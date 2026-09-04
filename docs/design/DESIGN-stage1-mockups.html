@@ -1,0 +1,2468 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}</style>
+<title>대신고 화면 설계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400..900&family=Roboto+Mono:wght@400..700&display=swap">
+<style>
+/* ============================================================
+   대신고 — 보고보고 안전관제 디자인 시스템 상속
+   원본: bogobogo-incident-ops/apps/dashboard/src/styles/
+   ============================================================ */
+:root{
+  --font-scale:1;
+
+  --app-bg:#f7f9fc;
+  --panel:#ffffff;
+  --panel-soft:#f8fafc;
+  --sunken:#eef2f7;
+
+  --ink:#111827;
+  --ink-2:#344054;
+  --muted:#5e6a79;
+  --muted-2:#8a94a6;
+
+  --border:#d9dee7;
+  --border-2:#c8d0dc;
+
+  --green:#10933f;
+  --green-solid:#0c8236;
+  --green-deep:#087a35;
+  --green-soft:#eaf7ef;
+  --green-bd:#bbf7d0;
+
+  --blue:#2563eb;
+  --blue-soft:#edf4ff;
+  --blue-bd:#bfdbfe;
+
+  --orange:#ff8a00;
+  --orange-ink:#b45309;
+  --orange-soft:#fff7e6;
+  --orange-bd:#fed7aa;
+
+  --red:#ef1b2d;
+  --red-soft:#fff1f2;
+  --red-bd:#fecdd3;
+
+  --slate:#526074;
+  --slate-soft:#f1f5f9;
+  --slate-bd:#cbd5e1;
+
+  --video:#0b1220;
+
+  /* ---- brand (미어캣) — 마크 이미지에서 뽑은 색 ---- */
+  --brand-ink:#0a5c46;
+  --brand-deep:#003828;
+  --brand-teal:#006870;
+  --brand-mint:#80e0c0;
+  --brand-sub:#4a6b5f;
+
+  --R:8px;
+  --sh-panel:0 4px 14px rgba(15,23,42,.05);
+  --sh-soft:0 3px 10px rgba(15,23,42,.06);
+  --sh-lift:0 8px 22px rgba(15,23,42,.08);
+  --sh-over:0 14px 30px rgba(15,23,42,.24);
+
+  --sans:'Pretendard','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --mono:'Roboto Mono','SF Mono',Consolas,monospace;
+
+  color-scheme:light;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--app-bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:calc(17px * var(--font-scale));
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  word-break:keep-all;
+}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* ============================================================
+   DOCUMENT SHELL
+   ============================================================ */
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px 110px}
+.col{max-width:72ch}
+
+.mast{padding:64px 0 40px;border-bottom:1px solid var(--border)}
+.kicker{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--green-soft);border:1px solid var(--green-bd);color:var(--green-deep);
+  border-radius:999px;padding:6px 15px;font-size:calc(15px * var(--font-scale));font-weight:750;
+  margin-bottom:22px
+}
+h1{
+  font-size:calc(clamp(32px,5vw,44px) * var(--font-scale));line-height:1.15;
+  font-weight:800;margin:0 0 18px;max-width:20ch;letter-spacing:-.01em
+}
+.lede{
+  font-size:calc(19px * var(--font-scale));line-height:1.66;color:var(--ink-2);
+  max-width:62ch;margin:0;font-weight:500
+}
+.mastmeta{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.mtag{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:9px 15px;font-size:calc(15px * var(--font-scale));color:var(--ink-2);font-weight:600;
+  box-shadow:var(--sh-soft)
+}
+.mtag b{color:var(--ink);font-weight:800}
+
+section{padding-top:64px}
+.slabel{
+  font-size:calc(16px * var(--font-scale));font-weight:900;color:var(--muted);
+  margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border);max-width:72ch
+}
+h2{
+  font-size:calc(clamp(23px,3vw,30px) * var(--font-scale));line-height:1.28;
+  font-weight:800;margin:0 0 16px;max-width:26ch;letter-spacing:-.008em
+}
+h3{font-size:calc(21px * var(--font-scale));font-weight:800;margin:38px 0 12px;line-height:1.3}
+p{margin:0 0 16px;max-width:72ch}
+ul{margin:0 0 16px;padding-left:1.2em;max-width:72ch}
+li{margin-bottom:8px}
+li::marker{color:var(--muted-2)}
+strong{font-weight:750}
+code{
+  font-family:var(--mono);font-size:.9em;background:var(--sunken);
+  border:1px solid var(--border);padding:.1em .4em;border-radius:5px
+}
+hr{border:0;border-top:1px solid var(--border);margin:60px 0 0}
+
+/* callout */
+.note{
+  background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--blue);
+  border-radius:var(--R);padding:18px 22px;margin:22px 0;max-width:72ch;box-shadow:var(--sh-soft)
+}
+.note.warn{border-left-color:var(--orange)}
+.note.good{border-left-color:var(--green)}
+.note p{margin:0}
+.note p+p{margin-top:10px}
+.note b{font-weight:800}
+
+/* token swatches */
+.sw{display:grid;grid-template-columns:repeat(auto-fit,minmax(184px,1fr));gap:14px;margin:24px 0 4px}
+.sw-i{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  overflow:hidden;box-shadow:var(--sh-panel)
+}
+.sw-c{height:66px;border-bottom:1px solid var(--border)}
+.sw-t{padding:13px 15px 15px}
+.sw-n{font-size:calc(16px * var(--font-scale));font-weight:800;margin:0 0 4px}
+.sw-h{font-family:var(--mono);font-size:calc(15px * var(--font-scale));color:var(--muted);font-weight:600}
+.sw-u{display:block;font-size:calc(15px * var(--font-scale));color:var(--ink-2);margin-top:8px;line-height:1.55;font-weight:500}
+
+/* comparison table */
+.tw{overflow-x:auto;margin:22px 0 4px;border:1px solid var(--border);border-radius:var(--R);background:var(--panel);box-shadow:var(--sh-panel)}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{text-align:left;padding:14px 18px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6;font-size:calc(16px * var(--font-scale))}
+th{font-weight:900;color:var(--muted);background:var(--panel-soft);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:750;color:var(--ink)}
+td.was{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--slate-bd)}
+
+/* ============================================================
+   MOCKUP FRAME
+   ============================================================ */
+.shot{margin:34px 0 0}
+.shot-hd{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:8px}
+.shot-n{
+  background:var(--ink);color:#fff;border-radius:6px;padding:4px 11px;
+  font-size:calc(14px * var(--font-scale));font-weight:800;white-space:nowrap
+}
+.shot-n.nw{background:var(--green-solid)}
+.shot-t{font-size:calc(21px * var(--font-scale));font-weight:800;line-height:1.3}
+.shot-d{font-size:calc(17px * var(--font-scale));color:var(--ink-2);margin:0 0 14px;max-width:72ch}
+.frame{
+  border:1px solid var(--border-2);border-radius:var(--R);overflow-x:auto;overflow-y:hidden;
+  background:var(--app-bg);box-shadow:var(--sh-lift);position:relative
+}
+.stage{width:1120px;font-size:calc(17px * var(--font-scale))}
+.cap{
+  margin:14px 0 0;max-width:72ch;font-size:calc(16px * var(--font-scale));color:var(--ink-2);
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);padding:14px 18px;line-height:1.65
+}
+.cap b{font-weight:800;color:var(--ink)}
+.scrollhint{
+  display:none;margin:10px 0 0;font-size:calc(15px * var(--font-scale));color:var(--muted);font-weight:600
+}
+
+/* ============================================================
+   PRODUCT UI
+   ============================================================ */
+.ui{background:var(--app-bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.ui *{box-sizing:border-box}
+
+/* --- top bar + progress rail --- */
+.appbar{
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+  border-bottom:1px solid var(--border);padding:18px 26px 0
+}
+.appbar-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{flex:0 0 auto}
+.logo-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.logo-t{
+  font-size:26px;font-weight:800;color:var(--brand-ink);
+  letter-spacing:-.018em;line-height:1.12
+}
+.logo-sub{
+  font-size:15px;font-weight:600;color:var(--brand-sub);
+  line-height:1.4;letter-spacing:-.002em;white-space:nowrap
+}
+:root[data-brand="shield"] .logo-sub{color:var(--muted)}
+
+/* ---- brand lockup: 미어캣이 기본, 방패는 롤백용 ---- */
+.logo-mark{
+  width:54px;height:54px;flex:0 0 54px;display:block;
+  background-image:url("data:image/png;base64,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");
+  background-size:contain;background-repeat:no-repeat;background-position:center
+}
+.logo-shield{display:none;line-height:0}
+.appbar .logo-shield svg,.blk .logo-shield svg{width:46px;height:46px}
+:root[data-brand="shield"] .logo-mark{display:none}
+:root[data-brand="shield"] .logo-shield{display:block}
+:root[data-brand="shield"] .logo-t{color:var(--green-deep);letter-spacing:-.01em}
+
+/* ---- 문서 상단 로고 전환 컨트롤 ---- */
+.bswitch{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:12px 16px;box-shadow:var(--sh-soft);margin-top:22px
+}
+.bswitch-l{font-size:15px;font-weight:900;color:var(--muted)}
+.bseg{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--R);overflow:hidden}
+.bseg button{
+  font-family:var(--sans);font-size:15px;font-weight:750;color:var(--ink-2);
+  background:#fff;border:0;padding:9px 16px;min-height:42px;cursor:pointer;
+  border-right:1px solid var(--border)
+}
+.bseg button:last-child{border-right:0}
+.bseg button[aria-pressed="true"]{background:var(--brand-ink);color:#fff}
+:root[data-brand="shield"] .bseg button[aria-pressed="true"]{background:var(--green-solid)}
+.bswitch-n{font-size:15px;color:var(--muted);font-weight:600}
+
+/* ---- 브랜드 견본 ---- */
+.blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:24px 0 4px}
+.blk{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:20px;box-shadow:var(--sh-panel);display:flex;flex-direction:column;gap:14px;align-items:flex-start
+}
+.blk-k{font-size:15px;font-weight:900;color:var(--muted)}
+.blk .logo-mark.xl{width:76px;height:76px;flex:0 0 76px}
+.blk .logo-mark.sm{width:24px;height:24px;flex:0 0 24px}
+.blk-dark{background:var(--video);border-color:var(--video)}
+.blk-dark .blk-k{color:#9fb0c4}
+.blk-dark .logo-t{color:var(--brand-mint)}
+:root[data-brand="shield"] .blk-dark .logo-t{color:#7fe0a4}
+.appbar-meta{
+  display:flex;align-items:center;gap:9px;font-size:16px;color:var(--muted);font-weight:600;
+  text-align:right;flex:0 0 auto
+}
+.appbar-meta .mono{color:var(--ink-2);font-weight:700}
+
+/* progress rail — large, readable */
+.rail{display:flex;gap:0;align-items:stretch;overflow:hidden}
+.rl{
+  flex:1;min-width:0;padding:11px 6px 13px;border-bottom:4px solid var(--border);
+  display:flex;flex-direction:column;gap:3px;text-align:center
+}
+.rl-n{font-size:14px;font-weight:800;color:var(--muted);font-family:var(--mono)}
+.rl-t{font-size:16px;font-weight:750;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rl.done{border-bottom-color:var(--green-bd)}
+.rl.done .rl-n{color:var(--green-deep)}
+.rl.done .rl-t{color:var(--ink-2)}
+.rl.on{border-bottom-color:var(--green)}
+.rl.on .rl-n,.rl.on .rl-t{color:var(--green-deep);font-weight:800}
+
+/* --- page body --- */
+.pbody{padding:22px 26px 26px}
+.ptop{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:20px}
+.ptitle{font-size:32px;font-weight:800;line-height:1.18;margin:0;letter-spacing:-.012em;color:#0b1220}
+.psub{font-size:18px;color:var(--muted);font-weight:600;margin:7px 0 0;max-width:62ch;line-height:1.55}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:18px;align-items:start}
+.grid2.wide{grid-template-columns:minmax(0,1fr) 460px}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* --- panel --- */
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  box-shadow:var(--sh-panel)
+}
+.panel-p{padding:20px}
+.panel-t{font-size:21px;font-weight:800;margin:0;line-height:1.25}
+.seclabel{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:16px;font-weight:900;color:var(--muted);
+  margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)
+}
+.seclabel .n{font-family:var(--mono);color:var(--ink-2);font-weight:700}
+
+/* --- buttons --- */
+.btn{
+  border:1px solid var(--border);background:#fff;color:var(--ink);
+  min-height:48px;border-radius:var(--R);padding:0 18px;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  font-family:var(--sans);font-size:17px;font-weight:700;line-height:1.3;
+  box-shadow:var(--sh-soft);cursor:default;text-align:center
+}
+.btn.pri{background:var(--green-solid);border-color:var(--green-solid);color:#fff;font-weight:800}
+.btn.blue{color:var(--blue);border-color:#9fc1ff;background:#fff}
+.btn.orange{color:var(--orange-ink);border-color:var(--orange-bd);background:#fffaf0}
+.btn.ghost{box-shadow:none;background:transparent;border-color:var(--border);color:var(--ink-2)}
+.btn.big{min-height:64px;font-size:18px}
+.btn.sm{min-height:40px;font-size:16px;padding:0 14px}
+.btn.wide{width:100%}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px}
+.btngrid{display:grid;gap:10px}
+.btngrid.c2{grid-template-columns:1fr 1fr}
+.btngrid.c3{grid-template-columns:repeat(3,1fr)}
+
+/* --- status badge (INFORMATION states only) --- */
+.bdg{
+  display:inline-flex;align-items:center;gap:7px;min-height:28px;padding:4px 11px;
+  border-radius:7px;font-size:14px;font-weight:750;white-space:nowrap;line-height:1.3;
+  border:1px solid
+}
+.bdg .dot{width:8px;height:8px;border-radius:999px;flex:0 0 8px}
+.bdg.src{background:var(--green-soft);border-color:var(--green-bd);color:var(--green-deep)}
+.bdg.src .dot{background:var(--green)}
+.bdg.usr{background:var(--green-solid);border-color:var(--green-solid);color:#fff}
+.bdg.usr .dot{background:#fff}
+.bdg.est{background:var(--blue-soft);border-color:var(--blue-bd);color:var(--blue)}
+.bdg.est .dot{background:var(--blue)}
+.bdg.att{background:var(--orange-soft);border-color:var(--orange-bd);color:var(--orange-ink)}
+.bdg.att .dot{background:var(--orange)}
+.bdg.unk{background:var(--slate-soft);border-color:var(--slate-bd);color:var(--slate)}
+.bdg.unk .dot{background:var(--slate)}
+
+/* --- KV row: 값 + 출처 + 상태 --- */
+.kv{border-top:1px solid var(--border)}
+.kvr{
+  display:grid;grid-template-columns:118px minmax(0,1fr) auto;gap:16px;
+  padding:15px 0;border-bottom:1px solid var(--border);align-items:start
+}
+.kvr.act{background:var(--orange-soft);margin:0 -20px;padding-left:20px;padding-right:20px;border-bottom-color:var(--orange-bd)}
+.kvr.est{background:var(--blue-soft);margin:0 -20px;padding-left:20px;padding-right:20px;border-bottom-color:var(--blue-bd)}
+.kv-k{display:block;font-size:15px;font-weight:900;color:var(--muted);padding-top:4px}
+.kv-v{min-width:0}
+.kv-val{display:block;font-size:19px;font-weight:750;color:var(--ink);line-height:1.35}
+.kv-val.mono{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:.01em}
+.kv-val.unk{color:var(--slate);font-weight:600;font-size:17px}
+.kv-src{display:block;font-size:15px;color:var(--muted);margin-top:5px;line-height:1.5;font-weight:500}
+.kv-act{margin-top:11px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* --- work status list (NEVER uses .bdg) --- */
+.work{list-style:none;margin:0;padding:0}
+.work li{
+  display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:13px 0;border-bottom:1px solid var(--border)
+}
+.work li:last-child{border-bottom:0}
+.wic{
+  width:24px;height:24px;border-radius:999px;display:grid;place-items:center;
+  border:2px solid var(--border-2);background:#fff
+}
+.wic svg{display:block}
+.work li.done .wic{background:var(--green-solid);border-color:var(--green-solid)}
+.work li.now .wic{border-color:var(--green);border-width:3px;background:#fff}
+.work li.now .wic i{width:9px;height:9px;border-radius:999px;background:var(--green);display:block}
+.w-t{display:block;font-size:17px;font-weight:600;color:var(--muted)}
+.work li.done .w-t{color:var(--ink-2);font-weight:650}
+.work li.now .w-t{color:var(--ink);font-weight:800}
+.w-s{display:block;font-size:15px;color:var(--muted);font-weight:650;font-family:var(--mono);white-space:nowrap}
+.work li.now .w-s{color:var(--green-deep)}
+
+/* ============================================================
+   SEARCH AXIS — 시간 막대
+   ============================================================ */
+.axis-p{padding:18px 20px 16px}
+.axis-hd{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;margin-bottom:14px}
+.axis-t{font-size:17px;font-weight:800;color:var(--ink)}
+.axis-s{font-size:16px;color:var(--muted);font-weight:600}
+.axis-s b{color:var(--green-deep);font-weight:800}
+.axis-s .mono{color:var(--ink-2);font-weight:700}
+
+.axis{position:relative;height:26px;background:var(--sunken);border-radius:5px;margin-bottom:8px}
+.aseg{position:absolute;top:0;bottom:0;border-radius:2px}
+.aseg.rest{background:#dfe6ee}
+.aseg.scope{background:#c9d6e4}
+.aseg.scanned{background:var(--green);opacity:.85}
+.aseg.now{background:var(--green);opacity:.42}
+/* file ticks */
+.aticks{position:absolute;inset:0;border-radius:5px;overflow:hidden;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(100%/42 - 1px),rgba(255,255,255,.75) calc(100%/42 - 1px) calc(100%/42))}
+/* scope bracket */
+.abr{
+  position:absolute;top:-7px;bottom:-7px;border:2px solid var(--green);border-radius:6px;
+  background:rgba(16,147,63,.07);pointer-events:none
+}
+.abr-l{
+  position:absolute;top:-30px;left:-2px;white-space:nowrap;
+  background:var(--green-solid);color:#fff;font-family:var(--mono);font-size:14px;font-weight:700;
+  padding:2px 8px;border-radius:5px
+}
+/* hour ruler */
+.aruler{position:relative;height:20px;margin-top:6px}
+.atk{
+  position:absolute;top:0;font-family:var(--mono);font-size:14px;color:var(--muted);
+  font-weight:650;transform:translateX(-50%);white-space:nowrap
+}
+.atk.e0{transform:none;left:0}
+.atk.e1{transform:none;right:0;left:auto}
+.atk::before{content:"";position:absolute;left:50%;top:-7px;width:1px;height:5px;background:var(--border-2)}
+.atk.e0::before{left:0}
+.atk.e1::before{left:auto;right:0}
+/* candidate markers — staggered, large */
+.apins{position:relative;height:74px;margin-top:8px}
+.apin{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+/* 겹치는 마커는 아래 줄로 내려간다. 줄이 내려갈수록 연결선이 길어져 같은 눈금을 가리킨다. */
+.apin.r1{top:36px}
+.apin.r1 i{height:45px}
+.apin b{
+  width:28px;height:28px;flex:0 0 28px;border-radius:999px;
+  background:#fff;border:2px solid var(--border-2);color:var(--ink-2);
+  font-family:var(--mono);font-size:15px;font-weight:800;
+  display:grid;place-items:center;box-shadow:var(--sh-soft)
+}
+.apin i{width:2px;height:9px;background:var(--border-2);display:block}
+.apin.sel b{background:var(--green-solid);border-color:var(--green-solid);color:#fff}
+.apin.sel i{background:var(--green)}
+/* candidate number used in the list beside the axis */
+.cnum{
+  width:26px;height:26px;flex:0 0 26px;border-radius:999px;
+  background:#fff;border:2px solid var(--border-2);color:var(--ink-2);
+  font-family:var(--mono);font-size:14px;font-weight:800;
+  display:grid;place-items:center
+}
+.cnum.sel{background:var(--green-solid);border-color:var(--green-solid);color:#fff}
+.apin.sel i{background:var(--green)}
+.alegend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px}
+.alg{display:flex;align-items:center;gap:7px;font-size:15px;color:var(--muted);font-weight:600}
+.alg i{width:14px;height:10px;border-radius:3px;display:block;flex:0 0 14px}
+
+/* ============================================================
+   EVIDENCE FRAME (video)
+   ============================================================ */
+.ev{
+  position:relative;aspect-ratio:16/9;background:var(--video);
+  border-radius:var(--R);overflow:hidden
+}
+.ev svg{width:100%;height:100%;display:block}
+.ev-chip{
+  position:absolute;background:rgba(17,24,39,.78);color:#fff;border-radius:6px;
+  padding:5px 10px;font-family:var(--mono);font-size:15px;font-weight:650;line-height:1.3
+}
+.ev-chip.tl{left:12px;top:12px}
+.ev-chip.tr{right:12px;top:12px}
+.ev-chip.bl{left:12px;bottom:12px}
+.ev-chip.br{right:12px;bottom:12px}
+.ev-tag{
+  position:absolute;display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-solid);color:#fff;border-radius:6px;padding:4px 10px;
+  font-size:15px;font-weight:800;box-shadow:var(--sh-over);white-space:nowrap
+}
+.ev-tag.o{background:var(--green-solid);color:#fff}
+.ev-box.o{border-color:var(--green)}
+.ev-box{position:absolute;border:3px solid var(--green);border-radius:6px;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+
+/* transport */
+.tp{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  border-top:1px solid var(--border);background:var(--panel-soft)
+}
+.tb{
+  width:44px;height:44px;flex:0 0 44px;border:1px solid var(--border);background:#fff;border-radius:var(--R);
+  display:grid;place-items:center;box-shadow:var(--sh-soft)
+}
+.tb.pri{background:var(--green-solid);border-color:var(--green-solid)}
+.tp-t{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink);white-space:nowrap}
+.tp-t.m{color:var(--muted);font-weight:650}
+.bar{flex:1;height:8px;background:var(--sunken);border-radius:999px;position:relative;min-width:60px}
+.bar-ev{position:absolute;top:0;bottom:0;background:var(--green-bd);border-radius:999px}
+.bar-hd{position:absolute;top:-4px;width:4px;height:16px;background:var(--ink);border-radius:2px}
+
+/* observation list */
+.obs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+.obs li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:11px;align-items:start}
+.obs .oi{
+  width:22px;height:22px;border-radius:999px;display:grid;place-items:center;flex:0 0 22px;margin-top:1px
+}
+.obs .oi.y{background:var(--green-soft);border:1px solid var(--green-bd)}
+.obs .oi.n{background:var(--slate-soft);border:1px solid var(--slate-bd)}
+.obs-t{display:block;font-size:17px;color:var(--ink);font-weight:600;line-height:1.5}
+.obs li.no .obs-t{color:var(--ink-2)}
+.obs-s{display:block;font-size:15px;color:var(--muted);margin-top:3px;font-weight:500;line-height:1.5}
+
+/* candidate cards */
+.cands{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cand{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  overflow:hidden;box-shadow:var(--sh-panel);display:flex;flex-direction:column
+}
+.cand.sel{border-color:var(--green);border-width:2px;box-shadow:0 8px 22px rgba(16,147,63,.16)}
+.cand-th{position:relative;aspect-ratio:16/9;background:var(--video)}
+.cand-b{padding:14px 15px 16px;display:flex;flex-direction:column;gap:11px;flex:1}
+.cand-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cand-tc{display:block;font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ink)}
+.cand-tag{
+  font-size:14px;font-weight:800;color:var(--muted);background:var(--sunken);
+  border-radius:999px;padding:3px 10px;white-space:nowrap
+}
+.cand.sel .cand-tag{background:var(--green-soft);color:var(--green-deep)}
+.mini{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.mini li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:9px;font-size:15px;color:var(--ink-2);font-weight:600;line-height:1.45;align-items:start}
+.mini .mi{width:16px;height:16px;border-radius:999px;display:grid;place-items:center;margin-top:2px}
+.mini .mi.y{background:var(--green-soft);border:1px solid var(--green-bd)}
+.mini .mi.n{background:var(--slate-soft);border:1px solid var(--slate-bd)}
+.mini li.no{color:var(--muted)}
+
+/* memory input */
+.memo{
+  background:#fff;border:2px solid var(--green);border-radius:var(--R);
+  padding:18px 20px;box-shadow:0 0 0 4px rgba(16,147,63,.09)
+}
+.memo-t{font-size:20px;color:var(--ink);line-height:1.6;font-weight:600;margin:0;min-height:58px}
+.memo-t .ph{color:var(--muted-2);font-weight:500}
+.cur{display:inline-block;width:2px;height:1.05em;background:var(--green);vertical-align:-3px;margin-left:2px}
+.memo-f{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  border-top:1px solid var(--border);margin-top:14px;padding-top:14px
+}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  background:var(--green-soft);border:1px solid var(--green-bd);color:var(--green-deep);
+  border-radius:999px;padding:5px 13px;font-size:15px;font-weight:700
+}
+.chip.gray{background:var(--panel-soft);border-color:var(--border);color:var(--muted)}
+
+/* example prompts */
+.egs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.eg{
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);
+  padding:13px 15px;display:flex;flex-direction:column;gap:4px
+}
+.eg-k{display:block;font-size:14px;font-weight:900;color:var(--muted)}
+.eg-v{display:block;font-size:16px;color:var(--ink-2);font-weight:600;line-height:1.45}
+
+/* understanding cards */
+.und{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.undc{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:15px 16px;box-shadow:var(--sh-panel);display:flex;flex-direction:column;gap:6px
+}
+.und-k{display:block;font-size:15px;font-weight:900;color:var(--muted)}
+.und-v{display:block;font-size:19px;font-weight:750;color:var(--ink);line-height:1.35}
+.und-v.mono{font-family:var(--mono);font-size:20px;font-weight:700}
+.und-q{display:block;font-size:15px;color:var(--muted);font-weight:500;line-height:1.5;margin-top:auto;padding-top:4px}
+
+/* plate */
+.plate-stage{
+  background:var(--video);border-radius:var(--R);padding:26px;display:grid;place-items:center;
+  position:relative;min-height:180px
+}
+.plate{
+  background:#eef1f4;border:3px solid #aab4bf;border-radius:7px;
+  padding:12px 26px;display:flex;align-items:center;gap:2px;
+  font-family:var(--mono);font-weight:700;font-size:44px;color:#151a20;letter-spacing:.02em;
+  box-shadow:0 8px 24px rgba(0,0,0,.5)
+}
+.plate .q{
+  color:#5d6672;position:relative;background:var(--orange-soft);
+  border-radius:4px;padding:0 4px;margin:0 2px;box-shadow:inset 0 -4px 0 var(--orange)
+}
+.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.fr{
+  border:2px solid var(--border);border-radius:var(--R);overflow:hidden;background:var(--video);
+  position:relative;aspect-ratio:16/10;box-shadow:var(--sh-soft)
+}
+.fr.on{border-color:var(--green);box-shadow:0 0 0 3px rgba(16,147,63,.18)}
+.fr-l{
+  position:absolute;left:0;right:0;bottom:0;background:rgba(17,24,39,.82);color:#fff;
+  font-family:var(--mono);font-size:13px;font-weight:650;padding:3px 7px;text-align:center
+}
+.fr-n{
+  position:absolute;left:5px;top:5px;background:#fff;color:var(--ink);border-radius:5px;
+  font-size:14px;font-weight:800;padding:1px 7px
+}
+.fr.on .fr-n{background:var(--green-solid);color:#fff}
+
+/* summary strip */
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sumc{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:16px 18px;box-shadow:var(--sh-panel);display:flex;align-items:center;gap:14px
+}
+.sum-ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex:0 0 52px}
+.sum-k{display:block;font-size:15px;color:var(--muted);font-weight:750}
+.sum-v{display:block;font-size:23px;font-weight:800;color:var(--ink);line-height:1.2;margin-top:2px}
+.sum-v.mono{font-family:var(--mono);font-size:21px;font-weight:700}
+
+/* checklist */
+.chk{list-style:none;margin:0;padding:0}
+.chk li{
+  display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;align-items:start;
+  padding:12px 0;border-bottom:1px solid var(--border)
+}
+.chk li:last-child{border-bottom:0}
+.chk .ci{width:22px;height:22px;border-radius:999px;display:grid;place-items:center;margin-top:1px;flex:0 0 22px}
+.chk .ci.ok{background:var(--green-solid)}
+.chk .ci.ex{background:var(--blue-soft);border:1px solid var(--blue-bd)}
+.chk-t{display:block;font-size:17px;font-weight:650;color:var(--ink);line-height:1.45}
+.chk-s{display:block;font-size:15px;color:var(--muted);font-weight:500;margin-top:3px;line-height:1.5}
+
+/* report statement */
+.stmt{background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);padding:18px 20px}
+.stmt p{font-size:17px;line-height:1.85;color:var(--ink);margin:0;font-weight:500}
+.stmt mark{background:var(--green-soft);color:var(--green-deep);font-weight:750;padding:1px 4px;border-radius:4px}
+
+/* disclaimer */
+.disc{
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);
+  padding:14px 17px;font-size:15px;color:var(--ink-2);line-height:1.6;font-weight:500
+}
+.disc b{font-weight:800;color:var(--ink)}
+
+/* --- upload (화면 1) --- */
+.drop{
+  border:2px dashed var(--border-2);border-radius:var(--R);background:var(--panel);
+  padding:34px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px
+}
+.drop.on{border-color:var(--green);background:#f0fbf4}
+.drop-ic{
+  width:64px;height:64px;border-radius:18px;background:var(--green-soft);
+  display:grid;place-items:center;flex:0 0 64px
+}
+.drop-t{font-size:21px;font-weight:800;margin:0;line-height:1.3}
+.drop-s{font-size:16px;color:var(--muted);font-weight:600;margin:0}
+.drop-f{font-size:15px;color:var(--muted);font-weight:550;margin:2px 0 0}
+
+.flist{border-top:1px solid var(--border)}
+.frow{
+  display:grid;grid-template-columns:26px minmax(0,1fr) 96px 84px 118px;gap:14px;
+  align-items:center;padding:12px 0;border-bottom:1px solid var(--border)
+}
+.frow:last-child{border-bottom:0}
+.frow.bad{background:var(--red-soft);margin:0 -20px;padding-left:20px;padding-right:20px;border-bottom-color:var(--red-bd)}
+.f-ic{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:0 0 24px;background:var(--sunken)}
+.frow.bad .f-ic{background:#fee}
+.f-n{
+  display:block;font-family:var(--mono);font-size:16px;font-weight:700;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.f-s{display:block;font-size:14px;color:var(--muted);font-weight:600;margin-top:2px}
+.f-m{font-family:var(--mono);font-size:15px;color:var(--ink-2);font-weight:650;text-align:right}
+.f-m.dim{color:var(--muted)}
+.fstat{display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:750;line-height:1.4}
+.fstat.ok{color:var(--muted)}
+.fstat.bad{color:#b3121f}
+.upbar{height:6px;background:var(--sunken);border-radius:999px;overflow:hidden;margin-top:5px}
+.upbar i{display:block;height:100%;background:var(--green-solid);border-radius:999px}
+.ftot{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);
+  padding:14px 18px;margin-top:14px
+}
+.ftot-k{font-size:16px;color:var(--muted);font-weight:750}
+.ftot-v{font-size:19px;font-weight:800;color:var(--ink)}
+.ftot-v .mono{font-family:var(--mono)}
+
+/* --- handoff transfer: paste vs select --- */
+.xhd{
+  display:flex;align-items:center;gap:11px;padding:14px 18px;border-radius:var(--R) var(--R) 0 0;
+  border-bottom:1px solid var(--border)
+}
+.xhd.paste{background:var(--blue-soft);border-bottom-color:var(--blue-bd)}
+.xhd.pick{background:var(--orange-soft);border-bottom-color:var(--orange-bd)}
+.xhd-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:0 0 34px;background:#fff}
+.xhd-t{display:block;font-size:18px;font-weight:800;line-height:1.3}
+.xhd-s{display:block;font-size:15px;font-weight:600;margin-top:2px}
+.xhd.paste .xhd-t{color:#1d4ed8}
+.xhd.paste .xhd-s{color:#2563eb}
+.xhd.pick .xhd-t{color:#9a5b00}
+.xhd.pick .xhd-s{color:var(--orange-ink)}
+.xlist{padding:4px 18px 16px}
+.xrow{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;
+  padding:14px 0;border-bottom:1px solid var(--border)
+}
+.xrow:last-child{border-bottom:0}
+.x-k{display:block;font-size:15px;font-weight:900;color:var(--muted);margin-bottom:5px}
+.x-v{display:block;font-size:19px;font-weight:750;color:var(--ink);line-height:1.4}
+.x-v.mono{font-family:var(--mono);font-size:20px;font-weight:700}
+.x-v.body{font-size:16px;font-weight:550;line-height:1.7;color:var(--ink-2)}
+.x-h{
+  display:flex;align-items:flex-start;gap:7px;font-size:15px;color:var(--muted);
+  font-weight:600;margin-top:7px;line-height:1.5
+}
+.x-h svg{flex:0 0 auto;margin-top:3px}
+.x-h b{color:var(--ink-2);font-weight:800}
+.xnote{
+  font-size:15px;color:var(--ink-2);font-weight:600;line-height:1.6;
+  background:var(--panel-soft);border:1px solid var(--border);border-radius:var(--R);
+  padding:12px 15px;margin:14px 18px 16px
+}
+
+/* empty / recovery */
+.empty{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);
+  padding:34px 30px;text-align:center;box-shadow:var(--sh-panel)
+}
+.empty-ic{width:72px;height:72px;border-radius:20px;background:var(--slate-soft);display:grid;place-items:center;margin:0 auto 18px}
+.empty-t{font-size:25px;font-weight:800;margin:0 0 10px;line-height:1.3}
+.empty-s{font-size:18px;color:var(--muted);font-weight:600;margin:0 auto 22px;max-width:46ch;line-height:1.6}
+
+/* handoff */
+.hand{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.hc{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--R);padding:20px;
+  box-shadow:var(--sh-panel);display:flex;flex-direction:column;gap:12px
+}
+.hc.go{border:2px solid var(--green);box-shadow:0 8px 22px rgba(16,147,63,.14)}
+.hc-n{
+  width:34px;height:34px;border-radius:999px;background:var(--sunken);color:var(--ink-2);
+  display:grid;place-items:center;font-family:var(--mono);font-size:17px;font-weight:800
+}
+.hc.go .hc-n{background:var(--green-solid);color:#fff}
+.hc-t{display:block;font-size:19px;font-weight:800;line-height:1.3}
+.hc-s{font-size:16px;color:var(--muted);font-weight:550;line-height:1.55;margin:0;flex:1}
+
+/* ============================================================
+   RESPONSIVE — scale mockups instead of forcing scroll
+   ============================================================ */
+@media(max-width:1240px){ .stage{zoom:.93} }
+@media(max-width:1120px){ .stage{zoom:.84} }
+@media(max-width:1000px){ .stage{zoom:.74} }
+@media(max-width:880px){  .stage{zoom:.64} }
+@media(max-width:900px){
+  .logo-sub{white-space:normal}
+}
+@media(max-width:780px){
+  .stage{zoom:.60}
+  .frame{overflow-x:auto}
+  .scrollhint{display:block}
+  .wrap{padding:0 16px 90px}
+  .mast{padding:44px 0 30px}
+  section{padding-top:48px}
+  .egs,.sw{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:no-preference){
+  .blink{animation:bk 1.2s steps(2,jump-none) infinite}
+  @keyframes bk{0%,100%{opacity:1}50%{opacity:0}}
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+
+<!-- ============================== MASTHEAD ============================== -->
+<header class="mast">
+  <span class="kicker">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    보고보고 디자인 시스템 상속
+  </span>
+  <h1>같은 손으로 만든 두 번째 도구</h1>
+  <p class="lede">
+    1차 시안의 어두운 작업공간과 기관용 서체를 버리고, 보고보고 안전관제 대시보드의 디자인 시스템을 그대로 가져왔다.
+    밝은 바탕, 큰 글씨, 색·점·아이콘이 함께 말하는 상태 배지.
+    새 언어를 배우게 하지 않는 것, 그리고 <b>안전신문고에서 실제로 해야 하는 일과 화면을 일치시키는 것</b>이 이번 목표다.
+  </p>
+  <div class="mastmeta">
+    <span class="mtag">원본 · <b>bogobogo-incident-ops/apps/dashboard</b></span>
+    <span class="mtag">시스템 문서 · <b>DESIGN.md</b></span>
+    <span class="mtag">화면 · <b>9개</b></span>
+  </div>
+
+  <div class="bswitch">
+    <span class="bswitch-l">로고</span>
+    <span class="bseg">
+      <button type="button" data-brand-set="meerkat" aria-pressed="true">미어캣 · 새 안</button>
+      <button type="button" data-brand-set="shield" aria-pressed="false">방패 · 기존</button>
+    </span>
+    <span class="bswitch-n">누르면 아래 9개 화면의 로고가 한 번에 바뀝니다.</span>
+  </div>
+</header>
+
+<!-- ============================== 01 무엇을 바꿨나 ============================== -->
+<section>
+  <p class="slabel">01 — 1차 시안에서 바뀐 것</p>
+  <h2>직관성을 떨어뜨린 원인부터 걷어냈다</h2>
+  <div class="tw"><table>
+    <tr><th>항목</th><th>1차 시안</th><th>이번</th><th>이유</th></tr>
+    <tr>
+      <td>표면</td>
+      <td class="was">어두운 작업공간 #141A21</td>
+      <td>밝은 #f7f9fc + 흰 패널</td>
+      <td>어두운 UI가 "AI 도구" 인상을 만들었다. 영상은 프레임 안에서만 어둡다.</td>
+    </tr>
+    <tr>
+      <td>서체</td>
+      <td class="was">IBM Plex Sans KR / Plex Mono</td>
+      <td>Pretendard / Roboto Mono</td>
+      <td>기관용 서체의 낯섦이 "어디서 본 것 같은" 인상의 원인이었다. 한글 화면용 서체가 맞다.</td>
+    </tr>
+    <tr>
+      <td>글자 크기</td>
+      <td class="was">라벨 9–10px, 본문 12–13px</td>
+      <td>라벨 15px, 본문 17px</td>
+      <td>대비 3.0–3.9:1로 무너졌고 읽히지 않았다. 15px가 하한이다.</td>
+    </tr>
+    <tr>
+      <td>상태 표현</td>
+      <td class="was">얇은 테두리 칩 (색 위주)</td>
+      <td>배지 = 색 + 점 + 아이콘 + 라벨</td>
+      <td>색만으로 구분하면 색각 이상·흑백에서 무너진다. 점 + 아이콘 + 라벨을 항상 함께 둔다.</td>
+    </tr>
+    <tr>
+      <td>작업 상태</td>
+      <td class="was">정보 상태와 같은 칩 사용</td>
+      <td>진행 목록 전용 컴포넌트</td>
+      <td>Core Flow §3이 금지한 혼용이었다. 이제 컴포넌트 자체가 다르다.</td>
+    </tr>
+    <tr>
+      <td>제출 방식</td>
+      <td class="was">복사 버튼 하나로 뭉뚱그림</td>
+      <td>붙여넣기 3 / 직접 선택 4로 분리</td>
+      <td>안전신문고에서 붙여넣을 수 있는 칸은 제목·신고 내용·차량번호뿐이다.
+        발생일자·발생시각·신고유형·발생장소는 화면에서 골라야 한다.</td>
+    </tr>
+    <tr>
+      <td>화면 수</td>
+      <td class="was">6개 (성공 경로만)</td>
+      <td>9개 (업로드·실패·연결 포함)</td>
+      <td>영상을 올리는 첫 순간, 후보를 못 찾는 순간, 안전신문고로 넘어가는 순간이 모두 빠져 있었다.</td>
+    </tr>
+  </table></div>
+
+  <div class="note warn">
+    <p><b>상속하지 않은 것 하나.</b> 보고보고에서 빨강 <code>#ef1b2d</code>은 <code>새 사고</code>였다.
+    대신고에서 빨강은 <b>시스템 실패 전용</b>이다 — 분석 오류, 연결 끊김, 파일 손상.
+    AI가 찾은 사건 후보에 빨강을 쓰면 대신고가 위반을 판정하는 제품이 되어버린다.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================== 02 시스템 ============================== -->
+<section>
+  <p class="slabel">02 — 상속한 시스템</p>
+  <h2>색은 의미가 있을 때만 나타난다</h2>
+  <p class="col">
+    무채색이 화면의 90%를 덮는다. 유채색 네 개는 각각 하나의 뜻만 갖는다.
+    보고보고에는 이미 <code>확인 필요</code>라는 오렌지 상태가 있었고, 대신고가 필요한 상태와 정확히 같은 뜻이었다.
+  </p>
+
+  <div class="sw">
+    <div class="sw-i"><div class="sw-c" style="background:#10933f"></div><div class="sw-t">
+      <p class="sw-n">관제 그린</p><span class="sw-h">#10933f</span>
+      <span class="sw-u">주요 행동 버튼. 그리고 <b>출처 확인됨 / 사용자 확인됨</b>.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#2563eb"></div><div class="sw-t">
+      <p class="sw-n">정보 블루</p><span class="sw-h">#2563eb</span>
+      <span class="sw-u"><b>AI 추정</b>. 경고가 아니라 출처 표시다 — 시스템이 말했고 아직 사람이 안 봤다는 뜻.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#ff8a00"></div><div class="sw-t">
+      <p class="sw-n">주의 오렌지</p><span class="sw-h">#ff8a00</span>
+      <span class="sw-u"><b>확인 필요</b> 전용. 이 색이 보이면 당신이 할 일이 있다. 다른 용도로 쓰지 않는다.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#526074"></div><div class="sw-t">
+      <p class="sw-n">부재 슬레이트</p><span class="sw-h">#526074</span>
+      <span class="sw-u"><b>알 수 없음</b>. 실패가 아니라 비어 있음이므로 무채색이다.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#ef1b2d"></div><div class="sw-t">
+      <p class="sw-n">실패 레드</p><span class="sw-h">#ef1b2d</span>
+      <span class="sw-u">시스템 오류에만. <b>AI 결과에는 절대 쓰지 않는다.</b></span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#f7f9fc;border-bottom:1px solid #d9dee7"></div><div class="sw-t">
+      <p class="sw-n">앱 바탕</p><span class="sw-h">#f7f9fc</span>
+      <span class="sw-u">흰 패널을 얹는 회청색 바탕. 어두운 면은 영상 프레임 안에만 존재한다.</span></div></div>
+  </div>
+
+  <h3>정보 상태 5종</h3>
+  <p class="col">
+    Product Spec §7이 요구하는 다섯 가지다. 모두 같은 배지 컴포넌트를 쓰고, 색·점·아이콘·라벨이 함께 움직인다.
+  </p>
+  <div class="btnrow" style="margin:20px 0 6px;gap:12px">
+    <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+    <span class="bdg usr"><i class="dot"></i>사용자 확인됨</span>
+    <span class="bdg est"><i class="dot"></i>AI 추정</span>
+    <span class="bdg att"><i class="dot"></i>확인 필요</span>
+    <span class="bdg unk"><i class="dot"></i>알 수 없음</span>
+  </div>
+
+  <div class="note">
+    <p><b>행 배경도 같은 색을 쓴다.</b> 사건 기록에서 손댈 곳이 남은 행은
+    그 행의 상태 색으로 옅게 칠한다 — 확인 필요는 주황, AI 추정은 파랑.
+    이미 정해진 값은 흰색으로 남는다. 배지를 하나씩 읽지 않아도 무엇이 남았는지 보인다.</p>
+  </div>
+
+  <div class="note good">
+    <p><b>작업 상태는 이 배지를 쓰지 않는다.</b>
+    <code>완료 / 진행 중 / 대기 / 부분 완료 / 중단 / 실패</code>는 진행 목록의 행 아이콘과 보조 텍스트로만 표현한다.
+    정보의 신뢰도와 작업의 진척도가 같은 모양을 가지면 안 된다는 Core Flow §3의 요구다.</p>
+  </div>
+
+  <div class="note">
+    <p><b>퍼센트 금지 규칙.</b> 확신도·정확도·일치율을 어떤 숫자로도 표시하지 않는다. 원본 시스템에서 상속한 규칙의 원문은 이렇다 —
+    「"위험도 X%" 표현은 forbidden이므로 priority tier + 우선순위 점수로 분리 표시」.
+    대신고에서는 더 강하게 적용한다. <b>확신도·정확도·일치율을 어떤 숫자로도 표시하지 않는다.</b>
+    남은 시간(ETA)도 마찬가지다.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================== 02-B 브랜드 ============================== -->
+<section>
+  <p class="slabel">02-B — 브랜드</p>
+  <h2>망을 보는 동물</h2>
+  <div class="col">
+    <p>
+      미어캣은 무리가 먹이를 찾는 동안 <strong>혼자 일어서서 주위를 살피고, 위험을 발견하면 알린다.</strong>
+      대신고가 하는 일이 정확히 그것이다 — 사용자가 운전하는 동안 블랙박스가 담아둔 것을 대신 훑어보고,
+      신고할 만한 것을 찾아 알린다. 판단하고 처벌하는 동물이 아니라 <em>먼저 보고 알려주는</em> 동물이라는 점이
+      「AI는 최종 판정을 하지 않는다」는 제품 경계와도 맞는다.
+    </p>
+    <p>
+      마크의 색은 우리 UI보다 <strong>깊고 청록에 가깝다.</strong>
+      그래서 워드마크에 <code>#0a5c46</code>을 쓴다 — 마크에서 뽑은 색이면서,
+      행동 버튼의 <code>#0c8236</code>보다 어두워 <strong>브랜드와 조작을 구분</strong>한다.
+      흰 바탕에서 7.98:1로 읽힌다.
+    </p>
+  </div>
+
+  <div class="blocks">
+    <div class="blk">
+      <span class="blk-k">기본 잠금형</span>
+      <span class="logo" style="gap:12px"><span class="logo-mark"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="logo-txt"><span class="logo-t">대신고</span><span class="logo-sub">신고할 순간을 대신 찾아드립니다</span></span></span>
+      <span class="blk-k" style="font-weight:600;color:var(--muted)">앱바에 쓰는 형태 · 마크 54px</span>
+    </div>
+    <div class="blk">
+      <span class="blk-k">마크 단독</span>
+      <span class="logo-mark xl"></span>
+      <span class="blk-k" style="font-weight:600;color:var(--muted)">파비콘 · 앱 아이콘 · 로딩</span>
+    </div>
+    <div class="blk">
+      <span class="blk-k">작은 크기</span>
+      <span class="logo" style="gap:7px"><span class="logo-mark sm"></span><span class="logo-shield" style="width:22px"><svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="logo-t" style="font-size:17px">대신고</span></span>
+      <span class="blk-k" style="font-weight:600;color:var(--muted)">본문 안 · 각주 · 푸터</span>
+    </div>
+    <div class="blk blk-dark">
+      <span class="blk-k">어두운 바탕</span>
+      <span class="logo" style="gap:12px"><span class="logo-mark"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="logo-t">대신고</span></span>
+      <span class="blk-k" style="font-weight:600">영상 위 워터마크 · 설명줄 없이 · 민트 <code style="background:transparent;border:0;color:#80e0c0">#80e0c0</code></span>
+    </div>
+  </div>
+
+  <h3>마크에서 뽑은 색</h3>
+  <div class="sw">
+    <div class="sw-i"><div class="sw-c" style="background:#0a5c46"></div><div class="sw-t">
+      <p class="sw-n">브랜드 그린</p><span class="sw-h">#0a5c46</span>
+      <span class="sw-u">워드마크 전용. 행동 버튼 초록보다 어두워 <b>브랜드와 조작이 구분</b>된다.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#003828"></div><div class="sw-t">
+      <p class="sw-n">딥 포레스트</p><span class="sw-h">#003828</span>
+      <span class="sw-u">마크에서 가장 넓은 면적. UI에는 쓰지 않는다.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#006870"></div><div class="sw-t">
+      <p class="sw-n">틸</p><span class="sw-h">#006870</span>
+      <span class="sw-u">마크의 중간톤. 우리 UI 초록이 청록 쪽과도 어울리는 근거.</span></div></div>
+    <div class="sw-i"><div class="sw-c" style="background:#80e0c0"></div><div class="sw-t">
+      <p class="sw-n">민트 하이라이트</p><span class="sw-h">#80e0c0</span>
+      <span class="sw-u">어두운 바탕에서만 쓰는 워드마크 색. 밝은 UI 위에는 대비가 모자란다.</span></div></div>
+  </div>
+
+  <div class="note warn">
+    <p><b>UI 색은 바꾸지 않았다.</b> 마크의 팔레트는 우리 초록보다 깊고 청록에 가깝지만,
+    그 색을 버튼·배지로 끌고 들어오면 보고보고에서 상속한 상태 체계가 흔들린다.
+    브랜드 색은 <b>워드마크와 마크 안에서만</b> 산다. 위 전환 버튼으로 두 안을 비교해보고,
+    되돌리려면 <code>&lt;html data-brand="shield"&gt;</code> 한 줄이면 된다.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================== 03 화면 ============================== -->
+<section>
+  <p class="slabel">03 — 화면</p>
+  <h2>아홉 개의 순간</h2>
+  <p class="col">
+    목업의 데이터는 모두 예시다. 1차 시안에 없던 화면이 셋 있다 —
+    <b>화면 1</b> 영상을 올리는 순간, <b>화면 6</b> 후보를 못 찾았을 때,
+    <b>화면 9</b> 실제로 안전신문고로 넘어가는 순간.
+  </p>
+  <p class="scrollhint">↔ 화면은 가로로 밀어서 볼 수 있습니다.</p>
+
+  <!-- ---------------- 화면 1 (NEW) ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n nw">화면 1 · 신규</span><span class="shot-t">블랙박스 영상 올리기</span></div>
+    <p class="shot-d">
+      파일 변환 사이트처럼 <b>끌어다 놓고, 목록으로 확인하고, 다음으로 넘어간다.</b>
+      여기서 이미 두 가지가 정해진다 — 영상이 몇 시부터 몇 시까지인지, 그리고 <b>GPS 기록이 있는지</b>.
+      위치를 나중에 확정할 수 없다는 사실을 마지막 화면이 아니라 첫 화면에서 알린다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+        </div>
+        <div class="rail">
+          <div class="rl on"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">블랙박스 영상을 올려주세요</h2>
+            <p class="psub">여러 파일을 한 번에 올리셔도 됩니다. 촬영 시각은 파일에서 자동으로 읽습니다.</p>
+          </div>
+        </div>
+
+        <div class="grid2 wide">
+          <div class="stack">
+            <div class="drop">
+              <span class="drop-ic">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              </span>
+              <p class="drop-t">여기에 영상 파일을 끌어다 놓으세요</p>
+              <p class="drop-s">폴더째로 끌어다 놓으셔도 됩니다</p>
+              <span class="btn pri" style="min-width:180px">파일 선택</span>
+              <p class="drop-f">MP4 · AVI · MOV · MKV · 파일 하나당 최대 4GB</p>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>올린 영상</span><span class="n">42개 중 41개 완료</span></div>
+              <div class="flist">
+              <div class="frow">
+                <span class="f-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span><span class="f-n">FILE_001.MP4</span><span class="f-s">15:40:02 시작</span></span>
+                <span class="f-m">3분 00초</span>
+                <span class="f-m">412MB</span>
+                <span><span class="fstat ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>올림 완료</span></span>
+              </div>
+              <div class="frow">
+                <span class="f-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span><span class="f-n">FILE_002.MP4</span><span class="f-s">15:43:02 시작</span></span>
+                <span class="f-m">3분 00초</span>
+                <span class="f-m">408MB</span>
+                <span><span class="fstat ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>올림 완료</span></span>
+              </div>
+              <div class="frow bad">
+                <span class="f-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef1b2d" stroke-width="3" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg></span>
+                <span><span class="f-n">FILE_017.MP4</span><span class="f-s">읽을 수 없어 건너뜁니다</span></span>
+                <span class="f-m dim">—</span>
+                <span class="f-m dim">—</span>
+                <span><span class="fstat bad"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef1b2d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>읽을 수 없음</span></span>
+              </div>
+              <div class="frow">
+                <span class="f-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span><span class="f-n">FILE_023.MP4</span><span class="f-s">18:30:14 시작</span></span>
+                <span class="f-m">3분 00초</span>
+                <span class="f-m">437MB</span>
+                <span><span class="fstat ok"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>올림 완료</span></span>
+              </div>
+              <div class="frow">
+                <span class="f-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5e6a79" stroke-width="3" stroke-linecap="round"><path d="M12 6v6l4 2"/></svg></span>
+                <span><span class="f-n">FILE_042.MP4</span><span class="f-s">19:09:12 시작</span></span>
+                <span class="f-m">2분 48초</span>
+                <span class="f-m">392MB</span>
+                <span><span class="f-s" style="margin-top:0;color:var(--green-deep);font-weight:750">올리는 중 68%</span><div class="upbar"><i style="width:68%"></i></div></span>
+              </div>
+              </div>
+              <div class="ftot">
+                <span class="ftot-k">마지막 파일을 올리고 있습니다</span>
+                <span class="ftot-v"><span class="mono">41</span> / <span class="mono">42</span>개 · <span class="mono">3시간 32분</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>영상에서 읽은 정보</span></div>
+              <div class="kv">
+                <div class="kvr" style="grid-template-columns:104px minmax(0,1fr) auto">
+                  <span class="kv-k">촬영 시간</span>
+                  <span class="kv-v">
+                    <span class="kv-val mono" style="font-size:18px">15:40 – 19:12</span>
+                    <span class="kv-src">2026년 8월 24일 · 3시간 32분</span>
+                  </span>
+                  <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+                </div>
+                <div class="kvr" style="grid-template-columns:104px minmax(0,1fr) auto">
+                  <span class="kv-k">화면 시각</span>
+                  <span class="kv-v">
+                    <span class="kv-val" style="font-size:17px">영상에 시각이 찍혀 있습니다</span>
+                    <span class="kv-src">발생시각을 정확하게 알 수 있습니다</span>
+                  </span>
+                  <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+                </div>
+                <div class="kvr" style="grid-template-columns:104px minmax(0,1fr) auto;border-bottom:0">
+                  <span class="kv-k">GPS 기록</span>
+                  <span class="kv-v">
+                    <span class="kv-val unk" style="font-size:17px">없습니다</span>
+                    <span class="kv-src">위치는 마지막에 안전신문고 지도에서 직접 고르셔야 합니다</span>
+                  </span>
+                  <span class="bdg unk"><i class="dot"></i>알 수 없음</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>원본은 건드리지 않습니다</span></div>
+              <p style="font-size:16px;color:var(--ink-2);font-weight:550;line-height:1.65;margin:0">
+                올려주신 파일은 <b>읽기만 합니다.</b> 신고용 영상이 필요하면 원본을 그대로 두고
+                사건 구간만 잘라 <b>새 파일</b>을 만듭니다.
+              </p>
+            </div>
+
+            <div class="disc">
+              <b>대신고는 정부·공공기관 서비스가 아닙니다.</b>
+              신고 접수는 안전신문고에서 직접 하셔야 합니다.
+            </div>
+          </div>
+        </div>
+
+        <div class="btnrow" style="margin-top:18px">
+          <span class="btn pri big" style="min-width:240px">다음 · 사건 설명하기</span>
+          <span class="btn big">영상 더 추가</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      <b>읽을 수 없는 파일은 빨강으로, 한 줄만 차지한다.</b> 42개 중 1개가 깨져도 흐름을 막지 않는다 —
+      Core Flow §23이 요구한 처리다. 이 화면은 빨강 <code>#ef1b2d</code>이 제품에서
+      처음 등장하는 자리이기도 하다. 시스템 문제일 때만 쓰기로 한 색이다.
+      <b>올림 완료·올리는 중·읽을 수 없음은 상태 배지를 쓰지 않는다</b> —
+      파일 처리는 작업 상태이지 값의 신뢰도가 아니기 때문이다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 1 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 2</span><span class="shot-t">기억나는 사건 설명하기</span></div>
+    <p class="shot-d">
+      빈 입력창을 마주하는 것이 이 제품에서 가장 어려운 순간이다. 그래서 예시 네 칸을 <b>항상 옆에 두고</b>,
+      아래에는 내가 올린 영상 전체가 시간 막대로 보인다. 무엇을 말하면 되는지, 그 말이 무엇을 좁히는지 동시에 보인다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta"><span class="mono">2026-08-24</span> 주행 · 영상 <span class="mono">42개</span> · <span class="mono">3시간 32분</span></div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl on"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">무슨 일이 있었는지 말씀해주세요</h2>
+            <p class="psub">기억나는 만큼만 적으시면 됩니다. 정확하지 않아도 괜찮습니다.</p>
+          </div>
+        </div>
+
+        <div class="grid2 wide">
+          <div class="stack">
+            <div class="memo">
+              <p class="memo-t">6시 반쯤 흰 SUV가 실선을 넘어 끼어들었어요. 미금역 근처였던 것 같아요<span class="cur blink"></span></p>
+              <div class="memo-f">
+                <div class="chips">
+                  <span class="chip">시간 · 6시 반쯤</span>
+                  <span class="chip">차량 · 흰색 SUV</span>
+                  <span class="chip">상황 · 실선 침범</span>
+                  <span class="chip">위치 · 미금역</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>내 영상 전체</span><span class="n">15:40 – 19:12</span></div>
+              <div class="axis">
+                <div class="aseg rest" style="left:0;right:0"></div>
+                <div class="aticks"></div>
+              </div>
+              <div class="aruler">
+                <span class="atk e0">15:40</span>
+                <span class="atk" style="left:23.4%">16:00</span>
+                <span class="atk" style="left:51.9%">17:00</span>
+                <span class="atk" style="left:80.3%">18:00</span>
+                <span class="atk e1">19:12</span>
+              </div>
+              <p style="font-size:16px;color:var(--muted);font-weight:600;margin:14px 0 0">
+                말씀하신 시간에 맞춰 먼저 찾아볼 구간을 정합니다. 나머지 영상도 그대로 남습니다.
+              </p>
+            </div>
+
+            <div class="btnrow">
+              <span class="btn pri big" style="min-width:200px">사건 찾기</span>
+              <span class="btn big">시간 단서 없이 전체 찾기</span>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>이런 것을 적어주세요</span></div>
+              <div class="egs">
+                <div class="eg"><span class="eg-k">시간</span><span class="eg-v">6시 반쯤<br>퇴근길 7시 전후</span></div>
+                <div class="eg"><span class="eg-k">상황</span><span class="eg-v">빨간불인데 직진<br>실선 넘어 끼어듦</span></div>
+                <div class="eg"><span class="eg-k">차량</span><span class="eg-v">흰색 SUV<br>검은 승용차 · 오토바이</span></div>
+                <div class="eg"><span class="eg-k">위치</span><span class="eg-v">미금역 근처<br>○○IC 지난 뒤</span></div>
+              </div>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>대신고가 찾을 수 있는 것</span></div>
+              <div class="chips" style="margin-bottom:14px">
+                <span class="chip gray">신호위반</span><span class="chip gray">중앙선 침범</span>
+                <span class="chip gray">진로변경</span><span class="chip gray">이륜차 안전모 미착용</span>
+              </div>
+              <p style="font-size:16px;color:var(--ink-2);line-height:1.6;margin:0 0 12px;font-weight:550">
+                결과는 <b>신고할 가능성이 있는 사건 후보</b>이며 법적 위반 확정이 아닙니다.
+                실제 사건과 신고정보는 제출 전에 직접 확인해주세요.
+              </p>
+              <div class="disc">
+                <b>대신고는 정부·공공기관 서비스가 아닙니다.</b>
+                신고 접수는 안전신문고에서 직접 하셔야 합니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      1차 시안은 이미 채워진 입력창만 보여줬다. <b>정작 어려운 건 빈 화면</b>이라
+      예시 네 칸을 상시 패널로 올렸다 — 닫을 수 없으니 사용자가 놓칠 수 없다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 2 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 3</span><span class="shot-t">이해한 내용과 찾을 범위 확인</span></div>
+    <p class="shot-d">
+      네 개의 단서가 각각 고칠 수 있는 카드로 분해되고, 시간 막대에 초록 괄호가 생긴다.
+      <span class="mono">42개 중 9개</span>가 무슨 뜻인지 글이 아니라 그림으로 보인다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta"><span class="mono">2026-08-24</span> 주행 · 영상 <span class="mono">42개</span></div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl on"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">이렇게 이해했어요</h2>
+            <p class="psub">틀린 부분이 있으면 지금 고쳐주세요. 잘못된 조건으로 오래 찾으면 시간이 낭비됩니다.</p>
+          </div>
+          <span class="btn">전부 다시 설명</span>
+        </div>
+
+        <div class="und" style="margin-bottom:18px">
+          <div class="undc">
+            <span class="und-k">시간</span>
+            <span class="und-v mono">18:30 전후</span>
+            <span class="und-q">"6시 반쯤"에서</span>
+            <span class="btn sm" style="margin-top:4px">수정</span>
+          </div>
+          <div class="undc">
+            <span class="und-k">차량</span>
+            <span class="und-v">흰색 SUV</span>
+            <span class="und-q">"흰 SUV"에서</span>
+            <span class="btn sm" style="margin-top:4px">수정</span>
+          </div>
+          <div class="undc">
+            <span class="und-k">상황</span>
+            <span class="und-v">백색 실선을 넘어<br>차로 변경</span>
+            <span class="und-q">"실선을 넘어 끼어들었어요"에서</span>
+            <span class="btn sm" style="margin-top:4px">수정</span>
+          </div>
+          <div class="undc">
+            <span class="und-k">위치</span>
+            <span class="und-v">미금역 근처</span>
+            <span class="und-q">"미금역 근처였던 것 같아요"에서</span>
+            <span class="btn sm" style="margin-top:4px">수정</span>
+          </div>
+        </div>
+
+        <div class="panel axis-p" style="margin-bottom:18px">
+          <div class="axis-hd">
+            <span class="axis-t">먼저 찾아볼 구간</span>
+            <span class="axis-s"><b>18:15 – 18:45</b> · 영상 <span class="mono">9개</span> · 나머지 <span class="mono">33개</span>는 그대로 남습니다</span>
+          </div>
+          <div class="axis" style="margin-top:34px">
+            <div class="aseg rest" style="left:0;right:0"></div>
+            <div class="aseg scope" style="left:70.9%;width:14.2%"></div>
+            <div class="aticks"></div>
+            <div class="abr" style="left:70.9%;width:14.2%"><span class="abr-l">18:15 – 18:45</span></div>
+          </div>
+          <div class="aruler">
+            <span class="atk e0">15:40</span>
+            <span class="atk" style="left:23.4%">16:00</span>
+            <span class="atk" style="left:51.9%">17:00</span>
+            <span class="atk" style="left:80.3%">18:00</span>
+            <span class="atk e1">19:12</span>
+          </div>
+          <div class="alegend">
+            <span class="alg"><i style="background:#c9d6e4"></i>먼저 찾을 구간 9개</span>
+            <span class="alg"><i style="background:#dfe6ee"></i>남겨둔 구간 33개</span>
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <span class="btn pri big" style="min-width:220px">맞아요, 찾아주세요</span>
+          <span class="btn big">구간 직접 조정</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      「나머지 33개는 그대로 남습니다」를 시간 막대에서 <b>실제로 보여준다.</b>
+      범위를 좁히는 것이 영상을 버리는 것이 아님을 문장으로 설득할 필요가 없어진다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 3 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 4</span><span class="shot-t">찾는 중 — 지금 어디까지 왔나</span></div>
+    <p class="shot-d">
+      사용자가 가장 오래 머무는 화면. 퍼센트도 남은 시간도 없다.
+      대신 <b>훑은 구간이 초록으로 채워지고</b>, 찾은 후보가 끝나기 전에 미리 나타난다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">경과 <span class="mono">1분 42초</span></div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl on"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">사건을 찾고 있어요</h2>
+            <p class="psub">창을 닫아도 계속 진행됩니다. 지금까지 찾은 후보는 사라지지 않습니다.</p>
+          </div>
+          <div class="btnrow">
+            <span class="btn">조건 수정</span>
+            <span class="btn">중단하기</span>
+          </div>
+        </div>
+
+        <div class="panel axis-p" style="margin-bottom:18px">
+          <div class="axis-hd">
+            <span class="axis-t">확인 중인 구간</span>
+            <span class="axis-s">영상 <b>9개 중 4개</b> 확인 · 후보 <b>3개</b> 발견</span>
+          </div>
+          <div class="axis" style="margin-top:34px">
+            <div class="aseg rest" style="left:0;right:0"></div>
+            <div class="aseg scope" style="left:70.9%;width:14.2%"></div>
+            <div class="aseg scanned" style="left:70.9%;width:6.6%"></div>
+            <div class="aseg now" style="left:77.5%;width:1.6%"></div>
+            <div class="aticks"></div>
+            <div class="abr" style="left:70.9%;width:14.2%"></div>
+          </div>
+          <div class="aruler">
+            <span class="atk e0">15:40</span>
+            <span class="atk" style="left:23.4%">16:00</span>
+            <span class="atk" style="left:51.9%">17:00</span>
+            <span class="atk" style="left:80.3%">18:00</span>
+            <span class="atk e1">19:12</span>
+          </div>
+          <div class="apins">
+            <div class="apin" style="left:72.8%"><b>3</b><i></i></div>
+            <div class="apin r1" style="left:75.6%"><b>2</b><i></i></div>
+            <div class="apin" style="left:77.2%"><b>1</b><i></i></div>
+          </div>
+          <div class="alegend">
+            <span class="alg"><i style="background:#10933f"></i>확인 끝난 구간</span>
+            <span class="alg"><i style="background:#c9d6e4"></i>남은 구간</span>
+            <span class="alg"><i style="background:#fff;border:2px solid #c8d0dc;border-radius:999px;width:12px;height:12px;flex:0 0 12px"></i>찾은 후보 · 시각은 오른쪽 목록에</span>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel panel-p">
+            <div class="seclabel"><span>진행 상황</span></div>
+            <ul class="work">
+              <li class="done">
+                <span class="wic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="w-t">찾아볼 구간 정하기</span><span class="w-s">42개 → 9개</span>
+              </li>
+              <li class="now">
+                <span class="wic"><i></i></span>
+                <span class="w-t">사건 가능성이 있는 장면 확인</span><span class="w-s">9개 중 4개</span>
+              </li>
+              <li>
+                <span class="wic"></span>
+                <span class="w-t">후보 장면 비교</span><span class="w-s">대기</span>
+              </li>
+              <li>
+                <span class="wic"></span>
+                <span class="w-t">사건 근거 정리</span><span class="w-s">대기</span>
+              </li>
+            </ul>
+            <p style="font-size:17px;color:var(--ink-2);line-height:1.65;margin:16px 0 0;font-weight:550">
+              지금까지 흰색 SUV가 나오는 장면 <b>3개</b>를 찾았습니다.
+              실선과 차량 움직임을 이어서 확인하고 있습니다.
+            </p>
+          </div>
+
+          <div class="panel panel-p">
+            <div class="seclabel"><span>지금까지 찾은 후보</span><span class="n">3개</span></div>
+            <div class="kv" style="border-top:0">
+              <div class="kvr" style="grid-template-columns:26px 104px minmax(0,1fr);align-items:center">
+                <span class="cnum">1</span>
+                <span class="mono" style="font-size:17px;color:var(--ink);font-weight:700">18:29:12</span>
+                <span class="kv-src" style="margin-top:0">흰색 SUV · 실선 확인 중</span>
+              </div>
+              <div class="kvr" style="grid-template-columns:26px 104px minmax(0,1fr);align-items:center">
+                <span class="cnum">2</span>
+                <span class="mono" style="font-size:17px;color:var(--ink);font-weight:700">18:25:40</span>
+                <span class="kv-src" style="margin-top:0">흰색 SUV · 차로 이동 확인 중</span>
+              </div>
+              <div class="kvr" style="grid-template-columns:26px 104px minmax(0,1fr);align-items:center;border-bottom:0">
+                <span class="cnum">3</span>
+                <span class="mono" style="font-size:17px;color:var(--ink);font-weight:700">18:19:03</span>
+                <span class="kv-src" style="margin-top:0">흰색 SUV · 실선 확인 중</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      후보 표시는 <b>흰 알약에 회색 점</b>이다. 오렌지가 아니다 —
+      오렌지는 "당신이 할 일"이라는 뜻이고, 찾은 후보는 아직 사용자의 할 일이 아니다.
+      1차 시안이 여기서 오렌지를 써 규칙을 스스로 깼다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 4 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 5</span><span class="shot-t">후보와 원본 영상 비교</span></div>
+    <p class="shot-d">
+      영상 안에서 <b>백색 실선을 직접 가리킨다.</b> 점선 차선과 실선이 화면에서 구분되지 않으면
+      사용자는 AI의 문장을 믿고 누를 수밖에 없다. 그건 이 제품이 막으려던 바로 그 일이다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">후보 <span class="mono">3개</span> · 찾기 완료</div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl done"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl on"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">이 사건이 맞나요?</h2>
+            <p class="psub">영상을 보고 직접 확인해주세요. 아래 세 후보는 언제든 비교할 수 있습니다.</p>
+          </div>
+        </div>
+
+        <div class="grid2 wide" style="margin-bottom:18px">
+          <div class="panel" style="overflow:hidden">
+            <div class="ev" style="border-radius:0">
+              <svg viewBox="0 0 320 180" preserveAspectRatio="none" role="img" aria-label="블랙박스 영상 — 흰색 SUV가 백색 실선을 넘는 장면">
+                <rect width="320" height="180" fill="#5d6b7d"/>
+                <rect width="320" height="86" fill="#7d8b9c"/>
+                <rect y="30" width="46" height="56" fill="#4e5a68"/>
+                <rect y="18" x="52" width="34" height="68" fill="#596675"/>
+                <rect y="40" x="250" width="70" height="46" fill="#4e5a68"/>
+                <rect y="86" width="320" height="94" fill="#3f464e"/>
+                <path d="M0 180 L138 86 L152 86 L60 180 Z" fill="#474e57"/>
+                <path d="M320 180 L196 86 L182 86 L268 180 Z" fill="#474e57"/>
+                <path d="M148 86 L142 104 L136 104 L143 86 Z" fill="#e8ecf0"/>
+                <path d="M134 112 L124 138 L114 138 L127 112 Z" fill="#e8ecf0"/>
+                <path d="M110 148 L94 180 L80 180 L100 148 Z" fill="#e8ecf0"/>
+                <path d="M172 86 L232 180 L246 180 L178 86 Z" fill="#fdfefe"/>
+                <rect x="196" y="96" width="72" height="48" rx="5" fill="#eef1f4"/>
+                <rect x="200" y="100" width="64" height="19" rx="3" fill="#5b6672"/>
+                <rect x="203" y="136" width="12" height="9" rx="2" fill="#2a2f36"/>
+                <rect x="249" y="136" width="12" height="9" rx="2" fill="#2a2f36"/>
+                <rect x="214" y="127" width="34" height="9" rx="2" fill="#d5dae0"/>
+              </svg>
+              <span class="ev-tag" style="left:52%;top:44%">대상 차량 · 흰색 SUV</span>
+              <span class="ev-box" style="left:60%;top:52%;width:24%;height:29%"></span>
+              <span class="ev-tag o" style="left:44%;bottom:8%">백색 실선 →</span>
+              <span class="ev-chip tl">2026-08-24 18:31:48</span>
+              <span class="ev-chip tr">FILE_023.MP4</span>
+            </div>
+            <div class="tp">
+              <span class="tb"><svg width="16" height="16" viewBox="0 0 24 24" fill="#344054"><path d="M19 5v14l-9-7 9-7ZM9 5v14l-9-7 9-7Z"/></svg></span>
+              <span class="tb pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M6 4l14 8-14 8V4Z"/></svg></span>
+              <span class="tb"><svg width="16" height="16" viewBox="0 0 24 24" fill="#344054"><path d="M5 5v14l9-7-9-7ZM15 5v14l9-7-9-7Z"/></svg></span>
+              <span class="tp-t">18:31:48</span>
+              <span class="bar"><i class="bar-ev" style="left:38%;width:17%"></i><i class="bar-hd" style="left:46%"></i></span>
+              <span class="tp-t m">3분 00초</span>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>영상에서 확인된 것</span></div>
+              <ul class="obs">
+                <li>
+                  <span class="oi y"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                  <span><span class="obs-t">백색 실선이 화면에 보입니다</span><span class="obs-s">영상 오른쪽의 끊기지 않은 흰 선 · 왼쪽 점선과 다릅니다</span></span>
+                </li>
+                <li>
+                  <span class="oi y"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                  <span><span class="obs-t">흰색 SUV — 말씀하신 차량과 같습니다</span></span>
+                </li>
+                <li>
+                  <span class="oi y"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                  <span><span class="obs-t">차량이 실선을 넘어 옆 차로로 이동합니다</span><span class="obs-s">18:31:46 → 18:31:52 구간</span></span>
+                </li>
+                <li class="no">
+                  <span class="oi n"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"><path d="M5 12h14"/></svg></span>
+                  <span><span class="obs-t">위치는 영상만으로 알 수 없습니다</span><span class="obs-s">이 블랙박스에 GPS 기록이 없습니다</span></span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>어떻게 하시겠어요?</span></div>
+              <div class="btngrid" style="gap:10px">
+                <span class="btn pri big wide">네, 이 사건이 맞아요</span>
+                <div class="btngrid c2">
+                  <span class="btn">조금 전이에요</span>
+                  <span class="btn">조금 후예요</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-p">
+          <div class="seclabel"><span>찾은 후보 3개 — 눌러서 비교하세요</span><span class="n">18:15 – 18:45</span></div>
+          <div class="cands">
+            <div class="cand sel">
+              <div class="cand-th">
+                <svg viewBox="0 0 320 180" preserveAspectRatio="none" aria-hidden="true">
+                  <rect width="320" height="180" fill="#5d6b7d"/><rect width="320" height="86" fill="#7d8b9c"/>
+                  <rect y="86" width="320" height="94" fill="#3f464e"/>
+                  <path d="M148 86 L110 148 L96 148 L138 86 Z" fill="#e8ecf0"/>
+                  <path d="M172 86 L232 180 L246 180 L178 86 Z" fill="#fdfefe"/>
+                  <rect x="196" y="96" width="72" height="48" rx="5" fill="#eef1f4"/>
+                  <rect x="200" y="100" width="64" height="19" rx="3" fill="#5b6672"/>
+                </svg>
+                <span class="ev-chip bl" style="font-size:13px;padding:3px 7px">18:31:48</span>
+              </div>
+              <div class="cand-b">
+                <div class="cand-h"><span style="display:flex;align-items:center;gap:9px"><span class="cnum sel">1</span><span class="cand-tc">18:31:48</span></span><span class="cand-tag">지금 보는 중</span></div>
+                <ul class="mini">
+                  <li><span class="mi y"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>흰색 SUV</span></li>
+                  <li><span class="mi y"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>백색 실선 확인</span></li>
+                  <li><span class="mi y"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>선을 넘어 이동</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="cand">
+              <div class="cand-th">
+                <svg viewBox="0 0 320 180" preserveAspectRatio="none" aria-hidden="true">
+                  <rect width="320" height="180" fill="#657282"/><rect width="320" height="86" fill="#8592a2"/>
+                  <rect y="86" width="320" height="94" fill="#454c55"/>
+                  <path d="M150 86 L118 140 L104 140 L140 86 Z" fill="#dfe4e9"/>
+                  <path d="M112 152 L92 180 L78 180 L102 152 Z" fill="#dfe4e9"/>
+                  <rect x="140" y="102" width="58" height="38" rx="5" fill="#e7eaee"/>
+                  <rect x="144" y="106" width="50" height="15" rx="3" fill="#616c78"/>
+                </svg>
+                <span class="ev-chip bl" style="font-size:13px;padding:3px 7px">18:25:40</span>
+              </div>
+              <div class="cand-b">
+                <div class="cand-h"><span style="display:flex;align-items:center;gap:9px"><span class="cnum">2</span><span class="cand-tc">18:25:40</span></span></div>
+                <ul class="mini">
+                  <li><span class="mi y"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>흰색 SUV</span></li>
+                  <li class="no"><span class="mi n"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round"><path d="M5 12h14"/></svg></span><span>실선인지 점선인지 불분명</span></li>
+                </ul>
+                <span class="btn sm wide" style="margin-top:auto">이 영상 보기</span>
+              </div>
+            </div>
+
+            <div class="cand">
+              <div class="cand-th">
+                <svg viewBox="0 0 320 180" preserveAspectRatio="none" aria-hidden="true">
+                  <rect width="320" height="180" fill="#5a6675"/><rect width="320" height="86" fill="#788595"/>
+                  <rect y="86" width="320" height="94" fill="#3c434b"/>
+                  <path d="M170 86 L226 180 L240 180 L176 86 Z" fill="#fbfcfd"/>
+                  <rect x="188" y="108" width="62" height="40" rx="5" fill="#9aa4ae"/>
+                  <rect x="192" y="112" width="54" height="16" rx="3" fill="#4a545e"/>
+                </svg>
+                <span class="ev-chip bl" style="font-size:13px;padding:3px 7px">18:19:03</span>
+              </div>
+              <div class="cand-b">
+                <div class="cand-h"><span style="display:flex;align-items:center;gap:9px"><span class="cnum">3</span><span class="cand-tc">18:19:03</span></span></div>
+                <ul class="mini">
+                  <li><span class="mi y"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>백색 실선 확인</span></li>
+                  <li class="no"><span class="mi n"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round"><path d="M5 12h14"/></svg></span><span>차량 색이 더 어둡습니다</span></li>
+                </ul>
+                <span class="btn sm wide" style="margin-top:auto">이 영상 보기</span>
+              </div>
+            </div>
+          </div>
+          <div class="btnrow" style="margin-top:16px;justify-content:flex-end">
+            <span class="btn">세 개 다 아니에요</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      거절 버튼을 <b>하나로 합쳤다.</b> 1차 시안은 「아니에요」와 「세 개 다 아니에요」가
+      다른 위치에 따로 있어서 무엇을 거절하는지 헷갈렸다. 이제 위쪽은 시간 보정만,
+      아래쪽은 전체 거절만 담당한다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 5 (NEW) ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n nw">화면 6 · 신규</span><span class="shot-t">못 찾았을 때</span></div>
+    <p class="shot-d">
+      1차 시안에 없던 화면. 2분을 기다린 뒤 원하는 걸 못 찾는 순간이 <b>사용자가 가장 많이 이탈하는 지점</b>이고,
+      Product Spec §2가 지목한 위험이기도 하다. 막다른 길로 두지 않는다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">18:15 – 18:45 확인 완료</div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl on"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="empty" style="margin-bottom:18px">
+          <div class="empty-ic">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </div>
+          <h2 class="empty-t">18:15 – 18:45 구간에서는 찾지 못했어요</h2>
+          <p class="empty-s">
+            영상 9개를 모두 확인했지만 말씀하신 상황과 맞는 장면이 없었습니다.
+            아래 방법 중 하나를 골라주세요.
+          </p>
+          <div class="btnrow" style="justify-content:center">
+            <span class="btn pri big" style="min-width:230px">앞뒤 30분 더 찾아보기</span>
+            <span class="btn big">시간을 다시 말할게요</span>
+            <span class="btn big">차량 특징 고치기</span>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel axis-p">
+            <div class="axis-hd">
+              <span class="axis-t">넓히면 이만큼 더 찾습니다</span>
+              <span class="axis-s">영상 <b>9개 → 21개</b> · 약 <span class="mono">4분</span> 더 걸립니다</span>
+            </div>
+            <div class="axis" style="margin-top:34px">
+              <div class="aseg rest" style="left:0;right:0"></div>
+              <div class="aseg scope" style="left:56.7%;width:42.6%"></div>
+              <div class="aseg scanned" style="left:70.9%;width:14.2%"></div>
+              <div class="aticks"></div>
+              <div class="abr" style="left:56.7%;width:42.6%"><span class="abr-l">17:45 – 19:12</span></div>
+            </div>
+            <div class="aruler">
+              <span class="atk e0">15:40</span>
+              <span class="atk" style="left:23.4%">16:00</span>
+              <span class="atk" style="left:51.9%">17:00</span>
+              <span class="atk" style="left:80.3%">18:00</span>
+              <span class="atk e1">19:12</span>
+            </div>
+            <div class="alegend">
+              <span class="alg"><i style="background:#10933f"></i>이미 확인함</span>
+              <span class="alg"><i style="background:#c9d6e4"></i>새로 확인할 구간</span>
+            </div>
+          </div>
+
+          <div class="panel panel-p">
+            <div class="seclabel"><span>비슷하지만 다른 장면 2개</span></div>
+            <p style="font-size:16px;color:var(--muted);font-weight:550;line-height:1.6;margin:0 0 14px">
+              말씀하신 조건과 일부만 맞습니다. 혹시 이 중에 있는지 확인해보세요.
+            </p>
+            <div class="kv" style="border-top:0">
+              <div class="kvr" style="grid-template-columns:82px minmax(0,1fr) auto;align-items:center">
+                <span class="ev" style="aspect-ratio:16/10;border-radius:6px">
+                  <svg viewBox="0 0 320 200" preserveAspectRatio="none" aria-hidden="true"><rect width="320" height="200" fill="#6a7686"/><rect width="320" height="96" fill="#8996a6"/><rect y="96" width="320" height="104" fill="#454c55"/><rect x="150" y="108" width="70" height="46" rx="5" fill="#3f4954"/></svg>
+                </span>
+                <span><span class="kv-val" style="font-size:17px;font-family:var(--mono);font-weight:700">18:38:22</span><span class="kv-src">검은 승용차 · 실선 침범</span></span>
+                <span class="btn sm">보기</span>
+              </div>
+              <div class="kvr" style="grid-template-columns:82px minmax(0,1fr) auto;align-items:center;border-bottom:0">
+                <span class="ev" style="aspect-ratio:16/10;border-radius:6px">
+                  <svg viewBox="0 0 320 200" preserveAspectRatio="none" aria-hidden="true"><rect width="320" height="200" fill="#6a7686"/><rect width="320" height="96" fill="#8996a6"/><rect y="96" width="320" height="104" fill="#454c55"/><rect x="120" y="112" width="66" height="42" rx="5" fill="#e4e8ec"/></svg>
+                </span>
+                <span><span class="kv-val" style="font-size:17px;font-family:var(--mono);font-weight:700">18:21:05</span><span class="kv-src">흰색 SUV · 점선 구간에서 차로 변경</span></span>
+                <span class="btn sm">보기</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      「찾지 못했습니다」로 끝내지 않고 <b>범위를 넓히면 얼마나 더 걸리는지</b>를 미리 보여준다.
+      기다림을 다시 요구하는 화면이므로 비용을 숨기지 않는다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 6 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 7</span><span class="shot-t">불확실한 번호판 확인하기</span></div>
+    <p class="shot-d">
+      AI가 못 읽은 글자만 주황으로 표시된다. 그리고 <b>실제로 넘겨볼 장면 네 개</b>가 있다 —
+      흐릿한 것, 빛 반사, 가려진 것. 1차 시안은 여기가 빈 검은 상자였다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">사건 <span class="mono">18:31:42 – 18:31:57</span></div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl done"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl done"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl on"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">차량번호를 확인해주세요</h2>
+            <p class="psub">다섯 번째 글자를 확실하게 읽지 못했습니다. 장면을 넘겨보며 확인해주세요.</p>
+          </div>
+          <div class="sum" style="grid-template-columns:1fr;min-width:210px">
+            <div class="sumc" style="padding:13px 16px;gap:12px">
+              <span class="sum-ic" style="width:42px;height:42px;flex:0 0 42px;border-radius:11px;background:var(--orange-soft)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              </span>
+              <span><span class="sum-k">남은 확인</span><span class="sum-v">2개</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2 wide">
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>가장 선명한 장면</span><span class="n">FILE_023.MP4 · 18:31:51</span></div>
+              <div class="plate-stage">
+                <span class="ev-chip tr" style="font-size:14px">4.0배 확대</span>
+                <span class="plate">12가&nbsp;34<span class="q">?</span>6</span>
+              </div>
+
+              <div class="seclabel" style="margin-top:20px"><span>다른 장면에서도 확인해보세요</span></div>
+              <div class="frames">
+                <div class="fr on">
+                  <svg viewBox="0 0 160 100" preserveAspectRatio="none" aria-hidden="true">
+                    <rect width="160" height="100" fill="#232a33"/>
+                    <rect x="34" y="34" width="92" height="32" rx="4" fill="#e7eaee"/>
+                    <text x="80" y="57" font-family="monospace" font-size="19" font-weight="700" fill="#151a20" text-anchor="middle">12가34?6</text>
+                  </svg>
+                  <span class="fr-n">1</span><span class="fr-l">18:31:51</span>
+                </div>
+                <div class="fr">
+                  <svg viewBox="0 0 160 100" preserveAspectRatio="none" aria-hidden="true" style="filter:blur(1.6px)">
+                    <rect width="160" height="100" fill="#232a33"/>
+                    <rect x="30" y="34" width="98" height="32" rx="4" fill="#d8dde2"/>
+                    <text x="79" y="57" font-family="monospace" font-size="19" font-weight="700" fill="#3a424b" text-anchor="middle">12가34?6</text>
+                  </svg>
+                  <span class="fr-n">2</span><span class="fr-l">18:31:52</span>
+                </div>
+                <div class="fr">
+                  <svg viewBox="0 0 160 100" preserveAspectRatio="none" aria-hidden="true">
+                    <rect width="160" height="100" fill="#232a33"/>
+                    <rect x="34" y="34" width="92" height="32" rx="4" fill="#e7eaee"/>
+                    <text x="80" y="57" font-family="monospace" font-size="19" font-weight="700" fill="#151a20" text-anchor="middle">12가34?6</text>
+                    <rect x="72" y="20" width="30" height="60" fill="#fff" opacity=".82"/>
+                  </svg>
+                  <span class="fr-n">3</span><span class="fr-l">18:31:53</span>
+                </div>
+                <div class="fr">
+                  <svg viewBox="0 0 160 100" preserveAspectRatio="none" aria-hidden="true">
+                    <rect width="160" height="100" fill="#232a33"/>
+                    <rect x="34" y="34" width="92" height="32" rx="4" fill="#e7eaee"/>
+                    <text x="80" y="57" font-family="monospace" font-size="19" font-weight="700" fill="#151a20" text-anchor="middle">12가34?6</text>
+                    <rect x="96" y="26" width="46" height="48" fill="#3d444d"/>
+                  </svg>
+                  <span class="fr-n">4</span><span class="fr-l">18:31:54</span>
+                </div>
+              </div>
+              <p style="font-size:16px;color:var(--muted);font-weight:550;margin:12px 0 0;line-height:1.55">
+                2번은 흔들렸고, 3번은 빛이 반사됐고, 4번은 뒷차에 가렸습니다.
+              </p>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>어떻게 하시겠어요?</span></div>
+              <div class="btngrid c2">
+                <span class="btn pri big">번호 직접 입력</span>
+                <span class="btn big">읽을 수 없음으로 두기</span>
+              </div>
+              <p style="font-size:16px;color:var(--muted);font-weight:550;margin:12px 0 0;line-height:1.55">
+                읽을 수 없음으로 두면 차량번호 없이 신고자료를 만듭니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="panel panel-p">
+            <div class="seclabel"><span>사건 기록</span><span class="n" style="color:var(--orange-ink)">확인할 항목 2개</span></div>
+            <div class="kv">
+              <div class="kvr act">
+                <span class="kv-k">차량번호</span>
+                <span class="kv-v">
+                  <span class="kv-val mono">12가 34?6</span>
+                  <span class="kv-src">영상에서 가장 선명한 장면 · 다섯 번째 글자 불확실</span>
+                </span>
+                <span class="bdg att"><i class="dot"></i>확인 필요</span>
+              </div>
+              <div class="kvr">
+                <span class="kv-k">발생시각</span>
+                <span class="kv-v">
+                  <span class="kv-val mono">18:31:48</span>
+                  <span class="kv-src">영상 화면에 표시된 시각</span>
+                </span>
+                <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+              </div>
+              <div class="kvr est">
+                <span class="kv-k">신고 상황</span>
+                <span class="kv-v">
+                  <span class="kv-val" style="font-size:17px">흰색 SUV가 백색 실선을 넘어 옆 차로로 변경</span>
+                  <span class="kv-src">영상에서 관찰한 내용을 정리한 문장입니다</span>
+                  <span class="kv-act"><span class="btn sm">읽고 확인하기</span></span>
+                </span>
+                <span class="bdg est"><i class="dot"></i>AI 추정</span>
+              </div>
+              <div class="kvr">
+                <span class="kv-k">위치</span>
+                <span class="kv-v">
+                  <span class="kv-val" style="font-size:17px">미금역 근처</span>
+                  <span class="kv-src">말씀하신 위치 · 블랙박스에 GPS 기록이 없습니다</span>
+                </span>
+                <span class="bdg unk"><i class="dot"></i>알 수 없음</span>
+              </div>
+              <div class="kvr">
+                <span class="kv-k">사건 구간</span>
+                <span class="kv-v">
+                  <span class="kv-val mono" style="font-size:17px">18:31:42 – 18:31:57</span>
+                  <span class="kv-src">FILE_023.MP4에서 잘라냈습니다</span>
+                </span>
+                <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      <b>「이 번호가 맞아요」 버튼을 없앴다.</b> <code>12가 34?6</code>처럼 물음표가 든 값을
+      "맞다"고 확인할 방법은 없다. 직접 입력하거나 알 수 없음으로 두거나, 둘 중 하나다.
+      그리고 행 배경은 <b>그 행의 상태 색을 그대로 따른다</b> — 확인 필요는 주황, AI 추정은 파랑,
+      이미 정해진 값은 흰색. 손댈 곳이 어디인지 배지를 읽지 않아도 보인다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 7 ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n">화면 8</span><span class="shot-t">신고자료 최종 확인</span></div>
+    <p class="shot-d">
+      전체를 다시 읽는 화면은 흐름 전체에서 여기 한 번뿐이다. 모든 값에 출처와 상태가 붙어 있고,
+      실제로 제출하게 될 신고문을 그대로 읽고 고칠 수 있다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">사건 <span class="mono">#001</span> · <span class="mono">2026-08-24</span></div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl done"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl done"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl done"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl on"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div>
+            <h2 class="ptitle">제출하기 전에 한 번만 읽어주세요</h2>
+            <p class="psub">아래 내용이 실제 상황과 맞는지 확인해주세요. 어느 항목이든 「수정」을 눌러 고칠 수 있습니다.</p>
+          </div>
+        </div>
+
+        <div class="sum" style="margin-bottom:18px">
+          <div class="sumc">
+            <span class="sum-ic" style="background:var(--green-soft)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+            </span>
+            <span><span class="sum-k">발생시각</span><span class="sum-v mono">18:31:48</span></span>
+          </div>
+          <div class="sumc">
+            <span class="sum-ic" style="background:var(--green-soft)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 11h2M11 11h7"/></svg>
+            </span>
+            <span><span class="sum-k">차량번호</span><span class="sum-v mono">12가 3456</span></span>
+          </div>
+          <div class="sumc">
+            <span class="sum-ic" style="background:var(--blue-soft)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m10 10 5 2-5 2z" fill="#2563eb"/></svg>
+            </span>
+            <span><span class="sum-k">신고유형 추천</span><span class="sum-v" style="font-size:20px">진로변경 위반</span></span>
+          </div>
+        </div>
+
+        <div class="grid2 wide">
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>신고자료 내용</span></div>
+              <div class="kv">
+                <div class="kvr est">
+                  <span class="kv-k">제목</span>
+                  <span class="kv-v">
+                    <span class="kv-val" style="font-size:17px">백색 실선 침범 신고 (흰색 SUV 12가 3456)</span>
+                    <span class="kv-src">사건 내용으로 자동 작성했습니다</span>
+                    <span class="kv-act"><span class="btn sm">제목 수정</span></span>
+                  </span>
+                  <span class="bdg est"><i class="dot"></i>AI 추정</span>
+                </div>
+                <div class="kvr est">
+                  <span class="kv-k">신고유형</span>
+                  <span class="kv-v">
+                    <span class="kv-val" style="font-size:17px">교통위반 &rsaquo; 진로변경 위반</span>
+                    <span class="kv-src">
+                      영상에서 관찰한 내용을 신고 규칙에 맞춰 <b style="color:var(--ink);font-weight:750">추천</b>했습니다.
+                      최종 유형은 안전신문고 화면에서 직접 고르셔야 합니다.
+                    </span>
+                    <span class="kv-act"><span class="btn sm">다른 유형 보기</span></span>
+                  </span>
+                  <span class="bdg est"><i class="dot"></i>AI 추정</span>
+                </div>
+                <div class="kvr">
+                  <span class="kv-k">발생시각</span>
+                  <span class="kv-v">
+                    <span class="kv-val mono">2026-08-24 18:31:48</span>
+                    <span class="kv-src">영상 화면에 표시된 시각</span>
+                  </span>
+                  <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+                </div>
+                <div class="kvr">
+                  <span class="kv-k">차량번호</span>
+                  <span class="kv-v">
+                    <span class="kv-val mono">12가 3456</span>
+                    <span class="kv-src">번호판 장면을 보고 직접 입력하셨습니다</span>
+                  </span>
+                  <span class="bdg usr"><i class="dot"></i>사용자 확인됨</span>
+                </div>
+                <div class="kvr">
+                  <span class="kv-k">신고 상황</span>
+                  <span class="kv-v">
+                    <span class="kv-val" style="font-size:17px">흰색 SUV가 백색 실선을 넘어 옆 차로로 변경한 상황</span>
+                    <span class="kv-src">영상 관찰 내용을 읽고 그대로 두기로 하셨습니다</span>
+                  </span>
+                  <span class="bdg usr"><i class="dot"></i>사용자 확인됨</span>
+                </div>
+                <div class="kvr">
+                  <span class="kv-k">사건 구간</span>
+                  <span class="kv-v">
+                    <span class="kv-val mono" style="font-size:18px">18:31:42 – 18:31:57</span>
+                    <span class="kv-src">15초 · FILE_023.MP4에서 잘라냈습니다</span>
+                  </span>
+                  <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+                </div>
+                <div class="kvr">
+                  <span class="kv-k">위치</span>
+                  <span class="kv-v">
+                    <span class="kv-val" style="font-size:17px">미금역 근처</span>
+                    <span class="kv-src">블랙박스에 GPS 기록이 없어 지도 위치는 안전신문고에서 고르셔야 합니다</span>
+                  </span>
+                  <span class="bdg unk"><i class="dot"></i>알 수 없음</span>
+                </div>
+                <div class="kvr" style="border-bottom:0">
+                  <span class="kv-k">신고용 영상</span>
+                  <span class="kv-v">
+                    <span class="kv-val mono" style="font-size:17px">daesingo_event_001.mp4</span>
+                    <span class="kv-src">
+                      <b style="color:var(--ink);font-weight:750">원본에서 새로 만든 영상입니다.</b>
+                      원본 FILE_023.MP4는 그대로 남아 있습니다.
+                    </span>
+                  </span>
+                  <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>안전신문고에 붙여넣을 신고문</span><span class="btn sm">수정</span></div>
+              <div class="stmt">
+                <p>
+                  2026년 8월 24일 18시 31분경, 미금역 근처 도로에서
+                  <mark>흰색 SUV(12가 3456)</mark>가 백색 실선을 넘어 옆 차로로 진로를 변경하였습니다.
+                  첨부한 영상 15초 구간에서 실선과 차량의 이동 경로를 확인하실 수 있습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel panel-p">
+              <div class="seclabel"><span>대신고가 준비한 것</span></div>
+              <ul class="chk">
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">사건 영상</span></li>
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">차량번호</span></li>
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">발생시각</span></li>
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">신고 상황</span></li>
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">파일 크기<span class="chk-s">84MB · 한도 130MB 이내</span></span></li>
+                <li><span class="ci ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="chk-t">신고기한<span class="chk-s">기한 안에 있습니다</span></span></li>
+              </ul>
+            </div>
+
+            <div class="panel panel-p">
+              <div class="seclabel"><span>안전신문고에서 하실 일</span><span class="n">복사 3 · 선택 4</span></div>
+              <p style="font-size:16px;color:var(--muted);font-weight:600;line-height:1.6;margin:0 0 12px">
+                제목·신고 내용·차량번호만 붙여넣을 수 있고, 나머지는 화면에서 골라야 합니다.
+              </p>
+              <ul class="chk">
+                <li>
+                  <span class="ci ex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg></span>
+                  <span class="chk-t">붙여넣기 3개<span class="chk-s">제목 · 신고 내용 · 차량번호</span></span>
+                </li>
+                <li>
+                  <span class="ci ex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg></span>
+                  <span class="chk-t">직접 고르기 4개<span class="chk-s">신고유형 · 발생일자 · 발생시각 · 발생장소</span></span>
+                </li>
+                <li>
+                  <span class="ci ex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg></span>
+                  <span class="chk-t">영상 첨부하기</span>
+                </li>
+                <li>
+                  <span class="ci ex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg></span>
+                  <span class="chk-t">신고 접수 누르기<span class="chk-s">대신고는 대신 접수하지 않습니다</span></span>
+                </li>
+              </ul>
+            </div>
+
+            <span class="btn pri big wide">신고자료 만들기</span>
+            <div class="btngrid c2">
+              <span class="btn">원본과 비교</span>
+              <span class="btn">정보 수정</span>
+            </div>
+            <div class="disc">
+              <b>대신고는 정부·공공기관 서비스가 아닙니다.</b>
+              신고 접수는 안전신문고에서 직접 하셔야 하며, 위반 여부는 관계기관이 판단합니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      「안전신문고에서 하실 일」을 실패가 아닌 <b>별도 목록</b>으로 분리했다.
+      GPS가 없다고 준비 완료가 <span class="mono">5/6</span>이 되지 않는다 — Core Flow §19.
+      상태 배지는 정보 상태 다섯 개만 쓴다 — 「안전신문고에서」라는 여섯 번째 배지를 만들었다가
+      되돌렸고, 지금은 위치도 <b>알 수 없음</b>이다. 값의 상태와 전달 방식은 다른 축이므로
+      전달 방식은 다음 화면이 담당한다.
+    </p>
+  </div>
+
+  <!-- ---------------- 화면 9 (NEW) ---------------- -->
+  <div class="shot">
+    <div class="shot-hd"><span class="shot-n nw">화면 9 · 신규</span><span class="shot-t">안전신문고로 옮겨 담기</span></div>
+    <p class="shot-d">
+      안전신문고에서 <b>붙여넣을 수 있는 칸은 세 개뿐이다</b> — 제목, 신고 내용, 차량번호.
+      발생일자·발생시각·신고유형·발생장소는 붙여넣기가 안 되고 화면에서 <b>골라야 한다.</b>
+      두 가지를 한 목록에 섞어두면 사용자는 복사 버튼을 누르고 왜 안 붙는지 헤매게 된다.
+    </p>
+    <div class="frame"><div class="stage ui">
+      <div class="appbar">
+        <div class="appbar-row">
+          <div class="logo">
+            <span class="logo-mark" role="img" aria-label="대신고 미어캣 마크"></span><span class="logo-shield"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path fill="#10933f" d="M32 4 56 13v17c0 16.5-9.8 25.6-24 31C17.8 55.6 8 46.5 8 30V13L32 4Z"/><path d="m22 31 7 7 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="logo-txt">
+              <span class="logo-t">대신고</span>
+              <span class="logo-sub">신고할 순간을 대신 찾아드립니다</span>
+            </span>
+          </div>
+          <div class="appbar-meta">사건 <span class="mono">#001</span> · 준비 완료</div>
+        </div>
+        <div class="rail">
+          <div class="rl done"><span class="rl-n">1</span><span class="rl-t">영상 올리기</span></div>
+          <div class="rl done"><span class="rl-n">2</span><span class="rl-t">사건 설명</span></div>
+          <div class="rl done"><span class="rl-n">3</span><span class="rl-t">범위 확인</span></div>
+          <div class="rl done"><span class="rl-n">4</span><span class="rl-t">사건 찾기</span></div>
+          <div class="rl done"><span class="rl-n">5</span><span class="rl-t">사건 선택</span></div>
+          <div class="rl done"><span class="rl-n">6</span><span class="rl-t">정보 확인</span></div>
+          <div class="rl on"><span class="rl-n">7</span><span class="rl-t">신고자료</span></div>
+        </div>
+      </div>
+
+      <div class="pbody">
+        <div class="ptop">
+          <div style="display:flex;align-items:center;gap:18px">
+            <span style="width:64px;height:64px;border-radius:18px;background:var(--green-soft);display:grid;place-items:center;flex:0 0 64px">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#10933f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <div>
+              <h2 class="ptitle">신고자료가 준비됐어요</h2>
+              <p class="psub">영상을 내려받고 안전신문고를 연 뒤, 아래 내용을 옮겨 담으시면 됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hand" style="margin-bottom:20px">
+          <div class="hc">
+            <span class="hc-n">1</span>
+            <span class="hc-t">영상 내려받기</span>
+            <p class="hc-s">
+              <span class="mono" style="color:var(--ink-2);font-weight:700">daesingo_event_001.mp4</span><br>
+              15초 · 84MB · 원본에서 새로 만든 영상
+            </p>
+            <span class="btn wide">영상 내려받기</span>
+          </div>
+          <div class="hc">
+            <span class="hc-n">2</span>
+            <span class="hc-t">안전신문고 열기</span>
+            <p class="hc-s">
+              새 창에서 열립니다. 이 화면은 그대로 두고 옆에 놓고 보세요.
+            </p>
+            <span class="btn wide">안전신문고 열기</span>
+          </div>
+          <div class="hc go">
+            <span class="hc-n">3</span>
+            <span class="hc-t">아래 내용 옮겨 담기</span>
+            <p class="hc-s">
+              왼쪽은 복사해서 붙여넣고, 오른쪽은 안전신문고 화면에서 직접 고르시면 됩니다.
+            </p>
+            <span class="btn pri wide">영상 첨부까지 완료</span>
+          </div>
+        </div>
+
+        <div class="grid2 wide" style="align-items:stretch">
+          <!-- 붙여넣기 -->
+          <div class="panel" style="display:flex;flex-direction:column">
+            <div class="xhd paste">
+              <span class="xhd-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+              </span>
+              <span>
+                <span class="xhd-t">복사해서 붙여넣을 것</span>
+                <span class="xhd-s">입력칸에 그대로 붙여넣으면 됩니다 · 3개</span>
+              </span>
+            </div>
+            <div class="xlist">
+              <div class="xrow">
+                <span>
+                  <span class="x-k">제목</span>
+                  <span class="x-v" style="font-size:17px">백색 실선 침범 신고 (흰색 SUV 12가 3456)</span>
+                </span>
+                <span class="btn sm">복사</span>
+              </div>
+              <div class="xrow">
+                <span>
+                  <span class="x-k">차량번호</span>
+                  <span class="x-v mono">12가 3456</span>
+                </span>
+                <span class="btn sm">복사</span>
+              </div>
+              <div class="xrow">
+                <span>
+                  <span class="x-k">신고 내용</span>
+                  <span class="x-v body">
+                    2026년 8월 24일 18시 31분경, 미금역 근처 도로에서 흰색 SUV(12가 3456)가
+                    백색 실선을 넘어 옆 차로로 진로를 변경하였습니다.
+                    첨부한 영상 15초 구간에서 실선과 차량의 이동 경로를 확인하실 수 있습니다.
+                  </span>
+                </span>
+                <span class="btn sm">복사</span>
+              </div>
+            </div>
+            <div class="xnote" style="margin-top:auto">
+              세 가지를 한 번에 복사하려면 <b>전체 복사</b>를 누르세요.
+              붙여넣을 칸 이름과 함께 복사됩니다.
+              <span class="btn sm blue" style="margin-top:10px">세 가지 전체 복사</span>
+            </div>
+          </div>
+
+          <!-- 직접 선택 -->
+          <div class="panel" style="display:flex;flex-direction:column">
+            <div class="xhd pick">
+              <span class="xhd-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 3 7 17 2.5-7L20 10.5 4 3Z"/></svg>
+              </span>
+              <span>
+                <span class="xhd-t">안전신문고에서 직접 고를 것</span>
+                <span class="xhd-s">붙여넣기가 안 되는 항목입니다 · 4개</span>
+              </span>
+            </div>
+            <div class="xlist">
+              <div class="xrow">
+                <span>
+                  <span class="x-k">신고유형</span>
+                  <span class="x-v" style="font-size:17px">교통위반 &rsaquo; 진로변경 위반</span>
+                  <span class="x-h">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 3 7 17 2.5-7L20 10.5 4 3Z"/></svg>
+                    유형 목록에서 <b>「교통위반」</b> 을 고른 뒤 <b>「진로변경」</b> 을 누르세요
+                  </span>
+                </span>
+                <span class="bdg est"><i class="dot"></i>AI 추정</span>
+              </div>
+              <div class="xrow">
+                <span>
+                  <span class="x-k">발생일자</span>
+                  <span class="x-v mono">2026-08-24</span>
+                  <span class="x-h">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 3 7 17 2.5-7L20 10.5 4 3Z"/></svg>
+                    달력에서 <b>8월 24일</b> 을 누르세요
+                  </span>
+                </span>
+                <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+              </div>
+              <div class="xrow">
+                <span>
+                  <span class="x-k">발생시각</span>
+                  <span class="x-v mono">18시 31분</span>
+                  <span class="x-h">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 3 7 17 2.5-7L20 10.5 4 3Z"/></svg>
+                    시·분을 각각 고르세요. 영상에 찍힌 시각은 <b>18:31:48</b> 입니다
+                  </span>
+                </span>
+                <span class="bdg src"><i class="dot"></i>출처 확인됨</span>
+              </div>
+              <div class="xrow">
+                <span>
+                  <span class="x-k">발생장소</span>
+                  <span class="x-v" style="font-size:17px">미금역 근처</span>
+                  <span class="x-h">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 3 7 17 2.5-7L20 10.5 4 3Z"/></svg>
+                    지도 검색창에 <b>「미금역」</b> 을 붙여넣고 사거리를 눌러 핀을 놓으세요
+                  </span>
+                  <span class="kv-act"><span class="btn sm">검색어 「미금역」 복사</span></span>
+                </span>
+                <span class="bdg unk"><i class="dot"></i>알 수 없음</span>
+              </div>
+            </div>
+            <div class="xnote" style="margin-top:auto">
+              이 네 가지는 <b>복사·붙여넣기가 되지 않습니다.</b>
+              안전신문고 화면에서 위 값과 같은 것을 눌러 고르셔야 합니다.
+              발생장소만 검색어를 붙여넣은 뒤 지도에서 핀을 놓는 방식입니다.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-top:18px">
+          <div class="panel panel-p">
+            <div class="seclabel"><span>영상 첨부</span></div>
+            <div class="kv" style="border-top:0">
+              <div class="kvr" style="grid-template-columns:minmax(0,1fr) auto;align-items:center">
+                <span>
+                  <span class="kv-val mono" style="font-size:17px">daesingo_event_001.mp4</span>
+                  <span class="kv-src">15초 · 84MB · 한도 130MB 이내 · 원본에서 새로 만들었습니다</span>
+                </span>
+                <span class="bdg src"><i class="dot"></i>요건 충족</span>
+              </div>
+              <div class="kvr" style="grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:0">
+                <span>
+                  <span class="kv-val mono" style="font-size:17px">FILE_023.MP4</span>
+                  <span class="kv-src">원본 · 수정하지 않았습니다. 첨부하지 마세요 (용량 초과)</span>
+                </span>
+                <span class="bdg unk"><i class="dot"></i>첨부 안 함</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="disc">
+              <b>대신고는 정부·공공기관 서비스가 아닙니다.</b>
+              신고 접수는 안전신문고에서 직접 하셔야 하며, 위반 여부는 관계기관이 판단합니다.
+              대신고가 준비한 자료는 참고 자료입니다.
+            </div>
+            <div class="btngrid c2">
+              <span class="btn">최종 확인으로</span>
+              <span class="btn ghost">다른 사건 찾기</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="cap">
+      <b>왼쪽은 파랑, 오른쪽은 주황.</b> 파랑은 「시스템이 준 값」이고 주황은 「당신이 할 일」이라는
+      기존 규칙이 여기서도 그대로 쓰인다 — 새 색을 만들지 않았다.
+      오른쪽 항목에도 상태 배지는 그대로 붙는다. <b>값의 신뢰도</b>와 <b>전달 방식</b>은 다른 축이기 때문이다.
+      발생시각은 「출처 확인됨」이면서 동시에 「직접 골라야 하는 것」일 수 있다.
+    </p>
+  </div>
+
+<hr>
+
+<!-- ============================== 04 컴포넌트 점검 ============================== -->
+<section>
+  <p class="slabel">04 — 컴포넌트 점검</p>
+  <h2>컴포넌트 점검</h2>
+  <p class="col">
+    컴포넌트 규칙과 상속 이력은 <code>DESIGN.md</code>가 소유한다(「출처」 문단과 Components 절). 여기에는 목업을 그리며
+    아직 닫지 못한 것만 남긴다.
+  </p>
+
+  <h3>아직 확인이 필요한 것</h3>
+  <ul class="col">
+    <li><b>시간 막대의 후보 밀도 — 두 번 고쳤다.</b> 처음에는 시각을 알약으로 막대에 얹었는데
+      후보 두 개가 4분 간격이기만 해도 겹쳤다(측정: 11px 겹침). 시각을 떼고 <b>번호 원</b>만
+      남겼지만 그것도 부족했다 — 4분은 이 막대에서 20px인데 원이 28px이라 여전히 겹친다.
+      최종안은 <b>겹치면 아래 줄로 내리고 연결선을 늘려 같은 눈금을 가리키게</b> 하는 것이다.
+      시각은 오른쪽 목록에서 읽고, 막대·목록·카드가 같은 번호로 묶인다.
+      남은 것은 한 줄에 담을 수 없을 만큼 몰릴 때 <b>묶음 마커</b>로 접는 규칙이다.</li>
+    <li><b>Pretendard 로딩.</b> 서체 스택이 <code>'Pretendard' → 'Noto Sans KR' → …</code> 순서라
+      <b>Pretendard가 설치된 환경에서는 그대로 Pretendard로 렌더된다.</b>
+      설치되지 않은 사람에게는 Google Fonts의 Noto Sans KR이 대신 뜬다.
+      실제 구현에서는 보고보고와 같이 Pretendard를 CDN에서 함께 불러와 모든 사용자에게 같은 자간·굵기를 보장해야 한다.</li>
+    <li><b><code>--font-scale</code> 적용.</b> 보고보고에는 1.0 / 1.1 / 1.2 배율 설정이 있다.
+      목업에는 배율 UI를 넣지 않았지만, 구현 시 모든 크기에 곱하기를 빼먹지 않아야 한다.</li>
+    <li><b>시스템 실패 화면.</b> 파일 손상은 화면 1의 목록에서 처리했지만
+      Core Flow §23의 <b>분석 실패</b>와 <b>연결 끊김</b>은 아직 그리지 않았다.</li>
+    <li><b>안전신문고 입력 규칙을 실물로 확인해야 한다.</b> 지금 화면 9는
+      「붙여넣기 3 · 선택 4」로 가정하고 그렸다. 신고유형 분류 이름과
+      시·분 선택 단위(분 단위인지 10분 단위인지)는 실제 화면을 보고 맞춰야 한다.
+      <b>차량번호 표기는 확정됐다</b> — <code>12가3456</code>과 <code>12가 3456</code>을
+      모두 허용하고, 비교·검증할 때만 내부에서 공백을 지운다. 표시는 확정값 그대로 두고
+      띄어쓰기 안내 문구는 넣지 않는다.</li>
+    <li><b>신고유형 추천의 근거 표시.</b> 지금은 「교통위반 &rsaquo; 진로변경 위반」을
+      AI 추정으로 제시만 한다. 왜 그 유형인지, 다른 후보 유형은 무엇인지 보여주는 화면이
+      아직 없다. Product Spec §6이 「AI는 법적 최종 판정을 하지 않는다」고 못박은 만큼
+      추천 근거를 보여주는 쪽이 안전하다.</li>
+  </ul>
+</section>
+
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btns = document.querySelectorAll('[data-brand-set]');
+  function set(name) {
+    if (name === 'shield') { root.setAttribute('data-brand', 'shield'); }
+    else { root.removeAttribute('data-brand'); }
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', String(btns[i].dataset.brandSet === name));
+    }
+    try { localStorage.setItem('daesingo-brand', name); } catch (e) {}
+  }
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function () { set(this.dataset.brandSet); });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem('daesingo-brand'); } catch (e) {}
+  set(saved === 'shield' ? 'shield' : 'meerkat');
+})();
+</script>
+
+</body>
+</html>
