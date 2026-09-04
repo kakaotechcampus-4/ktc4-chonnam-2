@@ -70,3 +70,38 @@ target/
 *.sqlite3
 *.db
 .terraform/
+
+# ════════════════════════════════════════════════════
+# 여기부터 팀 추가분. 위쪽은 운영 배포 초기본 그대로 둔다.
+# ════════════════════════════════════════════════════
+
+# ── 빌드 산출물 (운영본에 없는 것) ──────────────────
+.vite/
+
+# ── 로컬 도구 설정 (공유하지 않음) ──────────────────
+# `.claude/settings.json`(플러그인 1줄)은 CLAUDE.md와 짝이라 추적한다.
+# 그 아래 개인 설정·스킬만 무시한다.
+.claude/settings.local.json
+.claude/skills/
+.superpowers/
+.impeccable/
+.agents/
+skills-lock.json
+
+# ── 자료조사 원본 ───────────────────────────────────
+# 로컬 아카이브 레포에만 둔다. README.md "Archive" 절 참고.
+doc/
+
+# ── PM 내부 문서 ────────────────────────────────────
+# 팀원 평가 등 공개 불가. 절대 커밋하지 않는다.
+docs/management/secret/
+
+# ── 외부 제출용 사본 ────────────────────────────────
+# docs/ 원본에서 파생된 문서라 커밋하지 않는다.
+docs/management/submissions/
+
+# ── 평가 데이터 원본 미디어 ─────────────────────────
+# 용량이 크고 세부 실패 사례·hard-negative는 비공개 (product-strategy §6).
+# 목록은 eval/manifests/ 가 말한다.
+eval/datasets/*
+!eval/datasets/README.md
