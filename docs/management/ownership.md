@@ -372,6 +372,8 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 
 **실행 위치는 `.github/workflows/`다.** 운영진 CODEOWNERS 개정으로 팀 자체 CI 워크플로 추가가 명시적으로 허용됐다. 운영진 소유는 `.github/` 전체가 아니라 **파일 4개**뿐이다 — `workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `CODEOWNERS`. **이 4개는 수정·삭제하지 않는다**(멘토 자동 지정과 Discord 알림이 여기서 돈다). 그 밖에는 제약이 없다.
 
+**대기 상태는 끝났다 (2026-09-04 담임매니저 회신).** 운영진 배포가 완료됐고 안내도 왔다. 따로 `git pull`할 것은 없다 — 배포본은 `develop`에 이미 있고 `feature/* → develop` 머지에 그대로 따라온다. 즉 **지금 workflow를 추가해도 된다.** 다음 둘 중 하나가 보이면 진행하지 말고 담임매니저에게 알린다: ① 머지 시 `.github/` 충돌 ② PR에서 **admin 승인이 필요하다는 경고**. 후자는 위 4개를 건드렸다는 신호다 — CODEOWNERS는 base가 `develop`이어도 리뷰 요청 표시가 뜨고, 실제 차단은 `main`에서만 걸린다.
+
 **다만 지금은 돌릴 스크립트가 없다.** `scripts/`에 README만 있고 실제 grep 스크립트가 없으므로, 순서는 **① 스크립트 작성 → ② workflow 추가**다. 그때까지는 주간 회의 전에 손으로 점검한다. 스크립트 작성은 이 절의 grep 목록이 그대로 명세다.
 
 ---
