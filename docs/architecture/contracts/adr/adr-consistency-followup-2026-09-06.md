@@ -48,7 +48,20 @@ B11/B12의 '보정 완료'는 **무근거 확정의 제거 완료**다. 정철�
 | W07 잔여 | thumb_ref의 자산 종류, recording 자산 계약 두 건 | recording ↔ case/web |
 | N02 | CorrectionRecord Draft 리뷰·target_field/전후 값·현재값 선택, taxonomy Owner 확정 및 eval 지표 정의 | case ↔ evidence; readout ↔ eval |
 
-후속 CALL이 필요하면 이 경계별로 묶을 수 있다. **이번 작업에서는 카드 발송·추가 회신·Owner 수락을 만들지 않았다.** 원천 결정 문서가 이미 있으면 새 CALL 대신 그 원문 확인으로 닫을 수 있지만 현재는 Pending이다.
+**BLOCK 8건은 아래 4묶음으로 확인한다 (2026-09-06 카드 작성 완료 · 발송 전).**
+
+| 카드 | 대상 | 결정해 줄 사람 | 같이 볼 사람 |
+| --- | --- | --- | --- |
+| `CALL-8` | B01 · B02 | 유소연 (`case`) | 김준영 (`evidence`) · 신유민 (`web`) |
+| `CALL-9` | B03 | 신유민 (`readout`) | 유소연 (`case`) · 김대원 (`eval`) |
+| `CALL-10` | B05 | 김준영 (`common/runtime`) · 신유민 (`readout`) | 김대원 (`eval`) |
+| `CALL-11` | B06 · B07 · B08 · B09 | 정철원 (`recording`) | 서어진 (`search`) · 유소연 (`case`) · 김준영 (`evidence`) · 신유민 (`readout`, B07) |
+
+카드 원문은 `management/secret/calls/`에 있고 노션으로 올린다. **카드는 결정만 받는다 — 레포 파일 수정은 PM이 한다**(§7 규칙 1). 확인 대기 중 담당자가 겹치는 B12 잔여·W02 잔여는 `CALL-8` 부록에, W07 잔여는 `CALL-11` 부록에 한 줄씩 실었다. W04 잔여와 N02는 카드에 싣지 않았다.
+
+**이번 작업에서 카드 발송·추가 회신·Owner 수락을 만들지 않았다.** 원천 결정 문서가 이미 있으면 새 CALL 대신 그 원문 확인으로 닫을 수 있지만 현재는 Pending이다.
+
+**Canonical Contract v1의 최종 Freeze는 위 4건이 반영된 뒤로 둔다.** 계약 14건은 그때까지 현행대로 사용하며, 접합부만 확정 전이다.
 
 ## 4. 이전 보고·원인 진단의 정정
 
