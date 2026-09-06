@@ -1,0 +1,20 @@
+{
+  "contract": "SpanResolution",
+  "contract_version": "span-resolution/v1",
+
+  "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
+  "requested_range": { "start_sec": 690.0, "end_sec": 708.0 },
+  "status": "COMPLETE",
+
+  "spans": [
+    {
+      "sequence": 0,
+      "timeline_range": { "start_sec": 690.0, "end_sec": 708.0 },
+      "source_asset_ref": "sa_h001_01",
+      "media_stream_ref": "ms_h001_01",
+      "source_range": { "start_sec": 690.0, "end_sec": 708.0 }
+    }
+  ],
+
+  "missing_ranges": []
+}

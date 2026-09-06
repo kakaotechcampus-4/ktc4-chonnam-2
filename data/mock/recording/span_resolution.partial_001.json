@@ -1,0 +1,26 @@
+{
+  "contract": "SpanResolution",
+  "contract_version": "span-resolution/v1",
+
+  "timeline_ref": { "timeline_id": "tl_p001", "revision": 1 },
+  "requested_range": { "start_sec": 1180.0, "end_sec": 1260.0 },
+  "status": "PARTIAL",
+
+  "spans": [
+    {
+      "sequence": 0,
+      "timeline_range": { "start_sec": 1180.0, "end_sec": 1200.0 },
+      "source_asset_ref": "sa_p001_01",
+      "media_stream_ref": "ms_p001_01",
+      "source_range": { "start_sec": 1180.0, "end_sec": 1200.0 }
+    }
+  ],
+
+  "missing_ranges": [
+    {
+      "timeline_range": { "start_sec": 1200.0, "end_sec": 1260.0 },
+      "reason": "SOURCE_UNAVAILABLE",
+      "source_ref": "sa_p001_02"
+    }
+  ]
+}

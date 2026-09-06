@@ -1,0 +1,42 @@
+{
+  "scenario_id": "scenario_partial_001",
+  "description": "대표 Partial Success / ABSTAIN / UNKNOWN 시나리오. 시간(overlay)은 성공(OK/VERIFIED), 번호판은 ABSTAIN(FRAME_DISAGREEMENT), 위치는 GPS 없음 + 시각적 단서 부족으로 UNKNOWN — 전체 Case는 실패하지 않고 나머지 정보는 유지된다. recording.span_resolution도 PARTIAL(missing_ranges 1건)로 자산 일부 누락을 함께 보여준다. requirement_report.overall=BLOCK(EVIDENCE scope)이라 report_package는 존재하지 않는다(의도적으로 생성하지 않음).",
+  "case_id": "case_partial_001",
+  "artifacts": {
+    "recording": {
+      "timeline": "recording/timeline.partial_001.json",
+      "time_source_candidates": "recording/time_source_candidates.partial_001.json",
+      "span_resolution": "recording/span_resolution.partial_001.json"
+    },
+    "search": {
+      "analysis_scope": "search/analysis_scope.partial_001.json",
+      "analysis_run": "search/analysis_run.partial_001.json",
+      "candidate_events": "search/candidate_events.partial_001.json",
+      "visual_evidence": "search/visual_evidence.partial_001.json"
+    },
+    "readout": {
+      "readout_runs": "readout/readout_runs.partial_001.json",
+      "plate_readout": "readout/plate_readout.partial_001.json",
+      "overlay_time_readout": "readout/overlay_time_readout.partial_001.json"
+    },
+    "evidence": {
+      "observations": "evidence/observations.partial_001.json",
+      "time_resolution": "evidence/time_resolution.partial_001.json",
+      "evidence_record": "evidence/evidence_record.partial_001.json",
+      "evidence_needs": "evidence/evidence_needs.partial_001.json",
+      "requirement_report": "evidence/requirement_report.partial_001.json",
+      "report_package": null
+    },
+    "case": {
+      "job_records": "case/job_records.partial_001.json",
+      "job_executions": "case/job_executions.partial_001.json",
+      "usage_records": "case/usage_records.partial_001.json",
+      "case_view": "case/case_view.partial_001.json"
+    },
+    "eval": {
+      "expected": null,
+      "prediction_correct": null,
+      "prediction_wrong": null
+    }
+  }
+}

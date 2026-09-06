@@ -1,0 +1,45 @@
+scenario_id,module,contract,file,contract_status
+scenario_happy_001,recording,RecordingTimeline,recording/timeline.happy_001.json,Final
+scenario_happy_001,recording,TimeSourceCandidate,recording/time_source_candidates.happy_001.json,Final
+scenario_happy_001,recording,SpanResolution,recording/span_resolution.happy_001.json,Final
+scenario_happy_001,search,AnalysisScope,search/analysis_scope.happy_001.json,Final
+scenario_happy_001,search,AnalysisRun,search/analysis_run.happy_001.json,Final
+scenario_happy_001,search,CandidateEvent,search/candidate_events.happy_001.json,Final
+scenario_happy_001,search,VisualEvidence,search/visual_evidence.happy_001.json,Final
+scenario_happy_001,readout,ReadoutRun,readout/readout_runs.happy_001.json,Final
+scenario_happy_001,readout,PlateReadout,readout/plate_readout.happy_001.json,Final
+scenario_happy_001,readout,OverlayTimeReadout,readout/overlay_time_readout.happy_001.json,Final
+scenario_happy_001,evidence,Observation,evidence/observations.happy_001.json,Final
+scenario_happy_001,evidence,TimeResolution,evidence/time_resolution.happy_001.json,Final
+scenario_happy_001,evidence,EvidenceRecord,evidence/evidence_record.happy_001.json,Final
+scenario_happy_001,evidence,EvidenceNeeds,evidence/evidence_needs.happy_001.json,Final
+scenario_happy_001,evidence,RequirementReport,evidence/requirement_report.happy_001.json,Final
+scenario_happy_001,evidence,ReportPackage,evidence/report_package.happy_001.json,Final
+scenario_happy_001,case,JobRecord,case/job_records.happy_001.json,Final(B01/B02 pending on CaseView projection)
+scenario_happy_001,case,JobExecution,case/job_executions.happy_001.json,Final
+scenario_happy_001,case,UsageRecord,case/usage_records.happy_001.json,Final
+scenario_happy_001,case,CaseView,case/case_view.happy_001.json,Final(B01/B02 pending)
+scenario_happy_001,eval,GroundTruth(non-contract),expected/scenario_happy_001.expected.json,N/A
+scenario_happy_001,eval,Prediction(non-contract),eval/prediction_correct.happy_001.json,N/A
+scenario_happy_001,eval,Prediction(non-contract),eval/prediction_wrong.happy_001.json,N/A
+scenario_partial_001,recording,RecordingTimeline,recording/timeline.partial_001.json,Final
+scenario_partial_001,recording,TimeSourceCandidate,recording/time_source_candidates.partial_001.json,Final
+scenario_partial_001,recording,SpanResolution,recording/span_resolution.partial_001.json,Final
+scenario_partial_001,search,AnalysisScope,search/analysis_scope.partial_001.json,Final
+scenario_partial_001,search,AnalysisRun,search/analysis_run.partial_001.json,Final
+scenario_partial_001,search,CandidateEvent,search/candidate_events.partial_001.json,Final
+scenario_partial_001,search,VisualEvidence,search/visual_evidence.partial_001.json,Final
+scenario_partial_001,readout,ReadoutRun,readout/readout_runs.partial_001.json,Final
+scenario_partial_001,readout,PlateReadout,readout/plate_readout.partial_001.json,Final
+scenario_partial_001,readout,OverlayTimeReadout,readout/overlay_time_readout.partial_001.json,Final
+scenario_partial_001,evidence,Observation,evidence/observations.partial_001.json,Final
+scenario_partial_001,evidence,TimeResolution,evidence/time_resolution.partial_001.json,Final
+scenario_partial_001,evidence,EvidenceRecord,evidence/evidence_record.partial_001.json,Final
+scenario_partial_001,evidence,EvidenceNeeds,evidence/evidence_needs.partial_001.json,Final
+scenario_partial_001,evidence,RequirementReport,evidence/requirement_report.partial_001.json,Final
+scenario_partial_001,evidence,ReportPackage,N/A (BLOCK이라 미생성 — 의도된 부재),Final
+scenario_partial_001,case,JobRecord,case/job_records.partial_001.json,Final(B01/B02 pending)
+scenario_partial_001,case,JobExecution,case/job_executions.partial_001.json,Final
+scenario_partial_001,case,UsageRecord,case/usage_records.partial_001.json,Final
+scenario_partial_001,case,CaseView,case/case_view.partial_001.json,Final(B01/B02 pending)
+scenario_partial_001,eval,N/A,N/A (Seed v0에서 partial 시나리오용 eval fixture는 생성하지 않음),N/A

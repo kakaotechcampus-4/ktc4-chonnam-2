@@ -1,0 +1,11 @@
+[
+  {
+    "contract_version": "observation/v1",
+    "value": null,
+    "status": "UNKNOWN",
+    "source": { "kind": "recording.gps_stream" },
+    "support_refs": [],
+    "produced_by": { "module": "recording" },
+    "reason": { "code": "recording.gps.source_absent" }
+  }
+]

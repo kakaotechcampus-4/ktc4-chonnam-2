@@ -1,0 +1,45 @@
+{
+  "contract_version": "time-resolution/v1",
+  "resolution_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+  "status": "OK",
+  "resolved": {
+    "value": "2026-08-24T18:31:30+09:00",
+    "source": {
+      "kind": "readout.overlay_timestamp",
+      "input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" }
+    },
+    "verification": "VERIFIED",
+    "computation": {
+      "mode": "DIRECT",
+      "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "SOURCE_EXPLICIT" }
+    },
+    "user_corrected": false
+  },
+  "considered": [
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" },
+      "source": { "kind": "readout.overlay_timestamp" },
+      "value": "2026-08-24T18:31:30+09:00",
+      "observation_status": "OK",
+      "verification": "VERIFIED",
+      "used": true
+    },
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": { "kind": "time_source_candidate", "ref": "tsc_h001_filename" },
+      "source": { "kind": "recording.filename_time" },
+      "value": "2026-08-24T18:20:00+09:00",
+      "observation_status": "OK",
+      "verification": "UNVERIFIED",
+      "used": false,
+      "reason_code": "time.overlay_preferred_over_filename"
+    }
+  ],
+  "conflict": { "exists": false, "between_refs": [], "requires_user_notice": false },
+  "provenance": {
+    "policy_ref": "time-resolution-policy/v1",
+    "selected_input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" }
+  },
+  "post_stamp": { "needed": false, "reason_code": "time.already_verified", "requires_user_notice": false }
+}

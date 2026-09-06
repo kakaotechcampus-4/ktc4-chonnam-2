@@ -1,0 +1,59 @@
+{
+  "contract_version": "evidence-record/v1.1",
+  "record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+  "case_ref": { "kind": "case", "ref": "case_happy_001" },
+  "selection_rev": 1,
+  "basis": {
+    "candidate_ref": { "kind": "candidate_event", "ref": "cand_h001" },
+    "visual_evidence_ref": { "kind": "visual_evidence", "ref": "ve_h001" },
+    "evidence_interval_ref": { "kind": "asset_span", "ref": "sa_h001_01:690.0-708.0" }
+  },
+  "event": {
+    "visual_event_type": {
+      "value": "SOLID_LINE_LANE_CHANGE",
+      "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_h001" }, "observability": "OBSERVED", "label_key": "event.source.visual_inference" },
+      "support_refs": [],
+      "user_corrected": false
+    },
+    "safety_report_type": {
+      "value": "교통위반 › 진로변경 위반",
+      "source": { "kind": "evidence.policy_mapping", "ref": null, "observability": "INFERRED", "label_key": "report_type.source.policy_mapping" },
+      "support_refs": [],
+      "user_corrected": false
+    },
+    "violation_expression": {
+      "value": "백색 실선 구간에서 진로를 변경함",
+      "source": { "kind": "evidence.policy_mapping", "ref": null, "observability": "INFERRED", "label_key": "violation.source.policy_mapping" },
+      "support_refs": [],
+      "user_corrected": false
+    }
+  },
+  "occurred_at": {
+    "value": "2026-08-24T18:31:30+09:00",
+    "time_resolution_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+    "resolution_status": "OK"
+  },
+  "vehicle_number": {
+    "value": "12가 3476",
+    "source": { "kind": "readout.plate_overlay_ocr", "ref": { "kind": "plate_readout", "ref": "readout_h001_plate" }, "observability": "OBSERVED", "label_key": "plate.source.overlay_ocr" },
+    "support_refs": [],
+    "user_corrected": false
+  },
+  "location": {
+    "address": {
+      "value": "미금역 사거리 인근",
+      "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_h001" }, "observability": "INFERRED", "label_key": "location.source.visual_inference" },
+      "support_refs": [],
+      "user_corrected": false
+    }
+  },
+  "provenance": {
+    "input_refs": [
+      { "kind": "visual_evidence", "ref": "ve_h001" },
+      { "kind": "plate_readout", "ref": "readout_h001_plate" },
+      { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" }
+    ],
+    "correction_refs": [],
+    "policy_ref": "evidence-record-policy/v1"
+  }
+}

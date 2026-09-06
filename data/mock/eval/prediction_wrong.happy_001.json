@@ -1,0 +1,16 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "description": "명백한 오류 Fixture — 후보 순위 틀림 + 잘못된 plate accept를 의도적으로 심었다. 목적은 이 Fixture로 좋은 점수를 내는 게 아니라, Evaluation 코드가 이 오류를 실제로 잡아내는지 검증하는 것이다.",
+  "prediction": {
+    "candidate_id": "cand_h001",
+    "rank": 2,
+    "visual_event_type": "SIGNAL",
+    "plate_value": "12가 3475",
+    "occurred_at": "2026-08-24T18:31:30+09:00"
+  },
+  "injected_errors": [
+    "rank: 정답 1 대신 2 (순위 오류)",
+    "visual_event_type: 정답 SOLID_LINE_LANE_CHANGE 대신 SIGNAL (오분류)",
+    "plate_value: 정답 12가 3476 대신 12가 3475 (false accept — 마지막 자리 오인식)"
+  ]
+}

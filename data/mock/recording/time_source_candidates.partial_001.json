@@ -1,0 +1,18 @@
+[
+  {
+    "candidate_id": "tsc_p001_filename",
+    "source_kind": "FILENAME",
+    "source_detail": "MDR_YYMMDD_HHMMSS.AVI",
+    "value": "2026-08-25T09:00:00+09:00",
+    "applies_to": {
+      "source_asset_ref": "sa_p001_01",
+      "source_offset_sec": 0.0
+    },
+    "observation_status": "OK",
+    "producer_checks": { "parse_valid": true },
+    "provenance": {
+      "producer": "recording",
+      "observed_from": "MDR_260825_090000.AVI"
+    }
+  }
+]

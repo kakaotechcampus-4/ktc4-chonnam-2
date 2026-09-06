@@ -1,0 +1,45 @@
+{
+  "readout_id": "readout_h001_plate",
+  "case_id": "case_happy_001",
+  "candidate_id": "cand_h001",
+  "input_ref": {
+    "incident_clip_ref": "clip_h001",
+    "span_ref": "sa_h001_01:690.0-708.0",
+    "source_profile": "readout-native"
+  },
+  "target_association": {
+    "status": "ASSOCIATED",
+    "target_hint_used": true,
+    "track_ref": "track_h001",
+    "association_method": "TARGET_HINT_WITH_FALLBACK",
+    "associated_region": {
+      "frame_ref": "fr_h001_plate",
+      "bbox_xywh": [800, 410, 190, 74]
+    },
+    "evidence": [
+      { "kind": "SPATIAL_PROXIMITY", "detail": "candidate target region overlaps selected track" }
+    ]
+  },
+  "observation": {
+    "kind": "PLATE",
+    "status": "OK",
+    "value": "12가 3476",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "consensus": {
+    "text": "12가 3476",
+    "disagree_positions": [],
+    "method": "MULTI_FRAME"
+  },
+  "abstained": false,
+  "abstain_reason": null,
+  "best_frame": {
+    "frame_ref": "fr_h001_plate",
+    "crop_ref": "crop_h001_01",
+    "quality": { "plate_px_height": 46, "sharpness": 0.88 }
+  },
+  "frame_results": [
+    { "frame_ref": "fr_h001_plate", "crop_ref": "crop_h001_01", "text": "12가3476", "confidence": 0.91 },
+    { "frame_ref": "fr_h001_plate2", "crop_ref": "crop_h001_02", "text": "12가3476", "confidence": 0.89 }
+  ]
+}

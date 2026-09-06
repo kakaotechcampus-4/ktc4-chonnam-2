@@ -1,0 +1,30 @@
+{
+  "run_id": "run_p001_search",
+  "operation": "CANDIDATE_SEARCH",
+  "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_p001" },
+  "implementation": {
+    "impl_id": "gemini-candidate-search@c7",
+    "model_ref": "gemini-3.7-flash",
+    "prompt_version": "coarse-c7",
+    "config_version": "search-v2"
+  },
+  "outcome": "PARTIAL",
+  "started_at": "2026-08-25T09:05:02+09:00",
+  "completed_at": "2026-08-25T09:06:40+09:00",
+  "issues": [
+    {
+      "kind": "INFRA",
+      "code": "SUBRANGE_PROVIDER_TIMEOUT",
+      "scope_ref": "tl_p001:1200000-1260000",
+      "detail": null
+    }
+  ],
+  "usage_refs": ["usage_p001_1"],
+  "usage_summary": {
+    "processed_duration_ms": 98000,
+    "token_usage": { "input_tokens": 9100, "output_tokens": 800, "total_tokens": 9900 },
+    "latency_ms": 41000,
+    "total_cost": { "amount": "0.27", "currency": "USD" }
+  },
+  "contract_version": "analysis-run-candidate-event/v1"
+}

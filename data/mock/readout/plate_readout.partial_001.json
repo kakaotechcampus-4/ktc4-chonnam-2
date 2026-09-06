@@ -1,0 +1,46 @@
+{
+  "readout_id": "readout_p001_plate",
+  "case_id": "case_partial_001",
+  "candidate_id": "cand_p001",
+  "input_ref": {
+    "incident_clip_ref": "clip_p001",
+    "span_ref": "sa_p001_01:1180.0-1198.0",
+    "source_profile": "readout-native"
+  },
+  "target_association": {
+    "status": "ASSOCIATED",
+    "target_hint_used": false,
+    "track_ref": "track_p001",
+    "association_method": "TARGET_HINT_WITH_FALLBACK",
+    "associated_region": {
+      "frame_ref": "fr_p001_plate",
+      "bbox_xywh": [812, 420, 184, 72]
+    },
+    "evidence": [
+      { "kind": "SPATIAL_PROXIMITY", "detail": "candidate target region overlaps selected track" },
+      { "kind": "MULTI_FRAME_CONTINUITY", "detail": "similar plate crop appears across sampled frames" }
+    ]
+  },
+  "observation": {
+    "kind": "PLATE",
+    "status": "NEEDS_REVIEW",
+    "value": "12나 34?6",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "consensus": {
+    "text": "12나 34?6",
+    "disagree_positions": [5],
+    "method": "MULTI_FRAME"
+  },
+  "abstained": true,
+  "abstain_reason": "FRAME_DISAGREEMENT",
+  "best_frame": {
+    "frame_ref": "fr_p001_plate",
+    "crop_ref": "crop_p001_01",
+    "quality": { "plate_px_height": 39, "sharpness": 0.58 }
+  },
+  "frame_results": [
+    { "frame_ref": "fr_p001_plate", "crop_ref": "crop_p001_01", "text": "12나3456", "confidence": 0.61 },
+    { "frame_ref": "fr_p001_plate2", "crop_ref": "crop_p001_02", "text": "12나3466", "confidence": 0.57 }
+  ]
+}

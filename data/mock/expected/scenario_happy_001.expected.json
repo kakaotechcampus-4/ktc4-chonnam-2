@@ -1,0 +1,11 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "description": "Eval Ground Truth — 이 값은 Mock Runtime Output이 아니라 사람이 라벨링한 정답이다. 어떤 Data Contract도 이 파일을 생산/소비하지 않는다 — eval 전용 채점 자료다.",
+  "ground_truth": {
+    "correct_candidate_id": "cand_h001",
+    "correct_rank": 1,
+    "correct_visual_event_type": "SOLID_LINE_LANE_CHANGE",
+    "correct_plate_value": "12가 3476",
+    "correct_occurred_at": "2026-08-24T18:31:30+09:00"
+  }
+}

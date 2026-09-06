@@ -1,0 +1,16 @@
+{
+  "scope_id": "scope_h001",
+  "time_ranges": [
+    { "start": "2026-08-24T09:00:00Z", "end": "2026-08-24T09:40:00Z" }
+  ],
+  "target_event_types": ["SOLID_LINE_LANE_CHANGE"],
+  "hint": {
+    "vehicle": "흰색 SUV",
+    "free_text": null
+  },
+  "budget": {
+    "max_cost_krw": 300,
+    "max_latency_sec": 180
+  },
+  "contract_version": "1.0.0"
+}
