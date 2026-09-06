@@ -10,4 +10,4 @@
 
 ## 감사 후속 상태 (2026-09-06)
 
-현재 종결·Pending 구분은 [후속 보정 ADR](adr/adr-consistency-followup-2026-09-06.md)을 먼저 확인한다. 기존 Final 헤더는 문서의 수락 기록이며 개별 접합 Pending까지 완료됐다는 뜻이 아니다. 계약 14개 중 CorrectionRecord는 Draft이고, B01/B02·B03/B05·B06~B09는 Owner 합의 대기다.
+현재 종결·Pending 구분은 [후속 보정 ADR](adr/adr-consistency-followup-2026-09-06.md)을 먼저 확인한다. 그 판단의 근거가 된 외부 감사 결과는 [계약 정합성 외부 감사](../../management/contract-consistency-audit-2026-09-06.md)에 있다. 기존 Final 헤더는 문서의 수락 기록이며 개별 접합 Pending까지 완료됐다는 뜻이 아니다. 계약 14개 중 CorrectionRecord는 Draft이고, B01/B02·B03/B05·B06~B09는 Owner 합의 대기다.

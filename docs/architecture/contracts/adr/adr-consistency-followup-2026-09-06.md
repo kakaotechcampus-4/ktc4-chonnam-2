@@ -5,6 +5,8 @@
 **Date:** 2026-09-06
 **Supersedes in part:** `adr-consistency-2026-09.md` C1-6·C1-13·R-6·R-7 및 미해결 0건/통합 가능 결론; `adr-job-execution.md`·`adr-usage-record.md`의 신규 결정 범위·소비자 확인 단정
 
+**감사 보고:** `../../../management/contract-consistency-audit-2026-09-06.md` — 이 ADR이 처리하는 지적의 원문
+
 ## 1. 범위와 적용
 
 추가 CALL 없이 기존 canonical 근거로 유일하게 정해지는 보정과 PM의 임의 확정 철회만 수행한다. **이 ADR의 Accepted는 §3 Pending 접합부의 수락을 뜻하지 않는다.** 계약의 현재 필드·규칙은 각 계약이 소유하고 이 문서는 근거와 처리 상태만 기록한다.
