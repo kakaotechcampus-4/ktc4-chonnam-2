@@ -1,6 +1,7 @@
 import pytest
 
-from eval import run
+from eval import manifests_io, run
+from eval.enums import VIOLATION_TYPES
 from eval.runners import registry
 
 
@@ -51,3 +52,38 @@ def test_run_hands_impl_only_manifest_and_stage(monkeypatch):
     assert len(seen) == 1
     assert set(seen[0]) == {"manifest", "stage"}
     assert seen[0] == {"manifest": "b_youtube", "stage": "candidate"}
+
+
+def test_always_correct_reproduces_gt_labels_and_boxes():
+    impl = registry.get("fake:always_correct")
+    raw = impl({"manifest": "a_aihub", "stage": "classification"})
+    gt = manifests_io.load_gt("a_aihub", "classification")
+    by_id = {r["sequence_id"]: r for r in raw}
+    assert len(by_id) == len(gt["items"])
+    for item in gt["items"]:
+        p = by_id[item["sequence_id"]]
+        assert p["predicted"] == item["label"]
+        assert p["target_bbox"] == item.get("target_bbox")
+
+
+def test_always_wrong_misses_every_label_and_box():
+    impl = registry.get("fake:always_wrong")
+    raw = impl({"manifest": "a_aihub", "stage": "classification"})
+    gt = manifests_io.load_gt("a_aihub", "classification")
+    by_id = {r["sequence_id"]: r for r in raw}
+    for item in gt["items"]:
+        p = by_id[item["sequence_id"]]
+        assert p["predicted"] != item["label"]
+        assert p["predicted"] in VIOLATION_TYPES  # 구조적으로 틀렸을 뿐 enum 안이다
+        box = item.get("target_bbox")
+        if box is not None:
+            # 완전히 밀어냈으므로 GT bbox 와 겹치는 좌표가 없다.
+            assert p["target_bbox"][0] > box[2] and p["target_bbox"][1] > box[3]
+
+
+def test_unsupported_stage_raises_value_error_not_key_error():
+    # 다루지 않는 stage 는 「알 수 없는 impl」과 구분돼야 한다 (run.main 의
+    # except KeyError 에 잡히면 미구현이 그 오류로 둔갑한다).
+    impl = registry.get("fake:always_correct")
+    with pytest.raises(ValueError):
+        impl({"manifest": "b_youtube", "stage": "plate"})

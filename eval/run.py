@@ -38,7 +38,7 @@ def build_envelope(impl_name, manifest, stage, run_id):
     scope = {"manifest": manifest, "stage": stage}
     raw = impl(scope)
     normalized = _NORMALIZERS[stage](raw)
-    clips_meta = manifests_io.load_clips(manifest)["meta"]
+    manifest_meta = manifests_io.load_manifest_meta(manifest)
     # 버전은 impl 코드와 함께 움직여야 하므로 runner 가 값을 정하지 않고
     # impl 이 속한 모듈에서 읽는다 (없으면 "v1"으로 취급한다).
     impl_module = sys.modules[impl.__module__]
@@ -50,8 +50,9 @@ def build_envelope(impl_name, manifest, stage, run_id):
             "impl_version": impl_version,
             "stage": stage,
             "manifest": manifest,
-            "manifest_version": clips_meta.get("manifest_version"),
-            "clip_rule_version": clips_meta.get("clip_rule_version"),
+            "manifest_version": manifest_meta.get("manifest_version"),
+            # A tier 시퀀스 manifest 에는 clip 개념이 없어 null 이 된다.
+            "clip_rule_version": manifest_meta.get("clip_rule_version"),
             "normalizer_version": normalize.NORMALIZER_VERSION,
             "code_commit": _git_commit(),
             "created_at": datetime.datetime.now().astimezone().isoformat(),
@@ -70,11 +71,15 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     run_id = args.run_id or _new_run_id()
+    # 이름표 확인만 여기서 감싼다. build_envelope 전체를 except KeyError 로
+    # 감싸면 impl 내부의 KeyError 가 「알 수 없는 impl」로 둔갑해 진짜 버그가
+    # 숨는다 (classification stage 미구현이 그렇게 숨어 있었다).
     try:
-        env = build_envelope(args.impl, args.manifest, args.stage, run_id)
+        registry.get(args.impl)
     except KeyError as e:
         print("실패: %s" % e, file=sys.stderr)
         return 2
+    env = build_envelope(args.impl, args.manifest, args.stage, run_id)
 
     outdir = paths.predictions_dir()
     os.makedirs(outdir, exist_ok=True)

@@ -43,3 +43,14 @@ def test_main_writes_prediction_file(tmp_path, monkeypatch):
 def test_unknown_impl_returns_nonzero(capsys):
     rc = run.main(["--impl", "nope", "--manifest", "b_youtube", "--stage", "candidate"])
     assert rc != 0
+
+
+def test_classification_envelope_reads_meta_from_sequences_json():
+    # a_aihub 에는 clips.json 이 없다. sequences.json 의 meta 를 읽어야 한다.
+    env = run.build_envelope("fake:always_correct", "a_aihub", "classification",
+                             "run_test_005")
+    assert env["meta"]["manifest_version"] == "m1"
+    # 시퀀스 manifest 에는 clip 개념이 없다 — 값을 지어내지 않고 null 이다.
+    assert env["meta"]["clip_rule_version"] is None
+    assert len(env["normalized"]) == 120
+    assert set(env["normalized"][0]) == {"sequence_id", "predicted", "target_bbox"}

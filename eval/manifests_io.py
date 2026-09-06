@@ -19,6 +19,25 @@ def load_clips(manifest_name):
     return _read_json(os.path.join(paths.manifest_dir(manifest_name), "clips.json"))
 
 
+def load_sequences(manifest_name):
+    """A tier 의 시퀀스 manifest. B tier 의 clips.json 에 대응한다."""
+    return _read_json(os.path.join(paths.manifest_dir(manifest_name), "sequences.json"))
+
+
+def load_manifest_meta(manifest_name):
+    """manifest 의 meta 블록. clips.json 이 없으면 sequences.json 에서 읽는다.
+
+    B tier 는 clip 단위(clips.json), A tier 는 시퀀스 단위(sequences.json)라
+    파일 이름이 다르다. 없는 필드는 여기서 지어내지 않는다 — sequences.json
+    에는 clip 개념 자체가 없어 clip_rule_version 이 없고, 호출부에서 null 이
+    된다. 그것이 「clip 규칙 버전이 c1 이다」라고 거짓말하는 것보다 낫다.
+    """
+    clips_path = os.path.join(paths.manifest_dir(manifest_name), "clips.json")
+    if os.path.exists(clips_path):
+        return _read_json(clips_path)["meta"]
+    return load_sequences(manifest_name)["meta"]
+
+
 def load_gt(manifest_name, stage):
     return _read_json(
         os.path.join(paths.manifest_dir(manifest_name), "gt", "gt_%s.json" % stage)
@@ -81,6 +100,9 @@ def validate(clips, gt, verify_hashes=0):
                 )
 
     for c in clips["clips"]:
+        # 아래 sha256 검사부의 경로 조립과 비슷해 보이지만 같지 않다 — 여기는
+        # cwd 기준 상대경로도 존재로 인정하고(두 번째 or), 저쪽은 REPO_ROOT
+        # 기준만 본다. 합치면 한쪽의 허용 범위가 조용히 넓어진다.
         if not os.path.exists(os.path.join(paths.REPO_ROOT, c["file_path"])) \
                 and not os.path.exists(c["file_path"]):
             problems.append("%s: file_path 가 존재하지 않는다 (%s)" % (c["clip_id"], c["file_path"]))
