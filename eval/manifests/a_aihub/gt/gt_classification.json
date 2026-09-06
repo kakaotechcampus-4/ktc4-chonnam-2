@@ -6,7 +6,9 @@
     "coverage": {
       "sequences_total": 120,
       "sampling_rule_version": "s1",
-      "sampling_seed": 20260906
+      "sampling_seed": 20260906,
+      "items_with_target_bbox": 115,
+      "target_bbox_reason": "원본 라벨에 위반 차량 bbox 가 없는 시퀀스가 있다 (차선 등 다른 객체만 어노테이션된 경우). 그런 항목은 target_bbox/target_frame/distractor_count 가 null 이다."
     }
   },
   "items": [
@@ -105,7 +107,7 @@
       "label": "CENTER_LINE_CROSSING",
       "target_bbox": null,
       "target_frame": null,
-      "distractor_count": 0,
+      "distractor_count": null,
       "condition": {
         "weather": "눈",
         "day_night": "야간",
@@ -226,7 +228,7 @@
       "label": "CENTER_LINE_CROSSING",
       "target_bbox": null,
       "target_frame": null,
-      "distractor_count": 0,
+      "distractor_count": null,
       "condition": {
         "weather": "흐림",
         "day_night": "야간",
@@ -311,7 +313,7 @@
       "label": "CENTER_LINE_CROSSING",
       "target_bbox": null,
       "target_frame": null,
-      "distractor_count": 0,
+      "distractor_count": null,
       "condition": {
         "weather": "눈",
         "day_night": "주간",
@@ -324,7 +326,7 @@
       "label": "CENTER_LINE_CROSSING",
       "target_bbox": null,
       "target_frame": null,
-      "distractor_count": 0,
+      "distractor_count": null,
       "condition": {
         "weather": "맑음",
         "day_night": "주간",
@@ -463,7 +465,7 @@
       "label": "CENTER_LINE_CROSSING",
       "target_bbox": null,
       "target_frame": null,
-      "distractor_count": 0,
+      "distractor_count": null,
       "condition": {
         "weather": "눈",
         "day_night": "주간",

@@ -60,9 +60,11 @@ def sample(zip_path, per_type, seed):
     rng = random.Random(seed)
     sequences = []
     gt_items = []
+    actual_per_type = {}
     for vtype in sorted(by_type):
         keys = sorted(by_type[vtype])
         picked = rng.sample(keys, min(per_type, len(keys)))
+        actual_per_type[vtype] = len(picked)
         for top, sub, seq_id in sorted(picked):
             frames = sorted(idx[(top, sub, seq_id)])
             first = json.loads(zf.read(frames[0]).decode("utf-8"))
@@ -70,7 +72,7 @@ def sample(zip_path, per_type, seed):
 
             target_bbox = None
             target_frame = None
-            distractors = 0
+            distractors = None
             for fname in frames:
                 d = json.loads(zf.read(fname).decode("utf-8"))
                 anns = d["Annotation"]["annotations"]
@@ -116,6 +118,8 @@ def sample(zip_path, per_type, seed):
                 "source_tier": "A",
             })
 
+    items_with_target_bbox = sum(1 for it in gt_items if it["target_bbox"] is not None)
+
     seqs = {
         "meta": {
             "manifest_version": "m1",
@@ -125,6 +129,7 @@ def sample(zip_path, per_type, seed):
                 "rule_version": RULE_VERSION,
                 "seed": seed,
                 "per_type": per_type,
+                "actual_per_type": actual_per_type,
                 "strategy": "type-stratified, sequence-level",
             },
         },
@@ -134,7 +139,14 @@ def sample(zip_path, per_type, seed):
         "meta": {"gt_version": "g1", "tier": "A", "stage": "classification",
                  "coverage": {"sequences_total": len(gt_items),
                               "sampling_rule_version": RULE_VERSION,
-                              "sampling_seed": seed}},
+                              "sampling_seed": seed,
+                              "items_with_target_bbox": items_with_target_bbox,
+                              "target_bbox_reason": (
+                                  "원본 라벨에 위반 차량 bbox 가 없는 시퀀스가 있다"
+                                  " (차선 등 다른 객체만 어노테이션된 경우). 그런"
+                                  " 항목은 target_bbox/target_frame/distractor_count"
+                                  " 가 null 이다."
+                              )}},
         "items": gt_items,
     }
     return seqs, gt

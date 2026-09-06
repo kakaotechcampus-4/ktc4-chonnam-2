@@ -7,6 +7,12 @@
       "rule_version": "s1",
       "seed": 20260906,
       "per_type": 30,
+      "actual_per_type": {
+        "CENTER_LINE_CROSSING": 30,
+        "MOTORCYCLE_HELMET_NON_USE": 30,
+        "SIGNAL": 30,
+        "SOLID_LINE_LANE_CHANGE": 30
+      },
       "strategy": "type-stratified, sequence-level"
     }
   },
