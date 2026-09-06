@@ -1,0 +1,1695 @@
+{
+  "meta": {
+    "manifest_version": "m1",
+    "tier": "A",
+    "source": "aihub",
+    "sampling": {
+      "rule_version": "s1",
+      "seed": 20260906,
+      "per_type": 30,
+      "strategy": "type-stratified, sequence-level"
+    }
+  },
+  "sequences": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005763",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 50,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005763",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 59,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005817",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005844",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 66,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005845",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 26,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005899",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005937",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005973",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005979",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 63,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006056",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006083",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 291,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006143",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006196",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006217",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006257",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006261",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006351",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006364",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008453",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008459",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008527",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008618",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008714",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008883",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 40,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008890",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 59,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008895",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008917",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009072",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009152",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009274",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
+      "violation_type": "CENTER_LINE_CROSSING",
+      "sub_type": "중앙선주황색이중실선위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009447",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000031",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000031",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000189",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000189",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000248",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000248",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000282",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000282",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000409",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000409",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000879",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000879",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000899",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000899",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000990",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000990",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001112",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001112",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001237",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001237",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001646",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001646",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001682",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001682",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001896",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001896",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002216",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 6,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002216",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002259",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002259",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002405",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 9,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002405",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002514",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 8,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002514",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002522",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 8,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002522",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002714",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002714",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002814",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002814",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002898",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002898",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002902",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002902",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003265",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003265",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003622",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003622",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003695",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003695",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003712",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003712",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003716",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003716",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003808",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003808",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_안전모미착용_0000003871",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230223_안전모미착용_0000003871",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000004040",
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "sub_type": "안전모미착용",
+      "frame_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "안전모미착용/안전모미착용/20230226_안전모미착용_0000004040",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003718",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003718",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003756",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 25,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003756",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003830",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003830",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003945",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003945",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003948",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003948",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000004026",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시좌회전",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000004026",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011927",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000011927",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011931",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 53,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000011931",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012025",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012025",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012091",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012091",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012096",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012096",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012162",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012162",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012185",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012185",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012255",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012255",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012256",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012256",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012364",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012364",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012390",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012390",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012514",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 13,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012514",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012538",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012538",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012670",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012670",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012733",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 20,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012733",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012879",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012879",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013034",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013034",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013100",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 15,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013100",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013140",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013140",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013202",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 25,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013202",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013332",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 54,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013332",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013363",
+      "violation_type": "SIGNAL",
+      "sub_type": "적색신호시직진",
+      "frame_count": 60,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013363",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001064",
+      "violation_type": "SIGNAL",
+      "sub_type": "좌회전신호시직진",
+      "frame_count": 176,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/좌회전신호시직진/20230226_좌회전신호시직진_0000001064",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001137",
+      "violation_type": "SIGNAL",
+      "sub_type": "좌회전신호시직진",
+      "frame_count": 38,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "신호위반/좌회전신호시직진/20230226_좌회전신호시직진_0000001137",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010436",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 39,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010436",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010476",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010476",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010523",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 142,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010523",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010551",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010551",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010563",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010563",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010581",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010581",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010666",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 59,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010666",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010737",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010737",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010784",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010784",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010805",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010805",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010894",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 45,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010894",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011136",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 80,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011136",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011142",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011142",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011168",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 49,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011168",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011282",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011282",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011318",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011318",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011345",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 36,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011345",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011372",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011372",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011387",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 45,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011387",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011419",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011419",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011444",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011444",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011445",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011445",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011451",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011451",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011452",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 60,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011452",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011696",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011696",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011710",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011710",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011718",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011718",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011729",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "일반도로진로변경위반",
+      "frame_count": 14,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011729",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000614",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "터널내진로변경위반",
+      "frame_count": 30,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "터널"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/터널내진로변경위반/20230222_터널내진로변경위반_0000000614",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000630",
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "sub_type": "터널내진로변경위반",
+      "frame_count": 15,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "터널"
+      },
+      "archive": "VS.zip",
+      "archive_path": "진로변경위반/터널내진로변경위반/20230222_터널내진로변경위반_0000000630",
+      "split": "DEV"
+    }
+  ]
+}
