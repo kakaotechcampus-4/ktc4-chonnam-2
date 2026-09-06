@@ -35,8 +35,10 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
 
     events = []          # (clip_id, target)
     negative_clips = []
+    n_boundary_excluded = 0
     for item in gt["items"]:
         included = [t for t in item["targets"] if t.get("scoring") != "BOUNDARY_EXCLUDED"]
+        n_boundary_excluded += len(item["targets"]) - len(included)
         if item["targets"]:
             for t in included:
                 events.append((item["clip_id"], t))
@@ -84,6 +86,12 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
         reasons.append("NO_NEGATIVE_CLIPS — fp_per_clip 을 낼 수 없다")
     if n_events > 0 and not span_errors:
         reasons.append("NO_MATCHED_EVENTS — span_error_sec 를 낼 수 없다")
+    if n_boundary_excluded:
+        # 이걸 적지 않으면 결과의 n_events 와 GT 의 clips_with_events 가 어긋난
+        # 이유를 결과 파일만 보고는 알 수 없다 (스펙 §5).
+        reasons.append(
+            "BOUNDARY_EXCLUDED — %d건을 채점에서 제외했다" % n_boundary_excluded
+        )
 
     return {
         "recall_at": {str(k): (hits[k] / n_events if n_events else None) for k in ks},
@@ -99,4 +107,23 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
             for vt, v in sorted(by_type.items())
         },
         "coverage": "; ".join(reasons) if reasons else None,
+    }
+
+
+def not_run(reason, ks=(1, 3, 10)):
+    """이번 실행에서 돌지 않은 stage 의 결과 블록.
+
+    키를 빼지 않고 값만 null 로 둔다 — results/*.json 을 모으는 쪽이 「키가
+    없는 모양」과 「키가 null 인 모양」을 따로 처리해야 하는 일이 없도록,
+    plate 의 무데이터 블록과 같은 규칙을 쓴다. by_type 도 {} 가 아니라 null
+    이다: 빈 dict 는 「세어 봤더니 유형이 하나도 없었다」로 읽힌다.
+    """
+    return {
+        "recall_at": {str(k): None for k in ks},
+        "span_error_sec": {"mean": None, "median": None},
+        "fp_per_clip": None,
+        "n_events": None,
+        "n_negative_clips": None,
+        "by_type": None,
+        "coverage": reason,
     }

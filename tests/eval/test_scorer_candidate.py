@@ -111,3 +111,26 @@ def test_iou_disjoint_identical_and_zero_length():
     assert candidate._iou(0.0, 1.0, 5.0, 6.0) == 0.0
     assert candidate._iou(1.0, 2.0, 1.0, 2.0) == 1.0
     assert candidate._iou(0.0, 0.0, 0.0, 0.0) == 0.0
+
+
+def test_boundary_excluded_is_explained_in_coverage():
+    # 제외 사실이 결과 파일에 남아야 한다 — 남기지 않으면 n_events=4 와 GT 의
+    # clips_with_events=5 가 어긋난 이유를 결과만 보고 알 수 없다 (스펙 §5).
+    gt = manifests_io.load_gt("b_youtube", "candidate")
+    r = candidate.score(_run("fake:always_correct"), gt)
+    assert "BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다" in r["coverage"]
+
+
+def test_not_run_block_has_the_same_keys_as_a_scored_block():
+    # NOT_RUN 이라고 키를 빼면 results/*.json 집계 쪽이 모양을 특수 처리해야 한다.
+    gt = manifests_io.load_gt("b_youtube", "candidate")
+    scored = candidate.score(_run("fake:always_correct"), gt)
+    blank = candidate.not_run("NOT_RUN — 테스트")
+    assert set(blank) == set(scored)
+    assert set(blank["recall_at"]) == set(scored["recall_at"])
+    leaves = []
+    for k, v in blank.items():
+        if k == "coverage":
+            continue
+        leaves.extend(v.values() if isinstance(v, dict) else [v])
+    assert all(v is None for v in leaves)

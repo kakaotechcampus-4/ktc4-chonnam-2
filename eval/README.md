@@ -29,6 +29,29 @@
 
 `python -m eval.run --impl <이름표>` 한 줄로 도는 상태 → 정답지 10~20건 → 항상 정답/항상 오답 가짜 구현으로 지표 검증 → 4종별 점수 + Classification 지표.
 
-## 상태
+## 지금 도는 것 (v1 harness)
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+설계 원문은 `docs/modules/eval/harness-v1-design.md`다. 여기에는 쓰는 법만 적는다.
+
+```bash
+# 1) 실행 → predictions/<run_id>.json  (immutable · 덮어쓰지 않는다)
+python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candidate --run-id demo_correct
+
+# 2) 채점 → results/<run_id>.<gt_version>.json
+python -m eval.score --prediction demo_correct
+```
+
+`--stage` 는 `candidate`(B tier · `b_youtube`) 와 `classification`(A tier · `a_aihub`) 두 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+
+| 폴더 | 무엇이 들어 있나 |
+| --- | --- |
+| `predictions/` | impl 이 낸 **원문(`raw`) + 정규화 뷰(`normalized`) + `meta`**. GT나 지표 정의가 바뀌어도 다시 만들지 않는다 — scorer 만 다시 돈다 |
+| `results/` | 지표 값. 낼 수 없는 지표는 `0` 이 아니라 `null` 이고, `coverage` 가 그 이유와 채점에서 제외한 것을 적는다 |
+
+**지표 계산이 맞는지는 치트 구현 두 개의 점수 차이로 확인한다.** `fake:always_correct` 는 GT 를 그대로 되돌려주고 `fake:always_wrong` 은 유형·구간·bbox 를 전부 틀리게 낸다. 커밋된 `demo_correct*` / `demo_wrong*` 산출물이 그 대조다 — 만점과 0점이 함께 있지 않으면 그 지표는 검증되지 않은 것이다. runner 는 impl 에 `{"manifest", "stage"}` 만 넘긴다(§2-5). GT 는 치트 구현이 스스로 읽는다.
+
+```bash
+python -m pytest tests/eval/ -q
+```
+
+미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 55개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.

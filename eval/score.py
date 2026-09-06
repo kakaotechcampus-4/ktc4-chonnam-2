@@ -41,12 +41,11 @@ def build_result(env):
     }
     if stage == "candidate":
         result["candidate"] = candidate.score(norm, gt)
-        result["classification"] = {
-            "coverage": "NOT_RUN — stage=candidate 실행이다"
-        }
+        result["classification"] = classification.not_run(
+            "NOT_RUN — stage=candidate 실행이다")
     elif stage == "classification":
         result["classification"] = classification.score(norm, gt)
-        result["candidate"] = {"coverage": "NOT_RUN — stage=classification 실행이다"}
+        result["candidate"] = candidate.not_run("NOT_RUN — stage=classification 실행이다")
     return result
 
 
@@ -66,6 +65,7 @@ def main(argv=None):
     out = os.path.join(outdir, "%s.%s.json" % (args.prediction, result["meta"]["gt_version"]))
     with open(out, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
+        f.write("\n")
     print(out)
     return 0
 

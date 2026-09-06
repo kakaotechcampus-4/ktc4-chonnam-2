@@ -163,6 +163,8 @@ results/<run_id>.<gt_version>.json        커밋 (§10-2 「Eval result: JSON + 
 
 - **데이터가 없는 지표는 `0`이 아니라 `null` + 사유 문자열로 적는다.** 0으로 적으면 「성능이 나빴다」로 오독된다.
 - `results.json`에 `coverage` 블록을 두어 무엇을 못 냈고 왜인지를 결과 파일이 스스로 설명한다.
+- **`coverage`는 두 가지를 함께 적는다** — 「어떤 지표가 왜 `null`인가」와 「무엇을 채점에서 제외했는가」다. 후자는 지표가 전부 `null`이 아니어도 실린다(예: `BOUNDARY_EXCLUDED`로 제외한 사건 수, baseline enum 밖의 GT 라벨·예측 건수). 사유가 여럿이면 `"; "`로 잇는다. 이 규칙이 있어야 결과의 `n_events`와 GT의 `clips_with_events`가 어긋난 이유를 결과 파일만 보고 알 수 있다.
+- **돌지 않은 stage의 블록도 키를 전부 채우고 값만 `null`로 둔다.** `{"coverage": "NOT_RUN — …"}`처럼 키를 빼면 `results/*.json`을 모으는 쪽이 「키가 없는 모양」과 「키가 `null`인 모양」을 따로 처리해야 한다. 아래 plate 무데이터 블록이 그 기준 모양이다.
 
 ```json
 "plate": {
@@ -252,10 +254,31 @@ eval/manifests/**/events_draft.json
 | F4 | Hard-negative 대조쌍 | Hard-negative FPR | 실선 침범 ↔ 점선 정상 변경 대조 라벨 | 김대원 |
 | F5 | Fine / E2E / Efficiency stage | Fine Recall · HN-FPR · Final Recall@3 · 비용 | `search` 구현과 `UsageRecord` | 서어진 · 김준영 |
 | F6 | **Plate 채점 로직 재구현** (v1은 branch를 아예 제거함) | Exact Accuracy · Wrong-Accept Rate · Abstention Recall (C tier) | F1의 C tier plate text GT | 김대원 |
+| F7 | **후보 1건이 같은 클립의 GT 2건을 동시에 만족한다** | Recall@K의 정직성 | 1:1 배정(Hungarian 등) 또는 「매칭된 예측은 소비한다」 규칙 | 김대원 |
+| F8 | **임계값 0.5 두 개를 실험으로 정한다** | target correctness · Recall@K의 민감도 | 임계값 sweep 실험 | 김대원 |
+| F9 | `code_commit`이 구조적으로 직전 커밋을 가리킨다 | — (해석 규칙) | §5에 의미를 명시하거나 재생성 후 amend | 김대원 |
+| F10 | `TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다 | Classification target correctness의 GT 품질 | 유형별 대상 객체 매핑 | 김대원 |
+| F11 | 형식이 깨진 예측 bbox에 카운터가 없다 | target correctness의 해석 가능성 | `n_invalid_bboxes` 카운터 + coverage 사유 | 김대원 |
+| F12 | **`NONE` 클래스에 데이터 경로가 없다** | 5×5 confusion의 NONE 행·열 | A tier 시퀀스와 B tier negative 클립을 잇는 manifest | 김대원 |
+| F13 | `check_invariants`가 `a_aihub`에서 돌지 않는다 | A tier GT 불변식 (candidate의 7종에 대응) | 시퀀스 manifest용 검사기 | 김대원 |
 
 F2의 Overlay time은 A tier 화면에 시각이 남아 있어 라벨 비용이 낮지만, §9-4에 따라 **overlay 판독 정확도만** 채점하고 source agreement(메타데이터 vs 파일명 vs overlay 대조)는 C tier 몫으로 남긴다.
 
 F6: v1의 `plate.score`는 한때 GT가 있는 경우의 계산 분기를 갖고 있었으나, 검증할 GT가 없어 그 분기는 한 번도 실행되지 않은 채로 이미 틀린 숫자를 내고 있었다(`wrong_accept_rate`의 분모에서 abstain 항목을 빠뜨려, 판독 불가 번호판에 대한 오탐을 0으로 보고). 못 쓰는 채로 남겨 두면 나중에 C tier를 잇는 사람이 검증됐다고 믿고 그대로 쓸 위험이 있어(CLAUDE.md §2, 미검증 코드는 없는 것보다 위험하다), 이 분기는 **비활성화가 아니라 삭제**했다(task-8 리뷰 Important 2). C tier로 재구현할 때는 `wrong_accept_rate`의 분모에 abstain 항목(판독 불가로 답이 없는 번호판)을 **포함**해야 한다 — 판독 불가 번호판에 대한 잘못된 인식이야말로 이 지표가 잡아야 할 오류이기 때문이다.
+
+F7: `candidate.score`는 사건마다 독립으로 후보를 훑을 뿐 1:1 배정을 하지 않는다. 그래서 한 클립 안에 사건이 둘이면, 둘을 모두 덮는 넓은 예측 **하나**가 적중 2건으로 세어진다. 지금 B tier 사건 5건은 전부 다른 클립에 있어 실측이 흔들리지 않지만, 한 클립에 사건이 둘 이상 들어오는 순간 Recall@K가 **조용히 부풀어 오른다.** 그러므로 이 항목은 F3(사건 10~20건으로 확대)처럼 다중 사건 클립을 들여오는 후속 항목과 **같은 커밋에서** 고쳐야 한다. 나중에 따로 고치면 그 사이의 숫자가 전부 재계산 대상이 된다.
+
+F8: 값 `0.5`가 두 곳에 있지만 **서로 무관한 임계값**이다 — `classification._TARGET_BBOX_IOU_THRESHOLD`는 bbox의 2-D 공간 IoU이고, `candidate.score`의 `iou_threshold`는 구간의 1-D 시간 IoU다. 같은 값인 것은 우연이며 함께 움직여야 할 이유가 없다. 둘 다 튜닝 대상으로 열어 둔다: 전자는 A tier bbox를 사람이 판정한 「맞다/아니다」와 대조해, 후자는 B tier 사건의 span 라벨 폭 편차를 재서 정한다.
+
+F9: `_git_commit()`이 실행 시점의 HEAD를 읽고 산출물은 그 뒤에 커밋되므로, 커밋된 `predictions/`·`results/`의 `code_commit`은 **자기를 담은 커밋의 부모**를 가리킨다. 틀린 값이 아니라 「이 실행이 딛고 선 트리」다. 이 의미를 §5에 못 박거나, 산출물을 재생성해 같은 커밋에 amend 하는 절차를 규칙으로 삼는 두 가지 선택지가 있다. v1은 전자로 해석하고 값은 그대로 둔다.
+
+F10: `eval/tools/sample_aihub.py`의 `TARGET_OBJECTS`는 위반유형과 무관한 전역 목록이다. 그래서 신호위반 시퀀스의 프레임에 중앙선침범용 대상 객체가 어노테이션돼 있으면 그 bbox를 target으로 가져간다. 실측으로 확인된 오류는 아직 없지만 GT 품질의 잠재 위험이며, F13의 A tier 불변식 검사기가 잡아야 할 후보다.
+
+F11: `classification.score`는 baseline enum 밖의 **예측 라벨**은 세어서 `n_invalid_predictions`와 coverage에 적지만, 형식이 깨진 **예측 bbox**(길이가 4가 아닌 값)는 `_iou_2d`가 조용히 `0.0`으로 처리하고 아무 데도 적지 않는다. 지금은 치트 구현만 bbox를 내므로 닿지 않는 경로지만, 실제 분류기를 붙이는 순간 「bbox가 틀렸다」와 「bbox 형식이 깨졌다」가 같은 0점으로 섞인다. 라벨 쪽과 같은 모양의 `n_invalid_bboxes` 카운터를 그때 함께 만든다.
+
+F12: §4-2가 `NONE`을 B tier negative 클립에서 만든다고 정했지만, A tier 시퀀스 manifest와 B tier 클립을 잇는 manifest가 아직 없다. 그래서 실제 데이터로 채점하면 5×5 confusion의 `NONE` 행과 열이 **전부 0으로 비어 있다.** 이걸 채울 것은 두 tier를 함께 나열하는 classification manifest(가칭 `manifests/ab_mixed/sequences.json`)이며, 항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다.
+
+F13: `a_aihub`에는 `clips.json`이 없어 `manifests_io.check_invariants`가 돌지 않는다(그 함수는 clip과 span을 전제한다). 대신 `tests/eval/test_sample_aihub.py`의 A tier GT 자기정합성 테스트가 커밋된 정답지만 검사한다. 시퀀스 단위 불변식 검사기는 F12의 manifest가 정해진 뒤에 만든다 — 지금 만들면 곧 바뀔 모양을 굳힌다.
 
 ---
 

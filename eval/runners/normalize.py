@@ -79,6 +79,12 @@ def from_mock_pack(obj):
     data/mock/eval/prediction_*.json 은 `case` Owner 의 산출물이며 형식을
     바꾸라고 요구하지 않는다 (harness-v1-design.md §2-4). 여기서 읽기만 한다.
     시나리오 1건이므로 clip_id 자리에 scenario_id 를 쓴다.
+
+    **주의: 이 뷰에는 구간이 없다.** Mock Pack 객체가 시각을 담지 않아
+    t_start_sec/t_end_sec 를 0.0 으로 채운다. 그래서 이 결과를
+    candidate.score 에 넣으면 IoU 기반 지표(Recall@K · span error)가
+    「측정했는데 0」처럼 보이지만 실제로는 잰 적이 없는 값이다. 접합 확인
+    용도로만 쓰고 지표를 내지 않는다.
     """
     p = obj["prediction"]
     return [{

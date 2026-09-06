@@ -148,3 +148,19 @@ def score(normalized, gt):
         "n_invalid_gt_labels": n_invalid_gt_labels,
         "coverage": "; ".join(reasons) if reasons else None,
     }
+
+
+def not_run(reason):
+    """이번 실행에서 돌지 않은 stage 의 결과 블록. candidate.not_run 과 같은 규칙."""
+    return {
+        "recall_macro": None,
+        "precision_macro": None,
+        "recall_by_label": None,
+        "confusion": None,
+        "target_correctness": None,
+        "by_condition": None,
+        "n": None,
+        "n_invalid_predictions": None,
+        "n_invalid_gt_labels": None,
+        "coverage": reason,
+    }
