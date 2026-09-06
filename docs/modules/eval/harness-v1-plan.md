@@ -1338,6 +1338,14 @@ def sample(zip_path, per_type, seed):
                 "target_bbox": target_bbox,
                 "target_frame": target_frame,
                 "distractor_count": distractors,
+                # scorer 는 (normalized, gt) 두 개만 받는다. 조건별 지표를
+                # 내려면 GT 가 자족적이어야 하므로 sequences 와 같은 값을
+                # 여기에도 싣는다 (Task 8 classification.score 가 읽는다).
+                "condition": {
+                    "weather": cond.get("Weather"),
+                    "day_night": cond.get("DayNights"),
+                    "road_type": cond.get("roadType"),
+                },
                 "source_tier": "A",
             })
 
@@ -1431,7 +1439,7 @@ git commit -m "feat(eval): A tier 샘플링 도구와 classification GT"
   "recall_macro": float, "precision_macro": float,
   "confusion": {"SIGNAL": {"SIGNAL": 3, "NONE": 1, ...}, ...},  # 5×5
   "target_correctness": float | None,
-  "by_condition": {"day_night": {"주간": {"recall_macro": float, "n": int}, ...}},
+  "by_condition": {"day_night": {"주간": {"accuracy": float, "n": int}, ...}},
   "n": int, "coverage": str | None,
 }
 ```
