@@ -1,5 +1,17 @@
+import os
+
+import pytest
+
 from eval import manifests_io
 from eval import paths as eval_paths
+
+# B tier 클립 55개는 .gitignore 대상이라 clone 만으로는 없다. 미디어가 필요한
+# 검사(file_path 존재 · sha256 대조)는 있을 때만 돈다 — 없는데 실패로 적으면
+# 「데이터가 없다」가 「정답지가 틀렸다」로 오독된다.
+B_CLIPS_DIR = os.path.join(eval_paths.datasets_dir(), "youtube", "clips")
+needs_b_media = pytest.mark.skipif(
+    not os.path.isdir(B_CLIPS_DIR), reason="B tier 미디어 없음 (로컬 전용)"
+)
 
 
 def test_load_clips_returns_55_entries():
@@ -16,6 +28,7 @@ def test_load_gt_candidate_has_coverage_block():
     assert cov["negatives_confirmed"] is True
 
 
+@needs_b_media
 def test_real_b_youtube_data_has_no_invariant_violations():
     problems = manifests_io.check_invariants("b_youtube", "candidate", verify_hashes=3)
     assert problems == [], "위반: " + "; ".join(problems)
