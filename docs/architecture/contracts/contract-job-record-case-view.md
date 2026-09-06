@@ -2,9 +2,9 @@
 
 **Status:** `Final — Accepted`
 
-**Accepted:** `2026-09-04`
+**Accepted:** 최초 수락일 확인 대기 — 동일 계약 회차라는 이유로 추정한 2026-09-04 표기를 철회한다. CALL-1·5의 2026-09-06 답변 범위는 아래에 별도로 유지한다.
 
-**수락 근거:** §11 Consumer Review 반영 요약 — 신유민(web) 「수정요청 → 반영 완료」 · 김대원(eval) 「승인」 · 김준영 「최종 승인」. 3인 리뷰 종료. 헤더 표기만 누락돼 있어 PM이 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 유소연 이견 시 되돌린다
+**수락 근거:** §11 Consumer Review 반영 요약 — 신유민(web) 「수정요청 → 반영 완료」 · 김대원(eval) 「승인」 · 김준영 「최종 승인」. 본문에 리뷰 종료 기록이 있다. 정확한 최초 수락일·필드별 서명 범위는 확인 대기다. 과거에는 PM이 헤더를 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 유소연 이견 시 되돌린다
 
 **Architecture Contract:** v4 §5-1 ⑪ `CaseView` · ⑫ `JobRecord`
 
@@ -14,9 +14,9 @@
 
 > **`CaseView`는 v4에서 부록이 아니라 Core Contract ⑪이다**(v4 §5 머리말 · §4-모듈5 ⑥). 아래 절 제목의 「부록-A / 부록-B」는 ADR 작성 당시 표기이며, 계약의 위상은 Core Contract다.
 
-> **`case-view/v1.1` 변경 (2026-09-06)** — 유소연(`case` Owner) 회신 반영. B절만 바뀌었고 A절 `JobRecord`는 `job-record/v1` 그대로다.
-> ① `stage=READY` 정의 확정 ② `requirements.readiness`를 `RequirementReport.overall` 값 공간으로 축소 ③ `user_reviewed` 신규 ④ 세 값 display에 `info_state`·`source_label_key` 신규 ⑤ `requirements.scope` 신규(PM 확정 — ②를 반영하면서 드러난 후속 항목).
-> **v1에서 확정된 항목은 하나도 되돌리지 않았다** — `progress[].state` · `notices[].severity` · `running_jobs[].label_key` · `package.*` 타입 · `evidence`의 `case_type_display`/`report_type_display`/`violation_display`/`preview_ref`는 §12 Closure 그대로다(`adr/adr-consistency-2026-09.md` §6 R-1 비고).
+> **`case-view/v1.1` 변경 (2026-09-06)** — 유소연(`case` Owner) 회신 반영 당시 B절만 바뀌었고 A절 `JobRecord`는 `job-record/v1` 그대로다.
+> ① `stage=READY` 정의 확정 ② `requirements.readiness`를 `RequirementReport.overall` 값 공간으로 축소 ③ `user_reviewed` 신규 ④ 세 값 display에 `info_state`·`source_label_key` 신규 ⑤ `requirements.scope`는 **PM 제안/Owner 확인 대기**로 정정했다. 후속 판정은 `adr/adr-consistency-followup-2026-09-06.md`를 따른다.
+> **기존 스키마를 비교 기준으로 보존한다.** 네 evidence 필드의 삭제 의도·필드 수준 합의는 Pending이며 전체 합의 완료를 뜻하지 않는다 — `progress[].state` · `notices[].severity` · `running_jobs[].label_key` · `package.*` 타입 · `evidence`의 `case_type_display`/`report_type_display`/`violation_display`/`preview_ref`는 기존 Closure 판본을 보존한 것이다(현재 수락/Pending 구분은 §12·§13)(`adr/adr-consistency-2026-09.md` §6 R-1 비고).
 
 ## A. `JobRecord` (Job Intent)
 
@@ -85,7 +85,7 @@ json
 ### 7. Enum / State / Special Value
 
 - `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`. 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
-- `force_rerun`: 기본값 `false`. `false`이고 동일 fingerprint의 기존 **성공(SUCCEEDED)** 결과가 있으면 재사용한다. `FAILED`/`STALE` 결과는 cache hit로 간주하지 않으며 재실행을 허용한다.
+- `force_rerun`: 기본값 `false`. **동일 `(case_id, kind, input_fingerprint)`**이고 `force_rerun=false`인 요청에 기존 **SUCCEEDED** 결과가 있으면 재사용한다. `FAILED`/`STALE`은 cache hit가 아니다. `force_rerun=true`이면 새 실행이다. 기존 `adr-job-record-case-view.md` A절 §7의 조건을 복원한 것이며 fingerprint에 case/kind가 포함됐다고 추정하지 않는다.
 
 ### 8. 정상 예시
 
@@ -108,7 +108,7 @@ json
 ### 10. 불변조건
 
 1. 동일 job_id는 재사용되지 않는다
-2. `force_rerun=false`이고 input_fingerprint가 동일한 **SUCCEEDED 결과**가 존재하면 그 결과를 재사용한다. `FAILED`/`STALE`은 재사용하지 않는다.
+2. 캐시 재사용 조건은 A절 §7을 따른다(동일 case_id·kind·input_fingerprint의 성공 결과에 한정).
 3. `scope_ref`가 존재하면 유효한 scope_id를 참조한다
 4. 실행 상태 필드(status 등)는 본 계약에 포함되지 않는다 — Job Execution 계약 참고
 
@@ -170,7 +170,9 @@ web이 화면을 그리기 위해 읽는 유일한 통합 상태다. evidence/pa
 | evidence/package는 safe projection이어야 함 | ADR-부록B 결정1, 김준영 확정 |
 | checks[]는 RequirementReport 그대로 | 이전 회차 확정 |
 
-### 5. 확정 Contract 스키마 (JSON)
+### 5. Contract 스키마 (JSON — 아래 Pending 범위 포함)
+
+> **Pending B01/B02:** info_state 필드/enum 채택과 파생 함수 완결은 별개다. `requirements.scope`·report 선택 및 관련 불변조건은 제안으로 보존하며 필수 계약으로 확정하지 않는다. 아래 JSON과 §8~9의 관련 예시는 기존 제안 비교용이다. 기존 유형/preview 네 필드의 최종 유지·삭제도 Owner 확인 대기다.
 
 json
 
@@ -178,7 +180,7 @@ json
 {  "case_id": "string",  "case_rev": "int",  "stage": "INTAKE | SEARCHING | CANDIDATE_REVIEW | EVIDENCE_REVIEW | READY",  "user_reviewed": "boolean",  "manifest_summary": {    "file_count": "int",    "ok_file_count": "int",    "failed_file_count": "int",    "duration_sec": "number",    "range": "[string, string] | null"  },  "hints": { "time": "string|null", "vehicle": "string|null", "situation": "string|null", "location": "string|null" },  "progress": [ { "step": "string", "state": "PENDING | RUNNING | DONE | FAILED" } ],  "candidates": [    { "candidate_id": "string", "at": "string", "at_provenance": "string", "observed": "string", "thumb_ref": "string", "selected": "boolean" }  ],  "evidence": {    "record_id": "string",    "case_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "report_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "violation_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "plate_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "event_time_display": { "value": "ISO8601|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "location_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "user_edited": "boolean",    "preview_ref": "string|null",    "review_needed": "boolean",    "reason_code": "string|null"  },  "requirements": { "scope": "EVIDENCE | FINAL_PACKAGE", "readiness": "PASS | WARN | BLOCK | UNKNOWN", "checks": [] },  "package": {    "package_ref": "string|null",    "report_fields": "object<string, string|null>",    "artifact_ref": "string|null",    "capabilities": "string[]",    "warnings": "string[]"  },  "running_jobs": [ { "job_id": "string", "kind": "string", "label_key": "string", "status": "PENDING | RUNNING" } ],  "notices": [    { "code": "string", "severity": "INFO | WARN | ERROR", "blocking": "boolean", "message_key": "string", "actions": "string[]" }  ]}
 ```
 
-> 위 evidence/package 필드는 CaseView의 **확정 safe projection 스키마**다. case는 Evidence/ReportPackage의 authoritative 값을 재판정하거나 confidence를 자체 threshold로 재해석하지 않고, 확정된 값·검토 필요 여부·사유를 UI 표시 형태로만 변환한다. raw confidence, 내부 provenance, 중간 추론값은 기본 노출하지 않는다.
+> 위 evidence/package는 safe projection 경계를 따른다. 필드 수준 Pending은 §13에 있으며 이 JSON 전체가 최종 합의됐다는 뜻은 아니다. case는 Evidence/ReportPackage의 authoritative 값을 재판정하거나 confidence를 자체 threshold로 재해석하지 않고, 확정된 값·검토 필요 여부·사유를 UI 표시 형태로만 변환한다. raw confidence, 내부 provenance, 중간 추론값은 기본 노출하지 않는다.
 > 
 
 ### 6. 필드 정의
@@ -187,13 +189,13 @@ json
 | --- | --- | --- | --- | --- |
 | stage | enum(5) | Y | Case 진행 단계. `READY`는 「`PACKAGE_READY` 파생 gate가 성립한 시점」 | **확정** (신유민 Q3 답변 · READY 정의는 유소연 2026-09-06) |
 | user_reviewed | boolean | Y | 사용자가 최종 확인을 마쳤는지. v4 §3-6의 `USER_REVIEWED`를 내려보내는 통로이며 `stage`와 **별개 축**이다 | **확정** (유소연 2026-09-06) |
-| evidence.*_display.info_state | enum(5) | Y | 값의 정보 상태. `EvidenceValue`에서 결정론적으로 파생한다(§7) | **확정** (유소연·신유민 2026-09-06) |
+| evidence.*_display.info_state | enum(5) | Y | 값의 정보 상태. 파생 입력의 완결성은 Pending B01(§7) | **확정** (유소연·신유민 2026-09-06) |
 | evidence.*_display.source_label_key | string \| null | Y | `EvidenceValue.source.kind`를 화면 라벨 키로 노출. web은 이 키로 문구를 고르고 `kind` 문자열을 직접 해석하지 않는다 | **확정** (유소연·신유민 2026-09-06) |
-| requirements.scope | enum(2) | Y | 이 `requirements`가 어느 `RequirementReport`의 projection인지 | **확정** (PM 2026-09-06 · §7) |
+| requirements.scope | enum(2) | 제안/확인 대기 | 이 `requirements`가 어느 `RequirementReport`의 projection인지 | **제안/Pending B02** (case·evidence·web 확인 대기) |
 | requirements.readiness | enum(4) | Y | 위 `scope`에 해당하는 `RequirementReport.overall`의 projection. case가 재계산하지 않는다 | **확정** (유소연 2026-09-06) |
 | manifest_summary.ok_file_count / failed_file_count / duration_sec | int/int/number | Y | 파일 등록 성공·실패 수, 전체 구간 길이. count/duration은 항상 제공하고 정상 영상이 없으면 range=null | 확정 |
-| evidence.* (projection 필드 전반) | object | 선택 | 화면 표시용 evidence 요약 | **확정** — safe projection 필드 |
-| package.* | object | 선택 | 화면 표시용 package 요약 | **확정** — safe projection 필드 |
+| evidence.* (projection 필드 전반) | object | 선택 | 화면 표시용 evidence 요약 | safe projection 원칙 확정; 세부 필드 합의는 §13 Pending |
+| package.* | object | 선택 | 화면 표시용 package 요약 | safe projection 원칙 확정; 세부 필드 합의는 §13 Pending |
 | notices[].code/severity/blocking/message_key/actions | string/string/bool/string/array | Y(배열은 빈 배열 허용) | 부분 실패/경고 표시 | 신규, 신유민 요청 반영 |
 | progress[].state | string | Y | 단계 상태 | **확정** — `PENDING / RUNNING / DONE / FAILED` |
 
@@ -203,15 +205,15 @@ json
 | --- | --- | --- |
 | stage | `INTAKE`, `SEARCHING`, `CANDIDATE_REVIEW`, `EVIDENCE_REVIEW`, `READY` | 신유민 Q3 답변 기준 최종 확정. **`READY` = 「`PACKAGE_READY` 파생 gate가 성립한 시점」**(`contract-requirement-report-package.md` §5.2). `EVIDENCE_SUFFICIENT`는 `EVIDENCE_REVIEW` 단계 안의 조건이고 `USER_REVIEWED`는 `user_reviewed` 필드가 갖는다 |
 | user_reviewed | `true`, `false` | v4 §3-6 `USER_REVIEWED`. `stage`와 별개 축이며 `stage=READY`가 아니어도 `true`일 수 있다 |
-| requirements.scope | `EVIDENCE`, `FINAL_PACKAGE` | `RequirementReport.scope`와 **같은 값 공간**. 케이스 하나에 report가 둘 존재하므로(`contract-requirement-report-package.md` §5) 어느 쪽의 projection인지 밝힌다. `FINAL_PACKAGE` scope report가 존재하면 그것을, 없으면 `EVIDENCE` scope를 싣는다 |
+| requirements.scope | `EVIDENCE`, `FINAL_PACKAGE` | **제안/Pending B02.** 후보 값 공간이며 선택 규칙의 검토 원문은 `contract-requirement-report-package.md` §5.2-1만 따른다. 현재 basis·동일 scope 이력 선택은 미확정 |
 | requirements.readiness | `PASS`, `WARN`, `BLOCK`, `UNKNOWN` | 위 `scope`에 해당하는 `RequirementReport.overall`과 **같은 값 공간**. `4/5` 같은 score 표현을 두지 않는다(`contract-requirement-report-package.md` §4 「단순 readiness score를 Contract에 두지 않는다」) |
 | evidence.*_display.info_state | `INFO_AI_ESTIMATED`, `INFO_SOURCE_VERIFIED`, `INFO_USER_CONFIRMED`, `INFO_NEEDS_REVIEW`, `INFO_UNKNOWN` | `core-user-flow.md` §3-1의 정보 상태 5종과 1:1. **`Observation.status`와 다른 값 공간이므로 `INFO_` 접두어로 분리한다** — 파생 코드가 두 enum을 동시에 다루는 지점에서 `NEEDS_REVIEW`/`UNKNOWN`이 겹치는 것을 막는다(유소연 2026-09-06) |
 | progress[].state | `PENDING`, `RUNNING`, `DONE`, `FAILED` | CaseView UI 상태로 확정. JobExecution 상세 상태와 분리 |
 | notices[].severity | `INFO`, `WARN`, `ERROR` | 표시 강도만 의미하며 실제 차단 여부는 `blocking`으로 별도 판단 |
 
-**`info_state` 파생 규칙 (결정론적, 위에서부터 먼저 맞는 것 하나)**
+**`info_state` 파생 초안 — Pending B01 (기존 분기 순서 보존)**
 
-`case`는 아래 순서로만 판정하며 자체 threshold나 추가 정책을 넣지 않는다. 입력은 해당 값의 `EvidenceValue<T>`와 projection의 `needs_review`뿐이다.
+아래 순서는 입력이 모두 주어졌을 때의 기존 초안이다. **needs_review 생산 규칙, occurred_at→EvidenceValue 변환, 위치 대표값, source_label_key 전달 방식은 case·evidence·web 합의 대기**다. 사건시각은 현재 EvidenceRecord에서 EvidenceValue가 아니므로 전체 projection이 결정론적으로 닫혔다고 보지 않는다. 이 공백을 case의 임의 threshold로 채우지 않는다.
 
 ```
 1. value == null                        → INFO_UNKNOWN
@@ -221,7 +223,7 @@ json
 5. 그 외 (source.observability=INFERRED) → INFO_AI_ESTIMATED
 ```
 
-2가 3보다 앞서는 것은 `core-user-flow.md` §3-1 「한 번 `사용자 확인됨`이 된 값은 다시 묻지 않는다」 때문이다.
+2가 3보다 앞서는 것은 `core-user-flow.md` §9 「한 번 `사용자 확인됨`이 된 값은 다시 묻지 않는다」 때문이다.
 
 `source.observability`는 `contract-evidence-record-needs.md`의 `EvidenceValue.source`가 소유한다. **`case`가 `source.kind` 문자열을 보고 관찰/추론을 스스로 분류하지 않는다** — 그건 `case`가 정책 판단을 하는 것이라 §3 「authoritative 판단을 재계산하지 않는다」에 걸린다.
 
@@ -247,13 +249,13 @@ json
 
 1. `case_rev`는 반영 시점 리비전이며, 더 최신 case_rev 존재 시 stale
 2. `evidence`/`package`가 선택/완료 이전이면 null
-3. `package`가 non-null이면 `requirements.scope=FINAL_PACKAGE`이고 `requirements.readiness ∈ {PASS, WARN}`이다 (`contract-requirement-report-package.md` §5.2·§8.1의 Package 생성 조건과 같은 값)
-9. `stage=READY`이면 `requirements.scope=FINAL_PACKAGE`다. `READY`가 `PACKAGE_READY` 파생 gate이고 그 gate는 `FINAL_PACKAGE` scope report로만 성립한다
+3. **[제안/Pending B02]** `package`가 non-null이면 `requirements.scope=FINAL_PACKAGE`이고 `requirements.readiness ∈ {PASS, WARN}`이다 (`contract-requirement-report-package.md` §5.2·§8.1의 Package 생성 조건과 같은 값)
+9. **[제안/Pending B02]** `stage=READY`이면 `requirements.scope=FINAL_PACKAGE`다. `READY`가 `PACKAGE_READY` 파생 gate이고 그 gate는 `FINAL_PACKAGE` scope report로만 성립한다
 4. `evidence`/`package`는 EvidenceRecord/ReportPackage의 원본 필드를 그대로 포함하지 않는다(safe projection만 포함)
 5. `running_jobs`가 비어 있으면 진행 중인 작업 없음
-6. `info_state`는 `case`가 독립적으로 판단하지 않고 항상 §7의 파생 규칙으로 `EvidenceValue`에서 결정론적으로 도출된다
+6. `info_state`의 enum 채택은 유지한다. §7의 입력·파생 규칙은 Pending B01이며 case가 공백을 독립 정책으로 채우지 않는다
 7. `stage=READY`는 `PACKAGE_READY` 파생 gate가 성립한 시점이며, gate 자체는 `RequirementReport`/`ReportPackage`가 소유한다. `case`는 gate를 재계산하지 않는다
-8. **`user_reviewed`(workflow) · `evidence.user_edited`(record 단위) · `info_state=INFO_USER_CONFIRMED`(필드 단위 `user_corrected` 파생)는 서로 다른 세 가지 사실이며 하나로 합치지 않는다.** `contract-time-resolution.md` §불변조건 5 「`user_corrected`는 `USER_REVIEWED` workflow 상태와 동일하지 않다」와 같은 구분이다
+8. **`user_reviewed`(workflow) · `evidence.user_edited`(record 단위) · `info_state=INFO_USER_CONFIRMED`(필드 단위 `user_corrected` 파생)는 서로 다른 세 가지 사실이며 하나로 합치지 않는다.** `contract-time-resolution.md` §10 항목 5 「`user_corrected`는 `USER_REVIEWED` workflow 상태와 동일하지 않다」와 같은 구분이다
 
 ### 11. Consumer Review 반영 요약
 
@@ -266,7 +268,7 @@ json
 
 ### 12. Closure 완료 사항
 
-- evidence/package: 위 스키마를 safe projection 최종안으로 확정. case는 authoritative 판단을 재계산하지 않는다.
+- evidence/package: safe projection·재판정 금지 원칙을 유지한다. 세부 필드 합의는 §13의 Pending으로 분리한다.
 - `progress.state`: `PENDING / RUNNING / DONE / FAILED`로 확정.
 - `running_jobs.label_key`: 필수 제공. web은 `kind` 문자열을 직접 해석하지 않으며, 미등록/알 수 없는 kind는 `job.generic_processing` fallback을 사용한다.
 - `notices.severity`: `INFO / WARN / ERROR`로 확정. 실제 차단 여부는 `blocking`이 결정한다.
@@ -277,13 +279,13 @@ json
 - `stage=READY`: `PACKAGE_READY` 파생 gate 성립 시점으로 확정. `ownership.md` §7-④가 「통합 전 case Owner가 확인한다」로 넘긴 미결이 닫혔다.
 - `requirements.readiness`: `RequirementReport.overall`의 projection으로 확정하고 값 공간을 `PASS/WARN/BLOCK/UNKNOWN`으로 축소.
 - `user_reviewed`: v4 §3-6 `USER_REVIEWED`를 내려보내는 통로 확정.
-- `info_state` · `source_label_key`: 세 값 display에 추가하고 파생 규칙을 §7에 고정.
-- `requirements.scope`: 어느 `RequirementReport`의 projection인지 밝히도록 필드 추가. **PM 확정**이며 소유자 이견 시 되돌린다(`adr/adr-consistency-2026-09.md` §6 R-7).
+- `info_state` · `source_label_key`: 세 값 display의 필드 채택을 유지. 파생 규칙의 완결성은 §7 Pending B01.
+- **종결 철회 — `requirements.scope`:** PM의 단독 확정을 제안/Owner 확인 대기로 되돌린다(B02). 기존 R-7은 과거 결정 기록이며 현재 수락 근거가 아니다.
 
-### 13. 남은 미결
+### 13. 남은 미결 및 별도 종결 항목
 
 - evidence/package projection의 세부 필드명 최종 합의 · `CorrectionRecord.target_field`와 display 필드명 정렬 → 같은 자리에서 처리한다.
 - `candidates[].thumb_ref`의 형식. 예시가 `"frame:a09@178.6"`인데 2026-09-06에 `recording`이 **ref에 위치를 인코딩하지 않는다**로 확정했다(`adr/adr-consistency-2026-09.md` §6 R-5). 어느 자산의 ref인지(`fr_` / `da_`)는 `recording` 계약 2건이 나온 뒤 맞춘다. **목데이터는 `docs/architecture/mock-pack-v1-refs.md`를 쓴다.**
 
-> **닫힌 항목:** `requirements`의 scope 미지정은 §7·§10-3·§10-9로 확정됐다(PM, 2026-09-06 — `adr/adr-consistency-2026-09.md` §6 R-7).
-- JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`.
+> **Pending B01/B02:** §7·§10-3·§10-9를 새 합의 없이 닫지 않는다. 기존 네 evidence 필드의 유지/삭제 의도와 정확한 최초 수락일도 확인 대기다.
+- **별도 종결 항목 —** JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`.

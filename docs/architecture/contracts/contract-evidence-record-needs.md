@@ -12,7 +12,7 @@
 
 **Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1
 
-> **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 필드 추가뿐이고 기존 필드의 의미·값 공간은 그대로다. 근거는 §3의 해당 절.
+> **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 기존 필드 의미·값 공간은 유지한다. 다만 소비자 호환성·CaseView 전체 파생이 닫혔다는 뜻은 아니다. **Pending B01:** needs_review 원천·시각/위치 입력 변환·라벨 전달은 case/evidence/web 확인 대기다. 근거는 §3의 해당 절.
 
 **Contract Lead / Owner:** 김준영 (`evidence`)
 

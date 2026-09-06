@@ -2,9 +2,11 @@
 
 **Status:** `Final — Accepted`
 
-**Accepted:** `2026-09-04`
+> **통합 Pending B06~B09:** SpanResolution 범위 완전성·자산 입력 표면·상대 입력·사용 revision 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
 
-**수락 근거:** §25 「Pair Review 반영 최종 결정표」 · §26 「Final Contract 한 문장 정의」. 헤더가 `Final`까지만 적혀 있어 PM이 `Accepted`를 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 정철원 이견 시 되돌린다
+**Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4; 2026-09-06 Owner 회신에서 기존 계약 수락 재확인)
+
+**수락 근거:** §25 「Pair Review 반영 최종 결정표」 · §26 「Final Contract 한 문장 정의」. Status의 종결 근거와 날짜는 위 Pair Review·짝 ADR을 따른다. 과거에는 PM이 `Accepted`를 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 정철원 이견 시 되돌린다
 
 **Architecture Contract:** v4 §5-1 ② (부분 — `SourceAsset`/`MediaStream` 스키마와 ③ `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset`은 본 계약 범위 밖, 미작성)
 
@@ -275,8 +277,8 @@ AssetSpan
     "end_sec":60.0
   },
 
-  "source_asset_ref":"asset_A",
-  "media_stream_ref":"stream_A_front",
+  "source_asset_ref":"sa_0001",
+  "media_stream_ref":"ms_0001",
 
   "source_range": {
     "start_sec":55.0,
@@ -381,8 +383,8 @@ resolve_span()
         "start_sec":50.0,
         "end_sec":60.0
       },
-      "source_asset_ref":"asset_A",
-      "media_stream_ref":"stream_A_front",
+      "source_asset_ref":"sa_0001",
+      "media_stream_ref":"ms_0001",
       "source_range": {
         "start_sec":50.0,
         "end_sec":60.0
@@ -397,7 +399,7 @@ resolve_span()
         "end_sec":120.0
       },
       "reason":"SOURCE_UNAVAILABLE",
-      "source_ref":"asset_B"
+      "source_ref":"sa_0002"
     }
   ]
 }
@@ -446,7 +448,7 @@ spans = []
     "end_sec":120.0
   },
   "reason":"SOURCE_UNAVAILABLE",
-  "source_ref":"asset_B"
+  "source_ref":"sa_0002"
 }
 ```
 
@@ -523,7 +525,7 @@ Search도 AssetSpan에 path를 넣지 않는 대신 `AnalysisSource`가 실제 P
 예:
 
 ```
-asset_A offset 0초
+sa_0001 offset 0초
 ↔
 2026-08-23 20:51:17+09:00
 ```
@@ -912,17 +914,17 @@ SpanResolution
 
     "source_placements": [
       {
-        "source_asset_ref":"asset_A",
+        "source_asset_ref":"sa_0001",
         "timeline_start_sec":0.0,
         "timeline_end_sec":60.0,
-        "media_stream_refs": ["stream_A_front","stream_A_rear"
+        "media_stream_refs": ["ms_0001","ms_0002"
         ]
       },
       {
-        "source_asset_ref":"asset_B",
+        "source_asset_ref":"sa_0002",
         "timeline_start_sec":60.0,
         "timeline_end_sec":120.0,
-        "media_stream_refs": ["stream_B_front","stream_B_rear"
+        "media_stream_refs": ["ms_0003","ms_0004"
         ]
       }
     ],
@@ -939,7 +941,7 @@ SpanResolution
       "value":"2026-08-23T20:51:17+09:00",
 
       "applies_to": {
-        "source_asset_ref":"asset_A",
+        "source_asset_ref":"sa_0001",
         "source_offset_sec":0.0
       },
 
@@ -958,7 +960,7 @@ SpanResolution
 
   "time_source_checks": [
     {
-      "source_asset_ref":"asset_A",
+      "source_asset_ref":"sa_0001",
       "source_kind":"FILE_METADATA",
       "source_detail":"container.creation_time",
       "status":"NOT_FOUND"
@@ -988,8 +990,8 @@ SpanResolution
           "start_sec":55.0,
           "end_sec":60.0
         },
-        "source_asset_ref":"asset_A",
-        "media_stream_ref":"stream_A_front",
+        "source_asset_ref":"sa_0001",
+        "media_stream_ref":"ms_0001",
         "source_range": {
           "start_sec":55.0,
           "end_sec":60.0
@@ -1001,8 +1003,8 @@ SpanResolution
           "start_sec":60.0,
           "end_sec":65.0
         },
-        "source_asset_ref":"asset_B",
-        "media_stream_ref":"stream_B_front",
+        "source_asset_ref":"sa_0002",
+        "media_stream_ref":"ms_0003",
         "source_range": {
           "start_sec":0.0,
           "end_sec":5.0

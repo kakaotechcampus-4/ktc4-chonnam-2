@@ -1,6 +1,9 @@
 # ADR — `JobExecution` Data Contract
 
-**Status:** Accepted
+**Status:** Accepted — 일부 판단은 후속 ADR로 정정
+
+> **현재 적용 범위:** `adr-consistency-followup-2026-09-06.md`가 무근거 종결·수락일·회신 의도·소비자 확인 및 통합 가능 결론을 정정한다. 아래 본문은 당시 결정 기록이며 현재 Pending을 닫는 근거가 아니다. 캐시 복원과 현재 규칙은 해당 계약 및 후속 ADR을 따른다.
+
 **Decider:** 김준영 (`common/runtime` 계약 Owner) — 구현 담당 정철원
 **Date:** 2026-09-05
 **Contract:** `../contract-job-execution.md`
@@ -34,7 +37,7 @@ PM이 새로 정한 것은 셋뿐이고 계약 §10에 모아 두었다 — `exe
 
 ## 4. `CaseView` 매핑
 
-계약 §7에 매핑표를 고정했다.
+당시 계약 §6에 매핑표를 적었다. 현재 매핑 원천은 `../contract-job-record-case-view.md` B절 §13이다.
 
 ```
 QUEUED        → PENDING

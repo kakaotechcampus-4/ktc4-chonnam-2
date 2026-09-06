@@ -2,6 +2,12 @@
 
 **Status:** `Final — Accepted`
 
+> **통합 Pending B09:** Candidate/Run에서 사용 timeline revision을 추적하는 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+
+**Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4)
+
+**Related ADR:** `adr/adr-analysis-run-candidate-event.md`
+
 **Architecture Contract:** v4 §5-1 ⑤
 
 **Contract:** `AnalysisRun + CandidateEvent`
@@ -241,7 +247,7 @@
 
 `SUCCEEDED + candidates=[]`는 오류가 아니다. 이는 정상 탐색을 완료했지만 보존할 Candidate를 찾지 못했다는 뜻이다.
 
-`QUEUED`, `RUNNING`, `STALE`은 이 Contract가 아니라 common/runtime의 `JobRecord` 책임이다.
+`QUEUED`, `RUNNING`, `STALE`은 이 Contract가 아니라 common/runtime의 `JobExecution` 책임이다.
 
 ---
 

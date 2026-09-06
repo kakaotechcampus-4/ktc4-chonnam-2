@@ -245,19 +245,13 @@ AND ReportPackage exists
 
 `BLOCK / UNKNOWN`, Package 생성 실패, 필수 asset 부재이면 `ReportPackage`가 존재하지 않으므로 `PACKAGE_READY`가 성립하지 않는다.
 
-## 5.2-1 `CaseView`로의 projection 규칙 (2026-09-06)
+## 5.2-1 `CaseView`로의 projection — 제안/확인 대기 (B02)
 
-케이스 하나에 `RequirementReport`가 **둘** 존재한다(`scope=EVIDENCE` · `scope=FINAL_PACKAGE`). `CaseView.requirements`는 단일 객체이므로 **어느 쪽을 실었는지 `scope`로 밝힌다.**
+기존 PM 확정(R-7)을 철회한다. `CaseView`는 case 소유이며 현재 basis 선택·동일 scope 이력 선택·세 gate 표시·nullable은 case/evidence/web 합의가 필요하다. 이 절을 PM 소유 파일에 둔 것만으로 소비 계약을 확정하지 않는다.
 
-```
-FINAL_PACKAGE scope report가 존재하면  → 그것을 싣는다 (scope=FINAL_PACKAGE)
-없으면                                → EVIDENCE scope를 싣는다 (scope=EVIDENCE)
-둘 다 없으면                           → requirements = null
-```
+**검토 대상인 기존 제안 (실행 규칙으로 확정되지 않음):** FINAL_PACKAGE report가 존재하면 우선하고, 없으면 EVIDENCE report, 둘 다 없으면 null을 싣는다. 이 제안은 과거 basis의 report를 선택하거나 EVIDENCE gate를 가릴 수 있어 그대로 통합 기준으로 사용하지 않는다. 대체 선택 규칙은 이번 보정에서 정하지 않는다.
 
-`CaseView.requirements.readiness`는 그 report의 `overall`을 그대로 옮긴 값이며, **`case`도 `web`도 `overall`을 재계산하지 않는다**(§4·§불변조건 11).
-
-`stage=READY`는 `PACKAGE_READY` 파생 gate이므로 그때 `scope`는 항상 `FINAL_PACKAGE`다. 상세는 `contract-job-record-case-view.md` B절 §7·§10.
+§5.1·§5.2의 evidence/package gate 정의와 overall 값 공간은 유지한다. CaseView에 scope 필드를 둘지와 표시 방식은 Pending이다. 후속 기록: `adr/adr-consistency-followup-2026-09-06.md` §3 B02.
 
 ## 5.3 `USER_REVIEWED`
 

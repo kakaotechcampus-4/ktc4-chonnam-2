@@ -2,6 +2,10 @@
 
 **Status:** `Final — Accepted`
 
+**Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4)
+
+**Related ADR:** `adr/adr-visual-evidence.md`
+
 **Architecture Contract:** v4 §5-1 ⑥
 
 **Contract:** `VisualEvidence`

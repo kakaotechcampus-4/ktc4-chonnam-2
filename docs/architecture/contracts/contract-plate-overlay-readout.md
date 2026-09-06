@@ -2,6 +2,8 @@
 
 **Status:** `Final — Accepted`
 
+> **통합 Pending B03/B05:** 판독 결과의 run 연결 schema와 사용량 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+
 **Accepted:** `2026-09-06`
 
 **수락 근거:** 전환 조건이 둘 다 해소됐다. ① `frame_ref` 형식 확정 — 정철원(`recording` Owner) CALL-4 회신으로 `fr_<opaque-id>` opaque 형식이 확정됐고 아래 §「`frame_ref` 형식」에 반영했다. ② Owner 수락 — 신유민 「`contract-plate-overlay-readout.md`의 기존 내용은 Canonical Contract v1 승격에 동의합니다」(CALL-6 회신, 2026-09-06). 근거는 `adr/adr-consistency-2026-09.md` §6 R-4·R-5
@@ -62,8 +64,8 @@
 
 | # | Contract | Producer | Consumer | 역할 | 이번 문서에서 작성 여부 |
 | --- | --- | --- | --- | --- | --- |
-| ⑥-A | `PlateReadout` | `readout` | `evidence`, `eval` | 번호판 관찰값, 대상 차량 association 근거, 프레임별 OCR, consensus, abstain 근거 전달 | 작성 |
-| ⑥-B | `OverlayTimeReadout` | `readout` | `evidence`, `eval` | 화면 Timestamp OCR 관찰값과 검증 결과 전달 | 작성 |
+| A | `PlateReadout` | `readout` | `case` 경유 `evidence` · `eval` | 번호판 관찰값, 대상 차량 association 근거, 프레임별 OCR, consensus, abstain 근거 전달 | 작성 |
+| B | `OverlayTimeReadout` | `readout` | `case` 경유 `evidence` · `eval` | 화면 Timestamp OCR 관찰값과 검증 결과 전달 | 작성 |
 
 ---
 
@@ -77,13 +79,9 @@
 6. `target_hint`는 optional이다. 단, 최종 `PlateReadout`에는 readout이 실제로 어떤 대상 차량을 association했는지와 그 근거가 남아야 한다.
 7. 초기 v1에서는 `evidence`와 `eval` 모두 충분한 관찰 정보를 받을 수 있게 한다. 이후 payload/storage/운영 비용을 측정한 뒤 consumer별 projection 또는 요약 범위를 조정할 수 있다.
 
-## `frame_ref` 형식 (2026-09-06 확정)
+## `frame_ref` 형식 — 현재 작업 규약 참조
 
-`frame_ref`는 **`fr_<opaque-id>`** 형태의 opaque identifier다. 형식과 발급은 `recording`이 소유한다(정철원, CALL-4 회신).
-
-**위치 정보를 ID에 인코딩하지 않는다.** `fr_<media_stream_id>@<offset_ms>` 같은 형태는 정식 형식으로 쓰지 않으며, `media_stream_ref`와 source offset은 `recording`의 `FrameRef` 계약 필드로 별도 추적한다. `readout`은 ref를 만들지 않고 받은 것을 그대로 보존한다.
-
-같은 규칙이 `crop_ref`·`incident_clip_ref`·`span_ref`에도 적용된다 — 전부 opaque이며 `recording` 계약(`contract-source-asset-media-stream.md` · `contract-analysis-source-derived.md`, 정철원 작성 예정)이 형식을 소유한다.
+ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. 정식 FrameRef/자산 필드 계약은 recording 작성 대기다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다. 아래 예시 ID 정리는 결과-run 접합(B03/B05)의 종결을 뜻하지 않는다.
 
 ## `ReadoutRun`과의 연결
 
@@ -131,7 +129,7 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
   "case_id": "case_001",
   "candidate_id": "candidate_001",
   "input_ref": {
-    "incident_clip_ref": "incident_clip_001",
+    "incident_clip_ref": "clip_0001",
     "span_ref": "span_001",
     "source_profile": "readout-native"
   },
@@ -264,7 +262,7 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
   "case_id": "case_001",
   "candidate_id": "candidate_001",
   "input_ref": {
-    "incident_clip_ref": "incident_clip_001",
+    "incident_clip_ref": "clip_0001",
     "span_ref": "span_001",
     "source_profile": "readout-native"
   },

@@ -4,14 +4,14 @@
 
 **Accepted:** `2026-09-05`
 
-**수락 근거:** `common/runtime`은 PM 단독 소유다. 계약의 뼈대는 v4 §4-모듈2 ⑥·§4-모듈7 ⑤와 `AnalysisRun` 계약(L36·L119·L187-194)이 이미 고정했고, PM이 새로 정한 4건(§9)은 모두 **소비자를 위해 추가한 필드**다(`case_id`는 사건 단위 원가, `latency_ms`는 eval 분모). 소비자 이견이 오면 개정 ADR로 처리한다
+**수락 근거:** PM의 common/runtime Owner 결정이다. 기존 근거와 PM 추가 결정은 §9에서 구분한다. 소비자 수락·무이견은 확인 대기이며, ReadoutRun 접합(B05)은 이번 보정에서 확정하지 않는다.
 **Architecture Contract:** v4 §5-1 ⑫ · §4-모듈2 ⑥ · §4-모듈7 ⑤
 **Contract Version:** `usage-record/v1`
 **Producer / Owner:** `common/runtime` — 김준영
 **Consumers:** `case` — 유소연 (예산 소진) · `eval` — 김대원 (비용 분모 집계) · `search` — 서어진 (`AnalysisRun.usage_refs[]` 생성 시점 연결)
 **Related ADR:** `adr/adr-usage-record.md` · 작성 경위 `adr/adr-consistency-2026-09.md` C1-8
 
-> **이 문서가 왜 지금 생겼나.** v4 §5-1 ⑫에 있고 `AnalysisRun` 계약이 `usage_refs[]`로 참조하며 「상세 usage ledger의 authoritative source는 `UsageRecord`」라고 못박았는데(계약 L36·L327), 그 정의가 어디에도 없었다. PM이 v4와 `AnalysisRun` 계약이 이미 고정한 것만 모아 작성했다. 새로 정한 것은 §9, 정하지 않은 것은 §10이다.
+> **이 문서가 왜 지금 생겼나.** v4 §5-1 ⑫에 있고 `AnalysisRun` 계약이 `usage_refs[]`로 참조하며 「상세 usage ledger의 authoritative source는 `UsageRecord`」라고 못박았는데(계약 L36·L327), 그 정의가 어디에도 없었다. PM이 v4·AnalysisRun의 기존 결정과 추가 원장 설계를 모아 작성했다. 새로 정한 것은 §9, 정하지 않은 것은 §10이다.
 
 ---
 
@@ -19,7 +19,7 @@
 
 외부 유료 호출 **1건**의 사용량과 그 시점의 가격 맥락을 기록한다. 「이 사건 처리에 얼마 들었나」와 「지난달 실행을 지금 다시 계산하면 얼마인가」를 **둘 다** 답할 수 있어야 한다.
 
-v4 §4-모듈2 ⑥의 요구가 이 계약의 전부다.
+v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. 구체 원장 설계에는 PM 추가 결정도 있다(§9).
 
 > `AnalysisRun`은 과거 실행을 나중에도 비교할 수 있도록 **정규화된 사용량 + 실행 당시 pricing context를 추적할 수 있어야 한다.**
 
@@ -160,6 +160,8 @@ v4 §4-모듈2 ⑥의 요구가 이 계약의 전부다.
 
 ## 9. PM이 새로 정한 것 (소비자 통보 대상)
 
+아래 네 행은 추가 필드 목록의 일부다. 호출 1건당 row, run_ref 대상 제한, token 합계·객체 단위 null, pricing_id를 통한 별도 가격표 관리, append-only 원장 및 raw payload 제외의 구체 규칙도 §3~§8에서 정했다. **§9만 보거나 모든 값이 상위 문서에서 유일하게 도출됐다고 가정하지 않는다.** 소비자 확인 범위는 §3~§10 전체이며 실제 통보·수락 원문은 확인 대기다. §8의 삭제 금지와 §10의 purge_case·보관 정책 미결 사이의 관계도 확인 대기다.
+
 | # | 항목 | PM 결정 | 왜 |
 | --- | --- | --- | --- |
 | 9-1 | `execution_ref` | `JobExecution.execution_id`를 참조 | `JobExecution.usage_refs[]`와 양방향이 된다. 실행 1회분의 총 비용을 세려면 필요하다 |
@@ -168,6 +170,8 @@ v4 §4-모듈2 ⑥의 요구가 이 계약의 전부다.
 | 9-4 | `latency_ms` | 호출 왕복 시간을 usage row에 둔다 | v4 §4-모듈7 ⑤의 `latency_per_source_video_hour`가 이 값 없이는 안 나온다. `JobExecution`의 시각 3개는 Job 단위라 호출 단위 latency를 못 준다 |
 
 ## 10. 미결 — 이 계약에서 확정하지 않는다
+
+- **B05 — ReadoutRun 연결:** §5의 AnalysisRun 전용 run_ref와 readout의 usage_refs 연결은 common/runtime·readout·eval 합의 대기다. §7 OCR 예시의 null을 ReadoutRun 연결 정책으로 사용하지 않는다.
 
 - **통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).
 - **가격표(`pricing_id` → 단가) 저장 위치와 개정 절차** — `common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.

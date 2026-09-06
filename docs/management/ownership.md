@@ -250,7 +250,7 @@ v4 §4-모듈1 · §2 원칙 3·4(Source/Derived, 파일≠stream) · §3-3 · �
 - `SourceAsset ↔ MediaStream` 스키마 · `frame_ref` 형식 · stream role 표현(§11-1)
 - 샘플 폴더 하나로 도는 테스트 (시간축 정확도 / 경계 이어붙이기 / 원본 체크섬)
 - 업로드·처리 전략은 **미결 유지**(v4 A6) — 계약 뒤에 숨긴다
-- `JobExecution` 구현(queue row · lease · heartbeat · retry) — **계약 확정 후, `resolve_span` 목 응답을 낸 다음.** 스키마와 status 5값은 김준영이 준다
+- `JobExecution` 구현(queue row · lease · heartbeat · retry) — 계약 확정 후 착수. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 스키마와 status 5값은 김준영이 준다
 
 ### ⑥ 누구와 붙는가
 - **김준영과 상시** — 업로드·대용량·저장·보관은 운영 이슈라 PM의 관심 영역과 겹친다
@@ -327,7 +327,7 @@ AI 모델·프롬프트·OCR 라이브러리 / 영상 코덱·ffmpeg / 화면 �
 | --- | --- | --- | --- |
 | `search` | **최상** | **중** | **⚠ 부담 대비 가장 빡빡하다** → 아래 완충책 |
 | `case` | 중상 (통합 부담 최대) | 상 | ○ |
-| `recording` | 중상 (초반 집중) | 상 | ○ — `JobExecution` 구현이 추가됐다. **`resolve_span` 목 응답보다 뒤로 둔다** |
+| `recording` | 중상 (초반 집중) | 상 | ○ — `JobExecution` 구현이 추가됐다. **[제안/확인 대기] `resolve_span` 이후 착수 — 정철원 확인 전** |
 | `readout` | 중상 | 중 (중반 집중) | ○ — 초반엔 `web` 골격이라 시기가 갈린다 |
 | `eval` | 상 (초반 집중) | 중 (초반 집중) | ○ |
 | `evidence` | 중 | 중 일부 (PM 업무와 분할) | ○ — 순수 함수라 시간 대비 산출이 좋다 |
@@ -432,6 +432,8 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
   ↓
 [web]  증거 검토 카드 → 신고 꾸러미 → handoff 링크
 ```
+
+> **현재 통합 상태 (감사 후속):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 남은 접합·담당 경계는 `../architecture/contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5 참조.
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 

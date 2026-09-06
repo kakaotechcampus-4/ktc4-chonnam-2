@@ -28,8 +28,9 @@
 
 | 날짜 | 바뀐 곳 | 내용 | 근거 |
 | --- | --- | --- | --- |
-| 2026-09-05 | §5-1 ⑫ · §4-모듈5 ④⑤ · §11-4 · §12 RT8 · §5-3 | Job Intent / Job Execution 분해 확정을 반영. `JobRecord`(case) / `JobExecution`(common/runtime) / `UsageRecord`로 ⑫를 다시 씀. RT8 종결. recording 보조 구조 3개 등재 | `architecture/contracts/adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` |
-| 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ | 담당자 회신으로 계약 공백 2건이 닫혀 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층은 opaque ref 규칙 확정 + 계약 2건 작성 예정(정철원) | `adr/adr-consistency-2026-09.md` §6 · `adr/adr-readout-run.md` · `adr/adr-correction-record.md` |
+| 2026-09-05 | §5-1 ⑫ · §4-모듈5 ④⑤ · §11-4 · §12 RT8 · §5-3 | Job Intent / Job Execution 분해 확정을 반영. `JobRecord`(case) / `JobExecution`(common/runtime) / `UsageRecord`로 ⑫를 다시 씀. RT8 종결. recording 보조 구조 3개 등재 | `contracts/adr/adr-job-record-case-view.md` · `contracts/adr/adr-consistency-2026-09.md` |
+| 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ · §11-4 | 담당자 회신으로 별도 계약 2건을 작성하고 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층의 opaque ref 방향과 계약 2건 작성 예정 기록(정철원). §11-4 USER_REVIEWED 소유 확인 반영. 후속 감사에서 접합 완결은 Pending으로 분리 | `contracts/adr/adr-consistency-2026-09.md` §6 · `contracts/adr/adr-readout-run.md` · `contracts/adr/adr-correction-record.md` |
+| 2026-09-06 (감사 후속) | §5-1 상태 안내 · §5-3 · §11-4 안내 | 미작성 자산이 통합을 막지 않는다는 단정 철회. ref는 최소 schema 이전 작업 규약으로 한정. CaseView/recording 접합은 Pending 유지 | `contracts/adr/adr-consistency-followup-2026-09-06.md` |
 
 ---
 
@@ -1049,7 +1050,7 @@ Eval clip suite:
 
 > **중요:** web은 ①~⑩을 직접 읽지 않는다. case가 필요한 값을 `CaseView`로 projection한다.
 
-> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **PM이 임의로 행을 늘리지 않고 Owner 확인을 받은 뒤 등재했다** — `ReadoutRun`은 신유민(`readout`)이 별도 계약으로, `CorrectionRecord`는 유소연(`case`)이 별도 계약으로 확정했다. 근거는 `architecture/contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
+> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 Pending이며 `CorrectionRecord`는 Consumer Review 대기 Draft다. 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
 
 ## 5-2. `Observation<T>`
 
@@ -1095,11 +1096,11 @@ Data Contract 단계에서 보조 구조 3개가 추가됐다 — **`TimeSourceC
 
 > **작성 예정 (2026-09-06 확정).** ② 중 `SourceAsset`/`MediaStream`과 ③ 전체는 `recording` Owner(정철원)가 계약 2건으로 작성한다 — `contract-source-asset-media-stream.md`(`SourceAsset`·`MediaStream`·`FrameRef`) · `contract-analysis-source-derived.md`(`AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset`).
 >
-> **ref 형식은 opaque identifier로 통일한다** — `sa_` / `ms_` / `fr_` / `as_` / `rc_` / `clip_` / `da_` 접두어 + opaque id. **위치나 role을 ID에 인코딩하지 않는다**(`ms_<source_asset_id>_<role>` · `fr_<media_stream_id>@<offset_ms>` 같은 형태를 쓰지 않는다). `source_asset_ref`와 `role`은 `MediaStream`의 별도 필드로, frame 위치는 `FrameRef`의 `media_stream_ref + source offset`으로 보존한다. video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role도 분리한다.
+> **최소 schema 제공 전 ref 작업 규약** — Owner 회신의 opaque 제안 방향을 기존 목 예시에 적용한다. 정식 필드 계약이나 향후 불변 형식으로 확대 해석하지 않는다.  `sa_` / `ms_` / `fr_` / `as_` / `rc_` / `clip_` / `da_` 접두어 + opaque id. **위치나 role을 ID에 인코딩하지 않는다**(`ms_<source_asset_id>_<role>` · `fr_<media_stream_id>@<offset_ms>` 같은 형태를 쓰지 않는다). `source_asset_ref`와 `role`은 `MediaStream`의 별도 필드로, frame 위치는 `FrameRef`의 `media_stream_ref + source offset`으로 보존한다. video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role도 분리한다.
 >
 > 이 계약들은 **ref/provenance/lifecycle 의미까지만** 고정한다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4에서도 미결이므로 임의 확정하지 않는다(A6).
 >
-> **이 공백은 목데이터를 막지 않는다.** 다른 계약들이 이 타입들을 opaque `*_ref`로만 참조하고, 소비자가 실제로 읽는 표면(`RecordingTimeline`·`AssetSpan`·`SpanResolution`)은 이미 Final이다. 목데이터용 ref 규약은 `architecture/mock-pack-v1-refs.md`에 있다 — **계약이 아니며 정철원 계약이 나오면 폐기한다.**
+> **통합 Pending B06~B09.** opaque ref만으로 실제 evidence가 소비할 자산 metadata나 span/시간/revision 접합이 완성되지는 않는다. 개별 fixture는 만들 수 있으나 현재 계약만으로 전체 목 통합 가능을 보증하지 않는다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5를 따른다.
 
 ## 5-4. `AnalysisScope`
 
@@ -1742,6 +1743,8 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 - [x]  frame refs를 web에 어느 범위까지 projection할지 제안
 
 ## 11-4. `case` — 유소연
+
+> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection 및 전체 통합은 별도로 Pending이다(`contracts/adr/adr-consistency-followup-2026-09-06.md` §3).
 
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
 - [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7

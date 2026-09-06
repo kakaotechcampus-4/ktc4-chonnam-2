@@ -1,6 +1,9 @@
 # ADR-C1: 계약 정합성 보정 — 2026-09
 
-**Status:** Accepted
+**Status:** Accepted — 일부 판단은 후속 ADR로 정정
+
+> **현재 적용 범위:** `adr-consistency-followup-2026-09-06.md`가 무근거 종결·수락일·회신 의도·소비자 확인 및 통합 가능 결론을 정정한다. 아래 본문은 당시 결정 기록이며 현재 Pending을 닫는 근거가 아니다. 캐시 복원과 현재 규칙은 해당 계약 및 후속 ADR을 따른다.
+
 **Decider:** 김준영 (PM · 문서 일관성 소유자 — `management/cross-cutting-decisions.md` B-4)
 **Date:** 2026-09-05
 **Scope:** `docs/architecture/contracts/` 12건 · `docs/architecture/module-architecture.md` · `docs/management/ownership.md`
@@ -194,9 +197,11 @@ PM이 닫지 않았다. 상세는 각 호출 카드에 있다.
 > | (e) `case` 소유 계약 미결 4건 | ✅ 종결 — §6 R-2·R-3 (유소연) |
 > | (f) `ReadoutRun` 계약 없음 | ✅ 종결 — §6 R-4 (신유민) |
 >
-> **새로 나온 것이 하나 있었고 같은 날 닫았다** — `CaseView.requirements`가 어느 scope의 `RequirementReport`를 projection하는지 미지정. R-2의 (1)(2)를 함께 반영하면서 드러났다. **WARN으로 재판정하고 PM이 확정했다(§6 R-7).** 호출 카드는 발송하지 않았다.
+> **새로 나온 것이 하나 있었고 같은 날 닫았다** — `CaseView.requirements`가 어느 scope의 `RequirementReport`를 projection하는지 미지정. R-2의 (1)(2)를 함께 반영하면서 드러났다. ~~WARN으로 재판정하고 PM이 확정했다(§6 R-7).~~ 호출 카드는 발송하지 않았다.
 >
-> **결과: 정합성 검수가 연 항목 중 미해결은 0건이다.** 남은 것은 (d)의 recording 계약 2건이며, 그건 충돌이 아니라 **아직 작성되지 않은 산출물**이고 Owner가 작성을 맡았다.
+> ~~**결과: 정합성 검수가 연 항목 중 미해결은 0건이다.**~~
+>
+> **위 두 줄은 철회됐다 (2026-09-06 감사 후속).** R-7의 PM 확정은 소유자 권한 밖이었고 현재 **B02 — BLOCK/Pending**이다. 「미해결 0건」도 성립하지 않는다 — 외부 감사가 **BLOCK 8건**(B01·B02·B03·B05·B06~B09)을 확인했다. 위 표의 「종결」 표기도 **결정이 내려졌다는 뜻이고 접합이 완료됐다는 뜻이 아니다.** 현재 Pending 원장은 `adr-consistency-followup-2026-09-06.md` §3이 단독으로 갖는다.
 
 **(a) `CaseView`가 출처와 정보 상태를 못 내려준다 — BLOCK.** `plate_display`/`event_time_display`/`location_display`가 `value`+`needs_review` 두 필드뿐이다. 출처 필드가 없어 `product-spec.md` §7 「출처를 표시한다」가 화면에서 깨지고, `needs_review` boolean으로는 `core-user-flow.md` §3-1의 정보 상태 5종(`AI 추정`·`출처 확인됨`·`사용자 확인됨`·`확인 필요`·`알 수 없음`)이 나오지 않는다. `user_edited`가 record 단위라 필드별 「사용자 확인됨」도 만들 수 없다. → 유소연(`CaseView` 소유) · 신유민 · 김준영
 
@@ -322,7 +327,9 @@ CALL-1·CALL-5 회신과 함께 `Final Data Contract v1.1 — 부록-A JobRecord
 
 되돌리는 비용도 낮다 — 필드 4개를 빼는 것뿐이고 다른 계약이 참조하지 않는다. 유소연이 삭제 의도였다고 하면 그때 뺀다.
 
-### R-7. `CaseView.requirements`의 scope — PM 확정 (호출하지 않음)
+### R-7. `CaseView.requirements`의 scope — ~~PM 확정~~ **철회됨 (호출하지 않음)**
+
+> **이 항목의 확정은 철회됐다 (2026-09-06 감사 후속).** `CaseView`는 case 소유이며 PM이 단독으로 닫을 수 있는 항목이 아니었다. 현재 상태는 **B02 — BLOCK/Pending**이고 `requirements.scope`는 제안으로만 보존된다. 원장은 `adr-consistency-followup-2026-09-06.md` §2 W05·§3 B02. 아래 본문은 당시 판단 기록이며 현재 근거가 아니다.
 
 R-2의 (1)(2)를 함께 반영하면서 드러난 항목이다. **회신 내용이 아니라 회신을 반영해서 생긴 후속 항목**이므로 R-1~R-6과 성격이 다르다.
 

@@ -1,83 +1,33 @@
-# Mock Pack v1 — ref 규약
+# Mock Pack v1 — ref 예시 (계약 아님)
 
-> ## ⚠ 이 문서는 계약이 아니다
->
-> `recording` 자산 계층의 Data Contract 2건(`SourceAsset`·`MediaStream`·`FrameRef` / `AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset`)은 **정철원(`recording` Owner)이 작성 중**이다. 이 문서는 그 계약이 나오기 전에 **목데이터를 굴리기 위한 임시 규약**이며 다음을 지킨다.
->
-> 1. **`contracts/` 안에 두지 않는다.** 계약의 canonical 위치는 `architecture/contracts/`이고, 그 폴더에는 계약만 있어야 한다.
-> 2. **필드를 정의하지 않는다.** ref 문자열 형식만 다룬다. 어떤 타입에 어떤 필드가 있는지는 정철원 계약이 정한다.
-> 3. **정철원 계약이 나오면 이 문서는 폐기한다.** 그때 이 파일을 지우고 v4 §5-3의 포인터를 계약으로 바꾼다.
->
-> 목데이터를 만들다가 **ref가 아니라 필드가 필요해지면 채우지 말고 PM(김준영)에게 말한다.** 그건 계약이 필요하다는 신호다.
+> **정식 recording 계약 이전의 비규범 보조 자료다.** 필드·lookup·시간 변환 규칙을 정의하지 않는다. ref 작업 규약의 원천은 `module-architecture.md` §5-3이며 여기에는 규칙을 복제하지 않는다. 정식 계약 두 건이 나오면 이 문서를 폐기하고 포인터를 교체한다.
 
-**Status:** 임시 · 2026-09-06
-**Owner:** 김준영 (PM — 통합 보조 자료)
-**폐기 조건:** `contracts/contract-source-asset-media-stream.md` · `contracts/contract-analysis-source-derived.md` 등재
+**Status:** 임시 — 개별 fixture용, 전체 통합 가능 보증 아님 (2026-09-06 감사 후속)
+**Owner:** 김준영 (PM)
+**폐기 조건:** `contracts/contract-source-asset-media-stream.md` 및 `contracts/contract-analysis-source-derived.md` 제공
 
----
+## 1. 사용할 수 있는 범위
 
-## 1. 왜 이 문서로 충분한가
+이미 정의된 응답에서 opaque ID를 일관되게 연결하는 개별 fixture를 만들 때 참고한다. `RecordingTimeline`·`AssetSpan`·`SpanResolution`에 Final 헤더가 있다는 것만으로 소비자 접합이 검증되지는 않는다.
 
-**다른 계약들은 recording 자산을 opaque `*_ref` 문자열로만 참조한다.** 필드를 파고드는 계약이 없다.
+**B06~B09는 Pending이다.** SpanResolution의 요청 범위 완전성, 실제 evidence가 읽을 자산 metadata, 상대시각 입력, 사용 revision 연결이 남아 있다. 이 문서의 ID만으로 자산 크기·가시성·원본 무변형·ReportPackage gate를 계산할 수 없다. 필요한 필드가 없으면 임의 생성하지 않고 해당 Owner 계약을 기다린다.
 
-| ref | 참조하는 계약 |
-| --- | --- |
-| `source_asset_ref` | `contract-recording-timeline-asset-span.md` |
-| `media_stream_ref` | `contract-plate-overlay-readout.md` · `contract-recording-timeline-asset-span.md` |
-| `frame_ref` · `crop_ref` · `incident_clip_ref` · `span_ref` · `source_profile` | `contract-plate-overlay-readout.md` |
-| `derived_asset_ref` | `contract-requirement-report-package.md` |
+## 2. ID 예시
 
-그리고 소비자가 실제로 읽는 recording 표면은 **이미 Final이다** — `contract-recording-timeline-asset-span.md`가 `RecordingTimeline` · `AssetSpan` · **`SpanResolution`**(`resolve_span` 응답) · `TimeSourceCandidate` · `MissingRange` · File Boundary/Overlap 규칙을 갖고 있다.
+아래 값은 사람이 비교하기 위한 샘플이며 ID suffix에 파일·카메라·위치 의미를 배정하지 않는다. 형식과 해석 원칙은 v4 §5-3을 따른다.
 
-즉 목데이터에 필요한 것은 셋이고 셋 다 있다.
-
-1. **ref 형식** → 이 문서 (형식 자체는 정철원 확정)
-2. **`resolve_span` 응답** → `SpanResolution` (Final)
-3. **timeline / span** → `RecordingTimeline` · `AssetSpan` (Final)
-
-빠진 것은 `SourceAsset`/`MediaStream` 등의 **내부 필드**이고, 그건 `recording` 모듈이 자기 안에서 쓰는 값이라 목데이터 담당자가 손댈 일이 없다.
-
-## 2. ref 형식 — 정철원 확정 (2026-09-06)
-
-**형식 자체는 임시가 아니다.** `recording` Owner가 CALL-4 회신으로 확정했고, 계약이 나와도 이 형식은 그대로다(`contracts/adr/adr-consistency-2026-09.md` §6 R-5).
-
-```
-source_asset_ref    = "sa_<opaque-id>"
-media_stream_ref    = "ms_<opaque-id>"
-frame_ref           = "fr_<opaque-id>"
-analysis_source_ref = "as_<opaque-id>"
-remote_copy_ref     = "rc_<opaque-id>"
-incident_clip_ref   = "clip_<opaque-id>"
-derived_asset_ref   = "da_<opaque-id>"
+```text
+sa_0001, sa_0002
+ms_0001, ms_0002, ms_0003
+fr_a1b2c3
+as_0001, rc_0001, clip_0001, da_0001
 ```
 
-**위치나 role을 ID에 인코딩하지 않는다.** 아래는 **쓰지 않는다** — PM이 잠정안으로 제안했다가 `recording` Owner가 기각한 형태다.
+## 3. 미결과 제한적 실행
 
-```
-✗ ms_<source_asset_id>_<role>        Stream identity와 role을 결합한다
-✗ fr_<media_stream_id>@<offset_ms>   위치를 ID에 넣는다
-✗ "frame:a09@178.6"                  같은 이유
-```
+- `CaseView.candidates[].thumb_ref`의 자산 종류와 FrameRef/파생 자산 필드 계약은 recording·case 확인 대기다.
+- `source_profile`은 ref 목록에 넣지 않는다. 판독 계약의 라벨이며 자산 ID 타입이 아니다.
+- upload 방식·proxy profile 값·retention·provider별 delete 방식은 기존 미결을 유지한다.
+- 고정된 입력으로 개별 응답을 비교하는 작업과 `ownership.md` §7-④ 전체 E2E 통과는 구분한다. 실행 결과가 아직 없으므로 여기서 E2E PASS를 선언하지 않는다.
 
-- `source_asset_ref`와 `role`은 `MediaStream`의 **별도 필드**로 보존한다
-- frame 위치는 `FrameRef`의 **`media_stream_ref` + source offset**으로 추적한다
-- video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role은 **분리**한다
-
-## 3. 목데이터용 id 생성 규칙 (이 부분이 임시다)
-
-`<opaque-id>`는 계약상 **불투명**하므로 목에서는 아무 값이나 써도 된다. 다만 사람이 눈으로 추적할 수 있게 아래를 권장한다.
-
-```
-sa_0001, sa_0002 …        파일 순서
-ms_0001f, ms_0001r        sa_0001의 전방/후방 — 접미어는 사람 눈용이고 의미 없음
-fr_a1b2c3                 6자리 hex
-clip_0001, da_0001
-```
-
-**접미어에 의미를 부여하지 않는다.** 목 코드가 `ms_` 뒤 문자열을 파싱하면 계약 위반이고, 정철원 계약이 들어오는 순간 깨진다. 파싱이 필요하면 그건 필드로 받아야 할 값이다(§ 상단 경고 3번).
-
-## 4. 이 문서가 다루지 않는 것
-
-- 각 타입의 필드 목록 — **정철원 계약**
-- upload 방식 · proxy profile 값 · retention 일수 · provider별 `RemoteCopy` delete 방식 — v4에서도 **미결**이며 계약에서도 임의 확정하지 않기로 했다(v4 §5-3)
-- `CaseView.candidates[].thumb_ref`가 어느 자산의 ref인지(`fr_` / `da_`) — 계약 2건이 나온 뒤 확정한다
+현재 닫힌 항목·Pending 및 담당 경계는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §2~§5를 따른다.

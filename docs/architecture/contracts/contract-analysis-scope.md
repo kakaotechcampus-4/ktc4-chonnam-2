@@ -2,9 +2,11 @@
 
 **Status:** `Final — Accepted`
 
-**Accepted:** `2026-09-04`
+> **통합 Pending B08:** relative-only timeline을 ISO8601 time_ranges로 전달하는 접합은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
 
-**수락 근거:** 본문 머리말 「ADR-003 확정 내용을 반영한 최종 계약… 아래는 잠금(locked) 스키마」 · §5 「확정 Contract 스키마 (JSON, locked)」 · §11 Draft→Final 확정표. 헤더 표기만 누락돼 있어 PM이 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 유소연 이견 시 되돌린다
+**Accepted:** 확인 대기 — 최초 수락일과 2026-09-05 closure 보완일의 관계는 Owner 확인 필요
+
+**수락 근거:** 본문 머리말 「ADR-003 확정 내용을 반영한 최종 계약… 아래는 잠금(locked) 스키마」 · §5 「확정 Contract 스키마 (JSON, locked)」 · §11 Draft→Final 확정표. Status는 본문의 종결 근거를 옮겼다. 수락일을 같은 회차로 추정한 C1-13 판정은 철회했다(후속 ADR §2 B12). 과거 헤더는 PM이 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 유소연 이견 시 되돌린다
 
 **Architecture Contract:** v4 §5-1 ④
 
@@ -32,7 +34,7 @@ case가 사용자의 사건(case) 상태로부터 "무엇을, 언제 범위에�
 ### 2. Producer / Consumer
 
 - **Producer**: case (유소연)
-- **Consumer**: search (서어진), eval (김대원)
+- **Consumer**: search (서어진). eval (김대원)은 v4 §5-1의 fixture Producer다.
 
 ### 3. 책임 경계
 
@@ -52,7 +54,7 @@ case가 사용자의 사건(case) 상태로부터 "무엇을, 언제 범위에�
 **본 계약이 보장하지 않는 것**
 
 - `budget.max_cost_krw` / `max_latency_sec`의 제품 기본 숫자값 — 벤치마크에 따라 config로 조정하며 Data Contract의 필드 의미·validation과 분리한다.
-- budget 초과/부분 처리의 실행 결과 표현 — Contract④ `AnalysisRun.outcome/issues[]` 책임이다.
+- budget 초과/부분 처리의 실행 결과 표현 — `contract-analysis-run-candidate-event.md` §5의 `AnalysisRun.outcome/issues[]` 책임이다.
 - 복수 `time_ranges`를 eval에서 어떤 비율·시나리오로 테스트할지 — eval manifest/test plan 책임이다.
 
 ### 4. 조사에서 확인된 제약
@@ -110,7 +112,7 @@ json
 ### 9. 실패 / 부분성공 / UNKNOWN 예시
 
 - **입력 검증 실패**: time_ranges가 빈 배열이거나 target_event_types가 빈 배열인 경우 → case 측에서 요청 자체를 생성하지 않음 (본 계약 진입 전 케이스에서 차단, §10 불변조건 참고)
-- **budget 초과로 인한 부분 처리**: AnalysisScope 자체는 실행 결과를 담지 않으므로 부분성공/실패 표현은 본 계약 범위 밖. 해당 표현은 Contract④(AnalysisRun.outcome: SUCCEEDED/PARTIAL/FAILED)에서 다룸
+- **budget 초과로 인한 부분 처리**: AnalysisScope 자체는 실행 결과를 담지 않으므로 부분성공/실패 표현은 본 계약 범위 밖. 해당 표현은 `contract-analysis-run-candidate-event.md` §5(AnalysisRun.outcome: SUCCEEDED/PARTIAL/FAILED)에서 다룸
 
 ### 10. 불변조건
 
@@ -135,6 +137,6 @@ json
 
 - `budget` validation은 **non-null + 양수(`> 0`)**로 확정했다. 실제 제품 기본 숫자는 Search benchmark 결과에 따라 config에서 조정하며 계약 변경 사유가 아니다.
 - `target_event_types`는 v4 baseline 4종 enum으로 확정했다: `SIGNAL / CENTER_LINE_CROSSING / SOLID_LINE_LANE_CHANGE / MOTORCYCLE_HELMET_NON_USE`.
-- 다중 target의 eval 귀속은 `CandidateEvent.event_type_hint`에 의존하지 않는다. Contract④의 기존 결정대로 `event_type_hint`는 Recall-first Candidate 단계의 optional visual-event hint로 유지한다. Eval의 유형별 Recall은 Ground Truth의 event type과 Candidate span 매칭으로 귀속하며, hint가 있으면 진단/분석 보조값으로만 사용한다.
-- 복수 `time_ranges`는 Contract 차원에서 정식 허용한다. 구간별 처리·partial coverage는 Contract④ `AnalysisRun/issues[]`가 표현하며, eval manifest의 테스트 비율/시나리오는 Eval 계획으로 분리한다.
+- 다중 target의 eval 귀속은 `CandidateEvent.event_type_hint`에 의존하지 않는다. `contract-analysis-run-candidate-event.md`의 기존 결정대로 `event_type_hint`는 Recall-first Candidate 단계의 optional visual-event hint로 유지한다. Eval의 유형별 Recall은 Ground Truth의 event type과 Candidate span 매칭으로 귀속하며, hint가 있으면 진단/분석 보조값으로만 사용한다.
+- 복수 `time_ranges`는 Contract 차원에서 정식 허용한다. 구간별 처리·partial coverage는 `contract-analysis-run-candidate-event.md`의 `AnalysisRun/issues[]`가 표현하며, eval manifest의 테스트 비율/시나리오는 Eval 계획으로 분리한다.
 - `hint` 객체는 항상 존재하고 하위 두 필드는 null 가능하며, case는 PII sanitize 책임을 가진다.

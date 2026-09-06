@@ -47,7 +47,7 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 
 **Consumer가 기대할 수 있는 것**
 
-- `eval` — 실패를 `kind`별로 집계할 수 있고, run 단위 분모가 있으므로 `Abstention Recall` 비율이 계산된다
+- `eval` — 실패 집계의 run 단위 기록을 제공한다. Abstention Recall 계산에는 정답 라벨·분자 정의·결과 연결이 추가로 필요하며 소비자 확인 대기다.
 - `case` — 결과 없는 실패를 진행 상태로 표현할 수 있다
 
 **이 Contract가 보장하지 않는 것**
@@ -86,6 +86,8 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 
 ## 5. 결과 계약과의 연결
 
+> **Pending B03/B05:** 아래는 Owner가 요구한 추적 의미다. 실제 판독 결과 schema/예시의 run 연결 위치와 UsageRecord의 대상 타입은 미합의다. 새 필드나 매핑을 이번 보정에서 추가하지 않으며 전체 세트의 통합 완료로 보지 않는다.
+
 `PlateReadout` / `OverlayTimeReadout`은 **자신을 생성한 실행의 `run_id`를 보존한다.**
 
 - `ReadoutRun` 1건 : 결과 0~1건. `outcome=FAILED`이면 결과가 없을 수 있다
@@ -98,7 +100,7 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 
 **`outcome`** — `SUCCEEDED` · `PARTIAL` · `FAILED`. `AnalysisRun`과 같은 값 공간이다.
 
-**`failure.kind`** — **이 계약에 복제하지 않는다.** `modules/readout/decisions/failure-taxonomy.md`가 소유하며 현재 `PLATE_TARGET_ASSOCIATION` · `PLATE_DETECTION` · `PLATE_RECOGNITION` · `OVERLAY_VALIDATION` · `INFRA` 다섯이다. `contract-analysis-run-candidate-event.md`가 Search taxonomy를 같은 방식으로 포인터 위임했다.
+**`failure.kind`** — 값 집합과 확정 상태는 `../../modules/readout/decisions/failure-taxonomy.md`만 따른다. taxonomy는 현재 Owner 확정 전 초안이며 eval 확인도 대기다.
 
 ## 7. 정상 예시
 
