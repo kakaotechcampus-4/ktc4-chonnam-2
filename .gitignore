@@ -105,3 +105,13 @@ docs/management/submissions/
 # 목록은 eval/manifests/ 가 말한다.
 eval/datasets/*
 !eval/datasets/README.md
+
+# manifests/ 는 커밋 대상이지만, 파생 전의 원본 아카이브·대용량 라벨은 제외한다.
+# 여기서 유도한 GT JSON만 커밋한다 (eval/README 「manifests/ → 커밋」).
+eval/manifests/**/*.zip
+eval/manifests/02.라벨링데이터/
+eval/manifests/**/*.private.json
+
+# events_draft.json 은 events.json 을 만들기 위한 중간 작업 파일이다.
+# 검토 사실은 gt/*.json 의 meta.coverage 가 소유한다.
+eval/manifests/**/events_draft.json
