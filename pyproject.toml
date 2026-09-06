@@ -1,0 +1,15 @@
+[project]
+name = "daesingo-eval"
+version = "0.1.0"
+description = "대신고 오프라인 채점 하니스. 제품 런타임이 아니다."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["eval*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
