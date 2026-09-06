@@ -5,6 +5,8 @@ GT 를 스스로 읽는다 — runner 가 넘겨주지 않는다.
 """
 from eval import manifests_io
 
+IMPL_VERSION = "v1"
+
 
 def run(scope):
     gt = manifests_io.load_gt(scope["manifest"], scope["stage"])

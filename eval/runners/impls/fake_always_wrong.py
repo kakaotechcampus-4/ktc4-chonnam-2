@@ -6,6 +6,8 @@
 from eval import manifests_io
 from eval.enums import VIOLATION_TYPES
 
+IMPL_VERSION = "v1"
+
 
 def _other_type(t):
     for name in VIOLATION_TYPES:

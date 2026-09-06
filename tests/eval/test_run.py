@@ -1,6 +1,7 @@
 import json
 import os
 from eval import run, paths
+from eval.runners import registry
 
 
 def test_envelope_has_meta_raw_normalized():
@@ -17,6 +18,15 @@ def test_envelope_raw_is_preserved_not_replaced_by_normalized():
     env = run.build_envelope("fake:always_correct", "b_youtube", "candidate", "run_test_002")
     assert env["raw"] is not env["normalized"]
     assert len(env["raw"]) == 55
+
+
+def test_envelope_raw_matches_impl_output_exactly():
+    # 얕은 길이 비교만으로는 raw 의 중첩 dict 를 손대는 회귀를 못 잡는다 —
+    # impl 을 직접 호출한 결과와 깊이 비교해서 raw 가 진짜 원문인지 확인한다.
+    scope = {"manifest": "b_youtube", "stage": "candidate"}
+    direct = registry.get("fake:always_correct")(scope)
+    env = run.build_envelope("fake:always_correct", "b_youtube", "candidate", "run_test_004")
+    assert env["raw"] == direct
 
 
 def test_main_writes_prediction_file(tmp_path, monkeypatch):

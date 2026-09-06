@@ -39,11 +39,15 @@ def build_envelope(impl_name, manifest, stage, run_id):
     raw = impl(scope)
     normalized = _NORMALIZERS[stage](raw)
     clips_meta = manifests_io.load_clips(manifest)["meta"]
+    # 버전은 impl 코드와 함께 움직여야 하므로 runner 가 값을 정하지 않고
+    # impl 이 속한 모듈에서 읽는다 (없으면 "v1"으로 취급한다).
+    impl_module = sys.modules[impl.__module__]
+    impl_version = getattr(impl_module, "IMPL_VERSION", "v1")
     return {
         "meta": {
             "run_id": run_id,
             "impl": impl_name,
-            "impl_version": "v1",
+            "impl_version": impl_version,
             "stage": stage,
             "manifest": manifest,
             "manifest_version": clips_meta.get("manifest_version"),
