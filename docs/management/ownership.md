@@ -21,7 +21,7 @@
 | **김대원** | **`eval`** 성능 채점기 | `web` 영상 화면 | ●●● / ●● / ●●(FE) |
 | **신유민** | **`readout`** 화면 값 판독 | **`web`** 화면 Owner | ●(web 골격) / ●●● / ●●●(web) |
 | **유소연** | **`case`** 진행 관리·오케스트레이션 | E2E 통합 | ●● / ●●● / ●●● |
-| **정철원** | **`recording`** 블랙박스 파일 계층 | — | ●●● / ●●● / ●● |
+| **정철원** | **`recording`** 블랙박스 파일 계층 | `common/runtime` `JobExecution` 구현 | ●●● / ●●● / ●● |
 | **김준영** (PM) | **`evidence`** 증거 확정·신고 준비 + **공통 기반/운영** | 전반 검토·조율 | ●●● / ●● / ●● |
 
 ```text
@@ -230,7 +230,7 @@ v4 §4-모듈5 · §2 원칙 6 · §3-6(신고 준비 3상태) · §5 전체(지
 ## 정철원 — `recording` (블랙박스 파일 계층)
 
 ### ① 소유
-원본 참조(`ExternalSourceRef`, 불변) · 파일과 stream(`SourceAsset`/`MediaStream`) · 시간축과 기준점 · 파일이 주는 시각 후보들 · 파일 경계 해결(`resolve_span`) · GPS 관찰값 · 분석용 사본(`AnalysisSource`) · 외부에 올라간 사본의 참조와 만료(`RemoteCopy` registry) · Incident Clip · Report Video 등 파생 자산 · **보관기간과 일괄 삭제**
+원본 참조(`ExternalSourceRef`, 불변) · 파일과 stream(`SourceAsset`/`MediaStream`) · 시간축과 기준점 · 파일이 주는 시각 후보들 · 파일 경계 해결(`resolve_span`) · GPS 관찰값 · 분석용 사본(`AnalysisSource`) · 외부에 올라간 사본의 참조와 만료(`RemoteCopy` registry) · Incident Clip · Report Video 등 파생 자산 · **보관기간과 일괄 삭제** · `common/runtime`의 `JobExecution` **구현**(계약은 김준영 소유 — 2026-09-04 백엔드 회의)
 
 ### ② 이 일에 필요한 특성
 - **이 프로젝트에서 AI와 완전히 무관한 유일하게 큰 덩어리다.** 초반에 아무도 기다리지 않고 혼자 끝까지 갈 수 있다.
@@ -250,6 +250,7 @@ v4 §4-모듈1 · §2 원칙 3·4(Source/Derived, 파일≠stream) · §3-3 · �
 - `SourceAsset ↔ MediaStream` 스키마 · `frame_ref` 형식 · stream role 표현(§11-1)
 - 샘플 폴더 하나로 도는 테스트 (시간축 정확도 / 경계 이어붙이기 / 원본 체크섬)
 - 업로드·처리 전략은 **미결 유지**(v4 A6) — 계약 뒤에 숨긴다
+- `JobExecution` 구현(queue row · lease · heartbeat · retry) — 계약 확정 후 착수. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 스키마와 status 5값은 김준영이 준다
 
 ### ⑥ 누구와 붙는가
 - **김준영과 상시** — 업로드·대용량·저장·보관은 운영 이슈라 PM의 관심 영역과 겹친다
@@ -269,7 +270,7 @@ v4 §4-모듈1 · §2 원칙 3·4(Source/Derived, 파일≠stream) · §3-3 · �
 
 ### ① 소유
 **`evidence`:** 확정된 값(시스템에서 유일하게 도장 찍힌 값) · **발생시각 최종 판정**(`TimeResolution`) · 부족분 요청(`EvidenceNeeds`) · 요건 검사(`RequirementReport` PASS/WARN/BLOCK) · 신고 규정 데이터 표 · 신고문 템플릿 · `ReportPackage` · handoff · `EVIDENCE_SUFFICIENT`/`PACKAGE_READY` 판정
-**공통 기반(`common/runtime`):** DB Queue · Worker lifecycle(`JobRecord`) · 사용량·비용 장부(`UsageRecord`) · 마스킹 로거 · config · storage adapter
+**공통 기반(`common/runtime`):** DB Queue · Job execution lifecycle(`JobExecution` — 계약 소유, 구현은 정철원) · 사용량·비용 장부(`UsageRecord`) · 마스킹 로거 · config · storage adapter
 **운영:** CI/CD · 테스트·린트 · 대용량 처리 시나리오 · 전반 검토와 조율 · §1-2의 운영 역할
 
 ### ② 이 일에 필요한 특성
@@ -288,7 +289,7 @@ v4 §4-모듈4 · §3-2·3-5·3-6·3-7 · §5-2 `Observation` · §5-8~5-11 · �
 - `evidence` 공개 함수 시그니처 + **규정 데이터 표 초안**(기한·용량·필수항목·4종 유형 매핑 — 유형별 「번호판 필수인가」 포함)
 - `TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`·`ReportPackage` 계약 초안
 - 초기 테스트 케이스 7·9·10번을 **JSON만으로 1초에 돌리는 테스트**
-- 저장소 골격 + `common/runtime` 스키마(`JobRecord`·`UsageRecord`) + 마스킹 로거 + 린트
+- 저장소 골격 + `common/runtime` 계약(`JobExecution`·`UsageRecord`) + 마스킹 로거 + 린트
 
 ### ⑥ 누구와 붙는가
 - 정철원 — 업로드·대용량·보관, 파일이 주는 시각 후보 형식
@@ -326,7 +327,7 @@ AI 모델·프롬프트·OCR 라이브러리 / 영상 코덱·ffmpeg / 화면 �
 | --- | --- | --- | --- |
 | `search` | **최상** | **중** | **⚠ 부담 대비 가장 빡빡하다** → 아래 완충책 |
 | `case` | 중상 (통합 부담 최대) | 상 | ○ |
-| `recording` | 중상 (초반 집중) | 상 | ○ |
+| `recording` | 중상 (초반 집중) | 상 | ○ — `JobExecution` 구현이 추가됐다. **[제안/확인 대기] `resolve_span` 이후 착수 — 정철원 확인 전** |
 | `readout` | 중상 | 중 (중반 집중) | ○ — 초반엔 `web` 골격이라 시기가 갈린다 |
 | `eval` | 상 (초반 집중) | 중 (초반 집중) | ○ |
 | `evidence` | 중 | 중 일부 (PM 업무와 분할) | ○ — 순수 함수라 시간 대비 산출이 좋다 |
@@ -353,7 +354,7 @@ AI 모델·프롬프트·OCR 라이브러리 / 영상 코덱·ffmpeg / 화면 �
 | **사건 발생시각** | 후보 수집 = `recording`·`readout` / **최종 판정 = `evidence` Owner** | 시각 우선순위 규칙을 자기 모듈에 복제하지 않는다 |
 | **사용자가 고른 사건** | **유소연(`case`)** | `evidence`는 참조만 하고 복사해 갖지 않는다. 선택이 바뀌면 증거 기록은 무효다 |
 | **파일 경계 해결** | **정철원(`recording`)** | 아무도 자기 모듈에서 다시 계산하지 않는다. 특히 `web` |
-| **작업 발주 vs 실행** | 발주 의도 = 유소연(`case`) / **실행 lifecycle = 김준영(`common/runtime`)** | `case`가 Worker를 만들지 않고, runtime이 "왜 필요한지" 판단하지 않는다 (v4 원칙 6) |
+| **작업 발주 vs 실행** | 발주 의도 = 유소연(`case`, `JobRecord`) / **실행 lifecycle = 김준영(`common/runtime`, `JobExecution`) — 구현 담당 정철원** | `case`가 Worker를 만들지 않고, runtime이 "왜 필요한지" 판단하지 않는다 (v4 원칙 6). `JobRecord`는 발주 의도이고 실행 상태가 아니다 |
 
 ## 매주 확인할 것 (담당: 김준영 — B-4 문서 일관성 포함)
 
@@ -371,6 +372,8 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 ```
 
 **실행 위치는 `.github/workflows/`다.** 운영진 CODEOWNERS 개정으로 팀 자체 CI 워크플로 추가가 명시적으로 허용됐다. 운영진 소유는 `.github/` 전체가 아니라 **파일 4개**뿐이다 — `workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `CODEOWNERS`. **이 4개는 수정·삭제하지 않는다**(멘토 자동 지정과 Discord 알림이 여기서 돈다). 그 밖에는 제약이 없다.
+
+**대기 상태는 끝났다 (2026-09-04 담임매니저 회신).** 운영진 배포가 완료됐고 안내도 왔다. 따로 `git pull`할 것은 없다 — 배포본은 `develop`에 이미 있고 `feature/* → develop` 머지에 그대로 따라온다. 즉 **지금 workflow를 추가해도 된다.** 다음 둘 중 하나가 보이면 진행하지 말고 담임매니저에게 알린다: ① 머지 시 `.github/` 충돌 ② PR에서 **admin 승인이 필요하다는 경고**. 후자는 위 4개를 건드렸다는 신호다 — CODEOWNERS는 base가 `develop`이어도 리뷰 요청 표시가 뜨고, 실제 차단은 `main`에서만 걸린다.
 
 **다만 지금은 돌릴 스크립트가 없다.** `scripts/`에 README만 있고 실제 grep 스크립트가 없으므로, 순서는 **① 스크립트 작성 → ② workflow 추가**다. 그때까지는 주간 회의 전에 손으로 점검한다. 스크립트 작성은 이 절의 grep 목록이 그대로 명세다.
 
@@ -405,11 +408,11 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 | `SourceAsset`·`MediaStream`·`RecordingTimeline`·`AssetSpan` | 정철원 | `recording` → `search`·`readout`·`case` 통보 |
 | `AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset` | 정철원 (RemoteCopy 등록 규칙은 서어진과) | `recording` → `search`·`evidence` |
 | `VisualEvidence` | 서어진 | `search` → `readout`(target hint)·`evidence`(유형 추천) |
-| `PlateReadout`·`OverlayTimeReadout` | 신유민 | `readout` → `evidence`·`eval` |
+| `PlateReadout`·`OverlayTimeReadout`·`ReadoutRun` | 신유민 | `readout` → `evidence`·`eval` |
 | `TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`·`ReportPackage` | 김준영 | `evidence` → `case` |
 | **`CaseView`** | 유소연 | `case` → `web` (**web의 유일한 read contract**) |
-| `JobIntent` | 유소연 | `case` → `common/runtime` |
-| `JobRecord`·`UsageRecord` | 김준영 (`common/runtime`) | `common/runtime` → `case`·`search`·`eval` |
+| `JobRecord` (Job Intent) · `CorrectionRecord` | 유소연 | `case` → `common/runtime` · `evidence` |
+| `JobExecution`·`UsageRecord` | 김준영 (`common/runtime`) — `JobExecution` 구현은 정철원 | `common/runtime` → `case`·`search`·`eval` |
 
 > **계약 회의는 1회로 끝낸다.** 3개만 다루고, 나머지는 생산자가 문서에 적고 소비자가 이의만 제기한다. 합의된 계약은 `architecture/contracts/`로 승격한다.
 
@@ -430,6 +433,8 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 [web]  증거 검토 카드 → 신고 꾸러미 → handoff 링크
 ```
 
+> **현재 통합 상태 (감사 후속):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 남은 접합·담당 경계는 `../architecture/contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5 참조.
+
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 
 통과 기준 (v4 어휘):
@@ -440,7 +445,10 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 - [ ] `eval`이 가짜 `search` 구현을 채점해서 결과 파일을 내놓는가
 - [ ] **Tool Trajectory Review 1회차** 실시 (`management/tool-trajectory-review.md`)
 
-> `case` workflow stage의 `READY`(v4 §4-모듈5 ②)는 §3-6의 세 상태와 어떻게 대응하는지 v4가 명시하지 않았다. 통합 전 `case` Owner가 확인한다(Data Contract 항목).
+> ~~`case` workflow stage의 `READY`(v4 §4-모듈5 ②)는 §3-6의 세 상태와 어떻게 대응하는지 v4가 명시하지 않았다. 통합 전 `case` Owner가 확인한다(Data Contract 항목).~~
+> **종결 (2026-09-06).** `case` Owner(유소연)가 확인했다 — `stage=READY`는 「`PACKAGE_READY` 파생 gate가 성립한 시점」이고, `USER_REVIEWED`는 `stage`가 아니라 `CaseView.user_reviewed: boolean`이 갖는다. `EVIDENCE_SUFFICIENT`는 `EVIDENCE_REVIEW` 단계 안의 조건이다. 원문은 `architecture/contracts/contract-job-record-case-view.md` B절 §7 · `adr/adr-consistency-2026-09.md` §6 R-2.
+>
+> 위 통과 기준의 「`4/5` 같은 실패 표시 없이」도 계약에 반영됐다 — `requirements.readiness`가 `PASS/WARN/BLOCK/UNKNOWN`으로 좁혀졌다.
 
 ---
 

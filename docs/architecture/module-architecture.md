@@ -22,6 +22,18 @@
 
 ---
 
+## 개정 이력
+
+> **버전은 v4로 유지한다.** 아래는 경계 변경이 아니라 **Data Contract 단계에서 확정된 결정을 v4에 기록**한 것이다. 전체를 다시 읽을 필요는 없다.
+
+| 날짜 | 바뀐 곳 | 내용 | 근거 |
+| --- | --- | --- | --- |
+| 2026-09-05 | §5-1 ⑫ · §4-모듈5 ④⑤ · §11-4 · §12 RT8 · §5-3 | Job Intent / Job Execution 분해 확정을 반영. `JobRecord`(case) / `JobExecution`(common/runtime) / `UsageRecord`로 ⑫를 다시 씀. RT8 종결. recording 보조 구조 3개 등재 | `contracts/adr/adr-job-record-case-view.md` · `contracts/adr/adr-consistency-2026-09.md` |
+| 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ · §11-4 | 담당자 회신으로 별도 계약 2건을 작성하고 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층의 opaque ref 방향과 계약 2건 작성 예정 기록(정철원). §11-4 USER_REVIEWED 소유 확인 반영. 후속 감사에서 접합 완결은 Pending으로 분리 | `contracts/adr/adr-consistency-2026-09.md` §6 · `contracts/adr/adr-readout-run.md` · `contracts/adr/adr-correction-record.md` |
+| 2026-09-06 (감사 후속) | §5-1 상태 안내 · §5-3 · §11-4 안내 | 미작성 자산이 통합을 막지 않는다는 단정 철회. ref는 최소 schema 이전 작업 규약으로 한정. CaseView/recording 접합은 Pending 유지 | `contracts/adr/adr-consistency-followup-2026-09-06.md` |
+
+---
+
 ## 이 문서를 읽는 방법
 
 v4부터는 역할 배정이 끝났고 Owner별 기술 조사도 시작됐다. 따라서 v3의 목적이었던 “누가 어떤 모듈을 맡을지 정하기”보다 **각 Owner가 자기 경계를 구현 가능한 수준으로 이해하는 것**이 중요하다.
@@ -679,6 +691,8 @@ list_impls()                     -> implementation labels
 
 `target_hint`는 optional이다. `track_ref`가 없어도 자체 association을 시도해야 한다.
 
+`ReadoutRun`은 2026-09-06에 별도 계약으로 확정됐다 — `architecture/contracts/contract-readout-run.md`. 판독 실행 1회의 `outcome`과 실패 단계를 기록하며, **실행이 완전히 실패해 Readout 결과가 생성되지 않아도 run은 남는다.** 실패 분류 값 집합은 계약에 복제하지 않고 `modules/readout/decisions/failure-taxonomy.md`가 소유한다.
+
 ### ④ v4 Timestamp 관계
 
 readout은 **Overlay가 어떻게 보이는지와 검증 결과**까지만 말한다.
@@ -840,6 +854,8 @@ case
 
 즉 **발주 정책은 case**, **실행 lifecycle은 common/runtime**이다.
 
+계약 이름은 다음과 같이 확정됐다 — 발주 의도는 **`JobRecord`**(case 소유, append-only), 실행 상태는 **`JobExecution`**(common/runtime 소유)이다. `JobExecution`의 계약 Owner는 `evidence`/common Owner이고 **구현 담당은 `recording` Owner**다(2026-09-04 백엔드 회의). `CANCELLED`는 제품 요구가 없어 status에 두지 않는다. 상세는 `architecture/contracts/contract-job-execution.md`.
+
 ### ⑤ 소유 데이터
 
 | 데이터 | Owner |
@@ -848,8 +864,8 @@ case
 | `Selection` | case |
 | `CorrectionRecord` | case |
 | workflow stage / `USER_REVIEWED` | case |
-| Job 발주 의도 / rerun policy | case |
-| Job execution lifecycle row | common/runtime |
+| Job 발주 의도 / rerun policy (`JobRecord`) | case |
+| Job execution lifecycle (`JobExecution`) | common/runtime — 구현은 recording Owner |
 | Evidence 값 | evidence — case가 복사해 소유하지 않음 |
 
 ### ⑥ CaseView — v4부터 Core Contract
@@ -1024,14 +1040,17 @@ Eval clip suite:
 | ④ | `AnalysisScope` | case / eval fixture | search | 개인정보 없는 분석 의도 |
 | ⑤ | `AnalysisRun` + `CandidateEvent` | search | case / eval | span + immutable run |
 | ⑥ | `VisualEvidence` | search | case → evidence/readout projection | legal 판단 없음 |
-| ⑦ | `PlateReadout` / `OverlayTimeReadout` | readout | case → evidence | abstain + frame evidence |
+| ⑦ | `PlateReadout` / `OverlayTimeReadout` / `ReadoutRun` | readout | case → evidence · eval(실패 집계) | abstain + frame evidence / 판독 실행 기록 |
 | ⑧ | `TimeResolution` | evidence | case | verified source/conflict/provenance |
 | ⑨ | `EvidenceRecord` + `EvidenceNeeds` | evidence | case | 유일한 confirmed values |
 | ⑩ | `RequirementReport` + `ReportPackage` | evidence | case | PASS/WARN/BLOCK + handoff |
 | ⑪ | **`CaseView`** | case | **web only** | UI의 유일한 read contract |
-| ⑫ | `JobIntent` / `JobRecord` / `UsageRecord` | case → common/runtime | runtime / case / eval aggregation | 발주 의미 / execution lifecycle / 비용 |
+| ⑫ | `JobRecord`(Job Intent) / `JobExecution` / `UsageRecord` | `JobRecord`: case · `JobExecution`·`UsageRecord`: common/runtime | runtime / case / eval aggregation | 발주 의미 / execution lifecycle / 비용 |
+| ⑬ | `CorrectionRecord` | case | evidence | 사용자 수정 provenance |
 
 > **중요:** web은 ①~⑩을 직접 읽지 않는다. case가 필요한 값을 `CaseView`로 projection한다.
+
+> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 Pending이며 `CorrectionRecord`는 Consumer Review 대기 Draft다. 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
 
 ## 5-2. `Observation<T>`
 
@@ -1072,6 +1091,16 @@ SourceAsset
 Search가 반환한 시간 구간은 `recording.resolve_span`을 통해 **복수 파일 + 복수 stream 조각**으로 해석될 수 있다.
 
 구체 stream selector 규칙은 Data Contract에서 확정한다.
+
+Data Contract 단계에서 보조 구조 3개가 추가됐다 — **`TimeSourceCandidate`**(Source에서 관찰된 절대시각 후보와 provenance. 최종 판정은 하지 않는다. `case`를 거쳐 `evidence/time_resolve`가 소비한다), **`SpanResolution`**(timeline 구간 → 실제 Source/Stream 구간 변환 결과), **`TimeSourceCheck`**(후보가 없을 때의 관찰 기록). 필드는 `architecture/contracts/contract-recording-timeline-asset-span.md`가 소유한다.
+
+> **작성 예정 (2026-09-06 확정).** ② 중 `SourceAsset`/`MediaStream`과 ③ 전체는 `recording` Owner(정철원)가 계약 2건으로 작성한다 — `contract-source-asset-media-stream.md`(`SourceAsset`·`MediaStream`·`FrameRef`) · `contract-analysis-source-derived.md`(`AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset`).
+>
+> **최소 schema 제공 전 ref 작업 규약** — Owner 회신의 opaque 제안 방향을 기존 목 예시에 적용한다. 정식 필드 계약이나 향후 불변 형식으로 확대 해석하지 않는다.  `sa_` / `ms_` / `fr_` / `as_` / `rc_` / `clip_` / `da_` 접두어 + opaque id. **위치나 role을 ID에 인코딩하지 않는다**(`ms_<source_asset_id>_<role>` · `fr_<media_stream_id>@<offset_ms>` 같은 형태를 쓰지 않는다). `source_asset_ref`와 `role`은 `MediaStream`의 별도 필드로, frame 위치는 `FrameRef`의 `media_stream_ref + source offset`으로 보존한다. video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role도 분리한다.
+>
+> 이 계약들은 **ref/provenance/lifecycle 의미까지만** 고정한다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4에서도 미결이므로 임의 확정하지 않는다(A6).
+>
+> **통합 Pending B06~B09.** opaque ref만으로 실제 evidence가 소비할 자산 metadata나 span/시간/revision 접합이 완성되지는 않는다. 개별 fixture는 만들 수 있으나 현재 계약만으로 전체 목 통합 가능을 보증하지 않는다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5를 따른다.
 
 ## 5-4. `AnalysisScope`
 
@@ -1715,9 +1744,11 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-4. `case` — 유소연
 
+> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection 및 전체 통합은 별도로 Pending이다(`contracts/adr/adr-consistency-followup-2026-09-06.md` §3).
+
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
-- [ ]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가
-- [ ]  Job Intent(case) / Job Execution(common) 분리가 rerun_policy와 충돌하지 않는가
+- [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7
+- [x]  Job Intent(case) / Job Execution(common) 분리가 rerun_policy와 충돌하지 않는가 — **종결.** `contracts/adr/adr-job-record-case-view.md` 부록-A §7 불변조건
 - [ ]  input fingerprint와 cache bypass 규칙은 Data Contract에서 구체화
 - [ ]  CaseView를 web 유일 read contract로 유지 가능한가
 
@@ -1779,7 +1810,9 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 **Ops 조사:** runtime이 queue row 상태/lease/heartbeat를 관리해야 함.
 
-**v4 결정:** case는 Job Intent/rerun policy, common/runtime은 execution lifecycle. Data Contract에서 row schema 최종 확인.
+**v4 결정:** case는 Job Intent/rerun policy, common/runtime은 execution lifecycle.
+
+**종결(2026-09-05).** Data Contract에서 확정됐다 — `JobRecord`는 Job Intent로 범위를 좁히고 실행 상태는 `JobExecution`으로 분리. `force_rerun` 기본값 `false`, **`SUCCEEDED` 결과만 캐시 재사용**(`FAILED`/`STALE`은 재실행), optional `scope_ref`로 `AnalysisScope` 연결. 원문은 `contracts/adr/adr-job-record-case-view.md` 부록-A.
 
 ## RT9. `READY` 하나로 Evidence/파일/UI 상태가 섞임
 
