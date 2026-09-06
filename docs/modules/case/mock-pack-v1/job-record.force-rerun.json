@@ -1,0 +1,10 @@
+{
+  "job_id": "job_61",
+  "case_id": "case_3",
+  "case_rev": 5,
+  "kind": "PLATE_READ",
+  "scope_ref": null,
+  "input_fingerprint": "sha1:same-as-before",
+  "force_rerun": true,
+  "requested_at": "2026-09-02T09:10:00Z"
+}

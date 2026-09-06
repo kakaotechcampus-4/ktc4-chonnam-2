@@ -1,0 +1,10 @@
+{
+  "job_id": "job_51",
+  "case_id": "case_3",
+  "case_rev": 4,
+  "kind": "COARSE_SEARCH",
+  "scope_ref": "scope_2026_0912_001",
+  "input_fingerprint": "sha1:...",
+  "force_rerun": false,
+  "requested_at": "2026-09-01T18:00:00Z"
+}
