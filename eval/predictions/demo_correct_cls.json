@@ -1,0 +1,2368 @@
+{
+  "meta": {
+    "run_id": "demo_correct_cls",
+    "impl": "fake:always_correct",
+    "impl_version": "v1",
+    "stage": "classification",
+    "manifest": "a_aihub",
+    "manifest_version": "m1",
+    "clip_rule_version": null,
+    "normalizer_version": "n1",
+    "code_commit": "9691360",
+    "created_at": "2026-09-06T22:53:13.224753+09:00"
+  },
+  "raw": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005763",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        542,
+        103,
+        678
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        412,
+        381,
+        546,
+        498
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        5,
+        461,
+        195,
+        696
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        911,
+        299,
+        974,
+        352
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        326,
+        267,
+        584
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        611,
+        60,
+        718
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        5,
+        383,
+        578,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        263,
+        221,
+        660
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        488,
+        151,
+        812
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        475,
+        156,
+        655
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        566,
+        272,
+        611,
+        311
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        192,
+        331,
+        363,
+        439
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        412,
+        325,
+        1241,
+        621
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        719,
+        332,
+        1004,
+        495
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        318,
+        344,
+        536,
+        437
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        399,
+        507,
+        438,
+        539
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        397,
+        102,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        463,
+        415,
+        582,
+        551
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        489,
+        327,
+        672,
+        470
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        519,
+        379,
+        606,
+        451
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        567,
+        296,
+        655,
+        333
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        172,
+        376,
+        453,
+        579
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        541,
+        363,
+        808,
+        545
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        529,
+        393,
+        760,
+        547
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        351,
+        140,
+        572
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000031",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        671,
+        352,
+        735,
+        473
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000189",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        193,
+        250,
+        392,
+        652
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000248",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        827,
+        215,
+        1023,
+        627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000282",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        992,
+        425,
+        1163,
+        689
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000409",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        132,
+        352,
+        1071,
+        1593
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000879",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        132,
+        22,
+        477,
+        720
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000899",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        226,
+        124,
+        524,
+        505
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000990",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        813,
+        242,
+        1277,
+        715
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001112",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        500,
+        443,
+        663,
+        634
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001237",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        204,
+        340,
+        636,
+        776
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001646",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        158,
+        311,
+        573,
+        719
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001682",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        72,
+        266,
+        645,
+        1014
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001896",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        681,
+        276,
+        972,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002216",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        585,
+        215,
+        862,
+        709
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002259",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        396,
+        206,
+        641,
+        655
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002405",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        20,
+        40,
+        459,
+        627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002514",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        303,
+        136,
+        704,
+        756
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002522",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        12,
+        4,
+        710,
+        999
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002714",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        712,
+        302,
+        788,
+        497
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002814",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        675,
+        352,
+        734,
+        475
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002898",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        241,
+        294,
+        753,
+        1314
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002902",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        1,
+        219,
+        377,
+        658
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003265",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        221,
+        179,
+        733,
+        694
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003622",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        344,
+        560,
+        488,
+        866
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003695",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        936,
+        419,
+        1191,
+        672
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003712",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        601,
+        2,
+        917,
+        579
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003716",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        77,
+        312,
+        352,
+        626
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003808",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        2,
+        114,
+        222,
+        507
+      ]
+    },
+    {
+      "sequence_id": "20230223_안전모미착용_0000003871",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        412,
+        254,
+        764,
+        1017
+      ]
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000004040",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        746,
+        385,
+        946,
+        689
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003718",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        124,
+        486,
+        280,
+        633
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003756",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        244,
+        316,
+        383,
+        515
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003830",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        561,
+        371,
+        696,
+        490
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003945",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        573,
+        331,
+        683,
+        417
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003948",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        505,
+        354,
+        672,
+        486
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000004026",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        473,
+        396,
+        526,
+        510
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011927",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        489,
+        382,
+        843,
+        707
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011931",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        658,
+        471,
+        695,
+        540
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012025",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        716,
+        489,
+        757,
+        569
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012091",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        788,
+        456,
+        936,
+        677
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012096",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        101,
+        519,
+        660,
+        967
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012162",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        425,
+        369,
+        728,
+        618
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012185",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        651,
+        391,
+        710,
+        433
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012255",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        650,
+        274,
+        679,
+        328
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012256",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        671,
+        285,
+        760,
+        475
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012364",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        1125,
+        310,
+        1300,
+        560
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012390",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        691,
+        358,
+        766,
+        542
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012514",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        236,
+        524,
+        294,
+        613
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012538",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        108,
+        419,
+        195,
+        575
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012670",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        718,
+        489,
+        753,
+        572
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012733",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        33,
+        275,
+        668,
+        1243
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012879",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        693,
+        306,
+        798,
+        402
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013034",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        588,
+        453,
+        765,
+        603
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013100",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        572,
+        404,
+        689,
+        494
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013140",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        902,
+        323,
+        1279,
+        588
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013202",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        484,
+        398,
+        566,
+        471
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013332",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        619,
+        380,
+        662,
+        418
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013363",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        0,
+        534,
+        101,
+        649
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001064",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        503,
+        347,
+        577,
+        383
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001137",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        6,
+        535,
+        102,
+        706
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010436",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        749,
+        387,
+        944,
+        507
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010476",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        836,
+        310,
+        1088,
+        499
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010523",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        671,
+        410,
+        792,
+        494
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010551",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        480,
+        371,
+        561,
+        427
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010563",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        416,
+        446,
+        499,
+        496
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010581",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        577,
+        480,
+        666,
+        550
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010666",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        535,
+        384,
+        638,
+        462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010737",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        569,
+        398,
+        638,
+        453
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010784",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        304,
+        308,
+        523,
+        493
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010805",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        717,
+        365,
+        892,
+        512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010894",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        940,
+        368,
+        1247,
+        528
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011136",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        574,
+        316,
+        610,
+        345
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011142",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        588,
+        414,
+        848,
+        673
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011168",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        613,
+        359,
+        678,
+        430
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011282",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        584,
+        357,
+        694,
+        446
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011318",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        756,
+        435,
+        992,
+        604
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011345",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        613,
+        347,
+        651,
+        371
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011372",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        250,
+        332,
+        463,
+        457
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011387",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        326,
+        387,
+        532,
+        512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011419",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        611,
+        368,
+        729,
+        462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011444",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        522,
+        322,
+        620,
+        422
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011445",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        586,
+        135,
+        792,
+        283
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011451",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        455,
+        339,
+        626,
+        472
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011452",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        679,
+        246,
+        712,
+        270
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011696",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        434,
+        0,
+        638,
+        122
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011710",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        528,
+        376,
+        597,
+        431
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011718",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        615,
+        374,
+        664,
+        423
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011729",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        509,
+        222,
+        629,
+        319
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000614",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        636,
+        365,
+        775,
+        446
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000630",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        427,
+        381,
+        565,
+        479
+      ]
+    }
+  ],
+  "normalized": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005763",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        542,
+        103,
+        678
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        412,
+        381,
+        546,
+        498
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        5,
+        461,
+        195,
+        696
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        911,
+        299,
+        974,
+        352
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        326,
+        267,
+        584
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        611,
+        60,
+        718
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        5,
+        383,
+        578,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        263,
+        221,
+        660
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        488,
+        151,
+        812
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        475,
+        156,
+        655
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        566,
+        272,
+        611,
+        311
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        192,
+        331,
+        363,
+        439
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        412,
+        325,
+        1241,
+        621
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        719,
+        332,
+        1004,
+        495
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        318,
+        344,
+        536,
+        437
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        399,
+        507,
+        438,
+        539
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        397,
+        102,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        463,
+        415,
+        582,
+        551
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        489,
+        327,
+        672,
+        470
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        519,
+        379,
+        606,
+        451
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        567,
+        296,
+        655,
+        333
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        172,
+        376,
+        453,
+        579
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        541,
+        363,
+        808,
+        545
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        529,
+        393,
+        760,
+        547
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        351,
+        140,
+        572
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000031",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        671,
+        352,
+        735,
+        473
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000189",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        193,
+        250,
+        392,
+        652
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000248",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        827,
+        215,
+        1023,
+        627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000282",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        992,
+        425,
+        1163,
+        689
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000409",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        132,
+        352,
+        1071,
+        1593
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000879",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        132,
+        22,
+        477,
+        720
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000899",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        226,
+        124,
+        524,
+        505
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000990",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        813,
+        242,
+        1277,
+        715
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001112",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        500,
+        443,
+        663,
+        634
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001237",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        204,
+        340,
+        636,
+        776
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001646",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        158,
+        311,
+        573,
+        719
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001682",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        72,
+        266,
+        645,
+        1014
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001896",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        681,
+        276,
+        972,
+        717
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002216",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        585,
+        215,
+        862,
+        709
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002259",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        396,
+        206,
+        641,
+        655
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002405",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        20,
+        40,
+        459,
+        627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002514",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        303,
+        136,
+        704,
+        756
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002522",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        12,
+        4,
+        710,
+        999
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002714",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        712,
+        302,
+        788,
+        497
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002814",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        675,
+        352,
+        734,
+        475
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002898",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        241,
+        294,
+        753,
+        1314
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002902",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        1,
+        219,
+        377,
+        658
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003265",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        221,
+        179,
+        733,
+        694
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003622",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        344,
+        560,
+        488,
+        866
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003695",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        936,
+        419,
+        1191,
+        672
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003712",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        601,
+        2,
+        917,
+        579
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003716",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        77,
+        312,
+        352,
+        626
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003808",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        2,
+        114,
+        222,
+        507
+      ]
+    },
+    {
+      "sequence_id": "20230223_안전모미착용_0000003871",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        412,
+        254,
+        764,
+        1017
+      ]
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000004040",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        746,
+        385,
+        946,
+        689
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003718",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        124,
+        486,
+        280,
+        633
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003756",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        244,
+        316,
+        383,
+        515
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003830",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        561,
+        371,
+        696,
+        490
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003945",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        573,
+        331,
+        683,
+        417
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003948",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        505,
+        354,
+        672,
+        486
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000004026",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        473,
+        396,
+        526,
+        510
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011927",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        489,
+        382,
+        843,
+        707
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011931",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        658,
+        471,
+        695,
+        540
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012025",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        716,
+        489,
+        757,
+        569
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012091",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        788,
+        456,
+        936,
+        677
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012096",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        101,
+        519,
+        660,
+        967
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012162",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        425,
+        369,
+        728,
+        618
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012185",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        651,
+        391,
+        710,
+        433
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012255",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        650,
+        274,
+        679,
+        328
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012256",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        671,
+        285,
+        760,
+        475
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012364",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        1125,
+        310,
+        1300,
+        560
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012390",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        691,
+        358,
+        766,
+        542
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012514",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        236,
+        524,
+        294,
+        613
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012538",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        108,
+        419,
+        195,
+        575
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012670",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        718,
+        489,
+        753,
+        572
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012733",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        33,
+        275,
+        668,
+        1243
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012879",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        693,
+        306,
+        798,
+        402
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013034",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        588,
+        453,
+        765,
+        603
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013100",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        572,
+        404,
+        689,
+        494
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013140",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        902,
+        323,
+        1279,
+        588
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013202",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        484,
+        398,
+        566,
+        471
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013332",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        619,
+        380,
+        662,
+        418
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013363",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        0,
+        534,
+        101,
+        649
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001064",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        503,
+        347,
+        577,
+        383
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001137",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        6,
+        535,
+        102,
+        706
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010436",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        749,
+        387,
+        944,
+        507
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010476",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        836,
+        310,
+        1088,
+        499
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010523",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        671,
+        410,
+        792,
+        494
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010551",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        480,
+        371,
+        561,
+        427
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010563",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        416,
+        446,
+        499,
+        496
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010581",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        577,
+        480,
+        666,
+        550
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010666",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        535,
+        384,
+        638,
+        462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010737",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        569,
+        398,
+        638,
+        453
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010784",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        304,
+        308,
+        523,
+        493
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010805",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        717,
+        365,
+        892,
+        512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010894",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        940,
+        368,
+        1247,
+        528
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011136",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        574,
+        316,
+        610,
+        345
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011142",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        588,
+        414,
+        848,
+        673
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011168",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        613,
+        359,
+        678,
+        430
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011282",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        584,
+        357,
+        694,
+        446
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011318",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        756,
+        435,
+        992,
+        604
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011345",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        613,
+        347,
+        651,
+        371
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011372",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        250,
+        332,
+        463,
+        457
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011387",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        326,
+        387,
+        532,
+        512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011419",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        611,
+        368,
+        729,
+        462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011444",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        522,
+        322,
+        620,
+        422
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011445",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        586,
+        135,
+        792,
+        283
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011451",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        455,
+        339,
+        626,
+        472
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011452",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        679,
+        246,
+        712,
+        270
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011696",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        434,
+        0,
+        638,
+        122
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011710",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        528,
+        376,
+        597,
+        431
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011718",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        615,
+        374,
+        664,
+        423
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011729",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        509,
+        222,
+        629,
+        319
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000614",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        636,
+        365,
+        775,
+        446
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000630",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        427,
+        381,
+        565,
+        479
+      ]
+    }
+  ]
+}

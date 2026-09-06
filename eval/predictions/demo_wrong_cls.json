@@ -1,0 +1,2368 @@
+{
+  "meta": {
+    "run_id": "demo_wrong_cls",
+    "impl": "fake:always_wrong",
+    "impl_version": "v1",
+    "stage": "classification",
+    "manifest": "a_aihub",
+    "manifest_version": "m1",
+    "clip_rule_version": null,
+    "normalizer_version": "n1",
+    "code_commit": "9691360",
+    "created_at": "2026-09-06T22:53:13.440064+09:00"
+  },
+  "raw": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005763",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10542,
+        10103,
+        10678
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10381,
+        10546,
+        10498
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10005,
+        10461,
+        10195,
+        10696
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10911,
+        10299,
+        10974,
+        10352
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10326,
+        10267,
+        10584
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10611,
+        10060,
+        10718
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10005,
+        10383,
+        10578,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10263,
+        10221,
+        10660
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10488,
+        10151,
+        10812
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10475,
+        10156,
+        10655
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10566,
+        10272,
+        10611,
+        10311
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10192,
+        10331,
+        10363,
+        10439
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10325,
+        11241,
+        10621
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10719,
+        10332,
+        11004,
+        10495
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10318,
+        10344,
+        10536,
+        10437
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10399,
+        10507,
+        10438,
+        10539
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10397,
+        10102,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10463,
+        10415,
+        10582,
+        10551
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10489,
+        10327,
+        10672,
+        10470
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10519,
+        10379,
+        10606,
+        10451
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10567,
+        10296,
+        10655,
+        10333
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10172,
+        10376,
+        10453,
+        10579
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10541,
+        10363,
+        10808,
+        10545
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10529,
+        10393,
+        10760,
+        10547
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10351,
+        10140,
+        10572
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000031",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10671,
+        10352,
+        10735,
+        10473
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000189",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10193,
+        10250,
+        10392,
+        10652
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000248",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10827,
+        10215,
+        11023,
+        10627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000282",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10992,
+        10425,
+        11163,
+        10689
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000409",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10132,
+        10352,
+        11071,
+        11593
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000879",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10132,
+        10022,
+        10477,
+        10720
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000899",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10226,
+        10124,
+        10524,
+        10505
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000990",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10813,
+        10242,
+        11277,
+        10715
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001112",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10500,
+        10443,
+        10663,
+        10634
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001237",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10204,
+        10340,
+        10636,
+        10776
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001646",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10158,
+        10311,
+        10573,
+        10719
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001682",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10072,
+        10266,
+        10645,
+        11014
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001896",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10681,
+        10276,
+        10972,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002216",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10585,
+        10215,
+        10862,
+        10709
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002259",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10396,
+        10206,
+        10641,
+        10655
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002405",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10020,
+        10040,
+        10459,
+        10627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002514",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10303,
+        10136,
+        10704,
+        10756
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002522",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10012,
+        10004,
+        10710,
+        10999
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002714",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10712,
+        10302,
+        10788,
+        10497
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002814",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10675,
+        10352,
+        10734,
+        10475
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002898",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10241,
+        10294,
+        10753,
+        11314
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002902",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10219,
+        10377,
+        10658
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003265",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10221,
+        10179,
+        10733,
+        10694
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003622",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10344,
+        10560,
+        10488,
+        10866
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003695",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10936,
+        10419,
+        11191,
+        10672
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003712",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10601,
+        10002,
+        10917,
+        10579
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003716",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10077,
+        10312,
+        10352,
+        10626
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003808",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10002,
+        10114,
+        10222,
+        10507
+      ]
+    },
+    {
+      "sequence_id": "20230223_안전모미착용_0000003871",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10254,
+        10764,
+        11017
+      ]
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000004040",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10746,
+        10385,
+        10946,
+        10689
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003718",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10124,
+        10486,
+        10280,
+        10633
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003756",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10244,
+        10316,
+        10383,
+        10515
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003830",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10561,
+        10371,
+        10696,
+        10490
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003945",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10573,
+        10331,
+        10683,
+        10417
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003948",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10505,
+        10354,
+        10672,
+        10486
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000004026",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10473,
+        10396,
+        10526,
+        10510
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011927",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10489,
+        10382,
+        10843,
+        10707
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011931",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10658,
+        10471,
+        10695,
+        10540
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012025",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10716,
+        10489,
+        10757,
+        10569
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012091",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10788,
+        10456,
+        10936,
+        10677
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012096",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10101,
+        10519,
+        10660,
+        10967
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012162",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10425,
+        10369,
+        10728,
+        10618
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012185",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10651,
+        10391,
+        10710,
+        10433
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012255",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10650,
+        10274,
+        10679,
+        10328
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012256",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10671,
+        10285,
+        10760,
+        10475
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012364",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        11125,
+        10310,
+        11300,
+        10560
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012390",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10691,
+        10358,
+        10766,
+        10542
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012514",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10236,
+        10524,
+        10294,
+        10613
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012538",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10108,
+        10419,
+        10195,
+        10575
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012670",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10718,
+        10489,
+        10753,
+        10572
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012733",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10033,
+        10275,
+        10668,
+        11243
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012879",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10693,
+        10306,
+        10798,
+        10402
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013034",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10588,
+        10453,
+        10765,
+        10603
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013100",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10572,
+        10404,
+        10689,
+        10494
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013140",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10902,
+        10323,
+        11279,
+        10588
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013202",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10484,
+        10398,
+        10566,
+        10471
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013332",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10619,
+        10380,
+        10662,
+        10418
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013363",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10000,
+        10534,
+        10101,
+        10649
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001064",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10503,
+        10347,
+        10577,
+        10383
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001137",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10006,
+        10535,
+        10102,
+        10706
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010436",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10749,
+        10387,
+        10944,
+        10507
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010476",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10836,
+        10310,
+        11088,
+        10499
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010523",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10671,
+        10410,
+        10792,
+        10494
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010551",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10480,
+        10371,
+        10561,
+        10427
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010563",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10416,
+        10446,
+        10499,
+        10496
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010581",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10577,
+        10480,
+        10666,
+        10550
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010666",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10535,
+        10384,
+        10638,
+        10462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010737",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10569,
+        10398,
+        10638,
+        10453
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010784",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10304,
+        10308,
+        10523,
+        10493
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010805",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10717,
+        10365,
+        10892,
+        10512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010894",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10940,
+        10368,
+        11247,
+        10528
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011136",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10574,
+        10316,
+        10610,
+        10345
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011142",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10588,
+        10414,
+        10848,
+        10673
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011168",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10613,
+        10359,
+        10678,
+        10430
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011282",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10584,
+        10357,
+        10694,
+        10446
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011318",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10756,
+        10435,
+        10992,
+        10604
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011345",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10613,
+        10347,
+        10651,
+        10371
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011372",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10250,
+        10332,
+        10463,
+        10457
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011387",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10326,
+        10387,
+        10532,
+        10512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011419",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10611,
+        10368,
+        10729,
+        10462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011444",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10522,
+        10322,
+        10620,
+        10422
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011445",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10586,
+        10135,
+        10792,
+        10283
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011451",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10455,
+        10339,
+        10626,
+        10472
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011452",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10679,
+        10246,
+        10712,
+        10270
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011696",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10434,
+        10000,
+        10638,
+        10122
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011710",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10528,
+        10376,
+        10597,
+        10431
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011718",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10615,
+        10374,
+        10664,
+        10423
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011729",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10509,
+        10222,
+        10629,
+        10319
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000614",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10636,
+        10365,
+        10775,
+        10446
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000630",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10427,
+        10381,
+        10565,
+        10479
+      ]
+    }
+  ],
+  "normalized": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005763",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10542,
+        10103,
+        10678
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10381,
+        10546,
+        10498
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10005,
+        10461,
+        10195,
+        10696
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10911,
+        10299,
+        10974,
+        10352
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10326,
+        10267,
+        10584
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10611,
+        10060,
+        10718
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10005,
+        10383,
+        10578,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10263,
+        10221,
+        10660
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10488,
+        10151,
+        10812
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10475,
+        10156,
+        10655
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10566,
+        10272,
+        10611,
+        10311
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10192,
+        10331,
+        10363,
+        10439
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10325,
+        11241,
+        10621
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10719,
+        10332,
+        11004,
+        10495
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10318,
+        10344,
+        10536,
+        10437
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10399,
+        10507,
+        10438,
+        10539
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10397,
+        10102,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10463,
+        10415,
+        10582,
+        10551
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10489,
+        10327,
+        10672,
+        10470
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10519,
+        10379,
+        10606,
+        10451
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10567,
+        10296,
+        10655,
+        10333
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10172,
+        10376,
+        10453,
+        10579
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10541,
+        10363,
+        10808,
+        10545
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10529,
+        10393,
+        10760,
+        10547
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10000,
+        10351,
+        10140,
+        10572
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000031",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10671,
+        10352,
+        10735,
+        10473
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000189",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10193,
+        10250,
+        10392,
+        10652
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000248",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10827,
+        10215,
+        11023,
+        10627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000282",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10992,
+        10425,
+        11163,
+        10689
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000409",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10132,
+        10352,
+        11071,
+        11593
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000879",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10132,
+        10022,
+        10477,
+        10720
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000899",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10226,
+        10124,
+        10524,
+        10505
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000990",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10813,
+        10242,
+        11277,
+        10715
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001112",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10500,
+        10443,
+        10663,
+        10634
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001237",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10204,
+        10340,
+        10636,
+        10776
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001646",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10158,
+        10311,
+        10573,
+        10719
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001682",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10072,
+        10266,
+        10645,
+        11014
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001896",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10681,
+        10276,
+        10972,
+        10717
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002216",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10585,
+        10215,
+        10862,
+        10709
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002259",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10396,
+        10206,
+        10641,
+        10655
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002405",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10020,
+        10040,
+        10459,
+        10627
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002514",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10303,
+        10136,
+        10704,
+        10756
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002522",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10012,
+        10004,
+        10710,
+        10999
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002714",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10712,
+        10302,
+        10788,
+        10497
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002814",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10675,
+        10352,
+        10734,
+        10475
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002898",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10241,
+        10294,
+        10753,
+        11314
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002902",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10001,
+        10219,
+        10377,
+        10658
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003265",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10221,
+        10179,
+        10733,
+        10694
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003622",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10344,
+        10560,
+        10488,
+        10866
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003695",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10936,
+        10419,
+        11191,
+        10672
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003712",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10601,
+        10002,
+        10917,
+        10579
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003716",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10077,
+        10312,
+        10352,
+        10626
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003808",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10002,
+        10114,
+        10222,
+        10507
+      ]
+    },
+    {
+      "sequence_id": "20230223_안전모미착용_0000003871",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10412,
+        10254,
+        10764,
+        11017
+      ]
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000004040",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10746,
+        10385,
+        10946,
+        10689
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003718",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10124,
+        10486,
+        10280,
+        10633
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003756",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10244,
+        10316,
+        10383,
+        10515
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003830",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10561,
+        10371,
+        10696,
+        10490
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003945",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10573,
+        10331,
+        10683,
+        10417
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003948",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10505,
+        10354,
+        10672,
+        10486
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000004026",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10473,
+        10396,
+        10526,
+        10510
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011927",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10489,
+        10382,
+        10843,
+        10707
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011931",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10658,
+        10471,
+        10695,
+        10540
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012025",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10716,
+        10489,
+        10757,
+        10569
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012091",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10788,
+        10456,
+        10936,
+        10677
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012096",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10101,
+        10519,
+        10660,
+        10967
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012162",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10425,
+        10369,
+        10728,
+        10618
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012185",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10651,
+        10391,
+        10710,
+        10433
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012255",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10650,
+        10274,
+        10679,
+        10328
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012256",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10671,
+        10285,
+        10760,
+        10475
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012364",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        11125,
+        10310,
+        11300,
+        10560
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012390",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10691,
+        10358,
+        10766,
+        10542
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012514",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10236,
+        10524,
+        10294,
+        10613
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012538",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10108,
+        10419,
+        10195,
+        10575
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012670",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10718,
+        10489,
+        10753,
+        10572
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012733",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10033,
+        10275,
+        10668,
+        11243
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012879",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10693,
+        10306,
+        10798,
+        10402
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013034",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10588,
+        10453,
+        10765,
+        10603
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013100",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10572,
+        10404,
+        10689,
+        10494
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013140",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10902,
+        10323,
+        11279,
+        10588
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013202",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10484,
+        10398,
+        10566,
+        10471
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013332",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10619,
+        10380,
+        10662,
+        10418
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013363",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10000,
+        10534,
+        10101,
+        10649
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001064",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10503,
+        10347,
+        10577,
+        10383
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001137",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        10006,
+        10535,
+        10102,
+        10706
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010436",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10749,
+        10387,
+        10944,
+        10507
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010476",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10836,
+        10310,
+        11088,
+        10499
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010523",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10671,
+        10410,
+        10792,
+        10494
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010551",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10480,
+        10371,
+        10561,
+        10427
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010563",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10416,
+        10446,
+        10499,
+        10496
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010581",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10577,
+        10480,
+        10666,
+        10550
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010666",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10535,
+        10384,
+        10638,
+        10462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010737",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10569,
+        10398,
+        10638,
+        10453
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010784",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10304,
+        10308,
+        10523,
+        10493
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010805",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10717,
+        10365,
+        10892,
+        10512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010894",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10940,
+        10368,
+        11247,
+        10528
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011136",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10574,
+        10316,
+        10610,
+        10345
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011142",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10588,
+        10414,
+        10848,
+        10673
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011168",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10613,
+        10359,
+        10678,
+        10430
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011282",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10584,
+        10357,
+        10694,
+        10446
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011318",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10756,
+        10435,
+        10992,
+        10604
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011345",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10613,
+        10347,
+        10651,
+        10371
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011372",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10250,
+        10332,
+        10463,
+        10457
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011387",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10326,
+        10387,
+        10532,
+        10512
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011419",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10611,
+        10368,
+        10729,
+        10462
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011444",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10522,
+        10322,
+        10620,
+        10422
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011445",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10586,
+        10135,
+        10792,
+        10283
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011451",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10455,
+        10339,
+        10626,
+        10472
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011452",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10679,
+        10246,
+        10712,
+        10270
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011696",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10434,
+        10000,
+        10638,
+        10122
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011710",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10528,
+        10376,
+        10597,
+        10431
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011718",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10615,
+        10374,
+        10664,
+        10423
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011729",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10509,
+        10222,
+        10629,
+        10319
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000614",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10636,
+        10365,
+        10775,
+        10446
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000630",
+      "predicted": "SIGNAL",
+      "target_bbox": [
+        10427,
+        10381,
+        10565,
+        10479
+      ]
+    }
+  ]
+}
