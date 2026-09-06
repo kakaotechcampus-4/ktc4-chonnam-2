@@ -16,3 +16,19 @@ def test_score_cli_writes_results_with_coverage(tmp_path, monkeypatch):
     assert res["candidate"]["recall_at"]["1"] == 1.0
     assert res["plate"]["exact_accuracy"] is None
     assert res["meta"]["impl"] == "fake:always_correct"
+
+
+def test_score_cli_returns_rc2_when_gt_missing_not_a_traceback(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path))
+    run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
+              "--stage", "candidate", "--run-id", "run_missing_gt"])
+    # prediction이 가리키는 manifest를 GT가 없는 이름으로 바꿔치기한다.
+    p = os.path.join(str(tmp_path), "run_missing_gt.json")
+    with open(p, encoding="utf-8") as f:
+        env = json.load(f)
+    env["meta"]["manifest"] = "does_not_exist"
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(env, f)
+    rc = score.main(["--prediction", "run_missing_gt"])
+    assert rc == 2

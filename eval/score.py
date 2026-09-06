@@ -57,11 +57,10 @@ def main(argv=None):
 
     try:
         env = _load_prediction(args.prediction)
+        result = build_result(env)
     except OSError as e:
         print("실패: %s" % e, file=sys.stderr)
         return 2
-
-    result = build_result(env)
     outdir = paths.results_dir()
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "%s.%s.json" % (args.prediction, result["meta"]["gt_version"]))

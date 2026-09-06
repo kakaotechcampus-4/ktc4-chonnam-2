@@ -251,8 +251,11 @@ eval/manifests/**/events_draft.json
 | F3 | B tier 이벤트 5건 → 10~20건, 4종 채우기 | Recall@K 신뢰구간 · 4종별 breakdown | 라벨링 | 김대원 |
 | F4 | Hard-negative 대조쌍 | Hard-negative FPR | 실선 침범 ↔ 점선 정상 변경 대조 라벨 | 김대원 |
 | F5 | Fine / E2E / Efficiency stage | Fine Recall · HN-FPR · Final Recall@3 · 비용 | `search` 구현과 `UsageRecord` | 서어진 · 김준영 |
+| F6 | **Plate 채점 로직 재구현** (v1은 branch를 아예 제거함) | Exact Accuracy · Wrong-Accept Rate · Abstention Recall (C tier) | F1의 C tier plate text GT | 김대원 |
 
 F2의 Overlay time은 A tier 화면에 시각이 남아 있어 라벨 비용이 낮지만, §9-4에 따라 **overlay 판독 정확도만** 채점하고 source agreement(메타데이터 vs 파일명 vs overlay 대조)는 C tier 몫으로 남긴다.
+
+F6: v1의 `plate.score`는 한때 GT가 있는 경우의 계산 분기를 갖고 있었으나, 검증할 GT가 없어 그 분기는 한 번도 실행되지 않은 채로 이미 틀린 숫자를 내고 있었다(`wrong_accept_rate`의 분모에서 abstain 항목을 빠뜨려, 판독 불가 번호판에 대한 오탐을 0으로 보고). 못 쓰는 채로 남겨 두면 나중에 C tier를 잇는 사람이 검증됐다고 믿고 그대로 쓸 위험이 있어(CLAUDE.md §2, 미검증 코드는 없는 것보다 위험하다), 이 분기는 **비활성화가 아니라 삭제**했다(task-8 리뷰 Important 2). C tier로 재구현할 때는 `wrong_accept_rate`의 분모에 abstain 항목(판독 불가로 답이 없는 번호판)을 **포함**해야 한다 — 판독 불가 번호판에 대한 잘못된 인식이야말로 이 지표가 잡아야 할 오류이기 때문이다.
 
 ---
 

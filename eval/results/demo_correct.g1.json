@@ -6,7 +6,7 @@
     "manifest": "b_youtube",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "8b75468"
+    "code_commit": "62acce4"
   },
   "candidate": {
     "recall_at": {
