@@ -24,11 +24,11 @@
   "observation": {
     "kind": "PLATE",
     "status": "NEEDS_REVIEW",
-    "value": "12나 34?6",
+    "value": "12나34?6",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
   "consensus": {
-    "text": "12나 34?6",
+    "text": "12나34?6",
     "disagree_positions": [5],
     "method": "MULTI_FRAME"
   },
@@ -40,7 +40,7 @@
     "quality": { "plate_px_height": 39, "sharpness": 0.58 }
   },
   "frame_results": [
-    { "frame_ref": "fr_p001_plate", "crop_ref": "crop_p001_01", "text": "12나3456", "confidence": 0.61 },
-    { "frame_ref": "fr_p001_plate2", "crop_ref": "crop_p001_02", "text": "12나3466", "confidence": 0.57 }
+    { "frame_ref": "fr_p001_plate", "crop_ref": "crop_p001_01", "text": "12나3456", "confidence": 0.61, "used_in_consensus": true },
+    { "frame_ref": "fr_p001_plate2", "crop_ref": "crop_p001_02", "text": "12나3466", "confidence": 0.57, "used_in_consensus": true }
   ]
 }

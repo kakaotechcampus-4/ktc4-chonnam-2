@@ -23,11 +23,11 @@
   "observation": {
     "kind": "PLATE",
     "status": "OK",
-    "value": "12가 3476",
+    "value": "12가3476",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
   "consensus": {
-    "text": "12가 3476",
+    "text": "12가3476",
     "disagree_positions": [],
     "method": "MULTI_FRAME"
   },
@@ -39,7 +39,7 @@
     "quality": { "plate_px_height": 46, "sharpness": 0.88 }
   },
   "frame_results": [
-    { "frame_ref": "fr_h001_plate", "crop_ref": "crop_h001_01", "text": "12가3476", "confidence": 0.91 },
-    { "frame_ref": "fr_h001_plate2", "crop_ref": "crop_h001_02", "text": "12가3476", "confidence": 0.89 }
+    { "frame_ref": "fr_h001_plate", "crop_ref": "crop_h001_01", "text": "12가3476", "confidence": 0.91, "used_in_consensus": true },
+    { "frame_ref": "fr_h001_plate2", "crop_ref": "crop_h001_02", "text": "12가3476", "confidence": 0.89, "used_in_consensus": true }
   ]
 }

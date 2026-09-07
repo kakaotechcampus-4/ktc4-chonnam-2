@@ -14,6 +14,7 @@
     "source": "VIDEO_OVERLAY_OCR",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
+  "reason": null,
   "validation": {
     "format_ok": true,
     "monotonic_ok": true,
@@ -22,6 +23,9 @@
   },
   "samples": [
     { "frame_ref": "fr_h001_ov1", "offset_sec": 2.0, "raw_text": "2026-08-24 18:31:30", "parsed_at": "2026-08-24T18:31:30+09:00" },
-    { "frame_ref": "fr_h001_ov2", "offset_sec": 3.0, "raw_text": "2026-08-24 18:31:31", "parsed_at": "2026-08-24T18:31:31+09:00" }
+    { "frame_ref": "fr_h001_ov2", "offset_sec": 3.0, "raw_text": "2026-08-24 18:31:31", "parsed_at": "2026-08-24T18:31:31+09:00" },
+    { "frame_ref": "fr_h001_ov3", "offset_sec": 4.0, "raw_text": "2026-08-24 18:31:32", "parsed_at": "2026-08-24T18:31:32+09:00" },
+    { "frame_ref": "fr_h001_ov4", "offset_sec": 5.0, "raw_text": "2026-08-24 18:31:33", "parsed_at": "2026-08-24T18:31:33+09:00" },
+    { "frame_ref": "fr_h001_ov5", "offset_sec": 6.0, "raw_text": "2026-08-24 18:31:34", "parsed_at": "2026-08-24T18:31:34+09:00" }
   ]
 }
