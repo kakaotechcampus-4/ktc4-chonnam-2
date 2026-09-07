@@ -10,7 +10,7 @@
 
 이미 정의된 응답에서 opaque ID를 일관되게 연결하는 개별 fixture를 만들 때 참고한다. `RecordingTimeline`·`AssetSpan`·`SpanResolution`에 Final 헤더가 있다는 것만으로 소비자 접합이 검증되지는 않는다.
 
-**B06~B09는 Pending이다.** SpanResolution의 요청 범위 완전성, 실제 evidence가 읽을 자산 metadata, 상대시각 입력, 사용 revision 연결이 남아 있다. 이 문서의 ID만으로 자산 크기·가시성·원본 무변형·ReportPackage gate를 계산할 수 없다. 필요한 필드가 없으면 임의 생성하지 않고 해당 Owner 계약을 기다린다.
+**B06~B09 상태 (2026-09-07).** Owner 결정은 끝났다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9). 그러나 이 문서의 ID만으로 자산 크기·가시성·원본 무변형·ReportPackage gate를 계산할 수 없다는 점은 그대로다 — Asset Facts 필드는 recording 자산 계약 2건이 소유하고, `SpanResolution` failure reason·`AnalysisScope` relative range 직렬화는 결정 회차 대기다. 필요한 필드가 없으면 임의 생성하지 않고 해당 Owner 계약을 기다린다.
 
 ## 2. ID 예시
 
@@ -25,9 +25,9 @@ as_0001, rc_0001, clip_0001, da_0001
 
 ## 3. 미결과 제한적 실행
 
-- `CaseView.candidates[].thumb_ref`의 자산 종류와 FrameRef/파생 자산 필드 계약은 recording·case 확인 대기다.
+- `CaseView.candidates[].thumb_ref`는 `FrameRef`(`fr_` 계열)로 확정됐다(2026-09-07). `FrameRef`·파생 자산의 필드 계약과 thumbnail 이미지 전달 형태는 recording 자산 계약 2건 대기다.
 - `source_profile`은 ref 목록에 넣지 않는다. 판독 계약의 라벨이며 자산 ID 타입이 아니다.
 - upload 방식·proxy profile 값·retention·provider별 delete 방식은 기존 미결을 유지한다.
 - 고정된 입력으로 개별 응답을 비교하는 작업과 `ownership.md` §7-④ 전체 E2E 통과는 구분한다. 실행 결과가 아직 없으므로 여기서 E2E PASS를 선언하지 않는다.
 
-현재 닫힌 항목·Pending 및 담당 경계는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §2~§5를 따른다.
+현재 닫힌 항목·Pending 및 담당 경계는 `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §9를 따른다(2026-09-06 보정 기록은 `contracts/adr/adr-consistency-followup-2026-09-06.md`).

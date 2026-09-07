@@ -2,6 +2,8 @@
 
 **Status:** Accepted
 
+> **후속 변경 (2026-09-07):** `evidence-record/v1.2` — `EvidenceValue.needs_review` · `occurred_at.user_corrected`/`source{kind,label_key}` 추가와 `OK` 부여 조건은 `adr-data-contract-call-closure-2026-09-07.md` §4.1이 근거다. 본문은 당시 결정 기록이다.
+
 **Contract:** `⑧ EvidenceRecord + EvidenceNeeds`
 
 **Producer:** `evidence` — 김준영

@@ -2,9 +2,9 @@
 
 **Status:** `Final — Accepted`
 
-> **통합 Pending B03/B05:** 판독 결과의 run 연결 schema와 사용량 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+> **B03·B05 종결 (2026-09-07).** 판독 결과 최상위에 필수 `run_ref: ContractRef{kind:"readout_run"}`를 두고(§3·§4·§6), 사용량 연결은 `UsageRecord.run_ref`가 authoritative다(`contract-usage-record.md`). 결정 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4. 같은 회차에 예시 `observation` 블록을 `Observation<T> v1`에 맞췄다(R-9-5~7, Producer-side 정합).
 
-**Accepted:** `2026-09-06`
+**Accepted:** `2026-09-06` (v1) · `2026-09-07` (v1.1 — `run_ref` 필수 추가, 신유민)
 
 **수락 근거:** 전환 조건이 둘 다 해소됐다. ① `frame_ref` 형식 확정 — 정철원(`recording` Owner) CALL-4 회신으로 `fr_<opaque-id>` opaque 형식이 확정됐고 아래 §「`frame_ref` 형식」에 반영했다. ② Owner 수락 — 신유민 「`contract-plate-overlay-readout.md`의 기존 내용은 Canonical Contract v1 승격에 동의합니다」(CALL-6 회신, 2026-09-06). 근거는 `adr/adr-consistency-2026-09.md` §6 R-4·R-5
 
@@ -12,9 +12,9 @@
 
 **Contract:** `PlateReadout` / `OverlayTimeReadout`
 
-**Contract Version:** `plate-readout/v1` · `overlay-time-readout/v1`
+**Contract Version:** `plate-readout/v1.1` · `overlay-time-readout/v1.1`
 
-**Related ADR:** `adr/adr-plate-overlay-readout.md`
+**Related ADR:** `adr/adr-plate-overlay-readout.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (v1.1 근거)
 
 **Contract Lead:** 신유민
 
@@ -81,15 +81,24 @@
 
 ## `frame_ref` 형식 — 현재 작업 규약 참조
 
-ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. 정식 FrameRef/자산 필드 계약은 recording 작성 대기다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다. 아래 예시 ID 정리는 결과-run 접합(B03/B05)의 종결을 뜻하지 않는다.
+ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. 정식 FrameRef/자산 필드 계약은 recording 작성 대기이며, `FrameRef`가 보장하는 의미 6건(opaque identity · 동일 stream 동일 canonical frame = 동일 ref · 내부 파싱 금지 · `read_frame` 획득 · `media_stream_ref`+source offset 조회 · rebase 불변)은 `contract-recording-timeline-asset-span.md` §12에 있다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다.
 
-## `ReadoutRun`과의 연결
+## `ReadoutRun`과의 연결 — `run_ref` (B03 종결, 2026-09-07 · Decider 신유민 · 확인 유소연·김대원)
 
-`PlateReadout`·`OverlayTimeReadout`은 **자신을 생성한 실행의 `run_id`를 보존한다.**
+`PlateReadout`·`OverlayTimeReadout`은 최상위 **필수** 필드 `run_ref`로 자신을 생성한 실행을 가리킨다.
 
-v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값을 둘로 명시한다. 이 계약은 **관찰 결과**를 담고, 실행의 성공/부분성공/실패와 실패 단계는 `contract-readout-run.md`가 담는다. 실행이 완전히 실패하면 이 계약의 결과는 생성되지 않고 `ReadoutRun`만 남는다.
+```
+"run_ref": { "kind": "readout_run", "ref": "rr_881" }
+```
 
-결과 → run 역추적은 보장하고, 그 반대는 보장하지 않는다.
+- 모양은 `contract-observation.md` §3의 공통 `ContractRef {kind, ref}`다. 평문 `run_id` 문자열을 쓰지 않는다. `ref` 값은 `ReadoutRun.run_id`다.
+- **불변조건: 결과가 존재하면 `run_ref`가 존재하고 유효하다.** `ReadoutRun.outcome`이 `SUCCEEDED`든 `PARTIAL`이든 무관하다.
+- `readout_id`(결과 식별자)와 `run_ref`(실행 식별자)는 **둘 다 유지**한다. 실행이 완전히 실패하면 `ReadoutRun`만 남고 결과는 생성되지 않으므로(`ReadoutRun` 1건 : 결과 0~1건) 둘을 합치지 않는다.
+- **재시도는 새 `run_id`와 새 `readout_id`**다. 재시도 결과 간 supersede 관계는 `readout` 소유가 아니다 — 어느 `readout_id`가 현재 값인지는 `case` 진행 상태와 `CaseView` projection 소관이며 **이 계약에 `supersedes_ref`를 두지 않는다.**
+- 결과 → run 역추적은 보장하고, 그 반대(run → 결과)는 보장하지 않는다. `ReadoutRun.result_refs[]`는 없다.
+- 결과 안의 `observation.produced_by.run_ref`는 최상위 `run_ref`와 **같은 실행**을 가리킨다. `readout`이 생산하는 `Observation`은 `produced_by.run_ref`를 항상 채운다(`Observation` v1은 optional이지만 readout 결과는 항상 `ReadoutRun`에서 나오므로 Producer-side로 강화). 최상위 `run_ref`가 authoritative다.
+
+v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값을 둘로 명시한다. 이 계약은 **관찰 결과**를 담고, 실행의 성공/부분성공/실패와 실패 단계는 `contract-readout-run.md`가 담는다. `run_ref`는 `JobRecord.job_id`나 `JobExecution.execution_id`가 아니다 — `ReadoutRun → JobExecution` 역추적은 `JobExecution.produced`의 `{kind:"readout_run", ref}`가 담당한다.
 
 ---
 
@@ -110,11 +119,12 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 | 항목 | 의미 |
 | --- | --- |
 | `readout_id` | readout 결과 식별자 |
+| `run_ref` | **필수.** 이 결과를 생성한 `ReadoutRun`의 `ContractRef` — `{kind:"readout_run", ref:<run_id>}` (§3) |
 | `case_id` | 연결된 case |
 | `candidate_id` | 사용자가 선택했거나 case가 지정한 사건 후보 |
-| `input_ref` | OCR 근거가 된 `incident_clip_ref`, `span_ref` |
+| `input_ref` | OCR 근거가 된 `incident_clip_ref`, `span_ref`, `source_profile`, `provenance`(근거가 Source-derived임을 뜻하는 불변조건 §3-2·§3-3의 실제 근거) |
 | `target_association` | 실제로 어떤 차량/영역을 대상으로 번호판을 읽었는지와 근거 |
-| `observation` | 번호판 관찰값. 확정값이 아님 |
+| `observation` | 번호판 관찰값 — 공용 `Observation<T> v1` envelope(`contract_version`·`value`·`status`·`source`·`support_refs`·`produced_by`). 확정값이 아님. `support_refs`는 빈 배열 — 근거 ref는 `best_frame`·`frame_results[]`가 소유한다 |
 | `consensus` | 여러 프레임 OCR을 종합한 결과 |
 | `abstained` | 번호판 확정을 보류했는지 |
 | `abstain_reason` | 보류 사유 |
@@ -123,15 +133,19 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 
 ## 예시 JSON
 
+정상 실행(`ReadoutRun rr_881`, `outcome=SUCCEEDED` — `contract-readout-run.md` §7)에서 생성된 결과:
+
 ```json
 {
   "readout_id": "readout_plate_001",
+  "run_ref": { "kind": "readout_run", "ref": "rr_881" },
   "case_id": "case_001",
   "candidate_id": "candidate_001",
   "input_ref": {
     "incident_clip_ref": "clip_0001",
     "span_ref": "span_001",
-    "source_profile": "readout-native"
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
   "target_association": {
     "status": "ASSOCIATED",
@@ -154,10 +168,15 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
     ]
   },
   "observation": {
-    "kind": "PLATE",
-    "status": "NEEDS_REVIEW",
+    "contract_version": "observation/v1",
     "value": "12가34?6",
-    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    "status": "NEEDS_REVIEW",
+    "source": { "kind": "readout.plate_ocr" },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": { "kind": "readout_run", "ref": "rr_881" }
+    }
   },
   "consensus": {
     "text": "12가34?6",
@@ -191,6 +210,8 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 }
 ```
 
+**완전 실패 예시는 없다 — 그것이 규칙이다.** `ReadoutRun rr_882`(`outcome=FAILED`, `failure.kind=PLATE_DETECTION` — `contract-readout-run.md` §8)처럼 실행이 완전히 실패하면 `PlateReadout`은 **생성되지 않는다.** 실패 사실·원인은 `ReadoutRun`만 갖는다.
+
 ---
 
 # 5. PlateReadout 상태와 실패 처리
@@ -209,6 +230,8 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 ## `abstained`
 
 `abstained = true`는 `Observation.status = NEEDS_REVIEW`와 함께 사용한다. 별도 `ABSTAIN` status는 신설하지 않는다.
+
+**`abstain_reason`이 authoritative다** (2026-09-07). `observation.reason.code`는 abstain 외의 사유(`UNKNOWN`/`ERROR` 진단)에만 쓰고, `abstained=true`일 때 `reason.code`를 중복 채우지 않는다. 두 필드가 어긋날 자리를 만들지 않기 위함이다.
 
 이유:
 
@@ -247,31 +270,40 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 | 항목 | 의미 |
 | --- | --- |
 | `readout_id` | overlay readout 결과 식별자 |
+| `run_ref` | **필수.** 이 결과를 생성한 `ReadoutRun`의 `ContractRef` — `{kind:"readout_run", ref:<run_id>}` (§3) |
 | `case_id` | 연결된 case |
 | `candidate_id` | 사용자가 선택했거나 case가 지정한 사건 후보 |
-| `input_ref` | OCR 근거가 된 Source-derived input |
-| `observation` | 화면 timestamp 관찰값. 최종 발생 시각 확정값이 아님 |
+| `input_ref` | OCR 근거가 된 Source-derived input (`provenance` 포함) |
+| `observation` | 화면 timestamp 관찰값 — 공용 `Observation<T> v1` envelope. `source.kind`는 namespaced `readout.overlay_ocr`(`TimeResolution`이 쓰는 시각 source 값 공간과 같은 enum으로 합치지 않는다). 최종 발생 시각 확정값이 아님 |
 | `validation` | readout이 수행한 형식/시간흐름/구간 정합성 검증 |
 | `samples` | 검증에 사용한 sample별 OCR 결과 |
 
 ## 예시 JSON
 
+정상 실행(`ReadoutRun rr_883`, `operation=OVERLAY_TIME_READ`, `outcome=SUCCEEDED`)에서 생성된 결과. 실행이 완전히 실패하면 이 결과도 생성되지 않고 `ReadoutRun`만 남는다(§4 말미와 같은 규칙):
+
 ```json
 {
   "readout_id": "readout_time_001",
+  "run_ref": { "kind": "readout_run", "ref": "rr_883" },
   "case_id": "case_001",
   "candidate_id": "candidate_001",
   "input_ref": {
     "incident_clip_ref": "clip_0001",
     "span_ref": "span_001",
-    "source_profile": "readout-native"
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
   "observation": {
-    "kind": "OVERLAY_TIMESTAMP",
-    "status": "OK",
+    "contract_version": "observation/v1",
     "value": "2026-09-02T18:31:12+09:00",
-    "source": "VIDEO_OVERLAY_OCR",
-    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    "status": "OK",
+    "source": { "kind": "readout.overlay_ocr" },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": { "kind": "readout_run", "ref": "rr_883" }
+    }
   },
   "validation": {
     "format_ok": true,

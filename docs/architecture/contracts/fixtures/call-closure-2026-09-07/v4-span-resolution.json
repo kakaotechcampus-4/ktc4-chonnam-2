@@ -1,0 +1,67 @@
+{
+  "_about": "B06 — SpanResolution 완전성. 규칙 원문: contract-recording-timeline-asset-span.md §9·§23 SpanResolution 6~7. 계약 본문의 §8.1·§24 예시는 검사기가 직접 읽어 같은 검사를 한다. FAILED·범위 밖 요청 케이스는 reason 값·failure 필드가 확정되지 않아(CALL-14) 넣지 않았다.",
+  "valid": [
+    {
+      "id": "two_streams_same_window_allowed",
+      "note": "서로 다른 MediaStream(front/rear)이 같은 시간대를 덮는 것은 허용. 합집합은 요청 범위와 같다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 10.0, "end_sec": 30.0 },
+        "status": "COMPLETE",
+        "spans": [
+          { "sequence": 0, "timeline_range": { "start_sec": 10.0, "end_sec": 30.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 10.0, "end_sec": 30.0 } },
+          { "sequence": 1, "timeline_range": { "start_sec": 10.0, "end_sec": 30.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0002", "source_range": { "start_sec": 10.0, "end_sec": 30.0 } }
+        ],
+        "missing_ranges": []
+      }
+    },
+    {
+      "id": "partial_with_gap_fully_explained",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [
+          { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } },
+          { "sequence": 1, "timeline_range": { "start_sec": 120.0, "end_sec": 130.0 }, "source_asset_ref": "sa_0003", "media_stream_ref": "ms_0005", "source_range": { "start_sec": 0.0, "end_sec": 10.0 } }
+        ],
+        "missing_ranges": [
+          { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0002" }
+        ]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "unexplained_tail_10s",
+      "note": "감사 B06이 지적한 원래 §8.1 예시 그대로. [120,130)이 설명되지 않는다 → 위반.",
+      "expect_violation": "coverage",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0002" } ]
+      }
+    },
+    {
+      "id": "same_stream_overlap",
+      "note": "같은 MediaStream이 같은 logical coverage를 중복 → 위반.",
+      "expect_violation": "same_stream_overlap",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 0.0, "end_sec": 20.0 },
+        "status": "COMPLETE",
+        "spans": [
+          { "sequence": 0, "timeline_range": { "start_sec": 0.0, "end_sec": 15.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 15.0 } },
+          { "sequence": 1, "timeline_range": { "start_sec": 10.0, "end_sec": 20.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 10.0, "end_sec": 20.0 } }
+        ],
+        "missing_ranges": []
+      }
+    }
+  ]
+}

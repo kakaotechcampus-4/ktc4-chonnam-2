@@ -31,6 +31,7 @@
 | 2026-09-05 | §5-1 ⑫ · §4-모듈5 ④⑤ · §11-4 · §12 RT8 · §5-3 | Job Intent / Job Execution 분해 확정을 반영. `JobRecord`(case) / `JobExecution`(common/runtime) / `UsageRecord`로 ⑫를 다시 씀. RT8 종결. recording 보조 구조 3개 등재 | `contracts/adr/adr-job-record-case-view.md` · `contracts/adr/adr-consistency-2026-09.md` |
 | 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ · §11-4 | 담당자 회신으로 별도 계약 2건을 작성하고 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층의 opaque ref 방향과 계약 2건 작성 예정 기록(정철원). §11-4 USER_REVIEWED 소유 확인 반영. 후속 감사에서 접합 완결은 Pending으로 분리 | `contracts/adr/adr-consistency-2026-09.md` §6 · `contracts/adr/adr-readout-run.md` · `contracts/adr/adr-correction-record.md` |
 | 2026-09-06 (감사 후속) | §5-1 상태 안내 · §5-3 · §11-4 안내 | 미작성 자산이 통합을 막지 않는다는 단정 철회. ref는 최소 schema 이전 작업 규약으로 한정. CaseView/recording 접합은 Pending 유지 | `contracts/adr/adr-consistency-followup-2026-09-06.md` |
+| 2026-09-07 (접합부 종결) | §5-1 상태 안내 · §5-3 안내 · §11-4 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B01·B02·B03·B05·B09 종결, B06·B08 직렬화 대기, B07 자산 계약 대기를 종결 ADR로 가리킨다 | `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` |
 
 ---
 
@@ -888,6 +889,8 @@ v3에서는 산문으로만 정의됐지만 v4에서는 web의 유일한 입력�
 }
 ```
 
+> 위는 의미 수준 구조다. 필드·enum·nullable은 계약이 확정한다 — `case-view/v1.2`(2026-09-07)는 `requirements`를 `requirements_evidence` / `requirements_package` 두 객체로 나눠 세 gate(`EVIDENCE_SUFFICIENT`·`PACKAGE_READY`·`USER_REVIEWED`)를 구분해 내려보낸다(`contracts/contract-job-record-case-view.md` B절 §7).
+
 CaseView는 적어도 다음 상황을 web이 **추론 없이** 표현하게 해야 한다.
 
 ```
@@ -1050,7 +1053,7 @@ Eval clip suite:
 
 > **중요:** web은 ①~⑩을 직접 읽지 않는다. case가 필요한 값을 `CaseView`로 projection한다.
 
-> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 Pending이며 `CorrectionRecord`는 Consumer Review 대기 Draft다. 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
+> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 2026-09-07에 종결됐다(결과 계약의 필수 `run_ref` · `UsageRecord.run_ref` authoritative — `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4). `CorrectionRecord`는 여전히 Consumer Review 대기 Draft다. 등재 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
 
 ## 5-2. `Observation<T>`
 
@@ -1100,7 +1103,7 @@ Data Contract 단계에서 보조 구조 3개가 추가됐다 — **`TimeSourceC
 >
 > 이 계약들은 **ref/provenance/lifecycle 의미까지만** 고정한다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4에서도 미결이므로 임의 확정하지 않는다(A6).
 >
-> **통합 Pending B06~B09.** opaque ref만으로 실제 evidence가 소비할 자산 metadata나 span/시간/revision 접합이 완성되지는 않는다. 개별 fixture는 만들 수 있으나 현재 계약만으로 전체 목 통합 가능을 보증하지 않는다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5를 따른다.
+> **B06~B09 상태 (2026-09-07).** Owner 결정은 끝났다 — `SpanResolution` 완전성 규칙, 최소 자산 사실은 **recording lookup → case 수집 → evidence 주입**으로 전달(evidence·web은 recording을 직접 호출하지 않는다), relative-only timeline은 usable이며 `AnalysisScope`가 relative range를 수용하는 방향, 사용 revision은 `CandidateEvent.span.timeline_revision`. **남은 것:** Asset Facts·`FrameRef`·thumbnail 전달 형태의 필드는 recording 자산 계약 2건이 소유하고(작성 대기), `SpanResolution` failure reason과 `AnalysisScope` relative range의 직렬화는 결정 회차 대기다. opaque ref만으로 evidence의 ASSET 판정을 계산할 수 없다는 점은 그대로다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9·§9를 따른다.
 
 ## 5-4. `AnalysisScope`
 
@@ -1266,7 +1269,7 @@ CaseView는 **원천 domain contract의 복사본이 아니라 UI projection**�
 }
 ```
 
-web은 `notices`와 backend-projected 상태를 표현하고 raw threshold로 상태를 재판정하지 않는다.
+web은 `notices`와 backend-projected 상태를 표현하고 raw threshold로 상태를 재판정하지 않는다. 위 JSON은 의미 수준 예시이며 실제 필드(`requirements_evidence`/`requirements_package` 분리, `notices[].severity` 값 등)는 `contracts/contract-job-record-case-view.md`가 소유한다.
 
 ## 5-13. `JobIntent` / `JobRecord` / `UsageRecord`
 
@@ -1744,7 +1747,7 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-4. `case` — 유소연
 
-> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection 및 전체 통합은 별도로 Pending이다(`contracts/adr/adr-consistency-followup-2026-09-06.md` §3).
+> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 전체 통합(E2E)은 여전히 실행 기록이 없어 Pending이다(같은 문서 §10).
 
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
 - [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7

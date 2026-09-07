@@ -2,7 +2,7 @@
 
 **Status:** `Final — Accepted`
 
-> **통합 Pending B08:** relative-only timeline을 ISO8601 time_ranges로 전달하는 접합은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+> **B08 — 방향 확정, 직렬화 대기 (2026-09-07).** relative-only timeline을 위해 `time_ranges`가 **timeline-relative range를 명시적으로 구분해 수용하는 방향**으로 확장하기로 했다(정철원 불변조건 · 서어진·유소연 동의). **§5 locked 스키마는 아직 바뀌지 않았다** — 정확한 serialization은 `AnalysisScope` Owner(유소연)와 Consumer(서어진), fixture Producer(김대원)가 정한다(`adr/adr-data-contract-call-closure-2026-09-07.md` §4.7 · §8.1 CALL-15). 그 전까지 §12의 금지 규칙만 적용된다.
 
 **Accepted:** 확인 대기 — 최초 수락일과 2026-09-05 closure 보완일의 관계는 Owner 확인 필요
 
@@ -113,6 +113,7 @@ json
 
 - **입력 검증 실패**: time_ranges가 빈 배열이거나 target_event_types가 빈 배열인 경우 → case 측에서 요청 자체를 생성하지 않음 (본 계약 진입 전 케이스에서 차단, §10 불변조건 참고)
 - **budget 초과로 인한 부분 처리**: AnalysisScope 자체는 실행 결과를 담지 않으므로 부분성공/실패 표현은 본 계약 범위 밖. 해당 표현은 `contract-analysis-run-candidate-event.md` §5(AnalysisRun.outcome: SUCCEEDED/PARTIAL/FAILED)에서 다룸
+- **absolute anchor가 없는 영상(`RecordingTimeline.timeline_status=USABLE_RELATIVE_ONLY`)**: 현재 스키마로는 표현할 수 없다. **임의 기준일이나 가짜 ISO8601을 만들어 채우지 않는다**(`product-spec.md` §7). 이 경로는 relative range 직렬화가 확정될 때까지 `AnalysisScope`를 생성하지 않는 것이 아니라 **미확정 상태**다 — anchor 부재만으로 Search를 차단하는 것도 금지다(§12). 확정은 CALL-15
 
 ### 10. 불변조건
 
@@ -122,6 +123,7 @@ json
 4. `budget`은 scope 전체 단일 값이며 time_range별로 분리되지 않는다 (ADR-003 결정1 유지).
 5. `budget.max_cost_krw` / `budget.max_latency_sec`는 필수 non-null 숫자이며 반드시 `> 0`이다. 기본 숫자값은 benchmark/config에서 관리한다.
 6. `hint` 객체는 항상 존재하며 `vehicle`/`free_text`는 null 가능하다. case는 `free_text`에서 사용자 PII를 제거한다.
+7. (2026-09-07) `time_ranges`에 **가짜 기준일·가짜 ISO8601을 생성해 넣지 않는다.** relative-only timeline의 구간은 확정될 relative range 표현으로만 전달한다(§12).
 
 ### 11. Consumer Review 반영 요약
 
@@ -140,3 +142,11 @@ json
 - 다중 target의 eval 귀속은 `CandidateEvent.event_type_hint`에 의존하지 않는다. `contract-analysis-run-candidate-event.md`의 기존 결정대로 `event_type_hint`는 Recall-first Candidate 단계의 optional visual-event hint로 유지한다. Eval의 유형별 Recall은 Ground Truth의 event type과 Candidate span 매칭으로 귀속하며, hint가 있으면 진단/분석 보조값으로만 사용한다.
 - 복수 `time_ranges`는 Contract 차원에서 정식 허용한다. 구간별 처리·partial coverage는 `contract-analysis-run-candidate-event.md`의 `AnalysisRun/issues[]`가 표현하며, eval manifest의 테스트 비율/시나리오는 Eval 계획으로 분리한다.
 - `hint` 객체는 항상 존재하고 하위 두 필드는 null 가능하며, case는 PII sanitize 책임을 가진다.
+
+**B08 — timeline-relative range (2026-09-07 · 방향 확정 · 직렬화 대기)**
+
+`recording`은 다음 불변조건을 유지한다(`contract-recording-timeline-asset-span.md` §4·§23): relative-only `RecordingTimeline`은 정상 usable 상태다 · 가짜 absolute datetime 생성은 금지다 · absolute anchor 부재만으로 Search를 차단하는 것은 금지다. 따라서 ISO8601-only인 현재 `time_ranges`는 **timeline-relative range를 수용하는 방향으로 확장**한다.
+
+최소 의미(확정): absolute range와 relative range를 **명시적으로 구분**한다 · relative range는 timeline-relative 좌표를 쓴다 · 가짜 기준일/가짜 ISO8601 생성은 금지다.
+
+**정하지 않은 것(CALL-15, Decider 유소연 · Consumer 서어진 · fixture Producer 김대원 · 확인 정철원):** 구분 방식(필드/discriminator) · 좌표 단위와 `timeline_id`/`revision` 참조 방식 · 필수성 · `contract_version` 처리. 확정 전 §5 locked 스키마를 바꾸지 않는다. 회차 중간에 나온 「anchor가 없으면 case가 검색을 막고 notice로 표현」안은 recording 불변조건과 충돌해 최종에서 채택되지 않았다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.7.

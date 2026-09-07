@@ -433,7 +433,7 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 [web]  증거 검토 카드 → 신고 꾸러미 → handoff 링크
 ```
 
-> **현재 통합 상태 (감사 후속):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 남은 접합·담당 경계는 `../architecture/contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5 참조.
+> **현재 통합 상태 (2026-09-07):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 접합부 Owner 결정과 남은 Pending·결정 회차는 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §9·§10 참조(2026-09-06 보정 기록은 같은 폴더의 `adr-consistency-followup-2026-09-06.md`). 기준 ④의 세 gate 분리는 계약에 반영됐다(`requirements_evidence`/`requirements_package`/`user_reviewed`) — 화면 실행 확인은 아직 없다.
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 

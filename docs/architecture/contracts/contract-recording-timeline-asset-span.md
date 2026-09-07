@@ -2,7 +2,7 @@
 
 **Status:** `Final — Accepted`
 
-> **통합 Pending B06~B09:** SpanResolution 범위 완전성·자산 입력 표면·상대 입력·사용 revision 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+> **B06~B09 Owner 결정 (2026-09-07, 정철원).** B06 `SpanResolution` 완전성 규칙(§9·§10·§23) · B07 최소 자산 사실과 lookup 경계(§12) · B08 relative-only timeline 불변조건(§4·`contract-analysis-scope.md`) · B09 사용 revision을 `CandidateEvent.span.timeline_revision`에 보존(§5). 스키마·버전은 바뀌지 않았다. **남은 직렬화:** 범위 밖 `MissingRange.reason` 값과 top-level failure reason 필드(CALL-14), Asset Facts 필드(자산 계약 2건). 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9.
 
 **Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4; 2026-09-06 Owner 회신에서 기존 계약 수락 재확인)
 
@@ -247,6 +247,15 @@ revision = 2
 
 Search와 Evidence 모두 과거 결과의 provenance를 위해 `timeline_id + revision` 추적에 동의했다.
 
+**사용 revision의 보존 위치 (2026-09-07 확정 · B09).** Search 결과는 `CandidateEvent.span`에 `timeline_id`와 함께 **`timeline_revision`**을 보존한다(`contract-analysis-run-candidate-event.md` §4-1). 과거 Candidate는 rebase 후 최신 revision 기준으로 mutate하지 않는다.
+
+```
+Candidate provenance   = 생성 당시 timeline_id + timeline_revision
+현재 화면 표시 시각     = 현재 RecordingTimeline revision으로 projection
+```
+
+둘이 다르면 `case`가 비교해 `CaseView`에 「과거 timeline revision 기준」임을 표시한다. `recording`은 revision을 올리기만 하고 stale 판정·표시는 하지 않는다. `evidence`도 같은 `{timeline_id, revision}` 형태를 `TimeResolution` provenance에 맞춘다(`contract-time-resolution.md` §16).
+
 ---
 
 # 6. `AssetSpan`
@@ -371,7 +380,7 @@ resolve_span()
 
   "requested_range": {
     "start_sec":50.0,
-    "end_sec":130.0
+    "end_sec":120.0
   },
 
   "status":"PARTIAL",
@@ -405,9 +414,7 @@ resolve_span()
 }
 ```
 
----
-
-# 9. `SpanResolution.status`
+> **예시 수정 (2026-09-07).** 이전 예시는 `requested_range`가 `[50,130)`인데 `spans`·`missing_ranges`가 `[50,120)`까지만 설명해 10초가 비어 있었다. Owner(정철원)가 「별도 의미가 없는 예시 오류」로 확인했다. 새 reason 값을 만들지 않는 최소 수정으로 요청 범위를 `[50,120)`으로 맞췄다. 완전성 규칙은 §23.
 
 | 값 | 의미 |
 | --- | --- |
@@ -437,6 +444,14 @@ spans = []
 
 단, 빈 배열 자체로 원인을 판단하지 않고 명시적인 failure reason을 함께 사용한다.
 
+**범위·실패의 의미 (2026-09-07 확정 · B06 · Decider 정철원, 확인 김준영·서어진)**
+
+- `spans + missing_ranges`는 `requested_range` 전체를 **빠짐없이** 설명한다(§23 SpanResolution 6).
+- timeline 범위를 **일부** 벗어나는 정상 요청은 usable 구간이 있으면 `PARTIAL`이고, 범위 밖 부분은 `missing_ranges`로 명시한다. 요청 **전체**가 resolve 불가능하면 `FAILED`.
+- `start >= end`, 음수 범위, 잘못된 timeline reference 같은 **입력 오류는 `SpanResolution`을 만들지 않는다.** 입력 검증 실패로 처리한다. `FAILED`는 「정상 입력인데 usable span을 만들 수 없다」는 뜻이다.
+- `FAILED`의 원인 표면화: 위치를 특정할 수 있는 전체 실패는 요청 범위 전체를 `missing_ranges`로 설명한다. 그것만으로 표현할 수 없는 실패는 **top-level failure reason**을 둔다. `recording`은 실패 사실과 원인만 제공하고, 그것을 신고 규칙상 `BLOCK`/`UNKNOWN` 중 무엇으로 볼지는 `evidence`가 판단한다.
+- **아직 정하지 않은 것:** 범위 밖 구간에 쓸 `MissingRange.reason` 값(§10의 세 값에 없다)과 top-level failure reason의 필드명·모양. Owner 결정 대기(`adr/adr-data-contract-call-closure-2026-09-07.md` §8.1 CALL-14). 확정 전에는 값을 만들지 않는다.
+
 ---
 
 # 10. `MissingRange`
@@ -461,6 +476,8 @@ spans = []
 | `STREAM_UNAVAILABLE` | Stream 사용 불가 |
 
 Evidence가 원래 사건 구간에서 일부 Source가 누락됐다는 사실을 반드시 알아야 한다고 요청했기 때문에 `missing_ranges`를 Final 구조에 포함한다.
+
+요청이 timeline 범위를 벗어난 부분도 `missing_ranges`로 명시한다(§9). 그 경우의 `reason` 값은 위 세 값에 없으며 **Owner 결정 대기**다(CALL-14). 임의로 추가하지 않는다.
 
 ---
 
@@ -512,6 +529,29 @@ Gemini / VLM
 로 얻는다.
 
 Search도 AssetSpan에 path를 넣지 않는 대신 `AnalysisSource`가 실제 Provider 입력을 보장해야 한다고 확인했다.
+
+## 12.1 자산 사실 lookup과 `FrameRef` 의미 (2026-09-07 확정 · B07 · Decider 정철원, 확인 김준영·유소연·신유민·서어진)
+
+opaque ref 규칙은 유지한다. 다만 `RequirementReport`의 ASSET 판정은 ref만으로 계산할 수 없으므로 `recording`은 **최소 자산 사실(Asset Facts)을 돌려주는 lookup capability**를 소유한다. 전달 경계는 다음과 같다.
+
+```
+case / orchestration
+        ↓
+recording asset lookup
+        ↓
+Asset Facts
+        ↓
+case / orchestration
+        ↓
+evidence.check_requirements(..., assets)
+```
+
+- `case`가 lookup을 호출해 수집하고 `evidence` 입력에 주입한다. **`evidence`가 `recording`을 직접 호출하지 않는다.** web도 직접 호출하지 않는다(thumbnail 이미지도 같은 경계 — `contract-job-record-case-view.md` B절 §5).
+- 이번 통합의 최소 사실은 `asset_ref` · asset kind / derived role · byte size · 판정 시점의 존재·가용 여부 · derived-from / lineage(조건부로 `duration + timeline_range`)다. 목록과 제외 항목의 원문은 `contract-requirement-report-package.md` §4.6이 소유한다. `sa_`/`da_` 접두어를 파싱해 kind를 추론하지 않고 정식 필드로 준다.
+- **`FrameRef`가 보장하는 의미:** ① `fr_<opaque-id>` 형태의 opaque identity ② 동일 `MediaStream`의 동일 canonical frame은 같은 `FrameRef`(서로 다른 stream의 같은 시각 frame까지 같아야 한다는 뜻은 아님) ③ ref 문자열 내부를 파싱하지 않음 ④ `read_frame(frame_ref)`로 실제 frame 획득 가능 ⑤ `media_stream_ref`와 source-relative offset을 계약 필드로 조회 가능 ⑥ Timeline rebase가 일어나도 같은 `FrameRef`가 다른 frame을 가리키지 않음.
+- `AnalysisSource`는 search가 실제 Provider 분석 입력으로 사용할 수 있는 형태를 보장한다. **정확한 `stream_selector` 직렬화는 확정하지 않았다.**
+
+**필드 계약은 여기 없다.** Asset Facts·`FrameRef`·lookup 서명·thumbnail 이미지 전달 형태의 정확한 필드는 자산 계약 2건 `contract-source-asset-media-stream.md` · `contract-analysis-source-derived.md`(작성 대기, 정철원)가 소유한다. 이 절은 경계와 보장 의미만 고정한다.
 
 ---
 
@@ -868,6 +908,10 @@ SpanResolution
 3. `PARTIAL`이면 usable span과 missing range가 모두 존재한다.
 4. `FAILED`이면 usable span이 존재하지 않는다.
 5. 일부 Source 실패만으로 정상 Span을 제거하지 않는다.
+6. (2026-09-07 · B06) `spans[].timeline_range`와 `missing_ranges[].timeline_range`의 합집합은 `requested_range`와 정확히 같다 — 설명되지 않는 구간이 없다.
+7. (2026-09-07 · B06) 같은 `media_stream_ref`를 가진 `spans`끼리 `timeline_range`가 겹치지 않는다. 서로 다른 `media_stream_ref`가 같은 시간대를 가리키는 것은 허용한다.
+8. (2026-09-07 · B06) 입력 오류(`start >= end` · 음수 · 잘못된 timeline reference)는 `SpanResolution`으로 표현하지 않는다. 입력 검증 실패다.
+9. (2026-09-07 · B06) `FAILED`는 원인을 machine-readable하게 표면화한다 — 요청 범위 전체를 `missing_ranges`로 설명하거나 top-level failure reason을 둔다(모양은 CALL-14 대기).
 
 ## TimeSourceCandidate
 

@@ -6,13 +6,15 @@
 
 **Contract:** `EvidenceRecord + EvidenceNeeds`
 
-**Contract Version:** `evidence-record/v1.1` / `evidence-needs/v1`
+**Contract Version:** `evidence-record/v1.2` / `evidence-needs/v1`
 
-**Accepted:** `2026-09-04` (v1) · `2026-09-06` (v1.1)
+**Accepted:** `2026-09-04` (v1) · `2026-09-06` (v1.1) · `2026-09-07` (v1.2)
 
-**Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1
+**Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1 · **`adr/adr-data-contract-call-closure-2026-09-07.md` §4.1 (v1.2 근거, B01 종결)**
 
-> **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 기존 필드 의미·값 공간은 유지한다. 다만 소비자 호환성·CaseView 전체 파생이 닫혔다는 뜻은 아니다. **Pending B01:** needs_review 원천·시각/위치 입력 변환·라벨 전달은 case/evidence/web 확인 대기다. 근거는 §3의 해당 절.
+> **`evidence-record/v1.2` 변경 (2026-09-07)** — B01 종결. ① `EvidenceValue`에 `needs_review: boolean` 추가 — `evidence`가 값과 함께 검토 필요 여부를 내려주고 `case`는 재계산하지 않는다 ② `occurred_at`에 `user_corrected: boolean`·`source: {kind, label_key}` 추가(`TimeResolution` 결과의 snapshot, `observability` 없음) ③ `resolution_status=OK` 부여 조건을 엄격히 한다(§4.4) ④ §10 불변조건 12~15. 값 의미·값 공간은 유지하며 필드 추가만이다. Decider 유소연(`CaseView` 소비 규칙) · 김준영(`evidence` 필드) · 확인 신유민.
+
+> **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 당시 Pending B01(needs_review 원천·시각/위치 입력 변환·라벨 전달)은 v1.2에서 닫혔다.
 
 **Contract Lead / Owner:** 김준영 (`evidence`)
 
@@ -116,6 +118,11 @@ EvidenceRecord {
         resolution_status:
             OK
             | NEEDS_REVIEW
+        user_corrected: boolean
+        source: {
+            kind: namespaced string
+            label_key: string | null
+        }
     }
 
     vehicle_number?: EvidenceValue<string>
@@ -147,6 +154,7 @@ EvidenceValue<T> {
 
     support_refs: ContractRef[]
     user_corrected: boolean
+    needs_review: boolean
 }
 
 Coordinate {
@@ -174,6 +182,18 @@ Coordinate {
 - 이 두 필드는 표시를 위한 것이고 **authoritative 값 판정에는 쓰지 않는다.** `confidence`를 노출하는 것이 아니다.
 
 **보정 근거:** `evidence`는 김준영(PM) 소유이고 값 의미를 바꾸지 않는 필드 추가다(`adr/adr-consistency-2026-09.md` §3 트랙 1 조건 3). 소비자 `case`에는 통보한다 — `adr/adr-consistency-2026-09.md` §6 R-1.
+
+### `EvidenceValue.needs_review` (v1.2, 2026-09-07 · B01 종결)
+
+`CaseView`의 `info_state` 파생 3단계 「`needs_review == true → INFO_NEEDS_REVIEW`」의 입력이다. **`evidence`가 값과 함께 내려주고 `case`는 재계산하지 않는다.** 같은 Evidence를 받은 두 `case` 구현이 서로 다른 검토 상태를 만들지 않게 하기 위함이다. 판정 기준·threshold는 `evidence` 정책이 소유하고 이 계약에 수치를 적지 않는다.
+
+`evidence`가 보장하는 것:
+
+- `needs_review`는 **값은 존재하지만 사용자 확인이 필요한 경우**에만 `true`다.
+- `user_corrected=true`와 `needs_review=true`는 동시에 나오지 않는다 — 사용자가 이미 확인·수정한 값은 다시 확인시키지 않는다(`core-user-flow.md` §9).
+- `value=null`인 값에 `needs_review=true`를 만들지 않는다 — 값이 없어 입력이 필요한 상태는 `INFO_UNKNOWN`으로 갈라지고, 필요한 행동은 `EvidenceNeeds`나 requirement 항목이 표현한다.
+
+`needs_review`와 `CaseView.info_state`는 **독립 필드**다(동치 불변식 아님). web은 `info_state`만 보고 `needs_review`를 직접 해석하지 않는다(`contract-job-record-case-view.md` B절 §7).
 
 ---
 
@@ -213,11 +233,20 @@ visual_event_type
 occurred_at.value
 occurred_at.time_resolution_ref
 occurred_at.resolution_status
+occurred_at.user_corrected          (v1.2)
+occurred_at.source {kind, label_key} (v1.2)
 ```
 
 - `TimeResolution.status=UNKNOWN`이면 `occurred_at` 자체가 없어야 한다.
 - conflict/considered/timezone provenance 상세는 `TimeResolution`이 authoritative source다.
 - `case`는 Timestamp source priority를 재계산하지 않는다.
+
+**v1.2 (2026-09-07 · B01 종결)** — `occurred_at`은 `EvidenceValue<T>`가 아니므로 `CaseView`가 사건시각의 정보 상태를 만들 입력을 별도로 갖는다.
+
+- `resolution_status`는 `TimeResolution.status`(`OK`/`NEEDS_REVIEW`)를 그대로 옮긴다. **`OK`는 검증된 영상 화면 시각 또는 사용자 확정에만 부여한다.** 파일명·metadata로 계산한 시각은 값은 유지하되 `NEEDS_REVIEW`로 내려온다. 부여 조건의 원문은 `contract-time-resolution.md` §4이며 여기에 복제하지 않는다.
+- `user_corrected`는 `TimeResolution.resolved.user_corrected`의 snapshot이다. `OK` 하나로는 「사용자 확정」과 「검증된 화면 시각」이 구분되지 않아 `INFO_USER_CONFIRMED`/`INFO_SOURCE_VERIFIED`를 나누기 위해 둔다.
+- `source.kind`는 `TimeResolution.resolved.source.kind`의 snapshot, `source.label_key`는 그 kind에 대응하는 화면 라벨 키다(네임스페이스는 `evidence` 소유, 없으면 `null`). **`observability`는 두지 않는다** — `case`는 source를 보고 상태를 재판정하지 않기 때문이다.
+- `case`의 변환표(`occurred_at` 부재 → `INFO_UNKNOWN` / `user_corrected` → `INFO_USER_CONFIRMED` / `NEEDS_REVIEW` → `INFO_NEEDS_REVIEW` / `OK` → `INFO_SOURCE_VERIFIED`)는 `contract-job-record-case-view.md` B절 §7이 소유한다.
 
 ## 4.5 VisualEvidence 연결
 
@@ -261,6 +290,7 @@ occurred_at confirmed
 - `user_hint`를 객관적 GPS/주소와 동일시하지 않는다.
 - 사용자 correction이 적용되면 `user_corrected=true`와 correction provenance를 남긴다.
 - v1에서 위치 전용 신규 Contract를 만들지 않는다.
+- 화면 대표값 선택(`address → place_name → user_hint`)과 `coord`·`search_keyword`의 별도 전달은 `CaseView`의 projection 규칙이다(`contract-job-record-case-view.md` B절 §7). `evidence`는 존재하는 값을 각각의 provenance와 함께 보존하기만 하고 여러 값을 합쳐 새 위치 문자열을 만들지 않는다.
 
 ---
 
@@ -460,6 +490,10 @@ ReportPackage / DerivedVideo export Job
 9. `vehicle_number` 존재와 신고영상 내 번호판 가시성을 동일시하지 않는다.
 10. GPS가 없으면 임의 좌표를 만들지 않는다.
 11. `PACKAGE_READY`, `USER_REVIEWED`, Requirement severity를 Record에 넣지 않는다.
+12. (v1.2) `EvidenceValue.user_corrected=true`이면 `needs_review=false`다.
+13. (v1.2) `EvidenceValue.value=null`이면 `needs_review=false`다. `needs_review`는 값이 존재할 때만 `true`일 수 있다.
+14. (v1.2) `occurred_at.resolution_status=OK`는 검증된 영상 화면 시각 또는 사용자 확정에만 부여한다(`contract-time-resolution.md` §4). 파일명·metadata 계산 시각은 `NEEDS_REVIEW`다.
+15. (v1.2) `occurred_at`이 존재하면 `user_corrected`와 `source.kind`가 존재한다. `occurred_at.source`에 `observability`를 두지 않는다.
 
 ## EvidenceNeeds
 

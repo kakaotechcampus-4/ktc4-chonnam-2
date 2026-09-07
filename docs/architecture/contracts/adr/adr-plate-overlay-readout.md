@@ -1,5 +1,7 @@
 # ADR: PlateReadout / OverlayTimeReadout Contract Decision
 
+> **후속 변경 (2026-09-07):** `plate-readout/v1.1` · `overlay-time-readout/v1.1` — 최상위 필수 `run_ref{kind:"readout_run"}`와 예시 `observation` 블록의 Observation v1 정합은 `adr-data-contract-call-closure-2026-09-07.md` §4.3이 근거다. 본문은 당시 결정 기록이다.
+
 **Contract:** ⑥ `PlateReadout / OverlayTimeReadout`
 
 **Contract Lead:** 신유민

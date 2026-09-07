@@ -25,8 +25,18 @@ python scripts/check_boundaries.py --only=boundaries # 모듈 경계만
 
 **알려진 한계:** 포인터가 올바른 행인지, Accepted/Related ADR, JSON 직렬화·nullable·참조 연결·gate 의미는 검사하지 않는다. 번호/coverage 범위는 아직 ①~⑫이며 ⑬을 놓친다. AnalysisSource는 제목 언급 때문에 coverage NOTE에서 빠질 수 있다. 검사 대상 코드가 0개인 경로는 boundary NOTE를 출력한다. 현재 골격에서는 7개 boundary NOTE와 5개 coverage NOTE가 나오며, PASS를 E2E·Owner 수락 증거로 쓰지 않는다.
 
+## `check_contract_fixtures.py` — 계약 예시·fixture 의미 검사 (2026-09-07)
+
+```bash
+python scripts/check_contract_fixtures.py
+```
+
+`check_boundaries.py`가 보지 않는 것을 본다 — 수정한 계약 12건의 ```json 예시 파싱, `CaseView` `info_state` 파생(B01), `RequirementReport` 선택 3단계(B02), 판독 결과→`ReadoutRun`→`UsageRecord`→`JobExecution` 연결(B03·B05), `SpanResolution` 완전성(B06), `CandidateEvent.span.timeline_revision`(B09), 수정 문서의 상대 링크와 옛 Pending 문구 잔존. 규칙은 각 함수 docstring이 가리키는 계약 절이 소유하고, fixture는 `docs/architecture/contracts/fixtures/call-closure-2026-09-07/`에 있다. 검증 조건과 결과의 의미는 `docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §7.
+
+**알려진 한계:** ADR에서 확정되지 않은 값(범위 밖 `MissingRange.reason` · failure reason 필드 · relative range · stale 표시 필드명)은 fixture에 없다. 실패 run의 `JobExecution.status` 매핑도 Pending이라 검사하지 않는다. 출력의 PASS는 「계약 규칙을 코드로 옮겼을 때 fixture가 만족한다」는 뜻이며 구현 통합·E2E·Owner 수락 증거가 아니다. CI에는 아직 붙이지 않았다.
+
 ## CI
 
-`.github/workflows/boundary-check.yml`이 PR과 `develop` push에서 이 스크립트를 돌린다.
+`.github/workflows/boundary-check.yml`이 PR과 `develop` push에서 `check_boundaries.py`를 돌린다.
 
 **운영진 소유 4개 파일은 건드리지 않는다** — `workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `CODEOWNERS`. 그 밖의 `.github/` 추가는 CODEOWNERS 개정으로 허용됐다.
