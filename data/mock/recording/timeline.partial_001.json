@@ -20,14 +20,14 @@
     {
       "source_asset_ref": "sa_p001_01",
       "timeline_start_sec": 0.0,
-      "timeline_end_sec": 2400.0,
+      "timeline_end_sec": 1200.0,
       "media_stream_refs": ["ms_p001_01", "ms_p001_02", "ms_p001_03"]
     }
   ],
 
   "gaps": [],
 
-  "timeline_status": "USABLE",
+  "timeline_status": "PARTIAL",
 
   "produced_by": "recording"
 }

@@ -78,7 +78,7 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
   "gaps": [], "timeline_status": "USABLE", "produced_by": "recording"
 }
 ```
-- 대표 Partial 예시: `data/mock/recording/timeline.partial_001.json` (동일 구조, `timeline_id=tl_p001`)
+- 대표 Partial 예시: `data/mock/recording/timeline.partial_001.json` (`timeline_id=tl_p001`, 첫 Source 배치는 0~1200초, `timeline_status=PARTIAL`)
 - 핵심 불변조건: `revision>=1`, rebase 시 ID 유지·revision만 증가, `working_anchor`는 final `occurred_at`이 아님
 - 사용 Scenario: happy_001, partial_001
 

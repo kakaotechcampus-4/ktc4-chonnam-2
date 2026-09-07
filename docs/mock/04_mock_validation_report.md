@@ -23,7 +23,7 @@
 
 | Contract | Normal | Empty | Unknown | Abstain | Partial | 기타 |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| RecordingTimeline | 2 | N/A | N/A | N/A | 0 | timeline_status=PARTIAL/UNUSABLE 예시 없음(v1 확장 대상) |
+| RecordingTimeline | 1 | N/A | N/A | N/A | 1 | timeline_status=UNUSABLE 예시 없음(v1 확장 대상) |
 | SpanResolution | 1(COMPLETE) | N/A | N/A | N/A | 1 | FAILED(spans=[]) 예시 없음 |
 | TimeSourceCandidate | 2 | N/A | N/A | N/A | N/A | 계약상 "실제 값 있을 때만 생성" — TimeSourceCheck(부재 표현) fixture는 안 만듦 |
 | AnalysisScope | 2 | N/A | N/A | N/A | N/A | — |

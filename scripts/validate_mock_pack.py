@@ -114,11 +114,56 @@ def check_scenario(tag, case_id):
     if timeline and span_res:
         if span_res["timeline_ref"]["timeline_id"] != timeline["timeline_id"]:
             errors.append(f"[{tag}] span_resolution.timeline_ref != timeline.timeline_id")
+        if span_res["timeline_ref"]["revision"] != timeline["revision"]:
+            errors.append(f"[{tag}] span_resolution.timeline_ref.revision != timeline.revision")
+
+        placements = timeline.get("source_placements", [])
+
+        def overlaps(left, right):
+            return (
+                left["start_sec"] < right["end_sec"]
+                and right["start_sec"] < left["end_sec"]
+            )
+
         for span in span_res.get("spans", []):
             if span["timeline_range"]["start_sec"] >= span["timeline_range"]["end_sec"]:
                 errors.append(f"[{tag}] AssetSpan.timeline_range start>=end")
             if span["source_range"]["start_sec"] >= span["source_range"]["end_sec"]:
                 errors.append(f"[{tag}] AssetSpan.source_range start>=end")
+            matching_placements = [
+                placement
+                for placement in placements
+                if placement["source_asset_ref"] == span["source_asset_ref"]
+            ]
+            if not any(
+                placement["timeline_start_sec"] <= span["timeline_range"]["start_sec"]
+                and span["timeline_range"]["end_sec"] <= placement["timeline_end_sec"]
+                and span["media_stream_ref"] in placement.get("media_stream_refs", [])
+                for placement in matching_placements
+            ):
+                errors.append(
+                    f"[{tag}] AssetSpan이 같은 SourceAsset/MediaStream의 source_placement 범위에 포함되지 않음"
+                )
+        resolved_stream_refs = {
+            span["media_stream_ref"] for span in span_res.get("spans", [])
+        }
+        for missing in span_res.get("missing_ranges", []):
+            if any(
+                overlaps(
+                    missing["timeline_range"],
+                    {
+                        "start_sec": placement["timeline_start_sec"],
+                        "end_sec": placement["timeline_end_sec"],
+                    },
+                )
+                for placement in placements
+                if resolved_stream_refs.intersection(
+                    placement.get("media_stream_refs", [])
+                )
+            ):
+                errors.append(
+                    f"[{tag}] MissingRange가 같은 resolved MediaStream의 usable source_placement와 겹침"
+                )
         rr = span_res["requested_range"]
         if rr["start_sec"] >= rr["end_sec"]:
             errors.append(f"[{tag}] SpanResolution.requested_range start>=end")
