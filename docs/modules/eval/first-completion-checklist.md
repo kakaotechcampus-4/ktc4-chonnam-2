@@ -67,9 +67,8 @@
 
 - [x] 데이터가 없는 지표는 `null` + 사유 문자열이다. `0`으로 적지 않는다.
 - [x] 정답은 있는데 예측이 못 맞힌 경우와, 애초에 잴 수 없는 경우를 구분한다.
-- [ ] **`scenario_partial_001`의 ABSTAIN을 채점 규칙으로 다룬다.** `PlateReadout.abstained=true`일 때 "틀림"이 아니라 "판독 보류"로 센다 — 보류를 오답으로 세면 모델이 무리해서 읽는 쪽이 유리해진다.
-- [ ] `Observation.status=UNKNOWN`(GPS 없음)을 오답이 아니라 데이터 없음으로 처리한다.
 - [ ] Mock 예측에 구간이 없어 낼 수 없는 지표를 `null` + 사유로 낸다(0으로 적지 않는다).
+- [—] ~~`scenario_partial_001`의 ABSTAIN·UNKNOWN 채점~~ — **v1로 이월**(아래 제외 범위 참조)
 
 ### E. Integration
 
@@ -102,9 +101,8 @@
 
 ### `PlateReadout` / `OverlayTimeReadout` (Consumer)
 
-- [ ] `abstained` 여부와 `observation.status`(`OK` / `NEEDS_REVIEW`)를 구분해 읽는다.
-- [ ] ABSTAIN을 오답과 구분해 집계한다.
-- [ ] Consumer 검수 의견 제출.
+- [ ] Consumer 검수 의견 제출 — 특히 **ABSTAIN 표현이 채점 가능한 형태인가**. 채점 구현은 v1이지만, 계약 형태에 대한 의견은 지금 내야 한다(계약이 닫히고 나면 바꾸기 어렵다).
+- [—] ~~`abstained` / `observation.status` 채점 규칙 구현~~ — **v1로 이월**
 
 ### `UsageRecord` (Consumer)
 
@@ -126,7 +124,7 @@
 | --- | --- | --- | --- | --- |
 | `scenario_happy_001` | `prediction_correct.happy_001.json` + `expected` | 정규화 → 채점 | `results/*.json` | 4개 정답 항목 전부 적중, 낼 수 없는 지표는 `null`+사유 |
 | `scenario_happy_001` | `prediction_wrong.happy_001.json` + `expected` | 정규화 → 채점 | `results/*.json` | rank·유형·plate 세 곳이 오답으로 잡힘 — **correct와 점수가 갈릴 것** |
-| `scenario_partial_001` | — | **입력 fixture 없음** | — | 검수 의견으로 부재를 보고(채점 불가가 정상) |
+| `scenario_partial_001` | — | **1차 완료 범위 밖** | — | 채점하지 않는다. eval fixture 부재를 검수 의견으로 보고하는 것으로 끝 |
 
 ---
 
@@ -178,6 +176,7 @@
 
 ## 1차 완료에서 제외하는 것
 
+- **`scenario_partial_001` 채점 전체** — `04_mock_validation_report.md` §23이 "Partial Success 채점 검증은 v1로 미뤄졌다"고 이미 기록했다. Seed Mock(v0)에 eval fixture 자체가 없고, W4 §17이 eval에 요구하는 것은 "공개 Contract/Mock 결과를 읽어 **기본 검증**"까지다. ABSTAIN·UNKNOWN이 Case를 깨지 않는지는 `case` 쪽 판정 항목이다.
 - **Timestamp·Fine·E2E·Efficiency 지표** — 스펙 §1에서 v1 범위 밖으로 명시
 - **Plate 실측 지표** — 정답지가 존재하지 않는다. 스키마와 `null` + 사유까지만
 - **비용 / Latency 지표** — `UsageRecord` 검수 의견만 내고 계산은 하지 않는다
