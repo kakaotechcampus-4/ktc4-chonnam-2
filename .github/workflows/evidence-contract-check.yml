@@ -1,0 +1,26 @@
+name: evidence-contract-check
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Evidence contract tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Shared Mock Pack validation
+        run: python scripts/validate_mock_pack.py
+
+      - name: Evidence implementation fixture validation
+        run: python scripts/validate_evidence_impl.py
