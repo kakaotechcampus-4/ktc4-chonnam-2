@@ -1,0 +1,30 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "case_ref": {"kind": "case", "ref": "case_happy_001"},
+  "selection_rev": 1,
+  "candidate_ref": {"kind": "candidate_event", "ref": "cand_h001"},
+  "evidence_interval_ref": {"kind": "asset_span", "ref": "sa_h001_01:690.0-708.0"},
+  "location_hint": "미금역 근처",
+  "requirement_scope": "FINAL_PACKAGE",
+  "evaluated_at": "2026-08-24T18:35:00+09:00",
+  "package_created_at": "2026-08-24T18:36:00+09:00",
+  "refs": {
+    "resolution_ref": {"kind": "time_resolution", "ref": "tres_h001"},
+    "record_ref": {"kind": "evidence_record", "ref": "ev_h001"},
+    "requirement_report_ref": {"kind": "requirement_report", "ref": "req_h001"},
+    "package_ref": {"kind": "report_package", "ref": "pkg_h001"}
+  },
+  "assets": {
+    "requirement_asset_refs": [{"kind": "derived_asset", "ref": "da_h001_report_video"}],
+    "report_video_ref": {"kind": "derived_asset", "ref": "da_h001_report_video"},
+    "plate_image_ref": {"kind": "derived_asset", "ref": "da_h001_plate_crop"},
+    "source_refs": [{"kind": "source_asset", "ref": "sa_h001_01"}]
+  },
+  "fixture_paths": {
+    "visual_evidence": "search/visual_evidence.happy_001.json",
+    "plate_readout": "readout/plate_readout.happy_001.json",
+    "overlay_time_readout": "readout/overlay_time_readout.happy_001.json",
+    "time_source_candidates": "recording/time_source_candidates.happy_001.json",
+    "observations": "evidence/observations.happy_001.json"
+  }
+}

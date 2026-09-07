@@ -1,0 +1,30 @@
+{
+  "scenario_id": "scenario_partial_001",
+  "case_ref": {"kind": "case", "ref": "case_partial_001"},
+  "selection_rev": 1,
+  "candidate_ref": {"kind": "candidate_event", "ref": "cand_p001"},
+  "evidence_interval_ref": {"kind": "asset_span", "ref": "sa_p001_01:1180.0-1198.0"},
+  "location_hint": null,
+  "requirement_scope": "EVIDENCE",
+  "evaluated_at": "2026-08-25T09:25:00+09:00",
+  "package_created_at": null,
+  "refs": {
+    "resolution_ref": {"kind": "time_resolution", "ref": "tres_p001"},
+    "record_ref": {"kind": "evidence_record", "ref": "ev_p001"},
+    "requirement_report_ref": {"kind": "requirement_report", "ref": "req_p001"},
+    "package_ref": null
+  },
+  "assets": {
+    "requirement_asset_refs": [],
+    "report_video_ref": null,
+    "plate_image_ref": null,
+    "source_refs": []
+  },
+  "fixture_paths": {
+    "visual_evidence": "search/visual_evidence.partial_001.json",
+    "plate_readout": "readout/plate_readout.partial_001.json",
+    "overlay_time_readout": "readout/overlay_time_readout.partial_001.json",
+    "time_source_candidates": "recording/time_source_candidates.partial_001.json",
+    "observations": "evidence/observations.partial_001.json"
+  }
+}
