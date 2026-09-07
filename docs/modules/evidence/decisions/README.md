@@ -5,3 +5,4 @@
 ## 현재 결정
 
 - `no-separate-signoff.md — 신고요건 변경 서명자를 두지 않는 근거 (B-3)`
+- `first-integration-runtime-boundary.md` — 1차 Mock 통합 실행 경계와 검증 전략
