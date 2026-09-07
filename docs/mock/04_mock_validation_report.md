@@ -39,10 +39,10 @@
 | EvidenceNeeds | 1(items 有) | 1([]) | N/A | N/A | N/A | — |
 | RequirementReport | 0(PASS) | N/A | 0 | N/A | 1(WARN)+1(BLOCK) | §13이 요구한 8케이스 중 2개만 채움 — 원문 자체에 예시 없던 계약 |
 | ReportPackage | 1 | N/A | N/A | N/A | N/A(BLOCK이라 미생성, 의도됨) | 원문 자체에 예시 없던 계약 |
-| JobRecord | 4 | N/A | N/A | N/A | N/A | force_rerun=true 예시 없음(계약 원문 §9엔 있음, 이번 Pack엔 미포함) |
-| JobExecution | 4(SUCCEEDED) | N/A | N/A | N/A | 0 | FAILED/STALE 예시 없음 |
+| JobRecord | 4 | N/A | N/A | N/A | 1(force_rerun=true) | `job_p001_plate_reread` 추가로 force_rerun=true 예시 확보(2026-09-07) |
+| JobExecution | 4(SUCCEEDED) | N/A | N/A | N/A | 1(STALE)+1(RUNNING) | 같은 job_id에 attempt 1(STALE)→2(RUNNING) 추가(2026-09-07). FAILED 예시는 여전히 없음 |
 | UsageRecord | 4(token 有) | N/A | N/A | N/A | 2(token=null) | — |
-| CaseView | 1(READY/WARN) | N/A | N/A | N/A | 1(EVIDENCE_REVIEW/BLOCK) | — |
+| CaseView | 1(READY/WARN) | N/A | N/A | N/A | 2(EVIDENCE_REVIEW/BLOCK, 그중 1개는 running_jobs 有) | partial_001이 case_rev=3으로 갱신되어 `running_jobs`·`progress[].state=RUNNING` 예시 확보(2026-09-07). "결과 없음"/실패 stage 예시는 여전히 없음(Candidate 0개 upstream 필요, `CONTRACT_CONFLICTS.md` 참고) |
 | CorrectionRecord | 0 | N/A | N/A | N/A | N/A | **의도적 제외** — Draft (`CONTRACT_CONFLICTS.md` §3) |
 
 ## Scenario별 Contract Coverage

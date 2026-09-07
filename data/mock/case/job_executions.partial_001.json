@@ -25,5 +25,29 @@
     ],
     "failure_kind": null,
     "usage_refs": ["usage_p001_2", "usage_p001_3"]
+  },
+  {
+    "execution_id": "exec_p001_plate_reread_a1",
+    "job_id": "job_p001_plate_reread",
+    "status": "STALE",
+    "attempt": 1,
+    "queued_at": "2026-08-25T09:20:01+09:00",
+    "started_at": "2026-08-25T09:20:05+09:00",
+    "ended_at": null,
+    "produced": [],
+    "failure_kind": null,
+    "usage_refs": []
+  },
+  {
+    "execution_id": "exec_p001_plate_reread_a2",
+    "job_id": "job_p001_plate_reread",
+    "status": "RUNNING",
+    "attempt": 2,
+    "queued_at": "2026-08-25T09:21:00+09:00",
+    "started_at": "2026-08-25T09:21:05+09:00",
+    "ended_at": null,
+    "produced": [],
+    "failure_kind": null,
+    "usage_refs": []
   }
 ]
