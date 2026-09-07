@@ -18,4 +18,6 @@ storage   storage adapters
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+**1차 계약 유틸리티가 있다.** `JobExecution`/`UsageRecord` 검증, usage aggregate,
+운영 로그 마스킹을 제공한다. 실제 DB queue·lease·heartbeat 구현은 recording
+Owner와의 접합 대기이며 이 폴더에서 임의로 구현하지 않았다.
