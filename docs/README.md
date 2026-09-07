@@ -27,7 +27,7 @@
 | 누가 무엇을 맡는지 | `management/ownership.md` | — |
 | 모듈 경계 밖 운영 결정(승인 경로·리뷰 담당) | `management/cross-cutting-decisions.md` | `archive/management/`의 안건지 |
 | 배포 전 점검 | `management/pre-deploy-security-review.md` · `management/tool-trajectory-review.md` | — |
-| 계약이 지금 어디까지 합의됐는지 | `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §9 (현재 결정·Pending 원장) · `architecture/contracts/adr/adr-consistency-followup-2026-09-06.md` (2026-09-06 보정 기록) · `management/contract-consistency-audit-2026-09-06.md` (감사 근거) | 계약 14건 본문 |
+| 계약이 지금 어디까지 합의됐는지 | `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9 (현재 결정·Pending 원장) · `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` (2026-09-07 회차) · `architecture/contracts/adr/adr-consistency-followup-2026-09-06.md` (2026-09-06 보정 기록) · `management/contract-consistency-audit-2026-09-06.md` (감사 근거) | 계약 16건 본문(Draft 2건 포함) |
 | 평가 지표·실험 기록 방법 | `modules/eval/initial-evaluation-plan.md` · `modules/eval/experiment-guide.md` | — |
 | 과거 제출물·발표 맥락 | `archive/` — **현재 문서가 아니다** | — |
 

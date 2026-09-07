@@ -1,0 +1,136 @@
+{
+  "_about": "CALL-14 — SpanResolution 실패 직렬화(span-resolution/v1.1). 규칙 원문: contract-recording-timeline-asset-span.md §9·§10·§23 SpanResolution 6~12. failure.kind/code 값은 recording 소유 문서가 정한다(작성 대기) — 여기서는 EXAMPLE_* 자리표시자이고 검사기는 모양(비어 있지 않은 문자열)만 본다. OUT_OF_TIMELINE_RANGE 항목의 source_ref는 CALL-16 확정 전이라 키를 넣지 않았고 검사기는 이 키를 읽지 않는다.",
+  "valid": [
+    {
+      "id": "out_of_range_partial",
+      "note": "timeline이 [0,100)까지만 있는데 [80,130)을 요청 → usable [80,100) + 범위 밖 [100,130)은 OUT_OF_TIMELINE_RANGE. failure=null.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "OUT_OF_TIMELINE_RANGE" } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "failed_locatable",
+      "note": "요청 전체가 Source 불가 → missing_ranges가 요청 범위 전체를 설명하고 failure도 non-null.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 200.0, "end_sec": 260.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0007" } ],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    },
+    {
+      "id": "failed_unlocatable",
+      "note": "유효한 timeline ref지만 저장소/인덱스를 읽을 수 없음 → 위치 특정 불가. missing_ranges=[] 허용, failure 필수(완전성 불변조건의 명시적 예외).",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    },
+    {
+      "id": "entirely_out_of_range_is_failed",
+      "note": "요청 전체가 timeline 밖 → 위치를 특정할 수 있으므로 missing_ranges 전체 + failure.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 500.0, "end_sec": 560.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 500.0, "end_sec": 560.0 }, "reason": "OUT_OF_TIMELINE_RANGE" } ],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "partial_with_failure",
+      "expect_violation": "failure_must_be_null",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "OUT_OF_TIMELINE_RANGE" } ],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    },
+    {
+      "id": "failed_without_failure",
+      "expect_violation": "failure_required",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 200.0, "end_sec": 260.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0007" } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "failed_key_missing",
+      "expect_violation": "failure_key_missing",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "COMPLETE",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 200.0, "end_sec": 260.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 60.0 } } ],
+        "missing_ranges": []
+      }
+    },
+    {
+      "id": "failed_locatable_unexplained_tail",
+      "expect_violation": "coverage",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 200.0, "end_sec": 240.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0007" } ],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    },
+    {
+      "id": "unknown_reason",
+      "expect_violation": "reason_not_in_enum",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "BEYOND_END" } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "failure_with_empty_code",
+      "expect_violation": "failure_shape",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.1",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "" }
+      }
+    }
+  ]
+}

@@ -4,6 +4,8 @@
 
 **Status:** Accepted
 
+> **후속 변경 (2026-09-08):** 보조 구조 `SpanResolution`이 `span-resolution/v1.1` — top-level `failure: {kind, code} | null`(키 항상 존재) 추가 · `MissingRange.reason`에 `OUT_OF_TIMELINE_RANGE` 추가 · 위치 특정 불가 `FAILED`의 완전성 예외. Decider 정철원, 확인 김준영·서어진. 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.3. 2026-09-07의 완전성 규칙(B06)은 `adr-data-contract-call-closure-2026-09-07.md` §4.5. 아래 본문은 당시 결정 기록이며 고치지 않았다.
+
 **Contract:** `RecordingTimeline + AssetSpan + TimeSourceCandidate`
 
 **Producer:** `recording`

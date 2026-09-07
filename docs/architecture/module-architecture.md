@@ -32,6 +32,7 @@
 | 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ · §11-4 | 담당자 회신으로 별도 계약 2건을 작성하고 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층의 opaque ref 방향과 계약 2건 작성 예정 기록(정철원). §11-4 USER_REVIEWED 소유 확인 반영. 후속 감사에서 접합 완결은 Pending으로 분리 | `contracts/adr/adr-consistency-2026-09.md` §6 · `contracts/adr/adr-readout-run.md` · `contracts/adr/adr-correction-record.md` |
 | 2026-09-06 (감사 후속) | §5-1 상태 안내 · §5-3 · §11-4 안내 | 미작성 자산이 통합을 막지 않는다는 단정 철회. ref는 최소 schema 이전 작업 규약으로 한정. CaseView/recording 접합은 Pending 유지 | `contracts/adr/adr-consistency-followup-2026-09-06.md` |
 | 2026-09-07 (접합부 종결) | §5-1 상태 안내 · §5-3 안내 · §11-4 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B01·B02·B03·B05·B09 종결, B06·B08 직렬화 대기, B07 자산 계약 대기를 종결 ADR로 가리킨다 | `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` |
+| 2026-09-08 (접합부 종결 후속) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B06(`SpanResolution` `failure`·`OUT_OF_TIMELINE_RANGE`)·B08(`AnalysisScope` relative range) 직렬화 종결, ② `SourceAsset`/`MediaStream`·③ 전체를 담는 recording 자산 계약 2건이 **Draft(Consumer Review 대기)**로 추가됨 | `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` |
 
 ---
 
@@ -1103,7 +1104,9 @@ Data Contract 단계에서 보조 구조 3개가 추가됐다 — **`TimeSourceC
 >
 > 이 계약들은 **ref/provenance/lifecycle 의미까지만** 고정한다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4에서도 미결이므로 임의 확정하지 않는다(A6).
 >
-> **B06~B09 상태 (2026-09-07).** Owner 결정은 끝났다 — `SpanResolution` 완전성 규칙, 최소 자산 사실은 **recording lookup → case 수집 → evidence 주입**으로 전달(evidence·web은 recording을 직접 호출하지 않는다), relative-only timeline은 usable이며 `AnalysisScope`가 relative range를 수용하는 방향, 사용 revision은 `CandidateEvent.span.timeline_revision`. **남은 것:** Asset Facts·`FrameRef`·thumbnail 전달 형태의 필드는 recording 자산 계약 2건이 소유하고(작성 대기), `SpanResolution` failure reason과 `AnalysisScope` relative range의 직렬화는 결정 회차 대기다. opaque ref만으로 evidence의 ASSET 판정을 계산할 수 없다는 점은 그대로다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9·§9를 따른다.
+> **B06~B09 상태 (2026-09-07).** Owner 결정은 끝났다 — `SpanResolution` 완전성 규칙, 최소 자산 사실은 **recording lookup → case 수집 → evidence 주입**으로 전달(evidence·web은 recording을 직접 호출하지 않는다), relative-only timeline은 usable이며 `AnalysisScope`가 relative range를 수용하는 방향, 사용 revision은 `CandidateEvent.span.timeline_revision`. opaque ref만으로 evidence의 ASSET 판정을 계산할 수 없다는 점은 그대로다. 근거 `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9.
+>
+> **2026-09-08 갱신.** `SpanResolution` 실패 직렬화(`failure` 필드·`OUT_OF_TIMELINE_RANGE`, `span-resolution/v1.1`)와 `AnalysisScope` relative range(`kind: ABSOLUTE | TIMELINE_RELATIVE`, `analysis-scope/1.1.0`)는 종결됐다. 위 「작성 예정」 계약 2건은 **Draft로 저장소에 존재한다 — Consumer Review 대기이며 수락되지 않았다.** Asset Facts·`FrameRef`·thumbnail 전달 형태의 필드 정의처는 그 두 Draft이고, Review 전에는 그 필드를 확정 규칙으로 읽지 않는다. `mock-pack-v1-refs.md`는 두 계약이 Accepted가 될 때 폐기한다. 현재 상태는 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §4.5·§9를 따른다.
 
 ## 5-4. `AnalysisScope`
 

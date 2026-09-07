@@ -164,6 +164,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 9. (v1.1) `run_ref`는 `{kind, ref}`이며 `kind ∈ {analysis_run, readout_run}`이다.
 10. (v1.1) Run에 속한 호출을 `run_ref=null`로 기록하지 않는다. `null`은 Run 개념이 없는 직접 호출만을 뜻한다.
 11. (v1.1) `ReadoutRun.usage_refs`와 `UsageRecord.run_ref`가 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 양방향 정합을 불변조건으로 강제하지 않는다 — 강제하면 어긋난 순간 판정 주체를 다시 정해야 하고 그 판정이 `eval`의 비용 숫자에 들어간다.
+12. (2026-09-08 · 표기 정합, 버전 유지) `AnalysisRun.usage_refs[]`도 같은 지위다 — 조회 편의용 파생값이며 `UsageRecord.run_ref`와 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 7번의 「해당 Run에 속한 row」는 `run_ref={kind:"analysis_run", ref:<run_id>}`인 row를 뜻한다. search Owner(서어진) 결정, eval(김대원) 확인. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.2.
 
 ## 9. PM이 새로 정한 것 (소비자 통보 대상)
 
@@ -179,7 +180,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 
 ## 10. 미결 — 이 계약에서 확정하지 않는다
 
-- ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`를 `ReadoutRun.usage_refs`와 같은 「조회 편의 파생값」으로 표기할지는 `search` Owner 확인 대상이며 계약 의미 변경이 아니다(`adr/adr-data-contract-call-closure-2026-09-07.md` §8.1 CALL-13).
+- ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`의 「조회 편의 파생값」 표기도 **종결 (2026-09-08, search Owner 서어진 · eval 김대원 확인, §8-12).** 두 Run 계약의 `usage_refs`는 같은 지위이고 원장 `run_ref`가 유일한 집계 기준이다. `run_ref=null`의 의미는 §8-10 그대로다(「Run 개념이 없는 직접 호출만」 — 「아직 정식 연결 방식이 없는 호출」로 넓히지 않았다. 그런 호출이 실제로 있다면 이 계약 Owner가 별도로 판단한다).
 
 - **통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).
 - **가격표(`pricing_id` → 단가) 저장 위치와 개정 절차** — `common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.

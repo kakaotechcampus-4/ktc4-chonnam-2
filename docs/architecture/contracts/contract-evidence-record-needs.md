@@ -542,7 +542,7 @@ ReportPackage / DerivedVideo export Job
 }
 ```
 
-`case`는 이 Need가 current revision 기준으로 유효하면 백그라운드 `PLATE_READ` 계열 JobIntent를 자동 발주할 수 있다.
+`case`는 이 Need가 current revision 기준으로 유효하면 백그라운드 JobIntent를 자동 발주할 수 있다. 발주 형태는 `JobRecord` 계약이 소유한다 — `kind=PLATE_READ` + `force_rerun=true`, 새 `job_id`(`contract-job-record-case-view.md` A절 §7, 2026-09-07 case Owner 확정). `PLATE_REREAD`는 Need의 kind이며 `JobRecord.kind`로 쓰지 않는다.
 
 ---
 

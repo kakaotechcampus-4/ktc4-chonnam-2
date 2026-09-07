@@ -1,6 +1,9 @@
 # ADR — 데이터 계약 감사 접합부 종결 (2026-09-07)
 
 **Status:** Accepted — 아래 §4에 `ACCEPTED`로 표기한 결정에 한정. `PENDING`·`CALL_REQUIRED`·`OUT_OF_SCOPE` 항목의 수락을 뜻하지 않는다
+
+> **현재 결정 원장은 이 문서가 아니다 (2026-09-08 이후).** §8.1의 `CALL_REQUIRED` 4건(CALL-12~15)은 Owner 결정을 받았고, 그 결정·계약 반영·검증 상태·남은 Pending은 **`adr-data-contract-call-closure-2026-09-08.md`**가 갖는다. 이 문서의 §4 결정 본문은 고치지 않았다. §11의 규칙대로 §3·§8.1·§9 상태표의 해당 행에만 「(2026-09-08 갱신)」 표기로 후속 상태를 적었다.
+
 **Date:** 2026-09-07 (Owner 결정 완료일 · 계약 반영일 동일)
 **Decider:** 각 결정 단위의 Decider는 §4 표에 있다. 이 문서의 작성·계약 반영은 PM(김준영)이 했고, PM은 어느 결정도 Owner를 대신해 만들지 않았다
 **선행 문서:** `adr-consistency-followup-2026-09-06.md`(2026-09-06 감사 후 보정 · 이 문서 이전의 Pending 원장) → **이 문서가 2026-09-07 이후의 현재 결정 원장이다**
@@ -35,9 +38,9 @@
 | B02 | `ACCEPTED` | `requirements_evidence`/`requirements_package` 두 객체 분리. report 선택 3단계(현재 `EvidenceRecord.record_ref` basis → `supersedes_ref` head → `evaluated_at` 최신). 세 gate 분리 유지. 미실행이면 `null` | Decider 유소연 · 확인 김준영 · 신유민 | `CaseView` B절 · `RequirementReport` §5.2-1 | §7-V2 fixture: 옛 basis `FINAL_PACKAGE` PASS가 수정 후 화면에 남지 않음, supersede head 선택, 미실행 `null` |
 | B03 | `ACCEPTED` | 판독 결과 최상위 필수 `run_ref: ContractRef{kind:"readout_run", ref}`. `readout_id`·`run_ref` 둘 다 유지, 재시도는 새 `run_id`+새 `readout_id`. `Observation.produced_by.run_ref.kind="readout_run"` 등재. 정상/완전실패 예시 2건 | Decider 신유민(`readout`) · 확인 유소연(`case`) · 김대원(`eval`) | `PlateReadout`/`OverlayTimeReadout` · `ReadoutRun` · `Observation` | §7-V3 fixture: 결과→run→usage→execution 역추적, FAILED run에 결과 0건, 최상위와 `produced_by.run_ref` 동일 |
 | B05 | `ACCEPTED` | `UsageRecord.run_ref`를 `ContractRef \| null`로, `kind ∈ {analysis_run, readout_run}`. 원장 `run_ref`가 authoritative, `ReadoutRun.usage_refs`는 조회 편의 파생값. `null`은 Run 개념이 없는 직접 호출만 | Decider 김준영(`common/runtime`)·신유민(`readout`) · 확인 김대원(`eval`). D5~D8은 Owner 보충, 소비자 미열람(§4.4) | `UsageRecord` · `ReadoutRun` §4 | §7-V3 fixture: readout usage row가 `readout_run` ref를 가짐, 직접 호출만 `null` |
-| B06 | `ACCEPTED` (직렬화 일부 `CALL_REQUIRED`) | `spans + missing_ranges`가 `requested_range`를 빠짐없이 설명. 같은 `MediaStream`의 중복 coverage 금지, 다른 stream의 동일 시간대 허용. 범위 일부 초과는 `PARTIAL`+`missing_ranges`, 전체 불가는 `FAILED`, 입력 오류는 입력 검증 실패. `FAILED`는 machine-readable 원인 표면화. §8.1의 미설명 10초는 예시 오류 | Decider 정철원(`recording`) · 확인 김준영(`evidence`) · 서어진(`search`) | `SpanResolution` §8~§10 · §23 | §7-V4 fixture: 예시 coverage 합집합 = 요청 범위, stream별 중복 0. **범위 밖 `MissingRange.reason` 값과 top-level failure 필드는 CALL-14** |
+| B06 | `ACCEPTED` (직렬화 일부 `CALL_REQUIRED` → **2026-09-08 갱신: 직렬화 확정, `source_ref` 규칙 1건만 `CALL_REQUIRED`** — 후속 ADR §4.3) | `spans + missing_ranges`가 `requested_range`를 빠짐없이 설명. 같은 `MediaStream`의 중복 coverage 금지, 다른 stream의 동일 시간대 허용. 범위 일부 초과는 `PARTIAL`+`missing_ranges`, 전체 불가는 `FAILED`, 입력 오류는 입력 검증 실패. `FAILED`는 machine-readable 원인 표면화. §8.1의 미설명 10초는 예시 오류 | Decider 정철원(`recording`) · 확인 김준영(`evidence`) · 서어진(`search`) | `SpanResolution` §8~§10 · §23 | §7-V4 fixture: 예시 coverage 합집합 = 요청 범위, stream별 중복 0. **범위 밖 `MissingRange.reason` 값과 top-level failure 필드는 CALL-14** |
 | B07 | `ACCEPTED` (스키마 `ACCEPTED_PENDING_IMPLEMENTATION`) | opaque ref 유지 + 최소 자산 사실(asset_ref · kind/derived role · byte size · 판정 시점 존재·가용 · lineage · 조건부 duration+timeline_range)을 **recording lookup → case 수집 → evidence 입력 주입**으로 전달. evidence는 recording을 직접 호출하지 않는다. `FrameRef` 의미 6건 보장. `stream_selector` 직렬화는 미확정 | Decider 정철원 · 확인 김준영 · 유소연 · 신유민 · 서어진 | `RequirementReport` §2·§4 · recording 계약 §12 · v4 §5-3 안내 | Asset Facts 필드 계약이 `contract-source-asset-media-stream.md`·`contract-analysis-source-derived.md`에 나온 뒤 fixture. 지금은 경계·최소 목록만 반영 |
-| B08 | `ACCEPTED`(방향) · 직렬화 `CALL_REQUIRED` | relative-only timeline은 정상 usable. 가짜 absolute datetime 생성 금지. anchor 부재만으로 Search 차단 금지. `AnalysisScope`는 timeline-relative range를 **명시적으로 구분해** 수용하는 방향으로 확장 | Decider 정철원(불변조건) · 확인 서어진(`search`) · 유소연(`case`). **직렬화 Decider는 유소연(`AnalysisScope` Owner)** | `AnalysisScope` §9·§10·§12 | 직렬화가 CALL-15로 확정된 뒤 fixture. 지금은 locked 스키마 유지 + 방향·금지만 기록 |
+| B08 | `ACCEPTED`(방향) · 직렬화 `CALL_REQUIRED` → **2026-09-08 갱신: 직렬화 `ACCEPTED`(`analysis-scope/1.1.0`, 후속 ADR §4.4)** | relative-only timeline은 정상 usable. 가짜 absolute datetime 생성 금지. anchor 부재만으로 Search 차단 금지. `AnalysisScope`는 timeline-relative range를 **명시적으로 구분해** 수용하는 방향으로 확장 | Decider 정철원(불변조건) · 확인 서어진(`search`) · 유소연(`case`). **직렬화 Decider는 유소연(`AnalysisScope` Owner)** | `AnalysisScope` §9·§10·§12 | 직렬화가 CALL-15로 확정된 뒤 fixture. 지금은 locked 스키마 유지 + 방향·금지만 기록 |
 | B09 | `ACCEPTED` | `CandidateEvent.span.timeline_revision` 추가. Candidate는 rebase 후 mutate하지 않는다. 현재 표시 시각은 현재 revision projection, provenance는 생성 당시 `{timeline_id, timeline_revision}`. revision이 다르면 `case`가 비교해 `CaseView`에 「과거 revision 기준」 표시 | Decider 정철원 · 확인 서어진(필드 승인) · 유소연(표시) · 김준영(evidence provenance 동일 형태) | `AnalysisRun+CandidateEvent` §2·§4·§6 · `CaseView` §13 · `TimeResolution` 후속 | §7-V5 fixture: span에 revision 존재, 현재 revision과 비교로 stale 판정 재현. CaseView 표시 필드명·TimeResolution 필드는 `ACCEPTED_PENDING_IMPLEMENTATION` |
 | W07 잔여 | `ACCEPTED` | `CaseView.candidates[].thumb_ref`는 `FrameRef`(`fr_` 계열). 실제 이미지는 case가 recording lookup을 거쳐 projection, web→recording 직접 호출 금지. 이미지 전달 형태(URL/ref/endpoint)는 recording 자산 계약에서 | Decider 정철원 · 확인 유소연 · 신유민 | `CaseView` B절 §5·§8·§13 | §7-V1: 예시 `thumb_ref`가 위치 인코딩 없는 `fr_` opaque id |
 | W02 잔여 | `ACCEPTED` | `evidence`의 `case_type_display`/`report_type_display`/`violation_display`/`preview_ref` 네 필드는 **삭제 의도 없음**. 기존 방향 유지 | Decider 유소연 | `CaseView` §13 Pending 문구 | 문구 확인 |
@@ -279,6 +282,8 @@ python scripts/check_boundaries.py
 
 ### 8.1 새 결정 회차가 필요한 것 (`CALL_REQUIRED`)
 
+> **(2026-09-08 갱신)** 아래 네 회차는 모두 Owner 결정이 들어와 `adr-data-contract-call-closure-2026-09-08.md` §4.1~§4.4에 공개 결정으로 옮겨졌고 계약에 반영됐다. 이 표는 당시 열린 질문의 기록이다.
+
 | 회차 | 결정 경계 | Decider | 같이 볼 사람 | 왜 지금 닫아야 하나 |
 | --- | --- | --- | --- | --- |
 | CALL-12 | 재판독(`PLATE_REREAD` Need) 발주의 `JobRecord.kind`와 캐시 identity — `kind=PLATE_READ + force_rerun=true`인가, 별도 kind인가 | 유소연(`case`) | 신유민(`readout`) · 김준영(`evidence`) | 1:1 불변조건과 `operation` 대응이 이 값에 걸린다. abstain은 `outcome=SUCCEEDED`라 같은 kind 재발주는 cache hit |
@@ -312,12 +317,12 @@ python scripts/check_boundaries.py
 | --- | --- | --- | --- | --- | --- | --- |
 | B01 | `needs_review` 원천 없음 · `occurred_at` 비동형 입력 · 파일명 시각이 SOURCE_VERIFIED | §4.1 | `CaseView` B절 · `EvidenceRecord` §3 · `TimeResolution` §4 | V1 PASS | `CLOSED_VERIFIED` | — (PM 해석 2건은 §4.1 말미, 이견 시 수정) |
 | B02 | PM 단독 scope 확정 · 옛 basis report 노출 · gate 가림 | §4.2 | `CaseView` B절 · `RequirementReport` §5.2-1 | V2 PASS | `CLOSED_VERIFIED` | — |
-| B03 | 결과 schema/JSON에 run 연결 없음 | §4.3 | plate/overlay · `ReadoutRun` · `Observation` · `JobRecord` · `JobExecution` | V3 PASS | `CLOSED_VERIFIED` | 재판독 `kind`는 CALL-12(별건, B03 종결과 무관) |
+| B03 | 결과 schema/JSON에 run 연결 없음 | §4.3 | plate/overlay · `ReadoutRun` · `Observation` · `JobRecord` · `JobExecution` | V3 PASS | `CLOSED_VERIFIED` | 재판독 `kind`는 CALL-12(별건, B03 종결과 무관) → **(2026-09-08 갱신) 종결: `kind=PLATE_READ`+`force_rerun=true`, 후속 ADR §4.1** |
 | B04 | `produced` string[] 예시 | 후속 보정 ADR §2 (2026-09-06 복원) | 완료 | V3에서 `produced` ContractRef 파싱 PASS | `CLOSED_VERIFIED` | — |
-| B05 | `UsageRecord.run_ref`가 `AnalysisRun` 전용 | §4.4 | `UsageRecord` · `ReadoutRun` §4 | V3 PASS | `CLOSED_VERIFIED` | D5~D8 소비자 열람은 통보 대상. `AnalysisRun.usage_refs` 표기는 CALL-13(NOTE) |
-| B06 | 미설명 10초 · 완전성·FAILED 원인 규칙 없음 | §4.5 | recording §8.1·§9·§10·§23 | V4 PASS(정상·PARTIAL) | `CALL_REQUIRED` | CALL-14: 범위 밖 reason 값 · failure 필드. 확정 후 FAILED fixture 추가 |
-| B07 | evidence에 필요한 자산 사실·표면 미작성 | §4.6 | `RequirementReport` §2·§4.6 · recording §12 · v4 §5-3 안내 | 불가(필드 없음) | `PENDING_IMPLEMENTATION` | 정철원: recording 자산 계약 2건. 이후 evidence ASSET 판정 fixture |
-| B08 | relative timeline ↔ ISO8601 scope | §4.7 | `AnalysisScope` §9·§10·§12(방향·금지만) | 불가(직렬화 없음) | `CALL_REQUIRED` | CALL-15: 유소연·서어진·김대원 |
+| B05 | `UsageRecord.run_ref`가 `AnalysisRun` 전용 | §4.4 | `UsageRecord` · `ReadoutRun` §4 | V3 PASS | `CLOSED_VERIFIED` | D5~D8 소비자 열람은 통보 대상. `AnalysisRun.usage_refs` 표기는 CALL-13(NOTE) → **(2026-09-08 갱신) 종결: 파생값 표기, 원장 `run_ref` 기준, 후속 ADR §4.2** |
+| B06 | 미설명 10초 · 완전성·FAILED 원인 규칙 없음 | §4.5 | recording §8.1·§9·§10·§23 | V4 PASS(정상·PARTIAL) | `CALL_REQUIRED` → **(2026-09-08 갱신) `CLOSED_VERIFIED`(`span-resolution/v1.1`, V10 PASS) — `source_ref` 규칙 1건 `CALL_REQUIRED`(CALL-16)** | 후속 ADR §4.3·§9 |
+| B07 | evidence에 필요한 자산 사실·표면 미작성 | §4.6 | `RequirementReport` §2·§4.6 · recording §12 · v4 §5-3 안내 | 불가(필드 없음) | `PENDING_IMPLEMENTATION` → **(2026-09-08 갱신) `PENDING_CONSUMER_REVIEW`(Draft 계약 2건 존재)** | 후속 ADR §4.5·§9 · CALL-17·CALL-18 |
+| B08 | relative timeline ↔ ISO8601 scope | §4.7 | `AnalysisScope` §9·§10·§12(방향·금지만) | 불가(직렬화 없음) | `CALL_REQUIRED` → **(2026-09-08 갱신) `CLOSED_VERIFIED`(`analysis-scope/1.1.0`, V11 PASS)** | 후속 ADR §4.4·§9 |
 | B09 | Candidate에 사용 revision 없음 | §4.8 | `AnalysisRun+CandidateEvent` v1.1 · recording §5 | V5 PASS | `CLOSED_VERIFIED` | 표시 필드명(case)·TimeResolution 필드(evidence)는 `PENDING_IMPLEMENTATION`으로 별도 추적 |
 | B10 | 캐시 namespace 누락 | 후속 보정 ADR §2 (복원) | 완료 | 문구 확인 | `CLOSED_VERIFIED` | fingerprint 알고리즘은 미결 유지 |
 | B11 | PM 추가 작업 순서를 호출 없이 닫음 | 후속 보정 ADR §2 (철회) | `ownership.md` 제안/확인 대기 표기 | — | `CLOSED_BY_REMOVING_UNSUPPORTED_CLAIM` | 정철원 확인은 받지 않았다. 순서 자체는 여전히 제안 |

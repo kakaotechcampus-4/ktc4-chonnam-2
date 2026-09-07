@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""계약 예시·fixture 의미 검사 — 2026-09-07 접합부 종결 ADR의 검증 조건 V0~V6.
+"""계약 예시·fixture 의미 검사 — 2026-09-07 접합부 종결 ADR의 검증 조건 V0~V6 + 2026-09-08 후속 ADR의 V8~V11.
 
 규칙은 여기서 정하지 않는다. 각 검사가 옮겨 온 규칙의 원문은 함수 docstring이 가리킨다.
   - 결정 원장  → docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md §7
+                 docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md §7
   - fixture    → docs/architecture/contracts/fixtures/call-closure-2026-09-07/
+                 docs/architecture/contracts/fixtures/call-closure-2026-09-08/
 
 이 스크립트의 PASS는 「계약 규칙을 코드로 옮겼을 때 fixture가 그 규칙을 만족한다」는 뜻이다.
 구현 통합·E2E·Owner 수락을 증명하지 않는다.
@@ -15,13 +17,22 @@ import json
 import os
 import re
 import sys
+from decimal import Decimal
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CDIR = os.path.join(ROOT, "docs", "architecture", "contracts")
 FDIR = os.path.join(CDIR, "fixtures", "call-closure-2026-09-07")
+FDIR2 = os.path.join(CDIR, "fixtures", "call-closure-2026-09-08")
 
-# 이번 회차에 수정한 문서. V0(JSON 파싱)·V6(링크) 대상.
+# 두 회차에 수정·추가한 문서. V0(JSON 파싱)·V6(링크) 대상.
 TOUCHED = [
+    "contract-source-asset-media-stream.md",
+    "contract-analysis-source-derived.md",
+    "adr/adr-data-contract-call-closure-2026-09-08.md",
+    "adr/adr-source-asset-media-stream.md",
+    "adr/adr-analysis-source-derived.md",
+    "adr/adr-analysis-scope.md",
+    "adr/adr-recording-timeline-asset-span.md",
     "contract-job-record-case-view.md",
     "contract-evidence-record-needs.md",
     "contract-time-resolution.md",
@@ -51,8 +62,8 @@ def read(rel):
         return fh.read()
 
 
-def load_fixture(name):
-    with open(os.path.join(FDIR, name), encoding="utf-8") as fh:
+def load_fixture(name, fdir=FDIR):
+    with open(os.path.join(fdir, name), encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -376,21 +387,52 @@ def check_v3(parsed):
     rec("semantic", not errs, "V3 계약 본문 예시 대조", "; ".join(errs))
 
 
-# ══ V4. B06 — SpanResolution 완전성 ═════════════════════════════
+# ══ V4. B06 — SpanResolution 완전성 (+ V10. CALL-14 failure 직렬화) ══
+REASONS_V1 = {"TIMELINE_GAP", "SOURCE_UNAVAILABLE", "STREAM_UNAVAILABLE"}
+REASONS_V1_1 = REASONS_V1 | {"OUT_OF_TIMELINE_RANGE"}
+
+
 def span_violations(sr):
-    """contract-recording-timeline-asset-span.md §23 SpanResolution 1·6·7."""
+    """contract-recording-timeline-asset-span.md §23 SpanResolution 1·6·7 (v1) + 9~12 (v1.1).
+    `failure` 규칙은 contract_version이 span-resolution/v1.1일 때만 적용한다 — v1 payload의
+    재해석 규칙은 정해지지 않았다(2026-09-08 ADR §4.3)."""
     errs = []
+    v11 = sr.get("contract_version") == "span-resolution/v1.1"
+    st = sr["status"]
     req = (sr["requested_range"]["start_sec"], sr["requested_range"]["end_sec"])
     pieces = [(s["timeline_range"]["start_sec"], s["timeline_range"]["end_sec"]) for s in sr["spans"]]
     pieces += [(m["timeline_range"]["start_sec"], m["timeline_range"]["end_sec"]) for m in sr["missing_ranges"]]
     for a, b in pieces:
         if a < req[0] or b > req[1]:
             errs.append("range_outside_request")
-    # coverage: 합집합 == 요청 범위
-    pts = sorted(set([req[0], req[1]] + [p for pr in pieces for p in pr]))
-    for lo, hi in zip(pts, pts[1:]):
-        if not any(a <= lo and hi <= b for a, b in pieces):
-            errs.append("coverage: [%s,%s) 미설명" % (lo, hi))
+    # reason enum (§10 · §23-12)
+    allowed = REASONS_V1_1 if v11 else REASONS_V1
+    for m in sr["missing_ranges"]:
+        if m.get("reason") not in allowed:
+            errs.append("reason_not_in_enum: %r" % m.get("reason"))
+    # failure 규칙 (§9 · §23-10·11) — v1.1만
+    unlocatable_failed = False
+    if v11:
+        if "failure" not in sr:
+            errs.append("failure_key_missing")
+        else:
+            f = sr["failure"]
+            if st in ("COMPLETE", "PARTIAL") and f is not None:
+                errs.append("failure_must_be_null")
+            if st == "FAILED":
+                if f is None:
+                    errs.append("failure_required")
+                elif not (isinstance(f, dict) and isinstance(f.get("kind"), str) and f["kind"]
+                          and isinstance(f.get("code"), str) and f["code"]):
+                    errs.append("failure_shape")
+                elif not sr["missing_ranges"]:
+                    unlocatable_failed = True      # §23-11 — 완전성 예외
+    # coverage: 합집합 == 요청 범위 (§23-6) — 위치 특정 불가 FAILED는 예외
+    if not unlocatable_failed:
+        pts = sorted(set([req[0], req[1]] + [p for pr in pieces for p in pr]))
+        for lo, hi in zip(pts, pts[1:]):
+            if not any(a <= lo and hi <= b for a, b in pieces):
+                errs.append("coverage: [%s,%s) 미설명" % (lo, hi))
     # 같은 stream 중복 금지
     by_stream = {}
     for s in sr["spans"]:
@@ -401,7 +443,6 @@ def span_violations(sr):
             if a2 < b1:
                 errs.append("same_stream_overlap: %s" % ms)
     # status ↔ 배열 (§9)
-    st = sr["status"]
     if st == "COMPLETE" and (not sr["spans"] or sr["missing_ranges"]):
         errs.append("COMPLETE 조건 위반")
     if st == "PARTIAL" and (not sr["spans"] or not sr["missing_ranges"]):
@@ -435,6 +476,31 @@ def check_v4(parsed):
             rec("semantic", not errs, "V4 계약 예시 requested=[%s,%s)" % (sr["requested_range"]["start_sec"], sr["requested_range"]["end_sec"]), "; ".join(errs))
     if n == 0:
         rec("semantic", False, "V4 계약 예시", "recording 계약에서 SpanResolution 예시를 찾지 못함")
+    if n < 4:
+        rec("semantic", False, "V4 계약 예시 개수", "§8.1·§9 FAILED 2건·§24 = 최소 4건이어야 하는데 %d건" % n)
+
+
+def check_v10():
+    """CALL-14 fixture — contract-recording-timeline-asset-span.md §9·§10·§23 SpanResolution 9~12."""
+    fx = load_fixture("v10-span-resolution-failure.json", FDIR2)
+    for v in fx["valid"]:
+        errs = span_violations(v["span_resolution"])
+        rec("semantic", not errs, "V10 %s" % v["id"], "; ".join(errs))
+    for inv in fx["invalid"]:
+        errs = span_violations(inv["span_resolution"])
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V10 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    # 계약 본문: v1.1 예시가 존재하고 §10 reason 표에 OUT_OF_TIMELINE_RANGE가 있다
+    body = read("contract-recording-timeline-asset-span.md")
+    errs = []
+    if "span-resolution/v1.1" not in body:
+        errs.append("헤더/예시에 span-resolution/v1.1 없음")
+    if "`OUT_OF_TIMELINE_RANGE`" not in body:
+        errs.append("§10에 OUT_OF_TIMELINE_RANGE 없음")
+    if "CALL_REQUIRED" not in body:
+        errs.append("source_ref CALL_REQUIRED 표기 없음")
+    rec("semantic", not errs, "V10 계약 본문 표기", "; ".join(errs))
 
 
 # ══ V5. B09 — timeline_revision ══════════════════════════════════
@@ -476,11 +542,232 @@ def check_v5(parsed):
     rec("semantic", not errs, "V5 계약 본문 예시", "; ".join(errs))
 
 
-# ══ V6. 문서 — 상대 링크 · Pending 잔존 문구 ══════════════════════
+# ══ V8. CALL-12 — 재판독 발주 kind·force_rerun ══════════════════════
+REGISTERED_KINDS = {"COARSE_SEARCH", "PLATE_READ", "OVERLAY_TIME_READ"}
+
+
+def cache_decision(job, existing_success):
+    """contract-job-record-case-view.md A절 §7 `force_rerun` — 동일 (case_id, kind, input_fingerprint) +
+    force_rerun=false + 기존 SUCCEEDED → cache hit. force_rerun=true → 새 실행."""
+    key = (job["case_id"], job["kind"], job["input_fingerprint"])
+    if not job["force_rerun"] and key in existing_success:
+        return "cache_hit"
+    return "run"
+
+
+def reread_violations(job, original_job, existing_success, used_job_ids):
+    """A절 §7 「재판독 발주 규칙」 + §10-1."""
+    errs = []
+    if job["kind"] not in REGISTERED_KINDS:
+        errs.append("kind_not_registered: %s" % job["kind"])
+    if job["kind"] != "PLATE_READ":
+        errs.append("reread_kind_must_be_PLATE_READ")
+    if job["job_id"] in used_job_ids:
+        errs.append("job_id_reused")
+    if cache_decision(job, existing_success) == "cache_hit":
+        errs.append("cache_hit: force_rerun=false with same tuple")
+    if not job["force_rerun"]:
+        errs.append("force_rerun_must_be_true")
+    same_tuple = (job["case_id"], job["kind"], job["input_fingerprint"]) == \
+                 (original_job["case_id"], original_job["kind"], original_job["input_fingerprint"])
+    if job["kind"] == "PLATE_READ" and not same_tuple:
+        errs.append("fixture: 재판독 입력이 원판독과 다름 — 기본값(동일 입력) 시나리오가 아님")
+    return errs
+
+
+def check_v8():
+    fx = load_fixture("v8-reread-force-rerun.json", FDIR2)
+    o, r = fx["original"], fx["reread"]
+    existing_success = {(o["job_record"]["case_id"], o["job_record"]["kind"], o["job_record"]["input_fingerprint"])}
+    used = {o["job_record"]["job_id"]}
+    errs = []
+    # 원판독: abstain인데 SUCCEEDED (readout §9-5) → 같은 kind 재발주는 cache hit
+    if not (o["plate_readout"]["abstained"] and o["readout_run"]["outcome"] == "SUCCEEDED"):
+        errs.append("원판독 fixture가 abstain+SUCCEEDED가 아님")
+    if fx["evidence_need"]["kind"] != "PLATE_REREAD":
+        errs.append("Need kind가 PLATE_REREAD가 아님")
+    # 재판독 발주
+    errs += reread_violations(r["job_record"], o["job_record"], existing_success, used)
+    # 새 execution → 새 ReadoutRun 정확히 1건, operation ↔ kind, 원 run과 다른 run_id
+    rrs = [p["ref"] for p in r["job_execution"]["produced"] if is_ref(p, "readout_run")]
+    if len(rrs) != 1 or rrs[0] != r["readout_run"]["run_id"]:
+        errs.append("재판독 execution의 produced readout_run이 정확히 1건이 아니거나 불일치")
+    if r["job_execution"]["job_id"] != r["job_record"]["job_id"]:
+        errs.append("재판독 execution.job_id ≠ 재판독 job_id")
+    if r["job_execution"]["attempt"] != 1:
+        errs.append("재판독은 새 job이므로 attempt=1이어야")
+    if r["readout_run"]["run_id"] == o["readout_run"]["run_id"]:
+        errs.append("재판독 run_id가 원판독과 같음")
+    if r["readout_run"]["operation"] != r["job_record"]["kind"]:
+        errs.append("kind ↔ operation 불일치")
+    if r["plate_readout"]["run_ref"] != {"kind": "readout_run", "ref": r["readout_run"]["run_id"]}:
+        errs.append("재판독 결과 run_ref 불일치")
+    # 원판독 불변
+    if fx["original_after_reread"]["readout_run"] != o["readout_run"] or fx["original_after_reread"]["plate_readout"] != o["plate_readout"]:
+        errs.append("원판독 ReadoutRun/결과가 재판독 후 바뀜")
+    # 인프라 재시도는 같은 job_id, attempt 증가, 다른 execution
+    ir = fx["infra_retry"]["job_execution"]
+    if not (ir["job_id"] == o["job_record"]["job_id"] and ir["attempt"] == o["job_execution"]["attempt"] + 1
+            and ir["execution_id"] != o["job_execution"]["execution_id"]):
+        errs.append("인프라 재시도 fixture가 같은 job_id·attempt+1·새 execution이 아님")
+    rec("semantic", not errs, "V8 reread force_rerun (fixture)", "; ".join(errs))
+    for inv in fx["invalid"]:
+        got = reread_violations(inv["job_record"], o["job_record"], existing_success, used)
+        hit = any(inv["expect_violation"] in e for e in got)
+        rec("semantic", hit, "V8 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], got))
+    # 계약 본문: A절 §7에 규칙 등재, §13 미결 종결
+    body = read("contract-job-record-case-view.md")
+    errs = []
+    if "재판독 발주 규칙" not in body or "`force_rerun=true`를 조건 없이" not in body:
+        errs.append("A절 §7 재판독 발주 규칙 미등재")
+    if "case Owner 결정 대기(CALL-12)." in body and "~~" not in body.split("case Owner 결정 대기(CALL-12).")[0][-200:]:
+        errs.append("§13 CALL-12 미결 문구가 종결 표시 없이 남아 있음")
+    rec("semantic", not errs, "V8 계약 본문 표기", "; ".join(errs))
+
+
+# ══ V9. CALL-13 — AnalysisRun.usage_refs 파생값 vs 원장 run_ref ══════
+def check_v9():
+    """contract-usage-record.md §8-11·§8-12 · contract-analysis-run-candidate-event.md §3 usage_refs·§3-4."""
+    fx = load_fixture("v9-usage-refs-derived.json", FDIR2)
+    run = fx["analysis_run"]
+    usages = {u["usage_id"]: u for u in fx["usage_records"]}
+    errs = []
+    ledger = sorted(uid for uid, u in usages.items()
+                    if u["run_ref"] == {"kind": "analysis_run", "ref": run["run_id"]})
+    derived = sorted(run["usage_refs"])
+    if ledger != sorted(fx["expected"]["ledger_members_of_run"]):
+        errs.append("원장 기준 소속 기대 %s ≠ %s" % (fx["expected"]["ledger_members_of_run"], ledger))
+    if derived != sorted(fx["expected"]["derived_members_of_run"]):
+        errs.append("파생값 기대 %s ≠ %s" % (fx["expected"]["derived_members_of_run"], derived))
+    if ledger == derived:
+        errs.append("fixture가 어긋난 상태를 재현하지 않음(파생 == 원장)")
+    ledger_cost = sum(Decimal(usages[u]["cost"]["amount"]) for u in ledger)
+    derived_cost = sum(Decimal(usages[u]["cost"]["amount"]) for u in derived)
+    if ledger_cost != Decimal(fx["expected"]["ledger_total_cost"]):
+        errs.append("원장 기준 합 %s ≠ 기대 %s" % (ledger_cost, fx["expected"]["ledger_total_cost"]))
+    if derived_cost != Decimal(fx["expected"]["derived_total_cost"]):
+        errs.append("파생 기준 합 %s ≠ 기대 %s" % (derived_cost, fx["expected"]["derived_total_cost"]))
+    # usage_summary는 원장 기준 aggregate와 정합 (§3-4 · UsageRecord §8-7·8-12)
+    if Decimal(run["usage_summary"]["total_cost"]["amount"]) != ledger_cost:
+        errs.append("usage_summary.total_cost %s ≠ 원장 기준 %s" % (run["usage_summary"]["total_cost"]["amount"], ledger_cost))
+    if Decimal(run["usage_summary"]["total_cost"]["amount"]) == derived_cost:
+        errs.append("usage_summary가 파생값 기준으로 집계됨")
+    # run_ref 모양·null 규칙 (§8-9·10)
+    nulls = sorted(uid for uid, u in usages.items() if u["run_ref"] is None)
+    if nulls != sorted(fx["expected"]["run_ref_null_only_for"]):
+        errs.append("run_ref=null 기대 %s ≠ %s" % (fx["expected"]["run_ref_null_only_for"], nulls))
+    for uid, u in usages.items():
+        if u["run_ref"] is not None and not (is_ref(u["run_ref"]) and u["run_ref"]["kind"] in ("analysis_run", "readout_run")):
+            errs.append("%s run_ref 모양 위반" % uid)
+    rec("semantic", not errs, "V9 usage_refs 파생 vs 원장 (fixture)", "; ".join(errs))
+    body = read("contract-analysis-run-candidate-event.md")
+    errs = []
+    if "조회 편의용 파생값" not in body:
+        errs.append("AnalysisRun §3 usage_refs에 파생값 표기 없음")
+    if "analysis-run-candidate-event/v1.1" not in body:
+        errs.append("버전이 v1.1이 아님(버전 유지 결정 위반)")
+    ub = read("contract-usage-record.md")
+    if "12. (2026-09-08" not in ub:
+        errs.append("UsageRecord §8-12 없음")
+    if "usage-record/v1.1" not in ub:
+        errs.append("UsageRecord 버전이 v1.1이 아님(버전 유지 결정 위반)")
+    rec("semantic", not errs, "V9 계약 본문 표기", "; ".join(errs))
+
+
+# ══ V11. CALL-15 — AnalysisScope time_ranges[].kind ═══════════════
+ISO_TZ = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
+
+
+def resolve_kind(r):
+    """contract-analysis-scope.md §7 — kind 부재 + start/end 존재 = ABSOLUTE."""
+    if "kind" in r:
+        return r["kind"]
+    if "start" in r and "end" in r:
+        return "ABSOLUTE"
+    return None
+
+
+def scope_violations(scope, timeline_status=None):
+    """contract-analysis-scope.md §6·§7·§10-2·§10-7."""
+    errs = []
+    ranges = scope["time_ranges"]
+    if not ranges:
+        errs.append("time_ranges_empty")
+        return errs
+    kinds = set()
+    trefs = set()
+    for r in ranges:
+        k = resolve_kind(r)
+        if k not in ("ABSOLUTE", "TIMELINE_RELATIVE"):
+            errs.append("kind_unresolvable: %r" % k)
+            continue
+        kinds.add(k)
+        if k == "ABSOLUTE":
+            if not (isinstance(r.get("start"), str) and isinstance(r.get("end"), str)
+                    and ISO_TZ.match(r["start"]) and ISO_TZ.match(r["end"])):
+                errs.append("absolute_iso8601_tz_required")
+            elif r["start"] > r["end"]:
+                errs.append("range_order: start > end")
+            if timeline_status == "USABLE_RELATIVE_ONLY":
+                errs.append("fake_absolute: relative-only timeline에 ABSOLUTE range (§10-7)")
+        else:
+            tr = r.get("timeline_ref")
+            if not (isinstance(tr, dict) and isinstance(tr.get("timeline_id"), str) and tr["timeline_id"]
+                    and isinstance(tr.get("revision"), int) and tr["revision"] >= 1):
+                errs.append("timeline_ref_required")
+            else:
+                trefs.add((tr["timeline_id"], tr["revision"]))
+            if not (isinstance(r.get("start_ms"), int) and isinstance(r.get("end_ms"), int)):
+                errs.append("relative_ms_required")
+            elif r["start_ms"] > r["end_ms"]:
+                errs.append("range_order: start_ms > end_ms")
+    if len(kinds) > 1:
+        errs.append("mixed_kinds")
+    if len(trefs) > 1:
+        errs.append("timeline_ref_mismatch")
+    return errs
+
+
+def check_v11(parsed):
+    fx = load_fixture("v11-analysis-scope-relative.json", FDIR2)
+    for v in fx["valid"]:
+        errs = scope_violations(v["scope"])
+        got_kinds = {resolve_kind(r) for r in v["scope"]["time_ranges"]}
+        if got_kinds != {v["expected_kind"]}:
+            errs.append("kind 해석 기대 %s ≠ %s" % (v["expected_kind"], got_kinds))
+        rec("semantic", not errs, "V11 %s" % v["id"], "; ".join(errs))
+    for inv in fx["invalid"]:
+        errs = scope_violations(inv["scope"], inv.get("timeline_status"))
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V11 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    # 계약 §8 예시: 두 건 모두 유효, 1.1.0, kind 각각 ABSOLUTE / TIMELINE_RELATIVE
+    errs = []
+    seen = []
+    for obj in parsed.get("contract-analysis-scope.md", []):
+        if "scope_id" in obj and isinstance(obj.get("time_ranges"), list) and obj["scope_id"] != "string":
+            v = scope_violations(obj)
+            if v:
+                errs.append("%s: %s" % (obj["scope_id"], v))
+            if obj.get("contract_version") != "1.1.0":
+                errs.append("%s: contract_version %s" % (obj["scope_id"], obj.get("contract_version")))
+            seen.append({resolve_kind(r) for r in obj["time_ranges"]})
+    if {"ABSOLUTE"} not in seen or {"TIMELINE_RELATIVE"} not in seen:
+        errs.append("§8에 ABSOLUTE·TIMELINE_RELATIVE 예시가 각 1건 이상 있어야 함 (%s)" % seen)
+    body = read("contract-analysis-scope.md")
+    if "analysis-scope/1.1.0" not in body:
+        errs.append("헤더 버전이 1.1.0이 아님")
+    if "`RELATIVE`" in body and "TIMELINE_RELATIVE" not in body:
+        errs.append("축약 표기 RELATIVE만 등재됨")
+    rec("semantic", not errs, "V11 계약 본문 예시", "; ".join(errs))
+
+
+# ══ V6. 문서 — 상대 링크 · Pending 잔존 문구 · 계약-ADR 짝 ══════════
 LINK = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py))`")
 ADIR = os.path.join(CDIR, "adr")
-# Owner가 작성 예정이라고 명시한 계약 — 없는 것이 현재 상태다 (ADR §8.2)
-KNOWN_PENDING_FILES = {"contract-source-asset-media-stream.md", "contract-analysis-source-derived.md"}
+# 2026-09-08: 자산 계약 2건이 Draft로 존재한다 — 작성 대기 파일은 없다
+KNOWN_PENDING_FILES = set()
 
 
 MDIR = os.path.join(ROOT, "docs", "management")
@@ -535,12 +822,29 @@ def check_v6():
         body = read(name)
         hits = [p for p in stale_phrases if p in body]
         rec("structure", not hits, "V6 Pending 잔존 %s" % name, ", ".join(hits))
-    for f in os.listdir(FDIR):
-        try:
-            load_fixture(f)
-            rec("json", True, "V0 fixture %s" % f)
-        except Exception as exc:  # noqa: BLE001
-            rec("json", False, "V0 fixture %s" % f, str(exc))
+    for fdir in (FDIR, FDIR2):
+        for f in sorted(os.listdir(fdir)):
+            try:
+                load_fixture(f, fdir)
+                rec("json", True, "V0 fixture %s/%s" % (os.path.basename(fdir), f))
+            except Exception as exc:  # noqa: BLE001
+                rec("json", False, "V0 fixture %s/%s" % (os.path.basename(fdir), f), str(exc))
+    # 계약-ADR 짝 (contracts/README.md 규칙: contract-<slug>.md ↔ adr/adr-<slug>.md)
+    adrs = set(os.listdir(ADIR))
+    for name in sorted(os.listdir(CDIR)):
+        if name.startswith("contract-") and name.endswith(".md"):
+            slug = name[len("contract-"):-len(".md")]
+            ok = "adr-%s.md" % slug in adrs
+            rec("structure", ok, "V12 짝 ADR %s" % name, "" if ok else "adr/adr-%s.md 없음" % slug)
+    # Draft 계약·Proposed ADR의 상태 표기 — Consumer Review 전 Accepted로 읽히지 않게
+    for name in ("contract-source-asset-media-stream.md", "contract-analysis-source-derived.md"):
+        head = read(name)[:1500]
+        ok = "Draft" in head and "Accepted" not in head.split("**Accepted:**")[0].replace("Draft", "")
+        rec("structure", "Draft" in head, "V12 Draft 상태 %s" % name, "" if "Draft" in head else "헤더에 Draft 표기 없음")
+    for name in ("adr/adr-source-asset-media-stream.md", "adr/adr-analysis-source-derived.md"):
+        head = read(name)[:800]
+        ok = "Proposed" in head and "Consumer Review pending" in head
+        rec("structure", ok, "V12 Proposed 상태 %s" % name, "" if ok else "Status가 Proposed — Consumer Review pending이 아님")
 
 
 def main():
@@ -550,6 +854,10 @@ def main():
     check_v3(parsed)
     check_v4(parsed)
     check_v5(parsed)
+    check_v8()
+    check_v9()
+    check_v10()
+    check_v11(parsed)
     check_v6()
 
     total_fail = 0

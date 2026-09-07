@@ -2,21 +2,23 @@
 
 **Status:** `Final — Accepted`
 
-> **B06~B09 Owner 결정 (2026-09-07, 정철원).** B06 `SpanResolution` 완전성 규칙(§9·§10·§23) · B07 최소 자산 사실과 lookup 경계(§12) · B08 relative-only timeline 불변조건(§4·`contract-analysis-scope.md`) · B09 사용 revision을 `CandidateEvent.span.timeline_revision`에 보존(§5). 스키마·버전은 바뀌지 않았다. **남은 직렬화:** 범위 밖 `MissingRange.reason` 값과 top-level failure reason 필드(CALL-14), Asset Facts 필드(자산 계약 2건). 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9.
+> **B06~B09 Owner 결정 (2026-09-07, 정철원).** B06 `SpanResolution` 완전성 규칙(§9·§10·§23) · B07 최소 자산 사실과 lookup 경계(§12) · B08 relative-only timeline 불변조건(§4·`contract-analysis-scope.md`) · B09 사용 revision을 `CandidateEvent.span.timeline_revision`에 보존(§5). 스키마·버전은 바뀌지 않았다. 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.5~§4.9.
 
 **Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4; 2026-09-06 Owner 회신에서 기존 계약 수락 재확인)
 
 **수락 근거:** §25 「Pair Review 반영 최종 결정표」 · §26 「Final Contract 한 문장 정의」. Status의 종결 근거와 날짜는 위 Pair Review·짝 ADR을 따른다. 과거에는 PM이 `Accepted`를 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 정철원 이견 시 되돌린다
 
-**Architecture Contract:** v4 §5-1 ② (부분 — `SourceAsset`/`MediaStream` 스키마와 ③ `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset`은 본 계약 범위 밖, 미작성)
+**Architecture Contract:** v4 §5-1 ② (부분 — `SourceAsset`/`MediaStream` 스키마와 ③ `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset`은 본 계약 범위 밖. 2026-09-08부터 `contract-source-asset-media-stream.md`·`contract-analysis-source-derived.md` Draft가 소유, Consumer Review 대기)
 
-**Contract Version:** `recording-timeline/v1` · `asset-span/v1` · `time-source-candidate/v1`
+**Contract Version:** `recording-timeline/v1` · `asset-span/v1` · `time-source-candidate/v1` · 보조 구조 `span-resolution/v1.1`(2026-09-08, `failure` 필드·`OUT_OF_TIMELINE_RANGE` 추가)
 
 **Related ADR:** `adr/adr-recording-timeline-asset-span.md`
 
 **Contract Lead:** 정철원
 
 **Runtime Producer:** `recording`
+
+> **`SpanResolution` 실패 직렬화 확정 (2026-09-08 반영 · Decider 정철원 · 확인 김준영·서어진).** ① `MissingRange.reason`에 **`OUT_OF_TIMELINE_RANGE`** 추가(§10) ② top-level **`failure: {kind, code} | null`** 키 항상 존재 — `COMPLETE`/`PARTIAL`은 `null`, `FAILED`는 필수(§9) ③ 위치를 특정할 수 없는 `FAILED`는 `missing_ranges=[]`를 허용하고 `failure`가 원인을 제공한다(완전성 불변조건의 명시적 예외, §23 SpanResolution 10·11). 스키마 변경이므로 **`span-resolution/v1 → v1.1`**(PM bookkeeping, Owner 이견 시 조정). `recording-timeline/v1`·`asset-span/v1`·`time-source-candidate/v1`은 그대로다. **`CALL_REQUIRED`로 남은 것:** `MissingRange.source_ref`의 타입과 `OUT_OF_TIMELINE_RANGE`·`TIMELINE_GAP`에서의 nullable/부재 규칙(§10). `failure.kind` 값 집합을 담을 recording 소유 문서는 작성 대기다. Asset Facts 필드는 자산 계약 2건(Draft, Consumer Review 대기)이 소유한다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.3.
 
 ## 포함 Contract
 
@@ -371,7 +373,7 @@ resolve_span()
 ```
 {
   "contract":"SpanResolution",
-  "contract_version":"span-resolution/v1",
+  "contract_version":"span-resolution/v1.1",
 
   "timeline_ref": {
     "timeline_id":"tl_01",
@@ -410,9 +412,20 @@ resolve_span()
       "reason":"SOURCE_UNAVAILABLE",
       "source_ref":"sa_0002"
     }
-  ]
+  ],
+
+  "failure": null
 }
 ```
+
+| 최상위 필드 | 타입 | 필수 | 의미 |
+| --- | --- | --- | --- |
+| `timeline_ref` | `{timeline_id, revision}` | O | 해석 기준 Timeline revision |
+| `requested_range` | interval(초) | O | 호출자가 요청한 timeline 범위 |
+| `status` | `COMPLETE \| PARTIAL \| FAILED` | O | §9 |
+| `spans[]` | `AssetSpan[]` | O(빈 배열 허용) | usable 구간 |
+| `missing_ranges[]` | `MissingRange[]` | O(빈 배열 허용) | 해소하지 못한 구간과 이유(§10) |
+| `failure` | `{kind: string, code: string} \| null` | **O(키 항상 존재)** | (v1.1) `SpanResolution` 전체가 왜 `FAILED`인가. `status=FAILED`이면 non-null이고 `kind`·`code` 둘 다 필수. `COMPLETE`/`PARTIAL`이면 `null`. `kind`는 recording이 소유하는 상위 실패 분류, `code`는 stable machine-readable 코드. `ReadoutRun.failure`와 **구조만** 같다 — recording과 readout이 taxonomy나 코드 값을 공유한다는 뜻이 아니며, Consumer는 서로 다른 모듈의 `kind`/`code`를 공통 enum처럼 직접 비교하지 않는다. 값 집합은 recording 소유 문서 한 곳에서 관리하고 evidence/search 계약에 복제하지 않는다(문서 작성 대기) |
 
 > **예시 수정 (2026-09-07).** 이전 예시는 `requested_range`가 `[50,130)`인데 `spans`·`missing_ranges`가 `[50,120)`까지만 설명해 10초가 비어 있었다. Owner(정철원)가 「별도 의미가 없는 예시 오류」로 확인했다. 새 reason 값을 만들지 않는 최소 수정으로 요청 범위를 `[50,120)`으로 맞췄다. 완전성 규칙은 §23.
 
@@ -427,6 +440,7 @@ resolve_span()
 ```
 spans != []
 missing_ranges = []
+failure = null
 ```
 
 ### PARTIAL
@@ -434,23 +448,63 @@ missing_ranges = []
 ```
 spans != []
 missing_ranges != []
+failure = null          ← 원인은 각 missing_ranges[].reason이 설명한다
 ```
+
+usable span이 존재하므로 전체 실패를 뜻하는 top-level `failure`를 두지 않는다.
 
 ### FAILED
 
 ```
 spans = []
+failure != null         ← 필수. spans=[]만 보고 Consumer가 원인을 추측하게 하지 않는다
 ```
 
-단, 빈 배열 자체로 원인을 판단하지 않고 명시적인 failure reason을 함께 사용한다.
+`FAILED`에서 `missing_ranges`와 `failure`의 책임은 다르다 — `missing_ranges` = 요청 범위 중 **어디를** 해소하지 못했는가, `failure` = `SpanResolution` 전체가 **왜** `FAILED`인가.
+
+**위치를 특정할 수 있는 전체 실패** — `missing_ranges`가 `requested_range` 전체를 설명하면서 `failure`도 제공한다.
+
+```
+{
+  "contract":"SpanResolution",
+  "contract_version":"span-resolution/v1.1",
+  "timeline_ref": { "timeline_id":"tl_01", "revision":1 },
+  "requested_range": { "start_sec":200.0, "end_sec":260.0 },
+  "status":"FAILED",
+  "spans": [],
+  "missing_ranges": [
+    { "timeline_range": { "start_sec":200.0, "end_sec":260.0 }, "reason":"SOURCE_UNAVAILABLE", "source_ref":"sa_0007" }
+  ],
+  "failure": { "kind":"EXAMPLE_KIND", "code":"EXAMPLE_CODE" }
+}
+```
+
+**위치를 신뢰성 있게 특정할 수 없는 전체 실패**(Timeline 자체를 읽거나 해석하지 못함) — `missing_ranges=[]`를 허용하고 `failure`가 원인을 제공한다. 존재 여부를 확인할 수 없는 구간을 임의의 `MissingRange`로 만들지 않는다.
+
+```
+{
+  "contract":"SpanResolution",
+  "contract_version":"span-resolution/v1.1",
+  "timeline_ref": { "timeline_id":"tl_01", "revision":1 },
+  "requested_range": { "start_sec":200.0, "end_sec":260.0 },
+  "status":"FAILED",
+  "spans": [],
+  "missing_ranges": [],
+  "failure": { "kind":"EXAMPLE_KIND", "code":"EXAMPLE_CODE" }
+}
+```
+
+> 위 두 예시의 `failure.kind`/`code` 값(`EXAMPLE_*`)은 모양을 보이기 위한 자리표시자다. 실제 값 집합은 recording 소유 문서가 정하며 이 계약은 값을 만들지 않는다.
 
 **범위·실패의 의미 (2026-09-07 확정 · B06 · Decider 정철원, 확인 김준영·서어진)**
 
 - `spans + missing_ranges`는 `requested_range` 전체를 **빠짐없이** 설명한다(§23 SpanResolution 6).
 - timeline 범위를 **일부** 벗어나는 정상 요청은 usable 구간이 있으면 `PARTIAL`이고, 범위 밖 부분은 `missing_ranges`로 명시한다. 요청 **전체**가 resolve 불가능하면 `FAILED`.
 - `start >= end`, 음수 범위, 잘못된 timeline reference 같은 **입력 오류는 `SpanResolution`을 만들지 않는다.** 입력 검증 실패로 처리한다. `FAILED`는 「정상 입력인데 usable span을 만들 수 없다」는 뜻이다.
-- `FAILED`의 원인 표면화: 위치를 특정할 수 있는 전체 실패는 요청 범위 전체를 `missing_ranges`로 설명한다. 그것만으로 표현할 수 없는 실패는 **top-level failure reason**을 둔다. `recording`은 실패 사실과 원인만 제공하고, 그것을 신고 규칙상 `BLOCK`/`UNKNOWN` 중 무엇으로 볼지는 `evidence`가 판단한다.
-- **아직 정하지 않은 것:** 범위 밖 구간에 쓸 `MissingRange.reason` 값(§10의 세 값에 없다)과 top-level failure reason의 필드명·모양. Owner 결정 대기(`adr/adr-data-contract-call-closure-2026-09-07.md` §8.1 CALL-14). 확정 전에는 값을 만들지 않는다.
+- `FAILED`의 원인 표면화: 위치를 특정할 수 있는 전체 실패는 요청 범위 전체를 `missing_ranges`로 설명하면서 `failure`도 제공한다. 위치를 특정할 수 없는 실패는 `missing_ranges=[]` + **top-level `failure`**다(위 예시). `recording`은 실패 사실과 원인만 제공하고, 그것을 신고 규칙상 `BLOCK`/`UNKNOWN` 중 무엇으로 볼지는 `evidence`가 판단한다 — 그 판정 매핑은 evidence policy가 소유하며 이 계약에 고정하지 않는다.
+- 범위 밖 구간의 `MissingRange.reason`은 **`OUT_OF_TIMELINE_RANGE`**(§10). `TIMELINE_GAP`(Timeline 내부 결손)과 합치지 않는다.
+- 입력 오류(`start >= end` · 음수 · 존재하지 않거나 잘못된 형식의 timeline reference)는 `FAILED`가 아니라 입력 검증 실패다. **유효한** Timeline reference를 받았지만 저장소·인덱스·해석 결과를 사용할 수 없어 resolution을 만들 수 없는 경우가 `status=FAILED + failure`다.
+- (2026-09-08 확정 · Decider 정철원 · 확인 김준영·서어진 · `adr/adr-data-contract-call-closure-2026-09-08.md` §4.3)
 
 ---
 
@@ -471,13 +525,16 @@ spans = []
 
 | 값 | 의미 |
 | --- | --- |
-| `TIMELINE_GAP` | Timeline 자체에 gap |
+| `TIMELINE_GAP` | `RecordingTimeline` 내부에서 존재해야 할 구간에 생긴 결손 |
 | `SOURCE_UNAVAILABLE` | Source 사용 불가 |
 | `STREAM_UNAVAILABLE` | Stream 사용 불가 |
+| `OUT_OF_TIMELINE_RANGE` | (v1.1, 2026-09-08) 정상적인 요청 구간의 일부 또는 전체가 해당 Timeline의 **경계 밖**에 있음. `TIMELINE_GAP`과 구분한다 — recording이 관찰한 사실과 Consumer의 대응 의미가 다르다 |
 
 Evidence가 원래 사건 구간에서 일부 Source가 누락됐다는 사실을 반드시 알아야 한다고 요청했기 때문에 `missing_ranges`를 Final 구조에 포함한다.
 
-요청이 timeline 범위를 벗어난 부분도 `missing_ranges`로 명시한다(§9). 그 경우의 `reason` 값은 위 세 값에 없으며 **Owner 결정 대기**다(CALL-14). 임의로 추가하지 않는다.
+요청이 timeline 범위를 벗어난 부분도 `missing_ranges`로 명시한다(§9) — reason은 `OUT_OF_TIMELINE_RANGE`다.
+
+**`source_ref` — `CALL_REQUIRED`.** 위 예시의 `source_ref`는 Source가 원인인 reason(`SOURCE_UNAVAILABLE`)에서만 자연스럽다. `source_ref`의 타입(평문 opaque string인가 `ContractRef {kind, ref}`인가)과, `OUT_OF_TIMELINE_RANGE`·`TIMELINE_GAP`처럼 특정 Source가 원인이 아닌 reason에서 `null`인가 부재인가는 **Owner 결정 대기**다(`adr/adr-data-contract-call-closure-2026-09-08.md` §4.6). 확정 전에는 규칙을 만들지 않으며, fixture의 `OUT_OF_TIMELINE_RANGE` 항목은 `source_ref` 키를 넣지 않았다.
 
 ---
 
@@ -908,10 +965,13 @@ SpanResolution
 3. `PARTIAL`이면 usable span과 missing range가 모두 존재한다.
 4. `FAILED`이면 usable span이 존재하지 않는다.
 5. 일부 Source 실패만으로 정상 Span을 제거하지 않는다.
-6. (2026-09-07 · B06) `spans[].timeline_range`와 `missing_ranges[].timeline_range`의 합집합은 `requested_range`와 정확히 같다 — 설명되지 않는 구간이 없다.
+6. (2026-09-07 · B06) `spans[].timeline_range`와 `missing_ranges[].timeline_range`의 합집합은 `requested_range`와 정확히 같다 — 설명되지 않는 구간이 없다. **예외(2026-09-08):** 11번의 위치 특정 불가 `FAILED`에는 적용하지 않는다.
 7. (2026-09-07 · B06) 같은 `media_stream_ref`를 가진 `spans`끼리 `timeline_range`가 겹치지 않는다. 서로 다른 `media_stream_ref`가 같은 시간대를 가리키는 것은 허용한다.
 8. (2026-09-07 · B06) 입력 오류(`start >= end` · 음수 · 잘못된 timeline reference)는 `SpanResolution`으로 표현하지 않는다. 입력 검증 실패다.
-9. (2026-09-07 · B06) `FAILED`는 원인을 machine-readable하게 표면화한다 — 요청 범위 전체를 `missing_ranges`로 설명하거나 top-level failure reason을 둔다(모양은 CALL-14 대기).
+9. (2026-09-07 · B06 → 2026-09-08 모양 확정) `FAILED`는 원인을 machine-readable하게 표면화한다 — top-level `failure: {kind, code}`가 **필수**이고, 위치를 특정할 수 있으면 요청 범위 전체를 `missing_ranges`로도 설명한다.
+10. (2026-09-08 · v1.1) `failure` 키는 항상 존재한다. `status ∈ {COMPLETE, PARTIAL}`이면 `failure = null`, `status = FAILED`이면 `failure != null`이며 `kind`·`code`가 비어 있지 않은 문자열이다.
+11. (2026-09-08 · v1.1) 위치를 신뢰성 있게 특정할 수 없는 `FAILED`는 `spans = []` · `missing_ranges = []` · `failure != null`이다. 확인할 수 없는 구간을 임의의 `MissingRange`로 만들지 않는다.
+12. (2026-09-08 · v1.1) `missing_ranges[].reason ∈ {TIMELINE_GAP, SOURCE_UNAVAILABLE, STREAM_UNAVAILABLE, OUT_OF_TIMELINE_RANGE}`. 요청이 Timeline 경계를 벗어난 구간은 `OUT_OF_TIMELINE_RANGE`다.
 
 ## TimeSourceCandidate
 
@@ -1013,7 +1073,7 @@ SpanResolution
 
   "span_resolution": {
     "contract":"SpanResolution",
-    "contract_version":"span-resolution/v1",
+    "contract_version":"span-resolution/v1.1",
 
     "timeline_ref": {
       "timeline_id":"tl_case01",
@@ -1056,7 +1116,9 @@ SpanResolution
       }
     ],
 
-    "missing_ranges": []
+    "missing_ranges": [],
+
+    "failure": null
   }
 }
 ```

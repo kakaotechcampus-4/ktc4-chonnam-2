@@ -14,6 +14,8 @@
 
 > **`CaseView`는 v4에서 부록이 아니라 Core Contract ⑪이다**(v4 §5 머리말 · §4-모듈5 ⑥). 아래 절 제목의 「부록-A / 부록-B」는 ADR 작성 당시 표기이며, 계약의 위상은 Core Contract다.
 
+> **재판독 발주 규칙 등재 (2026-09-08 반영 · 유소연 2026-09-07 결정).** A절 §7에 「`PLATE_REREAD` Need → `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음」을 등재했다. 값 목록·스키마는 바뀌지 않아 `job-record/v1`을 유지한다. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
+
 > **`case-view/v1.2` 변경 (2026-09-07)** — 유소연(`case` Owner) 결정, 김준영(`evidence`)·신유민(`web`) 확인. 근거와 기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)·§4.2(B02)·§4.9(`thumb_ref`)에 있다. A절 `JobRecord`는 `job-record/v1` 그대로이며 §7의 `kind` 값 등재와 §10 불변조건 5만 늘었다(열린 enum·불변조건 추가라 버전 유지).
 > ① `info_state` 파생 입력 세 개 확정(`needs_review` 출처 · `occurred_at` 변환 · 위치 대표값) ② `location_display`에 `coord`·`search_keyword` 별도 필드 ③ `requirements`를 `requirements_evidence` / `requirements_package` 두 객체로 분리, report 선택 3단계 ④ web 소비 규칙(`info_state`만 본다) ⑤ `candidates[].thumb_ref`는 `FrameRef`. **B01·B02 Pending은 종결됐다.**
 
@@ -88,7 +90,8 @@ json
 
 - `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`, **`OVERLAY_TIME_READ`**(2026-09-07 등재, 유소연). 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
   - `PLATE_READ`와 `OVERLAY_TIME_READ`는 **항상 별도 `job_id`로 발주**한다. `ReadoutRun.operation`(`contract-readout-run.md` §6)과는 같은 이름의 값끼리 대응한다 — `PLATE_READ↔PLATE_READ`, `OVERLAY_TIME_READ↔OVERLAY_TIME_READ`. 한쪽에만 값을 추가하지 않는다.
-  - `PLATE_REREAD`는 `EvidenceNeeds.kind`의 값이며 `JobRecord.kind` 값이 아니다(값 공간이 다르다 — §4 「corrections.kind는 JobRecord.kind와 다른 값 공간」과 같은 이유). **재판독 발주의 `kind`·identity 처리는 case Owner 결정 대기다**(`adr/adr-data-contract-call-closure-2026-09-07.md` §8.1 CALL-12). 확정 전에는 임의로 값을 만들지 않는다.
+  - `PLATE_REREAD`는 `EvidenceNeeds.kind`의 값이며 `JobRecord.kind` 값이 아니다(값 공간이 다르다 — §4 「corrections.kind는 JobRecord.kind와 다른 값 공간」과 같은 이유).
+  - **재판독 발주 규칙 (2026-09-07 확정 · Decider 유소연 · 확인 신유민·김준영).** `EvidenceNeeds.kind=PLATE_REREAD` Need를 발주로 옮길 때 `case`는 **`kind=PLATE_READ`를 유지하고 `force_rerun=true`를 조건 없이 붙인다.** 별도 kind를 만들지 않는다. `PLATE_REREAD` Need는 사건 interval ref를 그대로 제공하므로 입력이 원판독과 같은 것이 기본값이고, fingerprint 구성에 case/kind가 포함된다고 가정할 수 없으므로 조건부 `force_rerun`은 재판독을 조용히 누락시킨다. 재판독은 **새 `job_id`**(새 `JobRecord`)로 발주하며 새 execution이 새 `ReadoutRun` 1건을 만든다 — **기존 `ReadoutRun`을 갱신하지 않는다.** 인프라 재시도(`STALE`)는 다른 층위다: 같은 `job_id` · 새 `execution_id` · `attempt` 증가(`contract-job-execution.md` §9-2). abstain 결과는 계속 `ReadoutRun.outcome=SUCCEEDED`이며(`contract-readout-run.md` §9-5) cache hit 회피는 `outcome`이 아니라 `force_rerun`으로 한다. 원판독/재판독 중 「현재 값」 선택은 B03 결정대로 `case`/`CaseView` projection 소관이다. §9의 `job_61` 예시가 이 형태다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
 - `force_rerun`: 기본값 `false`. **동일 `(case_id, kind, input_fingerprint)`**이고 `force_rerun=false`인 요청에 기존 **SUCCEEDED** 결과가 있으면 재사용한다. `FAILED`/`STALE`은 cache hit가 아니다. `force_rerun=true`이면 새 실행이다. 기존 `adr-job-record-case-view.md` A절 §7의 조건을 복원한 것이며 fingerprint에 case/kind가 포함됐다고 추정하지 않는다.
 
 ### 8. 정상 예시
@@ -328,6 +331,6 @@ json
 - evidence/package projection의 세부 필드명 최종 합의 · `CorrectionRecord.target_field`와 display 필드명 정렬 → 같은 자리에서 처리한다.
 - **`candidates[]`의 stale-revision 표시 필드.** `CandidateEvent.span.timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 `case`가 비교해 「과거 timeline revision 기준」임을 표시한다(B09, 2026-09-07 합의). **필드명·모양은 case Owner가 구현 시 정한다** — 여기서 임의로 만들지 않는다. `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8.
 - **`thumb_ref` 이미지 전달 형태**(URL/ref/endpoint)는 recording 자산 계약 2건에서 정한다. `FrameRef` 필드 계약도 같은 자리다. 그 전까지 목데이터는 `docs/architecture/mock-pack-v1-refs.md`의 `fr_` 예시를 쓴다.
-- **재판독 발주의 `JobRecord.kind`**(A절 §7) — case Owner 결정 대기(CALL-12).
+- ~~**재판독 발주의 `JobRecord.kind`**(A절 §7) — case Owner 결정 대기(CALL-12).~~ → **종결 (2026-09-07, 유소연).** `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음. A절 §7 등재. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
 - 최초 수락일 — Owner가 기억하지 못해 **확인 불가**로 유지한다(헤더).
 - **별도 종결 항목 —** JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`.
