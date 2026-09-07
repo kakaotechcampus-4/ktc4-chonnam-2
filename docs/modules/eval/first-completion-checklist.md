@@ -61,13 +61,13 @@
 - [x] 결과 JSON에 `run_id`·`impl`·`stage`·`manifest`·`gt_version`·`normalizer_version`·`code_commit`이 들어간다.
 - [x] 위반유형 4종별 점수를 따로 낸다.
 - [x] Classification(A tier) 지표를 낸다 — 5×5 혼동행렬 포함.
-- [ ] Mock Pack 채점 결과에 **어떤 Scenario를 채점했는지**가 남는다.
+- [—] ~~Mock Pack 채점 결과에 어떤 Scenario를 채점했는지가 남는다~~ — **해당 없음.** Mock은 채점하지 않기로 했다(성능 자료가 아니므로 결과 JSON을 남기지 않는다). Scenario 식별은 테스트가 상수 `SCENARIO`로 고정한다.
 
 ### D. Failure / Uncertainty
 
 - [x] 데이터가 없는 지표는 `null` + 사유 문자열이다. `0`으로 적지 않는다.
 - [x] 정답은 있는데 예측이 못 맞힌 경우와, 애초에 잴 수 없는 경우를 구분한다.
-- [ ] Mock 예측에 구간이 없어 낼 수 없는 지표를 `null` + 사유로 낸다(0으로 적지 않는다).
+- [x] Mock 예측에 구간이 없다는 사실이 코드에 기록돼 있다 — `from_mock_pack` 독스트링이 "IoU 기반 지표는 「측정했는데 0」처럼 보이지만 잰 적이 없는 값"이라고 경고한다. 애초에 채점하지 않으므로 잘못된 0이 나올 자리가 없다.
 - [—] ~~`scenario_partial_001`의 ABSTAIN·UNKNOWN 채점~~ — **v1로 이월**(아래 제외 범위 참조)
 
 ### E. Integration
@@ -75,18 +75,18 @@
 - [x] `eval`이 `case`·`evidence`·`web`을 import하지 않는다.
 - [x] `search`·`readout`의 내부 코드(프롬프트·파서)를 import하지 않는다 — 공개 Contract 파일만 읽는다.
 - [x] 외부 의존성 0개(표준 라이브러리만).
-- [ ] 실제 구현이 나오면 `--impl`에 이름표만 등록해 교체할 수 있다(현재 구조는 지원, 실물 미검증).
+- [ ] 실제 구현이 나오면 `--impl`에 이름표만 등록해 교체할 수 있다. **원격에 `feature/search-stub`("fixture-backed stub for search public capabilities")이 이미 올라와 있어 이제 실물로 검증 가능하다** — 통합 후 착수, 1차 완료 범위 밖.
 
 ### F. Test / Evaluation
 
 - [x] 채점기 단위 테스트가 있다.
 - [x] **가짜 구현 2종의 점수 대비로 지표 계산을 검증한다.**
 - [x] 정답지가 구현에 넘어가지 않는 것을 테스트가 검증한다.
-- [ ] 팀 Mock fixture를 읽는 회귀 테스트가 있다.
+- [x] 팀 Mock fixture를 읽는 회귀 테스트가 있다 — `tests/eval/test_mock_pack_contract.py` 5개.
 
 ### G. Operational
 
-- [ ] `UsageRecord`의 `latency_ms`·`cost.amount`를 읽을 수 있다(**v1 범위 밖 — 아래 제외 범위 참조**).
+- [—] ~~`UsageRecord`의 `latency_ms`·`cost.amount`를 읽는다~~ — **v1 범위 밖**(아래 제외 범위).
 
 ---
 
@@ -108,7 +108,7 @@
 ### `UsageRecord` (Consumer)
 
 - [ ] Consumer 검수 의견만 제출한다. **비용·Latency 지표 계산은 v1 범위 밖.**
-- [ ] eval batch 비용을 runtime 비용과 같은 숫자로 보고하지 않는다(절대 금지 항목).
+- [x] eval batch 비용을 runtime 비용과 같은 숫자로 보고하지 않는다 — 비용을 아예 계산하지 않으므로 섞일 자리가 없다.
 
 ### eval fixture (Producer — 내가 검수 담당)
 
