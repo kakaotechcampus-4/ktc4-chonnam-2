@@ -73,6 +73,38 @@ def normalize_classification(raw):
     return out
 
 
+def from_candidate_events(raw):
+    """CandidateEvent 계약 목록의 이름과 단위를 eval 뷰로 옮긴다.
+
+    계약은 event_type_hint · ranking_score · span.start_ms(밀리초)를 쓰고
+    eval 뷰는 event_type · score · t_start_sec(초)를 쓴다. 이 차이를
+    여기서 한 번만 흡수한다 — CONTRACT_CONFLICTS.md §4 가 기록했듯
+    계약마다 이름이 갈리며 Mock Pack 은 일부러 통일하지 않았다.
+
+    **clip 단위로 묶지 않는다.** 계약은 timeline_id 와 밀리초 offset 으로
+    위치를 말하고 B tier 정답지는 clip_id 로 말한다. 그 대응은 아직 어느
+    계약도 정하지 않았으므로 여기서 지어내지 않고 원문 식별자를 그대로
+    실어 보낸다. clip 단위 채점이 필요해지는 시점에 정해야 할 항목이다.
+    """
+    out = []
+    for i, ev in enumerate(raw):
+        where = "from_candidate_events: raw[%d]" % i
+        _require_dict(ev, where)
+        span = _require_field(ev, "span", where)
+        _require_dict(span, "%s.span" % where)
+        out.append({
+            "candidate_id": _require_field(ev, "candidate_id", where),
+            "run_id": ev.get("run_id"),
+            "timeline_id": span.get("timeline_id"),
+            "rank": _require_field(ev, "rank", where),
+            "t_start_sec": _require_field(span, "start_ms", "%s.span" % where) / 1000.0,
+            "t_end_sec": _require_field(span, "end_ms", "%s.span" % where) / 1000.0,
+            "event_type": _require_field(ev, "event_type_hint", where),
+            "score": _require_field(ev, "ranking_score", where),
+        })
+    return out
+
+
 def from_mock_pack(obj):
     """Mock Pack v1 의 평평한 prediction 객체를 candidate normalized 로 옮긴다.
 
