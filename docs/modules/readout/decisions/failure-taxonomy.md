@@ -15,7 +15,9 @@
 
 ### A. 실행 실패 — `ReadoutRun.failure.kind`
 
-런타임에 판정 가능한 것만 들어간다. 산출물을 못 만들었거나(`FAILED`), 만든 뒤 실행이 깨진 경우(`PARTIAL`)에 기록한다(`contract-readout-run.md` §10).
+런타임에 판정 가능한 것만 들어간다. 산출물을 못 만들었거나(`FAILED`), 만든 뒤 실행이 깨진 경우(`PARTIAL`)에 기록한다.
+
+> **`PARTIAL` 판정 기준은 계약 반영 대기다.** Owner가 「산출물은 생성되었으나 실행이 정상 종료하지 못한 경우」로 확정했고, 현재 `contract-readout-run.md` §10은 아직 이 항목을 「미해결 — readout Technical Spec 소관」으로 두고 있다. 계약에 반영되면 이 절의 outcome 열도 그 문구를 가리키도록 고친다.
 
 | 이름 | 의미 | outcome |
 | --- | --- | --- |
