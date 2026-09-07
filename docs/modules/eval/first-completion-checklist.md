@@ -45,16 +45,16 @@
 
 - [x] 정답지(GT)와 manifest를 파일에서 로드할 수 있다.
 - [x] 정답지 불변식을 검사해 위반 목록을 낸다(개수 일치·시간 순서·구간 범위·파일 존재·해시).
-- [ ] `data/mock/eval/prediction_*.json`을 **실제 파일 경로에서** 읽어 정규화할 수 있다.
-- [ ] `data/mock/expected/scenario_happy_001.expected.json`을 정답지로 로드할 수 있다.
-- [ ] Mock fixture가 바뀌면 테스트가 깨진다(현재는 파일을 읽지 않아 안 깨진다).
+- [x] `data/mock/eval/prediction_*.json`을 **실제 파일 경로에서** 읽는다.
+- [x] `data/mock/expected/scenario_happy_001.expected.json`을 정답지로 로드한다.
+- [x] Mock fixture가 바뀌면 테스트가 깨진다 — Mock Pack이 v1로 재생성되면 여기서 드러난다.
 
 ### B. Core Flow
 
 - [x] `python -m eval.run --impl <이름표>` 한 줄로 예측 산출물을 만든다.
 - [x] `python -m eval.score --prediction <run_id>` 한 줄로 채점 결과를 만든다.
 - [x] runner와 scorer가 분리되어 있고, 예측은 불변 산출물로 남는다.
-- [ ] `--impl mock_pack:correct` / `mock_pack:wrong`(이름 임의)으로 팀 fixture를 채점할 수 있다.
+- [x] 팀 Mock fixture 접합 확인은 **채점 파이프라인이 아니라 테스트로** 한다. Mock은 성능 자료가 아니므로 결과 JSON을 남기지 않는다 — `tests/eval/test_mock_pack_contract.py`.
 
 ### C. Output Contract (내가 생산하는 산출물)
 
@@ -94,10 +94,11 @@
 
 ### `CandidateEvent` (Consumer)
 
-- [ ] `candidate_id`·`rank`·`event_type_hint`·`span.{start_ms,end_ms}`를 읽어 정규화한다.
-- [ ] **필드 이름·단위 차이를 흡수한다.** 계약은 `event_type_hint`·`ranking_score`·`start_ms`(밀리초)인데 내 정규화 뷰는 `event_type`·`score`·`t_start_sec`(초)다. 이 매핑을 한 곳에서 처리하고 원문은 `raw`에 보존한다.
+- [x] `candidate_id`·`rank`·`event_type_hint`·`span.{start_ms,end_ms}`를 읽어 옮긴다 — `normalize.from_candidate_events`.
+- [x] **필드 이름·단위 차이를 한 곳에서 흡수한다** — `event_type_hint`→`event_type`, `ranking_score`→`score`, `start_ms`(밀리초)→`t_start_sec`(초).
+- [x] `event_type_hint` 값이 baseline 4종 안에 있는지 테스트가 고정한다 — 벗어나면 혼동행렬에 자리가 없어 조용히 miss로 집계된다.
 - [ ] `uncertainties`가 비어 있지 않은 경우를 채점에서 어떻게 다룰지 정한다.
-- [ ] Consumer 검수 의견 제출: 이 fixture로 채점을 시작할 수 있는가.
+- [ ] Consumer 검수 의견 제출 — 아래 「검수에서 나온 것」 참조.
 
 ### `PlateReadout` / `OverlayTimeReadout` (Consumer)
 
@@ -112,8 +113,8 @@
 ### eval fixture (Producer — 내가 검수 담당)
 
 - [x] `expected` 파일이 Mock Runtime Output이 아니라 사람이 라벨링한 정답지임이 문서에 명시돼 있다.
-- [ ] `prediction_correct`가 `expected`의 4개 값과 **실제로** 일치하는지 코드로 확인했다.
-- [ ] `prediction_wrong`이 rank·`visual_event_type`·plate 세 곳에서 어긋나는지 코드로 확인했다.
+- [x] `prediction_correct`가 `expected`의 **5개 값 전부**와 일치하는지 코드로 확인했다.
+- [x] `prediction_wrong`이 rank·`visual_event_type`·`plate_value` **정확히 세 곳에서만** 어긋나는지 코드로 확인했다 — Scenario Catalog의 주장과 파일이 일치한다.
 - [ ] **`scenario_partial_001`용 ground truth/prediction이 없다** — 검수 결과로 보고한다(`04_mock_validation_report.md` §23에 이미 기록됨).
 
 ---
@@ -128,14 +129,31 @@
 
 ---
 
+## 검수에서 나온 것 (Consumer 의견 초안)
+
+`tests/eval/test_mock_pack_contract.py`를 붙이면서 실제로 확인된 것들이다. 추측이 아니라 파일을 읽은 결과다.
+
+| # | 내용 | 누구와 | 상태 |
+| --- | --- | --- | --- |
+| 1 | `event_type_hint`가 baseline 4종 안에 있다 (`SOLID_LINE_LANE_CHANGE`). 다만 확인된 표본은 `happy_001` 1건뿐 — **값 공간 전체가 4종으로 닫혀 있는지는 계약 문서에서 확인 필요** | 서어진 | 확인 필요 |
+| 2 | **`timeline_id` + 밀리초 offset ↔ `clip_id` 대응을 어느 계약도 정하지 않았다.** 계약은 timeline 기준으로, eval의 B tier 정답지는 clip 기준으로 위치를 말한다. 지금은 원문 식별자를 그대로 실어 보내며 지어내지 않았다. clip 단위 채점이 필요해지는 시점에 정해야 한다 | 서어진 + 정철원 | **열린 결정** |
+| 3 | eval fixture(`prediction_*.json`)에 **구간이 없다** — `occurred_at` 타임스탬프뿐. 그래서 이 입력으로는 Recall@K·구간오차를 낼 수 없다(내면 "잰 적 없는 값을 0으로 적는" 것이 된다) | 유소연 | 보고 |
+| 4 | `scenario_partial_001`용 eval fixture가 없다 | 유소연 | v1로 이월 (§23 기록됨) |
+| 5 | `PlateReadout.abstained`가 boolean이고 `observation.status`가 별도 값 공간이다. **ABSTAIN을 오답과 구분해 세려면 이 형태로 충분한가**는 채점 규칙을 짤 때 확정해야 한다 | 신유민 | v1 |
+| 6 | `CandidateEvent.uncertainties`를 채점에서 어떻게 다룰지 미정 | 서어진 | v1 |
+
+> 2번이 가장 중요하다. 지금은 Mock이 시나리오 1건이라 드러나지 않지만, 실제 영상으로 넘어가면 **"이 후보가 어느 클립의 몇 초인가"를 아무도 계산할 수 없다.**
+
+---
+
 ## Merge 전 셀프 체크 증빙
 
 - [x] CLI 실행 결과 — `python -m eval.run` / `python -m eval.score`
 - [x] 정상 출력 JSON — `eval/results/demo_correct.g1.json`
 - [x] 오답 출력 JSON — `eval/results/demo_wrong.g1.json` (대비가 보이는 쌍)
 - [x] 테스트 실행 결과 — 72개 통과
-- [ ] **팀 Mock fixture 채점 결과 JSON 2개** (correct / wrong)
-- [ ] Consumer 검수 의견 문서 (3개 계약)
+- [x] **팀 Mock fixture 접합 확인** — `pytest tests/eval/test_mock_pack_contract.py -v` 5개 통과
+- [ ] Consumer 검수 의견 전달 — 위 표를 서어진·신유민·유소연에게 공유
 
 > 화면 캡처·API·로그는 이 모듈에 해당 없음. 비용/Latency 측정 파일은 v1 범위 밖.
 
@@ -214,7 +232,8 @@ python -m eval.score --prediction demo_wrong
 # 전체 테스트
 python -m pytest tests/eval/ -v
 
-# 팀 Mock fixture 채점            [구현 후 작성]
+# 팀 Mock fixture 접합 확인
+python -m pytest tests/eval/test_mock_pack_contract.py -v
 ```
 
 > Windows에서 한글 출력이 깨지면 `PYTHONIOENCODING=utf-8`을 앞에 붙인다.
