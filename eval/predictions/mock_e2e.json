@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "run_id": "mock_e2e",
+    "impl": "mock_pack:contracts",
+    "impl_version": "v1",
+    "stage": "candidate",
+    "manifest": "mock_pack",
+    "manifest_version": "mp0",
+    "clip_rule_version": null,
+    "normalizer_version": "n1",
+    "code_commit": "8f08563",
+    "created_at": "2026-09-07T17:26:39.613914+09:00"
+  },
+  "raw": [
+    {
+      "clip_id": "scenario_happy_001",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 690.0,
+          "t_end_sec": 708.0,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.86
+        }
+      ]
+    }
+  ],
+  "normalized": [
+    {
+      "clip_id": "scenario_happy_001",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 690.0,
+          "t_end_sec": 708.0,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.86
+        }
+      ]
+    }
+  ]
+}

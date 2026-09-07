@@ -1,3 +1,6 @@
+import inspect
+import sys
+
 import pytest
 
 from eval import manifests_io, run
@@ -5,11 +8,26 @@ from eval.enums import VIOLATION_TYPES
 from eval.runners import registry
 
 
-def test_both_fakes_are_registered_under_fake_prefix():
+def test_gt_reading_cheats_stay_isolated_under_the_fake_prefix():
+    """`fake:` 는 정답지를 몰래 읽는 치트의 표시다.
+
+    「등록된 전부가 fake: 다」를 단언하던 테스트였으나 그것은 가짜 2종만
+    있던 때 우연히 참이었을 뿐이다. 지켜야 하는 불변식은 방향이 반대다 —
+    **정답지를 읽는 구현은 반드시 fake: 아래에 있어야 한다.** 접두어 없는
+    구현이 정답지를 읽으면 치트를 실제 구현으로 착각하게 된다.
+    """
     names = registry.names()
     assert "fake:always_correct" in names
     assert "fake:always_wrong" in names
-    assert all(n.startswith("fake:") for n in names)
+
+    # fake: 가 아닌 구현은 정답지 로더를 참조하지 않는다.
+    for name in names:
+        if name.startswith("fake:"):
+            continue
+        module = sys.modules[registry.get(name).__module__]
+        src = inspect.getsource(module)
+        assert "load_gt" not in src, "%s 가 정답지를 읽는다 — fake: 로 격리해야 한다" % name
+        assert "manifests_io" not in src, "%s 가 manifests_io 를 참조한다" % name
 
 
 def test_unknown_impl_raises():

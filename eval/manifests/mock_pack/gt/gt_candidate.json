@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "gt_version": "mp0",
+    "tier": "MOCK",
+    "stage": "candidate",
+    "coverage": {
+      "scenario_id": "scenario_happy_001",
+      "clips_total": 1,
+      "clips_with_events": 1,
+      "derived_from_mock_pack": true,
+      "independent_ground_truth": false,
+      "purpose": "팀 목데이터가 eval 파이프라인(run -> normalize -> score)을 끝까지 통과하는지 확인한다. 예측이 맞는지를 재는 정답지가 아니다.",
+      "derived_from": [
+        "data/mock/expected/scenario_happy_001.expected.json (violation_type)",
+        "data/mock/search/candidate_events.happy_001.json (span)"
+      ],
+      "warning": "구간은 채점 대상인 예측과 같은 fixture 에서 왔다. 따라서 span_error 와 recall 은 순환적이며 성능 근거가 될 수 없다. 지표가 맞다는 증거는 b_youtube(55클립)·a_aihub(120시퀀스)에서 가짜 구현 2종의 점수 대비로 나온다.",
+      "reviewed_by": "daewon",
+      "reviewed_at": "2026-09-07"
+    }
+  },
+  "items": [
+    {
+      "clip_id": "scenario_happy_001",
+      "source_video_id": "tl_h001",
+      "targets": [
+        {
+          "event_id": "EV_MP_1",
+          "scoring": "INCLUDED",
+          "violation_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 690.0,
+          "t_end_sec": 708.0,
+          "t_onset_sec": 698.0
+        }
+      ]
+    }
+  ]
+}
