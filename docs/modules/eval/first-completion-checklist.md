@@ -61,7 +61,7 @@
 - [x] 결과 JSON에 `run_id`·`impl`·`stage`·`manifest`·`gt_version`·`normalizer_version`·`code_commit`이 들어간다.
 - [x] 위반유형 4종별 점수를 따로 낸다.
 - [x] Classification(A tier) 지표를 낸다 — 5×5 혼동행렬 포함.
-- [—] ~~Mock Pack 채점 결과에 어떤 Scenario를 채점했는지가 남는다~~ — **해당 없음.** Mock은 채점하지 않기로 했다(성능 자료가 아니므로 결과 JSON을 남기지 않는다). Scenario 식별은 테스트가 상수 `SCENARIO`로 고정한다.
+- [x] **어떤 Scenario를 확인했는지가 증빙에 남는다** — 시나리오로 파라미터화해 pytest 출력의 테스트 이름에 박히고, 정답지가 없는 `scenario_partial_001`은 사유와 함께 skip으로 같은 화면에 보인다. (Mock은 채점하지 않으므로 결과 JSON은 없다 — 성능 자료가 아니다.)
 
 ### D. Failure / Uncertainty
 
@@ -125,7 +125,7 @@
 | --- | --- | --- | --- | --- |
 | `scenario_happy_001` | `prediction_correct.happy_001.json` + `expected` | 정규화 → 채점 | `results/*.json` | 4개 정답 항목 전부 적중, 낼 수 없는 지표는 `null`+사유 |
 | `scenario_happy_001` | `prediction_wrong.happy_001.json` + `expected` | 정규화 → 채점 | `results/*.json` | rank·유형·plate 세 곳이 오답으로 잡힘 — **correct와 점수가 갈릴 것** |
-| `scenario_partial_001` | — | **1차 완료 범위 밖** | — | 채점하지 않는다. eval fixture 부재를 검수 의견으로 보고하는 것으로 끝 |
+| `scenario_partial_001` | `candidate_events` · `plate_readout` | 정답지 없이 가능한 것만 — enum 소속, ABSTAIN 가시성 | pytest PASS | 정답지가 필요한 3건은 **사유와 함께 skip**되어 출력에 남는다. 채점은 v1 이월 |
 
 ---
 
@@ -139,7 +139,7 @@
 | 2 | **`timeline_id` + 밀리초 offset ↔ `clip_id` 대응을 어느 계약도 정하지 않았다.** 계약은 timeline 기준으로, eval의 B tier 정답지는 clip 기준으로 위치를 말한다. 지금은 원문 식별자를 그대로 실어 보내며 지어내지 않았다. clip 단위 채점이 필요해지는 시점에 정해야 한다 | 서어진 + 정철원 | **열린 결정** |
 | 3 | eval fixture(`prediction_*.json`)에 **구간이 없다** — `occurred_at` 타임스탬프뿐. 그래서 이 입력으로는 Recall@K·구간오차를 낼 수 없다(내면 "잰 적 없는 값을 0으로 적는" 것이 된다) | 유소연 | 보고 |
 | 4 | `scenario_partial_001`용 eval fixture가 없다 | 유소연 | v1로 이월 (§23 기록됨) |
-| 5 | `PlateReadout.abstained`가 boolean이고 `observation.status`가 별도 값 공간이다. **ABSTAIN을 오답과 구분해 세려면 이 형태로 충분한가**는 채점 규칙을 짤 때 확정해야 한다 | 신유민 | v1 |
+| 5 | **`abstained=true`인데 `observation.value`에 값이 남아 있다**(`"12나 34?6"`). 계약상 정상 — `readout`은 번호판을 최종 확정하지 않고 관찰만 제공하며 확정/보류는 `evidence`가 판단한다. 따라서 **eval이 이 값을 확정 판독으로 채점하면 안 된다** — 정직하게 보류한 구현이 오답이 되고 무리해서 읽는 쪽이 유리해진다. 테스트로 고정해뒀다 | 신유민 | 확인됨 (채점 규칙은 v1) |
 | 6 | `CandidateEvent.uncertainties`를 채점에서 어떻게 다룰지 미정 | 서어진 | v1 |
 
 > 2번이 가장 중요하다. 지금은 Mock이 시나리오 1건이라 드러나지 않지만, 실제 영상으로 넘어가면 **"이 후보가 어느 클립의 몇 초인가"를 아무도 계산할 수 없다.**
