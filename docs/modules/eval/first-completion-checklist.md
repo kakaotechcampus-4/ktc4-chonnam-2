@@ -7,9 +7,9 @@
 
 ## 회의에서 먼저 볼 핵심
 
-1. **`scenario_happy_001`의 팀 fixture를 읽어 실제로 채점 결과 JSON을 낸다.** `prediction_correct`는 만점, `prediction_wrong`은 rank·`event_type_hint`·plate 세 곳에서 어긋난 점수가 나온다.
+1. **팀 목데이터가 파이프라인을 끝까지 통과해 결과 JSON을 낸다** — `eval/results/mock_e2e.mp0.json`. 입력은 서어진의 `candidate_events.happy_001.json`이고, 계약의 `span`(690000~708000ms)을 초로 옮겨 IoU 매칭이 성립한다.
 2. **채점기가 오류를 잡는다는 증거를 보인다.** 두 fixture의 점수가 갈리는 것 자체가 지표 계산이 맞다는 근거다. 같은 점수가 나오면 채점기가 깨진 것이다.
-3. **데이터가 없는 지표는 `0`이 아니라 `null` + 사유로 나온다.** Mock 예측에 구간이 없으므로 구간 기반 지표는 `null`이고, 그 이유가 결과 파일에 적혀 있다.
+3. **데이터가 없는 지표는 `0`이 아니라 `null` + 사유로 나온다.** 목데이터에는 negative clip이 없어 `fp_per_clip`이 `null`이고, 그 이유(`NO_NEGATIVE_CLIPS`)가 결과 파일에 적혀 있다.
 4. **Runtime 흐름을 건드리지 않는다.** `eval`은 별도 Track이며 `case`·`evidence`·`web`을 import하지 않는다. 공개 Contract 파일만 읽는다.
 5. **Consumer 검수 의견을 낸다.** 세 계약(`CandidateEvent`·`PlateReadout`·`UsageRecord`)에 대해 "이 fixture로 eval 개발을 시작할 수 있는가"에 답한다.
 
@@ -35,7 +35,7 @@
 
 ## 1차 완료 정의
 
-> `scenario_happy_001` 기준으로 **팀 공용 Mock fixture(`data/mock/eval/prediction_*.json`)와 정답지(`data/mock/expected/*.expected.json`)를 입력으로 받아**, 공개 Contract 필드만으로 채점을 수행하고, **결과 JSON을 파일로 생성**할 수 있으며, **데이터가 없어 낼 수 없는 지표는 `0`이 아니라 `null` + 사유로 표시**하고, `prediction_correct`와 `prediction_wrong`의 **점수 대비를 근거로 채점기 자체가 오류를 탐지한다는 것을 증명**할 수 있고, 세 소비 계약에 대한 **Consumer 검수 의견을 제출**했으면 1차 완료로 본다.
+> `scenario_happy_001` 기준으로 **팀 공용 Mock Pack 산출물(계약 `candidate_events`와 eval fixture `prediction_*.json`)과 정답지(`data/mock/expected/*.expected.json`)를 입력으로 받아**, 공개 Contract 필드만으로 채점을 수행하고, **결과 JSON을 파일로 생성**할 수 있으며, **데이터가 없어 낼 수 없는 지표는 `0`이 아니라 `null` + 사유로 표시**하고, `prediction_correct`와 `prediction_wrong`의 **점수 대비를 근거로 채점기 자체가 오류를 탐지한다는 것을 증명**할 수 있고, 세 소비 계약에 대한 **Consumer 검수 의견을 제출**했으면 1차 완료로 본다.
 
 ---
 
@@ -54,14 +54,14 @@
 - [x] `python -m eval.run --impl <이름표>` 한 줄로 예측 산출물을 만든다.
 - [x] `python -m eval.score --prediction <run_id>` 한 줄로 채점 결과를 만든다.
 - [x] runner와 scorer가 분리되어 있고, 예측은 불변 산출물로 남는다.
-- [x] 팀 Mock fixture 접합 확인은 **채점 파이프라인이 아니라 테스트로** 한다. Mock은 성능 자료가 아니므로 결과 JSON을 남기지 않는다 — `tests/eval/test_mock_pack_contract.py`.
+- [x] **팀 목데이터가 파이프라인을 끝까지 통과한다** — `--impl mock_pack:contracts --manifest mock_pack`. 산출물 `eval/predictions/mock_e2e.json` · `eval/results/mock_e2e.mp0.json` 커밋됨. 입력은 서어진의 `candidate_events.happy_001.json`이다.
 
 ### C. Output Contract (내가 생산하는 산출물)
 
 - [x] 결과 JSON에 `run_id`·`impl`·`stage`·`manifest`·`gt_version`·`normalizer_version`·`code_commit`이 들어간다.
 - [x] 위반유형 4종별 점수를 따로 낸다.
 - [x] Classification(A tier) 지표를 낸다 — 5×5 혼동행렬 포함.
-- [x] **어떤 Scenario를 확인했는지가 증빙에 남는다** — 시나리오로 파라미터화해 pytest 출력의 테스트 이름에 박히고, 정답지가 없는 `scenario_partial_001`은 사유와 함께 skip으로 같은 화면에 보인다. (Mock은 채점하지 않으므로 결과 JSON은 없다 — 성능 자료가 아니다.)
+- [x] **어떤 Scenario를 확인했는지가 증빙에 남는다** — 시나리오로 파라미터화해 pytest 출력의 테스트 이름에 박히고, 정답지가 없는 `scenario_partial_001`은 사유와 함께 skip으로 같은 화면에 보인다. 파이프라인 결과 파일에는 정답지 `meta.coverage.scenario_id`가 시나리오를 적는다.
 
 ### D. Failure / Uncertainty
 
@@ -82,7 +82,7 @@
 - [x] 채점기 단위 테스트가 있다.
 - [x] **가짜 구현 2종의 점수 대비로 지표 계산을 검증한다.**
 - [x] 정답지가 구현에 넘어가지 않는 것을 테스트가 검증한다.
-- [x] 팀 Mock fixture를 읽는 회귀 테스트가 있다 — `tests/eval/test_mock_pack_contract.py` 5개.
+- [x] 팀 Mock fixture를 읽는 회귀 테스트가 있다 — `test_mock_pack_contract.py`(7 통과 / 3 skip) · `test_mock_pack_pipeline.py`(5 통과).
 
 ### G. Operational
 
@@ -97,17 +97,17 @@
 - [x] `candidate_id`·`rank`·`event_type_hint`·`span.{start_ms,end_ms}`를 읽어 옮긴다 — `normalize.from_candidate_events`.
 - [x] **필드 이름·단위 차이를 한 곳에서 흡수한다** — `event_type_hint`→`event_type`, `ranking_score`→`score`, `start_ms`(밀리초)→`t_start_sec`(초).
 - [x] `event_type_hint` 값이 baseline 4종 안에 있는지 테스트가 고정한다 — 벗어나면 혼동행렬에 자리가 없어 조용히 miss로 집계된다.
-- [ ] `uncertainties`가 비어 있지 않은 경우를 채점에서 어떻게 다룰지 정한다.
-- [ ] Consumer 검수 의견 제출 — 아래 「검수에서 나온 것」 참조.
+- [~] `uncertainties` 처리 규칙 — **PR #11 질문 3으로 서어진에게 물었다.** 혼자 정할 수 없어 답변 대기. 채점 구현은 v1.
+- [x] Consumer 검수 의견 제출 — **PR #11 본문에 담당자별로 제출**(질문 1·2·3). 답변 대기.
 
 ### `PlateReadout` / `OverlayTimeReadout` (Consumer)
 
-- [ ] Consumer 검수 의견 제출 — 특히 **ABSTAIN 표현이 채점 가능한 형태인가**. 채점 구현은 v1이지만, 계약 형태에 대한 의견은 지금 내야 한다(계약이 닫히고 나면 바꾸기 어렵다).
+- [x] Consumer 검수 의견 제출 — **PR #11 질문 4.** `abstained=true`에 값이 남는 것이 계약상 정상임을 원문에서 확인하고, eval이 그 값을 확정으로 채점하지 않겠다는 해석을 함께 냈다. 신유민 확인 대기.
 - [—] ~~`abstained` / `observation.status` 채점 규칙 구현~~ — **v1로 이월**
 
 ### `UsageRecord` (Consumer)
 
-- [ ] Consumer 검수 의견만 제출한다. **비용·Latency 지표 계산은 v1 범위 밖.**
+- [x] Consumer 검수 의견 제출 — **PR #11 「범위 밖」절에 명시**. 비용·Latency 계산은 v1 범위 밖이며 eval batch 비용을 runtime 비용과 섞지 않는다.
 - [x] eval batch 비용을 runtime 비용과 같은 숫자로 보고하지 않는다 — 비용을 아예 계산하지 않으므로 섞일 자리가 없다.
 
 ### eval fixture (Producer — 내가 검수 담당)
@@ -115,7 +115,7 @@
 - [x] `expected` 파일이 Mock Runtime Output이 아니라 사람이 라벨링한 정답지임이 문서에 명시돼 있다.
 - [x] `prediction_correct`가 `expected`의 **5개 값 전부**와 일치하는지 코드로 확인했다.
 - [x] `prediction_wrong`이 rank·`visual_event_type`·`plate_value` **정확히 세 곳에서만** 어긋나는지 코드로 확인했다 — Scenario Catalog의 주장과 파일이 일치한다.
-- [ ] **`scenario_partial_001`용 ground truth/prediction이 없다** — 검수 결과로 보고한다(`04_mock_validation_report.md` §23에 이미 기록됨).
+- [x] **`scenario_partial_001`용 ground truth/prediction 부재를 보고했다** — **PR #11 질문 6.** `pytest` 출력에도 사유와 문서 번호가 함께 skip으로 남는다.
 
 ---
 
@@ -137,7 +137,7 @@
 | --- | --- | --- | --- |
 | 1 | `event_type_hint`가 baseline 4종 안에 있다 (`SOLID_LINE_LANE_CHANGE`). 다만 확인된 표본은 `happy_001` 1건뿐 — **값 공간 전체가 4종으로 닫혀 있는지는 계약 문서에서 확인 필요** | 서어진 | 확인 필요 |
 | 2 | **`timeline_id` + 밀리초 offset ↔ `clip_id` 대응을 어느 계약도 정하지 않았다.** 계약은 timeline 기준으로, eval의 B tier 정답지는 clip 기준으로 위치를 말한다. 지금은 원문 식별자를 그대로 실어 보내며 지어내지 않았다. clip 단위 채점이 필요해지는 시점에 정해야 한다 | 서어진 + 정철원 | **열린 결정** |
-| 3 | eval fixture(`prediction_*.json`)에 **구간이 없다** — `occurred_at` 타임스탬프뿐. 그래서 이 입력으로는 Recall@K·구간오차를 낼 수 없다(내면 "잰 적 없는 값을 0으로 적는" 것이 된다) | 유소연 | 보고 |
+| 3 | eval fixture(`prediction_*.json`)에 **구간이 없다** — `occurred_at` 타임스탬프뿐. 이 입력으로는 Recall@K·구간오차를 낼 수 없다(내면 "잰 적 없는 값을 0으로 적는" 것이 된다). **계약 산출물 `candidate_events`에는 `span`이 있어** 파이프라인은 그쪽을 읽어 해결했다. 다만 fixture가 실제 예측 형태를 대표하려면 `span`이 있어야 한다 | 유소연 | 보고 · 수정 PR 문의 |
 | 4 | `scenario_partial_001`용 eval fixture가 없다 | 유소연 | v1로 이월 (§23 기록됨) |
 | 5 | **`abstained=true`인데 `observation.value`에 값이 남아 있다**(`"12나 34?6"`). 계약상 정상 — `readout`은 번호판을 최종 확정하지 않고 관찰만 제공하며 확정/보류는 `evidence`가 판단한다. 따라서 **eval이 이 값을 확정 판독으로 채점하면 안 된다** — 정직하게 보류한 구현이 오답이 되고 무리해서 읽는 쪽이 유리해진다. 테스트로 고정해뒀다 | 신유민 | 확인됨 (채점 규칙은 v1) |
 | 6 | `CandidateEvent.uncertainties`를 채점에서 어떻게 다룰지 미정 | 서어진 | v1 |
@@ -151,9 +151,9 @@
 - [x] CLI 실행 결과 — `python -m eval.run` / `python -m eval.score`
 - [x] 정상 출력 JSON — `eval/results/demo_correct.g1.json`
 - [x] 오답 출력 JSON — `eval/results/demo_wrong.g1.json` (대비가 보이는 쌍)
-- [x] 테스트 실행 결과 — 72개 통과
-- [x] **팀 Mock fixture 접합 확인** — `pytest tests/eval/test_mock_pack_contract.py -v` 5개 통과
-- [ ] Consumer 검수 의견 전달 — 위 표를 서어진·신유민·유소연에게 공유
+- [x] 테스트 실행 결과 — **84 통과 + 3 skip**
+- [x] **팀 목데이터 파이프라인 결과** — `eval/results/mock_e2e.mp0.json` (커밋됨)
+- [x] Consumer 검수 의견 전달 — **PR #11 본문**(https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/11). 담당자별로 묶어 6건. 회의에서 구두 보강 예정
 
 > 화면 캡처·API·로그는 이 모듈에 해당 없음. 비용/Latency 측정 파일은 v1 범위 밖.
 
