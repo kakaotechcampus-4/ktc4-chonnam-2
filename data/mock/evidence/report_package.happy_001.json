@@ -8,7 +8,7 @@
     "safety_report_type": "교통위반 › 진로변경 위반",
     "occurred_at": "2026-08-24T18:31:30+09:00",
     "location": {
-      "display_text": "미금역 사거리 인근",
+      "display_text": "미금역 근처",
       "search_keyword": "미금역"
     },
     "vehicle_number": "12가 3476",
@@ -16,7 +16,7 @@
   },
   "report": {
     "title": "백색 실선 침범 신고 (흰색 SUV 12가 3476)",
-    "description": "2026-08-24 18:31 경 미금역 사거리 인근에서 흰색 SUV(12가 3476)가 백색 실선 구간에서 진로를 변경했습니다.",
+    "description": "2026-08-24 18:31 경 미금역 근처에서 흰색 SUV(12가 3476)가 백색 실선 구간에서 진로를 변경했습니다.",
     "template_ref": "report-template/lane-change/v1"
   },
   "assets": {

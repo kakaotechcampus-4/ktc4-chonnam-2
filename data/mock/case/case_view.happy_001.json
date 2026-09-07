@@ -37,8 +37,8 @@
     "report_type_display": { "code": "LANE_CHANGE_VIOLATION", "label": "진로변경 위반", "needs_review": false },
     "violation_display": { "code": null, "label": "백색 실선 구간에서 진로를 변경함", "needs_review": false },
     "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.overlay_ocr" },
-    "event_time_display": { "value": "2026-08-24T18:31:30+09:00", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "time.source.filename_time" },
-    "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "location.source.visual_inference" },
+    "event_time_display": { "value": "2026-08-24T18:31:30+09:00", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": null },
+    "location_display": { "value": "미금역 근처", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": null },
     "user_edited": false,
     "preview_ref": "da_h001_report_video",
     "review_needed": true,
@@ -50,13 +50,13 @@
     "report_fields": {
       "safety_report_type": "교통위반 › 진로변경 위반",
       "occurred_at": "2026-08-24T18:31:30+09:00",
-      "location": "미금역 사거리 인근",
+      "location": "미금역 근처",
       "vehicle_number": "12가 3476",
       "violation_expression": "백색 실선 구간에서 진로를 변경함"
     },
     "artifact_ref": "da_h001_report_video",
     "capabilities": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"],
-    "warnings": ["위치 정보는 영상 시각 추정값입니다."]
+    "warnings": ["위치 정보는 사용자 기억 단서이므로 최종 확인이 필요합니다."]
   },
   "running_jobs": [],
   "notices": []

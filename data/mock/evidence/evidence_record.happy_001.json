@@ -40,9 +40,9 @@
     "user_corrected": false
   },
   "location": {
-    "address": {
-      "value": "미금역 사거리 인근",
-      "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_h001" }, "observability": "INFERRED", "label_key": "location.source.visual_inference" },
+    "user_hint": {
+      "value": "미금역 근처",
+      "source": { "kind": "case.user_hint", "ref": { "kind": "case", "ref": "case_happy_001" }, "observability": "INFERRED", "label_key": null },
       "support_refs": [],
       "user_corrected": false
     }

@@ -14,10 +14,10 @@
   "issues": [],
   "usage_refs": ["usage_h001_1"],
   "usage_summary": {
-    "processed_duration_ms": 300000,
+    "processed_duration_ms": 64000,
     "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 },
     "latency_ms": 64000,
-    "total_cost": { "amount": "0.42", "currency": "USD" }
+    "total_cost": { "amount": "184.20", "currency": "KRW" }
   },
   "contract_version": "analysis-run-candidate-event/v1"
 }

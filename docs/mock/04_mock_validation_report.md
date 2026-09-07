@@ -4,20 +4,22 @@
 
 `scripts/validate_mock_pack.py` — 무거운 validation framework 없이(실제 Contract Model 코드가 아직 없으므로, `src/daesingo/*/README.md` "아직 코드가 없다") 경량 스크립트로 확인했다:
 
-1. `data/mock/**/*.json` 47개 전체 JSON parse
+1. `data/mock/**/*.json` 고유 파일 45개 전체 JSON parse
 2. `manifest.json` / `scenarios/*.json` / `fixture_index.csv`가 가리키는 모든 경로 실존 확인
 3. 시나리오별 ID 참조 일관성(`candidate_id`/`run_id`/`job_id`/`execution_id`/`usage_id`/`case_id` 등이 모듈 fixture 사이에서 어긋나지 않는지)
 4. 계약이 명시한 주요 invariant(예: `SpanResolution.status`↔`missing_ranges` 관계, `AnalysisRun.completed_at>=started_at`, `JobExecution.status`↔`ended_at`, `token_usage.total==input+output`, `CaseView.package`↔`requirements.scope/readiness` 등)
+5. `AnalysisRun.usage_summary`와 참조된 `UsageRecord`의 duration/token/cost aggregate 정합
+6. `CaseView.event_time_display.source_label_key`가 선택된 `TimeResolution` source와 모순되지 않는지 확인
 
-### 실행 결과 (2026-09-06 기준)
+### 실행 결과 (2026-09-07 기준)
 
 ```
-검사한 JSON 파일 수: 47
+검사한 고유 JSON 파일 수: 45
 오류(ERROR): 0
 경고(WARN): 0
 ```
 
-**이 결과가 뜻하는 것과 뜻하지 않는 것.** PASS는 "이번에 만든 47개 파일이 서로 참조 무결하고 스크립트가 아는 invariant를 어기지 않는다"는 뜻이다. 계약 의미 전체, 예시 직렬화 전체, Owner 수락을 검증한 것은 아니다(경계 스크립트 관례와 동일 — `scripts/README.md` 참고).
+**이 결과가 뜻하는 것과 뜻하지 않는 것.** PASS는 "이번에 만든 47개 파일(JSON 45 + JSONL 1 + CSV 1)이 서로 참조 무결하고 스크립트가 아는 invariant를 어기지 않는다"는 뜻이다. 계약 의미 전체, 예시 직렬화 전체, Owner 수락을 검증한 것은 아니다(경계 스크립트 관례와 동일 — `scripts/README.md` 참고).
 
 ## Contract별 생성 Fixture
 

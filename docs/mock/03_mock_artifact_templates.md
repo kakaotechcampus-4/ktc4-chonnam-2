@@ -136,7 +136,7 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
   "implementation": { "impl_id": "gemini-candidate-search@c7", "model_ref": "gemini-3.7-flash", "prompt_version": "coarse-c7", "config_version": "search-v2" },
   "outcome": "SUCCEEDED", "started_at": "2026-08-24T18:25:02+09:00", "completed_at": "2026-08-24T18:26:06+09:00",
   "issues": [], "usage_refs": ["usage_h001_1"],
-  "usage_summary": { "processed_duration_ms": 300000, "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 }, "latency_ms": 64000, "total_cost": { "amount": "0.42", "currency": "USD" } },
+  "usage_summary": { "processed_duration_ms": 64000, "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 }, "latency_ms": 64000, "total_cost": { "amount": "184.20", "currency": "KRW" } },
   "contract_version": "analysis-run-candidate-event/v1" }
 ```
 - Partial 예시(`data/mock/search/analysis_run.partial_001.json`) — `outcome="PARTIAL"`, `issues`에 `SUBRANGE_PROVIDER_TIMEOUT` 1건
@@ -256,7 +256,7 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 { "contract_version": "evidence-record/v1.1", "record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
   "case_ref": { "kind": "case", "ref": "case_happy_001" }, "selection_rev": 1,
   "vehicle_number": { "value": "12가 3476", "source": { "kind": "readout.plate_overlay_ocr", "observability": "OBSERVED" }, "user_corrected": false },
-  "location": { "address": { "value": "미금역 사거리 인근", "source": { "kind": "search.visual_inference", "observability": "INFERRED" }, "user_corrected": false } } }
+  "location": { "user_hint": { "value": "미금역 근처", "source": { "kind": "case.user_hint", "observability": "INFERRED", "label_key": null }, "user_corrected": false } } }
 ```
 - Partial 예시(`data/mock/evidence/evidence_record.partial_001.json`) — **`vehicle_number`/`location` 키 자체가 없다**(placeholder 금지 원칙, §10 불변조건 6)
 - 핵심 불변조건: 확정 못한 값은 null/placeholder가 아니라 필드 부재, `occurred_at` 있으면 `time_resolution_ref` 필수
@@ -349,7 +349,7 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 ```json
 { "case_id": "case_happy_001", "stage": "READY", "user_reviewed": true,
   "evidence": { "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED" },
-                "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW" } },
+                "location_display": { "value": "미금역 근처", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": null } },
   "requirements": { "scope": "FINAL_PACKAGE", "readiness": "WARN", "checks": [] },
   "package": { "package_ref": "pkg_h001", "artifact_ref": "da_h001_report_video" } }
 ```

@@ -14,6 +14,7 @@ Pydantic 등 실제 Contract Model이 아직 코드로 없으므로(§4-모듈5 
 """
 import json
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,7 +55,7 @@ else:
             errors.append(f"[MANIFEST] scenario file 없음: {scn['file']}")
 
 for scn_path in sorted((MOCK / "scenarios").glob("*.json")):
-    scn = load_json(scn_path)
+    scn = data_by_relpath.get(str(scn_path.relative_to(MOCK)))
     if scn is None:
         continue
     artifacts = scn.get("artifacts", {})
@@ -270,6 +271,49 @@ def check_scenario(tag, case_id):
             if tu is not None and tu["total_tokens"] != tu["input_tokens"] + tu["output_tokens"]:
                 errors.append(f"[{tag}] UsageRecord.token_usage.total_tokens != input+output ({u['usage_id']})")
 
+    # AnalysisRun usage_summary is an immutable aggregate of referenced UsageRecords.
+    if run and usage:
+        usage_by_id = {u["usage_id"]: u for u in usage}
+        referenced_usage = []
+        for usage_ref in run["usage_refs"]:
+            usage_record = usage_by_id.get(usage_ref)
+            if usage_record is None:
+                errors.append(f"[{tag}] AnalysisRun.usage_refs의 {usage_ref}가 UsageRecord에 없음")
+            else:
+                referenced_usage.append(usage_record)
+
+        if len(referenced_usage) == len(run["usage_refs"]):
+            summary = run["usage_summary"]
+            duration_values = [u["processed_duration_sec"] for u in referenced_usage]
+            if duration_values and all(value is not None for value in duration_values):
+                expected_duration_ms = sum(Decimal(str(value)) for value in duration_values) * 1000
+                if Decimal(summary["processed_duration_ms"]) != expected_duration_ms:
+                    errors.append(
+                        f"[{tag}] AnalysisRun.usage_summary.processed_duration_ms"
+                        f"({summary['processed_duration_ms']}) != UsageRecord aggregate({expected_duration_ms})"
+                    )
+
+            token_values = [u["token_usage"] for u in referenced_usage if u["token_usage"] is not None]
+            if token_values:
+                expected_tokens = {
+                    key: sum(value[key] for value in token_values)
+                    for key in ("input_tokens", "output_tokens", "total_tokens")
+                }
+                if summary["token_usage"] != expected_tokens:
+                    errors.append(f"[{tag}] AnalysisRun.usage_summary.token_usage != UsageRecord aggregate")
+
+            costs = [u["cost"] for u in referenced_usage if u["cost"] is not None]
+            currencies = {cost["currency"] for cost in costs}
+            if costs and len(currencies) == 1:
+                expected_cost = sum(Decimal(cost["amount"]) for cost in costs)
+                summary_cost = summary["total_cost"]
+                if (
+                    summary_cost is None
+                    or summary_cost["currency"] not in currencies
+                    or Decimal(summary_cost["amount"]) != expected_cost
+                ):
+                    errors.append(f"[{tag}] AnalysisRun.usage_summary.total_cost != UsageRecord aggregate")
+
     # case_view sanity
     if case_view:
         if case_view["case_id"] != case_id:
@@ -280,6 +324,18 @@ def check_scenario(tag, case_id):
             errors.append(f"[{tag}] CaseView.package가 존재하는데 readiness가 PASS/WARN이 아님")
         if case_view["stage"] == "READY" and case_view["requirements"]["scope"] != "FINAL_PACKAGE":
             errors.append(f"[{tag}] CaseView.stage=READY인데 requirements.scope != FINAL_PACKAGE (B02 제안 규칙 기준 점검용)")
+        if tres and tres.get("resolved") and case_view.get("evidence"):
+            selected_source_kind = tres["resolved"]["source"]["kind"]
+            source_label_key = case_view["evidence"]["event_time_display"]["source_label_key"]
+            label_source_kinds = {
+                "time.source.filename_time": "recording.filename_time",
+            }
+            expected_source_kind = label_source_kinds.get(source_label_key)
+            if expected_source_kind is not None and selected_source_kind != expected_source_kind:
+                errors.append(
+                    f"[{tag}] CaseView.event_time_display.source_label_key({source_label_key})가 "
+                    f"TimeResolution source({selected_source_kind})와 불일치"
+                )
         if candidates:
             selected = [c for c in case_view["candidates"] if c["selected"]]
             cv_cand_ids = {c["candidate_id"] for c in case_view["candidates"]}
@@ -297,7 +353,7 @@ ENUM_CHECKS = {
     },
 }
 
-print(f"검사한 JSON 파일 수: {checked_files}")
+print(f"검사한 고유 JSON 파일 수: {checked_files}")
 print(f"오류(ERROR): {len(errors)}")
 for e in errors:
     print("  -", e)

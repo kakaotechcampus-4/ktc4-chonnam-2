@@ -22,19 +22,19 @@
 
 전체 계약과 데이터 흐름은 `03_mock_artifact_templates.md` 상단의 Inventory 표를 따른다(중복 방지를 위해 여기서는 요약만 적는다).
 
-- Final: `RecordingTimeline`/`AssetSpan`/`SpanResolution`/`TimeSourceCandidate`(recording), `AnalysisScope`(search+case 공동), `AnalysisRun`/`CandidateEvent`(search), `VisualEvidence`(search), `PlateReadout`/`OverlayTimeReadout`/`ReadoutRun`(readout), `Observation<T>`(recording/search/readout 공통 envelope), `TimeResolution`/`EvidenceRecord`/`EvidenceNeeds`/`RequirementReport`/`ReportPackage`(evidence), `JobRecord`/`CaseView`(case), `JobExecution`/`UsageRecord`(common/runtime) — **20개 객체, 14개 파일**
+- Final: `RecordingTimeline`/`AssetSpan`/`SpanResolution`/`TimeSourceCandidate`(recording), `AnalysisScope`(search+case 공동), `AnalysisRun`/`CandidateEvent`(search), `VisualEvidence`(search), `PlateReadout`/`OverlayTimeReadout`/`ReadoutRun`(readout), `Observation<T>`(recording/search/readout 공통 envelope), `TimeResolution`/`EvidenceRecord`/`EvidenceNeeds`/`RequirementReport`/`ReportPackage`(evidence), `JobRecord`/`CaseView`(case), `JobExecution`/`UsageRecord`(common/runtime) — **21개 객체, 14개 파일**
 - Draft: `CorrectionRecord`(case) — Seed Pack 제외
 - 미작성(파일 없음): `SourceAsset`/`MediaStream`/`FrameRef`, `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset` — opaque id로만 참조
 
 ## 전체 Mock Pack 구성
 
 - Scenario 2개: `scenario_happy_001`(Happy Path), `scenario_partial_001`(Partial Success/ABSTAIN/UNKNOWN)
-- Fixture 47개 JSON + 1개 JSONL(`scenario_catalog.jsonl`) + 1개 CSV(`fixture_index.csv`) + manifest 3개(`manifest.json`, 시나리오 기술서 2개)
+- JSON 45개(계약/평가 fixture 42개 + 관리 JSON 3개), JSONL 1개(`scenario_catalog.jsonl`), CSV 1개(`fixture_index.csv`) — **총 47개 파일**
 - 각 시나리오는 recording→search→readout→evidence→case 5개 모듈 체인을 관통하고, happy 시나리오는 eval(ground truth + 정답/오답 prediction)까지 포함한다
 
 ## 공통 기준 Scenario
 
-- **대표 Happy Path:** `scenario_happy_001` — 위치만 시각 추정(NEEDS_REVIEW)이고 나머지는 모두 확정, `CaseView.stage=READY`·`package` non-null까지 도달
+- **대표 Happy Path:** `scenario_happy_001` — 위치는 사용자 기억 단서(NEEDS_REVIEW)이고 나머지는 모두 확정, `CaseView.stage=READY`·`package` non-null까지 도달
 - **대표 Partial/Failure Path:** `scenario_partial_001` — 시간은 성공(overlay 검증), 번호판은 ABSTAIN, 위치는 GPS 없음+시각 단서 부족으로 UNKNOWN. `SpanResolution`도 PARTIAL(일부 자산 누락)을 함께 보여준다
 - 대표 Rerun Path는 이번 Seed에서 만들지 않았다(`CorrectionRecord` Draft라서 재실행 트리거를 표현할 근거가 아직 Final이 아님 — `CONTRACT_CONFLICTS.md` §3)
 

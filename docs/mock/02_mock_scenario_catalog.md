@@ -2,7 +2,7 @@
 
 | Scenario ID | 목적 | 핵심 상황 | 통과 Contract | 기대 최종 상태 |
 | --- | --- | --- | --- | --- |
-| `scenario_happy_001` | 주요 Contract 전체 연결 + 정상 Case lifecycle + web 최종 CaseView 표현 + eval 정상 출력 읽기 검증 | 대상 차량·번호판·시각 모두 확정, 위치만 시각 추정으로 review 필요 | RecordingTimeline·TimeSourceCandidate·SpanResolution·AnalysisScope·AnalysisRun·CandidateEvent·VisualEvidence·ReadoutRun·PlateReadout·OverlayTimeReadout·Observation·TimeResolution·EvidenceRecord·EvidenceNeeds·RequirementReport·ReportPackage·JobRecord·JobExecution·UsageRecord·CaseView | `CaseView.stage=READY`, `readiness=WARN`, `package` 존재 |
+| `scenario_happy_001` | 주요 Contract 전체 연결 + 정상 Case lifecycle + web 최종 CaseView 표현 + eval 정상 출력 읽기 검증 | 대상 차량·번호판·시각 모두 확정, 위치는 사용자 기억 단서라 review 필요 | RecordingTimeline·TimeSourceCandidate·SpanResolution·AnalysisScope·AnalysisRun·CandidateEvent·VisualEvidence·ReadoutRun·PlateReadout·OverlayTimeReadout·Observation·TimeResolution·EvidenceRecord·EvidenceNeeds·RequirementReport·ReportPackage·JobRecord·JobExecution·UsageRecord·CaseView | `CaseView.stage=READY`, `readiness=WARN`, `package` 존재 |
 | `scenario_partial_001` | Partial Success(시간 성공/번호판 ABSTAIN/GPS 없음) + SpanResolution PARTIAL + AnalysisRun PARTIAL 검증. 전체 Case가 실패하지 않고 나머지 정보가 유지되는지 확인 | 신호위반 목격, 대상 차량 특정 모호, 번호판 판독 ABSTAIN, 위치 정보 없음 | 위와 동일 (ReportPackage 제외 — BLOCK이라 미생성) | `CaseView.stage=EVIDENCE_REVIEW`, `readiness=BLOCK`, `package=null`, notices에 `PLATE_ABSTAINED`/`LOCATION_UNKNOWN` |
 
 두 Scenario는 검증해야 할 상황 유형(A~I) 중 다음을 대표로 커버한다:
@@ -36,7 +36,7 @@ recording부터 case까지 5개 모듈 체인 전체가 하나의 Case로 연결
 → search: AnalysisRun(run_h001_search, SUCCEEDED) → CandidateEvent(cand_h001, rank1) → VisualEvidence(ve_h001, OBSERVED)
 → case: JobRecord(job_h001_plate) 발주 → common/runtime: JobExecution(exec_h001_plate, SUCCEEDED)
 → readout: ReadoutRun ×2(rr_h001_plate/overlay, 둘 다 SUCCEEDED) → PlateReadout(비abstain, OK) + OverlayTimeReadout(OK, 검증 4항목 모두 true)
-→ evidence: Observation(GPS, UNKNOWN — 이 대시캠엔 GPS 없음) + TimeResolution(OK, overlay VERIFIED 채택) → EvidenceRecord(ev_h001, 번호판/시각 확정, 위치는 시각 추정) → EvidenceNeeds(items=[], 추가 요청 없음) → RequirementReport(FINAL_PACKAGE, overall=WARN) → ReportPackage(pkg_h001) 생성
+→ evidence: Observation(GPS, UNKNOWN — 이 대시캠엔 GPS 없음) + TimeResolution(OK, overlay VERIFIED 채택) → EvidenceRecord(ev_h001, 번호판/시각 확정, 위치는 `user_hint`로 보존) → EvidenceNeeds(items=[], 추가 요청 없음) → RequirementReport(FINAL_PACKAGE, overall=WARN) → ReportPackage(pkg_h001) 생성
 → case: CaseView(stage=READY, readiness=WARN, package=pkg_h001)
 → eval: ground truth와 정답 prediction 비교(항상 일치), 오답 prediction으로 채점기 오류 탐지 확인
 ```

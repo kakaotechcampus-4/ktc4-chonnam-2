@@ -1,6 +1,6 @@
 {
   "scenario_id": "scenario_happy_001",
-  "description": "모든 핵심 값이 정상적으로 존재하며 E2E가 끝까지 진행되는 대표 Happy Path. 위치만 시각 추정(NEEDS_REVIEW)이라 requirements.readiness=WARN이지만, WARN도 Package를 막지 않으므로 case_view.happy_001의 stage=READY, package non-null까지 도달한다.",
+  "description": "모든 핵심 값이 정상적으로 존재하며 E2E가 끝까지 진행되는 대표 Happy Path. 위치는 사용자 기억 단서(NEEDS_REVIEW)라 requirements.readiness=WARN이지만, WARN도 Package를 막지 않으므로 case_view.happy_001의 stage=READY, package non-null까지 도달한다.",
   "case_id": "case_happy_001",
   "artifacts": {
     "recording": {
