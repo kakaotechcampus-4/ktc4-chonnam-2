@@ -1,0 +1,42 @@
+{
+  "scenario_id": "scenario_readout_failed_001",
+  "description": "readout 실행 실패 경로 고정용 부분 시나리오. 목적은 두 가지다 — (1) ReadoutRun.failure 객체의 구체 형태를 처음으로 고정한다(기존 fixture는 4건 모두 SUCCEEDED/failure=null이라 failure의 모양이 어디에도 없었다), (2) 계약 「실행이 완전히 실패하면 이 계약의 결과는 생성되지 않고 ReadoutRun만 남는다」를 실물로 보인다 — PLATE_READ run이 FAILED이므로 plate_readout 파일이 없다. 같은 Job의 OVERLAY_TIME_READ run은 SUCCEEDED이므로 overlay 결과는 존재한다(한 판독의 실패가 다른 판독을 죽이지 않는다). 전체 E2E Case가 아니다 — recording/search/evidence/case/eval 아티팩트는 이 시나리오 범위 밖이므로 null이다. failure.kind/code는 contract-readout-run.md §8 예시의 값을 그대로 썼고 새 taxonomy 값을 만들지 않았다. outcome=PARTIAL 예시는 만들지 않았다 — PARTIAL 판정 기준이 readout Technical Spec 소관으로 미정이다(contract-readout-run.md §10).",
+  "case_id": "case_readout_failed_001",
+  "artifacts": {
+    "recording": {
+      "timeline": null,
+      "time_source_candidates": null,
+      "span_resolution": null
+    },
+    "search": {
+      "analysis_scope": null,
+      "analysis_run": null,
+      "candidate_events": null,
+      "visual_evidence": null
+    },
+    "readout": {
+      "readout_runs": "readout/readout_runs.readout_failed_001.json",
+      "plate_readout": null,
+      "overlay_time_readout": "readout/overlay_time_readout.readout_failed_001.json"
+    },
+    "evidence": {
+      "observations": null,
+      "time_resolution": null,
+      "evidence_record": null,
+      "evidence_needs": null,
+      "requirement_report": null,
+      "report_package": null
+    },
+    "case": {
+      "job_records": null,
+      "job_executions": null,
+      "usage_records": null,
+      "case_view": null
+    },
+    "eval": {
+      "expected": null,
+      "prediction_correct": null,
+      "prediction_wrong": null
+    }
+  }
+}

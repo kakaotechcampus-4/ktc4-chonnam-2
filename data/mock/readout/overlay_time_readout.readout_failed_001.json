@@ -1,0 +1,29 @@
+{
+  "readout_id": "readout_rf001_overlay",
+  "case_id": "case_readout_failed_001",
+  "candidate_id": "cand_rf001",
+  "input_ref": {
+    "incident_clip_ref": "clip_rf001",
+    "span_ref": "span_rf001",
+    "source_profile": "readout-native"
+  },
+  "observation": {
+    "kind": "OVERLAY_TIMESTAMP",
+    "status": "OK",
+    "value": "2026-08-26T14:02:11+09:00",
+    "source": "VIDEO_OVERLAY_OCR",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "reason": null,
+  "validation": {
+    "format_ok": true,
+    "monotonic_ok": true,
+    "duration_match_ok": true,
+    "sample_count": 3
+  },
+  "samples": [
+    { "frame_ref": "fr_rf001_ov1", "offset_sec": 2.0, "raw_text": "2026-08-26 14:02:11", "parsed_at": "2026-08-26T14:02:11+09:00" },
+    { "frame_ref": "fr_rf001_ov2", "offset_sec": 3.0, "raw_text": "2026-08-26 14:02:12", "parsed_at": "2026-08-26T14:02:12+09:00" },
+    { "frame_ref": "fr_rf001_ov3", "offset_sec": 4.0, "raw_text": "2026-08-26 14:02:13", "parsed_at": "2026-08-26T14:02:13+09:00" }
+  ]
+}
