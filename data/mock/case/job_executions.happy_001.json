@@ -12,6 +12,21 @@
     "usage_refs": ["usage_h001_1"]
   },
   {
+    "execution_id": "exec_h001_visual",
+    "job_id": "job_h001_visual",
+    "status": "SUCCEEDED",
+    "attempt": 1,
+    "queued_at": "2026-08-24T18:26:21+09:00",
+    "started_at": "2026-08-24T18:26:30+09:00",
+    "ended_at": "2026-08-24T18:26:48+09:00",
+    "produced": [
+      { "kind": "analysis_run", "ref": "run_h001_visual" },
+      { "kind": "visual_evidence", "ref": "ve_h001" }
+    ],
+    "failure_kind": null,
+    "usage_refs": ["usage_h001_visual"]
+  },
+  {
     "execution_id": "exec_h001_plate",
     "job_id": "job_h001_plate",
     "status": "SUCCEEDED",

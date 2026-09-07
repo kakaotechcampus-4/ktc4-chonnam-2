@@ -29,7 +29,7 @@
 ## 전체 Mock Pack 구성
 
 - Scenario 2개: `scenario_happy_001`(Happy Path), `scenario_partial_001`(Partial Success/ABSTAIN/UNKNOWN)
-- Fixture 47개 JSON + 1개 JSONL(`scenario_catalog.jsonl`) + 1개 CSV(`fixture_index.csv`) + manifest 3개(`manifest.json`, 시나리오 기술서 2개)
+- Fixture 49개 JSON + 1개 JSONL(`scenario_catalog.jsonl`) + 1개 CSV(`fixture_index.csv`) + manifest 3개(`manifest.json`, 시나리오 기술서 2개)
 - 각 시나리오는 recording→search→readout→evidence→case 5개 모듈 체인을 관통하고, happy 시나리오는 eval(ground truth + 정답/오답 prediction)까지 포함한다
 
 ## 공통 기준 Scenario
@@ -55,7 +55,7 @@ data/mock/
     scenario_happy_001.json
     scenario_partial_001.json
   recording/   (RecordingTimeline · TimeSourceCandidate · SpanResolution)
-  search/      (AnalysisScope · AnalysisRun · CandidateEvent · VisualEvidence)
+  search/      (AnalysisScope · AnalysisRun(Candidate Search/Visual Verify) · CandidateEvent · VisualEvidence)
   readout/     (ReadoutRun · PlateReadout · OverlayTimeReadout)
   evidence/    (Observation · TimeResolution · EvidenceRecord · EvidenceNeeds · RequirementReport · ReportPackage)
   case/        (JobRecord · JobExecution · UsageRecord · CaseView)

@@ -96,6 +96,7 @@ def check_scenario(tag, case_id):
     span_res = get(p("recording", "span_resolution"))
     scope = get(p("search", "analysis_scope"))
     run = get(p("search", "analysis_run"))
+    visual_run = get(p("search", "visual_verify_run"))
     candidates = get(p("search", "candidate_events"))
     ve = get(p("search", "visual_evidence"))
     readout_runs = get(p("readout", "readout_runs"))
@@ -143,6 +144,15 @@ def check_scenario(tag, case_id):
         if run["outcome"] == "SUCCEEDED" and run["issues"]:
             warnings.append(f"[{tag}] AnalysisRun SUCCEEDED인데 issues 존재 (실행실패 의미 issue인지 확인 필요)")
 
+    # Fine / Classification은 Candidate Search와 별도 public capability invocation이다.
+    if visual_run:
+        if visual_run["operation"] != "VISUAL_VERIFY":
+            errors.append(f"[{tag}] Visual verify AnalysisRun.operation != VISUAL_VERIFY")
+        if visual_run["completed_at"] < visual_run["started_at"]:
+            errors.append(f"[{tag}] Visual verify AnalysisRun.completed_at < started_at")
+        if visual_run["outcome"] == "PARTIAL" and not visual_run["issues"]:
+            errors.append(f"[{tag}] Visual verify AnalysisRun PARTIAL인데 issues=[]")
+
     # run -> candidates
     if run and candidates:
         seen_ranks = set()
@@ -164,8 +174,19 @@ def check_scenario(tag, case_id):
         cand_ids = {c["candidate_id"] for c in candidates}
         if ve.get("candidate_id") not in cand_ids:
             errors.append(f"[{tag}] VisualEvidence.candidate_id가 이 시나리오의 CandidateEvent에 없음")
-        if ve["run_id"] != run["run_id"]:
-            errors.append(f"[{tag}] VisualEvidence.run_id != AnalysisRun.run_id")
+        if not visual_run:
+            errors.append(f"[{tag}] VisualEvidence를 생성한 VISUAL_VERIFY AnalysisRun이 없음")
+        elif ve["run_id"] != visual_run["run_id"]:
+            errors.append(f"[{tag}] VisualEvidence.run_id != VISUAL_VERIFY AnalysisRun.run_id")
+        if visual_run and ve["input_ref"] != visual_run["input_ref"]["ref"]:
+            errors.append(f"[{tag}] VisualEvidence.input_ref != VISUAL_VERIFY AnalysisRun.input_ref.ref")
+        if ve.get("temporal_facts") and visual_run:
+            processed_ms = visual_run["usage_summary"].get("processed_duration_ms")
+            if processed_ms is not None:
+                for fact in ve["temporal_facts"]:
+                    offset_ms = fact.get("at_offset_ms")
+                    if offset_ms is not None and not (0 <= offset_ms <= processed_ms):
+                        errors.append(f"[{tag}] VisualEvidence.temporal_facts[].at_offset_ms가 Fine 입력 범위 밖")
         v = ve["verification"]
         if v == "OBSERVED" and ve["visual_event_type"] is None:
             errors.append(f"[{tag}] VisualEvidence OBSERVED인데 visual_event_type null")
@@ -269,6 +290,39 @@ def check_scenario(tag, case_id):
             tu = u["token_usage"]
             if tu is not None and tu["total_tokens"] != tu["input_tokens"] + tu["output_tokens"]:
                 errors.append(f"[{tag}] UsageRecord.token_usage.total_tokens != input+output ({u['usage_id']})")
+
+        usage_by_id = {u["usage_id"]: u for u in usage}
+        for analysis_run in (run, visual_run):
+            if not analysis_run:
+                continue
+            linked = [usage_by_id[ref] for ref in analysis_run["usage_refs"] if ref in usage_by_id]
+            if len(linked) != len(analysis_run["usage_refs"]):
+                errors.append(f"[{tag}] AnalysisRun.usage_refs 중 UsageRecord에 없는 id가 있음 ({analysis_run['run_id']})")
+                continue
+            for row in linked:
+                if row["run_ref"] != analysis_run["run_id"]:
+                    errors.append(f"[{tag}] UsageRecord.run_ref != AnalysisRun.run_id ({row['usage_id']})")
+            summary = analysis_run["usage_summary"]
+            if linked and all(row["processed_duration_sec"] is not None for row in linked):
+                aggregate_ms = round(sum(row["processed_duration_sec"] for row in linked) * 1000)
+                if summary["processed_duration_ms"] != aggregate_ms:
+                    errors.append(f"[{tag}] AnalysisRun.usage_summary.processed_duration_ms가 UsageRecord 합계와 다름 ({analysis_run['run_id']})")
+            if len(linked) == 1 and summary["latency_ms"] != linked[0]["latency_ms"]:
+                errors.append(f"[{tag}] AnalysisRun.usage_summary.latency_ms가 단일 UsageRecord와 다름 ({analysis_run['run_id']})")
+            if linked and all(row["token_usage"] is not None for row in linked):
+                aggregate_tokens = {
+                    key: sum(row["token_usage"][key] for row in linked)
+                    for key in ("input_tokens", "output_tokens", "total_tokens")
+                }
+                if summary["token_usage"] != aggregate_tokens:
+                    errors.append(f"[{tag}] AnalysisRun.usage_summary.token_usage가 UsageRecord 합계와 다름 ({analysis_run['run_id']})")
+            if linked:
+                currencies = {row["cost"]["currency"] for row in linked}
+                if len(currencies) == 1 and summary["total_cost"] is not None:
+                    currency = next(iter(currencies))
+                    aggregate_amount = sum(float(row["cost"]["amount"]) for row in linked)
+                    if summary["total_cost"]["currency"] != currency or abs(float(summary["total_cost"]["amount"]) - aggregate_amount) > 1e-9:
+                        errors.append(f"[{tag}] AnalysisRun.usage_summary.total_cost가 UsageRecord 합계와 다름 ({analysis_run['run_id']})")
 
     # case_view sanity
     if case_view:

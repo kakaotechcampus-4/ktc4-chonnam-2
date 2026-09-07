@@ -4,20 +4,20 @@
 
 `scripts/validate_mock_pack.py` — 무거운 validation framework 없이(실제 Contract Model 코드가 아직 없으므로, `src/daesingo/*/README.md` "아직 코드가 없다") 경량 스크립트로 확인했다:
 
-1. `data/mock/**/*.json` 47개 전체 JSON parse
+1. `data/mock/**/*.json` 49개 전체 JSON parse
 2. `manifest.json` / `scenarios/*.json` / `fixture_index.csv`가 가리키는 모든 경로 실존 확인
 3. 시나리오별 ID 참조 일관성(`candidate_id`/`run_id`/`job_id`/`execution_id`/`usage_id`/`case_id` 등이 모듈 fixture 사이에서 어긋나지 않는지)
-4. 계약이 명시한 주요 invariant(예: `SpanResolution.status`↔`missing_ranges` 관계, `AnalysisRun.completed_at>=started_at`, `JobExecution.status`↔`ended_at`, `token_usage.total==input+output`, `CaseView.package`↔`requirements.scope/readiness` 등)
+4. 계약이 명시한 주요 invariant(예: `SpanResolution.status`↔`missing_ranges` 관계, `AnalysisRun.completed_at>=started_at`, Candidate Search/Visual Verify Run 분리, Fine-relative `at_offset_ms`, `AnalysisRun.usage_summary`↔`UsageRecord` 집계, `JobExecution.status`↔`ended_at`, `token_usage.total==input+output`, `CaseView.package`↔`requirements.scope/readiness` 등)
 
-### 실행 결과 (2026-09-06 기준)
+### 실행 결과 (2026-09-07 기준)
 
 ```
-검사한 JSON 파일 수: 47
+검사한 JSON 파일 수: 49
 오류(ERROR): 0
 경고(WARN): 0
 ```
 
-**이 결과가 뜻하는 것과 뜻하지 않는 것.** PASS는 "이번에 만든 47개 파일이 서로 참조 무결하고 스크립트가 아는 invariant를 어기지 않는다"는 뜻이다. 계약 의미 전체, 예시 직렬화 전체, Owner 수락을 검증한 것은 아니다(경계 스크립트 관례와 동일 — `scripts/README.md` 참고).
+**이 결과가 뜻하는 것과 뜻하지 않는 것.** PASS는 "이번에 만든 49개 파일이 서로 참조 무결하고 스크립트가 아는 invariant를 어기지 않는다"는 뜻이다. 계약 의미 전체, 예시 직렬화 전체, Owner 수락을 검증한 것은 아니다(경계 스크립트 관례와 동일 — `scripts/README.md` 참고).
 
 ## Contract별 생성 Fixture
 
@@ -27,7 +27,7 @@
 | SpanResolution | 1(COMPLETE) | N/A | N/A | N/A | 1 | FAILED(spans=[]) 예시 없음 |
 | TimeSourceCandidate | 2 | N/A | N/A | N/A | N/A | 계약상 "실제 값 있을 때만 생성" — TimeSourceCheck(부재 표현) fixture는 안 만듦 |
 | AnalysisScope | 2 | N/A | N/A | N/A | N/A | — |
-| AnalysisRun | 1(SUCCEEDED) | N/A | N/A | N/A | 1 | FAILED 예시 없음 |
+| AnalysisRun | 3(SUCCEEDED: Candidate Search 1 + Visual Verify 2) | N/A | N/A | N/A | 1(Candidate Search) | FAILED 예시 없음 |
 | CandidateEvent | 2 | 0 | N/A | N/A | N/A | Candidate 0개(SUCCEEDED+빈배열) 예시 없음 — Type B 대표 Scenario 미작성 |
 | VisualEvidence | 1(OBSERVED/MATCHED) | N/A | N/A | N/A | 1(AMBIGUOUS) | NOT_OBSERVED 예시 없음 |
 | PlateReadout | 1 | N/A | N/A | 1 | N/A | — |
@@ -39,9 +39,9 @@
 | EvidenceNeeds | 1(items 有) | 1([]) | N/A | N/A | N/A | — |
 | RequirementReport | 0(PASS) | N/A | 0 | N/A | 1(WARN)+1(BLOCK) | §13이 요구한 8케이스 중 2개만 채움 — 원문 자체에 예시 없던 계약 |
 | ReportPackage | 1 | N/A | N/A | N/A | N/A(BLOCK이라 미생성, 의도됨) | 원문 자체에 예시 없던 계약 |
-| JobRecord | 4 | N/A | N/A | N/A | N/A | force_rerun=true 예시 없음(계약 원문 §9엔 있음, 이번 Pack엔 미포함) |
-| JobExecution | 4(SUCCEEDED) | N/A | N/A | N/A | 0 | FAILED/STALE 예시 없음 |
-| UsageRecord | 4(token 有) | N/A | N/A | N/A | 2(token=null) | — |
+| JobRecord | 6 | N/A | N/A | N/A | N/A | force_rerun=true 예시 없음(계약 원문 §9엔 있음, 이번 Pack엔 미포함) |
+| JobExecution | 6(SUCCEEDED) | N/A | N/A | N/A | 0 | FAILED/STALE 예시 없음 |
+| UsageRecord | 4(token 有) | N/A | N/A | N/A | 4(token=null) | — |
 | CaseView | 1(READY/WARN) | N/A | N/A | N/A | 1(EVIDENCE_REVIEW/BLOCK) | — |
 | CorrectionRecord | 0 | N/A | N/A | N/A | N/A | **의도적 제외** — Draft (`CONTRACT_CONFLICTS.md` §3) |
 
@@ -65,10 +65,12 @@
 - "실행/판정 결과" 필드명이 계약마다 다르다(`outcome` vs `status` vs `overall`, `SpanResolution.status=COMPLETE`만 다른 계약의 "정상" 값과 이름이 다름) — `CONTRACT_CONFLICTS.md` §4-1
 - Primary identifier 명명 관례가 모듈 경계로 갈린다(`*_id` vs evidence 쪽 `*_ref`) — §4-2
 - `JobRecord.kind`가 `OVERLAY_TIME_READ`에 대응하는 값을 갖는지 불명확 — §4-3
+- Search Fine Job은 열린 확장 규칙에 따라 `JobRecord.kind=VISUAL_VERIFY`를 사용했으나, 확인된 값 목록 등재는 case/search Owner 확인 필요 — §4-4
 
 ### Architecture 확인 필요
 
 - 위 `JobRecord.kind`/`ReadoutRun.operation` 불일치를 어떻게 풀지는 이 Mock Pack이 결정할 사항이 아니다. `case`(유소연)·`readout`(신유민)·PM(김준영) 확인이 필요하다.
+- `VISUAL_VERIFY` Job kind 이름은 Final `AnalysisRun.operation`과 맞춘 보수적 확장이며, `case`(유소연)·`search`(서어진)가 확인해야 한다.
 - `CorrectionRecord`가 Final로 오르기 전까지는 Rerun(Type I)·사용자 수정(Type F) 대표 Scenario를 만들 수 없다.
 
 ### Fixture 생성 불가

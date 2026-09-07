@@ -4,6 +4,7 @@ scenario_happy_001,recording,TimeSourceCandidate,recording/time_source_candidate
 scenario_happy_001,recording,SpanResolution,recording/span_resolution.happy_001.json,Final
 scenario_happy_001,search,AnalysisScope,search/analysis_scope.happy_001.json,Final
 scenario_happy_001,search,AnalysisRun,search/analysis_run.happy_001.json,Final
+scenario_happy_001,search,AnalysisRun,search/visual_verify_run.happy_001.json,Final
 scenario_happy_001,search,CandidateEvent,search/candidate_events.happy_001.json,Final
 scenario_happy_001,search,VisualEvidence,search/visual_evidence.happy_001.json,Final
 scenario_happy_001,readout,ReadoutRun,readout/readout_runs.happy_001.json,Final
@@ -27,6 +28,7 @@ scenario_partial_001,recording,TimeSourceCandidate,recording/time_source_candida
 scenario_partial_001,recording,SpanResolution,recording/span_resolution.partial_001.json,Final
 scenario_partial_001,search,AnalysisScope,search/analysis_scope.partial_001.json,Final
 scenario_partial_001,search,AnalysisRun,search/analysis_run.partial_001.json,Final
+scenario_partial_001,search,AnalysisRun,search/visual_verify_run.partial_001.json,Final
 scenario_partial_001,search,CandidateEvent,search/candidate_events.partial_001.json,Final
 scenario_partial_001,search,VisualEvidence,search/visual_evidence.partial_001.json,Final
 scenario_partial_001,readout,ReadoutRun,readout/readout_runs.partial_001.json,Final

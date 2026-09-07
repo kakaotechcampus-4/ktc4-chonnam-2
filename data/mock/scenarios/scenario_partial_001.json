@@ -1,6 +1,6 @@
 {
   "scenario_id": "scenario_partial_001",
-  "description": "대표 Partial Success / ABSTAIN / UNKNOWN 시나리오. 시간(overlay)은 성공(OK/VERIFIED), 번호판은 ABSTAIN(FRAME_DISAGREEMENT), 위치는 GPS 없음 + 시각적 단서 부족으로 UNKNOWN — 전체 Case는 실패하지 않고 나머지 정보는 유지된다. recording.span_resolution도 PARTIAL(missing_ranges 1건)로 자산 일부 누락을 함께 보여준다. requirement_report.overall=BLOCK(EVIDENCE scope)이라 report_package는 존재하지 않는다(의도적으로 생성하지 않음).",
+  "description": "대표 Partial Success / ABSTAIN / UNKNOWN 시나리오. Candidate Search는 PARTIAL이고 별도 Visual Verify는 SUCCEEDED다. 시간(overlay)은 성공(OK/VERIFIED), 번호판은 ABSTAIN(FRAME_DISAGREEMENT), 위치는 GPS 없음 + 시각적 단서 부족으로 UNKNOWN — 전체 Case는 실패하지 않고 나머지 정보는 유지된다. recording.span_resolution도 PARTIAL(missing_ranges 1건)로 자산 일부 누락을 함께 보여준다. requirement_report.overall=BLOCK(EVIDENCE scope)이라 report_package는 존재하지 않는다(의도적으로 생성하지 않음).",
   "case_id": "case_partial_001",
   "artifacts": {
     "recording": {
@@ -11,6 +11,7 @@
     "search": {
       "analysis_scope": "search/analysis_scope.partial_001.json",
       "analysis_run": "search/analysis_run.partial_001.json",
+      "visual_verify_run": "search/visual_verify_run.partial_001.json",
       "candidate_events": "search/candidate_events.partial_001.json",
       "visual_evidence": "search/visual_evidence.partial_001.json"
     },

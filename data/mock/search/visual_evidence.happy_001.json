@@ -1,8 +1,8 @@
 {
   "schema_version": "visual-evidence/v1.0",
   "visual_evidence_id": "ve_h001",
-  "run_id": "run_h001_search",
-  "input_ref": "analysis-input:case_happy_001",
+  "run_id": "run_h001_visual",
+  "input_ref": "analysis-input:h001-fine-001",
   "candidate_id": "cand_h001",
 
   "verification": "OBSERVED",
@@ -28,7 +28,7 @@
 
   "temporal_facts": [
     {
-      "at_offset_ms": 698000,
+      "at_offset_ms": 8000,
       "fact": "TARGET_CROSSES_LINE",
       "evidence_refs": ["fr_h001_a"]
     }

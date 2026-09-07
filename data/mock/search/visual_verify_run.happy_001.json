@@ -1,0 +1,23 @@
+{
+  "run_id": "run_h001_visual",
+  "operation": "VISUAL_VERIFY",
+  "input_ref": { "kind": "ANALYSIS_INPUT", "ref": "analysis-input:h001-fine-001" },
+  "implementation": {
+    "impl_id": "gemini-visual-verify@v1",
+    "model_ref": "gemini-3.7-flash",
+    "prompt_version": "visual-v1",
+    "config_version": "search-v2"
+  },
+  "outcome": "SUCCEEDED",
+  "started_at": "2026-08-24T18:26:30+09:00",
+  "completed_at": "2026-08-24T18:26:48+09:00",
+  "issues": [],
+  "usage_refs": ["usage_h001_visual"],
+  "usage_summary": {
+    "processed_duration_ms": 18000,
+    "token_usage": { "input_tokens": 2800, "output_tokens": 350, "total_tokens": 3150 },
+    "latency_ms": 18000,
+    "total_cost": { "amount": "36.50", "currency": "KRW" }
+  },
+  "contract_version": "analysis-run-candidate-event/v1"
+}

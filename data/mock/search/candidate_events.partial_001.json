@@ -11,7 +11,7 @@
     "rank": 1,
     "ranking_score": 0.62,
     "event_type_hint": "SIGNAL",
-    "summary": "교차로 신호 위반 가능성이 있는 장면",
+    "summary": "적색 신호 상태에서 차량이 교차로에 진입하는 장면",
     "uncertainties": ["대상 차량 식별 모호"],
     "thumbnail_ref": "fr_p001_thumb"
   }

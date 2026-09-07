@@ -1,6 +1,6 @@
 {
   "scenario_id": "scenario_happy_001",
-  "description": "모든 핵심 값이 정상적으로 존재하며 E2E가 끝까지 진행되는 대표 Happy Path. 위치만 시각 추정(NEEDS_REVIEW)이라 requirements.readiness=WARN이지만, WARN도 Package를 막지 않으므로 case_view.happy_001의 stage=READY, package non-null까지 도달한다.",
+  "description": "모든 핵심 값이 정상적으로 존재하며 E2E가 끝까지 진행되는 대표 Happy Path. Candidate Search와 Visual Verify를 별도 AnalysisRun으로 기록한다. 위치만 시각 추정(NEEDS_REVIEW)이라 requirements.readiness=WARN이지만, WARN도 Package를 막지 않으므로 case_view.happy_001의 stage=READY, package non-null까지 도달한다.",
   "case_id": "case_happy_001",
   "artifacts": {
     "recording": {
@@ -11,6 +11,7 @@
     "search": {
       "analysis_scope": "search/analysis_scope.happy_001.json",
       "analysis_run": "search/analysis_run.happy_001.json",
+      "visual_verify_run": "search/visual_verify_run.happy_001.json",
       "candidate_events": "search/candidate_events.happy_001.json",
       "visual_evidence": "search/visual_evidence.happy_001.json"
     },

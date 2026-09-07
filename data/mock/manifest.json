@@ -1,6 +1,6 @@
 {
   "mock_pack_version": "seed-v0",
-  "generated_at": "2026-09-06",
+  "generated_at": "2026-09-07",
   "generated_from": "docs/architecture/contracts/*.md (14 Final/Draft contracts) + docs/architecture/contracts/adr/*.md",
   "note": "이 파일은 Mock 관리용이다. Runtime Data Contract에 scenario_id/artifacts 필드를 추가하는 근거로 쓰지 않는다.",
   "scenarios": [

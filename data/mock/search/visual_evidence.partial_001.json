@@ -1,8 +1,8 @@
 {
   "schema_version": "visual-evidence/v1.0",
   "visual_evidence_id": "ve_p001",
-  "run_id": "run_p001_search",
-  "input_ref": "analysis-input:case_partial_001",
+  "run_id": "run_p001_visual",
+  "input_ref": "analysis-input:p001-fine-001",
   "candidate_id": "cand_p001",
 
   "verification": "OBSERVED",
@@ -11,7 +11,7 @@
   "target": {
     "association_status": "AMBIGUOUS",
     "described_as": "차량 (특정 불가)",
-    "match_with_hint": false,
+    "match_with_hint": null,
     "association_confidence": 0.41,
     "track_ref": null,
     "evidence_refs": ["fr_p001_a"]
@@ -28,7 +28,7 @@
 
   "temporal_facts": [
     {
-      "at_offset_ms": 1189000,
+      "at_offset_ms": 9000,
       "fact": "TARGET_ENTERS_INTERSECTION",
       "evidence_refs": ["fr_p001_a"]
     }

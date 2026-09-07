@@ -36,9 +36,11 @@
 ```
 AnalysisScope ─────────────────────────────┐
                                             ▼
-RecordingTimeline ──▶ SpanResolution ──▶ AnalysisRun ──▶ CandidateEvent ──▶ VisualEvidence
-     │                                                         │                │
-     ▼                                                         ▼                ▼
+RecordingTimeline ──▶ SpanResolution ──▶ Candidate Search Run ──▶ CandidateEvent
+     │                                                              │
+     │                                                              ▼
+     │                                                       Visual Verify Run ──▶ VisualEvidence
+     ▼                                                              │                │
 TimeSourceCandidate                                    PlateReadout ◀── ReadoutRun ──▶ OverlayTimeReadout
      │                                                         │                │
      └──────────────────────┬──────────────────────────────────┴────────────────┘
@@ -130,18 +132,19 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 ## AnalysisRun
 
 - Producer: `search`(서어진) · Consumer: `case`, `eval`
-- 정상 예시(SUCCEEDED, `data/mock/search/analysis_run.happy_001.json`):
+- Candidate Search 정상 예시(SUCCEEDED, `data/mock/search/analysis_run.happy_001.json`):
 ```json
 { "run_id": "run_h001_search", "operation": "CANDIDATE_SEARCH", "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_h001" },
   "implementation": { "impl_id": "gemini-candidate-search@c7", "model_ref": "gemini-3.7-flash", "prompt_version": "coarse-c7", "config_version": "search-v2" },
   "outcome": "SUCCEEDED", "started_at": "2026-08-24T18:25:02+09:00", "completed_at": "2026-08-24T18:26:06+09:00",
   "issues": [], "usage_refs": ["usage_h001_1"],
-  "usage_summary": { "processed_duration_ms": 300000, "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 }, "latency_ms": 64000, "total_cost": { "amount": "0.42", "currency": "USD" } },
+  "usage_summary": { "processed_duration_ms": 300000, "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 }, "latency_ms": 64000, "total_cost": { "amount": "184.20", "currency": "KRW" } },
   "contract_version": "analysis-run-candidate-event/v1" }
 ```
+- Fine/Classification 정상 예시: `data/mock/search/visual_verify_run.happy_001.json` — `operation="VISUAL_VERIFY"`, `run_id="run_h001_visual"`. public capability invocation이 다르므로 Candidate Search Run과 분리한다.
 - Partial 예시(`data/mock/search/analysis_run.partial_001.json`) — `outcome="PARTIAL"`, `issues`에 `SUBRANGE_PROVIDER_TIMEOUT` 1건
-- 핵심 불변조건: `completed_at>=started_at`, `FAILED`는 usable Candidate 금지, `PARTIAL`은 `issues.length>=1`
-- 사용 Scenario: happy_001(SUCCEEDED), partial_001(PARTIAL)
+- 핵심 불변조건: `completed_at>=started_at`, `FAILED`는 usable Candidate 금지, `PARTIAL`은 `issues.length>=1`, `usage_summary`는 연결된 UsageRecord 집계와 정합
+- 사용 Scenario: happy_001(Candidate Search/Visual Verify 모두 SUCCEEDED), partial_001(Candidate Search PARTIAL, Visual Verify SUCCEEDED)
 
 ## CandidateEvent
 
@@ -162,16 +165,16 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 - Producer: `search`(서어진) · Consumer: `case`→`evidence`/`readout`
 - 정상 예시(OBSERVED+MATCHED, `data/mock/search/visual_evidence.happy_001.json`):
 ```json
-{ "schema_version": "visual-evidence/v1.0", "visual_evidence_id": "ve_h001", "run_id": "run_h001_search",
-  "input_ref": "analysis-input:case_happy_001", "candidate_id": "cand_h001",
+{ "schema_version": "visual-evidence/v1.0", "visual_evidence_id": "ve_h001", "run_id": "run_h001_visual",
+  "input_ref": "analysis-input:h001-fine-001", "candidate_id": "cand_h001",
   "verification": "OBSERVED", "visual_event_type": "SOLID_LINE_LANE_CHANGE",
   "target": { "association_status": "MATCHED", "described_as": "흰색 SUV", "match_with_hint": true, "association_confidence": 0.83, "track_ref": null, "evidence_refs": ["fr_h001_a"] },
   "primitives": [ { "kind": "WHITE_SOLID_LINE", "state": "PRESENT", "confidence": 0.9, "evidence_refs": ["fr_h001_a"] } ],
-  "temporal_facts": [ { "at_offset_ms": 698000, "fact": "TARGET_CROSSES_LINE", "evidence_refs": ["fr_h001_a"] } ],
+  "temporal_facts": [ { "at_offset_ms": 8000, "fact": "TARGET_CROSSES_LINE", "evidence_refs": ["fr_h001_a"] } ],
   "uncertainties": [], "legal_status": null }
 ```
 - Partial 예시(`data/mock/search/visual_evidence.partial_001.json`) — `target.association_status="AMBIGUOUS"`, `uncertainties`에 `TARGET_AMBIGUOUS` 1건
-- 핵심 불변조건: `legal_status`는 항상 null, `OBSERVED`면 `visual_event_type != null`, `track_ref==null`도 정상
+- 핵심 불변조건: `legal_status`는 항상 null, `OBSERVED`면 `visual_event_type != null`, `track_ref==null`도 정상, `run_id`는 별도 `VISUAL_VERIFY` AnalysisRun을 참조, `at_offset_ms`는 Fine input 시작 기준 상대값
 - 사용 Scenario: happy_001(MATCHED), partial_001(AMBIGUOUS)
 
 ## ReadoutRun
@@ -308,19 +311,20 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 ## JobRecord (Job Intent)
 
 - Producer: `case`(유소연) · Consumer: `common/runtime`
-- 정상 예시(`data/mock/case/job_records.happy_001.json`, 배열 2건 중 1건):
+- 정상 예시(`data/mock/case/job_records.happy_001.json`, 배열 3건 중 1건):
 ```json
 { "job_id": "job_h001_coarse", "case_id": "case_happy_001", "case_rev": 1, "kind": "COARSE_SEARCH",
   "scope_ref": "scope_h001", "input_fingerprint": "sha1:h001-coarse", "force_rerun": false, "requested_at": "2026-08-24T18:24:50+09:00" }
 ```
 - **주의(§4 새 발견):** `kind="PLATE_READ"`인 두 번째 JobRecord(`job_h001_plate`)가 `PlateReadout`과 `OverlayTimeReadout` 두 ReadoutRun을 모두 만든다고 가정했다 — `OVERLAY_TIME_READ`용 별도 kind가 계약에 없어서 내린 임시 가정이다(`CONTRACT_CONFLICTS.md` §4 참고)
+- Search Fine 호출은 계약의 열린 `kind` 확장 규칙을 따라 `VISUAL_VERIFY` JobRecord/JobExecution으로 Candidate Search와 분리했다.
 - 핵심 불변조건: 동일 job_id 재사용 금지, 캐시 재사용은 `(case_id,kind,input_fingerprint)` 동일+`force_rerun=false`+기존 SUCCEEDED에 한정
 - 사용 Scenario: happy_001, partial_001
 
 ## JobExecution
 
 - Producer: `common/runtime`(김준영/정철원) · Consumer: `case`, `web`(projection), `eval`
-- 정상 예시(`data/mock/case/job_executions.happy_001.json`, 배열 2건 중 1건):
+- 정상 예시(`data/mock/case/job_executions.happy_001.json`, 배열 3건 중 1건):
 ```json
 { "execution_id": "exec_h001_plate", "job_id": "job_h001_plate", "status": "SUCCEEDED", "attempt": 1,
   "queued_at": "2026-08-24T18:30:51+09:00", "started_at": "2026-08-24T18:31:00+09:00", "ended_at": "2026-08-24T18:31:12+09:00",
@@ -333,7 +337,7 @@ TimeSourceCandidate                                    PlateReadout ◀── Re
 ## UsageRecord
 
 - Producer: `common/runtime`(김준영) · Consumer: `case`, `eval`, `search`
-- 정상 예시(`data/mock/case/usage_records.happy_001.json`, 배열 3건 중 1건, readout 호출은 token 없음):
+- 정상 예시(`data/mock/case/usage_records.happy_001.json`, 배열 4건 중 1건, readout 호출은 token 없음):
 ```json
 { "usage_id": "usage_h001_2", "execution_ref": "exec_h001_plate", "run_ref": null, "case_id": "case_happy_001",
   "provider_label": "ocr-local", "operation": "READOUT_PLATE", "token_usage": null,

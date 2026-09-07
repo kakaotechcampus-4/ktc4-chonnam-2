@@ -8,10 +8,24 @@
     "provider_label": "gemini",
     "operation": "SEARCH_COARSE",
     "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 },
-    "processed_duration_sec": 64.0,
+    "processed_duration_sec": 300.0,
     "latency_ms": 64000,
     "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" },
     "cost": { "amount": "184.20", "currency": "KRW" }
+  },
+  {
+    "usage_id": "usage_h001_visual",
+    "execution_ref": "exec_h001_visual",
+    "run_ref": "run_h001_visual",
+    "case_id": "case_happy_001",
+    "occurred_at": "2026-08-24T18:26:30+09:00",
+    "provider_label": "gemini",
+    "operation": "SEARCH_VISUAL_VERIFY",
+    "token_usage": { "input_tokens": 2800, "output_tokens": 350, "total_tokens": 3150 },
+    "processed_duration_sec": 18.0,
+    "latency_ms": 18000,
+    "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" },
+    "cost": { "amount": "36.50", "currency": "KRW" }
   },
   {
     "usage_id": "usage_h001_2",
