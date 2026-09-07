@@ -12,8 +12,15 @@ Coarse 후보 구간 생성·Fine/Classification visual verification·4종 event
 
 ## 공개 함수
 
-§4-모듈2 「Public Capability」의 함수 이름은 예시다. 실제 시그니처는 데이터 계약에서 확정한 뒤 여기에 적는다. 다른 모듈은 **공개 함수만** 호출한다.
+다른 모듈은 **공개 함수만** 호출한다. `from daesingo.search import ...`로 쓴다.
+
+| 함수 | 입력 (Contract) | 출력 (Contract) |
+| --- | --- | --- |
+| `search_candidates(scope)` | `AnalysisScope` (`contract-analysis-scope.md`) | `{"analysis_run": AnalysisRun, "candidates": CandidateEvent[]}` (`contract-analysis-run-candidate-event.md` §2) |
+| `verify_visual(input_ref, target_hint=None)` | `input_ref` (opaque str) + optional `target_hint` | `VisualEvidence` (`contract-visual-evidence.md` §2) |
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+**fixture 기반 stub만 있다** (`stub.py`) — 1차 Mock E2E 통합용. 값은 `data/mock/search/`의 fixture가 소유하고, 함수는 입력에 맞는 fixture를 찾아 반환한다. 실제 Coarse/Fine 로직·`providers/`는 아직 없다. self-check: `python tests/test_search_stub.py`.
+
+실제 구현이 생기면 `stub.py`를 대체하되 `__init__`이 노출하는 공개 함수 이름·시그니처는 유지한다(Consumer는 내부가 fixture인지 실제 구현인지 몰라야 한다).
