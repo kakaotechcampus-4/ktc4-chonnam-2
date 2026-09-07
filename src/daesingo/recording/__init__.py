@@ -9,6 +9,7 @@ from .contracts import (
     SpanResolution,
     TimeSourceCandidate,
 )
+from .service import FixtureRecordingService, RecordingOutputNotPrepared
 
 __all__ = [
     "AssetSpan",
@@ -18,4 +19,6 @@ __all__ = [
     "RecordingTimeline",
     "SpanResolution",
     "TimeSourceCandidate",
+    "FixtureRecordingService",
+    "RecordingOutputNotPrepared",
 ]
