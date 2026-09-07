@@ -37,78 +37,80 @@
 
 ## 구현 체크리스트
 
+> **셀프체크 (2026-09-07):** 근거 표기 — `self-check`=`python tests/test_search_stub.py`가 assert · `stub`=구조상 자명 · `경계`=`check_boundaries.py` PASS · `[ ] 후속`=실제 로직/fixture 필요.
+
 ### A. Input
 
-- [ ] `AnalysisScope`를 계약 형식(`scope_id`·`time_ranges`≥1·`target_event_types`≥1·`hint`·`budget`)대로 받을 수 있다.
-- [ ] `target_event_types`가 **복수값일 수 있음**을 전제로 처리한다(단일값 가정 금지 — ADR-003 결정3).
-- [ ] `hint.vehicle`/`hint.free_text`가 `null`이어도 정상 동작한다.
-- [ ] `budget`을 scope **전체 총합**으로 해석한다(per-time_range 분배는 search 내부 책임).
-- [ ] `case_id`·`selection_rev`·위치·파일/asset 참조가 입력에 **없음을 전제**한다(있다고 가정하는 코드가 없다).
-- [ ] happy/partial 두 `AnalysisScope` fixture를 로딩(또는 동일 효과)해 실행 진입점에 넣을 수 있다.
+- [x] `AnalysisScope`를 계약 형식(`scope_id`·`time_ranges`≥1·`target_event_types`≥1·`hint`·`budget`)대로 받을 수 있다. — self-check
+- [x] `target_event_types`가 **복수값일 수 있음**을 전제로 처리한다(단일값 가정 금지 — ADR-003 결정3). — stub이 `target_event_types`를 소비하지 않아 개수 가정 자체가 없음
+- [x] `hint.vehicle`/`hint.free_text`가 `null`이어도 정상 동작한다. — stub이 hint 미소비, happy fixture `free_text=null`로 통과
+- [ ] `budget`을 scope **전체 총합**으로 해석한다(per-time_range 분배는 search 내부 책임). — 후속: 실제 탐색 로직 필요(stub은 budget 미해석)
+- [x] `case_id`·`selection_rev`·위치·파일/asset 참조가 입력에 **없음을 전제**한다(있다고 가정하는 코드가 없다). — stub은 `scope_id`만 읽음
+- [x] happy/partial 두 `AnalysisScope` fixture를 로딩(또는 동일 효과)해 실행 진입점에 넣을 수 있다. — self-check가 두 scope로 호출
 
 ### B. Core Flow
 
-- [ ] Candidate 탐색(Coarse)이 `AnalysisScope` → `CandidateEvent[]`를 만든다.
-- [ ] Fine/Classification 관찰이 `VisualEvidence`를 만든다(candidate 연결 또는 candidate-independent 모두 가능).
-- [ ] 한 번의 public capability 호출 = 하나의 `AnalysisRun`으로 기록한다.
+- [x] Candidate 탐색(Coarse)이 `AnalysisScope` → `CandidateEvent[]`를 만든다. — self-check(`search_candidates`)
+- [x] Fine/Classification 관찰이 `VisualEvidence`를 만든다(candidate 연결 또는 candidate-independent 모두 가능). — self-check(`verify_visual`)
+- [x] 한 번의 public capability 호출 = 하나의 `AnalysisRun`으로 기록한다. — 호출당 run 1개 반환
 
 ### C. Output Contract
 
 **`AnalysisRun`**
-- [ ] `run_id`·`operation`·`input_ref{kind,ref}`·`implementation`·`outcome`·`started_at`·`completed_at`·`issues[]`·`usage_refs[]`·`usage_summary`·`contract_version` 필수 필드를 모두 생성한다.
-- [ ] `operation`은 `CANDIDATE_SEARCH | VISUAL_VERIFY`만 쓴다(내부 COARSE/FINE 노출 금지).
-- [ ] `completed_at >= started_at`.
-- [ ] `usage_summary.token_usage.total_tokens == input + output`.
-- [ ] `contract_version == "analysis-run-candidate-event/v1"`.
+- [x] `run_id`·`operation`·`input_ref{kind,ref}`·`implementation`·`outcome`·`started_at`·`completed_at`·`issues[]`·`usage_refs[]`·`usage_summary`·`contract_version` 필수 필드를 모두 생성한다. — self-check(`RUN_REQUIRED`)
+- [x] `operation`은 `CANDIDATE_SEARCH | VISUAL_VERIFY`만 쓴다(내부 COARSE/FINE 노출 금지). — self-check
+- [x] `completed_at >= started_at`. — self-check(datetime 비교)
+- [x] `usage_summary.token_usage.total_tokens == input + output`. — self-check
+- [x] `contract_version == "analysis-run-candidate-event/v1"`. — self-check
 
 **`CandidateEvent`**
-- [ ] `candidate_id`·`run_id`·`span{timeline_id,start_ms,end_ms,representative_ms}`·`rank` 필수 필드를 생성한다.
-- [ ] `candidate.run_id == 자신을 만든 AnalysisRun.run_id`.
-- [ ] span 불변조건: `start_ms >= 0`, `start_ms < end_ms`, `start_ms <= representative_ms <= end_ms`.
-- [ ] `rank`는 1부터 시작하고 한 Run 안에서 중복이 없다.
-- [ ] `event_type_hint`는 있으면 4종 enum이며, **법적 신고 유형으로 쓰지 않는다**.
+- [x] `candidate_id`·`run_id`·`span{timeline_id,start_ms,end_ms,representative_ms}`·`rank` 필수 필드를 생성한다. — self-check(`CAND_REQUIRED`)
+- [x] `candidate.run_id == 자신을 만든 AnalysisRun.run_id`. — self-check
+- [x] span 불변조건: `start_ms >= 0`, `start_ms < end_ms`, `start_ms <= representative_ms <= end_ms`. — self-check
+- [x] `rank`는 1부터 시작하고 한 Run 안에서 중복이 없다. — self-check
+- [x] `event_type_hint`는 있으면 4종 enum이며, **법적 신고 유형으로 쓰지 않는다**. — self-check(4종 enum 검사)
 
 **`VisualEvidence`**
-- [ ] `schema_version`·`visual_evidence_id`·`run_id`·`input_ref`·`verification`·`primitives[]`·`temporal_facts[]`·`uncertainties[]`·`legal_status` 필수 필드를 생성한다.
-- [ ] `visual_event_type`은 `OBSERVED`일 때만 non-null, 값은 **`SIGNAL`/`CENTER_LINE_CROSSING`/`SOLID_LINE_LANE_CHANGE`/`MOTORCYCLE_HELMET_NON_USE`** 중 하나다.
-- [ ] `legal_status`는 항상 존재하고 항상 `null`이다.
-- [ ] `primitives`/`temporal_facts`/`uncertainties`는 `null`이 아니라 배열이다(빈 배열 허용).
-- [ ] top-level `confidence`를 만들지 않는다(component confidence만).
+- [x] `schema_version`·`visual_evidence_id`·`run_id`·`input_ref`·`verification`·`primitives[]`·`temporal_facts[]`·`uncertainties[]`·`legal_status` 필수 필드를 모두 생성한다. — self-check(`VE_REQUIRED`)
+- [x] `visual_event_type`은 `OBSERVED`일 때만 non-null, 값은 **`SIGNAL`/`CENTER_LINE_CROSSING`/`SOLID_LINE_LANE_CHANGE`/`MOTORCYCLE_HELMET_NON_USE`** 중 하나다. — self-check
+- [x] `legal_status`는 항상 존재하고 항상 `null`이다. — self-check
+- [x] `primitives`/`temporal_facts`/`uncertainties`는 `null`이 아니라 배열이다(빈 배열 허용). — self-check
+- [x] top-level `confidence`를 만들지 않는다(component confidence만). — self-check(`"confidence" not in ve`)
 
 ### D. Failure / Uncertainty
 
-- [ ] `SUCCEEDED / PARTIAL / FAILED`를 구분한다.
-- [ ] `PARTIAL`이면 `issues.length >= 1`이고, 영향 범위를 `scope_ref`로 남긴다.
-- [ ] `FAILED`이면 usable Candidate를 반환하지 않는다.
-- [ ] `SUCCEEDED + candidates=[]`(정상 탐색했으나 후보 0개)를 **오류가 아닌 정상**으로 표현한다.
-- [ ] `VisualEvidence.verification`의 `OBSERVED / NOT_OBSERVED / UNCERTAIN`을 구분한다(실행 실패를 `UNCERTAIN`으로 위장하지 않는다).
-- [ ] target 미확정을 `association_status=AMBIGUOUS`로 표현하고, 확보된 primitive/temporal_fact는 유지한다.
+- [x] `SUCCEEDED / PARTIAL / FAILED`를 구분한다. — self-check(happy=SUCCEEDED, partial=PARTIAL; FAILED는 fixture 후속)
+- [x] `PARTIAL`이면 `issues.length >= 1`이고, 영향 범위를 `scope_ref`로 남긴다. — self-check(issues≥1); `scope_ref`는 partial fixture 충족
+- [ ] `FAILED`이면 usable Candidate를 반환하지 않는다. — 후속: `FAILED` fixture 없음
+- [ ] `SUCCEEDED + candidates=[]`(정상 탐색했으나 후보 0개)를 **오류가 아닌 정상**으로 표현한다. — 후속: 빈 결과 fixture 없음(범위 밖)
+- [ ] `VisualEvidence.verification`의 `OBSERVED / NOT_OBSERVED / UNCERTAIN`을 구분한다(실행 실패를 `UNCERTAIN`으로 위장하지 않는다). — 후속: `NOT_OBSERVED`/`UNCERTAIN` fixture 없음(현재 둘 다 OBSERVED)
+- [x] target 미확정을 `association_status=AMBIGUOUS`로 표현하고, 확보된 primitive/temporal_fact는 유지한다. — self-check(partial)
 
 ### E. State / Lifecycle
 
-- [ ] 완료된 `AnalysisRun`/`VisualEvidence`를 수정하지 않는다(immutable).
-- [ ] 재실행은 기존 결과를 덮지 않고 **새 `run_id`와 새 result**를 만든다.
-- [ ] `QUEUED/RUNNING/STALE`을 `AnalysisRun`에 넣지 않는다(그건 `JobExecution` 책임).
-- [ ] `usage_summary`를 사후 가격 변경으로 재계산해 덮지 않는다.
+- [x] 완료된 `AnalysisRun`/`VisualEvidence`를 수정하지 않는다(immutable). — stub은 fixture 읽기 전용, 수정 경로 없음
+- [ ] 재실행은 기존 결과를 덮지 않고 **새 `run_id`와 새 result**를 만든다. — 후속: 새 run_id 생성은 실제 구현 몫(stub은 결정적으로 같은 fixture 반환)
+- [x] `QUEUED/RUNNING/STALE`을 `AnalysisRun`에 넣지 않는다(그건 `JobExecution` 책임). — fixture/출력에 해당 값 없음
+- [x] `usage_summary`를 사후 가격 변경으로 재계산해 덮지 않는다. — stub은 재계산 로직 없음
 
 ### F. Integration
 
-- [ ] case가 `candidate_id`/`rank`로, eval이 `rank`/span으로 내 출력을 실제로 읽을 수 있다.
-- [ ] 정답 하드코딩 **가짜 구현(stub)**으로 위 출력을 낼 수 있다(실제 provider 없이 case·eval이 병행 출발 가능).
-- [ ] 내 출력이 **계약 밖 내부 객체**(raw provider payload 등)에 의존하지 않는다.
-- [ ] `eval`의 존재·내부를 참조하지 않는다(`if eval_mode` 없음, `import eval` 없음).
+- [x] case가 `candidate_id`/`rank`로, eval이 `rank`/span으로 내 출력을 실제로 읽을 수 있다. — self-check(해당 필드 존재 확인)
+- [x] 정답 하드코딩 **가짜 구현(stub)**으로 위 출력을 낼 수 있다(실제 provider 없이 case·eval이 병행 출발 가능). — `stub.py`
+- [x] 내 출력이 **계약 밖 내부 객체**(raw provider payload 등)에 의존하지 않는다. — 출력은 순수 JSON dict(fixture)
+- [x] `eval`의 존재·내부를 참조하지 않는다(`if eval_mode` 없음, `import eval` 없음). — 경계(`check_boundaries.py` PASS)
 
 ### G. Test / Evaluation
 
-- [ ] happy/partial 각각에 대해 출력이 계약 불변조건을 만족하는지 확인하는 최소 contract test가 있다.
-- [ ] `scenario_happy_001`·`scenario_partial_001` fixture와 동일 ID/구조로 출력이 나온다.
-- [ ] eval이 채점에 쓰는 값(`rank`, span, `usage_summary`)을 제공한다.
-- [ ] 실패 case(`PARTIAL` issues, `AMBIGUOUS`)가 테스트로 검증된다.
+- [x] happy/partial 각각에 대해 출력이 계약 불변조건을 만족하는지 확인하는 최소 contract test가 있다. — `test_search_stub.py`
+- [x] `scenario_happy_001`·`scenario_partial_001` fixture와 동일 ID/구조로 출력이 나온다. — self-check(`ve == ve_expected` round-trip)
+- [x] eval이 채점에 쓰는 값(`rank`, span, `usage_summary`)을 제공한다. — 출력에 존재
+- [x] 실패 case(`PARTIAL` issues, `AMBIGUOUS`)가 테스트로 검증된다. — `test_partial`
 
 ### H. Operational (1차 통합에 필요한 최소)
 
-- [ ] `usage_summary`에 cost/token/latency를 남긴다(측정 불가 시 `null` 키 유지).
-- [ ] `issues[].kind`를 실패 분류 이름으로 기록한다(자유 텍스트 대체 금지). → **taxonomy 확정은 아래 통합 대기 참조.**
+- [x] `usage_summary`에 cost/token/latency를 남긴다(측정 불가 시 `null` 키 유지). — 출력 `usage_summary`에 존재
+- [x] `issues[].kind`를 실패 분류 이름으로 기록한다(자유 텍스트 대체 금지). — partial 출력 `issues[].kind=INFRA`. → **taxonomy 확정은 아래 통합 대기 참조.**
 
 ---
 
@@ -116,19 +118,19 @@
 
 ### `AnalysisRun` + `CandidateEvent` (`analysis-run-candidate-event/v1`)
 
-- [ ] `SUCCEEDED`(happy)·`PARTIAL`(partial) 정상 Artifact 생성 가능
-- [ ] Invariant 만족: run immutable · `completed_at>=started_at` · candidate span 3조건 · rank 1-based 무중복 · `PARTIAL⇒issues≥1` · `FAILED⇒candidate 없음`
-- [ ] `SUCCEEDED+candidates=[]` 표현 가능(현재 fixture엔 없음 — v1 확장 시 대상)
-- [ ] Consumer(case·eval)가 `run_id`/`candidate_id`/`rank`로 실제로 읽음
-- [ ] 예시 fixture(`analysis_run.*`/`candidate_events.*`)와 실제 출력 구조 동일
+- [x] `SUCCEEDED`(happy)·`PARTIAL`(partial) 정상 Artifact 생성 가능 — self-check
+- [x] Invariant 만족: run immutable · `completed_at>=started_at` · candidate span 3조건 · rank 1-based 무중복 · `PARTIAL⇒issues≥1` — self-check (단 `FAILED⇒candidate 없음`은 FAILED fixture 없어 미재현)
+- [ ] `SUCCEEDED+candidates=[]` 표현 가능(현재 fixture엔 없음 — v1 확장 시 대상) — 후속
+- [x] Consumer(case·eval)가 `run_id`/`candidate_id`/`rank`로 실제로 읽음 — self-check(필드 존재)
+- [x] 예시 fixture(`analysis_run.*`/`candidate_events.*`)와 실제 출력 구조 동일 — self-check(fixture 그대로 반환)
 
 ### `VisualEvidence` (`visual-evidence/v1.0`)
 
-- [ ] `OBSERVED/MATCHED`(happy)·`OBSERVED/AMBIGUOUS`(partial) Artifact 생성 가능
-- [ ] Invariant 만족: `OBSERVED⇔visual_event_type non-null` · `legal_status==null` · 3개 collection은 배열 · top-level confidence 없음
-- [ ] `NOT_OBSERVED`/`UNCERTAIN` 표현 가능(현재 fixture엔 없음 — v1 확장 시 대상)
-- [ ] Consumer(evidence·readout)가 `visual_event_type`/`target`/`input_ref`를 projection으로 읽음
-- [ ] 예시 fixture(`visual_evidence.*`)와 실제 출력 구조 동일
+- [x] `OBSERVED/MATCHED`(happy)·`OBSERVED/AMBIGUOUS`(partial) Artifact 생성 가능 — self-check
+- [x] Invariant 만족: `OBSERVED⇔visual_event_type non-null` · `legal_status==null` · 3개 collection은 배열 · top-level confidence 없음 — self-check
+- [ ] `NOT_OBSERVED`/`UNCERTAIN` 표현 가능(현재 fixture엔 없음 — v1 확장 시 대상) — 후속
+- [x] Consumer(evidence·readout)가 `visual_event_type`/`target`/`input_ref`를 projection으로 읽음 — self-check(필드 존재)
+- [x] 예시 fixture(`visual_evidence.*`)와 실제 출력 구조 동일 — self-check(`ve == ve_expected` round-trip)
 
 > `AnalysisScope`는 Consumer 계약이므로 여기 완료 조건에 넣지 않는다(입력 처리 항목은 A절). 단 **초안 공동 작성 책임**(유소연과)은 유지.
 
@@ -147,12 +149,12 @@
 
 ## Merge 전 셀프 체크 증빙
 
-- [ ] 정상 입력 예시 (`AnalysisScope` happy/partial JSON)
-- [ ] 정상 출력 JSON (`AnalysisRun` SUCCEEDED + `CandidateEvent` + `VisualEvidence` OBSERVED)
-- [ ] 부분/불확실 출력 JSON (`AnalysisRun` PARTIAL + issues + `VisualEvidence` AMBIGUOUS)
-- [ ] contract test 실행 결과 (불변조건 통과 로그)
-- [ ] ID 정합 확인 결과 (`candidate.run_id == run.run_id`, ve와 candidate가 같은 run)
-- [ ] `usage_summary` 값 예시 (token/cost/latency)
+- [x] 정상 입력 예시 (`AnalysisScope` happy/partial JSON) — `data/mock/search/analysis_scope.{happy,partial}_001.json`
+- [x] 정상 출력 JSON (`AnalysisRun` SUCCEEDED + `CandidateEvent` + `VisualEvidence` OBSERVED) — `search_candidates(happy)` + `verify_visual(happy)` 출력 = 해당 fixture
+- [x] 부분/불확실 출력 JSON (`AnalysisRun` PARTIAL + issues + `VisualEvidence` AMBIGUOUS) — partial 출력 = 해당 fixture
+- [x] contract test 실행 결과 (불변조건 통과 로그) — `python tests/test_search_stub.py` → `PASS`
+- [x] ID 정합 확인 결과 (`candidate.run_id == run.run_id`, ve와 candidate가 같은 run) — self-check
+- [x] `usage_summary` 값 예시 (token/cost/latency) — `analysis_run.*` 내 존재
 
 > "구현했습니다"는 증빙이 아니다. 위 JSON·테스트 결과로 보인다.
 

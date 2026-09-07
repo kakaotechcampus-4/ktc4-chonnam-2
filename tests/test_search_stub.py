@@ -9,6 +9,7 @@
 
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,9 +38,19 @@ def _check_input_is_analysis_scope(scope):
     assert "hint" in scope and "budget" in scope
 
 
+RUN_REQUIRED = ("run_id", "operation", "input_ref", "implementation", "outcome",
+                "started_at", "completed_at", "issues", "usage_refs",
+                "usage_summary", "contract_version")
+CAND_REQUIRED = ("candidate_id", "run_id", "span", "rank")
+
+
 def _check_analysis_run_contract(result):
     run = result["analysis_run"]
     candidates = result["candidates"]
+    for k in RUN_REQUIRED:                       # C: AnalysisRun 필수 필드
+        assert k in run, f"AnalysisRun에 {k} 없음"
+    assert run["operation"] in {"CANDIDATE_SEARCH", "VISUAL_VERIFY"}  # C: operation enum
+    assert datetime.fromisoformat(run["completed_at"]) >= datetime.fromisoformat(run["started_at"])
     assert run["contract_version"] == "analysis-run-candidate-event/v1"
     assert run["outcome"] in {"SUCCEEDED", "PARTIAL", "FAILED"}
     tok = run["usage_summary"]["token_usage"]
@@ -48,17 +59,27 @@ def _check_analysis_run_contract(result):
     # CandidateEvent 불변조건
     ranks = []
     for c in candidates:
-        assert c["run_id"] == run["run_id"]  # candidate ↔ run 정합
+        for k in CAND_REQUIRED:                   # C: CandidateEvent 필수 필드
+            assert k in c, f"CandidateEvent에 {k} 없음"
+        assert c["run_id"] == run["run_id"]       # candidate ↔ run 정합
         s = c["span"]
         assert s["start_ms"] >= 0
         assert s["start_ms"] < s["end_ms"]
         assert s["start_ms"] <= s["representative_ms"] <= s["end_ms"]
+        if c.get("event_type_hint") is not None:  # C: hint는 있으면 4종 enum
+            assert c["event_type_hint"] in BASELINE_EVENT_TYPES
         ranks.append(c["rank"])
     if ranks:
         assert sorted(ranks) == list(range(1, len(ranks) + 1))  # 1부터 무중복
 
 
+VE_REQUIRED = ("schema_version", "visual_evidence_id", "run_id", "input_ref",
+               "verification", "primitives", "temporal_facts", "uncertainties", "legal_status")
+
+
 def _check_visual_evidence_contract(ve):
+    for k in VE_REQUIRED:                        # C: VisualEvidence 필수 필드
+        assert k in ve, f"VisualEvidence에 {k} 없음"
     assert ve["run_id"]
     assert ve["verification"] in {"OBSERVED", "NOT_OBSERVED", "UNCERTAIN"}
     if ve["verification"] == "OBSERVED":
