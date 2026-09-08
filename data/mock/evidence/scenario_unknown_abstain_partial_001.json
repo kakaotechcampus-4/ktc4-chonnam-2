@@ -1,0 +1,194 @@
+{
+  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "module": "evidence",
+  "time_resolutions": [
+    {
+      "contract": "TimeResolution",
+      "contract_version": "time-resolution/v1",
+      "resolution_ref": { "kind": "time_resolution", "ref": "tres_u001" },
+      "status": "NEEDS_REVIEW",
+      "resolved": {
+        "value": "2026-08-26T22:20:15+09:00",
+        "source": {
+          "kind": "recording.filename_time",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_u001_filename" }
+        },
+        "verification": "UNVERIFIED",
+        "computation": {
+          "mode": "BASE_PLUS_OFFSET",
+          "base_input_ref": { "kind": "time_source_candidate", "ref": "tsc_u001_filename" },
+          "source_offset_ms": 615000,
+          "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "PRODUCT_CONTEXT" }
+        },
+        "user_corrected": false
+      },
+      "considered": [
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_u001_filename" },
+          "source": { "kind": "recording.filename_time" },
+          "value": "2026-08-26T22:10:00+09:00",
+          "observation_status": "OK",
+          "verification": "UNVERIFIED",
+          "used": true
+        },
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_u001_filemeta" },
+          "source": { "kind": "recording.file_metadata_time" },
+          "value": "2026-08-26T22:13:00+09:00",
+          "observation_status": "OK",
+          "verification": "UNVERIFIED",
+          "used": false,
+          "reason_code": "time.conflicting_metadata_candidate"
+        }
+      ],
+      "conflict": {
+        "exists": true,
+        "between_refs": [
+          { "kind": "time_source_candidate", "ref": "tsc_u001_filename" },
+          { "kind": "time_source_candidate", "ref": "tsc_u001_filemeta" }
+        ],
+        "requires_user_notice": true
+      },
+      "provenance": {
+        "policy_ref": "policy/time-source-priority-v1",
+        "selected_input_ref": { "kind": "time_source_candidate", "ref": "tsc_u001_filename" }
+      },
+      "post_stamp": {
+        "needed": true,
+        "reason_code": "time.no_verified_overlay_present",
+        "requires_user_notice": true
+      }
+    }
+  ],
+  "evidence_records": [
+    {
+      "contract": "EvidenceRecord",
+      "contract_version": "evidence-record/v1.2",
+      "record_ref": { "kind": "evidence_record", "ref": "ev_u001" },
+      "case_ref": { "kind": "case", "ref": "case_u001" },
+      "selection_rev": 1,
+      "basis": {
+        "candidate_ref": { "kind": "candidate_event", "ref": "candidate_u001" },
+        "visual_evidence_ref": { "kind": "visual_evidence", "ref": "ve_u001" },
+        "evidence_interval_ref": { "kind": "incident_clip", "ref": "clip_u001" }
+      },
+      "event": {
+        "visual_event_type": {
+          "value": "SIGNAL_VIOLATION",
+          "source": {
+            "kind": "search.visual_inference",
+            "ref": { "kind": "visual_evidence", "ref": "ve_u001" },
+            "observability": "OBSERVED",
+            "label_key": "event.source.visual_inference"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_u001" }],
+          "user_corrected": false,
+          "needs_review": true
+        },
+        "safety_report_type": {
+          "value": "UNSAFE_SIGNAL_VIOLATION",
+          "source": {
+            "kind": "evidence.category_mapping",
+            "ref": { "kind": "visual_evidence", "ref": "ve_u001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.category_mapping"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_u001" }],
+          "user_corrected": false,
+          "needs_review": true
+        },
+        "violation_expression": {
+          "value": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
+          "source": {
+            "kind": "evidence.violation_expression",
+            "ref": { "kind": "visual_evidence", "ref": "ve_u001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.violation_expression"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_u001" }],
+          "user_corrected": false,
+          "needs_review": true
+        }
+      },
+      "occurred_at": {
+        "value": "2026-08-26T22:20:15+09:00",
+        "time_resolution_ref": { "kind": "time_resolution", "ref": "tres_u001" },
+        "resolution_status": "NEEDS_REVIEW",
+        "user_corrected": false,
+        "source": { "kind": "recording.filename_time", "label_key": "time.source.filename" }
+      },
+      "provenance": {
+        "input_refs": [
+          { "kind": "visual_evidence", "ref": "ve_u001" },
+          { "kind": "plate_readout", "ref": "readout_u001_plate" },
+          { "kind": "time_resolution", "ref": "tres_u001" }
+        ],
+        "correction_refs": [],
+        "policy_ref": "policy/evidence-assembly-v1"
+      }
+    }
+  ],
+  "evidence_needs": [
+    {
+      "contract": "EvidenceNeeds",
+      "contract_version": "evidence-needs/v1",
+      "basis_record_ref": { "kind": "evidence_record", "ref": "ev_u001" },
+      "items": [
+        {
+          "kind": "PLATE_REREAD",
+          "would_fill": "VEHICLE_NUMBER",
+          "why": {
+            "code": "readout.plate_abstained_ambiguous_target",
+            "summary": "번호판 관찰이 대상 차량 식별 모호 및 프레임 간 불일치로 보류됨"
+          },
+          "optional": false,
+          "context_refs": [
+            { "role": "evidence.interval", "ref": { "kind": "incident_clip", "ref": "clip_u001" } },
+            { "role": "evidence.target_hint", "ref": { "kind": "visual_evidence", "ref": "ve_u001" } }
+          ]
+        }
+      ]
+    }
+  ],
+  "requirement_reports": [
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_u001_evidence" },
+      "scope": "EVIDENCE",
+      "basis": {
+        "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_u001" },
+        "asset_refs": []
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-26T22:33:00+09:00",
+      "overall": "UNKNOWN",
+      "checks": [
+        {
+          "code": "evidence.vehicle_number.present",
+          "category": "VEHICLE",
+          "outcome": "UNKNOWN",
+          "reason_code": "evidence.pending_plate_reread",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }]
+        },
+        {
+          "code": "evidence.occurred_at.present",
+          "category": "TIME",
+          "outcome": "WARN",
+          "reason_code": "evidence.time_needs_review",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }]
+        },
+        {
+          "code": "evidence.visual_event.present",
+          "category": "EVIDENCE",
+          "outcome": "WARN",
+          "reason_code": "evidence.signal_state_uncertain",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }]
+        }
+      ]
+    }
+  ],
+  "report_packages": []
+}

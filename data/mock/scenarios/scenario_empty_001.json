@@ -1,0 +1,23 @@
+{
+  "scenario_id": "scenario_empty_001",
+  "title": "결과 없음 — Candidate Search가 빈 배열을 반환",
+  "case_id": "case_e001",
+  "scenario_types": ["B"],
+  "description": "COARSE_SEARCH가 outcome=SUCCEEDED로 정상 종료했지만 candidates=[]인 경우. 빈 배열은 실패가 아니며, AnalysisRun 자체는 정상 성공으로 기록된다. CaseView는 stage=CANDIDATE_REVIEW에서 비차단(INFO) notice로 사용자에게 힌트 수정/재검색을 제안한다.",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다.",
+  "artifacts": {
+    "search": "data/mock/search/scenario_empty_001.json",
+    "case": "data/mock/case/scenario_empty_001.json",
+    "common": "data/mock/common/scenario_empty_001.json"
+  },
+  "modules_intentionally_absent": {
+    "recording": "AnalysisScope는 recording 자산을 직접 참조하지 않아 이 시나리오의 계약 검증에 recording fixture가 필요하지 않음",
+    "readout": "선택된 candidate가 없어 PLATE_READ/OVERLAY_TIME_READ가 발주되지 않음",
+    "evidence": "candidate가 없어 EvidenceRecord 생성 대상이 없음"
+  },
+  "shared_ids": {
+    "case_id": "case_e001",
+    "scope_id": "scope_e001",
+    "run_id": "run_e001"
+  }
+}

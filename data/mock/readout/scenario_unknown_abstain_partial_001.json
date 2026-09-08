@@ -1,0 +1,84 @@
+{
+  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "module": "readout",
+  "readout_runs": [
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_u001_plate",
+      "operation": "PLATE_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": ["usage_u001_plate"],
+      "started_at": "2026-08-26T22:32:00+09:00",
+      "ended_at": "2026-08-26T22:32:08+09:00"
+    },
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_u001_overlay",
+      "operation": "OVERLAY_TIME_READ",
+      "outcome": "FAILED",
+      "failure": { "kind": "OVERLAY_DETECTION", "code": "NO_OVERLAY_PRESENT" },
+      "usage_refs": ["usage_u001_overlay"],
+      "started_at": "2026-08-26T22:32:08+09:00",
+      "ended_at": "2026-08-26T22:32:11+09:00"
+    }
+  ],
+  "plate_readouts": [
+    {
+      "contract": "PlateReadout",
+      "contract_version": "plate-readout/v1.2",
+      "readout_id": "readout_u001_plate",
+      "run_ref": { "kind": "readout_run", "ref": "rr_u001_plate" },
+      "case_id": "case_u001",
+      "candidate_id": "candidate_u001",
+      "input_ref": {
+        "incident_clip_ref": "clip_u001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "target_association": {
+        "status": "AMBIGUOUS",
+        "target_hint_used": true,
+        "track_ref": null,
+        "association_method": "TARGET_HINT_WITH_FALLBACK",
+        "associated_region": {
+          "frame_ref": "fr_u001_plate1",
+          "bbox_xywh": [640, 500, 96, 40]
+        },
+        "evidence": [
+          { "kind": "SPATIAL_PROXIMITY", "detail": "two candidate regions overlap similarly with selected track" }
+        ]
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": "17나28?4",
+        "status": "NEEDS_REVIEW",
+        "source": { "kind": "readout.plate_ocr" },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": { "kind": "readout_run", "ref": "rr_u001_plate" }
+        }
+      },
+      "consensus": {
+        "text": "17나28?4",
+        "disagree_positions": [6],
+        "method": "MULTI_FRAME"
+      },
+      "abstained": true,
+      "abstain_reason": "FRAME_DISAGREEMENT",
+      "best_frame": {
+        "frame_ref": "fr_u001_plate1",
+        "crop_ref": "crop_u001_001",
+        "quality": { "plate_px_height": 24, "sharpness": 0.44 }
+      },
+      "frame_results": [
+        { "frame_ref": "fr_u001_plate1", "crop_ref": "crop_u001_001", "text": "17나2804", "confidence": 0.41 },
+        { "frame_ref": "fr_u001_plate2", "crop_ref": "crop_u001_002", "text": "17나2894", "confidence": 0.38 }
+      ]
+    }
+  ],
+  "overlay_time_readouts": []
+}

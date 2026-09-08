@@ -1,0 +1,74 @@
+{
+  "scenario_id": "scenario_correction_rerun_001",
+  "module": "readout",
+  "readout_runs": [
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_r001_plate",
+      "operation": "PLATE_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": ["usage_r001_plate"],
+      "started_at": "2026-08-27T13:21:00+09:00",
+      "ended_at": "2026-08-27T13:21:06+09:00"
+    }
+  ],
+  "plate_readouts": [
+    {
+      "contract": "PlateReadout",
+      "contract_version": "plate-readout/v1.2",
+      "readout_id": "readout_r001_plate",
+      "run_ref": { "kind": "readout_run", "ref": "rr_r001_plate" },
+      "case_id": "case_r001",
+      "candidate_id": "candidate_r001",
+      "input_ref": {
+        "incident_clip_ref": "clip_r001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "target_association": {
+        "status": "ASSOCIATED",
+        "target_hint_used": true,
+        "track_ref": "track_r001",
+        "association_method": "TARGET_HINT_WITH_FALLBACK",
+        "associated_region": {
+          "frame_ref": "fr_r001_plate1",
+          "bbox_xywh": [500, 600, 190, 70]
+        },
+        "evidence": [
+          { "kind": "SPATIAL_PROXIMITY", "detail": "candidate target region overlaps selected track" },
+          { "kind": "MULTI_FRAME_CONTINUITY", "detail": "identical plate crop across sampled frames" }
+        ]
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": "45다6789",
+        "status": "OK",
+        "source": { "kind": "readout.plate_ocr" },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": { "kind": "readout_run", "ref": "rr_r001_plate" }
+        }
+      },
+      "consensus": {
+        "text": "45다6789",
+        "disagree_positions": [],
+        "method": "MULTI_FRAME"
+      },
+      "abstained": false,
+      "abstain_reason": null,
+      "best_frame": {
+        "frame_ref": "fr_r001_plate1",
+        "crop_ref": "crop_r001_001",
+        "quality": { "plate_px_height": 46, "sharpness": 0.85 }
+      },
+      "frame_results": [
+        { "frame_ref": "fr_r001_plate1", "crop_ref": "crop_r001_001", "text": "45다6789", "confidence": 0.93 },
+        { "frame_ref": "fr_r001_plate2", "crop_ref": "crop_r001_002", "text": "45다6789", "confidence": 0.9 }
+      ]
+    }
+  ],
+  "overlay_time_readouts": []
+}

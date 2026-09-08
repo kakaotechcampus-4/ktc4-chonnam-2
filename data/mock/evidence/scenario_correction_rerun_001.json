@@ -1,0 +1,327 @@
+{
+  "scenario_id": "scenario_correction_rerun_001",
+  "module": "evidence",
+  "time_resolutions": [
+    {
+      "contract": "TimeResolution",
+      "contract_version": "time-resolution/v1",
+      "resolution_ref": { "kind": "time_resolution", "ref": "tres_r001_v1" },
+      "status": "NEEDS_REVIEW",
+      "resolved": {
+        "value": "2026-08-27T13:15:30+09:00",
+        "source": {
+          "kind": "recording.filename_time",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_r001_filename" }
+        },
+        "verification": "UNVERIFIED",
+        "computation": {
+          "mode": "BASE_PLUS_OFFSET",
+          "base_input_ref": { "kind": "time_source_candidate", "ref": "tsc_r001_filename" },
+          "source_offset_ms": 930000,
+          "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "PRODUCT_CONTEXT" }
+        },
+        "user_corrected": false
+      },
+      "considered": [
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_r001_filename" },
+          "source": { "kind": "recording.filename_time" },
+          "value": "2026-08-27T13:00:00+09:00",
+          "observation_status": "OK",
+          "verification": "UNVERIFIED",
+          "used": true
+        }
+      ],
+      "conflict": { "exists": false, "between_refs": [], "requires_user_notice": false },
+      "provenance": {
+        "policy_ref": "policy/time-source-priority-v1",
+        "selected_input_ref": { "kind": "time_source_candidate", "ref": "tsc_r001_filename" }
+      },
+      "post_stamp": {
+        "needed": true,
+        "reason_code": "time.no_verified_overlay_present",
+        "requires_user_notice": true
+      }
+    },
+    {
+      "contract": "TimeResolution",
+      "contract_version": "time-resolution/v1",
+      "resolution_ref": { "kind": "time_resolution", "ref": "tres_r001_v2" },
+      "supersedes_ref": { "kind": "time_resolution", "ref": "tres_r001_v1" },
+      "status": "OK",
+      "resolved": {
+        "value": "2026-08-27T13:13:00+09:00",
+        "source": {
+          "kind": "case.user_correction",
+          "input_ref": { "kind": "correction_record", "ref": "cr_r001_time" }
+        },
+        "verification": "AGREED",
+        "computation": {
+          "mode": "USER_OVERRIDE",
+          "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "PRODUCT_CONTEXT" }
+        },
+        "user_corrected": true
+      },
+      "considered": [
+        {
+          "input_kind": "USER_INPUT",
+          "input_ref": { "kind": "correction_record", "ref": "cr_r001_time" },
+          "source": { "kind": "case.user_correction" },
+          "value": "2026-08-27T13:13:00+09:00",
+          "verification": "AGREED",
+          "used": true
+        },
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_r001_filename" },
+          "source": { "kind": "recording.filename_time" },
+          "value": "2026-08-27T13:00:00+09:00",
+          "observation_status": "OK",
+          "verification": "UNVERIFIED",
+          "used": false,
+          "reason_code": "time.superseded_by_user_correction"
+        }
+      ],
+      "conflict": { "exists": false, "between_refs": [], "requires_user_notice": false },
+      "provenance": {
+        "policy_ref": "policy/time-source-priority-v1",
+        "selected_input_ref": { "kind": "correction_record", "ref": "cr_r001_time" }
+      },
+      "post_stamp": {
+        "needed": true,
+        "reason_code": "time.user_confirmed_no_overlay_present",
+        "requires_user_notice": true
+      }
+    }
+  ],
+  "evidence_records": [
+    {
+      "contract": "EvidenceRecord",
+      "contract_version": "evidence-record/v1.2",
+      "record_ref": { "kind": "evidence_record", "ref": "ev_r001_v1" },
+      "case_ref": { "kind": "case", "ref": "case_r001" },
+      "selection_rev": 1,
+      "basis": {
+        "candidate_ref": { "kind": "candidate_event", "ref": "candidate_r001" },
+        "visual_evidence_ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+        "evidence_interval_ref": { "kind": "incident_clip", "ref": "clip_r001" }
+      },
+      "event": {
+        "visual_event_type": {
+          "value": "ILLEGAL_PARKING",
+          "source": {
+            "kind": "search.visual_inference",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "OBSERVED",
+            "label_key": "event.source.visual_inference"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "safety_report_type": {
+          "value": "UNSAFE_SIDEWALK_PARKING",
+          "source": {
+            "kind": "evidence.category_mapping",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.category_mapping"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "violation_expression": {
+          "value": "파란색 트럭이 인도 위에 정차하여 보행 통행을 방해함",
+          "source": {
+            "kind": "evidence.violation_expression",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.violation_expression"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        }
+      },
+      "occurred_at": {
+        "value": "2026-08-27T13:15:30+09:00",
+        "time_resolution_ref": { "kind": "time_resolution", "ref": "tres_r001_v1" },
+        "resolution_status": "NEEDS_REVIEW",
+        "user_corrected": false,
+        "source": { "kind": "recording.filename_time", "label_key": "time.source.filename" }
+      },
+      "vehicle_number": {
+        "value": "45다6789",
+        "source": {
+          "kind": "readout.plate_ocr",
+          "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },
+          "observability": "OBSERVED",
+          "label_key": "plate.source.plate_ocr"
+        },
+        "support_refs": [{ "kind": "plate_readout", "ref": "readout_r001_plate" }],
+        "user_corrected": false,
+        "needs_review": false
+      },
+      "provenance": {
+        "input_refs": [
+          { "kind": "visual_evidence", "ref": "ve_r001" },
+          { "kind": "plate_readout", "ref": "readout_r001_plate" },
+          { "kind": "time_resolution", "ref": "tres_r001_v1" }
+        ],
+        "correction_refs": [],
+        "policy_ref": "policy/evidence-assembly-v1"
+      }
+    },
+    {
+      "contract": "EvidenceRecord",
+      "contract_version": "evidence-record/v1.2",
+      "record_ref": { "kind": "evidence_record", "ref": "ev_r001_v2" },
+      "supersedes_ref": { "kind": "evidence_record", "ref": "ev_r001_v1" },
+      "case_ref": { "kind": "case", "ref": "case_r001" },
+      "selection_rev": 2,
+      "basis": {
+        "candidate_ref": { "kind": "candidate_event", "ref": "candidate_r001" },
+        "visual_evidence_ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+        "evidence_interval_ref": { "kind": "incident_clip", "ref": "clip_r001" }
+      },
+      "event": {
+        "visual_event_type": {
+          "value": "ILLEGAL_PARKING",
+          "source": {
+            "kind": "search.visual_inference",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "OBSERVED",
+            "label_key": "event.source.visual_inference"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "safety_report_type": {
+          "value": "UNSAFE_SIDEWALK_PARKING",
+          "source": {
+            "kind": "evidence.category_mapping",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.category_mapping"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "violation_expression": {
+          "value": "파란색 트럭이 인도 위에 정차하여 보행 통행을 방해함",
+          "source": {
+            "kind": "evidence.violation_expression",
+            "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.violation_expression"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_r001" }],
+          "user_corrected": false,
+          "needs_review": false
+        }
+      },
+      "occurred_at": {
+        "value": "2026-08-27T13:13:00+09:00",
+        "time_resolution_ref": { "kind": "time_resolution", "ref": "tres_r001_v2" },
+        "resolution_status": "OK",
+        "user_corrected": true,
+        "source": { "kind": "case.user_correction", "label_key": "time.source.user_correction" }
+      },
+      "vehicle_number": {
+        "value": "45다6789",
+        "source": {
+          "kind": "readout.plate_ocr",
+          "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },
+          "observability": "OBSERVED",
+          "label_key": "plate.source.plate_ocr"
+        },
+        "support_refs": [{ "kind": "plate_readout", "ref": "readout_r001_plate" }],
+        "user_corrected": false,
+        "needs_review": false
+      },
+      "provenance": {
+        "input_refs": [
+          { "kind": "visual_evidence", "ref": "ve_r001" },
+          { "kind": "plate_readout", "ref": "readout_r001_plate" },
+          { "kind": "time_resolution", "ref": "tres_r001_v2" }
+        ],
+        "correction_refs": [{ "kind": "correction_record", "ref": "cr_r001_time" }],
+        "policy_ref": "policy/evidence-assembly-v1"
+      }
+    }
+  ],
+  "evidence_needs": [
+    {
+      "contract": "EvidenceNeeds",
+      "contract_version": "evidence-needs/v1",
+      "basis_record_ref": { "kind": "evidence_record", "ref": "ev_r001_v2" },
+      "items": []
+    }
+  ],
+  "requirement_reports": [
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_r001_evidence_v1" },
+      "scope": "EVIDENCE",
+      "basis": {
+        "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_r001_v1" },
+        "asset_refs": []
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-27T13:22:00+09:00",
+      "overall": "WARN",
+      "checks": [
+        {
+          "code": "evidence.vehicle_number.present",
+          "category": "VEHICLE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v1" }]
+        },
+        {
+          "code": "evidence.occurred_at.present",
+          "category": "TIME",
+          "outcome": "WARN",
+          "reason_code": "evidence.time_needs_review",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v1" }]
+        }
+      ]
+    },
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_r001_evidence_v2" },
+      "supersedes_ref": { "kind": "requirement_report", "ref": "req_r001_evidence_v1" },
+      "scope": "EVIDENCE",
+      "basis": {
+        "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_r001_v2" },
+        "asset_refs": []
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-27T13:35:00+09:00",
+      "overall": "PASS",
+      "checks": [
+        {
+          "code": "evidence.vehicle_number.present",
+          "category": "VEHICLE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v2" }]
+        },
+        {
+          "code": "evidence.occurred_at.present",
+          "category": "TIME",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v2" }]
+        }
+      ]
+    }
+  ],
+  "report_packages": []
+}

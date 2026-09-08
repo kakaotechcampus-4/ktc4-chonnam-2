@@ -1,0 +1,33 @@
+{
+  "mock_pack_version": "1.0.0",
+  "generated_note": "이 파일은 Mock 관리 전용이다. 여기 등장하는 필드(scenario_id 목록, artifacts 경로 등)는 어떤 런타임 Data Contract에도 속하지 않는다 — 실제 계약 payload는 각 모듈 디렉터리 아래 JSON 파일의 배열 값들이다.",
+  "source_of_truth_commit": "8fc0ced (origin/develop, 데이터 계약 전체 종결 시점)",
+  "modules": ["recording", "search", "readout", "evidence", "case", "common"],
+  "expected_dir": "data/mock/expected",
+  "scenarios": [
+    {
+      "scenario_id": "scenario_happy_001",
+      "manifest_ref": "data/mock/scenarios/scenario_happy_001.json",
+      "scenario_types": ["A"]
+    },
+    {
+      "scenario_id": "scenario_empty_001",
+      "manifest_ref": "data/mock/scenarios/scenario_empty_001.json",
+      "scenario_types": ["B"]
+    },
+    {
+      "scenario_id": "scenario_unknown_abstain_partial_001",
+      "manifest_ref": "data/mock/scenarios/scenario_unknown_abstain_partial_001.json",
+      "scenario_types": ["C", "D", "E", "G", "H", "I"]
+    },
+    {
+      "scenario_id": "scenario_correction_rerun_001",
+      "manifest_ref": "data/mock/scenarios/scenario_correction_rerun_001.json",
+      "scenario_types": ["F", "I"]
+    }
+  ],
+  "eval_fixtures": [
+    "data/mock/expected/eval_fixture_correct_001.json",
+    "data/mock/expected/eval_fixture_wrong_001.json"
+  ]
+}

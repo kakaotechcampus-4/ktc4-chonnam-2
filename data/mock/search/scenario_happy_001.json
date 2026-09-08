@@ -1,0 +1,87 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "module": "search",
+  "analysis_scopes": [
+    {
+      "scope_id": "scope_h001",
+      "time_ranges": [
+        { "kind": "ABSOLUTE", "start": "2026-08-24T18:00:00+09:00", "end": "2026-08-24T18:20:00+09:00" }
+      ],
+      "target_event_types": ["SOLID_LINE_LANE_CHANGE"],
+      "hint": { "vehicle": "흰색 SUV", "free_text": "백색 실선 crossing 가능성" },
+      "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
+      "contract_version": "1.1.0"
+    }
+  ],
+  "analysis_run_candidate_events": [
+    {
+      "analysis_run": {
+        "run_id": "run_h001",
+        "operation": "CANDIDATE_SEARCH",
+        "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_h001" },
+        "implementation": {
+          "impl_id": "gemini-candidate-search@c7",
+          "model_ref": "gemini-3.7-flash",
+          "prompt_version": "coarse-c7",
+          "config_version": "search-v2"
+        },
+        "outcome": "SUCCEEDED",
+        "started_at": "2026-08-24T18:20:05+09:00",
+        "completed_at": "2026-08-24T18:21:10+09:00",
+        "issues": [],
+        "usage_refs": ["usage_h001_coarse"],
+        "usage_summary": {
+          "processed_duration_ms": 300000,
+          "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 },
+          "latency_ms": 65000,
+          "total_cost": { "amount": "0.42", "currency": "USD" }
+        },
+        "contract_version": "analysis-run-candidate-event/v1.1"
+      },
+      "candidates": [
+        {
+          "candidate_id": "candidate_h001",
+          "run_id": "run_h001",
+          "span": {
+            "timeline_id": "tl_h001",
+            "timeline_revision": 1,
+            "start_ms": 300000,
+            "end_ms": 420000,
+            "representative_ms": 312480
+          },
+          "rank": 1,
+          "ranking_score": 0.86,
+          "event_type_hint": "SOLID_LINE_LANE_CHANGE",
+          "summary": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+          "uncertainties": [],
+          "thumbnail_ref": "fr_h001_thumb"
+        }
+      ]
+    }
+  ],
+  "visual_evidences": [
+    {
+      "schema_version": "visual-evidence/v1.0",
+      "visual_evidence_id": "ve_h001",
+      "run_id": "run_h001",
+      "input_ref": { "kind": "incident_clip", "ref": "clip_h001" },
+      "candidate_id": "candidate_h001",
+      "verification": "OBSERVED",
+      "visual_event_type": "SOLID_LINE_LANE_CHANGE",
+      "target": {
+        "association_status": "MATCHED",
+        "described_as": "흰색 SUV",
+        "match_with_hint": true,
+        "association_confidence": 0.84,
+        "track_ref": null,
+        "evidence_refs": ["fr_h001_thumb"]
+      },
+      "primitives": [
+        { "kind": "WHITE_SOLID_LINE", "state": "PRESENT", "confidence": 0.9, "evidence_refs": ["fr_h001_thumb"] }
+      ],
+      "temporal_facts": [
+        { "at_offset_ms": 12480, "fact": "TARGET_CROSSES_LINE", "evidence_refs": ["fr_h001_thumb"] }
+      ]
+    }
+  ]
+}

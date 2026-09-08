@@ -1,0 +1,45 @@
+{
+  "scenario_id": "scenario_empty_001",
+  "module": "search",
+  "analysis_scopes": [
+    {
+      "scope_id": "scope_e001",
+      "time_ranges": [
+        { "kind": "ABSOLUTE", "start": "2026-08-25T07:00:00+09:00", "end": "2026-08-25T07:30:00+09:00" }
+      ],
+      "target_event_types": ["ILLEGAL_U_TURN"],
+      "hint": { "vehicle": "은색 세단", "free_text": "유턴 금지 구간에서 유턴하는 것을 본 것 같음" },
+      "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
+      "contract_version": "1.1.0"
+    }
+  ],
+  "analysis_run_candidate_events": [
+    {
+      "analysis_run": {
+        "run_id": "run_e001",
+        "operation": "CANDIDATE_SEARCH",
+        "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_e001" },
+        "implementation": {
+          "impl_id": "gemini-candidate-search@c7",
+          "model_ref": "gemini-3.7-flash",
+          "prompt_version": "coarse-c7",
+          "config_version": "search-v2"
+        },
+        "outcome": "SUCCEEDED",
+        "started_at": "2026-08-25T07:30:05+09:00",
+        "completed_at": "2026-08-25T07:31:02+09:00",
+        "issues": [],
+        "usage_refs": ["usage_e001_coarse"],
+        "usage_summary": {
+          "processed_duration_ms": 1800000,
+          "token_usage": { "input_tokens": 9800, "output_tokens": 420, "total_tokens": 10220 },
+          "latency_ms": 57000,
+          "total_cost": { "amount": "0.31", "currency": "USD" }
+        },
+        "contract_version": "analysis-run-candidate-event/v1.1"
+      },
+      "candidates": []
+    }
+  ],
+  "visual_evidences": []
+}
