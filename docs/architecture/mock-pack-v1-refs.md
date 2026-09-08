@@ -1,6 +1,6 @@
 # Mock Pack v1 — ref 예시 (계약 아님)
 
-> **정식 recording 계약 이전의 비규범 보조 자료다.** 필드·lookup·시간 변환 규칙을 정의하지 않는다. ref 작업 규약의 원천은 `module-architecture.md` §5-3이며 여기에는 규칙을 복제하지 않는다. 정식 계약 두 건이 나오면 이 문서를 폐기하고 포인터를 교체한다.
+> **정식 recording 계약 이전의 비규범 보조 자료였다.** 필드·lookup·시간 변환 규칙을 정의하지 않는다. ref 작업 규약의 원천은 `module-architecture.md` §5-3이며 여기에는 규칙을 복제하지 않는다. **정식 계약 2건이 Accepted가 되어 이 문서는 아래 `Status`대로 폐기됐다** — 규범으로 읽지 않는다.
 
 **Status:** **폐기 — 2026-09-08.** 폐기 조건이 충족됐다: `contract-source-asset-media-stream.md`(`source-asset-media-stream/v1`)와 `contract-analysis-source-derived.md`(`analysis-source-derived/v1`)가 Consumer Review 종결로 `Final — Accepted`가 됐다. **이 문서를 규범으로 읽지 않는다.** 자산 ref의 형식·필드·lookup·`AssetFacts`·`FrameRef`·자산 계층 `ContractRef.kind` 값 공간은 그 두 계약이 소유하고, ref 작업 규약의 원천은 `module-architecture.md` §5-3이다. 아래 본문은 역사적 기록으로 남긴다
 **Owner:** 김준영 (PM)
@@ -30,4 +30,4 @@ as_0001, rc_0001, clip_0001, da_0001
 - upload 방식·proxy profile 값·retention·provider별 delete 방식은 기존 미결을 유지한다.
 - 고정된 입력으로 개별 응답을 비교하는 작업과 `ownership.md` §7-④ 전체 E2E 통과는 구분한다. 실행 결과가 아직 없으므로 여기서 E2E PASS를 선언하지 않는다.
 
-현재 닫힌 항목·Pending 및 담당 경계는 `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §9를 따른다(2026-09-06 보정 기록은 `contracts/adr/adr-consistency-followup-2026-09-06.md`).
+**§1~§3은 폐기 시점(2026-09-08) 이전의 역사 기록이다.** 현재 닫힌 항목·Pending·종결·다음 단계 준비도 판정은 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2를 따른다(이전 회차는 같은 폴더의 `adr-data-contract-call-closure-2026-09-07.md`, 2026-09-06 보정 기록은 `contracts/adr/adr-consistency-followup-2026-09-06.md`).

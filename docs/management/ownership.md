@@ -6,7 +6,7 @@
 > **결정 방식:** 병렬 개발 효율을 1순위로 두고, 그 안에서 PM이 사전 공유한 분배안을 최대한 따랐다. 6명 전원이 사전 분배안과 일치한다.
 
 ```text
-① 담당 파트 자료조사 ✓  →  ② 모듈안 고도화 ✓ (v4)  →  ③ 데이터 계약 확정 ◀ 지금  →  ④ 목데이터 1차 통합
+① 담당 파트 자료조사 ✓  →  ② 모듈안 고도화 ✓ (v4)  →  ③ 데이터 계약 확정 ✓ (계약 BLOCK 축 종결 2026-09-08 · W04·N02 잔여)  →  ④ 목데이터 1차 통합 ◀ 다음
 ```
 
 ---
@@ -247,10 +247,10 @@ v4 §4-모듈1 · §2 원칙 3·4(Source/Derived, 파일≠stream) · §3-3 · �
 ### ⑤ 지금 단계의 산출물
 - `resolve_span()` — 파일 경계에 걸친 구간을 이어주는 함수. **시스템 전체에서 이걸 계산하는 유일한 곳**
 - `build_timeline()` + `RecordingTimeline`·`AssetSpan` 계약 (시각 후보 여러 개 + 충돌 표시 포함)
-- `SourceAsset ↔ MediaStream` 스키마 · `frame_ref` 형식 · stream role 표현(§11-1)
+- **`SourceAsset ↔ MediaStream` 스키마 · `frame_ref` 형식 · stream role 표현은 확정됐다(2026-09-08).** 이제 정할 것이 아니라 **구현하고 검증할 것**이다 — `Final — Accepted` 계약 2건 `../architecture/contracts/contract-source-asset-media-stream.md`(`source-asset-media-stream/v1` — `MediaStream[]`·`FrameRef`·`resolve_frame`/`read_frame`·canonical `AssetFacts`) · `../architecture/contracts/contract-analysis-source-derived.md`(`analysis-source-derived/v1`). 산출물은 그 계약을 따르는 구현과 fixture·Mock·통합에서의 검증이다. 필드·enum·nullable을 다시 정하지 않고, 자산 `ContractRef.kind` 값 공간은 앞 계약 §2.1 한 곳에서 읽는다
 - 샘플 폴더 하나로 도는 테스트 (시간축 정확도 / 경계 이어붙이기 / 원본 체크섬)
 - 업로드·처리 전략은 **미결 유지**(v4 A6) — 계약 뒤에 숨긴다
-- `JobExecution` 구현(queue row · lease · heartbeat · retry) — 계약 확정 후 착수. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 스키마와 status 5값은 김준영이 준다
+- `JobExecution` 구현(queue row · lease · heartbeat · retry) — **계약은 이미 `Final — Accepted`다**(`../architecture/contracts/contract-job-execution.md`, `job-execution/v1`). 스키마와 status 5값은 김준영이 소유하고 확정돼 있으므로 계약을 기다리지 않는다. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 남은 접합 1건은 W04(`JobExecution` 소비자 확인 · domain `PARTIAL`↔runtime `status`)이며 `PENDING_OWNER`다 — 구현 착수를 막지 않는다
 
 ### ⑥ 누구와 붙는가
 - **김준영과 상시** — 업로드·대용량·저장·보관은 운영 이슈라 PM의 관심 영역과 겹친다
@@ -396,7 +396,9 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 | 번호판 검출에 외부 모델 필요 | 발동 안 함 — readout은 서버/로컬 baseline(A5) |
 | 4종 중 하나가 baseline에서 안 됨 | 아직 실측 전 |
 
-## ③ 데이터 계약 확정 — 지금
+## ③ 데이터 계약 확정 — 계약 BLOCK 축 종결 (2026-09-08)
+
+> **현재 상태.** 아래 표는 **누가 무엇을 초안 작성했는지**의 기록이다. 계약 16건 중 15건이 `Final — Accepted`이고 `CorrectionRecord` 1건만 Draft다(N02). 감사 BLOCK 12건은 전부 종결됐고 열린 결정 회차는 0건이다. 이 단계에 남은 것은 새 스키마 설계가 아니라 **W04**(`JobExecution` 소비자 확인 · domain `PARTIAL`↔runtime `status`)와 **N02**(`CorrectionRecord` Draft Consumer Review · readout taxonomy · eval 정답지) 두 건의 `PENDING_OWNER`이며, 둘 다 ④ 착수를 막지 않는다. 원장은 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2다.
 
 **초반에 전원이 합의할 것은 3개뿐이다.** 나머지는 생산자가 정하고 소비자가 예시 JSON으로 개발한다. 계약의 의미는 v4 §5, 필드·enum·nullable은 이 단계에서 확정한다(§13-2).
 
@@ -435,7 +437,9 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 
 > **현재 통합 상태 (2026-09-08, 2차 반영 후):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 접합부 Owner 결정과 남은 Pending·종결·준비도 판정은 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2 참조(2026-09-07 회차는 같은 폴더의 `adr-data-contract-call-closure-2026-09-07.md`, 2026-09-06 보정 기록은 `adr-consistency-followup-2026-09-06.md`). 기준 ④의 세 gate 분리는 계약에 반영됐다(`requirements_evidence`/`requirements_package`/`user_reviewed`) — 화면 실행 확인은 아직 없다.
 >
-> **데이터 계약 상태.** recording 자산 계약 2건이 4 Consumer Review 종결로 `Final — Accepted`가 되어 **BLOCK 12건 전부 종결이고 열린 결정 회차는 0건**이다. 감사 전체는 `CONTRACT_AUDIT_PARTIAL`로 남는다 — W04(`JobExecution` 소비자 확인·domain `PARTIAL`↔runtime `status`)와 N02(`CorrectionRecord` Draft Review·readout taxonomy·eval 정답지)가 `PENDING_OWNER`다. 다음 단계 준비도는 **`READY_WITH_NON_BLOCKING_GAPS`** — Mock·통합 E2E 착수를 막는 계약 항목은 없고, E2E에서 판정 대상으로 삼지 말아야 하는 셀(W04의 status 매핑 · `stream_selector` 경로 · thumbnail 이미지 획득)은 같은 ADR §10.2에 적혀 있다.
+> **데이터 계약 상태.** recording 자산 계약 2건이 4 Consumer Review 종결로 `Final — Accepted`가 되어 **BLOCK 12건 전부 종결이고 열린 결정 회차는 0건**이다. 감사 전체는 `CONTRACT_AUDIT_PARTIAL`로 남는다 — W04(`JobExecution` 소비자 확인·domain `PARTIAL`↔runtime `status`)와 N02(`CorrectionRecord` Draft Review·readout taxonomy·eval 정답지)가 `PENDING_OWNER`다. 다음 단계 준비도는 **`READY_WITH_NON_BLOCKING_GAPS`** — Mock·통합 E2E 착수를 막는 계약 항목은 없고, E2E에서 판정 대상으로 삼지 말아야 하는 셀(W04의 status 매핑 · `stream_selector` 경로 · thumbnail 이미지 획득 · recording `failure.kind`/`code`의 값 자체 · `AnalysisSource` profile 값 목록)은 같은 ADR §10.2에 적혀 있다. 이 항목들은 정해진 범위 밖에서 각 Owner가 처리하거나 판정 대상에서 제외한다.
+>
+> **준비도는 완료가 아니다.** `READY_WITH_NON_BLOCKING_GAPS`는 「계약만으로 Mock payload와 E2E 시나리오를 정의할 수 있다」는 뜻이며, **Mock 생성·모듈 구현·통합 E2E 실행이 끝났다는 뜻이 아니다.** 현재 `src/daesingo/*`·`apps/web`·`eval/*`에 실행 코드가 없어 구현 통합은 `IMPLEMENTATION_NOT_VERIFIED`, 실제 E2E는 `E2E_NOT_VERIFIED`다. 위 통과 기준 6개는 그 단계에서 채운다.
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 
@@ -448,7 +452,7 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 - [ ] **Tool Trajectory Review 1회차** 실시 (`management/tool-trajectory-review.md`)
 
 > ~~`case` workflow stage의 `READY`(v4 §4-모듈5 ②)는 §3-6의 세 상태와 어떻게 대응하는지 v4가 명시하지 않았다. 통합 전 `case` Owner가 확인한다(Data Contract 항목).~~
-> **종결 (2026-09-06).** `case` Owner(유소연)가 확인했다 — `stage=READY`는 「`PACKAGE_READY` 파생 gate가 성립한 시점」이고, `USER_REVIEWED`는 `stage`가 아니라 `CaseView.user_reviewed: boolean`이 갖는다. `EVIDENCE_SUFFICIENT`는 `EVIDENCE_REVIEW` 단계 안의 조건이다. 원문은 `architecture/contracts/contract-job-record-case-view.md` B절 §7 · `adr/adr-consistency-2026-09.md` §6 R-2.
+> **종결 (2026-09-06).** `case` Owner(유소연)가 확인했다 — `stage=READY`는 「`PACKAGE_READY` 파생 gate가 성립한 시점」이고, `USER_REVIEWED`는 `stage`가 아니라 `CaseView.user_reviewed: boolean`이 갖는다. `EVIDENCE_SUFFICIENT`는 `EVIDENCE_REVIEW` 단계 안의 조건이다. 원문은 `architecture/contracts/contract-job-record-case-view.md` B절 §7 · `architecture/contracts/adr/adr-consistency-2026-09.md` §6 R-2.
 >
 > 위 통과 기준의 「`4/5` 같은 실패 표시 없이」도 계약에 반영됐다 — `requirements.readiness`가 `PASS/WARN/BLOCK/UNKNOWN`으로 좁혀졌다.
 
