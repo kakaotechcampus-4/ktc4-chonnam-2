@@ -1,0 +1,61 @@
+{
+  "scenario_id": "scenario_empty_001",
+  "module": "case",
+  "job_records": [
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_e001_search",
+      "case_id": "case_e001",
+      "case_rev": 1,
+      "kind": "COARSE_SEARCH",
+      "scope_ref": "scope_e001",
+      "input_fingerprint": "sha1:e001-coarse-search",
+      "force_rerun": false,
+      "requested_at": "2026-08-25T07:30:04+09:00"
+    }
+  ],
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_e001",
+      "case_rev": 2,
+      "stage": "CANDIDATE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1800.0,
+        "range": ["2026-08-25T07:00:00+09:00", "2026-08-25T07:30:00+09:00"]
+      },
+      "hints": {
+        "time": "아침 7시쯤",
+        "vehicle": "은색 세단",
+        "situation": "앞차가 중앙선을 넘어 들어온 것 같은데 확실하지 않음",
+        "location": null
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" }
+      ],
+      "candidates": [],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "search.no_candidates",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.search_no_candidates",
+          "actions": ["EDIT_HINT", "RETRY_SEARCH"]
+        }
+      ]
+    }
+  ]
+}

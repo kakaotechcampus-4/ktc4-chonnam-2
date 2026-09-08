@@ -1,0 +1,70 @@
+{
+  "scenario_id": "scenario_empty_001",
+  "module": "recording",
+  "source_assets": [
+    {
+      "contract": "SourceAsset",
+      "contract_version": "source-asset-media-stream/v1",
+      "source_asset_ref": "sa_e001",
+      "asset_kind": "SOURCE_ASSET",
+      "external_source_ref": { "kind": "external_source", "ref": "ext_e001" },
+      "media_stream_refs": ["ms_e001_v"],
+      "byte_size": 1073741824,
+      "availability": "AVAILABLE",
+      "duration_sec": 1800.0
+    }
+  ],
+  "media_streams": [
+    {
+      "contract": "MediaStream",
+      "contract_version": "source-asset-media-stream/v1",
+      "media_stream_ref": "ms_e001_v",
+      "source_asset_ref": "sa_e001",
+      "media_type": "VIDEO",
+      "role": "FRONT",
+      "availability": "AVAILABLE",
+      "duration_sec": 1800.0
+    }
+  ],
+  "frame_refs": [],
+  "recording_timelines": [
+    {
+      "contract": "RecordingTimeline",
+      "contract_version": "recording-timeline/v1",
+      "timeline_id": "tl_e001",
+      "revision": 1,
+      "time_basis": {
+        "mode": "ABSOLUTE_AND_RELATIVE",
+        "working_anchor": {
+          "value": "2026-08-25T07:00:00+09:00",
+          "source_candidate_ref": "tsc_e001_filename",
+          "status": "OK"
+        }
+      },
+      "time_source_candidates": ["tsc_e001_filename"],
+      "source_placements": [
+        {
+          "source_asset_ref": "sa_e001",
+          "timeline_start_sec": 0.0,
+          "timeline_end_sec": 1800.0,
+          "media_stream_refs": ["ms_e001_v"]
+        }
+      ],
+      "gaps": [],
+      "timeline_status": "USABLE",
+      "produced_by": "recording"
+    }
+  ],
+  "time_source_candidates": [
+    {
+      "candidate_id": "tsc_e001_filename",
+      "source_kind": "FILENAME",
+      "source_detail": "MDR_260825_070000.AVI",
+      "value": "2026-08-25T07:00:00+09:00",
+      "applies_to": { "source_asset_ref": "sa_e001", "source_offset_sec": 0.0 },
+      "observation_status": "OK",
+      "producer_checks": { "parse_valid": true },
+      "provenance": { "producer": "recording", "observed_from": "MDR_260825_070000.AVI" }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "eval_fixture_id": "eval_fixture_correct_001",
+  "kind": "ALWAYS_CORRECT",
+  "provisional_non_contract_schema": true,
+  "note": "이 파일은 어떤 Final Data Contract도 소유하지 않는 Mock 전용 provisional 구조다. eval의 Ground Truth 스키마는 contract-readout-run.md §2 '정답지(READABLE+정답 문자열 / UNREADABLE)는 현재 없으며 eval 소유 후속'이라고 명시할 뿐 아직 확정되지 않았다. 이 fixture는 eval 팀이 자신의 metric 계산 코드를 최소한으로 검증할 수 있도록 제공하는 목적 전용이며, eval이 정식 Ground Truth Contract를 확정하면 교체되어야 한다.",
+  "purpose": "actual == expected인 입력에서 metric 계산 코드 자체가 올바르게 1.0(만점)을 내는지 검증한다. Mock이 실제 AI 성능을 증명하는 용도가 아니다.",
+  "scenario_ref": "scenario_happy_001",
+  "case_id": "case_h001",
+  "metric_targets": [
+    {
+      "metric": "plate_exact_match",
+      "actual_ref": { "kind": "plate_readout", "ref": "readout_h001_plate" },
+      "actual_value": "12가3456",
+      "expected_value": "12가3456",
+      "expect_match": true
+    },
+    {
+      "metric": "candidate_top1_correct",
+      "actual_ref": { "kind": "analysis_run_candidate_event", "ref": "run_h001" },
+      "actual_top_candidate_id": "candidate_h001",
+      "expected_top_candidate_id": "candidate_h001",
+      "expect_match": true
+    },
+    {
+      "metric": "occurred_at_within_tolerance",
+      "actual_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+      "actual_value": "2026-08-24T18:05:12+09:00",
+      "expected_value": "2026-08-24T18:05:12+09:00",
+      "max_deviation_sec": 2,
+      "expect_match": true
+    },
+    {
+      "metric": "abstention_correctness",
+      "actual_ref": { "kind": "plate_readout", "ref": "readout_h001_plate" },
+      "actual_abstained": false,
+      "expected_should_abstain": false,
+      "expect_match": true
+    }
+  ],
+  "expected_metric_results": {
+    "plate_exact_match_rate": 1.0,
+    "candidate_top1_accuracy": 1.0,
+    "time_within_tolerance_rate": 1.0,
+    "abstention_correctness_rate": 1.0
+  }
+}

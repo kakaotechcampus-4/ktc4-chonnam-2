@@ -164,6 +164,8 @@ ContractRef {
 
 Consumer는 이 우선순위를 복제하거나 재계산하지 않는다.
 
+**`status=OK` 부여 조건 (2026-09-07 확정 · Decider 김준영 `evidence` · 확인 유소연 `case` · 신유민 `web` · B01 종결).** `OK`는 **검증된 Video Overlay 시각(정책 1) 또는 명시적 사용자 확정(정책 4)** 에만 부여한다. Filename / File Metadata / 제조사 metadata로 계산한 시각(정책 2·3)은 `resolved`에 값을 유지하되 `status=NEEDS_REVIEW`로 낸다. 이 조건 덕분에 `CaseView`는 source를 다시 보지 않고 `EvidenceRecord.occurred_at.resolution_status`만으로 정보 상태를 만든다(`contract-evidence-record-needs.md` §4.4 · `contract-job-record-case-view.md` B절 §7). `OK`와 사용자 확정을 구분하는 것은 `resolved.user_corrected`다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1.
+
 ---
 
 # 5. 사용자 입력 / CorrectionRecord 규칙
@@ -340,3 +342,9 @@ conflict.requires_user_notice
 - `TimeResolution.post_stamp`는 사후 각인 필요 여부와 provenance만 보존하고, 실제 Report Video 생성은 Package/DerivedVideo export 흐름에서 처리한다.
 
 이 보정은 Timestamp 선택 정책이나 `post_stamp` 의미를 변경하지 않고, 후속 실행 책임의 소유권만 명확히 한다.
+
+## 16. 후속 — 사용 Timeline revision provenance (2026-09-07 합의 · 필드 미정)
+
+`recording`이 `CandidateEvent.span.timeline_revision`으로 사용 revision을 보존하기로 확정하면서(`adr/adr-data-contract-call-closure-2026-09-07.md` §4.8, B09), `evidence`도 **동일한 `{timeline_id, revision}` 형태**로 `TimeResolution`의 시간 계산 provenance에 사용 revision을 반영하기로 했다(김준영). `BASE_PLUS_OFFSET` 계산은 특정 revision 좌표에 의존하므로 rebase 이후 과거 결과를 복원하려면 이 provenance가 필요하다.
+
+**필드 위치·이름은 아직 정하지 않았다.** 다음 `time-resolution` 개정에서 Owner가 정하며 여기서 임의로 만들지 않는다. 그 전까지는 `computation.base_input_ref`가 가리키는 대상 계약의 revision을 따라간다.

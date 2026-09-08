@@ -1,0 +1,216 @@
+{
+  "scenario_id": "scenario_correction_rerun_001",
+  "module": "case",
+  "job_records": [
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_r001_search",
+      "case_id": "case_r001",
+      "case_rev": 1,
+      "kind": "COARSE_SEARCH",
+      "scope_ref": "scope_r001",
+      "input_fingerprint": "sha1:r001-coarse-search",
+      "force_rerun": false,
+      "requested_at": "2026-08-27T13:20:04+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_r001_plate",
+      "case_id": "case_r001",
+      "case_rev": 2,
+      "kind": "PLATE_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:r001-plate-read-clip_r001",
+      "force_rerun": false,
+      "requested_at": "2026-08-27T13:20:59+09:00"
+    }
+  ],
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_r001",
+      "case_rev": 2,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1500.0,
+        "range": ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]
+      },
+      "hints": {
+        "time": "1시쯤",
+        "vehicle": "검은색 스쿠터",
+        "situation": "헬멧 안 쓴 오토바이가 옆 차로로 지나감",
+        "location": null
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "DONE" },
+        { "step": "evidence_assembly", "state": "DONE" },
+        { "step": "requirement_check", "state": "DONE" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_r001",
+          "at": "2026-08-27T13:15:30+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "안전모를 착용하지 않은 운전자가 스쿠터를 운행하는 장면",
+          "thumb_ref": "fr_r001_plate1",
+          "selected": true
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_r001_v1",
+        "case_type_display": { "code": "MOTORCYCLE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "report_type_display": { "code": "UNSAFE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "violation_display": {
+          "code": null,
+          "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
+          "needs_review": false
+        },
+        "plate_display": {
+          "value": "광주서구 가1234",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-27T13:15:30+09:00",
+          "needs_review": true,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "time.source.filename"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": "fr_r001_plate1",
+        "review_needed": true,
+        "reason_code": "evidence.event_time_needs_review"
+      },
+      "requirements_evidence": {
+        "readiness": "WARN",
+        "checks": [
+          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.occurred_at.present", "outcome": "WARN", "reason_code": "evidence.time_needs_review" }
+        ]
+      },
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "time.needs_user_confirmation",
+          "severity": "WARN",
+          "blocking": false,
+          "message_key": "notice.event_time_needs_review",
+          "actions": ["EDIT_EVENT_TIME"]
+        }
+      ]
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_r001",
+      "case_rev": 3,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1500.0,
+        "range": ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]
+      },
+      "hints": {
+        "time": "1시쯤",
+        "vehicle": "검은색 스쿠터",
+        "situation": "헬멧 안 쓴 오토바이가 옆 차로로 지나감",
+        "location": null
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "DONE" },
+        { "step": "evidence_assembly", "state": "DONE" },
+        { "step": "requirement_check", "state": "DONE" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_r001",
+          "at": "2026-08-27T13:13:00+09:00",
+          "at_provenance": "case.user_correction",
+          "observed": "안전모를 착용하지 않은 운전자가 스쿠터를 운행하는 장면",
+          "thumb_ref": "fr_r001_plate1",
+          "selected": true
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_r001_v2",
+        "case_type_display": { "code": "MOTORCYCLE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "report_type_display": { "code": "UNSAFE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "violation_display": {
+          "code": null,
+          "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
+          "needs_review": false
+        },
+        "plate_display": {
+          "value": "광주서구 가1234",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-27T13:13:00+09:00",
+          "needs_review": false,
+          "info_state": "INFO_USER_CONFIRMED",
+          "source_label_key": "time.source.user_correction"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": true,
+        "preview_ref": "fr_r001_plate1",
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "PASS",
+        "checks": [
+          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" }
+        ]
+      },
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "time.post_stamp_required",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.post_stamp_required",
+          "actions": ["GENERATE_REPORT_VIDEO"]
+        }
+      ]
+    }
+  ]
+}

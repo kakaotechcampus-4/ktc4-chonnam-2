@@ -1,0 +1,47 @@
+{
+  "eval_fixture_id": "eval_fixture_wrong_001",
+  "kind": "DELIBERATELY_WRONG",
+  "provisional_non_contract_schema": true,
+  "note": "이 파일은 어떤 Final Data Contract도 소유하지 않는 Mock 전용 provisional 구조다(위와 동일한 사유 — eval Ground Truth Contract 미확정). eval의 metric 계산 코드가 실제로 오류를 잡아내는지 검증하는 용도이며, 이 fixture의 낮은 점수 자체가 시스템의 실제 성능을 뜻하지 않는다.",
+  "actual_values_are_inline": "이 fixture의 actual_* 값은 의도적으로 틀리게 만든 합성값이며 런타임 fixture를 참조하지 않는다. actual_ref를 두면 harness가 역참조했을 때 실제(정답) 값이 나와 테스트가 통과해버리므로 참조를 두지 않는다. metric 이름은 eval Owner(김대원) 확정 대기 — docs/mock/05_mock_deep_review_report.md P1-11.",
+  "purpose": "actual이 의도적으로 틀린 입력에서 metric 계산 코드가 만점을 내지 않고 실제로 오류를 검출하는지 검증한다 — bad candidate ranking, 큰 timestamp 편차, 잘못된 번호판 채택, false positive abstain을 각각 포함한다.",
+  "scenario_ref": "scenario_happy_001(기대값 출처만 참조 — actual은 합성값)",
+  "case_id": "case_h001",
+  "metric_targets": [
+    {
+      "metric": "plate_exact_match",
+      "actual_value": "98다6543",
+      "expected_value": "12가3456",
+      "expect_match": false,
+      "defect": "WRONG_PLATE_ACCEPTED"
+    },
+    {
+      "metric": "candidate_top1_correct",
+      "actual_top_candidate_id": "candidate_h001_decoy",
+      "expected_top_candidate_id": "candidate_h001",
+      "expect_match": false,
+      "defect": "BAD_CANDIDATE_RANKING"
+    },
+    {
+      "metric": "occurred_at_within_tolerance",
+      "actual_value": "2026-08-24T19:47:00+09:00",
+      "expected_value": "2026-08-24T18:05:12+09:00",
+      "max_deviation_sec": 2,
+      "expect_match": false,
+      "defect": "LARGE_TIMESTAMP_DEVIATION"
+    },
+    {
+      "metric": "abstention_correctness",
+      "actual_abstained": false,
+      "expected_should_abstain": true,
+      "expect_match": false,
+      "defect": "FALSE_POSITIVE_NO_ABSTAIN"
+    }
+  ],
+  "expected_metric_results": {
+    "plate_exact_match_rate": 0.0,
+    "candidate_top1_accuracy": 0.0,
+    "time_within_tolerance_rate": 0.0,
+    "abstention_correctness_rate": 0.0
+  }
+}

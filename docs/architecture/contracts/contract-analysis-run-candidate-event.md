@@ -2,17 +2,19 @@
 
 **Status:** `Final — Accepted`
 
-> **통합 Pending B09:** Candidate/Run에서 사용 timeline revision을 추적하는 연결은 Owner 간 확인 대기다. 기존 수락 범위를 유지하되 전체 접합이 닫혔다고 보지 않는다. `adr/adr-consistency-followup-2026-09-06.md` §3 참조.
+> **B09 종결 (2026-09-07).** `CandidateEvent.span`에 `timeline_revision`을 추가했다(§4-1). Decider 정철원(`recording`), 필드 승인 서어진(`search`), 표시 유소연(`case`), evidence provenance 동일 형태 김준영. serialization 변경이므로 이 계약 §9 규칙대로 `contract_version`을 `v1.1`로 올렸다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8.
 
-**Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4)
+> **`usage_refs[]` 지위 표기 (2026-09-08 결정, 서어진 · 확인 김대원·김준영).** `AnalysisRun.usage_refs[]`는 **조회 편의용 파생값**이며 authoritative가 아니다. Run↔Usage 연결과 비용 집계의 기준은 `UsageRecord.run_ref`다(§3·§3-4·§6-1·§7·§8). `ReadoutRun.usage_refs`와 같은 지위다. 의미 변경이 아닌 표기 정합이라 **버전은 `v1.1` 유지**. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.2.
 
-**Related ADR:** `adr/adr-analysis-run-candidate-event.md`
+**Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4) · `2026-09-07` (v1.1)
+
+**Related ADR:** `adr/adr-analysis-run-candidate-event.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8
 
 **Architecture Contract:** v4 §5-1 ⑤
 
 **Contract:** `AnalysisRun + CandidateEvent`
 
-**Contract Version:** `analysis-run-candidate-event/v1`
+**Contract Version:** `analysis-run-candidate-event/v1.1`
 
 **Producer / Owner:** 서어진 (`search`)
 
@@ -85,7 +87,7 @@
         "currency": "USD"
       }
     },
-    "contract_version": "analysis-run-candidate-event/v1"
+    "contract_version": "analysis-run-candidate-event/v1.1"
   },
   "candidates": [
     {
@@ -93,6 +95,7 @@
       "run_id": "run_01J...",
       "span": {
         "timeline_id": "timeline_01",
+        "timeline_revision": 1,
         "start_ms": 420000,
         "end_ms": 438000,
         "representative_ms": 429000
@@ -124,9 +127,9 @@
 | `started_at` | datetime | 필수 | logical run 시작 시각. timezone offset을 포함한 ISO 8601. |
 | `completed_at` | datetime | 필수 | logical run 완료 시각. `completed_at >= started_at`. |
 | `issues` | Issue[] | 필수 | 부분/전체 실패 정보. 정상 성공이면 빈 배열 가능. |
-| `usage_refs` | ID[] | 필수 | 해당 Run의 상세 `UsageRecord` reference. 외부 usage가 없으면 빈 배열 가능. |
+| `usage_refs` | ID[] | 필수 | 해당 Run의 상세 `UsageRecord` reference. 외부 usage가 없으면 빈 배열 가능. **조회 편의용 파생값(역방향 참조)이며 authoritative가 아니다** — 어느 Run에 속한 사용량인지의 기준은 `UsageRecord.run_ref`(`{kind:"analysis_run", ref:<run_id>}`)이고 두 값이 어긋나면 `UsageRecord.run_ref`가 기준이다(`contract-usage-record.md` §8-12). 양방향 정합을 이 계약의 불변조건으로 강제하지 않는다. `ReadoutRun.usage_refs`와 같은 지위(2026-09-08, 서어진). |
 | `usage_summary` | UsageSummary | 필수 | Run 완료 시점의 Eval용 immutable usage snapshot. |
-| `contract_version` | string | 필수 | v1에서는 항상 `analysis-run-candidate-event/v1`. |
+| `contract_version` | string | 필수 | 현재 `analysis-run-candidate-event/v1.1`. v1과의 차이는 `CandidateEvent.span.timeline_revision` 추가 하나다. |
 
 ## 3-1. `input_ref`
 
@@ -199,7 +202,8 @@
 **Snapshot 규칙**
 
 - Run 완료 이후 `usage_summary`를 과거 가격 변경 때문에 다시 계산해 덮어쓰지 않는다.
-- `usage_refs[]`가 존재하면 `usage_summary`는 해당 Run에 속한 usage의 실행 시점 aggregate와 정합해야 한다.
+- `usage_summary`는 해당 Run에 속한 usage의 실행 시점 aggregate와 정합해야 한다. 「해당 Run에 속한 usage」의 기준은 원장 행의 `UsageRecord.run_ref`가 이 Run을 가리키는 것이며 `usage_refs[]`가 아니다(2026-09-08). `usage_refs[]`가 잘못됐다는 이유만으로 `usage_summary`의 집계 기준이 바뀌지 않는다.
+- 과거 비용을 현재 가격으로 다시 계산해야 하면 `usage_summary`를 고치지 않고 `UsageRecord.pricing_context`로 별도 평가 결과를 만든다.
 - PARTIAL/FAILED에서도 확보 가능한 latency/cost/processed duration은 snapshot에 남길 수 있다.
 
 ---
@@ -210,7 +214,7 @@
 | --- | --- | --- | --- |
 | `candidate_id` | ID | 필수 | Candidate 안정 reference. 확정 Evidence ID가 아니다. |
 | `run_id` | ID | 필수 | 자신을 생성한 `AnalysisRun.run_id`. |
-| `span` | object | 필수 | Recording Timeline 기준 canonical 위치. |
+| `span` | object | 필수 | Recording Timeline 기준 canonical 위치. 생성 당시 `timeline_revision`을 함께 보존한다(v1.1). |
 | `rank` | integer | 필수 | 해당 Run 내 최종 후보 순위. 1부터 시작하며 ordering/Recall@K의 authoritative 값. |
 | `ranking_score` | number/null | 선택 | 동일 implementation 내부 ranking diagnostic. calibrated confidence가 아니다. |
 | `event_type_hint` | VisualEvent enum/null | 선택 | 예상 visual event family. 법적 신고 유형이나 Fine 확정값이 아니다. |
@@ -223,6 +227,7 @@
 ```json
 {
   "timeline_id": "timeline_01",
+  "timeline_revision": 1,
   "start_ms": 420000,
   "end_ms": 438000,
   "representative_ms": 429000
@@ -230,6 +235,7 @@
 ```
 
 - `timeline_id`: Recording Timeline reference.
+- `timeline_revision` (v1.1, 필수): 이 span의 좌표가 기준으로 삼은 `RecordingTimeline.revision`(`>= 1`). **생성 당시 값이며 rebase 후에도 바꾸지 않는다.** Candidate provenance = `timeline_id + timeline_revision`. 현재 화면 표시 시각은 `case`가 현재 revision으로 projection하고, provenance revision과 현재 revision이 다르면 `case`가 비교해 `CaseView`에 「과거 timeline revision 기준」임을 표시한다 — **`search`는 revision 값만 노출하고 stale 판정·표시를 하지 않는다.** 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8 (B09).
 - `start_ms`: timeline 시작 기준 상대 offset. `>= 0`.
 - `end_ms`: timeline 시작 기준 상대 offset. `> start_ms`.
 - `representative_ms`: Candidate 대표 지점. `start_ms <= representative_ms <= end_ms`.
@@ -265,7 +271,7 @@
 8. `SUCCEEDED`는 실행 실패를 의미하는 issue를 포함하지 않는다.
 9. `AnalysisRun`은 `QUEUED/RUNNING/STALE`을 표현하지 않는다.
 10. 모든 Run은 `implementation`과 `contract_version`을 가진다.
-11. `usage_refs[]`는 해당 Run의 상세 UsageRecord를 추적할 수 있어야 한다.
+11. `usage_refs[]`는 해당 Run의 상세 UsageRecord를 추적할 수 있어야 한다. 단, 이 배열은 조회 편의용 파생값이며 Run 소속의 authoritative source는 `UsageRecord.run_ref`다 — 어긋나면 원장이 기준이다(2026-09-08).
 12. `usage_summary`는 Run 완료 시점의 immutable snapshot이다.
 13. 법적 위반, 신고 유형, Evidence confirmation 값은 `AnalysisRun`에 존재하지 않는다.
 14. raw provider response는 공용 Contract에 저장하지 않는다.
@@ -284,6 +290,7 @@
 10. `event_type_hint`는 법적 신고 유형을 표현하지 않는다.
 11. Candidate ordering을 바꿔야 하면 기존 Run/Candidate를 수정하지 않고 새 Search Run을 생성한다.
 12. Candidate는 신고용 video/file reference를 소유하지 않는다.
+13. (v1.1) `span.timeline_revision >= 1`이며 생성 당시 `RecordingTimeline.revision`이다. Timeline rebase가 일어나도 기존 Candidate의 `span`을 새 revision 기준으로 mutate하지 않는다.
 
 ---
 
@@ -310,7 +317,7 @@
 - Candidate 선택 reference로 `candidate_id`를 사용한다.
 - Candidate ordering은 `rank`로 처리한다.
 - `ranking_score` threshold로 Evidence 의미를 재판정하지 않는다.
-- Candidate absolute display time은 Timeline projection으로 구성한다.
+- Candidate absolute display time은 **현재** Timeline revision으로 projection한다. `span.timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 그 사실을 `CaseView`에 표시한다(표시 필드는 case 소유 — `contract-job-record-case-view.md` B절 §13). 과거 Candidate를 현재 anchor로 조용히 환산해 provenance를 지우지 않는다.
 - `PARTIAL`이면 필요한 coverage notice를 구성할 수 있도록 `issues`를 확인한다.
 
 ## Consumer — `eval`
@@ -321,7 +328,7 @@
 - span/timestamp error는 timeline-relative span 기준으로 계산한다.
 - implementation 비교에는 `impl_id + model_ref + prompt_version + config_version + contract_version`을 사용한다.
 - Efficiency 재평가에는 immutable `usage_summary`를 사용할 수 있다.
-- 상세 usage audit가 필요하면 `usage_refs[] → UsageRecord`를 추적한다.
+- 상세 usage audit·비용 분모 집계는 원장 `UsageRecord`를 `run_ref`로 스캔해 계산한다. `usage_refs[]`는 audit 진입점(편의)으로만 쓰고 집계 기준으로 쓰지 않는다 — search와 readout에서 같은 규칙을 쓰고 모듈에 따라 다른 참조 방향을 신뢰하지 않는다(2026-09-08).
 
 ---
 
@@ -332,7 +339,7 @@
 | `AnalysisScope` | `AnalysisRun.input_ref` | Candidate Search 입력 범위/의도는 `case`가 생산 |
 | `RecordingTimeline` | `CandidateEvent.span.timeline_id` | 실제 파일 경계 해석과 clip/frame materialization은 `recording` 책임 |
 | `VisualEvidence` | Candidate 이후 verification | 구조화된 시각 관찰 및 Fine 결과는 별도 Contract 책임 |
-| `UsageRecord` | `AnalysisRun.usage_refs[]` | 상세 usage/pricing ledger의 authoritative source |
+| `UsageRecord` | `UsageRecord.run_ref`(authoritative) ← `AnalysisRun.usage_refs[]`(파생 역참조) | 상세 usage/pricing ledger와 Run 소속의 authoritative source는 원장 `run_ref` |
 | `CaseView` | Candidate selection/display projection | absolute display time 및 사용자 선택 상태는 `case` 책임 |
 | Eval Prediction | `usage_summary` 보존 | Prediction 파일 단독 Efficiency re-score 가능하도록 snapshot 유지 |
 

@@ -1,0 +1,28 @@
+{
+  "scenario_id": "scenario_correction_rerun_001",
+  "title": "사용자 시각 정정(F) + Evidence/RequirementReport supersede 재실행(I) + Overlay NOT_RUN 구분",
+  "case_id": "case_r001",
+  "scenario_types": ["F", "I"],
+  "description": "번호판은 처음부터 확정(OBSERVED, 45다6789)됐고, 사건 발생시각은 처음엔 Filename+offset 계산값(NEEDS_REVIEW, tres_r001_v1)이었다가 사용자가 명시적으로 정정(EVENT_TIME_MANUAL 성격의 CorrectionRecord 참조, opaque ref만 사용)해 tres_r001_v2(status=OK, verification=AGREED, user_corrected=true)로 supersede된다. EvidenceRecord도 ev_r001_v1 → ev_r001_v2로 supersede되며, 이 과정에서 이미 확정돼 있던 vehicle_number EvidenceValue는 완전히 동일한 값·provenance로 유지된다 — 정정이 무관한 값을 리셋하지 않는다는 원칙(I)의 직접적 증거다. RequirementReport(EVIDENCE)도 v1(WARN)→v2(PASS)로 supersede된다. 이 시나리오는 OverlayTimeReadout을 한 번도 시도하지 않는다(ReadoutRun 자체가 없음) — 이는 '결과 없음(FAILED)'과 다른 NOT_RUN 상태를 배열 부재로 표현한 것이다.",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다. CorrectionRecord(cr_r001_time)는 현재 Draft 상태 계약이라 이 Mock Pack에서 별도 필드 스키마로 생성하지 않았고 opaque ContractRef로만 참조한다 — 자세한 사유는 docs/mock/04_mock_validation_report.md의 'Contract 충돌/미확정' 절 참조.",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_correction_rerun_001.json",
+    "search": "data/mock/search/scenario_correction_rerun_001.json",
+    "readout": "data/mock/readout/scenario_correction_rerun_001.json",
+    "evidence": "data/mock/evidence/scenario_correction_rerun_001.json",
+    "case": "data/mock/case/scenario_correction_rerun_001.json",
+    "common": "data/mock/common/scenario_correction_rerun_001.json"
+  },
+  "modules_intentionally_absent": {},
+  "shared_ids": {
+    "case_id": "case_r001",
+    "candidate_id": "candidate_r001",
+    "timeline_id": "tl_r001",
+    "incident_clip_ref": "clip_r001"
+  },
+  "unresolved_dependency": {
+    "kind": "correction_record",
+    "ref": "cr_r001_time",
+    "reason": "contract-correction-record.md가 아직 Draft 상태라 필드 스키마 fixture를 생성하지 않음. opaque ContractRef만 사용."
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "_about": "MissingRange.source_ref 규칙 (span-resolution/v1.2). 규칙 원문: contract-recording-timeline-asset-span.md §10.1·§10.2 · §23 SpanResolution 13·14. 결정 근거: adr/adr-data-contract-call-closure-2026-09-08.md §4.7. 검사기는 ① source_ref 키 존재 ② ContractRef{kind,ref} 모양 ③ reason별 non-null/null ④ kind가 reason에 대응하는 값(source_asset/media_stream)인지를 본다. failure.kind/code의 EXAMPLE_* 값은 자리표시자다(값 집합은 recording 소유 문서, 작성 대기).",
+  "valid": [
+    {
+      "id": "source_unavailable_contract_ref",
+      "note": "SOURCE_UNAVAILABLE → source_asset을 가리키는 ContractRef non-null.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 120.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": { "kind": "source_asset", "ref": "sa_0002" } } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "stream_unavailable_points_to_media_stream",
+      "note": "STREAM_UNAVAILABLE → media_stream을 가리킨다. 평문이면 Consumer가 접두어를 파싱해야 하므로 ContractRef로 종류를 명시한다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 0.0, "end_sec": 40.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 0.0, "end_sec": 20.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 20.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 20.0, "end_sec": 40.0 }, "reason": "STREAM_UNAVAILABLE", "source_ref": { "kind": "media_stream", "ref": "ms_0002" } } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "timeline_gap_null",
+      "note": "TIMELINE_GAP은 특정 Source의 가용 실패가 아니므로 source_ref: null. 키는 존재한다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 0.0, "end_sec": 40.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 0.0, "end_sec": 30.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 30.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 30.0, "end_sec": 40.0 }, "reason": "TIMELINE_GAP", "source_ref": null } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "out_of_range_null",
+      "note": "OUT_OF_TIMELINE_RANGE도 source_ref: null. 요청이 timeline 경계를 넘은 것이지 Source가 원인이 아니다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "OUT_OF_TIMELINE_RANGE", "source_ref": null } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "mixed_reasons_one_resolution",
+      "note": "한 resolution 안에 non-null과 null이 함께 올 수 있다 — reason별로 규칙이 다르다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 2 },
+        "requested_range": { "start_sec": 0.0, "end_sec": 120.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 0.0, "end_sec": 40.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 40.0 } } ],
+        "missing_ranges": [
+          { "timeline_range": { "start_sec": 40.0, "end_sec": 60.0 }, "reason": "TIMELINE_GAP", "source_ref": null },
+          { "timeline_range": { "start_sec": 60.0, "end_sec": 100.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": { "kind": "source_asset", "ref": "sa_0003" } },
+          { "timeline_range": { "start_sec": 100.0, "end_sec": 120.0 }, "reason": "OUT_OF_TIMELINE_RANGE", "source_ref": null }
+        ],
+        "failure": null
+      }
+    },
+    {
+      "id": "unlocatable_failed_has_no_missing_ranges",
+      "note": "위치 특정 불가 FAILED는 missing_ranges=[]이므로 source_ref 규칙을 적용할 대상이 없다. §23-11 예외와 충돌하지 않는다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 200.0, "end_sec": 260.0 },
+        "status": "FAILED",
+        "spans": [],
+        "missing_ranges": [],
+        "failure": { "kind": "EXAMPLE_KIND", "code": "EXAMPLE_CODE" }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "source_ref_key_missing",
+      "expect_violation": "source_ref_key_missing",
+      "note": "키 부재는 계약 위반이다 — 의도적 null과 누락을 구분할 수 없게 된다(§23-13).",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "OUT_OF_TIMELINE_RANGE" } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "source_ref_plain_string",
+      "expect_violation": "source_ref_shape",
+      "note": "평문 opaque string은 폐기됐다 — Consumer가 sa_/ms_ 접두어를 파싱해야 하고 v4 §5-3이 금지한다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 120.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": "sa_0002" } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "source_unavailable_with_null",
+      "expect_violation": "source_ref_required",
+      "note": "원인 대상을 특정할 수 있는데 null인 payload는 계약 위반이다(§10.2-3).",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 120.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": null } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "out_of_range_with_fabricated_ref",
+      "expect_violation": "source_ref_must_be_null",
+      "note": "범위 밖 구간에 임의의 Source를 채우지 않는다(§10.2-2).",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 80.0, "end_sec": 130.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 80.0, "end_sec": 100.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 80.0, "end_sec": 100.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 100.0, "end_sec": 130.0 }, "reason": "OUT_OF_TIMELINE_RANGE", "source_ref": { "kind": "source_asset", "ref": "sa_0009" } } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "stream_unavailable_wrong_kind",
+      "expect_violation": "source_ref_kind_mismatch",
+      "note": "STREAM_UNAVAILABLE인데 source_asset을 가리키면 evidence가 「무엇이 없었는가」를 잘못 설명한다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 0.0, "end_sec": 40.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 0.0, "end_sec": 20.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 0.0, "end_sec": 20.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 20.0, "end_sec": 40.0 }, "reason": "STREAM_UNAVAILABLE", "source_ref": { "kind": "source_asset", "ref": "sa_0002" } } ],
+        "failure": null
+      }
+    },
+    {
+      "id": "uppercase_kind",
+      "expect_violation": "source_ref_kind_mismatch",
+      "note": "자산 계층 kind는 소문자 snake_case다. Consumer는 대소문자 무시 비교를 하지 않으므로 SOURCE_ASSET은 미등재 값이다.",
+      "span_resolution": {
+        "contract": "SpanResolution", "contract_version": "span-resolution/v1.2",
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 1 },
+        "requested_range": { "start_sec": 50.0, "end_sec": 120.0 },
+        "status": "PARTIAL",
+        "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 50.0, "end_sec": 60.0 }, "source_asset_ref": "sa_0001", "media_stream_ref": "ms_0001", "source_range": { "start_sec": 50.0, "end_sec": 60.0 } } ],
+        "missing_ranges": [ { "timeline_range": { "start_sec": 60.0, "end_sec": 120.0 }, "reason": "SOURCE_UNAVAILABLE", "source_ref": { "kind": "SOURCE_ASSET", "ref": "sa_0002" } } ],
+        "failure": null
+      }
+    }
+  ]
+}

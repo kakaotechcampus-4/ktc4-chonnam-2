@@ -4,6 +4,8 @@
 
 **Status:** Accepted
 
+> **후속 변경 (2026-09-08):** `analysis-scope/1.1.0` — `time_ranges[].kind: ABSOLUTE | TIMELINE_RELATIVE` 추가, relative range는 `start_ms`/`end_ms` + `timeline_ref{timeline_id, revision}`, 혼합 불허, `kind` 부재는 `ABSOLUTE`로 해석(하위 호환). Decider 유소연, 확인 서어진·김대원·정철원. 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.4(B08 방향은 `adr-data-contract-call-closure-2026-09-07.md` §4.7). 아래 본문은 당시 결정 기록이며 고치지 않았다 — 본문의 「timezone 포함 ISO8601」 서술은 1.1.0에서 `kind=ABSOLUTE`에 한정된다.
+
 > **⚠ 2026-09-05 정합성 보정 (PM · 김준영).** 본문의 `LANE_CHANGE`를 **`SOLID_LINE_LANE_CHANGE`**로 고쳤다(1곳). v4 §3-5가 baseline 4종을 `SIGNAL / CENTER_LINE_CROSSING / SOLID_LINE_LANE_CHANGE / MOTORCYCLE_HELMET_NON_USE`로 고정하고 Final 계약도 그 이름을 쓰는데 이 ADR만 옛 이름을 갖고 있었다.
 >
 > **결정 내용은 바뀌지 않았다 — 같은 값의 표기만 v4에 맞췄다.** 지원 범위 4종, 그 안에서 세 번째 항목이 「진로변경(백색 실선 침범)」인 것은 그대로다. 경위는 `adr-consistency-2026-09.md` C1-1.

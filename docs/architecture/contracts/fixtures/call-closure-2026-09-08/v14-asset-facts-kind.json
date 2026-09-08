@@ -1,0 +1,366 @@
+{
+  "_about": "자산 계층 ContractRef.kind 표기와 canonical AssetFacts 불변조건. 규칙 원문: contract-source-asset-media-stream.md §2.1·§2.2(kind 값 공간·소문자 snake_case) · §3.4(byte_size/duration_sec null) · §3.5(availability) · §6.1(불변조건) · §6.2(asset_kind ↔ asset_ref.kind 대응표) · §6.3(lineage 평탄화) · §6.4(timeline_ref/timeline_range 쌍). 결정 근거: adr/adr-data-contract-call-closure-2026-09-08.md §4.8·§4.10. 판정 매핑(availability → BLOCK/UNKNOWN, derived_role 필수성)은 evidence policy 소유이므로 이 fixture가 검사하지 않는다.",
+  "kind_value_space": [
+    "external_source",
+    "source_asset",
+    "media_stream",
+    "frame",
+    "analysis_source",
+    "remote_copy",
+    "incident_clip",
+    "derived_asset"
+  ],
+  "asset_kind_map": {
+    "SOURCE_ASSET": "source_asset",
+    "ANALYSIS_SOURCE": "analysis_source",
+    "INCIDENT_CLIP": "incident_clip",
+    "DERIVED_ASSET": "derived_asset"
+  },
+  "valid": [
+    {
+      "id": "source_asset_available",
+      "note": "AVAILABLE이면 byte_size non-null. 외부 원본이 있으면 lineage에 external_source 1건. timeline 좌표가 없으면 두 필드 모두 null.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 734003200,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "external_source", "ref": "ext_0001" } ],
+        "duration_sec": 1200.25,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "source_asset_no_parent_empty_lineage",
+      "note": "SOURCE_ASSET에 외부 원본이 없으면 lineage=[]가 정상이다 — 「모른다」가 아니라 「위가 없다」는 사실이다(§6.3 말미).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0002" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 1048576,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "incident_clip_flattened_lineage_with_timeline",
+      "note": "파생 자산 lineage는 원본까지 평탄화된다 — 중간 incident_clip 없이 clip 자신의 부모 사슬이 source_asset·external_source까지 이어진다. timeline 좌표를 주면 revision도 함께 준다.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "incident_clip", "ref": "clip_0001" },
+        "asset_kind": "INCIDENT_CLIP",
+        "derived_role": null,
+        "byte_size": 73400320,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [
+          { "kind": "source_asset", "ref": "sa_0001" },
+          { "kind": "external_source", "ref": "ext_0001" }
+        ],
+        "duration_sec": 120.0,
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 3 },
+        "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      }
+    },
+    {
+      "id": "derived_asset_report_video",
+      "note": "DERIVED_ASSET은 derived_role을 갖는다. source_refs(직접 부모)는 clip이지만 lineage는 원본까지 평탄화되어 evidence가 recording을 다시 호출하지 않아도 Source-derived를 증명한다.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "derived_asset", "ref": "da_0001" },
+        "asset_kind": "DERIVED_ASSET",
+        "derived_role": "REPORT_VIDEO",
+        "byte_size": 52428800,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [
+          { "kind": "incident_clip", "ref": "clip_0001" },
+          { "kind": "source_asset", "ref": "sa_0001" },
+          { "kind": "external_source", "ref": "ext_0001" }
+        ],
+        "duration_sec": 120.0,
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 3 },
+        "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      }
+    },
+    {
+      "id": "analysis_source_unavailable_null_size",
+      "note": "UNAVAILABLE이면 측정하지 못한 byte_size를 0으로 꾸미지 않고 null로 둔다.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "analysis_source", "ref": "as_0001" },
+        "asset_kind": "ANALYSIS_SOURCE",
+        "derived_role": null,
+        "byte_size": null,
+        "availability": "UNAVAILABLE",
+        "checked_at": "2026-09-08T00:40:00+09:00",
+        "lineage": [
+          { "kind": "source_asset", "ref": "sa_0001" }
+        ],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "unknown_availability_is_not_unavailable",
+      "note": "UNKNOWN(미확인/확인 실패)과 UNAVAILABLE(확인했고 없음/접근 불가)은 다른 값이다. 어느 outcome으로 내릴지는 evidence policy 소유.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "derived_asset", "ref": "da_0002" },
+        "asset_kind": "DERIVED_ASSET",
+        "derived_role": "PLATE_IMAGE",
+        "byte_size": null,
+        "availability": "UNKNOWN",
+        "checked_at": "2026-09-08T00:41:00+09:00",
+        "lineage": [
+          { "kind": "incident_clip", "ref": "clip_0001" },
+          { "kind": "source_asset", "ref": "sa_0001" }
+        ],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "uppercase_kind",
+      "expect_violation": "kind_not_in_value_space",
+      "note": "Draft v0.2의 대문자 표기. Consumer가 대소문자 무시 비교를 하지 않으므로 미등재 값이다(§2.2-3).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "SOURCE_ASSET", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "uppercase_kind_in_lineage",
+      "expect_violation": "kind_not_in_value_space",
+      "note": "lineage 원소의 kind에도 같은 값 공간이 적용된다.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "incident_clip", "ref": "clip_0001" },
+        "asset_kind": "INCIDENT_CLIP",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "SOURCE_ASSET", "ref": "sa_0001" } ],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "asset_kind_map_mismatch",
+      "expect_violation": "asset_kind_map_mismatch",
+      "note": "asset_kind와 asset_ref.kind는 문자열 동일성이 아니라 §6.2 대응표를 따른다 — 대응하지 않는 조합은 위반이다.",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "analysis_source", "ref": "as_0001" },
+        "asset_kind": "INCIDENT_CLIP",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "source_asset", "ref": "sa_0001" } ],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "asset_kind_not_a_facts_target",
+      "expect_violation": "asset_kind_not_in_enum",
+      "note": "media_stream·frame·external_source·remote_copy에는 임의의 asset kind를 만들지 않는다. 이런 ref의 lookup은 INVALID_REF_KIND 실패다(§6.2 말미).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "media_stream", "ref": "ms_0001" },
+        "asset_kind": "MEDIA_STREAM",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "source_asset", "ref": "sa_0001" } ],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "available_with_null_byte_size",
+      "expect_violation": "available_requires_byte_size",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": null,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "unavailable_byte_size_faked_zero",
+      "expect_violation": "byte_size_faked_zero",
+      "note": "측정하지 못한 크기를 0으로 꾸미지 않는다(§3.4).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 0,
+        "availability": "UNAVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "timeline_range_without_ref",
+      "expect_violation": "timeline_pair",
+      "note": "revision 없는 좌표는 rebase 이후 비교 대상이 사라진다(§6.4).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "incident_clip", "ref": "clip_0001" },
+        "asset_kind": "INCIDENT_CLIP",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "source_asset", "ref": "sa_0001" } ],
+        "duration_sec": 120.0,
+        "timeline_ref": null,
+        "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      }
+    },
+    {
+      "id": "timeline_ref_without_revision",
+      "expect_violation": "timeline_revision_missing",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "incident_clip", "ref": "clip_0001" },
+        "asset_kind": "INCIDENT_CLIP",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "source_asset", "ref": "sa_0001" } ],
+        "duration_sec": 120.0,
+        "timeline_ref": { "timeline_id": "tl_01" },
+        "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      }
+    },
+    {
+      "id": "derived_lineage_not_flattened",
+      "expect_violation": "lineage_missing_source_origin",
+      "note": "파생 자산 lineage에 직접 부모만 있으면 evidence가 clip → source_asset을 스스로 따라가야 한다 — B07 경계상 불가능하다(§6.3).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "derived_asset", "ref": "da_0001" },
+        "asset_kind": "DERIVED_ASSET",
+        "derived_role": "REPORT_VIDEO",
+        "byte_size": 52428800,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [ { "kind": "incident_clip", "ref": "clip_0001" } ],
+        "duration_sec": 120.0,
+        "timeline_ref": { "timeline_id": "tl_01", "revision": 3 },
+        "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      }
+    },
+    {
+      "id": "derived_lineage_empty_means_unknown",
+      "expect_violation": "lineage_missing_source_origin",
+      "note": "lineage를 모르는 상태를 정상적인 빈 배열로 표현하지 않는다 — availability=UNKNOWN 또는 lookup failure로 표면화한다(§6.3).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "analysis_source", "ref": "as_0001" },
+        "asset_kind": "ANALYSIS_SOURCE",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "checked_at_without_offset",
+      "expect_violation": "checked_at_not_offset_aware",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "derived_role_key_missing",
+      "expect_violation": "key_missing",
+      "note": "키 부재와 null을 혼용하지 않는다(§6 필드표: 키 항상 존재).",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "byte_size": 1024,
+        "availability": "AVAILABLE",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    },
+    {
+      "id": "unknown_availability_value",
+      "expect_violation": "availability_not_in_enum",
+      "asset_facts": {
+        "contract": "AssetFacts", "contract_version": "source-asset-media-stream/v1",
+        "asset_ref": { "kind": "source_asset", "ref": "sa_0001" },
+        "asset_kind": "SOURCE_ASSET",
+        "derived_role": null,
+        "byte_size": 1024,
+        "availability": "MISSING",
+        "checked_at": "2026-09-08T00:35:00+09:00",
+        "lineage": [],
+        "duration_sec": null,
+        "timeline_ref": null,
+        "timeline_range": null
+      }
+    }
+  ]
+}

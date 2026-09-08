@@ -1,0 +1,29 @@
+{
+  "_about": "CALL-13 — AnalysisRun.usage_refs[]는 파생값, 원장 UsageRecord.run_ref가 authoritative. 규칙 원문: contract-analysis-run-candidate-event.md §3 usage_refs 행·§3-4·§6-1-11, contract-usage-record.md §8-11·§8-12. 이 fixture는 의도적으로 usage_refs를 어긋나게 둔다(usage_102는 다른 run 소속, usage_103은 배열에 빠짐). 집계는 원장 run_ref 기준이어야 하고 usage_summary.total_cost는 원장 기준 합과 정합해야 한다. 금액·통화는 예시다.",
+  "analysis_run": {
+    "run_id": "run_01J_USAGE",
+    "operation": "CANDIDATE_SEARCH",
+    "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_11" },
+    "implementation": { "impl_id": "fake-search@1", "model_ref": null, "prompt_version": null, "config_version": "fixture" },
+    "outcome": "SUCCEEDED",
+    "started_at": "2026-09-02T16:00:02+09:00",
+    "completed_at": "2026-09-02T16:01:06+09:00",
+    "issues": [],
+    "usage_refs": [ "usage_101", "usage_102" ],
+    "usage_summary": { "processed_duration_ms": 300000, "token_usage": null, "latency_ms": 64000, "total_cost": { "amount": "0.30", "currency": "USD" } },
+    "contract_version": "analysis-run-candidate-event/v1.1"
+  },
+  "usage_records": [
+    { "usage_id": "usage_101", "run_ref": { "kind": "analysis_run", "ref": "run_01J_USAGE" }, "execution_ref": "exec_7001", "cost": { "amount": "0.20", "currency": "USD" } },
+    { "usage_id": "usage_102", "run_ref": { "kind": "analysis_run", "ref": "run_01J_OTHER" }, "execution_ref": "exec_7002", "cost": { "amount": "0.50", "currency": "USD" } },
+    { "usage_id": "usage_103", "run_ref": { "kind": "analysis_run", "ref": "run_01J_USAGE" }, "execution_ref": "exec_7001", "cost": { "amount": "0.10", "currency": "USD" } },
+    { "usage_id": "usage_104", "run_ref": null, "execution_ref": "exec_7003", "cost": { "amount": "0.01", "currency": "USD" } }
+  ],
+  "expected": {
+    "ledger_members_of_run": [ "usage_101", "usage_103" ],
+    "derived_members_of_run": [ "usage_101", "usage_102" ],
+    "ledger_total_cost": "0.30",
+    "derived_total_cost": "0.70",
+    "run_ref_null_only_for": [ "usage_104" ]
+  }
+}

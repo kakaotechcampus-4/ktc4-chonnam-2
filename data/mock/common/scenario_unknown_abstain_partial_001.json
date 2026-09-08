@@ -1,0 +1,112 @@
+{
+  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "module": "common",
+  "job_executions": [
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_u001_search",
+      "job_id": "job_u001_search",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:30:04+09:00",
+      "started_at": "2026-08-26T22:30:05+09:00",
+      "ended_at": "2026-08-26T22:31:20+09:00",
+      "produced": [{ "kind": "analysis_run", "ref": "run_u001" }],
+      "failure_kind": null,
+      "usage_refs": ["usage_u001_coarse"]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_u001_plate",
+      "job_id": "job_u001_plate",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:31:30+09:00",
+      "started_at": "2026-08-26T22:32:00+09:00",
+      "ended_at": "2026-08-26T22:32:08+09:00",
+      "produced": [{ "kind": "readout_run", "ref": "rr_u001_plate" }],
+      "failure_kind": null,
+      "usage_refs": ["usage_u001_plate"]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_u001_overlay",
+      "job_id": "job_u001_overlay",
+      "status": "FAILED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:31:30+09:00",
+      "started_at": "2026-08-26T22:32:08+09:00",
+      "ended_at": "2026-08-26T22:32:11+09:00",
+      "produced": [{ "kind": "readout_run", "ref": "rr_u001_overlay" }],
+      "failure_kind": "READOUT_OVERLAY_DETECTION",
+      "usage_refs": ["usage_u001_overlay"]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_u001_plate_reread",
+      "job_id": "job_u001_plate_reread",
+      "status": "QUEUED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:33:05+09:00",
+      "started_at": null,
+      "ended_at": null,
+      "produced": [],
+      "failure_kind": null,
+      "usage_refs": []
+    }
+  ],
+  "usage_records": [
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_u001_coarse",
+      "execution_ref": "exec_u001_search",
+      "run_ref": { "kind": "analysis_run", "ref": "run_u001" },
+      "case_id": "case_u001",
+      "occurred_at": "2026-08-26T22:31:20+09:00",
+      "provider_label": "gemini",
+      "operation": "SEARCH_COARSE",
+      "token_usage": { "input_tokens": 13100, "output_tokens": 980, "total_tokens": 14080 },
+      "processed_duration_sec": 1800.0,
+      "latency_ms": 61000,
+      "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" },
+      "cost": { "amount": "0.39", "currency": "USD" }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_u001_plate",
+      "execution_ref": "exec_u001_plate",
+      "run_ref": { "kind": "readout_run", "ref": "rr_u001_plate" },
+      "case_id": "case_u001",
+      "occurred_at": "2026-08-26T22:32:08+09:00",
+      "provider_label": "ocr-local",
+      "operation": "PLATE_OCR",
+      "token_usage": null,
+      "processed_duration_sec": 6.0,
+      "latency_ms": 950,
+      "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
+      "cost": { "amount": "0.00", "currency": "KRW" }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_u001_overlay",
+      "execution_ref": "exec_u001_overlay",
+      "run_ref": { "kind": "readout_run", "ref": "rr_u001_overlay" },
+      "case_id": "case_u001",
+      "occurred_at": "2026-08-26T22:32:11+09:00",
+      "provider_label": "ocr-local",
+      "operation": "OVERLAY_OCR",
+      "token_usage": null,
+      "processed_duration_sec": 1.5,
+      "latency_ms": 300,
+      "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
+      "cost": { "amount": "0.00", "currency": "KRW" }
+    }
+  ]
+}

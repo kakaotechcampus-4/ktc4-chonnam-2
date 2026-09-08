@@ -1,0 +1,41 @@
+{
+  "_about": "CALL-12 — 재판독 발주. 규칙 원문: contract-job-record-case-view.md A절 §7 「재판독 발주 규칙」·§10. 원판독(abstain, SUCCEEDED)과 동일 (case_id, kind, input_fingerprint)로 재발주하면 cache hit이므로 force_rerun=true(무조건)·새 job_id·새 execution·새 ReadoutRun. 원 ReadoutRun은 갱신되지 않는다. 인프라 재시도(STALE)는 같은 job_id·새 execution_id·attempt 증가로 다른 층위다. 'operation'·failure 값은 예시다.",
+  "original": {
+    "job_record": { "job_id": "job_71", "case_id": "case_001", "case_rev": 4, "kind": "PLATE_READ", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": false, "requested_at": "2026-09-05T09:11:50+09:00" },
+    "job_execution": { "execution_id": "exec_9101", "job_id": "job_71", "status": "SUCCEEDED", "attempt": 1, "produced": [ { "kind": "readout_run", "ref": "rr_881" }, { "kind": "plate_readout", "ref": "readout_plate_001" } ], "usage_refs": [ "usage_5521" ] },
+    "readout_run": { "run_id": "rr_881", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5521" ] },
+    "plate_readout": { "readout_id": "readout_plate_001", "run_ref": { "kind": "readout_run", "ref": "rr_881" }, "abstained": true, "abstain_reason": "FRAME_DISAGREEMENT" }
+  },
+  "evidence_need": { "kind": "PLATE_REREAD", "would_fill": "VEHICLE_NUMBER", "optional": false },
+  "reread": {
+    "job_record": { "job_id": "job_72", "case_id": "case_001", "case_rev": 5, "kind": "PLATE_READ", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": true, "requested_at": "2026-09-05T10:02:00+09:00" },
+    "job_execution": { "execution_id": "exec_9110", "job_id": "job_72", "status": "SUCCEEDED", "attempt": 1, "produced": [ { "kind": "readout_run", "ref": "rr_884" }, { "kind": "plate_readout", "ref": "readout_plate_002" } ], "usage_refs": [ "usage_5530" ] },
+    "readout_run": { "run_id": "rr_884", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5530" ] },
+    "plate_readout": { "readout_id": "readout_plate_002", "run_ref": { "kind": "readout_run", "ref": "rr_884" }, "abstained": false, "abstain_reason": null }
+  },
+  "original_after_reread": {
+    "readout_run": { "run_id": "rr_881", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5521" ] },
+    "plate_readout": { "readout_id": "readout_plate_001", "run_ref": { "kind": "readout_run", "ref": "rr_881" }, "abstained": true, "abstain_reason": "FRAME_DISAGREEMENT" }
+  },
+  "infra_retry": {
+    "note": "원판독 job이 STALE로 끝났다고 가정한 재시도 — 같은 job_id, 새 execution_id, attempt 2. 재판독과 다른 층위.",
+    "job_execution": { "execution_id": "exec_9102", "job_id": "job_71", "status": "SUCCEEDED", "attempt": 2, "produced": [ { "kind": "readout_run", "ref": "rr_885" } ], "usage_refs": [] }
+  },
+  "invalid": [
+    {
+      "id": "reread_without_force_rerun_is_cache_hit",
+      "expect_violation": "cache_hit",
+      "job_record": { "job_id": "job_79", "case_id": "case_001", "case_rev": 5, "kind": "PLATE_READ", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": false, "requested_at": "2026-09-05T10:02:00+09:00" }
+    },
+    {
+      "id": "reread_with_need_kind_as_job_kind",
+      "expect_violation": "kind_not_registered",
+      "job_record": { "job_id": "job_80", "case_id": "case_001", "case_rev": 5, "kind": "PLATE_REREAD", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": true, "requested_at": "2026-09-05T10:02:00+09:00" }
+    },
+    {
+      "id": "reread_reusing_job_id",
+      "expect_violation": "job_id_reused",
+      "job_record": { "job_id": "job_71", "case_id": "case_001", "case_rev": 5, "kind": "PLATE_READ", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": true, "requested_at": "2026-09-05T10:02:00+09:00" }
+    }
+  ]
+}

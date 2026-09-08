@@ -2,6 +2,8 @@
 
 **Status:** Accepted — 일부 판단은 후속 ADR로 정정
 
+> **후속 변경 (2026-09-07):** `usage-record/v1.1` — `run_ref`를 `ContractRef | null`(`kind ∈ {analysis_run, readout_run}`)로, 원장 authoritative, `null`=Run 없는 직접 호출. B05 종결 근거는 `adr-data-contract-call-closure-2026-09-07.md` §4.4다.
+
 > **현재 적용 범위:** `adr-consistency-followup-2026-09-06.md`가 무근거 종결·수락일·회신 의도·소비자 확인 및 통합 가능 결론을 정정한다. 아래 본문은 당시 결정 기록이며 현재 Pending을 닫는 근거가 아니다. 캐시 복원과 현재 규칙은 해당 계약 및 후속 ADR을 따른다.
 
 **Decider:** 김준영 (`common/runtime` Owner)

@@ -1,5 +1,7 @@
 # ADR-부록: JobRecord / CaseView
 
+> **후속 변경 (2026-09-07):** `case-view/v1.2` — B01·B02 종결(info_state 파생 입력 · requirements 두 객체 분리 · thumb_ref FrameRef)과 `JobRecord.kind` `OVERLAY_TIME_READ` 등재·1:1 불변조건은 `adr-data-contract-call-closure-2026-09-07.md` §4.1~§4.3·§4.9가 근거다. 아래 본문은 당시 결정 기록이며 고치지 않았다.
+
 ## ADR-부록A. `JobRecord` (Job Intent) 확정
 
 ### 1. Context

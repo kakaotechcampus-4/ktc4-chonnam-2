@@ -10,7 +10,11 @@
 
 **Accepted:** `2026-09-04`
 
-**Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`)
+**Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`) · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2(B02)·§4.6(B07)
+
+> **2026-09-07 반영.** §5.2-1의 `CaseView` projection 규칙 소유가 `contract-job-record-case-view.md`로 이관됐다(B02 종결). §4.6에 ASSET 판정 입력의 최소 자산 사실과 전달 경계를 기록했다(B07). 스키마·버전은 바뀌지 않았다.
+
+> **2026-09-08 포인터 갱신.** §4.6이 가리키는 **자산 사실의 필드 계약이 확정됐다** — canonical `AssetFacts`는 `contract-source-asset-media-stream.md` §6이 소유하고(`source-asset-media-stream/v1`, Consumer Review 종결) `availability` 3값의 부여 조건(§3.5) · `byte_size`/`duration_sec`의 nullable 규칙(§3.4) · `timeline_ref{timeline_id, revision}`와 `timeline_range{start_sec,end_sec}`의 쌍 규칙(§6.4) · `lineage[]`의 원본까지 평탄화(§6.3) · `lookup_asset_facts` 실패의 `UNKNOWN_REF`/`INVALID_REF_KIND` 구분(§6.6)이 거기에 있다. `derived_role` 등재 값 `REPORT_VIDEO`·`PLATE_IMAGE`는 `contract-analysis-source-derived.md` §7.3이다. **이 값들을 신고 규칙상 어느 outcome으로 볼지는 이 계약과 evidence policy가 소유하며 recording 계약에 고정하지 않았다.** 스키마·버전은 바뀌지 않았다. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.10.
 
 **Contract Lead / Owner:** 김준영 (`evidence`)
 
@@ -75,7 +79,7 @@ CaseView → web → USER_REVIEWED → Handoff
 
 - `EvidenceRecord`
 - `TimeResolution`
-- 신고용 Report Video / 이미지 등 derived asset metadata
+- 신고용 Report Video / 이미지 등 derived asset의 **최소 자산 사실(Asset Facts)** — `recording`이 lookup으로 제공하고 `case`가 수집해 주입한다(§4.6). `evidence`는 `recording`을 직접 호출하지 않는다
 - 신고문 template
 - 신고 규정 / Package policy
 
@@ -213,6 +217,43 @@ measurement.unit
 
 단, 한도 숫자를 Contract schema에 고정하지 않는다. 실제 규칙 수치는 `policy_ref`가 가리키는 rule data가 소유한다.
 
+## 4.6 ASSET 판정 입력 — 최소 자산 사실과 전달 경계 (2026-09-07 · B07)
+
+`category=ASSET` check는 opaque ref만으로 계산할 수 없다. `da_0001` 같은 ID는 파일 크기·존재 여부를 말해주지 않는다. 그래서 opaque ref 규칙은 유지하되 **최소 자산 사실(Asset Facts)** 을 별도 입력으로 받는다. Decider 정철원(`recording`), 확인 김준영·유소연·신유민·서어진.
+
+**이번 통합에서 `evidence`가 필요로 하는 최소 사실**
+
+```
+asset_ref
+asset kind / derived role
+byte size
+판정 시점의 존재·가용 여부
+derived-from / lineage
+duration + timeline_range   (FINAL_PACKAGE에서 사건 전후 coverage rule을 실제 적용하는 경우에만, 조건부)
+```
+
+**제외** — resolution · fps · codec · 원본 무변형 checksum · 번호판 가시성 · 화면 timestamp 표시 여부. 뒤의 둘은 recording 파일 사실이 아니라 readout observation을 근거로 `evidence`가 판정하는 항목이다(`contract-evidence-record-needs.md` §4.6·§4.7 「번호판 확정 ≠ 신고영상 가시성」·「사건시각 확정 ≠ 영상 내 표시」 분리 원칙 유지).
+
+**전달 경계**
+
+```
+case / orchestration
+        ↓
+recording asset lookup
+        ↓
+Asset Facts
+        ↓
+case / orchestration
+        ↓
+evidence.check_requirements(..., assets)
+```
+
+- `recording`이 lookup capability를 소유한다. `case`가 필요한 값을 수집해 `evidence` 입력에 주입한다. **`evidence`는 `recording`을 직접 호출하지 않는다**(§1 「evidence는 다른 모듈을 직접 호출하지 않는다」 유지).
+- `sa_`/`da_` 접두어를 파싱해 kind를 추론하지 않는다. kind/role은 정식 필드로 받는다.
+- `ReportPackage.assets.*`·`provenance.*`의 조립은 여전히 opaque ref로 충분하다. 자산 사실이 필요한 곳은 ASSET 판정만이다.
+
+**필드 계약은 여기 없다.** Asset Facts의 정확한 필드명·타입·lookup 서명은 `recording`의 자산 계약 2건(`contract-source-asset-media-stream.md` · `contract-analysis-source-derived.md`, 작성 대기)이 소유한다. 그 전까지 이 절은 **무엇이 필요하고 누가 전달하는가**만 고정하며, 필드가 없으면 임의 생성하지 않고 해당 계약을 기다린다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.6.
+
 ---
 
 # 5. 파생 Gate 규칙
@@ -245,13 +286,13 @@ AND ReportPackage exists
 
 `BLOCK / UNKNOWN`, Package 생성 실패, 필수 asset 부재이면 `ReportPackage`가 존재하지 않으므로 `PACKAGE_READY`가 성립하지 않는다.
 
-## 5.2-1 `CaseView`로의 projection — 제안/확인 대기 (B02)
+## 5.2-1 `CaseView`로의 projection — 규칙 소유는 `CaseView` (B02 종결, 2026-09-07)
 
-기존 PM 확정(R-7)을 철회한다. `CaseView`는 case 소유이며 현재 basis 선택·동일 scope 이력 선택·세 gate 표시·nullable은 case/evidence/web 합의가 필요하다. 이 절을 PM 소유 파일에 둔 것만으로 소비 계약을 확정하지 않는다.
+**이 절은 규칙을 소유하지 않는다.** 어느 report를 화면에 싣는지, 세 gate를 어떻게 구분해 보이는지는 `case` Owner(유소연)가 결정했고 `contract-job-record-case-view.md` B절 §7이 소유한다 — `requirements_evidence` / `requirements_package` 두 객체 분리, 선택 3단계(현재 `EvidenceRecord.record_ref` basis → `supersedes_ref` head → `evaluated_at` 최신), 미실행 시 `null`. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2.
 
-**검토 대상인 기존 제안 (실행 규칙으로 확정되지 않음):** FINAL_PACKAGE report가 존재하면 우선하고, 없으면 EVIDENCE report, 둘 다 없으면 null을 싣는다. 이 제안은 과거 basis의 report를 선택하거나 EVIDENCE gate를 가릴 수 있어 그대로 통합 기준으로 사용하지 않는다. 대체 선택 규칙은 이번 보정에서 정하지 않는다.
+이 계약이 그 규칙에 제공하는 것은 §3·§6의 필드다: `scope` · `basis.evidence_record_ref` · `supersedes_ref` · `evaluated_at`. **이 넷이 있어야 선택 규칙이 결정론적으로 동작한다**(§6 불변조건 3·4·9).
 
-§5.1·§5.2의 evidence/package gate 정의와 overall 값 공간은 유지한다. CaseView에 scope 필드를 둘지와 표시 방식은 Pending이다. 후속 기록: `adr/adr-consistency-followup-2026-09-06.md` §3 B02.
+과거의 「FINAL_PACKAGE report가 존재하면 우선」 제안은 철회된 상태로 종결됐다 — 과거 basis의 report를 선택하거나 `EVIDENCE` gate를 가릴 수 있어 채택되지 않았다. §5.1·§5.2의 gate 정의와 `overall` 값 공간은 그대로다.
 
 ## 5.3 `USER_REVIEWED`
 

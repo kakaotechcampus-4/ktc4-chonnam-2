@@ -1,364 +1,2486 @@
 # 03. Mock Artifact Templates
 
-이 문서의 JSON은 전부 `data/mock/`의 실제 fixture 파일에서 그대로 옮겼다(재입력하지 않았다). 서로 달라지면 fixture가 맞다. Partial 시나리오 예시는 지면 절약을 위해 파일 경로만 가리키고, 눈에 띄게 다른 값(ABSTAIN/UNKNOWN/PARTIAL 등)만 별도로 보여준다.
+아래 모든 JSON 예시는 손으로 다시 쓴 것이 아니라 `data/mock/` 아래 실제로 생성된 fixture 파일에서 그대로 발췌했다(`scripts/build_artifact_templates_doc.py`가 기계적으로 추출). 문서와 실제 fixture가 갈라질 수 없다.
 
-## Contract Inventory
+## recording
 
-| # | Contract | Producer | Consumer | 주요 역할 | 다른 Contract 참조 |
-| - | --- | --- | --- | --- | --- |
-| 1 | RecordingTimeline | recording (정철원) | search, case, readout, evidence | 여러 SourceAsset을 하나의 논리 시간축에 배치 | TimeSourceCandidate, SourceAsset/MediaStream(미작성) |
-| 2 | AssetSpan | recording | search, readout, case, evidence | Timeline 구간 → 실제 Source+Stream+local range 매핑 | SourceAsset/MediaStream(미작성) |
-| 3 | SpanResolution | recording (`resolve_span()`) | search, evidence | 구간 요청 결과(성공/부분/실패)를 AssetSpan[]+MissingRange[]로 표현 | RecordingTimeline, AssetSpan |
-| 4 | TimeSourceCandidate | recording | evidence | Source 위치 ↔ 절대시각 관찰 후보 | RecordingTimeline |
-| 5 | AnalysisScope | case+search 공동 (유소연/서어진) | search | case 상태 → search 입력 파라미터 경계 계약 | (case_id 등 의도적으로 미포함) |
-| 6 | AnalysisRun | search (서어진) | case, eval | search public capability 실행 1회 기록 | AnalysisScope, UsageRecord |
-| 7 | CandidateEvent | search | case, eval | Recording Timeline 기준 사건 후보 span | AnalysisRun, RecordingTimeline |
-| 8 | VisualEvidence | search (서어진) | evidence, readout | Fine/Classification 시각 관찰 (법적 판단 없음) | AnalysisRun, CandidateEvent |
-| 9 | PlateReadout | readout (신유민) | case→evidence, eval | 번호판 판독 관찰(association+consensus+abstain) | ReadoutRun, Observation |
-| 10 | OverlayTimeReadout | readout | case→evidence, eval | 화면 타임스탬프 OCR+검증 | ReadoutRun, Observation |
-| 11 | ReadoutRun | readout (신유민) | case, eval | 판독 실행 1회 성공/부분/실패 기록 | PlateReadout/OverlayTimeReadout, UsageRecord |
-| 12 | Observation\<T\> | recording/search/readout 공통 envelope | evidence, case(projection) | 관찰된 사실의 공통 의미 봉투 | AnalysisRun(run_ref) |
-| 13 | TimeResolution | evidence (김준영) | case, web(projection) | recording/readout 시간 관찰 + 사용자 보정을 비교해 최종 occurred_at 확정 | Observation, CorrectionRecord(Draft) |
-| 14 | EvidenceRecord | evidence (김준영) | case, web(projection) | 현재 authoritative confirmed values의 immutable snapshot | CandidateEvent, VisualEvidence, AssetSpan, TimeResolution, CorrectionRecord(Draft) |
-| 15 | EvidenceNeeds | evidence | case | 추가 관찰/판독 필요를 declarative하게 전달 | EvidenceRecord |
-| 16 | RequirementReport | evidence (김준영) | case, web(projection) | 신고 규칙 적용 판정(PASS/WARN/BLOCK/UNKNOWN) | EvidenceRecord |
-| 17 | ReportPackage | evidence (김준영) | case, web(projection) | 안전신문고 handoff용 confirmed 값+자산 묶음 | EvidenceRecord, RequirementReport |
-| 18 | JobRecord (Job Intent) | case (유소연) | common/runtime | 발주 의도(실행 상태 아님) | AnalysisScope |
-| 19 | JobExecution | common/runtime (김준영/정철원) | case, web(projection), eval | 실행 lifecycle(QUEUED~STALE) | JobRecord, UsageRecord |
-| 20 | UsageRecord | common/runtime (김준영) | case, eval, search | 외부 유료 호출 1건의 사용량+가격 | JobExecution, AnalysisRun |
-| 21 | CaseView | case (유소연) | web(유일한 read contract), eval | web이 화면을 그리기 위한 유일한 통합 상태(safe projection) | 거의 전부(간접) |
-| — | CorrectionRecord | case (유소연) | evidence | **Draft** — 사용자 직접 수정 이력 | TimeResolution, EvidenceRecord |
-| — | SourceAsset/MediaStream/FrameRef | recording | (미작성) | opaque id만 존재 | — |
-| — | AnalysisSource/RemoteCopy/IncidentClip/DerivedAsset | recording | (미작성) | opaque id만 존재 | — |
+### SourceAsset (정상)
 
-## 데이터 흐름
+**Contract**: `source-asset-media-stream/v1`  
+**출처**: recording/scenario_happy_001.json → source_assets[0] (실제 파일에서 그대로 발췌)
 
-```
-AnalysisScope ─────────────────────────────┐
-                                            ▼
-RecordingTimeline ──▶ SpanResolution ──▶ AnalysisRun ──▶ CandidateEvent ──▶ VisualEvidence
-     │                                                         │                │
-     ▼                                                         ▼                ▼
-TimeSourceCandidate                                    PlateReadout ◀── ReadoutRun ──▶ OverlayTimeReadout
-     │                                                         │                │
-     └──────────────────────┬──────────────────────────────────┴────────────────┘
-                             ▼
-                       Observation<T> (공통 envelope, GPS 등)
-                             │
-                             ▼
-                      TimeResolution ──▶ EvidenceRecord ──▶ EvidenceNeeds
-                                              │                  │
-                                              ▼                  │ (optional=false면 case가 JobIntent 자동 발주)
-                                       RequirementReport ◀────────┘
-                                              │
-                                              ▼ (scope=FINAL_PACKAGE & PASS/WARN)
-                                        ReportPackage
-                                              │
-        JobRecord ──▶ JobExecution ──▶ UsageRecord (case가 발주, common/runtime이 실행)
-                                              │
-                                              ▼
-                                          CaseView  ──▶ web (유일한 read contract)
-```
-
----
-
-## RecordingTimeline
-
-- Producer: `recording`(정철원) · Consumer: `search`/`case`/`readout`/`evidence`
-- 정상 예시 (`data/mock/recording/timeline.happy_001.json`):
 ```json
 {
-  "contract": "RecordingTimeline", "contract_version": "recording-timeline/v1",
-  "timeline_id": "tl_h001", "revision": 1,
-  "time_basis": { "mode": "ABSOLUTE_AND_RELATIVE",
-    "working_anchor": { "value": "2026-08-24T18:20:00+09:00", "source_candidate_ref": "tsc_h001_filename", "status": "OK" } },
-  "time_source_candidates": ["tsc_h001_filename"],
-  "source_placements": [ { "source_asset_ref": "sa_h001_01", "timeline_start_sec": 0.0, "timeline_end_sec": 900.0,
-    "media_stream_refs": ["ms_h001_01", "ms_h001_02", "ms_h001_03"] } ],
-  "gaps": [], "timeline_status": "USABLE", "produced_by": "recording"
+  "contract": "SourceAsset",
+  "contract_version": "source-asset-media-stream/v1",
+  "source_asset_ref": "sa_h001_front",
+  "asset_kind": "SOURCE_ASSET",
+  "external_source_ref": {
+    "kind": "external_source",
+    "ref": "ext_h001_front"
+  },
+  "media_stream_refs": [
+    "ms_h001_front_v",
+    "ms_h001_front_a"
+  ],
+  "byte_size": 734003200,
+  "availability": "AVAILABLE",
+  "duration_sec": 1200.0
 }
 ```
-- 대표 Partial 예시: `data/mock/recording/timeline.partial_001.json` (동일 구조, `timeline_id=tl_p001`)
-- 핵심 불변조건: `revision>=1`, rebase 시 ID 유지·revision만 증가, `working_anchor`는 final `occurred_at`이 아님
-- 사용 Scenario: happy_001, partial_001
 
-## AssetSpan / SpanResolution
+### RecordingTimeline (USABLE)
 
-- Producer: `recording`(`resolve_span()`) · Consumer: `search`, `evidence`
-- 정상 예시(COMPLETE, `data/mock/recording/span_resolution.happy_001.json`):
+**Contract**: `recording-timeline/v1`  
+**출처**: recording/scenario_happy_001.json → recording_timelines[0] (실제 파일에서 그대로 발췌)
+
 ```json
 {
-  "contract": "SpanResolution", "contract_version": "span-resolution/v1",
-  "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-  "requested_range": { "start_sec": 690.0, "end_sec": 708.0 }, "status": "COMPLETE",
-  "spans": [ { "sequence": 0, "timeline_range": { "start_sec": 690.0, "end_sec": 708.0 },
-    "source_asset_ref": "sa_h001_01", "media_stream_ref": "ms_h001_01",
-    "source_range": { "start_sec": 690.0, "end_sec": 708.0 } } ],
-  "missing_ranges": []
+  "contract": "RecordingTimeline",
+  "contract_version": "recording-timeline/v1",
+  "timeline_id": "tl_h001",
+  "revision": 1,
+  "time_basis": {
+    "mode": "ABSOLUTE_AND_RELATIVE",
+    "working_anchor": {
+      "value": "2026-08-24T18:00:00+09:00",
+      "source_candidate_ref": "tsc_h001_filename",
+      "status": "OK"
+    }
+  },
+  "time_source_candidates": [
+    "tsc_h001_filename"
+  ],
+  "source_placements": [
+    {
+      "source_asset_ref": "sa_h001_front",
+      "timeline_start_sec": 0.0,
+      "timeline_end_sec": 1200.0,
+      "media_stream_refs": [
+        "ms_h001_front_v",
+        "ms_h001_front_a"
+      ]
+    },
+    {
+      "source_asset_ref": "sa_h001_rear",
+      "timeline_start_sec": 0.0,
+      "timeline_end_sec": 1200.0,
+      "media_stream_refs": [
+        "ms_h001_rear_v"
+      ]
+    }
+  ],
+  "gaps": [],
+  "timeline_status": "USABLE",
+  "produced_by": "recording"
 }
 ```
-- 대표 Partial 예시(`data/mock/recording/span_resolution.partial_001.json`) — `status=PARTIAL`, `missing_ranges`에 `SOURCE_UNAVAILABLE` 1건 포함
-- 핵심 불변조건: `COMPLETE`면 `missing_ranges=[]`, `PARTIAL`이면 둘 다 비어있지 않음, `FAILED`면 `spans=[]`
-- 사용 Scenario: happy_001(COMPLETE), partial_001(PARTIAL)
 
-## TimeSourceCandidate
+### IncidentClip
 
-- Producer: `recording` · Consumer: `evidence`
-- 정상 예시(`data/mock/recording/time_source_candidates.happy_001.json`, 배열 1건):
+**Contract**: `analysis-source-derived/v1`  
+**출처**: recording/scenario_happy_001.json → incident_clips[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "candidate_id": "tsc_h001_filename", "source_kind": "FILENAME", "source_detail": "MDR_YYMMDD_HHMMSS.AVI",
-  "value": "2026-08-24T18:20:00+09:00", "applies_to": { "source_asset_ref": "sa_h001_01", "source_offset_sec": 0.0 },
-  "observation_status": "OK", "producer_checks": { "parse_valid": true },
-  "provenance": { "producer": "recording", "observed_from": "MDR_260824_182000.AVI" } }
+{
+  "contract": "IncidentClip",
+  "contract_version": "analysis-source-derived/v1",
+  "incident_clip_ref": "clip_h001",
+  "asset_kind": "INCIDENT_CLIP",
+  "source_provenance": {
+    "timeline_ref": {
+      "timeline_id": "tl_h001",
+      "revision": 1
+    },
+    "requested_range": {
+      "start_sec": 300.0,
+      "end_sec": 420.0
+    },
+    "asset_spans": [
+      {
+        "sequence": 0,
+        "timeline_range": {
+          "start_sec": 300.0,
+          "end_sec": 420.0
+        },
+        "source_asset_ref": "sa_h001_front",
+        "media_stream_ref": "ms_h001_front_v",
+        "source_range": {
+          "start_sec": 300.0,
+          "end_sec": 420.0
+        }
+      }
+    ]
+  },
+  "media_stream_refs": [
+    "ms_h001_front_v"
+  ],
+  "byte_size": 36700160,
+  "availability": "AVAILABLE",
+  "duration_sec": 120.0,
+  "timeline_ref": {
+    "timeline_id": "tl_h001",
+    "revision": 1
+  },
+  "timeline_range": {
+    "start_sec": 300.0,
+    "end_sec": 420.0
+  }
+}
 ```
-- 핵심 불변조건: 실제 시간값이 있을 때만 생성(값 없음은 별도로 `TimeSourceCheck`가 표현하며 이번 Pack엔 별도 fixture로 만들지 않았다 — 두 시나리오 모두 filename time이 존재하는 케이스라서), numeric confidence 없음, immutable
-- 사용 Scenario: happy_001, partial_001
 
-## AnalysisScope
+### TimeSourceCandidate ×2 (충돌하는 두 시각 후보)
 
-- Producer: `case`+`search` 공동(유소연/서어진) · Consumer: `search`
-- 정상 예시(`data/mock/search/analysis_scope.happy_001.json`):
+**Contract**: `recording-timeline/v1`  
+**출처**: recording/scenario_unknown_abstain_partial_001.json → time_source_candidates (실제 파일에서 그대로 발췌)
+
 ```json
-{ "scope_id": "scope_h001", "time_ranges": [ { "start": "2026-08-24T09:00:00Z", "end": "2026-08-24T09:40:00Z" } ],
-  "target_event_types": ["SOLID_LINE_LANE_CHANGE"], "hint": { "vehicle": "흰색 SUV", "free_text": null },
-  "budget": { "max_cost_krw": 300, "max_latency_sec": 180 }, "contract_version": "1.0.0" }
+[
+  {
+    "candidate_id": "tsc_u001_filename",
+    "source_kind": "FILENAME",
+    "source_detail": "MDR_260826_221000.AVI",
+    "value": "2026-08-26T22:10:00+09:00",
+    "applies_to": {
+      "source_asset_ref": "sa_u001",
+      "source_offset_sec": 0.0
+    },
+    "observation_status": "OK",
+    "producer_checks": {
+      "parse_valid": true
+    },
+    "provenance": {
+      "producer": "recording",
+      "observed_from": "MDR_260826_221000.AVI"
+    }
+  },
+  {
+    "candidate_id": "tsc_u001_filemeta",
+    "source_kind": "FILE_METADATA",
+    "source_detail": "container creation_time atom",
+    "value": "2026-08-26T22:13:00+09:00",
+    "applies_to": {
+      "source_asset_ref": "sa_u001",
+      "source_offset_sec": 0.0
+    },
+    "observation_status": "OK",
+    "producer_checks": {
+      "parse_valid": true
+    },
+    "provenance": {
+      "producer": "recording",
+      "observed_from": "container metadata"
+    }
+  }
+]
 ```
-- Partial 예시(`data/mock/search/analysis_scope.partial_001.json`) — `hint.vehicle=null`(차량 힌트 없음), `target_event_types=["SIGNAL"]`
-- 핵심 불변조건: `case_id`/`selection_rev`/파일 참조/위치를 절대 포함하지 않음, `time_ranges>=1`, `budget`은 scope 전체 단일값
-- 사용 Scenario: happy_001, partial_001
 
-## AnalysisRun
+## search
 
-- Producer: `search`(서어진) · Consumer: `case`, `eval`
-- 정상 예시(SUCCEEDED, `data/mock/search/analysis_run.happy_001.json`):
+### AnalysisRun + CandidateEvent (정상, 후보 1건)
+
+**Contract**: `analysis-run-candidate-event/v1.1`  
+**출처**: search/scenario_happy_001.json → analysis_run_candidate_events[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "run_id": "run_h001_search", "operation": "CANDIDATE_SEARCH", "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_h001" },
-  "implementation": { "impl_id": "gemini-candidate-search@c7", "model_ref": "gemini-3.7-flash", "prompt_version": "coarse-c7", "config_version": "search-v2" },
-  "outcome": "SUCCEEDED", "started_at": "2026-08-24T18:25:02+09:00", "completed_at": "2026-08-24T18:26:06+09:00",
-  "issues": [], "usage_refs": ["usage_h001_1"],
-  "usage_summary": { "processed_duration_ms": 300000, "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 }, "latency_ms": 64000, "total_cost": { "amount": "0.42", "currency": "USD" } },
-  "contract_version": "analysis-run-candidate-event/v1" }
+{
+  "analysis_run": {
+    "run_id": "run_h001",
+    "operation": "CANDIDATE_SEARCH",
+    "input_ref": {
+      "kind": "ANALYSIS_SCOPE",
+      "ref": "scope_h001"
+    },
+    "implementation": {
+      "impl_id": "gemini-candidate-search@c7",
+      "model_ref": "gemini-3.7-flash",
+      "prompt_version": "coarse-c7",
+      "config_version": "search-v2"
+    },
+    "outcome": "SUCCEEDED",
+    "started_at": "2026-08-24T18:20:05+09:00",
+    "completed_at": "2026-08-24T18:21:10+09:00",
+    "issues": [],
+    "usage_refs": [
+      "usage_h001_coarse"
+    ],
+    "usage_summary": {
+      "processed_duration_ms": 1200000,
+      "token_usage": {
+        "input_tokens": 14200,
+        "output_tokens": 1200,
+        "total_tokens": 15400
+      },
+      "latency_ms": 65000,
+      "total_cost": {
+        "amount": "0.42",
+        "currency": "USD"
+      }
+    },
+    "contract_version": "analysis-run-candidate-event/v1.1"
+  },
+  "candidates": [
+    {
+      "candidate_id": "candidate_h001",
+      "run_id": "run_h001",
+      "span": {
+        "timeline_id": "tl_h001",
+        "timeline_revision": 1,
+        "start_ms": 300000,
+        "end_ms": 420000,
+        "representative_ms": 312480
+      },
+      "rank": 1,
+      "ranking_score": 0.86,
+      "event_type_hint": "SOLID_LINE_LANE_CHANGE",
+      "summary": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+      "uncertainties": [],
+      "thumbnail_ref": "fr_h001_thumb"
+    }
+  ]
+}
 ```
-- Partial 예시(`data/mock/search/analysis_run.partial_001.json`) — `outcome="PARTIAL"`, `issues`에 `SUBRANGE_PROVIDER_TIMEOUT` 1건
-- 핵심 불변조건: `completed_at>=started_at`, `FAILED`는 usable Candidate 금지, `PARTIAL`은 `issues.length>=1`
-- 사용 Scenario: happy_001(SUCCEEDED), partial_001(PARTIAL)
 
-## CandidateEvent
+### VisualEvidence
 
-- Producer: `search` · Consumer: `case`, `eval`
-- 정상 예시(`data/mock/search/candidate_events.happy_001.json`, 배열 1건):
+**Contract**: `visual-evidence/v1.0`  
+**출처**: search/scenario_happy_001.json → visual_evidences[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "candidate_id": "cand_h001", "run_id": "run_h001_search",
-  "span": { "timeline_id": "tl_h001", "start_ms": 690000, "end_ms": 708000, "representative_ms": 698000 },
-  "rank": 1, "ranking_score": 0.86, "event_type_hint": "SOLID_LINE_LANE_CHANGE",
-  "summary": "흰색 SUV가 백색 실선 구간에서 인접 차로로 진입", "uncertainties": [], "thumbnail_ref": "fr_h001_thumb" }
+{
+  "schema_version": "visual-evidence/v1.0",
+  "visual_evidence_id": "ve_h001",
+  "run_id": "run_h001",
+  "input_ref": {
+    "kind": "incident_clip",
+    "ref": "clip_h001"
+  },
+  "candidate_id": "candidate_h001",
+  "verification": "OBSERVED",
+  "visual_event_type": "SOLID_LINE_LANE_CHANGE",
+  "target": {
+    "association_status": "MATCHED",
+    "described_as": "흰색 SUV",
+    "match_with_hint": true,
+    "association_confidence": 0.84,
+    "track_ref": null,
+    "evidence_refs": [
+      "fr_h001_thumb"
+    ]
+  },
+  "primitives": [
+    {
+      "kind": "WHITE_SOLID_LINE",
+      "state": "PRESENT",
+      "confidence": 0.9,
+      "evidence_refs": [
+        "fr_h001_thumb"
+      ]
+    }
+  ],
+  "temporal_facts": [
+    {
+      "at_offset_ms": 12480,
+      "fact": "TARGET_CROSSES_LINE",
+      "evidence_refs": [
+        "fr_h001_thumb"
+      ]
+    }
+  ],
+  "uncertainties": [],
+  "legal_status": null
+}
 ```
-- Partial 예시(`data/mock/search/candidate_events.partial_001.json`) — `ranking_score=0.62`, `uncertainties=["대상 차량 식별 모호"]`
-- 핵심 불변조건: `run_id`는 생성한 AnalysisRun과 일치, `start_ms<end_ms`, `rank`는 1부터 중복 없이
-- 사용 Scenario: happy_001, partial_001
 
-## VisualEvidence
+### AnalysisRun — 결과 없음(candidates=[], outcome=SUCCEEDED)
 
-- Producer: `search`(서어진) · Consumer: `case`→`evidence`/`readout`
-- 정상 예시(OBSERVED+MATCHED, `data/mock/search/visual_evidence.happy_001.json`):
+**Contract**: `analysis-run-candidate-event/v1.1`  
+**출처**: search/scenario_empty_001.json → analysis_run_candidate_events[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "schema_version": "visual-evidence/v1.0", "visual_evidence_id": "ve_h001", "run_id": "run_h001_search",
-  "input_ref": "analysis-input:case_happy_001", "candidate_id": "cand_h001",
-  "verification": "OBSERVED", "visual_event_type": "SOLID_LINE_LANE_CHANGE",
-  "target": { "association_status": "MATCHED", "described_as": "흰색 SUV", "match_with_hint": true, "association_confidence": 0.83, "track_ref": null, "evidence_refs": ["fr_h001_a"] },
-  "primitives": [ { "kind": "WHITE_SOLID_LINE", "state": "PRESENT", "confidence": 0.9, "evidence_refs": ["fr_h001_a"] } ],
-  "temporal_facts": [ { "at_offset_ms": 698000, "fact": "TARGET_CROSSES_LINE", "evidence_refs": ["fr_h001_a"] } ],
-  "uncertainties": [], "legal_status": null }
+{
+  "analysis_run": {
+    "run_id": "run_e001",
+    "operation": "CANDIDATE_SEARCH",
+    "input_ref": {
+      "kind": "ANALYSIS_SCOPE",
+      "ref": "scope_e001"
+    },
+    "implementation": {
+      "impl_id": "gemini-candidate-search@c7",
+      "model_ref": "gemini-3.7-flash",
+      "prompt_version": "coarse-c7",
+      "config_version": "search-v2"
+    },
+    "outcome": "SUCCEEDED",
+    "started_at": "2026-08-25T07:30:05+09:00",
+    "completed_at": "2026-08-25T07:31:02+09:00",
+    "issues": [],
+    "usage_refs": [
+      "usage_e001_coarse"
+    ],
+    "usage_summary": {
+      "processed_duration_ms": 1800000,
+      "token_usage": {
+        "input_tokens": 9800,
+        "output_tokens": 420,
+        "total_tokens": 10220
+      },
+      "latency_ms": 57000,
+      "total_cost": {
+        "amount": "0.31",
+        "currency": "USD"
+      }
+    },
+    "contract_version": "analysis-run-candidate-event/v1.1"
+  },
+  "candidates": []
+}
 ```
-- Partial 예시(`data/mock/search/visual_evidence.partial_001.json`) — `target.association_status="AMBIGUOUS"`, `uncertainties`에 `TARGET_AMBIGUOUS` 1건
-- 핵심 불변조건: `legal_status`는 항상 null, `OBSERVED`면 `visual_event_type != null`, `track_ref==null`도 정상
-- 사용 Scenario: happy_001(MATCHED), partial_001(AMBIGUOUS)
 
-## ReadoutRun
+## readout
 
-- Producer: `readout`(신유민) · Consumer: `case`, `eval`
-- 정상 예시(`data/mock/readout/readout_runs.happy_001.json`, 배열 2건 중 1건):
+### PlateReadout (정상, abstain 없음)
+
+**Contract**: `plate-readout/v1.2`  
+**출처**: readout/scenario_happy_001.json → plate_readouts[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "run_id": "rr_h001_plate", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null,
-  "usage_refs": ["usage_h001_2"], "started_at": "2026-08-24T18:31:00+09:00", "ended_at": "2026-08-24T18:31:07+09:00" }
+{
+  "contract": "PlateReadout",
+  "contract_version": "plate-readout/v1.2",
+  "readout_id": "readout_h001_plate",
+  "run_ref": {
+    "kind": "readout_run",
+    "ref": "rr_h001_plate"
+  },
+  "case_id": "case_h001",
+  "candidate_id": "candidate_h001",
+  "input_ref": {
+    "incident_clip_ref": "clip_h001",
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "target_association": {
+    "status": "ASSOCIATED",
+    "target_hint_used": true,
+    "track_ref": "track_h001",
+    "association_method": "TARGET_HINT_WITH_FALLBACK",
+    "associated_region": {
+      "frame_ref": "fr_h001_plate1",
+      "bbox_xywh": [
+        820,
+        410,
+        176,
+        68
+      ]
+    },
+    "evidence": [
+      {
+        "kind": "SPATIAL_PROXIMITY",
+        "detail": "candidate target region overlaps selected track"
+      },
+      {
+        "kind": "MULTI_FRAME_CONTINUITY",
+        "detail": "similar plate crop appears across sampled frames"
+      }
+    ]
+  },
+  "observation": {
+    "contract_version": "observation/v1",
+    "value": "12가3456",
+    "status": "OK",
+    "source": {
+      "kind": "readout.plate_ocr"
+    },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_h001_plate"
+      }
+    }
+  },
+  "consensus": {
+    "text": "12가3456",
+    "disagree_positions": [],
+    "method": "MULTI_FRAME"
+  },
+  "abstained": false,
+  "abstain_reason": null,
+  "best_frame": {
+    "frame_ref": "fr_h001_plate1",
+    "crop_ref": "crop_h001_001",
+    "quality": {
+      "plate_px_height": 44,
+      "sharpness": 0.87
+    }
+  },
+  "frame_results": [
+    {
+      "frame_ref": "fr_h001_plate1",
+      "crop_ref": "crop_h001_001",
+      "text": "12가3456",
+      "confidence": 0.91
+    },
+    {
+      "frame_ref": "fr_h001_plate2",
+      "crop_ref": "crop_h001_002",
+      "text": "12가3456",
+      "confidence": 0.88
+    }
+  ]
+}
 ```
-- Partial 예시(`data/mock/readout/readout_runs.partial_001.json`) — **`outcome`은 여전히 `SUCCEEDED`다**(abstain은 실패가 아님, §9 불변조건 5번)
-- 핵심 불변조건: `abstained+reason`은 실패가 아니다 — SUCCEEDED로 센다. `PARTIAL`/`FAILED`만 `failure` 필수
-- 사용 Scenario: happy_001, partial_001
 
-## PlateReadout
+### OverlayTimeReadout (정상)
 
-- Producer: `readout` · Consumer: `case`→`evidence`, `eval`
-- 정상(비abstain) 예시(`data/mock/readout/plate_readout.happy_001.json`, 요약):
+**Contract**: `overlay-time-readout/v1.2`  
+**출처**: readout/scenario_happy_001.json → overlay_time_readouts[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "readout_id": "readout_h001_plate", "case_id": "case_happy_001", "candidate_id": "cand_h001",
-  "observation": { "kind": "PLATE", "status": "OK", "value": "12가 3476", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
-  "consensus": { "text": "12가 3476", "disagree_positions": [], "method": "MULTI_FRAME" },
-  "abstained": false, "abstain_reason": null }
+{
+  "contract": "OverlayTimeReadout",
+  "contract_version": "overlay-time-readout/v1.2",
+  "readout_id": "readout_h001_overlay",
+  "run_ref": {
+    "kind": "readout_run",
+    "ref": "rr_h001_overlay"
+  },
+  "case_id": "case_h001",
+  "candidate_id": "candidate_h001",
+  "input_ref": {
+    "incident_clip_ref": "clip_h001",
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "observation": {
+    "contract_version": "observation/v1",
+    "value": "2026-08-24T18:05:12+09:00",
+    "status": "OK",
+    "source": {
+      "kind": "readout.overlay_ocr"
+    },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_h001_overlay"
+      }
+    }
+  },
+  "validation": {
+    "format_ok": true,
+    "monotonic_ok": true,
+    "duration_match_ok": true,
+    "sample_count": 3
+  },
+  "samples": [
+    {
+      "frame_ref": "fr_h001_thumb",
+      "offset_sec": 12.48,
+      "raw_text": "2026-08-24 18:05:12",
+      "parsed_at": "2026-08-24T18:05:12+09:00"
+    },
+    {
+      "frame_ref": "fr_h001_plate1",
+      "offset_sec": 13.1,
+      "raw_text": "2026-08-24 18:05:13",
+      "parsed_at": "2026-08-24T18:05:13+09:00"
+    },
+    {
+      "frame_ref": "fr_h001_plate2",
+      "offset_sec": 13.6,
+      "raw_text": "2026-08-24 18:05:13",
+      "parsed_at": "2026-08-24T18:05:13+09:00"
+    }
+  ]
+}
 ```
-- ABSTAIN 예시(`data/mock/readout/plate_readout.partial_001.json`, 요약):
+
+### PlateReadout — ABSTAIN (target_association=AMBIGUOUS)
+
+**Contract**: `plate-readout/v1.2`  
+**출처**: readout/scenario_unknown_abstain_partial_001.json → plate_readouts[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "readout_id": "readout_p001_plate",
-  "observation": { "kind": "PLATE", "status": "NEEDS_REVIEW", "value": "12나 34?6", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
-  "consensus": { "text": "12나 34?6", "disagree_positions": [5], "method": "MULTI_FRAME" },
-  "abstained": true, "abstain_reason": "FRAME_DISAGREEMENT" }
+{
+  "contract": "PlateReadout",
+  "contract_version": "plate-readout/v1.2",
+  "readout_id": "readout_u001_plate",
+  "run_ref": {
+    "kind": "readout_run",
+    "ref": "rr_u001_plate"
+  },
+  "case_id": "case_u001",
+  "candidate_id": "candidate_u001",
+  "input_ref": {
+    "incident_clip_ref": "clip_u001",
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "target_association": {
+    "status": "AMBIGUOUS",
+    "target_hint_used": true,
+    "track_ref": null,
+    "association_method": "TARGET_HINT_WITH_FALLBACK",
+    "associated_region": {
+      "frame_ref": "fr_u001_plate1",
+      "bbox_xywh": [
+        640,
+        500,
+        96,
+        40
+      ]
+    },
+    "evidence": [
+      {
+        "kind": "SPATIAL_PROXIMITY",
+        "detail": "two candidate regions overlap similarly with selected track"
+      }
+    ]
+  },
+  "observation": {
+    "contract_version": "observation/v1",
+    "value": "17나28?4",
+    "status": "NEEDS_REVIEW",
+    "source": {
+      "kind": "readout.plate_ocr"
+    },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_u001_plate"
+      }
+    }
+  },
+  "consensus": {
+    "text": "17나28?4",
+    "disagree_positions": [
+      5
+    ],
+    "method": "MULTI_FRAME"
+  },
+  "abstained": true,
+  "abstain_reason": "FRAME_DISAGREEMENT",
+  "best_frame": {
+    "frame_ref": "fr_u001_plate1",
+    "crop_ref": "crop_u001_001",
+    "quality": {
+      "plate_px_height": 24,
+      "sharpness": 0.44
+    }
+  },
+  "frame_results": [
+    {
+      "frame_ref": "fr_u001_plate1",
+      "crop_ref": "crop_u001_001",
+      "text": "17나2804",
+      "confidence": 0.41
+    },
+    {
+      "frame_ref": "fr_u001_plate2",
+      "crop_ref": "crop_u001_002",
+      "text": "17나2894",
+      "confidence": 0.38
+    }
+  ]
+}
 ```
-- 핵심 불변조건: single-frame confidence만으로 자동 확정 금지, 애매하면 abstain
-- 사용 Scenario: happy_001(비abstain), partial_001(ABSTAIN)
 
-## OverlayTimeReadout
+### ReadoutRun — 완전 실패 (결과 객체 자체가 생성되지 않음)
 
-- Producer: `readout` · Consumer: `case`→`evidence`, `eval`
-- 정상 예시(`data/mock/readout/overlay_time_readout.happy_001.json`, 요약):
+**Contract**: `readout-run/v1`  
+**출처**: readout/scenario_unknown_abstain_partial_001.json → readout_runs[1] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "readout_id": "readout_h001_overlay",
-  "observation": { "kind": "OVERLAY_TIMESTAMP", "status": "OK", "value": "2026-08-24T18:31:30+09:00", "source": "VIDEO_OVERLAY_OCR" },
-  "validation": { "format_ok": true, "monotonic_ok": true, "duration_match_ok": true, "sample_count": 5 } }
+{
+  "contract": "ReadoutRun",
+  "contract_version": "readout-run/v1",
+  "run_id": "rr_u001_overlay",
+  "operation": "OVERLAY_TIME_READ",
+  "outcome": "FAILED",
+  "failure": {
+    "kind": "OVERLAY_DETECTION",
+    "code": "NO_OVERLAY_PRESENT"
+  },
+  "usage_refs": [
+    "usage_u001_overlay"
+  ],
+  "started_at": "2026-08-26T22:32:08+09:00",
+  "ended_at": "2026-08-26T22:32:11+09:00"
+}
 ```
-- Partial 예시(`data/mock/readout/overlay_time_readout.partial_001.json`) — 이 Scenario에서도 overlay 자체는 OK(시간은 성공하는 케이스로 설계)
-- 핵심 불변조건: 최종 occurred_at 선택은 evidence/TimeResolution 책임, overlay 불확실은 filename candidate를 버리는 이유가 아님
-- 사용 Scenario: happy_001, partial_001
 
-## Observation\<T\>
+## evidence
 
-- Producer: `recording`/`search`/`readout` 공통 envelope · Consumer: `evidence`, `case`(projection)
-- 두 Scenario 모두 GPS UNKNOWN 예시를 썼다(이 프로젝트의 대시캠 소스에 GPS 스트림이 없다고 가정, `data/mock/evidence/observations.happy_001.json`):
+### TimeResolution (status=OK, 검증된 Overlay)
+
+**Contract**: `time-resolution/v1`  
+**출처**: evidence/scenario_happy_001.json → time_resolutions[0] (실제 파일에서 그대로 발췌)
+
 ```json
-[ { "contract_version": "observation/v1", "value": null, "status": "UNKNOWN",
-    "source": { "kind": "recording.gps_stream" }, "support_refs": [], "produced_by": { "module": "recording" },
-    "reason": { "code": "recording.gps.source_absent" } } ]
-```
-- 핵심 불변조건: `OK`면 `value!=null`, `UNKNOWN/ERROR/NOT_APPLICABLE`이면 `value==null`, `ABSTAIN`은 공통 status에 없음(readout 도메인 전용)
-- 사용 Scenario: happy_001, partial_001 (둘 다 UNKNOWN — GPS 정상 관찰 예시는 이번 Pack에 없음, v1에서 추가 권장)
-
-## TimeResolution
-
-- Producer: `evidence`(김준영) · Consumer: `case`, `web`(projection)
-- 정상 예시(`data/mock/evidence/time_resolution.happy_001.json`, 요약):
-```json
-{ "contract_version": "time-resolution/v1", "resolution_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+{
+  "contract": "TimeResolution",
+  "contract_version": "time-resolution/v1",
+  "resolution_ref": {
+    "kind": "time_resolution",
+    "ref": "tres_h001"
+  },
   "status": "OK",
-  "resolved": { "value": "2026-08-24T18:31:30+09:00", "source": { "kind": "readout.overlay_timestamp", "input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" } },
-    "verification": "VERIFIED", "computation": { "mode": "DIRECT", "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "SOURCE_EXPLICIT" } }, "user_corrected": false },
-  "conflict": { "exists": false, "between_refs": [], "requires_user_notice": false } }
+  "resolved": {
+    "value": "2026-08-24T18:05:12+09:00",
+    "source": {
+      "kind": "readout.overlay_ocr",
+      "input_ref": {
+        "kind": "overlay_time_readout",
+        "ref": "readout_h001_overlay"
+      }
+    },
+    "verification": "VERIFIED",
+    "computation": {
+      "mode": "DIRECT",
+      "timezone": {
+        "zone_id": "Asia/Seoul",
+        "utc_offset": "+09:00",
+        "source": "PRODUCT_CONTEXT"
+      }
+    },
+    "user_corrected": false
+  },
+  "considered": [
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": {
+        "kind": "overlay_time_readout",
+        "ref": "readout_h001_overlay"
+      },
+      "source": {
+        "kind": "readout.overlay_ocr"
+      },
+      "value": "2026-08-24T18:05:12+09:00",
+      "observation_status": "OK",
+      "verification": "VERIFIED",
+      "used": true
+    },
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_h001_filename"
+      },
+      "source": {
+        "kind": "recording.filename_time"
+      },
+      "value": "2026-08-24T18:00:00+09:00",
+      "observation_status": "OK",
+      "verification": "UNVERIFIED",
+      "used": false,
+      "reason_code": "time.superseded_by_verified_overlay"
+    }
+  ],
+  "conflict": {
+    "exists": false,
+    "between_refs": [],
+    "requires_user_notice": false
+  },
+  "provenance": {
+    "policy_ref": "policy/time-source-priority-v1",
+    "selected_input_ref": {
+      "kind": "overlay_time_readout",
+      "ref": "readout_h001_overlay"
+    }
+  },
+  "post_stamp": {
+    "needed": false,
+    "reason_code": "time.verified_overlay_already_present",
+    "requires_user_notice": false
+  }
+}
 ```
-- **이 계약은 원문 자체에 §8/§9 예시 JSON이 전혀 없다** — 이번 Pack이 만든 예시가 사실상 이 계약의 첫 구체 인스턴스다. Owner 검수 시 특히 눈여겨봐야 할 지점
-- Partial 예시(`data/mock/evidence/time_resolution.partial_001.json`) — 이 Scenario에서도 `status=OK`(시간은 성공하도록 설계했다)
-- 핵심 불변조건: `status=UNKNOWN`이면 `resolved` 없음, `resolved` 있으면 `provenance.selected_input_ref` 필수
-- 사용 Scenario: happy_001, partial_001
 
-## EvidenceRecord
+### EvidenceRecord (모든 값 confirmed)
 
-- Producer: `evidence`(김준영) · Consumer: `case`, `web`(projection)
-- **이 계약도 원문에 JSON 예시가 없다** — 아래는 계약 스키마(§3)를 그대로 따라 처음 만든 예시다
-- 정상 예시(`data/mock/evidence/evidence_record.happy_001.json`, 요약):
+**Contract**: `evidence-record/v1.2`  
+**출처**: evidence/scenario_happy_001.json → evidence_records[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "contract_version": "evidence-record/v1.1", "record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
-  "case_ref": { "kind": "case", "ref": "case_happy_001" }, "selection_rev": 1,
-  "vehicle_number": { "value": "12가 3476", "source": { "kind": "readout.plate_overlay_ocr", "observability": "OBSERVED" }, "user_corrected": false },
-  "location": { "address": { "value": "미금역 사거리 인근", "source": { "kind": "search.visual_inference", "observability": "INFERRED" }, "user_corrected": false } } }
+{
+  "contract": "EvidenceRecord",
+  "contract_version": "evidence-record/v1.2",
+  "record_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_h001"
+  },
+  "case_ref": {
+    "kind": "case",
+    "ref": "case_h001"
+  },
+  "selection_rev": 1,
+  "basis": {
+    "candidate_ref": {
+      "kind": "candidate_event",
+      "ref": "candidate_h001"
+    },
+    "visual_evidence_ref": {
+      "kind": "visual_evidence",
+      "ref": "ve_h001"
+    },
+    "evidence_interval_ref": {
+      "kind": "incident_clip",
+      "ref": "clip_h001"
+    }
+  },
+  "event": {
+    "visual_event_type": {
+      "value": "SOLID_LINE_LANE_CHANGE",
+      "source": {
+        "kind": "search.visual_inference",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        },
+        "observability": "OBSERVED",
+        "label_key": "event.source.visual_inference"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "safety_report_type": {
+      "value": "UNSAFE_LANE_CHANGE",
+      "source": {
+        "kind": "evidence.category_mapping",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.category_mapping"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "violation_expression": {
+      "value": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+      "source": {
+        "kind": "evidence.violation_expression",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.violation_expression"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_h001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    }
+  },
+  "occurred_at": {
+    "value": "2026-08-24T18:05:12+09:00",
+    "time_resolution_ref": {
+      "kind": "time_resolution",
+      "ref": "tres_h001"
+    },
+    "resolution_status": "OK",
+    "user_corrected": false,
+    "source": {
+      "kind": "readout.overlay_ocr",
+      "label_key": "time.source.overlay_ocr"
+    }
+  },
+  "vehicle_number": {
+    "value": "12가3456",
+    "source": {
+      "kind": "readout.plate_ocr",
+      "ref": {
+        "kind": "plate_readout",
+        "ref": "readout_h001_plate"
+      },
+      "observability": "OBSERVED",
+      "label_key": "plate.source.plate_ocr"
+    },
+    "support_refs": [
+      {
+        "kind": "plate_readout",
+        "ref": "readout_h001_plate"
+      }
+    ],
+    "user_corrected": false,
+    "needs_review": false
+  },
+  "location": {
+    "search_keyword": {
+      "value": "광주 상무지구 상무중앙로 사거리",
+      "source": {
+        "kind": "case.user_location_hint",
+        "ref": {
+          "kind": "case",
+          "ref": "case_h001"
+        },
+        "observability": "OBSERVED",
+        "label_key": "location.source.user_hint"
+      },
+      "support_refs": [],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "user_hint": {
+      "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "source": {
+        "kind": "case.user_location_hint",
+        "ref": {
+          "kind": "case",
+          "ref": "case_h001"
+        },
+        "observability": "OBSERVED",
+        "label_key": "location.source.user_hint"
+      },
+      "support_refs": [],
+      "user_corrected": false,
+      "needs_review": false
+    }
+  },
+  "provenance": {
+    "input_refs": [
+      {
+        "kind": "visual_evidence",
+        "ref": "ve_h001"
+      },
+      {
+        "kind": "plate_readout",
+        "ref": "readout_h001_plate"
+      },
+      {
+        "kind": "overlay_time_readout",
+        "ref": "readout_h001_overlay"
+      },
+      {
+        "kind": "time_resolution",
+        "ref": "tres_h001"
+      }
+    ],
+    "correction_refs": [],
+    "policy_ref": "policy/evidence-assembly-v1"
+  }
+}
 ```
-- Partial 예시(`data/mock/evidence/evidence_record.partial_001.json`) — **`vehicle_number`/`location` 키 자체가 없다**(placeholder 금지 원칙, §10 불변조건 6)
-- 핵심 불변조건: 확정 못한 값은 null/placeholder가 아니라 필드 부재, `occurred_at` 있으면 `time_resolution_ref` 필수
-- 사용 Scenario: happy_001, partial_001
 
-## EvidenceNeeds
+### RequirementReport (scope=FINAL_PACKAGE, overall=PASS)
 
-- Producer: `evidence` · Consumer: `case`
-- 정상 예시(items 없음, `data/mock/evidence/evidence_needs.happy_001.json`):
+**Contract**: `requirement-report/v1`  
+**출처**: evidence/scenario_happy_001.json → requirement_reports[1] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "contract_version": "evidence-needs/v1", "basis_record_ref": { "kind": "evidence_record", "ref": "ev_h001" }, "items": [] }
+{
+  "contract": "RequirementReport",
+  "contract_version": "requirement-report/v1",
+  "requirement_report_ref": {
+    "kind": "requirement_report",
+    "ref": "req_h001_final"
+  },
+  "scope": "FINAL_PACKAGE",
+  "basis": {
+    "evidence_record_ref": {
+      "kind": "evidence_record",
+      "ref": "ev_h001"
+    },
+    "asset_refs": [
+      {
+        "kind": "derived_asset",
+        "ref": "da_h001_report_video"
+      },
+      {
+        "kind": "derived_asset",
+        "ref": "da_h001_plate_image"
+      }
+    ],
+    "template_ref": "tmpl/safety-report-v1"
+  },
+  "policy_ref": "policy/requirement-rules-v1",
+  "evaluated_at": "2026-08-24T18:25:00+09:00",
+  "overall": "PASS",
+  "checks": [
+    {
+      "code": "package.asset.report_video.exists",
+      "category": "ASSET",
+      "outcome": "PASS",
+      "reason_code": "asset.available",
+      "subject_refs": [
+        {
+          "kind": "derived_asset",
+          "ref": "da_h001_report_video"
+        }
+      ],
+      "measurement": {
+        "actual": 120.0,
+        "limit": 180.0,
+        "unit": "asset.duration_sec"
+      }
+    },
+    {
+      "code": "package.asset.plate_visible",
+      "category": "ASSET",
+      "outcome": "PASS",
+      "reason_code": "asset.plate_legible",
+      "subject_refs": [
+        {
+          "kind": "derived_asset",
+          "ref": "da_h001_plate_image"
+        }
+      ]
+    },
+    {
+      "code": "package.time.overlay_visible",
+      "category": "TIME",
+      "outcome": "PASS",
+      "reason_code": "time.overlay_burned_in",
+      "subject_refs": [
+        {
+          "kind": "derived_asset",
+          "ref": "da_h001_report_video"
+        }
+      ]
+    }
+  ]
+}
 ```
-- Partial 예시(`data/mock/evidence/evidence_needs.partial_001.json`) — `items`에 `PLATE_REREAD`(계약 §11 공식 예시와 거의 동일 구조)
-- 핵심 불변조건: `(kind, would_fill)` 조합 중복 금지, v1 kind는 `OVERLAY_TIME_OCR`/`PLATE_REREAD`만 허용, `items=[]`이 신고 가능을 뜻하지 않음
-- 사용 Scenario: happy_001(빈 배열), partial_001(PLATE_REREAD)
 
-## RequirementReport
+### ReportPackage
 
-- Producer: `evidence`(김준영) · Consumer: `case`, `web`(projection)
-- **원문에 JSON 예시 없음**(§13은 필요한 Mock 케이스 목록만 bullet로 제공) — 이번 Pack이 실제 예시를 처음 만들었다
-- 정상 예시(FINAL_PACKAGE/WARN, `data/mock/evidence/requirement_report.happy_001.json`, 요약):
+**Contract**: `report-package/v1`  
+**출처**: evidence/scenario_happy_001.json → report_packages[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "scope": "FINAL_PACKAGE", "overall": "WARN",
-  "checks": [ { "code": "evidence.location.confidence", "category": "LOCATION", "outcome": "WARN", "reason_code": "location.inferred_needs_review" } ] }
+{
+  "contract": "ReportPackage",
+  "contract_version": "report-package/v1",
+  "package_ref": {
+    "kind": "report_package",
+    "ref": "pkg_h001"
+  },
+  "evidence_record_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_h001"
+  },
+  "requirement_report_ref": {
+    "kind": "requirement_report",
+    "ref": "req_h001_final"
+  },
+  "created_at": "2026-08-24T18:26:00+09:00",
+  "report_inputs": {
+    "safety_report_type": "안전운전 불이행",
+    "occurred_at": "2026-08-24T18:05:12+09:00",
+    "location": {
+      "display_text": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "search_keyword": "광주 상무지구 상무중앙로 사거리"
+    },
+    "vehicle_number": "12가3456",
+    "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+  },
+  "report": {
+    "title": "백색 실선 구간 차로변경 위반 신고",
+    "description": "2026-08-24 18:05:12 광주 상무지구 상무중앙로 사거리 인근에서 차량번호 12가3456 차량이 백색 실선 구간에서 차로를 변경하였습니다.",
+    "template_ref": "tmpl/safety-report-v1"
+  },
+  "assets": {
+    "report_video_ref": {
+      "kind": "derived_asset",
+      "ref": "da_h001_report_video"
+    },
+    "plate_image_ref": {
+      "kind": "derived_asset",
+      "ref": "da_h001_plate_image"
+    }
+  },
+  "provenance": {
+    "source_refs": [
+      {
+        "kind": "source_asset",
+        "ref": "sa_h001_front"
+      }
+    ],
+    "derived_asset_refs": [
+      {
+        "kind": "derived_asset",
+        "ref": "da_h001_report_video"
+      },
+      {
+        "kind": "derived_asset",
+        "ref": "da_h001_plate_image"
+      }
+    ],
+    "policy_ref": "policy/package-assembly-v1"
+  },
+  "handoff": {
+    "destination": "SAFETY_REPORT",
+    "supported_actions": [
+      "DOWNLOAD_ASSETS",
+      "COPY_FIELDS",
+      "OPEN_DESTINATION"
+    ]
+  }
+}
 ```
-- BLOCK 예시(EVIDENCE scope, `data/mock/evidence/requirement_report.partial_001.json`, 요약):
+
+### TimeResolution — 값 충돌 보존 (conflict.exists=true, status=NEEDS_REVIEW)
+
+**Contract**: `time-resolution/v1`  
+**출처**: evidence/scenario_unknown_abstain_partial_001.json → time_resolutions[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "scope": "EVIDENCE", "overall": "BLOCK",
-  "checks": [ { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "BLOCK", "reason_code": "vehicle_number.unconfirmed" },
-              { "code": "evidence.location.present", "category": "LOCATION", "outcome": "UNKNOWN", "reason_code": "location.no_source_available" } ] }
+{
+  "contract": "TimeResolution",
+  "contract_version": "time-resolution/v1",
+  "resolution_ref": {
+    "kind": "time_resolution",
+    "ref": "tres_u001"
+  },
+  "status": "NEEDS_REVIEW",
+  "resolved": {
+    "value": "2026-08-26T22:20:15+09:00",
+    "source": {
+      "kind": "recording.filename_time",
+      "input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filename"
+      }
+    },
+    "verification": "UNVERIFIED",
+    "computation": {
+      "mode": "BASE_PLUS_OFFSET",
+      "base_input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filename"
+      },
+      "source_offset_ms": 615000,
+      "timezone": {
+        "zone_id": "Asia/Seoul",
+        "utc_offset": "+09:00",
+        "source": "PRODUCT_CONTEXT"
+      }
+    },
+    "user_corrected": false
+  },
+  "considered": [
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filename"
+      },
+      "source": {
+        "kind": "recording.filename_time"
+      },
+      "value": "2026-08-26T22:10:00+09:00",
+      "observation_status": "OK",
+      "verification": "UNVERIFIED",
+      "used": true
+    },
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filemeta"
+      },
+      "source": {
+        "kind": "recording.file_metadata_time"
+      },
+      "value": "2026-08-26T22:13:00+09:00",
+      "observation_status": "OK",
+      "verification": "UNVERIFIED",
+      "used": false,
+      "reason_code": "time.conflicting_metadata_candidate"
+    }
+  ],
+  "conflict": {
+    "exists": true,
+    "between_refs": [
+      {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filename"
+      },
+      {
+        "kind": "time_source_candidate",
+        "ref": "tsc_u001_filemeta"
+      }
+    ],
+    "requires_user_notice": true
+  },
+  "provenance": {
+    "policy_ref": "policy/time-source-priority-v1",
+    "selected_input_ref": {
+      "kind": "time_source_candidate",
+      "ref": "tsc_u001_filename"
+    }
+  },
+  "post_stamp": {
+    "needed": true,
+    "reason_code": "time.no_verified_overlay_present",
+    "requires_user_notice": true
+  }
+}
 ```
-- 핵심 불변조건: `checks[].code` 중복 금지, `overall=ERROR` 없음(엔진 실패는 Report 자체 미생성으로 처리)
-- 사용 Scenario: happy_001(WARN), partial_001(BLOCK) — §13이 요구하는 8가지 Mock 케이스(EVIDENCE/FINAL_PACKAGE × PASS/WARN/BLOCK/UNKNOWN) 중 이번 Pack은 2가지만 채웠다. **나머지 6가지는 v1 확장 대상**
 
-## ReportPackage
+### EvidenceRecord — vehicle_number 필드 자체 부재(UNKNOWN)
 
-- Producer: `evidence`(김준영) · Consumer: `case`, `web`(projection)
-- **원문에 JSON 예시 없음** — 정상 예시(`data/mock/evidence/report_package.happy_001.json`, 요약):
+**Contract**: `evidence-record/v1.2`  
+**출처**: evidence/scenario_unknown_abstain_partial_001.json → evidence_records[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "package_ref": { "kind": "report_package", "ref": "pkg_h001" }, "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
-  "requirement_report_ref": { "kind": "requirement_report", "ref": "req_h001" },
-  "report": { "title": "백색 실선 침범 신고 (흰색 SUV 12가 3476)", "template_ref": "report-template/lane-change/v1" },
-  "handoff": { "destination": "SAFETY_REPORT", "supported_actions": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"] } }
+{
+  "contract": "EvidenceRecord",
+  "contract_version": "evidence-record/v1.2",
+  "record_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_u001"
+  },
+  "case_ref": {
+    "kind": "case",
+    "ref": "case_u001"
+  },
+  "selection_rev": 1,
+  "basis": {
+    "candidate_ref": {
+      "kind": "candidate_event",
+      "ref": "candidate_u001"
+    },
+    "visual_evidence_ref": {
+      "kind": "visual_evidence",
+      "ref": "ve_u001"
+    },
+    "evidence_interval_ref": {
+      "kind": "incident_clip",
+      "ref": "clip_u001"
+    }
+  },
+  "event": {
+    "visual_event_type": {
+      "value": "SIGNAL",
+      "source": {
+        "kind": "search.visual_inference",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        },
+        "observability": "OBSERVED",
+        "label_key": "event.source.visual_inference"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": true
+    },
+    "safety_report_type": {
+      "value": "UNSAFE_SIGNAL_VIOLATION",
+      "source": {
+        "kind": "evidence.category_mapping",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.category_mapping"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": true
+    },
+    "violation_expression": {
+      "value": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
+      "source": {
+        "kind": "evidence.violation_expression",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.violation_expression"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_u001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": true
+    }
+  },
+  "occurred_at": {
+    "value": "2026-08-26T22:20:15+09:00",
+    "time_resolution_ref": {
+      "kind": "time_resolution",
+      "ref": "tres_u001"
+    },
+    "resolution_status": "NEEDS_REVIEW",
+    "user_corrected": false,
+    "source": {
+      "kind": "recording.filename_time",
+      "label_key": "time.source.filename"
+    }
+  },
+  "provenance": {
+    "input_refs": [
+      {
+        "kind": "visual_evidence",
+        "ref": "ve_u001"
+      },
+      {
+        "kind": "plate_readout",
+        "ref": "readout_u001_plate"
+      },
+      {
+        "kind": "time_resolution",
+        "ref": "tres_u001"
+      }
+    ],
+    "correction_refs": [],
+    "policy_ref": "policy/evidence-assembly-v1"
+  }
+}
 ```
-- Partial 시나리오에는 이 fixture가 **없다** — BLOCK이므로 의도된 부재(§8.1 생성 조건 미충족)
-- 핵심 불변조건: `BUILDING/INCOMPLETE/ERROR/READY` 같은 status 필드 없음, `EvidenceRecord` 전체를 embed하지 않음(확정값만 snapshot)
-- 사용 Scenario: happy_001만
 
-## JobRecord (Job Intent)
+### EvidenceNeeds — PLATE_REREAD 요청
 
-- Producer: `case`(유소연) · Consumer: `common/runtime`
-- 정상 예시(`data/mock/case/job_records.happy_001.json`, 배열 2건 중 1건):
+**Contract**: `evidence-needs/v1`  
+**출처**: evidence/scenario_unknown_abstain_partial_001.json → evidence_needs[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "job_id": "job_h001_coarse", "case_id": "case_happy_001", "case_rev": 1, "kind": "COARSE_SEARCH",
-  "scope_ref": "scope_h001", "input_fingerprint": "sha1:h001-coarse", "force_rerun": false, "requested_at": "2026-08-24T18:24:50+09:00" }
+{
+  "contract": "EvidenceNeeds",
+  "contract_version": "evidence-needs/v1",
+  "basis_record_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_u001"
+  },
+  "items": [
+    {
+      "kind": "PLATE_REREAD",
+      "would_fill": "VEHICLE_NUMBER",
+      "why": {
+        "code": "readout.plate_abstained_ambiguous_target",
+        "summary": "번호판 관찰이 대상 차량 식별 모호 및 프레임 간 불일치로 보류됨"
+      },
+      "optional": false,
+      "context_refs": [
+        {
+          "role": "evidence.interval",
+          "ref": {
+            "kind": "incident_clip",
+            "ref": "clip_u001"
+          }
+        },
+        {
+          "role": "evidence.target_hint",
+          "ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_u001"
+          }
+        }
+      ]
+    }
+  ]
+}
 ```
-- **주의(§4 새 발견):** `kind="PLATE_READ"`인 두 번째 JobRecord(`job_h001_plate`)가 `PlateReadout`과 `OverlayTimeReadout` 두 ReadoutRun을 모두 만든다고 가정했다 — `OVERLAY_TIME_READ`용 별도 kind가 계약에 없어서 내린 임시 가정이다(`CONTRACT_CONFLICTS.md` §4 참고)
-- 핵심 불변조건: 동일 job_id 재사용 금지, 캐시 재사용은 `(case_id,kind,input_fingerprint)` 동일+`force_rerun=false`+기존 SUCCEEDED에 한정
-- 사용 Scenario: happy_001, partial_001
 
-## JobExecution
+### RequirementReport — overall=UNKNOWN
 
-- Producer: `common/runtime`(김준영/정철원) · Consumer: `case`, `web`(projection), `eval`
-- 정상 예시(`data/mock/case/job_executions.happy_001.json`, 배열 2건 중 1건):
+**Contract**: `requirement-report/v1`  
+**출처**: evidence/scenario_unknown_abstain_partial_001.json → requirement_reports[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "execution_id": "exec_h001_plate", "job_id": "job_h001_plate", "status": "SUCCEEDED", "attempt": 1,
-  "queued_at": "2026-08-24T18:30:51+09:00", "started_at": "2026-08-24T18:31:00+09:00", "ended_at": "2026-08-24T18:31:12+09:00",
-  "produced": [ { "kind": "readout_run", "ref": "rr_h001_plate" }, { "kind": "readout_run", "ref": "rr_h001_overlay" } ],
-  "failure_kind": null, "usage_refs": ["usage_h001_2", "usage_h001_3"] }
+{
+  "contract": "RequirementReport",
+  "contract_version": "requirement-report/v1",
+  "requirement_report_ref": {
+    "kind": "requirement_report",
+    "ref": "req_u001_evidence"
+  },
+  "scope": "EVIDENCE",
+  "basis": {
+    "evidence_record_ref": {
+      "kind": "evidence_record",
+      "ref": "ev_u001"
+    },
+    "asset_refs": []
+  },
+  "policy_ref": "policy/requirement-rules-v1",
+  "evaluated_at": "2026-08-26T22:33:00+09:00",
+  "overall": "UNKNOWN",
+  "checks": [
+    {
+      "code": "evidence.vehicle_number.present",
+      "category": "VEHICLE",
+      "outcome": "UNKNOWN",
+      "reason_code": "evidence.pending_plate_reread",
+      "subject_refs": [
+        {
+          "kind": "evidence_record",
+          "ref": "ev_u001"
+        }
+      ]
+    },
+    {
+      "code": "evidence.occurred_at.present",
+      "category": "TIME",
+      "outcome": "WARN",
+      "reason_code": "evidence.time_needs_review",
+      "subject_refs": [
+        {
+          "kind": "evidence_record",
+          "ref": "ev_u001"
+        }
+      ]
+    },
+    {
+      "code": "evidence.visual_event.present",
+      "category": "EVIDENCE",
+      "outcome": "WARN",
+      "reason_code": "evidence.signal_state_uncertain",
+      "subject_refs": [
+        {
+          "kind": "evidence_record",
+          "ref": "ev_u001"
+        }
+      ]
+    }
+  ]
+}
 ```
-- 핵심 불변조건: `SUCCEEDED`가 아니면 `produced`를 유효 결과로 취급 안 함, `QUEUED/RUNNING`이면 `ended_at=null`
-- 사용 Scenario: happy_001, partial_001 (둘 다 SUCCEEDED — FAILED/STALE 예시는 v1 확장 대상)
 
-## UsageRecord
+### TimeResolution v2 — USER_OVERRIDE, supersedes_ref
 
-- Producer: `common/runtime`(김준영) · Consumer: `case`, `eval`, `search`
-- 정상 예시(`data/mock/case/usage_records.happy_001.json`, 배열 3건 중 1건, readout 호출은 token 없음):
+**Contract**: `time-resolution/v1`  
+**출처**: evidence/scenario_correction_rerun_001.json → time_resolutions[1] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "usage_id": "usage_h001_2", "execution_ref": "exec_h001_plate", "run_ref": null, "case_id": "case_happy_001",
-  "provider_label": "ocr-local", "operation": "READOUT_PLATE", "token_usage": null,
-  "processed_duration_sec": 7.0, "latency_ms": 820, "cost": { "amount": "0", "currency": "KRW" } }
+{
+  "contract": "TimeResolution",
+  "contract_version": "time-resolution/v1",
+  "resolution_ref": {
+    "kind": "time_resolution",
+    "ref": "tres_r001_v2"
+  },
+  "supersedes_ref": {
+    "kind": "time_resolution",
+    "ref": "tres_r001_v1"
+  },
+  "status": "OK",
+  "resolved": {
+    "value": "2026-08-27T13:13:00+09:00",
+    "source": {
+      "kind": "case.user_correction",
+      "input_ref": {
+        "kind": "correction_record",
+        "ref": "cr_r001_time"
+      }
+    },
+    "verification": "AGREED",
+    "computation": {
+      "mode": "USER_OVERRIDE",
+      "timezone": {
+        "zone_id": "Asia/Seoul",
+        "utc_offset": "+09:00",
+        "source": "PRODUCT_CONTEXT"
+      }
+    },
+    "user_corrected": true
+  },
+  "considered": [
+    {
+      "input_kind": "USER_INPUT",
+      "input_ref": {
+        "kind": "correction_record",
+        "ref": "cr_r001_time"
+      },
+      "source": {
+        "kind": "case.user_correction"
+      },
+      "value": "2026-08-27T13:13:00+09:00",
+      "verification": "AGREED",
+      "used": true
+    },
+    {
+      "input_kind": "OBSERVATION",
+      "input_ref": {
+        "kind": "time_source_candidate",
+        "ref": "tsc_r001_filename"
+      },
+      "source": {
+        "kind": "recording.filename_time"
+      },
+      "value": "2026-08-27T13:00:00+09:00",
+      "observation_status": "OK",
+      "verification": "UNVERIFIED",
+      "used": false,
+      "reason_code": "time.superseded_by_user_correction"
+    }
+  ],
+  "conflict": {
+    "exists": false,
+    "between_refs": [],
+    "requires_user_notice": false
+  },
+  "provenance": {
+    "policy_ref": "policy/time-source-priority-v1",
+    "selected_input_ref": {
+      "kind": "correction_record",
+      "ref": "cr_r001_time"
+    }
+  },
+  "post_stamp": {
+    "needed": true,
+    "reason_code": "time.user_confirmed_no_overlay_present",
+    "requires_user_notice": true
+  }
+}
 ```
-- 핵심 불변조건: `token_usage`는 전체 null이거나 세 필드 모두 존재(일부만 채우지 않음), `total_tokens=input+output`, append-only
-- 사용 Scenario: happy_001, partial_001
 
-## CaseView
+### EvidenceRecord v2 — supersede, vehicle_number 값 리셋 없이 그대로 유지
 
-- Producer: `case`(유소연) · Consumer: `web`(유일한 read contract), `eval`
-- 정상 예시(`data/mock/case/case_view.happy_001.json`, 요약):
+**Contract**: `evidence-record/v1.2`  
+**출처**: evidence/scenario_correction_rerun_001.json → evidence_records[1] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "case_id": "case_happy_001", "stage": "READY", "user_reviewed": true,
-  "evidence": { "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED" },
-                "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW" } },
-  "requirements": { "scope": "FINAL_PACKAGE", "readiness": "WARN", "checks": [] },
-  "package": { "package_ref": "pkg_h001", "artifact_ref": "da_h001_report_video" } }
+{
+  "contract": "EvidenceRecord",
+  "contract_version": "evidence-record/v1.2",
+  "record_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_r001_v2"
+  },
+  "supersedes_ref": {
+    "kind": "evidence_record",
+    "ref": "ev_r001_v1"
+  },
+  "case_ref": {
+    "kind": "case",
+    "ref": "case_r001"
+  },
+  "selection_rev": 2,
+  "basis": {
+    "candidate_ref": {
+      "kind": "candidate_event",
+      "ref": "candidate_r001"
+    },
+    "visual_evidence_ref": {
+      "kind": "visual_evidence",
+      "ref": "ve_r001"
+    },
+    "evidence_interval_ref": {
+      "kind": "incident_clip",
+      "ref": "clip_r001"
+    }
+  },
+  "event": {
+    "visual_event_type": {
+      "value": "MOTORCYCLE_HELMET_NON_USE",
+      "source": {
+        "kind": "search.visual_inference",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        },
+        "observability": "OBSERVED",
+        "label_key": "event.source.visual_inference"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "safety_report_type": {
+      "value": "UNSAFE_HELMET_NON_USE",
+      "source": {
+        "kind": "evidence.category_mapping",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.category_mapping"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "violation_expression": {
+      "value": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
+      "source": {
+        "kind": "evidence.violation_expression",
+        "ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        },
+        "observability": "INFERRED",
+        "label_key": "event.source.violation_expression"
+      },
+      "support_refs": [
+        {
+          "kind": "visual_evidence",
+          "ref": "ve_r001"
+        }
+      ],
+      "user_corrected": false,
+      "needs_review": false
+    }
+  },
+  "occurred_at": {
+    "value": "2026-08-27T13:13:00+09:00",
+    "time_resolution_ref": {
+      "kind": "time_resolution",
+      "ref": "tres_r001_v2"
+    },
+    "resolution_status": "OK",
+    "user_corrected": true,
+    "source": {
+      "kind": "case.user_correction",
+      "label_key": "time.source.user_correction"
+    }
+  },
+  "vehicle_number": {
+    "value": "광주서구 가1234",
+    "source": {
+      "kind": "readout.plate_ocr",
+      "ref": {
+        "kind": "plate_readout",
+        "ref": "readout_r001_plate"
+      },
+      "observability": "OBSERVED",
+      "label_key": "plate.source.plate_ocr"
+    },
+    "support_refs": [
+      {
+        "kind": "plate_readout",
+        "ref": "readout_r001_plate"
+      }
+    ],
+    "user_corrected": false,
+    "needs_review": false
+  },
+  "provenance": {
+    "input_refs": [
+      {
+        "kind": "visual_evidence",
+        "ref": "ve_r001"
+      },
+      {
+        "kind": "plate_readout",
+        "ref": "readout_r001_plate"
+      },
+      {
+        "kind": "time_resolution",
+        "ref": "tres_r001_v2"
+      }
+    ],
+    "correction_refs": [
+      {
+        "kind": "correction_record",
+        "ref": "cr_r001_time"
+      }
+    ],
+    "policy_ref": "policy/evidence-assembly-v1"
+  }
+}
 ```
-- Partial 예시(`data/mock/case/case_view.partial_001.json`, 요약):
+
+## case
+
+### JobRecord (COARSE_SEARCH)
+
+**Contract**: `job-record/v1`  
+**출처**: case/scenario_happy_001.json → job_records[0] (실제 파일에서 그대로 발췌)
+
 ```json
-{ "case_id": "case_partial_001", "stage": "EVIDENCE_REVIEW",
-  "evidence": { "plate_display": { "value": null, "needs_review": true, "info_state": "INFO_UNKNOWN" } },
-  "requirements": { "scope": "EVIDENCE", "readiness": "BLOCK", "checks": [] }, "package": null,
-  "notices": [ { "code": "PLATE_ABSTAINED", "severity": "WARN", "blocking": false }, { "code": "LOCATION_UNKNOWN", "severity": "WARN", "blocking": false } ] }
+{
+  "contract": "JobRecord",
+  "contract_version": "job-record/v1",
+  "job_id": "job_h001_search",
+  "case_id": "case_h001",
+  "case_rev": 1,
+  "kind": "COARSE_SEARCH",
+  "scope_ref": "scope_h001",
+  "input_fingerprint": "sha1:h001-coarse-search",
+  "force_rerun": false,
+  "requested_at": "2026-08-24T18:20:04+09:00"
+}
 ```
-- **B01/B02 주의:** 위 `evidence.*_display`/`requirements` 값은 계약 §8/§9가 이미 예시로 든 값의 형태를 재사용한 것이며, 이 값을 만들어내는 파생 규칙 자체는 Pending이다(`CONTRACT_CONFLICTS.md` §1 B01/B02)
-- 사용 Scenario: happy_001, partial_001
+
+### CaseView — 처리 중 (stage=SEARCHING, progress RUNNING/PENDING)
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_happy_001.json → case_views[0] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_h001",
+  "case_rev": 1,
+  "stage": "SEARCHING",
+  "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 2,
+    "ok_file_count": 2,
+    "failed_file_count": 0,
+    "duration_sec": 1200.0,
+    "range": [
+      "2026-08-24T18:00:00+09:00",
+      "2026-08-24T18:20:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "18시쯤",
+    "vehicle": "흰색 SUV",
+    "situation": "백색 실선 구간에서 차로변경",
+    "location": "상무중앙로 사거리 부근"
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "RUNNING"
+    },
+    {
+      "step": "candidate_review",
+      "state": "PENDING"
+    },
+    {
+      "step": "plate_read",
+      "state": "PENDING"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "PENDING"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "PENDING"
+    },
+    {
+      "step": "requirement_check",
+      "state": "PENDING"
+    },
+    {
+      "step": "package_assembly",
+      "state": "PENDING"
+    }
+  ],
+  "candidates": [],
+  "evidence": null,
+  "requirements_evidence": null,
+  "requirements_package": null,
+  "package": null,
+  "running_jobs": [
+    {
+      "job_id": "job_h001_search",
+      "kind": "COARSE_SEARCH",
+      "label_key": "job.generic_processing",
+      "status": "RUNNING"
+    }
+  ],
+  "notices": []
+}
+```
+
+### CaseView (stage=READY)
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_happy_001.json → case_views[1] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_h001",
+  "case_rev": 3,
+  "stage": "READY",
+  "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 2,
+    "ok_file_count": 2,
+    "failed_file_count": 0,
+    "duration_sec": 1200.0,
+    "range": [
+      "2026-08-24T18:00:00+09:00",
+      "2026-08-24T18:20:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "18시쯤",
+    "vehicle": "흰색 SUV",
+    "situation": "백색 실선 구간에서 차로변경",
+    "location": "상무중앙로 사거리 부근"
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "DONE"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    },
+    {
+      "step": "package_assembly",
+      "state": "DONE"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate_h001",
+      "at": "2026-08-24T18:05:12+09:00",
+      "at_provenance": "readout.overlay_ocr",
+      "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+      "thumb_ref": "fr_h001_thumb",
+      "selected": true
+    }
+  ],
+  "evidence": {
+    "record_id": "ev_h001",
+    "case_type_display": {
+      "code": "SOLID_LINE_LANE_CHANGE",
+      "label": "백색 실선 구간 차로변경",
+      "needs_review": false
+    },
+    "report_type_display": {
+      "code": "UNSAFE_LANE_CHANGE",
+      "label": "안전운전 불이행",
+      "needs_review": false
+    },
+    "violation_display": {
+      "code": null,
+      "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+      "needs_review": false
+    },
+    "plate_display": {
+      "value": "12가3456",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "plate.source.plate_ocr"
+    },
+    "event_time_display": {
+      "value": "2026-08-24T18:05:12+09:00",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "time.source.overlay_ocr"
+    },
+    "location_display": {
+      "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "needs_review": false,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "location.source.user_hint",
+      "coord": null,
+      "search_keyword": "광주 상무지구 상무중앙로 사거리"
+    },
+    "user_edited": false,
+    "preview_ref": "fr_h001_thumb",
+    "review_needed": false,
+    "reason_code": null
+  },
+  "requirements_evidence": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.location.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.user_hint_sufficient"
+      }
+    ]
+  },
+  "requirements_package": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "package.asset.report_video.exists",
+        "outcome": "PASS",
+        "reason_code": "asset.available"
+      },
+      {
+        "code": "package.asset.plate_visible",
+        "outcome": "PASS",
+        "reason_code": "asset.plate_legible"
+      },
+      {
+        "code": "package.time.overlay_visible",
+        "outcome": "PASS",
+        "reason_code": "time.overlay_burned_in"
+      }
+    ]
+  },
+  "package": {
+    "package_ref": "pkg_h001",
+    "report_fields": {
+      "safety_report_type": "안전운전 불이행",
+      "occurred_at": "2026-08-24T18:05:12+09:00",
+      "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "vehicle_number": "12가3456",
+      "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "artifact_ref": "da_h001_report_video",
+    "capabilities": [
+      "DOWNLOAD_ASSETS",
+      "COPY_FIELDS",
+      "OPEN_DESTINATION"
+    ],
+    "warnings": []
+  },
+  "running_jobs": [],
+  "notices": []
+}
+```
+
+### CaseView — 사용자 최종 확인 완료 (user_reviewed=true)
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_happy_001.json → case_views[2] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_h001",
+  "case_rev": 4,
+  "stage": "READY",
+  "user_reviewed": true,
+  "manifest_summary": {
+    "file_count": 2,
+    "ok_file_count": 2,
+    "failed_file_count": 0,
+    "duration_sec": 1200.0,
+    "range": [
+      "2026-08-24T18:00:00+09:00",
+      "2026-08-24T18:20:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "18시쯤",
+    "vehicle": "흰색 SUV",
+    "situation": "백색 실선 구간에서 차로변경",
+    "location": "상무중앙로 사거리 부근"
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "DONE"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    },
+    {
+      "step": "package_assembly",
+      "state": "DONE"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate_h001",
+      "at": "2026-08-24T18:05:12+09:00",
+      "at_provenance": "readout.overlay_ocr",
+      "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+      "thumb_ref": "fr_h001_thumb",
+      "selected": true
+    }
+  ],
+  "evidence": {
+    "record_id": "ev_h001",
+    "case_type_display": {
+      "code": "SOLID_LINE_LANE_CHANGE",
+      "label": "백색 실선 구간 차로변경",
+      "needs_review": false
+    },
+    "report_type_display": {
+      "code": "UNSAFE_LANE_CHANGE",
+      "label": "안전운전 불이행",
+      "needs_review": false
+    },
+    "violation_display": {
+      "code": null,
+      "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+      "needs_review": false
+    },
+    "plate_display": {
+      "value": "12가3456",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "plate.source.plate_ocr"
+    },
+    "event_time_display": {
+      "value": "2026-08-24T18:05:12+09:00",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "time.source.overlay_ocr"
+    },
+    "location_display": {
+      "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "needs_review": false,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "location.source.user_hint",
+      "coord": null,
+      "search_keyword": "광주 상무지구 상무중앙로 사거리"
+    },
+    "user_edited": false,
+    "preview_ref": "fr_h001_thumb",
+    "review_needed": false,
+    "reason_code": null
+  },
+  "requirements_evidence": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.location.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.user_hint_sufficient"
+      }
+    ]
+  },
+  "requirements_package": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "package.asset.report_video.exists",
+        "outcome": "PASS",
+        "reason_code": "asset.available"
+      },
+      {
+        "code": "package.asset.plate_visible",
+        "outcome": "PASS",
+        "reason_code": "asset.plate_legible"
+      },
+      {
+        "code": "package.time.overlay_visible",
+        "outcome": "PASS",
+        "reason_code": "time.overlay_burned_in"
+      }
+    ]
+  },
+  "package": {
+    "package_ref": "pkg_h001",
+    "report_fields": {
+      "safety_report_type": "안전운전 불이행",
+      "occurred_at": "2026-08-24T18:05:12+09:00",
+      "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "vehicle_number": "12가3456",
+      "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "artifact_ref": "da_h001_report_video",
+    "capabilities": [
+      "DOWNLOAD_ASSETS",
+      "COPY_FIELDS",
+      "OPEN_DESTINATION"
+    ],
+    "warnings": []
+  },
+  "running_jobs": [],
+  "notices": []
+}
+```
+
+### JobRecord — 재판독 자동 발주 (kind=PLATE_READ, force_rerun=true)
+
+**Contract**: `job-record/v1`  
+**출처**: case/scenario_unknown_abstain_partial_001.json → job_records[3] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "JobRecord",
+  "contract_version": "job-record/v1",
+  "job_id": "job_u001_plate_reread",
+  "case_id": "case_u001",
+  "case_rev": 3,
+  "kind": "PLATE_READ",
+  "scope_ref": null,
+  "input_fingerprint": "sha1:u001-plate-read-clip_u001",
+  "force_rerun": true,
+  "requested_at": "2026-08-26T22:33:05+09:00"
+}
+```
+
+### CaseView — evidence.plate_display info_state=INFO_UNKNOWN, running_jobs 포함
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_u001",
+  "case_rev": 3,
+  "stage": "EVIDENCE_REVIEW",
+  "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 1,
+    "ok_file_count": 1,
+    "failed_file_count": 0,
+    "duration_sec": 1800.0,
+    "range": [
+      "2026-08-26T22:10:00+09:00",
+      "2026-08-26T22:40:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "밤 10시쯤",
+    "vehicle": "은색 해치백",
+    "situation": "신호 위반한 것 같은데 확실하지 않음",
+    "location": null
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "FAILED"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate_u001",
+      "at": "2026-08-26T22:20:15+09:00",
+      "at_provenance": "recording.filename_time",
+      "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
+      "thumb_ref": "fr_u001_plate1",
+      "selected": true
+    }
+  ],
+  "evidence": {
+    "record_id": "ev_u001",
+    "case_type_display": {
+      "code": "SIGNAL",
+      "label": "신호 위반 의심",
+      "needs_review": true
+    },
+    "report_type_display": {
+      "code": "UNSAFE_SIGNAL_VIOLATION",
+      "label": "안전운전 불이행(신호위반 의심)",
+      "needs_review": true
+    },
+    "violation_display": {
+      "code": null,
+      "label": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
+      "needs_review": true
+    },
+    "plate_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null
+    },
+    "event_time_display": {
+      "value": "2026-08-26T22:20:15+09:00",
+      "needs_review": true,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "time.source.filename"
+    },
+    "location_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null,
+      "coord": null,
+      "search_keyword": null
+    },
+    "user_edited": false,
+    "preview_ref": "fr_u001_plate1",
+    "review_needed": true,
+    "reason_code": "evidence.multiple_fields_need_review"
+  },
+  "requirements_evidence": {
+    "readiness": "UNKNOWN",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "outcome": "UNKNOWN",
+        "reason_code": "evidence.pending_plate_reread"
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "outcome": "WARN",
+        "reason_code": "evidence.time_needs_review"
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "outcome": "WARN",
+        "reason_code": "evidence.signal_state_uncertain"
+      }
+    ]
+  },
+  "requirements_package": null,
+  "package": null,
+  "running_jobs": [
+    {
+      "job_id": "job_u001_plate_reread",
+      "kind": "PLATE_READ",
+      "label_key": "job.plate_read",
+      "status": "PENDING"
+    }
+  ],
+  "notices": [
+    {
+      "code": "time.conflict_needs_notice",
+      "severity": "WARN",
+      "blocking": false,
+      "message_key": "notice.time_conflict",
+      "actions": [
+        "REVIEW_TIME"
+      ]
+    },
+    {
+      "code": "evidence.plate_reread_in_progress",
+      "severity": "INFO",
+      "blocking": false,
+      "message_key": "notice.plate_reread_running",
+      "actions": []
+    }
+  ]
+}
+```
+
+## common
+
+### JobExecution (SUCCEEDED)
+
+**Contract**: `job-execution/v1`  
+**출처**: common/scenario_happy_001.json → job_executions[0] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "JobExecution",
+  "contract_version": "job-execution/v1",
+  "execution_id": "exec_h001_search",
+  "job_id": "job_h001_search",
+  "status": "SUCCEEDED",
+  "attempt": 1,
+  "queued_at": "2026-08-24T18:20:04+09:00",
+  "started_at": "2026-08-24T18:20:05+09:00",
+  "ended_at": "2026-08-24T18:21:10+09:00",
+  "produced": [
+    {
+      "kind": "analysis_run",
+      "ref": "run_h001"
+    }
+  ],
+  "failure_kind": null,
+  "usage_refs": [
+    "usage_h001_coarse"
+  ]
+}
+```
+
+### UsageRecord (search 호출)
+
+**Contract**: `usage-record/v1.1`  
+**출처**: common/scenario_happy_001.json → usage_records[0] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "UsageRecord",
+  "contract_version": "usage-record/v1.1",
+  "usage_id": "usage_h001_coarse",
+  "execution_ref": "exec_h001_search",
+  "run_ref": {
+    "kind": "analysis_run",
+    "ref": "run_h001"
+  },
+  "case_id": "case_h001",
+  "occurred_at": "2026-08-24T18:21:10+09:00",
+  "provider_label": "gemini",
+  "operation": "SEARCH_COARSE",
+  "token_usage": {
+    "input_tokens": 14200,
+    "output_tokens": 1200,
+    "total_tokens": 15400
+  },
+  "processed_duration_sec": 1200.0,
+  "latency_ms": 65000,
+  "pricing_context": {
+    "pricing_id": "gemini-2026-08",
+    "unit": "per_1k_tokens"
+  },
+  "cost": {
+    "amount": "0.42",
+    "currency": "USD"
+  }
+}
+```
+
+### JobExecution — QUEUED (재판독 대기 중, ended_at=null)
+
+**Contract**: `job-execution/v1`  
+**출처**: common/scenario_unknown_abstain_partial_001.json → job_executions[3] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "JobExecution",
+  "contract_version": "job-execution/v1",
+  "execution_id": "exec_u001_plate_reread",
+  "job_id": "job_u001_plate_reread",
+  "status": "QUEUED",
+  "attempt": 1,
+  "queued_at": "2026-08-26T22:33:05+09:00",
+  "started_at": null,
+  "ended_at": null,
+  "produced": [],
+  "failure_kind": null,
+  "usage_refs": []
+}
+```
+
+## expected (Eval Harness, provisional — Final Contract 아님)
+
+### Eval fixture — 항상 정답 (metric 계산 검증용)
+
+**Contract**: `(provisional, non-contract)`  
+**출처**: expected/eval_fixture_correct_001.json (전체) (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "eval_fixture_id": "eval_fixture_correct_001",
+  "kind": "ALWAYS_CORRECT",
+  "provisional_non_contract_schema": true,
+  "note": "이 파일은 어떤 Final Data Contract도 소유하지 않는 Mock 전용 provisional 구조다. eval의 Ground Truth 스키마는 contract-readout-run.md §2 '정답지(READABLE+정답 문자열 / UNREADABLE)는 현재 없으며 eval 소유 후속'이라고 명시할 뿐 아직 확정되지 않았다. 이 fixture는 eval 팀이 자신의 metric 계산 코드를 최소한으로 검증할 수 있도록 제공하는 목적 전용이며, eval이 정식 Ground Truth Contract를 확정하면 교체되어야 한다.",
+  "purpose": "actual == expected인 입력에서 metric 계산 코드 자체가 올바르게 1.0(만점)을 내는지 검증한다. Mock이 실제 AI 성능을 증명하는 용도가 아니다.",
+  "scenario_ref": "scenario_happy_001",
+  "case_id": "case_h001",
+  "metric_targets": [
+    {
+      "metric": "plate_exact_match",
+      "actual_ref": {
+        "kind": "plate_readout",
+        "ref": "readout_h001_plate"
+      },
+      "actual_value": "12가3456",
+      "expected_value": "12가3456",
+      "expect_match": true
+    },
+    {
+      "metric": "candidate_top1_correct",
+      "actual_ref": {
+        "kind": "analysis_run_candidate_event",
+        "ref": "run_h001"
+      },
+      "actual_top_candidate_id": "candidate_h001",
+      "expected_top_candidate_id": "candidate_h001",
+      "expect_match": true
+    },
+    {
+      "metric": "occurred_at_within_tolerance",
+      "actual_ref": {
+        "kind": "time_resolution",
+        "ref": "tres_h001"
+      },
+      "actual_value": "2026-08-24T18:05:12+09:00",
+      "expected_value": "2026-08-24T18:05:12+09:00",
+      "max_deviation_sec": 2,
+      "expect_match": true
+    },
+    {
+      "metric": "abstention_correctness",
+      "actual_ref": {
+        "kind": "plate_readout",
+        "ref": "readout_h001_plate"
+      },
+      "actual_abstained": false,
+      "expected_should_abstain": false,
+      "expect_match": true
+    }
+  ],
+  "expected_metric_results": {
+    "plate_exact_match_rate": 1.0,
+    "candidate_top1_accuracy": 1.0,
+    "time_within_tolerance_rate": 1.0,
+    "abstention_correctness_rate": 1.0
+  }
+}
+```
+
+### Eval fixture — 의도적 오답 (metric이 오류를 잡아내는지 검증용)
+
+**Contract**: `(provisional, non-contract)`  
+**출처**: expected/eval_fixture_wrong_001.json (전체) (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "eval_fixture_id": "eval_fixture_wrong_001",
+  "kind": "DELIBERATELY_WRONG",
+  "provisional_non_contract_schema": true,
+  "note": "이 파일은 어떤 Final Data Contract도 소유하지 않는 Mock 전용 provisional 구조다(위와 동일한 사유 — eval Ground Truth Contract 미확정). eval의 metric 계산 코드가 실제로 오류를 잡아내는지 검증하는 용도이며, 이 fixture의 낮은 점수 자체가 시스템의 실제 성능을 뜻하지 않는다.",
+  "actual_values_are_inline": "이 fixture의 actual_* 값은 의도적으로 틀리게 만든 합성값이며 런타임 fixture를 참조하지 않는다. actual_ref를 두면 harness가 역참조했을 때 실제(정답) 값이 나와 테스트가 통과해버리므로 참조를 두지 않는다. metric 이름은 eval Owner(김대원) 확정 대기 — docs/mock/05_mock_deep_review_report.md P1-11.",
+  "purpose": "actual이 의도적으로 틀린 입력에서 metric 계산 코드가 만점을 내지 않고 실제로 오류를 검출하는지 검증한다 — bad candidate ranking, 큰 timestamp 편차, 잘못된 번호판 채택, false positive abstain을 각각 포함한다.",
+  "scenario_ref": "scenario_happy_001(기대값 출처만 참조 — actual은 합성값)",
+  "case_id": "case_h001",
+  "metric_targets": [
+    {
+      "metric": "plate_exact_match",
+      "actual_value": "98다6543",
+      "expected_value": "12가3456",
+      "expect_match": false,
+      "defect": "WRONG_PLATE_ACCEPTED"
+    },
+    {
+      "metric": "candidate_top1_correct",
+      "actual_top_candidate_id": "candidate_h001_decoy",
+      "expected_top_candidate_id": "candidate_h001",
+      "expect_match": false,
+      "defect": "BAD_CANDIDATE_RANKING"
+    },
+    {
+      "metric": "occurred_at_within_tolerance",
+      "actual_value": "2026-08-24T19:47:00+09:00",
+      "expected_value": "2026-08-24T18:05:12+09:00",
+      "max_deviation_sec": 2,
+      "expect_match": false,
+      "defect": "LARGE_TIMESTAMP_DEVIATION"
+    },
+    {
+      "metric": "abstention_correctness",
+      "actual_abstained": false,
+      "expected_should_abstain": true,
+      "expect_match": false,
+      "defect": "FALSE_POSITIVE_NO_ABSTAIN"
+    }
+  ],
+  "expected_metric_results": {
+    "plate_exact_match_rate": 0.0,
+    "candidate_top1_accuracy": 0.0,
+    "time_within_tolerance_rate": 0.0,
+    "abstention_correctness_rate": 0.0
+  }
+}
+```

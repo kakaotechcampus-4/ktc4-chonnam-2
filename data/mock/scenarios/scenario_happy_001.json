@@ -1,42 +1,22 @@
 {
   "scenario_id": "scenario_happy_001",
-  "description": "모든 핵심 값이 정상적으로 존재하며 E2E가 끝까지 진행되는 대표 Happy Path. 위치만 시각 추정(NEEDS_REVIEW)이라 requirements.readiness=WARN이지만, WARN도 Package를 막지 않으므로 case_view.happy_001의 stage=READY, package non-null까지 도달한다.",
-  "case_id": "case_happy_001",
+  "title": "Happy Path — 백색 실선 차로변경, 전체 파이프라인 정상 흐름",
+  "case_id": "case_h001",
+  "scenario_types": ["A"],
+  "description": "영상 등록부터 COARSE_SEARCH → 후보 선택 → PLATE_READ/OVERLAY_TIME_READ → Evidence 확정 → RequirementReport(EVIDENCE, FINAL_PACKAGE) 모두 PASS → ReportPackage 생성까지 전체 시스템을 한 번씩 통과하는 대표 정상 경로. 번호판·발생시각·위치가 모두 확정되고 abstain/needs_review가 없다.",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. 여기 있는 scenario_id/artifacts 매핑은 어떤 런타임 Data Contract 필드도 아니며, 실제 Contract JSON(recording/search/readout/evidence/case/common 아래 파일들)에는 이 필드들이 존재하지 않는다.",
   "artifacts": {
-    "recording": {
-      "timeline": "recording/timeline.happy_001.json",
-      "time_source_candidates": "recording/time_source_candidates.happy_001.json",
-      "span_resolution": "recording/span_resolution.happy_001.json"
-    },
-    "search": {
-      "analysis_scope": "search/analysis_scope.happy_001.json",
-      "analysis_run": "search/analysis_run.happy_001.json",
-      "candidate_events": "search/candidate_events.happy_001.json",
-      "visual_evidence": "search/visual_evidence.happy_001.json"
-    },
-    "readout": {
-      "readout_runs": "readout/readout_runs.happy_001.json",
-      "plate_readout": "readout/plate_readout.happy_001.json",
-      "overlay_time_readout": "readout/overlay_time_readout.happy_001.json"
-    },
-    "evidence": {
-      "observations": "evidence/observations.happy_001.json",
-      "time_resolution": "evidence/time_resolution.happy_001.json",
-      "evidence_record": "evidence/evidence_record.happy_001.json",
-      "evidence_needs": "evidence/evidence_needs.happy_001.json",
-      "requirement_report": "evidence/requirement_report.happy_001.json",
-      "report_package": "evidence/report_package.happy_001.json"
-    },
-    "case": {
-      "job_records": "case/job_records.happy_001.json",
-      "job_executions": "case/job_executions.happy_001.json",
-      "usage_records": "case/usage_records.happy_001.json",
-      "case_view": "case/case_view.happy_001.json"
-    },
-    "eval": {
-      "expected": "expected/scenario_happy_001.expected.json",
-      "prediction_correct": "eval/prediction_correct.happy_001.json",
-      "prediction_wrong": "eval/prediction_wrong.happy_001.json"
-    }
+    "recording": "data/mock/recording/scenario_happy_001.json",
+    "search": "data/mock/search/scenario_happy_001.json",
+    "readout": "data/mock/readout/scenario_happy_001.json",
+    "evidence": "data/mock/evidence/scenario_happy_001.json",
+    "case": "data/mock/case/scenario_happy_001.json",
+    "common": "data/mock/common/scenario_happy_001.json"
+  },
+  "shared_ids": {
+    "case_id": "case_h001",
+    "candidate_id": "candidate_h001",
+    "timeline_id": "tl_h001",
+    "incident_clip_ref": "clip_h001"
   }
 }
