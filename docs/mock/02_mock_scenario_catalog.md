@@ -31,7 +31,7 @@
 
 **목적**: `AnalysisRun.outcome=SUCCEEDED`이면서 `candidates=[]`인 경우가 실패가 아님을 보여준다. `search`·`case` 양쪽 모두 "빈 배열"과 "에러"를 구분해서 처리해야 함을 데이터로 증명한다.
 
-**시작 조건**: 영상은 정상 업로드됐지만, 사용자가 지목한 시간대에 해당 사건 유형(`ILLEGAL_U_TURN`)의 후보가 실제로 없다.
+**시작 조건**: 영상은 정상 업로드됐지만, 사용자가 지목한 시간대에 해당 사건 유형(`CENTER_LINE_CROSSING`)의 후보가 실제로 없다.
 
 **예상 흐름**: `COARSE_SEARCH` 실행이 정상 종료(`outcome=SUCCEEDED`)하지만 `candidates=[]` → `CaseView.stage=CANDIDATE_REVIEW`에 머물고 `candidates=[]` → 비차단(`blocking=false`) INFO notice로 힌트 수정/재검색 유도.
 

@@ -109,7 +109,7 @@
       },
       "event": {
         "visual_event_type": {
-          "value": "ILLEGAL_PARKING",
+          "value": "MOTORCYCLE_HELMET_NON_USE",
           "source": {
             "kind": "search.visual_inference",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -121,7 +121,7 @@
           "needs_review": false
         },
         "safety_report_type": {
-          "value": "UNSAFE_SIDEWALK_PARKING",
+          "value": "UNSAFE_HELMET_NON_USE",
           "source": {
             "kind": "evidence.category_mapping",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -133,7 +133,7 @@
           "needs_review": false
         },
         "violation_expression": {
-          "value": "파란색 트럭이 인도 위에 정차하여 보행 통행을 방해함",
+          "value": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
           "source": {
             "kind": "evidence.violation_expression",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -153,7 +153,7 @@
         "source": { "kind": "recording.filename_time", "label_key": "time.source.filename" }
       },
       "vehicle_number": {
-        "value": "45다6789",
+        "value": "광주서구 가1234",
         "source": {
           "kind": "readout.plate_ocr",
           "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },
@@ -188,7 +188,7 @@
       },
       "event": {
         "visual_event_type": {
-          "value": "ILLEGAL_PARKING",
+          "value": "MOTORCYCLE_HELMET_NON_USE",
           "source": {
             "kind": "search.visual_inference",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -200,7 +200,7 @@
           "needs_review": false
         },
         "safety_report_type": {
-          "value": "UNSAFE_SIDEWALK_PARKING",
+          "value": "UNSAFE_HELMET_NON_USE",
           "source": {
             "kind": "evidence.category_mapping",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -212,7 +212,7 @@
           "needs_review": false
         },
         "violation_expression": {
-          "value": "파란색 트럭이 인도 위에 정차하여 보행 통행을 방해함",
+          "value": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
           "source": {
             "kind": "evidence.violation_expression",
             "ref": { "kind": "visual_evidence", "ref": "ve_r001" },
@@ -232,7 +232,7 @@
         "source": { "kind": "case.user_correction", "label_key": "time.source.user_correction" }
       },
       "vehicle_number": {
-        "value": "45다6789",
+        "value": "광주서구 가1234",
         "source": {
           "kind": "readout.plate_ocr",
           "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },

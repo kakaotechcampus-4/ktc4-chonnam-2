@@ -7,8 +7,8 @@
       "time_ranges": [
         { "kind": "ABSOLUTE", "start": "2026-08-25T07:00:00+09:00", "end": "2026-08-25T07:30:00+09:00" }
       ],
-      "target_event_types": ["ILLEGAL_U_TURN"],
-      "hint": { "vehicle": "은색 세단", "free_text": "유턴 금지 구간에서 유턴하는 것을 본 것 같음" },
+      "target_event_types": ["CENTER_LINE_CROSSING"],
+      "hint": { "vehicle": "은색 세단", "free_text": "앞차가 중앙선을 넘어 들어온 것 같은데 확실하지 않음" },
       "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
       "contract_version": "1.1.0"
     }

@@ -76,7 +76,7 @@
       },
       "event": {
         "visual_event_type": {
-          "value": "SIGNAL_VIOLATION",
+          "value": "SIGNAL",
           "source": {
             "kind": "search.visual_inference",
             "ref": { "kind": "visual_evidence", "ref": "ve_u001" },

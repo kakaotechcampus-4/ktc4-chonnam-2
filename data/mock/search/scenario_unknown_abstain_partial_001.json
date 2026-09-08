@@ -7,7 +7,7 @@
       "time_ranges": [
         { "kind": "ABSOLUTE", "start": "2026-08-26T22:00:00+09:00", "end": "2026-08-26T22:30:00+09:00" }
       ],
-      "target_event_types": ["SIGNAL_VIOLATION"],
+      "target_event_types": ["SIGNAL"],
       "hint": { "vehicle": "은색 해치백", "free_text": "신호 위반한 것 같은데 확실하지 않음" },
       "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
       "contract_version": "1.1.0"
@@ -51,7 +51,7 @@
           },
           "rank": 1,
           "ranking_score": 0.61,
-          "event_type_hint": "SIGNAL_VIOLATION",
+          "event_type_hint": "SIGNAL",
           "summary": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
           "uncertainties": ["SIGNAL_STATE_NOT_CLEARLY_VISIBLE"],
           "thumbnail_ref": "fr_u001_plate1"
@@ -67,7 +67,7 @@
       "input_ref": { "kind": "incident_clip", "ref": "clip_u001" },
       "candidate_id": "candidate_u001",
       "verification": "OBSERVED",
-      "visual_event_type": "SIGNAL_VIOLATION",
+      "visual_event_type": "SIGNAL",
       "target": {
         "association_status": "MATCHED",
         "described_as": "은색 해치백",
@@ -81,7 +81,15 @@
       ],
       "temporal_facts": [
         { "at_offset_ms": 15000, "fact": "TARGET_CROSSES_STOP_LINE", "evidence_refs": ["fr_u001_plate1"] }
-      ]
+      ],
+      "uncertainties": [
+        {
+          "kind": "SIGNAL_STATE_OCCLUDED",
+          "detail": "신호등이 앞 차량에 부분적으로 가려져 점등 상태를 단정하기 어려움",
+          "evidence_refs": ["fr_u001_plate1"]
+        }
+      ],
+      "legal_status": null
     }
   ]
 }

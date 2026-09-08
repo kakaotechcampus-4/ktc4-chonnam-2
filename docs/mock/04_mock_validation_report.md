@@ -1,6 +1,21 @@
 # 04. Mock Validation Report
 
-`data/mock/validate_mock_pack.py` 실행 결과: **28개 JSON 파일, 4개 시나리오 스캔 — 오류 0건, 경고 0건 (VALIDATION PASSED)**. 이 스크립트가 기계적으로 확인하는 항목: JSON parse, 필수 top-level 키 존재, 닫힌 enum 값 검사(`ReadoutRun.outcome/operation`, `JobExecution.status`, `RequirementReport.overall`, `TimeResolution.status`, `CaseView.stage`), 같은 Scenario 내 모든 `{kind, ref}` ContractRef의 참조 해석(dangling ref 검사), Scenario manifest의 `artifacts` 경로 실존 여부, `ReadoutRun`/`JobExecution`의 outcome↔failure/ended_at 정합성, `AnalysisRun` candidate span의 `start_ms<=end_ms`와 `thumbnail_ref`가 해당 candidate 구간 안의 offset을 가리키는지(시간/구간 일관성).
+`data/mock/validate_mock_pack.py` 실행 결과: **29개 JSON 파일, 4개 시나리오 스캔 — 오류 0건, 경고 0건 (VALIDATION PASSED)**.
+
+> **2026-09-08 갱신.** 심층 검토(`05_mock_deep_review_report.md`) 이후 검증 스크립트를 강화하고 그때 잡힌 17건을 수정했다 — 미등록 사건 유형 10건(P0-1), `VisualEvidence` 필수 필드 누락 6건(P0-2), `disagree_positions` off-by-one 1건(P1-4). 추가로 overlay `samples[].offset_sec` 좌표계, `manifest_summary.range`, `processed_duration`, happy의 `deletion_reports` 분리, `CaseView` 스냅샷 3종(처리중·최종확인·정정 전) 추가를 반영했다. **P0-3(`VISUAL_VERIFY` run 부재)과 P0-4(「화면 시각 없음」 모델링)는 Owner 답변 대기로 미해소 상태다.**
+
+스크립트가 기계적으로 확인하는 항목:
+
+- JSON parse · 파일 wrapper(`scenario_id`/`module`) · 모듈별 필수 top-level 배열
+- **닫힌 enum 30여 종** — `VisualEventType`(4종), `verification`, `association_status`, `primitives[].state`, `Observation.status`, `target_association.status`, `timeline_status`, `TimeSourceCandidate.source_kind`, `SpanResolution.status`, `DeletionReport.status`/`items[].result`, `derived_role`, `availability`, `asset_kind`, `AnalysisRun.operation`/`outcome`, `AnalysisScope.time_ranges[].kind`, `RequirementCheck.category`/`outcome`, `EvidenceNeeds.kind`/`would_fill`, `CaseView.stage`/`progress[].state`/`notices[].severity`/`running_jobs[].status`/`info_state`, `UsageRecord.run_ref.kind` 등 (각 세트에 소유 계약을 주석으로 명시)
+- **계약별 필수 키** — `VisualEvidence` 11키(`legal_status` 포함), `AnalysisRun` 11키, `Observation` 6키, `JobExecution` 10키, `UsageRecord` 12키, `CaseView` 14키, `SpanResolution.failure` 등
+- **참조 해석** — 같은 시나리오 안의 `{kind, ref}` ContractRef + **평문 문자열 ref**(`thumbnail_ref`·`frame_ref`·`usage_refs[]`·`job_id`·`evidence_refs[]`·`package_ref` 등), 그리고 **ref의 `kind`가 실제 대상 객체의 종류와 일치하는지**
+- **조건부 불변조건** — `legal_status is null`, `verification≠OBSERVED ⇒ visual_event_type=null`, `abstained ⇒ observation.status=NEEDS_REVIEW`, `availability=AVAILABLE ⇒ byte_size≠null`, `timeline_ref/timeline_range` 쌍, `BASE_PLUS_OFFSET ⇒ base_input_ref+source_offset_ms`, `EvidenceValue`의 `user_corrected`/`needs_review` 상호배타, `RequirementReport.overall == precedence(checks)`, `SpanResolution` 완전성, `ReadoutRun`/`JobExecution`의 outcome↔failure/ended_at
+- **시간축 파생값 재계산** — `base 시각 + source_offset_ms == resolved.value`, overlay `samples[].offset_sec`가 clip 구간 안인지, `validation.sample_count == len(samples)`, `AssetSpan`의 timeline 길이 == source 길이, candidate span의 `start_ms<=end_ms`와 `thumbnail_ref` 위치
+- **번호판 마스킹 정합** — `disagree_positions`가 `frame_results` 간 실제 불일치 위치·`observation.value`의 `?` 위치와 일치하는지
+- **manifest 정합** — 상위 `manifest.json`의 시나리오/eval 경로 실존과 목록 일치, scenario manifest의 `artifacts`·`shared_ids`가 실제 fixture와 일치하는지
+- **eval fixture** — `provisional_non_contract_schema` 선언, `actual_ref` 해석, `ALWAYS_CORRECT`/`DELIBERATELY_WRONG`의 `expect_match` 일관성, 오답 fixture에 `actual_ref`가 없는지
+- **시나리오 간 ID 유일성**(경고)
 
 ## 1. Contract × Variant Coverage
 
@@ -9,7 +24,8 @@
 | `SourceAsset`/`MediaStream`/`FrameRef` | ✅ happy | N/A | N/A | N/A | N/A | — |
 | `RecordingTimeline`/`AssetSpan`/`SpanResolution` | ✅ happy(USABLE, COMPLETE) | N/A | N/A | N/A | ❌ 미커버(SpanResolution PARTIAL/failure 없음) | — |
 | `TimeSourceCandidate` | ✅ happy | N/A | N/A | N/A | N/A | ✅ 충돌 2건(unknown_abstain_partial) |
-| `AnalysisSource`/`IncidentClip`/`DerivedAsset`/`RemoteCopy`/`DeletionReport` | ✅ happy | N/A | N/A | N/A | ✅ DeletionReport=PARTIAL(happy) | ❌ DeletionReport COMPLETE/FAILED 미커버 |
+| `AnalysisSource`/`IncidentClip`/`DerivedAsset`/`RemoteCopy` | ✅ happy | N/A | N/A | N/A | N/A | ❌ export 실패 미커버 |
+| `DeletionReport` | ❌ | N/A | N/A | N/A | ❌ | ❌ **전면 미커버** — happy에 있던 `PARTIAL` 예시는 「AVAILABLE 자산과 DELETED 결과가 같은 스냅샷에 공존」 문제(05 P1-1) 때문에 제거했다. 별도 `scenario_purge_001`로 다시 만들어야 한다(05 §10-4) |
 | `AnalysisScope`/`AnalysisRun`/`CandidateEvent` | ✅ happy | ✅ empty(candidates=[], outcome=SUCCEEDED) | N/A | N/A | N/A | — |
 | `VisualEvidence` | ✅ happy | N/A(빈 결과 시나리오는 애초에 생성 안 됨) | N/A | N/A | N/A | ✅ 낮은 confidence(unknown_abstain_partial) |
 | `PlateReadout` | ✅ happy(OK, abstain 없음) | N/A | N/A | ✅ unknown_abstain_partial | — | — |
@@ -21,18 +37,18 @@
 | `RequirementReport` | ✅ happy(PASS×2) | N/A | ✅ overall=UNKNOWN | — | ✅ overall=WARN(correction_rerun v1) | ✅ supersede |
 | `ReportPackage` | ✅ happy | N/A | ✅ 미생성(overall≠PASS/WARN인 시나리오는 `report_packages=[]`) | — | — | — |
 | `JobRecord` | ✅ happy | ✅ empty(1건만 발주) | — | — | ✅ force_rerun=true(재판독) | — |
-| `CaseView` | ✅ happy(stage=READY) | ✅ empty(stage=CANDIDATE_REVIEW) | ✅ plate_display.info_state=INFO_UNKNOWN | — | ✅ EVIDENCE_REVIEW + running_jobs | ✅ notices(WARN/INFO) |
+| `CaseView` | ✅ happy(stage=READY) | ✅ empty(stage=CANDIDATE_REVIEW) | ✅ plate_display.info_state=INFO_UNKNOWN | — | ✅ EVIDENCE_REVIEW + running_jobs | ✅ notices(WARN/INFO) · ✅ 처리중(SEARCHING + progress RUNNING/PENDING + running_jobs RUNNING) · ✅ `user_reviewed=true` · ✅ 정정 전/후 스냅샷 · ❌ `blocking=true` notice·`INTAKE`·`INFO_AI_ESTIMATED` 미커버 |
 | `JobExecution` | ✅ happy(SUCCEEDED) | ✅ empty | — | — | ✅ QUEUED(재판독 대기) | ✅ FAILED |
 | `UsageRecord` | ✅ happy | ✅ empty | — | — | — | ✅ token_usage=null(로컬 OCR provider) |
 
-**커버리지 갭(정직하게 미커버로 남긴 것)**: `SpanResolution`의 `PARTIAL`/`failure≠null` 케이스, `DeletionReport`의 `COMPLETE`/`FAILED` 케이스, `ReadoutRun.outcome=PARTIAL`, `TimeResolution.status=UNKNOWN`(시각을 전혀 알 수 없는 경우). 4개 시나리오 안에 억지로 욱여넣기보다 갭으로 남기고 여기 기록하는 편이 이 작업의 "절대 조용히 결정하지 않는다" 원칙에 맞다고 판단했다. 필요하면 5번째 시나리오로 후속 추가할 수 있다.
+**커버리지 갭(정직하게 미커버로 남긴 것)**: `SpanResolution`의 `PARTIAL`/`failure≠null` 케이스, `DeletionReport` 전체, `ReadoutRun.outcome=PARTIAL`, `TimeResolution.status=UNKNOWN`(시각을 전혀 알 수 없는 경우), `RequirementReport.overall=BLOCK`, `VisualEvidence.verification`의 `NOT_OBSERVED`/`UNCERTAIN`, `info_state=INFO_AI_ESTIMATED`, GPS/좌표 Observation, `JobExecution.STALE`/재시도, `AnalysisScope`의 `TIMELINE_RELATIVE`와 `timeline_status=USABLE_RELATIVE_ONLY`. 4개 시나리오 안에 억지로 욱여넣기보다 갭으로 남기고 기록하는 편이 "절대 조용히 결정하지 않는다" 원칙에 맞다고 판단했다. 이 갭들을 메울 신규 시나리오 후보는 `05_mock_deep_review_report.md` §10에 근거와 함께 정리돼 있다.
 
 ## 2. Scenario × Contract Coverage
 
 | Scenario | recording 계약군 | search 계약군 | readout 계약군 | evidence 계약군 | case/common 계약군 |
 | --- | --- | --- | --- | --- | --- |
 | `scenario_happy_001` | ✅ 전체 | ✅ 전체 | ✅ 전체 | ✅ 전체 | ✅ 전체 |
-| `scenario_empty_001` | — (의도적 미포함, 시나리오 manifest에 사유 기록) | ✅ AnalysisScope/AnalysisRun | — | — | ✅ JobRecord/JobExecution/UsageRecord/CaseView |
+| `scenario_empty_001` | ✅ 최소 구성(SourceAsset·MediaStream·RecordingTimeline·TimeSourceCandidate) | ✅ AnalysisScope/AnalysisRun | — | — | ✅ JobRecord/JobExecution/UsageRecord/CaseView |
 | `scenario_unknown_abstain_partial_001` | ✅ (충돌 시각 포함) | ✅ | ✅ (abstain + 완전실패) | ✅ (UNKNOWN + Needs) | ✅ (자동 재판독 발주 포함) |
 | `scenario_correction_rerun_001` | ✅ | ✅ | ✅ (overlay NOT_RUN) | ✅ (supersede chain) | ✅ |
 
@@ -47,7 +63,7 @@
 1. **`TimeResolution.resolved.verification`(`AGREED`/`VERIFIED`/`UNVERIFIED`)와 `computation.mode=USER_OVERRIDE`의 대응 관계 미명시.** §4 조건표는 `status=OK`를 "검증된 Video Overlay 또는 명시적 사용자 확정"에 준다고만 하고, 사용자 확정일 때 `verification`이 셋 중 무엇인지 명시하지 않는다. `scenario_correction_rerun_001`에서는 `AGREED`("사용자가 동의/확정")로 해석해 사용했다. Owner(`evidence`, 김준영) 확인이 필요하다.
 2. **한 번도 AI를 거치지 않은 순수 사용자 입력 값의 `EvidenceValue.source.observability`/`user_corrected` 판정 기준 미명시.** `EvidenceRecord.location.user_hint`/`search_keyword`처럼 처음부터 사용자가 직접 입력한 값에 대해, `observability=OBSERVED`로 볼지, `user_corrected`를 어떻게 셀지(교정된 적이 없으므로 `false`로 뒀다) 계약이 정하지 않는다. `scenario_happy_001`에서 `observability=OBSERVED`·`user_corrected=false`로 해석해 사용했다.
 3. **`CaseView.evidence.review_needed`(object-level)의 파생 규칙 미명시.** 개별 `*_display.needs_review`/`info_state`와 별개 축이라는 것만 알 수 있고, 언제 `true`가 되는지 파생 규칙이 없다. Mock에서는 "개별 `needs_review` 중 하나라도 true"를 잠정 기준으로 삼았다(`scenario_unknown_abstain_partial_001`에서 `true`).
-4. **`EvidenceRecord.event.safety_report_type`의 실제 값 공간(안전신문고 신고유형 enum/코드)이 어느 Final Contract에도 등재돼 있지 않다.** `SafetyReportType`이라는 타입 이름만 있고 값 목록 출처가 없다. Mock은 `UNSAFE_LANE_CHANGE`/`UNSAFE_SIGNAL_VIOLATION`/`UNSAFE_SIDEWALK_PARKING` 형태로 임시 코드를 붙였다 — **이 값들은 등록된 enum이 아니라 Mock 편의 placeholder이며, 실제 값 공간이 확정되면 반드시 교체해야 한다.**
+4. **`EvidenceRecord.event.safety_report_type`의 실제 값 공간(안전신문고 신고유형 enum/코드)이 어느 Final Contract에도 등재돼 있지 않다.** `SafetyReportType`이라는 타입 이름만 있고 값 목록 출처가 없다. Mock은 `UNSAFE_LANE_CHANGE`/`UNSAFE_SIGNAL_VIOLATION`/`UNSAFE_HELMET_NON_USE` 형태로 임시 코드를 붙였다 — **이 값들은 등록된 enum이 아니라 Mock 편의 placeholder이며, 실제 값 공간이 확정되면 반드시 교체해야 한다.**
 
 ### 3.3 Architecture 확인 필요
 
@@ -90,4 +106,4 @@ Producer/Consumer는 각 Contract 문서 헤더와 `docs/management/ownership.md
 
 ## 5. 1차 Mock E2E 통합 가능 여부
 
-**조건부 가능.** 이유: §1의 4개 커버리지 갭(`SpanResolution` 부분실패, `DeletionReport` COMPLETE/FAILED, `ReadoutRun.PARTIAL`, `TimeResolution.UNKNOWN`)과 §3.2~§3.4의 5건은 통합을 막는 치명적 결함이 아니라 "지금 상태를 알고 시작하라"는 조건이다. 4개 시나리오·26개 실제 fixture·검증 스크립트 통과(0 오류)로 각 모듈이 병렬 개발·1차 통합을 시작하기에 충분한 골격이 갖춰졌다.
+**조건부 가능.** 이유: §1의 4개 커버리지 갭(`SpanResolution` 부분실패, `DeletionReport` COMPLETE/FAILED, `ReadoutRun.PARTIAL`, `TimeResolution.UNKNOWN`)과 §3.2~§3.4의 5건은 통합을 막는 치명적 결함이 아니라 "지금 상태를 알고 시작하라"는 조건이다. 4개 시나리오·29개 실제 JSON(모듈 fixture 22 + manifest 5 + eval 2)·검증 스크립트 통과(0 오류)로 각 모듈이 병렬 개발·1차 통합을 시작하기에 충분한 골격이 갖춰졌다.

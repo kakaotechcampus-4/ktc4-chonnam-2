@@ -1,7 +1,14 @@
 # Mock Dataset Deep Review Report
 
 > 검토일 2026-09-08 · 대상 브랜치 `mock-pack-v2` (base `origin/develop` @ `8fc0ced`)
-> **이 검토에서는 어떤 Mock 파일도 수정하지 않았다.** 이 문서만 새로 추가했다.
+> **검토 시점에는 어떤 Mock 파일도 수정하지 않았다.** 이 문서만 새로 추가했다.
+
+> **수정 진행 상황 (2026-09-08, 검토 이후 1차 수정 반영).** Owner 답변이 필요 없는 항목만 먼저 처리했다.
+>
+> - ✅ **해소** — P0-1(사건 유형 4종 교체) · P0-2(`VisualEvidence` 필수 필드) · P1-4(off-by-one) · P1-5(overlay offset 좌표계·sample_count) · P1-8(`manifest_summary.range`) · P1-1(happy에서 purge 분리) · P2-6(정정 전 CaseView 스냅샷) · P2-5(empty 시나리오 recording fixture) · P2-7(문서 수치·스크립트 절대경로) · P2-8(opaque ref 문서화) · P2-9(`processed_duration`) · P1-9 일부(처리중·`user_reviewed=true` 스냅샷 추가) · P1-11 일부(오답 fixture의 `actual_ref` 제거) · §13-1·14(검증 규칙 대폭 강화)
+> - ⏳ **Owner 답변 대기** — **P0-3**(`VISUAL_VERIFY` run) · **P0-4**(「화면 시각 없음」 모델링) · P1-2 · P1-3 · P1-6 · P1-7 · P1-10 · P1-12 · P2-2 · P2-3 · P2-4 · P3-1 · P1-9 나머지(`BLOCK`·`INFO_AI_ESTIMATED`)
+> - 📌 **의도적으로 보류** — **P1-7/item 8**(`ve_u001` → `UNCERTAIN`): 실행하려다 새 문제를 발견했다. `EvidenceRecord.event.*`는 계약 스키마에서 `?` 표시가 없어 **필수**로 보이는데, `verification=UNCERTAIN`이면 `visual_event_type`을 확정할 수 없다. 「VisualEvidence가 UNCERTAIN일 때 EvidenceRecord를 아예 만들지 않는가, 아니면 event를 비운 채 만드는가」가 계약에 없다 — §12에 김준영·서어진 확인 항목으로 추가했다.
+> - 갱신된 커버리지 표와 강화된 검증 항목은 `04_mock_validation_report.md`에 반영했다.
 
 ---
 
@@ -245,7 +252,7 @@ report_packages=[] ✅ ready-only 규칙 정확
 
 ---
 
-## `[P0-1] 제품 지원 범위 밖 사건 유형이 3개 시나리오에 사용됨`
+## `[P0-1] ✅ 해소 — 제품 지원 범위 밖 사건 유형이 3개 시나리오에 사용됨`
 
 **관련 파일:** `data/mock/search/scenario_empty_001.json` · `search/scenario_unknown_abstain_partial_001.json` · `search/scenario_correction_rerun_001.json` · `evidence/scenario_unknown_abstain_partial_001.json` · `evidence/scenario_correction_rerun_001.json` · `case/scenario_unknown_abstain_partial_001.json` · `case/scenario_correction_rerun_001.json` · `docs/mock/02_mock_scenario_catalog.md` · `data/mock/scenarios/scenario_{empty,unknown_abstain_partial,correction_rerun}_001.json`
 **Scenario:** `scenario_empty_001`, `scenario_unknown_abstain_partial_001`, `scenario_correction_rerun_001`
@@ -280,7 +287,7 @@ report_packages=[] ✅ ready-only 규칙 정확
 
 ---
 
-## `[P0-2] VisualEvidence 3건 모두 계약 필수 필드 uncertainties·legal_status 누락`
+## `[P0-2] ✅ 해소 — VisualEvidence 3건 모두 계약 필수 필드 uncertainties·legal_status 누락`
 
 **관련 파일:** `data/mock/search/scenario_happy_001.json` · `search/scenario_unknown_abstain_partial_001.json` · `search/scenario_correction_rerun_001.json`
 **Scenario:** 전 시나리오(VisualEvidence가 있는 3개)
@@ -312,7 +319,7 @@ Fixture only
 
 ---
 
-## `[P0-3] VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
+## `[P0-3] ⏳ Owner 답변 대기 — VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
 
 **관련 파일:** `data/mock/search/scenario_{happy,unknown_abstain_partial,correction_rerun}_001.json` · `data/mock/case/*` (Job 체인) · `data/mock/common/*` (execution·usage) · `data/mock/recording/scenario_happy_001.json`(고아 `as_h001_fine`/`rc_h001_fine`)
 **Scenario:** 전 시나리오
@@ -349,7 +356,7 @@ Coarse(후보 탐색)와 Fine(시각 검증)은 **비용·모델·실패 분류�
 
 ---
 
-## `[P0-4] 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
+## `[P0-4] ⏳ Owner 답변 대기 — 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · `data/mock/evidence/scenario_unknown_abstain_partial_001.json` · `data/mock/case/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -406,7 +413,7 @@ TimeResolution tres_u001.considered[] : overlay 항목 없음
 
 ---
 
-## `[P1-1] 같은 시나리오 스냅샷에 AVAILABLE 자산과 그 자산의 DELETED 결과가 공존`
+## `[P1-1] 🔶 부분 해소(happy에서 분리 완료 · scenario_purge_001 신규 생성은 미완) — 같은 시나리오 스냅샷에 AVAILABLE 자산과 그 자산의 DELETED 결과가 공존`
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json` · `data/mock/case/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001`
@@ -433,7 +440,7 @@ TimeResolution tres_u001.considered[] : overlay 항목 없음
 
 ---
 
-## `[P1-2] 계약에 등재되지 않은 source.kind 5종을 Mock이 신설하고 보고서에 기재하지 않음`
+## `[P1-2] ⏳ Owner 답변 대기 — 계약에 등재되지 않은 source.kind 5종을 Mock이 신설하고 보고서에 기재하지 않음`
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json` · `evidence/scenario_unknown_abstain_partial_001.json` · `evidence/scenario_correction_rerun_001.json`
 **Scenario:** 전 evidence 시나리오
@@ -460,7 +467,7 @@ Mock Documentation
 
 ---
 
-## `[P1-3] VisualEvidence의 ref 직렬화 형식이 계약 예시와 다르고, 어느 쪽이 정답인지 미확정`
+## `[P1-3] ⏳ Owner 답변 대기 — VisualEvidence의 ref 직렬화 형식이 계약 예시와 다르고, 어느 쪽이 정답인지 미확정`
 
 **관련 파일:** `data/mock/search/scenario_{happy,unknown_abstain_partial,correction_rerun}_001.json` · `docs/architecture/contracts/contract-visual-evidence.md`(계약, 수정 금지)
 **Scenario:** 전 시나리오
@@ -493,7 +500,7 @@ Mock Documentation + Upstream 확인 필요
 
 ---
 
-## `[P1-4] PlateReadout.consensus.disagree_positions off-by-one`
+## `[P1-4] ✅ 해소 — PlateReadout.consensus.disagree_positions off-by-one`
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -524,7 +531,7 @@ Fixture only
 
 ---
 
-## `[P1-5] OverlayTimeReadout.samples[].offset_sec가 clip 기준이 아니라 source 기준, sample_count와 배열 길이 불일치`
+## `[P1-5] ✅ 해소 — OverlayTimeReadout.samples[].offset_sec가 clip 기준이 아니라 source 기준, sample_count와 배열 길이 불일치`
 
 **관련 파일:** `data/mock/readout/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001`
@@ -554,7 +561,7 @@ Fixture only
 
 ---
 
-## `[P1-6] GPS/위치 Observation 경로가 전면 미커버 (+ Coordinate 필드명 lat/lng vs lat/lon 상위 문서 불일치)`
+## `[P1-6] ⏳ Owner 답변 대기 — GPS/위치 Observation 경로가 전면 미커버 (+ Coordinate 필드명 lat/lng vs lat/lon 상위 문서 불일치)`
 
 **관련 파일:** 전 시나리오(recording·evidence·case) · `docs/architecture/contracts/contract-observation.md` · `contract-evidence-record-needs.md`
 **Scenario:** 전 시나리오
@@ -589,7 +596,7 @@ Fixture only
 
 ---
 
-## `[P1-7] ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
+## `[P1-7] 📌 보류 — 수정 중 새 계약 공백 발견(§12 김준영 ⑤) — ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
 
 **관련 파일:** `data/mock/search/scenario_unknown_abstain_partial_001.json` · (연쇄) `data/mock/evidence/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -623,7 +630,7 @@ candidate uncertainties = ["SIGNAL_STATE_NOT_CLEARLY_VISIBLE"]
 
 ---
 
-## `[P1-8] CaseView.manifest_summary.range가 recording 커버리지가 아니라 AnalysisScope 범위`
+## `[P1-8] ✅ 해소 — CaseView.manifest_summary.range가 recording 커버리지가 아니라 AnalysisScope 범위`
 
 **관련 파일:** `data/mock/case/scenario_unknown_abstain_partial_001.json` · `data/mock/case/scenario_correction_rerun_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`, `scenario_correction_rerun_001`
@@ -656,7 +663,7 @@ Fixture only (+선택 시 Scenario 확장)
 
 ---
 
-## `[P1-9] web·case가 필요한 상태군이 통째로 비어 있음 (INFO_AI_ESTIMATED / 처리중 / blocking / BLOCK / user_reviewed)`
+## `[P1-9] 🔶 부분 해소(처리중·user_reviewed 스냅샷 추가 · BLOCK·INFO_AI_ESTIMATED 미해소) — web·case가 필요한 상태군이 통째로 비어 있음 (INFO_AI_ESTIMATED / 처리중 / blocking / BLOCK / user_reviewed)`
 
 **관련 파일:** `data/mock/case/*.json`(4개) · `data/mock/evidence/*.json`
 **Scenario:** 전 시나리오
@@ -698,7 +705,7 @@ web은 이 pack만으로는 화면 절반을 못 그린다. 특히 ① 「AI 추
 
 ---
 
-## `[P1-10] 최신 계약 변경분(TIMELINE_RELATIVE / USABLE_RELATIVE_ONLY / rebase revision / SpanResolution 실패)이 전부 미커버`
+## `[P1-10] ⏳ Owner 답변 대기 — 최신 계약 변경분(TIMELINE_RELATIVE / USABLE_RELATIVE_ONLY / rebase revision / SpanResolution 실패)이 전부 미커버`
 
 **관련 파일:** `data/mock/recording/*.json` · `data/mock/search/*.json`
 **Scenario:** 전 시나리오
@@ -732,7 +739,7 @@ web은 이 pack만으로는 화면 절반을 못 그린다. 특히 ① 「AI 추
 
 ---
 
-## `[P1-11] Eval fixture가 자기모순이고 프로젝트 metric 어휘를 쓰지 않음`
+## `[P1-11] 🔶 부분 해소(오답 fixture의 actual_ref 제거 · metric 이름은 대기) — Eval fixture가 자기모순이고 프로젝트 metric 어휘를 쓰지 않음`
 
 **관련 파일:** `data/mock/expected/eval_fixture_wrong_001.json` · `data/mock/expected/eval_fixture_correct_001.json`
 **Scenario:** (eval 전용)
@@ -765,7 +772,7 @@ Fixture only + Validation
 
 ---
 
-## `[P1-12] readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
+## `[P1-12] ⏳ Owner 답변 대기 — readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · (부재) search `AnalysisRun.issues[]`
 **Scenario:** `scenario_unknown_abstain_partial_001` 및 전 시나리오
@@ -804,7 +811,7 @@ Fixture only + Validation
 
 ---
 
-## `[P2-1] Happy Path가 "완전 정상"이 아니다 — 위치가 user_hint뿐이라 대표 기준선으로서 약함`
+## `[P2-1] ⏳ P1-6과 함께 처리 — Happy Path가 "완전 정상"이 아니다 — 위치가 user_hint뿐이라 대표 기준선으로서 약함`
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json` · `data/mock/case/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `EvidenceRecord.location` · `CaseView.location_display` | **Module:** evidence, case, web
@@ -826,7 +833,7 @@ Fixture only (P1-6과 동일 작업 단위) | **Owner 확인:** `권장`
 
 ---
 
-## `[P2-2] FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
+## `[P2-2] ⏳ Owner 답변 대기 — FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `RequirementReport` §4.6 · `AssetFacts` | **Module:** evidence, recording, case
@@ -849,7 +856,7 @@ Fixture only | **Owner 확인:** `권장` (김준영)
 
 ---
 
-## `[P2-3] post_stamp.needed=false인데 Report Video의 transform_ref가 poststamp`
+## `[P2-3] ⏳ Owner 답변 대기 — post_stamp.needed=false인데 Report Video의 transform_ref가 poststamp`
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `TimeResolution.post_stamp` · `DerivedAsset.transform_ref` §7.4 | **Module:** evidence, recording
@@ -871,7 +878,7 @@ Fixture only | **Owner 확인:** `권장` (정철원·김준영)
 
 ---
 
-## `[P2-4] TimeResolution.considered[]에 base anchor 값을 event-time 후보처럼 나열`
+## `[P2-4] ⏳ Owner 답변 대기 — TimeResolution.considered[]에 base anchor 값을 event-time 후보처럼 나열`
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `TimeResolution` §6 | **Module:** evidence, web
@@ -893,7 +900,7 @@ Fixture only | **Owner 확인:** `권장` (김준영)
 
 ---
 
-## `[P2-5] scenario_empty_001에 recording fixture가 없어 E2E 재생 불가`
+## `[P2-5] ✅ 해소 — scenario_empty_001에 recording fixture가 없어 E2E 재생 불가`
 
 **관련 파일:** `data/mock/scenarios/scenario_empty_001.json` · `data/mock/case/scenario_empty_001.json`
 **Scenario:** `scenario_empty_001` | **Contract:** `CaseView.manifest_summary` · `RecordingTimeline` | **Module:** case, recording
@@ -915,7 +922,7 @@ Fixture only + Scenario Manifest | **Owner 확인:** `불필요`
 
 ---
 
-## `[P2-6] scenario_correction_rerun_001에 정정 "전" CaseView 스냅샷이 없음`
+## `[P2-6] ✅ 해소 — scenario_correction_rerun_001에 정정 "전" CaseView 스냅샷이 없음`
 
 **관련 파일:** `data/mock/case/scenario_correction_rerun_001.json`
 **Scenario:** `scenario_correction_rerun_001` | **Contract:** `CaseView` | **Module:** case, web
@@ -934,7 +941,7 @@ Fixture only | **Owner 확인:** `불필요`
 
 ---
 
-## `[P2-7] 문서 수치 불일치와 문서 생성 스크립트의 절대경로 하드코딩`
+## `[P2-7] ✅ 해소 — 문서 수치 불일치와 문서 생성 스크립트의 절대경로 하드코딩`
 
 **관련 파일:** `docs/mock/01_mock_dataset_overview.md` · `docs/mock/04_mock_validation_report.md` · `scripts/build_artifact_templates_doc.py`
 
@@ -951,7 +958,7 @@ Mock Documentation + Validation | **Owner 확인:** `불필요`
 
 ---
 
-## `[P2-8] crop_ref·track_ref·shared_ids가 어디에도 정의/검증되지 않음`
+## `[P2-8] ✅ 해소(01 문서에 명시) — crop_ref·track_ref·shared_ids가 어디에도 정의/검증되지 않음`
 
 **관련 파일:** `data/mock/readout/*.json` · `data/mock/scenarios/*.json`
 **Contract:** `PlateReadout`(crop_ref·track_ref) | **Module:** readout, 검증
@@ -967,7 +974,7 @@ Mock Documentation + Validation | **Owner 확인:** `불필요`
 
 ---
 
-## `[P2-9] AnalysisRun.usage_summary.processed_duration_ms가 scope 범위와 불일치`
+## `[P2-9] ✅ 해소 — AnalysisRun.usage_summary.processed_duration_ms가 scope 범위와 불일치`
 
 **관련 파일:** `data/mock/search/scenario_happy_001.json` · `data/mock/common/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `AnalysisRun.usage_summary` · `UsageRecord.processed_duration_sec`
@@ -990,7 +997,7 @@ Fixture only | **Owner 확인:** `권장` (김대원 — 분모 정의)
 
 ---
 
-## `[P3-1] budget(KRW) vs cost(USD) 통화 혼용으로 예산 소진 판정을 mock으로 개발할 수 없음`
+## `[P3-1] ⏳ Owner 답변 대기 — budget(KRW) vs cost(USD) 통화 혼용으로 예산 소진 판정을 mock으로 개발할 수 없음`
 
 **관련 파일:** `data/mock/search/*.json` · `data/mock/common/*.json`
 **Contract:** `AnalysisScope.budget.max_cost_krw` · `UsageRecord.cost` · `AnalysisRun.usage_summary.total_cost` | **Module:** case, eval
@@ -1012,7 +1019,7 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 
 ---
 
-## `[P3-2] 값의 "너무 깔끔함"과 소소한 비현실성`
+## `[P3-2] ⏳ 미착수(통합에 지장 없음) — 값의 "너무 깔끔함"과 소소한 비현실성`
 
 **관련 파일:** 전 fixture
 
@@ -1088,7 +1095,7 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 | --- | --- | --- | --- |
 | **신유민** (readout) | ① 「화면 시각 없음」을 `observation.status`의 `NOT_APPLICABLE`로 볼지 `UNKNOWN`으로 볼지 (P0-4) ② overlay 실행 실패 시 쓸 taxonomy kind/code (P1-12) | 두 상태 구분 기준이 readout Technical Spec 미결이고, 화면 문구가 여기서 갈린다 | `readout/scenario_unknown_abstain_partial_001.json`, 신규 `scenario_infra_failure_001` |
 | **서어진** (search) | ① `VISUAL_VERIFY` run의 `input_ref` 종류(`incident_clip` vs `analysis_source`)와 직렬화 형식(ContractRef vs opaque string) (P0-3, P1-3) ② `ve_u001`을 `UNCERTAIN`으로 내릴지 (P1-7) ③ `Uncertainty.kind` 어휘 | Fine 입력 접합부는 계약이 "output Contract의 접합 규칙을 따른다"고만 위임했고, 관찰 강도 판단은 search 도메인이다 | `search/*.json` 3개 |
-| **김준영** (evidence/PM) | ① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2) ② `safety_report_type` 값 공간 확정 (기존 보고서 §3.2-4) ③ `plate_visible` check의 category (P2-2) ④ 좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6) | 전부 evidence가 소유한 값 공간·정책 판단이다 | `evidence/*.json` 3개 |
+| **김준영** (evidence/PM) | ① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2) ② `safety_report_type` 값 공간 확정 (기존 보고서 §3.2-4) ③ `plate_visible` check의 category (P2-2) ④ 좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6) ⑤ **`VisualEvidence.verification=UNCERTAIN`일 때 `EvidenceRecord`를 만드는가?** 만든다면 필수로 보이는 `event.visual_event_type`을 어떻게 하는가 (1차 수정 중 발견 — 서어진과 공동) | 전부 evidence가 소유한 값 공간·정책 판단이다. ⑤는 계약에 규정이 없어 P1-7 수정을 막고 있다 | `evidence/*.json` 3개 |
 | **유소연** (case) | ① Fine 발주용 `JobRecord.kind` 등재 여부 (P0-3) ② Report Video export / `purge_case` 발주 kind (기존 보고서 §3.3-1) ③ u001의 scope가 timeline 밖을 포함하는 상태를 유지할지 (P1-8) ④ `CaseView.evidence.review_needed` 파생 규칙 (기존 보고서 §3.2-3) | `JobRecord.kind`는 열린 enum이지만 등재는 case Owner 권한이고, CaseView 파생 규칙은 이 계약이 소유한다 | `case/*.json` 4개 |
 | **정철원** (recording) | ① GPS Observation을 recording이 어떤 단위·주기로 내는지 (P1-6) ② `scenario_relative_rebase_001`의 gap/rebase 서사와 `missing_ranges[].reason` 값 (P1-10) | 값 공간(`MissingRange.reason`)과 GPS 관찰 단위가 recording 소유이며 문서에 값 목록이 아직 없다 | 신규 `scenario_relative_rebase_001`, `recording/scenario_happy_001.json` |
 | **김대원** (eval) | ① metric 이름·정답 라벨 확정과 `expected/` 재작성 (P1-11) ② `processed_duration` 분모 정의 (P2-9) | eval Ground Truth 스키마 자체가 아직 없고 metric 정의는 eval 소유다 | `expected/*.json` 2개 |
@@ -1100,25 +1107,25 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 
 ## 13. 다음 수정 Agent용 작업 목록
 
-| 순서 | Priority | 작업 | 대상 파일 | 완료 조건 | Owner 확인 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | P0 | 검증 스크립트에 enum 검사 확대(§11-6)와 필수 키 검사(§11-7) 추가 후 **먼저 실행**해 실패 목록 확보 | `data/mock/validate_mock_pack.py` | 스크립트가 P0-1·P0-2를 자동 검출 | 불필요 |
-| 2 | P0 | 사건 유형을 등록된 4종으로 교체 (P0-1) | search 3 · evidence 2 · case 2 · scenarios 3 · `02` 카탈로그 | 모든 `target_event_types`/`event_type_hint`/`visual_event_type`이 4종 안에 들고 스크립트 통과 | 권장(서어진·김준영) |
-| 3 | P0 | `VisualEvidence`에 `uncertainties`·`legal_status:null` 추가 (P0-2) | search 3 | 3건 모두 §3 필수 필드 완비 | 불필요 |
-| 4 | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · evidence 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건 + `considered[]`에 overlay 항목 | **필수(신유민)** |
-| 5 | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 3 · common 3 · (보류 가능: case) | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | **필수(서어진·유소연)** |
-| 6 | P1 | 참조·좌표계 기계 수정: `disagree_positions`(P1-4), `samples[].offset_sec`+`sample_count`(P1-5), `manifest_summary.range`(P1-8), `processed_duration`(P2-9) | readout 1 · case 2 · search 1 · common 1 | 값이 §8 지시대로 정정되고 스크립트(§11-5·§11-9 규칙 포함) 통과 | 불필요 |
-| 7 | P1 | GPS/위치 경로 추가 + happy 위치 승격 (P1-6, P2-1) | recording 1~2 · evidence 2 · case 2 | happy `location_display.info_state=INFO_SOURCE_VERIFIED` + `coord` non-null, u001에 GPS 부재 Observation | **필수(김준영·정철원)** |
-| 8 | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1 · case 1 | `verification=UNCERTAIN`, `visual_event_type=null`, EvidenceRecord에 event 유형 필드 부재, requirement outcome 조정 | 권장(서어진) |
-| 9 | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001` · `scenario_relative_rebase_001` · `scenario_infra_failure_001` 전 모듈 + manifest + `02` | 각 시나리오가 스크립트 통과, `BLOCK`·`USABLE_RELATIVE_ONLY`·`STALE`이 pack에 등장 | **필수(정철원·신유민·유소연)** |
-| 10 | P1 | happy `case_views`에 진행중·최종확인 스냅샷 추가, correction에 정정 전 스냅샷 추가 (P1-9, P2-6) | case 2 | `SEARCHING`/`RUNNING`/`user_reviewed=true`/정정 전 `INFO_NEEDS_REVIEW`가 등장 | 권장(신유민) |
-| 11 | P1 | eval fixture 재작성 (P1-11) | `expected/` 2 | `actual_ref` 제거 또는 실재 오답 fixture 연결, metric 이름 교체, §11-4 검증 통과 | **필수(김대원)** |
-| 12 | P1 | purge를 happy에서 분리 (P1-1) | recording 1 (+신규 `scenario_purge_001`) | happy 스냅샷에 AVAILABLE/DELETED 공존 없음 | 권장(정철원) |
-| 13 | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
-| 14 | P2 | 검증 스크립트 나머지 규칙(§11-1·2·3·4·8·10) 구현 | `validate_mock_pack.py` | 새 규칙 추가 후에도 pack 전체 PASS | 불필요 |
-| 15 | P2 | 문서 동기화: 수치 정정, 스크립트 ROOT, `03` 재생성, `04`/`CONTRACT_CONFLICTS`에 신규 발견 항목(§8의 Upstream 항목들) 반영 | `docs/mock/*` · `scripts/*` | `03` 재생성 시 diff 없음, `04`와 `CONTRACT_CONFLICTS` 항목 수 일치 | 불필요 |
+| 순서 | 상태 | Priority | 작업 | 대상 파일 | 완료 조건 | Owner 확인 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | ✅ 완료 | P0 | 검증 스크립트에 enum 검사 확대(§11-6)와 필수 키 검사(§11-7) 추가 후 **먼저 실행**해 실패 목록 확보 | `data/mock/validate_mock_pack.py` | 스크립트가 P0-1·P0-2를 자동 검출 | 불필요 |
+| 2 | ✅ 완료 | P0 | 사건 유형을 등록된 4종으로 교체 (P0-1) | search 3 · evidence 2 · case 2 · scenarios 3 · `02` 카탈로그 | 모든 `target_event_types`/`event_type_hint`/`visual_event_type`이 4종 안에 들고 스크립트 통과 | 권장(서어진·김준영) |
+| 3 | ✅ 완료 | P0 | `VisualEvidence`에 `uncertainties`·`legal_status:null` 추가 (P0-2) | search 3 | 3건 모두 §3 필수 필드 완비 | 불필요 |
+| 4 | ⏳ 대기(신유민) | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · evidence 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건 + `considered[]`에 overlay 항목 | **필수(신유민)** |
+| 5 | ⏳ 대기(서어진·유소연) | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 3 · common 3 · (보류 가능: case) | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | **필수(서어진·유소연)** |
+| 6 | ✅ 완료 | P1 | 참조·좌표계 기계 수정: `disagree_positions`(P1-4), `samples[].offset_sec`+`sample_count`(P1-5), `manifest_summary.range`(P1-8), `processed_duration`(P2-9) | readout 1 · case 2 · search 1 · common 1 | 값이 §8 지시대로 정정되고 스크립트(§11-5·§11-9 규칙 포함) 통과 | 불필요 |
+| 7 | ⏳ 대기(김준영·정철원) | P1 | GPS/위치 경로 추가 + happy 위치 승격 (P1-6, P2-1) | recording 1~2 · evidence 2 · case 2 | happy `location_display.info_state=INFO_SOURCE_VERIFIED` + `coord` non-null, u001에 GPS 부재 Observation | **필수(김준영·정철원)** |
+| 8 | 📌 보류(§12 김준영 ⑤) | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1 · case 1 | `verification=UNCERTAIN`, `visual_event_type=null`, EvidenceRecord에 event 유형 필드 부재, requirement outcome 조정 | 권장(서어진) |
+| 9 | ⏳ 대기 | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001` · `scenario_relative_rebase_001` · `scenario_infra_failure_001` 전 모듈 + manifest + `02` | 각 시나리오가 스크립트 통과, `BLOCK`·`USABLE_RELATIVE_ONLY`·`STALE`이 pack에 등장 | **필수(정철원·신유민·유소연)** |
+| 10 | ✅ 완료 | P1 | happy `case_views`에 진행중·최종확인 스냅샷 추가, correction에 정정 전 스냅샷 추가 (P1-9, P2-6) | case 2 | `SEARCHING`/`RUNNING`/`user_reviewed=true`/정정 전 `INFO_NEEDS_REVIEW`가 등장 | 권장(신유민) |
+| 11 | 🔶 부분(actual_ref 제거 ✅ / metric 이름 대기) | P1 | eval fixture 재작성 (P1-11) | `expected/` 2 | `actual_ref` 제거 또는 실재 오답 fixture 연결, metric 이름 교체, §11-4 검증 통과 | **필수(김대원)** |
+| 12 | 🔶 부분(happy 분리 ✅ / purge 시나리오 미생성) | P1 | purge를 happy에서 분리 (P1-1) | recording 1 (+신규 `scenario_purge_001`) | happy 스냅샷에 AVAILABLE/DELETED 공존 없음 | 권장(정철원) |
+| 13 | 🔶 부분(P2-5·P2-8 ✅ / P2-2·3·4 대기) | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
+| 14 | ✅ 완료 | P2 | 검증 스크립트 나머지 규칙(§11-1·2·3·4·8·10) 구현 | `validate_mock_pack.py` | 새 규칙 추가 후에도 pack 전체 PASS | 불필요 |
+| 15 | 🔶 부분(수치·ROOT·03·04 ✅ / 신규 Upstream 항목 반영 잔여) | P2 | 문서 동기화: 수치 정정, 스크립트 ROOT, `03` 재생성, `04`/`CONTRACT_CONFLICTS`에 신규 발견 항목(§8의 Upstream 항목들) 반영 | `docs/mock/*` · `scripts/*` | `03` 재생성 시 diff 없음, `04`와 `CONTRACT_CONFLICTS` 항목 수 일치 | 불필요 |
 
-**작업 5·9는 Owner 응답이 필요하다.** 응답 전이라도 나머지는 병렬 진행 가능하며, 5는 "run/usage만 먼저 추가하고 Job은 보류"로 부분 진행할 수 있다.
+**상태는 2026-09-08 1차 수정 기준이다.** 답변이 필요 없는 1·2·3·6·10·14는 완료했고 11·12·13·15는 답변 불필요 부분만 처리했다. 남은 4·5·7·9와 11·13의 잔여는 §12의 Owner 답변이 있어야 진행할 수 있다. 8은 실행하려다 새 계약 공백을 발견해 보류했다(§0 참조).
 
 ---
 

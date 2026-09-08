@@ -64,7 +64,7 @@
       },
       "consensus": {
         "text": "17나28?4",
-        "disagree_positions": [6],
+        "disagree_positions": [5],
         "method": "MULTI_FRAME"
       },
       "abstained": true,

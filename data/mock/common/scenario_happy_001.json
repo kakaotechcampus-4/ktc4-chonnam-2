@@ -57,7 +57,7 @@
       "provider_label": "gemini",
       "operation": "SEARCH_COARSE",
       "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 },
-      "processed_duration_sec": 300.0,
+      "processed_duration_sec": 1200.0,
       "latency_ms": 65000,
       "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" },
       "cost": { "amount": "0.42", "currency": "USD" }

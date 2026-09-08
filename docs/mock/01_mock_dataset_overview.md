@@ -1,5 +1,7 @@
 # 01. Mock Dataset Overview — 대신고 공용 Mock Fixture Pack
 
+> **⚠️ 먼저 읽을 것 — `05_mock_deep_review_report.md`.** 이 Pack은 심층 검토를 한 번 거쳤고, 그 결과 P0 2건(`VisualEvidence`가 Coarse run에 연결됨 · 「화면 시각 없음」 모델링)이 **아직 미해소 상태**다. 각 모듈 Owner의 답변을 기다리는 항목이며 05 §12에 정리돼 있다. fixture를 그대로 믿고 구현을 시작하기 전에 05 §0과 §12를 먼저 보라.
+
 ## 1. 목적
 
 이 Mock Pack은 **새 Product/Architecture/Data Contract를 설계하지 않는다.** `origin/develop`에서 데이터 계약이 전부 종결된 상태(커밋 `8fc0ced`, 2026-09-08, 로드맵 「③ 데이터 계약 확정 ✓ → ④ 목데이터 1차 통합」)를 그대로 확장해 실제 실행 가능한 JSON 예시 데이터로 만든 것이다.
@@ -58,7 +60,7 @@ recording  ──▶  search  ──▶  readout  ──▶  evidence  ──▶
 
 전체 14 Final Contract + 1 Draft를 다시 읽고 이름·enum·unit·nullable·ID 참조·UNKNOWN/FAILURE/ABSTAIN 의미 축을 교차 검사했다. 발견한 항목은 전부 `04_mock_validation_report.md`에 있다. 요약:
 
-**Mock 생성 진행 가능** — 치명적 충돌(다른 계약이 서로 값을 부정하는 경우)은 없었다. 다만 진행 가능 판단과 별개로 아래 5건은 이 문서와 검증 리포트에 명시적으로 보고한다(고치지 않았다):
+**Mock 생성 진행 가능** — 치명적 충돌(다른 계약이 서로 값을 부정하는 경우)은 없었다. 다만 진행 가능 판단과 별개로 아래 7건은 이 문서와 검증 리포트에 명시적으로 보고한다(고치지 않았다). 이후 심층 검토에서 추가로 발견한 항목은 `05_mock_deep_review_report.md` §8에 있다:
 
 1. `contract-visual-evidence.md`의 JSON 예시가 `frame:incident-17@6400` 같은 위치 인코딩 문자열을 그대로 쓰고 있어 이후 확정된 opaque `FrameRef`(`fr_<opaque-id>`) 관례와 형식이 다르다.
 2. `JobRecord.kind`에 Report Video export / `purge_case()` 발주용 값이 아직 등재되지 않았다.
@@ -91,8 +93,12 @@ data/mock/
 docs/mock/
   01_mock_dataset_overview.md   (이 문서)
   02_mock_scenario_catalog.md
-  03_mock_artifact_templates.md
+  03_mock_artifact_templates.md   # fixture에서 자동 추출 — 직접 편집하지 말 것
   04_mock_validation_report.md
+  05_mock_deep_review_report.md   # 심층 검토 결과 + 남은 작업 + Owner 확인 항목
+  CONTRACT_CONFLICTS.md           # 계약 문제 인덱스
+scripts/
+  build_artifact_templates_doc.py # 03 재생성 스크립트
 ```
 
 각 `<module>/scenario_*.json` 파일은 `{"scenario_id": ..., "module": ..., <계약별 배열...>}` 형태의 **얇은 wrapper**다. `scenario_id`/`module` 키는 이 wrapper에만 있고, 그 안의 실제 Contract 객체(예: `SourceAsset`, `PlateReadout`)에는 없다 — 즉 런타임 Contract 스키마에 `scenario_id`를 추가한 것이 아니다. 시나리오 간 관계는 오직 `data/mock/scenarios/*.json`과 `data/mock/manifest.json`(둘 다 Mock 관리 전용 파일)에서만 표현한다.
@@ -114,6 +120,7 @@ docs/mock/
 - 같은 Scenario에 속한 모든 모듈의 artifact는 **같은 opaque ID**로 서로를 참조한다(`validate_mock_pack.py`가 기계적으로 검사한다).
 - ID는 사람이 읽을 수 있는 접두어(`sa_`·`ms_`·`fr_`·`tl_`·`tsc_`·`candidate_`·`ve_`·`readout_`·`rr_`·`tres_`·`ev_`·`req_`·`pkg_`·`job_`·`exec_`·`usage_`·`case_`)를 쓰되 **위치를 ID에 인코딩하지 않는다**(팀 기존 원칙).
 - Mock은 **완전히 결정론적**이다 — 난수·현재 시각·외부 API 호출이 전혀 없다.
+- **정의 객체가 없는 opaque ref가 몇 개 있다** — `crop_ref`(`crop_h001_001` 등)·`track_ref`(`track_h001`)는 `readout` 내부 식별자이고, `profile_ref`·`transform_ref`·`template_ref`·`policy_ref`·`pricing_id`는 각 계약이 opaque로 규정한 값이다. 이들을 가리키는 별도 fixture 객체는 없으며 찾을 필요도 없다(검증 스크립트도 참조 해석 대상에서 제외한다). `external_source`(`ext_*`)와 `correction_record`(`cr_*`)도 같은 이유로 제외 — 전자는 계약 집합 밖의 업로드 원본이고, 후자는 아직 Draft다.
 - `null` / `[]`(빈 배열) / `UNKNOWN` / `ABSTAIN` / `FAILED` / `NOT_RUN`(레코드 자체 부재)은 서로 다른 의미이며 절대 하나로 합치지 않았다. 예: `scenario_correction_rerun_001`은 `OverlayTimeReadout`을 아예 시도하지 않아 `readout_runs`에 overlay 항목이 없다(`FAILED`가 아니라 `NOT_RUN`).
 - Mock Runtime Output(각 모듈 fixture)과 Eval Ground Truth(`expected/`)는 완전히 분리했다. Search 후보 A/B/C 자체가 정답이 아니다.
 
@@ -138,4 +145,4 @@ docs/mock/
 
 ## 9. 금지 사항 (이 작업 중 지킨 것)
 
-Final Contract를 Mock 편의로 수정하지 않았다 / Contract에 없는 필드를 추가하지 않았다 / 모듈 내부 구현 세부를 Mock-Contract로 승격하지 않았다 / 존재하지 않는 제품 기능·법률/비즈니스 규칙을 만들지 않았다 / 서로 다른 실패 유형을 `null` 하나로 뭉치지 않았다 / 임의의 confidence·metric 숫자를 실제 성능인 것처럼 쓰지 않았다 / Mock Dataset을 실제 Evaluation Dataset처럼 다루지 않았다 / 서로 무관한 JSON을 만들지 않았다 / 한 Scenario 안에서 ID/참조가 모순되게 두지 않았다 / 문서만 만들고 끝내지 않았다(실제 JSON 파일 26개 + 검증 스크립트 생성) / 한 모듈의 Mock이 다른 모듈의 판단 책임을 대신하지 않았다 / 발견한 Contract 충돌을 임의 해석으로 숨기지 않았다.
+Final Contract를 Mock 편의로 수정하지 않았다 / Contract에 없는 필드를 추가하지 않았다 / 모듈 내부 구현 세부를 Mock-Contract로 승격하지 않았다 / 존재하지 않는 제품 기능·법률/비즈니스 규칙을 만들지 않았다 / 서로 다른 실패 유형을 `null` 하나로 뭉치지 않았다 / 임의의 confidence·metric 숫자를 실제 성능인 것처럼 쓰지 않았다 / Mock Dataset을 실제 Evaluation Dataset처럼 다루지 않았다 / 서로 무관한 JSON을 만들지 않았다 / 한 Scenario 안에서 ID/참조가 모순되게 두지 않았다 / 문서만 만들고 끝내지 않았다(실제 JSON 파일 29개 — 모듈 fixture 22 + scenario manifest 4 + 상위 manifest 1 + eval fixture 2 — 및 검증 스크립트 생성) / 한 모듈의 Mock이 다른 모듈의 판단 책임을 대신하지 않았다 / 발견한 Contract 충돌을 임의 해석으로 숨기지 않았다.

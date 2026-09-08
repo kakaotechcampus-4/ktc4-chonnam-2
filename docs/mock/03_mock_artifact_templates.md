@@ -129,48 +129,6 @@
 }
 ```
 
-### DeletionReport (PARTIAL)
-
-**Contract**: `analysis-source-derived/v1`  
-**출처**: recording/scenario_happy_001.json → deletion_reports[0] (실제 파일에서 그대로 발췌)
-
-```json
-{
-  "contract": "DeletionReport",
-  "contract_version": "analysis-source-derived/v1",
-  "case_id": "case_h001",
-  "requested_at": "2026-08-25T09:00:00+09:00",
-  "completed_at": "2026-08-25T09:00:04+09:00",
-  "status": "PARTIAL",
-  "items": [
-    {
-      "asset_ref": {
-        "kind": "incident_clip",
-        "ref": "clip_h001"
-      },
-      "result": "DELETED",
-      "failure_code": null
-    },
-    {
-      "asset_ref": {
-        "kind": "derived_asset",
-        "ref": "da_h001_report_video"
-      },
-      "result": "DELETED",
-      "failure_code": null
-    },
-    {
-      "asset_ref": {
-        "kind": "remote_copy",
-        "ref": "rc_h001_fine"
-      },
-      "result": "PENDING_EXPIRY",
-      "failure_code": null
-    }
-  ]
-}
-```
-
 ### TimeSourceCandidate ×2 (충돌하는 두 시각 후보)
 
 **Contract**: `recording-timeline/v1`  
@@ -247,7 +205,7 @@
       "usage_h001_coarse"
     ],
     "usage_summary": {
-      "processed_duration_ms": 300000,
+      "processed_duration_ms": 1200000,
       "token_usage": {
         "input_tokens": 14200,
         "output_tokens": 1200,
@@ -328,7 +286,9 @@
         "fr_h001_thumb"
       ]
     }
-  ]
+  ],
+  "uncertainties": [],
+  "legal_status": null
 }
 ```
 
@@ -519,14 +479,20 @@
   },
   "samples": [
     {
-      "frame_ref": "fr_h001_plate1",
-      "offset_sec": 313.1,
+      "frame_ref": "fr_h001_thumb",
+      "offset_sec": 12.48,
       "raw_text": "2026-08-24 18:05:12",
       "parsed_at": "2026-08-24T18:05:12+09:00"
     },
     {
+      "frame_ref": "fr_h001_plate1",
+      "offset_sec": 13.1,
+      "raw_text": "2026-08-24 18:05:13",
+      "parsed_at": "2026-08-24T18:05:13+09:00"
+    },
+    {
       "frame_ref": "fr_h001_plate2",
-      "offset_sec": 313.6,
+      "offset_sec": 13.6,
       "raw_text": "2026-08-24 18:05:13",
       "parsed_at": "2026-08-24T18:05:13+09:00"
     }
@@ -595,7 +561,7 @@
   "consensus": {
     "text": "17나28?4",
     "disagree_positions": [
-      6
+      5
     ],
     "method": "MULTI_FRAME"
   },
@@ -1211,7 +1177,7 @@
   },
   "event": {
     "visual_event_type": {
-      "value": "SIGNAL_VIOLATION",
+      "value": "SIGNAL",
       "source": {
         "kind": "search.visual_inference",
         "ref": {
@@ -1539,7 +1505,7 @@
   },
   "event": {
     "visual_event_type": {
-      "value": "ILLEGAL_PARKING",
+      "value": "MOTORCYCLE_HELMET_NON_USE",
       "source": {
         "kind": "search.visual_inference",
         "ref": {
@@ -1559,7 +1525,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_SIDEWALK_PARKING",
+      "value": "UNSAFE_HELMET_NON_USE",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -1579,7 +1545,7 @@
       "needs_review": false
     },
     "violation_expression": {
-      "value": "파란색 트럭이 인도 위에 정차하여 보행 통행을 방해함",
+      "value": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
       "source": {
         "kind": "evidence.violation_expression",
         "ref": {
@@ -1613,7 +1579,7 @@
     }
   },
   "vehicle_number": {
-    "value": "45다6789",
+    "value": "광주서구 가1234",
     "source": {
       "kind": "readout.plate_ocr",
       "ref": {
@@ -1680,7 +1646,7 @@
 }
 ```
 
-### CaseView (stage=READY)
+### CaseView — 처리 중 (stage=SEARCHING, progress RUNNING/PENDING)
 
 **Contract**: `case-view/v1.2`  
 **출처**: case/scenario_happy_001.json → case_views[0] (실제 파일에서 그대로 발췌)
@@ -1690,9 +1656,271 @@
   "contract": "CaseView",
   "contract_version": "case-view/v1.2",
   "case_id": "case_h001",
+  "case_rev": 1,
+  "stage": "SEARCHING",
+  "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 2,
+    "ok_file_count": 2,
+    "failed_file_count": 0,
+    "duration_sec": 1200.0,
+    "range": [
+      "2026-08-24T18:00:00+09:00",
+      "2026-08-24T18:20:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "18시쯤",
+    "vehicle": "흰색 SUV",
+    "situation": "백색 실선 구간에서 차로변경",
+    "location": "상무중앙로 사거리 부근"
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "RUNNING"
+    },
+    {
+      "step": "candidate_review",
+      "state": "PENDING"
+    },
+    {
+      "step": "plate_read",
+      "state": "PENDING"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "PENDING"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "PENDING"
+    },
+    {
+      "step": "requirement_check",
+      "state": "PENDING"
+    },
+    {
+      "step": "package_assembly",
+      "state": "PENDING"
+    }
+  ],
+  "candidates": [],
+  "evidence": null,
+  "requirements_evidence": null,
+  "requirements_package": null,
+  "package": null,
+  "running_jobs": [
+    {
+      "job_id": "job_h001_search",
+      "kind": "COARSE_SEARCH",
+      "label_key": "job.generic_processing",
+      "status": "RUNNING"
+    }
+  ],
+  "notices": []
+}
+```
+
+### CaseView (stage=READY)
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_happy_001.json → case_views[1] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_h001",
   "case_rev": 3,
   "stage": "READY",
   "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 2,
+    "ok_file_count": 2,
+    "failed_file_count": 0,
+    "duration_sec": 1200.0,
+    "range": [
+      "2026-08-24T18:00:00+09:00",
+      "2026-08-24T18:20:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "18시쯤",
+    "vehicle": "흰색 SUV",
+    "situation": "백색 실선 구간에서 차로변경",
+    "location": "상무중앙로 사거리 부근"
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "DONE"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    },
+    {
+      "step": "package_assembly",
+      "state": "DONE"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate_h001",
+      "at": "2026-08-24T18:05:12+09:00",
+      "at_provenance": "readout.overlay_ocr",
+      "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+      "thumb_ref": "fr_h001_thumb",
+      "selected": true
+    }
+  ],
+  "evidence": {
+    "record_id": "ev_h001",
+    "case_type_display": {
+      "code": "SOLID_LINE_LANE_CHANGE",
+      "label": "백색 실선 구간 차로변경",
+      "needs_review": false
+    },
+    "report_type_display": {
+      "code": "UNSAFE_LANE_CHANGE",
+      "label": "안전운전 불이행",
+      "needs_review": false
+    },
+    "violation_display": {
+      "code": null,
+      "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+      "needs_review": false
+    },
+    "plate_display": {
+      "value": "12가3456",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "plate.source.plate_ocr"
+    },
+    "event_time_display": {
+      "value": "2026-08-24T18:05:12+09:00",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "time.source.overlay_ocr"
+    },
+    "location_display": {
+      "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "needs_review": false,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "location.source.user_hint",
+      "coord": null,
+      "search_keyword": "광주 상무지구 상무중앙로 사거리"
+    },
+    "user_edited": false,
+    "preview_ref": "fr_h001_thumb",
+    "review_needed": false,
+    "reason_code": null
+  },
+  "requirements_evidence": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed"
+      },
+      {
+        "code": "evidence.location.present",
+        "outcome": "PASS",
+        "reason_code": "evidence.user_hint_sufficient"
+      }
+    ]
+  },
+  "requirements_package": {
+    "readiness": "PASS",
+    "checks": [
+      {
+        "code": "package.asset.report_video.exists",
+        "outcome": "PASS",
+        "reason_code": "asset.available"
+      },
+      {
+        "code": "package.asset.plate_visible",
+        "outcome": "PASS",
+        "reason_code": "asset.plate_legible"
+      },
+      {
+        "code": "package.time.overlay_visible",
+        "outcome": "PASS",
+        "reason_code": "time.overlay_burned_in"
+      }
+    ]
+  },
+  "package": {
+    "package_ref": "pkg_h001",
+    "report_fields": {
+      "safety_report_type": "안전운전 불이행",
+      "occurred_at": "2026-08-24T18:05:12+09:00",
+      "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+      "vehicle_number": "12가3456",
+      "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "artifact_ref": "da_h001_report_video",
+    "capabilities": [
+      "DOWNLOAD_ASSETS",
+      "COPY_FIELDS",
+      "OPEN_DESTINATION"
+    ],
+    "warnings": []
+  },
+  "running_jobs": [],
+  "notices": []
+}
+```
+
+### CaseView — 사용자 최종 확인 완료 (user_reviewed=true)
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_happy_001.json → case_views[2] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_h001",
+  "case_rev": 4,
+  "stage": "READY",
+  "user_reviewed": true,
   "manifest_summary": {
     "file_count": 2,
     "ok_file_count": 2,
@@ -1901,8 +2129,8 @@
     "failed_file_count": 0,
     "duration_sec": 1800.0,
     "range": [
-      "2026-08-26T22:00:00+09:00",
-      "2026-08-26T22:30:00+09:00"
+      "2026-08-26T22:10:00+09:00",
+      "2026-08-26T22:40:00+09:00"
     ]
   },
   "hints": {
@@ -1954,7 +2182,7 @@
   "evidence": {
     "record_id": "ev_u001",
     "case_type_display": {
-      "code": "SIGNAL_VIOLATION",
+      "code": "SIGNAL",
       "label": "신호 위반 의심",
       "needs_review": true
     },
@@ -2099,7 +2327,7 @@
     "output_tokens": 1200,
     "total_tokens": 15400
   },
-  "processed_duration_sec": 300.0,
+  "processed_duration_sec": 1200.0,
   "latency_ms": 65000,
   "pricing_context": {
     "pricing_id": "gemini-2026-08",
@@ -2213,16 +2441,13 @@
   "kind": "DELIBERATELY_WRONG",
   "provisional_non_contract_schema": true,
   "note": "이 파일은 어떤 Final Data Contract도 소유하지 않는 Mock 전용 provisional 구조다(위와 동일한 사유 — eval Ground Truth Contract 미확정). eval의 metric 계산 코드가 실제로 오류를 잡아내는지 검증하는 용도이며, 이 fixture의 낮은 점수 자체가 시스템의 실제 성능을 뜻하지 않는다.",
+  "actual_values_are_inline": "이 fixture의 actual_* 값은 의도적으로 틀리게 만든 합성값이며 런타임 fixture를 참조하지 않는다. actual_ref를 두면 harness가 역참조했을 때 실제(정답) 값이 나와 테스트가 통과해버리므로 참조를 두지 않는다. metric 이름은 eval Owner(김대원) 확정 대기 — docs/mock/05_mock_deep_review_report.md P1-11.",
   "purpose": "actual이 의도적으로 틀린 입력에서 metric 계산 코드가 만점을 내지 않고 실제로 오류를 검출하는지 검증한다 — bad candidate ranking, 큰 timestamp 편차, 잘못된 번호판 채택, false positive abstain을 각각 포함한다.",
-  "scenario_ref": "scenario_happy_001 (의도적으로 왜곡한 actual 값 사용)",
+  "scenario_ref": "scenario_happy_001(기대값 출처만 참조 — actual은 합성값)",
   "case_id": "case_h001",
   "metric_targets": [
     {
       "metric": "plate_exact_match",
-      "actual_ref": {
-        "kind": "plate_readout",
-        "ref": "readout_h001_plate"
-      },
       "actual_value": "98다6543",
       "expected_value": "12가3456",
       "expect_match": false,
@@ -2230,10 +2455,6 @@
     },
     {
       "metric": "candidate_top1_correct",
-      "actual_ref": {
-        "kind": "analysis_run_candidate_event",
-        "ref": "run_h001"
-      },
       "actual_top_candidate_id": "candidate_h001_decoy",
       "expected_top_candidate_id": "candidate_h001",
       "expect_match": false,
@@ -2241,10 +2462,6 @@
     },
     {
       "metric": "occurred_at_within_tolerance",
-      "actual_ref": {
-        "kind": "time_resolution",
-        "ref": "tres_h001"
-      },
       "actual_value": "2026-08-24T19:47:00+09:00",
       "expected_value": "2026-08-24T18:05:12+09:00",
       "max_deviation_sec": 2,
@@ -2253,10 +2470,6 @@
     },
     {
       "metric": "abstention_correctness",
-      "actual_ref": {
-        "kind": "plate_readout",
-        "ref": "readout_h001_plate"
-      },
       "actual_abstained": false,
       "expected_should_abstain": true,
       "expect_match": false,

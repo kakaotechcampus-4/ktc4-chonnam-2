@@ -64,7 +64,7 @@
         "ok_file_count": 1,
         "failed_file_count": 0,
         "duration_sec": 1800.0,
-        "range": ["2026-08-26T22:00:00+09:00", "2026-08-26T22:30:00+09:00"]
+        "range": ["2026-08-26T22:10:00+09:00", "2026-08-26T22:40:00+09:00"]
       },
       "hints": {
         "time": "밤 10시쯤",
@@ -93,7 +93,7 @@
       ],
       "evidence": {
         "record_id": "ev_u001",
-        "case_type_display": { "code": "SIGNAL_VIOLATION", "label": "신호 위반 의심", "needs_review": true },
+        "case_type_display": { "code": "SIGNAL", "label": "신호 위반 의심", "needs_review": true },
         "report_type_display": { "code": "UNSAFE_SIGNAL_VIOLATION", "label": "안전운전 불이행(신호위반 의심)", "needs_review": true },
         "violation_display": {
           "code": null,

@@ -6,7 +6,7 @@ example in that doc is guaranteed to be byte-identical to what's on disk
 import json
 from pathlib import Path
 
-ROOT = Path("/tmp/repo")
+ROOT = Path(__file__).resolve().parents[1]
 MOCK = ROOT / "data" / "mock"
 OUT = ROOT / "docs" / "mock" / "03_mock_artifact_templates.md"
 
@@ -40,8 +40,6 @@ sections.append(block("RecordingTimeline (USABLE)", "recording-timeline/v1",
                        "recording/scenario_happy_001.json → recording_timelines[0]", rec["recording_timelines"][0]))
 sections.append(block("IncidentClip", "analysis-source-derived/v1",
                        "recording/scenario_happy_001.json → incident_clips[0]", rec["incident_clips"][0]))
-sections.append(block("DeletionReport (PARTIAL)", "analysis-source-derived/v1",
-                       "recording/scenario_happy_001.json → deletion_reports[0]", rec["deletion_reports"][0]))
 rec_u = load("recording/scenario_unknown_abstain_partial_001.json")
 sections.append(block("TimeSourceCandidate ×2 (충돌하는 두 시각 후보)", "recording-timeline/v1",
                        "recording/scenario_unknown_abstain_partial_001.json → time_source_candidates",
@@ -114,8 +112,12 @@ ca = load("case/scenario_happy_001.json")
 sections.append("## case\n")
 sections.append(block("JobRecord (COARSE_SEARCH)", "job-record/v1",
                        "case/scenario_happy_001.json → job_records[0]", ca["job_records"][0]))
-sections.append(block("CaseView (stage=READY)", "case-view/v1.2",
+sections.append(block("CaseView — 처리 중 (stage=SEARCHING, progress RUNNING/PENDING)", "case-view/v1.2",
                        "case/scenario_happy_001.json → case_views[0]", ca["case_views"][0]))
+sections.append(block("CaseView (stage=READY)", "case-view/v1.2",
+                       "case/scenario_happy_001.json → case_views[1]", ca["case_views"][1]))
+sections.append(block("CaseView — 사용자 최종 확인 완료 (user_reviewed=true)", "case-view/v1.2",
+                       "case/scenario_happy_001.json → case_views[2]", ca["case_views"][2]))
 
 ca_u = load("case/scenario_unknown_abstain_partial_001.json")
 sections.append(block("JobRecord — 재판독 자동 발주 (kind=PLATE_READ, force_rerun=true)", "job-record/v1",

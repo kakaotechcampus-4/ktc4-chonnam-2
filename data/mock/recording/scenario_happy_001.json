@@ -260,20 +260,5 @@
       "availability": "AVAILABLE",
       "expires_at": "2026-08-26T18:00:00+09:00"
     }
-  ],
-  "deletion_reports": [
-    {
-      "contract": "DeletionReport",
-      "contract_version": "analysis-source-derived/v1",
-      "case_id": "case_h001",
-      "requested_at": "2026-08-25T09:00:00+09:00",
-      "completed_at": "2026-08-25T09:00:04+09:00",
-      "status": "PARTIAL",
-      "items": [
-        { "asset_ref": { "kind": "incident_clip", "ref": "clip_h001" }, "result": "DELETED", "failure_code": null },
-        { "asset_ref": { "kind": "derived_asset", "ref": "da_h001_report_video" }, "result": "DELETED", "failure_code": null },
-        { "asset_ref": { "kind": "remote_copy", "ref": "rc_h001_fine" }, "result": "PENDING_EXPIRY", "failure_code": null }
-      ]
-    }
   ]
 }
