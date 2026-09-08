@@ -2,6 +2,8 @@
 
 **Status:** Accepted
 
+> **후속 변경 (2026-09-07):** `analysis-run-candidate-event/v1.1` — `CandidateEvent.span.timeline_revision` 추가(B09). 근거 `adr-data-contract-call-closure-2026-09-07.md` §4.8. 본문은 당시 결정 기록이다.
+
 **Contract:** `AnalysisRun + CandidateEvent`
 
 **Producer:** 서어진 (`search`)

@@ -31,6 +31,10 @@
 | 2026-09-05 | §5-1 ⑫ · §4-모듈5 ④⑤ · §11-4 · §12 RT8 · §5-3 | Job Intent / Job Execution 분해 확정을 반영. `JobRecord`(case) / `JobExecution`(common/runtime) / `UsageRecord`로 ⑫를 다시 씀. RT8 종결. recording 보조 구조 3개 등재 | `contracts/adr/adr-job-record-case-view.md` · `contracts/adr/adr-consistency-2026-09.md` |
 | 2026-09-06 | §5-1 ⑦·⑬ · §5-3 · §4-모듈3 ③ · §11-4 | 담당자 회신으로 별도 계약 2건을 작성하고 목록에 등재. ⑦에 **`ReadoutRun`** 추가(신유민), **⑬ `CorrectionRecord`** 신설(유소연). recording 자산 계층의 opaque ref 방향과 계약 2건 작성 예정 기록(정철원). §11-4 USER_REVIEWED 소유 확인 반영. 후속 감사에서 접합 완결은 Pending으로 분리 | `contracts/adr/adr-consistency-2026-09.md` §6 · `contracts/adr/adr-readout-run.md` · `contracts/adr/adr-correction-record.md` |
 | 2026-09-06 (감사 후속) | §5-1 상태 안내 · §5-3 · §11-4 안내 | 미작성 자산이 통합을 막지 않는다는 단정 철회. ref는 최소 schema 이전 작업 규약으로 한정. CaseView/recording 접합은 Pending 유지 | `contracts/adr/adr-consistency-followup-2026-09-06.md` |
+| 2026-09-07 (접합부 종결) | §5-1 상태 안내 · §5-3 안내 · §11-4 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B01·B02·B03·B05·B09 종결, B06·B08 직렬화 대기, B07 자산 계약 대기를 종결 ADR로 가리킨다 | `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` |
+| 2026-09-08 (접합부 종결 후속) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B06(`SpanResolution` `failure`·`OUT_OF_TIMELINE_RANGE`)·B08(`AnalysisScope` relative range) 직렬화 종결, ② `SourceAsset`/`MediaStream`·③ 전체를 담는 recording 자산 계약 2건이 **Draft(Consumer Review 대기)**로 추가됨 | `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` |
+| 2026-09-08 (2차 반영) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. 자산 계약 2건이 Consumer Review 종결로 **`Final — Accepted`(`…/v1`)**, `MissingRange.source_ref`·`AssetSpan` identity 결정 종결 | 같은 ADR §4.7~§4.10 |
+| 2026-09-08 (주요 문서 동기화) | §5-3 안내 · §11-1 안내 · §11-4 포인터 | **규칙·계약 목록·enum은 바꾸지 않았다.** §5-3에 겹쳐 쌓인 과거 상태 안내 5개(「작성 예정」·「최소 schema 제공 전」·B06~B09 Pending·1차/2차 갱신)를 **2026-09-08 최종 상태 한 블록으로 합쳤다.** 위 행들의 당시 상태는 이 표가 역사 기록으로 보존한다 | 같은 ADR §4.7~§4.10 · §9 · §10.2 |
 
 ---
 
@@ -888,6 +892,8 @@ v3에서는 산문으로만 정의됐지만 v4에서는 web의 유일한 입력�
 }
 ```
 
+> 위는 의미 수준 구조다. 필드·enum·nullable은 계약이 확정한다 — `case-view/v1.2`(2026-09-07)는 `requirements`를 `requirements_evidence` / `requirements_package` 두 객체로 나눠 세 gate(`EVIDENCE_SUFFICIENT`·`PACKAGE_READY`·`USER_REVIEWED`)를 구분해 내려보낸다(`contracts/contract-job-record-case-view.md` B절 §7).
+
 CaseView는 적어도 다음 상황을 web이 **추론 없이** 표현하게 해야 한다.
 
 ```
@@ -1050,7 +1056,7 @@ Eval clip suite:
 
 > **중요:** web은 ①~⑩을 직접 읽지 않는다. case가 필요한 값을 `CaseView`로 projection한다.
 
-> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 Pending이며 `CorrectionRecord`는 Consumer Review 대기 Draft다. 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
+> **⑦ `ReadoutRun` · ⑬ `CorrectionRecord` 등재 (2026-09-06).** 둘 다 목록에 없는데 다른 계약이 이미 참조하던 타입이었다(2026-09-05 확인 필요 항목). **Owner가 별도 계약 작성을 수용한 뒤 등재했다** — 등재는 전체 접합 수락을 뜻하지 않는다. `ReadoutRun`의 결과·usage 연결은 2026-09-07에 종결됐다(결과 계약의 필수 `run_ref` · `UsageRecord.run_ref` authoritative — `contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4). `CorrectionRecord`는 여전히 Consumer Review 대기 Draft다. 등재 근거는 `contracts/adr/adr-consistency-2026-09.md` §6 R-3·R-4.
 
 ## 5-2. `Observation<T>`
 
@@ -1094,13 +1100,17 @@ Search가 반환한 시간 구간은 `recording.resolve_span`을 통해 **복수
 
 Data Contract 단계에서 보조 구조 3개가 추가됐다 — **`TimeSourceCandidate`**(Source에서 관찰된 절대시각 후보와 provenance. 최종 판정은 하지 않는다. `case`를 거쳐 `evidence/time_resolve`가 소비한다), **`SpanResolution`**(timeline 구간 → 실제 Source/Stream 구간 변환 결과), **`TimeSourceCheck`**(후보가 없을 때의 관찰 기록). 필드는 `architecture/contracts/contract-recording-timeline-asset-span.md`가 소유한다.
 
-> **작성 예정 (2026-09-06 확정).** ② 중 `SourceAsset`/`MediaStream`과 ③ 전체는 `recording` Owner(정철원)가 계약 2건으로 작성한다 — `contract-source-asset-media-stream.md`(`SourceAsset`·`MediaStream`·`FrameRef`) · `contract-analysis-source-derived.md`(`AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset`).
+> **자산 계층 계약 상태 (2026-09-08 최종).** ② 중 `SourceAsset`/`MediaStream`과 ③ 전체는 `recording` Owner(정철원)의 계약 2건이 소유하고 **둘 다 `Final — Accepted`**다 — `contract-source-asset-media-stream.md`(`source-asset-media-stream/v1` — `SourceAsset`·`MediaStream`·`FrameRef`·canonical `AssetFacts`) · `contract-analysis-source-derived.md`(`analysis-source-derived/v1` — `AnalysisSource`·`RemoteCopy`·`IncidentClip`·`DerivedAsset`). 4 Consumer(`search`·`readout`·`case`·`evidence`) Review가 종결됐다. 과거 회차의 「작성 예정」·「최소 schema 제공 전」 규약은 이 상태로 대체됐다(개정 이력 참조).
 >
-> **최소 schema 제공 전 ref 작업 규약** — Owner 회신의 opaque 제안 방향을 기존 목 예시에 적용한다. 정식 필드 계약이나 향후 불변 형식으로 확대 해석하지 않는다.  `sa_` / `ms_` / `fr_` / `as_` / `rc_` / `clip_` / `da_` 접두어 + opaque id. **위치나 role을 ID에 인코딩하지 않는다**(`ms_<source_asset_id>_<role>` · `fr_<media_stream_id>@<offset_ms>` 같은 형태를 쓰지 않는다). `source_asset_ref`와 `role`은 `MediaStream`의 별도 필드로, frame 위치는 `FrameRef`의 `media_stream_ref + source offset`으로 보존한다. video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role도 분리한다.
+> **필드·enum·nullable·시그니처의 정의처는 그 두 계약이다.** v4는 의미 수준만 고정하고 값 목록을 여기에 복제하지 않는다. **자산 계층 `ContractRef.kind` 값 공간(소문자 snake_case)은 `contract-source-asset-media-stream.md` §2.1 한 곳이 소유한다** — 다른 계약과 이 문서는 그 절을 가리킬 뿐이고, Consumer는 정확 문자열로 비교한다(대소문자 무시·별칭·prefix 추론·Consumer별 변환표 금지).
 >
-> 이 계약들은 **ref/provenance/lifecycle 의미까지만** 고정한다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4에서도 미결이므로 임의 확정하지 않는다(A6).
+> **ref 작업 규약 — 유지된다.** `sa_` / `ms_` / `fr_` / `as_` / `rc_` / `clip_` / `da_` 접두어 + opaque id. **위치나 role을 ID에 인코딩하지 않는다**(`ms_<source_asset_id>_<role>` · `fr_<media_stream_id>@<offset_ms>` 같은 형태를 쓰지 않는다). `source_asset_ref`와 `role`은 `MediaStream`의 별도 필드로, frame 위치는 `FrameRef`의 `media_stream_ref + source offset`으로 보존한다. video/audio stream 종류와 `FRONT`/`REAR`/`UNKNOWN` camera role도 분리한다. **Consumer가 여러 값을 이어 붙여 ref를 합성하는 것도 금지다.**
 >
-> **통합 Pending B06~B09.** opaque ref만으로 실제 evidence가 소비할 자산 metadata나 span/시간/revision 접합이 완성되지는 않는다. 개별 fixture는 만들 수 있으나 현재 계약만으로 전체 목 통합 가능을 보증하지 않는다. `mock-pack-v1-refs.md`는 비규범 예시이며 정식 recording 계약이 나오면 폐기한다. 현재 상태는 `contracts/adr/adr-consistency-followup-2026-09-06.md` §3·§5를 따른다.
+> **함께 종결된 접합 3건 (2026-09-08).** ① `MissingRange.source_ref`는 `ContractRef {kind, ref} | null`이고 **키는 항상 존재한다**(`span-resolution/v1.2`) — `reason`별 non-null/`null` 규칙과 허용 `kind`는 `contract-recording-timeline-asset-span.md` §10.1·§10.2가 소유한다. ② **`AssetSpan`에는 별도 identity를 추가하지 않는다** — 동일성은 composite 값으로 비교하고, 그 값을 결합·해시해 span ref를 발급하는 것도 금지다(`contract-analysis-source-derived.md` §6.3·§6.5). ③ **사건 구간의 canonical ref는 `incident_clip`이다** — readout `input_ref.span_ref`는 삭제됐고(`plate-readout/v1.2`·`overlay-time-readout/v1.2`) **합성 `span_ref`를 쓰지 않는다**. clip 생성 전 fallback과 `evidence.interval`의 참조 대상은 `contract-evidence-record-needs.md` §8.3이 소유한다.
+>
+> **`mock-pack-v1-refs.md`는 폐기됐다(비규범).** 자산 ref의 형식·필드·lookup·`AssetFacts`·`FrameRef`를 그 문서에서 읽지 않는다.
+>
+> **남은 것과 계약 차단의 구분.** 계약 의미를 막는 항목은 **0건**이다. upload 방식·proxy profile 값·retention 일수·provider별 `RemoteCopy` delete 방식은 v4 A6 미결을 유지하고, `AnalysisSource` profile 값 목록(`profile_ref` 자체는 **필수 non-null·opaque**로 확정)·`stream_selector` 직렬화·thumbnail 이미지 전달 방식은 **구현·운영 수준의 비차단 Pending**이다. 현재 종결·Pending·준비도 판정의 소유 문서는 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §4.7~§4.10 · §9 · §10.2다.
 
 ## 5-4. `AnalysisScope`
 
@@ -1266,7 +1276,7 @@ CaseView는 **원천 domain contract의 복사본이 아니라 UI projection**�
 }
 ```
 
-web은 `notices`와 backend-projected 상태를 표현하고 raw threshold로 상태를 재판정하지 않는다.
+web은 `notices`와 backend-projected 상태를 표현하고 raw threshold로 상태를 재판정하지 않는다. 위 JSON은 의미 수준 예시이며 실제 필드(`requirements_evidence`/`requirements_package` 분리, `notices[].severity` 값 등)는 `contracts/contract-job-record-case-view.md`가 소유한다.
 
 ## 5-13. `JobIntent` / `JobRecord` / `UsageRecord`
 
@@ -1720,6 +1730,8 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-1. `recording` — 정철원
 
+> **계약 종결 후속 (2026-09-08):** 아래 체크는 Owner 점검 기록이며 v4를 막는 blocker가 아니다. 이 중 자산 모델·frame access·clip 생성 책임·public contract 유지는 recording 자산 계약 2건이 `Final — Accepted`가 되면서 계약 문장으로 확정됐다 — `contracts/contract-source-asset-media-stream.md`(`MediaStream[]`·`FrameRef`·`resolve_frame`/`read_frame`) · `contracts/contract-analysis-source-derived.md`(clip 생성·파생 자산·lifecycle). upload/proxy 전략은 A6 미결을 유지하되 **public contract가 그 뒤에 숨는다**는 방향은 두 계약이 고정했다. 체크 표시는 Owner가 직접 한다.
+
 - [ ]  `SourceAsset ↔︎ MediaStream[]` 모델이 실제 전방/후방/오디오 샘플을 표현하는가
 - [ ]  사용자 원본 reference와 Managed Source Copy의 삭제 권한이 구분되는가
 - [ ]  `read_frame` 또는 동등한 frame access contract가 readout 요구를 만족하는가
@@ -1744,7 +1756,7 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-4. `case` — 유소연
 
-> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection 및 전체 통합은 별도로 Pending이다(`contracts/adr/adr-consistency-followup-2026-09-06.md` §3).
+> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 전체 통합(E2E)은 여전히 실행 기록이 없어 Pending이다 — 현재 종결·준비도 판정은 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §10.2가 소유한다.
 
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
 - [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7

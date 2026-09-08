@@ -4,7 +4,9 @@
 
 **Accepted:** `2026-09-06`
 
-**수락 근거:** CALL-6 회신 — 신유민(`readout` Owner) 「(b) `AnalysisRun`처럼 `ReadoutRun`을 별도 계약으로 만드는 방향에 동의합니다. 최소 필드는 제안해 주신 구성으로 수락합니다.」 소비자 김대원(`eval`) 확인 대상
+**수락 근거:** CALL-6 회신 — 신유민(`readout` Owner) 「(b) `AnalysisRun`처럼 `ReadoutRun`을 별도 계약으로 만드는 방향에 동의합니다. 최소 필드는 제안해 주신 구성으로 수락합니다.」 소비자 김대원(`eval`)은 2026-09-07 회차에서 run 단위 실패 집계를 확인했다(§2)
+
+> **B03·B05 종결 (2026-09-07).** 결과 → run 연결은 결과 계약의 필수 `run_ref`(`contract-plate-overlay-readout.md` §3), 사용량 연결은 `UsageRecord.run_ref`가 authoritative(§4). 스키마는 바뀌지 않았다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4.
 
 **Architecture Contract:** v4 §5-1 ⑦ · §4-모듈3 ③
 
@@ -47,8 +49,8 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 
 **Consumer가 기대할 수 있는 것**
 
-- `eval` — 실패 집계의 run 단위 기록을 제공한다. Abstention Recall 계산에는 정답 라벨·분자 정의·결과 연결이 추가로 필요하며 소비자 확인 대기다.
-- `case` — 결과 없는 실패를 진행 상태로 표현할 수 있다
+- `eval` — **실패 분류는 run 단위로 집계한다**(김대원 확인, 2026-09-07). `ReadoutRun`이 `operation`을 갖고 `JobRecord`는 갖지 않으므로 번호판 판독 실패와 화면시각 판독 실패가 한 바구니에 섞이지 않는다. 비용은 execution 단위(`UsageRecord.execution_ref`)다 — 지표마다 단위가 다른 것이 정상이다. Abstention Recall·Wrong Accept Rate의 정답 라벨과 분자·분모는 `eval`이 정의했고 **계약 필드 추가는 필요 없다**(`PlateReadout.abstained`와 `observation.value`로 충분). 정답지(`READABLE`+정답 문자열 / `UNREADABLE`)는 현재 없으며 eval 소유 후속이다.
+- `case` — 결과 없는 실패를 진행 상태로 표현할 수 있다. **readout 계열 Job 1 execution : `ReadoutRun` 1건**은 `case`의 orchestration 불변조건이다(`contract-job-record-case-view.md` A절 §10-5). `readout`이 보장하는 것은 「public 함수 호출 1회 = run 1건」까지다
 
 **이 Contract가 보장하지 않는 것**
 
@@ -80,23 +82,26 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 | `failure` | object \| null | 조건부 | `outcome ∈ {PARTIAL, FAILED}`일 때 필수, `SUCCEEDED`면 null |
 | `failure.kind` | string | Y(있을 때) | readout failure taxonomy의 상위 종류. **값 집합은 `modules/readout/decisions/failure-taxonomy.md`를 따른다** |
 | `failure.code` | string | Y(있을 때) | stable machine-readable failure code |
-| `usage_refs` | ID[] | Y(빈 배열 허용) | 이 실행이 소비한 `UsageRecord` 참조 |
+| `usage_refs` | ID[] | Y(빈 배열 허용) | 이 실행이 소비한 `UsageRecord` 참조. **조회 편의용 파생값이며 authoritative가 아니다** — 어느 run에 속한 사용량인지의 기준은 `UsageRecord.run_ref`이고 두 값이 어긋나면 `UsageRecord.run_ref`가 기준이다(B05, 2026-09-07 · `contract-usage-record.md` §8-11). 양방향 정합을 이 계약의 불변조건으로 강제하지 않는다 |
 | `started_at` | ISO8601 | Y | 실행 시작 |
 | `ended_at` | ISO8601 \| null | Y(키) | 종료. 관측하지 못했으면 null |
 
 ## 5. 결과 계약과의 연결
 
-> **Pending B03/B05:** 아래는 Owner가 요구한 추적 의미다. 실제 판독 결과 schema/예시의 run 연결 위치와 UsageRecord의 대상 타입은 미합의다. 새 필드나 매핑을 이번 보정에서 추가하지 않으며 전체 세트의 통합 완료로 보지 않는다.
+> **B03 종결 (2026-09-07 · Decider 신유민 · 확인 유소연·김대원).** 연결 필드는 결과 계약이 소유한다 — `contract-plate-overlay-readout.md` §3 「`ReadoutRun`과의 연결 — `run_ref`」. 이 절은 run 쪽에서 보이는 의미만 적는다.
 
-`PlateReadout` / `OverlayTimeReadout`은 **자신을 생성한 실행의 `run_id`를 보존한다.**
+`PlateReadout` / `OverlayTimeReadout`은 최상위 필수 `run_ref: {kind:"readout_run", ref:<run_id>}`로 **자신을 생성한 실행을 보존한다.**
 
-- `ReadoutRun` 1건 : 결과 0~1건. `outcome=FAILED`이면 결과가 없을 수 있다
-- 결과에서 run으로 역추적할 수 있어야 하고, 그 반대는 보장하지 않는다
-- `Observation<T>`의 `produced_by.run_ref`는 readout 산출 Observation일 때 이 `run_id`를 참조한다 (`contract-observation.md` — 「Producer가 별도 logical run identity를 가진 경우 사용한다」)
+- `ReadoutRun` 1건 : 결과 0~1건. `outcome=FAILED`이면 결과가 없다(§8의 `rr_882`)
+- **결과가 존재하면 `run_ref`가 존재·유효하다** — `outcome` 값과 무관
+- 결과에서 run으로 역추적할 수 있어야 하고, 그 반대는 보장하지 않는다. **`result_refs[]`는 두지 않는다**
+- 재시도는 새 `run_id`와 새 `readout_id`다(§9-1). 결과 간 supersede는 `readout` 소유가 아니다
+- `Observation<T>`의 `produced_by.run_ref`는 readout 산출 Observation일 때 `{kind:"readout_run", ref:<run_id>}`로 이 run을 참조한다(`contract-observation.md` §6 등재). 결과 최상위 `run_ref`와 같은 실행이다
+- `ReadoutRun`에는 `execution_ref`가 없다. `ReadoutRun → JobExecution` 역추적은 `JobExecution.produced`의 `{kind:"readout_run", ref}`가 담당한다(`contract-job-execution.md` §5)
 
 ## 6. Enum
 
-**`operation`** — `PLATE_READ` · `OVERLAY_TIME_READ`. v4 §4-모듈3 ③의 public capability와 1:1이다.
+**`operation`** — `PLATE_READ` · `OVERLAY_TIME_READ`. v4 §4-모듈3 ③의 public capability와 1:1이다. **`PLATE_REREAD`를 추가하지 않는다** — 재판독은 readout에게 `read_plate` 호출 1회이고 `PLATE_REREAD`는 `EvidenceNeeds.kind`의 값 공간이다. `JobRecord.kind`와는 같은 이름의 값끼리 대응한다(`contract-job-record-case-view.md` A절 §7).
 
 **`outcome`** — `SUCCEEDED` · `PARTIAL` · `FAILED`. `AnalysisRun`과 같은 값 공간이다.
 

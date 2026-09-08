@@ -2,6 +2,10 @@
 
 **Status:** Accepted
 
+> **후속 변경 (2026-09-07):** `evidence-record/v1.2` — `EvidenceValue.needs_review` · `occurred_at.user_corrected`/`source{kind,label_key}` 추가와 `OK` 부여 조건은 `adr-data-contract-call-closure-2026-09-07.md` §4.1이 근거다. 본문은 당시 결정 기록이다.
+
+> **후속 변경 (2026-09-08):** `context_refs[].role="evidence.interval"`과 `EvidenceRecord.basis.evidence_interval_ref`의 참조 대상이 확정됐다 — clip 생성 후 `incident_clip`, clip 생성 전 `candidate_event` fallback이며 `asset_span`을 가리키지 않는다(`AssetSpan`에 identity를 두지 않기로 확정). `ContractRef`의 필드 모양·필수성은 바뀌지 않아 **`evidence-needs/v1` 유지**. Decider 정철원(`AssetSpan`·`IncidentClip` 소유), 확인 신유민·유소연·김준영. 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.9.
+
 **Contract:** `⑧ EvidenceRecord + EvidenceNeeds`
 
 **Producer:** `evidence` — 김준영

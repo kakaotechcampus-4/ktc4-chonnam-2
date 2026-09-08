@@ -192,7 +192,9 @@ search.gemini_3_7_coarse     ❌
 ### `run_ref`
 
 - Producer가 별도 logical run identity를 가진 경우 사용한다.
-- Search Observation이면 `AnalysisRun.run_id`를 참조할 수 있다.
+- Search Observation이면 `AnalysisRun.run_id`를 참조할 수 있다 — `{ "kind": "analysis_run", "ref": <run_id> }`.
+- Readout Observation이면 `ReadoutRun.run_id`를 참조한다 — `{ "kind": "readout_run", "ref": <run_id> }` (2026-09-07 등재, B03). `readout` 결과는 항상 `ReadoutRun`에서 나오므로 `readout`은 이 필드를 항상 채운다(Producer-side 강화, `contract-plate-overlay-readout.md` §3). 공용 계약의 optional 의미는 바뀌지 않는다.
+- run identity를 뜻하는 `kind`는 현재 `analysis_run` · `readout_run` 둘이다. 새 run 종류는 계약 개정으로 추가한다(`contract-usage-record.md` §5의 필드 수준 제약과 같은 어휘).
 - `JobRecord.job_id` 또는 common/runtime의 `JobExecution`을 의미하지 않는다.
 - Job 발주·실행과 산출물의 관계는 `JobRecord` / `JobExecution.produced`가 소유한다.
 - recording 등 별도 run Contract가 없는 Producer는 생략할 수 있다.
@@ -373,7 +375,8 @@ CaseView.progress.state
 
 | Contract | 접합 규칙 |
 | --- | --- |
-| `AnalysisRun` | Search Observation의 `produced_by.run_ref`가 `AnalysisRun.run_id`를 가리킬 수 있음 |
+| `AnalysisRun` | Search Observation의 `produced_by.run_ref`가 `AnalysisRun.run_id`를 가리킬 수 있음 (`kind=analysis_run`) |
+| `ReadoutRun` | Readout Observation의 `produced_by.run_ref`가 `ReadoutRun.run_id`를 가리킴 (`kind=readout_run`). 결과 문서 최상위 `run_ref`와 같은 실행 |
 | `JobRecord` / `JobExecution` | Observation이 Job provenance를 중복 소유하지 않음. Job → 산출물 연결은 runtime/common 책임 |
 | `PlateReadout` | `ABSTAIN` 등 domain-specific 상태는 PlateReadout이 소유 |
 | `OverlayTimeReadout` | 판독/검증 결과 중 semantic observation에 Observation envelope 적용 가능 |

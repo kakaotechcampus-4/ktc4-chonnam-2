@@ -2,14 +2,16 @@
 
 **Status:** `Final — Accepted`
 
-**Accepted:** `2026-09-05`
+**Accepted:** `2026-09-05` (v1) · `2026-09-07` (v1.1 — B05 종결)
 
-**수락 근거:** PM의 common/runtime Owner 결정이다. 기존 근거와 PM 추가 결정은 §9에서 구분한다. 소비자 수락·무이견은 확인 대기이며, ReadoutRun 접합(B05)은 이번 보정에서 확정하지 않는다.
+**수락 근거:** PM의 common/runtime Owner 결정이다. 기존 근거와 PM 추가 결정은 §9에서 구분한다. **v1.1의 `run_ref` 변경은 신유민(`readout`)과 공동 결정, 김대원(`eval`) 확인 — `UsageRecord`에 대한 첫 문서화된 소비자 확인이다**(§9-5). `case`(유소연)·`search`(서어진)의 확인은 여전히 대기다.
 **Architecture Contract:** v4 §5-1 ⑫ · §4-모듈2 ⑥ · §4-모듈7 ⑤
-**Contract Version:** `usage-record/v1`
+**Contract Version:** `usage-record/v1.1`
 **Producer / Owner:** `common/runtime` — 김준영
-**Consumers:** `case` — 유소연 (예산 소진) · `eval` — 김대원 (비용 분모 집계) · `search` — 서어진 (`AnalysisRun.usage_refs[]` 생성 시점 연결)
-**Related ADR:** `adr/adr-usage-record.md` · 작성 경위 `adr/adr-consistency-2026-09.md` C1-8
+**Consumers:** `case` — 유소연 (예산 소진) · `eval` — 김대원 (비용 분모 집계) · `search` — 서어진 (`AnalysisRun.usage_refs[]` 생성 시점 연결) · `readout` — 신유민 (`ReadoutRun.usage_refs[]` 생성 시점 연결, 2026-09-07 추가)
+**Related ADR:** `adr/adr-usage-record.md` · 작성 경위 `adr/adr-consistency-2026-09.md` C1-8 · **v1.1 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.4**
+
+> **`usage-record/v1.1` (2026-09-07).** `run_ref`가 `string | null`에서 **`ContractRef | null`**로 바뀌었다(타입 변경 — additive가 아니라 minor를 올린다. v2로 가지 않는 근거는 Canonical v1 Freeze가 BLOCK 반영 뒤로 잡혀 있기 때문). `kind ∈ {analysis_run, readout_run}`. 원장의 `run_ref`가 authoritative고 `ReadoutRun.usage_refs`는 파생값이다. `null`은 Run 개념이 없는 직접 호출만 뜻한다.
 
 > **이 문서가 왜 지금 생겼나.** v4 §5-1 ⑫에 있고 `AnalysisRun` 계약이 `usage_refs[]`로 참조하며 「상세 usage ledger의 authoritative source는 `UsageRecord`」라고 못박았는데(계약 L36·L327), 그 정의가 어디에도 없었다. PM이 v4·AnalysisRun의 기존 결정과 추가 원장 설계를 모아 작성했다. 새로 정한 것은 §9, 정하지 않은 것은 §10이다.
 
@@ -58,7 +60,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 {
   "usage_id": "string",
   "execution_ref": "string | null",
-  "run_ref": "string | null",
+  "run_ref": { "kind": "analysis_run | readout_run", "ref": "string" },
   "case_id": "string | null",
   "occurred_at": "ISO8601",
   "provider_label": "string",
@@ -87,7 +89,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 | --- | --- | --- | --- | --- |
 | `usage_id` | string | Y | 고유 식별자. `AnalysisRun.usage_refs[]`가 이 값을 담는다 | `AnalysisRun` 계약 L119 |
 | `execution_ref` | string \| null | Y(키) | 이 호출이 속한 `JobExecution.execution_id` | §9-1 |
-| `run_ref` | string \| null | Y(키) | `AnalysisRun.run_id`. Run 개념이 없는 호출이면 null | `AnalysisRun` 계약 L119 |
+| `run_ref` | ContractRef \| null | Y(키) | 이 호출이 속한 logical run. 모양은 `contract-observation.md` §3의 `ContractRef {kind, ref}`(`JobExecution.produced`와 같은 참조 방식). **`kind`는 `analysis_run`(→`AnalysisRun.run_id`) · `readout_run`(→`ReadoutRun.run_id`) 두 값으로 닫는다** — 전역 `ContractRef.kind` 어휘를 닫는 것이 아니라 run identity를 뜻하는 kind가 이 둘이라는 필드 수준 제약이며 새 run 종류는 계약 개정으로만 추가한다. **null은 Run 개념이 없는 직접 호출만** 뜻한다. Run에 속한 호출을 null로 기록하지 않는다 | B05 종결 (2026-09-07) · `AnalysisRun` 계약 L119 |
 | `case_id` | string \| null | Y(키) | 사건 단위 원가 집계용. eval fixture 호출이면 null | §9-2 |
 | `occurred_at` | ISO8601 | Y | 호출 시각 | — |
 | `provider_label` | string | Y | 과금 주체를 식별하는 라벨 | §9-3 |
@@ -113,7 +115,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 {
   "usage_id": "usage_101",
   "execution_ref": "exec_9001",
-  "run_ref": "run_2026_0901_0007",
+  "run_ref": { "kind": "analysis_run", "ref": "run_2026_0901_0007" },
   "case_id": "case_3",
   "occurred_at": "2026-09-01T18:00:12Z",
   "provider_label": "gemini",
@@ -126,13 +128,13 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 }
 ```
 
-## 7. token을 제공하지 않는 provider 예시
+## 7. token을 제공하지 않는 provider 예시 — readout 실행에 속한 호출
 
 ```json
 {
   "usage_id": "usage_205",
   "execution_ref": "exec_9010",
-  "run_ref": null,
+  "run_ref": { "kind": "readout_run", "ref": "rr_001" },
   "case_id": "case_3",
   "occurred_at": "2026-09-01T18:11:02Z",
   "provider_label": "ocr-local",
@@ -147,6 +149,8 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 
 `token_usage`를 `0`으로 채우지 않고 null로 둔다. 0은 「호출했는데 토큰을 안 썼다」는 뜻이고 null은 「토큰이라는 개념이 없다」는 뜻이다(`Observation` 계약의 known-empty vs UNKNOWN 구분과 같은 원칙).
 
+`run_ref`도 같은 원칙이다. 이 호출은 `ReadoutRun rr_001`에 속하므로 `{kind:"readout_run"}`을 채운다. **v1의 이 예시는 `run_ref: null`이었고 그것이 B05 지적의 실제 대상이었다** — `null`은 「Run에 속하지만 연결을 못 적었다」가 아니라 「Run 개념이 없는 직접 호출」만을 뜻한다. `execution_ref`와 `run_ref`는 둘 다 채운다 — 전자는 실행 1회분의 총 비용(§9-1), 후자는 어느 logical run에 속하는가다. `attempt`가 2 이상일 때 논리적 run을 어떻게 두는지는 `readout` 소유 판단이다.
+
 ## 8. 불변조건
 
 1. `usage_id`는 재사용되지 않는다. row는 **append-only**다 — 수정·삭제하지 않는다.
@@ -157,10 +161,14 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 6. 사용자 이름·연락처·번호판 문자열·GPS 좌표를 넣지 않는다 (`product-spec.md` §7 · v4 §4-모듈2 ⑦).
 7. `AnalysisRun.usage_refs[]`가 이 row를 가리키면, `AnalysisRun.usage_summary`는 해당 Run에 속한 row들의 **실행 시점 aggregate와 정합해야 한다** (`AnalysisRun` 계약 L194).
 8. `search`는 `eval`의 존재를 모른다 — eval 전용 필드를 두지 않는다 (v4 §4-모듈7 ⑥).
+9. (v1.1) `run_ref`는 `{kind, ref}`이며 `kind ∈ {analysis_run, readout_run}`이다.
+10. (v1.1) Run에 속한 호출을 `run_ref=null`로 기록하지 않는다. `null`은 Run 개념이 없는 직접 호출만을 뜻한다.
+11. (v1.1) `ReadoutRun.usage_refs`와 `UsageRecord.run_ref`가 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 양방향 정합을 불변조건으로 강제하지 않는다 — 강제하면 어긋난 순간 판정 주체를 다시 정해야 하고 그 판정이 `eval`의 비용 숫자에 들어간다.
+12. (2026-09-08 · 표기 정합, 버전 유지) `AnalysisRun.usage_refs[]`도 같은 지위다 — 조회 편의용 파생값이며 `UsageRecord.run_ref`와 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 7번의 「해당 Run에 속한 row」는 `run_ref={kind:"analysis_run", ref:<run_id>}`인 row를 뜻한다. search Owner(서어진) 결정, eval(김대원) 확인. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.2.
 
 ## 9. PM이 새로 정한 것 (소비자 통보 대상)
 
-아래 네 행은 추가 필드 목록의 일부다. 호출 1건당 row, run_ref 대상 제한, token 합계·객체 단위 null, pricing_id를 통한 별도 가격표 관리, append-only 원장 및 raw payload 제외의 구체 규칙도 §3~§8에서 정했다. **§9만 보거나 모든 값이 상위 문서에서 유일하게 도출됐다고 가정하지 않는다.** 소비자 확인 범위는 §3~§10 전체이며 실제 통보·수락 원문은 확인 대기다. §8의 삭제 금지와 §10의 purge_case·보관 정책 미결 사이의 관계도 확인 대기다.
+아래 네 행은 추가 필드 목록의 일부다. 호출 1건당 row, run_ref 대상 제한, token 합계·객체 단위 null, pricing_id를 통한 별도 가격표 관리, append-only 원장 및 raw payload 제외의 구체 규칙도 §3~§8에서 정했다. **§9만 보거나 모든 값이 상위 문서에서 유일하게 도출됐다고 가정하지 않는다.** 소비자 확인 범위는 §3~§10 전체다. **9-5의 `run_ref` 변경은 `readout`(신유민)·`eval`(김대원) 확인을 받았다** — 이 계약에 대한 첫 문서화된 소비자 확인이며 W04 잔여 중 `UsageRecord` 부분은 이것으로 종결된다. 나머지 행에 대한 `case`·`search` 확인과 §8의 삭제 금지 ↔ §10의 purge_case·보관 정책 관계는 확인 대기다.
 
 | # | 항목 | PM 결정 | 왜 |
 | --- | --- | --- | --- |
@@ -168,10 +176,11 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 | 9-2 | `case_id`를 직접 둔다 | Run/Execution을 거치지 않고 사건 단위 원가를 바로 집계할 수 있게 | v4 §4-모듈7 ⑤의 `cost_per_source_video_hour`는 사건 단위 집계다. 매번 join하면 eval 쪽 부담이 커진다. eval fixture 호출은 `case_id=null` |
 | 9-3 | `provider_label` · `operation` | 둘 다 opaque 라벨. `provider_label`은 과금 주체, `operation`은 모듈 접두어 규칙 | 비용 원장은 「어디에 돈을 냈는가」를 알아야 감사가 된다. **`Observation.source.kind`에 provider/model을 넣지 않는 규칙과 충돌하지 않는다** — 그 규칙은 관찰의 출처 표기에 대한 것이고, 비용 장부는 별개 값 공간이다 |
 | 9-4 | `latency_ms` | 호출 왕복 시간을 usage row에 둔다 | v4 §4-모듈7 ⑤의 `latency_per_source_video_hour`가 이 값 없이는 안 나온다. `JobExecution`의 시각 3개는 Job 단위라 호출 단위 latency를 못 준다 |
+| 9-5 | `run_ref`를 `ContractRef \| null`로 (**타입 변경 · v1.1 · 소비자 확인 완료**) | `kind ∈ {analysis_run, readout_run}`. 원장이 authoritative, `ReadoutRun.usage_refs`는 파생값. `null`은 Run 없는 직접 호출만 | 김준영·신유민 공동 결정, 김대원 확인(2026-09-07). 「비용 집계가 *어느 참조를 신뢰했는가*에 따라 달라지는 건 피해야 한다」(김대원)가 한쪽만 authoritative로 둔 근거다. 기각: `readout_run_ref` 별도 필드(run 종류마다 필드·분기 증가) · `ReadoutRun.usage_refs` 단방향만(원장 한 번 스캔 집계가 갈라짐). 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.4 |
 
 ## 10. 미결 — 이 계약에서 확정하지 않는다
 
-- **B05 — ReadoutRun 연결:** §5의 AnalysisRun 전용 run_ref와 readout의 usage_refs 연결은 common/runtime·readout·eval 합의 대기다. §7 OCR 예시의 null을 ReadoutRun 연결 정책으로 사용하지 않는다.
+- ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`의 「조회 편의 파생값」 표기도 **종결 (2026-09-08, search Owner 서어진 · eval 김대원 확인, §8-12).** 두 Run 계약의 `usage_refs`는 같은 지위이고 원장 `run_ref`가 유일한 집계 기준이다. `run_ref=null`의 의미는 §8-10 그대로다(「Run 개념이 없는 직접 호출만」 — 「아직 정식 연결 방식이 없는 호출」로 넓히지 않았다. 그런 호출이 실제로 있다면 이 계약 Owner가 별도로 판단한다).
 
 - **통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).
 - **가격표(`pricing_id` → 단가) 저장 위치와 개정 절차** — `common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.

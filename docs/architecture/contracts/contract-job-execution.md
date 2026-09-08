@@ -162,6 +162,7 @@ QUEUED → FAILED          (실행 전 발주 자체가 무효화된 경우)
 6. 캐시 재사용 조건은 `contract-job-record-case-view.md` A절 §7을 따른다. 실행 결과만의 fingerprint 비교로 범위를 넓히지 않는다(근거: `adr-job-record-case-view.md` A절 §7).
 7. 비용 금액의 authoritative 원천은 `UsageRecord`다. 본 계약은 `usage_refs`로 연결만 하고 금액을 자체 필드로 중복 보관하지 않는다.
 8. `case`는 현재 `case_rev`와 맞지 않는 실행의 `produced`를 domain state에 반영하지 않는다(v4 §4-모듈5 ④).
+9. **readout 계열 Job의 worker는 1 execution 안에서 readout public 함수(`read_plate` / `read_overlay_time`)를 정확히 1회 호출한다.** 그래야 `case`의 불변조건 「1 execution : `ReadoutRun` 1건」(`contract-job-record-case-view.md` A절 §10-5)이 성립한다 — `readout`은 `JobExecution`을 모르므로 이 규칙은 worker(Producer common/runtime) 구현 규칙이다. `produced`에는 그 run의 `{kind:"readout_run", ref:<run_id>}`가 정확히 1개 들어간다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (신유민·유소연, 2026-09-07)
 
 ## 10. PM이 새로 정한 것 (소비자 통보 대상)
 
@@ -175,7 +176,7 @@ QUEUED → FAILED          (실행 전 발주 자체가 무효화된 경우)
 
 ## 11. 미결 — 이 계약에서 확정하지 않는다
 
-- **소비자 확인:** §10의 추가 결정 전체와 domain PARTIAL → runtime status/produced 연결은 case·eval 확인 대기다. 이번 보정에서 새 매핑을 정하지 않는다.
+- **소비자 확인:** §10의 추가 결정 전체와 domain PARTIAL → runtime status/produced 연결은 case·eval 확인 대기다(W04 잔여 중 `JobExecution` 부분). 같은 W04의 `UsageRecord` 부분은 2026-09-07에 소비자 확인으로 종결됐다(`contract-usage-record.md` §9-5). 이 계약에서 새 매핑을 정하지 않는다.
 
 - **retry 상한 · backoff 곡선 · lease 길이 · heartbeat 주기 · DB 구조** — Runtime 구현 세부다(ADR 부록-A §13-4). 구현 담당(정철원)이 정하고 계약을 바꾸지 않는다.
 - **`STALE` 판정 임계값** — 몇 초 heartbeat 미수신을 STALE로 볼지는 위와 같은 구현 세부다. 계약은 「살아 있지 않다고 판정됨」이라는 의미만 고정한다.

@@ -1,0 +1,149 @@
+{
+  "_about": "B01 — EvidenceRecord(evidence-record/v1.2) 입력에서 CaseView(case-view/v1.2) evidence display를 파생한다. 규칙 원문: contract-job-record-case-view.md B절 §7. 검사기는 규칙을 그대로 옮긴 함수로 계산하고 expected와 비교한다. 값은 예시이며 threshold나 정책을 뜻하지 않는다.",
+  "cases": [
+    {
+      "id": "observed_plate__filename_time__inferred_address",
+      "note": "CaseView §8 정상 예시와 같은 모양. 파일명 시각은 evidence가 NEEDS_REVIEW로 내리므로 INFO_NEEDS_REVIEW.",
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.2",
+        "record_ref": { "kind": "evidence_record", "ref": "ev_88" },
+        "vehicle_number": {
+          "value": "12가 3476",
+          "source": { "kind": "readout.overlay_ocr", "ref": { "kind": "plate_readout", "ref": "readout_plate_001" }, "observability": "OBSERVED", "label_key": "plate.source.overlay_ocr" },
+          "support_refs": [], "user_corrected": false, "needs_review": false
+        },
+        "occurred_at": {
+          "value": "2026-08-24T18:31:48+09:00",
+          "time_resolution_ref": { "kind": "time_resolution", "ref": "tr_31" },
+          "resolution_status": "NEEDS_REVIEW",
+          "user_corrected": false,
+          "source": { "kind": "recording.filename_time", "label_key": "time.source.filename_time" }
+        },
+        "location": {
+          "address": {
+            "value": "미금역 사거리 인근",
+            "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_204" }, "observability": "INFERRED", "label_key": "location.source.visual_inference" },
+            "support_refs": [], "user_corrected": false, "needs_review": true
+          },
+          "search_keyword": {
+            "value": "미금역 사거리",
+            "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_204" }, "observability": "INFERRED", "label_key": null },
+            "support_refs": [], "user_corrected": false, "needs_review": false
+          }
+        }
+      },
+      "expected": {
+        "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.overlay_ocr" },
+        "event_time_display": { "value": "2026-08-24T18:31:48+09:00", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "time.source.filename_time" },
+        "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "location.source.visual_inference", "coord": null, "search_keyword": "미금역 사거리" }
+      }
+    },
+    {
+      "id": "user_corrected_time_and_plate",
+      "note": "사용자 확정은 OK/observability보다 먼저 판정된다. evidence는 user_corrected=true이면 needs_review=false를 보장한다.",
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.2",
+        "record_ref": { "kind": "evidence_record", "ref": "ev_89" },
+        "vehicle_number": {
+          "value": "12가 3456",
+          "source": { "kind": "readout.plate_ocr", "ref": { "kind": "plate_readout", "ref": "readout_plate_001" }, "observability": "OBSERVED", "label_key": "plate.source.plate_ocr" },
+          "support_refs": [], "user_corrected": true, "needs_review": false
+        },
+        "occurred_at": {
+          "value": "2026-08-24T18:31:50+09:00",
+          "time_resolution_ref": { "kind": "time_resolution", "ref": "tr_32" },
+          "resolution_status": "OK",
+          "user_corrected": true,
+          "source": { "kind": "user.event_time_manual", "label_key": "time.source.user_input" }
+        }
+      },
+      "expected": {
+        "plate_display": { "value": "12가 3456", "needs_review": false, "info_state": "INFO_USER_CONFIRMED", "source_label_key": "plate.source.plate_ocr" },
+        "event_time_display": { "value": "2026-08-24T18:31:50+09:00", "needs_review": false, "info_state": "INFO_USER_CONFIRMED", "source_label_key": "time.source.user_input" },
+        "location_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null, "coord": null, "search_keyword": null }
+      }
+    },
+    {
+      "id": "nothing_confirmed",
+      "note": "occurred_at 부재·vehicle_number 부재·location 부재 → 세 display 모두 INFO_UNKNOWN. needs_review는 값이 없으므로 false.",
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.2",
+        "record_ref": { "kind": "evidence_record", "ref": "ev_90" }
+      },
+      "expected": {
+        "plate_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
+        "event_time_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
+        "location_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null, "coord": null, "search_keyword": null }
+      }
+    },
+    {
+      "id": "location_user_hint_only",
+      "note": "address·place_name이 없어 user_hint가 대표값. 대표값이 user_hint이면 INFO_NEEDS_REVIEW.",
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.2",
+        "record_ref": { "kind": "evidence_record", "ref": "ev_91" },
+        "location": {
+          "user_hint": {
+            "value": "분당 미금역 근처",
+            "source": { "kind": "case.user_hint", "ref": { "kind": "case", "ref": "case_3" }, "observability": "INFERRED", "label_key": "location.source.user_hint" },
+            "support_refs": [], "user_corrected": false, "needs_review": true
+          }
+        }
+      },
+      "expected": {
+        "plate_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
+        "event_time_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
+        "location_display": { "value": "분당 미금역 근처", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "location.source.user_hint", "coord": null, "search_keyword": null }
+      }
+    },
+    {
+      "id": "overlay_verified_time__ai_estimated_plate__place_name_with_coord",
+      "note": "검증된 overlay 시각 → OK → INFO_SOURCE_VERIFIED. 번호판은 INFERRED·검토 불필요 → INFO_AI_ESTIMATED. 위치는 address 없음 → place_name 대표값(OBSERVED) + coord 별도.",
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.2",
+        "record_ref": { "kind": "evidence_record", "ref": "ev_92" },
+        "vehicle_number": {
+          "value": "34나 5678",
+          "source": { "kind": "search.visual_inference", "ref": { "kind": "visual_evidence", "ref": "ve_300" }, "observability": "INFERRED", "label_key": "plate.source.visual_inference" },
+          "support_refs": [], "user_corrected": false, "needs_review": false
+        },
+        "occurred_at": {
+          "value": "2026-09-02T18:31:12+09:00",
+          "time_resolution_ref": { "kind": "time_resolution", "ref": "tr_40" },
+          "resolution_status": "OK",
+          "user_corrected": false,
+          "source": { "kind": "readout.overlay_ocr", "label_key": "time.source.overlay_ocr" }
+        },
+        "location": {
+          "place_name": {
+            "value": "미금역 3번 출구",
+            "source": { "kind": "recording.gps_stream", "ref": { "kind": "media_stream", "ref": "ms_0003" }, "observability": "OBSERVED", "label_key": "location.source.gps" },
+            "support_refs": [], "user_corrected": false, "needs_review": false
+          },
+          "coord": {
+            "value": { "lat": 37.3505, "lon": 127.1088 },
+            "source": { "kind": "recording.gps_stream", "ref": { "kind": "media_stream", "ref": "ms_0003" }, "observability": "OBSERVED", "label_key": "location.source.gps" },
+            "support_refs": [], "user_corrected": false, "needs_review": false
+          }
+        }
+      },
+      "expected": {
+        "plate_display": { "value": "34나 5678", "needs_review": false, "info_state": "INFO_AI_ESTIMATED", "source_label_key": "plate.source.visual_inference" },
+        "event_time_display": { "value": "2026-09-02T18:31:12+09:00", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "time.source.overlay_ocr" },
+        "location_display": { "value": "미금역 3번 출구", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "location.source.gps", "coord": { "lat": 37.3505, "lon": 127.1088 }, "search_keyword": null }
+      }
+    }
+  ],
+  "evidence_invariant_violations": [
+    {
+      "id": "user_corrected_and_needs_review",
+      "note": "contract-evidence-record-needs.md §10-12 위반. 검사기가 반드시 거부해야 한다.",
+      "evidence_value": { "value": "12가 3456", "source": { "kind": "readout.plate_ocr", "ref": { "kind": "plate_readout", "ref": "r" }, "observability": "OBSERVED", "label_key": null }, "support_refs": [], "user_corrected": true, "needs_review": true }
+    },
+    {
+      "id": "null_value_and_needs_review",
+      "note": "contract-evidence-record-needs.md §10-13 위반.",
+      "evidence_value": { "value": null, "source": { "kind": "readout.plate_ocr", "ref": { "kind": "plate_readout", "ref": "r" }, "observability": "OBSERVED", "label_key": null }, "support_refs": [], "user_corrected": false, "needs_review": true }
+    }
+  ]
+}
