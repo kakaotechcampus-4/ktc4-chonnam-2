@@ -19,7 +19,7 @@
       "run_ref": { "kind": "readout_run", "ref": "rr_881" },
       "case_id": "case_001",
       "candidate_id": "candidate_001",
-      "input_ref": { "incident_clip_ref": "clip_0001", "span_ref": "span_001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
+      "input_ref": { "incident_clip_ref": "clip_0001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
       "target_association": { "status": "ASSOCIATED", "target_hint_used": true, "track_ref": "track_007", "association_method": "TARGET_HINT_WITH_FALLBACK", "associated_region": { "frame_ref": "fr_9a1c0e", "bbox_xywh": [812, 420, 184, 72] }, "evidence": [] },
       "observation": { "contract_version": "observation/v1", "value": "12가34?6", "status": "NEEDS_REVIEW", "source": { "kind": "readout.plate_ocr" }, "support_refs": [], "produced_by": { "module": "readout", "run_ref": { "kind": "readout_run", "ref": "rr_881" } } },
       "consensus": { "text": "12가34?6", "disagree_positions": [5], "method": "MULTI_FRAME" },
@@ -35,7 +35,7 @@
       "run_ref": { "kind": "readout_run", "ref": "rr_883" },
       "case_id": "case_001",
       "candidate_id": "candidate_001",
-      "input_ref": { "incident_clip_ref": "clip_0001", "span_ref": "span_001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
+      "input_ref": { "incident_clip_ref": "clip_0001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
       "observation": { "contract_version": "observation/v1", "value": "2026-09-02T18:31:12+09:00", "status": "OK", "source": { "kind": "readout.overlay_ocr" }, "support_refs": [], "produced_by": { "module": "readout", "run_ref": { "kind": "readout_run", "ref": "rr_883" } } },
       "validation": { "format_ok": true, "monotonic_ok": true, "duration_match_ok": true, "sample_count": 5 },
       "samples": [ { "frame_ref": "fr_3b77d2", "offset_sec": 2.0, "raw_text": "2026-09-02 18:31:12", "parsed_at": "2026-09-02T18:31:12+09:00" } ]

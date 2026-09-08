@@ -16,6 +16,8 @@
 
 > **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 당시 Pending B01(needs_review 원천·시각/위치 입력 변환·라벨 전달)은 v1.2에서 닫혔다.
 
+> **`evidence.interval` 참조 대상 확정 (2026-09-08 · Decider 정철원(`recording`, `AssetSpan`·`IncidentClip` 소유) · 확인 신유민·유소연·김준영).** canonical `AssetSpan`에 독립 identity를 추가하지 않기로 확정됐으므로 §8.3의 「`AssetSpan` ref」 예시를 지우고, `context_refs[].role="evidence.interval"`의 참조 대상을 **clip 생성 후 `incident_clip`, clip 생성 전 `candidate_event` fallback**으로 명시한다. `ContractRef`의 필드 모양·필수성은 바뀌지 않고 허용되는 `kind`와 그 의미만 확정됐으므로 **`evidence-needs/v1`을 유지**한다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9.
+
 **Contract Lead / Owner:** 김준영 (`evidence`)
 
 **Runtime Producer:** `evidence`
@@ -84,7 +86,7 @@ ReportPackage / DerivedVideo
 - `PlateReadout` / `OverlayTimeReadout`
 - `TimeResolution`
 - `CorrectionRecord`
-- `CandidateEvent` / `AssetSpan`
+- `CandidateEvent` / `IncidentClip`
 
 ---
 
@@ -391,7 +393,8 @@ EvidenceNeeds는 실제 readout command DTO가 아니다.
 허용 예:
 
 ```
-evidence.interval → AssetSpan / Source-derived incident interval ref
+evidence.interval    → { kind: "incident_clip",   ref: ... }   (clip 생성 후)
+                     → { kind: "candidate_event", ref: ... }   (clip 생성 전 fallback)
 evidence.target_hint → VisualEvidence 등 stable target hint ref
 ```
 
@@ -401,6 +404,21 @@ evidence.target_hint → VisualEvidence 등 stable target hint ref
 - `OVERLAY_TIME_OCR`은 source-derived 사건 interval/clip을 구성할 수 있는 ref를 제공한다.
 - `context_refs`에 raw path, prompt, OCR threshold, retry, timeout, queue priority를 넣지 않는다.
 - case의 `needs_map`이 semantic refs를 현재 readout public input으로 조립한다.
+
+### `evidence.interval`의 참조 대상 (2026-09-08 확정)
+
+canonical `AssetSpan`에는 독립 identity가 없고 추가하지 않는다(`contract-recording-timeline-asset-span.md` §23 AssetSpan 5 · `contract-analysis-source-derived.md` §6.1). 따라서 이 role의 ref는 **`asset_span`을 가리키지 않는다.**
+
+| 시점 | `kind` | 근거 |
+| --- | --- | --- |
+| clip 생성 후 | `incident_clip` | `IncidentClip.source_provenance`가 `timeline_ref{timeline_id, revision}` · `requested_range` · canonical `AssetSpan[]`을 모두 보존한다 |
+| clip 생성 전 | `candidate_event` (fallback) | `CandidateEvent.span`이 `timeline_id` + `timeline_revision` + ms 범위를 갖는다(B09 종결) |
+
+- **`candidate_event` ref는 clip이 만들어진 뒤에도 `incident_clip` ref를 대신하는 영구 별칭이 아니다.** `case`는 candidate ref를 받아 필요한 `IncidentClip`을 materialize한 뒤 readout에는 `incident_clip_ref`를 전달한다(`contract-plate-overlay-readout.md` §4 — v1.2에서 `span_ref` 삭제).
+- 두 경우 모두 참조에서 `{timeline_id, revision}`·사건 범위를 계약 필드로 복원할 수 있어야 한다. evidence가 「결과가 어느 원본 구간에서 나왔는가」·「rebase 뒤에도 같은 구간인가」를 증명하는 근거가 이것이다.
+- 합성 span ref(canonical 값을 문자열로 결합하거나 해시한 것)를 만들지 않는다.
+- `kind` 문자열은 소문자 snake_case다 — 자산 계층 값 공간은 `contract-source-asset-media-stream.md` §2.1이 소유한다.
+- **`EvidenceRecord.basis.evidence_interval_ref`(§3)에도 같은 규칙을 적용한다** — 사건 구간 참조는 `incident_clip`(생성 후) 또는 `candidate_event`(생성 전)이며 `asset_span`을 가리키지 않는다. 필드 타입은 그대로 `ContractRef`다.
 
 ## 8.4 `why`
 
@@ -530,7 +548,7 @@ ReportPackage / DerivedVideo export Job
       "context_refs": [
         {
           "role": "evidence.interval",
-          "ref": {"kind":"asset_span","ref":"span_204"}
+          "ref": {"kind":"incident_clip","ref":"clip_0001"}
         },
         {
           "role": "evidence.target_hint",

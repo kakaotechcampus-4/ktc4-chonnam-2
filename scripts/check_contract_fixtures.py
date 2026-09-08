@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""계약 예시·fixture 의미 검사 — 2026-09-07 접합부 종결 ADR의 검증 조건 V0~V6 + 2026-09-08 후속 ADR의 V8~V11.
+"""계약 예시·fixture 의미 검사 — 2026-09-07 접합부 종결 ADR의 검증 조건 V0~V6 + 2026-09-08 후속 ADR의 V8~V15.
 
 규칙은 여기서 정하지 않는다. 각 검사가 옮겨 온 규칙의 원문은 함수 docstring이 가리킨다.
   - 결정 원장  → docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md §7
@@ -24,8 +24,10 @@ CDIR = os.path.join(ROOT, "docs", "architecture", "contracts")
 FDIR = os.path.join(CDIR, "fixtures", "call-closure-2026-09-07")
 FDIR2 = os.path.join(CDIR, "fixtures", "call-closure-2026-09-08")
 
-# 두 회차에 수정·추가한 문서. V0(JSON 파싱)·V6(링크) 대상.
+# 세 회차에 수정·추가한 문서. V0(JSON 파싱)·V6(링크) 대상.
 TOUCHED = [
+    "adr/adr-plate-overlay-readout.md",
+    "adr/adr-evidence-record-needs.md",
     "contract-source-asset-media-stream.md",
     "contract-analysis-source-derived.md",
     "adr/adr-data-contract-call-closure-2026-09-08.md",
@@ -394,10 +396,13 @@ REASONS_V1_1 = REASONS_V1 | {"OUT_OF_TIMELINE_RANGE"}
 
 def span_violations(sr):
     """contract-recording-timeline-asset-span.md §23 SpanResolution 1·6·7 (v1) + 9~12 (v1.1).
-    `failure` 규칙은 contract_version이 span-resolution/v1.1일 때만 적용한다 — v1 payload의
-    재해석 규칙은 정해지지 않았다(2026-09-08 ADR §4.3)."""
+    `failure` 규칙은 contract_version이 span-resolution/v1.1 이상일 때만 적용한다 — v1 payload의
+    재해석 규칙은 정해지지 않았다(2026-09-08 ADR §4.3). `source_ref` 규칙(§10.2 · §23-13·14)은
+    v1.2에서만 적용한다."""
     errs = []
-    v11 = sr.get("contract_version") == "span-resolution/v1.1"
+    ver = sr.get("contract_version")
+    v11 = ver in ("span-resolution/v1.1", "span-resolution/v1.2")
+    v12 = ver == "span-resolution/v1.2"
     st = sr["status"]
     req = (sr["requested_range"]["start_sec"], sr["requested_range"]["end_sec"])
     pieces = [(s["timeline_range"]["start_sec"], s["timeline_range"]["end_sec"]) for s in sr["spans"]]
@@ -410,6 +415,9 @@ def span_violations(sr):
     for m in sr["missing_ranges"]:
         if m.get("reason") not in allowed:
             errs.append("reason_not_in_enum: %r" % m.get("reason"))
+    # source_ref 규칙 (§10.1·§10.2 · §23-13·14) — v1.2만
+    if v12:
+        errs += source_ref_violations(sr["missing_ranges"])
     # failure 규칙 (§9 · §23-10·11) — v1.1만
     unlocatable_failed = False
     if v11:
@@ -498,8 +506,10 @@ def check_v10():
         errs.append("헤더/예시에 span-resolution/v1.1 없음")
     if "`OUT_OF_TIMELINE_RANGE`" not in body:
         errs.append("§10에 OUT_OF_TIMELINE_RANGE 없음")
-    if "CALL_REQUIRED" not in body:
-        errs.append("source_ref CALL_REQUIRED 표기 없음")
+    if "span-resolution/v1.2" not in body:
+        errs.append("헤더/예시에 span-resolution/v1.2 없음")
+    if "CALL_REQUIRED" in body:
+        errs.append("CALL_REQUIRED 표기가 남아 있음 (CALL-16 종결)")
     rec("semantic", not errs, "V10 계약 본문 표기", "; ".join(errs))
 
 
@@ -763,6 +773,303 @@ def check_v11(parsed):
     rec("semantic", not errs, "V11 계약 본문 예시", "; ".join(errs))
 
 
+# ══ V13. MissingRange.source_ref (span-resolution/v1.2) ═════════
+# 규칙: contract-recording-timeline-asset-span.md §10.1·§10.2 · §23 SpanResolution 13·14
+SOURCE_REF_KIND_BY_REASON = {
+    "SOURCE_UNAVAILABLE": "source_asset",
+    "STREAM_UNAVAILABLE": "media_stream",
+}
+SOURCE_REF_NULL_REASONS = ("TIMELINE_GAP", "OUT_OF_TIMELINE_RANGE")
+
+
+def source_ref_violations(missing_ranges):
+    """`source_ref` 키는 항상 존재하고 타입은 ContractRef|null. reason별 non-null/null과
+    kind 대응(§10.2 표)을 본다. kind 문자열 공간은 contract-source-asset-media-stream.md §2.1."""
+    errs = []
+    for i, m in enumerate(missing_ranges):
+        if "source_ref" not in m:
+            errs.append("source_ref_key_missing: missing_ranges[%d]" % i)
+            continue
+        sref = m["source_ref"]
+        reason = m.get("reason")
+        if sref is not None and not is_ref(sref):
+            errs.append("source_ref_shape: missing_ranges[%d] = %r" % (i, sref))
+            continue
+        if reason in SOURCE_REF_KIND_BY_REASON:
+            if sref is None:
+                errs.append("source_ref_required: %s인데 null" % reason)
+            elif sref["kind"] != SOURCE_REF_KIND_BY_REASON[reason]:
+                errs.append("source_ref_kind_mismatch: %s → %r (기대 %r)"
+                            % (reason, sref["kind"], SOURCE_REF_KIND_BY_REASON[reason]))
+        elif reason in SOURCE_REF_NULL_REASONS and sref is not None:
+            errs.append("source_ref_must_be_null: %s인데 %r" % (reason, sref))
+    return errs
+
+
+def check_v13():
+    """CALL-16 fixture — source_ref 타입·nullable 규칙."""
+    fx = load_fixture("v13-missing-range-source-ref.json", FDIR2)
+    for v in fx["valid"]:
+        errs = span_violations(v["span_resolution"])
+        rec("semantic", not errs, "V13 %s" % v["id"], "; ".join(errs))
+    for inv in fx["invalid"]:
+        errs = span_violations(inv["span_resolution"])
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V13 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    # 계약 본문: §10 예시가 ContractRef이고 평문이 남아 있지 않다
+    body = read("contract-recording-timeline-asset-span.md")
+    errs = []
+    if re.search(r'"source_ref"\s*:\s*"', body):
+        errs.append("§8.1/§9/§10 예시에 평문 source_ref 잔존")
+    if '"source_ref": null' not in body:
+        errs.append("§10.2에 source_ref: null 예시 없음")
+    if "SpanResolution 13" not in body and "13. (2026-09-08 · v1.2)" not in body:
+        errs.append("§23에 13·14 불변조건 없음")
+    rec("semantic", not errs, "V13 계약 본문 표기", "; ".join(errs))
+
+
+# ══ V14. 자산 계층 ContractRef.kind · canonical AssetFacts ═══════
+# 규칙: contract-source-asset-media-stream.md §2.1·§2.2·§3.4·§3.5·§6.1~§6.4
+AVAILABILITY = ("AVAILABLE", "UNAVAILABLE", "UNKNOWN")
+ASSET_FACTS_KEYS = ("asset_ref", "asset_kind", "derived_role", "byte_size", "availability",
+                    "checked_at", "lineage", "duration_sec", "timeline_ref", "timeline_range")
+OFFSET_AWARE = re.compile(r"(Z|[+-]\d{2}:\d{2})$")
+
+
+def asset_facts_violations(af, kind_space, kind_map):
+    errs = []
+    for key in ASSET_FACTS_KEYS:
+        if key not in af:
+            errs.append("key_missing: %s" % key)
+    if errs:
+        return errs
+    ar = af["asset_ref"]
+    if not is_ref(ar):
+        errs.append("asset_ref_shape: %r" % ar)
+    elif ar["kind"] not in kind_space:
+        errs.append("kind_not_in_value_space: %r" % ar["kind"])
+    ak = af["asset_kind"]
+    if ak not in kind_map:
+        errs.append("asset_kind_not_in_enum: %r" % ak)
+    elif is_ref(ar) and kind_map[ak] != ar["kind"]:
+        errs.append("asset_kind_map_mismatch: %s ↔ %r (기대 %r)" % (ak, ar["kind"], kind_map[ak]))
+    av = af["availability"]
+    if av not in AVAILABILITY:
+        errs.append("availability_not_in_enum: %r" % av)
+    bs = af["byte_size"]
+    if av == "AVAILABLE" and bs is None:
+        errs.append("available_requires_byte_size")
+    if av != "AVAILABLE" and bs == 0:
+        errs.append("byte_size_faked_zero")
+    if bs is not None and (not isinstance(bs, int) or bs < 0):
+        errs.append("byte_size_shape: %r" % bs)
+    ca = af["checked_at"]
+    if not isinstance(ca, str) or not OFFSET_AWARE.search(ca):
+        errs.append("checked_at_not_offset_aware: %r" % ca)
+    tr, tref = af["timeline_range"], af["timeline_ref"]
+    if (tr is None) != (tref is None):
+        errs.append("timeline_pair: range=%r ref=%r" % (tr, tref))
+    if tref is not None:
+        if "revision" not in tref:
+            errs.append("timeline_revision_missing")
+        if "timeline_id" not in tref:
+            errs.append("timeline_id_missing")
+    if tr is not None and not ("start_sec" in tr and "end_sec" in tr):
+        errs.append("timeline_range_not_seconds: %r" % tr)
+    lin = af["lineage"]
+    if not isinstance(lin, list):
+        errs.append("lineage_shape")
+    else:
+        for e in lin:
+            if not is_ref(e):
+                errs.append("lineage_entry_shape: %r" % e)
+            elif e["kind"] not in kind_space:
+                errs.append("kind_not_in_value_space: %r" % e["kind"])
+        # §6.3 — 파생 자산은 원본 계열(source_asset/external_source)까지 평탄화
+        if ak in ("ANALYSIS_SOURCE", "INCIDENT_CLIP", "DERIVED_ASSET"):
+            if not any(is_ref(e) and e["kind"] in ("source_asset", "external_source") for e in lin):
+                errs.append("lineage_missing_source_origin")
+    return errs
+
+
+def check_v14():
+    """CALL-17 + Consumer Review fixture — kind 표기와 AssetFacts 불변조건."""
+    fx = load_fixture("v14-asset-facts-kind.json", FDIR2)
+    space = set(fx["kind_value_space"])
+    kmap = fx["asset_kind_map"]
+    for v in fx["valid"]:
+        errs = asset_facts_violations(v["asset_facts"], space, kmap)
+        rec("semantic", not errs, "V14 %s" % v["id"], "; ".join(errs))
+    for inv in fx["invalid"]:
+        errs = asset_facts_violations(inv["asset_facts"], space, kmap)
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V14 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    # 계약 본문: 값 공간·대응표가 §2.1·§6.2에 있고 대문자 자산 kind가 남아 있지 않다
+    errs = []
+    doc1 = read("contract-source-asset-media-stream.md")
+    for k in sorted(space):
+        if "`%s`" % k not in doc1:
+            errs.append("§2.1 값 공간에 %s 없음" % k)
+    for ak, k in kmap.items():
+        if "| `%s` | `%s` |" % (ak, k) not in doc1:
+            errs.append("§6.2 대응표에 %s ↔ %s 없음" % (ak, k))
+    UPPER = ('"kind": "SOURCE_ASSET"', '"kind": "MEDIA_STREAM"', '"kind": "FRAME"',
+             '"kind": "EXTERNAL_SOURCE"', '"kind": "INCIDENT_CLIP"', '"kind": "ANALYSIS_SOURCE"',
+             '"kind": "DERIVED_ASSET"', '"kind": "REMOTE_COPY"')
+    for name in ("contract-source-asset-media-stream.md", "contract-analysis-source-derived.md"):
+        body = read(name)
+        for u in UPPER:
+            if u in body:
+                errs.append("%s에 대문자 자산 kind 잔존: %s" % (name, u))
+    rec("semantic", not errs, "V14 계약 본문 표기", "; ".join(errs))
+
+
+# ══ V15. IncidentClip provenance · 사건 구간 canonical ref ═══════
+# 규칙: contract-analysis-source-derived.md §6.2·§6.3·§6.4·§6.8·§6.9
+CANONICAL_SPAN_KEYS = ("sequence", "timeline_range", "source_asset_ref", "media_stream_ref", "source_range")
+FLAT_SPAN_KEYS = ("source_start_sec", "source_end_sec", "timeline_start_ms", "timeline_end_ms",
+                  "start_ms", "end_ms")
+INTERVAL_KINDS = ("incident_clip", "candidate_event")
+
+
+def sec_interval_errs(obj, where):
+    if not isinstance(obj, dict):
+        return ["%s_shape" % where]
+    if "start_sec" not in obj or "end_sec" not in obj:
+        return ["asset_span_not_canonical: %s가 초 단위 {start_sec,end_sec}가 아님" % where]
+    return []
+
+
+def incident_clip_violations(clip):
+    errs = []
+    prov = clip.get("source_provenance") or {}
+    tref = prov.get("timeline_ref")
+    if not isinstance(tref, dict) or "timeline_id" not in tref:
+        errs.append("provenance_timeline_ref_missing")
+    elif "revision" not in tref:
+        errs.append("provenance_revision_missing")
+    errs += sec_interval_errs(prov.get("requested_range"), "requested_range")
+    spans = prov.get("asset_spans")
+    if not isinstance(spans, list) or not spans:
+        errs.append("asset_spans_missing")
+        return errs
+    pieces = []
+    for i, sp in enumerate(spans):
+        for bad in FLAT_SPAN_KEYS:
+            if bad in sp:
+                errs.append("asset_span_not_canonical: asset_spans[%d].%s (평탄화 표기)" % (i, bad))
+        if "sequence" not in sp:
+            errs.append("asset_span_sequence_missing: asset_spans[%d]" % i)
+        for key in CANONICAL_SPAN_KEYS:
+            if key != "sequence" and key not in sp:
+                errs.append("asset_span_not_canonical: asset_spans[%d].%s 없음" % (i, key))
+        if "source_span_ref" in sp or "span_ref" in sp:
+            errs.append("synthetic_span_ref: asset_spans[%d]" % i)
+        errs += ["%s (asset_spans[%d])" % (e, i) for e in sec_interval_errs(sp.get("timeline_range"), "timeline_range")]
+        errs += ["%s (asset_spans[%d])" % (e, i) for e in sec_interval_errs(sp.get("source_range"), "source_range")]
+        tr = sp.get("timeline_range")
+        if isinstance(tr, dict) and "start_sec" in tr and "end_sec" in tr:
+            pieces.append((tr["start_sec"], tr["end_sec"]))
+    # §6.3 — span 합집합이 실제 materialize된 timeline_range를 설명한다
+    mat = clip.get("timeline_range")
+    if isinstance(mat, dict) and ("start_ms" in mat or "end_ms" in mat):
+        errs.append("asset_span_not_canonical: timeline_range가 ms 단위")
+    elif pieces and isinstance(mat, dict) and "start_sec" in mat:
+        lo, hi = mat["start_sec"], mat["end_sec"]
+        pts = sorted(set([lo, hi] + [p for pr in pieces for p in pr]))
+        for a, b in zip(pts, pts[1:]):
+            if a < lo or b > hi:
+                continue
+            if not any(x <= a and b <= y for x, y in pieces):
+                errs.append("span_coverage: [%s,%s) 미설명" % (a, b))
+    return errs
+
+
+def readout_input_violations(input_ref):
+    errs = []
+    if "span_ref" in input_ref:
+        errs.append("span_ref_removed: v1.2에서 삭제된 필드가 남아 있음")
+    if not input_ref.get("incident_clip_ref"):
+        errs.append("incident_clip_ref_required")
+    return errs
+
+
+def interval_ref_violations(ref):
+    if not is_ref(ref):
+        return ["interval_ref_shape: %r" % ref]
+    if ref["kind"] not in INTERVAL_KINDS:
+        return ["interval_kind_not_allowed: %r (허용 %s)" % (ref["kind"], list(INTERVAL_KINDS))]
+    return []
+
+
+def check_v15():
+    """CALL-18 fixture — AssetSpan identity 없음 · clip provenance · readout 입력 · evidence interval."""
+    fx = load_fixture("v15-incident-clip-provenance.json", FDIR2)
+    for v in fx["valid"]:
+        errs = incident_clip_violations(v["incident_clip"])
+        rec("semantic", not errs, "V15 %s" % v["id"], "; ".join(errs))
+    for inv in fx["invalid"]:
+        errs = incident_clip_violations(inv["incident_clip"])
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V15 violation detected: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    ri = fx["readout_inputs"]
+    for v in ri["valid"]:
+        errs = readout_input_violations(v["input_ref"])
+        rec("semantic", not errs, "V15 readout input %s" % v["id"], "; ".join(errs))
+    for inv in ri["invalid"]:
+        errs = readout_input_violations(inv["input_ref"])
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V15 readout violation: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    ei = fx["evidence_interval_refs"]
+    for v in ei["valid"]:
+        errs = interval_ref_violations(v["ref"])
+        rec("semantic", not errs, "V15 interval ref %s" % v["id"], "; ".join(errs))
+    for inv in ei["invalid"]:
+        errs = interval_ref_violations(inv["ref"])
+        hit = any(inv["expect_violation"] in e for e in errs)
+        rec("semantic", hit, "V15 interval violation: %s" % inv["id"],
+            "" if hit else "기대 위반 %s 미검출 (%s)" % (inv["expect_violation"], errs))
+    # 계약 본문: 계약 예시의 clip provenance와 readout input이 같은 규칙을 만족한다
+    errs = []
+    doc2 = read("contract-analysis-source-derived.md")
+    n = 0
+    for lang, body in FENCE.findall(doc2):
+        body = body.strip()
+        if '"contract": "IncidentClip"' not in body:
+            continue
+        try:
+            n += 1
+            errs += incident_clip_violations(json.loads(body))
+        except json.JSONDecodeError as exc:
+            errs.append("IncidentClip 예시 파싱 실패: %s" % exc)
+    if n == 0:
+        errs.append("§6.2에서 IncidentClip 예시를 찾지 못함")
+    plate = read("contract-plate-overlay-readout.md")
+    for lang, body in FENCE.findall(plate):
+        body = body.strip()
+        if not body.startswith("{"):
+            continue
+        try:
+            obj = json.loads(body)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict) and "input_ref" in obj:
+            errs += readout_input_violations(obj["input_ref"])
+    if "plate-readout/v1.2" not in plate or "overlay-time-readout/v1.2" not in plate:
+        errs.append("plate/overlay 헤더 버전이 v1.2가 아님")
+    needs = read("contract-evidence-record-needs.md")
+    if '"kind":"asset_span"' in needs or '"kind": "asset_span"' in needs:
+        errs.append("EvidenceNeeds 예시에 asset_span ref 잔존")
+    if "candidate_event" not in needs:
+        errs.append("EvidenceNeeds §8.3에 candidate_event fallback 없음")
+    rec("semantic", not errs, "V15 계약 본문 대조", "; ".join(errs))
+
+
+
 # ══ V6. 문서 — 상대 링크 · Pending 잔존 문구 · 계약-ADR 짝 ══════════
 LINK = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|py))`")
 ADIR = os.path.join(CDIR, "adr")
@@ -836,15 +1143,25 @@ def check_v6():
             slug = name[len("contract-"):-len(".md")]
             ok = "adr-%s.md" % slug in adrs
             rec("structure", ok, "V12 짝 ADR %s" % name, "" if ok else "adr/adr-%s.md 없음" % slug)
-    # Draft 계약·Proposed ADR의 상태 표기 — Consumer Review 전 Accepted로 읽히지 않게
+    # 자산 계약 2건의 상태 표기 — 2026-09-08 Consumer Review 종결로 Accepted 전환(ADR §4.10)
     for name in ("contract-source-asset-media-stream.md", "contract-analysis-source-derived.md"):
-        head = read(name)[:1500]
-        ok = "Draft" in head and "Accepted" not in head.split("**Accepted:**")[0].replace("Draft", "")
-        rec("structure", "Draft" in head, "V12 Draft 상태 %s" % name, "" if "Draft" in head else "헤더에 Draft 표기 없음")
+        head = read(name)[:2000]
+        errs = []
+        if "`Final — Accepted`" not in head:
+            errs.append("Status가 `Final — Accepted`가 아님")
+        if "**Accepted:** `2026-09-08`" not in head:
+            errs.append("Accepted 날짜 표기 없음")
+        if "Draft — Consumer Review 대기" in head:
+            errs.append("옛 Draft Status 문구 잔존")
+        rec("structure", not errs, "V12 Accepted 상태 %s" % name, "; ".join(errs))
     for name in ("adr/adr-source-asset-media-stream.md", "adr/adr-analysis-source-derived.md"):
-        head = read(name)[:800]
-        ok = "Proposed" in head and "Consumer Review pending" in head
-        rec("structure", ok, "V12 Proposed 상태 %s" % name, "" if ok else "Status가 Proposed — Consumer Review pending이 아님")
+        head = read(name)[:1200]
+        errs = []
+        if "Consumer Review pending" in head:
+            errs.append("Status에 Consumer Review pending 잔존")
+        if "**Status:** Accepted" not in head:
+            errs.append("Status가 Accepted가 아님")
+        rec("structure", not errs, "V12 ADR Accepted 상태 %s" % name, "; ".join(errs))
 
 
 def main():
@@ -858,6 +1175,9 @@ def main():
     check_v9()
     check_v10()
     check_v11(parsed)
+    check_v13()
+    check_v14()
+    check_v15()
     check_v6()
 
     total_fail = 0

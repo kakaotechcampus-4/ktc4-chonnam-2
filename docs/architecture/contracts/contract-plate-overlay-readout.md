@@ -4,7 +4,7 @@
 
 > **B03·B05 종결 (2026-09-07).** 판독 결과 최상위에 필수 `run_ref: ContractRef{kind:"readout_run"}`를 두고(§3·§4·§6), 사용량 연결은 `UsageRecord.run_ref`가 authoritative다(`contract-usage-record.md`). 결정 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4. 같은 회차에 예시 `observation` 블록을 `Observation<T> v1`에 맞췄다(R-9-5~7, Producer-side 정합).
 
-**Accepted:** `2026-09-06` (v1) · `2026-09-07` (v1.1 — `run_ref` 필수 추가, 신유민)
+**Accepted:** `2026-09-06` (v1) · `2026-09-07` (v1.1 — `run_ref` 필수 추가, 신유민) · `2026-09-08` (v1.2 — `input_ref.span_ref` 삭제, 신유민 확인 · Decider 정철원)
 
 **수락 근거:** 전환 조건이 둘 다 해소됐다. ① `frame_ref` 형식 확정 — 정철원(`recording` Owner) CALL-4 회신으로 `fr_<opaque-id>` opaque 형식이 확정됐고 아래 §「`frame_ref` 형식」에 반영했다. ② Owner 수락 — 신유민 「`contract-plate-overlay-readout.md`의 기존 내용은 Canonical Contract v1 승격에 동의합니다」(CALL-6 회신, 2026-09-06). 근거는 `adr/adr-consistency-2026-09.md` §6 R-4·R-5
 
@@ -12,9 +12,9 @@
 
 **Contract:** `PlateReadout` / `OverlayTimeReadout`
 
-**Contract Version:** `plate-readout/v1.1` · `overlay-time-readout/v1.1`
+**Contract Version:** `plate-readout/v1.2` · `overlay-time-readout/v1.2`
 
-**Related ADR:** `adr/adr-plate-overlay-readout.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (v1.1 근거)
+**Related ADR:** `adr/adr-plate-overlay-readout.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (v1.1 근거) · `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9 (v1.2 근거)
 
 **Contract Lead:** 신유민
 
@@ -25,6 +25,8 @@
 > Direct Consumer는 `case`다(v4 §5-1 ⑦ `case → evidence`). `evidence`는 다른 모듈을 직접 호출하지 않고 입력 JSON으로 받는다 — `contract-evidence-record-needs.md` §「책임 경계」와 v4 §2 원칙 6.
 
 **기준 문서:** Module Architecture v4, Readout/Web Architecture Input Memo, Consumer Review 반영본
+
+> **`input_ref.span_ref` 삭제 (2026-09-08 · Decider 정철원(`recording`, `AssetSpan` 소유) · 확인 신유민(`readout`)·유소연(`case`)·김준영(`evidence`)).** canonical `AssetSpan`에는 독립 identity가 없고 앞으로도 추가하지 않는다는 결정에 따라 **`PlateReadout.input_ref.span_ref`와 `OverlayTimeReadout.input_ref.span_ref`를 삭제**한다. `span_ref`라는 이름으로 `IncidentClip`이나 `SpanResolution`을 가리키는 **의미 재정의도 하지 않는다.** 예시가 쓰던 `"span_001"`은 recording이 발급하지 않는 ID였다. clip 생성 이후 사건 구간의 canonical reference는 `{kind:"incident_clip", ref:...}`이며, 「어느 구간을 읽었나」는 `incident_clip_ref` 하나로 알 수 있다 — timeline·요청 범위·사용한 span 값이 모두 `IncidentClip.source_provenance`에 있다(`contract-analysis-source-derived.md` §6.2·§6.3). 필드 삭제이므로 **`plate-readout/v1.1 → v1.2`** · **`overlay-time-readout/v1.1 → v1.2`**. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9.
 
 ---
 
@@ -81,7 +83,7 @@
 
 ## `frame_ref` 형식 — 현재 작업 규약 참조
 
-ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. 정식 FrameRef/자산 필드 계약은 recording 작성 대기이며, `FrameRef`가 보장하는 의미 6건(opaque identity · 동일 stream 동일 canonical frame = 동일 ref · 내부 파싱 금지 · `read_frame` 획득 · `media_stream_ref`+source offset 조회 · rebase 불변)은 `contract-recording-timeline-asset-span.md` §12에 있다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다.
+ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. **정식 `FrameRef` 필드 계약은 `contract-source-asset-media-stream.md` §5가 소유한다**(`source-asset-media-stream/v1`, 2026-09-08 Consumer Review 종결) — 보장 의미 6건(opaque identity · 동일 stream 동일 canonical frame = 동일 ref · 내부 파싱 금지 · `read_frame` 획득 · `media_stream_ref`+source offset 조회 · rebase 불변)이 §5.2에 있고, 좌표에서 `FrameRef`를 발급받는 `resolve_frame`은 §5.3, offset 정밀도 보장은 §5.4, 조회 실패의 machine-readable failure는 §6.6이다. 같은 6건은 `contract-recording-timeline-asset-span.md` §12에도 남아 있다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다.
 
 ## `ReadoutRun`과의 연결 — `run_ref` (B03 종결, 2026-09-07 · Decider 신유민 · 확인 유소연·김대원)
 
@@ -122,7 +124,7 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 | `run_ref` | **필수.** 이 결과를 생성한 `ReadoutRun`의 `ContractRef` — `{kind:"readout_run", ref:<run_id>}` (§3) |
 | `case_id` | 연결된 case |
 | `candidate_id` | 사용자가 선택했거나 case가 지정한 사건 후보 |
-| `input_ref` | OCR 근거가 된 `incident_clip_ref`, `span_ref`, `source_profile`, `provenance`(근거가 Source-derived임을 뜻하는 불변조건 §3-2·§3-3의 실제 근거) |
+| `input_ref` | OCR 근거가 된 `incident_clip_ref`(**필수**), `source_profile`, `provenance`(근거가 Source-derived임을 뜻하는 불변조건 §3-2·§3-3의 실제 근거). (v1.2, 2026-09-08) `span_ref`는 삭제됐다 — 사건 구간 canonical ref는 `incident_clip_ref`다 |
 | `target_association` | 실제로 어떤 차량/영역을 대상으로 번호판을 읽었는지와 근거 |
 | `observation` | 번호판 관찰값 — 공용 `Observation<T> v1` envelope(`contract_version`·`value`·`status`·`source`·`support_refs`·`produced_by`). 확정값이 아님. `support_refs`는 빈 배열 — 근거 ref는 `best_frame`·`frame_results[]`가 소유한다 |
 | `consensus` | 여러 프레임 OCR을 종합한 결과 |
@@ -143,7 +145,6 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
   "candidate_id": "candidate_001",
   "input_ref": {
     "incident_clip_ref": "clip_0001",
-    "span_ref": "span_001",
     "source_profile": "readout-native",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
@@ -290,7 +291,6 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
   "candidate_id": "candidate_001",
   "input_ref": {
     "incident_clip_ref": "clip_0001",
-    "span_ref": "span_001",
     "source_profile": "readout-native",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },

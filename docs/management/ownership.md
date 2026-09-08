@@ -433,7 +433,9 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 [web]  증거 검토 카드 → 신고 꾸러미 → handoff 링크
 ```
 
-> **현재 통합 상태 (2026-09-08):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 접합부 Owner 결정과 남은 Pending·결정 회차는 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10 참조(2026-09-07 회차는 같은 폴더의 `adr-data-contract-call-closure-2026-09-07.md`, 2026-09-06 보정 기록은 `adr-consistency-followup-2026-09-06.md`). 기준 ④의 세 gate 분리는 계약에 반영됐다(`requirements_evidence`/`requirements_package`/`user_reviewed`) — 화면 실행 확인은 아직 없다.
+> **현재 통합 상태 (2026-09-08, 2차 반영 후):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 접합부 Owner 결정과 남은 Pending·종결·준비도 판정은 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2 참조(2026-09-07 회차는 같은 폴더의 `adr-data-contract-call-closure-2026-09-07.md`, 2026-09-06 보정 기록은 `adr-consistency-followup-2026-09-06.md`). 기준 ④의 세 gate 분리는 계약에 반영됐다(`requirements_evidence`/`requirements_package`/`user_reviewed`) — 화면 실행 확인은 아직 없다.
+>
+> **데이터 계약 상태.** recording 자산 계약 2건이 4 Consumer Review 종결로 `Final — Accepted`가 되어 **BLOCK 12건 전부 종결이고 열린 결정 회차는 0건**이다. 감사 전체는 `CONTRACT_AUDIT_PARTIAL`로 남는다 — W04(`JobExecution` 소비자 확인·domain `PARTIAL`↔runtime `status`)와 N02(`CorrectionRecord` Draft Review·readout taxonomy·eval 정답지)가 `PENDING_OWNER`다. 다음 단계 준비도는 **`READY_WITH_NON_BLOCKING_GAPS`** — Mock·통합 E2E 착수를 막는 계약 항목은 없고, E2E에서 판정 대상으로 삼지 말아야 하는 셀(W04의 status 매핑 · `stream_selector` 경로 · thumbnail 이미지 획득)은 같은 ADR §10.2에 적혀 있다.
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 

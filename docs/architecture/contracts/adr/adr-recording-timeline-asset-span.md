@@ -6,6 +6,8 @@
 
 > **후속 변경 (2026-09-08):** 보조 구조 `SpanResolution`이 `span-resolution/v1.1` — top-level `failure: {kind, code} | null`(키 항상 존재) 추가 · `MissingRange.reason`에 `OUT_OF_TIMELINE_RANGE` 추가 · 위치 특정 불가 `FAILED`의 완전성 예외. Decider 정철원, 확인 김준영·서어진. 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.3. 2026-09-07의 완전성 규칙(B06)은 `adr-data-contract-call-closure-2026-09-07.md` §4.5. 아래 본문은 당시 결정 기록이며 고치지 않았다.
 
+> **후속 변경 (2026-09-08, 같은 날 2차):** `span-resolution/v1.2` — `MissingRange.source_ref`가 `ContractRef {kind, ref} | null`이고 키가 항상 존재한다. `SOURCE_UNAVAILABLE`·`STREAM_UNAVAILABLE`은 필수 non-null(각각 `source_asset`·`media_stream`), `TIMELINE_GAP`·`OUT_OF_TIMELINE_RANGE`는 `null`. Decider 정철원, 확인 김준영·서어진. 함께 **`AssetSpan`에 canonical identity를 추가하지 않는다**는 결정이 확정됐다 — `AssetSpan`은 immutable value mapping으로 유지되고 스키마·`asset-span/v1`은 바뀌지 않았다. 사건 구간의 canonical reference는 `incident_clip` ref다. 근거·기각안 같은 ADR §4.7·§4.9.
+
 **Contract:** `RecordingTimeline + AssetSpan + TimeSourceCandidate`
 
 **Producer:** `recording`

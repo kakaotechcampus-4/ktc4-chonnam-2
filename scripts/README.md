@@ -35,7 +35,9 @@ python scripts/check_contract_fixtures.py
 
 **2026-09-08 확장.** fixture 폴더 `fixtures/call-closure-2026-09-08/`와 검사 V8~V11이 추가됐다 — 재판독 발주(`kind=PLATE_READ`+`force_rerun=true`, V8) · `AnalysisRun.usage_refs[]` 파생값 vs 원장 `run_ref` 집계(V9) · `SpanResolution` `failure`·`OUT_OF_TIMELINE_RANGE`·위치 불특정 FAILED 예외(V10, `span-resolution/v1.1`에만 적용) · `AnalysisScope` `kind: ABSOLUTE | TIMELINE_RELATIVE`·혼합 금지·하위 호환(V11). Draft 자산 계약 2건은 JSON 파싱과 링크·짝 ADR 존재만 본다(의미 fixture는 Consumer Review 후). 검증 조건과 결과의 의미는 `docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §7.
 
-**알려진 한계:** ADR에서 확정되지 않은 값(`MissingRange.source_ref` 규칙 · recording `failure.kind` 값 집합 · 자산 ref `kind` 표기 · stale 표시 필드명)은 fixture에 없거나 `EXAMPLE_*` 자리표시자다. 실패 run의 `JobExecution.status` 매핑도 Pending이라 검사하지 않는다. `span-resolution/v1` payload에는 `failure` 규칙을 적용하지 않는다(재해석 규칙 미정). 출력의 PASS는 「계약 규칙을 코드로 옮겼을 때 fixture가 만족한다」는 뜻이며 구현 통합·E2E·Owner 수락 증거가 아니다. CI에는 아직 붙이지 않았다.
+**2026-09-08 2차 확장.** 자산 계약 2건의 Consumer Review가 종결되고 결정 3건이 닫혀 fixture 3건과 검사 V13~V15가 추가됐다 — `MissingRange.source_ref`의 타입·reason별 nullable·`kind` 대응(V13, `span-resolution/v1.2`) · 자산 계층 `ContractRef.kind` 값 공간과 canonical `AssetFacts` 불변조건(V14: `asset_kind` 대응표 · `AVAILABLE ⇒ byte_size non-null` · `timeline_ref`⇔`timeline_range` 쌍과 revision · lineage 평탄화 · offset-aware `checked_at`) · `IncidentClip` provenance가 canonical `AssetSpan`(초 단위·`sequence` 필수)인지와 readout `input_ref`에 `span_ref`가 없는지, `evidence.interval` ref가 `incident_clip`/`candidate_event`인지(V15). V10은 `span-resolution/v1.2`로 갱신되고 `source_ref`를 검사한다. V12는 두 계약이 `Final — Accepted`·짝 ADR이 `Accepted`인지로 뒤집혔다.
+
+**알려진 한계:** ADR에서 확정되지 않은 값(recording `failure.kind` 값 집합 · `AnalysisSource` profile 값 목록 · stale 표시 필드명)은 fixture에 없거나 `EXAMPLE_*` 자리표시자이고 검사기는 모양만 본다. 실패 run의 `JobExecution.status` 매핑은 W04 잔여로 Pending이라 검사하지 않는다. `span-resolution/v1` payload에는 `failure` 규칙을 적용하지 않는다(재해석 규칙 미정). 출력의 PASS는 「계약 규칙을 코드로 옮겼을 때 fixture가 만족한다」는 뜻이며 구현 통합·E2E·Owner 수락 증거가 아니다. CI에는 아직 붙이지 않았다.
 
 ## CI
 

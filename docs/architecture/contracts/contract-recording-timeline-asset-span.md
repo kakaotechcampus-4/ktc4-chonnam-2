@@ -8,9 +8,9 @@
 
 **수락 근거:** §25 「Pair Review 반영 최종 결정표」 · §26 「Final Contract 한 문장 정의」. Status의 종결 근거와 날짜는 위 Pair Review·짝 ADR을 따른다. 과거에는 PM이 `Accepted`를 채웠다(`adr/adr-consistency-2026-09.md` C1-13). 정철원 이견 시 되돌린다
 
-**Architecture Contract:** v4 §5-1 ② (부분 — `SourceAsset`/`MediaStream` 스키마와 ③ `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset`은 본 계약 범위 밖. 2026-09-08부터 `contract-source-asset-media-stream.md`·`contract-analysis-source-derived.md` Draft가 소유, Consumer Review 대기)
+**Architecture Contract:** v4 §5-1 ② (부분 — `SourceAsset`/`MediaStream` 스키마와 ③ `AnalysisSource`/`RemoteCopy`/`IncidentClip`/`DerivedAsset`은 본 계약 범위 밖. `contract-source-asset-media-stream.md`·`contract-analysis-source-derived.md`가 소유하며 2026-09-08 Consumer Review 종결로 `Final — Accepted`)
 
-**Contract Version:** `recording-timeline/v1` · `asset-span/v1` · `time-source-candidate/v1` · 보조 구조 `span-resolution/v1.1`(2026-09-08, `failure` 필드·`OUT_OF_TIMELINE_RANGE` 추가)
+**Contract Version:** `recording-timeline/v1` · `asset-span/v1` · `time-source-candidate/v1` · 보조 구조 `span-resolution/v1.2`(2026-09-08, `failure` 필드·`OUT_OF_TIMELINE_RANGE` 추가 → `MissingRange.source_ref` 타입·nullable 규칙 확정)
 
 **Related ADR:** `adr/adr-recording-timeline-asset-span.md`
 
@@ -18,7 +18,9 @@
 
 **Runtime Producer:** `recording`
 
-> **`SpanResolution` 실패 직렬화 확정 (2026-09-08 반영 · Decider 정철원 · 확인 김준영·서어진).** ① `MissingRange.reason`에 **`OUT_OF_TIMELINE_RANGE`** 추가(§10) ② top-level **`failure: {kind, code} | null`** 키 항상 존재 — `COMPLETE`/`PARTIAL`은 `null`, `FAILED`는 필수(§9) ③ 위치를 특정할 수 없는 `FAILED`는 `missing_ranges=[]`를 허용하고 `failure`가 원인을 제공한다(완전성 불변조건의 명시적 예외, §23 SpanResolution 10·11). 스키마 변경이므로 **`span-resolution/v1 → v1.1`**(PM bookkeeping, Owner 이견 시 조정). `recording-timeline/v1`·`asset-span/v1`·`time-source-candidate/v1`은 그대로다. **`CALL_REQUIRED`로 남은 것:** `MissingRange.source_ref`의 타입과 `OUT_OF_TIMELINE_RANGE`·`TIMELINE_GAP`에서의 nullable/부재 규칙(§10). `failure.kind` 값 집합을 담을 recording 소유 문서는 작성 대기다. Asset Facts 필드는 자산 계약 2건(Draft, Consumer Review 대기)이 소유한다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.3.
+> **`SpanResolution` 실패 직렬화 확정 (2026-09-08 반영 · Decider 정철원 · 확인 김준영·서어진).** ① `MissingRange.reason`에 **`OUT_OF_TIMELINE_RANGE`** 추가(§10) ② top-level **`failure: {kind, code} | null`** 키 항상 존재 — `COMPLETE`/`PARTIAL`은 `null`, `FAILED`는 필수(§9) ③ 위치를 특정할 수 없는 `FAILED`는 `missing_ranges=[]`를 허용하고 `failure`가 원인을 제공한다(완전성 불변조건의 명시적 예외, §23 SpanResolution 10·11). 스키마 변경이므로 **`span-resolution/v1 → v1.1`**(PM bookkeeping, Owner 이견 시 조정). `recording-timeline/v1`·`asset-span/v1`·`time-source-candidate/v1`은 그대로다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.3.
+
+> **`MissingRange.source_ref` 확정 (2026-09-08 반영 · Decider 정철원 · 확인 김준영·서어진).** `source_ref`는 **`ContractRef {kind, ref} | null`**이며 **키가 항상 존재**한다. `SOURCE_UNAVAILABLE`·`STREAM_UNAVAILABLE`이면 필수 non-null이고 각각 `source_asset`·`media_stream`을 가리킨다. `OUT_OF_TIMELINE_RANGE`·`TIMELINE_GAP`이면 `null`이다 — 특정 Source의 가용 실패가 아니므로 임의의 참조 대상을 넣지 않는다. 규칙 원문은 §10, 불변조건은 §23 SpanResolution 13·14. 스키마 변경이므로 **`span-resolution/v1.1 → v1.2`**(PM bookkeeping, Owner 이견 시 조정). `kind` 문자열은 `contract-source-asset-media-stream.md` §2.1이 소유하는 소문자 snake_case를 그대로 쓰며 Consumer는 ID 접두어를 파싱하지 않는다. 이 결정은 `SpanResolution.status`나 evidence의 `BLOCK`/`UNKNOWN` 판정 의미를 바꾸지 않는다 — 그 판정 매핑은 evidence policy가 소유하고 이 계약에 고정하지 않는다. **아직 열려 있는 것:** `failure.kind` 값 집합을 담을 recording 소유 문서(작성 대기). Asset Facts 필드는 `contract-source-asset-media-stream.md`(2026-09-08 Accepted)가 소유한다. 근거·기각안 같은 ADR §4.7.
 
 ## 포함 Contract
 
@@ -373,7 +375,7 @@ resolve_span()
 ```
 {
   "contract":"SpanResolution",
-  "contract_version":"span-resolution/v1.1",
+  "contract_version":"span-resolution/v1.2",
 
   "timeline_ref": {
     "timeline_id":"tl_01",
@@ -410,7 +412,7 @@ resolve_span()
         "end_sec":120.0
       },
       "reason":"SOURCE_UNAVAILABLE",
-      "source_ref":"sa_0002"
+      "source_ref": { "kind":"source_asset", "ref":"sa_0002" }
     }
   ],
 
@@ -467,13 +469,13 @@ failure != null         ← 필수. spans=[]만 보고 Consumer가 원인을 추
 ```
 {
   "contract":"SpanResolution",
-  "contract_version":"span-resolution/v1.1",
+  "contract_version":"span-resolution/v1.2",
   "timeline_ref": { "timeline_id":"tl_01", "revision":1 },
   "requested_range": { "start_sec":200.0, "end_sec":260.0 },
   "status":"FAILED",
   "spans": [],
   "missing_ranges": [
-    { "timeline_range": { "start_sec":200.0, "end_sec":260.0 }, "reason":"SOURCE_UNAVAILABLE", "source_ref":"sa_0007" }
+    { "timeline_range": { "start_sec":200.0, "end_sec":260.0 }, "reason":"SOURCE_UNAVAILABLE", "source_ref": { "kind":"source_asset", "ref":"sa_0007" } }
   ],
   "failure": { "kind":"EXAMPLE_KIND", "code":"EXAMPLE_CODE" }
 }
@@ -484,7 +486,7 @@ failure != null         ← 필수. spans=[]만 보고 Consumer가 원인을 추
 ```
 {
   "contract":"SpanResolution",
-  "contract_version":"span-resolution/v1.1",
+  "contract_version":"span-resolution/v1.2",
   "timeline_ref": { "timeline_id":"tl_01", "revision":1 },
   "requested_range": { "start_sec":200.0, "end_sec":260.0 },
   "status":"FAILED",
@@ -517,7 +519,7 @@ failure != null         ← 필수. spans=[]만 보고 Consumer가 원인을 추
     "end_sec":120.0
   },
   "reason":"SOURCE_UNAVAILABLE",
-  "source_ref":"sa_0002"
+  "source_ref": { "kind":"source_asset", "ref":"sa_0002" }
 }
 ```
 
@@ -534,7 +536,40 @@ Evidence가 원래 사건 구간에서 일부 Source가 누락됐다는 사실�
 
 요청이 timeline 범위를 벗어난 부분도 `missing_ranges`로 명시한다(§9) — reason은 `OUT_OF_TIMELINE_RANGE`다.
 
-**`source_ref` — `CALL_REQUIRED`.** 위 예시의 `source_ref`는 Source가 원인인 reason(`SOURCE_UNAVAILABLE`)에서만 자연스럽다. `source_ref`의 타입(평문 opaque string인가 `ContractRef {kind, ref}`인가)과, `OUT_OF_TIMELINE_RANGE`·`TIMELINE_GAP`처럼 특정 Source가 원인이 아닌 reason에서 `null`인가 부재인가는 **Owner 결정 대기**다(`adr/adr-data-contract-call-closure-2026-09-08.md` §4.6). 확정 전에는 규칙을 만들지 않으며, fixture의 `OUT_OF_TIMELINE_RANGE` 항목은 `source_ref` 키를 넣지 않았다.
+## 10.1 필드
+
+| 필드 | 타입 | 필수 | 의미 |
+| --- | --- | --- | --- |
+| `timeline_range` | interval(초) | O | 해소하지 못한 timeline 구간 |
+| `reason` | 위 enum 4값 | O | 왜 해소하지 못했는가 |
+| `source_ref` | `ContractRef {kind, ref}` \| null | **O(키 항상 존재)** | (v1.2) 원인이 되는 대상. §10.2 |
+
+## 10.2 `source_ref` (2026-09-08 확정 · Decider 정철원 · 확인 김준영·서어진)
+
+`source_ref` 키는 **모든 `MissingRange`에 항상 존재**한다. 「키 부재」와 「`null`」을 혼용하지 않는다 — Consumer가 의도적인 「참조 대상 없음」과 계약 위반에 의한 필드 누락을 구분할 수 있어야 한다. 타입은 `SpanResolution.failure`·`UsageRecord.run_ref`·`JobExecution.produced`와 같은 어휘인 `ContractRef {kind, ref}`다.
+
+| `reason` | `source_ref` | 가리키는 대상 |
+| --- | --- | --- |
+| `SOURCE_UNAVAILABLE` | **필수 non-null** | `{kind:"source_asset", ref:...}` |
+| `STREAM_UNAVAILABLE` | **필수 non-null** | `{kind:"media_stream", ref:...}` |
+| `TIMELINE_GAP` | `null` | — |
+| `OUT_OF_TIMELINE_RANGE` | `null` | — |
+
+```
+{
+  "timeline_range": { "start_sec":100.0, "end_sec":130.0 },
+  "reason":"OUT_OF_TIMELINE_RANGE",
+  "source_ref": null
+}
+```
+
+규칙:
+
+1. `kind` 문자열은 `contract-source-asset-media-stream.md` §2.1이 소유하는 소문자 snake_case를 그대로 쓴다. Consumer는 `sa_`·`ms_` 같은 **ID 접두어를 파싱하지 않고** `kind` 필드로 종류를 판단한다(v4 §5-3).
+2. `TIMELINE_GAP`·`OUT_OF_TIMELINE_RANGE`는 특정 `SourceAsset`이나 `MediaStream`의 가용 실패가 아니다. **임의의 참조 대상을 채우지 않는다.**
+3. 원인이 되는 대상을 특정할 수 있는데 `source_ref=null`인 payload는 계약 위반이다.
+4. `source_ref`는 원인 대상의 provenance와 사용자 설명을 위한 정보이며 **`SpanResolution.status`의 의미를 바꾸지 않는다.** 이 값을 신고 규칙상 `BLOCK`/`UNKNOWN` 중 무엇으로 볼지는 `evidence` policy가 소유하며 이 계약에 고정하지 않는다. `OUT_OF_TIMELINE_RANGE`(요청이 녹화 밖으로 나감)와 `TIMELINE_GAP`(녹화 내부 결손), 위치 불특정 `FAILED`(§9)는 evidence에서 서로 다른 판정 경로를 타지만 그 매핑은 여기에 적지 않는다.
+5. `evidence`는 이 값을 `RequirementCheck.subject_refs`(`ContractRef[]`)에 provenance로 담을 수 있다 — 그래서 평문 문자열이 아니라 `ContractRef`다.
 
 ---
 
@@ -972,6 +1007,8 @@ SpanResolution
 10. (2026-09-08 · v1.1) `failure` 키는 항상 존재한다. `status ∈ {COMPLETE, PARTIAL}`이면 `failure = null`, `status = FAILED`이면 `failure != null`이며 `kind`·`code`가 비어 있지 않은 문자열이다.
 11. (2026-09-08 · v1.1) 위치를 신뢰성 있게 특정할 수 없는 `FAILED`는 `spans = []` · `missing_ranges = []` · `failure != null`이다. 확인할 수 없는 구간을 임의의 `MissingRange`로 만들지 않는다.
 12. (2026-09-08 · v1.1) `missing_ranges[].reason ∈ {TIMELINE_GAP, SOURCE_UNAVAILABLE, STREAM_UNAVAILABLE, OUT_OF_TIMELINE_RANGE}`. 요청이 Timeline 경계를 벗어난 구간은 `OUT_OF_TIMELINE_RANGE`다.
+13. (2026-09-08 · v1.2) `MissingRange.source_ref` 키는 항상 존재하며 타입은 `ContractRef {kind, ref} | null`이다. 키 부재는 계약 위반이다.
+14. (2026-09-08 · v1.2) `reason ∈ {SOURCE_UNAVAILABLE, STREAM_UNAVAILABLE}`이면 `source_ref != null`이고 `kind`가 각각 `source_asset`·`media_stream`이다. `reason ∈ {TIMELINE_GAP, OUT_OF_TIMELINE_RANGE}`이면 `source_ref == null`이다.
 
 ## TimeSourceCandidate
 
@@ -1073,7 +1110,7 @@ SpanResolution
 
   "span_resolution": {
     "contract":"SpanResolution",
-    "contract_version":"span-resolution/v1.1",
+    "contract_version":"span-resolution/v1.2",
 
     "timeline_ref": {
       "timeline_id":"tl_case01",

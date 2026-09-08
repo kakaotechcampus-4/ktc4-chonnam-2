@@ -12,7 +12,9 @@
 
 **Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`) · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2(B02)·§4.6(B07)
 
-> **2026-09-07 반영.** §5.2-1의 `CaseView` projection 규칙 소유가 `contract-job-record-case-view.md`로 이관됐다(B02 종결). §4.6에 ASSET 판정 입력의 최소 자산 사실과 전달 경계를 기록했다(B07 — 필드 계약은 recording 자산 계약 대기). 스키마·버전은 바뀌지 않았다.
+> **2026-09-07 반영.** §5.2-1의 `CaseView` projection 규칙 소유가 `contract-job-record-case-view.md`로 이관됐다(B02 종결). §4.6에 ASSET 판정 입력의 최소 자산 사실과 전달 경계를 기록했다(B07). 스키마·버전은 바뀌지 않았다.
+
+> **2026-09-08 포인터 갱신.** §4.6이 가리키는 **자산 사실의 필드 계약이 확정됐다** — canonical `AssetFacts`는 `contract-source-asset-media-stream.md` §6이 소유하고(`source-asset-media-stream/v1`, Consumer Review 종결) `availability` 3값의 부여 조건(§3.5) · `byte_size`/`duration_sec`의 nullable 규칙(§3.4) · `timeline_ref{timeline_id, revision}`와 `timeline_range{start_sec,end_sec}`의 쌍 규칙(§6.4) · `lineage[]`의 원본까지 평탄화(§6.3) · `lookup_asset_facts` 실패의 `UNKNOWN_REF`/`INVALID_REF_KIND` 구분(§6.6)이 거기에 있다. `derived_role` 등재 값 `REPORT_VIDEO`·`PLATE_IMAGE`는 `contract-analysis-source-derived.md` §7.3이다. **이 값들을 신고 규칙상 어느 outcome으로 볼지는 이 계약과 evidence policy가 소유하며 recording 계약에 고정하지 않았다.** 스키마·버전은 바뀌지 않았다. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.10.
 
 **Contract Lead / Owner:** 김준영 (`evidence`)
 

@@ -2,6 +2,8 @@
 
 > **후속 변경 (2026-09-07):** `plate-readout/v1.1` · `overlay-time-readout/v1.1` — 최상위 필수 `run_ref{kind:"readout_run"}`와 예시 `observation` 블록의 Observation v1 정합은 `adr-data-contract-call-closure-2026-09-07.md` §4.3이 근거다. 본문은 당시 결정 기록이다.
 
+> **후속 변경 (2026-09-08):** `plate-readout/v1.2` · `overlay-time-readout/v1.2` — `input_ref.span_ref` **삭제**. canonical `AssetSpan`에 독립 identity가 없고 추가하지 않기로 확정됐으므로, 예시가 쓰던 `"span_001"`은 recording이 발급하지 않는 ID였다. 사건 구간 canonical ref는 `incident_clip_ref` 하나이며 timeline·요청 범위·사용한 span 값은 `IncidentClip.source_provenance`에 있다. `span_ref`라는 이름으로 다른 대상을 가리키는 의미 재정의도 하지 않는다. Decider 정철원(`AssetSpan` 소유), 확인 신유민(`readout`)·유소연(`case`)·김준영(`evidence`). 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.9.
+
 **Contract:** ⑥ `PlateReadout / OverlayTimeReadout`
 
 **Contract Lead:** 신유민
