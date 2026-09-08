@@ -1,0 +1,121 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "module": "readout",
+  "readout_runs": [
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_h001_plate",
+      "operation": "PLATE_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": ["usage_h001_plate"],
+      "started_at": "2026-08-24T18:22:00+09:00",
+      "ended_at": "2026-08-24T18:22:06+09:00"
+    },
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_h001_overlay",
+      "operation": "OVERLAY_TIME_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": ["usage_h001_overlay"],
+      "started_at": "2026-08-24T18:22:06+09:00",
+      "ended_at": "2026-08-24T18:22:11+09:00"
+    }
+  ],
+  "plate_readouts": [
+    {
+      "contract": "PlateReadout",
+      "contract_version": "plate-readout/v1.2",
+      "readout_id": "readout_h001_plate",
+      "run_ref": { "kind": "readout_run", "ref": "rr_h001_plate" },
+      "case_id": "case_h001",
+      "candidate_id": "candidate_h001",
+      "input_ref": {
+        "incident_clip_ref": "clip_h001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "target_association": {
+        "status": "ASSOCIATED",
+        "target_hint_used": true,
+        "track_ref": "track_h001",
+        "association_method": "TARGET_HINT_WITH_FALLBACK",
+        "associated_region": {
+          "frame_ref": "fr_h001_plate1",
+          "bbox_xywh": [820, 410, 176, 68]
+        },
+        "evidence": [
+          { "kind": "SPATIAL_PROXIMITY", "detail": "candidate target region overlaps selected track" },
+          { "kind": "MULTI_FRAME_CONTINUITY", "detail": "similar plate crop appears across sampled frames" }
+        ]
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": "12가3456",
+        "status": "OK",
+        "source": { "kind": "readout.plate_ocr" },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": { "kind": "readout_run", "ref": "rr_h001_plate" }
+        }
+      },
+      "consensus": {
+        "text": "12가3456",
+        "disagree_positions": [],
+        "method": "MULTI_FRAME"
+      },
+      "abstained": false,
+      "abstain_reason": null,
+      "best_frame": {
+        "frame_ref": "fr_h001_plate1",
+        "crop_ref": "crop_h001_001",
+        "quality": { "plate_px_height": 44, "sharpness": 0.87 }
+      },
+      "frame_results": [
+        { "frame_ref": "fr_h001_plate1", "crop_ref": "crop_h001_001", "text": "12가3456", "confidence": 0.91 },
+        { "frame_ref": "fr_h001_plate2", "crop_ref": "crop_h001_002", "text": "12가3456", "confidence": 0.88 }
+      ]
+    }
+  ],
+  "overlay_time_readouts": [
+    {
+      "contract": "OverlayTimeReadout",
+      "contract_version": "overlay-time-readout/v1.2",
+      "readout_id": "readout_h001_overlay",
+      "run_ref": { "kind": "readout_run", "ref": "rr_h001_overlay" },
+      "case_id": "case_h001",
+      "candidate_id": "candidate_h001",
+      "input_ref": {
+        "incident_clip_ref": "clip_h001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": "2026-08-24T18:05:12+09:00",
+        "status": "OK",
+        "source": { "kind": "readout.overlay_ocr" },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": { "kind": "readout_run", "ref": "rr_h001_overlay" }
+        }
+      },
+      "validation": {
+        "format_ok": true,
+        "monotonic_ok": true,
+        "duration_match_ok": true,
+        "sample_count": 3
+      },
+      "samples": [
+        { "frame_ref": "fr_h001_thumb", "offset_sec": 12.48, "raw_text": "2026-08-24 18:05:12", "parsed_at": "2026-08-24T18:05:12+09:00" },
+        { "frame_ref": "fr_h001_plate1", "offset_sec": 13.1, "raw_text": "2026-08-24 18:05:13", "parsed_at": "2026-08-24T18:05:13+09:00" },
+        { "frame_ref": "fr_h001_plate2", "offset_sec": 13.6, "raw_text": "2026-08-24 18:05:13", "parsed_at": "2026-08-24T18:05:13+09:00" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "module": "case",
+  "job_records": [
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_h001_search",
+      "case_id": "case_h001",
+      "case_rev": 1,
+      "kind": "COARSE_SEARCH",
+      "scope_ref": "scope_h001",
+      "input_fingerprint": "sha1:h001-coarse-search",
+      "force_rerun": false,
+      "requested_at": "2026-08-24T18:20:04+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_h001_plate",
+      "case_id": "case_h001",
+      "case_rev": 2,
+      "kind": "PLATE_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:h001-plate-read-clip_h001",
+      "force_rerun": false,
+      "requested_at": "2026-08-24T18:21:15+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_h001_overlay",
+      "case_id": "case_h001",
+      "case_rev": 2,
+      "kind": "OVERLAY_TIME_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:h001-overlay-read-clip_h001",
+      "force_rerun": false,
+      "requested_at": "2026-08-24T18:21:15+09:00"
+    }
+  ],
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_h001",
+      "case_rev": 1,
+      "stage": "SEARCHING",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 2,
+        "ok_file_count": 2,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+      },
+      "hints": {
+        "time": "18시쯤",
+        "vehicle": "흰색 SUV",
+        "situation": "백색 실선 구간에서 차로변경",
+        "location": "상무중앙로 사거리 부근"
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "RUNNING" },
+        { "step": "candidate_review", "state": "PENDING" },
+        { "step": "plate_read", "state": "PENDING" },
+        { "step": "overlay_time_read", "state": "PENDING" },
+        { "step": "evidence_assembly", "state": "PENDING" },
+        { "step": "requirement_check", "state": "PENDING" },
+        { "step": "package_assembly", "state": "PENDING" }
+      ],
+      "candidates": [],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [
+        { "job_id": "job_h001_search", "kind": "COARSE_SEARCH", "label_key": "job.generic_processing", "status": "RUNNING" }
+      ],
+      "notices": []
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_h001",
+      "case_rev": 3,
+      "stage": "READY",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 2,
+        "ok_file_count": 2,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+      },
+      "hints": {
+        "time": "18시쯤",
+        "vehicle": "흰색 SUV",
+        "situation": "백색 실선 구간에서 차로변경",
+        "location": "상무중앙로 사거리 부근"
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "DONE" },
+        { "step": "overlay_time_read", "state": "DONE" },
+        { "step": "evidence_assembly", "state": "DONE" },
+        { "step": "requirement_check", "state": "DONE" },
+        { "step": "package_assembly", "state": "DONE" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_h001",
+          "at": "2026-08-24T18:05:12+09:00",
+          "at_provenance": "readout.overlay_ocr",
+          "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+          "thumb_ref": "fr_h001_thumb",
+          "selected": true
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_h001",
+        "case_type_display": { "code": "SOLID_LINE_LANE_CHANGE", "label": "백색 실선 구간 차로변경", "needs_review": false },
+        "report_type_display": { "code": "UNSAFE_LANE_CHANGE", "label": "안전운전 불이행", "needs_review": false },
+        "violation_display": { "code": null, "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함", "needs_review": false },
+        "plate_display": {
+          "value": "12가3456",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-24T18:05:12+09:00",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "time.source.overlay_ocr"
+        },
+        "location_display": {
+          "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "needs_review": false,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "location.source.user_hint",
+          "coord": null,
+          "search_keyword": "광주 상무지구 상무중앙로 사거리"
+        },
+        "user_edited": false,
+        "preview_ref": "fr_h001_thumb",
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "PASS",
+        "checks": [
+          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.visual_event.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.location.present", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient" }
+        ]
+      },
+      "requirements_package": {
+        "readiness": "PASS",
+        "checks": [
+          { "code": "package.asset.report_video.exists", "outcome": "PASS", "reason_code": "asset.available" },
+          { "code": "package.asset.plate_visible", "outcome": "PASS", "reason_code": "asset.plate_legible" },
+          { "code": "package.time.overlay_visible", "outcome": "PASS", "reason_code": "time.overlay_burned_in" }
+        ]
+      },
+      "package": {
+        "package_ref": "pkg_h001",
+        "report_fields": {
+          "safety_report_type": "안전운전 불이행",
+          "occurred_at": "2026-08-24T18:05:12+09:00",
+          "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "vehicle_number": "12가3456",
+          "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+        },
+        "artifact_ref": "da_h001_report_video",
+        "capabilities": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"],
+        "warnings": []
+      },
+      "running_jobs": [],
+      "notices": []
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_h001",
+      "case_rev": 4,
+      "stage": "READY",
+      "user_reviewed": true,
+      "manifest_summary": {
+        "file_count": 2,
+        "ok_file_count": 2,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+      },
+      "hints": {
+        "time": "18시쯤",
+        "vehicle": "흰색 SUV",
+        "situation": "백색 실선 구간에서 차로변경",
+        "location": "상무중앙로 사거리 부근"
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "DONE" },
+        { "step": "overlay_time_read", "state": "DONE" },
+        { "step": "evidence_assembly", "state": "DONE" },
+        { "step": "requirement_check", "state": "DONE" },
+        { "step": "package_assembly", "state": "DONE" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_h001",
+          "at": "2026-08-24T18:05:12+09:00",
+          "at_provenance": "readout.overlay_ocr",
+          "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+          "thumb_ref": "fr_h001_thumb",
+          "selected": true
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_h001",
+        "case_type_display": { "code": "SOLID_LINE_LANE_CHANGE", "label": "백색 실선 구간 차로변경", "needs_review": false },
+        "report_type_display": { "code": "UNSAFE_LANE_CHANGE", "label": "안전운전 불이행", "needs_review": false },
+        "violation_display": { "code": null, "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함", "needs_review": false },
+        "plate_display": {
+          "value": "12가3456",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-24T18:05:12+09:00",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "time.source.overlay_ocr"
+        },
+        "location_display": {
+          "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "needs_review": false,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "location.source.user_hint",
+          "coord": null,
+          "search_keyword": "광주 상무지구 상무중앙로 사거리"
+        },
+        "user_edited": false,
+        "preview_ref": "fr_h001_thumb",
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "PASS",
+        "checks": [
+          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.visual_event.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
+          { "code": "evidence.location.present", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient" }
+        ]
+      },
+      "requirements_package": {
+        "readiness": "PASS",
+        "checks": [
+          { "code": "package.asset.report_video.exists", "outcome": "PASS", "reason_code": "asset.available" },
+          { "code": "package.asset.plate_visible", "outcome": "PASS", "reason_code": "asset.plate_legible" },
+          { "code": "package.time.overlay_visible", "outcome": "PASS", "reason_code": "time.overlay_burned_in" }
+        ]
+      },
+      "package": {
+        "package_ref": "pkg_h001",
+        "report_fields": {
+          "safety_report_type": "안전운전 불이행",
+          "occurred_at": "2026-08-24T18:05:12+09:00",
+          "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "vehicle_number": "12가3456",
+          "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+        },
+        "artifact_ref": "da_h001_report_video",
+        "capabilities": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"],
+        "warnings": []
+      },
+      "running_jobs": [],
+      "notices": []
+    }
+  ]
+}

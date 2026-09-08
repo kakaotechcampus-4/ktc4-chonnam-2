@@ -1,0 +1,23 @@
+{
+  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "title": "번호판 ABSTAIN + 화면시각 판독 실패(Partial) + 시각 소스 충돌(UNKNOWN 판정)",
+  "case_id": "case_u001",
+  "scenario_types": ["C", "D", "E", "G", "H", "I"],
+  "description": "한 시나리오에서 여러 불확실성 유형을 함께 검증한다: (1) PlateReadout이 target_association=AMBIGUOUS·frame 불일치로 abstained=true(D), 이는 Case 전체 실패가 아니다. (2) OverlayTimeReadout의 ReadoutRun이 outcome=FAILED(NO_OVERLAY_PRESENT)로 완전 실패해 결과 자체가 생성되지 않는다(E, Partial — 번호판 판독은 성공, 화면시각 판독은 실패). (3) Filename time과 File Metadata time이 3분 어긋나 TimeResolution.conflict.exists=true, status=NEEDS_REVIEW로 임의 승자를 정하지 않고 충돌을 보존한다(H). TimeResolution.computation.mode=BASE_PLUS_OFFSET로 상대 offset 계산도 함께 검증한다. (4) vehicle_number는 EvidenceRecord에서 필드 자체가 부재(null이 아니라 부재)로 표현되고, RequirementReport(EVIDENCE).overall=UNKNOWN(판정 자체가 성립하지 않음, G)이며 BLOCK과 구분된다. (5) EvidenceNeeds가 PLATE_REREAD를 요청하고 optional=false라 case가 새 JobRecord(force_rerun=true, 같은 job_id 아님)를 자동 발주한다 — 기존에 이미 확정된 값을 불필요하게 리셋하지 않는다(I).",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다.",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_unknown_abstain_partial_001.json",
+    "search": "data/mock/search/scenario_unknown_abstain_partial_001.json",
+    "readout": "data/mock/readout/scenario_unknown_abstain_partial_001.json",
+    "evidence": "data/mock/evidence/scenario_unknown_abstain_partial_001.json",
+    "case": "data/mock/case/scenario_unknown_abstain_partial_001.json",
+    "common": "data/mock/common/scenario_unknown_abstain_partial_001.json"
+  },
+  "modules_intentionally_absent": {},
+  "shared_ids": {
+    "case_id": "case_u001",
+    "candidate_id": "candidate_u001",
+    "timeline_id": "tl_u001",
+    "incident_clip_ref": "clip_u001"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "title": "Happy Path — 백색 실선 차로변경, 전체 파이프라인 정상 흐름",
+  "case_id": "case_h001",
+  "scenario_types": ["A"],
+  "description": "영상 등록부터 COARSE_SEARCH → 후보 선택 → PLATE_READ/OVERLAY_TIME_READ → Evidence 확정 → RequirementReport(EVIDENCE, FINAL_PACKAGE) 모두 PASS → ReportPackage 생성까지 전체 시스템을 한 번씩 통과하는 대표 정상 경로. 번호판·발생시각·위치가 모두 확정되고 abstain/needs_review가 없다.",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. 여기 있는 scenario_id/artifacts 매핑은 어떤 런타임 Data Contract 필드도 아니며, 실제 Contract JSON(recording/search/readout/evidence/case/common 아래 파일들)에는 이 필드들이 존재하지 않는다.",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_happy_001.json",
+    "search": "data/mock/search/scenario_happy_001.json",
+    "readout": "data/mock/readout/scenario_happy_001.json",
+    "evidence": "data/mock/evidence/scenario_happy_001.json",
+    "case": "data/mock/case/scenario_happy_001.json",
+    "common": "data/mock/common/scenario_happy_001.json"
+  },
+  "shared_ids": {
+    "case_id": "case_h001",
+    "candidate_id": "candidate_h001",
+    "timeline_id": "tl_h001",
+    "incident_clip_ref": "clip_h001"
+  }
+}
