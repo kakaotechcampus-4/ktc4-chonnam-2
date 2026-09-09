@@ -2,12 +2,12 @@
 
 **Owner:** 신유민 (`web`) — web 단독 결정이며 CALL 안건이 아니다
 **작성:** 2026-09-07 · **레포 반영:** 2026-09-10 (이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) B-5)
-**근거:** `product/product-spec.md` §7 · `product/core-user-flow.md` §3-1 · CALL-8 B01-3 · `architecture/contracts/contract-job-record-case-view.md` B절 §6·§7·§10-12
+**근거:** `product/product-spec.md` §7 · `product/core-user-flow.md` §3-1 · `architecture/contracts/contract-job-record-case-view.md` B절 §6·§7·§10-12 · `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)
 **적용 화면:** Evidence Review · 최종 신고자료(handoff)
 
 ## 1. 왜 이 문서가 필요한가
 
-CALL-8 B01-3에서 `location_display.value`의 대표값 우선순위를 `address → place_name → user_hint`로 정했다. `user_hint`는 **분석 전에 사용자가 말한 미확인 단서**이고, 그것이 값 슬롯에 담긴다.
+B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위를 `address → place_name → user_hint`로 정했다(계약 B절 §7-(3) · ADR §4.1). `user_hint`는 **분석 전에 사용자가 말한 미확인 단서**이고, 그것이 값 슬롯에 담긴다.
 
 계약이 제공하는 것은 상태를 알려주는 필드(`info_state` · `source_label_key` · `needs_review`)까지다. **그 값이 확정으로 보이지 않게 만드는 책임은 `web`에 있다.** 이 규칙이 없으면 사용자가 미확정 위치를 확정으로 믿고 신고한다 — 성능 문제가 아니라 잘못된 신고 문제다.
 
@@ -31,7 +31,7 @@ CALL-8 B01-3에서 `location_display.value`의 대표값 우선순위를 `addres
    *근거:* `product-spec.md` §7이 「값을 만들어내지 않고 출처와 `확인 필요`/UNKNOWN **상태를 보여준다**」로 `UNKNOWN`을 표시 대상으로 명시한다. 빈 칸은 상태를 보여주는 것도, 단서를 유지하는 것도 아니다.
 4. **값을 합치거나 새로 만들지 않는다.** `coord`는 원값으로 내려오고 포맷만 `web`이 한다. 여러 위치 값을 이어 붙여 새 문자열을 만들지 않는다(계약 B절 §7-(3)).
 5. **handoff 화면에서 미확정 값을 「준비됨」으로 묶지 않는다.** 신고요건 판정은 `requirements_evidence` / `requirements_package`가 소유하고, 세 gate(`EVIDENCE_SUFFICIENT` · `PACKAGE_READY` · `USER_REVIEWED`)는 각각 구분해 표시한다.
-   *근거:* `management/ownership.md` §7-④ 통합 기준 ④ · CALL-8 B02 감사 지적 ③(「단일 projection으로 묶으면 `EVIDENCE` gate가 화면에서 가려진다」). 실제 제출은 사용자가 직접 하므로(`product-spec.md` §7) 무엇이 미확정인지가 마지막 화면까지 남아야 한다.
+   *근거:* `management/ownership.md` §7-④의 통합 기준 「세 상태가 `CaseView`에 구분되어 표시되는가」 · 계약 B절 §7 「세 gate의 출처」·§10-11(하나의 readiness로 합치지 않는다). 실제 제출은 사용자가 직접 하므로(`product-spec.md` §7) 무엇이 미확정인지가 마지막 화면까지 남아야 한다.
 6. **`evidence.review_needed`를 제출 게이트나 「검토 필요」 요약으로 쓰지 않는다.** 이 값은 여섯 `*_display.needs_review`의 OR이고(계약 B절 §7, 2026-09-09 확정), `needs_review`와 `info_state`는 독립 필드다. 실제로 `info_state=INFO_NEEDS_REVIEW`인데 `review_needed=false`인 조합이 정상적으로 생긴다(§6 happy_001). 화면 분기의 기준은 언제나 `info_state`다.
 
 ## 4. 적용 대상 — 여섯 display 중 셋만 규칙 적용이 가능하다
@@ -41,7 +41,7 @@ CALL-8 B01-3에서 `location_display.value`의 대표값 우선순위를 `addres
 | `plate_display` · `event_time_display` · `location_display` | `value` · `info_state` · `source_label_key` · `needs_review` | **가능.** §2·§3 그대로 |
 | `case_type_display` · `report_type_display` · `violation_display` | `code` · `label` · `needs_review` | **불가.** `info_state`가 없다 → §5 ① |
 
-앞의 셋은 **미확정 상태가 정상 경로**다. 번호판은 `readout`이 `abstained=true`로 보류할 수 있고(`contract-plate-overlay-readout.md` §11-1), 시각은 파일명·metadata 계산값이 `INFO_NEEDS_REVIEW`로 내려오고(CALL-8 B01-2), 위치는 `address`가 없는 동안 대표값이 `user_hint`다. 예외 화면이 아니라 기본 화면에서 이 규칙이 작동해야 한다.
+앞의 셋은 **미확정 상태가 정상 경로**다. 번호판은 `readout`이 `abstained=true`로 보류할 수 있고(`contract-plate-overlay-readout.md` §11-1), 시각은 파일명·metadata 계산값이 `INFO_NEEDS_REVIEW`로 내려오고(계약 B절 §7-(2) · `contract-time-resolution.md` §4), 위치는 `address`가 없는 동안 대표값이 `user_hint`다. 예외 화면이 아니라 기본 화면에서 이 규칙이 작동해야 한다.
 
 ## 5. 미결 — 계약 요청 (이슈 #26)
 
