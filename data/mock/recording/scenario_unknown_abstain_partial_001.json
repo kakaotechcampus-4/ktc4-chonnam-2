@@ -7,8 +7,13 @@
       "contract_version": "source-asset-media-stream/v1",
       "source_asset_ref": "sa_u001",
       "asset_kind": "SOURCE_ASSET",
-      "external_source_ref": { "kind": "external_source", "ref": "ext_u001" },
-      "media_stream_refs": ["ms_u001_v"],
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_u001"
+      },
+      "media_stream_refs": [
+        "ms_u001_v"
+      ],
       "byte_size": 812000000,
       "availability": "AVAILABLE",
       "duration_sec": 1800.0
@@ -56,13 +61,18 @@
           "status": "OK"
         }
       },
-      "time_source_candidates": ["tsc_u001_filename", "tsc_u001_filemeta"],
+      "time_source_candidates": [
+        "tsc_u001_filename",
+        "tsc_u001_filemeta"
+      ],
       "source_placements": [
         {
           "source_asset_ref": "sa_u001",
           "timeline_start_sec": 0.0,
           "timeline_end_sec": 1800.0,
-          "media_stream_refs": ["ms_u001_v"]
+          "media_stream_refs": [
+            "ms_u001_v"
+          ]
         }
       ],
       "gaps": [],
@@ -76,36 +86,64 @@
       "source_kind": "FILENAME",
       "source_detail": "MDR_260826_221000.AVI",
       "value": "2026-08-26T22:10:00+09:00",
-      "applies_to": { "source_asset_ref": "sa_u001", "source_offset_sec": 0.0 },
+      "applies_to": {
+        "source_asset_ref": "sa_u001",
+        "source_offset_sec": 0.0
+      },
       "observation_status": "OK",
-      "producer_checks": { "parse_valid": true },
-      "provenance": { "producer": "recording", "observed_from": "MDR_260826_221000.AVI" }
+      "producer_checks": {
+        "parse_valid": true
+      },
+      "provenance": {
+        "producer": "recording",
+        "observed_from": "MDR_260826_221000.AVI"
+      }
     },
     {
       "candidate_id": "tsc_u001_filemeta",
       "source_kind": "FILE_METADATA",
       "source_detail": "container creation_time atom",
       "value": "2026-08-26T22:13:00+09:00",
-      "applies_to": { "source_asset_ref": "sa_u001", "source_offset_sec": 0.0 },
+      "applies_to": {
+        "source_asset_ref": "sa_u001",
+        "source_offset_sec": 0.0
+      },
       "observation_status": "OK",
-      "producer_checks": { "parse_valid": true },
-      "provenance": { "producer": "recording", "observed_from": "container metadata" }
+      "producer_checks": {
+        "parse_valid": true
+      },
+      "provenance": {
+        "producer": "recording",
+        "observed_from": "container metadata"
+      }
     }
   ],
   "span_resolutions": [
     {
       "contract": "SpanResolution",
       "contract_version": "span-resolution/v1.2",
-      "timeline_ref": { "timeline_id": "tl_u001", "revision": 1 },
-      "requested_range": { "start_sec": 600.0, "end_sec": 660.0 },
+      "timeline_ref": {
+        "timeline_id": "tl_u001",
+        "revision": 1
+      },
+      "requested_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      },
       "status": "COMPLETE",
       "spans": [
         {
           "sequence": 0,
-          "timeline_range": { "start_sec": 600.0, "end_sec": 660.0 },
+          "timeline_range": {
+            "start_sec": 600.0,
+            "end_sec": 660.0
+          },
           "source_asset_ref": "sa_u001",
           "media_stream_ref": "ms_u001_v",
-          "source_range": { "start_sec": 600.0, "end_sec": 660.0 }
+          "source_range": {
+            "start_sec": 600.0,
+            "end_sec": 660.0
+          }
         }
       ],
       "missing_ranges": [],
@@ -119,24 +157,103 @@
       "incident_clip_ref": "clip_u001",
       "asset_kind": "INCIDENT_CLIP",
       "source_provenance": {
-        "timeline_ref": { "timeline_id": "tl_u001", "revision": 1 },
-        "requested_range": { "start_sec": 600.0, "end_sec": 660.0 },
+        "timeline_ref": {
+          "timeline_id": "tl_u001",
+          "revision": 1
+        },
+        "requested_range": {
+          "start_sec": 600.0,
+          "end_sec": 660.0
+        },
         "asset_spans": [
           {
             "sequence": 0,
-            "timeline_range": { "start_sec": 600.0, "end_sec": 660.0 },
+            "timeline_range": {
+              "start_sec": 600.0,
+              "end_sec": 660.0
+            },
             "source_asset_ref": "sa_u001",
             "media_stream_ref": "ms_u001_v",
-            "source_range": { "start_sec": 600.0, "end_sec": 660.0 }
+            "source_range": {
+              "start_sec": 600.0,
+              "end_sec": 660.0
+            }
           }
         ]
       },
-      "media_stream_refs": ["ms_u001_v"],
+      "media_stream_refs": [
+        "ms_u001_v"
+      ],
       "byte_size": 18350080,
       "availability": "AVAILABLE",
       "duration_sec": 60.0,
-      "timeline_ref": { "timeline_id": "tl_u001", "revision": 1 },
-      "timeline_range": { "start_sec": 600.0, "end_sec": 660.0 }
+      "timeline_ref": {
+        "timeline_id": "tl_u001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      }
+    }
+  ],
+  "analysis_sources": [
+    {
+      "contract": "AnalysisSource",
+      "contract_version": "analysis-source-derived/v1",
+      "analysis_source_ref": "as_u001_fine",
+      "asset_kind": "ANALYSIS_SOURCE",
+      "source_refs": [
+        {
+          "kind": "source_asset",
+          "ref": "sa_u001"
+        }
+      ],
+      "media_stream_refs": [
+        "ms_u001_v"
+      ],
+      "byte_size": 20971520,
+      "availability": "AVAILABLE",
+      "duration_sec": 60.0,
+      "timeline_ref": {
+        "timeline_id": "tl_u001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      },
+      "profile_ref": "prof_fine_v1"
+    }
+  ],
+  "remote_copies": [
+    {
+      "contract": "RemoteCopy",
+      "contract_version": "analysis-source-derived/v1",
+      "remote_copy_ref": "rc_u001_fine",
+      "analysis_source_ref": "as_u001_fine",
+      "provider": "gemini",
+      "provider_object_ref": "files/u001-fine-abc123",
+      "availability": "AVAILABLE",
+      "expires_at": "2026-08-28T22:31:00+09:00"
+    }
+  ],
+  "gps_observations": [
+    {
+      "contract": "Observation",
+      "contract_version": "observation/v1",
+      "value": null,
+      "status": "UNKNOWN",
+      "source": {
+        "kind": "recording.gps_stream"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "recording"
+      },
+      "reason": {
+        "code": "recording.gps.source_absent"
+      }
     }
   ]
 }

@@ -37,6 +37,18 @@
       "input_fingerprint": "sha1:u001-overlay-read-clip_u001",
       "force_rerun": false,
       "requested_at": "2026-08-26T22:31:30+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_u001_fine",
+      "case_id": "case_u001",
+      "case_rev": 2,
+      "kind": "FINE_VERIFY",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:u001-fine-verify-clip_u001",
+      "force_rerun": false,
+      "requested_at": "2026-08-26T22:31:30+09:00"
     }
   ],
   "case_views": [

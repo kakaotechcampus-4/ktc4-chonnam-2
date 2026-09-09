@@ -250,7 +250,7 @@
 {
   "schema_version": "visual-evidence/v1.0",
   "visual_evidence_id": "ve_h001",
-  "run_id": "run_h001",
+  "run_id": "run_h001_fine",
   "input_ref": {
     "kind": "incident_clip",
     "ref": "clip_h001"
@@ -888,6 +888,29 @@
         "label_key": "location.source.user_hint"
       },
       "support_refs": [],
+      "user_corrected": false,
+      "needs_review": false
+    },
+    "coord": {
+      "value": {
+        "lat": 35.1522,
+        "lon": 126.8515
+      },
+      "source": {
+        "kind": "recording.gps_stream",
+        "ref": {
+          "kind": "media_stream",
+          "ref": "ms_h001_front_v"
+        },
+        "observability": "OBSERVED",
+        "label_key": "location.source.gps"
+      },
+      "support_refs": [
+        {
+          "kind": "frame",
+          "ref": "fr_h001_thumb"
+        }
+      ],
       "user_corrected": false,
       "needs_review": false
     }
@@ -1867,7 +1890,10 @@
       "needs_review": false,
       "info_state": "INFO_NEEDS_REVIEW",
       "source_label_key": "location.source.user_hint",
-      "coord": null,
+      "coord": {
+        "lat": 35.1522,
+        "lon": 126.8515
+      },
       "search_keyword": "광주 상무지구 상무중앙로 사거리"
     },
     "user_edited": false,
@@ -2107,7 +2133,10 @@
       "needs_review": false,
       "info_state": "INFO_NEEDS_REVIEW",
       "source_label_key": "location.source.user_hint",
-      "coord": null,
+      "coord": {
+        "lat": 35.1522,
+        "lon": 126.8515
+      },
       "search_keyword": "광주 상무지구 상무중앙로 사거리"
     },
     "user_edited": false,
@@ -2603,12 +2632,12 @@
   "processed_duration_sec": 1200.0,
   "latency_ms": 65000,
   "pricing_context": {
-    "pricing_id": "gemini-2026-08",
+    "pricing_id": "gemini-2026-08+fx-krw-2026-09",
     "unit": "per_1k_tokens"
   },
   "cost": {
-    "amount": "0.42",
-    "currency": "USD"
+    "amount": "588",
+    "currency": "KRW"
   }
 }
 ```

@@ -78,6 +78,27 @@
       "produced": [],
       "failure_kind": null,
       "usage_refs": []
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_p001_fine",
+      "job_id": "job_p001_fine",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-29T20:31:20+09:00",
+      "started_at": "2026-08-29T20:31:25+09:00",
+      "ended_at": "2026-08-29T20:32:25+09:00",
+      "produced": [
+        {
+          "kind": "analysis_run",
+          "ref": "run_p001_fine"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_p001_fine"
+      ]
     }
   ],
   "usage_records": [
@@ -102,12 +123,12 @@
       "processed_duration_sec": 1800.0,
       "latency_ms": 58000,
       "pricing_context": {
-        "pricing_id": "gemini-2026-08",
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
         "unit": "per_1k_tokens"
       },
       "cost": {
-        "amount": "0.38",
-        "currency": "USD"
+        "amount": "532",
+        "currency": "KRW"
       }
     },
     {
@@ -157,6 +178,35 @@
       },
       "cost": {
         "amount": "0.00",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_p001_fine",
+      "execution_ref": "exec_p001_fine",
+      "run_ref": {
+        "kind": "analysis_run",
+        "ref": "run_p001_fine"
+      },
+      "case_id": "case_p001",
+      "occurred_at": "2026-08-29T20:32:25+09:00",
+      "provider_label": "gemini",
+      "operation": "SEARCH_FINE",
+      "token_usage": {
+        "input_tokens": 9100,
+        "output_tokens": 900,
+        "total_tokens": 10000
+      },
+      "processed_duration_sec": 60.0,
+      "latency_ms": 60000,
+      "pricing_context": {
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
+        "unit": "per_1k_tokens"
+      },
+      "cost": {
+        "amount": "196",
         "currency": "KRW"
       }
     }

@@ -1,0 +1,195 @@
+{
+  "scenario_id": "scenario_relative_rebase_001",
+  "module": "recording",
+  "source_assets": [
+    {
+      "contract": "SourceAsset",
+      "contract_version": "source-asset-media-stream/v1",
+      "source_asset_ref": "sa_rb001_a",
+      "asset_kind": "SOURCE_ASSET",
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_rb001_a"
+      },
+      "media_stream_refs": [
+        "ms_rb001_a_v"
+      ],
+      "byte_size": 367001600,
+      "availability": "AVAILABLE",
+      "duration_sec": 600.0
+    },
+    {
+      "contract": "SourceAsset",
+      "contract_version": "source-asset-media-stream/v1",
+      "source_asset_ref": "sa_rb001_b",
+      "asset_kind": "SOURCE_ASSET",
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_rb001_b"
+      },
+      "media_stream_refs": [
+        "ms_rb001_b_v"
+      ],
+      "byte_size": 367001600,
+      "availability": "AVAILABLE",
+      "duration_sec": 600.0
+    }
+  ],
+  "media_streams": [
+    {
+      "contract": "MediaStream",
+      "contract_version": "source-asset-media-stream/v1",
+      "media_stream_ref": "ms_rb001_a_v",
+      "source_asset_ref": "sa_rb001_a",
+      "media_type": "VIDEO",
+      "role": "FRONT",
+      "availability": "AVAILABLE",
+      "duration_sec": 600.0
+    },
+    {
+      "contract": "MediaStream",
+      "contract_version": "source-asset-media-stream/v1",
+      "media_stream_ref": "ms_rb001_b_v",
+      "source_asset_ref": "sa_rb001_b",
+      "media_type": "VIDEO",
+      "role": "FRONT",
+      "availability": "AVAILABLE",
+      "duration_sec": 600.0
+    }
+  ],
+  "frame_refs": [
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_rb001_thumb",
+      "media_stream_ref": "ms_rb001_a_v",
+      "source_offset_sec": 512.0
+    }
+  ],
+  "recording_timelines": [
+    {
+      "contract": "RecordingTimeline",
+      "contract_version": "recording-timeline/v1",
+      "timeline_id": "tl_rb001",
+      "revision": 1,
+      "time_basis": {
+        "mode": "ABSOLUTE_AND_RELATIVE",
+        "working_anchor": {
+          "value": null,
+          "source_candidate_ref": null,
+          "status": "UNKNOWN"
+        }
+      },
+      "time_source_candidates": [],
+      "source_placements": [
+        {
+          "source_asset_ref": "sa_rb001_a",
+          "timeline_start_sec": 0.0,
+          "timeline_end_sec": 600.0,
+          "media_stream_refs": [
+            "ms_rb001_a_v"
+          ]
+        }
+      ],
+      "gaps": [],
+      "timeline_status": "USABLE_RELATIVE_ONLY",
+      "produced_by": "recording"
+    },
+    {
+      "contract": "RecordingTimeline",
+      "contract_version": "recording-timeline/v1",
+      "timeline_id": "tl_rb001",
+      "revision": 2,
+      "time_basis": {
+        "mode": "ABSOLUTE_AND_RELATIVE",
+        "working_anchor": {
+          "value": null,
+          "source_candidate_ref": null,
+          "status": "UNKNOWN"
+        }
+      },
+      "time_source_candidates": [],
+      "source_placements": [
+        {
+          "source_asset_ref": "sa_rb001_a",
+          "timeline_start_sec": 0.0,
+          "timeline_end_sec": 600.0,
+          "media_stream_refs": [
+            "ms_rb001_a_v"
+          ]
+        },
+        {
+          "source_asset_ref": "sa_rb001_b",
+          "timeline_start_sec": 630.0,
+          "timeline_end_sec": 1230.0,
+          "media_stream_refs": [
+            "ms_rb001_b_v"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "start_sec": 600.0,
+          "end_sec": 630.0
+        }
+      ],
+      "timeline_status": "USABLE_RELATIVE_ONLY",
+      "produced_by": "recording"
+    }
+  ],
+  "time_source_candidates": [],
+  "span_resolutions": [
+    {
+      "contract": "SpanResolution",
+      "contract_version": "span-resolution/v1.2",
+      "timeline_ref": {
+        "timeline_id": "tl_rb001",
+        "revision": 2
+      },
+      "requested_range": {
+        "start_sec": 580.0,
+        "end_sec": 650.0
+      },
+      "status": "PARTIAL",
+      "spans": [
+        {
+          "sequence": 0,
+          "timeline_range": {
+            "start_sec": 580.0,
+            "end_sec": 600.0
+          },
+          "source_asset_ref": "sa_rb001_a",
+          "media_stream_ref": "ms_rb001_a_v",
+          "source_range": {
+            "start_sec": 580.0,
+            "end_sec": 600.0
+          }
+        },
+        {
+          "sequence": 1,
+          "timeline_range": {
+            "start_sec": 630.0,
+            "end_sec": 650.0
+          },
+          "source_asset_ref": "sa_rb001_b",
+          "media_stream_ref": "ms_rb001_b_v",
+          "source_range": {
+            "start_sec": 0.0,
+            "end_sec": 20.0
+          }
+        }
+      ],
+      "missing_ranges": [
+        {
+          "timeline_range": {
+            "start_sec": 600.0,
+            "end_sec": 630.0
+          },
+          "reason": "TIMELINE_GAP",
+          "source_ref": null
+        }
+      ],
+      "failure": null
+    }
+  ]
+}

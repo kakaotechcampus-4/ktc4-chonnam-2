@@ -5,11 +5,23 @@
     {
       "scope_id": "scope_r001",
       "time_ranges": [
-        { "kind": "ABSOLUTE", "start": "2026-08-27T12:55:00+09:00", "end": "2026-08-27T13:20:00+09:00" }
+        {
+          "kind": "ABSOLUTE",
+          "start": "2026-08-27T12:55:00+09:00",
+          "end": "2026-08-27T13:20:00+09:00"
+        }
       ],
-      "target_event_types": ["MOTORCYCLE_HELMET_NON_USE"],
-      "hint": { "vehicle": "검은색 스쿠터", "free_text": "헬멧 안 쓴 오토바이가 옆 차로로 지나감" },
-      "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
+      "target_event_types": [
+        "MOTORCYCLE_HELMET_NON_USE"
+      ],
+      "hint": {
+        "vehicle": "검은색 스쿠터",
+        "free_text": "헬멧 안 쓴 오토바이가 옆 차로로 지나감"
+      },
+      "budget": {
+        "max_cost_krw": 1000,
+        "max_latency_sec": 180
+      },
       "contract_version": "1.1.0"
     }
   ],
@@ -18,7 +30,10 @@
       "analysis_run": {
         "run_id": "run_r001",
         "operation": "CANDIDATE_SEARCH",
-        "input_ref": { "kind": "ANALYSIS_SCOPE", "ref": "scope_r001" },
+        "input_ref": {
+          "kind": "ANALYSIS_SCOPE",
+          "ref": "scope_r001"
+        },
         "implementation": {
           "impl_id": "gemini-candidate-search@c7",
           "model_ref": "gemini-3.7-flash",
@@ -29,12 +44,21 @@
         "started_at": "2026-08-27T13:20:05+09:00",
         "completed_at": "2026-08-27T13:20:58+09:00",
         "issues": [],
-        "usage_refs": ["usage_r001_coarse"],
+        "usage_refs": [
+          "usage_r001_coarse"
+        ],
         "usage_summary": {
           "processed_duration_ms": 1500000,
-          "token_usage": { "input_tokens": 11200, "output_tokens": 860, "total_tokens": 12060 },
+          "token_usage": {
+            "input_tokens": 11200,
+            "output_tokens": 860,
+            "total_tokens": 12060
+          },
           "latency_ms": 53000,
-          "total_cost": { "amount": "0.33", "currency": "USD" }
+          "total_cost": {
+            "amount": "0.33",
+            "currency": "USD"
+          }
         },
         "contract_version": "analysis-run-candidate-event/v1.1"
       },
@@ -57,14 +81,55 @@
           "thumbnail_ref": "fr_r001_plate1"
         }
       ]
+    },
+    {
+      "analysis_run": {
+        "run_id": "run_r001_fine",
+        "operation": "VISUAL_VERIFY",
+        "input_ref": {
+          "kind": "analysis_source",
+          "ref": "as_r001_fine"
+        },
+        "implementation": {
+          "impl_id": "gemini-visual-verify@f3",
+          "model_ref": "gemini-3.7-flash",
+          "prompt_version": "fine-f3",
+          "config_version": "search-v2"
+        },
+        "outcome": "SUCCEEDED",
+        "started_at": "2026-08-27T13:21:04+09:00",
+        "completed_at": "2026-08-27T13:22:04+09:00",
+        "issues": [],
+        "usage_refs": [
+          "usage_r001_fine"
+        ],
+        "usage_summary": {
+          "processed_duration_ms": 60000,
+          "token_usage": {
+            "input_tokens": 8800,
+            "output_tokens": 850,
+            "total_tokens": 9650
+          },
+          "latency_ms": 60000,
+          "total_cost": {
+            "amount": "0.12",
+            "currency": "USD"
+          }
+        },
+        "contract_version": "analysis-run-candidate-event/v1.1"
+      },
+      "candidates": []
     }
   ],
   "visual_evidences": [
     {
       "schema_version": "visual-evidence/v1.0",
       "visual_evidence_id": "ve_r001",
-      "run_id": "run_r001",
-      "input_ref": { "kind": "incident_clip", "ref": "clip_r001" },
+      "run_id": "run_r001_fine",
+      "input_ref": {
+        "kind": "incident_clip",
+        "ref": "clip_r001"
+      },
       "candidate_id": "candidate_r001",
       "verification": "OBSERVED",
       "visual_event_type": "MOTORCYCLE_HELMET_NON_USE",
@@ -74,10 +139,20 @@
         "match_with_hint": true,
         "association_confidence": 0.88,
         "track_ref": null,
-        "evidence_refs": ["fr_r001_plate1"]
+        "evidence_refs": [
+          "fr_r001_plate1"
+        ]
       },
       "primitives": [
-        { "kind": "HELMET_ON_RIDER", "state": "ABSENT", "confidence": 0.87, "evidence_refs": ["fr_r001_plate1", "fr_r001_plate2"] }
+        {
+          "kind": "HELMET_ON_RIDER",
+          "state": "ABSENT",
+          "confidence": 0.87,
+          "evidence_refs": [
+            "fr_r001_plate1",
+            "fr_r001_plate2"
+          ]
+        }
       ],
       "temporal_facts": [],
       "uncertainties": [],

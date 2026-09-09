@@ -64,6 +64,27 @@
       "usage_refs": [
         "usage_u001_overlay"
       ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_u001_fine",
+      "job_id": "job_u001_fine",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:31:30+09:00",
+      "started_at": "2026-08-26T22:31:35+09:00",
+      "ended_at": "2026-08-26T22:32:35+09:00",
+      "produced": [
+        {
+          "kind": "analysis_run",
+          "ref": "run_u001_fine"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_u001_fine"
+      ]
     }
   ],
   "usage_records": [
@@ -88,12 +109,12 @@
       "processed_duration_sec": 1800.0,
       "latency_ms": 61000,
       "pricing_context": {
-        "pricing_id": "gemini-2026-08",
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
         "unit": "per_1k_tokens"
       },
       "cost": {
-        "amount": "0.39",
-        "currency": "USD"
+        "amount": "546",
+        "currency": "KRW"
       }
     },
     {
@@ -143,6 +164,35 @@
       },
       "cost": {
         "amount": "0.00",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_u001_fine",
+      "execution_ref": "exec_u001_fine",
+      "run_ref": {
+        "kind": "analysis_run",
+        "ref": "run_u001_fine"
+      },
+      "case_id": "case_u001",
+      "occurred_at": "2026-08-26T22:32:35+09:00",
+      "provider_label": "gemini",
+      "operation": "SEARCH_FINE",
+      "token_usage": {
+        "input_tokens": 9200,
+        "output_tokens": 950,
+        "total_tokens": 10150
+      },
+      "processed_duration_sec": 60.0,
+      "latency_ms": 60000,
+      "pricing_context": {
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
+        "unit": "per_1k_tokens"
+      },
+      "cost": {
+        "amount": "210",
         "currency": "KRW"
       }
     }

@@ -1,26 +1,26 @@
 {
-  "scenario_id": "scenario_empty_001",
+  "scenario_id": "scenario_relative_rebase_001",
   "module": "common",
   "job_executions": [
     {
       "contract": "JobExecution",
       "contract_version": "job-execution/v1",
-      "execution_id": "exec_e001_search",
-      "job_id": "job_e001_search",
+      "execution_id": "exec_rb001_search",
+      "job_id": "job_rb001_search",
       "status": "SUCCEEDED",
       "attempt": 1,
-      "queued_at": "2026-08-25T07:30:04+09:00",
-      "started_at": "2026-08-25T07:30:05+09:00",
-      "ended_at": "2026-08-25T07:31:02+09:00",
+      "queued_at": "2026-08-31T14:00:05+09:00",
+      "started_at": "2026-08-31T14:00:06+09:00",
+      "ended_at": "2026-08-31T14:01:10+09:00",
       "produced": [
         {
           "kind": "analysis_run",
-          "ref": "run_e001"
+          "ref": "run_rb001"
         }
       ],
       "failure_kind": null,
       "usage_refs": [
-        "usage_e001_coarse"
+        "usage_rb001_coarse"
       ]
     }
   ],
@@ -28,29 +28,29 @@
     {
       "contract": "UsageRecord",
       "contract_version": "usage-record/v1.1",
-      "usage_id": "usage_e001_coarse",
-      "execution_ref": "exec_e001_search",
+      "usage_id": "usage_rb001_coarse",
+      "execution_ref": "exec_rb001_search",
       "run_ref": {
         "kind": "analysis_run",
-        "ref": "run_e001"
+        "ref": "run_rb001"
       },
-      "case_id": "case_e001",
-      "occurred_at": "2026-08-25T07:31:02+09:00",
+      "case_id": "case_rb001",
+      "occurred_at": "2026-08-31T14:01:10+09:00",
       "provider_label": "gemini",
       "operation": "SEARCH_COARSE",
       "token_usage": {
-        "input_tokens": 9800,
-        "output_tokens": 420,
-        "total_tokens": 10220
+        "input_tokens": 3800,
+        "output_tokens": 350,
+        "total_tokens": 4150
       },
-      "processed_duration_sec": 1800.0,
-      "latency_ms": 57000,
+      "processed_duration_sec": 60.0,
+      "latency_ms": 64000,
       "pricing_context": {
         "pricing_id": "gemini-2026-08+fx-krw-2026-09",
         "unit": "per_1k_tokens"
       },
       "cost": {
-        "amount": "434",
+        "amount": "84",
         "currency": "KRW"
       }
     }

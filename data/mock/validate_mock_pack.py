@@ -311,6 +311,22 @@ def collect_defined_ids(scenario_docs_for_sid):
                 if key == "case_views":
                     if "case_id" in item:
                         defined.add(item["case_id"])
+                    # case_views[].candidates[].candidate_id is case's own denormalized copy — it
+                    # is a legitimate defining occurrence in scenarios where no PlateReadout/search
+                    # candidate block exists to define it first (e.g. an infra-failure scenario
+                    # where plate_readouts=[] because the run never completed). Previously this
+                    # nested shape silently relied on readout's plate_readouts[].candidate_id
+                    # (a direct, shallow field) to define the ID in every existing scenario.
+                    for cand in item.get("candidates", []) or []:
+                        if isinstance(cand, dict) and isinstance(cand.get("candidate_id"), str):
+                            defined.add(cand["candidate_id"])
+                # analysis_run_candidate_events[].candidates[].candidate_id — same nested shape
+                # in search's fixture; register it too so search alone can define a candidate_id
+                # without depending on readout also happening to define it.
+                if key == "analysis_run_candidate_events":
+                    for cand in item.get("candidates", []) or []:
+                        if isinstance(cand, dict) and isinstance(cand.get("candidate_id"), str):
+                            defined.add(cand["candidate_id"])
         # eval fixture own id
         if "eval_fixture_id" in doc:
             defined.add(doc["eval_fixture_id"])

@@ -1,0 +1,78 @@
+{
+  "scenario_id": "scenario_infra_failure_001",
+  "module": "recording",
+  "source_assets": [
+    {
+      "contract": "SourceAsset",
+      "contract_version": "source-asset-media-stream/v1",
+      "source_asset_ref": "sa_x001_front",
+      "asset_kind": "SOURCE_ASSET",
+      "external_source_ref": { "kind": "external_source", "ref": "ext_x001_front" },
+      "media_stream_refs": ["ms_x001_front_v"],
+      "byte_size": 734003200,
+      "availability": "AVAILABLE",
+      "duration_sec": 1200.0
+    }
+  ],
+  "media_streams": [
+    {
+      "contract": "MediaStream",
+      "contract_version": "source-asset-media-stream/v1",
+      "media_stream_ref": "ms_x001_front_v",
+      "source_asset_ref": "sa_x001_front",
+      "media_type": "VIDEO",
+      "role": "FRONT",
+      "availability": "AVAILABLE",
+      "duration_sec": 1200.0
+    }
+  ],
+  "frame_refs": [
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_x001_plate1",
+      "media_stream_ref": "ms_x001_front_v",
+      "source_offset_sec": 610.2
+    }
+  ],
+  "recording_timelines": [
+    {
+      "contract": "RecordingTimeline",
+      "contract_version": "recording-timeline/v1",
+      "timeline_id": "tl_x001",
+      "revision": 1,
+      "time_basis": {
+        "mode": "ABSOLUTE_AND_RELATIVE",
+        "working_anchor": {
+          "value": "2026-08-30T09:00:00+09:00",
+          "source_candidate_ref": "tsc_x001_filename",
+          "status": "OK"
+        }
+      },
+      "time_source_candidates": ["tsc_x001_filename"],
+      "source_placements": [
+        {
+          "source_asset_ref": "sa_x001_front",
+          "timeline_start_sec": 0.0,
+          "timeline_end_sec": 1200.0,
+          "media_stream_refs": ["ms_x001_front_v"]
+        }
+      ],
+      "gaps": [],
+      "timeline_status": "USABLE",
+      "produced_by": "recording"
+    }
+  ],
+  "time_source_candidates": [
+    {
+      "candidate_id": "tsc_x001_filename",
+      "source_kind": "FILENAME",
+      "source_detail": "MDR_260830_090000.AVI",
+      "value": "2026-08-30T09:00:00+09:00",
+      "applies_to": { "source_asset_ref": "sa_x001_front", "source_offset_sec": 0.0 },
+      "observation_status": "OK",
+      "producer_checks": { "parse_valid": true },
+      "provenance": { "producer": "recording", "observed_from": "MDR_260830_090000.AVI" }
+    }
+  ]
+}

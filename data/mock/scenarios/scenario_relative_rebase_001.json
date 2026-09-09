@@ -1,0 +1,25 @@
+{
+  "scenario_id": "scenario_relative_rebase_001",
+  "title": "Timeline 상대전용(USABLE_RELATIVE_ONLY) + Rebase(revision 2) + SpanResolution PARTIAL(신규 유형 K)",
+  "case_id": "case_rb001",
+  "scenario_types": [
+    "K"
+  ],
+  "description": "P1-10이 지적한 '2026-09-07~08 최신 계약 변경분(TIMELINE_RELATIVE / USABLE_RELATIVE_ONLY / rebase revision / SpanResolution 실패 직렬화)이 pack 전체에 0건'을 정철원(이슈 #18)이 확정한 메커니즘 그대로 fixture화한다. ① 파일명·메타데이터 모두 절대시각을 파싱할 수 없는 첫 영상(`sa_rb001_a`)으로 `RecordingTimeline` revision 1을 만든다 — `working_anchor.status=UNKNOWN`, `timeline_status=USABLE_RELATIVE_ONLY`, `time_source_candidates=[]`. ② Search가 `AnalysisScope.time_ranges[0].kind=TIMELINE_RELATIVE`(`timeline_ref={tl_rb001, revision:1}`, `start_ms/end_ms`)로 revision 1 좌표계에서 candidate(`candidate_rb001`)를 만든다. ③ 이후 두 번째 영상(`sa_rb001_b`)이 추가되며 timeline이 `revision 2`로 rebase된다 — 두 소스의 usable 구간 사이에 의도적으로 30초 공백(600.0~630.0s)을 남긴다(revision 1을 덮어쓰지 않고 보존). `candidate_rb001.span.timeline_revision`은 rebase 후에도 `1`로 불변이며(B09), `CaseView.candidates[].timeline_revision`/`stale_revision`(case 소유 표시 필드 — `contract-job-record-case-view.md` §13 note '필드명·모양은 case Owner가 구현 시 정한다')이 rev1→rev2에서 `false`→`true`로 바뀌어 「과거 timeline revision 기준」 표시를 구현한다. ④ 그 30초 공백을 가로지르는 `resolve_span()`(요청 범위 580.0~650.0s)은 `status:PARTIAL`, `failure:null`, 해석 가능한 두 edge는 `spans[]`(580~600s는 `sa_rb001_a`, 630~650s는 `sa_rb001_b`), 내부 공백은 `missing_ranges[]` 1건(`{timeline_range:{start_sec:600.0,end_sec:630.0}, reason:TIMELINE_GAP, source_ref:null}`) — `TIMELINE_GAP`(내부 결손)과 `OUT_OF_TIMELINE_RANGE`(요청이 timeline 경계 밖)의 구분이 이걸로 실증된다.",
+  "note": "recording_timelines[].gaps[] 항목 shape({start_sec,end_sec})은 계약이 예시로 보여준 적이 없어(항상 빈 배열) 이 계약 문서 안에서 반복되는 interval(초) 관용구를 그대로 재사용한 mock 실행 결정이다 — 새 의미를 만들지 않았다. candidates[].at은 이 시나리오에서 최초로 `null`이다 — 절대시각 자체가 없는 정상 상태이며, `contract-analysis-scope.md` §10-7의 '가짜 ISO8601로 위장 금지' 원칙을 CaseView 표시에도 그대로 적용해 임의의 절대시각을 지어내지 않았다. 이 시나리오는 P1-10(timeline 메커니즘 자체)에 집중하기 위해 readout·evidence 모듈을 의도적으로 비웠다 — 완전한 PLATE_READ/evidence assembly 파이프라인은 다른 5개 시나리오가 이미 충분히 커버한다. PARTIAL span_resolution은 별도 IncidentClip을 만들지 않는다 — 사건 클립 자체가 아니라 rebase 이후 '앞뒤 문맥 확장 미리보기' 같은 case/web 조회가 내부 gap 때문에 PARTIAL로 돌아오는 것을 보여주기 위한 standalone 예시다(고아 자산을 새로 만들지 않기 위한 의도적 scope 제한 — P0-3에서 발견됐던 `as_h001_fine` 고아 문제를 반복하지 않으려는 선택).",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_relative_rebase_001.json",
+    "search": "data/mock/search/scenario_relative_rebase_001.json",
+    "case": "data/mock/case/scenario_relative_rebase_001.json",
+    "common": "data/mock/common/scenario_relative_rebase_001.json"
+  },
+  "modules_intentionally_absent": {
+    "readout": "PLATE_READ/OVERLAY_TIME_READ를 실행하지 않는다 — 이 시나리오의 검증 대상은 timeline revision/gap 메커니즘이며 readout 파이프라인은 다른 시나리오가 이미 커버한다.",
+    "evidence": "readout이 없으므로 evidence assembly도 시작되지 않는다."
+  },
+  "shared_ids": {
+    "case_id": "case_rb001",
+    "candidate_id": "candidate_rb001",
+    "timeline_id": "tl_rb001"
+  }
+}

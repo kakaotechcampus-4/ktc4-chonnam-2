@@ -49,6 +49,18 @@
       "input_fingerprint": "sha1:p001-plate-read-clip_p001",
       "force_rerun": true,
       "requested_at": "2026-08-29T20:33:05+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_p001_fine",
+      "case_id": "case_p001",
+      "case_rev": 2,
+      "kind": "FINE_VERIFY",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:p001-fine-verify-clip_p001",
+      "force_rerun": false,
+      "requested_at": "2026-08-29T20:31:20+09:00"
     }
   ],
   "case_views": [
@@ -221,7 +233,9 @@
           "severity": "WARN",
           "blocking": false,
           "message_key": "notice.plate_abstained",
-          "actions": ["MANUAL_PLATE_INPUT"]
+          "actions": [
+            "MANUAL_PLATE_INPUT"
+          ]
         }
       ]
     }

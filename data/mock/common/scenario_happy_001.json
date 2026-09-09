@@ -12,9 +12,16 @@
       "queued_at": "2026-08-24T18:20:04+09:00",
       "started_at": "2026-08-24T18:20:05+09:00",
       "ended_at": "2026-08-24T18:21:10+09:00",
-      "produced": [{ "kind": "analysis_run", "ref": "run_h001" }],
+      "produced": [
+        {
+          "kind": "analysis_run",
+          "ref": "run_h001"
+        }
+      ],
       "failure_kind": null,
-      "usage_refs": ["usage_h001_coarse"]
+      "usage_refs": [
+        "usage_h001_coarse"
+      ]
     },
     {
       "contract": "JobExecution",
@@ -26,9 +33,16 @@
       "queued_at": "2026-08-24T18:21:15+09:00",
       "started_at": "2026-08-24T18:22:00+09:00",
       "ended_at": "2026-08-24T18:22:06+09:00",
-      "produced": [{ "kind": "readout_run", "ref": "rr_h001_plate" }],
+      "produced": [
+        {
+          "kind": "readout_run",
+          "ref": "rr_h001_plate"
+        }
+      ],
       "failure_kind": null,
-      "usage_refs": ["usage_h001_plate"]
+      "usage_refs": [
+        "usage_h001_plate"
+      ]
     },
     {
       "contract": "JobExecution",
@@ -40,9 +54,37 @@
       "queued_at": "2026-08-24T18:21:15+09:00",
       "started_at": "2026-08-24T18:22:06+09:00",
       "ended_at": "2026-08-24T18:22:11+09:00",
-      "produced": [{ "kind": "readout_run", "ref": "rr_h001_overlay" }],
+      "produced": [
+        {
+          "kind": "readout_run",
+          "ref": "rr_h001_overlay"
+        }
+      ],
       "failure_kind": null,
-      "usage_refs": ["usage_h001_overlay"]
+      "usage_refs": [
+        "usage_h001_overlay"
+      ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_h001_fine",
+      "job_id": "job_h001_fine",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-24T18:21:15+09:00",
+      "started_at": "2026-08-24T18:21:20+09:00",
+      "ended_at": "2026-08-24T18:22:20+09:00",
+      "produced": [
+        {
+          "kind": "analysis_run",
+          "ref": "run_h001_fine"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_h001_fine"
+      ]
     }
   ],
   "usage_records": [
@@ -51,23 +93,39 @@
       "contract_version": "usage-record/v1.1",
       "usage_id": "usage_h001_coarse",
       "execution_ref": "exec_h001_search",
-      "run_ref": { "kind": "analysis_run", "ref": "run_h001" },
+      "run_ref": {
+        "kind": "analysis_run",
+        "ref": "run_h001"
+      },
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:21:10+09:00",
       "provider_label": "gemini",
       "operation": "SEARCH_COARSE",
-      "token_usage": { "input_tokens": 14200, "output_tokens": 1200, "total_tokens": 15400 },
+      "token_usage": {
+        "input_tokens": 14200,
+        "output_tokens": 1200,
+        "total_tokens": 15400
+      },
       "processed_duration_sec": 1200.0,
       "latency_ms": 65000,
-      "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" },
-      "cost": { "amount": "0.42", "currency": "USD" }
+      "pricing_context": {
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
+        "unit": "per_1k_tokens"
+      },
+      "cost": {
+        "amount": "588",
+        "currency": "KRW"
+      }
     },
     {
       "contract": "UsageRecord",
       "contract_version": "usage-record/v1.1",
       "usage_id": "usage_h001_plate",
       "execution_ref": "exec_h001_plate",
-      "run_ref": { "kind": "readout_run", "ref": "rr_h001_plate" },
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_h001_plate"
+      },
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:06+09:00",
       "provider_label": "ocr-local",
@@ -75,15 +133,24 @@
       "token_usage": null,
       "processed_duration_sec": 6.0,
       "latency_ms": 900,
-      "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
-      "cost": { "amount": "0.00", "currency": "KRW" }
+      "pricing_context": {
+        "pricing_id": "ocr-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
+        "currency": "KRW"
+      }
     },
     {
       "contract": "UsageRecord",
       "contract_version": "usage-record/v1.1",
       "usage_id": "usage_h001_overlay",
       "execution_ref": "exec_h001_overlay",
-      "run_ref": { "kind": "readout_run", "ref": "rr_h001_overlay" },
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_h001_overlay"
+      },
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:11+09:00",
       "provider_label": "ocr-local",
@@ -91,8 +158,43 @@
       "token_usage": null,
       "processed_duration_sec": 5.0,
       "latency_ms": 850,
-      "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
-      "cost": { "amount": "0.00", "currency": "KRW" }
+      "pricing_context": {
+        "pricing_id": "ocr-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_h001_fine",
+      "execution_ref": "exec_h001_fine",
+      "run_ref": {
+        "kind": "analysis_run",
+        "ref": "run_h001_fine"
+      },
+      "case_id": "case_h001",
+      "occurred_at": "2026-08-24T18:22:20+09:00",
+      "provider_label": "gemini",
+      "operation": "SEARCH_FINE",
+      "token_usage": {
+        "input_tokens": 18200,
+        "output_tokens": 1500,
+        "total_tokens": 19700
+      },
+      "processed_duration_sec": 120.0,
+      "latency_ms": 60000,
+      "pricing_context": {
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
+        "unit": "per_1k_tokens"
+      },
+      "cost": {
+        "amount": "350",
+        "currency": "KRW"
+      }
     }
   ]
 }

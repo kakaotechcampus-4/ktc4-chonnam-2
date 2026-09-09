@@ -37,6 +37,18 @@
       "input_fingerprint": "sha1:h001-overlay-read-clip_h001",
       "force_rerun": false,
       "requested_at": "2026-08-24T18:21:15+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_h001_fine",
+      "case_id": "case_h001",
+      "case_rev": 2,
+      "kind": "FINE_VERIFY",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:h001-fine-verify-clip_h001",
+      "force_rerun": false,
+      "requested_at": "2026-08-24T18:21:15+09:00"
     }
   ],
   "case_views": [
@@ -52,7 +64,10 @@
         "ok_file_count": 2,
         "failed_file_count": 0,
         "duration_sec": 1200.0,
-        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+        "range": [
+          "2026-08-24T18:00:00+09:00",
+          "2026-08-24T18:20:00+09:00"
+        ]
       },
       "hints": {
         "time": "18시쯤",
@@ -61,14 +76,38 @@
         "location": "상무중앙로 사거리 부근"
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "RUNNING" },
-        { "step": "candidate_review", "state": "PENDING" },
-        { "step": "plate_read", "state": "PENDING" },
-        { "step": "overlay_time_read", "state": "PENDING" },
-        { "step": "evidence_assembly", "state": "PENDING" },
-        { "step": "requirement_check", "state": "PENDING" },
-        { "step": "package_assembly", "state": "PENDING" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "RUNNING"
+        },
+        {
+          "step": "candidate_review",
+          "state": "PENDING"
+        },
+        {
+          "step": "plate_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
+        }
       ],
       "candidates": [],
       "evidence": null,
@@ -76,7 +115,12 @@
       "requirements_package": null,
       "package": null,
       "running_jobs": [
-        { "job_id": "job_h001_search", "kind": "COARSE_SEARCH", "label_key": "job.generic_processing", "status": "RUNNING" }
+        {
+          "job_id": "job_h001_search",
+          "kind": "COARSE_SEARCH",
+          "label_key": "job.generic_processing",
+          "status": "RUNNING"
+        }
       ],
       "notices": []
     },
@@ -92,7 +136,10 @@
         "ok_file_count": 2,
         "failed_file_count": 0,
         "duration_sec": 1200.0,
-        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+        "range": [
+          "2026-08-24T18:00:00+09:00",
+          "2026-08-24T18:20:00+09:00"
+        ]
       },
       "hints": {
         "time": "18시쯤",
@@ -101,14 +148,38 @@
         "location": "상무중앙로 사거리 부근"
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "DONE" },
-        { "step": "candidate_review", "state": "DONE" },
-        { "step": "plate_read", "state": "DONE" },
-        { "step": "overlay_time_read", "state": "DONE" },
-        { "step": "evidence_assembly", "state": "DONE" },
-        { "step": "requirement_check", "state": "DONE" },
-        { "step": "package_assembly", "state": "DONE" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "DONE"
+        }
       ],
       "candidates": [
         {
@@ -122,9 +193,21 @@
       ],
       "evidence": {
         "record_id": "ev_h001",
-        "case_type_display": { "code": "SOLID_LINE_LANE_CHANGE", "label": "백색 실선 구간 차로변경", "needs_review": false },
-        "report_type_display": { "code": "UNSAFE_LANE_CHANGE", "label": "안전운전 불이행", "needs_review": false },
-        "violation_display": { "code": null, "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함", "needs_review": false },
+        "case_type_display": {
+          "code": "SOLID_LINE_LANE_CHANGE",
+          "label": "백색 실선 구간 차로변경",
+          "needs_review": false
+        },
+        "report_type_display": {
+          "code": "UNSAFE_LANE_CHANGE",
+          "label": "안전운전 불이행",
+          "needs_review": false
+        },
+        "violation_display": {
+          "code": null,
+          "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+          "needs_review": false
+        },
         "plate_display": {
           "value": "12가3456",
           "needs_review": false,
@@ -142,7 +225,10 @@
           "needs_review": false,
           "info_state": "INFO_NEEDS_REVIEW",
           "source_label_key": "location.source.user_hint",
-          "coord": null,
+          "coord": {
+            "lat": 35.1522,
+            "lon": 126.8515
+          },
           "search_keyword": "광주 상무지구 상무중앙로 사거리"
         },
         "user_edited": false,
@@ -153,18 +239,104 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.location.present", "category": "LOCATION", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] }
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "PASS",
+            "reason_code": "evidence.user_hint_sufficient",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          }
         ]
       },
       "requirements_package": {
         "readiness": "PASS",
         "checks": [
-          { "code": "package.asset.report_video.exists", "category": "ASSET", "outcome": "PASS", "reason_code": "asset.available", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }], "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" } },
-          { "code": "package.vehicle.plate_visible_in_report_video", "category": "VEHICLE", "outcome": "PASS", "reason_code": "readout.plate_legible_in_asset", "subject_refs": [{ "kind": "readout_run", "ref": "rr_h001_plate" }, { "kind": "derived_asset", "ref": "da_h001_plate_image" }] },
-          { "code": "package.time.overlay_visible", "category": "TIME", "outcome": "PASS", "reason_code": "time.overlay_burned_in", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }] }
+          {
+            "code": "package.asset.report_video.exists",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.available",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ],
+            "measurement": {
+              "actual": 120.0,
+              "limit": 180.0,
+              "unit": "asset.duration_sec"
+            }
+          },
+          {
+            "code": "package.vehicle.plate_visible_in_report_video",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "readout.plate_legible_in_asset",
+            "subject_refs": [
+              {
+                "kind": "readout_run",
+                "ref": "rr_h001_plate"
+              },
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ]
+          },
+          {
+            "code": "package.time.overlay_visible",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "time.overlay_burned_in",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ]
+          }
         ]
       },
       "package": {
@@ -177,7 +349,11 @@
           "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
         },
         "artifact_ref": "da_h001_report_video",
-        "capabilities": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"],
+        "capabilities": [
+          "DOWNLOAD_ASSETS",
+          "COPY_FIELDS",
+          "OPEN_DESTINATION"
+        ],
         "warnings": []
       },
       "running_jobs": [],
@@ -195,7 +371,10 @@
         "ok_file_count": 2,
         "failed_file_count": 0,
         "duration_sec": 1200.0,
-        "range": ["2026-08-24T18:00:00+09:00", "2026-08-24T18:20:00+09:00"]
+        "range": [
+          "2026-08-24T18:00:00+09:00",
+          "2026-08-24T18:20:00+09:00"
+        ]
       },
       "hints": {
         "time": "18시쯤",
@@ -204,14 +383,38 @@
         "location": "상무중앙로 사거리 부근"
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "DONE" },
-        { "step": "candidate_review", "state": "DONE" },
-        { "step": "plate_read", "state": "DONE" },
-        { "step": "overlay_time_read", "state": "DONE" },
-        { "step": "evidence_assembly", "state": "DONE" },
-        { "step": "requirement_check", "state": "DONE" },
-        { "step": "package_assembly", "state": "DONE" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "DONE"
+        }
       ],
       "candidates": [
         {
@@ -225,9 +428,21 @@
       ],
       "evidence": {
         "record_id": "ev_h001",
-        "case_type_display": { "code": "SOLID_LINE_LANE_CHANGE", "label": "백색 실선 구간 차로변경", "needs_review": false },
-        "report_type_display": { "code": "UNSAFE_LANE_CHANGE", "label": "안전운전 불이행", "needs_review": false },
-        "violation_display": { "code": null, "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함", "needs_review": false },
+        "case_type_display": {
+          "code": "SOLID_LINE_LANE_CHANGE",
+          "label": "백색 실선 구간 차로변경",
+          "needs_review": false
+        },
+        "report_type_display": {
+          "code": "UNSAFE_LANE_CHANGE",
+          "label": "안전운전 불이행",
+          "needs_review": false
+        },
+        "violation_display": {
+          "code": null,
+          "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+          "needs_review": false
+        },
         "plate_display": {
           "value": "12가3456",
           "needs_review": false,
@@ -245,7 +460,10 @@
           "needs_review": false,
           "info_state": "INFO_NEEDS_REVIEW",
           "source_label_key": "location.source.user_hint",
-          "coord": null,
+          "coord": {
+            "lat": 35.1522,
+            "lon": 126.8515
+          },
           "search_keyword": "광주 상무지구 상무중앙로 사거리"
         },
         "user_edited": false,
@@ -256,18 +474,104 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
-          { "code": "evidence.location.present", "category": "LOCATION", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] }
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "PASS",
+            "reason_code": "evidence.user_hint_sufficient",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_h001"
+              }
+            ]
+          }
         ]
       },
       "requirements_package": {
         "readiness": "PASS",
         "checks": [
-          { "code": "package.asset.report_video.exists", "category": "ASSET", "outcome": "PASS", "reason_code": "asset.available", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }], "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" } },
-          { "code": "package.vehicle.plate_visible_in_report_video", "category": "VEHICLE", "outcome": "PASS", "reason_code": "readout.plate_legible_in_asset", "subject_refs": [{ "kind": "readout_run", "ref": "rr_h001_plate" }, { "kind": "derived_asset", "ref": "da_h001_plate_image" }] },
-          { "code": "package.time.overlay_visible", "category": "TIME", "outcome": "PASS", "reason_code": "time.overlay_burned_in", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }] }
+          {
+            "code": "package.asset.report_video.exists",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.available",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ],
+            "measurement": {
+              "actual": 120.0,
+              "limit": 180.0,
+              "unit": "asset.duration_sec"
+            }
+          },
+          {
+            "code": "package.vehicle.plate_visible_in_report_video",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "readout.plate_legible_in_asset",
+            "subject_refs": [
+              {
+                "kind": "readout_run",
+                "ref": "rr_h001_plate"
+              },
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ]
+          },
+          {
+            "code": "package.time.overlay_visible",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "time.overlay_burned_in",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ]
+          }
         ]
       },
       "package": {
@@ -280,7 +584,11 @@
           "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
         },
         "artifact_ref": "da_h001_report_video",
-        "capabilities": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"],
+        "capabilities": [
+          "DOWNLOAD_ASSETS",
+          "COPY_FIELDS",
+          "OPEN_DESTINATION"
+        ],
         "warnings": []
       },
       "running_jobs": [],

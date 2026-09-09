@@ -13,7 +13,7 @@
 1. `TimeResolution.resolved.verification`과 `computation.mode=USER_OVERRIDE`의 대응 관계 미명시
 2. 순수 사용자 입력 값의 `EvidenceValue.source.observability`/`user_corrected` 판정 기준 미명시
 3. ~~`CaseView.evidence.review_needed`의 파생 규칙 미명시~~ → **종결(2026-09-09, 유소연)**: 여섯 `*_display.needs_review`의 OR 집계로 확정, `contract-job-record-case-view.md` B절 §6·§7 등재
-4. `EvidenceRecord.event.safety_report_type`의 실제 값 공간(등록된 enum) 부재
+4. `EvidenceRecord.event.safety_report_type`의 실제 값 공간(등록된 enum) 부재 — 김준영이 이슈 #19에서 **명시적으로 반려**(placeholder일 뿐 canonical enum 아님). evidence 소유 versioned artifact 필요, mock이 임의로 채울 수 없음
 
 → 상세: `04_mock_validation_report.md` §3.2
 
