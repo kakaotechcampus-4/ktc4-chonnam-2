@@ -10,6 +10,39 @@
 > - 📌 **의도적으로 보류** — **P1-7/item 8**(`ve_u001` → `UNCERTAIN`): 실행하려다 새 문제를 발견했다. `EvidenceRecord.event.*`는 계약 스키마에서 `?` 표시가 없어 **필수**로 보이는데, `verification=UNCERTAIN`이면 `visual_event_type`을 확정할 수 없다. 「VisualEvidence가 UNCERTAIN일 때 EvidenceRecord를 아예 만들지 않는가, 아니면 event를 비운 채 만드는가」가 계약에 없다 — §12에 김준영·서어진 확인 항목으로 추가했다.
 > - 갱신된 커버리지 표와 강화된 검증 항목은 `04_mock_validation_report.md`에 반영했다.
 
+> **수정 진행 상황 (2026-09-09, case Owner 유소연 2차 검수 반영).** §12에서 유소연에게 넘겨졌던 case 담당 항목 4건을 전부 결정·반영했다.
+>
+> - ✅ **결정·반영** — `JobRecord.kind`에 `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` 등재(+`purge_case`는 Job 밖 관리 동작으로 확정) · u001 `scope_u001`을 timeline과 일치하도록 `22:10~22:40`으로 축소(P1-8 잔여 종결) · `evidence.review_needed` OR 파생 규칙 확정 및 계약 문서 등재 · **P1-13(신규 발견·즉시 해소)**: `CaseView.requirements_*.checks[]`에 누락돼 있던 `category`·`subject_refs`·`measurement`를 대응 `evidence/*.json`에서 그대로 복사
+> - ⏳ **여전히 대기** — P0-3의 나머지(서어진의 `input_ref.kind` 결정 — case의 `JobRecord.kind` 등재는 끝났지만 실제 Fine Job/AnalysisRun 추가는 이 답변 이후 한 번에 진행), P3-1(예산 통화, 유소연+김준영 공동 — 이 시점엔 아직 미결. **2026-09-09 2라운드에서 이슈 #19 답변으로 환산 규칙은 종결, 기본값·fixture 반영만 잔여**)
+> - 상세 근거는 §8 P0-3·P1-8·P1-9·P1-13, §12·§13 갱신분 참고. `validate_mock_pack.py` 재실행 PASS.
+
+> **수정 진행 상황 (2026-09-09 2라운드, 팀 리뷰 이슈 #15~#19 5건 종합 반영 — Decider 유소연).** 5명 전원이 GitHub 이슈로 남긴 §12/§13 회신을 전부 읽고(이슈는 열려있는 상태로 진행, 닫는 것은 팀원 각자 몫으로 남김) 반영했다.
+>
+> - ✅ **결정·반영 완료** — P0-4(신유민: overlay 「없음」 = `NOT_APPLICABLE`, 결과 객체 생성) · P1-7(서어진: `ve_u001` → `UNCERTAIN`/`visual_event_type=null`) · P2-2(김준영: `plate_visible` → `category=VEHICLE`, `AssetFacts` 보강)
+> - ✅ **결정 완료 · fixture는 다음 라운드** — P0-3(서어진: `input_ref.kind=analysis_source`) · P1-12 taxonomy(신유민, `scenario_infra_failure_001` 한정)
+> - 🔀 **시나리오 분리(김준영 제안, 유소연 결정)** — P1-7을 실제로 적용하니 `EvidenceRecord.event`가 필수 필드라 `EvidenceRecord` 자체를 만들 수 없었고, 이것이 같은 시나리오 안의 C·D·G·I(번호판 abstain, 사건유형 confirmed 전제)와 충돌했다. `scenario_unknown_abstain_partial_001`(E·H)과 신규 `scenario_plate_reread_001`(C·D·G·I)로 분리 — 시나리오 5개, fixture 36개.
+> - 🆕 **신규 Contract Gap 발견** — `EvidenceNeeds`(v1)가 "AI가 사건 유형 자체를 확정하지 못했다"는 상황을 표현할 계약상 메커니즘이 없다. 새 계약/필드가 필요할 수 있어 case Owner 단독으로 해소하지 않고 `04_mock_validation_report.md` §3.1-4·`CONTRACT_CONFLICTS.md`에 기록했다 — evidence(김준영)/PM 확인 필요.
+> - ⚠️ **이 라운드가 만든 신규 갭** — P0-4 재정의로 pack에서 유일했던 `ReadoutRun.outcome=FAILED`/`JobExecution.status=FAILED` 예시가 사라졌다(§1 Coverage 표에 기록). 완전 실패 규칙 자체는 여전히 유효하나 현재 fixture 증거가 없다 — `scenario_infra_failure_001`(§13-9)이 채워야 한다.
+> - ⏳ **여전히 대기** — P1-2 실질 미해소(source.kind 5종 자체는 승인됐으나 `safety_report_type` 값 공간은 반려) · P1-6(김준영: 좌표 규칙은 결정됐으나 fixture 미구현 / 정철원: GPS 관찰 단위) · P1-10(정철원) · ~~P2-3·P2-4~~(2026-09-09 3라운드에서 해소) · P1-11/P2-9 finding 본문의 정확한 재작성(§13-19, 김대원 답변은 받았으나 텍스트 반영 전) · P3-1 기본값 결정·fixture 정규화(환산 규칙 자체는 이슈 #19로 종결) · **(신규) 김준영 §12-⑥ EvidenceNeeds 새 kind 신설 여부** — ~~P1-3~~은 이슈 #15로 완전 종결(직렬화 형식 mock 현행 유지 확인)
+> - 상세 근거는 §8 P0-3·P0-4·P1-7·P1-12·P2-2, §12·§13 갱신분, `04_mock_validation_report.md` §3.1-4 참고. `validate_mock_pack.py` 재실행 PASS(36개 파일·5개 시나리오).
+
+> **수정 진행 상황 (2026-09-09 3라운드, 이슈 #15~#19 전량 원문 재대조 — 사용자 신뢰 회복 요청에 따른 전면 재검증).** 2라운드에서 일부 답변(김준영 ①④, P3-1, P1-3)을 잘못 요약해 사용자가 정확성을 재확인 요청했다. 이에 5개 이슈 전문(코멘트 포함)을 다시 curl로 원문 그대로 가져와 대조했고, 1·2라운드가 놓쳤거나 뭉뚱그린 내용을 찾아냈다.
+>
+> - ✅ **fixture 반영 완료** — 신유민 B-1(`scenario_plate_reread_001` 프레임 불일치 2자리로 확장) · 신유민 taxonomy 정밀화(`readout.overlay_not_present`→`readout.overlay.not_present` 점 표기 통일, `validation.*_ok` false→null) · `scenario_correction_rerun_001`의 "Overlay NOT_RUN(배열 부재)" 설계를 정철원 확인 정책(오버레이 무조건 디스패치)과 일치시켜 "실행됨+NOT_APPLICABLE"로 재구성(u001과 동일 패턴) · `scenario_plate_reread_001`에 `evidence.plate_abstained`/`MANUAL_PLATE_INPUT` notice 추가(신유민 2차 코멘트가 지적한 0건 커버리지 해소)
+> - ✅ **문서만 정밀화(fixture 변경 없음, 근거 재작성)** — P1-11(eval 채점 모델 근본원인·metric 전체 개명표·`legibility` 필드) · P2-9(비용 분모의 3단 설명) · P1-12(readout taxonomy 정확한 코드 3종·`abstain_reason` 값공간/우선순위·화면문구 매핑표) · P1-10/GPS(정철원 확정 스키마·`scenario_relative_rebase_001` 전체 메커니즘)
+> - ✅ **재확인(변경 없음)** — 번호판 placeholder "34나7890"이 이미 pack 전체(readout/case/evidence/scenario 설명)에 일관 적용돼 있음을 grep으로 재확인. 신유민이 자기 모듈에서만 제안한 "광주 12가 3456"은 로컬 제안이었고 실제로 반영된 적이 없어 supersede할 것도 없었다
+> - 🆕 **신규 미결 항목 등록** — 신유민 2차 코멘트(web/CaseView 소비 분석)에서 `progress[].step`(2·3단계 대응 값 없음)·`progress[].state`(부분 완료/중단 미표현) 2건을 §12 유소연 항목으로 신규 등록(⑦⑧) — 아직 결정 안 됨
+> - ⏳ **여전히 대기** — P1-6/GPS·`scenario_relative_rebase_001`·`scenario_infra_failure_001`·`scenario_blocked_001`은 규칙/설계는 전부 확정됐으나 fixture 빌드아웃은 다음 라운드 · `data/mock/expected/`(eval) 실제 재작성은 김대원 소관 · §12 유소연 신규 ⑦⑧ · notices 코드 대소문자(⑤)·actions 값공간(⑥)
+> - 상세 근거는 §8 P1-11·P1-12·P2-9, §12 신유민/유소연/정철원/김대원 갱신분, §13 행 19~21 참고. `validate_mock_pack.py` 재실행 PASS(36개 파일·5개 시나리오, 파일 수 변동 없음 — 이번 라운드는 기존 5개 시나리오 내부 수정만).
+
+> **수정 진행 상황 (2026-09-09 4차 라운드, "규칙은 종결·fixture는 다음 라운드"로 남아 있던 전 항목 실제 fixture화 — Decider 유소연).** 3라운드까지 도메인 판단은 끝났지만 실행이 밀려 있던 것들을 이번 라운드에서 전부 fixture로 반영했다. 팀원이 fixture를 직접 수정 → 재추합 → 검토 → 이슈 닫기 사이클을 반복할 것을 전제로, case Owner가 진행할 수 있는 범위의 "versioned artifact" 작업도 함께 처리했다.
+>
+> - ✅ **fixture 반영 완료** — **P0-3**(happy·u001·plate_reread·correction_rerun 4개 시나리오에 `VISUAL_VERIFY` run 추가, `ve_*.run_id` 재연결, `as_h001_fine` 고아 해소) · **P1-10**(신규 `scenario_relative_rebase_001`, 유형 K — `USABLE_RELATIVE_ONLY`·rebase·`SpanResolution PARTIAL`+`TIMELINE_GAP` 전부 실증, case 소유 `stale_revision` 필드 신설) · **P1-12 잔여**(신규 `scenario_infra_failure_001`, 유형 J — `JobExecution STALE`→재시도→`FAILED`, `ReadoutRun.outcome=FAILED`+`INFRA` taxonomy, pack 최초 `severity=ERROR`/`blocking=true` notice) · **P3-1 기본값**(환율 placeholder 1400원/$·`budget.max_cost_krw` 300→1000·전 시나리오 `UsageRecord.cost` KRW 정규화)
+> - ✅ **versioned artifact 문서화 완료(mock 권한 범위 내)** — evidence 소유 `source.kind` registry(P1-2, 승인된 5종만) · case 소유 budget KRW 정규화 규칙(P3-1) · case 소유 `stale_revision` 필드 결정(P1-10)
+> - 🔶 **부분 반영 — coord까지, address는 미착수** — **P1-6/P2-1**: happy에 GPS 있음(`coord`, OBSERVED), u001에 GPS 없음(`UNKNOWN`) Observation을 recording에 추가하고 `location.coord`/`location_display.coord`까지 채웠다. 그러나 `address`는 김준영이 "versioned reverse-geocode artifact 없이 임의 생성 금지"라고 명시한 항목이라 **mock 작업 범위 밖**(실제 지오코딩 데이터가 필요) — `location_display.info_state`는 §7-(3) 규칙상 여전히 `INFO_NEEDS_REVIEW`이고, P2-1의 "happy가 완전 all-green"이라는 원래 목표는 그 artifact 없이는 달성 불가능하다.
+> - ⏳ **여전히 실질적으로 열려 있음(mock이 임의로 채울 수 없음)** — `safety_report_type` 값 공간(김준영, 반려됨 — 실제 신고 규정 원본 필요) · `EvidenceNeeds` 신규 kind 신설 여부(김준영/PM 결정 대상) · `location.address`(reverse-geocode artifact 필요) · notices 코드 대소문자(⑤)·actions 값공간(⑥, 계약 자체 미확정) · `progress[].step`/`state` 어휘 확장(⑦⑧, case가 결정은 가능하나 이번 라운드 범위 밖으로 남김) · `scenario_blocked_001`(P1-9 나머지 — `BLOCK`/`INFO_AI_ESTIMATED`, 이번 라운드 범위 밖) · eval `expected/` 재작성(김대원 소관)
+> - 상세 근거는 §8 P0-3·P1-6·P1-10·P2-1·P3-1 갱신분, §12·§13 갱신분 참고. `validate_mock_pack.py` 재실행 PASS(46개 파일·7개 시나리오).
+
 ---
 
 ## 0. Executive Summary
@@ -319,7 +352,11 @@ Fixture only
 
 ---
 
-## `[P0-3] ⏳ Owner 답변 대기 — VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
+## `[P0-3] ✅ 해소 — VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #15, 서어진 답변).** 남아 있던 `input_ref.kind` 질문에 서어진이 답변해 도메인 판단이 전부 끝났다 — `analysis_source`(`as_h001_fine` 등)를 `input_ref.kind`로 사용하기로 확정, 고아 자산 문제도 함께 해소된다.
+>
+> **2026-09-09 4차 라운드 갱신 (fixture 반영).** happy·u001·plate_reread·correction_rerun 4개 시나리오 전부에 `operation:"VISUAL_VERIFY"` `AnalysisRun`(`run_*_fine`)을 추가하고 `VisualEvidence.run_id`를 그쪽으로 재연결했다. `input_ref={kind:"analysis_source", ref:"as_*_fine"}`이며, happy는 기존 고아 `as_h001_fine`/`rc_h001_fine`을 그대로 소비해 고아 문제도 함께 해소됐다. u001·plate_reread·correction_rerun은 동일 패턴으로 새 `AnalysisSource`/`RemoteCopy`를 recording fixture에 만들었다. `case/*.json`에 `kind:"FINE_VERIFY"` `JobRecord`, `common/*.json`에 대응 `JobExecution`+`UsageRecord`(KRW 정규화 비용, budget 여유분 안에서 산정)를 추가했다. `scenario_empty_001`은 애초에 `VisualEvidence`가 없어 대상에서 제외했다.
 
 **관련 파일:** `data/mock/search/scenario_{happy,unknown_abstain_partial,correction_rerun}_001.json` · `data/mock/case/*` (Job 체인) · `data/mock/common/*` (execution·usage) · `data/mock/recording/scenario_happy_001.json`(고아 `as_h001_fine`/`rc_h001_fine`)
 **Scenario:** 전 시나리오
@@ -344,7 +381,7 @@ Coarse(후보 탐색)와 Fine(시각 검증)은 **비용·모델·실패 분류�
    `analysis_run = {run_id:"run_h001_fine", operation:"VISUAL_VERIFY", input_ref:{kind:"incident_clip", ref:"clip_h001"}, implementation:{impl_id:"gemini-visual-verify@f3", model_ref:..., prompt_version:"fine-f3", config_version:"search-v2"}, outcome:"SUCCEEDED", started_at/completed_at(코스 종료 이후), issues:[], usage_refs:["usage_h001_fine"], usage_summary:{...}, contract_version:"analysis-run-candidate-event/v1.1"}`, `candidates: []`
    — **주의**: `input_ref.kind`를 무엇으로 둘지는 계약이 "해당 output Contract의 접합 규칙을 따른다"고만 하고 `VisualEvidence`도 형식을 확정하지 않았다(P1-3과 같은 뿌리). `incident_clip` 또는 `analysis_source`(`as_h001_fine`) 중 하나를 골라야 하며 **서어진·정철원 확인이 필요하다.** 확인 전까지는 `analysis_source`(`as_h001_fine`)를 쓰면 고아 자산 문제까지 함께 해소된다.
 2. `ve_h001.run_id`를 `"run_h001_fine"`으로 변경.
-3. `case/scenario_happy_001.json`에 Fine용 `JobRecord` 추가 — **단 `JobRecord.kind`에 Fine 발주용 값이 등재돼 있지 않다**(등재값: `COARSE_SEARCH`·`PLATE_READ`·`OVERLAY_TIME_READ`). 새 값을 임의로 만들지 말고 §12에서 유소연에게 등재를 요청하고, 그 전까지는 이 Job 추가를 보류한다(fixture에 TODO 주석 대신 `04` 보고서의 "Architecture 확인 필요"에 항목 추가).
+3. `case/scenario_happy_001.json`에 Fine용 `JobRecord` 추가 — ~~단 `JobRecord.kind`에 Fine 발주용 값이 등재돼 있지 않다~~ **✅ 등재 완료(2026-09-09, 유소연): `kind="FINE_VERIFY"`, `label_key="job.fine_verify"`**(`contract-job-record-case-view.md` A절 §7·§12). case 쪽 blocker는 해소됐으나, 실제 `JobRecord`/`common` execution 추가는 아래 1의 `input_ref.kind` 답변(서어진) 이후 한 번에 진행한다 — 지금 case만 먼저 추가하면 실행 결과 없는 Job이 붕 뜬다.
 4. `common/scenario_happy_001.json`에 `exec_h001_fine`(produced: `{kind:"analysis_run", ref:"run_h001_fine"}`)와 `usage_h001_fine` 추가. Job 발주 값이 미정이면 execution도 함께 보류하고 run/usage만 추가한다(`UsageRecord.execution_ref=null`은 계약상 허용).
 5. u001·r001도 같은 방식으로 Fine run 추가.
 
@@ -352,11 +389,15 @@ Coarse(후보 탐색)와 Fine(시각 검증)은 **비용·모델·실패 분류�
 여러 Mock Artifact + Upstream 확인 필요(`JobRecord.kind` 등재, `VISUAL_VERIFY.input_ref.kind`)
 
 ### Owner 확인 필요 여부
-`필수 — 도메인 판단 필요` (서어진: Fine 입력 ref 종류 / 유소연: Fine 발주 `JobRecord.kind` 등재)
+`필수 — 도메인 판단 필요` (서어진: Fine 입력 ref 종류 / ~~유소연: Fine 발주 `JobRecord.kind` 등재~~ → **종결(2026-09-09, 유소연)**, 남은 것은 서어진 답변뿐)
 
 ---
 
-## `[P0-4] ⏳ Owner 답변 대기 — 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
+## `[P0-4] ✅ 해소 — 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #16, 신유민 답변 · case Owner 유소연 반영).** NOT_APPLICABLE(없음=사실) vs UNKNOWN(확인 못함) 판정 기준에 신유민이 「없음=사실」 쪽으로 답변해, 아래 "권장 수정"을 거의 그대로 반영했다. `rr_u001_overlay.outcome=SUCCEEDED`/`failure=null`, `overlay_time_readouts`에 `observation.status="NOT_APPLICABLE"` 결과 객체 추가, `JobExecution` SUCCEEDED로 정정, `CaseView.notices[]`에 `time.overlay_not_present`(INFO) 추가까지 전부 `scenario_unknown_abstain_partial_001` 재설계(§8) 과정에서 반영했다. 다만 이 재설계로 `ReadoutRun.outcome=FAILED`/`JobExecution.status=FAILED`의 fixture 실사례가 pack에서 완전히 사라졌다 — `04_mock_validation_report.md` §1에 신규 커버리지 갭으로 기록했다. 아래 "권장 수정" 6번(진짜 실행 실패 경로의 별도 시나리오)은 여전히 미착수다.
+>
+> **2026-09-09 3라운드 정정.** 최초 반영 시 `reason.code`를 밑줄 표기 `readout.overlay_not_present`로 잘못 썼다(아래 예시는 애초에 점 표기 `readout.overlay.not_present`였음). 신유민 이슈 #16 원문 재대조 과정에서 발견해 `scenario_unknown_abstain_partial_001`·`scenario_plate_reread_001`(해당 없음)·신규 `scenario_correction_rerun_001` overlay 결과 전부 점 표기로 통일했다. `validation.format_ok/monotonic_ok/duration_match_ok`도 신유민 지적대로 `false`(검증 시도했다가 실패)가 아니라 `null`(검증 자체를 시도 안 함)로 정정했다.
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · `data/mock/evidence/scenario_unknown_abstain_partial_001.json` · `data/mock/case/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -440,7 +481,9 @@ TimeResolution tres_u001.considered[] : overlay 항목 없음
 
 ---
 
-## `[P1-2] ⏳ Owner 답변 대기 — 계약에 등재되지 않은 source.kind 5종을 Mock이 신설하고 보고서에 기재하지 않음`
+## `[P1-2] 🔶 부분 해소 — 계약에 등재되지 않은 source.kind 5종을 Mock이 신설하고 보고서에 기재하지 않음`
+
+> **2026-09-09 4차 라운드 갱신 (fixture 변경 없음, 문서화).** 김준영이 승인한 5종을 `docs/modules/evidence/decisions/source-kind-registry.md`에 evidence 소유 versioned registry로 정식 등재했다(이슈 #19 "새 kind를 더 만들기 전에 evidence 소유 registry에 먼저 등재하라"는 요구 반영). fixture는 이미 이 형태로 쓰이고 있어 변경 없음. **`safety_report_type` 값 공간은 이 registry에 포함하지 않았다** — 김준영이 명시적으로 반려한 항목(placeholder일 뿐 canonical enum 아님)이라 evidence Owner의 후속 결정 없이 mock이 임의로 채울 수 없다. 그 부분만 여전히 미해소로 남긴다(registry 파일의 "아직 이 registry에 없는 것" 절에 명시).
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json` · `evidence/scenario_unknown_abstain_partial_001.json` · `evidence/scenario_correction_rerun_001.json`
 **Scenario:** 전 evidence 시나리오
@@ -561,7 +604,10 @@ Fixture only
 
 ---
 
-## `[P1-6] ⏳ Owner 답변 대기 — GPS/위치 Observation 경로가 전면 미커버 (+ Coordinate 필드명 lat/lng vs lat/lon 상위 문서 불일치)`
+## `[P1-6] 🔶 부분 해소 — GPS/위치 Observation 경로가 전면 미커버 (+ Coordinate 필드명 lat/lng vs lat/lon 상위 문서 불일치)`
+
+> **2026-09-09 4차 라운드 갱신 (fixture 반영).** 정철원(이슈 #18)·김준영(이슈 #19) 답변대로 GPS **있음**(`scenario_happy_001`)·**없음**(`scenario_unknown_abstain_partial_001`) 경로를 각각 recording fixture에 추가했다: `recording/*.json`에 신규 배열 `gps_observations`(mock 전용 배열명 — 어떤 계약도 이 이름을 고정하지 않는다)를 만들고 `Observation<Coordinate>` 1건씩 채웠다. happy는 `status:OK`, `value:{lat:35.1522, lon:126.8515}`, `source.kind:"recording.gps_stream"`, `source.ref:{kind:"media_stream", ref:"ms_h001_front_v"}`, `support_refs:[{kind:"frame", ref:"fr_h001_thumb"}]`(정철원 답변대로 `source_asset`이 아니라 관련 `FrameRef`), `produced_by:{module:"recording", impl_ref:"gps-parser/default"}`. u001은 계약 §12 "GPS source 없음" 예시 그대로 `value:null, status:UNKNOWN, source:{kind:"recording.gps_stream"}, support_refs:[], reason.code:"recording.gps.source_absent"`. 좌표 키는 `lat`/`lon`으로 통일했다(계약 예시의 `lat/lng`는 손대지 않음 — §12 3번 그대로 "Upstream 확인 필요"로 남김). `EvidenceRecord.location.coord`(happy)도 `source.kind:"recording.gps_stream"`·`observability:OBSERVED`·`needs_review:false`로 채웠고 `CaseView.location_display.coord`도 `{lat,lon}`으로 갱신했다.
+> **단, `address`/`place_name`은 채우지 않았다.** 김준영의 이슈 #19 답변 ④가 "address는 versioned reverse-geocode artifact 없이 임의 생성 금지"라고 명시적으로 못박았고, 그런 artifact(실제 좌표→주소 역지오코딩 데이터)는 mock 작업 범위에서 만들어낼 수 있는 게 아니다(가짜 주소를 지어내는 것과 다르지 않다). 그 결과 `contract-job-record-case-view.md` §7-(3)의 "대표값은 `address → place_name → user_hint` 중 존재하는 첫 값" 규칙에 따라 `location_display`의 대표 `value`/`info_state`는 여전히 `user_hint`/`INFO_NEEDS_REVIEW`다 — `coord`는 대표값 후보가 아니라 별도 채널이기 때문에(§7-(3) "coord·search_keyword는 대표값 후보가 아니며 별도 내려보낸다") 이번 fixture 추가가 `info_state`를 바꾸지는 않는다. 즉 **GPS Observation coverage 갭(P1-6의 핵심)은 닫혔지만, "happy가 완전히 all-green"이라는 P2-1의 원래 목표는 address artifact 없이는 달성할 수 없다** — 아래 P2-1 갱신 참고.
 
 **관련 파일:** 전 시나리오(recording·evidence·case) · `docs/architecture/contracts/contract-observation.md` · `contract-evidence-record-needs.md`
 **Scenario:** 전 시나리오
@@ -596,7 +642,9 @@ Fixture only
 
 ---
 
-## `[P1-7] 📌 보류 — 수정 중 새 계약 공백 발견(§12 김준영 ⑤) — ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
+## `[P1-7] ✅ 해소 — 수정 중 새 계약 공백 발견(§12 김준영 ⑤) — ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #15, 서어진 답변 · case Owner 유소연 반영).** 아래 (A)안대로 확정 — `verification:"UNCERTAIN"`, `visual_event_type:null`로 변경했다. 다만 (A)를 실제로 적용해보니 `EvidenceRecord.event`가 계약상 필수 필드라 **`EvidenceRecord` 자체를 만들 수 없다**는 사실이 새로 드러났고(단순 필드 부재로는 해결 안 됨), 이것이 같은 시나리오에 함께 있던 C·D·G·I(번호판 abstain, 사건유형은 confirmed 전제)와 정면으로 충돌했다. 그래서 김준영 제안대로 `scenario_unknown_abstain_partial_001`(E·H, 이 항목)과 신규 `scenario_plate_reread_001`(C·D·G·I, 사건유형 confirmed)로 시나리오를 분리했다 — 상세 근거는 `04_mock_validation_report.md` §3.1-4(신규 Contract Gap: `EvidenceNeeds`가 "사건 유형 자체 미확정"을 표현 못 함).
 
 **관련 파일:** `data/mock/search/scenario_unknown_abstain_partial_001.json` · (연쇄) `data/mock/evidence/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -654,6 +702,7 @@ candidate uncertainties = ["SIGNAL_STATE_NOT_CLEARLY_VISIBLE"]
 - u001: `range: ["2026-08-26T22:10:00+09:00", "2026-08-26T22:40:00+09:00"]`
 - r001: `range: ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]`
 - 추가 권장: u001의 `scope_u001.time_ranges`가 timeline 밖 구간을 포함하는 상태를 살릴 거라면 §10의 `SpanResolution PARTIAL` fixture와 연결하고, 아니면 scope를 `22:10~22:40` 안으로 좁힌다. **둘 중 하나를 고르지 않으면 "요청 범위 일부가 영상 밖"이라는 사실이 아무 데도 표현되지 않는다.**
+  **✅ 결정·적용 완료(2026-09-09, 유소연): scope를 `22:10~22:40`으로 좁혔다**(`search/scenario_unknown_abstain_partial_001.json`). `SpanResolution PARTIAL`은 §10 신규 시나리오 `scenario_relative_rebase_001`(정철원 담당)에서 별도로 커버하므로 u001에서 중복 구현하지 않는다.
 
 ### 수정 범위
 Fixture only (+선택 시 Scenario 확장)
@@ -701,11 +750,13 @@ web은 이 pack만으로는 화면 절반을 못 그린다. 특히 ① 「AI 추
 여러 Mock Artifact + Scenario Catalog + Manifest
 
 ### Owner 확인 필요 여부
-`권장 — 수정 후 Owner sanity check` (신유민: 화면 상태 충분성 / 유소연: stage·progress 조합)
+`권장 — 수정 후 Owner sanity check` (신유민: 화면 상태 충분성 / ~~유소연: stage·progress 조합~~ → **확인 완료(2026-09-09, 유소연)**: happy/empty/u001/r001 4개 파일의 `stage`·`progress[].state`·`running_jobs`·`case_rev` 조합을 재검토했고 모순 없음. `evidence.review_needed` OR 파생 규칙도 4개 시나리오 전부와 일치함을 확인해 B절 §7에 확정 등재)
 
 ---
 
-## `[P1-10] ⏳ Owner 답변 대기 — 최신 계약 변경분(TIMELINE_RELATIVE / USABLE_RELATIVE_ONLY / rebase revision / SpanResolution 실패)이 전부 미커버`
+## `[P1-10] ✅ 해소 — 최신 계약 변경분(TIMELINE_RELATIVE / USABLE_RELATIVE_ONLY / rebase revision / SpanResolution 실패)이 전부 미커버`
+
+> **2026-09-09 4차 라운드 갱신 (fixture 반영).** 정철원(이슈 #18)이 확정한 메커니즘 그대로 신규 시나리오 `scenario_relative_rebase_001`(유형 K)을 만들었다 — `RecordingTimeline` revision 1(`working_anchor.status=UNKNOWN`, `timeline_status=USABLE_RELATIVE_ONLY`, `time_source_candidates=[]`) → `TIMELINE_RELATIVE` scope로 candidate 생성(`span.timeline_revision:1`) → 두 번째 소스 추가로 revision 2 rebase(600~630s 30초 공백, revision 1 보존) → `resolve_span()`(580~650s 요청)이 `status:PARTIAL`+`missing_ranges[{600~630s, TIMELINE_GAP, source_ref:null}]`. `CandidateEvent.span.timeline_revision`은 rebase 후에도 `1`로 불변, `CaseView.candidates[].stale_revision`(case 소유 신규 필드 — `docs/modules/case/decisions/candidate-stale-revision-display.md`, 계약 §13 note가 명시적으로 case Owner에게 위임한 필드명·모양 결정)이 rev1→rev2에서 `false→true`로 바뀌어 「과거 timeline revision 기준」 표시를 실증한다. `SpanResolution.FAILED`(위치를 특정할 수 없는 전체 실패)는 이 시나리오 범위 밖으로 남겼다(정철원 답변 원문 그대로 — infra 실패 시나리오 계열로 분리).
 
 **관련 파일:** `data/mock/recording/*.json` · `data/mock/search/*.json`
 **Scenario:** 전 시나리오
@@ -739,7 +790,22 @@ web은 이 pack만으로는 화면 절반을 못 그린다. 특히 ① 「AI 추
 
 ---
 
-## `[P1-11] 🔶 부분 해소(오답 fixture의 actual_ref 제거 · metric 이름은 대기) — Eval fixture가 자기모순이고 프로젝트 metric 어휘를 쓰지 않음`
+## `[P1-11] 🔶 부분 해소(오답 fixture의 actual_ref 제거) · 근본 원인 재정의(김대원 답변) — Eval fixture가 자기모순이고, 채점 모델 자체가 실제 구현과 다름`
+
+> **2026-09-09 2라운드 갱신 (이슈 #17, 김대원 답변 · 원문 재대조로 정정).** 1라운드는 이 항목을 "metric 이름이 다르다"는 네이밍 문제로만 다뤘는데, 김대원의 답변은 **더 근본적인 문제 — 채점 모델(scoring model) 자체가 틀렸다**는 것이었다. 현재 fixture는 `candidate_id` 동일성(`actual_top_candidate_id`==`expected_top_candidate_id`)으로 채점하지만, 실제 eval 스코어러는 **구간(interval) + 위반 유형**으로 정답을 매칭한다(`event_type` 일치 AND `IoU >= 0.5`) — 실제 구현체는 자기 후보에 자기 ID를 붙이지 GT의 ID를 재현하지 않으므로, ID 매칭 방식은 "GT ID를 그대로 베낀 가짜 구현"은 통과시키고 "진짜로 정확히 탐지한 실구현"은 전부 낙제시키는 정반대 결과를 낳는다.
+>
+> **확정된 metric 개명(전체 표)**
+>
+> | 기존(mock) | 확정 명칭 | 비고 |
+> | --- | --- | --- |
+> | `candidate_top1_accuracy` | **`recall_at`**(K=1,3,10) | ID가 아니라 구간+유형 IoU≥0.5로 매칭 |
+> | `plate_exact_match_rate` | **(이름 유지)** | 분모 = GT `legibility=READABLE`로 라벨된 판독 건수 |
+> | `abstention_correctness_rate` | **폐기, 2개로 분리**: `abstention_recall` + `wrong_accept_rate` | `abstention_recall` 분모 = GT `legibility=UNREADABLE` 건수, `wrong_accept_rate` 분모 = abstain하지 않은 판독 건수 |
+> | `time_within_tolerance_rate` | **`timestamp_error_sec`** | 비율이 아니라 초 단위 값 |
+>
+> 김대원은 05 자체의 기존 권장안(③ `plate_exact_match_rate`를 나머지 두 metric으로 교체)을 **명시적으로 반려**했다 — 세 metric의 분모가 전부 다르므로 교체하면 "정직하게 abstain했는지" 평가 능력 자체가 사라진다는 이유. 신규 필수 GT 필드: `legibility: READABLE | UNREADABLE`(현재 pack에는 `UNREADABLE` 라벨 0건이라 `abstention_recall`은 `0`이 아니라 `null`+사유로 표시해야 정확).
+>
+> **`data/mock/expected/` 자체의 재작성은 case Owner 소관이 아니다** — 김대원이 "확정 전에 이 이슈에 새 shape을 먼저 올리겠다"고 명시했으므로, 여기서는 근거만 정확히 반영하고 fixture 재작성은 eval Owner의 후속 PR로 남긴다.
 
 **관련 파일:** `data/mock/expected/eval_fixture_wrong_001.json` · `data/mock/expected/eval_fixture_correct_001.json`
 **Scenario:** (eval 전용)
@@ -772,7 +838,23 @@ Fixture only + Validation
 
 ---
 
-## `[P1-12] ⏳ Owner 답변 대기 — readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
+## `[P1-12] 🔶 taxonomy 답변 완료(정밀화) · 신규 시나리오는 미착수 — readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #16, 신유민 답변).** readout failure taxonomy 쪽 답변을 받아 `scenario_infra_failure_001`을 만들 때 쓸 등록 kind가 확정됐다. 또한 아래 "현재 상태"에서 예견했던 대로, P0-4 수정으로 `rr_u001_overlay`가 성공으로 바뀌면서 **pack 전체에 `outcome=FAILED`인 fixture가 정말로 0건이 됐다**(`04_mock_validation_report.md` §1에 신규 갭으로 기록). search 쪽 `issues[]`/`outcome=PARTIAL` 값은 여전히 서어진 확인 대기. 아래 `scenario_infra_failure_001` 자체는 아직 만들지 않았다 — 다음 라운드 작업으로 남긴다.
+>
+> **2026-09-09 2라운드 정밀화 (이슈 #16 원문 재대조, 사용자 확인 요청으로).** 1라운드 요약이 taxonomy 세부값을 뭉뚱그렸다 — 신유민 원문을 그대로 옮긴다.
+> - `OVERLAY_DETECTION` kind는 **완전히 폐기**한다(v1 정책상 오버레이 OCR은 무조건 디스패치되므로 "감지 자체를 실패"라는 개념이 없다). overlay의 진짜 실행 실패는 **`INFRA`만** 해당하며, 코드는 `READOUT_PROVIDER_TIMEOUT` / `READOUT_FRAME_ACCESS_FAILED` / `READOUT_PIPELINE_ERROR` 3종으로 한정, `JobExecution.failure_kind="READOUT_INFRA"`.
+> - `OVERLAY_VALIDATION`은 **run 실패 kind가 아니다** — run은 `SUCCEEDED`인 채로 `validation.*_ok=false` + `observation.status ∈ {NEEDS_REVIEW, UNKNOWN}`로 표현되는 사후 결과다(계약 §10과 일치). `scenario_infra_failure_001`에는 쓰지 않는다.
+> - `abstain_reason`은 "authoritative" — 원인이 겹칠 때도 하나만 골라야 하며, 우선순위는 **target_association 문제(예: `TARGET_AMBIGUOUS`) > frame 불일치(`FRAME_DISAGREEMENT`)**. 값 공간: `TARGET_AMBIGUOUS` / `FRAME_DISAGREEMENT` / `LOW_RESOLUTION` / `OCR_LOW_CONFIDENCE`. 신유민이 이 값 공간을 `failure-taxonomy.md`에 직접 등재하겠다고 확인했다(case Owner가 임의로 결정할 항목이 아님).
+> - 화면 문구 매핑(잠정, 실측 전까지):
+>
+>   | 실제 상황 | outcome | observation.status | reason.code | 화면 문구 |
+>   | --- | --- | --- | --- | --- |
+>   | 화면에 시각이 안 찍힌 영상(사실) | SUCCEEDED | NOT_APPLICABLE | `readout.overlay.not_present` | "화면에 시각이 없습니다 → 파일 기록으로 계산했습니다" |
+>   | 찍혀 있는지 판정 못함 | SUCCEEDED | UNKNOWN | `readout.overlay.presence_undetermined` / `readout.overlay.ocr_failed` | "확인하지 못했습니다 → 직접 확인해 주세요" |
+>
+>   신유민은 이 구분을 "잠정"이라고 못박았다 — 실사용 false-negative(오버레이가 있는데 없다고 판정) 비율이 유의미하면 `UNKNOWN` 쪽으로 기울일 계획.
+> - u001의 `readout.overlay_not_present`(밑줄)는 이미 위 표의 `readout.overlay.not_present`(점 표기)로 정정 반영했다(이번 라운드, fixture 확인 완료). `correction_rerun_001`에 신규 추가한 overlay NOT_APPLICABLE 결과도 동일 코드를 썼다.
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · (부재) search `AnalysisRun.issues[]`
 **Scenario:** `scenario_unknown_abstain_partial_001` 및 전 시나리오
@@ -794,9 +876,10 @@ Fixture only + Validation
 
 ### 권장 수정
 §10의 신규 시나리오 `scenario_infra_failure_001`(경량, readout+common+case만):
-- `rr_*_plate`: `outcome:"FAILED"`, `failure:{kind:"INFRA", code:"READOUT_PROVIDER_TIMEOUT"}`, `plate_readouts: []`(완전 실패 시 결과 미생성 규칙 재확인)
+- `rr_*_plate`: `outcome:"FAILED"`, `failure:{kind:"INFRA", code:"READOUT_PROVIDER_TIMEOUT"}`(또는 `READOUT_FRAME_ACCESS_FAILED`/`READOUT_PIPELINE_ERROR` 중 하나 — 3종이 등록된 전부), `plate_readouts: []`(완전 실패 시 결과 미생성 규칙 재확인)
 - `JobExecution` 2건: attempt 1 = `STALE`(`ended_at:null`, `failure_kind:null` — 계약 §8 예시 그대로), attempt 2 = `FAILED`(`failure_kind:"READOUT_INFRA"`)
 - `CaseView`: `progress[plate_read].state="FAILED"`, `notices[]`에 재시도 안내(`blocking` 여부는 유소연 판단)
+- (선택) `abstain_reason` 값 공간 4종(`TARGET_AMBIGUOUS`/`FRAME_DISAGREEMENT`/`LOW_RESOLUTION`/`OCR_LOW_CONFIDENCE`) 중 이 pack에 아직 없는 값의 fixture도 함께 검토 — 현재 `scenario_plate_reread_001`은 `FRAME_DISAGREEMENT`만 커버한다.
 `AnalysisRun.outcome=PARTIAL` + `issues[]`는 search failure taxonomy를 아직 확인하지 못했으므로(§1 참조) 별도 항목으로 남기고 서어진에게 값을 받는다.
 
 ### 수정 범위
@@ -807,33 +890,64 @@ Fixture only + Validation
 
 ---
 
+## `[P1-13] ✅ 해소 — CaseView.requirements_evidence/package.checks[]가 RequirementReport의 RequirementCheck 스키마를 그대로 담지 않음`
+
+**관련 파일:** `data/mock/case/scenario_happy_001.json` · `case/scenario_unknown_abstain_partial_001.json` · `case/scenario_correction_rerun_001.json`
+**Scenario:** `scenario_happy_001`, `scenario_unknown_abstain_partial_001`, `scenario_correction_rerun_001`
+**관련 Contract:** `CaseView.requirements_evidence/requirements_package` · `RequirementReport.checks[]`(`RequirementCheck`)
+**관련 Module:** case (Producer), evidence (RequirementCheck 스키마 소유)
+
+### 현재 상태
+`contract-job-record-case-view.md` §4 「조사에서 확인된 제약: `checks[]`는 `RequirementReport` 그대로」에도 불구하고, 4개 시나리오의 `requirements_evidence.checks[]`/`requirements_package.checks[]`가 `code`·`outcome`·`reason_code`만 담고 있었다. `contract-requirement-report-package.md` §3의 `RequirementCheck`는 `category`(필수 enum)·`subject_refs`(필수 `ContractRef[]`)·`measurement`(선택)까지 포함한다. 대응하는 `evidence/*.json`의 `requirement_reports[].checks[]`(authoritative 원본)에는 이 필드들이 이미 정확히 채워져 있었다 — case 쪽 복사본만 누락된 상태였다.
+
+### 왜 문제인가
+"그대로"라는 계약 문구를 어기고 case가 임의로 필드를 걸러낸 축소 projection이 되어 있었다. web이 `category`(체크 분류 아이콘/그룹핑)나 `subject_refs`(어떤 자산/레코드가 문제인지)를 쓰려는 소비 코드를 mock으로 검증할 수 없었고, `measurement`(예: report_video 길이 180초 제한)도 이번 mock에서 유일하게 존재하는 사례가 case 쪽에서 사라져 있었다.
+
+### 근거
+`contract-job-record-case-view.md` §4 「checks[]는 RequirementReport 그대로 | 이전 회차 확정」, `contract-requirement-report-package.md` §3 `RequirementCheck` 스키마.
+
+### 조치
+4개 파일 전부 대응하는 `evidence/*.json`의 `requirement_reports[].checks[]`에서 `category`·`subject_refs`(·해당 시 `measurement`)를 그대로 복사했다(값 변경 없음 — P2-2의 `plate_visible` category 재배치 여부는 아직 열려 있으므로 현재 `"ASSET"` 값을 그대로 옮겼다). `validate_mock_pack.py` 재실행 PASS 확인.
+
+### 수정 범위
+Fixture only
+
+### Owner 확인 필요 여부
+`불필요 — 계약 문구("그대로") 위반의 기계적 정정` (2026-09-09, 유소연 검수 중 발견·즉시 수정)
+
+---
+
 ### P2
 
 ---
 
-## `[P2-1] ⏳ P1-6과 함께 처리 — Happy Path가 "완전 정상"이 아니다 — 위치가 user_hint뿐이라 대표 기준선으로서 약함`
+## `[P2-1] ⏳ coord까지는 반영, address artifact 없이는 종결 불가 — Happy Path가 "완전 정상"이 아니다 — 위치가 user_hint뿐이라 대표 기준선으로서 약함`
+
+> **2026-09-09 4차 라운드 갱신.** P1-6과 함께 `location.coord`/`location_display.coord`를 채웠지만, §7-(3) 규칙상 대표값은 `address → place_name → user_hint` 중 존재하는 값만 후보이고 `coord`는 대표값 후보가 아니다. `address`는 실제 versioned reverse-geocode artifact가 있어야 채울 수 있는데(김준영, 이슈 #19 ④) 그런 artifact는 mock 작업 범위 밖이라 — **`info_state`는 여전히 `INFO_NEEDS_REVIEW`, "완전 all-green 기준선"이라는 원래 목표는 이번 라운드로 종결되지 않는다.** 아래 "현재 상태"·"권장 수정"은 이 제약을 반영해 갱신했다.
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json` · `data/mock/case/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `EvidenceRecord.location` · `CaseView.location_display` | **Module:** evidence, case, web
 
 ### 현재 상태
-`location`에 `search_keyword`·`user_hint`만 있어 `CaseView.location_display.info_state = INFO_NEEDS_REVIEW`인데 같은 객체의 `review_needed`는 `false`, `RequirementReport`의 위치 check는 `PASS`다.
+`location`에 `coord`(GPS, OBSERVED)·`search_keyword`·`user_hint`가 있지만 `address`/`place_name`은 없어(§7-(3) 대표값 후보가 아님) `CaseView.location_display.info_state = INFO_NEEDS_REVIEW`가 그대로다. 같은 객체의 `review_needed`는 `false`, `RequirementReport`의 위치 check는 `PASS`.
 
 ### 왜 문제인가
 "모든 것이 정상인 기준선"이어야 할 시나리오가 검토 필요 상태를 하나 포함하고, 세 신호(`info_state` / `review_needed` / requirement `PASS`)가 서로 다른 방향을 가리킨다. 신규 개발자가 정상 상태의 모양을 오해한다.
 
 ### 근거
-`contract-job-record-case-view.md` §7(3): "대표값이 `user_hint`이면 `info_state = INFO_NEEDS_REVIEW`다."
+`contract-job-record-case-view.md` §7(3): "대표값이 `user_hint`이면 `info_state = INFO_NEEDS_REVIEW`다." · 같은 절: "`coord`·`search_keyword`는 대표값 후보가 아니며 별도 내려보낸다."
 
 ### 권장 수정
-P1-6과 함께 처리한다 — happy의 위치를 GPS 기반 `coord` + `address`(OBSERVED)로 올려 `INFO_SOURCE_VERIFIED`로 만들고, `user_hint`는 그대로 두되 대표값이 `address`가 되게 한다. `review_needed`/requirement는 그대로 `false`/`PASS`로 일관된다.
+`address`(versioned reverse-geocode artifact 기반, OBSERVED)가 채워지기 전까지는 규칙상 `INFO_SOURCE_VERIFIED`로 올릴 방법이 없다 — **이 항목은 case Owner가 임의로 만들 수 없는 실제 외부 데이터(지오코딩 서비스/DB)가 선행 조건**이므로 §12에 "Owner 답변/외부 artifact 필요"로 재등록한다. 그 전까지는 `info_state=INFO_NEEDS_REVIEW`가 이 시나리오의 정확한 상태이지 결함이 아니라는 점을 `04_mock_validation_report.md`에 명기하는 것으로 대신한다(`review_needed=false`/`PASS`와의 불일치는 여전히 신규 개발자에게 혼란 요소이므로 문서화만으로 완전히 닫히지는 않는다).
 
 ### 수정 범위
-Fixture only (P1-6과 동일 작업 단위) | **Owner 확인:** `권장`
+Fixture 일부(coord) 완료, 나머지는 외부 artifact 선행 필요 | **Owner 확인:** `필수 — reverse-geocode artifact는 mock 범위 밖`
 
 ---
 
-## `[P2-2] ⏳ Owner 답변 대기 — FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
+## `[P2-2] ✅ 해소 — FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #19, 김준영 답변).** 두 항목 모두 반영했다 — `recording/scenario_happy_001.json`의 `asset_facts`에 `da_h001_plate_image`(`DERIVED_ASSET`/`PLATE_IMAGE`) 항목을 추가했고, `evidence`·`case` 양쪽의 `package.asset.plate_visible` → `package.vehicle.plate_visible_in_report_video`로 `category="VEHICLE"`·`reason_code="readout.plate_legible_in_asset"`·`subject_refs=[{readout_run: rr_h001_plate}, {derived_asset: da_h001_plate_image}]`로 변경했다(§8 P1-13 checks[] 스키마 정합 작업과 함께 반영).
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `RequirementReport` §4.6 · `AssetFacts` | **Module:** evidence, recording, case
@@ -856,13 +970,18 @@ Fixture only | **Owner 확인:** `권장` (김준영)
 
 ---
 
-## `[P2-3] ⏳ Owner 답변 대기 — post_stamp.needed=false인데 Report Video의 transform_ref가 poststamp`
+## `[P2-3] ✅ 해소(2026-09-09 3라운드, 이슈 #19 원문 B절 재확인) — post_stamp.needed=false인데 Report Video의 transform_ref가 poststamp`
+
+> **정정 경위.** 이 항목은 원래 김준영 이슈 #19 본문 "B. 내 모듈 fixture 검수 · Required — evidence"에 있던 구체적 fixture 결함 지적이었는데, 1·2라운드 요약이 이슈 #19의 "A. 정합 검토 답변"(도메인 결정 6건)만 §12에 반영하고 "B" 절의 8+3건 fixture 결함 지적을 놓쳤다. 사용자가 이슈 #19 B절 전문을 다시 제시해 재대조하는 과정에서 발견해 즉시 반영했다. 아래 "권장 수정"이 이미 `권장`(비-차단) 수준이라 Owner 재확인 없이 그대로 적용했다.
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `TimeResolution.post_stamp` · `DerivedAsset.transform_ref` §7.4 | **Module:** evidence, recording
 
-### 현재 상태
+### 현재 상태 (수정 전)
 `tres_h001.post_stamp = {needed:false, reason_code:"time.verified_overlay_already_present"}` 인데 `da_h001_report_video.transform_ref = "tr_h001_poststamp_v1"`.
+
+### 조치
+`da_h001_report_video.transform_ref`를 `"tr_h001_poststamp_v1"` → `"tr_h001_trim_v1"`로 변경(opaque ref라 스키마 영향 없음). 각인이 실제로 적용되는 경로(`post_stamp.needed=true`)는 별도 시나리오로 표현할 필요가 있으면 다음 라운드 후보로 남긴다.
 
 ### 왜 문제인가
 계약은 `transform_ref`가 non-null이면 "적용된 transform 종류를 machine-readable하게 조회할 수 있다"는 보장이고, evidence는 이를 근거로 "사후 각인이 실제로 적용됐다"를 확인한다. 각인이 필요 없다고 판정한 시나리오에서 각인 transform이 붙어 있으면 그 검증 로직이 모순된 입력을 받는다.
@@ -878,13 +997,18 @@ Fixture only | **Owner 확인:** `권장` (정철원·김준영)
 
 ---
 
-## `[P2-4] ⏳ Owner 답변 대기 — TimeResolution.considered[]에 base anchor 값을 event-time 후보처럼 나열`
+## `[P2-4] ✅ 해소(2026-09-09 3라운드, 이슈 #19 원문 B절 재확인) — TimeResolution.considered[]에 base anchor 값을 event-time 후보처럼 나열`
+
+> **정정 경위.** P2-3과 같은 경위(이슈 #19 B절 재발견)로 반영. "권장 수정"의 전자안(anchor+offset 계산값으로 교체)을 그대로 적용했다.
 
 **관련 파일:** `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `TimeResolution` §6 | **Module:** evidence, web
 
-### 현재 상태
+### 현재 상태 (수정 전)
 happy의 `considered[1]`이 `{source: recording.filename_time, value: "18:00:00", used:false, reason_code:"time.superseded_by_verified_overlay"}` — 사건 시각 후보들 사이에 파일 **시작 기준시각**이 섞여 5분 차이가 나는 것처럼 보인다.
+
+### 조치
+`considered[1].value`를 `candidate_h001.representative_ms`(312480ms=312.48s) 기준 anchor+offset 계산값 `2026-08-24T18:05:12+09:00`(초 절삭)으로 교체. `considered[]`에는 `computation` 필드가 없어 "이 값이 offset 계산을 거쳤다"는 것을 별도로 표시할 수 없다는 한계는 남지만, 05 자체가 이미 이 방식을 "후보 비교 화면 개발에 유용"하다고 권장했었다.
 
 ### 왜 문제인가
 `considered[]`는 "evidence가 판정에 사용한 후보 요약"이며 consumer(웹 상세, eval 진단)가 후보 간 차이를 보여줄 수 있어야 한다. 기준 anchor를 그대로 넣으면 실제로 존재하지 않는 5분 불일치를 사용자에게 보여주게 된다. (u001은 `computation.mode=BASE_PLUS_OFFSET`이 anchor임을 설명하므로 문제가 아니다.)
@@ -974,7 +1098,7 @@ Mock Documentation + Validation | **Owner 확인:** `불필요`
 
 ---
 
-## `[P2-9] ✅ 해소 — AnalysisRun.usage_summary.processed_duration_ms가 scope 범위와 불일치`
+## `[P2-9] ✅ 해소(수치) · 근거 정정(김대원 답변) — AnalysisRun.usage_summary.processed_duration_ms가 scope 범위와 불일치`
 
 **관련 파일:** `data/mock/search/scenario_happy_001.json` · `data/mock/common/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `AnalysisRun.usage_summary` · `UsageRecord.processed_duration_sec`
@@ -985,11 +1109,16 @@ scope는 20분(1200s)인데 `processed_duration_ms: 300000`(5분), `UsageRecord.
 ### 왜 문제인가
 `eval`의 `cost_per_source_video_hour`·`FP-hour` 분모가 이 값이다. happy만 실제 처리 범위와 4배 어긋나면 지표 검증 fixture로 쓸 때 잘못된 분모를 학습한다.
 
-### 권장 수정
-`processed_duration_ms: 1200000`, `UsageRecord.processed_duration_sec: 1200.0`으로 정정(비용·토큰도 함께 4배로 올릴지는 P1-11의 예산 논의와 함께 결정 — 최소한 duration만이라도 맞춘다).
+### 조치와 근거 (2026-09-09 2라운드 정정 — 이슈 #17 원문 재대조)
+수치 정정(`1200000`/`1200.0`) 자체는 맞았지만, **05 1라운드가 적은 "이유"는 틀렸다** — 김대원의 실제 답변은 3단으로 구성된다.
+1. `cost_per_source_video_hour`/`FP-hour`의 분모는 **`processed_duration`이 아니라 사건 timeline의 실제 길이**(중복 제거된 원본 영상 시간)다. happy는 전/후방 2개 `source_assets`가 같은 20분 사건을 2개 각도로 찍은 것이므로, 둘의 `duration_sec`를 더하면 2400초로 이중 계상되고, `VISUAL_VERIFY` run을 추가하면 재처리할수록 비용이 더 싸 보이는 정반대 유인이 생긴다.
+2. `processed_duration` 자체는 **완전히 별개의 지표** — "이 영상이 실제로 몇 번 모델에 입력됐는가"를 추적하는 재처리 배수(reprocessing multiplier)이며, 비용 분모로 쓰지 않는다.
+3. 비용 집계의 권위 있는 원천은 **`UsageRecord` 원장**이다(CALL-13 결정). 불변 스냅샷인 `AnalysisRun.usage_summary`를 집계 소스로 쓰지 않는다.
+
+김대원은 이 규칙을 `missing_ranges`가 있는 시나리오(처리 범위와 scope 길이가 정당하게 어긋나는 경우)에는 **일괄 적용하지 말라**고 명시적으로 경고했다.
 
 ### 수정 범위
-Fixture only | **Owner 확인:** `권장` (김대원 — 분모 정의)
+Fixture only(수치는 이미 반영 완료) | **Owner 확인:** `해소` (김대원 — 분모 정의 확정)
 
 ---
 
@@ -997,7 +1126,11 @@ Fixture only | **Owner 확인:** `권장` (김대원 — 분모 정의)
 
 ---
 
-## `[P3-1] ⏳ Owner 답변 대기 — budget(KRW) vs cost(USD) 통화 혼용으로 예산 소진 판정을 mock으로 개발할 수 없음`
+## `[P3-1] ✅ 해소 — budget(KRW) vs cost(USD) 통화 혼용으로 예산 소진 판정을 mock으로 개발할 수 없음`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #19, common/runtime 답변 · 이슈 #15 search가 동일 문제 재확인).** 환산 규칙 자체는 답이 왔다 — 예산 판정의 authoritative source는 `UsageRecord`(`AnalysisRun.usage_summary`는 파생 summary), `UsageRecord.cost`는 **저장 전에 KRW로 정규화**해 `currency="KRW"`로 기록하고 환율/요율 provenance는 `pricing_id`가 가리키는 versioned pricing artifact가 보존한다. 현재 `max_cost_krw=300`과 USD 비용 조합은 이 규칙으로도 "happy로 승인 불가"라고 명시적으로 지적됐다.
+>
+> **2026-09-09 4차 라운드 갱신 (fixture 반영).** `docs/modules/case/decisions/budget-krw-normalization.md`에 mock 환율 placeholder(1 USD=1400 KRW, `pricing_id` 접미사 `+fx-krw-2026-09`)와 변환표를 등재하고, 5개 기존 시나리오의 `common/*.json` `SEARCH_COARSE` `UsageRecord.cost`를 전부 KRW로 정규화했다(588/546/532/462/434 KRW). `AnalysisScope.budget.max_cost_krw` 기본값을 `300`→`1000`으로 올렸다(계약 §6이 "제품 기본 숫자는 benchmark/config 관리"라고 명시해 case Owner 권한 범위 안). 이후 라운드에서 추가된 `VISUAL_VERIFY`(Fine) run 비용도 전부 이 규칙(KRW 정규화)을 따라 예산(1000 KRW) 안에 들어온다.
 
 **관련 파일:** `data/mock/search/*.json` · `data/mock/common/*.json`
 **Contract:** `AnalysisScope.budget.max_cost_krw` · `UsageRecord.cost` · `AnalysisRun.usage_summary.total_cost` | **Module:** case, eval
@@ -1093,13 +1226,14 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 
 | Owner | 반드시 직접 확인할 것 | 이유 | 관련 Fixture |
 | --- | --- | --- | --- |
-| **신유민** (readout) | ① 「화면 시각 없음」을 `observation.status`의 `NOT_APPLICABLE`로 볼지 `UNKNOWN`으로 볼지 (P0-4) ② overlay 실행 실패 시 쓸 taxonomy kind/code (P1-12) | 두 상태 구분 기준이 readout Technical Spec 미결이고, 화면 문구가 여기서 갈린다 | `readout/scenario_unknown_abstain_partial_001.json`, 신규 `scenario_infra_failure_001` |
-| **서어진** (search) | ① `VISUAL_VERIFY` run의 `input_ref` 종류(`incident_clip` vs `analysis_source`)와 직렬화 형식(ContractRef vs opaque string) (P0-3, P1-3) ② `ve_u001`을 `UNCERTAIN`으로 내릴지 (P1-7) ③ `Uncertainty.kind` 어휘 | Fine 입력 접합부는 계약이 "output Contract의 접합 규칙을 따른다"고만 위임했고, 관찰 강도 판단은 search 도메인이다 | `search/*.json` 3개 |
-| **김준영** (evidence/PM) | ① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2) ② `safety_report_type` 값 공간 확정 (기존 보고서 §3.2-4) ③ `plate_visible` check의 category (P2-2) ④ 좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6) ⑤ **`VisualEvidence.verification=UNCERTAIN`일 때 `EvidenceRecord`를 만드는가?** 만든다면 필수로 보이는 `event.visual_event_type`을 어떻게 하는가 (1차 수정 중 발견 — 서어진과 공동) | 전부 evidence가 소유한 값 공간·정책 판단이다. ⑤는 계약에 규정이 없어 P1-7 수정을 막고 있다 | `evidence/*.json` 3개 |
-| **유소연** (case) | ① Fine 발주용 `JobRecord.kind` 등재 여부 (P0-3) ② Report Video export / `purge_case` 발주 kind (기존 보고서 §3.3-1) ③ u001의 scope가 timeline 밖을 포함하는 상태를 유지할지 (P1-8) ④ `CaseView.evidence.review_needed` 파생 규칙 (기존 보고서 §3.2-3) | `JobRecord.kind`는 열린 enum이지만 등재는 case Owner 권한이고, CaseView 파생 규칙은 이 계약이 소유한다 | `case/*.json` 4개 |
-| **정철원** (recording) | ① GPS Observation을 recording이 어떤 단위·주기로 내는지 (P1-6) ② `scenario_relative_rebase_001`의 gap/rebase 서사와 `missing_ranges[].reason` 값 (P1-10) | 값 공간(`MissingRange.reason`)과 GPS 관찰 단위가 recording 소유이며 문서에 값 목록이 아직 없다 | 신규 `scenario_relative_rebase_001`, `recording/scenario_happy_001.json` |
-| **김대원** (eval) | ① metric 이름·정답 라벨 확정과 `expected/` 재작성 (P1-11) ② `processed_duration` 분모 정의 (P2-9) | eval Ground Truth 스키마 자체가 아직 없고 metric 정의는 eval 소유다 | `expected/*.json` 2개 |
-| **유소연 + 김준영** | 예산 단위(KRW) vs 비용 단위(USD) 환산 규칙 (P3-1) | 두 계약에 걸친 미결이며 제품 기본값 문제 | 전 `search/*` · `common/*` |
+| **신유민** (readout) | ~~① 「화면 시각 없음」을 `observation.status`의 `NOT_APPLICABLE`로 볼지 `UNKNOWN`으로 볼지 (P0-4)~~ → **종결(2026-09-09, 이슈 #16): `NOT_APPLICABLE`(없음=사실)로 확정, fixture 반영 완료(잠정 — 실사용 false-negative 비율에 따라 `UNKNOWN` 쪽으로 조정 가능성 있음을 신유민이 명시).** ~~② overlay 실행 실패 시 쓸 taxonomy kind/code (P1-12)~~ → **종결·정밀화(2026-09-09 3라운드, 이슈 #16 원문 재대조): `OVERLAY_DETECTION` 완전 폐기, `INFRA`만 유효(코드 3종: `READOUT_PROVIDER_TIMEOUT`/`READOUT_FRAME_ACCESS_FAILED`/`READOUT_PIPELINE_ERROR`), `OVERLAY_VALIDATION`은 run 실패가 아니라 사후 결과임을 확인** — `abstain_reason` 값 공간(`TARGET_AMBIGUOUS`/`FRAME_DISAGREEMENT`/`LOW_RESOLUTION`/`OCR_LOW_CONFIDENCE`, 우선순위 association>frame-consensus)은 신유민이 `failure-taxonomy.md`에 직접 등재 예정 — `scenario_infra_failure_001` fixture 자체는 아직 미생성 | 두 상태 구분 기준·taxonomy 값 모두 답변 완료. 남은 건 fixture화뿐 | `readout/scenario_unknown_abstain_partial_001.json`(완료)·`scenario_plate_reread_001.json`(완료, B-1 프레임 불일치 폭 수정 포함)·`scenario_correction_rerun_001.json`(완료, overlay NOT_RUN→NOT_APPLICABLE 재구성), 신규 `scenario_infra_failure_001`(미착수) |
+| **신유민** (web/CaseView 소비, 2차 코멘트) | ① `notices[].code` 대소문자 표기(계약 예시 SCREAMING_CASE vs mock 현행 dotted-lowercase) — **계약 미확정**이며 mock은 dotted-lowercase 관례를 유지하기로 함(§8 P0-4 참고) ② `actions[]` 값 공간 자체가 계약에 닫혀 있지 않음 — **계약 미확정** ③ `candidates==[]`일 때 진행바를 4단계("사건 찾기")로 되돌리는 것은 `core-user-flow.md` §4-1에 이미 명시돼 있어 **미해결 항목 아님**(web 스스로 파생, 확인만 남음) ④ `plate_display.needs_review=false` vs `info_state=INFO_UNKNOWN` — 계약 §7-(4)/§10 불변조건 12("web은 `info_state`로만 표시 분기")로 이미 해소됨, **미해결 항목 아님** | ①②는 유소연(case)이 결정할 계약 미확정 항목, ③④는 신유민이 자체 확인해 닫은 항목(기록용) | `contract-job-record-case-view.md`, `05` §12 유소연 행에 ①②를 신규 항목으로 이관 |
+| **서어진** (search) | ~~① `VISUAL_VERIFY` run의 `input_ref` 종류·직렬화 형식 (P0-3, P1-3)~~ → **종결(2026-09-09, 이슈 #15): `input_ref.kind=analysis_source`(`as_h001_fine` 등) 확정, `ContractRef {kind, ref}` 직렬화·`evidence_refs[]`의 `fr_<opaque-id>` 형식은 mock 현행 그대로가 맞다고 확인** — **fixture 반영 완료(2026-09-09 4차 라운드): happy·u001·plate_reread·correction_rerun 4개 시나리오에 `run_*_fine`(`VISUAL_VERIFY`) 추가, `ve_*.run_id` 재연결, `as_h001_fine` 고아 해소** ~~② `ve_u001`을 `UNCERTAIN`으로 내릴지 (P1-7)~~ → **종결·반영 완료(2026-09-09, 이슈 #15): `UNCERTAIN`/`visual_event_type=null`로 전환, `Uncertainty.kind`도 `SIGNAL_STATE_NOT_CLEARLY_VISIBLE`로 통일** ③ candidate 1건 고정/`rank` 항상 1 — search가 신고, 낮은 우선순위(eval 붙을 때 처리) | 도메인 판단은 모두 끝났다 | `search/*.json`(u001·plate_reread·`VISUAL_VERIFY` 4건 전부 반영 완료) |
+| **김준영** (evidence/PM) | ~~① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2)~~ → **종결(2026-09-09, 이슈 #19): 5종 전부 승인** — `recording.file_metadata_time`(OBSERVED, `time.source.file_metadata`) · `case.user_location_hint`(OBSERVED, `location.source.user_hint`) · `evidence.category_mapping`(INFERRED, `event.source.category_mapping`) · `evidence.violation_expression`(INFERRED, `event.source.violation_expression`) · `case.user_correction`(TimeResolution 전용, `time.source.user_correction`). fixture 재확인 결과 5개 값 전부 이미 이 형태로 쓰이고 있어 **fixture 변경 불필요** — **evidence 소유 versioned registry 문서화 완료(2026-09-09 4차 라운드): `docs/modules/evidence/decisions/source-kind-registry.md`** ② `safety_report_type` 값 공간 — **답변은 왔으나 미승인 상태로 확정(이슈 #19): 현 `UNSAFE_LANE_CHANGE` 등은 canonical enum이 아니라 placeholder라고 명시적으로 반려.** 4종 `VisualEventType`→신고유형→표현 매핑을 evidence 소유 versioned artifact로 만든 뒤 연결해야 한다는 후속 조치가 남음 — **여전히 실질적으로 미해소** ③ ~~`plate_visible` check의 category (P2-2)~~ → **종결(2026-09-09, 이슈 #19): `category=VEHICLE`·`code=package.vehicle.plate_visible_in_report_video` 확정, `AssetFacts` 보강 완료** ④ ~~좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6)~~ → **규칙은 종결(2026-09-09, 이슈 #19): canonical 좌표 키 `{lat, lon}`(`contract-observation.md`의 `{lat, lng}` 예시가 갱신 대상) 확정, `address`는 versioned reverse-geocode artifact 없이 임의 생성 금지** — **`coord`는 fixture 반영 완료(2026-09-09 4차 라운드): happy에 GPS 있음(OBSERVED)·u001에 GPS 없음(UNKNOWN), `location.coord`/`location_display.coord` 채움.** `address`는 여전히 versioned reverse-geocode artifact가 없어 **미착수**(mock 작업 범위 밖 — 실제 지오코딩 데이터 필요) — 그 결과 `location_display.info_state`는 규칙(§7-(3))상 여전히 `INFO_NEEDS_REVIEW` ⑤ ~~`VisualEvidence.verification=UNCERTAIN`일 때 `EvidenceRecord`를 만드는가?~~ → **종결(2026-09-09, 이슈 #19): 못 만든다(`event`가 필수 필드) — 이 결론이 `scenario_unknown_abstain_partial_001`/`scenario_plate_reread_001` 시나리오 분리로 이어졌다** ⑥ **(신규, 2026-09-09) `EvidenceNeeds`(v1)에 "AI가 사건 유형 자체를 확정 못함"을 표현할 새 kind(예: `EVENT_TYPE_CONFIRM`)를 신설할지, 아니면 다른 방식으로 해소할지** — ⑤의 결론(EvidenceRecord 완전 미생성)이 남긴 후속 질문. `scenario_unknown_abstain_partial_001`은 지금 임시 notice 코드(`evidence.visual_event_unconfirmed`, 계약 미등록)로만 이 상태를 표시 중이라 정식 메커니즘이 필요하다 | 전부 evidence가 소유한 값 공간·정책 판단이다. ①③⑤는 문서화까지 완료, ④는 `coord`만 완료. **②(안 됨)·④의 `address`(reverse-geocode artifact 필요)·⑥은 여전히 실질적으로 열려 있다 — mock이 임의로 채울 수 없는 항목** | `evidence/*.json`, `04_mock_validation_report.md` §3.1-4 |
+| **유소연** (case) | 1라운드 4건은 ~~① Fine 발주용 `JobRecord.kind` 등재 여부 (P0-3)~~ → `FINE_VERIFY` 등재 ② ~~Report Video export / `purge_case` 발주 kind~~ → `REPORT_VIDEO_EXPORT` 등재, `purge_case`는 Job 밖 관리 동작으로 확정 ③ ~~u001의 scope가 timeline 밖을 포함하는 상태를 유지할지~~ → scope를 `22:10~22:40`으로 좁힘 ④ ~~`CaseView.evidence.review_needed` 파생 규칙~~ → 여섯 `*_display.needs_review` OR 집계로 확정, `contract-job-record-case-view.md` B절 §6·§7에 등재 — **전부 종결.** **(신규, 2026-09-09 3라운드, 신유민 2차 코멘트 기반) 아직 미결인 항목 4건**: ⑤ `notices[].code` 대소문자 표기 — 계약 §9 예시는 SCREAMING_CASE, mock 현행은 dotted-lowercase. 이번 라운드에 추가한 `evidence.plate_abstained`도 dotted-lowercase로 맞췄으나 **계약 자체를 어느 쪽으로 확정할지는 아직 결정 안 함** ⑥ `actions[]` 값 공간이 계약에 닫혀 있지 않음(현재 `EDIT_EVENT_TIME`/`MANUAL_PLATE_INPUT`/`GENERATE_REPORT_VIDEO`/`REVIEW_TIME` 등 fixture에서 나온 값만 존재) ⑦ **(신규)** `progress[].step` 8종 어휘(`file_intake~package_assembly`)가 제품 확정 7단계 사용자 플로우(`core-user-flow.md` §4-1: 1.영상 올리기~7.신고자료) 중 2단계("사건 설명")·3단계("범위 확인")에 대응하는 값이 아예 없음 — web이 `hints`/`manifest_summary` 존재 여부로 역산해야 하는데 이는 §3-2 "AI 분석 진행은 별도로 표현한다" 원칙 위반 소지 ⑧ **(신규)** `progress[].state` 4종(`PENDING/RUNNING/DONE/FAILED`)이 제품 정의 6개 작업상태(완료/진행 중/대기/**부분 완료**/**중단**/실패) 중 "부분 완료"·"중단"을 표현 못함(기존에 알려진 "row 부재=SKIPPED?" 모호성과는 별개 문제) | ⑤⑥은 web 소비자(신유민)가 재확인한 계약 미확정 항목, ⑦⑧은 신유민이 2차 코멘트에서 새로 발견한 구조적 갭으로 case가 소유한 `progress[]` 스키마 자체의 결정이 필요하다 | `case/*.json` 4개, `search/scenario_unknown_abstain_partial_001.json`, `contract-job-record-case-view.md` |
+| **정철원** (recording) | ~~① GPS Observation을 recording이 어떤 단위·주기로 내는지 (P1-6)~~ → **종결(2026-09-09, 이슈 #18): 원시 고정주기 로그가 아니라 요청된 사건 시각마다 `Observation<Coordinate>` 1개, `{lat,lon}` 십진도, `source.kind="recording.gps_stream"`, `support_refs`에 관련 `FrameRef`, `produced_by.module="recording"`. 부재/무효 시 `value:null, status:"UNKNOWN", reason.code:"recording.gps.source_absent"`. 샘플링 주기는 기기/포맷 의존 구현 세부사항이라 의도적으로 고정하지 않음. happy에는 정상 GPS Observation, u001에는 부재/UNKNOWN 배치 예정** ~~② `scenario_relative_rebase_001`의 gap/rebase 서사와 `missing_ranges[].reason` 값 (P1-10)~~ → **종결(2026-09-09, 이슈 #18): 전체 메커니즘 확정** — 절대시각 파싱 불가한 파일로 revision 1(`working_anchor.status=UNKNOWN`, `timeline_status=USABLE_RELATIVE_ONLY`, `time_source_candidates=[]`) 생성 → Search가 revision 1 기준 Candidate 생성(이후 revision에도 불변) → 두 번째 SourceAsset 추가로 revision 2 생성, 두 소스의 usable 구간 사이에 의도적으로 30초 공백 유지(revision 1 보존, 덮어쓰지 않음) → 그 공백을 가로지르는 `resolve_span()`은 `status:PARTIAL`, `failure:null`, 해석 가능한 edge는 `spans[]`, 내부 30초 공백은 `missing_ranges[]` 1건(`{timeline_range:{start_sec:600.0,end_sec:630.0}, reason:"TIMELINE_GAP", source_ref:null}`) — `TIMELINE_GAP`(내부 공백) vs `OUT_OF_TIMELINE_RANGE`(요청이 바깥 경계 초과)의 구분이 이걸로 확정됨. `SpanResolution.FAILED`·recording 실패 taxonomy는 이 시나리오 범위 밖(별도 infra 시나리오용으로 남김) — **양쪽 모두 fixture 반영 완료(2026-09-09 4차 라운드): GPS는 happy/u001 recording에 `gps_observations` 추가, rebase/gap은 신규 `scenario_relative_rebase_001`(유형 K) 전체 빌드** | GPS 스키마·gap/rebase 서사 모두 recording 소유 판단이었고 fixture까지 전부 반영됐다 | `scenario_relative_rebase_001`(신규 6개 파일), `recording/scenario_happy_001.json`+`scenario_unknown_abstain_partial_001.json`(GPS Observation) |
+| **김대원** (eval) | ~~① metric 이름·정답 라벨 확정과 `expected/` 재작성 (P1-11)~~ → **근본원인·개명 확정(2026-09-09 3라운드, 이슈 #17): 채점 모델을 구간+유형 IoU 매칭으로 교체, `recall_at`/`plate_exact_match_rate`(유지)/`abstention_recall`+`wrong_accept_rate`(분리)/`timestamp_error_sec`로 개명, GT에 `legibility:READABLE|UNREADABLE` 신규 필수.** `data/mock/expected/` 실제 재작성은 김대원이 별도 PR로 진행("확정 전에 이 이슈에 먼저 올리겠다") — **case Owner가 손댈 fixture 아님** ~~② `processed_duration` 분모 정의 (P2-9)~~ → **종결(2026-09-09 3라운드, 이슈 #17): 분모=timeline 실제 길이(`processed_duration` 아님), `processed_duration`은 별개의 재처리-배수 지표, 비용 원장은 `UsageRecord`. `missing_ranges` 있는 시나리오엔 이 규칙을 일괄 적용 금지.** cp949 인코딩 버그 제보는 `validate_mock_pack.py`에 반영 완료(별건, 신유민도 동일 이슈 독립 제보) | eval Ground Truth 스키마 자체가 아직 없고 metric 정의는 eval 소유다. 답변은 전부 받았고 finding 본문(§8 P1-11/P2-9)에도 반영 완료 | `expected/*.json` 2개(eval Owner 후속 PR 대상) |
+| **유소연 + 김준영** | ~~예산 단위(KRW) vs 비용 단위(USD) 환산 규칙 (P3-1)~~ → **규칙은 종결(2026-09-09, 이슈 #19 common/runtime 답변): 예산 판정의 authoritative source는 `UsageRecord`(`AnalysisRun.usage_summary`는 파생 summary일 뿐), `UsageRecord.cost`는 저장 전 KRW로 정규화해 `currency="KRW"`로 기록, 환율/요율 provenance는 `pricing_id`가 가리키는 versioned pricing artifact가 보존.** 현재 `max_cost_krw=300`과 `$0.42` 등 USD 조합은 비교 불가능해 이슈 #15(search)도 "happy로 승인 불가"로 지적함 — **기본값 결정 + fixture 정규화 전부 완료(2026-09-09 4차 라운드): `budget.max_cost_krw` 300→1000, 환율 placeholder(1400원/$, `docs/modules/case/decisions/budget-krw-normalization.md`), 전 시나리오 `UsageRecord.cost` KRW 정규화** | 규칙·기본값·fixture 정규화 모두 완료 | 전 `search/*` · `common/*` |
 
 **Owner에게 넘기지 않은 것**: enum 값 교체, 필수 필드 추가, off-by-one, 좌표계 환산, manifest range, 문서 수치, 검증 규칙 — 전부 §8·§11에 기계적 수정 지시로 확정해 두었다.
 
@@ -1112,20 +1246,30 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 | 1 | ✅ 완료 | P0 | 검증 스크립트에 enum 검사 확대(§11-6)와 필수 키 검사(§11-7) 추가 후 **먼저 실행**해 실패 목록 확보 | `data/mock/validate_mock_pack.py` | 스크립트가 P0-1·P0-2를 자동 검출 | 불필요 |
 | 2 | ✅ 완료 | P0 | 사건 유형을 등록된 4종으로 교체 (P0-1) | search 3 · evidence 2 · case 2 · scenarios 3 · `02` 카탈로그 | 모든 `target_event_types`/`event_type_hint`/`visual_event_type`이 4종 안에 들고 스크립트 통과 | 권장(서어진·김준영) |
 | 3 | ✅ 완료 | P0 | `VisualEvidence`에 `uncertainties`·`legal_status:null` 추가 (P0-2) | search 3 | 3건 모두 §3 필수 필드 완비 | 불필요 |
-| 4 | ⏳ 대기(신유민) | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · evidence 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건 + `considered[]`에 overlay 항목 | **필수(신유민)** |
-| 5 | ⏳ 대기(서어진·유소연) | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 3 · common 3 · (보류 가능: case) | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | **필수(서어진·유소연)** |
+| 4 | ✅ 완료(2026-09-09, 신유민 답변 반영) | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건(`NOT_APPLICABLE`) — 반영 완료. `considered[]`에 overlay 항목 추가는 아직 안 함(잔여, evidence 1) | 불필요(반영 완료) |
+| 5 | ✅ 완료(2026-09-09 4차 라운드) | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 4 · common 4 · case 4 · recording 3 | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | 불필요 — 서어진(`input_ref.kind=analysis_source`)·유소연(`JobRecord.kind=FINE_VERIFY`) 둘 다 2026-09-09 결정, fixture 반영까지 완료 |
 | 6 | ✅ 완료 | P1 | 참조·좌표계 기계 수정: `disagree_positions`(P1-4), `samples[].offset_sec`+`sample_count`(P1-5), `manifest_summary.range`(P1-8), `processed_duration`(P2-9) | readout 1 · case 2 · search 1 · common 1 | 값이 §8 지시대로 정정되고 스크립트(§11-5·§11-9 규칙 포함) 통과 | 불필요 |
-| 7 | ⏳ 대기(김준영·정철원) | P1 | GPS/위치 경로 추가 + happy 위치 승격 (P1-6, P2-1) | recording 1~2 · evidence 2 · case 2 | happy `location_display.info_state=INFO_SOURCE_VERIFIED` + `coord` non-null, u001에 GPS 부재 Observation | **필수(김준영·정철원)** |
-| 8 | 📌 보류(§12 김준영 ⑤) | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1 · case 1 | `verification=UNCERTAIN`, `visual_event_type=null`, EvidenceRecord에 event 유형 필드 부재, requirement outcome 조정 | 권장(서어진) |
-| 9 | ⏳ 대기 | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001` · `scenario_relative_rebase_001` · `scenario_infra_failure_001` 전 모듈 + manifest + `02` | 각 시나리오가 스크립트 통과, `BLOCK`·`USABLE_RELATIVE_ONLY`·`STALE`이 pack에 등장 | **필수(정철원·신유민·유소연)** |
+| 7 | 🔶 부분(2026-09-09 4차 라운드 — coord 완료, address는 mock 범위 밖) | P1 | GPS/위치 경로 추가 + happy 위치 승격 (P1-6, P2-1) | recording 2 · evidence 1 · case 1 | `coord` non-null(happy)·GPS 부재 Observation(u001) 완료. `location_display.info_state`는 `address` artifact 없이는 `INFO_SOURCE_VERIFIED`로 못 올림 — §7-(3) 규칙상 정확한 상태 | **완료(김준영·정철원 규칙대로 실행) — `address`만 외부 artifact 선행 필요, 추가 Owner 판단 불필요** |
+| 8 | ✅ 완료(2026-09-09, 서어진 답변 반영 — `EvidenceRecord` 완전 미생성으로 귀결, 시나리오 분리) | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1(비움) · case 1 · 신규 `scenario_plate_reread_001` 전 모듈 | `verification=UNCERTAIN`, `visual_event_type=null` 반영. `EvidenceRecord`는 필드 부재가 아니라 **완전 미생성**(`evidence_records=[]`)으로 처리 — 단순 필드 부재로 안 되는 것이 확인돼 C·D·G·I 서사는 `scenario_plate_reread_001`로 분리 | 불필요(반영 완료) |
+| 9 | 🔶 부분(2026-09-09 4차 라운드 — 3건 중 2건 완료) | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001`(미착수) · `scenario_relative_rebase_001`(✅) · `scenario_infra_failure_001`(✅) 전 모듈 + manifest + `02` | `USABLE_RELATIVE_ONLY`·`STALE`은 pack에 등장 완료(`validate_mock_pack.py` PASS, 46개 파일·7개 시나리오). `scenario_blocked_001`의 `BLOCK`/`INFO_AI_ESTIMATED`는 아직 없음(P1-9 나머지) | `scenario_blocked_001`만 잔여 — **필수(정철원·신유민·유소연)** |
 | 10 | ✅ 완료 | P1 | happy `case_views`에 진행중·최종확인 스냅샷 추가, correction에 정정 전 스냅샷 추가 (P1-9, P2-6) | case 2 | `SEARCHING`/`RUNNING`/`user_reviewed=true`/정정 전 `INFO_NEEDS_REVIEW`가 등장 | 권장(신유민) |
 | 11 | 🔶 부분(actual_ref 제거 ✅ / metric 이름 대기) | P1 | eval fixture 재작성 (P1-11) | `expected/` 2 | `actual_ref` 제거 또는 실재 오답 fixture 연결, metric 이름 교체, §11-4 검증 통과 | **필수(김대원)** |
 | 12 | 🔶 부분(happy 분리 ✅ / purge 시나리오 미생성) | P1 | purge를 happy에서 분리 (P1-1) | recording 1 (+신규 `scenario_purge_001`) | happy 스냅샷에 AVAILABLE/DELETED 공존 없음 | 권장(정철원) |
-| 13 | 🔶 부분(P2-5·P2-8 ✅ / P2-2·3·4 대기) | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
+| 13 | ✅ 완료(2026-09-09 3라운드, P2-3·4 이슈 #19 B절 재발견으로 해소) | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
 | 14 | ✅ 완료 | P2 | 검증 스크립트 나머지 규칙(§11-1·2·3·4·8·10) 구현 | `validate_mock_pack.py` | 새 규칙 추가 후에도 pack 전체 PASS | 불필요 |
 | 15 | 🔶 부분(수치·ROOT·03·04 ✅ / 신규 Upstream 항목 반영 잔여) | P2 | 문서 동기화: 수치 정정, 스크립트 ROOT, `03` 재생성, `04`/`CONTRACT_CONFLICTS`에 신규 발견 항목(§8의 Upstream 항목들) 반영 | `docs/mock/*` · `scripts/*` | `03` 재생성 시 diff 없음, `04`와 `CONTRACT_CONFLICTS` 항목 수 일치 | 불필요 |
+| 16 | ✅ 완료 | P1 | `CaseView.requirements_*.checks[]`에 `category`·`subject_refs`(·`measurement`) 보강 (P1-13, 유소연 2차 검수 중 발견) | case 4 | `checks[]`가 대응 `evidence/*.json`의 `requirement_reports[].checks[]`와 필드 단위로 일치 | 불필요 |
+| 17 | ✅ 완료(2026-09-09, 유소연) | P0/P1 | case 담당 §12 항목 4건 결정·반영: `JobRecord.kind`에 `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` 등재(+`purge_case` Job 밖 확정), u001 `scope_u001` 범위 축소(P1-8 잔여), `evidence.review_needed` OR 파생 규칙 확정 | `contract-job-record-case-view.md`, `search/scenario_unknown_abstain_partial_001.json` | 계약 문서에 등재·확정 기록, `validate_mock_pack.py` PASS | 불필요(case Owner 본인 결정) |
+| 18 | ✅ 완료(2026-09-09, 팀 리뷰 이슈 #15~#19 5건 종합 반영) | P0/P1 | 팀원 5명 GitHub 이슈 회신 전부 읽고 반영: P0-3(서어진, 결정만) · P0-4(신유민, 반영 완료) · P1-7(서어진, 반영 완료) · P1-12 taxonomy(신유민, 결정만) · P2-2(김준영, 반영 완료) · **`scenario_unknown_abstain_partial_001` → `scenario_unknown_abstain_partial_001`(E·H) + 신규 `scenario_plate_reread_001`(C·D·G·I) 분리**(김준영 제안) | search/readout/evidence/case/common/scenarios 각 2개(u001+p001 신규) · `recording/scenario_happy_001.json`(AssetFacts) · `manifest.json` · `02_mock_scenario_catalog.md` · `04_mock_validation_report.md` · `CONTRACT_CONFLICTS.md` | `validate_mock_pack.py` PASS(36개 파일·5개 시나리오), `03` 재생성 diff 없음 | 불필요(전부 팀원 답변 반영) |
+| 19 | ✅ 완료(2026-09-09 3라운드) | P1 | P1-11/P2-9 finding 본문을 김대원 이슈 #17 답변 그대로 재작성 | `05_mock_deep_review_report.md` §8 | P1-11에 채점 모델 근본원인·metric 개명 전체표·`legibility` 필드 요건 반영, P2-9에 3단 설명(timeline 길이 분모·`processed_duration`은 별개 지표·`UsageRecord` 원장) 반영 | 불필요 |
+| 20 | ✅ 완료(2026-09-09 3라운드, 이슈 #15~#19 원문 재대조 — 사용자 신뢰 회복 요청에 따른 전량 재검증) | P1 | ① `scenario_plate_reread_001` 프레임 불일치 2자리로 확장(신유민 B-1: `disagree_positions [5]→[5,6]`, 마스킹 `17나28?4→17나28??`) ② `scenario_correction_rerun_001`의 "Overlay NOT_RUN(배열 부재)" 설계를 폐기하고 u001과 동일한 "실행됨+NOT_APPLICABLE"로 재구성(정철원 이슈 #18: 오버레이 OCR 무조건 디스패치 정책과 모순이었음) ③ `scenario_plate_reread_001` case에 `evidence.plate_abstained`/`MANUAL_PLATE_INPUT` notice 추가(신유민 2차 코멘트: 계약 §9 예시에는 있었으나 fixture 0건) | readout 1(plate_reread) · readout/case/common 각 1(correction_rerun, overlay 신규 3파일 변경) · case 1(plate_reread notice) | `validate_mock_pack.py` PASS(36개 파일·5개 시나리오 그대로) | 불필요(전부 팀원 답변의 정확한 재구현) |
+| 22 | ✅ 완료(2026-09-09 3라운드, 사용자가 이슈 #19 원문 B절 전체를 재제시해 발견) | P2 | 이슈 #19 본문 "B. 내 모듈 fixture 검수"(김준영의 evidence/common fixture 결함 지적 11건)가 1·2라운드에서 "A. 정합 검토 답변"(도메인 결정 6건)만 반영되고 누락됐던 것을 발견 — 11건을 현재 fixture와 대조한 결과: P2-3·P2-4(post_stamp/transform_ref 모순, considered[] anchor)는 이번에 해소, `ve_u001` 연쇄·overlay JobExecution 건은 이미 다른 라운드에서 해소, 번호판 형식 불일치는 "34나7890" 통일로 이미 해소(값은 다르지만 문제는 해소), 나머지(정책/신고문 template 실물 부재, coverage 갭 8종, common의 USD/KRW 혼용, RUNNING/STALE/attempt2/Report Video export 부재)는 전부 §12(김준영·P3-1)·§13(row 7·9)·04의 기존 gap 목록에 이미 정확히 대응되는 항목임을 확인 — **신규로 놓친 항목은 없었고, P2-3·P2-4 2건만 실제로 미반영 상태였다** | `05_mock_deep_review_report.md` §8 P2-3·P2-4, `recording/scenario_happy_001.json`, `evidence/scenario_happy_001.json` | 이슈 #19 B절 11건 전부 현재 fixture/문서 상태와 대조 완료, PASS | 불필요(전량 재확인 완료) |
+| 21 | ⏳ 대기(유소연) | P2 | 신유민 이슈 #16 2차 코멘트(web/CaseView 소비 관점)에서 나온 신규 미해결 2건을 §12에 등재만 하고 아직 결정하지 않음: (a) `progress[].step` 8종이 제품 확정 7단계 사용자 플로우의 2·3단계("사건 설명"·"범위 확인")를 표현할 방법이 없음 (b) `progress[].state` 4종이 제품 정의 6개 작업상태 중 "부분 완료"·"중단"을 표현 못함(기존에 알려진 SKIPPED 문제와 별개) | (결정 시) `contract-job-record-case-view.md`, `case/*.json` | 유소연이 §12에서 결정 후 처리 | **필수(유소연 — 아직 미결)** |
+| 23 | ✅ 완료(2026-09-09 4차 라운드) | P0/P1 | "규칙은 종결·fixture는 다음 라운드"로 남아 있던 전 항목 실행: `VISUAL_VERIFY` run 4개 시나리오 추가(row 5) · `scenario_relative_rebase_001`(K)·`scenario_infra_failure_001`(J) 신규 시나리오 2건(row 9 중 2/3) · budget KRW 정규화 기본값·fixture(P3-1) · GPS `coord` happy/u001(P1-6 부분, row 7) · `CaseView.candidates[].stale_revision` 신규 필드(계약 §13 note가 case Owner에게 위임한 결정) | recording 3(GPS 2·rebase 신규) · search 4(fine run) · case 6(fine·rebase·infra) · common 6(fine·rebase·infra) · readout 1(infra) · scenarios 2(신규) · manifest.json · `02` 카탈로그 · `docs/modules/{case,evidence}/decisions/*` 신규 3건 | `validate_mock_pack.py` PASS(46개 파일·7개 시나리오) | 불필요 — 전부 이미 결정된 규칙의 실행. `address`(reverse-geocode artifact)·`scenario_blocked_001`·`safety_report_type`·`EvidenceNeeds` 신규 kind만 여전히 외부 판단/artifact 대기 |
 
-**상태는 2026-09-08 1차 수정 기준이다.** 답변이 필요 없는 1·2·3·6·10·14는 완료했고 11·12·13·15는 답변 불필요 부분만 처리했다. 남은 4·5·7·9와 11·13의 잔여는 §12의 Owner 답변이 있어야 진행할 수 있다. 8은 실행하려다 새 계약 공백을 발견해 보류했다(§0 참조).
+**상태는 2026-09-09 2차 수정(유소연 case 파트 정합 검토 + 팀 리뷰 이슈 5건 종합 반영) 기준이다.** 1차 수정(2026-09-08)에서 답변이 필요 없는 1·2·3·6·10·14를 완료했고 11·12·13·15는 답변 불필요 부분만 처리했다. 2차(2026-09-09) 1라운드에서 유소연이 case 담당 §12 항목 4건(①~④)을 전부 결정·반영했고(17), 그 과정에서 새로 발견한 `checks[]` 필드 누락도 수정했다(16). 2라운드(18)에서 팀원 5명의 이슈 회신을 전부 반영해 4·8이 완료로 바뀌었고, 5는 도메인 판단이 끝나 fixture 반영만 남았다. 남은 것은 5 fixture 반영(서어진 결정 반영)·7(김준영 P1-2-②·P1-6 구현·정철원)·9(정철원·신유민·유소연 — 신규 시나리오 3건, taxonomy는 이미 답변받음)·13 잔여(P2-3·4)·19(김대원 답변의 정확한 재작성)와, P3-1(환산 규칙은 이슈 #19로 종결, budget 기본값은 유소연이 다시 정하고 그 값대로 `common/*`을 KRW로 정규화하는 fixture 작업만 남음)이다. 이번 라운드에서 **`EvidenceNeeds`가 "사건 유형 자체 미확정"을 표현 못 한다는 새 Contract Gap**을 발견해 `04_mock_validation_report.md` §3.1-4에 기록했다 — case Owner 단독 해소 범위 밖이라 evidence(김준영)/PM 확인이 필요하다.
+
+> **정정 (같은 날, 사용자 확인 요청으로 재검증).** 위 §12/§13 갱신 직후 이슈 #19·#15 원문을 다시 대조해보니 부정확한 부분이 있었다 — 김준영 §12 ①(source.kind 5종)은 "미해소"가 아니라 **승인 완료**(fixture도 이미 5종 전부 승인된 형태로 일치, 변경 불필요)였고, ④(lat/lon)도 규칙 자체는 **결정 완료**(구현만 잔여)였다. P3-1도 "미해소"가 아니라 **환산 규칙은 결정 완료**(budget 기본값·fixture 정규화만 잔여)였다. P1-3(ref 직렬화 형식)은 이슈 #15로 **완전 종결**(mock 현행 유지 확인)이라 더 이상 열린 항목이 아니다. 위 표·문단은 이 정정을 반영해 다시 썼다.
 
 ---
 

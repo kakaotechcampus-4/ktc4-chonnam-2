@@ -25,6 +25,30 @@
       "input_fingerprint": "sha1:r001-plate-read-clip_r001",
       "force_rerun": false,
       "requested_at": "2026-08-27T13:20:59+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_r001_overlay",
+      "case_id": "case_r001",
+      "case_rev": 2,
+      "kind": "OVERLAY_TIME_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:r001-overlay-read-clip_r001",
+      "force_rerun": false,
+      "requested_at": "2026-08-27T13:20:59+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_r001_fine",
+      "case_id": "case_r001",
+      "case_rev": 2,
+      "kind": "FINE_VERIFY",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:r001-fine-verify-clip_r001",
+      "force_rerun": false,
+      "requested_at": "2026-08-27T13:20:59+09:00"
     }
   ],
   "case_views": [
@@ -40,7 +64,10 @@
         "ok_file_count": 1,
         "failed_file_count": 0,
         "duration_sec": 1500.0,
-        "range": ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]
+        "range": [
+          "2026-08-27T13:00:00+09:00",
+          "2026-08-27T13:25:00+09:00"
+        ]
       },
       "hints": {
         "time": "1시쯤",
@@ -49,12 +76,34 @@
         "location": null
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "DONE" },
-        { "step": "candidate_review", "state": "DONE" },
-        { "step": "plate_read", "state": "DONE" },
-        { "step": "evidence_assembly", "state": "DONE" },
-        { "step": "requirement_check", "state": "DONE" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        }
       ],
       "candidates": [
         {
@@ -68,15 +117,23 @@
       ],
       "evidence": {
         "record_id": "ev_r001_v1",
-        "case_type_display": { "code": "MOTORCYCLE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
-        "report_type_display": { "code": "UNSAFE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "case_type_display": {
+          "code": "MOTORCYCLE_HELMET_NON_USE",
+          "label": "이륜차 안전모 미착용",
+          "needs_review": false
+        },
+        "report_type_display": {
+          "code": "UNSAFE_HELMET_NON_USE",
+          "label": "이륜차 안전모 미착용",
+          "needs_review": false
+        },
         "violation_display": {
           "code": null,
           "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
           "needs_review": false
         },
         "plate_display": {
-          "value": "광주서구 가1234",
+          "value": "34나7890",
           "needs_review": false,
           "info_state": "INFO_SOURCE_VERIFIED",
           "source_label_key": "plate.source.plate_ocr"
@@ -103,8 +160,30 @@
       "requirements_evidence": {
         "readiness": "WARN",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "WARN", "reason_code": "evidence.time_needs_review" }
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "WARN",
+            "reason_code": "evidence.time_needs_review",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          }
         ]
       },
       "requirements_package": null,
@@ -116,7 +195,9 @@
           "severity": "WARN",
           "blocking": false,
           "message_key": "notice.event_time_needs_review",
-          "actions": ["EDIT_EVENT_TIME"]
+          "actions": [
+            "EDIT_EVENT_TIME"
+          ]
         }
       ]
     },
@@ -132,7 +213,10 @@
         "ok_file_count": 1,
         "failed_file_count": 0,
         "duration_sec": 1500.0,
-        "range": ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]
+        "range": [
+          "2026-08-27T13:00:00+09:00",
+          "2026-08-27T13:25:00+09:00"
+        ]
       },
       "hints": {
         "time": "1시쯤",
@@ -141,12 +225,34 @@
         "location": null
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "DONE" },
-        { "step": "candidate_review", "state": "DONE" },
-        { "step": "plate_read", "state": "DONE" },
-        { "step": "evidence_assembly", "state": "DONE" },
-        { "step": "requirement_check", "state": "DONE" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        }
       ],
       "candidates": [
         {
@@ -160,15 +266,23 @@
       ],
       "evidence": {
         "record_id": "ev_r001_v2",
-        "case_type_display": { "code": "MOTORCYCLE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
-        "report_type_display": { "code": "UNSAFE_HELMET_NON_USE", "label": "이륜차 안전모 미착용", "needs_review": false },
+        "case_type_display": {
+          "code": "MOTORCYCLE_HELMET_NON_USE",
+          "label": "이륜차 안전모 미착용",
+          "needs_review": false
+        },
+        "report_type_display": {
+          "code": "UNSAFE_HELMET_NON_USE",
+          "label": "이륜차 안전모 미착용",
+          "needs_review": false
+        },
         "violation_display": {
           "code": null,
           "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
           "needs_review": false
         },
         "plate_display": {
-          "value": "광주서구 가1234",
+          "value": "34나7890",
           "needs_review": false,
           "info_state": "INFO_SOURCE_VERIFIED",
           "source_label_key": "plate.source.plate_ocr"
@@ -195,8 +309,30 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" }
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          }
         ]
       },
       "requirements_package": null,
@@ -208,7 +344,9 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.post_stamp_required",
-          "actions": ["GENERATE_REPORT_VIDEO"]
+          "actions": [
+            "GENERATE_REPORT_VIDEO"
+          ]
         }
       ]
     }

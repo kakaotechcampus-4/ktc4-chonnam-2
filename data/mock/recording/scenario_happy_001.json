@@ -7,8 +7,14 @@
       "contract_version": "source-asset-media-stream/v1",
       "source_asset_ref": "sa_h001_front",
       "asset_kind": "SOURCE_ASSET",
-      "external_source_ref": { "kind": "external_source", "ref": "ext_h001_front" },
-      "media_stream_refs": ["ms_h001_front_v", "ms_h001_front_a"],
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_h001_front"
+      },
+      "media_stream_refs": [
+        "ms_h001_front_v",
+        "ms_h001_front_a"
+      ],
       "byte_size": 734003200,
       "availability": "AVAILABLE",
       "duration_sec": 1200.0
@@ -18,8 +24,13 @@
       "contract_version": "source-asset-media-stream/v1",
       "source_asset_ref": "sa_h001_rear",
       "asset_kind": "SOURCE_ASSET",
-      "external_source_ref": { "kind": "external_source", "ref": "ext_h001_rear" },
-      "media_stream_refs": ["ms_h001_rear_v"],
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_h001_rear"
+      },
+      "media_stream_refs": [
+        "ms_h001_rear_v"
+      ],
       "byte_size": 612000000,
       "availability": "AVAILABLE",
       "duration_sec": 1200.0
@@ -94,19 +105,26 @@
           "status": "OK"
         }
       },
-      "time_source_candidates": ["tsc_h001_filename"],
+      "time_source_candidates": [
+        "tsc_h001_filename"
+      ],
       "source_placements": [
         {
           "source_asset_ref": "sa_h001_front",
           "timeline_start_sec": 0.0,
           "timeline_end_sec": 1200.0,
-          "media_stream_refs": ["ms_h001_front_v", "ms_h001_front_a"]
+          "media_stream_refs": [
+            "ms_h001_front_v",
+            "ms_h001_front_a"
+          ]
         },
         {
           "source_asset_ref": "sa_h001_rear",
           "timeline_start_sec": 0.0,
           "timeline_end_sec": 1200.0,
-          "media_stream_refs": ["ms_h001_rear_v"]
+          "media_stream_refs": [
+            "ms_h001_rear_v"
+          ]
         }
       ],
       "gaps": [],
@@ -120,26 +138,46 @@
       "source_kind": "FILENAME",
       "source_detail": "MDR_260824_180000.AVI",
       "value": "2026-08-24T18:00:00+09:00",
-      "applies_to": { "source_asset_ref": "sa_h001_front", "source_offset_sec": 0.0 },
+      "applies_to": {
+        "source_asset_ref": "sa_h001_front",
+        "source_offset_sec": 0.0
+      },
       "observation_status": "OK",
-      "producer_checks": { "parse_valid": true },
-      "provenance": { "producer": "recording", "observed_from": "MDR_260824_180000.AVI" }
+      "producer_checks": {
+        "parse_valid": true
+      },
+      "provenance": {
+        "producer": "recording",
+        "observed_from": "MDR_260824_180000.AVI"
+      }
     }
   ],
   "span_resolutions": [
     {
       "contract": "SpanResolution",
       "contract_version": "span-resolution/v1.2",
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "requested_range": { "start_sec": 300.0, "end_sec": 420.0 },
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "requested_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      },
       "status": "COMPLETE",
       "spans": [
         {
           "sequence": 0,
-          "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 },
+          "timeline_range": {
+            "start_sec": 300.0,
+            "end_sec": 420.0
+          },
           "source_asset_ref": "sa_h001_front",
           "media_stream_ref": "ms_h001_front_v",
-          "source_range": { "start_sec": 300.0, "end_sec": 420.0 }
+          "source_range": {
+            "start_sec": 300.0,
+            "end_sec": 420.0
+          }
         }
       ],
       "missing_ranges": [],
@@ -152,13 +190,26 @@
       "contract_version": "analysis-source-derived/v1",
       "analysis_source_ref": "as_h001_fine",
       "asset_kind": "ANALYSIS_SOURCE",
-      "source_refs": [{ "kind": "source_asset", "ref": "sa_h001_front" }],
-      "media_stream_refs": ["ms_h001_front_v"],
+      "source_refs": [
+        {
+          "kind": "source_asset",
+          "ref": "sa_h001_front"
+        }
+      ],
+      "media_stream_refs": [
+        "ms_h001_front_v"
+      ],
       "byte_size": 41943040,
       "availability": "AVAILABLE",
       "duration_sec": 120.0,
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 },
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      },
       "profile_ref": "prof_fine_v1"
     }
   ],
@@ -169,24 +220,44 @@
       "incident_clip_ref": "clip_h001",
       "asset_kind": "INCIDENT_CLIP",
       "source_provenance": {
-        "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-        "requested_range": { "start_sec": 300.0, "end_sec": 420.0 },
+        "timeline_ref": {
+          "timeline_id": "tl_h001",
+          "revision": 1
+        },
+        "requested_range": {
+          "start_sec": 300.0,
+          "end_sec": 420.0
+        },
         "asset_spans": [
           {
             "sequence": 0,
-            "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 },
+            "timeline_range": {
+              "start_sec": 300.0,
+              "end_sec": 420.0
+            },
             "source_asset_ref": "sa_h001_front",
             "media_stream_ref": "ms_h001_front_v",
-            "source_range": { "start_sec": 300.0, "end_sec": 420.0 }
+            "source_range": {
+              "start_sec": 300.0,
+              "end_sec": 420.0
+            }
           }
         ]
       },
-      "media_stream_refs": ["ms_h001_front_v"],
+      "media_stream_refs": [
+        "ms_h001_front_v"
+      ],
       "byte_size": 36700160,
       "availability": "AVAILABLE",
       "duration_sec": 120.0,
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      }
     }
   ],
   "derived_assets": [
@@ -196,13 +267,24 @@
       "derived_asset_ref": "da_h001_report_video",
       "asset_kind": "DERIVED_ASSET",
       "derived_role": "REPORT_VIDEO",
-      "source_refs": [{ "kind": "incident_clip", "ref": "clip_h001" }],
+      "source_refs": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_h001"
+        }
+      ],
       "byte_size": 26214400,
       "availability": "AVAILABLE",
       "duration_sec": 120.0,
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 },
-      "transform_ref": "tr_h001_poststamp_v1"
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      },
+      "transform_ref": "tr_h001_trim_v1"
     },
     {
       "contract": "DerivedAsset",
@@ -210,7 +292,12 @@
       "derived_asset_ref": "da_h001_plate_image",
       "asset_kind": "DERIVED_ASSET",
       "derived_role": "PLATE_IMAGE",
-      "source_refs": [{ "kind": "incident_clip", "ref": "clip_h001" }],
+      "source_refs": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_h001"
+        }
+      ],
       "byte_size": 184320,
       "availability": "AVAILABLE",
       "duration_sec": null,
@@ -223,30 +310,92 @@
     {
       "contract": "AssetFacts",
       "contract_version": "source-asset-media-stream/v1",
-      "asset_ref": { "kind": "incident_clip", "ref": "clip_h001" },
+      "asset_ref": {
+        "kind": "incident_clip",
+        "ref": "clip_h001"
+      },
       "asset_kind": "INCIDENT_CLIP",
       "derived_role": null,
       "byte_size": 36700160,
       "availability": "AVAILABLE",
       "checked_at": "2026-08-24T19:00:00+09:00",
-      "lineage": [{ "kind": "source_asset", "ref": "sa_h001_front" }, { "kind": "external_source", "ref": "ext_h001_front" }],
+      "lineage": [
+        {
+          "kind": "source_asset",
+          "ref": "sa_h001_front"
+        },
+        {
+          "kind": "external_source",
+          "ref": "ext_h001_front"
+        }
+      ],
       "duration_sec": 120.0,
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      }
     },
     {
       "contract": "AssetFacts",
       "contract_version": "source-asset-media-stream/v1",
-      "asset_ref": { "kind": "derived_asset", "ref": "da_h001_report_video" },
+      "asset_ref": {
+        "kind": "derived_asset",
+        "ref": "da_h001_report_video"
+      },
       "asset_kind": "DERIVED_ASSET",
       "derived_role": "REPORT_VIDEO",
       "byte_size": 26214400,
       "availability": "AVAILABLE",
       "checked_at": "2026-08-24T19:10:00+09:00",
-      "lineage": [{ "kind": "incident_clip", "ref": "clip_h001" }, { "kind": "source_asset", "ref": "sa_h001_front" }],
+      "lineage": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_h001"
+        },
+        {
+          "kind": "source_asset",
+          "ref": "sa_h001_front"
+        }
+      ],
       "duration_sec": 120.0,
-      "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
-      "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+      "timeline_ref": {
+        "timeline_id": "tl_h001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 300.0,
+        "end_sec": 420.0
+      }
+    },
+    {
+      "contract": "AssetFacts",
+      "contract_version": "source-asset-media-stream/v1",
+      "asset_ref": {
+        "kind": "derived_asset",
+        "ref": "da_h001_plate_image"
+      },
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "PLATE_IMAGE",
+      "byte_size": 184320,
+      "availability": "AVAILABLE",
+      "checked_at": "2026-08-24T19:10:00+09:00",
+      "lineage": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_h001"
+        },
+        {
+          "kind": "source_asset",
+          "ref": "sa_h001_front"
+        }
+      ],
+      "duration_sec": null,
+      "timeline_ref": null,
+      "timeline_range": null
     }
   ],
   "remote_copies": [
@@ -259,6 +408,34 @@
       "provider_object_ref": "files/h001-fine-abc123",
       "availability": "AVAILABLE",
       "expires_at": "2026-08-26T18:00:00+09:00"
+    }
+  ],
+  "gps_observations": [
+    {
+      "contract": "Observation",
+      "contract_version": "observation/v1",
+      "value": {
+        "lat": 35.1522,
+        "lon": 126.8515
+      },
+      "status": "OK",
+      "source": {
+        "kind": "recording.gps_stream",
+        "ref": {
+          "kind": "media_stream",
+          "ref": "ms_h001_front_v"
+        }
+      },
+      "support_refs": [
+        {
+          "kind": "frame",
+          "ref": "fr_h001_thumb"
+        }
+      ],
+      "produced_by": {
+        "module": "recording",
+        "impl_ref": "gps-parser/default"
+      }
     }
   ]
 }

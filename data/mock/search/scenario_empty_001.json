@@ -9,7 +9,7 @@
       ],
       "target_event_types": ["CENTER_LINE_CROSSING"],
       "hint": { "vehicle": "은색 세단", "free_text": "앞차가 중앙선을 넘어 들어온 것 같은데 확실하지 않음" },
-      "budget": { "max_cost_krw": 300, "max_latency_sec": 180 },
+      "budget": { "max_cost_krw": 1000, "max_latency_sec": 180 },
       "contract_version": "1.1.0"
     }
   ],
