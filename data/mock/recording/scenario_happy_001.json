@@ -202,7 +202,7 @@
       "duration_sec": 120.0,
       "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
       "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 },
-      "transform_ref": "tr_h001_poststamp_v1"
+      "transform_ref": "tr_h001_trim_v1"
     },
     {
       "contract": "DerivedAsset",
