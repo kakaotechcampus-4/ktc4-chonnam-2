@@ -1,0 +1,166 @@
+{
+  "scenario_id": "scenario_relative_rebase_001",
+  "module": "case",
+  "job_records": [
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_rb001_search",
+      "case_id": "case_rb001",
+      "case_rev": 1,
+      "kind": "COARSE_SEARCH",
+      "scope_ref": "scope_rb001",
+      "input_fingerprint": "sha1:rb001-coarse-search",
+      "force_rerun": false,
+      "requested_at": "2026-08-31T14:00:05+09:00"
+    }
+  ],
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_rb001",
+      "case_rev": 1,
+      "stage": "CANDIDATE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 600.0,
+        "range": null
+      },
+      "hints": {
+        "time": null,
+        "vehicle": "회색 세단",
+        "situation": "실선 구간에서 차로 변경",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_rb001",
+          "at": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "observed": "회색 세단이 중앙선 부근에서 인접 차로로 진입하려는 장면(파일 절대시각 없음 — timeline 상대위치만 확인됨)",
+          "thumb_ref": "fr_rb001_thumb",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": []
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_rb001",
+      "case_rev": 2,
+      "stage": "CANDIDATE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 2,
+        "ok_file_count": 2,
+        "failed_file_count": 0,
+        "duration_sec": 1230.0,
+        "range": null
+      },
+      "hints": {
+        "time": null,
+        "vehicle": "회색 세단",
+        "situation": "실선 구간에서 차로 변경",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "PENDING"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_rb001",
+          "at": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "observed": "회색 세단이 중앙선 부근에서 인접 차로로 진입하려는 장면(파일 절대시각 없음 — timeline 상대위치만 확인됨)",
+          "thumb_ref": "fr_rb001_thumb",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": true
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": []
+    }
+  ]
+}

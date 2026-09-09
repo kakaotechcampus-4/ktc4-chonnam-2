@@ -1,0 +1,19 @@
+{
+  "scenario_id": "scenario_infra_failure_001",
+  "module": "readout",
+  "readout_runs": [
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_x001_plate",
+      "operation": "PLATE_READ",
+      "outcome": "FAILED",
+      "failure": { "kind": "INFRA", "code": "READOUT_PROVIDER_TIMEOUT" },
+      "usage_refs": ["usage_x001_plate"],
+      "started_at": "2026-08-30T09:12:10+09:00",
+      "ended_at": "2026-08-30T09:12:55+09:00"
+    }
+  ],
+  "plate_readouts": [],
+  "overlay_time_readouts": []
+}

@@ -1,0 +1,23 @@
+{
+  "scenario_id": "scenario_infra_failure_001",
+  "title": "readout 인프라 실패 — STALE 재시도 후 FAILED(신규 유형 J)",
+  "case_id": "case_x001",
+  "scenario_types": ["J"],
+  "description": "PLATE_READ 실행이 인프라 계층에서 실패하는 경로를 표현한다(P1-12). attempt 1은 worker가 살아있음을 보고하지 못한 채 사라져 STALE(ended_at=null, produced=[])로 남고, 같은 job_id로 attempt 2가 새 execution_id로 재시도되지만 다시 실패해 status=FAILED, ReadoutRun.outcome=FAILED, failure={kind:INFRA, code:READOUT_PROVIDER_TIMEOUT}가 된다. readout failure taxonomy(신유민, 이슈 #16)가 확정한 INFRA 3종 코드 중 하나를 사용했다. PlateReadout은 완전 실패 규칙대로 결과 객체 자체가 생성되지 않는다(plate_readouts=[]). CaseView는 attempt 진행 중(RUNNING)과 재시도 소진 후(FAILED) 두 스냅샷으로 구성되며, 후자에는 이 pack에서 최초로 severity=ERROR·blocking=true인 notice가 등장한다(P1-9가 지적했던 coverage 갭 일부 해소).",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. 이 시나리오는 candidate 탐색·선정까지는 끝난 상태를 전제로 시작하며, 그 단계의 COARSE_SEARCH JobRecord/AnalysisRun/VisualEvidence는 이 시나리오의 검증 범위가 아니라 의도적으로 만들지 않았다(candidates[].candidate_id는 CaseView 자체 denormalized 복사본으로 self-contained). recording은 thumb_ref가 가리킬 FrameRef 자원을 위해 최소 구성만 포함한다.",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_infra_failure_001.json",
+    "readout": "data/mock/readout/scenario_infra_failure_001.json",
+    "case": "data/mock/case/scenario_infra_failure_001.json",
+    "common": "data/mock/common/scenario_infra_failure_001.json"
+  },
+  "modules_intentionally_absent": {
+    "search": "candidate 탐색·선정은 이 시나리오의 검증 대상이 아니다 — case_views[].candidates[]가 자체 복사본으로 완결되며 search AnalysisRun/VisualEvidence 생성 없이도 참조가 self-contained하다.",
+    "evidence": "PLATE_READ가 인프라 단계에서 실패해 evidence assembly 자체가 시작되지 않는다."
+  },
+  "shared_ids": {
+    "case_id": "case_x001",
+    "candidate_id": "candidate_x001",
+    "timeline_id": "tl_x001"
+  }
+}

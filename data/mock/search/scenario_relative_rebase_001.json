@@ -1,0 +1,91 @@
+{
+  "scenario_id": "scenario_relative_rebase_001",
+  "module": "search",
+  "analysis_scopes": [
+    {
+      "scope_id": "scope_rb001",
+      "time_ranges": [
+        {
+          "kind": "TIMELINE_RELATIVE",
+          "timeline_ref": {
+            "timeline_id": "tl_rb001",
+            "revision": 1
+          },
+          "start_ms": 500000,
+          "end_ms": 560000
+        }
+      ],
+      "target_event_types": [
+        "CENTER_LINE_CROSSING"
+      ],
+      "hint": {
+        "vehicle": "회색 세단",
+        "free_text": "실선 구간에서 차로 변경"
+      },
+      "budget": {
+        "max_cost_krw": 1000,
+        "max_latency_sec": 180
+      },
+      "contract_version": "1.1.0"
+    }
+  ],
+  "analysis_run_candidate_events": [
+    {
+      "analysis_run": {
+        "run_id": "run_rb001",
+        "operation": "CANDIDATE_SEARCH",
+        "input_ref": {
+          "kind": "ANALYSIS_SCOPE",
+          "ref": "scope_rb001"
+        },
+        "implementation": {
+          "impl_id": "gemini-candidate-search@c7",
+          "model_ref": "gemini-3.7-flash",
+          "prompt_version": "coarse-c7",
+          "config_version": "search-v2"
+        },
+        "outcome": "SUCCEEDED",
+        "started_at": "2026-08-31T14:00:06+09:00",
+        "completed_at": "2026-08-31T14:01:10+09:00",
+        "issues": [],
+        "usage_refs": [
+          "usage_rb001_coarse"
+        ],
+        "usage_summary": {
+          "processed_duration_ms": 60000,
+          "token_usage": {
+            "input_tokens": 3800,
+            "output_tokens": 350,
+            "total_tokens": 4150
+          },
+          "latency_ms": 64000,
+          "total_cost": {
+            "amount": "0.06",
+            "currency": "USD"
+          }
+        },
+        "contract_version": "analysis-run-candidate-event/v1.1"
+      },
+      "candidates": [
+        {
+          "candidate_id": "candidate_rb001",
+          "run_id": "run_rb001",
+          "span": {
+            "timeline_id": "tl_rb001",
+            "timeline_revision": 1,
+            "start_ms": 500000,
+            "end_ms": 560000,
+            "representative_ms": 512000
+          },
+          "rank": 1,
+          "ranking_score": 0.75,
+          "event_type_hint": "CENTER_LINE_CROSSING",
+          "summary": "회색 세단이 중앙선 부근에서 인접 차로로 진입하려는 장면(상대시간 기준 — 파일 절대시각 없음)",
+          "uncertainties": [],
+          "thumbnail_ref": "fr_rb001_thumb"
+        }
+      ]
+    }
+  ],
+  "visual_evidences": []
+}

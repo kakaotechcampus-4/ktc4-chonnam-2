@@ -41,14 +41,14 @@
     {
       "contract": "JobRecord",
       "contract_version": "job-record/v1",
-      "job_id": "job_u001_plate_reread",
+      "job_id": "job_u001_fine",
       "case_id": "case_u001",
-      "case_rev": 3,
-      "kind": "PLATE_READ",
+      "case_rev": 2,
+      "kind": "FINE_VERIFY",
       "scope_ref": null,
-      "input_fingerprint": "sha1:u001-plate-read-clip_u001",
-      "force_rerun": true,
-      "requested_at": "2026-08-26T22:33:05+09:00"
+      "input_fingerprint": "sha1:u001-fine-verify-clip_u001",
+      "force_rerun": false,
+      "requested_at": "2026-08-26T22:31:30+09:00"
     }
   ],
   "case_views": [
@@ -64,7 +64,10 @@
         "ok_file_count": 1,
         "failed_file_count": 0,
         "duration_sec": 1800.0,
-        "range": ["2026-08-26T22:10:00+09:00", "2026-08-26T22:40:00+09:00"]
+        "range": [
+          "2026-08-26T22:10:00+09:00",
+          "2026-08-26T22:40:00+09:00"
+        ]
       },
       "hints": {
         "time": "밤 10시쯤",
@@ -73,13 +76,34 @@
         "location": null
       },
       "progress": [
-        { "step": "file_intake", "state": "DONE" },
-        { "step": "coarse_search", "state": "DONE" },
-        { "step": "candidate_review", "state": "DONE" },
-        { "step": "plate_read", "state": "DONE" },
-        { "step": "overlay_time_read", "state": "FAILED" },
-        { "step": "evidence_assembly", "state": "DONE" },
-        { "step": "requirement_check", "state": "DONE" }
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        }
       ],
       "candidates": [
         {
@@ -91,61 +115,33 @@
           "selected": true
         }
       ],
-      "evidence": {
-        "record_id": "ev_u001",
-        "case_type_display": { "code": "SIGNAL", "label": "신호 위반 의심", "needs_review": true },
-        "report_type_display": { "code": "UNSAFE_SIGNAL_VIOLATION", "label": "안전운전 불이행(신호위반 의심)", "needs_review": true },
-        "violation_display": {
-          "code": null,
-          "label": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
-          "needs_review": true
-        },
-        "plate_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
-        "event_time_display": {
-          "value": "2026-08-26T22:20:15+09:00",
-          "needs_review": true,
-          "info_state": "INFO_NEEDS_REVIEW",
-          "source_label_key": "time.source.filename"
-        },
-        "location_display": {
-          "value": null,
-          "needs_review": false,
-          "info_state": "INFO_UNKNOWN",
-          "source_label_key": null,
-          "coord": null,
-          "search_keyword": null
-        },
-        "user_edited": false,
-        "preview_ref": "fr_u001_plate1",
-        "review_needed": true,
-        "reason_code": "evidence.multiple_fields_need_review"
-      },
-      "requirements_evidence": {
-        "readiness": "UNKNOWN",
-        "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "UNKNOWN", "reason_code": "evidence.pending_plate_reread" },
-          { "code": "evidence.occurred_at.present", "outcome": "WARN", "reason_code": "evidence.time_needs_review" },
-          { "code": "evidence.visual_event.present", "outcome": "WARN", "reason_code": "evidence.signal_state_uncertain" }
-        ]
-      },
+      "evidence": null,
+      "requirements_evidence": null,
       "requirements_package": null,
       "package": null,
-      "running_jobs": [
-        { "job_id": "job_u001_plate_reread", "kind": "PLATE_READ", "label_key": "job.plate_read", "status": "PENDING" }
-      ],
+      "running_jobs": [],
       "notices": [
         {
           "code": "time.conflict_needs_notice",
           "severity": "WARN",
           "blocking": false,
           "message_key": "notice.time_conflict",
-          "actions": ["REVIEW_TIME"]
+          "actions": [
+            "REVIEW_TIME"
+          ]
         },
         {
-          "code": "evidence.plate_reread_in_progress",
+          "code": "time.overlay_not_present",
           "severity": "INFO",
           "blocking": false,
-          "message_key": "notice.plate_reread_running",
+          "message_key": "notice.overlay_not_present",
+          "actions": []
+        },
+        {
+          "code": "evidence.visual_event_unconfirmed",
+          "severity": "WARN",
+          "blocking": true,
+          "message_key": "notice.visual_event_unconfirmed",
           "actions": []
         }
       ]

@@ -16,6 +16,8 @@
 
 > **재판독 발주 규칙 등재 (2026-09-08 반영 · 유소연 2026-09-07 결정).** A절 §7에 「`PLATE_REREAD` Need → `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음」을 등재했다. 값 목록·스키마는 바뀌지 않아 `job-record/v1`을 유지한다. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
 
+> **Fine 발주·Report Video export `kind` 등재 및 `purge_case` 경계 확정 (2026-09-09 · Decider 유소연, Mock Pack 심층 검토 §12 후속).** A절 §7에 `FINE_VERIFY`(Fine/시각 검증 발주)와 `REPORT_VIDEO_EXPORT`(신고용 파생영상 생성 발주)를 등재한다. `purge_case()`는 `contract-analysis-source-derived.md` §8이 이미 `purge_case(case_id) -> DeletionReport` 직접 호출로 정의했고 `DeletionReport`에 `job_id`가 없으므로, **`JobRecord`/`JobExecution` 경계 밖의 관리 동작으로 유지**하고 별도 `kind`를 만들지 않는다. `label_key`는 §12에 `job.fine_verify`·`job.report_video_export`를 추가한다. 값 목록·스키마는 바뀌지 않아 `job-record/v1`을 유지한다(열린 enum 등재).
+
 > **`case-view/v1.2` 변경 (2026-09-07)** — 유소연(`case` Owner) 결정, 김준영(`evidence`)·신유민(`web`) 확인. 근거와 기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)·§4.2(B02)·§4.9(`thumb_ref`)에 있다. A절 `JobRecord`는 `job-record/v1` 그대로이며 §7의 `kind` 값 등재와 §10 불변조건 5만 늘었다(열린 enum·불변조건 추가라 버전 유지).
 > ① `info_state` 파생 입력 세 개 확정(`needs_review` 출처 · `occurred_at` 변환 · 위치 대표값) ② `location_display`에 `coord`·`search_keyword` 별도 필드 ③ `requirements`를 `requirements_evidence` / `requirements_package` 두 객체로 분리, report 선택 3단계 ④ web 소비 규칙(`info_state`만 본다) ⑤ `candidates[].thumb_ref`는 `FrameRef`. **B01·B02 Pending은 종결됐다.**
 
@@ -88,7 +90,10 @@ json
 
 ### 7. Enum / State / Special Value
 
-- `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`, **`OVERLAY_TIME_READ`**(2026-09-07 등재, 유소연). 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
+- `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`(2026-09-07 등재, 유소연), **`FINE_VERIFY`**·**`REPORT_VIDEO_EXPORT`**(2026-09-09 등재, 유소연). 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
+  - `FINE_VERIFY`는 search의 `AnalysisRun.operation=VISUAL_VERIFY` 실행을 발주한다. `COARSE_SEARCH`(↔`AnalysisRun.operation=CANDIDATE_SEARCH`)와 이미 문자열이 다른 선례를 따라, `case`가 쓰는 Coarse/Fine 업무 명칭을 그대로 쓴다(`operation` 값과 1:1 문자열 일치를 요구하지 않는다 — 그 요구는 §7의 `PLATE_READ`/`OVERLAY_TIME_READ`↔`ReadoutRun.operation`에만 명시돼 있다).
+  - `REPORT_VIDEO_EXPORT`는 `DerivedAsset`(`derived_role=REPORT_VIDEO`) 생성을 발주한다(`contract-analysis-source-derived.md` §7.3·§7.5). export 실패는 그 계약 §9의 `REPORT_VIDEO_EXPORT_FAILED`를 `case`가 `CaseView.notices[].code`로 그대로 옮긴다.
+  - **`purge_case()`는 `JobRecord`를 통해 발주하지 않는다.** `contract-analysis-source-derived.md` §8이 `purge_case(case_id) -> DeletionReport`를 직접 호출로 정의하고 `DeletionReport`에 `job_id`가 없으므로, Job Intent/Execution 비동기 흐름 밖의 관리 동작으로 취급한다(2026-09-09, 유소연).
   - `PLATE_READ`와 `OVERLAY_TIME_READ`는 **항상 별도 `job_id`로 발주**한다. `ReadoutRun.operation`(`contract-readout-run.md` §6)과는 같은 이름의 값끼리 대응한다 — `PLATE_READ↔PLATE_READ`, `OVERLAY_TIME_READ↔OVERLAY_TIME_READ`. 한쪽에만 값을 추가하지 않는다.
   - `PLATE_REREAD`는 `EvidenceNeeds.kind`의 값이며 `JobRecord.kind` 값이 아니다(값 공간이 다르다 — §4 「corrections.kind는 JobRecord.kind와 다른 값 공간」과 같은 이유).
   - **재판독 발주 규칙 (2026-09-07 확정 · Decider 유소연 · 확인 신유민·김준영).** `EvidenceNeeds.kind=PLATE_REREAD` Need를 발주로 옮길 때 `case`는 **`kind=PLATE_READ`를 유지하고 `force_rerun=true`를 조건 없이 붙인다.** 별도 kind를 만들지 않는다. `PLATE_REREAD` Need는 사건 interval ref를 그대로 제공하므로 입력이 원판독과 같은 것이 기본값이고, fingerprint 구성에 case/kind가 포함된다고 가정할 수 없으므로 조건부 `force_rerun`은 재판독을 조용히 누락시킨다. 재판독은 **새 `job_id`**(새 `JobRecord`)로 발주하며 새 execution이 새 `ReadoutRun` 1건을 만든다 — **기존 `ReadoutRun`을 갱신하지 않는다.** 인프라 재시도(`STALE`)는 다른 층위다: 같은 `job_id` · 새 `execution_id` · `attempt` 증가(`contract-job-execution.md` §9-2). abstain 결과는 계속 `ReadoutRun.outcome=SUCCEEDED`이며(`contract-readout-run.md` §9-5) cache hit 회피는 `outcome`이 아니라 `force_rerun`으로 한다. 원판독/재판독 중 「현재 값」 선택은 B03 결정대로 `case`/`CaseView` projection 소관이다. §9의 `job_61` 예시가 이 형태다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
@@ -133,7 +138,7 @@ json
 - `JobExecution` Producer/Owner: runtime/common, 주요 Owner 김준영, 구현 담당 정철원 — 2026-09-04 백엔드 회의에서 확정
 - `JobExecution.status`: `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE`
 - heartbeat/lease/retry/backoff/DB 구조는 Runtime 구현 세부이며 본 Job Intent 계약의 closure를 막지 않는다.
-- kind 표시용 `label_key`/fallback은 부록-B `CaseView` 계약에서 확정한다. 등재된 `label_key`: `job.plate_read` · `job.overlay_time_read`(2026-09-07 추가). 미등록 kind는 `job.generic_processing` fallback(B절 §12).
+- kind 표시용 `label_key`/fallback은 부록-B `CaseView` 계약에서 확정한다. 등재된 `label_key`: `job.plate_read` · `job.overlay_time_read`(2026-09-07 추가) · `job.fine_verify` · `job.report_video_export`(2026-09-09 추가). `COARSE_SEARCH`는 아직 전용 `label_key`가 없어 `job.generic_processing` fallback을 그대로 쓴다(유소연 확인, 우선순위 낮음 — 필요해지면 `job.coarse_search`로 등재). 미등록 kind는 `job.generic_processing` fallback(B절 §12).
 
 ---
 
@@ -202,6 +207,7 @@ json
 | evidence.*_display.source_label_key | string \| null | Y | `EvidenceValue.source.label_key`(사건시각은 `occurred_at.source.label_key`)를 화면 라벨 키로 노출. `location_display`에서는 대표값 `value`의 출처만 뜻한다. web은 이 키로 문구를 고르고 `kind` 문자열을 직접 해석하지 않는다 | **확정** (유소연·신유민 2026-09-06 · 2026-09-07) |
 | evidence.location_display.coord | `{lat, lon}` \| null | Y(키) | `EvidenceRecord.location.coord.value`를 대표값과 **별도로** 내려보낸다. 포맷은 web | **확정** (유소연·신유민·김준영 2026-09-07) |
 | evidence.location_display.search_keyword | string \| null | Y(키) | `EvidenceRecord.location.search_keyword.value`. 대표값으로 승격하지 않는다 | **확정** (2026-09-07) |
+| evidence.review_needed | boolean | Y | 여섯 개 `*_display.needs_review`의 OR 집계(object-level). 파생 규칙 §7 | **확정** (2026-09-09, 유소연) |
 | requirements_evidence | object \| null | Y(키) | 현재 basis의 scope=`EVIDENCE` `RequirementReport` projection `{readiness, checks}`. 선택 규칙 §7. 미실행이면 `null` | **확정** (유소연 2026-09-07, B02 종결) |
 | requirements_package | object \| null | Y(키) | 현재 basis의 scope=`FINAL_PACKAGE` `RequirementReport` projection `{readiness, checks}`. 미실행·파생물 미생성이면 `null` | **확정** (유소연 2026-09-07, B02 종결) |
 | requirements_*.readiness | enum(4) | Y(객체 안) | 해당 `RequirementReport.overall`의 projection. case가 재계산하지 않는다 | **확정** (유소연 2026-09-06) |
@@ -259,6 +265,17 @@ json
 `source.observability`는 `contract-evidence-record-needs.md`의 `EvidenceValue.source`가 소유한다. **`case`가 `source.kind` 문자열을 보고 관찰/추론을 스스로 분류하지 않는다** — 그건 `case`가 정책 판단을 하는 것이라 §3 「authoritative 판단을 재계산하지 않는다」에 걸린다.
 
 `source_label_key`는 `EvidenceValue.source.label_key`(사건시각은 `occurred_at.source.label_key`)를 그대로 통과시킨 값이며 키 네임스페이스는 `evidence`가 소유한다. 대응 키가 없으면 `null`로 두고 web이 fallback 문구를 쓴다.
+
+**`evidence.review_needed` 파생 규칙 — 확정 (2026-09-09, 유소연, Mock Pack 심층 검토 §12 후속)**
+
+`review_needed`(object-level)는 `evidence`(record 단위 `EvidenceRecord`)가 아니라 **`case`가 아래 여섯 개의 `*_display.needs_review`로부터 파생하는 값**이다: `case_type_display` · `report_type_display` · `violation_display` · `plate_display` · `event_time_display` · `location_display`.
+
+```
+review_needed = (case_type_display.needs_review OR report_type_display.needs_review OR violation_display.needs_review
+                  OR plate_display.needs_review OR event_time_display.needs_review OR location_display.needs_review)
+```
+
+즉 **여섯 개 중 하나라도 `true`이면 `true`**다. `reason_code`는 `true`가 된 원인이 하나면 그 필드에 대응하는 코드(예: `evidence.event_time_needs_review`)를, 둘 이상이면 `evidence.multiple_fields_need_review`를 쓴다. `needs_review` 자체를 재계산하지 않으며(§10 불변조건 6과 같은 원칙), object-level `review_needed`와 필드별 `needs_review`는 같은 축의 집계일 뿐 서로 다른 정책을 추가하지 않는다.
 
 ### 8. 정상 예시
 
@@ -332,5 +349,7 @@ json
 - **`candidates[]`의 stale-revision 표시 필드.** `CandidateEvent.span.timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 `case`가 비교해 「과거 timeline revision 기준」임을 표시한다(B09, 2026-09-07 합의). **필드명·모양은 case Owner가 구현 시 정한다** — 여기서 임의로 만들지 않는다. `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8.
 - **`FrameRef` 필드 계약 — 종결 (2026-09-08).** `candidates[].thumb_ref`가 `FrameRef`라는 점과 `FrameRef`의 필드·발급·조회 capability는 `contract-source-asset-media-stream.md` §5·§7이 소유한다(`source-asset-media-stream/v1`, Consumer Review 종결). 목데이터의 `fr_` 예시도 그 계약에서 읽는다 — `mock-pack-v1-refs.md`는 폐기됐다. **`thumb_ref` 이미지 전달 형태**(URL/ref/endpoint)는 그 계약 §9-6 Pending으로 남아 있고, 호출 경계(`case → recording → projection → web`, web→recording 직접 호출 금지)는 §7에 확정돼 있다.
 - ~~**재판독 발주의 `JobRecord.kind`**(A절 §7) — case Owner 결정 대기(CALL-12).~~ → **종결 (2026-09-07, 유소연).** `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음. A절 §7 등재. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
+- ~~**Fine 발주·Report Video export의 `JobRecord.kind` 미등재**(`04_mock_validation_report.md` §3.3-1) — case Owner 결정 대기.~~ → **종결 (2026-09-09, 유소연).** `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` A절 §7 등재, `label_key` `job.fine_verify`·`job.report_video_export` 추가. `purge_case()`는 `JobRecord` 밖의 관리 동작으로 확정(§8 참고).
+- ~~**`CaseView.evidence.review_needed` 파생 규칙 미명시**(`04_mock_validation_report.md` §3.2-3) — case Owner 결정 대기.~~ → **종결 (2026-09-09, 유소연).** 규칙과 근거는 B절 §7 「`review_needed` 파생 규칙」에 등재.
 - 최초 수락일 — Owner가 기억하지 못해 **확인 불가**로 유지한다(헤더).
 - **별도 종결 항목 —** JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`.

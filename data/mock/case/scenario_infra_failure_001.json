@@ -1,0 +1,121 @@
+{
+  "scenario_id": "scenario_infra_failure_001",
+  "module": "case",
+  "job_records": [
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_x001_plate",
+      "case_id": "case_x001",
+      "case_rev": 1,
+      "kind": "PLATE_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:x001-plate-read-clip_x001",
+      "force_rerun": false,
+      "requested_at": "2026-08-30T09:11:00+09:00"
+    }
+  ],
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_x001",
+      "case_rev": 1,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": ["2026-08-30T09:00:00+09:00", "2026-08-30T09:20:00+09:00"]
+      },
+      "hints": {
+        "time": "아침 9시쯤",
+        "vehicle": "파란색 SUV",
+        "situation": "중앙선을 넘어오는 걸 봤어요",
+        "location": null
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "RUNNING" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_x001",
+          "at": "2026-08-30T09:10:10+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "파란색 SUV가 중앙선을 넘어 반대 차로로 진입하는 장면",
+          "thumb_ref": "fr_x001_plate1",
+          "selected": true
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [
+        {
+          "job_id": "job_x001_plate",
+          "kind": "PLATE_READ",
+          "label_key": "job.plate_read",
+          "status": "RUNNING"
+        }
+      ],
+      "notices": []
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_x001",
+      "case_rev": 2,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": ["2026-08-30T09:00:00+09:00", "2026-08-30T09:20:00+09:00"]
+      },
+      "hints": {
+        "time": "아침 9시쯤",
+        "vehicle": "파란색 SUV",
+        "situation": "중앙선을 넘어오는 걸 봤어요",
+        "location": null
+      },
+      "progress": [
+        { "step": "file_intake", "state": "DONE" },
+        { "step": "coarse_search", "state": "DONE" },
+        { "step": "candidate_review", "state": "DONE" },
+        { "step": "plate_read", "state": "FAILED" }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_x001",
+          "at": "2026-08-30T09:10:10+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "파란색 SUV가 중앙선을 넘어 반대 차로로 진입하는 장면",
+          "thumb_ref": "fr_x001_plate1",
+          "selected": true
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "readout.plate_read_failed",
+          "severity": "ERROR",
+          "blocking": true,
+          "message_key": "notice.plate_read_failed_retry_exhausted",
+          "actions": ["RETRY_PLATE_READ"]
+        }
+      ]
+    }
+  ]
+}

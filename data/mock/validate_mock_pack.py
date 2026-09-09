@@ -25,6 +25,14 @@ import json
 import sys
 from pathlib import Path
 
+# Windows 콘솔(cp949)에서 em dash 등 non-ASCII 출력 문자 때문에 UnicodeEncodeError로 죽는
+# 문제 수정(2026-09-09, 김대원·신유민 #16·#17 이슈 지적). 검증 자체는 PASS/FAIL과 무관하게
+# 항상 UTF-8로 출력한다.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parent  # data/mock
 MODULES = ["recording", "search", "readout", "evidence", "case", "common"]
 
@@ -303,6 +311,22 @@ def collect_defined_ids(scenario_docs_for_sid):
                 if key == "case_views":
                     if "case_id" in item:
                         defined.add(item["case_id"])
+                    # case_views[].candidates[].candidate_id is case's own denormalized copy — it
+                    # is a legitimate defining occurrence in scenarios where no PlateReadout/search
+                    # candidate block exists to define it first (e.g. an infra-failure scenario
+                    # where plate_readouts=[] because the run never completed). Previously this
+                    # nested shape silently relied on readout's plate_readouts[].candidate_id
+                    # (a direct, shallow field) to define the ID in every existing scenario.
+                    for cand in item.get("candidates", []) or []:
+                        if isinstance(cand, dict) and isinstance(cand.get("candidate_id"), str):
+                            defined.add(cand["candidate_id"])
+                # analysis_run_candidate_events[].candidates[].candidate_id — same nested shape
+                # in search's fixture; register it too so search alone can define a candidate_id
+                # without depending on readout also happening to define it.
+                if key == "analysis_run_candidate_events":
+                    for cand in item.get("candidates", []) or []:
+                        if isinstance(cand, dict) and isinstance(cand.get("candidate_id"), str):
+                            defined.add(cand["candidate_id"])
         # eval fixture own id
         if "eval_fixture_id" in doc:
             defined.add(doc["eval_fixture_id"])

@@ -1,10 +1,13 @@
 {
   "scenario_id": "scenario_unknown_abstain_partial_001",
-  "title": "번호판 ABSTAIN + 화면시각 판독 실패(Partial) + 시각 소스 충돌(UNKNOWN 판정)",
+  "title": "화면시각 판독 NOT_APPLICABLE(E) + 시각 소스 충돌(H) + 사건유형 확정 불가(신규 Contract Gap)",
   "case_id": "case_u001",
-  "scenario_types": ["C", "D", "E", "G", "H", "I"],
-  "description": "한 시나리오에서 여러 불확실성 유형을 함께 검증한다: (1) PlateReadout이 target_association=AMBIGUOUS·frame 불일치로 abstained=true(D), 이는 Case 전체 실패가 아니다. (2) OverlayTimeReadout의 ReadoutRun이 outcome=FAILED(NO_OVERLAY_PRESENT)로 완전 실패해 결과 자체가 생성되지 않는다(E, Partial — 번호판 판독은 성공, 화면시각 판독은 실패). (3) Filename time과 File Metadata time이 3분 어긋나 TimeResolution.conflict.exists=true, status=NEEDS_REVIEW로 임의 승자를 정하지 않고 충돌을 보존한다(H). TimeResolution.computation.mode=BASE_PLUS_OFFSET로 상대 offset 계산도 함께 검증한다. (4) vehicle_number는 EvidenceRecord에서 필드 자체가 부재(null이 아니라 부재)로 표현되고, RequirementReport(EVIDENCE).overall=UNKNOWN(판정 자체가 성립하지 않음, G)이며 BLOCK과 구분된다. (5) EvidenceNeeds가 PLATE_REREAD를 요청하고 optional=false라 case가 새 JobRecord(force_rerun=true, 같은 job_id 아님)를 자동 발주한다 — 기존에 이미 확정된 값을 불필요하게 리셋하지 않는다(I).",
-  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다.",
+  "scenario_types": [
+    "E",
+    "H"
+  ],
+  "description": "2026-09-09 시나리오 분리(Decider 유소연 · 팀 리뷰 이슈 #19 김준영 제안)로 C·D·G·I는 scenario_plate_reread_001로 이동했다. 이 시나리오는 두 가지만 전담한다: (1) OverlayTimeReadout의 ReadoutRun이 outcome=SUCCEEDED이면서 화면에 타임스탬프 오버레이 자체가 없어(NOT_PRESENT) observation.status=NOT_APPLICABLE인 결과 객체를 생성한다(E) — 이는 이전 버전의 outcome=FAILED(완전 실패, 결과 없음) 처리가 잘못이었음을 바로잡은 것이다(§8.1 P0-4, 신유민 결정). 완전 실패(결과 객체 자체가 없음)와 NOT_APPLICABLE(결과는 있으나 관찰 대상이 없음)은 다른 개념이다. (2) Filename time과 File Metadata time이 3분 어긋날 때 TimeResolution이 임의로 승자를 정하지 않고 conflict.exists=true로 보존한다(H). 아울러 VisualEvidence.verification=UNCERTAIN(visual_event_type=null)일 때 EvidenceRecord.event가 계약상 필수(non-optional) 필드라 EvidenceRecord 자체를 만들 수 없고, 그 결과 EvidenceNeeds(v1)도 basis_record_ref로 삼을 기존 EvidenceRecord가 없어 '사건 유형을 AI가 아예 확정하지 못했다'는 상황을 표현할 매커니즘이 계약에 없다는 gap을 이 fixture로 직접 증명한다 — CaseView.evidence=null, requirements_evidence=null이며 CaseView.notices[]에 임시 코드 evidence.visual_event_unconfirmed(WARN, blocking=true)로 사용자 개입 필요만 표시한다. 이 gap은 04_mock_validation_report.md · CONTRACT_CONFLICTS.md에 별도로 기록했다(새 EvidenceNeeds kind 또는 별도 Contract 신설 여지 — 계약 신설은 case Owner 단독 결정 범위 밖이라 여기서 해결하지 않는다).",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다. 번호판 abstain/EvidenceNeeds.PLATE_REREAD 자동 재발주 narrative는 scenario_plate_reread_001로 이동했다.",
   "artifacts": {
     "recording": "data/mock/recording/scenario_unknown_abstain_partial_001.json",
     "search": "data/mock/search/scenario_unknown_abstain_partial_001.json",

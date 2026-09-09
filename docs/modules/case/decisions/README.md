@@ -6,3 +6,5 @@
 
 - `timeout-fallback.md — timeout 담당·결정 시점 (A-1)`
 - `correction-log-reuse.md — correction 로그 재사용 전제·익명화 3줄 (C-4)`
+- `budget-krw-normalization.md — 예산(KRW) vs 비용(USD) 통화 정규화, Mock 기본값 (P3-1, 이슈 #19)`
+- `candidate-stale-revision-display.md — CaseView.candidates[].timeline_revision/stale_revision 필드 신설 (P1-10, 이슈 #18 위임)`

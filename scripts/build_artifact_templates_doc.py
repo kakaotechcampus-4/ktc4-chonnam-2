@@ -65,13 +65,14 @@ sections.append(block("PlateReadout (정상, abstain 없음)", "plate-readout/v1
                        "readout/scenario_happy_001.json → plate_readouts[0]", ro["plate_readouts"][0]))
 sections.append(block("OverlayTimeReadout (정상)", "overlay-time-readout/v1.2",
                        "readout/scenario_happy_001.json → overlay_time_readouts[0]", ro["overlay_time_readouts"][0]))
+ro_p = load("readout/scenario_plate_reread_001.json")
+sections.append(block("PlateReadout — ABSTAIN (target_association=ASSOCIATED, 프레임 간 OCR 불일치)", "plate-readout/v1.2",
+                       "readout/scenario_plate_reread_001.json → plate_readouts[0]",
+                       ro_p["plate_readouts"][0]))
 ro_u = load("readout/scenario_unknown_abstain_partial_001.json")
-sections.append(block("PlateReadout — ABSTAIN (target_association=AMBIGUOUS)", "plate-readout/v1.2",
-                       "readout/scenario_unknown_abstain_partial_001.json → plate_readouts[0]",
-                       ro_u["plate_readouts"][0]))
-sections.append(block("ReadoutRun — 완전 실패 (결과 객체 자체가 생성되지 않음)", "readout-run/v1",
-                       "readout/scenario_unknown_abstain_partial_001.json → readout_runs[1]",
-                       ro_u["readout_runs"][1]))
+sections.append(block("OverlayTimeReadout — NOT_APPLICABLE (화면에 오버레이 자체가 없음, outcome=SUCCEEDED)", "plate-overlay-readout/v1",
+                       "readout/scenario_unknown_abstain_partial_001.json → overlay_time_readouts[0]",
+                       ro_u["overlay_time_readouts"][0]))
 
 # evidence
 ev = load("evidence/scenario_happy_001.json")
@@ -89,15 +90,17 @@ ev_u = load("evidence/scenario_unknown_abstain_partial_001.json")
 sections.append(block("TimeResolution — 값 충돌 보존 (conflict.exists=true, status=NEEDS_REVIEW)", "time-resolution/v1",
                        "evidence/scenario_unknown_abstain_partial_001.json → time_resolutions[0]",
                        ev_u["time_resolutions"][0]))
-sections.append(block("EvidenceRecord — vehicle_number 필드 자체 부재(UNKNOWN)", "evidence-record/v1.2",
-                       "evidence/scenario_unknown_abstain_partial_001.json → evidence_records[0]",
-                       ev_u["evidence_records"][0]))
+
+ev_p = load("evidence/scenario_plate_reread_001.json")
+sections.append(block("EvidenceRecord — vehicle_number 필드 자체 부재(UNKNOWN), event는 전부 confirmed", "evidence-record/v1.2",
+                       "evidence/scenario_plate_reread_001.json → evidence_records[0]",
+                       ev_p["evidence_records"][0]))
 sections.append(block("EvidenceNeeds — PLATE_REREAD 요청", "evidence-needs/v1",
-                       "evidence/scenario_unknown_abstain_partial_001.json → evidence_needs[0]",
-                       ev_u["evidence_needs"][0]))
-sections.append(block("RequirementReport — overall=UNKNOWN", "requirement-report/v1",
-                       "evidence/scenario_unknown_abstain_partial_001.json → requirement_reports[0]",
-                       ev_u["requirement_reports"][0]))
+                       "evidence/scenario_plate_reread_001.json → evidence_needs[0]",
+                       ev_p["evidence_needs"][0]))
+sections.append(block("RequirementReport — overall=UNKNOWN (원인은 vehicle_number 하나로 국한)", "requirement-report/v1",
+                       "evidence/scenario_plate_reread_001.json → requirement_reports[0]",
+                       ev_p["requirement_reports"][0]))
 
 ev_r = load("evidence/scenario_correction_rerun_001.json")
 sections.append(block("TimeResolution v2 — USER_OVERRIDE, supersedes_ref", "time-resolution/v1",
@@ -119,11 +122,16 @@ sections.append(block("CaseView (stage=READY)", "case-view/v1.2",
 sections.append(block("CaseView — 사용자 최종 확인 완료 (user_reviewed=true)", "case-view/v1.2",
                        "case/scenario_happy_001.json → case_views[2]", ca["case_views"][2]))
 
-ca_u = load("case/scenario_unknown_abstain_partial_001.json")
+ca_p = load("case/scenario_plate_reread_001.json")
 sections.append(block("JobRecord — 재판독 자동 발주 (kind=PLATE_READ, force_rerun=true)", "job-record/v1",
-                       "case/scenario_unknown_abstain_partial_001.json → job_records[3]",
-                       ca_u["job_records"][3]))
+                       "case/scenario_plate_reread_001.json → job_records[3]",
+                       ca_p["job_records"][3]))
 sections.append(block("CaseView — evidence.plate_display info_state=INFO_UNKNOWN, running_jobs 포함", "case-view/v1.2",
+                       "case/scenario_plate_reread_001.json → case_views[0]",
+                       ca_p["case_views"][0]))
+
+ca_u = load("case/scenario_unknown_abstain_partial_001.json")
+sections.append(block("CaseView — evidence=null, 사건유형 확정 불가로 blocking notice만 표시 (Contract Gap)", "case-view/v1.2",
                        "case/scenario_unknown_abstain_partial_001.json → case_views[0]",
                        ca_u["case_views"][0]))
 
@@ -134,10 +142,10 @@ sections.append(block("JobExecution (SUCCEEDED)", "job-execution/v1",
                        "common/scenario_happy_001.json → job_executions[0]", co["job_executions"][0]))
 sections.append(block("UsageRecord (search 호출)", "usage-record/v1.1",
                        "common/scenario_happy_001.json → usage_records[0]", co["usage_records"][0]))
-co_u = load("common/scenario_unknown_abstain_partial_001.json")
+co_p = load("common/scenario_plate_reread_001.json")
 sections.append(block("JobExecution — QUEUED (재판독 대기 중, ended_at=null)", "job-execution/v1",
-                       "common/scenario_unknown_abstain_partial_001.json → job_executions[3]",
-                       co_u["job_executions"][3]))
+                       "common/scenario_plate_reread_001.json → job_executions[3]",
+                       co_p["job_executions"][3]))
 
 # expected
 sections.append("## expected (Eval Harness, provisional — Final Contract 아님)\n")

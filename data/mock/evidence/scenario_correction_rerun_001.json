@@ -153,7 +153,7 @@
         "source": { "kind": "recording.filename_time", "label_key": "time.source.filename" }
       },
       "vehicle_number": {
-        "value": "광주서구 가1234",
+        "value": "34나7890",
         "source": {
           "kind": "readout.plate_ocr",
           "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },
@@ -232,7 +232,7 @@
         "source": { "kind": "case.user_correction", "label_key": "time.source.user_correction" }
       },
       "vehicle_number": {
-        "value": "광주서구 가1234",
+        "value": "34나7890",
         "source": {
           "kind": "readout.plate_ocr",
           "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },

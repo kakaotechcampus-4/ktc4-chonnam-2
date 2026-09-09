@@ -5,3 +5,4 @@
 ## 현재 결정
 
 - `no-separate-signoff.md — 신고요건 변경 서명자를 두지 않는 근거 (B-3)`
+- `source-kind-registry.md — Mock이 신설한 source.kind 5종 승인 기록 (이슈 #19)`

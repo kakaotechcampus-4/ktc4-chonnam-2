@@ -1,57 +1,57 @@
 {
-  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "scenario_id": "scenario_plate_reread_001",
   "module": "readout",
   "readout_runs": [
     {
       "contract": "ReadoutRun",
       "contract_version": "readout-run/v1",
-      "run_id": "rr_u001_plate",
+      "run_id": "rr_p001_plate",
       "operation": "PLATE_READ",
       "outcome": "SUCCEEDED",
       "failure": null,
       "usage_refs": [
-        "usage_u001_plate"
+        "usage_p001_plate"
       ],
-      "started_at": "2026-08-26T22:32:00+09:00",
-      "ended_at": "2026-08-26T22:32:08+09:00"
+      "started_at": "2026-08-29T20:31:25+09:00",
+      "ended_at": "2026-08-29T20:31:33+09:00"
     },
     {
       "contract": "ReadoutRun",
       "contract_version": "readout-run/v1",
-      "run_id": "rr_u001_overlay",
+      "run_id": "rr_p001_overlay",
       "operation": "OVERLAY_TIME_READ",
       "outcome": "SUCCEEDED",
       "failure": null,
       "usage_refs": [
-        "usage_u001_overlay"
+        "usage_p001_overlay"
       ],
-      "started_at": "2026-08-26T22:32:08+09:00",
-      "ended_at": "2026-08-26T22:32:11+09:00"
+      "started_at": "2026-08-29T20:31:33+09:00",
+      "ended_at": "2026-08-29T20:31:38+09:00"
     }
   ],
   "plate_readouts": [
     {
       "contract": "PlateReadout",
       "contract_version": "plate-readout/v1.2",
-      "readout_id": "readout_u001_plate",
+      "readout_id": "readout_p001_plate",
       "run_ref": {
         "kind": "readout_run",
-        "ref": "rr_u001_plate"
+        "ref": "rr_p001_plate"
       },
-      "case_id": "case_u001",
-      "candidate_id": "candidate_u001",
+      "case_id": "case_p001",
+      "candidate_id": "candidate_p001",
       "input_ref": {
-        "incident_clip_ref": "clip_u001",
+        "incident_clip_ref": "clip_p001",
         "source_profile": "readout-native",
         "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
       },
       "target_association": {
         "status": "ASSOCIATED",
         "target_hint_used": true,
-        "track_ref": "track_u001",
+        "track_ref": "track_p001",
         "association_method": "TARGET_HINT_WITH_FALLBACK",
         "associated_region": {
-          "frame_ref": "fr_u001_plate1",
+          "frame_ref": "fr_p001_plate1",
           "bbox_xywh": [
             640,
             500,
@@ -66,14 +66,14 @@
           },
           {
             "kind": "MULTI_FRAME_CONTINUITY",
-            "detail": "identical plate crop across sampled frames"
+            "detail": "동일 차량으로 프레임 간 지속 추적됨 — 대상 식별은 확실하나 번호판 마지막 자리 인식이 프레임 간 불일치"
           }
         ]
       },
       "observation": {
         "contract_version": "observation/v1",
-        "value": "88부1234",
-        "status": "OK",
+        "value": "17나28??",
+        "status": "NEEDS_REVIEW",
         "source": {
           "kind": "readout.plate_ocr"
         },
@@ -82,63 +82,62 @@
           "module": "readout",
           "run_ref": {
             "kind": "readout_run",
-            "ref": "rr_u001_plate"
+            "ref": "rr_p001_plate"
           }
         }
       },
       "consensus": {
-        "text": "88부1234",
-        "disagree_positions": [],
+        "text": "17나28??",
+        "disagree_positions": [
+          5,
+          6
+        ],
         "method": "MULTI_FRAME"
       },
-      "abstained": false,
-      "abstain_reason": null,
+      "abstained": true,
+      "abstain_reason": "FRAME_DISAGREEMENT",
       "best_frame": {
-        "frame_ref": "fr_u001_plate1",
-        "crop_ref": "crop_u001_001",
+        "frame_ref": "fr_p001_plate1",
+        "crop_ref": "crop_p001_001",
         "quality": {
-          "plate_px_height": 42,
-          "sharpness": 0.79
+          "plate_px_height": 24,
+          "sharpness": 0.44
         }
       },
       "frame_results": [
         {
-          "frame_ref": "fr_u001_plate1",
-          "crop_ref": "crop_u001_001",
-          "text": "88부1234",
-          "confidence": 0.9
+          "frame_ref": "fr_p001_plate1",
+          "crop_ref": "crop_p001_001",
+          "text": "17나2804",
+          "confidence": 0.41
         },
         {
-          "frame_ref": "fr_u001_plate2",
-          "crop_ref": "crop_u001_002",
-          "text": "88부1234",
-          "confidence": 0.88
+          "frame_ref": "fr_p001_plate2",
+          "crop_ref": "crop_p001_002",
+          "text": "17나2891",
+          "confidence": 0.38
         }
       ]
     }
   ],
   "overlay_time_readouts": [
     {
-      "readout_id": "readout_u001_overlay_na",
+      "readout_id": "readout_p001_time",
       "run_ref": {
         "kind": "readout_run",
-        "ref": "rr_u001_overlay"
+        "ref": "rr_p001_overlay"
       },
-      "case_id": "case_u001",
-      "candidate_id": "candidate_u001",
+      "case_id": "case_p001",
+      "candidate_id": "candidate_p001",
       "input_ref": {
-        "incident_clip_ref": "clip_u001",
+        "incident_clip_ref": "clip_p001",
         "source_profile": "readout-native",
         "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
       },
       "observation": {
         "contract_version": "observation/v1",
-        "value": null,
-        "status": "NOT_APPLICABLE",
-        "reason": {
-          "code": "readout.overlay.not_present",
-          "note": "화면에 타임스탬프 오버레이 자체가 찍혀 있지 않음(NOT_PRESENT) — 판독 실패가 아니라 대상이 없다는 정상 관찰 결과"
-        },
+        "value": "2026-08-29T20:10:12+09:00",
+        "status": "OK",
         "source": {
           "kind": "readout.overlay_ocr"
         },
@@ -147,17 +146,30 @@
           "module": "readout",
           "run_ref": {
             "kind": "readout_run",
-            "ref": "rr_u001_overlay"
+            "ref": "rr_p001_overlay"
           }
         }
       },
       "validation": {
-        "format_ok": null,
-        "monotonic_ok": null,
-        "duration_match_ok": null,
-        "sample_count": 0
+        "format_ok": true,
+        "monotonic_ok": true,
+        "duration_match_ok": true,
+        "sample_count": 2
       },
-      "samples": []
+      "samples": [
+        {
+          "frame_ref": "fr_p001_plate1",
+          "offset_sec": 12.0,
+          "raw_text": "2026-08-29 20:10:12",
+          "parsed_at": "2026-08-29T20:10:12+09:00"
+        },
+        {
+          "frame_ref": "fr_p001_plate2",
+          "offset_sec": 12.6,
+          "raw_text": "2026-08-29 20:10:13",
+          "parsed_at": "2026-08-29T20:10:13+09:00"
+        }
+      ]
     }
   ]
 }
