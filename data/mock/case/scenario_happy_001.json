@@ -153,18 +153,18 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.visual_event.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.location.present", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient" }
+          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.location.present", "category": "LOCATION", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] }
         ]
       },
       "requirements_package": {
         "readiness": "PASS",
         "checks": [
-          { "code": "package.asset.report_video.exists", "outcome": "PASS", "reason_code": "asset.available" },
-          { "code": "package.asset.plate_visible", "outcome": "PASS", "reason_code": "asset.plate_legible" },
-          { "code": "package.time.overlay_visible", "outcome": "PASS", "reason_code": "time.overlay_burned_in" }
+          { "code": "package.asset.report_video.exists", "category": "ASSET", "outcome": "PASS", "reason_code": "asset.available", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }], "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" } },
+          { "code": "package.vehicle.plate_visible_in_report_video", "category": "VEHICLE", "outcome": "PASS", "reason_code": "readout.plate_legible_in_asset", "subject_refs": [{ "kind": "readout_run", "ref": "rr_h001_plate" }, { "kind": "derived_asset", "ref": "da_h001_plate_image" }] },
+          { "code": "package.time.overlay_visible", "category": "TIME", "outcome": "PASS", "reason_code": "time.overlay_burned_in", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }] }
         ]
       },
       "package": {
@@ -256,18 +256,18 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.visual_event.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.location.present", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient" }
+          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] },
+          { "code": "evidence.location.present", "category": "LOCATION", "outcome": "PASS", "reason_code": "evidence.user_hint_sufficient", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }] }
         ]
       },
       "requirements_package": {
         "readiness": "PASS",
         "checks": [
-          { "code": "package.asset.report_video.exists", "outcome": "PASS", "reason_code": "asset.available" },
-          { "code": "package.asset.plate_visible", "outcome": "PASS", "reason_code": "asset.plate_legible" },
-          { "code": "package.time.overlay_visible", "outcome": "PASS", "reason_code": "time.overlay_burned_in" }
+          { "code": "package.asset.report_video.exists", "category": "ASSET", "outcome": "PASS", "reason_code": "asset.available", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }], "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" } },
+          { "code": "package.vehicle.plate_visible_in_report_video", "category": "VEHICLE", "outcome": "PASS", "reason_code": "readout.plate_legible_in_asset", "subject_refs": [{ "kind": "readout_run", "ref": "rr_h001_plate" }, { "kind": "derived_asset", "ref": "da_h001_plate_image" }] },
+          { "code": "package.time.overlay_visible", "category": "TIME", "outcome": "PASS", "reason_code": "time.overlay_burned_in", "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }] }
         ]
       },
       "package": {

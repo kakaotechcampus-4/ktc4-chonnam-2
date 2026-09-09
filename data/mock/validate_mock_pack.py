@@ -25,6 +25,14 @@ import json
 import sys
 from pathlib import Path
 
+# Windows 콘솔(cp949)에서 em dash 등 non-ASCII 출력 문자 때문에 UnicodeEncodeError로 죽는
+# 문제 수정(2026-09-09, 김대원·신유민 #16·#17 이슈 지적). 검증 자체는 PASS/FAIL과 무관하게
+# 항상 UTF-8로 출력한다.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parent  # data/mock
 MODULES = ["recording", "search", "readout", "evidence", "case", "common"]
 

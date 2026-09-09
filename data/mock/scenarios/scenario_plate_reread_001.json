@@ -1,0 +1,28 @@
+{
+  "scenario_id": "scenario_plate_reread_001",
+  "title": "번호판 ABSTAIN + EvidenceNeeds 자동 재판독(C·D·G·I) — 확정된 사건유형 위에서",
+  "case_id": "case_p001",
+  "scenario_types": [
+    "C",
+    "D",
+    "G",
+    "I"
+  ],
+  "description": "scenario_unknown_abstain_partial_001에서 분리된 시나리오다(2026-09-09, Decider 유소연 · 팀 리뷰 이슈 #19 김준영 제안). 사건 유형 자체(SIGNAL, 적색 신호 위반)는 VisualEvidence.verification=OBSERVED로 명확히 관찰되어 EvidenceRecord.event.*가 전부 확정되지만, PlateReadout은 target_association=ASSOCIATED(대상 차량 식별은 확실)임에도 프레임 간 OCR 인식이 불일치해 abstained=true가 된다(D). vehicle_number는 EvidenceRecord에서 필드 자체가 부재(null이 아니라 부재)로 표현되고, RequirementReport(EVIDENCE).overall=UNKNOWN이 BLOCK과 다른 의미(판정 자체가 성립하지 않음)임을 보여준다(C·G). EvidenceNeeds.items에 PLATE_REREAD(optional=false)가 담기고 case가 이를 받아 force_rerun=true로 새 JobRecord를 자동 발주하되, 이미 확정된 occurred_at·visual_event_type 값은 리셋하지 않는다(I) — occurred_at은 검증된 Overlay로 이미 OK 상태다.",
+  "note": "이 파일은 Mock 관리 전용 메타데이터다. artifacts 매핑은 런타임 Contract 필드가 아니다. EvidenceRecord.event가 필수(non-optional) 필드임을 contract-evidence-record-needs.md §3에서 직접 확인한 뒤, '사건 유형 자체가 불확실한 경우'(verification=UNCERTAIN)는 이 시나리오가 아니라 scenario_unknown_abstain_partial_001(E·H)이 전담하도록 분리했다.",
+  "artifacts": {
+    "recording": "data/mock/recording/scenario_plate_reread_001.json",
+    "search": "data/mock/search/scenario_plate_reread_001.json",
+    "readout": "data/mock/readout/scenario_plate_reread_001.json",
+    "evidence": "data/mock/evidence/scenario_plate_reread_001.json",
+    "case": "data/mock/case/scenario_plate_reread_001.json",
+    "common": "data/mock/common/scenario_plate_reread_001.json"
+  },
+  "modules_intentionally_absent": {},
+  "shared_ids": {
+    "case_id": "case_p001",
+    "candidate_id": "candidate_p001",
+    "timeline_id": "tl_p001",
+    "incident_clip_ref": "clip_p001"
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "scenario_id": "scenario_plate_reread_001",
+  "module": "recording",
+  "source_assets": [
+    {
+      "contract": "SourceAsset",
+      "contract_version": "source-asset-media-stream/v1",
+      "source_asset_ref": "sa_p001",
+      "asset_kind": "SOURCE_ASSET",
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_p001"
+      },
+      "media_stream_refs": [
+        "ms_p001_v"
+      ],
+      "byte_size": 790000000,
+      "availability": "AVAILABLE",
+      "duration_sec": 1800.0
+    }
+  ],
+  "media_streams": [
+    {
+      "contract": "MediaStream",
+      "contract_version": "source-asset-media-stream/v1",
+      "media_stream_ref": "ms_p001_v",
+      "source_asset_ref": "sa_p001",
+      "media_type": "VIDEO",
+      "role": "FRONT",
+      "availability": "AVAILABLE",
+      "duration_sec": 1800.0
+    }
+  ],
+  "frame_refs": [
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_p001_plate1",
+      "media_stream_ref": "ms_p001_v",
+      "source_offset_sec": 612.0
+    },
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_p001_plate2",
+      "media_stream_ref": "ms_p001_v",
+      "source_offset_sec": 612.6
+    }
+  ],
+  "recording_timelines": [
+    {
+      "contract": "RecordingTimeline",
+      "contract_version": "recording-timeline/v1",
+      "timeline_id": "tl_p001",
+      "revision": 1,
+      "time_basis": {
+        "mode": "ABSOLUTE_AND_RELATIVE",
+        "working_anchor": {
+          "value": "2026-08-29T20:00:00+09:00",
+          "source_candidate_ref": "tsc_p001_filename",
+          "status": "OK"
+        }
+      },
+      "time_source_candidates": [
+        "tsc_p001_filename"
+      ],
+      "source_placements": [
+        {
+          "source_asset_ref": "sa_p001",
+          "timeline_start_sec": 0.0,
+          "timeline_end_sec": 1800.0,
+          "media_stream_refs": [
+            "ms_p001_v"
+          ]
+        }
+      ],
+      "gaps": [],
+      "timeline_status": "USABLE",
+      "produced_by": "recording"
+    }
+  ],
+  "time_source_candidates": [
+    {
+      "candidate_id": "tsc_p001_filename",
+      "source_kind": "FILENAME",
+      "source_detail": "MDR_260829_200000.AVI",
+      "value": "2026-08-29T20:00:00+09:00",
+      "applies_to": {
+        "source_asset_ref": "sa_p001",
+        "source_offset_sec": 0.0
+      },
+      "observation_status": "OK",
+      "producer_checks": {
+        "parse_valid": true
+      },
+      "provenance": {
+        "producer": "recording",
+        "observed_from": "MDR_260829_200000.AVI"
+      }
+    }
+  ],
+  "span_resolutions": [
+    {
+      "contract": "SpanResolution",
+      "contract_version": "span-resolution/v1.2",
+      "timeline_ref": {
+        "timeline_id": "tl_p001",
+        "revision": 1
+      },
+      "requested_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      },
+      "status": "COMPLETE",
+      "spans": [
+        {
+          "sequence": 0,
+          "timeline_range": {
+            "start_sec": 600.0,
+            "end_sec": 660.0
+          },
+          "source_asset_ref": "sa_p001",
+          "media_stream_ref": "ms_p001_v",
+          "source_range": {
+            "start_sec": 600.0,
+            "end_sec": 660.0
+          }
+        }
+      ],
+      "missing_ranges": [],
+      "failure": null
+    }
+  ],
+  "incident_clips": [
+    {
+      "contract": "IncidentClip",
+      "contract_version": "analysis-source-derived/v1",
+      "incident_clip_ref": "clip_p001",
+      "asset_kind": "INCIDENT_CLIP",
+      "source_provenance": {
+        "timeline_ref": {
+          "timeline_id": "tl_p001",
+          "revision": 1
+        },
+        "requested_range": {
+          "start_sec": 600.0,
+          "end_sec": 660.0
+        },
+        "asset_spans": [
+          {
+            "sequence": 0,
+            "timeline_range": {
+              "start_sec": 600.0,
+              "end_sec": 660.0
+            },
+            "source_asset_ref": "sa_p001",
+            "media_stream_ref": "ms_p001_v",
+            "source_range": {
+              "start_sec": 600.0,
+              "end_sec": 660.0
+            }
+          }
+        ]
+      },
+      "media_stream_refs": [
+        "ms_p001_v"
+      ],
+      "byte_size": 18000000,
+      "availability": "AVAILABLE",
+      "duration_sec": 60.0,
+      "timeline_ref": {
+        "timeline_id": "tl_p001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      }
+    }
+  ]
+}

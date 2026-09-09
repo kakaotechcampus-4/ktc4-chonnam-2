@@ -10,6 +10,22 @@
 > - 📌 **의도적으로 보류** — **P1-7/item 8**(`ve_u001` → `UNCERTAIN`): 실행하려다 새 문제를 발견했다. `EvidenceRecord.event.*`는 계약 스키마에서 `?` 표시가 없어 **필수**로 보이는데, `verification=UNCERTAIN`이면 `visual_event_type`을 확정할 수 없다. 「VisualEvidence가 UNCERTAIN일 때 EvidenceRecord를 아예 만들지 않는가, 아니면 event를 비운 채 만드는가」가 계약에 없다 — §12에 김준영·서어진 확인 항목으로 추가했다.
 > - 갱신된 커버리지 표와 강화된 검증 항목은 `04_mock_validation_report.md`에 반영했다.
 
+> **수정 진행 상황 (2026-09-09, case Owner 유소연 2차 검수 반영).** §12에서 유소연에게 넘겨졌던 case 담당 항목 4건을 전부 결정·반영했다.
+>
+> - ✅ **결정·반영** — `JobRecord.kind`에 `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` 등재(+`purge_case`는 Job 밖 관리 동작으로 확정) · u001 `scope_u001`을 timeline과 일치하도록 `22:10~22:40`으로 축소(P1-8 잔여 종결) · `evidence.review_needed` OR 파생 규칙 확정 및 계약 문서 등재 · **P1-13(신규 발견·즉시 해소)**: `CaseView.requirements_*.checks[]`에 누락돼 있던 `category`·`subject_refs`·`measurement`를 대응 `evidence/*.json`에서 그대로 복사
+> - ⏳ **여전히 대기** — P0-3의 나머지(서어진의 `input_ref.kind` 결정 — case의 `JobRecord.kind` 등재는 끝났지만 실제 Fine Job/AnalysisRun 추가는 이 답변 이후 한 번에 진행), P3-1(예산 통화, 유소연+김준영 공동 — 아직 미결)
+> - 상세 근거는 §8 P0-3·P1-8·P1-9·P1-13, §12·§13 갱신분 참고. `validate_mock_pack.py` 재실행 PASS.
+
+> **수정 진행 상황 (2026-09-09 2라운드, 팀 리뷰 이슈 #15~#19 5건 종합 반영 — Decider 유소연).** 5명 전원이 GitHub 이슈로 남긴 §12/§13 회신을 전부 읽고(이슈는 열려있는 상태로 진행, 닫는 것은 팀원 각자 몫으로 남김) 반영했다.
+>
+> - ✅ **결정·반영 완료** — P0-4(신유민: overlay 「없음」 = `NOT_APPLICABLE`, 결과 객체 생성) · P1-7(서어진: `ve_u001` → `UNCERTAIN`/`visual_event_type=null`) · P2-2(김준영: `plate_visible` → `category=VEHICLE`, `AssetFacts` 보강)
+> - ✅ **결정 완료 · fixture는 다음 라운드** — P0-3(서어진: `input_ref.kind=analysis_source`) · P1-12 taxonomy(신유민, `scenario_infra_failure_001` 한정)
+> - 🔀 **시나리오 분리(김준영 제안, 유소연 결정)** — P1-7을 실제로 적용하니 `EvidenceRecord.event`가 필수 필드라 `EvidenceRecord` 자체를 만들 수 없었고, 이것이 같은 시나리오 안의 C·D·G·I(번호판 abstain, 사건유형 confirmed 전제)와 충돌했다. `scenario_unknown_abstain_partial_001`(E·H)과 신규 `scenario_plate_reread_001`(C·D·G·I)로 분리 — 시나리오 5개, fixture 36개.
+> - 🆕 **신규 Contract Gap 발견** — `EvidenceNeeds`(v1)가 "AI가 사건 유형 자체를 확정하지 못했다"는 상황을 표현할 계약상 메커니즘이 없다. 새 계약/필드가 필요할 수 있어 case Owner 단독으로 해소하지 않고 `04_mock_validation_report.md` §3.1-4·`CONTRACT_CONFLICTS.md`에 기록했다 — evidence(김준영)/PM 확인 필요.
+> - ⚠️ **이 라운드가 만든 신규 갭** — P0-4 재정의로 pack에서 유일했던 `ReadoutRun.outcome=FAILED`/`JobExecution.status=FAILED` 예시가 사라졌다(§1 Coverage 표에 기록). 완전 실패 규칙 자체는 여전히 유효하나 현재 fixture 증거가 없다 — `scenario_infra_failure_001`(§13-9)이 채워야 한다.
+> - ⏳ **여전히 대기** — P1-2·P1-3·P1-6(김준영/정철원) · P1-10(정철원) · P2-3·P2-4(다음 P2 정리) · P1-11/P2-9 finding 본문의 정확한 재작성(§13-19, 김대원 답변은 받았으나 텍스트 반영 전) · P3-1(예산 통화, 유소연+김준영 공동)
+> - 상세 근거는 §8 P0-3·P0-4·P1-7·P1-12·P2-2, §12·§13 갱신분, `04_mock_validation_report.md` §3.1-4 참고. `validate_mock_pack.py` 재실행 PASS(36개 파일·5개 시나리오).
+
 ---
 
 ## 0. Executive Summary
@@ -319,7 +335,9 @@ Fixture only
 
 ---
 
-## `[P0-3] ⏳ Owner 답변 대기 — VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
+## `[P0-3] 🔶 결정 완료 · fixture 반영은 다음 라운드 — VisualEvidence가 CANDIDATE_SEARCH run에 매달려 있고, VISUAL_VERIFY run이 pack 전체에 0건`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #15, 서어진 답변).** 남아 있던 `input_ref.kind` 질문에 서어진이 답변해 도메인 판단이 전부 끝났다 — `analysis_source`(`as_h001_fine` 등)를 `input_ref.kind`로 사용하기로 확정, 고아 자산 문제도 함께 해소된다. 더 이상 Owner 답변 대기 상태는 아니지만, 실제 `VISUAL_VERIFY` run/`JobRecord`/execution fixture 추가는 이번 라운드(u001 시나리오 분리·이견없음 항목 즉시반영)의 범위 밖이라 **다음 수정 라운드**로 넘긴다(§13에 작업 항목으로 등록).
 
 **관련 파일:** `data/mock/search/scenario_{happy,unknown_abstain_partial,correction_rerun}_001.json` · `data/mock/case/*` (Job 체인) · `data/mock/common/*` (execution·usage) · `data/mock/recording/scenario_happy_001.json`(고아 `as_h001_fine`/`rc_h001_fine`)
 **Scenario:** 전 시나리오
@@ -344,7 +362,7 @@ Coarse(후보 탐색)와 Fine(시각 검증)은 **비용·모델·실패 분류�
    `analysis_run = {run_id:"run_h001_fine", operation:"VISUAL_VERIFY", input_ref:{kind:"incident_clip", ref:"clip_h001"}, implementation:{impl_id:"gemini-visual-verify@f3", model_ref:..., prompt_version:"fine-f3", config_version:"search-v2"}, outcome:"SUCCEEDED", started_at/completed_at(코스 종료 이후), issues:[], usage_refs:["usage_h001_fine"], usage_summary:{...}, contract_version:"analysis-run-candidate-event/v1.1"}`, `candidates: []`
    — **주의**: `input_ref.kind`를 무엇으로 둘지는 계약이 "해당 output Contract의 접합 규칙을 따른다"고만 하고 `VisualEvidence`도 형식을 확정하지 않았다(P1-3과 같은 뿌리). `incident_clip` 또는 `analysis_source`(`as_h001_fine`) 중 하나를 골라야 하며 **서어진·정철원 확인이 필요하다.** 확인 전까지는 `analysis_source`(`as_h001_fine`)를 쓰면 고아 자산 문제까지 함께 해소된다.
 2. `ve_h001.run_id`를 `"run_h001_fine"`으로 변경.
-3. `case/scenario_happy_001.json`에 Fine용 `JobRecord` 추가 — **단 `JobRecord.kind`에 Fine 발주용 값이 등재돼 있지 않다**(등재값: `COARSE_SEARCH`·`PLATE_READ`·`OVERLAY_TIME_READ`). 새 값을 임의로 만들지 말고 §12에서 유소연에게 등재를 요청하고, 그 전까지는 이 Job 추가를 보류한다(fixture에 TODO 주석 대신 `04` 보고서의 "Architecture 확인 필요"에 항목 추가).
+3. `case/scenario_happy_001.json`에 Fine용 `JobRecord` 추가 — ~~단 `JobRecord.kind`에 Fine 발주용 값이 등재돼 있지 않다~~ **✅ 등재 완료(2026-09-09, 유소연): `kind="FINE_VERIFY"`, `label_key="job.fine_verify"`**(`contract-job-record-case-view.md` A절 §7·§12). case 쪽 blocker는 해소됐으나, 실제 `JobRecord`/`common` execution 추가는 아래 1의 `input_ref.kind` 답변(서어진) 이후 한 번에 진행한다 — 지금 case만 먼저 추가하면 실행 결과 없는 Job이 붕 뜬다.
 4. `common/scenario_happy_001.json`에 `exec_h001_fine`(produced: `{kind:"analysis_run", ref:"run_h001_fine"}`)와 `usage_h001_fine` 추가. Job 발주 값이 미정이면 execution도 함께 보류하고 run/usage만 추가한다(`UsageRecord.execution_ref=null`은 계약상 허용).
 5. u001·r001도 같은 방식으로 Fine run 추가.
 
@@ -352,11 +370,13 @@ Coarse(후보 탐색)와 Fine(시각 검증)은 **비용·모델·실패 분류�
 여러 Mock Artifact + Upstream 확인 필요(`JobRecord.kind` 등재, `VISUAL_VERIFY.input_ref.kind`)
 
 ### Owner 확인 필요 여부
-`필수 — 도메인 판단 필요` (서어진: Fine 입력 ref 종류 / 유소연: Fine 발주 `JobRecord.kind` 등재)
+`필수 — 도메인 판단 필요` (서어진: Fine 입력 ref 종류 / ~~유소연: Fine 발주 `JobRecord.kind` 등재~~ → **종결(2026-09-09, 유소연)**, 남은 것은 서어진 답변뿐)
 
 ---
 
-## `[P0-4] ⏳ Owner 답변 대기 — 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
+## `[P0-4] ✅ 해소 — 「화면 시각 없음」을 ReadoutRun 실패로 모델링해 제품이 요구한 상태 구분이 사라짐 (+ 미등록 failure.kind)`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #16, 신유민 답변 · case Owner 유소연 반영).** NOT_APPLICABLE(없음=사실) vs UNKNOWN(확인 못함) 판정 기준에 신유민이 「없음=사실」 쪽으로 답변해, 아래 "권장 수정"을 거의 그대로 반영했다. `rr_u001_overlay.outcome=SUCCEEDED`/`failure=null`, `overlay_time_readouts`에 `observation.status="NOT_APPLICABLE"` 결과 객체 추가(`reason.code="readout.overlay_not_present"` — 아래 예시의 `readout.overlay.not_present`와 점 표기가 다르지만 동일한 의미로 등록), `JobExecution` SUCCEEDED로 정정, `CaseView.notices[]`에 `time.overlay_not_present`(INFO) 추가까지 전부 `scenario_unknown_abstain_partial_001` 재설계(§8) 과정에서 반영했다. 다만 이 재설계로 `ReadoutRun.outcome=FAILED`/`JobExecution.status=FAILED`의 fixture 실사례가 pack에서 완전히 사라졌다 — `04_mock_validation_report.md` §1에 신규 커버리지 갭으로 기록했다. 아래 "권장 수정" 6번(진짜 실행 실패 경로의 별도 시나리오)은 여전히 미착수다.
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · `data/mock/evidence/scenario_unknown_abstain_partial_001.json` · `data/mock/case/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -596,7 +616,9 @@ Fixture only
 
 ---
 
-## `[P1-7] 📌 보류 — 수정 중 새 계약 공백 발견(§12 김준영 ⑤) — ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
+## `[P1-7] ✅ 해소 — 수정 중 새 계약 공백 발견(§12 김준영 ⑤) — ve_u001이 근거가 불충분한데 verification=OBSERVED로 단정`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #15, 서어진 답변 · case Owner 유소연 반영).** 아래 (A)안대로 확정 — `verification:"UNCERTAIN"`, `visual_event_type:null`로 변경했다. 다만 (A)를 실제로 적용해보니 `EvidenceRecord.event`가 계약상 필수 필드라 **`EvidenceRecord` 자체를 만들 수 없다**는 사실이 새로 드러났고(단순 필드 부재로는 해결 안 됨), 이것이 같은 시나리오에 함께 있던 C·D·G·I(번호판 abstain, 사건유형은 confirmed 전제)와 정면으로 충돌했다. 그래서 김준영 제안대로 `scenario_unknown_abstain_partial_001`(E·H, 이 항목)과 신규 `scenario_plate_reread_001`(C·D·G·I, 사건유형 confirmed)로 시나리오를 분리했다 — 상세 근거는 `04_mock_validation_report.md` §3.1-4(신규 Contract Gap: `EvidenceNeeds`가 "사건 유형 자체 미확정"을 표현 못 함).
 
 **관련 파일:** `data/mock/search/scenario_unknown_abstain_partial_001.json` · (연쇄) `data/mock/evidence/scenario_unknown_abstain_partial_001.json`
 **Scenario:** `scenario_unknown_abstain_partial_001`
@@ -654,6 +676,7 @@ candidate uncertainties = ["SIGNAL_STATE_NOT_CLEARLY_VISIBLE"]
 - u001: `range: ["2026-08-26T22:10:00+09:00", "2026-08-26T22:40:00+09:00"]`
 - r001: `range: ["2026-08-27T13:00:00+09:00", "2026-08-27T13:25:00+09:00"]`
 - 추가 권장: u001의 `scope_u001.time_ranges`가 timeline 밖 구간을 포함하는 상태를 살릴 거라면 §10의 `SpanResolution PARTIAL` fixture와 연결하고, 아니면 scope를 `22:10~22:40` 안으로 좁힌다. **둘 중 하나를 고르지 않으면 "요청 범위 일부가 영상 밖"이라는 사실이 아무 데도 표현되지 않는다.**
+  **✅ 결정·적용 완료(2026-09-09, 유소연): scope를 `22:10~22:40`으로 좁혔다**(`search/scenario_unknown_abstain_partial_001.json`). `SpanResolution PARTIAL`은 §10 신규 시나리오 `scenario_relative_rebase_001`(정철원 담당)에서 별도로 커버하므로 u001에서 중복 구현하지 않는다.
 
 ### 수정 범위
 Fixture only (+선택 시 Scenario 확장)
@@ -701,7 +724,7 @@ web은 이 pack만으로는 화면 절반을 못 그린다. 특히 ① 「AI 추
 여러 Mock Artifact + Scenario Catalog + Manifest
 
 ### Owner 확인 필요 여부
-`권장 — 수정 후 Owner sanity check` (신유민: 화면 상태 충분성 / 유소연: stage·progress 조합)
+`권장 — 수정 후 Owner sanity check` (신유민: 화면 상태 충분성 / ~~유소연: stage·progress 조합~~ → **확인 완료(2026-09-09, 유소연)**: happy/empty/u001/r001 4개 파일의 `stage`·`progress[].state`·`running_jobs`·`case_rev` 조합을 재검토했고 모순 없음. `evidence.review_needed` OR 파생 규칙도 4개 시나리오 전부와 일치함을 확인해 B절 §7에 확정 등재)
 
 ---
 
@@ -772,7 +795,9 @@ Fixture only + Validation
 
 ---
 
-## `[P1-12] ⏳ Owner 답변 대기 — readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
+## `[P1-12] 🔶 taxonomy 답변 완료 · 신규 시나리오는 미착수 — readout / search 실행 실패 계열이 등록된 taxonomy 값으로 표현된 fixture가 없음`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #16, 신유민 답변).** readout failure taxonomy 쪽 답변을 받아 `scenario_infra_failure_001`을 만들 때 쓸 등록 kind가 확정됐다. 또한 아래 "현재 상태"에서 예견했던 대로, P0-4 수정으로 `rr_u001_overlay`가 성공으로 바뀌면서 **pack 전체에 `outcome=FAILED`인 fixture가 정말로 0건이 됐다**(`04_mock_validation_report.md` §1에 신규 갭으로 기록). search 쪽 `issues[]`/`outcome=PARTIAL` 값은 여전히 서어진 확인 대기. 아래 `scenario_infra_failure_001` 자체는 아직 만들지 않았다 — 다음 라운드 작업으로 남긴다.
 
 **관련 파일:** `data/mock/readout/scenario_unknown_abstain_partial_001.json` · `data/mock/common/scenario_unknown_abstain_partial_001.json` · (부재) search `AnalysisRun.issues[]`
 **Scenario:** `scenario_unknown_abstain_partial_001` 및 전 시나리오
@@ -807,6 +832,33 @@ Fixture only + Validation
 
 ---
 
+## `[P1-13] ✅ 해소 — CaseView.requirements_evidence/package.checks[]가 RequirementReport의 RequirementCheck 스키마를 그대로 담지 않음`
+
+**관련 파일:** `data/mock/case/scenario_happy_001.json` · `case/scenario_unknown_abstain_partial_001.json` · `case/scenario_correction_rerun_001.json`
+**Scenario:** `scenario_happy_001`, `scenario_unknown_abstain_partial_001`, `scenario_correction_rerun_001`
+**관련 Contract:** `CaseView.requirements_evidence/requirements_package` · `RequirementReport.checks[]`(`RequirementCheck`)
+**관련 Module:** case (Producer), evidence (RequirementCheck 스키마 소유)
+
+### 현재 상태
+`contract-job-record-case-view.md` §4 「조사에서 확인된 제약: `checks[]`는 `RequirementReport` 그대로」에도 불구하고, 4개 시나리오의 `requirements_evidence.checks[]`/`requirements_package.checks[]`가 `code`·`outcome`·`reason_code`만 담고 있었다. `contract-requirement-report-package.md` §3의 `RequirementCheck`는 `category`(필수 enum)·`subject_refs`(필수 `ContractRef[]`)·`measurement`(선택)까지 포함한다. 대응하는 `evidence/*.json`의 `requirement_reports[].checks[]`(authoritative 원본)에는 이 필드들이 이미 정확히 채워져 있었다 — case 쪽 복사본만 누락된 상태였다.
+
+### 왜 문제인가
+"그대로"라는 계약 문구를 어기고 case가 임의로 필드를 걸러낸 축소 projection이 되어 있었다. web이 `category`(체크 분류 아이콘/그룹핑)나 `subject_refs`(어떤 자산/레코드가 문제인지)를 쓰려는 소비 코드를 mock으로 검증할 수 없었고, `measurement`(예: report_video 길이 180초 제한)도 이번 mock에서 유일하게 존재하는 사례가 case 쪽에서 사라져 있었다.
+
+### 근거
+`contract-job-record-case-view.md` §4 「checks[]는 RequirementReport 그대로 | 이전 회차 확정」, `contract-requirement-report-package.md` §3 `RequirementCheck` 스키마.
+
+### 조치
+4개 파일 전부 대응하는 `evidence/*.json`의 `requirement_reports[].checks[]`에서 `category`·`subject_refs`(·해당 시 `measurement`)를 그대로 복사했다(값 변경 없음 — P2-2의 `plate_visible` category 재배치 여부는 아직 열려 있으므로 현재 `"ASSET"` 값을 그대로 옮겼다). `validate_mock_pack.py` 재실행 PASS 확인.
+
+### 수정 범위
+Fixture only
+
+### Owner 확인 필요 여부
+`불필요 — 계약 문구("그대로") 위반의 기계적 정정` (2026-09-09, 유소연 검수 중 발견·즉시 수정)
+
+---
+
 ### P2
 
 ---
@@ -833,7 +885,9 @@ Fixture only (P1-6과 동일 작업 단위) | **Owner 확인:** `권장`
 
 ---
 
-## `[P2-2] ⏳ Owner 답변 대기 — FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
+## `[P2-2] ✅ 해소 — FINAL_PACKAGE의 ASSET check 입력(AssetFacts)이 없고, plate_visible의 category 배치가 §4.6과 충돌`
+
+> **2026-09-09 갱신 (팀 리뷰 이슈 #19, 김준영 답변).** 두 항목 모두 반영했다 — `recording/scenario_happy_001.json`의 `asset_facts`에 `da_h001_plate_image`(`DERIVED_ASSET`/`PLATE_IMAGE`) 항목을 추가했고, `evidence`·`case` 양쪽의 `package.asset.plate_visible` → `package.vehicle.plate_visible_in_report_video`로 `category="VEHICLE"`·`reason_code="readout.plate_legible_in_asset"`·`subject_refs=[{readout_run: rr_h001_plate}, {derived_asset: da_h001_plate_image}]`로 변경했다(§8 P1-13 checks[] 스키마 정합 작업과 함께 반영).
 
 **관련 파일:** `data/mock/recording/scenario_happy_001.json` · `data/mock/evidence/scenario_happy_001.json`
 **Scenario:** `scenario_happy_001` | **Contract:** `RequirementReport` §4.6 · `AssetFacts` | **Module:** evidence, recording, case
@@ -1093,12 +1147,12 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 
 | Owner | 반드시 직접 확인할 것 | 이유 | 관련 Fixture |
 | --- | --- | --- | --- |
-| **신유민** (readout) | ① 「화면 시각 없음」을 `observation.status`의 `NOT_APPLICABLE`로 볼지 `UNKNOWN`으로 볼지 (P0-4) ② overlay 실행 실패 시 쓸 taxonomy kind/code (P1-12) | 두 상태 구분 기준이 readout Technical Spec 미결이고, 화면 문구가 여기서 갈린다 | `readout/scenario_unknown_abstain_partial_001.json`, 신규 `scenario_infra_failure_001` |
-| **서어진** (search) | ① `VISUAL_VERIFY` run의 `input_ref` 종류(`incident_clip` vs `analysis_source`)와 직렬화 형식(ContractRef vs opaque string) (P0-3, P1-3) ② `ve_u001`을 `UNCERTAIN`으로 내릴지 (P1-7) ③ `Uncertainty.kind` 어휘 | Fine 입력 접합부는 계약이 "output Contract의 접합 규칙을 따른다"고만 위임했고, 관찰 강도 판단은 search 도메인이다 | `search/*.json` 3개 |
-| **김준영** (evidence/PM) | ① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2) ② `safety_report_type` 값 공간 확정 (기존 보고서 §3.2-4) ③ `plate_visible` check의 category (P2-2) ④ 좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6) ⑤ **`VisualEvidence.verification=UNCERTAIN`일 때 `EvidenceRecord`를 만드는가?** 만든다면 필수로 보이는 `event.visual_event_type`을 어떻게 하는가 (1차 수정 중 발견 — 서어진과 공동) | 전부 evidence가 소유한 값 공간·정책 판단이다. ⑤는 계약에 규정이 없어 P1-7 수정을 막고 있다 | `evidence/*.json` 3개 |
-| **유소연** (case) | ① Fine 발주용 `JobRecord.kind` 등재 여부 (P0-3) ② Report Video export / `purge_case` 발주 kind (기존 보고서 §3.3-1) ③ u001의 scope가 timeline 밖을 포함하는 상태를 유지할지 (P1-8) ④ `CaseView.evidence.review_needed` 파생 규칙 (기존 보고서 §3.2-3) | `JobRecord.kind`는 열린 enum이지만 등재는 case Owner 권한이고, CaseView 파생 규칙은 이 계약이 소유한다 | `case/*.json` 4개 |
+| **신유민** (readout) | ~~① 「화면 시각 없음」을 `observation.status`의 `NOT_APPLICABLE`로 볼지 `UNKNOWN`으로 볼지 (P0-4)~~ → **종결(2026-09-09, 이슈 #16): `NOT_APPLICABLE`(없음=사실)로 확정, fixture 반영 완료.** ~~② overlay 실행 실패 시 쓸 taxonomy kind/code (P1-12)~~ → **종결(2026-09-09, 이슈 #16): taxonomy 값 확정** — 단 `scenario_infra_failure_001` fixture 자체는 아직 미생성 | 두 상태 구분 기준·taxonomy 값 모두 답변 완료. 남은 건 fixture화뿐 | `readout/scenario_unknown_abstain_partial_001.json`(완료), 신규 `scenario_infra_failure_001`(미착수) |
+| **서어진** (search) | ~~① `VISUAL_VERIFY` run의 `input_ref` 종류 (P0-3, P1-3)~~ → **종결(2026-09-09, 이슈 #15): `analysis_source` 사용 확정** — fixture 반영은 다음 라운드 ~~② `ve_u001`을 `UNCERTAIN`으로 내릴지 (P1-7)~~ → **종결·반영 완료(2026-09-09, 이슈 #15): `UNCERTAIN`/`visual_event_type=null`로 전환, `Uncertainty.kind`도 `SIGNAL_STATE_NOT_CLEARLY_VISIBLE`로 통일** | 도메인 판단은 모두 끝났다 | `search/*.json` — u001·plate_reread 반영 완료, `VISUAL_VERIFY` run 추가는 잔여 |
+| **김준영** (evidence/PM) | ① Mock이 신설한 미등재 `source.kind` 5종 승인/교체 (P1-2) ② `safety_report_type` 값 공간 확정 (기존 보고서 §3.2-4) ③ ~~`plate_visible` check의 category (P2-2)~~ → **종결(2026-09-09, 이슈 #19): `category=VEHICLE`·`code=package.vehicle.plate_visible_in_report_video` 확정, `AssetFacts` 보강 완료** ④ 좌표 필드명 `lat/lon` 통일 및 `address` provenance (P1-6) ⑤ ~~`VisualEvidence.verification=UNCERTAIN`일 때 `EvidenceRecord`를 만드는가?~~ → **종결(2026-09-09, 이슈 #19): 못 만든다(`event`가 필수 필드) — 이 결론이 `scenario_unknown_abstain_partial_001`/`scenario_plate_reread_001` 시나리오 분리로 이어졌다** | 전부 evidence가 소유한 값 공간·정책 판단이다. ①②④는 여전히 미해소 | `evidence/*.json` |
+| ~~**유소연** (case)~~ **→ 전항목 종결 (2026-09-09)** | ~~① Fine 발주용 `JobRecord.kind` 등재 여부 (P0-3)~~ → `FINE_VERIFY` 등재 ② ~~Report Video export / `purge_case` 발주 kind~~ → `REPORT_VIDEO_EXPORT` 등재, `purge_case`는 Job 밖 관리 동작으로 확정 ③ ~~u001의 scope가 timeline 밖을 포함하는 상태를 유지할지~~ → scope를 `22:10~22:40`으로 좁힘 ④ ~~`CaseView.evidence.review_needed` 파생 규칙~~ → 여섯 `*_display.needs_review` OR 집계로 확정, `contract-job-record-case-view.md` B절 §6·§7에 등재 | `JobRecord.kind`는 열린 enum이지만 등재는 case Owner 권한이고, CaseView 파생 규칙은 이 계약이 소유한다 | `case/*.json` 4개, `search/scenario_unknown_abstain_partial_001.json`, `contract-job-record-case-view.md` |
 | **정철원** (recording) | ① GPS Observation을 recording이 어떤 단위·주기로 내는지 (P1-6) ② `scenario_relative_rebase_001`의 gap/rebase 서사와 `missing_ranges[].reason` 값 (P1-10) | 값 공간(`MissingRange.reason`)과 GPS 관찰 단위가 recording 소유이며 문서에 값 목록이 아직 없다 | 신규 `scenario_relative_rebase_001`, `recording/scenario_happy_001.json` |
-| **김대원** (eval) | ① metric 이름·정답 라벨 확정과 `expected/` 재작성 (P1-11) ② `processed_duration` 분모 정의 (P2-9) | eval Ground Truth 스키마 자체가 아직 없고 metric 정의는 eval 소유다 | `expected/*.json` 2개 |
+| **김대원** (eval) | ① metric 이름·정답 라벨 확정과 `expected/` 재작성 (P1-11) ② `processed_duration` 분모 정의 (P2-9) — **이슈 #17에서 답변은 받았으나(cp949 인코딩 버그 제보 포함, `validate_mock_pack.py`에 반영 완료), P1-11/P2-9 finding 본문을 답변 그대로 재작성하는 작업은 아직 안 함 — 다음 라운드에서 정확한 인용으로 처리** | eval Ground Truth 스키마 자체가 아직 없고 metric 정의는 eval 소유다 | `expected/*.json` 2개 |
 | **유소연 + 김준영** | 예산 단위(KRW) vs 비용 단위(USD) 환산 규칙 (P3-1) | 두 계약에 걸친 미결이며 제품 기본값 문제 | 전 `search/*` · `common/*` |
 
 **Owner에게 넘기지 않은 것**: enum 값 교체, 필수 필드 추가, off-by-one, 좌표계 환산, manifest range, 문서 수치, 검증 규칙 — 전부 §8·§11에 기계적 수정 지시로 확정해 두었다.
@@ -1112,20 +1166,24 @@ Mock Documentation + Upstream 확인 필요 | **Owner 확인:** `필수` (유소
 | 1 | ✅ 완료 | P0 | 검증 스크립트에 enum 검사 확대(§11-6)와 필수 키 검사(§11-7) 추가 후 **먼저 실행**해 실패 목록 확보 | `data/mock/validate_mock_pack.py` | 스크립트가 P0-1·P0-2를 자동 검출 | 불필요 |
 | 2 | ✅ 완료 | P0 | 사건 유형을 등록된 4종으로 교체 (P0-1) | search 3 · evidence 2 · case 2 · scenarios 3 · `02` 카탈로그 | 모든 `target_event_types`/`event_type_hint`/`visual_event_type`이 4종 안에 들고 스크립트 통과 | 권장(서어진·김준영) |
 | 3 | ✅ 완료 | P0 | `VisualEvidence`에 `uncertainties`·`legal_status:null` 추가 (P0-2) | search 3 | 3건 모두 §3 필수 필드 완비 | 불필요 |
-| 4 | ⏳ 대기(신유민) | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · evidence 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건 + `considered[]`에 overlay 항목 | **필수(신유민)** |
-| 5 | ⏳ 대기(서어진·유소연) | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 3 · common 3 · (보류 가능: case) | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | **필수(서어진·유소연)** |
+| 4 | ✅ 완료(2026-09-09, 신유민 답변 반영) | P0 | overlay 「없음」을 결과 객체로 재모델링 (P0-4) | readout 1 · common 1 · case 1 | `rr_u001_overlay` SUCCEEDED + `OverlayTimeReadout` 1건(`NOT_APPLICABLE`) — 반영 완료. `considered[]`에 overlay 항목 추가는 아직 안 함(잔여, evidence 1) | 불필요(반영 완료) |
+| 5 | ⏳ 대기 — 도메인 판단은 종결, fixture 반영만 남음 | P0 | `VISUAL_VERIFY` run 추가 및 `ve_*.run_id` 재연결 (P0-3) | search 3 · common 3 · case 3 | 모든 VisualEvidence가 `operation=VISUAL_VERIFY` run을 가리키고 `as_h001_fine` 고아 해소 | 불필요 — 서어진(`input_ref.kind=analysis_source`)·유소연(`JobRecord.kind=FINE_VERIFY`) 둘 다 2026-09-09 결정 완료, fixture만 남음 |
 | 6 | ✅ 완료 | P1 | 참조·좌표계 기계 수정: `disagree_positions`(P1-4), `samples[].offset_sec`+`sample_count`(P1-5), `manifest_summary.range`(P1-8), `processed_duration`(P2-9) | readout 1 · case 2 · search 1 · common 1 | 값이 §8 지시대로 정정되고 스크립트(§11-5·§11-9 규칙 포함) 통과 | 불필요 |
 | 7 | ⏳ 대기(김준영·정철원) | P1 | GPS/위치 경로 추가 + happy 위치 승격 (P1-6, P2-1) | recording 1~2 · evidence 2 · case 2 | happy `location_display.info_state=INFO_SOURCE_VERIFIED` + `coord` non-null, u001에 GPS 부재 Observation | **필수(김준영·정철원)** |
-| 8 | 📌 보류(§12 김준영 ⑤) | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1 · case 1 | `verification=UNCERTAIN`, `visual_event_type=null`, EvidenceRecord에 event 유형 필드 부재, requirement outcome 조정 | 권장(서어진) |
-| 9 | ⏳ 대기 | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001` · `scenario_relative_rebase_001` · `scenario_infra_failure_001` 전 모듈 + manifest + `02` | 각 시나리오가 스크립트 통과, `BLOCK`·`USABLE_RELATIVE_ONLY`·`STALE`이 pack에 등장 | **필수(정철원·신유민·유소연)** |
+| 8 | ✅ 완료(2026-09-09, 서어진 답변 반영 — `EvidenceRecord` 완전 미생성으로 귀결, 시나리오 분리) | P1 | `ve_u001` → `UNCERTAIN` 전환과 연쇄 반영 (P1-7) | search 1 · evidence 1(비움) · case 1 · 신규 `scenario_plate_reread_001` 전 모듈 | `verification=UNCERTAIN`, `visual_event_type=null` 반영. `EvidenceRecord`는 필드 부재가 아니라 **완전 미생성**(`evidence_records=[]`)으로 처리 — 단순 필드 부재로 안 되는 것이 확인돼 C·D·G·I 서사는 `scenario_plate_reread_001`로 분리 | 불필요(반영 완료) |
+| 9 | ⏳ 대기 | P1 | 신규 시나리오 3건 추가 (P1-9·P1-10·P1-12 / §10의 1·2·3) | `scenario_blocked_001` · `scenario_relative_rebase_001` · `scenario_infra_failure_001` 전 모듈 + manifest + `02` | 각 시나리오가 스크립트 통과, `BLOCK`·`USABLE_RELATIVE_ONLY`·`STALE`이 pack에 등장 | **필수(정철원·신유민·유소연)** — taxonomy 값 자체는 신유민이 이슈 #16에서 이미 답변함(`scenario_infra_failure_001` 한정) |
 | 10 | ✅ 완료 | P1 | happy `case_views`에 진행중·최종확인 스냅샷 추가, correction에 정정 전 스냅샷 추가 (P1-9, P2-6) | case 2 | `SEARCHING`/`RUNNING`/`user_reviewed=true`/정정 전 `INFO_NEEDS_REVIEW`가 등장 | 권장(신유민) |
 | 11 | 🔶 부분(actual_ref 제거 ✅ / metric 이름 대기) | P1 | eval fixture 재작성 (P1-11) | `expected/` 2 | `actual_ref` 제거 또는 실재 오답 fixture 연결, metric 이름 교체, §11-4 검증 통과 | **필수(김대원)** |
 | 12 | 🔶 부분(happy 분리 ✅ / purge 시나리오 미생성) | P1 | purge를 happy에서 분리 (P1-1) | recording 1 (+신규 `scenario_purge_001`) | happy 스냅샷에 AVAILABLE/DELETED 공존 없음 | 권장(정철원) |
-| 13 | 🔶 부분(P2-5·P2-8 ✅ / P2-2·3·4 대기) | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
+| 13 | 🔶 부분(P2-2·P2-5·P2-8 ✅ / P2-3·4 대기) | P2 | 나머지 P2 정리: AssetFacts 보강·category(P2-2), transform_ref(P2-3), considered[](P2-4), empty 시나리오 recording(P2-5), crop/track 문서화(P2-8) | 다수 | 각 항목 완료 조건은 §8 참조 | 권장 |
 | 14 | ✅ 완료 | P2 | 검증 스크립트 나머지 규칙(§11-1·2·3·4·8·10) 구현 | `validate_mock_pack.py` | 새 규칙 추가 후에도 pack 전체 PASS | 불필요 |
 | 15 | 🔶 부분(수치·ROOT·03·04 ✅ / 신규 Upstream 항목 반영 잔여) | P2 | 문서 동기화: 수치 정정, 스크립트 ROOT, `03` 재생성, `04`/`CONTRACT_CONFLICTS`에 신규 발견 항목(§8의 Upstream 항목들) 반영 | `docs/mock/*` · `scripts/*` | `03` 재생성 시 diff 없음, `04`와 `CONTRACT_CONFLICTS` 항목 수 일치 | 불필요 |
+| 16 | ✅ 완료 | P1 | `CaseView.requirements_*.checks[]`에 `category`·`subject_refs`(·`measurement`) 보강 (P1-13, 유소연 2차 검수 중 발견) | case 4 | `checks[]`가 대응 `evidence/*.json`의 `requirement_reports[].checks[]`와 필드 단위로 일치 | 불필요 |
+| 17 | ✅ 완료(2026-09-09, 유소연) | P0/P1 | case 담당 §12 항목 4건 결정·반영: `JobRecord.kind`에 `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` 등재(+`purge_case` Job 밖 확정), u001 `scope_u001` 범위 축소(P1-8 잔여), `evidence.review_needed` OR 파생 규칙 확정 | `contract-job-record-case-view.md`, `search/scenario_unknown_abstain_partial_001.json` | 계약 문서에 등재·확정 기록, `validate_mock_pack.py` PASS | 불필요(case Owner 본인 결정) |
+| 18 | ✅ 완료(2026-09-09, 팀 리뷰 이슈 #15~#19 5건 종합 반영) | P0/P1 | 팀원 5명 GitHub 이슈 회신 전부 읽고 반영: P0-3(서어진, 결정만) · P0-4(신유민, 반영 완료) · P1-7(서어진, 반영 완료) · P1-12 taxonomy(신유민, 결정만) · P2-2(김준영, 반영 완료) · **`scenario_unknown_abstain_partial_001` → `scenario_unknown_abstain_partial_001`(E·H) + 신규 `scenario_plate_reread_001`(C·D·G·I) 분리**(김준영 제안) | search/readout/evidence/case/common/scenarios 각 2개(u001+p001 신규) · `recording/scenario_happy_001.json`(AssetFacts) · `manifest.json` · `02_mock_scenario_catalog.md` · `04_mock_validation_report.md` · `CONTRACT_CONFLICTS.md` | `validate_mock_pack.py` PASS(36개 파일·5개 시나리오), `03` 재생성 diff 없음 | 불필요(전부 팀원 답변 반영) |
+| 19 | ⏳ 대기 | P1 | P1-11/P2-9 finding 본문을 김대원 이슈 #17 답변 그대로 재작성(현재는 05 자체 제안이 남아있어 실제 결정과 다를 수 있음) | `05_mock_deep_review_report.md` §8, `04_mock_validation_report.md` | 두 finding 텍스트가 이슈 #17 답변과 문자열 단위로 일치 | 불필요(이미 받은 답변 반영만 남음) |
 
-**상태는 2026-09-08 1차 수정 기준이다.** 답변이 필요 없는 1·2·3·6·10·14는 완료했고 11·12·13·15는 답변 불필요 부분만 처리했다. 남은 4·5·7·9와 11·13의 잔여는 §12의 Owner 답변이 있어야 진행할 수 있다. 8은 실행하려다 새 계약 공백을 발견해 보류했다(§0 참조).
+**상태는 2026-09-09 2차 수정(유소연 case 파트 정합 검토 + 팀 리뷰 이슈 5건 종합 반영) 기준이다.** 1차 수정(2026-09-08)에서 답변이 필요 없는 1·2·3·6·10·14를 완료했고 11·12·13·15는 답변 불필요 부분만 처리했다. 2차(2026-09-09) 1라운드에서 유소연이 case 담당 §12 항목 4건(①~④)을 전부 결정·반영했고(17), 그 과정에서 새로 발견한 `checks[]` 필드 누락도 수정했다(16). 2라운드(18)에서 팀원 5명의 이슈 회신을 전부 반영해 4·8이 완료로 바뀌었고, 5는 도메인 판단이 끝나 fixture 반영만 남았다. 남은 것은 5 fixture 반영(서어진 결정 반영)·7(김준영·정철원)·9(정철원·신유민·유소연 — 신규 시나리오 3건, taxonomy는 이미 답변받음)·13 잔여(P2-3·4)·19(김대원 답변의 정확한 재작성)와, 유소연·김준영 공동 결정인 P3-1(예산 통화)뿐이다. 이번 라운드에서 **`EvidenceNeeds`가 "사건 유형 자체 미확정"을 표현 못 한다는 새 Contract Gap**을 발견해 `04_mock_validation_report.md` §3.1-4에 기록했다 — case Owner 단독 해소 범위 밖이라 evidence(김준영)/PM 확인이 필요하다.
 
 ---
 

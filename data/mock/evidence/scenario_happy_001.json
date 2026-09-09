@@ -238,11 +238,14 @@
           "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" }
         },
         {
-          "code": "package.asset.plate_visible",
-          "category": "ASSET",
+          "code": "package.vehicle.plate_visible_in_report_video",
+          "category": "VEHICLE",
           "outcome": "PASS",
-          "reason_code": "asset.plate_legible",
-          "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_plate_image" }]
+          "reason_code": "readout.plate_legible_in_asset",
+          "subject_refs": [
+            { "kind": "readout_run", "ref": "rr_h001_plate" },
+            { "kind": "derived_asset", "ref": "da_h001_plate_image" }
+          ]
         },
         {
           "code": "package.time.overlay_visible",

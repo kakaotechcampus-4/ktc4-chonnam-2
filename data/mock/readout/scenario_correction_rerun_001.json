@@ -43,7 +43,7 @@
       },
       "observation": {
         "contract_version": "observation/v1",
-        "value": "광주서구 가1234",
+        "value": "34나7890",
         "status": "OK",
         "source": { "kind": "readout.plate_ocr" },
         "support_refs": [],
@@ -53,7 +53,7 @@
         }
       },
       "consensus": {
-        "text": "광주서구 가1234",
+        "text": "34나7890",
         "disagree_positions": [],
         "method": "MULTI_FRAME"
       },
@@ -65,8 +65,8 @@
         "quality": { "plate_px_height": 46, "sharpness": 0.85 }
       },
       "frame_results": [
-        { "frame_ref": "fr_r001_plate1", "crop_ref": "crop_r001_001", "text": "광주서구 가1234", "confidence": 0.93 },
-        { "frame_ref": "fr_r001_plate2", "crop_ref": "crop_r001_002", "text": "광주서구 가1234", "confidence": 0.9 }
+        { "frame_ref": "fr_r001_plate1", "crop_ref": "crop_r001_001", "text": "34나7890", "confidence": 0.93 },
+        { "frame_ref": "fr_r001_plate2", "crop_ref": "crop_r001_002", "text": "34나7890", "confidence": 0.9 }
       ]
     }
   ],

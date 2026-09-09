@@ -18,7 +18,12 @@
     {
       "scenario_id": "scenario_unknown_abstain_partial_001",
       "manifest_ref": "data/mock/scenarios/scenario_unknown_abstain_partial_001.json",
-      "scenario_types": ["C", "D", "E", "G", "H", "I"]
+      "scenario_types": ["E", "H"]
+    },
+    {
+      "scenario_id": "scenario_plate_reread_001",
+      "manifest_ref": "data/mock/scenarios/scenario_plate_reread_001.json",
+      "scenario_types": ["C", "D", "G", "I"]
     },
     {
       "scenario_id": "scenario_correction_rerun_001",

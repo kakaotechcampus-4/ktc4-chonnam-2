@@ -1,6 +1,8 @@
 # 02. Mock Scenario Catalog
 
-시나리오는 4개로 유지했다(「시나리오를 너무 많이 만들지 않고 시나리오당 Contract coverage를 최대화한다」는 지침에 따름). A~I 9개 유형 전부를 아래 4개 시나리오가 나눠 커버한다.
+> **2026-09-09 갱신 (Decider 유소연 · 팀 리뷰 이슈 #19 김준영 제안)** — 기존 `scenario_unknown_abstain_partial_001`이 C·D·E·G·H·I 6개 유형을 한 시나리오에 몰아넣으면서, `EvidenceRecord.event`가 계약상 필수 필드라 "사건 유형 자체가 불확실(verification=UNCERTAIN)"한 경우와 "사건 유형은 확정됐지만 번호판만 abstain"인 경우가 하나의 fixture 안에서 논리적으로 충돌했다(전자는 EvidenceRecord를 만들 수 없고, 후자는 만들 수 있어야 한다). 이를 `scenario_unknown_abstain_partial_001`(E·H)과 신규 `scenario_plate_reread_001`(C·D·G·I)로 분리했다. 시나리오 수는 4개→5개.
+
+시나리오는 5개다(「시나리오를 너무 많이 만들지 않고 시나리오당 Contract coverage를 최대화한다」는 지침에 따르되, 계약상 양립 불가능한 조합은 분리한다). A~I 9개 유형 전부를 아래 5개 시나리오가 나눠 커버한다.
 
 ## 시나리오 목록
 
@@ -8,7 +10,8 @@
 | --- | --- | --- | --- |
 | `scenario_happy_001` | A (Happy Path) | recording·search·readout·evidence·case·common | `case_h001` |
 | `scenario_empty_001` | B (결과 없음) | search·case·common | `case_e001` |
-| `scenario_unknown_abstain_partial_001` | C·D·E·G·H·I | recording·search·readout·evidence·case·common | `case_u001` |
+| `scenario_unknown_abstain_partial_001` | E·H | recording·search·readout·evidence·case·common | `case_u001` |
+| `scenario_plate_reread_001` | C·D·G·I | recording·search·readout·evidence·case·common | `case_p001` |
 | `scenario_correction_rerun_001` | F·I | recording·search·readout·evidence·case·common | `case_r001` |
 
 ---
@@ -41,24 +44,42 @@
 
 ---
 
-## `scenario_unknown_abstain_partial_001` — ABSTAIN + Partial + 시각 충돌 + UNKNOWN 판정
+## `scenario_unknown_abstain_partial_001` — 화면시각 NOT_APPLICABLE + 시각 소스 충돌 + 사건유형 확정 불가
 
-이 시나리오 하나에 6개 유형을 몰아넣었다(시나리오 수를 늘리지 않고 coverage를 최대화하는 지침에 따름).
+> **2026-09-09 재설계 (Decider 유소연)** — 이전 버전은 이 시나리오에 C·D·E·G·H·I 6개 유형을 몰아넣었으나, `VisualEvidence.verification=UNCERTAIN`(사건 유형 자체가 불확실)인 상태에서는 `EvidenceRecord.event`가 계약상 필수 필드라 `EvidenceRecord`를 아예 만들 수 없다(`contract-evidence-record-needs.md` §3 직접 확인). 반면 C·D·G·I(번호판 abstain narrative)는 사건 유형이 confirmed임을 전제로 `EvidenceRecord`가 존재해야 성립한다 — 두 전제가 한 fixture 안에서 양립할 수 없었다. 이 시나리오는 이제 E·H만 전담하고, C·D·G·I는 [`scenario_plate_reread_001`](#scenario_plate_reread_001--번호판-abstain--evidenceneeds-자동-재판독-확정된-사건유형-위에서)로 이동했다.
 
 **목적**:
-- 번호판 판독이 대상 차량 식별 모호(`AMBIGUOUS`)와 프레임 간 불일치로 `abstained=true`가 되는 경우, 이것이 Case 전체 실패가 아님을 보여준다(D).
-- 화면 시각 판독의 `ReadoutRun`이 `outcome=FAILED`(`NO_OVERLAY_PRESENT`)로 완전히 실패해 결과 객체(`OverlayTimeReadout`) 자체가 생성되지 않는 규칙을 보여준다(E — Partial: 번호판은 성공, 화면시각은 실패).
+- 화면 시각 판독의 `ReadoutRun`이 `outcome=SUCCEEDED`이면서 화면에 타임스탬프 오버레이 자체가 없어(`NOT_PRESENT`) `OverlayTimeReadout.observation.status=NOT_APPLICABLE`인 결과 객체가 정상적으로 생성되는 규칙을 보여준다(E). **완전 실패(`outcome=FAILED`, 결과 객체 자체가 없음)와 NOT_APPLICABLE(결과는 있으나 관찰 대상이 없다는 정상 관찰)은 다른 개념이다** — 이전 버전은 이를 `outcome=FAILED`로 잘못 모델링했었다(§8.1 P0-4, 신유민 결정으로 정정).
 - Filename 시각과 File Metadata 시각이 3분 어긋날 때 `TimeResolution`이 임의로 승자를 정하지 않고 `conflict.exists=true`로 보존하는 것을 보여준다(H). `BASE_PLUS_OFFSET` 상대-절대 시간 계산도 함께 검증한다.
-- `vehicle_number`가 EvidenceRecord에서 (null이 아니라) **필드 자체 부재**로 표현되고, `RequirementReport(EVIDENCE).overall=UNKNOWN`이 `BLOCK`과 다른 의미(판정 자체가 성립하지 않음)임을 보여준다(C·G).
-- `EvidenceNeeds.items`에 `PLATE_REREAD`(optional=false)가 담기고, `case`가 이를 받아 새 `JobRecord`(`force_rerun=true`)를 자동 발주하되 이미 확정된 `occurred_at`·`visual_event_type` 값은 리셋하지 않는 것을 보여준다(I).
+- **(신규 Contract Gap 증거)** `VisualEvidence.verification=UNCERTAIN`·`visual_event_type=null`일 때 `EvidenceRecord`를 만들 수 없고, `EvidenceNeeds`(v1)도 기존 `EvidenceRecord`를 `basis_record_ref`로 요구하므로 "AI가 사건 유형 자체를 확정하지 못했다"는 상황을 표현할 계약상 메커니즘이 없다는 gap을 이 fixture가 직접 증명한다. `CaseView.evidence=null`·`requirements_evidence=null`이며, 임시 notice 코드(`evidence.visual_event_unconfirmed`, WARN·blocking=true)로만 사용자 개입 필요를 표시한다. 이 gap 자체는 case Owner 단독 결정 범위를 넘는 새 Contract 사안이라 여기서 해결하지 않고 `04_mock_validation_report.md`·`CONTRACT_CONFLICTS.md`에 기록했다.
 
-**시작 조건**: 영상 1개, filename time과 file metadata time이 서로 다름. 대상 차량 힌트가 약함(신호 상태가 화면에서 불확실).
+**시작 조건**: 영상 1개, filename time과 file metadata time이 서로 다름. 신호 상태가 화면에서 불확실해 사건 유형 자체를 확정할 수 없음.
 
-**예상 흐름**: `COARSE_SEARCH` → 후보 1건(`ranking_score 0.61`, `uncertainties` 포함) → `VisualEvidence.target.association_confidence=0.58`(약함) → `PLATE_READ` 성공하지만 `abstained=true` → `OVERLAY_TIME_READ`은 `ReadoutRun.outcome=FAILED` → `evidence.assemble()`이 `EvidenceRecord`에서 `vehicle_number` 필드를 아예 비움, `occurred_at`은 `NEEDS_REVIEW`로 채움 → `EvidenceNeeds`가 `PLATE_REREAD` 요청 → `case`가 `force_rerun=true`로 새 Job 자동 발주(`QUEUED` 상태로 스냅샷) → `RequirementReport(EVIDENCE).overall=UNKNOWN`.
+**예상 흐름**: `COARSE_SEARCH` → 후보 1건(`ranking_score 0.61`, `uncertainties` 포함) → `VisualEvidence.verification=UNCERTAIN`·`visual_event_type=null`(대상 차량은 `MATCHED`이지만 신호 상태 미확정) → `PLATE_READ`는 정상 성공(이 시나리오의 관심사가 아님) → `OVERLAY_TIME_READ`은 `ReadoutRun.outcome=SUCCEEDED` + `OverlayTimeReadout.observation.status=NOT_APPLICABLE` → `evidence.assemble()`은 `event` 필수 필드를 채울 수 없어 `EvidenceRecord`를 만들지 못함(`evidence_records=[]`) → `RequirementReport`도 생성되지 않음(`evidence_record_ref` 기준 없음) → `CaseView.evidence=null`, blocking notice로 사용자 개입 요청.
 
-**기대 결과**: `ReportPackage`가 생성되지 않는다(§8.1 ready-only 규칙). `CaseView.requirements_package=null`.
+**기대 결과**: `EvidenceRecord`·`RequirementReport`·`ReportPackage` 모두 생성되지 않는다. `CaseView.evidence=null`, `requirements_evidence=null`, `requirements_package=null`.
 
-**검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`PlateReadout`·`TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
+**검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`OverlayTimeReadout`(`NOT_APPLICABLE`)·`TimeResolution`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
+
+---
+
+## `scenario_plate_reread_001` — 번호판 ABSTAIN + EvidenceNeeds 자동 재판독 (확정된 사건유형 위에서)
+
+**신설 (2026-09-09, Decider 유소연 · 팀 리뷰 이슈 #19 김준영 제안)** — `scenario_unknown_abstain_partial_001`에서 C·D·G·I를 분리했다.
+
+**목적**:
+- 사건 유형(`SIGNAL`, 적색 신호 위반) 자체는 `VisualEvidence.verification=OBSERVED`로 명확히 관찰되어 `EvidenceRecord.event.*`가 전부 확정됨을 전제로 둔다.
+- 번호판 판독이 대상 차량 식별은 확실(`target_association.status=ASSOCIATED`)하지만 프레임 간 OCR 인식이 불일치해 `abstained=true`가 되는 경우, 이것이 Case 전체 실패가 아님을 보여준다(D).
+- `vehicle_number`가 `EvidenceRecord`에서 (null이 아니라) **필드 자체 부재**로 표현되고, `RequirementReport(EVIDENCE).overall=UNKNOWN`이 `BLOCK`과 다른 의미(판정 자체가 성립하지 않음)임을 보여준다(C·G).
+- `EvidenceNeeds.items`에 `PLATE_REREAD`(`optional=false`)가 담기고, `case`가 이를 받아 새 `JobRecord`(`force_rerun=true`)를 자동 발주하되 이미 확정된 `occurred_at`·`visual_event_type` 값은 리셋하지 않는 것을 보여준다(I) — `occurred_at`은 검증된 Overlay로 이미 `status=OK`다.
+
+**시작 조건**: 영상 1개, 신호 위반 장면은 화면에서 명확히 관찰됨(사건 유형 확정). 번호판만 프레임 간 인식이 갈림.
+
+**예상 흐름**: `COARSE_SEARCH` → 후보 1건(`ranking_score 0.83`, `uncertainties=[]`) → `VisualEvidence.verification=OBSERVED`·`visual_event_type=SIGNAL` → `PLATE_READ` 성공하지만 `target_association=ASSOCIATED`인 채로 `abstained=true`(프레임 간 OCR 불일치) → `OVERLAY_TIME_READ` 정상 성공, `TimeResolution.status=OK` → `evidence.assemble()`이 `EvidenceRecord`에서 `vehicle_number` 필드를 아예 비움, `event`·`occurred_at`은 전부 확정 → `EvidenceNeeds`가 `PLATE_REREAD` 요청 → `case`가 `force_rerun=true`로 새 Job 자동 발주(`QUEUED` 상태로 스냅샷, `occurred_at`·`visual_event_type`은 리셋되지 않음) → `RequirementReport(EVIDENCE).overall=UNKNOWN`(원인은 `vehicle_number` 하나로 명확히 국한).
+
+**기대 결과**: `ReportPackage`가 생성되지 않는다(§8.1 ready-only 규칙). `CaseView.requirements_package=null`. `CaseView.evidence.event_time_display`는 이미 `INFO_SOURCE_VERIFIED`로 확정 표시된다.
+
+**검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`PlateReadout`·`OverlayTimeReadout`·`TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
 
 ---
 

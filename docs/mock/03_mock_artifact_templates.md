@@ -500,34 +500,34 @@
 }
 ```
 
-### PlateReadout — ABSTAIN (target_association=AMBIGUOUS)
+### PlateReadout — ABSTAIN (target_association=ASSOCIATED, 프레임 간 OCR 불일치)
 
 **Contract**: `plate-readout/v1.2`  
-**출처**: readout/scenario_unknown_abstain_partial_001.json → plate_readouts[0] (실제 파일에서 그대로 발췌)
+**출처**: readout/scenario_plate_reread_001.json → plate_readouts[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
   "contract": "PlateReadout",
   "contract_version": "plate-readout/v1.2",
-  "readout_id": "readout_u001_plate",
+  "readout_id": "readout_p001_plate",
   "run_ref": {
     "kind": "readout_run",
-    "ref": "rr_u001_plate"
+    "ref": "rr_p001_plate"
   },
-  "case_id": "case_u001",
-  "candidate_id": "candidate_u001",
+  "case_id": "case_p001",
+  "candidate_id": "candidate_p001",
   "input_ref": {
-    "incident_clip_ref": "clip_u001",
+    "incident_clip_ref": "clip_p001",
     "source_profile": "readout-native",
     "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
   },
   "target_association": {
-    "status": "AMBIGUOUS",
+    "status": "ASSOCIATED",
     "target_hint_used": true,
-    "track_ref": null,
+    "track_ref": "track_p001",
     "association_method": "TARGET_HINT_WITH_FALLBACK",
     "associated_region": {
-      "frame_ref": "fr_u001_plate1",
+      "frame_ref": "fr_p001_plate1",
       "bbox_xywh": [
         640,
         500,
@@ -538,7 +538,11 @@
     "evidence": [
       {
         "kind": "SPATIAL_PROXIMITY",
-        "detail": "two candidate regions overlap similarly with selected track"
+        "detail": "candidate target region overlaps selected track"
+      },
+      {
+        "kind": "MULTI_FRAME_CONTINUITY",
+        "detail": "동일 차량으로 프레임 간 지속 추적됨 — 대상 식별은 확실하나 번호판 마지막 자리 인식이 프레임 간 불일치"
       }
     ]
   },
@@ -554,7 +558,7 @@
       "module": "readout",
       "run_ref": {
         "kind": "readout_run",
-        "ref": "rr_u001_plate"
+        "ref": "rr_p001_plate"
       }
     }
   },
@@ -568,8 +572,8 @@
   "abstained": true,
   "abstain_reason": "FRAME_DISAGREEMENT",
   "best_frame": {
-    "frame_ref": "fr_u001_plate1",
-    "crop_ref": "crop_u001_001",
+    "frame_ref": "fr_p001_plate1",
+    "crop_ref": "crop_p001_001",
     "quality": {
       "plate_px_height": 24,
       "sharpness": 0.44
@@ -577,14 +581,14 @@
   },
   "frame_results": [
     {
-      "frame_ref": "fr_u001_plate1",
-      "crop_ref": "crop_u001_001",
+      "frame_ref": "fr_p001_plate1",
+      "crop_ref": "crop_p001_001",
       "text": "17나2804",
       "confidence": 0.41
     },
     {
-      "frame_ref": "fr_u001_plate2",
-      "crop_ref": "crop_u001_002",
+      "frame_ref": "fr_p001_plate2",
+      "crop_ref": "crop_p001_002",
       "text": "17나2894",
       "confidence": 0.38
     }
@@ -592,27 +596,52 @@
 }
 ```
 
-### ReadoutRun — 완전 실패 (결과 객체 자체가 생성되지 않음)
+### OverlayTimeReadout — NOT_APPLICABLE (화면에 오버레이 자체가 없음, outcome=SUCCEEDED)
 
-**Contract**: `readout-run/v1`  
-**출처**: readout/scenario_unknown_abstain_partial_001.json → readout_runs[1] (실제 파일에서 그대로 발췌)
+**Contract**: `plate-overlay-readout/v1`  
+**출처**: readout/scenario_unknown_abstain_partial_001.json → overlay_time_readouts[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
-  "contract": "ReadoutRun",
-  "contract_version": "readout-run/v1",
-  "run_id": "rr_u001_overlay",
-  "operation": "OVERLAY_TIME_READ",
-  "outcome": "FAILED",
-  "failure": {
-    "kind": "OVERLAY_DETECTION",
-    "code": "NO_OVERLAY_PRESENT"
+  "readout_id": "readout_u001_overlay_na",
+  "run_ref": {
+    "kind": "readout_run",
+    "ref": "rr_u001_overlay"
   },
-  "usage_refs": [
-    "usage_u001_overlay"
-  ],
-  "started_at": "2026-08-26T22:32:08+09:00",
-  "ended_at": "2026-08-26T22:32:11+09:00"
+  "case_id": "case_u001",
+  "candidate_id": "candidate_u001",
+  "input_ref": {
+    "incident_clip_ref": "clip_u001",
+    "source_profile": "readout-native",
+    "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+  },
+  "observation": {
+    "contract_version": "observation/v1",
+    "value": null,
+    "status": "NOT_APPLICABLE",
+    "reason": {
+      "code": "readout.overlay_not_present",
+      "note": "화면에 타임스탬프 오버레이 자체가 찍혀 있지 않음(NOT_PRESENT) — 판독 실패가 아니라 대상이 없다는 정상 관찰 결과"
+    },
+    "source": {
+      "kind": "readout.overlay_ocr"
+    },
+    "support_refs": [],
+    "produced_by": {
+      "module": "readout",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_u001_overlay"
+      }
+    }
+  },
+  "validation": {
+    "format_ok": false,
+    "monotonic_ok": false,
+    "duration_match_ok": false,
+    "sample_count": 0
+  },
+  "samples": []
 }
 ```
 
@@ -940,11 +969,15 @@
       }
     },
     {
-      "code": "package.asset.plate_visible",
-      "category": "ASSET",
+      "code": "package.vehicle.plate_visible_in_report_video",
+      "category": "VEHICLE",
       "outcome": "PASS",
-      "reason_code": "asset.plate_legible",
+      "reason_code": "readout.plate_legible_in_asset",
       "subject_refs": [
+        {
+          "kind": "readout_run",
+          "ref": "rr_h001_plate"
+        },
         {
           "kind": "derived_asset",
           "ref": "da_h001_plate_image"
@@ -1143,10 +1176,10 @@
 }
 ```
 
-### EvidenceRecord — vehicle_number 필드 자체 부재(UNKNOWN)
+### EvidenceRecord — vehicle_number 필드 자체 부재(UNKNOWN), event는 전부 confirmed
 
 **Contract**: `evidence-record/v1.2`  
-**출처**: evidence/scenario_unknown_abstain_partial_001.json → evidence_records[0] (실제 파일에서 그대로 발췌)
+**출처**: evidence/scenario_plate_reread_001.json → evidence_records[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
@@ -1154,25 +1187,25 @@
   "contract_version": "evidence-record/v1.2",
   "record_ref": {
     "kind": "evidence_record",
-    "ref": "ev_u001"
+    "ref": "ev_p001"
   },
   "case_ref": {
     "kind": "case",
-    "ref": "case_u001"
+    "ref": "case_p001"
   },
   "selection_rev": 1,
   "basis": {
     "candidate_ref": {
       "kind": "candidate_event",
-      "ref": "candidate_u001"
+      "ref": "candidate_p001"
     },
     "visual_evidence_ref": {
       "kind": "visual_evidence",
-      "ref": "ve_u001"
+      "ref": "ve_p001"
     },
     "evidence_interval_ref": {
       "kind": "incident_clip",
-      "ref": "clip_u001"
+      "ref": "clip_p001"
     }
   },
   "event": {
@@ -1182,7 +1215,7 @@
         "kind": "search.visual_inference",
         "ref": {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         },
         "observability": "OBSERVED",
         "label_key": "event.source.visual_inference"
@@ -1190,11 +1223,11 @@
       "support_refs": [
         {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         }
       ],
       "user_corrected": false,
-      "needs_review": true
+      "needs_review": false
     },
     "safety_report_type": {
       "value": "UNSAFE_SIGNAL_VIOLATION",
@@ -1202,7 +1235,7 @@
         "kind": "evidence.category_mapping",
         "ref": {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         },
         "observability": "INFERRED",
         "label_key": "event.source.category_mapping"
@@ -1210,19 +1243,19 @@
       "support_refs": [
         {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         }
       ],
       "user_corrected": false,
-      "needs_review": true
+      "needs_review": false
     },
     "violation_expression": {
-      "value": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
+      "value": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
       "source": {
         "kind": "evidence.violation_expression",
         "ref": {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         },
         "observability": "INFERRED",
         "label_key": "event.source.violation_expression"
@@ -1230,39 +1263,39 @@
       "support_refs": [
         {
           "kind": "visual_evidence",
-          "ref": "ve_u001"
+          "ref": "ve_p001"
         }
       ],
       "user_corrected": false,
-      "needs_review": true
+      "needs_review": false
     }
   },
   "occurred_at": {
-    "value": "2026-08-26T22:20:15+09:00",
+    "value": "2026-08-29T20:10:12+09:00",
     "time_resolution_ref": {
       "kind": "time_resolution",
-      "ref": "tres_u001"
+      "ref": "tres_p001"
     },
-    "resolution_status": "NEEDS_REVIEW",
+    "resolution_status": "OK",
     "user_corrected": false,
     "source": {
-      "kind": "recording.filename_time",
-      "label_key": "time.source.filename"
+      "kind": "readout.overlay_ocr",
+      "label_key": "time.source.overlay_ocr"
     }
   },
   "provenance": {
     "input_refs": [
       {
         "kind": "visual_evidence",
-        "ref": "ve_u001"
+        "ref": "ve_p001"
       },
       {
         "kind": "plate_readout",
-        "ref": "readout_u001_plate"
+        "ref": "readout_p001_plate"
       },
       {
         "kind": "time_resolution",
-        "ref": "tres_u001"
+        "ref": "tres_p001"
       }
     ],
     "correction_refs": [],
@@ -1274,7 +1307,7 @@
 ### EvidenceNeeds — PLATE_REREAD 요청
 
 **Contract**: `evidence-needs/v1`  
-**출처**: evidence/scenario_unknown_abstain_partial_001.json → evidence_needs[0] (실제 파일에서 그대로 발췌)
+**출처**: evidence/scenario_plate_reread_001.json → evidence_needs[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
@@ -1282,7 +1315,7 @@
   "contract_version": "evidence-needs/v1",
   "basis_record_ref": {
     "kind": "evidence_record",
-    "ref": "ev_u001"
+    "ref": "ev_p001"
   },
   "items": [
     {
@@ -1290,7 +1323,7 @@
       "would_fill": "VEHICLE_NUMBER",
       "why": {
         "code": "readout.plate_abstained_ambiguous_target",
-        "summary": "번호판 관찰이 대상 차량 식별 모호 및 프레임 간 불일치로 보류됨"
+        "summary": "번호판 관찰이 프레임 간 인식 불일치로 보류됨"
       },
       "optional": false,
       "context_refs": [
@@ -1298,14 +1331,14 @@
           "role": "evidence.interval",
           "ref": {
             "kind": "incident_clip",
-            "ref": "clip_u001"
+            "ref": "clip_p001"
           }
         },
         {
           "role": "evidence.target_hint",
           "ref": {
             "kind": "visual_evidence",
-            "ref": "ve_u001"
+            "ref": "ve_p001"
           }
         }
       ]
@@ -1314,10 +1347,10 @@
 }
 ```
 
-### RequirementReport — overall=UNKNOWN
+### RequirementReport — overall=UNKNOWN (원인은 vehicle_number 하나로 국한)
 
 **Contract**: `requirement-report/v1`  
-**출처**: evidence/scenario_unknown_abstain_partial_001.json → requirement_reports[0] (실제 파일에서 그대로 발췌)
+**출처**: evidence/scenario_plate_reread_001.json → requirement_reports[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
@@ -1325,18 +1358,18 @@
   "contract_version": "requirement-report/v1",
   "requirement_report_ref": {
     "kind": "requirement_report",
-    "ref": "req_u001_evidence"
+    "ref": "req_p001_evidence"
   },
   "scope": "EVIDENCE",
   "basis": {
     "evidence_record_ref": {
       "kind": "evidence_record",
-      "ref": "ev_u001"
+      "ref": "ev_p001"
     },
     "asset_refs": []
   },
   "policy_ref": "policy/requirement-rules-v1",
-  "evaluated_at": "2026-08-26T22:33:00+09:00",
+  "evaluated_at": "2026-08-29T20:33:00+09:00",
   "overall": "UNKNOWN",
   "checks": [
     {
@@ -1347,31 +1380,31 @@
       "subject_refs": [
         {
           "kind": "evidence_record",
-          "ref": "ev_u001"
+          "ref": "ev_p001"
         }
       ]
     },
     {
       "code": "evidence.occurred_at.present",
       "category": "TIME",
-      "outcome": "WARN",
-      "reason_code": "evidence.time_needs_review",
+      "outcome": "PASS",
+      "reason_code": "evidence.value_confirmed",
       "subject_refs": [
         {
           "kind": "evidence_record",
-          "ref": "ev_u001"
+          "ref": "ev_p001"
         }
       ]
     },
     {
       "code": "evidence.visual_event.present",
       "category": "EVIDENCE",
-      "outcome": "WARN",
-      "reason_code": "evidence.signal_state_uncertain",
+      "outcome": "PASS",
+      "reason_code": "evidence.value_confirmed",
       "subject_refs": [
         {
           "kind": "evidence_record",
-          "ref": "ev_u001"
+          "ref": "ev_p001"
         }
       ]
     }
@@ -1579,7 +1612,7 @@
     }
   },
   "vehicle_number": {
-    "value": "광주서구 가1234",
+    "value": "34나7890",
     "source": {
       "kind": "readout.plate_ocr",
       "ref": {
@@ -1846,23 +1879,51 @@
     "checks": [
       {
         "code": "evidence.vehicle_number.present",
+        "category": "VEHICLE",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.occurred_at.present",
+        "category": "TIME",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.visual_event.present",
+        "category": "EVIDENCE",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.location.present",
+        "category": "LOCATION",
         "outcome": "PASS",
-        "reason_code": "evidence.user_hint_sufficient"
+        "reason_code": "evidence.user_hint_sufficient",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       }
     ]
   },
@@ -1871,18 +1932,48 @@
     "checks": [
       {
         "code": "package.asset.report_video.exists",
+        "category": "ASSET",
         "outcome": "PASS",
-        "reason_code": "asset.available"
+        "reason_code": "asset.available",
+        "subject_refs": [
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_report_video"
+          }
+        ],
+        "measurement": {
+          "actual": 120.0,
+          "limit": 180.0,
+          "unit": "asset.duration_sec"
+        }
       },
       {
-        "code": "package.asset.plate_visible",
+        "code": "package.vehicle.plate_visible_in_report_video",
+        "category": "VEHICLE",
         "outcome": "PASS",
-        "reason_code": "asset.plate_legible"
+        "reason_code": "readout.plate_legible_in_asset",
+        "subject_refs": [
+          {
+            "kind": "readout_run",
+            "ref": "rr_h001_plate"
+          },
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_plate_image"
+          }
+        ]
       },
       {
         "code": "package.time.overlay_visible",
+        "category": "TIME",
         "outcome": "PASS",
-        "reason_code": "time.overlay_burned_in"
+        "reason_code": "time.overlay_burned_in",
+        "subject_refs": [
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_report_video"
+          }
+        ]
       }
     ]
   },
@@ -2028,23 +2119,51 @@
     "checks": [
       {
         "code": "evidence.vehicle_number.present",
+        "category": "VEHICLE",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.occurred_at.present",
+        "category": "TIME",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.visual_event.present",
+        "category": "EVIDENCE",
         "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed"
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       },
       {
         "code": "evidence.location.present",
+        "category": "LOCATION",
         "outcome": "PASS",
-        "reason_code": "evidence.user_hint_sufficient"
+        "reason_code": "evidence.user_hint_sufficient",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_h001"
+          }
+        ]
       }
     ]
   },
@@ -2053,18 +2172,48 @@
     "checks": [
       {
         "code": "package.asset.report_video.exists",
+        "category": "ASSET",
         "outcome": "PASS",
-        "reason_code": "asset.available"
+        "reason_code": "asset.available",
+        "subject_refs": [
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_report_video"
+          }
+        ],
+        "measurement": {
+          "actual": 120.0,
+          "limit": 180.0,
+          "unit": "asset.duration_sec"
+        }
       },
       {
-        "code": "package.asset.plate_visible",
+        "code": "package.vehicle.plate_visible_in_report_video",
+        "category": "VEHICLE",
         "outcome": "PASS",
-        "reason_code": "asset.plate_legible"
+        "reason_code": "readout.plate_legible_in_asset",
+        "subject_refs": [
+          {
+            "kind": "readout_run",
+            "ref": "rr_h001_plate"
+          },
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_plate_image"
+          }
+        ]
       },
       {
         "code": "package.time.overlay_visible",
+        "category": "TIME",
         "outcome": "PASS",
-        "reason_code": "time.overlay_burned_in"
+        "reason_code": "time.overlay_burned_in",
+        "subject_refs": [
+          {
+            "kind": "derived_asset",
+            "ref": "da_h001_report_video"
+          }
+        ]
       }
     ]
   },
@@ -2093,24 +2242,198 @@
 ### JobRecord — 재판독 자동 발주 (kind=PLATE_READ, force_rerun=true)
 
 **Contract**: `job-record/v1`  
-**출처**: case/scenario_unknown_abstain_partial_001.json → job_records[3] (실제 파일에서 그대로 발췌)
+**출처**: case/scenario_plate_reread_001.json → job_records[3] (실제 파일에서 그대로 발췌)
 
 ```json
 {
   "contract": "JobRecord",
   "contract_version": "job-record/v1",
-  "job_id": "job_u001_plate_reread",
-  "case_id": "case_u001",
+  "job_id": "job_p001_plate_reread",
+  "case_id": "case_p001",
   "case_rev": 3,
   "kind": "PLATE_READ",
   "scope_ref": null,
-  "input_fingerprint": "sha1:u001-plate-read-clip_u001",
+  "input_fingerprint": "sha1:p001-plate-read-clip_p001",
   "force_rerun": true,
-  "requested_at": "2026-08-26T22:33:05+09:00"
+  "requested_at": "2026-08-29T20:33:05+09:00"
 }
 ```
 
 ### CaseView — evidence.plate_display info_state=INFO_UNKNOWN, running_jobs 포함
+
+**Contract**: `case-view/v1.2`  
+**출처**: case/scenario_plate_reread_001.json → case_views[0] (실제 파일에서 그대로 발췌)
+
+```json
+{
+  "contract": "CaseView",
+  "contract_version": "case-view/v1.2",
+  "case_id": "case_p001",
+  "case_rev": 3,
+  "stage": "EVIDENCE_REVIEW",
+  "user_reviewed": false,
+  "manifest_summary": {
+    "file_count": 1,
+    "ok_file_count": 1,
+    "failed_file_count": 0,
+    "duration_sec": 1800.0,
+    "range": [
+      "2026-08-29T20:00:00+09:00",
+      "2026-08-29T20:30:00+09:00"
+    ]
+  },
+  "hints": {
+    "time": "저녁 8시쯤",
+    "vehicle": "은색 해치백",
+    "situation": "신호 위반 장면은 확실히 봤는데 번호판이 잘 안 보임",
+    "location": null
+  },
+  "progress": [
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "DONE"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate_p001",
+      "at": "2026-08-29T20:10:12+09:00",
+      "at_provenance": "recording.filename_time",
+      "observed": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
+      "thumb_ref": "fr_p001_plate1",
+      "selected": true
+    }
+  ],
+  "evidence": {
+    "record_id": "ev_p001",
+    "case_type_display": {
+      "code": "SIGNAL",
+      "label": "신호 위반",
+      "needs_review": false
+    },
+    "report_type_display": {
+      "code": "UNSAFE_SIGNAL_VIOLATION",
+      "label": "안전운전 불이행(신호위반)",
+      "needs_review": false
+    },
+    "violation_display": {
+      "code": null,
+      "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
+      "needs_review": false
+    },
+    "plate_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null
+    },
+    "event_time_display": {
+      "value": "2026-08-29T20:10:12+09:00",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "time.source.overlay_ocr"
+    },
+    "location_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null,
+      "coord": null,
+      "search_keyword": null
+    },
+    "user_edited": false,
+    "preview_ref": "fr_p001_plate1",
+    "review_needed": false,
+    "reason_code": null
+  },
+  "requirements_evidence": {
+    "readiness": "UNKNOWN",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "category": "VEHICLE",
+        "outcome": "UNKNOWN",
+        "reason_code": "evidence.pending_plate_reread",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_p001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "category": "TIME",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_p001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "category": "EVIDENCE",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_p001"
+          }
+        ]
+      }
+    ]
+  },
+  "requirements_package": null,
+  "package": null,
+  "running_jobs": [
+    {
+      "job_id": "job_p001_plate_reread",
+      "kind": "PLATE_READ",
+      "label_key": "job.plate_read",
+      "status": "PENDING"
+    }
+  ],
+  "notices": [
+    {
+      "code": "evidence.plate_reread_in_progress",
+      "severity": "INFO",
+      "blocking": false,
+      "message_key": "notice.plate_reread_running",
+      "actions": []
+    }
+  ]
+}
+```
+
+### CaseView — evidence=null, 사건유형 확정 불가로 blocking notice만 표시 (Contract Gap)
 
 **Contract**: `case-view/v1.2`  
 **출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0] (실제 파일에서 그대로 발췌)
@@ -2158,7 +2481,7 @@
     },
     {
       "step": "overlay_time_read",
-      "state": "FAILED"
+      "state": "DONE"
     },
     {
       "step": "evidence_assembly",
@@ -2166,7 +2489,7 @@
     },
     {
       "step": "requirement_check",
-      "state": "DONE"
+      "state": "PENDING"
     }
   ],
   "candidates": [
@@ -2179,78 +2502,11 @@
       "selected": true
     }
   ],
-  "evidence": {
-    "record_id": "ev_u001",
-    "case_type_display": {
-      "code": "SIGNAL",
-      "label": "신호 위반 의심",
-      "needs_review": true
-    },
-    "report_type_display": {
-      "code": "UNSAFE_SIGNAL_VIOLATION",
-      "label": "안전운전 불이행(신호위반 의심)",
-      "needs_review": true
-    },
-    "violation_display": {
-      "code": null,
-      "label": "은색 해치백이 신호를 위반하고 정지선을 통과한 것으로 추정됨 (신호 상태 확인 필요)",
-      "needs_review": true
-    },
-    "plate_display": {
-      "value": null,
-      "needs_review": false,
-      "info_state": "INFO_UNKNOWN",
-      "source_label_key": null
-    },
-    "event_time_display": {
-      "value": "2026-08-26T22:20:15+09:00",
-      "needs_review": true,
-      "info_state": "INFO_NEEDS_REVIEW",
-      "source_label_key": "time.source.filename"
-    },
-    "location_display": {
-      "value": null,
-      "needs_review": false,
-      "info_state": "INFO_UNKNOWN",
-      "source_label_key": null,
-      "coord": null,
-      "search_keyword": null
-    },
-    "user_edited": false,
-    "preview_ref": "fr_u001_plate1",
-    "review_needed": true,
-    "reason_code": "evidence.multiple_fields_need_review"
-  },
-  "requirements_evidence": {
-    "readiness": "UNKNOWN",
-    "checks": [
-      {
-        "code": "evidence.vehicle_number.present",
-        "outcome": "UNKNOWN",
-        "reason_code": "evidence.pending_plate_reread"
-      },
-      {
-        "code": "evidence.occurred_at.present",
-        "outcome": "WARN",
-        "reason_code": "evidence.time_needs_review"
-      },
-      {
-        "code": "evidence.visual_event.present",
-        "outcome": "WARN",
-        "reason_code": "evidence.signal_state_uncertain"
-      }
-    ]
-  },
+  "evidence": null,
+  "requirements_evidence": null,
   "requirements_package": null,
   "package": null,
-  "running_jobs": [
-    {
-      "job_id": "job_u001_plate_reread",
-      "kind": "PLATE_READ",
-      "label_key": "job.plate_read",
-      "status": "PENDING"
-    }
-  ],
+  "running_jobs": [],
   "notices": [
     {
       "code": "time.conflict_needs_notice",
@@ -2262,10 +2518,17 @@
       ]
     },
     {
-      "code": "evidence.plate_reread_in_progress",
+      "code": "time.overlay_not_present",
       "severity": "INFO",
       "blocking": false,
-      "message_key": "notice.plate_reread_running",
+      "message_key": "notice.overlay_not_present",
+      "actions": []
+    },
+    {
+      "code": "evidence.visual_event_unconfirmed",
+      "severity": "WARN",
+      "blocking": true,
+      "message_key": "notice.visual_event_unconfirmed",
       "actions": []
     }
   ]
@@ -2343,17 +2606,17 @@
 ### JobExecution — QUEUED (재판독 대기 중, ended_at=null)
 
 **Contract**: `job-execution/v1`  
-**출처**: common/scenario_unknown_abstain_partial_001.json → job_executions[3] (실제 파일에서 그대로 발췌)
+**출처**: common/scenario_plate_reread_001.json → job_executions[3] (실제 파일에서 그대로 발췌)
 
 ```json
 {
   "contract": "JobExecution",
   "contract_version": "job-execution/v1",
-  "execution_id": "exec_u001_plate_reread",
-  "job_id": "job_u001_plate_reread",
+  "execution_id": "exec_p001_plate_reread",
+  "job_id": "job_p001_plate_reread",
   "status": "QUEUED",
   "attempt": 1,
-  "queued_at": "2026-08-26T22:33:05+09:00",
+  "queued_at": "2026-08-29T20:33:05+09:00",
   "started_at": null,
   "ended_at": null,
   "produced": [],

@@ -247,6 +247,20 @@
       "duration_sec": 120.0,
       "timeline_ref": { "timeline_id": "tl_h001", "revision": 1 },
       "timeline_range": { "start_sec": 300.0, "end_sec": 420.0 }
+    },
+    {
+      "contract": "AssetFacts",
+      "contract_version": "source-asset-media-stream/v1",
+      "asset_ref": { "kind": "derived_asset", "ref": "da_h001_plate_image" },
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "PLATE_IMAGE",
+      "byte_size": 184320,
+      "availability": "AVAILABLE",
+      "checked_at": "2026-08-24T19:10:00+09:00",
+      "lineage": [{ "kind": "incident_clip", "ref": "clip_h001" }, { "kind": "source_asset", "ref": "sa_h001_front" }],
+      "duration_sec": null,
+      "timeline_ref": null,
+      "timeline_range": null
     }
   ],
   "remote_copies": [

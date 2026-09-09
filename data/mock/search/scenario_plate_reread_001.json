@@ -1,14 +1,14 @@
 {
-  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "scenario_id": "scenario_plate_reread_001",
   "module": "search",
   "analysis_scopes": [
     {
-      "scope_id": "scope_u001",
+      "scope_id": "scope_p001",
       "time_ranges": [
         {
           "kind": "ABSOLUTE",
-          "start": "2026-08-26T22:10:00+09:00",
-          "end": "2026-08-26T22:40:00+09:00"
+          "start": "2026-08-29T20:00:00+09:00",
+          "end": "2026-08-29T20:30:00+09:00"
         }
       ],
       "target_event_types": [
@@ -16,7 +16,7 @@
       ],
       "hint": {
         "vehicle": "은색 해치백",
-        "free_text": "신호 위반한 것 같은데 확실하지 않음"
+        "free_text": "신호 위반 장면은 확실히 봤는데 번호판이 잘 안 보임"
       },
       "budget": {
         "max_cost_krw": 300,
@@ -28,11 +28,11 @@
   "analysis_run_candidate_events": [
     {
       "analysis_run": {
-        "run_id": "run_u001",
+        "run_id": "run_p001",
         "operation": "CANDIDATE_SEARCH",
         "input_ref": {
           "kind": "ANALYSIS_SCOPE",
-          "ref": "scope_u001"
+          "ref": "scope_p001"
         },
         "implementation": {
           "impl_id": "gemini-candidate-search@c7",
@@ -41,22 +41,22 @@
           "config_version": "search-v2"
         },
         "outcome": "SUCCEEDED",
-        "started_at": "2026-08-26T22:30:05+09:00",
-        "completed_at": "2026-08-26T22:31:20+09:00",
+        "started_at": "2026-08-29T20:30:05+09:00",
+        "completed_at": "2026-08-29T20:31:15+09:00",
         "issues": [],
         "usage_refs": [
-          "usage_u001_coarse"
+          "usage_p001_coarse"
         ],
         "usage_summary": {
           "processed_duration_ms": 1800000,
           "token_usage": {
-            "input_tokens": 13100,
-            "output_tokens": 980,
-            "total_tokens": 14080
+            "input_tokens": 13050,
+            "output_tokens": 960,
+            "total_tokens": 14010
           },
-          "latency_ms": 61000,
+          "latency_ms": 58000,
           "total_cost": {
-            "amount": "0.39",
+            "amount": "0.38",
             "currency": "USD"
           }
         },
@@ -64,23 +64,21 @@
       },
       "candidates": [
         {
-          "candidate_id": "candidate_u001",
-          "run_id": "run_u001",
+          "candidate_id": "candidate_p001",
+          "run_id": "run_p001",
           "span": {
-            "timeline_id": "tl_u001",
+            "timeline_id": "tl_p001",
             "timeline_revision": 1,
             "start_ms": 600000,
             "end_ms": 660000,
-            "representative_ms": 615000
+            "representative_ms": 612000
           },
           "rank": 1,
-          "ranking_score": 0.61,
+          "ranking_score": 0.83,
           "event_type_hint": "SIGNAL",
-          "summary": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
-          "uncertainties": [
-            "SIGNAL_STATE_NOT_CLEARLY_VISIBLE"
-          ],
-          "thumbnail_ref": "fr_u001_plate1"
+          "summary": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
+          "uncertainties": [],
+          "thumbnail_ref": "fr_p001_plate1"
         }
       ]
     }
@@ -88,53 +86,45 @@
   "visual_evidences": [
     {
       "schema_version": "visual-evidence/v1.0",
-      "visual_evidence_id": "ve_u001",
-      "run_id": "run_u001",
+      "visual_evidence_id": "ve_p001",
+      "run_id": "run_p001",
       "input_ref": {
         "kind": "incident_clip",
-        "ref": "clip_u001"
+        "ref": "clip_p001"
       },
-      "candidate_id": "candidate_u001",
-      "verification": "UNCERTAIN",
-      "visual_event_type": null,
+      "candidate_id": "candidate_p001",
+      "verification": "OBSERVED",
+      "visual_event_type": "SIGNAL",
       "target": {
         "association_status": "MATCHED",
         "described_as": "은색 해치백",
         "match_with_hint": true,
-        "association_confidence": 0.58,
+        "association_confidence": 0.91,
         "track_ref": null,
         "evidence_refs": [
-          "fr_u001_plate1"
+          "fr_p001_plate1"
         ]
       },
       "primitives": [
         {
           "kind": "RED_SIGNAL",
-          "state": "UNCERTAIN",
-          "confidence": 0.47,
+          "state": "PRESENT",
+          "confidence": 0.94,
           "evidence_refs": [
-            "fr_u001_plate1"
+            "fr_p001_plate1"
           ]
         }
       ],
       "temporal_facts": [
         {
-          "at_offset_ms": 15000,
+          "at_offset_ms": 12000,
           "fact": "TARGET_CROSSES_STOP_LINE",
           "evidence_refs": [
-            "fr_u001_plate1"
+            "fr_p001_plate1"
           ]
         }
       ],
-      "uncertainties": [
-        {
-          "kind": "SIGNAL_STATE_NOT_CLEARLY_VISIBLE",
-          "detail": "신호등이 앞 차량 등 시야 방해로 부분적으로 가려져 점등 상태를 명확히 판별할 수 없음 — 사건 유형(SIGNAL) 자체를 확정할 수 없음",
-          "evidence_refs": [
-            "fr_u001_plate1"
-          ]
-        }
-      ],
+      "uncertainties": [],
       "legal_status": null
     }
   ]

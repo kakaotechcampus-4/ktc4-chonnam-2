@@ -76,7 +76,7 @@
           "needs_review": false
         },
         "plate_display": {
-          "value": "광주서구 가1234",
+          "value": "34나7890",
           "needs_review": false,
           "info_state": "INFO_SOURCE_VERIFIED",
           "source_label_key": "plate.source.plate_ocr"
@@ -103,8 +103,8 @@
       "requirements_evidence": {
         "readiness": "WARN",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "WARN", "reason_code": "evidence.time_needs_review" }
+          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v1" }] },
+          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "WARN", "reason_code": "evidence.time_needs_review", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v1" }] }
         ]
       },
       "requirements_package": null,
@@ -168,7 +168,7 @@
           "needs_review": false
         },
         "plate_display": {
-          "value": "광주서구 가1234",
+          "value": "34나7890",
           "needs_review": false,
           "info_state": "INFO_SOURCE_VERIFIED",
           "source_label_key": "plate.source.plate_ocr"
@@ -195,8 +195,8 @@
       "requirements_evidence": {
         "readiness": "PASS",
         "checks": [
-          { "code": "evidence.vehicle_number.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" },
-          { "code": "evidence.occurred_at.present", "outcome": "PASS", "reason_code": "evidence.value_confirmed" }
+          { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v2" }] },
+          { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_r001_v2" }] }
         ]
       },
       "requirements_package": null,
