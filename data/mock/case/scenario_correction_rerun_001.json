@@ -25,6 +25,18 @@
       "input_fingerprint": "sha1:r001-plate-read-clip_r001",
       "force_rerun": false,
       "requested_at": "2026-08-27T13:20:59+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_r001_overlay",
+      "case_id": "case_r001",
+      "case_rev": 2,
+      "kind": "OVERLAY_TIME_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:r001-overlay-read-clip_r001",
+      "force_rerun": false,
+      "requested_at": "2026-08-27T13:20:59+09:00"
     }
   ],
   "case_views": [
@@ -53,6 +65,7 @@
         { "step": "coarse_search", "state": "DONE" },
         { "step": "candidate_review", "state": "DONE" },
         { "step": "plate_read", "state": "DONE" },
+        { "step": "overlay_time_read", "state": "DONE" },
         { "step": "evidence_assembly", "state": "DONE" },
         { "step": "requirement_check", "state": "DONE" }
       ],
@@ -145,6 +158,7 @@
         { "step": "coarse_search", "state": "DONE" },
         { "step": "candidate_review", "state": "DONE" },
         { "step": "plate_read", "state": "DONE" },
+        { "step": "overlay_time_read", "state": "DONE" },
         { "step": "evidence_assembly", "state": "DONE" },
         { "step": "requirement_check", "state": "DONE" }
       ],

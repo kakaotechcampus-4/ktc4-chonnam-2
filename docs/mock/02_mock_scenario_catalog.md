@@ -83,21 +83,22 @@
 
 ---
 
-## `scenario_correction_rerun_001` — 사용자 정정 + Supersede 재실행 + NOT_RUN 구분
+## `scenario_correction_rerun_001` — 사용자 정정 + Supersede 재실행
 
 **목적**:
 - 사용자가 사건 발생시각을 명시적으로 정정했을 때 `TimeResolution`이 `USER_OVERRIDE`/`user_corrected=true`로 새 버전을 만들고 `supersedes_ref`로 이전 버전과 연결되는 것을 보여준다(F).
 - 이 정정 과정에서 **이미 확정돼 있던 `vehicle_number`는 완전히 동일한 값·provenance로 유지**됨을 보여준다 — 정정이 무관한 값을 리셋하지 않는다는 원칙의 직접적 증거다(I).
 - `EvidenceRecord`·`RequirementReport`가 각각 v1→v2로 supersede되는 chain도 함께 보여준다.
-- `OverlayTimeReadout`을 한 번도 시도하지 않아 `readout_runs`에 overlay 항목이 아예 없는 상태 — 이는 "결과 없음(FAILED)"과 다른 **NOT_RUN**을 배열 부재로 표현한 것이다.
+- `OverlayTimeReadout`은 실행되지만(`rr_r001_overlay`, `outcome=SUCCEEDED`) 화면에 오버레이 자체가 찍혀 있지 않아 `observation.status=NOT_APPLICABLE`로 관찰된다(`scenario_unknown_abstain_partial_001`과 동일 패턴) — 그 때문에 최초 시각이 filename 기반 추정치(`NEEDS_REVIEW`)로만 남아 사용자 정정이 필요했다는 서사와도 맞아떨어진다.
+  - **2026-09-09 2차 재검토 정정**: 이전 버전은 `readout_runs`에 overlay 항목 자체가 없어 "결과 없음(FAILED)"과 다른 NOT_RUN을 배열 부재로 표현하려 했으나, 이는 v1에서 확정된 "오버레이 OCR은 선택된 후보마다 무조건 디스패치된다"는 정책(`contract-plate-overlay-readout.md` §11-4)과 정면으로 모순됨을 정철원(recording Owner, 이슈 #18)의 답변 재확인 과정에서 발견했다. NOT_RUN을 배열 부재로 표현하는 설계 자체를 폐기하고, u001과 동일하게 "실행은 되지만 NOT_APPLICABLE"로 재구성했다.
 
 **시작 조건**: 번호판은 처음부터 명확하게 확정(`OBSERVED`)됐다. 발생시각은 처음엔 Filename+offset 계산값(`NEEDS_REVIEW`)뿐이었다.
 
-**예상 흐름**: `COARSE_SEARCH` → 후보 선택 → `PLATE_READ` 성공(비-abstain) → `TimeResolution v1`(`NEEDS_REVIEW`, `BASE_PLUS_OFFSET`) → `EvidenceRecord v1`(`occurred_at.resolution_status=NEEDS_REVIEW`) → 사용자가 정정 제출(`CorrectionRecord`, opaque ref만 사용 — Draft 계약이라 필드 스키마 미생성) → `TimeResolution v2`(`status=OK`, `verification=AGREED`, `user_corrected=true`, `supersedes_ref=v1`) → `EvidenceRecord v2`(`occurred_at`만 갱신, `vehicle_number`는 v1과 완전 동일) → `RequirementReport v1(WARN)`→`v2(PASS)`.
+**예상 흐름**: `COARSE_SEARCH` → 후보 선택 → `PLATE_READ` 성공(비-abstain) → `OVERLAY_TIME_READ` 실행되나 오버레이 부재로 `NOT_APPLICABLE` → `TimeResolution v1`(`NEEDS_REVIEW`, `BASE_PLUS_OFFSET`) → `EvidenceRecord v1`(`occurred_at.resolution_status=NEEDS_REVIEW`) → 사용자가 정정 제출(`CorrectionRecord`, opaque ref만 사용 — Draft 계약이라 필드 스키마 미생성) → `TimeResolution v2`(`status=OK`, `verification=AGREED`, `user_corrected=true`, `supersedes_ref=v1`) → `EvidenceRecord v2`(`occurred_at`만 갱신, `vehicle_number`는 v1과 완전 동일) → `RequirementReport v1(WARN)`→`v2(PASS)`.
 
 **기대 결과**: `EvidenceRecord v2.vehicle_number`가 `EvidenceRecord v1.vehicle_number`와 값·source·support_refs·needs_review 전부 동일. `CaseView.evidence.user_edited=true`이지만 `plate_display`는 그대로.
 
-**검증 Contract**: `TimeResolution`(supersede)·`EvidenceRecord`(supersede)·`RequirementReport`(supersede)·`ReadoutRun`(overlay 부재)·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
+**검증 Contract**: `TimeResolution`(supersede)·`EvidenceRecord`(supersede)·`RequirementReport`(supersede)·`ReadoutRun`(overlay NOT_APPLICABLE)·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
 
 **의도적으로 만들지 않은 것**: `CorrectionRecord`의 실제 필드 fixture. `contract-correction-record.md`가 아직 Draft이기 때문이며, `04_mock_validation_report.md`의 "Fixture 생성 불가"에 기록했다.
 

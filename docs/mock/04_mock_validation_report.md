@@ -7,6 +7,8 @@
 > **2026-09-09 갱신 (case Owner 유소연 2차 검수).** §12에서 유소연에게 배정됐던 case 담당 항목 4건을 전부 결정·반영했다 — `JobRecord.kind`에 `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` 등재(+`purge_case`는 Job 밖 관리 동작으로 확정, §3.3-1), u001 `scope_u001`을 timeline과 일치하도록 축소(P1-8 잔여 종결), `evidence.review_needed` OR 파생 규칙 확정(§3.2-3). 검수 중 `CaseView.requirements_evidence/package.checks[]`가 계약이 요구하는 `RequirementReport` 원형(`category`·`subject_refs`·`measurement`)을 담지 않고 있던 것을 새로 발견해 4개 시나리오 전부 수정했다(P1-13, `05` §8 참고). **P0-3의 나머지(서어진의 `input_ref.kind` 결정)와 P3-1(예산 통화, 유소연+김준영 공동)은 이 시점엔 여전히 미해소였다 — 둘 다 2026-09-09 2라운드(이슈 #15·#19 반영)에서 도메인 판단은 종결되고 fixture 반영만 남았다.**
 >
 > **2026-09-09 2차 갱신 (case Owner 유소연 · 팀 리뷰 이슈 #15~#19 5건 종합 반영).** 팀원 5명이 GitHub 이슈로 남긴 §12/§13 회신을 전부 읽고 반영했다 — P0-3 완전 해소(서어진, `input_ref.kind` 결정), P1-12 taxonomy 확정(신유민), P2-2 `category=VEHICLE` 확정(김준영), P0-4 재정의: `OverlayTimeReadout`의 「화면 시각 없음」은 `outcome=FAILED`가 아니라 `outcome=SUCCEEDED` + `observation.status=NOT_APPLICABLE`(결과 객체는 생성됨)로 정정(신유민). 아울러 `scenario_unknown_abstain_partial_001`이 C·D·E·G·H·I 6개 유형을 한 fixture에 몰아넣으면서 "사건 유형 자체가 불확실"(EvidenceRecord를 만들 수 없음)과 "사건 유형은 확정, 번호판만 abstain"(EvidenceRecord가 있어야 함)이라는 두 전제가 충돌하고 있던 것을 발견해(김준영 제안, §3.1-4) `scenario_unknown_abstain_partial_001`(E·H)과 신규 `scenario_plate_reread_001`(C·D·G·I)로 분리했다. 분리 과정에서 **`EvidenceNeeds`(v1)가 "AI가 사건 유형 자체를 확정하지 못했다"는 상황을 표현할 계약상 메커니즘이 없다는 새 Contract Gap**을 발견해 §3.1-4에 기록했다(이 gap 자체는 새 계약/필드 신설이 필요할 수 있어 case Owner 단독으로 해소하지 않았다). 이 분리로 `ReadoutRun.outcome=FAILED`와 `JobExecution.status=FAILED`가 fixture에서 사라져 새 커버리지 갭이 됐다 — §1 표에 반영.
+>
+> **2026-09-09 3차 갱신 (이슈 #15~#19 전량 원문 재대조).** 2라운드 요약의 일부 오류(김준영 ①④·P3-1·P1-3 오독)를 사용자가 지적해 5개 이슈 전문을 다시 대조했다. `scenario_correction_rerun_001`의 `OverlayTimeReadout` "NOT_RUN(레코드 자체 부재)" 설계가 정철원이 확인한 "오버레이 OCR은 선택된 후보마다 무조건 디스패치"라는 v1 정책과 모순됨을 발견해 u001과 동일한 "실행됨+NOT_APPLICABLE"로 재구성했다(§1·§2 표 갱신). `readout.overlay_not_present`(밑줄) reason.code를 신유민이 지정한 `readout.overlay.not_present`(점 표기)로 통일하고 `validation.*_ok`를 `false`→`null`로 정정했다. P1-11(eval 채점 모델 근본원인·metric 개명표)·P2-9(비용 분모 3단 설명)는 `05_mock_deep_review_report.md` §8에서 김대원 원문 그대로 재작성했다(수치 자체는 이미 정정돼 있어 이 파일 변경 없음).
 
 스크립트가 기계적으로 확인하는 항목:
 
@@ -33,7 +35,7 @@
 | `AnalysisScope`/`AnalysisRun`/`CandidateEvent` | ✅ happy | ✅ empty(candidates=[], outcome=SUCCEEDED) | N/A | N/A | N/A | — |
 | `VisualEvidence` | ✅ happy | N/A(빈 결과 시나리오는 애초에 생성 안 됨) | N/A | N/A | N/A | ✅ 낮은 confidence(unknown_abstain_partial) · ✅ `verification=UNCERTAIN`/`visual_event_type=null`(unknown_abstain_partial) |
 | `PlateReadout` | ✅ happy(OK, abstain 없음) | N/A | N/A | ✅ plate_reread | — | ✅ 프레임 간 인식 불일치(plate_reread) |
-| `OverlayTimeReadout` | ✅ happy(OK) | N/A | N/A | N/A | — | ✅ NOT_RUN(correction_rerun, 레코드 자체 부재) · ✅ NOT_APPLICABLE(unknown_abstain_partial, 오버레이 없음이지만 결과 객체는 생성됨·`outcome=SUCCEEDED`) |
+| `OverlayTimeReadout` | ✅ happy(OK) | N/A | N/A | N/A | — | ✅ NOT_APPLICABLE(unknown_abstain_partial, correction_rerun 둘 다 — 오버레이 없음이지만 결과 객체는 생성됨·`outcome=SUCCEEDED`) |
 | `ReadoutRun` | ✅ happy(SUCCEEDED×2) | N/A | N/A | (abstain은 `PlateReadout.abstained`가 가짐, `ReadoutRun.outcome`은 계속 SUCCEEDED) | ❌ PARTIAL outcome 미커버 | ❌ **FAILED 신규 미커버** — 2026-09-09 P0-4 재정의로 이전에 유일했던 FAILED 예시(unknown_abstain_partial overlay)가 SUCCEEDED+NOT_APPLICABLE로 바뀌면서, 현재 fixture 중 `outcome=FAILED` 실사례가 없다. 규칙(§6/§8, 완전 실패 시 결과 객체 자체가 없음) 자체는 유효하나 fixture 증거가 없다. |
 | `TimeResolution` | ✅ happy(status=OK) | N/A | ❌ status=UNKNOWN(시각 자체 없음) 미커버 | — | — | ✅ conflict.exists=true · ✅ NEEDS_REVIEW · ✅ supersede/USER_OVERRIDE |
 | `EvidenceRecord` | ✅ happy(모든 필드 confirmed) | N/A | ✅ vehicle_number 필드 부재(plate_reread) | — | — | ✅ supersede(correction_rerun) · ❌ **완전 미생성 사례가 새로 생김(unknown_abstain_partial, `evidence_records=[]`)** — `event`가 필수 필드라 `verification=UNCERTAIN`일 때 아예 만들 수 없음을 이 fixture가 직접 증명한다 |
@@ -55,7 +57,7 @@
 | `scenario_empty_001` | ✅ 최소 구성(SourceAsset·MediaStream·RecordingTimeline·TimeSourceCandidate) | ✅ AnalysisScope/AnalysisRun | — | — | ✅ JobRecord/JobExecution/UsageRecord/CaseView |
 | `scenario_unknown_abstain_partial_001` | ✅ (충돌 시각 포함) | ✅ (`verification=UNCERTAIN`) | ✅ (overlay NOT_APPLICABLE) | ✅ (완전 미생성 — 신규 Contract Gap 증거) | ✅ (`evidence=null` + blocking notice) |
 | `scenario_plate_reread_001` | ✅ | ✅ (`verification=OBSERVED`) | ✅ (plate abstain) | ✅ (UNKNOWN + Needs) | ✅ (자동 재판독 발주 포함) |
-| `scenario_correction_rerun_001` | ✅ | ✅ | ✅ (overlay NOT_RUN) | ✅ (supersede chain) | ✅ |
+| `scenario_correction_rerun_001` | ✅ | ✅ | ✅ (overlay NOT_APPLICABLE — 실행됨, 화면에 시각 없음) | ✅ (supersede chain) | ✅ |
 
 ## 3. 발견한 문제
 

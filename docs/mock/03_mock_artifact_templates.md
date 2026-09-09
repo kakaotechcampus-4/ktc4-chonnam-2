@@ -548,7 +548,7 @@
   },
   "observation": {
     "contract_version": "observation/v1",
-    "value": "17나28?4",
+    "value": "17나28??",
     "status": "NEEDS_REVIEW",
     "source": {
       "kind": "readout.plate_ocr"
@@ -563,9 +563,10 @@
     }
   },
   "consensus": {
-    "text": "17나28?4",
+    "text": "17나28??",
     "disagree_positions": [
-      5
+      5,
+      6
     ],
     "method": "MULTI_FRAME"
   },
@@ -589,7 +590,7 @@
     {
       "frame_ref": "fr_p001_plate2",
       "crop_ref": "crop_p001_002",
-      "text": "17나2894",
+      "text": "17나2891",
       "confidence": 0.38
     }
   ]
@@ -620,7 +621,7 @@
     "value": null,
     "status": "NOT_APPLICABLE",
     "reason": {
-      "code": "readout.overlay_not_present",
+      "code": "readout.overlay.not_present",
       "note": "화면에 타임스탬프 오버레이 자체가 찍혀 있지 않음(NOT_PRESENT) — 판독 실패가 아니라 대상이 없다는 정상 관찰 결과"
     },
     "source": {
@@ -636,9 +637,9 @@
     }
   },
   "validation": {
-    "format_ok": false,
-    "monotonic_ok": false,
-    "duration_match_ok": false,
+    "format_ok": null,
+    "monotonic_ok": null,
+    "duration_match_ok": null,
     "sample_count": 0
   },
   "samples": []
@@ -2428,6 +2429,15 @@
       "blocking": false,
       "message_key": "notice.plate_reread_running",
       "actions": []
+    },
+    {
+      "code": "evidence.plate_abstained",
+      "severity": "WARN",
+      "blocking": false,
+      "message_key": "notice.plate_abstained",
+      "actions": [
+        "MANUAL_PLATE_INPUT"
+      ]
     }
   ]
 }

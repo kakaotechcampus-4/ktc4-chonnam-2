@@ -29,6 +29,20 @@
       "produced": [{ "kind": "readout_run", "ref": "rr_r001_plate" }],
       "failure_kind": null,
       "usage_refs": ["usage_r001_plate"]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_r001_overlay",
+      "job_id": "job_r001_overlay",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-27T13:20:59+09:00",
+      "started_at": "2026-08-27T13:21:06+09:00",
+      "ended_at": "2026-08-27T13:21:09+09:00",
+      "produced": [{ "kind": "readout_run", "ref": "rr_r001_overlay" }],
+      "failure_kind": null,
+      "usage_refs": ["usage_r001_overlay"]
     }
   ],
   "usage_records": [
@@ -61,6 +75,22 @@
       "token_usage": null,
       "processed_duration_sec": 6.0,
       "latency_ms": 880,
+      "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
+      "cost": { "amount": "0.00", "currency": "KRW" }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_r001_overlay",
+      "execution_ref": "exec_r001_overlay",
+      "run_ref": { "kind": "readout_run", "ref": "rr_r001_overlay" },
+      "case_id": "case_r001",
+      "occurred_at": "2026-08-27T13:21:09+09:00",
+      "provider_label": "ocr-local",
+      "operation": "OVERLAY_OCR",
+      "token_usage": null,
+      "processed_duration_sec": 1.5,
+      "latency_ms": 300,
       "pricing_context": { "pricing_id": "ocr-local-2026-08", "unit": "per_second" },
       "cost": { "amount": "0.00", "currency": "KRW" }
     }

@@ -136,7 +136,7 @@
         "value": null,
         "status": "NOT_APPLICABLE",
         "reason": {
-          "code": "readout.overlay_not_present",
+          "code": "readout.overlay.not_present",
           "note": "화면에 타임스탬프 오버레이 자체가 찍혀 있지 않음(NOT_PRESENT) — 판독 실패가 아니라 대상이 없다는 정상 관찰 결과"
         },
         "source": {
@@ -152,9 +152,9 @@
         }
       },
       "validation": {
-        "format_ok": false,
-        "monotonic_ok": false,
-        "duration_match_ok": false,
+        "format_ok": null,
+        "monotonic_ok": null,
+        "duration_match_ok": null,
         "sample_count": 0
       },
       "samples": []

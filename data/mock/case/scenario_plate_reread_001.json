@@ -215,6 +215,13 @@
           "blocking": false,
           "message_key": "notice.plate_reread_running",
           "actions": []
+        },
+        {
+          "code": "evidence.plate_abstained",
+          "severity": "WARN",
+          "blocking": false,
+          "message_key": "notice.plate_abstained",
+          "actions": ["MANUAL_PLATE_INPUT"]
         }
       ]
     }
