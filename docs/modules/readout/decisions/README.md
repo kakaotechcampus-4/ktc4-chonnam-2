@@ -4,5 +4,5 @@
 
 ## 현재 결정
 
-- `failure-taxonomy.md` — readout 실패 분류 **초안** (Owner 확정 전)
+- `failure-taxonomy.md` — readout 실패 분류. **Owner 확정** (2026-09-09, ①② 종결). 남은 잠정은 overlay 「없음 vs 확인 못함」 판정 기준뿐
 - `overlay-presence-detection.md` — intake overlay 존재 탐지. **방향 확정 · 세부 미결** (프레임 수·ROI·오판율·「없음 vs 탐지 실패」 구분)
