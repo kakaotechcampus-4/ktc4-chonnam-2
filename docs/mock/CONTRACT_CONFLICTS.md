@@ -12,7 +12,7 @@
 
 5. 이슈 #23 B-3(서어진 제안): `AnalysisRun.input_ref.kind = ANALYSIS_SCOPE`를 소문자 `analysis_scope`로 통일하자는 제안 — **반려**. `contract-source-asset-media-stream.md` §84(항목 5)와 `adr/adr-data-contract-call-closure-2026-09-08.md` §218(항목 6)에 이미 "`ANALYSIS_SCOPE`는 자산 계층 ref가 아니며 별도 accepted 값이고, 이를 근거로 전역 대문자 규칙을 적용하지 않는다"는 명시적 결정이 있다. 제안 당시 이 선행 결정을 참조하지 못한 것으로 보임. Mock fixture(`ANALYSIS_SCOPE` 대문자 유지)는 그대로 두었고 계약 문서도 수정하지 않았다 — 수정하면 오히려 기존 ADR을 위반한다. 서어진에게 이 선행 결정을 알려 이슈 #23 B-3을 close하도록 회신 필요.
 
-## 불명확한 Contract (8건 잔여 · 1건 종결)
+## 불명확한 Contract (9건 잔여 · 1건 종결)
 
 1. `TimeResolution.resolved.verification`과 `computation.mode=USER_OVERRIDE`의 대응 관계 미명시
 2. 순수 사용자 입력 값의 `EvidenceValue.source.observability`/`user_corrected` 판정 기준 미명시
@@ -23,6 +23,7 @@
 7. 신규(2026-09-10, 김대원, 이슈 #22 B-2) — `CandidateEvent.span`이 (a) coarse 후보 창인지 (b) 사건 구간(계약 §4-1 예시가 보여주는 18초 폭)인지 계약 문구가 명확히 답하지 않음. 현재 fixture는 60~120초 폭이라 eval의 IoU>=0.5 매칭이 구조적으로 불가능(대표 사례: `happy_001` 120초 폭, `representative_ms` 오차는 0인데 IoU 최대 0.15). `relative_rebase_001`은 span이 요청 scope와 완전히 동일해 오차가 정의상 0이 되는 부가 문제도 있음. **`AnalysisRun`/`CandidateEvent` 계약 소유자 서어진(search)의 답이 필요** — case/mock owner가 대신 결정하지 않았다. 답에 따라 (a) eval의 매칭 규칙을 `representative_ms`+onset 오차 기준으로 바꾸거나 (b) fixture의 span을 사건 길이로 좁혀야 한다.
 8. 신규(2026-09-10, 김대원, 이슈 #22 B-4) — 실패/STALE attempt도 `UsageRecord`를 발행해야 하는지 `contract-usage-record.md`(Producer/Owner: 김준영, common/runtime)가 명문화하지 않음. **mock pack v3는 "발행한다"로 fixture 컨벤션을 확정**했고(`scenario_infra_failure_001`의 `exec_x001_plate_a1` STALE attempt에 0 KRW `usage_x001_plate_a1` 추가) `docs/modules/case/decisions/eval-round2-ground-truth-and-usage.md`에 근거를 남겼다. 계약 본문 정식 등재는 common/runtime 소유라 case가 대신 쓰지 않았다.
 9. 신규(2026-09-10, 유소연, `05` §12 유소연-⑧) — `CaseView.progress[].state`가 제품 정의 6개 작업상태(`core-user-flow.md` §3-2) 중 "중단"(사용자가 분석을 중단한 경우, §4)을 표현하지 못함. "부분 완료"는 기존 `AnalysisRun.outcome=PARTIAL`을 그대로 투영하면 돼서 이번에 `PARTIAL`로 등재했지만, "중단"은 대응할 `JobExecution.status`(닫힌 5값: `QUEUED/RUNNING/SUCCEEDED/FAILED/STALE`, Producer/Owner 김준영 common/runtime)에 CANCELLED류 값 자체가 없다. `CaseView.progress[].state`만 case가 임의로 늘려도 그 상태를 가리킬 실제 `JobExecution` 데이터가 없어 fixture화가 불가능하다 — **김준영의 `JobExecution.status` enum 확장 결정이 선행돼야 한다.**
+10. 신규(2026-09-10, 신유민 PR #28 `docs(web): 값 상태 표시 규칙 등재` 리뷰 요청) — `CaseView.package.report_fields`가 `object<string, string|null>`(필드명→값 평면 map)이라 필드 단위 상태(에러/치환/검토 필요 등)를 실을 자리가 없다. web의 `value-state-display.md`는 여섯 `*_display` 필드처럼 `report_fields`도 필드별 상태 표시가 필요하다고 보는데, 현재 스키마로는 `unconfirmed_fields`(문자열 배열, 이름만 나열)로만 "검토 필요"를 우회 표현 중이고 그 외 상태(예: 값 없음·치환됨)는 아예 못 싣는다. `report_fields`를 만드는 쪽(package 생성 로직, evidence/case 경계)의 스키마 확장 여부 결정이 필요해 case 단독으로 fixture에 반영하지 않았다.
 
 → 상세: `04_mock_validation_report.md` §3.2
 

@@ -98,7 +98,15 @@
           "status": "RUNNING"
         }
       ],
-      "notices": []
+      "notices": [
+        {
+          "code": "readout.overlay_presence_undetermined",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_presence_undetermined",
+          "actions": []
+        }
+      ]
     },
     {
       "contract": "CaseView",
@@ -172,6 +180,13 @@
           "actions": [
             "RETRY_PLATE_READ"
           ]
+        },
+        {
+          "code": "readout.overlay_presence_undetermined",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_presence_undetermined",
+          "actions": []
         }
       ]
     }
