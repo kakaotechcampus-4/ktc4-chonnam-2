@@ -7,6 +7,8 @@
 > **2026-09-08 갱신.** Mock Pack PR #14 심층 검토 보고서(`docs/mock/05_mock_deep_review_report.md`) §12가 readout Owner에게 물은 2건(P0-4 · P1-12)의 답변을 등재했다. 답변 원문은 이슈 [#16 `[mock] readout 검수`](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/16) 「A. 정합 검토 답변」 ①②다.
 > 같은 회차에 **N02 `OVERCONFIDENT` 분리도 종결**했다(「사후 분류」 절) — 9/7 ADR §4.10이 값 정의를 이 문서에 위임한 데 따른 것이다.
 > **2026-09-09 갱신.** Mock Pack v2 2차 검수(PR [#20](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/20))에서 `scenario_infra_failure_001`이 `PLATE` stage의 `INFRA` code를 쓰는 것을 확인하고, 남아 있던 **①(code 층위) · ②(`PLATE` code 등재)를 A안으로 종결**했다. code 표의 `stage` 열이 「공통」으로 바뀌었고 「Owner 확정 대기」 절은 종결 기록으로 대체됐다.
+> **2026-09-10 갱신.** Mock Pack v3(PR [#29](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/29))가 이 문서의 「실패가 아닌 상태」 2행을 `CaseView.notices`로 구현한 것을 3차 검수(이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) A-1)에서 확인하면서, `observation.reason.code` → `CaseView.notices[].code` 매핑을 같은 절에 등재했다. UNKNOWN 행의 두 `reason.code` 중 `readout.overlay.ocr_failed`쪽 notice(`readout.overlay_ocr_failed`)를 미리 등재해 재사용 사고를 막는다.
+>
 > **Owner 미결은 없다.** 다만 overlay 「없음」/「확인 못함」의 **판정 기준**은 실측 전 잠정이며 readout Technical Spec에서 확정한다(해당 절에 표시).
 
 이 문서 안에서 **확정**과 **잠정**을 구분한다. 표 제목과 절 제목에 표시했다.
@@ -133,6 +135,27 @@ observation.status            = NEEDS_REVIEW | UNKNOWN
 
 > 참고: 이 두 갈래를 제품이 요구하는 시점은 `core-user-flow.md` §5의 **업로드 직후 intake presence 탐지**(값 OCR 없이 유무만)인데, 그 결과를 담을 계약 필드가 아직 어디에도 없다. 계약 공백으로 이슈 #16 A①에 별도 제기했다. 이 문서는 판독 실행(`OVERLAY_TIME_READ`) 시점의 표현만 다룬다.
 
+### `CaseView.notices[].code` 매핑 — 확정 (2026-09-10, 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) A-1)
+
+두 상태는 실행 실패가 아니므로 `CaseView.progress[]`를 `FAILED`로 내리지 않고 **notice로만** 알린다. Mock Pack v3가 이 전제대로 구현돼 있음을 확인했다(`scenario_infra_failure_001` rev1·rev2의 `progress[overlay_time_read].state=DONE`).
+
+`notices[].code`의 **표기 형식**은 `contract-job-record-case-view.md` B절 §7이 소유한다(`<producing-module>.<detail>`, dotted-lowercase). 이 문서는 그 규칙을 복제하지 않고 **readout `reason.code`와의 대응만** 정한다.
+
+**매핑 규칙 — module 접두어는 그대로 두고 그 뒤의 점을 밑줄로 접는다. `reason.code`와 notice code는 1:1이다.**
+
+| `observation.reason.code` | `CaseView.notices[].code` | severity | blocking | actions |
+| --- | --- | --- | --- | --- |
+| `readout.overlay.not_present` | `readout.overlay_not_present` | `INFO` | `false` | `[]` |
+| `readout.overlay.presence_undetermined` | `readout.overlay_presence_undetermined` | `INFO` | `false` | `[]` |
+| `readout.overlay.ocr_failed` | `readout.overlay_ocr_failed` | `INFO` | `false` | `[]` |
+
+- **세 code를 하나로 합치지 않는다.** 사용자에게 요구하는 행동이 다르다 — 「없음」은 확인할 것이 없고, 「판정 못 함」은 사용자가 자기 영상에 시각이 찍히는지 봐야 하고, 「읽었으나 못 알아봄」은 사용자가 화면의 시각을 직접 입력할 수 있다. 같은 이유로 UNKNOWN 행의 두 `reason.code`에 notice 하나를 돌려쓰지 않는다.
+- `readout.overlay_ocr_failed`는 **등재만 해 둔다.** 현재 pack에 이 갈래 fixture가 없다(`readout.overlay.ocr_failed` 자체가 미등장) — 생길 때 위 값을 그대로 쓰고 새로 짓지 않는다.
+- **severity는 `INFO`로 고정한다.** overlay가 UNKNOWN이어서 실제로 사용자 행동이 필요해지는 지점(시각을 다른 소스로 확정해야 함)은 `event_time_display.info_state`와 `evidence.time_*` notice가 나른다. notice는 「왜」만 설명하고 「확인 필요」의 무게를 중복해서 지지 않는다.
+- `actions[]`가 비는 이유는 overlay presence 판정 자체가 사용자가 손댈 수 있는 대상이 아니기 때문이다. 시각 입력·재확인 action은 위 evidence 계열 notice에 붙는다.
+
+---
+
 ---
 
 ## `JobExecution.failure_kind` 매핑 — 확정
@@ -208,4 +231,6 @@ Mock Pack v2 2차(`scenario_infra_failure_001`)가 `(PLATE_READ, INFRA, READOUT_
 - `contract-job-execution.md` §6(`failure_kind` 등재 위임)
 - `overlay-presence-detection.md` 미결 #3(오판율) · #4(「없음」과 「탐지 실패」 구분)
 - `product/core-user-flow.md` §5(두 문구를 합치지 않는다)
+- 이슈 [#31 `[mock] readout·web 3차 검수`](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) A-1 — notice 매핑 등재의 근거
+- `contract-job-record-case-view.md` B절 §7(`notices[].code` 표기 형식 소유 · `severity`/`blocking` 의미)
 - `adr-data-contract-call-closure-2026-09-07.md` §4.10(N02 — `OVERCONFIDENT` 분리 · Wrong Accept Rate 정의 · 정답지 부재)
