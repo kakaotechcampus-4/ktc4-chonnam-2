@@ -6,6 +6,8 @@
 
 > **2026-09-09 4차 라운드 갱신 (Decider 유소연 · 이슈 #18 정철원 답변, P1-10).** A~J는 모두 evidence 콘텐츠 상태·readout 실행 결과 축이라 "recording timeline 자체의 구성 방식"(절대시각 부재·rebase·구간 일부 해석 불가)이 들어갈 자리가 없었다. 이는 evidence 콘텐츠 상태와 독립적인 축이라 **신규 유형 K**로 추가하고 `scenario_relative_rebase_001`을 만들었다. 시나리오 수는 6개→7개.
 
+> **2026-09-10 4차 통합 갱신 (Decider·mock owner 유소연 · 이슈 #31·#33·#34·#35, PR #32 evidence 문서 병합 반영).** 새 유형/시나리오는 추가하지 않았다(7개 유지) — 3차 검수의 Required 7건은 기존 시나리오의 fixture 보강·버그 수정이었다. `scenario_happy_001`의 Report Video export Job 타이밍을 `CaseView.case_rev` 스냅샷과 정합하도록 수정하고, `scenario_unknown_abstain_partial_001`에 `situation_response`(`USER_UNSURE`)와 화면 시각 post-stamp 안내를 위한 신규 Job/Execution/Usage 체인·notice를 추가했으며, `scenario_plate_reread_001`의 `selection_rev`/`crop_ref` 이월 버그 2건을 수정하고, `scenario_correction_rerun_001`에 `CorrectionRecord` 실제 fixture를 신규 생성했다. evidence 콘텐츠가 있는 4개 시나리오(`happy`·`unknown_abstain_partial`·`plate_reread`·`correction_rerun`) 전부의 `safety_report_type`을 `SafetyReportType` registry(`docs/modules/evidence/decisions/safety-report-policy-v1.md`) 정식 코드(`TRAFFIC_VIOLATION`/`MOTORCYCLE_VIOLATION`)로 정규화했다. 상세는 각 시나리오 절의 v4 노트 및 `04_mock_validation_report.md` 6차 갱신 참고.
+
 시나리오는 7개다(「시나리오를 너무 많이 만들지 않고 시나리오당 Contract coverage를 최대화한다」는 지침에 따르되, 계약상 양립 불가능한 조합은 분리한다). A~I(evidence 콘텐츠 상태) + J(readout 인프라 실행 실패) + K(recording timeline 상대전용/rebase/구간 부분 해석) 11개 유형을 아래 7개 시나리오가 나눠 커버한다.
 
 ## 시나리오 목록
@@ -35,6 +37,8 @@
 **검증 Contract**: 전체 14개 Final Contract 중 12개(제외: 이 시나리오는 abstain/충돌이 없어 `EvidenceNeeds.items`가 빈 배열, `RequirementReport`의 BLOCK/UNKNOWN outcome은 다른 시나리오가 담당).
 
 > **2026-09-10 v3 추가 (이슈 #26 B-web-5·5, 신유민 답변).** `stage=READY` 이후 `case_rev:4`에서 신고자료용 `REPORT_VIDEO_EXPORT` `JobRecord`/`JobExecution`(`DerivedAsset` 생성)을 추가했다. 이 rev에서 `location_display`의 대표값이 `user_hint`라 `info_state=INFO_NEEDS_REVIEW`인데, 이전에는 `package.report_fields.location`에 같은 미확정 문장이 그대로 실리면서도 `package.warnings=[]`·`CaseView.evidence.review_needed=false`로 "전부 초록"인 사각지대가 있었다 — `package.unconfirmed_fields=["location"]`을 추가하고 `review_needed`/`reason_code`를 정정해 닫았다. 근거는 `contract-job-record-case-view.md` B절 §7의 `review_needed` 파생 규칙 갱신 참고.
+
+> **2026-09-10 v4 추가 (4차 통합, 이슈 #33 리뷰 지적 반영).** `case_rev:4`의 `job_h001_report_video` 실행 타이밍(`queued_at`/`started_at`/`ended_at`)이 `case_rev:4`가 관찰하는 시점보다 뒤(`18:25:xx`)에 있어 스냅샷 시제가 어긋나 있던 것을 발견해 `18:23:10`~`18:23:45`로 정정하고, 연동된 `usage_h001_report_video.occurred_at`도 함께 맞췄다. 또한 `report_packages[0]`의 `template_ref`/`report_inputs.safety_report_type`이 정식 registry 이전 placeholder(`tmpl/safety-report-v1`, `"안전운전 불이행"`)를 쓰고 있던 것을 `tmpl/safety-report-specific-v1`/`"교통위반(고속도로 포함)"`으로 정정했다. `package.report_field_states`(`case-view/v1.3` 신설)를 rev3·rev4 양쪽에 채워 넣었고, `unconfirmed_fields`도 `["safety_report_type", "location", "violation_expression"]`로 재계산했다 — `safety_report_type`/`violation_expression`이 이번에 처음으로 `info_state`를 갖게 되면서 새로 이 목록에 들어온 것이지, 값 자체가 바뀐 게 아니다.
 
 ---
 
@@ -71,6 +75,8 @@
 
 **검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`OverlayTimeReadout`(`NOT_APPLICABLE`)·`TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`(EVIDENCE·FINAL_PACKAGE WARN)·`ReportPackage`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`(`situation_confirmation`·`package.unconfirmed_fields`).
 
+> **2026-09-10 v4 추가 (4차 통합, 이슈 #33 Required-2·6).** ① `ev_u001`에 `situation_response`(`{value:"USER_UNSURE", responded_at, candidate_ref:{kind:"candidate_event", ref:"candidate_u001"}}`)를 신규 추가했다 — `CORRECTED`와 달리 `USER_UNSURE`는 새 `CorrectionRecord`를 만들지 않고, `candidate_ref`로 "무엇에 대해 모른다고 답했는지"의 안정적 스냅샷만 남긴다(`evidence-record/v1.3` 신설 필드, 불변조건 16-18). ② 화면 시각 post-stamp(사후 자막 합성)가 필요함을 안내하기 위해 `job_u001_report_video`/`exec_u001_report_video`(`SUCCEEDED`)/`usage_u001_report_video`(`run_ref=null`, `run_ref_reason=DIRECT_NO_RUN`) 체인을 신규 추가하고, `recording`의 `da_u001_report_video.transform_ref`를 `tr_u001_trim_v1`→`tr_u001_trim_poststamp_v1`로 바꿨으며, `CaseView` rev3·rev4 양쪽 `notices`에 `{code:"evidence.time_post_stamp_required", severity:"INFO", blocking:false}`를 추가했다. ③ `event.safety_report_type.value`를 한글 라벨 placeholder에서 `TRAFFIC_VIOLATION`으로 정규화하고 `needs_review`를 `false→true`로 뒤집었다(registry의 `USER_UNSURE` fallback 규칙). ④ `requirement_reports[FINAL_PACKAGE].checks[]`에 `package.time.post_stamp_applied`(PASS) check를 추가했다.
+
 ---
 
 ## `scenario_plate_reread_001` — 번호판 ABSTAIN + EvidenceNeeds 자동 재판독 (확정된 사건유형 위에서)
@@ -93,6 +99,8 @@
 **검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`PlateReadout`·`OverlayTimeReadout`·`TimeResolution`·`EvidenceRecord`(immutable snapshot + `supersedes_ref`)·`EvidenceNeeds`·`RequirementReport`(`UNKNOWN`→`PASS`)·`JobRecord`·`JobExecution`(`QUEUED`→`SUCCEEDED`)·`UsageRecord`·`CaseView`(`EVIDENCE_SUFFICIENT` true인 `EVIDENCE_REVIEW`).
 
 > **2026-09-10 v3 추가 (case/mock owner 유소연, 이슈 #22 B-3 회신 후속).** 최초 배포분은 재판독을 `QUEUED`에서 멈춰뒀다 — 김대원이 이슈 #22 B-3에서 확인한 참값(`17나2867`)까지만 결정해두고 fixture 완결은 다음 라운드로 미뤘던 항목이다. 이번에 실제로 완결했다: `readout`에 성공한 재판독 `PlateReadout`/`ReadoutRun`, `common`에 `SUCCEEDED` `JobExecution`+`UsageRecord`, `evidence`에 새 `EvidenceRecord`(`ev_p001_v2`)/`EvidenceNeeds`(충족, `items=[]`)/`RequirementReport`(`req_p001_evidence_v2`, `PASS`), `case`에 `case_rev:4` `CaseView`를 추가했다. `recording`에는 재판독이 참조하는 세 번째 프레임(`fr_p001_plate3`)을 추가했다 — `validate_mock_pack.py`의 참조 무결성 검사(`DANGLING_STRING_REF`) 요구사항이다. `ev_p001`/`readout_p001_plate`/`req_p001_evidence`(최초 abstain 스냅샷)는 이름을 바꾸지 않고 그대로 보존했다 — `03_mock_artifact_templates.md`의 기존 abstain 템플릿이 이 ID들을 그대로 참조하기 때문이다.
+>
+> **2026-09-10 v4 수정 (4차 통합, 이슈 #33 A-5 답변 — v3 이월 버그 2건 수정).** ① `ev_p001_v2.selection_rev`가 v3 작업 중 `correction_rerun_001`의 패턴을 잘못 유추해 `1→2`로 올라가 있던 것을 `1`로 되돌렸다 — 재판독은 새 후보를 다시 선택한 것이 아니라 같은 후보 위에서 번호판만 다시 읽은 것이라, 이슈 #33에서 `plate_reread_001`에 한정해 이 되돌림을 명시적으로 요청했다(`correction_rerun_001`의 `selection_rev` 1→2 bump는 후보 재선택이 실제로 있었던 정당한 사례라 그대로 뒀다). ② 재판독 readout(`readout_p001_plate_reread`)이 `frame_results[]`에서 원 판독과 같은 `crop_p001_001`/`crop_p001_002`를 재사용하고 있던 것이 `crop_ref` 동일성 규칙(`frame_ref`·`bbox`·`extraction_params=input_ref.source_profile` 중 하나라도 다르면 다른 `crop_ref`, 이슈 #31 A-3)을 위반해 `crop_p001_004`/`crop_p001_005`로 새 id를 부여했다 — `source_profile`이 `readout-native`→`readout-native-hires`로 바뀌었기 때문이다. 원 판독의 `crop_p001_001`/`crop_p001_002`와 새로 추가됐던 `crop_p001_003`은 그대로 뒀다.
 
 ---
 
@@ -111,9 +119,11 @@
 
 **기대 결과**: `EvidenceRecord v2.vehicle_number`가 `EvidenceRecord v1.vehicle_number`와 값·source·support_refs·needs_review 전부 동일. `CaseView.evidence.user_edited=true`이지만 `plate_display`는 그대로.
 
-**검증 Contract**: `TimeResolution`(supersede)·`EvidenceRecord`(supersede)·`RequirementReport`(supersede)·`ReadoutRun`(overlay NOT_APPLICABLE)·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
+**검증 Contract**: `TimeResolution`(supersede)·`EvidenceRecord`(supersede)·`RequirementReport`(supersede)·`ReadoutRun`(overlay NOT_APPLICABLE)·`JobRecord`·`JobExecution`·`UsageRecord`·`CorrectionRecord`·`CaseView`.
 
-**의도적으로 만들지 않은 것**: `CorrectionRecord`의 실제 필드 fixture. `contract-correction-record.md`가 아직 Draft이기 때문이며, `04_mock_validation_report.md`의 "Fixture 생성 불가"에 기록했다.
+> **2026-09-10 v4 추가 (4차 통합, 이슈 #33 — `CorrectionRecord` Draft→Final 승격 후속).** `contract-correction-record.md`가 `correction-record/v1.1`(Final — Accepted)로 승격되면서, 그동안 opaque ref로만 존재하던 사용자 정정 제출을 실제 `correction_records[]` fixture로 처음 구체화했다 — `cr_r001_time`(`case_id:"case_r001"`, `selection_rev:2`, `kind:"EVENT_TIME_MANUAL"`, `target_field:"occurred_at"`, `previous_value`는 filename+offset 추정치, `new_value`는 사용자가 정정한 시각, `supersedes_ref:null`, `corrected_at`은 `req_r001_evidence_v1` 평가와 `v2` 평가 사이 시점). `TimeResolution v2`/`EvidenceRecord v2`가 참조하는 `{kind:"correction_record", ref:"cr_r001_time"}`는 이제 실제로 정의된 대상을 가리킨다. 같은 시나리오의 `event.safety_report_type.value`도 두 `EvidenceRecord`(v1·v2) 모두 한글 라벨 placeholder에서 `MOTORCYCLE_VIOLATION`으로 정규화했다.
+
+**의도적으로 만들지 않은 것**: 없음(v4에서 `CorrectionRecord` fixture 생성 불가 항목을 해소했다).
 
 ---
 

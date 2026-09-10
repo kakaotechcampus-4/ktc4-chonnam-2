@@ -206,13 +206,13 @@
       "frame_results": [
         {
           "frame_ref": "fr_p001_plate1",
-          "crop_ref": "crop_p001_001",
+          "crop_ref": "crop_p001_004",
           "text": "17나2867",
           "confidence": 0.55
         },
         {
           "frame_ref": "fr_p001_plate2",
-          "crop_ref": "crop_p001_002",
+          "crop_ref": "crop_p001_005",
           "text": "17나2867",
           "confidence": 0.52
         },

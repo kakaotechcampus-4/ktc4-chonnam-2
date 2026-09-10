@@ -4,7 +4,7 @@
   "job_executions": [
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_p001_search",
       "job_id": "job_p001_search",
       "status": "SUCCEEDED",
@@ -25,7 +25,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_p001_plate",
       "job_id": "job_p001_plate",
       "status": "SUCCEEDED",
@@ -46,7 +46,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_p001_overlay",
       "job_id": "job_p001_overlay",
       "status": "SUCCEEDED",
@@ -67,7 +67,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_p001_plate_reread",
       "job_id": "job_p001_plate_reread",
       "status": "SUCCEEDED",
@@ -88,7 +88,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_p001_fine",
       "job_id": "job_p001_fine",
       "status": "SUCCEEDED",
@@ -111,13 +111,14 @@
   "usage_records": [
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_p001_coarse",
       "execution_ref": "exec_p001_search",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_p001"
       },
+      "run_ref_reason": null,
       "case_id": "case_p001",
       "occurred_at": "2026-08-29T20:31:15+09:00",
       "provider_label": "gemini",
@@ -140,13 +141,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_p001_plate",
       "execution_ref": "exec_p001_plate",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_p001_plate"
       },
+      "run_ref_reason": null,
       "case_id": "case_p001",
       "occurred_at": "2026-08-29T20:31:33+09:00",
       "provider_label": "ocr-local",
@@ -165,13 +167,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_p001_overlay",
       "execution_ref": "exec_p001_overlay",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_p001_overlay"
       },
+      "run_ref_reason": null,
       "case_id": "case_p001",
       "occurred_at": "2026-08-29T20:31:38+09:00",
       "provider_label": "ocr-local",
@@ -190,13 +193,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_p001_plate_reread",
       "execution_ref": "exec_p001_plate_reread",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_p001_plate_reread"
       },
+      "run_ref_reason": null,
       "case_id": "case_p001",
       "occurred_at": "2026-08-29T20:33:21+09:00",
       "provider_label": "ocr-local",
@@ -215,13 +219,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_p001_fine",
       "execution_ref": "exec_p001_fine",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_p001_fine"
       },
+      "run_ref_reason": null,
       "case_id": "case_p001",
       "occurred_at": "2026-08-29T20:32:25+09:00",
       "provider_label": "gemini",

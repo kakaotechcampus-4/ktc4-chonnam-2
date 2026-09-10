@@ -30,7 +30,7 @@
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_x001",
       "case_rev": 1,
       "stage": "EVIDENCE_REVIEW",
@@ -83,7 +83,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": null,
@@ -110,7 +111,7 @@
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_x001",
       "case_rev": 2,
       "stage": "EVIDENCE_REVIEW",
@@ -163,7 +164,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": null,
