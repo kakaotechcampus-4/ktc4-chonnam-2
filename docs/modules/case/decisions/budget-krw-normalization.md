@@ -23,7 +23,9 @@
 | `scenario_correction_rerun_001` | 0.33 | 462 |
 | `scenario_empty_001` | 0.31 | 434 |
 
-`PLATE_OCR`/`OVERLAY_OCR`의 `ocr-local` 비용은 이미 `{"amount":"0.00","currency":"KRW"}`라 변경 없음.
+`READOUT_PLATE`/`READOUT_OVERLAY_TIME`(옛 `PLATE_OCR`/`OVERLAY_OCR`)의 `ocr-local` 비용은 이미 `{"amount":"0.00","currency":"KRW"}`라 변경 없음.
+
+**추가 정규화(2026-09-10, 이슈 #23 B-1, 서어진 제안·본인 지지):** 위 표는 원장(`common/*.json`의 `UsageRecord.cost`)만 다뤘고, 같은 `AnalysisRun`을 search 쪽에서 내는 projected snapshot(`search/*.json`의 `AnalysisRunCandidateEvent.analysis_run.usage_summary.total_cost`)은 이 라운드 전까지 USD로 남아 있었다 — 값 자체(0.42×1400=588 등)는 원장과 정합했지만 `currency` 라벨만 달랐다. `AnalysisScope.budget.max_cost_krw`가 KRW 기준이고 eval이 efficiency 재계산에 `usage_summary`를 직접 쓰므로 라벨 불일치는 fx 없이는 예산 비교가 깨지는 실질적 gap이었다(계약 §3-4 "usage_summary는 run의 usage aggregate와 정합해야 한다"). 6개 시나리오(`happy`·`unknown_abstain_partial`·`plate_reread`·`correction_rerun`·`empty`·`relative_rebase`) 전체의 coarse/fine `usage_summary.total_cost.currency`를 `KRW`로, `amount`는 원장의 정수 KRW 값으로 맞췄다. `relative_rebase`(`0.06→84`)는 이 표에 없던 신규분이라 같이 반영.
 
 ## `budget.max_cost_krw` 기본값
 
@@ -32,4 +34,5 @@
 ## 남은 것
 
 - 실제 환율/요율을 관리하는 versioned pricing artifact(현재는 `fx-krw-2026-09`라는 opaque id만 부여, 실제 조회 가능한 문서/서비스는 아직 없음) — common/runtime 구현 시점에 결정.
-- `VISUAL_VERIFY`(Fine) run이 추가되면(P0-3) 그 `UsageRecord.cost`도 이 규칙(KRW 정규화)을 그대로 따라야 한다.
+- ~~`VISUAL_VERIFY`(Fine) run이 추가되면(P0-3) 그 `UsageRecord.cost`도 이 규칙(KRW 정규화)을 그대로 따라야 한다.~~ → **완료**: Fine run 추가 시점에 원장은 처음부터 KRW로 냈고(위 표), 2026-09-10에 search의 `usage_summary` snapshot도 맞췄다.
+- 이 문서는 fixture 정규화 기록이다 — `contract-analysis-run-candidate-event.md`의 `usage_summary.total_cost` 필드 정의 자체(허용 통화)는 아직 "정규화된 통화를 써야 한다"고 명문화하지 않았다. 계약 문서 정식 등재는 search 소유(서어진) 잔여 작업.

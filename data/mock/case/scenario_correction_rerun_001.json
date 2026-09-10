@@ -112,7 +112,10 @@
           "at_provenance": "recording.filename_time",
           "observed": "안전모를 착용하지 않은 운전자가 스쿠터를 운행하는 장면",
           "thumb_ref": "fr_r001_plate1",
-          "selected": true
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": {
@@ -191,7 +194,7 @@
       "running_jobs": [],
       "notices": [
         {
-          "code": "time.needs_user_confirmation",
+          "code": "evidence.time_needs_user_confirmation",
           "severity": "WARN",
           "blocking": false,
           "message_key": "notice.event_time_needs_review",
@@ -261,7 +264,10 @@
           "at_provenance": "case.user_correction",
           "observed": "안전모를 착용하지 않은 운전자가 스쿠터를 운행하는 장면",
           "thumb_ref": "fr_r001_plate1",
-          "selected": true
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": {
@@ -340,7 +346,7 @@
       "running_jobs": [],
       "notices": [
         {
-          "code": "time.post_stamp_required",
+          "code": "evidence.time_post_stamp_required",
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.post_stamp_required",

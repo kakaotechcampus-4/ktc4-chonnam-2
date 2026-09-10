@@ -49,6 +49,18 @@
       "input_fingerprint": "sha1:h001-fine-verify-clip_h001",
       "force_rerun": false,
       "requested_at": "2026-08-24T18:21:15+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_h001_report_video",
+      "case_id": "case_h001",
+      "case_rev": 4,
+      "kind": "REPORT_VIDEO_EXPORT",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:h001-report-video-export-pkg_h001",
+      "force_rerun": false,
+      "requested_at": "2026-08-24T18:25:00+09:00"
     }
   ],
   "case_views": [
@@ -188,7 +200,10 @@
           "at_provenance": "readout.overlay_ocr",
           "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
           "thumb_ref": "fr_h001_thumb",
-          "selected": true
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": {
@@ -233,8 +248,8 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
-        "review_needed": false,
-        "reason_code": null
+        "review_needed": true,
+        "reason_code": "evidence.location_needs_review"
       },
       "requirements_evidence": {
         "readiness": "PASS",
@@ -354,7 +369,10 @@
           "COPY_FIELDS",
           "OPEN_DESTINATION"
         ],
-        "warnings": []
+        "warnings": [],
+        "unconfirmed_fields": [
+          "location"
+        ]
       },
       "running_jobs": [],
       "notices": []
@@ -423,7 +441,10 @@
           "at_provenance": "readout.overlay_ocr",
           "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
           "thumb_ref": "fr_h001_thumb",
-          "selected": true
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": {
@@ -468,8 +489,8 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
-        "review_needed": false,
-        "reason_code": null
+        "review_needed": true,
+        "reason_code": "evidence.location_needs_review"
       },
       "requirements_evidence": {
         "readiness": "PASS",
@@ -589,7 +610,10 @@
           "COPY_FIELDS",
           "OPEN_DESTINATION"
         ],
-        "warnings": []
+        "warnings": [],
+        "unconfirmed_fields": [
+          "location"
+        ]
       },
       "running_jobs": [],
       "notices": []

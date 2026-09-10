@@ -85,6 +85,27 @@
       "usage_refs": [
         "usage_h001_fine"
       ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1",
+      "execution_id": "exec_h001_report_video",
+      "job_id": "job_h001_report_video",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-24T18:25:00+09:00",
+      "started_at": "2026-08-24T18:25:05+09:00",
+      "ended_at": "2026-08-24T18:25:35+09:00",
+      "produced": [
+        {
+          "kind": "derived_asset",
+          "ref": "da_h001_report_video"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_h001_report_video"
+      ]
     }
   ],
   "usage_records": [
@@ -129,7 +150,7 @@
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:06+09:00",
       "provider_label": "ocr-local",
-      "operation": "PLATE_OCR",
+      "operation": "READOUT_PLATE",
       "token_usage": null,
       "processed_duration_sec": 6.0,
       "latency_ms": 900,
@@ -154,7 +175,7 @@
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:11+09:00",
       "provider_label": "ocr-local",
-      "operation": "OVERLAY_OCR",
+      "operation": "READOUT_OVERLAY_TIME",
       "token_usage": null,
       "processed_duration_sec": 5.0,
       "latency_ms": 850,
@@ -193,6 +214,28 @@
       },
       "cost": {
         "amount": "350",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.1",
+      "usage_id": "usage_h001_report_video",
+      "execution_ref": "exec_h001_report_video",
+      "run_ref": null,
+      "case_id": "case_h001",
+      "occurred_at": "2026-08-24T18:25:35+09:00",
+      "provider_label": "ffmpeg-local",
+      "operation": "RECORDING_REPORT_VIDEO_EXPORT",
+      "token_usage": null,
+      "processed_duration_sec": 120.0,
+      "latency_ms": 30000,
+      "pricing_context": {
+        "pricing_id": "ffmpeg-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
         "currency": "KRW"
       }
     }

@@ -64,12 +64,17 @@
 
 # 2. 최종 Serialization
 
+> **표기 정정(2026-09-10, 서어진, 이슈 #23 A):** 이 절 이하 예시가 옛 형식(`input_ref`가 평문 string, `evidence_refs`가 `frame:<id>@<offset_ms>` 위치 인코딩)을 쓰던 것을 고쳤다. `input_ref`는 `AnalysisRun.input_ref`와 같은 `{kind, ref}` 구조체이고, frame ref는 `fr_<opaque-id>`(`contract-source-asset-media-stream.md` 확정, 위치 인코딩 폐기)다. 필드 의미 변경이 아니므로 `visual-evidence/v1.0` 유지, `contract_version` 안 올림.
+
 ```json
 {
   "schema_version": "visual-evidence/v1.0",
   "visual_evidence_id": "ve_lane_001",
   "run_id": "run_fine_101",
-  "input_ref": "analysis-input:incident-17",
+  "input_ref": {
+    "kind": "incident_clip",
+    "ref": "clip_17"
+  },
   "candidate_id": "c17",
 
   "verification": "OBSERVED",
@@ -82,7 +87,7 @@
     "association_confidence": 0.79,
     "track_ref": null,
     "evidence_refs": [
-      "frame:incident-17@6400"
+      "fr_17_thumb"
     ]
   },
 
@@ -92,7 +97,7 @@
       "state": "PRESENT",
       "confidence": 0.88,
       "evidence_refs": [
-        "frame:incident-17@6400"
+        "fr_17_thumb"
       ]
     }
   ],
@@ -102,7 +107,7 @@
       "at_offset_ms": 6400,
       "fact": "TARGET_CROSSES_LINE",
       "evidence_refs": [
-        "frame:incident-17@6400"
+        "fr_17_thumb"
       ]
     }
   ],
@@ -121,7 +126,7 @@
 | `schema_version` | string | 필수 | v1.0에서는 항상 `visual-evidence/v1.0`. |
 | `visual_evidence_id` | ID | 필수 | 하나의 immutable VisualEvidence result를 식별한다. 사건 확정 ID가 아니다. |
 | `run_id` | ref | 필수 | 결과를 생성한 Fine / Classification `AnalysisRun`. 비용·모델·실행 실패 정보는 Run을 참조한다. |
-| `input_ref` | ref | 필수 | 실제 Fine 분석 입력의 opaque reference. Source 파일 경계를 Consumer가 직접 해석하지 않는다. |
+| `input_ref` | `{kind, ref}` | 필수 | 실제 Fine 분석 입력의 opaque reference. `AnalysisRun.input_ref`와 같은 `{kind, ref}` 구조체(평문 string이 아니다). Source 파일 경계를 Consumer가 직접 해석하지 않는다. |
 | `candidate_id` | ID/null | 선택 | 제품 Candidate 기반 호출이면 연결한다. Candidate-independent Fine에서는 null이 정상이다. |
 | `verification` | enum | 필수 | `OBSERVED | NOT_OBSERVED | UNCERTAIN`. 실행 성공/실패 상태가 아니라 Visual Event 관찰 상태다. |
 | `visual_event_type` | enum/null | 조건부 | `OBSERVED`일 때만 지원 Visual Event 값을 가진다. Report Type이 아니다. |
@@ -169,7 +174,7 @@ v1.0 지원 범위:
   "match_with_hint": true,
   "association_confidence": 0.79,
   "track_ref": null,
-  "evidence_refs": ["frame:incident-17@6400"]
+  "evidence_refs": ["fr_17_thumb"]
 }
 ```
 
@@ -180,7 +185,7 @@ v1.0 지원 범위:
 | `match_with_hint` | bool/null | 선택 | 제공된 target hint와의 시각적 일치 여부. hint가 없으면 null 가능. |
 | `association_confidence` | number/null | 선택 | 정의 가능한 경우에만 `[0.0, 1.0]`. Consumer business threshold로 직접 사용하지 않는다. |
 | `track_ref` | ref/null | 선택 | tracking reference. `MATCHED`여도 null일 수 있다. |
-| `evidence_refs` | ref[] | 필수 | 대상 association 근거. 0개 이상. |
+| `evidence_refs` | ref[] | 필수 | 대상 association 근거. `fr_<opaque-id>`(`contract-source-asset-media-stream.md` 확정) 형식이며 위치는 ID에 인코딩하지 않는다. 0개 이상. |
 
 **중요 규칙**
 
@@ -198,7 +203,7 @@ v1.0 지원 범위:
   "kind": "WHITE_SOLID_LINE",
   "state": "PRESENT",
   "confidence": 0.88,
-  "evidence_refs": ["frame:incident-17@6400"]
+  "evidence_refs": ["fr_17_thumb"]
 }
 ```
 
@@ -207,7 +212,7 @@ v1.0 지원 범위:
 | `kind` | string/code | 필수 | Search가 관리하는 primitive 식별자. |
 | `state` | enum | 필수 | `PRESENT | ABSENT | UNCERTAIN`. |
 | `confidence` | number/null | 선택 | 정의 가능한 경우 `[0.0, 1.0]`. |
-| `evidence_refs` | ref[] | 필수 | 해당 primitive 관찰의 영상 근거. |
+| `evidence_refs` | ref[] | 필수 | 해당 primitive 관찰의 영상 근거. `fr_<opaque-id>` 형식(위치 인코딩 없음). |
 
 v1.0은 `WHITE_SOLID_LINE`, `HELMET_ON_RIDER` 같은 primitive 사용을 허용하지만 **primitive 전체 registry를 Data Contract의 안정적 정책 API로 고정하지 않는다.**
 
@@ -221,7 +226,7 @@ v1.0은 `WHITE_SOLID_LINE`, `HELMET_ON_RIDER` 같은 primitive 사용을 허용�
 {
   "at_offset_ms": 6400,
   "fact": "TARGET_CROSSES_LINE",
-  "evidence_refs": ["frame:incident-17@6400"]
+  "evidence_refs": ["fr_17_thumb"]
 }
 ```
 
@@ -229,7 +234,7 @@ v1.0은 `WHITE_SOLID_LINE`, `HELMET_ON_RIDER` 같은 primitive 사용을 허용�
 | --- | --- | --- | --- |
 | `at_offset_ms` | integer/null | 선택 | Fine input 시작점 기준 상대 시간. |
 | `fact` | string/code | 필수 | 관찰한 시간적 사실. |
-| `evidence_refs` | ref[] | 필수 | 해당 temporal fact의 영상 근거. |
+| `evidence_refs` | ref[] | 필수 | 해당 temporal fact의 영상 근거. `fr_<opaque-id>` 형식(위치 인코딩 없음). |
 - `temporal_facts`는 항상 배열이다.
 - `MOTORCYCLE_HELMET_NON_USE`처럼 object attribute 성격이 강한 사건에서는 `temporal_facts=[]`이 정상이다.
 - `at_offset_ms`는 최종 신고 `occurred_at`이 아니다.
@@ -242,7 +247,7 @@ v1.0은 `WHITE_SOLID_LINE`, `HELMET_ON_RIDER` 같은 primitive 사용을 허용�
 {
   "kind": "OCCLUSION",
   "detail": "대상 일부가 앞 차량에 가려짐",
-  "evidence_refs": ["frame:incident-17@6400"]
+  "evidence_refs": ["fr_17_thumb"]
 }
 ```
 
@@ -250,7 +255,7 @@ v1.0은 `WHITE_SOLID_LINE`, `HELMET_ON_RIDER` 같은 primitive 사용을 허용�
 | --- | --- | --- | --- |
 | `kind` | string/code | 필수 | 불확실성 유형. vocabulary는 Search가 관리한다. |
 | `detail` | string/null | 선택 | 사람이 이해할 수 있는 짧은 진단 설명. |
-| `evidence_refs` | ref[] | 선택 | 불확실성을 보여주는 영상 근거. |
+| `evidence_refs` | ref[] | 선택 | 불확실성을 보여주는 영상 근거. `fr_<opaque-id>` 형식(위치 인코딩 없음). |
 
 `detail`은 진단/검토용이며 Consumer business rule의 안정적 key로 사용하지 않는다.
 
