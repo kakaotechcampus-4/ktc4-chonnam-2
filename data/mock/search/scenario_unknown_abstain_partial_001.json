@@ -56,8 +56,8 @@
           },
           "latency_ms": 61000,
           "total_cost": {
-            "amount": "0.39",
-            "currency": "USD"
+            "amount": "546",
+            "currency": "KRW"
           }
         },
         "contract_version": "analysis-run-candidate-event/v1.1"
@@ -114,8 +114,8 @@
           },
           "latency_ms": 60000,
           "total_cost": {
-            "amount": "0.15",
-            "currency": "USD"
+            "amount": "210",
+            "currency": "KRW"
           }
         },
         "contract_version": "analysis-run-candidate-event/v1.1"

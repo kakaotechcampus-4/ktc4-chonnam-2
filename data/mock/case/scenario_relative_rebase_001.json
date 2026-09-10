@@ -79,7 +79,8 @@
           "thumb_ref": "fr_rb001_thumb",
           "selected": true,
           "timeline_revision": 1,
-          "stale_revision": false
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": null,
@@ -152,7 +153,8 @@
           "thumb_ref": "fr_rb001_thumb",
           "selected": true,
           "timeline_revision": 1,
-          "stale_revision": true
+          "stale_revision": true,
+          "stale_revision_label_key": "candidate.stale_timeline_revision"
         }
       ],
       "evidence": null,

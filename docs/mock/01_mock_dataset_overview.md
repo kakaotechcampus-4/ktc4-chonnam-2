@@ -79,7 +79,10 @@ data/mock/
     scenario_happy_001.json                     # 시나리오별 manifest (Mock 관리 전용)
     scenario_empty_001.json
     scenario_unknown_abstain_partial_001.json
+    scenario_plate_reread_001.json
     scenario_correction_rerun_001.json
+    scenario_infra_failure_001.json
+    scenario_relative_rebase_001.json           # 시나리오 4개→7개로 확장(2026-09-09~10, `02_mock_scenario_catalog.md` 참고)
   recording/  scenario_*.json                   # SourceAsset~DeletionReport
   search/     scenario_*.json                   # AnalysisScope~VisualEvidence
   readout/    scenario_*.json                   # ReadoutRun~OverlayTimeReadout
@@ -109,10 +112,13 @@ scripts/
 | --- | --- | --- |
 | `scenario_happy_001` | A | 정상 경로 — 등록부터 ReportPackage 생성까지 전체 파이프라인 1회 통과 |
 | `scenario_empty_001` | B | Candidate Search 결과 0건(빈 배열 ≠ 실패) |
-| `scenario_unknown_abstain_partial_001` | C·D·E·G·H·I | 번호판 abstain, 화면시각 판독 완전 실패, 시각 소스 충돌, Evidence 판정 UNKNOWN, 자동 재판독 발주 |
-| `scenario_correction_rerun_001` | F·I | 사용자 시각 정정 → TimeResolution/EvidenceRecord/RequirementReport supersede 체인, Overlay NOT_RUN 구분 |
+| `scenario_unknown_abstain_partial_001` | E·H | 화면시각 NOT_APPLICABLE, 시각 소스 충돌, 사건유형 확정 불가 → WARN 경로로 `stage=READY`까지 진행 |
+| `scenario_plate_reread_001` | C·D·G·I | 사건유형은 확정, 번호판만 abstain → `EvidenceNeeds` 자동 재판독 발주 |
+| `scenario_correction_rerun_001` | F·I | 사용자 시각 정정 → TimeResolution/EvidenceRecord/RequirementReport supersede 체인, Overlay NOT_APPLICABLE 구분 |
+| `scenario_infra_failure_001` | J | readout 인프라 실패 — STALE 재시도 후 FAILED, blocking notice |
+| `scenario_relative_rebase_001` | K | Timeline 상대전용(`USABLE_RELATIVE_ONLY`) + rebase + `SpanResolution PARTIAL` |
 
-시나리오 개수를 4개로 유지하면서 A~I 9개 유형을 모두 최소 1곳 이상에서 커버했다(상세 매핑은 `02_mock_scenario_catalog.md`).
+> **2026-09-09~10 갱신.** 이 표는 최초 4개 시나리오(A~I 9개 유형) 버전을 서술하던 것을 7개 시나리오·11개 유형(A~K) 현재 상태로 정정했다. 분리·확장 경위는 `02_mock_scenario_catalog.md` 상단 버전 노트, 상세 매핑도 그 문서 참고.
 
 ## 7. 사용 원칙
 

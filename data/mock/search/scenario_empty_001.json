@@ -34,7 +34,7 @@
           "processed_duration_ms": 1800000,
           "token_usage": { "input_tokens": 9800, "output_tokens": 420, "total_tokens": 10220 },
           "latency_ms": 57000,
-          "total_cost": { "amount": "0.31", "currency": "USD" }
+          "total_cost": { "amount": "434", "currency": "KRW" }
         },
         "contract_version": "analysis-run-candidate-event/v1.1"
       },
