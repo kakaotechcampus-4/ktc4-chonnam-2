@@ -85,6 +85,30 @@
 
 ref 형식·위치/role 분리 방향은 `../module-architecture.md` §5-3만 참조한다. **정식 `FrameRef` 필드 계약은 `contract-source-asset-media-stream.md` §5가 소유한다**(`source-asset-media-stream/v1`, 2026-09-08 Consumer Review 종결) — 보장 의미 6건(opaque identity · 동일 stream 동일 canonical frame = 동일 ref · 내부 파싱 금지 · `read_frame` 획득 · `media_stream_ref`+source offset 조회 · rebase 불변)이 §5.2에 있고, 좌표에서 `FrameRef`를 발급받는 `resolve_frame`은 §5.3, offset 정밀도 보장은 §5.4, 조회 실패의 machine-readable failure는 §6.6이다. 같은 6건은 `contract-recording-timeline-asset-span.md` §12에도 남아 있다. `readout`은 ref를 자체 발급하거나 ID 내부를 해석하지 않고 전달받은 근거 ref를 보존한다.
 
+## `crop_ref` identity — 확정 (2026-09-10 · Decider 신유민 · 요청 김대원(`eval`, 이슈 [#30](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/30) B-2) · 확인 요청 정철원(`recording`))
+
+지금까지 이 계약은 `crop_ref`를 필드 목록과 예시에만 두고 identity를 정의하지 않았다. Mock Pack v3의 `plate_reread_001`에서 **같은 `crop_ref`가 두 판독에서 서로 다른 값을 낸** 상태가 만들어지면서(원 판독 `17나2804` / 재판독 `17나2867`) `eval`이 「재판독이 무엇을 바꿔서 맞혔는가」를 귀속할 수 없게 됐다. 아래를 확정한다.
+
+- **`crop_ref`의 identity는 `(frame_ref, bbox, 추출 파라미터)`다.** 추출 파라미터에는 그 판독의 `input_ref.source_profile`이 포함된다. 셋 중 하나라도 다르면 **다른 `crop_ref`**다.
+- **같은 `crop_ref`가 서로 다른 픽셀을 가리키는 일은 없다.** id를 재사용하지 않는다 — 프레임을 다시 떠서 읽으면 새 `crop_ref`를 발급한다(같은 상황에서 새 프레임에 새 `frame_ref`가 붙는 것과 같은 규칙).
+- 따라서 **run 간 비교에 써도 된다.** 두 `PlateReadout`의 `frame_results[]`에 같은 `crop_ref`가 있으면 입력이 같았다는 뜻이고, 값이 달라졌다면 그 차이는 입력이 아니라 provider/모델 쪽에서 온 것이다.
+- **`crop_ref`는 opaque identity이지 조회 handle이 아니다.** crop 이미지를 가져오는 public 경로는 어느 계약에도 없다. `DerivedAsset(derived_role=PLATE_IMAGE)`는 신고자료용 파생물이지 이 crop이 아니다(`contract-analysis-source-derived.md` §7.3). Consumer는 identity 비교·추적에만 쓰고 이미지 획득을 가정하지 않는다.
+- **발급 주체는 `readout`이다.** `frame_ref`와 다른 점이다 — `FrameRef`는 `recording`이 발급하고 readout은 보존만 하지만(위 절), crop을 발급·조회하는 API는 `contract-source-asset-media-stream.md`에도 `contract-analysis-source-derived.md`에도 없다. 따라서 crop은 readout 내부 산출물로 둔다.
+  - **확인 요청(정철원).** `contract-analysis-source-derived.md` §6.8(readout 입력 경계)의 「readout은 `IncidentClip` 또는 그 clip에서 발급된 Source-derived `FrameRef`/crop을 근거로 사용한다」와 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.10의 같은 문장이 crop도 asset 계층이 **발급**하는 것처럼 읽힌다. `recording`이 crop ref를 발급하지 않는다는 것만 확인해 주면 이 절이 그대로 유효하고, 문구 정정이 필요하면 알려주면 된다. 나중에 `recording`이 crop 자산을 발급하게 되면 readout은 `crop_ref`를 대체하지 않고 `PLATE_IMAGE`처럼 **별도 필드**로 받는다.
+- **스키마 변경이 아니다.** 기존 필드의 의미를 명시한 것이므로 `plate-readout/v1.2`를 유지한다.
+
+## `input_ref.source_profile` 값 공간 — 등재 (2026-09-10 · 신유민)
+
+`source_profile`은 「같은 clip을 어떤 판독용 프로파일로 떠서 읽었나」를 나르는 필드이고, 재판독처럼 **같은 입력을 다시 읽는 실행에서 두 run의 유일한 기록된 차이**가 된다(`ReadoutRun`은 모델·프롬프트 세부를 담지 않는다 — §1 「포함하지 않는 것」). 지금까지 예시에만 등장하고 등재 목록이 없었다.
+
+| 값 | 의미 |
+| --- | --- |
+| `readout-native` | 기본 판독 프로파일 |
+| `readout-native-hires` | 고해상도 재추출 프로파일. 저해상도·프레임 불일치로 abstain한 뒤 재판독할 때 쓴다 |
+
+- **닫힌 목록이 아니다.** 신규 값은 이 표에 등재한 뒤 쓴다(`failure-taxonomy.md`의 값 등재 규칙과 같다).
+- `source_profile`(readout의 판독 라벨)과 `profile_ref`(자산 식별자)는 다른 개념이다 — 연결이 필요해지면 canonical space 소유자인 `recording`이 대응을 정한다(`contract-analysis-source-derived.md` §4.4). 그 §4.4의 canonical profile 값 목록은 아직 Pending이며, 아래 표는 그것과 별개인 **readout 판독 라벨**의 목록이다.
+
 ## `ReadoutRun`과의 연결 — `run_ref` (B03 종결, 2026-09-07 · Decider 신유민 · 확인 유소연·김대원)
 
 `PlateReadout`·`OverlayTimeReadout`은 최상위 **필수** 필드 `run_ref`로 자신을 생성한 실행을 가리킨다.
