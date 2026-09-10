@@ -34,6 +34,8 @@
 
 **검증 Contract**: 전체 14개 Final Contract 중 12개(제외: 이 시나리오는 abstain/충돌이 없어 `EvidenceNeeds.items`가 빈 배열, `RequirementReport`의 BLOCK/UNKNOWN outcome은 다른 시나리오가 담당).
 
+> **2026-09-10 v3 추가 (이슈 #26 B-web-5·5, 신유민 답변).** `stage=READY` 이후 `case_rev:4`에서 신고자료용 `REPORT_VIDEO_EXPORT` `JobRecord`/`JobExecution`(`DerivedAsset` 생성)을 추가했다. 이 rev에서 `location_display`의 대표값이 `user_hint`라 `info_state=INFO_NEEDS_REVIEW`인데, 이전에는 `package.report_fields.location`에 같은 미확정 문장이 그대로 실리면서도 `package.warnings=[]`·`CaseView.evidence.review_needed=false`로 "전부 초록"인 사각지대가 있었다 — `package.unconfirmed_fields=["location"]`을 추가하고 `review_needed`/`reason_code`를 정정해 닫았다. 근거는 `contract-job-record-case-view.md` B절 §7의 `review_needed` 파생 규칙 갱신 참고.
+
 ---
 
 ## `scenario_empty_001` — 결과 없음
@@ -50,22 +52,24 @@
 
 ---
 
-## `scenario_unknown_abstain_partial_001` — 화면시각 NOT_APPLICABLE + 시각 소스 충돌 + 사건유형 확정 불가
+## `scenario_unknown_abstain_partial_001` — 화면시각 NOT_APPLICABLE + 시각 소스 충돌 + 사건유형 확정 불가 → WARN 경로로 신고까지 진행
 
 > **2026-09-09 재설계 (Decider 유소연)** — 이전 버전은 이 시나리오에 C·D·E·G·H·I 6개 유형을 몰아넣었으나, `VisualEvidence.verification=UNCERTAIN`(사건 유형 자체가 불확실)인 상태에서는 `EvidenceRecord.event`가 계약상 필수 필드라 `EvidenceRecord`를 아예 만들 수 없다(`contract-evidence-record-needs.md` §3 직접 확인). 반면 C·D·G·I(번호판 abstain narrative)는 사건 유형이 confirmed임을 전제로 `EvidenceRecord`가 존재해야 성립한다 — 두 전제가 한 fixture 안에서 양립할 수 없었다. 이 시나리오는 이제 E·H만 전담하고, C·D·G·I는 [`scenario_plate_reread_001`](#scenario_plate_reread_001--번호판-abstain--evidenceneeds-자동-재판독-확정된-사건유형-위에서)로 이동했다.
+>
+> **2026-09-10 v3 재설계 (Decider 유소연 · 이슈 #25 A절, 김준영 답변) — "Contract Gap"에서 "WARN 경로로 실제 신고까지" 로 뒤집힘.** 위 재설계 직후 발견했던 gap("사건 유형 자체 미확정을 표현할 계약상 메커니즘이 없음", 아래 문단은 그 **이전 설계를 서술한 것으로 지금은 사실이 아니다**)을 김준영이 `event.visual_event_type.value=null`을 제한적으로 허용하는 것으로 해소했다. `EvidenceRecord`가 **생성되고**(빈 배열이 아님), `RequirementReport`(EVIDENCE·FINAL_PACKAGE 둘 다 WARN)·`ReportPackage`까지 생성돼 `CaseView.stage`가 `EVIDENCE_REVIEW`(rev3, WARN)→`READY`(rev4, WARN)로 진행한다. `CaseView.evidence=null`이 아니라 `case_type_display.info_state=INFO_UNKNOWN`으로 "AI가 확정 못 함"을 표현하고, 신규 `situation_confirmation="UNKNOWN"`(사용자도 "잘 모르겠어요")·`package.unconfirmed_fields=["report_type"]` 등으로 미확정 상태를 구조화해서 내려보낸다. 근거: `docs/modules/case/decisions/generic-warn-package-and-situation-response.md`.
 
 **목적**:
 - 화면 시각 판독의 `ReadoutRun`이 `outcome=SUCCEEDED`이면서 화면에 타임스탬프 오버레이 자체가 없어(`NOT_PRESENT`) `OverlayTimeReadout.observation.status=NOT_APPLICABLE`인 결과 객체가 정상적으로 생성되는 규칙을 보여준다(E). **완전 실패(`outcome=FAILED`, 결과 객체 자체가 없음)와 NOT_APPLICABLE(결과는 있으나 관찰 대상이 없다는 정상 관찰)은 다른 개념이다** — 이전 버전은 이를 `outcome=FAILED`로 잘못 모델링했었다(§8.1 P0-4, 신유민 결정으로 정정).
 - Filename 시각과 File Metadata 시각이 3분 어긋날 때 `TimeResolution`이 임의로 승자를 정하지 않고 `conflict.exists=true`로 보존하는 것을 보여준다(H). `BASE_PLUS_OFFSET` 상대-절대 시간 계산도 함께 검증한다.
-- **(신규 Contract Gap 증거)** `VisualEvidence.verification=UNCERTAIN`·`visual_event_type=null`일 때 `EvidenceRecord`를 만들 수 없고, `EvidenceNeeds`(v1)도 기존 `EvidenceRecord`를 `basis_record_ref`로 요구하므로 "AI가 사건 유형 자체를 확정하지 못했다"는 상황을 표현할 계약상 메커니즘이 없다는 gap을 이 fixture가 직접 증명한다. `CaseView.evidence=null`·`requirements_evidence=null`이며, 임시 notice 코드(`evidence.visual_event_unconfirmed`, WARN·blocking=true)로만 사용자 개입 필요를 표시한다. 이 gap 자체는 case Owner 단독 결정 범위를 넘는 새 Contract 사안이라 여기서 해결하지 않고 `04_mock_validation_report.md`·`CONTRACT_CONFLICTS.md`에 기록했다.
+- **(2026-09-10 v3) "AI가 사건 유형 자체를 확정하지 못했다" 상태가 신고 불가가 아니라 WARN + 사용자 확인 요청으로 이어지는 전체 경로의 예시.** `visual_event_type.value=null` → `EvidenceRecord`는 생성되지만 `case_type_display`/`report_type_display`가 `INFO_UNKNOWN`/일반화된 label(`"교통위반(고속도로 포함)"`) → `RequirementReport(EVIDENCE)=WARN` → `package.unconfirmed_fields`에 담아 신고 직전까지 진행 → `CaseView.candidates[].situation_confirmation`으로 "아직 안 물어봄"과 "물어봤는데 모른다고 답함"을 구분한다(현재 스냅샷은 `UNKNOWN`).
 
 **시작 조건**: 영상 1개, filename time과 file metadata time이 서로 다름. 신호 상태가 화면에서 불확실해 사건 유형 자체를 확정할 수 없음.
 
-**예상 흐름**: `COARSE_SEARCH` → 후보 1건(`ranking_score 0.61`, `uncertainties` 포함) → `VisualEvidence.verification=UNCERTAIN`·`visual_event_type=null`(대상 차량은 `MATCHED`이지만 신호 상태 미확정) → `PLATE_READ`는 정상 성공(이 시나리오의 관심사가 아님) → `OVERLAY_TIME_READ`은 `ReadoutRun.outcome=SUCCEEDED` + `OverlayTimeReadout.observation.status=NOT_APPLICABLE` → `evidence.assemble()`은 `event` 필수 필드를 채울 수 없어 `EvidenceRecord`를 만들지 못함(`evidence_records=[]`) → `RequirementReport`도 생성되지 않음(`evidence_record_ref` 기준 없음) → `CaseView.evidence=null`, blocking notice로 사용자 개입 요청.
+**예상 흐름**: `COARSE_SEARCH` → 후보 1건(`ranking_score 0.61`, `uncertainties` 포함) → `VisualEvidence.verification=UNCERTAIN`·`visual_event_type=null`(대상 차량은 `MATCHED`이지만 신호 상태 미확정) → `PLATE_READ`는 정상 성공(이 시나리오의 관심사가 아님) → `OVERLAY_TIME_READ`은 `ReadoutRun.outcome=SUCCEEDED` + `OverlayTimeReadout.observation.status=NOT_APPLICABLE` → `evidence.assemble()`이 `event.visual_event_type.value=null`인 채로 `EvidenceRecord`를 생성 → `RequirementReport(EVIDENCE)=WARN`(사건 유형 미확정 WARN 포함 4개 check) → `CaseView rev3`(`stage=EVIDENCE_REVIEW`, `evidence` 채워짐, `situation_confirmation=UNKNOWN`) → `RequirementReport(FINAL_PACKAGE)=WARN`·`ReportPackage` 생성 → `CaseView rev4`(`stage=READY`, `package.unconfirmed_fields`로 미확정 필드 노출).
 
-**기대 결과**: `EvidenceRecord`·`RequirementReport`·`ReportPackage` 모두 생성되지 않는다. `CaseView.evidence=null`, `requirements_evidence=null`, `requirements_package=null`.
+**기대 결과**: `EvidenceRecord`·`RequirementReport`(EVIDENCE·FINAL_PACKAGE)·`ReportPackage` 전부 생성된다(WARN 등급으로). `CaseView.evidence`는 채워져 있고 `case_type_display.info_state=INFO_UNKNOWN`으로 미확정을 표현하며, `stage=READY`까지 도달한다.
 
-**검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`OverlayTimeReadout`(`NOT_APPLICABLE`)·`TimeResolution`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`.
+**검증 Contract**: `AnalysisScope`·`AnalysisRun`·`CandidateEvent`·`VisualEvidence`·`ReadoutRun`·`OverlayTimeReadout`(`NOT_APPLICABLE`)·`TimeResolution`·`EvidenceRecord`·`EvidenceNeeds`·`RequirementReport`(EVIDENCE·FINAL_PACKAGE WARN)·`ReportPackage`·`JobRecord`·`JobExecution`·`UsageRecord`·`CaseView`(`situation_confirmation`·`package.unconfirmed_fields`).
 
 ---
 
@@ -128,6 +132,8 @@
 
 **의도적으로 만들지 않은 것**: `search`·`evidence` 모듈 전체(`modules_intentionally_absent`로 명시). candidate 탐색·선정은 이 시나리오의 검증 대상이 아니며, `PLATE_READ`가 인프라 단계에서 실패해 evidence assembly 자체가 시작되지 않는다. `SpanResolution.FAILED`, `EvidenceRecord` 관련 fixture도 이 시나리오에는 없다.
 
+> **2026-09-10 v3 추가 (이슈 #26 B-readout-3·4).** ① attempt 1(STALE)에도 0원 `UsageRecord`를 추가했다 — 실패·재시도분이 비용 분모에서 조용히 빠지는 것을 막기 위한 mock pack 전체 컨벤션(이슈 #22 B-4, `docs/modules/case/decisions/eval-round2-ground-truth-and-usage.md`). 이 fixture가 「1 execution : `ReadoutRun` 1건」 불변조건의 STALE 예외(신유민·유소연 제안, `contract-job-record-case-view.md`·`contract-job-execution.md`에 등재)의 최초 반례이기도 하다. ② 같은 시나리오에 `OVERLAY_TIME_READ` run을 새로 추가해 `observation.status=UNKNOWN`·`reason.code=readout.overlay.presence_undetermined`인 "화면 시각 확인 불가" 갈래를 처음으로 만들었다(신유민이 이슈 #16에서 요청했던 것). `recording/scenario_infra_failure_001.json`에 그동안 없던 `IncidentClip`(`clip_x001`)도 이때 추가했다(정철원 확인 대기, provisional).
+
 ---
 
 ## `scenario_relative_rebase_001` — Timeline 상대전용(USABLE_RELATIVE_ONLY) + Rebase(revision 2) + SpanResolution PARTIAL(신규 유형 K)
@@ -148,6 +154,8 @@
 
 **의도적으로 만들지 않은 것**: `readout`·`evidence` 모듈 전체(`modules_intentionally_absent`로 명시) — 이 시나리오는 timeline 메커니즘 자체에 집중하며, 완전한 `PLATE_READ`/evidence assembly 파이프라인은 다른 5개 시나리오가 이미 커버한다. `SpanResolution.FAILED`(위치를 특정할 수 없는 전체 실패)는 별도 항목으로 남겼다(P1-10 권장 수정). `PARTIAL` span_resolution은 별도 `IncidentClip`을 만들지 않는다 — `scenario_happy_001`의 `as_h001_fine` 고아 문제(P0-3)를 반복하지 않기 위한 의도적 scope 제한이다.
 
+> **2026-09-10 v3 추가 (이슈 #26 B-web-8, 신유민 답변).** `stale_revision=true`일 표시 문구를 web이 임의로 만들지 않도록 `candidates[].stale_revision_label_key`(등록값 `candidate.stale_timeline_revision`)를 신설했다. `case_rev:1`은 `null`, `case_rev:2`(rebase 후)는 이 값이 채워진다. 세 필드 모두 같은 날 후속으로 나머지 5개 시나리오(`empty`는 `candidates=[]`라 제외)에 backfill했다 — `timeline_revision:1`·`stale_revision:false`·`stale_revision_label_key:null`(전부 단일 revision만 쓰는 시나리오라 값이 자명함). `docs/modules/case/decisions/candidate-stale-revision-display.md` 참고.
+
 ---
 
 ## Eval Harness 전용 fixture (시나리오 밖, `data/mock/expected/`)
@@ -158,3 +166,5 @@
 | `eval_fixture_wrong_001.json` | 의도적 오답 | 잘못된 번호판 채택·나쁜 후보 순위·큰 timestamp 편차·false positive abstain을 각각 심어, metric 코드가 실제로 오류를 잡아내는지 검증 |
 
 두 파일 모두 `provisional_non_contract_schema: true`로 표시했다 — eval의 정식 Ground Truth 스키마는 아직 어떤 Final Contract에도 정의돼 있지 않다(`contract-readout-run.md` §2 "정답지... 현재 없으며 eval 소유 후속").
+
+> **2026-09-10 v3 예고 (이슈 #22 B-1, 김대원 답변).** 위 2개 파일은 **폐기 예정**이다 — 채점기가 맞는/틀린 입력에 각각 만점/낮은 점수를 주는지는 하니스 가짜 구현 2종이 실제 파이프라인으로 이미 증명하고, fixture 안에 기대 점수를 적어두는 이 방식은 채점 코드를 안 거쳐서 같은 걸 증명하지 못한다는 게 김대원의 판단이다. 대체품은 `data/mock/expected/<scenario_id>.expected.json` 7개(스키마 `eval-expected/v2`, `readout_ref`/`resolution_ref`/`timeline_ref` **참조** 방식 — fixture 값을 복사하지 않음)이며, **김대원이 자기 PR로 직접 작성**한다. case/mock owner는 이 디렉터리를 손대지 않기로 동의했다(`docs/modules/case/decisions/eval-round2-ground-truth-and-usage.md`). `plate_reread_001`의 실제 번호판(`17나2867`)·`unknown_abstain_partial_001`의 참값 사건 유형(없음, `EXCLUDED`)도 이 문서에서 확정해 eval에 회신했다.

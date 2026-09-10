@@ -124,7 +124,10 @@
           "at_provenance": "recording.filename_time",
           "observed": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
           "thumb_ref": "fr_p001_plate1",
-          "selected": true
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
       "evidence": {
@@ -221,13 +224,6 @@
         }
       ],
       "notices": [
-        {
-          "code": "evidence.plate_reread_in_progress",
-          "severity": "INFO",
-          "blocking": false,
-          "message_key": "notice.plate_reread_running",
-          "actions": []
-        },
         {
           "code": "evidence.plate_abstained",
           "severity": "WARN",

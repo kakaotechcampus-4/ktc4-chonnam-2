@@ -162,7 +162,7 @@ QUEUED → FAILED          (실행 전 발주 자체가 무효화된 경우)
 6. 캐시 재사용 조건은 `contract-job-record-case-view.md` A절 §7을 따른다. 실행 결과만의 fingerprint 비교로 범위를 넓히지 않는다(근거: `adr-job-record-case-view.md` A절 §7).
 7. 비용 금액의 authoritative 원천은 `UsageRecord`다. 본 계약은 `usage_refs`로 연결만 하고 금액을 자체 필드로 중복 보관하지 않는다.
 8. `case`는 현재 `case_rev`와 맞지 않는 실행의 `produced`를 domain state에 반영하지 않는다(v4 §4-모듈5 ④).
-9. **readout 계열 Job의 worker는 1 execution 안에서 readout public 함수(`read_plate` / `read_overlay_time`)를 정확히 1회 호출한다.** 그래야 `case`의 불변조건 「1 execution : `ReadoutRun` 1건」(`contract-job-record-case-view.md` A절 §10-5)이 성립한다 — `readout`은 `JobExecution`을 모르므로 이 규칙은 worker(Producer common/runtime) 구현 규칙이다. `produced`에는 그 run의 `{kind:"readout_run", ref:<run_id>}`가 정확히 1개 들어간다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (신유민·유소연, 2026-09-07)
+9. **readout 계열 Job의 worker는 1 execution 안에서 readout public 함수(`read_plate` / `read_overlay_time`)를 정확히 1회 호출한다.** 그래야 `case`의 불변조건 「1 execution : `ReadoutRun` 1건」(`contract-job-record-case-view.md` A절 §10-5)이 성립한다 — `readout`은 `JobExecution`을 모르므로 이 규칙은 worker(Producer common/runtime) 구현 규칙이다. `produced`에는 그 run의 `{kind:"readout_run", ref:<run_id>}`가 정확히 1개 들어간다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (신유민·유소연, 2026-09-07)    **예외(2026-09-10, 유소연·신유민, 이슈 #26 B-readout-3):** `status=STALE`로 종료된 execution은 worker가 readout public 함수 호출을 완료하지 못하고 소멸했을 수 있어 `produced=[]`(run 없음)를 허용한다 — 이 경우 §9 본문의 "정확히 1회 호출"은 성립하지 않은 채로 종료된 것이다.
 
 ## 10. PM이 새로 정한 것 (소비자 통보 대상)
 

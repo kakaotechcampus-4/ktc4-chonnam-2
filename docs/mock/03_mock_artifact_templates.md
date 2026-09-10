@@ -2472,10 +2472,12 @@
 }
 ```
 
-### CaseView — evidence=null, 사건유형 확정 불가로 blocking notice만 표시 (Contract Gap)
+### CaseView — 사건유형 확정 불가, EVIDENCE_REVIEW WARN (2026-09-10 v3 재구성)
+
+> **2026-09-10 갱신.** 이 스냅샷은 원래 `evidence=null`·blocking notice만 있는 Contract Gap 예시였다(사건 유형이 불확실하면 `EvidenceRecord.event`가 필수 필드라 레코드 자체를 만들 수 없다는 문제). 이슈 #25 A절에서 김준영(evidence)이 `event.visual_event_type.value=null`을 제한적으로 허용하기로 답해, 이 gap을 fixture 레벨에서 해소했다 — `EvidenceRecord`가 생성되고 `stage=EVIDENCE_REVIEW`→(다음 스냅샷에서) `READY`까지 WARN 경로로 진행한다. 근거: `docs/modules/case/decisions/generic-warn-package-and-situation-response.md`.
 
 **Contract**: `case-view/v1.2`  
-**출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0] (실제 파일에서 그대로 발췌)
+**출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0](`case_rev:3`) (실제 파일에서 그대로 발췌)
 
 ```json
 {
@@ -2502,34 +2504,14 @@
     "location": null
   },
   "progress": [
-    {
-      "step": "file_intake",
-      "state": "DONE"
-    },
-    {
-      "step": "coarse_search",
-      "state": "DONE"
-    },
-    {
-      "step": "candidate_review",
-      "state": "DONE"
-    },
-    {
-      "step": "plate_read",
-      "state": "DONE"
-    },
-    {
-      "step": "overlay_time_read",
-      "state": "DONE"
-    },
-    {
-      "step": "evidence_assembly",
-      "state": "DONE"
-    },
-    {
-      "step": "requirement_check",
-      "state": "PENDING"
-    }
+    { "step": "file_intake", "state": "DONE" },
+    { "step": "coarse_search", "state": "DONE" },
+    { "step": "candidate_review", "state": "DONE" },
+    { "step": "plate_read", "state": "DONE" },
+    { "step": "overlay_time_read", "state": "DONE" },
+    { "step": "evidence_assembly", "state": "DONE" },
+    { "step": "requirement_check", "state": "DONE" },
+    { "step": "package_assembly", "state": "PENDING" }
   ],
   "candidates": [
     {
@@ -2538,17 +2520,38 @@
       "at_provenance": "recording.filename_time",
       "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
       "thumb_ref": "fr_u001_plate1",
-      "selected": true
+      "selected": true,
+      "situation_confirmation": "UNKNOWN"
     }
   ],
-  "evidence": null,
-  "requirements_evidence": null,
+  "evidence": {
+    "record_id": "ev_u001",
+    "case_type_display": { "code": null, "label": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
+    "report_type_display": { "code": null, "label": "교통위반(고속도로 포함)", "needs_review": false },
+    "violation_display": { "code": null, "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.", "needs_review": false, "info_state": "INFO_AI_ESTIMATED", "source_label_key": "event.source.violation_expression" },
+    "plate_display": { "value": "88부1234", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.plate_ocr" },
+    "event_time_display": { "value": "2026-08-26T22:20:15+09:00", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "time.source.filename_time" },
+    "location_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null, "coord": null, "search_keyword": null },
+    "user_edited": false,
+    "preview_ref": "fr_u001_plate1",
+    "review_needed": true,
+    "reason_code": "evidence.event_time_needs_review"
+  },
+  "requirements_evidence": {
+    "readiness": "WARN",
+    "checks": [
+      { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
+      { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "WARN", "reason_code": "evidence.time_needs_review", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
+      { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "WARN", "reason_code": "evidence.visual_event_type_unconfirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
+      { "code": "evidence.location.present", "category": "LOCATION", "outcome": "WARN", "reason_code": "evidence.location_unavailable", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] }
+    ]
+  },
   "requirements_package": null,
   "package": null,
   "running_jobs": [],
   "notices": [
     {
-      "code": "time.conflict_needs_notice",
+      "code": "evidence.time_conflict_needs_notice",
       "severity": "WARN",
       "blocking": false,
       "message_key": "notice.time_conflict",
@@ -2557,7 +2560,7 @@
       ]
     },
     {
-      "code": "time.overlay_not_present",
+      "code": "readout.overlay_not_present",
       "severity": "INFO",
       "blocking": false,
       "message_key": "notice.overlay_not_present",
@@ -2566,13 +2569,15 @@
     {
       "code": "evidence.visual_event_unconfirmed",
       "severity": "WARN",
-      "blocking": true,
+      "blocking": false,
       "message_key": "notice.visual_event_unconfirmed",
       "actions": []
     }
   ]
 }
 ```
+
+**같은 시나리오의 `case_rev:4`**는 `stage=READY`까지 더 진행한 스냅샷으로, `requirements_package`(WARN)·`package`(`unconfirmed_fields` 포함)·`situation_confirmation=UNKNOWN`이 채워진다 — 전체는 `case/scenario_unknown_abstain_partial_001.json` 참고.
 
 ## common
 
