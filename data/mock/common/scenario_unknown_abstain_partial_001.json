@@ -4,7 +4,7 @@
   "job_executions": [
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_u001_search",
       "job_id": "job_u001_search",
       "status": "SUCCEEDED",
@@ -25,7 +25,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_u001_plate",
       "job_id": "job_u001_plate",
       "status": "SUCCEEDED",
@@ -46,7 +46,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_u001_overlay",
       "job_id": "job_u001_overlay",
       "status": "SUCCEEDED",
@@ -67,7 +67,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_u001_fine",
       "job_id": "job_u001_fine",
       "status": "SUCCEEDED",
@@ -85,18 +85,40 @@
       "usage_refs": [
         "usage_u001_fine"
       ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1.1",
+      "execution_id": "exec_u001_report_video",
+      "job_id": "job_u001_report_video",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-26T22:33:30+09:00",
+      "started_at": "2026-08-26T22:33:35+09:00",
+      "ended_at": "2026-08-26T22:33:55+09:00",
+      "produced": [
+        {
+          "kind": "derived_asset",
+          "ref": "da_u001_report_video"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_u001_report_video"
+      ]
     }
   ],
   "usage_records": [
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_u001_coarse",
       "execution_ref": "exec_u001_search",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_u001"
       },
+      "run_ref_reason": null,
       "case_id": "case_u001",
       "occurred_at": "2026-08-26T22:31:20+09:00",
       "provider_label": "gemini",
@@ -119,13 +141,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_u001_plate",
       "execution_ref": "exec_u001_plate",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_u001_plate"
       },
+      "run_ref_reason": null,
       "case_id": "case_u001",
       "occurred_at": "2026-08-26T22:32:08+09:00",
       "provider_label": "ocr-local",
@@ -144,13 +167,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_u001_overlay",
       "execution_ref": "exec_u001_overlay",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_u001_overlay"
       },
+      "run_ref_reason": null,
       "case_id": "case_u001",
       "occurred_at": "2026-08-26T22:32:11+09:00",
       "provider_label": "ocr-local",
@@ -169,13 +193,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_u001_fine",
       "execution_ref": "exec_u001_fine",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_u001_fine"
       },
+      "run_ref_reason": null,
       "case_id": "case_u001",
       "occurred_at": "2026-08-26T22:32:35+09:00",
       "provider_label": "gemini",
@@ -193,6 +218,29 @@
       },
       "cost": {
         "amount": "210",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.2",
+      "usage_id": "usage_u001_report_video",
+      "execution_ref": "exec_u001_report_video",
+      "run_ref": null,
+      "run_ref_reason": "DIRECT_NO_RUN",
+      "case_id": "case_u001",
+      "occurred_at": "2026-08-26T22:33:55+09:00",
+      "provider_label": "ffmpeg-local",
+      "operation": "RECORDING_REPORT_VIDEO_EXPORT",
+      "token_usage": null,
+      "processed_duration_sec": 60.0,
+      "latency_ms": 20000,
+      "pricing_context": {
+        "pricing_id": "ffmpeg-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
         "currency": "KRW"
       }
     }

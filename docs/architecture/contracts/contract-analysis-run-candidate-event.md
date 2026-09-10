@@ -240,6 +240,7 @@
 - `end_ms`: timeline 시작 기준 상대 offset. `> start_ms`.
 - `representative_ms`: Candidate 대표 지점. `start_ms <= representative_ms <= end_ms`.
 - 이 span은 실제 SourceAsset/file boundary가 아니며 최종 신고 `occurred_at`도 아니다.
+- **명확화(2026-09-10, 이슈 #22 B-2·`CONTRACT_CONFLICTS.md` 불명확 항목 7 종결, 서어진 — 원문 `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`).** `span`은 **coarse 후보 창(candidate window)이며 사건 길이(duration)와 같지 않다.** 이 span을 만드는 `AnalysisRun.operation=CANDIDATE_SEARCH`(coarse)의 산출물은 정밀 사건 구간이 아니라 대략적 후보 시간 창이고, 창 폭이 넓은 것(수십~백여 초) 자체는 정상이다. 사건의 정밀 시각은 이 계약이 아니라 별도 레이어가 담당한다 — Fine 단계(`VISUAL_VERIFY`)의 `temporal_facts[].at_offset_ms`, 그리고 최종적으로 `occurred_at`(overlay/`TimeResolution`). `representative_ms`는 이 넓은 창 안에서 실제 사건 순간(예: crossing moment)을 가리키도록 설계된 대표 시점이며 — `representative_ms = span.start_ms + fine.at_offset_ms`가 fixture 전반에서 성립한다 — coarse localization 정확도를 재는 authoritative 지점이다.
 
 ---
 
@@ -325,10 +326,10 @@
 반드시:
 
 - Recall@1/3/10은 `rank` 기준으로 계산한다.
-- span/timestamp error는 timeline-relative span 기준으로 계산한다.
+- **coarse localization 매칭 규칙(2026-09-10 정정, 이슈 #22 B-2, 서어진 — 원문 `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`).** `span`은 coarse 후보 창일 뿐 사건 구간이 아니므로(§4-1) **span IoU를 1차 매처로 쓰지 않는다.** localization은 `|representative_ms − gt_onset_ms|`(tolerance 매칭, point/onset error)로 계산한다. `start_ms <= gt_onset_ms <= end_ms`(span containment)는 보조 sanity 신호로만 쓴다. 이전 문구("span/timestamp error는 timeline-relative span 기준으로 계산한다")는 이 규칙으로 대체됐다 — timeline-relative라는 좌표계 자체는 여전히 맞지만, span 폭 전체와의 IoU로 오차를 재는 것은 coarse 창 설계와 맞지 않아 구조적으로 실패했다(예: `happy_001`은 오차 0인 매칭인데 IoU 최대 0.15).
 - implementation 비교에는 `impl_id + model_ref + prompt_version + config_version + contract_version`을 사용한다.
 - Efficiency 재평가에는 immutable `usage_summary`를 사용할 수 있다.
-- 상세 usage audit·비용 분모 집계는 원장 `UsageRecord`를 `run_ref`로 스캔해 계산한다. `usage_refs[]`는 audit 진입점(편의)으로만 쓰고 집계 기준으로 쓰지 않는다 — search와 readout에서 같은 규칙을 쓰고 모듈에 따라 다른 참조 방향을 신뢰하지 않는다(2026-09-08).
+- **집계 키 분리(2026-09-10 정정, 이슈 #33 Required-7).** 이 Run 하나에 속한 상세 usage row를 감사(audit)할 때는 원장 `UsageRecord.run_ref`로 스캔한다 — `usage_refs[]`는 audit 진입점(편의)으로만 쓰고 집계 기준으로 쓰지 않는다(2026-09-08 결정 유지). 그러나 **`cost_per_source_video_hour` 같은 사건/source-video 단위 비용 지표의 정본 집계 키는 `run_ref`가 아니라 `UsageRecord.case_id`다**(`contract-usage-record.md` §9-2·§9-6) — `run_ref=null`인 row(예: Run이 생성되지 못한 채 종료된 STALE 호출, `run_ref_reason=RUN_NOT_PRODUCED`)도 실제로 그 사건에 청구된 비용이므로 `run_ref` 스캔만으로는 비용 분모에서 누락된다. 요약하면 **"이 Run에 속한 usage" 질의는 `run_ref`, "이 사건/영상에 든 전체 비용" 질의는 `case_id`**이며 서로 대체하지 않는다.
 
 ---
 

@@ -46,7 +46,7 @@
       "case_rev": 2,
       "kind": "FINE_VERIFY",
       "scope_ref": null,
-      "input_fingerprint": "sha1:h001-fine-verify-clip_h001",
+      "input_fingerprint": "sha1:h001-fine-verify-as_h001_fine",
       "force_rerun": false,
       "requested_at": "2026-08-24T18:21:15+09:00"
     },
@@ -55,18 +55,18 @@
       "contract_version": "job-record/v1",
       "job_id": "job_h001_report_video",
       "case_id": "case_h001",
-      "case_rev": 4,
+      "case_rev": 2,
       "kind": "REPORT_VIDEO_EXPORT",
       "scope_ref": null,
-      "input_fingerprint": "sha1:h001-report-video-export-pkg_h001",
+      "input_fingerprint": "sha1:h001-report-video-export-ev_h001-tres_h001-clip_h001-policy_package-assembly-v1",
       "force_rerun": false,
-      "requested_at": "2026-08-24T18:25:00+09:00"
+      "requested_at": "2026-08-24T18:23:10+09:00"
     }
   ],
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_h001",
       "case_rev": 1,
       "stage": "SEARCHING",
@@ -138,7 +138,7 @@
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_h001",
       "case_rev": 3,
       "stage": "READY",
@@ -203,7 +203,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -211,17 +212,23 @@
         "case_type_display": {
           "code": "SOLID_LINE_LANE_CHANGE",
           "label": "백색 실선 구간 차로변경",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_LANE_CHANGE",
-          "label": "안전운전 불이행",
-          "needs_review": false
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": "12가3456",
@@ -357,11 +364,33 @@
       "package": {
         "package_ref": "pkg_h001",
         "report_fields": {
-          "safety_report_type": "안전운전 불이행",
+          "safety_report_type": "교통위반(고속도로 포함)",
           "occurred_at": "2026-08-24T18:05:12+09:00",
           "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
           "vehicle_number": "12가3456",
           "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+        },
+        "report_field_states": {
+          "vehicle_number": {
+            "info_state": "INFO_SOURCE_VERIFIED",
+            "source_label_key": "plate.source.plate_ocr"
+          },
+          "occurred_at": {
+            "info_state": "INFO_SOURCE_VERIFIED",
+            "source_label_key": "time.source.overlay_ocr"
+          },
+          "location": {
+            "info_state": "INFO_NEEDS_REVIEW",
+            "source_label_key": "location.source.user_hint"
+          },
+          "violation_expression": {
+            "info_state": "INFO_AI_ESTIMATED",
+            "source_label_key": "event.source.violation_expression"
+          },
+          "safety_report_type": {
+            "info_state": "INFO_AI_ESTIMATED",
+            "source_label_key": "event.source.category_mapping"
+          }
         },
         "artifact_ref": "da_h001_report_video",
         "capabilities": [
@@ -371,7 +400,9 @@
         ],
         "warnings": [],
         "unconfirmed_fields": [
-          "location"
+          "safety_report_type",
+          "location",
+          "violation_expression"
         ]
       },
       "running_jobs": [],
@@ -379,7 +410,7 @@
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_h001",
       "case_rev": 4,
       "stage": "READY",
@@ -444,7 +475,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -452,17 +484,23 @@
         "case_type_display": {
           "code": "SOLID_LINE_LANE_CHANGE",
           "label": "백색 실선 구간 차로변경",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_LANE_CHANGE",
-          "label": "안전운전 불이행",
-          "needs_review": false
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": "12가3456",
@@ -598,11 +636,33 @@
       "package": {
         "package_ref": "pkg_h001",
         "report_fields": {
-          "safety_report_type": "안전운전 불이행",
+          "safety_report_type": "교통위반(고속도로 포함)",
           "occurred_at": "2026-08-24T18:05:12+09:00",
           "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
           "vehicle_number": "12가3456",
           "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+        },
+        "report_field_states": {
+          "vehicle_number": {
+            "info_state": "INFO_SOURCE_VERIFIED",
+            "source_label_key": "plate.source.plate_ocr"
+          },
+          "occurred_at": {
+            "info_state": "INFO_SOURCE_VERIFIED",
+            "source_label_key": "time.source.overlay_ocr"
+          },
+          "location": {
+            "info_state": "INFO_NEEDS_REVIEW",
+            "source_label_key": "location.source.user_hint"
+          },
+          "violation_expression": {
+            "info_state": "INFO_AI_ESTIMATED",
+            "source_label_key": "event.source.violation_expression"
+          },
+          "safety_report_type": {
+            "info_state": "INFO_AI_ESTIMATED",
+            "source_label_key": "event.source.category_mapping"
+          }
         },
         "artifact_ref": "da_h001_report_video",
         "capabilities": [
@@ -612,7 +672,9 @@
         ],
         "warnings": [],
         "unconfirmed_fields": [
-          "location"
+          "safety_report_type",
+          "location",
+          "violation_expression"
         ]
       },
       "running_jobs": [],

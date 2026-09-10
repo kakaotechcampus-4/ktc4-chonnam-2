@@ -680,8 +680,11 @@ def check_v9():
     ub = read("contract-usage-record.md")
     if "12. (2026-09-08" not in ub:
         errs.append("UsageRecord §8-12 없음")
-    if "usage-record/v1.1" not in ub:
-        errs.append("UsageRecord 버전이 v1.1이 아님(버전 유지 결정 위반)")
+    # 2026-09-10: usage-record/v1.2로 의도적으로 올랐다(이슈 #33 Required-5/Required-7,
+    # run_ref_reason 필드 추가 + row 생성 규칙 명확화 — case 통합 주도). v1.1 고정은 그 이전의
+    # "버전 유지" 결정이었고 이번 필드 추가로 더 이상 유효하지 않다. v1.2 미만으로 되돌아가면 실패시킨다.
+    if "usage-record/v1.2" not in ub:
+        errs.append("UsageRecord 버전이 v1.2가 아님(2026-09-10 run_ref_reason 추가 반영 안 됨)")
     rec("semantic", not errs, "V9 계약 본문 표기", "; ".join(errs))
 
 

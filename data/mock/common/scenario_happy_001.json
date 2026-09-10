@@ -4,7 +4,7 @@
   "job_executions": [
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_h001_search",
       "job_id": "job_h001_search",
       "status": "SUCCEEDED",
@@ -25,7 +25,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_h001_plate",
       "job_id": "job_h001_plate",
       "status": "SUCCEEDED",
@@ -46,7 +46,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_h001_overlay",
       "job_id": "job_h001_overlay",
       "status": "SUCCEEDED",
@@ -67,7 +67,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_h001_fine",
       "job_id": "job_h001_fine",
       "status": "SUCCEEDED",
@@ -88,14 +88,14 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_h001_report_video",
       "job_id": "job_h001_report_video",
       "status": "SUCCEEDED",
       "attempt": 1,
-      "queued_at": "2026-08-24T18:25:00+09:00",
-      "started_at": "2026-08-24T18:25:05+09:00",
-      "ended_at": "2026-08-24T18:25:35+09:00",
+      "queued_at": "2026-08-24T18:23:10+09:00",
+      "started_at": "2026-08-24T18:23:15+09:00",
+      "ended_at": "2026-08-24T18:23:45+09:00",
       "produced": [
         {
           "kind": "derived_asset",
@@ -111,13 +111,14 @@
   "usage_records": [
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_h001_coarse",
       "execution_ref": "exec_h001_search",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_h001"
       },
+      "run_ref_reason": null,
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:21:10+09:00",
       "provider_label": "gemini",
@@ -140,13 +141,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_h001_plate",
       "execution_ref": "exec_h001_plate",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_h001_plate"
       },
+      "run_ref_reason": null,
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:06+09:00",
       "provider_label": "ocr-local",
@@ -165,13 +167,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_h001_overlay",
       "execution_ref": "exec_h001_overlay",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_h001_overlay"
       },
+      "run_ref_reason": null,
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:11+09:00",
       "provider_label": "ocr-local",
@@ -190,13 +193,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_h001_fine",
       "execution_ref": "exec_h001_fine",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_h001_fine"
       },
+      "run_ref_reason": null,
       "case_id": "case_h001",
       "occurred_at": "2026-08-24T18:22:20+09:00",
       "provider_label": "gemini",
@@ -219,12 +223,13 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_h001_report_video",
       "execution_ref": "exec_h001_report_video",
       "run_ref": null,
+      "run_ref_reason": "DIRECT_NO_RUN",
       "case_id": "case_h001",
-      "occurred_at": "2026-08-24T18:25:35+09:00",
+      "occurred_at": "2026-08-24T18:23:45+09:00",
       "provider_label": "ffmpeg-local",
       "operation": "RECORDING_REPORT_VIDEO_EXPORT",
       "token_usage": null,

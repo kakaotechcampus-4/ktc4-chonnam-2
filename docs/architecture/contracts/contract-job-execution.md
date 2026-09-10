@@ -1,14 +1,16 @@
 # Data Contract — JobExecution v1
 
 **Status:** `Final — Accepted`
-**Accepted:** `2026-09-05`
-**수락 근거:** PM의 common/runtime Owner 결정과 `adr-job-record-case-view.md` 부록-A를 따른다. **소비자 수락·무이견을 확인한 상태라는 뜻은 아니다.** 신규 결정과 접합부 확인 범위는 §10·§11 및 `adr/adr-consistency-followup-2026-09-06.md`를 따른다.
+**Accepted:** `2026-09-05` (v1) · `2026-09-10` (v1.1)
+**수락 근거:** PM의 common/runtime Owner 결정과 `adr-job-record-case-view.md` 부록-A를 따른다. **소비자 수락·무이견을 확인한 상태라는 뜻은 아니다.** 신규 결정과 접합부 확인 범위는 §10·§11 및 `adr/adr-consistency-followup-2026-09-06.md`를 따른다. **v1.1은 이슈 #33 A-2 반영이며 case(유소연) 통합 초안, 김준영 PR 리뷰 확인 대상이다.**
 
 **Architecture Contract:** v4 §5-1 ⑫ · §4-모듈5 ④⑤
-**Contract Version:** `job-execution/v1`
+**Contract Version:** `job-execution/v1.1`
 **Producer / Owner:** `common/runtime` — 김준영 (계약) · **구현 담당 정철원** (2026-09-04 백엔드 회의)
 **Consumers:** `case` — 유소연 (Runtime) · `web` — 신유민 (`CaseView` projection 경유) · `eval` — 김대원 (실행 성공률 집계)
 **Related ADR:** `adr/adr-job-execution.md` · 상위 결정 `adr/adr-job-record-case-view.md` 부록-A
+
+> **`job-execution/v1.1` (2026-09-10, 이슈 #33 A-2).** `status` enum에 **`CANCELLED`**를 추가한다(사용자가 진행 중인 분석을 중단한 경우 — `docs/product/core-user-flow.md` §4 "중단", `CONTRACT_CONFLICTS.md` 불명확 항목 9 종결). 허용 전이 `QUEUED→CANCELLED` · `RUNNING→CANCELLED`를 추가한다. §9 불변조건 3("`status=SUCCEEDED`가 아니면 `produced`를 유효한 결과로 취급하지 않는다")에 **`CANCELLED` 한정 예외**를 둔다 — 중단 시점까지 이미 만들어진 부분 결과가 있으면 `produced`에 남겨 보존할 수 있고, `case`는 이를 domain state의 `PARTIAL` outcome으로만 반영한다(완결된 결과로 승격하지 않는다). **"이어서 찾기"(재개) 시 같은 `job_id`를 재사용할지 새 Job으로 볼지는 `JobRecord`를 소유한 `case`의 판단이며 이 계약은 실행 상태 표현만 연다** — 이번 라운드는 이 구분을 요구하는 demo fixture를 만들지 않는다(이슈 #34 확인, Should-1 비차단 항목으로 유지).
 
 > **이 문서가 왜 지금 생겼나.** `JobRecord` ADR이 실행 상태(status/attempt/cost/produced/failure_kind)를 `JobRecord`에서 떼어내 별도 `JobExecution` 계약으로 이관하기로 확정했는데(부록-A §6·§10·§12), 그 계약 문서가 없었다. 목데이터 통합에서 queue 목 응답을 만들 근거가 없으므로 PM이 ADR의 기존 결정과 PM 소유 영역의 추가 결정을 모아 작성했다. 새로 정한 것은 §10에 따로 표시했고, 정하지 않은 것은 §11에 미결로 남겼다.
 
@@ -57,7 +59,7 @@
 {
   "execution_id": "string",
   "job_id": "string",
-  "status": "QUEUED | RUNNING | SUCCEEDED | FAILED | STALE",
+  "status": "QUEUED | RUNNING | SUCCEEDED | FAILED | STALE | CANCELLED",
   "attempt": "int",
   "queued_at": "ISO8601",
   "started_at": "ISO8601 | null",
@@ -85,7 +87,7 @@
 
 ## 6. Enum / State
 
-### `status` — 닫힌 enum 5값
+### `status` — 닫힌 enum 6값 (v1.1)
 
 | 값 | 의미 |
 | --- | --- |
@@ -94,16 +96,19 @@
 | `SUCCEEDED` | 정상 종료. `produced`가 유효하다 |
 | `FAILED` | 실행이 실패로 종료됨 |
 | `STALE` | 실행 중이던 worker가 살아 있지 않다고 판정됨 |
+| `CANCELLED` | 사용자가 진행 중인 분석을 중단해 종료됨(v1.1) |
 
-**`CANCELLED`는 두지 않는다** — 현재 제품 요구가 없다(ADR 부록-A §13-2).
+**v1: `CANCELLED`는 두지 않는다고 했었다** — 당시 현재 제품 요구가 없다고 판단했으나(ADR 부록-A §13-2), `core-user-flow.md` §4의 "중단" 흐름이 실제 제품 요구임이 확인돼 v1.1에서 추가한다(이슈 #33 A-2).
 
-허용 전이는 다음뿐이다.
+허용 전이는 다음이다.
 
 ```
 QUEUED → RUNNING → SUCCEEDED
                  → FAILED
                  → STALE → (새 execution_id로 재시도)
+                 → CANCELLED
 QUEUED → FAILED          (실행 전 발주 자체가 무효화된 경우)
+QUEUED → CANCELLED        (실행 시작 전 사용자가 중단)
 ```
 
 ### `CaseView`로의 projection
@@ -156,7 +161,7 @@ QUEUED → FAILED          (실행 전 발주 자체가 무효화된 경우)
 
 1. `execution_id`는 재사용되지 않는다.
 2. 하나의 `job_id`에 여러 `JobExecution`이 붙을 수 있다. `attempt`는 그 안에서 1부터 증가한다.
-3. `status=SUCCEEDED`가 아니면 `produced`를 유효한 결과로 취급하지 않는다.
+3. `status=SUCCEEDED`가 아니면 `produced`를 유효한 결과로 취급하지 않는다. **예외(v1.1):** `status=CANCELLED`이고 중단 시점까지 만들어진 부분 결과가 있으면 `produced`에 남길 수 있다 — 단 `case`는 이를 domain state의 `PARTIAL` outcome으로만 반영하고 완결된(`SUCCEEDED`와 동등한) 결과로 승격하지 않는다(이슈 #33 A-2).
 4. `status ∈ {QUEUED, RUNNING}`이면 `ended_at`은 null이다.
 5. `status=QUEUED`이면 `started_at`은 null이다.
 6. 캐시 재사용 조건은 `contract-job-record-case-view.md` A절 §7을 따른다. 실행 결과만의 fingerprint 비교로 범위를 넓히지 않는다(근거: `adr-job-record-case-view.md` A절 §7).

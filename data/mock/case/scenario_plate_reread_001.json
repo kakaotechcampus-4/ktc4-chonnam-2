@@ -58,7 +58,7 @@
       "case_rev": 2,
       "kind": "FINE_VERIFY",
       "scope_ref": null,
-      "input_fingerprint": "sha1:p001-fine-verify-clip_p001",
+      "input_fingerprint": "sha1:p001-fine-verify-as_p001_fine",
       "force_rerun": false,
       "requested_at": "2026-08-29T20:31:20+09:00"
     }
@@ -66,7 +66,7 @@
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_p001",
       "case_rev": 3,
       "stage": "EVIDENCE_REVIEW",
@@ -115,6 +115,10 @@
         {
           "step": "requirement_check",
           "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -127,7 +131,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -135,17 +140,23 @@
         "case_type_display": {
           "code": "SIGNAL",
           "label": "신호 위반",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_SIGNAL_VIOLATION",
-          "label": "안전운전 불이행(신호위반)",
-          "needs_review": false
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": null,
@@ -237,7 +248,7 @@
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_p001",
       "case_rev": 4,
       "stage": "EVIDENCE_REVIEW",
@@ -286,6 +297,10 @@
         {
           "step": "requirement_check",
           "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -298,7 +313,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -306,17 +322,23 @@
         "case_type_display": {
           "code": "SIGNAL",
           "label": "신호 위반",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_SIGNAL_VIOLATION",
-          "label": "안전운전 불이행(신호위반)",
-          "needs_review": false
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": "17나2867",
@@ -387,7 +409,17 @@
       "requirements_package": null,
       "package": null,
       "running_jobs": [],
-      "notices": []
+      "notices": [
+        {
+          "code": "case.report_video_not_generated",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.report_video_not_generated",
+          "actions": [
+            "GENERATE_REPORT_VIDEO"
+          ]
+        }
+      ]
     }
   ]
 }

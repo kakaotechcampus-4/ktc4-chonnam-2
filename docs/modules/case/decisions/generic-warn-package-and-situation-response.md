@@ -2,6 +2,8 @@
 
 > 결정일 2026-09-10 · 근거 [이슈 #25](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/25) A절(김준영) · comment(uminshin 2026-09-09, cheol1203 2026-09-09) · 담당 유소연(case) · Consulted 김준영(evidence)·신유민(web)·정철원(common/runtime)
 
+> **후속 갱신 (2026-09-10, 4차 통합·evidence 3차 검수 재확인 · 유소연).** 아래 「남은 것」 4건 중 3건이 이후 4차 통합에서 이미 처리됐는데 이 절이 갱신되지 않아 "계약 미등재"로 오독될 수 있는 상태였다 — evidence 3차 검수(김준영)가 이 불일치를 지적해 여기서 정정한다. 상세는 「남은 것」 절 참고. `candidates[].situation_confirmation` 값 공간도 이 문서 작성 이후 `NOT_ASKED|CONFIRMED|REJECTED|UNKNOWN`에서 `NOT_ASKED|CONFIRMED|CORRECTED|USER_UNSURE`로 정정됐다(`evidence-record/v1.3`의 `situation_response`와 정렬, `contract-job-record-case-view.md` §7 ①) — u001의 실제 값도 `UNKNOWN`이 아니라 `USER_UNSURE`다. 아래 「결정된 것」 목록은 **작성 당시 시점의 기록**으로 그대로 두고 고치지 않는다.
+
 ## 배경
 
 `scenario_unknown_abstain_partial_001`(u001)은 `VisualEvidence.verification=UNCERTAIN`(사건 유형 자체 불확실)일 때 `EvidenceRecord.event`가 필수 필드라 레코드 자체를 못 만드는 표현력 gap을 그대로 fixture화하고 있었다(`evidence_records=[]`, blocking notice로 종료). 이슈 #25 A절에서 evidence가 `visual_event_type=null`인 `EvidenceRecord`를 제한적으로 허용하기로 답했고, uminshin(web)·cheol1203(common/runtime) 코멘트로 남은 표시·발주 경계까지 확인됐다. 이 문서는 그 답변들을 case가 fixture에 반영하며 내린 구현 결정을 기록한다.
@@ -36,7 +38,7 @@ u001에 report video(`da_u001_report_video`, 60초 = `clip_u001` 길이)·plate 
 
 ## 남은 것
 
-- `report_type_display` `info_state`/`source_label_key` — 4→2 mapping registry 완성 후
-- u001 신규 recording 자산 2건 — 정철원 확인
-- 이 CaseView 신규 필드들(`situation_confirmation`·`unconfirmed_fields`) 계약 문서(`contract-job-record-case-view.md`) 본문 정식 등재 — 별도 PR
-- notices `code` 표기 규칙 자체를 계약 문서에 명문화하는 것 — #26 결정과 함께
+- ~~`report_type_display` `info_state`/`source_label_key` — 4→2 mapping registry 완성 후~~ → **완료(2026-09-10, 4차 통합).** 김준영이 `SafetyReportType` registry(`docs/modules/evidence/decisions/safety-report-policy-v1.md`)를 확정하면서 근거가 생겨, `case_type_display`와 같은 rule (1)을 적용해 `report_type_display.info_state`/`.source_label_key`도 채웠다. u001은 `INFO_NEEDS_REVIEW`(`USER_UNSURE` fallback 경로, `source_label_key=event.source.category_mapping`).
+- **u001 신규 recording 자산 2건 — 정철원 확인.** 아직 미확인, provisional 그대로다. 유일하게 진짜로 남은 항목.
+- ~~이 CaseView 신규 필드들(`situation_confirmation`·`unconfirmed_fields`) 계약 문서(`contract-job-record-case-view.md`) 본문 정식 등재 — 별도 PR~~ → **완료(2026-09-10, 4차 통합).** `case-view/v1.3`에 정식 등재했다(`CONTRACT_CONFLICTS.md` 불명확 항목 5 종결).
+- ~~notices `code` 표기 규칙 자체를 계약 문서에 명문화하는 것 — #26 결정과 함께~~ → **완료(2026-09-10, 이슈 #26 A-⑤).** `contract-job-record-case-view.md` B절 §7에 dotted-lowercase(`<producing-module>.<detail>`) 표기 규칙과 `time.*` 4종의 실제 근거 모듈 접두어 정정까지 명문화됐다.
