@@ -234,6 +234,160 @@
           ]
         }
       ]
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.2",
+      "case_id": "case_p001",
+      "case_rev": 4,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1800.0,
+        "range": [
+          "2026-08-29T20:00:00+09:00",
+          "2026-08-29T20:30:00+09:00"
+        ]
+      },
+      "hints": {
+        "time": "저녁 8시쯤",
+        "vehicle": "은색 해치백",
+        "situation": "신호 위반 장면은 확실히 봤는데 번호판이 잘 안 보임",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_p001",
+          "at": "2026-08-29T20:10:12+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
+          "thumb_ref": "fr_p001_plate1",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_p001_v2",
+        "case_type_display": {
+          "code": "SIGNAL",
+          "label": "신호 위반",
+          "needs_review": false
+        },
+        "report_type_display": {
+          "code": "UNSAFE_SIGNAL_VIOLATION",
+          "label": "안전운전 불이행(신호위반)",
+          "needs_review": false
+        },
+        "violation_display": {
+          "code": null,
+          "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
+          "needs_review": false
+        },
+        "plate_display": {
+          "value": "17나2867",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-29T20:10:12+09:00",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "time.source.overlay_ocr"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": "fr_p001_plate1",
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "PASS",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": []
     }
   ]
 }

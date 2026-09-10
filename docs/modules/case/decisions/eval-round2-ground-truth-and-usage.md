@@ -37,7 +37,7 @@
 
 김대원이 B-3 말미에 물은 것: `exec_p001_plate_reread`가 `QUEUED`·`produced=[]`라 재판독 후 판독값이 없는데, 다음 차수에 "재판독 성공 후" 상태를 넣을 계획인지.
 
-**답: 그렇다, 다음 라운드에 넣는다.** 이번 라운드는 손대지 않았다 — 이 시나리오는 "FRAME_DISAGREEMENT로 abstain → 재판독 요청(`force_rerun=true`)까지"를 보여주는 것이 목적이고, 완료 후 상태까지 한 fixture에 밀어넣으면 "재판독 대기 중" 화면 분기(§B-web-9의 `running_jobs` 기반 표시)를 검증할 스냅샷이 사라진다. 완료 후 상태는 새 `case_rev`(또는 신규 시나리오)로 별도 추가하고, 그 시점에 재판독 전/후 판독값·`review_needed` 전환을 eval이 비교할 수 있게 한다. `04_mock_validation_report.md` §1 커버리지 갭에 등재했다.
+**답(2026-09-10 갱신): 같은 세션 안에서 완료했다.** 처음 이 문서를 쓸 때는 "다음 라운드에 넣는다"고 답했지만, 같은 날 후속 작업으로 실제로 만들었다 — "재판독 대기 중" 스냅샷(`case_rev:3`, `running_jobs=[{job_p001_plate_reread, PENDING}]`)을 지우지 않고 그대로 둔 채, 완료 후 상태를 **새 `case_rev:4`**로 별도 추가하는 원래 계획 그대로 실행했다. `readout`에 성공한 재판독 `PlateReadout`(`readout_p001_plate_reread`, `abstained=false`, `consensus.text="17나2867"` — 위에서 확정한 참값과 정확히 일치)과 `ReadoutRun`, `common`에 `SUCCEEDED` `JobExecution`+`UsageRecord`, `evidence`에 `EvidenceRecord`(`ev_p001_v2`, `supersedes_ref=ev_p001`)·`EvidenceNeeds`(충족, `items=[]`)·`RequirementReport`(`req_p001_evidence_v2`, `UNKNOWN`→`PASS`)를 추가했다. 재판독 전/후 판독값(`readout_p001_plate` abstain vs `readout_p001_plate_reread` 확정) 비교, `review_needed`/`requirements_evidence.readiness` 전환(`UNKNOWN`→`PASS`) 모두 `case_rev:3`↔`case_rev:4` 두 스냅샷을 나란히 비교하면 eval이 검증할 수 있다. `04_mock_validation_report.md` §1 커버리지 갭에서 이 항목을 제거했다. 상세: `docs/mock/02_mock_scenario_catalog.md`의 `scenario_plate_reread_001` v3 추가 노트.
 
 ## B-4. STALE/실패 attempt의 `UsageRecord` 발행 — mock pack 컨벤션으로 확정, 계약 등재는 common/runtime 잔여
 
