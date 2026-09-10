@@ -37,7 +37,7 @@
 - 실제 provider 호출 여부에 맞춘 `usage_x001_plate_a1` 유지 또는 제거
 - `CONTRACT_CONFLICTS.md`의 현재 계약과 어긋난 설명 및 기존 trailing whitespace 정리
 
-따라서 이 문서는 **수정 요청서이면서 Owner 질문 답변서**다. 김준영 Owner 판단은 모두 확정됐으므로 공지 양식의 A/B 본문으로 등록할 수 있다. 이 보고서 자체 작성 시점에는 외부 GitHub 이슈를 등록하지 않았다.
+따라서 이 문서는 **수정 요청서이면서 Owner 질문 답변서**다. 김준영 Owner 판단은 모두 확정됐고 공지 양식의 A/B 본문을 GitHub 이슈 #33으로 등록했다.
 
 ## 1. 최종 판정
 
@@ -66,7 +66,7 @@
 
 ## 2. GitHub 이슈 제출용 요약
 
-아래 A/B는 공지의 3차 검수 양식에 맞춘 복사본이다. 이 보고서 작성 시점에는 GitHub 이슈를 등록하지 않았다.
+아래 A/B는 공지의 3차 검수 양식에 맞춘 복사본이며 GitHub 이슈 #33에 등록했다.
 
 이슈 제목: **`[mock] evidence/common-runtime 3차 검수`**
 
@@ -479,6 +479,7 @@ PARTIAL은 계약에 추가됐지만 이를 보여주는 fixture가 0건이다. 
 | `src/daesingo/{evidence,common}` tracked file 확인 | README만 존재 | 이번 판정은 fixture/contract 검수이며 구현 통합/E2E 판정이 아님 |
 | evidence 원본 조사 PDF 3개 | 19 + 19 + 24 = 62쪽 전체 텍스트 확인, 핵심 표·예시 17쪽 렌더링 대조 | 축약 memo에서 빠진 4→2 매핑, 유형별 표현, 고정 template, 사후각인 조건, correction provenance 복원 |
 | GitHub 이슈 #30 본문 및 현재 댓글 | OPEN, 댓글 0, B-1 common/runtime·B-2 readout/web | B-1 계약 충돌 추가 검수; B-2는 신유민 담당으로 범위 분리 |
+| GitHub 이슈 #33 | `[mock] evidence/common-runtime 3차 검수` 등록 | 공지 양식 A/B와 #30 B-1 답변 공유 |
 
 자동 검증 PASS는 위 Required finding을 반박하지 않는다. 현재 validator는 교차 파일 참조와 일부 enum/invariant를 검사하지만, timestamp ordering, post-stamp 적용, CaseView 신규 필드의 전 snapshot coverage, 사용자 응답 provenance, fixture가 versioned policy artifact와 일치하는지는 검사하지 않는다.
 
