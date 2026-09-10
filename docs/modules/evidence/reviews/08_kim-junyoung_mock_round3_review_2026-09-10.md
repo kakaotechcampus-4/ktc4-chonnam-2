@@ -21,13 +21,14 @@
 
 추가된 evidence 원본 조사 PDF 3개를 재검토한 결과, 축약 메모에서 빠진 근거가 확인됐다. `CorrectionRecord`의 evidence Consumer 수용 조건은 `docs/modules/evidence/contracts/correction-record-consumer-review-2026-09-10.md`에 확정했고, SafetyReportType 4→2 매핑과 specific/generic template은 `docs/modules/evidence/decisions/safety-report-policy-v1.md`에 등재했다. 따라서 두 항목은 더 이상 김준영의 추가 정책 선택을 기다리지 않는다. case Owner의 계약 반영과 mock Owner의 fixture 정규화만 남는다.
 
-### 다른 담당자의 회신 또는 수정이 필요한 항목
+### case 통합 주도와 원 담당자 확인 범위
 
-- **case/mock Owner**: CaseView 신규 필드를 정말 모든 snapshot의 필수값으로 둘지, 조건부 필드로 둘지 확정하고 fixture·validator·문서를 한 기준으로 맞춘다. happy Report Video의 revision/시간 순서, 번호판 재판독의 `selection_rev`, RequirementReport supersede 일관성을 맞춘다. CorrectionRecord는 새 정책 결정이 아니라 확정된 Consumer Review 6조건을 v1.1에 반영하면 된다.
-- **recording/runtime 담당**: u001의 post-stamp·사용자 고지·Report Video export chain을 기존 계약에 맞는 실제 fixture 값으로 연결한다.
-- **readout/web 담당**: CaseView 필드 형태나 `progress[].state` 값 공간이 바뀌는 경우 Consumer 확인이 필요하다. 이슈 #30 B-2의 `crop_ref` identity는 신유민 담당 검수 범위이므로 이 보고서에서 중복 결론을 내리지 않는다.
-- **eval 담당**: 이슈 #30 B-1 회신대로 사건/source-video 비용 지표는 `case_id`로 집계하면 된다. 특정 Run의 상세 사용량 검증에만 `run_ref`를 사용한다.
-- **search 담당**: `contract-analysis-run-candidate-event.md` Consumer 문구의 “비용 분모를 `run_ref`로 집계”를 특정 Run 감사와 사건 단위 비용 집계로 나누어 적어야 한다. 이는 search 계약 문구 정렬 요청이며, 별도 구현 호출은 아니다.
+- **case/mock Owner**: Mock Pack 전체 통합 담당으로서 fixture·validator·문서뿐 아니라 아래 결정이 완료된 계약 개정 초안까지 한 PR에서 직접 반영한다. 대상은 `CorrectionRecord v1.1`, `EvidenceRecord v1.3`, `UsageRecord v1.2`, `JobExecution v1.1`, CaseView 대응 버전과 AnalysisRun Consumer 문구다.
+- **evidence/common Owner**: 새 설계를 다시 제안하는 구현 주체가 아니라, case PR이 이 보고서의 확정 조건과 같은지 확인한다.
+- **readout/web Consumer**: `USER_UNSURE`, `CANCELLED`, 필드별 상태를 소비할 수 있는지만 확인한다. `crop_ref`는 이슈 #31 A-3 결정을 case가 그대로 적용하므로 다시 질문하지 않는다.
+- **eval Consumer**: 사건/source-video 비용=`case_id`, 특정 Run audit=`run_ref`, CANCELLED 집계 처리만 확인한다. 이슈 #30 B-1 답변을 다시 작성할 필요는 없다.
+- **search Owner**: AnalysisRun Consumer 문구 정렬만 확인하며 별도 search fixture 작업은 없다.
+- **recording Owner**: 이번 post-stamp/export chain은 이미 확정된 계약을 case가 조립할 수 있으므로 새 결정을 요청하지 않는다. 실제 worker 구현 제약이 발견될 때만 별도 확인한다.
 
 ### 별도 판단 없이 바로 수정 가능한 항목
 
@@ -56,7 +57,7 @@
 | --- | --- | --- |
 | `common/runtime` 변경 fixture | `REQUEST_CHANGES` | Usage operation namespace와 재판독 성공 usage는 양호하나, happy Report Video 발주/판정 순서, STALE UsageRecord 발행 조건, 사건/Run 집계 키의 역할 분리를 계약에 반영해야 한다. |
 | `evidence` 사용자-unsure 경로 | `PARTIAL_READY` | dead-end 해소와 WARN Package 및 SafetyReportType 정책은 확보. null 허용 계약·사용자 응답 provenance와 fixture 정규화가 남았다. |
-| `evidence` 번호판 재판독 | `PASS_WITH_CHANGE_REQUEST` | immutable EvidenceRecord chain은 맞지만 `selection_rev` 증가 근거와 RequirementReport supersede 일관성 확인이 필요하다. |
+| `evidence` 번호판 재판독 | `PASS_WITH_CHANGE_REQUEST` | immutable EvidenceRecord chain은 맞고 RequirementReport supersede 생략도 허용된다. 후보 재선택 없는 `selection_rev` 증가만 수정이 필요하다. |
 | Report Video / post-stamp | `REQUEST_CHANGES` | happy는 시간 순서가 역전되고, u001은 필요한 post-stamp와 export chain이 없다. |
 | CaseView Consumer 계약 | `REQUEST_CHANGES` | 신규 필수 필드가 10개 candidate snapshot 및 6개 evidence snapshot에 백필되지 않았다. |
 | 보안 | `NO_NEW_FINDING` | 비밀정보·인증·외부 전송·의존성 변경이 없다. 안전신문고의 비공개 machine code는 추측하지 않고 대신고 내부 code와 공개 label을 분리했다. |
@@ -128,7 +129,7 @@ case Owner가 위 여섯 조건을 반영하면 evidence가 정책 선택을 다
 - PASS: 기존 `ev_p001`을 mutate하지 않고 새 `ev_p001_v2`를 만들었다.
 - PASS: 사건 유형·시각은 유지하고 새 PlateReadout만 `vehicle_number`와 provenance에 반영했다.
 - 확인 필요: 후보 재선택이 없는데 `selection_rev`가 1→2로 증가했다. evidence revision과 selection revision을 같은 값처럼 올리면 안 된다.
-- 확인 필요: `req_p001_evidence_v2`는 이름상 새 revision인데 기존 `req_p001_evidence`를 `supersedes_ref`로 연결하지 않았다. 현재 basis 선택 규칙만으로 최신 report 선택은 가능하지만, `correction_rerun_001`의 report chain과는 다르므로 의도 여부를 문서화해야 한다.
+- 수용: `RequirementReport.supersedes_ref`는 optional이고 새 report의 basis가 새 EvidenceRecord를 가리키므로 생략할 수 있다. 이 부분은 별도 결정이나 수정 요구가 아니다.
 
 ### A-6. eval 3차 검수 이슈 #30 B-1 — 비용 집계 키와 STALE `run_ref`
 
@@ -150,17 +151,30 @@ case Owner가 위 여섯 조건을 반영하면 evidence가 정책 선택을 다
 - [ ] **수정 필요:** happy의 FINAL_PACKAGE Requirement가 `18:25:00`에 Report Video 존재를 PASS로 판정하지만 export execution은 `18:25:35`에 끝난다. JobRecord도 이미 Package가 보이는 `case_rev:4`에 발주되고 fingerprint가 미래 `pkg_h001`을 포함한다.
 - [x] `scenario_unknown_abstain_partial_001`: blocking dead-end가 EVIDENCE/FINAL_PACKAGE WARN + ReportPackage + READY로 바뀐 방향을 확인했다.
 - [ ] **수정 필요:** u001은 `post_stamp.needed=true`인데 `tr_u001_trim_v1`만 가리키며 post-stamp 적용·notice·export execution 없이 Package를 만든다.
-- [ ] **수정 필요:** u001의 사용자 `UNKNOWN` 응답은 CaseView에만 있고 `ev_u001` provenance에는 없다. 제한적 null 허용 조건을 EvidenceRecord 단독으로 감사할 수 없다.
+- [ ] **수정 필요:** u001의 사용자-unsure 응답은 CaseView에만 있고 `ev_u001` provenance에는 없다. 제한적 null 허용 조건을 EvidenceRecord 단독으로 감사할 수 없다.
 - [x] `scenario_plate_reread_001`: 재판독 성공값 `17나2867`, 새 ReadoutRun/UsageRecord, immutable EvidenceRecord, EVIDENCE PASS를 확인했다.
-- [ ] **확인 필요:** `selection_rev=2`와 RequirementReport supersede 생략이 의도된 것인지 case/mock Owner 확인이 필요하다.
+- [ ] **수정 필요:** 후보 재선택이 없으므로 `selection_rev`은 기존 값을 유지한다. RequirementReport supersede 생략은 계약상 허용된다.
 - [x] `scenario_infra_failure_001`: attempt 1 STALE·attempt 2 FAILED, overlay UNKNOWN과 새 INFO notice, operation namespace 변경을 확인했다.
 - [ ] **수정 필요:** STALE attempt마다 0원 UsageRecord를 의무화한 case decision 문구를 A-1의 actual-invocation 규칙으로 좁혀야 한다.
 - [ ] **수정 필요 · 이슈 #30 B-1:** 사건/source-video 비용은 `case_id`, 특정 Run audit은 `run_ref`를 사용하도록 두 계약의 문구를 정렬하고, `run_ref=null`인 두 종류의 row를 구분하는 사유값을 추가해야 한다.
 - [x] search `usage_summary.total_cost` 6개 시나리오가 KRW 원장 값과 정합하는 것을 확인했다.
 - [x] timeline stale 3필드가 candidate가 존재하는 12개 CaseView snapshot에 모두 들어간 것을 확인했다.
-- [ ] **수정 필요:** 신규 필수 `situation_confirmation`은 12개 candidate snapshot 중 u001의 2개에만 있고 10개에는 없다.
+- [ ] **수정 필요:** `situation_confirmation`을 `NOT_ASKED | CONFIRMED | CORRECTED | USER_UNSURE`로 정규화하고 required/conditional 규칙을 정한 뒤 기존 snapshot을 백필한다.
 - [ ] **수정 필요:** `case_type_display`/`violation_display.info_state`·`source_label_key`는 evidence가 있는 8개 snapshot 중 u001의 2개에만 있고 6개에는 없다.
 - [ ] **문서 수정:** `CONTRACT_CONFLICTS.md` 항목 5와 `generic-warn-package-and-situation-response.md`는 신규 CaseView 필드가 계약 미등재라고 하지만 현재 계약 schema/필드표에는 이미 등재돼 있다.
+
+### 담당자 후속 — case 통합 주도
+
+case/mock Owner는 다음을 같은 통합 PR에서 직접 반영한다.
+
+- happy Report Video 순서·fingerprint, u001 post-stamp/export provenance, CaseView 필드 backfill, SafetyReportType/template 정규화, plate reread `selection_rev`, 이슈 #31의 새 crop id, conflict/decision/validator/template 문서 정합
+- `CorrectionRecord v1.1`: A-3의 6조건
+- `EvidenceRecord v1.3`: `CONFIRMED | CORRECTED | USER_UNSURE`, null은 `USER_UNSURE`에만 허용, 응답값·시각·candidate ref snapshot
+- `UsageRecord v1.2`: actual invocation 발행, 사건 비용=`case_id`, Run audit=`run_ref`, `run_ref_reason`
+- `JobExecution v1.1`과 CaseView: `CANCELLED`, 부분 결과 보존, 재개 identity 규칙
+- AnalysisRun Consumer 문구: Run 상세 audit과 사건/source-video 비용 분모 분리
+
+원 계약 Owner와 Consumer는 구현을 나눠 맡기보다 case PR reviewer로 참여한다. recording에는 새 결정을 요청하지 않는다.
 
 ---
 
@@ -195,7 +209,7 @@ EVIDENCE Requirement PASS/WARN
 
 수용하는 부분:
 
-- `situation_confirmation=UNKNOWN`으로 미질문과 사용자-unsure를 분리했다.
+- 사용자 응답 상태를 CaseView에 표현하려는 방향은 맞다. 다만 `UNKNOWN` 하나로 미질문과 사용자-unsure를 겸하지 않고 `NOT_ASKED`와 `USER_UNSURE`로 분리해야 한다.
 - `case_type_display=INFO_UNKNOWN`, `violation_display=INFO_AI_ESTIMATED`를 분리했다.
 - EVIDENCE/FINAL_PACKAGE `WARN`, non-blocking notice, Package capabilities 유지가 제품 흐름과 맞는다.
 - generic 문구는 신호위반·중앙선 침범 등 구체 위반을 단정하지 않는다.
@@ -248,7 +262,7 @@ EVIDENCE Requirement PASS/WARN
 - 새 basis EVIDENCE Requirement `UNKNOWN→PASS`: PASS
 - Package 부재로 `stage=EVIDENCE_REVIEW` 유지: PASS
 
-단, `selection_rev` 증가와 RequirementReport supersede 정책은 기존 correction 패턴을 그대로 따른 것으로 보기 어렵다. `selection_rev`는 record revision counter가 아니므로 case Owner의 명시적 근거가 필요하다.
+단, 후보 재선택이 없는데 `selection_rev`가 증가한 것은 수정해야 한다. `selection_rev`는 record revision counter가 아니다. RequirementReport는 basis가 새 EvidenceRecord를 가리키므로 optional `supersedes_ref`를 생략해도 된다.
 
 ### 3.5 common/runtime UsageRecord — namespace 정리는 PASS, 생성·집계 조건은 보완 필요
 
@@ -402,11 +416,7 @@ EVIDENCE Requirement PASS/WARN
 - STALE 때문에 synthetic failed Run을 만들지 말고 `run_ref_reason` 또는 동등한 discriminant를 UsageRecord 새 버전에 추가한다.
 - 두 계약, schema/example, validator, null row fixture를 같은 변경으로 정렬한다.
 
-### Should-1. plate reread RequirementReport revision 연결을 통일할 것
-
-`req_p001_evidence_v2`는 basis가 새 EvidenceRecord라 현재 report 선택에는 문제가 없다. 다만 `correction_rerun_001`은 basis가 바뀌어도 `supersedes_ref`를 사용한다. 두 패턴 중 하나를 계약 예시로 정하고 이름/chain을 일관되게 유지하는 편이 좋다.
-
-### Should-2. `progress[].state=PARTIAL`과 CANCELLED 경로 fixture가 필요함
+### Should-1. `progress[].state=PARTIAL`과 CANCELLED 경로 fixture가 필요함
 
 PARTIAL은 계약에 추가됐지만 이를 보여주는 fixture가 0건이다. CANCELLED를 채택하면 `RUNNING → CANCELLED`, 부분 candidate 보존, `이어서 찾기`까지 한 시나리오로 검증해야 한다.
 
@@ -422,7 +432,7 @@ PARTIAL은 계약에 추가됐지만 이를 보여주는 fixture가 0건이다. 
 | --- | --- | --- |
 | u001 blocking dead-end | generic EVIDENCE/FINAL_PACKAGE WARN + Package + READY 추가 | `RESOLVED_WITH_CONTRACT_GAP` |
 | `INFO_AI_ESTIMATED` fixture 부재 | u001 violation display에 추가 | `RESOLVED` |
-| CaseView 사용자 응답 상태 부재 | `situation_confirmation=UNKNOWN` 추가 | `PARTIAL` — 다른 snapshot 백필/optional 규칙 없음 |
+| CaseView 사용자 응답 상태 부재 | u001에 임시 `situation_confirmation=UNKNOWN` 추가 | `PARTIAL` — `NOT_ASKED`/`USER_UNSURE` 분리와 다른 snapshot 백필/optional 규칙 필요 |
 | WARN Package capabilities | 다운로드·복사·이동 유지 | `RESOLVED` |
 | REPORT_VIDEO_EXPORT chain 부재 | happy 성공 chain 추가 | `REQUEST_CHANGES` — 시간/revision 순서 역전 |
 | 실제 SafetyReportType/rule/template 부재 | 원본 PDF 복원 후 `safety-report-policy/v1`로 결정 완료 | `RESOLVED_POLICY` — fixture 교체 필요 |
@@ -447,10 +457,10 @@ PARTIAL은 계약에 추가됐지만 이를 보여주는 fixture가 0건이다. 
 - [ ] STALE/FAILED UsageRecord 발행 규칙을 actual invocation 기준으로 계약화한다.
 - [ ] 사건/source-video 비용=`case_id`, 특정 Run audit=`run_ref`로 두 계약의 집계 문구를 정렬한다.
 - [ ] `run_ref=null`을 `DIRECT_NO_RUN`과 `RUN_NOT_PRODUCED`로 구분하는 필드·불변조건·fixture를 추가한다.
-- [x] `CANCELLED` 추가와 기존 부분 결과 보존 원칙을 김준영 Owner 결정으로 확정했다. 계약 버전 변경과 case/web/eval Consumer Review는 남았다.
+- [x] `CANCELLED` 추가와 기존 부분 결과 보존·재개 identity 원칙을 김준영 Owner 결정으로 확정했다. case가 계약 개정 초안을 만들고 web/eval은 PR에서 확인한다.
 - [x] `CorrectionRecord` evidence Consumer Review와 v1.1 수용 조건을 별도 문서로 확정했다. case가 계약 본문에 반영해야 한다.
 - [x] SafetyReportType mapping registry와 generic/specific template artifact를 원본 조사 PDF 근거로 작성했다. mock fixture 교체는 남았다.
-- [ ] plate reread `selection_rev`와 RequirementReport supersede 의도를 확정한다.
+- [ ] plate reread는 후보 재선택이 없으므로 `selection_rev`을 유지한다. RequirementReport supersede 생략은 허용한다.
 - [ ] `python data/mock/validate_mock_pack.py` 통과.
 - [ ] cp949 환경의 동일 validator 통과.
 - [ ] `python scripts/check_contract_fixtures.py` 통과.
