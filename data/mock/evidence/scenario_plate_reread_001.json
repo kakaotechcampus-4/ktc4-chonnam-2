@@ -83,7 +83,7 @@
   "evidence_records": [
     {
       "contract": "EvidenceRecord",
-      "contract_version": "evidence-record/v1.2",
+      "contract_version": "evidence-record/v1.3",
       "record_ref": {
         "kind": "evidence_record",
         "ref": "ev_p001"
@@ -129,7 +129,7 @@
           "needs_review": false
         },
         "safety_report_type": {
-          "value": "UNSAFE_SIGNAL_VIOLATION",
+          "value": "TRAFFIC_VIOLATION",
           "source": {
             "kind": "evidence.category_mapping",
             "ref": {
@@ -200,6 +200,150 @@
         "correction_refs": [],
         "policy_ref": "policy/evidence-assembly-v1"
       }
+    },
+    {
+      "contract": "EvidenceRecord",
+      "contract_version": "evidence-record/v1.3",
+      "record_ref": {
+        "kind": "evidence_record",
+        "ref": "ev_p001_v2"
+      },
+      "supersedes_ref": {
+        "kind": "evidence_record",
+        "ref": "ev_p001"
+      },
+      "case_ref": {
+        "kind": "case",
+        "ref": "case_p001"
+      },
+      "selection_rev": 1,
+      "basis": {
+        "candidate_ref": {
+          "kind": "candidate_event",
+          "ref": "candidate_p001"
+        },
+        "visual_evidence_ref": {
+          "kind": "visual_evidence",
+          "ref": "ve_p001"
+        },
+        "evidence_interval_ref": {
+          "kind": "incident_clip",
+          "ref": "clip_p001"
+        }
+      },
+      "event": {
+        "visual_event_type": {
+          "value": "SIGNAL",
+          "source": {
+            "kind": "search.visual_inference",
+            "ref": {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            },
+            "observability": "OBSERVED",
+            "label_key": "event.source.visual_inference"
+          },
+          "support_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "safety_report_type": {
+          "value": "TRAFFIC_VIOLATION",
+          "source": {
+            "kind": "evidence.category_mapping",
+            "ref": {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            },
+            "observability": "INFERRED",
+            "label_key": "event.source.category_mapping"
+          },
+          "support_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "violation_expression": {
+          "value": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
+          "source": {
+            "kind": "evidence.violation_expression",
+            "ref": {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            },
+            "observability": "INFERRED",
+            "label_key": "event.source.violation_expression"
+          },
+          "support_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        }
+      },
+      "occurred_at": {
+        "value": "2026-08-29T20:10:12+09:00",
+        "time_resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_p001"
+        },
+        "resolution_status": "OK",
+        "user_corrected": false,
+        "source": {
+          "kind": "readout.overlay_ocr",
+          "label_key": "time.source.overlay_ocr"
+        }
+      },
+      "vehicle_number": {
+        "value": "17나2867",
+        "source": {
+          "kind": "readout.plate_ocr",
+          "ref": {
+            "kind": "plate_readout",
+            "ref": "readout_p001_plate_reread"
+          },
+          "observability": "OBSERVED",
+          "label_key": "plate.source.plate_ocr"
+        },
+        "support_refs": [
+          {
+            "kind": "plate_readout",
+            "ref": "readout_p001_plate_reread"
+          }
+        ],
+        "user_corrected": false,
+        "needs_review": false
+      },
+      "provenance": {
+        "input_refs": [
+          {
+            "kind": "visual_evidence",
+            "ref": "ve_p001"
+          },
+          {
+            "kind": "plate_readout",
+            "ref": "readout_p001_plate_reread"
+          },
+          {
+            "kind": "time_resolution",
+            "ref": "tres_p001"
+          }
+        ],
+        "correction_refs": [],
+        "policy_ref": "policy/evidence-assembly-v1"
+      }
     }
   ],
   "evidence_needs": [
@@ -237,6 +381,15 @@
           ]
         }
       ]
+    },
+    {
+      "contract": "EvidenceNeeds",
+      "contract_version": "evidence-needs/v1",
+      "basis_record_ref": {
+        "kind": "evidence_record",
+        "ref": "ev_p001_v2"
+      },
+      "items": []
     }
   ],
   "requirement_reports": [
@@ -292,6 +445,63 @@
             {
               "kind": "evidence_record",
               "ref": "ev_p001"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": {
+        "kind": "requirement_report",
+        "ref": "req_p001_evidence_v2"
+      },
+      "scope": "EVIDENCE",
+      "basis": {
+        "evidence_record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001_v2"
+        },
+        "asset_refs": []
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-29T20:33:21+09:00",
+      "overall": "PASS",
+      "checks": [
+        {
+          "code": "evidence.vehicle_number.present",
+          "category": "VEHICLE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [
+            {
+              "kind": "evidence_record",
+              "ref": "ev_p001_v2"
+            }
+          ]
+        },
+        {
+          "code": "evidence.occurred_at.present",
+          "category": "TIME",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [
+            {
+              "kind": "evidence_record",
+              "ref": "ev_p001_v2"
+            }
+          ]
+        },
+        {
+          "code": "evidence.visual_event.present",
+          "category": "EVIDENCE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [
+            {
+              "kind": "evidence_record",
+              "ref": "ev_p001_v2"
             }
           ]
         }

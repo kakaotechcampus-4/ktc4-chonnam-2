@@ -46,15 +46,27 @@
       "case_rev": 2,
       "kind": "FINE_VERIFY",
       "scope_ref": null,
-      "input_fingerprint": "sha1:u001-fine-verify-clip_u001",
+      "input_fingerprint": "sha1:u001-fine-verify-as_u001_fine",
       "force_rerun": false,
       "requested_at": "2026-08-26T22:31:30+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_u001_report_video",
+      "case_id": "case_u001",
+      "case_rev": 3,
+      "kind": "REPORT_VIDEO_EXPORT",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:u001-report-video-export-ev_u001-tres_u001-clip_u001-policy_package-assembly-v1",
+      "force_rerun": false,
+      "requested_at": "2026-08-26T22:33:30+09:00"
     }
   ],
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_u001",
       "case_rev": 3,
       "stage": "EVIDENCE_REVIEW",
@@ -102,6 +114,10 @@
         },
         {
           "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
           "state": "PENDING"
         }
       ],
@@ -112,17 +128,120 @@
           "at_provenance": "recording.filename_time",
           "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
           "thumb_ref": "fr_u001_plate1",
-          "selected": true
+          "selected": true,
+          "situation_confirmation": "USER_UNSURE",
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
         }
       ],
-      "evidence": null,
-      "requirements_evidence": null,
+      "evidence": {
+        "record_id": "ev_u001",
+        "case_type_display": {
+          "code": null,
+          "label": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null
+        },
+        "report_type_display": {
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": true,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "event.source.category_mapping"
+        },
+        "violation_display": {
+          "code": null,
+          "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
+        },
+        "plate_display": {
+          "value": "88부1234",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-26T22:20:15+09:00",
+          "needs_review": true,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "time.source.filename_time"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": "fr_u001_plate1",
+        "review_needed": true,
+        "reason_code": "evidence.event_time_needs_review"
+      },
+      "requirements_evidence": {
+        "readiness": "WARN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "WARN",
+            "reason_code": "evidence.time_needs_review",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.visual_event_type_unconfirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          }
+        ]
+      },
       "requirements_package": null,
       "package": null,
       "running_jobs": [],
       "notices": [
         {
-          "code": "time.conflict_needs_notice",
+          "code": "evidence.time_conflict_needs_notice",
           "severity": "WARN",
           "blocking": false,
           "message_key": "notice.time_conflict",
@@ -131,7 +250,7 @@
           ]
         },
         {
-          "code": "time.overlay_not_present",
+          "code": "readout.overlay_not_present",
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.overlay_not_present",
@@ -140,8 +259,316 @@
         {
           "code": "evidence.visual_event_unconfirmed",
           "severity": "WARN",
-          "blocking": true,
+          "blocking": false,
           "message_key": "notice.visual_event_unconfirmed",
+          "actions": []
+        },
+        {
+          "code": "evidence.time_post_stamp_required",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.time_post_stamp_required",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.3",
+      "case_id": "case_u001",
+      "case_rev": 4,
+      "stage": "READY",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1800.0,
+        "range": [
+          "2026-08-26T22:10:00+09:00",
+          "2026-08-26T22:40:00+09:00"
+        ]
+      },
+      "hints": {
+        "time": "밤 10시쯤",
+        "vehicle": "은색 해치백",
+        "situation": "신호 위반한 것 같은데 확실하지 않음",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_u001",
+          "at": "2026-08-26T22:20:15+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
+          "thumb_ref": "fr_u001_plate1",
+          "selected": true,
+          "situation_confirmation": "USER_UNSURE",
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null
+        }
+      ],
+      "evidence": {
+        "record_id": "ev_u001",
+        "case_type_display": {
+          "code": null,
+          "label": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null
+        },
+        "report_type_display": {
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": true,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "event.source.category_mapping"
+        },
+        "violation_display": {
+          "code": null,
+          "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
+        },
+        "plate_display": {
+          "value": "88부1234",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-26T22:20:15+09:00",
+          "needs_review": true,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "time.source.filename_time"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": "fr_u001_plate1",
+        "review_needed": true,
+        "reason_code": "evidence.event_time_needs_review"
+      },
+      "requirements_evidence": {
+        "readiness": "WARN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "WARN",
+            "reason_code": "evidence.time_needs_review",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.visual_event_type_unconfirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements_package": {
+        "readiness": "WARN",
+        "checks": [
+          {
+            "code": "package.asset.report_video.exists",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.available",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_u001_report_video"
+              }
+            ],
+            "measurement": {
+              "actual": 60.0,
+              "limit": 180.0,
+              "unit": "asset.duration_sec"
+            }
+          },
+          {
+            "code": "package.vehicle.plate_visible_in_report_video",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "readout.plate_legible_in_asset",
+            "subject_refs": [
+              {
+                "kind": "readout_run",
+                "ref": "rr_u001_plate"
+              },
+              {
+                "kind": "derived_asset",
+                "ref": "da_u001_plate_image"
+              }
+            ]
+          },
+          {
+            "code": "package.evidence.situation_unconfirmed",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.visual_event_type_unconfirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_u001"
+              }
+            ]
+          }
+        ]
+      },
+      "package": {
+        "package_ref": "pkg_u001",
+        "report_fields": {
+          "safety_report_type": "교통위반(고속도로 포함)",
+          "occurred_at": "2026-08-26T22:20:15+09:00",
+          "location": null,
+          "vehicle_number": "88부1234",
+          "violation_expression": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다."
+        },
+        "report_field_states": {
+          "vehicle_number": {
+            "info_state": "INFO_SOURCE_VERIFIED",
+            "source_label_key": "plate.source.plate_ocr"
+          },
+          "occurred_at": {
+            "info_state": "INFO_NEEDS_REVIEW",
+            "source_label_key": "time.source.filename_time"
+          },
+          "location": {
+            "info_state": "INFO_UNKNOWN",
+            "source_label_key": null
+          },
+          "violation_expression": {
+            "info_state": "INFO_AI_ESTIMATED",
+            "source_label_key": "event.source.violation_expression"
+          },
+          "safety_report_type": {
+            "info_state": "INFO_NEEDS_REVIEW",
+            "source_label_key": "event.source.category_mapping"
+          }
+        },
+        "unconfirmed_fields": [
+          "safety_report_type",
+          "occurred_at",
+          "location",
+          "violation_expression"
+        ],
+        "artifact_ref": "da_u001_report_video",
+        "capabilities": [
+          "DOWNLOAD_ASSETS",
+          "COPY_FIELDS",
+          "OPEN_DESTINATION"
+        ],
+        "warnings": []
+      },
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "evidence.time_conflict_needs_notice",
+          "severity": "WARN",
+          "blocking": false,
+          "message_key": "notice.time_conflict",
+          "actions": [
+            "REVIEW_TIME"
+          ]
+        },
+        {
+          "code": "readout.overlay_not_present",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_not_present",
+          "actions": []
+        },
+        {
+          "code": "evidence.visual_event_unconfirmed",
+          "severity": "WARN",
+          "blocking": false,
+          "message_key": "notice.visual_event_unconfirmed",
+          "actions": []
+        },
+        {
+          "code": "evidence.time_post_stamp_required",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.time_post_stamp_required",
           "actions": []
         }
       ]

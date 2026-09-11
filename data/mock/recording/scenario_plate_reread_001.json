@@ -45,6 +45,13 @@
       "frame_ref": "fr_p001_plate2",
       "media_stream_ref": "ms_p001_v",
       "source_offset_sec": 612.6
+    },
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_p001_plate3",
+      "media_stream_ref": "ms_p001_v",
+      "source_offset_sec": 613.2
     }
   ],
   "recording_timelines": [

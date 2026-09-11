@@ -6,3 +6,4 @@
 
 - `no-separate-signoff.md — 신고요건 변경 서명자를 두지 않는 근거 (B-3)`
 - `source-kind-registry.md — Mock이 신설한 source.kind 5종 승인 기록 (이슈 #19)`
+- `safety-report-policy-v1.md — 초기 4종→안전신문고 2종 매핑, specific/generic 신고문 template, 사용자-unsure fallback`

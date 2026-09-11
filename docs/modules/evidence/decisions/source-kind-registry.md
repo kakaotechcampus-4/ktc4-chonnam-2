@@ -20,7 +20,7 @@
 - 이 5종은 이미 `data/mock/{evidence,case}/*.json`의 `EvidenceValue.source.kind`/`TimeResolution.resolved.source.kind`에서 실제로 쓰이고 있었다 — 승인은 기존 mock 관례를 추인한 것이며, 이 등재로 인한 fixture 변경은 없다(2026-09-09 3라운드 재확인, 값 5개 전부 이미 이 형태로 사용 중임을 grep으로 확인).
 - `contract-evidence-record-needs.md`/`contract-time-resolution.md`가 `source.kind`의 최종 스키마(값 자체는 열려 있되 `{kind, label_key}` 구조·`observability` 결합 규칙)를 소유한다. 이 파일은 그 스키마 안에서 이 프로젝트가 실제로 쓰는 값 목록만 관리한다.
 
-## 아직 이 registry에 없는 것
+## 다른 registry가 소유하는 것
 
-- `safety_report_type` 값 공간(사건 유형 → 신고유형 표현) — 이슈 #19에서 **명시적으로 반려**됐다(`UNSAFE_LANE_CHANGE` 등은 canonical enum이 아니라 placeholder). 4종 `VisualEventType` → 신고유형 → 표현/template 매핑은 실제 신고 규정 원본이 필요해 이 파일이 임의로 채우지 않는다 — evidence Owner(김준영)의 후속 결정 대상으로 남긴다.
+- `safety_report_type` 값 공간(사건 유형 → 신고유형 표현) — 이슈 #19에서 반려된 `UNSAFE_LANE_CHANGE` 등 placeholder를 승인하지 않는다. 복원된 evidence 원본 조사 PDF와 현재 Architecture를 근거로 4종 `VisualEventType` → 신고유형 → 표현/template을 `safety-report-policy-v1.md`에 별도 등재했다.
 - `EvidenceNeeds`(v1)에 "AI가 사건 유형 자체를 확정하지 못함"을 표현할 신규 `kind` — evidence/PM 결정 대상(`docs/mock/05_mock_deep_review_report.md` §12 김준영 ⑥).

@@ -8,12 +8,74 @@
       "run_id": "rr_x001_plate",
       "operation": "PLATE_READ",
       "outcome": "FAILED",
-      "failure": { "kind": "INFRA", "code": "READOUT_PROVIDER_TIMEOUT" },
-      "usage_refs": ["usage_x001_plate"],
+      "failure": {
+        "kind": "INFRA",
+        "code": "READOUT_PROVIDER_TIMEOUT"
+      },
+      "usage_refs": [
+        "usage_x001_plate"
+      ],
       "started_at": "2026-08-30T09:12:10+09:00",
       "ended_at": "2026-08-30T09:12:55+09:00"
+    },
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_x001_overlay",
+      "operation": "OVERLAY_TIME_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": [
+        "usage_x001_overlay"
+      ],
+      "started_at": "2026-08-30T09:11:10+09:00",
+      "ended_at": "2026-08-30T09:11:16+09:00"
     }
   ],
   "plate_readouts": [],
-  "overlay_time_readouts": []
+  "overlay_time_readouts": [
+    {
+      "contract": "OverlayTimeReadout",
+      "contract_version": "overlay-time-readout/v1.2",
+      "readout_id": "readout_x001_overlay",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_x001_overlay"
+      },
+      "case_id": "case_x001",
+      "candidate_id": "candidate_x001",
+      "input_ref": {
+        "incident_clip_ref": "clip_x001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": null,
+        "status": "UNKNOWN",
+        "reason": {
+          "code": "readout.overlay.presence_undetermined",
+          "note": "화질/노출 문제로 화면에 타임스탬프 오버레이가 있는지 여부 자체를 판별할 수 없음 — NOT_PRESENT(오버레이 없음 확인)와 다름"
+        },
+        "source": {
+          "kind": "readout.overlay_ocr"
+        },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": {
+            "kind": "readout_run",
+            "ref": "rr_x001_overlay"
+          }
+        }
+      },
+      "validation": {
+        "format_ok": null,
+        "monotonic_ok": null,
+        "duration_match_ok": null,
+        "sample_count": 0
+      },
+      "samples": []
+    }
+  ]
 }

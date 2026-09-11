@@ -27,6 +27,19 @@
       ],
       "started_at": "2026-08-29T20:31:33+09:00",
       "ended_at": "2026-08-29T20:31:38+09:00"
+    },
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_p001_plate_reread",
+      "operation": "PLATE_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": [
+        "usage_p001_plate_reread"
+      ],
+      "started_at": "2026-08-29T20:33:10+09:00",
+      "ended_at": "2026-08-29T20:33:21+09:00"
     }
   ],
   "plate_readouts": [
@@ -116,6 +129,98 @@
           "crop_ref": "crop_p001_002",
           "text": "17나2891",
           "confidence": 0.38
+        }
+      ]
+    },
+    {
+      "contract": "PlateReadout",
+      "contract_version": "plate-readout/v1.2",
+      "readout_id": "readout_p001_plate_reread",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_p001_plate_reread"
+      },
+      "case_id": "case_p001",
+      "candidate_id": "candidate_p001",
+      "input_ref": {
+        "incident_clip_ref": "clip_p001",
+        "source_profile": "readout-native-hires",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "target_association": {
+        "status": "ASSOCIATED",
+        "target_hint_used": true,
+        "track_ref": "track_p001",
+        "association_method": "TARGET_HINT_WITH_FALLBACK",
+        "associated_region": {
+          "frame_ref": "fr_p001_plate1",
+          "bbox_xywh": [
+            640,
+            500,
+            96,
+            40
+          ]
+        },
+        "evidence": [
+          {
+            "kind": "SPATIAL_PROXIMITY",
+            "detail": "candidate target region overlaps selected track"
+          },
+          {
+            "kind": "MULTI_FRAME_CONTINUITY",
+            "detail": "재판독에서 추가 프레임(fr_p001_plate3)을 더 샘플링해 마지막 두 자리까지 프레임 간 합의에 도달함 — 최초 판독의 FRAME_DISAGREEMENT 해소"
+          }
+        ]
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": "17나2867",
+        "status": "OK",
+        "source": {
+          "kind": "readout.plate_ocr"
+        },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": {
+            "kind": "readout_run",
+            "ref": "rr_p001_plate_reread"
+          }
+        }
+      },
+      "consensus": {
+        "text": "17나2867",
+        "disagree_positions": [],
+        "method": "MULTI_FRAME"
+      },
+      "abstained": false,
+      "abstain_reason": null,
+      "best_frame": {
+        "frame_ref": "fr_p001_plate3",
+        "crop_ref": "crop_p001_003",
+        "quality": {
+          "plate_px_height": 27,
+          "sharpness": 0.52
+        }
+      },
+      "frame_results": [
+        {
+          "frame_ref": "fr_p001_plate1",
+          "crop_ref": "crop_p001_004",
+          "text": "17나2867",
+          "confidence": 0.55
+        },
+        {
+          "frame_ref": "fr_p001_plate2",
+          "crop_ref": "crop_p001_005",
+          "text": "17나2867",
+          "confidence": 0.52
+        },
+        {
+          "frame_ref": "fr_p001_plate3",
+          "crop_ref": "crop_p001_003",
+          "text": "17나2867",
+          "confidence": 0.61
         }
       ]
     }
