@@ -7,8 +7,13 @@
       "contract_version": "source-asset-media-stream/v1",
       "source_asset_ref": "sa_x001_front",
       "asset_kind": "SOURCE_ASSET",
-      "external_source_ref": { "kind": "external_source", "ref": "ext_x001_front" },
-      "media_stream_refs": ["ms_x001_front_v"],
+      "external_source_ref": {
+        "kind": "external_source",
+        "ref": "ext_x001_front"
+      },
+      "media_stream_refs": [
+        "ms_x001_front_v"
+      ],
       "byte_size": 734003200,
       "availability": "AVAILABLE",
       "duration_sec": 1200.0
@@ -49,13 +54,17 @@
           "status": "OK"
         }
       },
-      "time_source_candidates": ["tsc_x001_filename"],
+      "time_source_candidates": [
+        "tsc_x001_filename"
+      ],
       "source_placements": [
         {
           "source_asset_ref": "sa_x001_front",
           "timeline_start_sec": 0.0,
           "timeline_end_sec": 1200.0,
-          "media_stream_refs": ["ms_x001_front_v"]
+          "media_stream_refs": [
+            "ms_x001_front_v"
+          ]
         }
       ],
       "gaps": [],
@@ -69,10 +78,65 @@
       "source_kind": "FILENAME",
       "source_detail": "MDR_260830_090000.AVI",
       "value": "2026-08-30T09:00:00+09:00",
-      "applies_to": { "source_asset_ref": "sa_x001_front", "source_offset_sec": 0.0 },
+      "applies_to": {
+        "source_asset_ref": "sa_x001_front",
+        "source_offset_sec": 0.0
+      },
       "observation_status": "OK",
-      "producer_checks": { "parse_valid": true },
-      "provenance": { "producer": "recording", "observed_from": "MDR_260830_090000.AVI" }
+      "producer_checks": {
+        "parse_valid": true
+      },
+      "provenance": {
+        "producer": "recording",
+        "observed_from": "MDR_260830_090000.AVI"
+      }
+    }
+  ],
+  "incident_clips": [
+    {
+      "contract": "IncidentClip",
+      "contract_version": "analysis-source-derived/v1",
+      "incident_clip_ref": "clip_x001",
+      "asset_kind": "INCIDENT_CLIP",
+      "source_provenance": {
+        "timeline_ref": {
+          "timeline_id": "tl_x001",
+          "revision": 1
+        },
+        "requested_range": {
+          "start_sec": 600.0,
+          "end_sec": 630.0
+        },
+        "asset_spans": [
+          {
+            "sequence": 0,
+            "timeline_range": {
+              "start_sec": 600.0,
+              "end_sec": 630.0
+            },
+            "source_asset_ref": "sa_x001_front",
+            "media_stream_ref": "ms_x001_front_v",
+            "source_range": {
+              "start_sec": 600.0,
+              "end_sec": 630.0
+            }
+          }
+        ]
+      },
+      "media_stream_refs": [
+        "ms_x001_front_v"
+      ],
+      "byte_size": 9175040,
+      "availability": "AVAILABLE",
+      "duration_sec": 30.0,
+      "timeline_ref": {
+        "timeline_id": "tl_x001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 630.0
+      }
     }
   ]
 }

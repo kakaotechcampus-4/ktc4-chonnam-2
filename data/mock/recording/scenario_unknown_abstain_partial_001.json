@@ -255,5 +255,111 @@
         "code": "recording.gps.source_absent"
       }
     }
+  ],
+  "derived_assets": [
+    {
+      "contract": "DerivedAsset",
+      "contract_version": "analysis-source-derived/v1",
+      "derived_asset_ref": "da_u001_report_video",
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "REPORT_VIDEO",
+      "source_refs": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_u001"
+        }
+      ],
+      "byte_size": 13107200,
+      "availability": "AVAILABLE",
+      "duration_sec": 60.0,
+      "timeline_ref": {
+        "timeline_id": "tl_u001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      },
+      "transform_ref": "tr_u001_trim_poststamp_v1"
+    },
+    {
+      "contract": "DerivedAsset",
+      "contract_version": "analysis-source-derived/v1",
+      "derived_asset_ref": "da_u001_plate_image",
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "PLATE_IMAGE",
+      "source_refs": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_u001"
+        }
+      ],
+      "byte_size": 172032,
+      "availability": "AVAILABLE",
+      "duration_sec": null,
+      "timeline_ref": null,
+      "timeline_range": null,
+      "transform_ref": null
+    }
+  ],
+  "asset_facts": [
+    {
+      "contract": "AssetFacts",
+      "contract_version": "source-asset-media-stream/v1",
+      "asset_ref": {
+        "kind": "derived_asset",
+        "ref": "da_u001_report_video"
+      },
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "REPORT_VIDEO",
+      "byte_size": 13107200,
+      "availability": "AVAILABLE",
+      "checked_at": "2026-08-26T22:40:00+09:00",
+      "lineage": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_u001"
+        },
+        {
+          "kind": "source_asset",
+          "ref": "sa_u001"
+        }
+      ],
+      "duration_sec": 60.0,
+      "timeline_ref": {
+        "timeline_id": "tl_u001",
+        "revision": 1
+      },
+      "timeline_range": {
+        "start_sec": 600.0,
+        "end_sec": 660.0
+      }
+    },
+    {
+      "contract": "AssetFacts",
+      "contract_version": "source-asset-media-stream/v1",
+      "asset_ref": {
+        "kind": "derived_asset",
+        "ref": "da_u001_plate_image"
+      },
+      "asset_kind": "DERIVED_ASSET",
+      "derived_role": "PLATE_IMAGE",
+      "byte_size": 172032,
+      "availability": "AVAILABLE",
+      "checked_at": "2026-08-26T22:40:00+09:00",
+      "lineage": [
+        {
+          "kind": "incident_clip",
+          "ref": "clip_u001"
+        },
+        {
+          "kind": "source_asset",
+          "ref": "sa_u001"
+        }
+      ],
+      "duration_sec": null,
+      "timeline_ref": null,
+      "timeline_range": null
+    }
   ]
 }

@@ -213,8 +213,8 @@
       },
       "latency_ms": 65000,
       "total_cost": {
-        "amount": "0.42",
-        "currency": "USD"
+        "amount": "588",
+        "currency": "KRW"
       }
     },
     "contract_version": "analysis-run-candidate-event/v1.1"
@@ -328,8 +328,8 @@
       },
       "latency_ms": 57000,
       "total_cost": {
-        "amount": "0.31",
-        "currency": "USD"
+        "amount": "434",
+        "currency": "KRW"
       }
     },
     "contract_version": "analysis-run-candidate-event/v1.1"
@@ -741,7 +741,7 @@
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_h001"
@@ -787,7 +787,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_LANE_CHANGE",
+      "value": "TRAFFIC_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -969,7 +969,7 @@
         "ref": "da_h001_plate_image"
       }
     ],
-    "template_ref": "tmpl/safety-report-v1"
+    "template_ref": "tmpl/safety-report-specific-v1"
   },
   "policy_ref": "policy/requirement-rules-v1",
   "evaluated_at": "2026-08-24T18:25:00+09:00",
@@ -1047,7 +1047,7 @@
   },
   "created_at": "2026-08-24T18:26:00+09:00",
   "report_inputs": {
-    "safety_report_type": "안전운전 불이행",
+    "safety_report_type": "교통위반(고속도로 포함)",
     "occurred_at": "2026-08-24T18:05:12+09:00",
     "location": {
       "display_text": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
@@ -1059,7 +1059,7 @@
   "report": {
     "title": "백색 실선 구간 차로변경 위반 신고",
     "description": "2026-08-24 18:05:12 광주 상무지구 상무중앙로 사거리 인근에서 차량번호 12가3456 차량이 백색 실선 구간에서 차로를 변경하였습니다.",
-    "template_ref": "tmpl/safety-report-v1"
+    "template_ref": "tmpl/safety-report-specific-v1"
   },
   "assets": {
     "report_video_ref": {
@@ -1208,7 +1208,7 @@
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_p001"
@@ -1254,7 +1254,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_SIGNAL_VIOLATION",
+      "value": "TRAFFIC_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -1532,7 +1532,7 @@
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_r001_v2"
@@ -1582,7 +1582,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_HELMET_NON_USE",
+      "value": "MOTORCYCLE_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -1711,7 +1711,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 1,
   "stage": "SEARCHING",
@@ -1791,7 +1791,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 3,
   "stage": "READY",
@@ -1853,7 +1853,11 @@
       "at_provenance": "readout.overlay_ocr",
       "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
       "thumb_ref": "fr_h001_thumb",
-      "selected": true
+      "selected": true,
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -1861,17 +1865,23 @@
     "case_type_display": {
       "code": "SOLID_LINE_LANE_CHANGE",
       "label": "백색 실선 구간 차로변경",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_LANE_CHANGE",
-      "label": "안전운전 불이행",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": "12가3456",
@@ -1898,8 +1908,8 @@
     },
     "user_edited": false,
     "preview_ref": "fr_h001_thumb",
-    "review_needed": false,
-    "reason_code": null
+    "review_needed": true,
+    "reason_code": "evidence.location_needs_review"
   },
   "requirements_evidence": {
     "readiness": "PASS",
@@ -2007,11 +2017,33 @@
   "package": {
     "package_ref": "pkg_h001",
     "report_fields": {
-      "safety_report_type": "안전운전 불이행",
+      "safety_report_type": "교통위반(고속도로 포함)",
       "occurred_at": "2026-08-24T18:05:12+09:00",
       "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
       "vehicle_number": "12가3456",
       "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "report_field_states": {
+      "vehicle_number": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "plate.source.plate_ocr"
+      },
+      "occurred_at": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "time.source.overlay_ocr"
+      },
+      "location": {
+        "info_state": "INFO_NEEDS_REVIEW",
+        "source_label_key": "location.source.user_hint"
+      },
+      "violation_expression": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.violation_expression"
+      },
+      "safety_report_type": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.category_mapping"
+      }
     },
     "artifact_ref": "da_h001_report_video",
     "capabilities": [
@@ -2019,7 +2051,12 @@
       "COPY_FIELDS",
       "OPEN_DESTINATION"
     ],
-    "warnings": []
+    "warnings": [],
+    "unconfirmed_fields": [
+      "safety_report_type",
+      "location",
+      "violation_expression"
+    ]
   },
   "running_jobs": [],
   "notices": []
@@ -2034,7 +2071,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 4,
   "stage": "READY",
@@ -2096,7 +2133,11 @@
       "at_provenance": "readout.overlay_ocr",
       "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
       "thumb_ref": "fr_h001_thumb",
-      "selected": true
+      "selected": true,
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -2104,17 +2145,23 @@
     "case_type_display": {
       "code": "SOLID_LINE_LANE_CHANGE",
       "label": "백색 실선 구간 차로변경",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_LANE_CHANGE",
-      "label": "안전운전 불이행",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": "12가3456",
@@ -2141,8 +2188,8 @@
     },
     "user_edited": false,
     "preview_ref": "fr_h001_thumb",
-    "review_needed": false,
-    "reason_code": null
+    "review_needed": true,
+    "reason_code": "evidence.location_needs_review"
   },
   "requirements_evidence": {
     "readiness": "PASS",
@@ -2250,11 +2297,33 @@
   "package": {
     "package_ref": "pkg_h001",
     "report_fields": {
-      "safety_report_type": "안전운전 불이행",
+      "safety_report_type": "교통위반(고속도로 포함)",
       "occurred_at": "2026-08-24T18:05:12+09:00",
       "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
       "vehicle_number": "12가3456",
       "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "report_field_states": {
+      "vehicle_number": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "plate.source.plate_ocr"
+      },
+      "occurred_at": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "time.source.overlay_ocr"
+      },
+      "location": {
+        "info_state": "INFO_NEEDS_REVIEW",
+        "source_label_key": "location.source.user_hint"
+      },
+      "violation_expression": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.violation_expression"
+      },
+      "safety_report_type": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.category_mapping"
+      }
     },
     "artifact_ref": "da_h001_report_video",
     "capabilities": [
@@ -2262,7 +2331,12 @@
       "COPY_FIELDS",
       "OPEN_DESTINATION"
     ],
-    "warnings": []
+    "warnings": [],
+    "unconfirmed_fields": [
+      "safety_report_type",
+      "location",
+      "violation_expression"
+    ]
   },
   "running_jobs": [],
   "notices": []
@@ -2297,7 +2371,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_p001",
   "case_rev": 3,
   "stage": "EVIDENCE_REVIEW",
@@ -2355,7 +2429,11 @@
       "at_provenance": "recording.filename_time",
       "observed": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
       "thumb_ref": "fr_p001_plate1",
-      "selected": true
+      "selected": true,
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -2363,17 +2441,23 @@
     "case_type_display": {
       "code": "SIGNAL",
       "label": "신호 위반",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_SIGNAL_VIOLATION",
-      "label": "안전운전 불이행(신호위반)",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": null,
@@ -2453,13 +2537,6 @@
   ],
   "notices": [
     {
-      "code": "evidence.plate_reread_in_progress",
-      "severity": "INFO",
-      "blocking": false,
-      "message_key": "notice.plate_reread_running",
-      "actions": []
-    },
-    {
       "code": "evidence.plate_abstained",
       "severity": "WARN",
       "blocking": false,
@@ -2480,7 +2557,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_u001",
   "case_rev": 3,
   "stage": "EVIDENCE_REVIEW",
@@ -2528,6 +2605,10 @@
     },
     {
       "step": "requirement_check",
+      "state": "DONE"
+    },
+    {
+      "step": "package_assembly",
       "state": "PENDING"
     }
   ],
@@ -2538,17 +2619,120 @@
       "at_provenance": "recording.filename_time",
       "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
       "thumb_ref": "fr_u001_plate1",
-      "selected": true
+      "selected": true,
+      "situation_confirmation": "USER_UNSURE",
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null
     }
   ],
-  "evidence": null,
-  "requirements_evidence": null,
+  "evidence": {
+    "record_id": "ev_u001",
+    "case_type_display": {
+      "code": null,
+      "label": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null
+    },
+    "report_type_display": {
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": true,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "event.source.category_mapping"
+    },
+    "violation_display": {
+      "code": null,
+      "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
+    },
+    "plate_display": {
+      "value": "88부1234",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "plate.source.plate_ocr"
+    },
+    "event_time_display": {
+      "value": "2026-08-26T22:20:15+09:00",
+      "needs_review": true,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "time.source.filename_time"
+    },
+    "location_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null,
+      "coord": null,
+      "search_keyword": null
+    },
+    "user_edited": false,
+    "preview_ref": "fr_u001_plate1",
+    "review_needed": true,
+    "reason_code": "evidence.event_time_needs_review"
+  },
+  "requirements_evidence": {
+    "readiness": "WARN",
+    "checks": [
+      {
+        "code": "evidence.vehicle_number.present",
+        "category": "VEHICLE",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "category": "TIME",
+        "outcome": "WARN",
+        "reason_code": "evidence.time_needs_review",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "category": "EVIDENCE",
+        "outcome": "WARN",
+        "reason_code": "evidence.visual_event_type_unconfirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.location.present",
+        "category": "LOCATION",
+        "outcome": "WARN",
+        "reason_code": "evidence.location_unavailable",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      }
+    ]
+  },
   "requirements_package": null,
   "package": null,
   "running_jobs": [],
   "notices": [
     {
-      "code": "time.conflict_needs_notice",
+      "code": "evidence.time_conflict_needs_notice",
       "severity": "WARN",
       "blocking": false,
       "message_key": "notice.time_conflict",
@@ -2557,7 +2741,7 @@
       ]
     },
     {
-      "code": "time.overlay_not_present",
+      "code": "readout.overlay_not_present",
       "severity": "INFO",
       "blocking": false,
       "message_key": "notice.overlay_not_present",
@@ -2566,8 +2750,15 @@
     {
       "code": "evidence.visual_event_unconfirmed",
       "severity": "WARN",
-      "blocking": true,
+      "blocking": false,
       "message_key": "notice.visual_event_unconfirmed",
+      "actions": []
+    },
+    {
+      "code": "evidence.time_post_stamp_required",
+      "severity": "INFO",
+      "blocking": false,
+      "message_key": "notice.time_post_stamp_required",
       "actions": []
     }
   ]
@@ -2584,7 +2775,7 @@
 ```json
 {
   "contract": "JobExecution",
-  "contract_version": "job-execution/v1",
+  "contract_version": "job-execution/v1.1",
   "execution_id": "exec_h001_search",
   "job_id": "job_h001_search",
   "status": "SUCCEEDED",
@@ -2613,13 +2804,14 @@
 ```json
 {
   "contract": "UsageRecord",
-  "contract_version": "usage-record/v1.1",
+  "contract_version": "usage-record/v1.2",
   "usage_id": "usage_h001_coarse",
   "execution_ref": "exec_h001_search",
   "run_ref": {
     "kind": "analysis_run",
     "ref": "run_h001"
   },
+  "run_ref_reason": null,
   "case_id": "case_h001",
   "occurred_at": "2026-08-24T18:21:10+09:00",
   "provider_label": "gemini",
@@ -2650,17 +2842,24 @@
 ```json
 {
   "contract": "JobExecution",
-  "contract_version": "job-execution/v1",
+  "contract_version": "job-execution/v1.1",
   "execution_id": "exec_p001_plate_reread",
   "job_id": "job_p001_plate_reread",
-  "status": "QUEUED",
+  "status": "SUCCEEDED",
   "attempt": 1,
   "queued_at": "2026-08-29T20:33:05+09:00",
-  "started_at": null,
-  "ended_at": null,
-  "produced": [],
+  "started_at": "2026-08-29T20:33:10+09:00",
+  "ended_at": "2026-08-29T20:33:21+09:00",
+  "produced": [
+    {
+      "kind": "readout_run",
+      "ref": "rr_p001_plate_reread"
+    }
+  ],
   "failure_kind": null,
-  "usage_refs": []
+  "usage_refs": [
+    "usage_p001_plate_reread"
+  ]
 }
 ```
 

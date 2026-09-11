@@ -18,7 +18,7 @@
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_rb001",
       "case_rev": 1,
       "stage": "CANDIDATE_REVIEW",
@@ -48,26 +48,6 @@
         {
           "step": "candidate_review",
           "state": "DONE"
-        },
-        {
-          "step": "plate_read",
-          "state": "PENDING"
-        },
-        {
-          "step": "overlay_time_read",
-          "state": "PENDING"
-        },
-        {
-          "step": "evidence_assembly",
-          "state": "PENDING"
-        },
-        {
-          "step": "requirement_check",
-          "state": "PENDING"
-        },
-        {
-          "step": "package_assembly",
-          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -79,7 +59,9 @@
           "thumb_ref": "fr_rb001_thumb",
           "selected": true,
           "timeline_revision": 1,
-          "stale_revision": false
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": null,
@@ -91,7 +73,7 @@
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_rb001",
       "case_rev": 2,
       "stage": "CANDIDATE_REVIEW",
@@ -121,26 +103,6 @@
         {
           "step": "candidate_review",
           "state": "DONE"
-        },
-        {
-          "step": "plate_read",
-          "state": "PENDING"
-        },
-        {
-          "step": "overlay_time_read",
-          "state": "PENDING"
-        },
-        {
-          "step": "evidence_assembly",
-          "state": "PENDING"
-        },
-        {
-          "step": "requirement_check",
-          "state": "PENDING"
-        },
-        {
-          "step": "package_assembly",
-          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -152,7 +114,9 @@
           "thumb_ref": "fr_rb001_thumb",
           "selected": true,
           "timeline_revision": 1,
-          "stale_revision": true
+          "stale_revision": true,
+          "stale_revision_label_key": "candidate.stale_timeline_revision",
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": null,

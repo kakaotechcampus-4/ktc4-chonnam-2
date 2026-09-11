@@ -24,5 +24,6 @@
 - `experiments/`: 실제 설정/입력/결과/learning
 - `decisions/`: 조사·실험 후 확정한 module 내부 결정
 - `contracts/`: 이 모듈이 생산/소비하는 계약의 초안·검토 메모. cross-module 최종 계약은 `architecture/contracts/`로 승격
+- `reviews/`: evidence/common-runtime Owner 관점의 Mock·접합부 검수 보고서
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
