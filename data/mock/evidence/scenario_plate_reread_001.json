@@ -83,7 +83,7 @@
   "evidence_records": [
     {
       "contract": "EvidenceRecord",
-      "contract_version": "evidence-record/v1.2",
+      "contract_version": "evidence-record/v1.3",
       "record_ref": {
         "kind": "evidence_record",
         "ref": "ev_p001"
@@ -129,7 +129,7 @@
           "needs_review": false
         },
         "safety_report_type": {
-          "value": "UNSAFE_SIGNAL_VIOLATION",
+          "value": "TRAFFIC_VIOLATION",
           "source": {
             "kind": "evidence.category_mapping",
             "ref": {
@@ -203,7 +203,7 @@
     },
     {
       "contract": "EvidenceRecord",
-      "contract_version": "evidence-record/v1.2",
+      "contract_version": "evidence-record/v1.3",
       "record_ref": {
         "kind": "evidence_record",
         "ref": "ev_p001_v2"
@@ -216,7 +216,7 @@
         "kind": "case",
         "ref": "case_p001"
       },
-      "selection_rev": 2,
+      "selection_rev": 1,
       "basis": {
         "candidate_ref": {
           "kind": "candidate_event",
@@ -253,7 +253,7 @@
           "needs_review": false
         },
         "safety_report_type": {
-          "value": "UNSAFE_SIGNAL_VIOLATION",
+          "value": "TRAFFIC_VIOLATION",
           "source": {
             "kind": "evidence.category_mapping",
             "ref": {

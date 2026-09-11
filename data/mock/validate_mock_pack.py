@@ -277,7 +277,7 @@ ID_FIELD_CANDIDATES = [
     "source_asset_ref", "media_stream_ref", "frame_ref", "timeline_id", "candidate_id",
     "run_id", "readout_id", "usage_id", "scope_id", "incident_clip_ref", "derived_asset_ref",
     "remote_copy_ref", "analysis_source_ref", "job_id", "execution_id", "case_id",
-    "eval_fixture_id", "visual_evidence_id",
+    "eval_fixture_id", "visual_evidence_id", "correction_id",
 ]
 
 REF_OBJECT_ID_FIELDS = {
@@ -347,12 +347,13 @@ def walk_refs(node, path, out):
 
 # kinds that intentionally reference something outside this scenario's own fixture set
 # (opaque, deliberately not materialized as a mock artifact — see scenario manifest note).
-# - correction_record: contract-correction-record.md is still Draft (not Final) — see
-#   docs/mock/04_mock_validation_report.md "Fixture 생성 불가".
 # - external_source: raw upload/ingest source metadata; no Final Data Contract in the
 #   14-contract set owns ExternalSource's own field schema, so it is referenced by
 #   SourceAsset but never materialized as its own mock artifact here.
-EXEMPT_KINDS = {"correction_record", "external_source"}
+# 2026-09-10: correction_record removed from this set — contract-correction-record.md is now
+# Final (v1.1, evidence Consumer Review 6건 반영), so CorrectionRecord refs must resolve to an
+# actual fixture object (see evidence/scenario_correction_rerun_001.json correction_records[]).
+EXEMPT_KINDS = {"external_source"}
 
 def collect_defined_by_kind(mods):
     """kind (as used in ContractRef) -> set of ids that legitimately carry that kind."""
@@ -399,6 +400,8 @@ def collect_defined_by_kind(mods):
             add("requirement_report", (a.get("requirement_report_ref") or {}).get("ref"))
         for a in doc.get("report_packages", []):
             add("report_package", (a.get("package_ref") or {}).get("ref"))
+        for a in doc.get("correction_records", []):
+            add("correction_record", a.get("correction_id"))
         for a in doc.get("case_views", []):
             add("case", a.get("case_id"))
         for a in doc.get("job_records", []):

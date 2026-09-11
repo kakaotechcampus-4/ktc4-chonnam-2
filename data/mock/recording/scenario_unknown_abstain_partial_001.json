@@ -280,7 +280,7 @@
         "start_sec": 600.0,
         "end_sec": 660.0
       },
-      "transform_ref": "tr_u001_trim_v1"
+      "transform_ref": "tr_u001_trim_poststamp_v1"
     },
     {
       "contract": "DerivedAsset",

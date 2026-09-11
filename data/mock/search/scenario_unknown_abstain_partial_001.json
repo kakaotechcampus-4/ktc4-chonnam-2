@@ -129,8 +129,8 @@
       "visual_evidence_id": "ve_u001",
       "run_id": "run_u001_fine",
       "input_ref": {
-        "kind": "incident_clip",
-        "ref": "clip_u001"
+        "kind": "analysis_source",
+        "ref": "as_u001_fine"
       },
       "candidate_id": "candidate_u001",
       "verification": "UNCERTAIN",

@@ -4,7 +4,7 @@
   "job_executions": [
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_x001_plate_a1",
       "job_id": "job_x001_plate",
       "status": "STALE",
@@ -20,7 +20,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_x001_plate_a2",
       "job_id": "job_x001_plate",
       "status": "FAILED",
@@ -41,7 +41,7 @@
     },
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_x001_overlay",
       "job_id": "job_x001_overlay",
       "status": "SUCCEEDED",
@@ -64,10 +64,11 @@
   "usage_records": [
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_x001_plate_a1",
       "execution_ref": "exec_x001_plate_a1",
       "run_ref": null,
+      "run_ref_reason": "RUN_NOT_PRODUCED",
       "case_id": "case_x001",
       "occurred_at": "2026-08-30T09:11:05+09:00",
       "provider_label": "ocr-local",
@@ -86,13 +87,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_x001_plate",
       "execution_ref": "exec_x001_plate_a2",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_x001_plate"
       },
+      "run_ref_reason": null,
       "case_id": "case_x001",
       "occurred_at": "2026-08-30T09:12:55+09:00",
       "provider_label": "ocr-local",
@@ -111,13 +113,14 @@
     },
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_x001_overlay",
       "execution_ref": "exec_x001_overlay",
       "run_ref": {
         "kind": "readout_run",
         "ref": "rr_x001_overlay"
       },
+      "run_ref_reason": null,
       "case_id": "case_x001",
       "occurred_at": "2026-08-30T09:11:16+09:00",
       "provider_label": "ocr-local",

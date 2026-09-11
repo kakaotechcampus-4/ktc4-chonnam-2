@@ -213,8 +213,8 @@
       },
       "latency_ms": 65000,
       "total_cost": {
-        "amount": "0.42",
-        "currency": "USD"
+        "amount": "588",
+        "currency": "KRW"
       }
     },
     "contract_version": "analysis-run-candidate-event/v1.1"
@@ -328,8 +328,8 @@
       },
       "latency_ms": 57000,
       "total_cost": {
-        "amount": "0.31",
-        "currency": "USD"
+        "amount": "434",
+        "currency": "KRW"
       }
     },
     "contract_version": "analysis-run-candidate-event/v1.1"
@@ -501,8 +501,6 @@
 ```
 
 ### PlateReadout — ABSTAIN (target_association=ASSOCIATED, 프레임 간 OCR 불일치)
-
-> `plate_readouts[0]`(최초 판독, abstain)이다. 같은 파일 `plate_readouts[1]`에 재판독 성공분(`readout_p001_plate_reread`, `abstained=false`, `consensus.text="17나2867"`)이 뒤이어 있다(2026-09-10 v3 추가) — 최초 abstain 기록은 지우지 않고 그대로 보존한 채 새 `PlateReadout`을 추가했다. "정상, abstain 없음" 템플릿(위 §readout 첫 항목)과 구조는 동일하므로 여기서는 따로 전문을 싣지 않는다.
 
 **Contract**: `plate-readout/v1.2`  
 **출처**: readout/scenario_plate_reread_001.json → plate_readouts[0] (실제 파일에서 그대로 발췌)
@@ -743,7 +741,7 @@
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_h001"
@@ -789,7 +787,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_LANE_CHANGE",
+      "value": "TRAFFIC_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -971,7 +969,7 @@
         "ref": "da_h001_plate_image"
       }
     ],
-    "template_ref": "tmpl/safety-report-v1"
+    "template_ref": "tmpl/safety-report-specific-v1"
   },
   "policy_ref": "policy/requirement-rules-v1",
   "evaluated_at": "2026-08-24T18:25:00+09:00",
@@ -1049,7 +1047,7 @@
   },
   "created_at": "2026-08-24T18:26:00+09:00",
   "report_inputs": {
-    "safety_report_type": "안전운전 불이행",
+    "safety_report_type": "교통위반(고속도로 포함)",
     "occurred_at": "2026-08-24T18:05:12+09:00",
     "location": {
       "display_text": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
@@ -1061,7 +1059,7 @@
   "report": {
     "title": "백색 실선 구간 차로변경 위반 신고",
     "description": "2026-08-24 18:05:12 광주 상무지구 상무중앙로 사거리 인근에서 차량번호 12가3456 차량이 백색 실선 구간에서 차로를 변경하였습니다.",
-    "template_ref": "tmpl/safety-report-v1"
+    "template_ref": "tmpl/safety-report-specific-v1"
   },
   "assets": {
     "report_video_ref": {
@@ -1207,12 +1205,10 @@
 **Contract**: `evidence-record/v1.2`  
 **출처**: evidence/scenario_plate_reread_001.json → evidence_records[0] (실제 파일에서 그대로 발췌)
 
-> `evidence_records[0]`(재판독 전, `vehicle_number` 필드 부재)이다. 같은 파일 `evidence_records[1]`에 재판독 성공 후 revision(`ev_p001_v2`, `supersedes_ref=ev_p001`, `vehicle_number="17나2867"` 채워짐)이 뒤이어 있다(2026-09-10 v3 추가) — 최초 record는 §10 Invariants 2(「동일 Record를 mutate하지 않는다」)에 따라 그대로 보존했다. 값이 채워진 후 shape은 "EvidenceRecord (모든 값 confirmed)" 템플릿(§evidence 첫 항목)과 동일하므로 여기서는 전문을 다시 싣지 않는다.
-
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_p001"
@@ -1258,7 +1254,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_SIGNAL_VIOLATION",
+      "value": "TRAFFIC_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -1334,8 +1330,6 @@
 
 ### EvidenceNeeds — PLATE_REREAD 요청
 
-> `evidence_needs[0]`(요청 시점)이다. 같은 파일 `evidence_needs[1]`은 재판독 성공 후 `basis_record_ref=ev_p001_v2`·`items=[]`(충족됨)로, 새 basis Record가 나올 때마다 별도 `EvidenceNeeds`를 추가하는 패턴을 보여준다(2026-09-10 v3 추가, §10 Invariants EvidenceNeeds-9 "superseded basis Record의 Need는 stale 여부를 확인한다"와 정합).
-
 **Contract**: `evidence-needs/v1`  
 **출처**: evidence/scenario_plate_reread_001.json → evidence_needs[0] (실제 파일에서 그대로 발췌)
 
@@ -1378,8 +1372,6 @@
 ```
 
 ### RequirementReport — overall=UNKNOWN (원인은 vehicle_number 하나로 국한)
-
-> `requirement_reports[0]`(재판독 전)이다. 같은 파일 `requirement_reports[1]`(`req_p001_evidence_v2`, `basis.evidence_record_ref=ev_p001_v2`)은 재판독 성공 후 `overall=PASS`로, 세 `checks[]`(`vehicle_number.present`·`occurred_at.present`·`visual_event.present`)가 전부 `PASS`로 바뀐다(2026-09-10 v3 추가). shape은 "RequirementReport (scope=FINAL_PACKAGE, overall=PASS)" 템플릿(§evidence)과 `scope`만 다르고(`EVIDENCE`) 동일하므로 여기서는 전문을 다시 싣지 않는다.
 
 **Contract**: `requirement-report/v1`  
 **출처**: evidence/scenario_plate_reread_001.json → requirement_reports[0] (실제 파일에서 그대로 발췌)
@@ -1540,7 +1532,7 @@
 ```json
 {
   "contract": "EvidenceRecord",
-  "contract_version": "evidence-record/v1.2",
+  "contract_version": "evidence-record/v1.3",
   "record_ref": {
     "kind": "evidence_record",
     "ref": "ev_r001_v2"
@@ -1590,7 +1582,7 @@
       "needs_review": false
     },
     "safety_report_type": {
-      "value": "UNSAFE_HELMET_NON_USE",
+      "value": "MOTORCYCLE_VIOLATION",
       "source": {
         "kind": "evidence.category_mapping",
         "ref": {
@@ -1719,7 +1711,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 1,
   "stage": "SEARCHING",
@@ -1799,7 +1791,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 3,
   "stage": "READY",
@@ -1861,7 +1853,11 @@
       "at_provenance": "readout.overlay_ocr",
       "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
       "thumb_ref": "fr_h001_thumb",
-      "selected": true
+      "selected": true,
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -1869,17 +1865,23 @@
     "case_type_display": {
       "code": "SOLID_LINE_LANE_CHANGE",
       "label": "백색 실선 구간 차로변경",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_LANE_CHANGE",
-      "label": "안전운전 불이행",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": "12가3456",
@@ -1906,8 +1908,8 @@
     },
     "user_edited": false,
     "preview_ref": "fr_h001_thumb",
-    "review_needed": false,
-    "reason_code": null
+    "review_needed": true,
+    "reason_code": "evidence.location_needs_review"
   },
   "requirements_evidence": {
     "readiness": "PASS",
@@ -2015,11 +2017,33 @@
   "package": {
     "package_ref": "pkg_h001",
     "report_fields": {
-      "safety_report_type": "안전운전 불이행",
+      "safety_report_type": "교통위반(고속도로 포함)",
       "occurred_at": "2026-08-24T18:05:12+09:00",
       "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
       "vehicle_number": "12가3456",
       "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "report_field_states": {
+      "vehicle_number": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "plate.source.plate_ocr"
+      },
+      "occurred_at": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "time.source.overlay_ocr"
+      },
+      "location": {
+        "info_state": "INFO_NEEDS_REVIEW",
+        "source_label_key": "location.source.user_hint"
+      },
+      "violation_expression": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.violation_expression"
+      },
+      "safety_report_type": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.category_mapping"
+      }
     },
     "artifact_ref": "da_h001_report_video",
     "capabilities": [
@@ -2027,7 +2051,12 @@
       "COPY_FIELDS",
       "OPEN_DESTINATION"
     ],
-    "warnings": []
+    "warnings": [],
+    "unconfirmed_fields": [
+      "safety_report_type",
+      "location",
+      "violation_expression"
+    ]
   },
   "running_jobs": [],
   "notices": []
@@ -2042,7 +2071,7 @@
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_h001",
   "case_rev": 4,
   "stage": "READY",
@@ -2104,7 +2133,11 @@
       "at_provenance": "readout.overlay_ocr",
       "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
       "thumb_ref": "fr_h001_thumb",
-      "selected": true
+      "selected": true,
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -2112,17 +2145,23 @@
     "case_type_display": {
       "code": "SOLID_LINE_LANE_CHANGE",
       "label": "백색 실선 구간 차로변경",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_LANE_CHANGE",
-      "label": "안전운전 불이행",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": "12가3456",
@@ -2149,8 +2188,8 @@
     },
     "user_edited": false,
     "preview_ref": "fr_h001_thumb",
-    "review_needed": false,
-    "reason_code": null
+    "review_needed": true,
+    "reason_code": "evidence.location_needs_review"
   },
   "requirements_evidence": {
     "readiness": "PASS",
@@ -2258,11 +2297,33 @@
   "package": {
     "package_ref": "pkg_h001",
     "report_fields": {
-      "safety_report_type": "안전운전 불이행",
+      "safety_report_type": "교통위반(고속도로 포함)",
       "occurred_at": "2026-08-24T18:05:12+09:00",
       "location": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
       "vehicle_number": "12가3456",
       "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+    },
+    "report_field_states": {
+      "vehicle_number": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "plate.source.plate_ocr"
+      },
+      "occurred_at": {
+        "info_state": "INFO_SOURCE_VERIFIED",
+        "source_label_key": "time.source.overlay_ocr"
+      },
+      "location": {
+        "info_state": "INFO_NEEDS_REVIEW",
+        "source_label_key": "location.source.user_hint"
+      },
+      "violation_expression": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.violation_expression"
+      },
+      "safety_report_type": {
+        "info_state": "INFO_AI_ESTIMATED",
+        "source_label_key": "event.source.category_mapping"
+      }
     },
     "artifact_ref": "da_h001_report_video",
     "capabilities": [
@@ -2270,7 +2331,12 @@
       "COPY_FIELDS",
       "OPEN_DESTINATION"
     ],
-    "warnings": []
+    "warnings": [],
+    "unconfirmed_fields": [
+      "safety_report_type",
+      "location",
+      "violation_expression"
+    ]
   },
   "running_jobs": [],
   "notices": []
@@ -2302,12 +2368,10 @@
 **Contract**: `case-view/v1.2`  
 **출처**: case/scenario_plate_reread_001.json → case_views[0] (실제 파일에서 그대로 발췌)
 
-> **2026-09-10 v3 갱신.** 아래 JSON을 실제 파일과 재대조해 두 가지를 정정했다: ① `candidates[0]`에 `timeline_revision`/`stale_revision`/`stale_revision_label_key` 3필드가 이 라운드에 backfill됐다(`docs/modules/case/decisions/candidate-stale-revision-display.md`). ② `notices[]`는 `evidence.plate_reread_in_progress`(INFO)·`evidence.plate_abstained`(WARN) 중복 2건이 아니라 `evidence.plate_abstained`(WARN) 1건만 남아 있다 — 이슈 #26 B-web-9(신유민, 같은 상황을 가리키는 notice 중복 제거)로 이미 정리됐다.
-
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_p001",
   "case_rev": 3,
   "stage": "EVIDENCE_REVIEW",
@@ -2368,7 +2432,8 @@
       "selected": true,
       "timeline_revision": 1,
       "stale_revision": false,
-      "stale_revision_label_key": null
+      "stale_revision_label_key": null,
+      "situation_confirmation": "NOT_ASKED"
     }
   ],
   "evidence": {
@@ -2376,17 +2441,23 @@
     "case_type_display": {
       "code": "SIGNAL",
       "label": "신호 위반",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "event.source.visual_inference"
     },
     "report_type_display": {
-      "code": "UNSAFE_SIGNAL_VIOLATION",
-      "label": "안전운전 불이행(신호위반)",
-      "needs_review": false
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.category_mapping"
     },
     "violation_display": {
       "code": null,
       "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
-      "needs_review": false
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
     },
     "plate_display": {
       "value": null,
@@ -2478,145 +2549,15 @@
 }
 ```
 
-### CaseView — 재판독 성공 후 (case_rev:4, EVIDENCE_SUFFICIENT true · stage는 여전히 EVIDENCE_REVIEW) (2026-09-10 v3 신설)
-
-> 위 `case_rev:3`(재판독 `QUEUED`)의 직접 후속 스냅샷이다. `PLATE_READ` 재판독이 `SUCCEEDED`로 끝나(`readout_p001_plate_reread`, `consensus.text="17나2867"`) `evidence`가 새 `EvidenceRecord`(`ev_p001_v2`, `supersedes_ref=ev_p001`)를 만들고 `RequirementReport(EVIDENCE)`가 `UNKNOWN`→`PASS`로 넘어간 결과다. `ReportPackage`는 `REPORT_VIDEO_EXPORT` Job이 이 시나리오에 없어 여전히 생성되지 않는다(§8.1 ready-only 규칙, `contract-job-record-case-view.md` §10 Invariants 9) — 그래서 `stage`가 `READY`로 올라가지 않고 `EVIDENCE_REVIEW`에 머무른 채 `requirements_evidence.readiness=PASS`만 되는, 이 pack에서 유일한 「`EVIDENCE_SUFFICIENT=true` + `READY` 아님」 스냅샷이다.
+### CaseView — evidence=null, 사건유형 확정 불가로 blocking notice만 표시 (Contract Gap)
 
 **Contract**: `case-view/v1.2`  
-**출처**: case/scenario_plate_reread_001.json → case_views[1] (실제 파일에서 그대로 발췌)
+**출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0] (실제 파일에서 그대로 발췌)
 
 ```json
 {
   "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
-  "case_id": "case_p001",
-  "case_rev": 4,
-  "stage": "EVIDENCE_REVIEW",
-  "user_reviewed": false,
-  "manifest_summary": {
-    "file_count": 1,
-    "ok_file_count": 1,
-    "failed_file_count": 0,
-    "duration_sec": 1800.0,
-    "range": [
-      "2026-08-29T20:00:00+09:00",
-      "2026-08-29T20:30:00+09:00"
-    ]
-  },
-  "hints": {
-    "time": "저녁 8시쯤",
-    "vehicle": "은색 해치백",
-    "situation": "신호 위반 장면은 확실히 봤는데 번호판이 잘 안 보임",
-    "location": null
-  },
-  "progress": [
-    { "step": "file_intake", "state": "DONE" },
-    { "step": "coarse_search", "state": "DONE" },
-    { "step": "candidate_review", "state": "DONE" },
-    { "step": "plate_read", "state": "DONE" },
-    { "step": "overlay_time_read", "state": "DONE" },
-    { "step": "evidence_assembly", "state": "DONE" },
-    { "step": "requirement_check", "state": "DONE" }
-  ],
-  "candidates": [
-    {
-      "candidate_id": "candidate_p001",
-      "at": "2026-08-29T20:10:12+09:00",
-      "at_provenance": "recording.filename_time",
-      "observed": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과하는 장면이 명확히 확인됨",
-      "thumb_ref": "fr_p001_plate1",
-      "selected": true,
-      "timeline_revision": 1,
-      "stale_revision": false,
-      "stale_revision_label_key": null
-    }
-  ],
-  "evidence": {
-    "record_id": "ev_p001_v2",
-    "case_type_display": {
-      "code": "SIGNAL",
-      "label": "신호 위반",
-      "needs_review": false
-    },
-    "report_type_display": {
-      "code": "UNSAFE_SIGNAL_VIOLATION",
-      "label": "안전운전 불이행(신호위반)",
-      "needs_review": false
-    },
-    "violation_display": {
-      "code": null,
-      "label": "은색 해치백이 적색 신호에서 정지선을 넘어 교차로를 통과함",
-      "needs_review": false
-    },
-    "plate_display": {
-      "value": "17나2867",
-      "needs_review": false,
-      "info_state": "INFO_SOURCE_VERIFIED",
-      "source_label_key": "plate.source.plate_ocr"
-    },
-    "event_time_display": {
-      "value": "2026-08-29T20:10:12+09:00",
-      "needs_review": false,
-      "info_state": "INFO_SOURCE_VERIFIED",
-      "source_label_key": "time.source.overlay_ocr"
-    },
-    "location_display": {
-      "value": null,
-      "needs_review": false,
-      "info_state": "INFO_UNKNOWN",
-      "source_label_key": null,
-      "coord": null,
-      "search_keyword": null
-    },
-    "user_edited": false,
-    "preview_ref": "fr_p001_plate1",
-    "review_needed": false,
-    "reason_code": null
-  },
-  "requirements_evidence": {
-    "readiness": "PASS",
-    "checks": [
-      {
-        "code": "evidence.vehicle_number.present",
-        "category": "VEHICLE",
-        "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed",
-        "subject_refs": [{ "kind": "evidence_record", "ref": "ev_p001_v2" }]
-      },
-      {
-        "code": "evidence.occurred_at.present",
-        "category": "TIME",
-        "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed",
-        "subject_refs": [{ "kind": "evidence_record", "ref": "ev_p001_v2" }]
-      },
-      {
-        "code": "evidence.visual_event.present",
-        "category": "EVIDENCE",
-        "outcome": "PASS",
-        "reason_code": "evidence.value_confirmed",
-        "subject_refs": [{ "kind": "evidence_record", "ref": "ev_p001_v2" }]
-      }
-    ]
-  },
-  "requirements_package": null,
-  "package": null,
-  "running_jobs": [],
-  "notices": []
-}
-```
-
-### CaseView — 사건유형 확정 불가, EVIDENCE_REVIEW WARN (2026-09-10 v3 재구성)
-
-> **2026-09-10 갱신.** 이 스냅샷은 원래 `evidence=null`·blocking notice만 있는 Contract Gap 예시였다(사건 유형이 불확실하면 `EvidenceRecord.event`가 필수 필드라 레코드 자체를 만들 수 없다는 문제). 이슈 #25 A절에서 김준영(evidence)이 `event.visual_event_type.value=null`을 제한적으로 허용하기로 답해, 이 gap을 fixture 레벨에서 해소했다 — `EvidenceRecord`가 생성되고 `stage=EVIDENCE_REVIEW`→(다음 스냅샷에서) `READY`까지 WARN 경로로 진행한다. 근거: `docs/modules/case/decisions/generic-warn-package-and-situation-response.md`.
-
-**Contract**: `case-view/v1.2`  
-**출처**: case/scenario_unknown_abstain_partial_001.json → case_views[0](`case_rev:3`) (실제 파일에서 그대로 발췌)
-
-```json
-{
-  "contract": "CaseView",
-  "contract_version": "case-view/v1.2",
+  "contract_version": "case-view/v1.3",
   "case_id": "case_u001",
   "case_rev": 3,
   "stage": "EVIDENCE_REVIEW",
@@ -2638,14 +2579,38 @@
     "location": null
   },
   "progress": [
-    { "step": "file_intake", "state": "DONE" },
-    { "step": "coarse_search", "state": "DONE" },
-    { "step": "candidate_review", "state": "DONE" },
-    { "step": "plate_read", "state": "DONE" },
-    { "step": "overlay_time_read", "state": "DONE" },
-    { "step": "evidence_assembly", "state": "DONE" },
-    { "step": "requirement_check", "state": "DONE" },
-    { "step": "package_assembly", "state": "PENDING" }
+    {
+      "step": "file_intake",
+      "state": "DONE"
+    },
+    {
+      "step": "coarse_search",
+      "state": "DONE"
+    },
+    {
+      "step": "candidate_review",
+      "state": "DONE"
+    },
+    {
+      "step": "plate_read",
+      "state": "DONE"
+    },
+    {
+      "step": "overlay_time_read",
+      "state": "DONE"
+    },
+    {
+      "step": "evidence_assembly",
+      "state": "DONE"
+    },
+    {
+      "step": "requirement_check",
+      "state": "DONE"
+    },
+    {
+      "step": "package_assembly",
+      "state": "PENDING"
+    }
   ],
   "candidates": [
     {
@@ -2655,17 +2620,55 @@
       "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
       "thumb_ref": "fr_u001_plate1",
       "selected": true,
-      "situation_confirmation": "UNKNOWN"
+      "situation_confirmation": "USER_UNSURE",
+      "timeline_revision": 1,
+      "stale_revision": false,
+      "stale_revision_label_key": null
     }
   ],
   "evidence": {
     "record_id": "ev_u001",
-    "case_type_display": { "code": null, "label": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null },
-    "report_type_display": { "code": null, "label": "교통위반(고속도로 포함)", "needs_review": false },
-    "violation_display": { "code": null, "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.", "needs_review": false, "info_state": "INFO_AI_ESTIMATED", "source_label_key": "event.source.violation_expression" },
-    "plate_display": { "value": "88부1234", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.plate_ocr" },
-    "event_time_display": { "value": "2026-08-26T22:20:15+09:00", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "time.source.filename_time" },
-    "location_display": { "value": null, "needs_review": false, "info_state": "INFO_UNKNOWN", "source_label_key": null, "coord": null, "search_keyword": null },
+    "case_type_display": {
+      "code": null,
+      "label": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null
+    },
+    "report_type_display": {
+      "code": "TRAFFIC_VIOLATION",
+      "label": "교통위반(고속도로 포함)",
+      "needs_review": true,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "event.source.category_mapping"
+    },
+    "violation_display": {
+      "code": null,
+      "label": "해당 일시와 장소에서 촬영된 차량의 주행 상황에 대해 신고합니다. 구체적인 위반 유형은 확인하기 어려워 첨부 영상을 바탕으로 확인을 요청드립니다.",
+      "needs_review": false,
+      "info_state": "INFO_AI_ESTIMATED",
+      "source_label_key": "event.source.violation_expression"
+    },
+    "plate_display": {
+      "value": "88부1234",
+      "needs_review": false,
+      "info_state": "INFO_SOURCE_VERIFIED",
+      "source_label_key": "plate.source.plate_ocr"
+    },
+    "event_time_display": {
+      "value": "2026-08-26T22:20:15+09:00",
+      "needs_review": true,
+      "info_state": "INFO_NEEDS_REVIEW",
+      "source_label_key": "time.source.filename_time"
+    },
+    "location_display": {
+      "value": null,
+      "needs_review": false,
+      "info_state": "INFO_UNKNOWN",
+      "source_label_key": null,
+      "coord": null,
+      "search_keyword": null
+    },
     "user_edited": false,
     "preview_ref": "fr_u001_plate1",
     "review_needed": true,
@@ -2674,10 +2677,54 @@
   "requirements_evidence": {
     "readiness": "WARN",
     "checks": [
-      { "code": "evidence.vehicle_number.present", "category": "VEHICLE", "outcome": "PASS", "reason_code": "evidence.value_confirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
-      { "code": "evidence.occurred_at.present", "category": "TIME", "outcome": "WARN", "reason_code": "evidence.time_needs_review", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
-      { "code": "evidence.visual_event.present", "category": "EVIDENCE", "outcome": "WARN", "reason_code": "evidence.visual_event_type_unconfirmed", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] },
-      { "code": "evidence.location.present", "category": "LOCATION", "outcome": "WARN", "reason_code": "evidence.location_unavailable", "subject_refs": [{ "kind": "evidence_record", "ref": "ev_u001" }] }
+      {
+        "code": "evidence.vehicle_number.present",
+        "category": "VEHICLE",
+        "outcome": "PASS",
+        "reason_code": "evidence.value_confirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.occurred_at.present",
+        "category": "TIME",
+        "outcome": "WARN",
+        "reason_code": "evidence.time_needs_review",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.visual_event.present",
+        "category": "EVIDENCE",
+        "outcome": "WARN",
+        "reason_code": "evidence.visual_event_type_unconfirmed",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      },
+      {
+        "code": "evidence.location.present",
+        "category": "LOCATION",
+        "outcome": "WARN",
+        "reason_code": "evidence.location_unavailable",
+        "subject_refs": [
+          {
+            "kind": "evidence_record",
+            "ref": "ev_u001"
+          }
+        ]
+      }
     ]
   },
   "requirements_package": null,
@@ -2706,12 +2753,17 @@
       "blocking": false,
       "message_key": "notice.visual_event_unconfirmed",
       "actions": []
+    },
+    {
+      "code": "evidence.time_post_stamp_required",
+      "severity": "INFO",
+      "blocking": false,
+      "message_key": "notice.time_post_stamp_required",
+      "actions": []
     }
   ]
 }
 ```
-
-**같은 시나리오의 `case_rev:4`**는 `stage=READY`까지 더 진행한 스냅샷으로, `requirements_package`(WARN)·`package`(`unconfirmed_fields` 포함)·`situation_confirmation=UNKNOWN`이 채워진다 — 전체는 `case/scenario_unknown_abstain_partial_001.json` 참고.
 
 ## common
 
@@ -2723,7 +2775,7 @@
 ```json
 {
   "contract": "JobExecution",
-  "contract_version": "job-execution/v1",
+  "contract_version": "job-execution/v1.1",
   "execution_id": "exec_h001_search",
   "job_id": "job_h001_search",
   "status": "SUCCEEDED",
@@ -2752,13 +2804,14 @@
 ```json
 {
   "contract": "UsageRecord",
-  "contract_version": "usage-record/v1.1",
+  "contract_version": "usage-record/v1.2",
   "usage_id": "usage_h001_coarse",
   "execution_ref": "exec_h001_search",
   "run_ref": {
     "kind": "analysis_run",
     "ref": "run_h001"
   },
+  "run_ref_reason": null,
   "case_id": "case_h001",
   "occurred_at": "2026-08-24T18:21:10+09:00",
   "provider_label": "gemini",
@@ -2781,9 +2834,7 @@
 }
 ```
 
-### JobExecution — QUEUED → SUCCEEDED (재판독 완료, 2026-09-10 v3 갱신)
-
-> **2026-09-10 갱신.** `JobExecution`은 `CaseView`와 달리 `case_rev` 스냅샷을 따로 두지 않고 하나의 `execution_id` 행이 자기 lifecycle 안에서 상태만 in-place로 전이한다(`contract-job-execution.md` §9-2 상태 전이표). 그래서 이 항목은 이제 "QUEUED로 멈춘 스냅샷"이 아니라 "재판독이 실제로 `SUCCEEDED`까지 끝난" 최신 상태를 보여준다 — `data/mock/case/scenario_plate_reread_001.json`의 `case_rev:3`(재판독 대기 중) `CaseView`는 그 자체로 별도 스냅샷이라 그대로 남아 있고, `running_jobs=[{status:PENDING}]`으로 그 순간의 "대기 중" 화면을 여전히 검증할 수 있다.
+### JobExecution — QUEUED (재판독 대기 중, ended_at=null)
 
 **Contract**: `job-execution/v1`  
 **출처**: common/scenario_plate_reread_001.json → job_executions[3] (실제 파일에서 그대로 발췌)
@@ -2791,7 +2842,7 @@
 ```json
 {
   "contract": "JobExecution",
-  "contract_version": "job-execution/v1",
+  "contract_version": "job-execution/v1.1",
   "execution_id": "exec_p001_plate_reread",
   "job_id": "job_p001_plate_reread",
   "status": "SUCCEEDED",
@@ -2800,10 +2851,15 @@
   "started_at": "2026-08-29T20:33:10+09:00",
   "ended_at": "2026-08-29T20:33:21+09:00",
   "produced": [
-    { "kind": "readout_run", "ref": "rr_p001_plate_reread" }
+    {
+      "kind": "readout_run",
+      "ref": "rr_p001_plate_reread"
+    }
   ],
   "failure_kind": null,
-  "usage_refs": ["usage_p001_plate_reread"]
+  "usage_refs": [
+    "usage_p001_plate_reread"
+  ]
 }
 ```
 

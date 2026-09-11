@@ -13,9 +13,9 @@
 
 `correction_rerun_001` 라벨 판단 확인 요청(사용자 정정 13:15:30→13:13:00을 anchor 오류로 보고 timeline offset 930s는 유지, 절대시각만 정정된 것으로 라벨)은 **case 관점에서도 맞다** — `TimeResolution`의 `USER_OVERRIDE`는 절대시각 값을 교체하는 것이지 candidate의 timeline-relative offset을 재계산하는 것이 아니다(offset은 `AnalysisRun`/`CandidateEvent` 소유이고 `TimeResolution`이 건드리는 대상이 아니다). 이견 없음.
 
-## B-2. `CandidateEvent.span` 폭 — case가 결정할 사안 아님, 미반영
+## B-2. `CandidateEvent.span` 폭 — 종결(2026-09-10, 서어진 회신 반영)
 
-`span`이 (a) coarse 후보 창인지 (b) 사건 구간인지는 `CandidateEvent`/`AnalysisRun` 계약 소유자 서어진(`search`)의 답이 필요하다 — `CANDIDATE_SEARCH`가 실제로 무엇을 반환하도록 설계됐는지는 case가 판단할 수 있는 범위 밖이다. `CONTRACT_CONFLICTS.md`에 신규 항목으로 등재하고 fixture는 손대지 않았다. `relative_rebase_001`의 span이 요청 scope와 동일해 오차가 정의상 0이 되는 점(순환 가능성)도 같은 답을 기다린다.
+`span`이 (a) coarse 후보 창인지 (b) 사건 구간인지는 `CandidateEvent`/`AnalysisRun` 계약 소유자 서어진(`search`)의 답이 필요해 처음엔 case가 결정할 사안이 아니라고 보류했다. 서어진이 **(a) coarse 후보 창이 맞다**고 회신했다 — 원문·근거·fixture 증거는 `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`에 그대로 보존했다. `contract-analysis-run-candidate-event.md` §4-1·§7(eval Consumer 매칭 규칙)에 반영했고, `relative_rebase_001`의 span이 요청 scope와 동일해 오차가 정의상 0이던 문제도 서어진이 case에 넘긴 대로 `502000~527000ms`로 좁혀 해소했다.
 
 ## B-3. 참값 라벨 2건 — mock pack 저자로서 답함
 

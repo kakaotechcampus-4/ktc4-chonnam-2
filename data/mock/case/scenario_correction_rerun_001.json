@@ -46,7 +46,7 @@
       "case_rev": 2,
       "kind": "FINE_VERIFY",
       "scope_ref": null,
-      "input_fingerprint": "sha1:r001-fine-verify-clip_r001",
+      "input_fingerprint": "sha1:r001-fine-verify-as_r001_fine",
       "force_rerun": false,
       "requested_at": "2026-08-27T13:20:59+09:00"
     }
@@ -54,7 +54,7 @@
   "case_views": [
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_r001",
       "case_rev": 2,
       "stage": "EVIDENCE_REVIEW",
@@ -115,7 +115,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -123,17 +124,23 @@
         "case_type_display": {
           "code": "MOTORCYCLE_HELMET_NON_USE",
           "label": "이륜차 안전모 미착용",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_HELMET_NON_USE",
-          "label": "이륜차 안전모 미착용",
-          "needs_review": false
+          "code": "MOTORCYCLE_VIOLATION",
+          "label": "이륜차 위반",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": "34나7890",
@@ -201,12 +208,19 @@
           "actions": [
             "EDIT_EVENT_TIME"
           ]
+        },
+        {
+          "code": "readout.overlay_not_present",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_not_present",
+          "actions": []
         }
       ]
     },
     {
       "contract": "CaseView",
-      "contract_version": "case-view/v1.2",
+      "contract_version": "case-view/v1.3",
       "case_id": "case_r001",
       "case_rev": 3,
       "stage": "EVIDENCE_REVIEW",
@@ -267,7 +281,8 @@
           "selected": true,
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
         }
       ],
       "evidence": {
@@ -275,17 +290,23 @@
         "case_type_display": {
           "code": "MOTORCYCLE_HELMET_NON_USE",
           "label": "이륜차 안전모 미착용",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
         },
         "report_type_display": {
-          "code": "UNSAFE_HELMET_NON_USE",
-          "label": "이륜차 안전모 미착용",
-          "needs_review": false
+          "code": "MOTORCYCLE_VIOLATION",
+          "label": "이륜차 위반",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
         },
         "violation_display": {
           "code": null,
           "label": "이륜차 운전자가 안전모를 착용하지 않은 상태로 주행함",
-          "needs_review": false
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
         },
         "plate_display": {
           "value": "34나7890",
@@ -353,6 +374,13 @@
           "actions": [
             "GENERATE_REPORT_VIDEO"
           ]
+        },
+        {
+          "code": "readout.overlay_not_present",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_not_present",
+          "actions": []
         }
       ]
     }

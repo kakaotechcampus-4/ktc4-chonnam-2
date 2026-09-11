@@ -127,8 +127,8 @@
       "visual_evidence_id": "ve_p001",
       "run_id": "run_p001_fine",
       "input_ref": {
-        "kind": "incident_clip",
-        "ref": "clip_p001"
+        "kind": "analysis_source",
+        "ref": "as_p001_fine"
       },
       "candidate_id": "candidate_p001",
       "verification": "OBSERVED",

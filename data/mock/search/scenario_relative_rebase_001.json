@@ -73,8 +73,8 @@
           "span": {
             "timeline_id": "tl_rb001",
             "timeline_revision": 1,
-            "start_ms": 500000,
-            "end_ms": 560000,
+            "start_ms": 502000,
+            "end_ms": 527000,
             "representative_ms": 512000
           },
           "rank": 1,

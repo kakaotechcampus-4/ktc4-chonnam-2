@@ -4,7 +4,7 @@
   "job_executions": [
     {
       "contract": "JobExecution",
-      "contract_version": "job-execution/v1",
+      "contract_version": "job-execution/v1.1",
       "execution_id": "exec_e001_search",
       "job_id": "job_e001_search",
       "status": "SUCCEEDED",
@@ -27,13 +27,14 @@
   "usage_records": [
     {
       "contract": "UsageRecord",
-      "contract_version": "usage-record/v1.1",
+      "contract_version": "usage-record/v1.2",
       "usage_id": "usage_e001_coarse",
       "execution_ref": "exec_e001_search",
       "run_ref": {
         "kind": "analysis_run",
         "ref": "run_e001"
       },
+      "run_ref_reason": null,
       "case_id": "case_e001",
       "occurred_at": "2026-08-25T07:31:02+09:00",
       "provider_label": "gemini",
