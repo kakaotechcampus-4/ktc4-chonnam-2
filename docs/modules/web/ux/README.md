@@ -4,4 +4,4 @@ web 모듈의 실제 화면·상태·interaction 상세를 둔다. 제품 수준
 
 ## 현재 문서
 
-- `value-state-display.md` — 값 상태(`info_state` 5종) 표시 규칙. **확정**. 미확정 값을 확정처럼 보이지 않게 하는 web 책임 (CALL-8 B01-3 · 이슈 #26 B-5)
+- `value-state-display.md` — 값 상태(`info_state` 5종) 표시 규칙 + 신고자료(handoff) 화면의 `report_field_states` 규칙. **확정**. 미확정 값을 확정처럼 보이지 않게 하는 web 책임 (CALL-8 B01-3 · 이슈 #26 B-5 · `case-view/v1.3`/Mock Pack v4 기준)
