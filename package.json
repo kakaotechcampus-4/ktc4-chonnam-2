@@ -12,6 +12,7 @@
   "scripts": {
     "dev:prototype": "npm run dev --workspace=daesingo-prototype",
     "build": "npm run build --workspaces --if-present",
-    "preview:prototype": "npm run preview --workspace=daesingo-prototype"
+    "preview:prototype": "npm run preview --workspace=daesingo-prototype",
+    "sheet": "npm run sheet --workspace=daesingo-prototype"
   }
 }

@@ -33,6 +33,18 @@ npm install          # 저장소 루트에서 한 번
 npm run dev:prototype
 ```
 
+## 화면 시트 (Figma 반입용)
+
+10개 화면과 그 상태 변형을 합쳐 **19장을 한 페이지에** 늘어놓은 것. 팀이 Figma에서 댓글로
+UX를 뜯어보기 위한 자료다. 상태는 손으로 적지 않고 `src/machine.ts`의 `reduce()`에 실제
+액션을 흘려서 만들기 때문에, 프로토타입이 바뀌면 시트도 따라 바뀐다.
+
+```bash
+npm run sheet        # 브라우저에서 보기 (창을 1400px 이상으로)
+```
+
+반입 절차·재생성 방법은 `figma/README.md`.
+
 ## 이 코드를 실제 앱의 출발점으로 쓸 것인가 — 미결
 
 **아직 정해지지 않았다.** `web` 모듈 Owner(`docs/modules/web/README.md`)가 조사·판단 후 결정할 사항이며, 이 README는 결정을 대신하지 않는다.

@@ -1,0 +1,108 @@
+/* ============================================================
+   화면 시트 — Figma 반입용 캔버스 껍데기.
+
+   여기 있는 규칙은 **시트의 껍데기만** 건드린다. `.ab-frame` 안쪽,
+   즉 실제 화면은 global.css가 그리는 그대로 둔다 — 시트에서 본 그림이
+   앱에서 본 그림과 달라지면 반입하는 의미가 없다.
+
+   딱 두 가지만 안쪽을 손댄다:
+   - `.app-shell`의 `min-height:100vh` → 아트보드마다 화면 높이가 잡히면
+     시트가 세로로 터진다. 내용 높이로 되돌린다.
+   - `.app-shell`의 하단 96px 여백 → ScenarioBar 자리인데 시트에는 없다.
+   ============================================================ */
+
+.sheet {
+  padding: 0 0 120px;
+  background: #e9edf3;
+  min-width: max-content;
+}
+
+/* ---------------------------------------------------------- 상단 조작 바 */
+.sheet-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 28px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-2);
+  box-shadow: var(--sh-soft);
+}
+.sheet-bar-l { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.sheet-bar-l strong { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+.sheet-sub { font-size: 14px; color: var(--muted); font-weight: 600; }
+.sheet-sub code { font-family: 'Roboto Mono', monospace; font-size: 13px; }
+.sheet-bar-r { display: flex; align-items: center; gap: 12px; flex: none; }
+
+.pill {
+  font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.pill.ok { background: var(--green-soft); border-color: var(--green-bd); color: var(--green-deep); }
+.pill.wait { background: var(--orange-soft); border-color: var(--orange-bd); color: var(--orange-ink); }
+
+.sheet-btn {
+  font: inherit; font-size: 14px; font-weight: 700;
+  padding: 9px 16px; border-radius: var(--R);
+  background: var(--green-solid); color: #fff; border: 0; cursor: pointer;
+}
+.sheet-btn:disabled { background: var(--slate-soft); color: var(--muted-2); cursor: not-allowed; }
+
+.sheet-warn {
+  margin: 0; padding: 12px 28px;
+  background: var(--red-soft); border-bottom: 1px solid var(--red-bd);
+  color: var(--red); font-size: 14px; font-weight: 700;
+}
+.sheet-how {
+  margin: 0; padding: 14px 28px;
+  background: var(--blue-soft); border-bottom: 1px solid var(--blue-bd);
+  color: var(--ink-2); font-size: 14px; line-height: 1.7; font-weight: 500;
+}
+.sheet-how code { font-family: 'Roboto Mono', monospace; font-size: 13px; }
+
+/* ---------------------------------------------------------- 레인 */
+.lane { padding: 46px 28px 0; }
+.lane-t {
+  margin: 0 0 18px;
+  font-size: 22px; font-weight: 800; letter-spacing: -.01em; color: var(--ink);
+}
+.lane-row { display: flex; align-items: flex-start; gap: 56px; }
+
+/* ---------------------------------------------------------- 아트보드 */
+.ab { flex: none; }
+.ab-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 10px; }
+.ab-num {
+  font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 700;
+  color: #fff; background: var(--slate); border-radius: 5px; padding: 2px 7px;
+}
+.ab-title { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -.008em; }
+.ab-step {
+  font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 600;
+  color: var(--muted); background: var(--sunken); border-radius: 5px; padding: 2px 7px;
+}
+
+.ab-frame {
+  background: var(--app-bg);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--sh-lift);
+}
+/* 안쪽 화면에 대한 유일한 두 가지 보정 — 위 주석 참고 */
+.ab-frame .app-shell { min-height: 0; padding-bottom: 28px; }
+
+.ab-notes {
+  margin-top: 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--orange);
+  border-radius: var(--R);
+  padding: 16px 18px;
+}
+.ab-note { margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
+.ab-q { margin: 0; padding-left: 20px; }
+.ab-q li { font-size: 15px; color: var(--muted); font-weight: 500; line-height: 1.7; margin: 0 0 6px; }
+.ab-q li:last-child { margin-bottom: 0; }
