@@ -125,7 +125,8 @@ CLOSED_ENUMS = {
     ("readout_runs", "outcome"): {"SUCCEEDED", "PARTIAL", "FAILED"},
     ("readout_runs", "operation"): {"PLATE_READ", "OVERLAY_TIME_READ"},
     # contract-job-execution.md §6
-    ("job_executions", "status"): {"QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE"},
+    # job-execution/v1.1 (이슈 #33 A-2)에서 CANCELLED 추가 — 이 세트가 그때 갱신되지 않고 남아 있었다
+    ("job_executions", "status"): {"QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED"},
     # contract-requirement-report-package.md §3
     ("requirement_reports", "overall"): {"PASS", "WARN", "BLOCK", "UNKNOWN"},
     ("requirement_reports", "scope"): {"EVIDENCE", "FINAL_PACKAGE"},
@@ -161,6 +162,23 @@ INFO_STATES = {
     "INFO_AI_ESTIMATED", "INFO_SOURCE_VERIFIED", "INFO_USER_CONFIRMED",
     "INFO_NEEDS_REVIEW", "INFO_UNKNOWN",
 }
+# contract-correction-record.md §4 (v1.1, SITUATION_CHANGE added)
+CORRECTION_RECORD_KINDS = {
+    "TIME_HINT_EDIT", "OTHER_CANDIDATE", "PLATE_MANUAL_EDIT", "PLATE_REREAD",
+    "SPAN_ADJUST", "REPORT_TYPE_CHANGE", "EVENT_TIME_MANUAL", "TIMELINE_REBASE",
+    "SITUATION_CHANGE",
+}
+# contract-job-record-case-view.md B절 §7 (v1.3, 이슈 #39 B-2 이후 값 공간)
+SITUATION_CONFIRMATION_VALUES = {"NOT_ASKED", "CONFIRMED", "CORRECTED", "USER_UNSURE"}
+# contract-evidence-record-needs.md §4.6-1 (v1.3)
+SITUATION_RESPONSE_VALUES = {"CONFIRMED", "CORRECTED", "USER_UNSURE"}
+# contract-usage-record.md §5 (v1.2)
+RUN_REF_REASON_VALUES = {"DIRECT_NO_RUN", "RUN_NOT_PRODUCED"}
+# CaseView B절 §5-7 — the six *_display fields review_needed/reason_code aggregate over
+SIX_DISPLAY_FIELDS = (
+    "case_type_display", "report_type_display", "violation_display",
+    "plate_display", "event_time_display", "location_display",
+)
 
 
 def check_enum(where, value, allowed, *, nullable=True):
@@ -233,6 +251,10 @@ for sid, mods in scenario_docs.items():
         if occ is not None:
             check_enum(f"{sid}/evidence.evidence_records[{i}].occurred_at.resolution_status",
                        occ.get("resolution_status"), {"OK", "NEEDS_REVIEW"}, nullable=False)
+        sit = rec.get("situation_response")
+        if sit is not None:
+            check_enum(f"{sid}/evidence.evidence_records[{i}].situation_response.value",
+                       sit.get("value"), SITUATION_RESPONSE_VALUES, nullable=False)
     recording_doc = mods.get("recording", {})
     for i, dr in enumerate(recording_doc.get("deletion_reports", [])):
         for j, item in enumerate(dr.get("items", [])):
@@ -246,15 +268,22 @@ for sid, mods in scenario_docs.items():
         check_enum(f"{base}.stage", cv.get("stage"),
                    {"INTAKE", "SEARCHING", "CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"}, nullable=False)
         for j, step in enumerate(cv.get("progress", [])):
+            # case-view/v1.3에서 PARTIAL 추가(CANCELLED→PARTIAL 흡수 포함) — 이 세트도 그때 누락됐었다
             check_enum(f"{base}.progress[{j}].state", step.get("state"),
-                       {"PENDING", "RUNNING", "DONE", "FAILED"}, nullable=False)
+                       {"PENDING", "RUNNING", "DONE", "FAILED", "PARTIAL"}, nullable=False)
         for j, nt in enumerate(cv.get("notices", [])):
             check_enum(f"{base}.notices[{j}].severity", nt.get("severity"), {"INFO", "WARN", "ERROR"}, nullable=False)
         for j, rj in enumerate(cv.get("running_jobs", [])):
             check_enum(f"{base}.running_jobs[{j}].status", rj.get("status"), {"PENDING", "RUNNING"}, nullable=False)
+        for j, cand in enumerate(cv.get("candidates", [])):
+            # 이슈 #39 Required-5: contract-job-record-case-view.md B§7 ① — 값 공간이
+            # NOT_ASKED/CONFIRMED/REJECTED/UNKNOWN에서 NOT_ASKED/CONFIRMED/CORRECTED/USER_UNSURE로
+            # 정정됐다(v1.3). 구 값이 남아있으면 이 검사가 잡는다.
+            check_enum(f"{base}.candidates[{j}].situation_confirmation", cand.get("situation_confirmation"),
+                       SITUATION_CONFIRMATION_VALUES, nullable=False)
         ev = cv.get("evidence")
         if ev:
-            for disp in ("plate_display", "event_time_display", "location_display"):
+            for disp in SIX_DISPLAY_FIELDS:
                 d = ev.get(disp)
                 if d is not None:
                     check_enum(f"{base}.evidence.{disp}.info_state", d.get("info_state"), INFO_STATES, nullable=False)
@@ -263,6 +292,9 @@ for sid, mods in scenario_docs.items():
             if req is not None:
                 check_enum(f"{base}.{req_key}.readiness", req.get("readiness"),
                            {"PASS", "WARN", "BLOCK", "UNKNOWN"}, nullable=False)
+    for i, cr in enumerate(case_doc.get("correction_records", [])):
+        check_enum(f"{sid}/case.correction_records[{i}].kind", cr.get("kind"),
+                   CORRECTION_RECORD_KINDS, nullable=False)
 
     # --- common: UsageRecord.run_ref.kind is a field-level closed set ---
     for i, u in enumerate(mods.get("common", {}).get("usage_records", [])):
@@ -270,6 +302,9 @@ for sid, mods in scenario_docs.items():
         if run_ref is not None:
             check_enum(f"{sid}/common.usage_records[{i}].run_ref.kind", run_ref.get("kind"),
                        {"analysis_run", "readout_run"}, nullable=False)
+        if u.get("run_ref_reason") is not None:
+            check_enum(f"{sid}/common.usage_records[{i}].run_ref_reason", u.get("run_ref_reason"),
+                       RUN_REF_REASON_VALUES, nullable=False)
 
 # ---- 4. build a registry of every opaque ID defined in a scenario, then check refs resolve --
 
@@ -352,7 +387,10 @@ def walk_refs(node, path, out):
 #   SourceAsset but never materialized as its own mock artifact here.
 # 2026-09-10: correction_record removed from this set — contract-correction-record.md is now
 # Final (v1.1, evidence Consumer Review 6건 반영), so CorrectionRecord refs must resolve to an
-# actual fixture object (see evidence/scenario_correction_rerun_001.json correction_records[]).
+# actual fixture object. CorrectionRecord's contract owner AND runtime producer are both case
+# (이슈 #39 Required-2), so the fixture object lives in case's own file — see
+# case/scenario_correction_rerun_001.json correction_records[]; evidence only holds a
+# ContractRef pointer to it (evidence_records[].provenance.correction_refs).
 EXEMPT_KINDS = {"external_source"}
 
 def collect_defined_by_kind(mods):
@@ -507,8 +545,18 @@ REQUIRED_OBJECT_KEYS = {
         "produced", "failure_kind", "usage_refs",
     ],
     ("common", "usage_records"): [
-        "usage_id", "execution_ref", "run_ref", "case_id", "occurred_at", "provider_label",
+        "contract", "contract_version", "usage_id", "execution_ref", "run_ref", "run_ref_reason",
+        "case_id", "occurred_at", "provider_label",
         "operation", "token_usage", "processed_duration_sec", "latency_ms", "pricing_context", "cost",
+    ],
+    # 이슈 #39 Required-2/Required-5: CorrectionRecord의 contract owner이자 runtime producer는
+    # case다 — case 모듈 fixture에만 존재해야 하고(아래 §8 case-ownership 검사), adr-correction-record.md
+    # L20의 8필드 최소 스키마(correction_id·case_id·selection_rev·kind·target_field·previous_value·
+    # new_value·corrected_at) + 이 mock pack 공통 fixture 메타(contract·contract_version) + Draft부터
+    # 있던 optional supersedes_ref를 갖춰야 한다 (contract-correction-record.md §4).
+    ("case", "correction_records"): [
+        "contract", "contract_version", "correction_id", "case_id", "selection_rev", "kind",
+        "target_field", "previous_value", "new_value", "supersedes_ref", "corrected_at",
     ],
     ("case", "job_records"): [
         "job_id", "case_id", "case_rev", "kind", "scope_ref", "input_fingerprint",
@@ -670,6 +718,118 @@ for sid, mods in scenario_docs.items():
         if expected and rep.get("overall") != expected:
             err(f"[INVARIANT] {sid}/evidence.requirement_reports[{i}]: overall={rep.get('overall')!r} but "
                 f"precedence(BLOCK>UNKNOWN>WARN>PASS) over checks gives {expected!r}")
+
+    # ---- 8-1. 이슈 #39 신규 검사 (Required-5) ---------------------------------
+
+    # CorrectionRecord case-ownership: contract owner이자 runtime producer가 모두 case이므로
+    # (contract-correction-record.md, Required-2) case가 아닌 모듈 fixture에 correction_records가
+    # 있으면 안 된다 — evidence는 ContractRef(provenance.correction_refs)로만 참조한다.
+    for module, doc in mods.items():
+        if module != "case" and doc.get("correction_records"):
+            err(f"[INVARIANT] {sid}/{module}.correction_records: CorrectionRecord는 case fixture에만 "
+                f"존재해야 한다(contract owner=runtime producer=case, 이슈 #39 Required-2) — "
+                f"{module}에 {len(doc['correction_records'])}건 있음")
+
+    # UsageRecord run_ref / run_ref_reason 결합 규칙 (contract-usage-record.md §8 invariant 13)
+    for i, u in enumerate(mods.get("common", {}).get("usage_records", [])):
+        base = f"{sid}/common.usage_records[{i}]"
+        run_ref, reason = u.get("run_ref"), u.get("run_ref_reason")
+        if run_ref is not None and reason is not None:
+            err(f"[INVARIANT] {base}: run_ref != null이면 run_ref_reason은 null이어야 한다 "
+                f"(got run_ref={run_ref!r}, run_ref_reason={reason!r})")
+        if run_ref is None and reason not in RUN_REF_REASON_VALUES:
+            err(f"[INVARIANT] {base}: run_ref == null이면 run_ref_reason은 "
+                f"{sorted(RUN_REF_REASON_VALUES)} 중 하나여야 한다 (got {reason!r})")
+
+    # TimeResolution invariant 12 (2026-09-11, 이슈 #39 A-1) — computation.mode=USER_OVERRIDE 체인.
+    # 역방향(AGREED이면 반드시 USER_OVERRIDE)은 아직 open topic이라 강제하지 않는다.
+    for i, tr in enumerate(mods.get("evidence", {}).get("time_resolutions", [])):
+        base = f"{sid}/evidence.time_resolutions[{i}]"
+        resolved = tr.get("resolved") or {}
+        comp = resolved.get("computation") or {}
+        if comp.get("mode") == "USER_OVERRIDE":
+            if tr.get("status") != "OK":
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires status=OK "
+                    f"(got {tr.get('status')!r})")
+            if resolved.get("verification") != "AGREED":
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires "
+                    f"resolved.verification=AGREED (got {resolved.get('verification')!r})")
+            if resolved.get("user_corrected") is not True:
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires "
+                    f"resolved.user_corrected=true")
+            sel_ref = (tr.get("provenance") or {}).get("selected_input_ref") or {}
+            if sel_ref.get("kind") != "correction_record":
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires "
+                    f"provenance.selected_input_ref.kind=correction_record (got {sel_ref.get('kind')!r})")
+            selected = [c for c in tr.get("considered", []) if c.get("used")]
+            if not selected or any(c.get("input_kind") != "USER_INPUT" for c in selected):
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires the used "
+                    f"considered[] entry to have input_kind=USER_INPUT")
+            elif any(c.get("verification") != "AGREED" for c in selected):
+                err(f"[INVARIANT] {base}: computation.mode=USER_OVERRIDE requires the used "
+                    f"considered[] entry to have verification=AGREED")
+
+    # EvidenceRecord.situation_response invariants 16~18 (evidence-record/v1.3 §10)
+    for i, rec in enumerate(mods.get("evidence", {}).get("evidence_records", [])):
+        sit = rec.get("situation_response")
+        if sit is None:
+            continue
+        base = f"{sid}/evidence.evidence_records[{i}].situation_response"
+        value = sit.get("value")
+        if value in ("CONFIRMED", "CORRECTED") and sit.get("candidate_ref") is None:
+            err(f"[INVARIANT] {base}: value={value!r} requires non-null candidate_ref (invariant 16)")
+        if value == "CORRECTED":
+            refs = (rec.get("provenance") or {}).get("correction_refs", [])
+            case_doc_for_scenario = mods.get("case", {})
+            corr_kinds = {c.get("correction_id"): c.get("kind")
+                          for c in case_doc_for_scenario.get("correction_records", [])}
+            if not any(corr_kinds.get(r.get("ref")) == "SITUATION_CHANGE" for r in refs):
+                err(f"[INVARIANT] {base}: value=CORRECTED requires a provenance.correction_refs entry "
+                    f"resolving to a CorrectionRecord with kind=SITUATION_CHANGE (invariant 17)")
+
+    # CaseView.evidence.review_needed / reason_code 파생 규칙 (contract-job-record-case-view.md B§7)
+    for i, cv in enumerate(mods.get("case", {}).get("case_views", [])):
+        ev = cv.get("evidence")
+        if not ev:
+            continue
+        base = f"{sid}/case.case_views[{i}].evidence"
+        causes = [f for f in SIX_DISPLAY_FIELDS
+                  if (ev.get(f) or {}).get("needs_review")
+                  or (ev.get(f) or {}).get("info_state") == "INFO_NEEDS_REVIEW"]
+        expected_review_needed = len(causes) > 0
+        if ev.get("review_needed") != expected_review_needed:
+            err(f"[INVARIANT] {base}.review_needed={ev.get('review_needed')!r} but derives to "
+                f"{expected_review_needed!r} from six-display OR (causes={causes})")
+        if expected_review_needed:
+            if len(causes) == 1:
+                expected_reason = f"evidence.{causes[0].split('_display')[0]}_needs_review"
+                if ev.get("reason_code") != expected_reason:
+                    err(f"[INVARIANT] {base}.reason_code={ev.get('reason_code')!r} but exactly one "
+                        f"cause ({causes[0]}) implies {expected_reason!r}")
+            else:
+                if ev.get("reason_code") != "evidence.multiple_fields_need_review":
+                    err(f"[INVARIANT] {base}.reason_code={ev.get('reason_code')!r} but {len(causes)} "
+                        f"causes ({causes}) imply 'evidence.multiple_fields_need_review'")
+        elif ev.get("reason_code") is not None:
+            err(f"[INVARIANT] {base}.reason_code={ev.get('reason_code')!r} must be null when "
+                f"review_needed=false")
+
+    # correction selection_rev ↔ candidate 선택 context 정합 (이슈 #39 Required-3/contract-correction-record.md
+    # §4 「selection_rev는 수정 발생 시점의 candidate 선택 context」) — case가 소유한 CorrectionRecord와
+    # 그것을 참조하는 evidence의 EvidenceRecord는 correction 발생 시점 기준 같은 selection_rev를 공유해야
+    # 한다. 이후 실제 후보 재선택이 일어나 selection_rev가 다시 올라간 EvidenceRecord가 있다면 그 최신
+    # record는 이 correction을 더는 basis로 삼지 않아야 하므로, 이 검사는 「해당 CorrectionRecord를
+    # correction_refs로 참조하는 모든 EvidenceRecord」에 대해서만 일치를 요구한다.
+    corr_by_id = {c.get("correction_id"): c for c in mods.get("case", {}).get("correction_records", [])}
+    for i, rec in enumerate(mods.get("evidence", {}).get("evidence_records", [])):
+        refs = (rec.get("provenance") or {}).get("correction_refs", [])
+        for r in refs:
+            corr = corr_by_id.get(r.get("ref"))
+            if corr is not None and corr.get("selection_rev") != rec.get("selection_rev"):
+                err(f"[INVARIANT] {sid}/evidence.evidence_records[{i}]: selection_rev="
+                    f"{rec.get('selection_rev')!r} but referenced CorrectionRecord "
+                    f"'{r.get('ref')}'.selection_rev={corr.get('selection_rev')!r} — selection_rev는 "
+                    f"수정 발생 시점의 candidate 선택 context이므로 이 둘은 일치해야 한다")
 
 # ---- 9. plate consensus / masking consistency -------------------------------
 

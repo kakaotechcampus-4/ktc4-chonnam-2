@@ -181,7 +181,7 @@
         "user_edited": false,
         "preview_ref": "fr_u001_plate1",
         "review_needed": true,
-        "reason_code": "evidence.event_time_needs_review"
+        "reason_code": "evidence.multiple_fields_need_review"
       },
       "requirements_evidence": {
         "readiness": "WARN",
@@ -389,7 +389,7 @@
         "user_edited": false,
         "preview_ref": "fr_u001_plate1",
         "review_needed": true,
-        "reason_code": "evidence.event_time_needs_review"
+        "reason_code": "evidence.multiple_fields_need_review"
       },
       "requirements_evidence": {
         "readiness": "WARN",

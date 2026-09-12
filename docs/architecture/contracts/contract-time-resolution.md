@@ -311,6 +311,18 @@ conflict.requires_user_notice
 9. USER_INPUT 기반 resolved는 case의 `CorrectionRecord`까지 추적 가능해야 한다.
 10. TimeResolution에는 numeric final confidence를 두지 않는다.
 11. 사후 각인 여부와 실제 Report Video 생성 완료 여부를 동일 상태로 사용하지 않는다.
+12. **`computation.mode=USER_OVERRIDE`는 다음 단방향 체인을 강제한다(2026-09-11 확정 · 이슈 #39 A-1, Decider 김준영 `evidence` · 확인 유소연 `case`).** 역방향(“`resolved.verification=AGREED`이면 반드시 `computation.mode=USER_OVERRIDE`”)은 아직 확정하지 않은 open topic이며, 이 조항은 정방향만 강제한다.
+
+    ```
+    computation.mode = USER_OVERRIDE
+      ⇒ status = OK
+      ⇒ resolved.verification = AGREED
+      ⇒ resolved.user_corrected = true
+      ⇒ provenance.selected_input_ref.kind = correction_record
+      ⇒ 선택된 considered[].input_kind = USER_INPUT
+      ⇒ 그 considered[] 항목의 verification = AGREED
+      ⇒ 참조된 CorrectionRecord.kind = EVENT_TIME_MANUAL
+    ```
 
 ---
 
