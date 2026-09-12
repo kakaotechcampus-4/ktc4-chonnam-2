@@ -22,7 +22,7 @@
 
 - `docs/architecture/module-architecture.md` v4
 - `docs/management/ownership.md` (R&R)
-- `docs/architecture/contracts/*.md` — Final Data Contract 14건 + Draft 1건(`contract-correction-record.md`)
+- `docs/architecture/contracts/*.md` — Final Data Contract 15건. ~~14건 + Draft 1건(`contract-correction-record.md`)~~ **(2026-09-10 갱신)** `contract-correction-record.md`는 evidence Consumer Review(`docs/modules/evidence/contracts/correction-record-consumer-review-2026-09-10.md`)를 거쳐 v1.1로 Final이 됐다.
 - 관련 ADR (`docs/architecture/adr/*.md`), 특히 `adr-data-contract-call-closure-2026-09-07.md` · `-08.md`
 
 계약이 서로 충돌하거나 불명확한 지점을 발견해도 **이 Mock 생성 작업 중에는 그 설계 문제를 직접 고치지 않는다.** 발견한 것은 전부 `04_mock_validation_report.md`의 「발견한 문제」 절에 보고했다.
@@ -38,14 +38,16 @@
 | 5 | `VisualEvidence` | search | evidence·eval | 후보에 대한 시각적 관찰 근거 | #3·#4 |
 | 6 | `PlateReadout` / `OverlayTimeReadout` | readout | case(direct)→evidence(projection)·eval | 번호판·화면 시각 관찰값, abstain 근거 | #3·#4 |
 | 7 | `ReadoutRun` | readout | case·eval | 판독 실행 1회의 성공/부분/실패 기록 | #6 |
-| 8 | `TimeResolution` | evidence | case(direct)·web(projection) | 사건 발생시각 최종 확정과 충돌 provenance | #2·#6·(Draft)`CorrectionRecord` |
+| 8 | `TimeResolution` | evidence | case(direct)·web(projection) | 사건 발생시각 최종 확정과 충돌 provenance | #2·#6·`CorrectionRecord`(아래, 2026-09-10부터 Final) |
 | 9 | `EvidenceRecord` / `EvidenceNeeds` | evidence | case(direct)·web(projection) | confirmed value snapshot + 보강 필요 declarative value | #4·#5·#6·#8 |
 | 10 | `RequirementReport` / `ReportPackage` | evidence | case(direct)·web(projection) | 신고요건 판정, 신고용 handoff bundle | #1·#9 |
 | 11 | `JobRecord` (Job Intent) | case | common/runtime·eval·web(간접) | 발주된 작업 1건, append-only | #4·#6·#9 |
 | 12 | `CaseView` | case | web·eval(간접) | web이 읽는 유일한 통합 상태, safe projection | #1~#11 전체 |
 | 13 | `JobExecution` | common/runtime | case·web(projection)·eval | Job 1건의 실행 상태 1회분 | #11 |
 | 14 | `UsageRecord` | common/runtime | case·eval·search·readout | 외부 유료 호출 1건의 사용량/비용 원장 | #4·#7·#13 |
-| (Draft) | `CorrectionRecord` | case | evidence(TimeResolution 근거) | 사용자 정정 기록 — **아직 Draft**, 이 Mock Pack은 opaque ref로만 참조 | — |
+| 15 | `CorrectionRecord` | case | evidence(TimeResolution 근거) | 사용자 정정 기록 | — |
+
+~~(Draft) `CorrectionRecord` — 아직 Draft, 이 Mock Pack은 opaque ref로만 참조~~ **(2026-09-10 갱신, 이슈 #39 Required-2)** `correction-record/v1.1`로 Final이 됐고, contract owner이자 runtime producer가 모두 case이므로 fixture 객체는 case의 `correction_records[]`에 정식 스키마로 존재한다. evidence는 `evidence_records[].provenance.correction_refs`로만 ContractRef 참조한다.
 
 데이터 흐름은 대략 `recording → search → readout → evidence → case → web` 순서로 쌓이며, `common/runtime`(`JobExecution`·`UsageRecord`)이 `case`가 발주한 작업의 실행 계층을 옆에서 채운다.
 
@@ -58,17 +60,17 @@ recording  ──▶  search  ──▶  readout  ──▶  evidence  ──▶
 
 ## 4. Contract Consistency Check 결과
 
-전체 14 Final Contract + 1 Draft를 다시 읽고 이름·enum·unit·nullable·ID 참조·UNKNOWN/FAILURE/ABSTAIN 의미 축을 교차 검사했다. 발견한 항목은 전부 `04_mock_validation_report.md`에 있다. 요약:
+~~전체 14 Final Contract + 1 Draft를~~ **(2026-09-10 갱신) 전체 15 Final Contract를** 다시 읽고 이름·enum·unit·nullable·ID 참조·UNKNOWN/FAILURE/ABSTAIN 의미 축을 교차 검사했다. 발견한 항목은 전부 `04_mock_validation_report.md`에 있다. 요약:
 
 **Mock 생성 진행 가능** — 치명적 충돌(다른 계약이 서로 값을 부정하는 경우)은 없었다. 다만 진행 가능 판단과 별개로 아래 7건은 이 문서와 검증 리포트에 명시적으로 보고한다(고치지 않았다). 이후 심층 검토에서 추가로 발견한 항목은 `05_mock_deep_review_report.md` §8에 있다:
 
 1. `contract-visual-evidence.md`의 JSON 예시가 `frame:incident-17@6400` 같은 위치 인코딩 문자열을 그대로 쓰고 있어 이후 확정된 opaque `FrameRef`(`fr_<opaque-id>`) 관례와 형식이 다르다.
 2. `JobRecord.kind`에 Report Video export / `purge_case()` 발주용 값이 아직 등재되지 않았다.
-3. `TimeResolution.resolved.verification`(`AGREED/VERIFIED/UNVERIFIED`) 중 어떤 값이 `computation.mode=USER_OVERRIDE`(사용자 정정)와 짝을 이루는지 계약이 명시하지 않는다.
+3. ~~`TimeResolution.resolved.verification`(`AGREED/VERIFIED/UNVERIFIED`) 중 어떤 값이 `computation.mode=USER_OVERRIDE`(사용자 정정)와 짝을 이루는지 계약이 명시하지 않는다.~~ → **종결 (2026-09-11, 이슈 #39 A-1, Decider 김준영 `evidence` · 확인 유소연 `case`).** `computation.mode=USER_OVERRIDE ⇒ status=OK ⇒ resolved.verification=AGREED`인 단방향 체인을 `contract-time-resolution.md` §13 invariant 12로 확정했다. 역방향(AGREED이면 반드시 USER_OVERRIDE)은 아직 open topic이다.
 4. `EvidenceRecord`의 「사용자 원본 입력(한 번도 AI 추정을 거치지 않은 값)」에 대해 `source.observability`(OBSERVED/INFERRED)와 `user_corrected`를 어떻게 매기는지 계약이 명시하지 않는다.
 5. `CaseView.evidence.review_needed`(object-level)가 개별 `*_display.needs_review`/`info_state`와 어떤 파생 규칙으로 연결되는지 계약이 명시하지 않는다.
 6. `EvidenceRecord.event.safety_report_type`의 실제 값 공간(안전신문고 신고유형 enum/코드 목록)이 어느 Final Contract에도 등재돼 있지 않다.
-7. `contract-correction-record.md`가 아직 Draft라서, `TimeResolution`/`EvidenceRecord`가 구조적으로 참조하는 `CorrectionRecord`의 필드 스키마를 이 Mock Pack이 생성할 수 없다.
+7. ~~`contract-correction-record.md`가 아직 Draft라서, `TimeResolution`/`EvidenceRecord`가 구조적으로 참조하는 `CorrectionRecord`의 필드 스키마를 이 Mock Pack이 생성할 수 없다.~~ → **종결 (2026-09-10, evidence Consumer Review 완료 · 2026-09-11 Required-2 fixture 반영).** `correction-record/v1.1`이 Final이 됐고 case fixture(`correction_records[]`)에 정식 필드 스키마로 존재한다.
 
 ## 5. 전체 구성
 
@@ -126,7 +128,7 @@ scripts/
 - 같은 Scenario에 속한 모든 모듈의 artifact는 **같은 opaque ID**로 서로를 참조한다(`validate_mock_pack.py`가 기계적으로 검사한다).
 - ID는 사람이 읽을 수 있는 접두어(`sa_`·`ms_`·`fr_`·`tl_`·`tsc_`·`candidate_`·`ve_`·`readout_`·`rr_`·`tres_`·`ev_`·`req_`·`pkg_`·`job_`·`exec_`·`usage_`·`case_`)를 쓰되 **위치를 ID에 인코딩하지 않는다**(팀 기존 원칙).
 - Mock은 **완전히 결정론적**이다 — 난수·현재 시각·외부 API 호출이 전혀 없다.
-- **정의 객체가 없는 opaque ref가 몇 개 있다** — `crop_ref`(`crop_h001_001` 등)·`track_ref`(`track_h001`)는 `readout` 내부 식별자이고, `profile_ref`·`transform_ref`·`template_ref`·`policy_ref`·`pricing_id`는 각 계약이 opaque로 규정한 값이다. 이들을 가리키는 별도 fixture 객체는 없으며 찾을 필요도 없다(검증 스크립트도 참조 해석 대상에서 제외한다). `external_source`(`ext_*`)와 `correction_record`(`cr_*`)도 같은 이유로 제외 — 전자는 계약 집합 밖의 업로드 원본이고, 후자는 아직 Draft다.
+- **정의 객체가 없는 opaque ref가 몇 개 있다** — `crop_ref`(`crop_h001_001` 등)·`track_ref`(`track_h001`)는 `readout` 내부 식별자이고, `profile_ref`·`transform_ref`·`template_ref`·`policy_ref`·`pricing_id`는 각 계약이 opaque로 규정한 값이다. 이들을 가리키는 별도 fixture 객체는 없으며 찾을 필요도 없다(검증 스크립트도 참조 해석 대상에서 제외한다). `external_source`(`ext_*`)는 같은 이유로 제외 — 계약 집합 밖의 업로드 원본이다. ~~`correction_record`(`cr_*`)도 같은 이유로 제외 — 아직 Draft다.~~ **(2026-09-10 갱신)** `correction-record/v1.1`이 Final이 되면서 `correction_record`는 정의 객체가 있는 정식 참조로 바뀌었다 — case의 `correction_records[]`가 그 객체이고, 검증 스크립트도 이제 참조 해석 대상에 포함한다(`data/mock/validate_mock_pack.py`).
 - `null` / `[]`(빈 배열) / `UNKNOWN` / `ABSTAIN` / `FAILED` / `NOT_RUN`(레코드 자체 부재)은 서로 다른 의미이며 절대 하나로 합치지 않았다. 예: `scenario_correction_rerun_001`은 `OverlayTimeReadout`을 아예 시도하지 않아 `readout_runs`에 overlay 항목이 없다(`FAILED`가 아니라 `NOT_RUN`).
 - Mock Runtime Output(각 모듈 fixture)과 Eval Ground Truth(`expected/`)는 완전히 분리했다. Search 후보 A/B/C 자체가 정답이 아니다.
 

@@ -38,6 +38,27 @@
       "frame_ref": "fr_x001_plate1",
       "media_stream_ref": "ms_x001_front_v",
       "source_offset_sec": 610.2
+    },
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_x001_overlay_r1",
+      "media_stream_ref": "ms_x001_front_v",
+      "source_offset_sec": 602.0
+    },
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_x001_overlay_r2",
+      "media_stream_ref": "ms_x001_front_v",
+      "source_offset_sec": 605.0
+    },
+    {
+      "contract": "FrameRef",
+      "contract_version": "source-asset-media-stream/v1",
+      "frame_ref": "fr_x001_overlay_r3",
+      "media_stream_ref": "ms_x001_front_v",
+      "source_offset_sec": 608.0
     }
   ],
   "recording_timelines": [

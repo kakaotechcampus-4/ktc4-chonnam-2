@@ -25,6 +25,30 @@
       "input_fingerprint": "sha1:x001-overlay-read-clip_x001",
       "force_rerun": false,
       "requested_at": "2026-08-30T09:11:00+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_x001_plate_reread",
+      "case_id": "case_x001",
+      "case_rev": 3,
+      "kind": "PLATE_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:x001-plate-read-clip_x001-v2",
+      "force_rerun": true,
+      "requested_at": "2026-08-30T09:14:00+09:00"
+    },
+    {
+      "contract": "JobRecord",
+      "contract_version": "job-record/v1",
+      "job_id": "job_x001_overlay_reread",
+      "case_id": "case_x001",
+      "case_rev": 4,
+      "kind": "OVERLAY_TIME_READ",
+      "scope_ref": null,
+      "input_fingerprint": "sha1:x001-overlay-read-clip_x001-v2",
+      "force_rerun": true,
+      "requested_at": "2026-08-30T09:15:00+09:00"
     }
   ],
   "case_views": [
@@ -188,6 +212,172 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.overlay_presence_undetermined",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.3",
+      "case_id": "case_x001",
+      "case_rev": 3,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": [
+          "2026-08-30T09:00:00+09:00",
+          "2026-08-30T09:20:00+09:00"
+        ]
+      },
+      "hints": {
+        "time": "아침 9시쯤",
+        "vehicle": "파란색 SUV",
+        "situation": "중앙선을 넘어오는 걸 봤어요",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "PARTIAL"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_x001",
+          "at": "2026-08-30T09:10:10+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "파란색 SUV가 중앙선을 넘어 반대 차로로 진입하는 장면",
+          "thumb_ref": "fr_x001_plate1",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "case.plate_read_cancelled",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.plate_read_cancelled",
+          "actions": [
+            "RETRY_PLATE_READ"
+          ]
+        },
+        {
+          "code": "readout.overlay_presence_undetermined",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_presence_undetermined",
+          "actions": []
+        }
+      ]
+    },
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.3",
+      "case_id": "case_x001",
+      "case_rev": 4,
+      "stage": "EVIDENCE_REVIEW",
+      "user_reviewed": false,
+      "manifest_summary": {
+        "file_count": 1,
+        "ok_file_count": 1,
+        "failed_file_count": 0,
+        "duration_sec": 1200.0,
+        "range": [
+          "2026-08-30T09:00:00+09:00",
+          "2026-08-30T09:20:00+09:00"
+        ]
+      },
+      "hints": {
+        "time": "아침 9시쯤",
+        "vehicle": "파란색 SUV",
+        "situation": "중앙선을 넘어오는 걸 봤어요",
+        "location": null
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "PARTIAL"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_x001",
+          "at": "2026-08-30T09:10:10+09:00",
+          "at_provenance": "recording.filename_time",
+          "observed": "파란색 SUV가 중앙선을 넘어 반대 차로로 진입하는 장면",
+          "thumb_ref": "fr_x001_plate1",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": [
+        {
+          "code": "case.plate_read_cancelled",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.plate_read_cancelled",
+          "actions": [
+            "RETRY_PLATE_READ"
+          ]
+        },
+        {
+          "code": "readout.overlay_ocr_failed",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.overlay_ocr_failed",
           "actions": []
         }
       ]
