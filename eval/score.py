@@ -11,7 +11,7 @@ import os
 import sys
 
 from eval import manifests_io, paths
-from eval.scorers import candidate, classification, plate
+from eval.scorers import candidate, classification, cost, plate
 
 
 def _load_prediction(run_id):
@@ -57,6 +57,11 @@ def build_result(env):
         "candidate": None,
         "classification": None,
         "plate": None,
+        "cost": cost.score(
+            (env.get("facts") or {}).get("usage_records", []),
+            env["meta"].get("processed_duration_sec"),
+            (env.get("facts") or {}).get("scenarios", []),
+        ),
     }
     if stage == "candidate":
         result["candidate"] = candidate.score(norm, gt)
