@@ -56,6 +56,19 @@ def test_confidently_reading_an_unreadable_plate_is_a_wrong_accept():
     assert out["abstention_recall"] == 0.0
 
 
+def test_prediction_with_unknown_readout_id_is_skipped_not_scored():
+    """GT 에 없는 readout_id 로 온 예측은 채점 대상에서 조용히 빠져야 한다.
+
+    KeyError 없이 건너뛰고, n 과 지표는 GT 와 매칭된 예측만 반영한다.
+    """
+    out = plate.score(
+        [_pred("r1", "12가3456", False), _pred("unknown", "99하9999", False)],
+        _gt(_truth("r1", "READABLE", "12가3456")),
+    )
+    assert out["n"] == 1
+    assert out["exact_accuracy"] == 1.0
+
+
 def test_no_gt_returns_null_not_zero():
     """데이터가 없는 것과 성능이 나쁜 것은 다른 사실이다."""
     out = plate.score([_pred("r1", "x", False)], None)

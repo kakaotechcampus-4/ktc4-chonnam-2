@@ -48,11 +48,14 @@ def test_plate_without_gt_reports_null_not_zero():
     assert "NO_PLATE_GT" in r["coverage"]
 
 
-def test_plate_with_gt_but_no_matching_predictions_scores_nothing():
+def test_plate_with_no_predictions_at_all_reports_null_not_zero():
     # v1은 plate GT가 없어 이 함수가 gt를 통째로 무시했었다. 지금은 GT를
     # 실제로 쓰므로(F6 해소), gt 형식은 새 계약(readout_id/legibility)을
-    # 따르되 매칭되는 예측이 없으면 채점 대상 0건을 null + 사유로 정직하게
-    # 보고해야 한다.
+    # 따르되 예측이 아예 하나도 없으면(normalized=[]) 채점 대상 0건을
+    # null + 사유로 정직하게 보고해야 한다. 예측이 비어 있으므로
+    # `for pred in normalized` 본문 자체가 돌지 않는다 — GT 에 없는
+    # readout_id 를 건너뛰는 경로는 test_scorer_plate.py 쪽에서 별도로
+    # 검증한다.
     gt = {"meta": {"gt_version": "g1"},
           "items": [{"readout_id": "r1", "legibility": "READABLE",
                      "true_text": "12가3456"}]}
