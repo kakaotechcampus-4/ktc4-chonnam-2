@@ -1,22 +1,24 @@
 {
   "meta": {
-    "gt_version": "mp0",
+    "gt_version": "mp1",
     "tier": "MOCK",
     "stage": "candidate",
+    "clip_id_convention": "mock tier 는 scenario_id 를 clip_id 로 쓴다. 시나리오당 recording_timeline 이 하나라 1:1 이 성립한다. B tier 는 clip_id 가 실재하므로 같은 scorer 를 타더라도 의미가 다르다.",
     "coverage": {
-      "scenario_id": "scenario_happy_001",
-      "clips_total": 1,
-      "clips_with_events": 1,
+      "clips_total": 7,
+      "clips_with_events": 5,
+      "negative_clips": 1,
+      "not_applicable_clips": 1,
       "derived_from_mock_pack": true,
       "independent_ground_truth": false,
       "purpose": "팀 목데이터가 eval 파이프라인(run -> normalize -> score)을 끝까지 통과하는지 확인한다. 예측이 맞는지를 재는 정답지가 아니다.",
       "derived_from": [
-        "data/mock/expected/scenario_happy_001.expected.json (violation_type)",
-        "data/mock/search/candidate_events.happy_001.json (span)"
+        "data/mock/expected/ (eval-expected/v2 라벨)",
+        "data/mock/search/ (candidate span.representative_ms)"
       ],
-      "warning": "구간은 채점 대상인 예측과 같은 fixture 에서 왔다. 따라서 span_error 와 recall 은 순환적이며 성능 근거가 될 수 없다. 지표가 맞다는 증거는 b_youtube(55클립)·a_aihub(120시퀀스)에서 가짜 구현 2종의 점수 대비로 나온다.",
+      "warning": "onset 은 채점 대상인 예측과 같은 fixture(span.representative_ms)에서 왔다. 따라서 onset_error 와 recall 은 순환적이며 성능 근거가 될 수 없다. 지표가 맞다는 증거는 b_youtube(55클립)·a_aihub(120시퀀스)에서 가짜 구현 2종의 점수 대비로 나온다.",
       "reviewed_by": "daewon",
-      "reviewed_at": "2026-09-07"
+      "reviewed_at": "2026-09-13"
     }
   },
   "items": [
@@ -24,14 +26,51 @@
       "clip_id": "scenario_happy_001",
       "source_video_id": "tl_h001",
       "targets": [
-        {
-          "event_id": "EV_MP_1",
-          "scoring": "INCLUDED",
-          "violation_type": "SOLID_LINE_LANE_CHANGE",
-          "t_start_sec": 690.0,
-          "t_end_sec": 708.0,
-          "t_onset_sec": 698.0
-        }
+        { "event_id": "EV_MP_H001", "scoring": "INCLUDED",
+          "violation_type": "SOLID_LINE_LANE_CHANGE", "t_onset_sec": 312.48 }
+      ]
+    },
+    {
+      "clip_id": "scenario_empty_001",
+      "source_video_id": "tl_e001",
+      "targets": []
+    },
+    {
+      "clip_id": "scenario_plate_reread_001",
+      "source_video_id": "tl_p001",
+      "targets": [
+        { "event_id": "EV_MP_P001", "scoring": "INCLUDED",
+          "violation_type": "SIGNAL", "t_onset_sec": 612.0 }
+      ]
+    },
+    {
+      "clip_id": "scenario_correction_rerun_001",
+      "source_video_id": "tl_r001",
+      "targets": [
+        { "event_id": "EV_MP_R001", "scoring": "INCLUDED",
+          "violation_type": "MOTORCYCLE_HELMET_NON_USE", "t_onset_sec": 930.0 }
+      ]
+    },
+    {
+      "clip_id": "scenario_unknown_abstain_partial_001",
+      "source_video_id": "tl_u001",
+      "targets": [
+        { "event_id": "EV_MP_U001", "scoring": "EXCLUDED",
+          "violation_type": null, "t_onset_sec": 615.0 }
+      ]
+    },
+    {
+      "clip_id": "scenario_infra_failure_001",
+      "source_video_id": "tl_x001",
+      "targets": [],
+      "not_applicable": "search fixture 가 없다 — 후보 없음이 아니라 대상 아님이다"
+    },
+    {
+      "clip_id": "scenario_relative_rebase_001",
+      "source_video_id": "tl_rb001",
+      "targets": [
+        { "event_id": "EV_MP_RB001", "scoring": "INCLUDED",
+          "violation_type": "CENTER_LINE_CROSSING", "t_onset_sec": 512.0 }
       ]
     }
   ]

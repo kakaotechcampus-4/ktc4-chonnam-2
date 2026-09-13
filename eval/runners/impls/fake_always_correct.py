@@ -18,6 +18,8 @@ def _candidate(gt):
             {"rank": i + 1,
              "t_start_sec": t["t_start_sec"],
              "t_end_sec": t["t_end_sec"],
+             "representative_sec": t["t_onset_sec"],
+             "timeline_revision": t.get("timeline_revision"),
              "event_type": t["violation_type"],
              "score": 1.0 - i * 0.01}
             for i, t in enumerate(item["targets"])

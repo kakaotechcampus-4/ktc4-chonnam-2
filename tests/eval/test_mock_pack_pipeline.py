@@ -4,12 +4,13 @@ W4 의 목표는 "실제 기능이 없어도 공용 Mock 기준 E2E 가 끝까�
 Merge 가이드 §16 은 eval 에 "정상 Fixture 로 기대 Metric 이 나오는지"를 요구한다.
 숫자가 훌륭한지가 아니라 **나오는지**를 본다.
 
-입력은 남이 만든 것이다 — 서어진(search)의 candidate_events fixture 를 읽어
-내 registry → run → normalize → score → 결과 파일까지 태운다.
+입력은 남이 만든 것이다 — 서어진(search)의 계약 산출물을 읽어 내 registry
+→ run → normalize → score → 결과 파일까지 태운다.
 
-**여기서 나오는 숫자는 성능이 아니다.** 시나리오 1건이라 recall 은 0 아니면 1이고,
-negative clip 이 없어 fp_per_clip 은 null 이다. 지표가 맞다는 증거는 실제 데이터
-(B tier 55클립 · A tier 120시퀀스)에서 가짜 구현 2종의 대비로 나온다.
+**여기서 나오는 숫자는 성능이 아니다.** 정답지가 예측과 같은 fixture
+(span.representative_ms)에서 나왔으므로 recall·onset_error 는 순환적이다.
+지표가 맞다는 증거는 실제 데이터(B tier 55클립 · A tier 120시퀀스)에서
+가짜 구현 2종의 대비로 나온다.
 """
 import json
 import os
@@ -32,21 +33,53 @@ def test_mock_pack_impl_is_registered_without_the_fake_prefix():
                    for n in registry.names())
 
 
-def test_impl_reads_team_fixture_and_keeps_the_contract_span():
-    """impl 이 서어진의 fixture 를 읽고 계약의 구간을 살려 오는지 확인한다.
+def test_impl_reads_team_fixture_and_keeps_the_coarse_window():
+    """impl 이 서어진의 계약 산출물을 읽고 coarse 창을 살려 오는지 확인한다.
 
-    납작한 eval fixture(prediction_*.json)에는 구간이 없지만 계약 산출물인
-    candidate_events 에는 있다(690000~708000ms). 그래서 IoU 매칭이 성립한다.
+    span 은 「이 근처를 보라」는 창이지 사건의 외연이 아니다. 창은 보조
+    신호(containment)로만 쓰고 매칭은 representative_ms 로 한다.
     """
     impl = registry.get("mock_pack:contracts")
     raw = impl({"manifest": MANIFEST, "stage": "candidate"})
 
-    assert len(raw) == 1
-    item = raw[0]
-    assert item["clip_id"] == SCENARIO
-    c = item["candidates"][0]
-    assert c["t_start_sec"] == 690.0
-    assert c["t_end_sec"] == 708.0
+    happy = next(i for i in raw if i["clip_id"] == SCENARIO)
+    c = happy["candidates"][0]
+    assert c["t_start_sec"] == 300.0
+    assert c["t_end_sec"] == 420.0
+    assert c["t_start_sec"] <= c["representative_sec"] <= c["t_end_sec"]
+
+
+def test_impl_covers_every_scenario_that_has_a_search_fixture():
+    """search fixture 가 없는 시나리오는 「후보 없음」이 아니라 「대상 아님」이다.
+
+    둘을 뭉개면 infra_failure_001 이 음성 클립으로 분모에 들어가
+    fp_per_clip 이 조용히 희석된다.
+    """
+    impl = registry.get("mock_pack:contracts")
+    raw = impl({"manifest": MANIFEST, "stage": "candidate"})
+
+    clip_ids = {item["clip_id"] for item in raw}
+    assert "scenario_infra_failure_001" not in clip_ids
+    assert len(raw) == 6
+    # empty_001 은 fixture 가 있고 후보가 0건이다 — 이쪽은 진짜 음성이다
+    empty = next(i for i in raw if i["clip_id"] == "scenario_empty_001")
+    assert empty["candidates"] == []
+
+
+def test_impl_carries_representative_ms_for_point_error_matching():
+    """점 오차 매처가 쓸 값이 예측에 실려 오는지 본다.
+
+    계약의 span 은 coarse 후보 창이고 사건 외연이 아니다
+    (contract-analysis-run-candidate-event v1.1 §4-1). 매칭은
+    representative_ms 로 한다.
+    """
+    impl = registry.get("mock_pack:contracts")
+    raw = impl({"manifest": MANIFEST, "stage": "candidate"})
+
+    happy = next(i for i in raw if i["clip_id"] == "scenario_happy_001")
+    c = happy["candidates"][0]
+    assert c["representative_sec"] == 312.48
+    assert c["timeline_revision"] == 1
     assert c["event_type"] == "SOLID_LINE_LANE_CHANGE"
 
 
@@ -61,6 +94,21 @@ def test_gt_declares_that_it_is_derived_not_independent():
     assert cov["derived_from_mock_pack"] is True
     assert cov["independent_ground_truth"] is False
     assert cov["purpose"]  # 무엇을 확인하는 정답지인지 적혀 있다
+
+
+def test_gt_has_one_item_per_scenario_and_keeps_the_circularity_warning():
+    gt = manifests_io.load_gt(MANIFEST, "candidate")
+    cov = gt["meta"]["coverage"]
+
+    assert len(gt["items"]) == 7
+    assert cov["clips_total"] == 7
+    assert cov["clips_with_events"] == 5
+    assert cov["derived_from_mock_pack"] is True
+    assert cov["independent_ground_truth"] is False
+    assert "순환" in cov["warning"]
+    # 죽은 경로를 가리키지 않는다
+    for p in cov["derived_from"]:
+        assert os.path.exists(os.path.join(paths.REPO_ROOT, p.split(" ")[0])), p
 
 
 def test_pipeline_runs_end_to_end_and_writes_a_result(tmp_path, monkeypatch):
@@ -87,19 +135,38 @@ def test_pipeline_runs_end_to_end_and_writes_a_result(tmp_path, monkeypatch):
     assert result["meta"]["impl"] == "mock_pack:contracts"
 
     cand = result["candidate"]
-    # 맞힌 예측이므로 적중한다 — 표본 1건이라 0 아니면 1이다
+    # scenario_happy_001 은 맞힌 예측이므로 그 사건은 적중한다
     assert cand["recall_at"]["1"] == 1.0
-    assert cand["n_events"] == 1
-    # negative clip 이 없으므로 0.0 이 아니라 null 이어야 한다
-    assert cand["fp_per_clip"] is None
-    assert "NO_NEGATIVE_CLIPS" in cand["coverage"]
+
+
+def test_empty_scenario_makes_fp_per_clip_a_real_number(tmp_path, monkeypatch):
+    """empty_001 이 pack 최초 음성 케이스다.
+
+    fp_per_clip 이 null(NO_NEGATIVE_CLIPS)에서 처음으로 실제 값이 된다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", MANIFEST,
+                     "--stage", "candidate", "--run-id", "t_seven"]) == 0
+    assert score.main(["--prediction", "t_seven"]) == 0
+
+    gt = manifests_io.load_gt(MANIFEST, "candidate")
+    out = tmp_path / "results" / ("t_seven.%s.json" % gt["meta"]["gt_version"])
+    cand = json.loads(out.read_text(encoding="utf-8"))["candidate"]
+
+    assert cand["fp_per_clip"] == 0.0
+    assert cand["n_negative_clips"] == 1
+    assert cand["excluded_by_reason"] == {"EXCLUDED": 1}
 
 
 def test_result_keeps_provenance_of_the_team_fixture():
-    """결과에 어느 목데이터를 태운 것인지가 남는지 확인한다.
-
-    manifest 이름만으로는 어느 시나리오였는지 알 수 없다. 정답지 meta 가
-    시나리오를 적고 있어야 결과를 나중에 읽는 사람이 추적할 수 있다.
+    """결과를 나중에 읽는 사람이 어느 팀 산출물에서 유도됐는지 추적할 수
+    있는지 확인한다. 시나리오가 7개로 늘어 단일 scenario_id 는 의미가
+    없어졌고, 정답지 meta 의 derived_from 이 그 자리를 대신한다.
     """
     gt = manifests_io.load_gt(MANIFEST, "candidate")
-    assert gt["meta"]["coverage"]["scenario_id"] == SCENARIO
+    cov = gt["meta"]["coverage"]
+    assert cov["derived_from"]
+    for p in cov["derived_from"]:
+        assert os.path.exists(os.path.join(paths.REPO_ROOT, p.split(" ")[0])), p

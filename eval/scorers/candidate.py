@@ -30,6 +30,26 @@ def _iou(a_start, a_end, b_start, b_end):
     return inter / union
 
 
+# mock tier GT target 은 구간(t_start_sec/t_end_sec) 없이 onset 만 가진다
+# (GT target 모양: event_id·scoring·violation_type·t_onset_sec). 그런 GT 를
+# 상대할 때는 IoU 를 잴 구간이 없으므로 대표 시점 오차로 적중을 잰다. 이
+# tolerance 는 점 오차 매처(Task 4)가 정식 지표로 다듬기 전까지 쓰는 값이다.
+ONSET_TOLERANCE_SEC = 2.0
+
+
+def _hit(c, t, iou_threshold):
+    """예측 c 가 정답 t 에 적중하는지 잰다.
+
+    t 에 구간이 있으면(B/A tier) 기존대로 IoU 로 잰다. t 에 구간이 없으면
+    (mock tier, onset 만 있음) 예측의 representative_sec 가 GT onset 에서
+    ONSET_TOLERANCE_SEC 이내인지로 잰다.
+    """
+    if "t_start_sec" in t and "t_end_sec" in t:
+        return _iou(c["t_start_sec"], c["t_end_sec"],
+                     t["t_start_sec"], t["t_end_sec"]) >= iou_threshold
+    return abs(c["representative_sec"] - t["t_onset_sec"]) <= ONSET_TOLERANCE_SEC
+
+
 SCORING_VALUES = ("INCLUDED", "EXCLUDED", "BOUNDARY_EXCLUDED")
 
 
@@ -59,6 +79,10 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
     negative_clips = []
     excluded_by_reason = {}
     for item in gt["items"]:
+        if item.get("not_applicable"):
+            # 예측을 만들 입력 자체가 없었다. 음성(=후보를 냈어야 하는데
+            # 안 냈다)과 다르므로 fp_per_clip 의 분모에 넣지 않는다.
+            continue
         included, excluded = _partition(item["targets"], item["clip_id"])
         for reason, n in excluded.items():
             excluded_by_reason[reason] = excluded_by_reason.get(reason, 0) + n
@@ -83,9 +107,7 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
             topk = [c for c in cands if c["rank"] <= k]
             matched = next(
                 (c for c in topk
-                 if c["event_type"] == vt
-                 and _iou(c["t_start_sec"], c["t_end_sec"],
-                          t["t_start_sec"], t["t_end_sec"]) >= iou_threshold),
+                 if c["event_type"] == vt and _hit(c, t, iou_threshold)),
                 None,
             )
             if matched is not None:
@@ -94,8 +116,12 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
                 if k == loosest_k:
                     matched_at_loosest = matched
         # 적중한 예측만 span error에 반영한다 — 모듈 docstring의 정의 참고.
+        # GT 에 구간이 없으면(mock tier) 시작 시각 대신 onset 기준으로 잰다.
         if matched_at_loosest is not None:
-            span_errors.append(abs(matched_at_loosest["t_start_sec"] - t["t_start_sec"]))
+            if "t_start_sec" in t:
+                span_errors.append(abs(matched_at_loosest["t_start_sec"] - t["t_start_sec"]))
+            else:
+                span_errors.append(abs(matched_at_loosest["representative_sec"] - t["t_onset_sec"]))
 
     n_events = len(events)
     fp = 0

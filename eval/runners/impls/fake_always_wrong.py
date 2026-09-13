@@ -36,9 +36,13 @@ def _candidate(gt):
     for item in gt["items"]:
         if item["targets"]:
             cands = [
+                # 자기 창 [t_end+5, t_end+8] 안이면서 GT onset 에서 최소 6.5s 떨어진다.
+                # onset 은 [t_start, t_end] 안에 있으므로 tolerance 밖이 보장된다.
                 {"rank": i + 1,
                  "t_start_sec": float(t["t_end_sec"]) + 5.0,
                  "t_end_sec": float(t["t_end_sec"]) + 8.0,
+                 "representative_sec": float(t["t_end_sec"]) + 6.5,
+                 "timeline_revision": t.get("timeline_revision"),
                  "event_type": _other_type(t["violation_type"]),
                  "score": 0.5 - i * 0.01}
                 for i, t in enumerate(item["targets"])
@@ -46,6 +50,8 @@ def _candidate(gt):
         else:
             # negative 클립에 오탐을 심는다 — FP/clip 이 0 이 아니어야 한다.
             cands = [{"rank": 1, "t_start_sec": 1.0, "t_end_sec": 3.0,
+                      "representative_sec": 2.0,
+                      "timeline_revision": None,
                       "event_type": VIOLATION_TYPES[0], "score": 0.5}]
         out.append({"clip_id": item["clip_id"], "candidates": cands})
     return out

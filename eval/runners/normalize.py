@@ -42,6 +42,7 @@ def normalize_candidate(raw):
             _require_dict(c, cwhere)
             _require_field(c, "score", cwhere)
             _require_field(c, "event_type", cwhere)
+            _require_field(c, "representative_sec", cwhere)
         cands = sorted(candidates, key=lambda c: -c["score"])
         out.append({
             "clip_id": clip_id,
@@ -49,6 +50,8 @@ def normalize_candidate(raw):
                 {"rank": k + 1,
                  "t_start_sec": float(c["t_start_sec"]),
                  "t_end_sec": float(c["t_end_sec"]),
+                 "representative_sec": float(c["representative_sec"]),
+                 "timeline_revision": c.get("timeline_revision"),
                  "event_type": c["event_type"],
                  "score": float(c["score"])}
                 for k, c in enumerate(cands)
@@ -81,6 +84,10 @@ def from_candidate_events(raw):
     여기서 한 번만 흡수한다 — CONTRACT_CONFLICTS.md §4 가 기록했듯
     계약마다 이름이 갈리며 Mock Pack 은 일부러 통일하지 않았다.
 
+    span.start_ms/end_ms 는 coarse 후보 창이고 사건 외연이 아니다. 매칭에
+    쓰는 값은 representative_ms 이며(계약 v1.1 §4-1), 창은 containment
+    보조 신호로만 쓴다.
+
     **clip 단위로 묶지 않는다.** 계약은 timeline_id 와 밀리초 offset 으로
     위치를 말하고 B tier 정답지는 clip_id 로 말한다. 그 대응은 아직 어느
     계약도 정하지 않았으므로 여기서 지어내지 않고 원문 식별자를 그대로
@@ -99,33 +106,10 @@ def from_candidate_events(raw):
             "rank": _require_field(ev, "rank", where),
             "t_start_sec": _require_field(span, "start_ms", "%s.span" % where) / 1000.0,
             "t_end_sec": _require_field(span, "end_ms", "%s.span" % where) / 1000.0,
+            "representative_sec": _require_field(
+                span, "representative_ms", "%s.span" % where) / 1000.0,
+            "timeline_revision": span.get("timeline_revision"),
             "event_type": _require_field(ev, "event_type_hint", where),
             "score": _require_field(ev, "ranking_score", where),
         })
     return out
-
-
-def from_mock_pack(obj):
-    """Mock Pack v1 의 평평한 prediction 객체를 candidate normalized 로 옮긴다.
-
-    data/mock/eval/prediction_*.json 은 `case` Owner 의 산출물이며 형식을
-    바꾸라고 요구하지 않는다 (harness-v1-design.md §2-4). 여기서 읽기만 한다.
-    시나리오 1건이므로 clip_id 자리에 scenario_id 를 쓴다.
-
-    **주의: 이 뷰에는 구간이 없다.** Mock Pack 객체가 시각을 담지 않아
-    t_start_sec/t_end_sec 를 0.0 으로 채운다. 그래서 이 결과를
-    candidate.score 에 넣으면 IoU 기반 지표(Recall@K · span error)가
-    「측정했는데 0」처럼 보이지만 실제로는 잰 적이 없는 값이다. 접합 확인
-    용도로만 쓰고 지표를 내지 않는다.
-    """
-    p = obj["prediction"]
-    return [{
-        "clip_id": obj["scenario_id"],
-        "candidates": [{
-            "rank": int(p["rank"]),
-            "t_start_sec": 0.0,
-            "t_end_sec": 0.0,
-            "event_type": p["visual_event_type"],
-            "score": 1.0,
-        }],
-    }]
