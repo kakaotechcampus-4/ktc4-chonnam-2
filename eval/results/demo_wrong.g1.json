@@ -6,7 +6,7 @@
     "manifest": "b_youtube",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "9691360"
+    "code_commit": "74dbe34"
   },
   "candidate": {
     "recall_at": {
@@ -14,13 +14,18 @@
       "3": 0.0,
       "10": 0.0
     },
-    "span_error_sec": {
+    "onset_error_sec": {
       "mean": null,
-      "median": null
+      "median": null,
+      "tolerance_sec": 2.0
     },
+    "containment_rate": null,
     "fp_per_clip": 1.0,
     "n_events": 4,
     "n_negative_clips": 50,
+    "excluded_by_reason": {
+      "BOUNDARY_EXCLUDED": 1
+    },
     "by_type": {
       "SIGNAL": {
         "recall_at": {
@@ -39,7 +44,7 @@
         "n": 2
       }
     },
-    "coverage": "NO_MATCHED_EVENTS — span_error_sec 를 낼 수 없다; BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
+    "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
   },
   "classification": {
     "recall_macro": null,

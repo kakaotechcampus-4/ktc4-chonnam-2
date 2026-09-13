@@ -6,7 +6,7 @@
     "manifest": "b_youtube",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "9691360"
+    "code_commit": "74dbe34"
   },
   "candidate": {
     "recall_at": {
@@ -14,13 +14,18 @@
       "3": 1.0,
       "10": 1.0
     },
-    "span_error_sec": {
+    "onset_error_sec": {
       "mean": 0.0,
-      "median": 0.0
+      "median": 0.0,
+      "tolerance_sec": 2.0
     },
+    "containment_rate": 1.0,
     "fp_per_clip": 0.0,
     "n_events": 4,
     "n_negative_clips": 50,
+    "excluded_by_reason": {
+      "BOUNDARY_EXCLUDED": 1
+    },
     "by_type": {
       "SIGNAL": {
         "recall_at": {

@@ -10,6 +10,53 @@ def _run(impl_name):
     return normalize.normalize_candidate(raw)
 
 
+def _gt(onset, violation_type="SIGNAL"):
+    return {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E1", "scoring": "INCLUDED",
+         "violation_type": violation_type, "t_onset_sec": onset},
+    ]}]}
+
+
+def _pred(rep, start, end, event_type="SIGNAL", score=0.9):
+    return [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": start, "t_end_sec": end,
+         "representative_sec": rep, "timeline_revision": 1,
+         "event_type": event_type, "score": score},
+    ]}]
+
+
+def test_match_is_decided_by_onset_point_error_not_overlap():
+    """창이 넓어도 대표 시점이 멀면 적중이 아니다.
+
+    구 IoU 매처는 창이 넓을수록 유리해 「아무 데나 넓게 잡기」를 보상했다.
+    """
+    out = candidate.score(_pred(rep=500.0, start=0.0, end=1000.0), _gt(100.0))
+    assert out["recall_at"]["1"] == 0.0
+
+
+def test_match_succeeds_within_tolerance_even_if_window_is_narrow():
+    out = candidate.score(_pred(rep=101.5, start=101.0, end=102.0), _gt(100.0))
+    assert out["recall_at"]["1"] == 1.0
+    assert out["onset_error_sec"]["mean"] == pytest.approx(1.5)
+
+
+def test_containment_is_reported_separately_from_the_match():
+    """점 오차는 맞는데 창이 onset 을 안 품는 경우를 따로 본다.
+
+    coarse 창 생성이 의심스러운 신호이므로 매칭 성패와 섞지 않는다.
+    """
+    out = candidate.score(_pred(rep=100.5, start=100.4, end=100.6), _gt(100.0))
+    assert out["recall_at"]["1"] == 1.0
+    assert out["containment_rate"] == 0.0
+
+
+def test_span_error_sec_key_is_gone():
+    """이름이 구간 오차를 뜻하는 채로 점 오차를 담으면 반드시 오해된다."""
+    out = candidate.score(_pred(rep=100.0, start=90.0, end=110.0), _gt(100.0))
+    assert "span_error_sec" not in out
+    assert "onset_error_sec" in out
+
+
 def test_always_correct_gets_perfect_recall():
     gt = manifests_io.load_gt("b_youtube", "candidate")
     r = candidate.score(_run("fake:always_correct"), gt)
@@ -23,10 +70,10 @@ def test_always_wrong_gets_zero_recall_and_positive_fp():
     r = candidate.score(_run("fake:always_wrong"), gt)
     assert r["recall_at"]["3"] == 0.0
     assert r["fp_per_clip"] > 0.0
-    # 적중이 하나도 없으므로 span_error_sec 은 0 이 아니라 null 이어야 한다
+    # 적중이 하나도 없으므로 onset_error_sec 은 0 이 아니라 null 이어야 한다
     # (측정했는데 0인 것과 잴 수 없는 것을 구분한다).
-    assert r["span_error_sec"]["mean"] is None
-    assert r["span_error_sec"]["median"] is None
+    assert r["onset_error_sec"]["mean"] is None
+    assert r["onset_error_sec"]["median"] is None
 
 
 def test_boundary_excluded_targets_are_not_counted():
@@ -51,42 +98,56 @@ def test_by_type_breakdown_lists_only_present_types():
     assert r["by_type"]["SIGNAL"]["recall_at"]["1"] == 1.0
 
 
-def test_zero_span_predictions_report_null_span_error():
-    gt = {"meta": {"coverage": {}},
-          "items": [{"clip_id": "C0", "source_video_id": "V", "targets": [
-              {"event_id": "E", "violation_type": "SIGNAL", "t_start_sec": 1.0,
-               "t_end_sec": 2.0, "t_onset_sec": 1.5, "scoring": "INCLUDED"}]}]}
-    norm = [{"clip_id": "C0", "candidates": [
-        {"rank": 1, "t_start_sec": 0.0, "t_end_sec": 0.0,
-         "event_type": "SIGNAL", "score": 1.0}]}]
-    r = candidate.score(norm, gt)
-    assert r["span_error_sec"]["mean"] is None
+def test_far_representative_point_is_a_miss_even_with_the_right_type():
+    """구 test_wrong_span_right_type_is_a_miss 의 점 오차판.
 
-
-def test_wrong_span_right_type_is_a_miss():
-    # 유형은 맞지만 구간이 전혀 겹치지 않는 예측 — and 를 or 로 잘못 바꾸면
-    # 유형 일치만으로 적중 처리되어 이 테스트가 깨진다.
-    gt = {"meta": {"coverage": {}},
-          "items": [{"clip_id": "C0", "source_video_id": "V", "targets": [
-              {"event_id": "E", "violation_type": "SIGNAL", "t_start_sec": 1.0,
-               "t_end_sec": 2.0, "t_onset_sec": 1.5, "scoring": "INCLUDED"}]}]}
-    norm = [{"clip_id": "C0", "candidates": [
+    miss 를 만드는 것은 창이 아니라 대표 시점이다.
+    """
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E", "violation_type": "SIGNAL", "t_onset_sec": 1.5,
+         "scoring": "INCLUDED"}]}]}
+    normalized = [{"clip_id": "c1", "candidates": [
         {"rank": 1, "t_start_sec": 10.0, "t_end_sec": 12.0,
-         "event_type": "SIGNAL", "score": 1.0}]}]
-    r = candidate.score(norm, gt)
-    assert r["recall_at"]["3"] == 0.0
+         "representative_sec": 11.0, "timeline_revision": 1,
+         "event_type": "SIGNAL", "score": 0.9}]}]
+
+    r = candidate.score(normalized, gt)
+    assert r["recall_at"]["1"] == 0.0
+    assert r["onset_error_sec"]["mean"] is None
+
+
+def test_zero_length_prediction_is_not_special_under_point_error():
+    """구 test_zero_span_predictions_report_null_span_error 의 대체.
+
+    IoU 체계에서는 길이 0 예측이 0/0 나눗셈 위험이었다. 점 오차는 대표
+    시점만 보므로 길이 0 자체는 더 이상 문제가 아니다 — 대표 시점이
+    맞으면 적중이다.
+    """
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E", "violation_type": "SIGNAL", "t_onset_sec": 1.5,
+         "scoring": "INCLUDED"}]}]}
+    normalized = [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": 1.5, "t_end_sec": 1.5,
+         "representative_sec": 1.5, "timeline_revision": 1,
+         "event_type": "SIGNAL", "score": 0.9}]}]
+
+    r = candidate.score(normalized, gt)
+    assert r["recall_at"]["1"] == 1.0
+    assert r["onset_error_sec"]["mean"] == 0.0
+    assert r["containment_rate"] == 1.0
 
 
 def test_wrong_type_right_span_is_a_miss():
-    # 구간은 완전히 겹치지만 유형이 다른 예측 — and 를 or 로 잘못 바꾸면
-    # 구간 일치만으로 적중 처리되어 이 테스트가 깨진다.
+    # 구간·대표 시점은 완전히 맞지만 유형이 다른 예측 — and 를 or 로 잘못
+    # 바꾸면 시점 일치만으로 적중 처리되어 이 테스트가 깨진다.
     gt = {"meta": {"coverage": {}},
           "items": [{"clip_id": "C0", "source_video_id": "V", "targets": [
               {"event_id": "E", "violation_type": "SIGNAL", "t_start_sec": 1.0,
                "t_end_sec": 2.0, "t_onset_sec": 1.5, "scoring": "INCLUDED"}]}]}
     norm = [{"clip_id": "C0", "candidates": [
         {"rank": 1, "t_start_sec": 1.0, "t_end_sec": 2.0,
-         "event_type": "CENTER_LINE_CROSSING", "score": 1.0}]}]
+         "representative_sec": 1.5, "event_type": "CENTER_LINE_CROSSING",
+         "score": 1.0}]}]
     r = candidate.score(norm, gt)
     assert r["recall_at"]["3"] == 0.0
 
@@ -100,19 +161,14 @@ def test_correct_rank2_is_caught_by_recall_at_3_not_recall_at_1():
                "t_end_sec": 2.0, "t_onset_sec": 1.5, "scoring": "INCLUDED"}]}]}
     norm = [{"clip_id": "C0", "candidates": [
         {"rank": 1, "t_start_sec": 10.0, "t_end_sec": 12.0,
-         "event_type": "CENTER_LINE_CROSSING", "score": 1.0},
+         "representative_sec": 11.0, "event_type": "CENTER_LINE_CROSSING",
+         "score": 1.0},
         {"rank": 2, "t_start_sec": 1.0, "t_end_sec": 2.0,
-         "event_type": "SIGNAL", "score": 0.5},
+         "representative_sec": 1.5, "event_type": "SIGNAL", "score": 0.5},
     ]}]
     r = candidate.score(norm, gt)
     assert r["recall_at"]["1"] == 0.0
     assert r["recall_at"]["3"] == 1.0
-
-
-def test_iou_disjoint_identical_and_zero_length():
-    assert candidate._iou(0.0, 1.0, 5.0, 6.0) == 0.0
-    assert candidate._iou(1.0, 2.0, 1.0, 2.0) == 1.0
-    assert candidate._iou(0.0, 0.0, 0.0, 0.0) == 0.0
 
 
 def test_boundary_excluded_is_explained_in_coverage():

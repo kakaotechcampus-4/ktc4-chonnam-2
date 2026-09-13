@@ -14,13 +14,16 @@
       "3": null,
       "10": null
     },
-    "span_error_sec": {
+    "onset_error_sec": {
       "mean": null,
-      "median": null
+      "median": null,
+      "tolerance_sec": null
     },
+    "containment_rate": null,
     "fp_per_clip": null,
     "n_events": null,
     "n_negative_clips": null,
+    "excluded_by_reason": null,
     "by_type": null,
     "coverage": "NOT_RUN — stage=classification 실행이다"
   },

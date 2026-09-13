@@ -3,51 +3,24 @@
 지표 정의의 원문은 module-architecture.md §9-3 과
 modules/eval/initial-evaluation-plan.md §2 다. 여기서 새로 만들지 않는다.
 
-단, span_error_sec 는 두 문서 모두 이름만 있고 정의가 없어 여기서 정한다:
-recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상으로, GT
-시작 시각과의 절대 오차를 잰다. 표본 수는 예측 개수가 아니라 「적중한 사건
-수」다 — 매칭되지 않은 예측의 구간 오차는 무엇과 비교해야 할지 정의되지
-않으므로 넣지 않는다.
+단, onset_error_sec 는 두 문서 모두 이름만 있고 정의가 없어 여기서 정한다:
+recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상으로,
+예측의 대표 시점(representative_sec)과 GT onset 의 절대 오차를 잰다.
+표본 수는 예측 개수가 아니라 「적중한 사건 수」다 — 매칭되지 않은 예측의
+오차는 무엇과 비교해야 할지 정의되지 않으므로 넣지 않는다.
+
+2026-09-10 계약 v1.1 §4-1 이 span 을 coarse 후보 창으로 확정하면서 IoU
+매칭을 폐기했다. 창은 containment_rate 로만 남는다.
 """
 import statistics
 
-
-def _iou(a_start, a_end, b_start, b_end):
-    """두 구간의 IoU.
-
-    union<=0(두 구간이 모두 길이 0으로 겹치는 경우)이면 0.0을 반환해 0-나눗셈을
-    피한다. GT 쪽 구간은 t_start_sec < t_end_sec 불변식
-    (manifests_io.check_invariants)이 보장하므로 이 분기는 예측(a)이 길이 0일
-    때만 닿을 수 있다 — 그런 예측은 겹침(inter)이 항상 0이라 이 분기가 없어도
-    iou==0이 나오므로 실측 매칭에는 등장하지 않는다. 그래도 0/0을 1.0으로
-    "고쳐" 길이 0인 예측이 매칭에 성공한 것처럼 보이게 만들지 않도록 0.0을
-    명시적으로 유지한다.
-    """
-    inter = max(0.0, min(a_end, b_end) - max(a_start, b_start))
-    union = max(a_end, b_end) - min(a_start, b_start)
-    if union <= 0:
-        return 0.0
-    return inter / union
+SCORER_VERSION = "s2"   # 2026-09-13 IoU -> onset point error (계약 v1.1 §4-1)
+DEFAULT_TOLERANCE_SEC = 2.0
 
 
-# mock tier GT target 은 구간(t_start_sec/t_end_sec) 없이 onset 만 가진다
-# (GT target 모양: event_id·scoring·violation_type·t_onset_sec). 그런 GT 를
-# 상대할 때는 IoU 를 잴 구간이 없으므로 대표 시점 오차로 적중을 잰다. 이
-# tolerance 는 점 오차 매처(Task 4)가 정식 지표로 다듬기 전까지 쓰는 값이다.
-ONSET_TOLERANCE_SEC = 2.0
-
-
-def _hit(c, t, iou_threshold):
-    """예측 c 가 정답 t 에 적중하는지 잰다.
-
-    t 에 구간이 있으면(B/A tier) 기존대로 IoU 로 잰다. t 에 구간이 없으면
-    (mock tier, onset 만 있음) 예측의 representative_sec 가 GT onset 에서
-    ONSET_TOLERANCE_SEC 이내인지로 잰다.
-    """
-    if "t_start_sec" in t and "t_end_sec" in t:
-        return _iou(c["t_start_sec"], c["t_end_sec"],
-                     t["t_start_sec"], t["t_end_sec"]) >= iou_threshold
-    return abs(c["representative_sec"] - t["t_onset_sec"]) <= ONSET_TOLERANCE_SEC
+def _contains(c, onset_sec):
+    """coarse 창이 정답 시점을 품는가. 매칭 조건이 아니라 보조 신호다."""
+    return c["t_start_sec"] <= onset_sec <= c["t_end_sec"]
 
 
 SCORING_VALUES = ("INCLUDED", "EXCLUDED", "BOUNDARY_EXCLUDED")
@@ -77,7 +50,7 @@ def _partition(targets, where):
     return included, excluded
 
 
-def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
+def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
     by_clip = {n["clip_id"]: n["candidates"] for n in normalized}
 
     events = []          # (clip_id, target)
@@ -99,11 +72,13 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
 
     loosest_k = max(ks)
     hits = {k: 0 for k in ks}
-    span_errors = []
+    onset_errors = []
+    contained = []
     by_type = {}
 
     for clip_id, t in events:
         vt = t["violation_type"]
+        onset = t["t_onset_sec"]
         slot = by_type.setdefault(vt, {"hits": {k: 0 for k in ks}, "n": 0})
         slot["n"] += 1
         cands = by_clip.get(clip_id, [])
@@ -112,7 +87,8 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
             topk = [c for c in cands if c["rank"] <= k]
             matched = next(
                 (c for c in topk
-                 if c["event_type"] == vt and _hit(c, t, iou_threshold)),
+                 if c["event_type"] == vt
+                 and abs(c["representative_sec"] - onset) <= tolerance_sec),
                 None,
             )
             if matched is not None:
@@ -120,13 +96,9 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
                 slot["hits"][k] += 1
                 if k == loosest_k:
                     matched_at_loosest = matched
-        # 적중한 예측만 span error에 반영한다 — 모듈 docstring의 정의 참고.
-        # GT 에 구간이 없으면(mock tier) 시작 시각 대신 onset 기준으로 잰다.
         if matched_at_loosest is not None:
-            if "t_start_sec" in t:
-                span_errors.append(abs(matched_at_loosest["t_start_sec"] - t["t_start_sec"]))
-            else:
-                span_errors.append(abs(matched_at_loosest["representative_sec"] - t["t_onset_sec"]))
+            onset_errors.append(abs(matched_at_loosest["representative_sec"] - onset))
+            contained.append(_contains(matched_at_loosest, onset))
 
     n_events = len(events)
     fp = 0
@@ -138,8 +110,8 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
         reasons.append("NO_EVENTS — GT 에 채점할 사건이 없다")
     if not negative_clips:
         reasons.append("NO_NEGATIVE_CLIPS — fp_per_clip 을 낼 수 없다")
-    if n_events > 0 and not span_errors:
-        reasons.append("NO_MATCHED_EVENTS — span_error_sec 를 낼 수 없다")
+    if n_events > 0 and not onset_errors:
+        reasons.append("NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다")
     for reason, n in sorted(excluded_by_reason.items()):
         # 이걸 적지 않으면 결과의 n_events 와 GT 의 clips_with_events 가
         # 어긋난 이유를 결과 파일만 보고는 알 수 없다 (스펙 §5).
@@ -147,10 +119,12 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
 
     return {
         "recall_at": {str(k): (hits[k] / n_events if n_events else None) for k in ks},
-        "span_error_sec": {
-            "mean": statistics.fmean(span_errors) if span_errors else None,
-            "median": statistics.median(span_errors) if span_errors else None,
+        "onset_error_sec": {
+            "mean": statistics.fmean(onset_errors) if onset_errors else None,
+            "median": statistics.median(onset_errors) if onset_errors else None,
+            "tolerance_sec": tolerance_sec,
         },
+        "containment_rate": (sum(contained) / len(contained)) if contained else None,
         "fp_per_clip": (fp / len(negative_clips)) if negative_clips else None,
         "n_events": n_events,
         "n_negative_clips": len(negative_clips),
@@ -173,7 +147,8 @@ def not_run(reason, ks=(1, 3, 10)):
     """
     return {
         "recall_at": {str(k): None for k in ks},
-        "span_error_sec": {"mean": None, "median": None},
+        "onset_error_sec": {"mean": None, "median": None, "tolerance_sec": None},
+        "containment_rate": None,
         "fp_per_clip": None,
         "n_events": None,
         "n_negative_clips": None,

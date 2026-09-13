@@ -15,7 +15,7 @@ from eval.enums import CLASS_LABELS
 
 _LABEL_SET = set(CLASS_LABELS)
 
-# bbox 매치 판정 임계값. candidate.score 의 iou_threshold(시간 구간)와
+# bbox 매치 판정 임계값. candidate.score 의 시간 매칭(tolerance_sec)과
 # 별개다 — 여기는 2-D 공간 IoU.
 _TARGET_BBOX_IOU_THRESHOLD = 0.5
 
@@ -30,7 +30,7 @@ def _iou_2d(a, b):
 
     형태가 다르면(길이 4가 아니면) 매치 실패로 취급해 0.0 을 반환한다 —
     normalize.py 가 target_bbox 의 형태를 검증하지 않으므로 여기서 크래시
-    시키지 않는다. 교차 폭·높이는 candidate._iou 와 같은 이유로 0 미만을
+    시키지 않는다. 교차 폭·높이는 음수 겹침이 나오지 않도록 0 미만을
     0 으로 클램프한다. 합집합 넓이가 0 이하(두 bbox 모두 넓이 0)이면 0/0
     을 피하려고 0.0 을 반환한다 — 넓이 0인 bbox 가 매치된 것처럼 보이지
     않도록 명시적으로 유지한다.
