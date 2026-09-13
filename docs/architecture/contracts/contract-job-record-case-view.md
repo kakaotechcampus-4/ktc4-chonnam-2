@@ -260,6 +260,7 @@ json
 | `RETRY_PLATE_READ` | `kind=PLATE_READ` 신규 `job_id` 발주. `FAILED`는 cache hit 대상이 아니므로(A절 §7 캐시 재사용은 성공 결과에 한정) `force_rerun` 불필요 — 새 `job_id`만으로 재시도가 성립한다 |
 | `EDIT_HINT` | **신규(v1.3, 이슈 #31 W-1)**. web이 사용자로부터 새 검색 단서(시간대·사건 유형 등)를 입력받는다 — 새 Job 발주 없음, 다음 `RETRY_SEARCH`의 입력을 바꾸는 동작이다 |
 | `RETRY_SEARCH` | **신규(v1.3, 이슈 #31 W-1)**. `kind=COARSE_SEARCH` 신규 `job_id` 발주(바뀐 단서 기준). `candidates=[]`는 cache hit 대상이 아니므로 `force_rerun` 불필요 — 새 `job_id`만으로 재검색이 성립한다(`RETRY_PLATE_READ`와 같은 원칙) |
+| `RESUME_SEARCH`(`이어서 찾기`) | **신규(2026-09-13, ERD 리뷰 반영)**. `JobExecution.status=CANCELLED` 이후 조건 변경 없이 재개하는 경우도 `kind=COARSE_SEARCH` 신규 `job_id` 발주다 — 위 `RETRY_SEARCH`/`RETRY_PLATE_READ`와 같은 원칙(사용자의 새 Intent는 새 `job_id`, 같은 `job_id`+`attempt` 증가는 자동 인프라 재시도 전용). 이미 찾은 후보는 `CandidateEvent`가 case에 독립적으로 남아 있어 `job_id`를 나눠도 `CaseView.candidates[]`에서 사라지지 않는다. 상세 `docs/modules/case/decisions/job-resume-identity-policy.md`, `contract-job-execution.md`의 2026-09-13 명확화 노트 |
 
 **`info_state` 파생 규칙 — 확정 (B01 종결, 2026-09-07)**
 
