@@ -30,6 +30,19 @@
       ],
       "started_at": "2026-08-30T09:11:10+09:00",
       "ended_at": "2026-08-30T09:11:16+09:00"
+    },
+    {
+      "contract": "ReadoutRun",
+      "contract_version": "readout-run/v1",
+      "run_id": "rr_x001_overlay_reread",
+      "operation": "OVERLAY_TIME_READ",
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": [
+        "usage_x001_overlay_reread"
+      ],
+      "started_at": "2026-08-30T09:15:05+09:00",
+      "ended_at": "2026-08-30T09:15:11+09:00"
     }
   ],
   "plate_readouts": [],
@@ -76,6 +89,68 @@
         "sample_count": 0
       },
       "samples": []
+    },
+    {
+      "contract": "OverlayTimeReadout",
+      "contract_version": "overlay-time-readout/v1.2",
+      "readout_id": "readout_x001_overlay_reread",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_x001_overlay_reread"
+      },
+      "case_id": "case_x001",
+      "candidate_id": "candidate_x001",
+      "input_ref": {
+        "incident_clip_ref": "clip_x001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": null,
+        "status": "UNKNOWN",
+        "reason": {
+          "code": "readout.overlay.ocr_failed",
+          "note": "화면에 타임스탬프 오버레이가 보이고 OCR도 수행됐으나 결과 문자열이 시각 형식으로 파싱되지 않음 — presence_undetermined(오버레이 존재 여부 자체를 모름)와 다름"
+        },
+        "source": {
+          "kind": "readout.overlay_ocr"
+        },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": {
+            "kind": "readout_run",
+            "ref": "rr_x001_overlay_reread"
+          }
+        }
+      },
+      "validation": {
+        "format_ok": false,
+        "monotonic_ok": null,
+        "duration_match_ok": null,
+        "sample_count": 3
+      },
+      "samples": [
+        {
+          "frame_ref": "fr_x001_overlay_r1",
+          "offset_sec": 2.0,
+          "raw_text": "2O26-O8-3O O9:1?:1?",
+          "parsed_at": null
+        },
+        {
+          "frame_ref": "fr_x001_overlay_r2",
+          "offset_sec": 5.0,
+          "raw_text": "2O26-O8-3O O9:1?:1?",
+          "parsed_at": null
+        },
+        {
+          "frame_ref": "fr_x001_overlay_r3",
+          "offset_sec": 8.0,
+          "raw_text": "2O26-O8-3O O9:1?:2?",
+          "parsed_at": null
+        }
+      ]
     }
   ]
 }

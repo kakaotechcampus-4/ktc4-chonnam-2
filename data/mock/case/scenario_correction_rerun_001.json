@@ -103,6 +103,10 @@
         {
           "step": "requirement_check",
           "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -269,13 +273,17 @@
         {
           "step": "requirement_check",
           "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
         {
           "candidate_id": "candidate_r001",
-          "at": "2026-08-27T13:13:00+09:00",
-          "at_provenance": "case.user_correction",
+          "at": "2026-08-27T13:15:30+09:00",
+          "at_provenance": "recording.filename_time",
           "observed": "안전모를 착용하지 않은 운전자가 스쿠터를 운행하는 장면",
           "thumb_ref": "fr_r001_plate1",
           "selected": true,
@@ -383,6 +391,21 @@
           "actions": []
         }
       ]
+    }
+  ],
+  "correction_records": [
+    {
+      "contract": "CorrectionRecord",
+      "contract_version": "correction-record/v1.1",
+      "correction_id": "cr_r001_time",
+      "case_id": "case_r001",
+      "selection_rev": 1,
+      "kind": "EVENT_TIME_MANUAL",
+      "target_field": "occurred_at",
+      "previous_value": "2026-08-27T13:15:30+09:00",
+      "new_value": "2026-08-27T13:13:00+09:00",
+      "supersedes_ref": null,
+      "corrected_at": "2026-08-27T13:30:00+09:00"
     }
   ]
 }

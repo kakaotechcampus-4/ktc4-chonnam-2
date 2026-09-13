@@ -153,7 +153,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 
 `token_usage`를 `0`으로 채우지 않고 null로 둔다. 0은 「호출했는데 토큰을 안 썼다」는 뜻이고 null은 「토큰이라는 개념이 없다」는 뜻이다(`Observation` 계약의 known-empty vs UNKNOWN 구분과 같은 원칙).
 
-`run_ref`도 같은 원칙이다. 이 호출은 `ReadoutRun rr_001`에 속하므로 `{kind:"readout_run"}`을 채운다. **v1의 이 예시는 `run_ref: null`이었고 그것이 B05 지적의 실제 대상이었다** — `null`은 「Run에 속하지만 연결을 못 적었다」가 아니라 「Run 개념이 없는 직접 호출」만을 뜻한다. `execution_ref`와 `run_ref`는 둘 다 채운다 — 전자는 실행 1회분의 총 비용(§9-1), 후자는 어느 logical run에 속하는가다. `attempt`가 2 이상일 때 논리적 run을 어떻게 두는지는 `readout` 소유 판단이다.
+`run_ref`도 같은 원칙이다. 이 호출은 `ReadoutRun rr_001`에 속하므로 `{kind:"readout_run"}`을 채운다. **v1의 이 예시는 `run_ref: null`이었고 그것이 B05 지적의 실제 대상이었다** — `null`은 Run에 속하는데 연결을 못 적은 경우를 뜻하지 않는다. (v1 당시엔 `null`이 「Run 개념이 없는 직접 호출」만을 뜻한다고 썼으나, **v1.2에서 정정** — Run이 있어야 할 자리인데 산출물이 만들어지지 못해 끝난 호출도 `null`일 수 있다. 이 두 `null` 사유의 구분은 §7-1·§9-6의 `run_ref_reason`이 맡는다.) `execution_ref`와 `run_ref`는 둘 다 채운다 — 전자는 실행 1회분의 총 비용(§9-1), 후자는 어느 logical run에 속하는가다. `attempt`가 2 이상일 때 논리적 run을 어떻게 두는지는 `readout` 소유 판단이다.
 
 ## 7-1. `run_ref=null` 두 사례 — `run_ref_reason` (v1.2)
 
@@ -208,7 +208,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 7. `AnalysisRun.usage_refs[]`가 이 row를 가리키면, `AnalysisRun.usage_summary`는 해당 Run에 속한 row들의 **실행 시점 aggregate와 정합해야 한다** (`AnalysisRun` 계약 L194).
 8. `search`는 `eval`의 존재를 모른다 — eval 전용 필드를 두지 않는다 (v4 §4-모듈7 ⑥).
 9. (v1.1) `run_ref`는 `{kind, ref}`이며 `kind ∈ {analysis_run, readout_run}`이다.
-10. (v1.1) Run에 속한 호출을 `run_ref=null`로 기록하지 않는다. `null`은 Run 개념이 없는 직접 호출만을 뜻한다.
+10. (v1.1) Run에 속한 호출을 이유 없이 `run_ref=null`로 기록하지 않는다. ~~`null`은 Run 개념이 없는 직접 호출만을 뜻한다.~~ **(v1.2 정정, 이슈 #39 Required-4)** — Run이 있어야 할 자리인데 산출물이 만들어지지 못해 끝난 호출(예: STALE)도 `null`일 수 있다. 두 사유의 구분은 13번의 `run_ref_reason`이 맡는다.
 11. (v1.1) `ReadoutRun.usage_refs`와 `UsageRecord.run_ref`가 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 양방향 정합을 불변조건으로 강제하지 않는다 — 강제하면 어긋난 순간 판정 주체를 다시 정해야 하고 그 판정이 `eval`의 비용 숫자에 들어간다.
 12. (2026-09-08 · 표기 정합, 버전 유지) `AnalysisRun.usage_refs[]`도 같은 지위다 — 조회 편의용 파생값이며 `UsageRecord.run_ref`와 어긋나면 **`UsageRecord.run_ref`가 기준**이다. 7번의 「해당 Run에 속한 row」는 `run_ref={kind:"analysis_run", ref:<run_id>}`인 row를 뜻한다. search Owner(서어진) 결정, eval(김대원) 확인. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.2.
 13. (v1.2) `run_ref != null ⇒ run_ref_reason = null`. `run_ref == null ⇒ run_ref_reason ∈ {DIRECT_NO_RUN, RUN_NOT_PRODUCED}`.
@@ -224,12 +224,12 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 | 9-2 | `case_id`를 직접 둔다 | Run/Execution을 거치지 않고 사건 단위 원가를 바로 집계할 수 있게 | v4 §4-모듈7 ⑤의 `cost_per_source_video_hour`는 사건 단위 집계다. 매번 join하면 eval 쪽 부담이 커진다. eval fixture 호출은 `case_id=null` |
 | 9-3 | `provider_label` · `operation` | 둘 다 opaque 라벨. `provider_label`은 과금 주체, `operation`은 모듈 접두어 규칙 | 비용 원장은 「어디에 돈을 냈는가」를 알아야 감사가 된다. **`Observation.source.kind`에 provider/model을 넣지 않는 규칙과 충돌하지 않는다** — 그 규칙은 관찰의 출처 표기에 대한 것이고, 비용 장부는 별개 값 공간이다 |
 | 9-4 | `latency_ms` | 호출 왕복 시간을 usage row에 둔다 | v4 §4-모듈7 ⑤의 `latency_per_source_video_hour`가 이 값 없이는 안 나온다. `JobExecution`의 시각 3개는 Job 단위라 호출 단위 latency를 못 준다 |
-| 9-5 | `run_ref`를 `ContractRef \| null`로 (**타입 변경 · v1.1 · 소비자 확인 완료**) | `kind ∈ {analysis_run, readout_run}`. 원장이 authoritative, `ReadoutRun.usage_refs`는 파생값. `null`은 Run 없는 직접 호출만 | 김준영·신유민 공동 결정, 김대원 확인(2026-09-07). 「비용 집계가 *어느 참조를 신뢰했는가*에 따라 달라지는 건 피해야 한다」(김대원)가 한쪽만 authoritative로 둔 근거다. 기각: `readout_run_ref` 별도 필드(run 종류마다 필드·분기 증가) · `ReadoutRun.usage_refs` 단방향만(원장 한 번 스캔 집계가 갈라짐). 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.4 |
+| 9-5 | `run_ref`를 `ContractRef \| null`로 (**타입 변경 · v1.1 · 소비자 확인 완료**) | `kind ∈ {analysis_run, readout_run}`. 원장이 authoritative, `ReadoutRun.usage_refs`는 파생값. ~~`null`은 Run 없는 직접 호출만~~ **(v1.2 정정)** — `null`은 「Run 개념이 없는 직접 호출」과 「Run을 시도했지만 산출물이 못 만들어진 호출」 두 경우이며 `run_ref_reason`(§7-1·§8-13)이 구분한다 | 김준영·신유민 공동 결정, 김대원 확인(2026-09-07). 「비용 집계가 *어느 참조를 신뢰했는가*에 따라 달라지는 건 피해야 한다」(김대원)가 한쪽만 authoritative로 둔 근거다. 기각: `readout_run_ref` 별도 필드(run 종류마다 필드·분기 증가) · `ReadoutRun.usage_refs` 단방향만(원장 한 번 스캔 집계가 갈라짐). 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.4 |
 | 9-6 | row 생성 조건 (**v1.2**) | "실패/STALE attempt도 row를 만든다"를 **"실제 capability/provider invocation이 시작됐을 때"로 조건을 좁혀** 명문화 | mock pack v3가 fixture 컨벤션으로 먼저 정했던 "모든 attempt가 row를 만든다"는 표현은 dispatch 전에 취소된 attempt까지 포함하는 것으로 오독될 수 있었다(이슈 #22 B-4 제기, 김대원). 실제로 비용/latency가 발생하는 것은 invocation이 시작된 순간부터이므로 그 기준으로 좁힌다 — eval의 비용 분모가 실제로 일어나지 않은 호출까지 세지 않게 하기 위함(이슈 #33 A-1). |
 
 ## 10. 미결 — 이 계약에서 확정하지 않는다
 
-- ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`의 「조회 편의 파생값」 표기도 **종결 (2026-09-08, search Owner 서어진 · eval 김대원 확인, §8-12).** 두 Run 계약의 `usage_refs`는 같은 지위이고 원장 `run_ref`가 유일한 집계 기준이다. `run_ref=null`의 의미는 §8-10 그대로다(「Run 개념이 없는 직접 호출만」 — 「아직 정식 연결 방식이 없는 호출」로 넓히지 않았다. 그런 호출이 실제로 있다면 이 계약 Owner가 별도로 판단한다).
+- ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`의 「조회 편의 파생값」 표기도 **종결 (2026-09-08, search Owner 서어진 · eval 김대원 확인, §8-12).** 두 Run 계약의 `usage_refs`는 같은 지위이고 원장 `run_ref`가 유일한 집계 기준이다. `run_ref=null`의 의미는 (§8-10이 v1.1 당시 서술했던 「Run 개념이 없는 직접 호출만」에서) **v1.2(§7-1·§8-13, 이슈 #33 A-1/Required-5)로 두 사유로 넓어졌다** — 「Run 개념이 없는 직접 호출」과 「Run을 시도했으나 산출물이 못 만들어진 호출」이며 `run_ref_reason`이 구분한다. 「아직 정식 연결 방식이 없는 호출」이라는 세 번째 의미로는 넓히지 않았다 — 그런 호출이 실제로 있다면 이 계약 Owner가 별도로 판단한다.
 
 - **통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).
 - **가격표(`pricing_id` → 단가) 저장 위치와 개정 절차** — `common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.

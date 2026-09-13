@@ -59,6 +59,43 @@
       "usage_refs": [
         "usage_x001_overlay"
       ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1.1",
+      "execution_id": "exec_x001_plate_reread",
+      "job_id": "job_x001_plate_reread",
+      "status": "CANCELLED",
+      "attempt": 1,
+      "queued_at": "2026-08-30T09:14:00+09:00",
+      "started_at": "2026-08-30T09:14:05+09:00",
+      "ended_at": "2026-08-30T09:14:20+09:00",
+      "produced": [],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_x001_plate_reread"
+      ]
+    },
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1.1",
+      "execution_id": "exec_x001_overlay_reread",
+      "job_id": "job_x001_overlay_reread",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-30T09:15:00+09:00",
+      "started_at": "2026-08-30T09:15:05+09:00",
+      "ended_at": "2026-08-30T09:15:11+09:00",
+      "produced": [
+        {
+          "kind": "readout_run",
+          "ref": "rr_x001_overlay_reread"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_x001_overlay_reread"
+      ]
     }
   ],
   "usage_records": [
@@ -123,6 +160,55 @@
       "run_ref_reason": null,
       "case_id": "case_x001",
       "occurred_at": "2026-08-30T09:11:16+09:00",
+      "provider_label": "ocr-local",
+      "operation": "READOUT_OVERLAY_TIME",
+      "token_usage": null,
+      "processed_duration_sec": 6.0,
+      "latency_ms": 600,
+      "pricing_context": {
+        "pricing_id": "ocr-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.2",
+      "usage_id": "usage_x001_plate_reread",
+      "execution_ref": "exec_x001_plate_reread",
+      "run_ref": null,
+      "run_ref_reason": "RUN_NOT_PRODUCED",
+      "case_id": "case_x001",
+      "occurred_at": "2026-08-30T09:14:20+09:00",
+      "provider_label": "ocr-local",
+      "operation": "READOUT_PLATE",
+      "token_usage": null,
+      "processed_duration_sec": null,
+      "latency_ms": 15000,
+      "pricing_context": {
+        "pricing_id": "ocr-local-2026-08",
+        "unit": "per_second"
+      },
+      "cost": {
+        "amount": "0.00",
+        "currency": "KRW"
+      }
+    },
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.2",
+      "usage_id": "usage_x001_overlay_reread",
+      "execution_ref": "exec_x001_overlay_reread",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_x001_overlay_reread"
+      },
+      "run_ref_reason": null,
+      "case_id": "case_x001",
+      "occurred_at": "2026-08-30T09:15:11+09:00",
       "provider_label": "ocr-local",
       "operation": "READOUT_OVERLAY_TIME",
       "token_usage": null,
