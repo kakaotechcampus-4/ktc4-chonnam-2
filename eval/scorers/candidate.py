@@ -30,15 +30,38 @@ def _iou(a_start, a_end, b_start, b_end):
     return inter / union
 
 
+SCORING_VALUES = ("INCLUDED", "EXCLUDED", "BOUNDARY_EXCLUDED")
+
+
+def _partition(targets, where):
+    """채점 대상과 제외 사유별 개수로 가른다.
+
+    scoring 이 없으면 INCLUDED 로 본다 — 없다고 빼면 분모가 조용히 줄어
+    recall 이 부풀려진다. 모르는 값은 채우지 않고 예외로 올린다.
+    """
+    included = []
+    excluded = {}
+    for t in targets:
+        scoring = t.get("scoring", "INCLUDED")
+        if scoring not in SCORING_VALUES:
+            raise ValueError("%s: 알 수 없는 scoring %r" % (where, scoring))
+        if scoring == "INCLUDED":
+            included.append(t)
+        else:
+            excluded[scoring] = excluded.get(scoring, 0) + 1
+    return included, excluded
+
+
 def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
     by_clip = {n["clip_id"]: n["candidates"] for n in normalized}
 
     events = []          # (clip_id, target)
     negative_clips = []
-    n_boundary_excluded = 0
+    excluded_by_reason = {}
     for item in gt["items"]:
-        included = [t for t in item["targets"] if t.get("scoring") != "BOUNDARY_EXCLUDED"]
-        n_boundary_excluded += len(item["targets"]) - len(included)
+        included, excluded = _partition(item["targets"], item["clip_id"])
+        for reason, n in excluded.items():
+            excluded_by_reason[reason] = excluded_by_reason.get(reason, 0) + n
         if item["targets"]:
             for t in included:
                 events.append((item["clip_id"], t))
@@ -86,12 +109,10 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
         reasons.append("NO_NEGATIVE_CLIPS — fp_per_clip 을 낼 수 없다")
     if n_events > 0 and not span_errors:
         reasons.append("NO_MATCHED_EVENTS — span_error_sec 를 낼 수 없다")
-    if n_boundary_excluded:
-        # 이걸 적지 않으면 결과의 n_events 와 GT 의 clips_with_events 가 어긋난
-        # 이유를 결과 파일만 보고는 알 수 없다 (스펙 §5).
-        reasons.append(
-            "BOUNDARY_EXCLUDED — %d건을 채점에서 제외했다" % n_boundary_excluded
-        )
+    for reason, n in sorted(excluded_by_reason.items()):
+        # 이걸 적지 않으면 결과의 n_events 와 GT 의 clips_with_events 가
+        # 어긋난 이유를 결과 파일만 보고는 알 수 없다 (스펙 §5).
+        reasons.append("%s — %d건을 채점에서 제외했다" % (reason, n))
 
     return {
         "recall_at": {str(k): (hits[k] / n_events if n_events else None) for k in ks},
@@ -102,6 +123,7 @@ def score(normalized, gt, ks=(1, 3, 10), iou_threshold=0.5):
         "fp_per_clip": (fp / len(negative_clips)) if negative_clips else None,
         "n_events": n_events,
         "n_negative_clips": len(negative_clips),
+        "excluded_by_reason": excluded_by_reason,
         "by_type": {
             vt: {"recall_at": {str(k): v["hits"][k] / v["n"] for k in ks}, "n": v["n"]}
             for vt, v in sorted(by_type.items())
@@ -124,6 +146,7 @@ def not_run(reason, ks=(1, 3, 10)):
         "fp_per_clip": None,
         "n_events": None,
         "n_negative_clips": None,
+        "excluded_by_reason": None,
         "by_type": None,
         "coverage": reason,
     }

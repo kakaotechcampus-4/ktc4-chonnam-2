@@ -1,3 +1,5 @@
+import pytest
+
 from eval import manifests_io
 from eval.runners import registry, normalize
 from eval.scorers import candidate
@@ -134,3 +136,52 @@ def test_not_run_block_has_the_same_keys_as_a_scored_block():
             continue
         leaves.extend(v.values() if isinstance(v, dict) else [v])
     assert all(v is None for v in leaves)
+
+
+def test_two_exclusion_reasons_are_counted_separately():
+    """제외 사유를 합산하지 않는다.
+
+    BOUNDARY_EXCLUDED(클립 경계에 걸침)와 EXCLUDED(참값 유형 자체가 없음)는
+    다른 사실이다. 결과 파일만 보고 n_events 가 GT 와 어긋난 이유를 읽을 수
+    있어야 하므로 사유별로 남긴다.
+    """
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"violation_type": "SIGNAL", "t_start_sec": 10.0, "t_end_sec": 12.0,
+         "t_onset_sec": 10.5, "scoring": "INCLUDED"},
+        {"violation_type": None, "t_start_sec": 20.0, "t_end_sec": 22.0,
+         "t_onset_sec": 20.5, "scoring": "EXCLUDED"},
+        {"violation_type": "SIGNAL", "t_start_sec": 30.0, "t_end_sec": 32.0,
+         "t_onset_sec": 30.5, "scoring": "BOUNDARY_EXCLUDED"},
+    ]}]}
+    normalized = [{"clip_id": "c1", "candidates": []}]
+
+    out = candidate.score(normalized, gt)
+
+    assert out["n_events"] == 1
+    assert out["excluded_by_reason"] == {"EXCLUDED": 1, "BOUNDARY_EXCLUDED": 1}
+
+
+def test_scoring_defaults_to_included_when_absent():
+    """scoring 이 없는 target 은 채점 대상이다.
+
+    기존 정답지에 scoring 이 없을 수 있고, 없다고 조용히 빼면 분모가 줄어
+    recall 이 부풀려진다.
+    """
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"violation_type": "SIGNAL", "t_start_sec": 10.0, "t_end_sec": 12.0,
+         "t_onset_sec": 10.5},
+    ]}]}
+    out = candidate.score([{"clip_id": "c1", "candidates": []}], gt)
+
+    assert out["n_events"] == 1
+    assert out["excluded_by_reason"] == {}
+
+
+def test_unknown_scoring_value_raises_instead_of_silently_excluding():
+    """오타가 조용한 제외로 둔갑하지 않게 한다."""
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"violation_type": "SIGNAL", "t_start_sec": 10.0, "t_end_sec": 12.0,
+         "t_onset_sec": 10.5, "scoring": "EXCLUDE"},
+    ]}]}
+    with pytest.raises(ValueError, match="EXCLUDE"):
+        candidate.score([{"clip_id": "c1", "candidates": []}], gt)
