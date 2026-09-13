@@ -9,7 +9,7 @@
 >
 > **현재 상태:** `pytest tests/eval` → **6 failed · 75 passed · 6 skipped**. 실패 6건은 전부 구 경로·구 식별자이고 하니스 본체는 통과한다. `data/mock/validate_mock_pack.py`는 46 files · 7 scenarios PASS.
 >
-> 해야 할 일은 **아래 「2차 — Mock Pack v5 반영 수정 체크리스트」**에 모았다. 1차 항목을 고쳐 쓰지 않고 2차에서 다시 판정한다.
+> 해야 할 일은 **`second-completion-checklist.md`**에 모았다. 1차 항목을 고쳐 쓰지 않고 2차에서 다시 판정한다.
 
 ---
 
@@ -252,86 +252,9 @@ python -m pytest tests/eval/test_mock_pack_contract.py -v
 
 ---
 
-## 2차 — Mock Pack v5 반영 수정 체크리스트
+## 2차 체크리스트
 
-> **기준:** Mock Pack v5(develop `72e0e05`) · 계약 `analysis-run-candidate-event/v1.1`(2026-09-10 §4-1·Consumer—eval 정정) · `usage-record/v1.2` · `case-view/v1.3`
-> **v5에서 eval 라벨 값은 하나도 바뀌지 않았다** — onset 5건·번호판 참값·abstain 상태 전부 v4와 동일하다(아래 #1 표가 그대로 유효). v5 변경분은 `infra_failure`(case·readout·common 보강)와 `correction_rerun`(`verification=AGREED`), validator +170줄이다.
-
-### #1. `expected/` 7개 신설 + 기존 2개 폐기 — **착수 가능**
-
-- [ ] `eval_fixture_correct_001.json`·`eval_fixture_wrong_001.json` 폐기 (ID 비교 모델. 역할은 `fake_always_correct`/`fake_always_wrong` 두 impl이 이미 수행)
-- [ ] `data/mock/expected/<scenario_id>.expected.json` 7개 신설 — 스키마 `eval-expected/v2`, 값 복사 금지(`readout_ref`·`resolution_ref`·`timeline_ref` 참조만)
-- [ ] plate 라벨은 **판독 단위 배열**(`plate_reread_001`은 INITIAL·REREAD 2건)
-
-| 시나리오 | candidate(type · onset · rev) | plate | time |
-| --- | --- | --- | --- |
-| `happy_001` | `SOLID_LINE_LANE_CHANGE` · 312.48s · 1 | READABLE `12가3456` | `18:05:12` |
-| `empty_001` | `targets: []` (음성 — `fp_per_clip` 분모) | 없음 | 없음 |
-| `plate_reread_001` | `SIGNAL` · 612.00s · 1 | INITIAL UNREADABLE / REREAD READABLE, 참값 `17나2867` | `20:10:12` |
-| `correction_rerun_001` | `MOTORCYCLE_HELMET_NON_USE` · 930.00s · 1 | READABLE `34나7890` | `13:13:00` (USER_OVERRIDE, offset 930s 유지) |
-| `unknown_abstain_partial_001` | 615.00s · 1 · **`scoring: EXCLUDED`**(참값 유형 없음) | READABLE `88부1234` | `null` (시각 충돌 보존) |
-| `infra_failure_001` | `targets: []` | `not_scored.plate = READOUT_INFRA_FAILURE` | `null` (overlay 2건 모두 `UNKNOWN`) |
-| `relative_rebase_001` | `CENTER_LINE_CROSSING` · 512.00s · 1 | 없음 | `null` (`USABLE_RELATIVE_ONLY`) |
-
-### #2. 접합부 재배선 — **착수 가능**
-
-- [ ] `eval/runners/impls/mock_pack.py` — `search/candidate_events.<suffix>.json` → `search/scenario_<id>.json`의 `analysis_run_candidate_events[].candidates[]`
-- [ ] `eval/runners/normalize.py` `from_mock_pack` — `data/mock/eval/prediction_*.json` 경로 소멸분 정리
-- [ ] `eval/manifests/mock_pack/gt/gt_candidate.json` — span 690~708초 → onset 312.48초 기준으로 재생성, `derived_from` 경로 갱신
-- [ ] `tests/eval/test_mock_pack_contract.py` — `scenario_partial_001` → `scenario_unknown_abstain_partial_001`, `<scenario>.expected.json` 경로
-- [ ] 식별자 개명 반영 — `cand_h001`→`candidate_h001`, `run_h001_search`→`run_h001`, `PLATE_OCR`→`READOUT_PLATE`, `OVERLAY_OCR`→`READOUT_OVERLAY_TIME`
-- [ ] **완료 판정:** `python -m pytest tests/eval -q` → 0 failed
-
-### #3. 매칭 규칙 교체 (IoU → point error) — **착수 가능**
-
-- [ ] `eval/scorers/candidate.py` — 1차 매처를 `abs(representative_ms − gt_onset_ms) <= tolerance`로 교체. span IoU는 보조 sanity(`start_ms <= gt_onset <= end_ms`)로만 남긴다
-- [ ] `span_error_sec` → mock/실측 공통으로 onset 오차 의미로 정리하고 이름·정의를 결과 파일에 명시
-- [ ] 근거: `contract-analysis-run-candidate-event.md` §4-1 · Consumer—`eval`(2026-09-10) · `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`
-- [ ] **주의:** 규칙이 바뀌었으므로 #4의 `scorer_version`을 올리는 첫 계기다
-
-### #4. 결과 envelope 누락 4건 — **착수 가능**
-
-- [ ] `predictions/`에 `contract_version` · `processed_duration_sec` 추가
-- [ ] `results/`에 `scorer_version` · `prediction_ref`(경로 + sha256) 추가
-- [ ] `contract_version` 기준으로 「버전이 다르면 비교 거부」(v4 §9-2 규칙 5)를 코드에서 강제
-- [ ] 근거·상세: `research/version-fields-proposal.md` §3
-
-### #5. 내 문서 문구 2곳 — **착수 가능**
-
-- [ ] `docs/modules/eval/experiment-guide.md:483` — `OVERCONFIDENT`가 런타임 실패 이름들과 한 표에 있다. 층위(런타임 5 + 사후 1) 한 줄 추가
-- [ ] `docs/modules/eval/harness-v1-design.md:267`(F6) — 「`wrong_accept_rate` 분모에 abstain 항목 포함」이 `abstained=true`를 넣으라는 뜻으로 읽힌다. 「정답이 `UNREADABLE`인 항목」으로 정정(ADR §4.10 정의와 같은 뜻)
-
-### #6. B tier manifest 출처 — **외부 입력 대기**
-
-- [ ] `eval/manifests/b_youtube/clips.json`에 `source_url`·`license` 추가 (현재 없음. `eval-dataset-plan.md` §3-3·§6-2가 「최소한 이 둘은 남긴다」고 못 박은 값)
-- [ ] 필요한 것: `YT_0001` 원본 URL과 라이선스 표기
-
-### #7. 자료조사 출처 링크 — **외부 입력 대기**
-
-- [ ] `research/aihub-71555-survey.md` §9 — AI-Hub 71555 상세/이용조건/일반 이용정책/구축 설명서
-- [ ] `research/eval-dataset-plan.md` §9 — `YT_0001` URL·라이선스, 대체 공개 데이터셋 3종
-- [ ] `research/blackbox-storage-survey.md` §4 — 제조사 매뉴얼 5종 (**출처 0건 상태라 현재 인용 금지**)
-- [ ] `research/ground-truth-schema.md` §4 — 데이터셋 원본·라벨 명세·위반유형 근거
-
-### #8. v5 신규 검수 — **확인 완료, 조치 없음**
-
-- [x] v5가 eval 라벨 값을 바꾸지 않았다 — onset 5건·참값·abstain 상태 v4와 동일
-- [x] `validate_mock_pack.py` 46 files · 7 scenarios PASS (validator +170줄 보강분 포함)
-- [x] `infra_failure_001`에 overlay 판독 2건(`UNKNOWN`)이 추가됐지만 eval 라벨은 그대로 `time: null`
-- [x] `correction_rerun_001`의 `verification=AGREED`는 evidence 소유 미결(4차 공지 🔴 1건)이고 eval 라벨(13:13:00)에는 영향 없음
-
-### 2차 완료 정의
-
-> 7개 시나리오 정답지가 `eval-expected/v2`로 존재하고, `pytest tests/eval`이 **0 failed**이며, candidate 매칭이 point error로 동작하고, 결과 파일만으로 「어느 계약·어느 지표 정의·어느 예측」을 채점했는지 재현할 수 있으면 2차 완료로 본다. #6·#7은 외부 입력 대기라 완료 정의에서 제외한다.
-
-### 2차 검증 명령
-
-```bash
-python data/mock/validate_mock_pack.py            # 46 files / 7 scenarios PASS
-python -m pytest tests/eval -q                    # 목표: 0 failed
-python -m eval.run   --impl mock_pack:contracts --manifest mock_pack --stage candidate --run-id mock_e2e
-python -m eval.score --prediction mock_e2e
-```
+Mock Pack v5 기준으로 해야 할 일은 **`second-completion-checklist.md`**에 있다. 1차 항목을 고쳐 쓰지 않고 그 문서에서 다시 판정한다.
 
 ---
 
