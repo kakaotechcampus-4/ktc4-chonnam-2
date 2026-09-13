@@ -12,8 +12,22 @@
 
 ## 공개 함수
 
-§4-모듈5 「Public Capability」의 함수 이름은 예시다. 실제 시그니처는 데이터 계약에서 확정한 뒤 여기에 적는다. 다른 모듈은 **공개 함수만** 호출한다.
+§4-모듈5 「Public Capability」의 함수 이름은 설계 시점 placeholder였다. 1차 구현 실제 코드 기준
+확정본과 각 함수의 근거·검증 현황은 **`docs/modules/case/tech-spec.md`**(Tech Spec)에 정리했다 —
+이 README는 요약만 남긴다.
+
+- `domain.CaseAggregate` — 상태 기계 + selection_rev를 갖는 Case 애그리게잇(`intake`/`start_search`/`receive_candidates`/`select_candidate`/`mark_ready`/`next_job_id`)
+- `jobs` — JobRecord 발주 7종(`issue_coarse_search`/`issue_plate_read`/`issue_overlay_time_read`/`issue_fine_verify`/`issue_report_video_export`/`issue_resume_search`/`issue_plate_reread`)
+- `correction.apply_correction` — CorrectionRecord 생성(case가 Producer)
+- `view.build_case_view` — CaseView projection(web의 유일한 read 경로, `case-view/v1.3`)
+- `adapters.MockFixtureAdapter` — 1차 구현 한정 내부 stand-in, **공개 API 아님**(Tech Spec §7 참고)
+
+다른 모듈은 위 공개 함수들만 호출한다 — `MockFixtureAdapter`는 예외.
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+1차 구현 완료(happy path, `scenario_happy_001`). 상태 기계·JobRecord 발주·CorrectionRecord·CaseView
+projection이 코드로 존재하고, `tests/test_scenario_happy_smoke.py`가 그 재현을 검증하며
+`scripts/check_boundaries.py` 경계 검사도 통과했다 — 근거·제외 범위는
+`docs/modules/case/checklists/phase1-completion-checklist.md` 참고. FastAPI 엔드포인트 배선·
+영속성(DB)·역행 전이·나머지 6개 시나리오는 §11(1차 완료 제외 범위)로 다음 라운드에 다룬다.
