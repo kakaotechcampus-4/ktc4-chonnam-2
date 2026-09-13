@@ -3,7 +3,7 @@
 **Owner:** 신유민 (`web`) — web 단독 결정이며 CALL 안건이 아니다
 **작성:** 2026-09-07 · **레포 반영:** 2026-09-10 (이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) B-5) · **갱신:** 2026-09-10 (Mock Pack v3 3차, 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31)) · **2026-09-11 (Mock Pack v4 · `case-view/v1.3` 기준 전면 갱신, 이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) A-3)** · **2026-09-14 (§5-2 작업 상태 계열 — PR [#46](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/46) 유소연 답변 · Mock Pack v5 반영)**
 **근거:** `product/product-spec.md` §7 · `product/core-user-flow.md` §3-1 · `architecture/contracts/contract-job-record-case-view.md` B절 §6·§7·§10-12 · `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)
-**대조 기준:** `develop` @ `d9d8e2b` (Mock Pack v4 · `case-view/v1.3`)
+**대조 기준:** §5-2는 `develop` @ `72e0e05` (Mock Pack v5) · **그 외 절은 `d9d8e2b` (Mock Pack v4 · `case-view/v1.3`)** — 전면 재대조는 후속
 **적용 화면:** Evidence Review · 최종 신고자료(handoff)
 
 > **2026-09-11 갱신 요약.** `case-view/v1.3`에서 §5의 미결 2건이 **둘 다 닫혔다** — `report_type_display`에 `info_state`/`source_label_key`가 추가됐고(`CONTRACT_CONFLICTS.md` 항목 4 종결), `package.report_field_states`가 신설되며 대응표·`unconfirmed_fields` 파생 규칙까지 명문화됐다(항목 10 종결). 이 문서의 잠정 2건을 철회하고 §3~§6을 v4 실측값으로 다시 썼다. §5는 아직 닫히지 않은 **작업 상태(CANCELLED) 계열 3건**으로 교체했다.
@@ -107,12 +107,15 @@ B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위�
 
 | 화면 문구 | 조건 |
 | --- | --- |
-| **「중단됨」** | `progress[].state=PARTIAL` + 같은 단계에 취소 code notice(`case.plate_read_cancelled` · `actions`에 `RETRY_PLATE_READ`) |
+| **「중단됨」** | `progress[].state=PARTIAL` + `notices[]`에 취소 code(현재 `case.plate_read_cancelled` 1종) |
 | **「부분 완료」** | `progress[].state=PARTIAL`이고 취소 code notice 없음 (무관한 notice는 있을 수 있다) |
 
 - **분기 기준은 「취소를 뜻하는 code」의 존재이지 notice의 존재가 아니다.** v5 `scenario_infra_failure_001` rev3의 `notices[]`는 `case.plate_read_cancelled`와 `readout.overlay_presence_undetermined` **2건**이다 — 중단과 무관한 notice가 같은 스냅샷에 공존하므로, notice가 하나라도 있으면 「중단됨」으로 찍는 규칙은 오작동한다.
 - **현재 등재된 취소 code는 `case.plate_read_cancelled` 1종이고, 그 외에는 「부분 완료」로 그린다.** `notices[].code`는 형식(`<producing-module>.<detail>`)만 확정돼 있고 **값 목록은 열려 있으며**, `actions[]`와 달리 「미등록 값 렌더 금지」 규칙도 없다(B절 §7, 이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) A-⑤). 따라서 모르는 code를 만나면 **중단을 단정하지 않는 쪽**이 안전한 기본값이다.
+- **분기 조건은 code 하나다 — 그 notice의 `actions[]`는 조건에 넣지 않는다.** 버튼은 기존 `actions[]` 규칙대로 렌더하면 되고(`case.plate_read_cancelled`는 `RETRY_PLATE_READ`를 싣는다), 그 값이 바뀌어도 문구 분기는 영향을 받지 않아야 한다.
+- **한계 — notice와 단계를 잇는 필드가 없다.** `notices[]`의 필드는 `code`·`severity`·`blocking`·`message_key`·`actions`뿐이라(B절 §5) **어느 단계의 취소인지는 code 이름으로만 알 수 있다.** 지금은 `PARTIAL`인 단계가 스냅샷당 하나뿐이라 모호하지 않지만, 여러 단계가 동시에 `PARTIAL`이 되는 스냅샷이 생기면 대응이 깨진다. 그때 `case`에 연결 수단을 요청한다.
 - **계약 공백 — `case`에 요청.** 취소 계열 code가 늘어나면 web이 이 목록을 따라 갱신해야 하고, 놓치면 실제 중단이 「부분 완료」로 표시된다. 새 취소 code를 만들 때 알려주시거나, 취소 계열을 식별할 수단(code 목록 등재 또는 별도 표시)을 주시면 목록 추적을 없앨 수 있다.
+
 **확정 ① — 취소된 job은 `running_jobs[]`에서 빠진다. web은 job 단위 중단 표시를 하지 않는다**
 
 **의도된 설계다.** 근거를 무게 순으로 적는다.
@@ -164,4 +167,4 @@ B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위�
 
 > **문서 stale 1건 (v4에서도 남아 있음).** `docs/mock/04_mock_validation_report.md`의 §1 `CaseView` 행 · §1 갭 요약 · 결론부가 아직 `info_state=INFO_AI_ESTIMATED`를 「미커버」로 적고 있다. 실제로는 v3에서 이미 해소됐고 v4에서는 happy path까지 확대됐다(이슈 #31 W-11로 제기, 이슈 #39 Required-6 범위). fixture가 아니라 문서만 어긋난 상태다.
 
-> **아직 못 그리는 화면.** `requirements_*.readiness=BLOCK` 경로는 fixture가 없어(`scenario_blocked_001` 대기) 규칙 5·7의 BLOCK 분기를 목데이터로 검증할 수 없다. `progress[].state=PARTIAL`도 같다(§5-2 ③).
+> **아직 못 그리는 화면.** `requirements_*.readiness=BLOCK` 경로는 fixture가 없어(`scenario_blocked_001` 대기) 규칙 5·7의 BLOCK 분기를 목데이터로 검증할 수 없다. `progress[].state=PARTIAL`은 **절반만 해소됐다** — `JobExecution.status=CANCELLED` 투영은 v5 `scenario_infra_failure_001` rev3·rev4로 검증 가능하고, `AnalysisRun.outcome=PARTIAL` 투영은 여전히 fixture가 없다(§5-2).
