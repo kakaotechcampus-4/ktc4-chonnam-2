@@ -16,7 +16,7 @@ import subprocess
 from typing import Any
 
 from .assembly import assemble_evidence, calculate_evidence_needs
-from .errors import PackageNotReady
+from .errors import ContractInputError, PackageNotReady
 from .policy import GENERIC_TEMPLATE_REF, SAFETY_REPORT_POLICY_REF, SPECIFIC_TEMPLATE_REF, render_report
 from .requirements import build_report_package, evaluate_requirements
 from .time_resolution import resolve_time
@@ -204,6 +204,7 @@ def _render_preview(record: Contract) -> Contract | None:
     event = record["event"]
     return render_report(
         visual_event_type=event["visual_event_type"]["value"],
+        situation_response=record.get("situation_response", {}).get("value"),
         occurred_at=record["occurred_at"]["value"],
         location_display=display,
         vehicle_number=record["vehicle_number"]["value"],
@@ -231,6 +232,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     reports: list[Contract] = []
     packages: list[Contract] = []
     package_error: str | None = None
+    policy_guard_check: Contract | None = None
     corrections = upstream["case"].get("correction_records") or []
     plates = upstream["readout"].get("plate_readouts") or []
 
@@ -336,6 +338,40 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
             resolution_id=ids["time"][0],
         )
         plate = plates[0] if plates else None
+        if scenario_id == "scenario_happy_001":
+            unconfirmed_config = deepcopy(config)
+            unconfirmed_config.pop("situation_response", None)
+            unconfirmed_record = _assemble(
+                upstream=upstream,
+                config=unconfirmed_config,
+                time=time,
+                plate=plate,
+                record_id=f"{ids['evidence'][0]}_unconfirmed_guard",
+            )
+            render_error: str | None = None
+            try:
+                _render_preview(unconfirmed_record)
+            except ContractInputError as exc:
+                render_error = str(exc)
+            if render_error != "report.input.situation_unconfirmed":
+                raise ValueError("specific-template policy guard did not fail closed")
+            policy_guard_check = {
+                "shared_case_situation_confirmation": next(
+                    item["situation_confirmation"]
+                    for item in latest_view["candidates"]
+                    if item.get("selected")
+                ),
+                "without_confirmation": {
+                    "evidence_record": unconfirmed_record,
+                    "render_error": render_error,
+                    "normal_final_report_emitted": False,
+                    "report_package_emitted": False,
+                },
+                "with_derived_confirmation": {
+                    "adapter_input": deepcopy(config.get("situation_response")),
+                    "derivation": deepcopy(config.get("derived_case_context")),
+                },
+            }
         record = _assemble(upstream=upstream, config=config, time=time, plate=plate, record_id=ids["evidence"][0])
         need = calculate_evidence_needs(record, plate, emit_empty=config["emit_empty_needs"])
         if need:
@@ -393,6 +429,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         "known_differences": [],
     }
     if scenario_id == "scenario_happy_001":
+        comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
         comparison["known_differences"].append("Baseline uses safety-report-policy/v1 text and policy_ref; the shared package still uses older text and policy/package-assembly-v1.")
         comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
     if scenario_id == "scenario_unknown_abstain_partial_001":
@@ -407,6 +444,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
             "upstream": "SHARED_MOCK_CONTRACTS",
             "requirement_observations": "EVIDENCE_TEST_MOCK",
             "consumer": "CONTRACT_READER_MOCK",
+            "case_context": "EVIDENCE_TEST_DERIVED" if config.get("derived_case_context") else "SHARED_CASE_CONTRACTS",
         },
         "versions": {
             "contracts": [
@@ -436,6 +474,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         },
         "outputs": outputs,
         "package_boundary_error": package_error,
+        "policy_guard_check": policy_guard_check,
         "consumer_mock": consume_contracts(outputs),
         "comparison": comparison,
     }
@@ -461,6 +500,17 @@ def run_all(root: Path, output_dir: Path) -> Contract:
                 "requirements": [item["overall"] for item in result["outputs"]["requirement_reports"]],
                 "package_count": len(result["outputs"]["report_packages"]),
                 "package_boundary_error": result["package_boundary_error"],
+                "policy_guard": None
+                if result["policy_guard_check"] is None
+                else {
+                    "shared_case_situation_confirmation": result["policy_guard_check"]["shared_case_situation_confirmation"],
+                    "without_confirmation": {
+                        "render_error": result["policy_guard_check"]["without_confirmation"]["render_error"],
+                        "normal_final_report_emitted": result["policy_guard_check"]["without_confirmation"]["normal_final_report_emitted"],
+                        "report_package_emitted": result["policy_guard_check"]["without_confirmation"]["report_package_emitted"],
+                    },
+                    "with_derived_confirmation": result["policy_guard_check"]["with_derived_confirmation"],
+                },
                 "consumer_mock": result["consumer_mock"],
             }
         )
@@ -470,7 +520,7 @@ def run_all(root: Path, output_dir: Path) -> Contract:
         "implementation_fingerprints": fingerprints,
         "scenarios": results,
         "readiness": "PARTIAL_READY",
-        "reason": "Shared upstream contracts and a consumer reader are executable; U package is withheld for the unresolved location nullability conflict, and no real case projection is connected.",
+        "reason": "Shared upstream contracts and a consumer reader are executable; H Package requires an explicitly marked test-derived confirmation, U Package is withheld for the unresolved location nullability conflict, and no real case projection is connected.",
     }
     _write(output_dir / "run-summary.json", summary)
     return summary

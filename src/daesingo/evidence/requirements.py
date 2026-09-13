@@ -277,6 +277,12 @@ def build_report_package(
         raise PackageNotReady("package.asset.report_video_size_unknown")
 
     event = evidence_record["event"]
+    visual_event_type = event["visual_event_type"]["value"]
+    situation_response = evidence_record.get("situation_response", {}).get("value")
+    if visual_event_type is None and situation_response != "USER_UNSURE":
+        raise PackageNotReady("package.input.user_unsure_required")
+    if visual_event_type is not None and situation_response not in {"CONFIRMED", "CORRECTED"}:
+        raise PackageNotReady("package.input.situation_unconfirmed")
     occurred = evidence_record.get("occurred_at")
     plate = evidence_record.get("vehicle_number")
     if occurred is None:
@@ -285,7 +291,8 @@ def build_report_package(
         raise PackageNotReady("package.input.vehicle_number_missing")
     location = _location_snapshot(evidence_record)
     rendered = render_report(
-        visual_event_type=event["visual_event_type"]["value"],
+        visual_event_type=visual_event_type,
+        situation_response=situation_response,
         occurred_at=occurred["value"],
         location_display=location["display_text"],
         vehicle_number=plate["value"],

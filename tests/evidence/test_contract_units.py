@@ -117,6 +117,7 @@ class ContractUnitTests(unittest.TestCase):
         for visual_type, policy in EVENT_POLICY.items():
             rendered = render_report(
                 visual_event_type=visual_type,
+                situation_response="CONFIRMED",
                 occurred_at="2026-09-13T10:00:00+09:00",
                 location_display="서울시 테스트로 1",
                 vehicle_number="12가3456",
@@ -127,6 +128,7 @@ class ContractUnitTests(unittest.TestCase):
             self.assertLessEqual(rendered["content_length"], 900)
         generic = render_report(
             visual_event_type=None,
+            situation_response="USER_UNSURE",
             occurred_at="2026-09-13T10:00:00+09:00",
             location_display="서울시 테스트로 1",
             vehicle_number="12가3456",
@@ -135,6 +137,41 @@ class ContractUnitTests(unittest.TestCase):
         self.assertEqual("tmpl/safety-report-generic-v1", generic["template_ref"])
         self.assertGreaterEqual(generic["content_length"], 5)
         self.assertLessEqual(generic["content_length"], 900)
+
+    def test_renderer_rejects_specific_report_without_user_confirmation(self):
+        with self.assertRaisesRegex(ContractInputError, "report.input.situation_unconfirmed"):
+            render_report(
+                visual_event_type="SIGNAL",
+                situation_response=None,
+                occurred_at="2026-09-13T10:00:00+09:00",
+                location_display="서울시 테스트로 1",
+                vehicle_number="12가3456",
+                violation_expression=EVENT_POLICY["SIGNAL"]["violation_expression"],
+            )
+
+    def test_renderer_rejects_generic_report_without_user_unsure_response(self):
+        with self.assertRaisesRegex(ContractInputError, "report.input.user_unsure_required"):
+            render_report(
+                visual_event_type=None,
+                situation_response=None,
+                occurred_at="2026-09-13T10:00:00+09:00",
+                location_display="서울시 테스트로 1",
+                vehicle_number="12가3456",
+                violation_expression="확인이 필요한 주행 상황",
+            )
+
+    def test_unconfirmed_specific_evidence_cannot_build_package(self):
+        unconfirmed = deepcopy(self.record)
+        unconfirmed.pop("situation_response")
+        report = self.happy["outputs"]["requirement_reports"][1]
+        with self.assertRaisesRegex(PackageNotReady, "package.input.situation_unconfirmed"):
+            build_report_package(
+                unconfirmed,
+                report,
+                package_id="pkg_unconfirmed",
+                created_at="2026-09-13T10:00:00+09:00",
+                asset_facts=self.assets,
+            )
 
     def test_correction_head_validates_type_chain_and_actual_application(self):
         first = self._correction("corr_plate_1", "vehicle_number", "11가1111", "22나2222", kind="PLATE_MANUAL_EDIT")
