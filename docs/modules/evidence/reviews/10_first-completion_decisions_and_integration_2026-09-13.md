@@ -2,7 +2,7 @@
 
 > 작성일: 2026-09-13
 >
-> 기준: `docs/evidence-first-completion-checklist` branch, HEAD `024689d4f458287f2e3884c71d4fd777e4d3b7d7` + 현재 evidence 미커밋 구현
+> 기준: `docs/evidence-first-completion-checklist` branch, 기준 커밋 `2a4302ecda6969f45da86543546c827d194be328` + confirmation guard 작업본
 >
 > 현재 상태: `PARTIAL_READY`
 >
@@ -12,15 +12,15 @@
 
 지금 다른 담당자와 먼저 결론 내야 하는 핵심은 **U Package의 위치 표현(Q1)** 한 건이다. 김준영이 지금 정책값을 확정하면 바로 구현 가능한 것은 **첨부 용량, 신고기한, 적용 rule catalog, 발생시각 이외 Correction의 source provenance**다. 신고문 Fixture 동기화, 실제 사용자 응답 전달, 영상 가시성 관찰, `EvidenceNeeds` 재발주, CaseView gate 검증, timeline revision 확인은 실제 산출물과 Consumer가 만나는 **통합 단계**에서 처리하는 편이 낫다.
 
-다만 아래 “결정 없이 먼저 고칠 항목”은 이미 확정된 정책을 현재 baseline이 덜 엄격하게 적용한 문제다. 새 합의를 기다릴 일이 아니다.
+아래 “결정 없이 먼저 고칠 항목”은 기준 커밋 `2a4302e` 이후 반영했다. 새 합의 없이 이미 확정된 정책을 코드와 Artifact에 적용한 것이다.
 
 ## 0. 결정 없이 먼저 고칠 항목
 
-| 항목 | 확인된 사실 | 바로 할 일 | 완료 조건 |
+| 항목 | 확인된 사실 | 적용 결과 | 상태·증빙 |
 | --- | --- | --- | --- |
-| H specific template 사전조건 | [`safety-report-policy-v1.md`](../decisions/safety-report-policy-v1.md)는 specific template을 “사건 유형과 위반행위를 사용자가 확인하거나 수정해 확정”한 경우로 제한한다. 그런데 공용 H의 selected candidate는 `situation_confirmation=NOT_ASKED`이고 Evidence에 `situation_response`가 없는데 현재 baseline은 `pkg_h001`을 생성한다. | `render_report`/Package 조립 전에 `CONFIRMED` 또는 유효한 `CORRECTED + SITUATION_CHANGE`를 요구하고, 그렇지 않으면 정상 Package를 발행하지 않도록 fail-closed 검사와 단위 테스트를 추가한다. | H 입력에 confirmation이 없을 때 Package 0건, confirmation을 명시한 파생 통합 입력에서는 specific Package 생성. 두 결과를 공용 원본과 구분해 증빙 |
+| H specific template 사전조건 | [`safety-report-policy-v1.md`](../decisions/safety-report-policy-v1.md)는 specific template을 “사건 유형과 위반행위를 사용자가 확인하거나 수정해 확정”한 경우로 제한한다. 공용 H의 selected candidate는 `situation_confirmation=NOT_ASKED`이고 Evidence에 `situation_response`가 없다. | renderer가 specific에는 `CONFIRMED`/`CORRECTED`, generic에는 `USER_UNSURE`를 요구하도록 fail-closed 처리했다. 공용 H 그대로는 정상 Report/Package를 만들지 않고, test-derived `CONFIRMED`를 명시한 별도 경로에서만 `pkg_h001`을 만든다. | **검증 완료.** `test_renderer_rejects_specific_report_without_user_confirmation`, H 통합 test, H baseline의 `policy_guard_check` |
 
-이 항목을 고치기 전의 `pkg_h001`은 “함수 연결 성공” 증거로만 볼 수 있고, 확정 정책을 충족한 Package로 수락하면 안 된다. 공용 H 입력을 `CONFIRMED`로 보완하는 일은 아래 통합 항목 I1에서 case와 처리한다.
+기준 커밋 `2a4302e`의 `pkg_h001`은 “함수 연결 성공” 증거로만 본다. 현재 작업본의 `pkg_h001`은 test-derived confirmation을 사용하므로 정책 guard 증거이지만 실제 case confirmation 접합 증거는 아니다. 실제 공용 H 입력을 `CONFIRMED`로 보완하는 일은 아래 I1에서 case와 처리한다.
 
 ## 1. 다른 담당자와 논의·확정 후 진행할 항목
 
@@ -112,7 +112,7 @@ I4처럼 실제 영상이 있어야 의미 있는 항목은 지금 별도 Contra
 
 ## 권장 진행 순서
 
-1. **즉시:** 0번 specific-template fail-closed 수정
+1. **완료:** 0번 specific-template fail-closed 수정과 H 전후 Artifact 분리
 2. **김준영 결정:** K1~K4를 각각 versioned policy/registry로 기록하고 단위 테스트 추가
 3. **짧은 Owner 합의:** D1에서 U 위치 정책 한 가지 선택
 4. **통합 착수:** I1~I5로 H/U, I6으로 P, I7로 R 연결

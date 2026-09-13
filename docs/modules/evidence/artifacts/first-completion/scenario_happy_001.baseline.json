@@ -5,7 +5,8 @@
     "core": "BASELINE_PURE_FUNCTIONS",
     "upstream": "SHARED_MOCK_CONTRACTS",
     "requirement_observations": "EVIDENCE_TEST_MOCK",
-    "consumer": "CONTRACT_READER_MOCK"
+    "consumer": "CONTRACT_READER_MOCK",
+    "case_context": "EVIDENCE_TEST_DERIVED"
   },
   "versions": {
     "contracts": [
@@ -282,6 +283,14 @@
             "needs_review": false
           }
         },
+        "situation_response": {
+          "value": "CONFIRMED",
+          "responded_at": "2026-08-24T18:22:30+09:00",
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_h001"
+          }
+        },
         "provenance": {
           "input_refs": [
             {
@@ -544,6 +553,207 @@
     ]
   },
   "package_boundary_error": null,
+  "policy_guard_check": {
+    "shared_case_situation_confirmation": "NOT_ASKED",
+    "without_confirmation": {
+      "evidence_record": {
+        "contract_version": "evidence-record/v1.3",
+        "record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_h001_unconfirmed_guard"
+        },
+        "case_ref": {
+          "kind": "case",
+          "ref": "case_h001"
+        },
+        "selection_rev": 1,
+        "basis": {
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_h001"
+          },
+          "visual_evidence_ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_h001"
+          },
+          "evidence_interval_ref": {
+            "kind": "incident_clip",
+            "ref": "clip_h001"
+          }
+        },
+        "event": {
+          "visual_event_type": {
+            "value": "SOLID_LINE_LANE_CHANGE",
+            "source": {
+              "kind": "search.visual_inference",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "event.source.visual_inference"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "safety_report_type": {
+            "value": "TRAFFIC_VIOLATION",
+            "source": {
+              "kind": "evidence.category_mapping",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.category_mapping"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "violation_expression": {
+            "value": "백색 실선을 넘어 진로를 변경",
+            "source": {
+              "kind": "evidence.violation_expression",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.violation_expression"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_h001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "occurred_at": {
+          "value": "2026-08-24T18:05:12+09:00",
+          "time_resolution_ref": {
+            "kind": "time_resolution",
+            "ref": "tres_h001"
+          },
+          "resolution_status": "OK",
+          "user_corrected": false,
+          "source": {
+            "kind": "readout.overlay_ocr",
+            "label_key": "time.source.overlay_ocr"
+          }
+        },
+        "vehicle_number": {
+          "value": "12가3456",
+          "source": {
+            "kind": "readout.plate_ocr",
+            "ref": {
+              "kind": "plate_readout",
+              "ref": "readout_h001_plate"
+            },
+            "observability": "OBSERVED",
+            "label_key": "plate.source.plate_ocr"
+          },
+          "support_refs": [
+            {
+              "kind": "plate_readout",
+              "ref": "readout_h001_plate"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "location": {
+          "user_hint": {
+            "value": "상무중앙로 사거리 부근",
+            "source": {
+              "kind": "case.user_location_hint",
+              "ref": {
+                "kind": "case",
+                "ref": "case_h001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "location.source.user_hint"
+            },
+            "support_refs": [],
+            "user_corrected": true,
+            "needs_review": false
+          },
+          "coord": {
+            "value": {
+              "lat": 35.1522,
+              "lon": 126.8515
+            },
+            "source": {
+              "kind": "recording.gps_stream",
+              "ref": {
+                "kind": "media_stream",
+                "ref": "ms_h001_front_v"
+              },
+              "observability": "OBSERVED",
+              "label_key": "location.source.gps"
+            },
+            "support_refs": [
+              {
+                "kind": "frame",
+                "ref": "fr_h001_thumb"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "provenance": {
+          "input_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_h001"
+            },
+            {
+              "kind": "plate_readout",
+              "ref": "readout_h001_plate"
+            },
+            {
+              "kind": "time_resolution",
+              "ref": "tres_h001"
+            }
+          ],
+          "correction_refs": [],
+          "policy_ref": "policy/evidence-assembly-v1"
+        }
+      },
+      "render_error": "report.input.situation_unconfirmed",
+      "normal_final_report_emitted": false,
+      "report_package_emitted": false
+    },
+    "with_derived_confirmation": {
+      "adapter_input": {
+        "value": "CONFIRMED",
+        "responded_at": "2026-08-24T18:22:30+09:00",
+        "candidate_ref": {
+          "kind": "candidate_event",
+          "ref": "candidate_h001"
+        }
+      },
+      "derivation": {
+        "kind": "TEST_DERIVED_CONFIRMATION",
+        "reason": "The shared CaseView is NOT_ASKED; the accepted specific-template policy requires explicit confirmation."
+      }
+    }
+  },
   "consumer_mock": {
     "current_evidence_ref": "ev_h001",
     "time_resolution_ref": {
@@ -573,24 +783,25 @@
     "common_package_count": 1,
     "baseline_package_count": 1,
     "known_differences": [
+      "The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.",
       "Baseline uses safety-report-policy/v1 text and policy_ref; the shared package still uses older text and policy/package-assembly-v1.",
       "Baseline location uses the case hint directly and does not invent the shared fixture search_keyword."
     ]
   },
-  "base_revision": "024689d4f458287f2e3884c71d4fd777e4d3b7d7",
+  "base_revision": "16c078f8b6fb7841c53bc97413fa16b90bda947d",
   "implementation_fingerprints": {
     "src/daesingo/evidence/_contract.py": "00bdef529c41660bc13aa57cc87f3b35d3b0b111b6fcf9eb88e505a8a2b989bc",
     "src/daesingo/evidence/assembly.py": "b56d481327c3a2f1d1996dbd933bf8d00fc12180d60d3f866037be1cfbb77db9",
     "src/daesingo/evidence/corrections.py": "041a7c48b8f1e05a52f024ec9f52813dcdc1811d4a87216350261eeb8ca0079a",
-    "src/daesingo/evidence/mock_integration.py": "7704c10b3aa10dbb4d2c2afe9514aca78d6bbd884afd65a1a831b75421d00786",
-    "src/daesingo/evidence/policy.py": "c1e820113b7ffe578cbf0dc75809cf1de55c18aaca8b5d749f477472e56db48a",
+    "src/daesingo/evidence/mock_integration.py": "be3d76506aa89ef053b21cdcaec100fe113fc7f2c4c9af2fbf31bbfa895d7eca",
+    "src/daesingo/evidence/policy.py": "e7a71965451a06266614981e54d5f9435b854e2b60c67ad2594ec384267e01af",
     "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
-    "src/daesingo/evidence/requirements.py": "9883bce897dd7e43c05ef73d49e8294da570700e9d9a0c1866b95eccb8881942",
+    "src/daesingo/evidence/requirements.py": "2c5657ef767bf082a8576e632e327f472b811e4a91e9b819282ff25e1978e6c4",
     "src/daesingo/evidence/time_resolution.py": "0b2c8033e9da462e26385d9a8895ad1e649eda393f63259ea7384ee02fbf457f",
     "src/daesingo/evidence/validation.py": "3651ccf808849efae11aaed2ba214454f7adb416898173d107ebcba54caeb38f",
-    "tests/evidence/fixtures/adapter_inputs.json": "33b433700f5a5ffa26fd44540fa1ffbf00ad328dd035ae191a7c855a519de2ca",
-    "tests/evidence/test_contract_units.py": "38fafe77bad12c22bdab6071d4bb58fe849eb65a2c5affd5e1cbc11624364402",
+    "tests/evidence/fixtures/adapter_inputs.json": "cee654ea6c791cad5d1747492c4590753a9ae9285216070c0defcdbf59d6062d",
+    "tests/evidence/test_contract_units.py": "022510bf3cdd5d19afa9b586cb24de96888c4862f68af0a8aeba36e297a4f54a",
     "tests/evidence/test_contract_validation.py": "0c9278008ccfcc108cd8cd821a4a9aee4ecf2045da503332ca365e19b80d3ada",
-    "tests/evidence/test_mock_integration.py": "c746529de00905462632e9151a154e1c180288a422b5edddfb922505b7f963c8"
+    "tests/evidence/test_mock_integration.py": "f18968fdb5f5bf1570ce56307be7f21643e91c729b6e4510d7b9b9a960ec2d6c"
   }
 }
