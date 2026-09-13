@@ -12,6 +12,8 @@ RUN_NOT_PRODUCED)는 run_ref 로 묶으면 통째로 빠져 비용이 과소 보
 NO_ROWS = "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
 MIXED = ("MIXED_CURRENCY — 통화가 섞여 합산하지 않는다. 환율은 "
          "pricing_context 에 귀속되며 eval 이 정할 값이 아니다")
+ZERO_DURATION = ("ZERO_PROCESSED_DURATION — 분모가 0이라 시간당 환산치를 "
+                  "낼 수 없다 (기록이 없다는 뜻이 아니다)")
 
 
 def score(usage_records, processed_duration_sec, scenarios):
@@ -34,7 +36,7 @@ def score(usage_records, processed_duration_sec, scenarios):
 
     total = sum(per_case.values())
     hourly = None
-    if processed_duration_sec:
+    if processed_duration_sec is not None and processed_duration_sec != 0:
         hourly = total / (processed_duration_sec / 3600.0)
 
     reasons = []
@@ -44,6 +46,8 @@ def score(usage_records, processed_duration_sec, scenarios):
         reasons.append("ZERO_COST_CASES — %s" % ", ".join(zero_cases))
     if processed_duration_sec is None:
         reasons.append("NO_PROCESSED_DURATION — 시간당 환산치를 낼 수 없다")
+    elif processed_duration_sec == 0:
+        reasons.append(ZERO_DURATION)
 
     return {
         "cost_per_case": per_case,

@@ -96,6 +96,21 @@ def test_result_pins_the_scorer_version_and_the_prediction_it_scored(tmp_path, m
     assert len(ref["sha256"]) == 64
 
 
+def test_cost_block_is_wired_end_to_end_and_keyed_by_case_id(tmp_path, monkeypatch):
+    """단위 테스트는 cost.score() 만 본다 — build_result 가 실제로 그 값을
+    result["cost"] 로 옮겨 쓰는지는 여기서 pin 한다."""
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "mock_pack",
+                     "--stage", "candidate", "--run-id", "t_cost_wiring"]) == 0
+    assert score.main(["--prediction", "t_cost_wiring"]) == 0
+
+    result = json.loads((tmp_path / "results" / "t_cost_wiring.mp1.json").read_text(encoding="utf-8"))
+    assert result["cost"]["currency"] == "KRW"
+    assert result["cost"]["total"] == 3570.0
+    assert result["cost"]["cost_per_case"]["case_h001"] == 938.0
+
+
 def test_score_refuses_when_the_contract_version_does_not_match(tmp_path, monkeypatch):
     """버전이 다르면 비교를 거부한다 (module-architecture v4 §9-2 규칙 5)."""
     monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))

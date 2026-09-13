@@ -60,3 +60,17 @@ def test_no_duration_leaves_the_hourly_rate_null():
     out = cost.score(rows, processed_duration_sec=None, scenarios=["s1"])
     assert out["total"] == 100.0
     assert out["cost_per_source_video_hour"] is None
+
+
+def test_missing_duration_reason_differs_from_zero_duration_reason():
+    """None(기록 없음)과 0(실측된 무값)은 다른 사실이다 — 사유 문구도 달라야 한다."""
+    rows = [_row("case_a", "100")]
+
+    missing = cost.score(rows, processed_duration_sec=None, scenarios=["s1"])
+    zero = cost.score(rows, processed_duration_sec=0.0, scenarios=["s1"])
+
+    assert missing["cost_per_source_video_hour"] is None
+    assert zero["cost_per_source_video_hour"] is None
+    assert missing["coverage"] != zero["coverage"]
+    assert "NO_PROCESSED_DURATION" in missing["coverage"]
+    assert "ZERO_PROCESSED_DURATION" in zero["coverage"]
