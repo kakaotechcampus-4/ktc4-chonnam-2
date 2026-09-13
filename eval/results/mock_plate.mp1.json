@@ -6,11 +6,11 @@
     "manifest": "mock_pack",
     "gt_version": "mp1",
     "normalizer_version": "n1",
-    "code_commit": "ed616a8",
-    "scorer_version": "s2",
+    "code_commit": "f19d4df",
+    "scorer_version": "p1",
     "prediction_ref": {
       "path": "eval/predictions/mock_plate.json",
-      "sha256": "74cf949fc416a9984611a3fae5d0886b1436b307874b9944b91df5a4033b94a1"
+      "sha256": "0f5b33365afa02534ef3f2f3956f014506c14cad1745b9d009ecdf207ef301c2"
     }
   },
   "candidate": {
@@ -70,6 +70,7 @@
       "scenario_unknown_abstain_partial_001",
       "scenario_infra_failure_001"
     ],
-    "coverage": "ZERO_COST_CASES — case_x001"
+    "coverage": "ZERO_COST_CASES — case_x001",
+    "scorer_version": "c1"
   }
 }

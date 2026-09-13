@@ -6,11 +6,11 @@
     "manifest": "a_aihub",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "ed616a8",
+    "code_commit": "f19d4df",
     "scorer_version": "s2",
     "prediction_ref": {
       "path": "eval/predictions/demo_correct_cls.json",
-      "sha256": "704fd81a50f2c3384a95efd0e8aa1863b623916f54810c505a78f5df9b4d0247"
+      "sha256": "e22831339d31079113c5990cac38f2677473959b37d03bd76f8bd4f89e4d65fd"
     }
   },
   "candidate": {
@@ -101,7 +101,7 @@
     "exact_accuracy": null,
     "wrong_accept_rate": null,
     "abstention_recall": null,
-    "n": 0,
+    "n": null,
     "coverage": "NOT_RUN — stage=classification 실행이다"
   },
   "cost": {
@@ -111,6 +111,7 @@
     "currency": null,
     "n_rows": 0,
     "scenarios": [],
-    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
+    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
+    "scorer_version": "c1"
   }
 }

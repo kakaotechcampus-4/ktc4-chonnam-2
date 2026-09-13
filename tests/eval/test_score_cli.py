@@ -111,6 +111,29 @@ def test_cost_block_is_wired_end_to_end_and_keyed_by_case_id(tmp_path, monkeypat
     assert result["cost"]["cost_per_case"]["case_h001"] == 938.0
 
 
+def test_plate_stage_with_no_gt_completes_and_reports_why(tmp_path, monkeypatch):
+    """A tier 처럼 plate 정답지가 없는 manifest 로 --stage plate 를 돌리면
+
+    FileNotFoundError 로 죽지 않고, 결과 파일이 plate 정답지가 없다는
+    사실을 null + 사유로 남긴다 (FIX7 — NO_GT 를 CLI 에서 실제로 밟는다).
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    # b_youtube 에는 gt/gt_plate.json 이 없다. mock_pack:contracts 는 manifest
+    # 이름과 무관하게 data/mock/readout 을 읽으므로 예측 자체는 만들어진다.
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "b_youtube",
+                     "--stage", "plate", "--run-id", "t_plate_no_gt"]) == 0
+    rc = score.main(["--prediction", "t_plate_no_gt"])
+    assert rc == 0
+
+    results_dir = tmp_path / "results"
+    out = next(results_dir.glob("t_plate_no_gt.*.json"))
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert result["plate"]["n"] is None
+    assert result["plate"]["exact_accuracy"] is None
+    assert "NO_PLATE_GT" in result["plate"]["coverage"]
+
+
 def test_score_refuses_when_the_contract_version_does_not_match(tmp_path, monkeypatch):
     """버전이 다르면 비교를 거부한다 (module-architecture v4 §9-2 규칙 5)."""
     monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))

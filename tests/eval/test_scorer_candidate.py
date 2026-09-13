@@ -243,6 +243,27 @@ def test_unknown_scoring_value_raises_instead_of_silently_excluding():
         candidate.score([{"clip_id": "c1", "candidates": []}], gt)
 
 
+def test_derived_gt_surfaces_the_circularity_warning():
+    """mock tier 처럼 GT 가 pack 에서 파생됐으면 결과가 그 사실을 말해야 한다.
+
+    plate.score 는 이미 이 경고를 coverage 에 적는다 — candidate 도 같은
+    규칙을 따라야 recall·onset_error 를 성능 근거로 잘못 읽지 않는다.
+    """
+    gt = _gt(100.0)
+    gt["meta"] = {"coverage": {"derived_from_mock_pack": True,
+                                "independent_ground_truth": False}}
+    out = candidate.score(_pred(rep=100.0, start=99.0, end=101.0), gt)
+    assert "순환" in out["coverage"]
+
+
+def test_independent_gt_does_not_surface_the_circularity_warning():
+    gt = _gt(100.0)
+    gt["meta"] = {"coverage": {"derived_from_mock_pack": False,
+                                "independent_ground_truth": True}}
+    out = candidate.score(_pred(rep=100.0, start=99.0, end=101.0), gt)
+    assert "순환" not in (out["coverage"] or "")
+
+
 def test_included_target_without_violation_type_raises():
     """violation_type 이 없는 INCLUDED target 을 조용히 by_type 에 흘리지 않는다.
 

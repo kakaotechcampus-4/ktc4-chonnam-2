@@ -9,6 +9,8 @@ RUN_NOT_PRODUCED)는 run_ref 로 묶으면 통째로 빠져 비용이 과소 보
 보장한다.
 """
 
+SCORER_VERSION = "c1"
+
 NO_ROWS = "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
 MIXED = ("MIXED_CURRENCY — 통화가 섞여 합산하지 않는다. 환율은 "
          "pricing_context 에 귀속되며 eval 이 정할 값이 아니다")
@@ -20,14 +22,15 @@ def score(usage_records, processed_duration_sec, scenarios):
     if not usage_records:
         return {"cost_per_case": None, "cost_per_source_video_hour": None,
                 "total": None, "currency": None, "n_rows": 0,
-                "scenarios": list(scenarios), "coverage": NO_ROWS}
+                "scenarios": list(scenarios), "coverage": NO_ROWS,
+                "scorer_version": SCORER_VERSION}
 
     currencies = {r["cost"]["currency"] for r in usage_records}
     if len(currencies) > 1:
         return {"cost_per_case": None, "cost_per_source_video_hour": None,
                 "total": None, "currency": sorted(currencies),
                 "n_rows": len(usage_records), "scenarios": list(scenarios),
-                "coverage": MIXED}
+                "coverage": MIXED, "scorer_version": SCORER_VERSION}
 
     per_case = {}
     for r in usage_records:
@@ -57,4 +60,5 @@ def score(usage_records, processed_duration_sec, scenarios):
         "n_rows": len(usage_records),
         "scenarios": list(scenarios),
         "coverage": "; ".join(reasons) if reasons else None,
+        "scorer_version": SCORER_VERSION,
     }

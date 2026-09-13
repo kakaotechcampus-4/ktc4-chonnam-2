@@ -17,6 +17,10 @@ import statistics
 SCORER_VERSION = "s2"   # 2026-09-13 IoU -> onset point error (계약 v1.1 §4-1)
 DEFAULT_TOLERANCE_SEC = 2.0
 
+CIRCULARITY = ("순환 경고 — mock tier 의 onset 은 채점 대상인 예측과 같은 fixture "
+               "(span.representative_ms)에서 유도한 값이라 recall·onset_error_sec 는 "
+               "구조상 순환적이다. 성능 근거가 아니다")
+
 
 def _contains(c, onset_sec):
     """coarse 창이 정답 시점을 품는가. 매칭 조건이 아니라 보조 신호다."""
@@ -105,7 +109,12 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
     for clip_id in negative_clips:
         fp += len(by_clip.get(clip_id, []))
 
+    cov = (gt.get("meta") or {}).get("coverage") or {}
+    circular = bool(cov.get("derived_from_mock_pack")) or cov.get("independent_ground_truth") is False
+
     reasons = []
+    if circular:
+        reasons.append(CIRCULARITY)
     if n_events == 0:
         reasons.append("NO_EVENTS — GT 에 채점할 사건이 없다")
     if not negative_clips:

@@ -14,6 +14,8 @@ A tier 는 번호판이 비식별 처리되어 문자 정답이 없다. GT 가 �
 아니라 null 이다 — 데이터가 없는 것과 성능이 나쁜 것은 다른 사실이다.
 """
 
+SCORER_VERSION = "p1"   # 2026-09-14 plate 채점 경로 신설 (abstained x legibility 교차표)
+
 NO_GT = ("NO_PLATE_GT — 이 manifest 에 plate 정답지가 없다. "
          "A tier 는 번호판 마스킹(harness-v1-design.md §4-3)")
 
@@ -26,7 +28,7 @@ ZERO_NUMERATOR = ("wrong_accept_rate 분자 0건 — pack 에 「확신에 차�
 
 def not_run(reason):
     return {"exact_accuracy": None, "wrong_accept_rate": None,
-            "abstention_recall": None, "n": 0, "coverage": reason}
+            "abstention_recall": None, "n": None, "coverage": reason}
 
 
 def score(normalized, gt):
