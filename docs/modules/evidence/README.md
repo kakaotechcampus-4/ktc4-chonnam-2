@@ -21,6 +21,8 @@
 ## 문서 운영
 
 - [김준영 1차 완료 체크리스트](first-completion-checklist.md): 공용 Mock·Final Contract 기준의 입력/출력 완료 조건, Merge 증빙, 통합 대기와 중단 기준. common/runtime 구현은 제외한다.
+- [1차 Mock 통합 수행 결과](first-completion-result.md): 실행 baseline, Scenario별 증빙, 체크리스트 추적표, 통합/결정 대기 목록.
+- [`artifacts/first-completion/`](artifacts/first-completion/): H/U/P/R 실제 baseline JSON과 Consumer Mock 판독 결과.
 
 - `research/`: 조사·비교·Spike
 - `experiments/`: 실제 설정/입력/결과/learning
