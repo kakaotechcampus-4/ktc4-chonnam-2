@@ -2,7 +2,7 @@
 
 > 상태: **PARTIAL_READY**
 >
-> 실행 기준: branch `docs/evidence-first-completion-checklist`, HEAD `024689d4f458287f2e3884c71d4fd777e4d3b7d7` + 이 문서와 함께 있는 미커밋 구현
+> 실행 기준: branch `docs/evidence-first-completion-checklist`, 기준 커밋 `2a4302ecda6969f45da86543546c827d194be328` + 이 문서와 함께 있는 confirmation guard 작업본
 >
 > 기준 계약/정책: `time-resolution/v1`, `evidence-record/v1.3`, `evidence-needs/v1`, `requirement-report/v1`, `report-package/v1`, `correction-record/v1.1`, `safety-report-policy/v1`
 
@@ -12,7 +12,7 @@
 
 | Scenario | baseline 결과 | Consumer Mock 판독 | 판정 |
 | --- | --- | --- | --- |
-| H `scenario_happy_001` | Time `OK`; Evidence `ev_h001`; Needs `[]`; Requirement `PASS/PASS`; Package `pkg_h001` | `EVIDENCE_SUFFICIENT=true`, `PACKAGE_READY=true`, `USER_REVIEWED=CASE_OWNED_NOT_DERIVED` | Mock 연결 검증 완료 |
+| H `scenario_happy_001` | 공용 입력의 `NOT_ASKED`는 renderer/Package 미발행. 명시적 test-derived `CONFIRMED`를 추가하면 Time `OK`; Evidence `ev_h001`; Needs `[]`; Requirement `PASS/PASS`; Package `pkg_h001` | derived 확인 입력에서만 `EVIDENCE_SUFFICIENT=true`, `PACKAGE_READY=true`; `USER_REVIEWED=CASE_OWNED_NOT_DERIVED` | 정책 guard 검증 완료 + 파생 Mock 연결 검증 완료 |
 | U `scenario_unknown_abstain_partial_001` | Time `NEEDS_REVIEW`와 충돌 provenance; visual type `null`; `USER_UNSURE`; Requirement `WARN/WARN`; Package 0건 | Evidence gate만 true, Package gate false | **Contract 변경 검토 필요(Q1)** |
 | P `scenario_plate_reread_001` | `ev_p001` 번호판 부재 + `PLATE_REREAD` + UNKNOWN → `ev_p001_v2` 번호판 `17나2867` + 빈 Needs + PASS | 현재 Evidence는 v2, Package 없음 | Mock 연결 검증 완료(Package는 Scenario 범위 밖) |
 | R `scenario_correction_rerun_001` | Time `NEEDS_REVIEW` → `OK/AGREED/USER_OVERRIDE`; Evidence/Requirement supersede; 번호판 `34나7890`·basis·`selection_rev=1` 보존 | 현재 Evidence/Requirement는 v2, Package 없음 | Mock 연결 검증 완료(Package는 Scenario 범위 밖) |
@@ -22,7 +22,8 @@
 ## 처리 경계
 
 - **실제 baseline 처리:** 시간 source 우선순위/offset/충돌, Evidence 조립, CorrectionRecord head와 타입 검증 및 반영, declarative Needs, 두 scope의 명시적 rule 평가, deterministic report rendering, ready-only Package 조립.
-- **공용 Mock 입력:** recording/search/readout/case의 계약 JSON과 AssetFacts. 원본 46 JSON/7 Scenario는 수정하지 않았다.
+- **공용 Mock 입력:** recording/search/readout/case의 계약 JSON과 AssetFacts. 원본 46 JSON/7 Scenario는 수정하지 않았다. H의 공용 `NOT_ASKED` 경로는 specific renderer에서 차단한다.
+- **evidence 전용 case context:** H의 specific Package 성공 경로에는 `CONFIRMED`, U의 snapshot에는 `USER_UNSURE`의 전체 필드를 test-derived 입력으로 명시한다. 공용 case 원본과 동일하다고 주장하지 않는다.
 - **evidence 전용 Mock:** 신고영상 내부 번호판·시각 가시성 fact. 문자열 값만으로 가시성 PASS를 만들지 않도록 subject refs가 있는 별도 관찰로 주입한다.
 - **Consumer Mock:** 공개 Contract JSON만 읽어 current head와 두 gate를 계산한다. CaseView를 만들거나 case 정책을 재구현하지 않으며 `USER_REVIEWED`는 산출하지 않는다.
 - **Fixture 비교:** 실제 baseline 처리 후 상태/overall을 공용 evidence JSON과 비교한다. `scenario_id`별 canned output 재생을 처리 구현의 증거로 사용하지 않는다.
@@ -41,7 +42,7 @@
 | EvidenceRecord 상세·초기 4종 매핑 | `assembly.py`, `policy_data.json` / renderer·correction 단위 검사 | U null+USER_UNSURE, R correction ref, 4종 mapping/길이 | 검증 완료 | 실영상 AI 정확도는 미검증 |
 | EvidenceNeeds 상세 | `calculate_evidence_needs` / P Scenario 검사 | 첫 basis `ev_p001`, PLATE_REREAD; v2 basis와 빈 items | 검증 완료 | 재발주 변환은 case 담당 |
 | RequirementReport 두 scope·우선순위 | `requirements.py` / Scenario·단위 검사 | H PASS/PASS, U WARN/WARN, P UNKNOWN→PASS, R WARN→PASS; precedence | 검증 완료 | 용량·기한 수치 정책은 결정 대기 |
-| ReportPackage ready-only·template·optional plate image·lineage | `requirements.py`, `policy.py` / H·단위 검사 | H Package, U 미발행, optional plate image 생략, supersede ref | Mock 연결 검증 완료 | U 정상 Package는 Q1; 공용 문구는 Q2 동기화 대기 |
+| ReportPackage ready-only·template·optional plate image·lineage | `requirements.py`, `policy.py` / H·단위 검사 | H NOT_ASKED 차단 + derived CONFIRMED Package, U 미발행, optional plate image 생략, supersede ref | 정책 guard 및 Mock 연결 검증 완료 | 실제 H confirmation 전달은 case 통합 대기; U 정상 Package는 Q1; 공용 문구는 Q2 동기화 대기 |
 | Integration: Consumer가 공개 출력 읽기 | `consume_contracts` / Scenario 검사 | 각 baseline JSON의 `consumer_mock` | Mock 연결 검증 완료 | 실제 CaseView projection은 유소연 통합 대기 |
 | Operational: revision·정책·Mock 범위·재현 | CLI, artifact, 이 문서 | `base_revision`, `execution_mode`, source paths, 아래 명령 | 검증 완료 | 커밋 SHA는 커밋 후 갱신 가능 |
 | Product Spec의 첨부 용량·신고기한 | `requirements.py`의 명시적 policy gap | `PolicyConfigurationError` 단위 검사 | 미완료 | 김준영 policy 결정/근거 채택 필요; 임의 수치 금지 |
@@ -71,7 +72,7 @@ python scripts/check_boundaries.py
 git diff --check
 ```
 
-시작 상태와 최종 상태에서 공용 검증은 각각 `46 JSON / 7 Scenario, 0 errors`, `structure 60 / JSON 26 / semantic 104 PASS`, boundary `0 violations`였다. 최종 evidence 검사는 `18 tests OK`, Ruff `All checks passed`, compileall 성공, `git diff --check` 성공이다. 품질 검토 중 AssetFacts `availability=UNKNOWN`과 `UNAVAILABLE`의 outcome 분리, CorrectionRecord chain 검증, RFC3339·candidate ref 경계를 보강한 뒤 전체 검사를 다시 실행했다. 공용 validator PASS는 baseline 의미 정확성, 실제 Consumer E2E, AI/OCR 정확도, Owner 수락을 증명하지 않는다.
+시작 상태와 최종 상태에서 공용 검증은 각각 `46 JSON / 7 Scenario, 0 errors`, `structure 60 / JSON 26 / semantic 104 PASS`, boundary `0 violations`였다. 최종 evidence 검사는 `21 tests OK`, Ruff `All checks passed`, compileall 성공, `git diff --check` 성공이다. 품질 검토 중 AssetFacts `availability=UNKNOWN`과 `UNAVAILABLE`의 outcome 분리, CorrectionRecord chain 검증, RFC3339·candidate ref 경계와 specific/generic template confirmation guard를 보강한 뒤 전체 검사를 다시 실행했다. 공용 validator PASS는 baseline 의미 정확성, 실제 Consumer E2E, AI/OCR 정확도, Owner 수락을 증명하지 않는다.
 
 ## 인수인계
 
