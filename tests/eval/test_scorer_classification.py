@@ -38,23 +38,30 @@ def test_target_correctness_is_null_when_no_gt_bbox():
 
 
 def test_plate_without_gt_reports_null_not_zero():
+    # F6 해소로 plate.score 는 이제 GT 가 있으면 실제로 채점한다. GT 자체가
+    # 없는 경우(None)에는 여전히 0 이 아니라 null + 사유다 — 데이터가 없는
+    # 것과 성능이 나쁜 것은 다른 사실이다.
     r = plate.score([], None)
     assert r["exact_accuracy"] is None
     assert r["wrong_accept_rate"] is None
     assert r["abstention_recall"] is None
-    assert "NO_C_TIER_DATA" in r["coverage"]
+    assert "NO_PLATE_GT" in r["coverage"]
 
 
-def test_plate_ignores_gt_items_v1_has_no_c_tier():
-    # v1은 plate text GT가 없다 — GT에 items가 들어와도(향후 C tier
-    # 연동 실수를 가정) 검증되지 않은 계산 경로를 타지 않고 그대로 null이다.
+def test_plate_with_gt_but_no_matching_predictions_scores_nothing():
+    # v1은 plate GT가 없어 이 함수가 gt를 통째로 무시했었다. 지금은 GT를
+    # 실제로 쓰므로(F6 해소), gt 형식은 새 계약(readout_id/legibility)을
+    # 따르되 매칭되는 예측이 없으면 채점 대상 0건을 null + 사유로 정직하게
+    # 보고해야 한다.
     gt = {"meta": {"gt_version": "g1"},
-          "items": [{"sequence_id": "S1", "plate_text": "12가3456"}]}
+          "items": [{"readout_id": "r1", "legibility": "READABLE",
+                     "true_text": "12가3456"}]}
     r = plate.score([], gt)
     assert r["exact_accuracy"] is None
     assert r["wrong_accept_rate"] is None
     assert r["abstention_recall"] is None
-    assert "NO_C_TIER_DATA" in r["coverage"]
+    assert r["n"] == 0
+    assert "NO_SCORED_READOUTS" in r["coverage"]
 
 
 def test_out_of_enum_prediction_is_folded_into_none_not_dropped():

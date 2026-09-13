@@ -76,6 +76,29 @@ def normalize_classification(raw):
     return out
 
 
+def normalize_plate(raw):
+    """PlateReadout 계약 목록을 판독 단위 뷰로 옮긴다.
+
+    legibility 는 계약에 없다 — 「사람이 보면 읽히는가」는 eval 이 새로
+    만드는 참값이고 정답지에만 있다. 여기서는 예측 쪽 사실만 옮긴다.
+    """
+    out = []
+    for i, p in enumerate(raw):
+        where = "normalize_plate: raw[%d]" % i
+        _require_dict(p, where)
+        obs = _require_field(p, "observation", where)
+        _require_dict(obs, "%s.observation" % where)
+        out.append({
+            "readout_id": _require_field(p, "readout_id", where),
+            "scenario_id": p.get("scenario_id"),
+            "source_profile": (p.get("input_ref") or {}).get("source_profile"),
+            "value": obs.get("value"),
+            "status": obs.get("status"),
+            "abstained": _require_field(p, "abstained", where),
+        })
+    return out
+
+
 def from_candidate_events(raw):
     """CandidateEvent 계약 목록의 이름과 단위를 eval 뷰로 옮긴다.
 

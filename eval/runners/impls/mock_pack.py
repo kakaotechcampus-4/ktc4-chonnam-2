@@ -58,8 +58,10 @@ def run(scope):
     """
     if scope["stage"] == "candidate":
         return _run_candidate()
+    if scope["stage"] == "plate":
+        return _run_plate()
     raise ValueError(
-        "mock_pack:contracts 는 stage=candidate 만 지원한다 (받은 값: %r)."
+        "mock_pack:contracts 는 stage=candidate|plate 만 지원한다 (받은 값: %r)."
         % scope["stage"]
     )
 
@@ -85,4 +87,17 @@ def _run_candidate():
                 "score": e["score"],
             } for e in cands],
         })
+    return out
+
+
+def _run_plate():
+    out = []
+    for scenario in SCENARIOS:
+        doc = _read("readout", scenario + ".json")
+        if doc is None:
+            continue
+        for p in doc.get("plate_readouts", []):
+            item = dict(p)
+            item["scenario_id"] = scenario
+            out.append(item)
     return out

@@ -37,15 +37,21 @@ def build_result(env):
         },
         "candidate": None,
         "classification": None,
-        "plate": plate.score(norm, None),
+        "plate": None,
     }
     if stage == "candidate":
         result["candidate"] = candidate.score(norm, gt)
         result["classification"] = classification.not_run(
             "NOT_RUN — stage=candidate 실행이다")
+        result["plate"] = plate.not_run("NOT_RUN — stage=candidate 실행이다")
     elif stage == "classification":
         result["classification"] = classification.score(norm, gt)
         result["candidate"] = candidate.not_run("NOT_RUN — stage=classification 실행이다")
+        result["plate"] = plate.not_run("NOT_RUN — stage=classification 실행이다")
+    elif stage == "plate":
+        result["plate"] = plate.score(norm, gt)
+        result["candidate"] = candidate.not_run("NOT_RUN — stage=plate 실행이다")
+        result["classification"] = classification.not_run("NOT_RUN — stage=plate 실행이다")
     return result
 
 

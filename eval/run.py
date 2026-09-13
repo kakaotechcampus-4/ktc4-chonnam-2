@@ -17,6 +17,7 @@ from eval.runners import normalize, registry
 _NORMALIZERS = {
     "candidate": normalize.normalize_candidate,
     "classification": normalize.normalize_classification,
+    "plate": normalize.normalize_plate,
 }
 
 
