@@ -64,10 +64,16 @@ python -m pytest tests/eval -q            6 failed · 75 passed · 6 skipped
 - [ ] `eval/runners/impls/mock_pack.py` — `SCENARIO` 상수 → 7개 리스트, `search/candidate_events.<suffix>.json` → `search/scenario_<id>.json`의 `analysis_run_candidate_events[].candidates[]`
 - [ ] **두 음성을 구분한다** — `empty_001`은 search fixture 있고 candidates 0건이라 「후보 없음」(`fp_per_clip` 분모 O) / `infra_failure_001`은 search fixture 자체가 없어 「대상 아님」(분모 X). 뭉개면 음성 1건이 분모에 잘못 들어간다
 - [ ] `eval/runners/normalize.py` `from_mock_pack` — 소멸한 `data/mock/eval/prediction_*.json` 경로 정리
+- [ ] 🔴 **`from_candidate_events`가 `representative_ms`를 아예 싣지 않는다** — 현재 출력은 `{candidate_id, run_id, timeline_id, rank, t_start_sec, t_end_sec, event_type, score}`뿐이고 `mock_pack.run()`은 그중 5개만 넘긴다. **D의 점 오차 매처가 쓸 값이 파이프라인 어디에도 없다.** `representative_sec`과 `timeline_revision`을 normalize 출력과 예측 항목에 **둘 다** 추가한다
+- [ ] `timeline_revision`이 필요한 이유는 `relative_rebase_001`이다 — timeline이 revision 2개인데 candidate는 rev 1에 달려 있어, 버리면 512s가 어느 시간축인지 결과만 보고 말할 수 없다
 - [ ] `eval/manifests/mock_pack/gt/gt_candidate.json` — 7개 항목 재생성, span 690~708초 → **onset 기준**, `derived_from` 갱신(현재 존재하지 않는 두 파일을 가리킨다)
 - [ ] `coverage`: `clips_total` 7 · `clips_with_events` 5 · 음성 1 · 대상 아님 1. **순환성 경고 유지** — mock tier recall은 파이프라인 통과 확인이지 성능 근거가 아니다
 - [ ] `tests/eval/test_mock_pack_contract.py` — `scenario_partial_001` → `scenario_unknown_abstain_partial_001`, `<scenario>.expected.json` 경로
-- [ ] 식별자 개명 — `cand_h001`→`candidate_h001` · `run_h001_search`→`run_h001` · `PLATE_OCR`→`READOUT_PLATE` · `OVERLAY_OCR`→`READOUT_OVERLAY_TIME`
+- [ ] 식별자 개명 — **실측하니 4건 중 3건은 이미 끝났다.** 남은 것은 `tests/eval/` 안 2건뿐이고 `data/mock/`은 손대지 않는다
+  - [ ] `cand_h001`→`candidate_h001` — `tests/eval/test_mock_pack_contract.py` · `tests/eval/test_normalize.py`
+  - [ ] `scenario_partial_001`→`scenario_unknown_abstain_partial_001` — `test_mock_pack_contract.py:26,165`
+  - ~~`run_h001_search`→`run_h001`~~ · ~~`PLATE_OCR`→`READOUT_PLATE`~~ · ~~`OVERLAY_OCR`→`READOUT_OVERLAY_TIME`~~ — **레포에 없다.** 남은 `VIDEO_OVERLAY_OCR`·`OVERLAY_TIME_OCR`은 다른 식별자이고 대상이 아니다(evidence 3차 리뷰가 PASS로 확인)
+- [ ] 죽은 경로 `candidate_events.*`는 정확히 3파일 — `impls/mock_pack.py:7,50` · `gt_candidate.json:15` · `test_mock_pack_contract.py:110,136,156`
 - [ ] **`empty_001`이 pack 최초 음성 케이스**다 — `fp_per_clip`이 `null`(`NO_NEGATIVE_CLIPS`)에서 처음으로 실제 값이 된다
 
 **예측 onset 5건이 라벨과 정확히 일치함을 확인했다** — 312480 · 612000 · 930000 · 615000 · 512000, 전부 `timeline_revision: 1`.
@@ -97,7 +103,9 @@ python -m pytest tests/eval -q            6 failed · 75 passed · 6 skipped
 | `abstained=true` | 놓친 판독 | **`abstention_recall` 적중** |
 
 - [ ] 실측 분모: `exact_match` **4/4** · `abstention_recall` **1/1** · `wrong_accept_rate` **0/1**
-- [ ] **분자 0건 한계를 `coverage`에 적는다** — pack에 「확신에 차서 틀리게 읽은」 케이스가 없다. 이 수치는 안전하다는 증거가 아니다
+- [ ] 🔴 **`exact_match` 4/4는 성능이 아니다** — `true_text`가 판독 결과에서 왔으므로 mock tier에서 구조상 만점일 수밖에 없다. candidate GT에는 있는 순환성 경고가 plate에는 없다. **`gt_plate.json`에도 같은 경고를 넣는다**
+- [ ] **`wrong_accept_rate`는 분자가 0건**이다 — pack에 「확신에 차서 틀리게 읽은」 케이스가 없다. 안전하다는 증거가 아니다
+- [ ] 각 plate 라벨에 **`derived_from_pack`**을 적는다(지금은 5건 전부 `true`). 나중에 독립 참값이나 「일부러 틀린」 fixture가 오면 그 라벨만 `false`가 되고, 그때 `exact_match`가 처음 의미를 갖는다. **이 플래그가 I의 테스트 범위도 정한다**
 - [ ] `not_scored` 2건(`infra_failure` · `relative_rebase`)도 사유와 함께 적는다
 
 ## F. 결과 envelope 누락 4건
@@ -130,18 +138,21 @@ run_ref_reason:  null 22 · DIRECT_NO_RUN 2 · RUN_NOT_PRODUCED 2
 - [ ] **`scenario_id = clip_id` 규약 유지** — 7개로 넓혀도 1:1이 안 깨진다(시나리오당 timeline 1개, `relative_rebase_001`은 같은 `tl_rb001`의 revision 2개). GT `meta.clip_id_convention`에 명문화
 - [ ] B tier(`clip_id` 실재)와 mock tier가 같은 scorer를 타므로 **결과 파일만 보고 어느 쪽인지 읽히게** 한다
 - [ ] `docs/modules/eval/experiment-guide.md:483` — `OVERCONFIDENT`가 런타임 실패 이름들과 한 표에 있다. 층위(런타임 5 + 사후 1) 한 줄 추가
-- [ ] `docs/modules/eval/harness-v1-design.md:267`(F6) — 「`wrong_accept_rate` 분모에 abstain 항목 포함」을 **「정답이 `UNREADABLE`인 항목」**으로 정정. E의 교차표·ADR §4.10과 같은 정의
+- [ ] `docs/modules/eval/harness-v1-design.md:267`(F6) — **의미는 이미 맞다.** 원문이 「abstain 항목**(판독 불가로 답이 없는 번호판)**」이라고 괄호로 풀어 뒀다. 고칠 것은 **용어**뿐 — 「abstain 항목」은 예측 쪽 어휘인데 가리키는 대상은 정답 쪽 집합이라 괄호를 못 보면 반대로 읽힌다. **「정답이 `UNREADABLE`인 항목」**으로 바꿔 E의 교차표·ADR §4.10과 용어를 맞춘다
 
 ## I. `tests/eval`가 §13의 빈자리를 메운다
 
 §13은 `metric_targets`가 **비어있는지만** 보고 라벨 내용은 검증하지 못한다. 그 자리를 내 테스트가 맡는다.
 
-- [ ] 모든 `metric_targets[].ref`가 pack 안 객체로 해석될 것
-- [ ] `legibility=READABLE`이면 `true_text` == 해당 `PlateReadout.observation.value`
-- [ ] `legibility=UNREADABLE`이면 그 판독의 `abstained == true`
-- [ ] `candidate_onset.onset_ms` == 해당 candidate의 `span.representative_ms`
-- [ ] `scoring` 값이 `INCLUDED`/`EXCLUDED`/`BOUNDARY_EXCLUDED` 안에 있을 것
-- [ ] 7개 시나리오 전부에 expected 파일이 있을 것
+🔴 **함정:** 「라벨 값 == fixture 값」을 무조건 단언하면 **mock impl이 항상 옳다고 못 박는 꼴**이다. 그러면 E가 지적한 빈자리(`wrong_accept_rate` 분자 0건)를 메울 「일부러 틀린」 fixture가 오는 순간 **테스트가 먼저 깨져 정작 필요한 케이스를 막는다.** 등식 검사는 `derived_from_pack: true`인 라벨에만 건다.
+
+- [ ] 모든 `metric_targets[].ref`가 pack 안 객체로 해석될 것 — 전체
+- [ ] `legibility=READABLE`이면 `true_text`가 있고, `UNREADABLE`이면 없을 것 — 전체 (라벨 자체의 앞뒤)
+- [ ] `true_text` == 해당 `PlateReadout.observation.value` — **`derived_from_pack: true`인 것만**
+- [ ] `candidate_onset.onset_ms` == 해당 candidate의 `span.representative_ms` — mock tier (onset이 파생값이라 재생성 누락 검사로만 유효)
+- [ ] `scoring` 값이 `INCLUDED`/`EXCLUDED`/`BOUNDARY_EXCLUDED` 안에 있을 것 — 전체
+- [ ] 7개 시나리오 전부에 expected 파일이 있을 것 — 전체
+- [ ] **`abstained`는 단언하지 않는다** — 채점 대상이지 전제가 아니다. 미리 고정하면 `abstention_recall`과 `wrong_accept_rate`가 둘 다 무의미해진다
 
 ## J. 외부 입력 대기 — 완료 정의에서 제외
 
