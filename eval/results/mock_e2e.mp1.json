@@ -1,16 +1,16 @@
 {
   "meta": {
-    "run_id": "demo_correct",
-    "impl": "fake:always_correct",
+    "run_id": "mock_e2e",
+    "impl": "mock_pack:contracts",
     "stage": "candidate",
-    "manifest": "b_youtube",
-    "gt_version": "g1",
+    "manifest": "mock_pack",
+    "gt_version": "mp1",
     "normalizer_version": "n1",
     "code_commit": "ed616a8",
     "scorer_version": "s2",
     "prediction_ref": {
-      "path": "eval/predictions/demo_correct.json",
-      "sha256": "5a9bbc2dce2cb7a2163ac72b6eae3ccb6cc3e6c2cc7035334c3c711a976d68f3"
+      "path": "eval/predictions/mock_e2e.json",
+      "sha256": "bae195dc39dedb8b8206e32c5a69575bb42f34e3c0f5573df0745324ba33f754"
     }
   },
   "candidate": {
@@ -27,18 +27,34 @@
     "containment_rate": 1.0,
     "fp_per_clip": 0.0,
     "n_events": 4,
-    "n_negative_clips": 50,
+    "n_negative_clips": 1,
     "excluded_by_reason": {
-      "BOUNDARY_EXCLUDED": 1
+      "EXCLUDED": 1
     },
     "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      },
+      "MOTORCYCLE_HELMET_NON_USE": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      },
       "SIGNAL": {
         "recall_at": {
           "1": 1.0,
           "3": 1.0,
           "10": 1.0
         },
-        "n": 2
+        "n": 1
       },
       "SOLID_LINE_LANE_CHANGE": {
         "recall_at": {
@@ -46,10 +62,10 @@
           "3": 1.0,
           "10": 1.0
         },
-        "n": 2
+        "n": 1
       }
     },
-    "coverage": "BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
+    "coverage": "EXCLUDED — 1건을 채점에서 제외했다"
   },
   "classification": {
     "recall_macro": null,
@@ -71,12 +87,26 @@
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
   "cost": {
-    "cost_per_case": null,
-    "cost_per_source_video_hour": null,
-    "total": null,
-    "currency": null,
-    "n_rows": 0,
-    "scenarios": [],
-    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
+    "cost_per_case": {
+      "case_h001": 938.0,
+      "case_e001": 434.0,
+      "case_p001": 728.0,
+      "case_r001": 630.0,
+      "case_u001": 756.0,
+      "case_rb001": 84.0
+    },
+    "cost_per_source_video_hour": 1381.9354838709676,
+    "total": 3570.0,
+    "currency": "KRW",
+    "n_rows": 21,
+    "scenarios": [
+      "scenario_happy_001",
+      "scenario_empty_001",
+      "scenario_plate_reread_001",
+      "scenario_correction_rerun_001",
+      "scenario_unknown_abstain_partial_001",
+      "scenario_relative_rebase_001"
+    ],
+    "coverage": null
   }
 }

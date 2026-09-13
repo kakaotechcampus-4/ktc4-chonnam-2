@@ -6,7 +6,12 @@
     "manifest": "a_aihub",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "9691360"
+    "code_commit": "ed616a8",
+    "scorer_version": "s2",
+    "prediction_ref": {
+      "path": "eval/predictions/demo_wrong_cls.json",
+      "sha256": "645a9d30a4b5dd560619f75aa8363fc767c2de3bf426de2ddc9663e9dabf55a8"
+    }
   },
   "candidate": {
     "recall_at": {
@@ -97,6 +102,15 @@
     "wrong_accept_rate": null,
     "abstention_recall": null,
     "n": 0,
-    "coverage": "NO_C_TIER_DATA — plate text GT 부재. A tier 는 번호판 마스킹(harness-v1-design.md §4-3)"
+    "coverage": "NOT_RUN — stage=classification 실행이다"
+  },
+  "cost": {
+    "cost_per_case": null,
+    "cost_per_source_video_hour": null,
+    "total": null,
+    "currency": null,
+    "n_rows": 0,
+    "scenarios": [],
+    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
   }
 }
