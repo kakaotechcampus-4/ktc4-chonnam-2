@@ -19,7 +19,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `calculate_evidence_needs(...) -> EvidenceNeeds | None`
 - `evaluate_requirements(...) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
-- `render_report(...) -> dict`: `safety-report-policy/v1`의 결정론적 renderer
+- `render_report(...) -> dict`: `safety-report-policy/v1`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 한다.
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 

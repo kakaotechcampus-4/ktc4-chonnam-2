@@ -45,12 +45,18 @@ def report_type_label(safety_report_type: str) -> str:
 def render_report(
     *,
     visual_event_type: str | None,
+    situation_response: str | None,
     occurred_at: str,
     location_display: str,
     vehicle_number: str,
     violation_expression: str,
 ) -> dict[str, Any]:
     """Render only from policy-owned slots; no free-form generation occurs."""
+    if visual_event_type is None:
+        if situation_response != "USER_UNSURE":
+            raise ContractInputError("report.input.user_unsure_required")
+    elif situation_response not in {"CONFIRMED", "CORRECTED"}:
+        raise ContractInputError("report.input.situation_unconfirmed")
     parsed: datetime = parse_rfc3339(occurred_at)
     display_time = parsed.strftime("%Y-%m-%d %H:%M:%S")
     for name, value in (

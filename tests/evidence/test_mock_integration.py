@@ -25,6 +25,13 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(["PASS", "PASS"], [item["overall"] for item in outputs["requirement_reports"]])
         self.assertEqual(record["record_ref"], package["evidence_record_ref"])
         self.assertEqual("safety-report-policy/v1", package["provenance"]["policy_ref"])
+        self.assertEqual("CONFIRMED", record["situation_response"]["value"])
+        guard = result["policy_guard_check"]
+        self.assertEqual("NOT_ASKED", guard["shared_case_situation_confirmation"])
+        self.assertEqual("report.input.situation_unconfirmed", guard["without_confirmation"]["render_error"])
+        self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
+        self.assertFalse(guard["without_confirmation"]["report_package_emitted"])
+        self.assertEqual("EVIDENCE_TEST_DERIVED", result["execution_mode"]["case_context"])
         self.assertTrue(result["consumer_mock"]["package_ready"])
         self.assertEqual("CASE_OWNED_NOT_DERIVED", result["consumer_mock"]["user_reviewed"])
 
