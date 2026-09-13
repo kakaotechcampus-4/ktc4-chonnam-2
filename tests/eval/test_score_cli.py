@@ -75,3 +75,37 @@ def test_not_run_classification_block_keeps_every_metric_key(tmp_path, monkeypat
     assert set(blank) == set(classification.not_run("x"))
     # 결과 파일은 개행으로 끝난다 — 텍스트 도구로 이어 붙이기 위해서다.
     assert text.endswith("}\n")
+
+
+def test_result_pins_the_scorer_version_and_the_prediction_it_scored(tmp_path, monkeypatch):
+    """어느 지표 정의로 어느 예측을 채점했는지가 결과에 남아야 한다.
+
+    run_id 문자열이 같다는 것만으로 이어져 있으면, 예측 파일을 덮어써도
+    결과가 그 사실을 모른다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "mock_pack",
+                     "--stage", "candidate", "--run-id", "t_pin"]) == 0
+    assert score.main(["--prediction", "t_pin"]) == 0
+
+    result = json.loads((tmp_path / "results" / "t_pin.mp1.json").read_text(encoding="utf-8"))
+    assert result["meta"]["scorer_version"] == "s2"
+    ref = result["meta"]["prediction_ref"]
+    assert ref["path"].endswith("t_pin.json")
+    assert len(ref["sha256"]) == 64
+
+
+def test_score_refuses_when_the_contract_version_does_not_match(tmp_path, monkeypatch):
+    """버전이 다르면 비교를 거부한다 (module-architecture v4 §9-2 규칙 5)."""
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "mock_pack",
+                     "--stage", "candidate", "--run-id", "t_mismatch"]) == 0
+
+    path = tmp_path / "predictions" / "t_mismatch.json"
+    env = json.loads(path.read_text(encoding="utf-8"))
+    env["meta"]["contract_version"] = "analysis-run-candidate-event/v9.9"
+    path.write_text(json.dumps(env, ensure_ascii=False), encoding="utf-8")
+
+    assert score.main(["--prediction", "t_mismatch"]) == 4

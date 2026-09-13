@@ -19,11 +19,28 @@ def _load_prediction(run_id):
         return json.load(f)
 
 
+def _prediction_ref(run_id):
+    path = os.path.join(paths.predictions_dir(), run_id + ".json")
+    return {"path": os.path.relpath(path, paths.REPO_ROOT).replace("\\", "/"),
+            "sha256": manifests_io.sha256_file(path)}
+
+
+class ContractMismatch(Exception):
+    pass
+
+
 def build_result(env):
     stage = env["meta"]["stage"]
     manifest = env["meta"]["manifest"]
     gt = manifests_io.load_gt(manifest, stage)
     norm = env["normalized"]
+
+    gt_contract = gt["meta"].get("contract_version")
+    env_contract = env["meta"].get("contract_version")
+    if gt_contract and env_contract and gt_contract != env_contract:
+        raise ContractMismatch(
+            "계약 버전이 다르면 비교하지 않는다 (v4 §9-2 규칙 5): "
+            "정답지=%s · 예측=%s" % (gt_contract, env_contract))
 
     result = {
         "meta": {
@@ -34,6 +51,8 @@ def build_result(env):
             "gt_version": gt["meta"]["gt_version"],
             "normalizer_version": env["meta"]["normalizer_version"],
             "code_commit": env["meta"]["code_commit"],
+            "scorer_version": candidate.SCORER_VERSION,
+            "prediction_ref": _prediction_ref(env["meta"]["run_id"]),
         },
         "candidate": None,
         "classification": None,
@@ -66,6 +85,9 @@ def main(argv=None):
     except OSError as e:
         print("실패: %s" % e, file=sys.stderr)
         return 2
+    except ContractMismatch as e:
+        print("실패: %s" % e, file=sys.stderr)
+        return 4
     outdir = paths.results_dir()
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "%s.%s.json" % (args.prediction, result["meta"]["gt_version"]))

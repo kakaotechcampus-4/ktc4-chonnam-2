@@ -44,6 +44,9 @@ def build_envelope(impl_name, manifest, stage, run_id):
     # impl 이 속한 모듈에서 읽는다 (없으면 "v1"으로 취급한다).
     impl_module = sys.modules[impl.__module__]
     impl_version = getattr(impl_module, "IMPL_VERSION", "v1")
+    # 훅이 없는 impl 은 null 이다 — 값을 지어내지 않는다.
+    facts_fn = getattr(impl_module, "run_facts", None)
+    facts = facts_fn(scope) if facts_fn is not None else {}
     return {
         "meta": {
             "run_id": run_id,
@@ -57,9 +60,12 @@ def build_envelope(impl_name, manifest, stage, run_id):
             "normalizer_version": normalize.NORMALIZER_VERSION,
             "code_commit": _git_commit(),
             "created_at": datetime.datetime.now().astimezone().isoformat(),
+            "contract_version": facts.get("contract_version"),
+            "processed_duration_sec": facts.get("processed_duration_sec"),
         },
         "raw": raw,
         "normalized": normalized,
+        "facts": facts,
     }
 
 

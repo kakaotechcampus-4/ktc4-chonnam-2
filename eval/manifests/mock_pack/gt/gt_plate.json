@@ -3,6 +3,7 @@
     "gt_version": "mp1",
     "tier": "MOCK",
     "stage": "plate",
+    "contract_version": "plate-readout/v1.2",
     "coverage": {
       "readouts_total": 5,
       "readable": 4,

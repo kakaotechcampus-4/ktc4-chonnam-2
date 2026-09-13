@@ -6,7 +6,7 @@ from eval.runners import registry
 
 def test_envelope_has_meta_raw_normalized():
     env = run.build_envelope("fake:always_correct", "b_youtube", "candidate", "run_test_001")
-    assert set(env) == {"meta", "raw", "normalized"}
+    assert set(env) == {"meta", "raw", "normalized", "facts"}
     assert env["meta"]["impl"] == "fake:always_correct"
     assert env["meta"]["stage"] == "candidate"
     assert env["meta"]["manifest"] == "b_youtube"
@@ -54,3 +54,31 @@ def test_classification_envelope_reads_meta_from_sequences_json():
     assert env["meta"]["clip_rule_version"] is None
     assert len(env["normalized"]) == 120
     assert set(env["normalized"][0]) == {"sequence_id", "predicted", "target_bbox"}
+
+
+def test_envelope_records_the_contract_version_and_processed_duration(tmp_path, monkeypatch):
+    """어느 계약을 태운 실행인지, 원본 몇 초를 처리했는지가 남아야 한다.
+
+    없으면 계약이 바뀐 전후의 결과를 구분할 수 없고, 시간당 환산치를
+    결과 파일만으로 재현할 수 없다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "mock_pack",
+                     "--stage", "candidate", "--run-id", "t_env"]) == 0
+
+    env = json.loads((tmp_path / "predictions" / "t_env.json").read_text(encoding="utf-8"))
+    assert env["meta"]["contract_version"] == "analysis-run-candidate-event/v1.1"
+    # 전후방 2소스를 합산하지 않는다 (1차 A절 P2-9)
+    assert env["meta"]["processed_duration_sec"] == 9300.0
+    assert env["facts"]["usage_records"]
+
+
+def test_fake_impls_declare_no_contract_version(tmp_path, monkeypatch):
+    """훅이 없는 impl 은 null 이다. 지어내지 않는다."""
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    assert run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
+                     "--stage", "candidate", "--run-id", "t_fake_env"]) == 0
+
+    env = json.loads((tmp_path / "predictions" / "t_fake_env.json").read_text(encoding="utf-8"))
+    assert env["meta"]["contract_version"] is None
+    assert env["meta"]["processed_duration_sec"] is None

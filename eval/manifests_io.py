@@ -44,7 +44,7 @@ def load_gt(manifest_name, stage):
     )
 
 
-def _sha256(path):
+def sha256_file(path):
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
@@ -110,7 +110,7 @@ def validate(clips, gt, verify_hashes=0):
     for c in clips["clips"][:verify_hashes]:
         p = os.path.join(paths.REPO_ROOT, c["file_path"])
         if os.path.exists(p) and c.get("sha256"):
-            if _sha256(p) != c["sha256"]:
+            if sha256_file(p) != c["sha256"]:
                 problems.append("%s: sha256 불일치" % c["clip_id"])
 
     return problems

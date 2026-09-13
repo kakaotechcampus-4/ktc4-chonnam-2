@@ -3,6 +3,7 @@
     "gt_version": "mp1",
     "tier": "MOCK",
     "stage": "candidate",
+    "contract_version": "analysis-run-candidate-event/v1.1",
     "clip_id_convention": "mock tier 는 scenario_id 를 clip_id 로 쓴다. 시나리오당 recording_timeline 이 하나라 1:1 이 성립한다. B tier 는 clip_id 가 실재하므로 같은 scorer 를 타더라도 의미가 다르다.",
     "coverage": {
       "clips_total": 7,

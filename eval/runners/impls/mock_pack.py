@@ -101,3 +101,69 @@ def _run_plate():
             item["scenario_id"] = scenario
             out.append(item)
     return out
+
+
+CONTRACT_VERSIONS = {
+    "candidate": "analysis-run-candidate-event/v1.1",
+    "plate": "plate-readout/v1.2",
+}
+
+
+def _timeline_union_sec(scenario):
+    """timeline 이 덮는 원본 길이. 전후방 2소스를 합산하지 않는다.
+
+    happy_001 은 전후방이 둘 다 0~1200s 라 합산하면 2400s 로 2배가 된다
+    (1차 A절 P2-9). revision 이 여럿이면 최신 것만 본다.
+    """
+    doc = _read("recording", scenario + ".json")
+    if doc is None:
+        return 0.0
+    timelines = doc.get("recording_timelines", [])
+    if not timelines:
+        return 0.0
+    latest = max(timelines, key=lambda t: t.get("revision", 0))
+    spans = [(p["timeline_start_sec"], p["timeline_end_sec"])
+             for p in latest.get("source_placements", [])]
+    total = 0.0
+    cur_start = cur_end = None
+    for s, e in sorted(spans):
+        if cur_end is None or s > cur_end:
+            if cur_end is not None:
+                total += cur_end - cur_start
+            cur_start, cur_end = s, e
+        else:
+            cur_end = max(cur_end, e)
+    if cur_end is not None:
+        total += cur_end - cur_start
+    return total
+
+
+def _scenarios_for(stage):
+    """이 stage 가 실제로 예측을 만든 시나리오들."""
+    if stage == "candidate":
+        return [s for s in SCENARIOS if _candidate_events(s) is not None]
+    if stage == "plate":
+        return [s for s in SCENARIOS if _read("readout", s + ".json") is not None]
+    return []
+
+
+def run_facts(scope):
+    """이 실행이 처리한 원본과 비용 재료. run.py 가 선택적으로 부른다.
+
+    분자(비용)와 분모(원본 길이)를 같은 시나리오 집합으로 맞춘다 —
+    대상 아님으로 뺀 시나리오는 양쪽 모두에서 빠진다.
+    """
+    stage = scope["stage"]
+    scenarios = _scenarios_for(stage)
+    usage = []
+    for scenario in scenarios:
+        doc = _read("common", scenario + ".json")
+        if doc is None:
+            continue
+        usage.extend(doc.get("usage_records", []))
+    return {
+        "contract_version": CONTRACT_VERSIONS.get(stage),
+        "processed_duration_sec": sum(_timeline_union_sec(s) for s in scenarios),
+        "usage_records": usage,
+        "scenarios": scenarios,
+    }
