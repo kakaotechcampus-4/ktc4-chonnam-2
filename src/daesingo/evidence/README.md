@@ -12,8 +12,31 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 
 ## 공개 함수
 
-§4-모듈4 「Public Capability」의 함수 이름은 예시다. 실제 시그니처는 데이터 계약에서 확정한 뒤 여기에 적는다. 다른 모듈은 **공개 함수만** 호출한다.
+`daesingo.evidence`는 Final Contract 값을 받거나 반환하는 순수 함수 경계다. 인수는 Contract JSON을 역직렬화한 `dict`이며, `scenario_id`나 Mock 파일명은 공개 입력이 아니다.
+
+- `resolve_time(...) -> TimeResolution`
+- `assemble_evidence(...) -> EvidenceRecord`
+- `calculate_evidence_needs(...) -> EvidenceNeeds | None`
+- `evaluate_requirements(...) -> RequirementReport`
+- `build_report_package(...) -> ReportPackage`
+- `render_report(...) -> dict`: `safety-report-policy/v1`의 결정론적 renderer
+- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
+- `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
+
+`evaluate_requirements`의 `rule_codes`와 가시성 fact는 채택된 policy 설정 또는 upstream 관찰을 명시적으로 주입하기 위한 Python 호출 인수다. 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다.
+
+## 재현
+
+저장소 루트의 PowerShell에서 실행한다.
+
+```powershell
+$env:PYTHONPATH='src'
+python -m unittest discover -s tests/evidence -p 'test_*.py'
+python -m daesingo.evidence.mock_integration
+```
+
+두 번째 명령은 공용 H/U/P/R upstream JSON을 로딩하되 실제 baseline 순수 함수를 호출하고, 결과를 `docs/modules/evidence/artifacts/first-completion/`에 기록한다. 이 adapter와 그 Consumer reader는 테스트 도구이며 실제 `case` projection이 아니다.
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+**1차 Mock 통합 baseline 구현.** production runtime, 외부 API 호출, 실제 영상 생성, `case`의 CaseView projection은 포함하지 않는다. 현재 검증 범위와 보류 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.
