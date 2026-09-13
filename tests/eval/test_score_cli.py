@@ -109,3 +109,29 @@ def test_score_refuses_when_the_contract_version_does_not_match(tmp_path, monkey
     path.write_text(json.dumps(env, ensure_ascii=False), encoding="utf-8")
 
     assert score.main(["--prediction", "t_mismatch"]) == 4
+
+
+def test_score_proceeds_when_only_the_ground_truth_declares_a_contract_version(tmp_path, monkeypatch):
+    """한쪽만 null 이면 불일치가 아니다 — 훅 없는 impl 을 거부하면 안 된다.
+
+    `fake:always_correct` 는 mock_pack 의 GT 모양(t_onset_sec 만 있고
+    t_start_sec/t_end_sec 가 없다)을 읽지 못하고 KeyError 로 죽는다 —
+    b_youtube 용으로 만들어진 치트라 mock_pack 계약 산출물을 모른다.
+    그래서 실제 CLI 호출 대신, 진짜 실행으로 얻은 envelope 의
+    contract_version 만 null 로 덮어써 같은 상황(정답지는 버전을 선언,
+    예측은 훅이 없어 null)을 만든다 — 위 불일치 테스트와 같은 패턴이다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "mock_pack:contracts", "--manifest", "mock_pack",
+                     "--stage", "candidate", "--run-id", "t_null_env_contract"]) == 0
+
+    path = tmp_path / "predictions" / "t_null_env_contract.json"
+    env = json.loads(path.read_text(encoding="utf-8"))
+    assert env["meta"]["contract_version"] is not None  # 정답지가 버전을 선언하는 쪽
+    env["meta"]["contract_version"] = None  # 예측 쪽은 훅이 없다고 가정한다
+    path.write_text(json.dumps(env, ensure_ascii=False), encoding="utf-8")
+
+    assert score.main(["--prediction", "t_null_env_contract"]) == 0
+    reread = json.loads(path.read_text(encoding="utf-8"))
+    assert reread["meta"]["contract_version"] is None
