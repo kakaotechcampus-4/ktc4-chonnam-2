@@ -81,8 +81,9 @@ python -m pytest tests/eval -q            6 failed · 75 passed · 6 skipped
 ## D. 매칭 규칙 교체 (IoU → onset point error)
 
 - [ ] `eval/scorers/candidate.py` — 1차 매처를 `abs(representative_ms − gt_onset_ms) <= tolerance`로 교체
-- [ ] `_iou`는 지우지 않고 **보조 sanity 신호로만** 남긴다
-- [ ] `span_error_sec`의 이름·정의를 onset 오차 의미로 정리하고 결과 파일에 명시 — **현행 docstring이 「GT 시작 시각과의 절대 오차」라 새 정의와 어긋난다**
+- [ ] 🔴 **`_iou`는 삭제한다** — GT target에 외연이 없어지고 `t_onset_sec`만 남으므로 IoU는 계산 자체가 불가능하다. 이 변경이 만든 고아다
+- [ ] 보조 신호는 IoU가 아니라 **containment** — `pred.t_start_sec <= gt.t_onset_sec <= pred.t_end_sec`를 `containment_rate`로 낸다. 점 오차는 맞는데 창이 onset을 안 품으면 `search` 쪽 창 생성이 의심된다
+- [ ] 결과 키 `span_error_sec` → **`onset_error_sec`** 개명 — 이름이 구간 오차를 뜻하는 채로 점 오차를 담으면 반드시 오해된다. **현행 docstring도 「GT 시작 시각과의 절대 오차」라 새 정의와 어긋난다**
 - [ ] 근거: `contract-analysis-run-candidate-event.md` §4-1 · Consumer—`eval`(2026-09-10) · `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`
 - [ ] **주의:** 이 변경이 F `scorer_version`을 올리는 첫 계기다
 
@@ -146,7 +147,7 @@ run_ref_reason:  null 22 · DIRECT_NO_RUN 2 · RUN_NOT_PRODUCED 2
 
 🔴 **함정:** 「라벨 값 == fixture 값」을 무조건 단언하면 **mock impl이 항상 옳다고 못 박는 꼴**이다. 그러면 E가 지적한 빈자리(`wrong_accept_rate` 분자 0건)를 메울 「일부러 틀린」 fixture가 오는 순간 **테스트가 먼저 깨져 정작 필요한 케이스를 막는다.** 등식 검사는 `derived_from_pack: true`인 라벨에만 건다.
 
-- [ ] 모든 `metric_targets[].ref`가 pack 안 객체로 해석될 것 — 전체
+- [x] ~~모든 `metric_targets[].ref`가 pack 안 객체로 해석될 것~~ — **§13이 `walk_refs`로 이미 한다.** 중복해서 짜지 않는다
 - [ ] `legibility=READABLE`이면 `true_text`가 있고, `UNREADABLE`이면 없을 것 — 전체 (라벨 자체의 앞뒤)
 - [ ] `true_text` == 해당 `PlateReadout.observation.value` — **`derived_from_pack: true`인 것만**
 - [ ] `candidate_onset.onset_ms` == 해당 candidate의 `span.representative_ms` — mock tier (onset이 파생값이라 재생성 누락 검사로만 유효)

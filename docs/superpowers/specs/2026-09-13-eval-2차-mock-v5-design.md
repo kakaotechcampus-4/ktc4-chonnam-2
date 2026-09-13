@@ -239,7 +239,9 @@ matched = next((c for c in topk
                 and abs(c["representative_sec"] - t["t_onset_sec"]) <= tolerance_sec), None)
 ```
 
-- `_iou`는 지우지 않고 **보조 sanity 신호로만** 남긴다(구간 포함 여부 확인용)
+- **`_iou`는 삭제한다.** GT target에서 외연(`t_start_sec`/`t_end_sec`)이 없어지고 `t_onset_sec`만 남으므로 IoU는 **계산 자체가 불가능**해진다. 이 변경이 만든 고아이므로 지운다
+- 보조 sanity 신호는 IoU가 아니라 **containment**다 — `pred.t_start_sec <= gt.t_onset_sec <= pred.t_end_sec`. coarse 창이 정답 시점을 품고 있는지를 `containment_rate`로 따로 낸다. 점 오차는 맞는데 창이 onset을 안 품으면 `search` 쪽 창 생성이 의심된다
+- 결과 키 `span_error_sec` → **`onset_error_sec`**으로 개명한다. 이름이 구간 오차를 뜻하는 채로 점 오차를 담으면 결과를 읽는 사람이 반드시 오해한다
 - `span_error_sec`의 이름·정의를 **onset 오차**로 정리하고 결과 파일에 명시한다. 현행 docstring은 「GT 시작 시각과의 절대 오차」라고 적혀 있어 새 정의와 어긋난다
 - **근거**: `contract-analysis-run-candidate-event.md` §4-1 Consumer—`eval`(2026-09-10) — `span`은 coarse 후보 창이지 사건 외연이 아니다. span IoU는 폐기됐다. `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`
 - **이 변경이 §9 `scorer_version`을 올리는 첫 계기다**
@@ -353,7 +355,7 @@ CI는 이 중 아무것도 돌리지 않는다. `.github/workflows/boundary-chec
 
 | 검사 | 범위 | 무엇을 막나 |
 | --- | --- | --- |
-| 모든 `metric_targets[].ref`가 pack 안 객체로 해석 | 전체 | 죽은 참조 |
+| ~~모든 `metric_targets[].ref`가 pack 안 객체로 해석~~ | — | **§13이 이미 한다**(`walk_refs`). 중복해서 짜지 않는다 |
 | `legibility=READABLE`이면 `true_text`가 있고, `UNREADABLE`이면 없다 | 전체 | 라벨 자체의 앞뒤가 안 맞음 |
 | `true_text` == 해당 `PlateReadout.observation.value` | **`derived_from_pack: true`만** | 파생 라벨이 원본과 조용히 갈라짐 |
 | `candidate_onset.onset_ms` == 해당 candidate의 `span.representative_ms` | mock tier | GT 재생성 누락 (mock tier onset은 파생값이다 — §6-2) |
