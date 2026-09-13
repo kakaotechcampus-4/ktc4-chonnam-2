@@ -111,3 +111,47 @@ def test_normalize_classification_missing_predicted_raises():
     with pytest.raises(ValueError,
                         match=re.escape("normalize_classification: raw[0]에 필드 'predicted' 없음")):
         normalize.normalize_classification(raw)
+
+
+def test_normalize_plate_extracts_fields():
+    raw = [{"readout_id": "r1", "scenario_id": "s1",
+            "input_ref": {"source_profile": "p1"},
+            "observation": {"value": "12가3456", "status": "OK"},
+            "abstained": False}]
+    out = normalize.normalize_plate(raw)
+    assert out == [{"readout_id": "r1", "scenario_id": "s1", "source_profile": "p1",
+                     "value": "12가3456", "status": "OK", "abstained": False}]
+
+
+def test_normalize_plate_optional_fields_default_to_none_when_absent():
+    """scenario_id·input_ref·observation.value·observation.status 는 선택 필드다."""
+    raw = [{"readout_id": "r1", "observation": {}, "abstained": True}]
+    out = normalize.normalize_plate(raw)
+    assert out == [{"readout_id": "r1", "scenario_id": None, "source_profile": None,
+                     "value": None, "status": None, "abstained": True}]
+
+
+def test_normalize_plate_raw_entry_not_dict_raises():
+    with pytest.raises(ValueError, match=re.escape("normalize_plate: raw[0]가 dict 가 아님")):
+        normalize.normalize_plate(["not-a-dict"])
+
+
+def test_normalize_plate_missing_readout_id_raises():
+    raw = [{"observation": {}, "abstained": False}]
+    with pytest.raises(ValueError,
+                        match=re.escape("normalize_plate: raw[0]에 필드 'readout_id' 없음")):
+        normalize.normalize_plate(raw)
+
+
+def test_normalize_plate_missing_observation_raises():
+    raw = [{"readout_id": "r1", "abstained": False}]
+    with pytest.raises(ValueError,
+                        match=re.escape("normalize_plate: raw[0]에 필드 'observation' 없음")):
+        normalize.normalize_plate(raw)
+
+
+def test_normalize_plate_missing_abstained_raises():
+    raw = [{"readout_id": "r1", "observation": {}}]
+    with pytest.raises(ValueError,
+                        match=re.escape("normalize_plate: raw[0]에 필드 'abstained' 없음")):
+        normalize.normalize_plate(raw)

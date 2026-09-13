@@ -172,6 +172,36 @@ def test_result_keeps_provenance_of_the_team_fixture():
         assert os.path.exists(os.path.join(paths.REPO_ROOT, p.split(" ")[0])), p
 
 
+def test_plate_stage_pipeline_runs_end_to_end_and_writes_a_result(tmp_path, monkeypatch):
+    """--stage plate 를 실제로 태우는 유일한 테스트다.
+
+    이게 없으면 _run_plate 가 판독 하나를 조용히 빠뜨려도(예: abstain
+    처리된 readout_p001_plate 를 빼먹어도) exact_accuracy 는 그대로 1.0 이고
+    abstention_recall 만 조용히 null 이 돼 아무것도 실패하지 않는다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+
+    rc = run.main(["--impl", "mock_pack:contracts", "--manifest", MANIFEST,
+                   "--stage", "plate", "--run-id", "t_mock_plate"])
+    assert rc == 0
+
+    rc = score.main(["--prediction", "t_mock_plate"])
+    assert rc == 0
+
+    gt = manifests_io.load_gt(MANIFEST, "plate")
+    out = tmp_path / "results" / ("t_mock_plate.%s.json" % gt["meta"]["gt_version"])
+    result = json.loads(out.read_text(encoding="utf-8"))
+
+    plate = result["plate"]
+    assert plate["n"] == 5
+    assert plate["exact_accuracy"] == 1.0
+    assert plate["abstention_recall"] == 1.0
+    assert plate["wrong_accept_rate"] == 0.0
+    assert "순환" in plate["coverage"]
+    assert "분자" in plate["coverage"]
+
+
 def test_gt_states_the_clip_id_convention_in_the_file():
     """규약이 코드 주석이 아니라 결과에서 읽히는 자리에 있어야 한다.
 

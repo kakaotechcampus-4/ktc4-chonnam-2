@@ -14,6 +14,7 @@ import os
 import pytest
 
 from eval import paths
+from eval.scorers.candidate import SCORING_VALUES
 
 MOCK = os.path.join(paths.REPO_ROOT, "data", "mock")
 
@@ -29,7 +30,6 @@ SCENARIOS = (
 
 METRICS = ("candidate_onset", "plate_readout", "occurred_at",
            "negative_clip", "not_scored")
-SCORING_VALUES = ("INCLUDED", "EXCLUDED", "BOUNDARY_EXCLUDED")
 
 
 def _read(*parts):
