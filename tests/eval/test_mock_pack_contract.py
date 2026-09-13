@@ -131,6 +131,14 @@ def test_contract_artifacts_agree_with_expected(scenario):
         assert plate["abstained"] is False
         assert plate["observation"]["value"] == plate_target["true_text"]
 
+    if onset_target is None and plate_target is None:
+        # scenario_empty_001 은 candidate_onset·plate_readout 이 둘 다 없다 —
+        # 아무것도 확인하지 않고 조용히 통과하는 대신, 이 시나리오의 유일한
+        # metric_target 이 실제로 negative_clip 하나뿐인지 적극적으로 확인한다.
+        assert scenario == "scenario_empty_001"
+        assert len(targets) == 1
+        assert targets[0]["metric"] == "negative_clip"
+
 
 @scenarios
 def test_candidate_event_type_stays_inside_baseline_enum(scenario):
@@ -142,6 +150,7 @@ def test_candidate_event_type_stays_inside_baseline_enum(scenario):
     candidate event 가 0건인 것이 정상이라 빈 목록도 통과해야 한다.
     """
     events = normalize.from_candidate_events(_search_candidates(scenario))
+    assert events or scenario == "scenario_empty_001"
     for c in events:
         assert c["event_type"] in VIOLATION_TYPES
 

@@ -185,3 +185,19 @@ def test_unknown_scoring_value_raises_instead_of_silently_excluding():
     ]}]}
     with pytest.raises(ValueError, match="EXCLUDE"):
         candidate.score([{"clip_id": "c1", "candidates": []}], gt)
+
+
+def test_included_target_without_violation_type_raises():
+    """violation_type 이 없는 INCLUDED target 을 조용히 by_type 에 흘리지 않는다.
+
+    scoring='INCLUDED' 인데 violation_type 이 None 이면 by_type 집계에서
+    문자열 키와 섞여 sorted() 가 TypeError 로 죽는다 — 그 크래시 지점이 아니라
+    원인이 결정되는 여기서 막는다. 참값 유형이 없으면 scoring 은
+    'EXCLUDED' 여야 한다.
+    """
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "EV_X", "violation_type": None, "t_onset_sec": 10.5,
+         "scoring": "INCLUDED"},
+    ]}]}
+    with pytest.raises(ValueError, match="EV_X"):
+        candidate.score([{"clip_id": "c1", "candidates": []}], gt)

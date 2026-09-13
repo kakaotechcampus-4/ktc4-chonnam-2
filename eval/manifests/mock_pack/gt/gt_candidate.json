@@ -63,7 +63,7 @@
       "clip_id": "scenario_infra_failure_001",
       "source_video_id": "tl_x001",
       "targets": [],
-      "not_applicable": "search fixture 가 없다 — 후보 없음이 아니라 대상 아님이다"
+      "not_applicable": "search fixture 가 없어 예측을 만들 입력 자체가 없었다. 정답지(expected/)는 이 시나리오를 negative_clip(사건 0건)으로 적는데 그것과 모순이 아니다 — 사건이 없는 것은 사실이고, 여기서 말하는 것은 「후보를 냈어야 하는데 안 냈다」를 잴 수 없다는 것이다. 그래서 fp_per_clip 의 분모에서 뺀다"
     },
     {
       "clip_id": "scenario_relative_rebase_001",

@@ -65,6 +65,11 @@ def _partition(targets, where):
         scoring = t.get("scoring", "INCLUDED")
         if scoring not in SCORING_VALUES:
             raise ValueError("%s: 알 수 없는 scoring %r" % (where, scoring))
+        if scoring == "INCLUDED" and t.get("violation_type") is None:
+            raise ValueError(
+                "%s: violation_type 이 없는 target 은 채점할 수 없다. 참값 유형이 "
+                "없으면 scoring='EXCLUDED' 여야 한다 (event_id=%r)"
+                % (where, t.get("event_id")))
         if scoring == "INCLUDED":
             included.append(t)
         else:
