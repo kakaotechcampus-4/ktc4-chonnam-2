@@ -1,0 +1,57 @@
+{
+  "_about": "B03·B05 — 판독 결과 → ReadoutRun → UsageRecord → JobExecution → JobRecord 연결. rr_881/rr_882/usage_5521/usage_5522는 contract-readout-run.md §7·§8과 같은 ID다. FAILED run(rr_882)에는 결과가 없다. 실패 run의 JobExecution status 매핑(domain↔runtime)은 W04 잔여로 Pending이라 이 fixture에 넣지 않았다. 'operation' 라벨 값은 예시다.",
+  "job_records": [
+    { "job_id": "job_71", "case_id": "case_001", "case_rev": 4, "kind": "PLATE_READ", "scope_ref": null, "input_fingerprint": "sha1:plate-a", "force_rerun": false, "requested_at": "2026-09-05T09:11:50+09:00" },
+    { "job_id": "job_73", "case_id": "case_001", "case_rev": 4, "kind": "OVERLAY_TIME_READ", "scope_ref": null, "input_fingerprint": "sha1:overlay-a", "force_rerun": false, "requested_at": "2026-09-05T09:11:51+09:00" }
+  ],
+  "job_executions": [
+    { "execution_id": "exec_9101", "job_id": "job_71", "status": "SUCCEEDED", "attempt": 1, "queued_at": "2026-09-05T09:11:52+09:00", "started_at": "2026-09-05T09:12:00+09:00", "ended_at": "2026-09-05T09:12:08+09:00", "produced": [ { "kind": "readout_run", "ref": "rr_881" }, { "kind": "plate_readout", "ref": "readout_plate_001" } ], "failure_kind": null, "usage_refs": [ "usage_5521" ] },
+    { "execution_id": "exec_9103", "job_id": "job_73", "status": "SUCCEEDED", "attempt": 1, "queued_at": "2026-09-05T09:11:53+09:00", "started_at": "2026-09-05T09:12:10+09:00", "ended_at": "2026-09-05T09:12:15+09:00", "produced": [ { "kind": "readout_run", "ref": "rr_883" }, { "kind": "overlay_time_readout", "ref": "readout_time_001" } ], "failure_kind": null, "usage_refs": [ "usage_5523" ] }
+  ],
+  "readout_runs": [
+    { "run_id": "rr_881", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5521" ], "started_at": "2026-09-05T09:12:00+09:00", "ended_at": "2026-09-05T09:12:07+09:00" },
+    { "run_id": "rr_882", "operation": "PLATE_READ", "outcome": "FAILED", "failure": { "kind": "PLATE_DETECTION", "code": "NO_PLATE_REGION_FOUND" }, "usage_refs": [ "usage_5522" ], "started_at": "2026-09-05T09:13:00+09:00", "ended_at": "2026-09-05T09:13:04+09:00" },
+    { "run_id": "rr_883", "operation": "OVERLAY_TIME_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5523" ], "started_at": "2026-09-05T09:12:10+09:00", "ended_at": "2026-09-05T09:12:14+09:00" }
+  ],
+  "plate_readouts": [
+    {
+      "readout_id": "readout_plate_001",
+      "run_ref": { "kind": "readout_run", "ref": "rr_881" },
+      "case_id": "case_001",
+      "candidate_id": "candidate_001",
+      "input_ref": { "incident_clip_ref": "clip_0001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
+      "target_association": { "status": "ASSOCIATED", "target_hint_used": true, "track_ref": "track_007", "association_method": "TARGET_HINT_WITH_FALLBACK", "associated_region": { "frame_ref": "fr_9a1c0e", "bbox_xywh": [812, 420, 184, 72] }, "evidence": [] },
+      "observation": { "contract_version": "observation/v1", "value": "12가34?6", "status": "NEEDS_REVIEW", "source": { "kind": "readout.plate_ocr" }, "support_refs": [], "produced_by": { "module": "readout", "run_ref": { "kind": "readout_run", "ref": "rr_881" } } },
+      "consensus": { "text": "12가34?6", "disagree_positions": [5], "method": "MULTI_FRAME" },
+      "abstained": true,
+      "abstain_reason": "FRAME_DISAGREEMENT",
+      "best_frame": { "frame_ref": "fr_9a1c0e", "crop_ref": "crop_001", "quality": { "plate_px_height": 42, "sharpness": 0.81 } },
+      "frame_results": [ { "frame_ref": "fr_9a1c0e", "crop_ref": "crop_001", "text": "12가3456", "confidence": 0.72 } ]
+    }
+  ],
+  "overlay_time_readouts": [
+    {
+      "readout_id": "readout_time_001",
+      "run_ref": { "kind": "readout_run", "ref": "rr_883" },
+      "case_id": "case_001",
+      "candidate_id": "candidate_001",
+      "input_ref": { "incident_clip_ref": "clip_0001", "source_profile": "readout-native", "provenance": "SOURCE_DERIVED_INCIDENT_CLIP" },
+      "observation": { "contract_version": "observation/v1", "value": "2026-09-02T18:31:12+09:00", "status": "OK", "source": { "kind": "readout.overlay_ocr" }, "support_refs": [], "produced_by": { "module": "readout", "run_ref": { "kind": "readout_run", "ref": "rr_883" } } },
+      "validation": { "format_ok": true, "monotonic_ok": true, "duration_match_ok": true, "sample_count": 5 },
+      "samples": [ { "frame_ref": "fr_3b77d2", "offset_sec": 2.0, "raw_text": "2026-09-02 18:31:12", "parsed_at": "2026-09-02T18:31:12+09:00" } ]
+    }
+  ],
+  "usage_records": [
+    { "usage_id": "usage_5521", "execution_ref": "exec_9101", "run_ref": { "kind": "readout_run", "ref": "rr_881" }, "case_id": "case_001", "occurred_at": "2026-09-05T09:12:02+09:00", "provider_label": "ocr-local", "operation": "READOUT_PLATE", "token_usage": null, "processed_duration_sec": 4.5, "latency_ms": 830, "pricing_context": { "pricing_id": "local-2026-09", "unit": "per_second" }, "cost": { "amount": "0", "currency": "KRW" } },
+    { "usage_id": "usage_5522", "execution_ref": "exec_9102", "run_ref": { "kind": "readout_run", "ref": "rr_882" }, "case_id": "case_001", "occurred_at": "2026-09-05T09:13:01+09:00", "provider_label": "ocr-local", "operation": "READOUT_PLATE", "token_usage": null, "processed_duration_sec": 3.0, "latency_ms": 610, "pricing_context": { "pricing_id": "local-2026-09", "unit": "per_second" }, "cost": { "amount": "0", "currency": "KRW" } },
+    { "usage_id": "usage_5523", "execution_ref": "exec_9103", "run_ref": { "kind": "readout_run", "ref": "rr_883" }, "case_id": "case_001", "occurred_at": "2026-09-05T09:12:11+09:00", "provider_label": "ocr-local", "operation": "READOUT_OVERLAY_TIME", "token_usage": null, "processed_duration_sec": 5.0, "latency_ms": 920, "pricing_context": { "pricing_id": "local-2026-09", "unit": "per_second" }, "cost": { "amount": "0", "currency": "KRW" } },
+    { "usage_id": "usage_101", "execution_ref": "exec_9001", "run_ref": { "kind": "analysis_run", "ref": "run_2026_0901_0007" }, "case_id": "case_001", "occurred_at": "2026-09-01T18:00:12Z", "provider_label": "gemini", "operation": "SEARCH_COARSE", "token_usage": { "input_tokens": 128400, "output_tokens": 2100, "total_tokens": 130500 }, "processed_duration_sec": 3600, "latency_ms": 41200, "pricing_context": { "pricing_id": "gemini-2026-08", "unit": "per_1k_tokens" }, "cost": { "amount": "184.20", "currency": "KRW" } },
+    { "usage_id": "usage_5600", "execution_ref": "exec_9104", "run_ref": null, "case_id": "case_001", "occurred_at": "2026-09-05T09:00:00+09:00", "provider_label": "ffprobe-local", "operation": "RECORDING_PROBE", "token_usage": null, "processed_duration_sec": null, "latency_ms": 120, "pricing_context": { "pricing_id": "local-2026-09", "unit": "per_call" }, "cost": { "amount": "0", "currency": "KRW" }, "_note": "Run 개념이 없는 직접 호출 — run_ref=null이 허용되는 유일한 경우" }
+  ],
+  "expected": {
+    "runs_with_result": [ "rr_881", "rr_883" ],
+    "runs_without_result": [ "rr_882" ],
+    "usage_run_ref_null_only_for": [ "usage_5600" ],
+    "execution_to_run": { "exec_9101": "rr_881", "exec_9103": "rr_883" }
+  }
+}

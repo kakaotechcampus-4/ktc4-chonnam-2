@@ -1,0 +1,610 @@
+# Final Data Contract — EvidenceRecord + EvidenceNeeds v1
+
+**Status:** `Final — Accepted`
+
+**Architecture Contract:** v4 §5-1 ⑨
+
+**Contract:** `EvidenceRecord + EvidenceNeeds`
+
+**Contract Version:** `evidence-record/v1.2` / `evidence-needs/v1`
+
+**Accepted:** `2026-09-04` (v1) · `2026-09-06` (v1.1) · `2026-09-07` (v1.2)
+
+**Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1 · **`adr/adr-data-contract-call-closure-2026-09-07.md` §4.1 (v1.2 근거, B01 종결)**
+
+> **`evidence-record/v1.2` 변경 (2026-09-07)** — B01 종결. ① `EvidenceValue`에 `needs_review: boolean` 추가 — `evidence`가 값과 함께 검토 필요 여부를 내려주고 `case`는 재계산하지 않는다 ② `occurred_at`에 `user_corrected: boolean`·`source: {kind, label_key}` 추가(`TimeResolution` 결과의 snapshot, `observability` 없음) ③ `resolution_status=OK` 부여 조건을 엄격히 한다(§4.4) ④ §10 불변조건 12~15. 값 의미·값 공간은 유지하며 필드 추가만이다. Decider 유소연(`CaseView` 소비 규칙) · 김준영(`evidence` 필드) · 확인 신유민.
+
+> **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 당시 Pending B01(needs_review 원천·시각/위치 입력 변환·라벨 전달)은 v1.2에서 닫혔다.
+
+> **`evidence.interval` 참조 대상 확정 (2026-09-08 · Decider 정철원(`recording`, `AssetSpan`·`IncidentClip` 소유) · 확인 신유민·유소연·김준영).** canonical `AssetSpan`에 독립 identity를 추가하지 않기로 확정됐으므로 §8.3의 「`AssetSpan` ref」 예시를 지우고, `context_refs[].role="evidence.interval"`의 참조 대상을 **clip 생성 후 `incident_clip`, clip 생성 전 `candidate_event` fallback**으로 명시한다. `ContractRef`의 필드 모양·필수성은 바뀌지 않고 허용되는 `kind`와 그 의미만 확정됐으므로 **`evidence-needs/v1`을 유지**한다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9.
+
+**Contract Lead / Owner:** 김준영 (`evidence`)
+
+**Runtime Producer:** `evidence`
+
+**Direct Runtime Consumer:** `case` — 유소연
+
+**Review / Projection Consumer:** `web` — 신유민 (`CaseView` 경유)
+
+**관련 Architecture:** 대신고 모듈 구조 설계 v4
+
+> 이 페이지가 `EvidenceRecord + EvidenceNeeds`의 **Source of Truth**다. Draft는 선택지와 Consumer Review 이력을 보존하며 구현·Mock·후속 Requirement/Package 계약은 이 Final Contract를 따른다.
+> 
+
+---
+
+# 1. 계약 목적
+
+`EvidenceRecord`는 `evidence`가 현재 사건에 대해 **authoritative하게 사용하는 confirmed values의 immutable snapshot**이다.
+
+`EvidenceNeeds`는 해당 `EvidenceRecord`를 기준으로 추가 관찰/판독이 필요할 때 그 필요를 **명령이 아닌 declarative value**로 `case`에 전달한다.
+
+핵심 경계는 다음과 같다.
+
+```
+Observation / VisualEvidence / Readout
+= "이렇게 관찰됐다"
+
+TimeResolution
+= "이 시간 근거들을 비교해 이 시각을 쓴다"
+
+EvidenceRecord
+= "현재 제품 정책상 이 값을 authoritative하게 사용한다"
+
+EvidenceNeeds
+= "이 confirmed Evidence를 보강하려면 이 추가 관찰/판독이 필요하다"
+
+RequirementReport
+= "신고요건을 충족하는가"
+
+ReportPackage / DerivedVideo
+= "신고용 파생물을 어떻게 만든다"
+```
+
+`evidence`는 다른 모듈을 직접 호출하지 않는다. `EvidenceNeeds`를 반환하고, 실제 Job orchestration은 `case`가 소유한다.
+
+---
+
+# 2. Producer / Consumer
+
+## Producer
+
+- `evidence` — 김준영
+
+## Runtime Consumer
+
+- `case` — 유소연
+
+## Review / Projection Consumer
+
+- `web` — 신유민
+- `web`은 `EvidenceRecord`나 `EvidenceNeeds`를 직접 읽지 않고 `CaseView` safe projection만 소비한다.
+
+## 주요 Upstream
+
+- `VisualEvidence`
+- `PlateReadout` / `OverlayTimeReadout`
+- `TimeResolution`
+- `CorrectionRecord`
+- `CandidateEvent` / `IncidentClip`
+
+---
+
+# 3. `EvidenceRecord` 최종 구조
+
+```
+EvidenceRecord {
+    contract_version: string
+
+    record_ref: ContractRef
+    supersedes_ref?: ContractRef
+
+    case_ref: ContractRef
+    selection_rev: integer
+
+    basis: {
+        candidate_ref: ContractRef
+        visual_evidence_ref: ContractRef
+        evidence_interval_ref: ContractRef
+    }
+
+    event: {
+        visual_event_type: EvidenceValue<VisualEventType>
+        safety_report_type: EvidenceValue<SafetyReportType>
+        violation_expression: EvidenceValue<string>
+    }
+
+    occurred_at?: {
+        value: offset-aware RFC3339 datetime
+        time_resolution_ref: ContractRef
+        resolution_status:
+            OK
+            | NEEDS_REVIEW
+        user_corrected: boolean
+        source: {
+            kind: namespaced string
+            label_key: string | null
+        }
+    }
+
+    vehicle_number?: EvidenceValue<string>
+
+    location?: {
+        coord?: EvidenceValue<Coordinate>
+        address?: EvidenceValue<string>
+        place_name?: EvidenceValue<string>
+        search_keyword?: EvidenceValue<string>
+        user_hint?: EvidenceValue<string>
+    }
+
+    provenance: {
+        input_refs: ContractRef[]
+        correction_refs: ContractRef[]
+        policy_ref: string
+    }
+}
+
+EvidenceValue<T> {
+    value: T
+
+    source: {
+        kind: namespaced string
+        ref: ContractRef
+        observability: OBSERVED | INFERRED
+        label_key: string | null
+    }
+
+    support_refs: ContractRef[]
+    user_corrected: boolean
+    needs_review: boolean
+}
+
+Coordinate {
+    lat: number
+    lon: number
+}
+```
+
+`EvidenceValue<T>`는 이번 v1에서 독립 Data Contract로 승격하지 않고 `EvidenceRecord` 내부 nested structure로 둔다.
+
+### `source.observability` · `source.label_key` (v1.1, 2026-09-06)
+
+`CaseView`가 `core-user-flow.md` §3-1의 정보 상태 5종을 내려보내려면 「이 값이 관찰된 것인가 추론된 것인가」를 알아야 한다(`contract-job-record-case-view.md` B절 §7 파생 규칙).
+
+`source.kind`는 `recording.filename_time` · `readout.overlay_ocr` · `search.visual_inference` 같은 **열린 namespaced 문자열**이라 소비자가 문자열을 보고 관찰/추론을 분류해야 했다. 그건 `case`가 정책 판단을 하는 것이고 v4 §3 정책 이관표와 「case는 authoritative 판단을 재계산하지 않는다」에 걸린다. 그래서 **분류를 값에 실어 `evidence`가 준다.**
+
+| 값 | 뜻 |
+| --- | --- |
+| `OBSERVED` | 영상 화면·파일 메타데이터·GPS 등 **확인 가능한 출처에서 직접 얻은** 값 |
+| `INFERRED` | 관찰값·단서로부터 **추론한** 값 |
+
+- 새 `source.kind`를 추가할 때 `observability`를 함께 정한다. 분류 없는 kind는 만들지 않는다.
+- 사용자 입력에는 별도 값을 두지 않는다 — `user_corrected=true`가 이미 그 사실을 갖고 있고, 파생 규칙에서 `observability`보다 먼저 판정된다.
+- `label_key`는 `kind`에 대응하는 화면 라벨 키다(예: `plate.source.overlay_ocr`). **키 네임스페이스는 `evidence`가 소유**하며 `CaseView.source_label_key`로 그대로 통과한다. 대응 키가 없으면 `null`이고 소비자가 fallback 문구를 쓴다.
+- 이 두 필드는 표시를 위한 것이고 **authoritative 값 판정에는 쓰지 않는다.** `confidence`를 노출하는 것이 아니다.
+
+**보정 근거:** `evidence`는 김준영(PM) 소유이고 값 의미를 바꾸지 않는 필드 추가다(`adr/adr-consistency-2026-09.md` §3 트랙 1 조건 3). 소비자 `case`에는 통보한다 — `adr/adr-consistency-2026-09.md` §6 R-1.
+
+### `EvidenceValue.needs_review` (v1.2, 2026-09-07 · B01 종결)
+
+`CaseView`의 `info_state` 파생 3단계 「`needs_review == true → INFO_NEEDS_REVIEW`」의 입력이다. **`evidence`가 값과 함께 내려주고 `case`는 재계산하지 않는다.** 같은 Evidence를 받은 두 `case` 구현이 서로 다른 검토 상태를 만들지 않게 하기 위함이다. 판정 기준·threshold는 `evidence` 정책이 소유하고 이 계약에 수치를 적지 않는다.
+
+`evidence`가 보장하는 것:
+
+- `needs_review`는 **값은 존재하지만 사용자 확인이 필요한 경우**에만 `true`다.
+- `user_corrected=true`와 `needs_review=true`는 동시에 나오지 않는다 — 사용자가 이미 확인·수정한 값은 다시 확인시키지 않는다(`core-user-flow.md` §9).
+- `value=null`인 값에 `needs_review=true`를 만들지 않는다 — 값이 없어 입력이 필요한 상태는 `INFO_UNKNOWN`으로 갈라지고, 필요한 행동은 `EvidenceNeeds`나 requirement 항목이 표현한다.
+
+`needs_review`와 `CaseView.info_state`는 **독립 필드**다(동치 불변식 아님). web은 `info_state`만 보고 `needs_review`를 직접 해석하지 않는다(`contract-job-record-case-view.md` B절 §7).
+
+---
+
+# 4. `EvidenceRecord` 핵심 의미
+
+## 4.1 Immutable snapshot
+
+- 생성된 `EvidenceRecord`는 의미적으로 mutate하지 않는다.
+- correction/reassemble 시 새 `record_ref`를 가진 Record를 만든다.
+- 이전 결과를 대체하면 `supersedes_ref`로 연결한다.
+- `case`는 새 결과를 받으면 current pointer를 갱신하고, 과거 Record는 audit/history 용도로 보존할 수 있다.
+
+## 4.2 confirmed value만 보존
+
+- Record에 존재하는 값은 `evidence`가 현재 authoritative하게 사용하는 값이다.
+- 확정하지 못한 값은 `UNKNOWN` 문자열이나 placeholder를 만들지 않고 **필드 부재/null**로 표현한다.
+- upstream `Observation.status=UNKNOWN/ERROR`를 EvidenceRecord에 별도 status로 복제하지 않는다.
+- 값이 없는 이유와 추가 작업은 `EvidenceNeeds` / downstream notice에서 표현한다.
+
+## 4.3 Event mapping 분리
+
+다음 세 값은 다른 개념으로 유지한다.
+
+```
+visual_event_type
+≠ safety_report_type
+≠ violation_expression
+```
+
+`violation_expression`은 제품의 신고 준비용 표현이며 AI가 법적 최종 판정을 내렸다는 뜻이 아니다.
+
+## 4.4 TimeResolution 연결
+
+`occurred_at`은 TimeResolution 전체를 embed하지 않고 최소 snapshot + reference로 연결한다.
+
+```
+occurred_at.value
+occurred_at.time_resolution_ref
+occurred_at.resolution_status
+occurred_at.user_corrected          (v1.2)
+occurred_at.source {kind, label_key} (v1.2)
+```
+
+- `TimeResolution.status=UNKNOWN`이면 `occurred_at` 자체가 없어야 한다.
+- conflict/considered/timezone provenance 상세는 `TimeResolution`이 authoritative source다.
+- `case`는 Timestamp source priority를 재계산하지 않는다.
+
+**v1.2 (2026-09-07 · B01 종결)** — `occurred_at`은 `EvidenceValue<T>`가 아니므로 `CaseView`가 사건시각의 정보 상태를 만들 입력을 별도로 갖는다.
+
+- `resolution_status`는 `TimeResolution.status`(`OK`/`NEEDS_REVIEW`)를 그대로 옮긴다. **`OK`는 검증된 영상 화면 시각 또는 사용자 확정에만 부여한다.** 파일명·metadata로 계산한 시각은 값은 유지하되 `NEEDS_REVIEW`로 내려온다. 부여 조건의 원문은 `contract-time-resolution.md` §4이며 여기에 복제하지 않는다.
+- `user_corrected`는 `TimeResolution.resolved.user_corrected`의 snapshot이다. `OK` 하나로는 「사용자 확정」과 「검증된 화면 시각」이 구분되지 않아 `INFO_USER_CONFIRMED`/`INFO_SOURCE_VERIFIED`를 나누기 위해 둔다.
+- `source.kind`는 `TimeResolution.resolved.source.kind`의 snapshot, `source.label_key`는 그 kind에 대응하는 화면 라벨 키다(네임스페이스는 `evidence` 소유, 없으면 `null`). **`observability`는 두지 않는다** — `case`는 source를 보고 상태를 재판정하지 않기 때문이다.
+- `case`의 변환표(`occurred_at` 부재 → `INFO_UNKNOWN` / `user_corrected` → `INFO_USER_CONFIRMED` / `NEEDS_REVIEW` → `INFO_NEEDS_REVIEW` / `OK` → `INFO_SOURCE_VERIFIED`)는 `contract-job-record-case-view.md` B절 §7이 소유한다.
+
+## 4.5 VisualEvidence 연결
+
+- `VisualEvidence` 상세 primitive/diagnostics를 Record에 복제하지 않는다.
+- `basis.visual_evidence_ref`로 실제 사용한 VisualEvidence를 연결한다.
+- `EvidenceRecord`는 그 관찰을 바탕으로 채택한 confirmed value만 snapshot한다.
+
+## 4.6 번호판과 신고영상 가시성 분리
+
+```
+vehicle_number confirmed
+≠ plate_visible_in_evidence
+```
+
+번호판 문자열 확정은 EvidenceRecord 책임이고, 신고영상에서 실제 식별 가능한지는 `RequirementReport` 책임이다.
+
+## 4.7 사건시각과 영상 내 표시 분리
+
+```
+occurred_at confirmed
+≠ evidence_time_visible
+```
+
+사건시각 확정은 EvidenceRecord/TimeResolution 책임이고, 신고영상에서 시각이 실제 표시되는지는 `RequirementReport`/Package 흐름에서 판단한다.
+
+---
+
+# 5. 위치 규칙
+
+`location`은 하나의 거대한 위치 상태가 아니라 확보된 confirmed value를 개별 provenance와 함께 보존한다.
+
+- `coord`: 실제 GPS/명시적 근거가 있을 때만 존재
+- `address`: 근거가 있는 주소
+- `place_name`: 장소명
+- `search_keyword`: 위치 검색용 보조 문자열
+- `user_hint`: 사용자가 입력한 위치 단서
+
+규칙:
+
+- GPS가 없다고 임의 좌표를 생성하지 않는다.
+- `user_hint`를 객관적 GPS/주소와 동일시하지 않는다.
+- 사용자 correction이 적용되면 `user_corrected=true`와 correction provenance를 남긴다.
+- v1에서 위치 전용 신규 Contract를 만들지 않는다.
+- 화면 대표값 선택(`address → place_name → user_hint`)과 `coord`·`search_keyword`의 별도 전달은 `CaseView`의 projection 규칙이다(`contract-job-record-case-view.md` B절 §7). `evidence`는 존재하는 값을 각각의 provenance와 함께 보존하기만 하고 여러 값을 합쳐 새 위치 문자열을 만들지 않는다.
+
+---
+
+# 6. Readiness / Workflow 경계
+
+`EvidenceRecord`에는 다음을 넣지 않는다.
+
+```
+EVIDENCE_SUFFICIENT
+READY
+PACKAGE_READY
+USER_REVIEWED
+Requirement PASS/WARN/BLOCK
+```
+
+책임은 다음처럼 분리한다.
+
+- Evidence 값: `EvidenceRecord`
+- 추가 관찰/판독 Need: `EvidenceNeeds`
+- 신고요건: `RequirementReport`
+- 신고용 꾸러미/파생물: `ReportPackage`
+- 사용자 workflow/UI: `CaseView`
+
+따라서 `EvidenceNeeds.items=[]`이어도 신고 가능을 의미하지 않는다.
+
+---
+
+# 7. `EvidenceNeeds` 최종 구조
+
+```
+EvidenceNeeds {
+    contract_version: string
+
+    basis_record_ref: ContractRef
+
+    items: EvidenceNeed[]
+}
+
+EvidenceNeed {
+    kind:
+        OVERLAY_TIME_OCR
+        | PLATE_REREAD
+
+    would_fill:
+        OCCURRED_AT
+        | VEHICLE_NUMBER
+
+    why: {
+        code: namespaced string
+        summary?: string
+    }
+
+    optional: boolean
+
+    context_refs: [
+        {
+            role: namespaced string
+            ref: ContractRef
+        }
+    ]
+}
+```
+
+---
+
+# 8. `EvidenceNeeds` 의미
+
+## 8.1 Container + basis Record
+
+`basis_record_ref`는 이 Need가 어느 Evidence snapshot을 기준으로 계산됐는지 나타낸다.
+
+- EvidenceRecord와 EvidenceNeeds는 한 `assemble()` 결과에서 함께 반환할 수 있다.
+- 함께 받은 직후에는 별도의 stale 탐색이 필수는 아니다.
+- 다만 delayed dispatch/retry 시 `basis_record_ref`가 더 이상 current Record가 아니면 Need를 다시 적용하기 전에 stale 여부를 확인한다.
+
+## 8.2 v1 NeedKind는 2개로 닫는다
+
+허용값:
+
+```
+OVERLAY_TIME_OCR
+PLATE_REREAD
+```
+
+매핑:
+
+- `OVERLAY_TIME_OCR` → `would_fill=OCCURRED_AT`
+- `PLATE_REREAD` → `would_fill=VEHICLE_NUMBER`
+- `PlateReadout.abstained=true`이고 차량번호가 아직 confirmed되지 않았다면 `PLATE_REREAD` Need로 연결할 수 있다. 이는 기존 Consumer Review에서 합의한 "abstain은 전체 실패가 아니라 번호판 보강이 필요한 상태"라는 의미를 보존한다.
+- 사용자 최종 확인·수정 자체는 새로운 `EvidenceNeeds` kind가 아니다. 사용자 action은 `CaseView`/`CorrectionRecord` 흐름에서 처리한다.
+
+새 Need를 추가하려면 EvidenceNeeds Contract version/review를 갱신한다.
+
+## 8.3 `context_refs[]`는 semantic reference만 전달
+
+EvidenceNeeds는 실제 readout command DTO가 아니다.
+
+허용 예:
+
+```
+evidence.interval    → { kind: "incident_clip",   ref: ... }   (clip 생성 후)
+                     → { kind: "candidate_event", ref: ... }   (clip 생성 전 fallback)
+evidence.target_hint → VisualEvidence 등 stable target hint ref
+```
+
+규칙:
+
+- `PLATE_REREAD`은 사건 interval ref를 제공해야 하며 target hint는 available한 경우 추가할 수 있다.
+- `OVERLAY_TIME_OCR`은 source-derived 사건 interval/clip을 구성할 수 있는 ref를 제공한다.
+- `context_refs`에 raw path, prompt, OCR threshold, retry, timeout, queue priority를 넣지 않는다.
+- case의 `needs_map`이 semantic refs를 현재 readout public input으로 조립한다.
+
+### `evidence.interval`의 참조 대상 (2026-09-08 확정)
+
+canonical `AssetSpan`에는 독립 identity가 없고 추가하지 않는다(`contract-recording-timeline-asset-span.md` §23 AssetSpan 5 · `contract-analysis-source-derived.md` §6.1). 따라서 이 role의 ref는 **`asset_span`을 가리키지 않는다.**
+
+| 시점 | `kind` | 근거 |
+| --- | --- | --- |
+| clip 생성 후 | `incident_clip` | `IncidentClip.source_provenance`가 `timeline_ref{timeline_id, revision}` · `requested_range` · canonical `AssetSpan[]`을 모두 보존한다 |
+| clip 생성 전 | `candidate_event` (fallback) | `CandidateEvent.span`이 `timeline_id` + `timeline_revision` + ms 범위를 갖는다(B09 종결) |
+
+- **`candidate_event` ref는 clip이 만들어진 뒤에도 `incident_clip` ref를 대신하는 영구 별칭이 아니다.** `case`는 candidate ref를 받아 필요한 `IncidentClip`을 materialize한 뒤 readout에는 `incident_clip_ref`를 전달한다(`contract-plate-overlay-readout.md` §4 — v1.2에서 `span_ref` 삭제).
+- 두 경우 모두 참조에서 `{timeline_id, revision}`·사건 범위를 계약 필드로 복원할 수 있어야 한다. evidence가 「결과가 어느 원본 구간에서 나왔는가」·「rebase 뒤에도 같은 구간인가」를 증명하는 근거가 이것이다.
+- 합성 span ref(canonical 값을 문자열로 결합하거나 해시한 것)를 만들지 않는다.
+- `kind` 문자열은 소문자 snake_case다 — 자산 계층 값 공간은 `contract-source-asset-media-stream.md` §2.1이 소유한다.
+- **`EvidenceRecord.basis.evidence_interval_ref`(§3)에도 같은 규칙을 적용한다** — 사건 구간 참조는 `incident_clip`(생성 후) 또는 `candidate_event`(생성 전)이며 `asset_span`을 가리키지 않는다. 필드 타입은 그대로 `ContractRef`다.
+
+## 8.4 `why`
+
+```
+why.code
+= stable machine-readable reason
+
+why.summary
+= optional human diagnostic summary
+```
+
+프로그램 분기는 `why.code`를 사용하고 자연어 parsing을 하지 않는다.
+
+## 8.5 `optional`
+
+`optional`은 **Evidence 보강 작업의 필요성**만 의미한다.
+
+```
+optional=false
+= 현재 Evidence policy상 가능한 경우 기본적으로 수행해야 하는 보강 작업
+
+optional=true
+= Evidence quality/enrichment에 도움이 되지만 생략 가능
+```
+
+다음과 같지 않다.
+
+```
+optional=false ≠ RequirementReport.BLOCK
+```
+
+### 자동 JobIntent 발주 규칙
+
+`optional=false`인 Need가 현재 case/selection revision에서 여전히 유효하면 `case`는 별도 사용자 승인 없이 해당 작업의 `JobIntent`를 자동 발주할 수 있다.
+
+단:
+
+- `EvidenceNeeds` 자체는 명령이 아니다.
+- stale Need는 자동 발주하지 않는다.
+- 실제 retry/cache/queue 정책은 `JobRecord` / `JobExecution` 책임이다.
+- 신고 blocker 여부는 `RequirementReport`만 판단한다.
+
+---
+
+# 9. Post-stamp / Report Video 경계
+
+`EvidenceNeeds` v1은 **confirmed Evidence를 보강하기 위한 추가 관찰/판독 작업**에만 사용한다.
+
+따라서 아래 kind는 v1에 넣지 않는다.
+
+```
+POST_STAMP
+REPORT_VIDEO
+EXPORT
+```
+
+`TimeResolution.post_stamp.needed`는 사후 Timestamp 각인이 필요한지와 provenance를 표현하는 정책 결과다.
+
+실제 흐름은:
+
+```
+TimeResolution.post_stamp
+        ↓
+case / package orchestration
+        ↓
+ReportPackage / DerivedVideo export Job
+        ↓
+신고용 파생영상 생성
+```
+
+즉 post-stamp는 **Evidence를 더 관찰하는 작업이 아니라 이미 확정된 정보를 신고용 파생물에 표현하는 작업**이므로 `EvidenceNeeds`에 포함하지 않는다.
+
+---
+
+# 10. Invariants
+
+## EvidenceRecord
+
+1. 모든 Record는 `record_ref`를 가진다.
+2. 동일 Record를 correction/reassemble 결과로 mutate하지 않는다.
+3. `supersedes_ref`가 있으면 현재 `record_ref`와 달라야 한다.
+4. Record는 하나의 `case_ref`와 `selection_rev`에 결합된다.
+5. 존재하는 Evidence value는 evidence의 authoritative confirmed value다.
+6. 확정하지 못한 값을 placeholder/sentinel로 채우지 않는다.
+7. `occurred_at`이 존재하면 `time_resolution_ref`가 존재한다.
+8. `resolution_status=UNKNOWN`인 `occurred_at`을 만들지 않는다.
+9. `vehicle_number` 존재와 신고영상 내 번호판 가시성을 동일시하지 않는다.
+10. GPS가 없으면 임의 좌표를 만들지 않는다.
+11. `PACKAGE_READY`, `USER_REVIEWED`, Requirement severity를 Record에 넣지 않는다.
+12. (v1.2) `EvidenceValue.user_corrected=true`이면 `needs_review=false`다.
+13. (v1.2) `EvidenceValue.value=null`이면 `needs_review=false`다. `needs_review`는 값이 존재할 때만 `true`일 수 있다.
+14. (v1.2) `occurred_at.resolution_status=OK`는 검증된 영상 화면 시각 또는 사용자 확정에만 부여한다(`contract-time-resolution.md` §4). 파일명·metadata 계산 시각은 `NEEDS_REVIEW`다.
+15. (v1.2) `occurred_at`이 존재하면 `user_corrected`와 `source.kind`가 존재한다. `occurred_at.source`에 `observability`를 두지 않는다.
+
+## EvidenceNeeds
+
+1. 모든 EvidenceNeeds는 `basis_record_ref`를 가진다.
+2. `(kind, would_fill)` 조합은 같은 `items[]` 안에서 중복되지 않는다.
+3. v1 kind는 `OVERLAY_TIME_OCR | PLATE_REREAD`만 허용한다.
+4. `OVERLAY_TIME_OCR → OCCURRED_AT`, `PLATE_REREAD → VEHICLE_NUMBER` 매핑을 지킨다.
+5. `why.code`는 stable machine-readable code다.
+6. `optional=false`는 Requirement BLOCK을 뜻하지 않는다.
+7. 실제 함수명/queue/retry/timeout을 EvidenceNeeds에 넣지 않는다.
+8. `items=[]`은 신고 가능/요건 충족을 뜻하지 않는다.
+9. superseded basis Record의 Need는 delayed dispatch 전에 stale 여부를 확인한다.
+10. `POST_STAMP`/`REPORT_VIDEO`를 EvidenceNeeds kind로 사용하지 않는다.
+
+---
+
+# 11. 예시
+
+## 번호판 재판독 필요
+
+```json
+{
+  "contract_version": "evidence-needs/v1",
+  "basis_record_ref": {"kind":"evidence_record","ref":"ev_89"},
+  "items": [
+    {
+      "kind": "PLATE_REREAD",
+      "would_fill": "VEHICLE_NUMBER",
+      "why": {
+        "code": "evidence.vehicle_number.unconfirmed",
+        "summary": "대상 차량 번호판을 확정하지 못했습니다."
+      },
+      "optional": false,
+      "context_refs": [
+        {
+          "role": "evidence.interval",
+          "ref": {"kind":"incident_clip","ref":"clip_0001"}
+        },
+        {
+          "role": "evidence.target_hint",
+          "ref": {"kind":"visual_evidence","ref":"ve_204"}
+        }
+      ]
+    }
+  ]
+}
+```
+
+`case`는 이 Need가 current revision 기준으로 유효하면 백그라운드 JobIntent를 자동 발주할 수 있다. 발주 형태는 `JobRecord` 계약이 소유한다 — `kind=PLATE_READ` + `force_rerun=true`, 새 `job_id`(`contract-job-record-case-view.md` A절 §7, 2026-09-07 case Owner 확정). `PLATE_REREAD`는 Need의 kind이며 `JobRecord.kind`로 쓰지 않는다.
+
+---
+
+# 12. 다른 Contract와의 경계
+
+- `Observation<T>`: 관찰값과 관찰 상태. confirmed value가 아님.
+- `VisualEvidence`: 영상 관찰 근거. EvidenceRecord에는 ref만 연결.
+- `PlateReadout / OverlayTimeReadout`: readout 관찰 결과. evidence가 confirmed value로 승격할지 결정.
+- `TimeResolution`: occurred_at의 authoritative resolution. EvidenceRecord는 최소 snapshot + ref만 보존.
+- `CorrectionRecord`: 사용자 수정 provenance.
+- `JobRecord / JobExecution`: Need 이후 실제 발주·실행 lifecycle.
+- `RequirementReport`: 신고요건 PASS/WARN/BLOCK 및 가시성 판단.
+- `ReportPackage / DerivedVideo`: post-stamp/export 등 신고용 파생물 생성.
+- `CaseView`: web을 위한 safe projection.
+
+---
+
+# 13. 후속 변경 규칙
+
+의미 변경이 필요한 경우:
+
+```
+문제 발견
+→ Producer / Consumer 확인
+→ Contract 변경안
+→ Architecture 영향 확인
+→ Contract Version 증가
+→ ADR Supersede/변경 ADR
+→ Mock 갱신
+```
+
+다음은 의미 변경으로 본다.
+
+- confirmed value ownership 변경
+- immutable lifecycle 변경
+- Need kind 추가/삭제
+- `optional` 의미 변경
+- Requirement/Package 책임을 EvidenceRecord/Needs로 이동
+- 새로운 command payload를 EvidenceNeeds에 포함
+
+---
+
+# 14. 현재 미해결 사항
+
+현재 Final Contract 기준 **미해결 Architecture Decision 없음**.
+
+구체적인 Evidence policy rule table, SafetyReportType registry, readout adapter 함수 인자, DB schema, retry/queue 세부는 Tech Spec/구현 범위이며 이 Contract 의미를 변경하지 않는다.

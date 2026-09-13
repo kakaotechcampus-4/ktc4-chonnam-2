@@ -1,0 +1,17 @@
+{
+  "name": "daesingo-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:prototype": "npm run dev --workspace=daesingo-prototype",
+    "build": "npm run build --workspaces --if-present",
+    "preview:prototype": "npm run preview --workspace=daesingo-prototype"
+  }
+}

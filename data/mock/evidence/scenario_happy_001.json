@@ -1,0 +1,298 @@
+{
+  "scenario_id": "scenario_happy_001",
+  "module": "evidence",
+  "time_resolutions": [
+    {
+      "contract": "TimeResolution",
+      "contract_version": "time-resolution/v1",
+      "resolution_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+      "status": "OK",
+      "resolved": {
+        "value": "2026-08-24T18:05:12+09:00",
+        "source": {
+          "kind": "readout.overlay_ocr",
+          "input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" }
+        },
+        "verification": "VERIFIED",
+        "computation": {
+          "mode": "DIRECT",
+          "timezone": { "zone_id": "Asia/Seoul", "utc_offset": "+09:00", "source": "PRODUCT_CONTEXT" }
+        },
+        "user_corrected": false
+      },
+      "considered": [
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" },
+          "source": { "kind": "readout.overlay_ocr" },
+          "value": "2026-08-24T18:05:12+09:00",
+          "observation_status": "OK",
+          "verification": "VERIFIED",
+          "used": true
+        },
+        {
+          "input_kind": "OBSERVATION",
+          "input_ref": { "kind": "time_source_candidate", "ref": "tsc_h001_filename" },
+          "source": { "kind": "recording.filename_time" },
+          "value": "2026-08-24T18:00:00+09:00",
+          "observation_status": "OK",
+          "verification": "UNVERIFIED",
+          "used": false,
+          "reason_code": "time.superseded_by_verified_overlay"
+        }
+      ],
+      "conflict": { "exists": false, "between_refs": [], "requires_user_notice": false },
+      "provenance": {
+        "policy_ref": "policy/time-source-priority-v1",
+        "selected_input_ref": { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" }
+      },
+      "post_stamp": {
+        "needed": false,
+        "reason_code": "time.verified_overlay_already_present",
+        "requires_user_notice": false
+      }
+    }
+  ],
+  "evidence_records": [
+    {
+      "contract": "EvidenceRecord",
+      "contract_version": "evidence-record/v1.2",
+      "record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+      "case_ref": { "kind": "case", "ref": "case_h001" },
+      "selection_rev": 1,
+      "basis": {
+        "candidate_ref": { "kind": "candidate_event", "ref": "candidate_h001" },
+        "visual_evidence_ref": { "kind": "visual_evidence", "ref": "ve_h001" },
+        "evidence_interval_ref": { "kind": "incident_clip", "ref": "clip_h001" }
+      },
+      "event": {
+        "visual_event_type": {
+          "value": "SOLID_LINE_LANE_CHANGE",
+          "source": {
+            "kind": "search.visual_inference",
+            "ref": { "kind": "visual_evidence", "ref": "ve_h001" },
+            "observability": "OBSERVED",
+            "label_key": "event.source.visual_inference"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_h001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "safety_report_type": {
+          "value": "UNSAFE_LANE_CHANGE",
+          "source": {
+            "kind": "evidence.category_mapping",
+            "ref": { "kind": "visual_evidence", "ref": "ve_h001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.category_mapping"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_h001" }],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "violation_expression": {
+          "value": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함",
+          "source": {
+            "kind": "evidence.violation_expression",
+            "ref": { "kind": "visual_evidence", "ref": "ve_h001" },
+            "observability": "INFERRED",
+            "label_key": "event.source.violation_expression"
+          },
+          "support_refs": [{ "kind": "visual_evidence", "ref": "ve_h001" }],
+          "user_corrected": false,
+          "needs_review": false
+        }
+      },
+      "occurred_at": {
+        "value": "2026-08-24T18:05:12+09:00",
+        "time_resolution_ref": { "kind": "time_resolution", "ref": "tres_h001" },
+        "resolution_status": "OK",
+        "user_corrected": false,
+        "source": { "kind": "readout.overlay_ocr", "label_key": "time.source.overlay_ocr" }
+      },
+      "vehicle_number": {
+        "value": "12가3456",
+        "source": {
+          "kind": "readout.plate_ocr",
+          "ref": { "kind": "plate_readout", "ref": "readout_h001_plate" },
+          "observability": "OBSERVED",
+          "label_key": "plate.source.plate_ocr"
+        },
+        "support_refs": [{ "kind": "plate_readout", "ref": "readout_h001_plate" }],
+        "user_corrected": false,
+        "needs_review": false
+      },
+      "location": {
+        "search_keyword": {
+          "value": "광주 상무지구 상무중앙로 사거리",
+          "source": {
+            "kind": "case.user_location_hint",
+            "ref": { "kind": "case", "ref": "case_h001" },
+            "observability": "OBSERVED",
+            "label_key": "location.source.user_hint"
+          },
+          "support_refs": [],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "user_hint": {
+          "value": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "source": {
+            "kind": "case.user_location_hint",
+            "ref": { "kind": "case", "ref": "case_h001" },
+            "observability": "OBSERVED",
+            "label_key": "location.source.user_hint"
+          },
+          "support_refs": [],
+          "user_corrected": false,
+          "needs_review": false
+        }
+      },
+      "provenance": {
+        "input_refs": [
+          { "kind": "visual_evidence", "ref": "ve_h001" },
+          { "kind": "plate_readout", "ref": "readout_h001_plate" },
+          { "kind": "overlay_time_readout", "ref": "readout_h001_overlay" },
+          { "kind": "time_resolution", "ref": "tres_h001" }
+        ],
+        "correction_refs": [],
+        "policy_ref": "policy/evidence-assembly-v1"
+      }
+    }
+  ],
+  "evidence_needs": [
+    {
+      "contract": "EvidenceNeeds",
+      "contract_version": "evidence-needs/v1",
+      "basis_record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+      "items": []
+    }
+  ],
+  "requirement_reports": [
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_h001_evidence" },
+      "scope": "EVIDENCE",
+      "basis": {
+        "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+        "asset_refs": []
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-24T18:23:00+09:00",
+      "overall": "PASS",
+      "checks": [
+        {
+          "code": "evidence.vehicle_number.present",
+          "category": "VEHICLE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }]
+        },
+        {
+          "code": "evidence.occurred_at.present",
+          "category": "TIME",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }]
+        },
+        {
+          "code": "evidence.visual_event.present",
+          "category": "EVIDENCE",
+          "outcome": "PASS",
+          "reason_code": "evidence.value_confirmed",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }]
+        },
+        {
+          "code": "evidence.location.present",
+          "category": "LOCATION",
+          "outcome": "PASS",
+          "reason_code": "evidence.user_hint_sufficient",
+          "subject_refs": [{ "kind": "evidence_record", "ref": "ev_h001" }]
+        }
+      ]
+    },
+    {
+      "contract": "RequirementReport",
+      "contract_version": "requirement-report/v1",
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_h001_final" },
+      "scope": "FINAL_PACKAGE",
+      "basis": {
+        "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+        "asset_refs": [
+          { "kind": "derived_asset", "ref": "da_h001_report_video" },
+          { "kind": "derived_asset", "ref": "da_h001_plate_image" }
+        ],
+        "template_ref": "tmpl/safety-report-v1"
+      },
+      "policy_ref": "policy/requirement-rules-v1",
+      "evaluated_at": "2026-08-24T18:25:00+09:00",
+      "overall": "PASS",
+      "checks": [
+        {
+          "code": "package.asset.report_video.exists",
+          "category": "ASSET",
+          "outcome": "PASS",
+          "reason_code": "asset.available",
+          "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }],
+          "measurement": { "actual": 120.0, "limit": 180.0, "unit": "asset.duration_sec" }
+        },
+        {
+          "code": "package.asset.plate_visible",
+          "category": "ASSET",
+          "outcome": "PASS",
+          "reason_code": "asset.plate_legible",
+          "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_plate_image" }]
+        },
+        {
+          "code": "package.time.overlay_visible",
+          "category": "TIME",
+          "outcome": "PASS",
+          "reason_code": "time.overlay_burned_in",
+          "subject_refs": [{ "kind": "derived_asset", "ref": "da_h001_report_video" }]
+        }
+      ]
+    }
+  ],
+  "report_packages": [
+    {
+      "contract": "ReportPackage",
+      "contract_version": "report-package/v1",
+      "package_ref": { "kind": "report_package", "ref": "pkg_h001" },
+      "evidence_record_ref": { "kind": "evidence_record", "ref": "ev_h001" },
+      "requirement_report_ref": { "kind": "requirement_report", "ref": "req_h001_final" },
+      "created_at": "2026-08-24T18:26:00+09:00",
+      "report_inputs": {
+        "safety_report_type": "안전운전 불이행",
+        "occurred_at": "2026-08-24T18:05:12+09:00",
+        "location": {
+          "display_text": "상무중앙로에서 시청 방향으로 가다가 사거리에서 발생",
+          "search_keyword": "광주 상무지구 상무중앙로 사거리"
+        },
+        "vehicle_number": "12가3456",
+        "violation_expression": "흰색 SUV가 편도 2차로 도로에서 백색 실선 구간을 가로질러 차로를 변경함"
+      },
+      "report": {
+        "title": "백색 실선 구간 차로변경 위반 신고",
+        "description": "2026-08-24 18:05:12 광주 상무지구 상무중앙로 사거리 인근에서 차량번호 12가3456 차량이 백색 실선 구간에서 차로를 변경하였습니다.",
+        "template_ref": "tmpl/safety-report-v1"
+      },
+      "assets": {
+        "report_video_ref": { "kind": "derived_asset", "ref": "da_h001_report_video" },
+        "plate_image_ref": { "kind": "derived_asset", "ref": "da_h001_plate_image" }
+      },
+      "provenance": {
+        "source_refs": [{ "kind": "source_asset", "ref": "sa_h001_front" }],
+        "derived_asset_refs": [
+          { "kind": "derived_asset", "ref": "da_h001_report_video" },
+          { "kind": "derived_asset", "ref": "da_h001_plate_image" }
+        ],
+        "policy_ref": "policy/package-assembly-v1"
+      },
+      "handoff": {
+        "destination": "SAFETY_REPORT",
+        "supported_actions": ["DOWNLOAD_ASSETS", "COPY_FIELDS", "OPEN_DESTINATION"]
+      }
+    }
+  ]
+}
