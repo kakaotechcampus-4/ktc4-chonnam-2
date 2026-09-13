@@ -1,0 +1,159 @@
+{
+  "artifact_version": "evidence-first-completion-summary/v1",
+  "base_revision": "024689d4f458287f2e3884c71d4fd777e4d3b7d7",
+  "implementation_fingerprints": {
+    "src/daesingo/evidence/_contract.py": "00bdef529c41660bc13aa57cc87f3b35d3b0b111b6fcf9eb88e505a8a2b989bc",
+    "src/daesingo/evidence/assembly.py": "b56d481327c3a2f1d1996dbd933bf8d00fc12180d60d3f866037be1cfbb77db9",
+    "src/daesingo/evidence/corrections.py": "041a7c48b8f1e05a52f024ec9f52813dcdc1811d4a87216350261eeb8ca0079a",
+    "src/daesingo/evidence/mock_integration.py": "7704c10b3aa10dbb4d2c2afe9514aca78d6bbd884afd65a1a831b75421d00786",
+    "src/daesingo/evidence/policy.py": "c1e820113b7ffe578cbf0dc75809cf1de55c18aaca8b5d749f477472e56db48a",
+    "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
+    "src/daesingo/evidence/requirements.py": "9883bce897dd7e43c05ef73d49e8294da570700e9d9a0c1866b95eccb8881942",
+    "src/daesingo/evidence/time_resolution.py": "0b2c8033e9da462e26385d9a8895ad1e649eda393f63259ea7384ee02fbf457f",
+    "src/daesingo/evidence/validation.py": "3651ccf808849efae11aaed2ba214454f7adb416898173d107ebcba54caeb38f",
+    "tests/evidence/fixtures/adapter_inputs.json": "33b433700f5a5ffa26fd44540fa1ffbf00ad328dd035ae191a7c855a519de2ca",
+    "tests/evidence/test_contract_units.py": "38fafe77bad12c22bdab6071d4bb58fe849eb65a2c5affd5e1cbc11624364402",
+    "tests/evidence/test_contract_validation.py": "0c9278008ccfcc108cd8cd821a4a9aee4ecf2045da503332ca365e19b80d3ada",
+    "tests/evidence/test_mock_integration.py": "c746529de00905462632e9151a154e1c180288a422b5edddfb922505b7f963c8"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "scenario_happy_001",
+      "time": [
+        "OK"
+      ],
+      "evidence": [
+        "ev_h001"
+      ],
+      "requirements": [
+        "PASS",
+        "PASS"
+      ],
+      "package_count": 1,
+      "package_boundary_error": null,
+      "consumer_mock": {
+        "current_evidence_ref": "ev_h001",
+        "time_resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_h001"
+        },
+        "evidence_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_h001_evidence"
+        },
+        "package_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_h001_final"
+        },
+        "report_package_ref": {
+          "kind": "report_package",
+          "ref": "pkg_h001"
+        },
+        "evidence_sufficient": true,
+        "package_ready": true,
+        "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+      }
+    },
+    {
+      "scenario_id": "scenario_unknown_abstain_partial_001",
+      "time": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": [
+        "ev_u001"
+      ],
+      "requirements": [
+        "WARN",
+        "WARN"
+      ],
+      "package_count": 0,
+      "package_boundary_error": "package.input.location_missing",
+      "consumer_mock": {
+        "current_evidence_ref": "ev_u001",
+        "time_resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_u001"
+        },
+        "evidence_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_u001_evidence"
+        },
+        "package_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_u001_final"
+        },
+        "report_package_ref": null,
+        "evidence_sufficient": true,
+        "package_ready": false,
+        "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+      }
+    },
+    {
+      "scenario_id": "scenario_plate_reread_001",
+      "time": [
+        "OK"
+      ],
+      "evidence": [
+        "ev_p001",
+        "ev_p001_v2"
+      ],
+      "requirements": [
+        "UNKNOWN",
+        "PASS"
+      ],
+      "package_count": 0,
+      "package_boundary_error": null,
+      "consumer_mock": {
+        "current_evidence_ref": "ev_p001_v2",
+        "time_resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_p001"
+        },
+        "evidence_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_p001_evidence_v2"
+        },
+        "package_requirement_ref": null,
+        "report_package_ref": null,
+        "evidence_sufficient": true,
+        "package_ready": false,
+        "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+      }
+    },
+    {
+      "scenario_id": "scenario_correction_rerun_001",
+      "time": [
+        "NEEDS_REVIEW",
+        "OK"
+      ],
+      "evidence": [
+        "ev_r001_v1",
+        "ev_r001_v2"
+      ],
+      "requirements": [
+        "WARN",
+        "PASS"
+      ],
+      "package_count": 0,
+      "package_boundary_error": null,
+      "consumer_mock": {
+        "current_evidence_ref": "ev_r001_v2",
+        "time_resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_r001_v2"
+        },
+        "evidence_requirement_ref": {
+          "kind": "requirement_report",
+          "ref": "req_r001_evidence_v2"
+        },
+        "package_requirement_ref": null,
+        "report_package_ref": null,
+        "evidence_sufficient": true,
+        "package_ready": false,
+        "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+      }
+    }
+  ],
+  "readiness": "PARTIAL_READY",
+  "reason": "Shared upstream contracts and a consumer reader are executable; U package is withheld for the unresolved location nullability conflict, and no real case projection is connected."
+}
