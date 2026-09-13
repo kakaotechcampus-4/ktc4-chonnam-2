@@ -67,6 +67,14 @@ def _candidates(scenario):
     return out
 
 
+def _time_resolutions(scenario):
+    doc = _read("evidence", scenario + ".json")
+    if doc is None:
+        return {}
+    return {(r.get("resolution_ref") or {}).get("ref"): r
+            for r in doc.get("time_resolutions", [])}
+
+
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_every_scenario_has_an_expected_file(scenario):
     doc = _expected(scenario)
@@ -110,6 +118,23 @@ def test_derived_plate_labels_match_the_pack(scenario):
         if t["legibility"] == "READABLE":
             assert t["true_text"] == readouts[rid]["observation"]["value"], \
                 "%s: 파생 라벨이 원본과 갈라졌다" % rid
+
+
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_derived_time_labels_match_the_pack(scenario):
+    """pack 에서 유도한 시각 라벨만 원본과 같은지 본다.
+
+    derived_from_pack=false 인 라벨은 건너뛴다 — u001 은 fixture 가 값을
+    싣고 있는데도 「확정하면 오답」이 정답이라 일부러 다르다.
+    """
+    resolutions = _time_resolutions(scenario)
+    for t in _targets(scenario, "occurred_at"):
+        if not t.get("derived_from_pack"):
+            continue
+        rid = t["ref"]["ref"]
+        assert rid in resolutions, "%s: pack 에 그런 시각 해석이 없다" % rid
+        assert t["expected"] == resolutions[rid]["resolved"]["value"], \
+            "%s: 파생 라벨이 원본과 갈라졌다" % rid
 
 
 @pytest.mark.parametrize("scenario", SCENARIOS)

@@ -22,7 +22,8 @@
     {
       "metric": "occurred_at",
       "ref": { "kind": "time_resolution", "ref": "tres_r001_v2" },
-      "expected": "2026-08-27T13:13:00+09:00"
+      "expected": "2026-08-27T13:13:00+09:00",
+      "derived_from_pack": true
     }
   ]
 }

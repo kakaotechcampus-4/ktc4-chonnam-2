@@ -23,7 +23,8 @@
       "metric": "occurred_at",
       "ref": { "kind": "time_resolution", "ref": "tres_u001" },
       "expected": null,
-      "expected_status": "NEEDS_REVIEW"
+      "expected_status": "NEEDS_REVIEW",
+      "derived_from_pack": false
     }
   ]
 }
