@@ -41,5 +41,13 @@
       "scenario_types": ["K"]
     }
   ],
-  "eval_fixtures": []
+  "eval_fixtures": [
+    "data/mock/expected/scenario_correction_rerun_001.expected.json",
+    "data/mock/expected/scenario_empty_001.expected.json",
+    "data/mock/expected/scenario_happy_001.expected.json",
+    "data/mock/expected/scenario_infra_failure_001.expected.json",
+    "data/mock/expected/scenario_plate_reread_001.expected.json",
+    "data/mock/expected/scenario_relative_rebase_001.expected.json",
+    "data/mock/expected/scenario_unknown_abstain_partial_001.expected.json"
+  ]
 }

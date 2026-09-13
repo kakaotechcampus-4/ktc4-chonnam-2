@@ -41,7 +41,9 @@ python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candi
 python -m eval.score --prediction demo_correct
 ```
 
-`--stage` 는 `candidate`(B tier · `b_youtube`) 와 `classification`(A tier · `a_aihub`) 두 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+`--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`) · `plate`(MOCK tier · `mock_pack`) 세 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+
+`mock_pack` manifest 는 팀 공용 Mock Pack(`data/mock/`) 산출물을 `mock_pack:contracts` impl 로 읽어 파이프라인이 끝까지 연결되는지 본다(`candidate`·`plate` 지원). 여기서 나오는 지표는 정답지가 채점 대상 fixture 에서 파생돼 순환적이다 — 성능 근거가 아니라 배관 확인용이다(결과의 `coverage` 경고 참조).
 
 | 폴더 | 무엇이 들어 있나 |
 | --- | --- |
