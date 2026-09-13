@@ -170,3 +170,17 @@ def test_result_keeps_provenance_of_the_team_fixture():
     assert cov["derived_from"]
     for p in cov["derived_from"]:
         assert os.path.exists(os.path.join(paths.REPO_ROOT, p.split(" ")[0])), p
+
+
+def test_gt_states_the_clip_id_convention_in_the_file():
+    """규약이 코드 주석이 아니라 결과에서 읽히는 자리에 있어야 한다.
+
+    B tier 는 clip_id 가 실재하고 mock tier 는 시나리오다. 같은 scorer 를
+    타므로 결과 파일만 보고 어느 쪽인지 말할 수 있어야 한다.
+    """
+    for stage in ("candidate", "plate"):
+        meta = manifests_io.load_gt(MANIFEST, stage)["meta"]
+        assert meta.get("contract_version")
+    cand_meta = manifests_io.load_gt(MANIFEST, "candidate")["meta"]
+    assert "scenario_id" in cand_meta["clip_id_convention"]
+    assert "clip_id" in cand_meta["clip_id_convention"]
