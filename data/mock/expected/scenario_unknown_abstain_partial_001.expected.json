@@ -1,0 +1,29 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_unknown_abstain_partial_001",
+  "provisional_non_contract_schema": true,
+  "note": "후보에 참값 유형이 없어 EXCLUDED 다 — 채점에 넣으면 영원히 맞출 수 없는 miss 가 된다. 시각은 「값 없음」이 아니라 「확정하면 오답」이다. fixture tres_u001 은 NEEDS_REVIEW 상태로 값을 싣고 있고, 충돌이 보존된 상태가 정답이다.",
+  "metric_targets": [
+    {
+      "metric": "candidate_onset",
+      "ref": { "kind": "candidate", "ref": "candidate_u001" },
+      "violation_type": null,
+      "onset_ms": 615000,
+      "timeline_revision": 1,
+      "scoring": "EXCLUDED"
+    },
+    {
+      "metric": "plate_readout",
+      "ref": { "kind": "plate_readout", "ref": "readout_u001_plate" },
+      "legibility": "READABLE",
+      "true_text": "88부1234",
+      "derived_from_pack": true
+    },
+    {
+      "metric": "occurred_at",
+      "ref": { "kind": "time_resolution", "ref": "tres_u001" },
+      "expected": null,
+      "expected_status": "NEEDS_REVIEW"
+    }
+  ]
+}
