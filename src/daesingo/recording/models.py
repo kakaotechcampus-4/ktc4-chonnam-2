@@ -242,6 +242,45 @@ def _merge_ranges(ranges: list[TimeRange]) -> list[tuple[float, float]]:
     return merged
 
 
+class AnalysisSource(ContractModel):
+    contract: Literal["AnalysisSource"]
+    contract_version: Literal["analysis-source-derived/v1"]
+    analysis_source_ref: str = Field(min_length=1)
+    asset_kind: Literal["ANALYSIS_SOURCE"]
+    source_refs: list[ContractRef] = Field(min_length=1)
+    media_stream_refs: list[str] = Field(min_length=1)
+    byte_size: int | None = Field(ge=0)
+    availability: Literal["AVAILABLE", "UNAVAILABLE", "UNKNOWN"]
+    duration_sec: float | None = Field(ge=0)
+    timeline_ref: TimelineRef | None
+    timeline_range: TimeRange | None
+    profile_ref: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def analysis_source_is_consistent(self) -> AnalysisSource:
+        if self.availability == "AVAILABLE" and self.byte_size is None:
+            raise ValueError("AVAILABLE AnalysisSource의 byte_size는 null일 수 없습니다")
+        if (self.timeline_ref is None) != (self.timeline_range is None):
+            raise ValueError("timeline_ref와 timeline_range는 함께 존재하거나 함께 null이어야 합니다")
+        return self
+
+
+class RemoteCopy(ContractModel):
+    contract: Literal["RemoteCopy"]
+    contract_version: Literal["analysis-source-derived/v1"]
+    remote_copy_ref: str = Field(min_length=1)
+    analysis_source_ref: str = Field(min_length=1)
+    provider: str = Field(min_length=1)
+    provider_object_ref: str = Field(min_length=1)
+    availability: Literal["AVAILABLE", "UNAVAILABLE", "UNKNOWN"]
+    expires_at: AwareDatetime | None
+
+
+class RemoteCopyInfo(ContractModel):
+    provider_object_ref: str = Field(min_length=1)
+    expires_at: AwareDatetime | None
+
+
 class AssetFacts(ContractModel):
     contract: Literal["AssetFacts"]
     contract_version: Literal[CONTRACT_VERSION]

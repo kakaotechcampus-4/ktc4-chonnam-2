@@ -9,11 +9,13 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .models import (
+    AnalysisSource,
     AssetFacts,
     ContractModel,
     FrameRef,
     MediaStream,
     RecordingTimeline,
+    RemoteCopy,
     SourceAsset,
     SpanResolution,
 )
@@ -34,6 +36,8 @@ class RecordingFixture(ContractModel):
     asset_facts: list[AssetFacts] = Field(default_factory=list)
     recording_timelines: list[RecordingTimeline]
     span_resolutions: list[SpanResolution] = Field(default_factory=list)
+    analysis_sources: list[AnalysisSource] = Field(default_factory=list)
+    remote_copies: list[RemoteCopy] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def source_stream_references_are_consistent(self) -> RecordingFixture:
@@ -96,6 +100,23 @@ class RecordingFixture(ContractModel):
                 stream = streams.get(span.media_stream_ref)
                 if stream is None or stream.source_asset_ref != span.source_asset_ref:
                     raise ValueError("AssetSpan의 SourceAsset과 MediaStream 관계가 맞지 않습니다")
+
+        analysis_source_refs = {
+            analysis_source.analysis_source_ref for analysis_source in self.analysis_sources
+        }
+        if len(analysis_source_refs) != len(self.analysis_sources):
+            raise ValueError("analysis_source_ref는 fixture 안에서 중복될 수 없습니다")
+        for analysis_source in self.analysis_sources:
+            if any(ref not in streams for ref in analysis_source.media_stream_refs):
+                raise ValueError("AnalysisSource가 등록되지 않은 MediaStream을 참조합니다")
+            if any(
+                ref.kind != "source_asset" or ref.ref not in assets
+                for ref in analysis_source.source_refs
+            ):
+                raise ValueError("AnalysisSource가 등록되지 않은 SourceAsset을 참조합니다")
+        for remote_copy in self.remote_copies:
+            if remote_copy.analysis_source_ref not in analysis_source_refs:
+                raise ValueError("RemoteCopy가 등록되지 않은 AnalysisSource를 참조합니다")
 
         return self
 

@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import Decimal
+from typing import BinaryIO
 
 from .models import (
+    AnalysisSource,
+    AssetSpan,
     AssetFacts,
     FrameRef,
     MediaStream,
     RecordingTimeline,
+    RemoteCopy,
     SourceAsset,
     SpanResolution,
     TimeRange,
@@ -30,6 +35,11 @@ class InMemoryRecordingRepository:
         self._asset_facts: dict[tuple[str, str], AssetFacts] = {}
         self._timelines: dict[tuple[str, int], RecordingTimeline] = {}
         self._span_resolutions: dict[tuple[str, int, Decimal, Decimal], SpanResolution] = {}
+        self._analysis_sources: dict[str, AnalysisSource] = {}
+        self._analysis_stream_factories: dict[str, Callable[[], BinaryIO]] = {}
+        self._analysis_content_types: dict[str, str] = {}
+        self._remote_copies: dict[str, RemoteCopy] = {}
+        self._remote_copy_by_source_provider: dict[tuple[str, str], str] = {}
 
     def add_source_asset(self, asset: SourceAsset) -> None:
         self._source_assets[asset.source_asset_ref] = asset
@@ -124,3 +134,53 @@ class InMemoryRecordingRepository:
             _offset_key(requested_range.start_sec),
             _offset_key(requested_range.end_sec),
         )
+
+    def add_analysis_source(
+        self,
+        source: AnalysisSource,
+        *,
+        stream_factory: Callable[[], BinaryIO] | None = None,
+        content_type: str = "application/octet-stream",
+    ) -> None:
+        current = self._analysis_sources.get(source.analysis_source_ref)
+        if current is not None and current != source:
+            raise ValueError("같은 AnalysisSource ref를 다른 payload로 덮어쓸 수 없습니다")
+        self._analysis_sources[source.analysis_source_ref] = source
+        if stream_factory is not None:
+            self._analysis_stream_factories[source.analysis_source_ref] = stream_factory
+            self._analysis_content_types[source.analysis_source_ref] = content_type
+
+    def get_analysis_source(self, source_ref: str) -> AnalysisSource | None:
+        return self._analysis_sources.get(source_ref)
+
+    def find_analysis_sources(self, span: AssetSpan, profile_ref: str) -> list[AnalysisSource]:
+        return [
+            source
+            for source in self._analysis_sources.values()
+            if source.profile_ref == profile_ref
+            and source.timeline_range == span.timeline_range
+            and span.media_stream_ref in source.media_stream_refs
+            and any(
+                ref.kind == "source_asset" and ref.ref == span.source_asset_ref
+                for ref in source.source_refs
+            )
+        ]
+
+    def open_analysis_stream(self, source_ref: str) -> tuple[BinaryIO, str] | None:
+        factory = self._analysis_stream_factories.get(source_ref)
+        if factory is None:
+            return None
+        return factory(), self._analysis_content_types[source_ref]
+
+    def add_remote_copy(self, remote_copy: RemoteCopy) -> None:
+        current = self._remote_copies.get(remote_copy.remote_copy_ref)
+        if current is not None and current != remote_copy:
+            raise ValueError("같은 RemoteCopy ref를 다른 payload로 덮어쓸 수 없습니다")
+        self._remote_copies[remote_copy.remote_copy_ref] = remote_copy
+        self._remote_copy_by_source_provider[
+            (remote_copy.analysis_source_ref, remote_copy.provider)
+        ] = remote_copy.remote_copy_ref
+
+    def get_remote_copy(self, analysis_source_ref: str, provider: str) -> RemoteCopy | None:
+        remote_ref = self._remote_copy_by_source_provider.get((analysis_source_ref, provider))
+        return self._remote_copies.get(remote_ref) if remote_ref is not None else None
