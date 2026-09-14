@@ -83,4 +83,6 @@ D1의 evidence 정책 결정 자체는 ADR-EVIDENCE-003으로 종결됐다. 위 
 
 구현은 입력 사실을 만들지 않는 경계를 우선했다. 공용 U의 v3 baseline은 FINAL_PACKAGE `UNKNOWN`이며, D1의 WARN Package는 세 관찰 fact를 명시한 test-derived 입력에서 별도로 검증한다. 정책 원문을 수정하지 않았으며 Owner가 ADR 변경 규칙에 따라 문구를 정리해야 한다.
 
+> **종결 (2026-09-14).** Owner가 [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)로 **세 관찰 rule 자체를 제거**해 이 불일치를 해소했다. 원인은 두 지시의 충돌이 아니라 **판정 입력을 생산하는 모듈이 계약 어디에도 없는 rule을 등재해 둔 것**이었다. v4 catalog 반영 후 공용 U는 `WARN`이고 `pkg_u001`이 발행되므로 D1 정정 블록의 기대가 조건 없이 성립한다. 위 구현 판단(입력 사실을 만들지 않음)은 그대로 옳았고 유지된다. 분석 경위는 [`reviews/14_…`](../reviews/14_instruction-conflict-analysis-and-doc-fixes_2026-09-14.md).
+
 발주 W12의 `validate_report_package(pkg_u001) == []`과 공용 fixture 수정 금지도 같은 이유로 동시에 문자 그대로 만족할 수 없다. 디스크의 `pkg_u001`은 v1이므로 v1 의미상 null location이 유효하지 않다. 구현 검사는 payload를 v1.1로 전환한 사본에서 `[]`를 확인하고 원본 fixture 동기화는 I2로 남긴다.

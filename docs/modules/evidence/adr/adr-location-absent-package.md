@@ -178,7 +178,7 @@ D1이 ①로 정해지면서 ④의 성격이 「막다른 끝을 막는 안전�
 | §5.12 rule 실행 실패 | **「Package 표시용 위치가 아직 없음」이 `UNKNOWN` 목록에서 빠진다.** 이 절이 원래 두지 않았던 네 번째 갈래(`WARN`)를 명시한다 |
 | §5.14 확인 상태 표 | catalog 식별자를 덮어쓰지 않는다는 점, rule 수는 그대로(15)라는 점 |
 | §5.15 구현·검증 영향 | `content_length` 항목에 template 기준 단서 |
-| §5.15 Artifact 영향 | **정정.** 원문은 U가 `UNKNOWN`으로 떨어져 Package가 사라지는 상태를 전제로 쓰였다. D1 반영 후에는 U가 `WARN`이고 `PACKAGE_READY`가 성립한다. **D1 반영이 Artifact 재실행보다 먼저**여야 한다 |
+| §5.15 Artifact 영향 | **정정.** 원문은 U가 `UNKNOWN`으로 떨어져 Package가 사라지는 상태를 전제로 쓰였다. D1 반영 후에는 U가 `WARN`이고 `PACKAGE_READY`가 성립한다. **D1 반영이 Artifact 재실행보다 먼저**여야 한다<br>**이 행의 정정 (2026-09-14).** 이 판단은 위치 축만 계산한 것이다. 관찰 rule 3건이라는 별개 축이 남아 공용 U는 여전히 `UNKNOWN`이었다. 조건이 붙는 이유와 해소는 ADR-002 §5.15의 두 번째 정정 블록과 [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 갖는다 |
 | §5.15 남은 미결 목록 | 「D1(Q1) 위치 결론」을 이 ADR로 종결 처리 |
 
 **K1·K2·K4는 영향을 받지 않는다.** 확인한 근거는 다음과 같다.
@@ -227,7 +227,7 @@ D1이 ①로 정해지면서 ④의 성격이 「막다른 끝을 막는 안전�
 | 확인 | 기대 |
 | --- | --- |
 | `validate_report_package(pkg_u001)` | `[]` |
-| U의 `FINAL_PACKAGE` overall | `WARN` 유지 — `package.location.present=WARN`, `package.report.content_length`는 `UNKNOWN`이 아님 |
+| U의 `FINAL_PACKAGE` overall | `WARN` 유지 — `package.location.present=WARN`, `package.report.content_length`는 `UNKNOWN`이 아님. **위치 축 두 rule은 2026-09-14 구현으로 확인됐다**([`reviews/13_…`](../reviews/13_adr-002-003-implementation_2026-09-14.md)). 다만 공용 U의 `overall`은 D1과 무관한 관찰 rule 3건 때문에 `UNKNOWN`이었고, [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 그 세 rule을 제거하면서 이 기대가 공용 U에서 성립하게 된다 |
 | `PACKAGE_READY` | 성립(`overall ∈ {PASS, WARN}` + Package 존재) |
 | 장소 없는 신고문 | 장소 구절이 빠질 뿐 값이 지어내지지 않는다 — test로 고정 |
 | `template_ref` | 렌더 결과가 `template_ref`로 재현된다(불변조건 1·4) |

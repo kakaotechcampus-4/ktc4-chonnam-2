@@ -8,12 +8,14 @@
 
 원본 [`first-completion-checklist.md`](first-completion-checklist.md)의 완료 정의와 작성 시점은 수정하지 않았다. 이 문서는 수행 결과만 별도로 연결한다. production/runtime 완성, 실제 AI·OCR·영상 생성, 외부 제출, 실제 `case`/web projection은 이 결과가 증명하지 않는다.
 
+> **반영 대기 결정 (2026-09-14).** [`ADR-EVIDENCE-005`](adr/adr-event-context-rules-removal.md)가 `FINAL_PACKAGE`의 사건 장면·전 상황·후 상황 세 rule을 제거하기로 확정했다. **아래 표는 그 반영 이전의 실행 결과다.** 반영 후에는 활성 catalog가 `policy/requirement-rules-v4`(무조건 rule 12개)가 되고 H는 `PASS`·U는 `WARN`으로 두 Package가 발행된다. 반영 범위는 같은 ADR §12, 확인 항목은 §9다. **그 전까지 아래 「Package 0건」은 현재 사실이며 지우지 않는다.**
+
 ## 실행 결과 요약
 
 | Scenario | baseline 결과 | Consumer Mock 판독 | 판정 |
 | --- | --- | --- | --- |
-| H `scenario_happy_001` | Time `OK`; Evidence `ev_h001`; Requirement `PASS/UNKNOWN`; 신규 사건·전후 상황 관찰 fact 3종 부재로 Package 0건 | `EVIDENCE_SUFFICIENT=true`, `PACKAGE_READY=false`; `USER_REVIEWED=CASE_OWNED_NOT_DERIVED` | v3 catalog 연결 검증 완료, 실제 관찰 전달 I4 대기 |
-| U `scenario_unknown_abstain_partial_001` | Time `NEEDS_REVIEW`; visual type `null`; `USER_UNSURE`; Requirement `WARN/UNKNOWN`; 신규 사건·전후 상황 관찰 fact 3종 부재로 Package 0건 | Evidence gate만 true, Package gate false | 공용 입력 보존 결과. 별도 D1 test-derived 입력은 `WARN`·`pkg_u001_d1_unit` 발행 검증 완료 |
+| H `scenario_happy_001` | Time `OK`; Evidence `ev_h001`; Requirement `PASS/UNKNOWN`; 신규 사건·전후 상황 관찰 fact 3종 부재로 Package 0건 | `EVIDENCE_SUFFICIENT=true`, `PACKAGE_READY=false`; `USER_REVIEWED=CASE_OWNED_NOT_DERIVED` | v3 catalog 연결 검증 완료. **Package 0건의 원인인 세 rule은 ADR-005로 제거 확정** — v4 반영 시 `PASS`·Package 발행 |
+| U `scenario_unknown_abstain_partial_001` | Time `NEEDS_REVIEW`; visual type `null`; `USER_UNSURE`; Requirement `WARN/UNKNOWN`; 신규 사건·전후 상황 관찰 fact 3종 부재로 Package 0건 | Evidence gate만 true, Package gate false | 공용 입력 보존 결과. 별도 D1 test-derived 입력은 `WARN`·`pkg_u001_d1_unit` 발행 검증 완료. **ADR-005 반영 시 공용 U에서 `WARN`·`pkg_u001` 발행** — D1 증명이 test-derived 입력에 의존하지 않게 된다 |
 | P `scenario_plate_reread_001` | `ev_p001` 번호판 부재 + `PLATE_REREAD` + UNKNOWN → `ev_p001_v2` 번호판 `17나2867` + 빈 Needs + Requirement `WARN` | 현재 Evidence는 v2, Package 없음 | v3 EVIDENCE catalog 연결 검증 완료(Package는 Scenario 범위 밖) |
 | R `scenario_correction_rerun_001` | Time `NEEDS_REVIEW` → `OK/AGREED/USER_OVERRIDE`; Evidence/Requirement supersede; Requirement `WARN/WARN`; 번호판 `34나7890`·basis·`selection_rev=1` 보존 | 현재 Evidence/Requirement는 v2, Package 없음 | v3 EVIDENCE catalog 연결 검증 완료(Package는 Scenario 범위 밖) |
 
@@ -24,7 +26,7 @@
 - **실제 baseline 처리:** 시간 source 우선순위/offset/충돌, Evidence 조립, CorrectionRecord head와 타입 검증 및 반영, declarative Needs, 활성 catalog 기반 두 scope rule 선택, K1 첨부·K2 기한 평가, deterministic report rendering, ready-only Package 조립.
 - **공용 Mock 입력:** recording/search/readout/case의 계약 JSON과 AssetFacts. 원본 46 JSON/7 Scenario는 수정하지 않았다. H의 공용 `NOT_ASKED` 경로는 specific renderer에서 차단한다.
 - **evidence 전용 case context:** H의 specific Package 성공 경로에는 `CONFIRMED`, U의 snapshot에는 `USER_UNSURE`의 전체 필드를 test-derived 입력으로 명시한다. 공용 case 원본과 동일하다고 주장하지 않는다.
-- **관찰 fact 경계:** 공용 H/U/P/R에 없는 사건 장면·전 상황·후 상황 fact를 adapter가 만들지 않는다. D1 Package 성공은 세 값을 명시한 단위 테스트 입력에서만 확인한다. 문자열 값만으로 가시성 PASS를 만들지 않는다.
+- **관찰 fact 경계:** 공용 H/U/P/R에 없는 사건 장면·전 상황·후 상황 fact를 adapter가 만들지 않는다. D1 Package 성공은 세 값을 명시한 단위 테스트 입력에서만 확인한다. 문자열 값만으로 가시성 PASS를 만들지 않는다. **ADR-005 반영 후에는 세 rule과 세 입력 key가 사라지므로 이 경계는 번호판·시각 표시·사후 각인 세 fact에만 적용된다.**
 - **Consumer Mock:** 공개 Contract JSON만 읽어 current head와 두 gate를 계산한다. CaseView를 만들거나 case 정책을 재구현하지 않으며 `USER_REVIEWED`는 산출하지 않는다.
 - **Fixture 비교:** 실제 baseline 처리 후 상태/overall을 공용 evidence JSON과 비교한다. `scenario_id`별 canned output 재생을 처리 구현의 증거로 사용하지 않는다.
 
@@ -49,7 +51,7 @@
 | K2 신고기한 | `deadline_policy_v1.json`, `deadline.py` | 평일·금요일·연속 공휴일·연말·exclusive 경계·coverage 오류 | 정책 엔진 반영 및 단위 검증 완료 | 2028 이후 calendar revision 필요 |
 | K3 rule catalog | `requirement_rules_v3.json`, `policy_catalog.py`, `requirements.py` | scope 수·조건부 selector 네 갈래·malformed catalog·출력 policy_ref | 활성 v3 연결 및 검증 완료 | v2는 채택 후 첫 실행 전 대체된 revision으로 보존 |
 | K4 correction provenance | `source-kind-registry.md` v2, `assembly.py` / correction 단위 검사 | 비시각 9개 path의 kind/ref/OBSERVED/null label/user flags, 파생값 INFERRED, occurred_at 무변경 | registry 추인 및 단위 검증 완료 | 실제 Consumer 검증은 I7·I8 대기 |
-| D1 위치 없는 Package | 계약 v1.1, 신고문 정책 v1.1, catalog v3, package/validator 구현 | 위치 null Package와 장소 없는 template, 두 catalog 변경의 결합 필요성 | 네 층 반영 및 단위 검증 완료 | 공용 U는 관찰 fact 부재로 Package 미발행; I2·I4 대기 |
+| D1 위치 없는 Package | 계약 v1.1, 신고문 정책 v1.1, catalog v3, package/validator 구현 | 위치 null Package와 장소 없는 template, 두 catalog 변경의 결합 필요성 | 네 층 반영 및 단위 검증 완료 | 공용 U의 Package 미발행은 D1이 아니라 사건 장면·전후 상황 rule 때문이다 → ADR-005로 제거 확정; I2 대기 |
 
 체크리스트 원문의 체크박스는 일괄 변경하지 않았다. 위 표의 “검증 완료”는 해당 코드/Contract 단위에 한정하며 공용 E2E, production, Consumer Owner 수락으로 확대하지 않는다.
 
@@ -60,7 +62,7 @@
 | Q1 U의 `report_inputs.location=null` | **종결.** ADR-EVIDENCE-003에 따라 `report-package/v1.1`에서 키 필수·값 nullable이며 위치 부재는 WARN이다 | D1 단위 경로에서 정상 Package가 발행된다 | evidence 네 층 반영 완료. `CaseView.report_field_states.location`, 고지 code, 공용 fixture 재렌더는 case/I2 담당 |
 | Q2 H/U 문구·Template·policy provenance | `safety-report-policy/v1.1`과 장소 없는 template을 발행했다 | 새 Package는 선택 template과 v1.1 policy ref를 보존한다 | evidence 구현 완료, 공용 Fixture 동기화는 I2 담당 |
 | Q3 timeline revision 직접 필드 | TimeResolution에 새 직접 필드는 확정되지 않았다 | CandidateEvent span과 IncidentClip provenance의 timeline ref/revision/range로 사용 입력 추적 가능 | 비차단 후속. 새 필드 없이 현 경로 유지; Contract 변경 시 반영 |
-| 공용 U Package baseline | 위치 결론은 종결됐지만 신규 사건·전후 상황 관찰 fact가 공용 입력에 없다 | 정직한 재실행은 FINAL_PACKAGE `UNKNOWN`, Package 0건이다 | I4에서 실제 관찰 전달을 연결한 뒤 I2 fixture를 재렌더. 현재 단위 D1 경로와 섞지 않음 |
+| 공용 H/U Package baseline | **원인 확정.** 위치 결론(D1)은 종결됐고 Package 0건의 원인은 사건 장면·전후 상황 rule 3건이다. 이 rule들은 판정 주체가 제품 안에 없어 영구 `UNKNOWN`이었다 | 정직한 재실행은 FINAL_PACKAGE `UNKNOWN`, Package 0건이다 | **[`ADR-EVIDENCE-005`](adr/adr-event-context-rules-removal.md)가 세 rule 제거를 확정했다.** catalog v4 반영이 필요한 조치이며(같은 ADR §12) I4 관찰 전달 확장은 취소됐다. 반영 후 I2 fixture 재렌더 |
 | 실제 Consumer | 현재 `case` 공개 실행 구현은 골격이며 실제 projection 호출 경로가 없다 | Contract reader Mock까지만 입증 | 유소연이 실제 case 입력 경계/CaseView projection을 구현한 뒤 동일 artifact로 접합 확인 |
 
 ## 재현 명령과 검증 범위
