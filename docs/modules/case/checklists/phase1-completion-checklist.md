@@ -8,6 +8,8 @@
 > **2026-09-14 갱신.** `feature/case-core`에 실제 구현 코드가 생긴 뒤로는, 체크 표시(`[x]`)는 단위/smoke 테스트로 실제 검증된 항목에만 붙인다 — 구현은 있지만 테스트가 없는 항목(예: `CorrectionRecord`)은 의도적으로 보류한다.
 >
 > **2026-09-14 2차 갱신.** "case 혼자서 진행할 수 있는 부분"을 전부 훑어서 구현했다 — 나머지 5개 시나리오(`empty`/`plate_reread`/`correction_rerun`/`infra_failure`/`relative_rebase`) 전체 파리티, `EvidenceNeeds.items → Job Intent` 자동 매핑, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `CorrectionRecord`/`USER_REVIEWED` 단위 테스트, `export_learning_log()`까지 끝나서 `pytest src/daesingo/case/tests/`가 16개→**43개** 통과로 늘었다. 여전히 case 혼자 끝낼 수 없는 것(역행 전이 상세 규칙, `web`/`recording`/`search` 접합 실증, Timeout 수치— `search` baseline 실측 대기)은 그대로 미해결로 남겨뒀다 — 아래 각 절에 어디가 막혔는지 구체적으로 적어뒀다.
+>
+> **2026-09-14 3차 갱신.** 2차 갱신에서 "역행 전이 상세 규칙"을 통째로 미해결로 남겼었는데, 다시 훑어보니 그중 일부는 case 혼자 끝낼 수 있는 것이었다 — `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1...md`(연구 메모)가 `module-architecture.md` §4-모듈5 ②의 역행 전이 한 줄을 9개 `CorrectionRecord.kind`별로 이미 구체화해뒀다. 그 표 기준으로 `TIME_HINT_EDIT`(→`SEARCHING` 역행)와 `OTHER_CANDIDATE`(실제로는 역행이 아니라 `EVIDENCE_REVIEW`에 제자리로 머무는 재선택임을 이번에 확인)를 구현했다 — `pytest src/daesingo/case/tests/`가 43개→**54개**로 늘었다. major `TIMELINE_REBASE`만은 이 연구 메모 자체가 "web과 화면 흐름 확인 필요"라고 명시해 여전히 접합부로 남겨뒀다. §3-B/§7/§10/§13/§14에 반영.
 
 ---
 
