@@ -3,6 +3,7 @@ import type { Notice } from '../contracts/caseView'
 import { isAction } from '../contracts/caseView'
 import type { Action } from '../contracts/caseView'
 import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
+import { DevExtra } from './DevExtra'
 
 // notices[].actions[]는 닫힌 7종이고 미등록 값은 버튼을 렌더하지 않는다
 // (계약 B절 §7 — label_key와 달리 fallback을 두지 않는다. 실행 경로가 없는
@@ -29,9 +30,33 @@ function NoticeItem(props: { notice: Notice; blocking: boolean; onAction: (actio
         {props.blocking ? '진행할 수 없음' : '안내'} · {notice.severity}
       </div>
       <div className="kv-val">{noticeMessage(notice.message_key)}</div>
-      <div className="kv-src mono">{notice.code}</div>
       <ActionButtons actions={notice.actions} onAction={props.onAction} />
     </div>
+  )
+}
+
+/**
+ * 어느 `code`가 어느 문구로 갔는지는 증빙에 필요하지만 **사용자에게 보일 값은 아니다**
+ * (`evidence.reason_code`를 걷어낸 것과 같은 이유). 문구 옆에 두지 않고 목록 끝에 한 번
+ * 접어 둔다 — 펼치면 매핑이 그대로 보이고, 접혀 있으면 화면이 제품 흐름과 같은 모양이 된다.
+ */
+function CodeMapping(props: { notices: Notice[] }): JSX.Element {
+  return (
+    <DevExtra label={`증빙용 — notice code ${props.notices.length}건`}>
+      <div className="kv kv-rows">
+        {props.notices.map((n) => (
+          <div className="kv-row" key={n.code + n.message_key}>
+            <span className="kv-k mono">{n.code}</span>
+            <span className="kv-v">
+              <span className="kv-val">{noticeMessage(n.message_key)}</span>
+              <span className="kv-src mono">
+                {n.message_key} · {n.severity} · {n.blocking ? 'blocking' : 'non-blocking'}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </DevExtra>
   )
 }
 
@@ -50,6 +75,7 @@ export function NoticeList(props: {
       {props.info.map((n) => (
         <NoticeItem key={n.code + n.message_key} notice={n} blocking={false} onAction={props.onAction} />
       ))}
+      <CodeMapping notices={[...props.blocking, ...props.info]} />
     </div>
   )
 }
