@@ -99,6 +99,149 @@ class TimeRange(ContractModel):
         return self
 
 
+class WorkingAnchor(ContractModel):
+    value: AwareDatetime | None
+    source_candidate_ref: str | None
+    status: str = Field(min_length=1)
+
+
+class TimeBasis(ContractModel):
+    mode: str = Field(min_length=1)
+    working_anchor: WorkingAnchor
+
+
+class SourcePlacement(ContractModel):
+    source_asset_ref: str = Field(min_length=1)
+    timeline_start_sec: float = Field(ge=0)
+    timeline_end_sec: float = Field(ge=0)
+    media_stream_refs: list[str]
+
+    @model_validator(mode="after")
+    def end_is_after_start(self) -> SourcePlacement:
+        if self.timeline_end_sec <= self.timeline_start_sec:
+            raise ValueError("timeline_end_sec는 timeline_start_sec보다 커야 합니다")
+        return self
+
+
+class RecordingTimeline(ContractModel):
+    contract: Literal["RecordingTimeline"]
+    contract_version: Literal["recording-timeline/v1"]
+    timeline_id: str = Field(min_length=1)
+    revision: int = Field(ge=1)
+    time_basis: TimeBasis
+    time_source_candidates: list[str]
+    source_placements: list[SourcePlacement]
+    gaps: list[TimeRange]
+    timeline_status: Literal["USABLE", "USABLE_RELATIVE_ONLY", "PARTIAL", "UNUSABLE"]
+    produced_by: Literal["recording"]
+
+    @model_validator(mode="after")
+    def relative_only_has_no_absolute_anchor(self) -> RecordingTimeline:
+        if (
+            self.timeline_status == "USABLE_RELATIVE_ONLY"
+            and self.time_basis.working_anchor.value is not None
+        ):
+            raise ValueError("relative-only timeline에 absolute anchor를 만들 수 없습니다")
+        return self
+
+
+class AssetSpan(ContractModel):
+    sequence: int = Field(ge=0)
+    timeline_range: TimeRange
+    source_asset_ref: str = Field(min_length=1)
+    media_stream_ref: str = Field(min_length=1)
+    source_range: TimeRange
+
+
+class MissingRange(ContractModel):
+    timeline_range: TimeRange
+    reason: Literal[
+        "TIMELINE_GAP",
+        "SOURCE_UNAVAILABLE",
+        "STREAM_UNAVAILABLE",
+        "OUT_OF_TIMELINE_RANGE",
+    ]
+    source_ref: ContractRef | None
+
+    @model_validator(mode="after")
+    def source_ref_matches_reason(self) -> MissingRange:
+        expected_kind = {
+            "SOURCE_UNAVAILABLE": "source_asset",
+            "STREAM_UNAVAILABLE": "media_stream",
+        }.get(self.reason)
+        if expected_kind is None and self.source_ref is not None:
+            raise ValueError(f"{self.reason}의 source_ref는 null이어야 합니다")
+        if expected_kind is not None and (
+            self.source_ref is None or self.source_ref.kind != expected_kind
+        ):
+            raise ValueError(f"{self.reason}의 source_ref.kind는 {expected_kind}여야 합니다")
+        return self
+
+
+class FailureDetail(ContractModel):
+    kind: str = Field(min_length=1)
+    code: str = Field(min_length=1)
+
+
+class SpanResolution(ContractModel):
+    contract: Literal["SpanResolution"]
+    contract_version: Literal["span-resolution/v1.2"]
+    timeline_ref: TimelineRef
+    requested_range: TimeRange
+    status: Literal["COMPLETE", "PARTIAL", "FAILED"]
+    spans: list[AssetSpan]
+    missing_ranges: list[MissingRange]
+    failure: FailureDetail | None
+
+    @model_validator(mode="after")
+    def resolution_is_complete_and_consistent(self) -> SpanResolution:
+        if [span.sequence for span in self.spans] != list(range(len(self.spans))):
+            raise ValueError("AssetSpan.sequence는 0부터 연속 증가해야 합니다")
+
+        if self.status == "COMPLETE" and (
+            not self.spans or self.missing_ranges or self.failure is not None
+        ):
+            raise ValueError("COMPLETE는 span이 있고 missing_ranges가 비며 failure가 null이어야 합니다")
+        if self.status == "PARTIAL" and (
+            not self.spans or not self.missing_ranges or self.failure is not None
+        ):
+            raise ValueError("PARTIAL은 span과 missing range가 있고 failure가 null이어야 합니다")
+        if self.status == "FAILED" and (self.spans or self.failure is None):
+            raise ValueError("FAILED는 span이 비고 failure가 있어야 합니다")
+
+        intervals = [item.timeline_range for item in [*self.spans, *self.missing_ranges]]
+        for interval in intervals:
+            if (
+                interval.start_sec < self.requested_range.start_sec
+                or interval.end_sec > self.requested_range.end_sec
+            ):
+                raise ValueError("해소된 모든 구간은 requested_range 안에 있어야 합니다")
+
+        if not (self.status == "FAILED" and not intervals):
+            merged = _merge_ranges(intervals)
+            if merged != [(self.requested_range.start_sec, self.requested_range.end_sec)]:
+                raise ValueError("spans와 missing_ranges가 requested_range 전체를 설명해야 합니다")
+
+        spans_by_stream: dict[str, list[TimeRange]] = {}
+        for span in self.spans:
+            spans_by_stream.setdefault(span.media_stream_ref, []).append(span.timeline_range)
+        for ranges in spans_by_stream.values():
+            ordered = sorted(ranges, key=lambda item: item.start_sec)
+            if any(left.end_sec > right.start_sec for left, right in zip(ordered, ordered[1:])):
+                raise ValueError("같은 MediaStream의 AssetSpan은 서로 겹칠 수 없습니다")
+        return self
+
+
+def _merge_ranges(ranges: list[TimeRange]) -> list[tuple[float, float]]:
+    merged: list[tuple[float, float]] = []
+    for current in sorted(ranges, key=lambda item: (item.start_sec, item.end_sec)):
+        if not merged or current.start_sec > merged[-1][1]:
+            merged.append((current.start_sec, current.end_sec))
+            continue
+        merged[-1] = (merged[-1][0], max(merged[-1][1], current.end_sec))
+    return merged
+
+
 class AssetFacts(ContractModel):
     contract: Literal["AssetFacts"]
     contract_version: Literal[CONTRACT_VERSION]

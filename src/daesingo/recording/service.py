@@ -13,7 +13,11 @@ from .models import (
     ContractRef,
     FrameLocator,
     FrameRef,
+    RecordingTimeline,
+    SpanResolution,
     StreamPositionLocator,
+    TimeRange,
+    TimelineRef,
 )
 from .repository import InMemoryRecordingRepository
 
@@ -38,6 +42,10 @@ class RecordingService:
             service._repository.add_frame(frame, content=stub_content)
         for facts in fixture.asset_facts:
             service._repository.add_asset_facts(facts)
+        for timeline in fixture.recording_timelines:
+            service._repository.add_timeline(timeline)
+        for resolution in fixture.span_resolutions:
+            service._repository.add_span_resolution(resolution)
         return service
 
     def resolve_frame(self, locator: FrameLocator | dict[str, Any]) -> FrameRef:
@@ -84,3 +92,32 @@ class RecordingService:
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts
+
+    def get_timeline(
+        self,
+        timeline_id: str,
+        revision: int,
+    ) -> RecordingTimeline:
+        timeline_ref = TimelineRef(timeline_id=timeline_id, revision=revision)
+        timeline = self._repository.get_timeline(timeline_ref)
+        if timeline is None:
+            raise ValueError("존재하지 않는 timeline reference입니다")
+        return timeline
+
+    def resolve_span(
+        self,
+        timeline_ref: TimelineRef | dict[str, Any],
+        requested_range: TimeRange | dict[str, Any],
+    ) -> SpanResolution:
+        parsed_ref = TimelineRef.model_validate(timeline_ref)
+        parsed_range = TimeRange.model_validate(requested_range)
+        if self._repository.get_timeline(parsed_ref) is None:
+            raise ValueError("존재하지 않는 timeline reference입니다")
+
+        resolution = self._repository.get_span_resolution(parsed_ref, parsed_range)
+        if resolution is None:
+            raise RecordingCapabilityError(
+                "TEMPORARY_FAILURE",
+                "이 요청 범위의 SpanResolution이 fixture adapter에 등록되지 않았습니다",
+            )
+        return resolution

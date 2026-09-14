@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from .models import AssetFacts, FrameRef, MediaStream, SourceAsset
+from .models import (
+    AssetFacts,
+    FrameRef,
+    MediaStream,
+    RecordingTimeline,
+    SourceAsset,
+    SpanResolution,
+    TimeRange,
+    TimelineRef,
+)
 
 
 def _offset_key(value: float) -> Decimal:
@@ -19,6 +28,8 @@ class InMemoryRecordingRepository:
         self._frame_by_position: dict[tuple[str, Decimal], str] = {}
         self._frame_content: dict[str, bytes] = {}
         self._asset_facts: dict[tuple[str, str], AssetFacts] = {}
+        self._timelines: dict[tuple[str, int], RecordingTimeline] = {}
+        self._span_resolutions: dict[tuple[str, int, Decimal, Decimal], SpanResolution] = {}
 
     def add_source_asset(self, asset: SourceAsset) -> None:
         self._source_assets[asset.source_asset_ref] = asset
@@ -53,3 +64,39 @@ class InMemoryRecordingRepository:
 
     def get_asset_facts(self, kind: str, ref: str) -> AssetFacts | None:
         return self._asset_facts.get((kind, ref))
+
+    def add_timeline(self, timeline: RecordingTimeline) -> None:
+        key = (timeline.timeline_id, timeline.revision)
+        current = self._timelines.get(key)
+        if current is not None and current != timeline:
+            raise ValueError("같은 timeline revision을 다른 payload로 덮어쓸 수 없습니다")
+        self._timelines[key] = timeline
+
+    def get_timeline(self, timeline_ref: TimelineRef) -> RecordingTimeline | None:
+        return self._timelines.get((timeline_ref.timeline_id, timeline_ref.revision))
+
+    def add_span_resolution(self, resolution: SpanResolution) -> None:
+        key = self._resolution_key(resolution.timeline_ref, resolution.requested_range)
+        current = self._span_resolutions.get(key)
+        if current is not None and current != resolution:
+            raise ValueError("같은 span 요청을 다른 결과로 덮어쓸 수 없습니다")
+        self._span_resolutions[key] = resolution
+
+    def get_span_resolution(
+        self,
+        timeline_ref: TimelineRef,
+        requested_range: TimeRange,
+    ) -> SpanResolution | None:
+        return self._span_resolutions.get(self._resolution_key(timeline_ref, requested_range))
+
+    @staticmethod
+    def _resolution_key(
+        timeline_ref: TimelineRef,
+        requested_range: TimeRange,
+    ) -> tuple[str, int, Decimal, Decimal]:
+        return (
+            timeline_ref.timeline_id,
+            timeline_ref.revision,
+            _offset_key(requested_range.start_sec),
+            _offset_key(requested_range.end_sec),
+        )

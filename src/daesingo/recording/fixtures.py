@@ -8,7 +8,15 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .models import AssetFacts, ContractModel, FrameRef, MediaStream, SourceAsset
+from .models import (
+    AssetFacts,
+    ContractModel,
+    FrameRef,
+    MediaStream,
+    RecordingTimeline,
+    SourceAsset,
+    SpanResolution,
+)
 
 
 _SCENARIO_ID = re.compile(r"scenario_[a-z0-9_]+")
@@ -24,12 +32,18 @@ class RecordingFixture(ContractModel):
     media_streams: list[MediaStream]
     frame_refs: list[FrameRef] = Field(default_factory=list)
     asset_facts: list[AssetFacts] = Field(default_factory=list)
+    recording_timelines: list[RecordingTimeline]
+    span_resolutions: list[SpanResolution] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def source_stream_references_are_consistent(self) -> RecordingFixture:
         assets = {asset.source_asset_ref: asset for asset in self.source_assets}
         streams = {stream.media_stream_ref: stream for stream in self.media_streams}
         frames = {frame.frame_ref: frame for frame in self.frame_refs}
+        timelines = {
+            (timeline.timeline_id, timeline.revision): timeline
+            for timeline in self.recording_timelines
+        }
 
         if len(assets) != len(self.source_assets):
             raise ValueError("source_asset_ref는 fixture 안에서 중복될 수 없습니다")
@@ -37,6 +51,8 @@ class RecordingFixture(ContractModel):
             raise ValueError("media_stream_ref는 fixture 안에서 중복될 수 없습니다")
         if len(frames) != len(self.frame_refs):
             raise ValueError("frame_ref는 fixture 안에서 중복될 수 없습니다")
+        if len(timelines) != len(self.recording_timelines):
+            raise ValueError("timeline_id와 revision 조합은 중복될 수 없습니다")
 
         for asset in self.source_assets:
             if len(set(asset.media_stream_refs)) != len(asset.media_stream_refs):
@@ -61,6 +77,25 @@ class RecordingFixture(ContractModel):
                 raise ValueError(f"{frame.media_stream_ref}를 가리키는 MediaStream이 없습니다")
             if stream.media_type != "VIDEO":
                 raise ValueError(f"{frame.frame_ref}가 VIDEO가 아닌 MediaStream을 참조합니다")
+
+        for timeline in self.recording_timelines:
+            for placement in timeline.source_placements:
+                asset = assets.get(placement.source_asset_ref)
+                if asset is None:
+                    raise ValueError(f"{placement.source_asset_ref} SourceAsset이 없습니다")
+                for stream_ref in placement.media_stream_refs:
+                    stream = streams.get(stream_ref)
+                    if stream is None or stream.source_asset_ref != asset.source_asset_ref:
+                        raise ValueError(f"{stream_ref}가 SourcePlacement의 SourceAsset과 맞지 않습니다")
+
+        for resolution in self.span_resolutions:
+            timeline_key = (resolution.timeline_ref.timeline_id, resolution.timeline_ref.revision)
+            if timeline_key not in timelines:
+                raise ValueError(f"{timeline_key} RecordingTimeline이 없습니다")
+            for span in resolution.spans:
+                stream = streams.get(span.media_stream_ref)
+                if stream is None or stream.source_asset_ref != span.source_asset_ref:
+                    raise ValueError("AssetSpan의 SourceAsset과 MediaStream 관계가 맞지 않습니다")
 
         return self
 
