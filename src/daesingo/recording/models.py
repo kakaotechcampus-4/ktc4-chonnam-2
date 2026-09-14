@@ -281,6 +281,98 @@ class RemoteCopyInfo(ContractModel):
     expires_at: AwareDatetime | None
 
 
+class IncidentClipProvenance(ContractModel):
+    timeline_ref: TimelineRef
+    requested_range: TimeRange
+    asset_spans: list[AssetSpan] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def spans_are_ordered_and_inside_request(self) -> IncidentClipProvenance:
+        if [span.sequence for span in self.asset_spans] != list(range(len(self.asset_spans))):
+            raise ValueError("clip AssetSpan.sequence는 0부터 연속 증가해야 합니다")
+        if any(
+            span.timeline_range.start_sec < self.requested_range.start_sec
+            or span.timeline_range.end_sec > self.requested_range.end_sec
+            for span in self.asset_spans
+        ):
+            raise ValueError("clip AssetSpan은 requested_range 안에 있어야 합니다")
+        return self
+
+
+class IncidentClip(ContractModel):
+    contract: Literal["IncidentClip"]
+    contract_version: Literal["analysis-source-derived/v1"]
+    incident_clip_ref: str = Field(min_length=1)
+    asset_kind: Literal["INCIDENT_CLIP"]
+    source_provenance: IncidentClipProvenance
+    media_stream_refs: list[str] = Field(min_length=1)
+    byte_size: int | None = Field(ge=0)
+    availability: Literal["AVAILABLE", "UNAVAILABLE", "UNKNOWN"]
+    duration_sec: float | None = Field(ge=0)
+    timeline_ref: TimelineRef | None
+    timeline_range: TimeRange | None
+
+    @model_validator(mode="after")
+    def clip_is_consistent(self) -> IncidentClip:
+        if self.availability == "AVAILABLE" and self.byte_size is None:
+            raise ValueError("AVAILABLE IncidentClip의 byte_size는 null일 수 없습니다")
+        if (self.timeline_ref is None) != (self.timeline_range is None):
+            raise ValueError("timeline_ref와 timeline_range는 함께 존재하거나 함께 null이어야 합니다")
+        if self.timeline_ref != self.source_provenance.timeline_ref:
+            raise ValueError("clip timeline_ref는 source provenance와 일치해야 합니다")
+        span_streams = {span.media_stream_ref for span in self.source_provenance.asset_spans}
+        if not span_streams.issubset(set(self.media_stream_refs)):
+            raise ValueError("clip media_stream_refs가 provenance의 stream을 포함해야 합니다")
+        return self
+
+
+class DerivedAsset(ContractModel):
+    contract: Literal["DerivedAsset"]
+    contract_version: Literal["analysis-source-derived/v1"]
+    derived_asset_ref: str = Field(min_length=1)
+    asset_kind: Literal["DERIVED_ASSET"]
+    derived_role: Literal["REPORT_VIDEO", "PLATE_IMAGE"]
+    source_refs: list[ContractRef] = Field(min_length=1)
+    byte_size: int | None = Field(ge=0)
+    availability: Literal["AVAILABLE", "UNAVAILABLE", "UNKNOWN"]
+    duration_sec: float | None = Field(ge=0)
+    timeline_ref: TimelineRef | None
+    timeline_range: TimeRange | None
+    transform_ref: str | None
+
+    @model_validator(mode="after")
+    def derived_asset_is_consistent(self) -> DerivedAsset:
+        if self.availability == "AVAILABLE" and self.byte_size is None:
+            raise ValueError("AVAILABLE DerivedAsset의 byte_size는 null일 수 없습니다")
+        if (self.timeline_ref is None) != (self.timeline_range is None):
+            raise ValueError("timeline_ref와 timeline_range는 함께 존재하거나 함께 null이어야 합니다")
+        return self
+
+
+class DeletionItem(ContractModel):
+    asset_ref: ContractRef
+    result: Literal["DELETED", "NOT_FOUND", "PENDING_EXPIRY", "FAILED"]
+    failure_code: Annotated[str, Field(min_length=1)] | None
+
+    @model_validator(mode="after")
+    def deletion_result_is_consistent(self) -> DeletionItem:
+        if self.asset_ref.kind == "external_source":
+            raise ValueError("사용자 외부 원본은 삭제 대상이 아닙니다")
+        if (self.result == "FAILED") != (self.failure_code is not None):
+            raise ValueError("FAILED일 때만 failure_code가 필요합니다")
+        return self
+
+
+class DeletionReport(ContractModel):
+    contract: Literal["DeletionReport"]
+    contract_version: Literal["analysis-source-derived/v1"]
+    case_id: str = Field(min_length=1)
+    requested_at: AwareDatetime
+    completed_at: AwareDatetime | None
+    status: Literal["COMPLETE", "PARTIAL", "FAILED"]
+    items: list[DeletionItem]
+
+
 class AssetFacts(ContractModel):
     contract: Literal["AssetFacts"]
     contract_version: Literal[CONTRACT_VERSION]

@@ -17,8 +17,12 @@ from .models import (
     AssetSpan,
     AssetFacts,
     ContractRef,
+    DeletionItem,
+    DeletionReport,
+    DerivedAsset,
     FrameLocator,
     FrameRef,
+    IncidentClip,
     RecordingTimeline,
     RemoteCopy,
     RemoteCopyInfo,
@@ -85,7 +89,12 @@ class RecordingService:
         self._repository = repository or InMemoryRecordingRepository()
 
     @classmethod
-    def from_fixture(cls, fixture: RecordingFixture) -> RecordingService:
+    def from_fixture(
+        cls,
+        fixture: RecordingFixture,
+        *,
+        case_id: str | None = None,
+    ) -> RecordingService:
         service = cls()
         for asset in fixture.source_assets:
             service._repository.add_source_asset(asset)
@@ -107,6 +116,31 @@ class RecordingService:
             service._repository.add_analysis_source(source, stream_factory=stream_factory)
         for remote_copy in fixture.remote_copies:
             service._repository.add_remote_copy(remote_copy)
+        for clip in fixture.incident_clips:
+            service._repository.add_incident_clip(clip)
+        for asset in fixture.derived_assets:
+            service._repository.add_derived_asset(asset)
+        if case_id is not None:
+            for source in fixture.analysis_sources:
+                service._repository.associate_case_asset(
+                    case_id,
+                    ContractRef(kind="analysis_source", ref=source.analysis_source_ref),
+                )
+            for clip in fixture.incident_clips:
+                service._repository.associate_case_asset(
+                    case_id,
+                    ContractRef(kind="incident_clip", ref=clip.incident_clip_ref),
+                )
+            for asset in fixture.derived_assets:
+                service._repository.associate_case_asset(
+                    case_id,
+                    ContractRef(kind="derived_asset", ref=asset.derived_asset_ref),
+                )
+            for remote_copy in fixture.remote_copies:
+                service._repository.associate_case_asset(
+                    case_id,
+                    ContractRef(kind="remote_copy", ref=remote_copy.remote_copy_ref),
+                )
         return service
 
     def resolve_frame(self, locator: FrameLocator | dict[str, Any]) -> FrameRef:
@@ -274,3 +308,85 @@ class RecordingService:
         )
         self._repository.add_remote_copy(remote_copy)
         return remote_copy
+
+    def build_incident_clip(
+        self,
+        resolution: SpanResolution | dict[str, Any],
+        options: dict[str, Any] | None = None,
+    ) -> IncidentClip:
+        parsed_resolution = SpanResolution.model_validate(resolution)
+        if options:
+            raise ValueError("build_incident_clip options schema는 아직 확정되지 않았습니다")
+        if parsed_resolution.status == "FAILED" or not parsed_resolution.spans:
+            raise RecordingCapabilityError(
+                "INCIDENT_CLIP_BUILD_FAILED",
+                "usable AssetSpan이 없어 IncidentClip을 만들 수 없습니다",
+            )
+        clips = self._repository.find_incident_clips(parsed_resolution)
+        if not clips:
+            raise RecordingCapabilityError(
+                "INCIDENT_CLIP_BUILD_FAILED",
+                "해당 provenance의 IncidentClip fixture가 준비되지 않았습니다",
+            )
+        if len(clips) > 1:
+            raise RecordingCapabilityError(
+                "INCIDENT_CLIP_BUILD_FAILED",
+                "동일 provenance에 여러 IncidentClip이 등록되어 있습니다",
+            )
+        return clips[0]
+
+    def get_incident_clip(self, incident_clip_ref: str) -> IncidentClip:
+        clip = self._repository.get_incident_clip(incident_clip_ref)
+        if clip is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
+        return clip
+
+    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any]) -> DerivedAsset:
+        asset = DerivedAsset.model_validate(payload)
+        self._repository.add_derived_asset(asset)
+        return asset
+
+    def get_derived_asset(self, derived_asset_ref: str) -> DerivedAsset:
+        asset = self._repository.get_derived_asset(derived_asset_ref)
+        if asset is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 DerivedAsset입니다")
+        return asset
+
+    def purge_case(
+        self,
+        case_id: str,
+        *,
+        requested_at: datetime | None = None,
+    ) -> DeletionReport:
+        if not case_id:
+            raise ValueError("case_id는 비어 있을 수 없습니다")
+        timestamp = requested_at or datetime.now(timezone.utc)
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+            raise ValueError("requested_at은 offset-aware datetime이어야 합니다")
+
+        items: list[DeletionItem] = []
+        for asset_ref in self._repository.get_case_assets(case_id):
+            if asset_ref.kind == "remote_copy":
+                remote_copy = self._repository.get_remote_copy_by_ref(asset_ref.ref)
+                if (
+                    remote_copy is not None
+                    and remote_copy.expires_at is not None
+                    and remote_copy.expires_at <= timestamp
+                ):
+                    result = "NOT_FOUND"
+                else:
+                    result = "PENDING_EXPIRY"
+            else:
+                result = "DELETED" if self._repository.mark_deleted(asset_ref) else "NOT_FOUND"
+            items.append(DeletionItem(asset_ref=asset_ref, result=result, failure_code=None))
+
+        status = "PARTIAL" if any(item.result == "PENDING_EXPIRY" for item in items) else "COMPLETE"
+        return DeletionReport(
+            contract="DeletionReport",
+            contract_version="analysis-source-derived/v1",
+            case_id=case_id,
+            requested_at=timestamp,
+            completed_at=timestamp,
+            status=status,
+            items=items,
+        )

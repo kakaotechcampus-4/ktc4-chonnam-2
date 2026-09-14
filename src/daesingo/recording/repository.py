@@ -10,8 +10,11 @@ from .models import (
     AnalysisSource,
     AssetSpan,
     AssetFacts,
+    ContractRef,
+    DerivedAsset,
     FrameRef,
     MediaStream,
+    IncidentClip,
     RecordingTimeline,
     RemoteCopy,
     SourceAsset,
@@ -40,6 +43,10 @@ class InMemoryRecordingRepository:
         self._analysis_content_types: dict[str, str] = {}
         self._remote_copies: dict[str, RemoteCopy] = {}
         self._remote_copy_by_source_provider: dict[tuple[str, str], str] = {}
+        self._incident_clips: dict[str, IncidentClip] = {}
+        self._derived_assets: dict[str, DerivedAsset] = {}
+        self._case_assets: dict[str, list[ContractRef]] = {}
+        self._deleted_assets: set[tuple[str, str]] = set()
 
     def add_source_asset(self, asset: SourceAsset) -> None:
         self._source_assets[asset.source_asset_ref] = asset
@@ -184,3 +191,50 @@ class InMemoryRecordingRepository:
     def get_remote_copy(self, analysis_source_ref: str, provider: str) -> RemoteCopy | None:
         remote_ref = self._remote_copy_by_source_provider.get((analysis_source_ref, provider))
         return self._remote_copies.get(remote_ref) if remote_ref is not None else None
+
+    def get_remote_copy_by_ref(self, remote_copy_ref: str) -> RemoteCopy | None:
+        return self._remote_copies.get(remote_copy_ref)
+
+    def add_incident_clip(self, clip: IncidentClip) -> None:
+        current = self._incident_clips.get(clip.incident_clip_ref)
+        if current is not None and current != clip:
+            raise ValueError("같은 IncidentClip ref를 다른 payload로 덮어쓸 수 없습니다")
+        self._incident_clips[clip.incident_clip_ref] = clip
+
+    def find_incident_clips(self, resolution: SpanResolution) -> list[IncidentClip]:
+        return [
+            clip
+            for clip in self._incident_clips.values()
+            if clip.source_provenance.timeline_ref == resolution.timeline_ref
+            and clip.source_provenance.requested_range == resolution.requested_range
+            and clip.source_provenance.asset_spans == resolution.spans
+        ]
+
+    def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
+        return self._incident_clips.get(clip_ref)
+
+    def add_derived_asset(self, asset: DerivedAsset) -> None:
+        current = self._derived_assets.get(asset.derived_asset_ref)
+        if current is not None and current != asset:
+            raise ValueError("같은 DerivedAsset ref를 다른 payload로 덮어쓸 수 없습니다")
+        self._derived_assets[asset.derived_asset_ref] = asset
+
+    def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:
+        return self._derived_assets.get(asset_ref)
+
+    def associate_case_asset(self, case_id: str, asset_ref: ContractRef) -> None:
+        if asset_ref.kind == "external_source":
+            raise ValueError("사용자 외부 원본은 서비스 관리 삭제 대상이 아닙니다")
+        refs = self._case_assets.setdefault(case_id, [])
+        if asset_ref not in refs:
+            refs.append(asset_ref)
+
+    def get_case_assets(self, case_id: str) -> list[ContractRef]:
+        return list(self._case_assets.get(case_id, []))
+
+    def mark_deleted(self, asset_ref: ContractRef) -> bool:
+        key = (asset_ref.kind, asset_ref.ref)
+        if key in self._deleted_assets:
+            return False
+        self._deleted_assets.add(key)
+        return True

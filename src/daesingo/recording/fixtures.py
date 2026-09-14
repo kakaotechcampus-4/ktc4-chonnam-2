@@ -12,8 +12,10 @@ from .models import (
     AnalysisSource,
     AssetFacts,
     ContractModel,
+    DerivedAsset,
     FrameRef,
     MediaStream,
+    IncidentClip,
     RecordingTimeline,
     RemoteCopy,
     SourceAsset,
@@ -38,6 +40,8 @@ class RecordingFixture(ContractModel):
     span_resolutions: list[SpanResolution] = Field(default_factory=list)
     analysis_sources: list[AnalysisSource] = Field(default_factory=list)
     remote_copies: list[RemoteCopy] = Field(default_factory=list)
+    incident_clips: list[IncidentClip] = Field(default_factory=list)
+    derived_assets: list[DerivedAsset] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def source_stream_references_are_consistent(self) -> RecordingFixture:
@@ -117,6 +121,16 @@ class RecordingFixture(ContractModel):
         for remote_copy in self.remote_copies:
             if remote_copy.analysis_source_ref not in analysis_source_refs:
                 raise ValueError("RemoteCopy가 등록되지 않은 AnalysisSource를 참조합니다")
+
+        clip_refs = {clip.incident_clip_ref for clip in self.incident_clips}
+        if len(clip_refs) != len(self.incident_clips):
+            raise ValueError("incident_clip_ref는 fixture 안에서 중복될 수 없습니다")
+        for clip in self.incident_clips:
+            if any(ref not in streams for ref in clip.media_stream_refs):
+                raise ValueError("IncidentClip이 등록되지 않은 MediaStream을 참조합니다")
+        for asset in self.derived_assets:
+            if any(ref.kind == "incident_clip" and ref.ref not in clip_refs for ref in asset.source_refs):
+                raise ValueError("DerivedAsset이 등록되지 않은 IncidentClip을 참조합니다")
 
         return self
 
