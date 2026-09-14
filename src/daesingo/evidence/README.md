@@ -25,6 +25,13 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 
 `evaluate_requirements`의 `rule_codes`와 가시성 fact는 채택된 policy 설정 또는 upstream 관찰을 명시적으로 주입하기 위한 Python 호출 인수다. 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다.
 
+## 정책 데이터
+
+- `deadline_policy_v1.json` — ADR-EVIDENCE-002 K2에서 채택한 2개 달력일 계산, 결과 매핑, 2026·2027 대한민국 공휴일 snapshot. 외부 공휴일 API를 사용하지 않는다.
+- `requirement_rules_v2.json` — ADR-EVIDENCE-002 K3에서 채택한 적용 rule catalog. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 15개, 시각 표시 조건부 3개 중 1개 선택, 그리고 정상 Report를 발행하지 않는 구성 오류 목록을 가진다.
+
+두 파일 모두 작성까지 완료됐으며 `evaluate_requirements` loader 연결은 아직 구현 전이다. 연결 시 `rule_codes` 인수가 사라지고 시각 표시 분기 selector용 `TimeResolution` 인수가 추가된다.
+
 ## 재현
 
 저장소 루트의 PowerShell에서 실행한다.

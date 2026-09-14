@@ -1,0 +1,544 @@
+{
+  "policy_ref": "policy/safety-report-deadline/v1",
+  "calendar_ref": "calendar/kr-public-holidays/2026-2027/r1",
+  "timezone": "Asia/Seoul",
+  "coverage_start": "2026-01-01",
+  "coverage_end": "2027-12-31",
+  "source_checked_at": "2026-09-13",
+  "automatic_updates": false,
+  "deadline_rule": {
+    "duration": 2,
+    "unit": "CALENDAR_DAY",
+    "exclude_incident_date": true,
+    "weekend_days": [
+      "SATURDAY",
+      "SUNDAY"
+    ],
+    "last_day_extension": "NEXT_NON_WEEKEND_OR_HOLIDAY_DATE",
+    "deadline_inclusive": "END_OF_LOCAL_DAY",
+    "exclusive_upper_bound": "NEXT_DAY_START"
+  },
+  "outcome_mapping": {
+    "OPEN": "PASS",
+    "EXTENDED": "PASS",
+    "EXCEEDED": "WARN",
+    "OCCURRED_AT_MISSING": "UNKNOWN",
+    "TIME_RESOLUTION_NEEDS_REVIEW": "WARN"
+  },
+  "sources": [
+    {
+      "source_id": "law_public_holidays_current",
+      "organization": "법제처 국가법령정보센터",
+      "title": "공휴일에 관한 법률 [시행 2026. 5. 11.]",
+      "url": "https://www.law.go.kr/LSW/lsInfoP.do?ancYnChk=0&lsId=014112",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "law_office_public_holidays_current",
+      "organization": "법제처 국가법령정보센터",
+      "title": "관공서의 공휴일에 관한 규정 [시행 2026. 5. 11.]",
+      "url": "https://www.law.go.kr/LSW/lsInfoP.do?ancYnChk=0&lsId=002404",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "law_national_days",
+      "organization": "법제처 국가법령정보센터",
+      "title": "국경일에 관한 법률 제2조(국경일의 종류)",
+      "url": "https://law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=900257794",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "mpm_2026_labor_constitution",
+      "organization": "인사혁신처",
+      "title": "올해부터 노동절, 제헌절 공휴일로",
+      "url": "https://www.mpm.go.kr/mpm/comm/newsPress/newsPressRelease/?boardId=bbs_0000000000000029&category=&cntId=4250&mode=view&pageIdx=1",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "kasa_2026_almanac",
+      "organization": "우주항공청",
+      "title": "「2026년 월력요항」 발표",
+      "url": "https://www.kasa.go.kr/prog/bbsArticle/BBSMSTR_000000000010/view.do?bbsId=B000000000010&nttId=B000000001860Pe2zT3",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "kasa_2027_almanac_notice",
+      "organization": "우주항공청",
+      "title": "2027년 월력요항 (우주항공청 공고 제2026-0078호)",
+      "url": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000018/B000000003234Li6nD2.do?mno=sub01_03_03",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "kasa_2027_almanac_release",
+      "organization": "우주항공청",
+      "title": "「2027년 월력요항」 발표",
+      "url": "https://www.kasa.go.kr/prog/plcyBrf/brief/kor/sub01_01_04/view.do?plcyBrfNo=431",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "nec_2026_local_election",
+      "organization": "중앙선거관리위원회",
+      "title": "제9회 전국동시지방선거 주요사무일정",
+      "url": "https://www.nec.go.kr/site/nec/ex/bbs/View.do?bcIdx=289351&cbIdx=1104",
+      "checked_at": "2026-09-13"
+    },
+    {
+      "source_id": "law_public_official_election_day",
+      "organization": "법제처 국가법령정보센터",
+      "title": "공직선거법 제34조(선거일)",
+      "url": "https://www.law.go.kr/lsLawLinkInfo.do?chrClsCd=010202&lsJoLnkSeq=1000238463",
+      "checked_at": "2026-09-13"
+    }
+  ],
+  "holidays": {
+    "2026": [
+      {
+        "date": "2026-01-01",
+        "name": "1월 1일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-02-16",
+        "name": "설날 전날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-02-17",
+        "name": "설날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-02-18",
+        "name": "설날 다음 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-03-01",
+        "name": "3·1절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-03-02",
+        "name": "대체공휴일(3·1절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-05-01",
+        "name": "노동절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_office_public_holidays_current",
+          "mpm_2026_labor_constitution"
+        ]
+      },
+      {
+        "date": "2026-05-05",
+        "name": "어린이날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-05-24",
+        "name": "부처님 오신 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-05-25",
+        "name": "대체공휴일(부처님 오신 날)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-06-03",
+        "name": "제9회 전국동시지방선거",
+        "kind": "ELECTION_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_public_official_election_day",
+          "nec_2026_local_election"
+        ]
+      },
+      {
+        "date": "2026-06-06",
+        "name": "현충일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-07-17",
+        "name": "제헌절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "law_office_public_holidays_current",
+          "mpm_2026_labor_constitution"
+        ]
+      },
+      {
+        "date": "2026-08-15",
+        "name": "광복절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-08-17",
+        "name": "대체공휴일(광복절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-09-24",
+        "name": "추석 전날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-09-25",
+        "name": "추석",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-09-26",
+        "name": "추석 다음 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-10-03",
+        "name": "개천절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-10-05",
+        "name": "대체공휴일(개천절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-10-09",
+        "name": "한글날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2026_almanac"
+        ]
+      },
+      {
+        "date": "2026-12-25",
+        "name": "기독탄신일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2026_almanac"
+        ]
+      }
+    ],
+    "2027": [
+      {
+        "date": "2027-01-01",
+        "name": "1월 1일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-02-06",
+        "name": "설날 전날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-02-07",
+        "name": "설날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-02-08",
+        "name": "설날 다음 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-02-09",
+        "name": "대체공휴일(설날)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-03-01",
+        "name": "3·1절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-05-01",
+        "name": "노동절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_office_public_holidays_current",
+          "mpm_2026_labor_constitution",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-05-03",
+        "name": "대체공휴일(노동절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-05-05",
+        "name": "어린이날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-05-13",
+        "name": "부처님 오신 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-06-06",
+        "name": "현충일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-07-17",
+        "name": "제헌절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "mpm_2026_labor_constitution",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-07-19",
+        "name": "대체공휴일(제헌절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-08-15",
+        "name": "광복절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-08-16",
+        "name": "대체공휴일(광복절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-09-14",
+        "name": "추석 전날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-09-15",
+        "name": "추석",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-09-16",
+        "name": "추석 다음 날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-10-03",
+        "name": "개천절",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-10-04",
+        "name": "대체공휴일(개천절)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-10-09",
+        "name": "한글날",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "law_national_days",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-10-11",
+        "name": "대체공휴일(한글날)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      },
+      {
+        "date": "2027-12-25",
+        "name": "기독탄신일",
+        "kind": "NATIONAL_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_public_holidays_current",
+          "kasa_2027_almanac_notice"
+        ]
+      },
+      {
+        "date": "2027-12-27",
+        "name": "대체공휴일(기독탄신일)",
+        "kind": "SUBSTITUTE_PUBLIC_HOLIDAY",
+        "source_ids": [
+          "law_office_public_holidays_current",
+          "kasa_2027_almanac_notice",
+          "kasa_2027_almanac_release"
+        ]
+      }
+    ]
+  },
+  "known_limitations": [
+    "이 snapshot은 source_checked_at 시점에 공식적으로 확인된 공휴일만 포함한다.",
+    "source_checked_at 이후 새로 지정되는 임시공휴일은 자동 반영하지 않는다.",
+    "지방공휴일은 포함하지 않는다.",
+    "2028년 날짜가 필요한 계산은 이 snapshot의 coverage 밖이다."
+  ]
+}
+
