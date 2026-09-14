@@ -11,5 +11,6 @@ evidence/common-runtime Owner 관점에서 수행한 Mock fixture와 모듈 접�
 - `12_u-package-location-nullability_issue-draft_2026-09-13.md` — 위치를 확보하지 못한 사건에서 `ReportPackage`를 발행할 것인지 묻는 이슈의 원본 초안과 재검토 기록(`10_...` D1(Q1) 후속, 게시 완료 — 이슈 #48)
 - `13_adr-002-003-implementation_2026-09-14.md` — K1~K4·D1 코드/정책/계약/Artifact 구현과 검수, 공용 관찰 fact 부재에 따른 지시 간 불일치 기록
 - `14_instruction-conflict-analysis-and-doc-fixes_2026-09-14.md` — `13_...`의 불일치 두 건에 대한 원인 분석, 구현 판단 평가, Owner 결정 대기 항목과 추천값, ADR 문서 정정안. **처리 완료** — ②③④ 채택, ①(I4 범위 확장)은 기각되고 `ADR-EVIDENCE-005`(세 rule 제거)로 대체됐다
+- `15_adr-005-implementation_2026-09-14.md` — ADR-EVIDENCE-005 D2의 v4 catalog·코드·테스트·Artifact 반영, H/U Package 복구 증빙, I2·I4·recording 미결 경계 검수
 
 공용 Mock의 canonical 설명과 fixture 규칙은 `../../../mock/`이 소유한다. 이 폴더의 보고서는 evidence/common-runtime 담당자의 검수 기록이며 공용 Mock 계약을 대신하지 않는다.
