@@ -10,6 +10,7 @@ import { LOAD_ISSUES, SCENARIO_IDS, SNAPSHOTS } from '../contracts/fixtures'
 import { ACTIONS, isAction, type InfoState } from '../contracts/caseView'
 import {
   ACTION_LABELS,
+  KNOWN_LABEL_KEYS,
   INFO_STATE_LABELS,
   NOTICE_FALLBACK,
   SOURCE_FALLBACK,
@@ -124,6 +125,24 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
       if (isAction(action)) expect(ACTION_LABELS[action]).toBeTruthy()
     }
     expect(ACTIONS).toHaveLength(7)
+  })
+
+  it('CaseView 안의 모든 *_label_key가 매핑돼 있다', () => {
+    // 필드 이름을 열거하지 않고 훑는다. 계약에 새 label_key가 생기면
+    // (v1.4의 at_provenance_label_key 등) 매핑을 만들기 전까지 여기서 깨진다.
+    const found = new Set<string>()
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) return node.forEach(walk)
+      if (node && typeof node === 'object') {
+        for (const [key, value] of Object.entries(node)) {
+          if (key.endsWith('_label_key') && typeof value === 'string') found.add(value)
+          else walk(value)
+        }
+      }
+    }
+    walk(views)
+    expect(found.size).toBeGreaterThan(0)
+    for (const key of found) expect(KNOWN_LABEL_KEYS).toContain(key)
   })
 
   it('미등록 action은 버튼을 만들지 않는다', () => {

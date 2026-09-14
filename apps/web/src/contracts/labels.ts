@@ -139,3 +139,14 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
 export function reportFieldLabel(key: string): string {
   return REPORT_FIELD_LABELS[key] ?? key
 }
+
+/**
+ * 모든 맵이 아는 키의 합집합. 계약에 새 `*_label_key`가 생기면(예: v1.4의
+ * `at_provenance_label_key`) 그 값이 여기에 없어 테스트가 먼저 깨진다 —
+ * 화면에 fallback 문구가 조용히 뜨는 것을 막는 자리다.
+ */
+export const KNOWN_LABEL_KEYS: ReadonlySet<string> = new Set([
+  ...Object.keys(SOURCE_LABELS),
+  ...Object.keys(JOB_LABELS),
+  ...Object.keys(STALE_LABELS),
+])

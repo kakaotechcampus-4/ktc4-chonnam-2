@@ -31,7 +31,7 @@
 - **등재 `actions[]` 7종 전부 렌더 경로가 있다** — `EDIT_EVENT_TIME`(시각 직접 입력) · `GENERATE_REPORT_VIDEO` · `MANUAL_PLATE_INPUT` · `RETRY_PLATE_READ` · `REVIEW_TIME` · `EDIT_HINT` · `RETRY_SEARCH`
 - **`notices[].code` 12종 전부 문구가 매핑됐다** — fallback으로 빠진 건 없다
 - **blocking과 non-blocking이 갈린다** — 전체에서 blocking은 `readout.plate_read_failed` 1건이고 나머지는 안내로 렌더된다
-- **`evidence=null`(6건)·`candidates=[]`(1건)·`package=null`을 실패로 그리지 않는다** — 진행 상태 화면과 빈 결과 화면이 따로 있다
+- **`evidence=null`(8건)·`candidates=[]`(1건)·`package=null`을 실패로 그리지 않는다** — 진행 상태 화면과 빈 결과 화면이 따로 있다
 - **WARN에서도 제출 경로가 열린다** — `unknown_abstain_partial #2`는 `requirements_package.readiness=WARN`인데 capabilities 3종 버튼이 그대로 뜬다(값 상태 표시 규칙 §3-7)
 - **`stale_revision_label_key`로 문구를 고른다** — `relative_rebase #2`에서만 뜨고 boolean으로 문구를 만들지 않는다
 
