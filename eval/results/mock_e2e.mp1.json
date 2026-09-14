@@ -6,11 +6,11 @@
     "manifest": "mock_pack",
     "gt_version": "mp1",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
+    "code_commit": "d21f76c",
     "scorer_version": "s2",
     "prediction_ref": {
       "path": "eval/predictions/mock_e2e.json",
-      "sha256": "0aa769bc37f985ecfe027189463556c151cadee067c13af0be82ecd005815e9e"
+      "sha256": "bf79888ac1a3f1b5003512fea11f0b1f58d21bf0d2e855fe528b20f3db796477"
     }
   },
   "candidate": {

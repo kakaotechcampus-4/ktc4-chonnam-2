@@ -1,10 +1,10 @@
 {
   "meta": {
-    "manifest_version": "mp0",
+    "manifest_version": "mp1",
     "clip_rule_version": null,
     "tier": "MOCK",
-    "source": "data/mock (Mock Pack seed-v0)",
-    "note": "팀 공용 Mock Pack 을 태우기 위한 manifest 다. 로컬 미디어가 없으므로 clips 는 비어 있고 manifests_io.check_invariants 는 이 manifest 에 적용되지 않는다(파일 존재·sha256 검사 대상이 없다). clip_rule_version 은 clip 분할 규칙이 없어 null 이다 — 시나리오 1건을 clip 하나로 취급한다."
+    "source": "data/mock (공용 Mock Fixture Pack v5, develop 72e0e05)",
+    "note": "팀 공용 Mock Pack 을 태우기 위한 manifest 다. 로컬 미디어가 없으므로 clips 는 비어 있고 manifests_io.check_invariants 는 이 manifest 에 적용되지 않는다(파일 존재·sha256 검사 대상이 없다). clip_rule_version 은 clip 분할 규칙이 없어 null 이다. clip_id 자리에는 scenario_id 를 쓴다 — 시나리오당 recording_timeline 이 하나라 1:1 이 성립한다. 이 규약의 원문은 gt_candidate.json 의 meta.clip_id_convention 이다. 대상 시나리오는 7건이며, 각 stage 가 실제로 예측을 만드는 시나리오 집합은 입력 fixture 유무로 갈린다 (candidate 는 search fixture 6건, plate 는 readout fixture 5건)."
   },
   "clips": []
 }
