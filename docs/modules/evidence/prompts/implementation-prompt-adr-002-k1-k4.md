@@ -178,6 +178,8 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 **근거:** ADR §5.3~§5.13. 특히 §5.7(시각 표시 분기)·§5.8(content_length)·§5.9(situation_response)·§5.12(구성 오류)·§5.13(호출 경계)
 
+> **D1과 겹치는 부분.** §5.4·§5.6·§5.8·§5.12에는 D1 종결 블록이 붙어 있다. W3에서는 v2를 그대로 연결하되 **위치 판정에 관한 테스트를 여기서 고정하지 마라.** 최종 형태는 W12가 정한다.
+
 **할 일**
 
 1. `requirement_rules_v2.json` 로더와 catalog entry 선택을 구현한다. `evaluate_requirements()`가 출력하는 `policy_ref`는 v2가 된다.
@@ -196,7 +198,7 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 - 미등재 `policy_ref`, 지원하지 않는 rule code, 빈 rule 목록, code 중복, 관찰 fact 구조 오류 각각에서 정상 Report 미발행
 - `NOT_ASKED`가 `USER_UNSURE`로 자동 치환되지 않음
 - 렌더 입력 부족이 예외가 아니라 `UNKNOWN`으로 나옴
-- `EVIDENCE` scope의 위치 부재가 `WARN`, `FINAL_PACKAGE`의 위치 부재가 `UNKNOWN`으로 **다르게** 판정됨(§5.4·§5.6)
+- ~~`EVIDENCE` scope의 위치 부재가 `WARN`, `FINAL_PACKAGE`의 위치 부재가 `UNKNOWN`으로 **다르게** 판정됨~~ → **D1 종결로 폐기.** 두 scope 모두 `WARN`이다(§5.4의 D1 블록·ADR-003 §5.5). **「다르게 판정됨」을 테스트로 고정하지 마라** — W12에서 곧바로 뒤집히고, 그 변경이 회귀처럼 보이게 된다. 위치 판정 테스트는 W12에서 최종 형태로 한 번만 쓴다
 
 **하지 말 것**
 
@@ -259,6 +261,8 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 - `build_report_package`의 조립·guard 경로 자체에 대한 회귀 검증은 test-derived 입력을 명시한 단위 테스트로 유지하라. 그 테스트 결과를 공용 Scenario의 Package 완료로 보고하지 마라.
 
 관찰값이 없어 `UNKNOWN`이 늘어난 것을 회귀 실패로 표시하지 마라. 동시에, 그것을 "이전과 동일"로 표현하지도 마라.
+
+**U는 다르다.** 위 경고는 관찰 fact가 없어서 생기는 `UNKNOWN`에 대한 것이고, U의 위치 부재는 관찰 부족이 아니라 **확정된 사실**이다. W12를 먼저 끝냈다면 U의 `overall`은 `WARN`이고 `pkg_u001`이 유지돼야 한다. 여기서 U의 Package가 사라졌다면 W12가 덜 반영된 것이니 「예상된 변경」으로 기록하지 말고 원인을 찾아라(§5.15의 D1 정정 블록).
 
 ### W7 — 문서 갱신
 
@@ -334,6 +338,7 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 2. `requirements.py`에서 `PackageNotReady("package.input.location_missing")`을 제거한다. 위치 부재만으로 Package를 보류하지 않는다.
 3. `validation.py`의 `location` 검사를 「키 필수 + `null` 허용」으로 바꾼다. 키가 없거나 빈 객체면 위반이다.
 4. `_location_snapshot`이 대표값을 못 만들 때 `null`을 내도록 한다.
+5. **§5.12의 갈래 분류를 지킨다.** 위치 부재는 「정책 엔진 오류」도 「업무상 `UNKNOWN`」도 아닌 **`WARN`**이다. §5.12의 `UNKNOWN` 목록에서 「Package 표시용 위치가 아직 없음」이 빠졌다(§5.12의 D1 블록).
 
 **완료 조건**
 
@@ -351,7 +356,9 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 ### 실행 순서
 
-W10·W11은 문서 개정이라 언제든 할 수 있다. W12는 **W3(catalog 연결)이 끝난 뒤** 그리고 **W6(Artifact 재실행) 전에** 수행한다. 그래야 재실행 결과가 D1 반영 후 상태를 그대로 보여준다.
+W10·W11은 문서 개정이라 언제든 할 수 있다. W12는 **W3(catalog 연결)이 끝난 뒤** 그리고 **W6(Artifact 재실행) 전에** 수행한다.
+
+**순서가 뒤바뀌면 틀린 증빙이 남는다.** §5.15의 D1 정정 블록이 그 이유를 적고 있다 — v2 그대로 재실행하면 U의 `package.location.present`와 `package.report.content_length`가 **둘 다 `UNKNOWN`**이 되어 `overall=UNKNOWN`, 계약 §8.1로 `pkg_u001`이 사라진다. 그 상태를 baseline으로 기록하면 「Package가 사라진 것이 정상 결과」라고 증빙에 남게 된다. D1 반영 후에는 U가 `WARN`이고 `PACKAGE_READY`가 성립한다.
 
 권장 순서: **W1 → W2 → W3 → W10 → W11 → W12 → W4 → W5 → W6 → W7 → W8 → W9**
 
