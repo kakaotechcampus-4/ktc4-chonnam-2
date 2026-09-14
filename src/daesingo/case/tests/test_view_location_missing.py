@@ -9,11 +9,10 @@
      `value["display_text"]`로 인덱싱해서 `TypeError`를 던지던 결함 — 같은 시나리오의
      `pkg_u001`은 `report_inputs.location`이 `null`이다.
 
-⚠️ `scenario_unknown_abstain_partial_001`은 `view.py` docstring이 명시한 §11 1차 구현
-제외 범위(abstain/WARN/UNKNOWN 표시 규칙)에 속한다. 그래서 `evidence`/`package` 뷰
-전체를 fixture와 비교하지 않고, 이번에 고친 location 관련 필드만 좁게 고정한다
-(`review_needed`/`reason_code`는 location 이외의 다른 필드까지 종합해야 하는데, 그
-종합 로직은 1차 구현 범위 밖이다).
+2026-09-14 이 시나리오는 §11 제외 범위에서 벗어나 전체 파리티가 확보됐다
+(`test_scenario_unknown_abstain_partial_smoke.py` 참고 — `build_case_view()` 전체를
+fixture와 바이트 단위로 비교한다). 이 파일은 그와 별개로, 처음 발견됐던 두 크래시를
+비공개 함수 수준에서 좁게 고정해두는 회귀 테스트로 남긴다.
 """
 import json
 from pathlib import Path
@@ -76,10 +75,7 @@ def test_build_package_view_handles_null_report_inputs_location_without_crash():
         "info_state": "INFO_UNKNOWN",
         "source_label_key": None,
     }
-    # ⚠️ report_fields/unconfirmed_fields 전체, 그리고 report_field_states 중 location 항목만
-    # fixture와 비교한다 — safety_report_type 등 다른 필드의 info_state 매핑(AI_ESTIMATED vs
-    # NEEDS_REVIEW)은 이번 location 결함 수정과 무관한, §11 범위 밖의 별개 이슈다.
     ready = _case_fixture_ready_view()
     assert package_view["report_fields"] == ready["package"]["report_fields"]
-    assert package_view["report_field_states"]["location"] == ready["package"]["report_field_states"]["location"]
+    assert package_view["report_field_states"] == ready["package"]["report_field_states"]
     assert package_view["unconfirmed_fields"] == ready["package"]["unconfirmed_fields"]

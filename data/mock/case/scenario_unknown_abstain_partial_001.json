@@ -491,6 +491,22 @@
                 "ref": "ev_u001"
               }
             ]
+          },
+          {
+            "code": "package.time.post_stamp_applied",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "time.post_stamp_burned_in",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_u001_report_video"
+              },
+              {
+                "kind": "time_resolution",
+                "ref": "tres_u001"
+              }
+            ]
           }
         ]
       },
