@@ -25,7 +25,7 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 - K1 첨부 용량·개수 policy를 versioned policy data와 `FINAL_PACKAGE` 여섯 rule로 구현한다.
 - K2 신고기한 policy를 `deadline_policy_v1.json` 기반 deadline evaluator로 구현한다.
-- K3 `policy/requirement-rules-v2` catalog를 실제 rule 선택 주체로 만들고, `evaluate_requirements()`의 호출 경계를 §5.13대로 바꾼다.
+- K3 catalog를 실제 rule 선택 주체로 만들고, `evaluate_requirements()`의 호출 경계를 §5.13대로 바꾼다. 작업 중 활성 catalog는 `policy/requirement-rules-v2`로 시작해 **W12에서 `v3`로 바뀐다**.
 - K4 `source-kind-registry`를 v2로 개정하고 비시각 correction provenance를 테스트로 고정한다.
 - **D1**(ADR-003) 위치 없는 `ReportPackage` 발행을 계약 `report-package/v1.1`·신고문 정책 `safety-report-policy/v1.1`·catalog revision·구현에 반영한다(W10~W12).
 - 위 변경이 H/U/P/R 네 공용 Scenario 재실행 결과에 어떻게 나타나는지 증빙으로 남긴다.
@@ -126,7 +126,7 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 1. `policy/safety-report-attachment-size/v1`을 담는 versioned policy data 파일을 `src/daesingo/evidence/`에 신설한다. 파일명·구조는 `deadline_policy_v1.json`의 기존 관례에 맞춘다. 근거·확인일·증거 상태(개수 제한은 화면 캡처 미보존)를 데이터 안에 남긴다.
 2. `package.asset.{image.each_size, video.each_size, total_size, image.count, video.count, total_count}` 여섯 rule을 구현한다.
-3. 각 check에 `measurement.actual/limit/unit`을 출력한다. 단위 값은 catalog(`requirement_rules_v2.json`)가 지정한 것을 쓴다.
+3. 각 check에 `measurement.actual/limit/unit`을 출력한다. 단위 값은 **활성 catalog**가 지정한 것을 쓴다(W3 시점 `requirement_rules_v2.json`, W12 이후 `v3`).
 4. 판정 대상 집합은 §3.3대로 "현재 Package에 첨부하려는 자산"이다. 동일 `asset_ref` 중복은 한 번만 센다. `ref` 접두어 추측으로 종류를 판단하지 말고 Contract의 role로 판단한다.
 5. 기존 `package.asset.report_video.size`는 v2 catalog에서 사용하지 않는다. v1 Artifact에 남은 code와 값은 그대로 보존한다.
 
@@ -182,7 +182,8 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 **할 일**
 
-1. `requirement_rules_v2.json` 로더와 catalog entry 선택을 구현한다. `evaluate_requirements()`가 출력하는 `policy_ref`는 v2가 된다.
+1. `requirement_rules_v2.json` 로더와 catalog entry 선택을 구현한다. **활성 catalog는 데이터 파일이고 코드에 박힌 상수가 아니다.** W3 시점의 활성 catalog는 v2지만 W12에서 새 revision으로 바뀌므로, `policy_ref` 문자열을 코드에 하드코딩하거나 테스트에 `v2`로 고정하지 마라. 출력 `policy_ref`는 로드한 catalog가 말하는 값이다.
+1-1. **각 rule의 outcome 매핑을 코드에 박지 마라.** catalog JSON이 rule마다 `outcomes` 객체(예: `{"display_location_present": "PASS", "display_location_absent": "UNKNOWN"}`)를 갖고 있다. 구현은 「조건 판정 → 조건 key」까지만 하고 key→outcome 변환은 **데이터에서 읽는다.** 이렇게 해야 W12의 `UNKNOWN → WARN`이 데이터 한 줄 변경이 되고, 같은 rule을 두 번 고치지 않는다.
 2. `evaluate_requirements()`에서 `rule_codes` 인수를 제거하고 `time_resolution` 인수를 추가한다(§5.13). 공개 함수 시그니처 변경이므로 `README.md`의 공개 함수 설명과 모든 호출부를 함께 고친다.
 3. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 15개를 catalog에서 선택해 실행한다.
 4. 시각 표시 분기는 `TimeResolution.status`와 `post_stamp.reason_code`로 **정확히 하나**를 고른다. `post_stamp.needed` 단독 분기 금지(§5.7).
@@ -312,7 +313,7 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 **할 일**
 
-1. `decisions/safety-report-policy-v1.md`를 덮어쓰지 말고 v1.1을 발행한다. 장소 구절이 없는 변형을 **별도 `template_ref`로 등재**한다. 기존 2종은 그대로 둔다.
+1. `decisions/safety-report-policy-v1.md`를 덮어쓰지 말고 v1.1을 발행한다. `policy_ref`는 `safety-report-policy/v1.1`이다(W12의 `referenced_policies.report_template`이 이 값을 가리킨다). 장소 구절이 없는 변형을 **별도 `template_ref`로 등재**한다. 기존 2종은 그대로 둔다.
 2. Renderer 불변조건 2의 입력 슬롯에서 `location.display_text`를 선택으로 내린다. 불변조건 5는 그대로다.
 3. renderer가 위치 유무에 따라 template을 고르도록 구현한다. 장소 구절은 **지어내지 않고 뺀다.**
 
@@ -332,9 +333,10 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 **할 일**
 
-1. `requirement_rules_v2.json`을 덮어쓰지 말고 **새 revision을 발행**한다(§7). 두 rule을 **함께** 바꾼다.
+1. `requirement_rules_v2.json`을 덮어쓰지 말고 **새 revision을 발행**한다(§7). 파일은 `src/daesingo/evidence/requirement_rules_v3.json`, `policy_ref`는 `policy/requirement-rules-v3`, `supersedes_policy_ref`는 `policy/requirement-rules-v2`로 둔다. `decision_ref`는 ADR-003을 가리킨다. **v2의 나머지 내용은 그대로 계승한다** — rule을 더하거나 빼지 않는다(15개 유지, §5.14).
    - `package.location.present` — 위치 부재를 `UNKNOWN`이 아니라 `WARN`으로
    - `package.report.content_length` — 필수 입력을 **선택된 template 기준**으로 읽는다. 장소 슬롯이 없는 template이면 위치는 필수 입력이 아니다
+   - `referenced_policies.report_template` — `safety-report-policy/v1` → **`safety-report-policy/v1.1`**. W11이 하위 정책의 새 version을 내므로 §7의 「하위 정책이 새 version을 내면 K3도 그 version을 가리키는 새 revision이 필요하다」가 여기 걸린다. 이 한 줄을 빠뜨리면 catalog가 장소 없는 template이 없는 정책을 가리키게 된다
 2. `requirements.py`에서 `PackageNotReady("package.input.location_missing")`을 제거한다. 위치 부재만으로 Package를 보류하지 않는다.
 3. `validation.py`의 `location` 검사를 「키 필수 + `null` 허용」으로 바꾼다. 키가 없거나 빈 객체면 위반이다.
 4. `_location_snapshot`이 대표값을 못 만들 때 `null`을 내도록 한다.
@@ -345,6 +347,8 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 - `validate_report_package(pkg_u001)`이 `[]`를 돌려준다.
 - U의 `FINAL_PACKAGE` `overall`이 `WARN`이고 `PACKAGE_READY`가 성립한다.
 - 두 rule 중 하나만 바꾸면 U가 `UNKNOWN`으로 떨어진다는 사실이 테스트로 드러난다.
+- 출력 `policy_ref`가 `policy/requirement-rules-v3`이고, 그 값이 코드 상수가 아니라 로드한 catalog에서 온다.
+- `EVIDENCE`·`FINAL_PACKAGE` 두 scope 모두 위치 부재를 `WARN`으로 판정한다(§5.4의 D1 블록). **위치 판정 테스트는 여기서 처음이자 마지막으로 쓴다.**
 
 **하지 말 것**
 
@@ -496,7 +500,7 @@ D1 반영(W10~W12) 후에는 다음도 함께 확인하고 결과를 기록한�
 3. 갱신된 H/U/P/R baseline과 `run-summary.json`, v1 대비 변화 목록.
 4. `reviews/13_adr-002-003-implementation_<date>.md` — 실행 증빙과 검수 기록.
 5. 갱신된 `src/daesingo/evidence/README.md`·`first-completion-result.md`·`decisions/source-kind-registry.md`(v2).
-6. **D1 산출물** — `contract-requirement-report-package.md` v1.1, `safety-report-policy` v1.1과 장소 없는 template, 새 catalog revision 파일.
+6. **D1 산출물** — `contract-requirement-report-package.md` v1.1, `safety-report-policy` v1.1과 장소 없는 template, `requirement_rules_v3.json`. v2 파일은 지우지 않고 남긴다(채택됐으나 실행 전에 대체된 revision).
 7. 후속·통합 대기 목록(W8) — 항목·담당자·영향 경로·완료에 필요한 구체적 조치.
 8. `adr/adr-*.md`(ADR-EVIDENCE-004) — 구현 구조 결정과 채택하지 않은 대안(W9).
 9. 「이 프롬프트 §10」에 따라 나눈 커밋들.
