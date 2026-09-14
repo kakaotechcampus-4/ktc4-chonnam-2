@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import timedelta
-from typing import Iterable
 
 from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .corrections import correction_heads

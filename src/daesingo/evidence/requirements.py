@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Iterable
 
 from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .deadline import evaluate_deadline
@@ -19,7 +19,11 @@ from .policy import (
     render_report,
     report_type_label,
 )
-from .policy_catalog import load_attachment_policy, load_deadline_policy, load_requirement_catalog
+from .policy_catalog import (
+    load_attachment_policy,
+    load_deadline_policy,
+    load_requirement_catalog,
+)
 from .validation import validate_requirement_report
 
 _PRECEDENCE = {"PASS": 0, "WARN": 1, "UNKNOWN": 2, "BLOCK": 3}

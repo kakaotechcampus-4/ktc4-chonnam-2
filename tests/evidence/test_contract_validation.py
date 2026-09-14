@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import json
-from pathlib import Path
 import unittest
+from copy import deepcopy
+from pathlib import Path
 
 from daesingo.evidence import validate_contract
 from daesingo.evidence.mock_integration import run_scenario
 from daesingo.evidence.validation import validate_report_package
-
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIGS = json.loads((ROOT / "tests/evidence/fixtures/adapter_inputs.json").read_text(encoding="utf-8"))["scenarios"]

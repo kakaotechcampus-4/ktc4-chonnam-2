@@ -8,11 +8,11 @@ scenario_id as a domain input and never returns a pre-recorded result.
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import hashlib
 import json
-from pathlib import Path
 import subprocess
+from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 from .assembly import assemble_evidence, calculate_evidence_needs
@@ -427,9 +427,9 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     for report in [item for item in reports if item["scope"] == "EVIDENCE"]:
         if [item["code"] for item in report["checks"]] != expected_rules:
             raise ValueError("active EVIDENCE catalog selection differs from adapter expectation")
-    if final_reports := [item for item in reports if item["scope"] == "FINAL_PACKAGE"]:
-        if [item["code"] for item in final_reports[-1]["checks"]] != config["final_rules"]:
-            raise ValueError("active FINAL_PACKAGE catalog selection differs from adapter expectation")
+    final_reports = [item for item in reports if item["scope"] == "FINAL_PACKAGE"]
+    if final_reports and [item["code"] for item in final_reports[-1]["checks"]] != config["final_rules"]:
+        raise ValueError("active FINAL_PACKAGE catalog selection differs from adapter expectation")
 
     outputs = {
         "time_resolutions": times,

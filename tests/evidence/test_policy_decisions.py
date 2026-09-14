@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import json
-from pathlib import Path
 import unittest
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import patch
 
 from daesingo.evidence import (
@@ -24,7 +24,6 @@ from daesingo.evidence.policy_catalog import (
     validate_report_policy,
     validate_requirement_catalog,
 )
-
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIGS = json.loads((ROOT / "tests/evidence/fixtures/adapter_inputs.json").read_text(encoding="utf-8"))["scenarios"]
@@ -129,10 +128,15 @@ class PolicyDecisionTests(unittest.TestCase):
         malformed["limits"].pop("total_bytes")
         with self.assertRaises(PolicyConfigurationError):
             validate_attachment_policy(malformed)
-        with patch.object(requirement_module, "load_attachment_policy",
-                          side_effect=PolicyConfigurationError("missing K1 policy")):
-            with self.assertRaises(PolicyConfigurationError):
-                self._evaluate()
+        with (
+            patch.object(
+                requirement_module,
+                "load_attachment_policy",
+                side_effect=PolicyConfigurationError("missing K1 policy"),
+            ),
+            self.assertRaises(PolicyConfigurationError),
+        ):
+            self._evaluate()
 
     def _deadline_case(self, occurred_at, evaluated_at, *, status="OK"):
         record = deepcopy(self.happy_record)
@@ -229,27 +233,43 @@ class PolicyDecisionTests(unittest.TestCase):
         catalog = load_requirement_catalog()
         bad_ref = deepcopy(catalog)
         bad_ref["referenced_policies"]["attachment"] = "policy/missing"
-        with patch.object(requirement_module, "load_requirement_catalog", return_value=bad_ref):
-            with self.assertRaises(PolicyConfigurationError):
-                self._evaluate()
+        with (
+            patch.object(
+                requirement_module, "load_requirement_catalog", return_value=bad_ref
+            ),
+            self.assertRaises(PolicyConfigurationError),
+        ):
+            self._evaluate()
 
         unsupported = deepcopy(catalog)
         unsupported["scopes"]["EVIDENCE"]["always"][0]["code"] = "evidence.unsupported"
-        with patch.object(requirement_module, "load_requirement_catalog", return_value=unsupported):
-            with self.assertRaises(PolicyConfigurationError):
-                evaluate_requirements(self.happy_record, scope="EVIDENCE", report_id="bad",
-                                      evaluated_at="2026-08-24T18:23:00+09:00",
-                                      time_resolution=self.happy_time)
+        with (
+            patch.object(
+                requirement_module,
+                "load_requirement_catalog",
+                return_value=unsupported,
+            ),
+            self.assertRaises(PolicyConfigurationError),
+        ):
+            evaluate_requirements(self.happy_record, scope="EVIDENCE", report_id="bad",
+                                  evaluated_at="2026-08-24T18:23:00+09:00",
+                                  time_resolution=self.happy_time)
 
         for mutation in ("empty", "duplicate"):
             broken = deepcopy(catalog)
             rules = broken["scopes"]["EVIDENCE"]["always"]
             broken["scopes"]["EVIDENCE"]["always"] = [] if mutation == "empty" else [*rules, deepcopy(rules[0])]
-            with patch.object(requirement_module, "load_requirement_catalog", return_value=broken):
-                with self.assertRaises(PolicyConfigurationError):
-                    evaluate_requirements(self.happy_record, scope="EVIDENCE", report_id=f"bad_{mutation}",
-                                          evaluated_at="2026-08-24T18:23:00+09:00",
-                                          time_resolution=self.happy_time)
+            with (
+                patch.object(
+                    requirement_module,
+                    "load_requirement_catalog",
+                    return_value=broken,
+                ),
+                self.assertRaises(PolicyConfigurationError),
+            ):
+                evaluate_requirements(self.happy_record, scope="EVIDENCE", report_id=f"bad_{mutation}",
+                                      evaluated_at="2026-08-24T18:23:00+09:00",
+                                      time_resolution=self.happy_time)
 
         invalid_record = deepcopy(self.happy_record)
         invalid_record["event"]["safety_report_type"]["value"] = "UNREGISTERED"
@@ -267,9 +287,13 @@ class PolicyDecisionTests(unittest.TestCase):
         catalog = load_requirement_catalog()
         duplicate = deepcopy(catalog["scopes"]["FINAL_PACKAGE"]["conditional"][0]["cases"][0])
         catalog["scopes"]["FINAL_PACKAGE"]["conditional"][0]["cases"].append(duplicate)
-        with patch.object(requirement_module, "load_requirement_catalog", return_value=catalog):
-            with self.assertRaises(PolicyConfigurationError):
-                self._evaluate()
+        with (
+            patch.object(
+                requirement_module, "load_requirement_catalog", return_value=catalog
+            ),
+            self.assertRaises(PolicyConfigurationError),
+        ):
+            self._evaluate()
 
         malformed_facts = self._facts()
         malformed_facts["plate_visible_in_report_video"] = {"value": "yes"}

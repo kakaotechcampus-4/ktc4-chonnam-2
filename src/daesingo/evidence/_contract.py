@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from datetime import datetime
-import re
 from typing import Any
 
 from .errors import ContractInputError

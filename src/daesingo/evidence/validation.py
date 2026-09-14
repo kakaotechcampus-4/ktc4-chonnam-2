@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ._contract import Contract, parse_rfc3339
 
@@ -57,9 +58,11 @@ def validate_time_resolution(value: Contract) -> list[str]:
         computation = resolved.get("computation") or {}
         if computation.get("mode") not in {"DIRECT", "BASE_PLUS_OFFSET", "USER_OVERRIDE"}:
             errors.append("computation.mode")
-        if computation.get("mode") == "BASE_PLUS_OFFSET":
-            if not _ref(computation.get("base_input_ref")) or not isinstance(computation.get("source_offset_ms"), int):
-                errors.append("base_plus_offset_inputs")
+        if computation.get("mode") == "BASE_PLUS_OFFSET" and (
+            not _ref(computation.get("base_input_ref"))
+            or not isinstance(computation.get("source_offset_ms"), int)
+        ):
+            errors.append("base_plus_offset_inputs")
         if computation.get("mode") == "USER_OVERRIDE":
             selected = value.get("provenance", {}).get("selected_input_ref")
             used = [item for item in value.get("considered", []) if item.get("used")]
