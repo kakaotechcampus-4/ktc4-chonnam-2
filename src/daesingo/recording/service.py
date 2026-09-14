@@ -16,6 +16,7 @@ from .models import (
     RecordingTimeline,
     SpanResolution,
     StreamPositionLocator,
+    TimelinePositionLocator,
     TimeRange,
     TimelineRef,
 )
@@ -50,11 +51,19 @@ class RecordingService:
 
     def resolve_frame(self, locator: FrameLocator | dict[str, Any]) -> FrameRef:
         parsed = _FRAME_LOCATOR_ADAPTER.validate_python(locator)
-        if not isinstance(parsed, StreamPositionLocator):
-            raise RecordingCapabilityError(
-                "TEMPORARY_FAILURE",
-                "TIMELINE_POSITION 해소는 timeline repository 구현 후 제공됩니다",
-            )
+        if isinstance(parsed, TimelinePositionLocator):
+            timeline = self._repository.get_timeline(parsed.timeline_ref)
+            if timeline is None:
+                raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 timeline입니다")
+            frames = self._repository.find_frames_at_timeline_position(timeline, parsed.at_sec)
+            if not frames:
+                raise RecordingCapabilityError("FRAME_NOT_FOUND", "해당 timeline 위치의 frame이 없습니다")
+            if len(frames) > 1:
+                raise RecordingCapabilityError(
+                    "TEMPORARY_FAILURE",
+                    "여러 frame 후보를 구분할 stream_selector가 필요합니다",
+                )
+            return frames[0]
 
         stream = self._repository.get_media_stream(parsed.media_stream_ref)
         if stream is None:
@@ -102,6 +111,12 @@ class RecordingService:
         timeline = self._repository.get_timeline(timeline_ref)
         if timeline is None:
             raise ValueError("존재하지 않는 timeline reference입니다")
+        return timeline
+
+    def get_latest_timeline(self, timeline_id: str) -> RecordingTimeline:
+        timeline = self._repository.get_latest_timeline(timeline_id)
+        if timeline is None:
+            raise ValueError("존재하지 않는 timeline_id입니다")
         return timeline
 
     def resolve_span(

@@ -13,6 +13,7 @@ from .models import (
     SpanResolution,
     TimeRange,
     TimelineRef,
+    TimelinePositionLocator,
 )
 from .service import RecordingService
 
@@ -30,5 +31,6 @@ __all__ = [
     "SpanResolution",
     "TimeRange",
     "TimelineRef",
+    "TimelinePositionLocator",
     "load_recording_fixture",
 ]

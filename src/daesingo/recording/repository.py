@@ -75,6 +75,30 @@ class InMemoryRecordingRepository:
     def get_timeline(self, timeline_ref: TimelineRef) -> RecordingTimeline | None:
         return self._timelines.get((timeline_ref.timeline_id, timeline_ref.revision))
 
+    def get_latest_timeline(self, timeline_id: str) -> RecordingTimeline | None:
+        revisions = [
+            timeline
+            for (stored_id, _), timeline in self._timelines.items()
+            if stored_id == timeline_id
+        ]
+        return max(revisions, key=lambda timeline: timeline.revision, default=None)
+
+    def find_frames_at_timeline_position(
+        self,
+        timeline: RecordingTimeline,
+        at_sec: float,
+    ) -> list[FrameRef]:
+        matches: dict[str, FrameRef] = {}
+        for placement in timeline.source_placements:
+            if not (placement.timeline_start_sec <= at_sec < placement.timeline_end_sec):
+                continue
+            source_offset_sec = at_sec - placement.timeline_start_sec
+            for stream_ref in placement.media_stream_refs:
+                frame = self.find_frame_at(stream_ref, source_offset_sec)
+                if frame is not None:
+                    matches[frame.frame_ref] = frame
+        return list(matches.values())
+
     def add_span_resolution(self, resolution: SpanResolution) -> None:
         key = self._resolution_key(resolution.timeline_ref, resolution.requested_range)
         current = self._span_resolutions.get(key)
