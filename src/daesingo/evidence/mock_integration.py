@@ -17,7 +17,14 @@ from typing import Any
 
 from .assembly import assemble_evidence, calculate_evidence_needs
 from .errors import ContractInputError, PackageNotReady
-from .policy import GENERIC_TEMPLATE_REF, SAFETY_REPORT_POLICY_REF, SPECIFIC_TEMPLATE_REF, render_report
+from .policy import (
+    GENERIC_NO_LOCATION_TEMPLATE_REF,
+    GENERIC_TEMPLATE_REF,
+    SAFETY_REPORT_POLICY_REF,
+    SPECIFIC_NO_LOCATION_TEMPLATE_REF,
+    SPECIFIC_TEMPLATE_REF,
+    render_report,
+)
 from .requirements import build_report_package, evaluate_requirements
 from .time_resolution import resolve_time
 from .validation import validate_contract
@@ -33,10 +40,16 @@ _IMPLEMENTATION_FILES = (
     "src/daesingo/evidence/_contract.py",
     "src/daesingo/evidence/assembly.py",
     "src/daesingo/evidence/corrections.py",
+    "src/daesingo/evidence/deadline.py",
+    "src/daesingo/evidence/deadline_policy_v1.json",
     "src/daesingo/evidence/mock_integration.py",
+    "src/daesingo/evidence/attachment_policy_v1.json",
     "src/daesingo/evidence/policy.py",
     "src/daesingo/evidence/policy_data.json",
+    "src/daesingo/evidence/policy_catalog.py",
+    "src/daesingo/evidence/requirement_rules_v3.json",
     "src/daesingo/evidence/requirements.py",
+    "src/daesingo/evidence/safety_report_policy_v1_1.json",
     "src/daesingo/evidence/time_resolution.py",
     "src/daesingo/evidence/validation.py",
     "tests/evidence/fixtures/adapter_inputs.json",
@@ -199,7 +212,7 @@ def _assemble(
 def _render_preview(record: Contract) -> Contract | None:
     location = record.get("location") or {}
     display = next((location[key]["value"] for key in ("address", "place_name", "user_hint") if location.get(key)), None)
-    if display is None or record.get("occurred_at") is None or record.get("vehicle_number") is None:
+    if record.get("occurred_at") is None or record.get("vehicle_number") is None:
         return None
     event = record["event"]
     return render_report(
@@ -251,7 +264,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
             scope="EVIDENCE",
             report_id=ids["requirements"][0],
             evaluated_at=config["evaluated_at"][0],
-            rule_codes=config["evidence_rules"],
+            time_resolution=time_v1,
         )
         time_v2 = resolve_time(
             time_source_candidates=upstream["recording"]["time_source_candidates"],
@@ -277,7 +290,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
             scope="EVIDENCE",
             report_id=ids["requirements"][1],
             evaluated_at=config["evaluated_at"][1],
-            rule_codes=config["evidence_rules"],
+            time_resolution=time_v2,
             supersedes_id=ids["requirements"][0],
         )
         times.extend((time_v1, time_v2))
@@ -315,14 +328,14 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
                     scope="EVIDENCE",
                     report_id=ids["requirements"][0],
                     evaluated_at=config["evaluated_at"][0],
-                    rule_codes=config["evidence_rules"],
+                    time_resolution=time,
                 ),
                 evaluate_requirements(
                     record_v2,
                     scope="EVIDENCE",
                     report_id=ids["requirements"][1],
                     evaluated_at=config["evaluated_at"][1],
-                    rule_codes=config["evidence_rules"],
+                    time_resolution=time,
                 ),
             )
         )
@@ -381,19 +394,16 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
             scope="EVIDENCE",
             report_id=ids["requirements"][0],
             evaluated_at=config["evaluated_at"][0],
-            rule_codes=config["evidence_rules"],
+            time_resolution=time,
         )
-        preview = _render_preview(record)
         final_report = evaluate_requirements(
             record,
             scope="FINAL_PACKAGE",
             report_id=ids["requirements"][1],
             evaluated_at=config["evaluated_at"][1],
-            rule_codes=config["final_rules"],
+            time_resolution=time,
             asset_facts=upstream["recording"].get("asset_facts") or [],
-            template_ref=GENERIC_TEMPLATE_REF if record["event"]["visual_event_type"]["value"] is None else SPECIFIC_TEMPLATE_REF,
             observation_facts=config["requirement_observation_facts"],
-            rendered_report=preview,
         )
         try:
             package = build_report_package(
@@ -409,6 +419,14 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         times.append(time)
         records.append(record)
         reports.extend((evidence_report, final_report))
+
+    expected_rules = config["evidence_rules"]
+    for report in [item for item in reports if item["scope"] == "EVIDENCE"]:
+        if [item["code"] for item in report["checks"]] != expected_rules:
+            raise ValueError("active EVIDENCE catalog selection differs from adapter expectation")
+    if final_reports := [item for item in reports if item["scope"] == "FINAL_PACKAGE"]:
+        if [item["code"] for item in final_reports[-1]["checks"]] != config["final_rules"]:
+            raise ValueError("active FINAL_PACKAGE catalog selection differs from adapter expectation")
 
     outputs = {
         "time_resolutions": times,
@@ -430,11 +448,11 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     }
     if scenario_id == "scenario_happy_001":
         comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
-        comparison["known_differences"].append("Baseline uses safety-report-policy/v1 text and policy_ref; the shared package still uses older text and policy/package-assembly-v1.")
+        comparison["known_differences"].append("Baseline uses safety-report-policy/v1.1 text and policy_ref; the shared package still uses older text and policy/package-assembly-v1.")
         comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
     if scenario_id == "scenario_unknown_abstain_partial_001":
-        comparison["known_differences"].append("Baseline withholds ReportPackage because location is absent; the shared package serializes location=null outside report-package/v1.")
-        comparison["known_differences"].append("Generic rendering is policy-tested separately, but this scenario cannot fill the required location slot.")
+        comparison["known_differences"].append("The baseline accepts location=null under report-package/v1.1, but the shared scenario has no observation facts for the three new event-context rules, so FINAL_PACKAGE remains UNKNOWN.")
+        comparison["known_differences"].append("The no-location generic renderer omits the location phrase and never invents a location value.")
 
     return {
         "artifact_version": "evidence-first-completion/v1",
@@ -452,12 +470,14 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
                 "evidence-record/v1.3",
                 "evidence-needs/v1",
                 "requirement-report/v1",
-                "report-package/v1",
+                "report-package/v1.1",
                 "correction-record/v1.1",
             ],
             "safety_report_policy": SAFETY_REPORT_POLICY_REF,
             "specific_template": SPECIFIC_TEMPLATE_REF,
             "generic_template": GENERIC_TEMPLATE_REF,
+            "specific_no_location_template": SPECIFIC_NO_LOCATION_TEMPLATE_REF,
+            "generic_no_location_template": GENERIC_NO_LOCATION_TEMPLATE_REF,
         },
         "source_paths": {
             module: f"data/mock/{module}/{scenario_id}.json" for module in ("recording", "search", "readout", "case")
@@ -520,7 +540,7 @@ def run_all(root: Path, output_dir: Path) -> Contract:
         "implementation_fingerprints": fingerprints,
         "scenarios": results,
         "readiness": "PARTIAL_READY",
-        "reason": "Shared upstream contracts and a consumer reader are executable; H Package requires an explicitly marked test-derived confirmation, U Package is withheld for the unresolved location nullability conflict, and no real case projection is connected.",
+        "reason": "Shared upstream contracts and a consumer reader are executable; H/U FINAL_PACKAGE remain UNKNOWN because the shared inputs contain no observations for the new event-context rules, and no real case projection is connected.",
     }
     _write(output_dir / "run-summary.json", summary)
     return summary

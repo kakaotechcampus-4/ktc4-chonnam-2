@@ -17,20 +17,23 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `resolve_time(...) -> TimeResolution`
 - `assemble_evidence(...) -> EvidenceRecord`
 - `calculate_evidence_needs(...) -> EvidenceNeeds | None`
-- `evaluate_requirements(...) -> RequirementReport`
+- `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
-- `render_report(...) -> dict`: `safety-report-policy/v1`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 한다.
+- `render_report(...) -> dict`: `safety-report-policy/v1.1`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을 고른다.
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 
-`evaluate_requirements`의 `rule_codes`와 가시성 fact는 채택된 policy 설정 또는 upstream 관찰을 명시적으로 주입하기 위한 Python 호출 인수다. 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다.
+`evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 번호판·사건·전후 상황·시각 표시의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다. 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다.
 
 ## 정책 데이터
 
-- `deadline_policy_v1.json` — ADR-EVIDENCE-002 K2에서 채택한 2개 달력일 계산, 결과 매핑, 2026·2027 대한민국 공휴일 snapshot. 외부 공휴일 API를 사용하지 않는다.
-- `requirement_rules_v2.json` — ADR-EVIDENCE-002 K3에서 채택한 적용 rule catalog. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 15개, 시각 표시 조건부 3개 중 1개 선택, 그리고 정상 Report를 발행하지 않는 구성 오류 목록을 가진다.
+- `attachment_policy_v1.json` — K1의 decimal byte 용량 상한과 첨부 개수 상한, outcome 매핑.
+- `deadline_policy_v1.json` — K2의 2개 달력일 계산, 결과 매핑, 2026·2027 대한민국 공휴일 snapshot. 외부 공휴일 API를 사용하지 않는다.
+- `requirement_rules_v2.json` — K3에서 채택됐으나 D1 반영으로 첫 실행 전에 v3에 대체된 보존 revision. 수정하거나 활성화하지 않는다.
+- `requirement_rules_v3.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 15개와 시각 표시 조건부 3개 중 정확히 1개를 선택하며, 위치 부재 WARN과 선택 template별 필수 입력을 반영한다.
+- `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑.
 
-두 파일 모두 작성까지 완료됐으며 `evaluate_requirements` loader 연결은 아직 구현 전이다. 연결 시 `rule_codes` 인수가 사라지고 시각 표시 분기 selector용 `TimeResolution` 인수가 추가된다.
+loader는 각 정책의 식별자·필수 구조·공휴일 coverage·catalog rule 구성을 검증한다. 깨진 구성은 `PolicyConfigurationError`로 정상 `RequirementReport` 발행 전에 중단하고, 관찰 사실 부족은 check의 `UNKNOWN`으로 남긴다.
 
 ## 재현
 
@@ -46,4 +49,4 @@ python -m daesingo.evidence.mock_integration
 
 ## 상태
 
-**1차 Mock 통합 baseline 구현.** production runtime, 외부 API 호출, 실제 영상 생성, `case`의 CaseView projection은 포함하지 않는다. 현재 검증 범위와 보류 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.
+**ADR-EVIDENCE-002(K1~K4)·003(D1) 정책 엔진 반영 완료.** production runtime, 외부 API 호출, 실제 영상 생성, `case`의 CaseView projection은 포함하지 않는다. 공용 H/U/P/R 입력에는 신규 사건·전후 상황 관찰 fact가 없으므로 FINAL_PACKAGE가 `UNKNOWN`일 수 있으며, D1의 WARN Package 경로는 명시적 test-derived 관찰 입력으로 별도 검증한다. 현재 검증 범위와 후속 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.

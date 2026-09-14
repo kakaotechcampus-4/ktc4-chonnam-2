@@ -8,7 +8,6 @@ import unittest
 from daesingo.evidence import (
     ContractInputError,
     PackageNotReady,
-    PolicyConfigurationError,
     aggregate_outcomes,
     assemble_evidence,
     build_report_package,
@@ -16,6 +15,7 @@ from daesingo.evidence import (
     evaluate_requirements,
     render_report,
     resolve_time,
+    validate_contract,
 )
 from daesingo.evidence.mock_integration import run_scenario
 from daesingo.evidence.policy import EVENT_POLICY, SPECIFIC_TEMPLATE_REF
@@ -30,7 +30,13 @@ class ContractUnitTests(unittest.TestCase):
     def setUpClass(cls):
         cls.happy = run_scenario(ROOT, "scenario_happy_001", CONFIGS["scenario_happy_001"])
         cls.record = cls.happy["outputs"]["evidence_records"][0]
+        cls.time = cls.happy["outputs"]["time_resolutions"][0]
         cls.assets = json.loads((ROOT / "data/mock/recording/scenario_happy_001.json").read_text(encoding="utf-8"))["asset_facts"]
+
+    def _ready_report(self):
+        report = deepcopy(self.happy["outputs"]["requirement_reports"][1])
+        report["overall"] = "PASS"
+        return report
 
     def test_time_without_basis_is_unknown_and_has_no_resolved_value(self):
         result = resolve_time(
@@ -65,7 +71,7 @@ class ContractUnitTests(unittest.TestCase):
         missing = evaluate_requirements(
             self.record, scope="FINAL_PACKAGE", report_id="req_missing",
             evaluated_at="2026-09-13T10:00:00+09:00",
-            rule_codes=["package.asset.report_video.exists"], asset_facts=[],
+            time_resolution=self.time, asset_facts=[],
         )
         unavailable_assets = deepcopy(self.assets)
         report_video = next(item for item in unavailable_assets if item.get("derived_role") == "REPORT_VIDEO")
@@ -73,27 +79,29 @@ class ContractUnitTests(unittest.TestCase):
         blocked = evaluate_requirements(
             self.record, scope="FINAL_PACKAGE", report_id="req_blocked",
             evaluated_at="2026-09-13T10:00:00+09:00",
-            rule_codes=["package.asset.report_video.exists"], asset_facts=unavailable_assets,
+            time_resolution=self.time, asset_facts=unavailable_assets,
         )
-        self.assertEqual("UNKNOWN", missing["overall"])
+        def by_code(report):
+            return {item["code"]: item for item in report["checks"]}
+        self.assertEqual("UNKNOWN", by_code(missing)["package.asset.report_video.exists"]["outcome"])
         self.assertEqual("BLOCK", blocked["overall"])
         report_video["availability"] = "UNKNOWN"
         unknown = evaluate_requirements(
             self.record, scope="FINAL_PACKAGE", report_id="req_unknown_asset",
             evaluated_at="2026-09-13T10:00:00+09:00",
-            rule_codes=["package.asset.report_video.exists"], asset_facts=unavailable_assets,
+            time_resolution=self.time, asset_facts=unavailable_assets,
         )
-        self.assertEqual("UNKNOWN", unknown["overall"])
+        self.assertEqual("UNKNOWN", by_code(unknown)["package.asset.report_video.exists"]["outcome"])
 
     def test_missing_asset_and_failed_assembly_do_not_build_packages(self):
-        report = self.happy["outputs"]["requirement_reports"][1]
+        report = self._ready_report()
         with self.assertRaisesRegex(PackageNotReady, "package.asset.report_video_missing"):
             build_report_package(self.record, report, package_id="pkg_no_asset", created_at="2026-09-13T10:00:00+09:00", asset_facts=[])
         with self.assertRaisesRegex(PackageNotReady, "package.assembly_failed"):
             build_report_package(self.record, report, package_id="pkg_failed", created_at="2026-09-13T10:00:00+09:00", asset_facts=self.assets, assembly_succeeded=False)
 
     def test_plate_image_is_optional_and_package_supersede_is_additive(self):
-        report = self.happy["outputs"]["requirement_reports"][1]
+        report = self._ready_report()
         report_only = [item for item in self.assets if item.get("derived_role") == "REPORT_VIDEO"]
         package = build_report_package(self.record, report, package_id="pkg_unit", created_at="2026-09-13T10:00:00+09:00", asset_facts=report_only)
         self.assertNotIn("plate_image_ref", package["assets"])
@@ -101,17 +109,13 @@ class ContractUnitTests(unittest.TestCase):
         self.assertEqual({"kind": "report_package", "ref": "pkg_unit"}, replacement["supersedes_ref"])
         self.assertEqual("pkg_unit", package["package_ref"]["ref"])
 
-    def test_unadopted_size_and_deadline_rules_are_not_invented(self):
-        for rule in ("package.asset.report_video.size", "package.deadline.within_policy"):
-            with self.assertRaises(PolicyConfigurationError):
-                evaluate_requirements(
-                    self.record,
-                    scope="FINAL_PACKAGE",
-                    report_id="req_policy_gap",
-                    evaluated_at="2026-09-13T10:00:00+09:00",
-                    rule_codes=[rule],
-                    asset_facts=self.assets,
-                )
+    def test_active_catalog_applies_adopted_size_and_deadline_rules(self):
+        report = self.happy["outputs"]["requirement_reports"][1]
+        codes = {item["code"] for item in report["checks"]}
+        self.assertIn("package.asset.video.each_size", codes)
+        self.assertIn("package.deadline.within_policy", codes)
+        self.assertNotIn("package.asset.report_video.size", codes)
+        self.assertEqual("policy/requirement-rules-v3", report["policy_ref"])
 
     def test_all_four_event_mappings_render_with_adopted_template_and_length(self):
         for visual_type, policy in EVENT_POLICY.items():
@@ -163,7 +167,7 @@ class ContractUnitTests(unittest.TestCase):
     def test_unconfirmed_specific_evidence_cannot_build_package(self):
         unconfirmed = deepcopy(self.record)
         unconfirmed.pop("situation_response")
-        report = self.happy["outputs"]["requirement_reports"][1]
+        report = self._ready_report()
         with self.assertRaisesRegex(PackageNotReady, "package.input.situation_unconfirmed"):
             build_report_package(
                 unconfirmed,
@@ -208,6 +212,73 @@ class ContractUnitTests(unittest.TestCase):
             for index, (target, (previous, new)) in enumerate(values.items())
         ]
         self.assertEqual(set(values), set(correction_heads(records, case_id="case_h001", selection_rev=1)))
+
+    def test_nine_non_time_corrections_have_k4_value_provenance(self):
+        values = {
+            "event.visual_event_type": ("SIGNAL", "CENTER_LINE_CROSSING"),
+            "event.safety_report_type": ("TRAFFIC_VIOLATION", "MOTORCYCLE_VIOLATION"),
+            "event.violation_expression": ("기존 위반 표현", "사용자가 직접 수정한 위반 표현"),
+            "vehicle_number": ("11가1111", "22나2222"),
+            "location.coord": ({"lat": 35.1, "lon": 126.1}, {"lat": 35.2, "lon": 126.2}),
+            "location.address": ("이전 주소", "수정 주소"),
+            "location.place_name": ("이전 장소", "수정 장소"),
+            "location.search_keyword": ("이전 검색어", "수정 검색어"),
+            "location.user_hint": ("이전 위치 단서", "수정 위치 단서"),
+        }
+        for index, (target, (previous, new)) in enumerate(values.items()):
+            with self.subTest(target=target):
+                kind = "SITUATION_CHANGE" if target == "event.visual_event_type" else "PLATE_MANUAL_EDIT" if target == "vehicle_number" else "REPORT_TYPE_CHANGE"
+                correction = self._correction(f"corr_k4_{index}", target, previous, new, kind=kind)
+                situation = None
+                if target == "event.visual_event_type":
+                    situation = {"value": "CORRECTED", "responded_at": "2026-09-13T10:00:00+09:00",
+                                 "candidate_ref": {"kind": "candidate_event", "ref": "candidate_h001"}}
+                assembled = self._reassemble([correction], situation_response=situation)
+                if target.startswith("event."):
+                    value = assembled["event"][target.split(".", 1)[1]]
+                elif target.startswith("location."):
+                    value = assembled["location"][target.split(".", 1)[1]]
+                else:
+                    value = assembled[target]
+                ref = {"kind": "correction_record", "ref": correction["correction_id"]}
+                self.assertEqual(new, value["value"])
+                self.assertEqual({"kind": "case.user_correction", "ref": ref,
+                                  "observability": "OBSERVED", "label_key": None}, value["source"])
+                self.assertEqual([ref], value["support_refs"])
+                self.assertTrue(value["user_corrected"])
+                self.assertFalse(value["needs_review"])
+                self.assertIn(ref, assembled["provenance"]["correction_refs"])
+                self.assertEqual([], validate_contract(assembled))
+
+    def test_visual_correction_keeps_derived_mapping_inferred_until_direct_override(self):
+        visual = self._correction("corr_visual_map", "event.visual_event_type", "SIGNAL",
+                                  "CENTER_LINE_CROSSING", kind="SITUATION_CHANGE")
+        situation = {"value": "CORRECTED", "responded_at": "2026-09-13T10:00:00+09:00",
+                     "candidate_ref": {"kind": "candidate_event", "ref": "candidate_h001"}}
+        assembled = self._reassemble([visual], situation_response=situation)
+        report_type = assembled["event"]["safety_report_type"]
+        expression = assembled["event"]["violation_expression"]
+        self.assertEqual(("evidence.category_mapping", "INFERRED", False), (
+            report_type["source"]["kind"], report_type["source"]["observability"],
+            report_type["user_corrected"]))
+        self.assertEqual(("evidence.violation_expression", "INFERRED", False), (
+            expression["source"]["kind"], expression["source"]["observability"],
+            expression["user_corrected"]))
+
+        direct = self._correction("corr_report_type", "event.safety_report_type",
+                                  "TRAFFIC_VIOLATION", "MOTORCYCLE_VIOLATION")
+        overridden = self._reassemble([visual, direct], situation_response=situation)
+        direct_value = overridden["event"]["safety_report_type"]
+        self.assertEqual("case.user_correction", direct_value["source"]["kind"])
+        self.assertEqual("OBSERVED", direct_value["source"]["observability"])
+        self.assertTrue(direct_value["user_corrected"])
+
+    def test_occurred_at_correction_does_not_gain_evidence_value_source_fields(self):
+        result = run_scenario(ROOT, "scenario_correction_rerun_001", CONFIGS["scenario_correction_rerun_001"])
+        occurred = result["outputs"]["evidence_records"][-1]["occurred_at"]
+        self.assertNotIn("observability", occurred["source"])
+        self.assertNotIn("ref", occurred["source"])
+        self.assertEqual("time.source.user_correction", occurred["source"]["label_key"])
 
     def test_corrected_situation_requires_change_but_user_unsure_does_not(self):
         situation = {"value": "CORRECTED", "responded_at": "2026-09-13T10:00:00+09:00", "candidate_ref": {"kind": "candidate_event", "ref": "candidate_h001"}}
