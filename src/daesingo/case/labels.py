@@ -37,6 +37,18 @@ _OBSERVABILITY_TO_INFO_STATE: dict[str, str] = {
 # B절 §7-(3) location 대표값 후보 우선순위. 존재하는 첫 값 하나를 쓴다.
 _LOCATION_CANDIDATE_KEYS: tuple[str, ...] = ("address", "place_name", "user_hint")
 
+# candidates[].at_provenance(raw) → at_provenance_label_key. case-view/v1.4, 2026-09-14,
+# docs/modules/case/decisions/candidate-at-provenance-label-key.md — web이 제안한
+# "occurred_at.source.label_key pass-through" 가설은 fixture 전수 대조로 기각됐고
+# (scenario_correction_rerun_001 rev0→rev1에서 at_provenance는 불변인데
+# event_time_display.source_label_key만 바뀜), case 소유의 독립 매핑으로 대체했다.
+# 매핑 안 되는 raw 값은 None(→ label_key null)으로 떨어뜨린다 — 침묵 실패이자 web fallback 신호.
+_AT_PROVENANCE_LABEL_KEYS: dict[str, str] = {
+    "recording.filename_time": "candidate.at_provenance.filename_time",
+    "readout.overlay_ocr": "candidate.at_provenance.overlay_ocr",
+    "recording.timeline_relative_only": "candidate.at_provenance.timeline_relative_only",
+}
+
 
 def observability_to_info_state(observability: str | None) -> str:
     """observability가 미등록 값이면 INFO_UNKNOWN으로 떨어뜨린다(조용히 단정하지 않는다)."""
@@ -109,3 +121,12 @@ def report_type_label(code: str | None) -> str | None:
     if code is None:
         return None
     return REPORT_TYPE_LABELS.get(code, code)
+
+
+def at_provenance_label_key(at_provenance: str | None) -> str | None:
+    """B절 §7 — `at_provenance` raw가 authoritative, 이 함수의 반환값(`at_provenance_label_key`)은
+    case가 그 raw를 보고 골라주는 순수 표시용 파생값이다(§10 불변조건 14). raw가 None이거나
+    매핑표에 없는 값이면 None을 반환한다 — web은 이 None을 fallback 신호로만 쓴다."""
+    if at_provenance is None:
+        return None
+    return _AT_PROVENANCE_LABEL_KEYS.get(at_provenance)
