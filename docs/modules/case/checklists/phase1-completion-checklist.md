@@ -75,7 +75,7 @@
 
 ### B. Core Flow
 
-- [ ] 5-state 상태 기계 전이 규칙 구현 — 전진 전이 + 뒤 단계에서 앞 단계로 돌아가는 역행 전이(`TIME_HINT_EDIT`, major `TIMELINE_REBASE`, candidate 변경)
+- [x] 5-state 상태 기계 전이 규칙 구현 — 전진 전이 + 뒤 단계에서 앞 단계로 돌아가는 역행 전이(`TIME_HINT_EDIT`, major `TIMELINE_REBASE`, candidate 변경) (2026-09-14 3차 갱신: `module-architecture.md` §4-모듈5 ②의 한 줄을 `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1...md`(연구 메모, 9개 `CorrectionRecord.kind`별 stage 전이/재실행/폐기/보존을 표로 완성해둠)로 구체화해서 구현. `TIME_HINT_EDIT`는 표 1행 그대로 `SEARCHING`으로 역행(`domain.regress_to_searching()` + `correction.edit_time_hint()`), `OTHER_CANDIDATE`("candidate 변경")는 표 2행을 보면 실제로는 역행이 아니라 `EVIDENCE_REVIEW`에 "제자리"로 머문다는 걸 확인해 별도 구현(`domain.reselect_candidate()` + `correction.reselect_candidate()`) — `test_domain.py` 7개 + `test_correction.py` 5개로 검증. major `TIMELINE_REBASE`는 이 연구 메모 자체가 "신유민(web)이랑 화면 흐름 확인 안 하면 혼자 추천하기 어렵다"고 명시해 접합부로 남기고 구현하지 않음. 실제 mock fixture는 없어 연구 메모 기준 자체 설계로 구현한 것 — fixture parity가 아니라 unit 테스트로만 검증됐다는 점을 구분해 남긴다)
 - [x] Candidate selection — 사용자가 고른 사건은 `case` 소유(`ownership.md` §6), evidence는 참조만 하고 복사해 갖지 않음 (`domain.CaseAggregate.select_candidate()`, `test_domain.py`)
 - [x] `JobRecord`(Job Intent) 생성 — `kind`별(예: `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`, `REPORT_VIDEO_EXPORT`) 발주 규칙 (`jobs.py`, `test_jobs.py::test_job_record_shape_matches_contract_fields`)
 - [x] rerun_policy — `RETRY_PLATE_READ`/`RETRY_SEARCH`/`RESUME_SEARCH`(신규, 이번 ERD 결정)는 새 `job_id`, 자동 인프라 재시도(`STALE`)만 같은 `job_id`+`attempt` 증가 (2026-09-14 구현: `jobs.issue_resume_search`/`issue_plate_reread`, `test_jobs.py::test_resume_search_issues_new_job_id_not_same_job_id_plus_attempt` — scenario-level Mock fixture 재현은 아직 없음, §10 참고)
@@ -164,7 +164,7 @@
 Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(전부 필수는 아니다 — 코드가 없는 지금은 목록만 정의):
 
 - [x] `data/mock/validate_mock_pack.py` 통과 로그(전체 fixture 참조 무결성) — 2026-09-14 재실행: `PASS`, 46 files / 7 scenarios
-- [x] `case` 구현 코드에 대한 단위 테스트 결과(상태 기계 전이 표 기반, §3-B) — `pytest src/daesingo/case/tests/` **43개** 전부 통과(2026-09-14, 16→43), `scripts/check_boundaries.py` 위반 0건
+- [x] `case` 구현 코드에 대한 단위 테스트 결과(상태 기계 전이 표 기반, §3-B) — `pytest src/daesingo/case/tests/` **54개** 전부 통과(2026-09-14, 16→43→54, 역행 전이 `TIME_HINT_EDIT`/`OTHER_CANDIDATE` 추가분 포함), `scripts/check_boundaries.py` 위반 0건
 - [x] 7개 Mock Scenario를 실제 `case` 코드에 입력했을 때의 `CaseView` 출력 JSON diff(Mock fixture와 일치하는지) — **7/7 완료(2026-09-14)**: `scenario_happy_001`/`scenario_unknown_abstain_partial_001`(이전 완료) + `scenario_empty_001`/`scenario_plate_reread_001`/`scenario_correction_rerun_001`/`scenario_infra_failure_001`/`scenario_relative_rebase_001`(이번에 추가) — `test_scenario_*_smoke.py` 7개 전부 `build_case_view()`가 fixture와 바이트 단위 일치
 - [ ] `CaseView`를 소비하는 `web` 쪽 화면 캡처(최소 happy path 1개) — 신유민과 접합 확인 후 첨부, **[구현 후 작성]**
 - [x] 익명화 로그 export(`export_learning_log()`) 결과 샘플 — 3줄 규칙 준수 확인 로그 (2026-09-14: `test_correction_log.py` 5개가 규칙 준수를 코드로 검증 — `vehicle_number`/`location.coord`는 mock pack에 fixture가 없어 합성 데이터, `occurred_at`은 실제 fixture. 사람이 읽는 별도 샘플 로그 파일은 아직 없음)
@@ -211,6 +211,8 @@ Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(
 | ~~`candidates[].stale_revision` 파생 계산~~ | **해소(2026-09-14)** | `view._build_candidates_view()` — `current_timeline_revision` 비교 방식, `scenario_relative_rebase_001` smoke test로 검증됨 |
 | Timeout/Long-running Job Fallback 수치·정책(A-1) | 통합 대기(막힘) | `timeout-fallback.md`가 threshold 수치를 `search` baseline 실측 대기로, job 유지/취소 정책을 "미결"로 명시 — case가 임의로 숫자를 정하면 결정문 위반, 실제 미완료 아니라 case 혼자 끝낼 수 없는 항목 |
 | hints(time/vehicle/situation/location) 구조화 | 통합 대기(막힘) | "구조화"의 정의(파싱 규칙 vs 필드 검증 vs 기타)가 어느 문서에도 없음 — 팀 확인 없이 case 혼자 스펙을 만들 수 없어 현재는 pass-through만 구현 |
+| ~~`TIME_HINT_EDIT`/`OTHER_CANDIDATE` 역행·재선택 전이~~ | **해소(2026-09-14)** | `domain.regress_to_searching()`/`reselect_candidate()` + `correction.edit_time_hint()`/`reselect_candidate()` — `부분 재실행 정책 표 초안` 근거로 구현, `test_domain.py`/`test_correction.py`로 검증(fixture 없이 연구 메모 기준 자체 설계) |
+| major `TIMELINE_REBASE` 역행 전이 | 통합 대기(막힘) | `부분 재실행 정책 표 초안` 문서 자체가 "신유민(web)과 화면 흐름을 확인해야 한다"고 명시 — case 혼자 결정할 수 없는 접합부 항목 |
 
 ---
 
@@ -250,7 +252,7 @@ python data/mock/validate_mock_pack.py
 # case 전체 테스트 — 상태 기계 전이, JobRecord/Jobs 발주, CaseView projection,
 # CorrectionRecord, AnalysisScope, export_learning_log(), 7개 Scenario smoke test 포함
 PYTHONPATH=src pytest src/daesingo/case/tests/ -q
-# → 43 passed (2026-09-14)
+# → 54 passed (2026-09-14)
 
 # case가 다른 모듈 내부 구현을 침범하지 않는지(경계 위반 0건이어야 함)
 python scripts/check_boundaries.py
@@ -261,4 +263,4 @@ python scripts/check_boundaries.py
 
 ## 14. 회의에서 말할 한 줄 요약
 
-> "`case`는 Mock Pack이 이미 증명한 5-state 상태 기계·`JobRecord` 발주 규칙·`CaseView` projection을 그대로 코드로 옮기는 것이 1차 완료이고, 실행 lifecycle·신고 판정·recording 자산 소유는 내 범위가 아니다. 2026-09-14 기준 `case` 혼자 끝낼 수 있는 건 전부 끝났다 — 7개 Mock Scenario 전체 파리티, `EvidenceNeeds→Job Intent` 자동 발주, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `export_learning_log()`까지 43개 테스트로 검증됐다. 남은 건 세 종류뿐이다: ① 다른 모듈과의 실제 접합 실증(`web`/`common-runtime`/`recording`, case 혼자 증명 불가), ② 결정문 자체가 수치를 미결로 남긴 것(Timeout/Fallback — `search` baseline 대기), ③ 정의 자체가 없는 것(hints 구조화 — 팀 확인 필요)."
+> "`case`는 Mock Pack이 이미 증명한 5-state 상태 기계·`JobRecord` 발주 규칙·`CaseView` projection을 그대로 코드로 옮기는 것이 1차 완료이고, 실행 lifecycle·신고 판정·recording 자산 소유는 내 범위가 아니다. 2026-09-14 기준 `case` 혼자 끝낼 수 있는 건 전부 끝났다 — 7개 Mock Scenario 전체 파리티, `EvidenceNeeds→Job Intent` 자동 발주, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `export_learning_log()`, `TIME_HINT_EDIT`/`OTHER_CANDIDATE` 역행·재선택 전이까지 54개 테스트로 검증됐다. 남은 건 접합부(다른 모듈과의 실제 배선 — `web`/`common-runtime`/`recording`, major `TIMELINE_REBASE` 포함, case 혼자 증명·결정 불가)와, 결정문/스펙 자체가 아직 값을 안 정해준 것(Timeout/Fallback 수치 — `search` baseline 대기, hints 구조화 — 정의 자체가 없음) 두 종류뿐이다."

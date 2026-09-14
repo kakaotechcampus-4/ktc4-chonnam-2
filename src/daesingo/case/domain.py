@@ -6,10 +6,26 @@
     `docs/modules/case/decisions/case-selection-revision-persistence.md` (2026-09-13)
   - CaseView에는 절대 selection_rev를 노출하지 않는다(위 결정 그대로) — `view.py` 참고.
 
-⚠️ 1차 구현 범위: 전진 전이 + happy path에서 실제로 쓰이는 최소한의 역행 전이만 구현했다.
-`TIME_HINT_EDIT`/major `TIMELINE_REBASE` 등 나머지 역행 조건은 §11(1차 완료 제외 범위)에
-따라 이번 라운드에는 만들지 않는다 — `docs/modules/case/checklists/phase1-completion-checklist.md`
-§3-B 참고.
+⚠️ 역행 전이 구현 범위(2026-09-14 갱신): `module-architecture.md` §4-모듈5 ②는 "`TIME_HINT_EDIT`,
+major `TIMELINE_REBASE`, candidate 변경 등에 의해 뒤 단계에서 앞 단계로 돌아갈 수 있다"고만
+적어뒀지만, `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1...md`(연구 메모, 9개
+`CorrectionRecord.kind` 각각의 stage 전이/재실행/폐기/보존을 표로 완성해둠)가 이 한 줄을
+구체화한다. 그 표 기준으로 실제 구현 가능한 것과 막힌 것을 나눴다:
+  - `TIME_HINT_EDIT` — 표 1행 그대로 `SEARCHING`으로 역행(`regress_to_searching()`). case가
+    소유한 순수 workflow state라 case 혼자 구현 가능.
+  - `OTHER_CANDIDATE`("candidate 변경") — 표 2행을 보면 실제로는 역행이 **아니다**: 뒤 단계
+    (`EVIDENCE_REVIEW`)에 "제자리"로 머문다(`reselect_candidate()`). §4-모듈5 ②의 "candidate
+    변경"이라는 표현이 역행을 뜻하는 것처럼 읽히지만, 더 구체적인 이 연구 메모가 실제로는
+    아니라고 정정한다 — 문서 간 불일치이며 원문(module-architecture.md)을 고치는 건 이 세션
+    범위 밖이라 그대로 뒀다(2026-09-14 체크리스트 §11 노트 참고).
+  - major `TIMELINE_REBASE` — 표 맨 아래 자체가 "신유민(web)이랑 화면 흐름 확인 안 하면 나
+    혼자 추천하기 어려운 지점"이라고 명시한다. 접합부 문제라 이번에도 구현하지 않는다.
+  - 나머지 6개 kind(`PLATE_MANUAL_EDIT`/`PLATE_REREAD`/`SPAN_ADJUST`/`REPORT_TYPE_CHANGE`/
+    `EVENT_TIME_MANUAL`/`SITUATION_CHANGE`)는 표에서도 stage 전이가 "제자리"라 별도 domain
+    메서드가 필요 없다 — `correction.apply_correction()` 하나로 이미 충분하다.
+  - 실제 fixture로 검증된 게 아니라 이 연구 메모(초안, `decisions/`로 승격되지 않음)를 근거로
+    case가 스스로 설계해 구현한 것이므로, 표시(`[x]`)에도 그 구분을 그대로 남긴다
+    (`phase1-completion-checklist.md` §3-B).
 """
 from __future__ import annotations
 
@@ -145,6 +161,40 @@ class CaseAggregate:
         rev3에서 이미 동일했고 `user_reviewed`만 바뀐다)."""
         self.user_reviewed = True
         self.bump_revision()
+
+    def regress_to_searching(self) -> None:
+        """`TIME_HINT_EDIT` 역행 전이 — `CANDIDATE_REVIEW`/`EVIDENCE_REVIEW`/`READY` 중 어디서든
+        `SEARCHING`으로 되돌아간다(`부분 재실행 정책 표 초안` 1행: "다시 도는 것=1차 탐색,
+        폐기되는 것=후보·2차확인·선택·증거, 절대 안 건드리는 것=시간축·원본"). case가 들고
+        있는 것 중 "폐기" 대상은 `candidates`뿐이다(2차 확인/증거는 evidence 쪽 데이터라 case가
+        아예 갖고 있지 않다 — 애초에 지울 게 없다). `selection_rev`는 건드리지 않는다(과거
+        correction_records가 스냅샷해 둔 값과의 정합성을 깨지 않기 위해 — 단조 증가만 유지).
+
+        `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
+        `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
+        """
+        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+        self.stage = "SEARCHING"
+        self.candidates = []
+
+    def reselect_candidate(self, candidate_id: str) -> None:
+        """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤(`EVIDENCE_REVIEW`) 사용자가 "다른 후보가
+        맞다"고 정정하는 경로. `부분 재실행 정책 표 초안` 2행: stage는 "제자리"(그대로
+        `EVIDENCE_REVIEW`)로 머물고, `selected` 플래그만 새 candidate로 옮긴다. 최초 선택
+        (`select_candidate()`, `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW` 전이 포함)과는 다른
+        메서드다 — 여긴 전이가 없다. `selection_rev`는 새 선택 context를 나타내려고 올린다
+        (`case-selection-revision-persistence.md`와 동일 원칙: candidate가 바뀌면 selection_rev도
+        바뀐다). `case_rev`는 여기서 올리지 않는다 — `correction.reselect_candidate()`가
+        `apply_correction()`으로 이미 올린다."""
+        if self.stage != "EVIDENCE_REVIEW":
+            raise InvalidTransition(f"{self.stage}에서는 OTHER_CANDIDATE 재선택을 쓸 수 없다(EVIDENCE_REVIEW 전용)")
+        match = next((c for c in self.candidates if c.candidate_id == candidate_id), None)
+        if match is None:
+            raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
+        for c in self.candidates:
+            c.selected = c.candidate_id == candidate_id
+        self.selection_rev += 1
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.

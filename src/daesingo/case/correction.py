@@ -55,3 +55,60 @@ def apply_correction(
     case.correction_records.append(record)
     case.bump_revision()  # 정정 제출 = 새 요청 → case_rev 상승(§3-E)
     return record
+
+
+_HINT_FIELDS = frozenset({"time", "vehicle", "situation", "location"})
+
+
+def edit_time_hint(case: CaseAggregate, hints_patch: dict[str, str | None]) -> dict[str, Any] | None:
+    """`TIME_HINT_EDIT` — `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1...md`
+    1행: 시간 단서 등 `hints`를 고치면 `SEARCHING`으로 역행하고 1차 탐색부터 다시 돈다.
+
+    `hints_patch`는 `{time?, vehicle?, situation?, location?}`(표에 적힌 payload 그대로) 중
+    바뀐 키만 담은 부분 patch다. `previous_value`/`new_value`는 그 변경분만(전체 hints 블롭이
+    아니라)을 dict로 담는다 — case가 이 namespace(`target_field="hints"`)의 값 타입을 스스로
+    정의할 수 있다(`contract-correction-record.md` §6: "case가 추가하는 non-evidence
+    target_field 네임스페이스... 닫힌 목록 아님").
+
+    변경이 하나도 없으면(모든 값이 기존과 동일) `CorrectionRecord`를 만들지 않고 역행도 하지
+    않는다 — §8 lifecycle 불변조건 1 "무효/무변경 입력 미생성"과 동일 원칙. 반환값은 그 경우
+    `None`이다.
+    """
+    unknown = set(hints_patch) - _HINT_FIELDS
+    if unknown:
+        raise ValueError(f"알 수 없는 hint 필드: {sorted(unknown)}")
+
+    changed_previous: dict[str, Any] = {}
+    changed_new: dict[str, Any] = {}
+    for field_name, new_value in hints_patch.items():
+        previous_value = case.hints.get(field_name)
+        if previous_value == new_value:
+            continue
+        changed_previous[field_name] = previous_value
+        changed_new[field_name] = new_value
+
+    if not changed_new:
+        return None
+
+    record = apply_correction(
+        case, kind="TIME_HINT_EDIT", target_field="hints",
+        previous_value=changed_previous, new_value=changed_new,
+    )
+    case.hints.update(changed_new)
+    case.regress_to_searching()
+    return record
+
+
+def reselect_candidate(case: CaseAggregate, candidate_id: str) -> dict[str, Any]:
+    """`OTHER_CANDIDATE` — 표 2행: 이미 선택한 뒤(`EVIDENCE_REVIEW`) 다른 후보가 맞다고
+    정정한다. stage는 그대로 머물고(`domain.reselect_candidate()`가 전이를 만들지 않는다),
+    `selected` 플래그만 옮겨간다. `target_field="candidate.selected_id"`도 case가 스스로 정의한
+    네임스페이스다(§6, 예시로 명시된 이름 그대로 재사용).
+    """
+    previous_id = next((c.candidate_id for c in case.candidates if c.selected), None)
+    record = apply_correction(
+        case, kind="OTHER_CANDIDATE", target_field="candidate.selected_id",
+        previous_value=previous_id, new_value=candidate_id,
+    )
+    case.reselect_candidate(candidate_id)
+    return record

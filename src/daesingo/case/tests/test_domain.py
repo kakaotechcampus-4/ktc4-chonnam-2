@@ -93,3 +93,78 @@ def test_job_ids_are_always_unique_even_for_same_kind():
     case = _make_case()
     ids = {case.next_job_id("PLATE_READ") for _ in range(20)}
     assert len(ids) == 20
+
+
+def _case_at_evidence_review() -> CaseAggregate:
+    case = _make_case()
+    case.start_search()
+    case.receive_candidates([
+        Candidate(candidate_id="c1", at="t1", at_provenance="p1", observed="obs1", thumb_ref="fr1"),
+        Candidate(candidate_id="c2", at="t2", at_provenance="p2", observed="obs2", thumb_ref="fr2"),
+    ])
+    case.select_candidate("c1")
+    return case
+
+
+def test_regress_to_searching_from_each_later_stage_clears_candidates():
+    """`TIME_HINT_EDIT` 역행 전이 — `부분 재실행 정책 표 초안` 1행: `CANDIDATE_REVIEW`/
+    `EVIDENCE_REVIEW`/`READY` 어디서든 `SEARCHING`으로 돌아가고 candidates는 전부 폐기된다."""
+    for reach_stage in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
+        case = _make_case()
+        case.start_search()
+        case.receive_candidates([Candidate(candidate_id="c1", at=None, at_provenance=None, observed="obs", thumb_ref="fr1")])
+        if reach_stage in ("EVIDENCE_REVIEW", "READY"):
+            case.select_candidate("c1")
+        if reach_stage == "READY":
+            case.mark_ready()
+        assert case.stage == reach_stage
+
+        case.regress_to_searching()
+        assert case.stage == "SEARCHING"
+        assert case.candidates == []
+
+
+def test_regress_to_searching_rejects_intake_and_searching():
+    case = _make_case()
+    with pytest.raises(InvalidTransition):
+        case.regress_to_searching()  # INTAKE — 아직 SEARCHING에도 못 갔다
+
+    case.start_search()
+    with pytest.raises(InvalidTransition):
+        case.regress_to_searching()  # SEARCHING — 이미 거기라 "역행"할 데가 없다
+
+
+def test_regress_to_searching_does_not_bump_case_rev_by_itself():
+    """전이 자체는 case_rev를 안 올린다 — `correction.edit_time_hint()`가 `apply_correction()`으로
+    이미 한 번 올리는 게 원칙(한 사용자 요청 = 한 case_rev 증가)."""
+    case = _case_at_evidence_review()
+    rev_before = case.case_rev
+    case.regress_to_searching()
+    assert case.case_rev == rev_before
+
+
+def test_reselect_candidate_stays_in_evidence_review():
+    case = _case_at_evidence_review()
+    assert case.stage == "EVIDENCE_REVIEW"
+    rev_before = case.case_rev
+    selection_rev_before = case.selection_rev
+
+    case.reselect_candidate("c2")
+    assert case.stage == "EVIDENCE_REVIEW"  # 표 2행: 제자리
+    assert case.case_rev == rev_before  # 여기서는 안 올림(correction.reselect_candidate()가 올림)
+    assert case.selection_rev == selection_rev_before + 1
+    assert [c.candidate_id for c in case.candidates if c.selected] == ["c2"]
+
+
+def test_reselect_candidate_rejects_outside_evidence_review():
+    case = _make_case()
+    case.start_search()
+    case.receive_candidates([Candidate(candidate_id="c1", at=None, at_provenance=None, observed="obs", thumb_ref="fr1")])
+    with pytest.raises(InvalidTransition):
+        case.reselect_candidate("c1")  # CANDIDATE_REVIEW에선 아직 선택 이후 정정 대상이 없다
+
+
+def test_reselect_candidate_rejects_unknown_candidate_id():
+    case = _case_at_evidence_review()
+    with pytest.raises(InvalidTransition):
+        case.reselect_candidate("does-not-exist")
