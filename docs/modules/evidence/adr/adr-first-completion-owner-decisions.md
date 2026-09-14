@@ -27,6 +27,8 @@
 
 K1-K4가 모두 결정되어 ADR 전체 상태를 `ACCEPTED`로 올렸다. 각 항목 표의 상태가 해당 결정의 authoritative 상태다. 이후 변경은 §7에 따라 새 version·revision으로 처리한다.
 
+> **후속 (2026-09-14).** K3가 열어둔 D1(Q1)이 [`ADR-EVIDENCE-003`](adr-location-absent-package.md)으로 종결됐다. §5.6의 `package.location.present`와 §5.8의 렌더 필수 입력이 새 catalog revision에서 바뀌고, §5.11의 발생장소 「필요」는 사실로 유지되되 그 무게가 옮겨간다. K1·K2·K4는 영향을 받지 않는다.
+
 ## 3. K1 — 첨부 용량·개수 policy
 
 ### 3.1 상태
@@ -393,11 +395,15 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 
 세 rule의 입력은 AssetFacts의 `duration`/`timeline_range`가 아니라 **실제 관찰 사실**로 받는다. [`contract-requirement-report-package.md`](../../../architecture/contracts/contract-requirement-report-package.md) §4.6은 `duration + timeline_range`를 "FINAL_PACKAGE에서 사건 전후 coverage rule을 실제 적용하는 경우에만" 조건부 필수로 둔다. v2는 번호판 가시성과 같은 관찰 경로를 쓰므로 그 조건부 필드를 필수로 승격시키지 않는다. 관찰값이 없으면 임의로 `PASS`하지 않고 `UNKNOWN`으로 둔다.
 
-#### 위치 — D1 미결과의 관계
+#### 위치 — D1 종결로 대체됨 (2026-09-14)
+
+> **이 표의 `package.location.present` 값은 v2 기준이며 D1 종결로 바뀐다.** 아래 원문은 v2를 정할 당시의 판단으로 보존한다. 현재 유효한 결정은 [`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.5이며, 새 catalog revision에서 위치 부재는 `UNKNOWN`이 아니라 **`WARN`**이다. 같은 revision이 `package.report.content_length`의 필수 입력도 함께 바꾼다 — 그러지 않으면 Package가 다시 `UNKNOWN`으로 사라진다.
 
 `FINAL_PACKAGE`의 위치 부재를 `UNKNOWN`으로 두면 Package가 발행되지 않는다. 이는 현재 Final `report-package/v1`이 `location{display_text}`를 필수로 요구하는 상태, 그리고 `build_report_package`가 `PackageNotReady("package.input.location_missing")`을 내는 현재 동작과 일치한다.
 
 이 값은 [`10_first-completion_decisions_and_integration`](../reviews/10_first-completion_decisions_and_integration_2026-09-13.md) D1(Q1)의 권장안 ②와 같은 방향이지만, **K3가 D1을 단독으로 종결하지 않는다.** D1이 ①(위치 없는 WARN Package 허용)로 결정되면 이 rule의 outcome 매핑을 바꾸는 새 revision을 발행한다. K3는 현재 Final Contract를 따르는 기본값을 정할 뿐이다.
+
+**D1은 2026-09-14에 ①로 결정됐다**([이슈 #48](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/48)). 위에서 예고한 새 revision이 그 결정에 따라 발행된다.
 
 ### 5.7 결정 — 시각 표시 조건부 분기
 
@@ -437,6 +443,8 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 
 렌더에 필요한 확정 입력은 `occurred_at`, Package 표시용 위치, `vehicle_number`, `violation_expression`, 그리고 template을 고르는 `situation_response`다. 이 중 하나라도 없으면 신고문을 만들지 않고 `UNKNOWN`으로 둔다. 값을 임의로 채워 길이를 맞추지 않는다.
 
+> **D1 종결에 따른 변경 (2026-09-14).** 「Package 표시용 위치」는 더 이상 무조건 필수 입력이 아니다. 필수 입력은 **선택된 template 기준**으로 읽는다 — 장소 슬롯이 없는 template을 고르면 위치는 필수가 아니다. 값을 임의로 채우지 않는다는 원칙은 그대로이며, 장소 구절은 지어내지 않고 **뺀다**. [`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.4·§5.5.
+
 ### 5.9 결정 — 사용자 응답 분기
 
 | `situation_response.value` | template | `outcome` | `reason_code` |
@@ -474,6 +482,8 @@ rule 이름은 기존 `package.evidence.situation_unconfirmed`에서 `package.ev
 | 위반 장면·전 상황·후 상황 | 필요 | 필요 |
 | `PLATE_IMAGE` | 선택 | 선택 |
 | 원본 영상 동시 제출 | 선택 | 선택 |
+
+> **D1 종결에 따른 단서 (2026-09-14).** 발생장소가 두 신고유형 모두 「필요」라는 이 표의 사실은 바뀌지 않는다. 다만 그 무게를 **Package 미발행이 지지 않는다** — 위치가 없어도 다른 요건이 충족되면 Package를 발행하고, 미확정이라는 사실은 `report_field_states`·`unconfirmed_fields`와 사용자 고지가 나른다. [`ADR-EVIDENCE-003`](adr-location-absent-package.md) §4.3·§5.1.
 
 `PLATE_IMAGE`는 OCR 확인·사용자 검토·보조 제출에 유용하지만 신고영상의 번호판 가시성을 대체하는 필수 자산이라는 근거는 확인되지 않았다. optional을 유지한다.
 
@@ -569,7 +579,7 @@ K3 결정으로 다음 작업을 진행할 수 있다.
 
 다음은 K3가 단독으로 확정하지 않는다.
 
-- D1(Q1) 위치 결론 — 결정되면 `package.location.present` outcome 매핑의 새 revision 필요
+- ~~D1(Q1) 위치 결론 — 결정되면 `package.location.present` outcome 매핑의 새 revision 필요~~ → **2026-09-14 종결.** [`ADR-EVIDENCE-003`](adr-location-absent-package.md)이 ①(위치 없는 `WARN` Package 발행)로 확정했다. 새 revision은 `package.location.present`와 `package.report.content_length` **두 rule을 함께** 바꾼다
 - 사건 장면·전후 상황 관찰값의 실제 생산·전달 경로 — 통합 항목 I4의 범위를 번호판·시각에서 사건 장면·전 상황·후 상황까지 넓혀야 한다
 - `ReportPackage.assets` 확장(최대 4개 첨부)
 - 전후 상황의 초 수 — `recording` Tech Spec
