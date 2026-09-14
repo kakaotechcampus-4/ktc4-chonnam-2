@@ -1,18 +1,23 @@
-# 코딩 에이전트 전달용 — ADR-EVIDENCE-002(K1~K4) 반영 구현 프롬프트
+# 코딩 에이전트 전달용 — ADR-EVIDENCE-002(K1~K4)·003(D1) 반영 구현 프롬프트
 
-이 문서 전체를 저장소에 접근 가능한 코딩 에이전트 작업에 전달한다. 기준 문서는 [ADR-EVIDENCE-002 — 1차 완료 후 Owner 정책 결정 K1-K4](../adr/adr-first-completion-owner-decisions.md)다. 이 프롬프트는 계획 작성이 아니라 **구현·테스트·Artifact 재실행·증빙 기록까지 수행하는 작업 지시**다.
+이 문서 전체를 저장소에 접근 가능한 코딩 에이전트 작업에 전달한다. 기준 문서는 두 개다.
 
-발주자: 김준영(`evidence` Owner). 작성일: `2026-09-13`.
+- [ADR-EVIDENCE-002 — 1차 완료 후 Owner 정책 결정 K1-K4](../adr/adr-first-completion-owner-decisions.md)
+- [ADR-EVIDENCE-003 — 위치를 확보하지 못한 사건의 `ReportPackage` 발행(D1)](../adr/adr-location-absent-package.md)
+
+이 프롬프트는 계획 작성이 아니라 **구현·테스트·Artifact 재실행·증빙 기록까지 수행하는 작업 지시**다.
+
+발주자: 김준영(`evidence` Owner). 작성일: `2026-09-13`. 갱신: `2026-09-14`(ADR-003 D1 반영 항목 W10~W12 추가).
 
 ---
 
 당신은 대신고 모노레포에서 김준영 담당 `evidence` 모듈을 구현하는 엔지니어다.
 
-**ADR-EVIDENCE-002의 K1·K2·K3·K4는 이미 `ACCEPTED`다. 이 작업은 그 결정을 코드·정책 데이터·테스트·Artifact·문서에 실제로 반영하는 일이다.** 결정을 다시 논의하거나, 이미 확정된 값에 대해 사용자 확인을 반복해서 요구하지 마라. 짧은 계획과 확인 사항을 먼저 공유한 다음 구현·검증·결과 정리까지 진행하라.
+**ADR-EVIDENCE-002의 K1·K2·K3·K4와 ADR-EVIDENCE-003의 D1은 이미 `ACCEPTED`다. 이 작업은 그 결정을 코드·정책 데이터·계약·테스트·Artifact·문서에 실제로 반영하는 일이다.** 결정을 다시 논의하거나, 이미 확정된 값에 대해 사용자 확인을 반복해서 요구하지 마라. 짧은 계획과 확인 사항을 먼저 공유한 다음 구현·검증·결과 정리까지 진행하라.
 
 ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. **판정 규칙의 원문은 항상 ADR의 해당 절이며, 아래 작업 항목은 "어느 절을 어디에 반영하는가"만 지정한다.** 이 프롬프트와 ADR이 달라 보이면 ADR이 이긴다. 다만 ADR이 Final Data Contract를 이기지는 않는다 — ADR과 Contract가 충돌하면 이 프롬프트 §7의 처리 방식을 따른다.
 
-**절 번호 표기.** 아래에서 `§3.4`·`§5.12`처럼 그냥 `§`로 적은 것은 **ADR-EVIDENCE-002의 절**이다. 이 프롬프트 자신의 절을 가리킬 때만 「이 프롬프트 §10」처럼 명시한다.
+**절 번호 표기.** 아래에서 `§3.4`·`§5.12`처럼 그냥 `§`로 적은 것은 **ADR-EVIDENCE-002의 절**이다. ADR-003의 절은 「ADR-003 §5.5」처럼 ADR 번호를 붙여 적고, 이 프롬프트 자신의 절을 가리킬 때만 「이 프롬프트 §10」처럼 명시한다.
 
 ## 1. 목표와 담당 범위
 
@@ -22,6 +27,7 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 - K2 신고기한 policy를 `deadline_policy_v1.json` 기반 deadline evaluator로 구현한다.
 - K3 `policy/requirement-rules-v2` catalog를 실제 rule 선택 주체로 만들고, `evaluate_requirements()`의 호출 경계를 §5.13대로 바꾼다.
 - K4 `source-kind-registry`를 v2로 개정하고 비시각 correction provenance를 테스트로 고정한다.
+- **D1**(ADR-003) 위치 없는 `ReportPackage` 발행을 계약 `report-package/v1.1`·신고문 정책 `safety-report-policy/v1.1`·catalog revision·구현에 반영한다(W10~W12).
 - 위 변경이 H/U/P/R 네 공용 Scenario 재실행 결과에 어떻게 나타나는지 증빙으로 남긴다.
 
 **범위 밖.** common/runtime 구현(Queue·Worker·lease·heartbeat·retry·취소·비용 장부·마스킹 로거·config/storage·CI/CD), `JobExecution`·`UsageRecord` 생산, 실제 AI/OCR 호출, ffmpeg 영상 생성, 안전신문고 자동 제출, 다른 모듈(`case`·`recording`·`readout`·`web`)의 구현. `evidence` 구현을 위해 공통 실행기나 상위 계층을 먼저 만들어야 한다는 방향으로 범위를 넓히지 마라.
@@ -34,7 +40,7 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 4. 기존 테스트와 공용 검증 3종의 **시작 상태**를 먼저 실행해 기록한다. 변경 후 결과와 비교할 기준선이 필요하다.
 5. 담당 범위·구현 순서·예상 변경 경로·확인이 필요한 항목을 짧게 공유한 뒤 구현을 시작한다.
 
-작성 시점 스냅샷 — 브랜치 `docs/evidence-first-completion-checklist`, HEAD `08eb78c`, 미커밋: `docs/modules/evidence/adr/`(신규), `src/daesingo/evidence/deadline_policy_v1.json`(신규), `src/daesingo/evidence/requirement_rules_v2.json`(신규), 공휴일 snapshot Research(신규), `reviews/11_...issue-draft`(신규), README 4종과 `first-completion-result.md`(수정). **이것은 과거 스냅샷이다. 실행 시 현재 상태를 다시 확인하라.**
+작성 시점 스냅샷(`2026-09-14` 갱신) — 브랜치 `feature/evidence-location-nullable`, 작업 트리 깨끗함. ADR 3종·정책 데이터 2종(`deadline_policy_v1.json`·`requirement_rules_v2.json`)·공휴일 snapshot·`reviews/11`·`reviews/12`가 모두 커밋돼 있다. 직전 브랜치 `docs/evidence-first-completion-checklist`는 [PR #52](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/52)로 열려 있고 **아직 `develop`에 병합되지 않았다** — 이 브랜치는 그 위에 쌓여 있다. **이것은 과거 스냅샷이다. 실행 시 현재 상태를 다시 확인하라.**
 
 ## 3. 읽을 자료와 우선순위
 
@@ -42,8 +48,10 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 ### 반드시 먼저 읽을 것
 
-- [`docs/modules/evidence/adr/adr-first-completion-owner-decisions.md`](../adr/adr-first-completion-owner-decisions.md) — 이 작업의 기준. §3(K1)·§4(K2)·§5(K3)·§6(K4)·§7(변경 규칙)
-- [`docs/modules/evidence/reviews/10_first-completion_decisions_and_integration_2026-09-13.md`](../reviews/10_first-completion_decisions_and_integration_2026-09-13.md) — 이 ADR이 나온 맥락, D1 미결, I1~I11 통합 항목
+- [`docs/modules/evidence/adr/adr-first-completion-owner-decisions.md`](../adr/adr-first-completion-owner-decisions.md) — 이 작업의 기준. §3(K1)·§4(K2)·§5(K3)·§6(K4)·§7(변경 규칙). §2·§5.6·§5.8·§5.11·§5.14에 D1 종결 표시가 붙어 있다
+- [`docs/modules/evidence/adr/adr-location-absent-package.md`](../adr/adr-location-absent-package.md) — **W10~W12의 기준.** §5.2(직렬화 모양)·§5.3(계약)·§5.4(template)·§5.5(catalog 2건)·§5.6(사용자 고지 경계)·§8(이 ADR이 결정하지 않는 것)·§9(검증)
+- [`docs/modules/evidence/reviews/10_first-completion_decisions_and_integration_2026-09-13.md`](../reviews/10_first-completion_decisions_and_integration_2026-09-13.md) — 이 ADR이 나온 맥락, D1, I1~I11 통합 항목
+- [`docs/modules/evidence/reviews/12_u-package-location-nullability_issue-draft_2026-09-13.md`](../reviews/12_u-package-location-nullability_issue-draft_2026-09-13.md) — D1의 근거·두 Owner 답변·사실 확인 표. **결정 원문은 ADR-003이고 이 문서는 경위 기록이다**
 - `src/daesingo/evidence/` 전체 코드와 `README.md`
 - `tests/evidence/` 전체와 `tests/evidence/fixtures/adapter_inputs.json`
 - [`docs/modules/evidence/first-completion-result.md`](../first-completion-result.md) — 갱신 대상 추적표
@@ -73,15 +81,18 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 | 항목 | 상태 |
 | --- | --- |
-| `deadline_policy_v1.json` | **작성 완료**(미커밋). 로더·계산기 미구현 |
-| `requirement_rules_v2.json` | **작성 완료**(미커밋). 로더·선택 로직 미구현 |
+| `deadline_policy_v1.json` | **작성 완료**(커밋됨). 로더·계산기 미구현 |
+| `requirement_rules_v2.json` | **작성 완료**(커밋됨). 로더·선택 로직 미구현. **D1 반영은 v2를 덮어쓰지 않고 새 revision으로 뺀다**(§7·ADR-003 §5.5) |
+| `package.location.present` 매핑 | v2는 부재를 `UNKNOWN`으로 둔다. D1 종결로 **새 revision에서 `WARN`**이다(ADR-003 §5.5) |
+| `report-package/v1` §7 `location` | 현재 필수. **v1.1에서 nullable**로 개정 대상(W10) |
+| 장소 슬롯 없는 신고문 template | **없음.** `safety-report-policy/v1.1`에서 신설(W11) |
 | K1 첨부 용량·개수 policy data | **없음.** 신설 대상 |
 | `evaluate_requirements()` | `rule_codes`를 호출자가 주입. `policy_ref`는 v1 고정 |
 | `package.asset.report_video.size` | 구현돼 있으나 `report_video_max_bytes` 미채택이라 `PolicyConfigurationError`. v2에서 K1 여섯 rule로 대체 대상 |
 | `package.deadline.within_policy` | 무조건 `PolicyConfigurationError` |
 | `package.evidence.situation_unconfirmed` | 구 이름·구 매핑으로 구현됨. `package.evidence.situation_response`로 교체 대상 |
 | 사건 장면·전 상황·후 상황 세 rule | **미구현** |
-| `package.location.present` | **미구현**(현재는 `build_report_package`의 `PackageNotReady`로만 드러남) |
+| `package.location.present` rule | **미구현**(현재는 `build_report_package`의 `PackageNotReady("package.input.location_missing")`으로만 드러남). W12에서 제거 대상 |
 | `package.time.display_unresolved` | **미구현**. 시각 표시 분기 selector도 미구현 |
 | `source-kind-registry.md` | v1. K4 개정 전 |
 | 비시각 correction provenance | `assembly.py`에 이미 K4와 같은 값으로 구현됨(ADR §6.11). 테스트만 없음 |
@@ -92,8 +103,9 @@ ADR의 수치·매핑·판정표를 이 프롬프트에 복제하지 않았다. 
 
 - `src/daesingo/evidence/` 코드와 정책 데이터, `tests/evidence/`, `docs/modules/evidence/`의 문서·Artifact를 작성·수정한다.
 - 기존 공용 타입·유틸이 있으면 재사용한다. 필요 이상의 전역 설정·의존성·추상화를 도입하지 마라. 표준 라이브러리로 충분한 계산에 새 패키지를 추가하지 마라.
+- **예외 한 건 — `contract-requirement-report-package.md`.** ADR-003이 이 계약의 `v1 → v1.1` 개정을 확정했고 Contract Owner가 발주자(김준영)이므로 **W10의 범위 안에서만** 수정한다. 개정 범위는 ADR-003 §5.3이 지정한 §7·§8.2 두 곳과 version 표기뿐이다. 그 밖의 절, 다른 계약 파일은 그대로 수정 금지다. 「계약을 고칠 수 있다」로 일반화하지 마라.
 - 다음은 **수정 금지**다.
-  - `docs/architecture/contracts/`의 Final Contract, 공용 `data/mock/` 원본, 공용 validator(`data/mock/validate_mock_pack.py`, `scripts/check_*.py`)
+  - `docs/architecture/contracts/`의 Final Contract(위 예외 제외), 공용 `data/mock/` 원본, 공용 validator(`data/mock/validate_mock_pack.py`, `scripts/check_*.py`)
   - 다른 Owner의 모듈 구현·문서 폴더
   - `.github/workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `.github/CODEOWNERS`
   - `docs/management/secret/`·`docs/management/submissions/`·`doc/` — 커밋 금지, `git add -f` 금지
@@ -250,9 +262,9 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 ### W7 — 문서 갱신
 
-1. `src/daesingo/evidence/README.md` — 공개 함수 시그니처(`rule_codes` 제거·`time_resolution` 추가), 정책 데이터 목록(K1 파일 추가), 재현 명령, 상태 문단.
-2. [`first-completion-result.md`](../first-completion-result.md) — 추적표에 K1~K4 반영 결과를 반영한다. 기존 완료 조건을 축소하거나 체크박스를 일괄 완료 처리하지 마라.
-3. **실행·검수 기록은 새 리뷰 보고서로 남긴다.** `docs/modules/evidence/reviews/12_adr-002-k1-k4-implementation_<YYYY-MM-DD>.md` 형태로 작성하고 `reviews/README.md` 목록에 추가한다.
+1. `src/daesingo/evidence/README.md` — 공개 함수 시그니처(`rule_codes` 제거·`time_resolution` 추가), 정책 데이터 목록(K1 파일과 새 catalog revision 추가), 재현 명령, 상태 문단.
+2. [`first-completion-result.md`](../first-completion-result.md) — 추적표에 K1~K4와 D1 반영 결과를 반영한다. Q1 행(「U 정상 Package는 `package.input.location_missing`으로 보류」)이 D1 종결로 바뀐다. 기존 완료 조건을 축소하거나 체크박스를 일괄 완료 처리하지 마라.
+3. **실행·검수 기록은 새 리뷰 보고서로 남긴다.** `docs/modules/evidence/reviews/13_adr-002-003-implementation_<YYYY-MM-DD>.md` 형태로 작성하고 `reviews/README.md` 목록에 추가한다. **번호 11·12는 이미 사용 중이다.**
 4. **ADR 본문의 결정 내용을 고쳐 쓰지 마라.** ADR은 결정 기록이고 실행 증빙의 소유자가 아니다(`docs/README.md`·`prompts/README.md`의 폴더 역할 구분). 구현 중 ADR의 사실관계 오류를 발견하면 직접 고치지 말고 발견 사실과 근거를 보고에 남겨 김준영이 ADR §7(변경 규칙)로 처리하게 하라.
 5. 이 프롬프트 파일과 `prompts/README.md`는 발주 이력이다. 수정하지 마라.
 
@@ -260,20 +272,99 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 구현하면서 확정된 후속 항목을 결과 문서와 리뷰 보고서에 남긴다. 최소한 다음은 상태를 갱신하거나 유지한다.
 
-- **D1(Q1) U 위치 결론** — 미결 유지. `package.location.present`의 현재 매핑은 Final Contract를 따르는 기본값일 뿐이며 K3가 D1을 종결하지 않는다(§5.6). 임의로 결론 내지 마라.
+- **D1(Q1) U 위치 결론** — **종결됨**(ADR-003, 2026-09-14). 이 작업의 W10~W12가 그 반영이다. 남는 후속은 아래 셋이고 **`evidence` 범위가 아니다**: `CaseView`의 `report_field_states.location` 필수 존재 문구(`case`), 사용자 고지 code 등재(`case`), 공용 fixture 재렌더(I2). 대신 처리하지 마라.
+- **④ 선택적 위치 질의 경로** — `DEFERRED`. C-1 사용자 검증 관찰 결과가 여는 조건이다(ADR-003 §5.7). 열지 마라.
+- **`WARN` Package 최소 케이스가 `unknown_abstain_partial_001` 하나** — `scenario_blocked_001` 부재와 같은 자리. Mock 커버리지 후속으로 유지한다.
 - **I4 범위 확장** — 관찰 전달 경로를 번호판·시각에서 사건 장면·전 상황·후 상황까지 넓혀야 한다(§5.15).
 - **`ReportPackage.assets` 확장**(최대 4개 첨부) — Contract 변경 검토 필요(§3.5·§3.9).
 - **대상별 `label_key` 신설** — UI 문구 확정 후 새 registry revision(§6.8).
 - **`PLATE_IMAGE` 생성·크기 측정 경계** — [`reviews/11_plate-image-generation-and-size-handoff_issue-draft_2026-09-13.md`](../reviews/11_plate-image-generation-and-size-handoff_issue-draft_2026-09-13.md).
 - **비시각 correction의 실제 Consumer 검증 부재** — 공용 Mock에 `occurred_at` 대상 correction 하나뿐이다. K4 검증은 evidence 단위 테스트 범위이며 I7·I8에서 실제 case correction과 CaseView projection으로 확인한다(§6.11).
 
+### W10 — D1 계약 개정 `report-package/v1 → v1.1`
+
+**근거:** ADR-003 §5.2·§5.3
+
+**할 일**
+
+1. `docs/architecture/contracts/contract-requirement-report-package.md` §7의 `report_inputs.location`을 nullable로 개정한다. 모양과 규범 문장은 ADR-003 §5.2가 소유한다 — 키 생략 금지, `null`은 확정된 부재, 빈 객체 금지.
+2. §8.2의 최소 snapshot 항목이 「없으면 없다는 사실까지」 포함함을 명시한다.
+3. contract version 표기를 `v1.1`로 올리고, 문서 머리말의 개정 이력에 근거(ADR-003·이슈 #48)를 남긴다.
+
+**완료 조건**
+
+- 계약 본문만 읽고도 `location: null`이 적법하며 그것이 「아직 오지 않은 값」이 아님을 알 수 있다.
+- 개정 범위가 §7·§8.2·version 표기에 한정된다.
+
+**하지 말 것**
+
+- 다른 절을 정리·재배치하지 마라. 이 개정은 위치 의미 하나만 바꾼다.
+- `location`에 `coord`를 추가하지 마라(ADR-003 §8).
+- 다른 계약 파일을 건드리지 마라.
+
+### W11 — 장소 슬롯 없는 신고문 template `safety-report-policy/v1 → v1.1`
+
+**근거:** ADR-003 §5.4
+
+**할 일**
+
+1. `decisions/safety-report-policy-v1.md`를 덮어쓰지 말고 v1.1을 발행한다. 장소 구절이 없는 변형을 **별도 `template_ref`로 등재**한다. 기존 2종은 그대로 둔다.
+2. Renderer 불변조건 2의 입력 슬롯에서 `location.display_text`를 선택으로 내린다. 불변조건 5는 그대로다.
+3. renderer가 위치 유무에 따라 template을 고르도록 구현한다. 장소 구절은 **지어내지 않고 뺀다.**
+
+**완료 조건**
+
+- 위치 없는 U가 렌더되고, 그 결과가 `template_ref`로 재현된다(불변조건 1·4).
+- 값을 지어내지 않는다는 점이 테스트로 고정돼 있다.
+
+**하지 말 것**
+
+- 장소 자리에 「위치 미상」·「확인 필요」 같은 문구를 넣지 마라. 구절 자체를 뺀다.
+- 기존 Package의 `template_ref`·`policy_ref`를 다시 쓰지 마라.
+
+### W12 — D1 catalog revision과 구현
+
+**근거:** ADR-003 §5.1·§5.5 · §5.6
+
+**할 일**
+
+1. `requirement_rules_v2.json`을 덮어쓰지 말고 **새 revision을 발행**한다(§7). 두 rule을 **함께** 바꾼다.
+   - `package.location.present` — 위치 부재를 `UNKNOWN`이 아니라 `WARN`으로
+   - `package.report.content_length` — 필수 입력을 **선택된 template 기준**으로 읽는다. 장소 슬롯이 없는 template이면 위치는 필수 입력이 아니다
+2. `requirements.py`에서 `PackageNotReady("package.input.location_missing")`을 제거한다. 위치 부재만으로 Package를 보류하지 않는다.
+3. `validation.py`의 `location` 검사를 「키 필수 + `null` 허용」으로 바꾼다. 키가 없거나 빈 객체면 위반이다.
+4. `_location_snapshot`이 대표값을 못 만들 때 `null`을 내도록 한다.
+
+**완료 조건**
+
+- `validate_report_package(pkg_u001)`이 `[]`를 돌려준다.
+- U의 `FINAL_PACKAGE` `overall`이 `WARN`이고 `PACKAGE_READY`가 성립한다.
+- 두 rule 중 하나만 바꾸면 U가 `UNKNOWN`으로 떨어진다는 사실이 테스트로 드러난다.
+
+**하지 말 것**
+
+- **두 rule 중 하나만 바꾸지 마라.** `content_length`를 그대로 두면 overall이 `UNKNOWN`이 되고 계약 §8.1로 Package가 다시 사라져 D1이 무효가 된다.
+- `evidence.location.present`(EVIDENCE scope)는 이미 `WARN`이다. 건드리지 마라.
+- 사용자 고지(notice)를 `evidence`에서 만들지 마라. code 이름·`message_key`·발동 조건은 `case` 소유다(ADR-003 §5.6·§8). `notices[].actions[]`를 확장하지 마라.
+- 선택적 위치 질의(④)를 구현하지 마라. `DEFERRED`다(ADR-003 §5.7).
+- 공용 `data/mock` fixture를 고치지 마라. `pkg_u001`의 `template_ref`·신고문 동기화는 통합 항목 I2(`case`)다.
+
+### 실행 순서
+
+W10·W11은 문서 개정이라 언제든 할 수 있다. W12는 **W3(catalog 연결)이 끝난 뒤** 그리고 **W6(Artifact 재실행) 전에** 수행한다. 그래야 재실행 결과가 D1 반영 후 상태를 그대로 보여준다.
+
+권장 순서: **W1 → W2 → W3 → W10 → W11 → W12 → W4 → W5 → W6 → W7 → W8 → W9**
+
+`requirement-rules-v2`는 아직 어떤 Artifact도 이 catalog로 생성된 적이 없다. 그래도 덮어쓰지 않는다 — ADR-002 §7의 규칙이다. 대신 **v2가 채택됐으나 첫 실행 전에 새 revision으로 대체됐다**는 사실을 W7의 문서와 W9의 ADR에 남겨라.
+
 ### W9 — 구현 ADR 작성 (마지막 순서)
 
-**W1~W8을 모두 끝내고 검증까지 통과한 다음** `docs/modules/evidence/adr/`에 새 구현 ADR을 작성한다. 파일명은 기존 관례를 따라 `adr-<주제>.md` 형태로 정하고, ID는 다음 번호(`ADR-EVIDENCE-003`)를 쓴다. `adr/README.md` 목록에 추가한다.
+**W1~W8과 W10~W12를 모두 끝내고 검증까지 통과한 다음** `docs/modules/evidence/adr/`에 새 구현 ADR을 작성한다. 파일명은 기존 관례를 따라 `adr-<주제>.md` 형태로 정하고, ID는 다음 번호(**`ADR-EVIDENCE-004`** — 003은 D1 결정이 이미 쓰고 있다)를 쓴다. `adr/README.md` 목록에 추가한다.
 
 **이 ADR이 기록하는 것 — 정책이 아니라 구현 구조의 선택과 그 이유다.**
 
 - K1·K2·K3 정책 데이터를 어떤 파일·구조로 두고 어떻게 로드·검증하는지, 그리고 그 구조를 고른 이유
+- D1 반영에서 template 선택과 필수 입력 판정을 어떤 구조로 갈랐는지, 그리고 catalog revision을 v2 위에 어떻게 얹었는지
 - `evaluate_requirements()`의 인수 변경을 어떤 형태로 흡수했는지(호출부 영향 포함)
 - catalog 기반 rule 선택과 시각 표시 조건부 분기를 어떤 구조로 구현했는지
 - 관찰 fact 입력의 표현 방식과, 그것이 Runtime wire schema가 아니라는 근거
@@ -284,10 +375,10 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 **지켜야 할 경계**
 
 - [`adr/README.md`](../adr/README.md)의 원칙 그대로다. Final Data Contract나 다른 모듈의 Owner 경계를 바꾸는 결정을 이 ADR에 담지 마라.
-- **ADR-EVIDENCE-002의 결정을 다시 서술하거나 수정하지 마라.** 정책 원문은 002가 소유하고, 003은 "그 결정을 이렇게 구현했다"만 기록한다. 중복 서술 대신 002의 절 번호를 가리켜라.
-- 실행 로그·검사 결과·Scenario별 판정 변화는 ADR이 아니라 `reviews/12_...` 보고서가 소유한다(W7-3). ADR에는 구조 결정만 남긴다.
+- **ADR-EVIDENCE-002·003의 결정을 다시 서술하거나 수정하지 마라.** 정책 원문은 002·003이 소유하고, 004는 "그 결정을 이렇게 구현했다"만 기록한다. 중복 서술 대신 절 번호를 가리켜라.
+- 실행 로그·검사 결과·Scenario별 판정 변화는 ADR이 아니라 `reviews/13_...` 보고서가 소유한다(W7-3). ADR에는 구조 결정만 남긴다.
 - 미결을 구현 편의로 확정하지 마라. 논의 전 항목은 `PENDING_DISCUSSION`으로 남긴다.
-- 구현하면서 ADR-002의 사실관계 오류나 조항 간 충돌을 발견했다면, 002를 고치지 말고 003의 별도 절에 "발견한 불일치와 근거"로 남겨 김준영이 ADR §7(변경 규칙)로 처리하게 하라.
+- 구현하면서 ADR-002·003의 사실관계 오류나 조항 간 충돌을 발견했다면, 그 ADR을 고치지 말고 004의 별도 절에 "발견한 불일치와 근거"로 남겨 김준영이 ADR §7(변경 규칙)로 처리하게 하라.
 
 ## 7. 모호함이 나왔을 때
 
@@ -313,6 +404,9 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 - **사용자 정정·재판독으로 과거 snapshot을 덮어쓰지 마라.** 새 값은 supersede 연결로 남긴다.
 - **ID는 opaque ref다.** 접두어로 종류를 추측하지 마라.
 - `evidence`는 순수 함수 모듈이다. 다른 도메인 모듈을 호출하지 않고 Job을 발주하지 않는다.
+- **위치 부재는 「확정된 사실」이지 「아직 오지 않은 값」이 아니다.** `location: null`과 키 부재를 같은 것으로 다루지 마라(ADR-003 §5.2).
+- **값을 지어내지 않는 것과 슬롯을 비우는 것은 다르다.** 장소 구절은 문장에서 빼고, placeholder 주소·임의 좌표·역지오코딩은 넣지 않는다.
+- **위치 없음을 사용자에게 말하는 주체는 `case`다.** `evidence`는 판정과 발행 여부만 정한다.
 
 ## 9. 실행·검증
 
@@ -327,6 +421,13 @@ python scripts/check_contract_fixtures.py
 python scripts/check_boundaries.py
 git diff --check
 ```
+
+D1 반영(W10~W12) 후에는 다음도 함께 확인하고 결과를 기록한다(ADR-003 §9).
+
+- `validate_report_package(pkg_u001)` → `[]`
+- U의 `FINAL_PACKAGE` `overall`이 `WARN`이고 `PACKAGE_READY`가 성립한다
+- 장소 없는 신고문이 `template_ref`로 재현되고, 장소 값이 지어내지지 않는다
+- `python data/mock/validate_mock_pack.py`는 **보강하지 않은 상태 그대로** 돌린다. `report_inputs` 내부 모양 검사 추가는 통합 항목 I2 이후의 별도 작업이다
 
 - 실제로 만들고 실행한 명령만 기록하라. 존재하지 않는 명령을 실행 가능하다고 적지 마라.
 - 공용 validator PASS는 스키마·정책 의미·baseline·E2E·Owner 수락의 증거가 아니다. 알려진 불일치를 검사에서 제외해 놓고 전체 PASS로 표현하지 마라.
@@ -384,13 +485,14 @@ git diff --check
 ## 11. 남길 산출물
 
 1. K1 정책 데이터 파일과 K1~K3 구현 코드.
-2. 새 테스트와 실행 방법. W1~W4의 완료 조건이 각각 어느 테스트로 확인되는지 대응이 보여야 한다.
+2. 새 테스트와 실행 방법. W1~W4·W10~W12의 완료 조건이 각각 어느 테스트로 확인되는지 대응이 보여야 한다.
 3. 갱신된 H/U/P/R baseline과 `run-summary.json`, v1 대비 변화 목록.
-4. `reviews/12_adr-002-k1-k4-implementation_<date>.md` — 실행 증빙과 검수 기록.
+4. `reviews/13_adr-002-003-implementation_<date>.md` — 실행 증빙과 검수 기록.
 5. 갱신된 `src/daesingo/evidence/README.md`·`first-completion-result.md`·`decisions/source-kind-registry.md`(v2).
-6. 후속·통합 대기 목록(W8) — 항목·담당자·영향 경로·완료에 필요한 구체적 조치.
-7. `adr/adr-*.md`(ADR-EVIDENCE-003) — 구현 구조 결정과 채택하지 않은 대안(W9).
-8. 「이 프롬프트 §10」에 따라 나눈 커밋들.
+6. **D1 산출물** — `contract-requirement-report-package.md` v1.1, `safety-report-policy` v1.1과 장소 없는 template, 새 catalog revision 파일.
+7. 후속·통합 대기 목록(W8) — 항목·담당자·영향 경로·완료에 필요한 구체적 조치.
+8. `adr/adr-*.md`(ADR-EVIDENCE-004) — 구현 구조 결정과 채택하지 않은 대안(W9).
+9. 「이 프롬프트 §10」에 따라 나눈 커밋들.
 
 보고서의 상태 표기(`검증 완료` / `Mock 연결 검증 완료` / `통합 대기` / `Contract 변경 검토 필요` / `결정 대기`)는 회의·작업 관리용이며 Runtime Contract enum이 아니다.
 
@@ -398,7 +500,7 @@ git diff --check
 
 최종 답변에 다음을 포함한다.
 
-1. K1·K2·K3·K4 각각의 반영 범위와 남은 부분.
+1. K1·K2·K3·K4와 D1 각각의 반영 범위와 남은 부분. D1은 계약·정책·catalog·구현 네 층 모두가 반영됐는지 층별로 적는다.
 2. 주요 코드·데이터·테스트·문서·Artifact 파일 링크.
 3. **v2 적용 전후의 H/U/P/R 판정 변화.** 어떤 check가 추가됐고, 어떤 `overall`이 바뀌었고, Package 발행 여부가 바뀌었다면 그 이유.
 4. 실행한 검사와 결과, 그리고 **그 검사로 증명하지 못한 것**.
