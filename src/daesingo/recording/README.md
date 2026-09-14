@@ -16,4 +16,4 @@
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+패키지 경계와 smoke test를 구성했다. 공개 entry와 Contract 모델은 `docs/modules/recording/decisions/first-integration-tech-spec.md`의 구현 순서에 따라 추가한다.
