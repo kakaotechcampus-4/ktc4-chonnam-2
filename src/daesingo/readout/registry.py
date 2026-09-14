@@ -35,6 +35,10 @@ ABSTAIN_REASONS = frozenset({
 })
 SOURCE_PROFILES = frozenset({"readout-native", "readout-native-hires"})
 
+# OCR 근거는 Source-derived여야 한다(계약 §3-2·§3-3). 사후 Timestamp가 삽입된 Report Video를
+# 근거로 삼는 경로를 값 층위에서 막는다. fixture 5개가 전부 이 한 값을 쓴다.
+PROVENANCES = frozenset({"SOURCE_DERIVED_INCIDENT_CLIP"})
+
 OBSERVATION_STATUSES = frozenset({
     "OK",
     "NEEDS_REVIEW",
