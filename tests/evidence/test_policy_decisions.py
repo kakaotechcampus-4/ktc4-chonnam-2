@@ -6,7 +6,13 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from daesingo.evidence import PolicyConfigurationError, build_report_package, evaluate_requirements, validate_contract
+from daesingo.evidence import (
+    PackageNotReady,
+    PolicyConfigurationError,
+    build_report_package,
+    evaluate_requirements,
+    validate_contract,
+)
 from daesingo.evidence import requirements as requirement_module
 from daesingo.evidence.mock_integration import run_scenario
 from daesingo.evidence.policy_catalog import (
@@ -300,6 +306,61 @@ class PolicyDecisionTests(unittest.TestCase):
             report, "package.evidence.situation_response")["outcome"])
         self.assertEqual("UNKNOWN", self._check(
             report, "package.report.content_length")["outcome"])
+
+    def test_invalid_vehicle_value_is_not_evidence_ready(self):
+        for invalid_value in (None, "", "  "):
+            with self.subTest(invalid_value=invalid_value):
+                record = deepcopy(self.happy_record)
+                record["vehicle_number"]["value"] = invalid_value
+                report = evaluate_requirements(
+                    record,
+                    scope="EVIDENCE",
+                    report_id="req_invalid_vehicle",
+                    evaluated_at="2026-08-24T18:23:00+09:00",
+                    time_resolution=self.happy_time,
+                )
+                check = self._check(report, "evidence.vehicle_number.present")
+                self.assertEqual("UNKNOWN", check["outcome"])
+                self.assertEqual("UNKNOWN", report["overall"])
+
+    def test_package_rejects_invalid_report_and_unevaluated_asset_refs(self):
+        report = self._evaluate(report_id="req_package_gate")
+
+        malformed = deepcopy(report)
+        malformed["policy_ref"] = ""
+        malformed["checks"] = [{"code": "not.a.real.rule", "outcome": "PASS"}]
+        malformed["overall"] = "PASS"
+        with self.assertRaisesRegex(
+            PackageNotReady, "package.requirement_report_invalid"
+        ):
+            build_report_package(
+                self.happy_record,
+                malformed,
+                package_id="pkg_invalid_report",
+                created_at="2026-08-24T18:26:00+09:00",
+                asset_facts=self.happy_assets,
+            )
+
+        replacement_assets = deepcopy(self.happy_assets)
+        report_video = next(
+            item for item in replacement_assets
+            if item.get("derived_role") == "REPORT_VIDEO"
+        )
+        report_video["asset_ref"] = {
+            "kind": "derived_asset",
+            "ref": "da_unchecked_replacement",
+        }
+        report_video["byte_size"] = 999_999_999
+        with self.assertRaisesRegex(
+            PackageNotReady, "package.requirement_asset_basis_mismatch"
+        ):
+            build_report_package(
+                self.happy_record,
+                report,
+                package_id="pkg_unevaluated_asset",
+                created_at="2026-08-24T18:26:00+09:00",
+                asset_facts=replacement_assets,
+            )
 
         missing_plate = deepcopy(self.happy_record)
         missing_plate.pop("vehicle_number")

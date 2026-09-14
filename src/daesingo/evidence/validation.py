@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Callable
 
 from ._contract import Contract, parse_rfc3339
@@ -80,17 +81,54 @@ def validate_time_resolution(value: Contract) -> list[str]:
     return errors
 
 
-def _validate_evidence_value(item: Any, name: str, errors: list[str]) -> None:
+def _non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _number(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, int):
+        return True
+    return isinstance(value, float) and math.isfinite(value)
+
+
+def _coordinate(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and _number(value.get("lat"))
+        and _number(value.get("lon"))
+    )
+
+
+def _validate_evidence_value(
+    item: Any,
+    name: str,
+    errors: list[str],
+    *,
+    value_is_valid: Callable[[Any], bool],
+    allow_null: bool = False,
+) -> None:
     if not isinstance(item, dict):
         errors.append(f"{name}:shape")
         return
     _required(item, ("value", "source", "support_refs", "user_corrected", "needs_review"), errors)
+    item_value = item.get("value")
+    if not (allow_null and item_value is None) and not value_is_valid(item_value):
+        errors.append(f"{name}:value")
     source = item.get("source") or {}
     if source.get("observability") not in {"OBSERVED", "INFERRED"} or not _ref(source.get("ref")):
         errors.append(f"{name}:source")
-    if item.get("user_corrected") and item.get("needs_review"):
+    support_refs = item.get("support_refs")
+    if not isinstance(support_refs, list) or any(not _ref(ref) for ref in support_refs):
+        errors.append(f"{name}:support_refs")
+    if not isinstance(item.get("user_corrected"), bool):
+        errors.append(f"{name}:user_corrected")
+    if not isinstance(item.get("needs_review"), bool):
+        errors.append(f"{name}:needs_review")
+    if item.get("user_corrected") is True and item.get("needs_review") is True:
         errors.append(f"{name}:corrected_needs_review")
-    if item.get("value") is None and item.get("needs_review"):
+    if item_value is None and item.get("needs_review") is True:
         errors.append(f"{name}:null_needs_review")
 
 
@@ -111,8 +149,20 @@ def validate_evidence_record(value: Contract) -> list[str]:
     if not _ref(basis.get("evidence_interval_ref")) or basis.get("evidence_interval_ref", {}).get("kind") not in {"incident_clip", "candidate_event"}:
         errors.append("basis_interval")
     event = value.get("event") or {}
-    for name in ("visual_event_type", "safety_report_type", "violation_expression"):
-        _validate_evidence_value(event.get(name), f"event.{name}", errors)
+    _validate_evidence_value(
+        event.get("visual_event_type"),
+        "event.visual_event_type",
+        errors,
+        value_is_valid=_non_empty_string,
+        allow_null=True,
+    )
+    for name in ("safety_report_type", "violation_expression"):
+        _validate_evidence_value(
+            event.get(name),
+            f"event.{name}",
+            errors,
+            value_is_valid=_non_empty_string,
+        )
     occurred = value.get("occurred_at")
     if occurred is not None:
         _datetime(occurred.get("value"), "occurred_at.value", errors)
@@ -123,9 +173,33 @@ def validate_evidence_record(value: Contract) -> list[str]:
         if "observability" in (occurred.get("source") or {}):
             errors.append("occurred_at.observability")
     if value.get("vehicle_number") is not None:
-        _validate_evidence_value(value["vehicle_number"], "vehicle_number", errors)
-    for name, item in (value.get("location") or {}).items():
-        _validate_evidence_value(item, f"location.{name}", errors)
+        _validate_evidence_value(
+            value["vehicle_number"],
+            "vehicle_number",
+            errors,
+            value_is_valid=_non_empty_string,
+        )
+    location = value.get("location")
+    if location is not None and not isinstance(location, dict):
+        errors.append("location:shape")
+    elif isinstance(location, dict):
+        allowed_location_fields = {
+            "coord",
+            "address",
+            "place_name",
+            "search_keyword",
+            "user_hint",
+        }
+        for name, item in location.items():
+            if name not in allowed_location_fields:
+                errors.append(f"location.{name}:unsupported")
+                continue
+            _validate_evidence_value(
+                item,
+                f"location.{name}",
+                errors,
+                value_is_valid=_coordinate if name == "coord" else _non_empty_string,
+            )
     response = value.get("situation_response")
     if response is not None:
         if response.get("value") not in {"CONFIRMED", "CORRECTED", "USER_UNSURE"}:
@@ -162,20 +236,78 @@ def validate_requirement_report(value: Contract) -> list[str]:
     _required(value, ("contract_version", "requirement_report_ref", "scope", "basis", "policy_ref", "evaluated_at", "overall", "checks"), errors)
     if value.get("contract_version") != "requirement-report/v1" or not _ref(value.get("requirement_report_ref"), "requirement_report"):
         errors.append("header")
+    if value.get("supersedes_ref") is not None and not _ref(
+        value.get("supersedes_ref"), "requirement_report"
+    ):
+        errors.append("supersedes_ref")
     if value.get("scope") not in {"EVIDENCE", "FINAL_PACKAGE"}:
         errors.append("scope")
+    basis = value.get("basis")
+    if not isinstance(basis, dict):
+        errors.append("basis")
+    else:
+        if not _ref(basis.get("evidence_record_ref"), "evidence_record"):
+            errors.append("basis.evidence_record_ref")
+        asset_refs = basis.get("asset_refs")
+        if not isinstance(asset_refs, list) or any(not _ref(ref) for ref in asset_refs):
+            errors.append("basis.asset_refs")
+        elif len({(ref["kind"], ref["ref"]) for ref in asset_refs}) != len(asset_refs):
+            errors.append("basis.asset_refs_duplicate")
+        if "template_ref" in basis and not _non_empty_string(basis.get("template_ref")):
+            errors.append("basis.template_ref")
+    if not _non_empty_string(value.get("policy_ref")):
+        errors.append("policy_ref")
     _datetime(value.get("evaluated_at"), "evaluated_at", errors)
     checks = value.get("checks") or []
-    codes = [check.get("code") for check in checks]
-    if not checks or len(codes) != len(set(codes)):
+    if not isinstance(checks, list) or not checks or any(
+        not isinstance(check, dict) for check in checks
+    ):
         errors.append("checks")
-    outcomes = [check.get("outcome") for check in checks]
-    if any(item not in {"PASS", "WARN", "BLOCK", "UNKNOWN"} for item in outcomes):
-        errors.append("outcome")
-    else:
+        return errors
+    codes = [check.get("code") for check in checks]
+    if any(not _non_empty_string(code) for code in codes) or len(codes) != len(set(codes)):
+        errors.append("checks")
+    allowed_categories = {
+        "EVIDENCE",
+        "TIME",
+        "VEHICLE",
+        "LOCATION",
+        "ASSET",
+        "DEADLINE",
+        "REPORT_CONTENT",
+    }
+    allowed_outcomes = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
+    outcomes: list[Any] = []
+    for index, check in enumerate(checks):
+        prefix = f"checks[{index}]"
+        if check.get("category") not in allowed_categories:
+            errors.append(f"{prefix}.category")
+        outcome = check.get("outcome")
+        outcomes.append(outcome)
+        if outcome not in allowed_outcomes:
+            errors.append(f"{prefix}.outcome")
+        if not _non_empty_string(check.get("reason_code")):
+            errors.append(f"{prefix}.reason_code")
+        subject_refs = check.get("subject_refs")
+        if not isinstance(subject_refs, list) or any(not _ref(ref) for ref in subject_refs):
+            errors.append(f"{prefix}.subject_refs")
+        measurement = check.get("measurement")
+        if measurement is not None:
+            if not isinstance(measurement, dict):
+                errors.append(f"{prefix}.measurement")
+            else:
+                if not _number(measurement.get("actual")):
+                    errors.append(f"{prefix}.measurement.actual")
+                if "limit" in measurement and not _number(measurement.get("limit")):
+                    errors.append(f"{prefix}.measurement.limit")
+                if not _non_empty_string(measurement.get("unit")):
+                    errors.append(f"{prefix}.measurement.unit")
+    if all(outcome in allowed_outcomes for outcome in outcomes):
         precedence = {"PASS": 0, "WARN": 1, "UNKNOWN": 2, "BLOCK": 3}
         if outcomes and value.get("overall") != max(outcomes, key=precedence.__getitem__):
             errors.append("overall")
+    elif value.get("overall") not in allowed_outcomes:
+        errors.append("overall")
     return errors
 
 

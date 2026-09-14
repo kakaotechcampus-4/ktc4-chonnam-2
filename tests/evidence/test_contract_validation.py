@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
@@ -33,6 +34,51 @@ class ContractValidationTests(unittest.TestCase):
             "provenance": {"policy_ref": "policy/time-source-priority-v1"},
         }
         self.assertTrue(validate_contract(value))
+
+    def test_evidence_value_types_reject_null_empty_and_boolean_coordinates(self):
+        outputs = run_scenario(
+            ROOT, "scenario_happy_001", CONFIGS["scenario_happy_001"]
+        )["outputs"]
+        record = outputs["evidence_records"][0]
+
+        null_plate = deepcopy(record)
+        null_plate["vehicle_number"]["value"] = None
+        self.assertIn("vehicle_number:value", validate_contract(null_plate))
+
+        empty_report_type = deepcopy(record)
+        empty_report_type["event"]["safety_report_type"]["value"] = "  "
+        self.assertIn(
+            "event.safety_report_type:value", validate_contract(empty_report_type)
+        )
+
+        for invalid_latitude in (True, float("inf")):
+            invalid_coordinate = deepcopy(record)
+            invalid_coordinate["location"]["coord"]["value"]["lat"] = invalid_latitude
+            self.assertIn(
+                "location.coord:value", validate_contract(invalid_coordinate)
+            )
+
+    def test_requirement_report_validator_rejects_incomplete_basis_and_checks(self):
+        outputs = run_scenario(
+            ROOT, "scenario_happy_001", CONFIGS["scenario_happy_001"]
+        )["outputs"]
+        report = next(
+            item for item in outputs["requirement_reports"]
+            if item["scope"] == "FINAL_PACKAGE"
+        )
+        malformed = deepcopy(report)
+        malformed["basis"].pop("asset_refs")
+        malformed["policy_ref"] = ""
+        malformed["checks"][0].pop("category")
+        malformed["checks"][0].pop("reason_code")
+        malformed["checks"][0].pop("subject_refs")
+
+        errors = validate_contract(malformed)
+        self.assertIn("basis.asset_refs", errors)
+        self.assertIn("policy_ref", errors)
+        self.assertIn("checks[0].category", errors)
+        self.assertIn("checks[0].reason_code", errors)
+        self.assertIn("checks[0].subject_refs", errors)
 
     def test_report_package_v1_1_requires_nullable_location_key(self):
         fixture = json.loads(

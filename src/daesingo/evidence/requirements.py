@@ -20,6 +20,7 @@ from .policy import (
     report_type_label,
 )
 from .policy_catalog import load_attachment_policy, load_deadline_policy, load_requirement_catalog
+from .validation import validate_requirement_report
 
 _PRECEDENCE = {"PASS": 0, "WARN": 1, "UNKNOWN": 2, "BLOCK": 3}
 _PACKAGE_ROLES = {"REPORT_VIDEO", "PLATE_IMAGE"}
@@ -96,7 +97,13 @@ def _evidence_check(rule: Contract, record: Contract) -> Contract:
     code = rule["code"]
     subject = [deepcopy(record["record_ref"])]
     if code == "evidence.vehicle_number.present":
-        condition = "value_present" if record.get("vehicle_number") else "value_absent"
+        vehicle_number = record.get("vehicle_number")
+        value = vehicle_number.get("value") if isinstance(vehicle_number, dict) else None
+        condition = (
+            "value_present"
+            if isinstance(value, str) and bool(value.strip())
+            else "value_absent"
+        )
         reason = "evidence.value_confirmed" if condition == "value_present" else "evidence.pending_plate_reread"
     elif code == "evidence.occurred_at.present":
         occurred = record.get("occurred_at")
@@ -452,16 +459,25 @@ def build_report_package(evidence_record: Contract, requirement_report: Contract
     if (requirement_report.get("scope") != "FINAL_PACKAGE"
             or requirement_report.get("overall") not in {"PASS", "WARN"}):
         raise PackageNotReady("package.requirement_not_ready")
+    if validate_requirement_report(requirement_report):
+        raise PackageNotReady("package.requirement_report_invalid")
     if requirement_report.get("basis", {}).get("evidence_record_ref") != evidence_record.get("record_ref"):
         raise PackageNotReady("package.requirement_basis_mismatch")
     if not assembly_succeeded:
         raise PackageNotReady("package.assembly_failed")
     assets = _package_assets(asset_facts)
+    evaluated_asset_refs = {
+        (ref["kind"], ref["ref"])
+        for ref in requirement_report["basis"]["asset_refs"]
+    }
+    package_asset_refs = {_asset_ref_key(asset) for asset in assets}
     report_video = _asset_by_role(assets, "REPORT_VIDEO")
     if report_video is None or report_video.get("availability") != "AVAILABLE":
         raise PackageNotReady("package.asset.report_video_missing")
     if report_video.get("byte_size") is None:
         raise PackageNotReady("package.asset.report_video_size_unknown")
+    if not package_asset_refs.issubset(evaluated_asset_refs):
+        raise PackageNotReady("package.requirement_asset_basis_mismatch")
 
     event = evidence_record["event"]
     visual_event_type = event["visual_event_type"]["value"]

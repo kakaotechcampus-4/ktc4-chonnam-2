@@ -37,11 +37,13 @@ SCENARIOS = (
     "scenario_correction_rerun_001",
 )
 _IMPLEMENTATION_FILES = (
+    "src/daesingo/evidence/__init__.py",
     "src/daesingo/evidence/_contract.py",
     "src/daesingo/evidence/assembly.py",
     "src/daesingo/evidence/corrections.py",
     "src/daesingo/evidence/deadline.py",
     "src/daesingo/evidence/deadline_policy_v1.json",
+    "src/daesingo/evidence/errors.py",
     "src/daesingo/evidence/mock_integration.py",
     "src/daesingo/evidence/attachment_policy_v1.json",
     "src/daesingo/evidence/policy.py",
@@ -56,6 +58,7 @@ _IMPLEMENTATION_FILES = (
     "tests/evidence/test_contract_units.py",
     "tests/evidence/test_contract_validation.py",
     "tests/evidence/test_mock_integration.py",
+    "tests/evidence/test_policy_decisions.py",
 )
 
 
