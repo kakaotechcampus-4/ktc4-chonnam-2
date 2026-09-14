@@ -85,6 +85,14 @@ export interface Candidate {
   candidate_id: string
   at: string | null
   at_provenance: string
+  /**
+   * `case-view/v1.4` 신규(§7). raw `at_provenance`가 authoritative이고 이 키는
+   * case가 골라 주는 표시용 파생값이다 — web은 raw를 해석하지 않고 이 키로만
+   * 문구를 고른다. 매핑 안 되는 raw는 case가 `null`로 내린다(§10-14).
+   * 계약상 필드는 항상 존재하지만(Y) **v5 fixture는 아직 안 내린다** — 그래서
+   * `undefined`를 받을 수 있고, `null`과 같게 다룬다(둘 다 fallback 문구).
+   */
+  at_provenance_label_key?: string | null
   observed: string
   thumb_ref: string | null
   selected: boolean

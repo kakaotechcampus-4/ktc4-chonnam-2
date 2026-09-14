@@ -10,10 +10,12 @@ import { LOAD_ISSUES, SCENARIO_IDS, SNAPSHOTS } from '../contracts/fixtures'
 import { ACTIONS, isAction, type InfoState } from '../contracts/caseView'
 import {
   ACTION_LABELS,
+  AT_PROVENANCE_FALLBACK,
   KNOWN_LABEL_KEYS,
   INFO_STATE_LABELS,
   NOTICE_FALLBACK,
   SOURCE_FALLBACK,
+  atProvenanceLabel,
   noticeMessage,
   sourceLabel,
 } from '../contracts/labels'
@@ -148,6 +150,45 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
 
   it('미등록 action은 버튼을 만들지 않는다', () => {
     expect(isAction('RESUME_SEARCH')).toBe(false)
+  })
+
+  it('at_provenance_label_key 등재 3종이 문구를 갖는다 (case-view/v1.4 §7)', () => {
+    expect(atProvenanceLabel('candidate.at_provenance.filename_time')).not.toBe(AT_PROVENANCE_FALLBACK)
+    expect(atProvenanceLabel('candidate.at_provenance.overlay_ocr')).not.toBe(AT_PROVENANCE_FALLBACK)
+    expect(atProvenanceLabel('candidate.at_provenance.timeline_relative_only')).not.toBe(
+      AT_PROVENANCE_FALLBACK,
+    )
+    for (const key of [
+      'candidate.at_provenance.filename_time',
+      'candidate.at_provenance.overlay_ocr',
+      'candidate.at_provenance.timeline_relative_only',
+    ]) {
+      expect(KNOWN_LABEL_KEYS).toContain(key)
+    }
+  })
+
+  it('label_key가 null이거나 미등록이면 같은 fallback 문구다 (§10-14)', () => {
+    // 「매핑 안 되는 raw」와 「값 자체를 모름」을 나누지 않기로 한 결정.
+    expect(atProvenanceLabel(null)).toBe(AT_PROVENANCE_FALLBACK)
+    expect(atProvenanceLabel('candidate.at_provenance.made_up')).toBe(AT_PROVENANCE_FALLBACK)
+    // v5 fixture는 계약이 Y로 정한 이 필드를 아직 안 내린다 — undefined도 같은 자리로.
+    expect(atProvenanceLabel(undefined)).toBe(AT_PROVENANCE_FALLBACK)
+  })
+
+  it('raw at_provenance를 문구로 해석하지 않는다', () => {
+    // raw 값이 label_key 자리에 잘못 들어오면 fallback으로 빠져야 한다.
+    const raws = [...new Set(views.flatMap((v) => v.candidates.map((c) => c.at_provenance)))]
+    expect(raws.length).toBeGreaterThan(0)
+    for (const raw of raws) expect(atProvenanceLabel(raw)).toBe(AT_PROVENANCE_FALLBACK)
+  })
+
+  it('fixture가 at_provenance_label_key를 내리면 전부 매핑돼 있다', () => {
+    // 지금은 0건이라 공회전한다. fixture 반영 시점에 이 단언이 살아난다.
+    const keys = views
+      .flatMap((v) => v.candidates)
+      .map((c) => c.at_provenance_label_key)
+      .filter((k): k is string => typeof k === 'string')
+    for (const key of keys) expect(atProvenanceLabel(key)).not.toBe(AT_PROVENANCE_FALLBACK)
   })
 })
 

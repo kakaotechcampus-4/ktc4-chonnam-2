@@ -85,6 +85,33 @@ export function staleLabel(key: string | null): string | null {
 }
 
 /**
+ * 후보 시각의 출처 — `candidates[].at_provenance_label_key`
+ * (`case-view/v1.4` §7 등재 3종, 2026-09-14 유소연·신유민 합의).
+ *
+ * raw `at_provenance`(`recording.filename_time` 등)를 web이 직접 해석하지
+ * 않는다. `event_time_display.source_label_key`와 문구가 겹쳐 보여도 다른
+ * 값이다 — 「후보의 시각을 어떻게 구했나」와 「확정 시각의 출처」는 별개
+ * 질문이고, fixture에서 한쪽만 바뀌는 사례가 실제로 있다
+ * (`correction_rerun` rev2→rev3).
+ */
+const AT_PROVENANCE_LABELS: Record<string, string> = {
+  'candidate.at_provenance.filename_time': '파일명 시각',
+  'candidate.at_provenance.overlay_ocr': '영상 화면 시각',
+  'candidate.at_provenance.timeline_relative_only': '영상 안 위치만 확인',
+}
+
+/**
+ * 미등록 raw(case가 `label_key=null`로 내림)와 web이 모르는 키를 같은 문구로
+ * 합친다 — 계약 §10-14가 두 케이스를 나누지 않기로 했다.
+ */
+export const AT_PROVENANCE_FALLBACK = '시각 출처 확인 중'
+
+export function atProvenanceLabel(key: string | null | undefined): string {
+  if (key === null || key === undefined) return AT_PROVENANCE_FALLBACK
+  return AT_PROVENANCE_LABELS[key] ?? AT_PROVENANCE_FALLBACK
+}
+
+/**
  * 상황 확인 — 닫힌 4종이고 label_key가 내려오지 않아 web이 문구를 갖는다
  * (value-state-display.md §5-3). NOT_ASKED와 USER_UNSURE를 같은 빈칸으로
  * 합치지 않는 것이 이 필드가 생긴 이유다.
@@ -149,4 +176,5 @@ export const KNOWN_LABEL_KEYS: ReadonlySet<string> = new Set([
   ...Object.keys(SOURCE_LABELS),
   ...Object.keys(JOB_LABELS),
   ...Object.keys(STALE_LABELS),
+  ...Object.keys(AT_PROVENANCE_LABELS),
 ])

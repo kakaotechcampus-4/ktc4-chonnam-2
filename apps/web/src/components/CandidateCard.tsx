@@ -1,10 +1,11 @@
 import type { JSX } from 'react'
 import type { Candidate } from '../contracts/caseView'
-import { SITUATION_LABELS, staleLabel } from '../contracts/labels'
+import { SITUATION_LABELS, atProvenanceLabel, staleLabel } from '../contracts/labels'
 
-// at_provenance는 아직 raw 문자열로만 내려온다. case-view/v1.4에서
-// at_provenance_label_key가 신설되면 그 키로 문구를 고른다(PR #46 Q-3).
-// 확정 전까지 raw 값을 문구로 번역하지 않는다 — 만들면 두 번 만든다.
+// 시각 출처는 `at_provenance_label_key`로만 고른다(case-view/v1.4 §7, PR #46
+// Q-3). raw `at_provenance`는 authoritative지만 web이 해석하지 않으므로 화면에
+// 내보내지 않는다. v5 fixture는 아직 키를 안 내려서 지금은 전부 fallback
+// 문구가 뜬다 — 키가 들어오면 문구가 자동으로 바뀐다.
 export function CandidateCard(props: { candidate: Candidate }): JSX.Element {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
@@ -26,7 +27,7 @@ export function CandidateCard(props: { candidate: Candidate }): JSX.Element {
         <div className="kv-row">
           <span className="kv-k">시각 출처</span>
           <span className="kv-v">
-            <span className="kv-val mono">{c.at_provenance}</span>
+            <span className="kv-val">{atProvenanceLabel(c.at_provenance_label_key)}</span>
           </span>
         </div>
       </div>
