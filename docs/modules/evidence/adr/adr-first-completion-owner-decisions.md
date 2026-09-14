@@ -27,7 +27,7 @@
 
 K1-K4가 모두 결정되어 ADR 전체 상태를 `ACCEPTED`로 올렸다. 각 항목 표의 상태가 해당 결정의 authoritative 상태다. 이후 변경은 §7에 따라 새 version·revision으로 처리한다.
 
-> **후속 (2026-09-14).** K3가 열어둔 D1(Q1)이 [`ADR-EVIDENCE-003`](adr-location-absent-package.md)으로 종결됐다. §5.6의 `package.location.present`와 §5.8의 렌더 필수 입력이 새 catalog revision에서 바뀌고, §5.11의 발생장소 「필요」는 사실로 유지되되 그 무게가 옮겨간다. K1·K2·K4는 영향을 받지 않는다.
+> **후속 (2026-09-14).** K3가 열어둔 D1(Q1)이 [`ADR-EVIDENCE-003`](adr-location-absent-package.md)으로 종결됐다. **K3는 §5.4·§5.6·§5.8·§5.11·§5.12·§5.14·§5.15 일곱 절이 영향을 받는다** — 각 절에 종결 표시를 달아 두었고 v2 당시 판단은 지우지 않고 보존했다. 그중 §5.12(위치 부재가 `UNKNOWN`이 아니다)와 §5.15 Artifact 영향(D1 반영이 재실행보다 먼저)은 **구현 순서를 바꾸는 내용**이므로 반드시 읽어야 한다. 영향 범위 전체 표는 ADR-003 §5.8에 있다. K1·K2·K4는 영향을 받지 않으며 그 근거도 같은 절에 적었다.
 
 ## 3. K1 — 첨부 용량·개수 policy
 
@@ -355,7 +355,9 @@ K1·K2는 개별 rule의 **판정 내용**을 확정했을 뿐, 그 rule을 **�
 
 Research는 초기 4종 전부에서 번호판 식별·위반일시·발생장소를 baseline 요건으로 둔다. 안전모 미착용이라고 해서 번호판 rule을 빼지 않는다.
 
-`EVIDENCE`에서 위치 부재를 `WARN`으로 두는 이유는 이 scope가 **증거 충분성** gate이기 때문이다. 위치는 나중에 사용자가 입력할 수 있고, 위치가 없다는 이유로 번호판 재판독이나 신고영상 생성까지 멈출 근거는 없다. `FINAL_PACKAGE`에서는 같은 사실을 `UNKNOWN`으로 다르게 판정한다(§5.6).
+`EVIDENCE`에서 위치 부재를 `WARN`으로 두는 이유는 이 scope가 **증거 충분성** gate이기 때문이다. 위치는 나중에 사용자가 입력할 수 있고, 위치가 없다는 이유로 번호판 재판독이나 신고영상 생성까지 멈출 근거는 없다. ~~`FINAL_PACKAGE`에서는 같은 사실을 `UNKNOWN`으로 다르게 판정한다(§5.6).~~
+
+> **D1 종결에 따른 변경 (2026-09-14).** 마지막 문장은 더 이상 유효하지 않다. `FINAL_PACKAGE`도 위치 부재를 **`WARN`**으로 판정한다([`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.5). 두 scope가 같은 사실을 같은 outcome으로 다루게 됐고, 「위치가 없다는 이유로 다음 단계를 멈추지 않는다」는 이 절의 논리가 `FINAL_PACKAGE`까지 그대로 이어진다. 이 rule의 EVIDENCE scope 매핑 자체는 바뀌지 않는다.
 
 `safety_report_type`과 `violation_expression`은 `evidence-record/v1.3`에서 이미 필수이고 매핑은 [`safety-report-policy-v1.md`](../decisions/safety-report-policy-v1.md)가 소유한다. 항상 `PASS`만 나오는 존재 검사를 catalog에 추가하지 않고, Contract validation과 renderer의 fail-closed 검증에 맡긴다.
 
@@ -376,8 +378,8 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 | `package.event.pre_context_present` | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.event.post_context_present` | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.vehicle.plate_visible_in_report_video` | `VEHICLE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
-| `package.location.present` | `LOCATION` | Package 표시용 위치 있음 / 없음 | `PASS` / `UNKNOWN` |
-| `package.report.content_length` | `REPORT_CONTENT` | §5.8 | `PASS` / `BLOCK` / `UNKNOWN` |
+| `package.location.present` | `LOCATION` | Package 표시용 위치 있음 / 없음 | `PASS` / ~~`UNKNOWN`~~ → **`WARN`**(D1) |
+| `package.report.content_length` | `REPORT_CONTENT` | §5.8 | `PASS` / `BLOCK` / `UNKNOWN` — 필수 입력은 선택된 template 기준(D1) |
 | `package.evidence.situation_response` | `EVIDENCE` | §5.9 | `PASS` / `WARN` / `UNKNOWN` |
 | `package.asset.image.each_size` | `ASSET` | K1 §3.6 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.asset.video.each_size` | `ASSET` | K1 §3.6 | `PASS` / `BLOCK` / `UNKNOWN` |
@@ -511,9 +513,11 @@ PC와 모바일로 catalog를 나누지 않는다. Package는 제목을 항상 �
 - `REPORT_VIDEO`가 아직 없음
 - `byte_size=null`
 - 번호판·사건 장면·전후 상황·시각 표시를 아직 관찰하지 않음
-- Package 표시용 위치가 아직 없음
+- ~~Package 표시용 위치가 아직 없음~~ → **D1 종결로 `UNKNOWN`이 아니라 `WARN`이다**(아래)
 - 발생시각을 확보하지 못함
 - 사용자가 사건 유형에 아직 응답하지 않음
+
+> **D1 종결에 따른 추가 (2026-09-14).** 이 절은 원래 「정책 엔진 오류 / `UNKNOWN` / `BLOCK`」 세 갈래만 두었다. **Package 표시용 위치 부재는 네 번째 갈래인 `WARN`이다** — 판정이 성립했고(위치가 없다는 사실이 확정됐고), 그것이 Package 발행을 막지 않으며, 미확정이라는 사실은 `report_field_states`·사용자 고지가 나른다([`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.1·§5.5). 위치 부재로 `UNKNOWN`을 내지 마라. `UNKNOWN`이면 overall이 `UNKNOWN`이 되어 Package가 사라지고 D1이 무효가 된다.
 
 그리고 실제 판정이 성립했는데 조건을 충족하지 못하면 `BLOCK`이다.
 
@@ -545,10 +549,10 @@ PC와 모바일로 catalog를 나누지 않는다. Package는 제목을 항상 �
 
 | 항목 | 값 |
 | --- | --- |
-| K3 catalog 식별자 | `policy/requirement-rules-v2` |
+| K3 catalog 식별자 | `policy/requirement-rules-v2` — **D1 반영은 이 값을 덮어쓰지 않고 새 revision으로 발행한다**(§7) |
 | 데이터 위치 | `src/daesingo/evidence/requirement_rules_v2.json` |
 | `EVIDENCE` 기본 rule 수 | 4 |
-| `FINAL_PACKAGE` 무조건 rule 수 | 15 |
+| `FINAL_PACKAGE` 무조건 rule 수 | 15 — D1은 rule을 더하거나 빼지 않고 두 rule의 판정만 바꾼다 |
 | `FINAL_PACKAGE` 조건부 rule | 3개 중 정확히 1개 선택 |
 | 결정일 | `2026-09-13` |
 
@@ -572,7 +576,7 @@ K3 결정으로 다음 작업을 진행할 수 있다.
 - 사건 장면·전 상황·후 상황 세 rule과 관찰 fact 입력 추가
 - `package.asset.report_video.size` → K1 여섯 rule 교체
 - `package.evidence.situation_unconfirmed` → `package.evidence.situation_response` 교체와 `NOT_ASKED` `UNKNOWN` 처리
-- `package.report.content_length`의 렌더 불가 `UNKNOWN` 처리
+- `package.report.content_length`의 렌더 불가 `UNKNOWN` 처리 — **필수 입력은 선택된 template 기준으로 읽는다**(D1, §5.8의 단서)
 - 시각 표시 selector 네 경우와 「정확히 하나 선택」 불변조건 테스트
 - §5.12의 구성 오류 전부에서 정상 Report 미발행 테스트
 - H/U/P/R 네 Scenario를 같은 기본 catalog로 재실행
@@ -585,6 +589,8 @@ K3 결정으로 다음 작업을 진행할 수 있다.
 - 전후 상황의 초 수 — `recording` Tech Spec
 
 **Artifact 영향.** v2로 재실행하면 H/U/P/R baseline의 `policy_ref`, `checks[]` 구성, 일부 `overall`이 바뀐다. U는 `package.report.content_length`가 추가되고 H는 `package.evidence.situation_response`가 추가되며, 네 Scenario 모두 사건 장면·전후 상황 rule이 `UNKNOWN`으로 들어온다. 이는 예상된 변경이며, 기존 v1 Artifact를 조용히 덮어쓰지 않고 v2 재실행 결과임을 명시해 기록한다. 실제 관찰값이 없는 상태에서 `UNKNOWN`이 늘어나는 것을 회귀 실패로 보지 않는다.
+
+> **D1 종결에 따른 정정 (2026-09-14).** 위 문단은 **U가 `UNKNOWN`으로 떨어져 `pkg_u001`이 사라지는 상태**를 전제로 쓰였다. v2 그대로 재실행하면 U의 `package.location.present`와 `package.report.content_length`가 모두 `UNKNOWN`이 되어 `overall=UNKNOWN`, 계약 §8.1로 Package가 없어진다. **D1 반영 후에는 그렇지 않다** — 두 rule이 각각 `WARN`과 template 기준 판정으로 바뀌어 U의 `overall`은 `WARN`이고 `PACKAGE_READY`가 성립한다([`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.5·§9). 따라서 **D1 반영을 Artifact 재실행보다 먼저 수행한다.** 순서가 뒤바뀌면 baseline이 사라진 Package를 정상 결과로 기록하게 된다.
 
 ## 6. K4 — 발생시각 이외 Correction의 `EvidenceValue.source` provenance
 
