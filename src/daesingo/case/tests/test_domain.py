@@ -32,21 +32,26 @@ def test_forward_transitions_bump_case_rev():
 
     case.select_candidate("c1")
     assert case.stage == "EVIDENCE_REVIEW"
-    assert case.case_rev == 3
+    # 2026-09-14 정정: candidate 선택 자체는 case_rev를 올리지 않는다(`scenario_correction_rerun_001`/
+    # `scenario_plate_reread_001` fixture로 확인 — 이전엔 이 전이도 case_rev를 올린다고 잘못 가정했었다).
+    assert case.case_rev == 2
     assert case.selection_rev == 1  # candidate 선택 1회 = selection_rev 1회 증가
 
     case.mark_ready()
     assert case.stage == "READY"
-    assert case.case_rev == 4
+    assert case.case_rev == 3
 
 
-def test_empty_candidates_does_not_advance_stage():
-    """빈 배열(candidates=[])은 실패가 아니다 — CANDIDATE_REVIEW로 전진하지 않고 머문다."""
+def test_empty_candidates_still_advances_to_candidate_review():
+    """빈 배열(candidates=[])은 실패가 아니다 — 검색 자체는 성공이므로 CANDIDATE_REVIEW로
+    전진한다(2026-09-14, `scenario_empty_001` fixture로 정정 — 예전엔 SEARCHING에 머문다고
+    잘못 가정했었다)."""
     case = _make_case()
     case.start_search()
     case.receive_candidates([])
-    assert case.stage == "SEARCHING"
-    assert case.case_rev == 1  # 빈 배열은 전이도, case_rev 증가도 일으키지 않는다
+    assert case.stage == "CANDIDATE_REVIEW"
+    assert case.candidates == []
+    assert case.case_rev == 2  # SEARCHING(1, 안 오름) -> CANDIDATE_REVIEW(2, 오름)
 
 
 def test_invalid_forward_jump_raises():
@@ -61,6 +66,25 @@ def test_selecting_unknown_candidate_raises():
     case.receive_candidates([Candidate(candidate_id="c1", at=None, at_provenance=None, observed="obs", thumb_ref=None)])
     with pytest.raises(InvalidTransition):
         case.select_candidate("does-not-exist")
+
+
+def test_mark_reviewed_sets_flag_and_bumps_case_rev():
+    """`user_reviewed`는 §3-C의 별도 workflow 상태(evidence.user_edited/INFO_USER_CONFIRMED와
+    합치지 않는다, §3-C-8) — `mark_reviewed()`가 그 상태를 True로 세우고, 사용자의 명시적
+    "확인함" 액션 자체가 새 요청이므로 case_rev도 오른다(`scenario_happy_001`의 rev3(case_rev:3,
+    user_reviewed:false)→rev4(case_rev:4, user_reviewed:true) — 두 revision이 이 두 필드
+    말고는 완전히 동일하다는 데서 역산해 확인, 2026-09-14)."""
+    case = _make_case()
+    case.start_search()
+    case.receive_candidates([Candidate(candidate_id="c1", at=None, at_provenance=None, observed="obs", thumb_ref="fr1")])
+    case.select_candidate("c1")
+    case.mark_ready()
+    assert case.user_reviewed is False
+    assert case.case_rev == 3
+
+    case.mark_reviewed()
+    assert case.user_reviewed is True
+    assert case.case_rev == 4
 
 
 def test_job_ids_are_always_unique_even_for_same_kind():

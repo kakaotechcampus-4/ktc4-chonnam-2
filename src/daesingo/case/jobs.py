@@ -42,6 +42,11 @@ def issue_job(
 ) -> dict[str, Any]:
     if kind not in JOB_KINDS:
         raise ValueError(f"알 수 없는 JobRecord.kind: {kind!r} (등록된 kind: {sorted(JOB_KINDS)})")
+    if force_rerun:
+        # 사용자가 명시적으로 재요청한 Job(재판독/재검색 등)은 그 자체가 새 "요청 시점 케이스
+        # 리비전"이다(§3-E) — `scenario_plate_reread_001` fixture로 확인(2026-09-14): 재판독을
+        # 발주하는 시점에 case_rev가 오르고, 그 job_record.case_rev도 오른 값을 그대로 담는다.
+        case.bump_revision()
     job_record: dict[str, Any] = {
         "contract": "JobRecord",
         "contract_version": CONTRACT_VERSION,
@@ -93,3 +98,46 @@ def issue_resume_search(case: CaseAggregate, *, scope_ref: str, input_fingerprin
 def issue_plate_reread(case: CaseAggregate, *, input_fingerprint: str) -> dict[str, Any]:
     """`EvidenceNeeds.items`가 `PLATE_REREAD`를 요청했을 때의 자동 발주(force_rerun=True)."""
     return issue_job(case, "PLATE_READ", input_fingerprint=input_fingerprint, force_rerun=True)
+
+
+def issue_overlay_time_reread(case: CaseAggregate, *, input_fingerprint: str) -> dict[str, Any]:
+    """`EvidenceNeeds.items`가 `OVERLAY_TIME_OCR`를 요청했을 때의 자동 발주(force_rerun=True) —
+    `issue_plate_reread()`와 대칭(`contract-evidence-record-needs.md` §8.2 kind 매핑:
+    `OVERLAY_TIME_OCR → would_fill=OCCURRED_AT`)."""
+    return issue_job(case, "OVERLAY_TIME_READ", input_fingerprint=input_fingerprint, force_rerun=True)
+
+
+_NEED_KIND_TO_SOURCE_JOB_KIND = {
+    "PLATE_REREAD": "PLATE_READ",
+    "OVERLAY_TIME_OCR": "OVERLAY_TIME_READ",
+}
+
+
+def issue_needed_jobs(case: CaseAggregate, evidence_needs: dict[str, Any]) -> list[dict[str, Any]]:
+    """`EvidenceNeeds.items` → Job Intent 자동 매핑(`contract-evidence-record-needs.md` §8.1/§8.2,
+    "case는 이 Need가 current revision 기준으로 유효하면 백그라운드 JobIntent를 자동 발주할 수
+    있다"). v1 kind는 `OVERLAY_TIME_OCR`/`PLATE_REREAD` 둘 뿐이다(§8.2, 닫힌 집합).
+
+    `input_fingerprint`는 case가 새로 계산하지 않는다 — 재판독은 "같은 입력을 다시 본다"는
+    뜻이므로, 같은 kind로 이미 발주됐던 가장 최근 `JobRecord`의 fingerprint를 그대로 재사용한다
+    (`scenario_plate_reread_001` fixture로 확인, 2026-09-14: `job_p001_plate`와
+    `job_p001_plate_reread`의 `input_fingerprint`가 완전히 동일한 `"sha1:p001-plate-read-clip_p001"`).
+    해당 kind로 발주된 적이 아직 없으면(비정상 상태 — Need는 이미 한 번 관찰을 시도했다는 뜻이라
+    보통 발생하지 않는다) `ValueError`를 던진다 — 조용히 임의 fingerprint를 만들어내지 않는다.
+    """
+    issued: list[dict[str, Any]] = []
+    for item in evidence_needs.get("items", []):
+        kind = item["kind"]
+        source_kind = _NEED_KIND_TO_SOURCE_JOB_KIND.get(kind)
+        if source_kind is None:
+            raise ValueError(f"알 수 없는 EvidenceNeeds item.kind: {kind!r}")
+        prior = next((j for j in reversed(case.job_records) if j["kind"] == source_kind), None)
+        if prior is None:
+            raise ValueError(
+                f"{kind!r} Need를 처리할 원본 {source_kind!r} JobRecord가 없다 (case_id={case.case_id!r})"
+            )
+        if source_kind == "PLATE_READ":
+            issued.append(issue_plate_reread(case, input_fingerprint=prior["input_fingerprint"]))
+        else:
+            issued.append(issue_overlay_time_reread(case, input_fingerprint=prior["input_fingerprint"]))
+    return issued

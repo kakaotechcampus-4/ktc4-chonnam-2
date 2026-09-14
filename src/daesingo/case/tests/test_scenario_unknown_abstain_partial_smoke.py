@@ -48,12 +48,17 @@ def test_unknown_abstain_partial_ready_matches_fixture():
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_u001", input_fingerprint="sha1:u001-coarse-search")
 
+    # ⚠️ 2026-09-14 정정: candidates[].at/at_provenance는 더 이상 evidence 확정 시점에
+    # view.py가 occurred_at으로 덮어쓰지 않는다(이슈 #39 Required-3 재확인,
+    # `scenario_correction_rerun_001`로 발견) — search가 처음 넘겨준 값이 최종 표시값까지
+    # 그대로 유지된다는 뜻이라, 여기서 fixture의 최종 값을 직접 공급한다(정답지: 이 시나리오는
+    # candidate가 1개뿐이라 raw_candidates 순서와 fixture 순서가 항상 일치한다).
     raw_candidates = adapter.get_candidate_events()
     candidates = [
         Candidate(
             candidate_id=c["candidate_id"],
-            at=None,
-            at_provenance=None,
+            at="2026-08-26T22:20:15+09:00",
+            at_provenance="recording.filename_time",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
         )

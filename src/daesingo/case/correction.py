@@ -5,6 +5,10 @@
 지점 — `docs/mock/02_mock_scenario_catalog.md`의 `scenario_correction_rerun_001` v4 노트
 참고). 그래서 여기서는 correction 시점의 `case.selection_rev`를 그대로 스냅샷하고,
 correction 자체는 selection_rev를 절대 증가시키지 않는다.
+
+반면 `case_rev`는 오른다(§3-E "요청 시점 케이스 리비전") — 사용자의 정정 제출은 그 자체가
+새 요청이다. `scenario_correction_rerun_001` fixture로 확인(2026-09-14): correction 전
+`case_rev:2` → correction 후 `case_rev:3`.
 """
 from __future__ import annotations
 
@@ -49,4 +53,5 @@ def apply_correction(
         "corrected_at": _now(),
     }
     case.correction_records.append(record)
+    case.bump_revision()  # 정정 제출 = 새 요청 → case_rev 상승(§3-E)
     return record

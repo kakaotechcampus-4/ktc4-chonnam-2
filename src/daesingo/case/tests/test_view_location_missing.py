@@ -47,7 +47,7 @@ def test_field_states_handles_missing_location_key_without_crash():
 def test_build_evidence_view_handles_missing_location_without_crash():
     evidence_record = _adapter().get_evidence_record()
 
-    view = _build_evidence_view(evidence_record, preview_ref="fr_u001_plate1")
+    view = _build_evidence_view(evidence_record, preview_ref="fr_u001_plate1", user_edited=False)
 
     assert view["location_display"] == {
         "value": None,

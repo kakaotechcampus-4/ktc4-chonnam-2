@@ -43,8 +43,73 @@ _PROGRESS_STEPS = (
 # unconfirmed_fields의 순서는 이 순서를 그대로 따른다(임의로 정렬하지 않는다).
 _REPORT_FIELDS = ("safety_report_type", "occurred_at", "location", "vehicle_number", "violation_expression")
 
+# `contract-job-record-case-view.md` 헤더 ③ / §13 「JobExecution → CaseView 상태 projection」 —
+# QUEUED→PENDING, RUNNING→RUNNING, SUCCEEDED→DONE, FAILED/STALE→FAILED, CANCELLED→PARTIAL
+# (CANCELLED은 새 enum 값을 만들지 않고 기존 PARTIAL로 흡수, 이슈 #33 A-2). 이 다섯 매핑
+# 자체는 case-view 계약이 소유하는 projection 표라 case 코드가 그대로 옮긴다 — "지금
+# 이 job_id/kind의 최신 실행이 어떤 JobExecution.status인가"를 고르는 일(여러 attempt
+# 중 최신을 고르는 것, force_rerun 이후 새 job_id로 갈아타는 것)은 이 함수의 책임이
+# 아니다(그건 JobExecution을 소유한 common/runtime 쪽에서 이미 해석해 건네준다고 본다).
+_JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
+    "QUEUED": "PENDING",
+    "RUNNING": "RUNNING",
+    "SUCCEEDED": "DONE",
+    "FAILED": "FAILED",
+    "STALE": "FAILED",
+    "CANCELLED": "PARTIAL",
+}
 
-def _build_progress(case: CaseAggregate, evidence_record: dict[str, Any] | None, report_package: dict[str, Any] | None) -> list[dict[str, str]]:
+
+def _job_execution_status_to_progress_state(status: str | None) -> str:
+    """`status`가 `None`이면 "이 kind의 Job은 발주됐지만 아직 어떤 실행 결과도 case에
+    보고되지 않았다"는 뜻이다(막 발주한 직후) — 낙관적으로 진행 중임을 보여준다(RUNNING).
+    `scenario_infra_failure_001`의 rev1(plate_read 발주 직후, 아직 실행 결과 없음)로 확인."""
+    if status is None:
+        return "RUNNING"
+    return _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE[status]
+
+
+def _build_progress(
+    case: CaseAggregate,
+    evidence_record: dict[str, Any] | None,
+    report_package: dict[str, Any] | None,
+    requirement_report_evidence: dict[str, Any] | None = None,
+    *,
+    plate_read_status: str | None = None,
+    overlay_time_read_status: str | None = None,
+) -> list[dict[str, str]]:
+    # ⚠️ CANDIDATE_REVIEW 단계면 후보가 있든 없든(2026-09-14 확인 — 처음엔 "후보 0개"만의
+    # 특수 케이스로 좁게 봤었는데, `scenario_relative_rebase_001`이 후보가 1개 있고 심지어
+    # `selected:true`인 상태에서도 이후 단계(plate_read~package_assembly)로 진행될 경로가
+    # 아직 없는 걸 보여줬다 — evidence 파이프라인은 `select_candidate()`로 stage가
+    # EVIDENCE_REVIEW로 실제 전이돼야 시작되고, "화면에 selected로 표시된 후보가 있다"는
+    # 것과 "stage가 전이됐다"는 건 별개다) 이후 단계로 진행될 경로 자체가 없다 —
+    # 낙관적으로 PENDING을 보여주지 않고 목록에서 아예 뺀다. 검색·후보검토 자체는 정상
+    # 완료된 것이므로(AnalysisRun.outcome=SUCCEEDED) candidate_review도 RUNNING이 아니라
+    # DONE으로 표시한다(fixture로 검증됨, 2026-09-14).
+    if case.stage == "CANDIDATE_REVIEW":
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+        ]
+
+    # ⚠️ EVIDENCE_REVIEW인데 evidence가 끝내 조립되지 못한 채(예: 번호판 판독이 인프라
+    # 오류로 실패·취소를 거듭함) 머물러 있으면, plate_read/overlay_time_read는 각 Job의
+    # 실행 상태(JobExecution.status projection)로 독립적으로 보여주고, 그 뒤 단계
+    # (evidence_assembly~package_assembly)는 계산할 신뢰 가능한 신호 자체가 없으므로
+    # 목록에서 아예 뺀다(CANDIDATE_REVIEW-빈 배열과 같은 원칙). `scenario_infra_failure_001`
+    # 4개 revision 전부(plate_read가 RUNNING/FAILED/PARTIAL을 오가는 동안 overlay_time_read는
+    # 독립적으로 DONE일 수 있다는 것까지) 이 분기로 확인됨(2026-09-14).
+    if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": _job_execution_status_to_progress_state(plate_read_status)},
+            {"step": "overlay_time_read", "state": _job_execution_status_to_progress_state(overlay_time_read_status)},
+        ]
+
     stage = case.stage
     stage_rank = {"INTAKE": 0, "SEARCHING": 1, "CANDIDATE_REVIEW": 2, "EVIDENCE_REVIEW": 3, "READY": 4}[stage]
 
@@ -77,31 +142,58 @@ def _build_progress(case: CaseAggregate, evidence_record: dict[str, Any] | None,
                 progress[step] = "RUNNING"
             else:
                 progress[step] = "PENDING"
-        for step in ("requirement_check", "package_assembly"):
-            if package_done:
-                progress[step] = "DONE"
-            elif evidence_done and stage_rank == 3:
-                progress[step] = "RUNNING"
-            else:
-                progress[step] = "PENDING"
+        # ⚠️ requirement_check은 package_assembly와 별개 게이트다(`scenario_plate_reread_001`로
+        # 확인 — requirements_evidence가 이미 존재해도 report_package는 아예 발주 안 될 수 있다).
+        # package_assembly는 신뢰 가능한 "생성 중" 신호가 없어 낙관적으로 RUNNING을 보여주지 않는다
+        # (report_package가 생기기 전까지는 PENDING — fixture로 검증됨, 2026-09-14).
+        requirement_done = requirement_report_evidence is not None
+        if requirement_done:
+            progress["requirement_check"] = "DONE"
+        elif evidence_done and stage_rank == 3:
+            progress["requirement_check"] = "RUNNING"
+        else:
+            progress["requirement_check"] = "PENDING"
+        progress["package_assembly"] = "DONE" if package_done else "PENDING"
         if stage_rank == 4:  # READY
             progress = {s: "DONE" for s in _PROGRESS_STEPS}
     return [{"step": s, "state": progress[s]} for s in _PROGRESS_STEPS]
 
 
-def _build_candidates_view(case: CaseAggregate, evidence_record: dict[str, Any] | None) -> list[dict[str, Any]]:
+def _build_candidates_view(
+    case: CaseAggregate,
+    evidence_record: dict[str, Any] | None,
+    current_timeline_revision: int | None = None,
+) -> list[dict[str, Any]]:
+    # ⚠️ 2026-09-14 정정(`scenario_correction_rerun_001`로 확인, 이슈 #39 Required-3 재확인):
+    # candidates[].at/at_provenance는 evidence가 확정돼도 occurred_at으로 덮어쓰지 않는다 —
+    # candidate 재선택이 없는 한 timeline 위치가 바뀔 이유가 없다. 과거엔 evidence_record가
+    # 있고 candidate가 selected면 occurred_at.value/source.kind로 덮어썼는데, 이건 correction
+    # 적용 후(candidate 재선택 없이 occurred_at만 바뀐 상황)에도 at/at_provenance가 같이
+    # 바뀌어버리는 회귀였다 — v5에서 이미 한 번 고쳤다가 다시 들어간 버그.
+    #
+    # `stale_revision`/`stale_revision_label_key`는 candidate 생성 시점에 고정해두는 값이
+    # 아니라 "매 투영 시점"에 다시 비교해서 만드는 파생값이다(`candidate-stale-revision-
+    # display.md` 결정문 그대로: "case가 매 투영 시점에 비교해 계산하는 파생값") —
+    # `current_timeline_revision`(그 candidate가 속한 `RecordingTimeline`의 **현재**
+    # revision, recording이 소유)이 주어지면 `c.timeline_revision`과 비교해서 다시 계산하고,
+    # 주어지지 않으면(대부분의 다른 시나리오 — 전부 단일 revision만 쓴다) Candidate에 이미
+    # 저장된 값을 그대로 쓴다(하위 호환). `scenario_relative_rebase_001`의 rev1(rebase 전,
+    # current_timeline_revision=1=timeline_revision → stale_revision:false)→rev2(rebase 후,
+    # current_timeline_revision=2≠timeline_revision:1 → stale_revision:true,
+    # stale_revision_label_key:"candidate.stale_timeline_revision")로 확인.
     out = []
     for c in case.candidates:
         at, at_provenance = c.at, c.at_provenance
         situation_confirmation = c.situation_confirmation
-        # evidence가 확정되면 occurred_at을 최종 표시값으로 쓴다(1차 구현 단순화 —
-        # 정식으로는 TimeResolution이 candidate.at을 직접 채운다. §11 참고).
+        if current_timeline_revision is None:
+            stale_revision = c.stale_revision
+            stale_revision_label_key = c.stale_revision_label_key
+        else:
+            stale_revision = c.timeline_revision != current_timeline_revision
+            stale_revision_label_key = "candidate.stale_timeline_revision" if stale_revision else None
+        # candidates[].situation_confirmation — B절 §6 필드 정의: EvidenceRecord.situation_response.value가
+        # 있으면 그대로 옮기고(CONFIRMED/CORRECTED/USER_UNSURE), 없으면 기존 NOT_ASKED를 유지한다.
         if evidence_record is not None and c.selected:
-            occurred_at = evidence_record["occurred_at"]
-            at = occurred_at["value"]
-            at_provenance = occurred_at["source"]["kind"]
-            # candidates[].situation_confirmation — B절 §6 필드 정의: EvidenceRecord.situation_response.value가
-            # 있으면 그대로 옮기고(CONFIRMED/CORRECTED/USER_UNSURE), 없으면 기존 NOT_ASKED를 유지한다.
             situation_response = evidence_record.get("situation_response")
             if situation_response is not None:
                 situation_confirmation = situation_response["value"]
@@ -114,8 +206,8 @@ def _build_candidates_view(case: CaseAggregate, evidence_record: dict[str, Any] 
                 "thumb_ref": c.thumb_ref,
                 "selected": c.selected,
                 "timeline_revision": c.timeline_revision,
-                "stale_revision": c.stale_revision,
-                "stale_revision_label_key": c.stale_revision_label_key,
+                "stale_revision": stale_revision,
+                "stale_revision_label_key": stale_revision_label_key,
                 "situation_confirmation": situation_confirmation,
             }
         )
@@ -127,7 +219,10 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     `evidence.*_display`가 공유하는 5개 필드(case_type 제외)의 info_state를 여기서 만든다."""
     event = evidence_record["event"]
     occurred_at = evidence_record["occurred_at"]
-    vehicle_number = evidence_record["vehicle_number"]
+    # ⚠️ vehicle_number도 location처럼 키 자체가 없을 수 있다(번호판 판독 abstain —
+    # `scenario_plate_reread_001`의 `ev_p001`, 2026-09-14 확인된 결함. 과거엔
+    # `evidence_record["vehicle_number"]`가 KeyError를 던졌다).
+    vehicle_number = evidence_record.get("vehicle_number")
     violation = event["violation_expression"]
     report_type = event["safety_report_type"]
     # ⚠️ location은 EvidenceRecord에 키 자체가 없을 수 있다(예: scenario_unknown_abstain_partial_001의
@@ -153,13 +248,17 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
 
     return {
         "vehicle_number": {
-            "info_state": evidence_value_info_state(
-                vehicle_number["value"],
-                needs_review=vehicle_number["needs_review"],
-                user_corrected=vehicle_number["user_corrected"],
-                observability=vehicle_number["source"].get("observability"),
+            "info_state": (
+                evidence_value_info_state(
+                    vehicle_number["value"],
+                    needs_review=vehicle_number["needs_review"],
+                    user_corrected=vehicle_number["user_corrected"],
+                    observability=vehicle_number["source"].get("observability"),
+                )
+                if vehicle_number is not None
+                else "INFO_UNKNOWN"
             ),
-            "source_label_key": vehicle_number["source"]["label_key"],
+            "source_label_key": vehicle_number["source"]["label_key"] if vehicle_number is not None else None,
         },
         "occurred_at": {
             "info_state": occurred_at_info_state(occurred_at),
@@ -190,7 +289,13 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     }
 
 
-def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | None) -> dict[str, Any]:
+def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | None, user_edited: bool) -> dict[str, Any]:
+    # ⚠️ 2026-09-14 확인(`scenario_correction_rerun_001`): evidence.user_edited은 record 내부
+    # 개별 필드의 user_corrected를 OR로 묶은 게 아니다 — `scenario_happy_001`의
+    # location.user_hint는 user_corrected=true지만 evidence.user_edited=false다(user_hint는
+    # 애초에 사용자가 준 값이라 "정정"이 아니다). 실제로는 case가 소유하는 CorrectionRecord가
+    # 하나라도 있는지(`bool(case.correction_records)`)로 판정한다 — correction 전(false)/
+    # 후(true) fixture와 정확히 일치한다. 호출부(`build_case_view`)에서 계산해 넘겨준다.
     event = evidence_record["event"]
     states = _field_states(evidence_record)
     # ⚠️ location 키 자체가 없는 EvidenceRecord가 정상 케이스다(위치 미확보 — 이슈 #48).
@@ -201,7 +306,7 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
     case_type = event["visual_event_type"]
     report_type = event["safety_report_type"]
     violation = event["violation_expression"]
-    vehicle_number = evidence_record["vehicle_number"]
+    vehicle_number = evidence_record.get("vehicle_number")
     occurred_at = evidence_record["occurred_at"]
 
     case_type_info_state = evidence_value_info_state(
@@ -221,7 +326,10 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
         "case_type": (case_type["needs_review"], case_type_info_state),
         "report_type": (report_type["needs_review"], states["safety_report_type"]["info_state"]),
         "violation": (violation["needs_review"], states["violation_expression"]["info_state"]),
-        "plate": (vehicle_number["needs_review"], states["vehicle_number"]["info_state"]),
+        "plate": (
+            vehicle_number["needs_review"] if vehicle_number is not None else False,
+            states["vehicle_number"]["info_state"],
+        ),
         "event_time": (event_time_needs_review, states["occurred_at"]["info_state"]),
         "location": (location_needs_review, states["location"]["info_state"]),
     }
@@ -258,10 +366,10 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
             "source_label_key": violation["source"]["label_key"],
         },
         "plate_display": {
-            "value": vehicle_number["value"],
-            "needs_review": vehicle_number["needs_review"],
+            "value": vehicle_number["value"] if vehicle_number is not None else None,
+            "needs_review": vehicle_number["needs_review"] if vehicle_number is not None else False,
             "info_state": states["vehicle_number"]["info_state"],
-            "source_label_key": vehicle_number["source"]["label_key"],
+            "source_label_key": vehicle_number["source"]["label_key"] if vehicle_number is not None else None,
         },
         "event_time_display": {
             "value": occurred_at["value"],
@@ -297,7 +405,7 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
                 "search_keyword": None,
             }
         ),
-        "user_edited": False,
+        "user_edited": user_edited,
         "preview_ref": preview_ref,
         "review_needed": review_needed,
         "reason_code": reason_code,
@@ -349,6 +457,9 @@ def build_case_view(
     report_package: dict[str, Any] | None = None,
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
+    plate_read_status: str | None = None,
+    overlay_time_read_status: str | None = None,
+    current_timeline_revision: int | None = None,
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
@@ -362,9 +473,20 @@ def build_case_view(
         "user_reviewed": case.user_reviewed,
         "manifest_summary": case.manifest_summary,
         "hints": case.hints,
-        "progress": _build_progress(case, evidence_record, report_package),
-        "candidates": _build_candidates_view(case, evidence_record),
-        "evidence": _build_evidence_view(evidence_record, preview_ref) if evidence_record else None,
+        "progress": _build_progress(
+            case,
+            evidence_record,
+            report_package,
+            requirement_report_evidence,
+            plate_read_status=plate_read_status,
+            overlay_time_read_status=overlay_time_read_status,
+        ),
+        "candidates": _build_candidates_view(case, evidence_record, current_timeline_revision),
+        "evidence": (
+            _build_evidence_view(evidence_record, preview_ref, bool(case.correction_records))
+            if evidence_record
+            else None
+        ),
         "requirements_evidence": _build_requirements_view(requirement_report_evidence),
         "requirements_package": _build_requirements_view(requirement_report_package),
         "package": _build_package_view(report_package, evidence_record),

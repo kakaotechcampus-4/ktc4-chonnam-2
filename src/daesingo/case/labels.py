@@ -18,11 +18,14 @@ from typing import Any
 # event.visual_event_type.value → 사용자 표시용 한글 label
 EVENT_TYPE_LABELS: dict[str, str] = {
     "SOLID_LINE_LANE_CHANGE": "백색 실선 구간 차로변경",
+    "SIGNAL": "신호 위반",  # scenario_plate_reread_001로 확인(2026-09-14)
+    "MOTORCYCLE_HELMET_NON_USE": "이륜차 안전모 미착용",  # scenario_correction_rerun_001로 확인(2026-09-14)
 }
 
 # event.safety_report_type.value → 사용자 표시용 한글 label
 REPORT_TYPE_LABELS: dict[str, str] = {
     "TRAFFIC_VIOLATION": "교통위반(고속도로 포함)",
+    "MOTORCYCLE_VIOLATION": "이륜차 위반",  # scenario_correction_rerun_001로 확인(2026-09-14)
 }
 
 # EvidenceValue.source.observability → CaseView *_display.info_state (규칙 (1)의 마지막 단계)

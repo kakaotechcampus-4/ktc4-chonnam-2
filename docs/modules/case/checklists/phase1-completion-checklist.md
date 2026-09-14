@@ -3,7 +3,11 @@
 > **작성일 2026-09-13 · 작성 담당 유소연(`case`) · 문서 성격: 구현 설계 문서 아님.**
 > 이 문서는 `case` 내부를 어떻게 짤지 정하지 않는다. **공용 Mock Pack(`data/mock/`, `docs/mock/01~05`)과 확정된 Final Data Contract(`docs/architecture/contracts/*.md`)를 기준으로, 1차 Mock E2E 통합(로드맵 ④단계) 전에 `case`가 "Merge해도 되는 상태"인지 스스로 확인하는 체크리스트다.**
 > 근거: `docs/management/ownership.md`(R&R) §3 유소연 절 · `docs/architecture/module-architecture.md` v4 §4-모듈5 · `docs/mock/01_mock_dataset_overview.md` §3·§8 · `docs/mock/02_mock_scenario_catalog.md` · `docs/mock/04_mock_validation_report.md`.
-> **아직 `case` 구현 코드는 없다**(`src/daesingo/case/README.md`: "아직 코드가 없다"). 이 문서는 그 코드를 쓰기 시작할 때 그대로 개발 TODO/Merge 기준으로 쓰라고 만든 것이다 — 지금 시점 체크 항목은 전부 "무엇을 만들어야 완료로 인정하는가"를 정의한 것이지, "이미 됐다"는 보고가 아니다.
+> **작성 당시(2026-09-13)엔 `case` 구현 코드가 없었다.** 이 문서는 그 코드를 쓰기 시작할 때 그대로 개발 TODO/Merge 기준으로 쓰라고 만든 것이었다 — 그래서 체크 항목은 원래 전부 "무엇을 만들어야 완료로 인정하는가"를 정의한 것이었지 "이미 됐다"는 보고가 아니었다.
+>
+> **2026-09-14 갱신.** `feature/case-core`에 실제 구현 코드가 생긴 뒤로는, 체크 표시(`[x]`)는 단위/smoke 테스트로 실제 검증된 항목에만 붙인다 — 구현은 있지만 테스트가 없는 항목(예: `CorrectionRecord`)은 의도적으로 보류한다.
+>
+> **2026-09-14 2차 갱신.** "case 혼자서 진행할 수 있는 부분"을 전부 훑어서 구현했다 — 나머지 5개 시나리오(`empty`/`plate_reread`/`correction_rerun`/`infra_failure`/`relative_rebase`) 전체 파리티, `EvidenceNeeds.items → Job Intent` 자동 매핑, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `CorrectionRecord`/`USER_REVIEWED` 단위 테스트, `export_learning_log()`까지 끝나서 `pytest src/daesingo/case/tests/`가 16개→**43개** 통과로 늘었다. 여전히 case 혼자 끝낼 수 없는 것(역행 전이 상세 규칙, `web`/`recording`/`search` 접합 실증, Timeout 수치— `search` baseline 실측 대기)은 그대로 미해결로 남겨뒀다 — 아래 각 절에 어디가 막혔는지 구체적으로 적어뒀다.
 
 ---
 
@@ -35,8 +39,9 @@
 - `case`는 **유일한 지휘자**다 — 다섯 모듈(recording·search·readout·evidence·web) 전부의 계약을 동시에 안다는 전제로 일한다(`ownership.md` §3 ②). 그래서 이 체크리스트의 절반은 "내 코드"가 아니라 "남의 계약을 내가 맞게 읽고 있는가"다.
 - v4의 핵심 분리: **발주 의도(`JobRecord`)는 `case` 소유, 실행 lifecycle(`JobExecution`)은 `common/runtime` 소유**(구현은 recording 담당). `case`는 Worker를 만들지 않는다(`module-architecture.md` §4-모듈5 ④).
 - `CaseView`가 `web`의 **유일한 read dependency**다(§4-모듈6 ③). `case`가 잘못 만들면 `web` 전체가 막힌다 — 접합부 리스크가 가장 큰 계약이다.
-- 이번 라운드(2026-09-13)에 ERD 리뷰로 `case` 소유 결정 2건이 막 확정됐다: **`selection_rev`는 `case` 내부 단일 현재값으로만 저장**(별도 이력 테이블 없음, `docs/modules/case/decisions/case-selection-revision-persistence.md`), **재개("이어서 찾기")도 새 `job_id`로 발주**(`docs/modules/case/decisions/job-resume-identity-policy.md`). 둘 다 아직 실제 구현/fixture는 없다 — 이 체크리스트의 §10에 반영.
+- 이번 라운드(2026-09-13)에 ERD 리뷰로 `case` 소유 결정 2건이 막 확정됐다: **`selection_rev`는 `case` 내부 단일 현재값으로만 저장**(별도 이력 테이블 없음, `docs/modules/case/decisions/case-selection-revision-persistence.md`), **재개("이어서 찾기")도 새 `job_id`로 발주**(`docs/modules/case/decisions/job-resume-identity-policy.md`). 확정 당시(2026-09-13)엔 둘 다 실제 구현/fixture가 없었지만, 2026-09-14 기준 `selection_rev`는 단위 레벨 구현+테스트가 끝났고 재개 정책도 `jobs.issue_resume_search()`로 단위 레벨은 끝났다 — 남은 건 scenario-level Mock fixture 재현뿐이다(§10 참고).
 - (2026-09-13 추가) ERD 리뷰에서 열려 있던 case 쪽 질문 2건도 이번에 전부 해소됐다 — `AnalysisScope`는 공동이 아니라 **case 단독 Producer**로 확정됐고, recording 자산-Case 결합도 recording의 `case_asset_links` 내부 테이블로 해결됐다(`erd-draft.md` 2026-09-13 갱신, §4.1). 남은 건 case가 그 등록 경계를 호출하는 방식뿐이다(§10).
+- (2026-09-14 추가) "이어서 찾기" 새 `job_id` 정책(`job-resume-identity-policy.md`)이 `jobs.issue_resume_search()`로 구현되고 `test_jobs.py::test_resume_search_issues_new_job_id_not_same_job_id_plus_attempt`로 검증됐다 — 단위 레벨은 끝났고, `build_case_view()`를 통한 scenario-level Mock fixture 재현만 §10에 남는다.
 
 ---
 
@@ -64,56 +69,56 @@
 
 ### A. Input
 
-- [ ] 사용자 자연어 단서(hints: time/vehicle/situation/location) 구조화 입력을 받아 `CaseView.hints`로 반영하는 경로
-- [ ] `AnalysisScope`(case 단독 Producer) 초안 입력 — 탐색 요청의 비식별 파라미터, search·eval 소비 스키마 고정
-- [ ] 사용자 명령 API(후보 선택, 정정 제출, 재개/재시도 요청)의 입력 스키마
+- [ ] 사용자 자연어 단서(hints: time/vehicle/situation/location) 구조화 입력을 받아 `CaseView.hints`로 반영하는 경로 — **막힘(2026-09-14): "구조화"가 정확히 무엇을 뜻하는지 문서에 정의가 없다.** 현재 코드는 `case.hints`를 그대로 보관·pass-through만 한다(`domain.CaseAggregate.intake()`) — 파싱 규칙(예: "18시쯤"→시간 범위 추정)인지, 단순 필드 검증인지, 다른 무엇인지 팀 확인 없이 case 혼자 결정할 수 없어 보류했다
+- [x] `AnalysisScope`(case 단독 Producer) 초안 입력 — 탐색 요청의 비식별 파라미터, search·eval 소비 스키마 고정 (2026-09-14: `scope.build_analysis_scope()` — §10 불변조건 전부(빈 time_ranges 금지/kind 혼용 금지/target_event_types enum/budget 양수) 검증, `hint.vehicle`/`hint.free_text`는 `case.hints`에서 파생, `test_scope.py` 11개로 `scenario_happy_001`(ABSOLUTE)·`scenario_relative_rebase_001`(TIMELINE_RELATIVE) 둘 다 fixture와 일치 확인)
+- [x] 사용자 명령 API(후보 선택, 정정 제출, 재개/재시도 요청)의 입력 스키마 (`domain.select_candidate()`/`correction.apply_correction()`/`jobs.issue_resume_search()` — 전부 단위 테스트 존재)
 
 ### B. Core Flow
 
 - [ ] 5-state 상태 기계 전이 규칙 구현 — 전진 전이 + 뒤 단계에서 앞 단계로 돌아가는 역행 전이(`TIME_HINT_EDIT`, major `TIMELINE_REBASE`, candidate 변경)
-- [ ] Candidate selection — 사용자가 고른 사건은 `case` 소유(`ownership.md` §6), evidence는 참조만 하고 복사해 갖지 않음
-- [ ] `JobRecord`(Job Intent) 생성 — `kind`별(예: `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`, `REPORT_VIDEO_EXPORT`) 발주 규칙
-- [ ] rerun_policy — `RETRY_PLATE_READ`/`RETRY_SEARCH`/`RESUME_SEARCH`(신규, 이번 ERD 결정)는 새 `job_id`, 자동 인프라 재시도(`STALE`)만 같은 `job_id`+`attempt` 증가
-- [ ] `EvidenceNeeds.items` → Job Intent 매핑 (`PLATE_REREAD` 자동 발주, `force_rerun=true`)
-- [ ] stale result 적용 여부 판단 — 오래된 `case_rev`/`timeline_revision` 기준 결과를 domain state에 반영할지 결정
+- [x] Candidate selection — 사용자가 고른 사건은 `case` 소유(`ownership.md` §6), evidence는 참조만 하고 복사해 갖지 않음 (`domain.CaseAggregate.select_candidate()`, `test_domain.py`)
+- [x] `JobRecord`(Job Intent) 생성 — `kind`별(예: `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`, `REPORT_VIDEO_EXPORT`) 발주 규칙 (`jobs.py`, `test_jobs.py::test_job_record_shape_matches_contract_fields`)
+- [x] rerun_policy — `RETRY_PLATE_READ`/`RETRY_SEARCH`/`RESUME_SEARCH`(신규, 이번 ERD 결정)는 새 `job_id`, 자동 인프라 재시도(`STALE`)만 같은 `job_id`+`attempt` 증가 (2026-09-14 구현: `jobs.issue_resume_search`/`issue_plate_reread`, `test_jobs.py::test_resume_search_issues_new_job_id_not_same_job_id_plus_attempt` — scenario-level Mock fixture 재현은 아직 없음, §10 참고)
+- [x] `EvidenceNeeds.items` → Job Intent 매핑 (`PLATE_REREAD`/`OVERLAY_TIME_OCR` 자동 발주, `force_rerun=true`, 원본 Job과 동일한 `input_fingerprint` 재사용 — `jobs.issue_needed_jobs()`, `test_jobs.py` 3건 + `scenario_plate_reread_001` smoke test가 실제 `EvidenceNeeds` fixture로 발주까지 재현)
+- [ ] stale result 적용 여부 판단 — 오래된 `case_rev`/`timeline_revision` 기준 결과를 domain state에 반영할지 결정 (부분 진행, 2026-09-14: **표시 파생값**만 구현됨 — `candidates[].stale_revision`이 candidate 생성 시점 고정값이 아니라 매 투영 시점에 `current_timeline_revision`과 `candidate.timeline_revision`을 비교해서 다시 계산됨을 `view._build_candidates_view()` + `scenario_relative_rebase_001` smoke test로 확인. 하지만 이 항목이 원래 묻는 것 — "오래된 결과를 domain state에 실제로 반영할지"(예: stale EvidenceRecord supersede를 수용/거부하는 판단) — 는 아직 없다. 표시와 domain 반영은 다른 일이라 체크 보류)
 
 ### C. Output Contract
 
-- [ ] `CaseView` 조립 — `stage`/`progress`/`hints`/`candidates`/`evidence`/`requirements_evidence`/`requirements_package`/`package`/`running_jobs`/`notices` 전 필드
-- [ ] `JobRecord` append-only 기록 — 발주 의도만 담고 실행 상태는 담지 않음
-- [ ] `CorrectionRecord` 생성 — `kind`/`target_field`/`previous_value`/`new_value`/`supersedes_ref`/`selection_rev` 스냅샷
-- [ ] `USER_REVIEWED` 상태 — `CaseView.stage`가 아니라 `case_view.user_reviewed: boolean`으로 별도 관리(`ownership.md` §7-③ 종결 사항)
+- [x] `CaseView` 조립 — `stage`/`progress`/`hints`/`candidates`/`evidence`/`requirements_evidence`/`requirements_package`/`package`/`running_jobs`/`notices` 전 필드 (`view.build_case_view()`, **7개 Mock Scenario 전부** 전체 파리티로 검증 — 2026-09-14 갱신, §6/§7 참고)
+- [x] `JobRecord` append-only 기록 — 발주 의도만 담고 실행 상태는 담지 않음 (`CaseAggregate.record_job()`, `job_records` 리스트 append-only)
+- [x] `CorrectionRecord` 생성 — `kind`/`target_field`/`previous_value`/`new_value`/`supersedes_ref`/`selection_rev` 스냅샷 (2026-09-14: `test_scenario_correction_rerun_smoke.py`가 실제 `apply_correction()` 호출 + 전체 필드 assert로 단위 검증 — 이전에 "구현은 있지만 테스트 없음"으로 보류했던 것 해소. correction 제출 자체가 `case_rev`를 올린다는 것도 이때 같이 확정됨)
+- [x] `USER_REVIEWED` 상태 — `CaseView.stage`가 아니라 `case_view.user_reviewed: boolean`으로 별도 관리(`ownership.md` §7-③ 종결 사항) (2026-09-14: `domain.mark_reviewed()` 신설 — `user_reviewed=True` 세팅 + `case_rev` 상승, `scenario_happy_001`의 rev3(`user_reviewed:false`)→rev4(`user_reviewed:true`) 대조로 역산 확인, `test_domain.py::test_mark_reviewed_sets_flag_and_bumps_case_rev`)
 
 ### D. Failure / Partial
 
-- [ ] `JobExecution` STALE→재시도→FAILED 체인을 읽어 `CaseView.progress[].state`에 반영(`RUNNING`→`FAILED`, `scenario_infra_failure_001`)
-- [ ] `CANCELLED→PARTIAL` 흡수 규칙(`case-view/v1.3` §7/§13, 이슈 #33 A-2) — 새 enum 값 추가 없이 `progress[plate_read].state=PARTIAL`로 처리
-- [ ] blocking(`severity=ERROR`,`blocking=true`) vs non-blocking(`severity=INFO`,`blocking=false`) notice 구분 — `readout.plate_read_failed`(ERROR) vs `case.plate_read_cancelled`/`readout.overlay_ocr_failed`(INFO)
-- [ ] `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`(빈 배열)과 실패를 구분해서 `CANDIDATE_REVIEW`에 머무는 경로(`scenario_empty_001`)
+- [x] `JobExecution` STALE→재시도→FAILED 체인을 읽어 `CaseView.progress[].state`에 반영(`RUNNING`→`FAILED`, `scenario_infra_failure_001`) (2026-09-14: `view._job_execution_status_to_progress_state()`가 계약 §13 5개 매핑 QUEUED→PENDING/RUNNING→RUNNING/SUCCEEDED→DONE/FAILED·STALE→FAILED/CANCELLED→PARTIAL을 그대로 구현, `plate_read`/`overlay_time_read`가 서로 독립적으로 움직이는 것까지 `test_scenario_infra_failure_smoke.py`로 4개 revision 전부 재현. "어느 attempt가 최신인가"를 고르는 건 case 책임이 아니라고 보고 호출자가 이미 해석한 status 문자열을 받는 것으로 범위를 좁혔다 — §9 참고)
+- [x] `CANCELLED→PARTIAL` 흡수 규칙(`case-view/v1.3` §7/§13, 이슈 #33 A-2) — 새 enum 값 추가 없이 `progress[plate_read].state=PARTIAL`로 처리 (위와 같은 구현, `scenario_infra_failure_001` rev3/rev4로 검증)
+- [x] blocking(`severity=ERROR`,`blocking=true`) vs non-blocking(`severity=INFO`,`blocking=false`) notice 구분 — `readout.plate_read_failed`(ERROR) vs `case.plate_read_cancelled`/`readout.overlay_ocr_failed`(INFO) (`CaseView.notices`는 호출자가 공급한 값을 그대로 옮기기만 한다 — case가 notice를 자체 합성하지 않는다는 원칙(§11)은 그대로 유지하면서, 두 종류가 섞인 실제 fixture를 `build_case_view()`가 깨지지 않고 그대로 통과시키는지 `scenario_infra_failure_001`의 4개 revision으로 확인)
+- [x] `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`(빈 배열)과 실패를 구분해서 `CANDIDATE_REVIEW`에 머무는 경로(`scenario_empty_001`) (`domain.receive_candidates()`가 빈 배열이어도 항상 `CANDIDATE_REVIEW`로 전진, `progress`는 3개 항목으로 truncate — `test_scenario_empty_smoke.py`, `test_domain.py::test_empty_candidates_still_advances_to_candidate_review`)
 
 ### E. State / Lifecycle
 
-- [ ] `case_rev` 증가 규칙 — 요청 시점 케이스 리비전
-- [ ] `selection_rev` 내부 저장 — **단일 현재값만, 별도 이력 테이블 없음**(`docs/modules/case/decisions/case-selection-revision-persistence.md`, 2026-09-13 결정). `CorrectionRecord`/`EvidenceRecord` 생성 시점에 스냅샷으로 굳혀 넘기고 `CaseView`로는 노출하지 않음
-- [ ] `candidates[].timeline_revision`/`stale_revision`/`stale_revision_label_key` — timeline rebase 후 「과거 revision 기준」 표시(`scenario_relative_rebase_001`, `docs/modules/case/decisions/candidate-stale-revision-display.md`)
+- [x] `case_rev` 증가 규칙 — 요청 시점 케이스 리비전 (`test_domain.py::test_forward_transitions_bump_case_rev`)
+- [x] `selection_rev` 내부 저장 — **단일 현재값만, 별도 이력 테이블 없음**(`docs/modules/case/decisions/case-selection-revision-persistence.md`, 2026-09-13 결정). `CorrectionRecord`/`EvidenceRecord` 생성 시점에 스냅샷으로 굳혀 넘기고 `CaseView`로는 노출하지 않음 (`test_domain.py`, `view.py`가 절대 노출하지 않는 것도 구현대로)
+- [x] `candidates[].timeline_revision`/`stale_revision`/`stale_revision_label_key` — timeline rebase 후 「과거 revision 기준」 표시(`scenario_relative_rebase_001`, `docs/modules/case/decisions/candidate-stale-revision-display.md`) (2026-09-14: candidate 생성 시점 고정값이 아니라 매 투영 시점에 `current_timeline_revision`과 `candidate.timeline_revision`을 비교하는 파생값으로 구현 — `view._build_candidates_view()`, `test_scenario_relative_rebase_smoke.py`가 rebase 전(`false`)/후(`true`) 전환과 `stale_revision_label_key` 값까지 fixture와 바이트 단위로 확인)
 
 ### F. Integration (접합부)
 
-- [ ] `web`(신유민)이 `CaseView` 하나만으로 UI를 그릴 수 있는지 — read dependency 단일 계약 원칙 검증
-- [ ] `common/runtime`(김준영, 구현 정철원)의 `JobExecution`을 `case`가 어떻게 poll/구독하는지 — 이 부분 구현은 `case` 담당이 아니라 소비 방식만 정의
-- [ ] `evidence`(김준영)의 `EvidenceNeeds` → `case`의 Job Intent 번역 규칙(§11-4)
-- [ ] 자산 생성/재사용 시 `case_id`를 recording의 `case_asset_links` 등록 경계로 전달하는 호출 방식 확정 — 스키마는 recording이 이미 결정(`erd-draft.md` §4.1), `purge_case()` 삭제 범위가 이 연결에 의존
+- [ ] `web`(신유민)이 `CaseView` 하나만으로 UI를 그릴 수 있는지 — read dependency 단일 계약 원칙 검증 — **통합 대기(2026-09-14)**: case 쪽 산출물(`CaseView`)은 7개 시나리오 전체 파리티로 검증 끝났지만, `web`이 실제로 이 하나만 읽는지는 `web` 쪽 코드와 맞춰봐야 확인 가능
+- [ ] `common/runtime`(김준영, 구현 정철원)의 `JobExecution`을 `case`가 어떻게 poll/구독하는지 — 이 부분 구현은 `case` 담당이 아니라 소비 방식만 정의 — **통합 대기(2026-09-14)**: case가 `JobExecution.status` 문자열을 받아 처리하는 로직(`view._job_execution_status_to_progress_state()`)은 단위 검증 끝났지만, 그 문자열을 실제로 poll/구독해 case에 넘기는 배선은 `common/runtime` 쪽 구현과 맞물려야 확인 가능
+- [ ] `evidence`(김준영)의 `EvidenceNeeds` → `case`의 Job Intent 번역 규칙(§11-4) — **통합 대기(2026-09-14)**: case 쪽 번역 로직(`jobs.issue_needed_jobs()`)은 단위+scenario 테스트로 끝남(§3-B) — 남은 건 evidence 쪽 정의와 중복/불일치가 없는지 상호 검토뿐
+- [ ] 자산 생성/재사용 시 `case_id`를 recording의 `case_asset_links` 등록 경계로 전달하는 호출 방식 확정 — 스키마는 recording이 이미 결정(`erd-draft.md` §4.1), `purge_case()` 삭제 범위가 이 연결에 의존 — recording 쪽 호출 인터페이스가 아직 확정 전이라 case 혼자 완결 불가
 
 ### G. Test / Evaluation
 
-- [ ] Tool Trajectory 통과 판정(C-3) 규칙의 최소 테스트 케이스
-- [ ] `export_learning_log()` — 익명화 규칙 3줄(번호판 문자열 제거/정확 좌표 제거/원본 참조는 로컬 케이스 ID만, `correction-log-reuse.md`) 준수 여부 테스트
-- [ ] eval이 소비하는 `case` 산출물(`JobRecord`/`CaseView` 간접)이 `data/mock/expected/*.expected.json`의 참조 방식과 충돌하지 않는지
+- [ ] Tool Trajectory 통과 판정(C-3) 규칙의 최소 테스트 케이스 — §8 질문 3(GitHub PR 코멘트로 최신본 확인)과 연결, 혼자 결정할 수 없는 것으로 남겨둠
+- [x] `export_learning_log()` — 익명화 규칙 3줄(번호판 문자열 제거/정확 좌표 제거/원본 참조는 로컬 케이스 ID만, `correction-log-reuse.md`) 준수 여부 테스트 (2026-09-14: `correction_log.py` — 결정문이 명시한 1단계(평가 재사용)만 구현, 동의 게이팅은 결정문 자체가 미결이라 임의로 만들지 않음. `test_correction_log.py` 5개 — `vehicle_number`/`location.coord`는 mock pack에 실제 fixture가 없어 계약이 정한 값 공간(§6) 기준 합성 데이터로, `occurred_at`은 실제 `scenario_correction_rerun_001` fixture로 검증)
+- [ ] eval이 소비하는 `case` 산출물(`JobRecord`/`CaseView` 간접)이 `data/mock/expected/*.expected.json`의 참조 방식과 충돌하지 않는지 — `expected/` 디렉터리는 case가 손대지 않기로 합의된 영역(§10, 김대원 담당)이라 case 혼자 검증 불가
 
 ### H. Operational
 
-- [ ] Timeout / Long-running Job Fallback 정책(A-1) 최소 구현 — `docs/modules/case/decisions/timeout-fallback.md` 기준
-- [ ] `purge_case(case_id) -> DeletionReport` 발주 경로 — recording의 `case_asset_links`(§9 접합부 참고, `erd-draft.md` §4.1)가 이 호출의 삭제 대상 조회 근거가 된다
+- [ ] Timeout / Long-running Job Fallback 정책(A-1) 최소 구현 — `docs/modules/case/decisions/timeout-fallback.md` 기준 — **막힘(2026-09-14)**: 결정 문서 자체가 구체 threshold 수치를 `search` baseline 실측 대기로 명시하고, job 유지/취소 정책 표도 "미결"로 남겨뒀다 — case가 숫자를 임의로 정하면 결정문이 금지하는 것을 그대로 어기게 되어 보류(negligence 아니라 결정문 자체의 blocking)
+- [ ] `purge_case(case_id) -> DeletionReport` 발주 경로 — recording의 `case_asset_links`(§9 접합부 참고, `erd-draft.md` §4.1)가 이 호출의 삭제 대상 조회 근거가 된다 — recording 쪽 등록 경계 호출 방식이 §3-F/§9와 같은 이유로 아직 통합 대기라 case 혼자 완결 불가
 
 ---
 
@@ -150,18 +155,20 @@
 | `scenario_infra_failure_001`(J) | `JobExecution` STALE(attempt1)→FAILED(attempt2, 같은 `job_id`) | `progress[plate_read].state` RUNNING→FAILED, blocking ERROR notice(`readout.plate_read_failed`) 추가, v5 추가분(`CANCELLED→PARTIAL` 흡수, `overlay_ocr_failed`) 반영 | `case_views` rev1(RUNNING)→rev2(FAILED) | STALE 재시도 체인과 완전 실패(결과 객체 부재) 규칙을 정확히 재현, non-blocking INFO notice와 blocking ERROR notice를 구분 |
 | `scenario_relative_rebase_001`(K) | `RecordingTimeline.timeline_status=USABLE_RELATIVE_ONLY`, revision 1→2 rebase, `SpanResolution.status=PARTIAL` | `candidates[].timeline_revision` 불변 보존, `stale_revision` false→true 전환, `stale_revision_label_key` 채움 | `case_views[1].candidates[0].stale_revision=true` | rebase 후에도 과거 candidate의 timeline 좌표를 덮어쓰지 않고 "오래된 기준" 표시로만 처리하는 것을 재현 |
 
+> **2026-09-14 갱신.** 위 7개 Scenario 전부 `test_scenario_*_smoke.py`(7개 파일)로 `build_case_view()` 출력을 fixture와 바이트 단위 비교하는 unit 레벨 검증이 끝났다. `scenario_infra_failure_001`/`scenario_relative_rebase_001`은 fixture 자체가 search 단계 `case_rev` 이력을 전부 기록하지 않아(case가 만든 gap이 아님) 그 두 시나리오만 `CaseAggregate`를 fixture가 전제하는 시작 상태로 직접 구성한 뒤 이후 단계부터 실제 domain 메서드로 재생했다 — 각 테스트 파일 docstring에 근거를 남겨뒀다.
+
 ---
 
 ## 7. Merge 전 셀프 체크 증빙
 
 Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(전부 필수는 아니다 — 코드가 없는 지금은 목록만 정의):
 
-- [ ] `data/mock/validate_mock_pack.py` 통과 로그(전체 22개 fixture 참조 무결성) — 이미 존재, Merge 전 재실행 결과 스크린샷/로그
-- [ ] `case` 구현 코드에 대한 단위 테스트 결과(상태 기계 전이 표 기반, §3-B) — **[구현 후 작성]**
-- [ ] 7개 Mock Scenario를 실제 `case` 코드에 입력했을 때의 `CaseView` 출력 JSON diff(Mock fixture와 일치하는지) — **[구현 후 작성]**
+- [x] `data/mock/validate_mock_pack.py` 통과 로그(전체 fixture 참조 무결성) — 2026-09-14 재실행: `PASS`, 46 files / 7 scenarios
+- [x] `case` 구현 코드에 대한 단위 테스트 결과(상태 기계 전이 표 기반, §3-B) — `pytest src/daesingo/case/tests/` **43개** 전부 통과(2026-09-14, 16→43), `scripts/check_boundaries.py` 위반 0건
+- [x] 7개 Mock Scenario를 실제 `case` 코드에 입력했을 때의 `CaseView` 출력 JSON diff(Mock fixture와 일치하는지) — **7/7 완료(2026-09-14)**: `scenario_happy_001`/`scenario_unknown_abstain_partial_001`(이전 완료) + `scenario_empty_001`/`scenario_plate_reread_001`/`scenario_correction_rerun_001`/`scenario_infra_failure_001`/`scenario_relative_rebase_001`(이번에 추가) — `test_scenario_*_smoke.py` 7개 전부 `build_case_view()`가 fixture와 바이트 단위 일치
 - [ ] `CaseView`를 소비하는 `web` 쪽 화면 캡처(최소 happy path 1개) — 신유민과 접합 확인 후 첨부, **[구현 후 작성]**
-- [ ] 익명화 로그 export(`export_learning_log()`) 결과 샘플 — 3줄 규칙 준수 확인 로그, **[구현 후 작성]**
-- [ ] 이번 라운드 ERD 결정 2건(`selection_rev` 단일 저장, 재개 시 새 `job_id`) 반영 커밋 diff — `docs/erd-review-case-decisions` 브랜치, 이미 존재
+- [x] 익명화 로그 export(`export_learning_log()`) 결과 샘플 — 3줄 규칙 준수 확인 로그 (2026-09-14: `test_correction_log.py` 5개가 규칙 준수를 코드로 검증 — `vehicle_number`/`location.coord`는 mock pack에 fixture가 없어 합성 데이터, `occurred_at`은 실제 fixture. 사람이 읽는 별도 샘플 로그 파일은 아직 없음)
+- [x] 이번 라운드 ERD 결정 2건(`selection_rev` 단일 저장, 재개 시 새 `job_id`) 반영 커밋 diff — `docs/erd-review-case-decisions` 브랜치, 이미 존재
 
 ---
 
@@ -185,6 +192,8 @@ Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(
 | `search`(서어진) | `AnalysisScope`(case 단독 Producer) | case가 발행한 스키마를 search가 합의 없이 그대로 소비하는지(스키마 변경 시 case가 일방 공지) |
 | `recording`(정철원) | `purge_case(case_id) -> DeletionReport`, `case_asset_links`(recording 내부) | 스키마는 해소됨(§4.1) — 남은 것은 자산 생성/재사용 시 `case_id`를 recording 등록 경계에 전달하는 **호출 방식**(공개 함수 서명 변경 아님) 조율 |
 
+> **2026-09-14 갱신.** 위 표는 여전히 전부 미확인이다 — 이번에 끝낸 건 case 쪽 산출물이 **자기 계약을 혼자 만족하는지**(unit/scenario 테스트)이지, 상대 모듈과 실제로 맞물리는지(접합 실증)가 아니다. 예: `JobExecution.status`를 case가 올바르게 소비하는 로직은 검증됐지만, 그 status를 실제로 poll/구독해 넘기는 `common/runtime` 쪽 배선과 맞춰본 적은 없다. 이 구분을 §7/§9 항목에도 그대로 반영했다.
+
 ---
 
 ## 10. 부분 완료/통합 대기 항목
@@ -193,11 +202,15 @@ Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(
 
 | 항목 | 분류 | 사유 |
 | --- | --- | --- |
-| `selection_rev` 단일 현재값 저장 실제 구현 | 실제 미완료 | 방향은 결정됐으나(2026-09-13) 코드/fixture 없음 |
-| "이어서 찾기" 새 `job_id` 발주 실제 fixture | 실제 미완료 | 방향은 결정됐으나(2026-09-13, `docs/modules/case/decisions/job-resume-identity-policy.md`) 데모 fixture 없음(Should-1, 비차단) |
+| ~~`selection_rev` 단일 현재값 저장 실제 구현~~ | **해소(2026-09-14)** | `domain.CaseAggregate.selection_rev` 필드 + `select_candidate()` 증가 로직 구현, `test_domain.py`로 검증됨 |
+| "이어서 찾기" 새 `job_id` 발주 — scenario-level Mock fixture 재현 | 실제 미완료 | 단위 레벨 코드·테스트는 있음(2026-09-14, `jobs.issue_resume_search`, `test_jobs.py::test_resume_search_issues_new_job_id_not_same_job_id_plus_attempt`) — `build_case_view()`로 `data/mock/case/scenario_*.json` 시나리오를 전체 재현하는 데모는 여전히 없음(Should-1, 비차단) |
 | case→recording 자산 등록 호출 방식(`case_id` 전달) | 통합 대기 | 스키마(`case_asset_links`)는 recording이 확정(2026-09-13, `erd-draft.md` §4.1) — 남은 것은 case가 자산 생성/재사용 시점에 `case_id`를 recording 등록 경계로 넘기는 구체 호출 방식 조율뿐, 공개 함수 서명 변경 아님 |
 | `CorrectionRecord` 2단계(학습 재사용) 동의 체계 | 통합 대기 | `correction-log-reuse.md` §10-3 `[미결 유지]`와 연결, PM(김준영) 승인 필요 |
 | Eval Ground Truth(`expected/*.expected.json`) | 통합 대기(타 담당) | `case`는 이 디렉터리를 손대지 않기로 합의(`eval-round2-ground-truth-and-usage.md`), 김대원 담당 |
+| ~~`EvidenceNeeds.items` → Job Intent 자동 매핑~~ | **해소(2026-09-14)** | `jobs.issue_needed_jobs()` — 원본 Job의 `input_fingerprint` 재사용, `force_rerun=true` 세팅까지 `test_jobs.py` 3건 + `scenario_plate_reread_001` smoke test로 검증됨 |
+| ~~`candidates[].stale_revision` 파생 계산~~ | **해소(2026-09-14)** | `view._build_candidates_view()` — `current_timeline_revision` 비교 방식, `scenario_relative_rebase_001` smoke test로 검증됨 |
+| Timeout/Long-running Job Fallback 수치·정책(A-1) | 통합 대기(막힘) | `timeout-fallback.md`가 threshold 수치를 `search` baseline 실측 대기로, job 유지/취소 정책을 "미결"로 명시 — case가 임의로 숫자를 정하면 결정문 위반, 실제 미완료 아니라 case 혼자 끝낼 수 없는 항목 |
+| hints(time/vehicle/situation/location) 구조화 | 통합 대기(막힘) | "구조화"의 정의(파싱 규칙 vs 필드 검증 vs 기타)가 어느 문서에도 없음 — 팀 확인 없이 case 혼자 스펙을 만들 수 없어 현재는 pass-through만 구현 |
 
 ---
 
@@ -227,24 +240,25 @@ Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(
 
 ## 13. 검증 명령
 
-**[구현 후 작성]** — 아직 `case` 실행 코드가 없어 실제 명령은 코드 작성 후 채운다. 지금 존재하는 것과 앞으로 필요한 자리만 명시한다.
+**2026-09-14 갱신.** `case` 실행 코드가 생겨서 아래는 전부 실제로 동작하는 명령이다(플레이스홀더 아님).
 
 ```bash
-# 이미 존재 — Mock Pack 참조 무결성(모든 모듈 공통, case fixture 포함)
+# Mock Pack 참조 무결성(모든 모듈 공통, case fixture 포함)
 python data/mock/validate_mock_pack.py
+# → PASS, 46 files / 7 scenarios (2026-09-14 재실행 확인)
 
-# [구현 후 작성] — case 상태 기계 단위 테스트
-# pytest tests/case/test_state_machine.py
+# case 전체 테스트 — 상태 기계 전이, JobRecord/Jobs 발주, CaseView projection,
+# CorrectionRecord, AnalysisScope, export_learning_log(), 7개 Scenario smoke test 포함
+PYTHONPATH=src pytest src/daesingo/case/tests/ -q
+# → 43 passed (2026-09-14)
 
-# [구현 후 작성] — 7개 Scenario를 case 코드에 흘려 CaseView 출력을 Mock fixture와 비교
-# pytest tests/case/test_scenario_replay.py
-
-# [구현 후 작성] — export_learning_log() 익명화 규칙 테스트
-# pytest tests/case/test_learning_log_export.py
+# case가 다른 모듈 내부 구현을 침범하지 않는지(경계 위반 0건이어야 함)
+python scripts/check_boundaries.py
+# → PASS, 0 violations (2026-09-14)
 ```
 
 ---
 
 ## 14. 회의에서 말할 한 줄 요약
 
-> "`case`는 Mock Pack이 이미 증명한 5-state 상태 기계·`JobRecord` 발주 규칙·`CaseView` projection을 그대로 코드로 옮기는 것이 1차 완료이고, 실행 lifecycle·신고 판정·recording 자산 소유는 내 범위가 아니다 — 이번 ERD 리뷰로 `AnalysisScope` 단독 소유, recording `case_id` 결합 스키마, `selection_rev` 저장, 재개 job_id 정책까지 전부 결정됐고, 남은 건 recording 등록 경계 호출 방식 하나뿐이다."
+> "`case`는 Mock Pack이 이미 증명한 5-state 상태 기계·`JobRecord` 발주 규칙·`CaseView` projection을 그대로 코드로 옮기는 것이 1차 완료이고, 실행 lifecycle·신고 판정·recording 자산 소유는 내 범위가 아니다. 2026-09-14 기준 `case` 혼자 끝낼 수 있는 건 전부 끝났다 — 7개 Mock Scenario 전체 파리티, `EvidenceNeeds→Job Intent` 자동 발주, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `export_learning_log()`까지 43개 테스트로 검증됐다. 남은 건 세 종류뿐이다: ① 다른 모듈과의 실제 접합 실증(`web`/`common-runtime`/`recording`, case 혼자 증명 불가), ② 결정문 자체가 수치를 미결로 남긴 것(Timeout/Fallback — `search` baseline 대기), ③ 정의 자체가 없는 것(hints 구조화 — 팀 확인 필요)."
