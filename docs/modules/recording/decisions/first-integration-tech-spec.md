@@ -1,7 +1,7 @@
 # recording 1차 Mock E2E Tech Spec
 
 **Owner:** 정철원  
-**상태:** Draft — 1차 구현 기준  
+**상태:** Implemented — 1차 Mock E2E 기준
 **기준 브랜치:** `feature/recording-first-integration`  
 **기준 커밋:** `53d2722`  
 **범위:** `recording` 공개 입출력과 정철원 담당 `JobExecution` 구현  
@@ -258,3 +258,11 @@ pytest
 - smoke/contract test와 공용 검증 스크립트가 통과한다.
 
 실제 ffmpeg, provider, DB Queue가 Stub이라는 이유만으로 미완료로 보지 않는다. 반대로 문서와 fixture만 있고 실행 가능한 공개 entry가 없으면 완료로 보지 않는다.
+
+## 13. 구현 결과
+
+- `RecordingService` 공개 capability와 in-memory repository를 구현했다.
+- recording·common 7개 시나리오 fixture를 Canonical 모델로 검증한다.
+- Happy Path, Empty, relative rebase/PARTIAL, infra failure 접합을 자동 테스트한다.
+- `examples/recording_consumer.py`에서 저장소 내부를 참조하지 않는 Consumer 호출과 JSON 출력을 재현한다.
+- 실제 ffmpeg/provider/storage/DB Queue는 §4의 제외 범위대로 후속 구현에 남긴다.

@@ -87,7 +87,7 @@ Consumer가 내부 구현을 몰라도 연결할 수 있는 공개 entry와 JSON
 - [ ] ID에 timeline 위치, stream role 또는 offset을 인코딩하지 않는다.
 - [ ] `RecordingTimeline`의 `timeline_id + revision`을 함께 보존한다.
 - [ ] 사용한 시각 후보와 anchor 상태를 보존한다.
-- [ ] `AssetSpan.sequence`는 1부터 연속 증가한다.
+- [ ] `AssetSpan.sequence`는 0부터 연속 증가한다.
 - [ ] `spans + missing_ranges`가 요청 범위를 빠짐없이 설명한다.
 - [ ] 같은 MediaStream의 span이 중복되지 않는다.
 - [ ] 다른 MediaStream의 동일 시간대 span은 정상적으로 허용한다.
@@ -366,11 +366,22 @@ $env:PYTHONUTF8='1'; python scripts/check_boundaries.py
 
 recording 및 JobExecution 구현 실행·테스트 명령:
 
-```text
-[구현 후 작성]
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe examples/recording_consumer.py
 ```
 
-현재 `src/daesingo/recording`, `src/daesingo/common`, `src/daesingo/worker`, `tests`에는 실행 코드가 없으므로 명령을 임의로 만들지 않는다.
+Consumer 예시는 public fixture loader와 `RecordingService`만 사용하며 저장소 내부를 직접 참조하지 않는다. 실제 ffmpeg/provider/storage/DB Queue는 1차 완료 제외 범위로 남는다.
+
+### 1차 구현 검증 결과 (2026-09-14)
+
+- recording·common/runtime 자동 테스트: 전체 통과
+- 공용 Mock validator: 전체 통과
+- Contract fixture 검사: 전체 통과
+- Boundary 검사: 위반 0건
+- Happy Path Consumer 예시: Canonical JSON 출력 확인
+
+위 결과는 Mock E2E 기준의 구현 증빙이다. 실제 미디어 처리와 운영 인프라 항목의 완료를 의미하지 않는다.
 
 ---
 
