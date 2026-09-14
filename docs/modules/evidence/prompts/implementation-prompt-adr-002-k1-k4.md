@@ -267,7 +267,7 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 
 ### W7 — 문서 갱신
 
-1. `src/daesingo/evidence/README.md` — 공개 함수 시그니처(`rule_codes` 제거·`time_resolution` 추가), 정책 데이터 목록(K1 파일과 새 catalog revision 추가), 재현 명령, 상태 문단.
+1. `src/daesingo/evidence/README.md` — 공개 함수 시그니처(`rule_codes` 제거·`time_resolution` 추가), 정책 데이터 목록(K1 파일과 새 catalog revision 추가), 재현 명령, 상태 문단. **정책 데이터 목록에서 `requirement_rules_v2.json`과 `v3` 중 어느 것이 활성인지 한 줄로 분명히 하라** — 파일이 둘 남으므로 목록만 보고 헷갈리면 안 된다. v2에는 「채택됐으나 첫 실행 전에 v3로 대체됨」을 적는다.
 2. [`first-completion-result.md`](../first-completion-result.md) — 추적표에 K1~K4와 D1 반영 결과를 반영한다. Q1 행(「U 정상 Package는 `package.input.location_missing`으로 보류」)이 D1 종결로 바뀐다. 기존 완료 조건을 축소하거나 체크박스를 일괄 완료 처리하지 마라.
 3. **실행·검수 기록은 새 리뷰 보고서로 남긴다.** `docs/modules/evidence/reviews/13_adr-002-003-implementation_<YYYY-MM-DD>.md` 형태로 작성하고 `reviews/README.md` 목록에 추가한다. **번호 11·12는 이미 사용 중이다.**
 4. **ADR 본문의 결정 내용을 고쳐 쓰지 마라.** ADR은 결정 기록이고 실행 증빙의 소유자가 아니다(`docs/README.md`·`prompts/README.md`의 폴더 역할 구분). 구현 중 ADR의 사실관계 오류를 발견하면 직접 고치지 말고 발견 사실과 근거를 보고에 남겨 김준영이 ADR §7(변경 규칙)로 처리하게 하라.
@@ -341,6 +341,8 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 3. `validation.py`의 `location` 검사를 「키 필수 + `null` 허용」으로 바꾼다. 키가 없거나 빈 객체면 위반이다.
 4. `_location_snapshot`이 대표값을 못 만들 때 `null`을 내도록 한다.
 5. **§5.12의 갈래 분류를 지킨다.** 위치 부재는 「정책 엔진 오류」도 「업무상 `UNKNOWN`」도 아닌 **`WARN`**이다. §5.12의 `UNKNOWN` 목록에서 「Package 표시용 위치가 아직 없음」이 빠졌다(§5.12의 D1 블록).
+6. **`requirement_rules_v2.json`은 한 글자도 고치지 않는다.** 채택됐으나 첫 실행 전에 대체된 revision으로 그대로 남긴다(ADR-003 §5.5). 지우지도 마라.
+7. **활성 catalog 선택은 코드에서 한 곳에만 둔다.** 이제 catalog 파일이 둘이므로, 호출자가 파일을 골라 넣거나 파일명을 여기저기서 조립하는 구조를 만들지 마라. 「어느 catalog가 활성인가」를 읽으려면 한 군데만 보면 되게 한다.
 
 **완료 조건**
 
@@ -348,6 +350,7 @@ v2에서는 사건 장면·전후 상황 세 rule이 관찰값 없이 `UNKNOWN`�
 - U의 `FINAL_PACKAGE` `overall`이 `WARN`이고 `PACKAGE_READY`가 성립한다.
 - 두 rule 중 하나만 바꾸면 U가 `UNKNOWN`으로 떨어진다는 사실이 테스트로 드러난다.
 - 출력 `policy_ref`가 `policy/requirement-rules-v3`이고, 그 값이 코드 상수가 아니라 로드한 catalog에서 온다.
+- **재실행 후 어떤 Artifact도 `policy/requirement-rules-v2`를 싣지 않는다.** baseline 4종과 `run-summary.json`을 실제로 확인해 기록한다.
 - `EVIDENCE`·`FINAL_PACKAGE` 두 scope 모두 위치 부재를 `WARN`으로 판정한다(§5.4의 D1 블록). **위치 판정 테스트는 여기서 처음이자 마지막으로 쓴다.**
 
 **하지 말 것**
@@ -366,7 +369,7 @@ W10·W11은 문서 개정이라 언제든 할 수 있다. W12는 **W3(catalog �
 
 권장 순서: **W1 → W2 → W3 → W10 → W11 → W12 → W4 → W5 → W6 → W7 → W8 → W9**
 
-`requirement-rules-v2`는 아직 어떤 Artifact도 이 catalog로 생성된 적이 없다. 그래도 덮어쓰지 않는다 — ADR-002 §7의 규칙이다. 대신 **v2가 채택됐으나 첫 실행 전에 새 revision으로 대체됐다**는 사실을 W7의 문서와 W9의 ADR에 남겨라.
+`requirement-rules-v2`는 아직 어떤 Artifact도 이 catalog로 생성된 적이 없다. **그래도 고치지 않고 남긴다** — 판단 근거는 ADR-003 §5.5의 「v2를 고치지 않고 v3를 내는 이유」에 적혀 있다(요지: v2 파일을 고치면 `ACCEPTED` 상태인 ADR-002의 결정 표를 고쳐야 한다). 이 선택을 다시 검토하지 말고, **v2가 채택됐으나 첫 실행 전에 v3로 대체됐다**는 사실을 W7의 문서와 W9의 ADR에 남겨라.
 
 ### W9 — 구현 ADR 작성 (마지막 순서)
 

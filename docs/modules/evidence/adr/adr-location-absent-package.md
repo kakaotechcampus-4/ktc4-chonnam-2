@@ -131,6 +131,18 @@ location: {
 
 `evidence.location.present`(EVIDENCE scope)는 v2에서 이미 `no_location_value: WARN`이라 바꾸지 않는다.
 
+#### v2를 고치지 않고 v3를 내는 이유
+
+v2는 **아직 어떤 Artifact도 이 catalog로 생성된 적이 없다.** 로더가 없어 한 번도 실행되지 않았고, `policy_ref: policy/requirement-rules-v2`를 실은 판정 결과가 존재하지 않는다. 「덮어쓰지 않는다」 규칙의 목적이 발행된 판정의 재현성 보존이라면, 실행된 적 없는 v2를 제자리에서 고치는 선택지도 성립한다 — 파일 하나로 끝나고 죽은 데이터가 남지 않는다.
+
+그래도 **v2를 보존한다.** 결정적인 이유는 [`ADR-EVIDENCE-002`](adr-first-completion-owner-decisions.md)가 **v2의 내용을 서술하고 있다**는 점이다. §5.6의 무조건 rule 표는 `package.location.present`를 `PASS`/`UNKNOWN`으로, §5.14는 catalog 식별자를 `policy/requirement-rules-v2`로 적는다. v2 파일의 판정을 바꾸면 `ACCEPTED` 상태인 ADR의 **결정 내용 자체**를 고쳐야 ADR과 데이터가 맞는다. 그것은 이 레포가 일관되게 지켜온 「ADR은 결정 기록이며 고쳐 쓰지 않고 새 결정으로 덮는다」와 정면으로 어긋난다. 주석을 덧붙이는 것과 결정 표를 고쳐 쓰는 것은 다르다.
+
+따라서 v2는 **채택됐으나 첫 실행 전에 대체된 revision**으로 남는다. 대신 「어느 catalog가 활성인가」가 모호해지지 않도록 세 가지를 함께 둔다.
+
+1. v3가 `supersedes_policy_ref`로 v2를 가리킨다.
+2. 활성 catalog 선택은 코드에서 **한 곳**에만 있다. 임의의 catalog 파일을 골라 로드하는 구조를 두지 않는다.
+3. 어떤 Artifact도 `policy/requirement-rules-v2`를 싣지 않는다는 것을 검증으로 고정한다.
+
 ### 5.6 D1-e — 사용자 고지의 경계
 
 위치가 비었다는 사실을 사용자에게 말하는 것은 필요하다. 다만 **그 표현은 `case`·`web`이 소유하고 이 ADR이 정하지 않는다.** `evidence`가 사용자에게 직접 묻거나 말하지 않는다.
