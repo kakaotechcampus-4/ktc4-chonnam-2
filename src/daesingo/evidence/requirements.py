@@ -26,9 +26,8 @@ _PACKAGE_ROLES = {"REPORT_VIDEO", "PLATE_IMAGE"}
 _SUPPORTED_RULES = {
     "evidence.vehicle_number.present", "evidence.occurred_at.present",
     "evidence.visual_event.present", "evidence.location.present",
-    "package.asset.report_video.exists", "package.event.violation_visible_in_report_video",
-    "package.event.pre_context_present", "package.event.post_context_present",
-    "package.vehicle.plate_visible_in_report_video", "package.location.present",
+    "package.asset.report_video.exists", "package.vehicle.plate_visible_in_report_video",
+    "package.location.present",
     "package.report.content_length", "package.evidence.situation_response",
     "package.asset.image.each_size", "package.asset.video.each_size",
     "package.asset.total_size", "package.asset.image.count", "package.asset.video.count",
@@ -178,9 +177,6 @@ def _observation_check(rule: Contract, observation_facts: Contract) -> Contract:
     condition = "not_observed" if fact is None else "observed_true" if fact["value"] else "observed_false"
     code = rule["code"]
     reason_roots = {
-        "package.event.violation_visible_in_report_video": "event.violation_visibility",
-        "package.event.pre_context_present": "event.pre_context",
-        "package.event.post_context_present": "event.post_context",
         "package.vehicle.plate_visible_in_report_video": "readout.plate_visibility",
         "package.time.overlay_visible": "time.overlay_visibility",
         "package.time.post_stamp_applied": "time.post_stamp",

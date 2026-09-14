@@ -47,7 +47,7 @@ _IMPLEMENTATION_FILES = (
     "src/daesingo/evidence/policy.py",
     "src/daesingo/evidence/policy_data.json",
     "src/daesingo/evidence/policy_catalog.py",
-    "src/daesingo/evidence/requirement_rules_v3.json",
+    "src/daesingo/evidence/requirement_rules_v4.json",
     "src/daesingo/evidence/requirements.py",
     "src/daesingo/evidence/safety_report_policy_v1_1.json",
     "src/daesingo/evidence/time_resolution.py",
@@ -448,10 +448,10 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     }
     if scenario_id == "scenario_happy_001":
         comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
-        comparison["known_differences"].append("Baseline uses safety-report-policy/v1.1 text and policy_ref; the shared package still uses older text and policy/package-assembly-v1.")
+        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and safety-report-policy/v1.1; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.")
         comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
     if scenario_id == "scenario_unknown_abstain_partial_001":
-        comparison["known_differences"].append("The baseline accepts location=null under report-package/v1.1, but the shared scenario has no observation facts for the three new event-context rules, so FINAL_PACKAGE remains UNKNOWN.")
+        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.")
         comparison["known_differences"].append("The no-location generic renderer omits the location phrase and never invents a location value.")
 
     return {
@@ -540,7 +540,7 @@ def run_all(root: Path, output_dir: Path) -> Contract:
         "implementation_fingerprints": fingerprints,
         "scenarios": results,
         "readiness": "PARTIAL_READY",
-        "reason": "Shared upstream contracts and a consumer reader are executable; H/U FINAL_PACKAGE remain UNKNOWN because the shared inputs contain no observations for the new event-context rules, and no real case projection is connected.",
+        "reason": "Shared upstream contracts and a consumer reader are executable; H/U Package assembly succeeds under requirement-rules-v4, while real case projection and the I4 plate/time observation wiring remain unconnected.",
     }
     _write(output_dir / "run-summary.json", summary)
     return summary

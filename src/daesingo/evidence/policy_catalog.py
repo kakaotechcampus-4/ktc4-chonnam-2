@@ -12,7 +12,7 @@ from .errors import PolicyConfigurationError
 
 Contract = dict[str, Any]
 _POLICY_DIR = Path(__file__).parent
-_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v3.json"
+_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v4.json"
 _CATEGORIES = {"EVIDENCE", "TIME", "VEHICLE", "LOCATION", "ASSET", "DEADLINE", "REPORT_CONTENT"}
 _OUTCOMES = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
 
@@ -159,7 +159,7 @@ def validate_requirement_catalog(value: Contract) -> Contract:
     if not isinstance(scopes, dict) or set(scopes) != {"EVIDENCE", "FINAL_PACKAGE"}:
         _fail("requirement catalog scopes are invalid")
     all_codes: list[str] = []
-    for scope, expected_count in (("EVIDENCE", 4), ("FINAL_PACKAGE", 15)):
+    for scope, expected_count in (("EVIDENCE", 4), ("FINAL_PACKAGE", 12)):
         entry = scopes[scope]
         rules = entry.get("always") if isinstance(entry, dict) else None
         if not isinstance(rules, list) or len(rules) != expected_count:

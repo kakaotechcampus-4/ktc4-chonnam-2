@@ -15,21 +15,17 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
     def run_case(self, scenario_id: str):
         return run_scenario(ROOT, scenario_id, CONFIGS[scenario_id])
 
-    def test_happy_connects_refs_and_exposes_missing_event_observations(self):
+    def test_happy_connects_refs_and_emits_ready_package(self):
         result = self.run_case("scenario_happy_001")
         outputs = result["outputs"]
         record = outputs["evidence_records"][0]
         self.assertEqual(["OK"], [item["status"] for item in outputs["time_resolutions"]])
         self.assertEqual([], outputs["evidence_needs"][0]["items"])
-        self.assertEqual(["PASS", "UNKNOWN"], [item["overall"] for item in outputs["requirement_reports"]])
-        self.assertEqual([], outputs["report_packages"])
+        self.assertEqual(["PASS", "PASS"], [item["overall"] for item in outputs["requirement_reports"]])
+        self.assertEqual(["pkg_h001"], [item["package_ref"]["ref"] for item in outputs["report_packages"]])
         final = outputs["requirement_reports"][1]
         unknown_codes = {item["code"] for item in final["checks"] if item["outcome"] == "UNKNOWN"}
-        self.assertEqual({
-            "package.event.violation_visible_in_report_video",
-            "package.event.pre_context_present",
-            "package.event.post_context_present",
-        }, unknown_codes)
+        self.assertEqual(set(), unknown_codes)
         self.assertEqual("CONFIRMED", record["situation_response"]["value"])
         guard = result["policy_guard_check"]
         self.assertEqual("NOT_ASKED", guard["shared_case_situation_confirmation"])
@@ -37,10 +33,10 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
         self.assertFalse(guard["without_confirmation"]["report_package_emitted"])
         self.assertEqual("EVIDENCE_TEST_DERIVED", result["execution_mode"]["case_context"])
-        self.assertFalse(result["consumer_mock"]["package_ready"])
+        self.assertTrue(result["consumer_mock"]["package_ready"])
         self.assertEqual("CASE_OWNED_NOT_DERIVED", result["consumer_mock"]["user_reviewed"])
 
-    def test_unknown_preserves_uncertainty_and_withholds_invalid_package(self):
+    def test_unknown_preserves_uncertainty_and_emits_warn_package(self):
         result = self.run_case("scenario_unknown_abstain_partial_001")
         record = result["outputs"]["evidence_records"][0]
         time = result["outputs"]["time_resolutions"][0]
@@ -49,9 +45,11 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual("USER_UNSURE", record["situation_response"]["value"])
         self.assertEqual("NEEDS_REVIEW", time["status"])
         self.assertTrue(time["conflict"]["exists"])
-        self.assertEqual(["WARN", "UNKNOWN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
-        self.assertEqual([], result["outputs"]["report_packages"])
-        self.assertEqual("package.requirement_not_ready", result["package_boundary_error"])
+        self.assertEqual(["WARN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        self.assertEqual(["pkg_u001"], [
+            item["package_ref"]["ref"] for item in result["outputs"]["report_packages"]])
+        self.assertIsNone(result["package_boundary_error"])
+        self.assertTrue(result["consumer_mock"]["package_ready"])
         final = result["outputs"]["requirement_reports"][1]
         checks = {item["code"]: item for item in final["checks"]}
         self.assertEqual("WARN", checks["package.location.present"]["outcome"])
