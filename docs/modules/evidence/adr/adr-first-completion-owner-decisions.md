@@ -29,6 +29,8 @@ K1-K4가 모두 결정되어 ADR 전체 상태를 `ACCEPTED`로 올렸다. 각 �
 
 > **후속 (2026-09-14).** K3가 열어둔 D1(Q1)이 [`ADR-EVIDENCE-003`](adr-location-absent-package.md)으로 종결됐다. **K3는 §5.4·§5.6·§5.8·§5.11·§5.12·§5.14·§5.15 일곱 절이 영향을 받는다** — 각 절에 종결 표시를 달아 두었고 v2 당시 판단은 지우지 않고 보존했다. 그중 §5.12(위치 부재가 `UNKNOWN`이 아니다)와 §5.15 Artifact 영향(D1 반영이 재실행보다 먼저)은 **구현 순서를 바꾸는 내용**이므로 반드시 읽어야 한다. 영향 범위 전체 표는 ADR-003 §5.8에 있다. K1·K2·K4는 영향을 받지 않으며 그 근거도 같은 절에 적었다.
 
+> **후속 2 (2026-09-14).** [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 **K3의 `FINAL_PACKAGE` 무조건 rule 세 건(사건 장면·전 상황·후 상황)을 제거**했다. 판정 입력을 생산하는 모듈이 계약 어디에도 없어 공용 Scenario 전부가 영구 `UNKNOWN`으로 막혀 있었고, 제품은 이 판정을 사용자 확인(`core-user-flow.md` §8·§15)에 맡기기로 이미 정해 두었다. **영향 절은 §5.6·§5.12·§5.14·§5.15**이며 각 절에 표시를 달고 원문은 보존했다. rule 수는 15 → 12, 활성 catalog는 `policy/requirement-rules-v4`가 된다. K1·K2·K4와 D1은 영향을 받지 않는다.
+
 ## 3. K1 — 첨부 용량·개수 policy
 
 ### 3.1 상태
@@ -374,9 +376,9 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 | `package.asset.report_video.exists` | `ASSET` | `availability=AVAILABLE` | `PASS` |
 | | | `UNKNOWN` 또는 AssetFacts 부재 | `UNKNOWN` |
 | | | `UNAVAILABLE` | `BLOCK` |
-| `package.event.violation_visible_in_report_video` | `EVIDENCE` | 관찰 `true` / `false` / 미관찰 | `PASS` / `BLOCK` / `UNKNOWN` |
-| `package.event.pre_context_present` | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
-| `package.event.post_context_present` | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
+| ~~`package.event.violation_visible_in_report_video`~~ | `EVIDENCE` | 관찰 `true` / `false` / 미관찰 | `PASS` / `BLOCK` / `UNKNOWN` — **D2로 제거**(아래) |
+| ~~`package.event.pre_context_present`~~ | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` — **D2로 제거** |
+| ~~`package.event.post_context_present`~~ | `EVIDENCE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` — **D2로 제거** |
 | `package.vehicle.plate_visible_in_report_video` | `VEHICLE` | 위와 같음 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.location.present` | `LOCATION` | Package 표시용 위치 있음 / 없음 | `PASS` / ~~`UNKNOWN`~~ → **`WARN`**(D1) |
 | `package.report.content_length` | `REPORT_CONTENT` | §5.8 | `PASS` / `BLOCK` / `UNKNOWN` — 필수 입력은 선택된 template 기준(D1) |
@@ -396,6 +398,8 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 경찰민원24 공식 안내는 위반 장면, 위반 전 상황, 위반 후 상황을 모두 요구한다. 따라서 세 rule을 v2 catalog에 등재한다. 다만 Research는 구체적인 초 수를 규정하지 않으므로 `pre_event_seconds` 같은 값을 정책 데이터로 저장하지 않는다. v2는 "대표 사건시점의 전과 후가 신고영상에 포함되었는가"까지만 판정하고, 몇 초를 확보할지는 `recording`의 생성 전략으로 분리한다.
 
 세 rule의 입력은 AssetFacts의 `duration`/`timeline_range`가 아니라 **실제 관찰 사실**로 받는다. [`contract-requirement-report-package.md`](../../../architecture/contracts/contract-requirement-report-package.md) §4.6은 `duration + timeline_range`를 "FINAL_PACKAGE에서 사건 전후 coverage rule을 실제 적용하는 경우에만" 조건부 필수로 둔다. v2는 번호판 가시성과 같은 관찰 경로를 쓰므로 그 조건부 필드를 필수로 승격시키지 않는다. 관찰값이 없으면 임의로 `PASS`하지 않고 `UNKNOWN`으로 둔다.
+
+> **D2 종결에 따른 정정 (2026-09-14).** **위 세 rule은 [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)로 제거됐다.** 이 절은 「경찰민원24가 요구한다 → check를 둔다」까지만 확인하고 **누가 그 관찰을 생산하는지를 확인하지 않았다.** 계약 문서 어디에도 사건 장면·전 상황·후 상황의 생산자가 없어(`plate_visible`·`time_overlay_visible`은 `readout` 계약이 있는 것과 대비) `not_observed`가 영구 상태가 됐고, 공용 Scenario 네 건 모두 `FINAL_PACKAGE`가 `UNKNOWN`이 되어 `ReportPackage`가 하나도 발행되지 않았다. 바로 위 문단이 산술(`duration`/`timeline_range`) 경로를 거절한 것이 그 원인의 일부다 — 생산자가 없는 경로를 택했다. 제품은 이 판정을 사용자에게 맡기기로 이미 정해 두었고(`core-user-flow.md` §8·§15, 「AI는 법률적 최종 판정을 요구하지 않는다」), 그 확인은 `package.evidence.situation_response`가 이미 판정한다. 근거·대안·이관처는 ADR-005 §4·§6.
 
 #### 위치 — D1 종결로 대체됨 (2026-09-14)
 
@@ -512,7 +516,7 @@ PC와 모바일로 catalog를 나누지 않는다. Package는 제목을 항상 �
 
 - `REPORT_VIDEO`가 아직 없음
 - `byte_size=null`
-- 번호판·사건 장면·전후 상황·시각 표시를 아직 관찰하지 않음
+- 번호판·~~사건 장면·전후 상황·~~시각 표시를 아직 관찰하지 않음 → **사건 장면·전후 상황은 D2로 rule 자체가 제거됐다**([`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md))
 - ~~Package 표시용 위치가 아직 없음~~ → **D1 종결로 `UNKNOWN`이 아니라 `WARN`이다**(아래)
 - 발생시각을 확보하지 못함
 - 사용자가 사건 유형에 아직 응답하지 않음
@@ -522,7 +526,7 @@ PC와 모바일로 catalog를 나누지 않는다. Package는 제목을 항상 �
 그리고 실제 판정이 성립했는데 조건을 충족하지 못하면 `BLOCK`이다.
 
 - 영상은 존재하지만 번호판을 식별할 수 없음
-- 사건 장면 또는 전·후 상황이 빠짐
+- ~~사건 장면 또는 전·후 상황이 빠짐~~ → **D2로 제거.** 이 판정을 할 수 있는 모듈이 없었다([`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md) §4.2). 녹화 경계로 전후가 물리적으로 없는 경우는 `recording` 미결로 등재됐다(같은 ADR §5.6)
 - 선택된 시각 표시가 실제 영상에 없음
 - 첨부 크기·개수가 상한을 초과함
 
@@ -552,7 +556,7 @@ PC와 모바일로 catalog를 나누지 않는다. Package는 제목을 항상 �
 | K3 catalog 식별자 | `policy/requirement-rules-v2` — **D1 반영은 이 값을 덮어쓰지 않고 새 revision으로 발행한다**(§7) |
 | 데이터 위치 | `src/daesingo/evidence/requirement_rules_v2.json` |
 | `EVIDENCE` 기본 rule 수 | 4 |
-| `FINAL_PACKAGE` 무조건 rule 수 | 15 — D1은 rule을 더하거나 빼지 않고 두 rule의 판정만 바꾼다 |
+| `FINAL_PACKAGE` 무조건 rule 수 | 15 — D1은 rule을 더하거나 빼지 않고 두 rule의 판정만 바꾼다. **D2가 세 rule을 제거해 12가 된다**([`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md) §5.2) |
 | `FINAL_PACKAGE` 조건부 rule | 3개 중 정확히 1개 선택 |
 | 결정일 | `2026-09-13` |
 
@@ -573,7 +577,7 @@ K3 결정으로 다음 작업을 진행할 수 있다.
 
 - `requirement_rules_v2.json` 로더와 catalog entry 선택 구현
 - `evaluate_requirements()`에서 `rule_codes` 제거, `time_resolution` 인수 추가
-- 사건 장면·전 상황·후 상황 세 rule과 관찰 fact 입력 추가
+- ~~사건 장면·전 상황·후 상황 세 rule과 관찰 fact 입력 추가~~ → **D2로 철회**([`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)). 관찰 fact 입력은 번호판·시각 표시·사후 각인 세 key만 남는다
 - `package.asset.report_video.size` → K1 여섯 rule 교체
 - `package.evidence.situation_unconfirmed` → `package.evidence.situation_response` 교체와 `NOT_ASKED` `UNKNOWN` 처리
 - `package.report.content_length`의 렌더 불가 `UNKNOWN` 처리 — **필수 입력은 선택된 template 기준으로 읽는다**(D1, §5.8의 단서)
@@ -584,13 +588,17 @@ K3 결정으로 다음 작업을 진행할 수 있다.
 다음은 K3가 단독으로 확정하지 않는다.
 
 - ~~D1(Q1) 위치 결론 — 결정되면 `package.location.present` outcome 매핑의 새 revision 필요~~ → **2026-09-14 종결.** [`ADR-EVIDENCE-003`](adr-location-absent-package.md)이 ①(위치 없는 `WARN` Package 발행)로 확정했다. 새 revision은 `package.location.present`와 `package.report.content_length` **두 rule을 함께** 바꾼다
-- 사건 장면·전후 상황 관찰값의 실제 생산·전달 경로 — 통합 항목 I4의 범위를 번호판·시각에서 사건 장면·전 상황·후 상황까지 넓혀야 한다
+- ~~사건 장면·전후 상황 관찰값의 실제 생산·전달 경로 — 통합 항목 I4의 범위를 번호판·시각에서 사건 장면·전 상황·후 상황까지 넓혀야 한다~~ → **2026-09-14 해소.** [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 세 rule을 제거해 넓힐 대상이 사라졌다. **I4는 번호판·시각 범위 그대로 유지한다**(같은 ADR §5.7)
 - `ReportPackage.assets` 확장(최대 4개 첨부)
 - 전후 상황의 초 수 — `recording` Tech Spec
 
 **Artifact 영향.** v2로 재실행하면 H/U/P/R baseline의 `policy_ref`, `checks[]` 구성, 일부 `overall`이 바뀐다. U는 `package.report.content_length`가 추가되고 H는 `package.evidence.situation_response`가 추가되며, 네 Scenario 모두 사건 장면·전후 상황 rule이 `UNKNOWN`으로 들어온다. 이는 예상된 변경이며, 기존 v1 Artifact를 조용히 덮어쓰지 않고 v2 재실행 결과임을 명시해 기록한다. 실제 관찰값이 없는 상태에서 `UNKNOWN`이 늘어나는 것을 회귀 실패로 보지 않는다.
 
 > **D1 종결에 따른 정정 (2026-09-14).** 위 문단은 **U가 `UNKNOWN`으로 떨어져 `pkg_u001`이 사라지는 상태**를 전제로 쓰였다. v2 그대로 재실행하면 U의 `package.location.present`와 `package.report.content_length`가 모두 `UNKNOWN`이 되어 `overall=UNKNOWN`, 계약 §8.1로 Package가 없어진다. **D1 반영 후에는 그렇지 않다** — 두 rule이 각각 `WARN`과 template 기준 판정으로 바뀌어 U의 `overall`은 `WARN`이고 `PACKAGE_READY`가 성립한다([`ADR-EVIDENCE-003`](adr-location-absent-package.md) §5.5·§9). 따라서 **D1 반영을 Artifact 재실행보다 먼저 수행한다.** 순서가 뒤바뀌면 baseline이 사라진 Package를 정상 결과로 기록하게 된다.
+
+> **위 정정 블록에 대한 정정 (2026-09-14 · D2).** 위 블록은 **위치 축만 계산했다.** U를 `UNKNOWN`으로 만드는 요인이 두 축이었는데(위치 축 2건 + 관찰 축 3건) 관찰 축은 바로 윗 문단이 이미 적고 있었음에도 결론에 넣지 않았다. 그래서 「D1이 위치 관련 `UNKNOWN` 두 건을 제거한다」(무조건 참)를 「D1 반영 후 U는 `WARN`이고 `PACKAGE_READY`가 성립한다」(관찰 축이 0건일 때만 참)로 넓혀 썼다. 실제로 D1을 반영해 재실행한 결과 U의 `package.location.present`는 `WARN`, `package.report.content_length`는 `PASS`로 **D1은 온전히 반영됐으나** 관찰 rule 3건이 `UNKNOWN`으로 남아 Package가 발행되지 않았다([`reviews/13_…`](../reviews/13_adr-002-003-implementation_2026-09-14.md) · [`reviews/14_…`](../reviews/14_instruction-conflict-analysis-and-doc-fixes_2026-09-14.md) §2). **[`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 그 세 rule을 제거하면서 위 블록의 기대는 조건 없이 성립하게 된다.**
+
+
 
 ## 6. K4 — 발생시각 이외 Correction의 `EvidenceValue.source` provenance
 
