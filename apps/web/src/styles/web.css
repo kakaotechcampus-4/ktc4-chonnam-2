@@ -21,3 +21,11 @@
 
 .load-ok { color: var(--green-deep); font-weight: 800; }
 .load-bad { color: var(--red); font-weight: 800; }
+
+/* 다른 단계의 패널을 증빙용으로만 붙일 때 쓰는 접힘. 제품 빌드에는 없다. */
+.dev-extra { border: 1px dashed var(--border-2); border-radius: var(--R); background: var(--panel-soft); }
+.dev-extra > summary {
+  cursor: pointer; padding: 10px 14px; font-size: 14px; font-weight: 800; color: var(--muted);
+}
+.dev-extra > summary:hover { color: var(--ink-2); }
+.dev-extra-body { padding: 0 12px 12px; }

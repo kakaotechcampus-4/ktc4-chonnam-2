@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react'
 import { LOAD_ISSUES, SNAPSHOTS } from './contracts/fixtures'
 import { selectScreen } from './state/selectScreen'
+import { DevExtra } from './components/DevExtra'
 import { NoticeList } from './components/NoticeList'
 import { ProgressPanel } from './components/ProgressPanel'
 import { CandidatesScreen } from './screens/CandidatesScreen'
@@ -49,13 +50,17 @@ export function App(): JSX.Element {
         {screen.kind === 'EVIDENCE' && (
           <>
             <EvidenceScreen view={view} />
-            <ProgressPanel view={view} jobs={screen.jobs} />
+            <DevExtra label="증빙용 — 진행 상태(제품 화면에서는 별도 표시)">
+              <ProgressPanel view={view} jobs={screen.jobs} />
+            </DevExtra>
           </>
         )}
         {screen.kind === 'HANDOFF' && (
           <>
             <HandoffScreen view={view} />
-            <EvidenceScreen view={view} />
+            <DevExtra label="증빙용 — 확인한 내용(제품 화면에서는 이전 단계)">
+              <EvidenceScreen view={view} />
+            </DevExtra>
           </>
         )}
 
