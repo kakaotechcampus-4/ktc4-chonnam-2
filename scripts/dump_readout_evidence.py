@@ -131,7 +131,10 @@ def main():
         "확인: run.outcome == FAILED / run.failure == {kind: INFRA, code: READOUT_PROVIDER_TIMEOUT}",
         "      plate is None / run.ended_at 존재(UsageRecord 발행 근거)",
     ]
-    name = "08-plate-total-failure.log"
+    # 확장자가 .txt인 이유: .gitignore의 `*.log`가 이 파일을 잡아 커밋되지
+    # 않았다. 증빙 README가 참조하는데 저장소엔 없는 상태였다. 「없음」을
+    # 보여주는 유일한 증빙이라 추적되지 않으면 의미가 없다.
+    name = "08-plate-total-failure.txt"
     with open(os.path.join(args.out, name), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
     written.append(name)
@@ -175,7 +178,7 @@ python scripts/dump_readout_evidence.py
 | `05-overlay-ocr-failed.json` | 「읽었으나 못 알아봄」(모름) — `UNKNOWN` + `...ocr_failed`, `format_ok=false` | 증빙 ② |
 | `06-plate-abstain.json` | 보류 — `abstained=true` · `NEEDS_REVIEW` · `value` `%(abstain)s` | 증빙 ③ |
 | `07-plate-reread.json` | 재판독 성공 — `value` `%(reread)s` · `OK`. `06`을 고치지 않은 **새 run·새 결과** | 증빙 ③ |
-| `08-plate-total-failure.log` | 완전 실패 — `outcome=FAILED`이고 **결과 객체가 없다** | 증빙 ④ |
+| `08-plate-total-failure.txt` | 완전 실패 — `outcome=FAILED`이고 **결과 객체가 없다** | 증빙 ④ |
 
 ## Merge 중단 기준과의 대응
 

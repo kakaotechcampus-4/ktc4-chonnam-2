@@ -20,7 +20,7 @@ python scripts/dump_readout_evidence.py
 | `05-overlay-ocr-failed.json` | 「읽었으나 못 알아봄」(모름) — `UNKNOWN` + `...ocr_failed`, `format_ok=false` | 증빙 ② |
 | `06-plate-abstain.json` | 보류 — `abstained=true` · `NEEDS_REVIEW` · `value` `17나28??` | 증빙 ③ |
 | `07-plate-reread.json` | 재판독 성공 — `value` `17나2867` · `OK`. `06`을 고치지 않은 **새 run·새 결과** | 증빙 ③ |
-| `08-plate-total-failure.log` | 완전 실패 — `outcome=FAILED`이고 **결과 객체가 없다** | 증빙 ④ |
+| `08-plate-total-failure.txt` | 완전 실패 — `outcome=FAILED`이고 **결과 객체가 없다** | 증빙 ④ |
 
 ## Merge 중단 기준과의 대응
 
