@@ -27,7 +27,6 @@
 
 ## 1차 구현 기준
 
-- [정철원 1차 완료 체크리스트](first-integration-checklist.md)
 - [recording 1차 Mock E2E Tech Spec](decisions/first-integration-tech-spec.md)
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
