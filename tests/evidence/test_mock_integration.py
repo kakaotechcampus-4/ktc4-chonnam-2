@@ -15,16 +15,21 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
     def run_case(self, scenario_id: str):
         return run_scenario(ROOT, scenario_id, CONFIGS[scenario_id])
 
-    def test_happy_connects_all_refs_and_ready_package(self):
+    def test_happy_connects_refs_and_exposes_missing_event_observations(self):
         result = self.run_case("scenario_happy_001")
         outputs = result["outputs"]
         record = outputs["evidence_records"][0]
-        package = outputs["report_packages"][0]
         self.assertEqual(["OK"], [item["status"] for item in outputs["time_resolutions"]])
         self.assertEqual([], outputs["evidence_needs"][0]["items"])
-        self.assertEqual(["PASS", "PASS"], [item["overall"] for item in outputs["requirement_reports"]])
-        self.assertEqual(record["record_ref"], package["evidence_record_ref"])
-        self.assertEqual("safety-report-policy/v1", package["provenance"]["policy_ref"])
+        self.assertEqual(["PASS", "UNKNOWN"], [item["overall"] for item in outputs["requirement_reports"]])
+        self.assertEqual([], outputs["report_packages"])
+        final = outputs["requirement_reports"][1]
+        unknown_codes = {item["code"] for item in final["checks"] if item["outcome"] == "UNKNOWN"}
+        self.assertEqual({
+            "package.event.violation_visible_in_report_video",
+            "package.event.pre_context_present",
+            "package.event.post_context_present",
+        }, unknown_codes)
         self.assertEqual("CONFIRMED", record["situation_response"]["value"])
         guard = result["policy_guard_check"]
         self.assertEqual("NOT_ASKED", guard["shared_case_situation_confirmation"])
@@ -32,7 +37,7 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
         self.assertFalse(guard["without_confirmation"]["report_package_emitted"])
         self.assertEqual("EVIDENCE_TEST_DERIVED", result["execution_mode"]["case_context"])
-        self.assertTrue(result["consumer_mock"]["package_ready"])
+        self.assertFalse(result["consumer_mock"]["package_ready"])
         self.assertEqual("CASE_OWNED_NOT_DERIVED", result["consumer_mock"]["user_reviewed"])
 
     def test_unknown_preserves_uncertainty_and_withholds_invalid_package(self):
@@ -44,9 +49,13 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual("USER_UNSURE", record["situation_response"]["value"])
         self.assertEqual("NEEDS_REVIEW", time["status"])
         self.assertTrue(time["conflict"]["exists"])
-        self.assertEqual(["WARN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        self.assertEqual(["WARN", "UNKNOWN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
         self.assertEqual([], result["outputs"]["report_packages"])
-        self.assertEqual("package.input.location_missing", result["package_boundary_error"])
+        self.assertEqual("package.requirement_not_ready", result["package_boundary_error"])
+        final = result["outputs"]["requirement_reports"][1]
+        checks = {item["code"]: item for item in final["checks"]}
+        self.assertEqual("WARN", checks["package.location.present"]["outcome"])
+        self.assertEqual("PASS", checks["package.report.content_length"]["outcome"])
 
     def _shared_visual_verification(self, result):
         search = json.loads((ROOT / result["source_paths"]["search"]).read_text(encoding="utf-8"))
@@ -67,7 +76,7 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(first["occurred_at"], second["occurred_at"])
         self.assertEqual(1, second["selection_rev"])
         self.assertEqual(first["record_ref"], second["supersedes_ref"])
-        self.assertEqual(["UNKNOWN", "PASS"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        self.assertEqual(["UNKNOWN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
 
     def test_manual_time_correction_is_one_way_and_preserves_plate(self):
         result = self.run_case("scenario_correction_rerun_001")
@@ -84,7 +93,7 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(1, new_record["selection_rev"])
         self.assertEqual(old_time["resolution_ref"], new_time["supersedes_ref"])
         self.assertEqual(old_record["record_ref"], new_record["supersedes_ref"])
-        self.assertEqual(["WARN", "PASS"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        self.assertEqual(["WARN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
 
     def test_adapter_does_not_mutate_shared_sources(self):
         paths = [ROOT / "data/mock" / module / "scenario_correction_rerun_001.json" for module in ("recording", "search", "readout", "case", "evidence")]

@@ -179,16 +179,26 @@ def validate_requirement_report(value: Contract) -> list[str]:
     return errors
 
 
-def validate_report_package(value: Contract) -> list[str]:
+def _validate_report_package(value: Contract, *, version: str, location_nullable: bool) -> list[str]:
     errors: list[str] = []
     _required(value, ("contract_version", "package_ref", "evidence_record_ref", "requirement_report_ref", "created_at", "report_inputs", "report", "assets", "provenance", "handoff"), errors)
-    if value.get("contract_version") != "report-package/v1" or not _ref(value.get("package_ref"), "report_package"):
+    if value.get("contract_version") != version or not _ref(value.get("package_ref"), "report_package"):
         errors.append("header")
     _datetime(value.get("created_at"), "created_at", errors)
     inputs = value.get("report_inputs") or {}
     _required(inputs, ("safety_report_type", "occurred_at", "location", "vehicle_number", "violation_expression"), errors)
+    location_present = "location" in inputs
     location = inputs.get("location")
-    if not isinstance(location, dict) or not isinstance(location.get("display_text"), str) or not location["display_text"]:
+    valid_location = (
+        isinstance(location, dict)
+        and isinstance(location.get("display_text"), str)
+        and bool(location["display_text"])
+        and (
+            "search_keyword" not in location
+            or isinstance(location.get("search_keyword"), str) and bool(location["search_keyword"])
+        )
+    )
+    if not location_present or not (valid_location or location_nullable and location is None):
         errors.append("location")
     if not _ref(value.get("assets", {}).get("report_video_ref"), "derived_asset"):
         errors.append("report_video_ref")
@@ -200,12 +210,21 @@ def validate_report_package(value: Contract) -> list[str]:
     return errors
 
 
+def validate_report_package(value: Contract) -> list[str]:
+    return _validate_report_package(value, version="report-package/v1.1", location_nullable=True)
+
+
+def validate_report_package_v1(value: Contract) -> list[str]:
+    return _validate_report_package(value, version="report-package/v1", location_nullable=False)
+
+
 VALIDATORS: dict[str, Callable[[Contract], list[str]]] = {
     "time-resolution/v1": validate_time_resolution,
     "evidence-record/v1.3": validate_evidence_record,
     "evidence-needs/v1": validate_evidence_needs,
     "requirement-report/v1": validate_requirement_report,
-    "report-package/v1": validate_report_package,
+    "report-package/v1": validate_report_package_v1,
+    "report-package/v1.1": validate_report_package,
 }
 
 

@@ -1,5 +1,5 @@
 {
-  "note": "Evidence 전용 통합 하니스 설정이다. scenario_id, 파일 경로, 출력 ID, 평가 시각, rule 목록은 Runtime Data Contract가 아니다. H/U situation_response는 공용 CaseView에 없는 전체 응답 context를 명시한 test-derived 입력이며, requirement_observation_facts는 실제 영상 검사가 아니라 공용 Mock을 소비하기 위한 명시적 upstream Mock이다.",
+  "note": "Evidence 전용 통합 하니스 설정이다. scenario_id, 파일 경로, 출력 ID, 평가 시각은 Runtime Data Contract가 아니다. evidence_rules/final_rules는 Runtime 입력이 아니라 활성 catalog가 선택한 목록의 기대값이다. H/U situation_response는 공용 CaseView에 없는 전체 응답 context를 명시한 test-derived 입력이며, requirement_observation_facts는 실제 영상 검사가 아니라 공용 Mock을 소비하기 위한 명시적 upstream Mock이다.",
   "scenarios": {
     "scenario_happy_001": {
       "selection_rev": 1,
@@ -28,9 +28,21 @@
       ],
       "final_rules": [
         "package.asset.report_video.exists",
+        "package.event.violation_visible_in_report_video",
+        "package.event.pre_context_present",
+        "package.event.post_context_present",
         "package.vehicle.plate_visible_in_report_video",
-        "package.time.overlay_visible",
-        "package.report.content_length"
+        "package.location.present",
+        "package.report.content_length",
+        "package.evidence.situation_response",
+        "package.asset.image.each_size",
+        "package.asset.video.each_size",
+        "package.asset.total_size",
+        "package.asset.image.count",
+        "package.asset.video.count",
+        "package.asset.total_count",
+        "package.deadline.within_policy",
+        "package.time.overlay_visible"
       ],
       "requirement_observation_facts": {
         "plate_visible_in_report_video": {
@@ -78,8 +90,20 @@
       ],
       "final_rules": [
         "package.asset.report_video.exists",
+        "package.event.violation_visible_in_report_video",
+        "package.event.pre_context_present",
+        "package.event.post_context_present",
         "package.vehicle.plate_visible_in_report_video",
-        "package.evidence.situation_unconfirmed",
+        "package.location.present",
+        "package.report.content_length",
+        "package.evidence.situation_response",
+        "package.asset.image.each_size",
+        "package.asset.video.each_size",
+        "package.asset.total_size",
+        "package.asset.image.count",
+        "package.asset.video.count",
+        "package.asset.total_count",
+        "package.deadline.within_policy",
         "package.time.post_stamp_applied"
       ],
       "requirement_observation_facts": {
@@ -113,7 +137,8 @@
       "evidence_rules": [
         "evidence.vehicle_number.present",
         "evidence.occurred_at.present",
-        "evidence.visual_event.present"
+        "evidence.visual_event.present",
+        "evidence.location.present"
       ],
       "emit_empty_needs": true
     },
@@ -127,7 +152,9 @@
       "evaluated_at": ["2026-08-27T13:22:00+09:00", "2026-08-27T13:35:00+09:00"],
       "evidence_rules": [
         "evidence.vehicle_number.present",
-        "evidence.occurred_at.present"
+        "evidence.occurred_at.present",
+        "evidence.visual_event.present",
+        "evidence.location.present"
       ],
       "emit_empty_needs": true
     }
