@@ -9,5 +9,6 @@ evidence/common-runtime Owner 관점에서 수행한 Mock fixture와 모듈 접�
 - `10_first-completion_decisions_and_integration_2026-09-13.md` — evidence 1차 Mock 통합 이후의 Owner 논의, 김준영 즉시 결정, 실제 통합 단계 작업 분류
 - `11_plate-image-generation-and-size-handoff_issue-draft_2026-09-13.md` — `PLATE_IMAGE` 생성 입력과 `AssetFacts.byte_size` 전달이 기존 Contract로 충분한지 묻는 이슈의 원본 초안과 재검토 기록(게시 완료 — 이슈 #47)
 - `12_u-package-location-nullability_issue-draft_2026-09-13.md` — 위치를 확보하지 못한 사건에서 `ReportPackage`를 발행할 것인지 묻는 이슈의 원본 초안과 재검토 기록(`10_...` D1(Q1) 후속, 게시 완료 — 이슈 #48)
+- `13_adr-002-003-implementation_2026-09-14.md` — K1~K4·D1 코드/정책/계약/Artifact 구현과 검수, 공용 관찰 fact 부재에 따른 지시 간 불일치 기록
 
 공용 Mock의 canonical 설명과 fixture 규칙은 `../../../mock/`이 소유한다. 이 폴더의 보고서는 evidence/common-runtime 담당자의 검수 기록이며 공용 Mock 계약을 대신하지 않는다.
