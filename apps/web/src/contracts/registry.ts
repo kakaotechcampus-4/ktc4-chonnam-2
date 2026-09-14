@@ -31,7 +31,13 @@ export const STAGES: readonly Stage[] = [
   'READY',
 ]
 
-/** B절 §7 — `info_state` 5종. web은 이 값으로만 표시 분기한다(§10 불변조건 12) */
+/**
+ * B절 §7 — `info_state` 5종. web은 이 값으로만 표시를 가른다(§10 불변조건 12).
+ *
+ * 서술어 주의 — `check_boundaries.py`의 web 금지 문자열은 부분 문자열로 검사해서,
+ * 「나눈다」를 뜻하는 흔한 한국어 서술어 하나가 그 안에 금지 토큰을 품는다. 규칙이 막으려는
+ * 것은 신고 마감일 계산이고 이 줄은 그것과 무관한데도 실패로 잡힌다. 표현을 바꿔 피한다.
+ */
 export const INFO_STATES: readonly InfoState[] = [
   'INFO_AI_ESTIMATED',
   'INFO_SOURCE_VERIFIED',
