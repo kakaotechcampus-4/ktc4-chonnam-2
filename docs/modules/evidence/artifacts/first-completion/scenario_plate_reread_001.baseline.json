@@ -1,0 +1,591 @@
+{
+  "artifact_version": "evidence-first-completion/v1",
+  "scenario_id": "scenario_plate_reread_001",
+  "execution_mode": {
+    "core": "BASELINE_PURE_FUNCTIONS",
+    "upstream": "SHARED_MOCK_CONTRACTS",
+    "requirement_observations": "EVIDENCE_TEST_MOCK",
+    "consumer": "CONTRACT_READER_MOCK",
+    "case_context": "SHARED_CASE_CONTRACTS"
+  },
+  "versions": {
+    "contracts": [
+      "time-resolution/v1",
+      "evidence-record/v1.3",
+      "evidence-needs/v1",
+      "requirement-report/v1",
+      "report-package/v1",
+      "correction-record/v1.1"
+    ],
+    "safety_report_policy": "safety-report-policy/v1",
+    "specific_template": "tmpl/safety-report-specific-v1",
+    "generic_template": "tmpl/safety-report-generic-v1"
+  },
+  "source_paths": {
+    "recording": "data/mock/recording/scenario_plate_reread_001.json",
+    "search": "data/mock/search/scenario_plate_reread_001.json",
+    "readout": "data/mock/readout/scenario_plate_reread_001.json",
+    "case": "data/mock/case/scenario_plate_reread_001.json"
+  },
+  "adapter_input_ref": "tests/evidence/fixtures/adapter_inputs.json",
+  "input_trace": {
+    "case_id": "case_p001",
+    "candidate_id": "candidate_p001",
+    "candidate_fine_run_ref": "run_p001_fine",
+    "timeline_ref": {
+      "timeline_id": "tl_p001",
+      "revision": 1
+    },
+    "timeline_range": {
+      "start_sec": 600.0,
+      "end_sec": 660.0
+    },
+    "selection_rev": 1,
+    "correction_refs": []
+  },
+  "outputs": {
+    "time_resolutions": [
+      {
+        "contract_version": "time-resolution/v1",
+        "resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_p001"
+        },
+        "status": "OK",
+        "resolved": {
+          "value": "2026-08-29T20:10:12+09:00",
+          "source": {
+            "kind": "readout.overlay_ocr",
+            "input_ref": {
+              "kind": "overlay_time_readout",
+              "ref": "readout_p001_time"
+            }
+          },
+          "verification": "VERIFIED",
+          "computation": {
+            "mode": "DIRECT",
+            "timezone": {
+              "zone_id": "Asia/Seoul",
+              "utc_offset": "+09:00",
+              "source": "PRODUCT_CONTEXT"
+            }
+          },
+          "user_corrected": false
+        },
+        "conflict": {
+          "exists": false,
+          "between_refs": [],
+          "requires_user_notice": false
+        },
+        "post_stamp": {
+          "needed": false,
+          "reason_code": "time.verified_overlay_already_present",
+          "requires_user_notice": false
+        },
+        "considered": [
+          {
+            "input_kind": "OBSERVATION",
+            "input_ref": {
+              "kind": "overlay_time_readout",
+              "ref": "readout_p001_time"
+            },
+            "source": {
+              "kind": "readout.overlay_ocr"
+            },
+            "value": "2026-08-29T20:10:12+09:00",
+            "observation_status": "OK",
+            "verification": "VERIFIED",
+            "used": true
+          },
+          {
+            "input_kind": "OBSERVATION",
+            "input_ref": {
+              "kind": "time_source_candidate",
+              "ref": "tsc_p001_filename"
+            },
+            "source": {
+              "kind": "recording.filename_time"
+            },
+            "value": "2026-08-29T20:00:00+09:00",
+            "observation_status": "OK",
+            "verification": "UNVERIFIED",
+            "used": false,
+            "reason_code": "time.superseded_by_verified_overlay"
+          }
+        ],
+        "provenance": {
+          "policy_ref": "policy/time-source-priority-v1",
+          "selected_input_ref": {
+            "kind": "overlay_time_readout",
+            "ref": "readout_p001_time"
+          }
+        }
+      }
+    ],
+    "evidence_records": [
+      {
+        "contract_version": "evidence-record/v1.3",
+        "record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001"
+        },
+        "case_ref": {
+          "kind": "case",
+          "ref": "case_p001"
+        },
+        "selection_rev": 1,
+        "basis": {
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_p001"
+          },
+          "visual_evidence_ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_p001"
+          },
+          "evidence_interval_ref": {
+            "kind": "incident_clip",
+            "ref": "clip_p001"
+          }
+        },
+        "event": {
+          "visual_event_type": {
+            "value": "SIGNAL",
+            "source": {
+              "kind": "search.visual_inference",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "event.source.visual_inference"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "safety_report_type": {
+            "value": "TRAFFIC_VIOLATION",
+            "source": {
+              "kind": "evidence.category_mapping",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.category_mapping"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "violation_expression": {
+            "value": "적색신호 상태에서 정지하지 않고 진행",
+            "source": {
+              "kind": "evidence.violation_expression",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.violation_expression"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "occurred_at": {
+          "value": "2026-08-29T20:10:12+09:00",
+          "time_resolution_ref": {
+            "kind": "time_resolution",
+            "ref": "tres_p001"
+          },
+          "resolution_status": "OK",
+          "user_corrected": false,
+          "source": {
+            "kind": "readout.overlay_ocr",
+            "label_key": "time.source.overlay_ocr"
+          }
+        },
+        "provenance": {
+          "input_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            },
+            {
+              "kind": "plate_readout",
+              "ref": "readout_p001_plate"
+            },
+            {
+              "kind": "time_resolution",
+              "ref": "tres_p001"
+            }
+          ],
+          "correction_refs": [],
+          "policy_ref": "policy/evidence-assembly-v1"
+        }
+      },
+      {
+        "contract_version": "evidence-record/v1.3",
+        "record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001_v2"
+        },
+        "case_ref": {
+          "kind": "case",
+          "ref": "case_p001"
+        },
+        "selection_rev": 1,
+        "basis": {
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_p001"
+          },
+          "visual_evidence_ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_p001"
+          },
+          "evidence_interval_ref": {
+            "kind": "incident_clip",
+            "ref": "clip_p001"
+          }
+        },
+        "event": {
+          "visual_event_type": {
+            "value": "SIGNAL",
+            "source": {
+              "kind": "search.visual_inference",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "event.source.visual_inference"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "safety_report_type": {
+            "value": "TRAFFIC_VIOLATION",
+            "source": {
+              "kind": "evidence.category_mapping",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.category_mapping"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "violation_expression": {
+            "value": "적색신호 상태에서 정지하지 않고 진행",
+            "source": {
+              "kind": "evidence.violation_expression",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.violation_expression"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_p001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "supersedes_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001"
+        },
+        "occurred_at": {
+          "value": "2026-08-29T20:10:12+09:00",
+          "time_resolution_ref": {
+            "kind": "time_resolution",
+            "ref": "tres_p001"
+          },
+          "resolution_status": "OK",
+          "user_corrected": false,
+          "source": {
+            "kind": "readout.overlay_ocr",
+            "label_key": "time.source.overlay_ocr"
+          }
+        },
+        "vehicle_number": {
+          "value": "17나2867",
+          "source": {
+            "kind": "readout.plate_ocr",
+            "ref": {
+              "kind": "plate_readout",
+              "ref": "readout_p001_plate_reread"
+            },
+            "observability": "OBSERVED",
+            "label_key": "plate.source.plate_ocr"
+          },
+          "support_refs": [
+            {
+              "kind": "plate_readout",
+              "ref": "readout_p001_plate_reread"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "provenance": {
+          "input_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_p001"
+            },
+            {
+              "kind": "plate_readout",
+              "ref": "readout_p001_plate_reread"
+            },
+            {
+              "kind": "time_resolution",
+              "ref": "tres_p001"
+            }
+          ],
+          "correction_refs": [],
+          "policy_ref": "policy/evidence-assembly-v1"
+        }
+      }
+    ],
+    "evidence_needs": [
+      {
+        "contract_version": "evidence-needs/v1",
+        "basis_record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001"
+        },
+        "items": [
+          {
+            "kind": "PLATE_REREAD",
+            "would_fill": "VEHICLE_NUMBER",
+            "why": {
+              "code": "readout.plate_abstained_frame_disagreement",
+              "summary": "The plate observation was withheld because frame readings disagreed."
+            },
+            "optional": false,
+            "context_refs": [
+              {
+                "role": "evidence.interval",
+                "ref": {
+                  "kind": "incident_clip",
+                  "ref": "clip_p001"
+                }
+              },
+              {
+                "role": "evidence.target_hint",
+                "ref": {
+                  "kind": "visual_evidence",
+                  "ref": "ve_p001"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "contract_version": "evidence-needs/v1",
+        "basis_record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_p001_v2"
+        },
+        "items": []
+      }
+    ],
+    "requirement_reports": [
+      {
+        "contract_version": "requirement-report/v1",
+        "requirement_report_ref": {
+          "kind": "requirement_report",
+          "ref": "req_p001_evidence"
+        },
+        "scope": "EVIDENCE",
+        "basis": {
+          "evidence_record_ref": {
+            "kind": "evidence_record",
+            "ref": "ev_p001"
+          },
+          "asset_refs": []
+        },
+        "policy_ref": "policy/requirement-rules-v1",
+        "evaluated_at": "2026-08-29T20:33:00+09:00",
+        "overall": "UNKNOWN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "UNKNOWN",
+            "reason_code": "evidence.pending_plate_reread",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "contract_version": "requirement-report/v1",
+        "requirement_report_ref": {
+          "kind": "requirement_report",
+          "ref": "req_p001_evidence_v2"
+        },
+        "scope": "EVIDENCE",
+        "basis": {
+          "evidence_record_ref": {
+            "kind": "evidence_record",
+            "ref": "ev_p001_v2"
+          },
+          "asset_refs": []
+        },
+        "policy_ref": "policy/requirement-rules-v1",
+        "evaluated_at": "2026-08-29T20:33:21+09:00",
+        "overall": "PASS",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "report_packages": []
+  },
+  "package_boundary_error": null,
+  "policy_guard_check": null,
+  "consumer_mock": {
+    "current_evidence_ref": "ev_p001_v2",
+    "time_resolution_ref": {
+      "kind": "time_resolution",
+      "ref": "tres_p001"
+    },
+    "evidence_requirement_ref": {
+      "kind": "requirement_report",
+      "ref": "req_p001_evidence_v2"
+    },
+    "package_requirement_ref": null,
+    "report_package_ref": null,
+    "evidence_sufficient": true,
+    "package_ready": false,
+    "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+  },
+  "comparison": {
+    "common_fixture_ref": "data/mock/evidence/scenario_plate_reread_001.json",
+    "time_statuses_match": true,
+    "requirement_overalls_match": true,
+    "common_package_count": 0,
+    "baseline_package_count": 0,
+    "known_differences": []
+  },
+  "base_revision": "16c078f8b6fb7841c53bc97413fa16b90bda947d",
+  "implementation_fingerprints": {
+    "src/daesingo/evidence/_contract.py": "00bdef529c41660bc13aa57cc87f3b35d3b0b111b6fcf9eb88e505a8a2b989bc",
+    "src/daesingo/evidence/assembly.py": "b56d481327c3a2f1d1996dbd933bf8d00fc12180d60d3f866037be1cfbb77db9",
+    "src/daesingo/evidence/corrections.py": "041a7c48b8f1e05a52f024ec9f52813dcdc1811d4a87216350261eeb8ca0079a",
+    "src/daesingo/evidence/mock_integration.py": "be3d76506aa89ef053b21cdcaec100fe113fc7f2c4c9af2fbf31bbfa895d7eca",
+    "src/daesingo/evidence/policy.py": "e7a71965451a06266614981e54d5f9435b854e2b60c67ad2594ec384267e01af",
+    "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
+    "src/daesingo/evidence/requirements.py": "2c5657ef767bf082a8576e632e327f472b811e4a91e9b819282ff25e1978e6c4",
+    "src/daesingo/evidence/time_resolution.py": "0b2c8033e9da462e26385d9a8895ad1e649eda393f63259ea7384ee02fbf457f",
+    "src/daesingo/evidence/validation.py": "3651ccf808849efae11aaed2ba214454f7adb416898173d107ebcba54caeb38f",
+    "tests/evidence/fixtures/adapter_inputs.json": "cee654ea6c791cad5d1747492c4590753a9ae9285216070c0defcdbf59d6062d",
+    "tests/evidence/test_contract_units.py": "022510bf3cdd5d19afa9b586cb24de96888c4862f68af0a8aeba36e297a4f54a",
+    "tests/evidence/test_contract_validation.py": "0c9278008ccfcc108cd8cd821a4a9aee4ecf2045da503332ca365e19b80d3ada",
+    "tests/evidence/test_mock_integration.py": "f18968fdb5f5bf1570ce56307be7f21643e91c729b6e4510d7b9b9a960ec2d6c"
+  }
+}
