@@ -5,7 +5,8 @@
 // fallback 문구를 쓴다 — 단 actions[]만은 fallback 없이 버튼을 렌더하지
 // 않는다(계약 B절 §7).
 
-import type { Action, InfoState, ProgressState, SituationConfirmation } from './caseView'
+import type { Action, InfoState, ProgressState, Readiness, SituationConfirmation } from './caseView'
+import { JOB_LABEL_FALLBACK_KEY } from './registry'
 
 /** 값의 출처 — `*_display.source_label_key` (v5 fixture 실측 9종) */
 const SOURCE_LABELS: Record<string, string> = {
@@ -28,14 +29,65 @@ export function sourceLabel(key: string | null): string | null {
   return SOURCE_LABELS[key] ?? SOURCE_FALLBACK
 }
 
-/** 진행 중 작업 — `running_jobs[].label_key` */
+/**
+ * 진행 중 작업 — `running_jobs[].label_key` (A절 §12 등재 4종 + fallback).
+ *
+ * v5 fixture에는 `job.plate_read`와 fallback 둘만 등장하지만 계약은 넷을 등재했다. fixture에
+ * 있는 것만 채우면 나머지가 「처리 중」으로 뭉개진다 — 특히 `job.report_video_export`는
+ * 「신고용 영상 만들기」를 누른 직후 뜨는 작업이라 무엇을 눌렀는지가 화면에서 사라진다.
+ */
 const JOB_LABELS: Record<string, string> = {
   'job.generic_processing': '처리 중',
   'job.plate_read': '번호판 판독 중',
+  'job.overlay_time_read': '화면 시각 판독 중',
+  'job.fine_verify': '정밀 확인 중',
+  'job.report_video_export': '신고용 영상 만드는 중',
 }
 
 export function jobLabel(key: string): string {
-  return JOB_LABELS[key] ?? JOB_LABELS['job.generic_processing']
+  return JOB_LABELS[key] ?? JOB_LABELS[JOB_LABEL_FALLBACK_KEY]
+}
+
+/**
+ * 신고요건·자료완성 판정 — `requirements_*.readiness` 4종.
+ *
+ * 등재값을 그대로 화면에 내보내지 않는다. 세 gate는 각각 구분해 표시하되(§3-5) 값은 문구로
+ * 바꾼다 — 한 패널에서 `PASS`와 「완료」가 나란히 뜨던 자리다.
+ * 객체 자체가 `null`인 것은 「아직 판정 안 함」이라 별도 문구다(§10-10 — 사용자 수정 직후
+ * 재검사 전이면 `null`이 정상이다).
+ */
+const READINESS_LABELS: Record<Readiness, string> = {
+  PASS: '충족',
+  WARN: '확인 필요',
+  BLOCK: '충족 못함',
+  UNKNOWN: '알 수 없음',
+}
+
+export const READINESS_NOT_CHECKED = '확인 전'
+
+export function readinessLabel(readiness: Readiness | null | undefined): string {
+  if (readiness === null || readiness === undefined) return READINESS_NOT_CHECKED
+  return READINESS_LABELS[readiness] ?? READINESS_NOT_CHECKED
+}
+
+/**
+ * 「확인이 필요한 값이 있다」의 원인 — `evidence.reason_code` 3종(B절 §7 파생 규칙).
+ *
+ * 이 코드는 `label_key`가 아니라 원인 코드라 문구가 같이 내려오지 않는다. 그렇다고 raw를
+ * 화면에 내보내면 사용자가 `evidence.location_needs_review`를 읽게 된다 — `message_key`·
+ * `source_label_key`를 전부 매핑해 놓고 여기만 예외일 이유가 없다.
+ */
+const REVIEW_REASON_MESSAGES: Record<string, string> = {
+  'evidence.event_time_needs_review': '발생 시각을 확인해 주세요.',
+  'evidence.location_needs_review': '발생 장소를 확인해 주세요.',
+  'evidence.multiple_fields_need_review': '확인이 필요한 값이 여러 건 있습니다.',
+}
+
+export const REVIEW_REASON_FALLBACK = '확인이 필요한 값이 있습니다.'
+
+export function reviewReason(code: string | null): string {
+  if (code === null) return REVIEW_REASON_FALLBACK
+  return REVIEW_REASON_MESSAGES[code] ?? REVIEW_REASON_FALLBACK
 }
 
 /** 안내 문구 — `notices[].message_key` (v5 fixture 실측 13종) */

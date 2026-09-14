@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import type { CaseView, EvidenceView } from '../contracts/caseView'
 import { DisplayRow } from '../components/DisplayRow'
 import { Panel } from '../components/Panel'
+import { reviewReason } from '../contracts/labels'
 
 function locationClue(view: CaseView, evidence: EvidenceView): string | null {
   // §3-3 UNKNOWN은 빈 칸이 아니다 — hints.location · coord · search_keyword를
@@ -64,8 +65,9 @@ export function EvidenceScreen(props: { view: CaseView }): JSX.Element {
       </div>
       {evidence.review_needed && (
         // §3-6 요약 배지로만 쓴다 — 제출 게이트로 쓰지 않는다.
+        // 원인은 reason_code로 고르되 raw 코드를 화면에 내보내지 않는다.
         <div className="kv-src" style={{ marginTop: 10 }}>
-          확인이 필요한 값이 있습니다{evidence.reason_code ? ` (${evidence.reason_code})` : ''}
+          {reviewReason(evidence.reason_code)}
         </div>
       )}
     </Panel>

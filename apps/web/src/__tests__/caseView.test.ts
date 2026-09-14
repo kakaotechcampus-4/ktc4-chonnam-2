@@ -6,11 +6,27 @@
 // 자체는 목업 설계가 들어오면 바뀌지만 이 규칙들은 바뀌지 않는다.
 
 import { describe, expect, it } from 'vitest'
-import { LOAD_ISSUES, SCENARIO_IDS, SNAPSHOTS } from '../contracts/fixtures'
+import { LOAD_ISSUES, SCENARIO_IDS, SNAPSHOTS, inspectView } from '../contracts/fixtures'
+import {
+  INFO_STATES,
+  JOB_LABEL_FALLBACK_KEY,
+  JOB_LABEL_KEYS,
+  PROGRESS_STATES,
+  READINESSES,
+  REVIEW_REASON_CODES,
+  SITUATION_CONFIRMATIONS,
+} from '../contracts/registry'
 import { ACTIONS, isAction, type InfoState } from '../contracts/caseView'
 import {
   ACTION_LABELS,
   AT_PROVENANCE_FALLBACK,
+  PROGRESS_LABELS,
+  READINESS_NOT_CHECKED,
+  REVIEW_REASON_FALLBACK,
+  SITUATION_LABELS,
+  jobLabel,
+  readinessLabel,
+  reviewReason,
   KNOWN_LABEL_KEYS,
   INFO_STATE_LABELS,
   NOTICE_FALLBACK,
@@ -189,6 +205,87 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
       .map((c) => c.at_provenance_label_key)
       .filter((k): k is string => typeof k === 'string')
     for (const key of keys) expect(atProvenanceLabel(key)).not.toBe(AT_PROVENANCE_FALLBACK)
+  })
+})
+
+describe('계약 등재 목록 전수 매핑 — fixture에 없는 값도 문구를 갖는다', () => {
+  // fixture를 훑는 검사만 있으면 「계약엔 등재됐는데 fixture엔 아직 없는 값」이 영영 안 잡힌다.
+  // 실제로 등재 label_key 4종 중 3종이 「처리 중」 fallback으로 뭉개지고 있었다.
+
+  it('등재 label_key 4종이 fallback 문구로 새지 않는다', () => {
+    const fallback = jobLabel(JOB_LABEL_FALLBACK_KEY)
+    for (const key of JOB_LABEL_KEYS) {
+      expect(jobLabel(key), key).not.toBe(fallback)
+    }
+    expect(jobLabel('job.not_registered_yet')).toBe(fallback)
+  })
+
+  it('progress 상태 5종 · 상황 확인 4종 · 정보 상태 5종이 전부 문구를 갖는다', () => {
+    for (const state of PROGRESS_STATES) expect(PROGRESS_LABELS[state], state).toBeTruthy()
+    for (const value of SITUATION_CONFIRMATIONS) expect(SITUATION_LABELS[value], value).toBeTruthy()
+    for (const state of INFO_STATES) expect(INFO_STATE_LABELS[state], state).toBeTruthy()
+  })
+
+  it('readiness 4종이 등재값 그대로 화면에 나가지 않는다', () => {
+    for (const readiness of READINESSES) {
+      const label = readinessLabel(readiness)
+      expect(label, readiness).toBeTruthy()
+      expect(label, readiness).not.toBe(readiness)
+    }
+    // 객체 자체가 null인 것은 「아직 판정 안 함」이고 UNKNOWN과 다른 문구다(§10-10).
+    expect(readinessLabel(null)).toBe(READINESS_NOT_CHECKED)
+    expect(readinessLabel(undefined)).toBe(READINESS_NOT_CHECKED)
+    expect(readinessLabel('UNKNOWN')).not.toBe(READINESS_NOT_CHECKED)
+  })
+
+  it('reason_code 3종이 매핑돼 있고 raw가 화면에 나가지 않는다', () => {
+    for (const code of REVIEW_REASON_CODES) {
+      expect(reviewReason(code), code).not.toBe(REVIEW_REASON_FALLBACK)
+      expect(reviewReason(code), code).not.toContain(code)
+    }
+    expect(reviewReason(null)).toBe(REVIEW_REASON_FALLBACK)
+    expect(reviewReason('evidence.something_new')).toBe(REVIEW_REASON_FALLBACK)
+  })
+
+  it('fixture가 쓰는 reason_code는 전부 등재 목록 안에 있다', () => {
+    const used = views.map((v) => v.evidence?.reason_code).filter((c): c is string => !!c)
+    expect(used.length).toBeGreaterThan(0)
+    for (const code of used) expect(REVIEW_REASON_CODES).toContain(code)
+  })
+})
+
+describe('로더 등재값 검사 — 문구 맵이 빈 칸을 뱉기 전에 잡는다', () => {
+  const sample = (): ReturnType<typeof structuredClone<(typeof views)[number]>> =>
+    structuredClone(views.find((v) => v.package !== null && v.candidates.length > 0) ?? views[0])
+
+  it('미등재 progress.state를 잡는다', () => {
+    const view = sample()
+    view.progress[0] = { ...view.progress[0], state: 'SKIPPED' as never }
+    expect(inspectView(view, 'test')).toHaveLength(1)
+  })
+
+  it('미등재 severity · readiness · situation_confirmation · job status를 잡는다', () => {
+    const view = sample()
+    if (view.notices.length > 0) view.notices[0] = { ...view.notices[0], severity: 'FATAL' as never }
+    if (view.requirements_package) view.requirements_package.readiness = 'MAYBE' as never
+    if (view.candidates.length > 0) {
+      view.candidates[0] = { ...view.candidates[0], situation_confirmation: 'ASKED' as never }
+    }
+    view.running_jobs = [
+      { job_id: 'job_t', kind: 'PLATE_READ', label_key: 'job.plate_read', status: 'DONE' as never },
+    ]
+    const problems = inspectView(view, 'test').map((i) => i.problem)
+    expect(problems.some((p) => p.includes('readiness'))).toBe(true)
+    expect(problems.some((p) => p.includes('situation_confirmation'))).toBe(true)
+    expect(problems.some((p) => p.includes('status'))).toBe(true)
+  })
+
+  it('미등록 label_key는 문제로 보지 않는다 — 계약이 fallback을 명시했다(A절 §12)', () => {
+    const view = sample()
+    view.running_jobs = [
+      { job_id: 'job_t', kind: 'NEW_KIND', label_key: 'job.brand_new', status: 'RUNNING' },
+    ]
+    expect(inspectView(view, 'test')).toEqual([])
   })
 })
 

@@ -2,7 +2,7 @@ import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { DisplayRow } from '../components/DisplayRow'
 import { Panel } from '../components/Panel'
-import { reportFieldLabel } from '../contracts/labels'
+import { readinessLabel, reportFieldLabel } from '../contracts/labels'
 
 // 신고자료 화면 — report_field_states를 직접 읽는다(value-state-display.md §5-1).
 // unconfirmed_fields는 요약(「확인 필요 N건」)에만 쓰고 필드별 배지·출처는
@@ -11,9 +11,11 @@ export function HandoffScreen(props: { view: CaseView }): JSX.Element {
   const pkg = props.view.package
   if (!pkg) return <Panel title="신고자료">아직 만들어지지 않았습니다.</Panel>
 
+  // §3-5 세 gate는 각각 구분해 표시한다. 등재값을 그대로 내보내지 않고 문구로 바꾼다 —
+  // 「PASS」와 「완료」가 한 패널에 나란히 뜨면 같은 축의 값처럼 읽힌다.
   const gates = [
-    ['신고요건', props.view.requirements_evidence?.readiness ?? '확인 전'],
-    ['자료 완성', props.view.requirements_package?.readiness ?? '확인 전'],
+    ['신고요건', readinessLabel(props.view.requirements_evidence?.readiness)],
+    ['자료 완성', readinessLabel(props.view.requirements_package?.readiness)],
     ['사용자 확인', props.view.user_reviewed ? '완료' : '미완료'],
   ] as const
 
