@@ -17,6 +17,7 @@ import {
   noticeMessage,
   sourceLabel,
 } from '../contracts/labels'
+import { ACTION_INTENT, describeIntent } from '../contracts/actionIntent'
 import { representativeJobs, selectScreen } from '../state/selectScreen'
 
 const views = SNAPSHOTS.map((s) => s.view)
@@ -204,5 +205,41 @@ describe('값 상태 표시 규칙', () => {
   it('WARN에서도 제출 경로가 열린다', () => {
     const warn = views.find((v) => v.requirements_package?.readiness === 'WARN')
     expect(warn?.package?.capabilities).toHaveLength(3)
+  })
+})
+
+describe('actions → 발주 매핑 (계약 A절 §7)', () => {
+  it('등재 7종 전부에 발주 의도가 있다', () => {
+    for (const action of ACTIONS) expect(ACTION_INTENT[action]).toBeDefined()
+  })
+
+  it('JobRecord를 만드는 건 3종뿐이다', () => {
+    const jobs = ACTIONS.filter((a) => ACTION_INTENT[a].type === 'JOB')
+    expect(jobs.sort()).toEqual(['GENERATE_REPORT_VIDEO', 'RETRY_PLATE_READ', 'RETRY_SEARCH'])
+  })
+
+  it('발주 kind가 계약 등재값이다', () => {
+    const REGISTERED = ['PLATE_READ', 'COARSE_SEARCH', 'REPORT_VIDEO_EXPORT']
+    for (const action of ACTIONS) {
+      const intent = ACTION_INTENT[action]
+      if (intent.type === 'JOB') expect(REGISTERED).toContain(intent.jobKind)
+    }
+  })
+
+  it('재시도 계열은 force_rerun 없이 새 job_id로 성립한다', () => {
+    // FAILED·candidates=[]는 cache hit 대상이 아니다(A절 §7). EvidenceNeeds의
+    // PLATE_REREAD 경로가 force_rerun=true를 붙이는 것은 case 소관이라 다르다.
+    for (const action of ['RETRY_PLATE_READ', 'RETRY_SEARCH'] as const) {
+      const intent = ACTION_INTENT[action]
+      expect(intent.type).toBe('JOB')
+      if (intent.type === 'JOB') expect(intent.forceRerun).toBe(false)
+    }
+  })
+
+  it('fixture에 실제로 오는 action은 전부 설명 가능하다', () => {
+    const used = [...new Set(views.flatMap((v) => v.notices.flatMap((n) => n.actions)))]
+    for (const action of used) {
+      if (isAction(action)) expect(describeIntent(action)).toMatch(/발주/)
+    }
   })
 })

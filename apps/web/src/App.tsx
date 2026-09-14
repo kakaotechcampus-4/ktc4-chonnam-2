@@ -1,4 +1,6 @@
 import { useState, type JSX } from 'react'
+import type { Action } from './contracts/caseView'
+import { describeIntent } from './contracts/actionIntent'
 import { LOAD_ISSUES, SNAPSHOTS } from './contracts/fixtures'
 import { selectScreen } from './state/selectScreen'
 import { DevExtra } from './components/DevExtra'
@@ -13,6 +15,10 @@ import { NoResultScreen } from './screens/NoResultScreen'
 // 보는가」뿐이고, 화면 내용은 전부 그 CaseView 1건에서 파생된다.
 export function App(): JSX.Element {
   const [current, setCurrent] = useState(0)
+  // 발주 경로(case worker)가 아직 없다. 버튼이 아무 일도 안 하는 것처럼 보이지
+  // 않게, 계약이 정한 「이 버튼이 무엇을 발주하는가」를 그대로 보여준다.
+  // 실제 전송이 붙는 자리는 이 setState 하나다.
+  const [lastAction, setLastAction] = useState<Action | null>(null)
   const snapshot = SNAPSHOTS[current]
   const view = snapshot.view
   const screen = selectScreen(view)
@@ -25,7 +31,10 @@ export function App(): JSX.Element {
             key={`${s.scenarioId}-${s.index}`}
             type="button"
             className={`btn${i === current ? ' on' : ''}`}
-            onClick={() => setCurrent(i)}
+            onClick={() => {
+              setCurrent(i)
+              setLastAction(null)
+            }}
           >
             {s.scenarioId.replace('scenario_', '').replace('_001', '')} #{s.index}
           </button>
@@ -42,7 +51,15 @@ export function App(): JSX.Element {
           </span>
         </div>
 
-        <NoticeList blocking={screen.blocking} info={screen.info} />
+        <NoticeList blocking={screen.blocking} info={screen.info} onAction={setLastAction} />
+
+        {lastAction && (
+          <div className="panel panel-p tight action-intent">
+            <div className="sec-label">눌린 액션 — 발주 경로 미연결</div>
+            <div className="kv-val mono">{lastAction}</div>
+            <div className="kv-src">{describeIntent(lastAction)}</div>
+          </div>
+        )}
 
         {screen.kind === 'PROGRESS' && <ProgressPanel view={view} jobs={screen.jobs} />}
         {screen.kind === 'NO_RESULT' && <NoResultScreen view={view} />}
