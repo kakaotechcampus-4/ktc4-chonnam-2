@@ -11,3 +11,4 @@
 - [ADR-EVIDENCE-001 — Final Contract 기반 1차 Mock 통합 구현 구조](adr-first-mock-integration-implementation.md)
 - [ADR-EVIDENCE-002 — 1차 완료 후 Owner 정책 결정 K1-K4](adr-first-completion-owner-decisions.md) — K1·K2·K3·K4 accepted
 - [ADR-EVIDENCE-003 — 위치를 확보하지 못한 사건의 `ReportPackage` 발행 (D1)](adr-location-absent-package.md) — accepted. 이슈 #48 종결, ADR-002 §5.6·§5.8·§5.11·§5.14 갱신
+- [ADR-EVIDENCE-004 — versioned requirement policy engine 구현 구조](adr-requirement-policy-engine.md) — K1~K4·D1 loader/evaluator/template/error 경계 구현 구조
