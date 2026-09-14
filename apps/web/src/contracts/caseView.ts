@@ -146,16 +146,6 @@ export interface CaseView {
   notices: Notice[]
 }
 
-// §5 여섯 display — 값 상태 표시 규칙(value-state-display.md §4)이 걸리는 대상.
-export const DISPLAY_KEYS = [
-  'plate_display',
-  'event_time_display',
-  'location_display',
-  'case_type_display',
-  'violation_display',
-  'report_type_display',
-] as const
-
 export function isAction(value: string): value is Action {
   return (ACTIONS as readonly string[]).includes(value)
 }
