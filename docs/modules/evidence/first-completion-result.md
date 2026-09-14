@@ -2,7 +2,7 @@
 
 > 상태: **PARTIAL_READY**
 >
-> 실행 기준: branch `docs/evidence-first-completion-checklist`, 기준 커밋 `2a4302ecda6969f45da86543546c827d194be328` + 이 문서와 함께 있는 confirmation guard 작업본
+> 실행 기준: branch `docs/evidence-first-completion-checklist`, 구현 기준 커밋 `16c078f8b6fb7841c53bc97413fa16b90bda947d`, 실행 증빙 갱신 `08eb78c`
 >
 > 기준 계약/정책: `time-resolution/v1`, `evidence-record/v1.3`, `evidence-needs/v1`, `requirement-report/v1`, `report-package/v1`, `correction-record/v1.1`, `safety-report-policy/v1`
 
@@ -45,7 +45,7 @@
 | ReportPackage ready-only·template·optional plate image·lineage | `requirements.py`, `policy.py` / H·단위 검사 | H NOT_ASKED 차단 + derived CONFIRMED Package, U 미발행, optional plate image 생략, supersede ref | 정책 guard 및 Mock 연결 검증 완료 | 실제 H confirmation 전달은 case 통합 대기; U 정상 Package는 Q1; 공용 문구는 Q2 동기화 대기 |
 | Integration: Consumer가 공개 출력 읽기 | `consume_contracts` / Scenario 검사 | 각 baseline JSON의 `consumer_mock` | Mock 연결 검증 완료 | 실제 CaseView projection은 유소연 통합 대기 |
 | Operational: revision·정책·Mock 범위·재현 | CLI, artifact, 이 문서 | `base_revision`, `execution_mode`, source paths, 아래 명령 | 검증 완료 | 커밋 SHA는 커밋 후 갱신 가능 |
-| Product Spec의 첨부 용량·신고기한 | `requirements.py`의 명시적 policy gap | `PolicyConfigurationError` 단위 검사 | 미완료 | 김준영 policy 결정/근거 채택 필요; 임의 수치 금지 |
+| Product Spec의 첨부 용량·신고기한 | `requirements.py`의 명시적 policy gap | `PolicyConfigurationError` 단위 검사 | 정책 결정 완료, Runtime 연결 미완료 | K1·K2·K3 `ACCEPTED`; `deadline_policy_v1.json`·`requirement_rules_v2.json` 작성 완료. evaluator 연결 필요 |
 
 체크리스트 원문의 체크박스는 일괄 변경하지 않았다. 위 표의 “검증 완료”는 해당 코드/Contract 단위에 한정하며 공용 E2E, production, Consumer Owner 수락으로 확대하지 않는다.
 
