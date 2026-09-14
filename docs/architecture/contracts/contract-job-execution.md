@@ -12,6 +12,8 @@
 
 > **`job-execution/v1.1` (2026-09-10, 이슈 #33 A-2).** `status` enum에 **`CANCELLED`**를 추가한다(사용자가 진행 중인 분석을 중단한 경우 — `docs/product/core-user-flow.md` §4 "중단", `CONTRACT_CONFLICTS.md` 불명확 항목 9 종결). 허용 전이 `QUEUED→CANCELLED` · `RUNNING→CANCELLED`를 추가한다. §9 불변조건 3("`status=SUCCEEDED`가 아니면 `produced`를 유효한 결과로 취급하지 않는다")에 **`CANCELLED` 한정 예외**를 둔다 — 중단 시점까지 이미 만들어진 부분 결과가 있으면 `produced`에 남겨 보존할 수 있고, `case`는 이를 domain state의 `PARTIAL` outcome으로만 반영한다(완결된 결과로 승격하지 않는다). **"이어서 찾기"(재개) 시 같은 `job_id`를 재사용할지 새 Job으로 볼지는 `JobRecord`를 소유한 `case`의 판단이며 이 계약은 실행 상태 표현만 연다** — 이번 라운드는 이 구분을 요구하는 demo fixture를 만들지 않는다(이슈 #34 확인, Should-1 비차단 항목으로 유지).
 
+> **2026-09-13 명확화 (ERD 리뷰 반영, case Owner 유소연).** 위 v1.1 노트가 case의 판단으로 남겨둔 "재개 시 job_id 재사용 여부"를 결정한다 — **"이어서 찾기"도 새 `job_id`(새 `JobRecord`)로 발주한다.** `RETRY_PLATE_READ`·`RETRY_SEARCH`(`contract-job-record-case-view.md` B절 §13)와 같은 원칙이다: `JobRecord`는 "작업 1건당 하나의 Intent 기록"(A절 §4)이고, 사용자가 버튼을 눌러 재개를 요청하는 순간 그 자체가 새 Intent이므로 새 `job_id`가 자연스럽다. 같은 `job_id`·새 `attempt`는 사용자 Intent 없이 벌어지는 자동 인프라 재시도(`STALE`)에 한정한다. "이미 찾은 후보를 버리지 않는다"(`core-user-flow.md` §4)는 이 결정과 무관하게 이미 만족된다 — `CandidateEvent`는 case에 종속된 독립 레코드라 어느 `job_id`가 만들었든 `CaseView.candidates[]`에서 계속 유지된다. 상세 근거 `docs/modules/case/decisions/job-resume-identity-policy.md`. 실제 데모 fixture는 여전히 없다(Should-1, 비차단, 다음 라운드 반영 예정).
+
 > **이 문서가 왜 지금 생겼나.** `JobRecord` ADR이 실행 상태(status/attempt/cost/produced/failure_kind)를 `JobRecord`에서 떼어내 별도 `JobExecution` 계약으로 이관하기로 확정했는데(부록-A §6·§10·§12), 그 계약 문서가 없었다. 목데이터 통합에서 queue 목 응답을 만들 근거가 없으므로 PM이 ADR의 기존 결정과 PM 소유 영역의 추가 결정을 모아 작성했다. 새로 정한 것은 §10에 따로 표시했고, 정하지 않은 것은 §11에 미결로 남겼다.
 
 ---
