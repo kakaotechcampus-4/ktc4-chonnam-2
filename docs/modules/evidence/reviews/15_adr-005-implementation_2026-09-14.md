@@ -57,7 +57,7 @@
 
 ```text
 python -m unittest discover -s tests/evidence -p 'test_*.py'
-42 tests OK
+46 tests OK
 
 python -m daesingo.evidence.mock_integration
 H PASS + pkg_h001 / U WARN + pkg_u001 / P·R FINAL_PACKAGE 없음
@@ -107,6 +107,10 @@ PASS
 
 - `963f5b5` `feat(evidence): v4 catalog로 판정 주체 없는 rule 제거`
 - `a34c8cb` `mock(evidence): v4 정책 baseline으로 H U Package 복구`
+- `1595b5d` `fix(evidence): Package gate와 계약 값 검증 강화`
+- `78904bd` `style(evidence): Ruff 정적 검사 경고 정리`
+
+2026-09-15 `1595b5d` 후속 검토에서는 RequirementReport의 필수 basis·policy·check 구조를 validator에서 확인하고, Package에 전달된 자산 ref가 평가 basis 밖이면 stable error로 차단하도록 보강했다. `vehicle_number.value`의 null·빈 문자열과 boolean/non-finite 좌표도 계약 validator에서 거부한다. `78904bd`에서는 evidence 범위의 기존 Ruff 경고를 정리하고 Artifact fingerprint 대상에 공개 API·오류·정책 회귀 테스트를 추가했다. 정상 H/U/P/R 결과는 유지됐고 Artifact는 `78904bd`를 `base_revision`으로 재생성했다.
 
 ## 주간 회의 보고 요약
 

@@ -2,7 +2,7 @@
 
 > 상태: **PARTIAL_READY**
 >
-> 최신 실행 기준: branch `feature/evidence-location-nullable`, 구현 기준 커밋 `963f5b591983f5e43d5a26fe561bec0c05a5276d`, 실행일 `2026-09-14`
+> 최신 실행 기준: branch `codex/evidence-integrated-pr`, 구현 기준 커밋 `78904bd46dd3582cbd0701c31b98d633b4644eb1`, 실행일 `2026-09-15`
 >
 > 기준 계약/정책: `time-resolution/v1`, `evidence-record/v1.3`, `evidence-needs/v1`, `requirement-report/v1`, `report-package/v1.1`, `correction-record/v1.1`, `policy/requirement-rules-v4`, `safety-report-policy/v1.1`
 
@@ -30,6 +30,7 @@
 - **Runtime 한계:** H/U의 `plate_visible_in_report_video`와 시각 표시 fact는 현재 adapter가 `mock_only: true`로 주입한다. 특히 번호판 가시성은 남은 유일한 무조건 관찰 rule이므로 실제 Runtime에서는 I4 배선 전 `not_observed → UNKNOWN`이 되어 Package가 다시 막힌다. 이번 Package 발행은 Runtime 준비 완료 증거가 아니다.
 - **Consumer Mock:** 공개 Contract JSON만 읽어 current head와 두 gate를 계산한다. CaseView를 만들거나 case 정책을 재구현하지 않으며 `USER_REVIEWED`는 산출하지 않는다.
 - **Fixture 비교:** 실제 baseline 처리 후 상태/overall을 공용 evidence JSON과 비교한다. `scenario_id`별 canned output 재생을 처리 구현의 증거로 사용하지 않는다.
+- **후속 방어 경계:** Package 조립 전에 RequirementReport 구조와 평가 자산 ref 포함 관계를 검증한다. 평가하지 않은 자산으로 바꿔 끼운 Package는 `package.requirement_asset_basis_mismatch`로 차단하며, null·빈 차량번호는 EVIDENCE `PASS`가 아니라 `UNKNOWN`이다.
 
 공개 사용자는 `daesingo.evidence`에서 순수 함수를 import하고 Final Contract payload를 직접 넘긴다. 자세한 함수 목록과 명령은 [`src/daesingo/evidence/README.md`](../../../src/daesingo/evidence/README.md)에 있다. Mock adapter의 `scenario_id`, 출력 ID, 평가 시각, rule 목록은 [`tests/evidence/fixtures/adapter_inputs.json`](../../../tests/evidence/fixtures/adapter_inputs.json)에만 있으며 Runtime 필드가 아니다.
 
@@ -47,7 +48,7 @@
 | RequirementReport 두 scope·우선순위 | `requirements.py`, `policy_catalog.py`, `deadline.py` / Scenario·정책 단위 검사 | EVIDENCE 4개, FINAL 12+조건부 1개; K1 경계·K2 날짜·precedence | 검증 완료 | I4는 번호판·시각 관찰 전달 범위로 유지 |
 | ReportPackage ready-only·template·optional plate image·lineage | `requirements.py`, `policy.py`, `validation.py` / D1·계약 단위 검사 | `location:null`, no-location template, v1.1 validator, optional plate image, supersede ref | 검증 완료 | 공용 fixture 재렌더와 case 고지/field state는 I2·case 담당 |
 | Integration: Consumer가 공개 출력 읽기 | `consume_contracts` / Scenario 검사 | 각 baseline JSON의 `consumer_mock` | Mock 연결 검증 완료 | 실제 CaseView projection은 유소연 통합 대기 |
-| Operational: revision·정책·Mock 범위·재현 | CLI, artifact, 이 문서 | `base_revision`, `execution_mode`, source paths, 아래 명령 | 검증 완료 | 커밋 SHA는 커밋 후 갱신 가능 |
+| Operational: revision·정책·Mock 범위·재현 | CLI, artifact, 이 문서 | `base_revision`, `execution_mode`, source paths, 아래 명령 | 검증 완료 | Artifact는 후속 방어 경계와 정적 검사 정리를 포함한 `78904bd` 기준으로 재생성 |
 | K1 첨부 용량·개수 | `attachment_policy_v1.json`, `requirements.py` | exact limit·1 byte 초과·null·부분합·dedup·개수·구성 오류 | 정책 엔진 반영 및 단위 검증 완료 | 실제 외부 제한 변경은 새 policy version 필요 |
 | K2 신고기한 | `deadline_policy_v1.json`, `deadline.py` | 평일·금요일·연속 공휴일·연말·exclusive 경계·coverage 오류 | 정책 엔진 반영 및 단위 검증 완료 | 2028 이후 calendar revision 필요 |
 | K3·D2 rule catalog | `requirement_rules_v4.json`, `policy_catalog.py`, `requirements.py` | scope 수·조건부 selector 네 갈래·세 rule 부재·legacy 입력 무영향·출력 policy_ref | 활성 v4 연결 및 검증 완료 | v2는 첫 실행 전 대체, v3는 실행 후 D2로 대체된 revision으로 보존 |
@@ -82,7 +83,7 @@ python scripts/check_boundaries.py
 git diff --check
 ```
 
-2026-09-14 ADR-EVIDENCE-005 구현 검증에서 evidence `42 tests OK`, Ruff `All checks passed`, compileall 성공을 확인했다. 공용 검증은 `46 JSON / 7 Scenario`, `structure 60 / JSON 26 / semantic 104 PASS`, boundary `0 violations`였고 `git diff --check`도 통과했다. baseline 4종과 `run-summary.json`에는 `policy/requirement-rules-v3` 참조가 0건이며 평가 Report는 v4를 사용한다. 공용 validator PASS는 baseline 의미 정확성, 실제 Consumer E2E, AI/OCR 정확도, 외부 신고 성공, Owner 수락을 증명하지 않는다.
+2026-09-15 PR #58 후속 검증에서 evidence `46 tests OK`, Ruff `All checks passed`, compileall 성공을 확인했다. 공용 검증은 `46 JSON / 7 Scenario`, `structure 60 / JSON 26 / semantic 104 PASS`, boundary `0 violations`였고 `git diff --check`도 통과했다. null·빈 차량번호와 malformed RequirementReport, 평가하지 않은 자산 ref 교체 반례가 각각 validator/UNKNOWN/stable Package error로 차단되는 회귀 테스트를 포함한다. baseline 4종과 `run-summary.json`에는 `policy/requirement-rules-v3` 참조가 0건이며 평가 Report는 v4를 사용한다. 공용 validator PASS는 baseline 의미 정확성, 실제 Consumer E2E, AI/OCR 정확도, 외부 신고 성공, Owner 수락을 증명하지 않는다.
 
 ## 인수인계
 
