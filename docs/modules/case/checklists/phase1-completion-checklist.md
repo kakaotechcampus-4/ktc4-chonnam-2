@@ -10,8 +10,8 @@
 > **2026-09-14 2차 갱신.** "case 혼자서 진행할 수 있는 부분"을 전부 훑어서 구현했다 — 나머지 5개 시나리오(`empty`/`plate_reread`/`correction_rerun`/`infra_failure`/`relative_rebase`) 전체 파리티, `EvidenceNeeds.items → Job Intent` 자동 매핑, `AnalysisScope` Producer, `candidates[].stale_revision` 파생 계산, `CorrectionRecord`/`USER_REVIEWED` 단위 테스트, `export_learning_log()`까지 끝나서 `pytest src/daesingo/case/tests/`가 16개→**43개** 통과로 늘었다. 여전히 case 혼자 끝낼 수 없는 것(역행 전이 상세 규칙, `web`/`recording`/`search` 접합 실증, Timeout 수치— `search` baseline 실측 대기)은 그대로 미해결로 남겨뒀다 — 아래 각 절에 어디가 막혔는지 구체적으로 적어뒀다.
 >
 > **2026-09-14 3차 갱신.** 2차 갱신에서 "역행 전이 상세 규칙"을 통째로 미해결로 남겼었는데, 다시 훑어보니 그중 일부는 case 혼자 끝낼 수 있는 것이었다 — `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1...md`(연구 메모)가 `module-architecture.md` §4-모듈5 ②의 역행 전이 한 줄을 9개 `CorrectionRecord.kind`별로 이미 구체화해뒀다. 그 표 기준으로 `TIME_HINT_EDIT`(→`SEARCHING` 역행)와 `OTHER_CANDIDATE`(실제로는 역행이 아니라 `EVIDENCE_REVIEW`에 제자리로 머무는 재선택임을 이번에 확인)를 구현했다 — `pytest src/daesingo/case/tests/`가 43개→**54개**로 늘었다. major `TIMELINE_REBASE`만은 이 연구 메모 자체가 "web과 화면 흐름 확인 필요"라고 명시해 여전히 접합부로 남겨뒀다. §3-B/§7/§10/§13/§14에 반영.
-
----
+>
+> **2026-09-14 4차 정정.** 남은 미해결 항목 3개(hints 구조화 / stale result 적용 여부 판단 / Tool Trajectory 통과 판정)의 "막힌 이유" 서술을 다시 검증해 더 정확하게 고쳤다 — 코드 변경은 없다. hints 구조화는 "정의가 없다"가 아니라 **정의는 있는데 실제 AI 모델 호출이 필요해 Mock Pack 1차 범위가 애초에 제외한 것**임을 `core-user-flow.md`에서 확인했다. Tool Trajectory는 §8 질문 3과 엮었던 이전 서술이 잘못된 연결이었음을 확인해 정정 — 실제로는 **사람이 하는 수동 검토 절차**라 case 코드 테스트 대상이 아니다(①번만 예외). stale result 적용 여부 판단은 기존 서술이 맞았고 근거만 보강했다. §3-A/§3-B/§3-G에 반영.
 
 ## 담당 범위
 
@@ -71,7 +71,7 @@
 
 ### A. Input
 
-- [ ] 사용자 자연어 단서(hints: time/vehicle/situation/location) 구조화 입력을 받아 `CaseView.hints`로 반영하는 경로 — **막힘(2026-09-14): "구조화"가 정확히 무엇을 뜻하는지 문서에 정의가 없다.** 현재 코드는 `case.hints`를 그대로 보관·pass-through만 한다(`domain.CaseAggregate.intake()`) — 파싱 규칙(예: "18시쯤"→시간 범위 추정)인지, 단순 필드 검증인지, 다른 무엇인지 팀 확인 없이 case 혼자 결정할 수 없어 보류했다
+- [ ] 사용자 자연어 단서(hints: time/vehicle/situation/location) 구조화 입력을 받아 `CaseView.hints`로 반영하는 경로 — **막힘(2026-09-14 4차 정정): 정의 자체는 있다 — `docs/product/core-user-flow.md` §4 흐름도("사용자가 사건 설명 → *AI가* 시간/차량/상황/위치 단서를 구조화 → 사용자가 AI의 이해와 우선 탐색 범위 확인 → 분석 시작")가 "구조화"를 case의 파싱 규칙이 아니라 **실제 LLM이 자연어를 읽고 구조화된 이해 + 초기 탐색 범위를 만들어내는 단계**로 정의해뒀다.** 그런데 이건 §11이 이미 제외해 둔 "실제 AI/OCR/Search 모델 성능 검증"과 같은 카테고리다 — case가 규칙을 몰라서가 아니라 **구현하려면 실제 AI 모델 호출이 필요한데 Mock Pack 1차 범위 자체가 그걸 명시적으로 뺐기 때문에** 못 만든다. 4개 필드(time/vehicle/situation/location)를 그대로 보관해 편집 가능하게 노출하는 부분(`domain.CaseAggregate.intake()`, `CaseView.hints`)은 이미 돼 있다 — 안 된 건 그 위에 얹히는 "AI가 이해한 내용 요약 + 탐색범위 제안" 부분뿐이다
 - [x] `AnalysisScope`(case 단독 Producer) 초안 입력 — 탐색 요청의 비식별 파라미터, search·eval 소비 스키마 고정 (2026-09-14: `scope.build_analysis_scope()` — §10 불변조건 전부(빈 time_ranges 금지/kind 혼용 금지/target_event_types enum/budget 양수) 검증, `hint.vehicle`/`hint.free_text`는 `case.hints`에서 파생, `test_scope.py` 11개로 `scenario_happy_001`(ABSOLUTE)·`scenario_relative_rebase_001`(TIMELINE_RELATIVE) 둘 다 fixture와 일치 확인)
 - [x] 사용자 명령 API(후보 선택, 정정 제출, 재개/재시도 요청)의 입력 스키마 (`domain.select_candidate()`/`correction.apply_correction()`/`jobs.issue_resume_search()` — 전부 단위 테스트 존재)
 
@@ -82,7 +82,7 @@
 - [x] `JobRecord`(Job Intent) 생성 — `kind`별(예: `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`, `REPORT_VIDEO_EXPORT`) 발주 규칙 (`jobs.py`, `test_jobs.py::test_job_record_shape_matches_contract_fields`)
 - [x] rerun_policy — `RETRY_PLATE_READ`/`RETRY_SEARCH`/`RESUME_SEARCH`(신규, 이번 ERD 결정)는 새 `job_id`, 자동 인프라 재시도(`STALE`)만 같은 `job_id`+`attempt` 증가 (2026-09-14 구현: `jobs.issue_resume_search`/`issue_plate_reread`, `test_jobs.py::test_resume_search_issues_new_job_id_not_same_job_id_plus_attempt` — scenario-level Mock fixture 재현은 아직 없음, §10 참고)
 - [x] `EvidenceNeeds.items` → Job Intent 매핑 (`PLATE_REREAD`/`OVERLAY_TIME_OCR` 자동 발주, `force_rerun=true`, 원본 Job과 동일한 `input_fingerprint` 재사용 — `jobs.issue_needed_jobs()`, `test_jobs.py` 3건 + `scenario_plate_reread_001` smoke test가 실제 `EvidenceNeeds` fixture로 발주까지 재현)
-- [ ] stale result 적용 여부 판단 — 오래된 `case_rev`/`timeline_revision` 기준 결과를 domain state에 반영할지 결정 (부분 진행, 2026-09-14: **표시 파생값**만 구현됨 — `candidates[].stale_revision`이 candidate 생성 시점 고정값이 아니라 매 투영 시점에 `current_timeline_revision`과 `candidate.timeline_revision`을 비교해서 다시 계산됨을 `view._build_candidates_view()` + `scenario_relative_rebase_001` smoke test로 확인. 하지만 이 항목이 원래 묻는 것 — "오래된 결과를 domain state에 실제로 반영할지"(예: stale EvidenceRecord supersede를 수용/거부하는 판단) — 는 아직 없다. 표시와 domain 반영은 다른 일이라 체크 보류)
+- [ ] stale result 적용 여부 판단 — 오래된 `case_rev`/`timeline_revision` 기준 결과를 domain state에 반영할지 결정 — **막힘(2026-09-14 4차 정정): 이건 진짜로 아무도 규칙을 정한 적이 없다.** 예: case가 revision 7인데 revision 5 시점에 발주된 job의 결과가 뒤늦게 도착하면, 그걸 받아서 domain state(EvidenceRecord supersede 등)에 반영할지 아니면 낡은 결과로 버릴지 정하는 규칙. `contract-evidence-record-needs.md` §8.1도 "case는 이 Need가 **current revision 기준으로 유효하면** 자동 발주할 수 있다"라고만 적고 "current revision 기준 유효"가 정확히 어느 필드 대 어느 필드 비교인지, 안 맞으면 어떻게 하는지는 정의하지 않는다 — 결정 문서도 없다. evidence(수용/거부 판정 기준)·common-runtime(job 버전 추적 방식)과 같이 정해야 해서 case 혼자 결정할 수 없다. (부분 진행: **표시 파생값**만 구현됨 — `candidates[].stale_revision`이 candidate 생성 시점 고정값이 아니라 매 투영 시점에 `current_timeline_revision`과 `candidate.timeline_revision`을 비교해서 다시 계산됨을 `view._build_candidates_view()` + `scenario_relative_rebase_001` smoke test로 확인. 이건 "화면에 오래됐다고 보여주기"일 뿐 "domain state에 실제로 반영할지 결정"과는 다른 일이다)
 
 ### C. Output Contract
 
@@ -113,7 +113,7 @@
 
 ### G. Test / Evaluation
 
-- [ ] Tool Trajectory 통과 판정(C-3) 규칙의 최소 테스트 케이스 — §8 질문 3(GitHub PR 코멘트로 최신본 확인)과 연결, 혼자 결정할 수 없는 것으로 남겨둠
+- [ ] Tool Trajectory 통과 판정(C-3) 규칙의 최소 테스트 케이스 — **막힘(2026-09-14 4차 정정: 이전에 §8 질문 3과 엮었던 건 잘못된 연결이었다, 정정)**: `docs/management/tool-trajectory-review.md`를 보면 이건 애초에 case 코드로 만드는 자동 테스트가 아니라 **사람이 눈으로 확인하는 수동 절차**다("자동화하지 않는다. 수동 확인" 명시, 판정 시점도 "1차 통합"·"데모 직전" 두 번뿐). 7개 판정 항목 중 ②~⑦은 search/readout/evidence/recording의 **실제 출력**(AnalysisRun, PlateReadout, TimeResolution, RequirementReport 등)이 있어야 판정 가능해서, 그 모듈들의 실제 코드·데이터가 없는 지금은 case 혼자 검증할 수 없다. 다만 ①번("필요한 단계만 재실행했는가")은 문서 자체가 "`JobRecord`만으로 자동화 가능"이라고 적어뒀고, 이번에 구현한 `TIME_HINT_EDIT`/`OTHER_CANDIDATE` rerun 테스트(§3-B)가 실질적으로 그 증거가 된다 — 하지만 이 항목 전체(7개)를 놓고 보면 여전히 대부분 case 혼자 끝낼 수 없다
 - [x] `export_learning_log()` — 익명화 규칙 3줄(번호판 문자열 제거/정확 좌표 제거/원본 참조는 로컬 케이스 ID만, `correction-log-reuse.md`) 준수 여부 테스트 (2026-09-14: `correction_log.py` — 결정문이 명시한 1단계(평가 재사용)만 구현, 동의 게이팅은 결정문 자체가 미결이라 임의로 만들지 않음. `test_correction_log.py` 5개 — `vehicle_number`/`location.coord`는 mock pack에 실제 fixture가 없어 계약이 정한 값 공간(§6) 기준 합성 데이터로, `occurred_at`은 실제 `scenario_correction_rerun_001` fixture로 검증)
 - [ ] eval이 소비하는 `case` 산출물(`JobRecord`/`CaseView` 간접)이 `data/mock/expected/*.expected.json`의 참조 방식과 충돌하지 않는지 — `expected/` 디렉터리는 case가 손대지 않기로 합의된 영역(§10, 김대원 담당)이라 case 혼자 검증 불가
 
