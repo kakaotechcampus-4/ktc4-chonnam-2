@@ -447,7 +447,7 @@
           },
           "asset_refs": []
         },
-        "policy_ref": "policy/requirement-rules-v3",
+        "policy_ref": "policy/requirement-rules-v4",
         "evaluated_at": "2026-08-29T20:33:00+09:00",
         "overall": "UNKNOWN",
         "checks": [
@@ -515,7 +515,7 @@
           },
           "asset_refs": []
         },
-        "policy_ref": "policy/requirement-rules-v3",
+        "policy_ref": "policy/requirement-rules-v4",
         "evaluated_at": "2026-08-29T20:33:21+09:00",
         "overall": "WARN",
         "checks": [
@@ -598,26 +598,26 @@
     "baseline_package_count": 0,
     "known_differences": []
   },
-  "base_revision": "427ebb980361f7b2d41f6024e476a5269f7d91bc",
+  "base_revision": "963f5b591983f5e43d5a26fe561bec0c05a5276d",
   "implementation_fingerprints": {
     "src/daesingo/evidence/_contract.py": "00bdef529c41660bc13aa57cc87f3b35d3b0b111b6fcf9eb88e505a8a2b989bc",
     "src/daesingo/evidence/assembly.py": "b56d481327c3a2f1d1996dbd933bf8d00fc12180d60d3f866037be1cfbb77db9",
     "src/daesingo/evidence/corrections.py": "041a7c48b8f1e05a52f024ec9f52813dcdc1811d4a87216350261eeb8ca0079a",
     "src/daesingo/evidence/deadline.py": "e6247d8325ba14f637cd8492a7e0dbe5a3ec48bb9b436d88651d77671d76aac8",
     "src/daesingo/evidence/deadline_policy_v1.json": "8df1cfaaf463a0c28f04483c5bb848c42f21d957bd34e907cf9bf4cf186af7f0",
-    "src/daesingo/evidence/mock_integration.py": "4e89b5a524c71986592151d0104e0129679510974112290e1861e91d46ed0e64",
+    "src/daesingo/evidence/mock_integration.py": "b86d475fa2feaa25397db78af5fe97c08e1a5efdb8ee1ba939bc263e9d6687e5",
     "src/daesingo/evidence/attachment_policy_v1.json": "c889518d5a4ccb0c0ab261d4dca42e45962dfb1bcc6ff6430f373e6fe0cc830a",
     "src/daesingo/evidence/policy.py": "e5fc10114e5c7a56ece4a1a589191ee43db5ffcbb61dcb21c568eda011c8bf7d",
     "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
-    "src/daesingo/evidence/policy_catalog.py": "7d81e7ae45e3b84f90594e5f10014b94fa04f65d38d3af3ffa32fb734704ee23",
-    "src/daesingo/evidence/requirement_rules_v3.json": "0d6bb106e5a637a6405eb74c353c4d06fc29f4a7e04a1594985db35d981d3e47",
-    "src/daesingo/evidence/requirements.py": "8272e129a3000c55d4cf993c6505c2730ea3e1f625a46c6705c8224b8aa4e139",
+    "src/daesingo/evidence/policy_catalog.py": "acbf223f66c5613d79393551ca475ac424fea954c9ec2fe6bbd6a6bd7d1dbc31",
+    "src/daesingo/evidence/requirement_rules_v4.json": "7ea4147095f2502e6edbb63873b26482a8c16d68b83b54b949dfc89b9105094b",
+    "src/daesingo/evidence/requirements.py": "197b46bfeefda24a19343083e475d1eb56571105295b97ed177b288a5417ffd4",
     "src/daesingo/evidence/safety_report_policy_v1_1.json": "9af87fc1e7fdb86a13b5fa4118eb83fe5fb621436ff78b4ee80caf8ec14a6805",
     "src/daesingo/evidence/time_resolution.py": "0b2c8033e9da462e26385d9a8895ad1e649eda393f63259ea7384ee02fbf457f",
     "src/daesingo/evidence/validation.py": "44645dedfba43902a3e0e5d8b5ee77d0f7e086fb67f3e7e93a66885dd9e3082a",
-    "tests/evidence/fixtures/adapter_inputs.json": "299d5150d3e6f2560995900c825fd090dab569804b5246f7d9c7a0e6f937be94",
-    "tests/evidence/test_contract_units.py": "68821556003fa2110369f9963e64f4dd4146d9d692b7600378c362f497cb9c2a",
+    "tests/evidence/fixtures/adapter_inputs.json": "2621a71cc8a0875f199b73b8022649fb58a6ec43a2a54d07478089f6a7b8778f",
+    "tests/evidence/test_contract_units.py": "ef75eb0e0ce90e6dd45cd5fe4e567a36d749d74d3ad015a658ae8ae1c8fe6f40",
     "tests/evidence/test_contract_validation.py": "9f4688745bc53b41d1f85bb7fc335f33b538f54da798e51e0fd46f5e8fc24437",
-    "tests/evidence/test_mock_integration.py": "1270e45e9443de821a5ee73668c91f51cbfde6dfc3686e6423d76d3dd9325cf9"
+    "tests/evidence/test_mock_integration.py": "53794b62cccaa757dfb26e06053032aa5020292aa14683efd965f3b525144d02"
   }
 }
