@@ -35,21 +35,9 @@ class PolicyDecisionTests(unittest.TestCase):
         cls.unknown_assets = json.loads((ROOT / "data/mock/recording/scenario_unknown_abstain_partial_001.json").read_text(encoding="utf-8"))["asset_facts"]
 
     def _facts(self, scenario: str = "happy"):
-        base = deepcopy(CONFIGS[
+        return deepcopy(CONFIGS[
             "scenario_happy_001" if scenario == "happy" else "scenario_unknown_abstain_partial_001"
         ]["requirement_observation_facts"])
-        ref = "da_h001_report_video" if scenario == "happy" else "da_u001_report_video"
-        for name in (
-            "violation_visible_in_report_video",
-            "pre_context_present_in_report_video",
-            "post_context_present_in_report_video",
-        ):
-            base[name] = {
-                "value": True,
-                "subject_refs": [{"kind": "derived_asset", "ref": ref}],
-                "mock_only": True,
-            }
-        return base
 
     def _evaluate(self, *, record=None, time=None, assets=None, facts=None,
                   evaluated_at="2026-08-24T18:25:00+09:00", report_id="req_policy_unit"):
@@ -197,13 +185,13 @@ class PolicyDecisionTests(unittest.TestCase):
         with self.assertRaises(PolicyConfigurationError):
             validate_deadline_policy(malformed)
 
-    def test_k3_catalog_selects_four_and_sixteen_rules_from_data(self):
+    def test_k3_catalog_selects_four_and_thirteen_rules_from_data(self):
         evidence = evaluate_requirements(
             self.happy_record, scope="EVIDENCE", report_id="req_catalog_evidence",
             evaluated_at="2026-08-24T18:23:00+09:00", time_resolution=self.happy_time)
         final = self._evaluate()
         self.assertEqual(4, len(evidence["checks"]))
-        self.assertEqual(16, len(final["checks"]))
+        self.assertEqual(13, len(final["checks"]))
         self.assertEqual(CONFIGS["scenario_happy_001"]["evidence_rules"],
                          [item["code"] for item in evidence["checks"]])
         self.assertEqual(CONFIGS["scenario_happy_001"]["final_rules"],
@@ -278,9 +266,31 @@ class PolicyDecisionTests(unittest.TestCase):
                 self._evaluate()
 
         malformed_facts = self._facts()
-        malformed_facts["violation_visible_in_report_video"] = {"value": "yes"}
+        malformed_facts["plate_visible_in_report_video"] = {"value": "yes"}
         with self.assertRaises(PolicyConfigurationError):
             self._evaluate(facts=malformed_facts)
+
+    def test_d2_removed_event_context_rules_are_absent_and_legacy_inputs_are_ignored(self):
+        removed_codes = {
+            "package.event.violation_visible_in_report_video",
+            "package.event.pre_context_present",
+            "package.event.post_context_present",
+        }
+        catalog = load_requirement_catalog()
+        active_codes = {item["code"] for item in catalog["scopes"]["FINAL_PACKAGE"]["always"]}
+        self.assertTrue(removed_codes.isdisjoint(active_codes))
+
+        baseline = self._evaluate(report_id="req_d2_baseline")
+        legacy_facts = self._facts()
+        legacy_facts.update({
+            "violation_visible_in_report_video": {"value": "legacy"},
+            "pre_context_present_in_report_video": None,
+            "post_context_present_in_report_video": ["legacy"],
+        })
+        with_legacy_inputs = self._evaluate(
+            facts=legacy_facts, report_id="req_d2_legacy_inputs")
+        self.assertEqual(baseline["overall"], with_legacy_inputs["overall"])
+        self.assertEqual(baseline["checks"], with_legacy_inputs["checks"])
 
     def test_k3_not_asked_and_incomplete_render_are_unknown(self):
         record = deepcopy(self.happy_record)
