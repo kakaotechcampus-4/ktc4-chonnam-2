@@ -1,9 +1,9 @@
 # web 값 상태 표시 규칙
 
 **Owner:** 신유민 (`web`) — web 단독 결정이며 CALL 안건이 아니다
-**작성:** 2026-09-07 · **레포 반영:** 2026-09-10 (이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) B-5) · **갱신:** 2026-09-10 (Mock Pack v3 3차, 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31)) · **2026-09-11 (Mock Pack v4 · `case-view/v1.3` 기준 전면 갱신, 이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) A-3)**
+**작성:** 2026-09-07 · **레포 반영:** 2026-09-10 (이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) B-5) · **갱신:** 2026-09-10 (Mock Pack v3 3차, 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31)) · **2026-09-11 (Mock Pack v4 · `case-view/v1.3` 기준 전면 갱신, 이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) A-3)** · **2026-09-14 (§5-2 작업 상태 계열 — PR [#46](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/46) 유소연 답변 · Mock Pack v5 반영)**
 **근거:** `product/product-spec.md` §7 · `product/core-user-flow.md` §3-1 · `architecture/contracts/contract-job-record-case-view.md` B절 §6·§7·§10-12 · `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)
-**대조 기준:** `develop` @ `d9d8e2b` (Mock Pack v4 · `case-view/v1.3`)
+**대조 기준:** §5-2는 `develop` @ `72e0e05` (Mock Pack v5) · **그 외 절은 `d9d8e2b` (Mock Pack v4 · `case-view/v1.3`)** — 전면 재대조는 후속
 **적용 화면:** Evidence Review · 최종 신고자료(handoff)
 
 > **2026-09-11 갱신 요약.** `case-view/v1.3`에서 §5의 미결 2건이 **둘 다 닫혔다** — `report_type_display`에 `info_state`/`source_label_key`가 추가됐고(`CONTRACT_CONFLICTS.md` 항목 4 종결), `package.report_field_states`가 신설되며 대응표·`unconfirmed_fields` 파생 규칙까지 명문화됐다(항목 10 종결). 이 문서의 잠정 2건을 철회하고 §3~§6을 v4 실측값으로 다시 썼다. §5는 아직 닫히지 않은 **작업 상태(CANCELLED) 계열 3건**으로 교체했다.
@@ -97,15 +97,51 @@ B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위�
 
 > 이전에 기록했던 「두 면이 양방향으로 어긋난다」(u001 rev4에서 `location`·`violation_expression`이 `unconfirmed_fields`에 없고 `safety_report_type`은 배열에만 있던 문제)는 **해소됐다.** v4 u001 rev4의 `unconfirmed_fields`는 `["safety_report_type","occurred_at","location","violation_expression"]`으로 파생 규칙과 정확히 일치한다.
 
-### 5-2. 미결 — 계약 요청 (작업 상태 계열, 이슈 [#33](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/33) ②)
+### 5-2. 작업 상태(CANCELLED) 계열 — 확정 2건 · 미결 1건
 
-`job-execution/v1.1`에 `CANCELLED`가 신설되며 제품 6개 작업상태 중 「중단」이 채워졌는데, **web이 그 화면을 그릴 근거가 세 군데 비어 있다.** 셋 다 `case-view` 쪽 결정이고 v1.3에 반영이 없다.
+> **2026-09-14 갱신.** `job-execution/v1.1`에 `CANCELLED`가 신설된 뒤 web이 중단 화면을 그릴 근거가 세 군데 비어 있었다(이슈 [#33](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/33) ②). Mock Pack v5의 `scenario_infra_failure_001`(CANCELLED→PARTIAL 실물)과 유소연 답변(PR [#46](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/46))으로 **①③이 닫혔고 ②만 남는다.**
 
-- **① 취소된 job이 `running_jobs[]`에서 사라진다.** `running_jobs[].status`가 아직 `PENDING | RUNNING` 2값이라, 취소된 job은 배열에서 빠지고 사용자는 `progress[]`로만 중단을 알게 된다. job 단위로 「이 작업이 중단됨」을 보여야 하면 `status`에 값을 늘리거나 notice가 하나 필요하다. 의도된 설계면 그대로 가고, 그 경우 web은 job 단위 중단 표시를 하지 않는다.
-- **② 「이어서 찾기」를 렌더할 `actions[]` 값이 없다.** 값 공간이 7종(`EDIT_EVENT_TIME`·`MANUAL_PLATE_INPUT`·`GENERATE_REPORT_VIDEO`·`REVIEW_TIME`·`RETRY_PLATE_READ`·`EDIT_HINT`·`RETRY_SEARCH`)으로 닫혔고 미등록 값은 렌더 금지인데, **재개에 해당하는 값이 없다.** `scenario_empty_001`에서 발견해 이슈 #31 W-1로 닫은 것과 **정확히 같은 문제**이고(그때 `EDIT_HINT`·`RETRY_SEARCH` 2종 추가로 해소), 중단 화면에서는 아직 버튼이 하나도 뜨지 않는다.
-- **③ 「중단」과 「부분 완료」가 한 값으로 접힌다.** `progress[].state=PARTIAL`에 `AnalysisRun.outcome=PARTIAL` 투영과 `JobExecution.status=CANCELLED` 투영 **두 경로가 모두 등재**돼 있다(`04_mock_validation_report.md` §1). `core-user-flow.md` §3-2는 둘을 다른 상태로 정의하므로, 화면에서 구분해야 하면 값이나 파생 규칙이 하나 더 필요하다. 구분하지 않기로 하면 web은 두 경우를 같은 문구로 그린다 — 어느 쪽이든 명시만 되면 그대로 구현한다.
+**확정 ③ — 「중단」과 「부분 완료」는 같은 상태값, 다른 문구** (2026-09-13 유소연, PR #46 Q-2)
 
-**검증 불가 상태도 같이 기록한다.** 두 투영 경로 어느 쪽도 실제 시나리오가 없어(이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) Non-blocking 후속) 이 화면은 현재 목데이터로 눌러볼 수 없다.
+`progress[].state=PARTIAL`에는 두 투영 경로가 등재돼 있다(`AnalysisRun.outcome=PARTIAL` · `JobExecution.status=CANCELLED`). **상태값은 `PARTIAL` 하나로 유지하고, 표시 문구만 「취소를 뜻하는 notice code」의 유무로 분기한다** — B절 §7의 2026-09-10 결정(「`PARTIAL`이 부분 완료·중단 둘 다 흡수하고, 구분이 필요하면 `notices[]`로」)을 그대로 따르는 것이라 새 규칙이 아니다.
+
+| 화면 문구 | 조건 |
+| --- | --- |
+| **「중단됨」** | `progress[].state=PARTIAL` + `notices[]`에 취소 code(현재 `case.plate_read_cancelled` 1종) |
+| **「부분 완료」** | `progress[].state=PARTIAL`이고 취소 code notice 없음 (무관한 notice는 있을 수 있다) |
+
+- **분기 기준은 「취소를 뜻하는 code」의 존재이지 notice의 존재가 아니다.** v5 `scenario_infra_failure_001` rev3의 `notices[]`는 `case.plate_read_cancelled`와 `readout.overlay_presence_undetermined` **2건**이다 — 중단과 무관한 notice가 같은 스냅샷에 공존하므로, notice가 하나라도 있으면 「중단됨」으로 찍는 규칙은 오작동한다.
+- **현재 등재된 취소 code는 `case.plate_read_cancelled` 1종이고, 그 외에는 「부분 완료」로 그린다.** `notices[].code`는 형식(`<producing-module>.<detail>`)만 확정돼 있고 **값 목록은 열려 있으며**, `actions[]`와 달리 「미등록 값 렌더 금지」 규칙도 없다(B절 §7, 이슈 [#26](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/26) A-⑤). 따라서 모르는 code를 만나면 **중단을 단정하지 않는 쪽**이 안전한 기본값이다.
+- **분기 조건은 code 하나다 — 그 notice의 `actions[]`는 조건에 넣지 않는다.** 버튼은 기존 `actions[]` 규칙대로 렌더하면 되고(`case.plate_read_cancelled`는 `RETRY_PLATE_READ`를 싣는다), 그 값이 바뀌어도 문구 분기는 영향을 받지 않아야 한다.
+- **한계 — notice와 단계를 잇는 필드가 없다.** `notices[]`의 필드는 `code`·`severity`·`blocking`·`message_key`·`actions`뿐이라(B절 §5) **어느 단계의 취소인지는 code 이름으로만 알 수 있다.** 지금은 `PARTIAL`인 단계가 스냅샷당 하나뿐이라 모호하지 않지만, 여러 단계가 동시에 `PARTIAL`이 되는 스냅샷이 생기면 대응이 깨진다. 그때 `case`에 연결 수단을 요청한다.
+- **계약 공백 — `case`에 요청.** 취소 계열 code가 늘어나면 web이 이 목록을 따라 갱신해야 하고, 놓치면 실제 중단이 「부분 완료」로 표시된다. 새 취소 code를 만들 때 알려주시거나, 취소 계열을 식별할 수단(code 목록 등재 또는 별도 표시)을 주시면 목록 추적을 없앨 수 있다.
+
+**확정 ① — 취소된 job은 `running_jobs[]`에서 빠진다. web은 job 단위 중단 표시를 하지 않는다**
+
+**의도된 설계다.** 근거를 무게 순으로 적는다.
+
+| 근거 | 내용 |
+| --- | --- |
+| **① 스키마 (핵심 근거)** | `running_jobs[].status`는 `PENDING` / `RUNNING` **2값**이다. `CANCELLED`를 표현할 자리가 애초에 없다 — 취소된 job을 배열에 남기려면 값 공간을 늘려야 하는데 그런 개정이 없었다 |
+| **② 계층 구분 (개정문이 직접 말한다)** | `CANCELLED`는 `job-execution/v1.1`(2026-09-10, 이슈 [#33](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/33) A-2)에서 `JobExecution.status`에 추가됐고, 그 개정문이 스스로 **「이 계약은 실행 상태 표현만 연다」**고 적었다. 그 뒤 `case-view/v1.3`은 `running_jobs[].status`를 2값으로 유지했다 — **빠뜨린 게 아니라 계층이 다르다**(실행 상태 ≠ 화면 투영) |
+| **③ 불변조건 (보조)** | B절 §10 불변조건 5 — 「`running_jobs`가 비어 있으면 진행 중인 작업 없음」. **단 이 문장은 「진행 중인 것만 담는다」까지 주지는 않는다**(터미널 job이 섞여 있어도 명제는 참이다) — 그건 위 ①에서 나온다. 방향을 지지하는 보조 근거다 |
+| **④ fixture 실물** | v5 `scenario_infra_failure_001` rev3·rev4: `job_x001_plate_reread`의 실행이 `CANCELLED`인데 `running_jobs=[]`이고, 중단 사실은 `notices[case.plate_read_cancelled]`가 나른다. Mock Pack 전체의 `running_jobs[]` 엔트리 3건도 전부 `PENDING`/`RUNNING`이다 |
+
+`running_jobs[]`는 「지금 돌고 있는 것」만 보여주는 배열로 쓰고, 중단 사실은 `progress[].state`와 notice가 나른다.
+
+> **case Owner 확인 대기 (비차단).** 위 근거는 전부 계약 문구와 기록된 값이며, 유소연(`case`)이 이 항목을 명시적으로 답한 것은 아니다(PR #46 Q-2 답변은 ③에 대한 것이다). `running_jobs[].status`를 2값으로 유지하는 한 이 절은 확정이고, `CANCELLED`를 이 배열에 넣기로 하면 되돌린다.
+
+**미결 ② — 「이어서 찾기」를 렌더할 `actions[]` 값이 없다**
+
+값 공간이 7종(`EDIT_EVENT_TIME`·`MANUAL_PLATE_INPUT`·`GENERATE_REPORT_VIDEO`·`REVIEW_TIME`·`RETRY_PLATE_READ`·`EDIT_HINT`·`RETRY_SEARCH`)으로 닫혔고 미등록 값은 렌더 금지인데, **재개에 해당하는 값이 없다.** `scenario_empty_001`에서 발견해 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) W-1로 닫은 것과 정확히 같은 문제다(그때 `EDIT_HINT`·`RETRY_SEARCH` 2종 추가로 해소).
+
+**2026-09-14 갱신 — 이 미결의 무게가 올라갔다.** PR #46에서 「이어서 찾기 = 새 `job_id` 발주」로 확정되면서 재개가 예외가 아니라 **정상 경로**가 됐다. 지금 목록으로는 중단 화면에 버튼이 하나도 뜨지 않는다. 이슈 [#48](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/48) Q3도 같은 `actions[]` 목록에 위치 입력 대응 값을 묻고 있어 **두 건을 한 번에 보는 편이 낫다.**
+
+**검증 상태 — v5에서 절반 해소**
+
+~~두 투영 경로 어느 쪽도 실제 시나리오가 없어 이 화면은 현재 목데이터로 눌러볼 수 없다.~~ → Mock Pack v5가 `scenario_infra_failure_001`에 `CANCELLED`→`PARTIAL` 실물을 넣었다(`job_x001_plate_reread` · rev3·rev4). 위 확정 2건은 이 fixture로 검증 가능하다.
+
+**`AnalysisRun.outcome=PARTIAL` 투영 쪽은 여전히 fixture가 없다** — Mock Pack 어느 run도 `outcome=PARTIAL`이 아니다. 「부분 완료」 문구 자체는 아직 실물로 눌러볼 수 없다.
 
 ### 5-3. web이 닫은 것 — `situation_confirmation` 화면 문구
 
@@ -131,4 +167,4 @@ B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위�
 
 > **문서 stale 1건 (v4에서도 남아 있음).** `docs/mock/04_mock_validation_report.md`의 §1 `CaseView` 행 · §1 갭 요약 · 결론부가 아직 `info_state=INFO_AI_ESTIMATED`를 「미커버」로 적고 있다. 실제로는 v3에서 이미 해소됐고 v4에서는 happy path까지 확대됐다(이슈 #31 W-11로 제기, 이슈 #39 Required-6 범위). fixture가 아니라 문서만 어긋난 상태다.
 
-> **아직 못 그리는 화면.** `requirements_*.readiness=BLOCK` 경로는 fixture가 없어(`scenario_blocked_001` 대기) 규칙 5·7의 BLOCK 분기를 목데이터로 검증할 수 없다. `progress[].state=PARTIAL`도 같다(§5-2 ③).
+> **아직 못 그리는 화면.** `requirements_*.readiness=BLOCK` 경로는 fixture가 없어(`scenario_blocked_001` 대기) 규칙 5·7의 BLOCK 분기를 목데이터로 검증할 수 없다. `progress[].state=PARTIAL`은 **절반만 해소됐다** — `JobExecution.status=CANCELLED` 투영은 v5 `scenario_infra_failure_001` rev3·rev4로 검증 가능하고, `AnalysisRun.outcome=PARTIAL` 투영은 여전히 fixture가 없다(§5-2).
