@@ -409,6 +409,159 @@ class ProviderContractBreachTest(unittest.TestCase):
         run, _ = self._breach(providers.OverlayReading(presence="MAYBE"))
         self.assertEqual(round_trip(run).to_dict(), run.to_dict())
 
+    def test_bad_tz_offset_becomes_a_failed_run(self):
+        """`tz_offset`은 clip 메타데이터에서 오는 값이라 비어 있거나 ISO가 아닐 수 있다.
+
+        그대로 이어 붙이면 시각이 아닌 문자열이 만들어지고, 파싱에서 `TypeError`/`ValueError`가
+        **provider를 부른 뒤에** 튀어나온다 — run 없이 예외만 남으면 worker가 발행 근거를 잃는다.
+        """
+        def reading(tz):
+            return providers.OverlayReading(
+                presence=providers.PRESENT,
+                tz_offset=tz,
+                samples=[providers.OverlaySampleReading("fr_a", 0.0, "2026-08-24 18:05:12")],
+            )
+
+        for tz in (None, "", "KST", "+0900"):
+            with self.subTest(tz_offset=tz):
+                run, overlay = self._breach(reading(tz))
+                self.assertIsNone(overlay)
+                self.assertEqual(run.outcome, "FAILED")
+                self.assertEqual(run.failure.kind, "INFRA")
+                self.assertEqual(run.failure.code, "READOUT_PIPELINE_ERROR")
+                self.assertIsNotNone(run.ended_at)
+
+    def test_iso_offsets_still_pass(self):
+        for tz in ("+09:00", "Z"):
+            with self.subTest(tz_offset=tz):
+                run, overlay = self._breach(providers.OverlayReading(
+                    presence=providers.PRESENT,
+                    tz_offset=tz,
+                    samples=[providers.OverlaySampleReading("fr_a", 0.0, "2026-08-24 18:05:12")],
+                ))
+                self.assertEqual(run.outcome, "SUCCEEDED")
+                self.assertEqual(overlay.observation.value, f"2026-08-24T18:05:12{tz}")
+
+
+class FailureIsRegisteredTest(unittest.TestCase):
+    """`ReadoutRun.failure`에 실리는 값은 **우리가 발행하는 값**이다 — provider 말을 그대로 싣지 않는다.
+
+    Merge 중단 기준 1 — 「미등재 `failure.kind`/`code` 사용」. readout이 이 계약의 Producer라
+    방어가 여기 있어야 한다. 등재 조합이 아니면 `INFRA`/`READOUT_PIPELINE_ERROR`로 닫는다.
+    """
+
+    def _failing(self, kind, code):
+        class Failing(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                raise providers.ProviderError(kind, code, "stub")
+
+            def read_overlay_time(self, input_ref):
+                raise providers.ProviderError(kind, code, "stub")
+
+        return Failing()
+
+    def test_registered_infra_failure_passes_through(self):
+        run, _ = api.read_plate(request_for("clip_h001"), HINT,
+                                provider=self._failing("INFRA", "READOUT_FRAME_ACCESS_FAILED"))
+        self.assertEqual((run.failure.kind, run.failure.code),
+                         ("INFRA", "READOUT_FRAME_ACCESS_FAILED"))
+
+    def test_unregistered_values_are_closed_as_pipeline_error(self):
+        run, plate = api.read_plate(request_for("clip_h001"), HINT,
+                                    provider=self._failing("DISK_ON_FIRE", "NOT_A_CODE"))
+        self.assertIsNone(plate)
+        self.assertEqual(run.failure.kind, "INFRA")
+        self.assertEqual(run.failure.code, "READOUT_PIPELINE_ERROR")
+        self.assertIn(run.failure.kind, registry.FAILURE_KINDS)
+        self.assertIn(run.failure.code, registry.FAILURE_CODES)
+
+    def test_overlay_validation_never_closes_a_run(self):
+        """`OVERLAY_VALIDATION`은 등재 kind지만 **값을 읽은 뒤의 검증 결과**라 run 실패가 아니다.
+
+        provider가 그것을 error 채널로 올리는 것 자체가 파이프라인 오류다
+        (failure-taxonomy.md 「kind와 outcome은 1:1이 아니다」).
+        """
+        run, overlay = api.read_overlay_time(
+            request_for("clip_h001"),
+            provider=self._failing("OVERLAY_VALIDATION", "READOUT_PIPELINE_ERROR"))
+        self.assertIsNone(overlay)
+        self.assertEqual(run.failure.kind, "INFRA")
+        self.assertEqual(
+            [str(v) for v in invariants.check_all(
+                [ReadoutFixture("generated-failure", "readout", [run], [], [])])],
+            [], "R2가 사후에 잡기 전에 api가 그 조합을 만들지 않는다")
+
+
+class AbstainWithCompleteValueTest(unittest.TestCase):
+    """보류 사유 4종 중 셋은 **온전한 문자열과 함께** 나온다 — 그것이 정상이다.
+
+    계약 §5: 「OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`,
+    `AMBIGUOUS`, `FAILED`이면 `evidence`는 최종 번호판 확정을 보류할 수 있다.」 확정 여부는
+    `status`가 나르고 `?` 마스킹은 프레임 불일치 표현 수단이다(§11-1 선택 C).
+
+    fixture에 있는 abstain은 `FRAME_DISAGREEMENT` 하나뿐이라 이 경로는 fixture로는 안 밟힌다.
+    """
+
+    def _provider(self, status, confidence, px_height):
+        class Unanimous(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                quality = {"plate_px_height": px_height, "sharpness": 0.9}
+                return providers.PlateReading(
+                    association=providers.AssociationReading(
+                        status, False, None, "FALLBACK_ONLY", []),
+                    frames=[
+                        providers.PlateFrameReading("fr_a", [0, 0, 10, 40], "17나2867",
+                                                    confidence, quality),
+                        providers.PlateFrameReading("fr_b", [0, 0, 10, 40], "17나2867",
+                                                    confidence, quality),
+                    ],
+                )
+
+        return Unanimous()
+
+    def _read(self, status="ASSOCIATED", confidence=0.9, px_height=40):
+        return api.read_plate(request_for("clip_h001"),
+                              provider=self._provider(status, confidence, px_height))
+
+    def test_low_confidence_keeps_the_observed_value(self):
+        run, plate = self._read(confidence=0.30)
+        self.assertTrue(plate.abstained)
+        self.assertEqual(plate.abstain_reason, "OCR_LOW_CONFIDENCE")
+        self.assertEqual(plate.observation.status, "NEEDS_REVIEW")
+        self.assertEqual(plate.observation.value, "17나2867",
+                         "보류했다고 관찰값을 지우지 않는다 — evidence가 그것을 본다")
+        self.assertEqual(plate.consensus.disagree_positions, [])
+
+    def test_low_resolution_and_ambiguous_target_do_the_same(self):
+        _, low_res = self._read(px_height=10)
+        _, ambiguous = self._read(status="AMBIGUOUS")
+        self.assertEqual(low_res.abstain_reason, "LOW_RESOLUTION")
+        self.assertEqual(ambiguous.abstain_reason, "TARGET_AMBIGUOUS")
+        for plate in (low_res, ambiguous):
+            self.assertEqual(plate.observation.value, "17나2867")
+            self.assertEqual(plate.observation.status, "NEEDS_REVIEW")
+
+    def test_generated_output_holds_the_invariants(self):
+        """구현이 만든 것을 구현의 검사기에 그대로 건다 — 둘이 어긋나면 여기서 죽는다."""
+        cases = [self._read(confidence=0.30), self._read(px_height=10),
+                 self._read(status="AMBIGUOUS")]
+        generated = ReadoutFixture(
+            "generated-abstain", "readout",
+            [run for run, _ in cases], [plate for _, plate in cases], [])
+        self.assertEqual([str(v) for v in invariants.check_all([generated])], [])
+
+    def test_frame_disagreement_still_requires_masking(self):
+        """좁힌 뒤에도 합의 실패 갈래는 그대로 잡힌다."""
+        _, plate = api.read_plate(request_for("clip_p001"), HINT, provider=fresh_provider())
+        self.assertEqual(plate.abstain_reason, "FRAME_DISAGREEMENT")
+        self.assertIn("?", plate.observation.value)
+        plate.observation.value = "17나2867"      # 마스킹을 지운다
+        plate.consensus.text = "17나2867"
+        plate.consensus.disagree_positions = []
+        violations = invariants.check_plate(
+            ReadoutFixture("broken", "readout", [], [plate], []))
+        self.assertIn("R11", sorted({v.rule for v in violations}))
+
 
 class CropIdentityTest(unittest.TestCase):
     """crop identity는 `(frame_ref, bbox, source_profile)`이다 — frame_ref 하나가 아니다."""

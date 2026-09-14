@@ -38,6 +38,7 @@ run만 남는다(contract-readout-run.md §5).
 """
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -97,6 +98,11 @@ OVERLAY_TIME_FORMATS = (
     "%Y.%m.%d %H:%M:%S",
 )
 """지원하는 overlay 날짜/시간 형식. 여기서 못 읽으면 `format_ok=false`다(계약 §7)."""
+
+TZ_OFFSET = re.compile(r"(?:[+-]\d{2}:\d{2}|Z)")
+"""provider가 주는 `tz_offset`의 형식. overlay 문자열에는 timezone이 없어서 clip의 source
+메타데이터에서 오는데, 그 값이 비어 있거나 ISO offset이 아니면 여기서 붙인 문자열이 시각이
+아니게 된다. 계약 값을 만들기 전에 형식부터 본다."""
 
 
 # ── 입력 ─────────────────────────────────────────────────────
@@ -207,10 +213,32 @@ def _start_run(operation: str, request) -> ReadoutRun:
     )
 
 
+RUN_FAILURE_KIND = "INFRA"
+"""`outcome=FAILED`로 run을 닫을 수 있는 유일한 kind.
+
+failure-taxonomy.md 「kind와 `outcome`은 1:1이 아니다」 — 등재 kind 5종 중 나머지 4종은
+eval이 「왜 못 읽었나」를 집계하는 분류이지 실행 실패가 아니다(`OVERLAY_VALIDATION`은 값을
+읽은 **뒤의** 검증 결과다). 등재 code 3건도 전부 `INFRA` 아래에 있다.
+"""
+
+
+def _registered_failure(error: providers.ProviderError) -> Failure:
+    """provider가 준 실패를 **등재 조합으로만** 계약에 싣는다.
+
+    이 계약의 Producer는 readout이다 — provider가 등재되지 않은 값이나 층위가 다른 kind를
+    error 채널로 올려도 그것을 그대로 `ReadoutRun.failure`에 실으면 미등재 값을 우리가
+    발행하는 것이 된다(Merge 중단 기준 1). 그런 응답 자체가 파이프라인 오류이므로
+    `INFRA`/`READOUT_PIPELINE_ERROR`로 닫는다 — 예외로 되돌리지는 않는다.
+    """
+    if error.kind == RUN_FAILURE_KIND and error.code in registry.FAILURE_CODES:
+        return Failure(kind=error.kind, code=error.code)
+    return Failure(kind=RUN_FAILURE_KIND, code="READOUT_PIPELINE_ERROR")
+
+
 def _fail_run(run: ReadoutRun, error: providers.ProviderError) -> ReadoutRun:
     """완전 실패 — run만 남기고 결과 객체를 만들지 않는다(failure-taxonomy.md 「code」)."""
     run.outcome = "FAILED"
-    run.failure = Failure(kind=error.kind, code=error.code)
+    run.failure = _registered_failure(error)
     run.ended_at = _now()
     return run
 
@@ -465,6 +493,45 @@ def read_overlay_time(request: ReadRequest,
         return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
             f"presence={reading.presence}인데 sample이 있다 — 읽은 것이 있으면 PRESENT다")), None)
 
+    if not TZ_OFFSET.fullmatch(reading.tz_offset or ""):
+        return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
+            f"provider가 ISO offset이 아닌 tz_offset을 줬다: {reading.tz_offset!r}")), None)
+
+    try:
+        samples, value, status, reason_code, validation = _interpret_overlay(reading)
+    except Exception as unexpected:  # noqa: BLE001 — 아래 이유로 넓게 잡는다
+        # provider 데이터를 해석하다 터진 것은 전부 여기로 온다. 예외로 되돌리면 실행이
+        # 일어났는데 run이 없는 상태가 되어 worker가 발행 근거를 잃는다(모듈 docstring).
+        return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
+            f"sample 해석 중 예기치 못한 오류: {unexpected!r}")), None)
+
+    reason = ObservationReason(code=reason_code, note=None) if reason_code else None
+    overlay = OverlayTimeReadout(
+        readout_id=_new_id("readout"),
+        run_ref=ContractRef(kind="readout_run", ref=run.run_id),
+        case_id=request.case_id,
+        candidate_id=request.candidate_id,
+        input_ref=_copy_input_ref(request.input_ref),
+        observation=_observation(value, status, "readout.overlay_ocr", run.run_id, reason),
+        validation=validation,
+        samples=samples,
+        contract="OverlayTimeReadout",
+        contract_version=OVERLAY_TIME_READOUT_VERSION,
+    )
+    # validation 실패는 run 실패가 아니다 — outcome을 내리지 않는다(failure-taxonomy.md).
+    run.ended_at = _now()
+    return OverlayTimeReadResult(run, overlay)
+
+
+def _interpret_overlay(reading):
+    """provider가 준 sample을 계약 값으로 옮긴다 — 4갈래와 validation 3종.
+
+    **provider 데이터에 손이 닿는 계산은 전부 여기 모여 있다.** 호출자가 이 함수 하나만
+    감싸면 「provider를 부른 뒤에는 예외를 내보내지 않는다」가 성립한다 — 형식이 어긋난
+    `tz_offset`처럼 우리가 미리 못 본 값이 들어와도 실패 run으로 닫힌다.
+
+    반환은 `(samples, value, status, reason_code, OverlayValidation)`.
+    """
     samples = [
         OverlaySample(
             frame_ref=s.frame_ref,      # 파싱하지 않고 그대로 보존한다
@@ -500,24 +567,9 @@ def read_overlay_time(request: ReadRequest,
         format_ok = True
         monotonic_ok, duration_match_ok = _validate_samples(parsed)
 
-    reason = ObservationReason(code=reason_code, note=None) if reason_code else None
-    overlay = OverlayTimeReadout(
-        readout_id=_new_id("readout"),
-        run_ref=ContractRef(kind="readout_run", ref=run.run_id),
-        case_id=request.case_id,
-        candidate_id=request.candidate_id,
-        input_ref=_copy_input_ref(request.input_ref),
-        observation=_observation(value, status, "readout.overlay_ocr", run.run_id, reason),
-        validation=OverlayValidation(
-            format_ok=format_ok,
-            monotonic_ok=monotonic_ok,
-            duration_match_ok=duration_match_ok,
-            sample_count=len(samples),
-        ),
-        samples=samples,
-        contract="OverlayTimeReadout",
-        contract_version=OVERLAY_TIME_READOUT_VERSION,
+    return samples, value, status, reason_code, OverlayValidation(
+        format_ok=format_ok,
+        monotonic_ok=monotonic_ok,
+        duration_match_ok=duration_match_ok,
+        sample_count=len(samples),
     )
-    # validation 실패는 run 실패가 아니다 — outcome을 내리지 않는다(failure-taxonomy.md).
-    run.ended_at = _now()
-    return OverlayTimeReadResult(run, overlay)

@@ -109,6 +109,21 @@ class RuleFiresTest(unittest.TestCase):
             plate["consensus"]["disagree_positions"] = []
         self.assertIn("R11", _rules(self._check("scenario_plate_reread_001", mutate)))
 
+    def test_R11_does_not_fire_outside_frame_disagreement(self):
+        """저신뢰도·저해상도·association 보류는 값이 온전해도 위반이 아니다.
+
+        계약 §5가 「OCR 문자열이 정확해 보여도 `target_association`이 `AMBIGUOUS`면 evidence는
+        최종 확정을 보류할 수 있다」고 쓴 그 조합이다. 여기를 R11로 잡으면 구현이 보류할 때마다
+        관찰값을 지우게 되고, evidence는 번호판을, eval은 abstention 분석 대상을 잃는다.
+        """
+        def mutate(raw):
+            plate = raw["plate_readouts"][0]
+            plate["abstain_reason"] = "OCR_LOW_CONFIDENCE"
+            plate["observation"]["value"] = "17나2867"
+            plate["consensus"]["text"] = "17나2867"
+            plate["consensus"]["disagree_positions"] = []
+        self.assertNotIn("R11", _rules(self._check("scenario_plate_reread_001", mutate)))
+
     def test_R12_abstain_reason_is_the_only_source(self):
         def mutate(raw):
             raw["plate_readouts"][0]["observation"]["reason"] = {

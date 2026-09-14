@@ -123,10 +123,18 @@ def check_plate(fixture) -> list:
         if plate.abstained:
             if obs.status != "NEEDS_REVIEW":
                 out.append(Violation("R10", pid, f"abstained=true인데 status={obs.status}"))
-            if obs.value is not None and "?" not in obs.value:
+            # R11은 **합의 실패 갈래에만** 건다. 계약 §5는 온전한 문자열 + 보류를 정상
+            # 조합으로 규정한다 — 「OCR 문자열이 정확해 보여도 target_association이
+            # LOW_CONFIDENCE·AMBIGUOUS·FAILED이면 evidence는 최종 확정을 보류할 수 있다」.
+            # 확정이냐 아니냐는 `status`가 나르고(R10), `?` 마스킹은 §11-1이 **프레임 불일치**
+            # 표현 수단으로 고른 것이다(선택 C — masking text + disagree_positions).
+            # 그래서 저신뢰도·저해상도·association 보류는 값이 온전해도 위반이 아니고,
+            # 「자리마다 다르게 읽혔다」고 해 놓고 마스킹이 없는 것만 모순이다.
+            masked = obs.value is None or "?" in obs.value
+            if plate.abstain_reason == "FRAME_DISAGREEMENT" and not masked:
                 out.append(Violation(
                     "R11", pid,
-                    f"abstained=true인데 확정 번호판 값이 나왔다: {obs.value!r}",
+                    f"프레임 합의 실패로 보류했는데 마스킹 없는 값이 나왔다: {obs.value!r}",
                 ))
             if plate.abstain_reason is None:
                 out.append(Violation("R12", pid, "abstained=true인데 abstain_reason이 없다"))
