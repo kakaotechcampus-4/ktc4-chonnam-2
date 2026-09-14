@@ -109,14 +109,6 @@ class OcrProvider:
 
 # ── Mock 1차용 Stub ──────────────────────────────────────────
 
-# `scenario_infra_failure_001`의 `rr_x001_plate`(INFRA/READOUT_PROVIDER_TIMEOUT)는 fixture에서
-# 역산할 수 없다 — 완전 실패라 결과 객체가 없고, `ReadoutRun`에는 `input_ref`가 없기 때문이다
-# (contract-readout-run.md §3). 그래서 이 한 줄만 명시한다.
-SCRIPTED_FAILURES = {
-    ("clip_x001", "PLATE_READ"): ("INFRA", "READOUT_PROVIDER_TIMEOUT"),
-}
-
-
 def _presence_of(overlay) -> str:
     reason = overlay.observation.reason
     code = reason.code if reason else None
@@ -161,13 +153,11 @@ class FixtureOcrProvider(OcrProvider):
         self._taken[key] = seen + 1
         return script[min(seen, len(script) - 1)]
 
-    def _raise_if_scripted(self, input_ref, operation):
-        failure = SCRIPTED_FAILURES.get((input_ref.incident_clip_ref, operation))
-        if failure:
-            raise ProviderError(*failure, detail=f"scripted stub failure for {operation}")
-
     def read_plate(self, input_ref, target_hint) -> PlateReading:
-        self._raise_if_scripted(input_ref, "PLATE_READ")
+        # `scenario_infra_failure_001`의 `rr_x001_plate`는 fixture에서 역산할 수 없다 — 완전
+        # 실패라 결과 객체가 없고 `ReadoutRun`에는 `input_ref`가 없다(contract-readout-run.md §3).
+        if input_ref.incident_clip_ref == "clip_x001":
+            raise ProviderError("INFRA", "READOUT_PROVIDER_TIMEOUT", "scripted stub failure")
         key = (input_ref.incident_clip_ref, input_ref.source_profile)
         plate = self._next(self._plate, key)
 
@@ -211,7 +201,6 @@ class FixtureOcrProvider(OcrProvider):
         )
 
     def read_overlay_time(self, input_ref) -> OverlayReading:
-        self._raise_if_scripted(input_ref, "OVERLAY_TIME_READ")
         key = (input_ref.incident_clip_ref, input_ref.source_profile)
         overlay = self._next(self._overlay, key)
         if overlay is None:
