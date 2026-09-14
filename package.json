@@ -14,6 +14,7 @@
     "build": "npm run build --workspaces --if-present",
     "preview:prototype": "npm run preview --workspace=daesingo-prototype",
     "dev:web": "npm run dev --workspace=daesingo-web",
-    "preview:web": "npm run preview --workspace=daesingo-web"
+    "preview:web": "npm run preview --workspace=daesingo-web",
+    "test:web": "npm run test --workspace=daesingo-web"
   }
 }
