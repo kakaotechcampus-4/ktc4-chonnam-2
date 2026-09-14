@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .models import ContractModel, MediaStream, SourceAsset
+from .models import AssetFacts, ContractModel, FrameRef, MediaStream, SourceAsset
 
 
 _SCENARIO_ID = re.compile(r"scenario_[a-z0-9_]+")
@@ -23,16 +22,21 @@ class RecordingFixture(ContractModel):
     module: Literal["recording"]
     source_assets: list[SourceAsset]
     media_streams: list[MediaStream]
+    frame_refs: list[FrameRef] = Field(default_factory=list)
+    asset_facts: list[AssetFacts] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def source_stream_references_are_consistent(self) -> RecordingFixture:
         assets = {asset.source_asset_ref: asset for asset in self.source_assets}
         streams = {stream.media_stream_ref: stream for stream in self.media_streams}
+        frames = {frame.frame_ref: frame for frame in self.frame_refs}
 
         if len(assets) != len(self.source_assets):
             raise ValueError("source_asset_ref는 fixture 안에서 중복될 수 없습니다")
         if len(streams) != len(self.media_streams):
             raise ValueError("media_stream_ref는 fixture 안에서 중복될 수 없습니다")
+        if len(frames) != len(self.frame_refs):
+            raise ValueError("frame_ref는 fixture 안에서 중복될 수 없습니다")
 
         for asset in self.source_assets:
             if len(set(asset.media_stream_refs)) != len(asset.media_stream_refs):
@@ -51,6 +55,13 @@ class RecordingFixture(ContractModel):
             if stream.media_stream_ref not in asset.media_stream_refs:
                 raise ValueError(f"{stream.media_stream_ref}가 SourceAsset에 등재되지 않았습니다")
 
+        for frame in self.frame_refs:
+            stream = streams.get(frame.media_stream_ref)
+            if stream is None:
+                raise ValueError(f"{frame.media_stream_ref}를 가리키는 MediaStream이 없습니다")
+            if stream.media_type != "VIDEO":
+                raise ValueError(f"{frame.frame_ref}가 VIDEO가 아닌 MediaStream을 참조합니다")
+
         return self
 
 
@@ -66,7 +77,4 @@ def load_recording_fixture(
 
     source_dir = fixture_dir if fixture_dir is not None else _DEFAULT_FIXTURE_DIR
     fixture_path = source_dir / f"{scenario_id}.json"
-    with fixture_path.open(encoding="utf-8") as fixture_file:
-        payload: Any = json.load(fixture_file)
-
-    return RecordingFixture.model_validate(payload)
+    return RecordingFixture.model_validate_json(fixture_path.read_text(encoding="utf-8"))

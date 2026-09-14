@@ -8,6 +8,22 @@ from pydantic import ValidationError
 from daesingo.recording import RecordingFixture, SourceAsset, load_recording_fixture
 
 
+@pytest.mark.parametrize(
+    "scenario_id",
+    [
+        "scenario_happy_001",
+        "scenario_empty_001",
+        "scenario_unknown_abstain_partial_001",
+        "scenario_plate_reread_001",
+        "scenario_correction_rerun_001",
+        "scenario_infra_failure_001",
+        "scenario_relative_rebase_001",
+    ],
+)
+def test_recording_fixture_contract_view_loads_every_scenario(scenario_id: str) -> None:
+    assert load_recording_fixture(scenario_id).scenario_id == scenario_id
+
+
 def test_happy_fixture_loads_source_assets_and_media_streams() -> None:
     fixture = load_recording_fixture("scenario_happy_001")
 
