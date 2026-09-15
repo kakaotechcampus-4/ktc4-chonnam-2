@@ -1,0 +1,23 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_infra_failure_001",
+  "provisional_non_contract_schema": true,
+  "note": "search fixture 자체가 없다 — 「후보 없음」이 아니라 「대상 아님」이다. overlay 판독 2건은 v5 에서 추가됐으나 둘 다 UNKNOWN·value null 이라 시각 정답이 서지 않는다.",
+  "metric_targets": [
+    {
+      "metric": "negative_clip",
+      "ref": { "kind": "recording_timeline", "ref": "tl_x001" },
+      "expected_event_count": 0
+    },
+    {
+      "metric": "not_scored",
+      "scope": "plate",
+      "reason": "READOUT_INFRA_FAILURE"
+    },
+    {
+      "metric": "not_scored",
+      "scope": "occurred_at",
+      "reason": "NO_TIME_RESOLUTION"
+    }
+  ]
+}

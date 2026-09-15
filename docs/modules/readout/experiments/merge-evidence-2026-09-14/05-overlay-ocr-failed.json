@@ -1,0 +1,75 @@
+{
+  "readout_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_181031c74e1f",
+    "operation": "OVERLAY_TIME_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-14T14:33:38+09:00",
+    "ended_at": "2026-09-14T14:33:38+09:00"
+  },
+  "result": {
+    "contract": "OverlayTimeReadout",
+    "contract_version": "overlay-time-readout/v1.2",
+    "readout_id": "readout_f41d4c3797bd",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_181031c74e1f"
+    },
+    "case_id": "case_x001",
+    "candidate_id": "candidate_x001",
+    "input_ref": {
+      "incident_clip_ref": "clip_x001",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": null,
+      "status": "UNKNOWN",
+      "reason": {
+        "code": "readout.overlay.ocr_failed",
+        "note": null
+      },
+      "source": {
+        "kind": "readout.overlay_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_181031c74e1f"
+        }
+      }
+    },
+    "validation": {
+      "format_ok": false,
+      "monotonic_ok": null,
+      "duration_match_ok": null,
+      "sample_count": 3
+    },
+    "samples": [
+      {
+        "frame_ref": "fr_x001_overlay_r1",
+        "offset_sec": 2.0,
+        "raw_text": "2O26-O8-3O O9:1?:1?",
+        "parsed_at": null
+      },
+      {
+        "frame_ref": "fr_x001_overlay_r2",
+        "offset_sec": 5.0,
+        "raw_text": "2O26-O8-3O O9:1?:1?",
+        "parsed_at": null
+      },
+      {
+        "frame_ref": "fr_x001_overlay_r3",
+        "offset_sec": 8.0,
+        "raw_text": "2O26-O8-3O O9:1?:2?",
+        "parsed_at": null
+      }
+    ]
+  }
+}

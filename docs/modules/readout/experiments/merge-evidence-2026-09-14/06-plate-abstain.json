@@ -1,0 +1,102 @@
+{
+  "readout_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_1bdb4c9651b1",
+    "operation": "PLATE_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-14T14:33:38+09:00",
+    "ended_at": "2026-09-14T14:33:38+09:00"
+  },
+  "result": {
+    "contract": "PlateReadout",
+    "contract_version": "plate-readout/v1.2",
+    "readout_id": "readout_a6c871a41432",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_1bdb4c9651b1"
+    },
+    "case_id": "case_p001",
+    "candidate_id": "candidate_p001",
+    "input_ref": {
+      "incident_clip_ref": "clip_p001",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "target_association": {
+      "status": "ASSOCIATED",
+      "target_hint_used": true,
+      "track_ref": "track_h001",
+      "association_method": "TARGET_HINT_WITH_FALLBACK",
+      "associated_region": {
+        "frame_ref": "fr_p001_plate1",
+        "bbox_xywh": [
+          640,
+          500,
+          96,
+          40
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "SPATIAL_PROXIMITY",
+          "detail": "candidate target region overlaps selected track"
+        },
+        {
+          "kind": "MULTI_FRAME_CONTINUITY",
+          "detail": "동일 차량으로 프레임 간 지속 추적됨 — 대상 식별은 확실하나 번호판 마지막 자리 인식이 프레임 간 불일치"
+        }
+      ]
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": "17나28??",
+      "status": "NEEDS_REVIEW",
+      "source": {
+        "kind": "readout.plate_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_1bdb4c9651b1"
+        }
+      }
+    },
+    "consensus": {
+      "text": "17나28??",
+      "disagree_positions": [
+        5,
+        6
+      ],
+      "method": "MULTI_FRAME"
+    },
+    "abstained": true,
+    "abstain_reason": "FRAME_DISAGREEMENT",
+    "best_frame": {
+      "frame_ref": "fr_p001_plate1",
+      "crop_ref": "crop_da850bf9d5cf",
+      "quality": {
+        "plate_px_height": 24,
+        "sharpness": 0.44
+      }
+    },
+    "frame_results": [
+      {
+        "frame_ref": "fr_p001_plate1",
+        "crop_ref": "crop_da850bf9d5cf",
+        "text": "17나2804",
+        "confidence": 0.41
+      },
+      {
+        "frame_ref": "fr_p001_plate2",
+        "crop_ref": "crop_2542424ed0ed",
+        "text": "17나2891",
+        "confidence": 0.38
+      }
+    ]
+  }
+}

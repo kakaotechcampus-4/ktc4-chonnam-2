@@ -1,0 +1,29 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_correction_rerun_001",
+  "provisional_non_contract_schema": true,
+  "note": "시각 해석이 2개다. tres_r001_v1(NEEDS_REVIEW, 13:15:30)을 tres_r001_v2(OK, 13:13:00, user_corrected=true)가 대체했다. 정답은 v2 다. anchor 정정이므로 offset 930s 는 그대로다.",
+  "metric_targets": [
+    {
+      "metric": "candidate_onset",
+      "ref": { "kind": "candidate", "ref": "candidate_r001" },
+      "violation_type": "MOTORCYCLE_HELMET_NON_USE",
+      "onset_ms": 930000,
+      "timeline_revision": 1,
+      "scoring": "INCLUDED"
+    },
+    {
+      "metric": "plate_readout",
+      "ref": { "kind": "plate_readout", "ref": "readout_r001_plate" },
+      "legibility": "READABLE",
+      "true_text": "34나7890",
+      "derived_from_pack": true
+    },
+    {
+      "metric": "occurred_at",
+      "ref": { "kind": "time_resolution", "ref": "tres_r001_v2" },
+      "expected": "2026-08-27T13:13:00+09:00",
+      "derived_from_pack": true
+    }
+  ]
+}

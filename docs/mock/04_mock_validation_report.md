@@ -1,6 +1,6 @@
 # 04. Mock Validation Report
 
-`data/mock/validate_mock_pack.py` 실행 결과: **46개 JSON 파일, 7개 시나리오 스캔 — 오류 0건, 경고 0건 (VALIDATION PASSED)**.
+`data/mock/validate_mock_pack.py` 실행 결과: **51개 JSON 파일, 7개 시나리오 스캔 — 오류 0건, 경고 0건 (VALIDATION PASSED)**.
 
 > **2026-09-08 갱신.** 심층 검토(`05_mock_deep_review_report.md`) 이후 검증 스크립트를 강화하고 그때 잡힌 17건을 수정했다 — 미등록 사건 유형 10건(P0-1), `VisualEvidence` 필수 필드 누락 6건(P0-2), `disagree_positions` off-by-one 1건(P1-4). 추가로 overlay `samples[].offset_sec` 좌표계, `manifest_summary.range`, `processed_duration`, happy의 `deletion_reports` 분리, `CaseView` 스냅샷 3종(처리중·최종확인·정정 전) 추가를 반영했다. **P0-3(`VISUAL_VERIFY` run 부재)과 P0-4(「화면 시각 없음」 모델링)는 Owner 답변 대기로 미해소 상태다.**
 >
@@ -40,6 +40,16 @@
 - **manifest 정합** — 상위 `manifest.json`의 시나리오/eval 경로 실존과 목록 일치, scenario manifest의 `artifacts`·`shared_ids`가 실제 fixture와 일치하는지
 - **eval fixture** — `provisional_non_contract_schema` 선언, `actual_ref` 해석, `ALWAYS_CORRECT`/`DELIBERATELY_WRONG`의 `expect_match` 일관성, 오답 fixture에 `actual_ref`가 없는지
 - **시나리오 간 ID 유일성**(경고)
+
+> **2026-09-15 12차 갱신 (1차 Mock Merge 통합 결과 반영, case Owner 유소연).** Mock Pack 데이터 자체가 아니라 **처음으로 6개 모듈의 실제 구현 코드를 Contract 의존성 순서(recording→search→readout→evidence→case→web, eval 병행)대로 `develop`에 순차 통합**한 결과를 반영한다(PR: recording #53·search #54·readout #51·evidence #58·case #60·web #59·eval #55). 이전 11차까지의 갱신은 전부 fixture 자체의 정합성이었고, 이번이 처음으로 "그 fixture를 실제 모듈 코드가 계약대로 처리하는가"까지 검증한 회차다.
+>
+> **검증 결과**: `check_boundaries.py` PASS(0 violation, 6개 모듈 전부 실제 코드 존재 확인 — 골격 단계 NOTE 소멸), `check_contract_fixtures.py` PASS(190검사), `validate_mock_pack.py` PASS(46→51개 JSON, 7개 시나리오 — eval-harness가 `data/mock/expected/eval_fixture_{correct,wrong}_001.json` 2개 범용 fixture를 7개 시나리오별 `scenario_*.expected.json`으로 교체하면서 +5), pytest 445 passed(+68 subtests) / 5 skipped(로컬 미디어 없음, 정상) / 0 failed, `apps/web` vitest 37/37 + `tsc -b` 클린, `eval`은 `mock_pack:contracts` impl로 실제 스코어링 결과 파일 생성까지 확인.
+>
+> **구조적으로 확인된 것**: recording/search/readout/evidence/case/eval 어느 쪽도 서로의 Python 코드를 import하지 않는다 — 전부 이 Mock Pack(`data/mock/<모듈>/*.json`)을 통해서만 연결되고, `apps/web`도 `data/mock/case/*.json`을 사본 없이 `import.meta.glob`으로 직접 읽는다. 즉 이번 회차는 "Contract 형태 정합 + 각 모듈의 실제 코드가 이 Mock Pack을 계약대로 처리"까지이고, 모듈 간 실제 함수 호출 연결은 아직 없다 — `ownership.md` §4가 정한 "완료 상태: 실제 구현만 Mock 자리에 하나씩 교체하면 된다"는 원래 계획과 일치한다.
+>
+> **Issue Log(Blocking 0건, 통합 과정에서 신규 발견)**: ① root `pyproject.toml` 3-way 충돌 — recording(setuptools·py3.10)/search(hatchling·py3.13)/eval-harness(setuptools류·py3.11)가 각자 다른 root 설정을 만들어 merge 때마다 add/add 충돌 — recording 버전으로 임시 수렴, 최종 수렴안은 팀 논의 필요(`readout`의 `tests/README.md`가 이 충돌을 이미 예견해 문서화해둔 상태였다). ② 위 결과로 `requires-python`이 `>=3.10`으로 남아있지만 search/eval 코드는 `typing.Self` 등으로 실제 `>=3.11` 필요 — 이번 검증은 Python 3.12로 통과시켰다. pyproject 수렴 시 함께 정정 필요. ③ `src/daesingo/__init__.py` add/add 충돌 — recording 쪽(버전 문자열 포함) 유지로 해결, 의미상 영향 없음.
+>
+> **Tool Trajectory Review 1회차**(`tool-trajectory-review.md` §4)도 이번 통합 직후 진행했다 — ①(부분 재실행 정책과 실제 Job 발주 함수 간 대응 미확인)·⑦(원본 불변성 계측 자체 부재, 단 Mock 단계라 파일 I/O 자체가 없어 당장 위험은 없음) WARN, 나머지 5개 PASS. 상세 근거는 해당 문서 §4-1 참고.
 
 ## 1. Contract × Variant Coverage
 
