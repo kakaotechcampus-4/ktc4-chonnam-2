@@ -1,0 +1,29 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_happy_001",
+  "provisional_non_contract_schema": true,
+  "note": "eval 소유 정답지. metric_targets 라는 이름은 공용 validator §13 과의 호환을 위해 유지한다. 값 사본을 싣지 않고 ref 로 가리킨다.",
+  "metric_targets": [
+    {
+      "metric": "candidate_onset",
+      "ref": { "kind": "candidate", "ref": "candidate_h001" },
+      "violation_type": "SOLID_LINE_LANE_CHANGE",
+      "onset_ms": 312480,
+      "timeline_revision": 1,
+      "scoring": "INCLUDED"
+    },
+    {
+      "metric": "plate_readout",
+      "ref": { "kind": "plate_readout", "ref": "readout_h001_plate" },
+      "legibility": "READABLE",
+      "true_text": "12가3456",
+      "derived_from_pack": true
+    },
+    {
+      "metric": "occurred_at",
+      "ref": { "kind": "time_resolution", "ref": "tres_h001" },
+      "expected": "2026-08-24T18:05:12+09:00",
+      "derived_from_pack": true
+    }
+  ]
+}

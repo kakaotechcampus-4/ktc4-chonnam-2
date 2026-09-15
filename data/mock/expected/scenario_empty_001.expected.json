@@ -1,0 +1,13 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_empty_001",
+  "provisional_non_contract_schema": true,
+  "note": "음성 클립이다. 빈 배열로 두면 공용 validator §13 이 metric_targets is empty 로 FAIL 하고, 「라벨을 아직 안 만들었다」와도 구분되지 않는다. 음성을 라벨로 적는다.",
+  "metric_targets": [
+    {
+      "metric": "negative_clip",
+      "ref": { "kind": "recording_timeline", "ref": "tl_e001" },
+      "expected_event_count": 0
+    }
+  ]
+}
