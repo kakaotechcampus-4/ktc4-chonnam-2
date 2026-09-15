@@ -1,20 +1,16 @@
 """readout 계약 타입 라운드트립 — fixture가 정답지다.
 
-`python -m unittest discover -s tests` 로 돈다. 외부 의존 없음.
+`python -m pytest tests/readout` 로 돈다. 외부 의존 없음.
 
 라운드트립은 **바이트가 아니라 파싱 결과**를 비교한다. fixture 5개의 들여쓰기·배열 줄바꿈이
 파일마다 달라서 텍스트 동일성은 계약 정합성과 무관한 것을 잡는다. 여기서 보는 것은
 「파싱 → 객체 → 직렬화」가 원본과 같은 dict인가 — 필드 누락·추가·이름 변화가 전부 여기서 걸린다.
 """
 import json
-import sys
 import unittest
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
-from daesingo.readout import contracts, registry  # noqa: E402
-from daesingo.readout.fixtures import fixture_paths, load_all, load_raw  # noqa: E402
+from daesingo.readout import contracts, registry
+from daesingo.readout.fixtures import fixture_paths, load_all, load_raw
 
 
 class RoundTripTest(unittest.TestCase):

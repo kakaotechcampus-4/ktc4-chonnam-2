@@ -32,4 +32,4 @@ read_overlay_time(request, provider=None)             -> (ReadoutRun, OverlayTim
 
 계약 타입(`contracts.py`) · 등재값(`registry.py`) · fixture 로더(`fixtures.py`) · 불변조건 18개(`invariants.py`) · 공개 함수 2개(`api.py`) · provider 경계(`providers.py`).
 
-검증은 `python -m unittest discover -s tests`. 폴더의 범위는 위 문서들이 정한다 — 여기에 규칙을 복제하지 않는다.
+검증은 `python -m pytest tests/readout`. 폴더의 범위는 위 문서들이 정한다 — 여기에 규칙을 복제하지 않는다.

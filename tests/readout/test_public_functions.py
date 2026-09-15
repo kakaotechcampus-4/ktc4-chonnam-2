@@ -5,16 +5,12 @@
 `invariants.check_all`을 생성된 출력에도 건다 — fixture에만 걸고 구현에는 안 걸면 검사한 것이
 아니다.
 
-`python -m unittest discover -s tests` 로 돈다. 외부 의존 없음.
+`python -m pytest tests/readout` 로 돈다. 외부 의존 없음.
 """
-import sys
 import unittest
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
-from daesingo.readout import api, invariants, providers, registry  # noqa: E402
-from daesingo.readout.contracts import (  # noqa: E402
+from daesingo.readout import api, invariants, providers, registry
+from daesingo.readout.contracts import (
     InputRef,
     OverlayTimeReadout,
     PlateReadout,

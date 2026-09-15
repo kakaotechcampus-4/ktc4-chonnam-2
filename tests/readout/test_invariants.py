@@ -3,18 +3,15 @@
 두 방향을 같이 본다. 앞쪽만 있으면 아무것도 검사하지 않는 함수도 초록색으로 통과한다.
 그래서 뒤쪽(고의로 깨뜨려 위반이 나오는지)이 규칙 하나하나에 붙어 있다.
 
-`python -m unittest discover -s tests` 로 돈다.
+`python -m pytest tests/readout` 로 돈다.
 """
 import copy
-import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
-from daesingo.readout import invariants  # noqa: E402
-from daesingo.readout.contracts import ReadoutFixture  # noqa: E402
-from daesingo.readout.fixtures import fixture_paths, load_all, load_raw  # noqa: E402
+from daesingo.readout import invariants
+from daesingo.readout.contracts import ReadoutFixture
+from daesingo.readout.fixtures import fixture_paths, load_all, load_raw
 
 
 def _raw(scenario_id):
