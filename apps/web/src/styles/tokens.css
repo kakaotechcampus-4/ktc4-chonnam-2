@@ -1,0 +1,28 @@
+/* Design tokens — ported verbatim from PROTOTYPE-SPEC.md §2 (the corrected,
+   measured values from stage-1 mockups; wins over DESIGN.md's frontmatter). */
+:root{
+  --font-scale:1;
+
+  --app-bg:#f7f9fc;  --panel:#ffffff;  --panel-soft:#f8fafc;  --sunken:#eef2f7;
+  --ink:#111827;     --ink-2:#344054;  --muted:#5e6a79;       --muted-2:#8a94a6;
+  --border:#d9dee7;  --border-2:#c8d0dc;
+
+  --green:#10933f;         /* 밝은 바탕 위 글자·테두리 전용 */
+  --green-solid:#0c8236;   /* ★ 흰 글자를 얹는 모든 면. #10933f는 3.99:1로 AA 미달 */
+  --green-deep:#087a35;    /* 배지 「출처 확인됨」 글자색 */
+  --green-soft:#eaf7ef;  --green-bd:#bbf7d0;
+
+  --blue:#2563eb;   --blue-soft:#edf4ff;   --blue-bd:#bfdbfe;
+  --orange:#ff8a00; --orange-ink:#b45309;  --orange-soft:#fff7e6; --orange-bd:#fed7aa;
+  --red:#ef1b2d;    --red-soft:#fff1f2;    --red-bd:#fecdd3;
+  --slate:#526074;  --slate-soft:#f1f5f9;  --slate-bd:#cbd5e1;
+  --video:#0b1220;
+
+  /* 브랜드 — 워드마크와 마크 안에서만 산다. 버튼·배지에 쓰지 않는다 */
+  --brand-ink:#0a5c46; --brand-sub:#4a6b5f; --brand-mint:#80e0c0;
+
+  --R:8px;
+  --sh-panel:0 4px 14px rgba(15,23,42,.05);
+  --sh-soft:0 3px 10px rgba(15,23,42,.06);
+  --sh-lift:0 8px 22px rgba(15,23,42,.08);
+}
