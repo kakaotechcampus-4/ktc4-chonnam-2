@@ -1,0 +1,707 @@
+{
+  "artifact_version": "evidence-first-completion/v1",
+  "scenario_id": "scenario_correction_rerun_001",
+  "execution_mode": {
+    "core": "BASELINE_PURE_FUNCTIONS",
+    "upstream": "SHARED_MOCK_CONTRACTS",
+    "requirement_observations": "EVIDENCE_TEST_MOCK",
+    "consumer": "CONTRACT_READER_MOCK",
+    "case_context": "SHARED_CASE_CONTRACTS"
+  },
+  "versions": {
+    "contracts": [
+      "time-resolution/v1",
+      "evidence-record/v1.3",
+      "evidence-needs/v1",
+      "requirement-report/v1",
+      "report-package/v1.1",
+      "correction-record/v1.1"
+    ],
+    "safety_report_policy": "safety-report-policy/v1.1",
+    "specific_template": "tmpl/safety-report-specific-v1",
+    "generic_template": "tmpl/safety-report-generic-v1",
+    "specific_no_location_template": "tmpl/safety-report-specific-no-location-v1",
+    "generic_no_location_template": "tmpl/safety-report-generic-no-location-v1"
+  },
+  "source_paths": {
+    "recording": "data/mock/recording/scenario_correction_rerun_001.json",
+    "search": "data/mock/search/scenario_correction_rerun_001.json",
+    "readout": "data/mock/readout/scenario_correction_rerun_001.json",
+    "case": "data/mock/case/scenario_correction_rerun_001.json"
+  },
+  "adapter_input_ref": "tests/evidence/fixtures/adapter_inputs.json",
+  "input_trace": {
+    "case_id": "case_r001",
+    "candidate_id": "candidate_r001",
+    "candidate_fine_run_ref": "run_r001_fine",
+    "timeline_ref": {
+      "timeline_id": "tl_r001",
+      "revision": 1
+    },
+    "timeline_range": {
+      "start_sec": 900.0,
+      "end_sec": 960.0
+    },
+    "selection_rev": 1,
+    "correction_refs": [
+      "cr_r001_time"
+    ]
+  },
+  "outputs": {
+    "time_resolutions": [
+      {
+        "contract_version": "time-resolution/v1",
+        "resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_r001_v1"
+        },
+        "status": "NEEDS_REVIEW",
+        "resolved": {
+          "value": "2026-08-27T13:15:30+09:00",
+          "source": {
+            "kind": "recording.filename_time",
+            "input_ref": {
+              "kind": "time_source_candidate",
+              "ref": "tsc_r001_filename"
+            }
+          },
+          "verification": "UNVERIFIED",
+          "computation": {
+            "mode": "BASE_PLUS_OFFSET",
+            "base_input_ref": {
+              "kind": "time_source_candidate",
+              "ref": "tsc_r001_filename"
+            },
+            "source_offset_ms": 930000,
+            "timezone": {
+              "zone_id": "Asia/Seoul",
+              "utc_offset": "+09:00",
+              "source": "PRODUCT_CONTEXT"
+            }
+          },
+          "user_corrected": false
+        },
+        "conflict": {
+          "exists": false,
+          "between_refs": [],
+          "requires_user_notice": false
+        },
+        "post_stamp": {
+          "needed": true,
+          "reason_code": "time.no_verified_overlay_present",
+          "requires_user_notice": true
+        },
+        "considered": [
+          {
+            "input_kind": "OBSERVATION",
+            "input_ref": {
+              "kind": "overlay_time_readout",
+              "ref": "readout_r001_overlay_na"
+            },
+            "source": {
+              "kind": "readout.overlay_ocr"
+            },
+            "value": null,
+            "observation_status": "NOT_APPLICABLE",
+            "verification": "UNVERIFIED",
+            "used": false,
+            "reason_code": "time.overlay_not_verified"
+          },
+          {
+            "input_kind": "OBSERVATION",
+            "input_ref": {
+              "kind": "time_source_candidate",
+              "ref": "tsc_r001_filename"
+            },
+            "source": {
+              "kind": "recording.filename_time"
+            },
+            "value": "2026-08-27T13:00:00+09:00",
+            "observation_status": "OK",
+            "verification": "UNVERIFIED",
+            "used": true
+          }
+        ],
+        "provenance": {
+          "policy_ref": "policy/time-source-priority-v1",
+          "selected_input_ref": {
+            "kind": "time_source_candidate",
+            "ref": "tsc_r001_filename"
+          }
+        }
+      },
+      {
+        "contract_version": "time-resolution/v1",
+        "resolution_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_r001_v2"
+        },
+        "supersedes_ref": {
+          "kind": "time_resolution",
+          "ref": "tres_r001_v1"
+        },
+        "status": "OK",
+        "resolved": {
+          "value": "2026-08-27T13:13:00+09:00",
+          "source": {
+            "kind": "case.user_correction",
+            "input_ref": {
+              "kind": "correction_record",
+              "ref": "cr_r001_time"
+            }
+          },
+          "verification": "AGREED",
+          "computation": {
+            "mode": "USER_OVERRIDE",
+            "timezone": {
+              "zone_id": "Asia/Seoul",
+              "utc_offset": "+09:00",
+              "source": "PRODUCT_CONTEXT"
+            }
+          },
+          "user_corrected": true
+        },
+        "conflict": {
+          "exists": false,
+          "between_refs": [],
+          "requires_user_notice": false
+        },
+        "post_stamp": {
+          "needed": true,
+          "reason_code": "time.user_confirmed_no_overlay_present",
+          "requires_user_notice": true
+        },
+        "considered": [
+          {
+            "input_kind": "USER_INPUT",
+            "input_ref": {
+              "kind": "correction_record",
+              "ref": "cr_r001_time"
+            },
+            "source": {
+              "kind": "case.user_correction"
+            },
+            "value": "2026-08-27T13:13:00+09:00",
+            "verification": "AGREED",
+            "used": true
+          },
+          {
+            "input_kind": "OBSERVATION",
+            "input_ref": {
+              "kind": "time_source_candidate",
+              "ref": "tsc_r001_filename"
+            },
+            "source": {
+              "kind": "recording.filename_time"
+            },
+            "value": "2026-08-27T13:00:00+09:00",
+            "observation_status": "OK",
+            "verification": "UNVERIFIED",
+            "used": false,
+            "reason_code": "time.superseded_by_user_correction"
+          }
+        ],
+        "provenance": {
+          "policy_ref": "policy/time-source-priority-v1",
+          "selected_input_ref": {
+            "kind": "correction_record",
+            "ref": "cr_r001_time"
+          }
+        }
+      }
+    ],
+    "evidence_records": [
+      {
+        "contract_version": "evidence-record/v1.3",
+        "record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_r001_v1"
+        },
+        "case_ref": {
+          "kind": "case",
+          "ref": "case_r001"
+        },
+        "selection_rev": 1,
+        "basis": {
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_r001"
+          },
+          "visual_evidence_ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_r001"
+          },
+          "evidence_interval_ref": {
+            "kind": "incident_clip",
+            "ref": "clip_r001"
+          }
+        },
+        "event": {
+          "visual_event_type": {
+            "value": "MOTORCYCLE_HELMET_NON_USE",
+            "source": {
+              "kind": "search.visual_inference",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "event.source.visual_inference"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "safety_report_type": {
+            "value": "MOTORCYCLE_VIOLATION",
+            "source": {
+              "kind": "evidence.category_mapping",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.category_mapping"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "violation_expression": {
+            "value": "이륜차 운전자 또는 탑승자가 안전모를 착용하지 않고 주행",
+            "source": {
+              "kind": "evidence.violation_expression",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.violation_expression"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "occurred_at": {
+          "value": "2026-08-27T13:15:30+09:00",
+          "time_resolution_ref": {
+            "kind": "time_resolution",
+            "ref": "tres_r001_v1"
+          },
+          "resolution_status": "NEEDS_REVIEW",
+          "user_corrected": false,
+          "source": {
+            "kind": "recording.filename_time",
+            "label_key": "time.source.filename_time"
+          }
+        },
+        "vehicle_number": {
+          "value": "34나7890",
+          "source": {
+            "kind": "readout.plate_ocr",
+            "ref": {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            },
+            "observability": "OBSERVED",
+            "label_key": "plate.source.plate_ocr"
+          },
+          "support_refs": [
+            {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "provenance": {
+          "input_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_r001"
+            },
+            {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            },
+            {
+              "kind": "time_resolution",
+              "ref": "tres_r001_v1"
+            }
+          ],
+          "correction_refs": [],
+          "policy_ref": "policy/evidence-assembly-v1"
+        }
+      },
+      {
+        "contract_version": "evidence-record/v1.3",
+        "record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_r001_v2"
+        },
+        "case_ref": {
+          "kind": "case",
+          "ref": "case_r001"
+        },
+        "selection_rev": 1,
+        "basis": {
+          "candidate_ref": {
+            "kind": "candidate_event",
+            "ref": "candidate_r001"
+          },
+          "visual_evidence_ref": {
+            "kind": "visual_evidence",
+            "ref": "ve_r001"
+          },
+          "evidence_interval_ref": {
+            "kind": "incident_clip",
+            "ref": "clip_r001"
+          }
+        },
+        "event": {
+          "visual_event_type": {
+            "value": "MOTORCYCLE_HELMET_NON_USE",
+            "source": {
+              "kind": "search.visual_inference",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "OBSERVED",
+              "label_key": "event.source.visual_inference"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "safety_report_type": {
+            "value": "MOTORCYCLE_VIOLATION",
+            "source": {
+              "kind": "evidence.category_mapping",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.category_mapping"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          },
+          "violation_expression": {
+            "value": "이륜차 운전자 또는 탑승자가 안전모를 착용하지 않고 주행",
+            "source": {
+              "kind": "evidence.violation_expression",
+              "ref": {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              },
+              "observability": "INFERRED",
+              "label_key": "event.source.violation_expression"
+            },
+            "support_refs": [
+              {
+                "kind": "visual_evidence",
+                "ref": "ve_r001"
+              }
+            ],
+            "user_corrected": false,
+            "needs_review": false
+          }
+        },
+        "supersedes_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_r001_v1"
+        },
+        "occurred_at": {
+          "value": "2026-08-27T13:13:00+09:00",
+          "time_resolution_ref": {
+            "kind": "time_resolution",
+            "ref": "tres_r001_v2"
+          },
+          "resolution_status": "OK",
+          "user_corrected": true,
+          "source": {
+            "kind": "case.user_correction",
+            "label_key": "time.source.user_correction"
+          }
+        },
+        "vehicle_number": {
+          "value": "34나7890",
+          "source": {
+            "kind": "readout.plate_ocr",
+            "ref": {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            },
+            "observability": "OBSERVED",
+            "label_key": "plate.source.plate_ocr"
+          },
+          "support_refs": [
+            {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            }
+          ],
+          "user_corrected": false,
+          "needs_review": false
+        },
+        "provenance": {
+          "input_refs": [
+            {
+              "kind": "visual_evidence",
+              "ref": "ve_r001"
+            },
+            {
+              "kind": "plate_readout",
+              "ref": "readout_r001_plate"
+            },
+            {
+              "kind": "time_resolution",
+              "ref": "tres_r001_v2"
+            }
+          ],
+          "correction_refs": [
+            {
+              "kind": "correction_record",
+              "ref": "cr_r001_time"
+            }
+          ],
+          "policy_ref": "policy/evidence-assembly-v1"
+        }
+      }
+    ],
+    "evidence_needs": [
+      {
+        "contract_version": "evidence-needs/v1",
+        "basis_record_ref": {
+          "kind": "evidence_record",
+          "ref": "ev_r001_v2"
+        },
+        "items": []
+      }
+    ],
+    "requirement_reports": [
+      {
+        "contract_version": "requirement-report/v1",
+        "requirement_report_ref": {
+          "kind": "requirement_report",
+          "ref": "req_r001_evidence_v1"
+        },
+        "scope": "EVIDENCE",
+        "basis": {
+          "evidence_record_ref": {
+            "kind": "evidence_record",
+            "ref": "ev_r001_v1"
+          },
+          "asset_refs": []
+        },
+        "policy_ref": "policy/requirement-rules-v4",
+        "evaluated_at": "2026-08-27T13:22:00+09:00",
+        "overall": "WARN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "WARN",
+            "reason_code": "evidence.time_needs_review",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "contract_version": "requirement-report/v1",
+        "requirement_report_ref": {
+          "kind": "requirement_report",
+          "ref": "req_r001_evidence_v2"
+        },
+        "scope": "EVIDENCE",
+        "basis": {
+          "evidence_record_ref": {
+            "kind": "evidence_record",
+            "ref": "ev_r001_v2"
+          },
+          "asset_refs": []
+        },
+        "policy_ref": "policy/requirement-rules-v4",
+        "evaluated_at": "2026-08-27T13:35:00+09:00",
+        "overall": "WARN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          }
+        ],
+        "supersedes_ref": {
+          "kind": "requirement_report",
+          "ref": "req_r001_evidence_v1"
+        }
+      }
+    ],
+    "report_packages": []
+  },
+  "package_boundary_error": null,
+  "policy_guard_check": null,
+  "consumer_mock": {
+    "current_evidence_ref": "ev_r001_v2",
+    "time_resolution_ref": {
+      "kind": "time_resolution",
+      "ref": "tres_r001_v2"
+    },
+    "evidence_requirement_ref": {
+      "kind": "requirement_report",
+      "ref": "req_r001_evidence_v2"
+    },
+    "package_requirement_ref": null,
+    "report_package_ref": null,
+    "evidence_sufficient": true,
+    "package_ready": false,
+    "user_reviewed": "CASE_OWNED_NOT_DERIVED"
+  },
+  "comparison": {
+    "common_fixture_ref": "data/mock/evidence/scenario_correction_rerun_001.json",
+    "time_statuses_match": true,
+    "requirement_overalls_match": false,
+    "common_package_count": 0,
+    "baseline_package_count": 0,
+    "known_differences": []
+  },
+  "base_revision": "78904bd46dd3582cbd0701c31b98d633b4644eb1",
+  "implementation_fingerprints": {
+    "src/daesingo/evidence/__init__.py": "3e8004640de7705ae7c06115764ff1c93b9df51bef5e9d176a5bd1503839529d",
+    "src/daesingo/evidence/_contract.py": "1f74d3d55c197697a3d8ad94b45cc61390d28dc3ae3fa70c106d849ff9678f0b",
+    "src/daesingo/evidence/assembly.py": "b56d481327c3a2f1d1996dbd933bf8d00fc12180d60d3f866037be1cfbb77db9",
+    "src/daesingo/evidence/corrections.py": "59e230d318511525959722473ba7c3ae8b559bfbecc4063e884f44ccf84d4543",
+    "src/daesingo/evidence/deadline.py": "e6247d8325ba14f637cd8492a7e0dbe5a3ec48bb9b436d88651d77671d76aac8",
+    "src/daesingo/evidence/deadline_policy_v1.json": "201f23e3bbb0cea5fc4a0a29ea43cc912dbb38822458cb6f0303ea1040cd32d3",
+    "src/daesingo/evidence/errors.py": "4b50dfae9bfeb8240a9c409098bae6c03a46354326f302d649aa52418223e4e6",
+    "src/daesingo/evidence/mock_integration.py": "16eda27a9d44ade9371a241e03ee9ae920e80a3180785ff688296a28b36d5d25",
+    "src/daesingo/evidence/attachment_policy_v1.json": "c889518d5a4ccb0c0ab261d4dca42e45962dfb1bcc6ff6430f373e6fe0cc830a",
+    "src/daesingo/evidence/policy.py": "e5fc10114e5c7a56ece4a1a589191ee43db5ffcbb61dcb21c568eda011c8bf7d",
+    "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
+    "src/daesingo/evidence/policy_catalog.py": "353cd42dead39cc90fd8c9f298360b669c74905ed4c96ff81f4772afa0e35428",
+    "src/daesingo/evidence/requirement_rules_v4.json": "7ea4147095f2502e6edbb63873b26482a8c16d68b83b54b949dfc89b9105094b",
+    "src/daesingo/evidence/requirements.py": "fda7bbe5be1f7b83fcefee993105546ec181eeb89315250b5a2acc8f171d2213",
+    "src/daesingo/evidence/safety_report_policy_v1_1.json": "9af87fc1e7fdb86a13b5fa4118eb83fe5fb621436ff78b4ee80caf8ec14a6805",
+    "src/daesingo/evidence/time_resolution.py": "6de15633988a4d6d0a267944591728783e98592c8f7ab6f82f1a18f1d984dee2",
+    "src/daesingo/evidence/validation.py": "83668c62ffb7f0e3d2c0ff962a64fbc6bcad36487eb5fc9c8e848baf97faf4b5",
+    "tests/evidence/fixtures/adapter_inputs.json": "2621a71cc8a0875f199b73b8022649fb58a6ec43a2a54d07478089f6a7b8778f",
+    "tests/evidence/test_contract_units.py": "6ce21104880dce00587c469f3b8c0e9fb21614ea6d9ba7b0490f0307be09be1e",
+    "tests/evidence/test_contract_validation.py": "833497458ce3d4ad50c0a8a254f277b29499433f5d61059d6606944e7916a3a8",
+    "tests/evidence/test_mock_integration.py": "92b60f5ce84d64cbe50151b610f4ad543027306859d4dfffd28ebdcdd8ef0d21",
+    "tests/evidence/test_policy_decisions.py": "c83ca1643b76a648edbc96b70e3167792cfb125d5f88bdf701c30c6b21e85a41"
+  }
+}

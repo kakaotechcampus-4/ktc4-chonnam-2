@@ -1,0 +1,53 @@
+{
+  "policy_ref": "policy/safety-report-attachment-size/v1",
+  "external_service": "안전신문고",
+  "checked_at": "2026-09-01",
+  "measurement_unit": "asset.bytes",
+  "count_unit": "asset.count",
+  "limits": {
+    "image_each_bytes": 30000000,
+    "video_each_bytes": 130000000,
+    "total_bytes": 180000000,
+    "image_count": 4,
+    "video_count": 4,
+    "total_count": 4
+  },
+  "outcome_mapping": {
+    "within_limit": "PASS",
+    "exceeds_limit": "BLOCK",
+    "measurement_incomplete": "UNKNOWN",
+    "attachment_set_incomplete": "UNKNOWN"
+  },
+  "sources": [
+    {
+      "source_id": "safety_report_ui_attachment_limits",
+      "kind": "OFFICIAL_UI_DIRECT_OBSERVATION",
+      "observed_by": "김준영",
+      "checked_at": "2026-09-01",
+      "covers": [
+        "image_each_bytes",
+        "video_each_bytes",
+        "total_bytes",
+        "image_count",
+        "video_count",
+        "total_count"
+      ],
+      "count_limit_capture_preserved": false
+    },
+    {
+      "source_id": "evidence_research_attachment_screens",
+      "kind": "RESEARCH_SCREEN_RECORD",
+      "checked_at": "2026-09-01",
+      "covers": [
+        "image_each_bytes",
+        "video_each_bytes",
+        "total_bytes"
+      ]
+    }
+  ],
+  "known_limitations": [
+    "개수 제한은 공식 UI에서 직접 확인했지만 화면 캡처는 보존되지 않았다.",
+    "MB는 decimal byte이며 MiB로 해석하지 않는다.",
+    "외부 상한보다 낮은 내부 목표 용량은 두지 않는다."
+  ]
+}
