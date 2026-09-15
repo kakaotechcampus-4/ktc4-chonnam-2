@@ -65,6 +65,8 @@
 # 2. 최종 Serialization
 
 > **표기 정정(2026-09-10, 서어진, 이슈 #23 A):** 이 절 이하 예시가 옛 형식(`input_ref`가 평문 string, `evidence_refs`가 `frame:<id>@<offset_ms>` 위치 인코딩)을 쓰던 것을 고쳤다. `input_ref`는 `AnalysisRun.input_ref`와 같은 `{kind, ref}` 구조체이고, frame ref는 `fr_<opaque-id>`(`contract-source-asset-media-stream.md` 확정, 위치 인코딩 폐기)다. 필드 의미 변경이 아니므로 `visual-evidence/v1.0` 유지, `contract_version` 안 올림.
+>
+> **예시 정정(2026-09-15, 서어진, ERD PR #42 후속):** 아래 예시의 `input_ref`가 `{kind:"incident_clip", ref:"clip_17"}`였던 것을 `{kind:"analysis_source", ref:"as_17"}`로 고쳤다. 확정된 Fine 입력 결정상 `VISUAL_VERIFY` AnalysisRun과 그 VisualEvidence는 **동일한 AnalysisSource**를 `input_ref`로 가리키며, IncidentClip은 후보 선택 이후 readout/evidence 단계에서 쓰는 downstream 결과물이라 Fine 입력이 아니다(§13, `contract-analysis-run-candidate-event.md` §8, ERD `docs/architecture/erd-draft.md` §3·§6.3). 옛 `incident_clip` 예시가 그 확정 결정과 어긋나 있던 것을 맞췄다. 예시 값 정정이므로 `visual-evidence/v1.0` 유지, `contract_version` 안 올림.
 
 ```json
 {
@@ -72,8 +74,8 @@
   "visual_evidence_id": "ve_lane_001",
   "run_id": "run_fine_101",
   "input_ref": {
-    "kind": "incident_clip",
-    "ref": "clip_17"
+    "kind": "analysis_source",
+    "ref": "as_17"
   },
   "candidate_id": "c17",
 
