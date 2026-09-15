@@ -25,4 +25,8 @@
 - `decisions/`: 조사·실험 후 확정한 module 내부 결정
 - `contracts/`: 이 모듈이 생산/소비하는 계약의 초안·검토 메모. cross-module 최종 계약은 `architecture/contracts/`로 승격
 
+## 1차 구현 기준
+
+- [recording 1차 Mock E2E Tech Spec](decisions/first-integration-tech-spec.md)
+
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
