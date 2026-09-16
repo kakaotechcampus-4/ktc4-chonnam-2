@@ -7,12 +7,55 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
 
 나중에 실제 모듈이 구현되면, 이 클래스와 같은 메서드 시그니처를 갖는 실제 HTTP/함수
 호출 어댑터로 교체하면 된다 — case의 domain/view 코드는 이 인터페이스에만 의존한다.
+
+## Mock→Real 교체 (W5)
+
+`ModuleAdapter`가 그 "인터페이스"를 `typing.Protocol`로 formalize한 것이다.
+`MockFixtureAdapter`와 `RealAdapter` 둘 다 구조적으로 이 프로토콜을 만족한다(명시적
+상속 없이도 각 메서드 시그니처가 같으면 타입체커가 호환으로 본다). `case/service.py`는
+구체 클래스가 아니라 `ModuleAdapter`에만 의존하므로, 실행 시점에 어느 어댑터 인스턴스를
+주입하느냐만 바꾸면 orchestration 코드는 손대지 않는다.
+
+`RealAdapter`는 아직 골격뿐이다 — 각 메서드는 대응하는 모듈(search/evidence/common)의
+실제 구현이 아직 없어 `NotImplementedError`를 낸다. 각 모듈 Owner가 실제 조회 경로(HTTP
+또는 함수 호출)를 완성하면, 그 메서드 하나만 채우면 된다 — 나머지 메서드는 계속
+`NotImplementedError`로 남겨서 "이 모듈은 아직 Mock, 저 모듈은 Real"인 혼재 상태를
+그대로 표현할 수 있다(W5 원칙 "Mock retained for not-yet-ready modules").
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class ModuleAdapter(Protocol):
+    """`case`가 upstream 모듈 산출물을 읽을 때 의존하는 유일한 인터페이스.
+
+    `MockFixtureAdapter`(현재)와 `RealAdapter`(골격, 앞으로 모듈별로 채워짐) 둘 다
+    이 프로토콜을 만족한다. `case/service.py`의 함수들은 이 타입에만 의존한다 —
+    Mock↔Real 교체는 여기 정의된 메서드 시그니처를 벗어나지 않는 한 `service.py`나
+    `domain.py`/`jobs.py`/`view.py`를 고치지 않고도 가능하다.
+    """
+
+    def get_candidate_events(self) -> list[dict[str, Any]]: ...
+
+    def get_analysis_scopes(self) -> list[dict[str, Any]]: ...
+
+    def get_evidence_record(self) -> dict[str, Any] | None: ...
+
+    def get_evidence_records(self) -> list[dict[str, Any]]: ...
+
+    def get_requirement_report(self, scope: str) -> dict[str, Any] | None: ...
+
+    def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]: ...
+
+    def get_evidence_needs(self) -> list[dict[str, Any]]: ...
+
+    def get_report_package(self) -> dict[str, Any] | None: ...
+
+    def get_job_executions(self) -> list[dict[str, Any]]: ...
 
 
 class MockFixtureAdapter:
@@ -84,3 +127,60 @@ class MockFixtureAdapter:
         (STALE→FAILED)가 있을 수 있어 전체 목록을 그대로 돌려준다 — "어느 attempt가
         최신인가"를 고르는 건 이 어댑터가 아니라 호출자(case) 책임이다."""
         return self._load("common").get("job_executions", [])
+
+
+class RealAdapter:
+    """`ModuleAdapter` 골격 — 실제 모듈 호출로 채워질 자리.
+
+    아직 어떤 모듈도 case가 호출할 수 있는 실제 엔드포인트/함수를 내놓지 않았으므로,
+    지금은 전부 `NotImplementedError`다. **모듈별로 하나씩 채운다** — 예를 들어
+    recording/search가 먼저 준비되면 `get_candidate_events()`/`get_analysis_scopes()`만
+    실제 호출로 바꾸고, 나머지(`get_evidence_record()` 등)는 evidence가 준비될 때까지
+    `NotImplementedError`로 남겨둔다. 이 상태에서도 `case/service.py`는 그대로
+    동작해야 한다 — 실패는 "아직 Real로 안 바뀐 자리를 호출했다"는 명확한 신호여야
+    하고, 조용히 빈 값을 돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
+
+    생성자 인자는 자리표시자다 — 실제 호출 방식(HTTP client, 같은 프로세스 내 함수
+    호출 등)이 모듈별로 정해지면 그에 맞게 바뀐다.
+    """
+
+    def __init__(self, *, case_id: str, **clients: Any) -> None:
+        self.case_id = case_id
+        self._clients = clients
+
+    def _not_ready(self, method: str, module: str) -> None:
+        raise NotImplementedError(
+            f"RealAdapter.{method}()는 아직 미구현 — {module} 모듈의 실제 구현이 준비되면 "
+            f"이 메서드만 채운다(case/adapters.py). 그 전까지는 이 case_id에 대해 "
+            f"{module}을 Mock으로 유지해야 한다."
+        )
+
+    # ── search ──────────────────────────────────────────────────────────
+    def get_candidate_events(self) -> list[dict[str, Any]]:
+        self._not_ready("get_candidate_events", "search")
+
+    def get_analysis_scopes(self) -> list[dict[str, Any]]:
+        self._not_ready("get_analysis_scopes", "search")
+
+    # ── evidence ────────────────────────────────────────────────────────
+    def get_evidence_record(self) -> dict[str, Any] | None:
+        self._not_ready("get_evidence_record", "evidence")
+
+    def get_evidence_records(self) -> list[dict[str, Any]]:
+        self._not_ready("get_evidence_records", "evidence")
+
+    def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
+        self._not_ready("get_requirement_report", "evidence")
+
+    def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
+        self._not_ready("get_requirement_reports", "evidence")
+
+    def get_evidence_needs(self) -> list[dict[str, Any]]:
+        self._not_ready("get_evidence_needs", "evidence")
+
+    def get_report_package(self) -> dict[str, Any] | None:
+        self._not_ready("get_report_package", "evidence")
+
+    # ── common/runtime ──────────────────────────────────────────────────
+    def get_job_executions(self) -> list[dict[str, Any]]:
+        self._not_ready("get_job_executions", "common/runtime")
