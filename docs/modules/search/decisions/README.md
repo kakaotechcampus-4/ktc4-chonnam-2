@@ -7,3 +7,5 @@
 - `challenger-policy.md — Failure decides the challenger 매핑·개방 절차 (A-2)`
 - `failure-taxonomy.md — search 실패 분류 **초안** (Owner 확정 전)`
 - `candidate-span-semantics-2026-09-10.md — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신`
+- `sdk-processing-verification.md — SDK processing 전달 강제·token density 검증 규칙 (단일 출처)`
+- `gemini-change-application-plan-2026-09-12.md — Gemini 3.8·agentic·SDK·usage·가격 변경의 단계별 적용안`

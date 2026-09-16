@@ -97,51 +97,12 @@ agentic은 별도 기능비 대신 탐색 과정이 thought token으로 과금�
 
 ### 2.3 Interactions API와 SDK
 
-이번 실험에서 SDK 호환성은 단순 구현 문제가 아니라 비용과 결과를 바꾸는 핵심 조건이었다.
+SDK 호환성은 단순 구현 문제가 아니라 비용과 결과를 바꾸는 핵심 조건이다. 최소 버전 강제, offset·typed 객체 전달, token density 검증의 규칙 원문과 기준값은 [`sdk-processing-verification.md`](sdk-processing-verification.md)가 단일 출처로 소유한다. 여기에 복제하지 않는다.
 
-#### 필수 버전
+이번 변경에서 이 규칙이 걸리는 지점:
 
-```
-google-genai >= 2.13.0
-현재 검증 버전: 2.22.0
-```
-
-2.13 미만에서는 `VideoContent.processing`이 Python 객체에 있어도 실제 요청 body에서 조용히 빠졌다. Fine smoke 실험에서는 8초 구간을 요청했지만 304초 클립 전체가 처리되어 입력 89,366토큰과 0.00742로 정상 처리되었다.
-
-#### 적용 규칙
-
-```python
-from google.genai import interactions as ix
-
-video = ix.VideoContent(
-    type="video",
-    uri=file_uri,
-    mime_type="video/mp4",
-    resolution="high",
-    processing={
-        "type": "static",
-        "fps": 2.0,
-        "start_offset": "33.000s",
-        "end_offset": "41.000s",
-    },
-)
-```
-
-- `input`은 raw dict가 아니라 `ix.VideoContent` / `ix.TextContent` 객체로 전달한다.
-- `start_offset` / `end_offset`은 정수 ms가 아니라 duration 문자열로 전달한다.
-- 실행 전에 SDK 최소 버전을 검사한다.
-- 실행 row에 실제 SDK 버전을 기록한다.
-- 설정 플래그만 믿지 않고 token density로 실제 적용 여부를 검사한다.
-
-검증 기준은 다음과 같다.
-
-| 설정 | 예상 video token 밀도 |
-| --- | --- |
-| low / 1fps | 약 100 tok/s |
-| high / 1fps | 약 290 tok/s |
-| high / 2fps | 약 553 tok/s |
-
-Fine `run1`은 high / 2fps에서 중앙값 553 video tok/s가 나와 설정 전달이 확인되었다. agentic은 static과 다른 token·thought·step 패턴이 나와야 실제 적용된 것으로 판단한다.
+- Coarse는 아직 SDK 검사와 `sdk_version` 기록이 없다(§3.2 P0). agentic 실험 전에 Fine과 같은 수준으로 맞춰야 결과를 채택할 수 있다.
+- agentic은 static과 다른 token·thought·step 패턴이 나와야 실제 적용된 것으로 판단한다. density 기준값만으로는 부족하므로 채택 판정 시 이 신호를 함께 본다.
 
 ---
 

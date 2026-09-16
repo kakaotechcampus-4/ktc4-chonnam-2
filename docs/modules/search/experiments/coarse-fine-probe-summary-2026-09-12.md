@@ -256,13 +256,9 @@ Fine은 본 실험 전에 같은 후보 하나로 `smoke`와 `smoke2`를 실행�
 | 실제 처리 | 304초 클립 전체 | 요청한 8초 |
 | 근거 시간 기준 | 클립 절대시간처럼 출력 | 구간 시작 상대시간 |
 
-`google-genai < 2.13`에서는 `processing`이 모델 객체에 남아 있어도 실제 HTTP body에서 제거된다. 에러와 경고가 없어 비용이 조용히 약 10배 커졌다. 이 실험으로 다음 규칙이 확정되었다.
+`google-genai < 2.13`에서는 `processing`이 모델 객체에 남아 있어도 실제 HTTP body에서 제거된다. 에러와 경고가 없어 비용이 조용히 약 10배 커졌다.
 
-1. `google-genai >= 2.13`을 강제하고 각 실행 row에 SDK 버전을 남긴다.
-2. `start_offset` / `end_offset`은 SDK 요청에서 정수 ms가 아니라 `"33.000s"` 같은 duration 문자열로 보낸다.
-3. raw dict 대신 `VideoContent` / `TextContent` 객체를 사용한다.
-4. 설정 플래그 자체를 믿지 않고 video token / 요청 구간초로 실제 적용 여부를 검증한다.
-5. 기준값은 low@1fps 약 100 tok/s, high@1fps 약 290 tok/s, high@2fps 약 553 tok/s다.
+이 실험이 근거가 되어 확정한 SDK·검증 규칙(최소 버전 강제, offset·typed 객체 전달, token density 기준값)은 [`decisions/sdk-processing-verification.md`](../decisions/sdk-processing-verification.md)가 단일 출처로 소유한다. 여기서는 규칙을 재서술하지 않고 근거(smoke vs smoke2)만 남긴다.
 
 `run1`의 중앙값이 high@2fps 기대값인 **553 video tok/s**와 일치하므로 Fine의 resolution, fps, offset은 실제로 전송된 것으로 확인된다.
 
