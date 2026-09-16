@@ -1,0 +1,201 @@
+{
+  "source_file": "paddleocr_500_results.json",
+  "source_sha256": "bacdce642f5b3a6a09eb2153ea2a1e61ba3173d85256ef024fb57aa6240a48fb",
+  "source_note": "레포 밖 원본. 경로는 같은 폴더 README.md 참조",
+  "executed_at": "2026-09-15",
+  "taxonomy": "docs/modules/readout/decisions/failure-taxonomy.md",
+  "tagging": {
+    "n": 500,
+    "exact": 28,
+    "empty_predictions": {
+      "n": 94,
+      "max_confidence": 0.0,
+      "would_be_runtime_kind": null,
+      "post_hoc": null,
+      "note": "confidence가 전부 정확히 0.0이다 — 고신뢰로 위장하지 않는다. readout을 통과하면 읽어낸 글자가 없는 경우이므로 observation.status=UNKNOWN · value=null이고 실패가 아니다."
+    },
+    "wrong_nonempty": {
+      "n": 378,
+      "would_be_runtime_kind": "PLATE_RECOGNITION",
+      "kind_registered": true,
+      "subsequence_of_truth": 75,
+      "with_illegal_letter": 14
+    },
+    "region_plates": {
+      "n": 152,
+      "exact": 0,
+      "region_dropped_exactly": 3,
+      "note": "지역명이 붙는 번호판 = 2줄 계열. 영상 pilot의 바5215와 같은 실패다."
+    },
+    "format_gate_leaks": {
+      "n": 16,
+      "max_confidence": 0.8917,
+      "caught_by_letter_set": 10,
+      "region_drop": 6,
+      "cases": [
+        {
+          "truth": "85서5618",
+          "prediction": "85시5618",
+          "confidence": 0.8917,
+          "illegal_letters": [
+            "시"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "서울32자4106",
+          "prediction": "32자4106",
+          "confidence": 0.888,
+          "illegal_letters": [],
+          "region_drop": true
+        },
+        {
+          "truth": "경기37바5709",
+          "prediction": "37바5709",
+          "confidence": 0.8689,
+          "illegal_letters": [],
+          "region_drop": true
+        },
+        {
+          "truth": "경기37바4640",
+          "prediction": "537바4640",
+          "confidence": 0.8619,
+          "illegal_letters": [],
+          "region_drop": true
+        },
+        {
+          "truth": "81러4695",
+          "prediction": "81리4695",
+          "confidence": 0.8612,
+          "illegal_letters": [
+            "리"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "87누0618",
+          "prediction": "87는0618",
+          "confidence": 0.857,
+          "illegal_letters": [
+            "는"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "17더5966",
+          "prediction": "17년5966",
+          "confidence": 0.8558,
+          "illegal_letters": [
+            "년"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "21머2573",
+          "prediction": "21매2573",
+          "confidence": 0.8552,
+          "illegal_letters": [
+            "매"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "58더6944",
+          "prediction": "58년6944",
+          "confidence": 0.8506,
+          "illegal_letters": [
+            "년"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "20노5938",
+          "prediction": "20는5938",
+          "confidence": 0.8421,
+          "illegal_letters": [
+            "는"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "25서2957",
+          "prediction": "25시2957",
+          "confidence": 0.8134,
+          "illegal_letters": [
+            "시"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "경기37바4346",
+          "prediction": "37바4346",
+          "confidence": 0.7905,
+          "illegal_letters": [],
+          "region_drop": true
+        },
+        {
+          "truth": "43보3378",
+          "prediction": "43년3378",
+          "confidence": 0.7687,
+          "illegal_letters": [
+            "년"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "68더0134",
+          "prediction": "68년0134",
+          "confidence": 0.7588,
+          "illegal_letters": [
+            "년"
+          ],
+          "region_drop": false
+        },
+        {
+          "truth": "경기37바6282",
+          "prediction": "537바6282",
+          "confidence": 0.7485,
+          "illegal_letters": [],
+          "region_drop": true
+        },
+        {
+          "truth": "경기37바1366",
+          "prediction": "537배1366",
+          "confidence": 0.7442,
+          "illegal_letters": [],
+          "region_drop": true
+        }
+      ]
+    },
+    "gates": [
+      {
+        "confidence": 0.8,
+        "accepted": 116,
+        "wrong_accepts": 88,
+        "wrong_accepts_passing_format": 11,
+        "of_which_illegal_letter": 8,
+        "of_which_region_dropped": 3,
+        "of_which_unexplained": 0
+      },
+      {
+        "confidence": 0.9,
+        "accepted": 32,
+        "wrong_accepts": 14,
+        "wrong_accepts_passing_format": 0,
+        "of_which_illegal_letter": 0,
+        "of_which_region_dropped": 0,
+        "of_which_unexplained": 0
+      },
+      {
+        "confidence": 0.95,
+        "accepted": 10,
+        "wrong_accepts": 2,
+        "wrong_accepts_passing_format": 0,
+        "of_which_illegal_letter": 0,
+        "of_which_region_dropped": 0,
+        "of_which_unexplained": 0
+      }
+    ],
+    "post_hoc_note": "confidence 단독 gate를 통과한 오답이 OVERCONFIDENT 후보다. 실제 분류는 정답지 대조로 eval이 붙인다 — readout이 런타임에 붙일 수 있는 값이 아니다."
+  }
+}
