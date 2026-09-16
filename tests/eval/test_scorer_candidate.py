@@ -58,11 +58,24 @@ def test_span_error_sec_key_is_gone():
 
 
 def test_always_correct_gets_perfect_recall():
+    """치트 구현은 K 가 한 조각의 사건 수를 덮을 때만 만점이다.
+
+    한 조각에 사건이 2건이면(YT_0003_C05) 두 번째 사건은 rank 2 로만 나오므로
+    recall@1 은 구조적으로 1.0 이 못 된다. 그래서 K=1 기대값은 「rank 1 에 오는
+    사건 수 / 채점 사건 수」로 계산한다 — 리터럴로 굳히면 조각 구성이 바뀔 때마다
+    지표 버그와 데이터 변경을 구분할 수 없다.
+    """
     gt = manifests_io.load_gt("b_youtube", "candidate")
     r = candidate.score(_run("fake:always_correct"), gt)
-    assert r["recall_at"]["1"] == 1.0
     assert r["recall_at"]["3"] == 1.0
+    assert r["recall_at"]["10"] == 1.0
     assert r["fp_per_clip"] == 0.0
+    scored = [[t for t in i["targets"] if t.get("scoring") != "BOUNDARY_EXCLUDED"]
+              for i in gt["items"]]
+    at_rank_1 = sum(1 for i in gt["items"]
+                    for idx, t in enumerate(i["targets"])
+                    if idx == 0 and t.get("scoring") != "BOUNDARY_EXCLUDED")
+    assert r["recall_at"]["1"] == at_rank_1 / sum(len(ts) for ts in scored)
 
 
 def test_always_wrong_gets_zero_recall_and_positive_fp():
@@ -84,14 +97,15 @@ def test_boundary_excluded_targets_are_not_counted():
     assert r["n_events"] == n_included
     # 재계산값과 별개로 리터럴 값도 고정한다 — C47(BOUNDARY_EXCLUDED) 처리
     # 회귀를 간접적으로(fp_per_clip 등을 통해서)가 아니라 직접 잡는다.
-    assert r["n_events"] == 4
-    assert r["n_negative_clips"] == 50
+    assert r["n_events"] == 10
+    assert r["n_negative_clips"] == 113
 
 
 def test_by_type_breakdown_lists_only_present_types():
     gt = manifests_io.load_gt("b_youtube", "candidate")
     r = candidate.score(_run("fake:always_correct"), gt)
-    assert set(r["by_type"]) == {"SIGNAL", "SOLID_LINE_LANE_CHANGE"}
+    assert set(r["by_type"]) == {"SIGNAL", "SOLID_LINE_LANE_CHANGE",
+                                "CENTER_LINE_CROSSING"}
     # 키 집합뿐 아니라 값도 고정한다 — by_type 분모가 전체 사건 수로 새는
     # 회귀(예: 전역 n_events 를 나눠 쓰는 버그)를 여기서 잡는다.
     assert r["by_type"]["SIGNAL"]["n"] == 2

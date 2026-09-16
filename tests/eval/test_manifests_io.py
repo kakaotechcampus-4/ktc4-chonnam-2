@@ -5,7 +5,7 @@ import pytest
 from eval import manifests_io
 from eval import paths as eval_paths
 
-# B tier 클립 55개는 .gitignore 대상이라 clone 만으로는 없다. 미디어가 필요한
+# B tier 클립 123개는 .gitignore 대상이라 clone 만으로는 없다. 미디어가 필요한
 # 검사(file_path 존재 · sha256 대조)는 있을 때만 돈다 — 없는데 실패로 적으면
 # 「데이터가 없다」가 「정답지가 틀렸다」로 오독된다.
 B_CLIPS_DIR = os.path.join(eval_paths.datasets_dir(), "youtube", "clips")
@@ -14,17 +14,17 @@ needs_b_media = pytest.mark.skipif(
 )
 
 
-def test_load_clips_returns_55_entries():
+def test_load_clips_returns_123_entries():
     data = manifests_io.load_clips("b_youtube")
     assert data["meta"]["tier"] == "B"
-    assert len(data["clips"]) == 55
+    assert len(data["clips"]) == 123
 
 
 def test_load_gt_candidate_has_coverage_block():
     gt = manifests_io.load_gt("b_youtube", "candidate")
     cov = gt["meta"]["coverage"]
-    assert cov["clips_total"] == 55
-    assert cov["clips_reviewed"] == 55
+    assert cov["clips_total"] == 123
+    assert cov["clips_reviewed"] == 123
     assert cov["negatives_confirmed"] is True
 
 

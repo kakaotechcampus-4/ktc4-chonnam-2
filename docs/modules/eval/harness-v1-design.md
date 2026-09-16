@@ -128,7 +128,9 @@ results/<run_id>.<gt_version>.json        커밋 (§10-2 「Eval result: JSON + 
 
 ### 4-1. B tier — YouTube (확보)
 
-55 클립(각 60초, 단일 원본 `YT_0001`) · CONFIRMED 이벤트 5건 · split 전부 DEV.
+123 클립(원본 3편 `YT_0001` 55 · `YT_0002` 1 · `YT_0003` 67) · CONFIRMED 이벤트 11건 · split 전부 DEV. 끝 조각과 `YT_0002`는 60초보다 짧다.
+
+`YT_0002`는 20초 원본에서 나온 조각 1개뿐이고 그 조각에 위반이 있다 — 정상 조각이 없어 이 원본만으로는 `fp_per_clip`의 분모가 서지 않는다. **그래서 `fp_per_clip`을 `source_video_id`별로 쪼개지 않는다**(전체 분모로만 읽는다). 전체로는 123 조각 중 위반 조각 10개다.
 
 기존 라벨 구조를 그대로 승계한다: `manifest_version`/`clip_rule_version`/`gt_version` 3종 버전 · `sha256` · `source_video_id` 그룹 키 · `scoring: INCLUDED | BOUNDARY_EXCLUDED`.
 

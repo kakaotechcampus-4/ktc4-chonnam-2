@@ -4,13 +4,13 @@
     "impl": "fake:always_wrong",
     "stage": "candidate",
     "manifest": "b_youtube",
-    "gt_version": "g1",
+    "gt_version": "g3",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
+    "code_commit": "c899ea4",
     "scorer_version": "s2",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong.json",
-      "sha256": "5a62264a9033a7e6c5e46edba63554d35185bda907ee0df9221924b1e79c23d9"
+      "sha256": "6d68ce39a8dc32b2ef75bf9f6bc3caf04f5ea3bbced2e60319ea87a42174fd6f"
     }
   },
   "candidate": {
@@ -26,12 +26,20 @@
     },
     "containment_rate": null,
     "fp_per_clip": 1.0,
-    "n_events": 4,
-    "n_negative_clips": 50,
+    "n_events": 10,
+    "n_negative_clips": 113,
     "excluded_by_reason": {
       "BOUNDARY_EXCLUDED": 1
     },
     "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 0.0,
+          "3": 0.0,
+          "10": 0.0
+        },
+        "n": 2
+      },
       "SIGNAL": {
         "recall_at": {
           "1": 0.0,
@@ -46,7 +54,7 @@
           "3": 0.0,
           "10": 0.0
         },
-        "n": 2
+        "n": 6
       }
     },
     "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"

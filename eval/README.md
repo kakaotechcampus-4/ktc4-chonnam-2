@@ -56,4 +56,4 @@ python -m eval.score --prediction demo_correct
 python -m pytest tests/eval/ -q
 ```
 
-미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 55개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.
+미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 123개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.

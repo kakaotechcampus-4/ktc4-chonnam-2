@@ -1,6 +1,6 @@
 import json
 import os
-from eval import run, score, paths
+from eval import manifests_io, run, score, paths
 from eval.scorers import classification
 
 
@@ -11,10 +11,11 @@ def test_score_cli_writes_results_with_coverage(tmp_path, monkeypatch):
               "--stage", "candidate", "--run-id", "run_cli_001"])
     rc = score.main(["--prediction", "run_cli_001"])
     assert rc == 0
-    out = os.path.join(str(tmp_path), "run_cli_001.g1.json")
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    out = os.path.join(str(tmp_path), "run_cli_001.%s.json" % gt_version)
     with open(out, encoding="utf-8") as f:
         res = json.load(f)
-    assert res["candidate"]["recall_at"]["1"] == 1.0
+    assert res["candidate"]["recall_at"]["3"] == 1.0
     assert res["plate"]["exact_accuracy"] is None
     assert res["meta"]["impl"] == "fake:always_correct"
 
@@ -64,7 +65,8 @@ def test_not_run_classification_block_keeps_every_metric_key(tmp_path, monkeypat
     run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
               "--stage", "candidate", "--run-id", "run_cli_notrun"])
     assert score.main(["--prediction", "run_cli_notrun"]) == 0
-    path = os.path.join(str(tmp_path), "run_cli_notrun.g1.json")
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    path = os.path.join(str(tmp_path), "run_cli_notrun.%s.json" % gt_version)
     with open(path, encoding="utf-8") as f:
         text = f.read()
     res = json.loads(text)
