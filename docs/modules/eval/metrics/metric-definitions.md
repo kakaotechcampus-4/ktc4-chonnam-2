@@ -281,9 +281,16 @@ eval/results/<run_id>.<gt_version>.json
 | # | 항목 | 지표에 미치는 영향 |
 | --- | --- | --- |
 | F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
-| F1 · F6 | C tier plate GT 미확보 | plate 3종이 실데이터로 나오지 않는다 |
-| F3 | B tier 사건 수가 적다 | `recall_at` 의 신뢰구간이 넓다 |
-| — | Fine · Timestamp · E2E 지표 | scorer 없음 |
+| F1 | C tier(실제 촬영 원본) 미확보 | plate 3종이 실데이터로 나오지 않는다. **촬영이 필요해 코드로 못 푼다** |
+| F2 | 화면시각 라벨 없음 | Timestamp 지표 전체. **라벨링이 필요하다** |
+| F4 | hard-negative 대조쌍 없음 | Hard-negative FPR. **라벨링이 필요하다** |
+| F5 | `search`·`evidence` 구현 대기 | Fine · E2E · Efficiency stage. **다른 Owner 의존** |
+| F3 | B tier 에 **안전모 사건이 0건** | `by_type` 에 `MOTORCYCLE_HELMET_NON_USE` 행이 없다. 사건 10건은 `recall_at` 의 신뢰구간이 여전히 넓다 |
+| — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
+
+**해소된 항목** (2026-09-16): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·
+F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate 채점) · F3(B tier 123클립 확장).
+근거와 실측은 `harness-v1-design.md` §9.
 
 미결은 미결로 둔다. 이 표의 항목을 「대충 정한 값」으로 채워 문서를 완성시키지 않는다.
 
