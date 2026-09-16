@@ -24,14 +24,27 @@ TYPE_MAP = {
     "안전모미착용": "MOTORCYCLE_HELMET_NON_USE",
 }
 
-# 위반 차량 bbox 를 가진 객체 이름. 확인된 목록 그대로다.
-TARGET_OBJECTS = (
-    "신호 위반 차량(이륜차 포함)",
-    "중앙선침범 위반 차량(이륜차 포함)",
-    "진로변경 위반 차량(이륜차 포함)",
-    "안전모 미착용 이륜차",
-)
+# 위반 차량 bbox 를 가진 객체 이름. **위반유형별로 좁힌다** (F10).
+#
+# 전역 목록 하나로 두면 신호위반 시퀀스의 프레임에 중앙선침범용 대상 객체가
+# 어노테이션돼 있을 때 그 bbox 를 target 으로 가져간다. 그러면 정답지가
+# 「이 시퀀스의 위반 차량」이 아닌 것을 위반 차량이라고 말하게 된다.
+TARGET_OBJECTS_BY_TYPE = {
+    "SIGNAL": ("신호 위반 차량(이륜차 포함)",),
+    "CENTER_LINE_CROSSING": ("중앙선침범 위반 차량(이륜차 포함)",),
+    "SOLID_LINE_LANE_CHANGE": ("진로변경 위반 차량(이륜차 포함)",),
+    "MOTORCYCLE_HELMET_NON_USE": ("안전모 미착용 이륜차",),
+}
 NORMAL_OBJECT_PREFIX = "정상 차량"
+
+
+def pick_target_bbox(annotations, violation_type):
+    """이 시퀀스의 위반유형에 해당하는 대상 객체의 bbox. 없으면 None."""
+    names = TARGET_OBJECTS_BY_TYPE[violation_type]
+    for a in annotations:
+        if a["Object Name"] in names and "Bbox Cordinate" in a:
+            return a["Bbox Cordinate"]
+    return None
 
 
 def _index(zf):
@@ -76,11 +89,10 @@ def sample(zip_path, per_type, seed):
             for fname in frames:
                 d = json.loads(zf.read(fname).decode("utf-8"))
                 anns = d["Annotation"]["annotations"]
-                for a in anns:
-                    if a["Object Name"] in TARGET_OBJECTS and "Bbox Cordinate" in a:
-                        if target_bbox is None:
-                            target_bbox = a["Bbox Cordinate"]
-                            target_frame = os.path.basename(fname).replace(".json", ".jpg")
+                box = pick_target_bbox(anns, vtype)
+                if box is not None and target_bbox is None:
+                    target_bbox = box
+                    target_frame = os.path.basename(fname).replace(".json", ".jpg")
                 if target_bbox is not None:
                     distractors = sum(
                         1 for a in anns if a["Object Name"].startswith(NORMAL_OBJECT_PREFIX)

@@ -259,7 +259,7 @@ eval/manifests/**/events_draft.json
 | ~~F7~~ | ~~**후보 1건이 같은 클립의 GT 2건을 동시에 만족한다**~~ | **해소 (2026-09-16, `s3`)** — 최대 매칭으로 1:1 배정 | — | 김대원 |
 | F8 | **임계값 0.5 두 개를 실험으로 정한다** | target correctness · Recall@K의 민감도 | 임계값 sweep 실험 | 김대원 |
 | F9 | `code_commit`이 구조적으로 직전 커밋을 가리킨다 | — (해석 규칙) | §5에 의미를 명시하거나 재생성 후 amend | 김대원 |
-| F10 | `TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다 | Classification target correctness의 GT 품질 | 유형별 대상 객체 매핑 | 김대원 |
+| ~~F10~~ | ~~`TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다~~ | **해소 (2026-09-16)** — `TARGET_OBJECTS_BY_TYPE`. 재생성 결과 GT 무변화 | — | 김대원 |
 | ~~F11~~ | ~~형식이 깨진 예측 bbox에 카운터가 없다~~ | **해소 (2026-09-16)** — `n_invalid_bboxes` + `INVALID_BBOXES` 사유 | — | 김대원 |
 | ~~F12~~ | ~~**`NONE` 클래스에 데이터 경로가 없다**~~ | **해소 (2026-09-16)** — `manifests/ab_mixed` (A 120 + NONE 30) | — | 김대원 |
 | ~~F13~~ | ~~`check_invariants`가 `a_aihub`에서 돌지 않는다~~ | **해소 (2026-09-16)** — `check_sequence_invariants` (`a_aihub`·`ab_mixed`) | — | 김대원 |
@@ -278,7 +278,9 @@ F8: 값 `0.5`가 두 곳에 있지만 **서로 무관한 임계값**이다 — `
 
 F9: `_git_commit()`이 실행 시점의 HEAD를 읽고 산출물은 그 뒤에 커밋되므로, 커밋된 `predictions/`·`results/`의 `code_commit`은 **자기를 담은 커밋의 부모**를 가리킨다. 틀린 값이 아니라 「이 실행이 딛고 선 트리」다. 이 의미를 §5에 못 박거나, 산출물을 재생성해 같은 커밋에 amend 하는 절차를 규칙으로 삼는 두 가지 선택지가 있다. v1은 전자로 해석하고 값은 그대로 둔다.
 
-F10: `eval/tools/sample_aihub.py`의 `TARGET_OBJECTS`는 위반유형과 무관한 전역 목록이다. 그래서 신호위반 시퀀스의 프레임에 중앙선침범용 대상 객체가 어노테이션돼 있으면 그 bbox를 target으로 가져간다. 실측으로 확인된 오류는 아직 없지만 GT 품질의 잠재 위험이며, F13의 A tier 불변식 검사기가 잡아야 할 후보다.
+F10 **해소됨** (2026-09-16). `TARGET_OBJECTS`가 위반유형과 무관한 전역 목록이어서, 신호위반 시퀀스의 프레임에 중앙선침범용 대상 객체가 어노테이션돼 있으면 그 bbox를 target으로 가져갔다. `TARGET_OBJECTS_BY_TYPE`로 유형별 1:1 매핑하고 `pick_target_bbox(annotations, violation_type)`으로 좁혔다.
+
+**같은 seed(20260906)·per_type(30)으로 재생성해 대조한 결과 120건 중 bbox가 바뀐 시퀀스는 0건이다.** `target_bbox` 보유 수도 115로 같다 — 샘플된 시퀀스에는 타 유형 대상 객체가 섞인 프레임이 없었다. 잠재 위험이었지 실제 오류는 아니었음이 실측으로 확인됐고, 그래서 **커밋된 `a_aihub` 정답지는 갱신하지 않는다**(내용이 동일하다). 샘플 범위가 넓어지면 달라질 수 있으므로 가드는 남는다.
 
 F11 **해소됨** (2026-09-16). 형식이 깨진 **예측 bbox**(길이가 4가 아닌 값)를 `_iou_2d`가 조용히 `0.0`으로 처리해 「bbox가 틀렸다」와 「bbox 형식이 깨졌다」가 같은 0점으로 섞이던 것을, 라벨 쪽(`n_invalid_predictions`)과 같은 모양의 `n_invalid_bboxes` 카운터와 `INVALID_BBOXES` coverage 사유로 갈랐다.
 
