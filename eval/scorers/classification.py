@@ -13,6 +13,8 @@ import collections
 
 from eval.enums import CLASS_LABELS
 
+SCORER_VERSION = "cl1"   # 2026-09-16 n_invalid_bboxes 신설 (F11)
+
 _LABEL_SET = set(CLASS_LABELS)
 
 # bbox 매치 판정 임계값. candidate.score 의 시간 매칭(tolerance_sec)과

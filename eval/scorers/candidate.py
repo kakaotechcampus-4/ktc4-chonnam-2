@@ -36,18 +36,31 @@ def _assign(cands, targets, k, tolerance_sec):
     예측 하나가 두 사건의 적중으로 중복 계수되지 않게 한다 (F7).
 
     탐욕이 아니라 최대 매칭(Kuhn)을 쓴다. 탐욕은 먼저 나온 사건이 후보를
-    삼켜 뒤의 사건이 굶을 수 있고, 그러면 recall 이 **정답지의 사건 나열
-    순서에 따라 달라진다.** 최대 매칭의 크기는 그 순서와 무관하게 하나로
-    정해지므로 채점이 파일 순서에 휘둘리지 않는다.
+    삼켜 뒤의 사건이 굶을 수 있고, 그러면 recall 이 정답지의 사건 나열
+    순서에 따라 달라진다. 최대 매칭의 크기는 그 순서와 무관하다.
+
+    **크기만 유일하고 어느 쌍으로 맺는지는 유일하지 않다.** recall 은 크기만
+    쓰지만 onset_error_sec·containment_rate 는 선택된 쌍을 쓰므로, 배정이
+    정답지 줄 순서를 타면 같은 예측·같은 사건인데 containment 가 뒤집힌다.
+    그래서 두 가지를 고정한다:
+
+    - 사건을 (onset, event_id) 정규 순서로 처리한다 — 파일 줄 순서가 아니다
+    - 각 사건의 간선을 (onset 오차, rank) 오름차순으로 본다 — 자유로운
+      배정에서는 가까운 후보에 붙는다
 
     후보는 같은 event_type 하고만 이어지므로 그래프가 유형별로 쪼개진다 —
     by_type 집계가 전체 집계와 저절로 일치한다.
     """
     topk = [c for c in cands if c["rank"] <= k]
-    adj = [[j for j, c in enumerate(topk)
-            if c["event_type"] == t["violation_type"]
-            and abs(c["representative_sec"] - t["t_onset_sec"]) <= tolerance_sec]
-           for t in targets]
+
+    def _edges(t):
+        hits = [(abs(c["representative_sec"] - t["t_onset_sec"]), c["rank"], j)
+                for j, c in enumerate(topk)
+                if c["event_type"] == t["violation_type"]
+                and abs(c["representative_sec"] - t["t_onset_sec"]) <= tolerance_sec]
+        return [j for _, _, j in sorted(hits)]
+
+    adj = [_edges(t) for t in targets]
     owner = {}                      # 후보 인덱스 -> 사건 인덱스
 
     def _augment(i, seen):
@@ -60,7 +73,10 @@ def _assign(cands, targets, k, tolerance_sec):
                 return True
         return False
 
-    for i in range(len(targets)):
+    order = sorted(range(len(targets)),
+                   key=lambda i: (targets[i]["t_onset_sec"],
+                                  str(targets[i].get("event_id") or "")))
+    for i in order:
         _augment(i, set())
     return {i: topk[j] for j, i in owner.items()}
 
@@ -96,7 +112,10 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
     by_clip = {n["clip_id"]: n["candidates"] for n in normalized}
 
     # 배정은 클립 단위다 — 후보는 자기 클립의 사건하고만 이어진다.
-    clips_with_events = []          # (clip_id, [target, ...])
+    # 같은 clip_id 가 GT 항목 여럿으로 쪼개져 있어도 한 번만 배정해야 한다.
+    # 항목별로 배정하면 _assign 이 따로 돌아 같은 후보가 양쪽에서 적중으로
+    # 세어진다 — 1:1 배정이 막으려는 바로 그 중복 계수다.
+    targets_by_clip = {}            # clip_id -> [target, ...] (등장 순서 유지)
     negative_clips = []
     excluded_by_reason = {}
     for item in gt["items"]:
@@ -109,9 +128,10 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
             excluded_by_reason[reason] = excluded_by_reason.get(reason, 0) + n
         if item["targets"]:
             if included:
-                clips_with_events.append((item["clip_id"], included))
+                targets_by_clip.setdefault(item["clip_id"], []).extend(included)
         else:
             negative_clips.append(item["clip_id"])
+    clips_with_events = list(targets_by_clip.items())
 
     loosest_k = max(ks)
     hits = {k: 0 for k in ks}

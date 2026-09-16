@@ -7,7 +7,7 @@
     "gt_version": "ag1",
     "normalizer_version": "n1",
     "code_commit": "f81e9dc",
-    "scorer_version": "s3",
+    "scorer_version": "cl1",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong_abmix.json",
       "sha256": "0b148ae1aa60432a7df562ccb6da5401426cd6609c8ab540f14dc48ffbc85fec"

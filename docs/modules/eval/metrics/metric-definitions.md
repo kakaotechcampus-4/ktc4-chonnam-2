@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-16 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s3` · plate `p1` · cost `c1` · normalizer `n1`
+> **버전:** candidate `s3` · classification `cl1` · plate `p1` · cost `c1` · normalizer `n1`
 
 ---
 
@@ -66,6 +66,18 @@
 탐욕이 아니라 최대 매칭인 이유: 탐욕은 먼저 나온 사건이 후보를 삼켜 뒤의 사건이 굶을 수 있고,
 그러면 **recall 이 정답지의 사건 나열 순서에 따라 달라진다.** 최대 매칭의 크기는 순서와 무관하다.
 
+**크기만 유일하고 어느 쌍으로 맺는지는 유일하지 않다.** `recall_at` 은 크기만 쓰므로 이걸로 충분하지만,
+`onset_error_sec` 와 `containment_rate` 는 **선택된 쌍**을 쓴다. 그래서 배정을 두 가지로 고정한다:
+
+- 사건을 **`(onset, event_id)` 정규 순서**로 처리한다 — 정답지 파일의 줄 순서가 아니다
+- 각 사건의 후보를 **`(onset 오차, rank)` 오름차순**으로 본다 — 배정이 자유로우면 가까운 후보에 붙는다
+
+고정하지 않으면 같은 예측·같은 사건인데 정답지의 줄 순서만 바꿔도 `containment_rate` 가
+0.0 ↔ 1.0 으로 뒤집힌다. `event_id` 가 없고 `onset` 까지 같은 사건이 둘이면 그때는 파일 순서로 떨어진다.
+
+**한 클립의 사건은 GT 항목이 여럿으로 쪼개져 있어도 한 번에 배정한다.** 항목별로 배정하면
+같은 후보가 양쪽에서 적중으로 세어져 1:1 배정이 무의미해진다.
+
 ### 3-2. 지표
 
 | 지표 | 분자 | 분모 | `null` 이 되는 때 |
@@ -99,7 +111,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 
 ---
 
-## 4. Classification — `eval/scorers/classification.py`
+## 4. Classification — `eval/scorers/classification.py` (`cl1`)
 
 입력은 시퀀스 단위 분류 결과. 라벨 공간은 **4종 + `NONE` = 5** (`eval/enums.py`, 원본은 v4 §3-5).
 
@@ -242,7 +254,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s3` · plate `p1` · cost `c1` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s3` · classification `cl1` · plate `p1` · cost `c1` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
 | `normalizer_version` | impl 출력 → scorer 입력 변환 | `n1` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |

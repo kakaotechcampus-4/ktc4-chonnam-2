@@ -175,3 +175,23 @@ def test_score_proceeds_when_only_the_ground_truth_declares_a_contract_version(t
     assert score.main(["--prediction", "t_null_env_contract"]) == 0
     reread = json.loads(path.read_text(encoding="utf-8"))
     assert reread["meta"]["contract_version"] is None
+
+
+def test_classification_result_pins_its_own_scorer_version(tmp_path, monkeypatch):
+    """stage 마다 자기 버전을 적는다 — candidate 의 값을 빌려 쓰지 않는다.
+
+    classification 결과에 candidate 의 버전이 실리면 그 파일이 candidate 의
+    지표 정의("IoU -> onset point error", "1:1 배정")를 자기 것인 양 말한다.
+    """
+    from eval.scorers import candidate as candidate_scorer
+    from eval.scorers import classification as classification_scorer
+
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "fake:always_correct", "--manifest", "ab_mixed",
+                     "--stage", "classification", "--run-id", "t_cls"]) == 0
+    assert score.main(["--prediction", "t_cls"]) == 0
+
+    result = json.loads((tmp_path / "results" / "t_cls.ag1.json").read_text(encoding="utf-8"))
+    assert result["meta"]["scorer_version"] == classification_scorer.SCORER_VERSION
+    assert result["meta"]["scorer_version"] != candidate_scorer.SCORER_VERSION

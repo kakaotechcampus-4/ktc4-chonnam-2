@@ -346,3 +346,59 @@ def test_by_type_recall_uses_the_same_assignment():
     out = candidate.score(_preds((10.5, 1.0)), _gt_two_events(10.0, 11.0))
     assert out["by_type"]["SIGNAL"]["recall_at"]["10"] == 0.5
     assert out["by_type"]["SIGNAL"]["n"] == 2
+
+
+def _gt_ordered(pairs):
+    """(event_id, onset) 순서를 그대로 정답지 줄 순서로 쓴다."""
+    return {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": eid, "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": onset}
+        for eid, onset in pairs]}]}
+
+
+def test_error_metrics_do_not_depend_on_gt_line_order():
+    """정답지 줄 순서를 바꿔도 모든 지표가 같아야 한다.
+
+    최대 매칭은 크기만 유일하고 어느 쌍으로 맺는지는 유일하지 않다.
+    recall 은 크기만 쓰므로 순서 무관이지만 onset_error_sec·containment_rate
+    는 선택된 쌍에 의존한다 — 배정 순서가 정답지 줄 순서를 타면
+    같은 예측·같은 사건인데 containment 가 0.0 ↔ 1.0 으로 뒤집힌다.
+    """
+    pred = _preds((10.0, 1.0), (10.5, 0.9))
+    a = candidate.score(pred, _gt_ordered([("EA", 10.0), ("EB", 10.5)]))
+    b = candidate.score(pred, _gt_ordered([("EB", 10.5), ("EA", 10.0)]))
+    assert a["recall_at"] == b["recall_at"]
+    assert a["onset_error_sec"] == b["onset_error_sec"]
+    assert a["containment_rate"] == b["containment_rate"]
+
+
+def test_assignment_prefers_the_closer_candidate_for_each_event():
+    """배정이 자유로울 때는 오차가 작은 쪽으로 붙는다.
+
+    크기가 같은 최대 매칭이 여럿이면 어느 것을 골라도 recall 은 같지만,
+    아무거나 고르면 onset_error_sec 가 실제보다 나쁘게 나온다.
+    """
+    out = candidate.score(_preds((10.0, 1.0), (10.5, 0.9)),
+                          _gt_ordered([("EA", 10.0), ("EB", 10.5)]))
+    assert out["recall_at"]["10"] == 1.0
+    assert out["onset_error_sec"]["mean"] == 0.0
+    assert out["containment_rate"] == 1.0
+
+
+def test_duplicate_clip_id_items_share_one_assignment():
+    """같은 clip_id 가 GT 항목 두 개로 쪼개져 있어도 후보는 한 번만 쓰인다.
+
+    클립별로 배정하지 않고 항목별로 배정하면 _assign 이 두 번 따로 돌아
+    같은 후보가 양쪽에서 적중으로 세어진다 — F7 이 막으려던 바로 그것이다.
+    """
+    gt = {"items": [
+        {"clip_id": "c1", "targets": [
+            {"event_id": "A", "scoring": "INCLUDED",
+             "violation_type": "SIGNAL", "t_onset_sec": 10.0}]},
+        {"clip_id": "c1", "targets": [
+            {"event_id": "B", "scoring": "INCLUDED",
+             "violation_type": "SIGNAL", "t_onset_sec": 10.5}]},
+    ]}
+    out = candidate.score(_preds((10.2, 1.0)), gt)
+    assert out["n_events"] == 2
+    assert out["recall_at"]["10"] == 0.5

@@ -34,6 +34,7 @@ class ContractMismatch(Exception):
 # error")를 자기 것인 양 적어 낸다 (FIX5).
 _SCORER_VERSIONS = {
     "candidate": candidate.SCORER_VERSION,
+    "classification": classification.SCORER_VERSION,
     "plate": plate.SCORER_VERSION,
 }
 
