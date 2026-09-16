@@ -7,6 +7,7 @@ abstain인데 확정값이 함께 나오는지, 완전 실패인데 결과 객�
 규칙 원문의 소유자:
   - contract-readout-run.md §4            R1 · R2
   - contract-plate-overlay-readout.md §3  R16 (crop_ref identity)
+  - 같은 문서 §4 (v1.3)                   R19 (best_frame.plate_bbox_xywh)
   - 같은 문서 §5                          R10~R14 (abstain)
   - 같은 문서 §7 · §10                    R17 · R18 (overlay 갈래 · validation)
   - contract-observation.md 불변조건      R8 · R9
@@ -167,7 +168,35 @@ def check_plate(fixture) -> list:
                 "R15", pid,
                 f"disagree_positions={marked}가 consensus.text의 ? 위치와 다르다",
             ))
+        out += _check_plate_bbox(pid, plate.best_frame)
     return out
+
+
+def _check_plate_bbox(pid, best_frame) -> list:
+    """R19 — `best_frame`이 있으면 `plate_bbox_xywh`가 있고 형식이 맞다 (계약 §4, v1.3).
+
+    **`associated_region`과의 관계는 검사하지 않는다.** 같은지 다른지는 Producer 구현에
+    달렸고 계약이 정한 바가 없다 — 같다고 단언하면 현재 fixture의 재판독 사례
+    (`fr_p001_plate1` vs `fr_p001_plate3`)가 거짓이 되고, 다르다고 단언하면 두 값이
+    우연히 일치하는 정상 출력을 위반으로 만든다.
+
+    높이와 `quality.plate_px_height`의 관계도 검사하지 않는다. 계약 §4 예시에서는 둘이
+    같은 값이지만 문서 문장이 그렇게 못박은 적은 없다 — 예시에서 규칙을 만들지 않는다.
+    """
+    if best_frame is None:
+        return []
+    bbox = best_frame.plate_bbox_xywh
+    if bbox is None:
+        return [Violation("R19", pid, "best_frame이 있는데 plate_bbox_xywh가 없다")]
+    if len(bbox) != 4 or not all(isinstance(v, int) for v in bbox):
+        return [Violation(
+            "R19", pid, f"plate_bbox_xywh는 정수 4개다 — [x,y,w,h]: {bbox!r}")]
+    x, y, w, h = bbox
+    if w <= 0 or h <= 0:
+        return [Violation("R19", pid, f"plate_bbox_xywh의 너비·높이는 양수다: {bbox!r}")]
+    if x < 0 or y < 0:
+        return [Violation("R19", pid, f"plate_bbox_xywh의 좌표는 음수가 아니다: {bbox!r}")]
+    return []
 
 
 def check_overlay(fixture) -> list:

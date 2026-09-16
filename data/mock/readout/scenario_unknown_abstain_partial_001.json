@@ -99,7 +99,8 @@
         "quality": {
           "plate_px_height": 42,
           "sharpness": 0.79
-        }
+        },
+        "plate_bbox_xywh": [638, 499, 96, 42]
       },
       "frame_results": [
         {
