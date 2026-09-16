@@ -7,7 +7,7 @@ import json
 import os
 
 from eval import paths
-from eval.enums import VIOLATION_TYPES
+from eval.enums import CLASS_LABELS, VIOLATION_TYPES
 
 
 def _read_json(path):
@@ -118,3 +118,70 @@ def validate(clips, gt, verify_hashes=0):
 
 def check_invariants(manifest_name, stage, verify_hashes=0):
     return validate(load_clips(manifest_name), load_gt(manifest_name, stage), verify_hashes)
+
+
+_SOURCE_TIERS = ("A", "B", "C")
+
+
+def validate_sequences(sequences, gt):
+    """시퀀스 manifest 와 classification 정답지의 불변식. 위반 메시지 목록.
+
+    validate() 는 clip 과 span 을 전제해 A tier·ab_mixed 에서 돌지 않는다 —
+    시퀀스 manifest 에는 clip 도 span 도 없다 (F13). 이 함수는 시퀀스 쪽
+    불변식만 본다.
+
+    라벨 공간은 4종이 아니라 CLASS_LABELS(4종 + NONE)다. ab_mixed 의 NONE
+    항목이 baseline enum 밖이라고 거부당하면 안 되기 때문이다.
+    """
+    problems = []
+    items = gt["items"]
+    seq_ids = [s["sequence_id"] for s in sequences["sequences"]]
+    gt_ids = [i["sequence_id"] for i in items]
+
+    for ids, where in ((seq_ids, "sequences.json"), (gt_ids, "GT")):
+        dupes = sorted({i for i in ids if ids.count(i) > 1})
+        for d in dupes:
+            problems.append("%s: sequence_id 중복 (%s)" % (where, d))
+
+    for sid in sorted(set(gt_ids) - set(seq_ids)):
+        problems.append("%s: GT 항목이 sequences.json 에 없다" % sid)
+    for sid in sorted(set(seq_ids) - set(gt_ids)):
+        problems.append("%s: sequences.json 항목이 GT 에 없다 — 채점되지 않는다" % sid)
+
+    cov = gt["meta"].get("coverage")
+    if cov is None:
+        problems.append("meta.coverage 가 없다 — 검토 실적을 확인할 수 없다")
+    elif cov.get("sequences_total") != len(items):
+        problems.append(
+            "meta.coverage.sequences_total=%s 인데 items=%d"
+            % (cov.get("sequences_total"), len(items)))
+
+    for item in items:
+        sid = item["sequence_id"]
+        if item["label"] not in CLASS_LABELS:
+            problems.append("%s: %r 는 5클래스(4종 + NONE)가 아니다" % (sid, item["label"]))
+        if item.get("source_tier") not in _SOURCE_TIERS:
+            problems.append(
+                "%s: 알 수 없는 source_tier %r — 해상도·압축 특성이 다른 tier 를 "
+                "구분할 수 없다" % (sid, item.get("source_tier")))
+
+        box = item.get("target_bbox")
+        if box is None:
+            # bbox 가 없으면 그에 딸린 사실도 전부 null 이어야 한다 —
+            # 하나만 남으면 「무엇을 모르는지」가 흐려진다.
+            for key in ("target_frame", "distractor_count"):
+                if item.get(key) is not None:
+                    problems.append(
+                        "%s: target_bbox 가 없는데 %s 가 남아 있다" % (sid, key))
+        elif len(box) != 4:
+            problems.append("%s: target_bbox 의 길이가 4가 아니다 (%r)" % (sid, box))
+        elif not (box[0] < box[2] and box[1] < box[3]):
+            problems.append(
+                "%s: target_bbox 의 넓이가 0 이하다 (%r) — IoU 가 영원히 0 이 된다"
+                % (sid, box))
+
+    return problems
+
+
+def check_sequence_invariants(manifest_name, stage="classification"):
+    return validate_sequences(load_sequences(manifest_name), load_gt(manifest_name, stage))

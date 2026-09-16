@@ -262,7 +262,7 @@ eval/manifests/**/events_draft.json
 | F10 | `TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다 | Classification target correctness의 GT 품질 | 유형별 대상 객체 매핑 | 김대원 |
 | ~~F11~~ | ~~형식이 깨진 예측 bbox에 카운터가 없다~~ | **해소 (2026-09-16)** — `n_invalid_bboxes` + `INVALID_BBOXES` 사유 | — | 김대원 |
 | ~~F12~~ | ~~**`NONE` 클래스에 데이터 경로가 없다**~~ | **해소 (2026-09-16)** — `manifests/ab_mixed` (A 120 + NONE 30) | — | 김대원 |
-| F13 | `check_invariants`가 `a_aihub`에서 돌지 않는다 | A tier GT 불변식 (candidate의 7종에 대응) | 시퀀스 manifest용 검사기 | 김대원 |
+| ~~F13~~ | ~~`check_invariants`가 `a_aihub`에서 돌지 않는다~~ | **해소 (2026-09-16)** — `check_sequence_invariants` (`a_aihub`·`ab_mixed`) | — | 김대원 |
 
 F2의 Overlay time은 A tier 화면에 시각이 남아 있어 라벨 비용이 낮지만, §9-4에 따라 **overlay 판독 정확도만** 채점하고 source agreement(메타데이터 vs 파일명 vs overlay 대조)는 C tier 몫으로 남긴다.
 
@@ -290,7 +290,11 @@ F12 **해소됨** (2026-09-16). §4-2가 `NONE`을 B tier negative 클립에서 
 
 **두 tier의 항목은 같은 것이 아니다.** A tier는 정지 프레임 열이고 B tier는 60초 영상이다. `sequences.json`이라는 한 이름으로 묶지만 필드를 억지로 맞추지 않았다.
 
-F13: `a_aihub`에는 `clips.json`이 없어 `manifests_io.check_invariants`가 돌지 않는다(그 함수는 clip과 span을 전제한다). 대신 `tests/eval/test_sample_aihub.py`의 A tier GT 자기정합성 테스트가 커밋된 정답지만 검사한다. 시퀀스 단위 불변식 검사기는 F12의 manifest가 정해진 뒤에 만든다 — 지금 만들면 곧 바뀔 모양을 굳힌다.
+F13 **해소됨** (2026-09-16). `a_aihub`에는 `clips.json`이 없어 `manifests_io.check_invariants`가 돌지 않았다(그 함수는 clip과 span을 전제한다). F12로 `ab_mixed`의 모양이 정해진 뒤 `validate_sequences` / `check_sequence_invariants`를 만들었다 — 「곧 바뀔 모양을 굳히지 않는다」던 이유가 해소됐기 때문이다.
+
+강제하는 것: GT↔`sequences.json` 1:1 · `sequence_id` 중복 · 라벨이 **5클래스(4종 + `NONE`)** 안 · `source_tier`가 A/B/C 중 하나 · `coverage.sequences_total`과 실제 항목 수 일치 · `target_bbox` 형식(길이 4, 넓이 > 0) · bbox가 없으면 `target_frame`·`distractor_count`도 null.
+
+라벨 공간이 4종이 아니라 `CLASS_LABELS`인 것이 핵심이다 — `ab_mixed`의 `NONE` 항목이 baseline enum 밖이라고 거부당하면 안 된다. `tests/eval/test_sample_aihub.py`의 A tier 자기정합성 테스트는 그대로 둔다. 그쪽은 데이터셋 고유의 수(120·115·30)를 고정하고, 이쪽은 구조 불변식을 본다.
 
 ---
 
