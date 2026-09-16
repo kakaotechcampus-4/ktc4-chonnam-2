@@ -162,7 +162,7 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 | `consensus` | 여러 프레임 OCR을 종합한 결과 |
 | `abstained` | 번호판 확정을 보류했는지 |
 | `abstain_reason` | 보류 사유 |
-| `best_frame` | 대표 근거 프레임/crop |
+| `best_frame` | 대표 근거 프레임/crop과 그 프레임 안 번호판 영역. `plate_bbox_xywh`(v1.3 신설)는 `frame_ref`가 가리키는 canonical frame의 **원본 픽셀 좌표**이며, `PLATE_IMAGE` 생성의 authoritative 입력이다 — `target_association.associated_region.bbox_xywh`는 대상 차량 association 근거이고 이 용도로 쓰지 않는다 (이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) Q2·Q4) |
 | `frame_results` | 프레임별 OCR 관찰 결과 |
 
 ## 예시 JSON
@@ -221,6 +221,7 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
   "best_frame": {
     "frame_ref": "fr_9a1c0e",
     "crop_ref": "crop_001",
+    "plate_bbox_xywh": [838, 434, 96, 42],
     "quality": {
       "plate_px_height": 42,
       "sharpness": 0.81
@@ -392,8 +393,14 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 | --- | --- | --- |
 | `evidence` | `observation`, `target_association`, `consensus`, `abstained`, `abstain_reason`, `best_frame`, `validation` | `frame_results`, `samples` |
 | `eval` | `consensus`, `best_frame`, `abstained`, `target_association`, `validation` | `frame_results`, `samples` |
+| `case` | `best_frame.frame_ref` — 화면에 번호판 프레임을 표시하기 위해 `CaseView`로 통과시킨다. 그 밖의 필드는 `evidence`로 **경유**만 한다 | 없음 (v1.3) |
+| `web` | **직접 소비 없음.** `case`의 `CaseView`를 통해서만 받는다 | 없음 |
 
 `eval`의 번호판 평가는 우선 `best_frame`, `consensus`, `abstained`를 중심으로 수행할 수 있다. `frame_results[]` 전체는 OCR 실패 원인 분석, CER 진단, frame-level debugging이 필요할 때 사용한다.
+
+`case` 행은 v1.3에서 등재했다. `case`는 그동안 `evidence`로 가는 **경유자**였으나, `core-user-flow.md` §12의 `[번호판 이미지 보기]`·`[확대]` 화면이 요구하는 프레임을 `CaseView`가 나를 수 없다는 것이 확인되어(이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47), `preview_ref`는 사건 대표 썸네일이지 번호판 프레임이 아님) `best_frame.frame_ref` 한 값에 한해 직접 Consumer가 된다. 새 경로를 여는 것이 아니라, 문서 상단에 이미 등재된 「Direct Consumer는 `case`다」를 이 표에 반영하는 것이다.
+
+`crop_ref`는 `case`·`web`에 제공하지 않는다 — opaque identity이지 이미지 조회 handle이 아니어서(§3) 화면이 그 값으로 할 수 있는 일이 없다. 여러 프레임을 넘겨보는 화면은 `[프로토타입]` 범위이므로 `frame_results[]` 제공은 v1.3에서 다루지 않는다.
 
 ---
 
