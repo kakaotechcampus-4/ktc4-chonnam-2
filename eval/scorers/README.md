@@ -1,5 +1,14 @@
 # eval/scorers
 
-prediction + GT version + metric version → metrics. 지표 정의는 `docs/modules/eval/initial-evaluation-plan.md` §2와 `module-architecture.md` §9-3.
+prediction + GT version + metric version → metrics.
 
-아직 내용이 없다. Owner(김대원)가 채운다.
+지표의 계산 정의(분자·분모, 적중 판정, `null` 조건, 버전 규칙)는
+`docs/modules/eval/metrics/metric-definitions.md` 가 소유한다.
+지표 목록은 `docs/architecture/module-architecture.md` §9-3.
+
+| 파일 | stage | 버전 |
+| --- | --- | --- |
+| `candidate.py` | Candidate | `s2` |
+| `classification.py` | Classification | — |
+| `plate.py` | Plate | `p1` |
+| `cost.py` | Cost (stage 무관, 항상 계산) | `c1` |
