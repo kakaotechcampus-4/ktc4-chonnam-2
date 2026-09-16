@@ -30,7 +30,7 @@
 | Stage | 지표 | 상태 | 지금 값이 나오나 |
 | --- | --- | --- | --- |
 | Candidate | `recall_at` 1/3/10 · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
-| Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` · `by_condition` | **확정 · 구현** | 예 (A tier). 단 `NONE` 행·열은 비어 있다 |
+| Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` · `by_condition` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
 | Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` | **확정 · 구현** | mock tier 만. 실데이터는 C tier 확보 전까지 `null` |
 | Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
 | Fine | Recall · Precision · Hard-negative FPR | 확정 · **미구현** | 아니오 |
@@ -129,10 +129,21 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | — |
 | 예측 bbox 형식이 깨짐(길이≠4) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
 
-### 4-3. 지금 5×5 가 아니다
+### 4-3. `NONE` 은 `ab_mixed` manifest 에서만 나온다
 
-`NONE` 은 B tier negative 클립에서 만들기로 했으나(§4-2) A tier 시퀀스와 B tier 클립을 잇는
-manifest 가 없어 **`NONE` 행·열이 전부 0** 이다. 실측은 4×4 다(F12).
+A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이다 — AI-Hub 시퀀스는 전부 4종 중
+하나여서 「아무 위반도 아닌 것」이 없다. 5×5 라고 부르지만 실측은 4×4 가 된다.
+
+`NONE` 은 B tier 의 **검토를 마친 negative 클립**에서 온다(§4-2). 두 tier 를 이어 붙인 것이
+`manifests/ab_mixed` 이며 `eval/tools/build_ab_mixed.py` 가 만든다(현재 A 120 + NONE 30 = 150).
+
+- 뽑은 클립은 `meta.coverage.sampling`(`rule_version` · `seed`)에 기록된다 — **샘플링이 GT 의 일부다.**
+- 항목마다 `source_tier`(`A` / `B`)가 있다. A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라
+  해상도·압축 특성이 다르고, 그 차이를 지운 채 한 숫자로 뭉치면 결과가 거짓말을 한다.
+- B tier 항목에는 `target_bbox` · `condition` 이 **없다**(`null`). 없는 라벨을 지어내지 않으므로
+  그 항목들은 `target_correctness` 와 `by_condition` 의 분모에서 빠진다.
+- B tier 정답지의 검토가 끝나지 않았으면(`clips_reviewed < clips_total` 또는
+  `negatives_confirmed: false`) 빌더가 **거부한다** — 검토 안 된 클립을 「사건 없음」 정답으로 쓸 수 없다.
 
 ---
 
@@ -270,7 +281,6 @@ eval/results/<run_id>.<gt_version>.json
 | # | 항목 | 지표에 미치는 영향 |
 | --- | --- | --- |
 | F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
-| F12 | `NONE` 데이터 경로가 없다 | 5×5 의 `NONE` 행·열이 비어 있다 |
 | F1 · F6 | C tier plate GT 미확보 | plate 3종이 실데이터로 나오지 않는다 |
 | F3 | B tier 사건 수가 적다 | `recall_at` 의 신뢰구간이 넓다 |
 | — | Fine · Timestamp · E2E 지표 | scorer 없음 |

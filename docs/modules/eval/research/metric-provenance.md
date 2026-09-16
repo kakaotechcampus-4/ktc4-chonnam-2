@@ -126,9 +126,9 @@ micro 평균은 큰 클래스에 끌려간다는 그 구분이 근거다.
 신고 유형이 틀리는 것이고, 「정상을 신호위반으로 불렀다」는 사용자를 헛걸음시키는 것이다.
 단일 accuracy 는 둘을 같은 실점으로 뭉갠다.
 
-**지금 비어 있다 (F12).** `NONE` 은 B tier negative 클립에서 만들기로 했는데 A tier 시퀀스와
-B tier 클립을 잇는 manifest 가 아직 없어 `NONE` 행·열이 전부 0이다. 5×5 라고 부르지만
-실측은 4×4 다.
+**채워졌다 (F12 해소, 2026-09-16).** `NONE` 은 B tier 의 검토 완료 negative 클립에서 온다.
+두 tier 를 잇는 `manifests/ab_mixed`(A 120 + NONE 30)가 생겨 5×5 가 실제로 5×5 다.
+A tier 단독(`a_aihub`)으로 채점하면 여전히 `NONE` 행·열이 0이다 — manifest 선택이 곧 측정 범위다.
 
 ### 2-6. `target_correctness` — bbox IoU ≥ 0.5
 

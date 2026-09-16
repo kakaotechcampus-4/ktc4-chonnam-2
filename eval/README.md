@@ -41,7 +41,9 @@ python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candi
 python -m eval.score --prediction demo_correct
 ```
 
-`--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`) · `plate`(MOCK tier · `mock_pack`) 세 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+`--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`, AB tier · `ab_mixed`) · `plate`(MOCK tier · `mock_pack`) 세 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+
+`ab_mixed` manifest 는 A tier 시퀀스 120개와 B tier negative 클립 30개를 이어 붙인 것이다. **5×5 confusion 의 `NONE` 행·열은 이 manifest 로만 채워진다** — AI-Hub 시퀀스는 전부 4종 중 하나여서 「아무 위반도 아닌 것」이 없기 때문이다. `python -m eval.tools.build_ab_mixed` 로 재생성하며 뽑은 클립은 `meta.coverage.sampling`(rule_version·seed)에 기록된다. 항목마다 `source_tier` 가 있다 — A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라 해상도·압축 특성이 다르다.
 
 `mock_pack` manifest 는 팀 공용 Mock Pack(`data/mock/`) 산출물을 `mock_pack:contracts` impl 로 읽어 파이프라인이 끝까지 연결되는지 본다(`candidate`·`plate` 지원). 여기서 나오는 지표는 정답지가 채점 대상 fixture 에서 파생돼 순환적이다 — 성능 근거가 아니라 배관 확인용이다(결과의 `coverage` 경고 참조).
 

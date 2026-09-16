@@ -261,7 +261,7 @@ eval/manifests/**/events_draft.json
 | F9 | `code_commit`이 구조적으로 직전 커밋을 가리킨다 | — (해석 규칙) | §5에 의미를 명시하거나 재생성 후 amend | 김대원 |
 | F10 | `TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다 | Classification target correctness의 GT 품질 | 유형별 대상 객체 매핑 | 김대원 |
 | ~~F11~~ | ~~형식이 깨진 예측 bbox에 카운터가 없다~~ | **해소 (2026-09-16)** — `n_invalid_bboxes` + `INVALID_BBOXES` 사유 | — | 김대원 |
-| F12 | **`NONE` 클래스에 데이터 경로가 없다** | 5×5 confusion의 NONE 행·열 | A tier 시퀀스와 B tier negative 클립을 잇는 manifest | 김대원 |
+| ~~F12~~ | ~~**`NONE` 클래스에 데이터 경로가 없다**~~ | **해소 (2026-09-16)** — `manifests/ab_mixed` (A 120 + NONE 30) | — | 김대원 |
 | F13 | `check_invariants`가 `a_aihub`에서 돌지 않는다 | A tier GT 불변식 (candidate의 7종에 대응) | 시퀀스 manifest용 검사기 | 김대원 |
 
 F2의 Overlay time은 A tier 화면에 시각이 남아 있어 라벨 비용이 낮지만, §9-4에 따라 **overlay 판독 정확도만** 채점하고 source agreement(메타데이터 vs 파일명 vs overlay 대조)는 C tier 몫으로 남긴다.
@@ -284,7 +284,11 @@ F11 **해소됨** (2026-09-16). 형식이 깨진 **예측 bbox**(길이가 4가 
 
 깨진 bbox는 `target_correctness`의 **분모에는 남고 분자에는 들어가지 않는다** — 예측을 내긴 냈으므로 「잴 게 없었다」(GT bbox 부재)와 다르고, 맞혔다고 셀 수도 없기 때문이다. 지금은 치트 구현만 bbox를 내므로 실측에서 닿지 않는 경로이며 커밋된 결과의 값은 `0`이다.
 
-F12: §4-2가 `NONE`을 B tier negative 클립에서 만든다고 정했지만, A tier 시퀀스 manifest와 B tier 클립을 잇는 manifest가 아직 없다. 그래서 실제 데이터로 채점하면 5×5 confusion의 `NONE` 행과 열이 **전부 0으로 비어 있다.** 이걸 채울 것은 두 tier를 함께 나열하는 classification manifest(가칭 `manifests/ab_mixed/sequences.json`)이며, 항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다.
+F12 **해소됨** (2026-09-16). §4-2가 `NONE`을 B tier negative 클립에서 만든다고 정했지만 두 tier를 잇는 manifest가 없어 5×5 confusion의 `NONE` 행·열이 전부 0이었다. `eval/tools/build_ab_mixed.py`가 `manifests/ab_mixed`를 만든다 — A tier 시퀀스 120개 + B tier negative 클립 30개로 **5클래스 각 30개**다(B tier 확장으로 negative가 113개가 되어 가능해졌다).
+
+항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다. 뽑은 클립은 `meta.coverage.sampling`(`rule_version`·`seed`)에 기록된다 — 샘플링이 GT의 일부이기 때문이다(§4-2와 같은 원칙). B tier 항목에는 `target_bbox`·`condition` 라벨이 없어 `null`로 두며, 그 항목들은 `target_correctness`와 `by_condition`의 분모에서 빠진다.
+
+**두 tier의 항목은 같은 것이 아니다.** A tier는 정지 프레임 열이고 B tier는 60초 영상이다. `sequences.json`이라는 한 이름으로 묶지만 필드를 억지로 맞추지 않았다.
 
 F13: `a_aihub`에는 `clips.json`이 없어 `manifests_io.check_invariants`가 돌지 않는다(그 함수는 clip과 span을 전제한다). 대신 `tests/eval/test_sample_aihub.py`의 A tier GT 자기정합성 테스트가 커밋된 정답지만 검사한다. 시퀀스 단위 불변식 검사기는 F12의 manifest가 정해진 뒤에 만든다 — 지금 만들면 곧 바뀔 모양을 굳힌다.
 
