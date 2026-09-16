@@ -132,3 +132,32 @@ def test_target_correctness_denominator_excludes_no_bbox_items():
     ]
     r = classification.score(norm, gt)
     assert r["target_correctness"] == 0.5
+
+
+def test_malformed_predicted_bbox_is_counted_not_silently_zero():
+    """형식이 깨진 예측 bbox 를 「틀렸다」와 섞지 않는다 (F11).
+
+    _iou_2d 는 길이가 4가 아니면 조용히 0.0 을 낸다. 그러면 「대상 차량을
+    잘못 짚었다」와 「bbox 가 망가져서 잴 수 없었다」가 같은 실점이 된다.
+    라벨 쪽 n_invalid_gt_labels 와 같은 모양의 카운터로 드러낸다.
+    """
+    norm = [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10]}]
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    r = classification.score(norm, gt)
+    assert r["n_invalid_bboxes"] == 1
+    assert r["target_correctness"] == 0.0
+    assert "INVALID_BBOXES" in r["coverage"]
+
+
+def test_wellformed_but_wrong_bbox_is_not_counted_as_malformed():
+    """틀린 bbox 는 형식 오류가 아니다 — 둘을 가르는 게 이 카운터의 목적이다."""
+    norm = [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": [90, 90, 99, 99]}]
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    r = classification.score(norm, gt)
+    assert r["n_invalid_bboxes"] == 0
+    assert r["target_correctness"] == 0.0
+
+
+def test_not_run_block_carries_the_invalid_bbox_key():
+    """돌지 않은 stage 도 키를 빼지 않는다 (§7 규율)."""
+    assert classification.not_run("NOT_RUN — x")["n_invalid_bboxes"] is None

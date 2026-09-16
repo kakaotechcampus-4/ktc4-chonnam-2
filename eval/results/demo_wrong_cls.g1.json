@@ -95,6 +95,7 @@
     "n": 120,
     "n_invalid_predictions": 0,
     "n_invalid_gt_labels": 0,
+    "n_invalid_bboxes": 0,
     "coverage": null
   },
   "plate": {

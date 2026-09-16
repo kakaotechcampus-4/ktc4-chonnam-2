@@ -62,6 +62,7 @@ def score(normalized, gt):
 
     target_hits = 0
     target_total = 0
+    n_invalid_bboxes = 0
     n_invalid_predictions = 0
     n_invalid_gt_labels = 0
     n_scored = 0
@@ -108,7 +109,11 @@ def score(normalized, gt):
         if gt_box is not None:
             target_total += 1
             pred_box = pred_by_id.get(sid, {}).get("target_bbox")
-            if pred_box is not None and _iou_2d(pred_box, gt_box) >= _TARGET_BBOX_IOU_THRESHOLD:
+            if pred_box is not None and len(pred_box) != 4:
+                # 「대상을 잘못 짚었다」와 「bbox 가 망가져 잴 수 없었다」를
+                # 가른다. 세지 않으면 둘이 같은 0점으로 섞인다 (F11).
+                n_invalid_bboxes += 1
+            elif pred_box is not None and _iou_2d(pred_box, gt_box) >= _TARGET_BBOX_IOU_THRESHOLD:
                 target_hits += 1
 
     recall = {}
@@ -132,6 +137,11 @@ def score(normalized, gt):
             "INVALID_PREDICTIONS — baseline enum 밖의 예측 %d건을 NONE으로 접어 채점했다"
             % n_invalid_predictions
         )
+    if n_invalid_bboxes:
+        reasons.append(
+            "INVALID_BBOXES — 형식이 깨진 예측 bbox %d건. target_correctness 분모에는 "
+            "남고 분자에는 들어가지 않는다" % n_invalid_bboxes
+        )
 
     return {
         "recall_macro": _macro(recall),
@@ -146,6 +156,7 @@ def score(normalized, gt):
         "n": n_scored,
         "n_invalid_predictions": n_invalid_predictions,
         "n_invalid_gt_labels": n_invalid_gt_labels,
+        "n_invalid_bboxes": n_invalid_bboxes,
         "coverage": "; ".join(reasons) if reasons else None,
     }
 
@@ -162,5 +173,6 @@ def not_run(reason):
         "n": None,
         "n_invalid_predictions": None,
         "n_invalid_gt_labels": None,
+        "n_invalid_bboxes": None,
         "coverage": reason,
     }

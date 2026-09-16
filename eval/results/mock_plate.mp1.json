@@ -42,6 +42,7 @@
     "n": null,
     "n_invalid_predictions": null,
     "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
     "coverage": "NOT_RUN — stage=plate 실행이다"
   },
   "plate": {

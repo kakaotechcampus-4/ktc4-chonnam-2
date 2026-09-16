@@ -260,7 +260,7 @@ eval/manifests/**/events_draft.json
 | F8 | **임계값 0.5 두 개를 실험으로 정한다** | target correctness · Recall@K의 민감도 | 임계값 sweep 실험 | 김대원 |
 | F9 | `code_commit`이 구조적으로 직전 커밋을 가리킨다 | — (해석 규칙) | §5에 의미를 명시하거나 재생성 후 amend | 김대원 |
 | F10 | `TARGET_OBJECTS`가 위반유형별로 좁혀져 있지 않다 | Classification target correctness의 GT 품질 | 유형별 대상 객체 매핑 | 김대원 |
-| F11 | 형식이 깨진 예측 bbox에 카운터가 없다 | target correctness의 해석 가능성 | `n_invalid_bboxes` 카운터 + coverage 사유 | 김대원 |
+| ~~F11~~ | ~~형식이 깨진 예측 bbox에 카운터가 없다~~ | **해소 (2026-09-16)** — `n_invalid_bboxes` + `INVALID_BBOXES` 사유 | — | 김대원 |
 | F12 | **`NONE` 클래스에 데이터 경로가 없다** | 5×5 confusion의 NONE 행·열 | A tier 시퀀스와 B tier negative 클립을 잇는 manifest | 김대원 |
 | F13 | `check_invariants`가 `a_aihub`에서 돌지 않는다 | A tier GT 불변식 (candidate의 7종에 대응) | 시퀀스 manifest용 검사기 | 김대원 |
 
@@ -280,7 +280,9 @@ F9: `_git_commit()`이 실행 시점의 HEAD를 읽고 산출물은 그 뒤에 �
 
 F10: `eval/tools/sample_aihub.py`의 `TARGET_OBJECTS`는 위반유형과 무관한 전역 목록이다. 그래서 신호위반 시퀀스의 프레임에 중앙선침범용 대상 객체가 어노테이션돼 있으면 그 bbox를 target으로 가져간다. 실측으로 확인된 오류는 아직 없지만 GT 품질의 잠재 위험이며, F13의 A tier 불변식 검사기가 잡아야 할 후보다.
 
-F11: `classification.score`는 baseline enum 밖의 **예측 라벨**은 세어서 `n_invalid_predictions`와 coverage에 적지만, 형식이 깨진 **예측 bbox**(길이가 4가 아닌 값)는 `_iou_2d`가 조용히 `0.0`으로 처리하고 아무 데도 적지 않는다. 지금은 치트 구현만 bbox를 내므로 닿지 않는 경로지만, 실제 분류기를 붙이는 순간 「bbox가 틀렸다」와 「bbox 형식이 깨졌다」가 같은 0점으로 섞인다. 라벨 쪽과 같은 모양의 `n_invalid_bboxes` 카운터를 그때 함께 만든다.
+F11 **해소됨** (2026-09-16). 형식이 깨진 **예측 bbox**(길이가 4가 아닌 값)를 `_iou_2d`가 조용히 `0.0`으로 처리해 「bbox가 틀렸다」와 「bbox 형식이 깨졌다」가 같은 0점으로 섞이던 것을, 라벨 쪽(`n_invalid_predictions`)과 같은 모양의 `n_invalid_bboxes` 카운터와 `INVALID_BBOXES` coverage 사유로 갈랐다.
+
+깨진 bbox는 `target_correctness`의 **분모에는 남고 분자에는 들어가지 않는다** — 예측을 내긴 냈으므로 「잴 게 없었다」(GT bbox 부재)와 다르고, 맞혔다고 셀 수도 없기 때문이다. 지금은 치트 구현만 bbox를 내므로 실측에서 닿지 않는 경로이며 커밋된 결과의 값은 `0`이다.
 
 F12: §4-2가 `NONE`을 B tier negative 클립에서 만든다고 정했지만, A tier 시퀀스 manifest와 B tier 클립을 잇는 manifest가 아직 없다. 그래서 실제 데이터로 채점하면 5×5 confusion의 `NONE` 행과 열이 **전부 0으로 비어 있다.** 이걸 채울 것은 두 tier를 함께 나열하는 classification manifest(가칭 `manifests/ab_mixed/sequences.json`)이며, 항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다.
 

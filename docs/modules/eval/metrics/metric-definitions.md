@@ -127,7 +127,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | 예측이 baseline enum 밖 | `NONE` 으로 접어서 채점(사라지지도, `NONE` 보다 유리하지도 않게) | `n_invalid_predictions` · `coverage` |
 | 해당 시퀀스에 예측이 없음 | `NONE` 을 예측한 것으로 채점(미탐으로 잡힌다) | confusion 의 `NONE` 열 |
 | GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | — |
-| 예측 bbox 형식이 깨짐(길이≠4) | IoU `0.0` 으로 처리 | **아무 데도 안 적힌다 — 알려진 공백(F11)** |
+| 예측 bbox 형식이 깨짐(길이≠4) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
 
 ### 4-3. 지금 5×5 가 아니다
 
@@ -216,7 +216,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_NEGATIVE_CLIPS` | `fp_per_clip` 의 분모가 없다 |
 | `NO_MATCHED_EVENTS` | 적중이 없어 `onset_error_sec` 를 못 낸다 |
 | `EXCLUDED` / `BOUNDARY_EXCLUDED — N건` | 채점에서 뺀 사건 수 |
-| `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` | enum 밖 라벨·예측 처리 결과 |
+| `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` / `INVALID_BBOXES` | enum 밖 라벨·예측, 형식이 깨진 bbox 처리 결과 |
 | `NO_SEQUENCES` | classification 정답지가 비었다 |
 | `NO_PLATE_GT` | 이 manifest 에 plate 정답지가 없다 |
 | `NO_SCORED_READOUTS` | 정답지와 겹치는 판독이 없다 |
@@ -270,7 +270,6 @@ eval/results/<run_id>.<gt_version>.json
 | # | 항목 | 지표에 미치는 영향 |
 | --- | --- | --- |
 | F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
-| F11 | 형식이 깨진 예측 bbox 카운터가 없다 | 「bbox 가 틀렸다」와 「형식이 깨졌다」가 같은 0점으로 섞인다 |
 | F12 | `NONE` 데이터 경로가 없다 | 5×5 의 `NONE` 행·열이 비어 있다 |
 | F1 · F6 | C tier plate GT 미확보 | plate 3종이 실데이터로 나오지 않는다 |
 | F3 | B tier 사건 수가 적다 | `recall_at` 의 신뢰구간이 넓다 |
