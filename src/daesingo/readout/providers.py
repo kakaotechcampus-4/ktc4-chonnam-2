@@ -65,12 +65,18 @@ class PlateFrameReading:
 
 @dataclass
 class AssociationReading:
-    """「어느 차량의 번호판을 읽었나」와 그 근거. status 값 공간은 계약 §5."""
+    """「어느 차량의 번호판을 읽었나」와 그 근거. status 값 공간은 계약 §5.
+
+    `region`은 **대상 차량 영역**이고 번호판 박스가 아니다. 번호판 박스는 프레임마다
+    `PlateFrameReading.bbox_xywh`가 갖는다 — 계약 §4 `best_frame.plate_bbox_xywh`(v1.3).
+    둘을 한 값으로 쓰면 소비자가 번호판을 그리려고 association 근거를 읽게 된다.
+    """
     status: str
     target_hint_used: bool
     track_ref: Optional[str]
     association_method: str
     evidence: list = field(default_factory=list)  # [(kind, detail), ...]
+    region: Optional[tuple] = None                # (frame_ref, bbox_xywh) | None
 
 
 @dataclass
@@ -176,6 +182,8 @@ class FixtureOcrProvider(OcrProvider):
 
         assoc = plate.target_association
         region = assoc.associated_region
+        # 대상 차량 영역이다. 번호판 영역이 아니다 — fixture가 번호판 박스를 갖고 있지 않은
+        # 프레임에서만 자리를 채우는 값으로 쓴다.
         bbox = list(region.bbox_xywh) if region else [0, 0, 0, 0]
         best = plate.best_frame
         return PlateReading(
@@ -186,11 +194,16 @@ class FixtureOcrProvider(OcrProvider):
                 track_ref=getattr(target_hint, "track_ref", None) or assoc.track_ref,
                 association_method="TARGET_HINT_WITH_FALLBACK" if used else "FALLBACK_ONLY",
                 evidence=[(e.kind, e.detail) for e in assoc.evidence],
+                region=(region.frame_ref, list(region.bbox_xywh)) if region else None,
             ),
             frames=[
                 PlateFrameReading(
                     frame_ref=f.frame_ref,
-                    bbox_xywh=list(bbox),
+                    # 번호판 박스도 품질 지표와 같다 — fixture는 best frame 것만 갖고 있다.
+                    # 나머지 프레임은 대상 차량 영역으로 자리만 채운다.
+                    bbox_xywh=(list(best.plate_bbox_xywh)
+                               if best and f.frame_ref == best.frame_ref
+                               and best.plate_bbox_xywh else list(bbox)),
                     text=f.text,
                     confidence=f.confidence,
                     # 품질 지표는 provider 쪽 실측값이다. fixture는 best frame 것만 갖고 있다.
