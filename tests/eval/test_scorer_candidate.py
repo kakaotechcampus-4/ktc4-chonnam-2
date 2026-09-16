@@ -292,3 +292,57 @@ def test_included_target_without_violation_type_raises():
     ]}]}
     with pytest.raises(ValueError, match="EV_X"):
         candidate.score([{"clip_id": "c1", "candidates": []}], gt)
+
+
+def _gt_two_events(onset_a, onset_b, violation_type="SIGNAL"):
+    """한 클립에 사건 2건. F7 이 다루는 모양이다."""
+    return {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "EA", "scoring": "INCLUDED",
+         "violation_type": violation_type, "t_onset_sec": onset_a},
+        {"event_id": "EB", "scoring": "INCLUDED",
+         "violation_type": violation_type, "t_onset_sec": onset_b},
+    ]}]}
+
+
+def _preds(*cands):
+    """(representative_sec, score) 들을 한 클립의 후보 목록으로."""
+    return [{"clip_id": "c1", "candidates": [
+        {"rank": i + 1, "t_start_sec": rep - 1.0, "t_end_sec": rep + 1.0,
+         "representative_sec": rep, "timeline_revision": 1,
+         "event_type": "SIGNAL", "score": score}
+        for i, (rep, score) in enumerate(sorted(cands, key=lambda c: -c[1]))
+    ]}]
+
+
+def test_one_candidate_cannot_hit_two_events(): 
+    """예측 하나가 사건 2건의 적중으로 중복 계수되지 않는다 (F7).
+
+    tolerance 2.0 안에 사건 둘(10.0 · 11.0)이 있고 후보는 하나(10.5)다.
+    1:1 배정이 없으면 recall 이 2/2 로 부풀어 오른다.
+    """
+    out = candidate.score(_preds((10.5, 1.0)), _gt_two_events(10.0, 11.0))
+    assert out["n_events"] == 2
+    assert out["recall_at"]["10"] == 0.5
+
+
+def test_assignment_finds_the_maximum_number_of_hits():
+    """배정이 최대 적중을 찾는다 — 사건 순서·rank 순서에 지지 않는다.
+
+    EB(13.0)는 후보 11.5 하고만 맞고, EA(10.0)는 11.5·10.0 둘 다와 맞는다.
+    EA 가 rank 1 인 11.5 를 먼저 집어 삼키면 EB 가 굶어 1/2 이 된다.
+    맞는 답은 EA←10.0 · EB←11.5 로 2/2 다.
+
+    중복 계수를 막는 코드(F7)를 탐욕 배정으로 짜면 이 테스트가 깨진다.
+    지금은 1:1 배정 자체가 없어 통과하므로, 이 테스트는 잘못된 고침을
+    막는 가드다.
+    """
+    out = candidate.score(_preds((11.5, 1.0), (10.0, 0.9)),
+                          _gt_two_events(10.0, 13.0))
+    assert out["recall_at"]["10"] == 1.0
+
+
+def test_by_type_recall_uses_the_same_assignment():
+    """유형별 집계도 같은 배정을 쓴다 — 전체와 어긋나면 둘 중 하나가 거짓이다."""
+    out = candidate.score(_preds((10.5, 1.0)), _gt_two_events(10.0, 11.0))
+    assert out["by_type"]["SIGNAL"]["recall_at"]["10"] == 0.5
+    assert out["by_type"]["SIGNAL"]["n"] == 2

@@ -92,7 +92,7 @@ def test_result_pins_the_scorer_version_and_the_prediction_it_scored(tmp_path, m
     assert score.main(["--prediction", "t_pin"]) == 0
 
     result = json.loads((tmp_path / "results" / "t_pin.mp1.json").read_text(encoding="utf-8"))
-    assert result["meta"]["scorer_version"] == "s2"
+    assert result["meta"]["scorer_version"] == "s3"
     ref = result["meta"]["prediction_ref"]
     assert ref["path"].endswith("t_pin.json")
     assert len(ref["sha256"]) == 64

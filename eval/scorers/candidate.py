@@ -11,10 +11,13 @@ recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상
 
 2026-09-10 계약 v1.1 §4-1 이 span 을 coarse 후보 창으로 확정하면서 IoU
 매칭을 폐기했다. 창은 containment_rate 로만 남는다.
+
+후보와 사건은 클립 단위로 1:1 배정한다 (_assign). 예측 하나가 두 사건의
+적중으로 중복 계수되면 recall 이 조용히 부풀어 오르기 때문이다.
 """
 import statistics
 
-SCORER_VERSION = "s2"   # 2026-09-13 IoU -> onset point error (계약 v1.1 §4-1)
+SCORER_VERSION = "s3"   # 2026-09-16 후보-사건 1:1 배정 (F7)
 DEFAULT_TOLERANCE_SEC = 2.0
 
 CIRCULARITY = ("순환 경고 — mock tier 의 onset 은 채점 대상인 예측과 같은 fixture "
@@ -25,6 +28,41 @@ CIRCULARITY = ("순환 경고 — mock tier 의 onset 은 채점 대상인 예�
 def _contains(c, onset_sec):
     """coarse 창이 정답 시점을 품는가. 매칭 조건이 아니라 보조 신호다."""
     return c["t_start_sec"] <= onset_sec <= c["t_end_sec"]
+
+
+def _assign(cands, targets, k, tolerance_sec):
+    """top-k 후보와 사건을 1:1 로 배정한다. 반환은 {사건 인덱스: 후보}.
+
+    예측 하나가 두 사건의 적중으로 중복 계수되지 않게 한다 (F7).
+
+    탐욕이 아니라 최대 매칭(Kuhn)을 쓴다. 탐욕은 먼저 나온 사건이 후보를
+    삼켜 뒤의 사건이 굶을 수 있고, 그러면 recall 이 **정답지의 사건 나열
+    순서에 따라 달라진다.** 최대 매칭의 크기는 그 순서와 무관하게 하나로
+    정해지므로 채점이 파일 순서에 휘둘리지 않는다.
+
+    후보는 같은 event_type 하고만 이어지므로 그래프가 유형별로 쪼개진다 —
+    by_type 집계가 전체 집계와 저절로 일치한다.
+    """
+    topk = [c for c in cands if c["rank"] <= k]
+    adj = [[j for j, c in enumerate(topk)
+            if c["event_type"] == t["violation_type"]
+            and abs(c["representative_sec"] - t["t_onset_sec"]) <= tolerance_sec]
+           for t in targets]
+    owner = {}                      # 후보 인덱스 -> 사건 인덱스
+
+    def _augment(i, seen):
+        for j in adj[i]:
+            if j in seen:
+                continue
+            seen.add(j)
+            if j not in owner or _augment(owner[j], seen):
+                owner[j] = i
+                return True
+        return False
+
+    for i in range(len(targets)):
+        _augment(i, set())
+    return {i: topk[j] for j, i in owner.items()}
 
 
 SCORING_VALUES = ("INCLUDED", "EXCLUDED", "BOUNDARY_EXCLUDED")
@@ -57,7 +95,8 @@ def _partition(targets, where):
 def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
     by_clip = {n["clip_id"]: n["candidates"] for n in normalized}
 
-    events = []          # (clip_id, target)
+    # 배정은 클립 단위다 — 후보는 자기 클립의 사건하고만 이어진다.
+    clips_with_events = []          # (clip_id, [target, ...])
     negative_clips = []
     excluded_by_reason = {}
     for item in gt["items"]:
@@ -69,8 +108,8 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
         for reason, n in excluded.items():
             excluded_by_reason[reason] = excluded_by_reason.get(reason, 0) + n
         if item["targets"]:
-            for t in included:
-                events.append((item["clip_id"], t))
+            if included:
+                clips_with_events.append((item["clip_id"], included))
         else:
             negative_clips.append(item["clip_id"])
 
@@ -80,31 +119,24 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
     contained = []
     by_type = {}
 
-    for clip_id, t in events:
-        vt = t["violation_type"]
-        onset = t["t_onset_sec"]
-        slot = by_type.setdefault(vt, {"hits": {k: 0 for k in ks}, "n": 0})
-        slot["n"] += 1
+    n_events = 0
+    for clip_id, targets in clips_with_events:
         cands = by_clip.get(clip_id, [])
-        matched_at_loosest = None
+        n_events += len(targets)
+        for t in targets:
+            slot = by_type.setdefault(t["violation_type"],
+                                      {"hits": {k: 0 for k in ks}, "n": 0})
+            slot["n"] += 1
         for k in ks:
-            topk = [c for c in cands if c["rank"] <= k]
-            matched = next(
-                (c for c in topk
-                 if c["event_type"] == vt
-                 and abs(c["representative_sec"] - onset) <= tolerance_sec),
-                None,
-            )
-            if matched is not None:
-                hits[k] += 1
-                slot["hits"][k] += 1
-                if k == loosest_k:
-                    matched_at_loosest = matched
-        if matched_at_loosest is not None:
-            onset_errors.append(abs(matched_at_loosest["representative_sec"] - onset))
-            contained.append(_contains(matched_at_loosest, onset))
-
-    n_events = len(events)
+            assigned = _assign(cands, targets, k, tolerance_sec)
+            hits[k] += len(assigned)
+            for i in assigned:
+                by_type[targets[i]["violation_type"]]["hits"][k] += 1
+            if k == loosest_k:
+                for i, c in assigned.items():
+                    onset = targets[i]["t_onset_sec"]
+                    onset_errors.append(abs(c["representative_sec"] - onset))
+                    contained.append(_contains(c, onset))
     fp = 0
     for clip_id in negative_clips:
         fp += len(by_clip.get(clip_id, []))

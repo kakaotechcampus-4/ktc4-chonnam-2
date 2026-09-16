@@ -7,7 +7,7 @@
     "gt_version": "g3",
     "normalizer_version": "n1",
     "code_commit": "c899ea4",
-    "scorer_version": "s2",
+    "scorer_version": "s3",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong.json",
       "sha256": "6d68ce39a8dc32b2ef75bf9f6bc3caf04f5ea3bbced2e60319ea87a42174fd6f"

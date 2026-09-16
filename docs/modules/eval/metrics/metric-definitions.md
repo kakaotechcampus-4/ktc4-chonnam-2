@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-16 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s2` · plate `p1` · cost `c1` · normalizer `n1`
+> **버전:** candidate `s3` · plate `p1` · cost `c1` · normalizer `n1`
 
 ---
 
@@ -43,7 +43,7 @@
 
 ---
 
-## 3. Candidate — `eval/scorers/candidate.py` (`s2`)
+## 3. Candidate — `eval/scorers/candidate.py` (`s3`)
 
 입력은 clip 단위 후보 목록. 후보는 `score` 내림차순으로 **rank 를 1부터 재계산**한다
 (impl 이 보낸 rank 값은 무시한다, `normalize.py`).
@@ -58,6 +58,13 @@
 **구간 IoU 로 판정하지 않는다.** 계약 v1.1 §4-1 이 `span` 을 「coarse 후보 창」으로 확정했기 때문이다 —
 창은 「사건이 여기까지다」가 아니라 「여기를 더 보라」는 제안이므로, 창을 넓게 잡았다고 점수가
 깎이면 안 된다. 창의 품질은 `containment_rate` 로만 본다.
+
+**한 예측은 한 사건에만 쓰인다.** 위 조건을 만족하는 (후보, 사건) 쌍을 클립 단위로 모아
+**최대 매칭**으로 1:1 배정한 뒤, 배정된 사건만 적중으로 센다. 배정하지 않으면 사건 둘이
+`2×tolerance` 안에 있을 때 예측 하나가 적중 2건으로 세어져 recall 이 부풀어 오른다.
+
+탐욕이 아니라 최대 매칭인 이유: 탐욕은 먼저 나온 사건이 후보를 삼켜 뒤의 사건이 굶을 수 있고,
+그러면 **recall 이 정답지의 사건 나열 순서에 따라 달라진다.** 최대 매칭의 크기는 순서와 무관하다.
 
 ### 3-2. 지표
 
@@ -224,7 +231,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s2` · plate `p1` · cost `c1` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s3` · plate `p1` · cost `c1` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
 | `normalizer_version` | impl 출력 → scorer 입력 변환 | `n1` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
@@ -262,7 +269,6 @@ eval/results/<run_id>.<gt_version>.json
 
 | # | 항목 | 지표에 미치는 영향 |
 | --- | --- | --- |
-| F7 | 후보-사건 1:1 배정이 없다 | 한 클립에 사건이 둘 이상이면 **recall@K 가 조용히 부풀어 오른다.** 다중 사건 클립을 들이는 커밋에서 함께 고쳐야 한다 |
 | F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
 | F11 | 형식이 깨진 예측 bbox 카운터가 없다 | 「bbox 가 틀렸다」와 「형식이 깨졌다」가 같은 0점으로 섞인다 |
 | F12 | `NONE` 데이터 경로가 없다 | 5×5 의 `NONE` 행·열이 비어 있다 |
