@@ -2,6 +2,9 @@
 
 작성일: 2026-09-16
 
+갱신일: 2026-09-17 — 사전학습 CV-first 조사안과 현재 VLM-first baseline 비교,
+병렬 candidate union 실험 및 조건부 전환 기준 추가
+
 상태: **Research / Spike 제안 — 구현·채택 결정 아님**
 
 대상: `search` 모듈의 Fine visual verification과 선택적 ADAS/CV challenger
@@ -40,6 +43,14 @@ Gemini에는 **YOLO 오버레이 영상만** 보내지 않는다. 권장 입력 
 
 전체 오버레이 영상은 개발자 디버깅 또는 사용자 근거 화면용 파생 자산으로는 유용하지만,
 Gemini 입력으로는 원본 영상과 key frame 조합을 우선 비교한다.
+
+2026-09-17 비교 검토의 결론은 다음과 같다.
+
+- 현재 기본 경로인 `Gemini Coarse → Gemini Fine`은 즉시 교체하지 않는다.
+- 첫 CV spike는 Fine 단계의 대상 연계와 시각 근거 보조에 한정한다.
+- 승인된 다음 challenger에서는 Gemini와 CV가 각각 후보를 찾고 후보 집합을 합친다.
+- 실선 차선 변경·중앙선 침범처럼 기하 분석 비중이 큰 유형은 동일 정답지 평가를 통과한 경우에만
+  유형별 CV-first 경로로 전환한다.
 
 ---
 
@@ -537,3 +548,276 @@ src/daesingo/search/
 
 이 질문은 이 문서에서 임의로 종결하지 않는다. 실험 결과와 기존 승인 절차에 따라 결정 문서로
 승격한다.
+
+---
+
+## 16. CV-first Candidate Generator 비교 판단 — 2026-09-17 갱신
+
+### 16.1 검토한 제안
+
+검토 대상은 실선 구간 차선 변경과 중앙선 침범을 다음 흐름으로 찾는 방안이다.
+
+```text
+Dashcam video
+  → pretrained vehicle/lane models
+  → vehicle tracking
+  → lane-relative trajectory analysis
+  → solid-line / centerline crossing candidate
+  → Gemini Fine verification
+```
+
+이 구조는 두 사건이 차량과 차선의 상대 위치가 시간에 따라 바뀌는 **기하·시간 사건**이라는 점에서
+장기적으로 적합하다. 다만 사전학습 모델을 연결했다고 곧바로 위반 판정기가 되는 것은 아니다.
+차선 의미, 이동 카메라 보정, 대상 차량 연계, 시간 상태 전이, 불확실성 보존을 별도로 구현하고
+우리 블랙박스 영상에서 검증해야 한다.
+
+### 16.2 현재 경로와 제안 경로 비교
+
+| 항목 | VLM-first baseline | CV-first candidate | 판단 |
+| --- | --- | --- | --- |
+| 후보 발견 | Gemini가 장면 문맥으로 탐색 | 차량·차선 좌표와 궤적으로 탐색 | 서로 놓치는 후보가 달라 병렬 비교 가치가 큼 |
+| 실선/중앙선 의미 | 문맥 해석에 유리 | 일반 lane 모델만으로는 부족 | CV에 별도 의미 분류와 `UNCERTAIN` 필요 |
+| 교차 시점 | 자연어 추론, 프레임 정밀도 편차 가능 | 상태 전이로 재현 가능 | CV의 강점 |
+| 이동 블랙박스 | 장면 전체를 직접 해석 | ego-motion·원근·곡률 보정 필요 | smoke test 없이 기본 경로로 승격 불가 |
+| 설명 가능성 | 설명은 쉽지만 좌표 근거가 약할 수 있음 | 궤적·선·시점 근거 생성 가능 | 원본 픽셀과 함께 쓰면 상호 보완 |
+| 장시간 비용 | 긴 영상 입력·반복 검증 비용 | sampling과 경량 추론으로 후보 축소 가능 | 전체 pipeline 실측 필요 |
+| 새로운 의존성 | 기존 Gemini 운영 경로 사용 | 모델 runtime·weight·라이선스 추가 | 격리된 spike부터 시작 |
+| 오탐 억제 | 장면 문맥 활용 | 기하 규칙만으로는 회피·회전·공사구간에 취약 | Gemini Fine 검증 유지 |
+
+따라서 지금의 최선은 어느 한쪽을 바로 대체하는 것이 아니라 다음 단계적 구조다.
+
+```text
+현재 MVP       VLM-first baseline + 선택적 CV Fine assist
+다음 challenger Gemini candidate ∪ CV geometry candidate
+조건부 전환     평가 gate를 통과한 사건 유형만 CV-first candidate로 전환
+```
+
+---
+
+## 17. 사전학습 모델별 적용 판단
+
+### 17.1 YOLO11
+
+[Ultralytics YOLO11 문서](https://docs.ultralytics.com/models/yolo11/)의 속도 수치는 단일 모델·특정
+입력 크기·특정 runtime에서의 추론 benchmark다. 차량 검출 출발점으로는 유효하지만 다음 시간을
+포함한 전체 처리속도로 해석하지 않는다.
+
+- 영상 decode와 resize
+- tracker와 camera-motion 보정
+- lane model
+- crossing rule과 후보 병합
+- 결과 encode·저장·I/O
+
+또한 제품 적용 전에는 §13.2의 라이선스 검토가 선행되어야 한다.
+
+### 17.2 YOLOPv2
+
+[YOLOPv2 공식 저장소](https://github.com/CAIC-AD/YOLOPv2)는 BDD100K 기준으로 객체 검출,
+주행 가능 영역, 차선 검출을 한 번에 제공하며 Tesla V100·입력 640에서 91 FPS를 보고한다.
+공개 표의 주요 값은 parameter 38.9M, traffic-object recall 91.1%, lane accuracy 87.3%,
+lane IoU 27.2%다.
+
+한 번의 forward로 필요한 요소를 폭넓게 얻는 점은 smoke test에 유리하다. 하지만 crossing 판정에서는
+희소 픽셀 정확도보다 선의 위치 오차와 IoU가 중요하다. 공개 benchmark만으로 우리 영상에서 교차
+시점을 충분히 정밀하게 찾는다고 결론 내리지 않는다.
+
+### 17.3 CLRNet
+
+[CLRNet 공식 저장소](https://github.com/Turoad/CLRNet)는 CULane, TuSimple, LLAMAS용 구현과
+Apache-2.0 라이선스를 제공한다. 공개 설치 환경은 Ubuntu 18.04/20.04, Python 3.8,
+PyTorch 1.6, CUDA 10.2 중심이므로 현재 application dependency에 직접 결합하지 않는다.
+재현 가능한 container 또는 별도 worker에서 먼저 평가한다.
+
+### 17.4 Ultra-Fast-Lane-Detection-v2
+
+[UFLDv2 공식 저장소](https://github.com/cfzd/Ultra-Fast-Lane-Detection-v2)는 CULane,
+TuSimple, CurveLanes 모델과 ONNX/TensorRT 추론 경로를 제공하고 MIT 라이선스를 사용한다.
+고속 lane geometry 후보로 비교할 가치는 있지만 흰색/황색, 실선/점선, 중앙선 역할까지 직접
+보장하는 모델로 보지 않는다.
+
+### 17.5 ByteTrack과 대안 tracker
+
+[ByteTrack 공식 저장소](https://github.com/FoundationVision/ByteTrack)의 대표 성능은 주로
+MOT17/MOT20 사람 추적 benchmark와 V100 환경을 기준으로 한다. 고정 CCTV와 달리 블랙박스는
+카메라 자체가 이동하므로 공개된 30 FPS 수치를 차량 추적 처리량과 안정성으로 그대로 환산하지 않는다.
+
+초기에는 ByteTrack을 가벼운 기준선으로 두되, 다음 항목을 BoT-SORT 또는 ReID 기반 대안과 비교한다.
+
+- ego-motion과 급격한 회전 구간의 ID switch
+- 가림 뒤 ID 복구
+- 멀어지는 소형 차량과 접근 차량의 track 유지
+- 사용자 차량과 위반 의심 차량의 association 오류
+
+---
+
+## 18. Crossing 판정 로직 보정
+
+### 18.1 bottom-center는 출발점이지 도로 좌표가 아니다
+
+차량 bbox의 bottom-center는 전체 bbox 교차보다 도로 접점을 잘 근사하므로 MVP 기준점으로 사용할 수
+있다. 그러나 raw image 좌표만 비교하면 곡선, 경사, ego-turn, 진동, 원근 변화에서 오탐이 생긴다.
+
+권장 계산 순서는 다음과 같다.
+
+```text
+vehicle ground-contact estimate
+  → local lane curve / lane corridor
+  → camera-motion stabilization
+  → lane-relative signed lateral position
+  → temporal crossing state machine
+```
+
+### 18.2 단일 겹침 대신 시간 상태 전이
+
+`vehicle bbox ∩ line != ∅`를 위반 후보로 사용하지 않는다. 최소 상태는 다음과 같다.
+
+```text
+SAME_SIDE
+  → CONTACT
+  → PARTIAL_CROSSING
+  → SUBSTANTIAL_OR_FULL_CROSSING
+  → STABLE_OTHER_SIDE
+```
+
+짧은 접촉 뒤 원래 쪽으로 복귀하거나 선 검출이 순간적으로 튀는 경우는 후보 신뢰도를 낮춘다.
+교차 전·중·후 프레임과 각 상태의 timestamp를 Fine 입력 metadata에 포함한다.
+
+### 18.3 선 종류와 의미의 불확실성 보존
+
+색상과 연속성 후처리는 유용한 heuristic이지만 그것만으로 중앙선 의미를 확정하지 않는다.
+각 속성을 독립적으로 기록한다.
+
+```text
+geometry      PRESENT | ABSENT | UNCERTAIN
+color         WHITE | YELLOW | OTHER | UNCERTAIN
+continuity    SOLID | DASHED | MIXED | UNCERTAIN
+semantic_role CENTERLINE | SAME_DIRECTION_DIVIDER | ROAD_EDGE | UNCERTAIN
+```
+
+예를 들어 황색 실선처럼 보여도 도로 가장자리이거나 공사 임시선일 수 있다. `semantic_role`이
+`UNCERTAIN`이면 deterministic rule이 최종 위반 label을 만들지 않고 Gemini Fine 또는 사용자 확인으로
+보낸다.
+
+---
+
+## 19. Sampling·처리속도·하드웨어 판단
+
+### 19.1 5~10 FPS는 채택값이 아니라 실험 시작값
+
+교차가 짧게 발생할 수 있어 1 FPS는 시점과 상태 전이를 놓칠 가능성이 높다. 5~10 FPS는 초기 probe로
+합리적이지만, 비용과 recall을 함께 보기 위해 다음 dual-rate 방식도 비교한다.
+
+```text
+전체 영상 3~5 FPS coarse CV scan
+  → 의심 구간 buffer
+  → 원본 FPS 또는 10~15 FPS local refinement
+```
+
+### 19.2 처리시간은 전체 pipeline으로 측정
+
+`처리 프레임 수 ÷ 모델 FPS`는 이론적 하한 계산에는 유용하다. 실제 보고값은 동일 장비에서 다음을
+포함해 측정한다.
+
+- wall-clock 시간과 effective source-video FPS
+- decode, 각 model, tracking, rule, encode 단계별 p50/p95 latency
+- CPU·GPU 사용률과 peak RAM·VRAM
+- 원본 1분·1시간당 후보 수, 저장량, Gemini 호출량과 비용
+
+### 19.3 자원 수치는 예산 가설로 취급
+
+4 GB, 6~8 GB, 12 GB 같은 VRAM 구간과 RAM 16 GB는 공식 최소 사양이 아니라 실험 장비 선정용
+가설이다. 입력 해상도, precision, batch, runtime, 동시 적재 모델에 따라 달라지므로 peak 사용량과
+OOM 여부를 실제 조합별로 기록한다.
+
+---
+
+## 20. 권장 Hybrid Candidate Architecture
+
+현재 정책과 기술적 장점을 함께 만족하는 목표 실험 구조는 다음과 같다.
+
+```text
+                         ┌─ Gemini Coarse ───────────────┐
+Dashcam video ─ decode ──┤                               ├─ candidate union / dedupe
+                         └─ CV geometry search ──────────┘
+                              │                            │
+                              ├ vehicle/lane detection     │
+                              ├ tracking + stabilization   │
+                              └ crossing state machine     │
+                                                           ↓
+                                  original candidate clip + CV hints
+                                                           ↓
+                                                     Gemini Fine
+                                                           ↓
+                                      OBSERVED | NOT_OBSERVED | UNCERTAIN
+                                                           ↓
+                                    evidence gate → 사용자 최종 확인
+```
+
+`candidate union`은 두 경로 중 하나만 찾은 구간도 버리지 않고 timestamp overlap으로 중복을 합친다.
+Fine에는 원본 클립을 항상 보존하고 CV hint는 관찰 보조 정보로만 전달한다. 최종 출력도 법적 확정이
+아닌 `VisualEvidence`이며 사용자 확인 경계를 유지한다.
+
+---
+
+## 21. 전체 파이프라인 비교 실험
+
+§11.2의 A~D는 **동일 후보에 대한 Fine 입력 형태** 비교다. 후보 생성기 자체의 효과를 판단하려면
+다음 P0~P3 실험을 별도로 수행한다.
+
+| 실험군 | 후보 생성 | Fine 검증 | 목적 |
+| --- | --- | --- | --- |
+| P0 | Gemini Coarse | Gemini Fine | 현재 baseline |
+| P1 | CV geometry | 없음, deterministic rule | CV 단독 상한·오탐 특성 파악 |
+| P2 | CV geometry | Gemini Fine + 선택적 CV hint | 순수 CV-first hybrid 평가 |
+| P3 | Gemini Coarse ∪ CV geometry | Gemini Fine + 선택적 CV hint | 병렬 후보의 incremental recall 평가 |
+
+### 21.1 정답지와 split
+
+- 정상 주행, 실선 접근만 한 경우, 합법적 회전, 공사·임시선, 곡선·교차로를 hard negative에 포함한다.
+- 실선 차선 변경과 중앙선 침범을 사건 단위로 라벨링하고 시작·접촉·교차 완료 시점을 기록한다.
+- 주간/야간, 우천, 마모 차선, 해상도, 카메라 설치각별로 slice를 만든다.
+- 모델·threshold 선정용 영상과 최종 평가 영상을 차량/경로 기준으로 분리한다.
+
+### 21.2 측정 지표
+
+- 사건 recall, precision, F1 및 top-3 candidate recall
+- 원본 영상 1시간당 후보 수와 hard-negative false positive
+- 시작·접촉·교차 완료 timestamp MAE
+- lane geometry recall과 차량 접점-선 거리 오차
+- 색상·연속성·semantic role 정확도 및 `UNCERTAIN` 비율
+- target association 정확도, ID switch, track fragmentation
+- Fine의 `OBSERVED/NOT_OBSERVED/UNCERTAIN` confusion과 근거 완전성
+- end-to-end latency, peak VRAM/RAM, 저장량, API 호출량과 비용
+
+### 21.3 조건부 전환 gate
+
+초기 수치는 승인 전 실험 가설이며 실제 baseline 분포에 맞춰 decision 문서에서 확정한다.
+
+- 사건 recall이 P0 대비 3 percentage point 이상 하락하지 않는다.
+- precision이 5 percentage point 이상 개선되거나 시간당 false positive가 25% 이상 감소한다.
+- top-3 candidate recall은 P0보다 나빠지지 않는다.
+- timestamp와 target association 지표가 의미 있게 개선된다.
+- unsupported evidence와 필수 근거 누락이 증가하지 않는다.
+- 합의된 latency·VRAM·API 비용 예산을 만족한다.
+
+평가 순서는 P3가 P0에 없는 사건을 얼마나 추가로 찾는지 먼저 확인하고, 그다음 P2가 더 낮은 비용으로
+P3 수준의 recall을 유지하는지 본다. 두 사건 중 하나만 gate를 통과하면 전체 search를 바꾸지 않고
+해당 사건 유형에만 CV-first candidate를 적용한다.
+
+---
+
+## 22. 갱신 후 권장 실행 순서
+
+1. P0 baseline의 사건별 recall, 후보 수, 실패 분류를 먼저 고정한다.
+2. 사용할 저장소·weight·runtime의 라이선스와 배포 제약을 검토한다.
+3. 승인 후 YOLOPv2를 격리된 worker에서 실제 블랙박스 영상에 smoke test한다.
+4. 첫 spike에서는 원본 clip + key frame + track metadata의 Fine assist 효과를 검증한다.
+5. `PRIMITIVE_FAILURE` 또는 승인된 challenger 범위에서 lane-relative crossing 후보기를 구현한다.
+6. 동일 정답지와 장비에서 P0~P3 및 §11.2 A~D를 구분해 평가한다.
+7. gate를 통과한 사건 유형만 decision 문서와 승인 절차를 거쳐 기본 경로 변경을 제안한다.
+
+> **최종 판단:** 제안된 CV-first 구조는 실선 차선 변경과 중앙선 침범의 장기 후보 생성기로 더 잘
+> 맞을 가능성이 높다. 그러나 현재 프로젝트에서는 검증되지 않은 차선 의미·이동 카메라 보정·target
+> association 위험 때문에 즉시 교체하지 않는다. 당장은 VLM-first baseline을 유지하고 CV Fine
+> assist를 먼저 검증한 뒤, Gemini와 CV 후보의 병렬 union을 challenger로 평가하는 것이 가장 안전하고
+> 정보량이 많은 다음 단계다.
