@@ -9,7 +9,7 @@
       "b_tier_negative_clips": 30,
       "negatives_available": 113,
       "sampling": {
-        "rule_version": "abs1",
+        "rule_version": "abs2",
         "seed": 20260916,
         "strategy": "B tier 의 검토 완료 negative 클립에서 단순 무작위 추출"
       },
@@ -2157,7 +2157,16 @@
       "source_tier": "A"
     },
     {
-      "sequence_id": "YT_0001_C05",
+      "sequence_id": "YT_0001_C04",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0001_C14",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2184,7 +2193,16 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0001_C24",
+      "sequence_id": "YT_0001_C25",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0001_C31",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2211,7 +2229,25 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0001_C37",
+      "sequence_id": "YT_0001_C35",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0001_C49",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2238,6 +2274,24 @@
       "source_tier": "B"
     },
     {
+      "sequence_id": "YT_0003_C00",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
       "sequence_id": "YT_0003_C02",
       "label": "NONE",
       "target_bbox": null,
@@ -2247,7 +2301,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C06",
+      "sequence_id": "YT_0003_C08",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2256,34 +2310,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C07",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C09",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C16",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C20",
+      "sequence_id": "YT_0003_C15",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2301,52 +2328,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C23",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
       "sequence_id": "YT_0003_C25",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C27",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C30",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C31",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C34",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2364,7 +2346,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C37",
+      "sequence_id": "YT_0003_C36",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2373,7 +2355,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C40",
+      "sequence_id": "YT_0003_C39",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2382,25 +2364,7 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C45",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C48",
-      "label": "NONE",
-      "target_bbox": null,
-      "target_frame": null,
-      "distractor_count": null,
-      "condition": null,
-      "source_tier": "B"
-    },
-    {
-      "sequence_id": "YT_0003_C51",
+      "sequence_id": "YT_0003_C54",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,
@@ -2418,7 +2382,43 @@
       "source_tier": "B"
     },
     {
-      "sequence_id": "YT_0003_C66",
+      "sequence_id": "YT_0003_C59",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "label": "NONE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": null,
+      "source_tier": "B"
+    },
+    {
+      "sequence_id": "YT_0003_C65",
       "label": "NONE",
       "target_bbox": null,
       "target_frame": null,

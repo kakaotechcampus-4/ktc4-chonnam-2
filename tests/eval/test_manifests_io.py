@@ -240,3 +240,22 @@ def test_committed_sequence_manifests_have_no_invariant_violations():
     """a_aihub 와 ab_mixed 둘 다 검사에 건다. 지금까지 ab_mixed 는 무검사였다."""
     for name in ("a_aihub", "ab_mixed"):
         assert manifests_io.check_sequence_invariants(name) == [], name
+
+
+def test_violation_type_drifting_from_gt_label_is_reported():
+    """A tier 는 위반유형을 두 파일에 중복 저장한다 — 드리프트가 가능한 유일한 지점이다."""
+    seqs = {"meta": {"manifest_version": "m1", "tier": "A"},
+            "sequences": [{"sequence_id": "S1", "source_tier": "A",
+                           "violation_type": "SIGNAL"}]}
+    problems = manifests_io.validate_sequences(
+        seqs, _seq_gt([_item("S1", label="CENTER_LINE_CROSSING")]))
+    assert any("violation_type" in p for p in problems)
+
+
+def test_null_violation_type_does_not_conflict_with_a_none_label():
+    """B tier 항목은 violation_type 이 없고 라벨이 NONE 이다 — 오탐이면 안 된다."""
+    seqs = {"meta": {"manifest_version": "am1", "tier": "AB"},
+            "sequences": [{"sequence_id": "YT_A", "source_tier": "B",
+                           "violation_type": None}]}
+    assert manifests_io.validate_sequences(
+        seqs, _seq_gt([_item("YT_A", label="NONE", tier="B")])) == []

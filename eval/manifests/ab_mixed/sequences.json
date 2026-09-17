@@ -1810,13 +1810,23 @@
       "source_tier": "A"
     },
     {
-      "sequence_id": "YT_0001_C05",
+      "sequence_id": "YT_0001_C04",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0001",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0001_C05.mp4",
-      "sha256": "6496aca2d9e1e2f8d7980c128da3c43adfa2baaeede33eaed46494e2f45c1ffd",
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C04.mp4",
+      "sha256": "b5c8de2504d219c081387f6d4314370741defa8cc1f04e4868100c13102c9bcc",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C14",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C14.mp4",
+      "sha256": "0927689e1fe385dbe6a0244d938526def76a797299493308cc0689fef6895a61",
       "split": "DEV"
     },
     {
@@ -1840,13 +1850,23 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0001_C24",
+      "sequence_id": "YT_0001_C25",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0001",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0001_C24.mp4",
-      "sha256": "5f6069dc14d07bd1136b641c6e350d9486336e5ee2a0c40fd623a8dadbaba341",
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C25.mp4",
+      "sha256": "9973e781a51f8727d767ee27728f7139810eb5261231d14279ced5b0f0ddf825",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C31",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C31.mp4",
+      "sha256": "b9ead790c23027fc974d577c2568f80178b5f103c5691b1507498d95438935ea",
       "split": "DEV"
     },
     {
@@ -1870,13 +1890,33 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0001_C37",
+      "sequence_id": "YT_0001_C35",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0001",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0001_C37.mp4",
-      "sha256": "816e20519260e58b7d595727ecfae1b243fe99baf64d495a9176349a188307bb",
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C35.mp4",
+      "sha256": "066d50650f766b831c12d4159f10a4e322a0755d01fb9c82a2fc018dbaa46257",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C46.mp4",
+      "sha256": "ffedcd1fd8d3710fa22120bfe634fa49721d7e549d72410b915d5f9fc3356389",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C49",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C49.mp4",
+      "sha256": "d2ae74e4a5459d397eae308ea302a531a889ad5d5763b72efbf042753ea75a2a",
       "split": "DEV"
     },
     {
@@ -1900,6 +1940,26 @@
       "split": "DEV"
     },
     {
+      "sequence_id": "YT_0003_C00",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C00.mp4",
+      "sha256": "cc8ce53da4fb990743dfad5cabcc4f31aead70726f04db1f7a37f44be27e0cc6",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C01.mp4",
+      "sha256": "ddbee4821c40b027f5d48a13623b90604579875cac291ebb1afba58893123abf",
+      "split": "DEV"
+    },
+    {
       "sequence_id": "YT_0003_C02",
       "source_tier": "B",
       "violation_type": null,
@@ -1910,53 +1970,23 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C06",
+      "sequence_id": "YT_0003_C08",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C06.mp4",
-      "sha256": "343014101338799800394f4e5249f2d52aec168b95f8c603b42fa293c2b77c09",
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C08.mp4",
+      "sha256": "950137ba4be03ea7086c127dfbfbd98785d61e58f15aee6ddbf347139a3fcfc9",
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C07",
+      "sequence_id": "YT_0003_C15",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C07.mp4",
-      "sha256": "6e443877a6876fb0296b9ff5017e84735bf3f93cc3b47e8c45e0e458a2a2211b",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C09",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C09.mp4",
-      "sha256": "063563facb8b458f1cc53dd1dc3e3ed0ee079ff93f96f6d21a326cb15c1c6f70",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C16",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C16.mp4",
-      "sha256": "6465eb73558682379c0902d9967bc3b0e280cdb9003c5e9096f872130f2f5eac",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C20",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C20.mp4",
-      "sha256": "a55f3fdb2fe2e4065e2a2b44976023a69f0de1faa4e1e49af5b02197fb5a679f",
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C15.mp4",
+      "sha256": "2de6ce83e52a914d8c58bc9ef636c91bccb90db5da58a77cacd15fe674f4f822",
       "split": "DEV"
     },
     {
@@ -1970,16 +2000,6 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C23",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C23.mp4",
-      "sha256": "8325d1338558a9537fd3f6beeb39e87b55f14e4b927c5e0e24eba89912fb46a3",
-      "split": "DEV"
-    },
-    {
       "sequence_id": "YT_0003_C25",
       "source_tier": "B",
       "violation_type": null,
@@ -1987,46 +2007,6 @@
       "duration_sec": 60,
       "file_path": "eval/datasets/youtube/clips/YT_0003_C25.mp4",
       "sha256": "9a1af3b3e876b2fd192951fe8b340bebe5b62605481ee4f654d050f46a195ca6",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C27",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C27.mp4",
-      "sha256": "d7d1b84237d9d37146ffccffa72228d4938341832c50576ea29670aace3f766f",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C30",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C30.mp4",
-      "sha256": "910d1be24adaf77fe8d0a4602b7f6b2e058eab6a7b755884c14c4318bcb1208f",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C31",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C31.mp4",
-      "sha256": "41cf7c84eca53f7b9949427e34e3636940d876b8062e449677228b277ff4ab9d",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C34",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C34.mp4",
-      "sha256": "0120bc130f2d1775f9926dbadaf2a376d84b80a9a2b32748cb2691750b7f7c2d",
       "split": "DEV"
     },
     {
@@ -2040,53 +2020,33 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C37",
+      "sequence_id": "YT_0003_C36",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C37.mp4",
-      "sha256": "be0156d5ad64052b49276644b51354f024c549567eb7d18fac82f4df99a315f6",
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C36.mp4",
+      "sha256": "a64fee811badc2c20190fd3eee2f2cb189c9646c675ae375ac9a92c90924e510",
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C40",
+      "sequence_id": "YT_0003_C39",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C40.mp4",
-      "sha256": "6d69c8bd943008dcd2feb7e27963c1a7f7f747b32b2618c39d932b6f2234ce86",
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C39.mp4",
+      "sha256": "952fc57f282c0d2c40ef815fe3054095011513d83e3478b3164962ed5075aad2",
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C45",
+      "sequence_id": "YT_0003_C54",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
       "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C45.mp4",
-      "sha256": "fb03e6e6ecb93f5a220e91cc6268952baa0d7b33bc7e536ae92e7197678c6613",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C48",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C48.mp4",
-      "sha256": "db23262ad7c8e6a7cf4db95c1e15766765d6a51a74dd30daeaf89a644b0d892e",
-      "split": "DEV"
-    },
-    {
-      "sequence_id": "YT_0003_C51",
-      "source_tier": "B",
-      "violation_type": null,
-      "source_video_id": "YT_0003",
-      "duration_sec": 60,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C51.mp4",
-      "sha256": "a13092cba35a89f7a37c544a73ec72dbea7392a9c9639a8e5e2a5e5c5d14219e",
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C54.mp4",
+      "sha256": "f72488bf80937ea11e99f587b40f017954927517cae680566585891fa9f94c72",
       "split": "DEV"
     },
     {
@@ -2100,13 +2060,53 @@
       "split": "DEV"
     },
     {
-      "sequence_id": "YT_0003_C66",
+      "sequence_id": "YT_0003_C59",
       "source_tier": "B",
       "violation_type": null,
       "source_video_id": "YT_0003",
-      "duration_sec": 43.398821000000225,
-      "file_path": "eval/datasets/youtube/clips/YT_0003_C66.mp4",
-      "sha256": "c38a4305febc571c2b3d3c905a047c9cf8c6fa7355d73ffd106c31624d2c805d",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C59.mp4",
+      "sha256": "35a47de89d418b5cf5c21b2f7ae2ec130a3a6c8aec3dafc29bf5f985ebdf46a4",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C61.mp4",
+      "sha256": "6b6b086424a38bc5295c98ad60a0f455cf3970359f1e6bd019f11ef6069e872c",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C63.mp4",
+      "sha256": "724b50dbb4c1e80047b167631f3f59039364cc1ee92ebadaf94e74ecc97cd0ac",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C64.mp4",
+      "sha256": "319f1e7c12dd70619ef575fd6248b20145c159274939a7643957f415f86825a6",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C65",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C65.mp4",
+      "sha256": "34e83ca6c556c74d9a81e2ad02d7b9910a54073c203ad0c6668f66ec0ab4fe8c",
       "split": "DEV"
     }
   ]

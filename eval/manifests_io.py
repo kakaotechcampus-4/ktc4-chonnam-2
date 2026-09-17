@@ -156,8 +156,17 @@ def validate_sequences(sequences, gt):
             "meta.coverage.sequences_total=%s 인데 items=%d"
             % (cov.get("sequences_total"), len(items)))
 
+    seq_by_id = {s["sequence_id"]: s for s in sequences["sequences"]}
     for item in items:
         sid = item["sequence_id"]
+        # A tier 는 위반유형을 sequences.json 과 GT 양쪽에 싣는다 — 이 레포에서
+        # 같은 사실이 두 파일에 중복 저장되는 유일한 지점이라 드리프트가 가능하다.
+        # B tier 항목은 violation_type 이 없고(None) 라벨이 NONE 이므로 건너뛴다.
+        seq_type = (seq_by_id.get(sid) or {}).get("violation_type")
+        if seq_type is not None and seq_type != item["label"]:
+            problems.append(
+                "%s: sequences.json 의 violation_type(%r)과 GT label(%r)이 다르다"
+                % (sid, seq_type, item["label"]))
         if item["label"] not in CLASS_LABELS:
             problems.append("%s: %r 는 5클래스(4종 + NONE)가 아니다" % (sid, item["label"]))
         if item.get("source_tier") not in _SOURCE_TIERS:

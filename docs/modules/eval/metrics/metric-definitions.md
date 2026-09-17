@@ -138,7 +138,8 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | GT 라벨이 baseline enum 밖 | **채점에서 제외**(진실을 지어낼 수 없다) | `n_invalid_gt_labels` · `coverage` |
 | 예측이 baseline enum 밖 | `NONE` 으로 접어서 채점(사라지지도, `NONE` 보다 유리하지도 않게) | `n_invalid_predictions` · `coverage` |
 | 해당 시퀀스에 예측이 없음 | `NONE` 을 예측한 것으로 채점(미탐으로 잡힌다) | confusion 의 `NONE` 열 |
-| GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | — |
+| GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | `coverage` (`NO_TARGET_BBOX_GT`) |
+| `condition` 라벨이 없음(B tier) | `by_condition` **분모에서 제외** | `coverage` (`NO_CONDITION`) |
 | 예측 bbox 형식이 깨짐(길이≠4) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
 
 ### 4-3. `NONE` 은 `ab_mixed` manifest 에서만 나온다
@@ -150,6 +151,8 @@ A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이�
 `manifests/ab_mixed` 이며 `eval/tools/build_ab_mixed.py` 가 만든다(현재 A 120 + NONE 30 = 150).
 
 - 뽑은 클립은 `meta.coverage.sampling`(`rule_version` · `seed`)에 기록된다 — **샘플링이 GT 의 일부다.**
+  선택에 `random.sample` 을 쓰지 않는다. CPython 이 버전 간 보장하는 것은 `random()` 스트림뿐이고
+  `sample()` 의 알고리즘은 구현 세부라, 파이썬을 올리면 뽑히는 클립이 조용히 달라질 수 있다.
 - 항목마다 `source_tier`(`A` / `B`)가 있다. A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라
   해상도·압축 특성이 다르고, 그 차이를 지운 채 한 숫자로 뭉치면 결과가 거짓말을 한다.
 - B tier 항목에는 `target_bbox` · `condition` 이 **없다**(`null`). 없는 라벨을 지어내지 않으므로
@@ -240,6 +243,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_MATCHED_EVENTS` | 적중이 없어 `onset_error_sec` 를 못 낸다 |
 | `EXCLUDED` / `BOUNDARY_EXCLUDED — N건` | 채점에서 뺀 사건 수 |
 | `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` / `INVALID_BBOXES` | enum 밖 라벨·예측, 형식이 깨진 bbox 처리 결과 |
+| `NO_TARGET_BBOX_GT` / `NO_CONDITION` | 라벨이 없어 분모에서 뺀 항목 수. 뺀 수를 적어야 결과만으로 분모가 복원된다 |
 | `NO_SEQUENCES` | classification 정답지가 비었다 |
 | `NO_PLATE_GT` | 이 manifest 에 plate 정답지가 없다 |
 | `NO_SCORED_READOUTS` | 정답지와 겹치는 판독이 없다 |

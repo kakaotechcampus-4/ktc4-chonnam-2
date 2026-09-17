@@ -8,8 +8,8 @@
     "manifest_version": "am1",
     "clip_rule_version": null,
     "normalizer_version": "n1",
-    "code_commit": "f81e9dc",
-    "created_at": "2026-09-16T22:16:40.570302+09:00",
+    "code_commit": "037c83b",
+    "created_at": "2026-09-17T10:27:28.091550+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },
@@ -1190,7 +1190,12 @@
       ]
     },
     {
-      "sequence_id": "YT_0001_C05",
+      "sequence_id": "YT_0001_C04",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C14",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1205,7 +1210,12 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0001_C24",
+      "sequence_id": "YT_0001_C25",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C31",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1220,7 +1230,17 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0001_C37",
+      "sequence_id": "YT_0001_C35",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C49",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1235,32 +1255,27 @@
       "target_bbox": null
     },
     {
+      "sequence_id": "YT_0003_C00",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
       "sequence_id": "YT_0003_C02",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C06",
+      "sequence_id": "YT_0003_C08",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C07",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C09",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C16",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C20",
+      "sequence_id": "YT_0003_C15",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1270,32 +1285,7 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C23",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
       "sequence_id": "YT_0003_C25",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C27",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C30",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C31",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C34",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1305,27 +1295,17 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C37",
+      "sequence_id": "YT_0003_C36",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C40",
+      "sequence_id": "YT_0003_C39",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C45",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C48",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C51",
+      "sequence_id": "YT_0003_C54",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -1335,7 +1315,27 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C66",
+      "sequence_id": "YT_0003_C59",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C65",
       "predicted": "SIGNAL",
       "target_bbox": null
     }
@@ -2517,7 +2517,12 @@
       ]
     },
     {
-      "sequence_id": "YT_0001_C05",
+      "sequence_id": "YT_0001_C04",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C14",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2532,7 +2537,12 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0001_C24",
+      "sequence_id": "YT_0001_C25",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C31",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2547,7 +2557,17 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0001_C37",
+      "sequence_id": "YT_0001_C35",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C49",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2562,32 +2582,27 @@
       "target_bbox": null
     },
     {
+      "sequence_id": "YT_0003_C00",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
       "sequence_id": "YT_0003_C02",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C06",
+      "sequence_id": "YT_0003_C08",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C07",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C09",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C16",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C20",
+      "sequence_id": "YT_0003_C15",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2597,32 +2612,7 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C23",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
       "sequence_id": "YT_0003_C25",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C27",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C30",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C31",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C34",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2632,27 +2622,17 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C37",
+      "sequence_id": "YT_0003_C36",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C40",
+      "sequence_id": "YT_0003_C39",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C45",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C48",
-      "predicted": "SIGNAL",
-      "target_bbox": null
-    },
-    {
-      "sequence_id": "YT_0003_C51",
+      "sequence_id": "YT_0003_C54",
       "predicted": "SIGNAL",
       "target_bbox": null
     },
@@ -2662,7 +2642,27 @@
       "target_bbox": null
     },
     {
-      "sequence_id": "YT_0003_C66",
+      "sequence_id": "YT_0003_C59",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C65",
       "predicted": "SIGNAL",
       "target_bbox": null
     }

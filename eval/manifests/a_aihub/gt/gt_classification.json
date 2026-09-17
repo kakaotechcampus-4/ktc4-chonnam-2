@@ -5,7 +5,7 @@
     "stage": "classification",
     "coverage": {
       "sequences_total": 120,
-      "sampling_rule_version": "s1",
+      "sampling_rule_version": "s2",
       "sampling_seed": 20260906,
       "items_with_target_bbox": 115,
       "target_bbox_reason": "원본 라벨에 위반 차량 bbox 가 없는 시퀀스가 있다 (차선 등 다른 객체만 어노테이션된 경우). 그런 항목은 target_bbox/target_frame/distractor_count 가 null 이다."

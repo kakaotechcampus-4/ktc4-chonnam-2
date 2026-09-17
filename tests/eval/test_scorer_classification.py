@@ -161,3 +161,39 @@ def test_wellformed_but_wrong_bbox_is_not_counted_as_malformed():
 def test_not_run_block_carries_the_invalid_bbox_key():
     """돌지 않은 stage 도 키를 빼지 않는다 (§7 규율)."""
     assert classification.not_run("NOT_RUN — x")["n_invalid_bboxes"] is None
+
+
+def test_excluded_denominators_are_explained_in_coverage():
+    """분모에서 뺀 항목을 결과가 스스로 말해야 한다 (§7 규율 3).
+
+    n 은 150인데 target_correctness 분모가 115, by_condition 합이 120이면
+    결과 파일만 보고는 그 차이를 복원할 수 없다. 지표가 전부 null 이
+    아니어도 「무엇을 왜 뺐는가」는 실린다.
+    """
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": [0, 0, 10, 10],
+         "condition": {"day_night": "주간"}, "source_tier": "A"},
+        {"sequence_id": "B1", "label": "NONE", "target_bbox": None,
+         "condition": None, "source_tier": "B"},
+        {"sequence_id": "B2", "label": "NONE", "target_bbox": None,
+         "condition": None, "source_tier": "B"},
+    ]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]},
+            {"sequence_id": "B1", "predicted": "NONE", "target_bbox": None},
+            {"sequence_id": "B2", "predicted": "NONE", "target_bbox": None}]
+    r = classification.score(norm, gt)
+
+    assert r["n"] == 3
+    assert "NO_TARGET_BBOX_GT" in r["coverage"]
+    assert "NO_CONDITION" in r["coverage"]
+    # 몇 건을 뺐는지가 적혀야 복원된다.
+    assert "2건" in r["coverage"]
+
+
+def test_nothing_excluded_means_no_denominator_reason():
+    """뺀 게 없으면 사유도 없다 — 없는 경고를 만들지 않는다."""
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": [0, 0, 10, 10],
+         "condition": {"day_night": "주간"}, "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]}]
+    assert classification.score(norm, gt)["coverage"] is None

@@ -65,6 +65,8 @@ def score(normalized, gt):
     target_hits = 0
     target_total = 0
     n_invalid_bboxes = 0
+    n_no_target_bbox_gt = 0
+    n_no_condition = 0
     n_invalid_predictions = 0
     n_invalid_gt_labels = 0
     n_scored = 0
@@ -103,12 +105,22 @@ def score(normalized, gt):
             by_cond[dn]["n"] += 1
             if pred == truth:
                 by_cond[dn]["correct"] += 1
+        else:
+            # 촬영조건 라벨이 없는 항목(B tier)은 by_condition 분모에서 빠진다.
+            # 세어 두지 않으면 n 과 by_condition 합의 차이를 결과만 보고
+            # 설명할 수 없다.
+            n_no_condition += 1
 
         # target_bbox 가 없는(None) GT 항목(원본 라벨에 위반 차량 bbox 부재)은
         # target_correctness 분모에서 제외한다 — 미탐으로 세지 않는다.
         # 빈 리스트([])는 None 과 다른 값이므로 별도로 구분해 둔다.
         gt_box = item.get("target_bbox")
-        if gt_box is not None:
+        if gt_box is None:
+            # 원본 라벨에 위반 차량 bbox 가 없다. 「잴 게 없었다」이므로
+            # 미탐으로 세지 않고 분모에서 뺀다 — 뺀 사실을 적어 둬야
+            # target_correctness 의 분모를 결과 파일에서 복원할 수 있다.
+            n_no_target_bbox_gt += 1
+        else:
             target_total += 1
             pred_box = pred_by_id.get(sid, {}).get("target_bbox")
             if pred_box is not None and len(pred_box) != 4:
@@ -139,6 +151,14 @@ def score(normalized, gt):
             "INVALID_PREDICTIONS — baseline enum 밖의 예측 %d건을 NONE으로 접어 채점했다"
             % n_invalid_predictions
         )
+    if n_no_target_bbox_gt:
+        reasons.append(
+            "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 %d건을 "
+            "target_correctness 분모에서 뺐다" % n_no_target_bbox_gt)
+    if n_no_condition:
+        reasons.append(
+            "NO_CONDITION — 촬영조건 라벨이 없는 %d건을 by_condition 분모에서 뺐다"
+            % n_no_condition)
     if n_invalid_bboxes:
         reasons.append(
             "INVALID_BBOXES — 형식이 깨진 예측 bbox %d건. target_correctness 분모에는 "

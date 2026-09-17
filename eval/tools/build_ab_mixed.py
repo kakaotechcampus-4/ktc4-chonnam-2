@@ -27,7 +27,7 @@ from eval import manifests_io, paths
 MANIFEST_NAME = "ab_mixed"
 MANIFEST_VERSION = "am1"
 GT_VERSION = "ag1"
-SAMPLING_RULE_VERSION = "abs1"
+SAMPLING_RULE_VERSION = "abs2"   # 2026-09-16 random() 스트림만 쓰는 선택으로 교체
 
 
 def _negative_clip_ids(b_gt):
@@ -54,7 +54,14 @@ def build(a_sequences, a_gt, b_clips, b_gt, n_none, seed):
         raise ValueError(
             "negative 클립이 %d개뿐인데 %d개를 요청했다. 분모를 조용히 줄이지 않는다."
             % (len(available), n_none))
-    picked = sorted(random.Random(seed).sample(available, n_none))
+    # random.sample 을 쓰지 않는다. CPython 이 버전 간 보장하는 것은 random()
+    # 스트림뿐이고 sample() 의 알고리즘은 구현 세부다 — 파이썬을 올리면
+    # 뽑히는 클립이 조용히 달라질 수 있고, 그러면 「샘플링이 GT 의 일부다」가
+    # 거짓이 된다. 정렬된 후보에 난수 키를 붙여 정렬하는 방식은 random()
+    # 만으로 선다.
+    rng = random.Random(seed)
+    keyed = sorted((rng.random(), clip_id) for clip_id in available)
+    picked = sorted(clip_id for _, clip_id in keyed[:n_none])
 
     clip_by_id = {c["clip_id"]: c for c in b_clips["clips"]}
 

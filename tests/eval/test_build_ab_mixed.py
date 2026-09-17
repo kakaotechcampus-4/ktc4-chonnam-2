@@ -180,3 +180,65 @@ def test_committed_ab_mixed_fills_the_none_row_and_column():
     assert sum(r["confusion"]["NONE"].values()) > 0, "NONE 행이 비었다"
     assert sum(row["NONE"] for row in r["confusion"].values()) > 0, "NONE 열이 비었다"
     assert r["recall_by_label"]["NONE"] is not None
+
+
+def test_not_applicable_clips_are_not_pulled_in_as_none():
+    """예측을 만들 입력 자체가 없었던 클립은 「사건 없음」이 아니다.
+
+    targets 가 비어 있다는 점만 보면 negative 와 구별되지 않는다. 그대로
+    NONE 정답으로 들여오면 정답지가 「이 클립엔 위반이 없다」고 말하는데
+    실은 아무도 본 적이 없는 클립이다.
+
+    공용 B_GT 를 건드리면 다른 테스트의 기대값이 따라 움직이므로 지역
+    fixture 를 쓴다.
+    """
+    clips = {"meta": dict(B_CLIPS["meta"]), "clips": [
+        {"clip_id": "YT_OK", "source_video_id": "YT_0001", "duration_sec": 60.0,
+         "file_path": "eval/datasets/youtube/clips/YT_OK.mp4", "sha256": "a" * 64,
+         "split": "DEV"},
+        {"clip_id": "YT_NA", "source_video_id": "YT_0001", "duration_sec": 60.0,
+         "file_path": "eval/datasets/youtube/clips/YT_NA.mp4", "sha256": "b" * 64,
+         "split": "DEV"},
+    ]}
+    gt = {"meta": {"gt_version": "g3", "tier": "B", "stage": "candidate",
+                   "coverage": {"clips_total": 2, "clips_reviewed": 2,
+                                "clips_with_events": 0, "negatives_confirmed": True}},
+          "items": [
+              {"clip_id": "YT_OK", "source_video_id": "YT_0001", "targets": []},
+              {"clip_id": "YT_NA", "source_video_id": "YT_0001", "targets": [],
+               "not_applicable": True},
+          ]}
+
+    _, out = build_ab_mixed.build(A_SEQ, A_GT, clips, gt, n_none=1, seed=1)
+    none_ids = {i["sequence_id"] for i in out["items"] if i["label"] == "NONE"}
+    assert none_ids == {"YT_OK"}
+    assert out["meta"]["coverage"]["negatives_available"] == 1
+
+    # not_applicable 을 빼고 세면 2건이 되어 요청 2건이 통과해 버린다.
+    with pytest.raises(ValueError, match="negative"):
+        build_ab_mixed.build(A_SEQ, A_GT, clips, gt, n_none=2, seed=1)
+
+
+def test_committed_ab_mixed_matches_a_rebuild_from_its_own_recorded_rule():
+    """커밋된 정답지가 자기가 기록한 규칙으로 재생성된다 (I7).
+
+    「샘플링이 GT 의 일부다」가 참이려면 기록된 seed·건수로 다시 만들었을 때
+    같은 것이 나와야 한다. NONE 행이 채워졌는지만 보는 테스트는 뽑힌 클립이
+    조용히 달라지는 것을 잡지 못한다.
+    """
+    from eval import manifests_io
+
+    seqs = manifests_io.load_sequences("ab_mixed")
+    gt = manifests_io.load_gt("ab_mixed", "classification")
+    cov = gt["meta"]["coverage"]
+
+    rebuilt_seqs, rebuilt_gt = build_ab_mixed.build(
+        manifests_io.load_sequences("a_aihub"),
+        manifests_io.load_gt("a_aihub", "classification"),
+        manifests_io.load_clips("b_youtube"),
+        manifests_io.load_gt("b_youtube", "candidate"),
+        n_none=cov["b_tier_negative_clips"],
+        seed=cov["sampling"]["seed"],
+    )
+    assert rebuilt_seqs == seqs
+    assert rebuilt_gt == gt

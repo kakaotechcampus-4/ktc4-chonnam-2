@@ -15,7 +15,7 @@ import zipfile
 
 from eval import paths
 
-RULE_VERSION = "s1"
+RULE_VERSION = "s2"   # 2026-09-16 대상 객체를 위반유형별로 좁혔다 (F10)
 
 TYPE_MAP = {
     "신호위반": "SIGNAL",

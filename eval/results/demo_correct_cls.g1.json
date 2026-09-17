@@ -96,7 +96,7 @@
     "n_invalid_predictions": 0,
     "n_invalid_gt_labels": 0,
     "n_invalid_bboxes": 0,
-    "coverage": null
+    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 5건을 target_correctness 분모에서 뺐다"
   },
   "plate": {
     "exact_accuracy": null,
