@@ -7,7 +7,7 @@
     "gt_version": "mp1",
     "normalizer_version": "n1",
     "code_commit": "d21f76c",
-    "scorer_version": "s2",
+    "scorer_version": "s3",
     "prediction_ref": {
       "path": "eval/predictions/mock_e2e.json",
       "sha256": "bf79888ac1a3f1b5003512fea11f0b1f58d21bf0d2e855fe528b20f3db796477"
@@ -77,6 +77,7 @@
     "n": null,
     "n_invalid_predictions": null,
     "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
   "plate": {

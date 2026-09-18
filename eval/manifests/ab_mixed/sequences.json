@@ -1,19 +1,11 @@
 {
   "meta": {
-    "manifest_version": "m1",
-    "tier": "A",
-    "source": "aihub",
-    "sampling": {
-      "rule_version": "s2",
-      "seed": 20260906,
-      "per_type": 30,
-      "actual_per_type": {
-        "CENTER_LINE_CROSSING": 30,
-        "MOTORCYCLE_HELMET_NON_USE": 30,
-        "SIGNAL": 30,
-        "SOLID_LINE_LANE_CHANGE": 30
-      },
-      "strategy": "type-stratified, sequence-level"
+    "manifest_version": "am1",
+    "tier": "AB",
+    "source": "aihub+youtube",
+    "composition": {
+      "a_aihub": "m1",
+      "b_youtube": "m3"
     }
   },
   "sequences": [
@@ -29,7 +21,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005763",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005817",
@@ -43,7 +36,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005817",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005844",
@@ -57,7 +51,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005844",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005845",
@@ -71,7 +66,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005845",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005899",
@@ -85,7 +81,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005899",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005937",
@@ -99,7 +96,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005937",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005973",
@@ -113,7 +111,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005973",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000005979",
@@ -127,7 +126,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000005979",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000006056",
@@ -141,7 +141,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006056",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000006083",
@@ -155,7 +156,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006083",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색실선위반_0000006143",
@@ -169,7 +171,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230222_중앙선주황색실선위반_0000006143",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006196",
@@ -183,7 +186,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006196",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006217",
@@ -197,7 +201,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006217",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006257",
@@ -211,7 +216,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006257",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006261",
@@ -225,7 +231,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006261",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006351",
@@ -239,7 +246,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006351",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_중앙선주황색실선위반_0000006364",
@@ -253,7 +261,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색실선위반/20230226_중앙선주황색실선위반_0000006364",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008453",
@@ -267,7 +276,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008453",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008459",
@@ -281,7 +291,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008459",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008527",
@@ -295,7 +306,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008527",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008618",
@@ -309,7 +321,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008618",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008714",
@@ -323,7 +336,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008714",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008883",
@@ -337,7 +351,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008883",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008890",
@@ -351,7 +366,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008890",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008895",
@@ -365,7 +381,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008895",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000008917",
@@ -379,7 +396,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000008917",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000009072",
@@ -393,7 +411,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009072",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000009152",
@@ -407,7 +426,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009152",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000009274",
@@ -421,7 +441,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009274",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_중앙선주황색이중실선위반_0000009447",
@@ -435,7 +456,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "중앙선침범/중앙선주황색이중실선위반/20230222_중앙선주황색이중실선위반_0000009447",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000031",
@@ -449,7 +471,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000031",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000189",
@@ -463,7 +486,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000189",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000248",
@@ -477,7 +501,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000248",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000282",
@@ -491,7 +516,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000282",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000409",
@@ -505,7 +531,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000409",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000879",
@@ -519,7 +546,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000879",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000899",
@@ -533,7 +561,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000899",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000000990",
@@ -547,7 +576,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000000990",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000001112",
@@ -561,7 +591,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001112",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000001237",
@@ -575,7 +606,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001237",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000001646",
@@ -589,7 +621,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001646",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000001682",
@@ -603,7 +636,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001682",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000001896",
@@ -617,7 +651,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000001896",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002216",
@@ -631,7 +666,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002216",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002259",
@@ -645,7 +681,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002259",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002405",
@@ -659,7 +696,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002405",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002514",
@@ -673,7 +711,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002514",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002522",
@@ -687,7 +726,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002522",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002714",
@@ -701,7 +741,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002714",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002814",
@@ -715,7 +756,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002814",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002898",
@@ -729,7 +771,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002898",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000002902",
@@ -743,7 +786,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000002902",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003265",
@@ -757,7 +801,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003265",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003622",
@@ -771,7 +816,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003622",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003695",
@@ -785,7 +831,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003695",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003712",
@@ -799,7 +846,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003712",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003716",
@@ -813,7 +861,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003716",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_안전모미착용_0000003808",
@@ -827,7 +876,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230222_안전모미착용_0000003808",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_안전모미착용_0000003871",
@@ -841,7 +891,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230223_안전모미착용_0000003871",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_안전모미착용_0000004040",
@@ -855,7 +906,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "안전모미착용/안전모미착용/20230226_안전모미착용_0000004040",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000003718",
@@ -869,7 +921,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003718",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000003756",
@@ -883,7 +936,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003756",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000003830",
@@ -897,7 +951,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003830",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000003945",
@@ -911,7 +966,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003945",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000003948",
@@ -925,7 +981,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000003948",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시좌회전_0000004026",
@@ -939,7 +996,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시좌회전/20230223_적색신호시좌회전_0000004026",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000011927",
@@ -953,7 +1011,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000011927",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000011931",
@@ -967,7 +1026,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000011931",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012025",
@@ -981,7 +1041,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012025",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012091",
@@ -995,7 +1056,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012091",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012096",
@@ -1009,7 +1071,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012096",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012162",
@@ -1023,7 +1086,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012162",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012185",
@@ -1037,7 +1101,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012185",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012255",
@@ -1051,7 +1116,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012255",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012256",
@@ -1065,7 +1131,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012256",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012364",
@@ -1079,7 +1146,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012364",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012390",
@@ -1093,7 +1161,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012390",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012514",
@@ -1107,7 +1176,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012514",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012538",
@@ -1121,7 +1191,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012538",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012670",
@@ -1135,7 +1206,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012670",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012733",
@@ -1149,7 +1221,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012733",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000012879",
@@ -1163,7 +1236,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000012879",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013034",
@@ -1177,7 +1251,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013034",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013100",
@@ -1191,7 +1266,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013100",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013140",
@@ -1205,7 +1281,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013140",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013202",
@@ -1219,7 +1296,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013202",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013332",
@@ -1233,7 +1311,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013332",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230223_적색신호시직진_0000013363",
@@ -1247,7 +1326,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/적색신호시직진/20230223_적색신호시직진_0000013363",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_좌회전신호시직진_0000001064",
@@ -1261,7 +1341,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/좌회전신호시직진/20230226_좌회전신호시직진_0000001064",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230226_좌회전신호시직진_0000001137",
@@ -1275,7 +1356,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "신호위반/좌회전신호시직진/20230226_좌회전신호시직진_0000001137",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010436",
@@ -1289,7 +1371,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010436",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010476",
@@ -1303,7 +1386,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010476",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010523",
@@ -1317,7 +1401,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010523",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010551",
@@ -1331,7 +1416,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010551",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010563",
@@ -1345,7 +1431,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010563",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010581",
@@ -1359,7 +1446,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010581",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010666",
@@ -1373,7 +1461,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010666",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010737",
@@ -1387,7 +1476,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010737",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010784",
@@ -1401,7 +1491,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010784",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010805",
@@ -1415,7 +1506,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010805",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000010894",
@@ -1429,7 +1521,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000010894",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011136",
@@ -1443,7 +1536,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011136",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011142",
@@ -1457,7 +1551,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011142",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011168",
@@ -1471,7 +1566,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011168",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011282",
@@ -1485,7 +1581,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011282",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011318",
@@ -1499,7 +1596,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011318",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011345",
@@ -1513,7 +1611,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011345",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011372",
@@ -1527,7 +1626,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011372",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011387",
@@ -1541,7 +1641,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011387",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011419",
@@ -1555,7 +1656,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011419",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011444",
@@ -1569,7 +1671,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011444",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011445",
@@ -1583,7 +1686,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011445",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011451",
@@ -1597,7 +1701,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011451",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011452",
@@ -1611,7 +1716,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011452",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011696",
@@ -1625,7 +1731,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011696",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011710",
@@ -1639,7 +1746,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011710",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011718",
@@ -1653,7 +1761,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011718",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_일반도로진로변경위반_0000011729",
@@ -1667,7 +1776,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/일반도로진로변경위반/20230222_일반도로진로변경위반_0000011729",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_터널내진로변경위반_0000000614",
@@ -1681,7 +1791,8 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/터널내진로변경위반/20230222_터널내진로변경위반_0000000614",
-      "split": "DEV"
+      "split": "DEV",
+      "source_tier": "A"
     },
     {
       "sequence_id": "20230222_터널내진로변경위반_0000000630",
@@ -1695,6 +1806,307 @@
       },
       "archive": "VS.zip",
       "archive_path": "진로변경위반/터널내진로변경위반/20230222_터널내진로변경위반_0000000630",
+      "split": "DEV",
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "YT_0001_C04",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C04.mp4",
+      "sha256": "b5c8de2504d219c081387f6d4314370741defa8cc1f04e4868100c13102c9bcc",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C14",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C14.mp4",
+      "sha256": "0927689e1fe385dbe6a0244d938526def76a797299493308cc0689fef6895a61",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C15",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C15.mp4",
+      "sha256": "ede45c419ba9cb00fca798c01cc717bebdc1af8ab0d5d95b26ce922c534d4031",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C22",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C22.mp4",
+      "sha256": "5ced9659029ea5f0da90d30c4ee5b129d7df393a64cd2f5c32d0a73fe63dd65d",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C25",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C25.mp4",
+      "sha256": "9973e781a51f8727d767ee27728f7139810eb5261231d14279ced5b0f0ddf825",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C31",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C31.mp4",
+      "sha256": "b9ead790c23027fc974d577c2568f80178b5f103c5691b1507498d95438935ea",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C32",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C32.mp4",
+      "sha256": "f7fe2268c02e235130cb36271cd18738f5ed4e977e348c109ef2881c570c5ce7",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C34",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C34.mp4",
+      "sha256": "8930e91c2237dc16a9dd89dd7e12fa153dff021e15f35131256a7cc2f1bdeb13",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C35",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C35.mp4",
+      "sha256": "066d50650f766b831c12d4159f10a4e322a0755d01fb9c82a2fc018dbaa46257",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C46.mp4",
+      "sha256": "ffedcd1fd8d3710fa22120bfe634fa49721d7e549d72410b915d5f9fc3356389",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C49",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C49.mp4",
+      "sha256": "d2ae74e4a5459d397eae308ea302a531a889ad5d5763b72efbf042753ea75a2a",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C52",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C52.mp4",
+      "sha256": "89e12bf773be6d67b14984c7e91e0695356b38e9fe92aacc65ede2d3fd890940",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0001_C53",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0001",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0001_C53.mp4",
+      "sha256": "ec763724530286a7f8f29b0eae71cd3f824d3d715cd1554778d83db957faf075",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C00",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C00.mp4",
+      "sha256": "cc8ce53da4fb990743dfad5cabcc4f31aead70726f04db1f7a37f44be27e0cc6",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C01.mp4",
+      "sha256": "ddbee4821c40b027f5d48a13623b90604579875cac291ebb1afba58893123abf",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C02",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C02.mp4",
+      "sha256": "e022590ca25104d0c9b9d3cdfb8befcfbe54ee8b68c8f4a35e88aa3902cbea23",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C08",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C08.mp4",
+      "sha256": "950137ba4be03ea7086c127dfbfbd98785d61e58f15aee6ddbf347139a3fcfc9",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C15",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C15.mp4",
+      "sha256": "2de6ce83e52a914d8c58bc9ef636c91bccb90db5da58a77cacd15fe674f4f822",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C21",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C21.mp4",
+      "sha256": "cf3e08d9a2cb56566d77e09ecc31206ef531f84bb5fe12f12e623b1beb2197ff",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C25",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C25.mp4",
+      "sha256": "9a1af3b3e876b2fd192951fe8b340bebe5b62605481ee4f654d050f46a195ca6",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C35",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C35.mp4",
+      "sha256": "e15afed87de8f613ad7e572961dfbe233fe09f13d9e5b6ca5df1506d9b8b59a9",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C36",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C36.mp4",
+      "sha256": "a64fee811badc2c20190fd3eee2f2cb189c9646c675ae375ac9a92c90924e510",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C39",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C39.mp4",
+      "sha256": "952fc57f282c0d2c40ef815fe3054095011513d83e3478b3164962ed5075aad2",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C54",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C54.mp4",
+      "sha256": "f72488bf80937ea11e99f587b40f017954927517cae680566585891fa9f94c72",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C58",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C58.mp4",
+      "sha256": "bc81452f2b4b49e2467b3610800d9e3779cefd6874a3a2f4f8b64aaf32ae8a72",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C59",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C59.mp4",
+      "sha256": "35a47de89d418b5cf5c21b2f7ae2ec130a3a6c8aec3dafc29bf5f985ebdf46a4",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C61.mp4",
+      "sha256": "6b6b086424a38bc5295c98ad60a0f455cf3970359f1e6bd019f11ef6069e872c",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C63.mp4",
+      "sha256": "724b50dbb4c1e80047b167631f3f59039364cc1ee92ebadaf94e74ecc97cd0ac",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C64.mp4",
+      "sha256": "319f1e7c12dd70619ef575fd6248b20145c159274939a7643957f415f86825a6",
+      "split": "DEV"
+    },
+    {
+      "sequence_id": "YT_0003_C65",
+      "source_tier": "B",
+      "violation_type": null,
+      "source_video_id": "YT_0003",
+      "duration_sec": 60,
+      "file_path": "eval/datasets/youtube/clips/YT_0003_C65.mp4",
+      "sha256": "34e83ca6c556c74d9a81e2ad02d7b9910a54073c203ad0c6668f66ec0ab4fe8c",
       "split": "DEV"
     }
   ]

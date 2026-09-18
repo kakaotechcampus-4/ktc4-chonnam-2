@@ -5,11 +5,11 @@
     "impl_version": "v1",
     "stage": "candidate",
     "manifest": "b_youtube",
-    "manifest_version": "m1",
+    "manifest_version": "m3",
     "clip_rule_version": "c1",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
-    "created_at": "2026-09-14T00:24:24.150323+09:00",
+    "code_commit": "c899ea4",
+    "created_at": "2026-09-16T00:38:54.228446+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },
@@ -783,6 +783,967 @@
           "score": 0.5
         }
       ]
+    },
+    {
+      "clip_id": "YT_0002_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 19.0,
+          "t_end_sec": 22.0,
+          "representative_sec": 20.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C01",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C02",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C03",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C04",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C05",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 17.0,
+          "t_end_sec": 20.0,
+          "representative_sec": 18.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 27.0,
+          "t_end_sec": 30.0,
+          "representative_sec": 28.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.49
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C06",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C07",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C08",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C09",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C10",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 14.0,
+          "t_end_sec": 17.0,
+          "representative_sec": 15.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C11",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C12",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C13",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C14",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C15",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C16",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C17",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C18",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C19",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C20",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C21",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C22",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C23",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C24",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C25",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C26",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C27",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C28",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 15.0,
+          "t_end_sec": 18.0,
+          "representative_sec": 16.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C29",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C30",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C31",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C32",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C33",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C34",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C35",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C36",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C37",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C38",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C39",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C40",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C41",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C42",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C43",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C44",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 35.0,
+          "t_end_sec": 38.0,
+          "representative_sec": 36.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C45",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C46",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C47",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C48",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C49",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C50",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C51",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C52",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C53",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C54",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C55",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C56",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C57",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C58",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C59",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C60",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C61",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C62",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C63",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C64",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C65",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C66",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
     }
   ],
   "normalized": [
@@ -1544,6 +2505,967 @@
     },
     {
       "clip_id": "YT_0001_C54",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0002_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 19.0,
+          "t_end_sec": 22.0,
+          "representative_sec": 20.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C01",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C02",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C03",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C04",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C05",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 17.0,
+          "t_end_sec": 20.0,
+          "representative_sec": 18.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 27.0,
+          "t_end_sec": 30.0,
+          "representative_sec": 28.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.49
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C06",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C07",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C08",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C09",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C10",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 14.0,
+          "t_end_sec": 17.0,
+          "representative_sec": 15.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C11",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C12",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C13",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C14",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C15",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C16",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C17",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C18",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C19",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C20",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C21",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C22",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C23",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C24",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C25",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C26",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C27",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C28",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 15.0,
+          "t_end_sec": 18.0,
+          "representative_sec": 16.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C29",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C30",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C31",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C32",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C33",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C34",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C35",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C36",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C37",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C38",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C39",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C40",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C41",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C42",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C43",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C44",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 35.0,
+          "t_end_sec": 38.0,
+          "representative_sec": 36.5,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C45",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C46",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C47",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C48",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C49",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C50",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C51",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C52",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C53",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C54",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C55",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C56",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C57",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C58",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C59",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C60",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C61",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C62",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C63",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C64",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C65",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 1.0,
+          "t_end_sec": 3.0,
+          "representative_sec": 2.0,
+          "timeline_revision": null,
+          "event_type": "SIGNAL",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C66",
       "candidates": [
         {
           "rank": 1,

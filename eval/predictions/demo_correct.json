@@ -5,11 +5,11 @@
     "impl_version": "v1",
     "stage": "candidate",
     "manifest": "b_youtube",
-    "manifest_version": "m1",
+    "manifest_version": "m3",
     "clip_rule_version": "c1",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
-    "created_at": "2026-09-14T00:24:23.761294+09:00",
+    "code_commit": "c899ea4",
+    "created_at": "2026-09-16T00:38:53.976515+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },
@@ -283,6 +283,337 @@
     {
       "clip_id": "YT_0001_C54",
       "candidates": []
+    },
+    {
+      "clip_id": "YT_0002_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 10,
+          "t_end_sec": 14,
+          "representative_sec": 12,
+          "timeline_revision": null,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C00",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C01",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C02",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C03",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C04",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C05",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 10,
+          "t_end_sec": 12,
+          "representative_sec": 11,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 20,
+          "t_end_sec": 22,
+          "representative_sec": 21,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.99
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C06",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C07",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C08",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C09",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C10",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 7,
+          "t_end_sec": 9,
+          "representative_sec": 8,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C11",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C12",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C13",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C14",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C15",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C16",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C17",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C18",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C19",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C20",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C21",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C22",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C23",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C24",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C25",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C26",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C27",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C28",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 9,
+          "t_end_sec": 10,
+          "representative_sec": 9,
+          "timeline_revision": null,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C29",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C30",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C31",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C32",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C33",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C34",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C35",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C36",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C37",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C38",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C39",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C40",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C41",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C42",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C43",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C44",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 28,
+          "t_end_sec": 30,
+          "representative_sec": 29,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C45",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C46",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C47",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C48",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C49",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C50",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C51",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C52",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C53",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C54",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C55",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C56",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C57",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C58",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C59",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C60",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C61",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C62",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C63",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C64",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C65",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C66",
+      "candidates": []
     }
   ],
   "normalized": [
@@ -554,6 +885,337 @@
     },
     {
       "clip_id": "YT_0001_C54",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0002_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 10.0,
+          "t_end_sec": 14.0,
+          "representative_sec": 12.0,
+          "timeline_revision": null,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C00",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C01",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C02",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C03",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C04",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C05",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 10.0,
+          "t_end_sec": 12.0,
+          "representative_sec": 11.0,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 20.0,
+          "t_end_sec": 22.0,
+          "representative_sec": 21.0,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.99
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C06",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C07",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C08",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C09",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C10",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 7.0,
+          "t_end_sec": 9.0,
+          "representative_sec": 8.0,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C11",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C12",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C13",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C14",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C15",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C16",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C17",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C18",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C19",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C20",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C21",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C22",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C23",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C24",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C25",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C26",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C27",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C28",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 9.0,
+          "t_end_sec": 10.0,
+          "representative_sec": 9.0,
+          "timeline_revision": null,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C29",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C30",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C31",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C32",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C33",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C34",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C35",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C36",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C37",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C38",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C39",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C40",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C41",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C42",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C43",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C44",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 28.0,
+          "t_end_sec": 30.0,
+          "representative_sec": 29.0,
+          "timeline_revision": null,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 1.0
+        }
+      ]
+    },
+    {
+      "clip_id": "YT_0003_C45",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C46",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C47",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C48",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C49",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C50",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C51",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C52",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C53",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C54",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C55",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C56",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C57",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C58",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C59",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C60",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C61",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C62",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C63",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C64",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C65",
+      "candidates": []
+    },
+    {
+      "clip_id": "YT_0003_C66",
       "candidates": []
     }
   ],

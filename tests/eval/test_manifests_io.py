@@ -5,7 +5,7 @@ import pytest
 from eval import manifests_io
 from eval import paths as eval_paths
 
-# B tier 클립 55개는 .gitignore 대상이라 clone 만으로는 없다. 미디어가 필요한
+# B tier 클립 123개는 .gitignore 대상이라 clone 만으로는 없다. 미디어가 필요한
 # 검사(file_path 존재 · sha256 대조)는 있을 때만 돈다 — 없는데 실패로 적으면
 # 「데이터가 없다」가 「정답지가 틀렸다」로 오독된다.
 B_CLIPS_DIR = os.path.join(eval_paths.datasets_dir(), "youtube", "clips")
@@ -14,17 +14,17 @@ needs_b_media = pytest.mark.skipif(
 )
 
 
-def test_load_clips_returns_55_entries():
+def test_load_clips_returns_123_entries():
     data = manifests_io.load_clips("b_youtube")
     assert data["meta"]["tier"] == "B"
-    assert len(data["clips"]) == 55
+    assert len(data["clips"]) == 123
 
 
 def test_load_gt_candidate_has_coverage_block():
     gt = manifests_io.load_gt("b_youtube", "candidate")
     cov = gt["meta"]["coverage"]
-    assert cov["clips_total"] == 55
-    assert cov["clips_reviewed"] == 55
+    assert cov["clips_total"] == 123
+    assert cov["clips_reviewed"] == 123
     assert cov["negatives_confirmed"] is True
 
 
@@ -152,3 +152,110 @@ def test_sha256_mismatch_is_reported(tmp_path, monkeypatch):
                         "source_video_id": "V0"}]}
     problems = manifests_io.validate(clips, gt, verify_hashes=1)
     assert any("sha256 불일치" in p for p in problems)
+
+
+# --- 시퀀스 manifest 불변식 (F13) ---------------------------------------
+#
+# clips.json 을 전제하는 validate() 는 A tier·ab_mixed 에서 돌지 않는다.
+# 시퀀스 manifest 는 clip 도 span 도 없기 때문이다.
+
+def _seqs(*ids):
+    return {"meta": {"manifest_version": "m1", "tier": "A"},
+            "sequences": [{"sequence_id": i, "source_tier": "A"} for i in ids]}
+
+
+def _seq_gt(items, total=None):
+    return {"meta": {"gt_version": "g1", "tier": "A", "stage": "classification",
+                     "coverage": {"sequences_total": len(items) if total is None else total}},
+            "items": items}
+
+
+def _item(sid, label="SIGNAL", box=None, frame=None, distractors=None, tier="A"):
+    return {"sequence_id": sid, "label": label, "target_bbox": box,
+            "target_frame": frame, "distractor_count": distractors,
+            "condition": None, "source_tier": tier}
+
+
+def test_sequence_gt_and_manifest_must_be_one_to_one():
+    problems = manifests_io.validate_sequences(_seqs("S1"), _seq_gt([_item("S1"), _item("S2")]))
+    assert any("S2" in p for p in problems)
+
+
+def test_sequence_manifest_entry_without_gt_is_reported():
+    """채점되지 않는 시퀀스가 manifest 에 남아 있으면 분모를 오해하게 된다."""
+    problems = manifests_io.validate_sequences(_seqs("S1", "S2"), _seq_gt([_item("S1")]))
+    assert any("S2" in p for p in problems)
+
+
+def test_duplicate_sequence_id_is_reported():
+    problems = manifests_io.validate_sequences(
+        _seqs("S1", "S1"), _seq_gt([_item("S1"), _item("S1")]))
+    assert any("중복" in p for p in problems)
+
+
+def test_label_outside_the_five_class_space_is_reported():
+    problems = manifests_io.validate_sequences(_seqs("S1"), _seq_gt([_item("S1", label="JAYWALK")]))
+    assert any("JAYWALK" in p for p in problems)
+
+
+def test_none_label_is_accepted():
+    """NONE 은 5클래스 공간 안이다 — ab_mixed 가 이걸로 선다."""
+    assert manifests_io.validate_sequences(
+        _seqs("S1"), _seq_gt([_item("S1", label="NONE", tier="B")])) == []
+
+
+def test_malformed_target_bbox_is_reported():
+    problems = manifests_io.validate_sequences(
+        _seqs("S1"), _seq_gt([_item("S1", box=[0, 0, 10])]))
+    assert any("bbox" in p for p in problems)
+
+
+def test_inverted_target_bbox_is_reported():
+    """x1 >= x2 면 넓이가 0 이하라 IoU 가 영원히 0 이다 — 조용히 오답이 된다."""
+    problems = manifests_io.validate_sequences(
+        _seqs("S1"), _seq_gt([_item("S1", box=[10, 0, 10, 20], frame="f.jpg", distractors=0)]))
+    assert any("bbox" in p for p in problems)
+
+
+def test_bbox_absent_but_its_companions_present_is_reported():
+    """bbox 가 없으면 딸린 사실도 전부 null 이어야 한다 — 하나만 남으면
+    「무엇을 모르는지」가 흐려진다."""
+    problems = manifests_io.validate_sequences(
+        _seqs("S1"), _seq_gt([_item("S1", box=None, frame="f.jpg")]))
+    assert any("target_frame" in p for p in problems)
+
+
+def test_coverage_sequences_total_mismatch_is_reported():
+    problems = manifests_io.validate_sequences(_seqs("S1"), _seq_gt([_item("S1")], total=9))
+    assert any("sequences_total" in p for p in problems)
+
+
+def test_unknown_source_tier_is_reported():
+    problems = manifests_io.validate_sequences(
+        _seqs("S1"), _seq_gt([_item("S1", tier="Z")]))
+    assert any("source_tier" in p for p in problems)
+
+
+def test_committed_sequence_manifests_have_no_invariant_violations():
+    """a_aihub 와 ab_mixed 둘 다 검사에 건다. 지금까지 ab_mixed 는 무검사였다."""
+    for name in ("a_aihub", "ab_mixed"):
+        assert manifests_io.check_sequence_invariants(name) == [], name
+
+
+def test_violation_type_drifting_from_gt_label_is_reported():
+    """A tier 는 위반유형을 두 파일에 중복 저장한다 — 드리프트가 가능한 유일한 지점이다."""
+    seqs = {"meta": {"manifest_version": "m1", "tier": "A"},
+            "sequences": [{"sequence_id": "S1", "source_tier": "A",
+                           "violation_type": "SIGNAL"}]}
+    problems = manifests_io.validate_sequences(
+        seqs, _seq_gt([_item("S1", label="CENTER_LINE_CROSSING")]))
+    assert any("violation_type" in p for p in problems)
+
+
+def test_null_violation_type_does_not_conflict_with_a_none_label():
+    """B tier 항목은 violation_type 이 없고 라벨이 NONE 이다 — 오탐이면 안 된다."""
+    seqs = {"meta": {"manifest_version": "am1", "tier": "AB"},
+            "sequences": [{"sequence_id": "YT_A", "source_tier": "B",
+                           "violation_type": None}]}
+    assert manifests_io.validate_sequences(
+        seqs, _seq_gt([_item("YT_A", label="NONE", tier="B")])) == []

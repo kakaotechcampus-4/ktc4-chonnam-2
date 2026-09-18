@@ -4,18 +4,18 @@
     "impl": "fake:always_correct",
     "stage": "candidate",
     "manifest": "b_youtube",
-    "gt_version": "g1",
+    "gt_version": "g3",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
-    "scorer_version": "s2",
+    "code_commit": "c899ea4",
+    "scorer_version": "s3",
     "prediction_ref": {
       "path": "eval/predictions/demo_correct.json",
-      "sha256": "e7c9c37cffcdf726a5448453b484e2287f3aa31216b5ca01d119e1d5a27b3d62"
+      "sha256": "1cb11e3e962f8febab400c747ccb59bdb51812355ccbec6f814ca9cb059a5fb2"
     }
   },
   "candidate": {
     "recall_at": {
-      "1": 1.0,
+      "1": 0.9,
       "3": 1.0,
       "10": 1.0
     },
@@ -26,12 +26,20 @@
     },
     "containment_rate": 1.0,
     "fp_per_clip": 0.0,
-    "n_events": 4,
-    "n_negative_clips": 50,
+    "n_events": 10,
+    "n_negative_clips": 113,
     "excluded_by_reason": {
       "BOUNDARY_EXCLUDED": 1
     },
     "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 2
+      },
       "SIGNAL": {
         "recall_at": {
           "1": 1.0,
@@ -42,11 +50,11 @@
       },
       "SOLID_LINE_LANE_CHANGE": {
         "recall_at": {
-          "1": 1.0,
+          "1": 0.8333333333333334,
           "3": 1.0,
           "10": 1.0
         },
-        "n": 2
+        "n": 6
       }
     },
     "coverage": "BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
@@ -61,6 +69,7 @@
     "n": null,
     "n_invalid_predictions": null,
     "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
   "plate": {
