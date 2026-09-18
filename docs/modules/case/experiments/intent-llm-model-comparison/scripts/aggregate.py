@@ -6,7 +6,7 @@ judge 호출이 실패한 케이스는 분모에서 제외한다(조용히 0으�
 에러 처리 정책과 동일.
 
 hallucinated/missed를 correct/partial과 분리해서 집계하는 이유, 카테고리별로도
-따로 보는 이유는 README.md "채점 방식을 정한 이유" 참고.
+따로 보는 이유는 README.md "채점 방식 — 1차 가설, 실측 전 잠정" 참고.
 """
 
 from __future__ import annotations
@@ -141,7 +141,7 @@ def render_markdown(results: dict[str, dict]) -> str:
     lines.append("")
     lines.append("## 카테고리별 정확도")
     lines.append("")
-    lines.append("(애매 표현 3종·correction 카테고리가 여기서 따로 보임 — README 「채점 방식을 정한 이유」)")
+    lines.append("(애매 표현 3종·correction 카테고리가 여기서 따로 보임 — README 「채점 방식 — 1차 가설, 실측 전 잠정」)")
     lines.append("")
     lines.append("| model | " + " | ".join(all_tags) + " |")
     lines.append("| --- | " + " | ".join(["---"] * len(all_tags)) + " |")

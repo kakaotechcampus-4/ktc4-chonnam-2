@@ -71,7 +71,7 @@ prior_hints: {prior_hints_json}
 
 VERDICTS = ("correct", "partial", "hallucinated", "missed")
 """필드별 judge 판정값. hallucinated/missed를 나누는 이유는
-`README.md`의 "채점 방식을 정한 이유" 참고 — hallucination rate와
+`README.md`의 "채점 방식 — 1차 가설, 실측 전 잠정" 참고 — hallucination rate와
 null/UNKNOWN 처리 비율을 하나의 'wrong'에서 분리해서 보기 위함."""
 
 Verdict = Literal["correct", "partial", "hallucinated", "missed"]
