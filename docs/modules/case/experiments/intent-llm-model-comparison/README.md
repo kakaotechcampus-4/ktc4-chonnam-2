@@ -2,7 +2,19 @@
 
 **목적:** `research/llm-model-comparison-hint-extraction.md`가 남긴 미결 항목(§7) — 자연어 단서 구조화 호출에 GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5 중 무엇을 쓸지 실측으로 결정하기 — 을 실행하는 실험 하네스와 고정 데이터셋.
 
-**상태:** API 키 미확보(research 문서 §7 미결 1번) — 아래 코드는 구조만 갖춰져 있고 아직 실행할 수 없다. 데이터셋(§ 아래)은 키 없이도 확정 가능해서 먼저 작성했다.
+**상태:** Elice ML API(카테캠 제공, 크레딧 12만 한도 — `search`와 공유) 경유로 세 모델을 다 부를 수 있다는 것까지 확인됐다. `ELICE_API_KEY`/`ELICE_BASE_URL` 값과 `gpt-5-nano`/`gemini-3.1-flash-lite` 모델 ID 문자열 확인만 남았다(아래 「Elice 연동」).
+
+## 비용 — 12만 크레딧 예산 대비
+
+Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
+
+| 모델 | 입력 | 출력 |
+| --- | --- | --- |
+| GPT-5 Nano | 76 | 609 |
+| Gemini 3.1 Flash-Lite | 380 | 2,283 |
+| Claude Haiku 4.5 | 1,522 | 7,612 |
+
+시드 7건 × 후보 3개 + judge 21건 기준으로 계산하면 **총 실행 비용은 ₩50 미만**(1 크레딧=₩1 가정 시 12만 크레딧의 0.05% 미만) — `search`와 예산을 나눠 써도 문제없는 수준이다. 10배 여유를 둬도 ₩500 이내.
 
 ## 채점 방식을 정한 이유
 
@@ -51,10 +63,12 @@
 ## 하네스 구조
 
 ```
+requirements.txt  # openai SDK (Elice가 OpenAI 호환 인터페이스로 중계 — 공유 pyproject.toml엔 안 넣음)
 scripts/
-  schema.py      # §3 추출 스키마 + 후보/judge 프롬프트 템플릿 (단일 정의 소스)
+  schema.py      # §3 추출 스키마(Pydantic) + 후보/judge 프롬프트 템플릿 (단일 정의 소스)
+  pricing.py     # Elice 크레딧 단가(KRW/1M 토큰) → 호출당 비용 추정
   dataset.py     # datasets/*.jsonl 로더
-  candidates.py  # CandidateAdapter 인터페이스 + 3개 벤더 stub (실행 전 벤더 문서 확인 필요 — TODO 표시)
+  candidates.py  # CandidateAdapter/JudgeAdapter — Elice(OpenAI SDK 호환) 호출
   runner.py      # dataset × candidates → predictions/*.jsonl (불변 저장)
   judge.py       # predictions × judge 모델 → 필드별 correct/partial/hallucinated/missed 판정
   aggregate.py   # 스키마 준수율 · 필드 정확도율 · hallucination/missed rate · 카테고리별 정확도 ·
@@ -63,13 +77,28 @@ scripts/
 
 Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API 호출(prediction)을 다시 하지 않아도 되게 한다.
 
-**Judge 모델**: 비교 대상 3개 후보 중에서 고르지 않는다(자기 채점 편향 방지). 현재 팀이 이미 쓰는 모델 중 후보 3개에 없는 것을 쓴다 — 실행 시점에 `JUDGE_MODEL` 환경변수로 확정.
+**Judge 모델**: 비교 대상 3개 후보 중에서 고르지 않는다(자기 채점 편향 방지) — `judge.py`가 `JUDGE_MODEL`이 `MODEL_IDS` 안에 있으면 실행을 막는다.
 
 **검증**: judge 판정 중 일부(20% 권장)를 사람이 직접 스팟체크한다. 사람과 다르게 판정한 케이스가 나오면 데이터셋이 아니라 `schema.py`의 judge 프롬프트(rubric)를 고친다.
 
+## Elice 연동
+
+세 모델 다 Elice가 **OpenAI SDK 호환 인터페이스**로 중계한다(`Authorization: Bearer <Serverless API Key>` + `client.chat.completions.parse(model=..., response_format=<PydanticModel>)`). `candidates.py`는 벤더별 분기 없이 `model_name`만 다른 하나의 클래스로 세 모델을 다 처리한다.
+
+**실행 전 필요한 환경변수:**
+
+| 변수 | 값 |
+| --- | --- |
+| `ELICE_API_KEY` | Elice ML API Serverless API 키 |
+| `ELICE_BASE_URL` | Elice 모델 카드의 `<your-mlapi-endpoint>`를 실제 계정 엔드포인트로 교체한 값 |
+| `JUDGE_MODEL` | 후보 3개(`gpt-5-nano`/`gemini-3.1-flash-lite`/`claude-haiku-4-5`) 밖의 Elice 모델 ID |
+
+키는 채팅에 붙여넣지 않고 `.env`나 셸 환경변수로 설정한다.
+
 ## 다음 단계 (미결)
 
-- [ ] `research/llm-model-comparison-hint-extraction.md` §7과 동일 — API 키 최소 1개 확보
-- [ ] `candidates.py`의 벤더별 TODO를 실제 API 스펙으로 채움 (실행 시점 최신 문서 확인 — 이 코드 작성 시점 기준 벤더 확정 문법을 검증하지 못했다)
+- [ ] `ELICE_BASE_URL` 실제 값 확보(계정별 엔드포인트) — API 키는 이미 발급 방식 확인됨
+- [ ] `candidates.py`의 `MODEL_IDS`에서 `gpt-5-nano`/`gemini-3.1-flash-lite` 문자열을 각 모델 카드에서 직접 확인(현재는 `claude-haiku-4-5`와 같은 명명 규칙일 거라고 가정한 값)
+- [ ] `response_format=<PydanticModel>` structured output이 Gemini/Claude 백엔드에도 그대로 강제되는지 실제 호출로 확인(`schema_valid` 계속 False면 이 가정이 깨진 것)
 - [ ] `JUDGE_MODEL` 확정
 - [ ] 실측 실행 → `results/summary.md` → 결과를 바탕으로 `docs/modules/case/decisions/`에 확정 문서 작성

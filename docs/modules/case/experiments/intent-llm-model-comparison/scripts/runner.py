@@ -13,7 +13,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from candidates import ALL_CANDIDATES
+from candidates import MODEL_IDS, CandidateAdapter
 from dataset import load_dataset
 from schema import validate_schema
 
@@ -22,8 +22,8 @@ def run(dataset_path: Path, out_dir: Path) -> None:
     cases = load_dataset(dataset_path)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for adapter_cls in ALL_CANDIDATES:
-        adapter = adapter_cls()
+    for model_name in MODEL_IDS.values():
+        adapter = CandidateAdapter(model_name)
         model_dir = out_dir / adapter.model_name
         model_dir.mkdir(parents=True, exist_ok=True)
 

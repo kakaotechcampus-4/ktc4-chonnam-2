@@ -51,8 +51,8 @@ def aggregate_model(model_dir: Path) -> dict:
             schema_valid_count += 1
         if prediction.get("latency_ms") is not None:
             latencies.append(prediction["latency_ms"])
-        if prediction.get("cost_usd") is not None:
-            costs.append(prediction["cost_usd"])
+        if prediction.get("cost_krw") is not None:
+            costs.append(prediction["cost_krw"])
 
         judge_path = pred_path.with_suffix("").with_suffix(".judge.json")
         if not judge_path.exists():
@@ -88,7 +88,7 @@ def aggregate_model(model_dir: Path) -> dict:
         "hallucination_rate": (hallucinated_count / total_judged_fields) if total_judged_fields else None,
         "missed_rate": (missed_count / total_judged_fields) if total_judged_fields else None,
         "avg_latency_ms": (sum(latencies) / len(latencies)) if latencies else None,
-        "total_cost_usd": sum(costs) if costs else None,
+        "total_cost_krw": sum(costs) if costs else None,
         "errored_cases": errored_cases,
         "judge_errors": judge_errors,
         "per_field_accuracy": {
@@ -111,12 +111,12 @@ def render_markdown(results: dict[str, dict]) -> str:
         "# Intent LLM 비교 결과",
         "",
         "| model | schema 준수율 | field 정확도 | hallucination rate | missed rate | "
-        "평균 latency(ms) | 총 비용(USD) | 실패 케이스 | judge 실패 |",
+        "평균 latency(ms) | 총 비용(KRW) | 실패 케이스 | judge 실패 |",
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for model, r in results.items():
         latency = "-" if r["avg_latency_ms"] is None else f"{r['avg_latency_ms']:.0f}"
-        cost = "-" if r["total_cost_usd"] is None else f"{r['total_cost_usd']:.4f}"
+        cost = "-" if r["total_cost_krw"] is None else f"{r['total_cost_krw']:.2f}"
         lines.append(
             f"| {model} | {_pct(r['schema_compliance_rate'])} | {_pct(r['field_accuracy_rate'])} | "
             f"{_pct(r['hallucination_rate'])} | {_pct(r['missed_rate'])} | "

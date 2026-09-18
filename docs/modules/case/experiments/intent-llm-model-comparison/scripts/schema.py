@@ -6,6 +6,10 @@
 
 from __future__ import annotations
 
+from typing import Literal, Optional
+
+from pydantic import BaseModel
+
 FIELDS = (
     "time_hint",
     "vehicle_hint",
@@ -32,6 +36,19 @@ EXTRACTION_SCHEMA = {
     "additionalProperties": False,
 }
 
+
+class IntentHintExtraction(BaseModel):
+    """EXTRACTION_SCHEMA와 동일한 필드. Elice가 중계하는 OpenAI SDK의
+    `response_format=<PydanticModel>` structured output에 이 클래스를 그대로 넘긴다."""
+
+    time_hint: Optional[str]
+    vehicle_hint: Optional[str]
+    situation_hint: Optional[str]
+    location_hint: Optional[str]
+    correction_target: Optional[str]
+    confidence: Literal["high", "low"]
+
+
 CANDIDATE_SYSTEM_PROMPT = """\
 너는 교통위반 신고 준비를 돕는 시스템의 일부다. 사용자가 자연어로 말한 사고 상황 설명에서
 아래 스키마의 필드만 추출한다.
@@ -57,6 +74,21 @@ VERDICTS = ("correct", "partial", "hallucinated", "missed")
 `README.md`의 "채점 방식을 정한 이유" 참고 — hallucination rate와
 null/UNKNOWN 처리 비율을 하나의 'wrong'에서 분리해서 보기 위함."""
 
+Verdict = Literal["correct", "partial", "hallucinated", "missed"]
+
+
+class JudgeVerdict(BaseModel):
+    """judge 호출의 structured output 스키마. `IntentHintExtraction`과 마찬가지로
+    `response_format=JudgeVerdict`로 그대로 넘긴다."""
+
+    time_hint: Verdict
+    vehicle_hint: Verdict
+    situation_hint: Verdict
+    location_hint: Verdict
+    correction_target: Verdict
+    confidence: Verdict
+    notes: str
+
 JUDGE_SYSTEM_PROMPT = """\
 너는 자연어 단서 추출 결과를 채점하는 평가자다. 비교 대상 모델 중 하나가 아니다.
 아래 정보를 보고 필드별로 다음 네 가지 중 하나를 매기고 한 줄 근거를 남긴다.
@@ -73,10 +105,8 @@ JUDGE_SYSTEM_PROMPT = """\
 - hallucinated와 missed는 방향이 반대다 — 헷갈리면 "모델이 원문보다 더 많이 말했는가(hallucinated)
   아니면 더 적게 말했는가(missed)"로 구분한다.
 
-출력은 반드시 JSON:
-{{"time_hint": "correct|partial|hallucinated|missed", "vehicle_hint": "...",
-  "situation_hint": "...", "location_hint": "...", "correction_target": "...",
-  "confidence": "...", "notes": "한두 문장 근거"}}
+각 필드값은 correct/partial/hallucinated/missed 중 하나이고, notes에 한두 문장 근거를 남긴다.
+출력 형식 자체는 이 호출에 넘기는 response_format(JudgeVerdict) 스키마가 강제한다.
 """
 
 JUDGE_USER_TEMPLATE = """\

@@ -1,30 +1,54 @@
-"""벤더별 호출 어댑터.
+"""Elice ML API 호출 어댑터.
 
-주의: 이 파일 작성 시점에는 세 후보(GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5)의
-정확한 API 요청 문법을 실측하지 못했다(research 문서 §7 미결). 아래 `_TODO_call` 부분은
-실행 전 각 벤더 최신 문서로 채워야 한다 — 여기 있는 endpoint/파라미터 이름은 자리표시자다.
+Elice가 세 후보 모두 **OpenAI SDK 호환 인터페이스**로 중계한다는 걸 확인했다(사용자가
+모델 카드에서 직접 확인):
 
-새 SDK 의존성을 pyproject.toml(공유 자원)에 미리 추가하지 않는다. 실제 실행 시점에
-어떤 SDK를 쓸지(공식 SDK vs 순수 HTTP) 정하고 그때 추가한다 — 지금은 표준 라이브러리
-(urllib)만으로 골격을 갖춘다.
+- 인증: `Authorization: Bearer <Serverless API Key>` — OpenAI SDK가 `api_key=`로 자동 처리
+- 호출: `client.chat.completions.parse(model=..., messages=[...], response_format=<PydanticModel>)`
+  (Claude Haiku 4.5 모델 카드 예시로 확인 — GPT-5 Nano/Gemini도 같은 패턴 사용 확인 필요, 아래 참고)
+- base_url: 계정별 실제 엔드포인트 문자열로 교체해야 함 (모델 카드는 `<your-mlapi-endpoint>` placeholder)
+
+세 모델 다 같은 클래스(model_name만 다름)로 처리한다 — 벤더별 서브클래스가 필요 없어졌다.
+
+**아직 확인 안 된 것:**
+- `MODEL_IDS`의 `gpt-5-nano`/`gemini-3.1-flash-lite` 문자열은 `claude-haiku-4-5`와
+  같은 명명 규칙일 거라고 가정한 값이다. 실행 전 각 모델 카드에서 정확한 문자열 확인 필요.
+- `response_format=<PydanticModel>` structured output이 Claude/Gemini 백엔드에도
+  동일하게 강제되는지(Elice가 내부적으로 어떻게 relay하는지)는 실제로 호출해봐야 안다 —
+  `schema_valid`가 계속 False로 나오면 이 가정이 깨진 것이니 `runner.py` 출력을 먼저 본다.
 """
 
 from __future__ import annotations
 
-import abc
 import json
 import os
 import time
-import urllib.request
 from dataclasses import dataclass
 
+from openai import OpenAI
+
+from pricing import estimate_cost_krw
 from schema import (
     CANDIDATE_SYSTEM_PROMPT,
     CANDIDATE_USER_TEMPLATE,
-    EXTRACTION_SCHEMA,
     JUDGE_SYSTEM_PROMPT,
     JUDGE_USER_TEMPLATE,
+    IntentHintExtraction,
+    JudgeVerdict,
 )
+
+MODEL_IDS = {
+    "gpt-5-nano": "gpt-5-nano",
+    "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+    "claude-haiku-4-5": "claude-haiku-4-5",  # 사용자가 모델 카드에서 직접 확인한 값
+}
+
+
+def _client() -> OpenAI:
+    return OpenAI(
+        api_key=os.environ["ELICE_API_KEY"],
+        base_url=os.environ["ELICE_BASE_URL"],
+    )
 
 
 @dataclass
@@ -35,128 +59,72 @@ class CandidateResult:
     latency_ms: float
     prompt_tokens: int | None
     completion_tokens: int | None
-    cost_usd: float | None
+    cost_krw: float | None
     error: str | None
 
 
-class CandidateAdapter(abc.ABC):
-    model_name: str
+class CandidateAdapter:
+    """세 후보 모두 이 클래스 하나로 처리한다 — `model_name`만 다르게 인스턴스화."""
+
+    def __init__(self, model_name: str):
+        self.model_name = model_name
 
     def extract(self, input_sentence: str, prior_hints: dict | None) -> CandidateResult:
-        prior_hints_json = json.dumps(prior_hints, ensure_ascii=False)
         user_prompt = CANDIDATE_USER_TEMPLATE.format(
-            prior_hints_json=prior_hints_json, input_sentence=input_sentence
+            prior_hints_json=json.dumps(prior_hints, ensure_ascii=False),
+            input_sentence=input_sentence,
         )
         start = time.monotonic()
         try:
-            raw_text, prompt_tokens, completion_tokens, cost_usd = self._call(
-                CANDIDATE_SYSTEM_PROMPT, user_prompt
+            response = _client().chat.completions.parse(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": CANDIDATE_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format=IntentHintExtraction,
             )
-        except Exception as exc:  # noqa: BLE001 — 실측 실패도 결과로 기록해야 함
-            latency_ms = (time.monotonic() - start) * 1000
+        except Exception as exc:  # noqa: BLE001 — 호출 실패도 결과로 기록해야 함
             return CandidateResult(
                 model_name=self.model_name,
                 raw_text=None,
                 parsed=None,
-                latency_ms=latency_ms,
+                latency_ms=(time.monotonic() - start) * 1000,
                 prompt_tokens=None,
                 completion_tokens=None,
-                cost_usd=None,
+                cost_krw=None,
                 error=str(exc),
             )
         latency_ms = (time.monotonic() - start) * 1000
 
-        try:
-            parsed = json.loads(raw_text)
-        except json.JSONDecodeError as exc:
-            return CandidateResult(
-                model_name=self.model_name,
-                raw_text=raw_text,
-                parsed=None,
-                latency_ms=latency_ms,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                cost_usd=cost_usd,
-                error=f"JSON 파싱 실패: {exc}",
-            )
+        message = response.choices[0].message
+        usage = response.usage
+        prompt_tokens = usage.prompt_tokens if usage else None
+        completion_tokens = usage.completion_tokens if usage else None
+        parsed_model = getattr(message, "parsed", None)
 
         return CandidateResult(
             model_name=self.model_name,
-            raw_text=raw_text,
-            parsed=parsed,
+            raw_text=message.content,
+            parsed=parsed_model.model_dump() if parsed_model is not None else None,
             latency_ms=latency_ms,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
-            cost_usd=cost_usd,
-            error=None,
-        )
-
-    @abc.abstractmethod
-    def _call(
-        self, system_prompt: str, user_prompt: str
-    ) -> tuple[str, int | None, int | None, float | None]:
-        """(raw_text, prompt_tokens, completion_tokens, cost_usd) 반환. 실패 시 예외를 던진다."""
-        raise NotImplementedError
-
-    def _post_json(self, url: str, headers: dict, body: dict) -> dict:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(body).encode("utf-8"),
-            headers={"Content-Type": "application/json", **headers},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-
-
-class GPT5NanoAdapter(CandidateAdapter):
-    model_name = "gpt-5-nano"
-
-    def _call(self, system_prompt, user_prompt):
-        api_key = os.environ["OPENAI_API_KEY"]
-        # TODO(실행 전): 현재 OpenAI API의 structured output 엔드포인트/파라미터로 교체.
-        # 자리표시자 — strict json_schema 모드로 EXTRACTION_SCHEMA를 강제해야 한다.
-        raise NotImplementedError(
-            "GPT5NanoAdapter._call: 실행 전 OpenAI 최신 문서 기준으로 구현 필요"
+            cost_krw=estimate_cost_krw(self.model_name, prompt_tokens, completion_tokens),
+            error=(
+                None
+                if parsed_model is not None
+                else (getattr(message, "refusal", None) or "structured output 파싱 실패")
+            ),
         )
 
 
-class Gemini31FlashLiteAdapter(CandidateAdapter):
-    model_name = "gemini-3.1-flash-lite"
-
-    def _call(self, system_prompt, user_prompt):
-        api_key = os.environ["GEMINI_API_KEY"]
-        # TODO(실행 전): responseSchema로 EXTRACTION_SCHEMA를 강제하는 현재 Gemini API 문법으로 교체.
-        raise NotImplementedError(
-            "Gemini31FlashLiteAdapter._call: 실행 전 Gemini 최신 문서 기준으로 구현 필요"
-        )
-
-
-class ClaudeHaiku45Adapter(CandidateAdapter):
-    model_name = "claude-haiku-4-5"
-
-    def _call(self, system_prompt, user_prompt):
-        api_key = os.environ["ANTHROPIC_API_KEY"]
-        # TODO(실행 전): output_config.format으로 EXTRACTION_SCHEMA를 강제하는 현재 Anthropic API
-        # 문법으로 교체.
-        raise NotImplementedError(
-            "ClaudeHaiku45Adapter._call: 실행 전 Anthropic 최신 문서 기준으로 구현 필요"
-        )
-
-
-ALL_CANDIDATES: tuple[type[CandidateAdapter], ...] = (
-    GPT5NanoAdapter,
-    Gemini31FlashLiteAdapter,
-    ClaudeHaiku45Adapter,
-)
-
-
-class JudgeAdapter(CandidateAdapter):
+class JudgeAdapter:
     """채점용 어댑터. 비교 대상 3개 중 하나를 재사용하지 않는다(자기 채점 편향 방지) —
-    실행 시점에 JUDGE_MODEL 환경변수로 어떤 어댑터를 쓸지 확정한다.
-    """
+    실행 시점에 `JUDGE_MODEL` 환경변수로 어떤 모델을 쓸지 확정한다."""
 
-    model_name = "judge"
+    def __init__(self, model_name: str):
+        self.model_name = model_name
 
     def judge(
         self,
@@ -173,8 +141,13 @@ class JudgeAdapter(CandidateAdapter):
         )
         start = time.monotonic()
         try:
-            raw_text, prompt_tokens, completion_tokens, cost_usd = self._call(
-                JUDGE_SYSTEM_PROMPT, user_prompt
+            response = _client().chat.completions.parse(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format=JudgeVerdict,
             )
         except Exception as exc:  # noqa: BLE001
             return CandidateResult(
@@ -184,29 +157,28 @@ class JudgeAdapter(CandidateAdapter):
                 latency_ms=(time.monotonic() - start) * 1000,
                 prompt_tokens=None,
                 completion_tokens=None,
-                cost_usd=None,
+                cost_krw=None,
                 error=str(exc),
             )
         latency_ms = (time.monotonic() - start) * 1000
-        try:
-            parsed = json.loads(raw_text)
-        except json.JSONDecodeError as exc:
-            parsed = None
-            error = f"JSON 파싱 실패: {exc}"
-        else:
-            error = None
+
+        message = response.choices[0].message
+        usage = response.usage
+        prompt_tokens = usage.prompt_tokens if usage else None
+        completion_tokens = usage.completion_tokens if usage else None
+        parsed_model = getattr(message, "parsed", None)
+
         return CandidateResult(
             model_name=self.model_name,
-            raw_text=raw_text,
-            parsed=parsed,
+            raw_text=message.content,
+            parsed=parsed_model.model_dump() if parsed_model is not None else None,
             latency_ms=latency_ms,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
-            cost_usd=cost_usd,
-            error=error,
-        )
-
-    def _call(self, system_prompt, user_prompt):
-        raise NotImplementedError(
-            "JudgeAdapter._call: JUDGE_MODEL 확정 후 해당 벤더 호출로 구현 필요"
+            cost_krw=estimate_cost_krw(self.model_name, prompt_tokens, completion_tokens),
+            error=(
+                None
+                if parsed_model is not None
+                else (getattr(message, "refusal", None) or "structured output 파싱 실패")
+            ),
         )
