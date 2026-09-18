@@ -119,3 +119,24 @@ case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 
 - `docs/modules/case/decisions/orchestration-service-layer.md` §6·§7·§8 — search/evidence/`get_view()` real 교체 과정에서 확인한 것들
 
 ⚠️ **위 3개 파일은 이 문서를 쓰는 시점(`docs/design-refinement`)엔 아직 없다.** `feature/case-mock-real-service-adapter` 브랜치에만 있고 아직 develop에 병합 전이다 — 그 브랜치가 병합되면 이 참조가 유효해진다. 지금 이 링크를 따라가려면 `feature/case-mock-real-service-adapter`를 별도로 체크아웃해야 한다.
+
+## 5. 완료 조건 — 이 문서의 각 항목을 "끝났다"고 부르는 기준
+
+이번 고도화 작업은 다음 사이클을 한 단위로 삼는다:
+
+```
+조사 문서 → 선택안과 근거 → eval dataset → baseline 측정 → 개선안 구현 → 동일 dataset 재평가 → ADR
+```
+
+**"도입하지 않음"도 정상적인 완료 조건이다.** 사이클이 반드시 "구현"까지 가야 끝나는 게 아니다 — 조사 후 "지금 구조가 이미 충분하고, 바꾸면 오히려 재현성·테스트성이 나빠진다"는 결론도 완료다. `decisions/agent-framework-adoption-criteria.md`가 이미 이 패턴을 실제로 증명했다 — 조사 문서(§2 출처) → 선택안과 근거(§3 대조표) → ADR(재검토 트리거 포함, §4)까지 거쳤고, eval dataset/baseline 측정 단계는 "측정할 대상 자체가 없다"(agent framework를 실제로 붙여보지 않고도 판단 가능한 정성적 기준)는 이유로 정당하게 생략했다. case의 현재 구조는 이미 단순하고 deterministic한데, 여기서 괜히 Agent framework로 바꾸면 재현성·테스트성이 오히려 나빠질 수 있다는 게 바로 그 판단의 핵심 근거였다.
+
+**어떤 항목에 전체 사이클이 필요한지, 어떤 항목은 생략 가능한지:**
+
+| 항목 | 사이클 적용 범위 | 이유 |
+| --- | --- | --- |
+| 7순위(Orchestration 평가 지표) | 전체 사이클 | "개선"이 실제로 측정 가능한 수치 변화라 baseline/재평가가 의미 있다 |
+| 3순위(Intent LLM 통합) | 전체 사이클(이미 진행 중) | `intent-llm-model-comparison` 실험이 이미 eval dataset(locked v1)·baseline 측정 단계를 밟고 있다 |
+| 1·2·4·5·6순위(A3/D8/B5/B6/A2) | 축약 — 조사 문서/선택안/구현/테스트까지만 | 순수 배선·설계 작업이라 "eval dataset로 개선폭을 측정"할 대상 자체가 없다(정답/오답이 명확한 정합성 문제) — 테스트 통과 여부가 곧 검증이다 |
+| 3.5순위(correction 로그 정책) | 사이클 밖 — 정책/승인 프로세스 | 성능 개선이 아니라 동의·법무 성격이라 이 사이클이 안 맞는다. Issue #74의 완료 조건 체크리스트를 그대로 따른다 |
+
+새 항목이 이 문서에 추가될 때도 "성능/품질 개선 항목인지, 순수 배선 항목인지, 정책 항목인지"를 먼저 구분하고 맞는 사이클(또는 생략)을 적용한다.
