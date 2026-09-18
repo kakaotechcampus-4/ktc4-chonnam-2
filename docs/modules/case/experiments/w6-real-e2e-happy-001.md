@@ -27,7 +27,7 @@ PYTHONPATH=src python -m daesingo.case.demo_happy_001
 | Evidence | `resolve_time → assemble_evidence → calculate_evidence_needs → evaluate_requirements×2 → build_report_package` | ✅ 실제 |
 | CaseView | `case.get_view(case_id, store=store)` | ✅ 실제(오늘 신설) |
 
-"실제"의 의미는 **case가 raw mock JSON을 직접 읽지 않고 각 모듈의 공개 함수를 호출했다**는 뜻이다. search 내부의 `FixtureSearchService`, readout 내부의 `FixtureOcrProvider`는 각 모듈 자신의 stand-in(진짜 Gemini/OCR 아님)으로 여전히 남아 있다 — 이건 case가 기다리거나 손댈 대상이 아니라 search/readout Owner가 자기 W5/W6에서 따로 진행하는 부분이다(`ADR-CASE-001` §6·§7 참고).
+"실제"의 의미는 **case가 raw mock JSON을 직접 읽지 않고 각 모듈의 공개 함수를 호출했다**는 뜻이다. search 내부의 `FixtureSearchService`, readout 내부의 `FixtureOcrProvider`는 각 모듈 자신의 stand-in(진짜 Gemini/OCR 아님)으로 여전히 남아 있다 — 이건 case가 기다리거나 손댈 대상이 아니라 search/readout Owner가 자기 W5/W6에서 따로 진행하는 부분이다(`decisions/orchestration-service-layer.md` §6·§7 참고).
 
 ## 실제 실행 결과 (2026-09-18)
 
@@ -53,7 +53,7 @@ PYTHONPATH=src python -m daesingo.case.demo_happy_001
 
 `requirements_package`의 `package.deadline.within_policy` 체크가 `WARN`(`deadline.exceeded`)으로 나온다. `evaluated_at`을 실행 시점의 실제 현재 시각(2026-09-18)으로 넘기는데, 시나리오의 사건 발생 시각은 2026-08-24라서 신고 기한(발생 후 약 며칠)이 실제로 지나 있다 — **버그가 아니라 evidence의 기한 판정 로직이 실제 시각을 받아서 정확히 판정한 결과**다. 데모/회의에서 "왜 WARN이 뜨냐"는 질문이 나오면 이걸로 설명하면 된다.
 
-## 알려진 단순화 (반복 — `real_e2e.py`/`ADR-CASE-001` §7.2가 원본)
+## 알려진 단순화 (반복 — `real_e2e.py`/`decisions/orchestration-service-layer.md` §7.2가 원본)
 
 1. `time_source_candidates` — recording이 아직 공개 함수로 노출 안 해서 raw fixture 1곳만 읽음.
 2. `situation_response`/`observation_facts` — case에 만드는 로직이 없어 `None` → 그 결과 `package`가 `null`.

@@ -1,16 +1,10 @@
-# ADR-CASE-001: orchestration 진입점(`service.py`) 분리 + `ModuleAdapter` Protocol 도입
+# orchestration 진입점(`service.py`) 분리 + `ModuleAdapter` Protocol 도입
 
-> 상태: **ACCEPTED**
+> 결정일 2026-09-16(§1-§5) · 2026-09-18(§6-§8, W6 Real E2E) · 담당 유소연(`case`) · Consulted 없음 — `case` 내부 실행 구조 결정이며 다른 모듈의 계약·경계를 바꾸지 않는다(§4 범위 참고)
 >
-> 결정일: `2026-09-16`
+> 적용 범위: `src/daesingo/case/adapters.py`·`service.py`·`store.py`·`real_e2e.py`, Mock→Real 교체(W5/W6) 진행
 >
-> Decider / Owner: 유소연 (`case` Owner · orchestration 담당)
->
-> Consulted: 없음 — `case` 내부 실행 구조에 대한 결정이며 다른 모듈의 계약·경계를 바꾸지 않는다(§4 범위 참고)
->
-> 적용 범위: `src/daesingo/case/adapters.py`, `src/daesingo/case/service.py`(신설), Mock→Real 교체(W5) 착수 준비
->
-> 근거 목록: `docs/modules/case/tech-spec.md` §1(case가 하는 일 — "자연어 단서 구조화" 등) · `docs/modules/case/ui-tests/01_yu-soyeon_web-manual-ui-check_2026-09-16.md`(직전 UI 점검) · `src/daesingo/case/tests/test_scenario_*_smoke.py`(기존 실행 경로)
+> 근거: `docs/modules/case/tech-spec.md` §1(case가 하는 일 — "자연어 단서 구조화" 등) · `docs/modules/case/ui-tests/01_yu-soyeon_web-manual-ui-check_2026-09-16.md`(직전 UI 점검) · `tests/case/test_scenario_*_smoke.py`(기존 실행 경로)
 
 ## 1. 목적
 
