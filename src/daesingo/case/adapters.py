@@ -16,17 +16,31 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
 구체 클래스가 아니라 `ModuleAdapter`에만 의존하므로, 실행 시점에 어느 어댑터 인스턴스를
 주입하느냐만 바꾸면 orchestration 코드는 손대지 않는다.
 
-`RealAdapter`는 아직 골격뿐이다 — 각 메서드는 대응하는 모듈(search/evidence/common)의
-실제 구현이 아직 없어 `NotImplementedError`를 낸다. 각 모듈 Owner가 실제 조회 경로(HTTP
-또는 함수 호출)를 완성하면, 그 메서드 하나만 채우면 된다 — 나머지 메서드는 계속
-`NotImplementedError`로 남겨서 "이 모듈은 아직 Mock, 저 모듈은 Real"인 혼재 상태를
-그대로 표현할 수 있다(W5 원칙 "Mock retained for not-yet-ready modules").
+`RealAdapter`는 모듈별로 하나씩 채워진다 — 나머지는 계속 `NotImplementedError`로 남겨서
+"이 모듈은 이미 Real, 저 모듈은 아직 Mock"인 혼재 상태를 그대로 표현한다(W5 원칙
+"Mock retained for not-yet-ready modules").
+
+## 2026-09-18 갱신 — search만 real로 교체됨
+
+`search.search_candidates()`/`evidence.*`/common의 실제 코드 존재 여부를 다시 확인한
+결과:
+
+- **search**: `search_candidates(scope)`가 순수하게 `AnalysisScope` 하나만 받아 완결된
+  결과를 주므로 real로 교체했다(`get_candidate_events()`).
+- **evidence**: 함수 자체(`assemble_evidence` 등)는 이미 완성돼 있지만, 그 입력으로
+  요구하는 `plate_readout`(readout)·`incident_clip`(recording)을 case가 아직 못 구한다
+  — `ModuleAdapter`에 readout/recording 메서드 자체가 없다. evidence Owner를 더 기다리는
+  게 아니라 **case가 readout/recording까지 엮는 별도 설계**가 먼저 필요하다(오늘 범위 밖).
+- **common/runtime**: `InMemoryJobExecutionStore`는 호출 가능한 서비스가 아니라 Worker
+  프로세스가 채우는 저장소다. `worker/`가 아직 비어 있어 실제로 채워질 대상 자체가 없다.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
+
+from daesingo import search as search_module
 
 
 @runtime_checkable
@@ -130,57 +144,101 @@ class MockFixtureAdapter:
 
 
 class RealAdapter:
-    """`ModuleAdapter` 골격 — 실제 모듈 호출로 채워질 자리.
+    """`ModuleAdapter`의 실제 구현 — 모듈별로 준비되는 대로 하나씩 채운다.
 
-    아직 어떤 모듈도 case가 호출할 수 있는 실제 엔드포인트/함수를 내놓지 않았으므로,
-    지금은 전부 `NotImplementedError`다. **모듈별로 하나씩 채운다** — 예를 들어
-    recording/search가 먼저 준비되면 `get_candidate_events()`/`get_analysis_scopes()`만
-    실제 호출로 바꾸고, 나머지(`get_evidence_record()` 등)는 evidence가 준비될 때까지
-    `NotImplementedError`로 남겨둔다. 이 상태에서도 `case/service.py`는 그대로
-    동작해야 한다 — 실패는 "아직 Real로 안 바뀐 자리를 호출했다"는 명확한 신호여야
-    하고, 조용히 빈 값을 돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
+    search는 이미 채워졌다(`get_candidate_events()`). 나머지는 여전히
+    `NotImplementedError`다 — 이 상태에서도 `case/service.py`는 그대로 동작해야 한다:
+    실패는 "아직 Real로 안 바뀐 자리를 호출했다"는 명확한 신호여야 하고, 조용히 빈 값을
+    돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
 
-    생성자 인자는 자리표시자다 — 실제 호출 방식(HTTP client, 같은 프로세스 내 함수
-    호출 등)이 모듈별로 정해지면 그에 맞게 바뀐다.
+    생성자 인자는 모듈별로 다르다 — search는 순수 함수 호출이라 `search_scope`(dict 또는
+    `search.AnalysisScope`) 하나면 충분하고, 나머지가 채워질 때 필요한 인자가 늘어난다.
     """
 
-    def __init__(self, *, case_id: str, **clients: Any) -> None:
+    def __init__(
+        self,
+        *,
+        case_id: str,
+        search_scope: dict[str, Any] | search_module.AnalysisScope | None = None,
+        **clients: Any,
+    ) -> None:
         self.case_id = case_id
+        self._search_scope = search_scope
         self._clients = clients
 
-    def _not_ready(self, method: str, module: str) -> None:
+    def _not_ready(self, method: str, module: str, *, reason: str) -> None:
         raise NotImplementedError(
-            f"RealAdapter.{method}()는 아직 미구현 — {module} 모듈의 실제 구현이 준비되면 "
-            f"이 메서드만 채운다(case/adapters.py). 그 전까지는 이 case_id에 대해 "
-            f"{module}을 Mock으로 유지해야 한다."
+            f"RealAdapter.{method}()는 아직 미구현 — {reason} "
+            f"그 전까지는 이 case_id에 대해 {module}을 Mock으로 유지해야 한다."
         )
 
     # ── search ──────────────────────────────────────────────────────────
     def get_candidate_events(self) -> list[dict[str, Any]]:
-        self._not_ready("get_candidate_events", "search")
+        """`search.search_candidates(scope)`를 실제로 호출한다. `AnalysisRun.outcome ==
+        FAILED`면 candidates가 빈 튜플이라는 게 `CandidateSearchResult`의 계약 불변조건
+        이므로(`search/runs.py`), 여기서 outcome을 따로 분기하지 않고 그대로 반환한다."""
+        if self._search_scope is None:
+            self._not_ready(
+                "get_candidate_events",
+                "search",
+                reason="생성자에 search_scope가 주어지지 않았다 — 호출자가 "
+                "case.scope.build_analysis_scope()로 만든 값을 넘겨야 한다.",
+            )
+        scope = self._search_scope
+        if not isinstance(scope, search_module.AnalysisScope):
+            scope = search_module.AnalysisScope.model_validate(scope)
+        result = search_module.search_candidates(scope)
+        return [
+            {
+                "candidate_id": c.candidate_id,
+                "summary": c.summary,
+                "thumbnail_ref": c.thumbnail_ref,
+            }
+            for c in result.candidates
+        ]
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
-        self._not_ready("get_analysis_scopes", "search")
+        """실제 대응이 없다 — case가 `AnalysisScope`의 Producer라(§`scope.py`), 다른
+        모듈에서 "가져오는" 값이 아니다. Mock 쪽에서만 `test_scope.py`의 정답지 용도로
+        쓰이므로 `RealAdapter`에는 채울 자리가 없다. 이 메서드를 부르는 real 경로가
+        생기면 그 자체가 설계 오류 신호다."""
+        self._not_ready(
+            "get_analysis_scopes",
+            "search",
+            reason="이 메서드는 애초에 real 대응이 없다(case가 Producer) — 부르지 않아야 한다.",
+        )
 
     # ── evidence ────────────────────────────────────────────────────────
+    _EVIDENCE_REASON = (
+        "evidence.assemble_evidence() 등은 이미 실제 구현이지만, 그 입력(plate_readout/"
+        "incident_clip)을 case가 readout/recording에서 가져오는 경로가 ModuleAdapter에 "
+        "아직 없다 — evidence를 더 기다리는 게 아니라 case가 readout/recording까지 엮는 "
+        "설계를 먼저 해야 한다."
+    )
+
     def get_evidence_record(self) -> dict[str, Any] | None:
-        self._not_ready("get_evidence_record", "evidence")
+        self._not_ready("get_evidence_record", "evidence", reason=self._EVIDENCE_REASON)
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
-        self._not_ready("get_evidence_records", "evidence")
+        self._not_ready("get_evidence_records", "evidence", reason=self._EVIDENCE_REASON)
 
     def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
-        self._not_ready("get_requirement_report", "evidence")
+        self._not_ready("get_requirement_report", "evidence", reason=self._EVIDENCE_REASON)
 
     def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
-        self._not_ready("get_requirement_reports", "evidence")
+        self._not_ready("get_requirement_reports", "evidence", reason=self._EVIDENCE_REASON)
 
     def get_evidence_needs(self) -> list[dict[str, Any]]:
-        self._not_ready("get_evidence_needs", "evidence")
+        self._not_ready("get_evidence_needs", "evidence", reason=self._EVIDENCE_REASON)
 
     def get_report_package(self) -> dict[str, Any] | None:
-        self._not_ready("get_report_package", "evidence")
+        self._not_ready("get_report_package", "evidence", reason=self._EVIDENCE_REASON)
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
-        self._not_ready("get_job_executions", "common/runtime")
+        self._not_ready(
+            "get_job_executions",
+            "common/runtime",
+            reason="InMemoryJobExecutionStore는 호출 가능한 서비스가 아니라 Worker "
+            "프로세스가 채우는 저장소다 — worker/가 아직 비어 있어 채워질 대상이 없다.",
+        )

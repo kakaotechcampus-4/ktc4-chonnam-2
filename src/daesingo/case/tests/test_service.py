@@ -69,14 +69,48 @@ def test_build_view_from_adapter_matches_manual_wiring():
     assert view["package"]["report_fields"] == ready["package"]["report_fields"]
 
 
-def test_real_adapter_is_not_ready_yet():
-    """`RealAdapter`는 아직 골격뿐이라는 것 자체를 회귀 테스트로 고정한다 — 어느 모듈이든
-    실제로 채워지면 그 메서드에 대해서는 이 테스트가 깨져야 하고(= 알아채야 하고), 그때
-    이 테스트를 그 메서드만 빼고 좁히면 된다.
+def test_real_adapter_get_candidate_events_matches_fixture():
+    """2026-09-18: `search.search_candidates()`가 순수 함수로 완결돼 있어서 real로
+    교체됐다 — 이 테스트가 그 사실을 고정한다. `get_analysis_scopes()`의 정답지 용도로
+    쓰던 `MockFixtureAdapter.get_analysis_scopes()`를 그대로 real 호출의 입력으로 써서,
+    "case가 스스로 만든 scope로 search를 부르면 mock과 같은 후보가 나오는가"까지 함께
+    검증한다."""
+    fixture = _load_case_fixture()
+    ready = fixture["case_views"][-1]
+
+    mock = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
+    scope = mock.get_analysis_scopes()[0]
+
+    real = RealAdapter(case_id="case_h001_real", search_scope=scope)
+    candidates = real.get_candidate_events()
+
+    assert len(candidates) == len(ready["candidates"])
+    assert candidates[0]["candidate_id"] == ready["candidates"][0]["candidate_id"]
+    assert candidates[0]["summary"] == ready["candidates"][0]["observed"]
+
+
+def test_real_adapter_get_candidate_events_without_scope_is_not_ready():
+    """search_scope를 안 주면 여전히 명확하게 실패해야 한다 — 조용히 빈 리스트를
+    돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일, adapters.py 참고)."""
+    adapter = RealAdapter(case_id="case_real_placeholder")
+    try:
+        adapter.get_candidate_events()
+    except NotImplementedError:
+        pass
+    else:
+        raise AssertionError("search_scope 없이 호출하면 NotImplementedError여야 한다")
+
+
+def test_real_adapter_still_not_ready_for_evidence_and_common():
+    """`RealAdapter`의 evidence/common 자리는 아직 골격뿐이라는 것 자체를 회귀 테스트로
+    고정한다 — 어느 모듈이든 실제로 채워지면 그 메서드에 대해서는 이 테스트가 깨져야
+    하고(= 알아채야 하고), 그때 이 테스트를 그 메서드만 빼고 좁히면 된다.
+    `get_candidate_events()`는 2026-09-18에 채워져서 이 목록에서 빠졌다 — 위 두 테스트가
+    그 경로를 대신 검증한다. `get_analysis_scopes()`는 실제 대응이 없어(case가
+    Producer) 계속 여기 남는다.
     """
     adapter = RealAdapter(case_id="case_real_placeholder")
     for method in (
-        adapter.get_candidate_events,
         adapter.get_analysis_scopes,
         adapter.get_evidence_record,
         adapter.get_evidence_records,

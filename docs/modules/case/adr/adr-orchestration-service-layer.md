@@ -49,3 +49,22 @@ happy path 하나만 보면 처음부터 끝까지 자동으로 진행시키는 
 
 - recording/search가 먼저 준비되면 `RealAdapter.get_candidate_events()`/`get_analysis_scopes()`부터 채운다.
 - 실제 worker loop(또는 그에 준하는 진입점) 설계는 이 ADR의 범위 밖이다 — `service.py`의 함수들을 어떤 순서/조건으로 호출할지는 각 모듈이 Real로 바뀌는 시점에 별도로 결정한다.
+
+## 6. 후속 — 2026-09-18: search만 real로 교체
+
+D2 작성 시점(2026-09-16)에는 "case가 실제로 호출할 수 있는 엔드포인트를 내놓은 모듈이 아직 없다"고 판단했다. 이틀 뒤 다시 확인한 결과는 달랐다 — `tests/{search,evidence,readout,recording,common}` 216개 테스트(+ 68 subtests)가 전부 통과하는, 이미 merge된 실제 코드가 있었다.
+
+다만 모듈별로 사정이 다르다는 것도 같이 확인됐다:
+
+| 모듈 | 실측 결과 | `RealAdapter` 처리 |
+| --- | --- | --- |
+| `search` | `search_candidates(scope)`가 `AnalysisScope` 하나만 받는 순수 함수라 그대로 연결 가능 | **`get_candidate_events()`를 real로 교체.** `search_scope` 생성자 인자 추가, `search.AnalysisScope.model_validate()`로 변환 후 호출. `test_real_adapter_get_candidate_events_matches_fixture`로 mock 경로와 같은 후보가 나오는지 검증 |
+| `search` (scope 자체) | `get_analysis_scopes()`는 case가 `AnalysisScope`의 Producer라 애초에 "가져오는" 대상이 아님(Mock에서도 `test_scope.py` 정답지 용도일 뿐) | real 대응 없음 — `NotImplementedError` 유지, 영구히 |
+| `evidence` | `assemble_evidence()` 등 함수 자체는 완성돼 있음. 하지만 입력으로 요구하는 `plate_readout`(readout)·`incident_clip`(recording)을 가져올 경로가 `ModuleAdapter`에 없음 | `NotImplementedError` 유지 — evidence를 더 기다리는 게 아니라 **case가 readout/recording까지 엮는 별도 설계**가 선행돼야 함(이 ADR 범위 밖) |
+| `common/runtime` | `InMemoryJobExecutionStore`는 호출 가능한 서비스가 아니라 Worker 프로세스가 채우는 저장소. `worker/`가 비어 있어 채울 대상 자체가 없음 | `NotImplementedError` 유지 — Worker 인프라가 먼저 나와야 함 |
+
+D2의 "모듈별로 준비되는 순서대로 하나씩 채운다"는 원칙은 그대로 유지한다 — 이번엔 그 순서가 `search` 하나였을 뿐이다. `scripts/check_boundaries.py`/`scripts/check_contract_fixtures.py`, 전체 테스트(`pytest src tests`, 450 passed) 재확인함.
+
+**다음으로 준비되는 모듈이 있으면 이어서 채운다:**
+- readout/recording이 `ModuleAdapter`에 메서드로 노출되면(설계 필요) evidence 연결 재시도
+- Worker 진입점이 생기면 `common/runtime` 연결 재시도
