@@ -89,3 +89,32 @@ PM 공지(W5 Baseline + W6 Real E2E, 2026-09-22 월 20:00 회의 데드라인 �
 `get_job_executions()`(common/runtime)는 여전히 `NotImplementedError`다 — `service.py`의 `fetch_case_view_inputs()`가 이 메서드를 아예 안 부르므로 오늘 목표에 영향 없음.
 
 전체 테스트(`pytest src tests`, 453 passed) 및 `scripts/check_boundaries.py`/`check_contract_fixtures.py` 재확인함.
+
+## 8. 후속 — 2026-09-18(W6): `case.get_view(case_id)` 진입점 + `CaseStore`
+
+§4/§5(원래 이 ADR의 "남은 일")가 지적했던 마지막 간극을 메웠다 — `module-architecture.md`가 적은 `web → case.get_view() → CaseView`를 실제로 만족하는 함수가 코드에 없었다. `build_view_from_adapter(case, adapter)`는 이미 만들어진 `case`/`adapter` 객체가 있어야 했는데, web이 실제로 쥐고 있는 건 `case_id` 문자열 하나뿐이다.
+
+### 8.1 결정
+
+| ID | 항목 | 상태 |
+| --- | --- | --- |
+| D5 | `case/store.py`에 `CaseStore`(case_id → `CaseAggregate` + `ModuleAdapter` 최소 in-memory 매핑) 신설 | **ACCEPTED** |
+| D6 | `case/service.py`에 `get_view(case_id, *, store, running_jobs=None, notices=None)` 신설, `build_view_from_adapter()`에도 같은 두 파라미터 통과시킴 | **ACCEPTED** |
+| D7 | `case/__init__.py`에서 `get_view`/`CaseStore`를 재노출해 `case.get_view(...)` 형태를 문자 그대로 만족시킴 | **ACCEPTED** |
+
+### 8.2 D5 — `store`를 숨은 전역 상태로 두지 않는 이유
+
+`get_view(case_id)`가 인자 하나로 끝나려면 프로세스 전체가 공유하는 전역 `CaseStore` 인스턴스를 어딘가 둬야 유혹이 생긴다. 그렇게 하지 않았다 — 테스트마다 상태가 새는 걸 막고, 나중에 FastAPI app state 같은 실제 배선 결정을 지금 미리 굳히지 않기 위해서다. 그래서 `store`는 항상 호출자가 명시적으로 넘긴다. `case.get_view(case_id, store=store)`가 "완전한 한 줄 호출"은 아니지만, `store` 자체는 호출자가 한 번만 만들어 재사용하면 되므로 실사용 부담은 크지 않다.
+
+### 8.3 D5 — `CaseStore`가 `ModuleAdapter`도 같이 들고 있는 이유
+
+어댑터를 매 조회마다 호출자가 다시 구성해서 넘기게 하면(예: `RealAdapter`의 `search_scope`/`mock_root`를 매번 다시 조립) `get_view(case_id)`가 사실상 여러 인자짜리 호출이 된다. 어떤 case가 Mock 시나리오 기반인지 Real 데이터 기반인지는 등록 시점에 정해지고 그 case 생애주기 동안 안 바뀐다는 게 지금까지의 실행 방식(스모크 테스트·`real_e2e.py`)과 일치해서, `register(case, adapter)`로 묶어 저장한다.
+
+### 8.4 검증
+
+`test_get_view_entrypoint.py`: 미등록 case_id 조회 시 명확히 실패, 중복 등록 거부, Mock/Real 어댑터 둘 다로 `case.get_view(case_id)` 한 호출에서 `CaseView`(Real 경로는 `stage: READY` + `plate_display.value: "12가3456"`까지)가 나오는지 확인. `src/daesingo/case` 67 passed, 전체 `pytest src tests` 458 passed, `check_boundaries.py`/`check_contract_fixtures.py` 재확인함.
+
+### 8.5 남은 일
+
+- 여러 요청에 걸쳐 `CaseStore`를 어디서 살려둘지(FastAPI app state 등)는 이 ADR 범위 밖 — 실제 배선 시점에 결정한다.
+- 정식 DB 영속화·동시성 제어는 W5/W6 요청 문서가 이번 범위 밖으로 뺐다.

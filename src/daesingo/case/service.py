@@ -26,6 +26,7 @@ from typing import Any
 
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case.store import CaseStore
 from daesingo.case.view import build_case_view
 
 
@@ -76,11 +77,21 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
     )
 
 
-def build_view_from_adapter(case: CaseAggregate, adapter: ModuleAdapter) -> dict[str, Any]:
+def build_view_from_adapter(
+    case: CaseAggregate,
+    adapter: ModuleAdapter,
+    *,
+    running_jobs: list[dict[str, Any]] | None = None,
+    notices: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """`fetch_case_view_inputs()` + `build_case_view()`를 이어붙인 편의 함수 —
     스모크 테스트에서 매번 반복되던 4줄을 한 호출로 줄인다. `case`(상태)와 `adapter`
     (downstream 스냅샷 소스)만 있으면 `CaseView`를 조립할 수 있다는 것이 이 함수가
     보이는 계약이다.
+
+    `running_jobs`/`notices`는 adapter가 아니라 호출자가 직접 안다(어떤 job을 방금
+    발주했는지는 이 함수가 추측하지 않는다 — 모듈 docstring 「여기 없는 것」과 동일한
+    이유). 그대로 `build_case_view()`에 전달만 한다.
     """
     snapshot = fetch_case_view_inputs(adapter)
     return build_case_view(
@@ -89,4 +100,27 @@ def build_view_from_adapter(case: CaseAggregate, adapter: ModuleAdapter) -> dict
         requirement_report_evidence=snapshot.requirement_report_evidence,
         requirement_report_package=snapshot.requirement_report_package,
         report_package=snapshot.report_package,
+        running_jobs=running_jobs,
+        notices=notices,
     )
+
+
+def get_view(
+    case_id: str,
+    *,
+    store: CaseStore,
+    running_jobs: list[dict[str, Any]] | None = None,
+    notices: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`web → case.get_view() → CaseView`(`module-architecture.md` §5-1 ⑪, §6 모듈6
+    ③)의 실제 진입점. 지금까지 스모크 테스트 안에만 있던 "case_id로 저장된 case를
+    찾아서 CaseView를 조립한다"는 마지막 연결을 뽑아냈다.
+
+    `store`를 명시적으로 받는다 — 프로세스 전체가 공유하는 숨은 전역 상태를 두지
+    않는다. 여러 요청에 걸쳐 같은 store를 재사용하는 것(예: FastAPI app state)은
+    호출자의 책임이다 — 그 배선 자체는 W5/W6 요청 문서가 이번 범위 밖으로 뺀
+    "완성된 FastAPI/Worker 배선"에 해당한다.
+    """
+    case = store.get_case(case_id)
+    adapter = store.get_adapter(case_id)
+    return build_view_from_adapter(case, adapter, running_jobs=running_jobs, notices=notices)
