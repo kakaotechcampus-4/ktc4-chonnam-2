@@ -10,8 +10,8 @@
 | 지표 (aggregate.py 기준) | 목표치 (1차) | 표본 크기(n, 후보 1개 기준) | 딥리서치 제안치 대비 |
 | --- | --- | --- | --- |
 | `schema_compliance_rate` | 99% 이상 | 7 (case 1건당 1) | 조사에선 별도 수치 없음 — Structured Outputs strict mode 강제 시 "거의 100%"라는 서술 근거로 신설 |
-| `field_accuracy_rate` | 70~75% 이상 | 42 (case 7 × field 6) | 조사 제안 Field-level F1 80~85%를 그대로 못 쓰고 낮췄다 — 이유는 §2 참고 |
-| `hallucination_rate` | 5% 이하 | 42 | 조사 제안(5% 이하) 그대로 채택 — 우리 스키마도 이미 "모르면 null" 원칙(§4)을 쓰고 있어 직접 적용 가능 |
+| `field_accuracy_rate` | 70~75% 이상 | 42 (case 7 × field 6) | 조사 제안 Field-level F1 80~85%를 그대로 못 쓰고 낮췄다 — 이유는 §2 참고. **§3.4 WebSearch 검증 결과, 근거였던 SLURP·STAGE-Eval 수치가 액면 그대로 못 믿을 수준이라 이 목표치의 신뢰도는 낮음** |
+| `hallucination_rate` | 5% 이하 | 42 | 조사 제안(5% 이하) 그대로 채택 — 우리 스키마도 이미 "모르면 null" 원칙(§4)을 쓰고 있어 직접 적용 가능. **§3.4 WebSearch 검증 결과, 근거였던 FinGround 4.1%·MulitaMiner 1.7%가 둘 다 미확인/조작 의심 — 5% 자체는 합리적인 라운드 넘버지만 "검증된 사례 기반"은 아님** |
 | `missed_rate` | 10% 이하 | 42 | 조사엔 이 이름의 지표가 없음 — hallucination과 반대 방향 실패라 별도 목표 신설 |
 | `per_scenario_accuracy` | 균일 목표 없음 — 카테고리 간 비교 참고용 | 카테고리당 6(case 1 × field 6) | 조사의 document-level 오류율 논거(§2)를 반영 |
 | `ambiguous_low_confidence_rate`(신설, `aggregate.py` 2026-09-18 구현) | 명시적 수치 목표 없음 — 3건 다 `confidence: low`가 이상적이나 n=3이라 참고용, 건수(예 `2/3`)를 비율보다 우선 본다 | 3(`전부_모호`·`차량_애매`·`위치_애매` 각 1건) | 조사의 document-level 오류율 논거(§2)를 반영. 이전 버전(§1 구 버전)은 "null/confidence:low로 떨어지는 비율"이라고만 적고 실제로는 `aggregate.py`에 없었다 — 이번에 실제 구현함(judge 판정이 아니라 후보 자신의 `confidence` 출력값을 직접 봄) |
@@ -384,11 +384,30 @@ MulitaMiner)은 검증 절차 및 탈출구(Escape hatch) 설계를 통해 환�
 - invoicedataextraction.com — Invoice OCR Accuracy: What Developers Need to Know
 - stackai.com — How Investment Banks Use AI Agents to Process Prospectuses and (제목 잘림)
 
-**주의 — 위 목록에 없는 claim이 있다.** §3.2 본문의 가장 구체적인 수치 일부(SLURP SLU-F1 63.5~70.3%, STAGE-Eval 74.27%/90.69%, SOB Benchmark 83.0%, TempEval/TimeML 0.9876·86%, Traffic Accident IE의 Llama-2 미세조정 0.774/0.899, 스페인어 뉴스 5W1H 판정 Cohen's Kappa 0.6739·JAR 99.79%)은 위 출처 목록의 어느 제목과도 명확히 안 맞는다 — 딥리서치가 인용은 했지만 이번에 받은 출처 목록엔 안 잡힌 것들이다. 이 수치들이 `field_accuracy_rate`(80~85% → 70~75%로 조정) 목표치의 핵심 근거였으므로, 이 목표치를 더 신뢰하려면 이 부분 출처를 별도로 확인하는 게 좋다.
+**주의 — 위 목록에 없는 claim이 있었다.** §3.2 본문의 가장 구체적인 수치 일부는 위 출처 목록의 어느 제목과도 명확히 안 맞았다 — §3.4에서 WebSearch로 직접 검증했다.
+
+### 3.4 WebSearch 검증 결과 (2026-09-18) — 9개 중 4개가 미확인/조작 의심
+
+§3.2의 구체적 수치 9개를 하나씩 검색해서 대조했다. **결론: 실제 논문·벤치마크는 대부분 존재하지만, 거기 붙은 숫자 중 상당수가 그 논문이 실제로 보고한 값이 아니다.** AI 리서치 도구가 진짜 출처에 그럴듯하지만 틀린 숫자를 붙이는 전형적인 패턴이다.
+
+| Claim | 검증 상태 | 실제로 확인된 내용 |
+| --- | --- | --- |
+| SLURP SLU-F1 63.5~70.3% | 🟡 대략만 맞음 | 벤치마크는 실재하고 50~70%대 범위 자체는 비슷하지만(WHISMA 63.1%, 다른 시스템 50.0% 등), "63.5%"·"70.3%" 정확한 수치는 못 찾음 |
+| STAGE-Eval Qwen3-4B 74.27%/90.69% | 🔴 숫자는 맞지만 **맥락이 틀림** | 이 수치는 실재하는데, **STAGE로 파인튜닝한 뒤**의 값이다. 파인튜닝 전(baseline) Qwen3-4B는 EMR 31.37%/VA 45.46%로 훨씬 낮다. 우리는 파인튜닝을 안 하는데 "경량 모델도 프롬프트만으로 74~90%대"인 것처럼 인용됨 |
+| SOB Benchmark 83.0% | 🟢 확인됨 | text 소스 기준 Value Accuracy 0.830 — 거의 정확히 일치 |
+| TempEval/TimeML LLM 파이프라인 F1 0.9876 | 🔴 못 찾음 | 실제 TempEval 관련 수치는 0.87~0.90대(ManTIME 등)뿐. 0.9876은 어느 출처에서도 안 나옴 — 조작 의심 |
+| Traffic Accident IE, Llama-2 미세조정 위치 0.774/사고기전 0.899 | 🔴 못 찾음 | Llama-2 관련 실제 수치는 찾았으나(70B 파인튜닝 79.4% vs base 61.7%, 전혀 다른 맥락) "위치 0.774/사고기전 0.899"는 어디서도 안 나옴 |
+| 5W1H 스페인어 뉴스, Claude 3.5 Sonnet Cohen's Kappa 0.6739·JAR 99.79% | 🟡 논문은 실재, 정확한 수치는 미확인 | 정확히 이 주제를 다루는 실제 논문 확인됨(Electronics 저널, DOI 10.3390/electronics15030659, 2026-02) — Cohen's Kappa로 LLM-judge와 전문가 일치도를 측정하는 것도 맞음. 다만 검색 결과엔 소수점 수치까지는 안 나와서 정확한 값 확인은 못 함 |
+| FinGround 환각률 4.1% | 🔴 못 찾음 | 논문은 실재(arXiv:2604.23588)하고 verify-then-ground 기법도 맞지만, 실제 보고된 수치는 "베이스라인 대비 68% 감소", "GPT-4o 대비 78% 감소"라는 **상대적** 감소율이지 절대 수치 "4.1%"가 아니다 |
+| MulitaMiner 20.5%→1.7%, "escape hatch" | 🔴 못 찾음, 조작 의심 | 도구는 실재(OpenVAS/Tenable 취약점 추출)하지만 평가 지표가 ROUGE-L 유사도이지 "오류율"이 아니고, "escape hatch" 개념 자체가 실제 자료 어디에도 없음 |
+| DSPy BootstrapFewShot 개선 폭 13% | 🔴 못 찾음 | DSPy 실측 개선 폭은 확인됨(HotpotQA 32%, GSM-8K 45%, 요약 38% 등)이지만 "13%"·"correction log 기준"이라는 조합은 어디서도 안 나옴 |
+
+**영향받는 목표치:** `hallucination_rate ≤ 5%`의 근거로 든 FinGround 4.1%·MulitaMiner 1.7%가 둘 다 미확인/조작 의심이다. 그렇다고 5%가 틀린 목표라는 뜻은 아니다 — 다만 "구체적으로 검증된 사례들에서 유도한 숫자"가 아니라 "5%라는 라운드 넘버가 합리적으로 느껴진다"는 정성적 판단에 가깝다는 걸 인지해야 한다. `field_accuracy_rate` 70~75%도 마찬가지로, 근거로 든 SLURP·STAGE-Eval 둘 다 액면 그대로 못 믿는다(SLURP는 대략만 맞고, STAGE-Eval은 파인튜닝 조건을 빼먹었다).
 
 ## 4. 다음 단계
 
-- §3.3에서 출처가 안 잡힌 claim(SLURP·STAGE-Eval·SOB Benchmark·TempEval·Traffic Accident IE·Cohen's Kappa 판정 연구)의 정확한 출처를 확인한다 — `field_accuracy_rate` 목표치의 핵심 근거라 출처 없이는 신뢰도가 낮다.
+- ~~§3.3에서 출처가 안 잡힌 claim의 정확한 출처를 확인한다~~ — 2026-09-18 WebSearch로 완료(§3.4). 9개 중 4개가 미확인/조작 의심으로 확인됨 — `field_accuracy_rate`·`hallucination_rate` 두 목표치의 신뢰도가 애초 생각보다 낮다는 것도 §1에 반영함.
+- **그래서 실측 결과를 목표치와 대조할 때 목표치 쪽을 과신하지 않는다** — 목표치 미달이 나와도 "우리 시스템이 나쁘다"보다 "애초에 목표치 근거가 약했다"일 가능성을 먼저 검토한다.
 - `research/llm-model-comparison-hint-extraction.md` §7 미결 항목(API 키 확보·모델 ID 확정) 해소 후, `datasets/intent-hint-eval-v1.jsonl`로 실측하고 §1 표의 목표치와 실제 결과를 대조한다.
 - 실측 결과가 목표치에 못 미치면, 목표치 자체를 낮추기보다 이 딥리서치 §4가 제안한 DSPy `BootstrapFewShot`(correction 로그 10~50개 기준) 도입을 먼저 검토한다 — correction 로그가 아직 없는 V1 시점엔 후순위.
 - production UCR 목표(§1 마지막 행)는 case가 이 기능을 실제로 내보낸 뒤 별도 결정 문서에서 확정한다.
