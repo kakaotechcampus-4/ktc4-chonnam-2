@@ -22,7 +22,7 @@
 딥리서치(§3)가 근거로 든 F1 80~85%·환각률 5% 이하 수치들은 대부분 (1) 라벨링 데이터가 있거나 (2) 우리보다 큰 팀·데이터 규모의 벤치마크·프로덕션 사례에서 나왔다. 특히:
 
 - SLURP 벤치마크의 Zero-shot 성능은 63.5~70.3%였고, 85~90%대는 외부 지식 주입 등 추가 장치를 얹은 뒤의 수치다. 우리는 `datasets/intent-hint-eval-v1.jsonl` v1 시점엔 카테고리당 1케이스뿐이라(§8-2 인용) 이 정도 장치를 아직 못 넣는다.
-- 딥리서치 §6이 스스로 인용한 인보이스 추출 사례 논거 — 필드 4개, 필드별 90% 정확도라도 문서(신고 건) 전체가 한 곳도 안 틀릴 확률은 1-0.9⁴ ≈ 66%밖에 안 된다 — 를 그대로 적용하면, 우리도 필드별 정확도를 무리하게 올리려 하기보다 "필드가 애매하면 확정 대신 null/low-confidence로 떨어지는지"를 더 중요하게 볼 근거가 된다. 그래서 `per_scenario_accuracy`는 균일 정확도 목표를 걸지 않고 애매 카테고리 3종은 별도 지표로 뺐다.
+- 딥리서치 §6이 스스로 인용한 인보이스 추출 사례 논거 — 필드 4개, 필드별 90% 정확도라도 문서(신고 건) 중 적어도 하나는 틀릴 확률이 1-0.9⁴ ≈ 34%나 된다(§7 본문과 동일 계산) — 를 그대로 적용하면, 우리도 필드별 정확도를 무리하게 올리려 하기보다 "필드가 애매하면 확정 대신 null/low-confidence로 떨어지는지"를 더 중요하게 볼 근거가 된다. 그래서 `per_scenario_accuracy`는 균일 정확도 목표를 걸지 않고 애매 카테고리 3종은 별도 지표로 뺐다.
 - `hallucination_rate`만은 조사 수치를 그대로 썼다 — 우리 스키마가 이미 모든 필드를 nullable로 두고 "텍스트에 근거 없으면 null" 원칙(`research/llm-model-comparison-hint-extraction.md` §3 스키마)을 쓰고 있어서, 조사가 전제로 삼은 조건(타입 제약 + escape hatch)과 지금 우리 설계가 이미 일치한다.
 
 ## 3. 딥리서치 원문
@@ -356,8 +356,27 @@ MulitaMiner)은 검증 절차 및 탈출구(Escape hatch) 설계를 통해 환�
 1~2개월 내에 UCR을 15% 미만으로 안정화시키는 것을 프로덕션 운영의 최종 성과 목표로 삼는다.
 ```
 
+### 3.3 딥리서치 출처 목록 (제목/도메인만 확보 — 정확한 URL은 원본 딥리서치 세션에서 재확인 필요)
+
+- openreview.net — Detecting and Grounding Financial Hallucinations via Atomic Claim (FinGround 관련으로 추정)
+- sol.sbc.org.br — MulitaMiner: A Multi-Version Evaluation of LLM-Based Vulnerability
+- codecademy.com — What is DSPy? Build a Text-to-SQL App with Python
+- aclanthology.org — Optimizing Instructions and Demonstrations for Multi-Stage (MIPRO 논문으로 추정)
+- ashitaorbis.com — MIPRO — Wiki
+- arxiv.org — (제목이 "arXiv:2es"로 잘려서 옴 — 어느 논문인지 특정 불가, 원본 세션에서 재확인 필요)
+- dev.to — LLM-as-a-Judge: Evaluating RAG Systems Beyond Exact-Match
+- langchain.com — Extraction Benchmarking
+- llamaindex.ai — What is F1 Score for Document Extraction?
+- doordash.engineering / careersatdoordash.com — Building DoorDash's product knowledge graph with large language (models)
+- zendesk.com — Building realistic multi-turn tests for AI agents
+- invoicedataextraction.com — Invoice OCR Accuracy: What Developers Need to Know
+- stackai.com — How Investment Banks Use AI Agents to Process Prospectuses and (제목 잘림)
+
+**주의 — 위 목록에 없는 claim이 있다.** §3.2 본문의 가장 구체적인 수치 일부(SLURP SLU-F1 63.5~70.3%, STAGE-Eval 74.27%/90.69%, SOB Benchmark 83.0%, TempEval/TimeML 0.9876·86%, Traffic Accident IE의 Llama-2 미세조정 0.774/0.899, 스페인어 뉴스 5W1H 판정 Cohen's Kappa 0.6739·JAR 99.79%)은 위 출처 목록의 어느 제목과도 명확히 안 맞는다 — 딥리서치가 인용은 했지만 이번에 받은 출처 목록엔 안 잡힌 것들이다. 이 수치들이 `field_accuracy_rate`(80~85% → 70~75%로 조정) 목표치의 핵심 근거였으므로, 이 목표치를 더 신뢰하려면 이 부분 출처를 별도로 확인하는 게 좋다.
+
 ## 4. 다음 단계
 
+- §3.3에서 출처가 안 잡힌 claim(SLURP·STAGE-Eval·SOB Benchmark·TempEval·Traffic Accident IE·Cohen's Kappa 판정 연구)의 정확한 출처를 확인한다 — `field_accuracy_rate` 목표치의 핵심 근거라 출처 없이는 신뢰도가 낮다.
 - `research/llm-model-comparison-hint-extraction.md` §7 미결 항목(API 키 확보·모델 ID 확정) 해소 후, `datasets/intent-hint-eval-v1.jsonl`로 실측하고 §1 표의 목표치와 실제 결과를 대조한다.
 - 실측 결과가 목표치에 못 미치면, 목표치 자체를 낮추기보다 이 딥리서치 §4가 제안한 DSPy `BootstrapFewShot`(correction 로그 10~50개 기준) 도입을 먼저 검토한다 — correction 로그가 아직 없는 V1 시점엔 후순위.
 - production UCR 목표(§1 마지막 행)는 case가 이 기능을 실제로 내보낸 뒤 별도 결정 문서에서 확정한다.
