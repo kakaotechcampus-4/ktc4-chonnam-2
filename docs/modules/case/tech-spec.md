@@ -9,6 +9,14 @@
 > `docs/architecture/contracts/contract-job-execution.md` · `docs/architecture/contracts/contract-correction-record.md` ·
 > `docs/modules/case/decisions/*.md` · `docs/modules/case/checklists/phase1-completion-checklist.md`.
 
+> **2026-09-19 갱신 — W5/W6 Real E2E 이후.** 아래 §6·§7·§8·§9는 2026-09-13(1차 구현) 시점 기준으로 남아있다. 2026-09-18 `feature/case-mock-real-service-adapter`에서 다음이 추가됐다 — **이 브랜치(`docs/design-refinement`)엔 아직 없고, 그 브랜치가 develop에 병합돼야 반영된다:**
+>
+> - `RealAdapter` — `MockFixtureAdapter`와 같은 인터페이스를 실제 search/recording/readout/evidence 공개 함수 호출로 구현(§7의 "실제 모듈 구현 시 같은 시그니처의 실제 호출 어댑터로 교체"가 실제로 일어남, `scenario_happy_001` 한정)
+> - `service.py::get_view(case_id, *, store)` — web이 부를 진입점(§9 "FastAPI 엔드포인트 배선"의 전제 조건). transport(FastAPI 등) 자체는 아직 없음
+> - `store.py::CaseStore` — case_id → `CaseAggregate` in-memory 매핑(§9 "영속성 계층"의 최소 버전. MySQL 아님, 프로세스 재시작하면 사라짐)
+>
+> 다음 우선순위/미결 항목은 이 문서 §9를 갱신하는 대신 `docs/modules/case/design-refinement-w7-baseline.md`(W7 기준 문서)로 이관했다 — 최신 우선순위는 그 문서를 본다.
+
 ---
 
 ## 1. 이 모듈이 하는 일 (§4-모듈5 요약)
@@ -191,6 +199,8 @@ docstring에 명시해뒀다.
 담는다. §4-모듈5 「Public Capability」의 함수 이름은 설계 시점 placeholder였고 아래가 그걸 대체한다.
 다른 모듈은 **이 함수들만** 호출한다 — `MockFixtureAdapter`는 예외(1차 구현 한정 내부 stand-in).
 
+`service.py::get_view(case_id, *, store)`가 web이 실제로 부를 단일 진입점으로 추가됐다(위 2026-09-19 갱신 노트 참고, 이 브랜치엔 아직 없음) — 아래 표는 그 이전(2026-09-13) 시점의 개별 함수 목록이며 여전히 유효하다.
+
 | 파일 | 함수/메서드 | 시그니처 | 설명 |
 | --- | --- | --- | --- |
 | `domain.py` | `CaseAggregate.intake` | `(case_id: str, hints: dict, manifest_summary: dict) -> CaseAggregate` | Case 생성 |
@@ -214,8 +224,8 @@ docstring에 명시해뒀다.
 
 ## 8. 검증 현황
 
-- `pytest src/daesingo/case/tests/ -v` → **12 passed** (도메인 6 + jobs 4 + happy-path smoke 2).
-- `python3 scripts/check_boundaries.py --only=boundary` → **PASS — 경계·계약 정합성 위반 0건.**
+- `pytest src/daesingo/case/tests/ -v` → **54 passed**(2026-09-19 재확인 — 1차 구현 시점 12건에서 시나리오 스모크 테스트 등이 늘어남). `feature/case-mock-real-service-adapter` 병합 후에는 `pytest tests/case/`(경로 이동)로 67 passed까지 확인됨(위 갱신 노트 참고).
+- `python3 scripts/check_boundaries.py --only=boundary` → **PASS — 경계·계약 정합성 위반 0건.**(2026-09-19 재확인)
 - `tests/test_scenario_happy_smoke.py`가 `data/mock/case/scenario_happy_001.json`의
   `case_views[0]`(SEARCHING)과 `case_views[-1]`(READY)을 실제 코드 실행 결과와 대조 — READY 스냅샷은
   `evidence`/`requirements_evidence`/`requirements_package`/`package.*` 필드가 완전 일치함을 확인했다.
@@ -226,7 +236,9 @@ docstring에 명시해뒀다.
 
 ---
 
-## 9. 다음 단계 (이번 라운드 이후)
+## 9. 다음 단계 (2026-09-13 시점 기록 — 최신 우선순위는 `design-refinement-w7-baseline.md` 참고)
+
+⚠️ 이 목록은 1차 구현 직후(2026-09-13)에 적은 것으로 역사적 기록으로 남긴다. 2026-09-18 Real E2E 이후 재우선순위화된 최신 목록은 `docs/modules/case/design-refinement-w7-baseline.md`에 있다 — 예를 들어 "FastAPI 엔드포인트 배선"/"영속성 계층"은 그 문서의 6순위(HTTP 진입점)·이미 완료된 `CaseStore`(위 갱신 노트)로 갈렸고, "happy path 외 6개 시나리오"는 그 문서 4순위로 이어졌다.
 
 - FastAPI 엔드포인트로 `domain`/`jobs`/`correction`/`view` 함수들을 감싸는 배선.
 - 영속성 계층(MySQL) — 현재는 순수 메모리 객체.
