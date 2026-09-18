@@ -7,11 +7,16 @@ readout이 **실제 영상과 실제 번호판 이미지에 OCR을 돌린 첫 �
 `merge-evidence-2026-09-14/`와 다른 점 — 그쪽은 **구현이 fixture를 받아 만든 출력**이고,
 여기는 **모델이 실제 픽셀을 보고 만든 출력**이다. 계약 준수 증빙이 아니라 측정이다.
 
-재생성:
+재생성 — 태깅만:
 
 ```
 python scripts/tag_ocr_failures.py
 ```
+
+OCR 실행 자체를 다시 돌리는 것은 별개다. **이 실행은 레포 코드로 한 것이 아니고**
+(`src/daesingo/readout`에는 OCR 실행 경로가 없다) 그때 따로 짠 스크립트로 했다.
+그 스크립트는 `scripts/`에, 환경은 `ENVIRONMENT.md`에 있다. 환경이 이미 그대로는
+재현되지 않는다는 점도 거기 적었다.
 
 ## 파일
 
@@ -19,6 +24,9 @@ python scripts/tag_ocr_failures.py
 | --- | --- |
 | `tagged-video-pilot.json` | 블랙박스 AVI 3개 · 대표 15프레임의 검출/인식 결과와 분류 태깅 |
 | `tagged-dataset-500.json` | AI Hub Validation 500장 recognition 기준선과 분류 태깅 |
+| `ENVIRONMENT.md` | 이 수치를 만든 실행 환경 · 모델 설정 · 입력 경로 · 재현 순서 |
+| `requirements-frozen.txt` | 실행 당시 패키지 70개 |
+| `scripts/` | 실제로 돌린 스크립트 8개 |
 
 **원본은 이 레포에 없다.** 실행 산출물 위치는 `~/Documents/카테캠/`이고
 (`ocr-test/paddle_results.json` · `ocr-dataset-eval/paddleocr_500_results.json`,
