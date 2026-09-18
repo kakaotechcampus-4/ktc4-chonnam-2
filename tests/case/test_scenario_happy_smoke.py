@@ -16,8 +16,8 @@ from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.view import build_case_view
 
-# repo_root/data/mock — conftest.py가 sys.path에 src/를 얹어주지만, 이 값은 import에
-# 얽히지 않게 이 파일에서 직접 계산한다(테스트 파일 간 relative import를 피한다).
+# repo_root/data/mock — 이 값은 다른 테스트 파일과 얽히지 않게 이 파일에서 직접 계산한다
+# (테스트 파일 간 relative import를 피한다).
 MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 SCENARIO_ID = "happy_001"
