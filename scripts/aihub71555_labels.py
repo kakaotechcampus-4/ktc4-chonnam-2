@@ -66,9 +66,17 @@ def bbox_of(ann: dict):
 
 
 def clip_of(decoded_path: str) -> str:
-    """클립 폴더명. `_01`~`_25`가 한 클립이라 프레임끼리 독립이 아니다."""
+    """클립 폴더명. 같은 클립의 프레임은 서로 독립이 아니다."""
     parts = [p for p in posixpath.normpath(decoded_path).split("/") if p]
     return parts[2] if len(parts) > 2 else "(없음)"
+
+
+def frame_index(decoded_path: str) -> int:
+    """파일명 끝의 프레임 번호. `_11` `_015` `_060`처럼 자리수가 일정하지 않아
+    문자열 정렬로는 순서가 어긋난다. 정수로 읽어서 정렬한다."""
+    stem = posixpath.basename(decoded_path).rsplit(".", 1)[0]
+    tail = stem.rsplit("_", 1)[-1]
+    return int(tail) if tail.isdigit() else -1
 
 
 def case_of(decoded_path: str) -> tuple[str, str]:
@@ -199,25 +207,53 @@ def cmd_sample(args) -> None:
     picked = []
     # 층마다 균등하게 뽑는다 — 안전모미착용이 1,522장뿐이라 비례추출하면 거의 사라진다.
     per_bucket = max(1, args.n // max(1, len(buckets)))
-    for key in sorted(buckets):
-        pool = sorted(buckets[key])
-        rng.shuffle(pool)
-        for decoded in pool[:per_bucket]:
-            picked.append({"label_entry": decoded, "clip": clip_of(decoded),
-                           "major": key[0], "minor": key[1], "daynight": key[2],
-                           "image_entry": decoded[:-5] + ".jpg"})
+
+    if args.by_clip:
+        # 프레임이 아니라 **클립 통째로** 뽑는다. span 단위 association·검출 지속성은
+        # 연속 프레임이 있어야 재는데, 프레임 추출은 그걸 못 준다.
+        for key in sorted(buckets):
+            by_clip = collections.defaultdict(list)
+            for decoded in buckets[key]:
+                by_clip[clip_of(decoded)].append(decoded)
+            clips = sorted(by_clip)
+            rng.shuffle(clips)
+            for clip in clips[:per_bucket]:
+                frames = sorted(by_clip[clip], key=frame_index)
+                # 480프레임짜리 클립 하나가 표본을 잡아먹지 않게 자른다. 자른 사실은 남긴다.
+                truncated = len(frames) > args.max_frames
+                for pos, decoded in enumerate(frames[: args.max_frames]):
+                    picked.append({"label_entry": decoded, "clip": clip,
+                                   "frame_index": frame_index(decoded), "clip_pos": pos,
+                                   "clip_frames": len(frames), "clip_truncated": truncated,
+                                   "major": key[0], "minor": key[1], "daynight": key[2],
+                                   "image_entry": decoded[:-5] + ".jpg"})
+    else:
+        for key in sorted(buckets):
+            pool = sorted(buckets[key])
+            rng.shuffle(pool)
+            for decoded in pool[:per_bucket]:
+                picked.append({"label_entry": decoded, "clip": clip_of(decoded),
+                               "frame_index": frame_index(decoded),
+                               "major": key[0], "minor": key[1], "daynight": key[2],
+                               "image_entry": decoded[:-5] + ".jpg"})
 
     out = Path(args.out)
     out.write_text(json.dumps({
         "dataset": "AI Hub 71555 교통법규 위반 상황 · Validation",
         "source_zip": str(SRC_ZIP), "label_zip": str(LABEL_ZIP),
         "seed": args.seed, "requested": args.n,
+        "by_clip": args.by_clip, "max_frames_per_clip": args.max_frames if args.by_clip else None,
         "bucket_count": len(buckets), "per_bucket": per_bucket,
         "picked": len(picked), "distinct_clips": len({i["clip"] for i in picked}),
         "items": picked,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    print(f"층 {len(buckets)}개 · 층당 {per_bucket}장 · 총 {len(picked)}장 → {out}")
+    unit = "클립" if args.by_clip else "장"
+    print(f"층 {len(buckets)}개 · 층당 {per_bucket}{unit} · 총 프레임 {len(picked)}장 → {out}")
+    if args.by_clip:
+        cut = len({i["clip"] for i in picked if i["clip_truncated"]})
+        print(f"  클립 {len({i['clip'] for i in picked})}개 · "
+              f"{args.max_frames}프레임에서 잘린 클립 {cut}개")
     by_major = collections.Counter(item["major"] for item in picked)
     for major, n in by_major.most_common():
         print(f"  {n:>4}  {major}")
@@ -248,7 +284,12 @@ def main() -> None:
     p.set_defaults(func=cmd_stats)
 
     p = sub.add_parser("sample", help="층화 표본 manifest 생성")
-    p.add_argument("--n", type=int, default=200)
+    p.add_argument("--n", type=int, default=200,
+                   help="--by-clip 이면 프레임이 아니라 클립 수로 읽는다")
+    p.add_argument("--by-clip", action="store_true",
+                   help="클립 통째로 뽑는다 (span 단위 association·지속성 측정용)")
+    p.add_argument("--max-frames", type=int, default=120,
+                   help="--by-clip 일 때 클립당 최대 프레임 (긴 클립 하나가 표본을 잡아먹지 않게)")
     p.add_argument("--seed", type=int, default=20260919)
     p.add_argument("--out", default="track1-sample.json")
     p.set_defaults(func=cmd_sample)

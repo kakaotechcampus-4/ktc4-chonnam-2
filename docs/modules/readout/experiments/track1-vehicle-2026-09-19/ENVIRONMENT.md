@@ -82,6 +82,12 @@ python scripts/aihub71555_report.py --detections .../detections.json > .../RESUL
 
 python scripts/aihub71555_associate.py --selfcheck        # 선택 규칙 자체 점검
 python scripts/aihub71555_associate.py --detections .../detections.json > .../ASSOCIATION.md  # 재실행 없이 다시 접는다
+
+# 클립(span) 단위 — 지속성 · multi-frame · 프레임 선택
+python scripts/aihub71555_labels.py sample --by-clip --n 96 --seed 20260919 --out .../clip-sample-manifest.json
+python scripts/aihub71555_detect.py --manifest .../clip-sample-manifest.json --model yolo11n.pt --out .../clip-detections.json
+python scripts/aihub71555_clips.py --selfcheck
+python scripts/aihub71555_clips.py --detections .../clip-detections.json > .../CLIPS.md
 ```
 
 `ROOT` 경로는 `scripts/aihub71555_labels.py` 상단에 하드코딩돼 있다. 다른 기계에서는
