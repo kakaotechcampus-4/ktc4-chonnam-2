@@ -9,7 +9,8 @@ from daesingo.common import load_env_file
 @dataclass(frozen=True, slots=True)
 class GeminiSearchConfig:
     model: str = "gemini-3.8-flash"
-    media_resolution: str = "low"
+    media_resolution: str = "low"           # Coarse. 넓게 싸게 훑는다
+    fine_media_resolution: str = "high"     # Fine. 실선/점선·신호색 판별이 화질에 직접 걸린다
     coarse_fps: float = 1.0
     fine_fps: float = 2.0
     max_retries: int = 3

@@ -114,7 +114,11 @@ class GeminiProvider:
                 type="video",
                 uri=uploaded.uri,
                 mime_type=mimetypes.guess_type(source.path)[0] or "video/mp4",
-                resolution=self._config.media_resolution,
+                resolution=(
+                    self._config.fine_media_resolution
+                    if offsets
+                    else self._config.media_resolution
+                ),
                 processing=processing,
             )
             response_format = self._interactions.TextResponseFormat(
