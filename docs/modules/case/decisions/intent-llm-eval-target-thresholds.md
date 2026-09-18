@@ -5,15 +5,27 @@
 
 ## 1. 결정된 것
 
-`experiments/intent-llm-model-comparison/scripts/aggregate.py`가 이미 집계하는 5개 지표에 아래 목표치를 1차로 건다. **아직 실측(§7 미결 — API 키/모델 ID 확정) 전이라 전부 잠정치**이고, `datasets/intent-hint-eval-v1.jsonl`로 GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5 3개 후보를 실제로 돌려본 뒤 이 문서를 갱신하거나 새 결정 문서로 승격한다.
+`experiments/intent-llm-model-comparison/scripts/aggregate.py`가 이미 집계하는 지표에 아래 목표치를 1차로 건다. **아직 실측(§7 미결 — API 키/모델 ID 확정) 전이라 전부 잠정치**이고, `datasets/intent-hint-eval-v1.jsonl`로 GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5 3개 후보를 실제로 돌려본 뒤 이 문서를 갱신하거나 새 결정 문서로 승격한다.
 
-| 지표 (aggregate.py 기준) | 목표치 (1차) | 딥리서치 제안치 대비 |
-| --- | --- | --- |
-| `schema_compliance_rate` | 99% 이상 | 조사에선 별도 수치 없음 — Structured Outputs strict mode 강제 시 "거의 100%"라는 서술 근거로 신설 |
-| `field_accuracy_rate` | 70~75% 이상 | 조사 제안 Field-level F1 80~85%를 그대로 못 쓰고 낮췄다 — 이유는 §2 참고 |
-| `hallucination_rate` | 5% 이하 | 조사 제안(5% 이하) 그대로 채택 — 우리 스키마도 이미 "모르면 null" 원칙(§4)을 쓰고 있어 직접 적용 가능 |
-| `missed_rate` | 10% 이하 | 조사엔 이 이름의 지표가 없음 — hallucination과 반대 방향 실패라 별도 목표 신설 |
-| `per_scenario_accuracy` | 균일 목표 없음 — `전부_모호`·`차량_애매`·`위치_애매` 3종은 정확도 대신 "null/`confidence: low`로 떨어지는 비율"로 별도 관리 | 조사의 document-level 오류율 논거(§2)를 반영 |
+| 지표 (aggregate.py 기준) | 목표치 (1차) | 표본 크기(n, 후보 1개 기준) | 딥리서치 제안치 대비 |
+| --- | --- | --- | --- |
+| `schema_compliance_rate` | 99% 이상 | 7 (case 1건당 1) | 조사에선 별도 수치 없음 — Structured Outputs strict mode 강제 시 "거의 100%"라는 서술 근거로 신설 |
+| `field_accuracy_rate` | 70~75% 이상 | 42 (case 7 × field 6) | 조사 제안 Field-level F1 80~85%를 그대로 못 쓰고 낮췄다 — 이유는 §2 참고 |
+| `hallucination_rate` | 5% 이하 | 42 | 조사 제안(5% 이하) 그대로 채택 — 우리 스키마도 이미 "모르면 null" 원칙(§4)을 쓰고 있어 직접 적용 가능 |
+| `missed_rate` | 10% 이하 | 42 | 조사엔 이 이름의 지표가 없음 — hallucination과 반대 방향 실패라 별도 목표 신설 |
+| `per_scenario_accuracy` | 균일 목표 없음 — 카테고리 간 비교 참고용 | 카테고리당 6(case 1 × field 6) | 조사의 document-level 오류율 논거(§2)를 반영 |
+| `ambiguous_low_confidence_rate`(신설, `aggregate.py` 2026-09-18 구현) | 명시적 수치 목표 없음 — 3건 다 `confidence: low`가 이상적이나 n=3이라 참고용, 건수(예 `2/3`)를 비율보다 우선 본다 | 3(`전부_모호`·`차량_애매`·`위치_애매` 각 1건) | 조사의 document-level 오류율 논거(§2)를 반영. 이전 버전(§1 구 버전)은 "null/confidence:low로 떨어지는 비율"이라고만 적고 실제로는 `aggregate.py`에 없었다 — 이번에 실제 구현함(judge 판정이 아니라 후보 자신의 `confidence` 출력값을 직접 봄) |
+
+### 1.1 표본 크기 한계 — 퍼센트를 소수점 단위로 믿지 않는다
+
+locked eval set v1은 카테고리당 1케이스, 총 7케이스뿐이다. 그래서 지표별로 실제 표본 크기(n)가 다르고, 전부 "%"로 적으면 실제보다 정밀해 보이는 착시가 생긴다:
+
+- `field_accuracy_rate`/`hallucination_rate`/`missed_rate`는 필드 단위로 집계돼 n=42라 그나마 낫다 — 필드 1개가 바뀌면 비율이 약 2.4%p 움직인다.
+- `schema_compliance_rate`는 n=7이라 케이스 1개가 비율을 약 14%p 움직인다.
+- `per_scenario_accuracy`는 카테고리당 n=6이라 필드 1개가 약 16.7%p를 움직인다.
+- `ambiguous_low_confidence_rate`는 n=3이라 사실상 "3건 중 몇 건"이라는 정수 카운트에 가깝다 — 67%·33% 같은 숫자를 소수점 있는 통계치처럼 읽으면 안 된다.
+
+**그래서 v1 실측 결과는 "목표치 대비 몇 %p 차이"보다 "몇 건 중 몇 건"으로 먼저 읽는다.** 목표치와의 정밀한 비교는 데이터셋이 커진(v2 이상) 뒤에 의미가 생긴다.
 
 **Production 단계 지표는 여기서 다루지 않는다.** 조사가 제안한 User Correction Rate(UCR, 초기 30% 이하 → 15% 이하)는 실사용자가 실제로 고친 이력을 세는 지표라 지금 쓰는 오프라인 locked eval set으로는 측정할 수 없다 — case가 이 기능을 실제로 내보낸 뒤 `CorrectionRecord` 실데이터가 쌓이면 별도 결정 문서에서 목표치를 건다.
 
@@ -22,7 +34,7 @@
 딥리서치(§3)가 근거로 든 F1 80~85%·환각률 5% 이하 수치들은 대부분 (1) 라벨링 데이터가 있거나 (2) 우리보다 큰 팀·데이터 규모의 벤치마크·프로덕션 사례에서 나왔다. 특히:
 
 - SLURP 벤치마크의 Zero-shot 성능은 63.5~70.3%였고, 85~90%대는 외부 지식 주입 등 추가 장치를 얹은 뒤의 수치다. 우리는 `datasets/intent-hint-eval-v1.jsonl` v1 시점엔 카테고리당 1케이스뿐이라(§8-2 인용) 이 정도 장치를 아직 못 넣는다.
-- 딥리서치 §6이 스스로 인용한 인보이스 추출 사례 논거 — 필드 4개, 필드별 90% 정확도라도 문서(신고 건) 중 적어도 하나는 틀릴 확률이 1-0.9⁴ ≈ 34%나 된다(§7 본문과 동일 계산) — 를 그대로 적용하면, 우리도 필드별 정확도를 무리하게 올리려 하기보다 "필드가 애매하면 확정 대신 null/low-confidence로 떨어지는지"를 더 중요하게 볼 근거가 된다. 그래서 `per_scenario_accuracy`는 균일 정확도 목표를 걸지 않고 애매 카테고리 3종은 별도 지표로 뺐다.
+- 딥리서치 §6이 스스로 인용한 인보이스 추출 사례 논거 — 필드 4개, 필드별 90% 정확도라도 문서(신고 건) 중 적어도 하나는 틀릴 확률이 1-0.9⁴ ≈ 34%나 된다(§7 본문과 동일 계산) — 를 그대로 적용하면, 우리도 필드별 정확도를 무리하게 올리려 하기보다 "필드가 애매하면 확정 대신 null/low-confidence로 떨어지는지"를 더 중요하게 볼 근거가 된다. 그래서 `per_scenario_accuracy`는 균일 정확도 목표를 걸지 않고 애매 카테고리 3종은 `ambiguous_low_confidence_rate`라는 별도 지표로 뺐다(§1.1 표본 크기 한계 참고).
 - `hallucination_rate`만은 조사 수치를 그대로 썼다 — 우리 스키마가 이미 모든 필드를 nullable로 두고 "텍스트에 근거 없으면 null" 원칙(`research/llm-model-comparison-hint-extraction.md` §3 스키마)을 쓰고 있어서, 조사가 전제로 삼은 조건(타입 제약 + escape hatch)과 지금 우리 설계가 이미 일치한다.
 
 ## 3. 딥리서치 원문

@@ -19,6 +19,11 @@ from schema import FIELDS
 
 JUDGE_FIELDS = [f for f in FIELDS]  # notes 필드는 집계 대상 아님
 
+# `decisions/intent-llm-eval-target-thresholds.md` §1의 "애매 3종은 정확도 대신
+# null/confidence:low로 떨어지는 비율로 별도 관리"를 실제로 계산한다. dataset.py의
+# scenario_tag 값과 정확히 일치해야 한다(datasets/intent-hint-eval-v1.jsonl 참고).
+AMBIGUOUS_TAGS = frozenset({"전부_모호", "차량_애매", "위치_애매"})
+
 
 def aggregate_model(model_dir: Path) -> dict:
     total_cases = 0
@@ -38,6 +43,9 @@ def aggregate_model(model_dir: Path) -> dict:
     scenario_correct: dict[str, int] = {}
     scenario_judged: dict[str, int] = {}
 
+    ambiguous_total = 0
+    ambiguous_low_confidence = 0
+
     for pred_path in sorted(model_dir.glob("*.json")):
         if pred_path.name.endswith(".judge.json"):
             continue
@@ -53,6 +61,13 @@ def aggregate_model(model_dir: Path) -> dict:
             latencies.append(prediction["latency_ms"])
         if prediction.get("cost_krw") is not None:
             costs.append(prediction["cost_krw"])
+
+        # 애매 3종은 judge 판정이 아니라 후보가 실제로 뱉은 confidence 값 자체를 본다 —
+        # "정답을 맞혔는가"가 아니라 "애매함을 스스로 인정했는가"를 재는 지표라 다르다.
+        if scenario_tag in AMBIGUOUS_TAGS and prediction.get("parsed") is not None:
+            ambiguous_total += 1
+            if prediction["parsed"].get("confidence") == "low":
+                ambiguous_low_confidence += 1
 
         judge_path = pred_path.with_suffix("").with_suffix(".judge.json")
         if not judge_path.exists():
@@ -99,6 +114,10 @@ def aggregate_model(model_dir: Path) -> dict:
             tag: (scenario_correct.get(tag, 0) / judged) if judged else None
             for tag, judged in scenario_judged.items()
         },
+        "ambiguous_low_confidence_rate": (
+            (ambiguous_low_confidence / ambiguous_total) if ambiguous_total else None
+        ),
+        "ambiguous_total": ambiguous_total,
     }
 
 
@@ -148,6 +167,27 @@ def render_markdown(results: dict[str, dict]) -> str:
     for model, r in results.items():
         cells = [_pct(r["per_scenario_accuracy"].get(tag)) for tag in all_tags]
         lines.append(f"| {model} | " + " | ".join(cells) + " |")
+
+    lines.append("")
+    lines.append("## 애매 3종 — confidence:low 인정 비율")
+    lines.append("")
+    lines.append(
+        "(정답을 맞혔는가가 아니라 애매함을 스스로 인정했는가. "
+        "`decisions/intent-llm-eval-target-thresholds.md` §1 참고 — n이 3뿐이라 "
+        "퍼센트보다 옆의 원본 건수를 우선 본다.)"
+    )
+    lines.append("")
+    lines.append("| model | confidence:low 인정 비율 | (건수) |")
+    lines.append("| --- | --- | --- |")
+    for model, r in results.items():
+        rate = _pct(r["ambiguous_low_confidence_rate"])
+        n = r["ambiguous_total"]
+        low_n = (
+            "-"
+            if r["ambiguous_low_confidence_rate"] is None
+            else round(r["ambiguous_low_confidence_rate"] * n)
+        )
+        lines.append(f"| {model} | {rate} | {low_n}/{n} |")
 
     return "\n".join(lines) + "\n"
 

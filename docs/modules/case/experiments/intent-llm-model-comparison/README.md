@@ -74,7 +74,7 @@ scripts/
   runner.py      # dataset × candidates → predictions/*.jsonl (불변 저장)
   judge.py       # predictions × judge 모델 → 필드별 correct/partial/hallucinated/missed 판정
   aggregate.py   # 스키마 준수율 · 필드 정확도율 · hallucination/missed rate · 카테고리별 정확도 ·
-                 # 비용/latency 집계 → results/summary.md
+                 # 애매 3종 confidence:low 인정 비율 · 비용/latency 집계 → results/summary.md
 ```
 
 Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API 호출(prediction)을 다시 하지 않아도 되게 한다.
