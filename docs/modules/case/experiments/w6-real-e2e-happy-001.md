@@ -58,11 +58,19 @@ PYTHONPATH=src python -m daesingo.case.demo_happy_001
 1. `time_source_candidates` — recording이 아직 공개 함수로 노출 안 해서 raw fixture 1곳만 읽음.
 2. `situation_response`/`observation_facts` — case에 만드는 로직이 없어 `None` → 그 결과 `package`가 `null`.
 
-## W5/W6 기준 대비 상태
+## W6(case 몫) 완료 증빙 3가지 — 2026-09-18 기준, 3개 중 1개만 충족
+
+| 완료 증빙 | 상태 | 이유 |
+| --- | --- | --- |
+| 배포 URL 또는 배포 환경 실행 증빙 | ❌ **미충족** | 지금까지 전부 로컬 실행(pytest·`demo_happy_001.py`)뿐이고 배포된 URL/환경이 없다. 어디에 배포할지(Elice? 팀 서버?) 아직 정해지지 않았다 — 결정 필요. |
+| 대표 시나리오 실행 로그/화면 | ✅ **충족** | 위 「실제 실행 결과」 절 + 회의에서 `demo_happy_001.py` 라이브 재실행 가능. |
+| 최초 실제 Eval 숫자 | ❌ **미충족 — case 몫이 아님** | `eval/results`·`eval/predictions`가 현재 `demo_correct`/`demo_wrong`/`mock_*` 라벨뿐이라 eval이 아직 real 함수로 숫자를 낸 적이 없다. 이건 김대원(`eval` Owner)의 W5 항목("Eval이 실제 함수 최소 1개 호출해서 결과 생성")이고, `search`/`eval` Owner 분리 원칙(`ownership.md`) 때문에 case가 대신 채울 수 없다. |
+
+**3가지 중 1가지만 충족한다.** 나머지 두 개는 case 혼자 못 끝내는 이유가 서로 다르다 — 배포는 인프라 결정이 필요하고, eval 숫자는 소유권이 다른 모듈 몫이다. 월요일 회의에는 이 표 그대로 "대표 시나리오 E2E는 통과, 배포·eval 실측은 각각 별도 결정/진행 필요"로 보고하면 정확하다.
+
+## (참고) W5/W6 요청 문서 전체 기준 대비
 
 | 요구 | 상태 |
 | --- | --- |
 | 대표 시나리오 1개가 전체 흐름을 실제로 통과 | ✅ (`happy_001`, `stage: READY`) |
-| Mock→Real 교체 최소 1건 (PR 증빙) | ✅ `feature/case-mock-real-service-adapter` 3개 커밋 |
-| 배포 URL/환경 실행 증빙 | ❌ — 로컬 실행만, 배포는 이번 범위 밖(요청 문서 "완성된 FastAPI/Worker 배선" 제외) |
-| 대표 시나리오 실행 로그/화면 | ✅ 이 문서 |
+| Mock→Real 교체 최소 1건 (PR 증빙) | ✅ `feature/case-mock-real-service-adapter` 5개 커밋 |
