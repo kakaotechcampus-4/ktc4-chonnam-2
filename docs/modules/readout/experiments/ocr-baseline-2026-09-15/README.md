@@ -27,6 +27,7 @@ OCR 실행 자체를 다시 돌리는 것은 별개다. **이 실행은 레포 �
 | `ENVIRONMENT.md` | 이 수치를 만든 실행 환경 · 모델 설정 · 입력 경로 · 재현 순서 |
 | `requirements-frozen.txt` | 실행 당시 패키지 70개 |
 | `scripts/` | 실제로 돌린 스크립트 8개 |
+| `samples/` | 번호판 crop 시각화 + 어노테이션 형식 예시 |
 
 **원본은 이 레포에 없다.** 실행 산출물 위치는 `~/Documents/카테캠/`이고
 (`ocr-test/paddle_results.json` · `ocr-dataset-eval/paddleocr_500_results.json`,
