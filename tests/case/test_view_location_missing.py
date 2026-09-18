@@ -20,7 +20,7 @@ from pathlib import Path
 from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.view import _build_evidence_view, _build_package_view, _field_states
 
-MOCK_ROOT = Path(__file__).resolve().parents[4] / "data" / "mock"
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 SCENARIO_ID = "unknown_abstain_partial_001"
 
 

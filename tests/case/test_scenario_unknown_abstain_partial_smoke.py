@@ -27,7 +27,7 @@ from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.view import build_case_view
 
-MOCK_ROOT = Path(__file__).resolve().parents[4] / "data" / "mock"
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 SCENARIO_ID = "unknown_abstain_partial_001"
 
 
