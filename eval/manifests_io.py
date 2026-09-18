@@ -135,8 +135,14 @@ def validate_sequences(sequences, gt):
     """
     problems = []
     items = gt["items"]
-    seq_ids = [s["sequence_id"] for s in sequences["sequences"]]
-    gt_ids = [i["sequence_id"] for i in items]
+    # 키가 없는 입력에 KeyError 를 던지면 「위반 메시지 목록을 돌려준다」는
+    # 계약이 깨진다. 없는 것도 위반으로 적고 계속 본다.
+    for where, rows in (("sequences.json", sequences["sequences"]), ("GT", items)):
+        for n, row in enumerate(rows):
+            if "sequence_id" not in row:
+                problems.append("%s[%d]: sequence_id 가 없다" % (where, n))
+    seq_ids = [s["sequence_id"] for s in sequences["sequences"] if "sequence_id" in s]
+    gt_ids = [i["sequence_id"] for i in items if "sequence_id" in i]
 
     for ids, where in ((seq_ids, "sequences.json"), (gt_ids, "GT")):
         dupes = sorted({i for i in ids if ids.count(i) > 1})
@@ -148,7 +154,9 @@ def validate_sequences(sequences, gt):
     for sid in sorted(set(seq_ids) - set(gt_ids)):
         problems.append("%s: sequences.json 항목이 GT 에 없다 — 채점되지 않는다" % sid)
 
-    cov = gt["meta"].get("coverage")
+    cov = (gt.get("meta") or {}).get("coverage")
+    if "meta" not in gt:
+        problems.append("GT 에 meta 가 없다 — gt_version 도 검토 실적도 확인할 수 없다")
     if cov is None:
         problems.append("meta.coverage 가 없다 — 검토 실적을 확인할 수 없다")
     elif cov.get("sequences_total") != len(items):
@@ -156,9 +164,14 @@ def validate_sequences(sequences, gt):
             "meta.coverage.sequences_total=%s 인데 items=%d"
             % (cov.get("sequences_total"), len(items)))
 
-    seq_by_id = {s["sequence_id"]: s for s in sequences["sequences"]}
+    seq_by_id = {s["sequence_id"]: s for s in sequences["sequences"] if "sequence_id" in s}
     for item in items:
+        if "sequence_id" not in item:
+            continue                      # 위에서 이미 적었다
         sid = item["sequence_id"]
+        if "label" not in item:
+            problems.append("%s: label 이 없다" % sid)
+            continue
         # A tier 는 위반유형을 sequences.json 과 GT 양쪽에 싣는다 — 이 레포에서
         # 같은 사실이 두 파일에 중복 저장되는 유일한 지점이라 드리프트가 가능하다.
         # B tier 항목은 violation_type 이 없고(None) 라벨이 NONE 이므로 건너뛴다.

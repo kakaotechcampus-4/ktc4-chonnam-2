@@ -8,8 +8,8 @@
     "manifest_version": "m3",
     "clip_rule_version": "c1",
     "normalizer_version": "n1",
-    "code_commit": "c899ea4",
-    "created_at": "2026-09-16T00:38:54.228446+09:00",
+    "code_commit": "486f64f",
+    "created_at": "2026-09-18T16:42:16.107606+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },

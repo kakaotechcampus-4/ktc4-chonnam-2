@@ -195,3 +195,43 @@ def test_classification_result_pins_its_own_scorer_version(tmp_path, monkeypatch
     result = json.loads((tmp_path / "results" / "t_cls.ag1.json").read_text(encoding="utf-8"))
     assert result["meta"]["scorer_version"] == classification_scorer.SCORER_VERSION
     assert result["meta"]["scorer_version"] != candidate_scorer.SCORER_VERSION
+
+
+def test_prediction_ref_sha_matches_the_file_as_committed(tmp_path, monkeypatch):
+    """결과에 적힌 지문이 실제 예측 파일의 지문이어야 한다.
+
+    산출물을 텍스트 모드로 쓰면 Windows 에서 \n 이 \r\n 으로 바뀌는데
+    .gitattributes 는 eol=lf 라, 기록된 sha 가 **커밋된 파일의 sha 가
+    아니게 된다.** 클론한 사람은 전원 불일치를 본다 — prediction_ref 가
+    「이 결과는 이 예측을 채점했다」를 증명하지 못한다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
+                     "--stage", "candidate", "--run-id", "t_sha"]) == 0
+    assert score.main(["--prediction", "t_sha"]) == 0
+
+    pred = tmp_path / "predictions" / "t_sha.json"
+    assert b"\r\n" not in pred.read_bytes(), "산출물에 CRLF 가 섞였다"
+
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    result = json.loads(
+        (tmp_path / "results" / ("t_sha.%s.json" % gt_version)).read_text(encoding="utf-8"))
+    assert result["meta"]["prediction_ref"]["sha256"] == manifests_io.sha256_file(str(pred))
+
+
+def test_committed_results_point_at_the_committed_predictions():
+    """커밋된 산출물끼리도 지문이 맞아야 한다 — 위 테스트는 tmp 안에서만 본다."""
+    import glob
+    from eval import paths as p
+    checked = 0
+    for path in sorted(glob.glob(os.path.join(p.results_dir(), "*.json"))):
+        with open(path, encoding="utf-8") as f:
+            result = json.load(f)
+        ref = result.get("meta", {}).get("prediction_ref")
+        if not ref:
+            continue
+        target = os.path.join(p.REPO_ROOT, ref["path"])
+        assert manifests_io.sha256_file(target) == ref["sha256"], path
+        checked += 1
+    assert checked >= 6

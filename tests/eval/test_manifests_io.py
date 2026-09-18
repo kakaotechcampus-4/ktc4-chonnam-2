@@ -259,3 +259,21 @@ def test_null_violation_type_does_not_conflict_with_a_none_label():
                            "violation_type": None}]}
     assert manifests_io.validate_sequences(
         seqs, _seq_gt([_item("YT_A", label="NONE", tier="B")])) == []
+
+
+def test_missing_keys_are_reported_not_raised():
+    """「위반 메시지 목록을 돌려준다」가 계약이다 — 깨진 입력에 KeyError 를
+    던지면 호출부가 검사기를 신뢰할 수 없다."""
+    seqs = {"meta": {}, "sequences": [{"source_tier": "A"}]}          # sequence_id 없음
+    gt = {"meta": {"coverage": {"sequences_total": 1}},
+          "items": [{"sequence_id": "S1", "source_tier": "A"}]}       # label 없음
+    problems = manifests_io.validate_sequences(seqs, gt)
+    assert any("sequence_id" in p for p in problems)
+    assert any("label" in p for p in problems)
+
+
+def test_missing_meta_is_reported_not_raised():
+    seqs = _seqs("S1")
+    gt = {"items": [_item("S1")]}                                      # meta 없음
+    problems = manifests_io.validate_sequences(seqs, gt)
+    assert any("meta" in p for p in problems)
