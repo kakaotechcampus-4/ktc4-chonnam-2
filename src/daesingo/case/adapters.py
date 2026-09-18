@@ -33,6 +33,24 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
   게 아니라 **case가 readout/recording까지 엮는 별도 설계**가 먼저 필요하다(오늘 범위 밖).
 - **common/runtime**: `InMemoryJobExecutionStore`는 호출 가능한 서비스가 아니라 Worker
   프로세스가 채우는 저장소다. `worker/`가 아직 비어 있어 실제로 채워질 대상 자체가 없다.
+
+## 2026-09-18(W6) 갱신 — evidence도 `scenario_happy_001` 대표 시나리오로 real 교체
+
+W5/W6 마감(월요일 20:00 회의 — 대표 시나리오 1개가 E2E를 실제로 통과하는지 확인)에
+맞춰 readout/recording도 이미 실제 공개 함수가 있다는 걸 확인했다(`real_e2e.py` 참고
+— recording의 `resolve_span`/`build_incident_clip`, readout의 `read_plate`/
+`read_overlay_time` 전부 fixture 없이도 순수 호출 가능). evidence 6개 메서드를
+`real_e2e.build_happy_001_evidence_bundle()`로 교체했다 — recording→search.verify_visual
+→readout→evidence 전체 체인을 실제 함수로 잇는다.
+
+`get_job_executions()`(common/runtime)는 여전히 `NotImplementedError`다 — 다만
+`case/service.py`의 `fetch_case_view_inputs()`/`build_view_from_adapter()`는 애초에
+이 메서드를 부르지 않으므로(대신 호출자가 `running_jobs`를 직접 넘김), 오늘 목표인
+"CaseView까지 E2E 통과"에는 영향이 없다.
+
+시나리오는 `scenario_happy_001` 하나로 고정돼 있다 — `real_e2e.py` 모듈 docstring의
+"알려진 단순화"(시각 원시 데이터 raw read, `situation_response`/`observation_facts`
+None) 두 가지도 그대로 적용된다.
 """
 from __future__ import annotations
 
@@ -41,6 +59,7 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 from daesingo import search as search_module
+from daesingo.case import real_e2e
 
 
 @runtime_checkable
@@ -152,7 +171,9 @@ class RealAdapter:
     돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
 
     생성자 인자는 모듈별로 다르다 — search는 순수 함수 호출이라 `search_scope`(dict 또는
-    `search.AnalysisScope`) 하나면 충분하고, 나머지가 채워질 때 필요한 인자가 늘어난다.
+    `search.AnalysisScope`) 하나면 충분하고, evidence 체인은 추가로 `mock_root`가
+    필요하다(`real_e2e.py`의 "알려진 단순화 1" — recording의 raw time_source_candidates
+    읽기용, 나머지는 전부 real 함수 호출). 나머지가 채워질 때 필요한 인자가 더 늘어난다.
     """
 
     def __init__(
@@ -160,10 +181,13 @@ class RealAdapter:
         *,
         case_id: str,
         search_scope: dict[str, Any] | search_module.AnalysisScope | None = None,
+        mock_root: Path | None = None,
         **clients: Any,
     ) -> None:
         self.case_id = case_id
         self._search_scope = search_scope
+        self._mock_root = mock_root
+        self._evidence_bundle: real_e2e.EvidenceBundle | None = None
         self._clients = clients
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
@@ -209,30 +233,57 @@ class RealAdapter:
         )
 
     # ── evidence ────────────────────────────────────────────────────────
-    _EVIDENCE_REASON = (
-        "evidence.assemble_evidence() 등은 이미 실제 구현이지만, 그 입력(plate_readout/"
-        "incident_clip)을 case가 readout/recording에서 가져오는 경로가 ModuleAdapter에 "
-        "아직 없다 — evidence를 더 기다리는 게 아니라 case가 readout/recording까지 엮는 "
-        "설계를 먼저 해야 한다."
-    )
+    def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
+        if self._evidence_bundle is None:
+            if self._search_scope is None or self._mock_root is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason="evidence 체인에는 search_scope와 mock_root(recording의 raw "
+                    "time_source_candidates 읽기용, real_e2e.py 「알려진 단순화 1」)가 "
+                    "모두 필요하다.",
+                )
+            scope = self._search_scope
+            if not isinstance(scope, search_module.AnalysisScope):
+                scope = search_module.AnalysisScope.model_validate(scope)
+            candidate = search_module.search_candidates(scope).candidates[0]
+            self._evidence_bundle = real_e2e.build_happy_001_evidence_bundle(
+                case_id=self.case_id,
+                candidate=candidate,
+                scope=scope,
+                mock_root=self._mock_root,
+            )
+        return self._evidence_bundle
 
     def get_evidence_record(self) -> dict[str, Any] | None:
-        self._not_ready("get_evidence_record", "evidence", reason=self._EVIDENCE_REASON)
+        return self._build_evidence_bundle().evidence_record
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
-        self._not_ready("get_evidence_records", "evidence", reason=self._EVIDENCE_REASON)
+        """`scenario_happy_001` 대표 시나리오는 supersede 체인이 없어(1건뿐) 리스트도
+        1건이다 — plate_reread류 다건 체인은 W7 확장 대상(모듈 docstring 참고)."""
+        return [self._build_evidence_bundle().evidence_record]
 
     def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
-        self._not_ready("get_requirement_report", "evidence", reason=self._EVIDENCE_REASON)
+        bundle = self._build_evidence_bundle()
+        if scope == "EVIDENCE":
+            return bundle.requirement_report_evidence
+        if scope == "FINAL_PACKAGE":
+            return bundle.requirement_report_package
+        raise ValueError(f"알 수 없는 requirement scope: {scope!r}")
 
     def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
-        self._not_ready("get_requirement_reports", "evidence", reason=self._EVIDENCE_REASON)
+        report = self.get_requirement_report(scope)
+        return [report] if report is not None else []
 
     def get_evidence_needs(self) -> list[dict[str, Any]]:
-        self._not_ready("get_evidence_needs", "evidence", reason=self._EVIDENCE_REASON)
+        needs = self._build_evidence_bundle().evidence_needs
+        return [needs] if needs is not None else []
 
     def get_report_package(self) -> dict[str, Any] | None:
-        self._not_ready("get_report_package", "evidence", reason=self._EVIDENCE_REASON)
+        """`build_report_package()`가 `PackageNotReady`를 던지면(situation_response/
+        observation_facts 미확보 — real_e2e.py 「알려진 단순화 2」) `None`을 돌려준다.
+        이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
+        return self._build_evidence_bundle().report_package
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:

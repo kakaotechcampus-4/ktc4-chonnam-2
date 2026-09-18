@@ -68,3 +68,24 @@ D2의 "모듈별로 준비되는 순서대로 하나씩 채운다"는 원칙은 
 **다음으로 준비되는 모듈이 있으면 이어서 채운다:**
 - readout/recording이 `ModuleAdapter`에 메서드로 노출되면(설계 필요) evidence 연결 재시도
 - Worker 진입점이 생기면 `common/runtime` 연결 재시도
+
+## 7. 후속 — 2026-09-18(W6): evidence도 `scenario_happy_001` 대표 시나리오로 real 교체
+
+PM 공지(W5 Baseline + W6 Real E2E, 2026-09-22 월 20:00 회의 데드라인 — "대표 실제 데이터 시나리오 1개가 전체 흐름을 실제로 통과하는지 회의에서 직접 실행 확인")에 맞춰 §6에서 "case가 readout/recording까지 엮는 별도 설계가 필요하다"고 미뤄뒀던 부분을 오늘 진행했다. 확인해보니 readout/recording도 search와 같은 상태였다 — `tests/readout/test_public_functions.py`가 "외부 의존 없음"이라고 명시하고, `tests/recording/test_first_integration_contract.py`가 `resolve_span → prepare_analysis_source → build_incident_clip` 흐름을 fixture만으로 완결시킨다. 즉 **case가 readout/recording을 "못 부르는" 게 아니라 "아직 안 불러본" 것**이었다.
+
+### 7.1 새 모듈 `case/real_e2e.py`
+
+`build_happy_001_evidence_bundle()` 하나로 recording→`search.verify_visual`→readout→evidence 체인을 실제 함수 호출로 잇는다. 순서는 evidence 자체 도구(`evidence/mock_integration.py`)가 mock 데이터로 검증해둔 순서(`resolve_time`→`assemble_evidence`→`calculate_evidence_needs`→`evaluate_requirements`×2→`build_report_package`)를 그대로 따르되, 입력 각각을 raw JSON이 아니라 real 함수 반환값으로 채운다.
+
+### 7.2 알려진 단순화 2건 (정직하게 남김, W7 대상)
+
+1. `time_source_candidates` — `RecordingFixture` pydantic 모델에 이 필드가 없다(recording의 1차 구현 범위 밖). 공개 함수로 노출된 적이 없으므로 이 한 값만 recording의 raw fixture JSON에서 읽는다.
+2. `situation_response`/`observation_facts` — case에 이 값을 만드는 로직(intake UI)이 없어 `None`. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에 못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 조용한 실패가 아니라 `EvidenceBundle.package_error`에 사유가 남고, `RealAdapter.get_report_package()`는 `None`을 돌려준다(CaseView의 partial 표현이 이미 이런 상태를 위해 있음, §5-12).
+
+### 7.3 결과
+
+`test_real_e2e.py`의 `test_real_e2e_happy_path_reaches_ready_caseview`가 recording→search→후보 선택→readout→evidence→`CaseView`까지 전부 real로 돌려서 `stage: READY`, `plate_display.value: "12가3456"`, `event_time_display.value: "2026-08-24T18:05:12+09:00"`, `requirements_evidence.readiness: WARN`(PASS는 아니지만 실제 평가 결과)을 확인했다. `package`는 7.2-2번 이유로 `None` — 이번 데드라인 기준("전체 흐름을 실제로 통과하는지")은 만족한다.
+
+`get_job_executions()`(common/runtime)는 여전히 `NotImplementedError`다 — `service.py`의 `fetch_case_view_inputs()`가 이 메서드를 아예 안 부르므로 오늘 목표에 영향 없음.
+
+전체 테스트(`pytest src tests`, 453 passed) 및 `scripts/check_boundaries.py`/`check_contract_fixtures.py` 재확인함.

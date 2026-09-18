@@ -101,20 +101,16 @@ def test_real_adapter_get_candidate_events_without_scope_is_not_ready():
         raise AssertionError("search_scope 없이 호출하면 NotImplementedError여야 한다")
 
 
-def test_real_adapter_still_not_ready_for_evidence_and_common():
-    """`RealAdapter`의 evidence/common 자리는 아직 골격뿐이라는 것 자체를 회귀 테스트로
-    고정한다 — 어느 모듈이든 실제로 채워지면 그 메서드에 대해서는 이 테스트가 깨져야
-    하고(= 알아채야 하고), 그때 이 테스트를 그 메서드만 빼고 좁히면 된다.
-    `get_candidate_events()`는 2026-09-18에 채워져서 이 목록에서 빠졌다 — 위 두 테스트가
-    그 경로를 대신 검증한다. `get_analysis_scopes()`는 실제 대응이 없어(case가
-    Producer) 계속 여기 남는다.
+def test_real_adapter_still_not_ready_for_common():
+    """`RealAdapter`의 common/runtime 자리는 아직 골격뿐이라는 것 자체를 회귀 테스트로
+    고정한다 — Worker 인프라가 생기면 이 테스트가 깨져야(= 알아채야) 한다.
+    `get_candidate_events()`(2026-09-18)와 evidence 6개(2026-09-18, W6)는 이미 채워져서
+    이 목록에서 빠졌다 — `test_real_e2e.py`가 그 경로를 검증한다. `get_analysis_scopes()`는
+    실제 대응이 없어(case가 Producer) 계속 여기 남는다.
     """
     adapter = RealAdapter(case_id="case_real_placeholder")
     for method in (
         adapter.get_analysis_scopes,
-        adapter.get_evidence_record,
-        adapter.get_evidence_records,
-        adapter.get_report_package,
         adapter.get_job_executions,
     ):
         try:
