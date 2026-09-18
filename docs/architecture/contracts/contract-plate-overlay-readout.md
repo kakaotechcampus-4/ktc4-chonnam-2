@@ -167,6 +167,32 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 | `best_frame` | 대표 근거 프레임/crop과 그 프레임 안 번호판 영역. `plate_bbox_xywh`(v1.3 신설, **`best_frame`이 있으면 필수**)는 `frame_ref`가 가리키는 canonical frame의 **원본 픽셀 좌표**이며, `PLATE_IMAGE` 생성의 authoritative 입력이다 — `target_association.associated_region.bbox_xywh`는 대상 차량 association 근거이고 이 용도로 쓰지 않는다 (이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) Q2·Q4) |
 | `frame_results` | 프레임별 OCR 관찰 결과 |
 
+## `best_frame.plate_bbox_xywh` 최소 유효성 (v1.3)
+
+이 값은 참고 정보가 아니라 `PLATE_IMAGE` 생성의 authoritative 입력이다. 음수 좌표나 0 크기
+영역을 구현별로 다르게 허용하면 locator로 쓸 수 없으므로 아래를 계약으로 고정한다.
+
+```text
+plate_bbox_xywh: [x, y, w, h]
+- 원소 수    : 정확히 4개
+- 원소 타입  : integer
+- x, y       : >= 0
+- w, h       : > 0
+- 좌표계     : frame_ref 가 가리키는 canonical frame 의 원본 픽셀
+```
+
+**표기는 `xywh` 하나다.** 외부 검출기와 데이터셋은 대개 `xyxy`(모서리 두 점)나 정규화 좌표를
+쓴다 — PaddleOCR의 반환값, AI Hub 172의 `[[x1,y1],[x2,y2]]` 등. **그 변환은 provider 경계에서
+끝내고 계약 객체에는 `xywh` 정수만 싣는다.** 계약 안에 두 표기를 섞으면 소비자가 어느 쪽인지
+판정해야 하고, 그 판정은 아무도 소유하지 않는다. 이 규칙은 이 필드만이 아니라 계약의 `bbox_xywh`
+전부에 적용된다(`target_association.associated_region.bbox_xywh` · `TargetHint.bbox_xywh`).
+
+**영역이 frame 크기를 벗어났을 때 거부할지 clamp할지는 여기서 정하지 않는다** — `recording`
+Tech Spec이 소유한다. 이 계약은 「좌표로 성립하는 값인가」까지만 고정하고, 프레임 경계와의
+관계는 생성 주체가 판정한다(§11-3 「Producer가 보장하지 않는 것」과 같은 성격).
+
+요청 정철원(`recording`, PR [#70](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/70) 리뷰 2번) · Decider 신유민.
+
 ## 예시 JSON
 
 정상 실행(`ReadoutRun rr_881`, `outcome=SUCCEEDED` — `contract-readout-run.md` §7)에서 생성된 결과:
@@ -395,7 +421,7 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 | --- | --- | --- |
 | `evidence` | `observation`, `target_association`, `consensus`, `abstained`, `abstain_reason`, `best_frame`, `validation` | `frame_results`, `samples` |
 | `eval` | `consensus`, `best_frame`, `abstained`, `target_association`, `validation` | `frame_results`, `samples` |
-| `case` | `best_frame.frame_ref` — 화면에 번호판 프레임을 표시하기 위해 `CaseView`로 통과시킨다. 그 밖의 필드는 `evidence`로 **경유**만 한다 | 없음 (v1.3) |
+| `case` | ① **화면 projection** — `best_frame.frame_ref`를 `CaseView`로 통과시킨다<br>② **`PLATE_IMAGE` 생성 발주 입력** — `best_frame.frame_ref` + `best_frame.plate_bbox_xywh`<br>그 밖의 필드는 `evidence`로 **경유**만 한다 | 없음 (v1.3) |
 | `web` | **직접 소비 없음.** `case`의 `CaseView`를 통해서만 받는다 | 없음 |
 
 `eval`의 번호판 평가는 우선 `best_frame`, `consensus`, `abstained`를 중심으로 수행할 수 있다. `frame_results[]` 전체는 OCR 실패 원인 분석, CER 진단, frame-level debugging이 필요할 때 사용한다.
@@ -403,6 +429,23 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 `case` 행은 v1.3에서 등재했다. `case`는 그동안 `evidence`로 가는 **경유자**였으나, `core-user-flow.md` §12의 `[번호판 이미지 보기]`·`[확대]` 화면이 요구하는 프레임을 `CaseView`가 나를 수 없다는 것이 확인되어(이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47), `preview_ref`는 사건 대표 썸네일이지 번호판 프레임이 아님) `best_frame.frame_ref` 한 값에 한해 직접 Consumer가 된다. 새 경로를 여는 것이 아니라, 문서 상단에 이미 등재된 「Direct Consumer는 `case`다」를 이 표에 반영하는 것이다.
 
 `crop_ref`는 `case`·`web`에 제공하지 않는다 — opaque identity이지 이미지 조회 handle이 아니어서(§3) 화면이 그 값으로 할 수 있는 일이 없다. 여러 프레임을 넘겨보는 화면은 `[프로토타입]` 범위이므로 `frame_results[]` 제공은 v1.3에서 다루지 않는다.
+
+### `case`가 `plate_bbox_xywh`를 받는 이유 — 발주자이기 때문이다
+
+`case` 행 ②는 화면용이 아니다. **`PLATE_IMAGE` 생성을 발주하는 주체가 `case`**라서 생성 입력을
+알아야 한다. 새 원칙이 아니라 이미 확정된 3자 분리를 이 값에 적용하는 것이다 —
+「`evidence`는 Need를 만들고, **`case`는 그 Need를 발주로 변환하며**, 실행 모듈이 수행한다」
+(`adr/adr-data-contract-call-closure-2026-09-08.md` §4.1). export orchestration이 `case` 소관이라는
+것도 같은 곳에 있다(`adr/adr-analysis-source-derived.md` Owner 표 — 「clip 발주·Report Video
+export orchestration」). `PLATE_IMAGE`는 `REPORT_VIDEO`의 자매 `derived_role`이다
+(`contract-analysis-source-derived.md` §7.3).
+
+**다만 발주 경로 자체는 아직 열려 있지 않다.** `PLATE_IMAGE` export 공개 capability와
+`PLATE_IMAGE_EXPORT_FAILED`는 이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) Q4의 `recording` 후속 항목으로 남아 있다. 이 표는
+**readout이 무엇을 제공하는가**를 정할 뿐이고, 그 값이 `recording`까지 가는 실행 경계는 그
+후속에서 닫는다. 여기서 값을 열어 두지 않으면 그때 계약을 다시 여는 일이 생긴다.
+
+요청 정철원(`recording`, PR [#70](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/70) 리뷰 1번) · Decider 신유민.
 
 ---
 
