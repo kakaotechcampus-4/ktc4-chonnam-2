@@ -1,28 +1,38 @@
 import json
-import os
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+
+from daesingo.common import load_env_file
 
 
 @dataclass(frozen=True, slots=True)
 class GeminiSearchConfig:
-    model: str = "gemini-3-flash-preview"
+    model: str = "gemini-3.8-flash"
     media_resolution: str = "low"
     coarse_fps: float = 1.0
     fine_fps: float = 2.0
     max_retries: int = 3
     retry_base_sec: float = 5.0
     fine_padding_sec: float = 4.0
-    version: str = "gemini-search-v1"
+    # 모든 Gemini 호출은 이 프록시(Bearer 인증)를 거친다. 운영자가 로컬에서
+    # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
+    base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    version: str = "gemini-search-v2"
 
     @classmethod
-    def from_env(cls) -> "GeminiSearchConfig":
+    def from_dotenv(
+        cls, env: Mapping[str, str] | None = None
+    ) -> "GeminiSearchConfig":
+        if env is None:
+            env = load_env_file()
         defaults = cls()
         return cls(
-            model=os.getenv("DAESINGO_GEMINI_MODEL", defaults.model),
-            media_resolution=os.getenv(
+            model=env.get("DAESINGO_GEMINI_MODEL", defaults.model),
+            media_resolution=env.get(
                 "DAESINGO_GEMINI_MEDIA_RESOLUTION", defaults.media_resolution
             ),
+            base_url=env.get("DAESINGO_GEMINI_BASE_URL", defaults.base_url),
         )
 
     @property

@@ -1,4 +1,3 @@
-import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -6,6 +5,7 @@ from hashlib import sha256
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from daesingo.common import load_env_file
 from eval import manifests_io, paths
 from eval.runners.errors import RunnerPreflightError
 
@@ -33,14 +33,15 @@ class PreparedEval:
 
 def prepare(scope: dict[str, str]) -> PreparedEval:
     problems: list[str] = []
+    env = load_env_file()
     if scope.get("manifest") != "b_youtube":
         problems.append("search:gemini-coarse-p3 supports manifest=b_youtube only")
     if scope.get("stage") != "candidate":
         problems.append("search:gemini-coarse-p3 supports stage=candidate only")
 
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = env.get("GEMINI_API_KEY", "").strip()
     if not api_key:
-        problems.append("GEMINI_API_KEY is not set")
+        problems.append("GEMINI_API_KEY is not set (.env)")
     sdk_version = _sdk_version(problems)
     ffprobe = shutil.which("ffprobe")
     if ffprobe is None:
@@ -50,11 +51,8 @@ def prepare(scope: dict[str, str]) -> PreparedEval:
     clips = manifest.get("clips", [])
     if len(clips) != 123:
         problems.append(f"b_youtube must contain 123 clips, found {len(clips)}")
-    root = (
-        Path(os.environ["DAESINGO_EVAL_DATA_ROOT"])
-        if os.getenv("DAESINGO_EVAL_DATA_ROOT")
-        else Path(paths.REPO_ROOT)
-    )
+    data_root = env.get("DAESINGO_EVAL_DATA_ROOT", "").strip()
+    root = Path(data_root) if data_root else Path(paths.REPO_ROOT)
     prepared: list[PreparedClip] = []
     for clip in clips:
         clip_id = str(clip["clip_id"])

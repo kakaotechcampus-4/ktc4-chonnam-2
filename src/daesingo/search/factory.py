@@ -9,5 +9,5 @@ def build_gemini_search_service(
     resolver: AnalysisSourceResolver,
     config: GeminiSearchConfig | None = None,
 ) -> SearchService:
-    selected = config or GeminiSearchConfig.from_env()
+    selected = config or GeminiSearchConfig.from_dotenv()
     return SearchService(resolver, GeminiProvider(api_key, selected), selected)

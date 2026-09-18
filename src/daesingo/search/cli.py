@@ -1,7 +1,8 @@
 import argparse
-import os
 import sys
 from pathlib import Path
+
+from daesingo.common import load_env_file
 
 from . import build_gemini_search_service, search_candidates, verify_visual
 from .report import render_report
@@ -29,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
             "--event-type", action="append", choices=[e.value for e in VisualEventType]
         )
     args = parser.parse_args(argv)
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = load_env_file().get("GEMINI_API_KEY", "").strip()
     if not api_key:
         print("실패: GEMINI_API_KEY is not set", file=sys.stderr)
         return 2

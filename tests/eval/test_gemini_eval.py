@@ -34,8 +34,11 @@ def test_preflight_reports_all_boundary_requirements_before_provider_creation(
         }
         for index in range(123)
     ]
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    monkeypatch.setenv("DAESINGO_EVAL_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        gemini_preflight,
+        "load_env_file",
+        lambda: {"DAESINGO_EVAL_DATA_ROOT": str(tmp_path)},
+    )
     monkeypatch.setattr(
         gemini_preflight.manifests_io, "load_clips", lambda _: {"clips": clips}
     )

@@ -56,7 +56,18 @@ class GeminiProvider:
     ) -> None:
         genai = importlib.import_module("google.genai")
         self._interactions = importlib.import_module("google.genai.interactions")
-        self._client = genai.Client(api_key=api_key)
+        # 프록시는 Bearer 인증을 요구한다. base_url 을 지정 프록시로 돌리면
+        # files.upload 와 interactions.create 가 모두 프록시를 경유한다.
+        # ponytail: base_url 이 이미 /v1 을 포함한다. 프록시가 SDK 의 버전
+        # 경로(/v1beta 등)를 덧붙이는 경우 운영자가 DAESINGO_GEMINI_BASE_URL 로
+        # 버전 없는 base 를 지정하거나 api_version 을 맞춰야 한다 — 로컬 실호출로 확인.
+        self._client = genai.Client(
+            api_key=api_key,
+            http_options={
+                "base_url": config.base_url,
+                "headers": {"Authorization": f"Bearer {api_key}"},
+            },
+        )
         self._config = config
         self._cache = cache or MemoryUploadCache()
 

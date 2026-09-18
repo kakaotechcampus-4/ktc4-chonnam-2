@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import pytest
 from pydantic import ValidationError
 
+from daesingo.common import load_env_file
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.fine import normalize_event_type
 from daesingo.search.privacy import mask_license_plates
@@ -113,8 +114,36 @@ def test_privacy_and_fine_legacy_event_mapping():
     assert normalize_event_type("LANE_CHANGE") is VisualEventType.SOLID_LINE_LANE_CHANGE
 
 
-def test_config_environment_defaults_are_values_not_slot_descriptors(monkeypatch):
-    monkeypatch.delenv("DAESINGO_GEMINI_MODEL", raising=False)
-    config = GeminiSearchConfig.from_env()
-    assert config.model == "gemini-3-flash-preview"
+def test_config_defaults_are_values_not_slot_descriptors():
+    config = GeminiSearchConfig.from_dotenv(env={})
+    assert config.model == "gemini-3.8-flash"
+    assert config.base_url.endswith("/v1")
+
+
+def test_config_reads_values_from_env_mapping_only():
+    config = GeminiSearchConfig.from_dotenv(
+        env={
+            "DAESINGO_GEMINI_MODEL": "gemini-x",
+            "DAESINGO_GEMINI_BASE_URL": "https://proxy.local/v1",
+        }
+    )
+    assert config.model == "gemini-x"
+    assert config.base_url == "https://proxy.local/v1"
+    # 미지정 키는 코드 기본값을 쓴다.
     assert config.media_resolution == "low"
+
+
+def test_load_env_file_parses_keys_and_ignores_env_vars(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        '# comment\nGEMINI_API_KEY="secret"\nDAESINGO_GEMINI_MODEL=gemini-x\n\nBAD LINE\n',
+        encoding="utf-8",
+    )
+    # shell 환경변수는 무시된다 — 값은 .env 에서만 온다.
+    monkeypatch.setenv("GEMINI_API_KEY", "from-shell")
+    values = load_env_file(str(env_file))
+    assert values == {"GEMINI_API_KEY": "secret", "DAESINGO_GEMINI_MODEL": "gemini-x"}
+
+
+def test_load_env_file_missing_returns_empty(tmp_path):
+    assert load_env_file(str(tmp_path / "nope.env")) == {}
