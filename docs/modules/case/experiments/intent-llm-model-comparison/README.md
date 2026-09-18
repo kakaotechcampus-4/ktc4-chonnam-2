@@ -14,6 +14,14 @@
 - 사람이 직접 pass/fail 라벨링: 가장 정확하지만, 프롬프트나 모델을 바꿔 재실행할 때마다 3개 모델 × N개 케이스를 매번 다시 사람이 봐야 해서 반복 실험(재실행이 전제인 locked dataset 취지)에 안 맞음.
 - **LLM-judge(채택)**: 자유 텍스트의 의미적 동치를 판단할 수 있으면서 재실행 비용이 낮음. 단점(judge 자체의 신뢰성)은 판정의 일부를 사람이 스팟체크하는 것으로 보완한다(아래 「검증」 절).
 
+**"correct/partial/wrong" 하나로는 부족해서 hallucinated/missed로 더 쪼갰다.** 단순 정확도만 보면 "모델이 없는 내용을 지어냈다"와 "모델이 있는 내용을 놓쳤다"가 똑같이 "틀림"으로 뭉개진다. 이 둘은 원인도 다르고(전자는 과감함, 후자는 소극적 과묵) 신고 준비 맥락에서 위험도도 다르다(있지도 않은 차량 색상을 지어내는 쪽이 더 위험하다). 그래서 judge 판정을 `correct / partial / hallucinated / missed` 4종으로 나누고(`schema.py`), `aggregate.py`에서 다음을 모델별로 집계한다:
+
+- `schema_compliance_rate` — 스키마 준수율
+- `field_accuracy_rate` — 필드별 정확도(위 원래 채점 방식)
+- `hallucination_rate` — 없는 정보를 지어낸 비율
+- `missed_rate` — 있는 정보를 null로 놓친 비율(= null/UNKNOWN 처리가 안 된 비율)
+- `per_scenario_accuracy` — 카테고리별 정확도. 데이터셋에 이미 있는 7개 태그를 그대로 써서 "애매한 표현 처리 정확도"(`전부_모호`·`차량_애매`·`위치_애매`)와 "correction 후 값 반영 정확도"(`잘못_입력_후_correction`)를 전체 평균에 묻히지 않고 따로 뽑는다.
+
 ## 이 데이터셋과 Mock Pack의 차이
 
 `data/mock/case/scenario_happy_*.json`은 workflow/contract 검증용이고 `hints` 필드가 이미 구조화된 결과물이다(원문 문장이 없음). 이 폴더의 데이터셋은 **원문 문장 → LLM 추출 결과**를 실측하기 위한 것이라 목적이 다르다. `phase1-completion-checklist.md` 74번 항목이 명시한 "AI 실측은 1차 Mock 범위 밖"이 이 작업이다. 두 데이터는 서로 대체하지 않는다.
@@ -48,8 +56,9 @@ scripts/
   dataset.py     # datasets/*.jsonl 로더
   candidates.py  # CandidateAdapter 인터페이스 + 3개 벤더 stub (실행 전 벤더 문서 확인 필요 — TODO 표시)
   runner.py      # dataset × candidates → predictions/*.jsonl (불변 저장)
-  judge.py       # predictions × judge 모델 → 필드별 correct/partial/wrong 판정
-  aggregate.py   # 스키마 준수율 · 필드 정확도율 · 비용/latency 집계 → results/summary.md
+  judge.py       # predictions × judge 모델 → 필드별 correct/partial/hallucinated/missed 판정
+  aggregate.py   # 스키마 준수율 · 필드 정확도율 · hallucination/missed rate · 카테고리별 정확도 ·
+                 # 비용/latency 집계 → results/summary.md
 ```
 
 Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API 호출(prediction)을 다시 하지 않아도 되게 한다.

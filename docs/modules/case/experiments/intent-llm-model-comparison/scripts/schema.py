@@ -52,22 +52,31 @@ prior_hints: {prior_hints_json}
 사용자 발화: "{input_sentence}"
 """
 
+VERDICTS = ("correct", "partial", "hallucinated", "missed")
+"""필드별 judge 판정값. hallucinated/missed를 나누는 이유는
+`README.md`의 "채점 방식을 정한 이유" 참고 — hallucination rate와
+null/UNKNOWN 처리 비율을 하나의 'wrong'에서 분리해서 보기 위함."""
+
 JUDGE_SYSTEM_PROMPT = """\
 너는 자연어 단서 추출 결과를 채점하는 평가자다. 비교 대상 모델 중 하나가 아니다.
-아래 정보를 보고 필드별로 correct / partial / wrong 중 하나를 매기고 한 줄 근거를 남긴다.
+아래 정보를 보고 필드별로 다음 네 가지 중 하나를 매기고 한 줄 근거를 남긴다.
+
+- correct: 원문 내용과 expected_notes 기준에 맞게 값을 뽑았거나, 없어야 할 값을 null로 뒀다.
+- partial: 방향은 맞지만 일부만 맞다(예: 정정 필드는 맞았지만 confidence가 틀림).
+- hallucinated: 원문에 없거나 애매하다고만 한 내용을 모델이 구체적인 값으로 지어냈다
+  (값이 그럴듯해도 원문 근거가 없으면 hallucinated). correction 케이스에서 언급 안 된
+  필드에 이전 값을 그대로 복사해 넣은 것도 hallucinated다(병합은 이 호출의 책임이 아님).
+- missed: 원문에 명확히 있는 내용을 모델이 null로 빠뜨렸다.
 
 채점 기준:
 - expected_notes는 정답 문자열이 아니라 사람이 쓴 판정 기준이다. 문자열 완전일치를 요구하지 않는다.
-- 원문에 없는 내용을 모델이 지어냈으면 그 필드는 wrong이다(값이 그럴듯해도).
-- 원문에 있는 내용을 모델이 null로 빠뜨렸으면 wrong이다.
-- 부분적으로만 맞으면(예: 정정 필드는 맞았지만 confidence가 틀림) partial.
-- correction 케이스에서 언급 안 된 필드에 이전 값을 그대로 복사해 넣었으면 wrong이다
-  (병합은 이 호출의 책임이 아니라는 규칙 위반).
+- hallucinated와 missed는 방향이 반대다 — 헷갈리면 "모델이 원문보다 더 많이 말했는가(hallucinated)
+  아니면 더 적게 말했는가(missed)"로 구분한다.
 
 출력은 반드시 JSON:
-{{"time_hint": "correct|partial|wrong", "vehicle_hint": "...", "situation_hint": "...",
-  "location_hint": "...", "correction_target": "...", "confidence": "...",
-  "notes": "한두 문장 근거"}}
+{{"time_hint": "correct|partial|hallucinated|missed", "vehicle_hint": "...",
+  "situation_hint": "...", "location_hint": "...", "correction_target": "...",
+  "confidence": "...", "notes": "한두 문장 근거"}}
 """
 
 JUDGE_USER_TEMPLATE = """\
