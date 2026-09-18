@@ -126,6 +126,7 @@
           "candidate_id": "candidate_u001",
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
+          "at_provenance_label_key": "candidate.at_provenance.filename_time",
           "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
           "thumb_ref": "fr_u001_plate1",
           "selected": true,
@@ -334,6 +335,7 @@
           "candidate_id": "candidate_u001",
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
+          "at_provenance_label_key": "candidate.at_provenance.filename_time",
           "observed": "은색 해치백이 정지선을 넘어 교차로를 통과하는 장면으로 추정됨",
           "thumb_ref": "fr_u001_plate1",
           "selected": true,
@@ -489,6 +491,22 @@
               {
                 "kind": "evidence_record",
                 "ref": "ev_u001"
+              }
+            ]
+          },
+          {
+            "code": "package.time.post_stamp_applied",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "time.post_stamp_burned_in",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_u001_report_video"
+              },
+              {
+                "kind": "time_resolution",
+                "ref": "tres_u001"
               }
             ]
           }

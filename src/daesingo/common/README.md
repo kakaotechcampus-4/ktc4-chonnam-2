@@ -16,6 +16,6 @@ storage   storage adapters
 - 작업 **발주 의도와 부분 재실행 정책**은 `case`가 소유한다. 여기는 execution lifecycle만 소유한다 (§4-모듈5 ④).
 - `case`가 Worker 구현을 import하고 Worker가 다시 `case`/`search`를 import하는 **순환을 만들지 않는다.** 연결은 `api/`·`worker/` composition root가 한다.
 
-## 상태
+## 현재 구현
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+1차 Mock E2E 범위로 `JobExecution` v1.1 모델, 공용 fixture loader와 in-memory lifecycle을 구현했다. `InMemoryJobExecutionStore`는 attempt 증가와 허용 상태 전이를 검증하며 실제 DB Queue, lease, heartbeat는 후속 통합 대상이다.
