@@ -77,8 +77,11 @@ python scripts/aihub71555_labels.py sample --n 1600 --seed 20260919 \
     --out docs/modules/readout/experiments/track1-vehicle-2026-09-19/sample-manifest.json
 python scripts/aihub71555_detect.py --selfcheck      # IoU·매칭 자체 점검
 python scripts/aihub71555_detect.py \
-    --manifest .../sample-manifest.json --model yolo11n.pt --out .../detections.json
+    --manifest .../sample-manifest.json --model yolo11n.pt --out .../detections.json     # 진행 로그는 stderr
 python scripts/aihub71555_report.py --detections .../detections.json > .../RESULTS.md
+
+python scripts/aihub71555_associate.py --selfcheck        # 선택 규칙 자체 점검
+python scripts/aihub71555_associate.py --detections .../detections.json > .../ASSOCIATION.md  # 재실행 없이 다시 접는다
 ```
 
 `ROOT` 경로는 `scripts/aihub71555_labels.py` 상단에 하드코딩돼 있다. 다른 기계에서는
