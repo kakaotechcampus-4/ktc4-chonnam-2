@@ -7,7 +7,7 @@ name = "daesingo"
 version = "0.1.0"
 description = "대신고 모듈형 모놀리스 백엔드"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 license = { file = "LICENSE" }
 dependencies = [
   "pydantic>=2.0,<3.0",
@@ -17,12 +17,19 @@ dependencies = [
 test = [
   "pytest>=8.0,<9.0",
 ]
+eval-gemini = [
+  "anyio>=4.0,<5.0",
+  "google-genai>=2.13,<3.0",
+]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"daesingo.search" = ["prompt_resources/*.txt"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
