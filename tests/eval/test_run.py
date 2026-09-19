@@ -11,13 +11,13 @@ def test_envelope_has_meta_raw_normalized():
     assert env["meta"]["stage"] == "candidate"
     assert env["meta"]["manifest"] == "b_youtube"
     assert env["meta"]["normalizer_version"] == "n1"
-    assert env["meta"]["manifest_version"] == "m1"
+    assert env["meta"]["manifest_version"] == "m3"
 
 
 def test_envelope_raw_is_preserved_not_replaced_by_normalized():
     env = run.build_envelope("fake:always_correct", "b_youtube", "candidate", "run_test_002")
     assert env["raw"] is not env["normalized"]
-    assert len(env["raw"]) == 55
+    assert len(env["raw"]) == 123
 
 
 def test_envelope_raw_matches_impl_output_exactly():

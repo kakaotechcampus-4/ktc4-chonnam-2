@@ -58,11 +58,24 @@ def test_span_error_sec_key_is_gone():
 
 
 def test_always_correct_gets_perfect_recall():
+    """치트 구현은 K 가 한 조각의 사건 수를 덮을 때만 만점이다.
+
+    한 조각에 사건이 2건이면(YT_0003_C05) 두 번째 사건은 rank 2 로만 나오므로
+    recall@1 은 구조적으로 1.0 이 못 된다. 그래서 K=1 기대값은 「rank 1 에 오는
+    사건 수 / 채점 사건 수」로 계산한다 — 리터럴로 굳히면 조각 구성이 바뀔 때마다
+    지표 버그와 데이터 변경을 구분할 수 없다.
+    """
     gt = manifests_io.load_gt("b_youtube", "candidate")
     r = candidate.score(_run("fake:always_correct"), gt)
-    assert r["recall_at"]["1"] == 1.0
     assert r["recall_at"]["3"] == 1.0
+    assert r["recall_at"]["10"] == 1.0
     assert r["fp_per_clip"] == 0.0
+    scored = [[t for t in i["targets"] if t.get("scoring") != "BOUNDARY_EXCLUDED"]
+              for i in gt["items"]]
+    at_rank_1 = sum(1 for i in gt["items"]
+                    for idx, t in enumerate(i["targets"])
+                    if idx == 0 and t.get("scoring") != "BOUNDARY_EXCLUDED")
+    assert r["recall_at"]["1"] == at_rank_1 / sum(len(ts) for ts in scored)
 
 
 def test_always_wrong_gets_zero_recall_and_positive_fp():
@@ -84,14 +97,15 @@ def test_boundary_excluded_targets_are_not_counted():
     assert r["n_events"] == n_included
     # 재계산값과 별개로 리터럴 값도 고정한다 — C47(BOUNDARY_EXCLUDED) 처리
     # 회귀를 간접적으로(fp_per_clip 등을 통해서)가 아니라 직접 잡는다.
-    assert r["n_events"] == 4
-    assert r["n_negative_clips"] == 50
+    assert r["n_events"] == 10
+    assert r["n_negative_clips"] == 113
 
 
 def test_by_type_breakdown_lists_only_present_types():
     gt = manifests_io.load_gt("b_youtube", "candidate")
     r = candidate.score(_run("fake:always_correct"), gt)
-    assert set(r["by_type"]) == {"SIGNAL", "SOLID_LINE_LANE_CHANGE"}
+    assert set(r["by_type"]) == {"SIGNAL", "SOLID_LINE_LANE_CHANGE",
+                                "CENTER_LINE_CROSSING"}
     # 키 집합뿐 아니라 값도 고정한다 — by_type 분모가 전체 사건 수로 새는
     # 회귀(예: 전역 n_events 를 나눠 쓰는 버그)를 여기서 잡는다.
     assert r["by_type"]["SIGNAL"]["n"] == 2
@@ -278,3 +292,125 @@ def test_included_target_without_violation_type_raises():
     ]}]}
     with pytest.raises(ValueError, match="EV_X"):
         candidate.score([{"clip_id": "c1", "candidates": []}], gt)
+
+
+def _gt_two_events(onset_a, onset_b, violation_type="SIGNAL"):
+    """한 클립에 사건 2건. F7 이 다루는 모양이다."""
+    return {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "EA", "scoring": "INCLUDED",
+         "violation_type": violation_type, "t_onset_sec": onset_a},
+        {"event_id": "EB", "scoring": "INCLUDED",
+         "violation_type": violation_type, "t_onset_sec": onset_b},
+    ]}]}
+
+
+def _preds(*cands):
+    """(representative_sec, score) 들을 한 클립의 후보 목록으로."""
+    return [{"clip_id": "c1", "candidates": [
+        {"rank": i + 1, "t_start_sec": rep - 1.0, "t_end_sec": rep + 1.0,
+         "representative_sec": rep, "timeline_revision": 1,
+         "event_type": "SIGNAL", "score": score}
+        for i, (rep, score) in enumerate(sorted(cands, key=lambda c: -c[1]))
+    ]}]
+
+
+def test_one_candidate_cannot_hit_two_events(): 
+    """예측 하나가 사건 2건의 적중으로 중복 계수되지 않는다 (F7).
+
+    tolerance 2.0 안에 사건 둘(10.0 · 11.0)이 있고 후보는 하나(10.5)다.
+    1:1 배정이 없으면 recall 이 2/2 로 부풀어 오른다.
+    """
+    out = candidate.score(_preds((10.5, 1.0)), _gt_two_events(10.0, 11.0))
+    assert out["n_events"] == 2
+    assert out["recall_at"]["10"] == 0.5
+
+
+def test_assignment_finds_the_maximum_number_of_hits():
+    """배정이 최대 적중을 찾는다 — 사건 순서·rank 순서에 지지 않는다.
+
+    EB(13.0)는 후보 11.5 하고만 맞고, EA(10.0)는 11.5·10.0 둘 다와 맞는다.
+    EA 가 rank 1 인 11.5 를 먼저 집어 삼키면 EB 가 굶어 1/2 이 된다.
+    맞는 답은 EA←10.0 · EB←11.5 로 2/2 다.
+
+    중복 계수를 막는 코드(F7)를 탐욕 배정으로 짜면 이 테스트가 깨진다.
+    지금은 1:1 배정 자체가 없어 통과하므로, 이 테스트는 잘못된 고침을
+    막는 가드다.
+    """
+    out = candidate.score(_preds((11.5, 1.0), (10.0, 0.9)),
+                          _gt_two_events(10.0, 13.0))
+    assert out["recall_at"]["10"] == 1.0
+
+
+def test_by_type_recall_uses_the_same_assignment():
+    """유형별 집계도 같은 배정을 쓴다 — 전체와 어긋나면 둘 중 하나가 거짓이다."""
+    out = candidate.score(_preds((10.5, 1.0)), _gt_two_events(10.0, 11.0))
+    assert out["by_type"]["SIGNAL"]["recall_at"]["10"] == 0.5
+    assert out["by_type"]["SIGNAL"]["n"] == 2
+
+
+def _gt_ordered(pairs):
+    """(event_id, onset) 순서를 그대로 정답지 줄 순서로 쓴다."""
+    return {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": eid, "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": onset}
+        for eid, onset in pairs]}]}
+
+
+def test_error_metrics_do_not_depend_on_gt_line_order():
+    """정답지 줄 순서를 바꿔도 모든 지표가 같아야 한다.
+
+    최대 매칭은 크기만 유일하고 어느 쌍으로 맺는지는 유일하지 않다.
+    recall 은 크기만 쓰므로 순서 무관이지만 onset_error_sec·containment_rate
+    는 선택된 쌍에 의존한다 — 배정 순서가 정답지 줄 순서를 타면
+    같은 예측·같은 사건인데 containment 가 0.0 ↔ 1.0 으로 뒤집힌다.
+    """
+    pred = _preds((10.0, 1.0), (10.5, 0.9))
+    a = candidate.score(pred, _gt_ordered([("EA", 10.0), ("EB", 10.5)]))
+    b = candidate.score(pred, _gt_ordered([("EB", 10.5), ("EA", 10.0)]))
+    assert a["recall_at"] == b["recall_at"]
+    assert a["onset_error_sec"] == b["onset_error_sec"]
+    assert a["containment_rate"] == b["containment_rate"]
+
+
+def test_assignment_prefers_the_closer_candidate_for_each_event():
+    """배정이 자유로울 때는 오차가 작은 쪽으로 붙는다.
+
+    크기가 같은 최대 매칭이 여럿이면 어느 것을 골라도 recall 은 같지만,
+    아무거나 고르면 onset_error_sec 가 실제보다 나쁘게 나온다.
+    """
+    out = candidate.score(_preds((10.0, 1.0), (10.5, 0.9)),
+                          _gt_ordered([("EA", 10.0), ("EB", 10.5)]))
+    assert out["recall_at"]["10"] == 1.0
+    assert out["onset_error_sec"]["mean"] == 0.0
+    assert out["containment_rate"] == 1.0
+
+
+def test_duplicate_clip_id_items_share_one_assignment():
+    """같은 clip_id 가 GT 항목 두 개로 쪼개져 있어도 후보는 한 번만 쓰인다.
+
+    클립별로 배정하지 않고 항목별로 배정하면 _assign 이 두 번 따로 돌아
+    같은 후보가 양쪽에서 적중으로 세어진다 — F7 이 막으려던 바로 그것이다.
+    """
+    gt = {"items": [
+        {"clip_id": "c1", "targets": [
+            {"event_id": "A", "scoring": "INCLUDED",
+             "violation_type": "SIGNAL", "t_onset_sec": 10.0}]},
+        {"clip_id": "c1", "targets": [
+            {"event_id": "B", "scoring": "INCLUDED",
+             "violation_type": "SIGNAL", "t_onset_sec": 10.5}]},
+    ]}
+    out = candidate.score(_preds((10.2, 1.0)), gt)
+    assert out["n_events"] == 2
+    assert out["recall_at"]["10"] == 0.5
+
+
+def test_types_with_no_events_are_named_in_coverage():
+    """by_type 에 키가 없는 유형은 「측정하지 않았다」는 뜻이다.
+
+    키가 없는 것과 0점인 것을 결과 파일만 보고 구분할 수 없으면, baseline
+    4종 중 1종을 못 쟀다는 사실이 조용히 사라진다 (B tier 의 안전모).
+    """
+    out = candidate.score(_preds((10.0, 1.0)), _gt_ordered([("EA", 10.0)]))
+    assert "SIGNAL" in out["by_type"]
+    assert "NO_EVENTS_FOR_TYPE" in out["coverage"]
+    assert "MOTORCYCLE_HELMET_NON_USE" in out["coverage"]

@@ -132,3 +132,82 @@ def test_target_correctness_denominator_excludes_no_bbox_items():
     ]
     r = classification.score(norm, gt)
     assert r["target_correctness"] == 0.5
+
+
+def test_malformed_predicted_bbox_is_counted_not_silently_zero():
+    """형식이 깨진 예측 bbox 를 「틀렸다」와 섞지 않는다 (F11).
+
+    _iou_2d 는 길이가 4가 아니면 조용히 0.0 을 낸다. 그러면 「대상 차량을
+    잘못 짚었다」와 「bbox 가 망가져서 잴 수 없었다」가 같은 실점이 된다.
+    라벨 쪽 n_invalid_gt_labels 와 같은 모양의 카운터로 드러낸다.
+    """
+    norm = [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10]}]
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    r = classification.score(norm, gt)
+    assert r["n_invalid_bboxes"] == 1
+    assert r["target_correctness"] == 0.0
+    assert "INVALID_BBOXES" in r["coverage"]
+
+
+def test_wellformed_but_wrong_bbox_is_not_counted_as_malformed():
+    """틀린 bbox 는 형식 오류가 아니다 — 둘을 가르는 게 이 카운터의 목적이다."""
+    norm = [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": [90, 90, 99, 99]}]
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    r = classification.score(norm, gt)
+    assert r["n_invalid_bboxes"] == 0
+    assert r["target_correctness"] == 0.0
+
+
+def test_not_run_block_carries_the_invalid_bbox_key():
+    """돌지 않은 stage 도 키를 빼지 않는다 (§7 규율)."""
+    assert classification.not_run("NOT_RUN — x")["n_invalid_bboxes"] is None
+
+
+def test_excluded_denominators_are_explained_in_coverage():
+    """분모에서 뺀 항목을 결과가 스스로 말해야 한다 (§7 규율 3).
+
+    n 은 150인데 target_correctness 분모가 115, by_condition 합이 120이면
+    결과 파일만 보고는 그 차이를 복원할 수 없다. 지표가 전부 null 이
+    아니어도 「무엇을 왜 뺐는가」는 실린다.
+    """
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": [0, 0, 10, 10],
+         "condition": {"day_night": "주간"}, "source_tier": "A"},
+        {"sequence_id": "B1", "label": "NONE", "target_bbox": None,
+         "condition": None, "source_tier": "B"},
+        {"sequence_id": "B2", "label": "NONE", "target_bbox": None,
+         "condition": None, "source_tier": "B"},
+    ]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]},
+            {"sequence_id": "B1", "predicted": "NONE", "target_bbox": None},
+            {"sequence_id": "B2", "predicted": "NONE", "target_bbox": None}]
+    r = classification.score(norm, gt)
+
+    assert r["n"] == 3
+    assert "NO_TARGET_BBOX_GT" in r["coverage"]
+    assert "NO_CONDITION" in r["coverage"]
+    # 몇 건을 뺐는지가 적혀야 복원된다.
+    assert "2건" in r["coverage"]
+
+
+def test_nothing_excluded_means_no_denominator_reason():
+    """뺀 게 없으면 사유도 없다 — 없는 경고를 만들지 않는다."""
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": [0, 0, 10, 10],
+         "condition": {"day_night": "주간"}, "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]}]
+    assert classification.score(norm, gt)["coverage"] is None
+
+
+def test_inverted_predicted_bbox_is_counted_as_malformed():
+    """넓이가 0 이하인 예측 bbox 는 IoU 가 구조적으로 0 이라 영원히 오답이다.
+
+    GT 쪽에는 이 검사를 넣어 두고 예측 쪽에만 없으면, 「대상을 잘못 짚었다」와
+    「bbox 가 망가졌다」가 다시 같은 0점으로 섞인다.
+    """
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    for box in ([10, 0, 10, 20], [10, 10, 5, 5]):
+        r = classification.score(
+            [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": box}], gt)
+        assert r["n_invalid_bboxes"] == 1, box
+        assert "INVALID_BBOXES" in r["coverage"], box

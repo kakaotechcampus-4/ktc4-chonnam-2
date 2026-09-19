@@ -831,6 +831,60 @@ for sid, mods in scenario_docs.items():
                     f"'{r.get('ref')}'.selection_rev={corr.get('selection_rev')!r} — selection_rev는 "
                     f"수정 발생 시점의 candidate 선택 context이므로 이 둘은 일치해야 한다")
 
+# ---- 8b. CaseView.progress[] step 집합 ---------------------------------------
+#
+# contract-job-record-case-view.md B§7 「progress[]의 step 집합 규칙」(v1.3, 이슈 #31 W-7):
+#   규칙 1 — 모든 모듈이 package_assembly까지 이어질 수 있는 시나리오는 도달 여부와 무관하게
+#            8단계 전부를 싣는다(미도달 step은 PENDING).
+#   규칙 2·3 — 시나리오 카탈로그가 modules_intentionally_absent로 선언한 모듈의 step은
+#            PENDING으로도 넣지 않고 배열에서 아예 뺀다.
+#
+# 이슈 #38 B-2(correction_rerun_001 rev2·rev3에 package_assembly 누락)가 자동 검증에 걸리지 않아
+# 사람 눈으로만 잡혔던 항목이라 기계 검사로 옮긴다.
+
+CANONICAL_PROGRESS_STEPS = (
+    "file_intake", "coarse_search", "candidate_review",
+    "plate_read", "overlay_time_read",
+    "evidence_assembly", "requirement_check", "package_assembly",
+)
+
+# absent 모듈이 배열에서 빼는 step. search/recording/case의 step은 어느 시나리오에서도 빠지지
+# 않으므로 등록하지 않는다 — 예: infra_failure_001은 search를 absent로 선언하지만 coarse_search·
+# candidate_review는 그대로 있다(그 두 step은 case의 진행 단계이지 search 모듈 fixture가 아니다).
+PROGRESS_STEPS_BY_MODULE = {
+    "readout": ("plate_read", "overlay_time_read"),
+    "evidence": ("evidence_assembly", "requirement_check", "package_assembly"),
+}
+
+scenario_manifests = {}
+for manifest_path in sorted((ROOT / "scenarios").glob("scenario_*.json")):
+    manifest_doc = all_docs.get(manifest_path)
+    if isinstance(manifest_doc, dict) and manifest_doc.get("scenario_id"):
+        scenario_manifests[manifest_doc["scenario_id"]] = manifest_doc
+
+for sid, mods in scenario_docs.items():
+    case_doc = mods.get("case")
+    if not case_doc:
+        continue
+    absent = scenario_manifests.get(sid, {}).get("modules_intentionally_absent") or {}
+    dropped = set()
+    for module in absent:
+        dropped.update(PROGRESS_STEPS_BY_MODULE.get(module, ()))
+    expected = [step for step in CANONICAL_PROGRESS_STEPS if step not in dropped]
+    for i, cv in enumerate(case_doc.get("case_views", [])):
+        base = f"{sid}/case.case_views[{i}].progress"
+        actual = [step.get("step") for step in cv.get("progress", [])]
+        if set(actual) != set(expected):
+            missing = [s for s in expected if s not in actual]
+            extra = [s for s in actual if s not in expected]
+            err(f"[INVARIANT] {base}[] step set mismatch — missing={missing} extra={extra} "
+                f"(absent modules: {sorted(absent) or 'none'}; "
+                f"contract-job-record-case-view.md B§7 step 집합 규칙)")
+        elif actual != expected:
+            # 집합은 맞는데 순서만 다른 경우. 계약이 순서를 명문화하지 않아 오류로 올리지 않는다.
+            warn(f"{base}[] step order {actual} differs from pipeline order {expected}")
+
+
 # ---- 9. plate consensus / masking consistency -------------------------------
 
 for sid, mods in scenario_docs.items():
