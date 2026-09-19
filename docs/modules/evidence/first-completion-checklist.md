@@ -6,21 +6,30 @@
 > 적용 범위: `evidence`의 입력 소비·출력 생산·Consumer 접합. **common/runtime 구현은 제외한다.**
 > 이 문서는 완료 조건이다. 내부 설계서나 현재 구현 완료 보고서가 아니며, 체크박스는 증빙을 확보한 뒤 표시한다.
 
-> **체크 표시 근거(2026-09-19):** 체크박스는 [`first-completion-result.md`](first-completion-result.md)의 수행 결과와 그 증빙(`artifacts/first-completion/`의 `run-summary.json`·네 baseline JSON은 `base_revision` `78904bd` 기준 재생성, `tests/evidence` 46 tests, 공용 검증 3종)으로 표시했다. 완료 조건 본문·기준일·작성 시점은 수정하지 않았다. 아래 4개 항목은 증빙이 없어 **미표시로 남긴다.**
+> **체크 표시 근거(2026-09-19):** 체크박스는 [`first-completion-result.md`](first-completion-result.md)의 수행 결과와 그 증빙(`artifacts/first-completion/`의 `run-summary.json`·네 baseline JSON은 `base_revision` `78904bd` 기준 재생성, `tests/evidence` 46 tests, 공용 검증 3종)으로 표시했다. 완료 조건 본문·기준일·작성 시점은 수정하지 않았다.
+>
+> **재확인(2026-09-19, 6개 모듈 `develop` 통합 반영):** 위 표시 이후 [`04_mock_validation_report.md`][M4] 12차 갱신이 기록한 6개 모듈 순차 통합(PR #51·#53·#54·#55·#58·#59·#60)으로 `case`·`web`·`eval`의 실제 코드가 생겨, 당시 미표시였던 4개 중 **3개의 증빙이 확보돼 추가 표시했다.** 재확인 시 직접 실행한 결과는 `tests/evidence` 46 tests OK, 전체 `pytest` 507 passed / 5 skipped, `validate_mock_pack.py` 51 JSON·7 Scenario PASS, `check_contract_fixtures.py` 60/26/104 PASS, `check_boundaries.py` 위반 0건, `python -m daesingo.evidence.mock_integration` 재생성 결과가 커밋된 네 baseline과 `base_revision` 한 줄을 빼고 동일이다.
+>
+> | 추가 표시 항목 | 확보한 증빙 |
+> | --- | --- |
+> | 회의 핵심 「신고 준비의 세 조건」 | `case-view/v1.4`가 `user_reviewed`를 `stage`와 별개 축으로 갖고([C12] §B), `src/daesingo/case/view.py`가 이를 투영한다. `data/mock/case/scenario_happy_001.json`의 rev3(`READY`·`pkg_h001`·`user_reviewed=false`) → rev4(동일 Package·`user_reviewed=true`)가 `PACKAGE_READY`와 `USER_REVIEWED`의 분리를, `scenario_plate_reread_001` rev4(`requirements_evidence=PASS`·Package 없음·`EVIDENCE_REVIEW`)가 `EVIDENCE_SUFFICIENT`와 `PACKAGE_READY`의 분리를 실제 Artifact로 보여준다. `tests/case/test_domain.py`가 rev3→rev4 전이를 검사한다 |
+> | Integration 「`case`의 safe projection 보존 확인」 | `src/daesingo/case/view.py`가 `requirements_evidence`·`requirements_package`를 별도 객체로 투영하고(두 scope 보존), `package`는 없으면 `null`이며(Package 유무 보존), `evidence.*_display`의 `source_label_key`·`needs_review`·`review_needed`가 시각 출처와 검토 필요를 보존한다. H/U/P/R 네 Scenario의 case smoke test가 두 scope를 모두 단언하고, `correction_rerun` smoke가 `time.source.filename → time.source.user_correction` 출처 변화를 검사한다. `apps/web/src`는 `requirement_report`·`report_package`·`evidence_record`를 직접 읽지 않고 `CaseView`만 소비한다(`check_boundaries.py` 위반 0건). 나아가 `src/daesingo/case/real_e2e.py`가 H에서 `resolve_time`·`assemble_evidence`·`calculate_evidence_needs`·`evaluate_requirements`·`build_report_package` **공개 함수를 실제로 호출**해 `CaseView`를 `READY`까지 만든다(`tests/case/test_real_e2e.py`) — Consumer Mock을 넘어선 실제 접합이다. 다만 이 real 경로에서는 Package가 발행되지 않는다(아래 주의) |
+> | Test/Evaluation 「eval 제공 값」 | [Module Architecture][A] §9-3이 「최종 source 선택 규칙 자체는 `evidence`의 pure policy/unit test에서 검증하고, 이를 위해 eval이 evidence를 import하지 않는다」로 확정했다. `eval/README.md` 호출 규칙도 「`case`·`evidence`·`web`을 모른다」이며, `eval/runners/impls/mock_pack.py`는 `search`/`readout`/`recording` fixture만 읽는다. 즉 evidence가 eval에 넘기는 값은 없고, 그 대신 두어야 할 evidence 자체 unit test(46 tests)가 존재한다. `mock_pack` 결과는 eval README가 스스로 「배관 확인용, 성능 근거 아님」으로 적어 Fixture PASS가 AI/OCR 정확도로 보고되지 않는다 |
+>
+> **주의 — real 경로와 baseline 경로의 결과가 다르다.** `case.real_e2e`로 H를 실제 호출하면 `EVIDENCE=WARN`, `FINAL_PACKAGE=UNKNOWN`, Package 미발행(`package.requirement_not_ready`)이다. `package.vehicle.plate_visible_in_report_video`·`package.time.overlay_visible`·`package.evidence.situation_response`·`package.report.content_length` 네 check가 `UNKNOWN`이기 때문이며, 이는 [`first-completion-result.md`](first-completion-result.md)가 「Runtime 한계」와 I4로 이미 예고한 상태다. 위 Core Flow·Output Contract·ReportPackage 체크는 **baseline(mock adapter) 경로 기준**이고, real 경로의 Package 발행은 `case`의 `situation_response` 수집과 I4 관찰 배선이 끝난 뒤 다시 확인한다.
+>
+> 아래 1개 항목은 증빙이 실제로 어긋나 **미표시로 남긴다.**
 >
 > | 미표시 항목 | 남은 이유 |
 > | --- | --- |
-> | 회의 핵심 「신고 준비의 세 조건」 | Consumer Mock은 두 gate만 계산하고 `USER_REVIEWED`를 산출하지 않는다. CaseView Artifact 확인은 `case` 통합 대기 |
-> | Integration 「`case`의 safe projection 보존 확인」 | 실제 CaseView projection 호출 경로가 없어 Consumer와 확인하지 못했다 |
-> | Test/Evaluation 「eval 제공 값」 | eval에 결과를 제공한 기록이 없다. 김대원 하니스 접합 대기 |
-> | RequirementReport 「H PASS·U WARN·P UNKNOWN→PASS·R WARN→PASS」 | baseline의 P v2·R v2는 `PASS`가 아니라 `WARN`이다. D1의 `evidence.location.present` WARN check가 더해진 결과이며, 두 baseline의 `comparison.known_differences`가 비어 있어 이 차이가 증빙에 기록돼 있지 않다 |
+> | RequirementReport 「H PASS·U WARN·P UNKNOWN→PASS·R WARN→PASS」 | baseline의 P v2·R v2는 `PASS`가 아니라 `WARN`이다. D1의 `evidence.location.present` WARN check가 더해진 결과이며, 두 baseline의 `comparison.known_differences`가 비어 있어 이 차이가 증빙에 기록돼 있지 않다. 공용 fixture(`data/mock/evidence/`)와 공용 `CaseView`(P rev4 `requirements_evidence=PASS`)도 D1 이전 3-check 기준에 멈춰 있어, 어느 쪽을 정본으로 맞출지 정해야 한다 |
 
 ## 회의에서 먼저 볼 핵심
 
 - [x] **Happy Path의 입력과 최종 결과를 연결해 보여준다.** `scenario_happy_001`에서 `case`가 전달한 관찰·자산 사실을 받아 `TimeResolution → EvidenceRecord → RequirementReport(EVIDENCE/FINAL_PACKAGE) → ReportPackage`가 이어지고, Consumer가 그 결과를 읽는 실행 증거가 있다.
 - [x] **사건 유형 불확실과 번호판 ABSTAIN을 구분해 보여준다.** `scenario_unknown_abstain_partial_001`의 `USER_UNSURE`·일반 신고문·WARN 경로와 `scenario_plate_reread_001`의 번호판 부재·`PLATE_REREAD`·Package 미생성 경로를 각각 설명할 수 있다. WARN Package의 현재 정합 대기 사항은 아래 Q1·Q2로 공개한다.
 - [x] **정정·부분 재판독 후 기존 근거가 보존됨을 보여준다.** `scenario_correction_rerun_001`에서는 시각만, `scenario_plate_reread_001`에서는 번호판 관련 결과만 바뀌며, 새 Evidence의 참조와 이전 snapshot을 비교할 수 있다.
-- [ ] **신고 준비의 세 조건을 구분해 보여준다.** `EVIDENCE_SUFFICIENT`, `PACKAGE_READY`, `USER_REVIEWED`가 같은 상태가 아님을 실제 Requirement·Package·CaseView Artifact로 확인한다.
+- [x] **신고 준비의 세 조건을 구분해 보여준다.** `EVIDENCE_SUFFICIENT`, `PACKAGE_READY`, `USER_REVIEWED`가 같은 상태가 아님을 실제 Requirement·Package·CaseView Artifact로 확인한다.
 - [x] **무엇으로 검증했는지 공개한다.** 각 결과가 공용 Fixture 재생인지 현재 baseline 출력인지 표시하고, 미해결 Contract 접합과 상대 구현 대기를 분리한 셀프 체크 증빙을 제출한다.
 
 ## 담당 범위
@@ -122,14 +131,14 @@ Mock Overview·Catalog·Validation Report에는 옛 미해소 설명과 후속 �
 - [x] 유소연이 evidence 출력 JSON을 `case`의 입력 경계에서 읽은 결과를 제시할 수 있다. 실제 case가 준비되지 않았다면 같은 Contract를 읽는 Consumer Mock으로 검증하고 실제 접합은 통합 대기로 기록한다. [C1][C2][C3]
 - [x] 입력 수집·readout 재발주·export 호출을 evidence가 수행하지 않는다. 필요한 후속 작업은 `EvidenceNeeds` 또는 `post_stamp` 결과로 전달된다. [A] §2 원칙6[C2] §9[C3] §9
 - [x] 공용 Mock과 baseline을 교체해도 Consumer가 읽는 Contract 필드와 상태 의미가 같다. 다른 모듈 내부 클래스·DB row·provider 응답 형식을 외부 입출력으로 노출하지 않는다. [A][C1][C2][C3]
-- [ ] `case`가 만든 safe projection에서 시각 출처·검토 필요·두 Requirement scope·Package 유무가 보존되는지 Consumer와 확인한다. web의 raw evidence 직접 소비를 전제로 하지 않는다. [C12]
+- [x] `case`가 만든 safe projection에서 시각 출처·검토 필요·두 Requirement scope·Package 유무가 보존되는지 Consumer와 확인한다. web의 raw evidence 직접 소비를 전제로 하지 않는다. [C12]
 
 ### Test / Evaluation
 
 - [x] H/U/P/R 각각의 입력, 출력, 예상 상태, 검증 결과를 재현 가능한 실행 기록으로 제시한다. U의 Q1·Q2가 미해결이면 해당 결과를 PASS로 표시하지 않는다. [M2][C1][C2][C3]
 - [x] 공용 Scenario에서 실제로 다루지 않는 필수 불변조건은 **Contract 단위 검사**로 확인하고, 공통 E2E를 실행했다고 표시하지 않는다. 아래 최소 보완 표를 따른다. [C1] §13[C3] §13
 - [x] 기존 공용 검증 명령의 결과와 evidence 자신의 동작/Consumer 검증 결과를 별도로 제시한다. [검증 명령](#검증-명령)
-- [ ] eval에서 사용하는 값은 원래 결과 ref와 기준 Scenario를 유지한 채 제공한다. 정답지·채점기·최종 성능 기준은 김대원 소유로 두고, Fixture PASS를 AI/OCR 정확도로 보고하지 않는다. [A] §9[M1]
+- [x] eval에서 사용하는 값은 원래 결과 ref와 기준 Scenario를 유지한 채 제공한다. 정답지·채점기·최종 성능 기준은 김대원 소유로 두고, Fixture PASS를 AI/OCR 정확도로 보고하지 않는다. [A] §9[M1]
 
 ### Operational — 1차 연결에 필요한 최소 범위
 
@@ -320,6 +329,17 @@ python scripts/check_boundaries.py
 **evidence 자체 실행, 최소 Contract 단위 검사, Consumer 통합 실행 명령:** `[구현 후 작성]`
 
 공개 함수 서명·CLI·테스트 러너가 아직 없으므로 `pytest`나 `python -m ...` 명령을 임의로 제시하지 않는다. 실제 명령을 추가할 때 H/U/P/R 입력 위치, 결과 위치, 실행 모드(Mock/baseline), 검사 범위를 함께 적는다. 기존 스크립트 3종이 PASS여도 Q1·Q2는 별도로 해소해야 한다.
+
+> **재확인 추가(2026-09-19).** 위 표의 「2026-09-12 확인 결과」 열은 당시 기록이라 고치지 않는다. 같은 명령을 오늘 다시 실행한 결과는 다음과 같다 — `validate_mock_pack.py`는 **51 JSON / 7 Scenario** PASS(eval-harness가 범용 expected fixture 2개를 Scenario별 7개로 교체해 +5, [M4] 12차 갱신), `check_contract_fixtures.py`는 60/26/104 PASS로 동일, `check_boundaries.py`는 **위반 0건이며 「코드 없는 모듈」 NOTE가 없다**(6개 모듈 전부 실제 코드 존재). 위 본문이 「공개 함수 서명·CLI·테스트 러너가 아직 없으므로」라고 적은 전제는 해소됐고, 실제 명령은 아래와 같다.
+>
+> ```powershell
+> $env:PYTHONPATH='src'
+> python -m unittest discover -s tests/evidence -p 'test_*.py'   # 46 tests OK
+> python -m daesingo.evidence.mock_integration                    # H/U/P/R baseline 재생성
+> python -m pytest -q                                             # 507 passed / 5 skipped
+> ```
+>
+> 입력은 `data/mock/<module>/scenario_*.json`과 `tests/evidence/fixtures/adapter_inputs.json`, 출력은 `docs/modules/evidence/artifacts/first-completion/`, 실행 모드는 baseline 순수 함수 + 공용 Mock 입력이다. 재생성 결과는 커밋된 네 baseline과 `base_revision` 한 줄만 다르다(이 필드가 HEAD를 따라가므로 커밋마다 diff가 생긴다). case 테스트는 `develop`에서 `src/daesingo/case/tests` → `tests/case`로 옮겨져 `python -m pytest` 한 줄에 전부 수집된다.
 
 ## 회의에서 말할 한 줄 요약
 
