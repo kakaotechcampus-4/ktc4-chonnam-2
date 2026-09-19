@@ -56,7 +56,7 @@
 
 ### 기술 스택 (확정)
 
-Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Queue · ffmpeg/ffprobe · AWS · Desktop Web 우선(모바일 반응형은 MVP 제외). 안전신문고 자동 제출 API는 연동하지 않는다.
+Python 3.12 · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Queue · ffmpeg/ffprobe · AWS · Desktop Web 우선(모바일 반응형은 MVP 제외). Python 의존성은 root `pyproject.toml` + `uv.lock`로 관리한다. 안전신문고 자동 제출 API는 연동하지 않는다.
 
 ## 레포 구성
 
@@ -69,7 +69,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker` composition root는 아직 README만 있는 골격 |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
-| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
+| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src", "."]`, `testpaths=["tests"]`) 기준으로 `src/daesingo`와 top-level `eval`을 함께 수집하며 레포 루트에서 `uv run pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
 | `docs/modules/` | 모듈별 조사·실험·결정·계약 |
@@ -115,14 +115,18 @@ npm run test:web           # apps/web 테스트 (vitest)
 
 ### Python (`src/daesingo`, `eval/`)
 
-Python 3.10 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
+팀 표준 Python은 **3.12**다. root `.python-version`이 로컬 기준 버전을 고정하고, Python 프로젝트 설정은 root `pyproject.toml`, 정확한 의존성은 `uv.lock`을 정본으로 사용한다. 모듈별로 별도 Python 버전이나 root `pyproject.toml`을 만들지 않는다.
 
 ```bash
-pip install -e ".[test]"   # daesingo 패키지 + pytest 설치 (루트에서 한 번)
-pytest                      # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
-pytest tests/case/          # 모듈 하나만
-python scripts/check_boundaries.py  # 모듈 경계 위반 검사
+uv sync                                   # .venv 생성 + lock 기준 의존성 동기화
+uv run pytest                             # tests/ 전체
+uv run pytest tests/case/                 # 모듈 하나만
+uv run python scripts/check_boundaries.py
+uv run python scripts/check_contract_fixtures.py
+uv run python data/mock/validate_mock_pack.py
 ```
+
+CI도 Python 3.12에서 `uv sync --locked` 후 동일한 검증 명령을 실행한다.
 
 ### 프로토타입에 대해
 

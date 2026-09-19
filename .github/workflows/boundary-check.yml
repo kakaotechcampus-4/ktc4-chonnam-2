@@ -16,6 +16,9 @@ on:
     branches: [develop]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,10 +27,21 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Python 3.12 환경 동기화
+        run: uv sync --locked
+
+      - name: 전체 pytest
+        run: uv run pytest
 
       - name: 모듈 경계 · 계약 정합성
-        run: python scripts/check_boundaries.py
+        run: uv run python scripts/check_boundaries.py
 
       - name: 계약 예시 · fixture 의미 검사
-        run: python scripts/check_contract_fixtures.py
+        run: uv run python scripts/check_contract_fixtures.py
+
+      - name: Mock Pack 검증
+        run: uv run python data/mock/validate_mock_pack.py

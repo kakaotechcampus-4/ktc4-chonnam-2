@@ -76,7 +76,7 @@ Architecture, Canonical Contract, Mock Pack v5와 정철원 1차 완료 체크�
 
 ### 5.1 언어와 패키징
 
-- Python 3.10 이상
+- Python 3.12 (프로젝트 root 공통 기준)
 - `src` layout 유지
 - 단일 Python package: `daesingo`
 - 테스트: `pytest`
