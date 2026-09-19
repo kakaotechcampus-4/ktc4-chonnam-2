@@ -61,6 +61,18 @@ None) 두 가지도 그대로 적용된다.
 `selected=True` candidate와 `case.selection_rev`를 그대로 쓴다. `happy_001`은 후보가
 하나뿐이라 지금까지 결과값 자체는 안 바뀌었지만, 배선이 case 상태를 실제로 따라가게
 됐다는 점이 다르다.
+
+## 2026-09-19 갱신(이슈 #73) — correction 적용 후 evidence 재계산이 실제로 일어나게 수정
+
+Tool Trajectory 1차 Review WARN ①: 부분 재실행 정책 표가 `EVENT_TIME_MANUAL` 등은
+"제자리, 요건 검사만 재발주"라고 정하고 있는데, 그 대응이 코드로 증명돼 있지 않았다.
+확인해보니 실제로 두 가지가 비어 있었다 — (1) `real_e2e.build_happy_001_evidence_bundle()`이
+`correction_records`를 아예 안 받아서 `resolve_time()`/`assemble_evidence()`에 정정이
+전달될 길이 없었고, (2) `_build_evidence_bundle()`의 캐시가 `case_rev`와 무관하게
+영구적이라 (1)을 고쳐도 정정 이후 재조회가 캐시된 옛 값을 계속 돌려줬다. 둘 다 고쳤다
+— `correction_records=self._case.correction_records`를 넘기고, 캐시를 `case_rev` 기준
+으로 무효화한다(`_build_evidence_bundle()` 참고). 별도 `JobRecord`는 추가하지 않는다 —
+evidence 재조립은 순수 함수 재호출로 끝나는 즉시 계산이라 비동기 발주가 필요 없다.
 """
 from __future__ import annotations
 
@@ -204,6 +216,7 @@ class RealAdapter:
         self._search_scope = search_scope
         self._mock_root = mock_root
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
+        self._evidence_bundle_case_rev: int | None = None
         self._clients = clients
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
@@ -258,8 +271,21 @@ class RealAdapter:
         것이 어긋날 수 있는 실제 버그였다. 지금은 `self._case.candidates`에서
         `selected=True`인 candidate를 찾아 그 `candidate_id`로 search 결과에서 일치하는
         `CandidateEvent`를 골라 넘기고, `selection_rev`도 `self._case.selection_rev`를
-        그대로 쓴다."""
-        if self._evidence_bundle is None:
+        그대로 쓴다.
+
+        **캐시는 `case.case_rev` 기준으로 무효화한다**(2026-09-19, 이슈 #73) — 이전엔
+        한 번 계산하면 `RealAdapter` 인스턴스가 살아있는 동안 절대 다시 계산하지 않아서,
+        `EVENT_TIME_MANUAL` 등 사용자 정정으로 `case_rev`가 올라가도 이 캐시가 정정 이전
+        값을 계속 돌려주는 버그가 있었다(`case_rev`는 "요청 시점 케이스 리비전"이라
+        정정 제출도 포함한다, `correction.py` 참고). `CaseStore`가 case당 이 어댑터
+        인스턴스를 계속 재사용하므로, "한 번 CaseView 조립 안에서 여러 getter가 중복
+        계산하지 않는다"는 원래 캐시 의도는 `case_rev`가 그 사이 안 바뀌는 한 그대로
+        유지되고, `case_rev`가 바뀐 뒤에는 다시 계산해 `case.correction_records`를
+        반영한다 — 이게 곧 부분 재실행 정책 표 "요건 검사만 재발주"의 실제 구현이다.
+        새 `JobRecord`를 발주하지 않는다: evidence 재조립은 순수 함수 재호출로 끝나는
+        즉시 계산이라 비동기 Job Queue에 태울 만큼 비싸지 않다(COARSE_SEARCH/PLATE_READ
+        같은 나머지 kind와 다른 점)."""
+        if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             if self._search_scope is None or self._mock_root is None:
                 self._not_ready(
                     "get_evidence_record",
@@ -303,7 +329,9 @@ class RealAdapter:
                 scope=scope,
                 mock_root=self._mock_root,
                 selection_rev=self._case.selection_rev,
+                correction_records=self._case.correction_records,
             )
+            self._evidence_bundle_case_rev = self._case.case_rev
         return self._evidence_bundle
 
     def get_evidence_record(self) -> dict[str, Any] | None:

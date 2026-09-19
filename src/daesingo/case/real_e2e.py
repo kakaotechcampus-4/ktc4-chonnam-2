@@ -63,10 +63,17 @@ def build_happy_001_evidence_bundle(
     scope: search_module.AnalysisScope,
     mock_root: Path,
     selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
     실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
     전부 각 모듈의 공개 함수 호출 결과다.
+
+    `correction_records`는 `case.correction_records`를 그대로 넘겨받아 `resolve_time()`/
+    `assemble_evidence()`에 그대로 전달한다 — `EVENT_TIME_MANUAL` 등 사용자 정정이
+    "제자리에서 요건 검사만 재발주"되는 정책(`부분 재실행 정책 표` 13행)의 실제 구현이
+    바로 이 배선이다: case는 별도 JobRecord를 발주하지 않고, evidence의 순수 함수를
+    최신 correction_records로 다시 부르는 것만으로 재계산이 끝난다(이슈 #73).
     """
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
@@ -113,6 +120,7 @@ def build_happy_001_evidence_bundle(
         time_source_candidates=time_source_candidates,
         overlay_time_readout=overlay_readout.to_dict() if overlay_readout else None,
         candidate_event=candidate.model_dump(mode="json"),
+        correction_records=correction_records or [],
         case_id=case_id,
         selection_rev=selection_rev,
         resolution_id=f"tr_{case_id}_001",
@@ -130,6 +138,7 @@ def build_happy_001_evidence_bundle(
         # 알려진 단순화 2 (모듈 docstring 참고).
         situation_response=None,
         gps_observation=None,
+        correction_records=correction_records or [],
     )
 
     evidence_needs = calculate_evidence_needs(

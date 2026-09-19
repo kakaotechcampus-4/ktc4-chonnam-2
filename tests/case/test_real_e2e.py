@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from daesingo.case import jobs, real_e2e, service
+from daesingo.case import correction, jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
 
@@ -80,6 +80,94 @@ def test_real_adapter_requires_selected_candidate_before_evidence():
 
     with pytest.raises(NotImplementedError, match="선택된"):
         real.get_evidence_record()
+
+
+def test_real_adapter_recomputes_evidence_after_event_time_manual_correction():
+    """이슈 #73 WARN ① — 부분 재실행 정책 표 13행(`EVENT_TIME_MANUAL` → "제자리, 요건
+    검사만 재발주", "절대 안 건드리는 것: 전부")이 RealAdapter 경로에서 실제로 지켜지는지
+    확인한다. `correction.apply_correction()`은 새 `JobRecord`를 발주하지 않는다 —
+    `case_rev`만 올리고, `RealAdapter`가 그 변화를 보고 evidence를 다시 계산해 정정을
+    반영해야 한다(2026-09-19 수정 전에는 캐시가 영구적이라 이게 안 됐다)."""
+    scope = _real_scope()
+    case = CaseAggregate.intake(case_id="case_h001_correction_rerun", hints={}, manifest_summary={})
+    real = RealAdapter(case_id="case_h001_correction_rerun", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    record_before = real.get_evidence_record()
+    assert record_before["occurred_at"]["value"] == "2026-08-24T18:05:12+09:00"
+    assert record_before["occurred_at"]["user_corrected"] is False
+
+    jobs_before_correction = list(case.job_records)
+
+    corrected_value = "2026-08-24T18:10:00+09:00"
+    correction.apply_correction(
+        case,
+        kind="EVENT_TIME_MANUAL",
+        target_field="occurred_at",
+        previous_value=record_before["occurred_at"]["value"],
+        new_value=corrected_value,
+    )
+
+    # "절대 안 건드리는 것: 전부" — Search/Readout/Fine 재실행이 전혀 발주되지 않는다.
+    assert case.job_records == jobs_before_correction
+
+    record_after = real.get_evidence_record()
+    assert record_after is not record_before  # case_rev 변화로 캐시가 무효화돼 다시 계산됨
+    assert record_after["occurred_at"]["value"] == corrected_value
+    assert record_after["occurred_at"]["user_corrected"] is True
+    assert record_after["occurred_at"]["source"]["kind"] == "case.user_correction"
+
+    # 정정과 무관한 값(번호판)은 내용이 그대로 유지된다 — 이슈 #39와 같은 원칙.
+    # (참조 id는 다르다 — `real_e2e.py`가 아직 "요건 검사만" 단위로 쪼개 재실행하지
+    # 못하고 recording/search/readout까지 통째로 다시 부르는 하나의 함수라서, 매번
+    # 새 readout_id가 생긴다. `RealAdapter`가 발주하는 JobRecord가 없다는 것과, 이
+    # glue 함수 내부의 참조 id 재생성은 다른 층위의 문제라 이 이슈 범위에서는 값만
+    # 확인한다 — 진짜 세분화된 부분 재실행은 W7 대상.)
+    assert record_after["vehicle_number"]["value"] == record_before["vehicle_number"]["value"]
+    assert record_after["vehicle_number"]["source"]["kind"] == record_before["vehicle_number"]["source"]["kind"]
+
+    # case_rev가 안 바뀐 재조회는 여전히 캐시를 재사용한다 — 원래 캐시 의도(중복 계산
+    # 방지) 자체는 그대로 유지된다.
+    assert real.get_evidence_record() is record_after
+
+
+def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
+    """이슈 #73 체크리스트 "다른 correction kind에도 같은 gap이 있는지 확인" —
+    `REPORT_TYPE_CHANGE`도 정책 표 12행에서 `EVENT_TIME_MANUAL`과 똑같이 "제자리,
+    요건 검사만 재발주"다. `assemble_evidence()`가 `event.*` target_field 정정을
+    전부 같은 방식(`correction_heads()`)으로 접합하므로, 위 테스트와 같은 배선
+    (`correction_records` 전달 + `case_rev` 캐시 무효화) 하나로 이 kind도 같이
+    해결된다는 걸 확인한다 — 별도 코드 경로가 필요 없다."""
+    scope = _real_scope()
+    case = CaseAggregate.intake(case_id="case_h001_report_type_change", hints={}, manifest_summary={})
+    real = RealAdapter(case_id="case_h001_report_type_change", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    record_before = real.get_evidence_record()
+    assert record_before["event"]["safety_report_type"]["value"] == "TRAFFIC_VIOLATION"
+
+    jobs_before_correction = list(case.job_records)
+    correction.apply_correction(
+        case,
+        kind="REPORT_TYPE_CHANGE",
+        target_field="event.safety_report_type",
+        previous_value="TRAFFIC_VIOLATION",
+        new_value="MOTORCYCLE_VIOLATION",
+    )
+    assert case.job_records == jobs_before_correction  # 여기도 재실행되는 Job은 없다
+
+    record_after = real.get_evidence_record()
+    assert record_after["event"]["safety_report_type"]["value"] == "MOTORCYCLE_VIOLATION"
+    assert record_after["event"]["safety_report_type"]["user_corrected"] is True
+    assert record_after["event"]["safety_report_type"]["source"]["kind"] == "case.user_correction"
 
 
 def test_real_e2e_happy_path_reaches_ready_caseview():
