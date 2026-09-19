@@ -6,11 +6,11 @@
     "manifest": "ab_mixed",
     "gt_version": "ag1",
     "normalizer_version": "n1",
-    "code_commit": "037c83b",
+    "code_commit": "486f64f",
     "scorer_version": "cl1",
     "prediction_ref": {
       "path": "eval/predictions/demo_correct_abmix.json",
-      "sha256": "02666344c36cad671b88ef7afd2f9666496df4c3e469957ebcc87790b0a7f5b4"
+      "sha256": "ee75331e20daaa703c7da8c09474d89c2417cdcada879f6aee7970df64aac332"
     }
   },
   "candidate": {

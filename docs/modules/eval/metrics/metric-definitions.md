@@ -86,7 +86,7 @@
 | `onset_error_sec.mean` / `.median` | `\|representative_sec − t_onset_sec\|` 의 평균 / 중앙값 | **최대 K(=10)에서 적중한 사건** | 적중이 0건 |
 | `containment_rate` | 적중 후보의 창이 `t_start ≤ onset ≤ t_end` 인 건수 | 위와 같은 적중 사건 | 적중이 0건 |
 | `fp_per_clip` | negative 클립에서 나온 **후보 개수 전부** | **negative 클립 수** | negative 클립이 0개 |
-| `by_type[유형].recall_at.K` | 해당 유형에서 적중한 사건 수 | 해당 유형의 사건 수 | — (유형이 없으면 키가 없다) |
+| `by_type[유형].recall_at.K` | 해당 유형에서 적중한 사건 수 | 해당 유형의 사건 수 | — (유형이 없으면 키가 없고, `coverage` 에 `NO_EVENTS_FOR_TYPE` 로 적힌다) |
 
 `onset_error_sec.tolerance_sec` 는 지표가 아니라 **그 실행에 쓴 임계값의 기록**이다. 결과 파일이
 자기 판정 기준을 스스로 말하게 하려고 넣는다.
@@ -140,7 +140,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | 해당 시퀀스에 예측이 없음 | `NONE` 을 예측한 것으로 채점(미탐으로 잡힌다) | confusion 의 `NONE` 열 |
 | GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | `coverage` (`NO_TARGET_BBOX_GT`) |
 | `condition` 라벨이 없음(B tier) | `by_condition` **분모에서 제외** | `coverage` (`NO_CONDITION`) |
-| 예측 bbox 형식이 깨짐(길이≠4) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
+| 예측 bbox 형식이 깨짐(길이≠4, 또는 넓이 ≤ 0) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
 
 ### 4-3. `NONE` 은 `ab_mixed` manifest 에서만 나온다
 
@@ -244,6 +244,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `EXCLUDED` / `BOUNDARY_EXCLUDED — N건` | 채점에서 뺀 사건 수 |
 | `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` / `INVALID_BBOXES` | enum 밖 라벨·예측, 형식이 깨진 bbox 처리 결과 |
 | `NO_TARGET_BBOX_GT` / `NO_CONDITION` | 라벨이 없어 분모에서 뺀 항목 수. 뺀 수를 적어야 결과만으로 분모가 복원된다 |
+| `NO_EVENTS_FOR_TYPE` | 정답지에 사건이 하나도 없는 baseline 유형. `by_type` 에 **키가 없는 것**과 0점을 구분한다 |
 | `NO_SEQUENCES` | classification 정답지가 비었다 |
 | `NO_PLATE_GT` | 이 manifest 에 plate 정답지가 없다 |
 | `NO_SCORED_READOUTS` | 정답지와 겹치는 판독이 없다 |
@@ -264,6 +265,8 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
 | `contract_version` | 계약 | 다르면 채점 거부 |
 | `code_commit` | — | **이 실행이 딛고 선 트리**(자기를 담은 커밋의 부모). 틀린 값이 아니다(F9) |
+| `prediction_ref.sha256` | 예측 파일 내용 | 산출물은 `newline="
+"` 로 쓴다. 텍스트 모드로 쓰면 Windows 에서 CRLF 가 되는데 `.gitattributes` 는 `eol=lf` 라, 기록된 지문이 **커밋된 파일의 지문이 아니게 된다** |
 
 `scorer_version` 은 **stage 별로 기록한다.** 전 stage 에 candidate 의 값을 쓰면 plate 결과가
 candidate 의 지표 정의(「IoU → onset point error」)를 자기 것인 양 적어 낸다.
@@ -303,10 +306,14 @@ eval/results/<run_id>.<gt_version>.json
 | F5 | `search`·`evidence` 구현 대기 | Fine · E2E · Efficiency stage. **다른 Owner 의존** |
 | F3 | B tier 에 **안전모 사건이 0건** | `by_type` 에 `MOTORCYCLE_HELMET_NON_USE` 행이 없다. 사건 10건은 `recall_at` 의 신뢰구간이 여전히 넓다 |
 | — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
+| — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
+| — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
+| — | pytest 가 CI 에서 안 돈다 | 테스트 226개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
 
-**해소된 항목** (2026-09-16): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·
-F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate 채점) · F3(B tier 123클립 확장).
-근거와 실측은 `harness-v1-design.md` §9.
+**해소된 항목** (2026-09-16~18): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·
+F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate 채점) · F3(B tier 123클립 확장) ·
+코드 리뷰 지적 9건(배정 순서 의존 · stage 별 `scorer_version` · 분모 기록 · 샘플링 재현성 ·
+산출물 지문 · 측정 공백). 근거와 실측은 `harness-v1-design.md` §9.
 
 미결은 미결로 둔다. 이 표의 항목을 「대충 정한 값」으로 채워 문서를 완성시키지 않는다.
 

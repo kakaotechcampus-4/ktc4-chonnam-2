@@ -16,7 +16,7 @@ from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.scope import build_analysis_scope
 
-MOCK_ROOT = Path(__file__).resolve().parents[4] / "data" / "mock"
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 def _case_hints(scenario_id: str) -> dict:

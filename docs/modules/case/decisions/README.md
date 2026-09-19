@@ -10,3 +10,4 @@
 - `candidate-stale-revision-display.md — CaseView.candidates[].timeline_revision/stale_revision 필드 신설 (P1-10, 이슈 #18 위임)`
 - `generic-warn-package-and-situation-response.md — situation_confirmation·unconfirmed_fields 신설, EVIDENCE/FINAL_PACKAGE WARN→READY 투영 (이슈 #25 A절·댓글)`
 - `eval-round2-ground-truth-and-usage.md — plate_reread_001·unknown_abstain_partial_001 참값 라벨 확정, STALE attempt UsageRecord 컨벤션 (이슈 #22 B-3·B-4)`
+- `orchestration-service-layer.md — service.py/ModuleAdapter Protocol 도입 + Mock→Real 교체(W5/W6) 진행 기록 (RealAdapter 실측 real 교체 범위, case.get_view() 진입점)`

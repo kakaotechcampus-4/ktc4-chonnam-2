@@ -6,3 +6,8 @@ codec·ffmpeg / Worker lifecycle 구현)은 여기 코드에도 그대로 적용
 `scripts/check_boundaries.py`가 소유하며, 그 목록 자체를 여기 docstring에 복제하지 않는다
 (복제하면 이 파일 자체가 검사에 걸린다).
 """
+
+from daesingo.case.service import get_view
+from daesingo.case.store import CaseStore
+
+__all__ = ["CaseStore", "get_view"]
