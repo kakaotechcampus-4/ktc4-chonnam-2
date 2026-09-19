@@ -72,6 +72,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
+| `docs/runtime/` | 공통 실행 인프라의 Runtime Tech Spec · Ops Spec. `common/runtime`은 도메인 모듈이 아님 |
 | `docs/modules/` | 모듈별 조사·실험·결정·계약 |
 | `docs/management/` | 역할 배정·운영 계획·cross-cutting 결정·보안 검수 |
 | `docs/design/` | 디자인 시스템·1단계 목업·프로토타입 스펙 |
@@ -89,6 +90,8 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | 화면 흐름 · 실패 UX | `docs/product/core-user-flow.md` |
 | 내 모듈의 경계 · 계약 · 금지사항 | `docs/architecture/module-architecture.md` §1 → §2 → §4 내 모듈 → §5 |
 | 내 모듈의 조사 · 실험 · 결정 | `docs/modules/<module>/` |
+| DB Queue · retry · lease/heartbeat · Worker 실행 기반 | `docs/runtime/runtime-tech-spec.md` |
+| 배포 · logging · monitoring · storage/retention · capacity | `docs/runtime/ops-spec.md` |
 | 누가 무엇을 맡는지 | `docs/management/ownership.md` |
 | 운영 결정(승인 경로 · 리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
 | 문서 폴더 규칙 · 문서가 서로 다른 말을 할 때 | `docs/README.md` |
