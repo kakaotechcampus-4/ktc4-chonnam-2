@@ -1,12 +1,16 @@
 # 대신고 논리 ERD 및 Canonical Contract 저장 대응표
 
-> 상태: **논리 설계 — evidence·case·recording·readout·search 결정 반영, web 제안 검토 대기** · 수정일: 2026-09-15
+> 상태: **논리 설계 — evidence·case·recording·readout·search 결정 반영, web 제안 일부 검토 대기** · 수정일: 2026-09-19
 >
-> 반영 근거: 사용자가 전달한 김준영(evidence)·유소연(case)·신유민(readout/web)·서어진(search)의 피드백과 위임된 recording Owner 역할의 결정. case의 재개 방식 정정은 이전 회신보다 우선한다. recording 결정 범위는 §4.1의 자산 연결·등록 호출·MVP 공유·삭제 규칙이다. 이 작업은 ERD 문서만 갱신하며 Canonical Contract 본문을 대신 수정하지 않는다.
+> **Maintainer / 통합 정합화:** 김준영(PM · 문서 일관성 · common/runtime). 각 domain의 데이터 의미·cardinality를 새로 바꾸는 결정권은 해당 Domain Owner에게 있다. 이미 Final Contract / Accepted ADR에서 정답이 유일하게 정해진 stale 표현은 maintainer가 정합화할 수 있다.
+>
+> 반영 근거: 김준영(evidence/common)·유소연(case)·신유민(readout/web)·서어진(search)·정철원(recording)의 검토·결정과 Final Data Contract를 통합한다. 이 문서는 Canonical Contract 본문을 대신하지 않으며, 충돌 시 상위 Contract/Accepted Owner Decision을 따른다. 정합화 기준은 [ERD ↔ Runtime 정합화 ADR](contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)을 따른다.
 
 ## 1. 문서의 목표와 범위
 
 이 문서는 **실제 테이블 후보, PK/FK 후보, 관계의 개수 조건, 핵심 상태**를 설명하는 논리 ERD다. MySQL의 컬럼 길이·정밀도·인덱스·물리 FK 적용·삭제 전파·DDL은 여기서 확정하지 않는다.
+
+정합성 판정은 **Product/Architecture → Final Data Contract·Accepted Owner Decision/ADR → Logical ERD → Runtime/구현** 순으로 읽는다. 따라서 ERD가 상위 결정과 어긋나면 ERD를 수정하고, 상위 문서와 ERD가 모두 물리 저장 방식을 열어둔 경우에는 Runtime/각 구현 문서가 그 세부를 후속 결정한다. Research/experiment는 결정의 근거이지 단독 SoT가 아니다.
 
 이전 초안의 포괄적인 `workflow`, `run_data`, `results`, `snapshot` JSON 묶음을 핵심 도표에서 제거했다. **관계를 설명하기 위해 상세 컬럼을 생략한 것과, 실제 JSON embed 저장을 제안한 것을 구분**한다. JSON 저장 제안은 §5 대응표에 구체적인 부모·필드와 함께 적었다.
 
@@ -222,7 +226,7 @@ erDiagram
     }
 ```
 
-두 AnalysisRun 입력선은 operation에 따른 대안이다. CANDIDATE_SEARCH는 AnalysisScope 하나, VISUAL_VERIFY는 AnalysisSource 하나를 참조하며 둘을 동시에 입력으로 갖지 않는다. VisualEvidence의 input_ref는 자신을 생성한 Fine run의 input_ref와 일치해야 한다. search Owner는 VisualEvidence 계약 §2 예시를 analysis_source로 수정 완료했다고 회신했다. 2026-09-15 확인한 현재 브랜치 원문에는 incident_clip 예시가 남아 있어 해당 수정의 병합 반영 확인만 남긴다. ERD 입력 결정은 미결이 아니며 이 작업에서 계약 예시를 중복 수정하지 않는다.
+두 AnalysisRun 입력선은 operation에 따른 대안이다. CANDIDATE_SEARCH는 AnalysisScope 하나, VISUAL_VERIFY는 AnalysisSource 하나를 참조하며 둘을 동시에 입력으로 갖지 않는다. VisualEvidence의 input_ref는 자신을 생성한 Fine run의 input_ref와 일치해야 한다. **2026-09-19 재검수에서 현재 Final VisualEvidence 계약 §2 예시가 `{kind:"analysis_source", ref:"as_17"}`로 이미 정정·병합된 것을 확인했다.** 따라서 옛 `incident_clip` 예시의 병합 확인은 종결됐고, Fine 입력 결정은 확정 상태다.
 
 - `CandidateEvent`, `VisualEvidence`, `PlateReadout`, `OverlayTimeReadout`를 실행 JSON에서 독립 테이블 후보로 분리했다. 다른 모듈이 ID로 재참조하고, 결과가 없는 실패에도 실행 기록은 남아야 하기 때문이다.
 - 후보의 `(timeline_id, timeline_revision)`은 `recording_timelines(timeline_id, revision)`을 참조하는 **복합 FK 후보**다. rebase 후에도 기존 후보 좌표를 변경하지 않는다.
@@ -411,9 +415,9 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 | CandidateEvent 상세 | JSON embed 제안 — search 권고 반영 | `candidate_events.details`에 ranking_score·event_type_hint·summary·uncertainties·thumbnail_ref 보존 | 독립 결과의 종속 상세. thumbnail_ref 참조 검증은 유지. details는 내부 저장 컬럼명 제안 / 서어진 |
 | 판독 프레임·합의 상세 | JSON embed — readout 동의 | `plate_readouts.frame_results`, `.best_frame`, `.consensus`, `.target_association`; `overlay_time_readouts.samples`, `.validation` | input_ref.source_profile·incident_clip_ref는 별도 컬럼. input_ref 전체를 embed하지 않음. provenance도 보존하되 상세 저장 위치는 후속 설계. canonical frame_ref 검증; crop_ref는 readout 내부 ref / 신유민 |
 | AnalysisRun 구현·요약 | JSON embed | `analysis_runs.implementation`, `.issues`, `.usage_summary` | 완료 시점 usage_summary는 immutable snapshot / 서어진 |
-| JobExecution.produced | 미정 — JSON / 관계 테이블 선택 | `job_executions.produced` JSON 또는 `job_execution_products(execution_id, kind, ref)` 정규화 | readout 제안 수용: 선택지를 열어둠. 후자는 execution FK·typed 대상 검증, 실행별 run/UsageRecord 조회에 유리. 공개 produced는 그대로 조립하며 두 저장소를 독립 정본으로 이중 관리하지 않음. readout 호출 실행의 run 1건 및 STALE 예외 유지 / 김준영·정철원·유소연 |
+| JobExecution.produced | **논리 Contract 확정 / 물리 저장 미정** | `job_executions.produced` JSON 또는 `job_execution_products(execution_id, kind, ref)` 정규화 | Final JobExecution Contract의 `produced: ContractRef[]` 존재·의미는 확정. 미정인 것은 MySQL 물리 표현뿐이다. 후자는 execution FK·typed 대상 검증, 실행별 run/UsageRecord 조회에 유리. 공개 produced는 Contract대로 조립하며 두 저장소를 독립 정본으로 이중 관리하지 않음. readout 호출 실행의 run 1건 및 STALE 예외 유지 / 김준영·정철원·유소연 |
 | AnalysisRun / ReadoutRun.usage_refs | projection·파생 | UsageRecord.run_kind/run_ref로 조회 | 정본은 UsageRecord.run_ref. 별도 양방향 원장 없음 / 김준영 |
-| JobExecution.usage_refs | projection·파생 | UsageRecord.execution_ref로 재구성 제안 | 재구성 방식의 수락 여부 확인 / 김준영·정철원 |
+| JobExecution.usage_refs | **논리 Contract 확정 / 물리 materialization 미정** | Final serialization에는 `usage_refs: ID[]`가 존재. DB에서는 별도 저장하거나 `UsageRecord.execution_ref`로 projection하는 두 방식 검토 | UsageRecord가 비용 원장이고 JobExecution은 참조만 소비한다. `usage_refs`를 물리 저장할지 projection할지는 Runtime 구현에서 결정하되 두 방향을 독립 authoritative 원장으로 이중 관리하지 않음 / 김준영·정철원 |
 | CorrectionRecord 수정 전후 값 | 미정 | `correction_records.previous_value`, `.new_value`의 구체 물리 저장 | target별 타입 검증은 확정. 공용 JSON 사용 여부는 미정 / 유소연 |
 | ContractRef (공통 값 구조) | 미정 | 단일 대상은 §6의 FK 후보로, 다형 참조는 kind/ref로 표현. JSON 배열 속 참조는 해당 부모를 따름 | 필드별 변환과 구현 방식을 확인. 공통 ref 테이블은 제안하지 않음 / 각 Owner |
 | Money (금액·통화 값 구조) | 미정 | UsageRecord.cost 등 부모의 상세 값 | 금액·통화는 보존하되 컬럼 분리/JSON과 물리 정밀도는 후속 결정 / 김준영 |
@@ -481,7 +485,7 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 
 계약 버전·시각·출처·금액·입력 지문·상세 조건 등은 도표에서 생략했을 뿐 필수성을 변경하지 않는다. 핵심 상태를 제외한 enum·정밀도·컬럼 길이는 해당 Canonical Contract와 후속 구현 설계가 정한다.
 
-**web 후속 — 같은 kind의 여러 Job:** 재개가 새 Job이므로 같은 kind에 여러 job_id가 존재하는 것은 정상이다. [JobRecord·CaseView 계약 A절 §10](contracts/contract-job-record-case-view.md)의 attempt 최댓값 규칙은 **동일 job_id 안에서만** 적용한다. progress 한 줄이 여러 Job 중 무엇을 대표하는지는 case/web 계약 후속이며 여기서 최신 job 선택 규칙을 임의로 추가하지 않는다. 재개 정정은 이번 case 회신을 근거로 반영했으며, 전달받은 PR #46의 병합 여부는 이번 작업에서 확인하지 않았다.
+**같은 kind의 여러 Job — 확정:** 재개가 새 Job이므로 같은 kind에 여러 job_id가 존재하는 것은 정상이다. [JobRecord·CaseView 계약 A절 §10](contracts/contract-job-record-case-view.md)에 따라 **동일 job_id 안에서는 attempt 최댓값의 JobExecution**, 같은 kind에 여러 job_id가 있으면 **`requested_at`이 가장 늦은 JobRecord**를 대표 상태로 투영한다. `case_rev`는 발주 순서 정렬 키로 사용하지 않는다. PR #46의 재개 정책도 develop에 병합돼 있으므로 이 항목은 더 이상 후속 합의가 아니다.
 
 **UsageRecord의 생성 조건과 저장 시점은 다르다.** 위의 '시작된 호출'은 기록 대상을 정하는 조건이며, 시작 순간에 아직 모르는 비용·소요시간을 확정 기록하라는 뜻이 아니다. 관측 가능한 호출 결과·사용량·실패 정보를 바탕으로 원장 row를 append하고, 모르는 값은 계약의 null 규칙을 따른다. 미완성 원장 row를 먼저 INSERT한 뒤 UPDATE하는 방식을 확정하지 않는다. 진행 중 호출 추적·worker 소멸 후 복구·중복 방지와 최종 append 시점의 구현은 common/runtime 후속 설계다. JobExecution의 mutable 상태 행과 UsageRecord의 append-only 원장을 혼동하지 않는다.
 
@@ -489,9 +493,9 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 
 | Owner | 이번 문서에서 확인할 것 |
 | --- | --- |
-| 유소연(case) | **반영 완료:** selection_rev 결정 유지, 재개는 새 job_id로 정정. 자산 생성·재사용 후 별도 register_case_asset 호출안 recording 수용. **잔여:** 등록 실패 복구·호출 계약 접합, 같은 kind 여러 Job의 progress 선택, AnalysisScope 저장 소유·보정 chain 분기·타입 저장 |
+| 유소연(case) | **반영 완료:** selection_rev 결정 유지, 재개는 새 job_id로 정정, 같은 kind 여러 Job의 대표 상태는 최신 `requested_at` Job으로 확정. 자산 생성·재사용 후 별도 register_case_asset 호출안 recording 수용. **잔여:** 등록 실패 복구·호출 계약 접합, AnalysisScope 저장 소유·보정 chain 분기·타입 저장 |
 | 정철원(recording) | **위임된 Owner 역할의 결정 반영:** §4.1 case_asset_links·별도 공개 등록 호출·멱등성·단일 Case 소속·외부 원본 제외·provider 경계 유지. **잔여:** 등록 반환/오류 계약·미등록 자산 복구·RemoteCopy 등록 경로·purge 동시성, 보조 결과/삭제 감사·보관 기간·성공 연결 정리, 저장 세부 승인 |
-| 서어진(search) | **확인·결정 반영:** 독립 저장·VisualEvidence embed·candidate optional·원본 revision 보존·상태 축·usage 방식 유지. VISUAL_VERIFY당 VisualEvidence 0..1, CandidateEvent 0..N. candidate 상세 embed 권고 반영. **후속:** Owner가 수정한 VisualEvidence 예시의 현재 브랜치 병합 반영 확인 |
+| 서어진(search) | **확인·결정 반영:** 독립 저장·VisualEvidence embed·candidate optional·원본 revision 보존·상태 축·usage 방식 유지. VISUAL_VERIFY당 VisualEvidence 0..1, CandidateEvent 0..N. candidate 상세 embed 권고 반영. **종결:** VisualEvidence §2의 Fine input 예시가 `analysis_source`로 정정·병합된 것까지 확인 |
 | 신유민(readout/web) | **A-1~A-3 반영:** 복합 FK/UK·operation CHECK, source_profile 컬럼·프레임 embed, case/candidate nullable. **B-1~B-3 반영:** 새 Job 재개, produced 정규화 선택지, UNKNOWN/abstained 성공 축. **B-4~B-5 제안 보존:** head 캐시·선택 및 package stale/표시 snapshot은 case/evidence와 합의 필요 |
 | 김준영(evidence/common) | **본검토 보완 반영:** §6.1 참조 관계·cardinality, §7 lifecycle, §3 Fine 입력, situation_response 전체 저장. **잔여:** TimeResolution/EvidenceNeeds·당시 AssetFacts snapshot의 세부 저장, 검사·Package 이력, 원장 append 시점·복구 구현 |
 
@@ -499,6 +503,7 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 
 ## 9. 근거
 
+- [ERD ↔ Runtime 정합화 ADR](contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [모듈 구조](module-architecture.md), [Owner 배정](../management/ownership.md)
 - [SourceAsset·MediaStream·FrameRef·AssetFacts](contracts/contract-source-asset-media-stream.md), [Timeline·AssetSpan·시간 후보](contracts/contract-recording-timeline-asset-span.md), [AnalysisSource·RemoteCopy·IncidentClip·DerivedAsset·삭제](contracts/contract-analysis-source-derived.md)
 - [AnalysisScope](contracts/contract-analysis-scope.md), [AnalysisRun·CandidateEvent](contracts/contract-analysis-run-candidate-event.md), [VisualEvidence](contracts/contract-visual-evidence.md), [후보 span 결정](../modules/search/decisions/candidate-span-semantics-2026-09-10.md)
