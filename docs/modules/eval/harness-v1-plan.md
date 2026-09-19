@@ -6,7 +6,7 @@
 
 **Architecture:** runner와 scorer를 분리한다(v4 §9-2). runner는 impl 출력을 `{meta, raw, normalized}` envelope으로 저장하고, scorer는 `normalized`만 읽는다. 계약이 바뀌어도 scorer와 과거 결과가 살아남고, `raw` 보존 덕에 새 지표를 낼 때 유료 API를 다시 부르지 않는다. runner는 GT를 모르며, 가짜 구현만 GT 파일을 스스로 읽는다.
 
-**Tech Stack:** Python 3.11 · 표준 라이브러리만 · pytest 9.1. 외부 의존성을 추가하지 않는다 — `scripts/check_boundaries.py`가 stdlib만 쓰는 기존 관례를 따르고, 의존성 결정은 실제로 필요해질 때 한다.
+**Tech Stack:** Python 3.12 (프로젝트 root 공통 기준) · 표준 라이브러리만 · pytest 9.1. 외부 의존성을 추가하지 않는다 — `scripts/check_boundaries.py`가 stdlib만 쓰는 기존 관례를 따르고, 의존성 결정은 실제로 필요해질 때 한다.
 
 **Spec:** `docs/modules/eval/harness-v1-design.md`
 
@@ -117,7 +117,7 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'eval'`
 name = "daesingo-eval"
 version = "0.1.0"
 description = "대신고 오프라인 채점 하니스. 제품 런타임이 아니다."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = []
 
 [project.optional-dependencies]
