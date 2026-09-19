@@ -23,7 +23,7 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 | 1 | P3 | `evidence.location.present` 정본 결정 | **정본 결정 · 유일한 차단 항목** | 김준영 · 유소연 · 신유민(`web`) |
 | 2 | P4 | real E2E에서 H의 Package가 발행되지 않는다 | 접합 미배선 | 유소연 · 정철원 · 신유민 |
 | 2 | P5 | 공용 Package fixture가 `report-package/v1`에 멈춰 있다 | fixture 갱신(I2) | 유소연 |
-| 3 | V1 | `requires-python`이 실제 하한보다 낮다 | **다른 PR 진행 중 — 완료 확인만** | 팀 공용 |
+| 3 | V1 | Python 버전·빌드 환경 통일 | **[PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82) 진행 중 — 머지 후 확인만** | 김준영(팀 공용) |
 
 권장 순서는 **P1 → P2 → P3**이다. P1과 P2가 P3을 논의할 재료를 만든다 — P1 없이는 「위치가 있는 정상 케이스」를 실제로 볼 수 없고, P2 없이는 P/R이 왜 다른지를 남에게 보여줄 근거가 없다.
 
@@ -207,21 +207,28 @@ P1을 먼저 처리하면 「위치가 있는 케이스」와 「없는 케이�
 
 여기 있는 항목은 **새 이슈로 올리지 않는다.** 다른 PR에서 이미 작업 중이라, 나중에 반영됐는지 확인하는 것으로 끝낸다.
 
-## V1. `requires-python`이 실제 하한보다 낮다
+## V1. Python 버전·빌드 환경 통일 — [PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82)
 
-> **상태: 다른 PR에서 처리 중.** 아래는 나중에 확인할 내용이며 이슈 제안이 아니다.
+> **상태: PR #82 `chore/python-3.12-uv-env` 진행 중(OPEN).** 아래는 머지 후 확인할 내용이며 이슈 제안이 아니다.
 
-루트 `pyproject.toml`은 `requires-python = ">=3.10"`인데, `src/daesingo/search`가 `typing.override`와 `typing.Self`·`typing.assert_never`를 쓴다. 선언대로 3.10이나 3.11에서 설치·실행하면 import 단계에서 깨진다.
+재검토 시점의 지적은 「루트 `pyproject.toml`이 `requires-python = ">=3.10"`인데 `src/daesingo/search`가 `typing.override`를 써서 실제 하한은 3.12」였다. [`04_mock_validation_report.md`](../../../mock/04_mock_validation_report.md) 12차 갱신 Issue Log가 이 항목을 「실제 `>=3.11` 필요」로 적어 둬서, **PR이 3.11로 맞추고 끝내지 않는지**가 걱정거리였다.
 
-[`04_mock_validation_report.md`](../../../mock/04_mock_validation_report.md) 12차 갱신의 Issue Log가 이미 「`requires-python`이 `>=3.10`으로 남아있지만 실제 `>=3.11` 필요」로 적어 둔 항목이다. 다만 **실제 하한은 3.11이 아니라 3.12**다 — `typing.override`가 3.12에서 추가됐기 때문이다. 해당 PR이 3.11로 맞춰 두고 끝내지 않았는지가 확인 지점이다.
+PR #82을 확인한 결과 그 우려는 해당하지 않는다. 팀 표준을 **3.12**로 잡았고, 재검토에서 지적한 세 갈래를 모두 덮는다.
 
-지금 이 어긋남이 드러나지 않는 이유는 CI가 테스트를 돌리지 않기 때문이다. `boundary-check` 워크플로는 검사 스크립트가 프로젝트 모듈을 import하지 않는 정적 검사라 통과한다.
+| 재검토에서 지적한 것 | PR #82의 처리 |
+| --- | --- |
+| `requires-python`이 실제 하한보다 낮다 | `>=3.10` → **`>=3.12`**. `.python-version`도 `3.12`로 추가 |
+| `pyproject.toml` 3-way 충돌의 수렴안이 없다 | root `pyproject.toml`을 Python 설정 SoT로 확정하고, 「모듈별 별도 Python 버전·root pyproject를 만들지 않는다」를 운영 기준으로 명문화 |
+| CI에 테스트 실행 job이 없어 이 어긋남이 잡히지 않는다 | `boundary-check`를 Python 3.12 + `uv sync --locked` 기준으로 바꾸고 **전체 pytest**와 Mock Pack 검증을 job에 추가 |
 
-### 나중에 확인할 것
+그 밖에 로컬 개발환경이 uv + project-local `.venv`로, 테스트 의존성이 `[project.optional-dependencies].test` → `[dependency-groups].dev`로 옮겨진다.
 
-- [ ] `requires-python`이 실제 하한과 일치한다. **3.11이 아니라 3.12인지** 확인한다 — 아니라면 `typing.override`가 제거됐는지 함께 본다.
-- [ ] `pyproject.toml` 3-way 충돌(빌드 백엔드·Python 버전)의 수렴안이 같이 정리됐다.
-- [ ] 선언한 최소 버전에서 전체 테스트가 도는 것이 CI로 확인된다. 지금은 테스트 실행 job 자체가 없다.
+### 머지 후 확인할 것
+
+- [ ] PR #82이 머지됐고 `requires-python`이 `>=3.12`다.
+- [ ] CI의 전체 pytest가 실제로 돌고 통과한다. 이 job이 생기면 앞으로 같은 종류의 어긋남이 자동으로 잡힌다.
+- [ ] **체크리스트의 실행 명령을 uv 기준으로 갱신한다.** [`first-completion-checklist.md`](../first-completion-checklist.md) §검증 명령의 재확인 블록은 아직 `$env:PYTHONPATH='src'`와 `python -m pytest` 기준이다. 정본이 `uv run pytest`로 바뀌므로 evidence 쪽 문서도 맞춰야 한다 — **이 항목만 evidence가 직접 해야 할 후속이다.**
+- [ ] `pip install -e .[test]`를 쓰던 안내가 남아 있지 않은지 본다. extras가 dependency group으로 옮겨져 그 명령은 더 이상 동작하지 않는다.
 
 ---
 
@@ -232,4 +239,4 @@ P1을 먼저 처리하면 「위치가 있는 케이스」와 「없는 케이�
 - **P3이 유일한 차단 항목**이다. 체크리스트의 마지막 미표시 1건이 여기에만 묶여 있고, 되돌릴 곳이 세 모듈에 걸쳐 있다.
 - **P5는 P3과 같은 fixture를 건드린다.** 따로 올리면 같은 파일을 두 번 재렌더하게 되니 한 이슈로 합치거나 작업 순서를 묶는다.
 - **P4는 evidence가 고칠 것이 없다.** 담당이 셋으로 갈리므로 이슈를 쪼개는 편이 낫다.
-- **V1은 올리지 않는다.** 진행 중인 PR이 머지된 뒤 위 확인 항목만 본다.
+- **V1은 올리지 않는다.** [PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82)이 세 갈래를 모두 덮고 있어, 머지된 뒤 확인 항목만 본다. 다만 **체크리스트 실행 명령의 uv 전환은 evidence가 직접 해야 하는 후속**이라 그 하나는 잊지 않는다.
