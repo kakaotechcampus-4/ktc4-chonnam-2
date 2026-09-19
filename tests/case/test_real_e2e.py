@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from daesingo.case import jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
@@ -53,25 +55,47 @@ def test_evidence_bundle_uses_real_plate_and_time_values():
 def test_real_adapter_caches_evidence_bundle():
     """evidence 체인(recording/readout/evidence 여러 호출)은 비용이 있으니, 같은
     `RealAdapter` 인스턴스에서 여러 getter를 불러도 한 번만 계산해야 한다."""
-    real = RealAdapter(case_id="case_h001_cache_test", search_scope=_real_scope(), mock_root=MOCK_ROOT)
+    scope = _real_scope()
+    case = CaseAggregate.intake(case_id="case_h001_cache_test", hints={}, manifest_summary={})
+    case.start_search()
+    real = RealAdapter(case_id="case_h001_cache_test", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
     record_first = real.get_evidence_record()
     record_second = real.get_evidence_record()
     assert record_first is record_second  # 같은 객체 — 재계산 안 했다는 뜻
+
+
+def test_real_adapter_requires_selected_candidate_before_evidence():
+    """2026-09-19 수정 — evidence가 case의 실제 선택값을 쓰게 바꾸면서 생긴 안전장치.
+    candidate를 아직 선택하지 않은 case로 evidence를 조회하면 조용히 아무 값이나
+    돌려주지 않고 명확히 실패해야 한다(Mock의 정직한 실패 원칙과 동일 — 이전엔
+    `search.search_candidates()`를 자체적으로 다시 불러 항상 값을 돌려줬었다)."""
+    scope = _real_scope()
+    case = CaseAggregate.intake(case_id="case_h001_no_selection", hints={}, manifest_summary={})
+    case.start_search()
+    real = RealAdapter(case_id="case_h001_no_selection", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    service.receive_search_candidates(case, real)  # CANDIDATE_REVIEW까지만, 선택은 안 함
+
+    with pytest.raises(NotImplementedError, match="선택된"):
+        real.get_evidence_record()
 
 
 def test_real_e2e_happy_path_reaches_ready_caseview():
     """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`가
     `READY`까지 도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다."""
     scope = _real_scope()
-    real = RealAdapter(case_id="case_h001_full_e2e", search_scope=scope, mock_root=MOCK_ROOT)
-
     case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints={}, manifest_summary={})
+    real = RealAdapter(case_id="case_h001_full_e2e", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
 
     candidates = service.receive_search_candidates(case, real)
     assert len(candidates) == 1
     case.select_candidate(candidates[0].candidate_id)
+    assert case.selection_rev == 1  # RealAdapter가 이 값을 그대로 evidence에 넘긴다(2026-09-19)
 
     jobs.issue_plate_read(case, input_fingerprint="sha1:h001-plate-read-clip_h001")
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")

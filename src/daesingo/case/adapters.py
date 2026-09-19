@@ -51,6 +51,16 @@ W5/W6 마감(월요일 20:00 회의 — 대표 시나리오 1개가 E2E를 실�
 시나리오는 `scenario_happy_001` 하나로 고정돼 있다 — `real_e2e.py` 모듈 docstring의
 "알려진 단순화"(시각 원시 데이터 raw read, `situation_response`/`observation_facts`
 None) 두 가지도 그대로 적용된다.
+
+## 2026-09-19 갱신 — evidence가 case의 실제 선택값을 쓰도록 수정
+
+`RealAdapter._build_evidence_bundle()`이 candidate/selection_rev를 `case` 상태에서
+읽지 않고 `search.search_candidates()`를 다시 불러 `candidates[0]`을 쓰던 지점을
+고쳤다 — evidence 파트가 W6 real E2E 체인을 검증하다 발견해 알려준 것(2026-09-19).
+`RealAdapter`는 이제 `case`(`CaseAggregate`) 참조를 받아 `case.candidates`의
+`selected=True` candidate와 `case.selection_rev`를 그대로 쓴다. `happy_001`은 후보가
+하나뿐이라 지금까지 결과값 자체는 안 바뀌었지만, 배선이 case 상태를 실제로 따라가게
+됐다는 점이 다르다.
 """
 from __future__ import annotations
 
@@ -60,6 +70,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from daesingo import search as search_module
 from daesingo.case import real_e2e
+from daesingo.case.domain import CaseAggregate
 
 
 @runtime_checkable
@@ -173,18 +184,23 @@ class RealAdapter:
     생성자 인자는 모듈별로 다르다 — search는 순수 함수 호출이라 `search_scope`(dict 또는
     `search.AnalysisScope`) 하나면 충분하고, evidence 체인은 추가로 `mock_root`가
     필요하다(`real_e2e.py`의 "알려진 단순화 1" — recording의 raw time_source_candidates
-    읽기용, 나머지는 전부 real 함수 호출). 나머지가 채워질 때 필요한 인자가 더 늘어난다.
+    읽기용, 나머지는 전부 real 함수 호출). evidence 체인은 이제 `case`(`CaseAggregate`)도
+    필요하다 — case가 실제로 선택한 candidate/selection_rev를 읽어야 하기 때문이다
+    (2026-09-19 수정, 아래 `_build_evidence_bundle()` 참고). 나머지가 채워질 때 필요한
+    인자가 더 늘어난다.
     """
 
     def __init__(
         self,
         *,
         case_id: str,
+        case: CaseAggregate | None = None,
         search_scope: dict[str, Any] | search_module.AnalysisScope | None = None,
         mock_root: Path | None = None,
         **clients: Any,
     ) -> None:
         self.case_id = case_id
+        self._case = case
         self._search_scope = search_scope
         self._mock_root = mock_root
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
@@ -234,6 +250,15 @@ class RealAdapter:
 
     # ── evidence ────────────────────────────────────────────────────────
     def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
+        """evidence로 넘기는 candidate/selection_rev는 **case가 실제로 선택한 값**이어야
+        한다(2026-09-19 수정) — 이전엔 이 메서드가 `search.search_candidates()`를 다시
+        불러 `candidates[0]`을 그냥 썼다. `happy_001`은 후보가 하나뿐이라 우연히 값이
+        같았을 뿐이고, `case.select_candidate()`가 고른 candidate와 무관하게 항상 같은
+        결과가 나왔다 — 후보가 여럿인 시나리오에서는 case가 고른 것과 evidence가 받는
+        것이 어긋날 수 있는 실제 버그였다. 지금은 `self._case.candidates`에서
+        `selected=True`인 candidate를 찾아 그 `candidate_id`로 search 결과에서 일치하는
+        `CandidateEvent`를 골라 넘기고, `selection_rev`도 `self._case.selection_rev`를
+        그대로 쓴다."""
         if self._evidence_bundle is None:
             if self._search_scope is None or self._mock_root is None:
                 self._not_ready(
@@ -243,15 +268,41 @@ class RealAdapter:
                     "time_source_candidates 읽기용, real_e2e.py 「알려진 단순화 1」)가 "
                     "모두 필요하다.",
                 )
+            if self._case is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason="case가 실제로 선택한 candidate/selection_rev를 읽으려면 "
+                    "생성자에 CaseAggregate가 필요하다 — case_id 문자열만으로는 어떤 "
+                    "candidate가 선택됐는지 알 수 없다.",
+                )
+            selected = next((c for c in self._case.candidates if c.selected), None)
+            if selected is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason=f"case_id={self.case_id!r}에 선택된(selected=True) candidate가 "
+                    "없다 — case.select_candidate()가 evidence 조회보다 먼저 호출돼야 한다.",
+                )
             scope = self._search_scope
             if not isinstance(scope, search_module.AnalysisScope):
                 scope = search_module.AnalysisScope.model_validate(scope)
-            candidate = search_module.search_candidates(scope).candidates[0]
+            search_candidates = search_module.search_candidates(scope).candidates
+            candidate = next(
+                (c for c in search_candidates if c.candidate_id == selected.candidate_id), None
+            )
+            if candidate is None:
+                raise ValueError(
+                    f"case가 선택한 candidate_id={selected.candidate_id!r}를 "
+                    "search.search_candidates() 결과에서 찾을 수 없다 — case와 search가 "
+                    "같은 scope를 보고 있는지 확인해야 한다."
+                )
             self._evidence_bundle = real_e2e.build_happy_001_evidence_bundle(
                 case_id=self.case_id,
                 candidate=candidate,
                 scope=scope,
                 mock_root=self._mock_root,
+                selection_rev=self._case.selection_rev,
             )
         return self._evidence_bundle
 
