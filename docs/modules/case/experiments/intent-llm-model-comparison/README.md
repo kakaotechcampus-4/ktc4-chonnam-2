@@ -20,7 +20,9 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 
 ## 채점 방식 — 1차 가설, 실측 전 잠정
 
-**2026-09-19 갱신 — judge를 실제로 21건 돌렸다(전부 `error=None`).** 아래 설계 논리(왜 LLM-judge를 골랐는지)는 실측 전에 세운 그대로 유효해서 안 고쳤다. 다만 "judge가 정말 믿을 만한가"의 최종 답은 여전히 없다 — 사람 스팟체크(아래 「검증」)를 아직 안 했다. 이 판단을 `decisions/`로 올리지 않고 `experiments/`에 계속 두는 이유가 바로 이거다. 필드별 판정 근거(`reason`)를 이제 저장하므로(멘토 피드백, 아래 참고) 스팟체크 자체는 이전보다 쉬워졌다.
+**2026-09-19 갱신 — judge를 실제로 21건 돌렸다(전부 `error=None`).** 아래 설계 논리(왜 LLM-judge를 골랐는지)는 실측 전에 세운 그대로 유효해서 안 고쳤다.
+
+**2026-09-20 갱신 — 사람 스팟체크 완료.** 126개 필드 판정 중 5개(4%)만 `correct`가 아니었고, 4개는 데이터셋(`expected_notes`) 공백, 1개는 judge rubric 문제(같은 값인데 모델별로 다르게 판정)로 확인됐다 — 후자는 `JUDGE_SYSTEM_PROMPT`에 규칙을 추가해 고쳤다(아래 「채점 방식」·`decisions/intent-llm-model-selection.md` §9). LLM-judge 신뢰도는 이걸로 이번 v1 비교 목적엔 충분하다고 판단했다 — 이 판단을 `decisions/`로 올리지 않고 `experiments/`에 계속 두는 이유(v1 한정 임시 방편이라는 것)는 그대로 유효하다.
 
 **2026-09-18 방향 전환:** LLM-judge를 채점 방식의 최종 답으로 보지 않는다. `decisions/intent-llm-eval-target-thresholds.md`의 딥리서치가 권고하고 지금 보기에도 정확도·비용 면에서 더 나은 방법은 **CorrectionRecord 기반 Field-level F1**이지만, 런칭 전이라 CorrectionRecord 실데이터가 없어서 지금 당장은 못 쓴다. 그래서 LLM-judge는 **이번 v1 모델 비교 한 번에만 쓰는 임시 방편**이고, 런칭 후 CorrectionRecord가 쌓이면 F1 기반으로 전환한다(아래 「다음 단계」).
 
@@ -94,6 +96,8 @@ Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API �
 
 **검증**: judge 판정 중 일부(20% 권장)를 사람이 직접 스팟체크한다. 사람과 다르게 판정한 케이스가 나오면 데이터셋이 아니라 `schema.py`의 judge 프롬프트(rubric)를 고친다.
 
+**2026-09-20 스팟체크 결과**: 126개 필드 판정 중 5개(4%) 불일치 — 4개는 데이터셋 `expected_notes` 공백(v2에서 보완 예정), 1개는 rubric 문제(동일 값인데 모델별로 다르게 판정 — "같은 값이면 같은 verdict" 규칙을 `JUDGE_SYSTEM_PROMPT`에 추가해 고침). GPT-5 Nano는 5건과 무관. 상세는 `decisions/intent-llm-model-selection.md` §9.
+
 ## Elice 연동
 
 세 모델 다 Elice가 **OpenAI SDK 호환 인터페이스**로 중계한다(`Authorization: Bearer <Serverless API Key>` + `client.chat.completions.parse(model=..., response_format=<PydanticModel>)`, 2026-09-19 실측으로 세 모델 다 구조화 출력까지 정상 확인됨). `candidates.py`는 벤더별 분기 없이 `model_name`만 다른 하나의 클래스로 세 모델을 다 처리한다.
@@ -120,6 +124,6 @@ Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API �
 - [x] `response_format=<PydanticModel>` structured output이 Gemini/Claude 백엔드에도 강제되는지 확인 — **된다.** 21건 전부 `schema_valid=True`
 - [x] `JUDGE_MODEL` 확정 — `anthropic/claude-sonnet-5`(후보 3개보다 위 티어, 자기 채점 편향 회피)
 - [x] 실측 실행 → `results/summary.md`(2026-09-19, judge_run_id `20260919T170342Z`)
-- [ ] **채점 방식(LLM-judge) 자체를 재검토** — judge 판정 20% 스팟체크해서 사람과 얼마나 갈리는지 확인. **아직 미결.** 필드별 `reason`을 이제 저장하므로(2026-09-19, 멘토 피드백) `predictions/<model>/<case_id>.judge.<run_id>.json`을 열어 스팟체크하면 된다.
+- [x] **채점 방식(LLM-judge) 자체를 재검토** — judge 판정 20% 스팟체크(2026-09-20 완료, 위 「검증」). 5/126(4%) 불일치, rubric 문제 1건은 고침.
 - [x] 결과를 바탕으로 `docs/modules/case/decisions/`에 확정 문서 작성 → `intent-llm-model-selection.md`(모델 선택 + 이번 v1 한정으로 LLM-judge를 썼다는 것 둘 다 기록)
 - [ ] **(런칭 후) LLM-judge를 CorrectionRecord 기반 Field-level F1으로 전환.** `CorrectionRecord` 실데이터가 쌓이기 시작하면 착수 — 그 전까지는 착수 조건 자체가 안 갖춰진 상태라 미룬다. 전환되면 이 폴더의 `schema.py`/`judge.py`(judge 프롬프트·판정 로직)는 더 이상 안 쓰이고, `aggregate.py`의 정확도 계산만 정답지 소스를 CorrectionRecord로 바꿔 재사용할 수 있는지 검토한다.

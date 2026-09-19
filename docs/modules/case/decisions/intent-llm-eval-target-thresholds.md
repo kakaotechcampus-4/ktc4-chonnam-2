@@ -411,4 +411,4 @@ MulitaMiner)은 검증 절차 및 탈출구(Escape hatch) 설계를 통해 환�
 - ~~`research/llm-model-comparison-hint-extraction.md` §7 미결 항목(API 키 확보·모델 ID 확정) 해소 후, `datasets/intent-hint-eval-v1.jsonl`로 실측하고 §1 표의 목표치와 실제 결과를 대조한다.~~ — 2026-09-19 완료. **3개 후보 전부 이 문서의 목표치를 넉넉히 넘겼다**(schema 100%/field 정확도 93~100%/hallucination 0~2%/missed 0~2% — 목표치는 각각 99%↑/70~75%↑/5%↓/10%↓). n이 작아(§1.1) 이 초과분 자체를 정밀하게 비교하는 데는 안 썼다 — 모델 간 최종 선택은 `decisions/intent-llm-model-selection.md` 참고. 상세 수치는 `experiments/intent-llm-model-comparison/results/summary.md`.
 - 실측 결과가 목표치에 못 미치면, 목표치 자체를 낮추기보다 이 딥리서치 §4가 제안한 DSPy `BootstrapFewShot`(correction 로그 10~50개 기준) 도입을 먼저 검토한다 — **이번 실측은 전부 목표치를 넘겨서 해당 없음.** correction 로그가 아직 없는 V1 시점엔 어차피 후순위.
 - production UCR 목표(§1 마지막 행)는 case가 이 기능을 실제로 내보낸 뒤 별도 결정 문서에서 확정한다 — 여전히 미결.
-- judge 판정 20% 스팟체크(harness README "검증" 절)는 아직 안 했다 — LLM-judge 신뢰도 자체를 이 목표치와 별개로 확인해야 하는 항목이라 미결로 남긴다.
+- ~~judge 판정 20% 스팟체크(harness README "검증" 절)~~ — 2026-09-20 완료. 126개 중 5개(4%) 불일치, GPT-5 Nano 선택과 무관. `decisions/intent-llm-model-selection.md` §9 참고.

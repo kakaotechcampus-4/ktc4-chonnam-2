@@ -51,12 +51,22 @@ GPT-5 Nano는 평균 12,745ms로 나머지 둘(2,676ms/3,417ms)보다 **3.7~4.8�
 - [ ] intent 구조화 호출이 실제 구현에서 동기(사용자가 화면에서 기다리는 경로)로 붙게 된다 — §5의 latency 정당화가 성립하지 않게 되는 경우.
 - [ ] Gemini 3.1 Flash-Lite가 GA로 전환된다 — §4의 제외 이유 중 하나(Preview 리스크)가 사라진다.
 - [ ] v2 이상의 더 큰 locked dataset(실사용자 로그 기반, `research/...` §7 남은 미결)으로 재측정했을 때 이번 v1(n=7) 결과와 다른 순위가 나온다.
-- [ ] judge 판정 20% 스팟체크(아직 미결, README "검증" 절)에서 LLM-judge가 사람과 크게 갈려, 이번 실측 자체의 신뢰도가 흔들린다.
+- [x] ~~judge 판정 20% 스팟체크에서 LLM-judge가 사람과 크게 갈려, 이번 실측 자체의 신뢰도가 흔들린다~~ — 2026-09-20 완료, 안 흔들림(§9). 트리거 조건 미충족.
 - [ ] `CorrectionRecord` 실데이터가 쌓여 Field-level F1로 채점 방식이 바뀐 뒤, 그 정답지로 다시 봤을 때 순위가 바뀐다.
 
 ## 8. 남은 것 — 이 결정이 안 끝낸 일
 
 - **실제 프로덕션 배선은 이 결정의 범위 밖이다.** `CaseAggregate.intake()`가 아직 구조화된 `hints`만 받고, 원문 자연어를 GPT-5 Nano로 실제 호출하는 코드는 `domain.py`/`scope.py` 어디에도 없다 — 이건 별도 구현 작업(설계 고도화 우선순위 목록 3순위)이다.
-- judge 판정 20% 스팟체크(사람이 직접) — 미결.
-- `research/...` §4 테스트 문장을 실사용자 로그로 교체(v2 dataset) — 미결.
+- `research/...` §4 테스트 문장을 실사용자 로그로 교체(v2 dataset) — 미결. §9가 찾은 case-04류 위치 단서 판정 기준 공백도 v2에서 같이 메운다.
 - Elice 쪽 `ELICE_API_KEY`/`ELICE_URL_*`/`JUDGE_MODEL_URL` 실제 값은 `.env`(gitignore 대상)에만 있고 이 문서·리포 어디에도 값 자체를 남기지 않는다.
+
+## 9. judge 판정 스팟체크 결과 (2026-09-20)
+
+126개 필드 판정(3모델 × 7케이스 × 6필드) 중 **5개(4%)만 `correct`가 아니었다** — 전부 `case-04-relative-time`/`case-05-vehicle-ambiguous` 두 케이스, claude-haiku-4-5/gemini-3.1-flash-lite 두 모델에만 있었다. **GPT-5 Nano는 5건과 전부 무관(126개 다 correct)** — 이 결정(§1)에 영향 없음.
+
+5건을 사람이 직접 읽고 원인을 둘로 나눴다:
+
+- **4건(case-04, location_hint/confidence)** — judge 판정 자체보다 **데이터셋 결함**이었다. `expected_notes`가 이 케이스의 `time_hint` 기준만 적어두고 원문의 "여기서"를 `location_hint`로 어떻게 다뤄야 하는지는 아예 안 정해뒀다 — judge가 그 자리에서 즉석 기준을 만들어 판정한 것. v2 데이터셋에서 이 공백을 메운다(§8).
+- **1건(case-05, `vehicle_hint`)** — **진짜 judge 리스크**였다. claude·gemini 둘 다 `vehicle_hint="SUV"`로 완전히 같은 값을 냈는데 judge가 다르게 판정했다(claude: correct, gemini: partial) — gemini가 `confidence`를 잘못(`high`로) 매긴 여파가 무관한 `vehicle_hint` 판정에도 전이된 것으로 보인다. **조치:** `schema.py`의 `JUDGE_SYSTEM_PROMPT`에 "같은 필드가 같은 값이면 모델이 달라도 같은 verdict를 매긴다"는 규칙을 명시적으로 추가했다(이 커밋). 기존 `judge_run_id=20260919T170342Z` 결과는 그대로 두고(불변 저장 원칙, `judge.py` 참고) 덮어쓰지 않았다 — 이 rubric 수정은 다음 채점 run부터 적용된다.
+
+**결론: 5/126(4%)이라는 이견율은 낮고, 유일한 진짜 judge 문제(case-05)도 이번 결정을 뒤집지 않는다 — §1의 GPT-5 Nano 채택은 이 스팟체크로 재확인됐다.**
