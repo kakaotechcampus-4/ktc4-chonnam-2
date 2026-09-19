@@ -52,7 +52,7 @@ v4부터는 역할 배정이 끝났고 Owner별 기술 조사도 시작됐다. �
 | **3** | **§4 자기 모듈** | 책임·소유 데이터·금지사항·접합부를 확인한다 |
 | **4** | **§5 Core Contracts** | 다른 Owner와 맞춰야 하는 의미 수준의 계약을 확인한다 |
 | **5** | **§6~§9** | 실제 호출 흐름·백그라운드·평가 구조를 확인한다 |
-| **마지막** | **§11 Owner Review Required** | v4 이후 Data Contract 전에 자기 모듈이 다시 확인할 항목만 본다 |
+| **마지막** | **§11 Owner Review Required** | **historical handoff** — v4 직후 Owner 검토 기록을 볼 때만 참고한다. 현재 작업 상태는 모듈 checklist/Final Contract를 본다 |
 
 > **중요:** v4는 Data Contract 문서가 아니다. JSON 예시는 **의미를 고정하기 위한 예시**이며 필드명·enum·nullable·DB column까지 확정하는 문서가 아니다.
 
@@ -1758,7 +1758,7 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-4. `case` — 유소연
 
-> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 전체 통합(E2E)은 여전히 실행 기록이 없어 Pending이다 — 현재 종결·준비도 판정은 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §10.2가 소유한다.
+> **감사 후속 기록:** 아래 체크는 개별 Owner 결정의 당시 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 09-08 closure ADR §10.2의 준비도 판정은 당시 snapshot이며, **현재 구현/E2E 상태는 루트 `README.md`와 `modules/case/checklists/`를 따른다.**
 
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
 - [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7
