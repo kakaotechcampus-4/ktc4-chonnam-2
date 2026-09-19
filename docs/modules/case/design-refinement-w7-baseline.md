@@ -109,6 +109,7 @@ case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 
 ## 3. 별도로 이미 결정 완료된 것
 
 - **Agent framework(LangGraph/Google ADK) 도입 기준** — 지금은 도입하지 않기로 결정. 재검토 트리거 4개 명시. → `docs/modules/case/decisions/agent-framework-adoption-criteria.md`
+- **input_fingerprint의 implementation label 조합** — 요구사항 자체는 유효하나, `case`에 fingerprint 기반 캐시/dedup 로직 자체가 아직 없고 search/readout의 `list_impls()`도 미구현이라 지금은 만들지 않기로 결정(이슈 #77). 재검토 트리거 2개 명시. → `docs/modules/case/decisions/input-fingerprint-implementation-label-deferred.md`
 
 ## 4. 오늘 Real E2E 실행 근거
 
