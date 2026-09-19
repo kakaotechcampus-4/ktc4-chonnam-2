@@ -3,9 +3,11 @@
 **Status:** Working — operations spec  
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
-**Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)
+**Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
+**Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
+**Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 
-> 이 문서는 배포된 Runtime을 **어떻게 운영·관찰·복구·확장할지** 정한다. JobExecution/UsageRecord schema나 queue algorithm은 [`runtime-tech-spec.md`](./runtime-tech-spec.md)이 아니라 각 Final Contract와 Runtime Tech Spec이 소유한다.
+> 이 문서는 배포된 Runtime을 **어떻게 운영·관찰·복구·확장할지** 정한다. Final Contract와 Logical ERD가 정의한 논리 의미·관계를 바꾸지 않으며, JobExecution/UsageRecord persistence와 queue algorithm은 [`runtime-tech-spec.md`](./runtime-tech-spec.md)이 소유한다.
 
 ## 1. 문서 경계
 
@@ -27,6 +29,8 @@
 
 - DB Queue claim/retry/lease algorithm — [Runtime Tech Spec](./runtime-tech-spec.md)
 - JobExecution/UsageRecord schema — Final Data Contract
+- cross-domain logical relationship / cardinality — [Logical ERD](../architecture/erd-draft.md)
+- JSON vs 관계 테이블 같은 Runtime 물리 persistence — [Runtime Tech Spec](./runtime-tech-spec.md)
 - Recording/Search benchmark 원본 — 각 module Owner
 - 제품 workflow — Product / case
 - Search/Readout 품질 threshold — 각 module/eval
@@ -553,6 +557,8 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 ## References
 
 - [Architecture v4](../architecture/module-architecture.md)
+- [Logical ERD](../architecture/erd-draft.md)
+- [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [Runtime Tech Spec](./runtime-tech-spec.md)
 - [AnalysisSource / Derived Asset Contract](../architecture/contracts/contract-analysis-source-derived.md)
 - [UsageRecord Contract](../architecture/contracts/contract-usage-record.md)
