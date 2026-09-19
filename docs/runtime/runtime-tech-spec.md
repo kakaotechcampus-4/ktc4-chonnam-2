@@ -3,9 +3,11 @@
 **Status:** Working — implementation spec  
 **Owner:** common/runtime — 김준영 · 구현 담당 정철원  
 **Scope:** 대신고 modular monolith의 실행 인프라  
-**Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)
+**Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
+**Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
+**Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 
-> 이 문서는 Final Data Contract를 재정의하지 않는다. `JobRecord`, `JobExecution`, `UsageRecord`, `CaseView`의 필드·enum·불변조건은 각 Contract가 authoritative하다. 이 문서는 그 계약을 **어떻게 DB Queue·Worker·실행 lifecycle로 구현할지**만 정한다.
+> 이 문서는 Final Data Contract를 재정의하지 않는다. `JobRecord`, `JobExecution`, `UsageRecord`, `CaseView`의 필드·enum·불변조건은 각 Contract가 authoritative하다. Logical ERD는 cross-domain 관계·cardinality·저장 후보의 입력이다. 이 문서는 그 상위 논리 의미를 유지하면서 **DB Queue·Worker·실행 lifecycle의 물리 구현**을 정한다.
 
 ## 1. 문서 경계
 
@@ -28,8 +30,23 @@
 - cache/reuse 정책 결정 — `case`
 - Search/Readout/Recording 내부 알고리즘
 - Final Contract schema
+- Logical ERD에 이미 확정된 cross-domain 의미·cardinality
 - 배포·모니터링·disk/retention 운영 정책 — [`ops-spec.md`](./ops-spec.md)
 - Recording/Search benchmark 원본
+
+### 설계 입력 우선순위
+
+Runtime 관련 저장/실행 설계가 충돌할 때는 다음 순서로 판정한다.
+
+```text
+Product / Module Architecture
+→ Final Data Contract / Accepted Owner Decision · ADR
+→ Logical ERD
+→ Runtime Tech Spec
+→ code / migration
+```
+
+Final Contract에서 이미 닫힌 의미를 ERD나 Runtime이 다시 결정하지 않는다. 반대로 `produced`의 JSON/관계 테이블 선택처럼 상위 문서가 물리 저장을 열어둔 경우에는 Runtime 구현에서 결정할 수 있다. 양쪽 모두 미결이면 임의 확정하지 않는다.
 
 ## 2. 상위 경계
 
@@ -111,7 +128,9 @@ Architecture baseline은 **MySQL 8.4 LTS / InnoDB 기반 DB Queue**다.
 
 Redis, Celery, RabbitMQ, SQS는 baseline에 넣지 않는다.
 
-### 4.2 Queue row와 Contract row의 분리
+### 4.2 Logical ERD와 Queue row의 분리
+
+Logical ERD는 `JobRecord 1 → N JobExecution`, `JobExecution → UsageRecord.execution_ref` 같은 **논리 관계**를 제공한다. 하지만 queue scheduling 자체의 `available_at`, claim owner, lease 같은 Runtime metadata까지 독립 domain record로 확정하지 않는다.
 
 권장 물리 모델은 다음 의미를 분리한다.
 
@@ -294,7 +313,7 @@ STALE      → FAILED
 CANCELLED  → PARTIAL
 ```
 
-같은 `job_id`에 여러 attempt가 있으면 가장 큰 attempt가 현재 execution 상태다. 사용자 재실행으로 같은 kind의 JobRecord가 여러 개라면 가장 최근 Intent가 현재 작업을 대표한다.
+같은 `job_id`에 여러 attempt가 있으면 가장 큰 `attempt`가 그 job의 대표 execution 상태다. 같은 kind의 JobRecord가 여러 개라면 Final JobRecord/CaseView Contract A절 §10-7에 따라 **`requested_at`이 가장 늦은 JobRecord**가 그 kind의 대표 job이다. `case_rev`는 발주 순서 정렬 키로 쓰지 않는다. 이 선택 규칙은 Runtime이 새로 판단하는 정책이 아니라 case projection Contract를 따르는 것이다.
 
 모든 가능한 stage를 미리 채우거나 근거 없는 percentage를 만들지 않는다.
 
@@ -324,15 +343,21 @@ case가 필요한 readout Job만 새로 발주
 
 ## 11. UsageRecord Persistence
 
-### 11.1 Row 생성 시점
+### 11.1 기록 대상과 persistence 시점
+
+Final UsageRecord Contract가 확정하는 것은 **기록 대상 조건**이다.
 
 ```text
 실제 capability/provider invocation 시작
-→ UsageRecord append
+→ 해당 호출은 UsageRecord 기록 대상
 
 dispatch 전 CANCELLED/FAILED
 → UsageRecord 없음
 ```
+
+호출 시작 순간에는 token/cost/latency/실패 정보가 완성되지 않을 수 있다. 따라서 Runtime은 관측 가능한 사용량·결과·실패 정보를 Contract 규칙에 맞게 채울 수 있는 시점에 호출 1건당 append-only UsageRecord 1건을 남긴다.
+
+**아직 확정하지 않는 것:** 호출 시작 순간 incomplete row를 먼저 INSERT할지, 완료/실패 관측 뒤 final row를 append할지, worker 소멸 시 in-flight invocation을 어떻게 복구할지, 중복 append를 어떻게 방지할지는 Runtime persistence 구현 결정이다.
 
 ### 11.2 집계
 
@@ -351,6 +376,8 @@ Runtime config가 `pricing_id → 가격표` mapping을 소유한다. exact 저�
 ### 11.4 아직 열려 있는 값
 
 - UsageRecord DB table/migration
+- invocation 시작 → final append 사이의 in-flight 추적/복구 방식
+- 호출 1건당 중복 append 방지/idempotency
 - pricing config 형식과 history 보관
 - UsageRecord retention
 - `purge_case()`와 ledger 삭제 관계
@@ -487,6 +514,9 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 첫 DB Queue/Worker 구현에서 닫아야 한다.
 
 - [ ] queue table / execution table의 물리 schema
+- [ ] `JobExecution.produced` 물리 저장 — JSON vs `job_execution_products`
+- [ ] `JobExecution.usage_refs` materialization — 별도 저장 vs `UsageRecord.execution_ref` projection
+- [ ] UsageRecord final append timing / in-flight recovery / duplicate prevention
 - [ ] claim transaction / locking query
 - [ ] retry max
 - [ ] backoff + jitter
@@ -503,6 +533,8 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 ## References
 
 - [Architecture v4](../architecture/module-architecture.md)
+- [Logical ERD](../architecture/erd-draft.md)
+- [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [JobRecord / CaseView Contract](../architecture/contracts/contract-job-record-case-view.md)
 - [JobExecution Contract](../architecture/contracts/contract-job-execution.md)
 - [UsageRecord Contract](../architecture/contracts/contract-usage-record.md)
