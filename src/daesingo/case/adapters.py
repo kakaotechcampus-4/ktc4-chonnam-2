@@ -73,6 +73,15 @@ Tool Trajectory 1차 Review WARN ①: 부분 재실행 정책 표가 `EVENT_TIME
 — `correction_records=self._case.correction_records`를 넘기고, 캐시를 `case_rev` 기준
 으로 무효화한다(`_build_evidence_bundle()` 참고). 별도 `JobRecord`는 추가하지 않는다 —
 evidence 재조립은 순수 함수 재호출로 끝나는 즉시 계산이라 비동기 발주가 필요 없다.
+
+## 2026-09-20 갱신(이슈 #84) — location_hint를 evidence에 실제로 전달
+
+`_build_evidence_bundle()`이 `assemble_evidence()`에 `location_hint`를 아예 안 넘기고
+있었다(`gps_observation=None`만 명시, `location_hint` 인자 자체가 빠져 있었음) — 공용
+case fixture에 `hints.location`이 있는데도 real 경로에서만 위치가 비어 EVIDENCE scope가
+`evidence.location.present` 하나 때문에 WARN으로 내려갔다. `location_hint=self._case.hints.get("location")`을
+넘기도록 고쳤다. `gps_observation`은 여전히 `None`이다 — recording이 GPS 관찰을 내놓는
+공개 함수를 아직 노출하지 않는다(`real_e2e.py` 모듈 docstring의 「알려진 단순화」 참고).
 """
 from __future__ import annotations
 
@@ -330,6 +339,7 @@ class RealAdapter:
                 mock_root=self._mock_root,
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
+                location_hint=self._case.hints.get("location"),
             )
             self._evidence_bundle_case_rev = self._case.case_rev
         return self._evidence_bundle

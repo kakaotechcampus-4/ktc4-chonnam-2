@@ -170,11 +170,68 @@ def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
     assert record_after["event"]["safety_report_type"]["source"]["kind"] == "case.user_correction"
 
 
+def test_real_adapter_evidence_includes_case_location_hint():
+    """이슈 #84 — `real_e2e.py`가 `assemble_evidence()`에 `location_hint`를 아예 안
+    넘겨서(`gps_observation=None`만 명시), 공용 case fixture에 `hints.location`이
+    있는데도 real 경로의 `EvidenceRecord.location`이 항상 비고 `evidence.location.present`
+    하나 때문에 EVIDENCE scope가 WARN으로 내려갔었다. `location_hint`가 없는 case와
+    있는 case를 나란히 돌려서 WARN → PASS로 바뀌는 것까지 값으로 확인한다."""
+    scope = _real_scope()
+    location_hint = "상무중앙로 사거리 부근"  # data/mock/case/scenario_happy_001.json 그대로
+
+    case_without_hint = CaseAggregate.intake(case_id="case_h001_no_location_hint", hints={}, manifest_summary={})
+    case_without_hint.start_search()
+    real_without_hint = RealAdapter(
+        case_id="case_h001_no_location_hint", case=case_without_hint, search_scope=scope, mock_root=MOCK_ROOT
+    )
+    candidates = service.receive_search_candidates(case_without_hint, real_without_hint)
+    case_without_hint.select_candidate(candidates[0].candidate_id)
+
+    record_before = real_without_hint.get_evidence_record()
+    assert "location" not in record_before
+    assert real_without_hint.get_requirement_report("EVIDENCE")["overall"] == "WARN"
+
+    case_with_hint = CaseAggregate.intake(
+        case_id="case_h001_location_hint", hints={"location": location_hint}, manifest_summary={}
+    )
+    case_with_hint.start_search()
+    real_with_hint = RealAdapter(
+        case_id="case_h001_location_hint", case=case_with_hint, search_scope=scope, mock_root=MOCK_ROOT
+    )
+    candidates = service.receive_search_candidates(case_with_hint, real_with_hint)
+    case_with_hint.select_candidate(candidates[0].candidate_id)
+
+    record_after = real_with_hint.get_evidence_record()
+    assert record_after["location"]["user_hint"]["value"] == location_hint
+    assert record_after["location"]["user_hint"]["source"]["kind"] == "case.user_location_hint"
+    # gps_observation은 여전히 None이다(recording이 아직 공개 경로를 안 내놓음, 「알려진 단순화」).
+    assert "coord" not in record_after["location"]
+
+    report_after = real_with_hint.get_requirement_report("EVIDENCE")
+    assert report_after["overall"] == "PASS"
+    location_check = next(c for c in report_after["checks"] if c["code"] == "evidence.location.present")
+    assert location_check["outcome"] == "PASS"
+    assert location_check["reason_code"] == "evidence.location_available"
+
+
 def test_real_e2e_happy_path_reaches_ready_caseview():
     """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`가
-    `READY`까지 도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다."""
+    `READY`까지 도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다.
+
+    `hints`는 `data/mock/case/scenario_happy_001.json`의 값을 그대로 쓴다 — 특히
+    `location`이 real 경로까지 전달돼야 EVIDENCE scope가 PASS까지 간다(이슈 #84,
+    수정 전에는 `location_hint`가 안 넘어가 WARN에 머물렀다)."""
     scope = _real_scope()
-    case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints={}, manifest_summary={})
+    case = CaseAggregate.intake(
+        case_id="case_h001_full_e2e",
+        hints={
+            "time": "18시쯤",
+            "vehicle": "흰색 SUV",
+            "situation": "백색 실선 구간에서 차로변경",
+            "location": "상무중앙로 사거리 부근",
+        },
+        manifest_summary={},
+    )
     real = RealAdapter(case_id="case_h001_full_e2e", case=case, search_scope=scope, mock_root=MOCK_ROOT)
 
     case.start_search()
@@ -196,6 +253,11 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["stage"] == "READY"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
-    assert view["requirements_evidence"]["readiness"] in {"PASS", "WARN"}
+    # 이슈 #84 수정분 — location_hint가 real 경로까지 전달돼 location_display가 채워지고,
+    # 그 결과 EVIDENCE scope가 WARN이 아니라 PASS까지 간다(수정 전에는 여기서 늘 WARN이었음).
+    assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"
+    assert view["evidence"]["location_display"]["info_state"] == "INFO_NEEDS_REVIEW"
+    assert view["evidence"]["location_display"]["coord"] is None  # gps_observation은 여전히 None(알려진 단순화)
+    assert view["requirements_evidence"]["readiness"] == "PASS"
     # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.
     assert view["package"] is None or "package_ref" in view["package"]
