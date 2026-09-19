@@ -240,7 +240,11 @@ def _base(root: Path, scenario_id: str, config: Contract) -> tuple[Contract, Con
 
 
 def _mismatched_dimensions(comparison: Contract) -> list[str]:
-    """`comparison`이 불일치로 기록한 축의 이름을 돌려준다."""
+    """`comparison`이 불일치로 기록한 축의 이름을 돌려준다.
+
+    비교 축은 여기에 명시적으로 등록한다. 새 축을 `comparison`에 추가하려면
+    이 목록에도 넣어야 사유 누락 검사가 그 축까지 본다.
+    """
     axes = (
         ("time_statuses", comparison["time_statuses_match"]),
         ("requirement_overalls", comparison["requirement_overalls_match"]),

@@ -122,11 +122,16 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
                     )
 
     def test_uncovered_mismatch_is_rejected(self):
-        """새 비교 축이 늘어도 사유 없는 불일치가 통과하지 못하게 막는다.
+        """`_mismatched_dimensions`에 등록된 축에서 사유 누락을 막는다.
 
-        `_derived_differences`가 축을 하나 빠뜨리면 artifact는 다시 「다르다는
-        사실만 있고 이유가 없는」 상태로 돌아간다. 그때 조용히 통과하지 않고
-        생성 단계에서 멈춰야 한다.
+        `_derived_differences`가 등록된 축을 하나 빠뜨리면 artifact는 다시
+        「다르다는 사실만 있고 이유가 없는」 상태로 돌아간다. 그때 조용히
+        통과하지 않고 생성 단계에서 멈춘다.
+
+        범위를 분명히 해 둔다 — 이 가드는 **등록된 축**만 본다.
+        `comparison`에 완전히 새로운 키를 추가하면서 `_mismatched_dimensions`에
+        등록하지 않으면 그 축은 애초에 불일치로 계산되지 않으므로 여기서 잡히지
+        않는다. 비교 축을 늘릴 때는 `_mismatched_dimensions` 등록이 함께 필요하다.
         """
         uncovered = {
             "time_statuses_match": True,
