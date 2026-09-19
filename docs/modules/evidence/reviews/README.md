@@ -12,6 +12,6 @@ evidence/common-runtime Owner 관점에서 수행한 Mock fixture와 모듈 접�
 - `13_adr-002-003-implementation_2026-09-14.md` — K1~K4·D1 코드/정책/계약/Artifact 구현과 검수, 공용 관찰 fact 부재에 따른 지시 간 불일치 기록
 - `14_instruction-conflict-analysis-and-doc-fixes_2026-09-14.md` — `13_...`의 불일치 두 건에 대한 원인 분석, 구현 판단 평가, Owner 결정 대기 항목과 추천값, ADR 문서 정정안. **처리 완료** — ②③④ 채택, ①(I4 범위 확장)은 기각되고 `ADR-EVIDENCE-005`(세 rule 제거)로 대체됐다
 - `15_adr-005-implementation_2026-09-14.md` — ADR-EVIDENCE-005 D2의 v4 catalog·코드·테스트·Artifact 반영, H/U Package 복구 증빙, I2·I4·recording 미결 경계 검수
-- `16_first-completion-recheck_issue-drafts_2026-09-19.md` — 6개 모듈 `develop` 통합 이후 1차 완료 체크리스트를 재확인하고 남은 항목을 **real E2E 기준 처리 시점별로 분류**한 초안(미게시). 1부는 real E2E 착수 전에 닫을 3건, 2부는 작업과 함께/뒤에 정리될 2건, 3부는 다른 PR에서 진행 중이라 완료 확인만 하는 1건
+- `16_first-completion-recheck_issue-drafts_2026-09-19.md` — 6개 모듈 `develop` 통합 이후 1차 완료 체크리스트를 재확인하고 남은 항목을 **real E2E 기준 처리 시점별로 분류**한 분류 기록. 1부 3건은 **게시 완료 — 이슈 #84·#85·#86**, 2부 2건은 real E2E 작업 이후로 미룸, 3부 1건은 PR #82이 덮고 있어 완료 확인만 한다
 
 공용 Mock의 canonical 설명과 fixture 규칙은 `../../../mock/`이 소유한다. 이 폴더의 보고서는 evidence/common-runtime 담당자의 검수 기록이며 공용 Mock 계약을 대신하지 않는다.

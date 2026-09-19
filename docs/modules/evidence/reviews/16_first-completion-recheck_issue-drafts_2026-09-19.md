@@ -1,6 +1,6 @@
 # 1차 완료 체크리스트 재검토 — 처리 시점별 분류
 
-> 상태: **초안 — 미게시.** 게시 여부와 분리 방식은 Owner가 정한다.
+> 상태: **1부 게시 완료 — 이슈 [#84](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/84) · [#85](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/85) · [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86)** (2026-09-19, [PR #83](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/83)). 2부는 real E2E 작업 이후로 미뤘고, 3부는 올리지 않는다. 이 문서는 원본 분류 기록으로 남으며 이후 논의는 각 이슈에서 진행한다.
 >
 > 작성일: `2026-09-19` · 기준 체크아웃: `origin/develop` 동기화 후
 >
@@ -18,11 +18,11 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 | 부 | # | 항목 | 성격 | 주 담당 |
 | --- | --- | --- | --- | --- |
-| 1 | P1 | `real_e2e`가 `location_hint`·`gps_observation`을 넘기지 않는다 | 배선 누락 | 유소연(`case`) |
-| 1 | P2 | baseline 비교에서 P/R의 차이 사유가 기록되지 않는다 | 구현 버그 | 김준영(`evidence`) |
-| 1 | P3 | `evidence.location.present` 정본 결정 | **정본 결정 · 유일한 차단 항목** | 김준영 · 유소연 · 신유민(`web`) |
-| 2 | P4 | real E2E에서 H의 Package가 발행되지 않는다 | 접합 미배선 | 유소연 · 정철원 · 신유민 |
-| 2 | P5 | 공용 Package fixture가 `report-package/v1`에 멈춰 있다 | fixture 갱신(I2) | 유소연 |
+| 1 | P1 | [#84](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/84) `real_e2e`가 `location_hint`·`gps_observation`을 넘기지 않는다 | 배선 누락 | 유소연(`case`) |
+| 1 | P2 | [#85](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/85) baseline 비교에서 P/R의 차이 사유가 기록되지 않는다 | 구현 버그 | 김준영(`evidence`) |
+| 1 | P3 | [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86) `evidence.location.present` 정본 결정 | **정본 결정 · 유일한 차단 항목** | 김준영 · 유소연 · 신유민(`web`) |
+| 2 | P4 | real E2E에서 H의 Package가 발행되지 않는다 | 접합 미배선 · **미게시** | 유소연 · 정철원 · 신유민 |
+| 2 | P5 | 공용 Package fixture가 `report-package/v1`에 멈춰 있다 | fixture 갱신(I2) · **미게시** | 유소연 |
 | 3 | V1 | Python 버전·빌드 환경 통일 | **[PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82) 진행 중 — 머지 후 확인만** | 김준영(팀 공용) |
 
 권장 순서는 **P1 → P2 → P3**이다. P1과 P2가 P3을 논의할 재료를 만든다 — P1 없이는 「위치가 있는 정상 케이스」를 실제로 볼 수 없고, P2 없이는 P/R이 왜 다른지를 남에게 보여줄 근거가 없다.
@@ -33,7 +33,7 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 # 1부 — real E2E 착수 전에 닫는다
 
-## P1. `[case]` `real_e2e`가 `location_hint`·`gps_observation`을 넘기지 않는다
+## P1. `[case]` `real_e2e`가 `location_hint`·`gps_observation`을 넘기지 않는다 — [#84](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/84)
 
 ### 제안 제목
 
@@ -64,7 +64,7 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 ---
 
-## P2. `[evidence]` baseline 비교에서 P/R의 차이 사유가 기록되지 않는다
+## P2. `[evidence]` baseline 비교에서 P/R의 차이 사유가 기록되지 않는다 — [#85](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/85)
 
 ### 제안 제목
 
@@ -95,7 +95,7 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 ---
 
-## P3. `[evidence/case/web]` `evidence.location.present` 정본 결정
+## P3. `[evidence/case/web]` `evidence.location.present` 정본 결정 — [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86)
 
 ### 제안 제목
 
@@ -133,7 +133,9 @@ P1을 먼저 처리하면 「위치가 있는 케이스」와 「없는 케이�
 
 # 2부 — real E2E와 함께, 또는 그 뒤에
 
-## P4. `[case/evidence/recording/readout]` real E2E에서 H의 Package가 발행되지 않는다
+> **아직 이슈로 올리지 않았다.** real E2E 작업이 끝난 뒤 체크리스트를 다시 확인하면서 그때 필요한 만큼만 올린다. 지금 올리면 담당자가 손댈 수 없는 상태로 열려 있게 된다.
+
+## P4. `[case/evidence/recording/readout]` real E2E에서 H의 Package가 발행되지 않는다 — 미게시
 
 ### 제안 제목
 
@@ -173,7 +175,7 @@ P1을 먼저 처리하면 「위치가 있는 케이스」와 「없는 케이�
 
 ---
 
-## P5. `[mock]` 공용 Package fixture가 `report-package/v1`에 멈춰 있다
+## P5. `[mock]` 공용 Package fixture가 `report-package/v1`에 멈춰 있다 — 미게시
 
 ### 제안 제목
 
