@@ -14,7 +14,7 @@ from daesingo.case import correction
 from daesingo.case.correction_log import export_learning_log
 from daesingo.case.domain import CaseAggregate
 
-MOCK_ROOT = Path(__file__).resolve().parents[4] / "data" / "mock"
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 def _make_case() -> CaseAggregate:

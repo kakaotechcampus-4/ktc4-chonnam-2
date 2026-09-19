@@ -6,7 +6,7 @@
 
 목표는 신고할 마음이 없던 사람을 유도하는 게 아니라, **이미 생긴 신고 의향이 준비 과정의 마찰 때문에 사라지지 않게 하는 것**이다.
 
-> **현재 상태:** 설계와 문서가 정리된 단계다. 실행되는 것은 `apps/prototype`의 흐름 프로토타입 하나뿐이고, **백엔드·영상 파이프라인·AI 호출이 없는 목데이터 UI 습작**이다. `src/`와 `eval/`은 폴더와 README만 있고 코드가 없다.
+> **현재 상태 (2026-09-18 갱신):** 설계 단계를 지나 모듈별 구현이 진행 중이다. `apps/prototype`은 여전히 백엔드·영상 파이프라인·AI 호출이 없는 흐름 프로토타입(목데이터)이지만, `apps/web`은 실제 구현이 시작됐다(`CaseView` 소비 화면·컴포넌트). `src/daesingo/`는 `case`·`search`·`readout`·`recording`·`evidence`·`common` 6개가 실제 코드와 테스트를 갖고 있고(`tests/` 기준 445개 통과), `api`·`worker`는 아직 README만 있는 골격이다. `eval/`도 채점 도구(정규화·scorer·runner)가 실제로 동작한다. 모듈 간 실제 AI 호출·엔드투엔드 연결은 아직 없다.
 
 ## 무엇을 하고, 무엇을 하지 않는가
 
@@ -60,15 +60,16 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 
 ## 레포 구성
 
-`apps/`에 실행 코드, `docs/`에 living document, `src/`·`eval/`에 코드 골격이 있다. 골격 폴더에는 README만 있고 코드가 없다 — 데이터 계약이 확정되면 각 Owner가 채운다.
+`apps/`에 실행 코드, `docs/`에 living document, `src/`·`eval/`에 Python 구현이 있다. 모듈별 진행 상태는 다르다 — 코드가 들어온 곳도 있고, 아직 README만 있는 골격도 있다. 정확한 현황은 각 폴더의 README와 `docs/management/ownership.md`가 소유한다.
 
 | 경로 | 내용 |
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
-| `apps/web/` | 실제 웹 앱 자리. README만 — 프로토타입을 확장할지 새로 만들지는 `web` Owner가 정한다 |
-| `src/daesingo/` | Python 모듈형 모놀리스 골격 — 도메인 5개 + `common` runtime + `api`/`worker` composition root |
-| `eval/` | 오프라인 채점 골격 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test` |
-| `scripts/`, `tests/` | 팀 스크립트와 테스트 자리 |
+| `apps/web/` | 실제 웹 앱. `CaseView` 소비 화면·컴포넌트 구현 진행 중 (Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
+| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker` composition root는 아직 README만 있는 골격 |
+| `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
+| `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
+| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
 | `docs/modules/` | 모듈별 조사·실험·결정·계약 |
@@ -108,15 +109,26 @@ npm run dev:prototype  # Vite가 출력하는 URL 열기 (기본 http://localhos
 ```bash
 npm run build              # build 스크립트가 있는 workspace 전부
 npm run preview:prototype  # 프로토타입 프로덕션 빌드 서빙
+npm run dev:web            # apps/web 개발 서버
+npm run test:web           # apps/web 테스트 (vitest)
 ```
 
-`src/daesingo`와 `eval/`은 아직 실행할 것이 없다. `pyproject.toml`과 의존성은 코드를 시작하는 Owner가 만든다.
+### Python (`src/daesingo`, `eval/`)
+
+Python 3.10 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
+
+```bash
+pip install -e ".[test]"   # daesingo 패키지 + pytest 설치 (루트에서 한 번)
+pytest                      # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
+pytest tests/case/          # 모듈 하나만
+python scripts/check_boundaries.py  # 모듈 경계 위반 검사
+```
 
 ### 프로토타입에 대해
 
-`apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다.
+`apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.
 
-실제 웹 앱이 이 코드를 확장할지 새로 시작할지는 **미결**이고 `web` Owner가 정한다. 판단에 필요한 사실은 [`apps/prototype/README.md`](apps/prototype/README.md)에 있다.
+실제 웹 앱은 `apps/web`에서 구현이 진행 중이다(`CaseView` 소비 화면·컴포넌트). 프로토타입을 얼마나 참고했는지·구조가 어떻게 다른지는 `web` Owner가 관리하는 [`apps/web/README.md`](apps/web/README.md)와 `docs/modules/web/`이 소유한다.
 
 ## 라이선스
 
