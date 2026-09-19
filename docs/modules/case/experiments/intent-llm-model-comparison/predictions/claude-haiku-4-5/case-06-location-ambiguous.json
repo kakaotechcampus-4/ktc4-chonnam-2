@@ -1,0 +1,22 @@
+{
+  "case_id": "case-06-location-ambiguous",
+  "scenario_tag": "위치_애매",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": \"집 근처 사거리\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"위치는 \\\"집 근처 사거리\\\"로 언급되었지만, 사용자 본인이 \\\"정확히 어디였는지는 기억이 안 난다\\\"고 명시했으므로 신뢰도가 낮다. 다른 필드들은 발화에서 언급되지 않았으므로 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "집 근처 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "위치는 \"집 근처 사거리\"로 언급되었지만, 사용자 본인이 \"정확히 어디였는지는 기억이 안 난다\"고 명시했으므로 신뢰도가 낮다. 다른 필드들은 발화에서 언급되지 않았으므로 null로 처리했다."
+  },
+  "latency_ms": 2866.9986999593675,
+  "prompt_tokens": 1846,
+  "completion_tokens": 256,
+  "cost_krw": 4.758284,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

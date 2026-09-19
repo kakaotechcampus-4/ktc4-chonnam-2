@@ -1,0 +1,22 @@
+{
+  "case_id": "case-05-vehicle-ambiguous",
+  "scenario_tag": "차량_애매",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"SUV\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"차량 종류에 대해 SUV라고 명확히 언급하였으며 색상에 대한 불확실함은 차량 종류 추출에 영향을 미치지 않음.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "SUV",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "차량 종류에 대해 SUV라고 명확히 언급하였으며 색상에 대한 불확실함은 차량 종류 추출에 영향을 미치지 않음."
+  },
+  "latency_ms": 2730.868100072257,
+  "prompt_tokens": 309,
+  "completion_tokens": 81,
+  "cost_krw": 0.30234300000000003,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
