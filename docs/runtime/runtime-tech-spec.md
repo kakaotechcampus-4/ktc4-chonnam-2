@@ -479,7 +479,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 3. RUNNING worker 소멸 → STALE
 4. retry 시 same job_id + new execution_id + attempt+1
 5. startup/periodic stale sweep idempotent
-6. invocation 시작 시 UsageRecord 생성
+6. 실제 invocation이 시작된 호출은 UsageRecord 기록 대상이 되며, 호출 1건당 최종 원장 row가 정확히 1건 남음
 7. dispatch 전 cancel에는 UsageRecord 없음
 8. old case_rev SUCCEEDED execution이 STALE로 바뀌지 않음
 
