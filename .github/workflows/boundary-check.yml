@@ -17,37 +17,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v6
-
-      # 이 PR에서만 Python 3.12 기준 lock을 재생성하고 head branch에 반영한다.
-      # lock 반영 확인 뒤 최종 워크플로에서는 제거한다.
-      - name: Python 3.12 lock 재생성
-        run: uv lock
-
-      - name: 변경된 lock 반영
-        if: github.event_name == 'pull_request'
-        run: |
-          if ! git diff --quiet -- uv.lock; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add uv.lock
-            git commit -m "chore(env): regenerate uv lock for Python 3.12"
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
 
       - name: Python 3.12 환경 동기화
         run: uv sync --locked
