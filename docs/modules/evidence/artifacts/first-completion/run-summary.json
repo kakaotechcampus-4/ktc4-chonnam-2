@@ -1,6 +1,6 @@
 {
   "artifact_version": "evidence-first-completion-summary/v1",
-  "base_revision": "78904bd46dd3582cbd0701c31b98d633b4644eb1",
+  "base_revision": "6d8a044b17d3856752e1ab9497ebd9727f953c31",
   "implementation_fingerprints": {
     "src/daesingo/evidence/__init__.py": "3e8004640de7705ae7c06115764ff1c93b9df51bef5e9d176a5bd1503839529d",
     "src/daesingo/evidence/_contract.py": "1f74d3d55c197697a3d8ad94b45cc61390d28dc3ae3fa70c106d849ff9678f0b",
@@ -9,7 +9,7 @@
     "src/daesingo/evidence/deadline.py": "e6247d8325ba14f637cd8492a7e0dbe5a3ec48bb9b436d88651d77671d76aac8",
     "src/daesingo/evidence/deadline_policy_v1.json": "201f23e3bbb0cea5fc4a0a29ea43cc912dbb38822458cb6f0303ea1040cd32d3",
     "src/daesingo/evidence/errors.py": "4b50dfae9bfeb8240a9c409098bae6c03a46354326f302d649aa52418223e4e6",
-    "src/daesingo/evidence/mock_integration.py": "16eda27a9d44ade9371a241e03ee9ae920e80a3180785ff688296a28b36d5d25",
+    "src/daesingo/evidence/mock_integration.py": "b8b06f666dc1dd85bd92b92516bf2efbbead98bea4bdb4893cf7741860b32b12",
     "src/daesingo/evidence/attachment_policy_v1.json": "c889518d5a4ccb0c0ab261d4dca42e45962dfb1bcc6ff6430f373e6fe0cc830a",
     "src/daesingo/evidence/policy.py": "e5fc10114e5c7a56ece4a1a589191ee43db5ffcbb61dcb21c568eda011c8bf7d",
     "src/daesingo/evidence/policy_data.json": "f39cb79f5b1352ec9972b6d44f642bc111f4f347998294c1e39789cf1368c73c",
@@ -19,10 +19,10 @@
     "src/daesingo/evidence/safety_report_policy_v1_1.json": "9af87fc1e7fdb86a13b5fa4118eb83fe5fb621436ff78b4ee80caf8ec14a6805",
     "src/daesingo/evidence/time_resolution.py": "6de15633988a4d6d0a267944591728783e98592c8f7ab6f82f1a18f1d984dee2",
     "src/daesingo/evidence/validation.py": "83668c62ffb7f0e3d2c0ff962a64fbc6bcad36487eb5fc9c8e848baf97faf4b5",
-    "tests/evidence/fixtures/adapter_inputs.json": "2621a71cc8a0875f199b73b8022649fb58a6ec43a2a54d07478089f6a7b8778f",
+    "tests/evidence/fixtures/adapter_inputs.json": "28bd972f8e92033352d877b095ca473303ae413f003a9a9318b07b1945212fd8",
     "tests/evidence/test_contract_units.py": "6ce21104880dce00587c469f3b8c0e9fb21614ea6d9ba7b0490f0307be09be1e",
     "tests/evidence/test_contract_validation.py": "833497458ce3d4ad50c0a8a254f277b29499433f5d61059d6606944e7916a3a8",
-    "tests/evidence/test_mock_integration.py": "92b60f5ce84d64cbe50151b610f4ad543027306859d4dfffd28ebdcdd8ef0d21",
+    "tests/evidence/test_mock_integration.py": "17017a1f912b1bacb5586091661b45df2789073f2295cc2b705ad217eda09704",
     "tests/evidence/test_policy_decisions.py": "c83ca1643b76a648edbc96b70e3167792cfb125d5f88bdf701c30c6b21e85a41"
   },
   "scenarios": [
