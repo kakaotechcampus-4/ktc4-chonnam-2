@@ -62,6 +62,7 @@ AI 에이전트 제품 평가에는 서로 다른 두 질문이 있다.
 ### 4-1. 1회차 판정 근거 (2026-09-15, `scenario_happy_001`/`scenario_unknown_abstain_partial_001`/`scenario_plate_reread_001` 기준)
 
 - **① WARN** — `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1....md` 13행: `EVENT_TIME_MANUAL` → "제자리, 요건 검사만 재발주"가 정책. 그런데 `src/daesingo/case/jobs.py`에 요건 검사 재발주에 대응하는 함수가 없고, `test_scenario_correction_rerun_smoke.py`도 이를 실제로 발주하지 않은 채 완성된 evidence_v2/report_v2 fixture를 직접 대입한다 — 정책 표와 실제 발주 코드 사이의 대응이 코드로 증명되지 않음. Blocking은 아니나(①은 WARN 허용 항목) 실구현 전환 전 확인 필요.
+  - **후속(2026-09-19, 이슈 #73):** `real_e2e.py`/`RealAdapter`가 `correction_records`를 안 흘려보내고 evidence 캐시도 `case_rev`와 무관하게 영구적이던 실제 원인 2가지를 확인·수정, real E2E 통합 테스트로 증명(PR #94, `fix/case-evidence-selected-candidate` 기반). "요건 검사"는 별도 `JobRecord` 없이 순수 함수 재호출로 처리하는 게 맞다는 설계 결론도 이 PR에서 확정. 2차 Review에서 이 근거로 재판정한다.
 - **② PASS** — `data/mock/search/scenario_happy_001.json`의 두 번째 `analysis_run`(`run_id: run_h001_fine`, `operation: VISUAL_VERIFY`, `outcome: SUCCEEDED`)이 선택된 후보(`candidate_h001`)의 Fine 분석 소스(`as_h001_fine`)를 실제로 가리킴 — Coarse만으로 유형을 확정하지 않았다.
 - **③ PASS** — `data/mock/readout/scenario_happy_001.json`의 `PlateReadout.target_association`: `status=ASSOCIATED`, `evidence=[{kind: SPATIAL_PROXIMITY, ...}]`로 근거 연결 확인. 불확실 시 포기 쪽은 `scenario_plate_reread_001`의 `EvidenceRecord`(v1)에 `vehicle_number` 키 자체가 없음(abstain)으로 확인.
 - **④ PASS** — `data/mock/evidence/scenario_unknown_abstain_partial_001.json`(GPS `UNKNOWN`)의 `EvidenceRecord.location = null` — 값을 만들어내지 않음.
