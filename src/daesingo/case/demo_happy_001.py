@@ -40,7 +40,7 @@ def run() -> dict[str, Any]:
         case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search"
     )
 
-    real = RealAdapter(case_id=CASE_ID, search_scope=scope, mock_root=MOCK_ROOT)
+    real = RealAdapter(case_id=CASE_ID, case=case, search_scope=scope, mock_root=MOCK_ROOT)
     store.register(case, real)
 
     _step(1, 4, "Recording+Search: 후보 탐색 중 (search.search_candidates 실제 호출)...")
