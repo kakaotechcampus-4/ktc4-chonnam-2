@@ -1,15 +1,15 @@
 {
   "meta": {
-    "run_id": "demo_correct_cls",
+    "run_id": "demo_correct_abmix",
     "impl": "fake:always_correct",
     "impl_version": "v1",
     "stage": "classification",
-    "manifest": "a_aihub",
-    "manifest_version": "m1",
+    "manifest": "ab_mixed",
+    "manifest_version": "am1",
     "clip_rule_version": null,
     "normalizer_version": "n1",
     "code_commit": "486f64f",
-    "created_at": "2026-09-18T16:42:16.233722+09:00",
+    "created_at": "2026-09-18T16:42:16.487671+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },
@@ -1188,6 +1188,156 @@
         565,
         479
       ]
+    },
+    {
+      "sequence_id": "YT_0001_C04",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C14",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C15",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C22",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C25",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C31",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C32",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C34",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C35",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C49",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C52",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C53",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C00",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C02",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C08",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C15",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C21",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C25",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C35",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C36",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C39",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C54",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C58",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C59",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C65",
+      "predicted": "NONE",
+      "target_bbox": null
     }
   ],
   "normalized": [
@@ -2365,6 +2515,156 @@
         565,
         479
       ]
+    },
+    {
+      "sequence_id": "YT_0001_C04",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C14",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C15",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C22",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C25",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C31",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C32",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C34",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C35",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C46",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C49",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C52",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0001_C53",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C00",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C01",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C02",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C08",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C15",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C21",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C25",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C35",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C36",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C39",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C54",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C58",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C59",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C61",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C63",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C64",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "YT_0003_C65",
+      "predicted": "NONE",
+      "target_bbox": null
     }
   ],
   "facts": {}

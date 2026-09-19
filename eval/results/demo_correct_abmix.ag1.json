@@ -1,16 +1,16 @@
 {
   "meta": {
-    "run_id": "demo_correct_cls",
+    "run_id": "demo_correct_abmix",
     "impl": "fake:always_correct",
     "stage": "classification",
-    "manifest": "a_aihub",
-    "gt_version": "g1",
+    "manifest": "ab_mixed",
+    "gt_version": "ag1",
     "normalizer_version": "n1",
     "code_commit": "486f64f",
     "scorer_version": "cl1",
     "prediction_ref": {
-      "path": "eval/predictions/demo_correct_cls.json",
-      "sha256": "aa094c4841f4ba443b92c2c9c677559af0ecdb975c66f6bea2b1c194b232516c"
+      "path": "eval/predictions/demo_correct_abmix.json",
+      "sha256": "ee75331e20daaa703c7da8c09474d89c2417cdcada879f6aee7970df64aac332"
     }
   },
   "candidate": {
@@ -40,7 +40,7 @@
       "CENTER_LINE_CROSSING": 1.0,
       "SOLID_LINE_LANE_CHANGE": 1.0,
       "MOTORCYCLE_HELMET_NON_USE": 1.0,
-      "NONE": null
+      "NONE": 1.0
     },
     "confusion": {
       "SIGNAL": {
@@ -76,7 +76,7 @@
         "CENTER_LINE_CROSSING": 0,
         "SOLID_LINE_LANE_CHANGE": 0,
         "MOTORCYCLE_HELMET_NON_USE": 0,
-        "NONE": 0
+        "NONE": 30
       }
     },
     "target_correctness": 1.0,
@@ -92,11 +92,11 @@
         }
       }
     },
-    "n": 120,
+    "n": 150,
     "n_invalid_predictions": 0,
     "n_invalid_gt_labels": 0,
     "n_invalid_bboxes": 0,
-    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 5건을 target_correctness 분모에서 뺐다"
+    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 35건을 target_correctness 분모에서 뺐다; NO_CONDITION — 촬영조건 라벨이 없는 30건을 by_condition 분모에서 뺐다"
   },
   "plate": {
     "exact_accuracy": null,

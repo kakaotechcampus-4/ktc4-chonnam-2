@@ -13,11 +13,23 @@ import collections
 
 from eval.enums import CLASS_LABELS
 
+SCORER_VERSION = "cl1"   # 2026-09-16 n_invalid_bboxes 신설 (F11)
+
 _LABEL_SET = set(CLASS_LABELS)
 
 # bbox 매치 판정 임계값. candidate.score 의 시간 매칭(tolerance_sec)과
 # 별개다 — 여기는 2-D 공간 IoU.
 _TARGET_BBOX_IOU_THRESHOLD = 0.5
+
+
+def _is_wellformed_box(box):
+    """[x1, y1, x2, y2] 이고 넓이가 양수인가.
+
+    넓이가 0 이하면 IoU 가 구조적으로 0 이라 무엇과도 절대 맞지 않는다 —
+    「대상을 잘못 짚었다」가 아니라 「bbox 가 망가졌다」다. GT 쪽
+    (manifests_io.validate_sequences)과 같은 판정을 쓴다.
+    """
+    return len(box) == 4 and box[0] < box[2] and box[1] < box[3]
 
 
 def _macro(per_label):
@@ -62,6 +74,9 @@ def score(normalized, gt):
 
     target_hits = 0
     target_total = 0
+    n_invalid_bboxes = 0
+    n_no_target_bbox_gt = 0
+    n_no_condition = 0
     n_invalid_predictions = 0
     n_invalid_gt_labels = 0
     n_scored = 0
@@ -100,15 +115,29 @@ def score(normalized, gt):
             by_cond[dn]["n"] += 1
             if pred == truth:
                 by_cond[dn]["correct"] += 1
+        else:
+            # 촬영조건 라벨이 없는 항목(B tier)은 by_condition 분모에서 빠진다.
+            # 세어 두지 않으면 n 과 by_condition 합의 차이를 결과만 보고
+            # 설명할 수 없다.
+            n_no_condition += 1
 
         # target_bbox 가 없는(None) GT 항목(원본 라벨에 위반 차량 bbox 부재)은
         # target_correctness 분모에서 제외한다 — 미탐으로 세지 않는다.
         # 빈 리스트([])는 None 과 다른 값이므로 별도로 구분해 둔다.
         gt_box = item.get("target_bbox")
-        if gt_box is not None:
+        if gt_box is None:
+            # 원본 라벨에 위반 차량 bbox 가 없다. 「잴 게 없었다」이므로
+            # 미탐으로 세지 않고 분모에서 뺀다 — 뺀 사실을 적어 둬야
+            # target_correctness 의 분모를 결과 파일에서 복원할 수 있다.
+            n_no_target_bbox_gt += 1
+        else:
             target_total += 1
             pred_box = pred_by_id.get(sid, {}).get("target_bbox")
-            if pred_box is not None and _iou_2d(pred_box, gt_box) >= _TARGET_BBOX_IOU_THRESHOLD:
+            if pred_box is not None and not _is_wellformed_box(pred_box):
+                # 「대상을 잘못 짚었다」와 「bbox 가 망가져 잴 수 없었다」를
+                # 가른다. 세지 않으면 둘이 같은 0점으로 섞인다 (F11).
+                n_invalid_bboxes += 1
+            elif pred_box is not None and _iou_2d(pred_box, gt_box) >= _TARGET_BBOX_IOU_THRESHOLD:
                 target_hits += 1
 
     recall = {}
@@ -132,6 +161,19 @@ def score(normalized, gt):
             "INVALID_PREDICTIONS — baseline enum 밖의 예측 %d건을 NONE으로 접어 채점했다"
             % n_invalid_predictions
         )
+    if n_no_target_bbox_gt:
+        reasons.append(
+            "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 %d건을 "
+            "target_correctness 분모에서 뺐다" % n_no_target_bbox_gt)
+    if n_no_condition:
+        reasons.append(
+            "NO_CONDITION — 촬영조건 라벨이 없는 %d건을 by_condition 분모에서 뺐다"
+            % n_no_condition)
+    if n_invalid_bboxes:
+        reasons.append(
+            "INVALID_BBOXES — 형식이 깨진 예측 bbox %d건. target_correctness 분모에는 "
+            "남고 분자에는 들어가지 않는다" % n_invalid_bboxes
+        )
 
     return {
         "recall_macro": _macro(recall),
@@ -146,6 +188,7 @@ def score(normalized, gt):
         "n": n_scored,
         "n_invalid_predictions": n_invalid_predictions,
         "n_invalid_gt_labels": n_invalid_gt_labels,
+        "n_invalid_bboxes": n_invalid_bboxes,
         "coverage": "; ".join(reasons) if reasons else None,
     }
 
@@ -162,5 +205,6 @@ def not_run(reason):
         "n": None,
         "n_invalid_predictions": None,
         "n_invalid_gt_labels": None,
+        "n_invalid_bboxes": None,
         "coverage": reason,
     }
