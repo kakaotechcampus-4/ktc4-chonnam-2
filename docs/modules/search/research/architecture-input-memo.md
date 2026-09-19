@@ -164,7 +164,7 @@
 
 | 결정할 문제 | 가능한 방향 | 현재 추천 | 추천 근거 | 누구와 확인 |
 | --- | --- | --- | --- | --- |
-| 1시간 원본이 Files API 2GB를 넘는다 | (a)원본 업로드 / (c)저해상도 사본 / (e)분할파일 직접 / GCS 경유 | **(c) 저해상도 무음 proxy** | 2GB·1M 컨텍스트·오디오 33%가 전부 같은 방향을 가리킴 | 정철원(업로드 5안 소유), 김준영(외부 전송 범위) |
+| 1시간 원본이 Files API 2GB를 넘는다 | (a)원본 업로드 / (c)저해상도 사본 / (e)분할파일 직접 / GCS 경유 | **(c) 저해상도 무음 proxy** | 2GB·1M 컨텍스트·오디오 33%가 전부 같은 방향을 가리킴. **profile 경계 합의됨(이슈 #41): media속성=recording/recall=search — §6 B-1** | 정철원(업로드 5안 소유), 김준영(외부 전송 범위) |
 | 구간 분할 전략 | A 통스캔 / B 고정분할 / C 겹침분할 / D 2패스 | **D를 유력 후보로 두되 A~D 실측 후 결정.** 겹침값은 30s/5s/step25s 차용 | 경계에 걸친 사건 누락(1.3 TC6) 방지 + 비용 최소. 단 recall 미측정 | 김대원(labels·채점), 유소연(latency 체감) |
 | `AnalysisRun.cost` 단위 | KRW 단일 / USD + 스냅샷 / 둘 다 | **USD 원값 + 요율·환율 스냅샷 보관, KRW는 파생** | 요율표가 USD이고 재계산 가능성이 목적 | 유소연(budget 비교), 김준영(장부) |
 | 48h 만료 후 사용자 재접속 | 재업로드 발주 / **case 유효기간을 48h 이내로 제한** / 만료 전 사전 갱신 | **보류 — 두 안 모두 정책 결정** | 기간 제한이 훨씬 단순하지만 UX 축소. 기술자 단독 결정 불가 | 유소연(`case` 재실행 정책), 김준영(N12) |
@@ -197,11 +197,27 @@
 
 ### B. 다른 모듈과 충돌 가능
 
-**B-1. profile 태그 체계 — `recording`이 해석하지만 정의에는 `search`+`readout`이 필요**
+**B-1. profile 태그 체계 — `recording`이 해석하지만 정의에는 `search`+`readout`이 필요** `[경계 합의됨 · 값 Pending]`
 
 - `search` coarse는 저해상도·무음으로 충분하나 `readout`(번호판·화면시각)은 **반드시 원본 화질**이어야 한다고 본다 `[제안]`. 이 구분이 계약 어디에도 표시되지 않는다.
 - 미해결 파생 질문: **fine 검증도 proxy로 하는가, 원본 구간을 다시 뽑는가** — 선 종류(실선/점선)·신호색 판별은 화질에 직접 영향받는다.
 - 같이 볼 사람: 정철원, 신유민.
+
+**합의 (이슈 #41, 2026-09-14 · recording 정철원 조건부 동의):**
+
+- **경계 확정:** `recording`은 profile의 **측정 가능한 media 속성**(오디오 유무·해상도(등급)·FPS·codec/container·duration/coverage·source lineage/provenance)을 보장한다. 그 profile이 coarse에 **충분한 recall을 내는지는 `search`가 실험으로 검증**한다. → "recall 손해 없음"은 recording이 profile로 보장하는 속성이 **아니다**(원 제안 문구 철회).
+- **provider 수치는 canonical profile에 고정하지 않는다:** Files API 한도·`media_resolution=low` 토큰율·audio 비중·ffmpeg strip 주체는 profile 논의 **입력**으로만 쓰고, 정확한 w×h·FPS·bitrate·codec·recall 하한·무음 절감폭·`budget` 기본값은 실측 후 확정.
+- **값 목록**은 계약 §11-1대로 `recording`·`search`·`readout` 3자 합의(다음 주). readout 고화질 profile은 recording이 신유민 확인을 별도로 받는다.
+
+**요구조건 목록 초안 (다음 주 3자 합의 입력 · search가 소비하는 profile만):**
+
+| profile | search 요구(측정 가능 media 속성) | 상태 |
+| --- | --- | --- |
+| coarse(후보 탐색) | 오디오 없음(무음) · 전체 timeline coverage · coarse 탐지에 충분한 해상도 등급 | 확정 — 제출 가능. recall 하한은 search 실험으로 후속 검증 |
+| fine(시각 검증) | 선 종류(실선/점선)·신호색 판별 가능한 화질 | **미결** — fine을 proxy로 하는가/원본 구간 재추출인가 결정에 종속(위 파생 질문), 다음 주 결정 |
+| ~~readout(판독)~~ | 원본 화질 | search 책임 아님 — recording↔readout 확인 |
+
+**잔여 (이슈 #41 종료 후 이관):** ① 위 요구조건 목록을 다음 주 3자 합의 테이블에 제출 ② **H.265 direct/copy 호환성 실측**(§6 A-1·§8 🔴, 담당=어진/샘플=철원) — A~D 분할 실험의 앞 게이트, proxy 고정 조건(container·codec·w×h·FPS·audio·bitrate·동일 source+coverage)을 실험 전 명시.
 
 **B-2. `AnalysisScope.budget` 기본값을 `case`가 정하려면 원가 실측이 먼저다**
 
@@ -262,7 +278,7 @@
 - **H.265 지원 여부 실측** — 결과에 따라 업로드 전략·proxy 필수 여부·원가식 항목(트랜스코딩 CPU)·N14 문구가 전부 갈린다. (실측 어진 / 샘플 철원)
 - **1시간 원본 > 2GB → 원본 직업로드 불가**를 확정 반영. 업로드 전략 5안의 선택지가 줄어든다.
 - **4종 event_type 명칭 확정 또는 "유지" 명시 기록** — 세 문서의 공통 키.
-- **profile 태그 체계의 소유자 지정** — `recording`·`search`·`readout` 3자 최소 계약.
+- **profile 태그 체계의 소유자 지정** — `recording`·`search`·`readout` 3자 최소 계약. `[경계 합의됨 — 이슈 #41]` media속성=recording / recall=search 확정(§6 B-1). 남은 건 **값 목록 3자 합의**(다음 주)뿐.
 - **48h 만료 케이스의 처리 정책**(재업로드 vs case 유효기간 제한) — 부분 재실행 표에 행이 하나 늘어난다.
 
 ### 🟡 Data Contract 단계에서 결정

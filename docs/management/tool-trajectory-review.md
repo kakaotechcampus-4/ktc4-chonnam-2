@@ -54,10 +54,20 @@ AI 에이전트 제품 평가에는 서로 다른 두 질문이 있다.
 
 | 회차 | 날짜 | ① | ② | ③ | ④ | ⑤ | ⑥ | ⑦ | 판정 | 비고 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | | | | | | |
+| 1 | 2026-09-15 | WARN | PASS | PASS | PASS | PASS | PASS | WARN | WARN | 1차 Mock Merge(recording→search→readout→evidence→case→web, eval 병행) 직후 판정. 근거는 아래 §4-1. 판정자: 유소연 |
 | 2 | | | | | | | | | | |
 
 판정 어휘는 `pre-deploy-security-review.md`와 같다 — **PASS / WARN / BLOCK**. BLOCK은 ②·③·④·⑦(사용자에게 틀린 값이 나가거나 원본이 손상되는 것). ①·⑤·⑥은 WARN으로 기록하고 진행할 수 있다.
+
+### 4-1. 1회차 판정 근거 (2026-09-15, `scenario_happy_001`/`scenario_unknown_abstain_partial_001`/`scenario_plate_reread_001` 기준)
+
+- **① WARN** — `docs/modules/case/doc-research/부분 재실행 정책 표 초안 v1....md` 13행: `EVENT_TIME_MANUAL` → "제자리, 요건 검사만 재발주"가 정책. 그런데 `src/daesingo/case/jobs.py`에 요건 검사 재발주에 대응하는 함수가 없고, `test_scenario_correction_rerun_smoke.py`도 이를 실제로 발주하지 않은 채 완성된 evidence_v2/report_v2 fixture를 직접 대입한다 — 정책 표와 실제 발주 코드 사이의 대응이 코드로 증명되지 않음. Blocking은 아니나(①은 WARN 허용 항목) 실구현 전환 전 확인 필요.
+- **② PASS** — `data/mock/search/scenario_happy_001.json`의 두 번째 `analysis_run`(`run_id: run_h001_fine`, `operation: VISUAL_VERIFY`, `outcome: SUCCEEDED`)이 선택된 후보(`candidate_h001`)의 Fine 분석 소스(`as_h001_fine`)를 실제로 가리킴 — Coarse만으로 유형을 확정하지 않았다.
+- **③ PASS** — `data/mock/readout/scenario_happy_001.json`의 `PlateReadout.target_association`: `status=ASSOCIATED`, `evidence=[{kind: SPATIAL_PROXIMITY, ...}]`로 근거 연결 확인. 불확실 시 포기 쪽은 `scenario_plate_reread_001`의 `EvidenceRecord`(v1)에 `vehicle_number` 키 자체가 없음(abstain)으로 확인.
+- **④ PASS** — `data/mock/evidence/scenario_unknown_abstain_partial_001.json`(GPS `UNKNOWN`)의 `EvidenceRecord.location = null` — 값을 만들어내지 않음.
+- **⑤ PASS** — 같은 fixture의 `TimeResolution.considered[]`에 후보별 `source.kind`·`value`·`verification`·`used`가 전부 보존됨. `post_stamp: {needed: true, reason_code: "time.no_verified_overlay_present", requires_user_notice: true}`도 존재. 다만 "사용자에게 실제로 보였는가"는 §3 원문대로 사람이 화면으로 직접 봐야 하는 부분이라 이번 판정에는 화면 확인이 빠져 있음.
+- **⑥ PASS** — `src/daesingo/evidence/requirements.py::build_report_package()`가 `requirement_report.overall not in {"PASS","WARN"}`이면 `PackageNotReady`를 코드로 강제 — 순서가 구조적으로 보장됨.
+- **⑦ WARN** — `ExternalSourceRef`(`src/daesingo/recording/models.py`)가 `{kind, ref}` 포인터뿐이고 체크섬·mtime 필드가 없으며, recording의 `repository.py`/`service.py` 어디에도 파일 I/O 자체가 없음(Mock 단계라 원본을 건드릴 코드 경로가 아직 없음) — 지금 당장 손상 위험은 없지만("건드릴 방법이 아예 없음"), 원본 불변성을 실제로 계측하는 수단 자체가 없어 2차(실구현 교체) 전에 체크섬/mtime 비교 계측을 반드시 추가해야 함.
 
 ## 5. 나중에 자동화할 수 있는 것
 

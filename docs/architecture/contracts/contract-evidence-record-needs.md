@@ -6,12 +6,14 @@
 
 **Contract:** `EvidenceRecord + EvidenceNeeds`
 
-**Contract Version:** `evidence-record/v1.2` / `evidence-needs/v1`
+**Contract Version:** `evidence-record/v1.3` / `evidence-needs/v1`
 
-**Accepted:** `2026-09-04` (v1) · `2026-09-06` (v1.1) · `2026-09-07` (v1.2)
+**Accepted:** `2026-09-04` (v1) · `2026-09-06` (v1.1) · `2026-09-07` (v1.2) · `2026-09-10` (v1.3)
 
-**Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1 · **`adr/adr-data-contract-call-closure-2026-09-07.md` §4.1 (v1.2 근거, B01 종결)**
+**Related ADR:** `adr/adr-evidence-record-needs.md` · `adr/adr-consistency-2026-09.md` §6 R-1 · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1 (v1.2 근거, B01 종결)
 
+> **`evidence-record/v1.3` 변경 (2026-09-10, 이슈 #33 Required-4 · PR #32 반영, case 통합 주도 · 확인 김준영).** `EvidenceRecord`에 최상위 `situation_response?` 필드를 추가한다(§3 참고) — 사용자가 AI가 제안한 사건 상황(사건 유형/위반 표현 등)에 "확인함/정정함/잘 모르겠음"으로 응답한 machine-readable provenance를 **immutable snapshot으로 보존**한다. 값은 `CONFIRMED | CORRECTED | USER_UNSURE` 3종이며, 단순 "잘 모르겠어요" 응답은 새 `CorrectionRecord`를 만들지 않고 이 필드 하나로 표현한다(`value=USER_UNSURE`일 때만 `candidate_ref=null` 허용, `CONFIRMED`/`CORRECTED`는 응답 대상 candidate snapshot을 반드시 가진다). `CORRECTED`는 별도로 `CorrectionRecord`(`kind=SITUATION_CHANGE`, `contract-correction-record.md` v1.1)도 생성하며 `situation_response`는 그 발생 사실과 시각만 snapshot한다 — 두 기록은 서로 다른 책임(EvidenceRecord=현재 확정 상태의 일부로서의 응답 이력, CorrectionRecord=값 변경 자체의 append-only 계보)이라 중복이 아니다. §10 불변조건 16~18 추가.
+>
 > **`evidence-record/v1.2` 변경 (2026-09-07)** — B01 종결. ① `EvidenceValue`에 `needs_review: boolean` 추가 — `evidence`가 값과 함께 검토 필요 여부를 내려주고 `case`는 재계산하지 않는다 ② `occurred_at`에 `user_corrected: boolean`·`source: {kind, label_key}` 추가(`TimeResolution` 결과의 snapshot, `observability` 없음) ③ `resolution_status=OK` 부여 조건을 엄격히 한다(§4.4) ④ §10 불변조건 12~15. 값 의미·값 공간은 유지하며 필드 추가만이다. Decider 유소연(`CaseView` 소비 규칙) · 김준영(`evidence` 필드) · 확인 신유민.
 
 > **`evidence-record/v1.1` 변경 (2026-09-06)** — `EvidenceValue.source`에 `observability`(`OBSERVED`/`INFERRED`)와 `label_key`를 추가했다. 당시 Pending B01(needs_review 원천·시각/위치 입력 변환·라벨 전달)은 v1.2에서 닫혔다.
@@ -109,7 +111,7 @@ EvidenceRecord {
     }
 
     event: {
-        visual_event_type: EvidenceValue<VisualEventType>
+        visual_event_type: EvidenceValue<VisualEventType | null>  // verification=UNCERTAIN 시 value=null 허용, 아래 절 참고
         safety_report_type: EvidenceValue<SafetyReportType>
         violation_expression: EvidenceValue<string>
     }
@@ -135,6 +137,12 @@ EvidenceRecord {
         place_name?: EvidenceValue<string>
         search_keyword?: EvidenceValue<string>
         user_hint?: EvidenceValue<string>
+    }
+
+    situation_response?: {
+        value: CONFIRMED | CORRECTED | USER_UNSURE
+        responded_at: offset-aware RFC3339 datetime
+        candidate_ref: ContractRef | null
     }
 
     provenance: {
@@ -166,6 +174,15 @@ Coordinate {
 ```
 
 `EvidenceValue<T>`는 이번 v1에서 독립 Data Contract로 승격하지 않고 `EvidenceRecord` 내부 nested structure로 둔다.
+
+### `event.visual_event_type`의 null 허용 — 명확화(v1.3, 2026-09-10, 이슈 #33 Required-5·`CONTRACT_CONFLICTS.md` 항목 4 종결, case 문서화 · 확인 김준영)
+
+위 스키마의 `event.visual_event_type: EvidenceValue<VisualEventType>`과 `EvidenceValue<T>.value: T`는 문면상 `value`가 항상 값을 가져야 하는 것처럼 읽히지만, 이는 이미 이슈 #25 A절에서 evidence가 내린 결정을 문서에 아직 옮기지 못한 것뿐이다 — **`VisualEvidence.verification=UNCERTAIN`(사건 유형 자체를 확정하지 못한 상황)일 때 `event.visual_event_type.value`는 `null`을 허용한다.** 즉 이 필드에 한해 실질 타입은 `T | null`이다.
+
+- `event` 최상위 객체와 `visual_event_type` 키 자체는 여전히 필수다 — 없애는 것은 `value` 하나뿐이다. `safety_report_type`·`violation_expression`은 이 예외 대상이 아니다(§4.3 개념 분리 유지, `unknown_abstain_partial_001`에서도 두 값 모두 non-null).
+- `value=null`일 때도 `EvidenceValue<T>`의 나머지 필드(`source`·`support_refs`·`user_corrected`·`needs_review`)는 §4.2·§3 「`needs_review`」 절 규칙을 그대로 따른다 — `value=null`에는 `needs_review=true`를 만들지 않는다.
+- 하위 소비자 처리는 새 규칙이 아니라 기존 규칙의 적용이다: `CaseView.case_type_display`는 `contract-job-record-case-view.md` B절 §7 파생 규칙 (1)을 그대로 타서 `value==null → INFO_UNKNOWN`으로 떨어진다(`docs/modules/case/decisions/generic-warn-package-and-situation-response.md` 항목 2, `scenario_unknown_abstain_partial_001` fixture로 실증됨).
+- 값 의미·값 공간을 바꾸지 않고 이미 합의된 내용을 스키마 문면에 반영하는 것이므로 `evidence-record/v1.3`을 유지한다(버전을 올리지 않음).
 
 ### `source.observability` · `source.label_key` (v1.1, 2026-09-06)
 
@@ -264,6 +281,21 @@ vehicle_number confirmed
 ```
 
 번호판 문자열 확정은 EvidenceRecord 책임이고, 신고영상에서 실제 식별 가능한지는 `RequirementReport` 책임이다.
+
+## 4.6-1 `situation_response` (v1.3, 2026-09-10)
+
+`case`가 AI가 제안한 사건 상황(예: `event.visual_event_type`/`violation_expression` 후보)을 사용자에게 보여주고 확인을 받는 흐름에서, 그 **응답 자체의 provenance**를 `EvidenceRecord`가 immutable snapshot으로 보존한다.
+
+| 값 | 뜻 |
+| --- | --- |
+| `CONFIRMED` | 사용자가 제안된 값을 그대로 확인함 |
+| `CORRECTED` | 사용자가 다른 값으로 정정함 — 별도 `CorrectionRecord`(`kind=SITUATION_CHANGE`)가 값 변경 자체의 계보를 남긴다 |
+| `USER_UNSURE` | 사용자가 "잘 모르겠어요"로 응답함 — 값 변경이 없으므로 `CorrectionRecord`를 만들지 않는다 |
+
+- `candidate_ref`는 응답이 어느 후보/값 snapshot을 대상으로 했는지 가리킨다. `CONFIRMED`/`CORRECTED`는 반드시 존재해야 하고, `USER_UNSURE`만 `null`을 허용한다(응답 대상이 특정되지 않을 수 있으므로).
+- 이 필드는 **응답 이력**이고 `CorrectionRecord`는 **값 변경 계보**다 — `CORRECTED` 한 건이 두 기록 모두에 나타나는 것은 책임 분리이지 중복이 아니다.
+- `situation_response`가 없으면 아직 사용자에게 확인을 요청하지 않았거나 응답을 받지 못한 상태다(`CaseView.candidates[].situation_confirmation=NOT_ASKED`로 투영, `contract-job-record-case-view.md` 소유).
+- 기존 필드와 마찬가지로 correction/reassemble 시 새 `record_ref`를 가진 Record로 옮겨가며, 과거 응답은 supersede된 Record의 snapshot으로 남는다.
 
 ## 4.7 사건시각과 영상 내 표시 분리
 
@@ -512,6 +544,9 @@ ReportPackage / DerivedVideo export Job
 13. (v1.2) `EvidenceValue.value=null`이면 `needs_review=false`다. `needs_review`는 값이 존재할 때만 `true`일 수 있다.
 14. (v1.2) `occurred_at.resolution_status=OK`는 검증된 영상 화면 시각 또는 사용자 확정에만 부여한다(`contract-time-resolution.md` §4). 파일명·metadata 계산 시각은 `NEEDS_REVIEW`다.
 15. (v1.2) `occurred_at`이 존재하면 `user_corrected`와 `source.kind`가 존재한다. `occurred_at.source`에 `observability`를 두지 않는다.
+16. (v1.3) `situation_response.value=USER_UNSURE`일 때만 `candidate_ref=null`을 허용한다. `CONFIRMED`/`CORRECTED`는 `candidate_ref`가 존재해야 한다.
+17. (v1.3) `situation_response.value=CORRECTED`이면 같은 변경을 나타내는 `CorrectionRecord`(`kind=SITUATION_CHANGE`)가 `provenance.correction_refs`에 존재해야 한다.
+18. (v1.3) `situation_response.value=USER_UNSURE`는 새 `CorrectionRecord`를 만들지 않는다 — 값 변경이 없기 때문이다.
 
 ## EvidenceNeeds
 

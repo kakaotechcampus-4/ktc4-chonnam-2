@@ -338,3 +338,44 @@ plate 3종 + time 2종, 총 **5개 지표가 통째로 여기 묶여 있다.** �
 ---
 
 **남은 최대 리스크 한 줄:** 평가에 쓰는 입력(시각 없는 1분 클립 · 프레임 시퀀스)이 **현재 계약으로는 제품과 같은 경로로 들어가지 못한다.** 이걸 계약 변경으로 풀지, 평가 전용 예외로 풀지가 v4에서 가장 먼저 결정될 문제다.
+
+---
+
+# 10. 현행 대조 (2026-09-12) — 메모 작성 이후 달라진 것
+
+> 이 절만 나중에 덧붙인 것이다. 위 본문은 작성 당시(v3 기준) 원문 그대로다.
+
+## 10-1. 해소된 것
+
+| 메모 항목 | 현재 |
+| --- | --- |
+| **A-1** `AnalysisScope`로 시각 없는 클립을 지목할 수 없다 | **해소.** `time_ranges[].kind = TIMELINE_RELATIVE` + `timeline_ref{timeline_id, revision}`가 생겼다. `contract-analysis-scope.md` §10-7이 「가짜 ISO8601로 절대시각을 위장하지 않는다」를 명시하고, `scenario_relative_rebase_001`(timeline_status `USABLE_RELATIVE_ONLY`)이 그 입력 경로를 fixture로 실증한다. **제품과 동일 입력 원칙을 지키면서 절대시각 없는 클립을 지목할 수 있다** |
+| **A-3** `verify_candidate(candidate_ref)`라 Classification 단독 실행 불가 | **해소.** Fine이 `verify_visual(input_ref, target_hint?)`로 바뀌어 candidate-independent다(RT7). 후보 없이 호출된다 |
+| **A-4** `timestamp_error` ↔ `CandidateEvent.at` 절대시각 전제 | **해소.** 후보 위치는 절대시각이 아니라 `span{timeline_id, timeline_revision, start_ms, end_ms, representative_ms}`(timeline 상대)다. 2026-09-10 정정으로 coarse localization은 `abs(representative_ms − gt_onset_ms)` point error이고 span IoU는 1차 매처에서 폐기됐다 |
+| **A-5** `eval → 공통 기반` 비용 경로 없음 | **해소.** `contract-usage-record.md`가 `eval`을 Consumer(비용 분모 집계)로 등재했고, 사건 단위 비용의 정본 집계 키는 `UsageRecord.case_id`다(v1.2) |
+| **A-6** v3 채점 대상 표가 옛 지표를 담고 있다 | **대체로 해소.** v4 §9-3이 `Recall@1/3/10` · `FP/hour 또는 FP/clip` · `Final Event Recall@3` · `recall_macro`로 갱신됐다 |
+| **B-2** 실패 분류 이름의 현행 여부 | **해소.** `docs/modules/readout/decisions/failure-taxonomy.md`가 런타임 5종 + 사후 분류 1종(`OVERCONFIDENT`)으로 확정했다(PR #27). `eval`은 이름을 복제하지 않고 가리킨다 |
+| **결론 ②** 예측/채점 물리적 분리 | **구현됨.** `eval/runners/` ↔ `eval/scorers/`, `eval/predictions/` ↔ `eval/results/` |
+| **결론 ⑥** JSON 파일 + git | **구현됨.** 실험 추적 도구 없음 |
+| **§7 질문 6** 실패를 빈 배열로 볼 것인가 | **해소.** `AnalysisRun.outcome=SUCCEEDED` + `candidates=[]`가 정상이고 실패는 `outcome`으로 표현한다(`scenario_empty_001`) |
+| **§7 질문 7** 후보 배열 순위 보장 | **해소.** `CandidateEvent.rank`가 필수이고 Consumer—`eval` 규칙이 「Recall@1/3/10은 `rank` 기준」이다 |
+
+## 10-2. 결론이 바뀐 것
+
+- **결론 ① 「모든 분모를 clip으로 통일」** → v4 §9-3은 **「FP/hour 또는 FP/clip — dataset 성격에 맞게 raw duration과 함께 보고」**로 정리됐다. 비용 지표는 `cost_per_clip`이 아니라 **`cost_per_source_video_hour`이고 분모는 중복 제거한 사건 timeline 길이**다(전후방 2소스를 합산하지 않는다 — 이슈 #17 A절).
+- **결론 ⑤ macro 보고** → 구현됐다(`recall_macro`·`precision_macro`·5×5 confusion). 다만 안전모 규모 때문에 제안했던 「안전모 제외 3종 macro를 주지표로」는 **미채택**이다(표본이 종당 30으로 균등해 규모 편차가 표본 단계에서 드러나지 않는다).
+
+## 10-3. 여전히 열린 것
+
+| 항목 | 현재 |
+| --- | --- |
+| **A-2** A tier 외부 모델 호출 주체 (가정 A4) | **미결.** v4는 지금도 「provider API 호출은 `search/providers`」다. 현재 하니스는 가짜 구현과 mock fixture만 읽어 외부 호출이 0건이라 충돌이 표면화되지 않았을 뿐이다 — **실제 모델로 A tier를 돌리는 순간 결정이 필요하다** |
+| **결론 ⑦** locked test 개봉 규칙 | **미구현.** A tier 120건·B tier 55건 모두 `split: DEV`이고 `locked`가 아직 없다. 개봉 주체·횟수는 PM 결정 대기 |
+| **§7 질문 8** abstain 임계값 기록 | **미해소이고 형태가 바뀌었다.** `contract-readout-run.md`가 「모델·프롬프트·OCR 내부 구현 세부」를 **의도적으로 제외**해 임계값을 실을 자리가 계약에 없다. plate 지표는 impl 무관 단일 계열로만 낸다 |
+| **§7 질문 10** `module_records/` 최소 필드 | **미결.** 폴더 자체가 아직 없다 |
+| FP 1건의 정의 / C-1 시각 허용 오차 / C-4 정답지 개인정보 취급 / C-5 B tier 라이선스 | **전부 미결** |
+
+## 10-4. 관련 문서
+
+- `ground-truth-schema.md` · `aihub-71555-survey.md` · `eval-dataset-plan.md` — 이 메모가 근거로 삼은 세 자료의 원문과 현행 대조
+- `version-fields-proposal.md` — §3-2(6) 「결과 파일 필수 필드 확장」의 후속 제안과 구현 대조

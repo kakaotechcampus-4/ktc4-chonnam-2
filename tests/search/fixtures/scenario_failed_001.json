@@ -1,0 +1,56 @@
+{
+  "scenario_id": "scenario_failed_001",
+  "module": "search",
+  "analysis_scopes": [
+    {
+      "scope_id": "scope_failed_001",
+      "time_ranges": [
+        {
+          "kind": "ABSOLUTE",
+          "start": "2026-08-24T18:00:00+09:00",
+          "end": "2026-08-24T18:20:00+09:00"
+        }
+      ],
+      "target_event_types": ["SIGNAL"],
+      "hint": {"vehicle": null, "free_text": null},
+      "budget": {"max_cost_krw": 1000, "max_latency_sec": 180},
+      "contract_version": "1.1.0"
+    }
+  ],
+  "analysis_run_candidate_events": [
+    {
+      "analysis_run": {
+        "run_id": "run_failed_001",
+        "operation": "CANDIDATE_SEARCH",
+        "input_ref": {"kind": "ANALYSIS_SCOPE", "ref": "scope_failed_001"},
+        "implementation": {
+          "impl_id": "fixture-search@1",
+          "model_ref": null,
+          "prompt_version": null,
+          "config_version": "search-fixture-v1"
+        },
+        "outcome": "FAILED",
+        "started_at": "2026-08-24T18:20:05+09:00",
+        "completed_at": "2026-08-24T18:20:06+09:00",
+        "issues": [
+          {
+            "kind": "INFRA",
+            "code": "PROVIDER_TIMEOUT",
+            "scope_ref": "scope_failed_001",
+            "detail": null
+          }
+        ],
+        "usage_refs": [],
+        "usage_summary": {
+          "processed_duration_ms": null,
+          "token_usage": null,
+          "latency_ms": 1000,
+          "total_cost": null
+        },
+        "contract_version": "analysis-run-candidate-event/v1.1"
+      },
+      "candidates": []
+    }
+  ],
+  "visual_evidences": []
+}

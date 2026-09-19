@@ -1,4 +1,4 @@
-# Final Data Contract — RequirementReport + ReportPackage v1
+# Final Data Contract — RequirementReport v1 + ReportPackage v1.1
 
 **Status:** `Final — Accepted`
 
@@ -6,11 +6,13 @@
 
 **Contract:** `RequirementReport + ReportPackage`
 
-**Contract Version:** `requirement-report/v1` / `report-package/v1`
+**Contract Version:** `requirement-report/v1` / `report-package/v1.1`
 
 **Accepted:** `2026-09-04`
 
-**Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`) · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2(B02)·§4.6(B07)
+**Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`) · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2(B02)·§4.6(B07) · `../../modules/evidence/adr/adr-location-absent-package.md` (`ADR-EVIDENCE-003`, 이슈 #48)
+
+> **2026-09-14 v1.1 개정.** ADR-EVIDENCE-003과 이슈 #48에 따라 `ReportPackage.report_inputs.location`을 키 필수·값 nullable로 바꿨다. 개정 범위는 §7·§8.2와 version 표기뿐이며 `RequirementReport`는 v1을 유지한다.
 
 > **2026-09-07 반영.** §5.2-1의 `CaseView` projection 규칙 소유가 `contract-job-record-case-view.md`로 이관됐다(B02 종결). §4.6에 ASSET 판정 입력의 최소 자산 사실과 전달 경계를 기록했다(B07). 스키마·버전은 바뀌지 않았다.
 
@@ -335,7 +337,7 @@ ReportPackage {
         safety_report_type: string
         occurred_at: offset-aware RFC3339 datetime
 
-        location: {
+        location: null | {
             display_text: string
             search_keyword?: string
         }
@@ -371,6 +373,8 @@ ReportPackage {
     }
 }
 ```
+
+`report_inputs.location` 키는 항상 존재해야 한다. `null`은 위치를 아직 받지 못했다는 뜻이 아니라, Package 생성 시점에 표시할 위치를 확보하지 못했다는 **확정된 부재 사실**이다. 키 생략과 빈 객체 `{}`는 허용하지 않는다.
 
 ---
 
@@ -408,7 +412,7 @@ AND deterministic package assembly 성공
 
 - safety report type
 - occurred_at
-- location display/search 정보
+- location display/search 정보 또는 그 위치를 확보하지 못했다는 부재 사실
 - vehicle number
 - violation expression
 

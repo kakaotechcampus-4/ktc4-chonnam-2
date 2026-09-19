@@ -8,13 +8,31 @@
 
 **Architecture Contract:** v4 §5-1 ⑪ `CaseView` · ⑫ `JobRecord`
 
-**Contract Version:** `job-record/v1` · `case-view/v1.2`
+**Contract Version:** `job-record/v1` · `case-view/v1.4`
 
-**Related ADR:** `adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` §6 R-1·R-2 · **`adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2·§4.3·§4.9 (v1.2 근거)**
+**Related ADR:** `adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` §6 R-1·R-2 · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2·§4.3·§4.9 (v1.2 근거)
+
+> **`case-view/v1.4` 변경 (2026-09-14, 이슈 #39 Required-3 후속 · PR 리뷰 코멘트 Q-3, 유소연·신유민 합의).**
+> ① `candidates[].at_provenance`의 값 공간을 두 갈래로 정의한다 — **evidence 조립 이후**(`occurred_at` 존재)는 `occurred_at.source.kind`(`TimeResolution.resolved.source.kind`의 snapshot) pass-through이며 값 공간은 evidence가 소유한 열린 namespaced string이다(case가 별도로 닫힌 목록을 등재하지 않는다). **evidence 조립 이전**(예: `CANDIDATE_REVIEW` 단계, `at=null`)은 case가 소유하는 별도의 작은 enum이며 현재 `recording.timeline_relative_only` 1개만 등재한다. §8 예시의 `TIMELINE_ANCHOR+OFFSET`은 fixture 전수 조사 결과 실사용 0건으로 확인돼 폐기하고 실제 값으로 교체한다(§7·§8).
+> ② `candidates[].at_provenance_label_key`(string|null, 신규)를 추가한다 — `stale_revision_label_key`와 같은 관례로, raw `at_provenance`가 authoritative이고 `at_provenance_label_key`는 case가 그 값을 보고 골라주는 순수 표시용 파생값이다. web은 raw 문자열을 직접 해석하지 않고 이 키로만 문구를 고른다(§10-12와 같은 원칙). 필드는 항상 존재하고(Y) 값만 `null`일 수 있다 — 매핑이 안 되는 raw 값은 `null`로 내려보내며 "미등록 값"과 "값 자체가 case에 알려지지 않음"을 별도 케이스로 나누지 않는다(§10-14).
+> ③ `at_provenance_label_key` 매핑표를 신설한다(§7) — web이 처음 제안한 「post-evidence 12건은 `occurred_at.source.label_key`(=`event_time_display.source_label_key`) pass-through」 가설을 fixture 16개 스냅샷 전수 대조로 검증한 결과 **성립하지 않아 기각**했다(`scenario_correction_rerun_001` rev0→rev1에서 `at_provenance`는 `recording.filename_time`으로 불변인데 `event_time_display.source_label_key`만 `time.source.filename`→`time.source.user_correction`으로 바뀌는 사례가 결정적 반증 — 이슈 #39 Required-3과 같은 종류의 독립성 문제라, pass-through를 채택하면 그 버그의 변종이 `_label_key` 레이어에서 재발할 위험이 있었다). 대신 관측된 raw 값 3종(`recording.filename_time` 10건 · `readout.overlay_ocr` 2건 · `recording.timeline_relative_only` 2건) 각각에 대해 case 소유의 독립 매핑을 신설한다. 미등록 값은 `label_key=null`로 web이 fallback 처리한다.
+> ④ `at=null`(pre-evidence) candidate의 표시 우선순위를 확인한다 — 값이 없는 상태(「시각 미확정」)가 출처 문구보다 먼저 보여야 한다는 web 제안이 case 원칙(값 없음이 `INFO_UNKNOWN`으로 먼저 표시되는 `report_field_states` 패턴)과 충돌이 없음을 확인했다. 필드 순서 자체를 스키마가 강제하지는 않는다(web 렌더링 재량).
+> fixture는 `data/mock/case/` 7개 파일의 candidates 14곳(post-evidence 12 · pre-evidence 2)에만 영향이 있고 다른 모듈 fixture 재검수가 필요 없어 별도 Mock Pack 버전 없이 scoped commit으로 반영한다(선례: 이슈 #47/#48 `report_field_states`). **fixture·case 코드(domain/view) 반영은 이 커밋의 범위 밖이며 후속 커밋에서 진행한다.**
+>
+> **`case-view/v1.3` 변경 (2026-09-10, 이슈 #31/#33 반영 · case 통합 초안, 신유민·김준영 PR 리뷰 확인 대상).**
+> ① `candidates[].situation_confirmation` 값 공간을 `NOT_ASKED | CONFIRMED | REJECTED | UNKNOWN`에서 **`NOT_ASKED | CONFIRMED | CORRECTED | USER_UNSURE`로 정정**한다 — `EvidenceRecord.situation_response`(`evidence-record/v1.3`) 값 공간과 맞춘다. `REJECTED`/`UNKNOWN`은 실제로 쓰인 적 없는 placeholder였다(§7).
+> ② `candidates[].situation_confirmation`의 파생 출처를 확정한다 — `EvidenceRecord.situation_response.value`가 있으면 그대로 projection(`CONFIRMED`/`CORRECTED`/`USER_UNSURE`), 없으면 `NOT_ASKED`. `CorrectionRecord`가 Draft라 이 필드가 대신한다던 기존 문구(A절 참고 각주)는 철회한다 — `CorrectionRecord`는 v1.1로 Final이 됐고 이제 두 계약(`EvidenceRecord.situation_response` + `CorrectionRecord{kind=SITUATION_CHANGE}`)이 각자의 책임으로 함께 존재한다(§7).
+> ③ `progress[].state=CANCELLED`는 새 값으로 만들지 않고 **기존 `PARTIAL`로 흡수**한다 — `JobExecution.status=CANCELLED`(`job-execution/v1.1`)는 부분 결과를 남길 수 있어도 완결이 아니므로 이미 있는 `PARTIAL` 의미와 같다(§7, `CONTRACT_CONFLICTS.md` 불명확 항목 9 종결). `JobExecution→CaseView` 상태 projection 표에 `CANCELLED→PARTIAL`을 추가한다(§13).
+> ④ `evidence.report_type_display`에 `info_state`/`source_label_key`를 추가한다 — `docs/modules/evidence/decisions/safety-report-policy-v1.md`(SafetyReportType registry, ACCEPTED)가 나와 `CONTRACT_CONFLICTS.md` 불명확 항목 4의 잔여 부분이 해소됐다. 파생은 `case_type_display`/`violation_display`와 같은 (1) 규칙을 따른다(§7).
+> ⑤ `package.report_field_states`를 신설한다 — `report_fields`(평면 map)와 나란히 **필드별 `{info_state, source_label_key}`**를 제공한다(신유민 PR #28 요청, `CONTRACT_CONFLICTS.md` 불명확 항목 10 종결). `unconfirmed_fields`는 이제 `report_field_states[field].info_state ∈ {INFO_AI_ESTIMATED, INFO_NEEDS_REVIEW, INFO_UNKNOWN}`인 필드명의 파생 목록으로 **정의를 명확히 한다**. **주의 — 파생 로직 자체는 새로 만드는 게 아니지만(§10 불변조건 6과 같은 원칙), `safety_report_type`/`violation_expression`은 이번 v1.3 이전에는 `report_field_states`(및 그 기반인 `report_type_display.info_state`)가 아예 없어 `unconfirmed_fields` 계산에 들어가지 못했다 — 그래서 기존 fixture 중 이 두 필드가 `INFO_AI_ESTIMATED`인 경우 `unconfirmed_fields`에 새로 추가된다(예: `scenario_happy_001`). 이는 규칙 정의를 명확히 한 자연스러운 결과이며 별도 정책 변경이 아니다.** §6·§7·§10에 반영.
+> ⑥ `notices[].actions[]` 값 공간을 5종에서 **7종으로 확장**한다 — `EDIT_HINT`·`RETRY_SEARCH`를 추가한다(이슈 #31 W-1, 신유민). `scenario_empty_001`의 `search.no_candidates` notice가 이 두 값을 이미 쓰고 있었는데 값 공간에 등록돼 있지 않아, "미등록 값은 버튼을 렌더하지 않는다"는 기존 규칙대로면 후보 0건 화면에 탈출 버튼이 하나도 뜨지 않는 상태였다 — 단서 수정·재검색이 그 화면의 유일한 경로라 이 gap은 실사용을 막는 결함이었다. §7에 반영.
+> ⑦ `progress[]`의 step 집합 규칙을 확정한다(이슈 #31 W-7, 신유민) — §7에 신설 규칙 추가, `scenario_relative_rebase_001`(8단계 전부 PENDING 표시 → 3단계로 축소) 수정. 같은 이슈의 W-5(`scenario_correction_rerun_001`에 `readout.overlay_not_present` notice 누락)·W-6(`scenario_plate_reread_001` rev4가 다음 행동을 가리키는 필드 없이 막다른 화면이던 것)도 함께 수정한다 — `readout.overlay_not_present` notice를 rev2·rev3에 추가하고, `plate_reread_001` rev3·rev4의 `progress[]`에 `package_assembly: PENDING`을 추가하고 rev4에 `case.report_video_not_generated`(INFO, `actions:["GENERATE_REPORT_VIDEO"]`) notice를 추가했다.
 
 > **`CaseView`는 v4에서 부록이 아니라 Core Contract ⑪이다**(v4 §5 머리말 · §4-모듈5 ⑥). 아래 절 제목의 「부록-A / 부록-B」는 ADR 작성 당시 표기이며, 계약의 위상은 Core Contract다.
 
 > **재판독 발주 규칙 등재 (2026-09-08 반영 · 유소연 2026-09-07 결정).** A절 §7에 「`PLATE_REREAD` Need → `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음」을 등재했다. 값 목록·스키마는 바뀌지 않아 `job-record/v1`을 유지한다. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
+
+> **Fine 발주·Report Video export `kind` 등재 및 `purge_case` 경계 확정 (2026-09-09 · Decider 유소연, Mock Pack 심층 검토 §12 후속).** A절 §7에 `FINE_VERIFY`(Fine/시각 검증 발주)와 `REPORT_VIDEO_EXPORT`(신고용 파생영상 생성 발주)를 등재한다. `purge_case()`는 `contract-analysis-source-derived.md` §8이 이미 `purge_case(case_id) -> DeletionReport` 직접 호출로 정의했고 `DeletionReport`에 `job_id`가 없으므로, **`JobRecord`/`JobExecution` 경계 밖의 관리 동작으로 유지**하고 별도 `kind`를 만들지 않는다. `label_key`는 §12에 `job.fine_verify`·`job.report_video_export`를 추가한다. 값 목록·스키마는 바뀌지 않아 `job-record/v1`을 유지한다(열린 enum 등재).
 
 > **`case-view/v1.2` 변경 (2026-09-07)** — 유소연(`case` Owner) 결정, 김준영(`evidence`)·신유민(`web`) 확인. 근거와 기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1(B01)·§4.2(B02)·§4.9(`thumb_ref`)에 있다. A절 `JobRecord`는 `job-record/v1` 그대로이며 §7의 `kind` 값 등재와 §10 불변조건 5만 늘었다(열린 enum·불변조건 추가라 버전 유지).
 > ① `info_state` 파생 입력 세 개 확정(`needs_review` 출처 · `occurred_at` 변환 · 위치 대표값) ② `location_display`에 `coord`·`search_keyword` 별도 필드 ③ `requirements`를 `requirements_evidence` / `requirements_package` 두 객체로 분리, report 선택 3단계 ④ web 소비 규칙(`info_state`만 본다) ⑤ `candidates[].thumb_ref`는 `FrameRef`. **B01·B02 Pending은 종결됐다.**
@@ -88,7 +106,10 @@ json
 
 ### 7. Enum / State / Special Value
 
-- `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`, **`OVERLAY_TIME_READ`**(2026-09-07 등재, 유소연). 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
+- `kind`: 확인된 값 `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ`(2026-09-07 등재, 유소연), **`FINE_VERIFY`**·**`REPORT_VIDEO_EXPORT`**(2026-09-09 등재, 유소연). 전체 목록은 모듈 접두어 규칙에 따라 계속 등재 (닫힌 enum 아님)
+  - `FINE_VERIFY`는 search의 `AnalysisRun.operation=VISUAL_VERIFY` 실행을 발주한다. `COARSE_SEARCH`(↔`AnalysisRun.operation=CANDIDATE_SEARCH`)와 이미 문자열이 다른 선례를 따라, `case`가 쓰는 Coarse/Fine 업무 명칭을 그대로 쓴다(`operation` 값과 1:1 문자열 일치를 요구하지 않는다 — 그 요구는 §7의 `PLATE_READ`/`OVERLAY_TIME_READ`↔`ReadoutRun.operation`에만 명시돼 있다).
+  - `REPORT_VIDEO_EXPORT`는 `DerivedAsset`(`derived_role=REPORT_VIDEO`) 생성을 발주한다(`contract-analysis-source-derived.md` §7.3·§7.5). export 실패는 그 계약 §9의 `REPORT_VIDEO_EXPORT_FAILED`(`JobExecution.failure_kind`, SCREAMING_SNAKE 열거값)를 **그대로 옮기지 않는다** — `case`가 B절 §7 「notices[].code 표기」 규칙에 따라 `recording.report_video_export_failed`로 매핑해 `CaseView.notices[].code`에 싣는다(2026-09-10 정정, 이슈 #26 A-⑤. `failure_kind`는 실행 상태를 나타내는 별도 값공간이라 표시용 `notices[].code`와 casing이 다를 수 있다).
+  - **`purge_case()`는 `JobRecord`를 통해 발주하지 않는다.** `contract-analysis-source-derived.md` §8이 `purge_case(case_id) -> DeletionReport`를 직접 호출로 정의하고 `DeletionReport`에 `job_id`가 없으므로, Job Intent/Execution 비동기 흐름 밖의 관리 동작으로 취급한다(2026-09-09, 유소연).
   - `PLATE_READ`와 `OVERLAY_TIME_READ`는 **항상 별도 `job_id`로 발주**한다. `ReadoutRun.operation`(`contract-readout-run.md` §6)과는 같은 이름의 값끼리 대응한다 — `PLATE_READ↔PLATE_READ`, `OVERLAY_TIME_READ↔OVERLAY_TIME_READ`. 한쪽에만 값을 추가하지 않는다.
   - `PLATE_REREAD`는 `EvidenceNeeds.kind`의 값이며 `JobRecord.kind` 값이 아니다(값 공간이 다르다 — §4 「corrections.kind는 JobRecord.kind와 다른 값 공간」과 같은 이유).
   - **재판독 발주 규칙 (2026-09-07 확정 · Decider 유소연 · 확인 신유민·김준영).** `EvidenceNeeds.kind=PLATE_REREAD` Need를 발주로 옮길 때 `case`는 **`kind=PLATE_READ`를 유지하고 `force_rerun=true`를 조건 없이 붙인다.** 별도 kind를 만들지 않는다. `PLATE_REREAD` Need는 사건 interval ref를 그대로 제공하므로 입력이 원판독과 같은 것이 기본값이고, fingerprint 구성에 case/kind가 포함된다고 가정할 수 없으므로 조건부 `force_rerun`은 재판독을 조용히 누락시킨다. 재판독은 **새 `job_id`**(새 `JobRecord`)로 발주하며 새 execution이 새 `ReadoutRun` 1건을 만든다 — **기존 `ReadoutRun`을 갱신하지 않는다.** 인프라 재시도(`STALE`)는 다른 층위다: 같은 `job_id` · 새 `execution_id` · `attempt` 증가(`contract-job-execution.md` §9-2). abstain 결과는 계속 `ReadoutRun.outcome=SUCCEEDED`이며(`contract-readout-run.md` §9-5) cache hit 회피는 `outcome`이 아니라 `force_rerun`으로 한다. 원판독/재판독 중 「현재 값」 선택은 B03 결정대로 `case`/`CaseView` projection 소관이다. §9의 `job_61` 예시가 이 형태다. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
@@ -118,7 +139,10 @@ json
 2. 캐시 재사용 조건은 A절 §7을 따른다(동일 case_id·kind·input_fingerprint의 성공 결과에 한정).
 3. `scope_ref`가 존재하면 유효한 scope_id를 참조한다
 4. 실행 상태 필드(status 등)는 본 계약에 포함되지 않는다 — Job Execution 계약 참고
-5. **readout 계열 Job 1 execution : `ReadoutRun` 1건 (1:1)** — `case`의 orchestration 불변조건이다(유소연 · 신유민, 2026-09-07). `readout`은 `JobExecution`을 모르므로 readout이 보장하는 것은 「public 함수 호출 1회 = `ReadoutRun` 1건」이고, 1:1은 worker 구현 규칙 「1 execution 안에서 readout public 함수를 정확히 1회 호출한다」(`contract-job-execution.md` §9-9)로 성립한다. `run_id`는 `job_id`처럼 재사용되지 않는 1회성 식별자이나 `execution_id`와 **같은 identity가 아니다**. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3
+5. **readout 계열 Job 1 execution : `ReadoutRun` 1건 (1:1)** — `case`의 orchestration 불변조건이다(유소연 · 신유민, 2026-09-07). `readout`은 `JobExecution`을 모르므로 readout이 보장하는 것은 「public 함수 호출 1회 = `ReadoutRun` 1건」이고, 1:1은 worker 구현 규칙 「1 execution 안에서 readout public 함수를 정확히 1회 호출한다」(`contract-job-execution.md` §9-9)로 성립한다. `run_id`는 `job_id`처럼 재사용되지 않는 1회성 식별자이나 `execution_id`와 **같은 identity가 아니다**. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3    **예외(2026-09-10, 유소연·신유민, 이슈 #26 B-readout-3):** `status=STALE`인 실행은 run이 없을 수 있다 — worker가 readout 호출을 완료하지 못하고 소멸한 경우. `scenario_infra_failure_001`의 attempt 1(STALE, `produced=[]`)이 이 예외의 fixture 근거다.
+6. **execution 대표 상태 — 「대표 execution = `attempt` 최댓값」**(2026-09-10, 유소연·신유민, 이슈 #26 B-web-7). 한 `job_id`에 `attempt`가 여럿이면 `CaseView.progress[]`·`running_jobs[]`는 **가장 큰 `attempt`의 `JobExecution.status`**를 그 job의 대표 상태로 투영한다. 재시도 중 이전 attempt가 `STALE`/`FAILED`였다는 사실 자체는 대표 상태에 노출하지 않는다 — attempt 1이 STALE로 판정된 순간에도 `progress[]`는 곧바로 `FAILED`로 깜빡이지 않고, attempt 2가 `QUEUED`/`RUNNING`인 동안 해당 job은 계속 진행 중으로 보인다. 모든 attempt가 소진된 뒤에야(재시도 없음, 마지막 attempt가 terminal 실패) 대표 상태가 `FAILED`로 전환된다. `scenario_infra_failure_001`의 두 스냅샷(`case_rev:1`=RUNNING, `case_rev:2`=최종 attempt 2 FAILED 이후)이 이미 이 규칙과 일치하며 이번에 fixture를 수정하지 않는다.
+7. **job_id 대표 상태 — 「대표 job = 가장 나중에 발주된 job」**(2026-09-13, 유소연·신유민, PR 리뷰 코멘트 반영). `RESUME_SEARCH`/`RETRY_PLATE_READ`/`RETRY_SEARCH`처럼 재개·재시도가 전부 새 `job_id`로 발주되는 정책(§7) 때문에, 같은 `kind`의 `JobRecord`가 여럿인 상태는 예외가 아니라 정상 경로다. 이 경우 `CaseView.progress[]`·`running_jobs[]`는 **`requested_at`이 가장 늦은(= append-only `job_records[]` 배열에서 그 `kind`로 가장 나중에 기록된) job**의 대표 상태를 그 `kind`의 대표 상태로 투영한다. 이전 job의 terminal 상태(`FAILED`/`CANCELLED`/`PARTIAL` 등)는 대표 상태에 남기지 않는다 — 항목 6의 attempt 단위 규칙을 job_id 단위로 확장한 것이다. `notices[]`도 같은 원칙을 따른다 — 같은 step에 여러 job이 각자 notice를 발생시켰다면 가장 나중 job이 발생시킨 notice만 대표 목록에 남기고 이전 job의 notice는 제거한다. `scenario_infra_failure_001`의 `plate_read`(`job_x001_plate`→`job_x001_plate_reread`)와 `notices[]`의 `readout.overlay_presence_undetermined`→`readout.overlay_ocr_failed` 교체가 이 규칙의 fixture 근거다.
+   **주의 — `case_rev`를 정렬 키로 쓰지 않는다.** `JobRecord.case_rev`는 발주 시점 case 리비전의 스냅샷일 뿐 issuance 순서를 보장하지 않는다 — 같은 stage 안에서 후속 candidate 재선택이나 단계 전이 없이 같은 `kind`를 연속 재시도하면 두 `JobRecord`가 같은 `case_rev`를 가질 수 있다. 지금 Mock Pack 7개 시나리오는 같은 `kind` 쌍마다 `case_rev`가 우연히 매번 달라(`scenario_infra_failure_001`: 1→3·1→4, `scenario_plate_reread_001`: 2→3) 이 경우를 노출하지 않았을 뿐, 계약이 이를 막아두지 않는다.
 
 ### 11. Consumer Review 반영 요약
 
@@ -133,7 +157,7 @@ json
 - `JobExecution` Producer/Owner: runtime/common, 주요 Owner 김준영, 구현 담당 정철원 — 2026-09-04 백엔드 회의에서 확정
 - `JobExecution.status`: `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE`
 - heartbeat/lease/retry/backoff/DB 구조는 Runtime 구현 세부이며 본 Job Intent 계약의 closure를 막지 않는다.
-- kind 표시용 `label_key`/fallback은 부록-B `CaseView` 계약에서 확정한다. 등재된 `label_key`: `job.plate_read` · `job.overlay_time_read`(2026-09-07 추가). 미등록 kind는 `job.generic_processing` fallback(B절 §12).
+- kind 표시용 `label_key`/fallback은 부록-B `CaseView` 계약에서 확정한다. 등재된 `label_key`: `job.plate_read` · `job.overlay_time_read`(2026-09-07 추가) · `job.fine_verify` · `job.report_video_export`(2026-09-09 추가). `COARSE_SEARCH`는 아직 전용 `label_key`가 없어 `job.generic_processing` fallback을 그대로 쓴다(유소연 확인, 우선순위 낮음 — 필요해지면 `job.coarse_search`로 등재). 미등록 kind는 `job.generic_processing` fallback(B절 §12).
 
 ---
 
@@ -185,7 +209,7 @@ web이 화면을 그리기 위해 읽는 유일한 통합 상태다. evidence/pa
 json
 
 ```json
-{  "case_id": "string",  "case_rev": "int",  "stage": "INTAKE | SEARCHING | CANDIDATE_REVIEW | EVIDENCE_REVIEW | READY",  "user_reviewed": "boolean",  "manifest_summary": {    "file_count": "int",    "ok_file_count": "int",    "failed_file_count": "int",    "duration_sec": "number",    "range": "[string, string] | null"  },  "hints": { "time": "string|null", "vehicle": "string|null", "situation": "string|null", "location": "string|null" },  "progress": [ { "step": "string", "state": "PENDING | RUNNING | DONE | FAILED" } ],  "candidates": [    { "candidate_id": "string", "at": "string", "at_provenance": "string", "observed": "string", "thumb_ref": "FrameRef (fr_<opaque-id>) | null", "selected": "boolean" }  ],  "evidence": {    "record_id": "string",    "case_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "report_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "violation_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean" },    "plate_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "event_time_display": { "value": "ISO8601|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "location_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null", "coord": "{ lat: number, lon: number } | null", "search_keyword": "string|null" },    "user_edited": "boolean",    "preview_ref": "string|null",    "review_needed": "boolean",    "reason_code": "string|null"  },  "requirements_evidence": { "readiness": "PASS | WARN | BLOCK | UNKNOWN", "checks": [] },  "requirements_package": { "readiness": "PASS | WARN | BLOCK | UNKNOWN", "checks": [] },  "package": {    "package_ref": "string|null",    "report_fields": "object<string, string|null>",    "artifact_ref": "string|null",    "capabilities": "string[]",    "warnings": "string[]"  },  "running_jobs": [ { "job_id": "string", "kind": "string", "label_key": "string", "status": "PENDING | RUNNING" } ],  "notices": [    { "code": "string", "severity": "INFO | WARN | ERROR", "blocking": "boolean", "message_key": "string", "actions": "string[]" }  ]}
+{  "case_id": "string",  "case_rev": "int",  "stage": "INTAKE | SEARCHING | CANDIDATE_REVIEW | EVIDENCE_REVIEW | READY",  "user_reviewed": "boolean",  "manifest_summary": {    "file_count": "int",    "ok_file_count": "int",    "failed_file_count": "int",    "duration_sec": "number",    "range": "[string, string] | null"  },  "hints": { "time": "string|null", "vehicle": "string|null", "situation": "string|null", "location": "string|null" },  "progress": [ { "step": "string", "state": "PENDING | RUNNING | DONE | FAILED | PARTIAL" } ],  "candidates": [    { "candidate_id": "string", "at": "string", "at_provenance": "string", "at_provenance_label_key": "string|null", "observed": "string", "thumb_ref": "FrameRef (fr_<opaque-id>) | null", "selected": "boolean", "timeline_revision": "int", "stale_revision": "boolean", "stale_revision_label_key": "string|null", "situation_confirmation": "NOT_ASKED | CONFIRMED | CORRECTED | USER_UNSURE" }  ],  "evidence": {    "record_id": "string",    "case_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "report_type_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "violation_display": { "code": "string|null", "label": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "plate_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "event_time_display": { "value": "ISO8601|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null" },    "location_display": { "value": "string|null", "needs_review": "boolean", "info_state": "INFO_AI_ESTIMATED | INFO_SOURCE_VERIFIED | INFO_USER_CONFIRMED | INFO_NEEDS_REVIEW | INFO_UNKNOWN", "source_label_key": "string|null", "coord": "{ lat: number, lon: number } | null", "search_keyword": "string|null" },    "user_edited": "boolean",    "preview_ref": "string|null",    "review_needed": "boolean",    "reason_code": "string|null"  },  "requirements_evidence": { "readiness": "PASS | WARN | BLOCK | UNKNOWN", "checks": [] },  "requirements_package": { "readiness": "PASS | WARN | BLOCK | UNKNOWN", "checks": [] },  "package": {    "package_ref": "string|null",    "report_fields": "object<string, string|null>",    "report_field_states": "object<string, { info_state: INFO_AI_ESTIMATED|INFO_SOURCE_VERIFIED|INFO_USER_CONFIRMED|INFO_NEEDS_REVIEW|INFO_UNKNOWN, source_label_key: string|null }>",    "unconfirmed_fields": "string[]",    "artifact_ref": "string|null",    "capabilities": "string[]",    "warnings": "string[]"  },  "running_jobs": [ { "job_id": "string", "kind": "string", "label_key": "string", "status": "PENDING | RUNNING" } ],  "notices": [    { "code": "string", "severity": "INFO | WARN | ERROR", "blocking": "boolean", "message_key": "string", "actions": "string[]" }  ]}
 ```
 
 > `requirements_evidence`·`requirements_package`·`package`·`evidence`는 각각 `null`일 수 있다(조건은 §7·§10). 위 evidence/package는 safe projection 경계를 따른다. case는 Evidence/ReportPackage의 authoritative 값을 재판정하거나 confidence를 자체 threshold로 재해석하지 않고, 확정된 값·검토 필요 여부·사유를 UI 표시 형태로만 변환한다. raw confidence, 내부 provenance, 중간 추론값은 기본 노출하지 않는다. `candidates[].thumb_ref`는 `FrameRef`이며 web은 recording을 직접 호출하지 않는다 — 실제 이미지는 case가 recording lookup을 거쳐 projection한다(`FrameRef` 필드 계약은 `contract-source-asset-media-stream.md` §5·§7, **이미지 전달 형태는 그 계약 §9-6 Pending**, §13).
@@ -202,15 +226,24 @@ json
 | evidence.*_display.source_label_key | string \| null | Y | `EvidenceValue.source.label_key`(사건시각은 `occurred_at.source.label_key`)를 화면 라벨 키로 노출. `location_display`에서는 대표값 `value`의 출처만 뜻한다. web은 이 키로 문구를 고르고 `kind` 문자열을 직접 해석하지 않는다 | **확정** (유소연·신유민 2026-09-06 · 2026-09-07) |
 | evidence.location_display.coord | `{lat, lon}` \| null | Y(키) | `EvidenceRecord.location.coord.value`를 대표값과 **별도로** 내려보낸다. 포맷은 web | **확정** (유소연·신유민·김준영 2026-09-07) |
 | evidence.location_display.search_keyword | string \| null | Y(키) | `EvidenceRecord.location.search_keyword.value`. 대표값으로 승격하지 않는다 | **확정** (2026-09-07) |
+| evidence.review_needed | boolean | Y | 여섯 개 `*_display.needs_review`의 OR 집계(object-level). 파생 규칙 §7 | **확정** (2026-09-09, 유소연) |
 | requirements_evidence | object \| null | Y(키) | 현재 basis의 scope=`EVIDENCE` `RequirementReport` projection `{readiness, checks}`. 선택 규칙 §7. 미실행이면 `null` | **확정** (유소연 2026-09-07, B02 종결) |
 | requirements_package | object \| null | Y(키) | 현재 basis의 scope=`FINAL_PACKAGE` `RequirementReport` projection `{readiness, checks}`. 미실행·파생물 미생성이면 `null` | **확정** (유소연 2026-09-07, B02 종결) |
 | requirements_*.readiness | enum(4) | Y(객체 안) | 해당 `RequirementReport.overall`의 projection. case가 재계산하지 않는다 | **확정** (유소연 2026-09-06) |
 | candidates[].thumb_ref | FrameRef \| null | Y(키) | 후보 대표 frame의 `FrameRef`(`fr_<opaque-id>`). 위치를 ID에 인코딩하지 않는다 | **확정** (정철원·유소연·신유민 2026-09-07) |
+| candidates[].timeline_revision | int | Y | 이 candidate 생성 시점에 참조한 `RecordingTimeline.revision`(`CandidateEvent.span.timeline_revision` 투영). rebase 이후에도 mutate하지 않는다(B09) | **확정** (유소연, `docs/modules/case/decisions/candidate-stale-revision-display.md`, 이슈 #18 위임 · 이슈 #26 B-web-8로 정식 등재) |
+| candidates[].stale_revision | boolean | Y | `timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 `true`. case가 매 투영 시점에 비교하는 파생값 | **확정** (같은 문서 · 이슈 #26 B-web-8로 정식 등재) |
+| candidates[].stale_revision_label_key | string \| null | Y | `stale_revision=true`일 때 「과거 timeline revision 기준」 문구를 고를 표시 키. `stale_revision=false`면 `null`. `*_display.source_label_key`와 같은 원칙 — web은 이 키로 문구를 고르고 `stale_revision` boolean만으로 문구를 직접 만들지 않는다. v1.1 등록값은 `candidate.stale_timeline_revision` 1개(단일 문구, 향후 세분화 시 값만 추가) | **확정(2026-09-10, 유소연, 이슈 #26 B-web-8 후속)** — A-⑤·B-web-8에서 신유민이 지적한 「label_key 없으면 web이 문구를 임의로 만든다」 gap을 닫는다. `docs/modules/case/decisions/candidate-stale-revision-display.md` 갱신 |
+| candidates[].situation_confirmation | enum(4) | Y | "아직 미확인"(`NOT_ASKED`)과 "잘 모르겠어요"(`USER_UNSURE`)를 같은 null로 합치지 않기 위한 projection. `EvidenceRecord.situation_response.value`가 있으면 그대로 옮기고(`CONFIRMED`/`CORRECTED`/`USER_UNSURE`), 없으면 `NOT_ASKED`다 | **확정(v1.3, 2026-09-10)** — 값 공간을 `evidence-record/v1.3`의 `situation_response`와 맞춤(이슈 #33). 원래 유소연 결정(`docs/modules/case/decisions/generic-warn-package-and-situation-response.md`, 이슈 #25)의 후속 |
+| candidates[].at_provenance | string | Y | 이 후보의 시각(`at`)을 어떻게 구했는지 나타내는 raw 값. **두 갈래**: evidence 조립 이후엔 `occurred_at.source.kind` pass-through(evidence 소유, 열린 namespace), 조립 이전엔 case 소유의 별도 enum(현재 `recording.timeline_relative_only` 1개). web은 이 값을 직접 해석하지 않고 `at_provenance_label_key`로만 분기한다 | **정정(v1.4, 2026-09-14)** — §8 예시 `TIMELINE_ANCHOR+OFFSET`은 fixture 실사용 0건으로 확인돼 폐기. 두 갈래 정의는 PR 리뷰 코멘트 Q-3, 유소연·신유민 합의 |
+| candidates[].at_provenance_label_key | string \| null | Y | `at_provenance` raw 값을 보고 case가 고르는 표시용 키. `stale_revision_label_key`와 같은 원칙 — raw가 authoritative, 이 키는 순수 파생값. 매핑 안 되는 raw는 `null` | **신규(v1.4, 2026-09-14)** — 이슈 #39 Required-3 후속, PR 리뷰 코멘트 Q-3, 유소연·신유민 합의. 매핑표는 §7 |
+| package.report_field_states | object<string, {info_state, source_label_key}> | Y(키, **5개 전부 항상 존재** — §10 불변조건 13) | `report_fields`와 나란히 필드별 정보 상태를 제공. 매핑표·값 공간은 §7 | **신규(v1.3)** — 신유민 PR #28 요청, `CONTRACT_CONFLICTS.md` 불명확 항목 10 종결 |
 | manifest_summary.ok_file_count / failed_file_count / duration_sec | int/int/number | Y | 파일 등록 성공·실패 수, 전체 구간 길이. count/duration은 항상 제공하고 정상 영상이 없으면 range=null | 확정 |
 | evidence.* (projection 필드 전반) | object | 선택 | 화면 표시용 evidence 요약 | safe projection 원칙 확정; 세부 필드 합의는 §13 Pending |
 | package.* | object | 선택 | 화면 표시용 package 요약 | safe projection 원칙 확정; 세부 필드 합의는 §13 Pending |
 | notices[].code/severity/blocking/message_key/actions | string/string/bool/string/array | Y(배열은 빈 배열 허용) | 부분 실패/경고 표시 | 신규, 신유민 요청 반영 |
-| progress[].state | string | Y | 단계 상태 | **확정** — `PENDING / RUNNING / DONE / FAILED` |
+| progress[].state | string | Y | 단계 상태 | **확정** — `PENDING / RUNNING / DONE / FAILED / PARTIAL`(2026-09-10 추가) |
+| progress[].step 범위(2026-09-10, 유소연, `05` §12 유소연-⑦ 종결) | — | — | `progress[]`는 `product/core-user-flow.md` §3-2가 "AI 분석 진행은 별도로 표현한다"고 정한 **AI job 진행상태 전용**이다. 제품 7단계 표시(§4-1) 중 2단계("사건 설명")·3단계("범위 확인")는 AI job이 아니라 **사용자가 입력·확인하는 동기 단계**라 대응하는 `progress[].step` 값이 원래 없어야 맞다 — web은 이 두 단계를 `hints`/`manifest_summary` 등 다른 필드의 존재 여부로 "완료"를 표시하면 되고, 이는 §3-2가 금지하는 "정보 상태와 작업 상태를 같은 표시 체계로 섞는 것"이 아니다(정보 상태가 아니라 사용자 입력 여부를 보는 것). `progress[].step` 8종(`file_intake~package_assembly`)은 제품 4~7단계(사건 찾기~신고자료)만 커버하면 되고, 이는 이미 그렇다 — **누락이 아니라 원래 이렇게 설계된 것으로 확정, 신규 step 추가 불필요** |
 
 ### 7. Enum / State / Special Value
 
@@ -222,14 +255,31 @@ json
 | requirements_*.readiness | `PASS`, `WARN`, `BLOCK`, `UNKNOWN` | 해당 `RequirementReport.overall`과 **같은 값 공간**. `4/5` 같은 score 표현을 두지 않는다(`contract-requirement-report-package.md` §4 「단순 readiness score를 Contract에 두지 않는다」) |
 | 세 gate의 출처 | — | `EVIDENCE_SUFFICIENT` = `requirements_evidence` 판정 · `PACKAGE_READY` = `requirements_package` 판정(+`package` 존재) · `USER_REVIEWED` = `user_reviewed`. **셋을 하나의 readiness로 합치지 않는다.** 별도 gate 표시값을 두려면 이 셋에서 단순 파생되는 표시값이어야 하고 새 authoritative 상태가 되면 안 된다 |
 | evidence.*_display.info_state | `INFO_AI_ESTIMATED`, `INFO_SOURCE_VERIFIED`, `INFO_USER_CONFIRMED`, `INFO_NEEDS_REVIEW`, `INFO_UNKNOWN` | `core-user-flow.md` §3-1의 정보 상태 5종과 1:1. **`Observation.status`와 다른 값 공간이므로 `INFO_` 접두어로 분리한다** — 파생 코드가 두 enum을 동시에 다루는 지점에서 `NEEDS_REVIEW`/`UNKNOWN`이 겹치는 것을 막는다(유소연 2026-09-06) |
-| progress[].state | `PENDING`, `RUNNING`, `DONE`, `FAILED` | CaseView UI 상태로 확정. JobExecution 상세 상태와 분리 |
+| progress[].state | `PENDING`, `RUNNING`, `DONE`, `FAILED`, `PARTIAL` | CaseView UI 상태로 확정. JobExecution 상세 상태와 분리. **`PARTIAL`(2026-09-10, 유소연, `05` §12 유소연-⑧ 부분 종결)**: 제품 정의 6개 작업상태(`core-user-flow.md` §3-2)의 "부분 완료"·**"중단" 둘 다**에 대응한다(v1.3 개정). 해당 단계의 `AnalysisRun.outcome=PARTIAL`(`contract-analysis-run-candidate-event.md` §5)을 그대로 투영하거나, `JobExecution.status=CANCELLED`(`job-execution/v1.1`, 이슈 #33 A-2로 신설)를 대표 상태로 가질 때도 `PARTIAL`로 투영한다. **새 enum 값을 만들지 않고 기존 `PARTIAL`로 흡수한 이유**: `CANCELLED`도 완결이 아니고(`job-execution/v1.1` §9 예외) 부분 결과가 있을 수 있다는 점에서 UI 표시 목적상 "부분 완료"와 구분할 실익이 이번 라운드엔 없다 — 실제 중단 사유("사용자가 멈춤" vs "일부만 됨")를 구분해야 하면 `notices[]`로 별도 표시한다. `PARTIAL`을 보여주는 demo fixture는 `scenario_infra_failure_001`의 `job_x001_plate_reread`(`JobExecution.status=CANCELLED`, `produced=[]`)로 확보됐다(2026-09-13, PR 리뷰 반영 — `04_mock_validation_report.md` §1에 등재됐던 Should-1 커버리지 갭을 닫는다). **`produced` 유무는 이 투영을 바꾸지 않는다** — 부분 결과가 전혀 없어도(`produced=[]`) `CANCELLED`는 그대로 `PARTIAL`로 투영된다. 「완결이 아니다」라는 사실 자체가 이 값의 의미이며, 중단 사유·다음 행동 안내는 `notices[]`(예: `case.plate_read_cancelled`, `actions=[RETRY_PLATE_READ]`)가 나른다 |
+| candidates[].at_provenance | 두 갈래 값 공간. **evidence 조립 이후**: `occurred_at.source.kind` pass-through — evidence가 소유한 열린 namespaced string이며 case가 별도로 닫힌 목록을 등재하지 않는다(관측값 예: `recording.filename_time`, `readout.overlay_ocr`). **evidence 조립 이전**: case 소유의 별도 enum, 현재 `recording.timeline_relative_only` 1개만 등재(열린 enum, 추가 시 값만 등재) | **정정(v1.4, 2026-09-14, 유소연·신유민)** — §8 예시 `TIMELINE_ANCHOR+OFFSET`은 fixture 전수 조사 결과 실사용 0건이라 폐기. `readout.overlay_ocr`가 `Observation.source.kind`와 문자열이 같다고 해서 같은 값 공간으로 합치지 않는다(`contract-plate-overlay-readout.md` §6 선례와 같은 원칙 — 「누가 관찰했나」와 「확정 시각의 출처」는 별개 질문) |
+| candidates[].at_provenance_label_key | 표기 dotted-lowercase(`<owner>.<detail>`), `notices[].code`와 같은 규칙. **등재값**: `candidate.at_provenance.filename_time`(← `recording.filename_time`) · `candidate.at_provenance.overlay_ocr`(← `readout.overlay_ocr`) · `candidate.at_provenance.timeline_relative_only`(← `recording.timeline_relative_only`, pre-evidence). 미등록 raw는 `label_key=null` — web이 fallback 문구를 쓰며, 별도 `candidate.at_provenance_unknown` raw 마커는 두지 않는다(§10-14) | **신규(v1.4, 2026-09-14, 유소연·신유민 PR 리뷰 코멘트 Q-3 합의)** — `event_time_display.source_label_key`(=`occurred_at.source.label_key`) pass-through 가설은 fixture 16 스냅샷 전수 대조로 기각됐다(`scenario_correction_rerun_001` rev0→rev1: `at_provenance`는 불변인데 `event_time_display.source_label_key`만 `time.source.filename`→`time.source.user_correction`으로 바뀜 — 이슈 #39 Required-3과 같은 종류의 독립성). case 소유의 독립 매핑으로 대체 |
 | notices[].severity | `INFO`, `WARN`, `ERROR` | 표시 강도만 의미하며 실제 차단 여부는 `blocking`으로 별도 판단 |
+| notices[].code | dotted-lowercase namespaced string | **확정(2026-09-10, 유소연·신유민, 이슈 #26 A-⑤)**. 형식은 `<producing-module>.<detail>` — `case` / `evidence` / `readout` / `search` / `recording` 중 이 notice의 근거를 실제로 만든 모듈을 접두어로 쓴다. **`time`은 모듈이 아니므로 접두어로 쓰지 않는다** — 기존 `time.*` 4종은 `evidence.time_conflict_needs_notice`·`evidence.time_needs_user_confirmation`·`readout.overlay_not_present`·`evidence.time_post_stamp_required`로 정정했다(근거 모듈 기준: 시각 충돌·재확인·post-stamp는 `TimeResolution`을 만드는 evidence, overlay 부재는 관찰 자체를 만드는 readout). `JobExecution.failure_kind`(SCREAMING_SNAKE 열거값)를 `notices[].code`로 옮길 때는 **문자열을 그대로 복사하지 않고** 이 표기로 변환한다(A절 §7 참고). **2026-09-14 신규 등재(이슈 #47/#48 결과, `evidence` 김준영 승인).** `evidence.location_search_keyword_missing`(`severity:INFO`, `blocking:false`, `actions:[]`) — 지도에 붙여넣을 `search_keyword`를 만들지 못한 경우에 발동한다(`location` 자체가 없어 파생 필드 전부가 `null`인 경우 포함). **판단 기준은 `location`의 존재 여부가 아니라 `evidence.location_display.search_keyword == null`이다** — `search_keyword`가 있으면 `display_text`가 사용자 기억 문장뿐이어도 지도 붙여넣기 경로가 성립해 이 notice 대상이 아니다(§21 복사 경로와 어긋나지 않게 하기 위함). `message_key`는 `notice.location_search_keyword_missing`(문구 매핑은 신유민 — 「지도에 붙여넣을 검색어를 제공하지 못한다, 기억나는 장소를 직접 검색해야 한다」). 제품 안에 실행 경로가 없는 정보성 notice라 `actions[]`는 확장하지 않는다(기준: 실행 경로가 있으면 `action`, 없으면 문구만 — 이슈 #31 W-6과의 구분 기준과 동일) |
+| notices[].actions[] | `EDIT_EVENT_TIME`, `MANUAL_PLATE_INPUT`, `GENERATE_REPORT_VIDEO`, `REVIEW_TIME`, `RETRY_PLATE_READ`, `EDIT_HINT`, `RETRY_SEARCH` | **닫음(2026-09-10, 유소연, 이슈 #26 A-⑥ · 이슈 #31 W-1로 2종 추가)**. SCREAMING_SNAKE 유지(발주 intent를 나타내는 값이라 `JobRecord.kind`류와 같은 표기). 값→발주 매핑은 아래 표. web은 이 값으로만 버튼을 렌더하며 값 자체를 해석하지 않는다(`running_jobs[].label_key`와 같은 원칙). **미등록 값은 fallback으로 버튼을 렌더하지 않는다**(무시) — `label_key` fallback과 달리 실행 경로가 없는 액션을 잘못 노출하는 것이 더 위험하기 때문이다 |
+
+**`notices[].actions[]` → 발주 매핑**
+
+| 값 | 발주/동작 |
+| --- | --- |
+| `EDIT_EVENT_TIME` | web이 사용자 입력을 받아 `CorrectionRecord`(Draft, N02 해소 후) 경유 시각 정정 — 현재는 case state 경유 |
+| `MANUAL_PLATE_INPUT` | web이 사용자 입력을 받아 번호판 값을 직접 정정 (`vehicle_number`, `user_corrected=true`) |
+| `GENERATE_REPORT_VIDEO` | `kind=REPORT_VIDEO_EXPORT` 신규 `JobRecord` 발주. 기존 `job_id` 없으면 새로 만든다 |
+| `REVIEW_TIME` | web이 시각 후보들을 보여주고 사용자가 하나를 선택/확인하게 한다 — 새 Job 발주 없음, 확인만으로 `TimeResolution.resolved.verification`이 바뀐다(§9-2 미결 항목과 연결) |
+| `RETRY_PLATE_READ` | `kind=PLATE_READ` 신규 `job_id` 발주. `FAILED`는 cache hit 대상이 아니므로(A절 §7 캐시 재사용은 성공 결과에 한정) `force_rerun` 불필요 — 새 `job_id`만으로 재시도가 성립한다 |
+| `EDIT_HINT` | **신규(v1.3, 이슈 #31 W-1)**. web이 사용자로부터 새 검색 단서(시간대·사건 유형 등)를 입력받는다 — 새 Job 발주 없음, 다음 `RETRY_SEARCH`의 입력을 바꾸는 동작이다 |
+| `RETRY_SEARCH` | **신규(v1.3, 이슈 #31 W-1)**. `kind=COARSE_SEARCH` 신규 `job_id` 발주(바뀐 단서 기준). `candidates=[]`는 cache hit 대상이 아니므로 `force_rerun` 불필요 — 새 `job_id`만으로 재검색이 성립한다(`RETRY_PLATE_READ`와 같은 원칙) |
+| `RESUME_SEARCH`(`이어서 찾기`) | **신규(2026-09-13, ERD 리뷰 반영)**. `JobExecution.status=CANCELLED` 이후 조건 변경 없이 재개하는 경우도 `kind=COARSE_SEARCH` 신규 `job_id` 발주다 — 위 `RETRY_SEARCH`/`RETRY_PLATE_READ`와 같은 원칙(사용자의 새 Intent는 새 `job_id`, 같은 `job_id`+`attempt` 증가는 자동 인프라 재시도 전용). 이미 찾은 후보는 `CandidateEvent`가 case에 독립적으로 남아 있어 `job_id`를 나눠도 `CaseView.candidates[]`에서 사라지지 않는다. 상세 `docs/modules/case/decisions/job-resume-identity-policy.md`, `contract-job-execution.md`의 2026-09-13 명확화 노트 |
 
 **`info_state` 파생 규칙 — 확정 (B01 종결, 2026-09-07)**
 
 입력은 모두 `EvidenceRecord`(`contract-evidence-record-needs.md` §3)에서 온다. `case`는 어느 입력도 재계산·재해석하지 않는다. 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1.
 
-**(1) `EvidenceValue` 기반 display — `plate_display` · `location_display`**
+**(1) `EvidenceValue` 기반 display — `plate_display` · `case_type_display` · `report_type_display` · `violation_display` · (`location_display`의 대표값 선정 후에도 동일 규칙, §7-(3))**
 
 ```
 1. value == null                        → INFO_UNKNOWN
@@ -240,6 +290,8 @@ json
 ```
 
 2가 3보다 앞서는 것은 `core-user-flow.md` §9 「한 번 `사용자 확인됨`이 된 값은 다시 묻지 않는다」 때문이다. `needs_review`는 **`evidence`가 값과 함께 내려주는 `EvidenceValue.needs_review`**다. `evidence`가 「`user_corrected=true`와 `needs_review=true` 동시 발생 금지」·「`value=null`과 `needs_review=true` 동시 발생 금지」를 보장하므로(같은 계약 §10) 순서 규칙과 boolean이 어긋나는 조합은 생기지 않는다.
+
+**(1) 적용 범위 확정(v1.3, 이슈 #31 W-3, 유소연).** `case_type_display`(← `event.visual_event_type`)·`report_type_display`(← `event.safety_report_type`)·`violation_display`(← `event.violation_expression`)는 셋 다 `EvidenceRecord.event` 아래의 `EvidenceValue<T>`이므로 `plate_display`와 같은 (1) 규칙을 그대로 쓴다 — 별도 파생 로직이 아니다. **정정(2026-09-11, 이슈 #38 B-3, 신유민 지적·김준영 교차 확인 — 4차 검수).** `visual_event_type`과 `violation_expression`의 observability는 서로 다르다 — 이전 문구는 둘 다 `evidence.assemble()`이 항상 `source.observability=INFERRED`로 채운다고 적어 이 차이를 놓치고 있었다. `violation_expression`은 문장 자체가 항상 AI 생성이라 언제나 `INFERRED`이고, `violation_display`는 사건 유형 확정 여부와 무관하게 전 시나리오에서 `INFO_AI_ESTIMATED`다 — happy path를 포함해 신고문 화면에 「AI 추정」 표시가 뜬다. 반면 `visual_event_type`은 `search.visual_inference`(`VisualEvidence`의 `verification`/`visual_event_type` 판정)를 그대로 옮기는 passthrough라 `source.observability=OBSERVED`로 채운다 — `verification=OBSERVED`인 경우 `case_type_display=INFO_SOURCE_VERIFIED`가 되는 것은 "AI가 `VisualEvidence`의 `OBSERVED` 판정을 그대로 옮겼다"는 뜻이다. 이 정정은 fixture·결론을 바꾸지 않는다(둘 다 이미 맞았다) — 향후 이 문구를 근거로 `visual_event_type`을 `INFERRED`로 "고치는" 회귀를 막기 위한 wording 정정이다. `violation_display=INFO_AI_ESTIMATED`라는 결론은 W-3에서 신유민이 제안한 해석을 그대로 채택한 것이다.
 
 **(2) `occurred_at` → `event_time_display`** — `occurred_at`은 `EvidenceValue`가 아니라 `{value, time_resolution_ref, resolution_status, user_corrected, source{kind,label_key}}`다. `case`는 `source`를 들여다보지 않는다.
 
@@ -260,12 +312,63 @@ json
 
 `source_label_key`는 `EvidenceValue.source.label_key`(사건시각은 `occurred_at.source.label_key`)를 그대로 통과시킨 값이며 키 네임스페이스는 `evidence`가 소유한다. 대응 키가 없으면 `null`로 두고 web이 fallback 문구를 쓴다.
 
+**`progress[]`의 step 집합 규칙 — 확정 (v1.3, 2026-09-10, 유소연, 이슈 #31 W-7)**
+
+`progress[]`가 담는 step 개수가 시나리오마다 8/7/5/3개로 갈려 있던 것을 정리한다. 규칙: **이 case가 밟을 계획인 step만 담되, "계획"의 기준은 시나리오가 실제로 다루는 모듈 범위다.** 구체적으로:
+
+1. 이 시나리오가 다루는 모든 모듈이 최종적으로 `package_assembly`까지 이어질 수 있는 경우(`happy`·`correction_rerun`·`plate_reread`·`unknown_abstain_partial`), **도달 여부와 무관하게 8단계 전부**를 싣는다 — 아직 도달하지 않은 step은 `PENDING`으로 표시한다.
+2. 시나리오 카탈로그가 특정 모듈을 `modules_intentionally_absent`로 명시했다면, 그 모듈에 대응하는 step은 **`PENDING`으로도 넣지 않고 배열에서 아예 뺀다** — 이 CaseView는 애초에 그 단계에 도달할 계획이 없기 때문이다(예: `infra_failure_001`은 evidence 모듈이 없어 `evidence_assembly`부터 이후 3단계를 빼고, `relative_rebase_001`은 readout·evidence 모듈이 모두 없어 `plate_read`부터 이후 5단계를 뺀다).
+3. `candidates=[]`로 이 case의 진행이 구조적으로 멈춘 경우(`empty_001`)도 2와 같은 취급이다 — 이후 step은 이 case 생애주기에서 일어날 계획 자체가 없다.
+
+정리 전에는 `relative_rebase_001`이 자신의 카탈로그 선언(readout·evidence 모듈 전체 부재)과 다르게 8단계를 `PENDING`으로 전부 실어 규칙 2를 어기고 있었다 — 3단계(`file_intake`·`coarse_search`·`candidate_review`)로 정정했다. `plate_reread_001`은 evidence/package 모듈이 실제로 존재하는 시나리오인데 `package_assembly`가 빠져 있어 규칙 1 위반이었다 — rev3·rev4 양쪽에 `package_assembly: PENDING`을 추가했다(이 gap이 바로 W-6의 "다음에 뭘 해야 할지 알 수 없는 막다른 화면" 문제의 절반이었다 — 나머지 절반은 `notices[]`에 `case.report_video_not_generated`(INFO, `actions:["GENERATE_REPORT_VIDEO"]`)를 추가해 닫았다).
+
+**`evidence.review_needed` 파생 규칙 — 확정 (2026-09-09, 유소연, Mock Pack 심층 검토 §12 후속)**
+
+`review_needed`(object-level)는 `evidence`(record 단위 `EvidenceRecord`)가 아니라 **`case`가 아래 여섯 개의 `*_display.needs_review`로부터 파생하는 값**이다: `case_type_display` · `report_type_display` · `violation_display` · `plate_display` · `event_time_display` · `location_display`.
+
+```
+review_needed = (case_type_display.needs_review OR report_type_display.needs_review OR violation_display.needs_review
+                  OR plate_display.needs_review OR event_time_display.needs_review OR location_display.needs_review
+                  OR plate_display.info_state==INFO_NEEDS_REVIEW OR event_time_display.info_state==INFO_NEEDS_REVIEW
+                  OR location_display.info_state==INFO_NEEDS_REVIEW OR case_type_display.info_state==INFO_NEEDS_REVIEW
+                  OR violation_display.info_state==INFO_NEEDS_REVIEW
+                  OR report_type_display.info_state==INFO_NEEDS_REVIEW)   # v1.3, report_type_display에 info_state 추가되며 포함
+```
+
+즉 **여섯 개 중 하나라도 `needs_review=true`이거나, `info_state`를 가진 필드 중 하나라도 `INFO_NEEDS_REVIEW`이면 `true`**다(v1.3 이전에는 `report_type_display`에 `info_state`가 없어 이 항에서 제외했으나, v1.3에서 `info_state`가 추가돼 이제 `report_type_display.info_state==INFO_NEEDS_REVIEW`도 포함한다 — 이슈 #33 반영). **개정(2026-09-10, 유소연, 이슈 #26 B-web-6)** — 원래는 `needs_review`만 OR했는데, B절 §7-(3) 「대표값이 `user_hint`면 `INFO_NEEDS_REVIEW`」가 `needs_review`를 거치지 않고 바로 `info_state`를 정하는 경로라 원래 식이 이 조합을 놓쳤다(`scenario_happy_001`의 `location_display`가 `needs_review=false`인데 `info_state=INFO_NEEDS_REVIEW`인 사례로 발견). `review_needed`가 "검토 필요한 게 하나라도 있는가"의 요약이라는 원래 의도를 지키기 위해 `info_state` 경로도 포함시켰다 — `needs_review`와 `info_state`가 독립 필드라는 원칙(B절 §7 (4))은 그대로 유지하고, 집계식만 두 경로를 모두 본다. `reason_code`는 `true`가 된 원인이 하나면 그 필드에 대응하는 코드(예: `evidence.event_time_needs_review`, `evidence.location_needs_review`)를, 둘 이상이면 `evidence.multiple_fields_need_review`를 쓴다. `needs_review`·`info_state` 자체를 재계산하지 않으며(§10 불변조건 6과 같은 원칙), object-level `review_needed`와 필드별 값들은 같은 축의 집계일 뿐 서로 다른 정책을 추가하지 않는다.
+
+**`package.report_field_states` — 신설 (v1.3, 2026-09-10, 이슈 #31 A-2 · 신유민 PR #28 요청)**
+
+`report_fields`(평면 `object<string, string|null>`)는 필드 단위 상태(에러/치환/검토 필요 등)를 실을 자리가 없었다(`CONTRACT_CONFLICTS.md` 불명확 항목 10). `report_field_states`를 나란히 추가해 필드별 `{info_state, source_label_key}`를 제공한다. **값 공간은 기존 여섯 `*_display.info_state`와 같다** — 새 상태를 만들지 않는다.
+
+`report_fields`/`report_field_states`의 키와 `evidence.*_display` 출처 대응표:
+
+| `report_fields` 키 | 출처 |
+| --- | --- |
+| `vehicle_number` | `plate_display` |
+| `occurred_at` | `event_time_display` |
+| `location` | `location_display` |
+| `violation_expression` | `violation_display` |
+| `safety_report_type` | `report_type_display` |
+
+`case_type_display`는 `report_fields`에 대응 키가 없다 — 안전신문고 신고 양식에 들어가지 않는 내부 사건 분류 표시이기 때문이다(실제 신고문에 들어가는 것은 `safety_report_type`/`violation_expression`이다). `case`가 `report_fields`/`report_field_states`를 만들 때 이 대응표의 값을 그대로 옮긴다(재계산 없음) — evidence/case 경계의 값 공간을 늘리지 않는다.
+
+**`unconfirmed_fields` 파생 규칙 — 명확화(v1.3)**
+
+```
+unconfirmed_fields = [ field for field in report_field_states
+                        if report_field_states[field].info_state
+                           ∈ {INFO_AI_ESTIMATED, INFO_NEEDS_REVIEW, INFO_UNKNOWN} ]
+```
+
+`INFO_SOURCE_VERIFIED`·`INFO_USER_CONFIRMED`인 필드는 `unconfirmed_fields`에 넣지 않는다. `vehicle_number`/`occurred_at`/`location`은 v1.2에서도 이미 `info_state`를 가졌으므로 이 세 필드는 규칙 적용 결과가 바뀌지 않는다. `safety_report_type`/`violation_expression`은 v1.3에서 `report_type_display.info_state`가 처음 생기면서 이번에 `unconfirmed_fields` 계산에 들어간다 — 위 위험 안내 참고.
+
 ### 8. 정상 예시
 
 json
 
 ```json
-{  "case_id": "case_3", "case_rev": 4, "stage": "EVIDENCE_REVIEW", "user_reviewed": false,  "manifest_summary": { "file_count": 42, "ok_file_count": 40, "failed_file_count": 2, "duration_sec": 4680, "range": ["18:03", "19:21"] },  "hints": { "time": "18:30 전후", "vehicle": "흰색 SUV", "situation": "백색 실선 crossing 가능성", "location": "미금역 근처" },  "progress": [ { "step": "SCOPE", "state": "DONE" }, { "step": "COARSE", "state": "DONE" }, { "step": "FINE", "state": "RUNNING" } ],  "candidates": [ { "candidate_id": "c1", "at": "18:31:48", "at_provenance": "TIMELINE_ANCHOR+OFFSET", "observed": "백색 실선 + 흰 SUV가 선을 넘어 인접차로 진입", "thumb_ref": "fr_7c2e91", "selected": true } ],  "evidence": {    "record_id": "ev_88",    "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.overlay_ocr" },    "event_time_display": { "value": "2026-08-24T18:31:48+09:00", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "time.source.filename_time" },    "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "location.source.visual_inference", "coord": null, "search_keyword": "미금역 사거리" },    "review_needed": true,    "reason_code": "LOCATION_LOW_CONFIDENCE"  },  "requirements_evidence": { "readiness": "WARN", "checks": [] },  "requirements_package": null,  "package": null,  "running_jobs": [ { "job_id": "job_52", "kind": "PLATE_READ", "label_key": "job.plate_read", "status": "RUNNING" }, { "job_id": "job_53", "kind": "OVERLAY_TIME_READ", "label_key": "job.overlay_time_read", "status": "PENDING" } ],  "notices": []}
+{  "case_id": "case_3", "case_rev": 4, "stage": "EVIDENCE_REVIEW", "user_reviewed": false,  "manifest_summary": { "file_count": 42, "ok_file_count": 40, "failed_file_count": 2, "duration_sec": 4680, "range": ["18:03", "19:21"] },  "hints": { "time": "18:30 전후", "vehicle": "흰색 SUV", "situation": "백색 실선 crossing 가능성", "location": "미금역 근처" },  "progress": [ { "step": "SCOPE", "state": "DONE" }, { "step": "COARSE", "state": "DONE" }, { "step": "FINE", "state": "RUNNING" } ],  "candidates": [ { "candidate_id": "c1", "at": "18:31:48", "at_provenance": "recording.filename_time", "at_provenance_label_key": "candidate.at_provenance.filename_time", "observed": "백색 실선 + 흰 SUV가 선을 넘어 인접차로 진입", "thumb_ref": "fr_7c2e91", "selected": true } ],  "evidence": {    "record_id": "ev_88",    "plate_display": { "value": "12가 3476", "needs_review": false, "info_state": "INFO_SOURCE_VERIFIED", "source_label_key": "plate.source.overlay_ocr" },    "event_time_display": { "value": "2026-08-24T18:31:48+09:00", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "time.source.filename_time" },    "location_display": { "value": "미금역 사거리 인근", "needs_review": true, "info_state": "INFO_NEEDS_REVIEW", "source_label_key": "location.source.visual_inference", "coord": null, "search_keyword": "미금역 사거리" },    "review_needed": true,    "reason_code": "LOCATION_LOW_CONFIDENCE"  },  "requirements_evidence": { "readiness": "WARN", "checks": [] },  "requirements_package": null,  "package": null,  "running_jobs": [ { "job_id": "job_52", "kind": "PLATE_READ", "label_key": "job.plate_read", "status": "RUNNING" }, { "job_id": "job_53", "kind": "OVERLAY_TIME_READ", "label_key": "job.overlay_time_read", "status": "PENDING" } ],  "notices": []}
 ```
 
 > 사건시각이 파일명 계산값이라 `resolution_status=NEEDS_REVIEW` → `INFO_NEEDS_REVIEW`다(`core-user-flow.md` §13의 「파일 기록으로 계산한 시각」 화면과 대응). 위치는 `address`/`place_name`이 있어 대표값이 되었고 `search_keyword`는 별도 필드로 내려갔다. package-scope 검사가 아직 없어 `requirements_package=null`이다.
@@ -292,6 +395,8 @@ json
 10. `requirements_evidence`·`requirements_package`는 §7의 3단계 선택 규칙을 통과한 report만 싣는다. **이전 basis(`EvidenceRecord.record_ref`가 다른) report는 현재 판정으로 대체 사용하지 않는다.** 사용자 수정 직후 재검사 전이면 `null`이 정상이다
 11. `EVIDENCE_SUFFICIENT` / `PACKAGE_READY` / `USER_REVIEWED`를 하나의 readiness 값으로 합쳐 내려보내지 않는다
 12. web은 `info_state`로만 표시 분기한다. `needs_review`를 직접 해석하지 않는다
+13. **`package.report_field_states`는 `_REPORT_FIELDS` 5개 키(`safety_report_type`·`occurred_at`·`location`·`vehicle_number`·`violation_expression`)를 항상 전부 갖는다.** 값을 만들 수 없는 필드도 키 자체를 생략하지 않고 `{info_state: INFO_UNKNOWN, source_label_key: null}`로 채운다(2026-09-14, 이슈 #47/#48 결과 — `report-package/v1.1`이 `report_inputs.location`을 `null`로, 그리고 그 `null`을 「위치 정보가 없다는 확정된 사실」로 정의한 것에 대응하는 case 쪽 조건. `evidence` 김준영 결정 + `case` 유소연 조건 수용). `scenario_unknown_abstain_partial_001`의 `pkg_u001.report_field_states.location`이 이미 이 모양(`{info_state: INFO_UNKNOWN, source_label_key: null}`)이다.
+14. **`candidates[].at_provenance`가 authoritative이고 `at_provenance_label_key`는 그 값에서 case가 파생하는 표시 전용 값이다.** web은 `at_provenance` raw 문자열을 직접 해석하지 않고 `at_provenance_label_key`로만 문구를 고른다(§10-12와 같은 원칙, `stale_revision`/`stale_revision_label_key` 관계와 동형). `at_provenance_label_key`는 키 자체는 항상 존재하고(Y) 값만 `null`일 수 있다 — 매핑되지 않는 raw 값이 와도 필드를 생략하지 않는다(§10-13과 같은 표기 원칙). `at_provenance`와 `event_time_display.source_label_key`(=`occurred_at.source.label_key`)는 서로 다른 질문에 답하는 독립된 값이며 correction 등으로 한쪽만 바뀔 수 있다 — 하나가 다른 하나의 pass-through라고 가정하지 않는다(2026-09-14, 이슈 #39 Required-3 후속, 유소연·신유민 PR 리뷰 코멘트 Q-3 합의).
 
 ### 11. Consumer Review 반영 요약
 
@@ -332,5 +437,22 @@ json
 - **`candidates[]`의 stale-revision 표시 필드.** `CandidateEvent.span.timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 `case`가 비교해 「과거 timeline revision 기준」임을 표시한다(B09, 2026-09-07 합의). **필드명·모양은 case Owner가 구현 시 정한다** — 여기서 임의로 만들지 않는다. `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8.
 - **`FrameRef` 필드 계약 — 종결 (2026-09-08).** `candidates[].thumb_ref`가 `FrameRef`라는 점과 `FrameRef`의 필드·발급·조회 capability는 `contract-source-asset-media-stream.md` §5·§7이 소유한다(`source-asset-media-stream/v1`, Consumer Review 종결). 목데이터의 `fr_` 예시도 그 계약에서 읽는다 — `mock-pack-v1-refs.md`는 폐기됐다. **`thumb_ref` 이미지 전달 형태**(URL/ref/endpoint)는 그 계약 §9-6 Pending으로 남아 있고, 호출 경계(`case → recording → projection → web`, web→recording 직접 호출 금지)는 §7에 확정돼 있다.
 - ~~**재판독 발주의 `JobRecord.kind`**(A절 §7) — case Owner 결정 대기(CALL-12).~~ → **종결 (2026-09-07, 유소연).** `kind=PLATE_READ` + `force_rerun=true`(무조건) · 새 `job_id` · 기존 `ReadoutRun` 갱신 없음. A절 §7 등재. `adr/adr-data-contract-call-closure-2026-09-08.md` §4.1.
+- ~~**Fine 발주·Report Video export의 `JobRecord.kind` 미등재**(`04_mock_validation_report.md` §3.3-1) — case Owner 결정 대기.~~ → **종결 (2026-09-09, 유소연).** `FINE_VERIFY`·`REPORT_VIDEO_EXPORT` A절 §7 등재, `label_key` `job.fine_verify`·`job.report_video_export` 추가. `purge_case()`는 `JobRecord` 밖의 관리 동작으로 확정(§8 참고).
+- ~~**`CaseView.evidence.review_needed` 파생 규칙 미명시**(`04_mock_validation_report.md` §3.2-3) — case Owner 결정 대기.~~ → **종결 (2026-09-09, 유소연).** 규칙과 근거는 B절 §7 「`review_needed` 파생 규칙」에 등재.
+- ~~**`candidates[].at_provenance`/`at_provenance_label_key` 값 공간 미등재**(PR 리뷰 코멘트 Q-3, 신유민 지적) — case Owner 결정 대기.~~ → **종결 (2026-09-14, 유소연·신유민).** 값 공간 두 갈래 정의·`at_provenance_label_key` 신설·매핑표 §7 등재. fixture 반영(`data/mock/case/` 14곳)은 별도 후속 커밋.
 - 최초 수락일 — Owner가 기억하지 못해 **확인 불가**로 유지한다(헤더).
-- **별도 종결 항목 —** JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`.
+- **별도 종결 항목 —** JobExecution → CaseView 상태 projection: `QUEUED→PENDING`, `RUNNING→RUNNING`, `SUCCEEDED→DONE`, `FAILED/STALE→FAILED`, **`CANCELLED→PARTIAL`(v1.3 추가, `job-execution/v1.1`의 `CANCELLED` 신설에 대응)**.
+
+### 14. v1.3에서 닫힌 것 (2026-09-10 · 유소연 통합 초안 · 신유민·김준영 PR 리뷰 확인 대상, 이슈 #31/#33)
+
+- `candidates[].situation_confirmation` 값 공간을 `evidence-record/v1.3`의 `situation_response`와 맞춰 `NOT_ASKED | CONFIRMED | CORRECTED | USER_UNSURE`로 정정. 파생 출처(§7) 명시.
+- `progress[].state`의 "중단" 표현: 새 enum 값 없이 `CANCELLED→PARTIAL`로 흡수(`CONTRACT_CONFLICTS.md` 불명확 항목 9 종결).
+- `evidence.report_type_display`에 `info_state`/`source_label_key` 추가(`CONTRACT_CONFLICTS.md` 불명확 항목 4 잔여 해소, SafetyReportType registry 근거).
+- `package.report_field_states` 신설 + `report_fields` 키 매핑표 + `unconfirmed_fields` 파생 규칙 명확화(`CONTRACT_CONFLICTS.md` 불명확 항목 10 종결).
+
+### 15. v1.4에서 닫힌 것 (2026-09-14 · PR 리뷰 코멘트 Q-3, 유소연·신유민 합의)
+
+- `candidates[].at_provenance` 값 공간을 두 갈래(evidence 조립 이후 pass-through / 이전 case 소유 enum)로 정의. §8 예시의 미사용 `TIMELINE_ANCHOR+OFFSET` 폐기.
+- `candidates[].at_provenance_label_key`(string|null) 신설. `event_time_display.source_label_key` pass-through 가설은 fixture 전수 대조로 기각, case 소유의 독립 매핑표(`recording.filename_time`·`readout.overlay_ocr`·`recording.timeline_relative_only` 3종)로 대체.
+- §10 불변조건 14 추가 — raw/label_key authoritative 관계, 필드 항상 존재 원칙.
+- fixture 반영(`data/mock/case/` 7개 파일 14곳)은 이 v1.4 확정의 후속 작업으로 별도 진행한다.
