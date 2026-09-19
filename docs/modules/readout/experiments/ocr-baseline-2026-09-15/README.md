@@ -193,5 +193,5 @@ Exact 28/500(5.6%) · CER 55.3% · 빈 출력 94장. 이 표본에는 detection 
 | `tagged-dataset-500.json` | AI Hub Validation 500장 recognition 기준선과 분류 태깅 |
 | `ENVIRONMENT.md` | 이 수치를 만든 실행 환경 · 모델 설정 · 입력 경로 · 재현 순서 |
 | `requirements-frozen.txt` | 실행 당시 패키지 70개 |
-| `scripts/` | 실제로 돌린 스크립트 8개 |
+| `scripts/` | 그때 실제로 돌린 스크립트 8개. **재실행용 아님** — 위 「다시 돌리려면」 참조 |
 | `samples/` | 번호판 crop 시각화 + 어노테이션 형식 예시 |
