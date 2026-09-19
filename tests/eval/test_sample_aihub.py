@@ -90,3 +90,37 @@ def test_committed_a_tier_gt_is_self_consistent():
             n_with_box += 1
             assert len(box) == 4
     assert n_with_box == cov["items_with_target_bbox"]
+
+
+# --- 대상 객체를 위반유형별로 좁힌다 (F10) ------------------------------
+
+def test_target_objects_are_mapped_per_violation_type():
+    """유형마다 자기 대상 객체 이름이 하나씩 있다."""
+    assert sorted(sample_aihub.TARGET_OBJECTS_BY_TYPE) == sorted(VIOLATION_TYPES)
+    for vtype, names in sample_aihub.TARGET_OBJECTS_BY_TYPE.items():
+        assert names, vtype
+
+
+def test_target_object_names_do_not_overlap_between_types():
+    """한 이름이 두 유형의 대상이면 좁힌 의미가 없다."""
+    seen = set()
+    for names in sample_aihub.TARGET_OBJECTS_BY_TYPE.values():
+        assert not (seen & set(names))
+        seen |= set(names)
+
+
+def test_target_bbox_ignores_another_types_object():
+    """신호위반 시퀀스에서 중앙선침범용 대상 객체를 가져가지 않는다 (F10).
+
+    좁히기 전에는 TARGET_OBJECTS 가 전역 목록이라 프레임에 다른 유형의
+    대상 객체가 어노테이션돼 있으면 그 bbox 를 정답으로 삼았다.
+    """
+    anns = [{"Object Name": "중앙선침범 위반 차량(이륜차 포함)",
+             "Bbox Cordinate": [1, 2, 3, 4]}]
+    assert sample_aihub.pick_target_bbox(anns, "SIGNAL") is None
+    assert sample_aihub.pick_target_bbox(anns, "CENTER_LINE_CROSSING") == [1, 2, 3, 4]
+
+
+def test_target_bbox_requires_the_coordinate_field():
+    anns = [{"Object Name": "신호 위반 차량(이륜차 포함)"}]
+    assert sample_aihub.pick_target_bbox(anns, "SIGNAL") is None

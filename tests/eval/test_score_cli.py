@@ -1,6 +1,6 @@
 import json
 import os
-from eval import run, score, paths
+from eval import manifests_io, run, score, paths
 from eval.scorers import classification
 
 
@@ -11,10 +11,11 @@ def test_score_cli_writes_results_with_coverage(tmp_path, monkeypatch):
               "--stage", "candidate", "--run-id", "run_cli_001"])
     rc = score.main(["--prediction", "run_cli_001"])
     assert rc == 0
-    out = os.path.join(str(tmp_path), "run_cli_001.g1.json")
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    out = os.path.join(str(tmp_path), "run_cli_001.%s.json" % gt_version)
     with open(out, encoding="utf-8") as f:
         res = json.load(f)
-    assert res["candidate"]["recall_at"]["1"] == 1.0
+    assert res["candidate"]["recall_at"]["3"] == 1.0
     assert res["plate"]["exact_accuracy"] is None
     assert res["meta"]["impl"] == "fake:always_correct"
 
@@ -64,7 +65,8 @@ def test_not_run_classification_block_keeps_every_metric_key(tmp_path, monkeypat
     run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
               "--stage", "candidate", "--run-id", "run_cli_notrun"])
     assert score.main(["--prediction", "run_cli_notrun"]) == 0
-    path = os.path.join(str(tmp_path), "run_cli_notrun.g1.json")
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    path = os.path.join(str(tmp_path), "run_cli_notrun.%s.json" % gt_version)
     with open(path, encoding="utf-8") as f:
         text = f.read()
     res = json.loads(text)
@@ -90,7 +92,7 @@ def test_result_pins_the_scorer_version_and_the_prediction_it_scored(tmp_path, m
     assert score.main(["--prediction", "t_pin"]) == 0
 
     result = json.loads((tmp_path / "results" / "t_pin.mp1.json").read_text(encoding="utf-8"))
-    assert result["meta"]["scorer_version"] == "s2"
+    assert result["meta"]["scorer_version"] == "s3"
     ref = result["meta"]["prediction_ref"]
     assert ref["path"].endswith("t_pin.json")
     assert len(ref["sha256"]) == 64
@@ -173,3 +175,63 @@ def test_score_proceeds_when_only_the_ground_truth_declares_a_contract_version(t
     assert score.main(["--prediction", "t_null_env_contract"]) == 0
     reread = json.loads(path.read_text(encoding="utf-8"))
     assert reread["meta"]["contract_version"] is None
+
+
+def test_classification_result_pins_its_own_scorer_version(tmp_path, monkeypatch):
+    """stage 마다 자기 버전을 적는다 — candidate 의 값을 빌려 쓰지 않는다.
+
+    classification 결과에 candidate 의 버전이 실리면 그 파일이 candidate 의
+    지표 정의("IoU -> onset point error", "1:1 배정")를 자기 것인 양 말한다.
+    """
+    from eval.scorers import candidate as candidate_scorer
+    from eval.scorers import classification as classification_scorer
+
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "fake:always_correct", "--manifest", "ab_mixed",
+                     "--stage", "classification", "--run-id", "t_cls"]) == 0
+    assert score.main(["--prediction", "t_cls"]) == 0
+
+    result = json.loads((tmp_path / "results" / "t_cls.ag1.json").read_text(encoding="utf-8"))
+    assert result["meta"]["scorer_version"] == classification_scorer.SCORER_VERSION
+    assert result["meta"]["scorer_version"] != candidate_scorer.SCORER_VERSION
+
+
+def test_prediction_ref_sha_matches_the_file_as_committed(tmp_path, monkeypatch):
+    """결과에 적힌 지문이 실제 예측 파일의 지문이어야 한다.
+
+    산출물을 텍스트 모드로 쓰면 Windows 에서 \n 이 \r\n 으로 바뀌는데
+    .gitattributes 는 eol=lf 라, 기록된 sha 가 **커밋된 파일의 sha 가
+    아니게 된다.** 클론한 사람은 전원 불일치를 본다 — prediction_ref 가
+    「이 결과는 이 예측을 채점했다」를 증명하지 못한다.
+    """
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
+    assert run.main(["--impl", "fake:always_correct", "--manifest", "b_youtube",
+                     "--stage", "candidate", "--run-id", "t_sha"]) == 0
+    assert score.main(["--prediction", "t_sha"]) == 0
+
+    pred = tmp_path / "predictions" / "t_sha.json"
+    assert b"\r\n" not in pred.read_bytes(), "산출물에 CRLF 가 섞였다"
+
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    result = json.loads(
+        (tmp_path / "results" / ("t_sha.%s.json" % gt_version)).read_text(encoding="utf-8"))
+    assert result["meta"]["prediction_ref"]["sha256"] == manifests_io.sha256_file(str(pred))
+
+
+def test_committed_results_point_at_the_committed_predictions():
+    """커밋된 산출물끼리도 지문이 맞아야 한다 — 위 테스트는 tmp 안에서만 본다."""
+    import glob
+    from eval import paths as p
+    checked = 0
+    for path in sorted(glob.glob(os.path.join(p.results_dir(), "*.json"))):
+        with open(path, encoding="utf-8") as f:
+            result = json.load(f)
+        ref = result.get("meta", {}).get("prediction_ref")
+        if not ref:
+            continue
+        target = os.path.join(p.REPO_ROOT, ref["path"])
+        assert manifests_io.sha256_file(target) == ref["sha256"], path
+        checked += 1
+    assert checked >= 6

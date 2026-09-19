@@ -4,7 +4,7 @@
     "tier": "A",
     "source": "aihub",
     "sampling": {
-      "rule_version": "s1",
+      "rule_version": "s2",
       "seed": 20260906,
       "per_type": 30,
       "actual_per_type": {

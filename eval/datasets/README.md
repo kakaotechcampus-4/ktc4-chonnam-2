@@ -8,7 +8,7 @@ clone 직후에는 이 폴더에 README 밖에 없다. 아래 테스트는 로�
 
 | 테스트 | 필요한 것 | skip 사유 문구 |
 | --- | --- | --- |
-| `tests/eval/test_manifests_io.py::test_real_b_youtube_data_has_no_invariant_violations` | `eval/datasets/youtube/clips/` 의 클립 55개 (`file_path` 존재 · `sha256` 대조) | `B tier 미디어 없음 (로컬 전용)` |
+| `tests/eval/test_manifests_io.py::test_real_b_youtube_data_has_no_invariant_violations` | `eval/datasets/youtube/clips/` 의 클립 123개 (`file_path` 존재 · `sha256` 대조) | `B tier 미디어 없음 (로컬 전용)` |
 | `tests/eval/test_sample_aihub.py` 의 아카이브 표시 테스트 4건 | `eval/manifests/02.라벨링데이터/VL.zip` (247MB) | `VL.zip 없음 (로컬 전용)` |
 
 나머지는 커밋된 manifest·GT 만으로 돌므로 fresh clone 에서도 전부 통과한다 (A tier GT 불변식 포함).

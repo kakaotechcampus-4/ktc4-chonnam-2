@@ -1,55 +1,63 @@
 {
   "meta": {
-    "run_id": "demo_wrong",
-    "impl": "fake:always_wrong",
+    "run_id": "demo_correct",
+    "impl": "fake:always_correct",
     "stage": "candidate",
     "manifest": "b_youtube",
-    "gt_version": "g1",
+    "gt_version": "g3",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
-    "scorer_version": "s2",
+    "code_commit": "486f64f",
+    "scorer_version": "s3",
     "prediction_ref": {
-      "path": "eval/predictions/demo_wrong.json",
-      "sha256": "5a62264a9033a7e6c5e46edba63554d35185bda907ee0df9221924b1e79c23d9"
+      "path": "eval/predictions/demo_correct.json",
+      "sha256": "4f92f321bb470090503942622c54aa1b7c3379e03d65d61f5e53b10824a37a6e"
     }
   },
   "candidate": {
     "recall_at": {
-      "1": 0.0,
-      "3": 0.0,
-      "10": 0.0
+      "1": 0.9,
+      "3": 1.0,
+      "10": 1.0
     },
     "onset_error_sec": {
-      "mean": null,
-      "median": null,
+      "mean": 0.0,
+      "median": 0.0,
       "tolerance_sec": 2.0
     },
-    "containment_rate": null,
-    "fp_per_clip": 1.0,
-    "n_events": 4,
-    "n_negative_clips": 50,
+    "containment_rate": 1.0,
+    "fp_per_clip": 0.0,
+    "n_events": 10,
+    "n_negative_clips": 113,
     "excluded_by_reason": {
       "BOUNDARY_EXCLUDED": 1
     },
     "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 2
+      },
       "SIGNAL": {
         "recall_at": {
-          "1": 0.0,
-          "3": 0.0,
-          "10": 0.0
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
         },
         "n": 2
       },
       "SOLID_LINE_LANE_CHANGE": {
         "recall_at": {
-          "1": 0.0,
-          "3": 0.0,
-          "10": 0.0
+          "1": 0.8333333333333334,
+          "3": 1.0,
+          "10": 1.0
         },
-        "n": 2
+        "n": 6
       }
     },
-    "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
+    "coverage": "NO_EVENTS_FOR_TYPE — MOTORCYCLE_HELMET_NON_USE 유형의 사건이 정답지에 없다. 이 유형의 recall 은 측정되지 않았다 (0점이 아니다); BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
   },
   "classification": {
     "recall_macro": null,
@@ -61,6 +69,7 @@
     "n": null,
     "n_invalid_predictions": null,
     "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
   "plate": {

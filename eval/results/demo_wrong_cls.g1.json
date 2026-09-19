@@ -6,11 +6,11 @@
     "manifest": "a_aihub",
     "gt_version": "g1",
     "normalizer_version": "n1",
-    "code_commit": "f19d4df",
-    "scorer_version": "s2",
+    "code_commit": "486f64f",
+    "scorer_version": "cl1",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong_cls.json",
-      "sha256": "d6997385bce57e66d341a342f26a680c524dbe961d21295d43bd6fc4dd509cba"
+      "sha256": "c40b2a63500c449978383cac1be08dc1ddbaec2f28475ef6cb9ae0555a8d15a8"
     }
   },
   "candidate": {
@@ -95,7 +95,8 @@
     "n": 120,
     "n_invalid_predictions": 0,
     "n_invalid_gt_labels": 0,
-    "coverage": null
+    "n_invalid_bboxes": 0,
+    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 5건을 target_correctness 분모에서 뺐다"
   },
   "plate": {
     "exact_accuracy": null,
