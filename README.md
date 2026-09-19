@@ -69,7 +69,7 @@ Python 3.12 · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 ·
 | `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker` composition root는 아직 README만 있는 골격 |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
-| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
+| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src", "."]`, `testpaths=["tests"]`) 기준으로 `src/daesingo`와 top-level `eval`을 함께 수집하며 레포 루트에서 `uv run pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
 | `docs/modules/` | 모듈별 조사·실험·결정·계약 |
