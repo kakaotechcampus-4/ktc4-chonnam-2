@@ -9,14 +9,13 @@
 ```text
 Product Policy
 → docs/architecture/module-architecture.md
-→ Final Data Contract
-→ module decisions
-→ module research / experiments
+→ Final Data Contract / Accepted Owner Decision · ADR
+→ docs/architecture/erd-draft.md (Logical ERD)
 → docs/runtime/*
 → implementation
 ```
 
-Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 않는다.
+Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 않는다. Logical ERD는 cross-domain 관계와 저장 후보를 통합하는 입력이며, Final Contract/Accepted Owner Decision과 충돌하면 상위 결정을 따른다. Research/experiment는 결정의 근거이지 단독 SoT가 아니다.
 
 ## 문서 구조
 
@@ -56,16 +55,18 @@ Worker composition root
 - STALE은 Worker 소멸 실행 상태이며 old `case_rev`와 다른 개념이다.
 - 비용/사용량의 authoritative ledger는 UsageRecord다.
 
-## Final Contract
+## Upstream Design Inputs
 
 Runtime 구현 시 다음 문서를 직접 참조한다.
 
+- [Logical ERD](../architecture/erd-draft.md) — cross-domain 관계·cardinality·저장 후보
 - [JobRecord / CaseView](../architecture/contracts/contract-job-record-case-view.md)
 - [JobExecution](../architecture/contracts/contract-job-execution.md)
 - [UsageRecord](../architecture/contracts/contract-usage-record.md)
 - [AnalysisSource / RemoteCopy / DerivedAsset](../architecture/contracts/contract-analysis-source-derived.md)
+- [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 
-schema, enum, 불변조건을 Runtime 문서로 복사해 별도 SoT를 만들지 않는다.
+schema, enum, 불변조건을 Runtime 문서로 복사해 별도 SoT를 만들지 않는다. Logical ERD에서 JSON/관계 테이블처럼 물리 저장 선택이 열려 있으면 Runtime Tech Spec이 구현 근거를 가지고 닫는다.
 
 ## 현재 구현 상태 — 2026-09-19
 
@@ -122,6 +123,9 @@ Issue #41에서 이미 합의된 경계:
 
 - queue/execution 물리 schema
 - claim transaction
+- `JobExecution.produced` 물리 저장: JSON vs 관계 테이블
+- `JobExecution.usage_refs` materialization: 별도 저장 vs `UsageRecord.execution_ref` projection
+- UsageRecord final append timing / in-flight invocation 복구·중복 방지
 - retry max/backoff/jitter
 - lease duration
 - heartbeat interval
@@ -171,5 +175,7 @@ Runtime 관련 변경 시:
 ## Related
 
 - [Architecture v4](../architecture/module-architecture.md)
+- [Logical ERD](../architecture/erd-draft.md)
+- [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [common runtime code README](../../src/daesingo/common/README.md)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
