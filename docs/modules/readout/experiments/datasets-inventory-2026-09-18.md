@@ -187,8 +187,8 @@ Annotation  annotations[] — Annotation Type ∈ {Bbox, polyline, polygon}
 > ### ⚠️ 위 「구성」 표를 조건별 slice 축으로 쓰지 말 것 (2026-09-19 전수 재측정)
 >
 > 이 절은 **표본 6,000건** 기준이다. 이후 224,859건 전수로 다시 재면서 두 가지가
-> 뒤집혔다. 근거와 수치는 `track1-vehicle-2026-09-19/`(README §6 ·
-> `condition-label-audit.txt`)에 있다.
+> 뒤집혔다. 아래는 그 전수 측정값이다. 측정 스크립트와 원자료는 **후속 PR**로
+> 따로 올린다 — 이 PR에는 정정 사실만 싣는다.
 >
 > **1. `DayNights`·`Weather`는 프레임의 실제 조건이 아니다.** 한 클립은 몇 초짜리
 > 연속 구간인데, 클립 5,619개 중 **`DayNights` 97.54% · `Weather` 98.36%가 한 클립
