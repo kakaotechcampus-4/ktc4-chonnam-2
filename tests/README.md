@@ -14,7 +14,9 @@ PR #51 리뷰에서 김준영 님이 제안한 공통 러너 통일이고(record
 
 **`pyproject.toml`은 이 PR에서 만들지 않았다.** 지금 `feature/eval-harness` · `feature/recording-first-integration` · `feature/search-first-integration` 세 브랜치가 **각자 다른 root `pyproject.toml`을 들고 있다** — 패키지 이름(`daesingo-eval`·`daesingo`·`daesingo-backend`), `requires-python`(3.11·3.10·3.13), 빌드 백엔드(setuptools·hatchling), `testpaths`가 전부 다르다. 여기에 네 번째를 더하면 통합에서 4-way 충돌이 된다.
 
-**통합에서 root `pyproject.toml` 하나로 수렴시켜야 한다.** 그때 `[tool.pytest.ini_options]`에 `pythonpath = ["src"]`가 들어오면(또는 editable 설치로 가면) 이 `conftest.py`는 지운다.
+**통합에서 root `pyproject.toml` 하나로 수렴시켜야 한다.**
+
+> **현재 기준(2026-09-19):** root `pyproject.toml` + Python 3.12 + `uv.lock`로 공통 환경을 수렴한다. 위 3.10/3.11/3.13 내용은 1차 Mock Merge 전에 왜 충돌이 발생했는지를 설명하는 이력이다. 그때 `[tool.pytest.ini_options]`에 `pythonpath = ["src"]`가 들어오면(또는 editable 설치로 가면) 이 `conftest.py`는 지운다.
 
 > `pytest.ini`·`setup.cfg`로 설정을 두는 것도 피했다. 둘 다 `pyproject.toml`의 `[tool.pytest.ini_options]`보다 우선순위가 높아서, 통합 뒤에 다른 모듈의 설정을 **조용히 덮어쓴다.**
 
