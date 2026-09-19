@@ -1,5 +1,5 @@
 {
-  "note": "Evidence 전용 통합 하니스 설정이다. scenario_id, 파일 경로, 출력 ID, 평가 시각은 Runtime Data Contract가 아니다. evidence_rules/final_rules는 Runtime 입력이 아니라 활성 catalog가 선택한 목록의 기대값이다. H/U situation_response는 공용 CaseView에 없는 전체 응답 context를 명시한 test-derived 입력이며, requirement_observation_facts는 남은 번호판·시각 표시 rule을 위한 명시적 upstream Mock이지 실제 영상 검사 결과가 아니다.",
+  "note": "Evidence 전용 통합 하니스 설정이다. scenario_id, 파일 경로, 출력 ID, 평가 시각은 Runtime Data Contract가 아니다. evidence_rules/final_rules는 Runtime 입력이 아니라 활성 catalog가 선택한 목록의 기대값이다. H/U situation_response는 공용 CaseView에 없는 전체 응답 context를 명시한 test-derived 입력이며, requirement_observation_facts는 남은 번호판·시각 표시 rule을 위한 명시적 upstream Mock이지 실제 영상 검사 결과가 아니다. known_differences는 공용 Fixture와 baseline이 의도적으로 다른 지점의 해석이다 — 비교 결과에서 기계적으로 파생되는 불일치 사유는 여기 적지 않고 mock_integration이 직접 만든다.",
   "scenarios": {
     "scenario_happy_001": {
       "selection_rev": 1,
@@ -58,6 +58,11 @@
           "mock_only": true
         }
       },
+      "known_differences": [
+        "The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.",
+        "The executable Package uses report-package/v1.1 and safety-report-policy/v1.1; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.",
+        "Baseline location uses the case hint directly and does not invent the shared fixture search_keyword."
+      ],
       "emit_empty_needs": true
     },
     "scenario_unknown_abstain_partial_001": {
@@ -118,6 +123,10 @@
           "mock_only": true
         }
       },
+      "known_differences": [
+        "The executable Package uses report-package/v1.1 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.",
+        "The no-location generic renderer omits the location phrase and never invents a location value."
+      ],
       "emit_empty_needs": false
     },
     "scenario_plate_reread_001": {

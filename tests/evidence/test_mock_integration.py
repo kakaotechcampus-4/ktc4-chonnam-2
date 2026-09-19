@@ -4,7 +4,10 @@ import json
 import unittest
 from pathlib import Path
 
-from daesingo.evidence.mock_integration import run_scenario
+from daesingo.evidence.mock_integration import (
+    _require_reason_per_mismatch,
+    run_scenario,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIGS = json.loads((ROOT / "tests/evidence/fixtures/adapter_inputs.json").read_text(encoding="utf-8"))["scenarios"]
@@ -91,6 +94,58 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(old_time["resolution_ref"], new_time["supersedes_ref"])
         self.assertEqual(old_record["record_ref"], new_record["supersedes_ref"])
         self.assertEqual(["WARN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+
+    def test_every_recorded_mismatch_carries_a_reason(self):
+        """`comparison`이 불일치를 기록하면 그 축을 설명하는 항목이 반드시 있어야 한다.
+
+        불일치 사실만 남고 사유가 비어 있으면 「무엇으로 검증했는지 공개한다」를
+        만족하지 못한다 — 읽는 쪽이 차이를 의도된 것으로 볼지 결함으로 볼지
+        판단할 근거가 없다.
+        """
+        for scenario_id in CONFIGS:
+            with self.subTest(scenario=scenario_id):
+                comparison = self.run_case(scenario_id)["comparison"]
+                differences = comparison["known_differences"]
+                mismatched = [
+                    dimension
+                    for dimension, matched in (
+                        ("time_statuses", comparison["time_statuses_match"]),
+                        ("requirement_overalls", comparison["requirement_overalls_match"]),
+                        ("package_count", comparison["common_package_count"] == comparison["baseline_package_count"]),
+                    )
+                    if not matched
+                ]
+                for dimension in mismatched:
+                    self.assertTrue(
+                        any(item.startswith(f"{dimension}: ") for item in differences),
+                        f"{scenario_id}: '{dimension}' 불일치를 기록했으나 설명이 없다 — {differences}",
+                    )
+
+    def test_uncovered_mismatch_is_rejected(self):
+        """`_mismatched_dimensions`에 등록된 축에서 사유 누락을 막는다.
+
+        `_derived_differences`가 등록된 축을 하나 빠뜨리면 artifact는 다시
+        「다르다는 사실만 있고 이유가 없는」 상태로 돌아간다. 그때 조용히
+        통과하지 않고 생성 단계에서 멈춘다.
+
+        범위를 분명히 해 둔다 — 이 가드는 **등록된 축**만 본다.
+        `comparison`에 완전히 새로운 키를 추가하면서 `_mismatched_dimensions`에
+        등록하지 않으면 그 축은 애초에 불일치로 계산되지 않으므로 여기서 잡히지
+        않는다. 비교 축을 늘릴 때는 `_mismatched_dimensions` 등록이 함께 필요하다.
+        """
+        uncovered = {
+            "time_statuses_match": True,
+            "requirement_overalls_match": False,
+            "common_package_count": 0,
+            "baseline_package_count": 0,
+            "known_differences": ["time_statuses: unrelated reason."],
+        }
+        with self.assertRaises(ValueError) as caught:
+            _require_reason_per_mismatch("scenario_probe", uncovered)
+        self.assertIn("requirement_overalls", str(caught.exception))
+
+        covered = dict(uncovered, known_differences=["requirement_overalls: shared X vs baseline Y."])
+        _require_reason_per_mismatch("scenario_probe", covered)
 
     def test_adapter_does_not_mutate_shared_sources(self):
         paths = [ROOT / "data/mock" / module / "scenario_correction_rerun_001.json" for module in ("recording", "search", "readout", "case", "evidence")]

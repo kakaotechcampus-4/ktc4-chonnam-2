@@ -239,6 +239,78 @@ def _base(root: Path, scenario_id: str, config: Contract) -> tuple[Contract, Con
     return upstream, candidate, overlay, clip, latest_view
 
 
+def _mismatched_dimensions(comparison: Contract) -> list[str]:
+    """`comparison`이 불일치로 기록한 축의 이름을 돌려준다.
+
+    비교 축은 여기에 명시적으로 등록한다. 새 축을 `comparison`에 추가하려면
+    이 목록에도 넣어야 사유 누락 검사가 그 축까지 본다.
+    """
+    axes = (
+        ("time_statuses", comparison["time_statuses_match"]),
+        ("requirement_overalls", comparison["requirement_overalls_match"]),
+        ("package_count", comparison["common_package_count"] == comparison["baseline_package_count"]),
+    )
+    return [name for name, matched in axes if not matched]
+
+
+def _check_codes(reports: list[Contract]) -> set[str]:
+    return {check["code"] for report in reports for check in report["checks"]}
+
+
+def _derived_differences(
+    comparison: Contract,
+    *,
+    expected_statuses: list[str],
+    actual_statuses: list[str],
+    expected_overalls: list[str],
+    actual_overalls: list[str],
+    expected_reports: list[Contract],
+    actual_reports: list[Contract],
+) -> list[str]:
+    """불일치한 축마다 사유 한 줄을 비교 결과에서 직접 만든다.
+
+    시나리오 이름으로 분기하지 않는다 — 어떤 Scenario가 늘어나도 불일치가
+    생기면 그 축의 설명이 함께 생긴다. 여기서는 관측한 차이만 적고 원인을
+    단정하지 않는다. 의도된 차이의 해석은 adapter config의 `known_differences`가
+    맡는다.
+    """
+    derived: list[str] = []
+    for dimension in _mismatched_dimensions(comparison):
+        if dimension == "time_statuses":
+            derived.append(
+                f"time_statuses: shared {expected_statuses} vs baseline {actual_statuses}."
+            )
+        elif dimension == "requirement_overalls":
+            added = sorted(_check_codes(actual_reports) - _check_codes(expected_reports))
+            removed = sorted(_check_codes(expected_reports) - _check_codes(actual_reports))
+            detail = "the same checks produce different outcomes"
+            if added or removed:
+                parts = []
+                if added:
+                    parts.append(f"the active catalog evaluates checks the shared fixture does not contain: {added}")
+                if removed:
+                    parts.append(f"the shared fixture contains checks the active catalog no longer emits: {removed}")
+                detail = "; ".join(parts)
+            derived.append(
+                f"requirement_overalls: shared {expected_overalls} vs baseline {actual_overalls}; {detail}."
+            )
+        else:
+            derived.append(
+                "package_count: shared "
+                f"{comparison['common_package_count']} vs baseline {comparison['baseline_package_count']}."
+            )
+    return derived
+
+
+def _require_reason_per_mismatch(scenario_id: str, comparison: Contract) -> None:
+    """불일치를 기록했는데 그 축의 사유가 없으면 조용히 통과시키지 않는다."""
+    for dimension in _mismatched_dimensions(comparison):
+        if not any(item.startswith(f"{dimension}: ") for item in comparison["known_differences"]):
+            raise ValueError(
+                f"{scenario_id}: comparison records a '{dimension}' mismatch with no recorded difference"
+            )
+
+
 def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     upstream, candidate, overlay, clip, latest_view = _base(root, scenario_id, config)
     ids = config["output_ids"]
@@ -441,21 +513,28 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     expected = _load(root / "data" / "mock" / "evidence" / f"{scenario_id}.json")
     expected_overalls = [item["overall"] for item in expected["requirement_reports"]]
     actual_overalls = [item["overall"] for item in reports]
+    expected_statuses = [item["status"] for item in expected["time_resolutions"]]
+    actual_statuses = [item["status"] for item in times]
     comparison: Contract = {
         "common_fixture_ref": f"data/mock/evidence/{scenario_id}.json",
-        "time_statuses_match": [item["status"] for item in times] == [item["status"] for item in expected["time_resolutions"]],
+        "time_statuses_match": actual_statuses == expected_statuses,
         "requirement_overalls_match": actual_overalls == expected_overalls,
         "common_package_count": len(expected["report_packages"]),
         "baseline_package_count": len(packages),
-        "known_differences": [],
+        "known_differences": list(config.get("known_differences") or []),
     }
-    if scenario_id == "scenario_happy_001":
-        comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
-        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and safety-report-policy/v1.1; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.")
-        comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
-    if scenario_id == "scenario_unknown_abstain_partial_001":
-        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.")
-        comparison["known_differences"].append("The no-location generic renderer omits the location phrase and never invents a location value.")
+    comparison["known_differences"].extend(
+        _derived_differences(
+            comparison,
+            expected_statuses=expected_statuses,
+            actual_statuses=actual_statuses,
+            expected_overalls=expected_overalls,
+            actual_overalls=actual_overalls,
+            expected_reports=expected["requirement_reports"],
+            actual_reports=reports,
+        )
+    )
+    _require_reason_per_mismatch(scenario_id, comparison)
 
     return {
         "artifact_version": "evidence-first-completion/v1",
