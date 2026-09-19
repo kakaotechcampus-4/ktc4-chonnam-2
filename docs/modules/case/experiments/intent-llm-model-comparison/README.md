@@ -2,7 +2,7 @@
 
 **목적:** `research/llm-model-comparison-hint-extraction.md`가 남긴 미결 항목(§7) — 자연어 단서 구조화 호출에 GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5 중 무엇을 쓸지 실측으로 결정하기 — 을 실행하는 실험 하네스와 고정 데이터셋.
 
-**상태:** Elice ML API(카테캠 제공, 크레딧 12만 한도 — `search`와 공유) 경유로 세 모델을 다 부를 수 있다는 것까지 확인됐다. `ELICE_API_KEY`/`ELICE_BASE_URL` 값과 `gpt-5-nano`/`gemini-3.1-flash-lite` 모델 ID 문자열 확인만 남았다(아래 「Elice 연동」).
+**상태(2026-09-19 실측 완료):** 3개 후보 + judge 모델(Claude Sonnet 5) 전부 Elice ML API 경유로 정상 호출됨 — candidate 21건 + judge 21건 전부 `error=None`/`schema_valid=True`. 최종 모델 선택은 `docs/modules/case/decisions/intent-llm-model-selection.md` 참고. 이 절 아래 내용은 실측 이전 준비 상태를 그대로 보존한다(하네스 자체 사용법은 여전히 유효).
 
 ## 비용 — 12만 크레딧 예산 대비
 
@@ -16,9 +16,11 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 
 시드 7건 × 후보 3개 + judge 21건 기준으로 계산하면 **총 실행 비용은 ₩50 미만**(1 크레딧=₩1 가정 시 12만 크레딧의 0.05% 미만) — `search`와 예산을 나눠 써도 문제없는 수준이다. 10배 여유를 둬도 ₩500 이내.
 
+**실측 결과(2026-09-19):** 후보 3개 실제 비용 합계 44.93 KRW(claude-haiku-4-5 34.21 + gpt-5-nano 8.34 + gemini-3.1-flash-lite 2.38) — 위 어림값과 같은 자릿수. judge(claude-sonnet-5) 비용은 `pricing.py`의 `KRW_PER_1M_TOKENS`에 없는 모델이라 집계에서 `None`으로 빠졌다(조용히 0으로 세지 않는다는 정책대로).
+
 ## 채점 방식 — 1차 가설, 실측 전 잠정
 
-**아래는 전부 실측 전 잠정 판단이다.** 아직 API 키/모델 ID가 확정 안 돼서 실제로 judge를 돌려본 적이 없다 — LLM-judge가 정말 믿을 만한지는 스팟체크(아래 「검증」)로 확인해야 나온다. 사람과 다르게 판정하는 비율이 높으면 규칙 기반 채점이나 사람 라벨링으로 되돌아갈 수 있다. 지금 이 판단을 `decisions/`로 올리지 않고 `experiments/`에 두는 이유가 이거다.
+**2026-09-19 갱신 — judge를 실제로 21건 돌렸다(전부 `error=None`).** 아래 설계 논리(왜 LLM-judge를 골랐는지)는 실측 전에 세운 그대로 유효해서 안 고쳤다. 다만 "judge가 정말 믿을 만한가"의 최종 답은 여전히 없다 — 사람 스팟체크(아래 「검증」)를 아직 안 했다. 이 판단을 `decisions/`로 올리지 않고 `experiments/`에 계속 두는 이유가 바로 이거다. 필드별 판정 근거(`reason`)를 이제 저장하므로(멘토 피드백, 아래 참고) 스팟체크 자체는 이전보다 쉬워졌다.
 
 **2026-09-18 방향 전환:** LLM-judge를 채점 방식의 최종 답으로 보지 않는다. `decisions/intent-llm-eval-target-thresholds.md`의 딥리서치가 권고하고 지금 보기에도 정확도·비용 면에서 더 나은 방법은 **CorrectionRecord 기반 Field-level F1**이지만, 런칭 전이라 CorrectionRecord 실데이터가 없어서 지금 당장은 못 쓴다. 그래서 LLM-judge는 **이번 v1 모델 비교 한 번에만 쓰는 임시 방편**이고, 런칭 후 CorrectionRecord가 쌓이면 F1 기반으로 전환한다(아래 「다음 단계」).
 
@@ -75,38 +77,49 @@ scripts/
   dataset.py     # datasets/*.jsonl 로더
   candidates.py  # CandidateAdapter/JudgeAdapter — Elice(OpenAI SDK 호환) 호출
   runner.py      # dataset × candidates → predictions/*.jsonl (불변 저장)
-  judge.py       # predictions × judge 모델 → 필드별 correct/partial/hallucinated/missed 판정
+  judge.py       # predictions × judge 모델 → 필드별 {verdict, reason} 판정,
+                 # predictions/<model>/<case_id>.judge.<run_id>.json로 run_id마다 분리 저장(덮어쓰지 않음)
   aggregate.py   # 스키마 준수율 · 필드 정확도율 · hallucination/missed rate · 카테고리별 정확도 ·
                  # 애매 3종 confidence:low 인정 비율 · 비용/latency 집계 → results/summary.md
+                 # (--judge-run-id로 어느 채점 run을 집계할지 명시해야 함)
 ```
 
 Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API 호출(prediction)을 다시 하지 않아도 되게 한다.
 
-**Judge 모델**: 비교 대상 3개 후보 중에서 고르지 않는다(자기 채점 편향 방지) — `judge.py`가 `JUDGE_MODEL`이 `MODEL_IDS` 안에 있으면 실행을 막는다.
+**Judge 모델**: 비교 대상 3개 후보 중에서 고르지 않는다(자기 채점 편향 방지) — `judge.py`가 `JUDGE_MODEL`이 `MODEL_IDS` 안에 있으면 실행을 막는다. 실측(2026-09-19)에는 `anthropic/claude-sonnet-5`를 썼다(후보 중 최고가인 Claude Haiku 4.5보다 한 단계 위 티어).
+
+**채점 결과는 run_id별로 분리 저장하고 덮어쓰지 않는다(2026-09-19, 멘토 피드백)** — "채점 프로세스도 바뀔 수 있으니까요"라는 이유로, `judge.py`를 다시 돌려도(rubric·judge 모델을 바꿔서 재채점해도) 이전 run의 파일이 그대로 남는다. `judge.py`가 끝나면서 찍는 `run_id`를 `aggregate.py --judge-run-id`에 그대로 넘겨야 한다.
+
+**필드별 판정에 근거(`reason`)를 같이 저장한다(2026-09-19, 멘토 피드백)** — "결과만 있으면 틀린 케이스를 정성적으로 이해하기 어렵다"는 이유로, `JudgeVerdict`의 각 필드가 `{verdict, reason}` 쌍이 됐다(예전엔 6개 필드 판정 전체에 `notes` 하나만 공유). 후보 쪽 `IntentHintExtraction`에도 `reasoning` 필드를 추가해 같은 이유로 판단 근거를 남긴다.
 
 **검증**: judge 판정 중 일부(20% 권장)를 사람이 직접 스팟체크한다. 사람과 다르게 판정한 케이스가 나오면 데이터셋이 아니라 `schema.py`의 judge 프롬프트(rubric)를 고친다.
 
 ## Elice 연동
 
-세 모델 다 Elice가 **OpenAI SDK 호환 인터페이스**로 중계한다(`Authorization: Bearer <Serverless API Key>` + `client.chat.completions.parse(model=..., response_format=<PydanticModel>)`). `candidates.py`는 벤더별 분기 없이 `model_name`만 다른 하나의 클래스로 세 모델을 다 처리한다.
+세 모델 다 Elice가 **OpenAI SDK 호환 인터페이스**로 중계한다(`Authorization: Bearer <Serverless API Key>` + `client.chat.completions.parse(model=..., response_format=<PydanticModel>)`, 2026-09-19 실측으로 세 모델 다 구조화 출력까지 정상 확인됨). `candidates.py`는 벤더별 분기 없이 `model_name`만 다른 하나의 클래스로 세 모델을 다 처리한다.
 
-**실행 전 필요한 환경변수:**
+**⚠️ base_url은 모델마다 다르다(2026-09-19 정정)** — 처음엔 세 모델이 base_url 하나를 공유한다고 가정했는데(Claude 카드 하나만 보고 세운 추측), 실제 모델 카드를 보니 `https://mlapi.run/<uuid>/v1`의 UUID 자체가 모델마다 다르다. API 키는 계정 공용으로 확인됨(모델별로 다르지 않음).
+
+**실행 전 필요한 환경변수(`.env`, `candidates.py` 참고):**
 
 | 변수 | 값 |
 | --- | --- |
-| `ELICE_API_KEY` | Elice ML API Serverless API 키 |
-| `ELICE_BASE_URL` | Elice 모델 카드의 `<your-mlapi-endpoint>`를 실제 계정 엔드포인트로 교체한 값 |
-| `JUDGE_MODEL` | 후보 3개(`gpt-5-nano`/`gemini-3.1-flash-lite`/`claude-haiku-4-5`) 밖의 Elice 모델 ID |
+| `ELICE_API_KEY` | Elice ML API Serverless API 키 — 모델 공용 |
+| `ELICE_URL_GPT_5_NANO` | GPT-5 Nano 모델 카드의 `https://<uuid>/v1` |
+| `ELICE_URL_GEMINI_3_1_FLASH_LITE` | Gemini 3.1 Flash-Lite 모델 카드의 `https://<uuid>/v1` |
+| `ELICE_URL_CLAUDE_HAIKU_4_5` | Claude Haiku 4.5 모델 카드의 `https://<uuid>/v1` |
+| `JUDGE_MODEL` | 후보 3개 밖의 Elice 모델 ID — 이번 실측에 `anthropic/claude-sonnet-5` 사용 |
+| `JUDGE_MODEL_URL` | 그 judge 모델의 `https://<uuid>/v1` |
 
-키는 채팅에 붙여넣지 않고 `.env`나 셸 환경변수로 설정한다.
+키는 채팅에 붙여넣지 않고 `.env`나 셸 환경변수로 설정한다. `.env`는 `.gitignore`(`.env`/`.env.*` 패턴)에 걸려 커밋되지 않는다.
 
-## 다음 단계 (미결)
+## 다음 단계
 
-- [ ] `ELICE_BASE_URL` 실제 값 확보(계정별 엔드포인트) — API 키는 이미 발급 방식 확인됨
-- [ ] `candidates.py`의 `MODEL_IDS`에서 `gpt-5-nano`/`gemini-3.1-flash-lite` 문자열을 각 모델 카드에서 직접 확인(현재는 `claude-haiku-4-5`와 같은 명명 규칙일 거라고 가정한 값)
-- [ ] `response_format=<PydanticModel>` structured output이 Gemini/Claude 백엔드에도 그대로 강제되는지 실제 호출로 확인(`schema_valid` 계속 False면 이 가정이 깨진 것)
-- [ ] `JUDGE_MODEL` 확정
-- [ ] 실측 실행 → `results/summary.md`
-- [ ] **채점 방식(LLM-judge) 자체를 재검토** — judge 판정 20% 스팟체크해서 사람과 얼마나 갈리는지 확인. 여기서 신뢰도가 낮게 나오면 모델 비교 결과를 믿기 전에 채점 방식부터 규칙 기반/사람 라벨링으로 바꾼다
-- [ ] 위 두 가지가 끝나야 결과를 바탕으로 `docs/modules/case/decisions/`에 확정 문서 작성(모델 선택 + 이번 v1 한정으로 LLM-judge를 썼다는 것 둘 다)
+- [x] `ELICE_*_URL` 실제 값 확보 — 모델별로 다르다는 것까지 포함해 확인됨(위 「Elice 연동」)
+- [x] `candidates.py`의 `MODEL_IDS` 문자열 확인 — `gemini-3.1-flash-lite`/`claude-haiku-4-5`는 모델 카드 예제로, `gpt-5-nano`는 실제 호출 성공(`schema_valid=True`)으로 확인됨
+- [x] `response_format=<PydanticModel>` structured output이 Gemini/Claude 백엔드에도 강제되는지 확인 — **된다.** 21건 전부 `schema_valid=True`
+- [x] `JUDGE_MODEL` 확정 — `anthropic/claude-sonnet-5`(후보 3개보다 위 티어, 자기 채점 편향 회피)
+- [x] 실측 실행 → `results/summary.md`(2026-09-19, judge_run_id `20260919T170342Z`)
+- [ ] **채점 방식(LLM-judge) 자체를 재검토** — judge 판정 20% 스팟체크해서 사람과 얼마나 갈리는지 확인. **아직 미결.** 필드별 `reason`을 이제 저장하므로(2026-09-19, 멘토 피드백) `predictions/<model>/<case_id>.judge.<run_id>.json`을 열어 스팟체크하면 된다.
+- [x] 결과를 바탕으로 `docs/modules/case/decisions/`에 확정 문서 작성 → `intent-llm-model-selection.md`(모델 선택 + 이번 v1 한정으로 LLM-judge를 썼다는 것 둘 다 기록)
 - [ ] **(런칭 후) LLM-judge를 CorrectionRecord 기반 Field-level F1으로 전환.** `CorrectionRecord` 실데이터가 쌓이기 시작하면 착수 — 그 전까지는 착수 조건 자체가 안 갖춰진 상태라 미룬다. 전환되면 이 폴더의 `schema.py`/`judge.py`(judge 프롬프트·판정 로직)는 더 이상 안 쓰이고, `aggregate.py`의 정확도 계산만 정답지 소스를 CorrectionRecord로 바꿔 재사용할 수 있는지 검토한다.

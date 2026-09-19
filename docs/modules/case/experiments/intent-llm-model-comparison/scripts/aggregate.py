@@ -1,12 +1,17 @@
 """predictions + judge verdicts -> results/summary.md.
 
-    python aggregate.py --predictions ../predictions --out ../results/summary.md
+    python aggregate.py --predictions ../predictions --judge-run-id <run_id> --out ../results/summary.md
 
 judge 호출이 실패한 케이스는 분모에서 제외한다(조용히 0으로 세지 않는다) — README의
 에러 처리 정책과 동일.
 
 hallucinated/missed를 correct/partial과 분리해서 집계하는 이유, 카테고리별로도
 따로 보는 이유는 README.md "채점 방식 — 1차 가설, 실측 전 잠정" 참고.
+
+`--judge-run-id`는 필수다(2026-09-20, 멘토 피드백으로 judge.py가 채점 결과를
+run_id별로 분리 저장하게 바뀌면서 같이 바뀜) — predictions 폴더 하나에 채점 결과가
+여러 run 쌓일 수 있어서, "어느 채점을 집계할지"를 이 스크립트가 알아서 고르지 않는다
+(judge.py 실행 끝에 찍히는 run_id를 그대로 넘긴다).
 """
 
 from __future__ import annotations
@@ -25,7 +30,7 @@ JUDGE_FIELDS = [f for f in FIELDS]  # notes 필드는 집계 대상 아님
 AMBIGUOUS_TAGS = frozenset({"전부_모호", "차량_애매", "위치_애매"})
 
 
-def aggregate_model(model_dir: Path) -> dict:
+def aggregate_model(model_dir: Path, judge_run_id: str) -> dict:
     total_cases = 0
     schema_valid_count = 0
     errored_cases = 0
@@ -47,7 +52,7 @@ def aggregate_model(model_dir: Path) -> dict:
     ambiguous_low_confidence = 0
 
     for pred_path in sorted(model_dir.glob("*.json")):
-        if pred_path.name.endswith(".judge.json"):
+        if ".judge." in pred_path.name:
             continue
         total_cases += 1
         prediction = json.loads(pred_path.read_text(encoding="utf-8"))
@@ -69,7 +74,7 @@ def aggregate_model(model_dir: Path) -> dict:
             if prediction["parsed"].get("confidence") == "low":
                 ambiguous_low_confidence += 1
 
-        judge_path = pred_path.with_suffix("").with_suffix(".judge.json")
+        judge_path = pred_path.parent / f"{prediction['case_id']}.judge.{judge_run_id}.json"
         if not judge_path.exists():
             continue
         verdict = json.loads(judge_path.read_text(encoding="utf-8"))
@@ -85,7 +90,9 @@ def aggregate_model(model_dir: Path) -> dict:
             total_judged_fields += 1
             scenario_judged[scenario_tag] = scenario_judged.get(scenario_tag, 0) + 1
 
-            outcome = parsed[f]
+            # parsed[f]는 FieldVerdict(verdict+reason) 딕셔너리다(2026-09-20부터,
+            # 멘토 피드백으로 필드별 근거를 남기게 되면서 구조가 바뀜) — 판정값만 집계한다.
+            outcome = parsed[f]["verdict"]
             if outcome == "correct":
                 field_correct[f] += 1
                 scenario_correct[scenario_tag] = scenario_correct.get(scenario_tag, 0) + 1
@@ -125,9 +132,13 @@ def _pct(value: float | None) -> str:
     return "-" if value is None else f"{value:.0%}"
 
 
-def render_markdown(results: dict[str, dict]) -> str:
+def render_markdown(results: dict[str, dict], judge_run_id: str) -> str:
     lines = [
         "# Intent LLM 비교 결과",
+        "",
+        f"judge_run_id: `{judge_run_id}` — 이 채점 결과의 raw 파일은 "
+        f"`predictions/<model>/<case_id>.judge.{judge_run_id}.json`에 있다"
+        "(필드별 판정 근거는 여기서 직접 읽는다).",
         "",
         "| model | schema 준수율 | field 정확도 | hallucination rate | missed rate | "
         "평균 latency(ms) | 총 비용(KRW) | 실패 케이스 | judge 실패 |",
@@ -192,22 +203,25 @@ def render_markdown(results: dict[str, dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def run(predictions_dir: Path, out_path: Path) -> None:
+def run(predictions_dir: Path, out_path: Path, judge_run_id: str) -> None:
     results = {
-        model_dir.name: aggregate_model(model_dir)
+        model_dir.name: aggregate_model(model_dir, judge_run_id)
         for model_dir in sorted(p for p in predictions_dir.iterdir() if p.is_dir())
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(render_markdown(results), encoding="utf-8")
-    print(f"결과 -> {out_path}")
+    out_path.write_text(render_markdown(results, judge_run_id), encoding="utf-8")
+    print(f"결과({judge_run_id}) -> {out_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--predictions", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument(
+        "--judge-run-id", required=True, help="judge.py 실행 끝에 찍힌 run_id."
+    )
     args = parser.parse_args()
-    run(args.predictions, args.out)
+    run(args.predictions, args.out, args.judge_run_id)
 
 
 if __name__ == "__main__":

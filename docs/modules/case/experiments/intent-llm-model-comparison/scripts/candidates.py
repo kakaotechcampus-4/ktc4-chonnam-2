@@ -3,18 +3,25 @@
 Elice가 세 후보 모두 **OpenAI SDK 호환 인터페이스**로 중계한다는 걸 확인했다(사용자가
 모델 카드에서 직접 확인):
 
-- 인증: `Authorization: Bearer <Serverless API Key>` — OpenAI SDK가 `api_key=`로 자동 처리
-- 호출: `client.chat.completions.parse(model=..., messages=[...], response_format=<PydanticModel>)`
-  (Claude Haiku 4.5 모델 카드 예시로 확인 — GPT-5 Nano/Gemini도 같은 패턴 사용 확인 필요, 아래 참고)
-- base_url: 계정별 실제 엔드포인트 문자열로 교체해야 함 (모델 카드는 `<your-mlapi-endpoint>` placeholder)
+- 인증: `Authorization: Bearer <Serverless API Key>` — OpenAI SDK가 `api_key=`로 자동 처리,
+  계정 공용(모델마다 다르지 않음, 카드 표기로 확인)
+- 호출: `client.chat.completions.create(model=..., messages=[...])` (Gemini 3.1 Flash-Lite
+  스트리밍 예제로 확인) — payload가 OpenAI Chat Completions 형식인 건 맞다.
+- **base_url은 모델마다 통째로 다르다(2026-09-20 정정)** — 처음엔 "세 모델이 base_url
+  하나를 공유한다"고 가정했지만(Claude 카드 하나만 보고 세운 추측), 실제로는 모델 카드마다
+  `client = OpenAI(base_url="https://<그 모델의 mlapi.run UUID>/v1", ...)`처럼 UUID
+  자체가 다르다. 그래서 `_client()`는 이제 `model_name`을 받아 그 모델 전용 환경변수에서
+  `base_url`을 찾는다 — 후보 3개는 `_MODEL_BASE_URL_ENV`, judge 모델은 `JUDGE_MODEL_URL`
+  (`.env` 참고).
 
 세 모델 다 같은 클래스(model_name만 다름)로 처리한다 — 벤더별 서브클래스가 필요 없어졌다.
 
 **아직 확인 안 된 것:**
-- `MODEL_IDS`의 `gpt-5-nano`/`gemini-3.1-flash-lite` 문자열은 `claude-haiku-4-5`와
-  같은 명명 규칙일 거라고 가정한 값이다. 실행 전 각 모델 카드에서 정확한 문자열 확인 필요.
-- `response_format=<PydanticModel>` structured output이 Claude/Gemini 백엔드에도
-  동일하게 강제되는지(Elice가 내부적으로 어떻게 relay하는지)는 실제로 호출해봐야 안다 —
+- `MODEL_IDS`의 `gemini-3.1-flash-lite`는 실제 카드 예제로 확인됐다. `gpt-5-nano`는
+  아직 그 카드의 호출 예제로 직접 확인한 적이 없다(같은 명명 규칙일 거라는 추정만 있음).
+- `response_format=<PydanticModel>` structured output(`.parse()`)이 Claude/Gemini
+  백엔드에도 동일하게 강제되는지는 실제로 호출해봐야 안다 — 지금까지 본 모델 카드 예제는
+  전부 `.create()` + `stream=True` 일반 채팅뿐이고 `.parse()` 예제는 못 봤다.
   `schema_valid`가 계속 False로 나오면 이 가정이 깨진 것이니 `runner.py` 출력을 먼저 본다.
 """
 
@@ -39,15 +46,27 @@ from schema import (
 
 MODEL_IDS = {
     "gpt-5-nano": "gpt-5-nano",
-    "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+    "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",  # 스트리밍 예제로 확인됨
     "claude-haiku-4-5": "claude-haiku-4-5",  # 사용자가 모델 카드에서 직접 확인한 값
 }
 
+# 후보 3개의 model_name -> base_url을 담은 환경변수 이름. judge 모델(MODEL_IDS 밖)은
+# 여기 없고 JUDGE_MODEL_URL 하나로 따로 처리한다(.env 참고).
+_MODEL_BASE_URL_ENV = {
+    "gpt-5-nano": "ELICE_URL_GPT_5_NANO",
+    "gemini-3.1-flash-lite": "ELICE_URL_GEMINI_3_1_FLASH_LITE",
+    "claude-haiku-4-5": "ELICE_URL_CLAUDE_HAIKU_4_5",
+}
 
-def _client() -> OpenAI:
+
+def _client(model_name: str) -> OpenAI:
+    """base_url이 모델마다 다르므로(모듈 docstring 참고) `model_name`으로 골라야 한다.
+    `model_name`이 후보 3개 중 하나면 그 전용 URL을, 아니면(judge 모델) `JUDGE_MODEL_URL`을
+    쓴다 — judge 모델은 정의상 `MODEL_IDS` 밖의 모델 하나뿐이라 이름별 매핑이 필요 없다."""
+    env_name = _MODEL_BASE_URL_ENV.get(model_name, "JUDGE_MODEL_URL")
     return OpenAI(
         api_key=os.environ["ELICE_API_KEY"],
-        base_url=os.environ["ELICE_BASE_URL"],
+        base_url=os.environ[env_name],
     )
 
 
@@ -76,7 +95,7 @@ class CandidateAdapter:
         )
         start = time.monotonic()
         try:
-            response = _client().chat.completions.parse(
+            response = _client(self.model_name).chat.completions.parse(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": CANDIDATE_SYSTEM_PROMPT},
@@ -141,7 +160,7 @@ class JudgeAdapter:
         )
         start = time.monotonic()
         try:
-            response = _client().chat.completions.parse(
+            response = _client(self.model_name).chat.completions.parse(
                 model=self.model_name,
                 messages=[
                     {"role": "system", "content": JUDGE_SYSTEM_PROMPT},

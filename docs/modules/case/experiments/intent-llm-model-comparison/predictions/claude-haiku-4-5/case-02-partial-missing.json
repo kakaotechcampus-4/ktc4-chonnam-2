@@ -1,0 +1,22 @@
+{
+  "case_id": "case-02-partial-missing",
+  "scenario_tag": "일부_누락",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"갑자기 끼어들음\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 차량(흰색 SUV)과 상황(갑자기 끼어듦)이 명확하게 언급되었다. 시간과 위치는 언급되지 않았으므로 null로 처리했다. prior_hints가 없으므로 정정 대상이 없다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "갑자기 끼어들음",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 차량(흰색 SUV)과 상황(갑자기 끼어듦)이 명확하게 언급되었다. 시간과 위치는 언급되지 않았으므로 null로 처리했다. prior_hints가 없으므로 정정 대상이 없다."
+  },
+  "latency_ms": 3154.8720999853685,
+  "prompt_tokens": 1829,
+  "completion_tokens": 249,
+  "cost_krw": 4.679126,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

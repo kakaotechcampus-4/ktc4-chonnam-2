@@ -31,15 +31,23 @@ EXTRACTION_SCHEMA = {
             "description": "정정 대상 필드명. 새 정보면 null",
         },
         "confidence": {"type": "string", "enum": ["high", "low"]},
+        "reasoning": {
+            "type": "string",
+            "description": "왜 이 값들을 뽑았는지 한두 문장 근거(멘토 피드백 2026-09-20 —"
+            " 결과만 있으면 틀린 케이스를 정성적으로 이해하기 어려움)",
+        },
     },
-    "required": list(FIELDS),
+    "required": [*FIELDS, "reasoning"],
     "additionalProperties": False,
 }
 
 
 class IntentHintExtraction(BaseModel):
     """EXTRACTION_SCHEMA와 동일한 필드. Elice가 중계하는 OpenAI SDK의
-    `response_format=<PydanticModel>` structured output에 이 클래스를 그대로 넘긴다."""
+    `response_format=<PydanticModel>` structured output에 이 클래스를 그대로 넘긴다.
+
+    `reasoning`은 `FIELDS`(judge가 채점하는 6개 필드)에 안 들어간다 — 채점 대상이
+    아니라 사람이 나중에 틀린 케이스를 정성적으로 읽어볼 때 참고하는 설명이다."""
 
     time_hint: Optional[str]
     vehicle_hint: Optional[str]
@@ -47,6 +55,7 @@ class IntentHintExtraction(BaseModel):
     location_hint: Optional[str]
     correction_target: Optional[str]
     confidence: Literal["high", "low"]
+    reasoning: str
 
 
 CANDIDATE_SYSTEM_PROMPT = """\
@@ -61,6 +70,9 @@ CANDIDATE_SYSTEM_PROMPT = """\
   correction_target에 정정 대상 필드명을 넣는다. 정정이 아니면 null.
 - 이번 발화에서 언급되지 않은 필드는 prior_hints 값을 복사하지 말고 null로 둔다
   (병합은 이 호출의 책임이 아니다).
+- reasoning에는 어떤 근거로 각 값을 그렇게 뽑았는지(특히 confidence를 low로 내린 이유,
+  correction_target을 그 필드로 판단한 이유) 한두 문장으로 남긴다. 정답을 다시 나열하지
+  않고 판단 과정을 설명한다.
 """
 
 CANDIDATE_USER_TEMPLATE = """\
@@ -77,21 +89,32 @@ null/UNKNOWN 처리 비율을 하나의 'wrong'에서 분리해서 보기 위함
 Verdict = Literal["correct", "partial", "hallucinated", "missed"]
 
 
+class FieldVerdict(BaseModel):
+    """필드 하나에 대한 판정 + 근거. 예전엔 6개 필드 판정 전체에 `notes: str` 하나만
+    공유했는데(2026-09-20 이전), 필드마다 왜 그렇게 판정했는지가 안 남아서 나중에
+    틀린 케이스를 정성적으로 못 읽었다(멘토 피드백) — 그래서 필드마다 근거를 갖게 바꿨다."""
+
+    verdict: Verdict
+    reason: str
+
+
 class JudgeVerdict(BaseModel):
     """judge 호출의 structured output 스키마. `IntentHintExtraction`과 마찬가지로
-    `response_format=JudgeVerdict`로 그대로 넘긴다."""
+    `response_format=JudgeVerdict`로 그대로 넘긴다. 필드마다 `FieldVerdict`(판정+근거)를
+    담는다 — `aggregate.py`는 `parsed[field]["verdict"]`로 판정값만, 근거는 사람이
+    `predictions/`의 raw judge 파일을 직접 읽어서 참고한다."""
 
-    time_hint: Verdict
-    vehicle_hint: Verdict
-    situation_hint: Verdict
-    location_hint: Verdict
-    correction_target: Verdict
-    confidence: Verdict
-    notes: str
+    time_hint: FieldVerdict
+    vehicle_hint: FieldVerdict
+    situation_hint: FieldVerdict
+    location_hint: FieldVerdict
+    correction_target: FieldVerdict
+    confidence: FieldVerdict
 
 JUDGE_SYSTEM_PROMPT = """\
 너는 자연어 단서 추출 결과를 채점하는 평가자다. 비교 대상 모델 중 하나가 아니다.
-아래 정보를 보고 필드별로 다음 네 가지 중 하나를 매기고 한 줄 근거를 남긴다.
+아래 정보를 보고 필드마다 다음 네 가지 중 하나를 verdict로 매기고, 그 필드에 대한
+reason(한두 문장 근거)을 같이 남긴다.
 
 - correct: 원문 내용과 expected_notes 기준에 맞게 값을 뽑았거나, 없어야 할 값을 null로 뒀다.
 - partial: 방향은 맞지만 일부만 맞다(예: 정정 필드는 맞았지만 confidence가 틀림).
@@ -104,8 +127,9 @@ JUDGE_SYSTEM_PROMPT = """\
 - expected_notes는 정답 문자열이 아니라 사람이 쓴 판정 기준이다. 문자열 완전일치를 요구하지 않는다.
 - hallucinated와 missed는 방향이 반대다 — 헷갈리면 "모델이 원문보다 더 많이 말했는가(hallucinated)
   아니면 더 적게 말했는가(missed)"로 구분한다.
+- reason은 그 필드 하나에 대한 근거만 담는다(다른 필드 얘기를 섞지 않는다) — 나중에
+  사람이 이 필드가 왜 이렇게 판정됐는지만 보고 이해할 수 있어야 한다.
 
-각 필드값은 correct/partial/hallucinated/missed 중 하나이고, notes에 한두 문장 근거를 남긴다.
 출력 형식 자체는 이 호출에 넘기는 response_format(JudgeVerdict) 스키마가 강제한다.
 """
 
@@ -127,12 +151,16 @@ JUDGE_USER_TEMPLATE = """\
 def validate_schema(obj: dict) -> tuple[bool, list[str]]:
     """EXTRACTION_SCHEMA에 대한 최소 수동 검증. 외부 jsonschema 의존성을 새로 추가하지 않기 위함
     (pyproject.toml에 pydantic만 있고, 이 실험은 case 공유 의존성에 손대지 않는다).
+
+    `reasoning`은 `FIELDS`(judge 채점 대상 6개)에 없지만 `EXTRACTION_SCHEMA`엔
+    필수 필드로 있다 — 여기서 따로 검증한다.
     """
     errors: list[str] = []
     if not isinstance(obj, dict):
         return False, ["출력이 JSON object가 아님"]
 
-    extra = set(obj.keys()) - set(FIELDS)
+    allowed = set(FIELDS) | {"reasoning"}
+    extra = set(obj.keys()) - allowed
     if extra:
         errors.append(f"스키마에 없는 필드: {sorted(extra)}")
 
@@ -147,5 +175,10 @@ def validate_schema(obj: dict) -> tuple[bool, list[str]]:
         else:
             if value is not None and not isinstance(value, str):
                 errors.append(f"{field}는 string 또는 null이어야 함, 실제: {type(value).__name__}")
+
+    if "reasoning" not in obj:
+        errors.append("필수 필드 누락: reasoning")
+    elif not isinstance(obj["reasoning"], str):
+        errors.append(f"reasoning은 string이어야 함, 실제: {type(obj['reasoning']).__name__}")
 
     return (len(errors) == 0), errors

@@ -408,6 +408,7 @@ MulitaMiner)은 검증 절차 및 탈출구(Escape hatch) 설계를 통해 환�
 
 - ~~§3.3에서 출처가 안 잡힌 claim의 정확한 출처를 확인한다~~ — 2026-09-18 WebSearch로 완료(§3.4). 9개 중 4개가 미확인/조작 의심으로 확인됨 — `field_accuracy_rate`·`hallucination_rate` 두 목표치의 신뢰도가 애초 생각보다 낮다는 것도 §1에 반영함.
 - **그래서 실측 결과를 목표치와 대조할 때 목표치 쪽을 과신하지 않는다** — 목표치 미달이 나와도 "우리 시스템이 나쁘다"보다 "애초에 목표치 근거가 약했다"일 가능성을 먼저 검토한다.
-- `research/llm-model-comparison-hint-extraction.md` §7 미결 항목(API 키 확보·모델 ID 확정) 해소 후, `datasets/intent-hint-eval-v1.jsonl`로 실측하고 §1 표의 목표치와 실제 결과를 대조한다.
-- 실측 결과가 목표치에 못 미치면, 목표치 자체를 낮추기보다 이 딥리서치 §4가 제안한 DSPy `BootstrapFewShot`(correction 로그 10~50개 기준) 도입을 먼저 검토한다 — correction 로그가 아직 없는 V1 시점엔 후순위.
-- production UCR 목표(§1 마지막 행)는 case가 이 기능을 실제로 내보낸 뒤 별도 결정 문서에서 확정한다.
+- ~~`research/llm-model-comparison-hint-extraction.md` §7 미결 항목(API 키 확보·모델 ID 확정) 해소 후, `datasets/intent-hint-eval-v1.jsonl`로 실측하고 §1 표의 목표치와 실제 결과를 대조한다.~~ — 2026-09-19 완료. **3개 후보 전부 이 문서의 목표치를 넉넉히 넘겼다**(schema 100%/field 정확도 93~100%/hallucination 0~2%/missed 0~2% — 목표치는 각각 99%↑/70~75%↑/5%↓/10%↓). n이 작아(§1.1) 이 초과분 자체를 정밀하게 비교하는 데는 안 썼다 — 모델 간 최종 선택은 `decisions/intent-llm-model-selection.md` 참고. 상세 수치는 `experiments/intent-llm-model-comparison/results/summary.md`.
+- 실측 결과가 목표치에 못 미치면, 목표치 자체를 낮추기보다 이 딥리서치 §4가 제안한 DSPy `BootstrapFewShot`(correction 로그 10~50개 기준) 도입을 먼저 검토한다 — **이번 실측은 전부 목표치를 넘겨서 해당 없음.** correction 로그가 아직 없는 V1 시점엔 어차피 후순위.
+- production UCR 목표(§1 마지막 행)는 case가 이 기능을 실제로 내보낸 뒤 별도 결정 문서에서 확정한다 — 여전히 미결.
+- judge 판정 20% 스팟체크(harness README "검증" 절)는 아직 안 했다 — LLM-judge 신뢰도 자체를 이 목표치와 별개로 확인해야 하는 항목이라 미결로 남긴다.

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-03-all-vague",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '언제였는지 기억이 잘 안 나요'라고 명시되어 있어 시간 정보가 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'어떤 차'는 식별 불가 수준의 값으로 허용되며, 색상이나 차종 등을 지어내지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '이상하게 운전했던 것 같은데'를 그대로 반영한 표현으로 구체적인 사실을 지어내지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 없는 신규 발화이므로 null 처리가 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"전반적으로 정보가 불확실하므로 low로 설정한 것이 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '언제였는지 기억이 잘 안 나요'라고 명시되어 있어 시간 정보가 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'어떤 차'는 식별 불가 수준의 값으로 허용되며, 색상이나 차종 등을 지어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '이상하게 운전했던 것 같은데'를 그대로 반영한 표현으로 구체적인 사실을 지어내지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 없는 신규 발화이므로 null 처리가 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "전반적으로 정보가 불확실하므로 low로 설정한 것이 기준에 부합한다."
+    }
+  },
+  "latency_ms": 6430.312699987553,
+  "prompt_tokens": 2375,
+  "completion_tokens": 509,
+  "cost_krw": null,
+  "error": null
+}

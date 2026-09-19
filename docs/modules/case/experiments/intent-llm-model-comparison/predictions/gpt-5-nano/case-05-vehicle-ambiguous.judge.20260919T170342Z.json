@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-05-vehicle-ambiguous",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"색상은 불확실하다고 명시하지 않고 null로 두지 않았지만, 값 자체에 색상을 지어내지 않고 'SUV'로만 표기해 애매함을 유지했으며 confidence를 low로 별도 표시했으므로 기준에 부합한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 상황 관련 정보가 없으므로 null 처리가 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아니므로 null 처리가 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"'잘 모르겠는데', '것 같아요' 등 불확실한 표현에 맞게 confidence를 low로 설정했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "색상은 불확실하다고 명시하지 않고 null로 두지 않았지만, 값 자체에 색상을 지어내지 않고 'SUV'로만 표기해 애매함을 유지했으며 confidence를 low로 별도 표시했으므로 기준에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 관련 정보가 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아니므로 null 처리가 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "'잘 모르겠는데', '것 같아요' 등 불확실한 표현에 맞게 confidence를 low로 설정했다."
+    }
+  },
+  "latency_ms": 7667.951500043273,
+  "prompt_tokens": 2421,
+  "completion_tokens": 506,
+  "cost_krw": null,
+  "error": null
+}
