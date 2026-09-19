@@ -100,9 +100,12 @@ OVERLAY_TIME_FORMATS = (
 """지원하는 overlay 날짜/시간 형식. 여기서 못 읽으면 `format_ok=false`다(계약 §7)."""
 
 TZ_OFFSET = re.compile(r"(?:[+-]\d{2}:\d{2}|Z)")
-"""provider가 주는 `tz_offset`의 형식. overlay 문자열에는 timezone이 없어서 clip의 source
+"""계약이 정한 `tz_offset` **표기**. overlay 문자열에는 timezone이 없어서 clip의 source
 메타데이터에서 오는데, 그 값이 비어 있거나 ISO offset이 아니면 여기서 붙인 문자열이 시각이
-아니게 된다. 계약 값을 만들기 전에 형식부터 본다."""
+아니게 된다.
+
+표기만으로는 부족하다 — `+25:99`는 이 패턴을 통과하지만 시각이 아니다. 유효성 판정은
+`_valid_tz_offset()`이 하고, 이 상수는 그 앞단의 표기 검사만 맡는다."""
 
 
 # ── 입력 ─────────────────────────────────────────────────────
@@ -346,10 +349,33 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
     except providers.ProviderError as error:
         return PlateReadResult(_fail_run(run, error), None)
 
+    try:
+        plate = _interpret_plate(reading, target_hint, request, run.run_id)
+    except providers.ProviderError as broken:
+        # 해석 중 우리가 **알아본** 계약 위반. detail이 이미 무엇이 어긋났는지 말한다.
+        return PlateReadResult(_fail_run(run, broken), None)
+    except Exception as unexpected:  # noqa: BLE001 — 아래 이유로 넓게 잡는다
+        # provider 데이터를 해석하다 터진 것은 전부 여기로 온다. 예외로 되돌리면 실행이
+        # 일어났는데 run이 없는 상태가 되어 worker가 발행 근거를 잃는다(모듈 docstring).
+        return PlateReadResult(_fail_run(run, _provider_broke_contract(
+            f"plate 응답 해석 중 예기치 못한 오류: {unexpected!r}")), None)
+
+    run.ended_at = _now()
+    return PlateReadResult(run, plate)
+
+
+def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
+    """provider가 준 plate 응답을 계약 값으로 옮긴다 — association 반영·consensus·abstain·조립.
+
+    **provider 데이터에 손이 닿는 계산은 전부 여기 모여 있다.** 호출자가 이 함수 하나만
+    감싸면 「provider를 부른 뒤에는 예외를 내보내지 않는다」가 성립한다 — `bbox_xywh`가
+    비어 오는 것처럼 우리가 미리 못 본 값이 들어와도 실패 run으로 닫힌다
+    (`_interpret_overlay`와 같은 구조다).
+    """
     association = reading.association
     if association.target_hint_used and target_hint is None:
-        return PlateReadResult(_fail_run(run, _provider_broke_contract(
-            "provider가 target_hint를 썼다고 보고했으나 hint가 없었다")), None)
+        raise _provider_broke_contract(
+            "provider가 target_hint를 썼다고 보고했으나 hint가 없었다")
 
     crop_refs = _issue_crop_refs(reading.frames)
     frame_results = [
@@ -384,9 +410,9 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
     if best is not None:
         region = AssociatedRegion(frame_ref=best.frame_ref, bbox_xywh=list(best.bbox_xywh))
 
-    plate = PlateReadout(
+    return PlateReadout(
         readout_id=_new_id("readout"),
-        run_ref=ContractRef(kind="readout_run", ref=run.run_id),
+        run_ref=ContractRef(kind="readout_run", ref=run_id),
         case_id=request.case_id,
         candidate_id=request.candidate_id,
         input_ref=_copy_input_ref(request.input_ref),
@@ -399,7 +425,7 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
             evidence=[AssociationEvidence(kind=k, detail=d) for k, d in association.evidence],
         ),
         # abstain일 때 observation.reason을 중복 채우지 않는다 — abstain_reason이 authoritative다.
-        observation=_observation(value, status, "readout.plate_ocr", run.run_id),
+        observation=_observation(value, status, "readout.plate_ocr", run_id),
         consensus=Consensus(
             text=text,
             disagree_positions=disagree_positions,
@@ -417,8 +443,6 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
         contract="PlateReadout",
         contract_version=PLATE_READOUT_VERSION,
     )
-    run.ended_at = _now()
-    return PlateReadResult(run, plate)
 
 
 # ── read_overlay_time ────────────────────────────────────────
@@ -433,6 +457,27 @@ def _parse_overlay_text(raw, tz_offset):
             continue
         return parsed.isoformat() + tz_offset
     return None
+
+
+def _valid_tz_offset(raw) -> bool:
+    """`tz_offset`이 **실제로 시각을 만들 수 있는 값**인지 판정한다.
+
+    표기 검사만으로는 `+25:99`·`+09:60`처럼 자리 수는 맞고 시각은 아닌 값이 통과한다. 이 값은
+    `_parse_overlay_text`에서 ISO 문자열 뒤에 그대로 이어 붙고 `_seconds_between`이
+    `fromisoformat`으로 다시 읽으므로, 여기서 못 거르면 해석 단계에서 터진다 — 그때는 이미
+    provider를 부른 뒤라 예외로 되돌릴 수 없는 자리다(모듈 docstring).
+
+    표기 검사를 남겨 둔 이유 — `%z`는 `+0900`도 유효한 offset으로 받지만 계약이 정한 표기는
+    `±HH:MM`·`Z` 둘뿐이다. **표기는 계약이 정하고, 유효성은 `strptime`이 판정한다.**
+    """
+    if not raw or not TZ_OFFSET.fullmatch(raw):
+        return False
+    try:
+        datetime.strptime(raw, "%z")
+    except ValueError:
+        # 범위를 벗어난 offset — `%z`는 ±24시간 밖을 시각으로 인정하지 않는다.
+        return False
+    return True
 
 
 def _seconds_between(earlier, later) -> float:
@@ -493,9 +538,9 @@ def read_overlay_time(request: ReadRequest,
         return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
             f"presence={reading.presence}인데 sample이 있다 — 읽은 것이 있으면 PRESENT다")), None)
 
-    if not TZ_OFFSET.fullmatch(reading.tz_offset or ""):
+    if not _valid_tz_offset(reading.tz_offset):
         return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
-            f"provider가 ISO offset이 아닌 tz_offset을 줬다: {reading.tz_offset!r}")), None)
+            f"provider가 시각을 만들 수 없는 tz_offset을 줬다: {reading.tz_offset!r}")), None)
 
     try:
         samples, value, status, reason_code, validation = _interpret_overlay(reading)
