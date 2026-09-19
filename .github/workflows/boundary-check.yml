@@ -16,6 +16,9 @@ on:
     branches: [develop]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -28,19 +31,33 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
-      # Python 3.12 기준 lock을 이번 PR에서 재생성해 커밋하기 위한 임시 검증 단계.
-      # 최종 PR에서는 uv sync --locked로 교체한다.
+      # 이 PR에서만 Python 3.12 기준 lock을 재생성하고 head branch에 반영한다.
+      # lock 반영 확인 뒤 최종 워크플로에서는 제거한다.
       - name: Python 3.12 lock 재생성
         run: uv lock
 
-      - name: 생성된 lock artifact 업로드
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-uv-lock
-          path: uv.lock
+      - name: 변경된 lock 반영
+        if: github.event_name == 'pull_request'
+        run: |
+          if ! git diff --quiet -- uv.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add uv.lock
+            git commit -m "chore(env): regenerate uv lock for Python 3.12"
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          fi
+
+      - name: Python 3.12 환경 동기화
+        run: uv sync --locked
+
+      - name: 전체 pytest
+        run: uv run pytest
 
       - name: 모듈 경계 · 계약 정합성
         run: uv run python scripts/check_boundaries.py
 
       - name: 계약 예시 · fixture 의미 검사
         run: uv run python scripts/check_contract_fixtures.py
+
+      - name: Mock Pack 검증
+        run: uv run python data/mock/validate_mock_pack.py
