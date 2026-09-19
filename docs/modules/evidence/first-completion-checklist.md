@@ -22,7 +22,7 @@
 >
 > | 미표시 항목 | 남은 이유 |
 > | --- | --- |
-> | RequirementReport 「H PASS·U WARN·P UNKNOWN→PASS·R WARN→PASS」 | baseline의 P v2·R v2는 `PASS`가 아니라 `WARN`이다. D1의 `evidence.location.present` WARN check가 더해진 결과이며, 두 baseline의 `comparison.known_differences`가 비어 있어 이 차이가 증빙에 기록돼 있지 않다. 공용 fixture(`data/mock/evidence/`)와 공용 `CaseView`(P rev4 `requirements_evidence=PASS`)도 D1 이전 3-check 기준에 멈춰 있어, 어느 쪽을 정본으로 맞출지 정해야 한다 |
+> | RequirementReport 「H PASS·U WARN·P UNKNOWN→PASS·R WARN→PASS」 | **정책은 확정돼 있고 구현도 따르고 있으나 공용 fixture 동기화가 남아 미표시로 둔다.** baseline의 P v2·R v2는 `PASS`가 아니라 `WARN`이다. [ADR-EVIDENCE-002][D10] §5.4가 EVIDENCE scope에 네 rule을 공통 적용하기로 정했고 `evidence.location.present`의 위치 부재는 **v2부터** `WARN`이다(D1은 `FINAL_PACKAGE`만 바꿨다). 같은 ADR §5.5는 P가 위치 check를, R이 위치와 사건 유형 check를 뺀 공용 목록을 갖는다는 사실까지 적으며 그것을 「테스트 설정이지 정책 예외가 아니다」로 못 박았다. 따라서 이 줄의 기대값은 정책이 아니라 **공용 fixture의 현재 상태**를 옮겨 적은 것이다. 공용 fixture와 공용 `CaseView`가 active catalog에 맞춰 재렌더되고 이 줄이 정정되면 표시한다([이슈 #86][I86]). 차이의 사유 자체는 [#87][P87]이 baseline artifact의 `comparison.known_differences`에 기록한다 |
 
 ## 회의에서 먼저 볼 핵심
 
@@ -388,3 +388,6 @@ python scripts/check_boundaries.py
 [R1]: research/안전신문고_실제_신고_요건_및_초기_4종_유형_매핑_조사.pdf
 [R2]: research/Timestamp__Evidence_Policy__사건_발생시각을_어떻게_확보하고_신고영상에_표시할_것인가.pdf
 [R3]: research/신고문__Package__Handoff__확정된_증거를_실제_신고_가능한_형태로_어떻게_넘길_것인가.pdf
+[D10]: adr/adr-first-completion-owner-decisions.md
+[I86]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86
+[P87]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/87

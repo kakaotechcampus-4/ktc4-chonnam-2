@@ -20,12 +20,12 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 | --- | --- | --- | --- | --- |
 | 1 | P1 | [#84](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/84) `real_e2e`가 `location_hint`·`gps_observation`을 넘기지 않는다 | 배선 누락 | 유소연(`case`) |
 | 1 | P2 | [#85](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/85) baseline 비교에서 P/R의 차이 사유가 기록되지 않는다 | 구현 버그 | 김준영(`evidence`) |
-| 1 | P3 | [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86) `evidence.location.present` 정본 결정 | **정본 결정 · 유일한 차단 항목** | 김준영 · 유소연 · 신유민(`web`) |
+| 1 | P3 | [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86) 공용 fixture·CaseView의 EVIDENCE check 동기화 | **fixture 동기화(정책은 확정됨)** | 유소연 · 신유민(`web`) · 김준영(체크리스트) |
 | 2 | P4 | real E2E에서 H의 Package가 발행되지 않는다 | 접합 미배선 · **미게시** | 유소연 · 정철원 · 신유민 |
 | 2 | P5 | 공용 Package fixture가 `report-package/v1`에 멈춰 있다 | fixture 갱신(I2) · **미게시** | 유소연 |
 | 3 | V1 | Python 버전·빌드 환경 통일 | **[PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82) 진행 중 — 머지 후 확인만** | 김준영(팀 공용) |
 
-권장 순서는 **P1 → P2 → P3**이다. P1과 P2가 P3을 논의할 재료를 만든다 — P1 없이는 「위치가 있는 정상 케이스」를 실제로 볼 수 없고, P2 없이는 P/R이 왜 다른지를 남에게 보여줄 근거가 없다.
+권장 순서는 **P1 → P2 → P3**이다. P2가 P3의 대조표를 artifact에 남기고, P1은 real 경로에서 위치가 있는 케이스를 실제로 보이게 한다. 셋 다 **새 정책 결정을 요구하지 않는다** — P3은 처음 「정본을 새로 정한다」로 썼으나 `ADR-EVIDENCE-002` §5.4·§5.5가 이미 정해 둔 사안이었다(아래 P3 정정 참고).
 
 재검토 전 후보였던 「기본 `pytest`가 case 테스트를 수집하지 않는다」는 `develop`에서 case 테스트가 `tests/case`로 이동하면서 **이미 해소돼 뺐다.**
 
@@ -76,11 +76,13 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 ### 배경
 
-`src/daesingo/evidence/mock_integration.py`의 비교 블록은 `known_differences`를 빈 배열로 시작한 뒤 `scenario_happy_001`과 `scenario_unknown_abstain_partial_001`일 때만 설명 문자열을 덧붙인다. P/R 분기가 아예 없다.
+아래는 이슈를 올릴 당시의 상태다. `src/daesingo/evidence/mock_integration.py`의 비교 블록은 `known_differences`를 빈 배열로 시작한 뒤 `scenario_happy_001`과 `scenario_unknown_abstain_partial_001`일 때만 설명 문자열을 덧붙인다. P/R 분기가 아예 없다.
 
 체크리스트는 「무엇으로 검증했는지 공개한다」와 「검증 범위 밖 항목을 PASS로 보고하지 않는다」를 Merge 중단 기준으로 둔다. 불일치를 침묵으로 남기는 것은 그 기준과 맞지 않는다. 실제로 이번 재검토에서 미표시로 남은 항목 1건의 직접 원인이 이 빈 배열이다 — 차이의 사유가 artifact에 없어 체크 근거로 쓸 수 없었다.
 
-**P3보다 먼저 해야 한다.** P3은 다른 모듈 Owner의 합의가 필요한데, 지금은 「무엇이 왜 다른가」를 보여줄 문서가 없다.
+**P3보다 먼저 해야 한다.** P3의 재렌더 범위를 정하려면 「무엇이 왜 다른가」가 artifact에 있어야 하고, 지금은 그 대조표가 없다.
+
+> **상태(2026-09-19): [PR #87](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/87)로 처리했다.** 불일치 축마다 사유를 비교 결과에서 파생시키고, 등록된 축에서 사유가 빠지면 생성 단계에서 멈춘다. 그 결과 P/R의 차이가 artifact에 기록됐고 P3의 동기화 범위가 드러났다.
 
 ### 제안
 
@@ -95,39 +97,56 @@ real E2E 작업을 기준선으로 놓고 세 갈래로 나눈다.
 
 ---
 
-## P3. `[evidence/case/web]` `evidence.location.present` 정본 결정 — [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86)
+## P3. `[evidence/case/web]` 공용 fixture·CaseView의 EVIDENCE check 동기화 — [#86](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/86)
 
-### 제안 제목
-
-`[evidence/case/web] D1 이후 EVIDENCE scope에 추가된 evidence.location.present를 공용 Mock이 반영하지 않았다 — 어느 쪽이 정본인가`
+> **2026-09-19 정정.** 이 항목은 처음 「`evidence.location.present`의 정본을 새로 결정한다」로 썼다. **잘못이다.** 그 결정은 [`ADR-EVIDENCE-002`](../adr/adr-first-completion-owner-decisions.md) §5.4·§5.5에서 이미 끝나 있었고, 과거 결정을 확인하지 않은 채 Owner에게 중복으로 물은 것이다. 이슈 #86도 같은 취지로 본문을 다시 썼다.
 
 ### 한 줄 요약
 
-`policy/requirement-rules-v4`의 EVIDENCE scope는 위치 부재를 `WARN`으로 잡는 check를 포함한다. 그런데 공용 `data/mock/evidence/`의 P·R은 이 check가 없는 구성으로 최종 `PASS`를 기대하고, 공용 `CaseView`도 같은 값을 그대로 담고 있다. **같은 시나리오에 두 개의 정답이 있다.**
+공용 `data/mock/evidence/`의 P·R과 그 값을 투영한 공용 `CaseView`가 **active catalog보다 축소된 EVIDENCE check 목록**을 담고 있다. 정책도 구현도 이미 정해진 방향을 따르고 있고, **공용 fixture와 Consumer 쪽 동기화만 남았다.**
 
-### 배경
+### 이미 확정된 것 — 재논의 대상이 아니다
 
-D1(`ADR-EVIDENCE-003`, 이슈 #48)로 위치 부재를 `WARN`으로 처리하는 방향이 확정되면서 EVIDENCE scope에 위치 check가 들어왔다. 이후 공용 Fixture는 재렌더되지 않았다.
+| 결정 | 출처 |
+| --- | --- |
+| EVIDENCE scope는 네 rule을 **모든 Scenario에 공통 적용**한다 | `ADR-EVIDENCE-002` §5.4 (`ACCEPTED`) |
+| `evidence.location.present`의 위치 부재는 **`WARN`** — **v2부터 불변**이다 | 같은 절 |
+| **Scenario별 rule 생략을 허용하지 않는다.** P/R fixture의 축소 목록은 「테스트 설정이지 정책 예외가 아니다」 | 같은 ADR §5.5 |
+| D1은 `FINAL_PACKAGE`의 `package.location.present`만 바꾼다. **EVIDENCE scope 매핑은 불변** | `ADR-EVIDENCE-003` §5.5 · 이슈 #48 |
 
-그 결과 체크리스트 `RequirementReport` 절의 「H PASS · U WARN · P UNKNOWN→PASS · R WARN→PASS」 줄이 현재 구현과 어긋난다. 구현을 따르면 P·R의 최종 등급은 `PASS`가 아니라 `WARN`이다. **체크리스트에 남은 마지막 미표시 1건이 여기에만 묶여 있다.**
+`ADR-EVIDENCE-003`은 이 점을 한 줄로 못 박는다 — 「`evidence.location.present`(EVIDENCE scope)는 v2에서 이미 `no_location_value: WARN`이라 바꾸지 않는다.」
 
-공용 `CaseView`도 같은 값을 담고 있어서, 이 차이는 evidence 안에서 끝나지 않고 `case`의 표시 규칙과 `web`의 화면 상태까지 이어진다. 미루면 되돌릴 곳이 evidence 구현·공용 evidence fixture·공용 `CaseView`·web 네 곳으로 늘어나고, 그 셋은 evidence 소유가 아니다.
+### 층을 나눠 본 현재 상태
 
-### 정해야 할 것
+| 층 | 상태 |
+| --- | --- |
+| 정책 결정 | **완료** |
+| evidence 구현 | **완료** — 네 Scenario 모두 EVIDENCE rule 4개 실행 |
+| baseline artifact | **완료** — 차이 사유가 `known_differences`에 기록됨(P2 / #87) |
+| 공용 evidence fixture | **미동기화** |
+| 공용 `CaseView` | **미동기화** |
+| 체크리스트 문구 | **미정정** |
 
-둘 중 하나를 고른다. 가운데는 없다.
+### 동기화할 내용 — R은 위치 하나가 아니다
 
-1. **구현이 정본** — 위치 없는 사건의 EVIDENCE scope는 `WARN`이 맞다. 공용 evidence fixture와 공용 `CaseView`를 재렌더하고, 체크리스트 해당 줄을 정정한다.
-2. **공용 Fixture가 정본** — 위치는 EVIDENCE scope의 판정 대상이 아니고 `FINAL_PACKAGE`에서만 본다. v4 catalog에서 EVIDENCE 쪽 위치 check를 뺀다.
+| Scenario | 공용 fixture의 check | active catalog가 추가로 평가 | 공용 기대 등급 | 현재 구현 |
+| --- | --- | --- | --- | --- |
+| P `plate_reread` | 3개 | `evidence.location.present` | `UNKNOWN` → `PASS` | `UNKNOWN` → `WARN` |
+| R `correction_rerun` | **2개** | `evidence.location.present` · `evidence.visual_event.present` | `WARN` → `PASS` | `WARN` → `WARN` |
 
-제안은 1번이다. D1이 이미 「위치 부재를 숨기지 않고 WARN으로 드러낸다」를 택했고, EVIDENCE scope에서만 그 사실을 감추면 사용자가 위치 없는 상태를 늦게 알게 된다. 다만 **이 결정은 `case`·`web`의 표시 규칙을 바꾸므로 evidence 단독으로 정하지 않는다.**
+`ADR-EVIDENCE-002` §5.5가 이 두 줄을 그대로 적어 두었다. R의 두 번째 차이는 새 발견이 아니라 **ADR에만 있고 실행 artifact에는 없던 사실**이며, P2(#87)가 그것을 artifact에도 남겼다.
 
-P1을 먼저 처리하면 「위치가 있는 케이스」와 「없는 케이스」를 실제 결과로 나란히 놓고 논의할 수 있다.
+### 왜 여전히 1부인가
+
+새 결정을 기다리는 항목은 아니지만, 공용 fixture와 공용 `CaseView`는 `case`·`web`이 매일 읽는 입력이다. 지금 상태 위에 표시 규칙을 더 쌓으면 재렌더 시 되돌릴 곳이 늘어난다. **결정 대기가 아니라 작업 대기**라서 1부에 남긴다.
+
+`reviews/10_...`의 **I2**·**I5**는 H/U Package 중심이라 **P/R의 EVIDENCE check 목록은 어느 I 항목에도 들어 있지 않다.** #86이 그 자리를 맡는다.
 
 ### 완료 조건
 
-- 채택안이 기록되고, evidence 구현·공용 evidence fixture·공용 `CaseView`·체크리스트 네 곳의 값이 한 방향으로 일치한다.
-- 체크리스트의 마지막 미표시 항목이 해소된다.
+- [ ] 공용 P/R fixture의 EVIDENCE report가 네 rule을 담고 최종 overall이 `WARN`이다.
+- [ ] 공용 `CaseView` 두 Scenario의 `requirements_evidence`가 그 값으로 재투영된다.
+- [ ] 1차 완료 체크리스트의 「P는 UNKNOWN→PASS, R은 WARN→PASS」 줄이 정정된다.
 
 ---
 
@@ -238,7 +257,7 @@ PR #82을 확인한 결과 그 우려는 해당하지 않는다. 팀 표준을 *
 
 - **P2는 evidence 단독**이라 이슈 없이 바로 고쳐도 된다. 다만 P3의 근거로 쓰이므로 P3보다 먼저 처리한다.
 - **P1은 `case` 소유 파일**이다. evidence가 직접 고치지 않고 유소연에게 넘긴다. 분량이 작아 이슈보다 직접 전달이 빠를 수 있다.
-- **P3이 유일한 차단 항목**이다. 체크리스트의 마지막 미표시 1건이 여기에만 묶여 있고, 되돌릴 곳이 세 모듈에 걸쳐 있다.
-- **P5는 P3과 같은 fixture를 건드린다.** 따로 올리면 같은 파일을 두 번 재렌더하게 되니 한 이슈로 합치거나 작업 순서를 묶는다.
+- **P3은 결정 대기가 아니라 작업 대기**다. 정책은 `ADR-EVIDENCE-002`에서 끝났고 남은 것은 공용 fixture·CaseView 재렌더다. 체크리스트의 마지막 미표시 1건이 여기 묶여 있다.
+- **P5는 P3과 같은 fixture를 건드린다.** 따로 올리면 같은 파일을 두 번 재렌더하게 되니 한 이슈로 합치거나 작업 순서를 묶는다. 둘 다 `reviews/10_...`의 I2 계열 후속이다.
 - **P4는 evidence가 고칠 것이 없다.** 담당이 셋으로 갈리므로 이슈를 쪼개는 편이 낫다.
 - **V1은 올리지 않는다.** [PR #82](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/82)이 세 갈래를 모두 덮고 있어, 머지된 뒤 확인 항목만 본다. 다만 **체크리스트 실행 명령의 uv 전환은 evidence가 직접 해야 하는 후속**이라 그 하나는 잊지 않는다.
