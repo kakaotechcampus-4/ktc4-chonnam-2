@@ -19,6 +19,11 @@ Worker 배선은 이번 범위 밖).
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
 - **시나리오 고정**: `scenario_happy_001` 하나로 고정돼 있다. 다른 시나리오로 넓히려면
   recording fixture 선택과 asset_facts 매핑을 다시 설계해야 한다(W7).
+- **`gps_observation`**: recording이 GPS 관찰을 내놓는 공개 함수를 아직 노출하지 않아서
+  (README에만 범위로 적혀 있고 실제 구현이 없음) `None`으로 둔다(이슈 #84). `location_hint`
+  (case의 `hints.location`, 사용자가 입력한 자연어 위치 단서)는 2026-09-20부터 real 경로에도
+  연결됐지만, GPS 좌표(`location.coord`)는 recording이 그 경로를 내놓기 전까지 계속 비어
+  있다 — `EvidenceRecord.location.user_hint`는 채워지고 `location.coord`만 없는 상태다.
 """
 
 from __future__ import annotations
@@ -64,10 +69,17 @@ def build_happy_001_evidence_bundle(
     mock_root: Path,
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
+    location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
-    실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
+    실행한다. 모듈 docstring의 "알려진 단순화" 목록만 raw fixture/`None`이고 나머지는
     전부 각 모듈의 공개 함수 호출 결과다.
+
+    `location_hint`는 `case.hints.get("location")`을 그대로 넘겨받아 `assemble_evidence()`에
+    전달한다 — 이전에는 이 인자가 아예 빠져 있어서(`gps_observation=None`만 명시) real
+    경로의 `EvidenceRecord.location`이 항상 비고 `evidence.location.present` 하나 때문에
+    EVIDENCE scope가 WARN으로 내려갔다(이슈 #84). `gps_observation`은 여전히 `None`이다
+    — 모듈 docstring의 "알려진 단순화" 참고.
 
     `correction_records`는 `case.correction_records`를 그대로 넘겨받아 `resolve_time()`/
     `assemble_evidence()`에 그대로 전달한다 — `EVENT_TIME_MANUAL` 등 사용자 정정이
@@ -135,7 +147,9 @@ def build_happy_001_evidence_bundle(
         plate_readout=plate_readout.to_dict() if plate_readout else None,
         incident_clip=incident_clip.model_dump(mode="json"),
         record_id=f"er_{case_id}_001",
-        # 알려진 단순화 2 (모듈 docstring 참고).
+        location_hint=location_hint,
+        # 알려진 단순화(모듈 docstring 참고): situation_response/observation_facts,
+        # gps_observation 둘 다 아직 real 경로에서 채울 producer가 없다.
         situation_response=None,
         gps_observation=None,
         correction_records=correction_records or [],
