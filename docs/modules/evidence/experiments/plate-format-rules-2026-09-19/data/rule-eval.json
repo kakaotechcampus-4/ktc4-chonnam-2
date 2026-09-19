@@ -1,0 +1,236 @@
+{
+ "schema": "plate-rule-eval/v1",
+ "dataset": {
+  "labels": 90000,
+  "unique_values": 39662,
+  "train": 80000,
+  "valid": 10000
+ },
+ "passed": 89995,
+ "passed_ratio_pct": 99.9944,
+ "by_format": {
+  "NAT2_PRIVATE": 52463,
+  "REGION_BIZ": 25605,
+  "NAT3_PRIVATE": 5461,
+  "NAT2_RENT": 2861,
+  "REGION_PARCEL": 1544,
+  "NAT3_RENT": 1069,
+  "MOTO": 690,
+  "REGION_PRIVATE": 163,
+  "CONSTR_BIZ": 58,
+  "NAT2_BIZ": 47,
+  "MIL": 16,
+  "REGION_LEGACY1": 9,
+  "NAT3_BIZ": 8,
+  "REGION_RENT": 1
+ },
+ "by_format_unique": {
+  "NAT2_PRIVATE": 28554,
+  "NAT2_RENT": 1529,
+  "NAT2_BIZ": 47,
+  "NAT3_PRIVATE": 3223,
+  "NAT3_RENT": 663,
+  "NAT3_BIZ": 8,
+  "MIL": 4,
+  "REGION_BIZ": 5036,
+  "REGION_PRIVATE": 117,
+  "CONSTR_BIZ": 44,
+  "REGION_LEGACY1": 3,
+  "REGION_PARCEL": 161,
+  "REGION_RENT": 1,
+  "MOTO": 267
+ },
+ "unexplained": {
+  "total": 5,
+  "by_reason": {
+   "plate.format.head_out_of_range": 1,
+   "plate.format.use_code_unknown": 4
+  },
+  "examples": {
+   "plate.format.head_out_of_range": [
+    "096모4989"
+   ],
+   "plate.format.use_code_unknown": [
+    "경기90지4234",
+    "34시2398",
+    "60히2390",
+    "서울74시4788"
+   ]
+  },
+  "finding": "5건 전부 이미지 확인 결과 정답지 라벨 오기. 형식 규칙이 정상 번호판을 막은 사례 0건"
+ },
+ "consistency_notes": {
+  "total": 91,
+  "by_code": {
+   "plate.consistency.biz_with_3digit_band": 8,
+   "plate.consistency.outside_notice_scope": 74,
+   "plate.consistency.legacy_scheme": 9
+  },
+  "examples": {
+   "plate.consistency.biz_with_3digit_band": [
+    "107바7009",
+    "111아9065",
+    "113바9587",
+    "215아9586",
+    "272아4957",
+    "306아3249",
+    "353바7335",
+    "248아5762"
+   ],
+   "plate.consistency.outside_notice_scope": [
+    "16육2331",
+    "16육2336",
+    "16육8801",
+    "16육9306",
+    "영경기15고7465",
+    "영경기06소8683",
+    "영경기06오6726",
+    "영경기14노6121"
+   ],
+   "plate.consistency.legacy_scheme": [
+    "경기2무1344",
+    "경기7아3122",
+    "인천7도2451"
+   ]
+  }
+ },
+ "value_shapes": [
+  {
+   "shape": "D2H1D4",
+   "count": 55383,
+   "unique": 30130,
+   "examples": [
+    "01가0785",
+    "01가0865",
+    "01가1134",
+    "01가1366"
+   ]
+  },
+  {
+   "shape": "H2D2H1D4",
+   "count": 27311,
+   "unique": 5313,
+   "examples": [
+    "강원32가8078",
+    "강원80바1837",
+    "강원80바6406",
+    "강원81바1744"
+   ]
+  },
+  {
+   "shape": "D3H1D4",
+   "count": 6539,
+   "unique": 3895,
+   "examples": [
+    "096모4989",
+    "100가1626",
+    "100나2925",
+    "100너5380"
+   ]
+  },
+  {
+   "shape": "H5D4",
+   "count": 662,
+   "unique": 254,
+   "examples": [
+    "경기고양나9817",
+    "경기고양나9937",
+    "경기고양다0465",
+    "경기고양다0679"
+   ]
+  },
+  {
+   "shape": "H3D2H1D4",
+   "count": 58,
+   "unique": 44,
+   "examples": [
+    "영경기06소8683",
+    "영경기06오6726",
+    "영경기14노6121",
+    "영경기14노7668"
+   ]
+  },
+  {
+   "shape": "H6D4",
+   "count": 18,
+   "unique": 8,
+   "examples": [
+    "서울동대문파8262",
+    "서울서대문다6336",
+    "서울서대문마6336",
+    "서울서대문바6336"
+   ]
+  },
+  {
+   "shape": "H4D4",
+   "count": 10,
+   "unique": 5,
+   "examples": [
+    "대구서하5185",
+    "대구서하6840",
+    "인천서타1154",
+    "인천서타4108"
+   ]
+  },
+  {
+   "shape": "H2D1H1D4",
+   "count": 9,
+   "unique": 3,
+   "examples": [
+    "경기2무1344",
+    "경기7아3122",
+    "인천7도2451"
+   ]
+  },
+  {
+   "shape": "D2H1_1D4",
+   "count": 4,
+   "unique": 4,
+   "examples": [
+    "10라 6519",
+    "52보 8850",
+    "72너 9571",
+    "75도 8268"
+   ]
+  },
+  {
+   "shape": "H2D2H1_1D4",
+   "count": 3,
+   "unique": 3,
+   "examples": [
+    "경기37바 1050",
+    "경기37바 5058",
+    "경기83배 1983"
+   ]
+  },
+  {
+   "shape": "D2H1D4?1",
+   "count": 1,
+   "unique": 1,
+   "examples": [
+    "76모7720-"
+   ]
+  },
+  {
+   "shape": "D2_1H1_1D4",
+   "count": 1,
+   "unique": 1,
+   "examples": [
+    "30 모 9737"
+   ]
+  },
+  {
+   "shape": "H2_1D2H1_1D4",
+   "count": 1,
+   "unique": 1,
+   "examples": [
+    "경기 37바 6071"
+   ]
+  }
+ ],
+ "two_line_risk_population": {
+  "count": 28070,
+  "ratio_pct": 31.19,
+  "basis": "형식으로부터 추정 — 정답지에 줄 수 라벨이 없다"
+ }
+}
