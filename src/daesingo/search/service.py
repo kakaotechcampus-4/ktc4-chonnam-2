@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from .coarse import search_coarse
+from .coarse import LinkedCoarseResult, search_coarse
 from .config import GeminiSearchConfig
 from .fine import normalize_event_type, verify_fine
 from .ledger import SearchLedger
@@ -18,10 +18,14 @@ class SearchService:
     config: GeminiSearchConfig
     ledger: SearchLedger = field(default_factory=SearchLedger)
 
-    def search_candidates(self, scope: AnalysisScope) -> CandidateSearchResult:
+    def search_candidates_linked(self, scope: AnalysisScope) -> LinkedCoarseResult:
+        """Return coarse search result together with source linkage."""
         return search_coarse(
             scope, self.resolver, self.provider, self.config, self.ledger
         )
+
+    def search_candidates(self, scope: AnalysisScope) -> CandidateSearchResult:
+        return self.search_candidates_linked(scope).result
 
     def verify_visual(
         self,

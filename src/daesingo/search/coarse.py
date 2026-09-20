@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from math import isfinite
 from uuid import uuid4
 
 from .config import GeminiSearchConfig
-from .errors import InvalidCoarseSpanError
+from .errors import InvalidCoarseSpanError, UnknownCandidateError
 from .ledger import SearchLedger, UsageRecord
 from .prompts import COARSE_PROMPT
 from .provider import CoarseRequest, ProviderResult, SearchProvider
@@ -29,13 +30,28 @@ from .sources import AnalysisSourceResolver, ResolvedAnalysisSource
 from .usage import ProviderUsage
 
 
+@dataclass(frozen=True, slots=True)
+class LinkedCoarseResult:
+    """Internal wrapper retaining which analysis source the candidates came from."""
+
+    result: CandidateSearchResult
+    source_ref: ContractRef
+
+    def source_ref_for(self, candidate_id: CandidateId) -> ContractRef:
+        """Return the source ref for a candidate; raises UnknownCandidateError if not found."""
+        for candidate in self.result.candidates:
+            if candidate.candidate_id == candidate_id:
+                return self.source_ref
+        raise UnknownCandidateError(candidate_id=candidate_id)
+
+
 def search_coarse(
     scope: AnalysisScope,
     resolver: AnalysisSourceResolver,
     provider: SearchProvider,
     config: GeminiSearchConfig,
     ledger: SearchLedger,
-) -> CandidateSearchResult:
+) -> LinkedCoarseResult:
     started = datetime.now(UTC)
     run_id = RunId(f"run_search_{uuid4().hex}")
     gathered: list[tuple[ResolvedAnalysisSource, CoarseCandidate]] = []
@@ -43,6 +59,7 @@ def search_coarse(
     latency_ms = 0
     usage_refs: list[str] = []
     duration_sec = 0.0
+    last_source: ResolvedAnalysisSource | None = None
 
     for source in resolver.resolve(scope):
         result = provider.search_coarse(CoarseRequest(source, scope.target_event_types))
@@ -53,6 +70,7 @@ def search_coarse(
         usage_refs.append(usage_ref)
         ledger.append(_usage_record(source, result, config))
         gathered.extend((source, candidate) for candidate in result.response.candidates)
+        last_source = source
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
     candidates = tuple(
@@ -78,7 +96,20 @@ def search_coarse(
         usage_summary=_usage_summary(usages, duration_sec, latency_ms),
         contract_version="analysis-run-candidate-event/v1.1",
     )
-    return CandidateSearchResult(analysis_run=analysis_run, candidates=candidates)
+    candidate_search_result = CandidateSearchResult(
+        analysis_run=analysis_run, candidates=candidates
+    )
+    # Single-source path: source_ref comes from ResolvedAnalysisSource.source_ref.
+    # last_source is always set when resolve() yields at least one source (empty scope → no candidates).
+    source_ref = (
+        last_source.source_ref
+        if last_source is not None
+        else ContractRef(kind="analysis_source", ref=scope.scope_id)
+    )
+    assert source_ref.kind == "analysis_source", (
+        f"source_ref.kind must be 'analysis_source', got {source_ref.kind!r}"
+    )
+    return LinkedCoarseResult(result=candidate_search_result, source_ref=source_ref)
 
 
 def _candidate(

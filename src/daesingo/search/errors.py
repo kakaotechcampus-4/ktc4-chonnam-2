@@ -68,6 +68,14 @@ class MissingCandidateError(Exception):
 
 
 @dataclass(frozen=True, slots=True)
+class UnknownCandidateError(Exception):
+    candidate_id: CandidateId
+
+    def __str__(self) -> str:
+        return f"unknown candidate: {self.candidate_id!r}"
+
+
+@dataclass(frozen=True, slots=True)
 class InvalidFineSpanError(Exception):
     source_ref: ContractRef
     candidate_id: CandidateId

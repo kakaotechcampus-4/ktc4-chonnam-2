@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Final
 
-from .errors import MissingCandidateError
+from .coarse import LinkedCoarseResult
+from .errors import MissingCandidateError, UnknownCandidateError
 from .factory import build_gemini_search_service
 from .fixtures import FixtureNotFoundError, FixtureSearchService
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
@@ -48,9 +49,11 @@ __all__ = [
     "CandidateSourceLink",
     "ContractRef",
     "FixtureNotFoundError",
+    "LinkedCoarseResult",
     "ResolvedAnalysisSource",
     "SearchHint",
     "SearchService",
+    "UnknownCandidateError",
     "VisualEventType",
     "VisualVerificationResult",
     "build_gemini_search_service",
