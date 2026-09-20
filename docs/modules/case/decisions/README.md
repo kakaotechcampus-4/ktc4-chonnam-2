@@ -13,3 +13,5 @@
 - `orchestration-service-layer.md — service.py/ModuleAdapter Protocol 도입 + Mock→Real 교체(W5/W6) 진행 기록 (RealAdapter 실측 real 교체 범위, case.get_view() 진입점)`
 - `intent-llm-eval-target-thresholds.md — intent LLM 평가 목표치(schema_compliance/field_accuracy/hallucination/missed rate) 딥리서치 기반 1차 설정 (2026-09-19 실측 완료, 3개 후보 전부 통과 — §4)`
 - `intent-llm-model-selection.md — 자연어 단서 구조화 LLM으로 GPT-5 Nano 채택, latency 트레이드오프 근거 + 재검토 트리거 5개`
+- `agent-framework-adoption-criteria.md — LangGraph/Google ADK 등 agent framework를 지금 도입하지 않는다는 결정 + 재검토 트리거 4개`
+- `input-fingerprint-implementation-label-deferred.md — input_fingerprint의 implementation label 조합 로직을 지금 만들지 않는다는 결정 + 재검토 트리거 2개 (이슈 #77)`
