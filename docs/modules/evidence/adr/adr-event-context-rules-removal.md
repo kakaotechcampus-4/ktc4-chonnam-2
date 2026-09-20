@@ -37,13 +37,15 @@
 
 걸린 것은 두 건뿐이며 **둘 다 같은 문장이고 생산자가 아니다** — `contract-requirement-report-package.md:234`와 그 근거 ADR(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md:172`)의 *"`duration + timeline_range`는 `FINAL_PACKAGE`에서 사건 전후 coverage rule을 실제 적용하는 경우 조건부"*. 이것은 **관찰이 아니라 산술 경로를 위한 asset 필드**이며, §2.3이 보이듯 ADR-002가 그 경로를 택하지 않았다.
 
-비교 대상이 있다. 같은 관찰 경로를 쓰는 다른 fact는 생산자와 계약이 모두 있다.
+비교 대상이 있다. 다만 2026-09-20 Owner 재확인 결과, 남아 있는 번호판·시각 가시성 fact도 **최종 `REPORT_VIDEO`를 대상으로 한 Runtime Producer는 아직 계약상 연결돼 있지 않다.**
 
-| 관찰 fact | 생산자 | 계약 |
+| 관찰 fact | 현재 Producer 상태 | 계약 상태 |
 | --- | --- | --- |
-| `plate_visible_in_report_video` | `readout` | [`contract-plate-overlay-readout.md`](../../../architecture/contracts/contract-plate-overlay-readout.md) §「`observation`」 |
-| `time_overlay_visible` | `readout` | 같은 계약, `readout.overlay_ocr` |
+| `plate_visible_in_report_video` | **미연결** — 현재 readout은 `IncidentClip`만 읽으며 최종 `REPORT_VIDEO`를 재관찰하지 않는다 | `contract-plate-overlay-readout.md`의 `input_ref.incident_clip_ref`는 존재하지만 `DerivedAsset(REPORT_VIDEO)` 입력 경로는 없음 |
+| `time_overlay_visible` | **미연결** — 현재 overlay readout도 `IncidentClip` 기준 관찰이다 | 위와 동일. 최종 `REPORT_VIDEO` 재관찰 계약이 필요 |
 | **사건 장면·전 상황·후 상황** | **없음** | **없음** |
+
+즉 제거한 세 rule과 남은 두 가시성 rule의 차이는 「이미 Producer가 있다」가 아니라, **남은 두 rule은 readout 관찰 기능을 확장해 Producer를 만들 수 있는 구체적 후속(I4)이 등록돼 있다는 점**이다.
 
 ### 2.3 ADR-002가 산술 경로를 명시적으로 거절했다
 
