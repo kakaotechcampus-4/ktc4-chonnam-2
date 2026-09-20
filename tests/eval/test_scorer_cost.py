@@ -74,3 +74,82 @@ def test_missing_duration_reason_differs_from_zero_duration_reason():
     assert missing["coverage"] != zero["coverage"]
     assert "NO_PROCESSED_DURATION" in missing["coverage"]
     assert "ZERO_PROCESSED_DURATION" in zero["coverage"]
+
+
+# --- 속도 (멘토 피드백 2026-09-20 「비용에 더해 속도도 함께 보시길」) ---
+#
+# latency_ms 는 usage-record/v1.2 §9-4 가 이미 필수 키로 두고 있고
+# mock pack 에도 값이 들어 있다. 여기서 새로 만드는 값이 아니라
+# 버리고 있던 값을 읽는 것이다.
+
+
+def _lrow(case_id, amount, latency_ms, currency="KRW"):
+    r = _row(case_id, amount, currency)
+    r["latency_ms"] = latency_ms
+    return r
+
+
+def test_latency_reports_the_distribution_not_only_the_mean():
+    """평균 하나로는 「대부분 빠른데 가끔 30초」가 안 보인다."""
+    rows = [_lrow("c%d" % i, "10", ms) for i, ms in
+            enumerate([100, 200, 300, 400, 500, 600, 700, 800, 900, 30000])]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    lat = out["latency_ms"]
+    assert lat["p50"] == 500
+    assert lat["p90"] == 900          # nearest-rank: 10건의 90% 지점은 9번째
+    assert lat["max"] == 30000
+    assert lat["n"] == 10
+
+
+def test_no_latency_anywhere_is_null_not_zero():
+    """기록이 없는 것과 0ms 로 빨랐던 것은 다른 사실이다."""
+    rows = [_row("case_a", "100")]          # latency_ms 키 자체가 없다
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["latency_ms"]["p50"] is None
+    assert out["latency_ms"]["n"] == 0
+    assert "NO_LATENCY" in out["coverage"]
+
+
+def test_rows_without_latency_are_counted_not_silently_dropped():
+    """분모가 조용히 줄면 「전부 빨랐다」로 읽힌다."""
+    rows = [_lrow("case_a", "10", 100), _lrow("case_b", "10", None),
+            _row("case_c", "10")]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["latency_ms"]["n"] == 1
+    assert out["latency_ms"]["n_missing"] == 2
+    assert "PARTIAL_LATENCY" in out["coverage"]
+
+
+def test_latency_per_source_video_hour_is_call_time_not_wall_clock():
+    """호출이 병렬이면 합은 경과시간이 아니다. 합으로 정의하고 그렇게 부른다."""
+    rows = [_lrow("case_a", "10", 60000), _lrow("case_b", "10", 60000)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    # 영상 1시간을 처리하는 데 든 총 호출 대기 시간 = 120초
+    assert out["latency_per_source_video_hour"] == pytest.approx(120.0)
+
+
+def test_latency_hourly_rate_is_null_without_a_denominator():
+    rows = [_lrow("case_a", "10", 100)]
+    out = cost.score(rows, processed_duration_sec=None, scenarios=["s1"])
+    assert out["latency_per_source_video_hour"] is None
+
+
+def test_no_usage_rows_keeps_every_latency_key():
+    """키가 사라지면 결과 파일을 기계로 비교할 수 없다."""
+    out = cost.score([], processed_duration_sec=3600.0, scenarios=[])
+    assert out["latency_ms"] == {"p50": None, "p90": None, "max": None,
+                                 "n": 0, "n_missing": 0}
+    assert out["latency_per_source_video_hour"] is None
+
+
+def test_mixed_currency_still_reports_latency():
+    """통화가 섞인 것은 비용의 문제지 속도의 문제가 아니다."""
+    rows = [_lrow("case_a", "100", 500, "KRW"), _lrow("case_b", "1", 700, "USD")]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["total"] is None
+    assert out["latency_ms"]["p50"] == 500
