@@ -112,7 +112,9 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["stage"] == "READY"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
-    assert view["requirements_evidence"]["readiness"] in {"PASS", "WARN"}
+    assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"
+    assert view["evidence"]["location_display"]["coord"] is None
+    assert view["requirements_evidence"]["readiness"] == "PASS"
     # 이슈 #103 — hints가 더 이상 {}로 고정되지 않는다.
     assert view["hints"] != {}
     # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.

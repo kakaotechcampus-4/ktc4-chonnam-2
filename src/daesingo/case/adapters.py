@@ -311,6 +311,7 @@ class RealAdapter:
                 scope=scope,
                 mock_root=self._mock_root,
                 selection_rev=self._case.selection_rev,
+                location_hint=self._case.hints.get("location"),
             )
         return self._evidence_bundle
 
