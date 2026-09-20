@@ -66,11 +66,14 @@ def build_happy_001_evidence_bundle(
     scope: search_module.AnalysisScope,
     mock_root: Path,
     selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
     실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
     전부 각 모듈의 공개 함수 호출 결과다.
+
+    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다(이슈 #73).
     """
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
@@ -117,6 +120,7 @@ def build_happy_001_evidence_bundle(
         time_source_candidates=time_source_candidates,
         overlay_time_readout=overlay_readout.to_dict() if overlay_readout else None,
         candidate_event=candidate.model_dump(mode="json"),
+        correction_records=correction_records or [],
         case_id=case_id,
         selection_rev=selection_rev,
         resolution_id=f"tr_{case_id}_001",
@@ -135,6 +139,7 @@ def build_happy_001_evidence_bundle(
         # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
         situation_response=None,
         gps_observation=None,
+        correction_records=correction_records or [],
     )
 
     evidence_needs = calculate_evidence_needs(
