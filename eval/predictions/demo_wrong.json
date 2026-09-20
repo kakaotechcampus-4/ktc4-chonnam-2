@@ -7,9 +7,9 @@
     "manifest": "b_youtube",
     "manifest_version": "m3",
     "clip_rule_version": "c1",
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
-    "created_at": "2026-09-18T16:42:16.107606+09:00",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "created_at": "2026-09-20T14:19:36.239087+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },

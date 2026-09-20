@@ -1,0 +1,22 @@
+{
+  "case_id": "case-06-location-ambiguous",
+  "scenario_tag": "위치_애매",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"집 근처 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자가 정확한 위치를 기억하지 못하고 대략적인 장소만 언급했으므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "집 근처 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 정확한 위치를 기억하지 못하고 대략적인 장소만 언급했으므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2355.723600019701,
+  "prompt_tokens": 314,
+  "completion_tokens": 95,
+  "cost_krw": 0.33620500000000003,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

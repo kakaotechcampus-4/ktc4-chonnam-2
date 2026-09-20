@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-05-vehicle-ambiguous",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없어 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"SUV로 추출한 것은 맞지만, 색상이 불확실하다는 애매함을 함께 보존하지 않고 단순히 'SUV'로만 표기해 원문의 불확실성 정보를 일부 누락했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 상황 설명이 없어 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없어 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아니므로 null 처리가 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"색상도 모르고 차종도 '~같다'는 추측 표현인데 모델은 confidence를 high로 지어내 원문의 불확실성을 반영하지 못했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없어 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "SUV로 추출한 것은 맞지만, 색상이 불확실하다는 애매함을 함께 보존하지 않고 단순히 'SUV'로만 표기해 원문의 불확실성 정보를 일부 누락했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 설명이 없어 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없어 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아니므로 null 처리가 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "색상도 모르고 차종도 '~같다'는 추측 표현인데 모델은 confidence를 high로 지어내 원문의 불확실성을 반영하지 못했다."
+    }
+  },
+  "latency_ms": 6338.248900021426,
+  "prompt_tokens": 2349,
+  "completion_tokens": 500,
+  "cost_krw": null,
+  "error": null
+}

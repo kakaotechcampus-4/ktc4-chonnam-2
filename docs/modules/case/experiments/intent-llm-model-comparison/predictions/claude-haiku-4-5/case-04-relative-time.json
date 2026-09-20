@@ -1,0 +1,22 @@
+{
+  "case_id": "case-04-relative-time",
+  "scenario_tag": "상대시간_표현",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"한 30분 전\", \"vehicle_hint\": null, \"situation_hint\": \"출근하다가 사고 날 뻔함\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"시간은 상대 표현 \\\"한 30분 전\\\"을 원문 그대로 기록했고, 상황은 \\\"사고 날 뻔했다\\\"는 내용을 추출했으나, 차량 종류, 정확한 위치, 위반 행위의 구체적 내용이 명시되지 않아 확신도가 낮습니다.\"}",
+  "parsed": {
+    "time_hint": "한 30분 전",
+    "vehicle_hint": null,
+    "situation_hint": "출근하다가 사고 날 뻔함",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간은 상대 표현 \"한 30분 전\"을 원문 그대로 기록했고, 상황은 \"사고 날 뻔했다\"는 내용을 추출했으나, 차량 종류, 정확한 위치, 위반 행위의 구체적 내용이 명시되지 않아 확신도가 낮습니다."
+  },
+  "latency_ms": 3768.4563000220805,
+  "prompt_tokens": 1838,
+  "completion_tokens": 273,
+  "cost_krw": 4.8755120000000005,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
