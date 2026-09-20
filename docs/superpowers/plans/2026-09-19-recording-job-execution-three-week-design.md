@@ -48,13 +48,13 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 
 | 영역 | 비책임 사유 |
 | --- | --- |
-| 전체 로컬 통합 실행기 조립 | 최종 Owner는 김준영·유소연 중 팀에서 확정 |
+| 전체 로컬 통합 실행기 조립 | Owner는 유소연(`case`). Recording은 공개 capability와 재현 예제까지만 제공 |
 | Evidence·CaseView 정책 | 각 계약 Owner 책임 |
 | Web 연결과 화면 정책 | web/통합 Owner 책임 |
 | Search·OCR 정확도 | search/readout 책임. Recording은 실제 입력 경로를 보장 |
 | Top-1의 정답성 | GT가 없으므로 실행 리포트에 미검증 후보로 기록하며 정확도로 주장하지 않음 |
 | 월요일 정식 HTTP API·Worker | 동기 Python 공개 호출로 대체 가능 |
-| 월요일 DB Queue·분산 Worker | `JobExecution` lifecycle과 교체 경계까지만 구현 |
+| 월요일 JobExecution 전체 배선·DB Queue·분산 Worker | JobRecord 발주와 실제 capability 호출 확인이 우선. Recording 소유 lifecycle 구현·교체 경계는 별도로 진행 |
 | 월요일 `REPORT_VIDEO`·`PLATE_IMAGE` | 최종 신고용 파생 자산은 현재 E2E 완료 조건에서 제외 |
 | 전체 위반 유형·모든 edge case | 대표 실제 배관 1건이 우선 |
 
@@ -100,8 +100,9 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 - 후보가 있으면 Top-1을 선택하고 정답 미확인 사실을 실행 리포트에 기록한다. canonical 후보 상태값을 신설하지 않는다.
 - 선택 후보 1건에 대해서만 실제 `IncidentClip`을 생성한다.
 - Plate와 Overlay Readout이 사용할 canonical `FrameRef`와 frame 접근을 제공한다.
-- `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ` 실행을 `JobExecution` lifecycle에 연결한다. Evidence가 요구하는 실제 `VisualEvidence`의 `FINE_VERIFY` 실행·추적 경계는 통합 Owner와 확인한다.
-- 실제 결과에서 생성된 CaseView가 Web에 표시될 수 있도록 integration Owner에게 공개 호출 경계를 전달한다.
+- 유소연(`case`)의 통합 실행기에서 필요한 `JobRecord` 발주와 실제 `COARSE_SEARCH`·`PLATE_READ`·`OVERLAY_TIME_READ` capability 호출을 확인한다. `JobExecution` 전체 배선은 월요일 완료를 막지 않으며, Recording 소유 lifecycle 구현은 가능한 범위에서 연결한다.
+- Evidence가 사용할 선택 후보는 Case의 실제 `candidate_id`·`selection_rev`를 기준으로 한다. 해당 배선은 PR #92의 병합·통합 상태를 확인한다. 시각 `UNKNOWN`·`null`은 정상 부분 상태이며, 실제 영상에 GPS가 있을 때만 관찰값을 전달한다.
+- 실제 결과에서 생성된 부분 상태의 CaseView가 Web에 표시되도록 유소연에게 공개 호출 경계를 전달한다. CaseView→Web 최소 연결(#102)은 이번 E2E에 필요하고, Web→후보 선택 제출(#106)은 runner의 `case.select_candidate()`로 대체해 W7로 미룬다.
 
 ### 4.2 월요일에 제외하는 범위
 
@@ -110,6 +111,8 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 - 자동 overlay OCR을 통한 anchor 신뢰도 판정
 - 대표 데이터가 요구하지 않는 multi-file Timeline stitching
 - `REPORT_VIDEO`·`PLATE_IMAGE` export
+- 최종 `ReportPackage`·`READY` 도달과 Web의 후보 선택 제출 경로
+- `JobExecution` 전체 모듈 배선(가능한 부분은 연결하되 월요일 완료 Gate로 강제하지 않음)
 - 정식 DB·Queue·Worker·HTTP 배선
 - 정식 retention·자동 purge
 - 성능 최적화와 전체 codec 지원
@@ -121,10 +124,10 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 - 실제 생성된 IncidentClip 1건
 - 실제 추출된 frame과 canonical FrameRef
 - contract validation 결과
-- `JobExecution` 상태·산출물 참조
+- 필요한 `JobRecord` 발주와 실제 capability 호출 기록. 연결된 범위의 `JobExecution` 상태·산출물 참조는 별도 확인
 - 실행별 JSON 리포트
-- integration Owner가 consumer 예제로 재현한 결과
-- 전체 팀 기준으로 실제 CaseView가 브라우저에 표시된 결과
+- 유소연(`case`)이 consumer 예제로 재현한 결과. 선택 후보·`selection_rev`는 Case의 실제 상태에서 가져온다
+- 전체 팀 기준으로 실제 파이프라인이 도달한 부분 상태의 CaseView가 브라우저에 표시된 결과. `READY + package=null`을 완료 상태로 만들지 않는다
 
 ## 5. Recording 데이터 흐름
 
@@ -229,7 +232,7 @@ AnalysisSource binary stream ──→ 실제 Search
 
 ### 6.1 실행 모델
 
-월요일에는 실제 Queue나 비동기 Worker 없이 로컬 통합 실행기에서 동기 호출해도 된다. 단, 각 실행은 Canonical `JobExecution` lifecycle을 따라야 한다.
+월요일에는 실제 Queue나 비동기 Worker 없이 유소연의 로컬 통합 실행기에서 동기 호출해도 된다. 필요한 `JobRecord` 발주와 실제 capability 호출 확인이 월요일 완료 조건이며, 모든 모듈 실행의 `JobExecution` 전체 배선을 강제하지 않는다. 정철원 소유의 `JobExecution` 구현은 아래 canonical lifecycle을 유지하고, 통합 경로에는 가능한 범위에서 연결한다.
 
 ```text
 QUEUED → RUNNING → SUCCEEDED
@@ -238,13 +241,15 @@ QUEUED → RUNNING → SUCCEEDED
 
 `STALE`·`CANCELLED`·재시도 규칙은 기존 계약을 유지한다. 월요일 실제 경로에서 반드시 발생시킬 필요는 없지만 contract/unit test로 검증한다.
 
-### 6.2 월요일 추적 대상
+### 6.2 연결 대상과 월요일 최소 확인
 
 | Job kind | 실행 대상 | 반환 결과 참조 |
 | --- | --- | --- |
 | `COARSE_SEARCH` | 실제 Search 호출 | 실제 `analysis_run` ref |
 | `PLATE_READ` | 실제 번호판 판독 호출 | 실제 `readout_run` ref 1건 |
 | `OVERLAY_TIME_READ` | 실제 화면 시각 판독 호출 | 실제 `readout_run` ref 1건 |
+
+월요일에는 위 발주와 실제 호출·반환 결과를 먼저 추적한다. `JobExecution`으로 연결된 실행에는 canonical 상태·참조 규칙을 적용하되, 표의 모든 실행이 연결되지 않았다는 이유만으로 Real E2E 완료를 막지 않는다.
 
 판독값을 확정하지 못한 abstain·UNKNOWN은 정상적인 domain 결과일 수 있다. 값 부재만으로 `JobExecution=FAILED`로 바꾸지 않는다. 반대로 public 함수가 반환했다는 이유만으로 `JobExecution=SUCCEEDED`로 처리하지 않는다. `ReadoutRun.outcome=FAILED`인 경우도 있으므로 반환된 run의 outcome을 확인해야 한다. 이 실패 run의 `produced` 보존과 `JobExecution.status`·`failure_kind` 대응은 관련 계약 문구가 일치하지 않아 readout·runtime Owner와 합의한 뒤 실행 wrapper에 반영한다.
 
@@ -434,8 +439,8 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 | G0 입력·합의 | 대표 영상, 수동 anchor, profile 합의, media tool 환경 | fingerprint와 cross-owner 합의 기록 |
 | G1 실제 Recording | 등록·probe·Timeline·TimeSourceCandidate·AnalysisSource 실제 동작 | contract test와 실행 리포트 |
 | G2 Readout 경계 | Top-1 IncidentClip·FrameRef 실제 생성 | clip/frame 재생·참조 검증 |
-| G3 Runtime handoff | Search·Plate·Overlay 실행 lifecycle 연결 | 상태 전이·produced ref 검증 |
-| G4 통합 재현 | 통합 Owner가 공개 예제로 사용 | 타 담당자 환경 재현 결과 |
+| G3 Runtime handoff (병행) | JobRecord 발주·실제 capability 호출 확인. `JobExecution` 전체 배선은 월요일 비필수 | 호출 기록과 연결된 범위의 상태·produced ref 검증 |
+| G4 통합 재현 | 유소연이 공개 예제로 실제 CaseView를 만들고 Web이 그 부분 상태를 표시 | 실제 선택 candidate·selection_rev 및 브라우저 표시 결과 |
 | G5 Baseline 동결 | GT 없는 Real E2E 측정값 보존 | 재실행 가능한 bundle |
 | G6 Risk burn-down | 가장 큰 실제 위험 개선 | 동일 Benchmark 전후 비교 |
 | G7 안정화 | adapter 경계·실패 회귀·CI 정리 | GitHub Actions와 전체 회귀 통과 |
@@ -457,7 +462,7 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 - 합의된 profile의 실제 AnalysisSource stream
 - Top-1 IncidentClip 1건
 - canonical FrameRef와 frame 접근
-- JobExecution lifecycle
+- JobRecord 발주·실제 capability 호출 확인, Recording 소유 JobExecution 구현 경계(W8까지 검증)
 - 계약·ref 검증
 - 실행 리포트와 실패 기록
 - CI media smoke
@@ -488,8 +493,8 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 | 단계 | Definition of Done |
 | --- | --- |
 | Capability 준비 | 실제 영상으로 SourceAsset·MediaStream·Timeline·AnalysisSource·IncidentClip·FrameRef가 생성되고 계약 검증을 통과 |
-| 통합 handoff | 김준영 또는 유소연이 Recording 내부 구현을 몰라도 consumer 예제로 같은 흐름을 재현 |
-| 월요일 Real E2E | GT 없는 실제 입력이 Web까지 도달하고 실행·fallback·실패가 기록됨 |
+| 통합 handoff | 유소연이 Recording 내부 구현을 몰라도 consumer 예제로 같은 흐름을 재현 |
+| 월요일 Real E2E | GT 없는 실제 입력으로 JobRecord 발주·capability 호출을 확인하고, 실제 선택 candidate·selection_rev를 사용한 부분 상태의 CaseView가 Web에 표시됨. 전체 JobExecution 배선·READY·최종 ReportPackage는 비필수 |
 | Baseline 동결 | 설정·dataset fingerprint·도구 버전·측정값이 재현 가능한 리포트로 보존 |
 | W7 고도화 | 가장 큰 실제 위험을 제거하고 동일 Benchmark에서 전후 차이를 확인 |
 | W8 안정화 | 핵심 기능·고도화·비교 검증이 사실상 완료되고 CI가 자동 회귀를 검출 |
@@ -501,9 +506,9 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 | --- | --- | --- | --- |
 | Search / 서어진 | AnalysisSource stream·실제 media 접근 경계 | provider 연결, Candidate span·Timeline revision, 실제 VisualEvidence | stream 소비 불가, 후보 span 계약 불일치 |
 | Readout / 신유민 | IncidentClip·FrameRef·frame bytes | 실제 Plate·Overlay 호출, locator 요청 | clip/frame 소비 경로 부재 |
-| Case·통합 / 유소연 또는 김준영 | capability·JobExecution·예제 | JobRecord, 실제 선택 candidate·selection_rev, 호출 순서, CaseView 연결 | 통합 Owner 미확정 또는 입력 미합의 |
-| Evidence / 김준영 | 같은 timeline/revision의 IncidentClip·TimeSourceCandidate[]·asset facts | UNKNOWN·abstain 정상 소비 | Mock 시각 후보가 실제 출력으로 교체되지 않음 |
-| Web / 신유민 | 직접 제공 없음 | 실제 CaseView 자동 로딩 | 정적 fixture만 표시 |
+| Case·통합 / 유소연 | capability·JobExecution 구현 경계·예제 | JobRecord 발주, 실제 선택 candidate·selection_rev 사용(PR #92 반영 확인), 호출 순서, 부분 상태의 CaseView 연결 | 실제 선택값 불일치 또는 호출 경계 부재 |
+| Evidence / 김준영 | 같은 timeline/revision의 IncidentClip·TimeSourceCandidate[]·asset facts | 시각 UNKNOWN·null·abstain 정상 소비, GPS는 실제 확보 시에만 사용 | Mock 시각 후보가 실제 출력으로 교체되지 않음 |
+| Web / 신유민 | 직접 제공 없음 | 실제 CaseView 최소 로딩(#102). 후보 선택 제출(#106)은 W7 | 정적 fixture만 표시 |
 | CI | 도구 요구사항과 smoke test | Actions 환경의 ffmpeg/ffprobe 실행 | workflow에서 실제 test 미실행 |
 | 데이터 준비 | 입력 검증·fingerprint | 실제 대표 영상과 수동 anchor 확인 | provider-compatible 영상 부재 |
 
@@ -538,7 +543,7 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 이 단계의 세부 일정과 배포 방식은 아직 미확정이다.
 
-## 18. Open Issues / Blocking Dependencies
+## 18. 결정 상태 / Blocking Dependencies
 
 ### OI-1. AnalysisSource profile과 provider 전환 접합부 합의
 
@@ -557,14 +562,13 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 저해상도·무음 proxy의 해상도·fps·분할값은 이 합의에 포함하지 않는다. 정철원이 canonical identity나 기존 Final Contract의 변경을 단독으로 결정하지 않는다.
 
-### OI-2. 전체 로컬 통합 실행기 Owner 확정
+### OI-2. 전체 로컬 통합 실행기 Owner — 종결
 
-**상태:** 미확정 · 통합 진행 전 확정 필요  
-**후보:** 김준영 또는 유소연
+**상태:** 김준영(PM) 답변으로 유소연(`case`) Owner 확정
 
-정철원은 Recording adapter와 `JobExecution` lifecycle, consumer 예제를 제공한다. 전체 모듈 호출 순서, Evidence/CaseView 연결, Web 전달을 조립하는 책임은 맡지 않는다. Owner가 늦게 확정되더라도 정철원의 범위가 전체 실행기 구현으로 자동 확대되지 않는다.
+정철원은 Recording adapter와 `JobExecution` 구현 경계, consumer 예제를 제공한다. 전체 모듈 호출 순서, Evidence/CaseView 연결, Web 전달을 조립하는 책임은 맡지 않는다.
 
-통합 Owner에게는 실제 `VisualEvidence`/`FINE_VERIFY` 추적, Case가 선택한 candidate·`selection_rev` 사용, 정상적인 시각 `UNKNOWN`의 CaseView 표시, `REPORT_VIDEO` 없는 부분 상태를 월요일 완료로 인정할지 확인을 요청했다. 이 항목들의 결과를 이 문서에서 미리 확정하지 않는다.
+월요일 완료 기준도 확인됐다. 필요한 `JobRecord` 발주와 실제 capability 호출을 확인하되 `JobExecution` 전체 배선은 강제하지 않는다. Evidence에는 Case가 실제 선택한 `candidate_id`·`selection_rev`를 사용한다(PR #92는 병합·통합 상태 확인 필요). 시각 `UNKNOWN`·`null`은 정상 부분 상태다. `READY`·최종 `ReportPackage`를 강제하거나 `READY + package=null`을 완료 상태로 만들지 않는다. 실제로 도달한 부분 상태의 CaseView가 Web에 표시돼야 한다(#102). Web 후보 선택 제출(#106)은 runner의 `case.select_candidate()`로 대체하고 W7로 미룬다. GPS는 실제로 확보될 때만 포함한다.
 
 ## 19. 최종 체크리스트
 
@@ -576,7 +580,7 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] absolute 또는 relative-only 선택 근거를 기록했다.
 - [ ] 원본/고화질 AnalysisSource profile을 3자가 합의했다.
 - [ ] 이슈 #95 D1·D2의 월요일 적용 경계를 합의했다.
-- [ ] 전체 로컬 통합 실행기 Owner가 확정됐다.
+- [x] 전체 로컬 통합 실행기 Owner가 유소연(`case`)으로 확정됐다.
 - [ ] ffmpeg/ffprobe 실행 환경을 확인했다.
 
 ### G1 — 실제 Recording
@@ -598,11 +602,13 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] `resolve_frame`·`read_frame`이 원본 기준 FrameRef를 제공한다.
 - [ ] on-demand frame cache가 사용자 원본과 분리돼 있다.
 
-### G3 — JobExecution
+### G3 — JobExecution 구현·연결 (월요일 전체 배선 비필수)
 
-- [ ] `COARSE_SEARCH`가 canonical lifecycle을 남긴다.
-- [ ] `PLATE_READ`가 실행 1회당 ReadoutRun ref 1건을 남긴다.
-- [ ] `OVERLAY_TIME_READ`가 실행 1회당 ReadoutRun ref 1건을 남긴다.
+- [ ] 월요일 경로에서 필요한 JobRecord 발주와 실제 capability 호출을 확인한다.
+- [ ] 연결한 `COARSE_SEARCH` 실행의 canonical lifecycle과 결과 참조를 검증한다.
+- [ ] 연결한 `PLATE_READ` 실행의 lifecycle과 ReadoutRun ref를 검증한다.
+- [ ] 연결한 `OVERLAY_TIME_READ` 실행의 lifecycle과 ReadoutRun ref를 검증한다.
+- [ ] 전체 실행의 JobExecution 배선이 없어도 월요일 Real E2E 완료를 막지 않는다. 미연결 범위는 기록한다.
 - [ ] abstain·UNKNOWN과 실행 실패를 구분한다.
 - [ ] `ReadoutRun.outcome=FAILED`를 함수 반환만으로 성공 처리하지 않으며, 상태·failure 매핑은 Owner 합의대로 검증한다.
 - [ ] 상태 전이 시각이 내부 append-only 로그에 남는다.
@@ -613,9 +619,12 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] 동기 Python public API를 제공한다.
 - [ ] consumer 예제에 정상·실패 경계를 포함한다.
 - [ ] 통합 Owner가 내부 구현 없이 실제 입력으로 재현했다.
+- [ ] Evidence에 Case가 실제 선택한 candidate와 `selection_rev`가 전달된다(PR #92 반영 상태 확인).
+- [ ] 시각 `UNKNOWN`·`null`을 정상 부분 상태로 전달하고, GPS는 실제로 확보됐을 때만 포함한다.
 - [ ] 실제 Search 0건 시 다른 실제 영상으로 재시도하고 기록했다.
 - [ ] Mock/가짜 후보/가짜 ref로 fallback하지 않았다.
-- [ ] 전체 팀 기준 실제 CaseView가 Web에 표시됐다.
+- [ ] 실제로 도달한 부분 상태의 CaseView가 Web에 표시됐다(#102). `READY + package=null`로 완료를 가장하지 않는다.
+- [ ] 후보 선택은 이번 runner에서 `case.select_candidate()`로 처리하고, Web 제출 경로(#106)는 W7로 남긴다.
 
 ### G5 — Observability·Baseline
 
