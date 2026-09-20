@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s4` · classification `cl1` · plate `p2` · cost `c2` · normalizer `n2`
+> **버전:** candidate `s4` · classification `cl2` · plate `p2` · cost `c2` · normalizer `n2`
 
 ---
 
@@ -30,7 +30,8 @@
 | Stage | 지표 | 상태 | 지금 값이 나오나 |
 | --- | --- | --- | --- |
 | Candidate | `recall_at` 1/3/10 · **`localization_recall_at`** · **`type_accuracy_given_localized`** · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
-| Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` · `by_condition` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
+| Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
+| ~~Classification `by_condition`~~ | ~~촬영조건별 정확도~~ | **철회 (`cl2`)** | 아니오 — 근거는 §4-4 |
 | Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` · **`readable_abstention_rate`** · **`abstain_reasons`** | **확정 · 구현** | mock tier 만. 실데이터는 C tier 확보 전까지 `null` |
 | Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` · **`latency_ms`** · **`latency_per_source_video_hour`** | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
 | Fine | Recall · Precision · Hard-negative FPR | 확정 · **미구현** | 아니오 |
@@ -134,7 +135,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 
 ---
 
-## 4. Classification — `eval/scorers/classification.py` (`cl1`)
+## 4. Classification — `eval/scorers/classification.py` (`cl2`)
 
 입력은 시퀀스 단위 분류 결과. 라벨 공간은 **4종 + `NONE` = 5** (`eval/enums.py`, 원본은 v4 §3-5).
 
@@ -146,7 +147,6 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | `precision_macro` / `recall_macro` | 라벨별 값의 **단순 평균**. 값이 `null` 인 라벨은 평균에서 **뺀다** | 모든 라벨이 `null` |
 | `confusion[truth][pred]` | 5×5 건수 | stage 미실행 |
 | `target_correctness` | 예측 bbox 와 GT bbox 의 **2-D IoU ≥ 0.5** 인 비율 | `target_bbox` 있는 GT 가 0건 |
-| `by_condition.day_night[주간\|야간]` | 그 조건의 정확도와 `n` | — |
 
 **macro 를 쓰는 이유.** A tier 시퀀스가 SIGNAL 2,065 : 안전모 412 로 5배 차이 난다. micro 로 재면
 신호위반만 잘하는 모델이 전체 점수를 가져간다. 제품은 4종을 **모두** 약속했다.
@@ -162,7 +162,6 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | 예측이 baseline enum 밖 | `NONE` 으로 접어서 채점(사라지지도, `NONE` 보다 유리하지도 않게) | `n_invalid_predictions` · `coverage` |
 | 해당 시퀀스에 예측이 없음 | `NONE` 을 예측한 것으로 채점(미탐으로 잡힌다) | confusion 의 `NONE` 열 |
 | GT `target_bbox` 가 `None` | `target_correctness` **분모에서 제외**(미탐으로 세지 않는다) | `coverage` (`NO_TARGET_BBOX_GT`) |
-| `condition` 라벨이 없음(B tier) | `by_condition` **분모에서 제외** | `coverage` (`NO_CONDITION`) |
 | 예측 bbox 형식이 깨짐(길이≠4, 또는 넓이 ≤ 0) | `target_correctness` **분모에는 남고 분자에는 안 들어간다** | `n_invalid_bboxes` · `coverage` |
 
 ### 4-3. `NONE` 은 `ab_mixed` manifest 에서만 나온다
@@ -179,9 +178,40 @@ A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이�
 - 항목마다 `source_tier`(`A` / `B`)가 있다. A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라
   해상도·압축 특성이 다르고, 그 차이를 지운 채 한 숫자로 뭉치면 결과가 거짓말을 한다.
 - B tier 항목에는 `target_bbox` · `condition` 이 **없다**(`null`). 없는 라벨을 지어내지 않으므로
-  그 항목들은 `target_correctness` 와 `by_condition` 의 분모에서 빠진다.
+  그 항목들은 `target_correctness` 의 분모에서 빠진다.
 - B tier 정답지의 검토가 끝나지 않았으면(`clips_reviewed < clips_total` 또는
   `negatives_confirmed: false`) 빌더가 **거부한다** — 검토 안 된 클립을 「사건 없음」 정답으로 쓸 수 없다.
+
+### 4-4. `by_condition` 을 내렸다 (`cl1` → `cl2`, 2026-09-20)
+
+**있던 지표를 지웠다.** 못 믿을 라벨 위에 서 있었기 때문이다.
+
+AI-Hub 71555 의 촬영조건 라벨은 **한 클립 안에서 값이 갈린다** — 전수 5,619클립 기준
+`DayNights` **97.54%** · `Weather` 98.36%. 근거는 readout PR
+[#93](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/93) 의 `condition-label-audit.txt` 다.
+
+대조군이 결정적이다. **해상도는 값이 45종인데 클립 안에서 한 번도 안 흔들린다(0.00%).**
+클립 묶음이 정확하다는 뜻이고, 따라서 97.54% 는 묶음 오류가 아니라 **라벨 자체가 무작위에 가깝다.**
+클립 내 「주간」 비율이 중앙 0.50(p10 0.40 · p90 0.60)이라 무작위 배정과 구분되지 않는다.
+
+여기에 우리 쪽 문제가 겹쳤다 — `sample_aihub.py` 는 시퀀스의 조건을 **첫 프레임 라벨**에서
+가져온다. 값이 클립 안에서 갈린다면 그건 **동전 한 번 던진 값**이다.
+
+그리고 `by_condition` 은 **`day_night` 하나로만** 잘랐다. 지표 전체가 그 축 위에 있었다.
+
+**왜 아무도 몰랐나.** 커밋된 결과가 `야간 n=66 · 주간 n=54` 로 비율이 그럴듯했고, impl 이
+치트(전부 맞힘/전부 틀림)라 정확도가 `1.0`/`0.0` 으로만 나와 **차이가 생길 자리가 없었다.**
+실제 모델이 도는 순간 이 표는 근거 없는 「야간이 더 어렵다」를 말하게 된다.
+
+**`road_type` 으로 갈아타지 않았다.** 그 축은 0.00% 로 멀쩡하지만, 원래 의도는 조명·날씨였지
+도로종류가 아니다. 엉뚱한 축을 남겨 두면 **의도가 채워진 것처럼 보인다.** 조건별 성능은
+이제 못 잰다 — 그 사실을 §10 에 미결로 남긴다.
+
+**키를 `null` 로 남기지 않고 지웠다.** `null` 은 「이번 실행에 데이터가 없었다」로 읽힌다(§7 규율 1).
+여기는 그게 아니라 **지표를 철회한 것**이다. 파일명의 `cl1` → `cl2` 가 그 경계를 말한다.
+
+**`condition` 라벨 자체는 manifest·정답지에서 지우지 않는다.** 원본이 그렇게 말했다는 것은
+사실이고, 그 기록까지 지우면 나중에 이 판단을 재검토할 수 없다. 쓰지 않을 뿐이다.
 
 ---
 
@@ -324,7 +354,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_LOCALIZED_EVENTS` | 시간이 맞은 사건이 없어 `type_accuracy_given_localized` 를 못 낸다. 「유형을 다 틀렸다」가 아니다 |
 | `EXCLUDED` / `BOUNDARY_EXCLUDED — N건` | 채점에서 뺀 사건 수 |
 | `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` / `INVALID_BBOXES` | enum 밖 라벨·예측, 형식이 깨진 bbox 처리 결과 |
-| `NO_TARGET_BBOX_GT` / `NO_CONDITION` | 라벨이 없어 분모에서 뺀 항목 수. 뺀 수를 적어야 결과만으로 분모가 복원된다 |
+| `NO_TARGET_BBOX_GT` | 라벨이 없어 분모에서 뺀 항목 수. 뺀 수를 적어야 결과만으로 분모가 복원된다 |
 | `NO_EVENTS_FOR_TYPE` | 정답지에 사건이 하나도 없는 baseline 유형. `by_type` 에 **키가 없는 것**과 0점을 구분한다 |
 | `NO_SEQUENCES` | classification 정답지가 비었다 |
 | `NO_PLATE_GT` | 이 manifest 에 plate 정답지가 없다 |
@@ -344,7 +374,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl1` · plate `p2` · cost `c2` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl2` · plate `p2` · cost `c2` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
 | `normalizer_version` | impl 출력 → scorer 입력 변환 | `n2` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
@@ -369,7 +399,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
                 onset_error_sec, containment_rate, fp_per_clip,
                 n_events, n_negative_clips, excluded_by_reason, by_type, coverage }
   classification { recall_macro, precision_macro, recall_by_label, confusion,
-                   target_correctness, by_condition, n,
+                   target_correctness, n,
                    n_invalid_predictions, n_invalid_gt_labels, coverage }
   plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
                 readable_abstention_rate, n_readable,
@@ -404,7 +434,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
 | — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
-| — | **`by_condition.day_night` 가 못 믿을 라벨 위에 서 있다** | AI-Hub 71555 의 `DayNights` 는 한 클립 안에서 값이 갈리는 클립이 **97.54%**(`Weather` 98.36%)다 — 전수 조사 근거는 readout PR [#93](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/93) `condition-label-audit.txt`. 대조군인 해상도는 0.00% 라 클립 묶음 오류가 아니다. `sample_aihub.py` 는 시퀀스의 조건을 **첫 프레임 라벨**에서 가져오므로 동전 한 번 던진 값이다. **`by_condition` 은 `day_night` 하나로만 자른다** — 지금은 impl 이 치트라 1.0/0.0 으로만 나와 피해가 안 보이지만, 실제 모델이 도는 순간 「야간이 더 어렵다」를 근거 없이 말하게 된다. `road_type` 은 0.00% 로 멀쩡하다. **축을 갈아탈지 내릴지 미결** |
+| — | **촬영조건별 성능을 못 잰다** | `by_condition` 을 `cl2` 에서 **철회했다**(§4-4) — AI-Hub 71555 의 조명·날씨 라벨이 무작위에 가까웠다. `road_type` 은 멀쩡하지만 원래 의도한 축이 아니라 갈아타지 않았다. **조명·날씨별 성능을 재려면 라벨이 새로 필요하다** — 코드로 못 푼다 |
 | — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
 
 **해소된 항목** (2026-09-16~18): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·

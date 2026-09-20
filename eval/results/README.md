@@ -17,20 +17,27 @@ scorer 집계 결과 JSON. **git으로 추적**한다. 실험 기록 방법은 `
 (예측과 같은 규율). 채점 프로세스가 바뀌면 이름이 달라져 나란히 남고,
 안 바뀌었는데 이름이 같다면 같은 숫자를 다시 쓰는 것이라 덮어쓸 이유가 없다.
 
-**`c1` 시절 결과는 남기지 못했다.** 이번 개정에서 예측을 다시 만들었고
+**`c1` 시절 결과는 남기지 못했다.** 그 개정에서 예측을 다시 만들었고
 (`normalizer` `n1 → n2`), 그러면 옛 결과의 `prediction_ref.sha256` 이
 맞지 않는다 — 검증되지 않는 숫자를 남기는 것은 남기지 않는 것보다 나쁘다.
-보존 규율은 이 커밋부터 선다. 예측이 그대로인 다음 개정부터는 옛 결과가
-새 결과 옆에 남는다.
+
+**`cl1` 결과 4건은 남아 있다.** `by_condition` 철회(`cl1 → cl2`)는 예측을
+건드리지 않아 지문이 그대로 맞는다. 규율이 실제로 작동한 첫 사례다 —
+같은 예측·같은 정답지에 채점기만 다른 결과 두 벌이 나란히 있고, 무엇이
+바뀌었는지 diff 로 볼 수 있다.
 
 | 파일 | impl | manifest · stage |
 | --- | --- | --- |
 | `demo_correct.g3.s4-c2.json` | `fake:always_correct` | `b_youtube` · `candidate` |
-| `demo_correct_cls.g1.cl1-c2.json` | `fake:always_correct` | `a_aihub` · `classification` |
+| `demo_correct_cls.g1.cl2-c2.json` | `fake:always_correct` | `a_aihub` · `classification` |
+| `demo_correct_cls.g1.cl1-c2.json` | `fake:always_correct` | `a_aihub` · `classification` (`by_condition` 철회 전) |
 | `demo_wrong.g3.s4-c2.json` | `fake:always_wrong` | `b_youtube` · `candidate` |
-| `demo_wrong_cls.g1.cl1-c2.json` | `fake:always_wrong` | `a_aihub` · `classification` |
-| `demo_correct_abmix.ag1.cl1-c2.json` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) |
-| `demo_wrong_abmix.ag1.cl1-c2.json` | `fake:always_wrong` | `ab_mixed` · `classification` |
+| `demo_wrong_cls.g1.cl2-c2.json` | `fake:always_wrong` | `a_aihub` · `classification` |
+| `demo_wrong_cls.g1.cl1-c2.json` | `fake:always_wrong` | `a_aihub` · `classification` (철회 전) |
+| `demo_correct_abmix.ag1.cl2-c2.json` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) |
+| `demo_correct_abmix.ag1.cl1-c2.json` | `fake:always_correct` | `ab_mixed` · `classification` (철회 전) |
+| `demo_wrong_abmix.ag1.cl2-c2.json` | `fake:always_wrong` | `ab_mixed` · `classification` |
+| `demo_wrong_abmix.ag1.cl1-c2.json` | `fake:always_wrong` | `ab_mixed` · `classification` (철회 전) |
 | `mock_e2e.mp1.s4-c2.json` | `mock_pack:contracts` | `mock_pack` · `candidate` |
 | `mock_plate.mp1.p2-c2.json` | `mock_pack:contracts` | `mock_pack` · `plate` |
 

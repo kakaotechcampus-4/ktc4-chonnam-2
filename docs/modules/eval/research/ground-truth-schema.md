@@ -115,7 +115,7 @@ case:
 
 | v0.2 | 현행(`eval/scorers/classification.py`) |
 | --- | --- |
-| `label_acc` (5×5 + macro) | `confusion`(5×5) · `recall_macro` · `precision_macro` · `recall_by_label` · `by_condition.day_night` |
+| `label_acc` (5×5 + macro) | `confusion`(5×5) · `recall_macro` · `precision_macro` · `recall_by_label` |
 | `target_correct` | `target_correctness` — bbox가 `null`인 GT 항목은 **분모에서 제외**(미탐으로 세지 않는다) |
 | `onset_frame_error` | 미구현 (위 ①) |
 
@@ -129,7 +129,7 @@ case:
 
 - **시퀀스 = 1건**(프레임 1장은 최소 단위가 아니다) — 현행 manifest·정답지·채점기 전부 시퀀스 단위다.
 - **base rate 경고** — 「이 정확도를 제품 성능으로 발표 금지」. 현행에서도 같은 이유로 성능 근거는 가짜 구현 2종(`fake_always_correct`/`fake_always_wrong`)의 점수 대비에서 나온다.
-- 조건별 분리 집계(날씨·주야·도로) — `by_condition.day_night`으로 일부 구현.
+- ~~조건별 분리 집계(날씨·주야·도로)~~ — `by_condition.day_night`으로 일부 구현했다가 **철회했다**(`cl2`, 2026-09-20). AI-Hub 71555의 조명·날씨 라벨이 클립 안에서 갈려 무작위에 가까웠다. 근거·판단은 `metrics/metric-definitions.md` §4-4. **원문의 문제의식은 유효하다** — 재려면 라벨이 새로 필요하다.
 
 ---
 
