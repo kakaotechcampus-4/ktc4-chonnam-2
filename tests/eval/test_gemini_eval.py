@@ -140,7 +140,7 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
 
     prediction = tmp_path / "predictions" / "gemini_mock_e2e.json"
     result = next(
-        (tmp_path / "results").glob("gemini_mock_e2e.g3.*.json"), None
+        (tmp_path / "results").glob("gemini_mock_e2e.g3*.json"), None
     )
     assert result is not None, sorted(
         p.name for p in (tmp_path / "results").iterdir()
