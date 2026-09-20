@@ -89,6 +89,7 @@ class GeminiSearchConfig:
         if env is None:
             env = load_env_file()
         defaults = cls()
+        # pricing fields (input/output rate, max_cost, fine_reserve): wired for live in Task 11/13 via env
         return cls(
             model=env.get("DAESINGO_GEMINI_MODEL", defaults.model),
             media_resolution=env.get(

@@ -52,7 +52,9 @@ def _usage(inp: int | None, out: int | None, thought: int | None) -> ProviderUsa
 
 class TestConfigFingerprint:
     def test_baseline_is_stable(self) -> None:
-        assert _cfg().fingerprint == _cfg().fingerprint
+        cfg = _cfg()
+        assert cfg.fingerprint == cfg.fingerprint
+        assert cfg.fingerprint != _cfg(input_usd_per_million=99.0).fingerprint
 
     def test_changes_on_input_rate(self) -> None:
         assert _cfg().fingerprint != _cfg(input_usd_per_million=1.0).fingerprint
@@ -184,4 +186,16 @@ class TestCheckFineReserve:
         assert (
             check_fine_reserve(Decimal("0.95"), 1.0, 0.10)
             is SmokeFailureCode.COST_EXCEEDED
+        )
+
+    def test_nan_max_cost_returns_budget_unavailable(self) -> None:
+        assert (
+            check_fine_reserve(Decimal("0.50"), float("nan"), 0.10)
+            is SmokeFailureCode.BUDGET_UNAVAILABLE
+        )
+
+    def test_inf_reserve_returns_budget_unavailable(self) -> None:
+        assert (
+            check_fine_reserve(Decimal("0.50"), 1.0, float("inf"))
+            is SmokeFailureCode.BUDGET_UNAVAILABLE
         )

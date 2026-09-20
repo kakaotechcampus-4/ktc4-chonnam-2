@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Protocol
@@ -36,8 +37,10 @@ class ProviderUsage:
 
         Kept for coarse.py / fine.py callers that are outside this task's edit
         scope. Callers that need injected rates must use cost_with_rates().
-        ponytail: hard-coded rates; migrate coarse/fine to cost_with_rates()
-        when Task 11 wires the full orchestration.
+        # ponytail: hard-coded rates; Task 11 must migrate coarse/fine to cost_with_rates()
+        # AND replace _budget_failure in smoke.py with check_fine_reserve (or an equivalent
+        # injected-rates check) in the same sweep — both paths compute cost independently and
+        # will diverge once real rates != 0.75/3.75.
         """
         if self.input_tokens is None or self.output_tokens is None:
             return None
@@ -85,6 +88,10 @@ def check_fine_reserve(
         COST_EXCEEDED      — spent + fine_reserve would exceed max_cost_usd.
     """
     if spent_usd is None:
+        return SmokeFailureCode.BUDGET_UNAVAILABLE
+    if not math.isfinite(config_max_cost_usd) or not math.isfinite(
+        config_fine_reserve_usd
+    ):
         return SmokeFailureCode.BUDGET_UNAVAILABLE
     max_cost = Decimal(str(config_max_cost_usd))
     reserve = Decimal(str(config_fine_reserve_usd))
