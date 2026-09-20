@@ -8,7 +8,7 @@ prediction + GT version + metric version → metrics.
 
 | 파일 | stage | 버전 |
 | --- | --- | --- |
-| `candidate.py` | Candidate | `s3` |
+| `candidate.py` | Candidate | `s4` |
 | `classification.py` | Classification | `cl1` |
-| `plate.py` | Plate | `p1` |
-| `cost.py` | Cost (stage 무관, 항상 계산) | `c1` |
+| `plate.py` | Plate | `p2` |
+| `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c2` |

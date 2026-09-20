@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
-> **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-16 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s3` · classification `cl1` · plate `p1` · cost `c1` · normalizer `n1`
+> **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
+> **버전:** candidate `s4` · classification `cl1` · plate `p2` · cost `c2` · normalizer `n2`
 
 ---
 
@@ -29,10 +29,10 @@
 
 | Stage | 지표 | 상태 | 지금 값이 나오나 |
 | --- | --- | --- | --- |
-| Candidate | `recall_at` 1/3/10 · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
+| Candidate | `recall_at` 1/3/10 · **`localization_recall_at`** · **`type_accuracy_given_localized`** · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
 | Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` · `by_condition` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
-| Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` | **확정 · 구현** | mock tier 만. 실데이터는 C tier 확보 전까지 `null` |
-| Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
+| Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` · **`readable_abstention_rate`** · **`abstain_reasons`** | **확정 · 구현** | mock tier 만. 실데이터는 C tier 확보 전까지 `null` |
+| Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` · **`latency_ms`** · **`latency_per_source_video_hour`** | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
 | Fine | Recall · Precision · Hard-negative FPR | 확정 · **미구현** | 아니오 |
 | Timestamp | source agreement · offset error · overlay validation · UNKNOWN/CONFLICT rate | 확정 · **미구현** | 아니오 |
 | E2E | Final Event Recall@3 · 사용자 검토 후보 수 | 확정 · **미구현** | 아니오 |
@@ -43,7 +43,7 @@
 
 ---
 
-## 3. Candidate — `eval/scorers/candidate.py` (`s3`)
+## 3. Candidate — `eval/scorers/candidate.py` (`s4`)
 
 입력은 clip 단위 후보 목록. 후보는 `score` 내림차순으로 **rank 를 1부터 재계산**한다
 (impl 이 보낸 rank 값은 무시한다, `normalize.py`).
@@ -78,11 +78,34 @@
 **한 클립의 사건은 GT 항목이 여럿으로 쪼개져 있어도 한 번에 배정한다.** 항목별로 배정하면
 같은 후보가 양쪽에서 적중으로 세어져 1:1 배정이 무의미해진다.
 
+### 3-1-1. 시간 축과 유형 축은 따로 잰다
+
+`recall_at` 은 위 두 조건이 **모두** 맞아야 적중이다. 그래서 「순간은 정확히 찾았는데 유형을
+잘못 불렀다」와 「아예 못 찾았다」가 **똑같이 0** 으로 나온다 — 고쳐야 할 곳이 완전히 다른
+두 실패다. 그래서 시간 축을 따로 낸다.
+
+| 지표 | 적중 조건 |
+| --- | --- |
+| `recall_at.K` | 유형 일치 **그리고** 시간 허용 오차 이내 |
+| `localization_recall_at.K` | **시간만** 허용 오차 이내 (유형을 보지 않는다) |
+| `type_accuracy_given_localized` | 시간이 맞은 사건 중 유형까지 맞은 비율 |
+
+유형을 보지 않는 배정에서도 **같은 거리라면 유형이 맞는 후보를 먼저** 잇는다. 아니면
+유형 정확도가 동률 배정 운에 휘둘린다.
+
+> **`recall_at` 은 두 축의 곱이 아니다.** 유형을 요구하면 후보-사건 그래프가 달라지고 최대
+> 매칭도 달라지므로, 두 축은 **서로 다른 배정**에서 나온다. 곱으로 검산하지 않는다.
+
+`localization_recall_at` 은 정의상 `recall_at` 보다 작을 수 없다 — 더 느슨한 조건이기 때문이다.
+뒤집혔다면 배정이 잘못된 것이다.
+
 ### 3-2. 지표
 
 | 지표 | 분자 | 분모 | `null` 이 되는 때 |
 | --- | --- | --- | --- |
 | `recall_at.K` | 상위 K개 후보 중 하나라도 적중한 사건 수 | **채점 대상 사건 수** (클립 수 아님) | 사건이 0건 |
+| `localization_recall_at.K` | 상위 K개 중 **시간만** 맞은 사건 수 | 위와 같은 사건 수 | 사건이 0건 |
+| `type_accuracy_given_localized` | 시간이 맞은 사건 중 유형까지 맞은 건수 | **시간이 맞은 사건 수** | 시간이 맞은 사건이 0건 (`NO_LOCALIZED_EVENTS`) |
 | `onset_error_sec.mean` / `.median` | `\|representative_sec − t_onset_sec\|` 의 평균 / 중앙값 | **최대 K(=10)에서 적중한 사건** | 적중이 0건 |
 | `containment_rate` | 적중 후보의 창이 `t_start ≤ onset ≤ t_end` 인 건수 | 위와 같은 적중 사건 | 적중이 0건 |
 | `fp_per_clip` | negative 클립에서 나온 **후보 개수 전부** | **negative 클립 수** | negative 클립이 0개 |
@@ -162,7 +185,7 @@ A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이�
 
 ---
 
-## 5. Plate — `eval/scorers/plate.py` (`p1`)
+## 5. Plate — `eval/scorers/plate.py` (`p2`)
 
 정답 판정은 **`abstained` × GT `legibility` 교차표** 하나다.
 
@@ -178,6 +201,43 @@ A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이�
 | `abstention_recall` | GT `UNREADABLE` 이고 기권한 건수 | **GT 가 `UNREADABLE` 인 항목 전체** |
 
 아래 두 지표는 **분모가 같고 합이 1** 이다. 같은 교차표 열의 두 칸이기 때문이다.
+
+### 5-0. 기권만 하는 모델을 막는다
+
+위 세 지표만으로는 **아무것도 읽지 않는 모델이 만점 두 개를 받는다.** 실측:
+
+```
+exact_accuracy      null     <- 답한 게 없어 분모가 0
+wrong_accept_rate   0.0      <- 확신에 차서 틀린 적이 없다
+abstention_recall   1.0      <- 기권해야 할 걸 전부 기권했다
+```
+
+`exact_accuracy` 의 `null` 이 「정답지가 없다」인지 「모델이 기권했다」인지도 구분되지 않았다.
+
+| 지표 | 분자 | 분모 | `null` 이 되는 때 |
+| --- | --- | --- | --- |
+| `readable_abstention_rate` | GT `READABLE` 인데 기권한 건수 | **GT 가 `READABLE` 인 항목 전체** | `READABLE` 이 0건 (`NO_READABLE_GT`) |
+| `abstain_reasons` | `abstain_reason` 값별 기권 건수 (dict) | — | 실행 안 함 |
+
+`READABLE` 을 **전부** 기권하면 `coverage` 에 `ANSWERED_NOTHING` 이 붙는다 —
+`exact_accuracy` 가 `null` 인 이유가 정답지가 아니라 모델이라는 것을 결과 파일이 말한다.
+
+**가중 합산 점수는 여기서 만들지 않는다.** 「기권 1건이 오답 몇 건 값이냐」는 제품이 정할
+값이지 채점기가 정할 값이 아니다(§1 소유 경계). 채점기는 가중치를 고르는 대신
+**기권만 하면 반드시 나빠 보이는 숫자**를 둔다.
+
+### 5-0-1. 기권 사유를 남긴다
+
+`abstain_reason` 은 `plate-readout/v1.3` 이 authoritative 로 둔 필드다. 예측 파일의 `raw` 에
+들어와 있었으나 `normalize` 가 버려 채점 결과까지 올라오지 못했다 — `n2` 에서 잇는다.
+`target_association.status`(어느 차를 읽었다고 봤는가)도 함께 옮긴다.
+
+사유 없는 기권은 `n_abstained_without_reason` 과 `NO_ABSTAIN_REASON` 으로 드러낸다.
+기권률만으로는 무엇을 고쳐야 하는지 알 수 없다.
+
+`frame_results[]`·`samples` 는 옮기지 않는다 — 계약 §9 가 eval 의 기본 제공 범위를
+`consensus`·`best_frame`·`abstained`·`target_association`·`validation` 으로 두고 상세 진단에만
+쓰라고 한다. 원문은 예측 파일 `raw` 에 그대로 남는다.
 
 ### 5-1. `wrong_accept_rate` 의 분모를 못 박는다
 
@@ -199,13 +259,15 @@ A tier(`a_aihub`) 단독으로 채점하면 **`NONE` 행·열이 전부 0** 이�
 
 ---
 
-## 6. Cost — `eval/scorers/cost.py` (`c1`)
+## 6. Cost — `eval/scorers/cost.py` (`c2`)
 
 | 지표 | 정의 |
 | --- | --- |
 | `cost_per_case` | `case_id` 별 `UsageRecord.cost.amount` 합 |
 | `total` | 위의 총합 |
 | `cost_per_source_video_hour` | `total / (processed_duration_sec / 3600)` |
+| `latency_ms.p50` / `.p90` / `.max` | `UsageRecord.latency_ms` 의 분포 (**보간하지 않는 nearest-rank**) |
+| `latency_per_source_video_hour` | `sum(latency_ms)/1000 / (processed_duration_sec / 3600)` — 초 단위 |
 
 **집계 키는 `case_id` 다** (`contract-usage-record.md` §9-2). `run_ref` 로 묶으면 run 이 산출되지 않은
 attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 과소 보고된다.**
@@ -213,6 +275,21 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 - **통화가 섞이면 합산하지 않는다.** 환율은 `pricing_context` 에 귀속되며 eval 이 정할 값이 아니다 → 전부 `null` + `MIXED_CURRENCY`.
 - 분모(`processed_duration_sec`)는 호출부가 넘긴다. 이 모듈은 파일을 읽지 않는다.
 - 0원 case 가 있으면 `coverage` 에 그 `case_id` 를 적는다 — 평균만 보면 안 보인다.
+
+### 6-1. 속도
+
+`latency_ms` 는 `usage-record/v1.2` §9-4 가 이미 필수 키로 둔 값이다. eval 이 새로 만드는
+값이 아니라 `c1` 이 읽지 않고 버리던 값이다.
+
+- **평균을 내지 않고 분포로 낸다.** 평균 하나로는 「대부분 빠른데 가끔 30초」가 안 보인다.
+- **분위수를 보간하지 않는다.** 호출 건수가 적을 때 보간하면 실제로 일어나지 않은 지연
+  시간이 결과 파일에 적힌다. 실측값 중 하나를 고른다.
+- **`latency_per_source_video_hour` 는 경과시간이 아니다.** 호출이 병렬이면 합은 벽시계를
+  넘는다. 「영상 1시간을 처리하는 데 든 **총 호출 대기 시간**(초)」이며 그 이상을 주장하지 않는다.
+- `latency_ms` 가 없는 row 는 `n_missing` 으로 센다 + `PARTIAL_LATENCY`. 분모가 조용히 줄면
+  「전부 빨랐다」로 읽힌다. 어느 row 에도 없으면 `null` + `NO_LATENCY` — 빨랐다는 뜻이 아니라
+  재지 않았다는 뜻이다.
+- **통화가 섞여 비용 집계가 멈추는 자리에서도 속도는 낸다.** 통화는 비용의 문제다.
 - **runtime 원가와 eval 실행 비용을 같은 숫자로 보고하지 않는다**(v4 §9-3). runtime 분모
   (source-video-hour)의 구성식은 `initial-evaluation-plan.md` §2 각주가 소유한다.
 
@@ -232,6 +309,9 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 5. **계약 버전이 다르면 채점하지 않는다.** 정답지와 예측의 `contract_version` 이 둘 다 있고 다르면
    `ContractMismatch` 로 거부한다(exit 4). 한쪽만 `null` 인 것은 거부하지 않는다.
 6. **실패 분류 이름은 eval 이 소유하지 않는다.** 미확정이면 `UNKNOWN`.
+7. **채점 결과를 덮어쓰지 않는다.** 파일명이 숫자를 만든 버전을 전부 싣고(§9), 같은 이름이
+   이미 있으면 `eval.score` 는 쓰지 않고 `rc 3` 으로 멈춘다 — 예측과 같은 규율이다.
+   채점 프로세스가 바뀌면 이름이 달라져 옛 결과 옆에 남는다.
 
 ### `coverage` 사유 문자열 목록
 
@@ -241,6 +321,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_EVENTS` | 정답지에 채점할 사건이 없다 |
 | `NO_NEGATIVE_CLIPS` | `fp_per_clip` 의 분모가 없다 |
 | `NO_MATCHED_EVENTS` | 적중이 없어 `onset_error_sec` 를 못 낸다 |
+| `NO_LOCALIZED_EVENTS` | 시간이 맞은 사건이 없어 `type_accuracy_given_localized` 를 못 낸다. 「유형을 다 틀렸다」가 아니다 |
 | `EXCLUDED` / `BOUNDARY_EXCLUDED — N건` | 채점에서 뺀 사건 수 |
 | `INVALID_GT_LABELS` / `INVALID_PREDICTIONS` / `INVALID_BBOXES` | enum 밖 라벨·예측, 형식이 깨진 bbox 처리 결과 |
 | `NO_TARGET_BBOX_GT` / `NO_CONDITION` | 라벨이 없어 분모에서 뺀 항목 수. 뺀 수를 적어야 결과만으로 분모가 복원된다 |
@@ -248,7 +329,11 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_SEQUENCES` | classification 정답지가 비었다 |
 | `NO_PLATE_GT` | 이 manifest 에 plate 정답지가 없다 |
 | `NO_SCORED_READOUTS` | 정답지와 겹치는 판독이 없다 |
+| `NO_READABLE_GT` | 정답지에 `READABLE` 이 없다. `exact_accuracy`·`readable_abstention_rate` 의 분모가 0 |
+| `ANSWERED_NOTHING` | `READABLE` 을 전부 기권했다. `exact_accuracy` 의 `null` 이 정답지 탓이 아니라 모델 탓이다 |
+| `NO_ABSTAIN_REASON` | 사유 없는 기권 건수. 진단할 수 없는 기권이다 |
 | `NO_USAGE_RECORDS` / `MIXED_CURRENCY` / `ZERO_PROCESSED_DURATION` / `NO_PROCESSED_DURATION` / `ZERO_COST_CASES` | cost 쪽 사유 |
+| `NO_LATENCY` / `PARTIAL_LATENCY` | 속도를 못 재거나 일부만 쟀다. 「빨랐다」가 아니라 「안 쟀다」 |
 | `순환 경고 — …` / `wrong_accept_rate 분자 0건 — …` | 숫자를 성능 근거로 쓰지 말라는 경고 |
 
 ---
@@ -259,9 +344,9 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s3` · classification `cl1` · plate `p1` · cost `c1` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl1` · plate `p2` · cost `c2` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
-| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n1` |
+| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n2` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
 | `contract_version` | 계약 | 다르면 채점 거부 |
 | `code_commit` | — | **이 실행이 딛고 선 트리**(자기를 담은 커밋의 부모). 틀린 값이 아니다(F9) |
@@ -276,17 +361,27 @@ candidate 의 지표 정의(「IoU → onset point error」)를 자기 것인 �
 ## 9. 결과 파일에서 읽는 법
 
 ```
-eval/results/<run_id>.<gt_version>.json
-  meta        run_id · impl · stage · manifest · gt_version · scorer_version · prediction_ref{path, sha256}
-  candidate   { recall_at, onset_error_sec, containment_rate, fp_per_clip,
+eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
+  meta        run_id · impl · stage · manifest · gt_version · scorer_version ·
+              cost_scorer_version · normalizer_version · code_commit ·
+              prediction_ref{path, sha256}
+  candidate   { recall_at, localization_recall_at, type_accuracy_given_localized,
+                onset_error_sec, containment_rate, fp_per_clip,
                 n_events, n_negative_clips, excluded_by_reason, by_type, coverage }
   classification { recall_macro, precision_macro, recall_by_label, confusion,
                    target_correctness, by_condition, n,
                    n_invalid_predictions, n_invalid_gt_labels, coverage }
-  plate       { exact_accuracy, wrong_accept_rate, abstention_recall, n, coverage }
+  plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
+                readable_abstention_rate, n_readable,
+                abstain_reasons, n_abstained_without_reason, n, coverage }
   cost        { cost_per_case, cost_per_source_video_hour, total, currency,
+                latency_ms{p50,p90,max,n,n_missing}, latency_per_source_video_hour,
                 n_rows, scenarios, coverage, scorer_version }
 ```
+
+**파일명이 숫자를 만든 버전을 전부 싣는다.** 이름이 `<run_id>.<gt_version>.json` 이던 동안
+`s2 → s3` 개정에서 s2 결과가 통째로 사라졌다 — 정답지가 같으면 파일명이 같았기 때문이다.
+정답지가 같아도 채점기가 다르면 다른 숫자이고, 다른 숫자는 다른 파일이어야 비교할 수 있다.
 
 `cost` 는 stage 와 무관하게 **항상** 계산된다(`UsageRecord` 가 없으면 `NO_USAGE_RECORDS`).
 나머지 세 블록 중 이번 stage 가 아닌 것은 `not_run()` 모양이다.
@@ -308,12 +403,19 @@ eval/results/<run_id>.<gt_version>.json
 | — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
-| — | pytest 가 CI 에서 안 돈다 | 테스트 226개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
+| — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
+| — | **`by_condition.day_night` 가 못 믿을 라벨 위에 서 있다** | AI-Hub 71555 의 `DayNights` 는 한 클립 안에서 값이 갈리는 클립이 **97.54%**(`Weather` 98.36%)다 — 전수 조사 근거는 readout PR [#93](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/93) `condition-label-audit.txt`. 대조군인 해상도는 0.00% 라 클립 묶음 오류가 아니다. `sample_aihub.py` 는 시퀀스의 조건을 **첫 프레임 라벨**에서 가져오므로 동전 한 번 던진 값이다. **`by_condition` 은 `day_night` 하나로만 자른다** — 지금은 impl 이 치트라 1.0/0.0 으로만 나와 피해가 안 보이지만, 실제 모델이 도는 순간 「야간이 더 어렵다」를 근거 없이 말하게 된다. `road_type` 은 0.00% 로 멀쩡하다. **축을 갈아탈지 내릴지 미결** |
+| — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
 
 **해소된 항목** (2026-09-16~18): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·
 F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate 채점) · F3(B tier 123클립 확장) ·
 코드 리뷰 지적 9건(배정 순서 의존 · stage 별 `scorer_version` · 분모 기록 · 샘플링 재현성 ·
 산출물 지문 · 측정 공백). 근거와 실측은 `harness-v1-design.md` §9.
+
+**멘토 피드백 해소** (2026-09-20 · 안용준 멘토): ① 판독 판단 근거 보존(§5-0-1 · `n1 → n2`) ·
+② 기권만 하는 모델(§5-0 · `p1 → p2`) · ③ 채점 결과 보존(§7-7 · §9) · ④ 속도(§6-1 · `c1 → c2`) ·
+⑤ 시간 축과 유형 축 분리(§3-1-1 · `s3 → s4`). ①의 candidate·classification 쪽은 계약에 필드가
+없어 위 표에 미결로 남겼다.
 
 미결은 미결로 둔다. 이 표의 항목을 「대충 정한 값」으로 채워 문서를 완성시키지 않는다.
 
