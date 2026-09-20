@@ -102,3 +102,34 @@
 .cand-meta { margin: 0; margin-top: auto; padding-top: 9px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
 .cand-meta dt { font-size: calc(12px * var(--font-scale)); font-weight: 700; color: var(--muted); }
 .cand-meta dd { margin: 0; font-size: calc(14px * var(--font-scale)); font-weight: 650; color: var(--ink); line-height: 1.4; }
+
+/* ── 기억 단서 (A-3) ─────────────────────────────────────────
+   후보 목록 위에 한 번 놓인다. 후보 카드와 시각적으로 구분되도록 가라앉힌
+   바탕을 쓴다 — 나란히 놓되 같은 층위가 아니라는 것을 색으로 말한다. */
+.hint-recall {
+  background: var(--sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--R);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.hint-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.hint-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+}
+
+.hint-chip-k { font-size: calc(12px * var(--font-scale)); font-weight: 800; color: var(--muted); }
+.hint-chip-v { font-size: calc(14px * var(--font-scale)); font-weight: 700; color: var(--ink); }
+
+.hint-none { font-size: calc(13px * var(--font-scale)); color: var(--slate); font-weight: 600; }
