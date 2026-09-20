@@ -261,6 +261,49 @@ class TotalFailureTest(unittest.TestCase):
         self.assertEqual(round_trip(run).to_dict(), run.to_dict())
 
 
+class OverlayTextParseTest(unittest.TestCase):
+    """실제 블랙박스는 시각 옆에 다른 값을 같은 줄에 찍는다.
+
+    `20260810_175721_EVT_1` 14.76s 프레임을 실제로 OCR한 결과가 근거다(conf 0.9724) —
+    시각 뒤에 속도·G센서가 붙어 나왔고, 원문 전체를 `strptime`에 넣던 구현은 시각이
+    멀쩡히 찍혀 있는데도 `format_ok=false`로 떨어뜨렸다. fixture는 깨끗한 문자열이라
+    통과했기 때문에 실물을 넣기 전까지 드러나지 않았다.
+    """
+
+    TZ = "+09:00"
+
+    def test_real_overlay_line_with_sensor_values(self):
+        raw = "2026/08/10 17:57:36 13.20 ×:+0.020 Y:-0.043 2:-0.012"
+        self.assertEqual(api._parse_overlay_text(raw, self.TZ), "2026-08-10T17:57:36+09:00")
+
+    def test_timestamp_with_leading_text(self):
+        self.assertEqual(
+            api._parse_overlay_text("CH1 2026/08/10 17:57:36", self.TZ),
+            "2026-08-10T17:57:36+09:00")
+
+    def test_registered_formats_still_parse(self):
+        for raw in ("2026-08-24 18:05:12", "2026/08/24 18:05:12",
+                    "2026.08.24 18:05:12", "2026-08-24T18:05:12"):
+            with self.subTest(raw=raw):
+                self.assertEqual(
+                    api._parse_overlay_text(raw, self.TZ), "2026-08-24T18:05:12+09:00")
+
+    def test_shape_alone_does_not_make_a_time(self):
+        """자리 찾기와 유효성 판정을 나눠 둔 이유 — 패턴은 통과해도 시각이 아니면 버린다."""
+        self.assertIsNone(api._parse_overlay_text("2026/13/45 99:99:99", self.TZ))
+
+    def test_no_timestamp_at_all(self):
+        for raw in (None, "", "speed 13.20 km/h", "----"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
+
+    def test_first_timestamp_wins_when_two_are_present(self):
+        """어느 것이 프레임 시각인지 고를 근거가 여기 없다 — 판정을 숨기지 않고 앞의 것을 쓴다."""
+        self.assertEqual(
+            api._parse_overlay_text("2026/08/10 17:57:36 2026/08/10 17:57:37", self.TZ),
+            "2026-08-10T17:57:36+09:00")
+
+
 class OverlayBranchTest(unittest.TestCase):
     """네 갈래가 서로 다른 값으로 나온다 — 합치면 Merge 중단 기준 위반이다."""
 
@@ -384,6 +427,13 @@ class ProviderContractBreachTest(unittest.TestCase):
 
         return api.read_overlay_time(request_for("clip_h001"), provider=BreachingProvider())
 
+    def _breach_plate(self, reading):
+        class BreachingProvider(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                return reading
+
+        return api.read_plate(request_for("clip_h001"), HINT, provider=BreachingProvider())
+
     def test_unknown_presence_becomes_a_failed_run(self):
         run, overlay = self._breach(providers.OverlayReading(presence="MAYBE"))
         self.assertIsNone(overlay)
@@ -437,6 +487,58 @@ class ProviderContractBreachTest(unittest.TestCase):
                 ))
                 self.assertEqual(run.outcome, "SUCCEEDED")
                 self.assertEqual(overlay.observation.value, f"2026-08-24T18:05:12{tz}")
+
+    def test_unreal_tz_offset_becomes_a_failed_run(self):
+        """표기는 맞는데 시각이 아닌 offset — 정규식만으로는 걸리지 않던 자리다.
+
+        `+25:99`는 `±HH:MM` 패턴을 통과한다. 그대로 이어 붙이면 `fromisoformat`이 해석
+        단계에서 죽고, 그때는 이미 provider를 부른 뒤라 예외로 되돌릴 수 없다.
+        """
+        for tz in ("+25:99", "+09:60", "+24:00", "-24:00"):
+            with self.subTest(tz_offset=tz):
+                run, overlay = self._breach(providers.OverlayReading(
+                    presence=providers.PRESENT,
+                    tz_offset=tz,
+                    samples=[providers.OverlaySampleReading("fr_a", 0.0, "2026-08-24 18:05:12")],
+                ))
+                self.assertIsNone(overlay)
+                self.assertEqual(run.outcome, "FAILED")
+                self.assertEqual(run.failure.kind, "INFRA")
+                self.assertEqual(run.failure.code, "READOUT_PIPELINE_ERROR")
+                self.assertIsNotNone(run.ended_at)
+
+    def test_unreadable_plate_response_becomes_a_failed_run(self):
+        """plate도 overlay와 같아야 한다 — `ProviderError`만 잡으면 나머지가 그대로 튄다.
+
+        `bbox_xywh`가 비어 오면 `list(...)`에서 `TypeError`가 난다. provider를 부른 **뒤**라
+        예외로 되돌리면 run 없이 비용만 나간 상태가 되고 「호출 1회 = run 1건」이 깨진다.
+        """
+        broken = [
+            providers.PlateReading(
+                association=providers.AssociationReading(
+                    status="OK", target_hint_used=True, track_ref="track_test",
+                    association_method="HINT", evidence=[],
+                ),
+                frames=[providers.PlateFrameReading("fr_a", None, "12가3456", 0.9, {})],
+            ),
+            providers.PlateReading(
+                association=providers.AssociationReading(
+                    status="OK", target_hint_used=True, track_ref="track_test",
+                    association_method="HINT", evidence=[("kind", "detail", "extra")],
+                ),
+                frames=[providers.PlateFrameReading("fr_a", [0, 0, 10, 10], "12가3456", 0.9, {})],
+            ),
+        ]
+        for i, reading in enumerate(broken):
+            with self.subTest(case=i):
+                run, plate = self._breach_plate(reading)
+                self.assertIsNone(plate)
+                self.assertEqual(run.outcome, "FAILED")
+                self.assertEqual(run.failure.kind, "INFRA")
+                self.assertEqual(run.failure.code, "READOUT_PIPELINE_ERROR")
+                self.assertIn(run.failure.code, registry.FAILURE_CODES)
+                self.assertIsNotNone(run.ended_at, "언제 실행됐는지가 UsageRecord 발행 근거다")
+                self.assertEqual(round_trip(run).to_dict(), run.to_dict())
 
 
 class FailureIsRegisteredTest(unittest.TestCase):

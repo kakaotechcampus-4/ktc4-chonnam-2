@@ -99,7 +99,7 @@ def main(argv=None):
     if os.path.exists(out):
         print("실패: %s 가 이미 있다. prediction 은 덮어쓰지 않는다." % out, file=sys.stderr)
         return 3
-    with open(out, "w", encoding="utf-8") as f:
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(env, f, ensure_ascii=False, indent=2)
     print(out)
     return 0

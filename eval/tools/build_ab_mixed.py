@@ -131,7 +131,7 @@ def build(a_sequences, a_gt, b_clips, b_gt, n_none, seed):
 
 def _write(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
         f.write("\n")
     return path

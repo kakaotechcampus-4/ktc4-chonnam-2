@@ -402,3 +402,15 @@ def test_duplicate_clip_id_items_share_one_assignment():
     out = candidate.score(_preds((10.2, 1.0)), gt)
     assert out["n_events"] == 2
     assert out["recall_at"]["10"] == 0.5
+
+
+def test_types_with_no_events_are_named_in_coverage():
+    """by_type 에 키가 없는 유형은 「측정하지 않았다」는 뜻이다.
+
+    키가 없는 것과 0점인 것을 결과 파일만 보고 구분할 수 없으면, baseline
+    4종 중 1종을 못 쟀다는 사실이 조용히 사라진다 (B tier 의 안전모).
+    """
+    out = candidate.score(_preds((10.0, 1.0)), _gt_ordered([("EA", 10.0)]))
+    assert "SIGNAL" in out["by_type"]
+    assert "NO_EVENTS_FOR_TYPE" in out["coverage"]
+    assert "MOTORCYCLE_HELMET_NON_USE" in out["coverage"]

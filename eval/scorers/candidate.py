@@ -17,6 +17,8 @@ recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상
 """
 import statistics
 
+from eval.enums import VIOLATION_TYPES
+
 SCORER_VERSION = "s3"   # 2026-09-16 후보-사건 1:1 배정 (F7)
 DEFAULT_TOLERANCE_SEC = 2.0
 
@@ -173,6 +175,14 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
         reasons.append("NO_NEGATIVE_CLIPS — fp_per_clip 을 낼 수 없다")
     if n_events > 0 and not onset_errors:
         reasons.append("NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다")
+    missing_types = [t for t in VIOLATION_TYPES if t not in by_type]
+    if missing_types:
+        # by_type 에 키가 없는 것과 값이 0 인 것을 결과 파일만 보고는 구분할
+        # 수 없다. 적지 않으면 baseline 4종 중 몇 종을 아예 못 쟀다는 사실이
+        # 조용히 사라진다 (B tier 의 안전모가 지금 그 상태다).
+        reasons.append(
+            "NO_EVENTS_FOR_TYPE — %s 유형의 사건이 정답지에 없다. 이 유형의 "
+            "recall 은 측정되지 않았다 (0점이 아니다)" % ", ".join(missing_types))
     for reason, n in sorted(excluded_by_reason.items()):
         # 이걸 적지 않으면 결과의 n_events 와 GT 의 clips_with_events 가
         # 어긋난 이유를 결과 파일만 보고는 알 수 없다 (스펙 §5).

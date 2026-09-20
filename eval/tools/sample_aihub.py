@@ -179,9 +179,9 @@ def main(argv=None):
     seqs, gt = sample(args.zip, args.per_type, args.seed)
     outdir = paths.manifest_dir("a_aihub")
     os.makedirs(os.path.join(outdir, "gt"), exist_ok=True)
-    with open(os.path.join(outdir, "sequences.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(outdir, "sequences.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(seqs, f, ensure_ascii=False, indent=2)
-    with open(os.path.join(outdir, "gt", "gt_classification.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(outdir, "gt", "gt_classification.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(gt, f, ensure_ascii=False, indent=2)
     print("시퀀스 %d개 / GT %d건" % (len(seqs["sequences"]), len(gt["items"])))
     return 0

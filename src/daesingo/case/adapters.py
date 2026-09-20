@@ -7,12 +7,99 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
 
 나중에 실제 모듈이 구현되면, 이 클래스와 같은 메서드 시그니처를 갖는 실제 HTTP/함수
 호출 어댑터로 교체하면 된다 — case의 domain/view 코드는 이 인터페이스에만 의존한다.
+
+## Mock→Real 교체 (W5)
+
+`ModuleAdapter`가 그 "인터페이스"를 `typing.Protocol`로 formalize한 것이다.
+`MockFixtureAdapter`와 `RealAdapter` 둘 다 구조적으로 이 프로토콜을 만족한다(명시적
+상속 없이도 각 메서드 시그니처가 같으면 타입체커가 호환으로 본다). `case/service.py`는
+구체 클래스가 아니라 `ModuleAdapter`에만 의존하므로, 실행 시점에 어느 어댑터 인스턴스를
+주입하느냐만 바꾸면 orchestration 코드는 손대지 않는다.
+
+`RealAdapter`는 모듈별로 하나씩 채워진다 — 나머지는 계속 `NotImplementedError`로 남겨서
+"이 모듈은 이미 Real, 저 모듈은 아직 Mock"인 혼재 상태를 그대로 표현한다(W5 원칙
+"Mock retained for not-yet-ready modules").
+
+## 2026-09-18 갱신 — search만 real로 교체됨
+
+`search.search_candidates()`/`evidence.*`/common의 실제 코드 존재 여부를 다시 확인한
+결과:
+
+- **search**: `search_candidates(scope)`가 순수하게 `AnalysisScope` 하나만 받아 완결된
+  결과를 주므로 real로 교체했다(`get_candidate_events()`).
+- **evidence**: 함수 자체(`assemble_evidence` 등)는 이미 완성돼 있지만, 그 입력으로
+  요구하는 `plate_readout`(readout)·`incident_clip`(recording)을 case가 아직 못 구한다
+  — `ModuleAdapter`에 readout/recording 메서드 자체가 없다. evidence Owner를 더 기다리는
+  게 아니라 **case가 readout/recording까지 엮는 별도 설계**가 먼저 필요하다(오늘 범위 밖).
+- **common/runtime**: `InMemoryJobExecutionStore`는 호출 가능한 서비스가 아니라 Worker
+  프로세스가 채우는 저장소다. `worker/`가 아직 비어 있어 실제로 채워질 대상 자체가 없다.
+
+## 2026-09-18(W6) 갱신 — evidence도 `scenario_happy_001` 대표 시나리오로 real 교체
+
+W5/W6 마감(월요일 20:00 회의 — 대표 시나리오 1개가 E2E를 실제로 통과하는지 확인)에
+맞춰 readout/recording도 이미 실제 공개 함수가 있다는 걸 확인했다(`real_e2e.py` 참고
+— recording의 `resolve_span`/`build_incident_clip`, readout의 `read_plate`/
+`read_overlay_time` 전부 fixture 없이도 순수 호출 가능). evidence 6개 메서드를
+`real_e2e.build_happy_001_evidence_bundle()`로 교체했다 — recording→search.verify_visual
+→readout→evidence 전체 체인을 실제 함수로 잇는다.
+
+`get_job_executions()`(common/runtime)는 여전히 `NotImplementedError`다 — 다만
+`case/service.py`의 `fetch_case_view_inputs()`/`build_view_from_adapter()`는 애초에
+이 메서드를 부르지 않으므로(대신 호출자가 `running_jobs`를 직접 넘김), 오늘 목표인
+"CaseView까지 E2E 통과"에는 영향이 없다.
+
+시나리오는 `scenario_happy_001` 하나로 고정돼 있다 — `real_e2e.py` 모듈 docstring의
+"알려진 단순화"(시각 원시 데이터 raw read, `situation_response`/`observation_facts`
+None) 두 가지도 그대로 적용된다.
+
+## 2026-09-19 갱신 — evidence가 case의 실제 선택값을 쓰도록 수정
+
+`RealAdapter._build_evidence_bundle()`이 candidate/selection_rev를 `case` 상태에서
+읽지 않고 `search.search_candidates()`를 다시 불러 `candidates[0]`을 쓰던 지점을
+고쳤다 — evidence 파트가 W6 real E2E 체인을 검증하다 발견해 알려준 것(2026-09-19).
+`RealAdapter`는 이제 `case`(`CaseAggregate`) 참조를 받아 `case.candidates`의
+`selected=True` candidate와 `case.selection_rev`를 그대로 쓴다. `happy_001`은 후보가
+하나뿐이라 지금까지 결과값 자체는 안 바뀌었지만, 배선이 case 상태를 실제로 따라가게
+됐다는 점이 다르다.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
+
+from daesingo import search as search_module
+from daesingo.case import real_e2e
+from daesingo.case.domain import CaseAggregate
+
+
+@runtime_checkable
+class ModuleAdapter(Protocol):
+    """`case`가 upstream 모듈 산출물을 읽을 때 의존하는 유일한 인터페이스.
+
+    `MockFixtureAdapter`(현재)와 `RealAdapter`(골격, 앞으로 모듈별로 채워짐) 둘 다
+    이 프로토콜을 만족한다. `case/service.py`의 함수들은 이 타입에만 의존한다 —
+    Mock↔Real 교체는 여기 정의된 메서드 시그니처를 벗어나지 않는 한 `service.py`나
+    `domain.py`/`jobs.py`/`view.py`를 고치지 않고도 가능하다.
+    """
+
+    def get_candidate_events(self) -> list[dict[str, Any]]: ...
+
+    def get_analysis_scopes(self) -> list[dict[str, Any]]: ...
+
+    def get_evidence_record(self) -> dict[str, Any] | None: ...
+
+    def get_evidence_records(self) -> list[dict[str, Any]]: ...
+
+    def get_requirement_report(self, scope: str) -> dict[str, Any] | None: ...
+
+    def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]: ...
+
+    def get_evidence_needs(self) -> list[dict[str, Any]]: ...
+
+    def get_report_package(self) -> dict[str, Any] | None: ...
+
+    def get_job_executions(self) -> list[dict[str, Any]]: ...
 
 
 class MockFixtureAdapter:
@@ -43,6 +130,14 @@ class MockFixtureAdapter:
         """search fixture에 실려있는 `AnalysisScope`(case가 Producer로 만들어 보낸 것)를
         그대로 읽는다 — `scope.build_analysis_scope()`의 정답지로 쓴다."""
         return self._load("search").get("analysis_scopes", [])
+
+    def get_hints(self) -> dict[str, Any]:
+        """대표 시나리오의 사용자 단서(`core-user-flow.md` §6 4칸)를 case 자신의 mock
+        fixture(`case_views[0].hints`)에서 읽는다 — `intake()` 호출자가 실제 값을 채울 수
+        있게 하려는 용도다(이슈 #103: real E2E 경로가 `hints={}`로 고정돼 후보 화면의
+        「기억 단서와 대조」가 빈 채로 나왔다)."""
+        case_views = self._load("case").get("case_views", [])
+        return case_views[0].get("hints", {}) if case_views else {}
 
     # ── evidence ────────────────────────────────────────────────────────
     def get_evidence_record(self) -> dict[str, Any] | None:
@@ -84,3 +179,176 @@ class MockFixtureAdapter:
         (STALE→FAILED)가 있을 수 있어 전체 목록을 그대로 돌려준다 — "어느 attempt가
         최신인가"를 고르는 건 이 어댑터가 아니라 호출자(case) 책임이다."""
         return self._load("common").get("job_executions", [])
+
+
+class RealAdapter:
+    """`ModuleAdapter`의 실제 구현 — 모듈별로 준비되는 대로 하나씩 채운다.
+
+    search는 이미 채워졌다(`get_candidate_events()`). 나머지는 여전히
+    `NotImplementedError`다 — 이 상태에서도 `case/service.py`는 그대로 동작해야 한다:
+    실패는 "아직 Real로 안 바뀐 자리를 호출했다"는 명확한 신호여야 하고, 조용히 빈 값을
+    돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
+
+    생성자 인자는 모듈별로 다르다 — search는 순수 함수 호출이라 `search_scope`(dict 또는
+    `search.AnalysisScope`) 하나면 충분하고, evidence 체인은 추가로 `mock_root`가
+    필요하다(`real_e2e.py`의 "알려진 단순화 1" — recording의 raw time_source_candidates
+    읽기용, 나머지는 전부 real 함수 호출). evidence 체인은 이제 `case`(`CaseAggregate`)도
+    필요하다 — case가 실제로 선택한 candidate/selection_rev를 읽어야 하기 때문이다
+    (2026-09-19 수정, 아래 `_build_evidence_bundle()` 참고). 나머지가 채워질 때 필요한
+    인자가 더 늘어난다.
+    """
+
+    def __init__(
+        self,
+        *,
+        case_id: str,
+        case: CaseAggregate | None = None,
+        search_scope: dict[str, Any] | search_module.AnalysisScope | None = None,
+        mock_root: Path | None = None,
+        **clients: Any,
+    ) -> None:
+        self.case_id = case_id
+        self._case = case
+        self._search_scope = search_scope
+        self._mock_root = mock_root
+        self._evidence_bundle: real_e2e.EvidenceBundle | None = None
+        self._clients = clients
+
+    def _not_ready(self, method: str, module: str, *, reason: str) -> None:
+        raise NotImplementedError(
+            f"RealAdapter.{method}()는 아직 미구현 — {reason} "
+            f"그 전까지는 이 case_id에 대해 {module}을 Mock으로 유지해야 한다."
+        )
+
+    # ── search ──────────────────────────────────────────────────────────
+    def get_candidate_events(self) -> list[dict[str, Any]]:
+        """`search.search_candidates(scope)`를 실제로 호출한다. `AnalysisRun.outcome ==
+        FAILED`면 candidates가 빈 튜플이라는 게 `CandidateSearchResult`의 계약 불변조건
+        이므로(`search/runs.py`), 여기서 outcome을 따로 분기하지 않고 그대로 반환한다."""
+        if self._search_scope is None:
+            self._not_ready(
+                "get_candidate_events",
+                "search",
+                reason="생성자에 search_scope가 주어지지 않았다 — 호출자가 "
+                "case.scope.build_analysis_scope()로 만든 값을 넘겨야 한다.",
+            )
+        scope = self._search_scope
+        if not isinstance(scope, search_module.AnalysisScope):
+            scope = search_module.AnalysisScope.model_validate(scope)
+        result = search_module.search_candidates(scope)
+        return [
+            {
+                "candidate_id": c.candidate_id,
+                "summary": c.summary,
+                "thumbnail_ref": c.thumbnail_ref,
+            }
+            for c in result.candidates
+        ]
+
+    def get_analysis_scopes(self) -> list[dict[str, Any]]:
+        """실제 대응이 없다 — case가 `AnalysisScope`의 Producer라(§`scope.py`), 다른
+        모듈에서 "가져오는" 값이 아니다. Mock 쪽에서만 `test_scope.py`의 정답지 용도로
+        쓰이므로 `RealAdapter`에는 채울 자리가 없다. 이 메서드를 부르는 real 경로가
+        생기면 그 자체가 설계 오류 신호다."""
+        self._not_ready(
+            "get_analysis_scopes",
+            "search",
+            reason="이 메서드는 애초에 real 대응이 없다(case가 Producer) — 부르지 않아야 한다.",
+        )
+
+    # ── evidence ────────────────────────────────────────────────────────
+    def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
+        """evidence로 넘기는 candidate/selection_rev는 **case가 실제로 선택한 값**이어야
+        한다(2026-09-19 수정) — 이전엔 이 메서드가 `search.search_candidates()`를 다시
+        불러 `candidates[0]`을 그냥 썼다. `happy_001`은 후보가 하나뿐이라 우연히 값이
+        같았을 뿐이고, `case.select_candidate()`가 고른 candidate와 무관하게 항상 같은
+        결과가 나왔다 — 후보가 여럿인 시나리오에서는 case가 고른 것과 evidence가 받는
+        것이 어긋날 수 있는 실제 버그였다. 지금은 `self._case.candidates`에서
+        `selected=True`인 candidate를 찾아 그 `candidate_id`로 search 결과에서 일치하는
+        `CandidateEvent`를 골라 넘기고, `selection_rev`도 `self._case.selection_rev`를
+        그대로 쓴다."""
+        if self._evidence_bundle is None:
+            if self._search_scope is None or self._mock_root is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason="evidence 체인에는 search_scope와 mock_root(recording의 raw "
+                    "time_source_candidates 읽기용, real_e2e.py 「알려진 단순화 1」)가 "
+                    "모두 필요하다.",
+                )
+            if self._case is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason="case가 실제로 선택한 candidate/selection_rev를 읽으려면 "
+                    "생성자에 CaseAggregate가 필요하다 — case_id 문자열만으로는 어떤 "
+                    "candidate가 선택됐는지 알 수 없다.",
+                )
+            selected = next((c for c in self._case.candidates if c.selected), None)
+            if selected is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason=f"case_id={self.case_id!r}에 선택된(selected=True) candidate가 "
+                    "없다 — case.select_candidate()가 evidence 조회보다 먼저 호출돼야 한다.",
+                )
+            scope = self._search_scope
+            if not isinstance(scope, search_module.AnalysisScope):
+                scope = search_module.AnalysisScope.model_validate(scope)
+            search_candidates = search_module.search_candidates(scope).candidates
+            candidate = next(
+                (c for c in search_candidates if c.candidate_id == selected.candidate_id), None
+            )
+            if candidate is None:
+                raise ValueError(
+                    f"case가 선택한 candidate_id={selected.candidate_id!r}를 "
+                    "search.search_candidates() 결과에서 찾을 수 없다 — case와 search가 "
+                    "같은 scope를 보고 있는지 확인해야 한다."
+                )
+            self._evidence_bundle = real_e2e.build_happy_001_evidence_bundle(
+                case_id=self.case_id,
+                candidate=candidate,
+                scope=scope,
+                mock_root=self._mock_root,
+                selection_rev=self._case.selection_rev,
+            )
+        return self._evidence_bundle
+
+    def get_evidence_record(self) -> dict[str, Any] | None:
+        return self._build_evidence_bundle().evidence_record
+
+    def get_evidence_records(self) -> list[dict[str, Any]]:
+        """`scenario_happy_001` 대표 시나리오는 supersede 체인이 없어(1건뿐) 리스트도
+        1건이다 — plate_reread류 다건 체인은 W7 확장 대상(모듈 docstring 참고)."""
+        return [self._build_evidence_bundle().evidence_record]
+
+    def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
+        bundle = self._build_evidence_bundle()
+        if scope == "EVIDENCE":
+            return bundle.requirement_report_evidence
+        if scope == "FINAL_PACKAGE":
+            return bundle.requirement_report_package
+        raise ValueError(f"알 수 없는 requirement scope: {scope!r}")
+
+    def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
+        report = self.get_requirement_report(scope)
+        return [report] if report is not None else []
+
+    def get_evidence_needs(self) -> list[dict[str, Any]]:
+        needs = self._build_evidence_bundle().evidence_needs
+        return [needs] if needs is not None else []
+
+    def get_report_package(self) -> dict[str, Any] | None:
+        """`build_report_package()`가 `PackageNotReady`를 던지면(situation_response/
+        observation_facts 미확보 — real_e2e.py 「알려진 단순화 2」) `None`을 돌려준다.
+        이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
+        return self._build_evidence_bundle().report_package
+
+    # ── common/runtime ──────────────────────────────────────────────────
+    def get_job_executions(self) -> list[dict[str, Any]]:
+        self._not_ready(
+            "get_job_executions",
+            "common/runtime",
+            reason="InMemoryJobExecutionStore는 호출 가능한 서비스가 아니라 Worker "
+            "프로세스가 채우는 저장소다 — worker/가 아직 비어 있어 채워질 대상이 없다.",
+        )

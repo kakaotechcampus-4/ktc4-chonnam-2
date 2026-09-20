@@ -22,6 +22,16 @@ _LABEL_SET = set(CLASS_LABELS)
 _TARGET_BBOX_IOU_THRESHOLD = 0.5
 
 
+def _is_wellformed_box(box):
+    """[x1, y1, x2, y2] 이고 넓이가 양수인가.
+
+    넓이가 0 이하면 IoU 가 구조적으로 0 이라 무엇과도 절대 맞지 않는다 —
+    「대상을 잘못 짚었다」가 아니라 「bbox 가 망가졌다」다. GT 쪽
+    (manifests_io.validate_sequences)과 같은 판정을 쓴다.
+    """
+    return len(box) == 4 and box[0] < box[2] and box[1] < box[3]
+
+
 def _macro(per_label):
     vals = [v for v in per_label.values() if v is not None]
     return sum(vals) / len(vals) if vals else None
@@ -123,7 +133,7 @@ def score(normalized, gt):
         else:
             target_total += 1
             pred_box = pred_by_id.get(sid, {}).get("target_bbox")
-            if pred_box is not None and len(pred_box) != 4:
+            if pred_box is not None and not _is_wellformed_box(pred_box):
                 # 「대상을 잘못 짚었다」와 「bbox 가 망가져 잴 수 없었다」를
                 # 가른다. 세지 않으면 둘이 같은 0점으로 섞인다 (F11).
                 n_invalid_bboxes += 1

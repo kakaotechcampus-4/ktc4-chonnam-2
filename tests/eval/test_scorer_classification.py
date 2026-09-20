@@ -197,3 +197,17 @@ def test_nothing_excluded_means_no_denominator_reason():
          "condition": {"day_night": "주간"}, "source_tier": "A"}]}
     norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]}]
     assert classification.score(norm, gt)["coverage"] is None
+
+
+def test_inverted_predicted_bbox_is_counted_as_malformed():
+    """넓이가 0 이하인 예측 bbox 는 IoU 가 구조적으로 0 이라 영원히 오답이다.
+
+    GT 쪽에는 이 검사를 넣어 두고 예측 쪽에만 없으면, 「대상을 잘못 짚었다」와
+    「bbox 가 망가졌다」가 다시 같은 0점으로 섞인다.
+    """
+    gt = {"meta": GT["meta"], "items": [GT["items"][0]]}
+    for box in ([10, 0, 10, 20], [10, 10, 5, 5]):
+        r = classification.score(
+            [{"sequence_id": "S1", "predicted": "SIGNAL", "target_bbox": box}], gt)
+        assert r["n_invalid_bboxes"] == 1, box
+        assert "INVALID_BBOXES" in r["coverage"], box

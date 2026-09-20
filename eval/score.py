@@ -123,7 +123,7 @@ def main(argv=None):
     outdir = paths.results_dir()
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "%s.%s.json" % (args.prediction, result["meta"]["gt_version"]))
-    with open(out, "w", encoding="utf-8") as f:
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
         f.write("\n")
     print(out)
