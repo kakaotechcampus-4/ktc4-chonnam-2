@@ -131,7 +131,8 @@ def build_happy_001_evidence_bundle(
         plate_readout=plate_readout.to_dict() if plate_readout else None,
         incident_clip=incident_clip.model_dump(mode="json"),
         record_id=f"er_{case_id}_001",
-        # 알려진 단순화 2 (모듈 docstring 참고).
+        location_hint=location_hint,
+        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
         situation_response=None,
         gps_observation=None,
     )
