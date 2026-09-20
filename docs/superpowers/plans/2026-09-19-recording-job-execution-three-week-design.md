@@ -23,7 +23,7 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 
 이 문서는 위 전체 흐름을 다시 설계하지 않는다. 전체 흐름에서 정철원이 소유한 Recording과 `JobExecution` 구현을 월요일 최소 Baseline, 실제 데이터 관찰, W7 Risk Burn-down, W8 집중 개발 종료선까지 어떻게 완성할지를 정의한다.
 
-대표 영상에는 사건·번호판·시각 Ground Truth가 없다. 사건 위치와 정답도 알려져 있지 않다. 따라서 월요일 Real E2E는 정확도 Benchmark가 아니라 **GT 없는 실제 배관 E2E**다. 실제 파일 접근, 계약 객체 생성, 실제 Search·Readout 호출, 실패·UNKNOWN·abstain 전달, 실제 CaseView의 Web 표시를 검증한다. Search Top-1은 정답이 아니라 명시적인 `UNVERIFIED` 후보로 사용한다.
+대표 영상에는 사건·번호판·시각 Ground Truth가 없다. 사건 위치와 정답도 알려져 있지 않다. 따라서 월요일 Real E2E는 정확도 Benchmark가 아니라 **GT 없는 실제 배관 E2E**다. 실제 파일 접근, 계약 객체 생성, 실제 Search·Readout 호출, 실패·UNKNOWN·abstain 전달, 실제 CaseView의 Web 표시를 검증한다. Search Top-1은 정답이 확인되지 않은 후보로만 선택한다. 이때의 `UNVERIFIED`는 실행 리포트의 설명용 표시이며 `CandidateEvent`나 `CaseView`에 추가하는 canonical 필드·enum이 아니다.
 
 ## 2. 정철원 책임 범위 / 비책임 범위
 
@@ -34,8 +34,9 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 | Source 등록 | 실제 원본 파일 등록, `SourceAsset`·`MediaStream` 생성 |
 | Metadata | 실제 파일 크기·duration·stream 정보 probe |
 | Timeline | 신뢰 가능한 anchor 또는 relative-only Timeline 생성·revision 보존 |
+| 시각 후보 | 실제 파일명·metadata에서 얻은 `TimeSourceCandidate[]`를 기존 계약 형태로 제공 |
 | Asset resolve | opaque ref를 내부 locator로 해석하는 registry |
-| AnalysisSource | 원본 media를 실제 분석 입력으로 제공하는 최소 capability |
+| AnalysisSource | 합의된 profile의 실제 media를 `open_analysis_source()` binary stream으로 제공하는 최소 capability |
 | IncidentClip | 선택된 Top-1 후보 1건의 실제 clip materialization |
 | Frame | 원본 기준 canonical `FrameRef` 발급과 on-demand frame 접근 |
 | Runtime | `JobExecution` 상태 전이·attempt·produced·failure·usage ref 구현 |
@@ -51,7 +52,7 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 | Evidence·CaseView 정책 | 각 계약 Owner 책임 |
 | Web 연결과 화면 정책 | web/통합 Owner 책임 |
 | Search·OCR 정확도 | search/readout 책임. Recording은 실제 입력 경로를 보장 |
-| Top-1의 정답성 | GT가 없으므로 `UNVERIFIED`로만 사용 |
+| Top-1의 정답성 | GT가 없으므로 실행 리포트에 미검증 후보로 기록하며 정확도로 주장하지 않음 |
 | 월요일 정식 HTTP API·Worker | 동기 Python 공개 호출로 대체 가능 |
 | 월요일 DB Queue·분산 Worker | `JobExecution` lifecycle과 교체 경계까지만 구현 |
 | 월요일 `REPORT_VIDEO`·`PLATE_IMAGE` | 최종 신고용 파생 자산은 현재 E2E 완료 조건에서 제외 |
@@ -74,7 +75,7 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 | --- | --- | --- |
 | Source 등록 | 실제 파일에서 canonical 객체 생성 | 중복 등록 탐지, 대규모 파일 최적화, container 확대 |
 | Timeline | 실제 duration과 확인된 anchor로 생성 | 자동 anchor 판독·검증, stitching, drift 보정 |
-| AnalysisSource | 원본 기반 실제 입력 제공 | proxy/profile, provider별 최적화, 재사용 |
+| AnalysisSource | 합의된 profile에 맞는 실제 binary stream 제공 | proxy/profile, provider별 최적화, 재사용 |
 | IncidentClip | 선택 후보 1건 실제 materialization | padding, codec, 경계 정밀도, 복수 파일 clip |
 | FrameRef | 요청 위치의 canonical frame 반환 | batch extraction, cache, decode 성능 |
 | JobExecution | 올바른 lifecycle과 산출물 참조 | persistence, retry, heartbeat·lease, 분산 Worker |
@@ -92,13 +93,14 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 - 두 값이 일치하고 신뢰 가능할 때만 absolute anchor를 사용한다.
 - 불일치·파싱 실패·신뢰 부족이면 `USABLE_RELATIVE_ONLY`로 fallback한다.
 - 가짜 날짜나 추정 absolute datetime을 만들지 않는다.
-- Search에 원본 media를 제공하는 최소 `AnalysisSource`를 생성한다.
+- 실제 파일명·metadata에서 확인된 시각 후보가 있으면 기존 `TimeSourceCandidate` 계약으로 반환한다. 사람이 overlay와 대조한 사실은 별도 실행 리포트에 기록하며 새 `source_kind`를 만들지 않는다.
+- 합의된 profile에 맞는 실제 media를 `AnalysisSource`의 binary stream으로 제공한다. 원본 전체와 실제 구간 컷 중 어느 범위를 반환할지는 이슈 #95 D2 합의 전까지 확정하지 않는다.
 - 실제 Search 결과가 0건이면 이를 기록하고 provider 제한을 만족하는 다른 실제 영상으로 재시도한다.
 - 후보를 인위적으로 만들거나 Mock 후보로 대체하지 않는다.
-- 후보가 있으면 Top-1을 `UNVERIFIED`로 선택한다.
+- 후보가 있으면 Top-1을 선택하고 정답 미확인 사실을 실행 리포트에 기록한다. canonical 후보 상태값을 신설하지 않는다.
 - 선택 후보 1건에 대해서만 실제 `IncidentClip`을 생성한다.
 - Plate와 Overlay Readout이 사용할 canonical `FrameRef`와 frame 접근을 제공한다.
-- `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ` 실행을 `JobExecution` lifecycle에 연결한다.
+- `COARSE_SEARCH`, `PLATE_READ`, `OVERLAY_TIME_READ` 실행을 `JobExecution` lifecycle에 연결한다. Evidence가 요구하는 실제 `VisualEvidence`의 `FINE_VERIFY` 실행·추적 경계는 통합 Owner와 확인한다.
 - 실제 결과에서 생성된 CaseView가 Web에 표시될 수 있도록 integration Owner에게 공개 호출 경계를 전달한다.
 
 ### 4.2 월요일에 제외하는 범위
@@ -115,6 +117,7 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 ### 4.3 월요일 완료 증거
 
 - 실제 파일을 사용한 Source/Timeline/AnalysisSource 계약 객체
+- 실제 파일명·metadata에 해당 값이 있을 때의 `TimeSourceCandidate[]`와 재현 방법
 - 실제 생성된 IncidentClip 1건
 - 실제 추출된 frame과 canonical FrameRef
 - contract validation 결과
@@ -144,11 +147,11 @@ anchor 입력 검증 ── 신뢰 가능 ──→ absolute RecordingTimeline
 resolve_span
         │
         ▼
-원본 기반 AnalysisSource ──→ 실제 Search
+AnalysisSource binary stream ──→ 실제 Search
                                   │
                                   ▼
                          CandidateEvent Top-1
-                           (UNVERIFIED 선택)
+                      (정답 미확인: 실행 리포트에 기록)
                                   │
                                   ▼
                          resolve_span + clamp
@@ -181,19 +184,21 @@ resolve_span
 - Recording은 입력 형식과 영상 범위 정합을 검증한다.
 - 수동 입력이라는 provenance와 absolute/relative 선택 근거는 실행 리포트에 남긴다.
 - 신뢰할 수 없으면 정상적으로 relative-only를 반환한다.
+- `TimeSourceCandidate.source_kind`는 계약의 `FILENAME`·`FILE_METADATA`·`VENDOR_METADATA` 중 실제 출처에 맞는 값만 사용한다. 사람의 대조 행위를 `USER_INPUT` 후보로 만들지 않는다.
 
 ### 5.3 AnalysisSource
 
 - `AnalysisSource`는 반드시 proxy일 필요가 없다.
-- 월요일에는 원본 또는 원본 구간을 실제 분석 입력으로 연다.
+- 월요일에는 합의된 profile에 맞는 실제 분석 입력을 준비한다. 원본 전체와 실제 구간 컷 중 어느 bytes를 반환할지는 이슈 #95 D2 결정에 따른다.
 - `profile_ref`는 non-null opaque ref로 유지한다.
-- Search adapter가 실제 경로를 필요로 하면 내부 resolver를 통해 얻고, public Contract에는 노출하지 않는다.
-- 정확한 원본/고화질 profile identity와 보장 속성은 Open Issue 1이 해소된 뒤 사용한다.
+- `open_analysis_source(ref)`는 public 경계에서 매번 처음부터 읽을 수 있는 새 binary stream, `content_type`, 실제 `byte_size`를 반환한다. local path를 Search에 직접 전달하지 않는다.
+- provider가 파일 경로를 요구하면 `search/providers` adapter가 stream을 내부 임시 파일로 변환한다. provider 전송 형식도 Search 경계에서 처리한다.
+- 정확한 profile identity·보장 속성과 `RemoteCopy` 처리 방향은 Open Issue 1이 해소된 뒤 적용한다.
 
 ### 5.4 IncidentClip
 
 - Top-1 후보 1건만 materialize한다.
-- 요청 범위는 선택된 `CandidateEvent.span`을 그대로 사용한다.
+- 요청 범위는 선택된 `CandidateEvent.span`을 그대로 사용한다. 이 span은 coarse 후보 창이지 정밀하게 확정된 사건·신고 구간이 아니므로, 생성 clip도 월요일 배관 검증용으로만 취급한다.
 - 임의 padding을 추가하지 않는다.
 - Timeline 경계를 넘을 때만 유효 구간으로 clamp한다.
 - `requested_range`와 실제 `timeline_range`를 구분해 보존한다.
@@ -235,20 +240,20 @@ QUEUED → RUNNING → SUCCEEDED
 
 ### 6.2 월요일 추적 대상
 
-| Job kind | 실행 대상 | 성공 시 produced |
+| Job kind | 실행 대상 | 반환 결과 참조 |
 | --- | --- | --- |
 | `COARSE_SEARCH` | 실제 Search 호출 | 실제 `analysis_run` ref |
 | `PLATE_READ` | 실제 번호판 판독 호출 | 실제 `readout_run` ref 1건 |
 | `OVERLAY_TIME_READ` | 실제 화면 시각 판독 호출 | 실제 `readout_run` ref 1건 |
 
-판독값을 확정하지 못한 abstain·UNKNOWN은 정상적인 domain 결과일 수 있다. public 함수가 정상 완료해 계약 결과를 생성했다면 값 부재만으로 `JobExecution=FAILED`로 바꾸지 않는다.
+판독값을 확정하지 못한 abstain·UNKNOWN은 정상적인 domain 결과일 수 있다. 값 부재만으로 `JobExecution=FAILED`로 바꾸지 않는다. 반대로 public 함수가 반환했다는 이유만으로 `JobExecution=SUCCEEDED`로 처리하지 않는다. `ReadoutRun.outcome=FAILED`인 경우도 있으므로 반환된 run의 outcome을 확인해야 한다. 이 실패 run의 `produced` 보존과 `JobExecution.status`·`failure_kind` 대응은 관련 계약 문구가 일치하지 않아 readout·runtime Owner와 합의한 뒤 실행 wrapper에 반영한다.
 
 ### 6.3 Clip 준비 실패 경계
 
 - IncidentClip이 Readout 발주 전에 실패하면 capability failure다.
 - `INCIDENT_CLIP_BUILD_FAILED`를 실행 리포트에 기록한다.
 - 존재하지 않는 Readout Job의 `JobExecution=FAILED`를 만들지 않는다.
-- 발주 후 입력이 사라지거나 frame 접근이 실패한 경우는 해당 Readout 실행 실패 규칙을 따른다.
+- 발주 후 입력이 사라지거나 frame 접근이 실패한 경우는 Readout의 실패 run과 구분해 기록한다. `INPUT_UNAVAILABLE`과 `READOUT_FRAME_ACCESS_FAILED`의 적용 경계는 문서 간 불일치가 있어 Owner 합의 없이 recording이 정하지 않는다.
 
 ### 6.4 저장과 전이 기록
 
@@ -318,6 +323,7 @@ QUEUED → RUNNING → SUCCEEDED
 - 원본 크기·재생시간·stream 기술 정보
 - probe 시간
 - Timeline status·revision·anchor 선택 근거
+- 실제 `TimeSourceCandidate[]`의 출처와 수동 대조 사실의 구분
 - AnalysisSource profile/ref와 접근 결과
 - clip 요청 범위·실제 범위·설정·시간·크기
 - frame locator·source offset·추출 시간·cache 여부
@@ -426,7 +432,7 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 | Gate | 결과 | 통과 증거 |
 | --- | --- | --- |
 | G0 입력·합의 | 대표 영상, 수동 anchor, profile 합의, media tool 환경 | fingerprint와 cross-owner 합의 기록 |
-| G1 실제 Recording | 등록·probe·Timeline·AnalysisSource 실제 동작 | contract test와 실행 리포트 |
+| G1 실제 Recording | 등록·probe·Timeline·TimeSourceCandidate·AnalysisSource 실제 동작 | contract test와 실행 리포트 |
 | G2 Readout 경계 | Top-1 IncidentClip·FrameRef 실제 생성 | clip/frame 재생·참조 검증 |
 | G3 Runtime handoff | Search·Plate·Overlay 실행 lifecycle 연결 | 상태 전이·produced ref 검증 |
 | G4 통합 재현 | 통합 Owner가 공개 예제로 사용 | 타 담당자 환경 재현 결과 |
@@ -448,7 +454,7 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 - 원본 불변성과 내부 path 격리
 - 실제 probe와 Timeline
 - relative-only fallback
-- 원본 기반 AnalysisSource
+- 합의된 profile의 실제 AnalysisSource stream
 - Top-1 IncidentClip 1건
 - canonical FrameRef와 frame 접근
 - JobExecution lifecycle
@@ -493,10 +499,10 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 
 | 상대 | 정철원 제공 | 상대 제공 | blocker 조건 |
 | --- | --- | --- | --- |
-| Search / 서어진 | AnalysisSource·실제 media 접근 경계 | provider 연결, Candidate span·Timeline revision | 원본 접근 불가, 후보 span 계약 불일치 |
+| Search / 서어진 | AnalysisSource stream·실제 media 접근 경계 | provider 연결, Candidate span·Timeline revision, 실제 VisualEvidence | stream 소비 불가, 후보 span 계약 불일치 |
 | Readout / 신유민 | IncidentClip·FrameRef·frame bytes | 실제 Plate·Overlay 호출, locator 요청 | clip/frame 소비 경로 부재 |
-| Case·통합 / 유소연 또는 김준영 | capability·JobExecution·예제 | JobRecord, 호출 순서, 결과 반영, CaseView 연결 | 통합 Owner 미확정 또는 입력 미합의 |
-| Evidence / 김준영 | provenance·asset facts 복원 가능한 ref | UNKNOWN·abstain 정상 소비 | 값 부재를 pipeline 실패로 처리 |
+| Case·통합 / 유소연 또는 김준영 | capability·JobExecution·예제 | JobRecord, 실제 선택 candidate·selection_rev, 호출 순서, CaseView 연결 | 통합 Owner 미확정 또는 입력 미합의 |
+| Evidence / 김준영 | 같은 timeline/revision의 IncidentClip·TimeSourceCandidate[]·asset facts | UNKNOWN·abstain 정상 소비 | Mock 시각 후보가 실제 출력으로 교체되지 않음 |
 | Web / 신유민 | 직접 제공 없음 | 실제 CaseView 자동 로딩 | 정적 fixture만 표시 |
 | CI | 도구 요구사항과 smoke test | Actions 환경의 ffmpeg/ffprobe 실행 | workflow에서 실제 test 미실행 |
 | 데이터 준비 | 입력 검증·fingerprint | 실제 대표 영상과 수동 anchor 확인 | provider-compatible 영상 부재 |
@@ -534,21 +540,22 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 ## 18. Open Issues / Blocking Dependencies
 
-### OI-1. 원본/고화질 AnalysisSource profile 합의
+### OI-1. AnalysisSource profile과 provider 전환 접합부 합의
 
-**상태:** 미확정 · 월요일 전 차단 합의  
-**참여:** 정철원(recording) · 서어진(search) · 신유민(readout)
+**상태:** 미확정 · 월요일 전 차단 합의 · 이슈 #95 D1·D2 확인 요청 중
+**참여:** 정철원(recording) · 서어진(search) · 신유민(readout), 필요 시 김준영(PM)
 
 최소 결정 항목:
 
-- 의미: 원본 또는 판독 가능한 고화질 입력
-- 월요일 실제 처리: 원본 media 사용
+- D1: Files API 객체가 없는 provider에서 `RemoteCopy`를 월요일 경로에서 미사용·유지할지, 계약상 폐기·재해석할지
+- D2: 반환 media가 원본 전체인지 실제로 잘린 구간인지, 구간 컷의 수행 주체와 반환 bytes·duration의 의미
+- 원본 또는 판독 가능한 고화질 profile의 의미와 보장 속성
 - video/audio 유지 여부
 - 같은 조건의 AnalysisSource 재사용 기준
 - opaque `profile_ref`와 registry entry
 - Consumer가 ref 문자열을 파싱하지 않는다는 재확인
 
-저해상도·무음 proxy의 해상도·fps·분할값은 이 합의에 포함하지 않는다. 정철원이 canonical identity를 단독으로 만들지 않는다.
+저해상도·무음 proxy의 해상도·fps·분할값은 이 합의에 포함하지 않는다. 정철원이 canonical identity나 기존 Final Contract의 변경을 단독으로 결정하지 않는다.
 
 ### OI-2. 전체 로컬 통합 실행기 Owner 확정
 
@@ -556,6 +563,8 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 **후보:** 김준영 또는 유소연
 
 정철원은 Recording adapter와 `JobExecution` lifecycle, consumer 예제를 제공한다. 전체 모듈 호출 순서, Evidence/CaseView 연결, Web 전달을 조립하는 책임은 맡지 않는다. Owner가 늦게 확정되더라도 정철원의 범위가 전체 실행기 구현으로 자동 확대되지 않는다.
+
+통합 Owner에게는 실제 `VisualEvidence`/`FINE_VERIFY` 추적, Case가 선택한 candidate·`selection_rev` 사용, 정상적인 시각 `UNKNOWN`의 CaseView 표시, `REPORT_VIDEO` 없는 부분 상태를 월요일 완료로 인정할지 확인을 요청했다. 이 항목들의 결과를 이 문서에서 미리 확정하지 않는다.
 
 ## 19. 최종 체크리스트
 
@@ -566,6 +575,7 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] 파일명과 overlay 시각을 사람이 대조했다.
 - [ ] absolute 또는 relative-only 선택 근거를 기록했다.
 - [ ] 원본/고화질 AnalysisSource profile을 3자가 합의했다.
+- [ ] 이슈 #95 D1·D2의 월요일 적용 경계를 합의했다.
 - [ ] 전체 로컬 통합 실행기 Owner가 확정됐다.
 - [ ] ffmpeg/ffprobe 실행 환경을 확인했다.
 
@@ -574,13 +584,14 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] 실제 파일 등록이 `SourceAsset`·`MediaStream[]`을 반환한다.
 - [ ] metadata·stream probe가 실제 값을 반환한다.
 - [ ] 신뢰할 수 없는 anchor가 `USABLE_RELATIVE_ONLY`로 fallback한다.
+- [ ] 실제 파일명·metadata의 시각 후보를 `TimeSourceCandidate[]`로 반환하고 수동 overlay 대조와 구분한다.
 - [ ] public Contract에 local path가 노출되지 않는다.
 - [ ] 내부 asset registry가 opaque ref를 해석한다.
-- [ ] 원본 기반 AnalysisSource가 실제 Search에 열리는 입력을 제공한다.
+- [ ] 합의된 profile의 AnalysisSource가 실제 binary stream으로 Search에 열리는 입력을 제공한다.
 
 ### G2 — Clip·Frame
 
-- [ ] Top-1 `UNVERIFIED` 후보 1건에서 IncidentClip을 생성한다.
+- [ ] 정답 미확인 Top-1 후보 1건에서 배관 검증용 IncidentClip을 생성하고, 미검증 사실을 실행 리포트에 기록한다.
 - [ ] 요청 범위와 실제 범위를 구분해 기록한다.
 - [ ] clip 생성 결과를 decode·범위 검증한 뒤 발행한다.
 - [ ] clip 준비 실패 시 Readout Job을 발주하지 않는다.
@@ -593,6 +604,7 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] `PLATE_READ`가 실행 1회당 ReadoutRun ref 1건을 남긴다.
 - [ ] `OVERLAY_TIME_READ`가 실행 1회당 ReadoutRun ref 1건을 남긴다.
 - [ ] abstain·UNKNOWN과 실행 실패를 구분한다.
+- [ ] `ReadoutRun.outcome=FAILED`를 함수 반환만으로 성공 처리하지 않으며, 상태·failure 매핑은 Owner 합의대로 검증한다.
 - [ ] 상태 전이 시각이 내부 append-only 로그에 남는다.
 - [ ] `STALE`·attempt·`CANCELLED` 규칙을 테스트한다.
 
@@ -632,4 +644,3 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] CI 전체 검증이 통과한다.
 - [ ] 미지원 범위와 후속 배포 작업이 문서화됐다.
 - [ ] 이후 대규모 기능 개발 없이 배포·안정화·발표 준비 중심으로 전환할 수 있다.
-
