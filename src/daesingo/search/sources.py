@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from .runs import ContractRef
+from .errors import CandidateSourceMismatchError
+from .runs import CandidateEvent, ContractRef
 from .scope import AnalysisScope
 
 
@@ -13,6 +14,29 @@ class ResolvedAnalysisSource:
     duration_sec: float
     timeline_id: str
     timeline_revision: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateSourceLink:
+    source_ref: ContractRef
+    candidate: CandidateEvent
+
+    def validate(self, source: ResolvedAnalysisSource) -> None:
+        candidate_span = self.candidate.span
+        matches_source = (
+            self.source_ref.kind == "analysis_source"
+            and candidate_span.timeline_id == source.timeline_id
+            and candidate_span.timeline_revision == source.timeline_revision
+        )
+        if not matches_source:
+            raise CandidateSourceMismatchError(
+                source_ref=self.source_ref,
+                candidate_id=self.candidate.candidate_id,
+                candidate_timeline_id=candidate_span.timeline_id,
+                candidate_timeline_revision=candidate_span.timeline_revision,
+                source_timeline_id=source.timeline_id,
+                source_timeline_revision=source.timeline_revision,
+            )
 
 
 class AnalysisSourceResolver(Protocol):

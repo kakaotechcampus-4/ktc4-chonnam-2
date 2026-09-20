@@ -2,8 +2,16 @@ import json
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from typing import Final
+from urllib.parse import urlsplit
 
 from daesingo.common import load_env_file
+
+from .errors import GeminiBaseUrlRejectionReason, UnsafeGeminiBaseUrlError
+
+_APPROVED_GEMINI_BASE_URL_HOSTS: Final = frozenset(
+    {"mlapi.run", "generativelanguage.googleapis.com"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,6 +28,34 @@ class GeminiSearchConfig:
     # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
     base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
     version: str = "gemini-search-v2"
+
+    def __post_init__(self) -> None:
+        try:
+            parsed = urlsplit(self.base_url)
+            port = parsed.port
+        except ValueError:
+            raise UnsafeGeminiBaseUrlError(
+                GeminiBaseUrlRejectionReason.MALFORMED
+            ) from None
+
+        if parsed.scheme != "https":
+            raise UnsafeGeminiBaseUrlError(
+                GeminiBaseUrlRejectionReason.HTTPS_REQUIRED
+            )
+        if parsed.username is not None or parsed.password is not None:
+            raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.USERINFO)
+        if parsed.hostname not in _APPROVED_GEMINI_BASE_URL_HOSTS:
+            raise UnsafeGeminiBaseUrlError(
+                GeminiBaseUrlRejectionReason.UNAPPROVED_HOST
+            )
+        if port not in (None, 443):
+            raise UnsafeGeminiBaseUrlError(
+                GeminiBaseUrlRejectionReason.NON_DEFAULT_PORT
+            )
+        if parsed.query or "?" in self.base_url:
+            raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.QUERY)
+        if parsed.fragment or "#" in self.base_url:
+            raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.FRAGMENT)
 
     @classmethod
     def from_dotenv(

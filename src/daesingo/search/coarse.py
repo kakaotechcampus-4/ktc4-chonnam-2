@@ -1,8 +1,10 @@
 from datetime import UTC, datetime
 from decimal import Decimal
+from math import isfinite
 from uuid import uuid4
 
 from .config import GeminiSearchConfig
+from .errors import InvalidCoarseSpanError
 from .ledger import SearchLedger, UsageRecord
 from .prompts import COARSE_PROMPT
 from .provider import CoarseRequest, ProviderResult, SearchProvider
@@ -85,6 +87,37 @@ def _candidate(
     source: ResolvedAnalysisSource,
     candidate: CoarseCandidate,
 ) -> CandidateEvent:
+    values_are_finite = all(
+        isfinite(value)
+        for value in (
+            candidate.span.start_sec,
+            candidate.span.end_sec,
+            candidate.at_sec,
+        )
+    )
+    span_is_nonnegative = (
+        candidate.span.start_sec >= 0
+        and candidate.span.end_sec >= 0
+        and candidate.at_sec >= 0
+    )
+    span_is_ordered = candidate.span.start_sec < candidate.span.end_sec
+    span_overlaps_source = (
+        candidate.span.start_sec < source.duration_sec
+        and candidate.span.end_sec > 0
+    )
+    if not (
+        values_are_finite
+        and span_is_nonnegative
+        and span_is_ordered
+        and span_overlaps_source
+    ):
+        raise InvalidCoarseSpanError(
+            source_id=source.source_id,
+            start_sec=candidate.span.start_sec,
+            end_sec=candidate.span.end_sec,
+            at_sec=candidate.at_sec,
+            duration_sec=source.duration_sec,
+        )
     start = max(0.0, min(candidate.span.start_sec, source.duration_sec))
     end = max(start + 0.001, min(candidate.span.end_sec, source.duration_sec))
     representative = min(max(candidate.at_sec, start), end)

@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Final
 
+from .errors import MissingCandidateError
 from .factory import build_gemini_search_service
 from .fixtures import FixtureNotFoundError, FixtureSearchService
-from .runs import CandidateSearchResult, ContractRef
+from .runs import CandidateEvent, CandidateSearchResult, ContractRef
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .service import SearchService
-from .sources import AnalysisSourceResolver, ResolvedAnalysisSource
+from .sources import AnalysisSourceResolver, CandidateSourceLink, ResolvedAnalysisSource
 from .visual import VisualVerificationResult
 
 _MOCK_DIR: Final = Path(__file__).resolve().parents[3] / "data" / "mock" / "search"
@@ -30,17 +31,21 @@ def verify_visual(
     *,
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
+    candidate: CandidateEvent | None = None,
 ) -> VisualVerificationResult:
     """Return the recorded Fine run together with its visual evidence."""
     if service is None:
         return _FIXTURE_SERVICE.verify_visual(input_ref, target_hint)
-    return service.verify_visual(input_ref, target_hint, event_type)
+    if candidate is None:
+        raise MissingCandidateError(source_ref=input_ref)
+    return service.verify_visual(input_ref, candidate, target_hint, event_type)
 
 
 __all__ = [
     "AnalysisScope",
     "AnalysisSourceResolver",
     "CandidateSearchResult",
+    "CandidateSourceLink",
     "ContractRef",
     "FixtureNotFoundError",
     "ResolvedAnalysisSource",

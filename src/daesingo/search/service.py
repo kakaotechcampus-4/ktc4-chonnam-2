@@ -5,7 +5,7 @@ from .config import GeminiSearchConfig
 from .fine import normalize_event_type, verify_fine
 from .ledger import SearchLedger
 from .provider import SearchProvider
-from .runs import CandidateSearchResult, ContractRef
+from .runs import CandidateEvent, CandidateSearchResult, ContractRef
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .sources import AnalysisSourceResolver
 from .visual import VisualVerificationResult
@@ -26,11 +26,13 @@ class SearchService:
     def verify_visual(
         self,
         input_ref: ContractRef,
+        candidate: CandidateEvent,
         target_hint: SearchHint | None = None,
         event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     ) -> VisualVerificationResult:
         return verify_fine(
             input_ref,
+            candidate,
             target_hint,
             normalize_event_type(event_type),
             self.resolver,

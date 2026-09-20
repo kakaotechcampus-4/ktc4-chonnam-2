@@ -2,12 +2,13 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from .config import GeminiSearchConfig
+from .errors import InvalidFineSpanError
 from .ledger import SearchLedger, UsageRecord
 from .prompts import FINE_PROMPT, fine_prompt_for
 from .provider import FineRequest, SearchProvider
 from .runs import (
     AnalysisRun,
-    CandidateId,
+    CandidateEvent,
     ContractRef,
     Implementation,
     Operation,
@@ -16,7 +17,7 @@ from .runs import (
     UsageSummary,
 )
 from .scope import SearchHint, VisualEventType
-from .sources import AnalysisSourceResolver
+from .sources import AnalysisSourceResolver, CandidateSourceLink
 from .visual import (
     Primitive,
     Target,
@@ -38,6 +39,7 @@ def normalize_event_type(value: str | VisualEventType) -> VisualEventType:
 
 def verify_fine(
     input_ref: ContractRef,
+    candidate: CandidateEvent,
     target_hint: SearchHint | None,
     event_type: VisualEventType,
     resolver: AnalysisSourceResolver,
@@ -46,6 +48,22 @@ def verify_fine(
     ledger: SearchLedger,
 ) -> VisualVerificationResult:
     source = resolver.resolve_reference(input_ref)
+    CandidateSourceLink(source_ref=input_ref, candidate=candidate).validate(source)
+    start_sec = max(
+        0.0,
+        candidate.span.start_ms / 1000 - config.fine_padding_sec,
+    )
+    end_sec = min(
+        source.duration_sec,
+        candidate.span.end_ms / 1000 + config.fine_padding_sec,
+    )
+    if start_sec >= end_sec:
+        raise InvalidFineSpanError(
+            source_ref=input_ref,
+            candidate_id=candidate.candidate_id,
+            start_sec=start_sec,
+            end_sec=end_sec,
+        )
     started = datetime.now(UTC)
     run_id = RunId(f"run_fine_{uuid4().hex}")
     hint_text = ""
@@ -54,7 +72,7 @@ def verify_fine(
             filter(None, (target_hint.vehicle, target_hint.free_text))
         )
     result = provider.verify_fine(
-        FineRequest(source, event_type, hint_text, 0.0, source.duration_sec)
+        FineRequest(source, event_type, hint_text, start_sec, end_sec)
     )
     ledger.append(
         UsageRecord(
@@ -63,7 +81,7 @@ def verify_fine(
             prompt_version=FINE_PROMPT.version,
             prompt_fingerprint=fine_prompt_for(event_type).fingerprint,
             config_version=config.version,
-            processed_duration_sec=source.duration_sec,
+            processed_duration_sec=end_sec - start_sec,
             latency_ms=result.latency_ms,
             usage=result.usage,
             cost_usd=result.usage.cost_usd,
@@ -86,7 +104,7 @@ def verify_fine(
         issues=(),
         usage_refs=(f"usage:{source.source_id}",),
         usage_summary=UsageSummary(
-            processed_duration_ms=round(source.duration_sec * 1000),
+            processed_duration_ms=round((end_sec - start_sec) * 1000),
             token_usage=None,
             latency_ms=result.latency_ms,
             total_cost=None,
@@ -98,9 +116,7 @@ def verify_fine(
         visual_evidence_id=f"evidence_{uuid4().hex}",
         run_id=run_id,
         input_ref=input_ref,
-        candidate_id=CandidateId(input_ref.ref)
-        if input_ref.kind == "candidate"
-        else None,
+        candidate_id=candidate.candidate_id,
         verification=response.verification,
         visual_event_type=response.visual_event_type,
         target=Target.model_validate(response.target.model_dump()),

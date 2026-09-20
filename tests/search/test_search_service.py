@@ -2,7 +2,13 @@ from pathlib import Path
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
-from daesingo.search.runs import ContractRef
+from daesingo.search.runs import (
+    CandidateEvent,
+    CandidateId,
+    CandidateSpan,
+    ContractRef,
+    RunId,
+)
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import (
     AnalysisScope,
@@ -106,11 +112,30 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
 
 def test_fine_routes_legacy_event_name_to_the_contract_enum():
     source = ResolvedAnalysisSource("clip-1", Path("clip.mp4"), 10.0, "clip-1", 1)
-    resolver = StaticAnalysisSourceResolver({}, {"candidate-1": source})
+    resolver = StaticAnalysisSourceResolver({}, {"source-1": source})
     service = SearchService(resolver, _Provider(), GeminiSearchConfig())
+    candidate = CandidateEvent(
+        candidate_id=CandidateId("candidate-1"),
+        run_id=RunId("run-coarse-1"),
+        span=CandidateSpan(
+            timeline_id="clip-1",
+            timeline_revision=1,
+            start_ms=1000,
+            end_ms=3000,
+            representative_ms=2000,
+        ),
+        rank=1,
+        ranking_score=0.9,
+        event_type_hint=VisualEventType.SOLID_LINE_LANE_CHANGE,
+        summary="lane change",
+        uncertainties=(),
+        thumbnail_ref=None,
+    )
 
     result = service.verify_visual(
-        ContractRef(kind="candidate", ref="candidate-1"), event_type="LANE_CHANGE"
+        ContractRef(kind="analysis_source", ref="source-1"),
+        candidate,
+        event_type="LANE_CHANGE",
     )
 
     assert result.visual_evidence.verification.value == "UNCERTAIN"
