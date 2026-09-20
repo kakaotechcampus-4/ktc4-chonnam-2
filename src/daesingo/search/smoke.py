@@ -31,7 +31,7 @@ from .smoke_models import (
     SmokeUsage,
 )
 from .smoke_report import SmokeOutcome, SmokeReportBuilder
-from .sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
+from .sources import LocalAnalysisSourceResolver, ResolvedAnalysisSource
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,10 +147,11 @@ def build_smoke_service(
     api_key: str | None,
     fixture: SmokeProviderFixture | None,
 ) -> tuple[SearchService, GeminiSearchConfig]:
-    source = ResolvedAnalysisSource(
-        "smoke", options.source, options.duration_sec, "smoke", 1
+    ref = ContractRef(kind="analysis_source", ref="smoke")
+    source = ResolvedAnalysisSource(ref, options.duration_sec, "smoke", 1)
+    resolver = LocalAnalysisSourceResolver(
+        {"smoke": (source,)}, {"smoke": source}, {"smoke": options.source}
     )
-    resolver = StaticAnalysisSourceResolver({"smoke": (source,)}, {"smoke": source})
     if fixture is not None:
         config = GeminiSearchConfig(model=fixture.model, max_retries=1)
         return SearchService(resolver, SmokeFixtureProvider(fixture), config), config

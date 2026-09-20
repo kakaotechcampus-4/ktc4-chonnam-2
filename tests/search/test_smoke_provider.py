@@ -12,6 +12,7 @@ from daesingo.search.provider import (
     GeminiProvider,
     ProviderRuntimeOptions,
 )
+from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import VisualEventType
 from daesingo.search.smoke_errors import FixtureRateLimitError
@@ -100,10 +101,14 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
         GeminiSearchConfig(max_retries=1),
         runtime=ProviderRuntimeOptions(request_timeout_sec=7.5),
     )
-    source = ResolvedAnalysisSource("s", source_file, 12, "t", 1)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="s"), 12, "t", 1
+    )
 
     # When
-    provider.search_coarse(CoarseRequest(source, (VisualEventType.SIGNAL,)))
+    provider.search_coarse(
+        CoarseRequest(source, (VisualEventType.SIGNAL,), source_path=source_file)
+    )
 
     # Then: OpenAI-compatible client, SDK retries off, proxy base_url + Bearer key
     assert client_kwargs["base_url"] == GeminiSearchConfig().base_url
@@ -131,7 +136,9 @@ def test_fixture_provider_retries_once_without_sleep_and_stops_at_two_attempts()
         update={"coarse": fixture.coarse.model_copy(update={"rate_limit_failures": 2})}
     )
     provider = SmokeFixtureProvider(retrying)
-    source = ResolvedAnalysisSource("s", Path("clip.mp4"), 12, "t", 1)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="s"), 12, "t", 1
+    )
 
     # When
     with pytest.raises(FixtureRateLimitError, match="429"):
@@ -149,7 +156,9 @@ def test_fixture_provider_timeout_is_immediate_and_never_calls_fine() -> None:
         update={"coarse": fixture.coarse.model_copy(update={"times_out": True})}
     )
     provider = SmokeFixtureProvider(timing_out)
-    source = ResolvedAnalysisSource("s", Path("clip.mp4"), 12, "t", 1)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="s"), 12, "t", 1
+    )
 
     # When
     with pytest.raises(FixtureTimeoutError):

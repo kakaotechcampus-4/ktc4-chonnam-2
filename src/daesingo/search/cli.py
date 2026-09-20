@@ -11,6 +11,7 @@ from daesingo.common import load_env_file
 from . import build_gemini_search_service, search_candidates
 from .errors import UnsafeGeminiBaseUrlError
 from .report import render_report
+from .runs import ContractRef
 from .scope import (
     AnalysisScope,
     SearchBudget,
@@ -29,7 +30,7 @@ from .smoke import (
 )
 from .smoke_fixture import SmokeProviderFixture
 from .smoke_models import SmokeFailureStage, SmokeStatus
-from .sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
+from .sources import LocalAnalysisSourceResolver, ResolvedAnalysisSource
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -64,8 +65,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"실패: source file does not exist ({args.source})", file=sys.stderr)
         return 2
 
-    source = ResolvedAnalysisSource("cli", args.source, args.duration_sec, "cli", 1)
-    resolver = StaticAnalysisSourceResolver({"cli": (source,)}, {"cli": source})
+    ref = ContractRef(kind="analysis_source", ref="cli")
+    source = ResolvedAnalysisSource(ref, args.duration_sec, "cli", 1)
+    resolver = LocalAnalysisSourceResolver(
+        {"cli": (source,)}, {"cli": source}, {"cli": args.source}
+    )
     service = build_gemini_search_service(api_key, resolver)
     selected = tuple(
         VisualEventType(item) for item in (args.event_type or [])

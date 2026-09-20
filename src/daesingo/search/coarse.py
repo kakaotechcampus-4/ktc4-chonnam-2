@@ -102,8 +102,7 @@ def _candidate(
     )
     span_is_ordered = candidate.span.start_sec < candidate.span.end_sec
     span_overlaps_source = (
-        candidate.span.start_sec < source.duration_sec
-        and candidate.span.end_sec > 0
+        candidate.span.start_sec < source.duration_sec and candidate.span.end_sec > 0
     )
     if not (
         values_are_finite

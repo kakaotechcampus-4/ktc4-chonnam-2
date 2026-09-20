@@ -4,6 +4,7 @@ import pytest
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
+from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
@@ -106,7 +107,10 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
     sources = {
         clip.clip_id: (
             ResolvedAnalysisSource(
-                clip.clip_id, clip.path, clip.duration_sec, clip.clip_id, 1
+                ContractRef(kind="analysis_source", ref=clip.clip_id),
+                clip.duration_sec,
+                clip.clip_id,
+                1,
             ),
         )
         for clip in prepared_clips

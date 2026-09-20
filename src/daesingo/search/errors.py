@@ -62,7 +62,9 @@ class MissingCandidateError(Exception):
     source_ref: ContractRef
 
     def __str__(self) -> str:
-        return f"Fine verification requires a candidate for source {self.source_ref.ref!r}"
+        return (
+            f"Fine verification requires a candidate for source {self.source_ref.ref!r}"
+        )
 
 
 @dataclass(frozen=True, slots=True)

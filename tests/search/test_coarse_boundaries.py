@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from math import isnan
-from pathlib import Path
 
 import pytest
 
@@ -73,7 +72,10 @@ def _scope() -> AnalysisScope:
 
 def _source(duration_sec: float = 10.0) -> ResolvedAnalysisSource:
     return ResolvedAnalysisSource(
-        "clip-1", Path("clip.mp4"), duration_sec, "timeline-1", 4
+        ContractRef(kind="analysis_source", ref="clip-1"),
+        duration_sec,
+        "timeline-1",
+        4,
     )
 
 

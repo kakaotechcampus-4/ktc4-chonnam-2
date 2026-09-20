@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
-from pathlib import Path
 
 import pytest
 
-from daesingo.search import ContractRef, search_candidates, verify_visual
+from daesingo.search import search_candidates, verify_visual
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.errors import (
     CandidateSourceMismatchError,
@@ -11,7 +10,13 @@ from daesingo.search.errors import (
     MissingCandidateError,
 )
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
-from daesingo.search.runs import CandidateEvent, CandidateId, CandidateSpan, RunId
+from daesingo.search.runs import (
+    CandidateEvent,
+    CandidateId,
+    CandidateSpan,
+    ContractRef,
+    RunId,
+)
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import (
     AnalysisScope,
@@ -65,8 +70,7 @@ class _RecordingProvider:
 
 def _source(duration_sec: float = 10.0) -> ResolvedAnalysisSource:
     return ResolvedAnalysisSource(
-        source_id="source-1",
-        path=Path("clip.mp4"),
+        source_ref=ContractRef(kind="analysis_source", ref="source-1"),
         duration_sec=duration_sec,
         timeline_id="timeline-1",
         timeline_revision=4,
@@ -109,7 +113,9 @@ def test_verify_visual_fixture_accepts_omitted_candidate() -> None:
     assert result.visual_evidence.input_ref == input_ref
 
 
-def test_verify_visual_real_service_uses_selected_candidate_and_explicit_event_type() -> None:
+def test_verify_visual_real_service_uses_selected_candidate_and_explicit_event_type() -> (
+    None
+):
     # Given
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
@@ -131,11 +137,15 @@ def test_verify_visual_real_service_uses_selected_candidate_and_explicit_event_t
     # Then
     assert provider.fine_requests[0].source == source
     assert result.analysis_run.input_ref == input_ref
-    assert provider.fine_requests[0].event_type is VisualEventType.SOLID_LINE_LANE_CHANGE
+    assert (
+        provider.fine_requests[0].event_type is VisualEventType.SOLID_LINE_LANE_CHANGE
+    )
     assert result.visual_evidence.candidate_id == CandidateId("candidate-1")
 
 
-def test_verify_visual_real_service_rejects_a_missing_candidate_before_provider_call() -> None:
+def test_verify_visual_real_service_rejects_a_missing_candidate_before_provider_call() -> (
+    None
+):
     # Given
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
@@ -223,7 +233,9 @@ def test_verify_visual_real_service_rejects_candidate_timeline_mismatch(
     with pytest.raises(CandidateSourceMismatchError):
         verify_visual(
             input_ref,
-            candidate=_candidate(timeline_id=timeline_id, timeline_revision=timeline_revision),
+            candidate=_candidate(
+                timeline_id=timeline_id, timeline_revision=timeline_revision
+            ),
             service=service,
         )
     assert provider.fine_requests == []
@@ -298,7 +310,9 @@ def test_public_coarse_to_fine_selected_candidate_manual_qa() -> None:
         )
     )
     service = SearchService(
-        StaticAnalysisSourceResolver({scope.scope_id: (source,)}, {source_ref.ref: source}),
+        StaticAnalysisSourceResolver(
+            {scope.scope_id: (source,)}, {source_ref.ref: source}
+        ),
         provider,
         GeminiSearchConfig(fine_padding_sec=2.0),
     )

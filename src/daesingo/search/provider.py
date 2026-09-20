@@ -2,7 +2,7 @@ import base64
 import importlib
 import mimetypes
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
@@ -22,6 +22,9 @@ from .usage import ProviderUsage
 class CoarseRequest:
     source: ResolvedAnalysisSource
     event_types: tuple[VisualEventType, ...]
+    # ponytail: temporary path bridge until the media-pipeline task wires
+    # open_source through the provider; replace with MediaInput then.
+    source_path: Path | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +34,8 @@ class FineRequest:
     target_hint: str
     start_sec: float
     end_sec: float
+    # ponytail: temporary path bridge — same as CoarseRequest.source_path
+    source_path: Path | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,7 +109,9 @@ class GeminiProvider:
             event_types=", ".join(event.value for event in request.event_types),
             duration_sec=request.source.duration_sec,
         )
-        return self._invoke(request.source, prompt, CoarseResponse)
+        return self._invoke(
+            request.source, prompt, CoarseResponse, source_path=request.source_path
+        )
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
         prompt = fine_prompt_for(request.event_type).render(
@@ -113,17 +120,25 @@ class GeminiProvider:
             start_sec=request.start_sec,
             end_sec=request.end_sec,
         )
-        return self._invoke(request.source, prompt, FineResponse)
+        return self._invoke(
+            request.source, prompt, FineResponse, source_path=request.source_path
+        )
 
     def _invoke[ResponseT: BaseModel](
         self,
         source: ResolvedAnalysisSource,
         prompt: str,
         response_model: type[ResponseT],
+        *,
+        source_path: Path | None = None,
     ) -> ProviderResult[ResponseT]:
         # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 서버측 구간
         # 클리핑·fps·해상도는 미결이라 Fine 구간은 프롬프트로만 지시한다 —
         # config.media_resolution/fps 는 그 처리 도입 시 사용할 자리로 남긴다.
+        if source_path is None:
+            raise ValueError(
+                f"source_path required for provider invocation (source {source.source_id!r})"
+            )
         messages = [
             {
                 "role": "user",
@@ -131,7 +146,7 @@ class GeminiProvider:
                     {"type": "text", "text": prompt},
                     {
                         "type": "file",
-                        "file": {"file_data": _video_data_url(source.path)},
+                        "file": {"file_data": _video_data_url(source_path)},
                     },
                 ],
             }

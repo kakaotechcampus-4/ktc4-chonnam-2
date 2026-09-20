@@ -66,7 +66,9 @@ class TokenUsage(ContractModel):
     @model_validator(mode="after")
     def check_total(self) -> Self:
         if self.total_tokens != self.input_tokens + self.output_tokens:
-            raise PydanticCustomError("token_total", "total_tokens must equal input plus output")
+            raise PydanticCustomError(
+                "token_total", "total_tokens must equal input plus output"
+            )
         return self
 
 
@@ -98,11 +100,15 @@ class AnalysisRun(ContractModel):
     @model_validator(mode="after")
     def check_terminal_state(self) -> Self:
         if self.completed_at < self.started_at:
-            raise PydanticCustomError("run_time_order", "completed_at must not precede started_at")
+            raise PydanticCustomError(
+                "run_time_order", "completed_at must not precede started_at"
+            )
         match self.outcome:
             case RunOutcome.SUCCEEDED:
                 if self.issues:
-                    raise PydanticCustomError("succeeded_issues", "SUCCEEDED cannot contain issues")
+                    raise PydanticCustomError(
+                        "succeeded_issues", "SUCCEEDED cannot contain issues"
+                    )
             case RunOutcome.PARTIAL:
                 if not self.issues:
                     raise PydanticCustomError(
@@ -125,10 +131,13 @@ class CandidateSpan(ContractModel):
     @model_validator(mode="after")
     def check_order(self) -> Self:
         if self.end_ms <= self.start_ms:
-            raise PydanticCustomError("candidate_span_order", "end_ms must follow start_ms")
+            raise PydanticCustomError(
+                "candidate_span_order", "end_ms must follow start_ms"
+            )
         if not self.start_ms <= self.representative_ms <= self.end_ms:
             raise PydanticCustomError(
-                "candidate_representative", "representative_ms must fall inside the span"
+                "candidate_representative",
+                "representative_ms must fall inside the span",
             )
         return self
 
@@ -152,12 +161,21 @@ class AnalysisRunCandidateEvents(ContractModel):
     @model_validator(mode="after")
     def check_candidates(self) -> Self:
         if self.analysis_run.outcome is RunOutcome.FAILED and self.candidates:
-            raise PydanticCustomError("failed_candidates", "FAILED cannot return candidates")
-        if any(candidate.run_id != self.analysis_run.run_id for candidate in self.candidates):
-            raise PydanticCustomError("candidate_run", "candidate run_id must match AnalysisRun")
+            raise PydanticCustomError(
+                "failed_candidates", "FAILED cannot return candidates"
+            )
+        if any(
+            candidate.run_id != self.analysis_run.run_id
+            for candidate in self.candidates
+        ):
+            raise PydanticCustomError(
+                "candidate_run", "candidate run_id must match AnalysisRun"
+            )
         ranks = sorted(candidate.rank for candidate in self.candidates)
         if ranks != list(range(1, len(ranks) + 1)):
-            raise PydanticCustomError("candidate_ranks", "ranks must be contiguous from one")
+            raise PydanticCustomError(
+                "candidate_ranks", "ranks must be contiguous from one"
+            )
         return self
 
 
@@ -165,5 +183,7 @@ class CandidateSearchResult(AnalysisRunCandidateEvents):
     @model_validator(mode="after")
     def check_operation(self) -> Self:
         if self.analysis_run.operation is not Operation.CANDIDATE_SEARCH:
-            raise PydanticCustomError("search_operation", "search result requires CANDIDATE_SEARCH")
+            raise PydanticCustomError(
+                "search_operation", "search result requires CANDIDATE_SEARCH"
+            )
         return self

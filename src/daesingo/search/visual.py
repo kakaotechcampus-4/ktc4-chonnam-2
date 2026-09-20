@@ -102,9 +102,13 @@ class VisualVerificationResult(ContractModel):
     @model_validator(mode="after")
     def check_links(self) -> Self:
         if self.analysis_run.operation is not Operation.VISUAL_VERIFY:
-            raise PydanticCustomError("visual_operation", "visual result requires VISUAL_VERIFY")
+            raise PydanticCustomError(
+                "visual_operation", "visual result requires VISUAL_VERIFY"
+            )
         if self.analysis_run.run_id != self.visual_evidence.run_id:
-            raise PydanticCustomError("visual_run", "VisualEvidence run_id must match AnalysisRun")
+            raise PydanticCustomError(
+                "visual_run", "VisualEvidence run_id must match AnalysisRun"
+            )
         if self.analysis_run.input_ref != self.visual_evidence.input_ref:
             raise PydanticCustomError(
                 "visual_input", "VisualEvidence input_ref must match AnalysisRun"

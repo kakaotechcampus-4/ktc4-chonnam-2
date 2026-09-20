@@ -16,7 +16,9 @@ def test_config_preserves_current_defaults_when_created() -> None:
     assert config.model == "gemini-3.8-flash"
     assert config.media_resolution == "low"
     assert config.fine_media_resolution == "high"
-    assert config.base_url == "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    assert (
+        config.base_url == "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    )
 
 
 def test_config_preserves_model_media_and_base_url_from_dotenv() -> None:

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
 from daesingo.search.runs import (
@@ -78,7 +76,9 @@ class _Provider:
 
 
 def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
-    source = ResolvedAnalysisSource("clip-1", Path("clip.mp4"), 10.0, "clip-1", 4)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 4
+    )
     resolver = StaticAnalysisSourceResolver({"scope-1": (source,)}, {})
     service = SearchService(resolver, _Provider(), GeminiSearchConfig())
     scope = AnalysisScope(
@@ -111,7 +111,9 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
 
 
 def test_fine_routes_legacy_event_name_to_the_contract_enum():
-    source = ResolvedAnalysisSource("clip-1", Path("clip.mp4"), 10.0, "clip-1", 1)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 1
+    )
     resolver = StaticAnalysisSourceResolver({}, {"source-1": source})
     service = SearchService(resolver, _Provider(), GeminiSearchConfig())
     candidate = CandidateEvent(
