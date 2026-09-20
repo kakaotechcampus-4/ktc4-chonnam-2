@@ -113,7 +113,7 @@ class SmokeFineProjection(SmokeModel):
     visual_event_type: VisualEventType | None
     target_association_status: AssociationStatus
     target_association_confidence: Confidence | None
-    primitive_states: dict[str, PrimitiveState]
+    primitive_states: dict[PrimitiveState, int]
     temporal_offsets_ms: tuple[NonNegativeInt, ...]
     uncertainty_count: NonNegativeInt
 

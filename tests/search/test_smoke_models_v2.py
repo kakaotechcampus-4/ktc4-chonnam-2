@@ -61,7 +61,7 @@ def _fine() -> SmokeFineProjection:
         visual_event_type=VisualEventType.SIGNAL,
         target_association_status=AssociationStatus.MATCHED,
         target_association_confidence=0.92,
-        primitive_states={"traffic_signal_red": PrimitiveState.PRESENT},
+        primitive_states={PrimitiveState.PRESENT: 1},
         temporal_offsets_ms=(1200, 3400),
         uncertainty_count=0,
     )
@@ -376,6 +376,31 @@ def test_stage_metrics_optional_media_fields() -> None:
     )
     assert s.prepared_media_bytes == 204800
     assert s.prepared_duration_ms == 5000
+
+
+def test_omitted_field_with_sentinel_raises_validation_error() -> None:
+    """Adversarial: sentinel in an omitted field must be rejected at parse time.
+
+    SmokeCandidateProjection has extra='forbid', so passing 'summary'
+    (a field the projection structurally omits) must raise ValidationError.
+    This proves the DTO cannot carry the sentinel through omission bypass.
+    """
+    with pytest.raises(ValidationError):
+        _ = SmokeCandidateProjection.model_validate(
+            {
+                "candidate_id": "cand_adv",
+                "source_ref": {"kind": "recording-segment", "ref": "seg_001"},
+                "timeline_id": "tl_adv",
+                "timeline_revision": 1,
+                "start_ms": 0,
+                "end_ms": 1000,
+                "representative_ms": 500,
+                "rank": 1,
+                "ranking_score": 0.5,
+                "event_type_hint": None,
+                "summary": "SECRET_PLATE_12가3456",
+            }
+        )
 
 
 def test_candidate_event_type_hint_can_be_none() -> None:
