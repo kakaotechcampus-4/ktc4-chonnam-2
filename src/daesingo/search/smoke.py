@@ -122,6 +122,16 @@ def run_smoke(
                 selected,
             )
         )
+    stage = _budget_failure(report_builder.usage(), options)
+    if stage is not None:
+        return report_builder.build(
+            SmokeOutcome(
+                SmokeStatus.FAILED,
+                stage,
+                coarse.candidates,
+                selected,
+            )
+        )
     return report_builder.build(
         SmokeOutcome(
             SmokeStatus.SUCCEEDED,

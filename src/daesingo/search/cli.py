@@ -1,4 +1,5 @@
 import argparse
+import math
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -99,6 +100,9 @@ def _run_smoke_command(args: argparse.Namespace) -> int:
     try:
         if (
             not args.source.is_file()
+            or not math.isfinite(args.duration_sec)
+            or not math.isfinite(args.timeout_sec)
+            or not args.max_cost_usd.is_finite()
             or args.duration_sec <= 0
             or args.timeout_sec <= 0
             or args.max_cost_usd < 0

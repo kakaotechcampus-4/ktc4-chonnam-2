@@ -81,6 +81,81 @@ def test_smoke_orchestration_does_not_swallow_programmer_assertion(
     assert str(caught.value) == "programmer defect"
 
 
+def test_smoke_fails_when_coarse_fits_but_aggregate_exceeds_budget(
+    tmp_path: Path, capsys
+) -> None:
+    # Given: coarse latency 125ms / cost 0.00016875 both fit, but the
+    # coarse+fine aggregate (200ms / 0.00024375) does not.
+    source = tmp_path / "recording.mp4"
+    source.write_bytes(b"video")
+
+    def run(*extra: str) -> tuple[int, dict[str, JsonValue]]:
+        code = main(
+            [
+                "smoke",
+                "--source",
+                str(source),
+                "--duration-sec",
+                "12",
+                "--provider-fixture",
+                str(FIXTURE),
+                *extra,
+            ]
+        )
+        return code, json.loads(capsys.readouterr().out)
+
+    # When
+    time_code, time_report = run("--timeout-sec", "0.15")
+    cost_code, cost_report = run("--max-cost-usd", "0.0002")
+
+    # Then
+    assert time_code == 1
+    assert time_report["status"] == "failed"
+    assert time_report["failure_stage"] == "time_budget"
+    assert cost_code == 1
+    assert cost_report["status"] == "failed"
+    assert cost_report["failure_stage"] == "cost_budget"
+
+
+@pytest.mark.parametrize(
+    "extra",
+    (
+        ["--duration-sec", "nan"],
+        ["--duration-sec", "inf"],
+        ["--timeout-sec", "nan"],
+        ["--timeout-sec", "inf"],
+        ["--max-cost-usd", "nan"],
+        ["--max-cost-usd", "inf"],
+    ),
+)
+def test_smoke_non_finite_numeric_input_is_typed_input_failure(
+    tmp_path: Path, capsys, extra: list[str]
+) -> None:
+    # Given
+    source = tmp_path / "recording.mp4"
+    source.write_bytes(b"video")
+
+    # When
+    exit_code = main(
+        [
+            "smoke",
+            "--source",
+            str(source),
+            "--duration-sec",
+            "12",
+            "--provider-fixture",
+            str(FIXTURE),
+            *extra,
+        ]
+    )
+
+    # Then
+    raw = capsys.readouterr().out
+    assert exit_code == 2
+    assert len([line for line in raw.splitlines() if line.startswith("{")]) == 1
+    assert json.loads(raw)["failure_stage"] == "input"
+
+
 def test_smoke_cli_does_not_mislabel_unexpected_attribute_error(
     tmp_path: Path, capsys, monkeypatch
 ) -> None:
