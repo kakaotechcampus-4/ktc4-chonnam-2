@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import override
 
 from .runs import CandidateId, ContractRef
 
@@ -86,4 +87,21 @@ class InvalidFineSpanError(Exception):
         return (
             f"candidate {self.candidate_id!r} produced a degenerate Fine span "
             f"[{self.start_sec}, {self.end_sec}] for source {self.source_ref.ref!r}"
+        )
+
+
+@dataclass(slots=True)
+class CoarseDurationMismatchError(Exception):
+    """Probed duration differs by >250 ms; exceptions must allow traceback state."""
+
+    source_id: str
+    declared_sec: float
+    probed_sec: float
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"duration mismatch for source {self.source_id!r}: "
+            f"declared {self.declared_sec:.3f}s vs probed {self.probed_sec:.3f}s "
+            f"(delta {abs(self.probed_sec - self.declared_sec) * 1000:.0f}ms > 250ms)"
         )

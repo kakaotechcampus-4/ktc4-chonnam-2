@@ -108,14 +108,17 @@ class GeminiProvider:
         *,
         runtime: ProviderRuntimeOptions | None = None,
     ) -> None:
-        _openai_mod = importlib.import_module("openai")
-        _OpenAI = cast("type[_openai.OpenAI]", getattr(_openai_mod, "OpenAI"))
+        if TYPE_CHECKING:
+            from openai import OpenAI
+        else:
+            OpenAI = importlib.import_module("openai").OpenAI
+
         # 프록시(Elice MLAPI)는 OpenAI 호환 /v1/chat/completions 만 제공한다.
         # base_url 이 .../v1 로 끝나면 SDK 가 /chat/completions 를 덧붙인다.
         # Bearer 인증은 api_key 로 자동 구성된다. Files API 는 없으므로 영상은
         # file 콘텐츠 파트에 base64 data URL 로 인라인 전송한다.
         # timeout 은 per-attempt 로 _invoke 에서 주입한다; 여기서는 기본값만 둔다.
-        self._client = _OpenAI(
+        self._client = OpenAI(
             base_url=config.base_url,
             api_key=api_key,
             timeout=(runtime or ProviderRuntimeOptions()).request_timeout_sec,

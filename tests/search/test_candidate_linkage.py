@@ -19,6 +19,11 @@ from daesingo.search.scope import (
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
 from daesingo.search.usage import ProviderUsage
+from tests.search._search_service_support import (
+    FixtureMediaPreparer,
+    OpenableResolver,
+    make_deadline,
+)
 
 _SOURCE_REF = ContractRef(kind="analysis_source", ref="clip-link-1")
 _SOURCE = ResolvedAnalysisSource(
@@ -72,7 +77,13 @@ def _make_service() -> SearchService:
         {"scope-link-1": (_SOURCE,)},
         {"clip-link-1": _SOURCE},
     )
-    return SearchService(resolver, _MinimalProvider(), GeminiSearchConfig())
+    return SearchService(
+        OpenableResolver(resolver),
+        _MinimalProvider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(_SOURCE.duration_sec),
+        make_deadline(),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -155,6 +166,12 @@ def test_zero_sources_raises_assertion_error() -> None:
         {"scope-link-1": ()},  # empty tuple → zero sources
         {},
     )
-    service = SearchService(resolver, _MinimalProvider(), GeminiSearchConfig())
+    service = SearchService(
+        OpenableResolver(resolver),
+        _MinimalProvider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(_SOURCE.duration_sec),
+        make_deadline(),
+    )
     with pytest.raises(AssertionError, match="no sources"):
         _ = service.search_candidates_linked(_SCOPE)

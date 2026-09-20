@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from hashlib import sha256
@@ -10,6 +11,8 @@ from .errors import (
     InvalidCoarseSpanError,
     InvalidFineSpanError,
 )
+from .execution import RunDeadline
+from .media import MediaPreparer
 from .provider import GeminiProvider, ProviderRuntimeOptions
 from .runs import ContractRef
 from .scope import (
@@ -154,7 +157,16 @@ def build_smoke_service(
     )
     if fixture is not None:
         config = GeminiSearchConfig(model=fixture.model, max_retries=1)
-        return SearchService(resolver, SmokeFixtureProvider(fixture), config), config
+        return (
+            SearchService(
+                resolver,
+                SmokeFixtureProvider(fixture),
+                config,
+                MediaPreparer(config),
+                RunDeadline(time.monotonic, round(options.timeout_sec * 1000)),
+            ),
+            config,
+        )
     if api_key is None:
         raise MissingSmokeApiKeyError
     config = replace(GeminiSearchConfig.from_dotenv(), max_retries=1)
@@ -163,7 +175,16 @@ def build_smoke_service(
         config,
         runtime=ProviderRuntimeOptions(request_timeout_sec=options.timeout_sec),
     )
-    return SearchService(resolver, provider, config), config
+    return (
+        SearchService(
+            resolver,
+            provider,
+            config,
+            MediaPreparer(config),
+            RunDeadline(time.monotonic, round(options.timeout_sec * 1000)),
+        ),
+        config,
+    )
 
 
 class MissingSmokeApiKeyError(Exception):

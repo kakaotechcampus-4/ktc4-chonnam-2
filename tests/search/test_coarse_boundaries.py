@@ -35,6 +35,11 @@ from daesingo.search.sources import (
     StaticAnalysisSourceResolver,
 )
 from daesingo.search.usage import ProviderUsage
+from tests.search._search_service_support import (
+    FixtureMediaPreparer,
+    OpenableResolver,
+    make_deadline,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,7 +96,13 @@ def _candidate(start_sec: float, end_sec: float, at_sec: float) -> CoarseCandida
 
 def _service(source: ResolvedAnalysisSource, response: CoarseResponse) -> SearchService:
     resolver = StaticAnalysisSourceResolver({"scope-1": (source,)}, {})
-    return SearchService(resolver, _CoarseProvider(response), GeminiSearchConfig())
+    return SearchService(
+        OpenableResolver(resolver),
+        _CoarseProvider(response),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
 
 
 def test_search_coarse_preserves_valid_ranked_timeline_spans() -> None:

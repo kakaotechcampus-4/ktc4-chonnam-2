@@ -20,6 +20,11 @@ from daesingo.search.scope import (
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
 from daesingo.search.usage import ProviderUsage
+from tests.search._search_service_support import (
+    FixtureMediaPreparer,
+    OpenableResolver,
+    make_deadline,
+)
 
 
 class _Provider:
@@ -80,7 +85,13 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
         ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 4
     )
     resolver = StaticAnalysisSourceResolver({"scope-1": (source,)}, {})
-    service = SearchService(resolver, _Provider(), GeminiSearchConfig())
+    service = SearchService(
+        OpenableResolver(resolver),
+        _Provider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
     scope = AnalysisScope(
         scope_id="scope-1",
         time_ranges=(
@@ -115,7 +126,13 @@ def test_fine_routes_legacy_event_name_to_the_contract_enum():
         ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 1
     )
     resolver = StaticAnalysisSourceResolver({}, {"source-1": source})
-    service = SearchService(resolver, _Provider(), GeminiSearchConfig())
+    service = SearchService(
+        OpenableResolver(resolver),
+        _Provider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
     candidate = CandidateEvent(
         candidate_id=CandidateId("candidate-1"),
         run_id=RunId("run-coarse-1"),

@@ -1,9 +1,15 @@
 from dataclasses import dataclass, field
 
-from .coarse import LinkedCoarseResult, search_coarse
+from .coarse import (
+    CoarseExecutionDependencies,
+    LinkedCoarseResult,
+    search_coarse,
+)
 from .config import GeminiSearchConfig
+from .execution import RunDeadline
 from .fine import normalize_event_type, verify_fine
 from .ledger import SearchLedger
+from .media_contract import CoarseMediaPreparer
 from .provider import SearchProvider
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
 from .scope import AnalysisScope, SearchHint, VisualEventType
@@ -16,12 +22,22 @@ class SearchService:
     resolver: AnalysisSourceResolver
     provider: SearchProvider
     config: GeminiSearchConfig
+    media_preparer: CoarseMediaPreparer
+    deadline: RunDeadline
     ledger: SearchLedger = field(default_factory=SearchLedger)
 
     def search_candidates_linked(self, scope: AnalysisScope) -> LinkedCoarseResult:
         """Return coarse search result together with source linkage."""
         return search_coarse(
-            scope, self.resolver, self.provider, self.config, self.ledger
+            scope,
+            CoarseExecutionDependencies(
+                resolver=self.resolver,
+                provider=self.provider,
+                config=self.config,
+                ledger=self.ledger,
+                media_preparer=self.media_preparer,
+                deadline=self.deadline,
+            ),
         )
 
     def search_candidates(self, scope: AnalysisScope) -> CandidateSearchResult:
