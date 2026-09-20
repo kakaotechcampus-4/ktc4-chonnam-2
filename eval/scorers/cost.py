@@ -15,7 +15,7 @@ pack 에도 들어 있다 — 새로 만드는 값이 아니라 버리고 있던
 """
 import math
 
-SCORER_VERSION = "c2"   # 2026-09-20 latency 집계 신설
+SCORER_VERSION = "c3"   # 2026-09-20 비용 미상 row 를 버리지 않는다 (이슈 #107)
 
 NO_ROWS = "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
 MIXED = ("MIXED_CURRENCY — 통화가 섞여 합산하지 않는다. 환율은 "
@@ -24,6 +24,17 @@ ZERO_DURATION = ("ZERO_PROCESSED_DURATION — 분모가 0이라 시간당 환산
                   "낼 수 없다 (기록이 없다는 뜻이 아니다)")
 NO_LATENCY = ("NO_LATENCY — 어느 row 에도 latency_ms 가 없다. 빨랐다는 뜻이 "
               "아니라 재지 않았다는 뜻이다")
+
+
+def _priced(usage_records):
+    """비용을 아는 row 만. 나머지는 「0원」이 아니라 「모른다」다.
+
+    호출은 실제로 일어났는데 provider 응답의 토큰 usage 만 파싱 실패하는
+    경우가 있다. 그 row 를 아예 안 넘겨 버리면 분자만 줄고 분모
+    (processed_duration_sec)는 그대로라 시간당 비용이 조용히 낮아진다.
+    그렇다고 0원으로 세면 「쌌다」가 된다 — 세지 않되 몇 건인지는 남긴다.
+    """
+    return [r for r in usage_records if r.get("cost") is not None]
 
 
 def _nearest_rank(values, q):
@@ -70,26 +81,44 @@ def score(usage_records, processed_duration_sec, scenarios):
     # 속도는 비용이 멈추는 자리에서도 낸다 — 통화가 섞인 것은 비용의
     # 문제지 속도의 문제가 아니다.
     lat, lat_hourly, lat_reasons = _latency(usage_records, processed_duration_sec)
+    # 속도는 모든 row 에서 낸다 — 비용을 못 쟀다고 그 호출이 안 걸린 것은 아니다.
+    priced = _priced(usage_records)
+    n_unknown = len(usage_records) - len(priced)
+    unknown_reason = (
+        ["UNKNOWN_COST — 비용을 알 수 없는 호출 %d건을 비용 집계에서 뺐다 "
+         "(0원이 아니라 모른다). 이 호출들도 실제로 일어났고 속도 집계에는 들어간다"
+         % n_unknown] if n_unknown else [])
 
     if not usage_records:
         return {"cost_per_case": None, "cost_per_source_video_hour": None,
                 "total": None, "currency": None, "n_rows": 0,
+                "n_unknown_cost": 0,
                 "latency_ms": lat, "latency_per_source_video_hour": lat_hourly,
                 "scenarios": list(scenarios), "coverage": NO_ROWS,
                 "scorer_version": SCORER_VERSION}
 
-    currencies = {r["cost"]["currency"] for r in usage_records}
+    if not priced:
+        # 호출은 있었는데 비용을 하나도 모른다. 0 이 아니라 null 이다.
+        return {"cost_per_case": None, "cost_per_source_video_hour": None,
+                "total": None, "currency": None, "n_rows": len(usage_records),
+                "n_unknown_cost": n_unknown,
+                "latency_ms": lat, "latency_per_source_video_hour": lat_hourly,
+                "scenarios": list(scenarios),
+                "coverage": "; ".join(unknown_reason + lat_reasons),
+                "scorer_version": SCORER_VERSION}
+
+    currencies = {r["cost"]["currency"] for r in priced}
     if len(currencies) > 1:
         return {"cost_per_case": None, "cost_per_source_video_hour": None,
                 "total": None, "currency": sorted(currencies),
-                "n_rows": len(usage_records),
+                "n_rows": len(usage_records), "n_unknown_cost": n_unknown,
                 "latency_ms": lat, "latency_per_source_video_hour": lat_hourly,
                 "scenarios": list(scenarios),
-                "coverage": "; ".join([MIXED] + lat_reasons),
+                "coverage": "; ".join([MIXED] + unknown_reason + lat_reasons),
                 "scorer_version": SCORER_VERSION}
 
     per_case = {}
-    for r in usage_records:
+    for r in priced:
         case_id = r["case_id"]
         per_case[case_id] = per_case.get(case_id, 0.0) + float(r["cost"]["amount"])
 
@@ -103,6 +132,7 @@ def score(usage_records, processed_duration_sec, scenarios):
     if zero_cases:
         # 평균만 보면 안 보인다. 0원 case 가 있다는 사실을 파일에 남긴다.
         reasons.append("ZERO_COST_CASES — %s" % ", ".join(zero_cases))
+    reasons.extend(unknown_reason)
     if processed_duration_sec is None:
         reasons.append("NO_PROCESSED_DURATION — 시간당 환산치를 낼 수 없다")
     elif processed_duration_sec == 0:
@@ -115,6 +145,7 @@ def score(usage_records, processed_duration_sec, scenarios):
         "total": total,
         "currency": currencies.pop(),
         "n_rows": len(usage_records),
+        "n_unknown_cost": n_unknown,
         "latency_ms": lat,
         "latency_per_source_video_hour": lat_hourly,
         "scenarios": list(scenarios),

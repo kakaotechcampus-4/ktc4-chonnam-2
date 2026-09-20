@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s4` · classification `cl2` · plate `p2` · cost `c2` · normalizer `n2`
+> **버전:** candidate `s4` · classification `cl2` · plate `p2` · cost `c3` · normalizer `n3`
 
 ---
 
@@ -99,6 +99,18 @@
 
 `localization_recall_at` 은 정의상 `recall_at` 보다 작을 수 없다 — 더 느슨한 조건이기 때문이다.
 뒤집혔다면 배정이 잘못된 것이다.
+
+### 3-1-2. 판단 근거를 예측에 남긴다
+
+`CandidateEvent` 계약은 **`summary`**(「Candidate Review를 위한 짧은 시각 관찰 요약」)와
+**`uncertainties`**(「Coarse 단계에서 남은 불확실성」)를 선택 필드로 두고 있다
+(`contract-analysis-run-candidate-event.md` §`CandidateEvent` 필드 정의).
+
+**지표는 이 값을 쓰지 않는다.** 그래도 `normalize` 가 옮긴다 — 「왜 이 구간을 이 유형이라고
+봤나」가 예측 파일에 남아야 나중에 틀린 결과를 사람이 읽을 수 있기 때문이다
+(2026-09-20 멘토 피드백). plate 의 `abstain_reason`(§5-0-1)과 같은 자리다.
+
+없으면 `null` 이다. 근거를 주지 않는 impl 도 있으므로 빈 문자열을 지어내지 않는다.
 
 ### 3-2. 지표
 
@@ -289,7 +301,7 @@ abstention_recall   1.0      <- 기권해야 할 걸 전부 기권했다
 
 ---
 
-## 6. Cost — `eval/scorers/cost.py` (`c2`)
+## 6. Cost — `eval/scorers/cost.py` (`c3`)
 
 | 지표 | 정의 |
 | --- | --- |
@@ -305,6 +317,21 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 - **통화가 섞이면 합산하지 않는다.** 환율은 `pricing_context` 에 귀속되며 eval 이 정할 값이 아니다 → 전부 `null` + `MIXED_CURRENCY`.
 - 분모(`processed_duration_sec`)는 호출부가 넘긴다. 이 모듈은 파일을 읽지 않는다.
 - 0원 case 가 있으면 `coverage` 에 그 `case_id` 를 적는다 — 평균만 보면 안 보인다.
+
+### 6-0. 비용을 알 수 없는 호출
+
+호출은 실제로 일어났는데 provider 응답의 토큰 usage 만 파싱 실패하는 경우가 있다.
+
+| 처리 | 왜 |
+| --- | --- |
+| 비용 집계에서 **뺀다** | 0원으로 세면 「쌌다」로 읽힌다 |
+| `n_unknown_cost` 에 **센다** + `UNKNOWN_COST` | 아예 안 세면 분자만 줄고 분모(`processed_duration_sec`)는 그대로라 시간당 비용이 조용히 낮아진다 |
+| 속도 집계에는 **넣는다** | 비용을 못 쟀다고 그 호출이 안 걸린 것은 아니다 |
+| 전부 미상이면 `total` 은 `null` | 0 이 아니다 |
+
+호출부가 이런 row 를 **eval 에 넘기지 않고 버리면** 이 처리가 작동하지 않는다 — 계약도 같은
+이유로 「실제 invocation 이 시작됐을 때 row 를 만든다」로 정해 두었다
+(`contract-usage-record.md` §9-6). 이슈 [#107](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/107).
 
 ### 6-1. 속도
 
@@ -364,6 +391,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 | `NO_ABSTAIN_REASON` | 사유 없는 기권 건수. 진단할 수 없는 기권이다 |
 | `NO_USAGE_RECORDS` / `MIXED_CURRENCY` / `ZERO_PROCESSED_DURATION` / `NO_PROCESSED_DURATION` / `ZERO_COST_CASES` | cost 쪽 사유 |
 | `NO_LATENCY` / `PARTIAL_LATENCY` | 속도를 못 재거나 일부만 쟀다. 「빨랐다」가 아니라 「안 쟀다」 |
+| `UNKNOWN_COST` | 비용을 알 수 없는 호출 수. 0원이 아니라 모른다 |
 | `순환 경고 — …` / `wrong_accept_rate 분자 0건 — …` | 숫자를 성능 근거로 쓰지 말라는 경고 |
 
 ---
@@ -374,9 +402,9 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl2` · plate `p2` · cost `c2` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl2` · plate `p2` · cost `c3` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
-| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n2` |
+| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n3` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
 | `contract_version` | 계약 | 다르면 채점 거부 |
 | `code_commit` | — | **이 실행이 딛고 선 트리**(자기를 담은 커밋의 부모). 틀린 값이 아니다(F9) |
@@ -406,7 +434,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
                 abstain_reasons, n_abstained_without_reason, n, coverage }
   cost        { cost_per_case, cost_per_source_video_hour, total, currency,
                 latency_ms{p50,p90,max,n,n_missing}, latency_per_source_video_hour,
-                n_rows, scenarios, coverage, scorer_version }
+                n_rows, n_unknown_cost, scenarios, coverage, scorer_version }
 ```
 
 **파일명이 숫자를 만든 버전을 전부 싣는다.** 이름이 `<run_id>.<gt_version>.json` 이던 동안
@@ -428,7 +456,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | F1 | C tier(실제 촬영 원본) 미확보 | plate 3종이 실데이터로 나오지 않는다. **촬영이 필요해 코드로 못 푼다** |
 | F2 | 화면시각 라벨 없음 | Timestamp 지표 전체. **라벨링이 필요하다** |
 | F4 | hard-negative 대조쌍 없음 | Hard-negative FPR. **라벨링이 필요하다** |
-| F5 | `search`·`evidence` 구현 대기 | Fine · E2E · Efficiency stage. **다른 Owner 의존** |
+| F5 | `search` 실제 실행 대기 · `evidence` 구현 대기 | Gemini coarse 어댑터(`search:gemini-coarse-p3`)는 `feature/search-gemini-eval` 에 **완성돼 있고**, 유료 호출 없이 123클립 채점 경로가 도는 것을 확인했다. 남은 것은 **첫 실제 실행** — 그 결과가 W7 「개선 전」이다. Fine · E2E stage 는 여전히 미구현 |
 | F3 | B tier 에 **안전모 사건이 0건** | `by_type` 에 `MOTORCYCLE_HELMET_NON_USE` 행이 없다. 사건 10건은 `recall_at` 의 신뢰구간이 여전히 넓다 |
 | — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |

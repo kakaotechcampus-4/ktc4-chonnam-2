@@ -11,4 +11,4 @@ prediction + GT version + metric version → metrics.
 | `candidate.py` | Candidate | `s4` |
 | `classification.py` | Classification | `cl2` |
 | `plate.py` | Plate | `p2` |
-| `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c2` |
+| `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c3` |

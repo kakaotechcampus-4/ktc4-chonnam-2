@@ -153,3 +153,69 @@ def test_mixed_currency_still_reports_latency():
 
     assert out["total"] is None
     assert out["latency_ms"]["p50"] == 500
+
+
+# --- 비용을 알 수 없는 호출 (이슈 #107) ---
+#
+# 호출은 실제로 일어났고 시간도 걸렸는데 provider 응답의 토큰 usage 만
+# 파싱 실패하는 경우가 있다. 그 row 를 통째로 버리면 분자만 줄고 분모
+# (processed_duration_sec)는 그대로라 시간당 비용이 실제보다 낮게 나온다.
+# 계약도 「invocation 이 시작됐을 때 row 를 만든다」로 정해 두었다
+# (contract-usage-record.md §9-6).
+
+
+def _norow(case_id, latency_ms=None):
+    r = {"case_id": case_id, "cost": None}
+    if latency_ms is not None:
+        r["latency_ms"] = latency_ms
+    return r
+
+
+def test_a_call_with_unknown_cost_does_not_vanish_from_the_report():
+    rows = [_lrow("case_a", "100", 500), _norow("case_b", 700)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["n_rows"] == 2
+    assert out["n_unknown_cost"] == 1
+    assert "UNKNOWN_COST" in out["coverage"]
+
+
+def test_unknown_cost_rows_are_excluded_from_the_cost_total():
+    """비용을 모르는 것을 0원으로 세면 「쌌다」로 읽힌다."""
+    rows = [_lrow("case_a", "100", 500), _norow("case_b", 700)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["total"] == 100.0
+    assert "case_b" not in out["cost_per_case"]
+
+
+def test_unknown_cost_rows_still_count_toward_speed():
+    """비용을 못 쟀다고 그 호출이 안 걸린 것은 아니다."""
+    rows = [_lrow("case_a", "100", 500), _norow("case_b", 700)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["latency_ms"]["n"] == 2
+    assert out["latency_ms"]["max"] == 700
+
+
+def test_every_row_unknown_leaves_cost_null_not_zero():
+    rows = [_norow("case_a", 500), _norow("case_b", 700)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["total"] is None
+    assert out["cost_per_source_video_hour"] is None
+    assert out["n_unknown_cost"] == 2
+    assert out["latency_ms"]["p50"] == 500        # 속도는 여전히 나온다
+
+
+def test_no_unknown_cost_rows_means_no_reason_and_a_zero_counter():
+    rows = [_lrow("case_a", "100", 500)]
+    out = cost.score(rows, processed_duration_sec=3600.0, scenarios=["s1"])
+
+    assert out["n_unknown_cost"] == 0
+    assert "UNKNOWN_COST" not in (out["coverage"] or "")
+
+
+def test_no_usage_rows_keeps_the_unknown_cost_counter():
+    out = cost.score([], processed_duration_sec=3600.0, scenarios=[])
+    assert out["n_unknown_cost"] == 0

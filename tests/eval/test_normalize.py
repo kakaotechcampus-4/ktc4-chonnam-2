@@ -9,7 +9,8 @@ def test_normalize_candidate_passes_through_shape():
     raw = [{"clip_id": "C1",
             "candidates": [{"rank": 1, "t_start_sec": 1.0, "t_end_sec": 2.0,
                             "representative_sec": 1.5, "timeline_revision": None,
-                            "event_type": "SIGNAL", "score": 0.9}]}]
+                            "event_type": "SIGNAL", "score": 0.9,
+                            "summary": None, "uncertainties": None}]}]
     out = normalize.normalize_candidate(raw)
     assert out == raw
 
@@ -189,3 +190,48 @@ def test_normalize_plate_missing_reason_is_none_not_a_made_up_value():
     out = normalize.normalize_plate(raw)
     assert out[0]["abstain_reason"] is None
     assert out[0]["target_association_status"] is None
+
+
+# --- candidate 판단 근거 (멘토 피드백 2026-09-20) ---
+#
+# CandidateEvent 계약은 summary(「짧은 시각 관찰 요약」)와 uncertainties
+# (「Coarse 단계에서 남은 불확실성」)를 이미 두고 있다
+# (contract-analysis-run-candidate-event.md §CandidateEvent 필드 정의).
+# Gemini coarse 구현은 모델이 낸 observed 를 그대로 summary 로 싣는다.
+#
+# plate 의 abstain_reason 과 같은 자리다 — 계약이 주는데 normalize 가
+# 버려서 예측 파일까지 못 오던 값이다.
+
+
+def test_normalize_candidate_keeps_the_summary_and_uncertainties():
+    raw = [{"clip_id": "c1", "candidates": [
+        {"score": 0.9, "event_type": "SIGNAL", "representative_sec": 3.0,
+         "t_start_sec": 2.0, "t_end_sec": 4.0,
+         "summary": "앞차가 정지선을 넘었다", "uncertainties": ["신호등 가림"]},
+    ]}]
+    out = normalize.normalize_candidate(raw)
+    assert out[0]["candidates"][0]["summary"] == "앞차가 정지선을 넘었다"
+    assert out[0]["candidates"][0]["uncertainties"] == ["신호등 가림"]
+
+
+def test_normalize_candidate_without_a_summary_is_none_not_invented():
+    """근거를 안 주는 impl 도 있다. 빈 문자열을 지어내지 않는다."""
+    raw = [{"clip_id": "c1", "candidates": [
+        {"score": 0.9, "event_type": "SIGNAL", "representative_sec": 3.0,
+         "t_start_sec": 2.0, "t_end_sec": 4.0},
+    ]}]
+    out = normalize.normalize_candidate(raw)
+    assert out[0]["candidates"][0]["summary"] is None
+    assert out[0]["candidates"][0]["uncertainties"] is None
+
+
+def test_from_candidate_events_carries_the_summary_and_uncertainties():
+    raw = [{"candidate_id": "cand_1", "rank": 1, "event_type_hint": "SIGNAL",
+            "ranking_score": 0.8,
+            "span": {"timeline_id": "t1", "start_ms": 2000, "end_ms": 4000,
+                     "representative_ms": 3000},
+            "summary": "흰 SUV가 차선을 넘었다",
+            "uncertainties": ["점선 여부 불확실"]}]
+    out = normalize.from_candidate_events(raw)
+    assert out[0]["summary"] == "흰 SUV가 차선을 넘었다"
+    assert out[0]["uncertainties"] == ["점선 여부 불확실"]

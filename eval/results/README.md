@@ -26,19 +26,18 @@ scorer 집계 결과 JSON. **git으로 추적**한다. 실험 기록 방법은 `
 같은 예측·같은 정답지에 채점기만 다른 결과 두 벌이 나란히 있고, 무엇이
 바뀌었는지 diff 로 볼 수 있다.
 
-| 파일 | impl | manifest · stage |
-| --- | --- | --- |
-| `demo_correct.g3.s4-c2.json` | `fake:always_correct` | `b_youtube` · `candidate` |
-| `demo_correct_cls.g1.cl2-c2.json` | `fake:always_correct` | `a_aihub` · `classification` |
-| `demo_correct_cls.g1.cl1-c2.json` | `fake:always_correct` | `a_aihub` · `classification` (`by_condition` 철회 전) |
-| `demo_wrong.g3.s4-c2.json` | `fake:always_wrong` | `b_youtube` · `candidate` |
-| `demo_wrong_cls.g1.cl2-c2.json` | `fake:always_wrong` | `a_aihub` · `classification` |
-| `demo_wrong_cls.g1.cl1-c2.json` | `fake:always_wrong` | `a_aihub` · `classification` (철회 전) |
-| `demo_correct_abmix.ag1.cl2-c2.json` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) |
-| `demo_correct_abmix.ag1.cl1-c2.json` | `fake:always_correct` | `ab_mixed` · `classification` (철회 전) |
-| `demo_wrong_abmix.ag1.cl2-c2.json` | `fake:always_wrong` | `ab_mixed` · `classification` |
-| `demo_wrong_abmix.ag1.cl1-c2.json` | `fake:always_wrong` | `ab_mixed` · `classification` (철회 전) |
-| `mock_e2e.mp1.s4-c2.json` | `mock_pack:contracts` | `mock_pack` · `candidate` |
-| `mock_plate.mp1.p2-c2.json` | `mock_pack:contracts` | `mock_pack` · `plate` |
+| run_id | impl | manifest · stage | 현행 세대 | 남아 있는 옛 세대 |
+| --- | --- | --- | --- | --- |
+| `demo_correct` | `fake:always_correct` | `b_youtube` · `candidate` | `g3.s4-c3` | `g3.s4-c2` |
+| `demo_wrong` | `fake:always_wrong` | `b_youtube` · `candidate` | `g3.s4-c3` | `g3.s4-c2` |
+| `demo_correct_cls` | `fake:always_correct` | `a_aihub` · `classification` | `g1.cl2-c3` | `g1.cl1-c2` · `g1.cl2-c2` |
+| `demo_wrong_cls` | `fake:always_wrong` | `a_aihub` · `classification` | `g1.cl2-c3` | `g1.cl1-c2` · `g1.cl2-c2` |
+| `demo_correct_abmix` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) | `ag1.cl2-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` |
+| `demo_wrong_abmix` | `fake:always_wrong` | `ab_mixed` · `classification` | `ag1.cl2-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` |
+| `mock_e2e` | `mock_pack:contracts` | `mock_pack` · `candidate` | `mp1.s4-c3` | `mp1.s4-c2` |
+| `mock_plate` | `mock_pack:contracts` | `mock_pack` · `plate` | `mp1.p2-c3` | `mp1.p2-c2` |
+
+**옛 세대를 지우지 않는다.** 채점기가 바뀌면 이름이 달라져 나란히 남는다 —
+같은 예측·같은 정답지에 채점기만 다른 결과를 diff 로 비교할 수 있다.
 
 `demo_*` 는 치트 구현 두 개(`fake:always_correct`/`fake:always_wrong`)의 대조로 지표 계산 자체가 오류를 잡는지 확인한다. `mock_*` 는 팀 Mock Pack 이 파이프라인을 끝까지 통과하는지 확인하는 배관 테스트다 — 정답지가 채점 대상 fixture 에서 파생돼 순환적이므로(`coverage` 참조) 숫자를 성능으로 읽지 않는다.
