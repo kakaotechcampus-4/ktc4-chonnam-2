@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import base64
 import importlib
 import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Protocol, final
+from typing import TYPE_CHECKING, Protocol, cast, final
+
+if TYPE_CHECKING:
+    import openai as _openai
+    from openai.types.chat import ChatCompletionMessageParam
+    from openai.types.shared_params import ReasoningEffort
 
 from pydantic import BaseModel, ValidationError
 
@@ -74,9 +81,9 @@ def _video_data_url(path: Path, content_type: str) -> str:
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
     if usage is None:
         return ProviderUsage(None, None, None, None)
-    prompt_tokens = getattr(usage, "prompt_tokens", None)
-    completion_tokens = getattr(usage, "completion_tokens", None)
-    total = None
+    prompt_tokens: int | None = getattr(usage, "prompt_tokens", None)
+    completion_tokens: int | None = getattr(usage, "completion_tokens", None)
+    total: int | None = None
     if prompt_tokens is not None and completion_tokens is not None:
         total = prompt_tokens + completion_tokens
     # 이 프록시는 사고(thought) 토큰을 별도로 보고하지 않는다. completion_tokens 에
@@ -91,7 +98,7 @@ def _usage_from_completion(usage: object | None) -> ProviderUsage:
 
 @final
 class GeminiProvider:
-    _client: Any
+    _client: _openai.OpenAI
     _config: GeminiSearchConfig
 
     def __init__(
@@ -101,13 +108,14 @@ class GeminiProvider:
         *,
         runtime: ProviderRuntimeOptions | None = None,
     ) -> None:
-        openai = importlib.import_module("openai")
+        _openai_mod = importlib.import_module("openai")
+        _OpenAI = cast("type[_openai.OpenAI]", getattr(_openai_mod, "OpenAI"))
         # 프록시(Elice MLAPI)는 OpenAI 호환 /v1/chat/completions 만 제공한다.
         # base_url 이 .../v1 로 끝나면 SDK 가 /chat/completions 를 덧붙인다.
         # Bearer 인증은 api_key 로 자동 구성된다. Files API 는 없으므로 영상은
         # file 콘텐츠 파트에 base64 data URL 로 인라인 전송한다.
         # timeout 은 per-attempt 로 _invoke 에서 주입한다; 여기서는 기본값만 둔다.
-        self._client = openai.OpenAI(
+        self._client = _OpenAI(
             base_url=config.base_url,
             api_key=api_key,
             timeout=(runtime or ProviderRuntimeOptions()).request_timeout_sec,
@@ -190,9 +198,9 @@ class GeminiProvider:
             started = time.monotonic()
             completion = self._client.chat.completions.parse(
                 model=self._config.model,
-                messages=messages,
+                messages=cast("list[ChatCompletionMessageParam]", messages),
                 response_format=response_model,
-                reasoning_effort=self._config.reasoning_effort,
+                reasoning_effort=cast("ReasoningEffort", self._config.reasoning_effort),
                 timeout=timeout_sec,
             )
             latency_ms = round((time.monotonic() - started) * 1000)

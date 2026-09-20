@@ -1,3 +1,4 @@
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -36,8 +37,6 @@ def is_server_error(error: Exception) -> bool:
         return code // 100 == 5
     # Fallback for non-SDK errors: match only standalone 5xx patterns to avoid
     # false positives from unrelated text containing "500".
-    import re
-
     return bool(re.search(r"\b5\d{2}\b", str(error)))
 
 

@@ -6,6 +6,7 @@ Uses a spying fake OpenAI client — never hits the network.
 import base64
 import importlib
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
@@ -80,7 +81,7 @@ class _FakeClient:
     chat: _Chat
 
 
-def _make_openai_module(factory: object) -> ModuleType:
+def _make_openai_module(factory: Callable[..., object]) -> ModuleType:
     """Build a fake openai module with a given OpenAI factory callable."""
     mod = ModuleType("openai")
     setattr(mod, "OpenAI", factory)  # noqa: B010
@@ -325,7 +326,7 @@ def _make_counting_provider(
             return _Completion([_Choice(_Msg(CoarseResponse(candidates=())))])
 
     counting = _CountingCompletions()
-    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(counting)))  # type: ignore[arg-type]
+    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(counting)))
     original = importlib.import_module
 
     def fake_import(name: str) -> ModuleType:
