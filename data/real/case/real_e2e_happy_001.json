@@ -1,7 +1,7 @@
 {
   "scenario_id": "real_e2e_happy_001",
   "module": "case",
-  "generated_at": "2026-09-20T21:08:43+09:00",
+  "generated_at": "2026-09-20T21:19:50+09:00",
   "generated_by": "scripts/dump_real_caseview.py",
   "case_views": [
     {
@@ -370,7 +370,7 @@
               }
             ],
             "measurement": {
-              "actual": 1789906123,
+              "actual": 1789906790,
               "limit": 1787756400,
               "unit": "deadline.epoch_seconds"
             },

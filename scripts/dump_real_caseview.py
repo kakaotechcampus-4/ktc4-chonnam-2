@@ -36,10 +36,13 @@ def build_view():
     """`test_real_e2e.py::test_real_e2e_happy_path_reaches_ready_caseview`와 같은 순서."""
     mock = MockFixtureAdapter(MOCK_ROOT, "happy_001")
     scope = mock.get_analysis_scopes()[0]
-    real = RealAdapter(case_id=CASE_ID, search_scope=scope, mock_root=MOCK_ROOT)
 
     # 이슈 #103 — hints={}로 고정하면 후보 화면의 「기억 단서와 대조」가 그릴 값이 없다.
     case = CaseAggregate.intake(case_id=CASE_ID, hints=mock.get_hints(), manifest_summary={})
+    # PR #92 — RealAdapter가 case의 실제 선택 candidate/selection_rev를 읽으려면
+    # 생성자에 CaseAggregate가 필요하다(case_id 문자열만으로는 알 수 없음).
+    real = RealAdapter(case_id=CASE_ID, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001",
                              input_fingerprint="sha1:h001-coarse-search")
