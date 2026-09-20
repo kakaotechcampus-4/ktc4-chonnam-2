@@ -1,7 +1,7 @@
 # 정철원 3주 Recording·JobExecution 개발/고도화 설계
 
 > 기준일: 2026-09-19  
-> 상태: Brainstorming 승인 완료 · 구현 전  
+> 상태: Brainstorming 승인 완료 · 단계별 구현 진행 중
 > 대상: 정철원 (`recording`, `common/runtime`의 `JobExecution` 구현)  
 > 범위: 약 3주의 집중 개발 기간과 11월 11일 최종 제출 전 후속 단계
 
@@ -94,7 +94,7 @@ Canonical Contract, 7개 Mock Scenario, 공개 입출력을 연결한 1차 Mock 
 - 불일치·파싱 실패·신뢰 부족이면 `USABLE_RELATIVE_ONLY`로 fallback한다.
 - 가짜 날짜나 추정 absolute datetime을 만들지 않는다.
 - 실제 파일명·metadata에서 확인된 시각 후보가 있으면 기존 `TimeSourceCandidate` 계약으로 반환한다. 사람이 overlay와 대조한 사실은 별도 실행 리포트에 기록하며 새 `source_kind`를 만들지 않는다.
-- 합의된 profile에 맞는 실제 media를 `AnalysisSource`의 binary stream으로 제공한다. 원본 전체와 실제 구간 컷 중 어느 범위를 반환할지는 이슈 #95 D2 합의 전까지 확정하지 않는다.
+- `AnalysisSource`는 실제 분석 가능한 prepared media로 유지하고, `open_analysis_source(ref)`에서 실제 media의 binary stream을 제공한다. 전체 범위 요청은 전체 원본/준비된 media로 충족할 수 있으나, 일부 구간 요청은 그 구간의 실제 bytes를 제공하거나 Search가 처음부터 전체 범위를 요청해야 한다. 반환 bytes와 `timeline_range`·`duration_sec`·`byte_size`를 일치시킨다. 최종 입력 길이와 profile 값은 실험 전까지 고정하지 않는다.
 - 실제 Search 결과가 0건이면 이를 기록하고 provider 제한을 만족하는 다른 실제 영상으로 재시도한다.
 - 후보를 인위적으로 만들거나 Mock 후보로 대체하지 않는다.
 - 후보가 있으면 Top-1을 선택하고 정답 미확인 사실을 실행 리포트에 기록한다. canonical 후보 상태값을 신설하지 않는다.
@@ -192,16 +192,17 @@ AnalysisSource binary stream ──→ 실제 Search
 ### 5.3 AnalysisSource
 
 - `AnalysisSource`는 반드시 proxy일 필요가 없다.
-- 월요일에는 합의된 profile에 맞는 실제 분석 입력을 준비한다. 원본 전체와 실제 구간 컷 중 어느 bytes를 반환할지는 이슈 #95 D2 결정에 따른다.
+- 월요일에는 실제 분석 가능한 prepared media를 준비한다. 전체 범위 요청에는 전체 원본/준비된 media를 사용할 수 있고, 일부 구간 요청에는 실제로 잘린 구간을 반환하거나 Search가 처음부터 전체 범위를 요청해야 한다. 일부 구간의 metadata를 기록하면서 원본 전체 bytes를 반환하지 않는다.
 - `profile_ref`는 non-null opaque ref로 유지한다.
-- `open_analysis_source(ref)`는 public 경계에서 매번 처음부터 읽을 수 있는 새 binary stream, `content_type`, 실제 `byte_size`를 반환한다. local path를 Search에 직접 전달하지 않는다.
-- provider가 파일 경로를 요구하면 `search/providers` adapter가 stream을 내부 임시 파일로 변환한다. provider 전송 형식도 Search 경계에서 처리한다.
-- 정확한 profile identity·보장 속성과 `RemoteCopy` 처리 방향은 Open Issue 1이 해소된 뒤 적용한다.
+- `open_analysis_source(ref)`는 public 경계에서 매번 처음부터 읽을 수 있는 새 binary stream, `content_type`, 실제 `byte_size`를 반환한다. `timeline_range`·`duration_sec`와 반환 bytes도 일치시킨다. local path를 Search에 직접 전달하지 않는다.
+- Search가 반환 stream을 Elice 전송 형식(base64 등)으로 변환한다. ffmpeg 명령은 Recording implementation/version 영역이며 public contract에 고정하지 않는다.
+- `RemoteCopy`는 provider가 발급한 외부 객체 참조라는 기존 의미·계약을 유지하지만 Elice 경로에서는 사용하지 않는다. local/base64 cache로 재해석하거나 가상의 `provider_object_ref`를 발급하지 않는다.
+- 정확한 profile identity·해상도·fps·audio·codec·길이와 local materialization/cache 적용 여부·TTL은 실측 및 Consumer 합의 전까지 고정하지 않는다.
 
 ### 5.4 IncidentClip
 
 - Top-1 후보 1건만 materialize한다.
-- 요청 범위는 선택된 `CandidateEvent.span`을 그대로 사용한다. 이 span은 coarse 후보 창이지 정밀하게 확정된 사건·신고 구간이 아니므로, 생성 clip도 월요일 배관 검증용으로만 취급한다.
+- 요청 범위는 선택된 `CandidateEvent.span`의 timeline revision을 보존하고 ms 좌표를 `resolve_span()` 입력의 sec 좌표로 변환해 사용한다. 현재 Case 통합 실행기는 fixture 범위를 재사용하므로, 실제 선택 후보의 범위를 전달하는 연결 경계는 유소연과 확인해야 한다. span은 coarse 후보 창이지 정밀하게 확정된 사건·신고 구간이 아니므로, 생성 clip도 월요일 배관 검증용으로만 취급한다.
 - 임의 padding을 추가하지 않는다.
 - Timeline 경계를 넘을 때만 유효 구간으로 clamp한다.
 - `requested_range`와 실제 `timeline_range`를 구분해 보존한다.
@@ -545,22 +546,16 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 ## 18. 결정 상태 / Blocking Dependencies
 
-### OI-1. AnalysisSource profile과 provider 전환 접합부 합의
+### OI-1. D1·D2 경계 종결 / AnalysisSource profile 값 미확정
 
-**상태:** 미확정 · 월요일 전 차단 합의 · 이슈 #95 D1·D2 확인 요청 중
+**상태:** D1·D2·D3 책임 경계는 [이슈 #95의 PM 합의 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95#issuecomment-5749597376)로 종결. profile의 구체 값과 provider 호환성은 실측·Consumer 합의 전까지 미확정.
 **참여:** 정철원(recording) · 서어진(search) · 신유민(readout), 필요 시 김준영(PM)
 
-최소 결정 항목:
+- D1: `RemoteCopy`는 provider-side object 참조로 유지하되 Elice Real E2E/W7 경로에서 사용·고도화하지 않는다. 동일 media의 local 재사용은 Recording의 AnalysisSource materialization/cache 계층에서 별도로 검토하며 적용 여부·TTL/retention은 실측 후 결정한다.
+- D2: `AnalysisSource`는 특정 길이의 clip이 아닌 prepared media input이다. 공개 stream 경계를 유지하고, 요청 범위·실제 반환 bytes·metadata를 일치시킨다. Search가 provider 전송 형식으로 변환한다. ffmpeg 세부 명령은 Recording 구현에 둔다.
+- D3: `UsageRecord`의 `input/output/total` 구조를 유지하고 별도 `thought_tokens`를 추가하지 않는다. reasoning 비용은 output에 포함하며 coarse/fine의 `reasoning_effort`는 실험 후 결정한다. D3의 usage 처리는 Search·runtime 소유이며 Recording의 media 계약을 변경하지 않는다.
 
-- D1: Files API 객체가 없는 provider에서 `RemoteCopy`를 월요일 경로에서 미사용·유지할지, 계약상 폐기·재해석할지
-- D2: 반환 media가 원본 전체인지 실제로 잘린 구간인지, 구간 컷의 수행 주체와 반환 bytes·duration의 의미
-- 원본 또는 판독 가능한 고화질 profile의 의미와 보장 속성
-- video/audio 유지 여부
-- 같은 조건의 AnalysisSource 재사용 기준
-- opaque `profile_ref`와 registry entry
-- Consumer가 ref 문자열을 파싱하지 않는다는 재확인
-
-저해상도·무음 proxy의 해상도·fps·분할값은 이 합의에 포함하지 않는다. 정철원이 canonical identity나 기존 Final Contract의 변경을 단독으로 결정하지 않는다.
+남은 결정은 원본/고화질을 포함한 `profile_ref`의 opaque identity·media 보장 속성, video/audio·codec·해상도·fps·길이, 같은 조건의 local 재사용 기준이다. Search의 Elice 영상 입력 P0 실험과 Recording의 bytes/metadata 정합성 검증(R0)·materialization 비용 측정(R1)은 병렬 진행할 수 있다. 이 실험 순서는 추천안이지 월요일 Real E2E 완료 조건을 확대하는 결정이 아니다. 특히 20초 chunk나 cache TTL을 지금 확정하지 않으며, 정철원이 canonical identity나 기존 Final Contract 변경을 단독으로 결정하지 않는다.
 
 ### OI-2. 전체 로컬 통합 실행기 Owner — 종결
 
@@ -579,7 +574,7 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] 파일명과 overlay 시각을 사람이 대조했다.
 - [ ] absolute 또는 relative-only 선택 근거를 기록했다.
 - [ ] 원본/고화질 AnalysisSource profile을 3자가 합의했다.
-- [ ] 이슈 #95 D1·D2의 월요일 적용 경계를 합의했다.
+- [x] 이슈 #95 D1·D2의 책임 경계를 합의했다. 구체 profile 값은 위 항목대로 미확정이다.
 - [x] 전체 로컬 통합 실행기 Owner가 유소연(`case`)으로 확정됐다.
 - [ ] ffmpeg/ffprobe 실행 환경을 확인했다.
 
