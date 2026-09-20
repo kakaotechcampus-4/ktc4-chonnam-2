@@ -60,6 +60,8 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
                 "t_end_sec": candidate.span.end_ms / 1000,
                 "representative_sec": candidate.span.representative_ms / 1000,
                 "timeline_revision": candidate.span.timeline_revision,
+                "summary": candidate.summary,
+                "uncertainties": list(candidate.uncertainties),
             }
             for candidate in result.candidates
         ]
@@ -76,9 +78,7 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
         "config_version": service.config.version,
         "config_fingerprint": service.config.fingerprint,
         "sdk_version": prepared.sdk_version,
-        "usage_records": [
-            record.as_eval_fact() for record in records if record.cost_usd is not None
-        ],
+        "usage_records": [record.as_eval_fact() for record in records],
         "provider_usage_records": [record.as_eval_fact() for record in records],
         "clips": [clip.clip_id for clip in prepared.clips],
         "scenarios": [clip.clip_id for clip in prepared.clips],
