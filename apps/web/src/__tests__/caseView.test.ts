@@ -1,6 +1,6 @@
 // CaseView 소비 회귀 테스트.
 //
-// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「16건이 전부
+// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「17건이 전부
 // 렌더된다」·「미등록 값이 fallback으로 새지 않는다」를 여기서 고정한다.
 // 렌더러가 아니라 계약 소비 지점(로더·화면 선택·라벨 맵)을 검증한다 — 화면
 // 자체는 목업 설계가 들어오면 바뀌지만 이 규칙들은 바뀌지 않는다.
@@ -41,9 +41,17 @@ import { representativeJobs, selectScreen } from '../state/selectScreen'
 const views = SNAPSHOTS.map((s) => s.view)
 
 describe('Input (web)', () => {
-  it('7 시나리오 16 스냅샷을 로딩한다', () => {
-    expect(SCENARIO_IDS).toHaveLength(7)
-    expect(SNAPSHOTS).toHaveLength(16)
+  it('mock 7 시나리오 16건 + real 산출물 1건을 로딩한다', () => {
+    expect(SCENARIO_IDS).toHaveLength(8)
+    expect(SNAPSHOTS).toHaveLength(17)
+  })
+
+  it('실제 case.get_view() 산출물도 같은 로더를 통과한다', () => {
+    // 이슈 #102 — mock만 읽히던 상태의 회귀. real 산출물이 등재값 위반 없이
+    // 들어오는지까지 봐야 「web이 실제 CaseView를 소비한다」가 증빙된다.
+    const real = SNAPSHOTS.find((s) => s.scenarioId === 'real_e2e_happy_001')
+    expect(real).toBeDefined()
+    expect(inspectView(real!.view, 'real')).toEqual([])
   })
 
   it('등재값 위반이 없다', () => {
@@ -59,7 +67,7 @@ describe('Input (web)', () => {
 })
 
 describe('화면 선택', () => {
-  it('16건 전부 화면이 정해진다', () => {
+  it('17건 전부 화면이 정해진다', () => {
     for (const view of views) expect(selectScreen(view).kind).toBeTruthy()
   })
 
@@ -75,9 +83,18 @@ describe('화면 선택', () => {
   })
 
   it('READY + package면 신고자료 화면이다', () => {
-    const ready = views.filter((v) => v.stage === 'READY')
+    const ready = views.filter((v) => v.stage === 'READY' && v.package)
     expect(ready.length).toBe(3)
     for (const view of ready) expect(selectScreen(view).kind).toBe('HANDOFF')
+  })
+
+  it('READY인데 package가 없으면 확인 화면에 머문다', () => {
+    // real 산출물이 실제로 이 상태다(`situation_response`/`observation_facts`
+    // 미배선 → package 미발행, case의 「알려진 단순화 2」). stage만 보고
+    // HANDOFF로 보내면 빈 신고자료 화면이 뜬다.
+    const ready = views.filter((v) => v.stage === 'READY' && !v.package)
+    expect(ready.length).toBe(1)
+    for (const view of ready) expect(selectScreen(view).kind).toBe('EVIDENCE')
   })
 
   it('blocking notice는 non-blocking과 분리된다', () => {
