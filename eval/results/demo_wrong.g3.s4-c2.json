@@ -5,12 +5,13 @@
     "stage": "candidate",
     "manifest": "b_youtube",
     "gt_version": "g3",
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
-    "scorer_version": "s3",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "s4",
+    "cost_scorer_version": "c2",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong.json",
-      "sha256": "a5821599019f0e2911308f817ed30c757f741a7e248c8d75a8bd9d003e0d6166"
+      "sha256": "75d0f24e4646b84b144a7b196411230ba9e0e139dce78778f382b728c8b24e27"
     }
   },
   "candidate": {
@@ -19,6 +20,12 @@
       "3": 0.0,
       "10": 0.0
     },
+    "localization_recall_at": {
+      "1": 0.0,
+      "3": 0.0,
+      "10": 0.0
+    },
+    "type_accuracy_given_localized": null,
     "onset_error_sec": {
       "mean": null,
       "median": null,
@@ -57,7 +64,7 @@
         "n": 6
       }
     },
-    "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; NO_EVENTS_FOR_TYPE — MOTORCYCLE_HELMET_NON_USE 유형의 사건이 정답지에 없다. 이 유형의 recall 은 측정되지 않았다 (0점이 아니다); BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
+    "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; NO_LOCALIZED_EVENTS — 허용 오차 안에 든 사건이 없어 type_accuracy_given_localized 를 낼 수 없다 (0 이 아니다); NO_EVENTS_FOR_TYPE — MOTORCYCLE_HELMET_NON_USE 유형의 사건이 정답지에 없다. 이 유형의 recall 은 측정되지 않았다 (0점이 아니다); BOUNDARY_EXCLUDED — 1건을 채점에서 제외했다"
   },
   "classification": {
     "recall_macro": null,
@@ -76,6 +83,10 @@
     "exact_accuracy": null,
     "wrong_accept_rate": null,
     "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
     "n": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
@@ -85,8 +96,16 @@
     "total": null,
     "currency": null,
     "n_rows": 0,
+    "latency_ms": {
+      "p50": null,
+      "p90": null,
+      "max": null,
+      "n": 0,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": null,
     "scenarios": [],
     "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
-    "scorer_version": "c1"
+    "scorer_version": "c2"
   }
 }
