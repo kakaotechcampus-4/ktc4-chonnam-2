@@ -434,6 +434,8 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
 | — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
+| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않아, 같은 판독 결과에 다른 Exact 가 나올 수 있다 — **정의가 갈려서가 아니라 정규화가 갈려서**다. eval 소유이고 eval 이 닫는다. 다만 C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다** (readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) 의 Exact 5.6% · CER 55.3% 실측이 후보를 보여준다) |
+| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다(32~35px vs 1줄 39~44px — readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) ⓑ). 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다** |
 | — | **촬영조건별 성능을 못 잰다** | `by_condition` 을 `cl2` 에서 **철회했다**(§4-4) — AI-Hub 71555 의 조명·날씨 라벨이 무작위에 가까웠다. `road_type` 은 멀쩡하지만 원래 의도한 축이 아니라 갈아타지 않았다. **조명·날씨별 성능을 재려면 라벨이 새로 필요하다** — 코드로 못 푼다 |
 | — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
 
