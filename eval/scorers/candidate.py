@@ -14,12 +14,23 @@ recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상
 
 후보와 사건은 클립 단위로 1:1 배정한다 (_assign). 예측 하나가 두 사건의
 적중으로 중복 계수되면 recall 이 조용히 부풀어 오르기 때문이다.
+
+**시간 축과 유형 축을 갈라 잰다** (2026-09-20 멘토 피드백). recall_at 은
+유형과 시간이 둘 다 맞아야 적중이라, 「순간은 정확히 찾았는데 유형을
+잘못 불렀다」와 「아예 못 찾았다」가 똑같이 0 으로 나온다 — 고쳐야 할
+곳이 완전히 다른 두 실패다. localization_recall_at 은 시간만 보고,
+type_accuracy_given_localized 는 시간이 맞은 사건 중 유형까지 맞은
+비율이다.
+
+**두 축은 서로 다른 배정에서 나온다.** 유형을 요구하면 그래프가 달라지고
+최대 매칭도 달라지므로, recall_at 은 localization_recall_at 과
+type_accuracy_given_localized 의 곱이 아니다. 곱으로 검산하지 않는다.
 """
 import statistics
 
 from eval.enums import VIOLATION_TYPES
 
-SCORER_VERSION = "s3"   # 2026-09-16 후보-사건 1:1 배정 (F7)
+SCORER_VERSION = "s4"   # 2026-09-20 시간 축(localization)과 유형 축 분리
 DEFAULT_TOLERANCE_SEC = 2.0
 
 CIRCULARITY = ("순환 경고 — mock tier 의 onset 은 채점 대상인 예측과 같은 fixture "
@@ -32,8 +43,12 @@ def _contains(c, onset_sec):
     return c["t_start_sec"] <= onset_sec <= c["t_end_sec"]
 
 
-def _assign(cands, targets, k, tolerance_sec):
+def _assign(cands, targets, k, tolerance_sec, require_type=True):
     """top-k 후보와 사건을 1:1 로 배정한다. 반환은 {사건 인덱스: 후보}.
+
+    require_type=False 면 유형을 보지 않고 시간만으로 잇는다 —
+    localization 축이 쓴다. 이때도 같은 거리라면 유형이 맞는 후보를 먼저
+    본다. 아니면 유형 정확도가 동률 배정 운에 휘둘린다.
 
     예측 하나가 두 사건의 적중으로 중복 계수되지 않게 한다 (F7).
 
@@ -56,11 +71,16 @@ def _assign(cands, targets, k, tolerance_sec):
     topk = [c for c in cands if c["rank"] <= k]
 
     def _edges(t):
-        hits = [(abs(c["representative_sec"] - t["t_onset_sec"]), c["rank"], j)
-                for j, c in enumerate(topk)
-                if c["event_type"] == t["violation_type"]
-                and abs(c["representative_sec"] - t["t_onset_sec"]) <= tolerance_sec]
-        return [j for _, _, j in sorted(hits)]
+        hits = []
+        for j, c in enumerate(topk):
+            same_type = c["event_type"] == t["violation_type"]
+            if require_type and not same_type:
+                continue
+            err = abs(c["representative_sec"] - t["t_onset_sec"])
+            if err > tolerance_sec:
+                continue
+            hits.append((0 if same_type else 1, err, c["rank"], j))
+        return [j for _, _, _, j in sorted(hits)]
 
     adj = [_edges(t) for t in targets]
     owner = {}                      # 후보 인덱스 -> 사건 인덱스
@@ -137,6 +157,8 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
 
     loosest_k = max(ks)
     hits = {k: 0 for k in ks}
+    loc_hits = {k: 0 for k in ks}
+    n_localized = n_type_correct = 0
     onset_errors = []
     contained = []
     by_type = {}
@@ -159,6 +181,16 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
                     onset = targets[i]["t_onset_sec"]
                     onset_errors.append(abs(c["representative_sec"] - onset))
                     contained.append(_contains(c, onset))
+
+            # 시간 축은 따로 배정한다. 유형 제약을 풀면 그래프가 달라져
+            # 최대 매칭도 달라지므로 위 배정을 재활용할 수 없다.
+            localized = _assign(cands, targets, k, tolerance_sec, require_type=False)
+            loc_hits[k] += len(localized)
+            if k == loosest_k:
+                n_localized += len(localized)
+                n_type_correct += sum(
+                    1 for i, c in localized.items()
+                    if c["event_type"] == targets[i]["violation_type"])
     fp = 0
     for clip_id in negative_clips:
         fp += len(by_clip.get(clip_id, []))
@@ -175,6 +207,11 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
         reasons.append("NO_NEGATIVE_CLIPS — fp_per_clip 을 낼 수 없다")
     if n_events > 0 and not onset_errors:
         reasons.append("NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다")
+    if n_events > 0 and not n_localized:
+        # 유형 정확도의 분모가 0 이다. 「유형을 다 틀렸다」가 아니라
+        # 「유형을 따질 만큼 시간을 맞힌 사건이 없다」이므로 0 이 아닌 null.
+        reasons.append("NO_LOCALIZED_EVENTS — 허용 오차 안에 든 사건이 없어 "
+                       "type_accuracy_given_localized 를 낼 수 없다 (0 이 아니다)")
     missing_types = [t for t in VIOLATION_TYPES if t not in by_type]
     if missing_types:
         # by_type 에 키가 없는 것과 값이 0 인 것을 결과 파일만 보고는 구분할
@@ -190,6 +227,10 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
 
     return {
         "recall_at": {str(k): (hits[k] / n_events if n_events else None) for k in ks},
+        "localization_recall_at": {
+            str(k): (loc_hits[k] / n_events if n_events else None) for k in ks},
+        "type_accuracy_given_localized": (
+            (n_type_correct / n_localized) if n_localized else None),
         "onset_error_sec": {
             "mean": statistics.fmean(onset_errors) if onset_errors else None,
             "median": statistics.median(onset_errors) if onset_errors else None,
@@ -218,6 +259,8 @@ def not_run(reason, ks=(1, 3, 10)):
     """
     return {
         "recall_at": {str(k): None for k in ks},
+        "localization_recall_at": {str(k): None for k in ks},
+        "type_accuracy_given_localized": None,
         "onset_error_sec": {"mean": None, "median": None, "tolerance_sec": None},
         "containment_rate": None,
         "fp_per_clip": None,

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-04-relative-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '한 30분 전'을 그대로 보존했고 절대 시각으로 변환하지 않아 기준에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 언급이 없어 null로 둔 것이 타당하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'사고 날 뻔했어요'라는 원문 표현을 그대로 상황 단서로 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '여기서'를 위치 단서로 그대로 추출했으며 구체적 장소로 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 맥락이 없으므로 null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간, 상황, 위치가 명확히 언급되어 있어 high 신뢰도 판정이 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '한 30분 전'을 그대로 보존했고 절대 시각으로 변환하지 않아 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 언급이 없어 null로 둔 것이 타당하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'사고 날 뻔했어요'라는 원문 표현을 그대로 상황 단서로 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '여기서'를 위치 단서로 그대로 추출했으며 구체적 장소로 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 맥락이 없으므로 null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "원문에 시간, 상황, 위치가 명확히 언급되어 있어 high 신뢰도 판정이 적절하다."
+    }
+  },
+  "latency_ms": 6505.489900009707,
+  "prompt_tokens": 2526,
+  "completion_tokens": 489,
+  "cost_krw": null,
+  "error": null
+}
