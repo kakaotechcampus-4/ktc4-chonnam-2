@@ -1,4 +1,4 @@
-"""Bounded media preparation: materialize → probe → coarse proxy + fine clip.
+"""Bounded media preparation: materialize → probe → coarse proxy or fine clip.
 
 Never sends the original source to a model. Temp dir is always cleaned up
 on success, failure, timeout, and cancellation.
@@ -7,13 +7,16 @@ on success, failure, timeout, and cancellation.
 from __future__ import annotations
 
 import hashlib
-import json
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, TypeGuard, final
+from typing import BinaryIO, ClassVar, final
+
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from .config import GeminiSearchConfig
 from .execution import DeadlineExceededError, RunDeadline
@@ -21,58 +24,37 @@ from .execution import DeadlineExceededError, RunDeadline
 _CHUNK = 64 * 1024  # 64 KiB read chunks
 
 
-def _ffprobe_object_hook(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    """object_pairs_hook that yields a properly-typed dict for basedpyright."""
-    result: dict[str, object] = {}
-    for key, val in pairs:
-        result[key] = val
-    return result
+# ---------------------------------------------------------------------------
+# ffprobe JSON model (replaces all manual dict-traversal helpers)
+# ---------------------------------------------------------------------------
 
 
-def _json_parse(text: str) -> object:
-    """Call json.loads and return object (not Any) for basedpyright callers."""
-    result: object = json.loads(text, object_pairs_hook=_ffprobe_object_hook)
-    return result
+class _FfprobeStream(BaseModel, frozen=True):
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+
+    codec_type: str = "unknown"
+    codec_name: str = "unknown"
+    width: int = 0
+    height: int = 0
+    r_frame_rate: str = "0/1"
+    duration: str | None = None
 
 
-def _parse_ffprobe_json(data: bytes) -> dict[str, object]:
-    """Parse ffprobe JSON bytes into a typed dict. Raises FfprobeError on issues."""
-    text = data.decode(errors="replace")
-    try:
-        obj = _json_parse(text)
-    except json.JSONDecodeError as exc:
-        raise FfprobeError(f"ffprobe output is not valid JSON: {exc}") from exc
-    if not _is_str_obj_dict(obj):
-        raise FfprobeError("ffprobe output is not a JSON object")
-    return obj
+class _FfprobeFormat(BaseModel, frozen=True):
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+
+    format_name: str = "unknown"
+    duration: str | None = None
 
 
-def _is_str_obj_dict(val: object) -> TypeGuard[dict[str, object]]:
-    return isinstance(val, dict)
+class _FfprobeOutput(BaseModel, frozen=True):
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+
+    streams: list[_FfprobeStream] = []
+    format: _FfprobeFormat = _FfprobeFormat()
 
 
-def _is_list_of_dicts(val: object) -> TypeGuard[list[dict[str, object]]]:
-    if not isinstance(val, list):
-        return False
-    for elem in val:
-        item: object = elem
-        if not isinstance(item, dict):
-            return False
-    return True
-
-
-def _get_streams(root: dict[str, object]) -> list[dict[str, object]]:
-    """Extract the streams array from a parsed ffprobe dict."""
-    streams_val = root.get("streams")
-    if _is_list_of_dicts(streams_val):
-        return streams_val
-    return []
-
-
-def _get_fmt(root: dict[str, object]) -> dict[str, object]:
-    """Extract the format dict from a parsed ffprobe dict."""
-    fmt_val = root.get("format")
-    return fmt_val if _is_str_obj_dict(fmt_val) else {}
+_FFPROBE_ADAPTER: TypeAdapter[_FfprobeOutput] = TypeAdapter(_FfprobeOutput)
 
 
 # ---------------------------------------------------------------------------
@@ -168,11 +150,7 @@ def _run_subprocess(
     *,
     capture_stdout: bool = False,
 ) -> subprocess.CompletedProcess[bytes]:
-    """Run a subprocess with deadline guard. Terminates and reaps on timeout.
-
-    Uses Popen + communicate so the process handle is always available for
-    terminate+wait on TimeoutExpired (pattern from test_runtime_deadline.py).
-    """
+    """Run a subprocess with deadline guard. Kills and drains on timeout."""
     deadline.check()
     timeout = deadline.remaining_sec()
     stdout = subprocess.PIPE if capture_stdout else subprocess.DEVNULL
@@ -184,8 +162,8 @@ def _run_subprocess(
     try:
         out, err = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        proc.terminate()
-        _rc = proc.wait()  # reap — no zombie
+        proc.kill()
+        out, err = proc.communicate()  # drain pipes, reap — no deadlock
         raise DeadlineExceededError(
             f"subprocess timed out after {timeout:.1f}s: {args[0]}"
         )
@@ -211,37 +189,32 @@ def _probe(path: Path, deadline: RunDeadline) -> MediaProbe:
     if result.returncode != 0:
         stderr = (result.stderr or b"").decode(errors="replace")
         raise FfprobeError(f"ffprobe exited {result.returncode}: {stderr}")
-    root = _parse_ffprobe_json(result.stdout or b"")
-    streams = _get_streams(root)
-    fmt = _get_fmt(root)
 
-    # Find first video stream
-    video: dict[str, object] | None = next(
-        (s for s in streams if s.get("codec_type") == "video"),
+    try:
+        parsed = _FFPROBE_ADAPTER.validate_json(result.stdout or b"")
+    except Exception as exc:
+        raise FfprobeError(f"ffprobe output parse failed: {exc}") from exc
+
+    video = next(
+        (s for s in parsed.streams if s.codec_type == "video"),
         None,
     )
     if video is None:
         raise FfprobeError("no video stream found in ffprobe output")
 
     try:
-        dur_raw = fmt.get("duration") or video.get("duration") or "0"
-        duration = float(str(dur_raw))
-        width = int(str(video["width"]))
-        height = int(str(video["height"]))
-        codec_raw = video.get("codec_name")
-        codec = str(codec_raw) if codec_raw is not None else "unknown"
-        fmt_name_raw = fmt.get("format_name")
-        fmt_name = str(fmt_name_raw) if fmt_name_raw is not None else "unknown"
-        container = fmt_name.split(",")[0]
-    except (KeyError, ValueError, TypeError) as exc:
+        dur_raw = parsed.format.duration or video.duration or "0"
+        duration = float(dur_raw)
+        container = parsed.format.format_name.split(",")[0]
+    except (ValueError, TypeError) as exc:
         raise FfprobeError(f"ffprobe output missing required fields: {exc}") from exc
 
     return MediaProbe(
         container=container,
-        codec=codec,
+        codec=video.codec_name,
         duration_sec=duration,
-        width=width,
-        height=height,
+        width=video.width,
+        height=video.height,
     )
 
 
@@ -257,24 +230,28 @@ def _scale_filter(max_height: int) -> str:
 
 @final
 class MediaPreparer:
-    """Materializes, probes, and produces bounded Coarse + Fine MP4s."""
+    """Materializes, probes, and produces bounded Coarse or Fine MP4s."""
 
     def __init__(self, config: GeminiSearchConfig) -> None:
         self._cfg = config
 
-    def prepare(
+    @contextmanager
+    def prepare_coarse(
         self,
         media_input: MediaInput,
-        fine_start_sec: float,
-        fine_end_sec: float,
         deadline: RunDeadline,
-    ) -> tuple[PreparedMedia, PreparedMedia]:
-        """Return (coarse, fine). Temp dir is always cleaned up on any exit."""
+    ) -> Generator[PreparedMedia]:
+        """Materialize + probe + 1fps/360p/no-audio proxy; yield it; rmtree in finally.
+
+        Temp dir is cleaned up on every exit — success, failure, timeout,
+        and cancellation (KeyboardInterrupt / asyncio.CancelledError).
+
+        ``origin_start_sec`` / ``origin_end_sec`` span the whole probed source.
+        """
         cfg = self._cfg
         max_src = cfg.max_materialized_source_bytes
         max_inline = cfg.max_inline_media_bytes
 
-        # Reject declared size before streaming
         if media_input.declared_byte_size > max_src:
             raise SourceTooLargeError(
                 f"declared size {media_input.declared_byte_size} > cap {max_src}"
@@ -282,11 +259,9 @@ class MediaPreparer:
 
         tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
         try:
-            # 1. Materialize source
             src_path = tmpdir / "source.mp4"
             materialized = _materialize(media_input, src_path, max_src, deadline)
 
-            # 2. Coarse proxy
             coarse_path = tmpdir / "coarse.mp4"
             deadline.check()
             _run_ffmpeg_encode(
@@ -298,7 +273,7 @@ class MediaPreparer:
             )
             _verify_output(coarse_path, max_inline)
             coarse_probe = _probe(coarse_path, deadline)
-            coarse = PreparedMedia(
+            yield PreparedMedia(
                 path=coarse_path,
                 content_type="video/mp4",
                 byte_size=coarse_path.stat().st_size,
@@ -306,11 +281,42 @@ class MediaPreparer:
                 origin_start_sec=0.0,
                 origin_end_sec=materialized.probe.duration_sec,
             )
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
-            # 3. Fine clip (clamped interval)
+    @contextmanager
+    def prepare_fine(
+        self,
+        media_input: MediaInput,
+        fine_start_sec: float,
+        fine_end_sec: float,
+        deadline: RunDeadline,
+    ) -> Generator[PreparedMedia]:
+        """Materialize + probe + clamp [start,end] to probed duration + 2fps/720p/no-audio clip.
+
+        Temp dir is cleaned up on every exit — success, failure, timeout,
+        and cancellation (KeyboardInterrupt / asyncio.CancelledError).
+
+        ``origin_start_sec`` / ``origin_end_sec`` are the clamped interval.
+        """
+        cfg = self._cfg
+        max_src = cfg.max_materialized_source_bytes
+        max_inline = cfg.max_inline_media_bytes
+
+        if media_input.declared_byte_size > max_src:
+            raise SourceTooLargeError(
+                f"declared size {media_input.declared_byte_size} > cap {max_src}"
+            )
+
+        tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
+        try:
+            src_path = tmpdir / "source.mp4"
+            materialized = _materialize(media_input, src_path, max_src, deadline)
+
             src_dur = materialized.probe.duration_sec
             start = max(0.0, min(fine_start_sec, src_dur))
             end = max(start, min(fine_end_sec, src_dur))
+
             fine_path = tmpdir / "fine.mp4"
             deadline.check()
             _run_ffmpeg_encode(
@@ -324,7 +330,7 @@ class MediaPreparer:
             )
             _verify_output(fine_path, max_inline)
             fine_probe = _probe(fine_path, deadline)
-            fine = PreparedMedia(
+            yield PreparedMedia(
                 path=fine_path,
                 content_type="video/mp4",
                 byte_size=fine_path.stat().st_size,
@@ -332,12 +338,8 @@ class MediaPreparer:
                 origin_start_sec=start,
                 origin_end_sec=end,
             )
-
-            return coarse, fine
-
-        except Exception:
+        finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
-            raise
 
 
 # ---------------------------------------------------------------------------

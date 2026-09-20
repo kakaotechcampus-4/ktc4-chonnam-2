@@ -58,6 +58,10 @@ class GeminiSearchConfig:
             raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.QUERY)
         if parsed.fragment or "#" in self.base_url:
             raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.FRAGMENT)
+        if self.max_materialized_source_bytes < 0:
+            raise ValueError("max_materialized_source_bytes must be non-negative")
+        if self.max_inline_media_bytes < 0:
+            raise ValueError("max_inline_media_bytes must be non-negative")
 
     @classmethod
     def from_dotenv(cls, env: Mapping[str, str] | None = None) -> "GeminiSearchConfig":

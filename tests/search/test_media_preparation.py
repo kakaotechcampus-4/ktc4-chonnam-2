@@ -6,15 +6,16 @@ All tests that invoke ffmpeg/ffprobe are skipped when the binaries are absent.
 from __future__ import annotations
 
 import io
-import json
 import shutil
 import subprocess
 import tempfile
 import time
 from pathlib import Path
-from typing import TypeGuard
+from typing import ClassVar
+from unittest.mock import patch
 
 import pytest
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import DeadlineExceededError, RunDeadline
@@ -80,44 +81,25 @@ def _media_input(data: bytes) -> MediaInput:
     )
 
 
-def _pairs_to_dict(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    result: dict[str, object] = {}
-    for k, v in pairs:
-        result[k] = v
-    return result
-
-
-def _is_str_obj_dict(val: object) -> TypeGuard[dict[str, object]]:
-    return isinstance(val, dict)
-
-
-def _is_list_of_dicts(val: object) -> TypeGuard[list[dict[str, object]]]:
-    if not isinstance(val, list):
-        return False
-    for elem in val:
-        item: object = elem
-        if not isinstance(item, dict):
-            return False
-    return True
-
-
-def _json_parse(text: str) -> object:
-    result: object = json.loads(text, object_pairs_hook=_pairs_to_dict)
-    return result
-
-
 def _parse_streams(data: bytes) -> list[dict[str, object]]:
     """Parse ffprobe JSON and return the streams list, typed."""
+
+    class _Stream(BaseModel):
+        model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+        codec_type: str = "unknown"
+
+    class _Probe(BaseModel):
+        model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+        streams: list[_Stream] = []
+
     try:
-        obj = _json_parse(data.decode(errors="replace"))
-    except (json.JSONDecodeError, TypeError):
+        probe = TypeAdapter(_Probe).validate_json(data)
+    except (ValidationError, ValueError):
         return []
-    if not _is_str_obj_dict(obj):
-        return []
-    streams_val = obj.get("streams")
-    if _is_list_of_dicts(streams_val):
-        return streams_val
-    return []
+    result: list[dict[str, object]] = []
+    for s in probe.streams:
+        result.append(s.model_dump())
+    return result
 
 
 def _ffprobe_streams(path: Path) -> list[dict[str, object]]:
@@ -154,24 +136,42 @@ def _stream_fps(video: dict[str, object]) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Smoke: happy path
+# Smoke: happy path — coarse only
 # ---------------------------------------------------------------------------
 
 
 @_NEEDS_FFMPEG
-def test_prepare_returns_two_prepared_media_objects() -> None:
+def test_prepare_coarse_returns_prepared_media() -> None:
     data = _make_test_mp4(duration_sec=6.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    coarse, fine = preparer.prepare(
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        assert coarse.content_type == "video/mp4"
+        assert coarse.byte_size > 0
+        tmpdir = coarse.path.parent
+    assert not tmpdir.exists(), "temp dir must be cleaned up after `with` block"
+
+
+# ---------------------------------------------------------------------------
+# Smoke: happy path — fine only
+# ---------------------------------------------------------------------------
+
+
+@_NEEDS_FFMPEG
+def test_prepare_fine_returns_prepared_media() -> None:
+    data = _make_test_mp4(duration_sec=6.0)
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=1.0,
         fine_end_sec=4.0,
         deadline=_real_deadline(),
-    )
-    assert coarse.content_type == "video/mp4"
-    assert fine.content_type == "video/mp4"
-    assert coarse.byte_size > 0
-    assert fine.byte_size > 0
+    ) as fine:
+        assert fine.content_type == "video/mp4"
+        assert fine.byte_size > 0
+        tmpdir = fine.path.parent
+    assert not tmpdir.exists(), "temp dir must be cleaned up after `with` block"
 
 
 # ---------------------------------------------------------------------------
@@ -183,44 +183,48 @@ def test_prepare_returns_two_prepared_media_objects() -> None:
 def test_coarse_fps_at_most_1() -> None:
     data = _make_test_mp4(duration_sec=6.0, size="640x480")
     preparer = MediaPreparer(_DEFAULT_CFG)
-    coarse, _ = preparer.prepare(
-        _media_input(data),
-        fine_start_sec=1.0,
-        fine_end_sec=4.0,
-        deadline=_real_deadline(),
-    )
-    fps = _stream_fps(_video_stream(coarse.path))
-    assert fps <= 1.0 + 1e-3, f"Coarse fps={fps} exceeds 1"
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        fps = _stream_fps(_video_stream(coarse.path))
+        assert fps <= 1.0 + 1e-3, f"Coarse fps={fps} exceeds 1"
 
 
 @_NEEDS_FFMPEG
 def test_coarse_height_at_most_360() -> None:
     data = _make_test_mp4(duration_sec=6.0, size="640x480")
     preparer = MediaPreparer(_DEFAULT_CFG)
-    coarse, _ = preparer.prepare(
-        _media_input(data),
-        fine_start_sec=1.0,
-        fine_end_sec=4.0,
-        deadline=_real_deadline(),
-    )
-    video = _video_stream(coarse.path)
-    assert int(str(video["height"])) <= 360, (
-        f"Coarse height={video['height']} exceeds 360"
-    )
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        video = _video_stream(coarse.path)
+        assert int(str(video["height"])) <= 360, (
+            f"Coarse height={video['height']} exceeds 360"
+        )
 
 
 @_NEEDS_FFMPEG
 def test_coarse_no_audio() -> None:
     data = _make_test_mp4(duration_sec=6.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    coarse, _ = preparer.prepare(
-        _media_input(data),
-        fine_start_sec=1.0,
-        fine_end_sec=4.0,
-        deadline=_real_deadline(),
-    )
-    audio = [s for s in _ffprobe_streams(coarse.path) if s.get("codec_type") == "audio"]
-    assert audio == [], "Coarse must have no audio streams"
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        audio = [
+            s for s in _ffprobe_streams(coarse.path) if s.get("codec_type") == "audio"
+        ]
+        assert audio == [], "Coarse must have no audio streams"
+
+
+@_NEEDS_FFMPEG
+def test_coarse_origin_spans_full_source() -> None:
+    data = _make_test_mp4(duration_sec=6.0)
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        assert coarse.origin_start_sec == 0.0
+        assert coarse.origin_end_sec > 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -232,60 +236,62 @@ def test_coarse_no_audio() -> None:
 def test_fine_fps_at_most_2() -> None:
     data = _make_test_mp4(duration_sec=10.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    _, fine = preparer.prepare(
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=2.0,
         fine_end_sec=7.0,
         deadline=_real_deadline(),
-    )
-    fps = _stream_fps(_video_stream(fine.path))
-    assert fps <= 2.0 + 1e-3, f"Fine fps={fps} exceeds 2"
+    ) as fine:
+        fps = _stream_fps(_video_stream(fine.path))
+        assert fps <= 2.0 + 1e-3, f"Fine fps={fps} exceeds 2"
 
 
 @_NEEDS_FFMPEG
 def test_fine_height_at_most_720() -> None:
     data = _make_test_mp4(duration_sec=10.0, size="1280x720")
     preparer = MediaPreparer(_DEFAULT_CFG)
-    _, fine = preparer.prepare(
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=2.0,
         fine_end_sec=7.0,
         deadline=_real_deadline(),
-    )
-    video = _video_stream(fine.path)
-    assert int(str(video["height"])) <= 720, (
-        f"Fine height={video['height']} exceeds 720"
-    )
+    ) as fine:
+        video = _video_stream(fine.path)
+        assert int(str(video["height"])) <= 720, (
+            f"Fine height={video['height']} exceeds 720"
+        )
 
 
 @_NEEDS_FFMPEG
 def test_fine_no_audio() -> None:
     data = _make_test_mp4(duration_sec=10.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    _, fine = preparer.prepare(
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=2.0,
         fine_end_sec=7.0,
         deadline=_real_deadline(),
-    )
-    audio = [s for s in _ffprobe_streams(fine.path) if s.get("codec_type") == "audio"]
-    assert audio == [], "Fine must have no audio streams"
+    ) as fine:
+        audio = [
+            s for s in _ffprobe_streams(fine.path) if s.get("codec_type") == "audio"
+        ]
+        assert audio == [], "Fine must have no audio streams"
 
 
 @_NEEDS_FFMPEG
 def test_fine_duration_matches_clamped_interval() -> None:
     data = _make_test_mp4(duration_sec=10.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    _, fine = preparer.prepare(
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=2.0,
         fine_end_sec=7.0,
         deadline=_real_deadline(),
-    )
-    # Physical interval is 5s; allow ±1.5s tolerance for encoder rounding
-    assert abs(fine.duration_sec - 5.0) <= 1.5, (
-        f"Fine duration={fine.duration_sec} not close to expected 5.0s"
-    )
+    ) as fine:
+        # Physical interval is 5s; allow ±1.5s tolerance for encoder rounding
+        assert abs(fine.duration_sec - 5.0) <= 1.5, (
+            f"Fine duration={fine.duration_sec} not close to expected 5.0s"
+        )
 
 
 @_NEEDS_FFMPEG
@@ -293,13 +299,13 @@ def test_fine_interval_clamped_to_source_bounds() -> None:
     """Requesting an interval beyond source end clamps to source duration."""
     data = _make_test_mp4(duration_sec=6.0)
     preparer = MediaPreparer(_DEFAULT_CFG)
-    _, fine = preparer.prepare(
+    with preparer.prepare_fine(
         _media_input(data),
         fine_start_sec=4.0,
-        fine_end_sec=999.0,  # way past end
+        fine_end_sec=999.0,
         deadline=_real_deadline(),
-    )
-    assert fine.origin_end_sec <= 6.5  # clamped
+    ) as fine:
+        assert fine.origin_end_sec <= 6.5  # clamped
 
 
 # ---------------------------------------------------------------------------
@@ -311,69 +317,121 @@ def test_fine_interval_clamped_to_source_bounds() -> None:
 def test_coarse_does_not_upscale_small_input() -> None:
     data = _make_test_mp4(duration_sec=4.0, size="160x120")
     preparer = MediaPreparer(_DEFAULT_CFG)
-    coarse, _ = preparer.prepare(
-        _media_input(data),
-        fine_start_sec=0.0,
-        fine_end_sec=4.0,
-        deadline=_real_deadline(),
-    )
-    video = _video_stream(coarse.path)
-    assert int(str(video["height"])) <= 120 + 2, "Small input must not be upscaled"
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        video = _video_stream(coarse.path)
+        assert int(str(video["height"])) <= 120 + 2, "Small input must not be upscaled"
 
 
 # ---------------------------------------------------------------------------
-# Error paths — all assert temp dir cleaned up
+# Error paths — coarse: assert temp dir cleaned up
 # ---------------------------------------------------------------------------
 
 
 @_NEEDS_FFMPEG
-def test_declared_size_too_large_raises_and_cleans_up() -> None:
+def test_coarse_declared_size_too_large_raises_and_cleans_up() -> None:
     data = _make_test_mp4(duration_sec=2.0)
-    cfg = GeminiSearchConfig(
-        max_materialized_source_bytes=100  # tiny cap
-    )
+    cfg = GeminiSearchConfig(max_materialized_source_bytes=100)
     mi = MediaInput(
         stream=io.BytesIO(data),
         content_type="video/mp4",
-        declared_byte_size=len(data),  # real size > 100
+        declared_byte_size=len(data),
     )
     preparer = MediaPreparer(cfg)
-    with pytest.raises(SourceTooLargeError):
-        _ = preparer.prepare(mi, 0.0, 2.0, _real_deadline())
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(SourceTooLargeError),
+        preparer.prepare_coarse(mi, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
 
 
 @_NEEDS_FFMPEG
-def test_stream_hard_cap_raises_and_cleans_up() -> None:
-    """Stream exceeds cap mid-copy → SourceTooLargeError, no temp dir left."""
+def test_coarse_stream_hard_cap_raises_and_cleans_up() -> None:
     data = _make_test_mp4(duration_sec=4.0)
-    # Cap smaller than actual data but larger than declared so pre-check passes
     cap = len(data) // 2
     cfg = GeminiSearchConfig(max_materialized_source_bytes=cap)
     mi = MediaInput(
         stream=io.BytesIO(data),
         content_type="video/mp4",
-        declared_byte_size=cap,  # declared fits; actual doesn't
+        declared_byte_size=cap,
     )
     preparer = MediaPreparer(cfg)
-    with pytest.raises(SourceTooLargeError):
-        _ = preparer.prepare(mi, 0.0, 4.0, _real_deadline())
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(SourceTooLargeError),
+        preparer.prepare_coarse(mi, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
 
 
 @_NEEDS_FFMPEG
-def test_byte_size_mismatch_raises_and_cleans_up() -> None:
+def test_coarse_byte_size_mismatch_raises_and_cleans_up() -> None:
     data = _make_test_mp4(duration_sec=2.0)
     mi = MediaInput(
         stream=io.BytesIO(data),
         content_type="video/mp4",
-        declared_byte_size=len(data) + 9999,  # wrong
+        declared_byte_size=len(data) + 9999,
     )
     preparer = MediaPreparer(_DEFAULT_CFG)
-    with pytest.raises(ByteSizeMismatchError):
-        _ = preparer.prepare(mi, 0.0, 2.0, _real_deadline())
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(ByteSizeMismatchError),
+        preparer.prepare_coarse(mi, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
 
 
 @_NEEDS_FFMPEG
-def test_malformed_input_raises_ffprobe_error() -> None:
+def test_coarse_malformed_input_raises_ffprobe_error_and_cleans_up() -> None:
     garbage = b"\x00" * 1024
     mi = MediaInput(
         stream=io.BytesIO(garbage),
@@ -381,30 +439,208 @@ def test_malformed_input_raises_ffprobe_error() -> None:
         declared_byte_size=len(garbage),
     )
     preparer = MediaPreparer(_DEFAULT_CFG)
-    with pytest.raises(FfprobeError):
-        _ = preparer.prepare(mi, 0.0, 1.0, _real_deadline())
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(FfprobeError),
+        preparer.prepare_coarse(mi, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
 
 
 @_NEEDS_FFMPEG
-def test_media_too_large_raises_when_output_exceeds_cap() -> None:
+def test_coarse_media_too_large_raises_and_cleans_up() -> None:
     data = _make_test_mp4(duration_sec=6.0)
-    cfg = GeminiSearchConfig(max_inline_media_bytes=1)  # impossibly small
+    cfg = GeminiSearchConfig(max_inline_media_bytes=1)
     preparer = MediaPreparer(cfg)
-    with pytest.raises(MediaTooLargeError):
-        _ = preparer.prepare(_media_input(data), 0.0, 6.0, _real_deadline())
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(MediaTooLargeError),
+        preparer.prepare_coarse(_media_input(data), _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
+
+
+# ---------------------------------------------------------------------------
+# Error paths — fine: assert temp dir cleaned up
+# ---------------------------------------------------------------------------
+
+
+@_NEEDS_FFMPEG
+def test_fine_declared_size_too_large_raises_and_cleans_up() -> None:
+    data = _make_test_mp4(duration_sec=2.0)
+    cfg = GeminiSearchConfig(max_materialized_source_bytes=100)
+    mi = MediaInput(
+        stream=io.BytesIO(data),
+        content_type="video/mp4",
+        declared_byte_size=len(data),
+    )
+    preparer = MediaPreparer(cfg)
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(SourceTooLargeError),
+        preparer.prepare_fine(mi, 0.0, 2.0, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
+
+
+@_NEEDS_FFMPEG
+def test_fine_malformed_input_raises_ffprobe_error_and_cleans_up() -> None:
+    garbage = b"\x00" * 1024
+    mi = MediaInput(
+        stream=io.BytesIO(garbage),
+        content_type="video/mp4",
+        declared_byte_size=len(garbage),
+    )
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(FfprobeError),
+        preparer.prepare_fine(mi, 0.0, 1.0, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
+
+
+@_NEEDS_FFMPEG
+def test_fine_media_too_large_raises_and_cleans_up() -> None:
+    data = _make_test_mp4(duration_sec=6.0)
+    cfg = GeminiSearchConfig(max_inline_media_bytes=1)
+    preparer = MediaPreparer(cfg)
+    recorded: list[str] = []
+    real_mkdtemp = tempfile.mkdtemp
+
+    def _capturing_mkdtemp(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+    ) -> str:
+        path = real_mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        recorded.append(path)
+        return path
+
+    with (
+        patch("daesingo.search.media.tempfile.mkdtemp", side_effect=_capturing_mkdtemp),
+        pytest.raises(MediaTooLargeError),
+        preparer.prepare_fine(_media_input(data), 0.0, 6.0, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+    assert recorded, "mkdtemp must have been called"
+    for p in recorded:
+        assert not Path(p).exists(), f"temp dir {p} was not cleaned up"
 
 
 @_NEEDS_FFMPEG
 def test_exhausted_deadline_raises_before_work() -> None:
     data = _make_test_mp4(duration_sec=2.0)
-    # Budget already exhausted
     clock_val = [0.0]
     dl = RunDeadline(lambda: clock_val[0], budget_ms=1)
     clock_val[0] = 1.0  # now exhausted
 
     preparer = MediaPreparer(_DEFAULT_CFG)
-    with pytest.raises(DeadlineExceededError):
-        _ = preparer.prepare(_media_input(data), 0.0, 2.0, dl)
+    with (
+        pytest.raises(DeadlineExceededError),
+        preparer.prepare_coarse(_media_input(data), dl),
+    ):
+        pass  # pragma: no cover
+
+
+# ---------------------------------------------------------------------------
+# Cleanup on success
+# ---------------------------------------------------------------------------
+
+
+@_NEEDS_FFMPEG
+def test_coarse_temp_dir_cleaned_up_on_success() -> None:
+    data = _make_test_mp4(duration_sec=4.0)
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    tmpdir_path: Path | None = None
+    with preparer.prepare_coarse(
+        _media_input(data), deadline=_real_deadline()
+    ) as coarse:
+        tmpdir_path = coarse.path.parent
+        assert tmpdir_path.exists(), "temp dir must exist inside the `with` block"
+    assert tmpdir_path is not None
+    assert not tmpdir_path.exists(), "temp dir must be gone after `with` block"
+
+
+@_NEEDS_FFMPEG
+def test_fine_temp_dir_cleaned_up_on_success() -> None:
+    data = _make_test_mp4(duration_sec=4.0)
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    tmpdir_path: Path | None = None
+    with preparer.prepare_fine(
+        _media_input(data),
+        fine_start_sec=0.0,
+        fine_end_sec=4.0,
+        deadline=_real_deadline(),
+    ) as fine:
+        tmpdir_path = fine.path.parent
+        assert tmpdir_path.exists(), "temp dir must exist inside the `with` block"
+    assert tmpdir_path is not None
+    assert not tmpdir_path.exists(), "temp dir must be gone after `with` block"
 
 
 # ---------------------------------------------------------------------------
@@ -429,5 +665,23 @@ def test_missing_ffmpeg_raises_typed_error(monkeypatch: pytest.MonkeyPatch) -> N
         declared_byte_size=len(data),
     )
     preparer = MediaPreparer(_DEFAULT_CFG)
-    with pytest.raises(MissingFfmpegError):
-        _ = preparer.prepare(mi, 0.0, 1.0, _real_deadline())
+    with (
+        pytest.raises(MissingFfmpegError),
+        preparer.prepare_coarse(mi, _real_deadline()),
+    ):
+        pass  # pragma: no cover
+
+
+# ---------------------------------------------------------------------------
+# Config validation
+# ---------------------------------------------------------------------------
+
+
+def test_config_rejects_negative_max_materialized_source_bytes() -> None:
+    with pytest.raises(ValueError, match="max_materialized_source_bytes"):
+        _ = GeminiSearchConfig(max_materialized_source_bytes=-1)
+
+
+def test_config_rejects_negative_max_inline_media_bytes() -> None:
+    with pytest.raises(ValueError, match="max_inline_media_bytes"):
+        _ = GeminiSearchConfig(max_inline_media_bytes=-1)
