@@ -1,7 +1,7 @@
 {
   "scenario_id": "real_e2e_happy_001",
   "module": "case",
-  "generated_at": "2026-09-20T16:43:11+09:00",
+  "generated_at": "2026-09-20T21:08:43+09:00",
   "generated_by": "scripts/dump_real_caseview.py",
   "case_views": [
     {
@@ -12,7 +12,12 @@
       "stage": "READY",
       "user_reviewed": false,
       "manifest_summary": {},
-      "hints": {},
+      "hints": {
+        "time": "18시쯤",
+        "vehicle": "흰색 SUV",
+        "situation": "백색 실선 구간에서 차로변경",
+        "location": "상무중앙로 사거리 부근"
+      },
       "progress": [
         {
           "step": "file_intake",
@@ -51,8 +56,8 @@
         {
           "candidate_id": "candidate_h001",
           "at": null,
-          "at_provenance": null,
-          "at_provenance_label_key": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",
           "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
           "thumb_ref": "fr_h001_thumb",
           "selected": true,
@@ -365,7 +370,7 @@
               }
             ],
             "measurement": {
-              "actual": 1789890191,
+              "actual": 1789906123,
               "limit": 1787756400,
               "unit": "deadline.epoch_seconds"
             },

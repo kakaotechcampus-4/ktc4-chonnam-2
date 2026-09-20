@@ -34,10 +34,12 @@ SCENARIO_ID = "real_e2e_happy_001"
 
 def build_view():
     """`test_real_e2e.py::test_real_e2e_happy_path_reaches_ready_caseview`와 같은 순서."""
-    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    mock = MockFixtureAdapter(MOCK_ROOT, "happy_001")
+    scope = mock.get_analysis_scopes()[0]
     real = RealAdapter(case_id=CASE_ID, search_scope=scope, mock_root=MOCK_ROOT)
 
-    case = CaseAggregate.intake(case_id=CASE_ID, hints={}, manifest_summary={})
+    # 이슈 #103 — hints={}로 고정하면 후보 화면의 「기억 단서와 대조」가 그릴 값이 없다.
+    case = CaseAggregate.intake(case_id=CASE_ID, hints=mock.get_hints(), manifest_summary={})
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001",
                              input_fingerprint="sha1:h001-coarse-search")
