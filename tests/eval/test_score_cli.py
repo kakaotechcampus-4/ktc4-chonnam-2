@@ -1,7 +1,7 @@
 import json
 import os
 from eval import manifests_io, run, score, paths
-from eval.scorers import classification
+from eval.scorers import candidate, classification, cost
 
 
 def test_score_cli_writes_results_with_coverage(tmp_path, monkeypatch):
@@ -12,7 +12,10 @@ def test_score_cli_writes_results_with_coverage(tmp_path, monkeypatch):
     rc = score.main(["--prediction", "run_cli_001"])
     assert rc == 0
     gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
-    out = os.path.join(str(tmp_path), "run_cli_001.%s.json" % gt_version)
+    out = os.path.join(str(tmp_path), score.result_filename(
+        "run_cli_001", {"gt_version": gt_version,
+                        "scorer_version": candidate.SCORER_VERSION,
+                        "cost_scorer_version": cost.SCORER_VERSION}))
     with open(out, encoding="utf-8") as f:
         res = json.load(f)
     assert res["candidate"]["recall_at"]["3"] == 1.0
@@ -42,7 +45,8 @@ def _score_classification(run_id, impl, tmp_path, monkeypatch):
     assert run.main(["--impl", impl, "--manifest", "a_aihub",
                      "--stage", "classification", "--run-id", run_id]) == 0
     assert score.main(["--prediction", run_id]) == 0
-    with open(os.path.join(str(tmp_path), run_id + ".g1.json"), encoding="utf-8") as f:
+    out = next(p for p in os.listdir(str(tmp_path)) if p.startswith(run_id + ".g1."))
+    with open(os.path.join(str(tmp_path), out), encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -66,7 +70,10 @@ def test_not_run_classification_block_keeps_every_metric_key(tmp_path, monkeypat
               "--stage", "candidate", "--run-id", "run_cli_notrun"])
     assert score.main(["--prediction", "run_cli_notrun"]) == 0
     gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
-    path = os.path.join(str(tmp_path), "run_cli_notrun.%s.json" % gt_version)
+    path = os.path.join(str(tmp_path), score.result_filename(
+        "run_cli_notrun", {"gt_version": gt_version,
+                           "scorer_version": candidate.SCORER_VERSION,
+                           "cost_scorer_version": cost.SCORER_VERSION}))
     with open(path, encoding="utf-8") as f:
         text = f.read()
     res = json.loads(text)
@@ -91,7 +98,8 @@ def test_result_pins_the_scorer_version_and_the_prediction_it_scored(tmp_path, m
                      "--stage", "candidate", "--run-id", "t_pin"]) == 0
     assert score.main(["--prediction", "t_pin"]) == 0
 
-    result = json.loads((tmp_path / "results" / "t_pin.mp1.json").read_text(encoding="utf-8"))
+    result = json.loads(next((tmp_path / "results").glob("t_pin.mp1.*.json"))
+                        .read_text(encoding="utf-8"))
     assert result["meta"]["scorer_version"] == "s3"
     ref = result["meta"]["prediction_ref"]
     assert ref["path"].endswith("t_pin.json")
@@ -107,7 +115,8 @@ def test_cost_block_is_wired_end_to_end_and_keyed_by_case_id(tmp_path, monkeypat
                      "--stage", "candidate", "--run-id", "t_cost_wiring"]) == 0
     assert score.main(["--prediction", "t_cost_wiring"]) == 0
 
-    result = json.loads((tmp_path / "results" / "t_cost_wiring.mp1.json").read_text(encoding="utf-8"))
+    result = json.loads(next((tmp_path / "results").glob("t_cost_wiring.mp1.*.json"))
+                        .read_text(encoding="utf-8"))
     assert result["cost"]["currency"] == "KRW"
     assert result["cost"]["total"] == 3570.0
     assert result["cost"]["cost_per_case"]["case_h001"] == 938.0
@@ -192,7 +201,8 @@ def test_classification_result_pins_its_own_scorer_version(tmp_path, monkeypatch
                      "--stage", "classification", "--run-id", "t_cls"]) == 0
     assert score.main(["--prediction", "t_cls"]) == 0
 
-    result = json.loads((tmp_path / "results" / "t_cls.ag1.json").read_text(encoding="utf-8"))
+    result = json.loads(next((tmp_path / "results").glob("t_cls.ag1.*.json"))
+                        .read_text(encoding="utf-8"))
     assert result["meta"]["scorer_version"] == classification_scorer.SCORER_VERSION
     assert result["meta"]["scorer_version"] != candidate_scorer.SCORER_VERSION
 
@@ -216,7 +226,8 @@ def test_prediction_ref_sha_matches_the_file_as_committed(tmp_path, monkeypatch)
 
     gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
     result = json.loads(
-        (tmp_path / "results" / ("t_sha.%s.json" % gt_version)).read_text(encoding="utf-8"))
+        next((tmp_path / "results").glob("t_sha.%s.*.json" % gt_version))
+        .read_text(encoding="utf-8"))
     assert result["meta"]["prediction_ref"]["sha256"] == manifests_io.sha256_file(str(pred))
 
 
@@ -235,3 +246,67 @@ def test_committed_results_point_at_the_committed_predictions():
         assert manifests_io.sha256_file(target) == ref["sha256"], path
         checked += 1
     assert checked >= 6
+
+
+# --- 채점 결과 보존 (멘토 피드백 2026-09-20) ---
+#
+# 「채점 결과도 덮어쓰지 말고 각각 저장해두시길 바랍니다. 채점 프로세스도
+# 바뀔 수 있으니까요.」
+#
+# 실제로 한 번 잃었다 — s2 -> s3 때 파일명이 {run_id}.{gt_version}.json
+# 이라 s2 결과가 전부 사라졌다. 예측은 run.py 가 덮어쓰기를 막는데
+# 채점 결과는 안 막고 있었다.
+
+
+def _score_once(tmp_path, monkeypatch, run_id, stage="candidate",
+                manifest="b_youtube", impl="fake:always_correct"):
+    monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "p"))
+    monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "r"))
+    assert run.main(["--impl", impl, "--manifest", manifest,
+                     "--stage", stage, "--run-id", run_id]) == 0
+    return score.main(["--prediction", run_id])
+
+
+def test_result_filename_carries_every_version_that_made_the_numbers(tmp_path, monkeypatch):
+    """파일명만 보고 어느 채점기가 낸 숫자인지 알 수 있어야 한다."""
+    assert _score_once(tmp_path, monkeypatch, "t_name") == 0
+
+    gt_version = manifests_io.load_gt("b_youtube", "candidate")["meta"]["gt_version"]
+    expected = "t_name.%s.%s-%s.json" % (
+        gt_version, candidate.SCORER_VERSION, cost.SCORER_VERSION)
+    assert (tmp_path / "r" / expected).exists()
+
+
+def test_rescoring_the_same_thing_refuses_instead_of_overwriting(tmp_path, monkeypatch):
+    """예측과 같은 규율이다 (run.py rc 3)."""
+    assert _score_once(tmp_path, monkeypatch, "t_twice") == 0
+    out = next((tmp_path / "r").glob("t_twice.*.json"))
+    before = out.read_text(encoding="utf-8")
+
+    assert score.main(["--prediction", "t_twice"]) == 3
+    assert out.read_text(encoding="utf-8") == before
+
+
+def test_a_scorer_version_bump_lands_beside_the_old_result(tmp_path, monkeypatch):
+    """채점 프로세스가 바뀌면 두 결과가 나란히 남아야 비교할 수 있다."""
+    assert _score_once(tmp_path, monkeypatch, "t_bump") == 0
+    old = next((tmp_path / "r").glob("t_bump.*.json"))
+
+    monkeypatch.setattr(candidate, "SCORER_VERSION", "s99")
+    assert score.main(["--prediction", "t_bump"]) == 0
+
+    both = sorted(p.name for p in (tmp_path / "r").glob("t_bump.*.json"))
+    assert len(both) == 2, both
+    assert old.exists()
+    assert any(".s99-" in n for n in both)
+
+
+def test_the_result_records_the_same_version_its_filename_claims(tmp_path, monkeypatch):
+    """파일명과 내용이 어긋나면 파일명을 믿을 수 없다."""
+    monkeypatch.setattr(candidate, "SCORER_VERSION", "s99")
+    assert _score_once(tmp_path, monkeypatch, "t_agree") == 0
+
+    out = next((tmp_path / "r").glob("t_agree.*.json"))
+    res = json.loads(out.read_text(encoding="utf-8"))
+    assert res["meta"]["scorer_version"] == "s99"
+    assert ".s99-" in out.name
