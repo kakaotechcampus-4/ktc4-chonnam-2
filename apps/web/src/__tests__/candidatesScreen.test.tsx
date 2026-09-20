@@ -10,6 +10,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
+import { SNAPSHOTS } from '../contracts/fixtures'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 
 afterEach(cleanup)
@@ -114,53 +115,50 @@ describe('CandidatesScreen — 나란히 비교(A-1)', () => {
 
 // ── 실제 데이터 회귀 ──────────────────────────────────────────────
 //
-// 아래 값은 지어낸 것이 아니라 `tests/case/test_real_e2e.py`가 돌린 실제
-// 파이프라인(recording → search → readout → evidence)의 `case.get_view()`
-// 산출물을 2026-09-20에 떠온 것이다. mock 스냅샷과 달리 `at`·`at_provenance`가
-// 전부 null이고 `hints`가 통째로 비어 있다 — 후보 화면이 이 상태에서
-// 무엇을 그리는지가 월요일 Real E2E 시연에서 실제로 보일 모습이다.
+// 값을 손으로 베껴 두지 않고 로더가 읽는 실제 산출물을 그대로 먹인다
+// (`data/real/case/*.json` — `scripts/dump_real_caseview.py`가 쓴다).
+// 베껴 두면 파이프라인이 고쳐져도 테스트만 옛 상태를 붙들고 조용히 통과한다 —
+// 실제로 그럴 뻔했다. 2026-09-20 실측 당시 `at_provenance`와 `hints`가 비어
+// 있었고 그 공백을 단언해 뒀는데, #103·#104로 둘 다 채워졌다.
 //
-// 값이 채워지면 이 테스트는 갱신 대상이다. 그때까지는 「빈 값이어도 화면이
-// 거짓말하지 않는다」를 지키는 자리다.
-describe('CandidatesScreen — 실제 E2E 산출물(2026-09-20 실측)', () => {
-  // 계약 타입은 `at_provenance: string`(non-null)인데 실제 파이프라인은 null을
-  // 내린다. 이 캐스트가 그 불일치의 증거다 — 고치는 건 case/계약 쪽 몫이라
-  // 여기서는 실제로 오는 값을 그대로 둔다.
-  const realCandidate = {
-    candidate_id: 'candidate_h001',
-    at: null,
-    at_provenance: null,
-    at_provenance_label_key: null,
-    observed: '흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면',
-    thumb_ref: 'fr_h001_thumb',
-    selected: false,
-    timeline_revision: 1,
-    stale_revision: false,
-    stale_revision_label_key: null,
-    situation_confirmation: 'NOT_ASKED',
-  } as unknown as Candidate
+// 이 산출물은 `stage=READY`라 화면 선택은 확인 화면으로 간다(#102). 그래도
+// 후보 화면에 직접 먹이는 이유는, 실제 값이 후보 카드에 닿았을 때 무엇이
+// 보이는지가 시연에서 실제로 물어볼 질문이기 때문이다.
+describe('CandidatesScreen — 실제 case.get_view() 산출물', () => {
+  const real = SNAPSHOTS.find((s) => s.scenarioId === 'real_e2e_happy_001')
 
-  // 실제 산출물의 `hints`는 4개 키가 있는 객체가 아니라 `{}`다.
-  const realView = { ...view([realCandidate]), hints: {} } as unknown as CaseView
+  it('실제 산출물이 로더에 들어와 있다', () => {
+    expect(real).toBeDefined()
+    expect(real!.view.candidates.length).toBeGreaterThan(0)
+  })
 
-  it('시각이 없어도 카드가 비지 않는다 — 「시각 미확정」을 적는다', () => {
-    const { container } = render(<CandidatesScreen view={realView} />)
+  it('절대시각이 없어도 카드가 비지 않는다 — 「시각 미확정」을 적는다', () => {
+    // 실제 파이프라인에서 `candidates[].at`은 계속 null이다. search
+    // `CandidateEvent`에 절대시각이 없고, `view.py`가 evidence의 `occurred_at`을
+    // 후보로 덮어쓰지 않는다(#103 조사 결과). mock fixture가 READY에서 값을
+    // 들고 있는 것과 다르다.
+    expect(real!.view.candidates[0].at).toBeNull()
+    const { container } = render(<CandidatesScreen view={real!.view} />)
     expect(container.textContent).toContain('시각 미확정')
   })
 
-  it('시각 출처가 없어도 빈 칸으로 두지 않는다 — fallback 문구를 쓴다', () => {
-    const { container } = render(<CandidatesScreen view={realView} />)
-    expect(container.textContent).toContain('시각 출처 확인 중')
+  it('시각 출처는 fallback이 아니라 등재된 문구로 뜬다', () => {
+    // #104에서 고친 자리다. `recording.timeline_relative_only`는 「절대시각을
+    // 못 구한 후보」를 위해 계약이 이미 등재해 둔 값이다. 여기가 fallback으로
+    // 새면 그 수정이 되돌아간 것이다.
+    const { container } = render(<CandidatesScreen view={real!.view} />)
+    expect(container.textContent).toContain('영상 안 위치만 확인')
+    expect(container.textContent).not.toContain('시각 출처 확인 중')
   })
 
-  it('hints가 비어 있어도 화면이 깨지지 않는다', () => {
-    const { container } = render(<CandidatesScreen view={realView} />)
-    expect(container.querySelectorAll('.cand')).toHaveLength(1)
-    expect(container.textContent).toContain('흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면')
+  it('선택된 후보를 테두리 색만으로 알리지 않는다', () => {
+    const { container } = render(<CandidatesScreen view={real!.view} />)
+    expect(container.querySelector('.cand')!.classList.contains('sel')).toBe(true)
+    expect(container.textContent).toContain('선택된 장면')
   })
 
   it('후보 1건이면 카드가 패널을 채운다 — 고정 3열의 빈 칸이 남지 않는다', () => {
-    const { container } = render(<CandidatesScreen view={realView} />)
+    const { container } = render(<CandidatesScreen view={real!.view} />)
     const grid = container.querySelector('.cands')
     expect(grid).not.toBeNull()
     expect(grid!.children).toHaveLength(1)
