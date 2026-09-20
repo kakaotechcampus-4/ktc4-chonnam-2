@@ -17,6 +17,9 @@ Worker 배선은 이번 범위 밖).
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
+- **`gps_observation`**: recording이 GPS 관찰을 내놓는 공개 함수를 아직 노출하지 않아
+  `None`으로 둔다. case의 자연어 위치 단서(`hints.location`)는 real 경로에 전달하지만,
+  좌표(`location.coord`)는 GPS producer가 연결되기 전까지 비어 있을 수 있다.
 - **시나리오 고정**: `scenario_happy_001` 하나로 고정돼 있다. 다른 시나리오로 넓히려면
   recording fixture 선택과 asset_facts 매핑을 다시 설계해야 한다(W7).
 """
