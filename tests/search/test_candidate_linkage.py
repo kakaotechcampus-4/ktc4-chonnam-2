@@ -45,7 +45,8 @@ _SCOPE = AnalysisScope(
 
 
 class _MinimalProvider:
-    def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:  # pyright: ignore[reportUnusedParameter]
+    def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
+        _ = request
         response = CoarseResponse.model_validate(
             {
                 "candidates": [
@@ -61,7 +62,8 @@ class _MinimalProvider:
         )
         return ProviderResult(response, ProviderUsage(10, 2, 0, 12), 15)
 
-    def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:  # pyright: ignore[reportUnusedParameter]
+    def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
+        _ = request
         raise NotImplementedError
 
 
@@ -134,14 +136,25 @@ def test_legacy_search_candidates_returns_unchanged_candidate_search_result() ->
     assert set(serialized.keys()) == {"analysis_run", "candidates"}
 
 
-def test_legacy_result_is_the_linked_result_object() -> None:
-    """search_candidates() returns the .result from the same LinkedCoarseResult call."""
+def test_legacy_search_candidates_returns_structurally_equivalent_result() -> None:
+    """search_candidates() and search_candidates_linked() produce structurally equivalent candidates."""
     service = _make_service()
     linked = service.search_candidates_linked(_SCOPE)
-    # search_candidates delegates to search_candidates_linked and returns .result
-    # Verify structural equivalence: same fields, same candidate count, same spans.
     legacy = service.search_candidates(_SCOPE)
     assert len(legacy.candidates) == len(linked.result.candidates)
     for leg_c, lnk_c in zip(legacy.candidates, linked.result.candidates):
         assert leg_c.span == lnk_c.span
         assert leg_c.rank == lnk_c.rank
+
+
+def test_zero_sources_raises_assertion_error() -> None:
+    """When resolve() yields no sources, search_coarse raises AssertionError rather than fabricating a ref."""
+    from daesingo.search.sources import StaticAnalysisSourceResolver
+
+    resolver = StaticAnalysisSourceResolver(
+        {"scope-link-1": ()},  # empty tuple → zero sources
+        {},
+    )
+    service = SearchService(resolver, _MinimalProvider(), GeminiSearchConfig())
+    with pytest.raises(AssertionError, match="no sources"):
+        _ = service.search_candidates_linked(_SCOPE)

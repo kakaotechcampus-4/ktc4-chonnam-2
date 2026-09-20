@@ -99,13 +99,11 @@ def search_coarse(
     candidate_search_result = CandidateSearchResult(
         analysis_run=analysis_run, candidates=candidates
     )
-    # Single-source path: source_ref comes from ResolvedAnalysisSource.source_ref.
-    # last_source is always set when resolve() yields at least one source (empty scope → no candidates).
-    source_ref = (
-        last_source.source_ref
-        if last_source is not None
-        else ContractRef(kind="analysis_source", ref=scope.scope_id)
-    )
+    if last_source is None:
+        raise AssertionError(
+            "resolve() yielded no sources for scope; cannot attach source_ref"
+        )
+    source_ref = last_source.source_ref
     assert source_ref.kind == "analysis_source", (
         f"source_ref.kind must be 'analysis_source', got {source_ref.kind!r}"
     )
