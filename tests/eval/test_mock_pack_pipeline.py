@@ -128,7 +128,8 @@ def test_pipeline_runs_end_to_end_and_writes_a_result(tmp_path, monkeypatch):
     assert rc == 0
 
     gt = manifests_io.load_gt(MANIFEST, "candidate")
-    out = tmp_path / "results" / ("t_mock_e2e.%s.json" % gt["meta"]["gt_version"])
+    out = next((tmp_path / "results").glob(
+        "t_mock_e2e.%s.*.json" % gt["meta"]["gt_version"]))
     result = json.loads(out.read_text(encoding="utf-8"))
 
     assert result["meta"]["manifest"] == MANIFEST
@@ -152,7 +153,8 @@ def test_empty_scenario_makes_fp_per_clip_a_real_number(tmp_path, monkeypatch):
     assert score.main(["--prediction", "t_seven"]) == 0
 
     gt = manifests_io.load_gt(MANIFEST, "candidate")
-    out = tmp_path / "results" / ("t_seven.%s.json" % gt["meta"]["gt_version"])
+    out = next((tmp_path / "results").glob(
+        "t_seven.%s.*.json" % gt["meta"]["gt_version"]))
     cand = json.loads(out.read_text(encoding="utf-8"))["candidate"]
 
     assert cand["fp_per_clip"] == 0.0
@@ -190,7 +192,8 @@ def test_plate_stage_pipeline_runs_end_to_end_and_writes_a_result(tmp_path, monk
     assert rc == 0
 
     gt = manifests_io.load_gt(MANIFEST, "plate")
-    out = tmp_path / "results" / ("t_mock_plate.%s.json" % gt["meta"]["gt_version"])
+    out = next((tmp_path / "results").glob(
+        "t_mock_plate.%s.*.json" % gt["meta"]["gt_version"]))
     result = json.loads(out.read_text(encoding="utf-8"))
 
     plate = result["plate"]

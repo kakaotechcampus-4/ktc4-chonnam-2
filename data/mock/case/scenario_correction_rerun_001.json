@@ -198,6 +198,30 @@
                 "ref": "ev_r001_v1"
               }
             ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v1"
+              }
+            ]
           }
         ]
       },
@@ -344,7 +368,7 @@
         "reason_code": null
       },
       "requirements_evidence": {
-        "readiness": "PASS",
+        "readiness": "WARN",
         "checks": [
           {
             "code": "evidence.vehicle_number.present",
@@ -363,6 +387,30 @@
             "category": "TIME",
             "outcome": "PASS",
             "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_r001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
             "subject_refs": [
               {
                 "kind": "evidence_record",
