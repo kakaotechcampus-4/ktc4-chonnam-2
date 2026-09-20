@@ -16,6 +16,7 @@ import pytest
 from daesingo.case import jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
+from daesingo.recording import RecordingCapabilityError
 
 MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 SCENARIO_ID = "happy_001"
@@ -54,6 +55,37 @@ def test_evidence_bundle_uses_real_plate_and_time_values():
     # 만들 수 있다 — 이게 조용한 실패가 아니라 사유가 남는다는 것까지 확인한다.
     if bundle.report_package is None:
         assert bundle.package_error is not None
+
+
+def test_evidence_bundle_uses_candidate_span_not_fixed_fixture_span():
+    """W7 baseline 1순위/6.5순위 gap — `build_happy_001_evidence_bundle()`이
+    `candidate.span`을 무시하고 `fixture.span_resolutions[0]`을 무조건 재사용했다.
+    그래서 candidate가 무엇이든(심지어 존재하지 않는 범위여도) 항상 같은 결과가
+    나왔다 — 실제 새 영상의 candidate span과 연결되지 않는 상태였다.
+
+    이 테스트는 candidate의 span을 recording fixture에 등록되지 않은 범위로
+    바꿔서 호출한다. candidate.span을 실제로 쓴다면 recording이 "등록 안 된
+    범위"로 명확히 실패해야 하고, 무시한다면(현재 버그) 조용히 성공한다."""
+    import daesingo.search as search_module
+
+    scope_dict = _real_scope()
+    scope = search_module.AnalysisScope.model_validate(scope_dict)
+    candidate = search_module.search_candidates(scope).candidates[0]
+    mismatched = candidate.model_copy(
+        update={
+            "span": candidate.span.model_copy(
+                update={"start_ms": 999_000, "end_ms": 999_999, "representative_ms": 999_500}
+            )
+        }
+    )
+
+    with pytest.raises(RecordingCapabilityError):
+        real_e2e.build_happy_001_evidence_bundle(
+            case_id="case_h001_span_mismatch_test",
+            candidate=mismatched,
+            scope=scope,
+            mock_root=MOCK_ROOT,
+        )
 
 
 def test_real_adapter_caches_evidence_bundle():

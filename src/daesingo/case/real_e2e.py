@@ -71,11 +71,20 @@ def build_happy_001_evidence_bundle(
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
 
-    span_resolution_fixture = fixture.span_resolutions[0]
-    resolution = rec_service.resolve_span(
-        span_resolution_fixture.timeline_ref.model_dump(mode="json"),
-        span_resolution_fixture.requested_range.model_dump(mode="json"),
-    )
+    # W7 baseline 1순위/6.5순위 gap 해소 — `fixture.span_resolutions[0]`을 무조건
+    # 재사용하지 않고, search가 실제로 반환한 candidate.span을 recording.resolve_span()
+    # 입력으로 변환한다. ms→sec 변환은 recording 공개 경계에서 명시적으로 한다는 규칙을
+    # 그대로 따른다(`contract-analysis-scope.md` §12 B08 — recording의 SpanResolution은
+    # 초 단위를 유지한다).
+    timeline_ref = {
+        "timeline_id": candidate.span.timeline_id,
+        "revision": candidate.span.timeline_revision,
+    }
+    requested_range = {
+        "start_sec": candidate.span.start_ms / 1000,
+        "end_sec": candidate.span.end_ms / 1000,
+    }
+    resolution = rec_service.resolve_span(timeline_ref, requested_range)
     analysis_source = rec_service.prepare_analysis_source(
         resolution.spans[0].model_dump(mode="json"),
         fixture.analysis_sources[0].profile_ref,
