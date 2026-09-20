@@ -95,7 +95,7 @@ PASS
 | 항목 | 담당 | 상태와 필요한 조치 |
 | --- | --- | --- |
 | D2-e 녹화 경계·span 정책 | `recording` Owner 정철원, 필요 시 `case` 협의 | **OPEN.** 사건이 파일 시작·끝에 걸릴 때 생성 실패/경고/사용자 고지를 결정한다. evidence가 대신 닫지 않는다 |
-| I4 번호판·시각 관찰 전달 | `readout` 생산, `case`·`recording` 접합 | `plate_visible_in_report_video`, `time_overlay_visible` 또는 `post_stamp_applied`를 실제 Runtime에서 evidence 호출 입력으로 전달한다 |
+| I4 번호판·시각 관찰 전달 | 최종 `REPORT_VIDEO` 가시성 Producer는 현재 미연결; readout 계약 확장 후 `case`·`recording` 접합 | readout이 `DerivedAsset(REPORT_VIDEO)`를 재관찰할 입력 경로를 먼저 열고 `plate_visible_in_report_video`·`time_overlay_visible`를 전달한다. `post_stamp_applied`는 recording transform provenance로 확인한다 |
 | I2 공용 H/U Package 재렌더 | Mock Pack / `case` Owner | v1.1 contract·policy·no-location template으로 공용 fixture를 재렌더하고 Consumer를 검증한다 |
 | D1 case 표시·고지 | `case` Owner | 위치 부재 field state와 사용자 고지 code·발동 조건을 반영한다 |
 | 실제 CaseView projection | `case` Owner 유소연 | 동일 Artifact를 실제 projection 호출 경로에 연결한다 |
