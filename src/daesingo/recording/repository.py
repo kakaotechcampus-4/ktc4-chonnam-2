@@ -55,6 +55,9 @@ class InMemoryRecordingRepository:
     def add_source_asset(self, asset: SourceAsset) -> None:
         self._source_assets[asset.source_asset_ref] = asset
 
+    def get_source_asset(self, source_ref: str) -> SourceAsset | None:
+        return self._source_assets.get(source_ref)
+
     def add_local_source(
         self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource,
     ) -> None:
@@ -107,10 +110,12 @@ class InMemoryRecordingRepository:
         current = self._timelines.get(key)
         if current is not None and current != timeline:
             raise ValueError("같은 timeline revision을 다른 payload로 덮어쓸 수 없습니다")
-        self._timelines[key] = timeline
+        # frozen model도 내부 list는 변경 가능하다. 저장 revision을 외부 변경과 분리한다.
+        self._timelines[key] = timeline.model_copy(deep=True)
 
     def get_timeline(self, timeline_ref: TimelineRef) -> RecordingTimeline | None:
-        return self._timelines.get((timeline_ref.timeline_id, timeline_ref.revision))
+        timeline = self._timelines.get((timeline_ref.timeline_id, timeline_ref.revision))
+        return timeline.model_copy(deep=True) if timeline is not None else None
 
     def get_latest_timeline(self, timeline_id: str) -> RecordingTimeline | None:
         revisions = [
@@ -118,7 +123,8 @@ class InMemoryRecordingRepository:
             for (stored_id, _), timeline in self._timelines.items()
             if stored_id == timeline_id
         ]
-        return max(revisions, key=lambda timeline: timeline.revision, default=None)
+        latest = max(revisions, key=lambda timeline: timeline.revision, default=None)
+        return latest.model_copy(deep=True) if latest is not None else None
 
     def find_frames_at_timeline_position(
         self,

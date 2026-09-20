@@ -39,7 +39,7 @@ source 등록을 case의 삭제 대상에 연결하지 않는다. hash 계산은
 
 ## 재현 (현재 브랜치, root PowerShell / Python 3.12)
 
-환경 PR #82 미병합 상태의 root `.venv`를 사용하며 환경 파일을 재생성하지 않는다.
+Python 3.12 표준화(#111)가 반영된 root `.venv`를 사용하며 환경 파일을 재생성하지 않는다.
 ffmpeg와 ffprobe가 PATH에 있어야 생성 영상 smoke가 실행된다.
 
 ```powershell
@@ -60,3 +60,6 @@ skip과 생성 영상 성공을 실제 도로 영상 E2E 성공으로 해석하�
 현재 한계: metadata 등록만 수행한다. `lookup_asset_facts` 연결, decoder 검증,
 Timeline, AnalysisSource/D1·D2, clip/frame 생성, JobExecution 배선, 영속화는 포함하지 않는다.
 등록 후 외부 프로세스가 파일을 변경하는 것을 차단하지 않으며 후속 읽기 시 재검증이 필요하다.
+
+후속 기능인 [단일 원본 상대 Timeline 생성](relative-timeline-creation.md)은 별도 공개
+함수로 제공한다. 이 등록 함수의 입출력과 책임 범위는 유지한다.

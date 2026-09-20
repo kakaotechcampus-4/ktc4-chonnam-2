@@ -37,6 +37,7 @@ from .models import (
 )
 from .repository import InMemoryRecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
+from .timeline import build_relative_timeline
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -238,6 +239,25 @@ class RecordingService:
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts
+
+    def create_relative_timeline(self, source_asset_ref: str) -> RecordingTimeline:
+        """등록된 단일 Source를 [0, duration)에 배치한 새 revision 1을 생성한다.
+
+        등록 당시 metadata를 사용한다. 절대시각 추정·파일 연결·rebase는 하지 않는다.
+        stream 길이/가용성은 원래 사실을 유지하며 이후 span 해석에서 별도로 다룬다.
+        """
+        asset = self._repository.get_source_asset(source_asset_ref)
+        if asset is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 SourceAsset입니다")
+        streams = []
+        for ref in asset.media_stream_refs:
+            stream = self._repository.get_media_stream(ref)
+            if stream is None:
+                raise ValueError("SourceAsset이 참조하는 MediaStream이 등록되지 않았습니다")
+            streams.append(stream)
+        timeline = build_relative_timeline(asset, tuple(streams))
+        self._repository.add_timeline(timeline)
+        return timeline
 
     def get_timeline(
         self,
