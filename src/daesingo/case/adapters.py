@@ -120,6 +120,14 @@ class MockFixtureAdapter:
         그대로 읽는다 — `scope.build_analysis_scope()`의 정답지로 쓴다."""
         return self._load("search").get("analysis_scopes", [])
 
+    def get_hints(self) -> dict[str, Any]:
+        """대표 시나리오의 사용자 단서(`core-user-flow.md` §6 4칸)를 case 자신의 mock
+        fixture(`case_views[0].hints`)에서 읽는다 — `intake()` 호출자가 실제 값을 채울 수
+        있게 하려는 용도다(이슈 #103: real E2E 경로가 `hints={}`로 고정돼 후보 화면의
+        「기억 단서와 대조」가 빈 채로 나왔다)."""
+        case_views = self._load("case").get("case_views", [])
+        return case_views[0].get("hints", {}) if case_views else {}
+
     # ── evidence ────────────────────────────────────────────────────────
     def get_evidence_record(self) -> dict[str, Any] | None:
         records = self._load("evidence").get("evidence_records", [])

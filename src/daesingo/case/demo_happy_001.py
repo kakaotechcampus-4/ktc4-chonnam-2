@@ -21,8 +21,22 @@ from daesingo.case.domain import CaseAggregate
 from daesingo.case.store import CaseStore
 
 MOCK_ROOT = Path(__file__).resolve().parents[3] / "data" / "mock"
+REAL_OUTPUT_ROOT = Path(__file__).resolve().parents[3] / "data" / "real" / "case"
 SCENARIO_ID = "happy_001"
 CASE_ID = "case_h001_demo"
+
+
+def export_view_snapshot(view: dict[str, Any], *, scenario_id: str, output_root: Path) -> Path:
+    """이슈 #108 — `view`를 `apps/web/src/contracts/fixtures.ts`가 읽는
+    `data/mock/case/*.json`과 같은 모양(`{scenario_id, module, case_views}`)으로 저장한다.
+    web은 이 파일 하나를 그대로 가리켜서 읽을 수 있다(#102)."""
+    output_root.mkdir(parents=True, exist_ok=True)
+    output_path = output_root / f"scenario_{scenario_id}.json"
+    snapshot = {"scenario_id": scenario_id, "module": "case", "case_views": [view]}
+    output_path.write_text(
+        json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return output_path
 
 
 def _step(n: int, total: int, message: str) -> None:
@@ -34,7 +48,8 @@ def run() -> dict[str, Any]:
     scope = mock.get_analysis_scopes()[0]
 
     store = CaseStore()
-    case = CaseAggregate.intake(case_id=CASE_ID, hints={}, manifest_summary={})
+    # 이슈 #103 — {}로 고정하면 후보 화면의 「기억 단서와 대조」가 그릴 값이 없다.
+    case = CaseAggregate.intake(case_id=CASE_ID, hints=mock.get_hints(), manifest_summary={})
     case.start_search()
     jobs.issue_coarse_search(
         case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search"
@@ -98,6 +113,10 @@ def main() -> int:
     print()
     print("=== 전체 CaseView (JSON) ===")
     print(json.dumps(view, ensure_ascii=False, indent=2))
+
+    output_path = export_view_snapshot(view, scenario_id=SCENARIO_ID, output_root=REAL_OUTPUT_ROOT)
+    print()
+    print(f"=== web용 real CaseView export 완료: {output_path} ===")
     return 0
 
 
