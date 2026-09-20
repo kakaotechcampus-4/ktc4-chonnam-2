@@ -11,7 +11,19 @@ class RetryPolicy:
     base_delay_sec: float
 
 
+def _status_code(error: Exception) -> int | None:
+    """Return the HTTP status code from an SDK error, or None if unavailable."""
+    code = getattr(error, "status_code", None)
+    if isinstance(code, int):
+        return code
+    return None
+
+
 def is_rate_limited(error: Exception) -> bool:
+    code = _status_code(error)
+    if code is not None:
+        return code == 429
+    # Fallback for non-SDK errors (e.g. plain RuntimeError in tests).
     message = str(error).lower()
     return (
         "429" in message or "resource_exhausted" in message or "rate limit" in message
@@ -19,23 +31,14 @@ def is_rate_limited(error: Exception) -> bool:
 
 
 def is_server_error(error: Exception) -> bool:
-    message = str(error)
-    for code in (
-        "500",
-        "502",
-        "503",
-        "504",
-        "505",
-        "506",
-        "507",
-        "508",
-        "509",
-        "510",
-        "511",
-    ):
-        if code in message:
-            return True
-    return False
+    code = _status_code(error)
+    if code is not None:
+        return code // 100 == 5
+    # Fallback for non-SDK errors: match only standalone 5xx patterns to avoid
+    # false positives from unrelated text containing "500".
+    import re
+
+    return bool(re.search(r"\b5\d{2}\b", str(error)))
 
 
 def is_transient(error: Exception) -> bool:

@@ -26,6 +26,7 @@ class GeminiSearchConfig:
     fine_fps: float = 2.0
     max_materialized_source_bytes: int = 512 * 1024 * 1024  # 512 MiB
     max_inline_media_bytes: int = 12 * 1024 * 1024  # 12 MiB
+    max_inline_request_bytes: int = 18 * 1024 * 1024  # 18 MiB
     max_retries: int = 3
     retry_base_sec: float = 5.0
     fine_padding_sec: float = 4.0
@@ -69,6 +70,8 @@ class GeminiSearchConfig:
             raise ValueError("max_materialized_source_bytes must be non-negative")
         if self.max_inline_media_bytes < 0:
             raise ValueError("max_inline_media_bytes must be non-negative")
+        if self.max_inline_request_bytes < 0:
+            raise ValueError("max_inline_request_bytes must be non-negative")
         if (
             not math.isfinite(self.input_usd_per_million)
             or self.input_usd_per_million < 0

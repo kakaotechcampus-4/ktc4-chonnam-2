@@ -7,6 +7,7 @@ from types import ModuleType
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
+from daesingo.search.media import PreparedMedia
 from daesingo.search.provider import (
     CoarseRequest,
     GeminiProvider,
@@ -96,6 +97,14 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     monkeypatch.setitem(sys.modules, "openai", openai_module)
     source_file = tmp_path / "clip.mp4"
     source_file.write_bytes(b"video-bytes")
+    media = PreparedMedia(
+        path=source_file,
+        content_type="video/mp4",
+        byte_size=len(b"video-bytes"),
+        duration_sec=12.0,
+        origin_start_sec=0.0,
+        origin_end_sec=12.0,
+    )
     provider = GeminiProvider(
         "secret",
         GeminiSearchConfig(max_retries=1),
@@ -107,7 +116,7 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
 
     # When
     provider.search_coarse(
-        CoarseRequest(source, (VisualEventType.SIGNAL,), source_path=source_file)
+        CoarseRequest(source, (VisualEventType.SIGNAL,), media=media, timeout_sec=7.5)
     )
 
     # Then: OpenAI-compatible client, SDK retries off, proxy base_url + Bearer key
@@ -120,6 +129,7 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     assert call["model"] == "gemini-3.8-flash"
     assert call["response_format"] is CoarseResponse
     assert call["reasoning_effort"] == "low"
+    assert call["timeout"] == 7.5  # per-attempt timeout from request.timeout_sec
     content = call["messages"][0]["content"]
     file_part = next(part for part in content if part["type"] == "file")
     assert file_part["file"]["file_data"].startswith("data:video/mp4;base64,")
