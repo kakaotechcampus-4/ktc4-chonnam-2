@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s4` · classification `cl2` · plate `p2` · cost `c3` · normalizer `n3`
+> **버전:** candidate `s5` · classification `cl3` · plate `p2` · cost `c3` · normalizer `n3`
 
 ---
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 3. Candidate — `eval/scorers/candidate.py` (`s4`)
+## 3. Candidate — `eval/scorers/candidate.py` (`s5`)
 
 입력은 clip 단위 후보 목록. 후보는 `score` 내림차순으로 **rank 를 1부터 재계산**한다
 (impl 이 보낸 rank 값은 무시한다, `normalize.py`).
@@ -112,6 +112,29 @@
 
 없으면 `null` 이다. 근거를 주지 않는 impl 도 있으므로 빈 문자열을 지어내지 않는다.
 
+### 3-1-3. 비율에는 신뢰구간을 함께 낸다
+
+**B tier 의 채점 대상 사건은 10건이고, `by_type` 은 유형당 2~6건이다.** 그래서 `recall_at` 한 값이
+얼마나 흔들리는지를 결과가 스스로 말하지 않으면 사람들이 소수점을 믿는다.
+
+모든 사건을 맞히는 치트 구현(`fake:always_correct`)을 현행 정답지로 채점한 실측이다:
+
+| 지표 | 값 | 95% 구간 | 폭 |
+| --- | ---: | --- | ---: |
+| `recall_at[3]` (n=10) | 1.00 | [0.72, 1.00] | 0.28 |
+| `by_type.SIGNAL` (n=2) | 1.00 | **[0.34, 1.00]** | 0.66 |
+| `by_type.CENTER_LINE_CROSSING` (n=2) | 1.00 | **[0.34, 1.00]** | 0.66 |
+
+**완벽한 모델조차 SIGNAL 에서 34% 보다 낫다고 말할 수 없다.** 이 정답지로는 만점과 34% 짜리를
+구분할 방법이 없다는 뜻이고, 그건 모델의 문제가 아니라 **표본의 문제**다.
+
+- 방법은 **Wilson score 구간**이다. 정규근사(Wald)는 `k=n` 에서 `[1.0, 1.0]` 을 내는데,
+  2건 맞혔다고 「확실히 100%」라고 말하는 셈이라 우리가 실제로 마주치는 자리에서 무너진다.
+  근거는 `eval/scorers/interval.py` 의 docstring
+- **분모가 0 이면 구간도 `null`** 이다 — 0.0 이 아니다
+- **평균·비율이 아닌 값에는 붙이지 않는다.** `onset_error_sec` 은 평균이고 `fp_per_clip` 은
+  0~1 로 묶이지 않아 둘 다 이 구간의 가정 밖이다. `recall_macro` 도 「비율들의 평균」이라 붙이지 않는다
+
 ### 3-2. 지표
 
 | 지표 | 분자 | 분모 | `null` 이 되는 때 |
@@ -123,6 +146,7 @@
 | `containment_rate` | 적중 후보의 창이 `t_start ≤ onset ≤ t_end` 인 건수 | 위와 같은 적중 사건 | 적중이 0건 |
 | `fp_per_clip` | negative 클립에서 나온 **후보 개수 전부** | **negative 클립 수** | negative 클립이 0개 |
 | `by_type[유형].recall_at.K` | 해당 유형에서 적중한 사건 수 | 해당 유형의 사건 수 | — (유형이 없으면 키가 없고, `coverage` 에 `NO_EVENTS_FOR_TYPE` 로 적힌다) |
+| `*_ci95` | 같은 분자·분모의 **Wilson 95% 구간** (§3-1-3) | — | 분모가 0 |
 
 `onset_error_sec.tolerance_sec` 는 지표가 아니라 **그 실행에 쓴 임계값의 기록**이다. 결과 파일이
 자기 판정 기준을 스스로 말하게 하려고 넣는다.
@@ -147,7 +171,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 
 ---
 
-## 4. Classification — `eval/scorers/classification.py` (`cl2`)
+## 4. Classification — `eval/scorers/classification.py` (`cl3`)
 
 입력은 시퀀스 단위 분류 결과. 라벨 공간은 **4종 + `NONE` = 5** (`eval/enums.py`, 원본은 v4 §3-5).
 
@@ -159,6 +183,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | `precision_macro` / `recall_macro` | 라벨별 값의 **단순 평균**. 값이 `null` 인 라벨은 평균에서 **뺀다** | 모든 라벨이 `null` |
 | `confusion[truth][pred]` | 5×5 건수 | stage 미실행 |
 | `target_correctness` | 예측 bbox 와 GT bbox 의 **2-D IoU ≥ 0.5** 인 비율 | `target_bbox` 있는 GT 가 0건 |
+| `recall_by_label_ci95` · `target_correctness_ci95` | 위 두 값의 **Wilson 95% 구간** (§3-1-3). `recall_macro` 에는 붙이지 않는다 — 「비율들의 평균」이라 가정 밖이다 | 분모가 0 |
 
 **macro 를 쓰는 이유.** A tier 시퀀스가 SIGNAL 2,065 : 안전모 412 로 5배 차이 난다. micro 로 재면
 신호위반만 잘하는 모델이 전체 점수를 가져간다. 제품은 4종을 **모두** 약속했다.
@@ -402,7 +427,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl2` · plate `p2` · cost `c3` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s5` · classification `cl3` · plate `p2` · cost `c3` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
 | `normalizer_version` | impl 출력 → scorer 입력 변환 | `n3` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
@@ -423,11 +448,13 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
   meta        run_id · impl · stage · manifest · gt_version · scorer_version ·
               cost_scorer_version · normalizer_version · code_commit ·
               prediction_ref{path, sha256}
-  candidate   { recall_at, localization_recall_at, type_accuracy_given_localized,
-                onset_error_sec, containment_rate, fp_per_clip,
+  candidate   { recall_at, recall_at_ci95,
+                localization_recall_at, localization_recall_at_ci95,
+                type_accuracy_given_localized, type_accuracy_given_localized_ci95,
+                onset_error_sec, containment_rate, containment_rate_ci95, fp_per_clip,
                 n_events, n_negative_clips, excluded_by_reason, by_type, coverage }
-  classification { recall_macro, precision_macro, recall_by_label, confusion,
-                   target_correctness, n,
+  classification { recall_macro, precision_macro, recall_by_label, recall_by_label_ci95,
+                   confusion, target_correctness, target_correctness_ci95, n,
                    n_invalid_predictions, n_invalid_gt_labels, coverage }
   plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
                 readable_abstention_rate, n_readable,
@@ -445,6 +472,9 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 나머지 세 블록 중 이번 stage 가 아닌 것은 `not_run()` 모양이다.
 
 **어떤 블록이든 먼저 `coverage` 를 읽는다.** 숫자만 보고 판단하지 않는다.
+
+**비율 값은 `*_ci95` 와 함께 읽는다.** 점추정만 인용하면 표본이 2건인 것과 200건인 것이
+같아 보인다 (§3-1-3).
 
 ---
 
