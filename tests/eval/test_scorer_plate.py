@@ -87,3 +87,75 @@ def test_circularity_and_zero_numerator_are_written_into_coverage():
     )
     assert "순환" in out["coverage"]
     assert "분자" in out["coverage"]
+
+
+# --- 기권만 하는 모델 (멘토 피드백 2026-09-20) ---
+#
+# 「번호판 판독은 기권만 하는 모델이 점수가 높을 수 있겠다는 생각이
+# 드네요. 각 점수에 가중치를 잘 설정하셔야겠습니다.」
+#
+# 가중 합산 점수는 여기서 만들지 않는다 — 「기권 1건이 오답 몇 건 값이냐」는
+# 제품 결정이지 채점기 결정이다. 대신 기권만 하면 반드시 나빠 보이는
+# 숫자를 둬서, 세 숫자를 따로 떼어 읽을 수 없게 만든다.
+
+
+def test_a_model_that_only_abstains_cannot_look_good():
+    """읽을 수 있었는데 기권한 비율이 1.0 이어야 한다."""
+    out = plate.score(
+        [_pred("r1", None, True), _pred("r2", None, True), _pred("r3", None, True)],
+        _gt(_truth("r1", "READABLE", "12가3456"),
+            _truth("r2", "READABLE", "34나5678"),
+            _truth("r3", "UNREADABLE")))
+
+    # 기존 세 숫자는 여전히 「좋아」 보인다 — 그래서 이것이 필요했다
+    assert out["wrong_accept_rate"] == 0.0
+    assert out["abstention_recall"] == 1.0
+    assert out["exact_accuracy"] is None
+
+    assert out["readable_abstention_rate"] == 1.0
+    assert out["n_readable"] == 2
+    assert "ANSWERED_NOTHING" in out["coverage"]
+
+
+def test_answering_every_readable_plate_leaves_the_abstention_rate_zero():
+    out = plate.score(
+        [_pred("r1", "12가3456", False), _pred("r2", "34나5678", False)],
+        _gt(_truth("r1", "READABLE", "12가3456"),
+            _truth("r2", "READABLE", "34나5678")))
+
+    assert out["readable_abstention_rate"] == 0.0
+    assert "ANSWERED_NOTHING" not in (out["coverage"] or "")
+
+
+def test_partial_abstention_is_a_rate_not_a_flag():
+    """절반만 기권한 모델과 전부 기권한 모델이 같아 보이면 안 된다."""
+    out = plate.score(
+        [_pred("r1", "12가3456", False), _pred("r2", None, True)],
+        _gt(_truth("r1", "READABLE", "12가3456"),
+            _truth("r2", "READABLE", "34나5678")))
+
+    assert out["readable_abstention_rate"] == 0.5
+    assert out["exact_accuracy"] == 1.0        # 답한 것만 놓고는 만점이다
+    assert "ANSWERED_NOTHING" not in (out["coverage"] or "")
+
+
+def test_exact_accuracy_null_says_which_kind_of_null_it_is():
+    """「정답지가 없다」와 「모델이 답을 안 했다」는 다른 사실이다."""
+    no_readable = plate.score([_pred("r1", None, True)],
+                              _gt(_truth("r1", "UNREADABLE")))
+    refused = plate.score([_pred("r1", None, True)],
+                          _gt(_truth("r1", "READABLE", "12가3456")))
+
+    assert no_readable["exact_accuracy"] is None
+    assert refused["exact_accuracy"] is None
+    assert no_readable["coverage"] != refused["coverage"]
+    assert "NO_READABLE_GT" in no_readable["coverage"]
+    assert "ANSWERED_NOTHING" in refused["coverage"]
+    assert no_readable["readable_abstention_rate"] is None   # 분모가 0이다
+
+
+def test_not_run_keeps_the_new_keys():
+    """키가 사라지면 결과 파일을 기계로 비교할 수 없다."""
+    block = plate.not_run("NOT_RUN — 테스트")
+    assert block["readable_abstention_rate"] is None
+    assert block["n_readable"] is None
