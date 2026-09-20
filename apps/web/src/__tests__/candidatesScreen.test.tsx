@@ -111,3 +111,58 @@ describe('CandidatesScreen — 나란히 비교(A-1)', () => {
     expect(container.textContent).toContain('파일명 시각')
   })
 })
+
+// ── 실제 데이터 회귀 ──────────────────────────────────────────────
+//
+// 아래 값은 지어낸 것이 아니라 `tests/case/test_real_e2e.py`가 돌린 실제
+// 파이프라인(recording → search → readout → evidence)의 `case.get_view()`
+// 산출물을 2026-09-20에 떠온 것이다. mock 스냅샷과 달리 `at`·`at_provenance`가
+// 전부 null이고 `hints`가 통째로 비어 있다 — 후보 화면이 이 상태에서
+// 무엇을 그리는지가 월요일 Real E2E 시연에서 실제로 보일 모습이다.
+//
+// 값이 채워지면 이 테스트는 갱신 대상이다. 그때까지는 「빈 값이어도 화면이
+// 거짓말하지 않는다」를 지키는 자리다.
+describe('CandidatesScreen — 실제 E2E 산출물(2026-09-20 실측)', () => {
+  // 계약 타입은 `at_provenance: string`(non-null)인데 실제 파이프라인은 null을
+  // 내린다. 이 캐스트가 그 불일치의 증거다 — 고치는 건 case/계약 쪽 몫이라
+  // 여기서는 실제로 오는 값을 그대로 둔다.
+  const realCandidate = {
+    candidate_id: 'candidate_h001',
+    at: null,
+    at_provenance: null,
+    at_provenance_label_key: null,
+    observed: '흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면',
+    thumb_ref: 'fr_h001_thumb',
+    selected: false,
+    timeline_revision: 1,
+    stale_revision: false,
+    stale_revision_label_key: null,
+    situation_confirmation: 'NOT_ASKED',
+  } as unknown as Candidate
+
+  // 실제 산출물의 `hints`는 4개 키가 있는 객체가 아니라 `{}`다.
+  const realView = { ...view([realCandidate]), hints: {} } as unknown as CaseView
+
+  it('시각이 없어도 카드가 비지 않는다 — 「시각 미확정」을 적는다', () => {
+    const { container } = render(<CandidatesScreen view={realView} />)
+    expect(container.textContent).toContain('시각 미확정')
+  })
+
+  it('시각 출처가 없어도 빈 칸으로 두지 않는다 — fallback 문구를 쓴다', () => {
+    const { container } = render(<CandidatesScreen view={realView} />)
+    expect(container.textContent).toContain('시각 출처 확인 중')
+  })
+
+  it('hints가 비어 있어도 화면이 깨지지 않는다', () => {
+    const { container } = render(<CandidatesScreen view={realView} />)
+    expect(container.querySelectorAll('.cand')).toHaveLength(1)
+    expect(container.textContent).toContain('흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면')
+  })
+
+  it('후보 1건이면 카드가 패널을 채운다 — 고정 3열의 빈 칸이 남지 않는다', () => {
+    const { container } = render(<CandidatesScreen view={realView} />)
+    const grid = container.querySelector('.cands')
+    expect(grid).not.toBeNull()
+    expect(grid!.children).toHaveLength(1)
+  })
+})
