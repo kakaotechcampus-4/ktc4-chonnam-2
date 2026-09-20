@@ -166,9 +166,9 @@
 | `violation_visible_in_report_video` | **제거** |
 | `pre_context_present_in_report_video` | **제거** |
 | `post_context_present_in_report_video` | **제거** |
-| `plate_visible_in_report_video` | 유지 (`readout`) |
-| `time_overlay_visible` | 유지 (`readout`) |
-| `post_stamp_applied` | 유지 |
+| `plate_visible_in_report_video` | 유지 — 최종 `REPORT_VIDEO` 관찰 Producer는 I4에서 연결 |
+| `time_overlay_visible` | 유지 — 최종 `REPORT_VIDEO` 관찰 Producer는 I4에서 연결 |
+| `post_stamp_applied` | 유지 — 실제 사후각인 수행 사실은 `recording` transform provenance로 확인 |
 
 관찰 fact의 구조 검증(boolean·`subject_refs`)과 `PolicyConfigurationError` 처리는 남는 셋에 그대로 적용된다(ADR-002 §5.12).
 
