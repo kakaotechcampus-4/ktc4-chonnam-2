@@ -151,7 +151,12 @@ def pick_plate(boxes):
     candidates = [
         b for b in boxes
         if len(re.findall(r"\d", b.text)) >= MIN_DIGITS
-        and b.width / max(b.height, 1) >= MIN_ASPECT
+        # 납작한 박스를 여기서 버린다. 앞서 `max(height, 1)`로 가리고 있었는데, 그러면
+        # 높이 0짜리 박스가 후보로 남아 `best_frame.plate_bbox_xywh`에 [x,y,w,0]으로
+        # 실린다 — 계약 §4 최소 유효성의 `h > 0`(invariants R19) 위반이다. provider는
+        # 외부 OCR 출력이 들어오는 경계라 여기서 막는다.
+        and b.height > 0
+        and b.width / b.height >= MIN_ASPECT
         and HANGUL.search(b.text)
         and not TIMESTAMP_PATTERN.search(b.text)
     ]
@@ -311,6 +316,9 @@ def selfcheck() -> None:
                            0.95, (300, 1000, 1200, 1040))]) is None
     # 한글이 없는 오인식도 후보가 아니다 (baseline 백색 1줄의 한글 누락 프레임)
     assert pick_plate([box("2354874", 0.91, (100, 100, 300, 160))]) is None
+    # 높이 0짜리 박스는 후보가 아니다 — 통과시키면 plate_bbox_xywh가 [x,y,w,0]으로
+    # 나가 R19의 h > 0을 어긴다
+    assert pick_plate([box("23두4874", 0.99, (100, 100, 300, 100))]) is None
 
     # overlay 줄은 자르지 않고 통째로 넘긴다 — 시각 추출은 api.py가 한다
     raw = "2026/08/10 17:57:36 13.20 ×:+0.020 Y:-0.043 2:-0.012"
