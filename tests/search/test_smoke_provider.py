@@ -6,13 +6,13 @@ from types import ModuleType
 
 import pytest
 
-from daesingo.search.cache import MemoryUploadCache
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.provider import (
     CoarseRequest,
     GeminiProvider,
     ProviderRuntimeOptions,
 )
+from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import VisualEventType
 from daesingo.search.smoke_errors import FixtureRateLimitError
 from daesingo.search.smoke_fixture import (
@@ -27,103 +27,98 @@ type JsonValue = (
 )
 
 
-@dataclass(frozen=True, slots=True)
-class _Remote:
-    name: str = "upload-1"
-    uri: str = "gemini://upload-1"
-    state: str = "ACTIVE"
-
-
-@dataclass(frozen=True, slots=True)
-class _Files:
-    def upload(self, *, file: str, config: dict[str, str]) -> _Remote:
-        del file, config
-        return _Remote()
-
-    def get(self, *, name: str) -> _Remote:
-        del name
-        return _Remote()
-
-
-@dataclass(frozen=True, slots=True)
-class _Interactions:
-    calls: list[dict[str, JsonValue]] = field(default_factory=list)
-
-    def create(self, **kwargs: JsonValue) -> "_Response":
-        self.calls.append(kwargs)
-        return _Response()
-
-
-@dataclass(frozen=True, slots=True)
-class _Response:
-    status: str = "completed"
-    output_text: str = '{"candidates": []}'
-    usage: None = None
-
-
 class _ApiError(Exception):
     pass
 
 
+class _BadRequest(_ApiError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
-class _Client:
-    files: _Files
-    interactions: _Interactions
+class _Message:
+    parsed: object
 
 
-def test_gemini_provider_disables_sdk_retries_and_sets_both_timeout_units(
-    monkeypatch,
+@dataclass(frozen=True, slots=True)
+class _Choice:
+    message: _Message
+
+
+@dataclass(frozen=True, slots=True)
+class _Completion:
+    choices: list[_Choice]
+    usage: object | None = None
+
+
+@dataclass
+class _Completions:
+    calls: list[dict[str, JsonValue]] = field(default_factory=list)
+
+    def parse(self, **kwargs: JsonValue) -> _Completion:
+        self.calls.append(kwargs)
+        return _Completion([_Choice(_Message(CoarseResponse(candidates=())))])
+
+
+@dataclass(frozen=True, slots=True)
+class _Chat:
+    completions: _Completions
+
+
+@dataclass(frozen=True, slots=True)
+class _OpenAIClient:
+    chat: _Chat
+
+
+def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
+    monkeypatch, tmp_path: Path
 ) -> None:
     # Given
-    client_kwargs: list[dict[str, JsonValue]] = []
-    interactions_client = _Interactions()
-    client = _Client(_Files(), interactions_client)
-    genai = ModuleType("google.genai")
+    client_kwargs: dict[str, JsonValue] = {}
+    completions = _Completions()
+    client = _OpenAIClient(_Chat(completions))
 
-    def client_factory(**kwargs: JsonValue) -> _Client:
-        client_kwargs.append(kwargs)
+    def openai_factory(**kwargs: JsonValue) -> _OpenAIClient:
+        client_kwargs.update(kwargs)
         return client
 
-    genai.Client = client_factory
-    interactions = ModuleType("google.genai.interactions")
-    interactions.VideoContent = lambda **kwargs: kwargs
-    interactions.TextContent = lambda **kwargs: kwargs
-    interactions.TextResponseFormat = lambda **kwargs: kwargs
-    errors = ModuleType("google.genai.errors")
-    errors.APIError = _ApiError
-    genai.errors = errors
+    openai_module = ModuleType("openai")
+    openai_module.OpenAI = openai_factory
+    openai_module.APIError = _ApiError
+    openai_module.BadRequestError = _BadRequest
     original = importlib.import_module
 
     def fake_import(name: str) -> ModuleType:
-        known = {
-            "google.genai": genai,
-            "google.genai.interactions": interactions,
-            "google.genai.errors": errors,
-        }.get(name)
-        if known is not None:
-            return known
-        return original(name)
+        return openai_module if name == "openai" else original(name)
 
     monkeypatch.setattr("daesingo.search.provider.importlib.import_module", fake_import)
-    monkeypatch.setitem(sys.modules, "google.genai", genai)
-    monkeypatch.setitem(sys.modules, "google.genai.errors", errors)
+    monkeypatch.setitem(sys.modules, "openai", openai_module)
+    source_file = tmp_path / "clip.mp4"
+    source_file.write_bytes(b"video-bytes")
     provider = GeminiProvider(
         "secret",
         GeminiSearchConfig(max_retries=1),
-        MemoryUploadCache(),
         runtime=ProviderRuntimeOptions(request_timeout_sec=7.5),
     )
-    source = ResolvedAnalysisSource("s", Path("clip.mp4"), 12, "t", 1)
+    source = ResolvedAnalysisSource("s", source_file, 12, "t", 1)
 
     # When
     provider.search_coarse(CoarseRequest(source, (VisualEventType.SIGNAL,)))
 
-    # Then
-    http_options = client_kwargs[0]["http_options"]
-    assert isinstance(http_options, dict)
-    assert http_options["timeout"] == 7500
-    assert http_options["retry_options"] == {"attempts": 1}
-    assert interactions_client.calls[0]["timeout"] == 7.5
+    # Then: OpenAI-compatible client, SDK retries off, proxy base_url + Bearer key
+    assert client_kwargs["base_url"] == GeminiSearchConfig().base_url
+    assert client_kwargs["api_key"] == "secret"
+    assert client_kwargs["timeout"] == 7.5
+    assert client_kwargs["max_retries"] == 0
+    # And: chat.completions.parse with structured output and inline base64 video
+    call = completions.calls[0]
+    assert call["model"] == "gemini-3.8-flash"
+    assert call["response_format"] is CoarseResponse
+    assert call["reasoning_effort"] == "low"
+    content = call["messages"][0]["content"]
+    file_part = next(part for part in content if part["type"] == "file")
+    assert file_part["file"]["file_data"].startswith("data:video/mp4;base64,")
+    assert not any(part.get("type") == "video" for part in content)
 
 
 def test_fixture_provider_retries_once_without_sleep_and_stops_at_two_attempts() -> (

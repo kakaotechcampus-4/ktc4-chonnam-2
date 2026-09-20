@@ -24,6 +24,8 @@ class GeminiSearchConfig:
     max_retries: int = 3
     retry_base_sec: float = 5.0
     fine_padding_sec: float = 4.0
+    # 추론 강도 (none/low/medium/high). 시연 단가 우선이라 low 기본. 필요 시 상향.
+    reasoning_effort: str = "low"
     # 모든 Gemini 호출은 이 프록시(Bearer 인증)를 거친다. 운영자가 로컬에서
     # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
     base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"

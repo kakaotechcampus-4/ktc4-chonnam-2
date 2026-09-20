@@ -1,26 +1,19 @@
+import base64
 import importlib
-import inspect
-import json
 import mimetypes
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from pydantic import BaseModel, ValidationError
 
-from .cache import MemoryUploadCache, UploadCache, UploadedFile
 from .config import GeminiSearchConfig
 from .prompts import COARSE_PROMPT, fine_prompt_for
 from .retry import RetryPolicy, call_with_retry
 from .schemas import CoarseResponse, FineResponse
 from .scope import VisualEventType
-from .smoke_errors import (
-    ProviderApiError,
-    ProviderInteractionStatusError,
-    ProviderPayloadError,
-    ProviderUploadStateError,
-    ProviderUploadTimeoutError,
-)
+from .smoke_errors import ProviderApiError, ProviderPayloadError
 from .sources import ResolvedAnalysisSource
 from .usage import ProviderUsage
 
@@ -60,42 +53,58 @@ class SearchProvider(Protocol):
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]: ...
 
 
+def _video_data_url(path: Path) -> str:
+    mime = mimetypes.guess_type(path)[0] or "video/mp4"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
+def _usage_from_completion(usage: object | None) -> ProviderUsage:
+    if usage is None:
+        return ProviderUsage(None, None, None, None)
+    prompt_tokens = getattr(usage, "prompt_tokens", None)
+    completion_tokens = getattr(usage, "completion_tokens", None)
+    total = None
+    if prompt_tokens is not None and completion_tokens is not None:
+        total = prompt_tokens + completion_tokens
+    # 이 프록시는 사고(thought) 토큰을 별도로 보고하지 않는다. completion_tokens 에
+    # 포함되므로 thought 는 0 으로 두어 비용식이 중복 계산하지 않게 한다.
+    return ProviderUsage(
+        input_tokens=prompt_tokens,
+        output_tokens=completion_tokens,
+        thought_tokens=0 if completion_tokens is not None else None,
+        total_tokens=total,
+    )
+
+
 class GeminiProvider:
     def __init__(
         self,
         api_key: str,
         config: GeminiSearchConfig,
-        cache: UploadCache | None = None,
         *,
         runtime: ProviderRuntimeOptions | None = None,
     ) -> None:
-        genai = importlib.import_module("google.genai")
-        self._interactions = importlib.import_module("google.genai.interactions")
-        # 프록시는 Bearer 인증을 요구한다. base_url 을 지정 프록시로 돌리면
-        # files.upload 와 interactions.create 가 모두 프록시를 경유한다.
-        # ponytail: base_url 이 이미 /v1 을 포함한다. 프록시가 SDK 의 버전
-        # 경로(/v1beta 등)를 덧붙이는 경우 운영자가 DAESINGO_GEMINI_BASE_URL 로
-        # 버전 없는 base 를 지정하거나 api_version 을 맞춰야 한다 — 로컬 실호출로 확인.
+        openai = importlib.import_module("openai")
         selected_runtime = runtime or ProviderRuntimeOptions()
-        self._client = genai.Client(
+        # 프록시(Elice MLAPI)는 OpenAI 호환 /v1/chat/completions 만 제공한다.
+        # base_url 이 .../v1 로 끝나면 SDK 가 /chat/completions 를 덧붙인다.
+        # Bearer 인증은 api_key 로 자동 구성된다. Files API 는 없으므로 영상은
+        # file 콘텐츠 파트에 base64 data URL 로 인라인 전송한다.
+        self._client = openai.OpenAI(
+            base_url=config.base_url,
             api_key=api_key,
-            http_options={
-                "base_url": config.base_url,
-                "headers": {"Authorization": f"Bearer {api_key}"},
-                "timeout": round(selected_runtime.request_timeout_sec * 1000),
-                "retry_options": {"attempts": 1},
-            },
+            timeout=selected_runtime.request_timeout_sec,
+            max_retries=0,  # 재시도는 call_with_retry 로 직접 제어한다
         )
         self._config = config
-        self._cache = cache or MemoryUploadCache()
-        self._request_timeout_sec = selected_runtime.request_timeout_sec
 
     def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
         prompt = COARSE_PROMPT.render(
             event_types=", ".join(event.value for event in request.event_types),
             duration_sec=request.source.duration_sec,
         )
-        return self._invoke(request.source, prompt, CoarseResponse, None)
+        return self._invoke(request.source, prompt, CoarseResponse)
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
         prompt = fine_prompt_for(request.event_type).render(
@@ -104,114 +113,53 @@ class GeminiProvider:
             start_sec=request.start_sec,
             end_sec=request.end_sec,
         )
-        return self._invoke(
-            request.source,
-            prompt,
-            FineResponse,
-            (request.start_sec, request.end_sec),
-        )
+        return self._invoke(request.source, prompt, FineResponse)
 
     def _invoke[ResponseT: BaseModel](
         self,
         source: ResolvedAnalysisSource,
         prompt: str,
         response_model: type[ResponseT],
-        offsets: tuple[float, float] | None,
     ) -> ProviderResult[ResponseT]:
-        def operation() -> ProviderResult[ResponseT]:
-            uploaded = self._uploaded(source)
-            processing: dict[str, str | float] = {
-                "type": "static",
-                "fps": self._config.fine_fps if offsets else self._config.coarse_fps,
-            }
-            if offsets is not None:
-                processing.update(
-                    start_offset=f"{offsets[0]:.3f}s",
-                    end_offset=f"{offsets[1]:.3f}s",
-                )
-            video = self._interactions.VideoContent(
-                type="video",
-                uri=uploaded.uri,
-                mime_type=mimetypes.guess_type(source.path)[0] or "video/mp4",
-                resolution=(
-                    self._config.fine_media_resolution
-                    if offsets
-                    else self._config.media_resolution
-                ),
-                processing=processing,
-            )
-            response_format = self._interactions.TextResponseFormat(
-                type="text",
-                mime_type="application/json",
-                schema=response_model.model_json_schema(),
-            )
-            started = time.monotonic()
-            create = self._client.interactions.create
-            parameters = inspect.signature(create).parameters.values()
-            supports_timeout = any(
-                parameter.name == "timeout"
-                or parameter.kind is inspect.Parameter.VAR_KEYWORD
-                for parameter in parameters
-            )
-            create_arguments = {
-                "model": self._config.model,
-                "input": [
-                    video,
-                    self._interactions.TextContent(type="text", text=prompt),
+        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 서버측 구간
+        # 클리핑·fps·해상도는 미결이라 Fine 구간은 프롬프트로만 지시한다 —
+        # config.media_resolution/fps 는 그 처리 도입 시 사용할 자리로 남긴다.
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "file",
+                        "file": {"file_data": _video_data_url(source.path)},
+                    },
                 ],
-                "response_format": response_format,
             }
-            if supports_timeout:
-                create_arguments["timeout"] = self._request_timeout_sec
-            response = create(**create_arguments)
+        ]
+
+        def operation() -> ProviderResult[ResponseT]:
+            started = time.monotonic()
+            completion = self._client.chat.completions.parse(
+                model=self._config.model,
+                messages=messages,
+                response_format=response_model,
+                reasoning_effort=self._config.reasoning_effort,
+            )
             latency_ms = round((time.monotonic() - started) * 1000)
-            status = str(getattr(response, "status", "") or "")
-            if status and status != "completed":
-                raise ProviderInteractionStatusError(status)
-            payload = json.loads(str(getattr(response, "output_text", "")))
-            parsed = response_model.model_validate(payload)
-            usage = ProviderUsage.from_sdk(getattr(response, "usage", None))
+            parsed = completion.choices[0].message.parsed
+            if parsed is None:
+                raise ProviderPayloadError("provider returned no parsed content")
+            usage = _usage_from_completion(getattr(completion, "usage", None))
             return ProviderResult(parsed, usage, latency_ms)
 
-        from google.genai import errors
+        from openai import APIError, BadRequestError
 
         try:
             return call_with_retry(
                 operation,
                 RetryPolicy(self._config.max_retries, self._config.retry_base_sec),
             )
-        except errors.APIError as error:
-            raise ProviderApiError(str(error)) from error
-        except (json.JSONDecodeError, ValidationError) as error:
+        except (BadRequestError, ValidationError) as error:
             raise ProviderPayloadError(str(error)) from error
-
-    def _uploaded(self, source: ResolvedAnalysisSource) -> UploadedFile:
-        cached = self._cache.get(source.source_id)
-        if cached is not None:
-            from google.genai import errors
-
-            try:
-                remote = self._client.files.get(name=cached.name)
-                if str(getattr(remote.state, "name", remote.state)) == "ACTIVE":
-                    return cached
-            except errors.APIError:
-                cached = None
-        mime = mimetypes.guess_type(source.path)[0] or "video/mp4"
-        remote = self._client.files.upload(
-            file=str(source.path), config={"mime_type": mime}
-        )
-        processing_started = time.monotonic()
-        while str(getattr(remote.state, "name", remote.state)) == "PROCESSING":
-            remaining = self._request_timeout_sec - (
-                time.monotonic() - processing_started
-            )
-            if remaining <= 0:
-                raise ProviderUploadTimeoutError(self._request_timeout_sec)
-            time.sleep(min(2, remaining))
-            remote = self._client.files.get(name=remote.name)
-        state = str(getattr(remote.state, "name", remote.state))
-        if state != "ACTIVE":
-            raise ProviderUploadStateError(state)
-        uploaded = UploadedFile(name=str(remote.name), uri=str(remote.uri))
-        self._cache.put(source.source_id, uploaded)
-        return uploaded
+        except APIError as error:
+            raise ProviderApiError(str(error)) from error
