@@ -159,3 +159,48 @@ def test_not_run_keeps_the_new_keys():
     block = plate.not_run("NOT_RUN — 테스트")
     assert block["readable_abstention_rate"] is None
     assert block["n_readable"] is None
+
+
+# --- abstain 사유 집계 (멘토 피드백 2026-09-20) ---
+
+
+def _pred_r(readout_id, value, abstained, reason=None, ta=None):
+    p = _pred(readout_id, value, abstained)
+    p["abstain_reason"] = reason
+    p["target_association_status"] = ta
+    return p
+
+
+def test_abstain_reasons_are_counted_so_the_refusals_can_be_read():
+    """「왜 기권했나」가 결과에 없으면 기권률만 보고는 손댈 곳을 모른다."""
+    out = plate.score(
+        [_pred_r("r1", None, True, "FRAME_DISAGREEMENT"),
+         _pred_r("r2", None, True, "FRAME_DISAGREEMENT"),
+         _pred_r("r3", None, True, "LOW_RESOLUTION")],
+        _gt(_truth("r1", "UNREADABLE"), _truth("r2", "UNREADABLE"),
+            _truth("r3", "UNREADABLE")))
+
+    assert out["abstain_reasons"] == {"FRAME_DISAGREEMENT": 2, "LOW_RESOLUTION": 1}
+
+
+def test_an_abstention_with_no_reason_is_reported_not_hidden():
+    """사유 없는 기권은 진단할 수 없는 기권이다."""
+    out = plate.score([_pred_r("r1", None, True, None)],
+                      _gt(_truth("r1", "UNREADABLE")))
+
+    assert out["abstain_reasons"] == {}
+    assert out["n_abstained_without_reason"] == 1
+    assert "NO_ABSTAIN_REASON" in out["coverage"]
+
+
+def test_answers_do_not_land_in_the_abstain_reason_table():
+    out = plate.score([_pred_r("r1", "12가3456", False, None)],
+                      _gt(_truth("r1", "READABLE", "12가3456")))
+    assert out["abstain_reasons"] == {}
+    assert out["n_abstained_without_reason"] == 0
+
+
+def test_not_run_keeps_the_reason_keys():
+    block = plate.not_run("NOT_RUN — 테스트")
+    assert block["abstain_reasons"] is None
+    assert block["n_abstained_without_reason"] is None

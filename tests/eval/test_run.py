@@ -10,7 +10,7 @@ def test_envelope_has_meta_raw_normalized():
     assert env["meta"]["impl"] == "fake:always_correct"
     assert env["meta"]["stage"] == "candidate"
     assert env["meta"]["manifest"] == "b_youtube"
-    assert env["meta"]["normalizer_version"] == "n1"
+    assert env["meta"]["normalizer_version"] == "n2"
     assert env["meta"]["manifest_version"] == "m3"
 
 

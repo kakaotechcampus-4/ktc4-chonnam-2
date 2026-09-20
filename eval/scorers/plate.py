@@ -42,11 +42,16 @@ ANSWERED_NOTHING = ("ANSWERED_NOTHING — 읽을 수 있는 번호판 %d건에 �
 NO_READABLE_GT = ("NO_READABLE_GT — 정답지에 READABLE 항목이 없다. "
                   "exact_accuracy 와 readable_abstention_rate 는 분모가 0이다")
 
+NO_REASON = ("NO_ABSTAIN_REASON — 기권 %d건에 사유가 없다. 기권률만으로는 "
+             "무엇을 고쳐야 하는지 알 수 없다 (plate-readout/v1.3 은 "
+             "abstain_reason 을 authoritative 로 둔다)")
+
 
 def not_run(reason):
     return {"exact_accuracy": None, "wrong_accept_rate": None,
             "abstention_recall": None, "readable_abstention_rate": None,
-            "n_readable": None, "n": None, "coverage": reason}
+            "n_readable": None, "abstain_reasons": None,
+            "n_abstained_without_reason": None, "n": None, "coverage": reason}
 
 
 def score(normalized, gt):
@@ -59,6 +64,8 @@ def score(normalized, gt):
     n_readable = n_readable_abstained = 0
     n_scored = 0
     circular = False
+    abstain_reasons = {}
+    n_no_reason = 0
 
     for pred in normalized:
         t = truth.get(pred["readout_id"])
@@ -66,6 +73,14 @@ def score(normalized, gt):
             continue                      # 정답지에 없는 판독은 채점 대상이 아니다
         n_scored += 1
         circular = circular or bool(t.get("derived_from_pack"))
+        if pred["abstained"]:
+            # 기권했다는 사실과 왜 기권했는지는 다른 정보다. 사유별로
+            # 세어 두지 않으면 기권률을 보고도 손댈 곳을 모른다.
+            why = pred.get("abstain_reason")
+            if why:
+                abstain_reasons[why] = abstain_reasons.get(why, 0) + 1
+            else:
+                n_no_reason += 1
         if t["legibility"] == "READABLE":
             n_readable += 1
             if pred["abstained"]:
@@ -94,6 +109,8 @@ def score(normalized, gt):
         reasons.append(NO_READABLE_GT)
     elif n_readable_abstained == n_readable:
         reasons.append(ANSWERED_NOTHING % n_readable)
+    if n_no_reason:
+        reasons.append(NO_REASON % n_no_reason)
 
     return {
         "exact_accuracy": (n_exact_hit / n_exact_den) if n_exact_den else None,
@@ -102,6 +119,8 @@ def score(normalized, gt):
         "readable_abstention_rate": (
             (n_readable_abstained / n_readable) if n_readable else None),
         "n_readable": n_readable,
+        "abstain_reasons": abstain_reasons,
+        "n_abstained_without_reason": n_no_reason,
         "n": n_scored,
         "coverage": "; ".join(reasons) if reasons else None,
     }

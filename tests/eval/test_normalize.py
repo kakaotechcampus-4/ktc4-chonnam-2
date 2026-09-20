@@ -120,7 +120,8 @@ def test_normalize_plate_extracts_fields():
             "abstained": False}]
     out = normalize.normalize_plate(raw)
     assert out == [{"readout_id": "r1", "scenario_id": "s1", "source_profile": "p1",
-                     "value": "12가3456", "status": "OK", "abstained": False}]
+                     "value": "12가3456", "status": "OK", "abstained": False,
+                     "abstain_reason": None, "target_association_status": None}]
 
 
 def test_normalize_plate_optional_fields_default_to_none_when_absent():
@@ -128,7 +129,8 @@ def test_normalize_plate_optional_fields_default_to_none_when_absent():
     raw = [{"readout_id": "r1", "observation": {}, "abstained": True}]
     out = normalize.normalize_plate(raw)
     assert out == [{"readout_id": "r1", "scenario_id": None, "source_profile": None,
-                     "value": None, "status": None, "abstained": True}]
+                     "value": None, "status": None, "abstained": True,
+                     "abstain_reason": None, "target_association_status": None}]
 
 
 def test_normalize_plate_raw_entry_not_dict_raises():
@@ -155,3 +157,35 @@ def test_normalize_plate_missing_abstained_raises():
     with pytest.raises(ValueError,
                         match=re.escape("normalize_plate: raw[0]에 필드 'abstained' 없음")):
         normalize.normalize_plate(raw)
+
+
+# --- 판단 근거 보존 (멘토 피드백 2026-09-20) ---
+#
+# 「각 LLM 판단 결과를 저장할 때 reasoning도 저장하시면 좋습니다. 결과만
+# 있을 때에는 모델의 판단이 이해가 안가는 경우가 있거든요.」
+#
+# abstain_reason 은 plate-readout/v1.3 이 이미 두고 있고(§abstained,
+# authoritative), 예측 파일 raw 에도 그대로 들어온다. normalize 가 버려서
+# 채점 결과까지 못 올라오던 것을 잇는다.
+
+
+def test_normalize_plate_keeps_the_abstain_reason():
+    raw = [{"readout_id": "r1", "observation": {"value": None, "status": "NEEDS_REVIEW"},
+            "abstained": True, "abstain_reason": "FRAME_DISAGREEMENT"}]
+    out = normalize.normalize_plate(raw)
+    assert out[0]["abstain_reason"] == "FRAME_DISAGREEMENT"
+
+
+def test_normalize_plate_keeps_the_target_association_status():
+    """어느 차를 읽었다고 판단했는지도 판단 근거다."""
+    raw = [{"readout_id": "r1", "observation": {}, "abstained": False,
+            "target_association": {"status": "LOW_CONFIDENCE"}}]
+    out = normalize.normalize_plate(raw)
+    assert out[0]["target_association_status"] == "LOW_CONFIDENCE"
+
+
+def test_normalize_plate_missing_reason_is_none_not_a_made_up_value():
+    raw = [{"readout_id": "r1", "observation": {}, "abstained": True}]
+    out = normalize.normalize_plate(raw)
+    assert out[0]["abstain_reason"] is None
+    assert out[0]["target_association_status"] is None
