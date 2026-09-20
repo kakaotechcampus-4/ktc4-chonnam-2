@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import RawIOBase
+from pathlib import Path
 from typing import Any, BinaryIO
 from uuid import uuid4
 
@@ -23,16 +24,19 @@ from .models import (
     FrameLocator,
     FrameRef,
     IncidentClip,
+    MediaStream,
     RecordingTimeline,
     RemoteCopy,
     RemoteCopyInfo,
     SpanResolution,
+    SourceAsset,
     StreamPositionLocator,
     TimelinePositionLocator,
     TimeRange,
     TimelineRef,
 )
 from .repository import InMemoryRecordingRepository
+from .probe import FfprobeMediaProbe, MediaProbe
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -44,6 +48,14 @@ class OpenedAnalysisSource:
     stream: BinaryIO
     content_type: str
     byte_size: int
+
+
+@dataclass(frozen=True)
+class RegisteredSource:
+    """기존 계약 객체를 묶는 Python 반환값. 새 Canonical Contract가 아니다."""
+
+    source_asset: SourceAsset
+    media_streams: tuple[MediaStream, ...]
 
 
 class _SyntheticBinaryStream(RawIOBase):
@@ -85,8 +97,39 @@ class _SyntheticBinaryStream(RawIOBase):
 
 
 class RecordingService:
-    def __init__(self, repository: InMemoryRecordingRepository | None = None) -> None:
+    def __init__(
+        self, repository: InMemoryRecordingRepository | None = None,
+        *, media_probe: MediaProbe | None = None,
+    ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
+        self._media_probe = media_probe or FfprobeMediaProbe()
+
+    def register_local_source(self, path: str | Path) -> RegisteredSource:
+        """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
+
+        실패 시 자산을 등록하지 않는다. 매 성공 호출은 새 opaque ref를 발급한다.
+        Source는 파일 읽기를 확인했으므로 AVAILABLE, stream은 decode 검사 전이므로
+        UNKNOWN이다. 카메라 방향과 누락된 stream duration을 추정하지 않는다.
+        """
+        source = self._media_probe.probe(Path(path))
+        source_ref = f"sa_{uuid4().hex}"
+        streams = tuple(
+            MediaStream(
+                contract="MediaStream", contract_version="source-asset-media-stream/v1",
+                media_stream_ref=f"ms_{uuid4().hex}", source_asset_ref=source_ref,
+                media_type=stream.media_type,
+                role="UNKNOWN" if stream.media_type == "VIDEO" else None,
+                availability="UNKNOWN", duration_sec=stream.duration_sec,
+            ) for stream in source.streams
+        )
+        asset = SourceAsset(
+            contract="SourceAsset", contract_version="source-asset-media-stream/v1",
+            source_asset_ref=source_ref, asset_kind="SOURCE_ASSET", external_source_ref=None,
+            media_stream_refs=[stream.media_stream_ref for stream in streams],
+            byte_size=source.byte_size, availability="AVAILABLE", duration_sec=source.duration_sec,
+        )
+        self._repository.add_local_source(asset, streams, source)
+        return RegisteredSource(asset, streams)
 
     @classmethod
     def from_fixture(

@@ -21,7 +21,8 @@ from .models import (
     TimelineRef,
     TimelinePositionLocator,
 )
-from .service import OpenedAnalysisSource, RecordingService
+from .probe import FfprobeMediaProbe
+from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
 
 __all__ = [
     "AnalysisSource",
@@ -31,12 +32,14 @@ __all__ = [
     "DeletionReport",
     "DerivedAsset",
     "FrameRef",
+    "FfprobeMediaProbe",
     "IncidentClip",
     "MediaStream",
     "OpenedAnalysisSource",
     "RecordingCapabilityError",
     "RecordingFixture",
     "RecordingService",
+    "RegisteredSource",
     "RecordingTimeline",
     "RemoteCopy",
     "RemoteCopyInfo",
