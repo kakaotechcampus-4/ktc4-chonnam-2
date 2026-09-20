@@ -66,6 +66,7 @@ def build_happy_001_evidence_bundle(
     scope: search_module.AnalysisScope,
     mock_root: Path,
     selection_rev: int = 1,
+    location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
     실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
