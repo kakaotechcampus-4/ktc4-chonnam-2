@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "gt_version": "mp1",
+    "tier": "MOCK",
+    "stage": "plate",
+    "contract_version": "plate-readout/v1.2",
+    "coverage": {
+      "readouts_total": 5,
+      "readable": 4,
+      "unreadable": 1,
+      "derived_from_mock_pack": true,
+      "independent_ground_truth": false,
+      "purpose": "plate 지표의 배관(normalize -> score -> results)이 실제 참값을 태우고 도는지 확인한다.",
+      "derived_from": ["data/mock/expected/ (eval-expected/v2 plate_readout 라벨)"],
+      "warning": "true_text 가 채점 대상인 판독 결과(observation.value)에서 왔다. 따라서 exact_accuracy 는 구조상 만점이며 성능 근거가 될 수 없다. wrong_accept_rate 는 분자가 0건이다 — pack 에 「확신에 차서 틀리게 읽은」 케이스가 없어 이 수치는 안전하다는 증거가 아니다.",
+      "not_scored": [
+        "scenario_infra_failure_001 — READOUT_INFRA_FAILURE (판독 0건)",
+        "scenario_relative_rebase_001 — NO_PLATE_READOUT"
+      ],
+      "reviewed_by": "daewon",
+      "reviewed_at": "2026-09-13"
+    }
+  },
+  "items": [
+    { "readout_id": "readout_h001_plate", "scenario_id": "scenario_happy_001",
+      "legibility": "READABLE", "true_text": "12가3456", "derived_from_pack": true },
+    { "readout_id": "readout_p001_plate", "scenario_id": "scenario_plate_reread_001",
+      "legibility": "UNREADABLE", "derived_from_pack": true },
+    { "readout_id": "readout_p001_plate_reread", "scenario_id": "scenario_plate_reread_001",
+      "legibility": "READABLE", "true_text": "17나2867", "derived_from_pack": true },
+    { "readout_id": "readout_r001_plate", "scenario_id": "scenario_correction_rerun_001",
+      "legibility": "READABLE", "true_text": "34나7890", "derived_from_pack": true },
+    { "readout_id": "readout_u001_plate", "scenario_id": "scenario_unknown_abstain_partial_001",
+      "legibility": "READABLE", "true_text": "88부1234", "derived_from_pack": true }
+  ]
+}

@@ -6,3 +6,6 @@
 
 - `challenger-policy.md — Failure decides the challenger 매핑·개방 절차 (A-2)`
 - `failure-taxonomy.md — search 실패 분류 **초안** (Owner 확정 전)`
+- `candidate-span-semantics-2026-09-10.md — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신`
+- `gemini-change-application-plan-2026-09-12.md` — 현재 Gemini 변경 적용 기준과 실험 순서
+- `gemini-coarse-fine-prompt-revision-plan-2026-09-16.md` — 세 위반 Coarse→Fine evidence-first 프롬프트 **개정·검증 계획(미확정)**

@@ -9,7 +9,9 @@
       "operation": "PLATE_READ",
       "outcome": "SUCCEEDED",
       "failure": null,
-      "usage_refs": ["usage_u001_plate"],
+      "usage_refs": [
+        "usage_u001_plate"
+      ],
       "started_at": "2026-08-26T22:32:00+09:00",
       "ended_at": "2026-08-26T22:32:08+09:00"
     },
@@ -18,9 +20,11 @@
       "contract_version": "readout-run/v1",
       "run_id": "rr_u001_overlay",
       "operation": "OVERLAY_TIME_READ",
-      "outcome": "FAILED",
-      "failure": { "kind": "OVERLAY_DETECTION", "code": "NO_OVERLAY_PRESENT" },
-      "usage_refs": ["usage_u001_overlay"],
+      "outcome": "SUCCEEDED",
+      "failure": null,
+      "usage_refs": [
+        "usage_u001_overlay"
+      ],
       "started_at": "2026-08-26T22:32:08+09:00",
       "ended_at": "2026-08-26T22:32:11+09:00"
     }
@@ -30,7 +34,10 @@
       "contract": "PlateReadout",
       "contract_version": "plate-readout/v1.2",
       "readout_id": "readout_u001_plate",
-      "run_ref": { "kind": "readout_run", "ref": "rr_u001_plate" },
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_u001_plate"
+      },
       "case_id": "case_u001",
       "candidate_id": "candidate_u001",
       "input_ref": {
@@ -39,46 +46,118 @@
         "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
       },
       "target_association": {
-        "status": "AMBIGUOUS",
+        "status": "ASSOCIATED",
         "target_hint_used": true,
-        "track_ref": null,
+        "track_ref": "track_u001",
         "association_method": "TARGET_HINT_WITH_FALLBACK",
         "associated_region": {
           "frame_ref": "fr_u001_plate1",
-          "bbox_xywh": [640, 500, 96, 40]
+          "bbox_xywh": [
+            640,
+            500,
+            96,
+            40
+          ]
         },
         "evidence": [
-          { "kind": "SPATIAL_PROXIMITY", "detail": "two candidate regions overlap similarly with selected track" }
+          {
+            "kind": "SPATIAL_PROXIMITY",
+            "detail": "candidate target region overlaps selected track"
+          },
+          {
+            "kind": "MULTI_FRAME_CONTINUITY",
+            "detail": "identical plate crop across sampled frames"
+          }
         ]
       },
       "observation": {
         "contract_version": "observation/v1",
-        "value": "17나28?4",
-        "status": "NEEDS_REVIEW",
-        "source": { "kind": "readout.plate_ocr" },
+        "value": "88부1234",
+        "status": "OK",
+        "source": {
+          "kind": "readout.plate_ocr"
+        },
         "support_refs": [],
         "produced_by": {
           "module": "readout",
-          "run_ref": { "kind": "readout_run", "ref": "rr_u001_plate" }
+          "run_ref": {
+            "kind": "readout_run",
+            "ref": "rr_u001_plate"
+          }
         }
       },
       "consensus": {
-        "text": "17나28?4",
-        "disagree_positions": [5],
+        "text": "88부1234",
+        "disagree_positions": [],
         "method": "MULTI_FRAME"
       },
-      "abstained": true,
-      "abstain_reason": "FRAME_DISAGREEMENT",
+      "abstained": false,
+      "abstain_reason": null,
       "best_frame": {
         "frame_ref": "fr_u001_plate1",
         "crop_ref": "crop_u001_001",
-        "quality": { "plate_px_height": 24, "sharpness": 0.44 }
+        "quality": {
+          "plate_px_height": 42,
+          "sharpness": 0.79
+        }
       },
       "frame_results": [
-        { "frame_ref": "fr_u001_plate1", "crop_ref": "crop_u001_001", "text": "17나2804", "confidence": 0.41 },
-        { "frame_ref": "fr_u001_plate2", "crop_ref": "crop_u001_002", "text": "17나2894", "confidence": 0.38 }
+        {
+          "frame_ref": "fr_u001_plate1",
+          "crop_ref": "crop_u001_001",
+          "text": "88부1234",
+          "confidence": 0.9
+        },
+        {
+          "frame_ref": "fr_u001_plate2",
+          "crop_ref": "crop_u001_002",
+          "text": "88부1234",
+          "confidence": 0.88
+        }
       ]
     }
   ],
-  "overlay_time_readouts": []
+  "overlay_time_readouts": [
+    {
+      "readout_id": "readout_u001_overlay_na",
+      "run_ref": {
+        "kind": "readout_run",
+        "ref": "rr_u001_overlay"
+      },
+      "case_id": "case_u001",
+      "candidate_id": "candidate_u001",
+      "input_ref": {
+        "incident_clip_ref": "clip_u001",
+        "source_profile": "readout-native",
+        "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+      },
+      "observation": {
+        "contract_version": "observation/v1",
+        "value": null,
+        "status": "NOT_APPLICABLE",
+        "reason": {
+          "code": "readout.overlay.not_present",
+          "note": "화면에 타임스탬프 오버레이 자체가 찍혀 있지 않음(NOT_PRESENT) — 판독 실패가 아니라 대상이 없다는 정상 관찰 결과"
+        },
+        "source": {
+          "kind": "readout.overlay_ocr"
+        },
+        "support_refs": [],
+        "produced_by": {
+          "module": "readout",
+          "run_ref": {
+            "kind": "readout_run",
+            "ref": "rr_u001_overlay"
+          }
+        }
+      },
+      "validation": {
+        "format_ok": null,
+        "monotonic_ok": null,
+        "duration_match_ok": null,
+        "sample_count": 0
+      },
+      "samples": []
+    }
+  ]
 }

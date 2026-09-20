@@ -10,10 +10,17 @@
 
 사건 종류·법적 위반 / 신고 규정 / 어느 Timestamp source가 정답인지 / AI 모델 / case stage / AI provider API 직접 호출(그건 `search/providers/`)
 
-## 공개 함수
+## 공개 경계
 
-§4-모듈1 「Public Capability」의 함수 이름은 예시다. 실제 시그니처는 데이터 계약에서 확정한 뒤 여기에 적는다. 다른 모듈은 **공개 함수만** 호출한다.
+다른 모듈은 `RecordingService`와 `load_recording_fixture()`만 사용한다. 저장소와 Stub 구현은 공개 경계가 아니다.
+
+- frame·사실: `resolve_frame()`, `read_frame()`, `lookup_asset_facts()`
+- timeline·구간: `get_timeline()`, `get_latest_timeline()`, `resolve_span()`
+- 분석 자산: `prepare_analysis_source()`, `open_analysis_source()`, `find_remote_copy()`, `register_remote_copy()`
+- 사건·파생 자산: `build_incident_clip()`, `get_incident_clip()`, `register_derived_asset()`, `get_derived_asset()`, `purge_case()`
+
+Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "run_id": "mock_e2e",
+    "impl": "mock_pack:contracts",
+    "stage": "candidate",
+    "manifest": "mock_pack",
+    "gt_version": "mp1",
+    "normalizer_version": "n1",
+    "code_commit": "486f64f",
+    "scorer_version": "s3",
+    "prediction_ref": {
+      "path": "eval/predictions/mock_e2e.json",
+      "sha256": "b835449fe0f308d6511ad5b1b3621fdfa8c82a991361bdfeec0d7d4bd51ac821"
+    }
+  },
+  "candidate": {
+    "recall_at": {
+      "1": 1.0,
+      "3": 1.0,
+      "10": 1.0
+    },
+    "onset_error_sec": {
+      "mean": 0.0,
+      "median": 0.0,
+      "tolerance_sec": 2.0
+    },
+    "containment_rate": 1.0,
+    "fp_per_clip": 0.0,
+    "n_events": 4,
+    "n_negative_clips": 1,
+    "excluded_by_reason": {
+      "EXCLUDED": 1
+    },
+    "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      },
+      "MOTORCYCLE_HELMET_NON_USE": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      },
+      "SIGNAL": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      },
+      "SOLID_LINE_LANE_CHANGE": {
+        "recall_at": {
+          "1": 1.0,
+          "3": 1.0,
+          "10": 1.0
+        },
+        "n": 1
+      }
+    },
+    "coverage": "순환 경고 — mock tier 의 onset 은 채점 대상인 예측과 같은 fixture (span.representative_ms)에서 유도한 값이라 recall·onset_error_sec 는 구조상 순환적이다. 성능 근거가 아니다; EXCLUDED — 1건을 채점에서 제외했다"
+  },
+  "classification": {
+    "recall_macro": null,
+    "precision_macro": null,
+    "recall_by_label": null,
+    "confusion": null,
+    "target_correctness": null,
+    "by_condition": null,
+    "n": null,
+    "n_invalid_predictions": null,
+    "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
+    "coverage": "NOT_RUN — stage=candidate 실행이다"
+  },
+  "plate": {
+    "exact_accuracy": null,
+    "wrong_accept_rate": null,
+    "abstention_recall": null,
+    "n": null,
+    "coverage": "NOT_RUN — stage=candidate 실행이다"
+  },
+  "cost": {
+    "cost_per_case": {
+      "case_h001": 938.0,
+      "case_e001": 434.0,
+      "case_p001": 728.0,
+      "case_r001": 630.0,
+      "case_u001": 756.0,
+      "case_rb001": 84.0
+    },
+    "cost_per_source_video_hour": 1381.9354838709676,
+    "total": 3570.0,
+    "currency": "KRW",
+    "n_rows": 21,
+    "scenarios": [
+      "scenario_happy_001",
+      "scenario_empty_001",
+      "scenario_plate_reread_001",
+      "scenario_correction_rerun_001",
+      "scenario_unknown_abstain_partial_001",
+      "scenario_relative_rebase_001"
+    ],
+    "coverage": null,
+    "scorer_version": "c1"
+  }
+}

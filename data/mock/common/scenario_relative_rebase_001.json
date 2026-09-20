@@ -1,0 +1,59 @@
+{
+  "scenario_id": "scenario_relative_rebase_001",
+  "module": "common",
+  "job_executions": [
+    {
+      "contract": "JobExecution",
+      "contract_version": "job-execution/v1.1",
+      "execution_id": "exec_rb001_search",
+      "job_id": "job_rb001_search",
+      "status": "SUCCEEDED",
+      "attempt": 1,
+      "queued_at": "2026-08-31T14:00:05+09:00",
+      "started_at": "2026-08-31T14:00:06+09:00",
+      "ended_at": "2026-08-31T14:01:10+09:00",
+      "produced": [
+        {
+          "kind": "analysis_run",
+          "ref": "run_rb001"
+        }
+      ],
+      "failure_kind": null,
+      "usage_refs": [
+        "usage_rb001_coarse"
+      ]
+    }
+  ],
+  "usage_records": [
+    {
+      "contract": "UsageRecord",
+      "contract_version": "usage-record/v1.2",
+      "usage_id": "usage_rb001_coarse",
+      "execution_ref": "exec_rb001_search",
+      "run_ref": {
+        "kind": "analysis_run",
+        "ref": "run_rb001"
+      },
+      "run_ref_reason": null,
+      "case_id": "case_rb001",
+      "occurred_at": "2026-08-31T14:01:10+09:00",
+      "provider_label": "gemini",
+      "operation": "SEARCH_COARSE",
+      "token_usage": {
+        "input_tokens": 3800,
+        "output_tokens": 350,
+        "total_tokens": 4150
+      },
+      "processed_duration_sec": 60.0,
+      "latency_ms": 64000,
+      "pricing_context": {
+        "pricing_id": "gemini-2026-08+fx-krw-2026-09",
+        "unit": "per_1k_tokens"
+      },
+      "cost": {
+        "amount": "84",
+        "currency": "KRW"
+      }
+    }
+  ]
+}

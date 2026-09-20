@@ -1,0 +1,35 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_plate_reread_001",
+  "provisional_non_contract_schema": true,
+  "note": "plate 라벨은 판독 단위다. legibility 는 (incident_clip, source_profile) 속성이라 초판독(readout-native)과 재판독(readout-native-hires)의 정답이 달라도 모순이 아니다. 초판독의 abstain 은 실패가 아니라 정답이다.",
+  "metric_targets": [
+    {
+      "metric": "candidate_onset",
+      "ref": { "kind": "candidate", "ref": "candidate_p001" },
+      "violation_type": "SIGNAL",
+      "onset_ms": 612000,
+      "timeline_revision": 1,
+      "scoring": "INCLUDED"
+    },
+    {
+      "metric": "plate_readout",
+      "ref": { "kind": "plate_readout", "ref": "readout_p001_plate" },
+      "legibility": "UNREADABLE",
+      "derived_from_pack": true
+    },
+    {
+      "metric": "plate_readout",
+      "ref": { "kind": "plate_readout", "ref": "readout_p001_plate_reread" },
+      "legibility": "READABLE",
+      "true_text": "17나2867",
+      "derived_from_pack": true
+    },
+    {
+      "metric": "occurred_at",
+      "ref": { "kind": "time_resolution", "ref": "tres_p001" },
+      "expected": "2026-08-29T20:10:12+09:00",
+      "derived_from_pack": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "eval-expected/v2",
+  "scenario_id": "scenario_relative_rebase_001",
+  "provisional_non_contract_schema": true,
+  "note": "timeline 이 revision 2개다. candidate 는 rev 1 에 달려 있다. 절대 시각이 서지 않아(USABLE_RELATIVE_ONLY) 시각은 채점하지 않는다.",
+  "metric_targets": [
+    {
+      "metric": "candidate_onset",
+      "ref": { "kind": "candidate", "ref": "candidate_rb001" },
+      "violation_type": "CENTER_LINE_CROSSING",
+      "onset_ms": 512000,
+      "timeline_revision": 1,
+      "scoring": "INCLUDED"
+    },
+    {
+      "metric": "not_scored",
+      "scope": "plate",
+      "reason": "NO_PLATE_READOUT"
+    },
+    {
+      "metric": "not_scored",
+      "scope": "occurred_at",
+      "reason": "USABLE_RELATIVE_ONLY"
+    }
+  ]
+}
