@@ -426,7 +426,8 @@ Challenger다 — 로드맵이 P4 Go/No-Go까지 막아 둔 일이다.
 real
 AI Hub 71555 교통법규 위반 상황 · Validation
 층화 표본 1,600 프레임 / 1,206 클립 (16층 × 100) · seed 20260919
-positive only — hard-negative 미구성
+association 축 hard-negative — 정상 차량 오선택률 26~33%로 측정 (§2-③)
+  ※ 「이 장면이 위반이냐」 축은 71555에 정상 클립이 0건이라 측정 불가
 
 [INPUT]
 target_hint 없음 (그것이 이 실험의 조건이다)
