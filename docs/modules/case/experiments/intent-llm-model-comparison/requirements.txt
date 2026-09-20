@@ -1,0 +1,6 @@
+# 이 실험 폴더 전용 의존성. 프로젝트 공유 pyproject.toml에는 추가하지 않는다
+# (product 런타임과 무관한 1회성 실측 도구이기 때문 — README 참고).
+#
+#   pip install -r requirements.txt
+#
+openai>=1.40,<2.0

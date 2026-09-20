@@ -66,7 +66,7 @@
 | Q3 timeline revision 직접 필드 | TimeResolution에 새 직접 필드는 확정되지 않았다 | CandidateEvent span과 IncidentClip provenance의 timeline ref/revision/range로 사용 입력 추적 가능 | 비차단 후속. 새 필드 없이 현 경로 유지; Contract 변경 시 반영 |
 | 공용 H/U Package baseline | **반영 완료.** 판정 주체가 없던 세 rule을 v4에서 제거했다 | H `PASS`·`pkg_h001`, U `WARN`·`pkg_u001`; 두 Consumer Mock 모두 `PACKAGE_READY=true` | evidence 범위 완료. 공용 Package는 아직 v1이고 U는 위치 있는 template이므로 I2 fixture 재렌더 대기 |
 | D2-e 녹화 경계 | 사건이 녹화 시작·끝에 걸려 전후가 물리적으로 없을 수 있다 | v4 `RequirementReport`는 이를 판정하지 않는다 | `recording` Owner(정철원)가 생성 실패/경고/사용자 고지와 span 정책을 결정. evidence는 미결을 닫지 않음 |
-| I4 번호판·시각 관찰 전달 | Mock adapter에는 값이 있으나 `mock_only: true`다 | 실제 Runtime은 `plate_visible_in_report_video` 부재 시 FINAL_PACKAGE `UNKNOWN` | `readout` 생산 결과를 `case`·`recording` 경계에서 evidence 입력으로 배선 |
+| I4 번호판·시각 관찰 전달 | Mock adapter에는 값이 있으나 `mock_only: true`다. 현재 readout은 `IncidentClip`만 읽어 최종 `REPORT_VIDEO` 가시성을 생산하지 않는다 | 실제 Runtime은 `plate_visible_in_report_video` 부재 시 FINAL_PACKAGE `UNKNOWN` | 먼저 readout이 `DerivedAsset(REPORT_VIDEO)`를 관찰 대상으로 받을 수 있는 계약/capability를 열고, 이후 case가 관찰 결과를 evidence `observation_facts`로 전달. `post_stamp_applied`는 recording transform provenance로 확인 |
 | 실제 Consumer | 현재 `case` 공개 실행 구현은 골격이며 실제 projection 호출 경로가 없다 | Contract reader Mock까지만 입증 | 유소연이 실제 case 입력 경계/CaseView projection을 구현한 뒤 동일 artifact로 접합 확인 |
 
 ## 재현 명령과 검증 범위

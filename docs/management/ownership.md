@@ -398,7 +398,7 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 
 ## ③ 데이터 계약 확정 — 계약 BLOCK 축 종결 (2026-09-08)
 
-> **현재 상태.** 아래 표는 **누가 무엇을 초안 작성했는지**의 기록이다. 계약 16건 중 15건이 `Final — Accepted`이고 `CorrectionRecord` 1건만 Draft다(N02). 감사 BLOCK 12건은 전부 종결됐고 열린 결정 회차는 0건이다. 이 단계에 남은 것은 새 스키마 설계가 아니라 **W04**(`JobExecution` 소비자 확인 · domain `PARTIAL`↔runtime `status`)와 **N02**(`CorrectionRecord` Draft Consumer Review · readout taxonomy · eval 정답지) 두 건의 `PENDING_OWNER`이며, 둘 다 ④ 착수를 막지 않는다. 원장은 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2다.
+> **현재 상태 (2026-09-19 maintenance).** 아래 표는 **누가 무엇을 초안 작성했는지**의 역사 기록이다. 2026-09-08 closure 당시에는 15건 Final + `CorrectionRecord` 1건 Draft였지만, 2026-09-10 evidence Consumer Review 반영으로 `correction-record/v1.1`도 `Final — Accepted`가 되어 **현재 canonical 계약 16건은 모두 Final**이다. 당시 W04/N02 표는 closure snapshot으로 보존한다. W04의 `JobExecution` 소비자 확인은 현재도 `contract-job-execution.md` §11에 남아 있고, N02 중 `CorrectionRecord`/readout taxonomy 후속은 종결됐다. 현재 계약 상태는 `../architecture/contracts/README.md`와 각 Contract를 따른다.
 
 **초반에 전원이 합의할 것은 3개뿐이다.** 나머지는 생산자가 정하고 소비자가 예시 JSON으로 개발한다. 계약의 의미는 v4 §5, 필드·enum·nullable은 이 단계에서 확정한다(§13-2).
 
@@ -435,11 +435,11 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
 [web]  증거 검토 카드 → 신고 꾸러미 → handoff 링크
 ```
 
-> **현재 통합 상태 (2026-09-08, 2차 반영 후):** 아래 6개는 통과 기준이지 완료 기록이 아니다. 개별 Mock/제한 경로 착수와 전체 E2E 완료를 구분한다. 접합부 Owner 결정과 남은 Pending·종결·준비도 판정은 `../architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2 참조(2026-09-07 회차는 같은 폴더의 `adr-data-contract-call-closure-2026-09-07.md`, 2026-09-06 보정 기록은 `adr-consistency-followup-2026-09-06.md`). 기준 ④의 세 gate 분리는 계약에 반영됐다(`requirements_evidence`/`requirements_package`/`user_reviewed`) — 화면 실행 확인은 아직 없다.
+> **통합 상태 (2026-09-19 maintenance):** 아래 6개는 2026-09-08에 정의한 **통과 기준의 역사 기록**이며, 현재 완료표로 사용하지 않는다. 09-08 closure ADR의 `READY_WITH_NON_BLOCKING_GAPS`는 당시 계약 준비도 판정으로 보존한다.
 >
-> **데이터 계약 상태.** recording 자산 계약 2건이 4 Consumer Review 종결로 `Final — Accepted`가 되어 **BLOCK 12건 전부 종결이고 열린 결정 회차는 0건**이다. 감사 전체는 `CONTRACT_AUDIT_PARTIAL`로 남는다 — W04(`JobExecution` 소비자 확인·domain `PARTIAL`↔runtime `status`)와 N02(`CorrectionRecord` Draft Review·readout taxonomy·eval 정답지)가 `PENDING_OWNER`다. 다음 단계 준비도는 **`READY_WITH_NON_BLOCKING_GAPS`** — Mock·통합 E2E 착수를 막는 계약 항목은 없고, E2E에서 판정 대상으로 삼지 말아야 하는 셀(W04의 status 매핑 · `stream_selector` 경로 · thumbnail 이미지 획득 · recording `failure.kind`/`code`의 값 자체 · `AnalysisSource` profile 값 목록)은 같은 ADR §10.2에 적혀 있다. 이 항목들은 정해진 범위 밖에서 각 Owner가 처리하거나 판정 대상에서 제외한다.
+> **현재 계약 상태:** canonical 계약 16건은 모두 `Final — Accepted`. 다만 `contract-job-execution.md` §11의 W04 소비자 확인처럼 Final Contract 내부에 명시적으로 남은 후속 확인은 그대로 유효하며 임의 종결하지 않는다.
 >
-> **준비도는 완료가 아니다.** `READY_WITH_NON_BLOCKING_GAPS`는 「계약만으로 Mock payload와 E2E 시나리오를 정의할 수 있다」는 뜻이며, **Mock 생성·모듈 구현·통합 E2E 실행이 끝났다는 뜻이 아니다.** 현재 `src/daesingo/*`·`apps/web`·`eval/*`에 실행 코드가 없어 구현 통합은 `IMPLEMENTATION_NOT_VERIFIED`, 실제 E2E는 `E2E_NOT_VERIFIED`다. 위 통과 기준 6개는 그 단계에서 채운다.
+> **현재 구현 상태:** Mock integration과 `src/daesingo/{case,search,readout,recording,evidence,common}` 구현·테스트, `apps/web` 구현, `eval/` runner/scorer가 존재한다. 반면 실제 `api`/worker composition root와 모듈 간 실제 AI 호출 기반 E2E는 아직 없다. **현재 구현 현황의 Source of Truth는 루트 `README.md`와 각 모듈 README/checklist**이며, 이 ownership 문단은 milestone 기준만 보존한다.
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 

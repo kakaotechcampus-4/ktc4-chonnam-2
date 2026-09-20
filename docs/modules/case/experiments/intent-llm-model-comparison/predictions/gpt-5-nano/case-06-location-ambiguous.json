@@ -1,0 +1,22 @@
+{
+  "case_id": "case-06-location-ambiguous",
+  "scenario_tag": "위치_애매",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":\"집 근처 사거리\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"발화에서 위치 정보로 '집 근처 사거리'가 명시되어 있어 이를 location_hint로 추출. 시간/차량/상황 관련 정보는 언급되지 않았으므로 각 필드는 null 처리. prior_hints가 null이므로 정정 대상도 없음. 문장에 '같아요'와 '정확히 기억나지 않는다'는 불확실한 진술로 판단되어 confidence를 low로 설정.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "집 근처 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에서 위치 정보로 '집 근처 사거리'가 명시되어 있어 이를 location_hint로 추출. 시간/차량/상황 관련 정보는 언급되지 않았으므로 각 필드는 null 처리. prior_hints가 null이므로 정정 대상도 없음. 문장에 '같아요'와 '정확히 기억나지 않는다'는 불확실한 진술로 판단되어 confidence를 low로 설정."
+  },
+  "latency_ms": 9180.40029995609,
+  "prompt_tokens": 792,
+  "completion_tokens": 1299,
+  "cost_krw": 0.851283,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
