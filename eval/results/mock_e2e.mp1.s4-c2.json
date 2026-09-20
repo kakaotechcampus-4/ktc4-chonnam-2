@@ -5,12 +5,13 @@
     "stage": "candidate",
     "manifest": "mock_pack",
     "gt_version": "mp1",
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
-    "scorer_version": "s3",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "s4",
+    "cost_scorer_version": "c2",
     "prediction_ref": {
       "path": "eval/predictions/mock_e2e.json",
-      "sha256": "b835449fe0f308d6511ad5b1b3621fdfa8c82a991361bdfeec0d7d4bd51ac821"
+      "sha256": "b2807433a84f7b9ce6292cd3ad174bee86c2708bb6f1439c53f3a9285a58a37b"
     }
   },
   "candidate": {
@@ -19,6 +20,12 @@
       "3": 1.0,
       "10": 1.0
     },
+    "localization_recall_at": {
+      "1": 1.0,
+      "3": 1.0,
+      "10": 1.0
+    },
+    "type_accuracy_given_localized": 1.0,
     "onset_error_sec": {
       "mean": 0.0,
       "median": 0.0,
@@ -84,6 +91,10 @@
     "exact_accuracy": null,
     "wrong_accept_rate": null,
     "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
     "n": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
@@ -100,6 +111,14 @@
     "total": 3570.0,
     "currency": "KRW",
     "n_rows": 21,
+    "latency_ms": {
+      "p50": 30000,
+      "p90": 61000,
+      "max": 65000,
+      "n": 21,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": 253.75354838709674,
     "scenarios": [
       "scenario_happy_001",
       "scenario_empty_001",
@@ -109,6 +128,6 @@
       "scenario_relative_rebase_001"
     ],
     "coverage": null,
-    "scorer_version": "c1"
+    "scorer_version": "c2"
   }
 }

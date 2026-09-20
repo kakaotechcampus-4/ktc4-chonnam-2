@@ -5,12 +5,13 @@
     "stage": "candidate",
     "manifest": "b_youtube",
     "gt_version": "g3",
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
-    "scorer_version": "s3",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "s4",
+    "cost_scorer_version": "c3",
     "prediction_ref": {
       "path": "eval/predictions/demo_correct.json",
-      "sha256": "4f92f321bb470090503942622c54aa1b7c3379e03d65d61f5e53b10824a37a6e"
+      "sha256": "a1294c277be54a8df8c394aae78f91a314d8808d255cf5a291090983c0cad2fc"
     }
   },
   "candidate": {
@@ -19,6 +20,12 @@
       "3": 1.0,
       "10": 1.0
     },
+    "localization_recall_at": {
+      "1": 0.9,
+      "3": 1.0,
+      "10": 1.0
+    },
+    "type_accuracy_given_localized": 1.0,
     "onset_error_sec": {
       "mean": 0.0,
       "median": 0.0,
@@ -65,7 +72,6 @@
     "recall_by_label": null,
     "confusion": null,
     "target_correctness": null,
-    "by_condition": null,
     "n": null,
     "n_invalid_predictions": null,
     "n_invalid_gt_labels": null,
@@ -76,6 +82,10 @@
     "exact_accuracy": null,
     "wrong_accept_rate": null,
     "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
     "n": null,
     "coverage": "NOT_RUN — stage=candidate 실행이다"
   },
@@ -85,8 +95,17 @@
     "total": null,
     "currency": null,
     "n_rows": 0,
+    "n_unknown_cost": 0,
+    "latency_ms": {
+      "p50": null,
+      "p90": null,
+      "max": null,
+      "n": 0,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": null,
     "scenarios": [],
     "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
-    "scorer_version": "c1"
+    "scorer_version": "c3"
   }
 }

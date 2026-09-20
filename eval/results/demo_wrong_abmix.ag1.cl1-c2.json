@@ -5,12 +5,13 @@
     "stage": "classification",
     "manifest": "ab_mixed",
     "gt_version": "ag1",
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
     "scorer_version": "cl1",
+    "cost_scorer_version": "c2",
     "prediction_ref": {
       "path": "eval/predictions/demo_wrong_abmix.json",
-      "sha256": "273438e284c0065a98e42655c7f6c30b6e1f6e301b13cbc8c2aaeaa8f2abefd1"
+      "sha256": "a9b29c12ce2c617f80b6a909d102ac022f4c7c097b3cf638a317a2fd00db6fa0"
     }
   },
   "candidate": {
@@ -19,6 +20,12 @@
       "3": null,
       "10": null
     },
+    "localization_recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "type_accuracy_given_localized": null,
     "onset_error_sec": {
       "mean": null,
       "median": null,
@@ -102,6 +109,10 @@
     "exact_accuracy": null,
     "wrong_accept_rate": null,
     "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
     "n": null,
     "coverage": "NOT_RUN — stage=classification 실행이다"
   },
@@ -111,8 +122,16 @@
     "total": null,
     "currency": null,
     "n_rows": 0,
+    "latency_ms": {
+      "p50": null,
+      "p90": null,
+      "max": null,
+      "n": 0,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": null,
     "scenarios": [],
     "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
-    "scorer_version": "c1"
+    "scorer_version": "c2"
   }
 }
