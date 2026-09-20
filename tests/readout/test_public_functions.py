@@ -261,6 +261,49 @@ class TotalFailureTest(unittest.TestCase):
         self.assertEqual(round_trip(run).to_dict(), run.to_dict())
 
 
+class OverlayTextParseTest(unittest.TestCase):
+    """실제 블랙박스는 시각 옆에 다른 값을 같은 줄에 찍는다.
+
+    `20260810_175721_EVT_1` 14.76s 프레임을 실제로 OCR한 결과가 근거다(conf 0.9724) —
+    시각 뒤에 속도·G센서가 붙어 나왔고, 원문 전체를 `strptime`에 넣던 구현은 시각이
+    멀쩡히 찍혀 있는데도 `format_ok=false`로 떨어뜨렸다. fixture는 깨끗한 문자열이라
+    통과했기 때문에 실물을 넣기 전까지 드러나지 않았다.
+    """
+
+    TZ = "+09:00"
+
+    def test_real_overlay_line_with_sensor_values(self):
+        raw = "2026/08/10 17:57:36 13.20 ×:+0.020 Y:-0.043 2:-0.012"
+        self.assertEqual(api._parse_overlay_text(raw, self.TZ), "2026-08-10T17:57:36+09:00")
+
+    def test_timestamp_with_leading_text(self):
+        self.assertEqual(
+            api._parse_overlay_text("CH1 2026/08/10 17:57:36", self.TZ),
+            "2026-08-10T17:57:36+09:00")
+
+    def test_registered_formats_still_parse(self):
+        for raw in ("2026-08-24 18:05:12", "2026/08/24 18:05:12",
+                    "2026.08.24 18:05:12", "2026-08-24T18:05:12"):
+            with self.subTest(raw=raw):
+                self.assertEqual(
+                    api._parse_overlay_text(raw, self.TZ), "2026-08-24T18:05:12+09:00")
+
+    def test_shape_alone_does_not_make_a_time(self):
+        """자리 찾기와 유효성 판정을 나눠 둔 이유 — 패턴은 통과해도 시각이 아니면 버린다."""
+        self.assertIsNone(api._parse_overlay_text("2026/13/45 99:99:99", self.TZ))
+
+    def test_no_timestamp_at_all(self):
+        for raw in (None, "", "speed 13.20 km/h", "----"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
+
+    def test_first_timestamp_wins_when_two_are_present(self):
+        """어느 것이 프레임 시각인지 고를 근거가 여기 없다 — 판정을 숨기지 않고 앞의 것을 쓴다."""
+        self.assertEqual(
+            api._parse_overlay_text("2026/08/10 17:57:36 2026/08/10 17:57:37", self.TZ),
+            "2026-08-10T17:57:36+09:00")
+
+
 class OverlayBranchTest(unittest.TestCase):
     """네 갈래가 서로 다른 값으로 나온다 — 합치면 Merge 중단 기준 위반이다."""
 
