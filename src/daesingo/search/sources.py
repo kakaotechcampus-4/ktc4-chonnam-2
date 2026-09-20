@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Protocol, override
@@ -105,7 +105,7 @@ class AnalysisSourceResolver(Protocol):
 
     def resolve_reference(self, input_ref: ContractRef) -> ResolvedAnalysisSource: ...
 
-    def open_source(self, ref: ContractRef) -> Generator[MediaInput]: ...
+    def open_source(self, ref: ContractRef) -> AbstractContextManager[MediaInput]: ...
 
 
 # ---------------------------------------------------------------------------
@@ -134,13 +134,11 @@ class StaticAnalysisSourceResolver:
                 f"no analysis source for ref {input_ref.ref!r}"
             ) from error
 
-    @contextmanager
-    def open_source(self, ref: ContractRef) -> Generator[MediaInput]:
+    def open_source(self, ref: ContractRef) -> AbstractContextManager[MediaInput]:
         raise NotImplementedError(
             "StaticAnalysisSourceResolver does not support open_source; "
             "use LocalAnalysisSourceResolver or RecordingAnalysisSourceResolver"
         )
-        yield  # type: ignore[misc]  # unreachable — satisfies Generator protocol
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +209,10 @@ class RecordingAnalysisSourceGateway(Protocol):
 # RecordingAnalysisSourceResolver
 # ---------------------------------------------------------------------------
 
-_RECORDING_ERROR_MAP: dict[str, type[Exception]] = {
-    "NOT_FOUND": AnalysisSourceNotFoundError,
+_RECORDING_ERROR_MAP: dict[
+    str,
+    type[AnalysisSourceUnavailableError | AnalysisSourceTemporaryFailureError],
+] = {
     "UNAVAILABLE": AnalysisSourceUnavailableError,
     "TEMPORARY_FAILURE": AnalysisSourceTemporaryFailureError,
     # Defensive: UNSUPPORTED_MEDIA is documented but not raised by recording/service.py today.
@@ -272,12 +272,12 @@ class RecordingAnalysisSourceResolver:
         try:
             opened = self.gateway.open_analysis_source(ref.ref)
         except RecordingCapabilityError as exc:
+            if exc.code == "NOT_FOUND":
+                raise AnalysisSourceNotFoundError(ref.ref) from exc
             error_cls = _RECORDING_ERROR_MAP.get(
                 exc.code, AnalysisSourceTemporaryFailureError
             )
-            if error_cls is AnalysisSourceNotFoundError:
-                raise AnalysisSourceNotFoundError(ref.ref) from exc
-            raise error_cls(ref.ref, str(exc)) from exc  # type: ignore[call-arg]
+            raise error_cls(ref.ref, str(exc)) from exc
         try:
             yield MediaInput(
                 stream=opened.stream,
