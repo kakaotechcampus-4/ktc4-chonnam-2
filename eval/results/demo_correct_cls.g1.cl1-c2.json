@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "run_id": "demo_correct_cls",
+    "impl": "fake:always_correct",
+    "stage": "classification",
+    "manifest": "a_aihub",
+    "gt_version": "g1",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "cl1",
+    "cost_scorer_version": "c2",
+    "prediction_ref": {
+      "path": "eval/predictions/demo_correct_cls.json",
+      "sha256": "49550c8b87a45c8fdd2ce0b94c949dd23697a9d9794faed55d6f17ee3d77a583"
+    }
+  },
+  "candidate": {
+    "recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "localization_recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "type_accuracy_given_localized": null,
+    "onset_error_sec": {
+      "mean": null,
+      "median": null,
+      "tolerance_sec": null
+    },
+    "containment_rate": null,
+    "fp_per_clip": null,
+    "n_events": null,
+    "n_negative_clips": null,
+    "excluded_by_reason": null,
+    "by_type": null,
+    "coverage": "NOT_RUN — stage=classification 실행이다"
+  },
+  "classification": {
+    "recall_macro": 1.0,
+    "precision_macro": 1.0,
+    "recall_by_label": {
+      "SIGNAL": 1.0,
+      "CENTER_LINE_CROSSING": 1.0,
+      "SOLID_LINE_LANE_CHANGE": 1.0,
+      "MOTORCYCLE_HELMET_NON_USE": 1.0,
+      "NONE": null
+    },
+    "confusion": {
+      "SIGNAL": {
+        "SIGNAL": 30,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "CENTER_LINE_CROSSING": {
+        "SIGNAL": 0,
+        "CENTER_LINE_CROSSING": 30,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "SOLID_LINE_LANE_CHANGE": {
+        "SIGNAL": 0,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 30,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "MOTORCYCLE_HELMET_NON_USE": {
+        "SIGNAL": 0,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 30,
+        "NONE": 0
+      },
+      "NONE": {
+        "SIGNAL": 0,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      }
+    },
+    "target_correctness": 1.0,
+    "by_condition": {
+      "day_night": {
+        "야간": {
+          "accuracy": 1.0,
+          "n": 66
+        },
+        "주간": {
+          "accuracy": 1.0,
+          "n": 54
+        }
+      }
+    },
+    "n": 120,
+    "n_invalid_predictions": 0,
+    "n_invalid_gt_labels": 0,
+    "n_invalid_bboxes": 0,
+    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 5건을 target_correctness 분모에서 뺐다"
+  },
+  "plate": {
+    "exact_accuracy": null,
+    "wrong_accept_rate": null,
+    "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
+    "n": null,
+    "coverage": "NOT_RUN — stage=classification 실행이다"
+  },
+  "cost": {
+    "cost_per_case": null,
+    "cost_per_source_video_hour": null,
+    "total": null,
+    "currency": null,
+    "n_rows": 0,
+    "latency_ms": {
+      "p50": null,
+      "p90": null,
+      "max": null,
+      "n": 0,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": null,
+    "scenarios": [],
+    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
+    "scorer_version": "c2"
+  }
+}

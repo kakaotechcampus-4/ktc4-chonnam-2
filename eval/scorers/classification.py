@@ -8,12 +8,26 @@ _TARGET_BBOX_IOU_THRESHOLD 이상이면 correct 다. bbox 한 픽셀 밀림까�
 완전 일치를 요구하면 실제 탐지기는 전부 0점을 받는다 — "측정했고 0"과
 "애초에 잴 게 없다"를 구분하려던 null 규율이, 이번엔 정의 자체의
 과도한 엄격함 때문에 무너지지 않도록 느슨한 임계값을 쓴다.
+
+**by_condition 은 `cl2` 에서 내렸다** (2026-09-20). AI-Hub 71555 의
+`DayNights` 는 한 클립 안에서 값이 갈리는 클립이 **97.54%**, `Weather` 는
+98.36% 다 (전수 5,619클립 — readout PR #93 `condition-label-audit.txt`).
+대조군인 해상도는 0.00% 라 클립 묶음 오류가 아니라 라벨 자체가 무작위에
+가깝다. 게다가 `sample_aihub` 는 시퀀스의 조건을 **첫 프레임 라벨**에서
+가져오므로 동전 한 번 던진 값이다. `by_condition` 은 `day_night` 하나로만
+잘랐으니 지표 전체가 그 위에 서 있었다 — 치트 impl 이라 1.0/0.0 으로만
+나와 피해가 안 보였을 뿐, 실제 모델이 도는 순간 근거 없는 「야간이 더
+어렵다」를 말하게 된다. 잴 수 없는 것을 재는 척하느니 내린다.
+
+`roadType` 은 0.00% 로 멀쩡하지만 그 축으로 갈아타지 않았다 — 원래
+의도는 조명·날씨였지 도로종류가 아니다. 엉뚱한 축을 남겨 두면 의도가
+채워진 것처럼 보인다.
 """
 import collections
 
 from eval.enums import CLASS_LABELS
 
-SCORER_VERSION = "cl1"   # 2026-09-16 n_invalid_bboxes 신설 (F11)
+SCORER_VERSION = "cl2"   # 2026-09-20 by_condition 철회 (못 믿을 라벨)
 
 _LABEL_SET = set(CLASS_LABELS)
 
@@ -70,13 +84,11 @@ def score(normalized, gt):
     tp = collections.Counter()
     fp = collections.Counter()
     fn = collections.Counter()
-    by_cond = collections.defaultdict(lambda: {"correct": 0, "n": 0})
 
     target_hits = 0
     target_total = 0
     n_invalid_bboxes = 0
     n_no_target_bbox_gt = 0
-    n_no_condition = 0
     n_invalid_predictions = 0
     n_invalid_gt_labels = 0
     n_scored = 0
@@ -108,18 +120,6 @@ def score(normalized, gt):
         else:
             fn[truth] += 1
             fp[pred] += 1
-
-        cond = item.get("condition") or {}
-        dn = cond.get("day_night")
-        if dn:
-            by_cond[dn]["n"] += 1
-            if pred == truth:
-                by_cond[dn]["correct"] += 1
-        else:
-            # 촬영조건 라벨이 없는 항목(B tier)은 by_condition 분모에서 빠진다.
-            # 세어 두지 않으면 n 과 by_condition 합의 차이를 결과만 보고
-            # 설명할 수 없다.
-            n_no_condition += 1
 
         # target_bbox 가 없는(None) GT 항목(원본 라벨에 위반 차량 bbox 부재)은
         # target_correctness 분모에서 제외한다 — 미탐으로 세지 않는다.
@@ -165,10 +165,6 @@ def score(normalized, gt):
         reasons.append(
             "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 %d건을 "
             "target_correctness 분모에서 뺐다" % n_no_target_bbox_gt)
-    if n_no_condition:
-        reasons.append(
-            "NO_CONDITION — 촬영조건 라벨이 없는 %d건을 by_condition 분모에서 뺐다"
-            % n_no_condition)
     if n_invalid_bboxes:
         reasons.append(
             "INVALID_BBOXES — 형식이 깨진 예측 bbox %d건. target_correctness 분모에는 "
@@ -181,10 +177,6 @@ def score(normalized, gt):
         "recall_by_label": recall,
         "confusion": confusion,
         "target_correctness": (target_hits / target_total) if target_total else None,
-        "by_condition": {
-            "day_night": {k: {"accuracy": v["correct"] / v["n"], "n": v["n"]}
-                          for k, v in sorted(by_cond.items())}
-        },
         "n": n_scored,
         "n_invalid_predictions": n_invalid_predictions,
         "n_invalid_gt_labels": n_invalid_gt_labels,
@@ -201,7 +193,6 @@ def not_run(reason):
         "recall_by_label": None,
         "confusion": None,
         "target_correctness": None,
-        "by_condition": None,
         "n": None,
         "n_invalid_predictions": None,
         "n_invalid_gt_labels": None,

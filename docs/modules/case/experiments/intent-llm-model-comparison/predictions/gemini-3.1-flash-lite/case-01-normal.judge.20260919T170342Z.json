@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-01-normal",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"'어제 18시쯤'을 정확히 추출함.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'흰색 SUV'를 정확히 추출함.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'백색 실선 구간에서 차로 변경'으로 원문 내용을 정확히 반영함.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'상무중앙로 사거리'를 정확히 추출함.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null로 둔 것이 맞음.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·장소·차량·상황이 모두 명확히 진술되어 high로 판단한 것이 적절함.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'어제 18시쯤'을 정확히 추출함."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'흰색 SUV'를 정확히 추출함."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'백색 실선 구간에서 차로 변경'으로 원문 내용을 정확히 반영함."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'상무중앙로 사거리'를 정확히 추출함."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 맞음."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·장소·차량·상황이 모두 명확히 진술되어 high로 판단한 것이 적절함."
+    }
+  },
+  "latency_ms": 5474.673700053245,
+  "prompt_tokens": 2428,
+  "completion_tokens": 409,
+  "cost_krw": null,
+  "error": null
+}

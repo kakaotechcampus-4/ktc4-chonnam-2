@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from daesingo.case import jobs, real_e2e, service
+from daesingo.case import correction, jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
 
@@ -86,6 +86,85 @@ def test_real_adapter_requires_selected_candidate_before_evidence():
         real.get_evidence_record()
 
 
+def test_real_adapter_recomputes_evidence_after_event_time_manual_correction():
+    """EVENT_TIME_MANUAL 정정 뒤 evidence가 최신 correction을 반영해 다시 계산되는지 확인한다."""
+    scope = _real_scope()
+    case = CaseAggregate.intake(
+        case_id="case_h001_correction_rerun", hints={}, manifest_summary={}
+    )
+    real = RealAdapter(
+        case_id="case_h001_correction_rerun",
+        case=case,
+        search_scope=scope,
+        mock_root=MOCK_ROOT,
+    )
+    case.start_search()
+    jobs.issue_coarse_search(
+        case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search"
+    )
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    record_before = real.get_evidence_record()
+    jobs_before = list(case.job_records)
+    corrected_value = "2026-08-24T18:10:00+09:00"
+    correction.apply_correction(
+        case,
+        kind="EVENT_TIME_MANUAL",
+        target_field="occurred_at",
+        previous_value=record_before["occurred_at"]["value"],
+        new_value=corrected_value,
+    )
+    assert case.job_records == jobs_before
+
+    record_after = real.get_evidence_record()
+    assert record_after is not record_before
+    assert record_after["occurred_at"]["value"] == corrected_value
+    assert record_after["occurred_at"]["user_corrected"] is True
+    assert record_after["occurred_at"]["source"]["kind"] == "case.user_correction"
+    assert record_after["vehicle_number"]["value"] == record_before["vehicle_number"]["value"]
+    assert real.get_evidence_record() is record_after
+
+
+def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
+    """REPORT_TYPE_CHANGE도 같은 correction 배선으로 반영되는지 확인한다."""
+    scope = _real_scope()
+    case = CaseAggregate.intake(
+        case_id="case_h001_report_type_change", hints={}, manifest_summary={}
+    )
+    real = RealAdapter(
+        case_id="case_h001_report_type_change",
+        case=case,
+        search_scope=scope,
+        mock_root=MOCK_ROOT,
+    )
+    case.start_search()
+    jobs.issue_coarse_search(
+        case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search"
+    )
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    record_before = real.get_evidence_record()
+    jobs_before = list(case.job_records)
+    correction.apply_correction(
+        case,
+        kind="REPORT_TYPE_CHANGE",
+        target_field="event.safety_report_type",
+        previous_value="TRAFFIC_VIOLATION",
+        new_value="MOTORCYCLE_VIOLATION",
+    )
+    assert case.job_records == jobs_before
+
+    record_after = real.get_evidence_record()
+    assert record_after["event"]["safety_report_type"]["value"] == "MOTORCYCLE_VIOLATION"
+    assert record_after["event"]["safety_report_type"]["user_corrected"] is True
+    assert (
+        record_after["event"]["safety_report_type"]["source"]["kind"]
+        == "case.user_correction"
+    )
+
+
 def test_real_e2e_happy_path_reaches_ready_caseview():
     """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`가
     `READY`까지 도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다."""
@@ -112,7 +191,9 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["stage"] == "READY"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
-    assert view["requirements_evidence"]["readiness"] in {"PASS", "WARN"}
+    assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"
+    assert view["evidence"]["location_display"]["coord"] is None
+    assert view["requirements_evidence"]["readiness"] == "PASS"
     # 이슈 #103 — hints가 더 이상 {}로 고정되지 않는다.
     assert view["hints"] != {}
     # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.

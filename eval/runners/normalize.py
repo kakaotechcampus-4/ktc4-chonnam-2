@@ -4,7 +4,7 @@ scorer 는 계약을 직접 읽지 않는다. 계약 간 필드명이 갈리는 
 (docs/mock/CONTRACT_CONFLICTS.md §4)를 이 경계에서 흡수한다.
 """
 
-NORMALIZER_VERSION = "n1"
+NORMALIZER_VERSION = "n3"   # 2026-09-20 candidate 판단 근거(summary·uncertainties) 보존
 
 
 def _require_dict(obj, where):
@@ -30,6 +30,15 @@ def normalize_candidate(raw):
     입력의 rank 값은 무시하고 정렬 순서로 재계산한다.
     candidates 가 빈 리스트인 항목은 정상이다 (해당 clip 에서 후보를
     하나도 찾지 못한 경우 — B tier 의 negative clip 이 여기 해당한다).
+
+    **판단 근거를 같이 옮긴다** (2026-09-20 멘토 피드백). CandidateEvent
+    계약이 이미 summary(「짧은 시각 관찰 요약」)와 uncertainties(「Coarse
+    단계에서 남은 불확실성」)를 두고 있다. 지표는 이 값을 쓰지 않지만,
+    「왜 이 구간을 이 유형이라고 봤나」가 예측 파일에 남아야 나중에 틀린
+    결과를 사람이 읽을 수 있다 — plate 의 abstain_reason 과 같은 자리다.
+
+    없으면 null 이다. 근거를 주지 않는 impl 도 있으므로 빈 문자열을
+    지어내지 않는다.
     """
     out = []
     for i, item in enumerate(raw):
@@ -53,7 +62,9 @@ def normalize_candidate(raw):
                  "representative_sec": float(c["representative_sec"]),
                  "timeline_revision": c.get("timeline_revision"),
                  "event_type": c["event_type"],
-                 "score": float(c["score"])}
+                 "score": float(c["score"]),
+                 "summary": c.get("summary"),
+                 "uncertainties": c.get("uncertainties")}
                 for k, c in enumerate(cands)
             ],
         })
@@ -81,6 +92,17 @@ def normalize_plate(raw):
 
     legibility 는 계약에 없다 — 「사람이 보면 읽히는가」는 eval 이 새로
     만드는 참값이고 정답지에만 있다. 여기서는 예측 쪽 사실만 옮긴다.
+
+    **판단 근거를 같이 옮긴다** (2026-09-20 멘토 피드백). 결과값만 있으면
+    모델이 왜 그렇게 판단했는지 나중에 알 수 없다. abstain_reason 은
+    plate-readout/v1.3 이 authoritative 로 둔 필드이고(§abstained),
+    target_association.status 는 「어느 차를 읽었다고 봤는가」다. 둘 다
+    계약이 이미 주는 값이라 여기서 지어내는 것이 없다.
+
+    frame_results[]·samples 는 옮기지 않는다 — 계약 §9 가 eval 의 기본
+    제공 범위를 consensus·best_frame·abstained·target_association·
+    validation 으로 두고, 상세 진단이 필요할 때만 쓰라고 한다. 원문은
+    예측 파일 raw 에 그대로 남아 있다.
     """
     out = []
     for i, p in enumerate(raw):
@@ -95,6 +117,9 @@ def normalize_plate(raw):
             "value": obs.get("value"),
             "status": obs.get("status"),
             "abstained": _require_field(p, "abstained", where),
+            "abstain_reason": p.get("abstain_reason"),
+            "target_association_status": (
+                (p.get("target_association") or {}).get("status")),
         })
     return out
 
@@ -134,5 +159,8 @@ def from_candidate_events(raw):
             "timeline_revision": span.get("timeline_revision"),
             "event_type": _require_field(ev, "event_type_hint", where),
             "score": _require_field(ev, "ranking_score", where),
+            # 계약의 선택 필드다. 없으면 null — 지어내지 않는다.
+            "summary": ev.get("summary"),
+            "uncertainties": ev.get("uncertainties"),
         })
     return out
