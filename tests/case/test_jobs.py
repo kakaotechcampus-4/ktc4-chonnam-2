@@ -4,7 +4,7 @@ from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import CaseAggregate
 from daesingo.case import jobs
 
-MOCK_ROOT = Path(__file__).resolve().parents[4] / "data" / "mock"
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 def _ready_case() -> CaseAggregate:

@@ -4,10 +4,12 @@ scorer 집계 결과 JSON. **git으로 추적**한다. 실험 기록 방법은 `
 
 | 파일 | impl | manifest · stage |
 | --- | --- | --- |
-| `demo_correct.g1.json` | `fake:always_correct` | `b_youtube` · `candidate` |
+| `demo_correct.g3.json` | `fake:always_correct` | `b_youtube` · `candidate` |
 | `demo_correct_cls.g1.json` | `fake:always_correct` | `a_aihub` · `classification` |
-| `demo_wrong.g1.json` | `fake:always_wrong` | `b_youtube` · `candidate` |
+| `demo_wrong.g3.json` | `fake:always_wrong` | `b_youtube` · `candidate` |
 | `demo_wrong_cls.g1.json` | `fake:always_wrong` | `a_aihub` · `classification` |
+| `demo_correct_abmix.ag1.json` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) |
+| `demo_wrong_abmix.ag1.json` | `fake:always_wrong` | `ab_mixed` · `classification` |
 | `mock_e2e.mp1.json` | `mock_pack:contracts` | `mock_pack` · `candidate` |
 | `mock_plate.mp1.json` | `mock_pack:contracts` | `mock_pack` · `plate` |
 
