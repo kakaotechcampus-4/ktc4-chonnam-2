@@ -17,10 +17,14 @@ _APPROVED_GEMINI_BASE_URL_HOSTS: Final = frozenset(
 @dataclass(frozen=True, slots=True)
 class GeminiSearchConfig:
     model: str = "gemini-3.8-flash"
-    media_resolution: str = "low"           # Coarse. 넓게 싸게 훑는다
-    fine_media_resolution: str = "high"     # Fine. 실선/점선·신호색 판별이 화질에 직접 걸린다
+    media_resolution: str = "low"  # Coarse. 넓게 싸게 훑는다
+    fine_media_resolution: str = (
+        "high"  # Fine. 실선/점선·신호색 판별이 화질에 직접 걸린다
+    )
     coarse_fps: float = 1.0
     fine_fps: float = 2.0
+    max_materialized_source_bytes: int = 512 * 1024 * 1024  # 512 MiB
+    max_inline_media_bytes: int = 12 * 1024 * 1024  # 12 MiB
     max_retries: int = 3
     retry_base_sec: float = 5.0
     fine_padding_sec: float = 4.0
@@ -41,15 +45,11 @@ class GeminiSearchConfig:
             ) from None
 
         if parsed.scheme != "https":
-            raise UnsafeGeminiBaseUrlError(
-                GeminiBaseUrlRejectionReason.HTTPS_REQUIRED
-            )
+            raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.HTTPS_REQUIRED)
         if parsed.username is not None or parsed.password is not None:
             raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.USERINFO)
         if parsed.hostname not in _APPROVED_GEMINI_BASE_URL_HOSTS:
-            raise UnsafeGeminiBaseUrlError(
-                GeminiBaseUrlRejectionReason.UNAPPROVED_HOST
-            )
+            raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.UNAPPROVED_HOST)
         if port not in (None, 443):
             raise UnsafeGeminiBaseUrlError(
                 GeminiBaseUrlRejectionReason.NON_DEFAULT_PORT
@@ -60,9 +60,7 @@ class GeminiSearchConfig:
             raise UnsafeGeminiBaseUrlError(GeminiBaseUrlRejectionReason.FRAGMENT)
 
     @classmethod
-    def from_dotenv(
-        cls, env: Mapping[str, str] | None = None
-    ) -> "GeminiSearchConfig":
+    def from_dotenv(cls, env: Mapping[str, str] | None = None) -> "GeminiSearchConfig":
         if env is None:
             env = load_env_file()
         defaults = cls()
