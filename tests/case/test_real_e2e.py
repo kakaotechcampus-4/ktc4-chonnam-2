@@ -24,6 +24,10 @@ def _real_scope():
     return mock.get_analysis_scopes()[0]
 
 
+def _real_hints():
+    return MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID).get_hints()
+
+
 def test_evidence_bundle_uses_real_plate_and_time_values():
     """readout/search/recording을 실제로 호출해서 나온 값이지, mock JSON을 베낀 게
     아니라는 걸 값으로 확인한다 — 세 값 다 `data/mock/readout/scenario_happy_001.json`과
@@ -65,7 +69,7 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     scope = _real_scope()
     real = RealAdapter(case_id="case_h001_full_e2e", search_scope=scope, mock_root=MOCK_ROOT)
 
-    case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints={}, manifest_summary={})
+    case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints=_real_hints(), manifest_summary={})
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
 
@@ -85,5 +89,7 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
     assert view["requirements_evidence"]["readiness"] in {"PASS", "WARN"}
+    # 이슈 #103 — hints가 더 이상 {}로 고정되지 않는다.
+    assert view["hints"] != {}
     # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.
     assert view["package"] is None or "package_ref" in view["package"]
