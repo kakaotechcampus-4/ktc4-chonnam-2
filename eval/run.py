@@ -13,6 +13,7 @@ import sys
 
 from eval import manifests_io, paths
 from eval.runners import normalize, registry
+from eval.runners.errors import RunnerPreflightError
 
 _NORMALIZERS = {
     "candidate": normalize.normalize_candidate,
@@ -86,7 +87,11 @@ def main(argv=None):
     except KeyError as e:
         print("실패: %s" % e, file=sys.stderr)
         return 2
-    env = build_envelope(args.impl, args.manifest, args.stage, run_id)
+    try:
+        env = build_envelope(args.impl, args.manifest, args.stage, run_id)
+    except RunnerPreflightError as e:
+        print("실패: %s" % e, file=sys.stderr)
+        return 5
 
     outdir = paths.predictions_dir()
     os.makedirs(outdir, exist_ok=True)

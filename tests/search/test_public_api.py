@@ -65,7 +65,9 @@ def test_verify_visual_returns_run_and_evidence(
     expected_evidence = scenario.visual_evidences[0]
 
     # When
-    result = verify_visual(expected_evidence.input_ref, scenario.analysis_scopes[0].hint)
+    result = verify_visual(
+        expected_evidence.input_ref, scenario.analysis_scopes[0].hint
+    )
 
     # Then
     assert result.analysis_run.operation == "VISUAL_VERIFY"
