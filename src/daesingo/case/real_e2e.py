@@ -44,9 +44,39 @@ from daesingo.evidence.errors import PackageNotReady
 from daesingo.readout import api as readout_api
 from daesingo.readout import providers as readout_providers
 from daesingo.readout.contracts import InputRef
-from daesingo.recording import RecordingService, load_recording_fixture
+from daesingo.recording import AssetSpan, RecordingService, SpanResolution, load_recording_fixture
 
 SCENARIO_ID = "scenario_happy_001"
+
+
+class StreamSelectionError(Exception):
+    """`SpanResolution.spans[]`에서 쓸 `AssetSpan`을 정확히 하나로 좁힐 수 없을 때.
+
+    여러 VIDEO stream(front/rear 등)이 같은 시간대를 가리킬 수 있다는 게
+    `contract-recording-timeline-asset-span.md` §9 불변식 7이 명시적으로 허용하는
+    상황이다 — 그 상태에서 `spans[0]`을 조용히 쓰면 어떤 카메라가 선택됐는지가
+    사실상 우연이 된다. 그래서 애매하면 조용히 넘어가지 않고 여기서 표면화한다.
+    """
+
+
+def _select_asset_span(
+    resolution: SpanResolution, media_stream_ref: str | None
+) -> AssetSpan:
+    """`media_stream_ref`와 일치하는 span을 명시적으로 고른다.
+
+    `media_stream_ref`가 없으면 span이 정확히 하나일 때만 그대로 쓴다(지금까지의
+    단일 스트림 경로와 동일) — span이 여러 개면 어떤 stream인지 명시해야 한다.
+    """
+    candidates = resolution.spans
+    if media_stream_ref is not None:
+        candidates = [span for span in candidates if span.media_stream_ref == media_stream_ref]
+    if len(candidates) != 1:
+        raise StreamSelectionError(
+            f"media_stream_ref={media_stream_ref!r}로 span을 하나로 좁힐 수 없습니다 "
+            f"(일치하는 span {len(candidates)}개, 전체 {len(resolution.spans)}개). "
+            "여러 stream이 같은 시간대를 가리키면 media_stream_ref를 명시해야 합니다."
+        )
+    return candidates[0]
 
 
 @dataclass
@@ -68,12 +98,20 @@ def build_happy_001_evidence_bundle(
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
+    media_stream_ref: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
     실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
     전부 각 모듈의 공개 함수 호출 결과다.
 
     `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다(이슈 #73).
+
+    `media_stream_ref`는 이 candidate를 찾을 때 search가 실제로 분석한 VIDEO
+    stream이다(현재는 별도 실행 문맥으로 search에서 전달됨 — `CandidateEvent`
+    canonical 계약은 바뀌지 않는다). `resolve_span()`이 여러 stream에 걸친
+    `AssetSpan`을 돌려줄 수 있어(예: front/rear 카메라) `spans[0]`을 조용히
+    쓰지 않고, 이 값과 일치하는 span을 명시적으로 고른다(`_select_asset_span`).
+    단일 stream fixture에서는 생략해도 된다.
     """
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
@@ -83,8 +121,9 @@ def build_happy_001_evidence_bundle(
         span_resolution_fixture.timeline_ref.model_dump(mode="json"),
         span_resolution_fixture.requested_range.model_dump(mode="json"),
     )
+    selected_span = _select_asset_span(resolution, media_stream_ref)
     analysis_source = rec_service.prepare_analysis_source(
-        resolution.spans[0].model_dump(mode="json"),
+        selected_span.model_dump(mode="json"),
         fixture.analysis_sources[0].profile_ref,
     )
     incident_clip = rec_service.build_incident_clip(resolution.model_dump(mode="json"))
