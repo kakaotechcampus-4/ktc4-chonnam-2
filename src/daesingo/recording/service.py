@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from io import RawIOBase
+from io import BytesIO, RawIOBase
 import math
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -42,6 +42,7 @@ from .timeline import build_relative_timeline
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
+from .materialization import LocalAnalysisMaterializer
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -106,10 +107,28 @@ class RecordingService:
         self, repository: InMemoryRecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
+        analysis_materializer: LocalAnalysisMaterializer | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
+        self._analysis_materializer = analysis_materializer
+        self._local_analysis: dict[str, tuple[AnalysisSource, bytes]] = {}
+        self._analysis_reuse: dict[tuple, str] = {}
+        self._local_analysis_refs: set[str] = set()
+        self._analysis_closed = False
+
+    def close(self) -> None:
+        """로컬 AnalysisSource 메모리를 해제한다. 이미 열린 독립 stream은 호출자가 닫는다."""
+        self._local_analysis.clear()
+        self._analysis_reuse.clear()
+        self._analysis_closed = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def register_local_source(self, path: str | Path) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
@@ -368,10 +387,58 @@ class RecordingService:
         self,
         span: AssetSpan | dict[str, Any],
         profile_ref: str,
+        *, timeline_ref: TimelineRef | dict[str, Any] | None = None,
     ) -> AnalysisSource:
         parsed_span = AssetSpan.model_validate(span)
         if not profile_ref:
             raise ValueError("profile_ref는 비어 있을 수 없습니다")
+        local = self._repository.get_local_source(parsed_span.source_asset_ref)
+        if local is not None:
+            if self._analysis_closed:
+                raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
+            if timeline_ref is None:
+                raise ValueError("실제 AnalysisSource에는 명시적인 timeline_ref가 필요합니다")
+            ref = TimelineRef.model_validate(timeline_ref)
+            resolution = self.resolve_span(ref, parsed_span.timeline_range,
+                                           media_stream_ref=parsed_span.media_stream_ref)
+            if resolution.status != "COMPLETE":
+                reasons = {missing.reason for missing in resolution.missing_ranges}
+                failure = resolution.failure
+                # 구체적인 검사 실패 코드는 그대로 전달한다. 일반적인 전체 실패는
+                # 단일 missing reason이 있으면 그 관측 원인을 보존한다.
+                if failure is not None and failure.code != "NO_USABLE_SPAN":
+                    code = failure.code
+                elif len(reasons) == 1:
+                    code = next(iter(reasons))
+                else:
+                    code = failure.code if failure is not None else "TEMPORARY_FAILURE"
+                raise RecordingCapabilityError(code, "현재 원본 상태에서 AnalysisSource 구간을 준비할 수 없습니다")
+            if resolution.spans != [parsed_span]:
+                raise ValueError("span이 해당 Timeline revision의 실제 매핑과 일치하지 않습니다")
+            if self._analysis_materializer is None:
+                raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "로컬 materialization configuration이 없습니다")
+            if not self._analysis_materializer.has_profile(profile_ref):
+                raise ValueError("등록되지 않은 profile_ref입니다")
+            key = (ref.timeline_id, ref.revision, parsed_span.model_dump_json(), profile_ref)
+            cached = self._analysis_reuse.get(key)
+            if cached is not None:
+                return self._local_analysis[cached][0].model_copy(deep=True)
+            index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
+            if index is None:
+                raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
+            prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
+            source = AnalysisSource(
+                contract="AnalysisSource", contract_version="analysis-source-derived/v1",
+                analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
+                source_refs=[ContractRef(kind="source_asset", ref=parsed_span.source_asset_ref)],
+                media_stream_refs=[parsed_span.media_stream_ref], byte_size=len(prepared.content),
+                availability="AVAILABLE", duration_sec=prepared.duration_sec,
+                timeline_ref=ref, timeline_range=prepared.timeline_range, profile_ref=profile_ref,
+            )
+            self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
+            self._local_analysis_refs.add(source.analysis_source_ref)
+            self._analysis_reuse[key] = source.analysis_source_ref
+            return source
         sources = self._repository.find_analysis_sources(parsed_span, profile_ref)
         if not sources:
             raise RecordingCapabilityError(
@@ -386,6 +453,12 @@ class RecordingService:
         return sources[0]
 
     def open_analysis_source(self, analysis_source_ref: str) -> OpenedAnalysisSource:
+        prepared = self._local_analysis.get(analysis_source_ref)
+        if prepared is not None:
+            source, content = prepared
+            return OpenedAnalysisSource(BytesIO(content), "video/mp4", len(content))
+        if analysis_source_ref in self._local_analysis_refs:
+            raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         source = self._repository.get_analysis_source(analysis_source_ref)
         if source is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 AnalysisSource입니다")

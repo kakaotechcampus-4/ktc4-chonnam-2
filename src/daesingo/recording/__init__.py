@@ -22,9 +22,12 @@ from .models import (
     TimelinePositionLocator,
 )
 from .probe import FfprobeMediaProbe
+from .materialization import AnalysisProfile, LocalAnalysisMaterializer
 from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
 
 __all__ = [
+    "AnalysisProfile",
+    "LocalAnalysisMaterializer",
     "AnalysisSource",
     "AssetFacts",
     "AssetSpan",
