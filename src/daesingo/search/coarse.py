@@ -10,7 +10,7 @@ from .errors import (
     InvalidCoarseSpanError,
     UnknownCandidateError,
 )
-from .execution import RunDeadline
+from .execution import DeadlineExceededError, RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
@@ -23,7 +23,9 @@ from .runs import (
     CandidateSearchResult,
     CandidateSpan,
     ContractRef,
+    FailureKind,
     Implementation,
+    Issue,
     Money,
     Operation,
     RunId,
@@ -70,6 +72,7 @@ def search_coarse(
     gathered: list[tuple[ResolvedAnalysisSource, CoarseCandidate]] = []
     records: list[UsageRecord] = []
     usage_refs: list[str] = []
+    failure: Issue | None = None
     sources = dependencies.resolver.resolve(scope)
     if not sources:
         raise AssertionError(
@@ -92,20 +95,31 @@ def search_coarse(
                 declared_sec=source.duration_sec,
                 probed_sec=prepared.origin_end_sec,
             )
-        dependencies.deadline.check()
-        result = dependencies.provider.search_coarse(
-            CoarseRequest(
-                source,
-                scope.target_event_types,
-                media=prepared,
-                timeout_sec=dependencies.deadline.remaining_sec(),
+        try:
+            dependencies.deadline.check()
+            result = dependencies.provider.search_coarse(
+                CoarseRequest(
+                    source,
+                    scope.target_event_types,
+                    media=prepared,
+                    timeout_sec=dependencies.deadline.remaining_sec(),
+                )
             )
-        )
-        usage_refs.append(f"usage:{source.source_id}")
-        record = _usage_record(source, prepared, result, dependencies.config)
-        dependencies.ledger.append(record)
-        records.append(record)
-        gathered.extend((source, candidate) for candidate in result.response.candidates)
+        except DeadlineExceededError as error:
+            failure = _issue(FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error)
+        except Exception as error:
+            failure = _issue(FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error)
+        else:
+            usage_refs.append(f"usage:{source.source_id}")
+            record = _usage_record(source, prepared, result, dependencies.config)
+            dependencies.ledger.append(record)
+            records.append(record)
+            gathered.extend(
+                (source, candidate) for candidate in result.response.candidates
+            )
+
+    if failure is not None:
+        return _failed_result(run_id, scope, source, started, failure, dependencies)
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
     candidates = tuple(
@@ -139,6 +153,67 @@ def search_coarse(
     )
     return LinkedCoarseResult(
         result=candidate_search_result, source_ref=source.source_ref
+    )
+
+
+def _issue(
+    kind: FailureKind,
+    code: str,
+    scope: AnalysisScope,
+    error: Exception,
+) -> Issue:
+    """실패 하나를 taxonomy 이름으로 기록한다.
+
+    `detail`에는 예외 타입 이름만 남긴다 — 계약 §3-3이 stack trace와 raw provider
+    payload를 금지하고, provider 메시지 자체가 마스킹되지 않은 입력을 담을 수 있다.
+    stage(COARSE/FINE)는 `Issue`에 별도 필드를 두지 않는다. `operation`이 이미 구분한다.
+    """
+    return Issue(
+        kind=kind,
+        code=code,
+        scope_ref=scope.scope_id,
+        detail=type(error).__name__,
+    )
+
+
+def _failed_result(
+    run_id: RunId,
+    scope: AnalysisScope,
+    source: ResolvedAnalysisSource,
+    started: datetime,
+    failure: Issue,
+    dependencies: CoarseExecutionDependencies,
+) -> LinkedCoarseResult:
+    """FAILED AnalysisRun을 만든다 — 계약 §7 Producer는 결과 구분을 요구한다.
+
+    usage는 비운다. 호출이 결과를 내지 못했으므로 Eval이 재평가할 snapshot이 없다.
+    """
+    analysis_run = AnalysisRun(
+        run_id=run_id,
+        operation=Operation.CANDIDATE_SEARCH,
+        input_ref=ContractRef(kind="ANALYSIS_SCOPE", ref=scope.scope_id),
+        implementation=Implementation(
+            impl_id="search:gemini-coarse-p3",
+            model_ref=dependencies.config.model,
+            prompt_version=COARSE_PROMPT.version,
+            config_version=dependencies.config.version,
+        ),
+        outcome=RunOutcome.FAILED,
+        started_at=started,
+        completed_at=datetime.now(UTC),
+        issues=(failure,),
+        usage_refs=(),
+        usage_summary=UsageSummary(
+            processed_duration_ms=None,
+            token_usage=None,
+            latency_ms=None,
+            total_cost=None,
+        ),
+        contract_version="analysis-run-candidate-event/v1.1",
+    )
+    return LinkedCoarseResult(
+        result=CandidateSearchResult(analysis_run=analysis_run, candidates=()),
+        source_ref=source.source_ref,
     )
 
 

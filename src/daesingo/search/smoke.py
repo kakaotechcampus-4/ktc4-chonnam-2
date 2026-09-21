@@ -17,7 +17,7 @@ from .errors import (
 from .execution import RunDeadline
 from .media import MediaInput, MediaPreparer, PreparedMedia
 from .provider import GeminiProvider, ProviderRuntimeOptions
-from .runs import ContractRef
+from .runs import ContractRef, RunOutcome
 from .scope import (
     AnalysisScope,
     SearchBudget,
@@ -236,6 +236,12 @@ def run_smoke(
     try:
         coarse = search_candidates(scope, service=service)
     except (SmokeProviderError, InvalidCoarseSpanError):
+        return report_builder.build(
+            SmokeOutcome(SmokeStatus.FAILED, SmokeFailureStage.COARSE)
+        )
+    if coarse.analysis_run.outcome is RunOutcome.FAILED:
+        # 실패한 실행은 후보가 없다는 사실과 다르다. taxonomy kind·code는
+        # analysis_run.issues가 소유하고, 여기서는 어느 단계였는지만 말한다.
         return report_builder.build(
             SmokeOutcome(SmokeStatus.FAILED, SmokeFailureStage.COARSE)
         )

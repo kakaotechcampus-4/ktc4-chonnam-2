@@ -5,8 +5,9 @@
 """
 
 from daesingo.search.config import GeminiSearchConfig
+from daesingo.search.execution import RunDeadline
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
-from daesingo.search.runs import ContractRef
+from daesingo.search.runs import ContractRef, FailureKind, RunOutcome
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import (
     AnalysisScope,
@@ -90,3 +91,99 @@ def _make_service() -> SearchService:
 def test_coarse_run_input_ref_kind_is_uppercase_analysis_scope() -> None:
     result = _make_service().search_candidates(_SCOPE)
     assert result.analysis_run.input_ref.kind == "ANALYSIS_SCOPE"
+
+
+# ---------------------------------------------------------------------------
+# 실패 taxonomy — 계약 §7 Producer "SUCCEEDED / PARTIAL / FAILED를 구분한다"
+# stage는 Issue에 별도 필드를 두지 않는다. operation이 COARSE/FINE을 이미 구분한다.
+# ---------------------------------------------------------------------------
+
+
+class _FailingProvider:
+    """provider 호출이 실패하는 경우 — taxonomy의 INFRA."""
+
+    def __init__(self, failure: Exception) -> None:
+        self._failure = failure
+
+    def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
+        _ = request
+        raise self._failure
+
+    def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
+        _ = request
+        raise NotImplementedError
+
+
+def _service_with(provider: object) -> SearchService:
+    resolver = StaticAnalysisSourceResolver(
+        {"scope-run-1": (_SOURCE,)},
+        {"clip-run-1": _SOURCE},
+    )
+    return SearchService(
+        OpenableResolver(resolver),
+        provider,
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(_SOURCE.duration_sec),
+        make_deadline(),
+    )
+
+
+def test_provider_failure_returns_failed_run_instead_of_raising() -> None:
+    result = _service_with(
+        _FailingProvider(RuntimeError("provider exploded"))
+    ).search_candidates(_SCOPE)
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert result.candidates == ()
+
+
+def test_provider_failure_records_infra_issue_with_scope_ref() -> None:
+    result = _service_with(
+        _FailingProvider(RuntimeError("provider exploded"))
+    ).search_candidates(_SCOPE)
+    (issue,) = result.analysis_run.issues
+    assert issue.kind is FailureKind.INFRA
+    assert issue.code == "PROVIDER_CALL_FAILED"
+    assert issue.scope_ref == "scope-run-1"
+
+
+def test_exhausted_deadline_records_cost_issue() -> None:
+    """taxonomy의 COST = 비용·지연 상한 초과로 중단."""
+    resolver = StaticAnalysisSourceResolver(
+        {"scope-run-1": (_SOURCE,)},
+        {"clip-run-1": _SOURCE},
+    )
+    service = SearchService(
+        OpenableResolver(resolver),
+        _MinimalProvider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(_SOURCE.duration_sec),
+        RunDeadline(lambda: 0.0, budget_ms=0),
+    )
+
+    result = service.search_candidates(_SCOPE)
+
+    (issue,) = result.analysis_run.issues
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert issue.kind is FailureKind.COST
+    assert issue.code == "RUN_DEADLINE_EXCEEDED"
+
+
+def test_failed_run_keeps_implementation_metadata() -> None:
+    """실패해도 어느 구현이 실패했는지 비교 가능해야 한다 (계약 §7 Producer)."""
+    result = _service_with(
+        _FailingProvider(RuntimeError("provider exploded"))
+    ).search_candidates(_SCOPE)
+    assert result.analysis_run.implementation.impl_id == "search:gemini-coarse-p3"
+    assert result.analysis_run.input_ref.kind == "ANALYSIS_SCOPE"
+
+
+def test_failed_run_detail_excludes_raw_provider_payload() -> None:
+    """계약 §3-3: detail에 stack trace나 raw provider payload를 넣지 않는다."""
+    secret = "RAW_PROVIDER_PAYLOAD_XYZ"
+    result = _service_with(_FailingProvider(RuntimeError(secret))).search_candidates(
+        _SCOPE
+    )
+    (issue,) = result.analysis_run.issues
+    assert issue.detail is not None
+    assert secret not in issue.detail
+    assert "Traceback" not in issue.detail

@@ -7,7 +7,7 @@ import pytest
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.errors import CoarseDurationMismatchError
-from daesingo.search.execution import DeadlineExceededError, RunDeadline
+from daesingo.search.execution import RunDeadline
 from daesingo.search.media import (
     FfprobeError,
     MediaInput,
@@ -20,7 +20,12 @@ from daesingo.search.provider import (
     ProviderResult,
     SearchProvider,
 )
-from daesingo.search.runs import CandidateSearchResult, ContractRef
+from daesingo.search.runs import (
+    CandidateSearchResult,
+    ContractRef,
+    FailureKind,
+    RunOutcome,
+)
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import (
     AnalysisScope,
@@ -235,9 +240,13 @@ def test_deadline_after_preparation_skips_provider_and_cleans_temp(
         deadline=deadline,
     )
 
-    # When / Then
-    with pytest.raises(DeadlineExceededError):
-        _ = service.search_candidates(_scope())
+    # When
+    result = service.search_candidates(_scope())
+
+    # Then — provider 호출 직전의 deadline 초과는 taxonomy COST로 기록된다.
+    (issue,) = result.analysis_run.issues
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert issue.kind is FailureKind.COST
     assert provider.requests == []
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
 
@@ -261,20 +270,41 @@ def test_duration_mismatch_fails_before_provider_and_cleans_temp(
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
 
 
-@pytest.mark.parametrize(
-    "failure", [RuntimeError("provider failed"), KeyboardInterrupt()]
-)
 def test_provider_failure_cleans_prepared_temp(
-    failure: BaseException, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """provider 실패는 FAILED run으로 기록되고 임시 파일은 남지 않는다."""
     # Given
     source_path = tmp_path / "source.mp4"
     _ = make_mp4(source_path)
-    provider = _ProviderSpy(failure)
+    provider = _ProviderSpy(RuntimeError("provider failed"))
+    temp_dirs = capture_temp_dirs(monkeypatch)
+
+    # When
+    result = _service(
+        _CountingResolver(make_source(), source_path),
+        provider,
+        GeminiSearchConfig(),
+    ).search_candidates(_scope())
+
+    # Then
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert provider.prepared_path is not None and not provider.prepared_path.exists()
+    assert temp_dirs and all(not path.exists() for path in temp_dirs)
+
+
+def test_keyboard_interrupt_still_propagates_and_cleans_prepared_temp(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """BaseException은 삼키지 않는다 — 취소는 실행 실패가 아니다."""
+    # Given
+    source_path = tmp_path / "source.mp4"
+    _ = make_mp4(source_path)
+    provider = _ProviderSpy(KeyboardInterrupt())
     temp_dirs = capture_temp_dirs(monkeypatch)
 
     # When / Then
-    with pytest.raises(type(failure)):
+    with pytest.raises(KeyboardInterrupt):
         _ = _service(
             _CountingResolver(make_source(), source_path),
             provider,
