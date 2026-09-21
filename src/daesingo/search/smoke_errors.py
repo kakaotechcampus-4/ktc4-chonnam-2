@@ -1,47 +1,46 @@
-from dataclasses import dataclass
-from typing import override
-
-
 class SmokeProviderError(Exception):
     pass
 
 
-@dataclass(frozen=True, slots=True)
 class ProviderInteractionStatusError(SmokeProviderError):
-    status: str
+    def __init__(self, status: str) -> None:
+        self.status = status
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return f"Gemini interaction ended with status={self.status}"
 
 
-@dataclass(frozen=True, slots=True)
 class ProviderUploadStateError(SmokeProviderError):
-    state: str
+    def __init__(self, state: str) -> None:
+        self.state = state
+        super().__init__(state)
 
 
-@dataclass(frozen=True, slots=True)
 class ProviderUploadTimeoutError(SmokeProviderError):
-    timeout_sec: float
+    def __init__(self, timeout_sec: float) -> None:
+        self.timeout_sec = timeout_sec
+        super().__init__(f"upload timed out after {timeout_sec}s")
 
 
-@dataclass(frozen=True, slots=True)
 class FixtureRateLimitError(SmokeProviderError):
     def __str__(self) -> str:
         return "429 RESOURCE_EXHAUSTED"
 
 
-@dataclass(frozen=True, slots=True)
 class ProviderApiError(SmokeProviderError):
-    detail: str
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
 
     def __str__(self) -> str:
         return self.detail
 
 
-@dataclass(slots=True)
 class ProviderPayloadError(SmokeProviderError):
-    detail: str
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
 
-    @override
     def __str__(self) -> str:
         return self.detail

@@ -24,10 +24,14 @@ class OpenableResolver:
 
     @contextmanager
     def open_source(self, ref: ContractRef) -> Generator[MediaInput]:
-        _ = ref
+        try:
+            source = self._delegate.resolve_reference(ref)
+            duration = source.duration_sec
+        except (LookupError, NotImplementedError):
+            duration = 0.0
         stream = io.BytesIO(b"fixture")
         try:
-            yield MediaInput(stream, "video/mp4", 7)
+            yield MediaInput(stream, "video/mp4", 7, declared_duration_sec=duration)
         finally:
             stream.close()
 
@@ -43,8 +47,9 @@ class FixtureMediaPreparer:
         media_input: MediaInput,
         deadline: RunDeadline,
     ) -> AbstractContextManager[PreparedMedia]:
-        _ = media_input, deadline
-        return _prepared_media(self._duration_sec)
+        _ = deadline
+        duration = media_input.declared_duration_sec or self._duration_sec
+        return _prepared_media(duration)
 
     def prepare_fine(
         self,

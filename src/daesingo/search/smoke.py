@@ -1,4 +1,6 @@
 import time
+from collections.abc import Generator
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from hashlib import sha256
@@ -12,7 +14,7 @@ from .errors import (
     InvalidFineSpanError,
 )
 from .execution import RunDeadline
-from .media import MediaPreparer
+from .media import MediaInput, MediaPreparer, PreparedMedia
 from .provider import GeminiProvider, ProviderRuntimeOptions
 from .runs import ContractRef
 from .scope import (
@@ -35,6 +37,43 @@ from .smoke_models import (
 )
 from .smoke_report import SmokeOutcome, SmokeReportBuilder
 from .sources import LocalAnalysisSourceResolver, ResolvedAnalysisSource
+
+
+class _FixtureMediaPreparer:
+    """Fake preparer for fixture smoke runs — no ffprobe, declared duration used as-is."""
+
+    def __init__(self, duration_sec: float) -> None:
+        self._duration_sec = duration_sec
+
+    def prepare_coarse(
+        self, media_input: MediaInput, deadline: RunDeadline
+    ) -> AbstractContextManager[PreparedMedia]:
+        return self._ctx(self._duration_sec)
+
+    def prepare_fine(
+        self,
+        media_input: MediaInput,
+        fine_start_sec: float,
+        fine_end_sec: float,
+        deadline: RunDeadline,
+    ) -> AbstractContextManager[PreparedMedia]:
+        return self._ctx(fine_end_sec - fine_start_sec, fine_start_sec, fine_end_sec)
+
+    @contextmanager
+    def _ctx(
+        self,
+        duration_sec: float,
+        origin_start_sec: float = 0.0,
+        origin_end_sec: float | None = None,
+    ) -> Generator[PreparedMedia]:
+        yield PreparedMedia(
+            path=Path("fixture-media.mp4"),
+            content_type="video/mp4",
+            byte_size=0,
+            duration_sec=duration_sec,
+            origin_start_sec=origin_start_sec,
+            origin_end_sec=origin_end_sec if origin_end_sec is not None else duration_sec,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +99,7 @@ def run_smoke(
     config: GeminiSearchConfig,
 ) -> SmokeReport:
     source_hash = input_sha256(options.source)
-    report_builder = SmokeReportBuilder(config, source_hash, service)
+    report_builder = SmokeReportBuilder(config, source_hash, service.ledger)
     scope = AnalysisScope(
         scope_id="smoke",
         time_ranges=(
@@ -156,13 +195,18 @@ def build_smoke_service(
         {"smoke": (source,)}, {"smoke": source}, {"smoke": options.source}
     )
     if fixture is not None:
-        config = GeminiSearchConfig(model=fixture.model, max_retries=1)
+        config = GeminiSearchConfig(
+            model=fixture.model,
+            max_retries=1,
+            input_usd_per_million=0.75,
+            output_usd_per_million=3.75,
+        )
         return (
             SearchService(
                 resolver,
                 SmokeFixtureProvider(fixture),
                 config,
-                MediaPreparer(config),
+                _FixtureMediaPreparer(options.duration_sec),
                 RunDeadline(time.monotonic, round(options.timeout_sec * 1000)),
             ),
             config,

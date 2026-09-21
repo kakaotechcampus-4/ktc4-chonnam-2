@@ -4,14 +4,12 @@ Never sends the original source to a model. Temp dir is always cleaned up
 on success, failure, timeout, and cancellation.
 """
 
-from __future__ import annotations
-
 import hashlib
 import shutil
 import subprocess
 import tempfile
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, ClassVar, final
@@ -96,6 +94,7 @@ class MediaInput:
     stream: BinaryIO
     content_type: str
     declared_byte_size: int
+    declared_duration_sec: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,12 +234,11 @@ class MediaPreparer:
     def __init__(self, config: GeminiSearchConfig) -> None:
         self._cfg = config
 
-    @contextmanager
     def prepare_coarse(
         self,
         media_input: MediaInput,
         deadline: RunDeadline,
-    ) -> Generator[PreparedMedia]:
+    ) -> AbstractContextManager[PreparedMedia]:
         """Materialize + probe + 1fps/360p/no-audio proxy; yield it; rmtree in finally.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
@@ -248,6 +246,14 @@ class MediaPreparer:
 
         ``origin_start_sec`` / ``origin_end_sec`` span the whole probed source.
         """
+        return self._prepare_coarse(media_input, deadline)
+
+    @contextmanager
+    def _prepare_coarse(
+        self,
+        media_input: MediaInput,
+        deadline: RunDeadline,
+    ) -> Generator[PreparedMedia]:
         cfg = self._cfg
         max_src = cfg.max_materialized_source_bytes
         max_inline = cfg.max_inline_media_bytes
@@ -284,14 +290,13 @@ class MediaPreparer:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
-    @contextmanager
     def prepare_fine(
         self,
         media_input: MediaInput,
         fine_start_sec: float,
         fine_end_sec: float,
         deadline: RunDeadline,
-    ) -> Generator[PreparedMedia]:
+    ) -> AbstractContextManager[PreparedMedia]:
         """Materialize + probe + clamp [start,end] to probed duration + 2fps/720p/no-audio clip.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
@@ -299,6 +304,16 @@ class MediaPreparer:
 
         ``origin_start_sec`` / ``origin_end_sec`` are the clamped interval.
         """
+        return self._prepare_fine(media_input, fine_start_sec, fine_end_sec, deadline)
+
+    @contextmanager
+    def _prepare_fine(
+        self,
+        media_input: MediaInput,
+        fine_start_sec: float,
+        fine_end_sec: float,
+        deadline: RunDeadline,
+    ) -> Generator[PreparedMedia]:
         cfg = self._cfg
         max_src = cfg.max_materialized_source_bytes
         max_inline = cfg.max_inline_media_bytes

@@ -50,7 +50,7 @@
       ],
       "temporal_facts": [
         {
-          "at_offset_ms": 2000,
+          "at_offset_ms": null,
           "fact": "crossed",
           "evidence_refs": ["fr_exact_001"]
         }

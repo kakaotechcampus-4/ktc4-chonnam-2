@@ -226,8 +226,14 @@ def test_candidate_source_link_validates_matching_resolved_timeline() -> None:
         candidate=candidate,
     )
 
-    # When
-    link.validate(_source())
+    # When: validate against a source whose ref, timeline_id, and timeline_revision all match
+    matching_source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="source-1"),
+        duration_sec=10.0,
+        timeline_id="timeline-1",
+        timeline_revision=4,
+    )
+    link.validate(matching_source)
 
     # Then
     assert link.source_ref.ref == "source-1"

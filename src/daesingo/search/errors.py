@@ -1,6 +1,4 @@
-from dataclasses import dataclass
 from enum import StrEnum
-from typing import override
 
 from .runs import CandidateId, ContractRef
 
@@ -15,21 +13,30 @@ class GeminiBaseUrlRejectionReason(StrEnum):
     FRAGMENT = "fragment"
 
 
-@dataclass(frozen=True, slots=True)
 class UnsafeGeminiBaseUrlError(Exception):
-    reason: GeminiBaseUrlRejectionReason
+    def __init__(self, reason: GeminiBaseUrlRejectionReason) -> None:
+        self.reason = reason
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return f"unsafe Gemini base URL: {self.reason}"
 
 
-@dataclass(frozen=True, slots=True)
 class InvalidCoarseSpanError(Exception):
-    source_id: str
-    start_sec: float
-    end_sec: float
-    at_sec: float
-    duration_sec: float
+    def __init__(
+        self,
+        source_id: str,
+        start_sec: float,
+        end_sec: float,
+        at_sec: float,
+        duration_sec: float,
+    ) -> None:
+        self.source_id = source_id
+        self.start_sec = start_sec
+        self.end_sec = end_sec
+        self.at_sec = at_sec
+        self.duration_sec = duration_sec
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return (
@@ -39,14 +46,23 @@ class InvalidCoarseSpanError(Exception):
         )
 
 
-@dataclass(frozen=True, slots=True)
 class CandidateSourceMismatchError(Exception):
-    source_ref: ContractRef
-    candidate_id: CandidateId
-    candidate_timeline_id: str
-    candidate_timeline_revision: int
-    source_timeline_id: str
-    source_timeline_revision: int
+    def __init__(
+        self,
+        source_ref: ContractRef,
+        candidate_id: CandidateId,
+        candidate_timeline_id: str,
+        candidate_timeline_revision: int,
+        source_timeline_id: str,
+        source_timeline_revision: int,
+    ) -> None:
+        self.source_ref = source_ref
+        self.candidate_id = candidate_id
+        self.candidate_timeline_id = candidate_timeline_id
+        self.candidate_timeline_revision = candidate_timeline_revision
+        self.source_timeline_id = source_timeline_id
+        self.source_timeline_revision = source_timeline_revision
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return (
@@ -58,30 +74,37 @@ class CandidateSourceMismatchError(Exception):
         )
 
 
-@dataclass(frozen=True, slots=True)
 class MissingCandidateError(Exception):
-    source_ref: ContractRef
+    def __init__(self, source_ref: ContractRef) -> None:
+        self.source_ref = source_ref
+        super().__init__(str(self))
 
     def __str__(self) -> str:
-        return (
-            f"Fine verification requires a candidate for source {self.source_ref.ref!r}"
-        )
+        return f"Fine verification requires a candidate for source {self.source_ref.ref!r}"
 
 
-@dataclass(frozen=True, slots=True)
 class UnknownCandidateError(Exception):
-    candidate_id: CandidateId
+    def __init__(self, candidate_id: CandidateId) -> None:
+        self.candidate_id = candidate_id
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return f"unknown candidate: {self.candidate_id!r}"
 
 
-@dataclass(frozen=True, slots=True)
 class InvalidFineSpanError(Exception):
-    source_ref: ContractRef
-    candidate_id: CandidateId
-    start_sec: float
-    end_sec: float
+    def __init__(
+        self,
+        source_ref: ContractRef,
+        candidate_id: CandidateId,
+        start_sec: float,
+        end_sec: float,
+    ) -> None:
+        self.source_ref = source_ref
+        self.candidate_id = candidate_id
+        self.start_sec = start_sec
+        self.end_sec = end_sec
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return (
@@ -90,15 +113,15 @@ class InvalidFineSpanError(Exception):
         )
 
 
-@dataclass(slots=True)
 class CoarseDurationMismatchError(Exception):
-    """Probed duration differs by >250 ms; exceptions must allow traceback state."""
+    """Probed duration differs by >250 ms."""
 
-    source_id: str
-    declared_sec: float
-    probed_sec: float
+    def __init__(self, source_id: str, declared_sec: float, probed_sec: float) -> None:
+        self.source_id = source_id
+        self.declared_sec = declared_sec
+        self.probed_sec = probed_sec
+        super().__init__(str(self))
 
-    @override
     def __str__(self) -> str:
         return (
             f"duration mismatch for source {self.source_id!r}: "

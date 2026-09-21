@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import Field
@@ -52,9 +51,10 @@ class SmokeProviderFixture(SmokeModel):
         return cls.model_validate_json(path.read_text(encoding="utf-8"))
 
 
-@dataclass(frozen=True, slots=True)
 class FixtureTimeoutError(SmokeProviderError):
-    stage: str
+    def __init__(self, stage: str) -> None:
+        self.stage = stage
+        super().__init__(str(self))
 
     def __str__(self) -> str:
         return f"fixture {self.stage} timed out"
