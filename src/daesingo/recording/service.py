@@ -46,6 +46,7 @@ from .facts import inspect_local_source
 from .spans import resolve_local_span
 from .materialization import LocalAnalysisMaterializer
 from .incidents import LocalIncidentMaterializer
+from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -112,6 +113,7 @@ class RecordingService:
         frame_extractor: FrameExtractor | None = None,
         analysis_materializer: LocalAnalysisMaterializer | None = None,
         incident_materializer: LocalIncidentMaterializer | None = None,
+        time_source_observer: LocalTimeSourceObserver | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
@@ -125,6 +127,67 @@ class RecordingService:
         self._local_clips: dict[str, tuple[IncidentClip, bytes]] = {}
         self._clip_identity: dict[tuple, str] = {}
         self._local_clip_refs: set[str] = set()
+        self._time_source_observer = time_source_observer or LocalTimeSourceObserver()
+        self._time_observations: dict[str, ObservedTimeSources] = {}
+        self._time_candidates: dict[str, TimeSourceCandidate] = {}
+
+    def observe_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
+        local = self._repository.get_local_source(source_asset_ref)
+        if local is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록된 로컬 원본 ref가 필요합니다")
+        self._time_source_observer.verify_source(local)
+        if source_asset_ref not in self._time_observations:
+            observed = self._time_source_observer.observe(source_asset_ref, local)
+            self._time_observations[source_asset_ref] = observed
+            for candidate in observed.candidates:
+                self._time_candidates[candidate.candidate_id] = candidate
+        return self.get_time_sources(source_asset_ref)
+
+    def get_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
+        observed = self._time_observations.get(source_asset_ref)
+        if observed is None:
+            raise RecordingCapabilityError("NOT_FOUND", "이 원본의 시간 관찰 결과가 없습니다")
+        return ObservedTimeSources(tuple(c.model_copy(deep=True) for c in observed.candidates),
+                                   tuple(c.model_copy(deep=True) for c in observed.checks))
+
+    def get_time_source_candidate(self, candidate_id: str) -> TimeSourceCandidate:
+        candidate = self._time_candidates.get(candidate_id)
+        if candidate is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 시각 후보입니다")
+        return candidate.model_copy(deep=True)
+
+    def apply_filename_anchor(self, timeline_ref: TimelineRef | dict[str, Any], candidate_id: str | None,
+                              *, overlay_matches: bool | None, trusted: bool = False) -> AnchorApplication:
+        """수동 대조 입력을 별도 실행 결과로 보존한다. Candidate의 검증 상태는 바꾸지 않는다."""
+        if (overlay_matches is not None and type(overlay_matches) is not bool) or type(trusted) is not bool:
+            raise ValueError("수동 대조와 신뢰 입력은 명시적 bool이어야 합니다")
+        ref = TimelineRef.model_validate(timeline_ref)
+        timeline = self.get_timeline(ref.timeline_id, ref.revision)
+        latest = self.get_latest_timeline(timeline.timeline_id)
+        if timeline.revision != latest.revision:
+            raise ValueError("stale timeline revision: 최신 revision만 anchor 적용 대상으로 사용할 수 있습니다")
+        if (timeline.timeline_status != "USABLE_RELATIVE_ONLY" or len(timeline.source_placements) != 1
+                or timeline.source_placements[0].timeline_start_sec != 0.0):
+            raise ValueError("단일 원본의 0초 시작 relative-only Timeline이 필요합니다")
+        if overlay_matches is not True or trusted is not True or candidate_id is None:
+            return AnchorApplication(timeline, overlay_matches, trusted, False)
+        candidate = self.get_time_source_candidate(candidate_id)
+        placement = timeline.source_placements[0]
+        if (candidate.source_kind != "FILENAME" or candidate.applies_to.source_asset_ref != placement.source_asset_ref
+                or candidate.applies_to.source_offset_sec != 0.0):
+            raise ValueError("해당 원본 시작점의 filename 후보만 anchor로 적용할 수 있습니다")
+        local = self._repository.get_local_source(placement.source_asset_ref)
+        if local is None:
+            raise RecordingCapabilityError("UNAVAILABLE", "anchor 원본에 접근할 수 없습니다")
+        self._time_source_observer.verify_source(local)
+        payload = timeline.model_dump()
+        payload.update(revision=latest.revision + 1, timeline_status="USABLE",
+                       time_source_candidates=[c.candidate_id for c in self.get_time_sources(placement.source_asset_ref).candidates])
+        payload["time_basis"]["working_anchor"] = {
+            "value": candidate.value, "source_candidate_ref": candidate.candidate_id, "status": "OK"}
+        anchored = RecordingTimeline.model_validate(payload)
+        self._repository.add_timeline(anchored)
+        return AnchorApplication(anchored, overlay_matches, trusted, True)
 
     def close(self) -> None:
         """로컬 prepared media 메모리를 해제한다. 이미 열린 독립 stream은 호출자가 닫는다."""

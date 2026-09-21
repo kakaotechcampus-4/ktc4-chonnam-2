@@ -24,9 +24,16 @@ from .models import (
 from .probe import FfprobeMediaProbe
 from .materialization import AnalysisProfile, LocalAnalysisMaterializer
 from .incidents import IncidentClipEncoding, LocalIncidentMaterializer
+from .time_sources import (AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources,
+                           TimeSourceCandidate, TimeSourceCheck)
 from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
 
 __all__ = [
+    "AnchorApplication",
+    "LocalTimeSourceObserver",
+    "ObservedTimeSources",
+    "TimeSourceCandidate",
+    "TimeSourceCheck",
     "IncidentClipEncoding",
     "LocalIncidentMaterializer",
     "AnalysisProfile",
