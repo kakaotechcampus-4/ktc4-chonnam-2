@@ -59,3 +59,27 @@
 참고: `docs/architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md`
 §10.2는 stream을 명시하고 selector 경로를 E2E 판정에서 제외하는 비차단 회피 방법을
 기록한다.
+
+## profile_ref · AnalysisScope 경계 (Recording 확인, 2026-09-21)
+
+VIDEO stream ref 접합(위)과는 별개 축이며, Recording Owner 회신으로 아래 두 경계가
+확인됐다. Canonical profile 값 목록과 budget 기본 숫자는 Search가 정의하지 않는다.
+
+- **profile_ref:** 책임 경계는 이슈 #95 D2로 종결. 월요일 실행은 추가 결정을 기다리지
+  않는다. profile_ref는 opaque token이며 한 실행 안 동일성·재사용 판단에만 쓴다. 실제
+  출력 설정(480p H.264 MP4·audio off 등)은 ref 문자열에 담기지 않고 Recording이 실행
+  조립 시 명시적으로 등록한다. Search는 ref에서 설정을 추론하지 않는다 — 현재 코드도
+  `profile_ref`를 참조하지 않는다. 미확정으로 남은 것은 최종 canonical profile 값 목록뿐이며
+  월요일 비차단이다.
+- **stream 생존:** Recording은 Search가 `open_analysis_source()` stream을 모두 소비할
+  때까지 닫지 않는다. 실행별 `AnalysisSource` bytes는 Search 쪽 컨텍스트 종료 시 해제된다.
+  Search는 stream을 컨텍스트 안에서 소비 완료한 뒤에만 닫는다(현 구현 준수).
+- **AnalysisScope:** Recording 소유가 아니다. 계약상 case가 Producer이고 budget 기본
+  숫자는 benchmark/config가 관리한다. Search는 scope를 fixture/benchmark에서 읽고
+  budget을 하드코딩하지 않는다(하드코딩 값은 CLI·smoke 전용). 월요일 GT 없는 배관
+  E2E는 공용 Mock Pack happy 기준(`target_event_types: ["SOLID_LINE_LANE_CHANGE"]`,
+  `budget: {max_cost_krw: 1000, max_latency_sec: 180}`)을 재사용한다. `SOLID_LINE_LANE_CHANGE`는
+  영상 정답 단정이 아니라 Search에 요청하는 탐지 대상이다. Elice 실제 호출 한도로 다른
+  값이 필요하면 실행 시 scope 값으로 조정하며, 계약 기본값 재확정은 아니다.
+- **미집행 항목:** `budget.max_cost_krw`는 KRW↔USD 환산 미결로 아직 집행하지 않고
+  `max_latency_sec`만 deadline으로 집행한다(`coarse.py:88`). 월요일 배관 E2E 비차단.

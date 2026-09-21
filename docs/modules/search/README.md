@@ -24,4 +24,8 @@
 - `decisions/`: 조사·실험 후 확정한 module 내부 결정
 - `contracts/`: 이 모듈이 생산/소비하는 계약의 초안·검토 메모. cross-module 최종 계약은 `architecture/contracts/`로 승격
 
+## 설계 문서
+
+- [`search-design-advancement-2026-09-18.md`](./search-design-advancement-2026-09-18.md): 현재 Search 설계와 W7 Quality / Risk Burn-down의 우선순위·완료 기준을 정리한 실행 기준 초안
+
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
