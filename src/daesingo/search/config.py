@@ -92,13 +92,30 @@ class GeminiSearchConfig:
         if env is None:
             env = load_env_file()
         defaults = cls()
-        # pricing fields (input/output rate, max_cost, fine_reserve): wired for live in Task 11/13 via env
         return cls(
             model=env.get("DAESINGO_GEMINI_MODEL", defaults.model),
             media_resolution=env.get(
                 "DAESINGO_GEMINI_MEDIA_RESOLUTION", defaults.media_resolution
             ),
             base_url=env.get("DAESINGO_GEMINI_BASE_URL", defaults.base_url),
+            input_usd_per_million=float(
+                env.get(
+                    "DAESINGO_GEMINI_INPUT_USD_PER_MILLION",
+                    defaults.input_usd_per_million,
+                )
+            ),
+            output_usd_per_million=float(
+                env.get(
+                    "DAESINGO_GEMINI_OUTPUT_USD_PER_MILLION",
+                    defaults.output_usd_per_million,
+                )
+            ),
+            max_cost_usd=float(
+                env.get("DAESINGO_GEMINI_MAX_COST_USD", defaults.max_cost_usd)
+            ),
+            fine_reserve_usd=float(
+                env.get("DAESINGO_GEMINI_FINE_RESERVE_USD", defaults.fine_reserve_usd)
+            ),
         )
 
     @property

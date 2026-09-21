@@ -22,9 +22,14 @@ from .scope import (
     VisualEventType,
 )
 from .smoke import (
+    LiveInputManifest,
+    LivePreconditionError,
     MissingSmokeApiKeyError,
+    NotExecutedReport,
     SmokeRunOptions,
+    build_live_smoke_service,
     build_smoke_service,
+    check_live_preconditions,
     failed_input_report,
     run_smoke,
 )
@@ -38,16 +43,28 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     for name in ("coarse", "fine", "smoke"):
         command = subparsers.add_parser(name)
-        command.add_argument("--source", type=Path, required=True)
-        command.add_argument("--duration-sec", type=float, required=True)
-        command.add_argument(
-            "--event-type", action="append", choices=[e.value for e in VisualEventType]
-        )
         if name == "smoke":
-            command.add_argument("--provider-fixture", type=Path)
+            mode = command.add_mutually_exclusive_group(required=True)
+            mode.add_argument("--provider-fixture", type=Path)
+            mode.add_argument("--live-manifest", type=Path)
+            command.add_argument("--source", type=Path)
+            command.add_argument("--duration-sec", type=float)
+            command.add_argument(
+                "--event-type",
+                action="append",
+                choices=[e.value for e in VisualEventType],
+            )
             command.add_argument("--timeout-sec", type=float, default=60.0)
             command.add_argument(
                 "--max-cost-usd", type=Decimal, default=Decimal("1.00")
+            )
+        else:
+            command.add_argument("--source", type=Path, required=True)
+            command.add_argument("--duration-sec", type=float, required=True)
+            command.add_argument(
+                "--event-type",
+                action="append",
+                choices=[e.value for e in VisualEventType],
             )
     args = parser.parse_args(argv)
     if args.command == "smoke":
@@ -101,13 +118,23 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run_smoke_command(args: argparse.Namespace) -> int:
+    if args.live_manifest is not None:
+        return _run_smoke_live(args)
+    return _run_smoke_fixture(args)
+
+
+def _run_smoke_fixture(args: argparse.Namespace) -> int:
     try:
+        source: Path | None = args.source
+        duration_sec: float | None = args.duration_sec
         if (
-            not args.source.is_file()
-            or not math.isfinite(args.duration_sec)
+            source is None
+            or not source.is_file()
+            or duration_sec is None
+            or not math.isfinite(duration_sec)
             or not math.isfinite(args.timeout_sec)
             or not args.max_cost_usd.is_finite()
-            or args.duration_sec <= 0
+            or duration_sec <= 0
             or args.timeout_sec <= 0
             or args.max_cost_usd < 0
         ):
@@ -117,8 +144,8 @@ def _run_smoke_command(args: argparse.Namespace) -> int:
                 VisualEventType(item) for item in (args.event_type or [])
             ) or tuple(VisualEventType)
             options = SmokeRunOptions(
-                source=args.source,
-                duration_sec=args.duration_sec,
+                source=source,
+                duration_sec=duration_sec,
                 event_types=selected,
                 timeout_sec=args.timeout_sec,
                 max_cost_usd=args.max_cost_usd,
@@ -137,6 +164,46 @@ def _run_smoke_command(args: argparse.Namespace) -> int:
         report = failed_input_report()
     except (OSError, UnicodeError, ValidationError, UnsafeGeminiBaseUrlError):
         report = failed_input_report()
+    print(render_report(report))
+    if report.status is SmokeStatus.SUCCEEDED:
+        return 0
+    return 2 if report.failure_stage is SmokeFailureStage.INPUT else 1
+
+
+def _run_smoke_live(args: argparse.Namespace) -> int:
+    from .config import GeminiSearchConfig
+
+    try:
+        manifest = LiveInputManifest.from_path(args.live_manifest)
+    except (OSError, UnicodeError, ValidationError):
+        print(render_report(NotExecutedReport(missing_prerequisite="manifest")))
+        return 2
+
+    env = load_env_file()
+    api_key = env.get("GEMINI_API_KEY", "").strip() or None
+
+    try:
+        config = GeminiSearchConfig.from_dotenv(env)
+    except (UnsafeGeminiBaseUrlError, ValueError):
+        print(render_report(NotExecutedReport(missing_prerequisite="config")))
+        return 2
+
+    try:
+        check_live_preconditions(manifest, api_key, config)
+    except LivePreconditionError as exc:
+        print(render_report(NotExecutedReport(missing_prerequisite=exc.missing)))
+        return 2
+
+    # api_key is not None here: _check_live_preconditions raises if it is.
+    assert api_key is not None
+    try:
+        service, config, options = build_live_smoke_service(
+            manifest, api_key, config, args.timeout_sec
+        )
+        report = run_smoke(options, service, config)
+    except (OSError, UnicodeError, ValidationError, UnsafeGeminiBaseUrlError):
+        print(render_report(failed_input_report()))
+        return 2
     print(render_report(report))
     if report.status is SmokeStatus.SUCCEEDED:
         return 0
