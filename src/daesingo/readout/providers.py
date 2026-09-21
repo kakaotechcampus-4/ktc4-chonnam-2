@@ -18,7 +18,9 @@ validation·run 조립. provider가 하는 일은 그 앞단, 즉 **프레임을
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Callable, Optional
+
+from daesingo.recording import RecordingCapabilityError
 
 from .fixtures import load_all
 
@@ -111,6 +113,69 @@ class OcrProvider:
 
     def read_overlay_time(self, input_ref) -> OverlayReading:
         raise NotImplementedError
+
+
+class IncidentClipFrames:
+    """IncidentClip-relative offsets를 Recording frame bytes로 바꾼다."""
+
+    def __init__(self, recording, incident_clip_ref: str):
+        self._recording = recording
+        self._clip = recording.get_incident_clip(incident_clip_ref)
+
+    def read_at(self, offset_sec: float):
+        if offset_sec < 0:
+            raise ValueError("offset_sec는 0 이상이어야 합니다")
+        at_sec = self._clip.timeline_range.start_sec + offset_sec
+        spans = [
+            span for span in self._clip.source_provenance.asset_spans
+            if span.timeline_range.start_sec <= at_sec < span.timeline_range.end_sec
+        ]
+        if len(spans) != 1:
+            raise RecordingCapabilityError(
+                "FRAME_NOT_FOUND" if not spans else "TEMPORARY_FAILURE",
+                "clip 위치를 하나의 MediaStream frame으로 해석할 수 없습니다",
+            )
+        span = spans[0]
+        frame = self._recording.resolve_frame({
+            "kind": "STREAM_POSITION",
+            "media_stream_ref": span.media_stream_ref,
+            "source_offset_sec": (
+                span.source_range.start_sec
+                + at_sec
+                - span.timeline_range.start_sec
+            ),
+        })
+        return frame, self._recording.read_frame(frame.frame_ref)
+
+
+class RecordingOcrProvider(OcrProvider):
+    """Recording frame access와 실제 OCR callable을 잇는 Real E2E adapter."""
+
+    label = "recording-ocr"
+
+    def __init__(
+        self,
+        recording,
+        plate_reader: Callable[[IncidentClipFrames, object, object], PlateReading],
+        overlay_reader: Callable[[IncidentClipFrames, object], OverlayReading],
+    ):
+        self._recording = recording
+        self._plate_reader = plate_reader
+        self._overlay_reader = overlay_reader
+
+    def read_plate(self, input_ref, target_hint) -> PlateReading:
+        try:
+            frames = IncidentClipFrames(self._recording, input_ref.incident_clip_ref)
+            return self._plate_reader(frames, input_ref, target_hint)
+        except RecordingCapabilityError as error:
+            raise ProviderError("INFRA", "READOUT_FRAME_ACCESS_FAILED", str(error)) from error
+
+    def read_overlay_time(self, input_ref) -> OverlayReading:
+        try:
+            frames = IncidentClipFrames(self._recording, input_ref.incident_clip_ref)
+            return self._overlay_reader(frames, input_ref)
+        except RecordingCapabilityError as error:
+            raise ProviderError("INFRA", "READOUT_FRAME_ACCESS_FAILED", str(error)) from error
 
 
 # ── Mock 1차용 Stub ──────────────────────────────────────────
