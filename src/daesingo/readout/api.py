@@ -413,9 +413,13 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         value, status = None, "UNKNOWN"
         abstained, reason = False, None
 
+    # 대상 차량 영역은 association이 소유한다. 대표 프레임의 번호판 박스에서 만들지 않는다 —
+    # 그러면 「어느 차량을 읽었나」와 「번호판이 어디 있나」가 한 값이 되고, 계약 §4가
+    # `plate_bbox_xywh`를 따로 둔 이유가 사라진다. 둘은 프레임이 다를 수도 있다.
     region = None
-    if best is not None:
-        region = AssociatedRegion(frame_ref=best.frame_ref, bbox_xywh=list(best.bbox_xywh))
+    if association.region is not None:
+        frame_ref, bbox = association.region
+        region = AssociatedRegion(frame_ref=frame_ref, bbox_xywh=list(bbox))
 
     return PlateReadout(
         readout_id=_new_id("readout"),
@@ -445,6 +449,9 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
             frame_ref=best.frame_ref,
             crop_ref=crop_refs[best_at],
             quality=dict(best.quality),
+            # provider가 프레임마다 돌려주던 값을 여기서 버리고 있었다 (v1.3에서 실었다).
+            # 새로 만드는 값이 아니라 대표 프레임의 번호판 영역을 그대로 싣는 것이다.
+            plate_bbox_xywh=list(best.bbox_xywh),
         ) if best is not None else None,
         frame_results=frame_results,
         contract="PlateReadout",
