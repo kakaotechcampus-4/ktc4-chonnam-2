@@ -116,7 +116,7 @@ def search_coarse(
     analysis_run = AnalysisRun(
         run_id=run_id,
         operation=Operation.CANDIDATE_SEARCH,
-        input_ref=ContractRef(kind="analysis_scope", ref=scope.scope_id),
+        input_ref=ContractRef(kind="ANALYSIS_SCOPE", ref=scope.scope_id),
         implementation=Implementation(
             impl_id="search:gemini-coarse-p3",
             model_ref=dependencies.config.model,
