@@ -30,6 +30,11 @@ from daesingo.search.scope import (
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
 from daesingo.search.usage import ProviderUsage
+from tests.search._search_service_support import (
+    FixtureMediaPreparer,
+    OpenableResolver,
+    make_deadline,
+)
 
 
 def _fine_response() -> FineResponse:
@@ -102,6 +107,26 @@ def _candidate(
     )
 
 
+def _service(
+    source: ResolvedAnalysisSource,
+    provider: _RecordingProvider,
+    config: GeminiSearchConfig,
+    scope_id: str | None = None,
+) -> SearchService:
+    sources_by_scope = {} if scope_id is None else {scope_id: (source,)}
+    return SearchService(
+        OpenableResolver(
+            StaticAnalysisSourceResolver(
+                sources_by_scope, {source.source_ref.ref: source}
+            )
+        ),
+        provider,
+        config,
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
+
+
 def test_verify_visual_fixture_accepts_omitted_candidate() -> None:
     # Given
     input_ref = ContractRef(kind="analysis_source", ref="as_h001_fine")
@@ -120,11 +145,7 @@ def test_verify_visual_real_service_uses_selected_candidate_and_explicit_event_t
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(),
-    )
+    service = _service(source, provider, GeminiSearchConfig())
 
     # When
     result = verify_visual(
@@ -150,11 +171,7 @@ def test_verify_visual_real_service_rejects_a_missing_candidate_before_provider_
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(),
-    )
+    service = _service(source, provider, GeminiSearchConfig())
 
     # When / Then
     with pytest.raises(MissingCandidateError):
@@ -167,11 +184,7 @@ def test_verify_visual_real_service_pads_selected_candidate_offsets_exactly() ->
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(fine_padding_sec=1.5),
-    )
+    service = _service(source, provider, GeminiSearchConfig(fine_padding_sec=1.5))
 
     # When
     result = verify_visual(input_ref, candidate=_candidate(), service=service)
@@ -198,11 +211,7 @@ def test_verify_visual_real_service_clamps_padded_offsets(
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(fine_padding_sec=2.0),
-    )
+    service = _service(source, provider, GeminiSearchConfig(fine_padding_sec=2.0))
 
     # When
     verify_visual(input_ref, candidate=candidate, service=service)
@@ -223,11 +232,7 @@ def test_verify_visual_real_service_rejects_candidate_timeline_mismatch(
     source = _source()
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(),
-    )
+    service = _service(source, provider, GeminiSearchConfig())
 
     # When / Then
     with pytest.raises(CandidateSourceMismatchError):
@@ -246,11 +251,7 @@ def test_verify_visual_real_service_rejects_a_non_source_reference() -> None:
     source = _source()
     input_ref = ContractRef(kind="candidate", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(),
-    )
+    service = _service(source, provider, GeminiSearchConfig())
 
     # When / Then
     with pytest.raises(CandidateSourceMismatchError):
@@ -263,11 +264,7 @@ def test_verify_visual_real_service_rejects_a_degenerate_clamped_span() -> None:
     source = _source(duration_sec=0.0)
     input_ref = ContractRef(kind="analysis_source", ref="source-1")
     provider = _RecordingProvider()
-    service = SearchService(
-        StaticAnalysisSourceResolver({}, {input_ref.ref: source}),
-        provider,
-        GeminiSearchConfig(),
-    )
+    service = _service(source, provider, GeminiSearchConfig())
 
     # When / Then
     with pytest.raises(InvalidFineSpanError):
@@ -309,12 +306,11 @@ def test_public_coarse_to_fine_selected_candidate_manual_qa() -> None:
             }
         )
     )
-    service = SearchService(
-        StaticAnalysisSourceResolver(
-            {scope.scope_id: (source,)}, {source_ref.ref: source}
-        ),
+    service = _service(
+        source,
         provider,
         GeminiSearchConfig(fine_padding_sec=2.0),
+        scope.scope_id,
     )
 
     # When

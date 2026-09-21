@@ -81,6 +81,7 @@ class CandidateSourceLink:
         candidate_span = self.candidate.span
         matches_source = (
             self.source_ref.kind == "analysis_source"
+            and source.source_ref == self.source_ref
             and candidate_span.timeline_id == source.timeline_id
             and candidate_span.timeline_revision == source.timeline_revision
         )
@@ -135,9 +136,9 @@ class StaticAnalysisSourceResolver:
             ) from error
 
     def open_source(self, ref: ContractRef) -> AbstractContextManager[MediaInput]:
+        _ = ref
         raise NotImplementedError(
-            "StaticAnalysisSourceResolver does not support open_source; "
-            "use LocalAnalysisSourceResolver or RecordingAnalysisSourceResolver"
+            "StaticAnalysisSourceResolver does not support open_source; use LocalAnalysisSourceResolver or RecordingAnalysisSourceResolver"
         )
 
 

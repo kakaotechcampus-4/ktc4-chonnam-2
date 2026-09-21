@@ -9,3 +9,11 @@ class CoarseMediaPreparer(Protocol):
     def prepare_coarse(
         self, media_input: MediaInput, deadline: RunDeadline
     ) -> AbstractContextManager[PreparedMedia]: ...
+
+    def prepare_fine(
+        self,
+        media_input: MediaInput,
+        start_sec: float,
+        end_sec: float,
+        deadline: RunDeadline,
+    ) -> AbstractContextManager[PreparedMedia]: ...

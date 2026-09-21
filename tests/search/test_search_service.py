@@ -123,7 +123,7 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
 
 def test_fine_routes_legacy_event_name_to_the_contract_enum():
     source = ResolvedAnalysisSource(
-        ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 1
+        ContractRef(kind="analysis_source", ref="source-1"), 10.0, "clip-1", 1
     )
     resolver = StaticAnalysisSourceResolver({}, {"source-1": source})
     service = SearchService(

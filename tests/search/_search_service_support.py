@@ -46,6 +46,16 @@ class FixtureMediaPreparer:
         _ = media_input, deadline
         return _prepared_media(self._duration_sec)
 
+    def prepare_fine(
+        self,
+        media_input: MediaInput,
+        start_sec: float,
+        end_sec: float,
+        deadline: RunDeadline,
+    ) -> AbstractContextManager[PreparedMedia]:
+        _ = media_input, deadline
+        return _prepared_fine_media(start_sec, end_sec)
+
 
 @contextmanager
 def _prepared_media(duration_sec: float) -> Generator[PreparedMedia]:
@@ -56,6 +66,18 @@ def _prepared_media(duration_sec: float) -> Generator[PreparedMedia]:
         duration_sec=duration_sec,
         origin_start_sec=0.0,
         origin_end_sec=duration_sec,
+    )
+
+
+@contextmanager
+def _prepared_fine_media(start_sec: float, end_sec: float) -> Generator[PreparedMedia]:
+    yield PreparedMedia(
+        path=Path("fixture-fine.mp4"),
+        content_type="video/mp4",
+        byte_size=7,
+        duration_sec=end_sec - start_sec,
+        origin_start_sec=start_sec,
+        origin_end_sec=end_sec,
     )
 
 

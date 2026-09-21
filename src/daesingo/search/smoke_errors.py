@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import override
 
 
 class SmokeProviderError(Exception):
@@ -37,6 +38,10 @@ class ProviderApiError(SmokeProviderError):
         return self.detail
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ProviderPayloadError(SmokeProviderError):
     detail: str
+
+    @override
+    def __str__(self) -> str:
+        return self.detail

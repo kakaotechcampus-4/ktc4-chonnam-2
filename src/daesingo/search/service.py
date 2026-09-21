@@ -59,4 +59,6 @@ class SearchService:
             self.provider,
             self.config,
             self.ledger,
+            self.media_preparer,
+            self.deadline,
         )
