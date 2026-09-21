@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from io import RawIOBase
 import math
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Mapping
 from uuid import uuid4
 
 from pydantic import TypeAdapter
@@ -42,6 +42,7 @@ from .timeline import build_relative_timeline
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
+from .materialize import LocalAnalysisMaterializer, LocalAnalysisProfile
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -106,10 +107,29 @@ class RecordingService:
         self, repository: InMemoryRecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
+        analysis_profiles: Mapping[str, LocalAnalysisProfile] | None = None,
+        media_materializer: LocalAnalysisMaterializer | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
+        self._analysis_profiles = dict(analysis_profiles or {})
+        self._media_materializer = media_materializer
+        self._closed = False
+
+    def close(self) -> None:
+        """Release temporary analysis media after consumers close their streams."""
+        if self._closed:
+            return
+        if self._media_materializer is not None:
+            self._media_materializer.close()
+        self._closed = True
+
+    def __enter__(self) -> RecordingService:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
     def register_local_source(self, path: str | Path) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
@@ -351,6 +371,8 @@ class RecordingService:
                                             selected_stream_ref=media_stream_ref)
             if len(resolution.spans) > 1 or any(s.media_stream_ref != media_stream_ref for s in resolution.spans):
                 raise RecordingCapabilityError("TEMPORARY_FAILURE", "Baseline에서 선택 ref의 단일 span을 확정할 수 없습니다")
+            for span in resolution.spans:
+                self._repository.associate_local_span_timeline(span, parsed_ref)
             return resolution
 
         resolution = self._repository.get_span_resolution(parsed_ref, parsed_range)
@@ -369,15 +391,97 @@ class RecordingService:
         span: AssetSpan | dict[str, Any],
         profile_ref: str,
     ) -> AnalysisSource:
+        if self._closed:
+            raise RecordingCapabilityError("UNAVAILABLE", "RecordingService가 종료되었습니다")
         parsed_span = AssetSpan.model_validate(span)
         if not profile_ref:
             raise ValueError("profile_ref는 비어 있을 수 없습니다")
-        sources = self._repository.find_analysis_sources(parsed_span, profile_ref)
+        local = self._repository.get_local_source(parsed_span.source_asset_ref)
+        timeline_ref = None
+        if local is not None:
+            source_asset = self._repository.get_source_asset(parsed_span.source_asset_ref)
+            if source_asset is None:
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록된 원본 정보가 없습니다")
+            if inspect_local_source(source_asset, local).availability != "AVAILABLE":
+                raise RecordingCapabilityError("SOURCE_UNAVAILABLE", "등록 후 원본이 변경되었습니다")
+            refs = self._repository.find_timeline_refs_for_span(parsed_span)
+            if len(refs) != 1:
+                raise RecordingCapabilityError(
+                    "TEMPORARY_FAILURE", "AssetSpan의 Timeline을 단일하게 식별할 수 없습니다",
+                )
+            timeline_ref = refs[0]
+        sources = self._repository.find_analysis_sources(
+            parsed_span, profile_ref, timeline_ref=timeline_ref,
+        )
         if not sources:
-            raise RecordingCapabilityError(
-                "NOT_FOUND",
-                "해당 span과 profile의 AnalysisSource가 준비되지 않았습니다",
+            profile = self._analysis_profiles.get(profile_ref)
+            if local is None or profile is None:
+                raise RecordingCapabilityError(
+                    "NOT_FOUND", "해당 span과 profile의 AnalysisSource가 준비되지 않았습니다",
+                )
+            index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
+            stream = self._repository.get_media_stream(parsed_span.media_stream_ref)
+            if index is None or stream is None or stream.media_type != "VIDEO":
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "Video stream을 찾을 수 없습니다")
+            audio_stream = None
+            if profile.include_audio:
+                for ref in source_asset.media_stream_refs:
+                    candidate = self._repository.get_media_stream(ref)
+                    if candidate is not None and candidate.media_type == "AUDIO":
+                        audio_stream = candidate
+                        break
+            audio_index = (
+                self._repository.get_local_stream_index(audio_stream.media_stream_ref)
+                if audio_stream is not None else None
             )
+            if profile.include_audio and audio_index is None:
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "Audio stream을 찾을 수 없습니다")
+            if self._media_materializer is None:
+                self._media_materializer = LocalAnalysisMaterializer()
+            media = self._media_materializer.materialize(
+                local,
+                video_stream_index=index,
+                audio_stream_index=audio_index,
+                start_sec=parsed_span.source_range.start_sec,
+                end_sec=parsed_span.source_range.end_sec,
+                profile=profile,
+            )
+            source = AnalysisSource(
+                contract="AnalysisSource",
+                contract_version="analysis-source-derived/v1",
+                analysis_source_ref=f"as_{uuid4().hex}",
+                asset_kind="ANALYSIS_SOURCE",
+                source_refs=[ContractRef(kind="source_asset", ref=parsed_span.source_asset_ref)],
+                media_stream_refs=[
+                    parsed_span.media_stream_ref,
+                    *([audio_stream.media_stream_ref] if audio_stream is not None else []),
+                ],
+                byte_size=media.byte_size,
+                availability="AVAILABLE",
+                duration_sec=media.duration_sec,
+                timeline_ref=timeline_ref,
+                timeline_range=parsed_span.timeline_range,
+                profile_ref=profile_ref,
+            )
+            self._repository.add_analysis_source(
+                source, stream_factory=lambda path=media.path: path.open("rb"),
+                content_type="video/mp4",
+            )
+            self._repository.add_asset_facts(AssetFacts(
+                contract="AssetFacts",
+                contract_version="source-asset-media-stream/v1",
+                asset_ref=ContractRef(kind="analysis_source", ref=source.analysis_source_ref),
+                asset_kind="ANALYSIS_SOURCE",
+                derived_role=None,
+                byte_size=source.byte_size,
+                availability="AVAILABLE",
+                checked_at=datetime.now(timezone.utc),
+                lineage=list(source.source_refs),
+                duration_sec=source.duration_sec,
+                timeline_ref=source.timeline_ref,
+                timeline_range=source.timeline_range,
+            ))
+            return source
         if len(sources) > 1:
             raise RecordingCapabilityError(
                 "TEMPORARY_FAILURE",
@@ -386,12 +490,17 @@ class RecordingService:
         return sources[0]
 
     def open_analysis_source(self, analysis_source_ref: str) -> OpenedAnalysisSource:
+        if self._closed:
+            raise RecordingCapabilityError("UNAVAILABLE", "RecordingService가 종료되었습니다")
         source = self._repository.get_analysis_source(analysis_source_ref)
         if source is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 AnalysisSource입니다")
         if source.availability != "AVAILABLE" or source.byte_size is None:
             raise RecordingCapabilityError("UNAVAILABLE", "AnalysisSource를 읽을 수 없습니다")
-        opened = self._repository.open_analysis_stream(analysis_source_ref)
+        try:
+            opened = self._repository.open_analysis_stream(analysis_source_ref)
+        except OSError:
+            raise RecordingCapabilityError("UNAVAILABLE", "AnalysisSource stream을 열 수 없습니다") from None
         if opened is None:
             raise RecordingCapabilityError("UNAVAILABLE", "AnalysisSource stream이 없습니다")
         stream, content_type = opened

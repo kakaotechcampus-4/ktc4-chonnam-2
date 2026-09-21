@@ -22,6 +22,7 @@ from .models import (
     TimelinePositionLocator,
 )
 from .probe import FfprobeMediaProbe
+from .materialize import LocalAnalysisMaterializer, LocalAnalysisProfile
 from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
 
 __all__ = [
@@ -34,6 +35,8 @@ __all__ = [
     "FrameRef",
     "FfprobeMediaProbe",
     "IncidentClip",
+    "LocalAnalysisMaterializer",
+    "LocalAnalysisProfile",
     "MediaStream",
     "OpenedAnalysisSource",
     "RecordingCapabilityError",

@@ -21,6 +21,10 @@
 
 Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
+명시적으로 선택된 단일 로컬 VIDEO span의 분석용 H.264 MP4 생성은
+`LocalAnalysisProfile`과 `RecordingService.prepare_analysis_source()`로 시험할 수 있다.
+지원 범위와 임시 파일 수명은 `docs/modules/recording/local-analysis-materialization.md`를 참조한다.
+
 ## 상태
 
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

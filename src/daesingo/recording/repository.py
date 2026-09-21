@@ -42,6 +42,7 @@ class InMemoryRecordingRepository:
         self._asset_facts: dict[tuple[str, str], AssetFacts] = {}
         self._timelines: dict[tuple[str, int], RecordingTimeline] = {}
         self._span_resolutions: dict[tuple[str, int, Decimal, Decimal], SpanResolution] = {}
+        self._local_span_timeline_refs: dict[str, dict[tuple[str, int], TimelineRef]] = {}
         self._analysis_sources: dict[str, AnalysisSource] = {}
         self._analysis_stream_factories: dict[str, Callable[[], BinaryIO]] = {}
         self._analysis_content_types: dict[str, str] = {}
@@ -156,6 +157,19 @@ class InMemoryRecordingRepository:
     ) -> SpanResolution | None:
         return self._span_resolutions.get(self._resolution_key(timeline_ref, requested_range))
 
+    def associate_local_span_timeline(self, span: AssetSpan, timeline_ref: TimelineRef) -> None:
+        """Remember provenance without caching a selected-stream resolution."""
+        refs = self._local_span_timeline_refs.setdefault(span.model_dump_json(), {})
+        refs[(timeline_ref.timeline_id, timeline_ref.revision)] = timeline_ref
+
+    def find_timeline_refs_for_span(self, span: AssetSpan) -> list[TimelineRef]:
+        refs = dict(self._local_span_timeline_refs.get(span.model_dump_json(), {}))
+        for resolution in self._span_resolutions.values():
+            if span in resolution.spans:
+                ref = resolution.timeline_ref
+                refs[(ref.timeline_id, ref.revision)] = ref
+        return list(refs.values())
+
     @staticmethod
     def _resolution_key(
         timeline_ref: TimelineRef,
@@ -186,11 +200,14 @@ class InMemoryRecordingRepository:
     def get_analysis_source(self, source_ref: str) -> AnalysisSource | None:
         return self._analysis_sources.get(source_ref)
 
-    def find_analysis_sources(self, span: AssetSpan, profile_ref: str) -> list[AnalysisSource]:
+    def find_analysis_sources(
+        self, span: AssetSpan, profile_ref: str, *, timeline_ref: TimelineRef | None = None,
+    ) -> list[AnalysisSource]:
         return [
             source
             for source in self._analysis_sources.values()
             if source.profile_ref == profile_ref
+            and (timeline_ref is None or source.timeline_ref == timeline_ref)
             and source.timeline_range == span.timeline_range
             and span.media_stream_ref in source.media_stream_refs
             and any(

@@ -36,3 +36,4 @@
 - [로컬 원본의 실제 FrameRef·PNG 조회](local-frame-access.md)
 - [등록 원본의 현재 AssetFacts 조회](local-asset-facts.md)
 - [실제 단일 원본의 SpanResolution 계산](local-span-resolution.md)
+- [선택된 로컬 VIDEO span의 AnalysisSource 생성](local-analysis-materialization.md)
