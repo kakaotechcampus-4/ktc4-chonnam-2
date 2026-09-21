@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import RawIOBase
+import math
 from pathlib import Path
 from typing import Any, BinaryIO
 from uuid import uuid4
@@ -38,6 +39,7 @@ from .models import (
 from .repository import InMemoryRecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
+from .frames import FfmpegFrameExtractor, FrameExtractor
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -101,9 +103,11 @@ class RecordingService:
     def __init__(
         self, repository: InMemoryRecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
+        frame_extractor: FrameExtractor | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
+        self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
 
     def register_local_source(self, path: str | Path) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
@@ -203,9 +207,35 @@ class RecordingService:
                 )
             return frames[0]
 
+        if not math.isfinite(parsed.source_offset_sec):
+            raise ValueError("source_offset_sec은 유한한 값이어야 합니다")
         stream = self._repository.get_media_stream(parsed.media_stream_ref)
         if stream is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 MediaStream입니다")
+        local = self._repository.get_local_source(stream.source_asset_ref)
+        if local is not None:
+            if stream.media_type != "VIDEO":
+                raise RecordingCapabilityError("FRAME_NOT_FOUND", "video stream에만 frame이 있습니다")
+            if stream.availability == "UNAVAILABLE":
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "MediaStream을 읽을 수 없습니다")
+            if stream.duration_sec is not None and parsed.source_offset_sec >= stream.duration_sec:
+                raise RecordingCapabilityError("OUT_OF_RANGE", "요청 위치가 MediaStream 범위를 벗어납니다")
+            index = self._repository.get_local_stream_index(stream.media_stream_ref)
+            if index is None:
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "원본 stream index가 없습니다")
+            decoded = self._frame_extractor.extract(local, index, parsed.source_offset_sec)
+            frame = self._repository.find_frame_at(stream.media_stream_ref, decoded.source_offset_sec)
+            if frame is not None:
+                if self._repository.get_frame_content(frame.frame_ref) != decoded.content:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "동일 frame 위치의 내용이 달라졌습니다")
+                return frame
+            frame = FrameRef(
+                contract="FrameRef", contract_version="source-asset-media-stream/v1",
+                frame_ref=f"fr_{uuid4().hex}", media_stream_ref=stream.media_stream_ref,
+                source_offset_sec=decoded.source_offset_sec,
+            )
+            self._repository.add_frame(frame, content=decoded.content)
+            return frame
         if stream.availability != "AVAILABLE":
             raise RecordingCapabilityError("STREAM_UNAVAILABLE", "MediaStream을 읽을 수 없습니다")
         if stream.duration_sec is not None and parsed.source_offset_sec > stream.duration_sec:

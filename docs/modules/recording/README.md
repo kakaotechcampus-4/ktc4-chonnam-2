@@ -30,3 +30,7 @@
 - [recording 1차 Mock E2E Tech Spec](decisions/first-integration-tech-spec.md)
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
+
+## 실제 원본 capability
+
+- [로컬 원본의 실제 FrameRef·PNG 조회](local-frame-access.md)
