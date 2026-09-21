@@ -8,3 +8,4 @@
 - `aihub-71555-survey.md` — A tier 소스(AI-Hub 71555) 사전조사 원문(2026-08-27)과 현행 대조 (결정 아님)
 - `eval-dataset-plan.md` — 평가 데이터셋 3-tier(A/B/C) 구성 계획 원문과 현행 대조 (결정 아님)
 - `blackbox-storage-survey.md` — 제조사별 블랙박스 저장 방식 메모. **출처 미검증(LLM 응답)** — 인용 금지
+- `metric-provenance.md` — 지표별 문헌 출처 사후 대조표. 무엇을 「차용했다」고 말해도 되고 무엇이 우리 정의인지를 가른다 (결정 아님)

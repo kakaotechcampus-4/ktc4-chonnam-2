@@ -3,15 +3,31 @@
 이 폴더의 수치를 만든 환경을 기록한 것이다. 실행은 팀 레포 코드가 아니라 **그때 따로 짠
 스크립트**로 했고(`scripts/`), 환경은 특정 PC에만 있었다. 그 PC를 잃기 전에 남기는 기록이다.
 
-## 먼저 알아야 할 것 — 이 환경은 지금 그대로 재현되지 않는다
+## 먼저 알아야 할 것 — 남아 있던 환경은 못 쓴다. 다시 깔면 된다 (2026-09-19 확인)
 
 `C:\tmp\paddle-ocr`에 풀려 있던 패키지 더미는 **CPython 3.12 전용 바이너리**다
 (`pydantic_core/_pydantic_core.cp312-win_amd64.pyd`, `_cffi_backend.cp312-win_amd64.pyd`,
-`ujson.cp312-win_amd64.pyd`). 2026-09-18 확인 시점에 그 PC에 3.12가 없다 — py 런처에는
-3.14 / 3.13(anaconda) / 3.11만 잡히고, 3.11에서 import하면 `pydantic_core` 로드에서 깨진다.
+`ujson.cp312-win_amd64.pyd`). venv가 아니라 `sys.path.insert`로 경로에 꽂은 더미라
+인터프리터가 바뀌면 그대로는 못 쓴다. **아래 정보는 「다시 깔아서 재현하는 법」이지
+「남아 있는 환경을 쓰는 법」이 아니다.**
 
-그래서 **아래 정보는 "다시 깔아서 재현하는 법"이고, "남아 있는 환경을 쓰는 법"이 아니다.**
-수치를 그대로 다시 뽑아야 한다면 3.12를 새로 설치하고 `requirements-frozen.txt`로 복원해야 한다.
+**다만 재설치 경로는 실제로 동작한다.** 2026-09-19에 다른 PC에서 아래로 복원했고 같은
+버전 조합이 나왔다 — 이 문서가 한때 「재현되지 않는다」로 적었던 것은 특정 PC에 3.12가
+없다는 사실을 환경 자체의 성질로 잘못 옮긴 것이다.
+
+```bash
+uv venv --python 3.12 <경로>
+uv pip install --python <경로>/Scripts/python.exe \
+    "paddlepaddle==3.3.1" "paddleocr==3.7.0" "opencv-contrib-python==4.10.0.84"
+```
+
+복원 결과 `python 3.12.13` · `paddlepaddle 3.3.1` · `paddleocr 3.7.0` · `cv2 4.10.0`.
+모델 가중치는 첫 실행에서 `~/.paddlex/official_models/`로 자동 내려받는다
+(`PP-OCRv5_mobile_det` · `korean_PP-OCRv5_mobile_rec`).
+
+> **재현이 「같은 수치」를 보장하지는 않는다.** 위는 버전 조합을 되살리는 방법이고,
+> 이 폴더의 수치는 그때의 입력·프레임 선택·필터까지 같아야 재현된다. 실제 판독 경로가
+> 무엇이었는지는 아래 「전처리」 절을 봐야 한다.
 
 ## 인터프리터
 
@@ -108,6 +124,38 @@ python scripts/dataset-500/build_report.py        # threshold·종횡비 분석 
 | --- | --- |
 | `ocr-test/paddle_results.json` | `9fc4e253...ca98c1f8` |
 | `ocr-dataset-eval/paddleocr_500_results.json` | `bacdce64...6240a48fb` |
+
+## 전처리 — 아무것도 하지 않았다 (2026-09-19 추가)
+
+수치를 「PaddleOCR 성능」이 아니라 **「원본 프레임 무보정 1-pass · mobile 모델」 성능**으로
+읽어야 하는 이유다. 스크립트에서 확인한 그대로다.
+
+| | video-pilot | dataset-500 |
+| --- | --- | --- |
+| 투입 | 원본 **1920×1080 전체 프레임** | 정답 crop 파일 그대로 |
+| crop | 없음 | (입력이 이미 crop) |
+| 확대·대비·샤프닝 | 없음 | 없음 |
+| 다중 프레임 | 없음 — 5장 각각 독립 1회 | 해당 없음 |
+| 호출 | `PaddleOCR.predict` (det+rec) | `TextRecognition.predict` (rec 단독) |
+
+`use_doc_orientation_classify` · `use_doc_unwarping` · `use_textline_orientation` **셋 다 `False`**.
+`make_plate_crops.py`의 600×180 확대는 사람이 보라고 만든 contact sheet이고 OCR 경로가 아니다.
+
+video-pilot은 후보를 `digits >= 3` · `w/h >= 2.2` · `y1 < 1020` 휴리스틱으로 골랐다.
+**판독 로직이 아니라 스크립트 필터**이므로 이 조건에 걸려 빠진 후보가 있다.
+
+### det이 입력을 절반으로 줄인다
+
+`PP-OCRv5_mobile_det`의 `inference.yml`은 `DetResizeForTest: resize_long: 960`이다.
+**1920×1080을 통째로 넣으면 긴 변이 960으로, 정확히 0.5배 축소된다.**
+
+| | 원본 좌표 | det이 실제로 본 크기 |
+| --- | ---: | ---: |
+| 2줄 번호판 아랫줄 | 35px | **17.5px** |
+| 같은 번호판 윗줄 | 약 20px | **10px** |
+
+`api.py`의 `MIN_PLATE_PX_HEIGHT = 20`은 **원본 좌표 기준**이다. 모델이 보는 크기와 다르므로
+이 임계값을 검출 성능과 직접 견주지 않는다.
 
 ## 이 환경이 수치에 남긴 제약
 

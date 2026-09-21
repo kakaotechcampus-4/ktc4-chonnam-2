@@ -10,6 +10,8 @@
 > **2026-09-10 갱신.** Mock Pack v3(PR [#29](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/29))가 이 문서의 「실패가 아닌 상태」 2행을 `CaseView.notices`로 구현한 것을 3차 검수(이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) A-1)에서 확인하면서, `observation.reason.code` → `CaseView.notices[].code` 매핑을 같은 절에 등재했다. UNKNOWN 행의 두 `reason.code` 중 `readout.overlay.ocr_failed`쪽 notice(`readout.overlay_ocr_failed`)를 미리 등재해 재사용 사고를 막는다.
 > **2026-09-11 확인 (Mock Pack v4 전수 재대조).** 이 문서의 값을 `develop` @ `d9d8e2b`(Mock Pack v4, PR [#37](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/37) 머지분) 기준으로 다시 대조했다 — **변경할 값 없음.** 확인 항목: notice 3종 매핑(`severity`/`blocking`/`actions`까지 fixture와 일치) · `readout.overlay.ocr_failed` fixture 여전히 0건 · `progress[overlay_time_read].state=DONE` 유지 · 폐기값 3종(`OVERLAY_DETECTION`·`NO_OVERLAY_PRESENT`·`READOUT_OVERLAY_DETECTION`) fixture 0건 · `source_profile` 2종 · `abstain_reason` 4종 · `failure` code 3종 모두 등재 범위 안. 대조 결과는 PR #27 코멘트에 표로 남겼다.
 >
+> **2026-09-14 갱신 (Mock Pack v5 반영).** v5(PR [#43](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/43), `develop` @ `72e0e05`)에서 `readout.overlay.ocr_failed` fixture가 **처음 생겼다**(`readout/scenario_infra_failure_001.json`의 `readout_x001_overlay_reread`). 미리 등재해둔 notice 값(`readout.overlay_ocr_failed` · `INFO` · `blocking=false` · `actions=[]`)이 그대로 쓰였음을 4차 재검수(이슈 [#38](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/38))에서 확인했다. 이 fixture 덕분에 세 갈래가 데이터에서 어떻게 갈리는지 관측 가능해져 **「fixture 지문」 표를 신설**했다. 등재값·규칙 변경은 없다.
+>
 > **Owner 미결은 없다.** 다만 overlay 「없음」/「확인 못함」의 **판정 기준**은 실측 전 잠정이며 readout Technical Spec에서 확정한다(해당 절에 표시).
 
 이 문서 안에서 **확정**과 **잠정**을 구분한다. 표 제목과 절 제목에 표시했다.
@@ -123,6 +125,24 @@ observation.status            = NEEDS_REVIEW | UNKNOWN
 - `status` 값 공간은 공용 `Observation<T>`의 `OK / NEEDS_REVIEW / UNKNOWN / ERROR / NOT_APPLICABLE`를 그대로 쓴다. readout이 새 status를 만들지 않는다(계약 §10 원칙).
 - `reason.code`는 Producer/domain이 소유하는 stable machine-readable reason이다(`contract-observation.md`). 프로그램 분기는 `status + reason.code`로 한다.
 
+### fixture 지문 — 어느 갈래인지 데이터에서 가리는 법 (2026-09-14, Mock Pack v5)
+
+위 표는 **어떤 값을 내야 하는가**를 정하고, 이 표는 **이미 기록된 `OverlayTimeReadout`이 어느 갈래인가**를 가린다. v5에서 `ocr_failed` fixture가 생기면서 네 갈래가 전부 관측 가능해졌다.
+
+| | `status` | `reason.code` | `samples` | `validation.format_ok` | `validation.monotonic_ok` · `duration_match_ok` |
+| --- | --- | --- | --- | --- | --- |
+| 읽음 (정상) | `OK` | `null` | 2~3건 | `true` | `true` |
+| 시각이 안 찍힌 영상 (**사실**) | `NOT_APPLICABLE` | `readout.overlay.not_present` | `[]` | `null` | `null` |
+| 있는지 자체를 못 봄 (**모름**) | `UNKNOWN` | `readout.overlay.presence_undetermined` | `[]` | `null` | `null` |
+| 읽었으나 못 알아봄 (**모름**) | `UNKNOWN` | `readout.overlay.ocr_failed` | 1건 이상 (`raw_text` 존재, `parsed_at=null`) | `false` | `null` |
+
+읽는 법 두 가지다.
+
+- **`ocr_failed`만 지문으로 갈린다.** 읽으려고 시도한 흔적(`samples[]`)이 남고 `format_ok=false`가 「글자는 잡았는데 시각으로 파싱되지 않았다」를 나른다. 나머지 두 UNKNOWN/NOT_APPLICABLE 갈래는 시도 자체가 없어 `samples=[]` · `validation.*=null`로 **서로 지문이 같다** — 이 둘은 `status`와 `reason.code`로만 갈린다.
+- **`format_ok=false`와 `format_ok=null`은 다른 말이다.** `false`는 검사해서 틀렸다는 뜻이고 `null`은 검사할 대상이 없었다는 뜻이다. `monotonic_ok`·`duration_match_ok`가 `ocr_failed`에서도 `null`인 것은 같은 이유다 — 파싱된 시각이 없으니 순서·길이를 비교할 대상이 없다.
+
+`samples` 유무로 `reason.code`를 **역추론하지 않는다.** 위는 기록된 값을 읽는 표이고, 어느 code를 낼지는 아래 판정 기준이 정한다.
+
 ### 어느 쪽을 낼지 정하는 판정 기준 — **잠정. Technical Spec에서 확정**
 
 **잠정 규칙 (v1):**
@@ -151,7 +171,7 @@ observation.status            = NEEDS_REVIEW | UNKNOWN
 | `readout.overlay.ocr_failed` | `readout.overlay_ocr_failed` | `INFO` | `false` | `[]` |
 
 - **세 code를 하나로 합치지 않는다.** 사용자에게 요구하는 행동이 다르다 — 「없음」은 확인할 것이 없고, 「판정 못 함」은 사용자가 자기 영상에 시각이 찍히는지 봐야 하고, 「읽었으나 못 알아봄」은 사용자가 화면의 시각을 직접 입력할 수 있다. 같은 이유로 UNKNOWN 행의 두 `reason.code`에 notice 하나를 돌려쓰지 않는다.
-- `readout.overlay_ocr_failed`는 **등재만 해 둔다.** Mock Pack v4(`d9d8e2b`) 기준으로도 이 갈래 fixture가 없다(`readout.overlay.ocr_failed` 자체가 미등장) — 생길 때 위 값을 그대로 쓰고 새로 짓지 않는다. fixture 추가는 이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) Non-blocking 후속에 등록돼 있다.
+- ~~`readout.overlay_ocr_failed`는 **등재만 해 둔다.** Mock Pack v4(`d9d8e2b`) 기준으로도 이 갈래 fixture가 없다~~ → **해소 (2026-09-14, Mock Pack v5).** 이슈 [#39](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/39) Non-blocking 후속으로 등록돼 있던 fixture가 v5에 들어왔고(`readout_x001_overlay_reread`), 미리 등재해둔 값을 새로 짓지 않고 그대로 썼다. 세 code 전부 fixture 근거가 있다.
 - **severity는 `INFO`로 고정한다.** overlay가 UNKNOWN이어서 실제로 사용자 행동이 필요해지는 지점(시각을 다른 소스로 확정해야 함)은 `event_time_display.info_state`와 `evidence.time_*` notice가 나른다. notice는 「왜」만 설명하고 「확인 필요」의 무게를 중복해서 지지 않는다.
   - **이슈 [#16](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/16) A에서 `web`이 요청했던 안은 철회됐다.** 당시 「확인 못함」쪽을 `time.overlay_undetermined` = **`WARN`** + `actions:["REVIEW_TIME"]`로 갈라 달라고 요청했으나, 이슈 [#31](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/31) A-1에서 같은 Owner가 철회했다 — **code 접두어**(`time.`은 모듈이 아니라 `notices[].code` 표기 규칙 위반, `contract-job-record-case-view.md` B절 §7)와 **severity**(위 근거대로 `INFO`) 양쪽이 바뀌었다. #16만 읽고 `WARN`으로 되돌리지 않는다.
 - `actions[]`가 비는 이유는 overlay presence 판정 자체가 사용자가 손댈 수 있는 대상이 아니기 때문이다. 시각 입력·재확인 action은 위 evidence 계열 notice에 붙는다.

@@ -1,0 +1,399 @@
+{
+  "scenario_id": "real_e2e_happy_001",
+  "module": "case",
+  "generated_at": "2026-09-20T21:19:50+09:00",
+  "generated_by": "scripts/dump_real_caseview.py",
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.4",
+      "case_id": "case_h001_real_e2e",
+      "case_rev": 3,
+      "stage": "READY",
+      "user_reviewed": false,
+      "manifest_summary": {},
+      "hints": {
+        "time": "18시쯤",
+        "vehicle": "흰색 SUV",
+        "situation": "백색 실선 구간에서 차로변경",
+        "location": "상무중앙로 사거리 부근"
+      },
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_h001",
+          "at": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",
+          "observed": "흰 SUV가 백색 실선을 넘어 인접 차로로 이동하는 장면",
+          "thumb_ref": "fr_h001_thumb",
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
+        }
+      ],
+      "evidence": {
+        "record_id": "er_case_h001_real_e2e_001",
+        "case_type_display": {
+          "code": "SOLID_LINE_LANE_CHANGE",
+          "label": "백색 실선 구간 차로변경",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
+        },
+        "report_type_display": {
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
+        },
+        "violation_display": {
+          "code": null,
+          "label": "백색 실선을 넘어 진로를 변경",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
+        },
+        "plate_display": {
+          "value": "12가3456",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": "2026-08-24T18:05:12+09:00",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "time.source.overlay_ocr"
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": "fr_h001_thumb",
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "WARN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements_package": {
+        "readiness": "UNKNOWN",
+        "checks": [
+          {
+            "code": "package.asset.report_video.exists",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.available",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ]
+          },
+          {
+            "code": "package.vehicle.plate_visible_in_report_video",
+            "category": "VEHICLE",
+            "outcome": "UNKNOWN",
+            "reason_code": "readout.plate_visibility.not_observed",
+            "subject_refs": []
+          },
+          {
+            "code": "package.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "package.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "package.report.content_length",
+            "category": "REPORT_CONTENT",
+            "outcome": "UNKNOWN",
+            "reason_code": "report.inputs_incomplete",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "package.evidence.situation_response",
+            "category": "EVIDENCE",
+            "outcome": "UNKNOWN",
+            "reason_code": "evidence.situation_not_asked",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              }
+            ]
+          },
+          {
+            "code": "package.asset.image.each_size",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.size_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ],
+            "measurement": {
+              "actual": 184320,
+              "limit": 30000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.video.each_size",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.size_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ],
+            "measurement": {
+              "actual": 26214400,
+              "limit": 130000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.total_size",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.total_size_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              },
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ],
+            "measurement": {
+              "actual": 26398720,
+              "limit": 180000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.image.count",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.count_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ],
+            "measurement": {
+              "actual": 1,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.video.count",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.count_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              }
+            ],
+            "measurement": {
+              "actual": 1,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.total_count",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.count_within_policy",
+            "subject_refs": [
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_report_video"
+              },
+              {
+                "kind": "derived_asset",
+                "ref": "da_h001_plate_image"
+              }
+            ],
+            "measurement": {
+              "actual": 2,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.deadline.within_policy",
+            "category": "DEADLINE",
+            "outcome": "WARN",
+            "reason_code": "deadline.exceeded",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_h001_real_e2e_001"
+              },
+              {
+                "kind": "time_resolution",
+                "ref": "tr_case_h001_real_e2e_001"
+              }
+            ],
+            "measurement": {
+              "actual": 1789906790,
+              "limit": 1787756400,
+              "unit": "deadline.epoch_seconds"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-deadline/v1",
+              "calendar_ref": "calendar/kr-public-holidays/2026-2027/r1",
+              "deadline_date": "2026-08-26",
+              "deadline_exclusive_at": "2026-08-27T00:00:00+09:00",
+              "deadline_status": "EXCEEDED"
+            }
+          },
+          {
+            "code": "package.time.overlay_visible",
+            "category": "TIME",
+            "outcome": "UNKNOWN",
+            "reason_code": "time.overlay_visibility.not_observed",
+            "subject_refs": []
+          }
+        ]
+      },
+      "package": null,
+      "running_jobs": [],
+      "notices": []
+    }
+  ]
+}

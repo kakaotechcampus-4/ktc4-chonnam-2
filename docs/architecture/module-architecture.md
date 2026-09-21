@@ -20,6 +20,8 @@
 >
 > Owner Memo의 모든 제안을 그대로 Architecture Decision으로 승격하지 않는다. **실측으로 확인된 제약은 반영하고, 구현 선택이나 아직 근거가 약한 수치는 각 모듈 Technical Spec 또는 Data Contract 단계로 남긴다.**
 
+> **현재 사용 상태 (2026-09-19 maintenance):** v4는 여전히 **모듈 경계·소유권·호출 방향의 Source of Truth**이며 v5로 올리지 않는다. 이후 Data Contract → Mock Pack → 모듈 구현/통합 → Logical ERD·Runtime Spec 구체화가 진행됐다. 따라서 schema·enum·fixture·DB/queue·배포 세부는 각각 Final Contract, 모듈 Decision/Tech Spec, `erd-draft.md`, `runtime/`이 소유한다. **§10-3·§11·§13의 handoff 문구는 v4 작성 당시의 이관/검토 기록으로 읽고, 현재 상태 판단에는 각 하위 SoT를 사용한다.** 이번 maintenance는 경계·Owner·호출 방향을 바꾸지 않고 상태 드리프트와 포인터만 정리한다.
+
 ---
 
 ## 개정 이력
@@ -35,6 +37,7 @@
 | 2026-09-08 (접합부 종결 후속) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. B06(`SpanResolution` `failure`·`OUT_OF_TIMELINE_RANGE`)·B08(`AnalysisScope` relative range) 직렬화 종결, ② `SourceAsset`/`MediaStream`·③ 전체를 담는 recording 자산 계약 2건이 **Draft(Consumer Review 대기)**로 추가됨 | `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` |
 | 2026-09-08 (2차 반영) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. 자산 계약 2건이 Consumer Review 종결로 **`Final — Accepted`(`…/v1`)**, `MissingRange.source_ref`·`AssetSpan` identity 결정 종결 | 같은 ADR §4.7~§4.10 |
 | 2026-09-08 (주요 문서 동기화) | §5-3 안내 · §11-1 안내 · §11-4 포인터 | **규칙·계약 목록·enum은 바꾸지 않았다.** §5-3에 겹쳐 쌓인 과거 상태 안내 5개(「작성 예정」·「최소 schema 제공 전」·B06~B09 Pending·1차/2차 갱신)를 **2026-09-08 최종 상태 한 블록으로 합쳤다.** 위 행들의 당시 상태는 이 표가 역사 기록으로 보존한다 | 같은 ADR §4.7~§4.10 · §9 · §10.2 |
+| 2026-09-19 (maintenance) | 문서 머리말 · §9-5 · §10-3 · §11 안내 · §13-2·§13-3 | **Architecture 결정 변경 없음.** 계약·Mock·구현 이후 상태 드리프트를 정리했다. `CorrectionRecord`/EvidenceNeeds·cache 규칙 등 이미 닫힌 Data Contract 항목을 현재 미결에서 제거하고, §11·§13을 historical handoff로 명시했다. Web stack은 모듈 Decision으로 이미 확정됐으므로 Architecture 미결에서 제외했다 | Final Contract 16건 현재 상태 · `modules/web/decisions/web-stack.md` · `README.md` 현재 구현 상태 · `runtime/` · `erd-draft.md` |
 
 ---
 
@@ -49,7 +52,7 @@ v4부터는 역할 배정이 끝났고 Owner별 기술 조사도 시작됐다. �
 | **3** | **§4 자기 모듈** | 책임·소유 데이터·금지사항·접합부를 확인한다 |
 | **4** | **§5 Core Contracts** | 다른 Owner와 맞춰야 하는 의미 수준의 계약을 확인한다 |
 | **5** | **§6~§9** | 실제 호출 흐름·백그라운드·평가 구조를 확인한다 |
-| **마지막** | **§11 Owner Review Required** | v4 이후 Data Contract 전에 자기 모듈이 다시 확인할 항목만 본다 |
+| **마지막** | **§11 Owner Review Required** | **historical handoff** — v4 직후 Owner 검토 기록을 볼 때만 참고한다. 현재 작업 상태는 모듈 checklist/Final Contract를 본다 |
 
 > **중요:** v4는 Data Contract 문서가 아니다. JSON 예시는 **의미를 고정하기 위한 예시**이며 필드명·enum·nullable·DB column까지 확정하는 문서가 아니다.
 
@@ -1673,7 +1676,7 @@ A/B/C tier를 사용하고 각 tier에서 측정할 수 없는 metric을 억지�
 
 case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린다.
 
-사건 단위 학습 이력을 위해 correction이 어떤 `selection_rev` / candidate context에서 발생했는지는 보존할 수 있어야 한다. 구체 필드는 Data Contract에서 확정한다.
+사건 단위 학습 이력을 위해 correction이 어떤 `selection_rev` / candidate context에서 발생했는지는 보존한다. **구체 필드와 supersede/current-value 규칙은 현재 `contracts/contract-correction-record.md`(`correction-record/v1.1`, Final — Accepted)가 소유한다.**
 
 ---
 
@@ -1707,26 +1710,25 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 | Eval result | JSON + git | 제품 DB와 분리 |
 | Progress | polling 우선 | web/runtime 세부 |
 
-## 10-3. `[미결 유지]`
+## 10-3. `[현재도 미결 / 하위 문서에서 결정]`
+
+> **2026-09-19 정리:** 이 목록은 Architecture가 값 자체를 정해야 하는 TODO가 아니라, v4가 의도적으로 하위 계층에 남긴 구현·운영 선택만 유지한다. `EvidenceNeeds` 값 공간과 Data Contract schema/enum/nullable은 Final Contract 단계에서 닫혔고, `apps/web` stack은 `modules/web/decisions/web-stack.md`에서 React 19 · TypeScript 5.8 · Vite 6으로 결정됐으므로 여기서 제거했다.
 
 - 원본 upload/processing 전략
 - Analysis profile 정확한 resolution/FPS/bitrate
 - Object Storage 범위
 - provider별 RemoteCopy 즉시 삭제 가능 여부
-- frontend framework
 - auth 세부
 - plate tracker/detector 최종 조합
 - exact retention days
 - H.265/provider compatibility 실제 E2E
 - locked test 개봉 운영 규칙
-- EvidenceNeeds 전체 enum
-- Data Contract 상세 필드
 
 ---
 
-# 11. v4 이후 Owner Review Required
+# 11. v4 이후 Owner Review Required — historical handoff
 
-> 이 절의 항목은 v4를 막는 blocker가 아니다. **v4 기본안을 기준으로 각 Owner가 자기 모듈을 점검하고 Data Contract 전에 문제를 제기하는 항목**이다.
+> **2026-09-19 maintenance:** 이 절은 v4 작성 직후 **Data Contract 전에 각 Owner에게 넘긴 검토 체크리스트의 역사 기록**이다. 체크박스 상태를 현재 구현 완료도나 현재 blocker로 해석하지 않는다. 이후 확정된 schema·enum·projection·rerun/cache 규칙은 Final Contract/Accepted Decision이 소유하고, 실제 구현·통합 잔여는 각 모듈의 checklist/Tech Spec과 루트 `README.md` 현재 상태를 따른다. 아래 체크는 당시 Owner 확인 기록을 보존하기 위해 임의로 다시 체크하지 않는다.
 
 ## 11-1. `recording` — 정철원
 
@@ -1756,7 +1758,7 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 ## 11-4. `case` — 유소연
 
-> **감사 후속:** 아래 체크는 개별 Owner 결정의 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 전체 통합(E2E)은 여전히 실행 기록이 없어 Pending이다 — 현재 종결·준비도 판정은 `contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §10.2가 소유한다.
+> **감사 후속 기록:** 아래 체크는 개별 Owner 결정의 당시 기록이다. `CaseView`의 정보 상태·report projection은 2026-09-07에 case Owner 결정으로 종결됐다(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2). 09-08 closure ADR §10.2의 준비도 판정은 당시 snapshot이며, **현재 구현/E2E 상태는 루트 `README.md`와 `modules/case/checklists/`를 따른다.**
 
 - [ ]  5-state workflow가 실제 UI 흐름을 설명하는가
 - [x]  `USER_REVIEWED`를 case가 소유하는 것이 자연스러운가 — **종결(2026-09-06).** `CaseView`에 `user_reviewed: boolean`을 두고 `stage`와 별개 축으로 분리했다. `contracts/contract-job-record-case-view.md` B절 §7
@@ -1872,7 +1874,9 @@ Incident Clip ≠ Report Video
 원본은 Final Package 기본 포함 안 함
 ```
 
-## 13-2. Data Contract로 넘기는 것
+## 13-2. v4 작성 당시 Data Contract로 넘긴 것 — historical handoff
+
+> 아래는 **당시 이관 목록**이다. 2026-09-19 현재 `docs/architecture/contracts/contract-*.md` 16건은 모두 `Final — Accepted` 상태이며, 현재 schema·enum·nullable·불변조건은 각 Final Contract가 소유한다. 이 목록을 현재 TODO로 사용하지 않는다.
 
 ```
 필드명 / enum / nullable
@@ -1888,7 +1892,9 @@ UsageRecord pricing fields
 CorrectionRecord event-level fields
 ```
 
-## 13-3. Technical Spec로 넘기는 것
+## 13-3. v4 작성 당시 Technical Spec로 넘긴 것 — historical handoff
+
+> 아래 항목은 Architecture 밖으로 내린 구현 선택의 범위를 보여주는 기록이다. 일부는 이미 하위 Decision/Tech Spec에서 닫혔고(예: web stack), 일부는 Runtime/Ops 또는 모듈 실험의 현재 미결로 남아 있다. 현재 상태는 해당 하위 문서를 따른다.
 
 ```
 Gemini Files API 구현

@@ -4,7 +4,7 @@
 
 > **B03·B05 종결 (2026-09-07).** 판독 결과 최상위에 필수 `run_ref: ContractRef{kind:"readout_run"}`를 두고(§3·§4·§6), 사용량 연결은 `UsageRecord.run_ref`가 authoritative다(`contract-usage-record.md`). 결정 근거·기각안은 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3·§4.4. 같은 회차에 예시 `observation` 블록을 `Observation<T> v1`에 맞췄다(R-9-5~7, Producer-side 정합).
 
-**Accepted:** `2026-09-06` (v1) · `2026-09-07` (v1.1 — `run_ref` 필수 추가, 신유민) · `2026-09-08` (v1.2 — `input_ref.span_ref` 삭제, 신유민 확인 · Decider 정철원)
+**Accepted:** `2026-09-06` (v1) · `2026-09-07` (v1.1 — `run_ref` 필수 추가, 신유민) · `2026-09-08` (v1.2 — `input_ref.span_ref` 삭제, 신유민 확인 · Decider 정철원) · `2026-09-17` (plate-readout v1.3 — `best_frame.plate_bbox_xywh` 신설 · `case`·`web` Consumer 등재, Decider 신유민)
 
 **수락 근거:** 전환 조건이 둘 다 해소됐다. ① `frame_ref` 형식 확정 — 정철원(`recording` Owner) CALL-4 회신으로 `fr_<opaque-id>` opaque 형식이 확정됐고 아래 §「`frame_ref` 형식」에 반영했다. ② Owner 수락 — 신유민 「`contract-plate-overlay-readout.md`의 기존 내용은 Canonical Contract v1 승격에 동의합니다」(CALL-6 회신, 2026-09-06). 근거는 `adr/adr-consistency-2026-09.md` §6 R-4·R-5
 
@@ -12,7 +12,7 @@
 
 **Contract:** `PlateReadout` / `OverlayTimeReadout`
 
-**Contract Version:** `plate-readout/v1.2` · `overlay-time-readout/v1.2`
+**Contract Version:** `plate-readout/v1.3` · `overlay-time-readout/v1.2`
 
 **Related ADR:** `adr/adr-plate-overlay-readout.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (v1.1 근거) · `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9 (v1.2 근거)
 
@@ -29,6 +29,8 @@
 > **`input_ref.span_ref` 삭제 (2026-09-08 · Decider 정철원(`recording`, `AssetSpan` 소유) · 확인 신유민(`readout`)·유소연(`case`)·김준영(`evidence`)).** canonical `AssetSpan`에는 독립 identity가 없고 앞으로도 추가하지 않는다는 결정에 따라 **`PlateReadout.input_ref.span_ref`와 `OverlayTimeReadout.input_ref.span_ref`를 삭제**한다. `span_ref`라는 이름으로 `IncidentClip`이나 `SpanResolution`을 가리키는 **의미 재정의도 하지 않는다.** 예시가 쓰던 `"span_001"`은 recording이 발급하지 않는 ID였다. clip 생성 이후 사건 구간의 canonical reference는 `{kind:"incident_clip", ref:...}`이며, 「어느 구간을 읽었나」는 `incident_clip_ref` 하나로 알 수 있다 — timeline·요청 범위·사용한 span 값이 모두 `IncidentClip.source_provenance`에 있다(`contract-analysis-source-derived.md` §6.2·§6.3). 필드 삭제이므로 **`plate-readout/v1.1 → v1.2`** · **`overlay-time-readout/v1.1 → v1.2`**. 근거·기각안 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9.
 
 > **의미 명시 — 버전 변경 없음 (2026-09-10 · Decider 신유민).** §3에 두 절을 추가했다 — **`crop_ref` identity**(`(frame_ref, bbox, 추출 파라미터)`, opaque identity이고 조회 handle이 아니다 · 발급 주체는 `readout`)와 **`input_ref.source_profile` 값 공간 등재**(`readout-native` · `readout-native-hires`, 열린 목록). 둘 다 **기존 필드의 의미를 명시한 것이라 `plate-readout/v1.2` · `overlay-time-readout/v1.2`를 유지한다**(스키마 변경 없음). 요청 김대원(이슈 #30 B-2) · 답변 이슈 #31 A-3 · Producer 경계 확인 정철원(이슈 #40 C절) · Consumer 확인 김준영(PR #27).
+
+> **`best_frame.plate_bbox_xywh` 신설 · `case`·`web` 제공 범위 등재 (2026-09-17 · Decider 신유민(`readout` Contract Lead)).** `PLATE_IMAGE` 생성에 필요한 번호판 위치를 `best_frame`에 신설한다 — **`best_frame`이 존재하면 필수**이고, 값은 `frame_ref`가 가리키는 canonical frame의 **원본 픽셀 좌표** `[x, y, w, h]`다. `target_association.associated_region.bbox_xywh`는 대상 차량 association 근거일 뿐 픽셀 재현을 보장하지 않으므로(§3-6·§4 필수 의미 표·§11-3 어디에도 그 규정이 없다) 이 용도로 쓰지 않는다. 함께 §9에 `case`·`web` 행을 등재한다 — `case`는 `best_frame.frame_ref` 한 값에 한해 직접 Consumer가 되고, `web`은 `CaseView` 경유만 한다. **필드 신설이므로 `plate-readout/v1.2 → v1.3`. `OverlayTimeReadout`은 변경이 없어 `overlay-time-readout/v1.2`를 유지한다.** 근거는 이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) 합의다 — Q2 `associated_region` 부적합(신유민, 2026-09-13) · Q4 생성 입력 확인(정철원, 2026-09-14) · 최소 범위(단일 프레임)를 MVP로 두고 `frame_results[]` 확장은 MVP 밖으로 확정(유소연, 2026-09-14). **별도 ADR을 열지 않고 이 이슈 합의를 근거로 한다** — v1.1·v1.2는 계약 종결 회차 ADR이 근거였으나 이번은 그 회차가 아니다. **이 개정 범위 밖:** Mock Pack 시나리오의 `best_frame`에 값을 채우는 일(소유 유소연)과 `readout` 구현의 `BestFrame` 반영은 후속으로 분리한다.
 
 ---
 
@@ -162,8 +164,34 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
 | `consensus` | 여러 프레임 OCR을 종합한 결과 |
 | `abstained` | 번호판 확정을 보류했는지 |
 | `abstain_reason` | 보류 사유 |
-| `best_frame` | 대표 근거 프레임/crop |
+| `best_frame` | 대표 근거 프레임/crop과 그 프레임 안 번호판 영역. `plate_bbox_xywh`(v1.3 신설, **`best_frame`이 있으면 필수**)는 `frame_ref`가 가리키는 canonical frame의 **원본 픽셀 좌표**이며, `PLATE_IMAGE` 생성의 authoritative 입력이다 — `target_association.associated_region.bbox_xywh`는 대상 차량 association 근거이고 이 용도로 쓰지 않는다 (이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) Q2·Q4) |
 | `frame_results` | 프레임별 OCR 관찰 결과 |
+
+## `best_frame.plate_bbox_xywh` 최소 유효성 (v1.3)
+
+이 값은 참고 정보가 아니라 `PLATE_IMAGE` 생성의 authoritative 입력이다. 음수 좌표나 0 크기
+영역을 구현별로 다르게 허용하면 locator로 쓸 수 없으므로 아래를 계약으로 고정한다.
+
+```text
+plate_bbox_xywh: [x, y, w, h]
+- 원소 수    : 정확히 4개
+- 원소 타입  : integer
+- x, y       : >= 0
+- w, h       : > 0
+- 좌표계     : frame_ref 가 가리키는 canonical frame 의 원본 픽셀
+```
+
+**표기는 `xywh` 하나다.** 외부 검출기와 데이터셋은 대개 `xyxy`(모서리 두 점)나 정규화 좌표를
+쓴다 — PaddleOCR의 반환값, AI Hub 172의 `[[x1,y1],[x2,y2]]` 등. **그 변환은 provider 경계에서
+끝내고 계약 객체에는 `xywh` 정수만 싣는다.** 계약 안에 두 표기를 섞으면 소비자가 어느 쪽인지
+판정해야 하고, 그 판정은 아무도 소유하지 않는다. 이 규칙은 이 필드만이 아니라 계약의 `bbox_xywh`
+전부에 적용된다(`target_association.associated_region.bbox_xywh` · `TargetHint.bbox_xywh`).
+
+**영역이 frame 크기를 벗어났을 때 거부할지 clamp할지는 여기서 정하지 않는다** — `recording`
+Tech Spec이 소유한다. 이 계약은 「좌표로 성립하는 값인가」까지만 고정하고, 프레임 경계와의
+관계는 생성 주체가 판정한다(§11-3 「Producer가 보장하지 않는 것」과 같은 성격).
+
+요청 정철원(`recording`, PR [#70](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/70) 리뷰 2번) · Decider 신유민.
 
 ## 예시 JSON
 
@@ -221,6 +249,7 @@ v4 §4-모듈3 ③이 `read_plate -> ReadoutRun, PlateReadout`으로 반환값�
   "best_frame": {
     "frame_ref": "fr_9a1c0e",
     "crop_ref": "crop_001",
+    "plate_bbox_xywh": [838, 434, 96, 42],
     "quality": {
       "plate_px_height": 42,
       "sharpness": 0.81
@@ -392,8 +421,31 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 | --- | --- | --- |
 | `evidence` | `observation`, `target_association`, `consensus`, `abstained`, `abstain_reason`, `best_frame`, `validation` | `frame_results`, `samples` |
 | `eval` | `consensus`, `best_frame`, `abstained`, `target_association`, `validation` | `frame_results`, `samples` |
+| `case` | ① **화면 projection** — `best_frame.frame_ref`를 `CaseView`로 통과시킨다<br>② **`PLATE_IMAGE` 생성 발주 입력** — `best_frame.frame_ref` + `best_frame.plate_bbox_xywh`<br>그 밖의 필드는 `evidence`로 **경유**만 한다 | 없음 (v1.3) |
+| `web` | **직접 소비 없음.** `case`의 `CaseView`를 통해서만 받는다 | 없음 |
 
 `eval`의 번호판 평가는 우선 `best_frame`, `consensus`, `abstained`를 중심으로 수행할 수 있다. `frame_results[]` 전체는 OCR 실패 원인 분석, CER 진단, frame-level debugging이 필요할 때 사용한다.
+
+`case` 행은 v1.3에서 등재했다. `case`는 그동안 `evidence`로 가는 **경유자**였으나, `core-user-flow.md` §12의 `[번호판 이미지 보기]`·`[확대]` 화면이 요구하는 프레임을 `CaseView`가 나를 수 없다는 것이 확인되어(이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47), `preview_ref`는 사건 대표 썸네일이지 번호판 프레임이 아님) `best_frame.frame_ref` 한 값에 한해 직접 Consumer가 된다. 새 경로를 여는 것이 아니라, 문서 상단에 이미 등재된 「Direct Consumer는 `case`다」를 이 표에 반영하는 것이다.
+
+`crop_ref`는 `case`·`web`에 제공하지 않는다 — opaque identity이지 이미지 조회 handle이 아니어서(§3) 화면이 그 값으로 할 수 있는 일이 없다. 여러 프레임을 넘겨보는 화면은 `[프로토타입]` 범위이므로 `frame_results[]` 제공은 v1.3에서 다루지 않는다.
+
+### `case`가 `plate_bbox_xywh`를 받는 이유 — 발주자이기 때문이다
+
+`case` 행 ②는 화면용이 아니다. **`PLATE_IMAGE` 생성을 발주하는 주체가 `case`**라서 생성 입력을
+알아야 한다. 새 원칙이 아니라 이미 확정된 3자 분리를 이 값에 적용하는 것이다 —
+「`evidence`는 Need를 만들고, **`case`는 그 Need를 발주로 변환하며**, 실행 모듈이 수행한다」
+(`adr/adr-data-contract-call-closure-2026-09-08.md` §4.1). export orchestration이 `case` 소관이라는
+것도 같은 곳에 있다(`adr/adr-analysis-source-derived.md` Owner 표 — 「clip 발주·Report Video
+export orchestration」). `PLATE_IMAGE`는 `REPORT_VIDEO`의 자매 `derived_role`이다
+(`contract-analysis-source-derived.md` §7.3).
+
+**다만 발주 경로 자체는 아직 열려 있지 않다.** `PLATE_IMAGE` export 공개 capability와
+`PLATE_IMAGE_EXPORT_FAILED`는 이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) Q4의 `recording` 후속 항목으로 남아 있다. 이 표는
+**readout이 무엇을 제공하는가**를 정할 뿐이고, 그 값이 `recording`까지 가는 실행 경계는 그
+후속에서 닫는다. 여기서 값을 열어 두지 않으면 그때 계약을 다시 여는 일이 생긴다.
+
+요청 정철원(`recording`, PR [#70](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/70) 리뷰 1번) · Decider 신유민.
 
 ---
 

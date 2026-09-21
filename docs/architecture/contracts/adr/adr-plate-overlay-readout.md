@@ -4,6 +4,8 @@
 
 > **후속 변경 (2026-09-08):** `plate-readout/v1.2` · `overlay-time-readout/v1.2` — `input_ref.span_ref` **삭제**. canonical `AssetSpan`에 독립 identity가 없고 추가하지 않기로 확정됐으므로, 예시가 쓰던 `"span_001"`은 recording이 발급하지 않는 ID였다. 사건 구간 canonical ref는 `incident_clip_ref` 하나이며 timeline·요청 범위·사용한 span 값은 `IncidentClip.source_provenance`에 있다. `span_ref`라는 이름으로 다른 대상을 가리키는 의미 재정의도 하지 않는다. Decider 정철원(`AssetSpan` 소유), 확인 신유민(`readout`)·유소연(`case`)·김준영(`evidence`). 근거·기각안 `adr-data-contract-call-closure-2026-09-08.md` §4.9.
 
+> **후속 변경 (2026-09-17):** `plate-readout/v1.3` — `best_frame.plate_bbox_xywh` **신설**(`best_frame`이 존재하면 필수, `frame_ref`가 가리키는 canonical frame의 원본 픽셀 좌표 `[x, y, w, h]`)과 §9 Consumer 표에 `case`·`web` 행 **등재**. `PLATE_IMAGE` 생성 입력을 `target_association.associated_region.bbox_xywh`로 대신할 수 없다는 것이 확인됐다 — 그 값은 association 근거이고 픽셀 재현을 보장하지 않는다. `OverlayTimeReadout`은 변경이 없어 `overlay-time-readout/v1.2`를 유지한다. Decider 신유민(`readout`), Q4 생성 입력 확인 정철원(`recording`), 최소 범위(단일 프레임) MVP 확정 유소연(`case`). **별도 ADR 절을 열지 않고 이슈 [#47](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47) 합의를 근거로 한다** — v1.1·v1.2는 계약 종결 회차 ADR이 근거였으나 이번은 그 회차가 아니다. 본문은 당시 결정 기록이다.
+
 **Contract:** ⑥ `PlateReadout / OverlayTimeReadout`
 
 **Contract Lead:** 신유민
