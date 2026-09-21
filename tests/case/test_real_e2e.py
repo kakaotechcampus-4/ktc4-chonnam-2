@@ -16,6 +16,7 @@ import pytest
 from daesingo.case import correction, jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
+from daesingo.recording import AssetSpan, SpanResolution, TimeRange, TimelineRef
 
 MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 SCENARIO_ID = "happy_001"
@@ -28,6 +29,71 @@ def _real_scope():
 
 def _real_hints():
     return MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID).get_hints()
+
+
+def _span(*, sequence: int, media_stream_ref: str) -> AssetSpan:
+    return AssetSpan(
+        sequence=sequence,
+        timeline_range=TimeRange(start_sec=0.0, end_sec=10.0),
+        source_asset_ref="sa_multi",
+        media_stream_ref=media_stream_ref,
+        source_range=TimeRange(start_sec=0.0, end_sec=10.0),
+    )
+
+
+def _resolution(*spans: AssetSpan) -> SpanResolution:
+    return SpanResolution(
+        contract="SpanResolution",
+        contract_version="span-resolution/v1.2",
+        timeline_ref=TimelineRef(timeline_id="tl_multi", revision=1),
+        requested_range=TimeRange(start_sec=0.0, end_sec=10.0),
+        status="COMPLETE",
+        spans=list(spans),
+        missing_ranges=[],
+        failure=None,
+    )
+
+
+def test_select_asset_span_returns_only_span_without_ref():
+    """단일 stream만 있을 때는 지금까지처럼 media_stream_ref 없이도 그 span을 쓴다."""
+    resolution = _resolution(_span(sequence=0, media_stream_ref="ms_front"))
+
+    selected = real_e2e._select_asset_span(resolution, None)
+
+    assert selected.media_stream_ref == "ms_front"
+
+
+def test_select_asset_span_matches_requested_ref():
+    """여러 stream이 같은 시간대를 가리켜도, 지정한 media_stream_ref와 일치하는
+    span만 명시적으로 골라 쓴다 — `spans[0]`을 조용히 쓰지 않는다."""
+    resolution = _resolution(
+        _span(sequence=0, media_stream_ref="ms_rear"),
+        _span(sequence=1, media_stream_ref="ms_front"),
+    )
+
+    selected = real_e2e._select_asset_span(resolution, "ms_front")
+
+    assert selected.media_stream_ref == "ms_front"
+
+
+def test_select_asset_span_raises_when_ambiguous_without_ref():
+    """여러 span이 있는데 media_stream_ref를 안 주면 `spans[0]`으로 조용히 넘어가지
+    않고 명확히 실패한다."""
+    resolution = _resolution(
+        _span(sequence=0, media_stream_ref="ms_rear"),
+        _span(sequence=1, media_stream_ref="ms_front"),
+    )
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._select_asset_span(resolution, None)
+
+
+def test_select_asset_span_raises_when_ref_has_no_match():
+    """요청한 media_stream_ref가 어떤 span에도 없으면 실패한다."""
+    resolution = _resolution(_span(sequence=0, media_stream_ref="ms_front"))
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._select_asset_span(resolution, "ms_unknown")
 
 
 def test_evidence_bundle_uses_real_plate_and_time_values():
