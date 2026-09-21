@@ -128,3 +128,26 @@ class CoarseDurationMismatchError(Exception):
             f"declared {self.declared_sec:.3f}s vs probed {self.probed_sec:.3f}s "
             f"(delta {abs(self.probed_sec - self.declared_sec) * 1000:.0f}ms > 250ms)"
         )
+
+
+class VideoStreamSelectionError(Exception):
+    """The execution input cannot identify exactly one VIDEO stream."""
+
+    def __init__(
+        self,
+        *,
+        analysis_source_ref: ContractRef,
+        code: str,
+        stream_refs: tuple[str, ...],
+    ) -> None:
+        self.analysis_source_ref = analysis_source_ref
+        self.code = code
+        self.stream_refs = stream_refs
+        super().__init__(str(self))
+
+    def __str__(self) -> str:
+        return (
+            f"cannot select VIDEO stream for analysis source "
+            f"{self.analysis_source_ref.ref!r}: {self.code} "
+            f"(stream_refs={self.stream_refs!r})"
+        )

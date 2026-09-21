@@ -2,13 +2,19 @@ from pathlib import Path
 from typing import Final
 
 from .coarse import LinkedCoarseResult
-from .errors import MissingCandidateError, UnknownCandidateError
+from .errors import MissingCandidateError, UnknownCandidateError, VideoStreamSelectionError
 from .factory import build_gemini_search_service
 from .fixtures import FixtureNotFoundError, FixtureSearchService
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .service import SearchService
 from .sources import AnalysisSourceResolver, CandidateSourceLink, ResolvedAnalysisSource
+from .stream_context import (
+    AnalysisSourceStream,
+    SelectedVideoStream,
+    VisualVerificationExecution,
+    select_single_video_stream,
+)
 from .visual import VisualVerificationResult
 
 _MOCK_DIR: Final = Path(__file__).resolve().parents[3] / "data" / "mock" / "search"
@@ -42,8 +48,38 @@ def verify_visual(
     return service.verify_visual(input_ref, candidate, target_hint, event_type)
 
 
+def verify_visual_with_stream_context(
+    input_ref: ContractRef,
+    candidate: CandidateEvent,
+    analysis_source_streams: tuple[AnalysisSourceStream, ...],
+    target_hint: SearchHint | None = None,
+    *,
+    service: SearchService | None = None,
+    event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
+) -> VisualVerificationExecution:
+    """Run Fine and return its non-canonical selected VIDEO stream context.
+
+    ``analysis_source_streams`` is an execution-only view of the authoritative
+    Recording MediaStream facts.  It lets Search select a VIDEO stream without
+    parsing opaque refs or applying a default stream policy.
+    """
+    selected_video_stream = select_single_video_stream(input_ref, analysis_source_streams)
+    result = verify_visual(
+        input_ref,
+        target_hint,
+        service=service,
+        event_type=event_type,
+        candidate=candidate,
+    )
+    return VisualVerificationExecution(
+        result=result,
+        selected_video_stream=selected_video_stream,
+    )
+
+
 __all__ = [
     "AnalysisScope",
+    "AnalysisSourceStream",
     "AnalysisSourceResolver",
     "CandidateSearchResult",
     "CandidateSourceLink",
@@ -51,12 +87,17 @@ __all__ = [
     "FixtureNotFoundError",
     "LinkedCoarseResult",
     "ResolvedAnalysisSource",
+    "SelectedVideoStream",
     "SearchHint",
     "SearchService",
     "UnknownCandidateError",
+    "VideoStreamSelectionError",
     "VisualEventType",
+    "VisualVerificationExecution",
     "VisualVerificationResult",
     "build_gemini_search_service",
     "search_candidates",
+    "select_single_video_stream",
     "verify_visual",
+    "verify_visual_with_stream_context",
 ]

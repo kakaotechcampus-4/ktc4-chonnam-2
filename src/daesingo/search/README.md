@@ -18,6 +18,7 @@ Coarse 후보 구간 생성·Fine/Classification visual verification·4종 event
 | --- | --- | --- |
 | `search_candidates(scope)` | `AnalysisScope` | `CandidateSearchResult(analysis_run, candidates)` |
 | `verify_visual(input_ref, target_hint=None)` | `ContractRef`, 선택 `SearchHint` | `VisualVerificationResult(analysis_run, visual_evidence)` |
+| `verify_visual_with_stream_context(input_ref, candidate, analysis_source_streams, target_hint=None)` | `ContractRef`, `CandidateEvent`, typed MediaStream facts | `VisualVerificationExecution(result, selected_video_stream)` — 월요일 Real E2E용 비정규 실행 문맥 |
 
 fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `SearchService`와 `AnalysisSourceResolver`를 구성하고 `service=`로 주입한다. 제품과 eval 모두 이 경로를 사용하며 `eval_mode`나 GT 접근 분기는 없다.
 
