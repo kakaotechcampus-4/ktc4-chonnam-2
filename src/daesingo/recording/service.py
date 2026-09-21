@@ -41,6 +41,7 @@ from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
+from .spans import resolve_local_span
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -318,11 +319,39 @@ class RecordingService:
         self,
         timeline_ref: TimelineRef | dict[str, Any],
         requested_range: TimeRange | dict[str, Any],
+        *, media_stream_ref: str | None = None,
     ) -> SpanResolution:
+        """로컬 계산에는 Case가 전달한 VIDEO ref가 필수다. 무선택 fixture 호출만 호환한다."""
         parsed_ref = TimelineRef.model_validate(timeline_ref)
         parsed_range = TimeRange.model_validate(requested_range)
-        if self._repository.get_timeline(parsed_ref) is None:
+        if (not all(math.isfinite(value) for value in (parsed_range.start_sec, parsed_range.end_sec))
+                or parsed_range.start_sec < 0 or parsed_range.end_sec <= parsed_range.start_sec):
+            raise ValueError("요청 범위는 유한하며 0 <= start < end를 만족해야 합니다")
+        timeline = self._repository.get_timeline(parsed_ref)
+        if timeline is None:
             raise ValueError("존재하지 않는 timeline reference입니다")
+
+        is_local = any(self._repository.get_local_source(p.source_asset_ref) is not None
+                       for p in timeline.source_placements)
+        if is_local or media_stream_ref is not None:
+            if not isinstance(media_stream_ref, str) or not media_stream_ref:
+                raise ValueError("명시적인 VIDEO media_stream_ref가 필요합니다")
+            matches = [p for p in timeline.source_placements
+                       for ref in p.media_stream_refs if ref == media_stream_ref]
+            stream = self._repository.get_media_stream(media_stream_ref)
+            if len(matches) != 1 or stream is None or stream.media_type != "VIDEO":
+                raise ValueError("선택 ref는 해당 Timeline revision에 한 번 소속된 VIDEO여야 합니다")
+            placement = matches[0]
+            source = self._repository.get_source_asset(placement.source_asset_ref)
+            if (source is None or stream.source_asset_ref != placement.source_asset_ref
+                    or source.media_stream_refs.count(media_stream_ref) != 1):
+                raise ValueError("선택 ref의 원본 소속이 Timeline과 일치하지 않습니다")
+        if is_local:
+            resolution = resolve_local_span(self._repository, timeline, parsed_range,
+                                            selected_stream_ref=media_stream_ref)
+            if len(resolution.spans) > 1 or any(s.media_stream_ref != media_stream_ref for s in resolution.spans):
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "Baseline에서 선택 ref의 단일 span을 확정할 수 없습니다")
+            return resolution
 
         resolution = self._repository.get_span_resolution(parsed_ref, parsed_range)
         if resolution is None:
@@ -330,6 +359,9 @@ class RecordingService:
                 "TEMPORARY_FAILURE",
                 "이 요청 범위의 SpanResolution이 fixture adapter에 등록되지 않았습니다",
             )
+        if media_stream_ref is not None and (
+                len(resolution.spans) != 1 or resolution.spans[0].media_stream_ref != media_stream_ref):
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "fixture 결과가 선택 ref의 단일 span과 일치하지 않습니다")
         return resolution
 
     def prepare_analysis_source(
