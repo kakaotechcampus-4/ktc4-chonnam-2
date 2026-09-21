@@ -124,11 +124,11 @@ def test_config_reads_values_from_env_mapping_only():
     config = GeminiSearchConfig.from_dotenv(
         env={
             "DAESINGO_GEMINI_MODEL": "gemini-x",
-            "DAESINGO_GEMINI_BASE_URL": "https://proxy.local/v1",
+            "DAESINGO_GEMINI_BASE_URL": "https://mlapi.run/alternate/v1",
         }
     )
     assert config.model == "gemini-x"
-    assert config.base_url == "https://proxy.local/v1"
+    assert config.base_url == "https://mlapi.run/alternate/v1"
     # 미지정 키는 코드 기본값을 쓴다.
     assert config.media_resolution == "low"
 

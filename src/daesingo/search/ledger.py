@@ -15,6 +15,8 @@ class UsageRecord:
     latency_ms: int
     usage: ProviderUsage
     cost_usd: Decimal | None
+    prepared_media_bytes: int | None = None
+    prepared_duration_ms: int | None = None
 
     def as_eval_fact(self) -> dict[str, object]:
         cost = None
@@ -28,6 +30,8 @@ class UsageRecord:
             "prompt_fingerprint": self.prompt_fingerprint,
             "config_version": self.config_version,
             "processed_duration_sec": self.processed_duration_sec,
+            "prepared_media_bytes": self.prepared_media_bytes,
+            "prepared_duration_ms": self.prepared_duration_ms,
             "latency_ms": self.latency_ms,
             "input_tokens": self.usage.input_tokens,
             "output_tokens": self.usage.output_tokens,

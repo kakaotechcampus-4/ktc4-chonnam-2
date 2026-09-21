@@ -1,8 +1,12 @@
-from pathlib import Path
-
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
-from daesingo.search.runs import ContractRef
+from daesingo.search.runs import (
+    CandidateEvent,
+    CandidateId,
+    CandidateSpan,
+    ContractRef,
+    RunId,
+)
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import (
     AnalysisScope,
@@ -16,6 +20,11 @@ from daesingo.search.scope import (
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
 from daesingo.search.usage import ProviderUsage
+from tests.search._search_service_support import (
+    FixtureMediaPreparer,
+    OpenableResolver,
+    make_deadline,
+)
 
 
 class _Provider:
@@ -72,9 +81,17 @@ class _Provider:
 
 
 def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
-    source = ResolvedAnalysisSource("clip-1", Path("clip.mp4"), 10.0, "clip-1", 4)
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="clip-1"), 10.0, "clip-1", 4
+    )
     resolver = StaticAnalysisSourceResolver({"scope-1": (source,)}, {})
-    service = SearchService(resolver, _Provider(), GeminiSearchConfig())
+    service = SearchService(
+        OpenableResolver(resolver),
+        _Provider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
     scope = AnalysisScope(
         scope_id="scope-1",
         time_ranges=(
@@ -105,12 +122,39 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
 
 
 def test_fine_routes_legacy_event_name_to_the_contract_enum():
-    source = ResolvedAnalysisSource("clip-1", Path("clip.mp4"), 10.0, "clip-1", 1)
-    resolver = StaticAnalysisSourceResolver({}, {"candidate-1": source})
-    service = SearchService(resolver, _Provider(), GeminiSearchConfig())
+    source = ResolvedAnalysisSource(
+        ContractRef(kind="analysis_source", ref="source-1"), 10.0, "clip-1", 1
+    )
+    resolver = StaticAnalysisSourceResolver({}, {"source-1": source})
+    service = SearchService(
+        OpenableResolver(resolver),
+        _Provider(),
+        GeminiSearchConfig(),
+        FixtureMediaPreparer(source.duration_sec),
+        make_deadline(),
+    )
+    candidate = CandidateEvent(
+        candidate_id=CandidateId("candidate-1"),
+        run_id=RunId("run-coarse-1"),
+        span=CandidateSpan(
+            timeline_id="clip-1",
+            timeline_revision=1,
+            start_ms=1000,
+            end_ms=3000,
+            representative_ms=2000,
+        ),
+        rank=1,
+        ranking_score=0.9,
+        event_type_hint=VisualEventType.SOLID_LINE_LANE_CHANGE,
+        summary="lane change",
+        uncertainties=(),
+        thumbnail_ref=None,
+    )
 
     result = service.verify_visual(
-        ContractRef(kind="candidate", ref="candidate-1"), event_type="LANE_CHANGE"
+        ContractRef(kind="analysis_source", ref="source-1"),
+        candidate,
+        event_type="LANE_CHANGE",
     )
 
     assert result.visual_evidence.verification.value == "UNCERTAIN"

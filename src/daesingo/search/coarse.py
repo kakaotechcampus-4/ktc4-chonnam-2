@@ -1,9 +1,19 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
+from math import isfinite
 from uuid import uuid4
 
 from .config import GeminiSearchConfig
+from .errors import (
+    CoarseDurationMismatchError,
+    InvalidCoarseSpanError,
+    UnknownCandidateError,
+)
+from .execution import RunDeadline
 from .ledger import SearchLedger, UsageRecord
+from .media import PreparedMedia
+from .media_contract import CoarseMediaPreparer
 from .prompts import COARSE_PROMPT
 from .provider import CoarseRequest, ProviderResult, SearchProvider
 from .runs import (
@@ -24,32 +34,77 @@ from .runs import (
 from .schemas import CoarseCandidate, CoarseResponse
 from .scope import AnalysisScope
 from .sources import AnalysisSourceResolver, ResolvedAnalysisSource
-from .usage import ProviderUsage
+
+
+@dataclass(frozen=True, slots=True)
+class LinkedCoarseResult:
+    """Internal wrapper retaining which analysis source the candidates came from."""
+
+    result: CandidateSearchResult
+    source_ref: ContractRef
+
+    def source_ref_for(self, candidate_id: CandidateId) -> ContractRef:
+        """Return the source ref for a candidate; raises UnknownCandidateError if not found."""
+        for candidate in self.result.candidates:
+            if candidate.candidate_id == candidate_id:
+                return self.source_ref
+        raise UnknownCandidateError(candidate_id=candidate_id)
+
+
+@dataclass(frozen=True, slots=True)
+class CoarseExecutionDependencies:
+    resolver: AnalysisSourceResolver
+    provider: SearchProvider
+    config: GeminiSearchConfig
+    ledger: SearchLedger
+    media_preparer: CoarseMediaPreparer
+    deadline: RunDeadline
 
 
 def search_coarse(
     scope: AnalysisScope,
-    resolver: AnalysisSourceResolver,
-    provider: SearchProvider,
-    config: GeminiSearchConfig,
-    ledger: SearchLedger,
-) -> CandidateSearchResult:
+    dependencies: CoarseExecutionDependencies,
+) -> LinkedCoarseResult:
     started = datetime.now(UTC)
     run_id = RunId(f"run_search_{uuid4().hex}")
     gathered: list[tuple[ResolvedAnalysisSource, CoarseCandidate]] = []
-    usages: list[ProviderUsage] = []
-    latency_ms = 0
+    records: list[UsageRecord] = []
     usage_refs: list[str] = []
-    duration_sec = 0.0
-
-    for source in resolver.resolve(scope):
-        result = provider.search_coarse(CoarseRequest(source, scope.target_event_types))
-        duration_sec += source.duration_sec
-        latency_ms += result.latency_ms
-        usages.append(result.usage)
-        usage_ref = f"usage:{source.source_id}"
-        usage_refs.append(usage_ref)
-        ledger.append(_usage_record(source, result, config))
+    sources = dependencies.resolver.resolve(scope)
+    if not sources:
+        raise AssertionError(
+            "resolve() yielded no sources for scope; cannot attach source_ref"
+        )
+    if len(sources) != 1:
+        raise AssertionError(
+            f"resolve() must yield exactly one source for coarse search; got {len(sources)}"
+        )
+    source = sources[0]
+    with (
+        dependencies.resolver.open_source(source.source_ref) as media_input,
+        dependencies.media_preparer.prepare_coarse(
+            media_input, dependencies.deadline
+        ) as prepared,
+    ):
+        if abs(source.duration_sec - prepared.origin_end_sec) > 0.250:
+            raise CoarseDurationMismatchError(
+                source_id=source.source_id,
+                declared_sec=source.duration_sec,
+                probed_sec=prepared.origin_end_sec,
+            )
+        dependencies.deadline.check()
+        result = dependencies.provider.search_coarse(
+            CoarseRequest(
+                source,
+                scope.target_event_types,
+                media=prepared,
+                timeout_sec=dependencies.deadline.remaining_sec(),
+            )
+        )
+        usage_refs.append(f"usage:{source.source_id}")
+        record = _usage_record(source, prepared, result, dependencies.config)
+        dependencies.ledger.append(record)
+        records.append(record)
         gathered.extend((source, candidate) for candidate in result.response.candidates)
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
@@ -64,19 +119,27 @@ def search_coarse(
         input_ref=ContractRef(kind="analysis_scope", ref=scope.scope_id),
         implementation=Implementation(
             impl_id="search:gemini-coarse-p3",
-            model_ref=config.model,
+            model_ref=dependencies.config.model,
             prompt_version=COARSE_PROMPT.version,
-            config_version=config.version,
+            config_version=dependencies.config.version,
         ),
         outcome=RunOutcome.SUCCEEDED,
         started_at=started,
         completed_at=completed,
         issues=(),
         usage_refs=tuple(usage_refs),
-        usage_summary=_usage_summary(usages, duration_sec, latency_ms),
+        usage_summary=_usage_summary(records),
         contract_version="analysis-run-candidate-event/v1.1",
     )
-    return CandidateSearchResult(analysis_run=analysis_run, candidates=candidates)
+    candidate_search_result = CandidateSearchResult(
+        analysis_run=analysis_run, candidates=candidates
+    )
+    assert source.source_ref.kind == "analysis_source", (
+        f"source_ref.kind must be 'analysis_source', got {source.source_ref.kind!r}"
+    )
+    return LinkedCoarseResult(
+        result=candidate_search_result, source_ref=source.source_ref
+    )
 
 
 def _candidate(
@@ -85,6 +148,36 @@ def _candidate(
     source: ResolvedAnalysisSource,
     candidate: CoarseCandidate,
 ) -> CandidateEvent:
+    values_are_finite = all(
+        isfinite(value)
+        for value in (
+            candidate.span.start_sec,
+            candidate.span.end_sec,
+            candidate.at_sec,
+        )
+    )
+    span_is_nonnegative = (
+        candidate.span.start_sec >= 0
+        and candidate.span.end_sec >= 0
+        and candidate.at_sec >= 0
+    )
+    span_is_ordered = candidate.span.start_sec < candidate.span.end_sec
+    span_overlaps_source = (
+        candidate.span.start_sec < source.duration_sec and candidate.span.end_sec > 0
+    )
+    if not (
+        values_are_finite
+        and span_is_nonnegative
+        and span_is_ordered
+        and span_overlaps_source
+    ):
+        raise InvalidCoarseSpanError(
+            source_id=source.source_id,
+            start_sec=candidate.span.start_sec,
+            end_sec=candidate.span.end_sec,
+            at_sec=candidate.at_sec,
+            duration_sec=source.duration_sec,
+        )
     start = max(0.0, min(candidate.span.start_sec, source.duration_sec))
     end = max(start + 0.001, min(candidate.span.end_sec, source.duration_sec))
     representative = min(max(candidate.at_sec, start), end)
@@ -114,6 +207,7 @@ def _candidate(
 
 def _usage_record(
     source: ResolvedAnalysisSource,
+    prepared: PreparedMedia,
     result: ProviderResult[CoarseResponse],
     config: GeminiSearchConfig,
 ) -> UsageRecord:
@@ -126,13 +220,17 @@ def _usage_record(
         processed_duration_sec=source.duration_sec,
         latency_ms=result.latency_ms,
         usage=result.usage,
-        cost_usd=result.usage.cost_usd,
+        cost_usd=result.usage.cost_with_rates(
+            config.input_usd_per_million,
+            config.output_usd_per_million,
+        ),
+        prepared_media_bytes=prepared.byte_size,
+        prepared_duration_ms=round(prepared.duration_sec * 1000),
     )
 
 
-def _usage_summary(
-    usages: list[ProviderUsage], duration_sec: float, latency_ms: int
-) -> UsageSummary:
+def _usage_summary(records: list[UsageRecord]) -> UsageSummary:
+    usages = [record.usage for record in records]
     complete = all(
         usage.input_tokens is not None
         and usage.output_tokens is not None
@@ -150,7 +248,7 @@ def _usage_summary(
             output_tokens=output_tokens,
             total_tokens=input_tokens + output_tokens,
         )
-    costs = [usage.cost_usd for usage in usages]
+    costs = [record.cost_usd for record in records]
     total_cost = None
     if all(cost is not None for cost in costs):
         total_cost = Money(
@@ -158,8 +256,10 @@ def _usage_summary(
             currency="USD",
         )
     return UsageSummary(
-        processed_duration_ms=round(duration_sec * 1000),
+        processed_duration_ms=round(
+            sum(record.processed_duration_sec for record in records) * 1000
+        ),
         token_usage=token_usage,
-        latency_ms=latency_ms,
+        latency_ms=sum(record.latency_ms for record in records),
         total_cost=total_cost,
     )

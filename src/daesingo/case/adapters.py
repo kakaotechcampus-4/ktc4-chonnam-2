@@ -61,6 +61,13 @@ None) 두 가지도 그대로 적용된다.
 `selected=True` candidate와 `case.selection_rev`를 그대로 쓴다. `happy_001`은 후보가
 하나뿐이라 지금까지 결과값 자체는 안 바뀌었지만, 배선이 case 상태를 실제로 따라가게
 됐다는 점이 다르다.
+
+## 2026-09-19 갱신(이슈 #73) — correction 적용 후 evidence 재계산이 실제로 일어나게 수정
+
+Tool Trajectory 1차 Review WARN ①: 부분 재실행 정책 표가 `EVENT_TIME_MANUAL` 등은
+"제자리, 요건 검사만 재발주"라고 정하고 있는데, 실제 배선에는 두 공백이 있었다.
+`correction_records` 전달과 `case_rev` 기준 캐시 무효화를 추가해 정정 후 evidence가
+실제로 다시 계산되게 한다. 별도 `JobRecord`는 발주하지 않는다.
 """
 from __future__ import annotations
 
@@ -212,6 +219,7 @@ class RealAdapter:
         self._search_scope = search_scope
         self._mock_root = mock_root
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
+        self._evidence_bundle_case_rev: int | None = None
         self._clients = clients
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
@@ -266,8 +274,11 @@ class RealAdapter:
         것이 어긋날 수 있는 실제 버그였다. 지금은 `self._case.candidates`에서
         `selected=True`인 candidate를 찾아 그 `candidate_id`로 search 결과에서 일치하는
         `CandidateEvent`를 골라 넘기고, `selection_rev`도 `self._case.selection_rev`를
-        그대로 쓴다."""
-        if self._evidence_bundle is None:
+        그대로 쓴다.
+
+        correction이 적용돼 `case_rev`가 바뀌면 캐시를 무효화하고 최신
+        `case.correction_records`로 evidence를 다시 계산한다(이슈 #73)."""
+        if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             if self._search_scope is None or self._mock_root is None:
                 self._not_ready(
                     "get_evidence_record",
@@ -311,7 +322,10 @@ class RealAdapter:
                 scope=scope,
                 mock_root=self._mock_root,
                 selection_rev=self._case.selection_rev,
+                correction_records=self._case.correction_records,
+                location_hint=self._case.hints.get("location"),
             )
+            self._evidence_bundle_case_rev = self._case.case_rev
         return self._evidence_bundle
 
     def get_evidence_record(self) -> dict[str, Any] | None:

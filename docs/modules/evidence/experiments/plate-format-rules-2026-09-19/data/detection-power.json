@@ -1,0 +1,173 @@
+{
+ "schema": "plate-rule-detection-power/v1",
+ "method": "정답지 통과분 89,295건 각각에 오독 1건을 주입하고 규칙이 「형식으로 설명 불가」로 판정하는지 셌다",
+ "caveat": "시뮬레이션이다. 실제 OCR 출력 기준이 아니다",
+ "note_before_gosi_ranges": "detection_rate_pct_before_gosi_ranges 는 3자리 분류기호를 100~699 로만, 이륜 용도기호를 관측 14자로만 뒀을 때의 값. PR #88 고시 범위를 반영하자 검출력이 내려갔다",
+ "summary": {
+  "STRUCTURE_BROKEN": "100.00%",
+  "STRUCTURE_PRESERVED": "0.00 ~ 0.84%",
+  "reason": "한국 번호판에는 체크디지트가 없다. 자릿수·문자종이 보존된 오독은 원리상 검출 불가"
+ },
+ "items": [
+  {
+   "id": "upper_line_lost",
+   "label": "①윗줄전체누락(한글+일련번호만)",
+   "description": "2줄판의 윗줄(관할기호+앞숫자)을 통째로 못 읽음",
+   "nature": "STRUCTURE_BROKEN",
+   "case": "PR #80 ⓐ 의 바5215",
+   "applied": 89295,
+   "detected": 89295,
+   "detection_rate_pct": 100.0,
+   "detection_rate_pct_before_gosi_ranges": 100.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 100.0,
+   "missed_examples": []
+  },
+  {
+   "id": "region_mark_lost",
+   "label": "②지역명만누락",
+   "description": "윗줄에서 관할기호 2글자만 놓치고 앞숫자는 읽음",
+   "nature": "STRUCTURE_PRESERVED",
+   "case": "경기37바1050 → 37바1050",
+   "applied": 27376,
+   "detected": 67,
+   "detection_rate_pct": 0.24,
+   "detection_rate_pct_before_gosi_ranges": 0.24,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 0.21,
+   "missed_examples": [
+    "서울83자4027→83자4027",
+    "강원32가8078→32가8078",
+    "강원80바1837→80바1837"
+   ]
+  },
+  {
+   "id": "head_digit_dropped",
+   "label": "③앞자리 숫자 1자 누락",
+   "description": "앞 숫자부 한 자리 탈락",
+   "nature": "PARTIAL",
+   "case": "100가1626 → 10가1626",
+   "applied": 89286,
+   "detected": 55454,
+   "detection_rate_pct": 62.11,
+   "detection_rate_pct_before_gosi_ranges": 62.11,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 0.21,
+   "missed_examples": [
+    "100가1626→10가1626",
+    "100나2925→10나2925",
+    "100다8919→10다8919"
+   ]
+  },
+  {
+   "id": "use_code_dropped",
+   "label": "④용도기호(한글) 누락",
+   "description": "한글 한 자를 못 읽음",
+   "nature": "STRUCTURE_BROKEN",
+   "case": "12가3456 → 123456",
+   "applied": 89295,
+   "detected": 89295,
+   "detection_rate_pct": 100.0,
+   "detection_rate_pct_before_gosi_ranges": 100.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 100.0,
+   "missed_examples": []
+  },
+  {
+   "id": "serial_digit_dropped",
+   "label": "⑤일련번호 1자 누락",
+   "description": "뒤 4자리 중 한 자리 탈락",
+   "nature": "STRUCTURE_BROKEN",
+   "case": "12가3456 → 12가346",
+   "applied": 89295,
+   "detected": 89295,
+   "detection_rate_pct": 100.0,
+   "detection_rate_pct_before_gosi_ranges": 100.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 100.0,
+   "missed_examples": []
+  },
+  {
+   "id": "serial_digit_substituted",
+   "label": "⑥일련번호 1자 오독(숫자→숫자)",
+   "description": "뒤 4자리 중 한 자리를 다른 숫자로",
+   "nature": "STRUCTURE_PRESERVED",
+   "case": "12가3456 → 12가3455",
+   "applied": 89295,
+   "detected": 13,
+   "detection_rate_pct": 0.01,
+   "detection_rate_pct_before_gosi_ranges": 0.01,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 0.04,
+   "missed_examples": [
+    "01가0785→01가0789",
+    "01가0865→01가0855",
+    "01가1134→01가1034"
+   ]
+  },
+  {
+   "id": "head_digit_substituted",
+   "label": "⑦앞자리 1자 오독(숫자→숫자)",
+   "description": "앞 숫자부 한 자리를 다른 숫자로",
+   "nature": "STRUCTURE_PRESERVED",
+   "case": "12가3456 → 15가3456",
+   "applied": 89295,
+   "detected": 1507,
+   "detection_rate_pct": 1.69,
+   "detection_rate_pct_before_gosi_ranges": 1.69,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 0.18,
+   "missed_examples": [
+    "01가0785→05가0785",
+    "01가0865→02가0865",
+    "01가1134→81가1134"
+   ]
+  },
+  {
+   "id": "use_code_substituted",
+   "label": "⑧용도기호 오독(한글→유효한글)",
+   "description": "한글을 다른 유효 용도기호로",
+   "nature": "STRUCTURE_PRESERVED",
+   "case": "12가3456 → 12누3456",
+   "applied": 89295,
+   "detected": 0,
+   "detection_rate_pct": 0.0,
+   "detection_rate_pct_before_gosi_ranges": 0.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 0.0,
+   "missed_examples": [
+    "01가0785→01누0785",
+    "01가0865→01저0865",
+    "01가1134→01부1134"
+   ]
+  },
+  {
+   "id": "digit_hallucinated",
+   "label": "⑨숫자 1자 덧붙음(환각)",
+   "description": "없는 문자를 만들어 붙임",
+   "nature": "STRUCTURE_BROKEN",
+   "case": "PR #80 의 4442- / 2 / 1 환각",
+   "applied": 89295,
+   "detected": 89295,
+   "detection_rate_pct": 100.0,
+   "detection_rate_pct_before_gosi_ranges": 100.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 100.0,
+   "missed_examples": []
+  },
+  {
+   "id": "charclass_mixed",
+   "label": "⑩숫자 자리에 한글 혼입",
+   "description": "숫자 자리를 한글로",
+   "nature": "STRUCTURE_BROKEN",
+   "case": "12가3456 → 12가3가56",
+   "applied": 89295,
+   "detected": 89295,
+   "detection_rate_pct": 100.0,
+   "detection_rate_pct_before_gosi_ranges": 100.0,
+   "two_line_applied": 27367,
+   "two_line_detection_rate_pct": 100.0,
+   "missed_examples": []
+  }
+ ]
+}
