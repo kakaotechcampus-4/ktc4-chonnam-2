@@ -15,7 +15,12 @@ Recording→Search(Elice/Gemini)→Readout→Evidence까지 실제 함수·실�
 - [x] `.env`에 `GEMINI_API_KEY`/`DAESINGO_GEMINI_BASE_URL`/`DAESINGO_GEMINI_MODEL` 값 존재 확인(값은 로그에 남기지 않음)
 - [x] ffmpeg/ffprobe 설치 — `conda install -c conda-forge ffmpeg`가 멈춘 듯해서(장시간 무응답)
   중단하고 `pip install static-ffmpeg`로 대체. 정적 바이너리를 받아 PATH에 얹었다
-  (`static_ffmpeg.run.get_or_fetch_platform_executables_else_raise()`).
+  (`static_ffmpeg.run.get_or_fetch_platform_executables_else_raise()`). **나중에 확인해보니
+  conda 설치도 실제로는 끝까지 돌아 있었다** — 그런데 conda-forge 4.3.1 빌드는 이 영상을
+  480p로 transcode할 때 `RecordingCapabilityError`(media/frame coverage 불일치)로 **매번**
+  실패하고, static-ffmpeg의 8.0.1 essentials 빌드는 **매번** 성공한다(재현 확인, 우연 아님).
+  ⚠️ **PATH에서 어느 ffmpeg가 먼저 잡히는지에 따라 이 레포의 real-video 테스트/스크립트
+  결과가 갈린다** — `tests/case/test_real_video_pipeline.py` 상단 주석에도 남겨뒀다.
 - [x] `opencv-python`/`paddlepaddle`/`paddleocr` 설치 — 1차 시도는 `cv2.pyd` 파일 접근 거부로
   일부 실패(`WinError 5`, 다른 프로세스가 파일을 잡고 있었던 것으로 보임). 재시도로 해결.
 
@@ -174,4 +179,38 @@ rec_service.close() ✅
 **의미:** search의 Coarse/Fine만 해결되면(이슈 #132), 지금 이 다운스트림 코드는
 이미 실제 데이터로 끝까지 검증된 상태다 — 세 번째 유료 시도에서 또 다른 코드
 버그로 막힐 위험은 크게 줄었다.
+
+## CaseView/Web 연결 — `RealVideoAdapter` 신설 (2026-09-22)
+
+**문제:** `build_real_video_evidence_bundle()`은 `EvidenceBundle`만 돌려주고
+candidate 선택을 자체적으로(`candidates[0]`) 해버려서, case의 상태 기계
+(`case.select_candidate()`)와 `CaseView` 조립(`service.build_view_from_adapter()`)에
+연결할 방법이 없었다. fixture 경로(`RealAdapter`)와 같은 흐름을 타려면 별도
+adapter가 필요했다.
+
+**한 것:**
+1. `real_e2e.py`를 3단계로 쪼갰다 — `prepare_real_video_context()`(candidate
+   탐색 전, 전체 영상 범위 AnalysisSource+real service 조립 1회) /
+   `get_real_video_candidates()`(Coarse 실제 호출) /
+   `build_evidence_for_real_video_candidate()`(선택된 candidate로 Fine~evidence).
+   `build_real_video_evidence_bundle()`은 이 3개를 이어붙인 편의 함수로 남겼다
+   (기존 스모크 스크립트 호환, 동작 동일함을 재실행으로 확인).
+2. `adapters.py`에 `RealVideoAdapter` 추가 — `RealAdapter`와 같은
+   `ModuleAdapter` 프로토콜을 실제 영상 백엔드로 구현. `case.select_candidate()`가
+   고른 candidate로만 evidence를 계산한다(`RealAdapter`와 같은 원칙).
+3. `scripts/dump_real_video_caseview.py` 추가 — `dump_real_caseview.py`(fixture)와
+   짝. `data/real/case/real_e2e_monday_video.json`에 떨어뜨리면 web이 바로 읽는다.
+4. `tests/case/test_real_video_pipeline.py` 추가(2건, search만 stub) — 실제
+   ffmpeg/paddleocr/영상 파일 없으면 skip.
+
+**검증(무료 dry-run, search만 stub):** `RealVideoAdapter`로
+`receive_search_candidates()` → `case.select_candidate()` →
+`build_view_from_adapter()`까지 실행 — **`stage=READY`, `event_time_display.value
+="2026-06-20T14:19:56+09:00"`(실제 overlay OCR), `info_state="INFO_SOURCE_VERIFIED"`.**
+CaseView가 web이 그대로 읽을 수 있는 모양으로 끝까지 나온다.
+
+**남은 것:** 이슈 #132가 풀려야 `dump_real_video_caseview.py`를 stub 없이 그대로
+돌려서 진짜 `data/real/case/` 산출물을 만들 수 있다. Web 업로드 API(protocol §8)는
+이번에 손대지 않았다 — 프로토콜 자체가 "시간 부족하면 `Real E2E 실행 → data/real/case
+JSON → Web 렌더`까지만 확인해도 된다"고 명시한 최소 기준에 맞춘 것이다.
 

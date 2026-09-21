@@ -478,26 +478,33 @@ def build_happy_001_evidence_bundle(
     )
 
 
-def build_real_video_evidence_bundle(
-    *,
-    case_id: str,
-    local_video_path: str | Path,
-    case: CaseAggregate,
-    scope_id: str,
-    selection_rev: int = 1,
-    correction_records: list[dict[str, Any]] | None = None,
-    location_hint: str | None = None,
-) -> tuple[EvidenceBundle, RecordingService]:
-    """월요일 real 영상(`register_local_source`) 경로 — 모듈 docstring
-    "build_real_video_evidence_bundle() 알려진 단순화" 절의 전제를 그대로 따른다.
-    실행되어 검증된 적은 없다(같은 절 참고).
+@dataclass
+class RealVideoContext:
+    """월요일 real 영상 실행 1건의 상태 — `RealVideoAdapter`가 `get_candidate_events()`와
+    `get_evidence_record()` 사이에 들고 있어야 하는 것들. `prepare_real_video_context()`가
+    만들고, `get_real_video_candidates()`/`build_evidence_for_real_video_candidate()`가
+    재사용한다.
 
-    `case`는 `scope.build_analysis_scope()`가 `hint.vehicle`/`hint.free_text`를
-    파생할 `case.hints`를 읽기 위해서만 쓰인다 — 이 함수가 `case`의 상태를 바꾸지
-    않는다.
+    호출자가 다 쓴 뒤(evidence 조립까지, search의 `open_analysis_source()` 소비도
+    끝난 뒤) `rec_service.close()`해야 한다.
+    """
 
-    반환하는 `RecordingService`는 호출자가 이 함수의 결과(특히 evidence 조립까지
-    끝난 뒤, search의 `open_analysis_source()` 소비도 끝난 뒤)에 `close()`해야 한다.
+    rec_service: RecordingService
+    registered: Any
+    timeline: Any
+    scope: search_module.AnalysisScope
+    gemini_service: Any
+    analysis_source: Any
+    bootstrap_ref: str
+    local_video_path: str | Path
+
+
+def prepare_real_video_context(
+    *, local_video_path: str | Path, case: CaseAggregate, scope_id: str
+) -> RealVideoContext:
+    """`register_local_source()`부터 real Gemini/Elice service 조립까지 — candidate
+    탐색 이전 단계. 이 단계는 candidate와 무관하게 한 번만 한다(전체 영상 범위
+    AnalysisSource 하나 재사용 — 모듈 docstring 참고).
     """
     # 월요일 대표 파일(20260620_141956_EVT_1.avi) 기준 profile 설정 — 480p H.264,
     # preset=veryfast, crf=23, audio off(정철원 확인, 2026-09-21). canonical profile
@@ -600,22 +607,54 @@ def build_real_video_evidence_bundle(
         api_key=api_key, resolver=resolver
     )
 
-    candidates = search_module.search_candidates(scope, service=gemini_service).candidates
-    if not candidates:
-        raise StreamSelectionError(
-            "월요일 대표 영상에서 candidate가 하나도 나오지 않았습니다 — GT 없는"
-            " 배관 확인이 목적이라 이 경우를 자동으로 처리하지 않는다."
-        )
-    # 알려진 단순화(모듈 docstring 참고) — candidate가 여럿이면 어느 것이 맞는지는
-    # 이번 범위 밖이라 첫 번째를 그대로 쓴다.
-    candidate = candidates[0]
+    return RealVideoContext(
+        rec_service=rec_service,
+        registered=registered,
+        timeline=timeline,
+        scope=scope,
+        gemini_service=gemini_service,
+        analysis_source=analysis_source,
+        bootstrap_ref=bootstrap_ref,
+        local_video_path=local_video_path,
+    )
+
+
+def get_real_video_candidates(
+    context: RealVideoContext,
+) -> tuple[search_module.CandidateEvent, ...]:
+    """real Gemini/Elice **Coarse**를 실제로 호출한다(유료). `prepare_real_video_context()`가
+    만든 `context`를 그대로 재사용 — candidate 탐색용 AnalysisSource를 다시 만들지
+    않는다."""
+    return search_module.search_candidates(
+        context.scope, service=context.gemini_service
+    ).candidates
+
+
+def build_evidence_for_real_video_candidate(
+    context: RealVideoContext,
+    candidate: search_module.CandidateEvent,
+    *,
+    case_id: str,
+    selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
+    location_hint: str | None = None,
+) -> EvidenceBundle:
+    """선택된 candidate 하나에 대해 real Gemini/Elice **Fine**을 실제로 호출하고
+    (유료) IncidentClip~evidence까지 조립한다. `case.select_candidate()`가 고른
+    candidate를 그대로 받는다 — 여기서 다시 고르지 않는다.
+    """
+    rec_service = context.rec_service
+    registered = context.registered
+    analysis_source = context.analysis_source
+    bootstrap_ref = context.bootstrap_ref
+    scope = context.scope
 
     visual_result, media_stream_ref = _resolve_via_search_stream_context(
         analysis_source=analysis_source,
         media_streams=registered.media_streams,
         candidate=candidate,
         target_hint=scope.hint,
-        service=gemini_service,
+        service=context.gemini_service,
     )
     # 정철원 확인(2026-09-21) — 월요일 대표 파일은 VIDEO가 하나뿐이라 search가
     # 부트스트랩과 다른 stream을 고를 수 없다. 다르면 조용히 넘어가지 않고 실패시켜
@@ -666,7 +705,7 @@ def build_real_video_evidence_bundle(
     # "readout provider" 절 참고).
     ocr_provider = paddle_provider.PaddleOcrProvider(
         paddle_provider.LocalVideoFrameSource(
-            {incident_clip.incident_clip_ref: str(local_video_path)}
+            {incident_clip.incident_clip_ref: str(context.local_video_path)}
         )
     )
     _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
@@ -759,7 +798,7 @@ def build_real_video_evidence_bundle(
     except PackageNotReady as exc:
         package_error = str(exc)
 
-    bundle = EvidenceBundle(
+    return EvidenceBundle(
         evidence_record=evidence_record,
         evidence_needs=evidence_needs,
         requirement_report_evidence=requirement_report_evidence,
@@ -767,4 +806,44 @@ def build_real_video_evidence_bundle(
         report_package=report_package,
         package_error=package_error,
     )
-    return bundle, rec_service
+
+
+def build_real_video_evidence_bundle(
+    *,
+    case_id: str,
+    local_video_path: str | Path,
+    case: CaseAggregate,
+    scope_id: str,
+    selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
+    location_hint: str | None = None,
+) -> tuple[EvidenceBundle, RecordingService]:
+    """`prepare_real_video_context()` + `get_real_video_candidates()`(candidates[0]
+    고정) + `build_evidence_for_real_video_candidate()`를 한 번에 묶은 편의 함수 —
+    `case.select_candidate()` 없이 단일 실행으로 스모크하는 스크립트용이다
+    (`docs/modules/case/experiments/real-e2e-20260922-monday-baseline.md` 참고).
+
+    `RealVideoAdapter`처럼 candidate 선택을 case 상태 기계에 맡기려면 이 함수
+    대신 위 3개를 직접 조합해서 쓴다.
+    """
+    context = prepare_real_video_context(
+        local_video_path=local_video_path, case=case, scope_id=scope_id
+    )
+    candidates = get_real_video_candidates(context)
+    if not candidates:
+        raise StreamSelectionError(
+            "월요일 대표 영상에서 candidate가 하나도 나오지 않았습니다 — GT 없는"
+            " 배관 확인이 목적이라 이 경우를 자동으로 처리하지 않는다."
+        )
+    # 알려진 단순화(모듈 docstring 참고) — candidate가 여럿이면 어느 것이 맞는지는
+    # 이번 범위 밖이라 첫 번째를 그대로 쓴다.
+    candidate = candidates[0]
+    bundle = build_evidence_for_real_video_candidate(
+        context,
+        candidate,
+        case_id=case_id,
+        selection_rev=selection_rev,
+        correction_records=correction_records,
+        location_hint=location_hint,
+    )
+    return bundle, context.rec_service

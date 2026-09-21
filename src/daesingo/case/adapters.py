@@ -371,3 +371,149 @@ class RealAdapter:
             reason="InMemoryJobExecutionStore는 호출 가능한 서비스가 아니라 Worker "
             "프로세스가 채우는 저장소다 — worker/가 아직 비어 있어 채워질 대상이 없다.",
         )
+
+
+class RealVideoAdapter:
+    """`ModuleAdapter`의 real 영상(`register_local_source`) 구현.
+
+    `RealAdapter`(fixture/`happy_001`)와 같은 `case/service.py` 흐름
+    (`receive_search_candidates()` → `case.select_candidate()` →
+    `build_view_from_adapter()`)을 그대로 쓰지만, 백엔드가 실제 로컬 영상이라
+    생성자 인자가 다르다 — `real_e2e.RealVideoContext`(register_local_source
+    ~real Gemini/Elice service 조립)를 한 번만 만들어 재사용한다
+    (`prepare_real_video_context()`/`get_real_video_candidates()`/
+    `build_evidence_for_real_video_candidate()`, 2026-09-22).
+
+    `close()`를 호출자가 다 쓴 뒤 불러야 한다 — 안 그러면 `RecordingService`가
+    등록한 로컬 원본이 메모리에 계속 남는다.
+    """
+
+    def __init__(
+        self,
+        *,
+        case_id: str,
+        case: CaseAggregate,
+        local_video_path: Path | str,
+        scope_id: str,
+    ) -> None:
+        self.case_id = case_id
+        self._case = case
+        self._local_video_path = local_video_path
+        self._scope_id = scope_id
+        self._context: real_e2e.RealVideoContext | None = None
+        self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
+        self._evidence_bundle: real_e2e.EvidenceBundle | None = None
+        self._evidence_bundle_case_rev: int | None = None
+
+    def _not_ready(self, method: str, module: str, *, reason: str) -> None:
+        raise NotImplementedError(
+            f"RealVideoAdapter.{method}()는 아직 미구현 — {reason} "
+            f"그 전까지는 이 case_id에 대해 {module}을 Mock으로 유지해야 한다."
+        )
+
+    def _ensure_context(self) -> real_e2e.RealVideoContext:
+        if self._context is None:
+            self._context = real_e2e.prepare_real_video_context(
+                local_video_path=self._local_video_path,
+                case=self._case,
+                scope_id=self._scope_id,
+            )
+        return self._context
+
+    def close(self) -> None:
+        """호출자가 evidence 조립까지 끝난 뒤 불러야 한다(모듈 docstring 참고) —
+        search의 `open_analysis_source()` 소비가 끝나기 전에 부르면 안 된다."""
+        if self._context is not None:
+            self._context.rec_service.close()
+
+    # ── search ──────────────────────────────────────────────────────────
+    def get_candidate_events(self) -> list[dict[str, Any]]:
+        """real Gemini/Elice **Coarse**를 실제로 호출한다(유료) — candidate 객체를
+        `candidate_id`로 캐시해서 `get_evidence_record()`가 나중에 case가 실제
+        선택한 것과 같은 객체를 다시 찾아 쓰게 한다(`RealAdapter`와 동일 원칙,
+        2026-09-19 수정 참고)."""
+        context = self._ensure_context()
+        candidates = real_e2e.get_real_video_candidates(context)
+        self._candidates_by_id = {c.candidate_id: c for c in candidates}
+        return [
+            {
+                "candidate_id": c.candidate_id,
+                "summary": c.summary,
+                "thumbnail_ref": c.thumbnail_ref,
+            }
+            for c in candidates
+        ]
+
+    def get_analysis_scopes(self) -> list[dict[str, Any]]:
+        self._not_ready(
+            "get_analysis_scopes",
+            "search",
+            reason="이 메서드는 애초에 real 대응이 없다(case가 Producer) — 부르지 않아야 한다.",
+        )
+
+    # ── evidence ────────────────────────────────────────────────────────
+    def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
+        """`RealAdapter._build_evidence_bundle()`과 같은 원칙 — case가 실제로
+        선택한 candidate로만 계산하고, case_rev가 바뀌면(정정 등) 캐시를 무효화해
+        다시 계산한다. real Gemini/Elice **Fine**을 실제로 호출한다(유료)."""
+        if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
+            selected = next((c for c in self._case.candidates if c.selected), None)
+            if selected is None:
+                self._not_ready(
+                    "get_evidence_record",
+                    "evidence",
+                    reason=f"case_id={self.case_id!r}에 선택된(selected=True) candidate가 "
+                    "없다 — case.select_candidate()가 evidence 조회보다 먼저 호출돼야 한다.",
+                )
+            candidate = self._candidates_by_id.get(selected.candidate_id)
+            if candidate is None:
+                raise ValueError(
+                    f"case가 선택한 candidate_id={selected.candidate_id!r}를 "
+                    "get_candidate_events() 결과에서 찾을 수 없다 — 같은 인스턴스로 "
+                    "먼저 후보를 받아왔는지 확인해야 한다."
+                )
+            context = self._ensure_context()
+            self._evidence_bundle = real_e2e.build_evidence_for_real_video_candidate(
+                context,
+                candidate,
+                case_id=self.case_id,
+                selection_rev=self._case.selection_rev,
+                correction_records=self._case.correction_records,
+                location_hint=self._case.hints.get("location"),
+            )
+            self._evidence_bundle_case_rev = self._case.case_rev
+        return self._evidence_bundle
+
+    def get_evidence_record(self) -> dict[str, Any] | None:
+        return self._build_evidence_bundle().evidence_record
+
+    def get_evidence_records(self) -> list[dict[str, Any]]:
+        return [self._build_evidence_bundle().evidence_record]
+
+    def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
+        bundle = self._build_evidence_bundle()
+        if scope == "EVIDENCE":
+            return bundle.requirement_report_evidence
+        if scope == "FINAL_PACKAGE":
+            return bundle.requirement_report_package
+        raise ValueError(f"알 수 없는 requirement scope: {scope!r}")
+
+    def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
+        report = self.get_requirement_report(scope)
+        return [report] if report is not None else []
+
+    def get_evidence_needs(self) -> list[dict[str, Any]]:
+        needs = self._build_evidence_bundle().evidence_needs
+        return [needs] if needs is not None else []
+
+    def get_report_package(self) -> dict[str, Any] | None:
+        return self._build_evidence_bundle().report_package
+
+    # ── common/runtime ──────────────────────────────────────────────────
+    def get_job_executions(self) -> list[dict[str, Any]]:
+        self._not_ready(
+            "get_job_executions",
+            "common/runtime",
+            reason="InMemoryJobExecutionStore는 호출 가능한 서비스가 아니라 Worker "
+            "프로세스가 채우는 저장소다 — worker/가 아직 비어 있어 채워질 대상이 없다.",
+        )
