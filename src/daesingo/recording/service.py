@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
+import hashlib
 import math
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -25,6 +26,7 @@ from .models import (
     FrameLocator,
     FrameRef,
     IncidentClip,
+    IncidentClipProvenance,
     MediaStream,
     RecordingTimeline,
     RemoteCopy,
@@ -43,6 +45,7 @@ from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
 from .materialization import LocalAnalysisMaterializer
+from .incidents import LocalIncidentMaterializer
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -108,6 +111,7 @@ class RecordingService:
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
         analysis_materializer: LocalAnalysisMaterializer | None = None,
+        incident_materializer: LocalIncidentMaterializer | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
@@ -117,11 +121,17 @@ class RecordingService:
         self._analysis_reuse: dict[tuple, str] = {}
         self._local_analysis_refs: set[str] = set()
         self._analysis_closed = False
+        self._incident_materializer = incident_materializer
+        self._local_clips: dict[str, tuple[IncidentClip, bytes]] = {}
+        self._clip_identity: dict[tuple, str] = {}
+        self._local_clip_refs: set[str] = set()
 
     def close(self) -> None:
-        """로컬 AnalysisSource 메모리를 해제한다. 이미 열린 독립 stream은 호출자가 닫는다."""
+        """로컬 prepared media 메모리를 해제한다. 이미 열린 독립 stream은 호출자가 닫는다."""
         self._local_analysis.clear()
         self._analysis_reuse.clear()
+        self._local_clips.clear()
+        self._clip_identity.clear()
         self._analysis_closed = True
 
     def __enter__(self):
@@ -528,6 +538,46 @@ class RecordingService:
                 "INCIDENT_CLIP_BUILD_FAILED",
                 "usable AssetSpan이 없어 IncidentClip을 만들 수 없습니다",
             )
+        if any(self._repository.get_local_source(s.source_asset_ref) is not None
+               for s in parsed_resolution.spans):
+            if (self._analysis_closed or self._incident_materializer is None
+                    or len(parsed_resolution.spans) != 1):
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "실행 중인 단일 VIDEO 생성 설정이 필요합니다")
+            span = parsed_resolution.spans[0]
+            try:
+                current = self.resolve_span(parsed_resolution.timeline_ref, parsed_resolution.requested_range,
+                                            media_stream_ref=span.media_stream_ref)
+                if current != parsed_resolution:
+                    raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "현재 원본 해소 결과와 입력 provenance가 다릅니다")
+                local = self._repository.get_local_source(span.source_asset_ref)
+                index = self._repository.get_local_stream_index(span.media_stream_ref)
+                if local is None or index is None:
+                    raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
+                prepared = self._incident_materializer.materialize(local, index, span)
+            except (RecordingCapabilityError, ValueError, OSError):
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "원본 검증 또는 IncidentClip 생성에 실패했습니다") from None
+            provenance = IncidentClipProvenance(
+                timeline_ref=parsed_resolution.timeline_ref,
+                requested_range=parsed_resolution.requested_range,
+                asset_spans=parsed_resolution.spans,
+            )
+            identity = (provenance.model_dump_json(), self._incident_materializer.generation_conditions,
+                        hashlib.sha256(prepared.content).hexdigest(), prepared.duration_sec,
+                        prepared.timeline_range.model_dump_json())
+            previous = self._clip_identity.get(identity)
+            if previous is not None:
+                return self._local_clips[previous][0].model_copy(deep=True)
+            clip = IncidentClip(
+                contract="IncidentClip", contract_version="analysis-source-derived/v1",
+                incident_clip_ref=f"clip_{uuid4().hex}", asset_kind="INCIDENT_CLIP",
+                source_provenance=provenance, media_stream_refs=[span.media_stream_ref],
+                byte_size=len(prepared.content), availability="AVAILABLE", duration_sec=prepared.duration_sec,
+                timeline_ref=parsed_resolution.timeline_ref, timeline_range=prepared.timeline_range,
+            )
+            self._local_clips[clip.incident_clip_ref] = (clip.model_copy(deep=True), prepared.content)
+            self._local_clip_refs.add(clip.incident_clip_ref)
+            self._clip_identity[identity] = clip.incident_clip_ref
+            return clip.model_copy(deep=True)
         clips = self._repository.find_incident_clips(parsed_resolution)
         if not clips:
             raise RecordingCapabilityError(
@@ -542,6 +592,11 @@ class RecordingService:
         return clips[0]
 
     def get_incident_clip(self, incident_clip_ref: str) -> IncidentClip:
+        local = self._local_clips.get(incident_clip_ref)
+        if local is not None:
+            return local[0].model_copy(deep=True)
+        if incident_clip_ref in self._local_clip_refs:
+            raise RecordingCapabilityError("UNAVAILABLE", "로컬 IncidentClip 실행이 종료되었습니다")
         clip = self._repository.get_incident_clip(incident_clip_ref)
         if clip is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")

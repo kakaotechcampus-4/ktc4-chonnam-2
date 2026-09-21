@@ -23,9 +23,12 @@ from .models import (
 )
 from .probe import FfprobeMediaProbe
 from .materialization import AnalysisProfile, LocalAnalysisMaterializer
+from .incidents import IncidentClipEncoding, LocalIncidentMaterializer
 from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
 
 __all__ = [
+    "IncidentClipEncoding",
+    "LocalIncidentMaterializer",
     "AnalysisProfile",
     "LocalAnalysisMaterializer",
     "AnalysisSource",
