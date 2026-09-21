@@ -13,3 +13,4 @@
 - [ADR-EVIDENCE-003 — 위치를 확보하지 못한 사건의 `ReportPackage` 발행 (D1)](adr-location-absent-package.md) — accepted. 이슈 #48 종결, ADR-002 §5.6·§5.8·§5.11·§5.14 갱신
 - [ADR-EVIDENCE-004 — versioned requirement policy engine 구현 구조](adr-requirement-policy-engine.md) — K1~K4·D1 loader/evaluator/template/error 경계 구현 구조
 - [ADR-EVIDENCE-005 — 판정 주체가 없는 사건 장면·전후 상황 rule 제거 (D2)](adr-event-context-rules-removal.md) — accepted. `FINAL_PACKAGE` 무조건 rule 15 → 12, ADR-002 §5.6·§5.12·§5.14·§5.15 갱신
+- [ADR-EVIDENCE-006 — 번호판 형식 규칙은 hard reject가 아니라 사용자 검토 신호로 사용](adr-license-plate-format-review-rules.md) — accepted, implementation pending. PR #80 실측 + PR #88 공식 규정 조사 연결, 후속 versioned rule 구현 필요

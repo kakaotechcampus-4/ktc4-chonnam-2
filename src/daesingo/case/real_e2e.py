@@ -17,6 +17,9 @@ Worker 배선은 이번 범위 밖).
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
+- **`gps_observation`**: recording이 GPS 관찰을 내놓는 공개 함수를 아직 노출하지 않아
+  `None`으로 둔다. case의 자연어 위치 단서(`hints.location`)는 real 경로에 전달하지만,
+  좌표(`location.coord`)는 GPS producer가 연결되기 전까지 비어 있을 수 있다.
 - **시나리오 고정**: `scenario_happy_001` 하나로 고정돼 있다. 다른 시나리오로 넓히려면
   recording fixture 선택과 asset_facts 매핑을 다시 설계해야 한다(W7).
 """
@@ -63,10 +66,14 @@ def build_happy_001_evidence_bundle(
     scope: search_module.AnalysisScope,
     mock_root: Path,
     selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
+    location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual` → readout → evidence까지 실제 함수로 이어서
     실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw fixture/`None`이고 나머지는
     전부 각 모듈의 공개 함수 호출 결과다.
+
+    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다(이슈 #73).
     """
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
@@ -113,6 +120,7 @@ def build_happy_001_evidence_bundle(
         time_source_candidates=time_source_candidates,
         overlay_time_readout=overlay_readout.to_dict() if overlay_readout else None,
         candidate_event=candidate.model_dump(mode="json"),
+        correction_records=correction_records or [],
         case_id=case_id,
         selection_rev=selection_rev,
         resolution_id=f"tr_{case_id}_001",
@@ -127,9 +135,11 @@ def build_happy_001_evidence_bundle(
         plate_readout=plate_readout.to_dict() if plate_readout else None,
         incident_clip=incident_clip.model_dump(mode="json"),
         record_id=f"er_{case_id}_001",
-        # 알려진 단순화 2 (모듈 docstring 참고).
+        location_hint=location_hint,
+        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
         situation_response=None,
         gps_observation=None,
+        correction_records=correction_records or [],
     )
 
     evidence_needs = calculate_evidence_needs(

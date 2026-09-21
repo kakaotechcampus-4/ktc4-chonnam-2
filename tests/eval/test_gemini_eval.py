@@ -147,7 +147,7 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
     assert score.main(["--prediction", "gemini_mock_e2e"]) == 0
 
     prediction = tmp_path / "predictions" / "gemini_mock_e2e.json"
-    result = tmp_path / "results" / "gemini_mock_e2e.g3.json"
     assert prediction.is_file()
+    result = next((tmp_path / "results").glob("gemini_mock_e2e.g3.*.json"))
     assert result.is_file()
     assert len(service.ledger.records()) == 123

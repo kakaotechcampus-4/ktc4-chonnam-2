@@ -1,9 +1,11 @@
 # ADR — `CorrectionRecord` Data Contract
 
-**Status:** Draft — Consumer Review 대기
+**Status:** Accepted — Consumer Review 반영 완료
 **Decider:** 유소연 (`case` Owner)
-**Date:** 2026-09-06
+**Date:** 2026-09-06 (초안 결정) · 2026-09-10 (v1.1 Final 승격)
 **Contract:** `../contract-correction-record.md`
+
+> **후속 상태 (2026-09-10):** evidence Consumer Review(김준영) 수용 조건 6건을 반영해 canonical 계약이 `correction-record/v1.1` `Final — Accepted`로 승격됐다. 아래 §1~§4는 최초 Draft 결정을 보존하는 역사 기록이며, 현재 schema·`kind`/semantic path·supersede/current-value 규칙은 canonical Contract가 소유한다.
 
 ---
 
@@ -40,8 +42,8 @@
 
 ## 5. Consumer Review
 
-**미진행.** `evidence`(김준영) 리뷰 후 v1.1로 올린다. 그때 `target_field` 값 공간을 같이 닫는다.
+**완료 (2026-09-10).** `docs/modules/evidence/contracts/correction-record-consumer-review-2026-09-10.md`의 수용 조건 6건을 반영해 v1.1로 승격했다. 현재 규칙은 canonical Contract의 v1.1 변경 고지를 따른다.
 
-## 6. 미결
+## 6. 최초 Draft의 미결 — 후속 종결
 
-`target_field` 값 공간 · 동일 필드 다건 수정 시 현재 유효값 판정 · 실패한 수정의 레코드 생성 여부. **채우지 않았다.**
+최초 Draft에서 열어 둔 `target_field` 값 공간 · 동일 필드 다건 수정 시 현재 유효값 판정 · 실패/무효 수정의 레코드 생성 여부는 v1.1에서 종결됐다. **현재 규칙을 이 절에서 재정의하지 않고 `contract-correction-record.md`를 참조한다.**

@@ -292,7 +292,7 @@ F11 **해소됨** (2026-09-16). 형식이 깨진 **예측 bbox**(길이가 4가 
 
 F12 **해소됨** (2026-09-16). §4-2가 `NONE`을 B tier negative 클립에서 만든다고 정했지만 두 tier를 잇는 manifest가 없어 5×5 confusion의 `NONE` 행·열이 전부 0이었다. `eval/tools/build_ab_mixed.py`가 `manifests/ab_mixed`를 만든다 — A tier 시퀀스 120개 + B tier negative 클립 30개로 **5클래스 각 30개**다(B tier 확장으로 negative가 113개가 되어 가능해졌다).
 
-항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다. 뽑은 클립은 `meta.coverage.sampling`(`rule_version`·`seed`)에 기록된다 — 샘플링이 GT의 일부이기 때문이다(§4-2와 같은 원칙). B tier 항목에는 `target_bbox`·`condition` 라벨이 없어 `null`로 두며, 그 항목들은 `target_correctness`와 `by_condition`의 분모에서 빠진다.
+항목마다 `source_tier`를 남겨 해상도·재인코딩 차이가 결과에 드러나게 한다. 뽑은 클립은 `meta.coverage.sampling`(`rule_version`·`seed`)에 기록된다 — 샘플링이 GT의 일부이기 때문이다(§4-2와 같은 원칙). B tier 항목에는 `target_bbox`·`condition` 라벨이 없어 `null`로 두며, 그 항목들은 `target_correctness`의 분모에서 빠진다(`by_condition`은 `cl2`에서 철회했다 — `metrics/metric-definitions.md` §4-4).
 
 **두 tier의 항목은 같은 것이 아니다.** A tier는 정지 프레임 열이고 B tier는 60초 영상이다. `sequences.json`이라는 한 이름으로 묶지만 필드를 억지로 맞추지 않았다.
 
