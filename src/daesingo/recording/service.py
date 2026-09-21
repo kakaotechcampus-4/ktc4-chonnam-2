@@ -40,6 +40,7 @@ from .repository import InMemoryRecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .frames import FfmpegFrameExtractor, FrameExtractor
+from .facts import inspect_local_source
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -265,6 +266,13 @@ class RecordingService:
                 "INVALID_REF_KIND",
                 "이 ref kind는 AssetFacts 조회 대상이 아닙니다",
             )
+        if parsed.kind == "source_asset":
+            local = self._repository.get_local_source(parsed.ref)
+            if local is not None:
+                asset = self._repository.get_source_asset(parsed.ref)
+                if asset is None:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록된 원본 정보를 읽을 수 없습니다")
+                return inspect_local_source(asset, local)
         facts = self._repository.get_asset_facts(parsed.kind, parsed.ref)
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")

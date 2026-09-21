@@ -34,3 +34,4 @@
 ## 실제 원본 capability
 
 - [로컬 원본의 실제 FrameRef·PNG 조회](local-frame-access.md)
+- [등록 원본의 현재 AssetFacts 조회](local-asset-facts.md)
