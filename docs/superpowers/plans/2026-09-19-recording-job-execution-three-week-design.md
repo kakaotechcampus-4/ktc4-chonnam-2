@@ -196,13 +196,19 @@ AnalysisSource binary stream ──→ 실제 Search
 - `profile_ref`는 non-null opaque ref로 유지한다.
 - `open_analysis_source(ref)`는 public 경계에서 매번 처음부터 읽을 수 있는 새 binary stream, `content_type`, 실제 `byte_size`를 반환한다. `timeline_range`·`duration_sec`와 반환 bytes도 일치시킨다. local path를 Search에 직접 전달하지 않는다.
 - Search가 반환 stream을 Elice 전송 형식(base64 등)으로 변환한다. ffmpeg 명령은 Recording implementation/version 영역이며 public contract에 고정하지 않는다.
+- 월요일 Baseline에서 Search는 `AnalysisSource.media_stream_refs[]`를 입력으로 받고, 실제 분석에 사용한 VIDEO `media_stream_ref` 하나를 별도 실행 문맥으로 Case에 반환한다. `CandidateEvent` canonical 직렬화에는 이 값을 추가하지 않는다.
+- Search는 배열의 첫 원소를 자동 선택하거나 ref 이름에서 stream을 추론하지 않는다. 실제 사용 stream을 명시적으로 식별할 수 없는 입력은 조용히 보정하지 않고 접합 실패로 표면화한다.
 - `RemoteCopy`는 provider가 발급한 외부 객체 참조라는 기존 의미·계약을 유지하지만 Elice 경로에서는 사용하지 않는다. local/base64 cache로 재해석하거나 가상의 `provider_object_ref`를 발급하지 않는다.
 - 정확한 profile identity·해상도·fps·audio·codec·길이와 local materialization/cache 적용 여부·TTL은 실측 및 Consumer 합의 전까지 고정하지 않는다.
 
 ### 5.4 IncidentClip
 
 - Top-1 후보 1건만 materialize한다.
-- 요청 범위는 선택된 `CandidateEvent.span`의 timeline revision을 보존하고 ms 좌표를 `resolve_span()` 입력의 sec 좌표로 변환해 사용한다. 현재 Case 통합 실행기는 fixture 범위를 재사용하므로, 실제 선택 후보의 범위를 전달하는 연결 경계는 유소연과 확인해야 한다. span은 coarse 후보 창이지 정밀하게 확정된 사건·신고 구간이 아니므로, 생성 clip도 월요일 배관 검증용으로만 취급한다.
+- 요청 범위는 선택된 `CandidateEvent.span`의 timeline revision을 보존하고 ms 좌표를 `resolve_span()` 입력의 sec 좌표로 변환해 사용한다. Case는 Search가 별도 실행 문맥으로 반환한 VIDEO `media_stream_ref`를 이 timeline/revision/range와 함께 Recording의 두 번째 `resolve_span()` 호출까지 그대로 전달한다.
+- Recording은 명시적으로 전달받은 VIDEO stream 하나만 해소한다. 월요일 Baseline에서는 AUDIO를 실행·해소 대상에서 제외하며, 선택되지 않은 stream이나 duration을 관측하지 못한 AUDIO 때문에 `PARTIAL`을 만들지 않는다.
+- `resolve_span()` 결과에서는 전달된 `media_stream_ref`와 일치하는 `AssetSpan`만 사용한다. 일치하는 span이 없거나 여러 개이면 Case가 임의로 첫 값을 사용하지 않고 실패로 표면화한다.
+- 위 전달 방식은 월요일 실행 문맥 합의이며 canonical `CandidateEvent`·`SpanResolution` 구조를 바꾸지 않는다. `stream_selector`의 정확한 직렬화와 기본 선택 정책은 W7 후속으로 남긴다. Search→Case 별도 실행 문맥의 정확한 필드 모양은 Search 구현 결과에 맞춰 Case가 배선한다.
+- Candidate span은 coarse 후보 창이지 정밀하게 확정된 사건·신고 구간이 아니므로, 생성 clip도 월요일 배관 검증용으로만 취급한다.
 - 임의 padding을 추가하지 않는다.
 - Timeline 경계를 넘을 때만 유효 구간으로 clamp한다.
 - `requested_range`와 실제 `timeline_range`를 구분해 보존한다.
@@ -437,7 +443,7 @@ GitHub Actions는 테스트 명령을 선언만 하지 않고 실제로 실행�
 
 | Gate | 결과 | 통과 증거 |
 | --- | --- | --- |
-| G0 입력·합의 | 대표 영상, 수동 anchor, profile 합의, media tool 환경 | fingerprint와 cross-owner 합의 기록 |
+| G0 입력·합의 | 대표 영상, 수동 anchor, profile 합의, 명시적 VIDEO stream 전달 경계, media tool 환경 | fingerprint와 cross-owner 합의 기록 |
 | G1 실제 Recording | 등록·probe·Timeline·TimeSourceCandidate·AnalysisSource 실제 동작 | contract test와 실행 리포트 |
 | G2 Readout 경계 | Top-1 IncidentClip·FrameRef 실제 생성 | clip/frame 재생·참조 검증 |
 | G3 Runtime handoff (병행) | JobRecord 발주·실제 capability 호출 확인. `JobExecution` 전체 배선은 월요일 비필수 | 호출 기록과 연결된 범위의 상태·produced ref 검증 |
@@ -565,6 +571,19 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 월요일 완료 기준도 확인됐다. 필요한 `JobRecord` 발주와 실제 capability 호출을 확인하되 `JobExecution` 전체 배선은 강제하지 않는다. Evidence에는 Case가 실제 선택한 `candidate_id`·`selection_rev`를 사용한다(PR #92는 병합·통합 상태 확인 필요). 시각 `UNKNOWN`·`null`은 정상 부분 상태다. `READY`·최종 `ReportPackage`를 강제하거나 `READY + package=null`을 완료 상태로 만들지 않는다. 실제로 도달한 부분 상태의 CaseView가 Web에 표시돼야 한다(#102). Web 후보 선택 제출(#106)은 runner의 `case.select_candidate()`로 대체하고 W7로 미룬다. GPS는 실제로 확보될 때만 포함한다.
 
+### OI-3. 월요일 VIDEO stream 전달 경계 — 책임 합의 완료, 접합 모양 구현 중
+
+**상태:** 정철원(recording)·서어진(search)·유소연(case) 합의 완료. Search→Case 별도 실행 문맥의 정확한 필드 모양과 함수 시그니처만 Search 구현 결과에 맞춰 Case가 배선한다.
+
+- Search는 `AnalysisSource.media_stream_refs[]`를 입력으로 받아 실제 분석에 사용한 VIDEO `media_stream_ref` 하나를 별도 실행 문맥으로 Case에 제공한다. `CandidateEvent` canonical 직렬화는 변경하지 않는다.
+- Search는 첫 stream 자동 선택이나 ref 이름 기반 추론을 하지 않는다.
+- Case는 해당 ref와 실제 선택 candidate의 timeline id·revision·`start_ms/end_ms`를 두 번째 `resolve_span()` 호출까지 전달한다. 시간 범위는 기존 합의대로 ms에서 sec로 변환한다.
+- Recording은 전달된 VIDEO stream 하나만 해소하고 AUDIO는 월요일 실행·해소 대상에서 제외한다.
+- Case는 결과 중 전달 ref와 일치하는 `AssetSpan`을 명시적으로 사용하며, 일치 항목이 없거나 여러 개이면 임의 보정 없이 실패시킨다.
+- canonical `stream_selector` 직렬화와 기본 선택 정책은 확정하지 않았으며 W7 후속이다.
+
+따라서 Recording의 월요일 blocker는 선택 정책 결정이 아니라, 합의된 명시적 `media_stream_ref`를 받는 공개 capability와 실제 span 계산을 구현·검증하는 것이다. Search→Case 실행 문맥의 구체 모양이 나오지 않으면 전체 Real E2E 접합은 미완료로 기록하되, Recording capability 자체의 완료 여부와 구분한다.
+
 ## 19. 최종 체크리스트
 
 ### G0 — 입력·합의
@@ -576,6 +595,8 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] 원본/고화질 AnalysisSource profile을 3자가 합의했다.
 - [x] 이슈 #95 D1·D2의 책임 경계를 합의했다. 구체 profile 값은 위 항목대로 미확정이다.
 - [x] 전체 로컬 통합 실행기 Owner가 유소연(`case`)으로 확정됐다.
+- [x] Search→Case→Recording의 명시적 VIDEO `media_stream_ref` 전달 책임과 월요일 AUDIO 제외를 합의했다.
+- [ ] Search→Case 별도 실행 문맥의 정확한 필드 모양과 함수 시그니처가 구현됐다.
 - [ ] ffmpeg/ffprobe 실행 환경을 확인했다.
 
 ### G1 — 실제 Recording
@@ -590,6 +611,9 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 
 ### G2 — Clip·Frame
 
+- [ ] 공개 `resolve_span()`이 Case가 전달한 VIDEO `media_stream_ref` 하나만 해소한다.
+- [ ] 선택되지 않은 stream과 duration 미관측 AUDIO가 `SpanResolution` 상태에 영향을 주지 않는다.
+- [ ] 자동 첫 stream 선택·ref 이름 추론·fixture span fallback이 없다.
 - [ ] 정답 미확인 Top-1 후보 1건에서 배관 검증용 IncidentClip을 생성하고, 미검증 사실을 실행 리포트에 기록한다.
 - [ ] 요청 범위와 실제 범위를 구분해 기록한다.
 - [ ] clip 생성 결과를 decode·범위 검증한 뒤 발행한다.
@@ -615,6 +639,8 @@ W8 이후부터 11월 11일 사이에는 프로젝트 일정과 배포 결정에
 - [ ] consumer 예제에 정상·실패 경계를 포함한다.
 - [ ] 통합 Owner가 내부 구현 없이 실제 입력으로 재현했다.
 - [ ] Evidence에 Case가 실제 선택한 candidate와 `selection_rev`가 전달된다(PR #92 반영 상태 확인).
+- [ ] Search가 실제 사용한 VIDEO `media_stream_ref`를 별도 실행 문맥으로 반환하고 Case가 실제 candidate의 timeline/revision/range와 함께 Recording에 전달한다.
+- [ ] Case가 반환된 `AssetSpan` 중 전달한 stream ref와 정확히 일치하는 한 건만 사용하며, 없음·중복을 실패로 표면화한다.
 - [ ] 시각 `UNKNOWN`·`null`을 정상 부분 상태로 전달하고, GPS는 실제로 확보됐을 때만 포함한다.
 - [ ] 실제 Search 0건 시 다른 실제 영상으로 재시도하고 기록했다.
 - [ ] Mock/가짜 후보/가짜 ref로 fallback하지 않았다.
