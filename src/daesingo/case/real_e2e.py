@@ -40,25 +40,29 @@ IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정�
 다음 후보를 자동으로 Fine하거나 가장 높은 후보를 자동 채택하는 정책은 여기 없다 —
 `core-user-flow.md`가 정본화된 뒤 Product/Case/Evidence/Web이 함께 정할 후속 변경이다.
 
-## 의존 중(합의됐지만 미병합) — 2026-09-21
+## 의존성 — 2026-09-21 develop 병합 완료(PR #128 search·#129 recording·#130 readout·#113 PaddleOCR)
 
-- **`search.verify_visual_with_stream_context` / `AnalysisSourceStream` /
-  `VideoStreamSelectionError`**: 서어진(search)이 월요일 Real E2E stream 선택
-  경계용으로 만들었다고 알려온 API이지만, 이 글을 쓰는 시점엔 어느 브랜치·PR에도
-  push되지 않았다(전체 브랜치 grep으로 확인). 아래 코드는 그 API가 그 시그니처로
-  들어온다는 전제로 미리 짜둔 것이다 — search 쪽이 실제로 push되기 전까지는
-  `ImportError`/`AttributeError`로 실패한다(조용히 다른 것으로 대체하지 않음).
-- **`recording.resolve_span(..., media_stream_ref=...)` / `register_local_source()` /
-  `create_relative_timeline()`**: 정철원(recording)이 이 시그니처로 준비됐다고
-  알려왔다. 실제로는 `origin/feature/recording-real-e2e` 브랜치에 있고(PR 미생성,
-  develop 미병합) develop의 `RecordingService.resolve_span()`은 여전히
-  2-param(`timeline_ref`, `requested_range`)이다 — 그래서 아래 두 번째
-  `resolve_span()` 호출은 이 브랜치가 develop에 없는 동안은
-  `TypeError: unexpected keyword argument 'media_stream_ref'`로 실패한다.
-- **`AnalysisProfile` / `LocalAnalysisMaterializer`**: 정철원 확인(2026-09-21) —
-  `daesingo.recording.materialization`에 있고 `origin/feature/recording-real-e2e`
-  (커밋 `3f5fb385`)에만 있다. develop에는 없어서 `build_real_video_evidence_bundle()`은
-  이 브랜치가 develop에 없는 동안 `ImportError`로 실패한다.
+`search.verify_visual_with_stream_context`/`AnalysisSourceStream`/`VideoStreamSelectionError`,
+`recording.resolve_span(..., media_stream_ref=...)`/`register_local_source()`/
+`create_relative_timeline()`/`AnalysisProfile`/`LocalAnalysisMaterializer` 전부
+develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e2e 가능성
+체크.md` 참고, 둘 다 git에 커밋되지 않는 로컬 전용 문서 — 실행 기록은
+`docs/modules/case/experiments/real-e2e-20260922-monday-baseline.md`):
+
+- **search에 실제 service 미주입 — 종결.** `RecordingAnalysisSourceResolver`(gateway로
+  `rec_service`를 그대로 씀 — `open_analysis_source()` 시그니처가 구조적으로 일치)와
+  `build_gemini_search_service(api_key, resolver)`로 `search_candidates()`/
+  `verify_visual_with_stream_context()`에 `service=`를 실제로 넘긴다. API 키는
+  `.env`의 `GEMINI_API_KEY`(커밋 안 됨, `daesingo.common.env.load_env_file()`로 읽음).
+- **readout `FixtureOcrProvider` — 종결(대체 경로로).** `RecordingOcrProvider`(#130)는
+  `IncidentClipFrames`를 감쌀 plate_reader/overlay_reader 콜러블이 아직 없어(새
+  capability라 여기서 만들지 않음), 대신 이미 실제로 검증된
+  `paddle_provider.PaddleOcrProvider(LocalVideoFrameSource({ref: local_video_path}))`
+  경로(`scripts/run_readout_real.py`와 동일 패턴)를 쓴다. clip 범위가 아니라 파일
+  전체의 30/50/70% 지점을 본다는 제약이 있다 — 이번 목표(실제 pixel→실제 OCR)엔
+  영향 없다.
+- **`time_source_candidates = []` — 종결.** `rec_service.observe_time_sources()`
+  결과를 그대로 전달한다.
 
 ## `build_real_video_evidence_bundle()` — 월요일 real 영상 경로, 알려진 단순화
 
@@ -85,11 +89,15 @@ IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정�
   `open_analysis_source()`로 바이트를 다 읽기 전에 닫으면 실행 중인 AnalysisSource가
   해제된다(정철원 확인, 2026-09-21) — 반환값에 `rec_service`를 포함해 호출자가 언제
   닫을지 스스로 결정하게 한다.
-- **아직 실행해서 확인한 적이 없다.** 실제 영상 파일이 이 저장소에 없고(정철원이
-  공유 안 하기로 한 대로), `register_local_source`가 실제 `ffmpeg`/`ffprobe`
-  프로세스를 부르므로 이 함수는 로컬에서 실행·테스트되지 않았다 — 아래 새 helper
-  (`_unique_video_media_stream_ref`/`_match_analysis_source_streams`)만 순수 값으로
-  단위 테스트됐다.
+- **2026-09-22 실행 현황(`docs/modules/case/experiments/real-e2e-20260922-monday-baseline.md`
+  참고, 상세 기록은 git 커밋 안 되는 `doc/`가 아니라 이 경로에 있다):** 대표 영상
+  (`20260620_141956_EVT_1.avi`)으로 실제 실행 — `register_local_source()`~
+  Coarse 실제 Elice/Gemini 호출~candidate 생성까지 성공, **Fine 이후는 search
+  내부 정합성 검증 실패로 막힘**(이슈 #132, case 배선 문제 아님). Coarse/Fine만
+  stub으로 바꾼 무료 dry-run으로는 IncidentClip~EvidenceRecord~RequirementReport까지
+  전부 실제 데이터(실제 PaddleOCR·실제 time source 포함)로 끝까지 통과 확인함 —
+  그 과정에서 실제 버그 2건(`incident_materializer` 누락, 로컬 analysis_source/
+  incident_clip의 AssetFacts 미등록) 발견·수정.
 """
 
 from __future__ import annotations
@@ -104,6 +112,7 @@ from uuid import uuid4
 from daesingo import search as search_module
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.scope import build_analysis_scope
+from daesingo.common.env import load_env_file
 from daesingo.evidence import (
     NOT_ASSEMBLED,
     VisualEvidenceDisposition,
@@ -116,9 +125,20 @@ from daesingo.evidence import (
 )
 from daesingo.evidence.errors import PackageNotReady
 from daesingo.readout import api as readout_api
+from daesingo.readout import paddle_provider
 from daesingo.readout import providers as readout_providers
 from daesingo.readout.contracts import InputRef
-from daesingo.recording import AssetSpan, RecordingService, SpanResolution, load_recording_fixture
+from daesingo.recording import (
+    AnalysisProfile,
+    AssetSpan,
+    IncidentClipEncoding,
+    LocalAnalysisMaterializer,
+    LocalIncidentMaterializer,
+    RecordingService,
+    SpanResolution,
+    load_recording_fixture,
+)
+from daesingo.search.sources import RecordingAnalysisSourceResolver, SourceMeta
 
 SCENARIO_ID = "scenario_happy_001"
 
@@ -126,12 +146,6 @@ SCENARIO_ID = "scenario_happy_001"
 # 아니라 월요일 GT 없는 배관 E2E용 재사용 값이다.
 _MONDAY_TARGET_EVENT_TYPES = ["SOLID_LINE_LANE_CHANGE"]
 _MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": 180}
-
-# `AnalysisProfile`/`LocalAnalysisMaterializer`는 모듈 최상단에서 import하지 않는다
-# — develop에 아직 없어서(모듈 docstring "의존 중" 참고) 최상단 import로 두면
-# `daesingo.case` 패키지 전체(이 파일을 참조하는 `adapters.py`/`service.py`까지)의
-# import 자체가 깨진다. `build_real_video_evidence_bundle()` 안에서 지연 import한다
-# — 그 함수를 실제로 부르기 전까지는 이 의존성이 나머지 case 코드를 막지 않는다.
 
 
 class StreamSelectionError(Exception):
@@ -219,11 +233,16 @@ def _resolve_via_search_stream_context(
     media_streams: Any,
     candidate: search_module.CandidateEvent,
     target_hint: Any,
+    service: Any = None,
 ) -> tuple[Any, str]:
     """`AnalysisSource.media_stream_refs`를 등록된 `media_streams`와 매칭해 search의
     실행 문맥 API를 부르고, `(VisualVerificationResult, 선택된 media_stream_ref)`를
     돌려준다. fixture 경로(`build_happy_001_evidence_bundle`)와 실제 영상 경로
     (`build_real_video_evidence_bundle`)가 공유한다.
+
+    `service`가 `None`이면 search 자체 fixture로 빠진다(`verify_visual_with_stream_context`
+    기본값 그대로) — 실제 영상 경로는 real `SearchService`를 넘겨서 Fine이 Elice ML
+    API를 실제로 부르게 한다.
     """
     analysis_source_streams = _match_analysis_source_streams(
         analysis_source.media_stream_refs, media_streams
@@ -235,6 +254,7 @@ def _resolve_via_search_stream_context(
         candidate=candidate,
         analysis_source_streams=analysis_source_streams,
         target_hint=target_hint,
+        service=service,
     )
     return execution.result, execution.selected_video_stream.media_stream_ref
 
@@ -479,9 +499,6 @@ def build_real_video_evidence_bundle(
     반환하는 `RecordingService`는 호출자가 이 함수의 결과(특히 evidence 조립까지
     끝난 뒤, search의 `open_analysis_source()` 소비도 끝난 뒤)에 `close()`해야 한다.
     """
-    # 지연 import — 모듈 최상단 주석 참고(develop에 아직 없어서 여기서만 부른다).
-    from daesingo.recording import AnalysisProfile, LocalAnalysisMaterializer
-
     # 월요일 대표 파일(20260620_141956_EVT_1.avi) 기준 profile 설정 — 480p H.264,
     # preset=veryfast, crf=23, audio off(정철원 확인, 2026-09-21). canonical profile
     # 값 공간이 아니라 이번 실행 전용 opaque 설정이다(모듈 docstring 참고).
@@ -489,7 +506,17 @@ def build_real_video_evidence_bundle(
     materializer = LocalAnalysisMaterializer(
         {profile_ref: AnalysisProfile(height=480, preset="veryfast", crf=23)}
     )
-    rec_service = RecordingService(analysis_materializer=materializer)
+    # `build_incident_clip()`은 local source에 대해 analysis_materializer와 별도로
+    # incident_materializer가 필요하다(recording/service.py:606) — 처음엔 이걸 몰라서
+    # `LocalIncidentMaterializer` 없이 실행했다가 "실행 중인 단일 VIDEO 생성 설정이
+    # 필요합니다"로 실패했다. 같은 인코딩 값을 재사용한다(모듈 docstring 참고 —
+    # canonical 값이 아니라 이번 실행 전용).
+    incident_materializer = LocalIncidentMaterializer(
+        IncidentClipEncoding(height=480, preset="veryfast", crf=23)
+    )
+    rec_service = RecordingService(
+        analysis_materializer=materializer, incident_materializer=incident_materializer
+    )
 
     registered = rec_service.register_local_source(local_video_path)
     timeline = rec_service.create_relative_timeline(registered.source_asset.source_asset_ref)
@@ -504,6 +531,24 @@ def build_real_video_evidence_bundle(
             "등록된 SourceAsset의 duration_sec을 확인할 수 없어 AnalysisScope 범위를"
             " 만들 수 없습니다."
         )
+    whole_timeline_ref = {"timeline_id": timeline.timeline_id, "revision": timeline.revision}
+    whole_requested_range = {"start_sec": 0.0, "end_sec": duration_ms / 1000}
+
+    # coarse 검색용 AnalysisSource — 전체 영상 범위로 하나만 만든다. Fine 단계는
+    # 같은 AnalysisSource를 candidate.span으로 좁혀서 재사용한다(search가 내부적으로
+    # candidate.span 기준 clip을 만든다 — case가 후보별로 별도 AnalysisSource를
+    # 다시 만들지 않는다). resolve_span은 로컬 등록 원본에서 media_stream_ref가
+    # 항상 필수다.
+    whole_resolution = rec_service.resolve_span(
+        whole_timeline_ref, whole_requested_range, media_stream_ref=bootstrap_ref
+    )
+    whole_span = _select_asset_span(whole_resolution, bootstrap_ref)
+    analysis_source = rec_service.prepare_analysis_source(
+        whole_span.model_dump(mode="json"),
+        profile_ref,
+        timeline_ref=whole_timeline_ref,
+    )
+
     scope_dict = build_analysis_scope(
         case,
         scope_id=scope_id,
@@ -523,7 +568,39 @@ def build_real_video_evidence_bundle(
         max_latency_sec=_MONDAY_BUDGET["max_latency_sec"],
     )
     scope = search_module.AnalysisScope.model_validate(scope_dict)
-    candidates = search_module.search_candidates(scope).candidates
+
+    # search에 실제 Gemini/Elice service를 주입한다 — service=None이면
+    # search_candidates()/verify_visual_with_stream_context()가 조용히 fixture로
+    # 빠지므로, 여기서 명시적으로 real service를 만들어 넘긴다(모듈 docstring
+    # "search에 실제 service 미주입 — 종결" 참고).
+    env = load_env_file()
+    api_key = env.get("GEMINI_API_KEY")
+    if not api_key:
+        raise StreamSelectionError(
+            ".env에 GEMINI_API_KEY가 없습니다 — real Search 호출에 필요합니다."
+        )
+    analysis_source_ref = search_module.ContractRef(
+        kind="analysis_source", ref=analysis_source.analysis_source_ref
+    )
+    resolver = RecordingAnalysisSourceResolver(
+        scope_sources={scope.scope_id: (analysis_source_ref,)},
+        ref_metadata={
+            analysis_source.analysis_source_ref: SourceMeta(
+                duration_sec=analysis_source.duration_sec,
+                timeline_id=analysis_source.timeline_ref.timeline_id,
+                timeline_revision=analysis_source.timeline_ref.revision,
+            )
+        },
+        # rec_service가 open_analysis_source(ref) -> OpenedAnalysisSource를 이미
+        # 갖고 있어 RecordingAnalysisSourceGateway 구조를 그대로 만족한다 — 별도
+        # adapter 클래스가 필요 없다.
+        gateway=rec_service,
+    )
+    gemini_service = search_module.build_gemini_search_service(
+        api_key=api_key, resolver=resolver
+    )
+
+    candidates = search_module.search_candidates(scope, service=gemini_service).candidates
     if not candidates:
         raise StreamSelectionError(
             "월요일 대표 영상에서 candidate가 하나도 나오지 않았습니다 — GT 없는"
@@ -533,29 +610,12 @@ def build_real_video_evidence_bundle(
     # 이번 범위 밖이라 첫 번째를 그대로 쓴다.
     candidate = candidates[0]
 
-    timeline_ref = {
-        "timeline_id": candidate.span.timeline_id,
-        "revision": candidate.span.timeline_revision,
-    }
-    requested_range = {
-        "start_sec": candidate.span.start_ms / 1000,
-        "end_sec": candidate.span.end_ms / 1000,
-    }
-    bootstrap_resolution = rec_service.resolve_span(
-        timeline_ref, requested_range, media_stream_ref=bootstrap_ref
-    )
-    bootstrap_span = _select_asset_span(bootstrap_resolution, bootstrap_ref)
-    analysis_source = rec_service.prepare_analysis_source(
-        bootstrap_span.model_dump(mode="json"),
-        profile_ref,
-        timeline_ref=timeline_ref,
-    )
-
     visual_result, media_stream_ref = _resolve_via_search_stream_context(
         analysis_source=analysis_source,
         media_streams=registered.media_streams,
         candidate=candidate,
         target_hint=scope.hint,
+        service=gemini_service,
     )
     # 정철원 확인(2026-09-21) — 월요일 대표 파일은 VIDEO가 하나뿐이라 search가
     # 부트스트랩과 다른 stream을 고를 수 없다. 다르면 조용히 넘어가지 않고 실패시켜
@@ -567,6 +627,16 @@ def build_real_video_evidence_bundle(
             " VIDEO가 하나뿐이라 항상 같아야 합니다."
         )
 
+    # 두 번째 resolve_span() — IncidentClip은 전체 영상이 아니라 candidate.span만큼
+    # 좁혀야 한다(evidence가 실제로 볼 clip이라서 coarse의 전체 범위와 다르다).
+    timeline_ref = {
+        "timeline_id": candidate.span.timeline_id,
+        "revision": candidate.span.timeline_revision,
+    }
+    requested_range = {
+        "start_sec": candidate.span.start_ms / 1000,
+        "end_sec": candidate.span.end_ms / 1000,
+    }
     fine_resolution = rec_service.resolve_span(
         timeline_ref, requested_range, media_stream_ref=media_stream_ref
     )
@@ -585,18 +655,34 @@ def build_real_video_evidence_bundle(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    # 알려진 단순화(모듈 docstring 참고) — 실제 영상엔 맞지 않는 provider지만
-    # readout Owner가 풀 gap이라 여기서 대신 만들지 않는다.
-    _plate_run, plate_readout = readout_api.read_plate(
-        read_request, provider=readout_providers.FixtureOcrProvider()
+    # 실제 PaddleOCR — `RecordingOcrProvider`(#130)는 `IncidentClipFrames`를 감싸는
+    # plate_reader/overlay_reader 콜러블이 아직 없어서(paddle_provider.py에
+    # `PaddleOcrProvider`가 기대하는 `frame_source.frames(clip_ref)` 모양의 어댑터가
+    # 없음 — 새 capability라 여기서 만들지 않는다), 이미 실제로 쓰이고 검증된
+    # `LocalVideoFrameSource(로컬 경로)` + `PaddleOcrProvider` 경로를 그대로 쓴다
+    # (`scripts/run_readout_real.py`와 동일 패턴). `LocalVideoFrameSource`는 clip
+    # 범위가 아니라 파일 전체의 30/50/70% 지점을 본다 — candidate 구간과 정확히
+    # 안 맞을 수 있지만, 이번 목표(실제 pixel→실제 OCR)엔 영향 없다(모듈 docstring
+    # "readout provider" 절 참고).
+    ocr_provider = paddle_provider.PaddleOcrProvider(
+        paddle_provider.LocalVideoFrameSource(
+            {incident_clip.incident_clip_ref: str(local_video_path)}
+        )
     )
+    _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
-        read_request, provider=readout_providers.FixtureOcrProvider()
+        read_request, provider=ocr_provider
     )
 
-    # 알려진 단순화 1과 같은 이유(모듈 docstring) — recording이 time_source_candidates를
-    # 아직 공개 함수로 노출하지 않고, 실제 영상엔 읽을 raw fixture JSON 자체가 없다.
-    time_source_candidates: list[dict[str, Any]] = []
+    # 실제 시간 source — recording의 observe_time_sources()가 이제 develop에 있다
+    # (#129). filename/metadata에서 관찰된 값을 그대로 evidence에 넘긴다 — case가
+    # 신뢰도나 값을 재해석하지 않는다.
+    observed_time_sources = rec_service.observe_time_sources(
+        registered.source_asset.source_asset_ref
+    )
+    time_source_candidates = [
+        c.model_dump(mode="json") for c in observed_time_sources.candidates
+    ]
 
     time_resolution = resolve_time(
         time_source_candidates=time_source_candidates,
@@ -638,18 +724,16 @@ def build_real_video_evidence_bundle(
         time_resolution=time_resolution,
     )
 
-    # 알려진 단순화(모듈 docstring) — fixture 경로의 fixture.asset_facts 목록에
-    # 대응하는 것이 없어, 이 실행에서 실제로 만든 자산 3개(원본·AnalysisSource·
-    # IncidentClip)만 조회한다. 신고요건 판정에 필요한 전체 자산 집합과 다를 수 있다.
+    # 알려진 단순화(모듈 docstring) — `lookup_asset_facts()`는 로컬로 materialize된
+    # analysis_source/incident_clip에 대해서는 AssetFacts를 등록하지 않는다
+    # (`RecordingService.prepare_analysis_source()`/`build_incident_clip()`의 로컬
+    # 경로가 `add_asset_facts()`를 안 부름 — recording 쪽 gap, 실행해보고 발견함).
+    # `source_asset`만 `inspect_local_source()`로 즉석 조회가 된다. fixture 경로도
+    # 원래 `analysis_source`는 asset_facts에 안 넣는다(happy_001 fixture 확인) — 이
+    # 부분은 fixture와 다르지 않다.
     asset_facts_real = [
         rec_service.lookup_asset_facts(
             {"kind": "source_asset", "ref": registered.source_asset.source_asset_ref}
-        ).model_dump(mode="json"),
-        rec_service.lookup_asset_facts(
-            {"kind": "analysis_source", "ref": analysis_source.analysis_source_ref}
-        ).model_dump(mode="json"),
-        rec_service.lookup_asset_facts(
-            {"kind": "incident_clip", "ref": incident_clip.incident_clip_ref}
         ).model_dump(mode="json"),
     ]
     requirement_report_package = evaluate_requirements(

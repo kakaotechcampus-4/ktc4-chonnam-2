@@ -1,0 +1,177 @@
+# Real E2E 실행 기록 — 월요일 대표 영상 (`20260620_141956_EVT_1`)
+
+**날짜:** 2026-09-22 · **실행자:** 유소연(Claude Code 보조) · **브랜치:** `fix/case-search-stream-context-wiring`
+
+**목적:** PM 전달사항(`doc/real-e2e-protocol.md`, git 미커밋)에 따라 실제 대표 영상 1개를
+Recording→Search(Elice/Gemini)→Readout→Evidence까지 실제 함수·실제 외부 호출로 통과시킨다.
+정확도 평가가 아니라 "각 실제 Producer가 실제로 호출되고 그 결과가 다음 단계로 전달되는가"를
+증명하는 것이 목표다.
+
+**입력 영상:** `20260620_141956_EVT_1.avi` (로컬 경로 `doc/`, git 미커밋)
+
+## 사전 준비
+
+- [x] PR #128(search)·#129(recording)·#130(readout)·#113(PaddleOCR) develop 병합 확인
+- [x] `.env`에 `GEMINI_API_KEY`/`DAESINGO_GEMINI_BASE_URL`/`DAESINGO_GEMINI_MODEL` 값 존재 확인(값은 로그에 남기지 않음)
+- [x] ffmpeg/ffprobe 설치 — `conda install -c conda-forge ffmpeg`가 멈춘 듯해서(장시간 무응답)
+  중단하고 `pip install static-ffmpeg`로 대체. 정적 바이너리를 받아 PATH에 얹었다
+  (`static_ffmpeg.run.get_or_fetch_platform_executables_else_raise()`).
+- [x] `opencv-python`/`paddlepaddle`/`paddleocr` 설치 — 1차 시도는 `cv2.pyd` 파일 접근 거부로
+  일부 실패(`WinError 5`, 다른 프로세스가 파일을 잡고 있었던 것으로 보임). 재시도로 해결.
+
+## build_real_video_evidence_bundle() 코드 작성 중 발견한 것들
+
+### 1. search에 실제 service 주입 경로가 처음 짠 구조와 안 맞았다
+
+처음엔 "candidate.span으로 좁힌 AnalysisSource 하나만 만들면 된다"고 가정했는데,
+`RecordingAnalysisSourceResolver`가 `scope_sources`(scope_id → AnalysisSource ref)로
+coarse 검색 **이전에** AnalysisSource가 이미 있어야 하는 구조라 candidate가 나오기도
+전에 AnalysisSource를 만들어야 했다. → **전체 영상 범위로 AnalysisSource를 한 번만
+만들고**, coarse/fine 둘 다 이걸 재사용하도록 고쳤다(Fine이 candidate.span으로 좁히는
+건 search 자신의 `MediaPreparer`가 내부에서 한다 — case가 두 번째 AnalysisSource를
+따로 만들 필요가 없었다).
+
+### 2. `RecordingOcrProvider`(#130)를 쓰려 했으나 아직 못 쓴다
+
+`RecordingOcrProvider`는 `IncidentClipFrames`를 감쌀 `plate_reader`/`overlay_reader`
+콜러블을 생성자로 받는데, `paddle_provider.py`엔 그 모양(callable)의 함수가 없다 —
+있는 건 `frame_source.frames(clip_ref)` 인터페이스를 기대하는 `PaddleOcrProvider`
+클래스뿐이다. 새 adapter 함수를 직접 만드는 건 readout 소유 영역을 침범하는 것이라
+만들지 않았다. 대신 이미 실측된 `PaddleOcrProvider(LocalVideoFrameSource({ref: path}))`
+경로(`scripts/run_readout_real.py`와 동일 패턴)를 그대로 썼다 — clip 범위가 아니라
+파일 전체의 30/50/70%를 본다는 제약이 있지만, 이번 목표(실제 pixel→실제 OCR)엔 지장 없다.
+
+## 실행 1회차 — 2026-09-22
+
+**명령:** (scratchpad) `python run_real_e2e.py` — `build_real_video_evidence_bundle(case_id=, local_video_path=doc/20260620_141956_EVT_1.avi, case=, scope_id=)`
+
+**결과: 부분 성공 후 실패.**
+
+| 단계 | 결과 |
+| --- | --- |
+| `register_local_source()` (ffprobe 실제 실행) | ✅ 성공 |
+| `create_relative_timeline()` | ✅ 성공 |
+| VIDEO stream 유일성 검증 | ✅ 성공 |
+| `prepare_analysis_source()`(전체 영상) | ✅ 성공 |
+| **Elice/Gemini Coarse 실제 호출** | ✅ 성공 — candidate 1건 생성 |
+| **Elice/Gemini Fine 실제 호출** | ✅ 성공(API 응답은 받음) |
+| Fine 응답의 시간 정합성 검증(`search/fine.py::_rebase_temporal_facts`) | ❌ **실패** |
+
+**실패 원문:**
+```
+daesingo.search.smoke_errors.ProviderPayloadError: Fine temporal offset outside candidate window
+```
+
+**무슨 뜻인가:** search 자신의 `verify_fine()`이 Fine 응답의 `at_offset_ms`를 원본
+시간으로 rebase한 뒤, 그 값이 **Coarse가 찾은 `candidate.span.start_ms~end_ms` 안에
+있는지 검증**한다(`fine.py:62-64`). 이번 실행에서는 Fine이 돌려준 시간이 그 범위
+밖이었다 — Coarse와 Fine이 서로 다른 순간을 가리켰다는 뜻이다.
+
+**case 쪽 배선 문제인지 확인:** `candidate`는 `search_candidates()`가 돌려준 객체를
+그대로(재계산 없이) `verify_visual_with_stream_context()`에 넘겼다 — case가 중간에
+값을 바꾸거나 다시 계산하지 않았다. 즉 이 불일치는 **search 자신의 coarse↔fine 결과
+사이의 불일치**이지 case의 배선 버그가 아닌 것으로 보인다.
+
+**분류(프로토콜 §12 기준):** "Contract 변경/모듈 책임 경계/여러 Owner 합의가 필요한
+문제"에 가깝다 — case가 `fine.py`의 검증 허용 범위를 임의로 넓히거나 우회하면 search
+소유 정책을 침범한다. **큰 문제로 분류하고 Owner(서어진) 확인 필요.**
+
+**멈춘 이유:** Elice/Gemini 호출은 유료라, 같은 원인으로 또 실패할지 모른 채 재시도를
+반복하면 비용만 나간다. 여기서 멈추고 사용자에게 보고했다.
+
+## 실행 2회차 — 2026-09-22 (사용자 지시로 재시도)
+
+**결과: 정확히 같은 지점에서 정확히 같은 에러로 실패.**
+```
+daesingo.search.smoke_errors.ProviderPayloadError: Fine temporal offset outside candidate window
+```
+
+**1회차와 다른 점 없음** — 같은 파일·같은 코드 경로. 두 번 다 같은 이유로 실패했다는
+것은 모델 응답의 우연한 변동이 아니라 **구조적으로 재현되는 패턴**이라는 뜻이다.
+
+**재시도 전 `search/fine.py` 원문을 다시 읽어 원인을 좁혔다(추가 비용 없이):**
+
+```python
+start_sec = max(0.0, candidate.span.start_ms / 1000 - config.fine_padding_sec)
+end_sec   = min(source.duration_sec, candidate.span.end_ms / 1000 + config.fine_padding_sec)
+# Fine에는 이 [start_sec, end_sec] 패딩된(±fine_padding_sec=4.0초) 구간을 보여준다
+...
+# 그런데 검증은 패딩 없는 원래 candidate.span.start_ms~end_ms 안에 있어야 한다고 요구한다
+if not candidate.span.start_ms <= rebased <= candidate.span.end_ms:
+    raise ProviderPayloadError("Fine temporal offset outside candidate window")
+```
+
+**해석:** Fine은 모델에게 candidate 구간보다 **넓게(±4초) 패딩된** clip을 보여주고
+정확한 순간을 짚어달라고 요청하는데, 검증은 그 결과가 **패딩 없는 좁은 coarse 구간
+안**에 있어야만 통과시킨다. 즉 coarse가 잡은 구간이 실제 사건 순간보다 조금이라도
+좁거나 어긋나 있으면, Fine이 패딩된 넓은 화면에서 찾은 "더 정확한" 순간은 구조적으로
+항상 이 검증에 걸린다. 두 번 다 똑같이 실패한 것과 정합적인 설명이다.
+
+**결론:** case의 배선이 아니라 **search 내부의 coarse↔fine 정합성 정책** 문제로 보고,
+세 번째 유료 재시도는 보류한다. 서어진(search Owner) 확인이 필요한 지점 —
+`docs/management/`가 아니라 GitHub Issue로 만들어 전달 예정(프로토콜 §12 "큰 문제"
+분류). → **이슈 #132로 등록 완료.**
+
+## 다운스트림 무료 dry-run — 2026-09-22 (search Coarse/Fine만 stub, 나머지 전부 real)
+
+**목적:** 유료 재시도 전에 IncidentClip~EvidenceRecord 구간에 다른 버그가 있는지
+무료로 먼저 잡는다. Coarse/Fine만 `search_module.search_candidates`/
+`verify_visual_with_stream_context`를 스텁으로 바꿔서 실행했고, `register_local_source`
+~`create_relative_timeline`~`prepare_analysis_source`~`build_incident_clip`~
+readout(PaddleOCR 실제 실행)~`observe_time_sources`~`assemble_evidence`~
+`evaluate_requirements`는 전부 real 함수다. **이건 Real E2E 증빙이 아니다** —
+search 실제 호출이 없다. 순수하게 case 코드의 다운스트림 배선 점검용.
+
+### 발견·수정한 실제 버그 2건
+
+**1. `build_incident_clip()`이 로컬 원본에서 `incident_materializer` 없이는 항상 실패한다.**
+```
+RecordingCapabilityError: 실행 중인 단일 VIDEO 생성 설정이 필요합니다
+```
+`RecordingService(analysis_materializer=...)`만 넘기고 있었는데, local source의
+`build_incident_clip()`은 **별도의** `incident_materializer`(`LocalIncidentMaterializer`)가
+필요했다(`recording/service.py:606`). `prepare_analysis_source()`용
+`analysis_materializer`와 `build_incident_clip()`용 `incident_materializer`는 서로
+다른 설정이라는 걸 문서만 보고는 몰랐다 — 실행해봐서 발견했다. 같은 인코딩값
+(480p/veryfast/crf23)으로 `IncidentClipEncoding`을 만들어 추가했다.
+
+**2. `lookup_asset_facts()`는 로컬로 만든 `analysis_source`/`incident_clip`에 대해
+AssetFacts를 등록하지 않는다.**
+```
+RecordingCapabilityError: 등록되지 않은 자산 ref입니다
+```
+`prepare_analysis_source()`/`build_incident_clip()`의 로컬 경로는 결과를
+`self._local_analysis`/`self._local_clips`에만 저장하고 `add_asset_facts()`를
+안 부른다 — `source_asset`만 `inspect_local_source()`로 즉석 조회되는 특수
+경로가 있다. `happy_001` fixture도 원래 `analysis_source`는 asset_facts에
+넣지 않는다는 것까지 확인했다(fixture와 다른 동작이 아니었다). `asset_facts_real`
+목록을 `source_asset` 하나만으로 좁혔다 — **recording 쪽에 로컬 analysis_source/
+incident_clip의 AssetFacts 등록이 없다는 것 자체는 잠재적 gap으로 남는다**(지금
+당장 case 실행을 막지는 않아서 별도 이슈를 내지는 않았다).
+
+### 실행 결과 — 끝까지 성공
+
+```
+EvidenceRecord 생성 ✅
+  occurred_at.value = "2026-06-20T14:19:56+09:00"
+  occurred_at.source.kind = "readout.overlay_ocr"  ← 실제 PaddleOCR이 영상 속
+    타임스탬프 overlay를 실제로 읽어서 나온 값이다(스텁 데이터가 아니다 —
+    stub은 candidate.span/visual_evidence만 대체했고 overlay 판독은 100% real).
+    파일명(20260620_141956)과 정확히 일치 — 실제 블랙박스 화면 시각 표시를
+    제대로 읽은 것으로 보인다.
+RequirementReport(EVIDENCE): overall=UNKNOWN
+  vehicle_number: UNKNOWN(재판독 대기) · occurred_at: PASS · visual_event: PASS
+  · location: WARN(위치 미확보)
+RequirementReport(FINAL_PACKAGE): overall=UNKNOWN
+  situation_response 미확보·report_video 없음 등으로 여러 UNKNOWN(알려진 단순화,
+  모듈 docstring 그대로) · deadline: WARN(실제 현재 시각 기준 기한 초과 —
+  W6 happy_001 실행 때와 같은 정상 판정)
+ReportPackage: package_error="package.requirement_not_ready"(PackageNotReady,
+  알려진 단순화 2 그대로 — 실패 아님)
+rec_service.close() ✅
+```
+
+**의미:** search의 Coarse/Fine만 해결되면(이슈 #132), 지금 이 다운스트림 코드는
+이미 실제 데이터로 끝까지 검증된 상태다 — 세 번째 유료 시도에서 또 다른 코드
+버그로 막힐 위험은 크게 줄었다.
+

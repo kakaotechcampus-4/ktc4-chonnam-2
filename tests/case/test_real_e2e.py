@@ -227,12 +227,13 @@ def test_evidence_bundle_wires_search_stream_context(monkeypatch):
     captured: dict[str, Any] = {}
 
     def _fake_verify_visual_with_stream_context(
-        *, input_ref, candidate, analysis_source_streams, target_hint
+        *, input_ref, candidate, analysis_source_streams, target_hint, service=None
     ):
         captured["input_ref"] = input_ref
         captured["candidate"] = candidate
         captured["analysis_source_streams"] = analysis_source_streams
         captured["target_hint"] = target_hint
+        captured["service"] = service
         video_streams = [s for s in analysis_source_streams if s.media_type == "VIDEO"]
         assert len(video_streams) == 1  # 서어진의 합의대로 — VIDEO가 정확히 하나일 때만 선택
         real_result = search_module.verify_visual(input_ref, target_hint)
