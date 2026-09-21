@@ -83,11 +83,13 @@ def search_coarse(
             f"resolve() must yield exactly one source for coarse search; got {len(sources)}"
         )
     source = sources[0]
+    # scope.budget은 이 scope 실행 전체의 상한이다(contract-analysis-scope.md §103).
+    # 주입된 deadline을 좁히기만 한다 — 남은 실행 시간을 늘리지 않는다.
+    # budget.max_cost_krw는 KRW↔USD 환산이 미결이라 여기서 집행하지 않는다.
+    deadline = dependencies.deadline.narrowed_to(scope.budget.max_latency_sec * 1000)
     with (
         dependencies.resolver.open_source(source.source_ref) as media_input,
-        dependencies.media_preparer.prepare_coarse(
-            media_input, dependencies.deadline
-        ) as prepared,
+        dependencies.media_preparer.prepare_coarse(media_input, deadline) as prepared,
     ):
         if abs(source.duration_sec - prepared.origin_end_sec) > 0.250:
             raise CoarseDurationMismatchError(
@@ -96,13 +98,13 @@ def search_coarse(
                 probed_sec=prepared.origin_end_sec,
             )
         try:
-            dependencies.deadline.check()
+            deadline.check()
             result = dependencies.provider.search_coarse(
                 CoarseRequest(
                     source,
                     scope.target_event_types,
                     media=prepared,
-                    timeout_sec=dependencies.deadline.remaining_sec(),
+                    timeout_sec=deadline.remaining_sec(),
                 )
             )
         except DeadlineExceededError as error:
