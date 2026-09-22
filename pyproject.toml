@@ -23,6 +23,11 @@ eval-gemini = [
   "google-genai>=2.13,<3.0",
   "openai>=1.40,<3.0",
 ]
+readout-paddle = [
+  "opencv-contrib-python==4.10.0.84",
+  "paddleocr==3.7.0",
+  "paddlepaddle==3.3.1",
+]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

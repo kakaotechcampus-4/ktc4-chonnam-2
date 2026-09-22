@@ -68,7 +68,7 @@ from .contracts import (
 # ── 계약 버전 ────────────────────────────────────────────────
 # 값의 원문은 계약 문서다. fixture가 쓰는 것과 같은 문자열을 쓴다.
 READOUT_RUN_VERSION = "readout-run/v1"
-PLATE_READOUT_VERSION = "plate-readout/v1.2"
+PLATE_READOUT_VERSION = "plate-readout/v1.3"
 OVERLAY_TIME_READOUT_VERSION = "overlay-time-readout/v1.2"
 OBSERVATION_VERSION = "observation/v1"
 
@@ -330,6 +330,10 @@ def _abstain_reason(association, best, disagreed):
     if disagreed:
         return "FRAME_DISAGREEMENT"
     if best is not None:
+        # 대상 crop은 검출용으로 한글이 빠진 숫자 문자열도 보존한다. 다만 이것은
+        # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
+        if best.text and not re.search(r"[가-힣]", best.text):
+            return "OCR_LOW_CONFIDENCE"
         height = best.quality.get("plate_px_height")
         if height is not None and height < MIN_PLATE_PX_HEIGHT:
             return "LOW_RESOLUTION"

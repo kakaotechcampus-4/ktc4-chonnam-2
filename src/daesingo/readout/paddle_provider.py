@@ -10,9 +10,9 @@
 **`frame_ref`를 이 모듈이 만들지 않기 위해서다** — `FrameRef`는 `recording`이 발급하고
 readout은 보존만 한다(`contract-plate-overlay-readout.md` §「`frame_ref` 형식」).
 
-지금 있는 것은 `LocalVideoFrameSource` 하나이고 **`frame_ref`가 임시값이다.**
-`recording`이 실제 영상을 `MediaStream`으로 등록하면 `resolve_frame`/`read_frame`을 쓰는
-공급자로 갈아끼운다 — 이 파일은 안 바뀐다.
+독립 실험에는 `LocalVideoFrameSource`를 쓴다. 이 경로의 **`frame_ref`는 임시값이다.**
+실제 IncidentClip에는 `RecordingFrameSource`를 쓴다. 이 경로는 recording의
+`resolve_frame`/`read_frame`을 통해 발급된 ref와 PNG를 그대로 받는다.
 
 ## 측정 근거
 
@@ -23,11 +23,15 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from math import isfinite
+
+from daesingo.recording import RecordingCapabilityError
 
 from .providers import (
     PRESENT,
     UNDETERMINED,
     AssociationReading,
+    IncidentClipFrames,
     OcrProvider,
     OverlayReading,
     OverlaySampleReading,
@@ -43,6 +47,12 @@ MIN_ASPECT = 2.2
 
 PLATE_PATTERN = re.compile(r"\d{2,3}[가-힣]\d{4}")
 """1줄 형식. 맞는 후보를 **우선**하지만 안 맞는다고 버리지 않는다 — 2줄 아랫줄(`바5215`)."""
+
+DIGITS_ONLY_PLATE = re.compile(r"\d{2,3}\s?\d{4}")
+"""대상 차량 crop 안에서 한글만 빠진 1줄 번호판 OCR 결과.
+
+전체 화면에서는 overlay 숫자 줄을 번호판으로 오인할 수 있어 쓰지 않는다.
+"""
 
 HANGUL = re.compile(r"[가-힣]")
 """번호판 문자열은 한글(용도·지역 문자)을 포함한다.
@@ -83,6 +93,59 @@ class TextBox:
     @property
     def height(self) -> int:
         return self.box[3] - self.box[1]
+
+
+def _hint_bbox(target_hint, frame_ref):
+    """해당 프레임에 붙은 대상 차량 영역만 돌려준다.
+
+    한 프레임의 bbox를 다른 시점에 재사용하면 옆 차량을 읽을 수 있으므로, frame_ref가
+    일치할 때만 crop한다. 추적기가 frame별 hint를 공급하면 각 프레임에서 같은 경로를 탄다.
+    """
+    if target_hint is None or getattr(target_hint, "frame_ref", None) != frame_ref:
+        return None
+    bbox = getattr(target_hint, "bbox_xywh", None)
+    if not isinstance(bbox, (list, tuple)) or len(bbox) != 4:
+        return None
+    if not all(isinstance(value, int) for value in bbox):
+        return None
+    x, y, width, height = bbox
+    return (x, y, width, height) if width > 0 and height > 0 else None
+
+
+def _target_crop(image, target_hint, frame_ref):
+    """대상 차량 crop을 3배로 키운 이미지와 원본 좌표 변환값을 반환한다."""
+    bbox = _hint_bbox(target_hint, frame_ref)
+    if bbox is None:
+        return None
+    import cv2
+
+    x, y, width, height = bbox
+    pad = max(8, round(max(width, height) * 0.10))
+    x1, y1 = max(0, x - pad), max(0, y - pad)
+    x2 = min(image.shape[1], x + width + pad)
+    y2 = min(image.shape[0], y + height + pad)
+    crop = image[y1:y2, x1:x2]
+    if crop.size == 0:
+        return None
+    # ponytail: vehicle bbox만 있으므로 OCR detector가 plate를 다시 찾게 한다.
+    # frame별 vehicle track bbox가 들어오면 이 경로가 곧 multi-frame target crop이 된다.
+    scale = 3
+    enlarged = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+    return enlarged, (x1, y1), scale
+
+
+def _to_frame_boxes(boxes, origin, scale):
+    """확대 crop OCR box를 원본 프레임 좌표계로 되돌린다."""
+    x0, y0 = origin
+    return [
+        TextBox(
+            text=box.text,
+            score=box.score,
+            box=tuple(round(value / scale) + (x0 if index % 2 == 0 else y0)
+                      for index, value in enumerate(box.box)),
+        )
+        for box in boxes
+    ]
 
 
 class LocalVideoFrameSource:
@@ -140,9 +203,56 @@ class LocalVideoFrameSource:
         return out
 
 
+def _decode_image(content: bytes):
+    """recording이 반환한 PNG bytes를 PaddleOCR 입력 이미지로 바꾼다."""
+    import cv2
+    import numpy as np
+
+    image = cv2.imdecode(np.frombuffer(content, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ProviderError("INFRA", "READOUT_FRAME_ACCESS_FAILED", "frame PNG를 decode하지 못했습니다")
+    return image
+
+
+class RecordingFrameSource:
+    """IncidentClip에서 recording이 발급한 실제 `FrameRef`와 픽셀을 가져온다."""
+
+    def __init__(self, recording, sample_ratios=(0.30, 0.50, 0.70)):
+        if len(sample_ratios) < 2 or any(
+            not isfinite(ratio) or ratio < 0 or ratio >= 1 for ratio in sample_ratios
+        ):
+            raise ValueError("sample_ratios는 [0, 1) 범위의 2점 이상이어야 합니다")
+        self._recording = recording
+        self._ratios = tuple(sample_ratios)
+
+    def frames(self, incident_clip_ref: str) -> list:
+        try:
+            clip = self._recording.get_incident_clip(incident_clip_ref)
+            if clip.duration_sec is None or clip.duration_sec <= 0:
+                raise ProviderError(
+                    "INFRA", "READOUT_FRAME_ACCESS_FAILED", "incident clip 길이를 알 수 없습니다"
+                )
+            clip_frames = IncidentClipFrames(self._recording, incident_clip_ref)
+            frames = []
+            for ratio in self._ratios:
+                offset_sec = clip.duration_sec * ratio
+                frame, content = clip_frames.read_at(offset_sec)
+                frames.append(SourceFrame(
+                    frame_ref=frame.frame_ref,
+                    offset_sec=round(offset_sec, 3),
+                    image=_decode_image(content),
+                ))
+            return frames
+        except ProviderError:
+            raise
+        except RecordingCapabilityError as error:
+            # recording의 상세 오류는 여기서 외부 OCR provider 실패 taxonomy로 접는다.
+            raise ProviderError("INFRA", "READOUT_FRAME_ACCESS_FAILED", str(error)) from error
+
+
 # ── OCR 결과 해석 — 픽셀 없이 검사 가능한 부분 ───────────────
 
-def pick_plate(boxes):
+def pick_plate(boxes, *, allow_digits_only=False):
     """프레임 한 장에서 번호판 줄 하나를 고른다. 없으면 `None`.
 
     형식이 맞는 것을 먼저 보고 그 안에서 신뢰도로 고른다. 형식 후보가 없으면 필터 통과분 중
@@ -157,12 +267,17 @@ def pick_plate(boxes):
         # 외부 OCR 출력이 들어오는 경계라 여기서 막는다.
         and b.height > 0
         and b.width / b.height >= MIN_ASPECT
-        and HANGUL.search(b.text)
+        and (HANGUL.search(b.text)
+             or (allow_digits_only and DIGITS_ONLY_PLATE.search(b.text)))
         and not TIMESTAMP_PATTERN.search(b.text)
     ]
     if not candidates:
         return None
-    formatted = [b for b in candidates if PLATE_PATTERN.search(b.text)]
+    formatted = [
+        b for b in candidates
+        if PLATE_PATTERN.search(b.text)
+        or (allow_digits_only and DIGITS_ONLY_PLATE.search(b.text))
+    ]
     return max(formatted or candidates, key=lambda b: b.score)
 
 
@@ -186,12 +301,17 @@ def association(hint_used: bool, target_hint, *, found: bool) -> AssociationRead
     else:
         status = "FAILED" if hint_used else "NOT_PROVIDED"
         evidence = []
+    region = None
+    bbox = _hint_bbox(target_hint, getattr(target_hint, "frame_ref", None))
+    if bbox is not None:
+        region = (target_hint.frame_ref, list(bbox))
     return AssociationReading(
         status=status,
         target_hint_used=hint_used,
         track_ref=getattr(target_hint, "track_ref", None),
         association_method="TARGET_HINT_WITH_FALLBACK" if hint_used else "FALLBACK_ONLY",
         evidence=evidence,
+        region=region,
     )
 
 
@@ -234,8 +354,9 @@ class PaddleOcrProvider(OcrProvider):
             self._frames[clip_ref] = self._source.frames(clip_ref)
         return self._frames[clip_ref]
 
-    def _boxes(self, clip_ref, frame) -> list:
-        key = (clip_ref, frame.frame_ref)
+    def _boxes(self, clip_ref, frame, target_hint=None) -> list:
+        hint_bbox = _hint_bbox(target_hint, frame.frame_ref)
+        key = (clip_ref, frame.frame_ref, hint_bbox)
         if key in self._seen:
             return self._seen[key]
         if self._engine is None:
@@ -249,11 +370,15 @@ class PaddleOcrProvider(OcrProvider):
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
             )
-        result = next(iter(self._engine.predict(frame.image))).json["res"]
+        target_crop = _target_crop(frame.image, target_hint, frame.frame_ref)
+        image = target_crop[0] if target_crop else frame.image
+        result = next(iter(self._engine.predict(image))).json["res"]
         boxes = [
             TextBox(text=t, score=float(s), box=tuple(int(v) for v in b))
             for t, s, b in zip(result["rec_texts"], result["rec_scores"], result["rec_boxes"])
         ]
+        if target_crop:
+            boxes = _to_frame_boxes(boxes, target_crop[1], target_crop[2])
         self._seen[key] = boxes
         return boxes
 
@@ -262,7 +387,10 @@ class PaddleOcrProvider(OcrProvider):
         used = target_hint is not None
         readings = []
         for frame in self._clip_frames(clip_ref):
-            picked = pick_plate(self._boxes(clip_ref, frame))
+            targeted = _hint_bbox(target_hint, frame.frame_ref) is not None
+            picked = pick_plate(
+                self._boxes(clip_ref, frame, target_hint), allow_digits_only=targeted
+            )
             if picked is None:
                 continue
             readings.append(PlateFrameReading(
@@ -316,6 +444,14 @@ def selfcheck() -> None:
                            0.95, (300, 1000, 1200, 1040))]) is None
     # 한글이 없는 오인식도 후보가 아니다 (baseline 백색 1줄의 한글 누락 프레임)
     assert pick_plate([box("2354874", 0.91, (100, 100, 300, 160))]) is None
+    # 대상 차량 crop 안에서는 한글이 빠진 1줄 판독을 보존한다. 전체 화면에서는 overlay
+    # 오탐 방지를 위해 여전히 버린다.
+    digits_only = box("36 3105", 0.93, (100, 100, 300, 160))
+    assert pick_plate([digits_only]) is None
+    assert pick_plate([digits_only], allow_digits_only=True).text == "36 3105"
+    # target crop OCR 좌표는 원본 frame 좌표로 되돌아간다
+    restored = _to_frame_boxes([box("23두4874", 0.99, (30, 60, 330, 120))], (10, 20), 3)[0]
+    assert restored.box == (20, 40, 120, 60)
     # 높이 0짜리 박스는 후보가 아니다 — 통과시키면 plate_bbox_xywh가 [x,y,w,0]으로
     # 나가 R19의 h > 0을 어긴다
     assert pick_plate([box("23두4874", 0.99, (100, 100, 300, 100))]) is None

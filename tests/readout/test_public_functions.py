@@ -630,6 +630,27 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
                          "보류했다고 관찰값을 지우지 않는다 — evidence가 그것을 본다")
         self.assertEqual(plate.consensus.disagree_positions, [])
 
+    def test_digits_only_candidate_requires_human_review(self):
+        class DigitsOnly(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                return providers.PlateReading(
+                    association=providers.AssociationReading(
+                        "ASSOCIATED", True, "track_test", "TARGET_HINT_WITH_FALLBACK", []
+                    ),
+                    frames=[providers.PlateFrameReading(
+                        "fr_a", [0, 0, 80, 21], "36 3105", 0.933,
+                        {"plate_px_height": 21, "sharpness": 1.0},
+                    )],
+                )
+
+        _, plate = api.read_plate(request_for("clip_h001"), target_hint=HINT,
+                                  provider=DigitsOnly())
+
+        self.assertEqual(plate.observation.value, "36 3105")
+        self.assertEqual(plate.observation.status, "NEEDS_REVIEW")
+        self.assertEqual(plate.abstain_reason, "OCR_LOW_CONFIDENCE")
+        self.assertEqual(plate.contract_version, "plate-readout/v1.3")
+
     def test_low_resolution_and_ambiguous_target_do_the_same(self):
         _, low_res = self._read(px_height=10)
         _, ambiguous = self._read(status="AMBIGUOUS")
