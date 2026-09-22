@@ -34,7 +34,9 @@ uv run --locked python -m examples.recording_incident_clip <로컬영상> --vide
 ```
 
 예제는 공개 계약과 PNG 크기/hash만 출력하고 파일을 저장하지 않는다. frame은 clip의 축소 영상이 아니라
-원본에서 읽는다. root Python 3.12, ffmpeg/ffprobe가 필요하다.
+원본에서 읽는다. root Python 3.12, ffmpeg/ffprobe가 필요하다. IncidentClip도 AnalysisSource와
+같은 변환 엔진을 사용하므로 [FFmpeg 실행 환경과 4.3.1 제한](local-analysis-source.md#ffmpeg-실행-환경)이
+동일하게 적용된다.
 
 ## 생성·provenance·identity
 

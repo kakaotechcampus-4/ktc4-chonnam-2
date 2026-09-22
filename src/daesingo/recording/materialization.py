@@ -13,6 +13,13 @@ from .models import AssetSpan, TimeRange
 from .probe import LocalSource, _snapshot
 
 
+class _FrameCoverageError(RecordingCapabilityError):
+    """정적인 진단문만 사용하여 공통 엔진의 coverage 실패 원인을 보존한다."""
+
+    def __init__(self, message):
+        super().__init__("UNSUPPORTED_MEDIA", message)
+
+
 @dataclass(frozen=True)
 class AnalysisProfile:
     height: int
@@ -62,7 +69,7 @@ class LocalAnalysisMaterializer:
         if index is not None:
             args += ["-select_streams", str(index)]
         args += ["-show_frames", "-show_entries",
-                 "format=format_name,duration:stream=codec_type,codec_name,width,height,pix_fmt,time_base,duration:frame=best_effort_timestamp,duration",
+                 "format=format_name,duration:stream=codec_type,codec_name,width,height,pix_fmt,time_base,duration:frame=best_effort_timestamp,duration,pkt_duration",
                  "-of", "json", str(path)]
         return json.loads(self._run(args))
 
@@ -74,12 +81,28 @@ class LocalAnalysisMaterializer:
         base = Fraction(streams[0]["time_base"])
         if base <= 0:
             raise ValueError("유효하지 않은 time base")
-        frames = [(int(f["best_effort_timestamp"]) * base, int(f["duration"]) * base)
-                  for f in payload["frames"]]
-        if not frames or any(length <= 0 for _, length in frames):
-            raise ValueError("frame coverage 미확인")
+        raw_frames = payload["frames"]
+        timestamps = [int(f["best_effort_timestamp"]) * base for f in raw_frames]
+        if not timestamps or any(b <= a for a, b in zip(timestamps, timestamps[1:])):
+            raise _FrameCoverageError("frame timestamp가 없거나 엄격히 증가하지 않습니다")
+        frames = []
+        for i, (frame, at) in enumerate(zip(raw_frames, timestamps)):
+            # 구버전 ffprobe는 duration 대신 pkt_duration을 제공한다. 단위는 stream time_base다.
+            observed = [int(frame[key]) * base for key in ("duration", "pkt_duration")
+                        if frame.get(key) not in (None, "N/A")]
+            if any(length <= 0 for length in observed) or len(set(observed)) > 1:
+                raise _FrameCoverageError("frame duration 관찰값이 유효하지 않거나 서로 다릅니다")
+            if observed:
+                length = observed[0]
+            elif i + 1 < len(timestamps):
+                # 다음 presentation timestamp까지의 표시 구간. 일정 fps를 가정하지 않는다.
+                length = timestamps[i + 1] - at
+            else:
+                # container duration은 다른 stream을 포함할 수 있어 마지막 frame의 근거가 아니다.
+                raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+            frames.append((at, length))
         if any(a + length != b for (a, length), (b, _) in zip(frames, frames[1:])):
-            raise ValueError("불연속 frame coverage는 지원하지 않습니다")
+            raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
         return base, [(at - frames[0][0], length) for at, length in frames]
 
     def materialize(self, source: LocalSource, index: int, span: AssetSpan, profile_ref: str) -> MaterializedVideo:

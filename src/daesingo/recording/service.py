@@ -44,7 +44,7 @@ from .timeline import build_relative_timeline
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
-from .materialization import LocalAnalysisMaterializer
+from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 
@@ -617,6 +617,8 @@ class RecordingService:
                 if local is None or index is None:
                     raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
                 prepared = self._incident_materializer.materialize(local, index, span)
+            except _FrameCoverageError as error:
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", str(error)) from None
             except (RecordingCapabilityError, ValueError, OSError):
                 raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "원본 검증 또는 IncidentClip 생성에 실패했습니다") from None
             provenance = IncidentClipProvenance(

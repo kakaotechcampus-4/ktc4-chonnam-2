@@ -47,6 +47,20 @@ uv run --locked python -m examples.recording_analysis_source <로컬영상> --vi
 예제는 필수 VIDEO 순번에서 실제 ref를 얻고 공개 함수를 호출한다. 출력에는 요청 span, 실제 계약 객체,
 content_type/크기/hash/재사용 여부만 담는다. 영상 bytes·경로를 출력하지 않는다.
 
+### FFmpeg 실행 환경
+
+실행 전 `ffmpeg -version`과 `ffprobe -version`으로 실제 호출되는 바이너리 버전을 확인한다.
+대표 AVI의 AnalysisSource 생성은 FFmpeg/ffprobe 9.0.1에서 검증했다. PR #134 검토에서
+ffprobe 4.3.1의 frame `duration` 누락은 파싱할 수 있음이 확인됐지만, **FFmpeg 4.3.1의
+전체 materialization은 지원되지 않는다.** 인코딩 명령의 `-fps_mode passthrough` 옵션을
+인식하지 못해 실패한다. 파싱 단계 통과를 생성 경로 전체 통과로 해석하면 안 된다.
+
+현재 검증 결과만으로 전체 지원 최소 버전을 `FFmpeg >= 5.0` 등으로 단정하지 않는다.
+구버전용 `-vsync` 자동 전환도 출력 frame timestamp와 실제 coverage의 동등성이
+검증되기 전에는 적용하지 않는다. Real E2E에서는 생성 경로를 실제로 통과한 FFmpeg
+환경을 사용한다. FFmpeg는 외부 실행 파일이므로 이 요구사항을 Python 의존성으로
+`pyproject.toml`에 선언하지 않는다.
+
 ## frame 경계와 metadata
 
 원본의 지정 VIDEO를 ffprobe로 decode해 정수 timestamp·duration과 time base를 읽는다.
