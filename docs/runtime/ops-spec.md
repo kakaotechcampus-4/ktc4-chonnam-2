@@ -58,6 +58,56 @@ API와 Worker는 같은 repository/image 계열을 사용하는 modular monolith
 
 RDS, ALB, Elastic IP, 추가 EC2는 기본 제공으로 가정하지 않는다.
 
+### 2-1. AWS 배포 인증 · 서버 접속 기준
+
+2026-09-22 카테캠 AWS 공지에 따라 **배포 인증과 서버 접속 방식은 아래를 baseline으로 확정**한다.
+
+```text
+GitHub Actions
+→ GitHub OIDC
+→ AWS STS AssumeRole
+→ ktc-github-deploy
+
+배포 명령 / 서버 접속
+→ AWS Systems Manager(SSM)
+→ EC2 instance role
+```
+
+원칙:
+
+- GitHub Actions에서 AWS에 접근할 때 **장기 Access Key를 만들거나 GitHub Secrets에 저장하지 않는다.**
+- 카테캠에서 제공하는 배포 역할 **`ktc-github-deploy`** 를 사용한다. 별도 IAM 역할 생성은 기본 경로가 아니다.
+- AWS 계정 ID는 향후 배포 workflow를 구현할 때 repository **Variable `AWS_ACCOUNT_ID`** 로 등록한다. 계정 ID 자체를 Secret으로 취급하지 않는다.
+- AWS 인증이 필요한 workflow에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `aws-actions/configure-aws-credentials@v4`로 `ap-northeast-2`의 배포 역할을 assume한다.
+- 현재의 boundary/contract 등 **비-AWS CI에는 OIDC 권한을 추가하지 않는다.** 배포 workflow와 일반 PR CI를 분리한다.
+- 배포 트리거는 `push` 또는 `workflow_dispatch`를 기본 후보로 둔다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
+- EC2 접속과 원격 명령 실행은 **SSM Session Manager / SSM Run Command**를 사용한다. GitHub Actions 배포를 위해 SSH private key를 저장하거나 보안그룹의 22번 포트를 인터넷에 개방하지 않는다.
+- Object Storage를 도입해 S3 경유 배포를 선택하는 경우, GitHub Actions의 업로드 주체(`ktc-github-deploy`)와 EC2의 다운로드 주체(`ktc-ec2-ssm-role`)를 별도 권한 주체로 취급한다.
+- 이 결정은 **S3 사용 자체를 확정하지 않는다.** Object Storage 범위는 §13의 실측 기반 결정 기준을 계속 따른다.
+
+#### 현재 구현 범위
+
+이번 결정은 **운영 기준 문서화만 수행**한다.
+
+현재 단계에서는 다음을 하지 않는다.
+
+- `AWS_ACCOUNT_ID` repository Variable 등록
+- OIDC 검증 workflow 추가
+- 실제 deployment workflow 추가
+- SSM 배포 명령 구현
+- Security Group / IAM / EC2 설정 변경
+- S3/ECR 등 배포 artifact 전달 방식 확정
+
+향후 API/Worker composition root와 Docker/Compose 배포 단위가 준비된 뒤 다음 순서로 구현한다.
+
+```text
+1. AWS_ACCOUNT_ID Variable 등록
+2. OIDC 인증 전용 workflow로 aws sts get-caller-identity 검증
+3. SSM 기반 deployment workflow 구현
+4. 필요 시 artifact 전달 방식(S3/ECR 등) 선택
+5. 실제 배포 환경에서 pre-deploy review 수행
+```
+
 ## 3. 현재 상태와 목표 상태
 
 ### 현재 develop에서 확인된 것
@@ -488,6 +538,12 @@ python scripts/check_contract_fixtures.py
 
 외부 AI 실제 호출은 일반 PR CI의 deterministic gate에서 분리한다.
 
+### Deployment workflow 분리 원칙
+
+현재 `.github/workflows/boundary-check.yml`은 모듈 경계·계약 검사용 CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
+
+향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
+
 ## 20. Test / Validation 운영
 
 테스트 층:
@@ -549,7 +605,8 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] UsageRecord retention
 - [ ] provider RemoteCopy cleanup 운영
 - [ ] capacity/scaling threshold
-- [ ] deployment workflow
+- [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
+- [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
 - [ ] secret scan gate
 
 Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까지 수치를 임의 확정하지 않는다.
@@ -565,3 +622,4 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Recording architecture input](../modules/recording/research/architecture-input-memo.md)
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
+- Kakao Tech Campus AWS OIDC guide (2026-09-22 공지)
