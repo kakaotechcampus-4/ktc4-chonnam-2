@@ -25,6 +25,7 @@ from daesingo.search.scope import AnalysisScope, SearchHint, VisualEventType
 from daesingo.search.smoke_errors import ProviderPayloadError
 from daesingo.search.sources import ResolvedAnalysisSource
 from daesingo.search.usage import ProviderUsage
+from daesingo.search.visual import VisualVerificationResult
 
 
 def _response() -> FineResponse:
@@ -182,7 +183,7 @@ def test_fine_characterization_preserves_source_ref_and_padded_interval(
     assert result.visual_evidence.input_ref == source_ref
 
 
-def test_fine_prepares_only_selected_source_and_rebases_transport_offset(
+def test_fine_prepares_only_selected_source_and_keeps_the_clip_relative_offset(
     tmp_path: Path,
 ) -> None:
     # Given
@@ -235,7 +236,7 @@ def test_fine_prepares_only_selected_source_and_rebases_transport_offset(
     assert result.analysis_run.input_ref == source_ref
     assert result.visual_evidence.input_ref == source_ref
     assert [fact.at_offset_ms for fact in result.visual_evidence.temporal_facts] == [
-        4_000,
+        3_500,
         None,
     ]
     record = ledger.records()[0]
@@ -244,6 +245,71 @@ def test_fine_prepares_only_selected_source_and_rebases_transport_offset(
     assert record.prepared_duration_ms == 7_000
     assert str(record.cost_usd) == "14"
     assert preparer.exited
+
+
+def _verify_single_offset(
+    tmp_path: Path, name: str, offset_ms: int
+) -> VisualVerificationResult:
+    """Run verify_fine against the padded clip 0.5~7.5s with one timed fact.
+
+    The candidate span is 2.0~6.0s (representative 4.0s), so padding of 1.5s is
+    what puts 0.5~2.0s and 6.0~7.5s in front of the model at all.
+    """
+    source_ref = ContractRef(kind="analysis_source", ref="source-fine")
+    resolver = _Resolver(ResolvedAnalysisSource(source_ref, 10.0, "timeline-fine", 2))
+    path = tmp_path / name
+    path.write_bytes(b"prepared")
+    preparer = _Preparer(PreparedMedia(path, "video/mp4", 8, 7.0, 0.5, 7.5))
+    provider = _Provider(
+        response=_response().model_copy(
+            update={
+                "temporal_facts": (
+                    FineTemporalFact(
+                        at_offset_ms=offset_ms, fact="EVENT", evidence_refs=()
+                    ),
+                )
+            }
+        )
+    )
+    return verify_fine(
+        source_ref,
+        _candidate(),
+        None,
+        VisualEventType.SIGNAL,
+        resolver,
+        provider,
+        GeminiSearchConfig(fine_padding_sec=1.5),
+        SearchLedger(),
+        preparer,
+        RunDeadline(lambda: 0.0, budget_ms=30_000),
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "offset_ms"), [("leading-pad.mp4", 500), ("trailing-pad.mp4", 6_500)]
+)
+def test_fine_accepts_a_moment_found_inside_the_padding(
+    tmp_path: Path, name: str, offset_ms: int
+) -> None:
+    # Given / When — 0.5s와 6.5s는 clip 안이지만 candidate span(2.0~6.0s) 밖이다
+    result = _verify_single_offset(tmp_path, name, offset_ms)
+
+    # Then
+    assert [fact.at_offset_ms for fact in result.visual_evidence.temporal_facts] == [
+        offset_ms
+    ]
+
+
+def test_fine_accepts_a_moment_that_does_not_match_the_coarse_representative(
+    tmp_path: Path,
+) -> None:
+    # Given / When — clip 상대 2.5s = 원본 3.0s, coarse representative는 4.0s다
+    result = _verify_single_offset(tmp_path, "off-representative.mp4", 2_500)
+
+    # Then
+    assert [fact.at_offset_ms for fact in result.visual_evidence.temporal_facts] == [
+        2_500
+    ]
 
 
 @pytest.mark.parametrize("offset_ms", [-1, 7_001])
@@ -285,45 +351,26 @@ def test_fine_rejects_transport_offsets_outside_prepared_clip(
     assert preparer.exited
 
 
-@pytest.mark.parametrize(
-    ("prepared", "offset_ms"),
-    [
-        (
-            PreparedMedia(Path("source-upper.mp4"), "video/mp4", 8, 2.0, 9.0, 10.0),
-            1_500,
-        ),
-        (PreparedMedia(Path("window-link.mp4"), "video/mp4", 8, 7.0, 0.5, 7.5), 500),
-        (
-            PreparedMedia(
-                Path("representative-link.mp4"), "video/mp4", 8, 7.0, 0.5, 7.5
-            ),
-            2_500,
-        ),
-    ],
-)
-def test_fine_rejects_rebased_offsets_incompatible_with_source_or_candidate(
-    tmp_path: Path, prepared: PreparedMedia, offset_ms: int
+def test_fine_rejects_an_offset_that_would_fall_past_the_source_end(
+    tmp_path: Path,
 ) -> None:
+    """clip 안이어도 원본 밖을 가리키면 거절한다.
+
+    2.0초짜리 clip이 원본 9.0~10.0초에서 왔다고 보고하는 상황이다 — ffmpeg/probe가
+    어긋난 경우이고, 이때 1.5초 지점은 원본 10.5초라 원본 길이(10.0초)를 넘는다.
+    """
     # Given
-    path = tmp_path / prepared.path.name
-    path.write_bytes(b"prepared")
-    bounded_prepared = PreparedMedia(
-        path,
-        prepared.content_type,
-        prepared.byte_size,
-        prepared.duration_sec,
-        prepared.origin_start_sec,
-        prepared.origin_end_sec,
-    )
     source_ref = ContractRef(kind="analysis_source", ref="source-fine")
     resolver = _Resolver(ResolvedAnalysisSource(source_ref, 10.0, "timeline-fine", 2))
-    preparer = _Preparer(bounded_prepared)
+    path = tmp_path / "source-upper.mp4"
+    path.write_bytes(b"prepared")
+    preparer = _Preparer(PreparedMedia(path, "video/mp4", 8, 2.0, 9.0, 10.0))
     provider = _Provider(
         response=_response().model_copy(
             update={
                 "temporal_facts": (
                     FineTemporalFact(
-                        at_offset_ms=offset_ms, fact="EVENT", evidence_refs=()
+                        at_offset_ms=1_500, fact="EVENT", evidence_refs=()
                     ),
                 )
             }
