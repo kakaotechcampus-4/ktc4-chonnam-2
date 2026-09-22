@@ -302,13 +302,13 @@ def association(hint_used: bool, target_hint, *, found: bool) -> AssociationRead
         status = "FAILED" if hint_used else "NOT_PROVIDED"
         evidence = []
     region = None
-    bbox = _hint_bbox(target_hint, getattr(target_hint, "frame_ref", None))
+    bbox = _hint_bbox(target_hint, getattr(target_hint, "frame_ref", None)) if hint_used else None
     if bbox is not None:
         region = (target_hint.frame_ref, list(bbox))
     return AssociationReading(
         status=status,
         target_hint_used=hint_used,
-        track_ref=getattr(target_hint, "track_ref", None),
+        track_ref=getattr(target_hint, "track_ref", None) if hint_used else None,
         association_method="TARGET_HINT_WITH_FALLBACK" if hint_used else "FALLBACK_ONLY",
         evidence=evidence,
         region=region,
@@ -384,12 +384,17 @@ class PaddleOcrProvider(OcrProvider):
 
     def read_plate(self, input_ref, target_hint) -> PlateReading:
         clip_ref = input_ref.incident_clip_ref
-        used = target_hint is not None
+        frames = self._clip_frames(clip_ref)
+        targeted_frames = [
+            frame for frame in frames if _hint_bbox(target_hint, frame.frame_ref) is not None
+        ]
+        # target_hint가 있으면 해당 frame만 읽는다. 불일치한 hint에서 전체 화면을 읽으면
+        # 다른 차량 결과를 ASSOCIATED로 잘못 표시할 수 있다.
+        frames = targeted_frames if target_hint is not None else frames
         readings = []
-        for frame in self._clip_frames(clip_ref):
-            targeted = _hint_bbox(target_hint, frame.frame_ref) is not None
+        for frame in frames:
             picked = pick_plate(
-                self._boxes(clip_ref, frame, target_hint), allow_digits_only=targeted
+                self._boxes(clip_ref, frame, target_hint), allow_digits_only=target_hint is not None
             )
             if picked is None:
                 continue
@@ -402,7 +407,7 @@ class PaddleOcrProvider(OcrProvider):
                          "sharpness": sharpness(frame.image, picked.box)},
             ))
         return PlateReading(
-            association=association(used, target_hint, found=bool(readings)),
+            association=association(bool(targeted_frames), target_hint, found=bool(readings)),
             frames=readings,
         )
 
