@@ -1,9 +1,11 @@
-# 자연어 단서 구조화 LLM — GPT-5 Nano 채택
+# 자연어 단서 구조화 LLM — Gemini 3.8 Flash 채택 (2026-09-22 재검토로 변경)
+
+> **2026-09-22 갱신 — 최종 결정이 바뀌었다.** §1~§9는 2026-09-19 첫 결정(GPT-5 Nano)의 원문 그대로 보존한다(불변 저장 원칙) — 왜 그때 그렇게 판단했는지는 여전히 유효한 기록이다. **현재 채택은 §10~§11을 본다.**
 
 > 결정일 2026-09-19(실측) · 담당 유소연(`case`) · Consulted 없음
 > 근거: `experiments/intent-llm-model-comparison/results/summary.md`(judge_run_id `20260919T170342Z`) · `research/llm-model-comparison-hint-extraction.md` §5·§6·§9 · `decisions/intent-llm-eval-target-thresholds.md` §1
 
-## 1. 결정된 것
+## 1. 결정된 것 (2026-09-19 — §10에서 철회됨)
 
 **자연어 단서 구조화("사용자 자연어 단서를 구조화한다", `tech-spec.md` §1) 호출에 GPT-5 Nano를 쓴다.** Gemini 3.1 Flash-Lite / Claude Haiku 4.5는 채택하지 않는다.
 
@@ -70,3 +72,38 @@ GPT-5 Nano는 평균 12,745ms로 나머지 둘(2,676ms/3,417ms)보다 **3.7~4.8�
 - **1건(case-05, `vehicle_hint`)** — **진짜 judge 리스크**였다. claude·gemini 둘 다 `vehicle_hint="SUV"`로 완전히 같은 값을 냈는데 judge가 다르게 판정했다(claude: correct, gemini: partial) — gemini가 `confidence`를 잘못(`high`로) 매긴 여파가 무관한 `vehicle_hint` 판정에도 전이된 것으로 보인다. **조치:** `schema.py`의 `JUDGE_SYSTEM_PROMPT`에 "같은 필드가 같은 값이면 모델이 달라도 같은 verdict를 매긴다"는 규칙을 명시적으로 추가했다(이 커밋). 기존 `judge_run_id=20260919T170342Z` 결과는 그대로 두고(불변 저장 원칙, `judge.py` 참고) 덮어쓰지 않았다 — 이 rubric 수정은 다음 채점 run부터 적용된다.
 
 **결론: 5/126(4%)이라는 이견율은 낮고, 유일한 진짜 judge 문제(case-05)도 이번 결정을 뒤집지 않는다 — §1의 GPT-5 Nano 채택은 이 스팟체크로 재확인됐다.**
+
+---
+
+## 10. 재검토 결과 — 최종 결정 변경 (2026-09-22)
+
+**§7 재검토 트리거("더 큰 dataset으로 재측정했을 때 다른 순위가 나온다")가 실제로 발동됐다** — PM이 §1의 표본 크기(n=7)를 지적한 뒤 강건성 데이터셋을 3차례에 걸쳐 실측했다(`research/intent-llm-robustness-test-design.md` §10~§13). 세 번 다 GPT-5 Nano의 §1 우위가 재현되지 않았고, 순위는 일관되게 같은 방향을 가리켰다.
+
+| 실측(케이스 수) | GPT-5 Nano | Gemini 3.1 Flash-Lite | Claude Haiku 4.5 | Gemini 3.8 Flash |
+| --- | --- | --- | --- | --- |
+| robustness v1(27) | 85% / halluc 10% / 17.5s | 85% / 9% / 1.9s | 82% / 11% / 3.0s | **91% / 6% / 4.4s** |
+| robustness v2(48) | 85% / 9% / 16.9s | 87% / 8% / 1.7s | 89% / 8% / 2.7s | **93% / 4% / 3.9s** |
+| `새사고_정정오인_방지`(v1→v2) | 61%→70% (최저) | 78%→70% | 94%→93% (최고) | **100%→97%** |
+
+(field 정확도 / hallucination rate / 평균 latency 순. 원본: `results/summary-robustness-v1.md`·`summary-robustness-v2.md`·`summary-gemini-3.8-flash-v1.md`·`summary-gemini-3.8-flash-robustness.md`.)
+
+### 결정: GPT-5 Nano 채택을 철회하고 Gemini 3.8 Flash로 교체한다
+
+**이유:**
+
+1. **§1의 근거 자체가 착시였다.** "field 정확도 100%, hallucination 0%"는 n=7 표본에서 나온 숫자였고(§9의 스팟체크는 judge 신뢰도만 확인했을 뿐 표본 크기 문제는 다루지 않았다), 27~48케이스로 늘리자 GPT-5 Nano는 다른 후보와 사실상 동률(82~89% 사이)로 좁혀졌다.
+2. **GPT-5 Nano가 오히려 correction 안전성에서 가장 약했다.** `새사고_정정오인_방지`(prior_hints가 있을 때 "이건 새 사고다"라는 신호를 정정으로 오인하지 않는지)에서 4개 모델 중 최저(61%)를 기록했다 — 스팟체크로 사람이 직접 원인 확인(judge rubric 문제 아니라 실제 모델 약점, `research/...` §10).
+3. **§5의 latency 트레이드오프가 더 나빠졌다.** "12.7초는 비동기 job이라 괜찮다"는 논리는 그대로지만, 실제 latency가 처음 추정보다 더 벌어졌다(16.9~17.5초, Gemini 3.8 Flash 대비 4~9배). 품질 우위가 사라진 상태에서 이 격차만 남았다 — PM이 "latency가 마냥 긍정적으로 안 보인다"고 지적한 지점이 맞았다.
+4. **Gemini 3.8 Flash는 3차례 실측 전부에서 최고 또는 최상위권**이었다(field 정확도·hallucination 둘 다) — 특히 GPT-5 Nano가 가장 약했던 correction 안전성 카테고리를 가장 잘 처리했다(97~100%).
+5. **§4가 Gemini 3.1 Flash-Lite를 배제한 이유(Preview 상태)가 3.8 Flash에는 없다.** 2026-09-02 GA 전환 확인(Google 공식 발표, WebSearch로 검증). search 모듈이 이미 Elice로 실사용 중인 모델이라 신규 벤더 온보딩 비용도 없다(`src/daesingo/search/config.py`).
+
+**하지 않은 것 — 비용 단가.** Elice가 이 모델에 매기는 정확한 KRW 단가를 아직 못 구했다(`pricing.py`에 없음, Elice 모델 카드 직접 확인 필요 — 소연님 확인 대기). Google 공식 요율($0.75/$3.75)은 참고치일 뿐 Elice 마크업이 반영된 값이 아니다. 다만 search 모듈이 이미 이 모델을 실사용 중이라는 사실 자체가 팀이 감당 가능한 비용 수준이라는 간접 근거로 본다 — 확정 단가가 나오면 이 문서를 갱신한다.
+
+**하지 않은 것 — 실사용자 로그 기반 확인.** §1이 원래 갖고 있던 표본 문제(실사용자 로그로 재측정)는 아직 실행 전이다(`research/intent-hint-real-text-collection-plan.md`, 설문 계획만 준비됨). 다만 세 번의 독립적인 synthetic 실측(27/34/48케이스, 서로 다른 케이스 구성)에서 순위가 일관되게 나왔다는 것으로, 이 확인을 기다리지 않고 지금 결정을 내려도 된다고 판단했다 — 실사용자 로그 실측이 나중에 다른 결과를 보이면 §11 트리거로 다시 연다.
+
+## 11. 재검토 트리거 (2026-09-22 갱신)
+
+- [ ] 실사용자 로그 기반 실측(`research/intent-hint-real-text-collection-plan.md` 실행 후)에서 이번 순위와 다른 결과가 나온다.
+- [ ] Elice 모델 카드에서 확인한 실제 KRW 단가가 예상보다 크게 벗어나(다른 후보 대비 비용 열위) 재검토가 필요해진다.
+- [ ] Gemini 3.8 Flash가 sunset·요금 인상(2027-01-01부터 표준 요금 $1.5/$7.5로 2배 인상 예정 — Google 공식) 등으로 재검토가 필요해진다.
+- [ ] `correction_target_오염_시도` 카테고리(4개 모델 다 47~53%로 낮음, Gemini 3.8 Flash도 예외 아님)가 실사용에서 실제 문제로 드러난다 — 이건 특정 모델 약점이 아니라 이 실험 전체의 미해결 지점으로 남아있다.
