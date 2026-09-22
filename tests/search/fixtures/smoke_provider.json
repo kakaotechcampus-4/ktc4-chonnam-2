@@ -37,22 +37,19 @@
         "described_as": "plate 12가3456",
         "match_with_hint": true,
         "association_confidence": 0.95,
-        "track_ref": "track-7",
-        "evidence_refs": ["fr_exact_001"]
+        "track_ref": "track-7"
       },
       "primitives": [
         {
           "kind": "line_crossing",
           "state": "PRESENT",
-          "confidence": 0.93,
-          "evidence_refs": ["fr_exact_001"]
+          "confidence": 0.93
         }
       ],
       "temporal_facts": [
         {
           "at_offset_ms": null,
-          "fact": "crossed",
-          "evidence_refs": ["fr_exact_001"]
+          "fact": "crossed"
         }
       ],
       "uncertainties": []

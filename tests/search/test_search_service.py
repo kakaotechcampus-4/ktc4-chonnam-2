@@ -64,7 +64,6 @@ class _Provider:
                     "match_with_hint": None,
                     "association_confidence": None,
                     "track_ref": None,
-                    "evidence_refs": ["fr_001"],
                 },
                 "primitives": [],
                 "temporal_facts": [],
@@ -72,7 +71,6 @@ class _Provider:
                     {
                         "kind": "LOW_RESOLUTION",
                         "detail": "선 종류 판별 불가",
-                        "evidence_refs": ["fr_001"],
                     }
                 ],
             }

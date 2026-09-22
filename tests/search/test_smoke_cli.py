@@ -53,7 +53,7 @@ def test_smoke_succeeds_without_api_key_and_selects_highest_score(
     assert isinstance(fine, dict)
     assert selected["ranking_score"] == 0.94
     assert fine["visual_evidence"]["candidate_id"] == selected["candidate_id"]
-    assert fine["visual_evidence"]["target"]["evidence_refs"] == ["fr_exact_001"]
+    assert fine["visual_evidence"]["target"]["evidence_refs"] == []
 
 
 def test_smoke_reports_sha_usage_bounds_and_redacts_sensitive_data(

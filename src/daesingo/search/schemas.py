@@ -45,26 +45,22 @@ class FineTarget(WireModel):
     match_with_hint: bool | None
     association_confidence: float | None = Field(default=None, ge=0, le=1)
     track_ref: str | None
-    evidence_refs: tuple[str, ...]
 
 
 class FinePrimitive(WireModel):
     kind: str
     state: PrimitiveState
     confidence: float | None = Field(default=None, ge=0, le=1)
-    evidence_refs: tuple[str, ...]
 
 
 class FineTemporalFact(WireModel):
     at_offset_ms: int | None = Field(default=None, ge=0)
     fact: str
-    evidence_refs: tuple[str, ...]
 
 
 class FineUncertainty(WireModel):
     kind: str
     detail: str | None
-    evidence_refs: tuple[str, ...]
 
 
 class FineResponse(WireModel):

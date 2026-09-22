@@ -48,7 +48,6 @@ def _fine_response() -> FineResponse:
                 "match_with_hint": None,
                 "association_confidence": None,
                 "track_ref": None,
-                "evidence_refs": [],
             },
             "primitives": [],
             "temporal_facts": [],

@@ -19,7 +19,7 @@ from .runs import (
     RunOutcome,
     UsageSummary,
 )
-from .schemas import FineTemporalFact
+from .schemas import FineTemporalFact, WireModel
 from .scope import SearchHint, VisualEventType
 from .smoke_errors import ProviderPayloadError
 from .sources import AnalysisSourceResolver, CandidateSourceLink
@@ -33,6 +33,20 @@ from .visual import (
 )
 
 _LEGACY_EVENT_NAMES = {"LANE_CHANGE": VisualEventType.SOLID_LINE_LANE_CHANGE}
+
+# `FrameRef`는 `recording.resolve_frame(locator)`만 발급한다
+# (`contract-source-asset-media-stream.md` §5.3). Fine 입력은 clip 한 덩어리라
+# 모델에게 준 frame inventory가 없고, 따라서 모델이 답할 수 있는 ref도 없다 —
+# 실제로 Gemini는 이 칸에 `"00:03"` 같은 타임스탬프를 넣어 돌려줬다(이슈 #135).
+# 타임스탬프를 `fr_...`로 합성하는 길은 막혀 있다: `contract-visual-evidence.md` §4
+# "위치는 ID에 인코딩하지 않는다", `module-architecture.md` "Consumer가 여러 값을
+# 이어 붙여 ref를 합성하는 것도 금지다". 그래서 wire schema에서 이 칸을 빼 애초에
+# 묻지 않고, 공개 계약의 `evidence_refs`는 발급받은 ref가 생길 때까지 비워 둔다.
+_NO_FRAME_REFS: tuple[str, ...] = ()
+
+
+def _with_no_frame_refs(item: WireModel) -> dict[str, object]:
+    return {**item.model_dump(), "evidence_refs": _NO_FRAME_REFS}
 
 
 def _clip_relative_temporal_facts(
@@ -73,7 +87,7 @@ def _clip_relative_temporal_facts(
             TemporalFact(
                 at_offset_ms=offset,
                 fact=item.fact,
-                evidence_refs=item.evidence_refs,
+                evidence_refs=_NO_FRAME_REFS,
             )
         )
     return tuple(checked)
@@ -195,13 +209,14 @@ def verify_fine(
         candidate_id=candidate.candidate_id,
         verification=response.verification,
         visual_event_type=response.visual_event_type,
-        target=Target.model_validate(response.target.model_dump()),
+        target=Target.model_validate(_with_no_frame_refs(response.target)),
         primitives=tuple(
-            Primitive.model_validate(item.model_dump()) for item in response.primitives
+            Primitive.model_validate(_with_no_frame_refs(item))
+            for item in response.primitives
         ),
         temporal_facts=temporal_facts,
         uncertainties=tuple(
-            Uncertainty.model_validate(item.model_dump())
+            Uncertainty.model_validate(_with_no_frame_refs(item))
             for item in response.uncertainties
         ),
         legal_status=None,
