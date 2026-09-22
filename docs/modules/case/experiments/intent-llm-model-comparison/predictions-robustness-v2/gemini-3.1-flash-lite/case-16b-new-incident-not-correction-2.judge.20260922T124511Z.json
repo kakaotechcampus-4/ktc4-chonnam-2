@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 '오늘 아침'을 정확히 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 끌어오지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 '불법 유턴'을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 언급이 없어 null로 둔 것이 적절하며 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'그건 됐고'는 명시적 전환 신호로 완전히 새로운 사고를 설명하는 것인데, 모델이 이를 기존 필드 수정으로 오인해 correction_target='time_hint'를 채웠다. expected_notes에 따르면 이 경우 correction_target은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 사고 설명 자체는 명확해 confidence 값 자체는 그럴듯하나, correction_target을 잘못 판단한 상태에서 매겨진 confidence이므로 전체 판단의 정확성 맥락에서 부분 점수만 준다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문 '오늘 아침'을 정확히 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 끌어오지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문 '불법 유턴'을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 언급이 없어 null로 둔 것이 적절하며 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'그건 됐고'는 명시적 전환 신호로 완전히 새로운 사고를 설명하는 것인데, 모델이 이를 기존 필드 수정으로 오인해 correction_target='time_hint'를 채웠다. expected_notes에 따르면 이 경우 correction_target은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 사고 설명 자체는 명확해 confidence 값 자체는 그럴듯하나, correction_target을 잘못 판단한 상태에서 매겨진 confidence이므로 전체 판단의 정확성 맥락에서 부분 점수만 준다."
+    }
+  },
+  "latency_ms": 7166.4940000046045,
+  "prompt_tokens": 2952,
+  "completion_tokens": 593,
+  "cost_krw": null,
+  "error": null
+}

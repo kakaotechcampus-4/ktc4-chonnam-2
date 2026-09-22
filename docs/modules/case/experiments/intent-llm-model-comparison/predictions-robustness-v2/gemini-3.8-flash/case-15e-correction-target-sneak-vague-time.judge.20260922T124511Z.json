@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에서는 '19시쯤이었던 것 같기도 하고'라는 모호한 추측성 표현일 뿐인데, 모델이 이를 '19시쯤'이라는 확정된 값으로 바꿔 넣었다. expected_notes에 따르면 이런 모호한 정정은 값을 확정하지 말고 낮은 confidence로 남기거나 정정하지 않은 채 둬야 하므로, 구체적 값을 지어낸 것은 hallucination이다.\"}, \"vehicle_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에서 차량에 대한 정정 언급이 없으므로 이전 값인 '흰색 SUV'를 유지했어야 하는데, 모델은 이를 null로 비워 정보를 누락시켰다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '신호위반이 아니라 중앙선 침범이었어요'라고 명확히 정정하고 있으므로 '중앙선 침범'으로 값을 바꾼 것은 정확하다.\"}, \"location_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 위치에 대한 언급이나 정정이 없으므로 이전 값 '상무중앙로'를 유지했어야 하는데 null로 비워 정보를 누락시켰다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"situation_hint가 명확한 정정 대상인 것은 맞게 짚었으나, 원문에는 time_hint에 대한 모호한 정정 시도도 함께 있었는데 이를 correction_target에 반영하지 않고 situation_hint 단일 값으로만 표기하여 일부만 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"confidence를 'low'로 낮춘 것 자체는 시간 표현의 불확실성을 인지한 결과로 방향은 맞으나, 정작 time_hint 값 자체를 '19시쯤'으로 확정해버려 confidence와 실제 값 처리가 모순된다 — 불확실성을 인정했다면 값을 확정하지 말았어야 하므로 전체적으로 지어낸 확정값에 대한 낮은 신뢰도 표시로는 부적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에서는 '19시쯤이었던 것 같기도 하고'라는 모호한 추측성 표현일 뿐인데, 모델이 이를 '19시쯤'이라는 확정된 값으로 바꿔 넣었다. expected_notes에 따르면 이런 모호한 정정은 값을 확정하지 말고 낮은 confidence로 남기거나 정정하지 않은 채 둬야 하므로, 구체적 값을 지어낸 것은 hallucination이다."
+    },
+    "vehicle_hint": {
+      "verdict": "missed",
+      "reason": "원문에서 차량에 대한 정정 언급이 없으므로 이전 값인 '흰색 SUV'를 유지했어야 하는데, 모델은 이를 null로 비워 정보를 누락시켰다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '신호위반이 아니라 중앙선 침범이었어요'라고 명확히 정정하고 있으므로 '중앙선 침범'으로 값을 바꾼 것은 정확하다."
+    },
+    "location_hint": {
+      "verdict": "missed",
+      "reason": "원문에 위치에 대한 언급이나 정정이 없으므로 이전 값 '상무중앙로'를 유지했어야 하는데 null로 비워 정보를 누락시켰다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "situation_hint가 명확한 정정 대상인 것은 맞게 짚었으나, 원문에는 time_hint에 대한 모호한 정정 시도도 함께 있었는데 이를 correction_target에 반영하지 않고 situation_hint 단일 값으로만 표기하여 일부만 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "confidence를 'low'로 낮춘 것 자체는 시간 표현의 불확실성을 인지한 결과로 방향은 맞으나, 정작 time_hint 값 자체를 '19시쯤'으로 확정해버려 confidence와 실제 값 처리가 모순된다 — 불확실성을 인정했다면 값을 확정하지 말았어야 하므로 전체적으로 지어낸 확정값에 대한 낮은 신뢰도 표시로는 부적절하다."
+    }
+  },
+  "latency_ms": 11042.598800035194,
+  "prompt_tokens": 3055,
+  "completion_tokens": 922,
+  "cost_krw": null,
+  "error": null
+}

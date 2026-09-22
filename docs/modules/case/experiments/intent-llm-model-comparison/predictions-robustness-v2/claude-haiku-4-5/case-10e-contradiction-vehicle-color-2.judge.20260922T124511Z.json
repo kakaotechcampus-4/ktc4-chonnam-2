@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10e-contradiction-vehicle-color-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"검은색과 남색 두 값이 모두 언급되어 불확실한 상태이므로 이를 모두 반영해 '검은색 또는 남색 트럭'으로 표현한 것은 원문의 불확실성을 왜곡 없이 담은 정답으로 볼 수 있다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '불법 유턴'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '죽전로'를 정확히 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"이전 힌트가 없는 최초 발화이므로 correction_target이 null인 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상이 두 번 다르게 언급되어 불확실한 상황임을 인지하고 confidence를 low로 설정했으며, 이는 채점 기준이 요구하는 '임의 확정 후 high 부여'라는 위험 패턴을 피한 올바른 판단이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색과 남색 두 값이 모두 언급되어 불확실한 상태이므로 이를 모두 반영해 '검은색 또는 남색 트럭'으로 표현한 것은 원문의 불확실성을 왜곡 없이 담은 정답으로 볼 수 있다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '불법 유턴'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '죽전로'를 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "이전 힌트가 없는 최초 발화이므로 correction_target이 null인 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상이 두 번 다르게 언급되어 불확실한 상황임을 인지하고 confidence를 low로 설정했으며, 이는 채점 기준이 요구하는 '임의 확정 후 high 부여'라는 위험 패턴을 피한 올바른 판단이다."
+    }
+  },
+  "latency_ms": 6599.8947999905795,
+  "prompt_tokens": 2883,
+  "completion_tokens": 565,
+  "cost_krw": null,
+  "error": null
+}

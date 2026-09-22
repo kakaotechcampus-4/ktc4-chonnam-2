@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 추측 표현인데, 모델은 이를 구체적인 '19시쯤'으로 확정해 값을 채웠다. expected_notes에 따르면 이런 모호한 정정은 지어내면 hallucination에 해당한다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"이번 발화에서 차량 관련 언급이 전혀 없는데, prior_hints의 '흰색 SUV'를 이어가지 않고 null로 처리한 것은 정정 컨텍스트에서는 값을 비운 것이므로 원문 기준으로는 올바른 처리다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '신호위반이 아니라 중앙선 침범'이라고 명확히 정정했고, 모델이 이를 '중앙선 침범'으로 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 위치 관련 언급이 없으므로 null 처리한 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"situation_hint를 정정 대상으로 잡은 것은 맞지만, 시간에 대한 모호한 정정 언급도 있었으므로 correction_target이 situation_hint 하나로만 국한된 것은 시간 정정 언급을 놓친 것으로 볼 수 있어 부분 정답이다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"confidence를 low로 낮춘 것은 방향은 맞으나, 이는 time_hint를 구체값으로 확정해놓고 나서 confidence만 낮춘 것이라 실제로는 time_hint 자체를 모호하게 남겨야 했던 것과 불일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 추측 표현인데, 모델은 이를 구체적인 '19시쯤'으로 확정해 값을 채웠다. expected_notes에 따르면 이런 모호한 정정은 지어내면 hallucination에 해당한다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "이번 발화에서 차량 관련 언급이 전혀 없는데, prior_hints의 '흰색 SUV'를 이어가지 않고 null로 처리한 것은 정정 컨텍스트에서는 값을 비운 것이므로 원문 기준으로는 올바른 처리다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '신호위반이 아니라 중앙선 침범'이라고 명확히 정정했고, 모델이 이를 '중앙선 침범'으로 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 위치 관련 언급이 없으므로 null 처리한 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "situation_hint를 정정 대상으로 잡은 것은 맞지만, 시간에 대한 모호한 정정 언급도 있었으므로 correction_target이 situation_hint 하나로만 국한된 것은 시간 정정 언급을 놓친 것으로 볼 수 있어 부분 정답이다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "confidence를 low로 낮춘 것은 방향은 맞으나, 이는 time_hint를 구체값으로 확정해놓고 나서 confidence만 낮춘 것이라 실제로는 time_hint 자체를 모호하게 남겨야 했던 것과 불일치한다."
+    }
+  },
+  "latency_ms": 9890.474200015888,
+  "prompt_tokens": 3112,
+  "completion_tokens": 780,
+  "cost_krw": null,
+  "error": null
+}

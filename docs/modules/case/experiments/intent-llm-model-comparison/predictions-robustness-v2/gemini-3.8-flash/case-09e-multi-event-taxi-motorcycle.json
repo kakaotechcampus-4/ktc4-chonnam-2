@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"아침, 저녁\",\n  \"vehicle_hint\": \"택시, 오토바이\",\n  \"situation_hint\": \"정류장에서 급정거, 헬멧 미착용 및 인도 주행\",\n  \"location_hint\": \"정류장, 인도\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"한 발화에 아침의 택시 급정거와 저녁의 오토바이 인도 주행이라는 두 가지 서로 다른 상황이 혼재되어 있어 특정 단일 위반을 확정하기 어려우므로 confidence를 low로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아침, 저녁",
+    "vehicle_hint": "택시, 오토바이",
+    "situation_hint": "정류장에서 급정거, 헬멧 미착용 및 인도 주행",
+    "location_hint": "정류장, 인도",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "한 발화에 아침의 택시 급정거와 저녁의 오토바이 인도 주행이라는 두 가지 서로 다른 상황이 혼재되어 있어 특정 단일 위반을 확정하기 어려우므로 confidence를 low로 지정했습니다."
+  },
+  "latency_ms": 4070.5427000066265,
+  "prompt_tokens": 325,
+  "completion_tokens": 545,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

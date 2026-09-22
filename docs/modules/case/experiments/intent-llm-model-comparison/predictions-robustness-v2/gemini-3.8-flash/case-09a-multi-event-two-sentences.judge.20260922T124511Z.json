@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건의 시점(어제 18시쯤, 오늘 아침)을 모두 나열해 정확히 반영했고 뭉개거나 하나로 확정하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"흰색 SUV, 검은색 세단, 오토바이를 모두 나열했으나 두 번째 사건은 '검은색 세단'과 '오토바이'가 서로 다른 차량인데 이를 구분 없이 나열해 마치 하나의 차량 속성처럼 조합될 위험이 있다 - 원문 자체가 애매한 문장(세단이 오토바이를 탄다는 모순)이라 완전히 잘못됐다고 보긴 어렵지만 정리가 불완전하다.\"}, \"situation_hint\": {\"verdict\": \"partial\", \"reason\": \"신호위반과 헬멧 미착용을 나열한 것은 두 사건의 상황을 모두 담았으나, 두 사건을 구분하지 않고 단순 나열해 어떤 상황이 어떤 사건에 속하는지 불명확하게 처리했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 원문에 명시된 위치이며 첫 번째 사건에 해당하는 값으로 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞여 있고 모순된 진술(세단+오토바이)이 있어 confidence를 low로 설정한 것은 애매함을 적절히 반영한 판단이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "두 사건의 시점(어제 18시쯤, 오늘 아침)을 모두 나열해 정확히 반영했고 뭉개거나 하나로 확정하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "흰색 SUV, 검은색 세단, 오토바이를 모두 나열했으나 두 번째 사건은 '검은색 세단'과 '오토바이'가 서로 다른 차량인데 이를 구분 없이 나열해 마치 하나의 차량 속성처럼 조합될 위험이 있다 - 원문 자체가 애매한 문장(세단이 오토바이를 탄다는 모순)이라 완전히 잘못됐다고 보긴 어렵지만 정리가 불완전하다."
+    },
+    "situation_hint": {
+      "verdict": "partial",
+      "reason": "신호위반과 헬멧 미착용을 나열한 것은 두 사건의 상황을 모두 담았으나, 두 사건을 구분하지 않고 단순 나열해 어떤 상황이 어떤 사건에 속하는지 불명확하게 처리했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 원문에 명시된 위치이며 첫 번째 사건에 해당하는 값으로 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞여 있고 모순된 진술(세단+오토바이)이 있어 confidence를 low로 설정한 것은 애매함을 적절히 반영한 판단이다."
+    }
+  },
+  "latency_ms": 7792.047600029036,
+  "prompt_tokens": 2975,
+  "completion_tokens": 726,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"19시쯤\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": \"중앙선 침범\",\n  \"location_hint\": null,\n  \"correction_target\": \"situation_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"상황을 정정하며 '19시쯤'이라는 시간 표현을 덧붙였습니다. 상황 정정 대상은 situation_hint이나, 시간은 '같기도 하고'와 같이 불확실하게 표현되어 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "상황을 정정하며 '19시쯤'이라는 시간 표현을 덧붙였습니다. 상황 정정 대상은 situation_hint이나, 시간은 '같기도 하고'와 같이 불확실하게 표현되어 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1948.3465000521392,
+  "prompt_tokens": 383,
+  "completion_tokens": 128,
+  "cost_krw": 0.437764,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

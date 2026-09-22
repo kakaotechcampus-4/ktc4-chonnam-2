@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 '방금'이라는 시간 표현이 명확히 있고, 이는 새로운 사고에 대한 시간 정보이므로 정확히 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 '오토바이'가 명확히 언급되었고 이전 SUV 정보를 끌어오지 않고 새로 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"헬멧 없이 신호위반이라는 원문 내용을 그대로 반영했고 이전 차로 변경 정보를 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고 이전 상무중앙로 정보를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"새로운 별개의 사고임을 인지하고 correction_target을 null로 두어 기존 필드 정정으로 오인하지 않았다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 사고의 정보(오토바이, 헬멧 미착용, 신호위반, 방금)는 원문에 명확히 있지만 location_hint가 없어 정보가 불완전한데도 high로 판단한 것은 다소 과도하며, medium 정도가 더 적절해 보인다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에 '방금'이라는 시간 표현이 명확히 있고, 이는 새로운 사고에 대한 시간 정보이므로 정확히 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화에 '오토바이'가 명확히 언급되었고 이전 SUV 정보를 끌어오지 않고 새로 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "헬멧 없이 신호위반이라는 원문 내용을 그대로 반영했고 이전 차로 변경 정보를 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고 이전 상무중앙로 정보를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "새로운 별개의 사고임을 인지하고 correction_target을 null로 두어 기존 필드 정정으로 오인하지 않았다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 사고의 정보(오토바이, 헬멧 미착용, 신호위반, 방금)는 원문에 명확히 있지만 location_hint가 없어 정보가 불완전한데도 high로 판단한 것은 다소 과도하며, medium 정도가 더 적절해 보인다."
+    }
+  },
+  "latency_ms": 7167.812500032596,
+  "prompt_tokens": 2941,
+  "completion_tokens": 618,
+  "cost_krw": null,
+  "error": null
+}

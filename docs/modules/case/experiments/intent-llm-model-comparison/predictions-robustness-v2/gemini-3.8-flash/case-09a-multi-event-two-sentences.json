@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤, 오늘 아침\",\n  \"vehicle_hint\": \"흰색 SUV, 검은색 세단, 오토바이\",\n  \"situation_hint\": \"신호위반, 헬멧 미착용\",\n  \"location_hint\": \"상무중앙로\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"두 개 이상의 별개 사건이 한 문장에 섞여 있고, '검은색 세단이 헬멧 없이 오토바이를 탄다'는 상충되고 불확실한 진술이 포함되어 있어 신뢰도를 low로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤, 오늘 아침",
+    "vehicle_hint": "흰색 SUV, 검은색 세단, 오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "두 개 이상의 별개 사건이 한 문장에 섞여 있고, '검은색 세단이 헬멧 없이 오토바이를 탄다'는 상충되고 불확실한 진술이 포함되어 있어 신뢰도를 low로 판단했습니다."
+  },
+  "latency_ms": 3796.2262000655755,
+  "prompt_tokens": 338,
+  "completion_tokens": 539,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

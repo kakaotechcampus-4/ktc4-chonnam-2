@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13d-chinese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"昨天晚上八点左右\",\n  \"vehicle_hint\": \"黑色卡车\",\n  \"situation_hint\": \"违反信号灯\",\n  \"location_hint\": \"世宗路\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 차량, 위치, 위반 상황이 명확하게 기술되어 신뢰도를 high로 설정하였으며 이전 단서가 없어 정정 대상은 없습니다.\"\n}",
+  "parsed": {
+    "time_hint": "昨天晚上八点左右",
+    "vehicle_hint": "黑色卡车",
+    "situation_hint": "违反信号灯",
+    "location_hint": "世宗路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 차량, 위치, 위반 상황이 명확하게 기술되어 신뢰도를 high로 설정하였으며 이전 단서가 없어 정정 대상은 없습니다."
+  },
+  "latency_ms": 2545.860299956985,
+  "prompt_tokens": 311,
+  "completion_tokens": 305,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

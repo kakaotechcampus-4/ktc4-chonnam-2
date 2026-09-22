@@ -1,0 +1,14 @@
+{
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": null,
+  "parsed": null,
+  "latency_ms": 2782.1548999054357,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost_krw": null,
+  "error": "2 validation errors for IntentHintExtraction\nconfidence\n  Input should be 'high' or 'low' [type=literal_error, input_value='high</confidence>\\n<para...n_target은 null이다.', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/literal_error\nreasoning\n  Field required [type=missing, input_value={'time_hint': '아침, ..._target은 null이다.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing",
+  "schema_valid": false,
+  "schema_errors": []
+}

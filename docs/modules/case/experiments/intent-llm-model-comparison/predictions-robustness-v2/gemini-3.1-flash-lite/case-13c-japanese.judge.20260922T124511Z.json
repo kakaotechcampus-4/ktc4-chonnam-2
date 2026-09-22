@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13c-japanese",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '昨日18時ごろ'를 그대로 추출했으며 시간 정보가 누락되지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '白いSUV'를 그대로 추출하여 차량 정보를 정확히 반영했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '車線変更'(차선 변경) 상황을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '商武中央路' 위치 정보를 그대로 추출하여 누락 없이 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"원문에 정정 요청 관련 내용이 없으므로 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·차량·상황·위치 정보가 모두 명확히 존재하므로 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '昨日18時ごろ'를 그대로 추출했으며 시간 정보가 누락되지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '白いSUV'를 그대로 추출하여 차량 정보를 정확히 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '車線変更'(차선 변경) 상황을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '商武中央路' 위치 정보를 그대로 추출하여 누락 없이 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문에 정정 요청 관련 내용이 없으므로 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·차량·상황·위치 정보가 모두 명확히 존재하므로 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 4652.250699931756,
+  "prompt_tokens": 2870,
+  "completion_tokens": 479,
+  "cost_krw": null,
+  "error": null
+}

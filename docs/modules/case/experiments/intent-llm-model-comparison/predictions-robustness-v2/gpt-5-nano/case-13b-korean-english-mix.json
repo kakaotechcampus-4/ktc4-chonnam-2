@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13b-korean-english-mix",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 6시쯤\",\"vehicle_hint\":\"white SUV\",\"situation_hint\":\"lane change\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"time_hint은 원문 '어제 6시쯤'을 그대로 담고, vehicle_hint는 'white SUV', location_hint은 '상무중앙로', situation_hint은 'lane change'로 기록했습니다. correction_target는 null이며, prior_hints가 없으므로 추가 수정은 필요하지 않습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 6시쯤",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "lane change",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "time_hint은 원문 '어제 6시쯤'을 그대로 담고, vehicle_hint는 'white SUV', location_hint은 '상무중앙로', situation_hint은 'lane change'로 기록했습니다. correction_target는 null이며, prior_hints가 없으므로 추가 수정은 필요하지 않습니다."
+  },
+  "latency_ms": 13417.957699974068,
+  "prompt_tokens": 791,
+  "completion_tokens": 1735,
+  "cost_krw": 1.1167310000000001,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

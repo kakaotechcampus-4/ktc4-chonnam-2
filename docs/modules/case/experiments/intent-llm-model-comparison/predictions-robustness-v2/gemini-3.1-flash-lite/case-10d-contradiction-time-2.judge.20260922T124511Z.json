@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"20시에서 21시로 자기 정정한 마지막 값을 채택했으므로 값 자체는 타당하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 오토바이가 명확히 언급되어 있다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"신호위반이 원문에 명확히 언급되어 있다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"죽전로가 원문에 명확히 언급되어 있다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"시간 정보가 20시에서 21시로 정정되었으므로 correction_target을 time_hint로 잡은 것은 타당하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"한 문장 안에서 시간 값이 두 번 바뀐 불확실한 발화임에도 confidence를 high로 매긴 것은 근거 없는 과신이며, 이 케이스의 핵심 채점 기준에 정면으로 위배된다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "20시에서 21시로 자기 정정한 마지막 값을 채택했으므로 값 자체는 타당하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 오토바이가 명확히 언급되어 있다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반이 원문에 명확히 언급되어 있다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "죽전로가 원문에 명확히 언급되어 있다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "시간 정보가 20시에서 21시로 정정되었으므로 correction_target을 time_hint로 잡은 것은 타당하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "한 문장 안에서 시간 값이 두 번 바뀐 불확실한 발화임에도 confidence를 high로 매긴 것은 근거 없는 과신이며, 이 케이스의 핵심 채점 기준에 정면으로 위배된다."
+    }
+  },
+  "latency_ms": 5789.320899988525,
+  "prompt_tokens": 2818,
+  "completion_tokens": 496,
+  "cost_krw": null,
+  "error": null
+}

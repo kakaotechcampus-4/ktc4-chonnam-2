@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13a-english-only",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"Yesterday around 6pm\",\"vehicle_hint\":\"white SUV\",\"situation_hint\":\"changed lanes on a solid line\",\"location_hint\":\"near Sangmu-jungang-ro\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"From the sentence: time expression is 'Yesterday around 6pm'; vehicle described as 'white SUV'; action is 'changed lanes on a solid line'; location is 'near Sangmu-jungang-ro'. No prior hints to correct, so correction_target is null. Confidence is high because all elements are explicitly stated.\"}",
+  "parsed": {
+    "time_hint": "Yesterday around 6pm",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "changed lanes on a solid line",
+    "location_hint": "near Sangmu-jungang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "From the sentence: time expression is 'Yesterday around 6pm'; vehicle described as 'white SUV'; action is 'changed lanes on a solid line'; location is 'near Sangmu-jungang-ro'. No prior hints to correct, so correction_target is null. Confidence is high because all elements are explicitly stated."
+  },
+  "latency_ms": 9795.225200010464,
+  "prompt_tokens": 791,
+  "completion_tokens": 1218,
+  "cost_krw": 0.8018779999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

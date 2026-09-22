@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10e-contradiction-vehicle-color-2",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭(색상: 불확실: 검은색 또는 남색)\", \"situation_hint\": \"죽전로에서의 불법 유턴\", \"location_hint\": \"죽전로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화에서 차량은 '트럭'으로 지목되며 색상은 '검은색'과 '남색' 두 가지 가능성이 제시되어 색상 식별이 불확실하다. 핵심 행위는 '불법 유턴'이고 위치는 '죽전로'로 명시되어 있다. prior_hints가 null이므로 이번 발화에서 정정 대상 필드를 지정하지 않았다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭(색상: 불확실: 검은색 또는 남색)",
+    "situation_hint": "죽전로에서의 불법 유턴",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에서 차량은 '트럭'으로 지목되며 색상은 '검은색'과 '남색' 두 가지 가능성이 제시되어 색상 식별이 불확실하다. 핵심 행위는 '불법 유턴'이고 위치는 '죽전로'로 명시되어 있다. prior_hints가 null이므로 이번 발화에서 정정 대상 필드를 지정하지 않았다."
+  },
+  "latency_ms": 15015.423399978317,
+  "prompt_tokens": 796,
+  "completion_tokens": 2160,
+  "cost_krw": 1.375936,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

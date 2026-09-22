@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 SUV\", \"situation_hint\": null, \"location_hint\": \"좀 더 아래쪽이었던 것 같아요\", \"correction_target\": \"vehicle_hint\", \"confidence\": \"high\", \"reasoning\": \"발화에서 차량 색깔이 '은색'으로 정정되었으므로 correction_target를 vehicle_hint로 설정했다. 위치는 '좀 더 아래쪽이었던 것 같아요'라고 명시되어 있어 location_hint에 반영한다. 시간 및 상황은 발화에 새로운 정보로 언급되지 않았으므로 null로 두고, 이번 발화의 내용이 비교적 명확하므로 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 SUV",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽이었던 것 같아요",
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "발화에서 차량 색깔이 '은색'으로 정정되었으므로 correction_target를 vehicle_hint로 설정했다. 위치는 '좀 더 아래쪽이었던 것 같아요'라고 명시되어 있어 location_hint에 반영한다. 시간 및 상황은 발화에 새로운 정보로 언급되지 않았으므로 null로 두고, 이번 발화의 내용이 비교적 명확하므로 confidence를 high로 판단했다."
+  },
+  "latency_ms": 15507.15439999476,
+  "prompt_tokens": 845,
+  "completion_tokens": 2340,
+  "cost_krw": 1.48928,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

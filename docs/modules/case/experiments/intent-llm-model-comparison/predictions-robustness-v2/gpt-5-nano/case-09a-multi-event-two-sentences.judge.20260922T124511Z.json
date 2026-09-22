@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건의 시간(어제 18시쯤, 오늘 아침)을 모두 나열하고 하나로 뭉개지 않았으며 속성 교차조합도 없다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색 SUV와 검은색 세단을 각각 구분해 나열했고 두 사건의 속성을 섞어 조합하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"신호위반과 헬멧 미착용 오토바이 상황을 별개로 기술했고, 세단과 오토바이 주체 불일치까지 지적해 사건을 억지로 하나로 합치거나 속성을 교차조합하지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 원문에 명시된 위치이며 신호위반 사건에 해당하는 위치로 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞여 있고 주체 불일치 등 애매함이 있어 confidence=low로 반영한 것이 판정 기준과 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "두 사건의 시간(어제 18시쯤, 오늘 아침)을 모두 나열하고 하나로 뭉개지 않았으며 속성 교차조합도 없다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색 SUV와 검은색 세단을 각각 구분해 나열했고 두 사건의 속성을 섞어 조합하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반과 헬멧 미착용 오토바이 상황을 별개로 기술했고, 세단과 오토바이 주체 불일치까지 지적해 사건을 억지로 하나로 합치거나 속성을 교차조합하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 원문에 명시된 위치이며 신호위반 사건에 해당하는 위치로 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞여 있고 주체 불일치 등 애매함이 있어 confidence=low로 반영한 것이 판정 기준과 부합한다."
+    }
+  },
+  "latency_ms": 6330.680700019002,
+  "prompt_tokens": 3040,
+  "completion_tokens": 590,
+  "cost_krw": null,
+  "error": null
+}

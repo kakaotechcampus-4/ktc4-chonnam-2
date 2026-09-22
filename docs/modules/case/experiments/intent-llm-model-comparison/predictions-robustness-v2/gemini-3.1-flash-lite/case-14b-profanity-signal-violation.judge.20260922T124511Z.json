@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-14b-profanity-signal-violation",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리한 것은 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"검은색 트럭이라는 차량 정보가 원문에 명확히 있고 정확히 추출되었다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"신호위반 후 그냥 가버렸다는 내용이 '신호위반 후 도주'로 정확히 반영되었고, 욕설은 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리는 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아닌 최초 진술이므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량, 상황 정보가 명확하게 진술되어 있어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리한 것은 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색 트럭이라는 차량 정보가 원문에 명확히 있고 정확히 추출되었다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반 후 그냥 가버렸다는 내용이 '신호위반 후 도주'로 정확히 반영되었고, 욕설은 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리는 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아닌 최초 진술이므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량, 상황 정보가 명확하게 진술되어 있어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 4950.922999996692,
+  "prompt_tokens": 2767,
+  "completion_tokens": 471,
+  "cost_krw": null,
+  "error": null
+}

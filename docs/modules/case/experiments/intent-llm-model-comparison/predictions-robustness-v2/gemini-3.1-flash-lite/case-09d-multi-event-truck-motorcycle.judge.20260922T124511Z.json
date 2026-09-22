@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09d-multi-event-truck-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"지난달과 방금 두 시점을 각 사건에 대응해 나열했으며 서로 조합해 새로운 시점을 만들지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"파란색 트럭과 오토바이를 각각 나열했고 속성을 교차 조합하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"불법 주차와 신호위반을 각각 나열했고 두 사건의 상황을 뒤섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 상황이 아니므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞여 있어 애매함을 low로 반영한 것이 판정 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "지난달과 방금 두 시점을 각 사건에 대응해 나열했으며 서로 조합해 새로운 시점을 만들지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "파란색 트럭과 오토바이를 각각 나열했고 속성을 교차 조합하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "불법 주차와 신호위반을 각각 나열했고 두 사건의 상황을 뒤섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 상황이 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞여 있어 애매함을 low로 반영한 것이 판정 기준에 부합한다."
+    }
+  },
+  "latency_ms": 5162.08319994621,
+  "prompt_tokens": 2845,
+  "completion_tokens": 477,
+  "cost_krw": null,
+  "error": null
+}

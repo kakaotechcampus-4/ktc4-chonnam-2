@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"화자가 흰색과 은색 두 값을 언급했는데 마지막 정정값(은색)이 아닌 먼저 말한 값(흰색)을 채택해 확정값으로 제시했다. 자기정정을 반영하지 못했지만 SUV라는 차종 정보와 색상 언급 자체는 살렸으므로 부분 정답으로 본다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경이라는 상황이 원문에 명확히 있고 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없어 정정 대상이 없는 것이 맞고, 모델도 null로 처리했다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"같은 문장 안에서 색상 값이 두 번 바뀌는 모호성을 반영해 confidence를 low로 낮춘 것은 판정 기준(가장 위험한 오답인 high 확신을 피함)에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "화자가 흰색과 은색 두 값을 언급했는데 마지막 정정값(은색)이 아닌 먼저 말한 값(흰색)을 채택해 확정값으로 제시했다. 자기정정을 반영하지 못했지만 SUV라는 차종 정보와 색상 언급 자체는 살렸으므로 부분 정답으로 본다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경이라는 상황이 원문에 명확히 있고 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없어 정정 대상이 없는 것이 맞고, 모델도 null로 처리했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "같은 문장 안에서 색상 값이 두 번 바뀌는 모호성을 반영해 confidence를 low로 낮춘 것은 판정 기준(가장 위험한 오답인 high 확신을 피함)에 부합한다."
+    }
+  },
+  "latency_ms": 6411.5217999788,
+  "prompt_tokens": 2946,
+  "completion_tokens": 585,
+  "cost_krw": null,
+  "error": null
+}

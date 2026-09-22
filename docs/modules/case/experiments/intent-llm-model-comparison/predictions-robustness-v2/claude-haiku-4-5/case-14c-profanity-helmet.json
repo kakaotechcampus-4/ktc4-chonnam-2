@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14c-profanity-helmet",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧을 미착용한 상태로 주행\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 오토바이 헬멧 미착용 상황을 명확하게 목격했으며, 발화 시점은 \\\"방금\\\"이라 구체적이다. 위치나 추가 상황 정보는 언급되지 않았다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧을 미착용한 상태로 주행",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 오토바이 헬멧 미착용 상황을 명확하게 목격했으며, 발화 시점은 \"방금\"이라 구체적이다. 위치나 추가 상황 정보는 언급되지 않았다."
+  },
+  "latency_ms": 2177.9079999541864,
+  "prompt_tokens": 1847,
+  "completion_tokens": 242,
+  "cost_krw": 4.653238,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

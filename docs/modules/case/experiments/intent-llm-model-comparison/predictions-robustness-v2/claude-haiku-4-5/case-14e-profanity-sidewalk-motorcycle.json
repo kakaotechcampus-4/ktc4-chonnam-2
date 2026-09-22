@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14e-profanity-sidewalk-motorcycle",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧 미착용, 인도 주행\", \"location_hint\": \"인도\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 오토바이, 헬멧 미착용, 인도 주행이라는 구체적인 위반 행위를 명확히 언급했다. 시간은 상대 표현도 없고 구체적으로 언급되지 않았으므로 null 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 미착용, 인도 주행",
+    "location_hint": "인도",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 오토바이, 헬멧 미착용, 인도 주행이라는 구체적인 위반 행위를 명확히 언급했다. 시간은 상대 표현도 없고 구체적으로 언급되지 않았으므로 null 처리했다."
+  },
+  "latency_ms": 2252.3754000430927,
+  "prompt_tokens": 1851,
+  "completion_tokens": 251,
+  "cost_krw": 4.727834,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

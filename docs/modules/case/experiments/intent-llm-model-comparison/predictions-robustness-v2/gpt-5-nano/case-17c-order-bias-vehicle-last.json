@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "scenario_tag": "정보_위치순서_편향",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"차로를 변경하는 차가 있었다\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 명시된 시간 표현은 '어제 18시쯤'으로 원문을 보존해야 하므로 time_hint로 추출. 위치는 '상무중앙로 사거리'가 정확히 언급되어 location_hint로 채택. 차량은 '흰색 SUV'로 색상과 유형이 직접 기술되어 vehicle_hint로 반영. 사건은 '차로를 변경하는 차'가 핵심이므로 situation_hint로 설정. prior_hints가 null이므로 correction_target도 null이며, 정보가 발화에 명시적으로 제시되어 있어 confidence는 high로 판단한다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로를 변경하는 차가 있었다",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 명시된 시간 표현은 '어제 18시쯤'으로 원문을 보존해야 하므로 time_hint로 추출. 위치는 '상무중앙로 사거리'가 정확히 언급되어 location_hint로 채택. 차량은 '흰색 SUV'로 색상과 유형이 직접 기술되어 vehicle_hint로 반영. 사건은 '차로를 변경하는 차'가 핵심이므로 situation_hint로 설정. prior_hints가 null이므로 correction_target도 null이며, 정보가 발화에 명시적으로 제시되어 있어 confidence는 high로 판단한다."
+  },
+  "latency_ms": 13518.708100076765,
+  "prompt_tokens": 809,
+  "completion_tokens": 2126,
+  "cost_krw": 1.356218,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
