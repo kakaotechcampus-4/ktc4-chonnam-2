@@ -7,6 +7,8 @@ from typing import Any
 
 from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .corrections import correction_heads
+from .disposition import NOT_ASSEMBLED, classify_visual_evidence
+from .errors import VisualEventNotAssembled
 from .policy import EVIDENCE_POLICY_REF, GENERIC_VIOLATION_EXPRESSION, event_policy
 
 _TIME_LABELS = {
@@ -189,7 +191,15 @@ def assemble_evidence(
     situation_response: Contract | None = None,
     correction_records: list[Contract] | None = None,
 ) -> Contract:
-    """Adopt upstream observations into an immutable EvidenceRecord."""
+    """Adopt upstream observations into an immutable EvidenceRecord.
+
+    A `NOT_OBSERVED` VisualEvidence never reaches a Record — the decision belongs to
+    `classify_visual_evidence()`, which the caller is expected to ask first.  This
+    guard only stops a direct call from promoting that valid negative into one.
+    """
+    disposition = classify_visual_evidence(visual_evidence, situation_response)
+    if disposition.decision == NOT_ASSEMBLED:
+        raise VisualEventNotAssembled(disposition.reason_code)
     require(isinstance(selection_rev, int) and not isinstance(selection_rev, bool) and selection_rev >= 1, "selection_rev must be >= 1")
     _validate_context(
         case_id=case_id,
