@@ -288,3 +288,34 @@ daesingo.evidence.errors.ContractInputError: only an UNCERTAIN VisualEvidence ma
    `docs/modules/case/experiments/real-e2e-captures/`에 저장한다 —
    다음에 같은 상황을 다시 보고 싶으면 재호출 없이 replay하면 된다.
 
+
+## 실행 6회차 — 2026-09-22 (이슈 #137 수정 후 재시도, 성공)
+
+**결과: 성공.** PR #142(evidence `classify_visual_evidence()` 신설)와 그 case
+쪽 후속 정합화(`build_evidence_for_real_video_candidate()`에 동일 분류 적용,
+PR #131 rebase 후 커밋)를 마치고 재시도했다.
+
+```
+Disposition: decision=NOT_ASSEMBLED, verification=NOT_OBSERVED,
+             reason_code=evidence.visual_event.not_observed
+assembled: False
+```
+
+5회차와 같은 candidate가 다시 `NOT_OBSERVED`로 나왔지만, 이번엔 `ContractInputError`
+없이 정상 종료했다 — `EvidenceRecord`/`RequirementReport`/`ReportPackage` 전부
+`None`이고 `VisualEvidence`·Fine `AnalysisRun`·usage는 그대로 보존됐다
+(`on_visual_result` 캡처: `real-e2e-captures/run-20260922-224602.json`). 이게
+PR #142 본문이 정의한 negative 경로 성공 기준(Record/Report/Package 미생성,
+예외 없음, VisualEvidence·Usage 보존)과 정확히 일치한다 — **case가 사용자에게
+지시받은 이번 real E2E 목표는 이 negative 경로 확인으로 충분하다고 판단, 여기서
+종결한다.** OBSERVED까지 가는 자동 후보 순회는 의도적 비범위(§ADR-EVIDENCE-007 §7).
+
+실제 유료 호출 2건(Coarse+Fine), input_tokens=2818/output_tokens=1096,
+`real-e2e-usage-log.jsonl`에 기록.
+
+**환경 참고 — ffmpeg 빌드.** 이 실행 시점에 PATH 최우선 `ffmpeg`가 conda의 4.3.1이라
+transcode가 실패했다(이전에 이미 발견한 그 버전 문제, 정철원에게 보고됨) —
+`static_ffmpeg`(pip 패키지가 받은 8.0.1 essentials 빌드) 경로를 PATH 맨 앞에
+둬서 우회했다. `daesingo.recording.materialization`은 `ffmpeg`/`ffprobe`를
+bare 이름으로 호출해 PATH 탐색에 의존하므로, 이 환경에서 다시 실행할 땐 매번
+PATH 순서를 확인해야 한다.
