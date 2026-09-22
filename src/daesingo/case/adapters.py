@@ -333,8 +333,13 @@ class RealAdapter:
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
         """`scenario_happy_001` 대표 시나리오는 supersede 체인이 없어(1건뿐) 리스트도
-        1건이다 — plate_reread류 다건 체인은 W7 확장 대상(모듈 docstring 참고)."""
-        return [self._build_evidence_bundle().evidence_record]
+        1건이다 — plate_reread류 다건 체인은 W7 확장 대상(모듈 docstring 참고).
+
+        Fine이 후보를 기각해(`NOT_OBSERVED`) 조립 자체가 없으면 빈 리스트다 — 그건
+        조용한 실패가 아니라 `EvidenceBundle.disposition`에 사유가 남는 정상 결과다
+        (이슈 #137)."""
+        record = self._build_evidence_bundle().evidence_record
+        return [record] if record is not None else []
 
     def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
         bundle = self._build_evidence_bundle()

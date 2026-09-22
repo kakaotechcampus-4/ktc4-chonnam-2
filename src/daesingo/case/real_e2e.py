@@ -22,6 +22,22 @@ Worker 배선은 이번 범위 밖).
   좌표(`location.coord`)는 GPS producer가 연결되기 전까지 비어 있을 수 있다.
 - **시나리오 고정**: `scenario_happy_001` 하나로 고정돼 있다. 다른 시나리오로 넓히려면
   recording fixture 선택과 asset_facts 매핑을 다시 설계해야 한다(W7).
+
+## Fine 결과 소비 (이슈 #137)
+
+Fine은 `OBSERVED` 말고도 정상적인 결과를 낸다. `verification=NOT_OBSERVED`는 "영상은 봤고
+실행도 성공했는데 이 후보를 지지하는 근거가 없다"는 뜻이고(`contract-visual-evidence.md`
+§4-1), `EvidenceRecord`로 승격시키면 안 되는 유효한 negative 결과다. 그래서 이 파이프라인은
+Fine 결과를 받자마자 `evidence.classify_visual_evidence()`로 분류하고, 조립 대상이 아니면
+IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정상 종료한다 —
+`EvidenceBundle`의 조립 산출물이 전부 `None`인 것이 그 상태다.
+
+`NOT_OBSERVED`를 `UNCERTAIN` fallback으로 합치지 않는다. `UNCERTAIN + USER_UNSURE`는
+사용자가 "잘 모르겠지만 진행"을 택한 generic 신고 경로이고, `NOT_OBSERVED`는 Fine이 후보를
+기각한 것이라 둘을 합치면 관찰되지 않은 위반으로 신고문을 만들게 된다.
+
+다음 후보를 자동으로 Fine하거나 가장 높은 후보를 자동 채택하는 정책은 여기 없다 —
+`core-user-flow.md`가 정본화된 뒤 Product/Case/Evidence/Web이 함께 정할 후속 변경이다.
 """
 
 from __future__ import annotations
@@ -34,9 +50,12 @@ from typing import Any
 
 from daesingo import search as search_module
 from daesingo.evidence import (
+    NOT_ASSEMBLED,
+    VisualEvidenceDisposition,
     assemble_evidence,
     build_report_package,
     calculate_evidence_needs,
+    classify_visual_evidence,
     evaluate_requirements,
     resolve_time,
 )
@@ -81,12 +100,27 @@ def _select_asset_span(
 
 @dataclass
 class EvidenceBundle:
-    evidence_record: dict[str, Any]
+    """Fine 결과를 소비한 결과. `NOT_OBSERVED`면 조립 산출물 쪽이 전부 `None`이다.
+
+    `visual_evidence`/`fine_run`/`disposition`은 어느 결말에서도 채워진다 — Fine이
+    후보를 기각했다는 것도 평가·진단에 쓰이는 관찰 결과라서(`adr-visual-evidence.md`)
+    조립을 하지 않는다고 지워버리면 안 된다. `fine_run`에 `usage_refs`/`usage_summary`가
+    들어 있어 비용 기록도 같이 남는다.
+    """
+
+    evidence_record: dict[str, Any] | None
     evidence_needs: dict[str, Any] | None
-    requirement_report_evidence: dict[str, Any]
-    requirement_report_package: dict[str, Any]
+    requirement_report_evidence: dict[str, Any] | None
+    requirement_report_package: dict[str, Any] | None
     report_package: dict[str, Any] | None
     package_error: str | None
+    visual_evidence: dict[str, Any]
+    fine_run: dict[str, Any]
+    disposition: VisualEvidenceDisposition
+
+    @property
+    def assembled(self) -> bool:
+        return self.evidence_record is not None
 
 
 def build_happy_001_evidence_bundle(
@@ -126,12 +160,33 @@ def build_happy_001_evidence_bundle(
         selected_span.model_dump(mode="json"),
         fixture.analysis_sources[0].profile_ref,
     )
-    incident_clip = rec_service.build_incident_clip(resolution.model_dump(mode="json"))
-
     visual_result = search_module.verify_visual(
         search_module.ContractRef(kind="analysis_source", ref=analysis_source.analysis_source_ref),
         scope.hint,
     )
+    visual_evidence = visual_result.visual_evidence.model_dump(mode="json")
+    fine_run = visual_result.analysis_run.model_dump(mode="json")
+
+    # Fine 결과를 downstream으로 밀어넣기 전에 먼저 분류한다(이슈 #137). `NOT_OBSERVED`는
+    # 실행 실패가 아니라 "이 후보는 아니다"라는 유효한 관찰 결과이므로, IncidentClip·
+    # readout·TimeResolution·evidence 조립을 시작하지 않고 여기서 정상 종료한다.
+    # 다음 후보를 자동으로 고르는 정책은 이번 범위가 아니다 — `core-user-flow.md`가
+    # 정본화된 뒤 별도로 결정한다.
+    disposition = classify_visual_evidence(visual_evidence)
+    if disposition.decision == NOT_ASSEMBLED:
+        return EvidenceBundle(
+            evidence_record=None,
+            evidence_needs=None,
+            requirement_report_evidence=None,
+            requirement_report_package=None,
+            report_package=None,
+            package_error=None,
+            visual_evidence=visual_evidence,
+            fine_run=fine_run,
+            disposition=disposition,
+        )
+
+    incident_clip = rec_service.build_incident_clip(resolution.model_dump(mode="json"))
 
     read_request = readout_api.ReadRequest(
         case_id=case_id,
@@ -169,7 +224,7 @@ def build_happy_001_evidence_bundle(
         case_id=case_id,
         selection_rev=selection_rev,
         candidate_event=candidate.model_dump(mode="json"),
-        visual_evidence=visual_result.visual_evidence.model_dump(mode="json"),
+        visual_evidence=visual_evidence,
         time_resolution=time_resolution,
         plate_readout=plate_readout.to_dict() if plate_readout else None,
         incident_clip=incident_clip.model_dump(mode="json"),
@@ -231,4 +286,7 @@ def build_happy_001_evidence_bundle(
         requirement_report_package=requirement_report_package,
         report_package=report_package,
         package_error=package_error,
+        visual_evidence=visual_evidence,
+        fine_run=fine_run,
+        disposition=disposition,
     )
