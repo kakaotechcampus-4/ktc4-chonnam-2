@@ -12,6 +12,7 @@
 
 ## 현재 프롬프트
 
+- `implementation-prompt-issue-137-not-observed.md` — 이슈 #137의 Case `NOT_OBSERVED` 정상 분기, Evidence non-assembly 방어, synthetic 회귀와 negative/positive Real E2E를 현재 Accepted Contract 기준으로 구현·검증하는 발주. 자동 후보 순회·자동 채택·새 Package 정책은 후속 Product-flow 정합화로 제외한다.
 - `implementation-prompt-gpt-5.6-sol.md` — GPT-5.6 Sol에게 보내는 김준영 evidence 1차 구현 발주. 완료 기준은 `../first-completion-checklist.md`이며, common/runtime 구현은 범위에서 제외한다.
 - `implementation-prompt-adr-005-d2.md` — **D2**(판정 주체가 없는 사건 장면·전후 상황 rule 제거)를 catalog revision v4·구현·테스트·Artifact에 반영하는 발주. 기준은 `../adr/adr-event-context-rules-removal.md`이며, `recording` 미결(D2-e)과 통합 항목 I2·I4는 범위에서 제외한다.
 - `implementation-prompt-adr-002-k1-k4.md` — 1차 완료 이후 확정한 Owner 결정 **K1~K4와 D1**을 코드·정책 데이터·계약·테스트·Artifact에 반영하는 발주. 기준은 `../adr/adr-first-completion-owner-decisions.md`(K1~K4)와 `../adr/adr-location-absent-package.md`(D1, 2026-09-14 추가 — 작업 항목 W10~W12)이며, 통합 항목 I1~I11은 범위에서 제외한다. 파일명은 최초 발주 시점 이름을 유지한다.
