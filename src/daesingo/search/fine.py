@@ -169,7 +169,7 @@ def verify_fine(
         operation=Operation.VISUAL_VERIFY,
         input_ref=input_ref,
         implementation=Implementation(
-            impl_id="search:gemini-fine-p2",
+            impl_id="search:gemini-fine-p3",
             model_ref=config.model,
             prompt_version=FINE_PROMPT.version,
             config_version=config.version,

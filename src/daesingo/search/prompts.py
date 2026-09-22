@@ -37,12 +37,12 @@ def load_prompt(version: str) -> PromptTemplate:
 
 
 COARSE_PROMPT = load_prompt("coarse-p3")
-FINE_PROMPT = load_prompt("fine-p2")
+FINE_PROMPT = load_prompt("fine-p3")
 
 
 def fine_prompt_for(event_type: VisualEventType) -> PromptTemplate:
     suffix = event_type.value.lower().replace("_", "-")
-    delta = load_prompt(f"fine-p2-{suffix}")
+    delta = load_prompt(f"fine-p3-{suffix}")
     text = f"{FINE_PROMPT.text.rstrip()}\n\n{delta.text}"
     return PromptTemplate(
         version=FINE_PROMPT.version,

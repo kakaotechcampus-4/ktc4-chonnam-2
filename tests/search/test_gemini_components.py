@@ -17,7 +17,7 @@ from daesingo.search.usage import ProviderUsage
 def test_prompt_versions_placeholders_and_fingerprints_are_stable_metadata():
     assert COARSE_PROMPT.version == "coarse-p3"
     assert COARSE_PROMPT.placeholders == frozenset({"event_types", "duration_sec"})
-    assert FINE_PROMPT.version == "fine-p2"
+    assert FINE_PROMPT.version == "fine-p3"
     assert {
         "event_type",
         "target_hint",
@@ -33,6 +33,21 @@ def test_prompt_versions_placeholders_and_fingerprints_are_stable_metadata():
     signal = fine_prompt_for(VisualEventType.SIGNAL)
     assert lane.fingerprint != signal.fingerprint
     assert "점선처럼 보인다는 이유만으로" in lane.text
+
+
+def test_fine_prompt_pins_the_offset_base_to_the_clip_it_hands_over():
+    """모델에게 준 것은 잘라낸 clip인데 구간은 원본 초로 말해준다.
+
+    기준을 적지 않으면 같은 답을 원본 절대 시각으로도, clip 상대로도 낼 수 있고
+    전자는 `outside prepared clip`으로 거절된다(이슈 #132 C4).
+    """
+    rendered = FINE_PROMPT.render(
+        event_type="SIGNAL", target_hint="없음", start_sec=200.0, end_sec=214.0
+    )
+
+    assert "잘라낸" in rendered
+    assert "at_offset_ms" in rendered
+    assert "0초" in rendered
 
 
 def test_coarse_schema_accepts_only_contract_event_names_and_relative_coordinates():
