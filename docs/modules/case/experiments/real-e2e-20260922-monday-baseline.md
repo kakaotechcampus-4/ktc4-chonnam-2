@@ -214,3 +214,33 @@ CaseView가 web이 그대로 읽을 수 있는 모양으로 끝까지 나온다.
 이번에 손대지 않았다 — 프로토콜 자체가 "시간 부족하면 `Real E2E 실행 → data/real/case
 JSON → Web 렌더`까지만 확인해도 된다"고 명시한 최소 기준에 맞춘 것이다.
 
+## 실행 3회차 — 2026-09-22 (PR #133 병합 후 재시도)
+
+서어진의 PR #133(`fix/search-fine-padded-window`, 이슈 #132 수정 — `at_offset_ms`를
+절대시각으로 rebase하지 않고 clip 상대시간으로 유지, 패딩 구간도 유효 범위로 인정)
+병합 확인 후 재시도.
+
+**결과: 이슈 #132는 확실히 해결됨.** Coarse·Fine 둘 다 real Elice/Gemini 호출
+성공, coarse/fine 시간 정합성 검증(`_clip_relative_temporal_facts`)도 통과 —
+1·2회차에서 막혔던 지점을 완전히 통과했다.
+
+**대신 그 다음 단계에서 새 문제로 막힘(#132와 무관, 별개 발견):**
+```
+pydantic_core._pydantic_core.ValidationError: 2 validation errors for TemporalFact
+evidence_refs.0
+  String should match pattern '^fr_[A-Za-z0-9_-]+$' [input_value='00:04']
+evidence_refs.1
+  String should match pattern '^fr_[A-Za-z0-9_-]+$' [input_value='00:05']
+```
+`TemporalFact.evidence_refs`는 계약상 `fr_...` 형태의 opaque FrameRef여야 하는데
+(`search/visual.py` `FrameRef = Annotated[str, Field(pattern=r"^fr_[A-Za-z0-9_-]+$")]`),
+이번 real 응답에서 **Gemini가 `"00:04"`/`"00:05"` 같은 원시 타임스탬프 문자열을
+그대로 돌려줬다.** search의 새 `_clip_relative_temporal_facts()`(PR #133)가 이
+값을 변환·검증 없이 그대로 `TemporalFact`에 넣어서 pydantic이 막았다.
+
+**case 배선 문제 아님** — search의 프롬프트가 모델에게 evidence_refs 형식을
+충분히 명확히 지시하지 못했거나, 모델 응답을 `fr_...`로 변환하는 단계가
+없는 것으로 보인다. 둘 다 search 소유 영역이라 case가 대신 고치지 않는다.
+
+**세 번째 유료 호출까지 완료 — 다음 재시도는 사용자 확인 후 진행.**
+
