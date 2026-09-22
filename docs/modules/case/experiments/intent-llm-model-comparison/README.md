@@ -127,3 +127,4 @@ Prediction과 Judging을 분리해서, judge rubric이 바뀌어도 유료 API �
 - [x] **채점 방식(LLM-judge) 자체를 재검토** — judge 판정 20% 스팟체크(2026-09-20 완료, 위 「검증」). 5/126(4%) 불일치, rubric 문제 1건은 고침.
 - [x] 결과를 바탕으로 `docs/modules/case/decisions/`에 확정 문서 작성 → `intent-llm-model-selection.md`(모델 선택 + 이번 v1 한정으로 LLM-judge를 썼다는 것 둘 다 기록)
 - [ ] **(런칭 후) LLM-judge를 CorrectionRecord 기반 Field-level F1으로 전환.** `CorrectionRecord` 실데이터가 쌓이기 시작하면 착수 — 그 전까지는 착수 조건 자체가 안 갖춰진 상태라 미룬다. 전환되면 이 폴더의 `schema.py`/`judge.py`(judge 프롬프트·판정 로직)는 더 이상 안 쓰이고, `aggregate.py`의 정확도 계산만 정답지 소스를 CorrectionRecord로 바꿔 재사용할 수 있는지 검토한다.
+- [ ] **PM 재검토(2026-09-22) — 강건성(도메인 밖 입력·일관성) 카테고리 추가.** `datasets/intent-hint-eval-v1.jsonl`은 전부 "진짜 사고 설명"이라는 전제 위에 있어 그 전제가 깨지는 입력(무관한 질문·인젝션·모순 정보 등)을 하나도 안 다뤘다는 지적. 표본 크기(N) 문제(위 §1.1)와는 다른 축이라 `datasets/intent-hint-robustness-v1.jsonl`(9카테고리×3변형=27케이스)로 별도 파일에 두고, 설계 근거·미결 항목은 `research/intent-llm-robustness-test-design.md`에 정리했다. 아직 실측 전.
