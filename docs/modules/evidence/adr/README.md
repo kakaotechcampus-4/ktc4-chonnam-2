@@ -14,3 +14,4 @@
 - [ADR-EVIDENCE-004 — versioned requirement policy engine 구현 구조](adr-requirement-policy-engine.md) — K1~K4·D1 loader/evaluator/template/error 경계 구현 구조
 - [ADR-EVIDENCE-005 — 판정 주체가 없는 사건 장면·전후 상황 rule 제거 (D2)](adr-event-context-rules-removal.md) — accepted. `FINAL_PACKAGE` 무조건 rule 15 → 12, ADR-002 §5.6·§5.12·§5.14·§5.15 갱신
 - [ADR-EVIDENCE-006 — 번호판 형식 규칙은 hard reject가 아니라 사용자 검토 신호로 사용](adr-license-plate-format-review-rules.md) — accepted, implementation pending. PR #80 실측 + PR #88 공식 규정 조사 연결, 후속 versioned rule 구현 필요
+- [ADR-EVIDENCE-007 — `NOT_OBSERVED` VisualEvidence는 `EvidenceRecord` 이전에 끝나는 정상 결과 (D3)](adr-not-observed-non-assembly.md) — accepted. 이슈 #137, `classify_visual_evidence()` 경계 신설, `contract-evidence-record-needs.md` null 예외 절 명확화(버전 유지)
