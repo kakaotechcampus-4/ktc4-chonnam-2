@@ -319,3 +319,58 @@ transcode가 실패했다(이전에 이미 발견한 그 버전 문제, 정철�
 둬서 우회했다. `daesingo.recording.materialization`은 `ffmpeg`/`ffprobe`를
 bare 이름으로 호출해 PATH 탐색에 의존하므로, 이 환경에서 다시 실행할 땐 매번
 PATH 순서를 확인해야 한다.
+
+### PM 프로토콜(`doc/real-e2e-protocol.md`, 로컬 전용) 10번 — 성공 기준 체크리스트
+
+```
+[x] 실제 영상 파일 등록
+[x] ffprobe/ffmpeg 실제 실행
+[x] AnalysisSource 실제 생성
+[x] Elice ML API Coarse 실제 호출        — gemini-3.8-flash, latency 5,617ms
+[x] Candidate 실제 생성 (1건)             — candidate_eee3c3d2ee6a418893111ce7697c3c6c
+[x] Elice ML API Fine 실제 호출          — gemini-3.8-flash, latency 7,645ms
+[x] VisualEvidence 실제 생성              — verification=NOT_OBSERVED
+[ ] IncidentClip 실제 생성                — 오늘 실행에선 스킵(NOT_OBSERVED, 설계상 정상).
+                                             이전 회차(다운스트림 무료 dry-run·5회차)에서
+                                             실제 데이터로 개별 확인됨
+[ ] Recording 실제 frame 추출             — 〃
+[ ] PaddleOCR 실제 실행                   — 〃
+[ ] 번호판 Readout 생성                   — 〃
+[ ] Overlay time Readout 생성             — 〃
+[ ] 실제 TimeSourceCandidate 연결         — 〃
+[ ] TimeResolution 생성                   — 〃
+[ ] EvidenceRecord 생성                   — NOT_OBSERVED라 정상적으로 안 만들어짐(정상 결말)
+[ ] Requirement 평가                      — 〃
+[ ] CaseView 생성                         — 미달성, 아래 정정 참고
+[ ] Web에서 Real CaseView 렌더            — 미달성, 아래 정정 참고
+[ ] UI 육안 확인                          — 안 함
+[ ] UI 스크린샷 저장                      — 안 함(의도적, case 담당자가 직접 진행 예정)
+```
+
+프로토콜 10번의 실제 판정 기준은 "Fixture로 성공한 척한 게 아니라 각 실제 Producer가
+호출되고 그 결과가 전달되었는가"다 — "한 번의 실행에 전부 몰려야 한다"는 조건은 없다.
+IncidentClip~Requirement 평가까지의 미체크 항목은 오늘 실행이 그 지점까지 갈 이유가
+없어서(NOT_OBSERVED) 안 지나간 것이고, 각 단계 자체는 이전 회차에서 이미 실제 데이터로
+개별 확인됐다.
+
+### 정정 — `CaseView`/`Web` 두 항목은 "부분 달성"이 아니라 미달성이다
+
+처음 이 결과를 정리할 때 7번(Evidence/CaseView)을 "부분적", 8번(Web/UI)을 "처음부터
+범위 밖"이라고 적었는데 둘 다 부정확했다.
+
+- **7번(CaseView) — 미달성.** `assemble_evidence()` 이후 체인이 `NOT_OBSERVED`로 정상
+  스킵된 것과는 별개로, **`CaseView` 객체 자체도 오늘 한 번도 만들지 않았다.**
+  `EvidenceBundle`까지만 나왔고, `case.get_view()`/`service.build_view_from_adapter()`로
+  감싸서 실제 `CaseView`를 만드는 단계를 거치지 않았다.
+- **8번(Web/UI) — 미달성.** 브라우저 업로드 경로가 범위 밖이라는 건 맞지만, "Real
+  CaseView를 Web에서 열어 확인"하는 최소 목표(프로토콜 §8 원문)는 **처음부터 범위 밖이
+  아니라, 7번의 CaseView가 없어서 열어볼 대상 자체가 없었던 것**이다.
+- **왜 CaseView를 안 만들었나:** (1) `scripts/dump_real_video_caseview.py`는 오늘 캡처한
+  6회차 결과(`real-e2e-captures/run-20260922-224602.json`)를 재사용하는 기능이 없어
+  돌리면 Coarse+Fine을 처음부터 다시 실제로 호출해야 한다(추가 소액 비용). (2) 같은
+  영상이라 다시 돌려도 `NOT_OBSERVED`가 나올 가능성이 높아, 만들어져도 "증거 없음"
+  계열 화면만 보여줄 뿐 오늘 이미 로그로 증명한 것(NOT_OBSERVED가 예외 없이 처리된다)
+  이상의 새 정보가 없다. (3) 오늘 목표(NOT_OBSERVED 안전 처리 확인)는 이미 달성됐고
+  CaseView·Web 화면은 그 목표에 필수가 아니라 "보여주기용" 산출물이다. **기술적으로
+  못 만든 게 아니라 비용 대비 얻는 게 적어서 안 만들기로 선택했다**(case 담당자 판단,
+  2026-09-22).
