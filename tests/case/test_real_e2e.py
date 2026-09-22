@@ -9,14 +9,16 @@ evidence→`CaseView`까지 **전부 real 함수 호출로** 통과하는지 확
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from daesingo.case import correction, jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import CaseAggregate
-from daesingo.recording import AssetSpan, SpanResolution, TimeRange, TimelineRef
+from daesingo.recording import AssetSpan, MediaStream, SpanResolution, TimeRange, TimelineRef
 
 MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 SCENARIO_ID = "happy_001"
@@ -96,6 +98,82 @@ def test_select_asset_span_raises_when_ref_has_no_match():
         real_e2e._select_asset_span(resolution, "ms_unknown")
 
 
+def _media_stream(*, ref: str, media_type: str, source_asset_ref: str = "sa_multi") -> MediaStream:
+    return MediaStream(
+        contract="MediaStream",
+        contract_version="source-asset-media-stream/v1",
+        media_stream_ref=ref,
+        source_asset_ref=source_asset_ref,
+        media_type=media_type,
+        role="UNKNOWN" if media_type == "VIDEO" else None,
+        availability="AVAILABLE",
+        duration_sec=1200.0,
+    )
+
+
+def test_unique_video_media_stream_ref_returns_the_only_video():
+    """정철원 확인(2026-09-21) — VIDEO 1개/AUDIO 1개뿐인 월요일 대표 파일 케이스."""
+    streams = [
+        _media_stream(ref="ms_video", media_type="VIDEO"),
+        _media_stream(ref="ms_audio", media_type="AUDIO"),
+    ]
+
+    assert real_e2e._unique_video_media_stream_ref(streams) == "ms_video"
+
+
+def test_unique_video_media_stream_ref_raises_when_no_video():
+    streams = [_media_stream(ref="ms_audio", media_type="AUDIO")]
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._unique_video_media_stream_ref(streams)
+
+
+def test_unique_video_media_stream_ref_raises_when_multiple_video():
+    """복수 카메라(front/rear)는 W7 후속 — case가 임의로 고르지 않고 실패한다."""
+    streams = [
+        _media_stream(ref="ms_front", media_type="VIDEO"),
+        _media_stream(ref="ms_rear", media_type="VIDEO"),
+    ]
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._unique_video_media_stream_ref(streams)
+
+
+def test_match_analysis_source_streams_builds_analysis_source_stream_tuple():
+    import daesingo.search as search_module
+
+    streams = [
+        _media_stream(ref="ms_video", media_type="VIDEO"),
+        _media_stream(ref="ms_audio", media_type="AUDIO"),
+    ]
+
+    result = real_e2e._match_analysis_source_streams(["ms_video"], streams)
+
+    assert len(result) == 1
+    assert isinstance(result[0], search_module.AnalysisSourceStream)
+    assert result[0].media_stream_ref == "ms_video"
+    assert result[0].media_type == "VIDEO"
+
+
+def test_match_analysis_source_streams_raises_when_ref_missing():
+    """AnalysisSource가 참조하는 ref가 등록된 media_streams에 없으면 fixture로
+    보정하지 않고 실패한다(정철원 확인, 2026-09-21)."""
+    streams = [_media_stream(ref="ms_video", media_type="VIDEO")]
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._match_analysis_source_streams(["ms_missing"], streams)
+
+
+def test_match_analysis_source_streams_raises_when_ref_duplicated():
+    streams = [
+        _media_stream(ref="ms_video", media_type="VIDEO"),
+        _media_stream(ref="ms_video", media_type="VIDEO"),
+    ]
+
+    with pytest.raises(real_e2e.StreamSelectionError):
+        real_e2e._match_analysis_source_streams(["ms_video"], streams)
+
+
 def test_evidence_bundle_uses_real_plate_and_time_values():
     """readout/search/recording을 실제로 호출해서 나온 값이지, mock JSON을 베낀 게
     아니라는 걸 값으로 확인한다 — 세 값 다 `data/mock/readout/scenario_happy_001.json`과
@@ -120,6 +198,76 @@ def test_evidence_bundle_uses_real_plate_and_time_values():
     # 만들 수 있다 — 이게 조용한 실패가 아니라 사유가 남는다는 것까지 확인한다.
     if bundle.report_package is None:
         assert bundle.package_error is not None
+
+
+def test_evidence_bundle_wires_search_stream_context(monkeypatch):
+    """`search.verify_visual_with_stream_context`(서어진, 2026-09-21 합의)가 아직
+    어느 브랜치에도 push되지 않아서, 여기서는 합의된 계약대로 동작하는 스텁으로
+    case 쪽 배선만 검증한다 — search가 실제로 push되면 이 스텁을 지우고 real
+    호출로 교체한다. 확인하는 것: ① `AnalysisSourceStream`을
+    `analysis_source.media_stream_refs`·`fixture.media_streams`로부터 만드는지
+    ② `target_hint`를 그대로 전달하는지 ③ 돌려받은 `selected_video_stream`으로
+    두 번째 span 선택을 좁혀도 회귀 없이 끝까지 도는지."""
+    import daesingo.search as search_module
+
+    @dataclass
+    class _FakeAnalysisSourceStream:
+        media_stream_ref: str
+        media_type: str
+
+    @dataclass
+    class _FakeSelectedStream:
+        media_stream_ref: str
+
+    @dataclass
+    class _FakeExecution:
+        result: Any
+        selected_video_stream: _FakeSelectedStream
+
+    captured: dict[str, Any] = {}
+
+    def _fake_verify_visual_with_stream_context(
+        *, input_ref, candidate, analysis_source_streams, target_hint, service=None
+    ):
+        captured["input_ref"] = input_ref
+        captured["candidate"] = candidate
+        captured["analysis_source_streams"] = analysis_source_streams
+        captured["target_hint"] = target_hint
+        captured["service"] = service
+        video_streams = [s for s in analysis_source_streams if s.media_type == "VIDEO"]
+        assert len(video_streams) == 1  # 서어진의 합의대로 — VIDEO가 정확히 하나일 때만 선택
+        real_result = search_module.verify_visual(input_ref, target_hint)
+        return _FakeExecution(
+            result=real_result,
+            selected_video_stream=_FakeSelectedStream(
+                media_stream_ref=video_streams[0].media_stream_ref
+            ),
+        )
+
+    monkeypatch.setattr(
+        search_module, "AnalysisSourceStream", _FakeAnalysisSourceStream, raising=False
+    )
+    monkeypatch.setattr(
+        search_module,
+        "verify_visual_with_stream_context",
+        _fake_verify_visual_with_stream_context,
+        raising=False,
+    )
+
+    scope_dict = _real_scope()
+    scope = search_module.AnalysisScope.model_validate(scope_dict)
+    candidate = search_module.search_candidates(scope).candidates[0]
+
+    bundle = real_e2e.build_happy_001_evidence_bundle(
+        case_id="case_h001_stream_context_test", candidate=candidate, scope=scope, mock_root=MOCK_ROOT
+    )
+
+    assert captured["target_hint"] == scope.hint
+    assert captured["analysis_source_streams"]
+    assert all(
+        isinstance(s, _FakeAnalysisSourceStream) for s in captured["analysis_source_streams"]
+    )
+    assert bundle.evidence_record["vehicle_number"]["value"] == "12가3456"
 
 
 def test_real_adapter_caches_evidence_bundle():
