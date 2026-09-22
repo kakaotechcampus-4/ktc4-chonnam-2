@@ -675,6 +675,27 @@ def build_evidence_for_real_video_candidate(
             " VIDEO가 하나뿐이라 항상 같아야 합니다."
         )
 
+    visual_evidence = visual_result.visual_evidence.model_dump(mode="json")
+    fine_run = visual_result.analysis_run.model_dump(mode="json")
+
+    # Fine 결과를 downstream(두 번째 resolve_span·IncidentClip·readout·TimeResolution
+    # 포함)으로 밀어넣기 전에 먼저 분류한다(이슈 #137, `build_happy_001_evidence_bundle()`과
+    # 동일 패턴 — PR #131→#142 후속 정합화). `NOT_OBSERVED`는 유효한 관찰 결과이므로
+    # 여기서 조립을 시작하지 않고 정상 종료한다.
+    disposition = classify_visual_evidence(visual_evidence)
+    if disposition.decision == NOT_ASSEMBLED:
+        return EvidenceBundle(
+            evidence_record=None,
+            evidence_needs=None,
+            requirement_report_evidence=None,
+            requirement_report_package=None,
+            report_package=None,
+            package_error=None,
+            visual_evidence=visual_evidence,
+            fine_run=fine_run,
+            disposition=disposition,
+        )
+
     # 두 번째 resolve_span() — IncidentClip은 전체 영상이 아니라 candidate.span만큼
     # 좁혀야 한다(evidence가 실제로 볼 clip이라서 coarse의 전체 범위와 다르다).
     timeline_ref = {
@@ -746,7 +767,7 @@ def build_evidence_for_real_video_candidate(
         case_id=case_id,
         selection_rev=selection_rev,
         candidate_event=candidate.model_dump(mode="json"),
-        visual_evidence=visual_result.visual_evidence.model_dump(mode="json"),
+        visual_evidence=visual_evidence,
         time_resolution=time_resolution,
         plate_readout=plate_readout.to_dict() if plate_readout else None,
         incident_clip=incident_clip.model_dump(mode="json"),
@@ -814,6 +835,9 @@ def build_evidence_for_real_video_candidate(
         requirement_report_package=requirement_report_package,
         report_package=report_package,
         package_error=package_error,
+        visual_evidence=visual_evidence,
+        fine_run=fine_run,
+        disposition=disposition,
     )
 
 

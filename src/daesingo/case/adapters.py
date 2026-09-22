@@ -488,7 +488,11 @@ class RealVideoAdapter:
         return self._build_evidence_bundle().evidence_record
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
-        return [self._build_evidence_bundle().evidence_record]
+        """Fine이 후보를 기각해(`NOT_OBSERVED`) 조립 자체가 없으면 빈 리스트다 — 그건
+        조용한 실패가 아니라 `EvidenceBundle.disposition`에 사유가 남는 정상 결과다
+        (이슈 #137, `RealAdapter.get_evidence_records()`와 동일 패턴)."""
+        record = self._build_evidence_bundle().evidence_record
+        return [record] if record is not None else []
 
     def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
         bundle = self._build_evidence_bundle()

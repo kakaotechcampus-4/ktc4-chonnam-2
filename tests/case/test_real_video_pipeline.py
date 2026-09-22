@@ -70,6 +70,7 @@ class _DictModel(dict):
 @dataclass
 class _FakeVisualResult:
     visual_evidence: _DictModel
+    analysis_run: _DictModel
 
 
 @dataclass
@@ -120,8 +121,15 @@ def _install_stubbed_search(monkeypatch: pytest.MonkeyPatch) -> None:
         visual_evidence = dict(_visual_evidence_template())
         visual_evidence["candidate_id"] = candidate.candidate_id
         visual_evidence["input_ref"] = {"kind": input_ref.kind, "ref": input_ref.ref}
+        analysis_run = {
+            "run_id": "run_monday_test_fine",
+            "operation": "VISUAL_VERIFY",
+            "outcome": "SUCCEEDED",
+            "usage_refs": [],
+            "usage_summary": None,
+        }
         return _FakeExecution(
-            result=_FakeVisualResult(_DictModel(visual_evidence)),
+            result=_FakeVisualResult(_DictModel(visual_evidence), _DictModel(analysis_run)),
             selected_video_stream=selected,
         )
 
