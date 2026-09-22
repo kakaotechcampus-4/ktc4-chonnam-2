@@ -37,6 +37,7 @@
 | 14 | `AnalysisScope.hint.free_text`에서 개인정보를 제거한 뒤 외부 provider로 전송 (§4-모듈2 ⑦) | 유소연 (`case`) | — (WARN) | | |
 | 15 | `purge_case`가 사용자 원본(`ExternalSourceRef`)을 삭제하지 않음 (§4-모듈1 ⑨) | 정철원 (`recording`) | 원본 영상 손상 = BLOCK | | |
 | 16 | 외부 provider `RemoteCopy` 만료·삭제 처리 — delete API 지원 시 호출, 미지원 시 expiry까지 남는다는 사실 기록 (§8-4) | 서어진 (`search/providers`) · 정철원 (registry) | — (WARN) | | |
+| 17 | 외부 공개 endpoint에서 실제 사용자 데이터·인증정보를 다루는 경우 HTTPS 적용 및 HTTP 평문 경로 여부 확인 (`runtime/ops-spec.md` §2-2) | 김준영 (공통 runtime/ops) · 신유민 (`web`) | — (WARN) | | |
 
 ### 1-1. 개발 단계에서 미루는 Privacy 항목
 
@@ -82,6 +83,7 @@ Privacy 관련 세부 처리는 개발 마무리 단계에서 다시 본다. 실
 8. FFmpeg / file parser 사용자 입력 validation
 9. 삭제 요청 / 자동파기
 10. 불필요하게 수집하는 개인정보
+11. 외부 공개 endpoint의 domain / HTTPS / redirect URI와 평문 HTTP 노출 여부
 
 WARN·BLOCK 판정에는 다음 형식으로 사유를 남긴다.
 
@@ -93,7 +95,7 @@ WARN·BLOCK 판정에는 다음 형식으로 사유를 남긴다.
 
 ## 5. 현재 상태
 
-- [ ] 배포 전 전체 리뷰 수행 — §1 표의 16행 전부 확인일·판정이 채워졌는가
+- [ ] 배포 전 전체 리뷰 수행 — §1 표의 17행 전부 확인일·판정이 채워졌는가
 - [ ] **BLOCK 0건** — Coordinator(김준영) 확인
 - 고친 것: `[실제 배포 전 입력]`
 
