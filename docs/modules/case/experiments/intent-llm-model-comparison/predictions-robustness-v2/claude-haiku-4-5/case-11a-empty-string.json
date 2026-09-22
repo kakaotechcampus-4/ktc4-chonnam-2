@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11a-empty-string",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자 발화가 비어있어 교통위반 상황에 대한 어떤 정보도 제공되지 않았습니다. 모든 필드를 null로 처리하고 confidence를 low로 표시했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자 발화가 비어있어 교통위반 상황에 대한 어떤 정보도 제공되지 않았습니다. 모든 필드를 null로 처리하고 confidence를 low로 표시했습니다."
+  },
+  "latency_ms": 2175.6843999028206,
+  "prompt_tokens": 1808,
+  "completion_tokens": 216,
+  "cost_krw": 4.395968,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

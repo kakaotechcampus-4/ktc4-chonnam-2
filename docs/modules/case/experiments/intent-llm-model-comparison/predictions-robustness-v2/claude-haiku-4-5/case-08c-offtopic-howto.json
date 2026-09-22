@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08c-offtopic-howto",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자의 발화는 서비스 사용 방법을 묻는 일반적인 인사와 문의이며, 교통위반 사고 상황에 대한 구체적인 정보를 전혀 포함하고 있지 않습니다. 따라서 추출 가능한 필드가 없습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자의 발화는 서비스 사용 방법을 묻는 일반적인 인사와 문의이며, 교통위반 사고 상황에 대한 구체적인 정보를 전혀 포함하고 있지 않습니다. 따라서 추출 가능한 필드가 없습니다."
+  },
+  "latency_ms": 2118.206499959342,
+  "prompt_tokens": 1836,
+  "completion_tokens": 244,
+  "cost_krw": 4.651719999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

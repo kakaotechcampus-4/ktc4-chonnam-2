@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '19시였어요'로 명시적으로 정정한 값을 정확히 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은 오토바이'는 원문에 언급되긴 했으나 이는 별도 사건(헬멧 미착용)에 대한 것으로, 기존 흰색 SUV의 vehicle_hint를 덮어쓰는 것은 오염이다. 기존 값을 유지하거나 별도 처리해야 하는데 그냥 교체해버렸다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'헬멧 안 썼던데'는 검은 오토바이라는 별개 사건의 상황이지 기존 차로 변경 상황을 대체할 근거가 아니다. 기존 situation_hint를 덮어써 오염시켰다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에 location 정정 언급이 없는데 기존 '상무중앙로' 값을 null로 바꿔버려 정보를 누락시켰다(정정 대상이 아닌 필드를 임의로 변경).\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상이 time_hint라는 판정과 일치한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"time_hint 정정 자체는 명확하나, 별도 사건(검은 오토바이)이 뒤섞여 들어와 전체적으로 오염된 상황이므로 high는 과도하며 낮은 confidence로 별도 신호를 줘야 했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '19시였어요'로 명시적으로 정정한 값을 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은 오토바이'는 원문에 언급되긴 했으나 이는 별도 사건(헬멧 미착용)에 대한 것으로, 기존 흰색 SUV의 vehicle_hint를 덮어쓰는 것은 오염이다. 기존 값을 유지하거나 별도 처리해야 하는데 그냥 교체해버렸다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'헬멧 안 썼던데'는 검은 오토바이라는 별개 사건의 상황이지 기존 차로 변경 상황을 대체할 근거가 아니다. 기존 situation_hint를 덮어써 오염시켰다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에 location 정정 언급이 없는데 기존 '상무중앙로' 값을 null로 바꿔버려 정보를 누락시켰다(정정 대상이 아닌 필드를 임의로 변경)."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상이 time_hint라는 판정과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "time_hint 정정 자체는 명확하나, 별도 사건(검은 오토바이)이 뒤섞여 들어와 전체적으로 오염된 상황이므로 high는 과도하며 낮은 confidence로 별도 신호를 줘야 했다."
+    }
+  },
+  "latency_ms": 12032.989200088196,
+  "prompt_tokens": 2977,
+  "completion_tokens": 700,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14b-profanity-signal-violation",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 트럭\", \"situation_hint\": \"신호위반\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명확하게 언급한 위반행위(신호위반)와 차량정보(검은색 트럭)는 확실하게 추출했습니다. 다만 사고 발생 시간과 장소에 대한 정보는 발화에 포함되지 않아 null로 처리했습니다. prior_hints가 없으므로 correction_target도 null입니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 언급한 위반행위(신호위반)와 차량정보(검은색 트럭)는 확실하게 추출했습니다. 다만 사고 발생 시간과 장소에 대한 정보는 발화에 포함되지 않아 null로 처리했습니다. prior_hints가 없으므로 correction_target도 null입니다."
+  },
+  "latency_ms": 2518.548700027168,
+  "prompt_tokens": 1853,
+  "completion_tokens": 272,
+  "cost_krw": 4.89073,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08a-offtopic-toilet",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자의 발화가 교통 위반 신고와 전혀 관련 없는 질문이므로 어떠한 정보도 추출할 수 없습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자의 발화가 교통 위반 신고와 전혀 관련 없는 질문이므로 어떠한 정보도 추출할 수 없습니다."
+  },
+  "latency_ms": 2237.7141000470147,
+  "prompt_tokens": 299,
+  "completion_tokens": 89,
+  "cost_krw": 0.31680699999999995,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08d-offtopic-parking",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": \"주차 방법 문의\", \"location_hint\": \"여기\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"문장에 '주차 방법 문의'라는 의도가 드러나며, 현재 위치를 가리키는 '여기'가 포함되어 있다. 시간/차량 정보나 구체적 상황은 언급되지 않아 null 처리, 명확한 문의이므로 high로 판단.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "주차 방법 문의",
+    "location_hint": "여기",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "문장에 '주차 방법 문의'라는 의도가 드러나며, 현재 위치를 가리키는 '여기'가 포함되어 있다. 시간/차량 정보나 구체적 상황은 언급되지 않아 null 처리, 명확한 문의이므로 high로 판단."
+  },
+  "latency_ms": 12774.600100005046,
+  "prompt_tokens": 777,
+  "completion_tokens": 1791,
+  "cost_krw": 1.149771,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

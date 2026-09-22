@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09d-multi-event-truck-motorcycle",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"지난달, 방금\", \"vehicle_hint\": \"파란색 트럭, 오토바이\", \"situation_hint\": \"불법 주차, 신호위반\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"두 가지 서로 다른 사건이 동시에 언급되어 있고, 정확한 위치 정보가 결여되어 있어 confidence를 low로 설정하였습니다.\"}",
+  "parsed": {
+    "time_hint": "지난달, 방금",
+    "vehicle_hint": "파란색 트럭, 오토바이",
+    "situation_hint": "불법 주차, 신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "두 가지 서로 다른 사건이 동시에 언급되어 있고, 정확한 위치 정보가 결여되어 있어 confidence를 low로 설정하였습니다."
+  },
+  "latency_ms": 1527.4684000760317,
+  "prompt_tokens": 323,
+  "completion_tokens": 97,
+  "cost_krw": 0.344191,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

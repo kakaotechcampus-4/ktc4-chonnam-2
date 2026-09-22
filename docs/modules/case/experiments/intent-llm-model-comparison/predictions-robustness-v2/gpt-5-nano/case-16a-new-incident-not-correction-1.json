@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"방금\",\"vehicle_hint\":\"오토바이\",\"situation_hint\":\"신호위반\",\"location_hint\":null,\"correction_target\":\"vehicle_hint\",\"confidence\":\"high\",\"reasoning\":\"발화에 '방금'의 시간 표현과 '오토바이', '신호위반'이 명시되어 있어 해당 필드를 채웠다. 이전 단서의 차량_hint '흰색 SUV'를 이번 발화가 정정하는 것으로 판단해 correction_target를 'vehicle_hint'로 설정했다. location_hint는 발화에 언급되지 않으므로 null로 두었다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반",
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "발화에 '방금'의 시간 표현과 '오토바이', '신호위반'이 명시되어 있어 해당 필드를 채웠다. 이전 단서의 차량_hint '흰색 SUV'를 이번 발화가 정정하는 것으로 판단해 correction_target를 'vehicle_hint'로 설정했다. location_hint는 발화에 언급되지 않으므로 null로 두었다."
+  },
+  "latency_ms": 26867.282600025646,
+  "prompt_tokens": 850,
+  "completion_tokens": 3920,
+  "cost_krw": 2.45188,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

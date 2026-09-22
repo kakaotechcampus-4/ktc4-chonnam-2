@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14c-profanity-helmet",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧을 쓰지 않음\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 \\\"방금\\\"(시간), \\\"오토바이\\\"(차량), \\\"헬멧도 안 쓰고\\\"(위반 상황)이 명확히 언급되었다. 다만 사건 발생 위치는 언급되지 않았으므로 location_hint는 null로 처리했다. prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧을 쓰지 않음",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 \"방금\"(시간), \"오토바이\"(차량), \"헬멧도 안 쓰고\"(위반 상황)이 명확히 언급되었다. 다만 사건 발생 위치는 언급되지 않았으므로 location_hint는 null로 처리했다. prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 2761.9650999549776,
+  "prompt_tokens": 1847,
+  "completion_tokens": 273,
+  "cost_krw": 4.88921,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

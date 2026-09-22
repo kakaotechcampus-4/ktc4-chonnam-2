@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09d-multi-event-truck-motorcycle",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"지난달에 본, 방금 본\",\"vehicle_hint\":\"파란색 트럭, 오토바이\",\"situation_hint\":\"파란색 트럭의 불법 주차 및 오토바이의 신호위반을 신고하려는 의도\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 두 사건이 명시적으로 나타나며 시간 표현도 두 시점을 포함한다. 두 차량이 특정되었으므로 vehicle_hint와 situation_hint에 각각 반영했고, 명시된 시간 표현은 원문대로 유지했다. prior_hints가 null이므로 correction_target도 null이며, 정보가 불확실하지 않아 high로 판단한다.\"}",
+  "parsed": {
+    "time_hint": "지난달에 본, 방금 본",
+    "vehicle_hint": "파란색 트럭, 오토바이",
+    "situation_hint": "파란색 트럭의 불법 주차 및 오토바이의 신호위반을 신고하려는 의도",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 두 사건이 명시적으로 나타나며 시간 표현도 두 시점을 포함한다. 두 차량이 특정되었으므로 vehicle_hint와 situation_hint에 각각 반영했고, 명시된 시간 표현은 원문대로 유지했다. prior_hints가 null이므로 correction_target도 null이며, 정보가 불확실하지 않아 high로 판단한다."
+  },
+  "latency_ms": 24894.873299985193,
+  "prompt_tokens": 802,
+  "completion_tokens": 3496,
+  "cost_krw": 2.190016,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

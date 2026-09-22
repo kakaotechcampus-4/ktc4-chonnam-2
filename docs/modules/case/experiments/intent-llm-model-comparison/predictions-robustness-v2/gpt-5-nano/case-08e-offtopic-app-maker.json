@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08e-offtopic-app-maker",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"이 발화는 교통사고 관련 시간, 차량, 상황, 위치 정보를 직접적으로 언급하지 않는다; 따라서 어떤 필드도 채울 근거가 없어 null로 두고, 정보 부족으로 confidence를 low로 판단한다. prior_hints가 null이므로 correction_target도 없다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "이 발화는 교통사고 관련 시간, 차량, 상황, 위치 정보를 직접적으로 언급하지 않는다; 따라서 어떤 필드도 채울 근거가 없어 null로 두고, 정보 부족으로 confidence를 low로 판단한다. prior_hints가 null이므로 correction_target도 없다."
+  },
+  "latency_ms": 16478.511900058948,
+  "prompt_tokens": 777,
+  "completion_tokens": 1400,
+  "cost_krw": 0.911652,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

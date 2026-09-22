@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13d-chinese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"昨天晚上八点左右\",\"vehicle_hint\":\"黑色卡车\",\"situation_hint\":\"违反信号灯\",\"location_hint\":\"世宗路\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 시간 표현 '昨天晚上八点左右', 차량 '黑色卡车', 행위 '违反信号灯', 위치 '世宗路'가 명시적으로 제시되어 있어 이를 그대로 매핑했다. prior_hints가 null이므로 correction_target은 없으며, 표현이 비교적 명확해 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "昨天晚上八点左右",
+    "vehicle_hint": "黑色卡车",
+    "situation_hint": "违反信号灯",
+    "location_hint": "世宗路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 시간 표현 '昨天晚上八点左右', 차량 '黑色卡车', 행위 '违反信号灯', 위치 '世宗路'가 명시적으로 제시되어 있어 이를 그대로 매핑했다. prior_hints가 null이므로 correction_target은 없으며, 표현이 비교적 명확해 confidence를 high로 판단했다."
+  },
+  "latency_ms": 13301.639099954627,
+  "prompt_tokens": 790,
+  "completion_tokens": 2121,
+  "cost_krw": 1.3517290000000002,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

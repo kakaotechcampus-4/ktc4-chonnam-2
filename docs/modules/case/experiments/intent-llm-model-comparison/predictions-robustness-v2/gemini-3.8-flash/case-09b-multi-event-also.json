@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09b-multi-event-also",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"아까, 지난주\",\n  \"vehicle_hint\": \"흰색 SUV, 트럭\",\n  \"situation_hint\": \"신호위반, 불법 유턴\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"단일 사건이 아닌 서로 다른 두 건의 위반 사항(아까 흰색 SUV 신호위반, 지난주 트럭 불법 유턴)이 한 발화에 혼재되어 단일 건 추출이 모호하므로 confidence를 low로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아까, 지난주",
+    "vehicle_hint": "흰색 SUV, 트럭",
+    "situation_hint": "신호위반, 불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "단일 사건이 아닌 서로 다른 두 건의 위반 사항(아까 흰색 SUV 신호위반, 지난주 트럭 불법 유턴)이 한 발화에 혼재되어 단일 건 추출이 모호하므로 confidence를 low로 판단했습니다."
+  },
+  "latency_ms": 3380.974299972877,
+  "prompt_tokens": 321,
+  "completion_tokens": 456,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

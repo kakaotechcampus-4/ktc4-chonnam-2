@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11d-whitespace-only",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"The user utterance is empty (only spaces), so there is no information to extract. All fields remain null. Confidence is set to low due to lack of content to support any inference.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "The user utterance is empty (only spaces), so there is no information to extract. All fields remain null. Confidence is set to low due to lack of content to support any inference."
+  },
+  "latency_ms": 9663.733699941076,
+  "prompt_tokens": 771,
+  "completion_tokens": 1304,
+  "cost_krw": 0.852732,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

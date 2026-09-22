@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화에선 차량 색상에 대해 모호한 진술이 있어 색상 확정이 불확실하다. 반면 차로 변경은 명확히 언급되어 있다. prior_hints가 null이므로 정정 대상도 없다. 따라서 색상 진술의 불확실성으로 confidence를 low로 판단.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에선 차량 색상에 대해 모호한 진술이 있어 색상 확정이 불확실하다. 반면 차로 변경은 명확히 언급되어 있다. prior_hints가 null이므로 정정 대상도 없다. 따라서 색상 진술의 불확실성으로 confidence를 low로 판단."
+  },
+  "latency_ms": 15365.662900032476,
+  "prompt_tokens": 790,
+  "completion_tokens": 2375,
+  "cost_krw": 1.506415,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

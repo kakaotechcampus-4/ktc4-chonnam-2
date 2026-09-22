@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-08d-offtopic-parking",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 전혀 없어 null 처리한 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 정보가 전혀 없어 null 처리한 것이 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고/상황 설명이 전혀 없으므로 null 처리가 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"구체적 위치 언급이 없어 null 처리가 적절하며, 존재하지 않는 위치 정보를 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아니므로 null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"유효한 단서가 전혀 없는 상황이므로 confidence를 low로 매긴 것이 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 전혀 없어 null 처리한 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 정보가 전혀 없어 null 처리한 것이 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고/상황 설명이 전혀 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "구체적 위치 언급이 없어 null 처리가 적절하며, 존재하지 않는 위치 정보를 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아니므로 null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "유효한 단서가 전혀 없는 상황이므로 confidence를 low로 매긴 것이 기준에 부합한다."
+    }
+  },
+  "latency_ms": 4507.261399994604,
+  "prompt_tokens": 2677,
+  "completion_tokens": 458,
+  "cost_krw": null,
+  "error": null
+}

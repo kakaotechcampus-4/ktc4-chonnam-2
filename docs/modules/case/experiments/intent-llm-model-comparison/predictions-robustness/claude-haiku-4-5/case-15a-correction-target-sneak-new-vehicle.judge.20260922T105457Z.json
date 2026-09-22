@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '19시였어요'로 명시적 정정한 내용을 정확히 반영해 '어제 19시'로 수정함.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은 오토바이'는 언급되었지만 이는 기존 신고 차량(흰색 SUV)과 별개의 새로운 사건인데, 이를 기존 vehicle_hint 자리에 덮어써서 흰색 SUV 정보를 오염/삭제시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'헬멧 미착용'은 검은 오토바이라는 별도 사건에 대한 정보인데, 기존 situation_hint('차로 변경')를 덮어써서 원래 신고 상황을 오염시켰다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"이번 발화에서 위치가 재언급되지 않았다고 해서 기존 location_hint('상무중앙로')를 null로 지우는 것은 correction 대상이 아닌 필드를 임의로 변경한 것이므로 부적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상이 time_hint 하나뿐이라는 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"검은 오토바이/헬멧 미착용이라는 별개 사건 정보를 확신에 찬 high로 처리하여, 별도 취급이 필요한 정보를 기존 신고와 동일한 확신도로 병합했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '19시였어요'로 명시적 정정한 내용을 정확히 반영해 '어제 19시'로 수정함."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은 오토바이'는 언급되었지만 이는 기존 신고 차량(흰색 SUV)과 별개의 새로운 사건인데, 이를 기존 vehicle_hint 자리에 덮어써서 흰색 SUV 정보를 오염/삭제시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'헬멧 미착용'은 검은 오토바이라는 별도 사건에 대한 정보인데, 기존 situation_hint('차로 변경')를 덮어써서 원래 신고 상황을 오염시켰다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "이번 발화에서 위치가 재언급되지 않았다고 해서 기존 location_hint('상무중앙로')를 null로 지우는 것은 correction 대상이 아닌 필드를 임의로 변경한 것이므로 부적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상이 time_hint 하나뿐이라는 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "검은 오토바이/헬멧 미착용이라는 별개 사건 정보를 확신에 찬 high로 처리하여, 별도 취급이 필요한 정보를 기존 신고와 동일한 확신도로 병합했다."
+    }
+  },
+  "latency_ms": 7342.607600032352,
+  "prompt_tokens": 3065,
+  "completion_tokens": 689,
+  "cost_krw": null,
+  "error": null
+}

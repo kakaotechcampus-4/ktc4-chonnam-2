@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"19시쯤\",\"vehicle_hint\":null,\"situation_hint\":\"중앙선 침범\",\"location_hint\":null,\"correction_target\":\"situation_hint\",\"confidence\":\"low\",\"reasoning\":\"발화에서 '중앙선 침범'으로 상황이 바뀌었고, 시간도 '19시쯤'으로 추정되나 핵심 정정은 상황에 대한 진술 변경이다. 정정 대상은 상황_hint로 판단했고, 차량/위치 힌트는 이번 발화에서 언급되지 않아 null 처리한다. 시간은 불확실해 보이므로 전체 신뢰도는 low로 설정한다.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "발화에서 '중앙선 침범'으로 상황이 바뀌었고, 시간도 '19시쯤'으로 추정되나 핵심 정정은 상황에 대한 진술 변경이다. 정정 대상은 상황_hint로 판단했고, 차량/위치 힌트는 이번 발화에서 언급되지 않아 null 처리한다. 시간은 불확실해 보이므로 전체 신뢰도는 low로 설정한다."
+  },
+  "latency_ms": 37031.94180002902,
+  "prompt_tokens": 859,
+  "completion_tokens": 4187,
+  "cost_krw": 2.615167,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

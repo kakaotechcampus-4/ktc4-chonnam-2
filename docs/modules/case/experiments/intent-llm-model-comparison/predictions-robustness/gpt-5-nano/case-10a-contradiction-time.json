@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10a-contradiction-time",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤이었나... 아니다 19시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"SUV가 차로 변경\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"시간 표현이 어제와 19시쯤으로 모호하게 두 가지를 제시하고 있어 time_hint의 신뢰를 low로 판단했습니다. 다른 정보인 색상과 차종, 위치, 행위는 발화에 명시적이므로 해당 필드들의 추출은 신뢰도가 높다고 보았습니다. prior_hints가 null이므로 correction_target는 null로 판단했습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤이었나... 아니다 19시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "SUV가 차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간 표현이 어제와 19시쯤으로 모호하게 두 가지를 제시하고 있어 time_hint의 신뢰를 low로 판단했습니다. 다른 정보인 색상과 차종, 위치, 행위는 발화에 명시적이므로 해당 필드들의 추출은 신뢰도가 높다고 보았습니다. prior_hints가 null이므로 correction_target는 null로 판단했습니다."
+  },
+  "latency_ms": 15271.04290004354,
+  "prompt_tokens": 805,
+  "completion_tokens": 2149,
+  "cost_krw": 1.369921,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

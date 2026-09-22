@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17a-order-bias-time-last",
+  "scenario_tag": "정보_위치순서_편향",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"백색 실선 구간에서 차로 바꿈\", \"location_hint\": \"상무중앙로 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 시간, 차량 종류/색상, 위반 상황, 위치를 명확하게 언급했다. \\\"어제 18시쯤\\\"은 상대 시간 표현이므로 원문 그대로 기록했다. prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꿈",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 시간, 차량 종류/색상, 위반 상황, 위치를 명확하게 언급했다. \"어제 18시쯤\"은 상대 시간 표현이므로 원문 그대로 기록했다. prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 2511.8691999232396,
+  "prompt_tokens": 1867,
+  "completion_tokens": 277,
+  "cost_krw": 4.9500980000000006,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

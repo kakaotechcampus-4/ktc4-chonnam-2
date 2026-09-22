@@ -1,0 +1,22 @@
+{
+  "case_id": "case-02-partial-missing",
+  "scenario_tag": "일부_누락",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"갑자기 끼어들었어요\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"차량 종류 및 색상('흰색 SUV')과 위반 정황('갑자기 끼어들었어요')이 명확히 기술되었으며, 시간과 장소에 대한 언급은 없어 null로 처리했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "갑자기 끼어들었어요",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "차량 종류 및 색상('흰색 SUV')과 위반 정황('갑자기 끼어들었어요')이 명확히 기술되었으며, 시간과 장소에 대한 언급은 없어 null로 처리했습니다."
+  },
+  "latency_ms": 3080.124800093472,
+  "prompt_tokens": 303,
+  "completion_tokens": 265,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없어 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색→은색으로 자기 정정한 것으로 읽어 마지막 값인 '은색 SUV'를 채택한 것은 합리적인 처리다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경했어요'를 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없어 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없는 단독 발화이므로 correction_target이 없는 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상에 대해 두 번 다른 값을 말해 확신이 낮은 상황을 low로 정확히 반영했다 — high로 과신하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없어 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색→은색으로 자기 정정한 것으로 읽어 마지막 값인 '은색 SUV'를 채택한 것은 합리적인 처리다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경했어요'를 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없어 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없는 단독 발화이므로 correction_target이 없는 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상에 대해 두 번 다른 값을 말해 확신이 낮은 상황을 low로 정확히 반영했다 — high로 과신하지 않았다."
+    }
+  },
+  "latency_ms": 5997.046499978751,
+  "prompt_tokens": 2881,
+  "completion_tokens": 476,
+  "cost_krw": null,
+  "error": null
+}

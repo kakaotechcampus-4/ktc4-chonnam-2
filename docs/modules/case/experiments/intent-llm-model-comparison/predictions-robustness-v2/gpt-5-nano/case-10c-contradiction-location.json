@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10c-contradiction-location",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로, 죽전로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"차로 변경이 발화에 명시되어 상황_hint를 차로 변경으로 추출. 발화에서 두 도로명(상무중앙로, 죽전로)이 언급되며 '것 같아요'로 불확실성이 표현되어 location_hint를 두 도로로 나열하고 overall confidence를 low로 판단. prior_hints가 null이므로 correction_target는 null이며 시간/차량 정보는 추가로 확인되지 않았다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로, 죽전로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "차로 변경이 발화에 명시되어 상황_hint를 차로 변경으로 추출. 발화에서 두 도로명(상무중앙로, 죽전로)이 언급되며 '것 같아요'로 불확실성이 표현되어 location_hint를 두 도로로 나열하고 overall confidence를 low로 판단. prior_hints가 null이므로 correction_target는 null이며 시간/차량 정보는 추가로 확인되지 않았다."
+  },
+  "latency_ms": 17357.559600030072,
+  "prompt_tokens": 798,
+  "completion_tokens": 2597,
+  "cost_krw": 1.642221,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

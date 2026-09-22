@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 SUV\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"vehicle_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 먼저 \\\"흰색 SUV\\\"라고 했다가 \\\"은색이었나\\\"라고 정정하고 있어 차량 색상이 불확실함. 최종 발언은 \\\"은색 SUV\\\"로 해석했으나, 사용자의 주저하는 태도(\\\"아 은색이었나\\\")로 인해 신뢰도를 낮게 평가. 이전 단서가 없으므로 vehicle_hint 자체가 정정 대상이 됨.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 SUV",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 먼저 \"흰색 SUV\"라고 했다가 \"은색이었나\"라고 정정하고 있어 차량 색상이 불확실함. 최종 발언은 \"은색 SUV\"로 해석했으나, 사용자의 주저하는 태도(\"아 은색이었나\")로 인해 신뢰도를 낮게 평가. 이전 단서가 없으므로 vehicle_hint 자체가 정정 대상이 됨."
+  },
+  "latency_ms": 2939.7288999753073,
+  "prompt_tokens": 1841,
+  "completion_tokens": 298,
+  "cost_krw": 5.070378,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

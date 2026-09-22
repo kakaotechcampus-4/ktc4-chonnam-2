@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13e-korean-english-mix-2",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"그저께 밤 9시쯤\",\n  \"vehicle_hint\": \"black motorcycle\",\n  \"situation_hint\": \"헬멧 안 쓰고 달림\",\n  \"location_hint\": \"assembly로\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 발화에서 시간, 차량 색상 및 종류, 위반 상황, 위치 정보를 명확하게 언급하여 confidence를 high로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "그저께 밤 9시쯤",
+    "vehicle_hint": "black motorcycle",
+    "situation_hint": "헬멧 안 쓰고 달림",
+    "location_hint": "assembly로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 발화에서 시간, 차량 색상 및 종류, 위반 상황, 위치 정보를 명확하게 언급하여 confidence를 high로 설정했습니다."
+  },
+  "latency_ms": 1525.4745999118313,
+  "prompt_tokens": 315,
+  "completion_tokens": 112,
+  "cost_krw": 0.37539599999999995,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

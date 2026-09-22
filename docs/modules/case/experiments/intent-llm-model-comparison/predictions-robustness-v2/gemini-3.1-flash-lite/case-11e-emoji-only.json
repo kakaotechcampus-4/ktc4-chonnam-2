@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11e-emoji-only",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자가 감정 표현과 이모지만 사용하였고 구체적인 사고 상황에 대한 정보가 전혀 없어 모든 필드를 null로 처리하고 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 감정 표현과 이모지만 사용하였고 구체적인 사고 상황에 대한 정보가 전혀 없어 모든 필드를 null로 처리하고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1504.5140000293031,
+  "prompt_tokens": 299,
+  "completion_tokens": 100,
+  "cost_krw": 0.34192,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

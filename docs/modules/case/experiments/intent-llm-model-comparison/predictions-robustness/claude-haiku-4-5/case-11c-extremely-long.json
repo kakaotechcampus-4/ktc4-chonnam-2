@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11c-extremely-long",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화가 반복적인 표현으로 이루어져 있으며, 마지막 부분에서 \\\"그런 일이 있었던 것 같기도 하고 아닌 것 같기도\\\"라고 명시적으로 불확실성을 드러내고 있습니다. 교통사고나 위반 상황과 관련된 구체적인 정보(시간, 차량, 상황, 위치)가 전혀 포함되어 있지 않아 추출할 수 있는 내용이 없습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화가 반복적인 표현으로 이루어져 있으며, 마지막 부분에서 \"그런 일이 있었던 것 같기도 하고 아닌 것 같기도\"라고 명시적으로 불확실성을 드러내고 있습니다. 교통사고나 위반 상황과 관련된 구체적인 정보(시간, 차량, 상황, 위치)가 전혀 포함되어 있지 않아 추출할 수 있는 내용이 없습니다."
+  },
+  "latency_ms": 3078.2085999380797,
+  "prompt_tokens": 2337,
+  "completion_tokens": 307,
+  "cost_krw": 5.893798,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

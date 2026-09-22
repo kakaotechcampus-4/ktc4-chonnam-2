@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"20시와 21시 두 값이 한 문장에서 언급된 자기 정정 상황을 원문 그대로('20시쯤...아니 21시였던 거 같은데') 담아 정보 손실 없이 표현했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '오토바이'를 정확히 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '신호위반'을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '죽전로에서'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 정정 대상이 없어 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간 표현이 한 문장 내에서 20시/21시로 오락가락하는 불확실성을 인지해 confidence를 low로 낮췄으며, 이는 expected_notes가 요구하는 'high로 나오지 않아야 한다'는 기준을 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "20시와 21시 두 값이 한 문장에서 언급된 자기 정정 상황을 원문 그대로('20시쯤...아니 21시였던 거 같은데') 담아 정보 손실 없이 표현했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '오토바이'를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '신호위반'을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '죽전로에서'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 정정 대상이 없어 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간 표현이 한 문장 내에서 20시/21시로 오락가락하는 불확실성을 인지해 confidence를 low로 낮췄으며, 이는 expected_notes가 요구하는 'high로 나오지 않아야 한다'는 기준을 충족한다."
+    }
+  },
+  "latency_ms": 6186.9344000006095,
+  "prompt_tokens": 2991,
+  "completion_tokens": 527,
+  "cost_krw": null,
+  "error": null
+}

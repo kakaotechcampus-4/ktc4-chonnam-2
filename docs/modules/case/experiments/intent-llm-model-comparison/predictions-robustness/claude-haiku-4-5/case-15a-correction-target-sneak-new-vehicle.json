@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"검은 오토바이\", \"situation_hint\": \"헬멧 미착용\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"시간 그거 말고 19시였어요\\\"라고 명확하게 정정했으므로 time_hint를 어제 18시에서 어제 19시로 수정. 검은 오토바이는 새로운 위반 차량으로 추가 언급되었고, 헬멧 미착용은 명확한 신고 대상. location_hint는 이번 발화에서 재언급되지 않았으므로 null로 처리. 오토바이와 헬멧 정보는 명확하여 confidence는 high.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": "헬멧 미착용",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"시간 그거 말고 19시였어요\"라고 명확하게 정정했으므로 time_hint를 어제 18시에서 어제 19시로 수정. 검은 오토바이는 새로운 위반 차량으로 추가 언급되었고, 헬멧 미착용은 명확한 신고 대상. location_hint는 이번 발화에서 재언급되지 않았으므로 null로 처리. 오토바이와 헬멧 정보는 명확하여 confidence는 high."
+  },
+  "latency_ms": 2843.7795999925584,
+  "prompt_tokens": 1913,
+  "completion_tokens": 330,
+  "cost_krw": 5.423546,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

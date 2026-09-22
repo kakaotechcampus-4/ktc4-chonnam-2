@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '어제 밤에 본'이라는 명확한 시간 표현이 있고, 이전 prior_hints의 '어제 18시'를 끌어오지 않고 새 발화 기준으로 '어제 밤'을 채웠다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '택시'가 명확히 언급되었고, 이전 '흰색 SUV'를 끌어오지 않고 새 값으로 정확히 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '정류장에서 승객 안전벨트도 안 채우고 출발했다'는 상황을 그대로 반영했고 이전 '차로 변경'을 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '정류장'이 명확히 언급되었고 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'그거 말고, 또 다른 사고'라는 명시적 전환 신호를 정정이 아닌 완전히 새로운 사건으로 올바르게 인식하여 null로 처리했다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 차량, 상황, 장소가 모두 구체적으로 언급되어 high로 판정한 것이 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '어제 밤에 본'이라는 명확한 시간 표현이 있고, 이전 prior_hints의 '어제 18시'를 끌어오지 않고 새 발화 기준으로 '어제 밤'을 채웠다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '택시'가 명확히 언급되었고, 이전 '흰색 SUV'를 끌어오지 않고 새 값으로 정확히 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '정류장에서 승객 안전벨트도 안 채우고 출발했다'는 상황을 그대로 반영했고 이전 '차로 변경'을 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '정류장'이 명확히 언급되었고 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'그거 말고, 또 다른 사고'라는 명시적 전환 신호를 정정이 아닌 완전히 새로운 사건으로 올바르게 인식하여 null로 처리했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "새 발화에서 차량, 상황, 장소가 모두 구체적으로 언급되어 high로 판정한 것이 적절하다."
+    }
+  },
+  "latency_ms": 6293.8798000104725,
+  "prompt_tokens": 3045,
+  "completion_tokens": 622,
+  "cost_krw": null,
+  "error": null
+}

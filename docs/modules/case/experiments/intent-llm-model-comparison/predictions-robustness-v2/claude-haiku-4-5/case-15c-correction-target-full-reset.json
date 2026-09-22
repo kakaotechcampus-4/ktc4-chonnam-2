@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명확하게 \\\"다 취소\\\"를 선언했으므로 이전 정보들을 폐기하고, 이번 발화에서 명시적으로 언급된 '트럭'과 '불법 유턴'만 추출했습니다. 시간과 위치는 이번 발화에서 제시되지 않았으므로 null입니다. 차량과 상황은 명확하게 서술되어 confidence는 high입니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 \"다 취소\"를 선언했으므로 이전 정보들을 폐기하고, 이번 발화에서 명시적으로 언급된 '트럭'과 '불법 유턴'만 추출했습니다. 시간과 위치는 이번 발화에서 제시되지 않았으므로 null입니다. 차량과 상황은 명확하게 서술되어 confidence는 high입니다."
+  },
+  "latency_ms": 2736.6209999891,
+  "prompt_tokens": 1922,
+  "completion_tokens": 292,
+  "cost_krw": 5.147988,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09d-multi-event-truck-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"두 시점('지난달에 본', '방금 본')을 모두 나열했으나, 이는 두 개의 서로 다른 사건을 하나의 필드에 뭉쳐 표현한 것으로 어느 사건에 어떤 시간이 매칭되는지 구분이 안 되고 애매함을 반영하지 않았다. 속성 교차조합은 아니지만 사건 분리 없이 나열만 한 점에서 완전한 정답은 아니다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"파란색 트럭과 오토바이를 모두 나열했지만, 어느 사건(불법주차 vs 신호위반)에 어떤 차량이 매칭되는지 명확히 분리하지 않고 단순 나열하여 두 사건을 뭉갤 위험이 있다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"situation_hint에서 '파란색 트럭의 불법 주차 및 오토바이의 신호위반'이라고 명시적으로 속성을 교차 없이 정확히 매칭해 서술했으나, 이는 사실 원문과 일치하는 매칭이라 문제는 없어 보이지만, 두 사건을 하나의 확정된 문장으로 뭉쳐 마치 단일하고 명확한 상황으로 확정한 것이 문제다. 원문의 애매함(두 사건이 뒤섞여 있을 수 있다는 불확실성)을 전혀 반영하지 않고 두 사건을 모두 확정적으로 조합해 하나의 신고 사유로 만들어냈다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 상황이 아니므로 null 처리가 적절하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 사건이 한 문장에 섞여 있어 애매함이 존재하는데도 confidence를 high로 매겨 불확실성을 전혀 반영하지 않았다. expected_notes 기준상 confidence=low가 요구되는 상황이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "두 시점('지난달에 본', '방금 본')을 모두 나열했으나, 이는 두 개의 서로 다른 사건을 하나의 필드에 뭉쳐 표현한 것으로 어느 사건에 어떤 시간이 매칭되는지 구분이 안 되고 애매함을 반영하지 않았다. 속성 교차조합은 아니지만 사건 분리 없이 나열만 한 점에서 완전한 정답은 아니다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "파란색 트럭과 오토바이를 모두 나열했지만, 어느 사건(불법주차 vs 신호위반)에 어떤 차량이 매칭되는지 명확히 분리하지 않고 단순 나열하여 두 사건을 뭉갤 위험이 있다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "situation_hint에서 '파란색 트럭의 불법 주차 및 오토바이의 신호위반'이라고 명시적으로 속성을 교차 없이 정확히 매칭해 서술했으나, 이는 사실 원문과 일치하는 매칭이라 문제는 없어 보이지만, 두 사건을 하나의 확정된 문장으로 뭉쳐 마치 단일하고 명확한 상황으로 확정한 것이 문제다. 원문의 애매함(두 사건이 뒤섞여 있을 수 있다는 불확실성)을 전혀 반영하지 않고 두 사건을 모두 확정적으로 조합해 하나의 신고 사유로 만들어냈다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 상황이 아니므로 null 처리가 적절하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 사건이 한 문장에 섞여 있어 애매함이 존재하는데도 confidence를 high로 매겨 불확실성을 전혀 반영하지 않았다. expected_notes 기준상 confidence=low가 요구되는 상황이다."
+    }
+  },
+  "latency_ms": 10780.987899983302,
+  "prompt_tokens": 2985,
+  "completion_tokens": 913,
+  "cost_krw": null,
+  "error": null
+}

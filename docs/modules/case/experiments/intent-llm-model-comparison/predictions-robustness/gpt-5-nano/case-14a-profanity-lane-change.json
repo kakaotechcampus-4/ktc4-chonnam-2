@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14a-profanity-lane-change",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"차로 변경\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 '어제 18시쯤', '흰색 SUV', '상무중앙로', '차로 변경'이 명시되어 있어 각각 time_hint, vehicle_hint, location_hint, situation_hint로 직관적으로 매핑했다. prior_hints가 null이므로 correction_target은 null이고, 내용이 모호하지 않아 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 '어제 18시쯤', '흰색 SUV', '상무중앙로', '차로 변경'이 명시되어 있어 각각 time_hint, vehicle_hint, location_hint, situation_hint로 직관적으로 매핑했다. prior_hints가 null이므로 correction_target은 null이고, 내용이 모호하지 않아 confidence를 high로 판단했다."
+  },
+  "latency_ms": 11567.815499962308,
+  "prompt_tokens": 803,
+  "completion_tokens": 1620,
+  "cost_krw": 1.0476079999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

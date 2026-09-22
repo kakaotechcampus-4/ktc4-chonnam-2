@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13a-english-only",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"Yesterday around 6pm\",\n  \"vehicle_hint\": \"white SUV\",\n  \"situation_hint\": \"changed lanes on a solid line\",\n  \"location_hint\": \"near Sangmu-jungang-ro\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"The user provided specific details regarding time, vehicle type, traffic violation, and location without any ambiguity.\"\n}",
+  "parsed": {
+    "time_hint": "Yesterday around 6pm",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "changed lanes on a solid line",
+    "location_hint": "near Sangmu-jungang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "The user provided specific details regarding time, vehicle type, traffic violation, and location without any ambiguity."
+  },
+  "latency_ms": 1803.4613999770954,
+  "prompt_tokens": 315,
+  "completion_tokens": 104,
+  "cost_krw": 0.357132,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

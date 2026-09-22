@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11c-extremely-long",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"시간, 차량, 장소, 위반 상황에 대한 구체적인 정보가 전혀 언급되지 않았으며, 발화 내용이 매우 불확실하고 모호하여 모든 항목을 null로 두고 confidence를 low로 평가했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간, 차량, 장소, 위반 상황에 대한 구체적인 정보가 전혀 언급되지 않았으며, 발화 내용이 매우 불확실하고 모호하여 모든 항목을 null로 두고 confidence를 low로 평가했습니다."
+  },
+  "latency_ms": 2341.8676999863237,
+  "prompt_tokens": 470,
+  "completion_tokens": 264,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

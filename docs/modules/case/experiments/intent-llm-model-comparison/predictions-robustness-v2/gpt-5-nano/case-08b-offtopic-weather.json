@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08b-offtopic-weather",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"이번 발화는 교통 위반 신고와 직접 관련된 정보(시간, 차량, 구체적 상황, 위치 등)가 명시적으로 포함되어 있지 않으며, 단순히 오늘의 날씨를 말하고 있다. 따라서 어떤 필드도 채워지지 않아 null로 처리했다. prior_hints가 null이므로 정정 대상도 없다. 이 발화는 교통 관련 정보의 여부를 판단하기에 명확하지 않아도, 현재 문장에선 해당 스키마 필드를 채울 수 있는 근거가 없으므로, 불확실한 진술로 간주하지 않고 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "이번 발화는 교통 위반 신고와 직접 관련된 정보(시간, 차량, 구체적 상황, 위치 등)가 명시적으로 포함되어 있지 않으며, 단순히 오늘의 날씨를 말하고 있다. 따라서 어떤 필드도 채워지지 않아 null로 처리했다. prior_hints가 null이므로 정정 대상도 없다. 이 발화는 교통 관련 정보의 여부를 판단하기에 명확하지 않아도, 현재 문장에선 해당 스키마 필드를 채울 수 있는 근거가 없으므로, 불확실한 진술로 간주하지 않고 high로 판단했다."
+  },
+  "latency_ms": 10619.69229998067,
+  "prompt_tokens": 778,
+  "completion_tokens": 1537,
+  "cost_krw": 0.995161,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

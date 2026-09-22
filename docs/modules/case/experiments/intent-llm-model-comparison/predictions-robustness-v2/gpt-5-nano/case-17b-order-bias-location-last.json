@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "scenario_tag": "정보_위치순서_편향",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간에서 차로 바꿨다\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"시간 표현은 원문 '어제 18시쯤'을 그대로 담았고, 차량은 '흰색 SUV', 위치는 '상무중앙로 사거리', 행위는 '차로 바꿨다'로 본다. 주어진 정보 이외의 해석은 하지 않았고 prior_hints가 null이므로 correction_target도 null이다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꿨다",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간 표현은 원문 '어제 18시쯤'을 그대로 담았고, 차량은 '흰색 SUV', 위치는 '상무중앙로 사거리', 행위는 '차로 바꿨다'로 본다. 주어진 정보 이외의 해석은 하지 않았고 prior_hints가 null이므로 correction_target도 null이다."
+  },
+  "latency_ms": 13444.10299998708,
+  "prompt_tokens": 808,
+  "completion_tokens": 2016,
+  "cost_krw": 1.2891519999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
