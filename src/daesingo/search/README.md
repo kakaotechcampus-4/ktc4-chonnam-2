@@ -27,7 +27,7 @@ fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `
 
 ## 상태
 
-1차 Mock E2E 통합용 fixture 스텁과 Gemini 실제 구현이 함께 있다. `data/mock/search/scenario_*.json`에 기록된 실행은 기존 기본 경로가 반환한다. Gemini 구현은 Coarse `coarse-p3`, Fine `fine-p2` 리소스 프롬프트와 fingerprint, 구조화 응답 schema, 429 전용 재시도, 업로드 cache, usage/cost ledger를 사용한다. Fine은 네 event type별 검증 지침을 선택하며 기존 `LANE_CHANGE` 입력은 공개 계약의 `SOLID_LINE_LANE_CHANGE`로 변환한다.
+1차 Mock E2E 통합용 fixture 스텁과 Gemini 실제 구현이 함께 있다. `data/mock/search/scenario_*.json`에 기록된 실행은 기존 기본 경로가 반환한다. Gemini 구현은 Coarse `coarse-p3`, Fine `fine-p3` 리소스 프롬프트와 fingerprint, 구조화 응답 schema, 429 전용 재시도, 업로드 cache, usage/cost ledger를 사용한다. Fine은 네 event type별 검증 지침을 선택하며 기존 `LANE_CHANGE` 입력은 공개 계약의 `SOLID_LINE_LANE_CHANGE`로 변환한다.
 
 독립 실행용 진입점은 다음과 같다. `GEMINI_API_KEY`가 필요하며 결과 JSON의 문자열은 번호판 형식을 마스킹한다.
 

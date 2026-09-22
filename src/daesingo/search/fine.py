@@ -35,46 +35,48 @@ from .visual import (
 _LEGACY_EVENT_NAMES = {"LANE_CHANGE": VisualEventType.SOLID_LINE_LANE_CHANGE}
 
 
-def _rebase_temporal_facts(
+def _clip_relative_temporal_facts(
     facts: tuple[FineTemporalFact, ...],
     prepared: PreparedMedia,
     source_duration_sec: float,
-    candidate: CandidateEvent,
 ) -> tuple[TemporalFact, ...]:
+    """모델이 답한 offset을 그대로 싣는다 — 기준은 Fine input(잘라낸 clip)의 0초다.
+
+    `contract-visual-evidence.md` §7과 `adr-visual-evidence.md`가 `at_offset_ms`를
+    "Fine input 시작점 기준 상대 시간"으로 정의한다. Fine input은 candidate span이
+    아니라 `verify_fine`이 앞뒤 `fine_padding_sec`을 붙여 잘라낸 clip이다.
+
+    유효 범위는 clip 전체다. padding은 경계에서 시작하는 사건을 보라고 붙인 것이므로
+    padding 구간에서 짚은 시각을 거절하면 padding을 준 이유가 사라진다(이슈 #132).
+
+    coarse의 `span.representative_ms`와 일치하는지는 검사하지 않는다. 그 값은 coarse가
+    본 대략적 시점이고 이쪽은 fine이 본 시점이다 — 둘이 ms까지 같기를 요구하면 실제
+    호출은 통과할 수 없다. mock fixture에서 성립하던
+    `representative_ms = span.start_ms + at_offset_ms`는 padding이 0일 때의 파생식이지
+    검증 조건이 아니다.
+    """
     clip_duration_ms = round(prepared.duration_sec * 1000)
     origin_start_ms = round(prepared.origin_start_sec * 1000)
     source_duration_ms = round(source_duration_sec * 1000)
-    rebased_offsets: list[int] = []
-    rebased_facts: list[TemporalFact] = []
+    checked: list[TemporalFact] = []
     for item in facts:
         offset = item.at_offset_ms
-        if offset is None:
-            rebased_facts.append(
-                TemporalFact(
-                    at_offset_ms=None,
-                    fact=item.fact,
-                    evidence_refs=item.evidence_refs,
+        if offset is not None:
+            if offset < 0 or offset > clip_duration_ms:
+                raise ProviderPayloadError("Fine temporal offset outside prepared clip")
+            # 방출하지는 않지만, clip이 원본 밖을 가리키면 준비 단계가 어긋난 것이다.
+            if origin_start_ms + offset > source_duration_ms:
+                raise ProviderPayloadError(
+                    "Fine temporal offset outside source duration"
                 )
-            )
-            continue
-        if offset < 0 or offset > clip_duration_ms:
-            raise ProviderPayloadError("Fine temporal offset outside prepared clip")
-        rebased = offset + origin_start_ms
-        if rebased < 0 or rebased > source_duration_ms:
-            raise ProviderPayloadError("Fine temporal offset outside source duration")
-        if not candidate.span.start_ms <= rebased <= candidate.span.end_ms:
-            raise ProviderPayloadError("Fine temporal offset outside candidate window")
-        rebased_offsets.append(rebased)
-        rebased_facts.append(
+        checked.append(
             TemporalFact(
-                at_offset_ms=rebased,
+                at_offset_ms=offset,
                 fact=item.fact,
                 evidence_refs=item.evidence_refs,
             )
         )
-    if rebased_offsets and candidate.span.representative_ms not in rebased_offsets:
-        raise ProviderPayloadError("Fine temporal offsets do not link representative")
-    return tuple(rebased_facts)
+    return tuple(checked)
 
 
 def normalize_event_type(value: str | VisualEventType) -> VisualEventType:
@@ -157,18 +159,17 @@ def verify_fine(
             )
         )
         response = result.response
-        temporal_facts = _rebase_temporal_facts(
+        temporal_facts = _clip_relative_temporal_facts(
             response.temporal_facts,
             prepared,
             source.duration_sec,
-            candidate,
         )
     analysis_run = AnalysisRun(
         run_id=run_id,
         operation=Operation.VISUAL_VERIFY,
         input_ref=input_ref,
         implementation=Implementation(
-            impl_id="search:gemini-fine-p2",
+            impl_id="search:gemini-fine-p3",
             model_ref=config.model,
             prompt_version=FINE_PROMPT.version,
             config_version=config.version,
