@@ -638,10 +638,17 @@ def build_evidence_for_real_video_candidate(
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
+    on_visual_result: Any = None,
 ) -> EvidenceBundle:
     """선택된 candidate 하나에 대해 real Gemini/Elice **Fine**을 실제로 호출하고
     (유료) IncidentClip~evidence까지 조립한다. `case.select_candidate()`가 고른
     candidate를 그대로 받는다 — 여기서 다시 고르지 않는다.
+
+    `on_visual_result`는 `(visual_result, media_stream_ref)`를 받는 선택적
+    콜백이다 — Fine 응답을 실제로 받은 **직후**, 이후 단계(IncidentClip·readout·
+    evidence 조립)가 실패하기 **전에** 호출된다. 유료 응답을 downstream 버그로
+    잃지 않고 캡처해 재사용(replay)하려는 용도다(이슈 #135/#137 진단 과정에서
+    필요성이 드러남) — real_e2e.py 자체는 여기서 아무것도 저장하지 않는다.
     """
     rec_service = context.rec_service
     registered = context.registered
@@ -656,6 +663,8 @@ def build_evidence_for_real_video_candidate(
         target_hint=scope.hint,
         service=context.gemini_service,
     )
+    if on_visual_result is not None:
+        on_visual_result(visual_result, media_stream_ref)
     # 정철원 확인(2026-09-21) — 월요일 대표 파일은 VIDEO가 하나뿐이라 search가
     # 부트스트랩과 다른 stream을 고를 수 없다. 다르면 조용히 넘어가지 않고 실패시켜
     # 배선 버그를 표면화한다.
@@ -817,6 +826,7 @@ def build_real_video_evidence_bundle(
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
+    on_visual_result: Any = None,
 ) -> tuple[EvidenceBundle, RecordingService]:
     """`prepare_real_video_context()` + `get_real_video_candidates()`(candidates[0]
     고정) + `build_evidence_for_real_video_candidate()`를 한 번에 묶은 편의 함수 —
@@ -824,7 +834,9 @@ def build_real_video_evidence_bundle(
     (`docs/modules/case/experiments/real-e2e-20260922-monday-baseline.md` 참고).
 
     `RealVideoAdapter`처럼 candidate 선택을 case 상태 기계에 맡기려면 이 함수
-    대신 위 3개를 직접 조합해서 쓴다.
+    대신 위 3개를 직접 조합해서 쓴다. `on_visual_result`는
+    `build_evidence_for_real_video_candidate()`로 그대로 전달된다(같은 docstring
+    참고).
     """
     context = prepare_real_video_context(
         local_video_path=local_video_path, case=case, scope_id=scope_id
@@ -845,5 +857,6 @@ def build_real_video_evidence_bundle(
         selection_rev=selection_rev,
         correction_records=correction_records,
         location_hint=location_hint,
+        on_visual_result=on_visual_result,
     )
     return bundle, context.rec_service

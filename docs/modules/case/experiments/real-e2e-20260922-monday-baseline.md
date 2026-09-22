@@ -244,3 +244,47 @@ evidence_refs.1
 
 **세 번째 유료 호출까지 완료 — 다음 재시도는 사용자 확인 후 진행.**
 
+## 실행 4회차 — 2026-09-22 (PR #133 merge 후 재시도 확인용)
+
+**결과: 정확히 같은 `evidence_refs` 문제 재현** — `"00:03"`/`"00:04"`(값만 다름,
+패턴 동일). 3·4회차 연속 재현이라 우연이 아니라 판단, **이슈 #135로 등록.**
+토큰 사용량: Coarse 1,722/1,581, Fine 1,073/508 (합계 input 2,795 / output 2,089).
+`SearchLedger.records()`를 매 실행마다 JSONL로 남기도록
+`docs/modules/case/experiments/real-e2e-usage-log.jsonl`을 추가함(성공/실패 무관
+— `fine.py`의 `ledger.append()`가 파싱 실패보다 먼저 일어나서 실패한 실행도
+토큰 사용량은 건질 수 있다).
+
+## 실행 5회차 — 2026-09-22 (이슈 #135 PR #136 merge 후 재시도)
+
+**결과: 이슈 #135 확실히 해결.** PaddleOCR 실제 실행, real Fine 호출 모두
+성공, `evidence_refs` 문제 재현 안 됨(서어진 수정대로 빈 tuple로 나옴).
+
+**대신 완전히 새로운 모듈(evidence)에서 막힘:**
+```
+daesingo.evidence.errors.ContractInputError: only an UNCERTAIN VisualEvidence may produce a null visual event
+```
+`search.VisualEvidence`의 `verification`은 `NOT_OBSERVED`/`UNCERTAIN` 둘 다
+`visual_event_type=null`을 허용하는데, `evidence/assembly.py`의
+`_event_values()`는 `UNCERTAIN`만 처리한다. 이번이 처음으로 real Coarse가
+찍은 candidate를 real Fine이 "위반 확인 안 됨"(`NOT_OBSERVED`)으로 판정한
+경우였던 것으로 보인다 — fixture 시나리오들은 이 조합이 없었다.
+
+**추가 유료 호출 없이 synthetic 값으로 재현 확인** —
+`_event_values({"verification": "NOT_OBSERVED", "visual_event_type": None, ...}, None)`
+호출만으로 같은 에러가 남. **이슈 #137로 등록**(재현 코드도 댓글로 첨부).
+
+**case는 대신 고치지 않음** — `NOT_OBSERVED`를 `UNCERTAIN`과 같이 취급할지,
+별도 상태가 필요한지는 evidence(김준영) 소유 판단.
+
+## 토큰 절약 원칙 (5회차 이후 정리)
+
+1. **코드만 읽어도 원인이 확실하면 절대 재호출하지 않는다.** downstream(evidence/
+   requirement/CaseView) 버그는 최소 synthetic 값으로 무료 재현 가능한 경우가
+   많다(#137이 그 예).
+2. **모델의 실제 응답 내용 자체가 궁금할 때만 호출**하고, **그 결과는 반드시
+   저장해서 두 번 다시 안 쓴다.** `build_evidence_for_real_video_candidate()`/
+   `build_real_video_evidence_bundle()`에 `on_visual_result` 콜백을 추가해서,
+   Fine 응답을 받은 직후(이후 단계가 실패하기 전에) candidate·visual_evidence를
+   `docs/modules/case/experiments/real-e2e-captures/`에 저장한다 —
+   다음에 같은 상황을 다시 보고 싶으면 재호출 없이 replay하면 된다.
+
