@@ -39,7 +39,6 @@ def _response() -> FineResponse:
                 "match_with_hint": None,
                 "association_confidence": None,
                 "track_ref": None,
-                "evidence_refs": [],
             },
             "primitives": [],
             "temporal_facts": [],
@@ -197,9 +196,9 @@ def test_fine_prepares_only_selected_source_and_keeps_the_clip_relative_offset(
     response = _response().model_copy(
         update={
             "temporal_facts": (
-                FineTemporalFact(at_offset_ms=3_500, fact="EVENT", evidence_refs=()),
+                FineTemporalFact(at_offset_ms=3_500, fact="EVENT"),
                 FineTemporalFact(
-                    at_offset_ms=None, fact="UNKNOWN_TIME", evidence_refs=()
+                    at_offset_ms=None, fact="UNKNOWN_TIME"
                 ),
             )
         }
@@ -265,7 +264,7 @@ def _verify_single_offset(
             update={
                 "temporal_facts": (
                     FineTemporalFact(
-                        at_offset_ms=offset_ms, fact="EVENT", evidence_refs=()
+                        at_offset_ms=offset_ms, fact="EVENT"
                     ),
                 )
             }
@@ -327,7 +326,7 @@ def test_fine_rejects_transport_offsets_outside_prepared_clip(
         update={
             "temporal_facts": (
                 FineTemporalFact.model_construct(
-                    at_offset_ms=offset_ms, fact="EVENT", evidence_refs=()
+                    at_offset_ms=offset_ms, fact="EVENT"
                 ),
             )
         }
@@ -370,7 +369,7 @@ def test_fine_rejects_an_offset_that_would_fall_past_the_source_end(
             update={
                 "temporal_facts": (
                     FineTemporalFact(
-                        at_offset_ms=1_500, fact="EVENT", evidence_refs=()
+                        at_offset_ms=1_500, fact="EVENT"
                     ),
                 )
             }
