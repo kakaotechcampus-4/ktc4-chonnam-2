@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13b-korean-english-mix",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '어제 6시쯤'이 명시되어 있고 이를 그대로 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 'white SUV'가 명시되어 있고 이를 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 'lane change'가 명시되어 있고 이를 그대로 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '상무중앙로'가 명시되어 있고 이를 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이므로 정정 대상이 없는 것이 맞고 null로 처리했다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·차량·상황·위치 모두 명확히 언급되어 있으므로 high 신뢰도는 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '어제 6시쯤'이 명시되어 있고 이를 그대로 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 'white SUV'가 명시되어 있고 이를 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 'lane change'가 명시되어 있고 이를 그대로 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '상무중앙로'가 명시되어 있고 이를 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이므로 정정 대상이 없는 것이 맞고 null로 처리했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·차량·상황·위치 모두 명확히 언급되어 있으므로 high 신뢰도는 타당하다."
+    }
+  },
+  "latency_ms": 5101.525700069033,
+  "prompt_tokens": 2943,
+  "completion_tokens": 461,
+  "cost_krw": null,
+  "error": null
+}

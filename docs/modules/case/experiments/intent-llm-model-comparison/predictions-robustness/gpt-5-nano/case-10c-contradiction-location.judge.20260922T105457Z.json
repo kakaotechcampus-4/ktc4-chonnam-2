@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 종류 정보가 없으므로 null 처리가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경 상황이 명확히 언급되어 있고 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로와 죽전로 두 값이 한 문장에서 혼용되어 자기정정으로 읽히는 애매한 상황을 원문 그대로 남겨 임의 확정을 피했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"같은 슬롯에 대해 서로 다른 값이 한 문장 안에 등장하는 모호성을 반영해 confidence를 high가 아닌 low로 낮춘 것이 채점 기준(가장 위험한 오답인 임의 확정+high를 피함)에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 종류 정보가 없으므로 null 처리가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경 상황이 명확히 언급되어 있고 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로와 죽전로 두 값이 한 문장에서 혼용되어 자기정정으로 읽히는 애매한 상황을 원문 그대로 남겨 임의 확정을 피했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "같은 슬롯에 대해 서로 다른 값이 한 문장 안에 등장하는 모호성을 반영해 confidence를 high가 아닌 low로 낮춘 것이 채점 기준(가장 위험한 오답인 임의 확정+high를 피함)에 부합한다."
+    }
+  },
+  "latency_ms": 6036.710500018671,
+  "prompt_tokens": 2992,
+  "completion_tokens": 544,
+  "cost_krw": null,
+  "error": null
+}

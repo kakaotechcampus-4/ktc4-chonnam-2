@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤, 오늘 아침\", \"vehicle_hint\": \"흰색 SUV, 검은색 세단, 오토바이\", \"situation_hint\": \"신호위반, 헬멧 없이 오토바이 운행\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 두 건의 교통위반 상황을 설명했으며, 각각에 대해 시간(어제 18시쯤, 오늘 아침), 차량 정보(흰색 SUV, 검은색 세단, 오토바이), 위반 행위(신호위반, 헬멧 미착용)가 명확하게 언급되었다. 위치는 상무중앙로로 명시되었다. prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤, 오늘 아침",
+    "vehicle_hint": "흰색 SUV, 검은색 세단, 오토바이",
+    "situation_hint": "신호위반, 헬멧 없이 오토바이 운행",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 두 건의 교통위반 상황을 설명했으며, 각각에 대해 시간(어제 18시쯤, 오늘 아침), 차량 정보(흰색 SUV, 검은색 세단, 오토바이), 위반 행위(신호위반, 헬멧 미착용)가 명확하게 언급되었다. 위치는 상무중앙로로 명시되었다. prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 5663.787600002252,
+  "prompt_tokens": 1881,
+  "completion_tokens": 357,
+  "cost_krw": 5.580366,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

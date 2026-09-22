@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 언급이 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"발화는 흰색과 은색을 둘 다 언급한 자기 정정성 표현인데, 모델이 정정 전 값인 '흰색 SUV'를 채택했다. 마지막 언급인 은색이 정정된 값에 더 가까워 방향은 이해했으나 값 선택이 부정확하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경'이 원문에 명확히 언급되어 있고 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 언급이 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 이전 대화에 대한 정정 요청이 아니므로 correction_target null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상에 대한 발화 내 자기모순(흰색→은색)을 인지하여 confidence를 low로 낮춘 것은 기준에서 요구하는 핵심 사항(high로 두면 안 됨)을 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "발화는 흰색과 은색을 둘 다 언급한 자기 정정성 표현인데, 모델이 정정 전 값인 '흰색 SUV'를 채택했다. 마지막 언급인 은색이 정정된 값에 더 가까워 방향은 이해했으나 값 선택이 부정확하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경'이 원문에 명확히 언급되어 있고 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 언급이 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 이전 대화에 대한 정정 요청이 아니므로 correction_target null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상에 대한 발화 내 자기모순(흰색→은색)을 인지하여 confidence를 low로 낮춘 것은 기준에서 요구하는 핵심 사항(high로 두면 안 됨)을 충족한다."
+    }
+  },
+  "latency_ms": 7328.446900006384,
+  "prompt_tokens": 2981,
+  "completion_tokens": 577,
+  "cost_krw": null,
+  "error": null
+}

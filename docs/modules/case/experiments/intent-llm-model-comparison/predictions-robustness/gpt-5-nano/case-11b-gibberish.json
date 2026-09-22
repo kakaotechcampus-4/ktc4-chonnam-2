@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11b-gibberish",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"발화에 사고 상황의 구체적 정보(time/장소/차량/상황)가 명시되지 않아 힌트를 모두 null로 판단했다. 주된 정보가 없고 불확실하기 때문에 confidence를 low로 표시했고, prior_hints가 null이므로 correction_target은 없다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에 사고 상황의 구체적 정보(time/장소/차량/상황)가 명시되지 않아 힌트를 모두 null로 판단했다. 주된 정보가 없고 불확실하기 때문에 confidence를 low로 표시했고, prior_hints가 null이므로 correction_target은 없다."
+  },
+  "latency_ms": 8474.701500032097,
+  "prompt_tokens": 789,
+  "completion_tokens": 1203,
+  "cost_krw": 0.792591,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

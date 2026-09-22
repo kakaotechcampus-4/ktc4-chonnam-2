@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14a-profanity-lane-change",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"시간(어제 18시쯤), 차량(흰색 SUV), 위치(상무중앙로), 상황(차로 변경)이 명확하게 진술되었다. prior_hints가 없으므로 정정 대상 없음.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간(어제 18시쯤), 차량(흰색 SUV), 위치(상무중앙로), 상황(차로 변경)이 명확하게 진술되었다. prior_hints가 없으므로 정정 대상 없음."
+  },
+  "latency_ms": 2246.9513999531046,
+  "prompt_tokens": 1857,
+  "completion_tokens": 240,
+  "cost_krw": 4.653233999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '오늘 아침'을 그대로 추출했고 이전 hint('어제 18시')를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '트럭'을 새 발화 기준으로 정확히 추출했고 이전 '흰색 SUV'를 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 정확히 추출했고 이전 상황(차로 변경)을 덮어쓰지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 전환 신호('그건 됐고')와 함께 완전히 새로운 사고를 설명하는 상황이므로 correction_target을 null로 둔 것이 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"위치 정보가 없어 confidence를 낮춘 것은 합리적이나, 시간/차량/상황이 명확히 언급된 새 사건이므로 low보다는 medium 정도가 적절해 다소 과소평가된 판정이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '오늘 아침'을 그대로 추출했고 이전 hint('어제 18시')를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '트럭'을 새 발화 기준으로 정확히 추출했고 이전 '흰색 SUV'를 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 정확히 추출했고 이전 상황(차로 변경)을 덮어쓰지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 전환 신호('그건 됐고')와 함께 완전히 새로운 사고를 설명하는 상황이므로 correction_target을 null로 둔 것이 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "위치 정보가 없어 confidence를 낮춘 것은 합리적이나, 시간/차량/상황이 명확히 언급된 새 사건이므로 low보다는 medium 정도가 적절해 다소 과소평가된 판정이다."
+    }
+  },
+  "latency_ms": 6652.009200071916,
+  "prompt_tokens": 3020,
+  "completion_tokens": 604,
+  "cost_krw": null,
+  "error": null
+}

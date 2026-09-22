@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08b-offtopic-weather",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"발화 내용은 교통위반 신고와 직접 관련된 정보가 없어서 모든 힌트 필드를 null로 둔다. 이 발화로부터 정정해야 할 대상도 없고, 정보 확정이 어렵기 때문에 confidence를 low로 표시한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화 내용은 교통위반 신고와 직접 관련된 정보가 없어서 모든 힌트 필드를 null로 둔다. 이 발화로부터 정정해야 할 대상도 없고, 정보 확정이 어렵기 때문에 confidence를 low로 표시한다."
+  },
+  "latency_ms": 15744.883499923162,
+  "prompt_tokens": 778,
+  "completion_tokens": 1642,
+  "cost_krw": 1.059106,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

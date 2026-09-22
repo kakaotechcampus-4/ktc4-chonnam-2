@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"완전히 다른 얘기\\\"라고 명시적으로 선언했으므로 이전 정보를 모두 폐기하고 이번 발화에서만 정보를 추출했다. 트럭과 불법 유턴은 명확히 언급되었고, 시간과 장소는 언급되지 않았으므로 null로 처리했다. Correction_target도 이전 정보를 의도적으로 취소하는 것이므로 정정이 아니라 새로운 신고이기에 null로 둔다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"완전히 다른 얘기\"라고 명시적으로 선언했으므로 이전 정보를 모두 폐기하고 이번 발화에서만 정보를 추출했다. 트럭과 불법 유턴은 명확히 언급되었고, 시간과 장소는 언급되지 않았으므로 null로 처리했다. Correction_target도 이전 정보를 의도적으로 취소하는 것이므로 정정이 아니라 새로운 신고이기에 null로 둔다."
+  },
+  "latency_ms": 3236.1441999673843,
+  "prompt_tokens": 1922,
+  "completion_tokens": 323,
+  "cost_krw": 5.38396,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

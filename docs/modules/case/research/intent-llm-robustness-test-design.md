@@ -61,7 +61,27 @@ PM이 GPT-5 Nano 모델 선정 결과를 재검토하며 두 가지를 지적했
 
 ## 9. 다음 단계
 
-- [ ] `judge.py`/`aggregate.py`가 이 27케이스를 실행할 수 있는지 확인 — 특히 `prior_hints`가 있는 8케이스(§3 마지막 두 카테고리)가 `candidates.py`의 기존 처리 경로를 그대로 타는지 점검
+- [x] `dataset.py`의 `load_dataset()`으로 27케이스 전부 무료 로드 확인(2026-09-22) — 파싱 에러 없음, `prior_hints`가 있는 6케이스(`case-15a/b/c`·`case-16a/b/c`, §3 마지막 두 카테고리 각 3개 — 8이 아니라 6이었다, 이전 기재 정정)도 정상 인식됨. `candidates.py`가 `prior_hints`를 그대로 프롬프트에 주입하는 구조라 실제 API 호출 전에 걸릴 게 없음을 확인.
+- [x] **모델 선정 재검토 필요성 관련(PM 피드백 2)** — GPT-5 Nano의 100% field 정확도가 n=7 기반이라 근거가 얇다는 지적에 따라, 이번 27케이스 실측을 GPT-5 Nano 하나가 아니라 **3개 후보 모델 전부**에 대해 실행하기로 결정(2026-09-22) — robustness 검증과 모델 선정 재확인을 동시에 수행.
 - [ ] `decisions/intent-hint-robustness-policy.md` §3의 남은 항목(모순 정보 `expected_notes` 구체화 등) 진행
 - [ ] §7 "정보 위치/순서 편향" 케이스 추가 여부 결정
-- [ ] 결정되면 Elice 실측 실행 → `results/` 아래 별도 run으로 저장(기존 v1 결과와 섞지 않음, `judge.py`의 run_id 분리 저장 원칙 그대로 적용)
+- [x] Elice 실측 실행(3개 모델 × 27케이스, 2026-09-22) → §10 참고. `predictions-robustness/`·`results/summary-robustness-v1.md`에 저장(기존 v1 `predictions/`·결과와 분리, §6 명명 원칙 그대로 적용)
+
+## 10. 실측 결과 (2026-09-22, judge_run_id `20260922T105457Z`)
+
+3개 후보 모델 × 27케이스, 전부 `error=None`/`schema_valid=True`(candidate 81건 + judge 81건, 실패 0). 원본: `results/summary-robustness-v1.md`.
+
+| model | field 정확도 | hallucination | missed | 평균 latency | 총 비용(KRW) |
+| --- | --- | --- | --- | --- | --- |
+| gpt-5-nano | 85% | 10% | 1% | 17,479ms | 41.20 |
+| gemini-3.1-flash-lite | 85% | 9% | 0% | 1,865ms | 9.73 |
+| claude-haiku-4-5 | 82% | 11% | 1% | 2,994ms | 134.63 |
+
+**v1(n=7)의 "GPT-5 Nano 100%/hallucination 0%" 압도적 우위가 재현되지 않았다.** 세 모델이 82~85%로 사실상 동률이고 hallucination도 9~11%로 다 같이 높아졌다 — n=7에서 보인 격차가 표본이 작아 생긴 착시였다는 §1의 PM 지적이 이번 실측으로 뒷받침된다. latency 격차는 오히려 더 벌어졌다(GPT-5 Nano 17.5초, Gemini 대비 9.4배·Claude 대비 5.8배 — v1 때는 4.8배/3.7배). 비용도 GPT-5 Nano가 더 이상 최저가가 아니다(Gemini가 가장 저렴).
+
+카테고리별로 특히 튄 두 지점을 사람이 직접 스팟체크했다(원본 판정 근거는 `predictions-robustness/<model>/<case_id>.judge.20260922T105457Z.json`):
+
+- **GPT-5 Nano — `새사고_정정오인_방지` 61%(3케이스 전부 확인).** 사용자가 "또 다른 사고", "그건 됐고", "다른 건데요"처럼 새 사고임을 명시했는데도, 3건 모두 이를 기존 필드 정정으로 오인해 `correction_target`을 지어냈다(judge 판정: 3건 다 `hallucinated`, 근거 문장도 매번 구체적이고 일관됨 — 예: "'또 다른 사고'라며 명시적으로 전환했는데 모델이 이를 vehicle_hint의 정정으로 오인"). 같은 케이스(`case-16a`)를 Claude Haiku로 확인하니 같은 신호를 정확히 인식해 `correction_target: null`로 맞게 처리했다 — 대조가 뚜렷하다. **judge rubric 문제가 아니라 GPT-5 Nano의 실제 약점으로 확인됨.**
+- **Claude Haiku — `여러_사건_혼합` 39%(3케이스 전부 확인).** 두 사건이 섞인 문장에서 값을 분리하거나 하나를 고르지 않고 두 값을 한 필드에 콤마로 나열하면서(예: `vehicle_hint: "흰색 SUV, 검은색 세단, 오토바이"`), confidence는 3건 모두 `high`로 유지했다 — 이 카테고리가 원래 경계하려던 "애매한데 과신" 실패 패턴 그 자체다. **동일하게 judge rubric 문제가 아니라 실제 약점으로 확인됨.**
+
+**결론: 이번 실측은 `decisions/intent-llm-model-selection.md` §7의 재검토 트리거("더 큰 dataset으로 재측정했을 때 다른 순위가 나온다")를 충족한다.** 모델 재선정 여부는 이 문서(research)가 결정하지 않는다 — 별도 논의로 진행한다.

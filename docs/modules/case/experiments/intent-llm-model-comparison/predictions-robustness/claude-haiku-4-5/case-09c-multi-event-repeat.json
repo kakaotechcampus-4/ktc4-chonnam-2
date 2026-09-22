@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09c-multi-event-repeat",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 오전, 방금 전\", \"vehicle_hint\": \"버스, 택시\", \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 두 건의 사고를 언급했으며, 각각의 시간(오전, 방금 전)과 차량 종류(버스, 택시), 위반 행위(중앙선 침범)가 명확하게 표현되어 있다. 다만 구체적인 장소는 언급되지 않아 location_hint는 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": "오늘 오전, 방금 전",
+    "vehicle_hint": "버스, 택시",
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 두 건의 사고를 언급했으며, 각각의 시간(오전, 방금 전)과 차량 종류(버스, 택시), 위반 행위(중앙선 침범)가 명확하게 표현되어 있다. 다만 구체적인 장소는 언급되지 않아 location_hint는 null로 처리했다."
+  },
+  "latency_ms": 2653.5279999952763,
+  "prompt_tokens": 1851,
+  "completion_tokens": 281,
+  "cost_krw": 4.956194,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

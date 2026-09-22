@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"두 사건의 시간을 모두 나열했는데, 이는 서로 다른 사건을 하나의 필드에 뭉쳐 담은 것으로 사건 구분 없이 병합한 형태다. 값 자체는 원문에 있는 내용이라 hallucinated는 아니지만 하나의 사건으로 확정하지 않은 애매함을 confidence에 반영하지 못했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"흰색 SUV, 검은색 세단, 오토바이를 모두 한 필드에 나열해 마치 하나의 사건에 관련된 차량들처럼 조합했는데, 이는 서로 다른 두 사건의 차량 속성을 뒤섞어 존재하지 않는 사건을 만든 것과 같다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"신호위반과 헬멧 미착용을 하나의 situation_hint로 묶어 나열함으로써 흰색 SUV의 신호위반과 검은색 세단(오토바이)의 헬멧 미착용이라는 서로 다른 사건 속성이 교차 조합된 것처럼 제시되어, 기준에서 최우선으로 금지한 속성 교차조합에 해당한다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 원문에 명시된 위치이며 첫 번째 사건(흰색 SUV 신호위반)에 해당하는 정보로 정확히 추출되었다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 원문도 정정 요청이 아니라 새로운 신고이므로 correction_target을 null로 둔 것은 타당하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 사건이 뒤섞여 속성 교차조합까지 발생한 애매한 상황임에도 confidence를 high로 표기해 불확실성을 전혀 반영하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "두 사건의 시간을 모두 나열했는데, 이는 서로 다른 사건을 하나의 필드에 뭉쳐 담은 것으로 사건 구분 없이 병합한 형태다. 값 자체는 원문에 있는 내용이라 hallucinated는 아니지만 하나의 사건으로 확정하지 않은 애매함을 confidence에 반영하지 못했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "흰색 SUV, 검은색 세단, 오토바이를 모두 한 필드에 나열해 마치 하나의 사건에 관련된 차량들처럼 조합했는데, 이는 서로 다른 두 사건의 차량 속성을 뒤섞어 존재하지 않는 사건을 만든 것과 같다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "신호위반과 헬멧 미착용을 하나의 situation_hint로 묶어 나열함으로써 흰색 SUV의 신호위반과 검은색 세단(오토바이)의 헬멧 미착용이라는 서로 다른 사건 속성이 교차 조합된 것처럼 제시되어, 기준에서 최우선으로 금지한 속성 교차조합에 해당한다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 원문에 명시된 위치이며 첫 번째 사건(흰색 SUV 신호위반)에 해당하는 정보로 정확히 추출되었다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 원문도 정정 요청이 아니라 새로운 신고이므로 correction_target을 null로 둔 것은 타당하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 사건이 뒤섞여 속성 교차조합까지 발생한 애매한 상황임에도 confidence를 high로 표기해 불확실성을 전혀 반영하지 않았다."
+    }
+  },
+  "latency_ms": 9398.16559990868,
+  "prompt_tokens": 3061,
+  "completion_tokens": 837,
+  "cost_krw": null,
+  "error": null
+}
