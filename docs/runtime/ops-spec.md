@@ -108,6 +108,44 @@ GitHub Actions
 5. 실제 배포 환경에서 pre-deploy review 수행
 ```
 
+### 2-2. Public endpoint · Domain · TLS 기준
+
+2026-09-22 카테캠 무료 도메인 공지는 **도메인 발급 자체를 현재 baseline 의무로 만들지 않는다.** 현재 Architecture는 인증을 MVP 최소 수준으로 두고 인증 방식 세부를 별도 결정으로 남기므로, 소셜 로그인·도메인·TLS 구현을 이 문서만으로 앞당기지 않는다.
+
+다만 다음 요구가 실제로 생기면 public endpoint 운영 조건으로 함께 결정한다.
+
+```text
+외부 공개 demo URL 또는 OAuth redirect URI 필요
+→ 안정적인 public IP 필요 여부 확인
+→ 필요 시 Elastic IP 연결
+→ A/CNAME 등 DNS 연결
+→ HTTPS 인증서 / reverse proxy 구성
+→ OAuth를 채택한 경우 정확한 HTTPS callback URI 등록
+```
+
+원칙:
+
+- **Elastic IP는 현재 필수 자원이 아니다.** EC2 stop/start 이후에도 유지되어야 하는 public endpoint가 실제 요구일 때 도입한다.
+- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 현재 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다.
+- 도메인 자동 갱신에 token 같은 비밀값이 필요한 공급자를 선택하면 해당 값은 repository에 커밋하지 않고 secret으로 관리한다.
+- 외부 공개 endpoint에서 실제 사용자 데이터나 인증정보가 오가는 경우 **HTTPS를 pre-deploy 조건으로 검토**한다.
+- 80/443 Security Group 규칙, Let's Encrypt, Caddy/Nginx 등 reverse proxy/인증서 도구는 실제 deployment stack을 닫을 때 결정한다.
+- Google/Kakao 등 소셜 로그인 도입 여부와 인증 방식 자체는 이 문서가 결정하지 않는다. `module-architecture.md` §1-7 A2의 별도 결정을 따른다.
+- 단순 내부 개발/Real E2E 때문에 domain/EIP/OAuth 구현을 선행하지 않는다.
+
+#### 현재 구현 범위
+
+이번 공지 반영은 **운영 조건과 후속 결정 시점의 문서화만 수행**한다.
+
+현재 단계에서는 다음을 하지 않는다.
+
+- Elastic IP 할당/연결
+- 무료 도메인 발급 또는 DNS record 생성
+- Security Group 80/443 변경
+- TLS 인증서 발급
+- Caddy/Nginx 등 reverse proxy 도입
+- Google/Kakao OAuth client·callback 등록
+
 ## 3. 현재 상태와 목표 상태
 
 ### 현재 develop에서 확인된 것
@@ -497,7 +535,7 @@ cleanup/retention/Object Storage 분리를 적용한 뒤에도 **실행 working 
 
 ### Elastic IP
 
-demo/domain endpoint의 IP 안정성이 실제 요구일 때.
+외부 공개 demo/domain endpoint의 IP 안정성이 실제 요구일 때. §2-2의 public endpoint 조건이 생기기 전에는 baseline 자원으로 선점하지 않는다.
 
 ### ALB
 
@@ -566,6 +604,7 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 - logging에 민감 원문이 남는가
 - secret이 repo/image/log에 노출되는가
+- 외부 공개 endpoint에서 사용자 데이터/인증정보를 다룬다면 HTTPS가 적용됐는가
 - provider upload/delete/expiry가 문서와 일치하는가
 - cleanup/retention이 실제 adapter에 구현됐는가
 - health/readiness가 deployment에서 동작하는가
@@ -607,6 +646,7 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] capacity/scaling threshold
 - [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
 - [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
+- [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성을 §2-2 기준으로 결정
 - [ ] secret scan gate
 
 Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까지 수치를 임의 확정하지 않는다.
@@ -623,3 +663,4 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
 - Kakao Tech Campus AWS OIDC guide (2026-09-22 공지)
+- Kakao Tech Campus 무료 도메인 발급 가이드 (2026-09-22 공지)
