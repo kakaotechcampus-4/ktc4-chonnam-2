@@ -127,7 +127,6 @@ def _target_crop(image, target_hint, frame_ref):
     crop = image[y1:y2, x1:x2]
     if crop.size == 0:
         return None
-    # ponytail: vehicle bbox만 있으므로 OCR detector가 plate를 다시 찾게 한다.
     # frame별 vehicle track bbox가 들어오면 이 경로가 곧 multi-frame target crop이 된다.
     scale = 3
     enlarged = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
