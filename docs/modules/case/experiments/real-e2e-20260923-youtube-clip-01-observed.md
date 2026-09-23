@@ -94,6 +94,36 @@ stage=READY · candidates=1 · package=없음
 | `package` | `null` — `PackageNotReady`(situation_response·occurred_at 미확보. `real_e2e.py` 모듈 docstring의 "알려진 단순화 2"와 정확히 일치, 실패 아님) |
 | `progress[]` | 8단계 전부 `DONE` — 이번엔 실제로 전부 실행됐다(허위 아님, 지난 `view.py` progress 버그 수정 이후 정상 동작 확인) |
 
+## Web 렌더 + 스크린샷
+
+`apps/web`을 로컬 dev 서버(`npm run dev`, Vite)로 띄워 확인. `import.meta.glob()`이
+`data/real/case/*.json`을 그대로 읽으므로 별도 배선 없이 떴다.
+
+**주의 — 스냅샷 선택 버튼 3개가 전부 같은 라벨(`real_e2e_monday_video #1`)로
+뜬다.** 위 「남은 gap」에 적은 대로 `scenario_id`/`case_id`가 세 실행(YT_0002·
+YT_0003·youtube_clip_01) 전부 동일한 상수라서 버튼 텍스트만으로는 구분이 안 된다.
+실제로는 `EvidenceScreen.tsx`가 `view.evidence === null`이면 "증거 정리 전"만 띄우게
+되어 있어서, NOT_OBSERVED 두 건(YT_0002·YT_0003)은 그 문구가 뜨고 이 영상
+(youtube_clip_01)만 실제 값이 뜬다 — 그걸로 구분해서 찾았다.
+
+![CaseView Evidence 화면 스크린샷](./real-e2e-20260923-youtube-clip-01-evidence-screenshot.jpeg)
+
+화면에서 확인되는 값:
+
+- `case_monday_real_video` / rev 3 / `stage=READY · package 없음`
+- 차량 번호: **125호1108** (출처 확인됨)
+- 사건 분류: 백색 실선 구간 차로변경 (출처 확인됨)
+- 위반 내용: 백색 실선을 넘어 진로를 변경 (AI 추정)
+- 신고 유형: 교통위반(고속도로 포함) (AI 추정)
+- 발생 시각·발생 장소: 알 수 없음 (알려진 단순화, 정상)
+- 진행 상태 8단계 전부 "완료" — 이번엔 실제로 전부 실행됐다(허위 DONE 아님)
+
+**케이스 식별자 관련 한계:** PM 프로토콜 §9가 요구하는 "case_id·영상 파일명·실행
+시각 중 최소 하나"는 화면에 찍힌 `case_monday_real_video`(case_id)로 문자 그대로는
+충족한다. 다만 이 case_id는 세 실행 모두 동일해서 **이 스크린샷 하나만으로는
+어떤 영상에서 나온 결과인지 구분되지 않는다** — 이 문서와 나란히 두는 것으로
+연결한다(스크린샷 파일명에 `youtube-clip-01`을 넣어 매칭).
+
 ## PM 프로토콜(`doc/real-e2e-protocol.md`) 최소 완료 기준 대비
 
 PM이 명시한 최소 완료 기준: **"실제 영상 → 실제 AI/OCR → CaseView → Web 렌더 →
@@ -117,10 +147,13 @@ PM이 명시한 최소 완료 기준: **"실제 영상 → 실제 AI/OCR → Cas
 [x] EvidenceRecord 생성
 [x] Requirement 평가
 [x] CaseView 생성                             — `data/real/case/real_e2e_youtube_clip_01.json`
-[ ] Web에서 Real CaseView 렌더                — 이 문서 작성 직후 시도 예정
-[ ] UI 육안 확인
-[ ] UI 스크린샷 저장
+[x] Web에서 Real CaseView 렌더                — `apps/web` dev 서버에서 확인
+[x] UI 육안 확인                              — 번호판·위반유형·진행상태 정상 렌더 확인(사용자)
+[x] UI 스크린샷 저장                          — `real-e2e-20260923-youtube-clip-01-evidence-screenshot.jpeg`(사용자 촬영)
 ```
+
+**PM이 명시한 최소 완료 기준("실제 영상 → 실제 AI/OCR → CaseView → Web 렌더 →
+스크린샷")을 이 영상으로 전부 충족했다.**
 
 `ReportPackage`는 §11 원칙대로 별도 기록: **Real pipeline OBSERVED·Evidence PASS,
 Final ReportPackage BLOCKED(원인: occurred_at·situation_response 미확보, 알려진
