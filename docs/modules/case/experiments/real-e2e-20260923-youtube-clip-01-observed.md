@@ -92,7 +92,7 @@ stage=READY · candidates=1 · package=없음
 | `requirements_evidence.readiness` | `UNKNOWN` (occurred_at 미확보로 TIME 체크가 UNKNOWN) |
 | `requirements_package.readiness` | `UNKNOWN` |
 | `package` | `null` — `PackageNotReady`(situation_response·occurred_at 미확보. `real_e2e.py` 모듈 docstring의 "알려진 단순화 2"와 정확히 일치, 실패 아님) |
-| `progress[]` | 8단계 전부 `DONE` — 이번엔 실제로 전부 실행됐다(허위 아님, 지난 `view.py` progress 버그 수정 이후 정상 동작 확인) |
+| `progress[]` | (최초 기록 당시) 8단계 전부 `DONE`이라고 여기 적었으나 **이것도 틀렸다** — PM 리뷰로 잔여 버그 발견, 아래 「PM 리뷰 — 잔여 버그」 절 참고. 최종적으로는 `package_assembly`만 `PENDING`, 나머지 7단계는 `DONE` |
 
 ## Web 렌더 + 스크린샷
 
@@ -149,7 +149,7 @@ PM이 명시한 최소 완료 기준: **"실제 영상 → 실제 AI/OCR → Cas
 [x] CaseView 생성                             — `data/real/case/real_e2e_youtube_clip_01.json`
 [x] Web에서 Real CaseView 렌더                — `apps/web` dev 서버에서 확인
 [x] UI 육안 확인                              — 번호판·위반유형·진행상태 정상 렌더 확인(사용자)
-[x] UI 스크린샷 저장                          — `real-e2e-20260923-youtube-clip-01-evidence-screenshot.jpeg`(사용자 촬영)
+[x] UI 스크린샷 저장                          — 1차: `...-screenshot.jpeg`, PM 리뷰로 progress 버그 발견 후 수정·재촬영: `...-screenshot-v2.jpeg`(둘 다 사용자 촬영)
 ```
 
 **PM이 명시한 최소 완료 기준("실제 영상 → 실제 AI/OCR → CaseView → Web 렌더 →
@@ -158,6 +158,71 @@ PM이 명시한 최소 완료 기준: **"실제 영상 → 실제 AI/OCR → Cas
 `ReportPackage`는 §11 원칙대로 별도 기록: **Real pipeline OBSERVED·Evidence PASS,
 Final ReportPackage BLOCKED(원인: occurred_at·situation_response 미확보, 알려진
 단순화)** — 이건 실패로 세지 않는다.
+
+## PM 리뷰 — 잔여 버그 발견 및 수정 (2026-09-23, PR #147)
+
+PM(flosure23)이 이 PR을 리뷰하면서 Positive 결과 JSON/스크린샷에서 모순을 하나
+더 찾았다.
+
+> Positive Real E2E 자체는 잘 확인했습니다. 다만 progress 쪽에 한 가지 잔여
+> 버그가 남아 있는 것 같습니다. `package = null` / `requirements_package.readiness
+> = UNKNOWN` / 화면도 "package 없음"인데, `progress[].package_assembly = DONE`으로
+> 표시됩니다. (...) `READY + evidence_record 있음 + report_package 없음` 케이스는
+> 아직 남아 있는 것 같습니다.
+
+**지적이 정확했다.** 위 표에서 "8단계 전부 DONE — 허위 아님"이라고 적었던 게
+**이번 문서 자체의 오기였다** — 이 문서를 쓸 때는 그 판단이 맞다고 봤는데,
+PM이 코드를 다시 짚어 잘못을 확인했다.
+
+**원인:** `view.py::_build_progress()`에 남아 있던 블랭킷 override.
+
+```python
+progress["package_assembly"] = "DONE" if package_done else "PENDING"  # 이미 맞게 계산됨
+if stage_rank == 4:  # READY
+    progress = {s: "DONE" for s in _PROGRESS_STEPS}  # 근데 이게 바로 위 계산을 덮어씀
+```
+
+지난 번(YT_0002/YT_0003 NOT_OBSERVED 문서)에 고친 건 `READY + evidence_record
+없음` 조합뿐이었다 — `READY + evidence_record 있음 + report_package 없음`(이번
+Positive 케이스가 정확히 이거)은 놓쳤다.
+
+**수정:** override 블록 자체를 삭제했다. 바로 위 코드가 `evidence_done`/
+`package_done`/`requirement_done` 여부로 8단계를 이미 정확히 계산해주므로,
+override 없이도 evidence+package가 둘 다 있으면 자연스럽게 전부 DONE이 되고
+(happy path), package만 없으면 그 단계만 정직하게 PENDING이 된다.
+
+**회귀 테스트 추가:** `tests/case/test_progress_ready_without_package.py` — PM이
+요청한 정확히 그 케이스(`stage=READY` · `evidence_record != null` ·
+`requirement_report_evidence != null` · `report_package == null` → 기대값
+`package_assembly = PENDING`)와, override 제거가 happy path(8단계 전부 DONE)를
+안 깼는지 확인하는 케이스 둘 다 넣었다. `pytest tests/case -q` — 98 passed(기존
+96 + 신규 2).
+
+**실제 데이터 재검증 — Coarse/Fine 재호출 없이.** 수정을 검증하려고
+`youtube_clip_01.mp4`를 다시 돌렸더니 **이번엔 Fine이 `NOT_OBSERVED`를
+냈다**(Coarse/Fine이 비결정적이라 같은 영상도 매번 같은 판정이 나오지 않는다 —
+Coarse가 고른 구간도 이전 실행과 미세하게 달랐다). 기존에 커밋된 OBSERVED
+결과를 잃을 뻔해서 `git checkout`으로 즉시 복구했다.
+
+대신 `_build_progress()`는 `evidence_record`/`report_package`의 **내용이 아니라
+존재 여부(`is not None`)만** 본다는 걸 이용해, 기존 커밋된 JSON에 이미 있는
+실제 사실(evidence 있음/package 없음/requirements_evidence 있음)만 그대로
+넘겨 고쳐진 코드로 `progress`만 재계산했다 — 값을 지어낸 게 아니라, 이미 확보한
+real 실행 결과의 표시 버그만 바로잡은 것이다.
+
+```
+BEFORE: package_assembly = DONE
+AFTER:  package_assembly = PENDING
+```
+
+나머지 7단계·evidence 내용(번호판·위반유형 등)은 전혀 안 바뀌었다.
+
+**Web 재확인 + 스크린샷 재촬영:**
+
+![수정 후 CaseView Evidence 화면 스크린샷](./real-e2e-20260923-youtube-clip-01-evidence-screenshot-v2.jpeg)
+
+"신고자료 만들기"만 `완료`→`대기`로 바뀌고 나머지 7개(영상 등록~신고요건 확인)는
+그대로 `완료`, Evidence 내용(번호판 125호1108 등)도 그대로임을 육안 확인.
 
 ## 프로토콜 대비 미충족 항목 (이유 포함)
 
@@ -210,5 +275,11 @@ PM 문서 자체도 "제대로 된 큐 방식 대신 통합용 얇은 endpoint �
 ## 변경/생성된 파일
 
 - `src/daesingo/case/view.py` — `occurred_at` None-safe 처리 2곳(`_field_states()`,
-  `_build_evidence_view()`)
-- `data/real/case/real_e2e_youtube_clip_01.json` — 이번 실행 산출물(첫 OBSERVED CaseView)
+  `_build_evidence_view()`) + PM 리뷰로 발견된 `_build_progress()`의
+  `stage_rank==4` 블랭킷 override 제거
+- `tests/case/test_progress_ready_without_package.py` — PM이 요청한 회귀 테스트
+  (신규)
+- `data/real/case/real_e2e_youtube_clip_01.json` — 이번 실행 산출물(첫 OBSERVED
+  CaseView). `progress[].package_assembly`를 PM 리뷰 반영해 재계산
+- `docs/modules/case/experiments/real-e2e-20260923-youtube-clip-01-evidence-screenshot-v2.jpeg`
+  — 수정 후 재촬영한 스크린샷(신규)

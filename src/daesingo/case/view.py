@@ -168,8 +168,19 @@ def _build_progress(
         else:
             progress["requirement_check"] = "PENDING"
         progress["package_assembly"] = "DONE" if package_done else "PENDING"
-        if stage_rank == 4:  # READY
-            progress = {s: "DONE" for s in _PROGRESS_STEPS}
+        # ⚠️ PM 리뷰(2026-09-23, PR #147) — 여기 있던 "stage_rank==4(READY)면 8단계
+        # 전부 DONE으로 덮어쓴다"는 블랙킷 override를 제거한다. 바로 위에서 이미
+        # evidence_done/package_done/requirement_done을 보고 단계별로 정확히
+        # 계산해두는데, 이 override가 그 결과를 무시하고 package_assembly까지
+        # 무조건 DONE으로 덮어써서 `report_package is None`(예: PackageNotReady로
+        # BLOCKED)인 READY 상태에서도 package_assembly=DONE이라는 허위 표시가
+        # 나왔다(`youtube_clip_01` 실행에서 실제로 재현됨). READY에서
+        # evidence_record가 있는데 report_package가 없는 조합은 이제 바로 위
+        # 코드가 이미 정확히 PENDING을 내므로, 이 override 없이도
+        # file_intake/coarse_search/candidate_review는 항상 DONE(stage_rank
+        # 비교로 자동 보장), plate_read~requirement_check는 evidence_done/
+        # requirement_done 여부로 정확히 DONE이 된다 — 8단계 전부 DONE인 경우도
+        # (예: happy path) 이 계산 결과로 이미 자연스럽게 나온다.
     return [{"step": s, "state": progress[s]} for s in _PROGRESS_STEPS]
 
 
