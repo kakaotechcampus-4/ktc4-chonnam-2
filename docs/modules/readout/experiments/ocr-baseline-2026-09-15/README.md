@@ -164,6 +164,8 @@ confidence 단독 게이트다. 형식 검사는 걸지 않았다.
 - 「틀리게 확정」 = 확정한 것 중 정답이 아닌 비율. `wrong_accepts / accepted`
 - 「제대로 포기」 = 보류한 것 중 실제로 틀렸던 비율. 나머지는 맞는데 버린 것이다
 
+> **용어 경계.** 이 표는 confidence gate의 **예측 결과 기준** 집계다. eval의 `wrong_accept_rate`·`readable_abstention_rate`는 각각 GT `UNREADABLE`·`READABLE` 전체를 분모로 쓰므로, 같은 이름의 eval 지표로 부르지 않는다.
+
 **0.80에서 「제대로 포기」가 100%인 것은 정답 28건이 전부 conf 0.80 위에 있다는 뜻이다.**
 이 표본에서 confidence는 **정답을 버리지는 않는다.** 대신 **확정한 것의 76%가 틀린다.**
 
