@@ -111,6 +111,19 @@ def _build_progress(
             {"step": "overlay_time_read", "state": _job_execution_status_to_progress_state(overlay_time_read_status)},
         ]
 
+    # ⚠️ READY인데 evidence_record가 없으면(Fine이 NOT_ASSEMBLED로 분류해 IncidentClip~
+    # package_assembly를 애초에 시작하지 않은 정상 종료, 이슈 #137과 같은 원칙) 위
+    # EVIDENCE_REVIEW 분기와 동일하게 취급한다 — 아래 stage_rank 일반 로직은 READY를
+    # "evidence_record가 있는 상태"로 암묵 가정해 8단계를 전부 DONE으로 덮어쓰므로,
+    # 이 경우를 먼저 걸러내지 않으면 실행되지 않은 단계가 DONE으로 표시된다
+    # (real_e2e_yt0002 실행에서 발견, 2026-09-23).
+    if case.stage == "READY" and evidence_record is None:
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+        ]
+
     stage = case.stage
     stage_rank = {"INTAKE": 0, "SEARCHING": 1, "CANDIDATE_REVIEW": 2, "EVIDENCE_REVIEW": 3, "READY": 4}[stage]
 
