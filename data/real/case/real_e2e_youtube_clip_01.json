@@ -1,0 +1,345 @@
+{
+  "scenario_id": "real_e2e_monday_video",
+  "module": "case",
+  "generated_at": "2026-09-23T19:41:34+09:00",
+  "generated_by": "scripts/dump_real_video_caseview.py",
+  "source_video": "youtube_clip_01.mp4",
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.4",
+      "case_id": "case_monday_real_video",
+      "case_rev": 3,
+      "stage": "READY",
+      "user_reviewed": false,
+      "manifest_summary": {},
+      "hints": {},
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        },
+        {
+          "step": "plate_read",
+          "state": "DONE"
+        },
+        {
+          "step": "overlay_time_read",
+          "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "DONE"
+        },
+        {
+          "step": "requirement_check",
+          "state": "DONE"
+        },
+        {
+          "step": "package_assembly",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_cb899f2c33434c4db14d2fd26940106a",
+          "at": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",
+          "observed": "전방 1차로의 흰색 세단 차량이 2차로로 차로를 변경하는 모습이 관찰됨; 차로 경계선이 백색 실선 구간으로 보이나 화질 저하로 정확한 실선/점선 구분이 다소 불명확함; 차량이 차선을 넘어 본 차량 주행 차로(2차로) 앞으로 진입함",
+          "thumb_ref": null,
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
+        }
+      ],
+      "evidence": {
+        "record_id": "er_case_monday_real_video_001",
+        "case_type_display": {
+          "code": "SOLID_LINE_LANE_CHANGE",
+          "label": "백색 실선 구간 차로변경",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "event.source.visual_inference"
+        },
+        "report_type_display": {
+          "code": "TRAFFIC_VIOLATION",
+          "label": "교통위반(고속도로 포함)",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.category_mapping"
+        },
+        "violation_display": {
+          "code": null,
+          "label": "백색 실선을 넘어 진로를 변경",
+          "needs_review": false,
+          "info_state": "INFO_AI_ESTIMATED",
+          "source_label_key": "event.source.violation_expression"
+        },
+        "plate_display": {
+          "value": "125호1108",
+          "needs_review": false,
+          "info_state": "INFO_SOURCE_VERIFIED",
+          "source_label_key": "plate.source.plate_ocr"
+        },
+        "event_time_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null
+        },
+        "location_display": {
+          "value": null,
+          "needs_review": false,
+          "info_state": "INFO_UNKNOWN",
+          "source_label_key": null,
+          "coord": null,
+          "search_keyword": null
+        },
+        "user_edited": false,
+        "preview_ref": null,
+        "review_needed": false,
+        "reason_code": null
+      },
+      "requirements_evidence": {
+        "readiness": "UNKNOWN",
+        "checks": [
+          {
+            "code": "evidence.vehicle_number.present",
+            "category": "VEHICLE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.occurred_at.present",
+            "category": "TIME",
+            "outcome": "UNKNOWN",
+            "reason_code": "evidence.time_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.visual_event.present",
+            "category": "EVIDENCE",
+            "outcome": "PASS",
+            "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          }
+        ]
+      },
+      "requirements_package": {
+        "readiness": "UNKNOWN",
+        "checks": [
+          {
+            "code": "package.asset.report_video.exists",
+            "category": "ASSET",
+            "outcome": "UNKNOWN",
+            "reason_code": "asset.fact_missing",
+            "subject_refs": []
+          },
+          {
+            "code": "package.vehicle.plate_visible_in_report_video",
+            "category": "VEHICLE",
+            "outcome": "UNKNOWN",
+            "reason_code": "readout.plate_visibility.not_observed",
+            "subject_refs": []
+          },
+          {
+            "code": "package.location.present",
+            "category": "LOCATION",
+            "outcome": "WARN",
+            "reason_code": "package.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "package.report.content_length",
+            "category": "REPORT_CONTENT",
+            "outcome": "UNKNOWN",
+            "reason_code": "report.inputs_incomplete",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "package.evidence.situation_response",
+            "category": "EVIDENCE",
+            "outcome": "UNKNOWN",
+            "reason_code": "evidence.situation_not_asked",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ]
+          },
+          {
+            "code": "package.asset.image.each_size",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.size_within_policy",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 30000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.video.each_size",
+            "category": "ASSET",
+            "outcome": "PASS",
+            "reason_code": "asset.size_within_policy",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 130000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.total_size",
+            "category": "ASSET",
+            "outcome": "UNKNOWN",
+            "reason_code": "asset.total_size_unknown",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 180000000,
+              "unit": "asset.bytes"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.image.count",
+            "category": "ASSET",
+            "outcome": "UNKNOWN",
+            "reason_code": "asset.attachment_set_unknown",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.video.count",
+            "category": "ASSET",
+            "outcome": "UNKNOWN",
+            "reason_code": "asset.attachment_set_unknown",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.asset.total_count",
+            "category": "ASSET",
+            "outcome": "UNKNOWN",
+            "reason_code": "asset.attachment_set_unknown",
+            "subject_refs": [],
+            "measurement": {
+              "actual": 0,
+              "limit": 4,
+              "unit": "asset.count"
+            },
+            "provenance": {
+              "policy_ref": "policy/safety-report-attachment-size/v1"
+            }
+          },
+          {
+            "code": "package.deadline.within_policy",
+            "category": "DEADLINE",
+            "outcome": "UNKNOWN",
+            "reason_code": "deadline.occurred_at_missing",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "er_case_monday_real_video_001"
+              }
+            ],
+            "provenance": {
+              "policy_ref": "policy/safety-report-deadline/v1",
+              "calendar_ref": "calendar/kr-public-holidays/2026-2027/r1"
+            }
+          },
+          {
+            "code": "package.time.display_unresolved",
+            "category": "TIME",
+            "outcome": "UNKNOWN",
+            "reason_code": "time.source_unresolved",
+            "subject_refs": [
+              {
+                "kind": "time_resolution",
+                "ref": "tr_case_monday_real_video_001"
+              }
+            ]
+          }
+        ]
+      },
+      "package": null,
+      "running_jobs": [],
+      "notices": []
+    }
+  ]
+}

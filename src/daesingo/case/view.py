@@ -233,7 +233,12 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     """B절 §7-(1)/(2)/(3) 파생 규칙 — `report_fields`/`report_field_states`(§10 불변조건 13)와
     `evidence.*_display`가 공유하는 5개 필드(case_type 제외)의 info_state를 여기서 만든다."""
     event = evidence_record["event"]
-    occurred_at = evidence_record["occurred_at"]
+    # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
+    # (TimeResolution.status=UNKNOWN이면 assemble_evidence()가 occurred_at을 아예 안 만든다
+    # — evidence/assembly.py:230-231). 실제 real 영상(시간 출처가 전혀 없는 화면녹화본)에서
+    # 처음 발생 확인, 2026-09-23. `occurred_at_info_state(None)`은 이미 "INFO_UNKNOWN"을
+    # 반환하도록 되어 있었다 — 여기서 `.get()`으로 안 바꾼 게 유일한 gap이었다.
+    occurred_at = evidence_record.get("occurred_at")
     # ⚠️ vehicle_number도 location처럼 키 자체가 없을 수 있다(번호판 판독 abstain —
     # `scenario_plate_reread_001`의 `ev_p001`, 2026-09-14 확인된 결함. 과거엔
     # `evidence_record["vehicle_number"]`가 KeyError를 던졌다).
@@ -277,7 +282,7 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
         },
         "occurred_at": {
             "info_state": occurred_at_info_state(occurred_at),
-            "source_label_key": occurred_at["source"]["label_key"],
+            "source_label_key": occurred_at["source"]["label_key"] if occurred_at is not None else None,
         },
         "location": {
             "info_state": location_info_state,
@@ -322,7 +327,10 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
     report_type = event["safety_report_type"]
     violation = event["violation_expression"]
     vehicle_number = evidence_record.get("vehicle_number")
-    occurred_at = evidence_record["occurred_at"]
+    # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
+    # (TimeResolution.status=UNKNOWN — evidence/assembly.py:230-231). 실제 real 영상(시간
+    # 출처가 전혀 없는 화면녹화본)에서 처음 발생 확인, 2026-09-23.
+    occurred_at = evidence_record.get("occurred_at")
 
     case_type_info_state = evidence_value_info_state(
         case_type["value"],
@@ -330,7 +338,9 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
         user_corrected=case_type["user_corrected"],
         observability=case_type["source"].get("observability"),
     )
-    event_time_needs_review = occurred_at.get("resolution_status") == "NEEDS_REVIEW"
+    event_time_needs_review = (
+        occurred_at.get("resolution_status") == "NEEDS_REVIEW" if occurred_at is not None else False
+    )
     location_needs_review = location_value.get("needs_review", False) if location_value is not None else False
 
     # review_needed(object-level) 파생 — B절 §7 "evidence.review_needed 파생 규칙"(2026-09-09,
@@ -387,12 +397,15 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
             "source_label_key": vehicle_number["source"]["label_key"] if vehicle_number is not None else None,
         },
         "event_time_display": {
-            "value": occurred_at["value"],
+            # ⚠️ occurred_at 미확보(키 없음, TimeResolution.status=UNKNOWN)는 location_display와
+            # 같은 원칙(§19 "제품 안에서 완결되지 않는 게 정상") — 실패로 표시하지 않고 값 자체가
+            # 없다는 것을 그대로 나타낸다.
+            "value": occurred_at["value"] if occurred_at is not None else None,
             # ⚠️ 과거엔 False로 고정돼 있었다 — B절 §7-(2): "event_time_display.needs_review는
             # resolution_status == NEEDS_REVIEW를 그대로 옮긴다."
             "needs_review": event_time_needs_review,
             "info_state": states["occurred_at"]["info_state"],
-            "source_label_key": occurred_at["source"]["label_key"],
+            "source_label_key": occurred_at["source"]["label_key"] if occurred_at is not None else None,
         },
         "location_display": (
             {
