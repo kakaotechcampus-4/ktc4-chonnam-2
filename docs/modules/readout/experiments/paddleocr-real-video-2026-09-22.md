@@ -15,12 +15,14 @@
 | 대상 차량 bbox | `[535, 575, 350, 275]` (`xywh`) |
 | 수동 전체 번호판 bbox | `[618, 682, 105, 39]` (`xywh`) |
 | OCR 텍스트 줄 bbox | `[627, 693, 80, 21]` (`xywh`) |
+| 전체 번호판 detector 후보 (EasyKorean, conf 0.15) | `[627.3, 691.9, 83.3, 20.2]` (`xywh`), confidence `0.583`, 수동 전체 bbox 대비 IoU `0.411` |
 | 회귀 테스트 | 2026-09-23: `69 passed, 34 subtests passed` |
 
 - 전체 화면 OCR은 번호판 후보를 만들지 못했다.
 - 같은 프레임의 대상 차량 bbox를 crop하고 3배 확대하면 OCR 후보가 검출됐다.
 - `36 3105`는 일부 관찰값으로 보존하되 `NEEDS_REVIEW`·`abstained=true`로 처리한다. 자동 확정값이 아니다.
 - 황색 2줄 번호판의 하단 줄 `바5215`는 `PARTIAL_PLATE_READ`로 분류해 `NEEDS_REVIEW`·`abstained=true`가 되도록 수정·회귀 테스트했다. 텍스트 한 줄 bbox는 `best_frame`으로 발행하지 않는다.
+- EasyKorean detector 후보도 같은 프레임에서 글자 줄 크기의 상자를 반환했다. 수동 전체 번호판 bbox보다 높이가 약 절반이고 IoU가 `0.411`이므로, 전체 번호판 bbox를 발행하는 후보로 채택하지 않는다.
 
 ## 좌표와 이미지 원칙
 
@@ -31,7 +33,7 @@
 
 ## 현재 한계와 후속
 
-현재 PaddleOCR detector는 줄 단위 bbox를 반환한다. 2줄 번호판의 전체 bbox를 안정적으로 산출하는 detector/병합 규칙은 이번 기준선 범위에 없다. 그 경로가 준비되기 전에는 하단 줄 bbox를 전체 번호판 bbox로 승격하지 않는다. 다음 실험은 수동 전체 번호판 GT가 있는 여러 프레임에서 후보 detector/2줄 병합 규칙의 bbox 정확도를 측정한 뒤에만 구현한다.
+현재 PaddleOCR detector는 줄 단위 bbox를 반환하며, 첫 실영상에서 측정한 EasyKorean detector 후보도 전체 plate 경계를 만들지 못했다. 2줄 번호판의 전체 bbox를 안정적으로 산출하는 detector/병합 규칙은 이번 기준선 범위에 없다. 그 경로가 준비되기 전에는 하단 줄 bbox를 전체 번호판 bbox로 승격하지 않는다. 다음 후보는 수동 전체 번호판 GT가 있는 여러 프레임에서 bbox 정확도를 측정한 뒤에만 구현한다.
 
 또한 `?`는 현 계약에서 프레임 간 합의가 깨진 문자 위치를 표시하는 표기다. 단일 결과에서 형식으로 누락 위치를 추론한 부분 판독까지 `?`로 표현하려면, `PARTIAL_PLATE_READ`와 해당 위치의 의미를 계약·taxonomy에 별도로 등재해야 한다.
 
