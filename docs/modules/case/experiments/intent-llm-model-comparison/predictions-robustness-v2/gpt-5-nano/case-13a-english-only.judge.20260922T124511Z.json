@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13a-english-only",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'Yesterday around 6pm'을 그대로 추출했으며 정보 손실이나 지어낸 내용이 없다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'white SUV'를 정확히 반영했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'changed lanes on a solid line'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'near Sangmu-jungang-ro'를 정확히 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정을 암시하는 내용이 없으므로 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"문장에 시간·차량·상황·위치 정보가 모두 명시적으로 드러나 있어 high로 판정한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'Yesterday around 6pm'을 그대로 추출했으며 정보 손실이나 지어낸 내용이 없다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'white SUV'를 정확히 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'changed lanes on a solid line'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'near Sangmu-jungang-ro'를 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정을 암시하는 내용이 없으므로 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "문장에 시간·차량·상황·위치 정보가 모두 명시적으로 드러나 있어 high로 판정한 것이 타당하다."
+    }
+  },
+  "latency_ms": 5290.837899898179,
+  "prompt_tokens": 2971,
+  "completion_tokens": 467,
+  "cost_krw": null,
+  "error": null
+}

@@ -23,6 +23,8 @@
 - Object Storage 도입 기준
 - capacity / scaling trigger
 - CI/CD 및 pre-deploy validation
+- 배포 검증 / release 식별 / rollback 운영
+- build-time / runtime configuration 주입 경계
 - 운영 장애 시 확장 기준
 
 ### 이 문서가 소유하지 않는다
@@ -57,6 +59,107 @@ EC2 1대
 API와 Worker는 같은 repository/image 계열을 사용하는 modular monolith의 두 composition root다.
 
 RDS, ALB, Elastic IP, 추가 EC2는 기본 제공으로 가정하지 않는다.
+
+### 2-1. AWS 배포 인증 · 서버 접속 기준
+
+2026-09-22 카테캠 AWS 공지에 따라 **배포 인증과 서버 접속 방식은 아래를 baseline으로 확정**한다.
+
+```text
+GitHub Actions
+→ GitHub OIDC
+→ AWS STS AssumeRole
+→ ktc-github-deploy
+
+배포 명령 / 서버 접속
+→ AWS Systems Manager(SSM)
+→ EC2 instance role
+```
+
+원칙:
+
+- GitHub Actions에서 AWS에 접근할 때 **장기 Access Key를 만들거나 GitHub Secrets에 저장하지 않는다.**
+- 카테캠에서 제공하는 배포 역할 **`ktc-github-deploy`** 를 사용한다. 별도 IAM 역할 생성은 기본 경로가 아니다.
+- AWS 계정 ID는 향후 배포 workflow를 구현할 때 repository **Variable `AWS_ACCOUNT_ID`** 로 등록한다. 계정 ID 자체를 Secret으로 취급하지 않는다.
+- AWS 인증이 필요한 workflow에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `aws-actions/configure-aws-credentials@v4`로 `ap-northeast-2`의 배포 역할을 assume한다.
+- 현재의 boundary/contract 등 **비-AWS CI에는 OIDC 권한을 추가하지 않는다.** 배포 workflow와 일반 PR CI를 분리한다.
+- 배포 트리거는 `push` 또는 `workflow_dispatch`를 기본 후보로 둔다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
+- EC2 접속과 원격 명령 실행은 **SSM Session Manager / SSM Run Command**를 사용한다. GitHub Actions 배포를 위해 SSH private key를 저장하거나 보안그룹의 22번 포트를 인터넷에 개방하지 않는다.
+- Object Storage를 도입해 S3 경유 배포를 선택하는 경우, GitHub Actions의 업로드 주체(`ktc-github-deploy`)와 EC2의 다운로드 주체(`ktc-ec2-ssm-role`)를 별도 권한 주체로 취급한다.
+- 이 결정은 **S3 사용 자체를 확정하지 않는다.** Object Storage 범위는 §13의 실측 기반 결정 기준을 계속 따른다.
+
+#### 현재 구현 범위
+
+이번 결정은 **운영 기준 문서화만 수행**한다.
+
+현재 단계에서는 다음을 하지 않는다.
+
+- `AWS_ACCOUNT_ID` repository Variable 등록
+- OIDC 검증 workflow 추가
+- 실제 deployment workflow 추가
+- SSM 배포 명령 구현
+- Security Group / IAM / EC2 설정 변경
+- S3/ECR 등 배포 artifact 전달 방식 확정
+
+향후 API/Worker composition root와 Docker/Compose 배포 단위가 준비된 뒤 다음 순서로 구현한다.
+
+```text
+1. AWS_ACCOUNT_ID Variable 등록
+2. OIDC 인증 전용 workflow로 aws sts get-caller-identity 검증
+3. SSM 기반 deployment workflow 구현
+4. 필요 시 artifact 전달 방식(S3/ECR 등) 선택
+5. 실제 배포 환경에서 pre-deploy review 수행
+```
+
+### 2-2. Public endpoint · Domain · TLS 기준
+
+2026-09-22 카테캠 무료 도메인 공지는 **도메인 발급 자체를 현재 baseline 의무로 만들지 않는다.** 현재 Architecture는 인증을 MVP 최소 수준으로 두고 인증 방식 세부를 별도 결정으로 남기므로, 소셜 로그인·도메인·TLS 구현을 이 문서만으로 앞당기지 않는다.
+
+다만 다음 요구가 실제로 생기면 public endpoint 운영 조건으로 함께 결정한다.
+
+```text
+외부 공개 demo URL 또는 OAuth redirect URI 필요
+→ 안정적인 public IP 필요 여부 확인
+→ 필요 시 Elastic IP 연결
+→ A/CNAME 등 DNS 연결
+→ HTTPS 인증서 / reverse proxy 구성
+→ OAuth를 채택한 경우 정확한 HTTPS callback URI 등록
+```
+
+원칙:
+
+- **Elastic IP는 현재 필수 자원이 아니다.** EC2 stop/start 이후에도 유지되어야 하는 public endpoint가 실제 요구일 때 도입한다.
+- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 현재 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다.
+- 도메인 자동 갱신에 token 같은 비밀값이 필요한 공급자를 선택하면 해당 값은 repository에 커밋하지 않고 secret으로 관리한다.
+- 외부 공개 endpoint에서 실제 사용자 데이터나 인증정보가 오가는 경우 **HTTPS를 pre-deploy 조건으로 검토**한다.
+- 80/443 Security Group 규칙, Let's Encrypt, Caddy/Nginx 등 reverse proxy/인증서 도구는 실제 deployment stack을 닫을 때 결정한다.
+- Google/Kakao 등 소셜 로그인 도입 여부와 인증 방식 자체는 이 문서가 결정하지 않는다. `module-architecture.md` §1-7 A2의 별도 결정을 따른다.
+- 단순 내부 개발/Real E2E 때문에 domain/EIP/OAuth 구현을 선행하지 않는다.
+
+#### Reverse Proxy 선택 원칙
+
+외부 공개 endpoint와 HTTPS가 실제 요구가 되면, single EC2 + Docker Compose baseline에서는 **Caddy를 첫 구현 후보로 검토**한다.
+
+이 선택 기준은 특정 도구 선호가 아니라 현재 운영 조건에 있다.
+
+- TLS 인증서 발급·갱신 책임을 애플리케이션에서 분리할 수 있어야 한다.
+- 단일 서버에서 proxy 설정과 인증서 lifecycle을 관리하는 운영 표면을 작게 유지한다.
+- `api`는 public 80/443을 직접 소유하지 않고 내부 application port에 집중한다.
+- 고급 routing, 세밀한 traffic tuning, 다중 upstream/load balancing 요구가 실제로 커지면 Nginx/ALB 등 다른 선택지를 다시 비교한다.
+
+따라서 현재 결정은 **Caddy 고정**이 아니라 “작은 운영 표면을 우선하고 요구가 커질 때 확장한다”는 선택 기준이다.
+
+#### 현재 구현 범위
+
+이번 공지 반영은 **운영 조건과 후속 결정 시점의 문서화만 수행**한다.
+
+현재 단계에서는 다음을 하지 않는다.
+
+- Elastic IP 할당/연결
+- 무료 도메인 발급 또는 DNS record 생성
+- Security Group 80/443 변경
+- TLS 인증서 발급
+- Caddy/Nginx 등 reverse proxy 도입
+- Google/Kakao OAuth client·callback 등록
 
 ## 3. 현재 상태와 목표 상태
 
@@ -105,6 +208,27 @@ mysql
 - secret은 image나 repository에 bake하지 않는다.
 
 정확한 Dockerfile/Compose service command는 composition root 구현 후 그 entrypoint에 맞춰 닫는다.
+
+### 4-1. Build-time / Runtime Configuration 경계
+
+배포 환경변수는 “secret인가 아닌가”뿐 아니라 **언제 주입되는 값인가**를 구분한다.
+
+```text
+Build-time
+→ image/dependency/build 산출물 생성에 필요한 값
+
+Runtime
+→ 실행 환경에 따라 달라지는 DB/provider/endpoint/tuning 값
+```
+
+원칙:
+
+- build image에 provider key, DB credential, access token 같은 secret을 bake하지 않는다.
+- 가능한 한 동일 image를 환경별로 재사용하고 환경 차이는 runtime configuration으로 주입한다.
+- Compose/Dockerfile에는 secret 값 자체보다 변수 이름과 주입 경계만 남긴다.
+- `.env.example`을 둘 경우 non-secret key 이름과 안전한 예시만 제공한다.
+- CI에 등록된 값이라도 build 단계에서 필요한 값인지 runtime 단계에서 필요한 값인지 구분한다.
+- exact secret source와 주입 방식은 실제 deployment workflow를 구현할 때 확정하되 repository/image/log에 secret을 남기지 않는 원칙은 유지한다.
 
 ## 5. Python / Dependency Runtime
 
@@ -165,6 +289,31 @@ status
 }
 ```
 
+### 6-1. Correlation Context 전파
+
+비동기 실행 경로에서는 로그가 API process와 Worker process로 분리되므로 correlation ID를 한 process 안에서만 유지해서는 충분하지 않다.
+
+목표 흐름:
+
+```text
+HTTP request
+→ API / case
+→ Runtime dispatch
+→ queue
+→ Worker
+→ recording / search / readout / evidence
+→ provider adapter
+```
+
+원칙:
+
+- API 진입점에서 요청 correlation context를 만들거나 신뢰 가능한 기존 값을 수용한다.
+- Runtime dispatch 이후 Worker에서도 같은 `trace_id`를 이어서 기록할 수 있어야 한다.
+- `case_id`, `job_id`, `execution_id`가 생긴 시점부터는 같은 로그 event에 함께 남긴다.
+- `trace_id`는 observability용 상관관계 값이며 business identity나 Final Contract의 authoritative key를 대체하지 않는다.
+- provider가 안전한 metadata/correlation field를 지원하면 최소 식별자만 전달할 수 있고, 지원하지 않으면 local log에서 invocation과 execution의 관계를 남긴다.
+- exact persistence/queue metadata 방식은 첫 Runtime DB Queue/Worker 구현에서 정하되 Final Contract schema를 관측 편의를 위해 임의 확장하지 않는다.
+
 ## 7. Logging / Privacy Guardrail
 
 실제 사용자 데이터가 들어가는 운영 단계에서는 다음 원문을 일반 운영 로그에 남기지 않는다.
@@ -214,6 +363,20 @@ EC2 기본 CPU/RAM/disk 지표
 - OOM/swap/CPU saturation이 반복되는가
 
 현재 DB Runtime이 없으므로 queue/lease/heartbeat 지표는 아직 실제 운영 metric이 아니다.
+
+### Monitoring Stack 확장 기준
+
+Prometheus/Grafana/OpenTelemetry를 쓰지 않는 것이 목표가 아니라, **현재 관측 수단으로 해결되지 않는 반복 운영 문제가 생길 때 도입**한다.
+
+예를 들어 다음 요구가 실제로 생기면 시계열 metric 수집/대시보드 도입을 검토한다.
+
+- queue wait / oldest queued age를 지속적으로 추세 비교해야 함
+- execution latency / failure / retry rate의 시간대별 변화가 필요함
+- Worker heartbeat, provider latency, CPU/RAM/disk를 같은 운영 화면에서 상관 분석해야 함
+- 수동 DB query와 로그 검색만으로 장애 감지/원인 축소가 반복적으로 늦어짐
+- metric 기반 alert가 실제 운영 대응에 필요함
+
+도구 도입 자체가 목적이 아니라 **관측·감지·원인 축소 시간을 줄이는가**를 기준으로 판단한다.
 
 ## 9. Health / Readiness 운영
 
@@ -293,9 +456,21 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
+Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
+
+따라서 Runtime은 persistent/shared cache를 먼저 도입하지 않고 다음을 capacity 실험에서 함께 관측한다.
+
+- cold materialization과 warm reuse의 시간·disk 차이
+- Worker/process restart 후 재생성 비용
+- 동일 입력 동시 요청의 duplicate materialization 가능성
+- cleanup 이후 steady-state disk 회수
+- reuse 이득이 local-only storage의 제약을 상쇄하는지
+
+이 결과가 local-only storage로 부족하다는 근거를 만들 때 §13의 Object Storage 또는 shared persistence 후보를 검토한다.
+
 ## 12. Recording / Search Benchmark Dependency
 
-Runtime/Ops가 benchmark 원본을 소유하지 않는다.
+Runtime/Ops가 Recording/Search benchmark 원본을 소유하지 않는다.
 
 ### recording Owner가 제공할 것
 
@@ -307,10 +482,10 @@ Runtime/Ops가 benchmark 원본을 소유하지 않는다.
 ### search Owner가 제공할 것
 
 - provider compatibility
-- H.265 direct/copy 여부
 - recall
 - token/cost/latency
-- A~D strategy experiment
+- provider-specific media/input 제약
+- coarse/fine strategy 실험
 
 Issue #41로 이미 닫힌 경계:
 
@@ -319,15 +494,37 @@ recording → measurable media property 보장
 search    → recall/provider suitability 검증
 ```
 
-또한 합의된 실험 순서:
+### 12-1. Issue #95 P0/P1에서 Runtime이 받아들이는 사실
+
+Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실은 다음 정도다.
+
+- Elice ML API의 inline video 경로가 실제 호출에서 동작했다.
+- Files API / provider-side reusable object를 Elice 기본 경로로 전제할 수 없으며, Search가 AnalysisSource stream을 provider 전송 형식으로 변환한다.
+- binary media를 base64 data URL + JSON request로 만들기 때문에 transport 단계에서 request body와 process memory working set이 원본 binary보다 증가할 수 있다.
+- AnalysisSource materialization에는 ffmpeg CPU/RAM/time/temp disk 비용이 존재한다.
+- 동일 `source + span + profile`의 local reuse는 materialization 비용을 크게 줄일 가능성이 있다.
+- 20초·480p H.264 MP4·audio off는 P1에서 다음 단계의 첫 시험 후보로 제안됐지만 **canonical profile이나 운영 상수가 아니다.**
+
+반대로 아직 다음은 확인되지 않았다.
+
+- baseline EC2에서 api + worker + mysql + ffmpeg + base64/JSON이 동시에 실행될 때 peak CPU/RAM/disk
+- provider call 중 request construction이 Worker RSS에 미치는 실제 영향
+- MySQL과 media transform의 CPU/I/O contention
+- Worker concurrency를 1보다 늘릴 자원 여유
+- restart/실패 후 temp media와 local reuse working set 회수
+- 30분~1시간 입력을 제품 경로로 처리했을 때 queue/cost/latency/storage 특성
+
+따라서 위 미확인값을 구현 상수로 채우지 않고 [`experiments/elice-runtime-capacity-smoke-plan.md`](./experiments/elice-runtime-capacity-smoke-plan.md)의 **P2 Runtime Capacity Smoke**로 검증한다.
 
 ```text
-H.265 direct/copy 확인
-→ 실험용 AnalysisSource 조건 고정
-→ A~D 분할 비교
+#95 P0/P1
+→ Runtime capacity 질문 추출
+→ P2: concurrency=1 baseline 측정
+→ 결과로 EC2 / concurrency / storage 가설 갱신
+→ 필요 시 P3 long-duration Runtime E2E 계획
 ```
 
-Runtime/Ops에는 **benchmark 결과로 결정된 운영 영향만** 남긴다.
+P2는 Search/Recording의 품질·profile 결정을 대신하지 않는다. Runtime/Ops에는 **실험 결과가 실행/배포/저장 구조에 주는 영향만** 승격한다.
 
 ## 13. Object Storage 도입 기준
 
@@ -340,8 +537,9 @@ Object Storage를 baseline 의무로 두지 않는다.
 - instance 교체/재배포 시 보존해야 할 managed asset 존재
 - upload/download overhead보다 persistence 이점이 큼
 - lifecycle/retention을 object store 정책으로 관리하는 편이 단순
+- process-local AnalysisSource reuse가 restart/다중 Worker 환경에서 반복 materialization을 유발하고 P2/P3에서 그 비용이 실제 병목으로 확인됨
 
-도입 시에도 domain Contract에 provider/storage locator를 노출하지 않고 storage adapter 뒤에 둔다.
+도입 시에도 domain Contract에 provider/storage locator를 노출하지 않고 storage adapter 뒤에 둔다. local reuse의 성능 이득만으로 Object Storage를 선결하지 않는다.
 
 ## 14. Retention / Cleanup
 
@@ -416,7 +614,9 @@ provider rate limit / CPU/RAM/I/O에 병렬 여유
 
 CPU-bound ffmpeg/OCR와 network-bound provider call을 구분해 병목을 측정한다.
 
-Worker 수를 늘리기 전에 DB claim/lease가 concurrent-safe함을 integration test로 확인한다.
+Issue #95 후속에서는 [P2 Runtime Capacity Smoke](./experiments/elice-runtime-capacity-smoke-plan.md)의 **Worker concurrency=1**을 먼저 baseline으로 측정한다. concurrency=1에서 api/mysql과 자원 경합, request construction peak, cleanup을 설명할 수 있기 전에는 Worker 수 증가를 성능 개선책으로 선결하지 않는다.
+
+Worker 수를 늘리기 전에 DB claim/lease가 concurrent-safe함을 integration test로 확인하고, P2 결과에서 병렬 여유가 관측되어야 한다.
 
 ## 18. 카테캠 자원 확장 기준
 
@@ -447,7 +647,7 @@ cleanup/retention/Object Storage 분리를 적용한 뒤에도 **실행 working 
 
 ### Elastic IP
 
-demo/domain endpoint의 IP 안정성이 실제 요구일 때.
+외부 공개 demo/domain endpoint의 IP 안정성이 실제 요구일 때. §2-2의 public endpoint 조건이 생기기 전에는 baseline 자원으로 선점하지 않는다.
 
 ### ALB
 
@@ -488,6 +688,42 @@ python scripts/check_contract_fixtures.py
 
 외부 AI 실제 호출은 일반 PR CI의 deterministic gate에서 분리한다.
 
+### Deployment workflow 분리 원칙
+
+현재 `.github/workflows/boundary-check.yml`은 모듈 경계·계약 검사용 CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
+
+향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
+
+### Release 식별 · 배포 검증 · Rollback 원칙
+
+배포 성공은 “원격 명령이 종료됨”이 아니라 **어떤 revision이 올라갔는지 식별 가능하고, 실제 서비스 경로가 검증됐으며, 실패 시 직전 정상 revision으로 복구 가능함**을 의미한다.
+
+배포 흐름의 목표:
+
+```text
+CI quality gate
+→ deployable revision 식별
+→ AWS OIDC 인증
+→ SSM 배포 명령
+→ container/process 상태 확인
+→ /health/live
+→ /health/ready
+→ 외부 endpoint smoke test
+→ 성공 revision 기록
+```
+
+원칙:
+
+- 모든 배포는 최소 commit SHA로 revision을 식별한다.
+- Registry 기반 image 배포를 선택하면 `latest`만 의존하지 않고 immutable tag 또는 digest로 어떤 image가 배포됐는지 재현 가능하게 한다.
+- 새 revision 배포 전 직전 known-good revision을 식별할 수 있어야 한다.
+- container가 실행 중이라는 사실만으로 성공 처리하지 않고 health/readiness와 실제 외부 경로의 최소 smoke test를 통과해야 한다.
+- 배포 검증 실패 시 원인 분석보다 서비스 복구가 우선인 상황에서는 직전 known-good revision으로 rollback하고 같은 health/smoke test를 다시 수행한다.
+- DB migration처럼 코드 rollback만으로 되돌릴 수 없는 변경은 backward compatibility 또는 별도 rollback/restore 계획 없이 자동 rollback 대상으로 간주하지 않는다.
+- exact 명령과 체크 순서는 [`deployment-runbook.md`](./deployment-runbook.md)에 유지한다.
+
+Blue-Green/Canary 같은 다중 환경 배포는 현재 single EC2 baseline의 기본값이 아니다. 단순 rollback으로 감당할 수 없는 downtime/traffic 전환 요구가 실제로 생기면 검토한다.
+
 ## 20. Test / Validation 운영
 
 테스트 층:
@@ -502,6 +738,8 @@ python scripts/check_contract_fixtures.py
 
 Real E2E는 비용·rate limit·외부 장애 때문에 일반 PR CI와 분리한다.
 
+Runtime cross-cutting capacity 실험 역시 일반 PR gate로 두지 않는다. #95 P2는 baseline deployment에서 CPU/RAM/disk/queue/recovery를 관측하기 위한 계획이며, 완료 결과가 생기면 `experiments/`에 남긴 뒤 반복 가능한 운영 결론만 이 문서로 승격한다.
+
 coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없는 특정 percentage gate를 먼저 두지 않는다.
 
 ## 21. Pre-deploy Review
@@ -510,6 +748,7 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 - logging에 민감 원문이 남는가
 - secret이 repo/image/log에 노출되는가
+- 외부 공개 endpoint에서 사용자 데이터/인증정보를 다룬다면 HTTPS가 적용됐는가
 - provider upload/delete/expiry가 문서와 일치하는가
 - cleanup/retention이 실제 adapter에 구현됐는가
 - health/readiness가 deployment에서 동작하는가
@@ -548,8 +787,15 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] Managed asset retention
 - [ ] UsageRecord retention
 - [ ] provider RemoteCopy cleanup 운영
-- [ ] capacity/scaling threshold
-- [ ] deployment workflow
+- [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
+- [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
+- [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
+- [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
+- [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
+- [ ] build-time / runtime configuration 주입 방식과 변수 ownership
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command
+- [ ] post-deploy health/readiness + external smoke test 연결
+- [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
 - [ ] secret scan gate
 
 Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까지 수치를 임의 확정하지 않는다.
@@ -564,4 +810,11 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [UsageRecord Contract](../architecture/contracts/contract-usage-record.md)
 - [Recording architecture input](../modules/recording/research/architecture-input-memo.md)
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
+- [Runtime experiments router](./experiments/README.md)
+- [Elice Runtime Capacity Smoke Plan](./experiments/elice-runtime-capacity-smoke-plan.md)
+- [Issue #95 — Elice ML API migration tracker](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95)
+- [Issue #153 — provider usage · pricing · runtime config boundary review](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
+- Kakao Tech Campus AWS OIDC guide (2026-09-22 공지)
+- Kakao Tech Campus 무료 도메인 발급 가이드 (2026-09-22 공지)
+- Kakao Tech Campus 「에이전틱 서비스 배포 & CI/CD」 특강 (2026-09-23) — 소규모 팀의 운영 복잡도, observability, 반복 가능한 배포·복구 관점의 설계 입력

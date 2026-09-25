@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '방금'을 그대로 반영했고 새 사건 기준으로 올바르게 채웠다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '오토바이'를 새 사고의 차량으로 정확히 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"헬멧 없이 신호위반한 상황을 '신호위반'으로 반영했으며 새 사고 기준으로 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 위치 정보가 없어 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"사용자는 '아까 얘기한 거 말고', '방금 또 다른 사고' 라는 명시적 전환 신호로 완전히 새로운 사고를 설명한 것인데, 모델은 이를 vehicle_hint의 정정으로 오인해 correction_target을 채웠다. 기준상 이 경우 correction_target은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"confidence 값 자체는 high로 그럴듯하나, correction_target을 잘못 설정한 상태에서 매겨진 확신도라 전체 판단 맥락이 틀렸다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '방금'을 그대로 반영했고 새 사건 기준으로 올바르게 채웠다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '오토바이'를 새 사고의 차량으로 정확히 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "헬멧 없이 신호위반한 상황을 '신호위반'으로 반영했으며 새 사고 기준으로 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "발화에 위치 정보가 없어 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "사용자는 '아까 얘기한 거 말고', '방금 또 다른 사고' 라는 명시적 전환 신호로 완전히 새로운 사고를 설명한 것인데, 모델은 이를 vehicle_hint의 정정으로 오인해 correction_target을 채웠다. 기준상 이 경우 correction_target은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "confidence 값 자체는 high로 그럴듯하나, correction_target을 잘못 설정한 상태에서 매겨진 확신도라 전체 판단 맥락이 틀렸다."
+    }
+  },
+  "latency_ms": 7099.43360008765,
+  "prompt_tokens": 3041,
+  "completion_tokens": 623,
+  "cost_krw": null,
+  "error": null
+}

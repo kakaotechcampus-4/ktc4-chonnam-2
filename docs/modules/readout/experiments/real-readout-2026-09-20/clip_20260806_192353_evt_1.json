@@ -1,0 +1,178 @@
+{
+  "source_video": "C:\\Users\\tlsdb\\Downloads\\20260806_192353_EVT_1.avi",
+  "incident_clip_ref": "clip_20260806_192353_evt_1",
+  "provider_label": "paddleocr-3.7.0-ppocrv5-korean",
+  "known_simplifications": [
+    "frame_ref는 recording이 발급한 정식 ref가 아니다 — LocalVideoFrameSource의 임시값이다",
+    "tz_offset을 +09:00으로 고정했다 — 정식 출처는 clip의 source 메타데이터다",
+    "target_hint 없이 실행했다 — association은 provider 자체 선택이라 LOW_CONFIDENCE다"
+  ],
+  "plate_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_1fc2534b3dc3",
+    "operation": "PLATE_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-20T21:19:05+09:00",
+    "ended_at": "2026-09-20T21:19:54+09:00"
+  },
+  "plate_readout": {
+    "contract": "PlateReadout",
+    "contract_version": "plate-readout/v1.2",
+    "readout_id": "readout_6329ab09650b",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_1fc2534b3dc3"
+    },
+    "case_id": "case_real_001",
+    "candidate_id": "candidate_real_001",
+    "input_ref": {
+      "incident_clip_ref": "clip_20260806_192353_evt_1",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "target_association": {
+      "status": "LOW_CONFIDENCE",
+      "target_hint_used": false,
+      "track_ref": null,
+      "association_method": "FALLBACK_ONLY",
+      "associated_region": {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_014.018",
+        "bbox_xywh": [
+          930,
+          839,
+          150,
+          40
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "SPATIAL_PROXIMITY",
+          "detail": "프레임 내 번호판 후보에서 선택"
+        }
+      ]
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": "23두4874",
+      "status": "OK",
+      "source": {
+        "kind": "readout.plate_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_1fc2534b3dc3"
+        }
+      }
+    },
+    "consensus": {
+      "text": "23두4874",
+      "disagree_positions": [],
+      "method": "MULTI_FRAME"
+    },
+    "abstained": false,
+    "abstain_reason": null,
+    "best_frame": {
+      "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_014.018",
+      "crop_ref": "crop_122a466a2051",
+      "quality": {
+        "plate_px_height": 40,
+        "sharpness": 574.615
+      }
+    },
+    "frame_results": [
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_006.008",
+        "crop_ref": "crop_228354565fe1",
+        "text": "23두4874",
+        "confidence": 0.9231058359146118
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_010.013",
+        "crop_ref": "crop_76dde8ea9b22",
+        "text": "23두4874",
+        "confidence": 0.9754853844642639
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_014.018",
+        "crop_ref": "crop_122a466a2051",
+        "text": "23두4874",
+        "confidence": 0.9914476275444031
+      }
+    ]
+  },
+  "overlay_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_30d9d1cf1b03",
+    "operation": "OVERLAY_TIME_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-20T21:19:54+09:00",
+    "ended_at": "2026-09-20T21:19:54+09:00"
+  },
+  "overlay_time_readout": {
+    "contract": "OverlayTimeReadout",
+    "contract_version": "overlay-time-readout/v1.2",
+    "readout_id": "readout_6836ed073b0b",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_30d9d1cf1b03"
+    },
+    "case_id": "case_real_001",
+    "candidate_id": "candidate_real_001",
+    "input_ref": {
+      "incident_clip_ref": "clip_20260806_192353_evt_1",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": "2026-08-06T19:23:54+09:00",
+      "status": "OK",
+      "source": {
+        "kind": "readout.overlay_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_30d9d1cf1b03"
+        }
+      }
+    },
+    "validation": {
+      "format_ok": true,
+      "monotonic_ok": true,
+      "duration_match_ok": true,
+      "sample_count": 3
+    },
+    "samples": [
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_006.008",
+        "offset_sec": 6.008,
+        "raw_text": "2026/08/06 19:23:54 12.80 ×:+0.035 Y:-0.055 2:-0.008",
+        "parsed_at": "2026-08-06T19:23:54+09:00"
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_010.013",
+        "offset_sec": 10.013,
+        "raw_text": "2026/08/06 19:23:58 12.80 ×:+0.023 Y:-0.035 2:-0.012",
+        "parsed_at": "2026-08-06T19:23:58+09:00"
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_192353_evt_1_014.018",
+        "offset_sec": 14.018,
+        "raw_text": "2026/08/06 19:24:02 12.90 ×:+0.020 Y:-0.031 2:-0.012",
+        "parsed_at": "2026-08-06T19:24:02+09:00"
+      }
+    ]
+  }
+}

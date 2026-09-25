@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11b-gibberish",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"입력된 발화가 무의미한 텍스트 나열로 교통위반과 관련된 유의미한 정보를 전혀 포함하고 있지 않아 모든 필드를 null로 두고 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "입력된 발화가 무의미한 텍스트 나열로 교통위반과 관련된 유의미한 정보를 전혀 포함하고 있지 않아 모든 필드를 null로 두고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2690.236800001003,
+  "prompt_tokens": 308,
+  "completion_tokens": 239,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

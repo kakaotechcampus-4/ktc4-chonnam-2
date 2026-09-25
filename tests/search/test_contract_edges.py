@@ -85,7 +85,9 @@ def test_mixed_scope_coordinate_kinds_are_rejected() -> None:
 def test_partial_without_issue_is_rejected() -> None:
     # Given
     scenario = load_edge_scenario("partial_not_observed_001")
-    run = scenario.candidate_search_result.analysis_run.model_copy(update={"issues": ()})
+    run = scenario.candidate_search_result.analysis_run.model_copy(
+        update={"issues": ()}
+    )
 
     # When / Then
     with pytest.raises(ValidationError):
@@ -137,7 +139,9 @@ def test_producer_contracts_round_trip_through_json() -> None:
     scope_round_trip = AnalysisScope.model_validate_json(
         scenario.analysis_scopes[0].model_dump_json()
     )
-    result_round_trip = CandidateSearchResult.model_validate_json(search_result.model_dump_json())
+    result_round_trip = CandidateSearchResult.model_validate_json(
+        search_result.model_dump_json()
+    )
     evidence_round_trip = type(visual_evidence).model_validate_json(
         visual_evidence.model_dump_json()
     )

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14a-profanity-lane-change",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"차로 변경\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에서 발생 시간('어제 18시쯤'), 장소('상무중앙로'), 차량 특징('흰색 SUV'), 위반 상황('차로 변경')이 명확히 언급되어 confidence를 high로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 발생 시간('어제 18시쯤'), 장소('상무중앙로'), 차량 특징('흰색 SUV'), 위반 상황('차로 변경')이 명확히 언급되어 confidence를 high로 설정했습니다."
+  },
+  "latency_ms": 3986.700200010091,
+  "prompt_tokens": 322,
+  "completion_tokens": 301,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

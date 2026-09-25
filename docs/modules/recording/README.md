@@ -30,3 +30,11 @@
 - [recording 1차 Mock E2E Tech Spec](decisions/first-integration-tech-spec.md)
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
+
+## 실제 원본 capability
+
+- [로컬 원본의 실제 FrameRef·PNG 조회](local-frame-access.md)
+- [등록 원본의 현재 AssetFacts 조회](local-asset-facts.md)
+- [실제 단일 원본의 SpanResolution 계산](local-span-resolution.md)
+- [실행별 로컬 AnalysisSource materialization](local-analysis-source.md)
+- [실제 단일 VIDEO IncidentClip과 Readout 경계](local-incident-clip.md)

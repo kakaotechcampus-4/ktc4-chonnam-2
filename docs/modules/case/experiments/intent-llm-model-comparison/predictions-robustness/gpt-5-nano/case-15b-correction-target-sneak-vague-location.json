@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"은색 SUV\",\"situation_hint\":null,\"location_hint\":\"좀 더 아래쪽으로\",\"correction_target\":\"vehicle_hint\",\"confidence\":\"high\",\"reasoning\":\"발화에서 차량 색깔이 흰색에서 은색으로 정정되었으므로 정정 대상은 vehicle_hint로 판단한다. 또한 위치가 더 아래쪽으로 바뀌었다고 명시되어 location_hint도 업데이트한다. 발화가 색상에 대해 명확한 수정 정보를 제공했으므로 신뢰도는 높다고 판단한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 SUV",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽으로",
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "발화에서 차량 색깔이 흰색에서 은색으로 정정되었으므로 정정 대상은 vehicle_hint로 판단한다. 또한 위치가 더 아래쪽으로 바뀌었다고 명시되어 location_hint도 업데이트한다. 발화가 색상에 대해 명확한 수정 정보를 제공했으므로 신뢰도는 높다고 판단한다."
+  },
+  "latency_ms": 40499.87499997951,
+  "prompt_tokens": 845,
+  "completion_tokens": 5894,
+  "cost_krw": 3.6536660000000003,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

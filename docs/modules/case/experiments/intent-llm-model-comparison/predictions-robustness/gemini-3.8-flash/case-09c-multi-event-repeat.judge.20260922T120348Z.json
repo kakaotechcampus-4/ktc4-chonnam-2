@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09c-multi-event-repeat",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"오늘 오전과 방금 전이라는 두 시점을 모두 나열하여 두 사건이 섞여있음을 명시했고, 속성을 하나로 조합하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"버스와 택시 두 차량을 나열하여 두 사건의 차량 정보를 각각 보존했고, 하나로 확정하거나 조합하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건 모두 중앙선 침범이라는 동일한 상황이므로 하나로 표기해도 서로 다른 속성을 조합한 것이 아니며 원문 내용과 일치한다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null 처리가 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"서로 다른 두 사건이 섞여 단일 신고 대상 특정이 모호하다는 이유로 low를 매겨 판정 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "오늘 오전과 방금 전이라는 두 시점을 모두 나열하여 두 사건이 섞여있음을 명시했고, 속성을 하나로 조합하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "버스와 택시 두 차량을 나열하여 두 사건의 차량 정보를 각각 보존했고, 하나로 확정하거나 조합하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "두 사건 모두 중앙선 침범이라는 동일한 상황이므로 하나로 표기해도 서로 다른 속성을 조합한 것이 아니며 원문 내용과 일치한다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null 처리가 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "서로 다른 두 사건이 섞여 단일 신고 대상 특정이 모호하다는 이유로 low를 매겨 판정 기준에 부합한다."
+    }
+  },
+  "latency_ms": 9264.94330004789,
+  "prompt_tokens": 2888,
+  "completion_tokens": 552,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\n  \"time_hint\": \"아침엔, 저녁엔\",\n  \"vehicle_hint\": \"택시, 오토바이\",\n  \"situation_hint\": \"아침엔 택시가 정류장에서 급정거했고, 저녁엔 다른 오토바이가 헬멧 안 쓰고 인도로 달렸어요\",\n  \"location_hint\": \"정류장 및 인도\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간 표현이 두 시점(아침, 저녁)을 모두 포함하고 있어 time_hint에 반영했습니다. 두 사건을 하나의 진술로 담되, 원문 표현을 최대한 보존하기로 상황 요약(situation_hint)을 구성했습니다. 텍스트에 명시된 차량은 택시와 오토바이이므로 vehicle_hint에 반영했고, prior_hints가 없으므로 correction_target는 null입니다. 두 진술 모두 명확해 confidence를 high로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아침엔, 저녁엔",
+    "vehicle_hint": "택시, 오토바이",
+    "situation_hint": "아침엔 택시가 정류장에서 급정거했고, 저녁엔 다른 오토바이가 헬멧 안 쓰고 인도로 달렸어요",
+    "location_hint": "정류장 및 인도",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간 표현이 두 시점(아침, 저녁)을 모두 포함하고 있어 time_hint에 반영했습니다. 두 사건을 하나의 진술로 담되, 원문 표현을 최대한 보존하기로 상황 요약(situation_hint)을 구성했습니다. 텍스트에 명시된 차량은 택시와 오토바이이므로 vehicle_hint에 반영했고, prior_hints가 없으므로 correction_target는 null입니다. 두 진술 모두 명확해 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 22160.142199951224,
+  "prompt_tokens": 805,
+  "completion_tokens": 2853,
+  "cost_krw": 1.798657,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

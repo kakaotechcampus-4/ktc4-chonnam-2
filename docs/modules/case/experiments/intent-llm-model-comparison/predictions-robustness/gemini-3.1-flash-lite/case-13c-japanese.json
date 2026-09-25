@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13c-japanese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"昨日18時ごろ\",\n  \"vehicle_hint\": \"白いSUV\",\n  \"situation_hint\": \"車線変更\",\n  \"location_hint\": \"商武中央路\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 차량, 상황, 장소에 대한 정보가 명확하게 문장에 포함되어 있어 confidence를 high로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "昨日18時ごろ",
+    "vehicle_hint": "白いSUV",
+    "situation_hint": "車線変更",
+    "location_hint": "商武中央路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 차량, 상황, 장소에 대한 정보가 명확하게 문장에 포함되어 있어 confidence를 high로 설정했습니다."
+  },
+  "latency_ms": 1737.5164000550285,
+  "prompt_tokens": 311,
+  "completion_tokens": 104,
+  "cost_krw": 0.355612,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

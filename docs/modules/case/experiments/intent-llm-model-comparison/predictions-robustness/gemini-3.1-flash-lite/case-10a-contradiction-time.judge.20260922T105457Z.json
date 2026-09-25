@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화 내에서 18시->19시로 자기 정정이 있었고, 모델은 마지막 값인 '19시쯤'을 채택했다. 이는 마지막 값 채택 해석으로 합리적이다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '흰색 SUV'를 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"시간 슬롯에서 18시->19시로 자기 정정이 발생했으므로 correction_target을 time_hint로 지정한 것은 타당하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"발화 내 동일 슬롯(시간)에 대해 서로 다른 값이 두 번 언급된 모호한 상황임에도 confidence를 high로 설정했다. expected_notes에 따르면 이런 자기 정정 상황에서 confidence=high는 가장 위험한 오답 패턴이며, 모델이 실제로는 확신할 수 없는 상태를 과신한 것으로 지어낸 판단이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화 내에서 18시->19시로 자기 정정이 있었고, 모델은 마지막 값인 '19시쯤'을 채택했다. 이는 마지막 값 채택 해석으로 합리적이다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '흰색 SUV'를 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "시간 슬롯에서 18시->19시로 자기 정정이 발생했으므로 correction_target을 time_hint로 지정한 것은 타당하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "발화 내 동일 슬롯(시간)에 대해 서로 다른 값이 두 번 언급된 모호한 상황임에도 confidence를 high로 설정했다. expected_notes에 따르면 이런 자기 정정 상황에서 confidence=high는 가장 위험한 오답 패턴이며, 모델이 실제로는 확신할 수 없는 상태를 과신한 것으로 지어낸 판단이다."
+    }
+  },
+  "latency_ms": 5932.35880008433,
+  "prompt_tokens": 2915,
+  "completion_tokens": 604,
+  "cost_krw": null,
+  "error": null
+}

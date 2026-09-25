@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11e-emoji-only",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"🚗\",\"situation_hint\":\"road rage\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"발화에 자동차 이모지와 분노를 나타내는 이모지가 포함되어 있어 차량 관련 상황이 시사되지만 시간/위치/구체사실은 불명확하다. 따라서 항목은 추정적이고 신뢰도가 낮으며 정정 대상도 없다고 판단했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "🚗",
+    "situation_hint": "road rage",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에 자동차 이모지와 분노를 나타내는 이모지가 포함되어 있어 차량 관련 상황이 시사되지만 시간/위치/구체사실은 불명확하다. 따라서 항목은 추정적이고 신뢰도가 낮으며 정정 대상도 없다고 판단했다."
+  },
+  "latency_ms": 16470.39169992786,
+  "prompt_tokens": 782,
+  "completion_tokens": 2613,
+  "cost_krw": 1.6507489999999998,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

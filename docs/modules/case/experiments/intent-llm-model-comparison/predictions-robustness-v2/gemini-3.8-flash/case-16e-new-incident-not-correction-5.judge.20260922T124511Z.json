@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16e-new-incident-not-correction-5",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 정보가 없으므로 time_hint를 null로 둔 것은 맞고, 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '버스'라고 명확히 언급되었고 이전 '흰색 SUV'를 끌어오지 않고 새로 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화의 '정류장 아닌 곳에서 급정거'를 정확히 반영했고 이전 '차로 변경'을 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"완전히 새로운 사고 신고이므로 correction_target을 null로 둔 것이 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"차량과 상황은 명확하지만 시간·장소 정보가 전혀 없는 새 사건임에도 high로 판단한 것은 과도하며, 정보 부족을 반영해 낮은 확신도로 매기는 것이 더 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 정보가 없으므로 time_hint를 null로 둔 것은 맞고, 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '버스'라고 명확히 언급되었고 이전 '흰색 SUV'를 끌어오지 않고 새로 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "새 발화의 '정류장 아닌 곳에서 급정거'를 정확히 반영했고 이전 '차로 변경'을 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "완전히 새로운 사고 신고이므로 correction_target을 null로 둔 것이 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "차량과 상황은 명확하지만 시간·장소 정보가 전혀 없는 새 사건임에도 high로 판단한 것은 과도하며, 정보 부족을 반영해 낮은 확신도로 매기는 것이 더 적절하다."
+    }
+  },
+  "latency_ms": 8901.220600004308,
+  "prompt_tokens": 2993,
+  "completion_tokens": 605,
+  "cost_krw": null,
+  "error": null
+}

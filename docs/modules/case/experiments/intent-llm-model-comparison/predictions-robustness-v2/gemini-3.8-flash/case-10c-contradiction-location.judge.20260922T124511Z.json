@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 종류 언급이 없으므로 null 처리가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경'이라는 상황이 원문에 명확히 있고 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"partial\", \"reason\": \"마지막에 언급된 '죽전로'를 채택한 것은 자기 정정으로 볼 수 있어 방향은 맞지만, 상무중앙로와 죽전로 두 값이 한 문장에서 충돌하는 애매한 상황이므로 확정값으로 단정한 것은 정책상 완전한 정답으로 보기 어렵다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"위치 정보가 한 문장 안에서 번복되는 불확실한 상황을 반영해 confidence를 low로 낮춘 것은 기준에서 요구하는 핵심 채점 포인트를 정확히 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 종류 언급이 없으므로 null 처리가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경'이라는 상황이 원문에 명확히 있고 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "partial",
+      "reason": "마지막에 언급된 '죽전로'를 채택한 것은 자기 정정으로 볼 수 있어 방향은 맞지만, 상무중앙로와 죽전로 두 값이 한 문장에서 충돌하는 애매한 상황이므로 확정값으로 단정한 것은 정책상 완전한 정답으로 보기 어렵다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "위치 정보가 한 문장 안에서 번복되는 불확실한 상황을 반영해 confidence를 low로 낮춘 것은 기준에서 요구하는 핵심 채점 포인트를 정확히 충족한다."
+    }
+  },
+  "latency_ms": 6887.213899986818,
+  "prompt_tokens": 2927,
+  "completion_tokens": 578,
+  "cost_krw": null,
+  "error": null
+}

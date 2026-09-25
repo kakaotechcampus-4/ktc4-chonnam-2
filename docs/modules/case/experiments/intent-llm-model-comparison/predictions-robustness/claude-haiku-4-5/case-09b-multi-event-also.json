@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09b-multi-event-also",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"아까, 지난주\", \"vehicle_hint\": \"흰색 SUV, 트럭\", \"situation_hint\": \"신호위반, 불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 두 가지 교통위반 상황을 명확하게 언급했다. 각 상황별로 시간(\\\"아까\\\", \\\"지난주\\\"), 차량(\\\"흰색 SUV\\\", \\\"트럭\\\"), 위반 상황(\\\"신호위반\\\", \\\"불법 유턴\\\")이 분명하게 드러났다. 다만 구체적인 위치 정보는 제시되지 않았으므로 location_hint는 null이다. Prior hints가 없으므로 correction_target은 없다.\"}",
+  "parsed": {
+    "time_hint": "아까, 지난주",
+    "vehicle_hint": "흰색 SUV, 트럭",
+    "situation_hint": "신호위반, 불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 두 가지 교통위반 상황을 명확하게 언급했다. 각 상황별로 시간(\"아까\", \"지난주\"), 차량(\"흰색 SUV\", \"트럭\"), 위반 상황(\"신호위반\", \"불법 유턴\")이 분명하게 드러났다. 다만 구체적인 위치 정보는 제시되지 않았으므로 location_hint는 null이다. Prior hints가 없으므로 correction_target은 없다."
+  },
+  "latency_ms": 3766.39750006143,
+  "prompt_tokens": 1861,
+  "completion_tokens": 319,
+  "cost_krw": 5.260669999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

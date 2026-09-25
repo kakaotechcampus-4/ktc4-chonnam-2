@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "scenario_tag": "정보_위치순서_편향",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"백색 실선 구간으로 차로를 변경\", \"location_hint\": \"상무중앙로 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자 발화에서 시간, 장소, 차량, 위반 상황이 명확하게 언급되었다. 모든 정보가 직접 기술되어 있으며 모호함이 없다. 이전 hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간으로 차로를 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자 발화에서 시간, 장소, 차량, 위반 상황이 명확하게 언급되었다. 모든 정보가 직접 기술되어 있으며 모호함이 없다. 이전 hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 2508.843500050716,
+  "prompt_tokens": 1869,
+  "completion_tokens": 269,
+  "cost_krw": 4.892246,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

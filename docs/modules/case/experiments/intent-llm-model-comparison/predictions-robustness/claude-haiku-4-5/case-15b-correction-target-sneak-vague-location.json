@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색\", \"situation_hint\": null, \"location_hint\": \"상무중앙로 아래쪽\", \"correction_target\": \"vehicle_hint, location_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 이전의 \\\"흰색 SUV\\\"를 \\\"은색\\\"으로 정정하고, \\\"상무중앙로\\\"의 위치를 \\\"더 아래쪽\\\"으로 수정했다. 다만 \\\"위치도 좀 더 아래쪽이었던 것 같아요\\\"에서 \\\"아래쪽\\\"이 상대적 표현이고 정확한 지점이 불명확하며, 차량 색깔도 재확인하는 과정에서 나온 진술이어서 확실성이 낮다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "상무중앙로 아래쪽",
+    "correction_target": "vehicle_hint, location_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 이전의 \"흰색 SUV\"를 \"은색\"으로 정정하고, \"상무중앙로\"의 위치를 \"더 아래쪽\"으로 수정했다. 다만 \"위치도 좀 더 아래쪽이었던 것 같아요\"에서 \"아래쪽\"이 상대적 표현이고 정확한 지점이 불명확하며, 차량 색깔도 재확인하는 과정에서 나온 진술이어서 확실성이 낮다."
+  },
+  "latency_ms": 2917.606099974364,
+  "prompt_tokens": 1920,
+  "completion_tokens": 325,
+  "cost_krw": 5.39614,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

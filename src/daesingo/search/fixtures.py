@@ -21,14 +21,20 @@ class SearchScenario(ContractModel):
     scenario_id: str = Field(min_length=1)
     module: Literal["search"]
     analysis_scopes: tuple[AnalysisScope, ...] = Field(min_length=1)
-    analysis_run_candidate_events: tuple[AnalysisRunCandidateEvents, ...] = Field(min_length=1)
+    analysis_run_candidate_events: tuple[AnalysisRunCandidateEvents, ...] = Field(
+        min_length=1
+    )
     visual_evidences: tuple[VisualEvidence, ...]
 
     @model_validator(mode="after")
     def check_references(self) -> Self:
-        run_ids = {record.analysis_run.run_id for record in self.analysis_run_candidate_events}
+        run_ids = {
+            record.analysis_run.run_id for record in self.analysis_run_candidate_events
+        }
         if any(evidence.run_id not in run_ids for evidence in self.visual_evidences):
-            raise PydanticCustomError("scenario_visual_run", "VisualEvidence run_id must exist")
+            raise PydanticCustomError(
+                "scenario_visual_run", "VisualEvidence run_id must exist"
+            )
         return self
 
     @property

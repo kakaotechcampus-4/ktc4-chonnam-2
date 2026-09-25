@@ -1,0 +1,22 @@
+{
+  "case_id": "case-07-correction",
+  "scenario_tag": "잘못_입력_후_correction",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 세단\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"vehicle_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"그 차 아니고\\\"라고 명시적으로 이전의 \\\"흰색 SUV\\\"를 정정하고 \\\"바로 옆에 은색 세단\\\"이라고 명확히 언급했으므로, vehicle_hint를 은색 세단으로 변경하고 correction_target을 vehicle_hint로 표시했다. 나머지 필드들은 이번 발화에서 언급되지 않았으므로 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 세단",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"그 차 아니고\"라고 명시적으로 이전의 \"흰색 SUV\"를 정정하고 \"바로 옆에 은색 세단\"이라고 명확히 언급했으므로, vehicle_hint를 은색 세단으로 변경하고 correction_target을 vehicle_hint로 표시했다. 나머지 필드들은 이번 발화에서 언급되지 않았으므로 null로 처리했다."
+  },
+  "latency_ms": 3375.096800038591,
+  "prompt_tokens": 1908,
+  "completion_tokens": 290,
+  "cost_krw": 5.111456,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

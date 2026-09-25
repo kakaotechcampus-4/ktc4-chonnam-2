@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08a-offtopic-toilet",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자 발화는 \\\"화장실이 어디예요?\\\"로서 교통위반 신고와 무관한 질문이다. 교통 사고 상황, 시간, 차량, 위반 상황 등 추출할 내용이 전혀 없으므로 모든 필드를 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자 발화는 \"화장실이 어디예요?\"로서 교통위반 신고와 무관한 질문이다. 교통 사고 상황, 시간, 차량, 위반 상황 등 추출할 내용이 전혀 없으므로 모든 필드를 null로 처리했다."
+  },
+  "latency_ms": 2263.8034999836236,
+  "prompt_tokens": 1818,
+  "completion_tokens": 242,
+  "cost_krw": 4.6091,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

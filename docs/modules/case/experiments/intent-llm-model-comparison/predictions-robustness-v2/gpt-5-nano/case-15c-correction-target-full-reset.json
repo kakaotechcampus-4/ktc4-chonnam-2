@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"이번 발화는 이전 내용을 취소하고 새로운 사고를 제시하므로 시간/장소 정보는 명시되지 않아 null로 두었다. 차량은 '트럭'으로 해석했고 상황은 '불법 유턴'으로 판단했다. 정정 대상 필드는 이번 발화에서 특정Prior Hint를 직접적으로 수정하는 내용이 없으므로 null이며, 진술이 명확하므로 신뢰도는 'high'이다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "이번 발화는 이전 내용을 취소하고 새로운 사고를 제시하므로 시간/장소 정보는 명시되지 않아 null로 두었다. 차량은 '트럭'으로 해석했고 상황은 '불법 유턴'으로 판단했다. 정정 대상 필드는 이번 발화에서 특정Prior Hint를 직접적으로 수정하는 내용이 없으므로 null이며, 진술이 명확하므로 신뢰도는 'high'이다."
+  },
+  "latency_ms": 19679.04570000246,
+  "prompt_tokens": 851,
+  "completion_tokens": 2910,
+  "cost_krw": 1.8368659999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

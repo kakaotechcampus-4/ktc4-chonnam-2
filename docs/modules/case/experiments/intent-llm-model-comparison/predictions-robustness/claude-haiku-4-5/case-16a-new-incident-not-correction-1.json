@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧 없이 신호위반\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"방금 또 다른 사고\\\"라고 명시해서 이전 단서와 완전히 다른 별도 사건을 보고하는 것으로 판단. 오토바이, 신호위반, 헬멧 미착용이 명확히 언급됨. 위치는 언급되지 않아 null. 이번 발화는 새로운 사안이므로 correction_target은 null.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 없이 신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"방금 또 다른 사고\"라고 명시해서 이전 단서와 완전히 다른 별도 사건을 보고하는 것으로 판단. 오토바이, 신호위반, 헬멧 미착용이 명확히 언급됨. 위치는 언급되지 않아 null. 이번 발화는 새로운 사안이므로 correction_target은 null."
+  },
+  "latency_ms": 3077.5236999616027,
+  "prompt_tokens": 1917,
+  "completion_tokens": 288,
+  "cost_krw": 5.10993,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08a-offtopic-toilet",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화가 교통위반 신고와 직접적으로 관련된 시간/차량/상황/위치 정보를 제공하지 않으며, 단순히 화장실 위치를 묻는 일반적인 문의로 보인다. 따라서 어떤 필드도 확정적으로 추출되지 않으며, 모호성으로 인해 confidence를 low로 판단했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화가 교통위반 신고와 직접적으로 관련된 시간/차량/상황/위치 정보를 제공하지 않으며, 단순히 화장실 위치를 묻는 일반적인 문의로 보인다. 따라서 어떤 필드도 확정적으로 추출되지 않으며, 모호성으로 인해 confidence를 low로 판단했다."
+  },
+  "latency_ms": 12214.118400006555,
+  "prompt_tokens": 777,
+  "completion_tokens": 1155,
+  "cost_krw": 0.762447,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"18시->19시로 자기정정된 마지막 값을 채택한 것은 합리적이지만, 자기정정 자체를 반영해 불확실성을 남겨야 함에도 단정적으로 처리되어 완전한 correct로 보기 어렵다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 흰색 SUV로 명확히 언급되어 있고 정정 대상이 아니므로 그대로 추출한 것이 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경이라는 상황이 원문에 명확히 있고 그대로 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로라는 위치가 원문에 명확히 있고 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"missed\", \"reason\": \"한 문장 안에서 시간 값(18시->19시)이 자기정정된 명확한 사례임에도 correction_target을 null로 처리해 정정 발생 사실을 놓쳤다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"같은 슬롯(시간)에 대해 발화 내에서 값이 두 번 바뀌었으므로 confidence는 high가 되면 안 되는데, 모델은 정정 사실을 인지하면서도 high로 과신하여 가장 위험한 오답 패턴을 보였다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "18시->19시로 자기정정된 마지막 값을 채택한 것은 합리적이지만, 자기정정 자체를 반영해 불확실성을 남겨야 함에도 단정적으로 처리되어 완전한 correct로 보기 어렵다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 흰색 SUV로 명확히 언급되어 있고 정정 대상이 아니므로 그대로 추출한 것이 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경이라는 상황이 원문에 명확히 있고 그대로 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로라는 위치가 원문에 명확히 있고 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "missed",
+      "reason": "한 문장 안에서 시간 값(18시->19시)이 자기정정된 명확한 사례임에도 correction_target을 null로 처리해 정정 발생 사실을 놓쳤다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "같은 슬롯(시간)에 대해 발화 내에서 값이 두 번 바뀌었으므로 confidence는 high가 되면 안 되는데, 모델은 정정 사실을 인지하면서도 high로 과신하여 가장 위험한 오답 패턴을 보였다."
+    }
+  },
+  "latency_ms": 9180.265499977395,
+  "prompt_tokens": 2953,
+  "completion_tokens": 629,
+  "cost_krw": null,
+  "error": null
+}

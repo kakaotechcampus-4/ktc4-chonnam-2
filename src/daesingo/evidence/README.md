@@ -15,6 +15,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 `daesingo.evidence`는 Final Contract 값을 받거나 반환하는 순수 함수 경계다. 인수는 Contract JSON을 역직렬화한 `dict`이며, `scenario_id`나 Mock 파일명은 공개 입력이 아니다.
 
 - `resolve_time(...) -> TimeResolution`
+- `classify_visual_evidence(visual_evidence, situation_response=None) -> VisualEvidenceDisposition`: `EvidenceRecord` 조립 이전에 VisualEvidence 하나의 결말을 정한다(`ASSEMBLE` / `AWAIT_SITUATION_RESPONSE` / `NOT_ASSEMBLED`). `verification=NOT_OBSERVED`는 예외가 아니라 안정적인 비조립 결과다 — 후보 선택·순회는 여기 없다.
 - `assemble_evidence(...) -> EvidenceRecord`
 - `calculate_evidence_needs(...) -> EvidenceNeeds | None`
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
@@ -23,7 +24,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 
-`evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 번호판·시각 표시·사후 각인의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다. 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다.
+`evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 번호판·시각 표시·사후 각인의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다. 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다. `VisualEventNotAssembled`는 `assemble_evidence()`가 `NOT_OBSERVED`로 직접 호출됐을 때 가짜 Record 대신 멈추는 경계이며, producer 계약 위반이 아니라 호출자가 분류를 건너뛴 경우다(`ADR-EVIDENCE-007`).
 
 ## 정책 데이터
 

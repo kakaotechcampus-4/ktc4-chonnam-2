@@ -73,7 +73,8 @@
       "best_frame": {
         "frame_ref": "fr_h001_plate1",
         "crop_ref": "crop_h001_001",
-        "quality": { "plate_px_height": 44, "sharpness": 0.87 }
+        "quality": { "plate_px_height": 44, "sharpness": 0.87 },
+        "plate_bbox_xywh": [858, 422, 100, 44]
       },
       "frame_results": [
         { "frame_ref": "fr_h001_plate1", "crop_ref": "crop_h001_001", "text": "12가3456", "confidence": 0.91 },

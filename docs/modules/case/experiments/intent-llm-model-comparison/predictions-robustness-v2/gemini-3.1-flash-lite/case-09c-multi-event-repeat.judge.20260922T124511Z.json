@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09c-multi-event-repeat",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"가장 뒤(방금 전) 사건 하나를 채택했고, 그 시점은 택시 사건과 정확히 대응되어 속성 교차조합 없이 일관성 있다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'방금 전' 시점과 짝을 이루는 차량은 택시이며, 버스 사건과 혼동 없이 정확히 대응시켰다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"택시가 중앙선을 넘었다는 원문 내용과 일치하며 다른 사건 속성과 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 상황이 아니므로 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"두 개의 서로 다른 사건이 한 문장에 섞여 있어 애매성이 존재함에도 confidence를 high로 매겨 기준(low 반영)과 맞지 않는다; 다만 채택한 사건 자체는 속성 교차조합 없이 정확해 방향은 맞다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "가장 뒤(방금 전) 사건 하나를 채택했고, 그 시점은 택시 사건과 정확히 대응되어 속성 교차조합 없이 일관성 있다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'방금 전' 시점과 짝을 이루는 차량은 택시이며, 버스 사건과 혼동 없이 정확히 대응시켰다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "택시가 중앙선을 넘었다는 원문 내용과 일치하며 다른 사건 속성과 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 상황이 아니므로 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "두 개의 서로 다른 사건이 한 문장에 섞여 있어 애매성이 존재함에도 confidence를 high로 매겨 기준(low 반영)과 맞지 않는다; 다만 채택한 사건 자체는 속성 교차조합 없이 정확해 방향은 맞다."
+    }
+  },
+  "latency_ms": 7485.703799990006,
+  "prompt_tokens": 2813,
+  "completion_tokens": 575,
+  "cost_krw": null,
+  "error": null
+}

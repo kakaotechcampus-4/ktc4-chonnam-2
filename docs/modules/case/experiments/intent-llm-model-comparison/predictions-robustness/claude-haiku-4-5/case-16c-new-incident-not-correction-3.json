@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 세단\", \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"다른 건데요\\\"라고 명시하여 새로운 사건을 보고하는 것으로 판단. 이번 발화에서 직접 언급된 것은 차량 색상/유형(검은색 세단)과 상황(중앙선 침범)뿐이며, 시간과 위치는 명시되지 않아 null 처리. correction_target은 null인데, 사용자가 이전 정보를 정정하는 것이 아니라 별개의 사건을 추가 보고하기 때문.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 세단",
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"다른 건데요\"라고 명시하여 새로운 사건을 보고하는 것으로 판단. 이번 발화에서 직접 언급된 것은 차량 색상/유형(검은색 세단)과 상황(중앙선 침범)뿐이며, 시간과 위치는 명시되지 않아 null 처리. correction_target은 null인데, 사용자가 이전 정보를 정정하는 것이 아니라 별개의 사건을 추가 보고하기 때문."
+  },
+  "latency_ms": 3174.4793000398204,
+  "prompt_tokens": 1890,
+  "completion_tokens": 324,
+  "cost_krw": 5.342868,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

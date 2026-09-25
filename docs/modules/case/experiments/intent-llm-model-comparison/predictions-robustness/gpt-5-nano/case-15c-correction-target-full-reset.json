@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": \"time_hint, vehicle_hint, situation_hint, location_hint\", \"confidence\": \"high\", \"reasoning\": \"이번 발화는 이전의 단서들을 전부 취소하고 새로운 사고 정보를 제시하고 있다. 따라서 time_hint, vehicle_hint, situation_hint, location_hint 중 해당 필드들을 정정 대상으로 판단하고 새 값을 반영했다. 발화에선 차량 종류가 트럭이고 상황은 불법 유턴으로 명시되며, 시간과 장소는 언급되지 않아 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint, vehicle_hint, situation_hint, location_hint",
+    "confidence": "high",
+    "reasoning": "이번 발화는 이전의 단서들을 전부 취소하고 새로운 사고 정보를 제시하고 있다. 따라서 time_hint, vehicle_hint, situation_hint, location_hint 중 해당 필드들을 정정 대상으로 판단하고 새 값을 반영했다. 발화에선 차량 종류가 트럭이고 상황은 불법 유턴으로 명시되며, 시간과 장소는 언급되지 않아 null로 처리했다."
+  },
+  "latency_ms": 24415.72599997744,
+  "prompt_tokens": 851,
+  "completion_tokens": 3297,
+  "cost_krw": 2.072549,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

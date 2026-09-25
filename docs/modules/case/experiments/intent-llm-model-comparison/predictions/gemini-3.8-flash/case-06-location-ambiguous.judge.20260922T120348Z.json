@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-06-location-ambiguous",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null로 둔 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 언급이 없으므로 null로 둔 것이 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 사고 상황에 대한 구체적 언급이 없으므로 null로 둔 것이 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 모호한 표현 '집 근처 사거리'를 그대로 담았고, 구체적인 지명이나 도로명을 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 correction_target을 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"원문에 '기억이 안 나는데', '것 같아요' 같은 불확실성 표현이 있어 confidence를 low로 매긴 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null로 둔 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 언급이 없으므로 null로 둔 것이 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 사고 상황에 대한 구체적 언급이 없으므로 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 모호한 표현 '집 근처 사거리'를 그대로 담았고, 구체적인 지명이나 도로명을 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 correction_target을 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "원문에 '기억이 안 나는데', '것 같아요' 같은 불확실성 표현이 있어 confidence를 low로 매긴 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 8229.28149998188,
+  "prompt_tokens": 2688,
+  "completion_tokens": 505,
+  "cost_krw": null,
+  "error": null
+}

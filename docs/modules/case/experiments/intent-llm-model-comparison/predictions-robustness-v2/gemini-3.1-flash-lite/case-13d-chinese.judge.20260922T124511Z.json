@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13d-chinese",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '昨天晚上八点左右'(어제 저녁 8시경)를 그대로 추출했으며 시간 정보 누락 없이 잘 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '黑色卡车'(검은색 트럭)를 정확히 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '违反信号灯'(신호 위반)을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '世宗路'(세종로)를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간, 차량, 상황, 위치 정보가 모두 명확히 제시되어 있으므로 high 신뢰도 판정이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '昨天晚上八点左右'(어제 저녁 8시경)를 그대로 추출했으며 시간 정보 누락 없이 잘 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '黑色卡车'(검은색 트럭)를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '违反信号灯'(신호 위반)을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '世宗路'(세종로)를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간, 차량, 상황, 위치 정보가 모두 명확히 제시되어 있으므로 high 신뢰도 판정이 타당하다."
+    }
+  },
+  "latency_ms": 5178.996299975552,
+  "prompt_tokens": 2823,
+  "completion_tokens": 475,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15c-correction-target-full-reset",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 언급이 없고, 새 신고이므로 이전 hint('어제 18시')를 끌어오지 않고 null로 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '트럭'을 정확히 채웠고 이전 '흰색 SUV'와 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 정확히 채웠고 이전 '차로 변경'과 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없고, 이전 hint('상무중앙로')를 가져오지 않고 null로 둔 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'아까 말한 거 다 취소하고 완전히 다른 얘기'라는 표현은 새 신고를 의미하므로 correction_target은 null이어야 하는데, 모델은 vehicle_hint로 지어냈다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"vehicle_hint, situation_hint 값 자체는 확실하게 뽑았으므로 high 방향은 맞지만, correction_target을 잘못 지정한 상태에서의 confidence라 전체적으로 판단 근거가 왜곡되어 있다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없고, 새 신고이므로 이전 hint('어제 18시')를 끌어오지 않고 null로 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '트럭'을 정확히 채웠고 이전 '흰색 SUV'와 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 정확히 채웠고 이전 '차로 변경'과 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없고, 이전 hint('상무중앙로')를 가져오지 않고 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'아까 말한 거 다 취소하고 완전히 다른 얘기'라는 표현은 새 신고를 의미하므로 correction_target은 null이어야 하는데, 모델은 vehicle_hint로 지어냈다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "vehicle_hint, situation_hint 값 자체는 확실하게 뽑았으므로 high 방향은 맞지만, correction_target을 잘못 지정한 상태에서의 confidence라 전체적으로 판단 근거가 왜곡되어 있다."
+    }
+  },
+  "latency_ms": 7626.778499921784,
+  "prompt_tokens": 2945,
+  "completion_tokens": 623,
+  "cost_krw": null,
+  "error": null
+}

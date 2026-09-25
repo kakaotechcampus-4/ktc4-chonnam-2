@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13c-japanese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"昨日18時ごろ\",\"vehicle_hint\":\"白いSUV\",\"situation_hint\":\"車線変更\",\"location_hint\":\"商武中央路\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 '昨日18時ごろ'로 시간 표현이 명시되어 있고, '白いSUV'라는 차종·색상, '商武中央路で車線変更しました'라는행동이 구체적으로 언급되어 있어 각 필드를 명확하게 추출할 수 있었다. prior_hints가 null이므로 수정 대상도 없다.\"}",
+  "parsed": {
+    "time_hint": "昨日18時ごろ",
+    "vehicle_hint": "白いSUV",
+    "situation_hint": "車線変更",
+    "location_hint": "商武中央路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 '昨日18時ごろ'로 시간 표현이 명시되어 있고, '白いSUV'라는 차종·색상, '商武中央路で車線変更しました'라는행동이 구체적으로 언급되어 있어 각 필드를 명확하게 추출할 수 있었다. prior_hints가 null이므로 수정 대상도 없다."
+  },
+  "latency_ms": 10777.885999996215,
+  "prompt_tokens": 789,
+  "completion_tokens": 1418,
+  "cost_krw": 0.923526,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

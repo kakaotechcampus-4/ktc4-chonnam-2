@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 언급이 없으므로 null 처리한 것은 적절하며, 이전 값(어제 18시)을 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '오토바이'가 명시되어 있으므로 새 사고 기준으로 오토바이를 뽑은 것은 값 자체는 맞다. correction으로 잘못 판단한 것은 correction_target에서 감점될 부분이며 vehicle_hint 값 자체는 원문에 근거한 정확한 추출이다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '헬멧 없이 신호위반'이라는 상황 정보가 명확히 있는데 null로 처리해 누락했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 위치 정보가 없으므로 null 처리가 맞고, 이전 상무중앙로를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"사용자는 '또 다른 사고'라며 명시적으로 새로운 사고임을 전환했는데, 모델은 이를 기존 vehicle_hint의 정정으로 오인해 correction_target을 vehicle_hint로 지어냈다. expected_notes에 따르면 correction_target은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"correction_target을 잘못 판단한 상태에서 그에 대한 확신으로 confidence를 high로 매겨, 잘못된 판단을 그대로 강화했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 언급이 없으므로 null 처리한 것은 적절하며, 이전 값(어제 18시)을 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '오토바이'가 명시되어 있으므로 새 사고 기준으로 오토바이를 뽑은 것은 값 자체는 맞다. correction으로 잘못 판단한 것은 correction_target에서 감점될 부분이며 vehicle_hint 값 자체는 원문에 근거한 정확한 추출이다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '헬멧 없이 신호위반'이라는 상황 정보가 명확히 있는데 null로 처리해 누락했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 위치 정보가 없으므로 null 처리가 맞고, 이전 상무중앙로를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "사용자는 '또 다른 사고'라며 명시적으로 새로운 사고임을 전환했는데, 모델은 이를 기존 vehicle_hint의 정정으로 오인해 correction_target을 vehicle_hint로 지어냈다. expected_notes에 따르면 correction_target은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "correction_target을 잘못 판단한 상태에서 그에 대한 확신으로 confidence를 high로 매겨, 잘못된 판단을 그대로 강화했다."
+    }
+  },
+  "latency_ms": 7774.028499959968,
+  "prompt_tokens": 3022,
+  "completion_tokens": 705,
+  "cost_krw": null,
+  "error": null
+}

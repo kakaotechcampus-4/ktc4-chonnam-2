@@ -1,0 +1,51 @@
+{
+  "media_stream_ref": "ms_70ff8e3e1ec34776986eabb85e7747e0",
+  "visual_evidence": {
+    "schema_version": "visual-evidence/v1.0",
+    "visual_evidence_id": "evidence_fb953f0d30474262a9f1249718de7efe",
+    "run_id": "run_fine_35dd4b01defe4e8e8017b737539f77b5",
+    "input_ref": {
+      "kind": "analysis_source",
+      "ref": "as_48bddb7f220d4fe38675dd0dc612494e"
+    },
+    "candidate_id": "candidate_eee3c3d2ee6a418893111ce7697c3c6c",
+    "verification": "NOT_OBSERVED",
+    "visual_event_type": null,
+    "target": {
+      "association_status": "NOT_FOUND",
+      "described_as": null,
+      "match_with_hint": null,
+      "association_confidence": null,
+      "track_ref": null,
+      "evidence_refs": []
+    },
+    "primitives": [
+      {
+        "kind": "solid_line",
+        "state": "ABSENT",
+        "confidence": 0.95,
+        "evidence_refs": []
+      },
+      {
+        "kind": "lane_change",
+        "state": "ABSENT",
+        "confidence": 0.93,
+        "evidence_refs": []
+      }
+    ],
+    "temporal_facts": [
+      {
+        "at_offset_ms": 0,
+        "fact": "주행 도로 차로 경계선은 흰색 점선으로 이어지며 주행 차량들이 각 차로를 유지함",
+        "evidence_refs": []
+      },
+      {
+        "at_offset_ms": 6000,
+        "fact": "전방 및 우측 차로의 차량들이 차선 변경 없이 직선 주행함",
+        "evidence_refs": []
+      }
+    ],
+    "uncertainties": [],
+    "legal_status": null
+  }
+}

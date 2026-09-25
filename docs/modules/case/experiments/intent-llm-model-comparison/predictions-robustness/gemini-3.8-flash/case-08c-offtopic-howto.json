@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08c-offtopic-howto",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 서비스 사용법을 묻는 일반 문의 발화로 교통위반 관련 정보(시간, 차량, 상황, 위치)가 전혀 언급되지 않아 모든 항목을 null로 판단했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 서비스 사용법을 묻는 일반 문의 발화로 교통위반 관련 정보(시간, 차량, 상황, 위치)가 전혀 언급되지 않아 모든 항목을 null로 판단했습니다."
+  },
+  "latency_ms": 4081.881199963391,
+  "prompt_tokens": 300,
+  "completion_tokens": 237,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

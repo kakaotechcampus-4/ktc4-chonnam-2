@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '오늘 아침에'라는 시간 표현이 명확히 언급되었고, 모델이 이를 정확히 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '트럭'이 명확히 언급되었고, 이전 흰색 SUV 정보를 끌어오지 않고 새 값으로 정확히 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '불법 유턴'이 명확히 언급되었고, 이전 차로 변경 정보를 덮어쓰지 않고 새 값으로 정확히 채웠다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 위치 정보가 언급되지 않았고, 이전 상무중앙로 정보를 끌어오지 않고 null로 정확히 처리했다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"사용자는 '그건 됐고'라며 명시적으로 이전 사고와 완전히 분리된 새로운 사고를 얘기하는 것인데, 모델은 이를 기존 time_hint에 대한 정정으로 오인해 correction_target을 'time_hint'로 채웠다. expected_notes에 따르면 이 경우 correction_target은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 사고에 대한 4개 필드 추출 자체는 정확도가 높아 confidence를 high로 매긴 것은 방향은 맞으나, correction_target을 잘못 판단한 상태에서의 confidence이므로 전체 판단 맥락이 왜곡되어 있어 partial로 본다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '오늘 아침에'라는 시간 표현이 명확히 언급되었고, 모델이 이를 정확히 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '트럭'이 명확히 언급되었고, 이전 흰색 SUV 정보를 끌어오지 않고 새 값으로 정확히 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '불법 유턴'이 명확히 언급되었고, 이전 차로 변경 정보를 덮어쓰지 않고 새 값으로 정확히 채웠다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 위치 정보가 언급되지 않았고, 이전 상무중앙로 정보를 끌어오지 않고 null로 정확히 처리했다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "사용자는 '그건 됐고'라며 명시적으로 이전 사고와 완전히 분리된 새로운 사고를 얘기하는 것인데, 모델은 이를 기존 time_hint에 대한 정정으로 오인해 correction_target을 'time_hint'로 채웠다. expected_notes에 따르면 이 경우 correction_target은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 사고에 대한 4개 필드 추출 자체는 정확도가 높아 confidence를 high로 매긴 것은 방향은 맞으나, correction_target을 잘못 판단한 상태에서의 confidence이므로 전체 판단 맥락이 왜곡되어 있어 partial로 본다."
+    }
+  },
+  "latency_ms": 8888.811100041494,
+  "prompt_tokens": 3065,
+  "completion_tokens": 735,
+  "cost_krw": null,
+  "error": null
+}

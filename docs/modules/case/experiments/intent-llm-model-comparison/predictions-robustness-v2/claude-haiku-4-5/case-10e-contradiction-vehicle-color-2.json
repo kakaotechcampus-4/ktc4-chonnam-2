@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10e-contradiction-vehicle-color-2",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 또는 남색 트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": \"죽전로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"차량 색상이 검은색과 남색 중 불확실하다고 사용자 스스로 표현했으므로 confidence를 low로 설정. 상황(불법 유턴)과 위치(죽전로)는 명확하게 언급되었으나, 시간 정보는 제시되지 않았음.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 또는 남색 트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "차량 색상이 검은색과 남색 중 불확실하다고 사용자 스스로 표현했으므로 confidence를 low로 설정. 상황(불법 유턴)과 위치(죽전로)는 명확하게 언급되었으나, 시간 정보는 제시되지 않았음."
+  },
+  "latency_ms": 2505.016200011596,
+  "prompt_tokens": 1849,
+  "completion_tokens": 263,
+  "cost_krw": 4.816134,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

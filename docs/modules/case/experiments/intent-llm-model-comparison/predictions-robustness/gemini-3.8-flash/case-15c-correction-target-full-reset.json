@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"트럭\",\"situation_hint\":\"불법 유턴\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"이전 진술을 취소하고 완전히 새로운 상황을 설명하여 특정 필드에 대한 정정이 아니므로 correction_target은 null로 설정했고, 발화에 명시된 차량과 상황 정보만 추출했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "이전 진술을 취소하고 완전히 새로운 상황을 설명하여 특정 필드에 대한 정정이 아니므로 correction_target은 null로 설정했고, 발화에 명시된 차량과 상황 정보만 추출했습니다."
+  },
+  "latency_ms": 3604.4020999688655,
+  "prompt_tokens": 374,
+  "completion_tokens": 451,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

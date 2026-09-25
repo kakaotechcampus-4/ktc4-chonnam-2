@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색과 은색이 반복 언급되었고 마지막에 정정된 값인 '은색 SUV'를 채택했으며, 이는 자기 정정으로 읽을 수 있는 합리적 처리다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경했어요'를 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"색상에 대한 정정이 발생했으므로 vehicle_hint를 correction_target으로 지정한 것이 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"동일 슬롯 내 값 정정 상황에서 confidence를 high로 과신하지 않고 low로 설정했으므로 판정 기준의 핵심 요구를 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색과 은색이 반복 언급되었고 마지막에 정정된 값인 '은색 SUV'를 채택했으며, 이는 자기 정정으로 읽을 수 있는 합리적 처리다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경했어요'를 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "색상에 대한 정정이 발생했으므로 vehicle_hint를 correction_target으로 지정한 것이 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "동일 슬롯 내 값 정정 상황에서 confidence를 high로 과신하지 않고 low로 설정했으므로 판정 기준의 핵심 요구를 충족한다."
+    }
+  },
+  "latency_ms": 5417.5607999786735,
+  "prompt_tokens": 2915,
+  "completion_tokens": 517,
+  "cost_krw": null,
+  "error": null
+}

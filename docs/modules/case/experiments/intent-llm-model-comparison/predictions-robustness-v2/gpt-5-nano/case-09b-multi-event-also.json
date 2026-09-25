@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09b-multi-event-also",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"아까 본 흰색 SUV 신호위반이랑, 지난주에 본 트럭 불법 유턴\",\"vehicle_hint\":\"흰색 SUV, 트럭\",\"situation_hint\":\"흰색 SUV의 신호위반, 트럭의 불법 유턴\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"두 사건이 모두 구체적으로 언급되어 있고 시점도 명시되어 있어 해석이 명확합니다. priors가 없으므로 정정 대상도 없고, 내용의 불확실성이 낮아 confidence를 high로 판단했습니다.\"}",
+  "parsed": {
+    "time_hint": "아까 본 흰색 SUV 신호위반이랑, 지난주에 본 트럭 불법 유턴",
+    "vehicle_hint": "흰색 SUV, 트럭",
+    "situation_hint": "흰색 SUV의 신호위반, 트럭의 불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "두 사건이 모두 구체적으로 언급되어 있고 시점도 명시되어 있어 해석이 명확합니다. priors가 없으므로 정정 대상도 없고, 내용의 불확실성이 낮아 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 17377.688399981707,
+  "prompt_tokens": 800,
+  "completion_tokens": 2709,
+  "cost_krw": 1.710581,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

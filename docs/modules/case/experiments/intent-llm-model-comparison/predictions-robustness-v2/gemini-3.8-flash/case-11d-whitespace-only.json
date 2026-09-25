@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11d-whitespace-only",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자 발화가 공백으로만 이루어져 있어 단서를 추출할 수 없으므로 모든 필드를 null로 지정하고 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자 발화가 공백으로만 이루어져 있어 단서를 추출할 수 없으므로 모든 필드를 null로 지정하고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 7564.003000035882,
+  "prompt_tokens": 294,
+  "completion_tokens": 202,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

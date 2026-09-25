@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 '방금'이라는 시간 표현이 명확히 있고, 새로운 사고이므로 이를 새 time_hint로 채운 것은 맞으며 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '오토바이'가 명시되어 있고, 이전 '흰색 SUV'를 끌어오지 않고 새 발화 기준으로 정확히 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '헬멧 없이', '신호위반'을 그대로 반영했고 이전 '차로 변경' 정보는 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 전환 신호('또 다른 사고')로 새로운 사고임이 분명하므로 correction_target을 null로 둔 것이 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 시간, 차량, 상황이 모두 명확히 언급되어 확신도를 high로 매긴 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에 '방금'이라는 시간 표현이 명확히 있고, 새로운 사고이므로 이를 새 time_hint로 채운 것은 맞으며 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '오토바이'가 명시되어 있고, 이전 '흰색 SUV'를 끌어오지 않고 새 발화 기준으로 정확히 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '헬멧 없이', '신호위반'을 그대로 반영했고 이전 '차로 변경' 정보는 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 전환 신호('또 다른 사고')로 새로운 사고임이 분명하므로 correction_target을 null로 둔 것이 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "새 발화에서 시간, 차량, 상황이 모두 명확히 언급되어 확신도를 high로 매긴 것이 타당하다."
+    }
+  },
+  "latency_ms": 7172.2617000341415,
+  "prompt_tokens": 3083,
+  "completion_tokens": 611,
+  "cost_krw": null,
+  "error": null
+}
