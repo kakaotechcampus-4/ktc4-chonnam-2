@@ -22,7 +22,8 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | 문서 | 역할 |
 | --- | --- |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
-| [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD |
+| [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
+| [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
 | `decisions/` | 장기 영향을 주는 실제 Runtime 결정이 생겼을 때만 ADR 추가 |
 
 빈 ADR 폴더를 미리 만들지는 않는다.
@@ -143,6 +144,10 @@ Issue #41에서 이미 합의된 경계:
 - UsageRecord retention
 - scaling threshold
 - deployment workflow
+- build-time/runtime configuration 주입 방식
+- immutable release 식별 / known-good revision 기록
+- post-deploy health/readiness + external smoke test
+- rollback exact command
 
 정확한 수치는 실제 Runtime integration과 Recording/Search benchmark 결과 없이 임의 확정하지 않는다.
 
