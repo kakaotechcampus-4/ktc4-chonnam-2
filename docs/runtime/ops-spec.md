@@ -23,6 +23,8 @@
 - Object Storage 도입 기준
 - capacity / scaling trigger
 - CI/CD 및 pre-deploy validation
+- 배포 검증 / release 식별 / rollback 운영
+- build-time / runtime configuration 주입 경계
 - 운영 장애 시 확장 기준
 
 ### 이 문서가 소유하지 않는다
@@ -133,6 +135,19 @@ GitHub Actions
 - Google/Kakao 등 소셜 로그인 도입 여부와 인증 방식 자체는 이 문서가 결정하지 않는다. `module-architecture.md` §1-7 A2의 별도 결정을 따른다.
 - 단순 내부 개발/Real E2E 때문에 domain/EIP/OAuth 구현을 선행하지 않는다.
 
+#### Reverse Proxy 선택 원칙
+
+외부 공개 endpoint와 HTTPS가 실제 요구가 되면, single EC2 + Docker Compose baseline에서는 **Caddy를 첫 구현 후보로 검토**한다.
+
+이 선택 기준은 특정 도구 선호가 아니라 현재 운영 조건에 있다.
+
+- TLS 인증서 발급·갱신 책임을 애플리케이션에서 분리할 수 있어야 한다.
+- 단일 서버에서 proxy 설정과 인증서 lifecycle을 관리하는 운영 표면을 작게 유지한다.
+- `api`는 public 80/443을 직접 소유하지 않고 내부 application port에 집중한다.
+- 고급 routing, 세밀한 traffic tuning, 다중 upstream/load balancing 요구가 실제로 커지면 Nginx/ALB 등 다른 선택지를 다시 비교한다.
+
+따라서 현재 결정은 **Caddy 고정**이 아니라 “작은 운영 표면을 우선하고 요구가 커질 때 확장한다”는 선택 기준이다.
+
 #### 현재 구현 범위
 
 이번 공지 반영은 **운영 조건과 후속 결정 시점의 문서화만 수행**한다.
@@ -194,6 +209,27 @@ mysql
 
 정확한 Dockerfile/Compose service command는 composition root 구현 후 그 entrypoint에 맞춰 닫는다.
 
+### 4-1. Build-time / Runtime Configuration 경계
+
+배포 환경변수는 “secret인가 아닌가”뿐 아니라 **언제 주입되는 값인가**를 구분한다.
+
+```text
+Build-time
+→ image/dependency/build 산출물 생성에 필요한 값
+
+Runtime
+→ 실행 환경에 따라 달라지는 DB/provider/endpoint/tuning 값
+```
+
+원칙:
+
+- build image에 provider key, DB credential, access token 같은 secret을 bake하지 않는다.
+- 가능한 한 동일 image를 환경별로 재사용하고 환경 차이는 runtime configuration으로 주입한다.
+- Compose/Dockerfile에는 secret 값 자체보다 변수 이름과 주입 경계만 남긴다.
+- `.env.example`을 둘 경우 non-secret key 이름과 안전한 예시만 제공한다.
+- CI에 등록된 값이라도 build 단계에서 필요한 값인지 runtime 단계에서 필요한 값인지 구분한다.
+- exact secret source와 주입 방식은 실제 deployment workflow를 구현할 때 확정하되 repository/image/log에 secret을 남기지 않는 원칙은 유지한다.
+
 ## 5. Python / Dependency Runtime
 
 팀 문서 기준 목표는 Python 3.12 + root `pyproject.toml` + `uv.lock`이다.
@@ -253,6 +289,31 @@ status
 }
 ```
 
+### 6-1. Correlation Context 전파
+
+비동기 실행 경로에서는 로그가 API process와 Worker process로 분리되므로 correlation ID를 한 process 안에서만 유지해서는 충분하지 않다.
+
+목표 흐름:
+
+```text
+HTTP request
+→ API / case
+→ Runtime dispatch
+→ queue
+→ Worker
+→ recording / search / readout / evidence
+→ provider adapter
+```
+
+원칙:
+
+- API 진입점에서 요청 correlation context를 만들거나 신뢰 가능한 기존 값을 수용한다.
+- Runtime dispatch 이후 Worker에서도 같은 `trace_id`를 이어서 기록할 수 있어야 한다.
+- `case_id`, `job_id`, `execution_id`가 생긴 시점부터는 같은 로그 event에 함께 남긴다.
+- `trace_id`는 observability용 상관관계 값이며 business identity나 Final Contract의 authoritative key를 대체하지 않는다.
+- provider가 안전한 metadata/correlation field를 지원하면 최소 식별자만 전달할 수 있고, 지원하지 않으면 local log에서 invocation과 execution의 관계를 남긴다.
+- exact persistence/queue metadata 방식은 첫 Runtime DB Queue/Worker 구현에서 정하되 Final Contract schema를 관측 편의를 위해 임의 확장하지 않는다.
+
 ## 7. Logging / Privacy Guardrail
 
 실제 사용자 데이터가 들어가는 운영 단계에서는 다음 원문을 일반 운영 로그에 남기지 않는다.
@@ -302,6 +363,20 @@ EC2 기본 CPU/RAM/disk 지표
 - OOM/swap/CPU saturation이 반복되는가
 
 현재 DB Runtime이 없으므로 queue/lease/heartbeat 지표는 아직 실제 운영 metric이 아니다.
+
+### Monitoring Stack 확장 기준
+
+Prometheus/Grafana/OpenTelemetry를 쓰지 않는 것이 목표가 아니라, **현재 관측 수단으로 해결되지 않는 반복 운영 문제가 생길 때 도입**한다.
+
+예를 들어 다음 요구가 실제로 생기면 시계열 metric 수집/대시보드 도입을 검토한다.
+
+- queue wait / oldest queued age를 지속적으로 추세 비교해야 함
+- execution latency / failure / retry rate의 시간대별 변화가 필요함
+- Worker heartbeat, provider latency, CPU/RAM/disk를 같은 운영 화면에서 상관 분석해야 함
+- 수동 DB query와 로그 검색만으로 장애 감지/원인 축소가 반복적으로 늦어짐
+- metric 기반 alert가 실제 운영 대응에 필요함
+
+도구 도입 자체가 목적이 아니라 **관측·감지·원인 축소 시간을 줄이는가**를 기준으로 판단한다.
 
 ## 9. Health / Readiness 운영
 
@@ -582,6 +657,36 @@ python scripts/check_contract_fixtures.py
 
 향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
 
+### Release 식별 · 배포 검증 · Rollback 원칙
+
+배포 성공은 “원격 명령이 종료됨”이 아니라 **어떤 revision이 올라갔는지 식별 가능하고, 실제 서비스 경로가 검증됐으며, 실패 시 직전 정상 revision으로 복구 가능함**을 의미한다.
+
+배포 흐름의 목표:
+
+```text
+CI quality gate
+→ deployable revision 식별
+→ AWS OIDC 인증
+→ SSM 배포 명령
+→ container/process 상태 확인
+→ /health/live
+→ /health/ready
+→ 외부 endpoint smoke test
+→ 성공 revision 기록
+```
+
+원칙:
+
+- 모든 배포는 최소 commit SHA로 revision을 식별한다.
+- Registry 기반 image 배포를 선택하면 `latest`만 의존하지 않고 immutable tag 또는 digest로 어떤 image가 배포됐는지 재현 가능하게 한다.
+- 새 revision 배포 전 직전 known-good revision을 식별할 수 있어야 한다.
+- container가 실행 중이라는 사실만으로 성공 처리하지 않고 health/readiness와 실제 외부 경로의 최소 smoke test를 통과해야 한다.
+- 배포 검증 실패 시 원인 분석보다 서비스 복구가 우선인 상황에서는 직전 known-good revision으로 rollback하고 같은 health/smoke test를 다시 수행한다.
+- DB migration처럼 코드 rollback만으로 되돌릴 수 없는 변경은 backward compatibility 또는 별도 rollback/restore 계획 없이 자동 rollback 대상으로 간주하지 않는다.
+- exact 명령과 체크 순서는 [`deployment-runbook.md`](./deployment-runbook.md)에 유지한다.
+
+Blue-Green/Canary 같은 다중 환경 배포는 현재 single EC2 baseline의 기본값이 아니다. 단순 rollback으로 감당할 수 없는 downtime/traffic 전환 요구가 실제로 생기면 검토한다.
+
 ## 20. Test / Validation 운영
 
 테스트 층:
@@ -646,7 +751,10 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] capacity/scaling threshold
 - [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
 - [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
-- [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성을 §2-2 기준으로 결정
+- [ ] build-time / runtime configuration 주입 방식과 변수 ownership
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command
+- [ ] post-deploy health/readiness + external smoke test 연결
+- [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
 - [ ] secret scan gate
 
 Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까지 수치를 임의 확정하지 않는다.
@@ -664,3 +772,4 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
 - Kakao Tech Campus AWS OIDC guide (2026-09-22 공지)
 - Kakao Tech Campus 무료 도메인 발급 가이드 (2026-09-22 공지)
+- Kakao Tech Campus 「에이전틱 서비스 배포 & CI/CD」 특강 (2026-09-23) — 소규모 팀의 운영 복잡도, observability, 반복 가능한 배포·복구 관점의 설계 입력
