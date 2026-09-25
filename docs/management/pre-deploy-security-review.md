@@ -38,6 +38,8 @@
 | 15 | `purge_case`가 사용자 원본(`ExternalSourceRef`)을 삭제하지 않음 (§4-모듈1 ⑨) | 정철원 (`recording`) | 원본 영상 손상 = BLOCK | | |
 | 16 | 외부 provider `RemoteCopy` 만료·삭제 처리 — delete API 지원 시 호출, 미지원 시 expiry까지 남는다는 사실 기록 (§8-4) | 서어진 (`search/providers`) · 정철원 (registry) | — (WARN) | | |
 | 17 | 외부 공개 endpoint에서 실제 사용자 데이터·인증정보를 다루는 경우 HTTPS 적용 및 HTTP 평문 경로 여부 확인 (`runtime/ops-spec.md` §2-2) | 김준영 (공통 runtime/ops) · 신유민 (`web`) | — (WARN) | | |
+| 18 | inline media 경로에서 raw binary / base64 data URL / JSON request body 전문이 application·HTTP client·proxy·exception log에 남지 않는지 확인 (#95) | 서어진 (`search/providers`) · 김준영 (runtime/logging) | — (WARN) | | |
+| 19 | provider-side reusable object가 없는 경로에서도 inline request/media의 provider 보관·삭제·logging 정책을 별도로 확인. `RemoteCopy` 미사용을 "provider 보관 없음"으로 해석하지 않음 (#95) | 서어진 (`search/providers`) | — (WARN) | | |
 
 ### 1-1. 개발 단계에서 미루는 Privacy 항목
 
@@ -66,6 +68,8 @@ Privacy 관련 세부 처리는 개발 마무리 단계에서 다시 본다. 실
 
 ## 3. Source / Derived Video
 
+Issue #95 이후 현재 Elice 경로에서는 provider-side reusable file object를 기본 전제로 두지 않고 inline media 전송을 사용한다. 그러나 **`RemoteCopy`가 없다는 사실은 provider 내부 request/media retention이 없다는 증거가 아니다.** 배포 전에는 provider 정책과 실제 logging 경계를 별도로 확인한다.
+
 - 사용자 Source video를 실수로 덮어쓰지 않는다. `recording`이 원본 무변형을 체크섬으로 검증한다.
 - 신고용 Derived Evidence(Report Video)에서 압축·timestamp 삽입·블러·재인코딩 등 어떤 변환을 허용할지는 제출요건 확인 후 결정한다. 사후 timestamp 각인은 Report Video에만 허용하고 Incident Clip에는 넣지 않는다(`module-architecture.md` §3-2).
 
@@ -84,6 +88,8 @@ Privacy 관련 세부 처리는 개발 마무리 단계에서 다시 본다. 실
 9. 삭제 요청 / 자동파기
 10. 불필요하게 수집하는 개인정보
 11. 외부 공개 endpoint의 domain / HTTPS / redirect URI와 평문 HTTP 노출 여부
+12. inline base64/JSON media request 전문이 application·HTTP client·proxy·exception log에 남는가
+13. provider-side reusable object가 없어도 provider가 request/media를 별도 logging·retention하는가
 
 WARN·BLOCK 판정에는 다음 형식으로 사유를 남긴다.
 
@@ -95,7 +101,7 @@ WARN·BLOCK 판정에는 다음 형식으로 사유를 남긴다.
 
 ## 5. 현재 상태
 
-- [ ] 배포 전 전체 리뷰 수행 — §1 표의 17행 전부 확인일·판정이 채워졌는가
+- [ ] 배포 전 전체 리뷰 수행 — §1 표의 19행 전부 확인일·판정이 채워졌는가
 - [ ] **BLOCK 0건** — Coordinator(김준영) 확인
 - 고친 것: `[실제 배포 전 입력]`
 
