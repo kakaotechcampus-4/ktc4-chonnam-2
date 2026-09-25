@@ -25,6 +25,8 @@
 - 요청에 언급된 `fine-p2*` resource는 현재 tree에 없고, runtime은 `coarse-p3`와 `fine-p3*`를 사용한다.
 - 따라서 이 계획의 실제 code baseline은 현재 worktree의 Search runtime이며, 병합 대상은 `develop`이다.
 
+> **기준 정정(2026-09-25, 서어진, PR #136 병합 후):** 위 첫 항목은 작성 시점의 사실이고 지금은 아니다. `develop`에 `src/daesingo/search`가 들어와 있으므로 이 계획의 code baseline은 worktree가 아니라 **`develop`의 Search runtime**이다. 두 번째·세 번째 항목은 그대로 유효하다.
+
 ## A. 현재 구조
 
 ```text
@@ -182,6 +184,12 @@ Gemini는 public `Primitive.kind`, `TemporalFact.fact`, `Uncertainty.kind`를 �
 - 추후 실제 keyframe을 Fine 입력으로 전달할 경우에만 그 frame ID를 allowlist에 넣는다.
 - clip-relative offset은 frame ID의 대체가 아닌 temporal anchor다.
 
+> **구현 정정(2026-09-25, 서어진, 이슈 #135 · PR #136):** 이 절의 결론은 실현됐으나 방식이 다르다. allowlist를 두고 걸러내는 대신 **wire schema에서 `evidence_refs`를 제거해 애초에 묻지 않는** 쪽으로 갔다(`FineTarget`·`FinePrimitive`·`FineTemporalFact`·`FineUncertainty` 네 곳). 공개 `VisualEvidence`의 `evidence_refs`는 필드로 남되 항상 빈 tuple이다.
+>
+> 계기는 §B 표가 예측한 "Gemini가 임의 `fr_*` ID 생성"이 실제로 터진 것이다 — real E2E 3·4회차에서 모델이 `evidence_refs`에 `"00:03"`·`"00:04"`를 넣어 `FrameRef` 패턴 검증에 걸렸다. 받아서 거르는 것보다 묻지 않는 쪽이 출력 토큰도 줄고 실패 경로 자체가 사라진다.
+>
+> `allowed_evidence_refs` allowlist는 **폐기가 아니라 보류**다. 실제 keyframe을 Fine 입력으로 전달해 addressable frame inventory가 생기는 시점에 다시 필요해진다. 그때는 `recording.resolve_frame`으로 발급받은 실제 `FrameRef`가 allowlist의 원소가 된다.
+
 ### C.6 Coarse candidate strength
 
 `score` 대신 `CandidateStrength`를 wire schema로 사용한다.
@@ -211,6 +219,10 @@ candidate_strength 내림차순
 ### C.7 Prompt version
 
 기존 p3는 불변으로 둔다.
+
+> **전제 정정(2026-09-25, 서어진, PR #136):** "p3는 불변"은 더 이상 성립하지 않는다. PR #136이 `fine-p3.txt`에서 dangling 지시였던 "근거 프레임을 구분하세요"를 걷어내고 프레임 ID를 묻지 않는다는 문장을 넣었다(§C.5 정정 참조). version은 fine-p3을 유지했는데, p4 이름을 이 계획이 쓸 예정이라 선점하지 않은 것이다. 본문이 바뀌어 fingerprint는 달라졌고 `UsageRecord`가 version과 fingerprint를 따로 남기므로 eval은 fingerprint로 구분할 수 있다.
+>
+> 따라서 p4 rename의 출발점은 원래 p3가 아니라 **#136이 반영된 p3**다. 아래 rename 계획 자체는 그대로 유효하다.
 
 ```text
 coarse-p3 → coarse-p4
