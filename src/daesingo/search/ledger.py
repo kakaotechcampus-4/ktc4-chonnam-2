@@ -24,7 +24,7 @@ class UsageRecord:
             cost = {"amount": str(self.cost_usd), "currency": "USD"}
         return {
             "case_id": self.case_id,
-            "provider": "google",
+            "provider": "elice",
             "model": self.model,
             "prompt_version": self.prompt_version,
             "prompt_fingerprint": self.prompt_fingerprint,
