@@ -1,5 +1,7 @@
 # W7 Recording Benchmark 실행기 v1
 
+실제 측정 결과: [W7 분리 범위 baseline negative-001](w7-baseline-negative-001.md).
+
 ## 분리 범위 실행 v2
 
 기존 `--start/--end`는 동일 범위를 사용하는 smoke/micro baseline으로 유지하며

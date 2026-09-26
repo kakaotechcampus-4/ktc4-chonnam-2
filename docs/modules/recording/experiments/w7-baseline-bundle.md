@@ -1,5 +1,7 @@
 # G5 Recording Baseline bundle v1
 
+동결 결과: [W7 분리 범위 baseline negative-001](w7-baseline-negative-001.md).
+
 ## 넓은 analysis / 좁은 incident baseline v2
 
 기존 단일 범위 실행과 FROZEN bundle은 v1 smoke/micro baseline으로 보존한다.
