@@ -1,5 +1,30 @@
 # G5 Recording Baseline bundle v1
 
+## 넓은 analysis / 좁은 incident baseline v2
+
+기존 단일 범위 실행과 FROZEN bundle은 v1 smoke/micro baseline으로 보존한다.
+다음처럼 새 output에 두 범위를 지정하면 recording-benchmark/v2 원본 결과와
+recording-baseline/v2 manifest를 생성한다.
+
+```powershell
+$datasetId = 'ds_' + [guid]::NewGuid().ToString('N')
+$env:DAESINGO_RECORDING_VIDEO='C:\normal\20260620_141956_EVT_1.avi'
+.venv/Scripts/python.exe examples/recording_baseline.py --dataset-id $datasetId --output C:\normal\baseline-bundles\split-001 --repeats 3 --video-index 0 --analysis-start 0 --analysis-end 10 --incident-start 1 --incident-end 2
+```
+
+기존 dataset 비교라면 새 ID를 만들지 않고 기존 익명 dataset ID를 재사용한다.
+`execution.requested_range` 대신 `execution.requested_ranges.analysis/incident`가 기록된다.
+`freeze_checks.same_settings`는 schema version·encoding 설정·두 requested range의 일치를
+모두 검사한다. 한쪽 범위만 달라져도 동결하지 않는다. 두 resolve 단계의 시간을 각각 집계한다.
+raw run JSON 보존·파일 hash·덮어쓰기 방지·원본 불변·실패 통계 원칙은 동일하다.
+단일/분리 CLI 입력을 섞거나 네 범위 중 일부만 지정하면 디렉터리 생성 전에 거부한다.
+
+실제 분리 opt-in 테스트는 같은 Timeline/VIDEO에서 analysis 0–10초, incident 1–2초를
+480p 설정으로 2회 실행한다. 실행 결과는 pytest 임시 디렉터리에만 저장한다.
+기존 bundle 재작성이나 기존 JSON을 v2로 변환하는 작업은 하지 않는다.
+
+아래는 기존 v1 동결 및 공통 저장 원칙이다.
+
 `examples/recording_baseline.py`는 기존 `recording_benchmark.run_benchmark()`를 순차 반복한다.
 각 실행은 독립 RecordingService를 사용한다. 기존 `recording-benchmark/v1` 결과를 바꾸거나
 media 처리 코드를 복제하지 않는다. Canonical Contract/API에는 변경이 없다.

@@ -144,3 +144,57 @@ def test_tool_timeout_sanitized_and_missing_input(media, monkeypatch):
     missing = run(media.parent / "missing.avi")
     assert missing["failure"]["stage"] == "input_fingerprint"
     assert missing["original_unchanged"] is None
+
+
+def test_split_ranges_materialize_independently(media):
+    report = benchmark.run_benchmark(media, video_index=0, height=48,
+        analysis_start=0.0, analysis_end=1.0, incident_start=0.35, incident_end=0.76)
+    assert report["schema_version"] == "recording-benchmark/v2" and report["failure"] is None
+    assert "requested_range" not in report
+    resolutions = report["results"]["resolutions"]
+    for kind in ("analysis", "incident"):
+        assert resolutions[kind]["status"] == "COMPLETE"
+        assert resolutions[kind]["requested_range"] == report["requested_ranges"][kind]
+        assert resolutions[kind]["timeline_ref"] == report["context"]["timeline_ref"]
+        assert resolutions[kind]["media_stream_ref"] == report["context"]["media_stream_ref"]
+    assert report["results"]["analysis_source"]["timeline_range"] == {"start_sec": 0.0, "end_sec": 1.0}
+    assert report["results"]["incident_clip"]["timeline_range"] == {"start_sec": 0.4, "end_sec": 0.8}
+    assert report["results"]["analysis_source"]["duration_sec"] == 1.0
+    assert report["results"]["incident_clip"]["duration_sec"] == 0.4
+    assert report["results"]["frame"]["requested_source_offset_sec"] == 0.35
+    assert 0.35 <= report["results"]["frame"]["actual_source_offset_sec"] < 0.8
+    assert report["original_unchanged"] is True
+
+
+@pytest.mark.parametrize("kind", ["analysis", "incident"])
+@pytest.mark.parametrize("status,start,end", [("PARTIAL", 0.0, 1.5), ("FAILED", 2.0, 3.0)])
+def test_each_range_resolution_status(media, kind, status, start, end):
+    args = {"analysis_start": 0.0, "analysis_end": 1.0, "incident_start": 0.3, "incident_end": 0.7}
+    args.update({f"{kind}_start": start, f"{kind}_end": end})
+    report = benchmark.run_benchmark(media, video_index=0, height=48, **args)
+    resolutions = report["results"]["resolutions"]
+    assert resolutions[kind]["status"] == status
+    assert resolutions["incident" if kind == "analysis" else "analysis"]["status"] == "COMPLETE"
+    assert report["original_unchanged"] is True
+    if status == "PARTIAL":
+        assert report["failure"] is None and report["status"] == "FALLBACK"
+        assert resolutions[kind]["missing_ranges"]
+    else:
+        assert report["failure"]["stage"] == f"resolve_{kind}_span"
+        assert next(s for s in report["stages"] if s["name"] == "analysis_source")["status"] == "SKIPPED"
+
+
+@pytest.mark.parametrize("extra", [
+    ["--analysis-start", "0"],
+    ["--start", "0", "--end", "1", "--analysis-start", "0", "--analysis-end", "1", "--incident-start", "0", "--incident-end", "1"],
+])
+def test_split_cli_rejects_incomplete_or_mixed_ranges(media, capsys, extra):
+    assert benchmark.main([str(media), "--video-index", "0", *extra]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["failure"] == {"stage": "input_fingerprint", "code": "INVALID_INPUT"}
+
+
+def test_split_cli(media, capsys):
+    assert benchmark.main([str(media), "--video-index", "0", "--analysis-start", "0", "--analysis-end", "1",
+                           "--incident-start", "0.3", "--incident-end", "0.7"]) == 0
+    assert json.loads(capsys.readouterr().out)["schema_version"] == "recording-benchmark/v2"

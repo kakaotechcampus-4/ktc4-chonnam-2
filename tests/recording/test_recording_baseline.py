@@ -154,3 +154,55 @@ def test_opt_in_real_baseline(tmp_path):
     reports = verify_bundle(tmp_path / "real-baseline", bundle)
     assert all(r["original_unchanged"] is True for r in reports)
     print(json.dumps({"status": bundle["status"], "runs": len(reports), "freeze_checks": bundle["freeze_checks"]}))
+
+
+def split_run(video, output, **kwargs):
+    return baseline.run_baseline(video, dataset_id=DATASET_ID, output=output,
+        **({"repeats": 2, "video_index": 0, "analysis_start": 0.0, "analysis_end": 1.0,
+            "incident_start": 0.3, "incident_end": 0.7, "height": 48} | kwargs))
+
+
+def test_split_bundle_preserves_raw_reports_and_both_range_settings(media, tmp_path, monkeypatch):
+    reports = []
+    original = baseline.benchmark.run_benchmark
+    def capture(*a, **kw):
+        report = original(*a, **kw)
+        reports.append(copy.deepcopy(report))
+        return report
+    monkeypatch.setattr(baseline.benchmark, "run_benchmark", capture)
+    directory = tmp_path / "split"
+    bundle = split_run(media, directory)
+    assert bundle["schema_version"] == "recording-baseline/v2" and bundle["status"] == "FROZEN"
+    assert bundle["execution"]["requested_ranges"] == reports[0]["requested_ranges"]
+    assert "requested_range" not in bundle["execution"]
+    for index, item in enumerate(bundle["runs"]):
+        data = (directory / item["file"]).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == item["sha256"]
+        assert json.loads(data) == reports[index]
+    for kind in ("analysis", "incident"):
+        assert bundle["summary"]["stages"][f"resolve_{kind}_span"]["elapsed_sec"]["count"] == 2
+        changed = copy.deepcopy(reports)
+        changed[1]["requested_ranges"][kind]["end_sec"] += 0.1
+        assert baseline._freeze_checks(changed, 2)["same_settings"] is False
+
+
+def test_opt_in_real_split_baseline(tmp_path):
+    video = os.environ.get("DAESINGO_RECORDING_VIDEO")
+    index = os.environ.get("DAESINGO_RECORDING_VIDEO_INDEX")
+    if not video or index is None:
+        pytest.skip("실제 영상과 명시적 VIDEO_INDEX opt-in 필요")
+    output = tmp_path / "real-split"
+    bundle = split_run(video, output, video_index=int(index), analysis_end=10.0,
+                       incident_start=1.0, incident_end=2.0, height=480)
+    assert bundle["status"] == "FROZEN", bundle["freeze_checks"]
+    for item in bundle["runs"]:
+        data = (output / item["file"]).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == item["sha256"]
+        report = json.loads(data)
+        assert report["schema_version"] == "recording-benchmark/v2"
+        assert all(r["status"] == "COMPLETE" for r in report["results"]["resolutions"].values())
+        assert report["results"]["analysis_source"]["duration_sec"] > report["results"]["incident_clip"]["duration_sec"]
+        assert 1.0 <= report["results"]["frame"]["actual_source_offset_sec"] < 2.0
+        assert report["original_unchanged"] is True
+    print(json.dumps({"status": bundle["status"], "runs": len(bundle["runs"]),
+                      "requested_ranges": bundle["execution"]["requested_ranges"], "checks": bundle["freeze_checks"]}))

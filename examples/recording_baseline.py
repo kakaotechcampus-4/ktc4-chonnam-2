@@ -5,7 +5,6 @@ from collections import Counter
 import hashlib
 import importlib.util
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -32,7 +31,8 @@ def statistics(values):
 def summarize(reports):
     """SKIPPED는 0초로 바꾸지 않고 제외하며, 실패 시간은 성공 시간과 별도로 요약한다."""
     stages = {}
-    for name in benchmark.STAGES:
+    names = benchmark.SPLIT_STAGES if reports[0].get("schema_version") == "recording-benchmark/v2" else benchmark.STAGES
+    for name in names:
         entries = [s for r in reports for s in r["stages"] if s["name"] == name]
         stages[name] = {
             "status_counts": dict(Counter(s["status"] for s in entries)),
@@ -63,7 +63,9 @@ def _freeze_checks(reports, repeats):
         "same_fingerprint": first["input_before"] is not None and all(
             r["input_before"] == first["input_before"] for r in reports),
         "same_settings": bool(first["settings"]) and all(
-            (r["settings"], r["requested_range"]) == (first["settings"], first["requested_range"]) for r in reports),
+            (r["schema_version"], r["settings"], r.get("requested_range"), r.get("requested_ranges"))
+            == (first["schema_version"], first["settings"], first.get("requested_range"), first.get("requested_ranges"))
+            for r in reports),
         "same_versions": set(first["tools"]) == {"python", "ffmpeg", "ffprobe"}
             and all(v != "unparsed" for v in first["tools"].values())
             and all(r["tools"] == first["tools"] for r in reports),
@@ -72,7 +74,8 @@ def _freeze_checks(reports, repeats):
     }
 
 
-def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec, end_sec, height=480):
+def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec=None, end_sec=None, height=480,
+                 analysis_start=None, analysis_end=None, incident_start=None, incident_end=None):
     """기존 단일 실행 결과는 수정하지 않는다. 생성된 bundle.json을 반환한다."""
     # 자유로운 설명·파일명·경로를 ID에 복사하지 못하도록 opaque UUID 표기만 받는다.
     if not isinstance(dataset_id, str) or re.fullmatch(r"ds_[0-9a-f]{32}", dataset_id) is None:
@@ -80,11 +83,12 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec, 
     if (not isinstance(video, (str, os.PathLike)) or not str(video)
             or type(repeats) is not int or repeats < 1
             or type(video_index) is not int or video_index < 0
-            or type(start_sec) not in (int, float) or type(end_sec) not in (int, float)
-            or not math.isfinite(start_sec) or not math.isfinite(end_sec)
-            or start_sec < 0 or end_sec <= start_sec
             or type(height) is not int or height <= 0 or height % 2):
         raise BaselineError("INVALID_INPUT")
+    try:
+        ranges = benchmark.requested_ranges(start_sec, end_sec, analysis_start, analysis_end, incident_start, incident_end)
+    except ValueError:
+        raise BaselineError("INVALID_INPUT") from None
     destination = Path(output)
     try:
         destination.mkdir(parents=True, exist_ok=False)
@@ -94,7 +98,8 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec, 
     reports, artifacts = [], []
     for index in range(1, repeats + 1):
         report = benchmark.run_benchmark(video, video_index=video_index, start_sec=start_sec,
-                                         end_sec=end_sec, height=height)
+                                         end_sec=end_sec, height=height, analysis_start=analysis_start,
+                                         analysis_end=analysis_end, incident_start=incident_start, incident_end=incident_end)
         filename = f"runs/{index:04d}.json"
         digest = _write_json(destination / filename, report)
         reports.append(report)
@@ -110,10 +115,15 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec, 
         "dataset": {"dataset_id": dataset_id, "fingerprint": first["input_before"],
                     "technical_metadata": first["results"].get("input")},
         "execution": {"requested_repeats": repeats, "completed_repeats": len(reports),
-                      "settings": first["settings"], "requested_range": first["requested_range"],
+                      "settings": first["settings"],
                       "service_lifetime": "fresh_per_run", "warmup_runs": 0},
         "tools": first["tools"], "runs": artifacts, "summary": summarize(reports),
     }
+    if "shared" in ranges:
+        bundle["execution"]["requested_range"] = first["requested_range"]
+    else:
+        bundle["schema_version"] = "recording-baseline/v2"
+        bundle["execution"]["requested_ranges"] = first["requested_ranges"]
     # manifest는 마지막에 발행한다. 중단된 디렉터리를 FROZEN으로 취급하지 않는다.
     temporary = destination / "bundle.pending.json"
     _write_json(temporary, bundle)
@@ -128,12 +138,13 @@ def main(argv=None):
     parser.add_argument("--output", required=True, help="존재하지 않는 새 bundle 디렉터리")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--video-index", type=int, required=True)
-    parser.add_argument("--start", type=float, required=True)
-    parser.add_argument("--end", type=float, required=True)
+    benchmark.add_range_arguments(parser)
     args = parser.parse_args(argv)
     try:
         bundle = run_baseline(args.video, dataset_id=args.dataset_id, output=args.output, repeats=args.repeats,
-                              video_index=args.video_index, start_sec=args.start, end_sec=args.end)
+                              video_index=args.video_index, start_sec=args.start, end_sec=args.end,
+                              analysis_start=args.analysis_start, analysis_end=args.analysis_end,
+                              incident_start=args.incident_start, incident_end=args.incident_end)
     except Exception as error:
         print(json.dumps({"status": "FAILED", "failure": {"code": error.code if isinstance(error, BaselineError)
                                                            else "BUNDLE_WRITE_OR_RUN_FAILED"}}))

@@ -20,6 +20,7 @@ from daesingo.recording import (
 
 STAGES = ("input_fingerprint", "tool_versions", "register_probe", "timeline", "stream_selection",
           "resolve_span", "analysis_source", "incident_clip", "frame", "original_integrity")
+SPLIT_STAGES = STAGES[:5] + ("resolve_analysis_span", "resolve_incident_span") + STAGES[6:]
 # 공유 report에는 예외 메시지나 임의 exception.code를 복사하지 않는다.
 SAFE_CODES = {"UNKNOWN_REF", "UNAVAILABLE", "TEMPORARY_FAILURE", "UNSUPPORTED_MEDIA",
               "SOURCE_UNAVAILABLE", "SOURCE_INSPECTION_FAILED", "STREAM_COVERAGE_UNKNOWN",
@@ -52,16 +53,40 @@ def tool_versions():
     return versions
 
 
-def run_benchmark(video, *, video_index, start_sec, end_sec, height=480):
+def requested_ranges(start_sec, end_sec, analysis_start, analysis_end, incident_start, incident_end):
+    split = any(v is not None for v in (analysis_start, analysis_end, incident_start, incident_end))
+    pairs = [(analysis_start, analysis_end), (incident_start, incident_end)] if split else [(start_sec, end_sec)]
+    if split and (start_sec is not None or end_sec is not None):
+        raise ValueError("range modes cannot be mixed")
+    for start, end in pairs:
+        if (type(start) not in (int, float) or type(end) not in (int, float)
+                or not math.isfinite(start) or not math.isfinite(end) or start < 0 or end <= start):
+            raise ValueError("complete finite ranges are required")
+    return dict(zip(("analysis", "incident") if split else ("shared",),
+                    ({"start_sec": float(a), "end_sec": float(b)} for a, b in pairs)))
+
+
+def add_range_arguments(parser):
+    for name in ("start", "end", "analysis-start", "analysis-end", "incident-start", "incident-end"):
+        parser.add_argument(f"--{name}", type=float)
+
+
+def run_benchmark(video, *, video_index, start_sec=None, end_sec=None, height=480,
+                  analysis_start=None, analysis_end=None, incident_start=None, incident_end=None):
     """Benchmark 전용 report를 반환한다. Canonical Contract/profile registry와 별개다."""
+    split = any(v is not None for v in (analysis_start, analysis_end, incident_start, incident_end))
     report = {
         "schema_version": "recording-benchmark/v1", "run_id": f"bench_{uuid4().hex}",
         "status": "SUCCESS", "failure": None, "original_unchanged": None,
         "input_before": None, "input_after": None, "tools": {}, "settings": {},
         "requested_range": None, "results": {},
         "stages": [{"name": name, "status": "SKIPPED", "elapsed_sec": None, "failure": None}
-                   for name in STAGES],
+                   for name in (SPLIT_STAGES if split else STAGES)],
     }
+    if split:
+        report["schema_version"] = "recording-benchmark/v2"
+        del report["requested_range"]
+        report["requested_ranges"] = None
     started = perf_counter()
 
     def step(name, action):
@@ -106,17 +131,18 @@ def run_benchmark(video, *, video_index, start_sec, end_sec, height=480):
             nonlocal path
             if video is None:
                 raise ValueError("video input is required")
-            if (type(video_index) is not int or video_index < 0
-                    or type(start_sec) not in (int, float) or type(end_sec) not in (int, float)
-                    or not math.isfinite(start_sec) or not math.isfinite(end_sec)
-                    or start_sec < 0 or end_sec <= start_sec):
+            if type(video_index) is not int or video_index < 0:
                 raise ValueError("invalid benchmark input")
+            ranges = requested_ranges(start_sec, end_sec, analysis_start, analysis_end, incident_start, incident_end)
             AnalysisProfile(height, "veryfast", 23)
             path = Path(video)
             report["settings"] = {"video_index": video_index, "height": height,
                 "codec": "h264", "preset": "veryfast", "crf": 23, "audio": False,
                 "pixel_format": "yuv420p", "faststart": True, "profile_scope": "benchmark_trial"}
-            report["requested_range"] = {"start_sec": float(start_sec), "end_sec": float(end_sec)}
+            if split:
+                report["requested_ranges"] = ranges
+            else:
+                report["requested_range"] = ranges["shared"]
             return fingerprint(path)
 
         report["input_before"] = step("input_fingerprint", validate_and_hash)
@@ -144,24 +170,50 @@ def run_benchmark(video, *, video_index, start_sec, end_sec, height=480):
 
             selected = step("stream_selection", select)
 
-            def resolve():
-                result = service.resolve_span(ref, report["requested_range"], media_stream_ref=selected.media_stream_ref)
-                report["results"]["resolution"] = {"status": result.status,
+            if split:
+                report["context"] = {"timeline_ref": ref, "media_stream_ref": selected.media_stream_ref}
+                report["results"]["resolutions"] = {}
+
+            def resolve(kind=None):
+                requested = report["requested_ranges"][kind] if split else report["requested_range"]
+                result = service.resolve_span(ref, requested, media_stream_ref=selected.media_stream_ref)
+                details = {"status": result.status,
                     "ranges": [s.timeline_range.model_dump(mode="json") for s in result.spans],
                     "missing_ranges": [{"timeline_range": r.timeline_range.model_dump(mode="json"), "reason": r.reason}
                                        for r in result.missing_ranges]}
+                if split:
+                    details.update(timeline_ref=ref, media_stream_ref=selected.media_stream_ref, requested_range=requested)
+                    report["results"]["resolutions"][kind] = details
+                else:
+                    report["results"]["resolution"] = details
                 if result.status == "FAILED" or len(result.spans) != 1:
                     code = result.failure.code if result.failure else "NO_SINGLE_USABLE_SPAN"
                     raise BenchmarkFailure(code if code in SAFE_CODES else "NO_SINGLE_USABLE_SPAN")
                 return result
 
-            resolution = step("resolve_span", resolve)
-            if resolution.status == "PARTIAL":
-                fallback("resolve_span", "PARTIAL_COVERAGE")
+            if split:
+                resolved, failures = {}, []
+                for kind in ("analysis", "incident"):
+                    stage = f"resolve_{kind}_span"
+                    try:
+                        resolved[kind] = step(stage, lambda: resolve(kind))
+                        if resolved[kind].status == "PARTIAL":
+                            fallback(stage, "PARTIAL_COVERAGE")
+                    except Exception as error:
+                        failures.append(error)
+                if failures:
+                    raise failures[0]
+                analysis_resolution, resolution = resolved["analysis"], resolved["incident"]
+            else:
+                resolution = step("resolve_span", resolve)
+                if resolution.status == "PARTIAL":
+                    fallback("resolve_span", "PARTIAL_COVERAGE")
+                analysis_resolution = resolution
+            analysis_span, = analysis_resolution.spans
             span, = resolution.spans
 
             def prepare():
-                source = service.prepare_analysis_source(span, profile, timeline_ref=ref)
+                source = service.prepare_analysis_source(analysis_span, profile, timeline_ref=ref)
                 opened = service.open_analysis_source(source.analysis_source_ref)
                 count = 0
                 digest = hashlib.sha256()
@@ -217,10 +269,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("video", nargs="?", default=os.environ.get("DAESINGO_RECORDING_VIDEO"))
     parser.add_argument("--video-index", type=int, required=True, help="VIDEO만 센 명시적 0 기반 순번")
-    parser.add_argument("--start", type=float, required=True)
-    parser.add_argument("--end", type=float, required=True)
+    add_range_arguments(parser)
     args = parser.parse_args(argv)
-    report = run_benchmark(args.video, video_index=args.video_index, start_sec=args.start, end_sec=args.end)
+    report = run_benchmark(args.video, video_index=args.video_index, start_sec=args.start, end_sec=args.end,
+                          analysis_start=args.analysis_start, analysis_end=args.analysis_end,
+                          incident_start=args.incident_start, incident_end=args.incident_end)
     print(json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2))
     return 1 if report["status"] == "FAILED" else 0
 

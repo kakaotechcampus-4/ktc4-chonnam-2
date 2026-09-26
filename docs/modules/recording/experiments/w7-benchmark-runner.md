@@ -1,5 +1,38 @@
 # W7 Recording Benchmark 실행기 v1
 
+## 분리 범위 실행 v2
+
+기존 `--start/--end`는 동일 범위를 사용하는 smoke/micro baseline으로 유지하며
+`recording-benchmark/v1`을 그대로 출력한다. 기존 FROZEN bundle을 변환/수정하지 않는다.
+실제 흐름에 가까운 넓은 분석/좁은 incident 측정은 네 범위를 모두 명시한다.
+
+```powershell
+$env:DAESINGO_RECORDING_VIDEO='C:\normal\20260620_141956_EVT_1.avi'
+.venv/Scripts/python.exe examples/recording_benchmark.py --video-index 0 --analysis-start 0 --analysis-end 10 --incident-start 1 --incident-end 2
+```
+
+이 모드는 `recording-benchmark/v2`를 출력한다.
+
+| v1 | v2 |
+| --- | --- |
+| requested_range | requested_ranges.analysis / requested_ranges.incident |
+| results.resolution | results.resolutions.analysis / results.resolutions.incident |
+| resolve_span 시간 | resolve_analysis_span / resolve_incident_span 시간 |
+| 공통 span 사용 | AnalysisSource는 analysis span, IncidentClip·Frame은 incident span |
+
+`context`와 각 resolution에 같은 timeline_ref/revision 및 media_stream_ref를 기록한다.
+두 해소를 모두 수행하여 각각 COMPLETE/PARTIAL/FAILED를 기록한다. 반환된 resolution 없이
+capability 자체가 예외를 내면 해당 stage.failure만 기록하고 가짜 resolution을 만들지 않는다.
+한쪽이라도 usable 단일 span이 없으면 두 해소 결과까지 보존하고 materialization은 SKIPPED다.
+PARTIAL은 기존처럼 실제 해소된 span으로 진행하며 요청 범위와 missing_ranges를 보존한다.
+예상 오류 코드와 원본 최종 검사는 기존과 같다.
+
+단일/분리 범위 혼용, 일부만 지정, 잘못된 숫자·순서는 INVALID_INPUT이다.
+incident가 analysis에 포함되는지를 새로운 계약 정책으로 강제하지는 않는다.
+Candidate 자동 선택은 없으며 실행자가 incident 범위를 지정한다.
+
+아래는 기존 v1 단일 범위 설명이다.
+
 G5의 실행별 JSON·도구 버전·fingerprint·단계별 시간·실패 위치·비노출과
 G6의 합성 media/정상·relative-only·경계·손상 입력 검증을 위한 첫 기능 단위다.
 실행기는 `examples/recording_benchmark.py`이며 기존 Recording public capability만 호출한다.
