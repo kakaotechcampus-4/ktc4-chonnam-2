@@ -72,7 +72,8 @@ Report에는 basename·절대경로·시각 후보·픽셀·인증정보·환경
 - 기본 시험 설정은 480p H.264/veryfast/CRF23/yuv420p/faststart/audio off다.
   최종 Canonical profile이 아니다. 테스트는 처리비용을 줄이기 위해 48p로 실행한다.
 - IncidentClip open API가 없으므로 clip bytes를 내부 저장소에서 직접 꺼내지 않는다.
-- 원본 전체 hash와 단일 실행 비용을 포함한다. 반복 통계·RSS·peak temp disk·동시성 측정은 아직 없다.
-- JobExecution 시간, CI workflow, 외부 dataset manifest, baseline 동결, 전후 개선 비교는 후속이다.
+- 원본 전체 hash와 단일 실행 비용을 포함한다. 반복 통계와 baseline bundle 동결은
+  [Baseline 실행기](w7-baseline-bundle.md)를 사용한다. RSS·peak temp disk·동시성 측정은 아직 없다.
+- JobExecution 시간, CI workflow, 외부 dataset manifest, 전후 개선 비교는 후속이다.
 - cache/TTL/retention·proxy 최적화·stitching·복수 VIDEO 기본 선택·export는 이번 범위에 없다.
 - 이 리포트는 처리·계약 경계 측정이며 탐지율·OCR·시각 정확도 성능 근거가 아니다.
