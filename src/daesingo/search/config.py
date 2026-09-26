@@ -17,6 +17,11 @@ _APPROVED_GEMINI_BASE_URL_HOSTS: Final = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class GeminiSearchConfig:
+    """Search 서비스 설정. 이름은 'Gemini'지만 실제 provider는 Elice ML API
+    (OpenAI 호환 프록시)다. 클래스명·DAESINGO_GEMINI_* 환경변수·에러 타입은 기존
+    배포 .env 호환을 위해 유지한다(#153, #95). model은 프록시가 서빙하는 Gemini 계열.
+    """
+
     model: str = "gemini-3.8-flash"
     media_resolution: str = "low"  # Coarse. 넓게 싸게 훑는다
     fine_media_resolution: str = (
