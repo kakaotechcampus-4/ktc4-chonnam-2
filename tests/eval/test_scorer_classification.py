@@ -243,3 +243,58 @@ def test_a_missing_condition_label_no_longer_produces_a_reason():
     norm = [{"sequence_id": "B1", "predicted": "NONE", "target_bbox": None}]
 
     assert "NO_CONDITION" not in (classification.score(norm, gt)["coverage"] or "")
+
+
+# --- 신뢰구간 (2026-09-21) ---
+
+
+def test_recall_by_label_carries_intervals():
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": None, "source_tier": "A"},
+        {"sequence_id": "A2", "label": "SIGNAL", "target_bbox": None, "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": None},
+            {"sequence_id": "A2", "predicted": "NONE", "target_bbox": None}]
+    r = classification.score(norm, gt)
+
+    assert r["recall_by_label"]["SIGNAL"] == 0.5
+    lo, hi = r["recall_by_label_ci95"]["SIGNAL"]
+    assert hi - lo > 0.8, "라벨당 2건짜리 구간은 거의 전 구간이어야 한다"
+
+
+def test_a_label_with_no_ground_truth_has_no_interval():
+    """분모가 0 이면 recall 도 구간도 null 이다 — 0 점이 아니다."""
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": None, "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": None}]
+    r = classification.score(norm, gt)
+
+    assert r["recall_by_label"]["NONE"] is None
+    assert r["recall_by_label_ci95"]["NONE"] is None
+
+
+def test_target_correctness_carries_an_interval():
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": [0, 0, 10, 10],
+         "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": [0, 0, 10, 10]}]
+    r = classification.score(norm, gt)
+
+    assert r["target_correctness"] == 1.0
+    lo, hi = r["target_correctness_ci95"]
+    assert lo < 1.0, "1건 맞혔다고 「확실히 100%」라고 말하면 안 된다"
+
+
+def test_no_scorable_bbox_leaves_the_interval_null():
+    gt = {"meta": GT["meta"], "items": [
+        {"sequence_id": "A1", "label": "SIGNAL", "target_bbox": None, "source_tier": "A"}]}
+    norm = [{"sequence_id": "A1", "predicted": "SIGNAL", "target_bbox": None}]
+    r = classification.score(norm, gt)
+
+    assert r["target_correctness"] is None
+    assert r["target_correctness_ci95"] is None
+
+
+def test_not_run_keeps_the_interval_keys():
+    block = classification.not_run("NOT_RUN — 테스트")
+    assert block["recall_by_label_ci95"] is None
+    assert block["target_correctness_ci95"] is None
