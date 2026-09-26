@@ -9,7 +9,7 @@ from daesingo.common import load_env_file
 from eval import manifests_io, paths
 from eval.runners.errors import RunnerPreflightError
 
-MINIMUM_SDK = (2, 13, 0)
+MINIMUM_SDK = (1, 40, 0)
 
 
 class PreflightError(RunnerPreflightError):
@@ -90,18 +90,18 @@ def prepare(scope: dict[str, str]) -> PreparedEval:
 
 def _sdk_version(problems: list[str]) -> str:
     try:
-        installed = version("google-genai")
+        installed = version("openai")
     except PackageNotFoundError:
-        problems.append("google-genai is not installed; sync the eval-gemini extra")
+        problems.append("openai is not installed; sync the eval-gemini extra")
         return "missing"
     try:
         parts = tuple(int(part) for part in installed.split(".")[:3])
     except ValueError:
-        problems.append(f"google-genai version is not parseable ({installed})")
+        problems.append(f"openai version is not parseable ({installed})")
         return installed
     if parts < MINIMUM_SDK:
         required = ".".join(str(part) for part in MINIMUM_SDK)
-        problems.append(f"google-genai>={required} is required, found {installed}")
+        problems.append(f"openai>={required} is required, found {installed}")
     return installed
 
 
