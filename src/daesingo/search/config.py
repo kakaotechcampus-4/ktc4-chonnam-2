@@ -35,9 +35,8 @@ class GeminiSearchConfig:
     # 단가: 프록시가 고지한 USD/백만 토큰. 테스트에서 명시 주입; 운영은 Task 11/13 담당.
     input_usd_per_million: float = 0.0
     output_usd_per_million: float = 0.0
-    # 예산 한도 및 Fine 호출 전 예비비
+    # 예산 한도
     max_cost_usd: float = 0.0
-    fine_reserve_usd: float = 0.0
     # 모든 Gemini 호출은 이 프록시(Bearer 인증)를 거친다. 운영자가 로컬에서
     # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
     base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
@@ -84,8 +83,6 @@ class GeminiSearchConfig:
             raise ValueError("output_usd_per_million must be finite and non-negative")
         if not math.isfinite(self.max_cost_usd) or self.max_cost_usd < 0:
             raise ValueError("max_cost_usd must be finite and non-negative")
-        if not math.isfinite(self.fine_reserve_usd) or self.fine_reserve_usd < 0:
-            raise ValueError("fine_reserve_usd must be finite and non-negative")
 
     @classmethod
     def from_dotenv(cls, env: Mapping[str, str] | None = None) -> "GeminiSearchConfig":
@@ -112,9 +109,6 @@ class GeminiSearchConfig:
             ),
             max_cost_usd=float(
                 env.get("DAESINGO_GEMINI_MAX_COST_USD", defaults.max_cost_usd)
-            ),
-            fine_reserve_usd=float(
-                env.get("DAESINGO_GEMINI_FINE_RESERVE_USD", defaults.fine_reserve_usd)
             ),
         )
 
