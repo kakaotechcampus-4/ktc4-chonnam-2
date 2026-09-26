@@ -14,6 +14,7 @@ from types import ModuleType
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
+from daesingo.search.execution import DeadlineExceededError, RunDeadline
 from daesingo.search.media import PreparedMedia
 from daesingo.search.provider import (
     CoarseRequest,
@@ -421,3 +422,59 @@ def test_unrelated_message_containing_500_does_not_retry(
         _ = provider.search_coarse(_coarse_request(media))
 
     assert len(completions.calls) == 1  # not retried despite "500" in message
+
+
+# ---------------------------------------------------------------------------
+# Retry respects the run deadline (issue #149): the RunDeadline must reach
+# call_with_retry so a retryable error is NOT retried past the time budget.
+# ---------------------------------------------------------------------------
+
+
+def test_retry_stops_when_run_deadline_exhausted_between_attempts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A 429 is normally retried, but once the run budget is spent the provider
+    must surface DeadlineExceededError instead of sleeping and retrying."""
+    now = [0.0]
+
+    def clock() -> float:
+        return now[0]
+
+    call_counts: list[int] = []
+
+    class _ClockBurningCompletions:
+        def parse(self, **_kwargs: object) -> _Completion:
+            call_counts.append(1)
+            now[0] += 0.2  # each attempt burns 200ms of budget
+            raise _FakeApiError("rate limited", status_code=429)
+
+    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(_ClockBurningCompletions())))
+    original = importlib.import_module
+
+    def fake_import(name: str) -> ModuleType:
+        return mod if name == "openai" else original(name)
+
+    monkeypatch.setattr("daesingo.search.provider.importlib.import_module", fake_import)
+    monkeypatch.setitem(sys.modules, "openai", mod)
+
+    media_file = tmp_path / "clip.mp4"
+    media_file.write_bytes(b"bytes")
+    media = _make_media(media_file)
+    # base 5s backoff + 3 retries would run for seconds if the deadline were ignored.
+    provider = GeminiProvider(
+        "key", GeminiSearchConfig(max_retries=3, retry_base_sec=5.0)
+    )
+
+    deadline = RunDeadline(clock, budget_ms=100)  # 100ms budget; one attempt exhausts it
+    request = CoarseRequest(
+        _source(),
+        (VisualEventType.SIGNAL,),
+        media=media,
+        timeout_sec=deadline.remaining_sec(),
+        deadline=deadline,
+    )
+
+    with pytest.raises(DeadlineExceededError):
+        _ = provider.search_coarse(request)
+
+    assert len(call_counts) == 1  # exhausted after the first attempt → no retry
