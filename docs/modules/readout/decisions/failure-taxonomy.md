@@ -206,6 +206,7 @@ readout run 실패는 `JobExecution.failure_kind = "READOUT_INFRA"`로 올라간
 | `FRAME_DISAGREEMENT` | 프레임 간 OCR 결과가 합의되지 않음 |
 | `LOW_RESOLUTION` | 번호판 영역 해상도가 문자 판독 하한에 미달 |
 | `OCR_LOW_CONFIDENCE` | 인식은 됐으나 신뢰도가 확정 임계 미만 |
+| `PARTIAL_PLATE_READ` | 2줄 번호판의 한 행처럼 전체 번호판이 아닌 일부만 읽힘. 관찰 문자열은 보존하지만 자동 확정하지 않으며, 텍스트 행 bbox를 전체 번호판 bbox로 발행하지 않음 |
 
 ### 사유가 겹칠 때 우선순위 — `association > frame consensus`
 

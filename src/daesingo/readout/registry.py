@@ -32,6 +32,7 @@ ABSTAIN_REASONS = frozenset({
     "FRAME_DISAGREEMENT",
     "LOW_RESOLUTION",
     "OCR_LOW_CONFIDENCE",
+    "PARTIAL_PLATE_READ",
 })
 SOURCE_PROFILES = frozenset({"readout-native", "readout-native-hires"})
 

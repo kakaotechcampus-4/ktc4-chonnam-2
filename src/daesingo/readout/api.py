@@ -68,7 +68,7 @@ from .contracts import (
 # ── 계약 버전 ────────────────────────────────────────────────
 # 값의 원문은 계약 문서다. fixture가 쓰는 것과 같은 문자열을 쓴다.
 READOUT_RUN_VERSION = "readout-run/v1"
-PLATE_READOUT_VERSION = "plate-readout/v1.2"
+PLATE_READOUT_VERSION = "plate-readout/v1.3"
 OVERLAY_TIME_READOUT_VERSION = "overlay-time-readout/v1.2"
 OBSERVATION_VERSION = "observation/v1"
 
@@ -330,6 +330,15 @@ def _abstain_reason(association, best, disagreed):
     if disagreed:
         return "FRAME_DISAGREEMENT"
     if best is not None:
+        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 한글 1자+일련번호만 읽힌 값은
+        # 완전한 번호판이 아니다. 관찰값은 보존하지만 자동 확정하지 않는다.
+        normalized = re.sub(r"\\s+", "", best.text or "")
+        if re.fullmatch(r"[가-힣]\\d{4}", normalized):
+            return "PARTIAL_PLATE_READ"
+        # 대상 crop은 검출용으로 한글이 빠진 숫자 문자열도 보존한다. 다만 이것은
+        # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
+        if best.text and not re.search(r"[가-힣]", best.text):
+            return "OCR_LOW_CONFIDENCE"
         height = best.quality.get("plate_px_height")
         if height is not None and height < MIN_PLATE_PX_HEIGHT:
             return "LOW_RESOLUTION"
@@ -445,6 +454,8 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         ),
         abstained=abstained,
         abstain_reason=reason,
+        # PARTIAL_PLATE_READ의 bbox는 2줄 번호판 중 텍스트 한 줄일 수 있다. 이를
+        # 전체 번호판 bbox로 내보내 Case가 PLATE_IMAGE를 잘못 만들게 하지 않는다.
         best_frame=BestFrame(
             frame_ref=best.frame_ref,
             crop_ref=crop_refs[best_at],
@@ -452,7 +463,7 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
             # provider가 프레임마다 돌려주던 값을 여기서 버리고 있었다 (v1.3에서 실었다).
             # 새로 만드는 값이 아니라 대표 프레임의 번호판 영역을 그대로 싣는 것이다.
             plate_bbox_xywh=list(best.bbox_xywh),
-        ) if best is not None else None,
+        ) if best is not None and reason != "PARTIAL_PLATE_READ" else None,
         frame_results=frame_results,
         contract="PlateReadout",
         contract_version=PLATE_READOUT_VERSION,
