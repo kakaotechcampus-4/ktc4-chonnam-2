@@ -2,7 +2,7 @@
 
 작성일: 2026-09-22  
 범위: `src/daesingo/search/**`, `tests/search/**`, `docs/modules/search/**`  
-상태: 구현 전 계획
+상태: **종료(2026-09-26)** — p4 미커밋 구현을 폐기했다. 원 계획은 이력으로 보존한다. 현재 방향은 [판단 근거 진단 결정](decision-trace-2026-09-26.md), 기존 실행 조건·프롬프트는 [p4 기록](../experiments/p4-retired-2026-09-25/conditions.md)을 따른다.
 
 ## 0. 기준과 범위
 

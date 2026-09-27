@@ -4,6 +4,8 @@
 
 ## 현재 결정
 
+- [decision-trace-2026-09-26.md](decision-trace-2026-09-26.md) — p4 종료, p3 기반 Search 전용 판단 근거 진단과 단계별 프롬프트 실험
+
 - `challenger-policy.md — Failure decides the challenger 매핑·개방 절차 (A-2)`
 - `failure-taxonomy.md — search 실패 분류 **초안** (Owner 확정 전)`
 - `candidate-span-semantics-2026-09-10.md — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신`
