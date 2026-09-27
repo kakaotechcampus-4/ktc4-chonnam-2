@@ -949,7 +949,7 @@ Owner 이름은 [ownership §2][owners], GitHub ID 및 Wireframe 담당은 [#149
 
 ## 8. 월요일 회의 안건
 
-**아래는 조건부 목록이다. 9/27 일요일까지 답변으로 닫힌 항목은 9/28 회의에서 제거한다.** Owner가 아직 답하지 않은 것을 동의로 간주하지 않는다.
+**아래는 조건부 목록이다. 별도 일요일 마감은 두지 않으며, 9/28 월요일 회의 전까지 답변으로 닫힌 항목은 회의에서 제거한다.** Owner가 아직 답하지 않은 것을 동의로 간주하지 않는다.
 
 | 우선순위 | 비동기로 닫히지 않았을 때만 논의 | 필요한 결정 산출물 |
 | --- | --- | --- |
@@ -992,11 +992,11 @@ Q2 음성 결과 출구는 1번의 결과 종류에 합치고, Q4 미관찰/실�
 | --- | --- | --- |
 | [#145][pr145] | merged | full diff 기준점. conversation/review/inline 0건. 20 hunk 모두 §2 추적 |
 | [#106][i106] | open | 9/23 [최신 댓글][i106-final]: common command surface, 결과 재선택, reject IDs 미채택, TIME 계열 후속. D2/D5/D6/D8 |
-| [#122][i122] | open | 9/23 [최신 댓글][i122-latest]: rank1·Case 자동·stale 제외, explicit rank 제안. 초기 자동 채택 가능 여부 질문 반복 금지 |
+| [#122][i122] | open | 9/23 [최신 댓글][i122-latest]: rank1·Case 자동·stale 제외, explicit rank 제안. 9/27 [Case 답변][i122-case]: `candidates[].rank` pass-through·rank 오름차순·최신 Run rank1 자동 선택·`selected` 표현을 **Case 제안**으로 제시, Web 확인 대기. 다중 Run rank 표시는 Search와 미결. 초기 자동 채택 가능 여부 질문 반복 금지 |
 | [#123][i123] | closed 9/27 | [종료 댓글][i123-final]: Stream 후보 entry 전제 철회, 남은 접합은 #122/#106·Web 후속. D8 |
 | [#146][pr146] | merged 9/27 | develop→main 통합. conversation 1건, inline 17건, review 11건. 9/25 [상황 응답][r146-situation]·[plate UNKNOWN][r146-plate]·[Wireframe][r146-wire]·[frame 경로][r146-frame]·[진행 전달][r146-progress] 답변과 [최종 승인/사용자 E2E 후속][r146-final] 반영 |
 | [#147][pr147] | merged 9/27, 측정 head `032efc0` | Positive real Fine/OCR→Evidence 증거와 package progress 수정이 develop에 반영. 당시 Package BLOCKED·READY 의미 문제는 남음. 과거 실측을 최신 코드의 유료 재실행으로 표기하지 않음 |
-| [#149][i149] | open | Owner/담당 배분. [최신 Search 답변][i149-latest]은 #152 retry 보강과 별개 factory cap 문제. D9 |
+| [#149][i149] | open | Owner/담당 배분. [Search 답변][i149-latest]은 #152 retry 보강과 별개 factory cap 문제. 9/27 [Case 답변][i149-case]: 요청서 `max_latency_sec` 단일 권위(A안) 동의, timeout 숫자는 여전히 미결. D9 |
 | [#25][i25] | closed | 실제 USER_UNSURE generic WARN·field state·capabilities의 기존 근거. D3/D7 |
 | [#47][i47] | open | [최신 Recording 답변][i47-final]: canonical best frame+bbox·생성 시점. preview_ref 오해 정정과 새 preview/export 후속. D10 |
 | [#48][i48] | open | [Owner 최종 결정][i48-final]: location null/WARN·no-location template, 위치 정책 재질문 금지. D7 |
@@ -1099,7 +1099,7 @@ Q2 음성 결과 출구는 1번의 결과 종류에 합치고, Q4 미관찰/실�
 - [ ] D12의 네 완료 경로와 필수 예외가 구현 이슈별 acceptance criteria로 배정된다. Mock 통과·실제 E2E·Owner 수락을 따로 표시한다.
 - [ ] 별도 일요일 마감 없이 9월 28일 월요일 회의 전까지 가능한 범위에서 Owner 의견을 받고, 회의에서는 unresolved만 결정한다.
 
-이 보고서 자체의 완료와 새 Product Flow 구현 완료는 별개다. 이 작업에서는 보고서만 작성하며 원격 게시·Issue 생성·PR·merge·Contract 변경은 하지 않는다.
+이 보고서 자체의 완료와 새 Product Flow 구현 완료는 별개다. 이 작업에서는 보고서 게시(Draft PR)와 umbrella·Case 버그 Issue 발행까지만 하며, merge·코드·Contract·ADR 변경은 하지 않는다.
 
 <!-- 근거 링크: 모두 조사 기준 commit 또는 실제 discussion/comment를 가리킨다. -->
 [flow]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/blob/bae28184f9940c0da0bce3fe334a1432920bea97/docs/product/core-user-flow.md
@@ -1184,6 +1184,8 @@ Q2 음성 결과 출구는 1번의 결과 종류에 합치고, Q4 미관찰/실�
 [i122-latest]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/122#issuecomment-5787681148
 [i123-final]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/123#issuecomment-5855876531
 [i149-latest]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/149#issuecomment-5832506384
+[i149-case]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/149#issuecomment-5857086226
+[i122-case]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/122#issuecomment-5857157336
 [i47-final]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-5666104327
 [i48-final]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/48#issuecomment-5658225684
 [i74-final]: https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/74#issuecomment-5747808378
