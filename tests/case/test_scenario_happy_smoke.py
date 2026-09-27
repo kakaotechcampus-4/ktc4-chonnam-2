@@ -65,8 +65,10 @@ def test_happy_path_rev1_searching_matches_fixture():
 
 def test_happy_path_ready_matches_fixture():
     fixture = _load_case_fixture()
-    ready = fixture["case_views"][-1]
+    # case_views: rev1 SEARCHING · rev2 EVIDENCE_REVIEW(응답 전) · rev4 READY · rev5 READY(검토 완료)
+    ready = fixture["case_views"][2]
     assert ready["stage"] == "READY"
+    assert ready["user_reviewed"] is False
 
     adapter = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
 
@@ -100,6 +102,8 @@ def test_happy_path_ready_matches_fixture():
     report_package = adapter.get_report_package()
 
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
+    # 결과 화면 「신고 상황」에서 사용자가 [맞아요]를 누른 뒤에야 Package가 나온다(#171 B-2).
+    case.record_situation_response("CONFIRMED", responded_at="2026-08-24T18:22:30+09:00")
     case.mark_ready()
 
     view = build_case_view(
@@ -113,7 +117,9 @@ def test_happy_path_ready_matches_fixture():
     # 이 1차 구현이 실제로 재현하기로 한 부분만 정답지와 비교한다(§11 제외 범위 참고 —
     # manifest_summary/hints는 이 테스트에서 임의로 비워서 시작했으므로 비교하지 않는다).
     assert view["stage"] == ready["stage"]
+    assert view["case_rev"] == ready["case_rev"]
     assert view["progress"] == ready["progress"]
+    assert view["candidates"][0]["situation_confirmation"] == "CONFIRMED"
     assert view["candidates"][0]["candidate_id"] == ready["candidates"][0]["candidate_id"]
     assert view["candidates"][0]["observed"] == ready["candidates"][0]["observed"]
     assert view["candidates"][0]["selected"] is True
@@ -125,3 +131,51 @@ def test_happy_path_ready_matches_fixture():
     assert view["package"]["unconfirmed_fields"] == ready["package"]["unconfirmed_fields"]
     assert view["package"]["artifact_ref"] == ready["package"]["artifact_ref"]
     assert view["package"]["capabilities"] == ready["package"]["capabilities"]
+
+
+def test_happy_path_before_situation_response_has_no_package():
+    """응답 전(`NOT_ASKED`) 스냅샷 — ADR-EVIDENCE-005 D2-c: 확인 응답이 없으면 Package가 나가지
+    않는다. evidence는 응답 전 기록(`ev_h001`)과 FINAL 판정(UNKNOWN)만 있고, 사용자가 응답한 뒤
+    `ev_h001_v2`(CONFIRMED)가 supersede한다(#48 I1 완료 증거: 전후 JSON 구분)."""
+    fixture = _load_case_fixture()
+    before = fixture["case_views"][1]
+    assert before["stage"] == "EVIDENCE_REVIEW"
+
+    adapter = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
+    records = adapter.get_evidence_records()
+    evidence_reports = adapter.get_requirement_reports("EVIDENCE")
+    package_reports = adapter.get_requirement_reports("FINAL_PACKAGE")
+    assert [r["record_ref"]["ref"] for r in records] == ["ev_h001", "ev_h001_v2"]
+    assert "situation_response" not in records[0]
+
+    case = CaseAggregate.intake(case_id="case_h001", hints=before["hints"], manifest_summary=before["manifest_summary"])
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
+    fixture_candidate = before["candidates"][0]
+    case.receive_candidates(
+        [
+            Candidate(
+                candidate_id=fixture_candidate["candidate_id"],
+                at=fixture_candidate["at"],
+                at_provenance=fixture_candidate["at_provenance"],
+                observed=fixture_candidate["observed"],
+                thumb_ref=fixture_candidate["thumb_ref"],
+            )
+        ]
+    )
+    case.select_candidate("candidate_h001")
+
+    view = build_case_view(
+        case,
+        evidence_record=records[0],
+        requirement_report_evidence=evidence_reports[0],
+        requirement_report_package=package_reports[0],
+        report_package=None,
+    )
+
+    assert package_reports[0]["overall"] == "UNKNOWN"
+    assert view["package"] is None
+    assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert {k: v for k, v in view.items() if k not in ("contract", "contract_version")} == {
+        k: v for k, v in before.items() if k not in ("contract", "contract_version")
+    }

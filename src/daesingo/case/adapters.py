@@ -160,18 +160,23 @@ class MockFixtureAdapter:
 
     # ── evidence ────────────────────────────────────────────────────────
     def get_evidence_record(self) -> dict[str, Any] | None:
+        """현재(= supersede 체인의 마지막) `EvidenceRecord`. fixture는 v1→v2 순서로 적혀 있다.
+        2026-09-28 정정: 예전엔 최초 1건(`records[0]`)을 돌려줘, 체인이 있는 시나리오를
+        `service.build_view_from_adapter()`로 조립하면 옛 기록으로 CaseView가 만들어졌다
+        (공용 H가 응답 전 v1 → CONFIRMED v2 체인이 되면서 드러남, #48 I1)."""
         records = self._load("evidence").get("evidence_records", [])
-        return records[0] if records else None
+        return records[-1] if records else None
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
-        """`get_evidence_record()`는 최초 1건만 돌려준다 — supersede 체인(재판독 등으로
+        """`get_evidence_record()`는 현재 1건만 돌려준다 — supersede 체인(재판독 등으로
         `EvidenceRecord`가 v1→v2로 갱신되는 시나리오, `scenario_plate_reread_001`)을
         순서대로 재현하려면 전체 목록이 필요해서 추가했다."""
         return self._load("evidence").get("evidence_records", [])
 
     def get_requirement_report(self, scope: str) -> dict[str, Any] | None:
+        """같은 scope의 현재(마지막) 보고서 — `get_evidence_record()`와 같은 원칙."""
         reports = self._load("evidence").get("requirement_reports", [])
-        return next((r for r in reports if r["scope"] == scope), None)
+        return next((r for r in reversed(reports) if r["scope"] == scope), None)
 
     def get_requirement_reports(self, scope: str) -> list[dict[str, Any]]:
         """`get_requirement_report()`와 같은 이유로 추가 — 같은 scope에 여러 건(supersede
@@ -188,7 +193,7 @@ class MockFixtureAdapter:
 
     def get_report_package(self) -> dict[str, Any] | None:
         packages = self._load("evidence").get("report_packages", [])
-        return packages[0] if packages else None
+        return packages[-1] if packages else None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
