@@ -244,6 +244,13 @@
           "blocking": false,
           "message_key": "notice.overlay_not_present",
           "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
         }
       ]
     },
@@ -438,6 +445,13 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.overlay_not_present",
+          "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
           "actions": []
         }
       ]

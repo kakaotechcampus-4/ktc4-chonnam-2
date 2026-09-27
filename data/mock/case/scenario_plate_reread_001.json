@@ -256,6 +256,13 @@
           "actions": [
             "MANUAL_PLATE_INPUT"
           ]
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
         }
       ]
     },
@@ -444,6 +451,13 @@
           "actions": [
             "GENERATE_REPORT_VIDEO"
           ]
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
         }
       ]
     }

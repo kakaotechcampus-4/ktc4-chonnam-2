@@ -270,6 +270,13 @@
           "blocking": false,
           "message_key": "notice.time_post_stamp_required",
           "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
         }
       ]
     },
@@ -587,6 +594,13 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.time_post_stamp_required",
+          "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
           "actions": []
         }
       ]
