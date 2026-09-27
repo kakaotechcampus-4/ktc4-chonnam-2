@@ -159,6 +159,23 @@ def test_real_video_correction_reassembles_without_new_fine(monkeypatch):
     assert [c[:2] for c in calls["assemble"]] == [("cand_a", 0), ("cand_a", 1)]
 
 
+def test_real_video_new_selection_of_same_candidate_observes_again(monkeypatch):
+    """`TIME_HINT_EDIT` 뒤 재검색에서 같은 candidate_id가 다시 선택돼도 새 선택 context다
+    (정책 표: 후보·2차 확인·선택·증거 폐기). `select_candidate()`는 `case_rev`를 올리지 않고
+    `selection_rev`만 올리므로 candidate_id만 보면 이전 Fine 결과를 잘못 재사용한다."""
+    case, adapter, calls = _fake_real_video_adapter(monkeypatch)
+
+    adapter.get_evidence_record()
+    correction.edit_time_hint(case, {"time": "18시 10분쯤"})
+    case.receive_candidates(
+        [Candidate(candidate_id="cand_a", at=None, at_provenance=None, observed="", thumb_ref=None)]
+    )
+    case.select_candidate("cand_a")
+    adapter.get_evidence_record()
+
+    assert calls["observe"] == ["cand_a", "cand_a"]
+
+
 def test_real_video_other_candidate_observes_again(monkeypatch):
     """다른 후보 선택(`OTHER_CANDIDATE`)은 정책 표상 2차 확인이 다시 도는 경우다."""
     case, adapter, calls = _fake_real_video_adapter(monkeypatch)
