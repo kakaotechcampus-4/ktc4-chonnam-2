@@ -12,6 +12,7 @@ from .errors import RecordingCapabilityError
 from .models import AssetSpan, TimeRange
 from .probe import LocalSource, _snapshot
 from .observability import observed_materialization, phase
+from .inspection import active_inspections
 
 
 class _FrameCoverageError(RecordingCapabilityError):
@@ -111,14 +112,25 @@ class LocalAnalysisMaterializer:
         if profile_ref not in self._profiles:
             raise ValueError("등록되지 않은 profile_ref입니다")
         profile = self._profiles[profile_ref]
+        inspections = active_inspections()
+        inspection_key = None
+        completed = False
         try:
             with phase("source_snapshot"):
                 before = _snapshot(source.path)
                 if (before[2], before[3], before[4]) != (source.byte_size, source.mtime_ns, source.sha256):
                     raise RecordingCapabilityError("UNAVAILABLE", "등록 이후 원본이 변경되었습니다")
             with phase("source_probe"):
-                raw = self._probe(source.path, index)
-                base, frames = self._frames(raw)
+                # snapshot에는 device/inode/크기/mtime/SHA-256이 포함된다.
+                # 서로 다른 probe 실행 설정은 보수적으로 공유하지 않는다.
+                inspection_key = (before, index, self._ffprobe)
+                inspected = inspections.get(inspection_key) if inspections is not None else None
+                if inspected is None:
+                    raw = self._probe(source.path, index)
+                    base, frames = self._frames(raw)
+                    # raw frame JSON은 보관하지 않고 검증된 coverage와 stream metadata만 보관한다.
+                    inspected = ({"streams": raw["streams"]}, base, frames)
+                raw, base, frames = inspected
             with phase("frame_prepare"):
                 input_stream = raw["streams"][0]
                 width = max(2, 2 * math.floor(input_stream["width"] * profile.height / input_stream["height"] / 2 + 0.5))
@@ -177,11 +189,19 @@ class LocalAnalysisMaterializer:
                     if _snapshot(source.path) != before:
                         raise RecordingCapabilityError("UNAVAILABLE", "변환 중 원본 변경을 감지했습니다")
                 shift = Fraction(str(span.timeline_range.start_sec)) - start
-                return MaterializedVideo(content, duration, TimeRange(
+                result = MaterializedVideo(content, duration, TimeRange(
                     start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)))
+            # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
+            if inspections is not None:
+                inspections.put(inspection_key, inspected)
+            completed = True
+            return result
         except subprocess.TimeoutExpired:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "materialization 제한 시간을 초과했습니다") from None
         except OSError:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "media 파일 또는 도구에 접근할 수 없습니다") from None
         except (ValueError, KeyError, TypeError, ZeroDivisionError, OverflowError):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "실제 media의 형식·frame coverage·시각을 검증할 수 없습니다") from None
+        finally:
+            if inspections is not None and inspection_key is not None and not completed:
+                inspections.discard(inspection_key)

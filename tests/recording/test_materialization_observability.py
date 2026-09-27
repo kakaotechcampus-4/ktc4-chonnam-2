@@ -49,7 +49,7 @@ def test_opt_in_trace_same_bytes_and_no_duplicate_tools(media, monkeypatch, spli
     assert plain["schema_version"] == ("recording-benchmark/v2" if split else "recording-benchmark/v1")
     assert "materialization_trace" not in plain and "materialization_trace" not in plain["settings"]
     assert traced["schema_version"] == "recording-benchmark/v3"
-    assert calls == plain_calls and len(calls) == 6  # 각 생성 source/output probe + encode 1회
+    assert calls == plain_calls and len(calls) == 5  # source inspection 공유 1회 + output probe/encode 각 2회
     for kind in ("analysis_source", "incident_clip", "frame"):
         assert traced["results"][kind] == plain["results"][kind]
     for kind in ("analysis_source", "incident_clip"):
