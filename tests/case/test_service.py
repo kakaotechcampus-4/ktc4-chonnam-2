@@ -40,6 +40,35 @@ def test_receive_search_candidates_matches_manual_wiring():
     assert len(case.candidates) == len(ready["candidates"])
 
 
+def test_receive_search_candidates_uses_registered_pre_evidence_at_provenance():
+    """이슈 #104 — pre-evidence 후보(`at=None`)는 `at_provenance`도 None이 아니라
+    case가 소유한 등록된 enum 값(`recording.timeline_relative_only`,
+    `docs/modules/case/decisions/candidate-at-provenance-label-key.md`)이어야 한다.
+    계약(`caseView.ts`/contract 문서)은 이미 non-null을 기대하므로 구현을 맞춘다."""
+    adapter = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
+    case = CaseAggregate.intake(case_id="case_h001_svc_provenance", hints={}, manifest_summary={})
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
+
+    candidates = service.receive_search_candidates(case, adapter)
+
+    assert candidates[0].at is None
+    assert candidates[0].at_provenance == "recording.timeline_relative_only"
+
+
+def test_get_hints_reads_real_scenario_hints():
+    """이슈 #103 — real E2E 경로가 `hints={}`를 고정으로 넘겨서 후보 화면의
+    「기억 단서와 대조」가 그릴 값이 없었다. case 자신의 mock fixture(`case_views[0].hints`)
+    에서 대표 시나리오의 실제 단서를 읽어올 수 있어야 한다."""
+    adapter = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
+
+    hints = adapter.get_hints()
+
+    fixture = _load_case_fixture()
+    assert hints == fixture["case_views"][0]["hints"]
+    assert hints != {}
+
+
 def test_build_view_from_adapter_matches_manual_wiring():
     fixture = _load_case_fixture()
     ready = fixture["case_views"][-1]

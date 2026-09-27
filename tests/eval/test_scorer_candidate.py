@@ -414,3 +414,155 @@ def test_types_with_no_events_are_named_in_coverage():
     assert "SIGNAL" in out["by_type"]
     assert "NO_EVENTS_FOR_TYPE" in out["coverage"]
     assert "MOTORCYCLE_HELMET_NON_USE" in out["coverage"]
+
+
+# --- 시간과 유형을 갈라 잰다 (멘토 피드백 2026-09-20) ---
+#
+# 「장면의 '시간을 맞춘 것'과 '유형이 맞는지' 는 구분해서 평가해주세요.」
+#
+# recall_at 은 유형과 시간이 **둘 다** 맞아야 적중이라, 「순간은 정확히
+# 찾았는데 신호위반을 중앙선침범이라 불렀다」와 「아예 못 찾았다」가 똑같이
+# 0 으로 나온다. 둘은 고쳐야 할 곳이 완전히 다르다.
+
+
+def test_right_moment_wrong_type_is_not_the_same_as_finding_nothing():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0,
+                                event_type="CENTER_LINE_CROSSING"),
+                          _gt(100.0, violation_type="SIGNAL"))
+
+    assert out["recall_at"]["1"] == 0.0            # 합산 지표는 여전히 0
+    assert out["localization_recall_at"]["1"] == 1.0
+    assert out["type_accuracy_given_localized"] == 0.0
+
+
+def test_right_moment_right_type_scores_on_both_axes():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0),
+                          _gt(100.0))
+
+    assert out["recall_at"]["1"] == 1.0
+    assert out["localization_recall_at"]["1"] == 1.0
+    assert out["type_accuracy_given_localized"] == 1.0
+
+
+def test_finding_nothing_leaves_the_type_axis_null_not_zero():
+    """시간을 못 맞혔으면 유형 정확도는 「0점」이 아니라 「잰 적 없음」이다."""
+    out = candidate.score(_pred(rep=500.0, start=490.0, end=510.0),
+                          _gt(100.0))
+
+    assert out["recall_at"]["1"] == 0.0
+    assert out["localization_recall_at"]["1"] == 0.0
+    assert out["type_accuracy_given_localized"] is None
+    assert "NO_LOCALIZED_EVENTS" in out["coverage"]
+
+
+def test_localization_recall_is_never_below_recall():
+    """시간만 맞으면 되는 쪽이 더 느슨하다. 뒤집히면 배정이 잘못된 것이다."""
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E1", "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": 10.0},
+        {"event_id": "E2", "scoring": "INCLUDED",
+         "violation_type": "CENTER_LINE_CROSSING", "t_onset_sec": 20.0},
+    ]}]}
+    pred = [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": 9.0, "t_end_sec": 11.0, "representative_sec": 10.2,
+         "timeline_revision": 1, "event_type": "SIGNAL", "score": 0.9},
+        {"rank": 2, "t_start_sec": 19.0, "t_end_sec": 21.0, "representative_sec": 20.4,
+         "timeline_revision": 1, "event_type": "SIGNAL", "score": 0.5},
+    ]}]
+    out = candidate.score(pred, gt)
+
+    assert out["recall_at"]["3"] == 0.5               # E2 는 유형이 틀렸다
+    assert out["localization_recall_at"]["3"] == 1.0  # 두 순간 다 찾았다
+    assert out["type_accuracy_given_localized"] == 0.5
+
+
+def test_a_matching_type_wins_over_a_mistyped_candidate_at_the_same_distance():
+    """같은 거리면 유형이 맞는 후보에 붙인다 — 아니면 유형 정확도가 배정 운에 휘둘린다."""
+    pred = [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": 9.0, "t_end_sec": 11.0, "representative_sec": 10.5,
+         "timeline_revision": 1, "event_type": "CENTER_LINE_CROSSING", "score": 0.9},
+        {"rank": 2, "t_start_sec": 9.0, "t_end_sec": 11.0, "representative_sec": 10.5,
+         "timeline_revision": 1, "event_type": "SIGNAL", "score": 0.5},
+    ]}]
+    out = candidate.score(pred, _gt(10.0, violation_type="SIGNAL"))
+
+    assert out["localization_recall_at"]["3"] == 1.0
+    assert out["type_accuracy_given_localized"] == 1.0
+
+
+def test_not_run_keeps_the_new_axes(ks=(1, 3, 10)):
+    block = candidate.not_run("NOT_RUN — 테스트")
+    assert block["localization_recall_at"] == {"1": None, "3": None, "10": None}
+    assert block["type_accuracy_given_localized"] is None
+
+
+# --- 신뢰구간 (2026-09-21) ---
+#
+# B tier 채점 대상 사건이 10건이고 by_type 은 유형당 2~6건이다.
+# 「Recall 0.5」가 실제로는 0.24~0.76 인데 결과 파일이 그걸 말하지 않으면
+# 사람들이 소수점을 믿는다.
+
+
+def test_recall_carries_its_interval():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0), _gt(100.0))
+
+    lo, hi = out["recall_at_ci95"]["1"]
+    assert hi == 1.0
+    assert lo < 1.0, "사건 1건으로 「확실히 100%」라고 말하면 안 된다"
+
+
+def test_no_events_leaves_the_interval_null_not_zero():
+    gt = {"items": [{"clip_id": "c1", "targets": []}]}
+    out = candidate.score(_pred(rep=1.0, start=0.0, end=2.0), gt)
+
+    assert out["recall_at"]["1"] is None
+    assert out["recall_at_ci95"]["1"] is None
+
+
+def test_the_localization_axis_carries_an_interval_too():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0,
+                                event_type="CENTER_LINE_CROSSING"),
+                          _gt(100.0, violation_type="SIGNAL"))
+
+    assert out["localization_recall_at_ci95"]["1"] is not None
+    assert out["type_accuracy_given_localized_ci95"] is not None
+
+
+def test_type_accuracy_interval_is_null_when_nothing_was_localized():
+    out = candidate.score(_pred(rep=500.0, start=490.0, end=510.0), _gt(100.0))
+
+    assert out["type_accuracy_given_localized"] is None
+    assert out["type_accuracy_given_localized_ci95"] is None
+
+
+def test_by_type_carries_intervals_because_that_is_where_n_is_smallest():
+    """유형당 사건이 2건이면 recall 값이 사실상 아무것도 말하지 않는다."""
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E1", "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": 10.0},
+        {"event_id": "E2", "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": 40.0},
+    ]}]}
+    pred = [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": 9.0, "t_end_sec": 11.0, "representative_sec": 10.2,
+         "timeline_revision": 1, "event_type": "SIGNAL", "score": 0.9},
+    ]}]
+    out = candidate.score(pred, gt)
+
+    slot = out["by_type"]["SIGNAL"]
+    assert slot["recall_at"]["3"] == 0.5
+    lo, hi = slot["recall_at_ci95"]["3"]
+    assert hi - lo > 0.8, "2건짜리 구간은 거의 전 구간이어야 한다"
+
+
+def test_containment_rate_carries_an_interval():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0), _gt(100.0))
+    assert out["containment_rate_ci95"] is not None
+
+
+def test_not_run_keeps_every_interval_key():
+    block = candidate.not_run("NOT_RUN — 테스트")
+    assert block["recall_at_ci95"] == {"1": None, "3": None, "10": None}
+    assert block["localization_recall_at_ci95"] == {"1": None, "3": None, "10": None}
+    assert block["type_accuracy_given_localized_ci95"] is None
+    assert block["containment_rate_ci95"] is None

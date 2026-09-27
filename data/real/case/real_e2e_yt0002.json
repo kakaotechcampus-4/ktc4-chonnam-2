@@ -1,0 +1,54 @@
+{
+  "scenario_id": "real_e2e_monday_video",
+  "module": "case",
+  "generated_at": "2026-09-23T18:42:11+09:00",
+  "generated_by": "scripts/dump_real_video_caseview.py",
+  "source_video": "YT_0002_C00.mp4",
+  "case_views": [
+    {
+      "contract": "CaseView",
+      "contract_version": "case-view/v1.4",
+      "case_id": "case_monday_real_video",
+      "case_rev": 3,
+      "stage": "READY",
+      "user_reviewed": false,
+      "manifest_summary": {},
+      "hints": {},
+      "progress": [
+        {
+          "step": "file_intake",
+          "state": "DONE"
+        },
+        {
+          "step": "coarse_search",
+          "state": "DONE"
+        },
+        {
+          "step": "candidate_review",
+          "state": "DONE"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "candidate_784b10d8da834c3e9e9134fe6f88a9ec",
+          "at": null,
+          "at_provenance": "recording.timeline_relative_only",
+          "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",
+          "observed": "전방의 흰색 승용차가 주행 차로에서 좌측 황색 실선 중앙선을 향해 이동; 차량 좌측 바퀴 및 차체 일부가 황색 중앙선을 침범하여 반대편 차선 방향으로 넘어가는 모습 관찰; 중앙선은 황색 복선/실선 형태로 표시되어 있음",
+          "thumb_ref": null,
+          "selected": true,
+          "timeline_revision": 1,
+          "stale_revision": false,
+          "stale_revision_label_key": null,
+          "situation_confirmation": "NOT_ASKED"
+        }
+      ],
+      "evidence": null,
+      "requirements_evidence": null,
+      "requirements_package": null,
+      "package": null,
+      "running_jobs": [],
+      "notices": []
+    }
+  ]
+}

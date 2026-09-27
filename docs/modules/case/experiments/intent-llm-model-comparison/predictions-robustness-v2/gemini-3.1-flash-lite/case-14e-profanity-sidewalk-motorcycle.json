@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14e-profanity-sidewalk-motorcycle",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧 미착용 및 인도 주행\", \"location_hint\": \"인도\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자의 발화에서 차량 종류인 오토바이, 상황인 헬멧 미착용과 인도 주행, 장소인 인도가 명확히 추출됨.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 미착용 및 인도 주행",
+    "location_hint": "인도",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자의 발화에서 차량 종류인 오토바이, 상황인 헬멧 미착용과 인도 주행, 장소인 인도가 명확히 추출됨."
+  },
+  "latency_ms": 1680.4859000258148,
+  "prompt_tokens": 317,
+  "completion_tokens": 97,
+  "cost_krw": 0.341911,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

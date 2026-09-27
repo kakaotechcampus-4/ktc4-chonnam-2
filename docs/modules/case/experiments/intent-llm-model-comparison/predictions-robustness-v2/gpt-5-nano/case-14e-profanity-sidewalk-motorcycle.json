@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14e-profanity-sidewalk-motorcycle",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"오토바이\",\"situation_hint\":\"헬멧 미착용 및 인도 주행\",\"location_hint\":\"인도\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 '오토바이', '헬멧도 안 쓰고', '인도로 달리네'가 명시되어 있어 해당 필드를 채움. 시간 표현이 없고 prior_hints도 없으므로 time_hint와 correction_target를 null로 두었다. 이 발화는 관찰에 기반한 명시적 진술이므로 신뢰도는 high다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 미착용 및 인도 주행",
+    "location_hint": "인도",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 '오토바이', '헬멧도 안 쓰고', '인도로 달리네'가 명시되어 있어 해당 필드를 채움. 시간 표현이 없고 prior_hints도 없으므로 time_hint와 correction_target를 null로 두었다. 이 발화는 관찰에 기반한 명시적 진술이므로 신뢰도는 high다."
+  },
+  "latency_ms": 21041.445199982263,
+  "prompt_tokens": 799,
+  "completion_tokens": 2453,
+  "cost_krw": 1.554601,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"흰색과 은색 두 값이 번복된 상황을 '흰색 SUV 또는 은색'으로 모두 담아 정보 손실은 없으나, 마지막 값(은색) 채택도 아니고 단일 확정값도 아닌 애매한 병기 형태라 완전한 정답으로 보기 어렵다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경했어요'를 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없는 신규 발화이므로 정정 대상이 없다고 본 것이 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상 진술이 번복된 점을 근거로 confidence를 low로 낮춘 것은 expected_notes의 핵심 기준(high로 두면 안 됨)을 정확히 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "흰색과 은색 두 값이 번복된 상황을 '흰색 SUV 또는 은색'으로 모두 담아 정보 손실은 없으나, 마지막 값(은색) 채택도 아니고 단일 확정값도 아닌 애매한 병기 형태라 완전한 정답으로 보기 어렵다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경했어요'를 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없는 신규 발화이므로 정정 대상이 없다고 본 것이 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상 진술이 번복된 점을 근거로 confidence를 low로 낮춘 것은 expected_notes의 핵심 기준(high로 두면 안 됨)을 정확히 충족한다."
+    }
+  },
+  "latency_ms": 6904.302099952474,
+  "prompt_tokens": 2881,
+  "completion_tokens": 555,
+  "cost_krw": null,
+  "error": null
+}

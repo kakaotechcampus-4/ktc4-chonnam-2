@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11e-emoji-only",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"confidence\": {\"verdict\": \"correct\", \"reason\": \"confidence를 low로 설정하여 기준과 일치한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"correction_target을 null로 두어 기준과 일치한다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"location_hint를 null로 두어 기준과 일치한다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 자동차 이모지와 화난 이모지뿐인데 모델이 'road rage'라는 구체적 상황을 지어냈다. 이모지만으로 도로 위 분노 상황이라 단정할 근거가 없다.\"}, \"time_hint\": {\"verdict\": \"correct\", \"reason\": \"time_hint를 null로 두어 기준과 일치한다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문의 자동차 이모지를 그대로 vehicle_hint 값으로 넣었는데, 이는 차종/차량 정보를 특정할 근거가 없는 상태에서 구체적인 값을 채운 것으로 hallucination이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "time_hint를 null로 두어 기준과 일치한다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문의 자동차 이모지를 그대로 vehicle_hint 값으로 넣었는데, 이는 차종/차량 정보를 특정할 근거가 없는 상태에서 구체적인 값을 채운 것으로 hallucination이다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 자동차 이모지와 화난 이모지뿐인데 모델이 'road rage'라는 구체적 상황을 지어냈다. 이모지만으로 도로 위 분노 상황이라 단정할 근거가 없다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "location_hint를 null로 두어 기준과 일치한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "correction_target을 null로 두어 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "confidence를 low로 설정하여 기준과 일치한다."
+    }
+  },
+  "latency_ms": 6176.150299957953,
+  "prompt_tokens": 2720,
+  "completion_tokens": 509,
+  "cost_krw": null,
+  "error": null
+}

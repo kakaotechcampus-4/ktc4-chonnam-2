@@ -1,0 +1,22 @@
+{
+  "case_id": "case-02-partial-missing",
+  "scenario_tag": "일부_누락",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"갑자기 끼어들었다\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에 명시적으로 '흰색 SUV'가 언급되고 '갑자기 끼어들었다'는 상황 동작이 서술되어 있어, vehicle_hint와 situation_hint를 채움. 나머지 필드는 명시되지 않아 null로 두었고, prior_hints가 null이므로 correction_target도 null이다. 이 경우 두 필드의 정확성이 높으므로 confidence는 high.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "갑자기 끼어들었다",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 명시적으로 '흰색 SUV'가 언급되고 '갑자기 끼어들었다'는 상황 동작이 서술되어 있어, vehicle_hint와 situation_hint를 채움. 나머지 필드는 명시되지 않아 null로 두었고, prior_hints가 null이므로 correction_target도 null이다. 이 경우 두 필드의 정확성이 높으므로 confidence는 high."
+  },
+  "latency_ms": 12402.086700079963,
+  "prompt_tokens": 784,
+  "completion_tokens": 1758,
+  "cost_krw": 1.130206,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

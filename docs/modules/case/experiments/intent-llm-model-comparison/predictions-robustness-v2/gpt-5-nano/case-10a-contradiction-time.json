@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10a-contradiction-time",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤이었나... 아니다 19시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"흰색 SUV가 차로 변경했다\",\"location_hint\":\"상무중앙로에서\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"시간 표현이 모호하고 상충하는 부분(어제 18시쯤 vs 19시쯤)이 있어 정확한 시각을 확정하기 어렵다. 따라서 해당 시각은 low 신뢰도로 표기했고, prior_hints가 null이므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤이었나... 아니다 19시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "흰색 SUV가 차로 변경했다",
+    "location_hint": "상무중앙로에서",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간 표현이 모호하고 상충하는 부분(어제 18시쯤 vs 19시쯤)이 있어 정확한 시각을 확정하기 어렵다. 따라서 해당 시각은 low 신뢰도로 표기했고, prior_hints가 null이므로 정정 대상은 없다."
+  },
+  "latency_ms": 17769.676199997775,
+  "prompt_tokens": 805,
+  "completion_tokens": 2773,
+  "cost_krw": 1.7499369999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

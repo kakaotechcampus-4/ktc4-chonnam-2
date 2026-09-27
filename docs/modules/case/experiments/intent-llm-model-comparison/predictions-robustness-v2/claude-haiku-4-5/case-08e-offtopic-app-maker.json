@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08e-offtopic-app-maker",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자 발화가 교통위반 신고와 무관한 앱 제작자 정보에 대한 질문이다. 시간, 차량, 상황, 위치 정보가 전혀 언급되지 않았으므로 모든 필드는 null이며, confidence는 high(명확하게 관련 정보가 없음)로 표시한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자 발화가 교통위반 신고와 무관한 앱 제작자 정보에 대한 질문이다. 시간, 차량, 상황, 위치 정보가 전혀 언급되지 않았으므로 모든 필드는 null이며, confidence는 high(명확하게 관련 정보가 없음)로 표시한다."
+  },
+  "latency_ms": 2290.034499950707,
+  "prompt_tokens": 1825,
+  "completion_tokens": 256,
+  "cost_krw": 4.726322,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

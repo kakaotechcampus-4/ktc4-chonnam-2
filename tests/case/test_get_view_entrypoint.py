@@ -78,7 +78,7 @@ def test_get_view_with_real_adapter_reaches_ready_caseview():
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
 
-    real = RealAdapter(case_id="case_h001_getview_real", search_scope=scope, mock_root=MOCK_ROOT)
+    real = RealAdapter(case_id="case_h001_getview_real", case=case, search_scope=scope, mock_root=MOCK_ROOT)
     store.register(case, real)
 
     candidates = service.receive_search_candidates(case, real)

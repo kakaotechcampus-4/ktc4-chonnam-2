@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11c-extremely-long",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"입력문은 시간/차량/상황/장소에 대한 구체적 정보를 전혀 담고 있지 않는 반복적 허위/주술적 서술에 불과하다. 따라서 어떤 필드도 추출할 수 없고 전부 null로 둔다. prior_hints가 null이므로 정정 대상도 없다. 정보가 없어 판단 근거가 약하므로 confidence를 low로 처리했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "입력문은 시간/차량/상황/장소에 대한 구체적 정보를 전혀 담고 있지 않는 반복적 허위/주술적 서술에 불과하다. 따라서 어떤 필드도 추출할 수 없고 전부 null로 둔다. prior_hints가 null이므로 정정 대상도 없다. 정보가 없어 판단 근거가 약하므로 confidence를 low로 처리했다."
+  },
+  "latency_ms": 12591.761499992572,
+  "prompt_tokens": 951,
+  "completion_tokens": 1813,
+  "cost_krw": 1.176393,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

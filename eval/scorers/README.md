@@ -8,7 +8,8 @@ prediction + GT version + metric version → metrics.
 
 | 파일 | stage | 버전 |
 | --- | --- | --- |
-| `candidate.py` | Candidate | `s3` |
-| `classification.py` | Classification | `cl1` |
-| `plate.py` | Plate | `p1` |
-| `cost.py` | Cost (stage 무관, 항상 계산) | `c1` |
+| `candidate.py` | Candidate | `s5` |
+| `classification.py` | Classification | `cl3` |
+| `plate.py` | Plate | `p2` |
+| `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c3` |
+| `interval.py` | 비율 지표의 Wilson 95% 구간 (stage 무관 · 공용) | — |

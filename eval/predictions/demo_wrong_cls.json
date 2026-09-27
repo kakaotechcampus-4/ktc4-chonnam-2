@@ -7,9 +7,9 @@
     "manifest": "a_aihub",
     "manifest_version": "m1",
     "clip_rule_version": null,
-    "normalizer_version": "n1",
-    "code_commit": "486f64f",
-    "created_at": "2026-09-18T16:42:16.357099+09:00",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "created_at": "2026-09-20T14:19:36.647845+09:00",
     "contract_version": null,
     "processed_duration_sec": null
   },

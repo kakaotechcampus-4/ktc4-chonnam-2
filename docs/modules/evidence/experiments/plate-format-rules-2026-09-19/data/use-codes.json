@@ -1,0 +1,338 @@
+{
+ "schema": "plate-use-codes/v1",
+ "groups": [
+  {
+   "group": "비사업용 자가용·관용",
+   "source": "gosi-2025-121",
+   "ref": "고시 제5조제1항",
+   "codes": [
+    {
+     "code": "가",
+     "observed": 1628
+    },
+    {
+     "code": "나",
+     "observed": 1752
+    },
+    {
+     "code": "다",
+     "observed": 1591
+    },
+    {
+     "code": "라",
+     "observed": 1785
+    },
+    {
+     "code": "마",
+     "observed": 1644
+    },
+    {
+     "code": "거",
+     "observed": 1912
+    },
+    {
+     "code": "너",
+     "observed": 1925
+    },
+    {
+     "code": "더",
+     "observed": 1826
+    },
+    {
+     "code": "러",
+     "observed": 1538
+    },
+    {
+     "code": "머",
+     "observed": 1481
+    },
+    {
+     "code": "버",
+     "observed": 1830
+    },
+    {
+     "code": "서",
+     "observed": 1747
+    },
+    {
+     "code": "어",
+     "observed": 1929
+    },
+    {
+     "code": "저",
+     "observed": 1773
+    },
+    {
+     "code": "고",
+     "observed": 2082
+    },
+    {
+     "code": "노",
+     "observed": 1974
+    },
+    {
+     "code": "도",
+     "observed": 2160
+    },
+    {
+     "code": "로",
+     "observed": 1663
+    },
+    {
+     "code": "모",
+     "observed": 2132
+    },
+    {
+     "code": "보",
+     "observed": 1675
+    },
+    {
+     "code": "소",
+     "observed": 2036
+    },
+    {
+     "code": "오",
+     "observed": 1926
+    },
+    {
+     "code": "조",
+     "observed": 2088
+    },
+    {
+     "code": "구",
+     "observed": 1577
+    },
+    {
+     "code": "누",
+     "observed": 1929
+    },
+    {
+     "code": "두",
+     "observed": 2074
+    },
+    {
+     "code": "루",
+     "observed": 1430
+    },
+    {
+     "code": "무",
+     "observed": 1598
+    },
+    {
+     "code": "부",
+     "observed": 1946
+    },
+    {
+     "code": "수",
+     "observed": 1888
+    },
+    {
+     "code": "우",
+     "observed": 1820
+    },
+    {
+     "code": "주",
+     "observed": 1821
+    }
+   ]
+  },
+  {
+   "group": "자동차운수사업용 일반용",
+   "source": "gosi-2025-121",
+   "ref": "고시 제5조제1항",
+   "codes": [
+    {
+     "code": "바",
+     "observed": 18237
+    },
+    {
+     "code": "사",
+     "observed": 1018
+    },
+    {
+     "code": "아",
+     "observed": 5872
+    },
+    {
+     "code": "자",
+     "observed": 1003
+    },
+    {
+     "code": "배",
+     "observed": 1544
+    }
+   ]
+  },
+  {
+   "group": "대여사업용",
+   "source": "gosi-2025-121",
+   "ref": "고시 제5조제1항",
+   "codes": [
+    {
+     "code": "허",
+     "observed": 494
+    },
+    {
+     "code": "하",
+     "observed": 1472
+    },
+    {
+     "code": "호",
+     "observed": 1978
+    }
+   ]
+  },
+  {
+   "group": "이륜자동차 (별표13·14·15)",
+   "source": "gosi-2025-121",
+   "ref": "제2025-121호 개정문",
+   "codes": [
+    {
+     "code": "가",
+     "observed": 2
+    },
+    {
+     "code": "거",
+     "observed": 0
+    },
+    {
+     "code": "나",
+     "observed": 11
+    },
+    {
+     "code": "너",
+     "observed": 0
+    },
+    {
+     "code": "다",
+     "observed": 11
+    },
+    {
+     "code": "더",
+     "observed": 0
+    },
+    {
+     "code": "라",
+     "observed": 1
+    },
+    {
+     "code": "러",
+     "observed": 0
+    },
+    {
+     "code": "마",
+     "observed": 7
+    },
+    {
+     "code": "머",
+     "observed": 0
+    },
+    {
+     "code": "바",
+     "observed": 27
+    },
+    {
+     "code": "버",
+     "observed": 0
+    },
+    {
+     "code": "사",
+     "observed": 96
+    },
+    {
+     "code": "서",
+     "observed": 0
+    },
+    {
+     "code": "아",
+     "observed": 270
+    },
+    {
+     "code": "어",
+     "observed": 0
+    },
+    {
+     "code": "자",
+     "observed": 71
+    },
+    {
+     "code": "저",
+     "observed": 0
+    },
+    {
+     "code": "차",
+     "observed": 60
+    },
+    {
+     "code": "처",
+     "observed": 0
+    },
+    {
+     "code": "카",
+     "observed": 82
+    },
+    {
+     "code": "커",
+     "observed": 0
+    },
+    {
+     "code": "타",
+     "observed": 24
+    },
+    {
+     "code": "터",
+     "observed": 0
+    },
+    {
+     "code": "파",
+     "observed": 15
+    },
+    {
+     "code": "퍼",
+     "observed": 0
+    },
+    {
+     "code": "하",
+     "observed": 13
+    },
+    {
+     "code": "허",
+     "observed": 0
+    }
+   ]
+  },
+  {
+   "group": "군용",
+   "source": "aihub-observed",
+   "ref": null,
+   "codes": [
+    {
+     "code": "공",
+     "observed": 0
+    },
+    {
+     "code": "국",
+     "observed": 0
+    },
+    {
+     "code": "육",
+     "observed": 16
+    },
+    {
+     "code": "합",
+     "observed": 0
+    },
+    {
+     "code": "해",
+     "observed": 0
+    }
+   ]
+  }
+ ],
+ "observed_not_in_any_list": {
+  "시": 2,
+  "지": 1,
+  "히": 1
+ },
+ "car_whitelist_size": 40
+}

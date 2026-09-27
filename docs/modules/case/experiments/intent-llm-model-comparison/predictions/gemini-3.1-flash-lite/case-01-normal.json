@@ -1,0 +1,22 @@
+{
+  "case_id": "case-01-normal",
+  "scenario_tag": "정상_단서",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"백색 실선 구간에서 차로 변경\",\n  \"location_hint\": \"상무중앙로 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 장소, 차량 정보, 상황이 모두 명확하게 진술되어 높은 신뢰도로 추출함.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 장소, 차량 정보, 상황이 모두 명확하게 진술되어 높은 신뢰도로 추출함."
+  },
+  "latency_ms": 2681.937100016512,
+  "prompt_tokens": 323,
+  "completion_tokens": 113,
+  "cost_krw": 0.38071900000000003,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

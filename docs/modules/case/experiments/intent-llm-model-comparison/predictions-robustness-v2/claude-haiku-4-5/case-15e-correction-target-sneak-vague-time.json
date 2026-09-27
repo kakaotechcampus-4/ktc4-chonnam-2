@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"[\\\"situation_hint\\\", \\\"time_hint\\\"]\", \"confidence\": \"low\", \"reasoning\": \"사용자가 상황을 명확히 정정했으므로 situation_hint는 high confidence로 변경하려 했으나, 시간은 \\\"19시쯤...인 것 같기도\\\"라고 불확실하게 표현했고 이전 \\\"어제 18시\\\"와 충돌하므로 전체 confidence를 low로 평가했습니다. 정정 대상으로 situation_hint(차로 변경 → 중앙선 침범)와 time_hint(어제 18시 → 19시쯤)을 표시했습니다.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "[\"situation_hint\", \"time_hint\"]",
+    "confidence": "low",
+    "reasoning": "사용자가 상황을 명확히 정정했으므로 situation_hint는 high confidence로 변경하려 했으나, 시간은 \"19시쯤...인 것 같기도\"라고 불확실하게 표현했고 이전 \"어제 18시\"와 충돌하므로 전체 confidence를 low로 평가했습니다. 정정 대상으로 situation_hint(차로 변경 → 중앙선 침범)와 time_hint(어제 18시 → 19시쯤)을 표시했습니다."
+  },
+  "latency_ms": 2846.974999993108,
+  "prompt_tokens": 1938,
+  "completion_tokens": 327,
+  "cost_krw": 5.43876,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

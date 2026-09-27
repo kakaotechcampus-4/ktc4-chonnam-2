@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16e-new-incident-not-correction-5",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"버스\", \"situation_hint\": \"정류장 아닌 곳에서 급정거\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"완전 새로운 건\\\"이라고 명시했으므로 이전 신고가 아닌 새로운 사건을 진술하는 것으로 판단됨. vehicle_hint는 \\\"버스\\\"로 명확하게 언급되었고, situation_hint는 \\\"정류장 아닌 곳에서 급정거\\\"라고 구체적으로 설명됨. 시간과 장소는 이번 발화에서 언급되지 않아 null로 처리. correction_target은 new case이므로 null.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "버스",
+    "situation_hint": "정류장 아닌 곳에서 급정거",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"완전 새로운 건\"이라고 명시했으므로 이전 신고가 아닌 새로운 사건을 진술하는 것으로 판단됨. vehicle_hint는 \"버스\"로 명확하게 언급되었고, situation_hint는 \"정류장 아닌 곳에서 급정거\"라고 구체적으로 설명됨. 시간과 장소는 이번 발화에서 언급되지 않아 null로 처리. correction_target은 new case이므로 null."
+  },
+  "latency_ms": 2646.625899942592,
+  "prompt_tokens": 1915,
+  "completion_tokens": 321,
+  "cost_krw": 5.358082,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

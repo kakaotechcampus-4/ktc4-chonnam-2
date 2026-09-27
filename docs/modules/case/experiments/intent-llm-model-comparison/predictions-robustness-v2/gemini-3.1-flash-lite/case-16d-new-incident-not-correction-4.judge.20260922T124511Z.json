@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화의 '어제 밤에 본 또 다른 사고'를 근거로 time_hint를 '어제 밤'으로 새로 채웠고 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 사고의 차량인 '택시'를 정확히 반영했고 이전 '흰색 SUV'를 덮어쓰지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"정류장에서 승객 안전벨트를 안 채우고 출발한 상황을 새 발화 기준으로 정확히 채웠고 이전 '차로 변경'을 가져오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'그거 말고'는 완전히 새로운 사고로의 전환 신호인데, 모델은 이를 time_hint에 대한 correction으로 오인해 correction_target='time_hint'를 지어냈다. 기준상 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"confidence 값 자체는 'high'로 표기되었으나 correction_target을 잘못 판단한 상황에서 매겨진 것이라 신뢰도 판단의 근거가 틀렸다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화의 '어제 밤에 본 또 다른 사고'를 근거로 time_hint를 '어제 밤'으로 새로 채웠고 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 사고의 차량인 '택시'를 정확히 반영했고 이전 '흰색 SUV'를 덮어쓰지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "정류장에서 승객 안전벨트를 안 채우고 출발한 상황을 새 발화 기준으로 정확히 채웠고 이전 '차로 변경'을 가져오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'그거 말고'는 완전히 새로운 사고로의 전환 신호인데, 모델은 이를 time_hint에 대한 correction으로 오인해 correction_target='time_hint'를 지어냈다. 기준상 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "confidence 값 자체는 'high'로 표기되었으나 correction_target을 잘못 판단한 상황에서 매겨진 것이라 신뢰도 판단의 근거가 틀렸다."
+    }
+  },
+  "latency_ms": 7756.678200094029,
+  "prompt_tokens": 2967,
+  "completion_tokens": 659,
+  "cost_krw": null,
+  "error": null
+}

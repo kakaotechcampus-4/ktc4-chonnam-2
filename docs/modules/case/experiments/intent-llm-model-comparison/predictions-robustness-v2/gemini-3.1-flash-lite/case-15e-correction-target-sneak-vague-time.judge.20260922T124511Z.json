@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 표현인데, 모델이 이를 '19시쯤'이라는 구체적 값으로 확정해버렸다. 불확실한 표현은 낮은 confidence로 남기거나 정정하지 않아야 하는데 구체값으로 지어냈으므로 hallucinated다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에 차량 관련 언급이 전혀 없는데 prior_hints의 값을 이어받지 않고 null로 지웠다 - 언급되지 않은 필드는 이전 값을 유지해야 하는데 null로 지운 것은 정보 손실이다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '신호위반이 아니라 중앙선 침범'이라고 명확히 정정했고, 모델이 이를 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에 위치 관련 언급이 없는데 prior_hints의 '상무중앙로'를 유지하지 않고 null로 지웠다 - 언급 안 된 필드는 이전 값을 보존해야 한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"situation_hint가 명확한 정정 대상으로 지목되었고, 이는 원문과 expected_notes 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"situation_hint 정정은 명확하므로 confidence를 낮게(low) 설정한 것은 시간 정정의 모호함만 반영한 것으로, 명확한 situation 정정과 모호한 time 정정이 섞여 있어 전체를 low로 뭉뚱그린 것은 부분적으로만 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 표현인데, 모델이 이를 '19시쯤'이라는 구체적 값으로 확정해버렸다. 불확실한 표현은 낮은 confidence로 남기거나 정정하지 않아야 하는데 구체값으로 지어냈으므로 hallucinated다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에 차량 관련 언급이 전혀 없는데 prior_hints의 값을 이어받지 않고 null로 지웠다 - 언급되지 않은 필드는 이전 값을 유지해야 하는데 null로 지운 것은 정보 손실이다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '신호위반이 아니라 중앙선 침범'이라고 명확히 정정했고, 모델이 이를 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에 위치 관련 언급이 없는데 prior_hints의 '상무중앙로'를 유지하지 않고 null로 지웠다 - 언급 안 된 필드는 이전 값을 보존해야 한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "situation_hint가 명확한 정정 대상으로 지목되었고, 이는 원문과 expected_notes 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "situation_hint 정정은 명확하므로 confidence를 낮게(low) 설정한 것은 시간 정정의 모호함만 반영한 것으로, 명확한 situation 정정과 모호한 time 정정이 섞여 있어 전체를 low로 뭉뚱그린 것은 부분적으로만 타당하다."
+    }
+  },
+  "latency_ms": 8378.8055999903,
+  "prompt_tokens": 3037,
+  "completion_tokens": 774,
+  "cost_krw": null,
+  "error": null
+}

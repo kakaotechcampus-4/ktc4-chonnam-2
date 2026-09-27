@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13b-korean-english-mix",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 6시쯤\", \"vehicle_hint\": \"white SUV\", \"situation_hint\": \"lane change\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 시간(어제 6시쯤), 차량(white SUV), 상황(lane change), 위치(상무중앙로)를 명확하게 명시했다. prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 6시쯤",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "lane change",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 시간(어제 6시쯤), 차량(white SUV), 상황(lane change), 위치(상무중앙로)를 명확하게 명시했다. prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 1914.6631000330672,
+  "prompt_tokens": 1838,
+  "completion_tokens": 233,
+  "cost_krw": 4.571032,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

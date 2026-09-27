@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-06-location-ambiguous",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리는 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 언급이 없으므로 null 처리는 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 사고 상황에 대한 구체적 언급이 없으므로 null 처리는 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 모호한 표현 '집 근처 사거리'를 그대로 담았고, 구체적 지명을 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null 처리가 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"위치가 불명확하다고 스스로 밝힌 점을 반영해 low로 설정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리는 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 언급이 없으므로 null 처리는 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 사고 상황에 대한 구체적 언급이 없으므로 null 처리는 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 모호한 표현 '집 근처 사거리'를 그대로 담았고, 구체적 지명을 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null 처리가 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "위치가 불명확하다고 스스로 밝힌 점을 반영해 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 7949.451999971643,
+  "prompt_tokens": 2413,
+  "completion_tokens": 468,
+  "cost_krw": null,
+  "error": null
+}

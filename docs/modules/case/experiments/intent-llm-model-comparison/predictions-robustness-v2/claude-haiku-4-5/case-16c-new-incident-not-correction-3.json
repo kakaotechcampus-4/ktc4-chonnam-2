@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 세단\", \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"vehicle_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"다른 건데요\\\"라며 새로운 사건을 언급했으므로, 이전 정보와 다른 내용만 추출했습니다. 차량이 흰색 SUV에서 검은색 세단으로, 위반 상황이 차로변경에서 중앙선 침범으로 명확히 변경되었으므로 vehicle_hint와 situation_hint를 정정합니다. 시간과 장소는 이번 발화에서 언급되지 않아 null로 처리했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 세단",
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"다른 건데요\"라며 새로운 사건을 언급했으므로, 이전 정보와 다른 내용만 추출했습니다. 차량이 흰색 SUV에서 검은색 세단으로, 위반 상황이 차로변경에서 중앙선 침범으로 명확히 변경되었으므로 vehicle_hint와 situation_hint를 정정합니다. 시간과 장소는 이번 발화에서 언급되지 않아 null로 처리했습니다."
+  },
+  "latency_ms": 2800.61629996635,
+  "prompt_tokens": 1890,
+  "completion_tokens": 320,
+  "cost_krw": 5.31242,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

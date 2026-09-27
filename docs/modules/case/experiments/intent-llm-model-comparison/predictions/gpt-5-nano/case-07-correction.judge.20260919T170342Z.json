@@ -1,0 +1,38 @@
+{
+  "run_id": "20260919T170342Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-07-correction",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 시간 언급이 없으므로 null로 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화의 '은색 세단'을 정확히 반영하여 갱신했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 상황 언급이 없으므로 null로 둔 것이 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 위치 언급이 없으므로 null로 둔 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"차량 정보를 정정하는 발화이므로 vehicle_hint로 정확히 지정했다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정정 내용이 명확하므로 high로 판정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 시간 언급이 없으므로 null로 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화의 '은색 세단'을 정확히 반영하여 갱신했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 상황 언급이 없으므로 null로 둔 것이 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 위치 언급이 없으므로 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "차량 정보를 정정하는 발화이므로 vehicle_hint로 정확히 지정했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정정 내용이 명확하므로 high로 판정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 5365.394199965522,
+  "prompt_tokens": 2649,
+  "completion_tokens": 440,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10d-contradiction-time-2",
+  "scenario_tag": "모순_정보",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"21시\",\n  \"vehicle_hint\": \"오토바이\",\n  \"situation_hint\": \"신호위반\",\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"시간을 20시에서 21시로 고쳐 말하며 '아마', '~였던 거 같은데'라며 불확실하게 표현했기 때문에 confidence를 low로 책정했습니다. prior_hints가 없으므로 발화 내 자체 수정이어도 correction_target은 null입니다.\"\n}",
+  "parsed": {
+    "time_hint": "21시",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간을 20시에서 21시로 고쳐 말하며 '아마', '~였던 거 같은데'라며 불확실하게 표현했기 때문에 confidence를 low로 책정했습니다. prior_hints가 없으므로 발화 내 자체 수정이어도 correction_target은 null입니다."
+  },
+  "latency_ms": 3400.599400047213,
+  "prompt_tokens": 326,
+  "completion_tokens": 462,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

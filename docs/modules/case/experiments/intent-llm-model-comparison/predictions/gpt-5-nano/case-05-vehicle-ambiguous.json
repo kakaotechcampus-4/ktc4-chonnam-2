@@ -1,0 +1,22 @@
+{
+  "case_id": "case-05-vehicle-ambiguous",
+  "scenario_tag": "차량_애매",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"SUV\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화에서 차량 유형이 'SUV'였던 것으로 보인다고 표현하나 '것 같아요'와 같은 불확실한 표현이 있어 확신이 낮다. 따라서 vehicle_hint를 'SUV'로 표기하고 색상 등 다른 정보는 언급되지 않아 null 처리한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "SUV",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에서 차량 유형이 'SUV'였던 것으로 보인다고 표현하나 '것 같아요'와 같은 불확실한 표현이 있어 확신이 낮다. 따라서 vehicle_hint를 'SUV'로 표기하고 색상 등 다른 정보는 언급되지 않아 null 처리한다."
+  },
+  "latency_ms": 7925.327499979176,
+  "prompt_tokens": 788,
+  "completion_tokens": 1019,
+  "cost_krw": 0.6804589999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10a-contradiction-time",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"시간이 \\\"18시쯤\\\"에서 \\\"19시쯤\\\"으로 수정되었으나 사용자 스스로 확신하지 못하는 표현(\\\"었나... 아니다\\\")을 보이고 있어 confidence를 low로 표시했다. 장소, 차량 색상과 유형, 상황은 명확하게 진술되었다.\"}",
+  "parsed": {
+    "time_hint": "어제 19시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간이 \"18시쯤\"에서 \"19시쯤\"으로 수정되었으나 사용자 스스로 확신하지 못하는 표현(\"었나... 아니다\")을 보이고 있어 confidence를 low로 표시했다. 장소, 차량 색상과 유형, 상황은 명확하게 진술되었다."
+  },
+  "latency_ms": 2646.9206999754533,
+  "prompt_tokens": 1857,
+  "completion_tokens": 274,
+  "cost_krw": 4.912042,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

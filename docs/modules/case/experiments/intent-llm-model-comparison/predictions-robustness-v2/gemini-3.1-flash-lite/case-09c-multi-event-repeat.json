@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09c-multi-event-repeat",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"방금 전\", \"vehicle_hint\": \"택시\", \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 방금 전 발생한 택시의 중앙선 침범 상황을 명확히 진술하였습니다.\"}",
+  "parsed": {
+    "time_hint": "방금 전",
+    "vehicle_hint": "택시",
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 방금 전 발생한 택시의 중앙선 침범 상황을 명확히 진술하였습니다."
+  },
+  "latency_ms": 1512.576000066474,
+  "prompt_tokens": 313,
+  "completion_tokens": 80,
+  "cost_krw": 0.30158,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

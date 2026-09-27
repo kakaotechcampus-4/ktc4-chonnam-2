@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08a-offtopic-toilet",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자 발화는 교통위반 사고 상황과 무관한 일상적 질문입니다. 교통위반 신고 준비와 관련된 어떤 정보도 포함하지 않으므로, 모든 필드는 null입니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자 발화는 교통위반 사고 상황과 무관한 일상적 질문입니다. 교통위반 신고 준비와 관련된 어떤 정보도 포함하지 않으므로, 모든 필드는 null입니다."
+  },
+  "latency_ms": 2348.113700048998,
+  "prompt_tokens": 1818,
+  "completion_tokens": 225,
+  "cost_krw": 4.479696,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

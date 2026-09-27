@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 정보가 없으므로 null 처리, 이전 값(어제 18시)을 끌어오지 않아 올바름.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 언급된 '검은색 세단'을 정확히 추출했고 이전 흰색 SUV를 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"발화에 '중앙선 침범'이라는 상황이 명시되어 있으나 모델이 null로 처리해 놓쳤다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 정보가 없으므로 null 처리, 이전 상무중앙로를 끌어오지 않아 올바름.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'다른 건데요'라는 명시적 전환 신호로 새로운 사고를 설명한 것인데, 모델이 이를 vehicle_hint에 대한 correction으로 오인해 correction_target을 채웠다. expected는 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"correction_target을 잘못 채운 상태에서의 confidence이므로 그 판단 맥락 자체가 틀렸다; 진술의 명확성 자체는 인정되나 전체 판단 틀이 잘못되어 부분 정답으로 처리.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 정보가 없으므로 null 처리, 이전 값(어제 18시)을 끌어오지 않아 올바름."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 언급된 '검은색 세단'을 정확히 추출했고 이전 흰색 SUV를 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "발화에 '중앙선 침범'이라는 상황이 명시되어 있으나 모델이 null로 처리해 놓쳤다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 정보가 없으므로 null 처리, 이전 상무중앙로를 끌어오지 않아 올바름."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'다른 건데요'라는 명시적 전환 신호로 새로운 사고를 설명한 것인데, 모델이 이를 vehicle_hint에 대한 correction으로 오인해 correction_target을 채웠다. expected는 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "correction_target을 잘못 채운 상태에서의 confidence이므로 그 판단 맥락 자체가 틀렸다; 진술의 명확성 자체는 인정되나 전체 판단 틀이 잘못되어 부분 정답으로 처리."
+    }
+  },
+  "latency_ms": 7659.853400080465,
+  "prompt_tokens": 2982,
+  "completion_tokens": 627,
+  "cost_krw": null,
+  "error": null
+}

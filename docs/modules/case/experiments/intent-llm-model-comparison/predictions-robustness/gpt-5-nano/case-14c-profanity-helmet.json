@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14c-profanity-helmet",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"방금\",\"vehicle_hint\":\"오토바이\",\"situation_hint\":\"헬멧 미착용\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"상대 시간 표현 '방금'을 원문대로 time_hint에 반영했다. 발화에서 '오토바이'와 '헬멧도 안 쓰고'를 통해 차량 및 미착용 상황을 직접 추출했고 위치 정보는 언급이 없어 null로 처리했다. prior_hints가 null이므로 정정 대상도 없고, 표현이 명확하므로 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "상대 시간 표현 '방금'을 원문대로 time_hint에 반영했다. 발화에서 '오토바이'와 '헬멧도 안 쓰고'를 통해 차량 및 미착용 상황을 직접 추출했고 위치 정보는 언급이 없어 null로 처리했다. prior_hints가 null이므로 정정 대상도 없고, 표현이 명확하므로 confidence를 high로 판단했다."
+  },
+  "latency_ms": 14323.756499914452,
+  "prompt_tokens": 794,
+  "completion_tokens": 1879,
+  "cost_krw": 1.204655,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

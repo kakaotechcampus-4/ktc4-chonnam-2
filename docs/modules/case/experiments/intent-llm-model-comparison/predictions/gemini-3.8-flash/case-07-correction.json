@@ -1,0 +1,22 @@
+{
+  "case_id": "case-07-correction",
+  "scenario_tag": "잘못_입력_후_correction",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"은색 세단\",\"situation_hint\":null,\"location_hint\":null,\"correction_target\":\"vehicle_hint\",\"confidence\":\"high\",\"reasoning\":\"사용자가 이전 차량 정보를 부정하고 '은색 세단'으로 명확히 정정했으므로 vehicle_hint를 추출하고 correction_target을 vehicle_hint로 지정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 세단",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 이전 차량 정보를 부정하고 '은색 세단'으로 명확히 정정했으므로 vehicle_hint를 추출하고 correction_target을 vehicle_hint로 지정했습니다."
+  },
+  "latency_ms": 2653.921299963258,
+  "prompt_tokens": 365,
+  "completion_tokens": 319,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-04-relative-time",
+  "scenario_tag": "상대시간_표현",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"30분 전\", \"vehicle_hint\": null, \"situation_hint\": \"사고 날 뻔함\", \"location_hint\": \"여기\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"시간과 상황은 명확하나 장소를 '여기'라는 지시대명사로 표현하여 구체적인 위치 정보가 부족하고, 사건 발생 위치를 특정하기 어려워 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": "30분 전",
+    "vehicle_hint": null,
+    "situation_hint": "사고 날 뻔함",
+    "location_hint": "여기",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간과 상황은 명확하나 장소를 '여기'라는 지시대명사로 표현하여 구체적인 위치 정보가 부족하고, 사건 발생 위치를 특정하기 어려워 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2992.9248000262305,
+  "prompt_tokens": 309,
+  "completion_tokens": 102,
+  "cost_krw": 0.350286,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

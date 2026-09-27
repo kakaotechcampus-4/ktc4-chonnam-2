@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13c-japanese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"昨日18時ごろ\", \"vehicle_hint\": \"白いSUV\", \"situation_hint\": \"車線変更\", \"location_hint\": \"商武中央路\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"発話から時間（昨日18時ごろ）、車両（白いSUV）、状況（車線変更）、場所（商武中央路）が明確に述べられている。相対時間表現「昨日」をそのまま保持し、prior_hintsがないため定正対象はない。\"}",
+  "parsed": {
+    "time_hint": "昨日18時ごろ",
+    "vehicle_hint": "白いSUV",
+    "situation_hint": "車線変更",
+    "location_hint": "商武中央路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "発話から時間（昨日18時ごろ）、車両（白いSUV）、状況（車線変更）、場所（商武中央路）が明確に述べられている。相対時間表現「昨日」をそのまま保持し、prior_hintsがないため定正対象はない。"
+  },
+  "latency_ms": 2562.7433999907225,
+  "prompt_tokens": 1837,
+  "completion_tokens": 251,
+  "cost_krw": 4.706526,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10c-contradiction-location",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"차\", \"situation_hint\": null, \"location_hint\": \"죽전로\", \"correction_target\": \"location_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 처음 \\\"상무중앙로\\\"라고 했다가 \\\"생각해보니 죽전로였던 것 같아\\\"로 정정했으므로 correction_target을 location_hint로 설정했습니다. 그러나 \\\"것 같아\\\"라는 표현으로 확실하지 않으므로 confidence는 low입니다. 차량은 명확히 언급되었습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "차",
+    "situation_hint": null,
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 처음 \"상무중앙로\"라고 했다가 \"생각해보니 죽전로였던 것 같아\"로 정정했으므로 correction_target을 location_hint로 설정했습니다. 그러나 \"것 같아\"라는 표현으로 확실하지 않으므로 confidence는 low입니다. 차량은 명확히 언급되었습니다."
+  },
+  "latency_ms": 2623.8554000156,
+  "prompt_tokens": 1854,
+  "completion_tokens": 270,
+  "cost_krw": 4.877027999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

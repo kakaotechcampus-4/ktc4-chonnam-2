@@ -1,0 +1,283 @@
+{
+  "source_file": "paddle_results.json",
+  "source_sha256": "9fc4e2531e8a89016b54630acb47c93febf4be854f8826ecc75c6b65ca98c1f8",
+  "source_note": "레포 밖 원본. 경로는 같은 폴더 README.md 참조",
+  "executed_at": "2026-09-15",
+  "taxonomy": "docs/modules/readout/decisions/failure-taxonomy.md",
+  "tagging": [
+    {
+      "video": "20260806_061434_EVT_1",
+      "condition": "주행 · 원거리 · 횡방향 · 터널 진입",
+      "visual_truth": null,
+      "frames_ocr": 5,
+      "frames_detected": 0,
+      "distinct_texts": [],
+      "unanimous": false,
+      "exact_frames": 0,
+      "frames": [
+        {
+          "frame": "frame_04_003.47s.jpg",
+          "candidates": 0,
+          "text": null,
+          "confidence": null,
+          "bbox_xywh": null,
+          "plate_px_height": null,
+          "illegal_letters": [],
+          "verdict": "NOT_DETECTED"
+        },
+        {
+          "frame": "frame_08_006.95s.jpg",
+          "candidates": 0,
+          "text": null,
+          "confidence": null,
+          "bbox_xywh": null,
+          "plate_px_height": null,
+          "illegal_letters": [],
+          "verdict": "NOT_DETECTED"
+        },
+        {
+          "frame": "frame_11_009.55s.jpg",
+          "candidates": 0,
+          "text": null,
+          "confidence": null,
+          "bbox_xywh": null,
+          "plate_px_height": null,
+          "illegal_letters": [],
+          "verdict": "NOT_DETECTED"
+        },
+        {
+          "frame": "frame_14_012.16s.jpg",
+          "candidates": 0,
+          "text": null,
+          "confidence": null,
+          "bbox_xywh": null,
+          "plate_px_height": null,
+          "illegal_letters": [],
+          "verdict": "NOT_DETECTED"
+        },
+        {
+          "frame": "frame_17_014.76s.jpg",
+          "candidates": 0,
+          "text": null,
+          "confidence": null,
+          "bbox_xywh": null,
+          "plate_px_height": null,
+          "illegal_letters": [],
+          "verdict": "NOT_DETECTED"
+        }
+      ],
+      "tagging": {
+        "would_be_runtime_kind": "PLATE_DETECTION",
+        "kind_registered": true,
+        "would_be_failure_code": null,
+        "code_registered": false,
+        "post_hoc": null,
+        "would_be_abstain_reason": null,
+        "open_question": "PLATE_DETECTION에 대응하는 failure.code가 taxonomy 「code」 표에 없다. 등재된 code는 INFRA 3종뿐인데 contract-readout-run.md §4 예시는 NO_PLATE_REGION_FOUND를 쓴다 — 미등재 값이다. Owner 결정 필요.",
+        "note": "검출 0/5. 거리·해상도 문제인지 detector 문제인지는 이 실행으로 분리되지 않는다."
+      }
+    },
+    {
+      "video": "20260806_192353_EVT_1",
+      "condition": "정지 · 정면 · 백색 1줄",
+      "visual_truth": "23두4874",
+      "frames_ocr": 5,
+      "frames_detected": 5,
+      "distinct_texts": [
+        "2354874",
+        "23두4874",
+        "23투4874"
+      ],
+      "unanimous": false,
+      "exact_frames": 3,
+      "frames": [
+        {
+          "frame": "frame_02_001.74s.jpg",
+          "candidates": 2,
+          "text": "23두4874",
+          "confidence": 0.9724,
+          "bbox_xywh": [
+            929,
+            838,
+            151,
+            39
+          ],
+          "plate_px_height": 39,
+          "illegal_letters": [],
+          "verdict": "EXACT"
+        },
+        {
+          "frame": "frame_07_006.08s.jpg",
+          "candidates": 1,
+          "text": "2354874",
+          "confidence": 0.9071,
+          "bbox_xywh": [
+            931,
+            838,
+            149,
+            40
+          ],
+          "plate_px_height": 40,
+          "illegal_letters": [],
+          "verdict": "MISMATCH"
+        },
+        {
+          "frame": "frame_12_010.42s.jpg",
+          "candidates": 1,
+          "text": "23두4874",
+          "confidence": 0.9778,
+          "bbox_xywh": [
+            930,
+            838,
+            150,
+            40
+          ],
+          "plate_px_height": 40,
+          "illegal_letters": [],
+          "verdict": "EXACT"
+        },
+        {
+          "frame": "frame_17_014.76s.jpg",
+          "candidates": 3,
+          "text": "23두4874",
+          "confidence": 0.98,
+          "bbox_xywh": [
+            930,
+            836,
+            151,
+            44
+          ],
+          "plate_px_height": 44,
+          "illegal_letters": [],
+          "verdict": "EXACT"
+        },
+        {
+          "frame": "frame_22_019.11s.jpg",
+          "candidates": 1,
+          "text": "23투4874",
+          "confidence": 0.944,
+          "bbox_xywh": [
+            930,
+            837,
+            151,
+            43
+          ],
+          "plate_px_height": 43,
+          "illegal_letters": [
+            "투"
+          ],
+          "verdict": "MISMATCH"
+        }
+      ],
+      "tagging": {
+        "would_be_runtime_kind": "PLATE_RECOGNITION",
+        "kind_registered": true,
+        "would_be_failure_code": null,
+        "code_registered": false,
+        "post_hoc": null,
+        "would_be_abstain_reason": "FRAME_DISAGREEMENT",
+        "open_question": null,
+        "note": "프레임 간 불일치가 있어 현재 구현의 만장일치 consensus가 abstain으로 막는다. PLATE_RECOGNITION은 프레임 단위 분류이고 run 단위 결과는 정상 보류다."
+      }
+    },
+    {
+      "video": "20260810_175721_EVT_1",
+      "condition": "정지 · 근거리 · 황색 2줄",
+      "visual_truth": null,
+      "frames_ocr": 5,
+      "frames_detected": 5,
+      "distinct_texts": [
+        "바5215"
+      ],
+      "unanimous": true,
+      "exact_frames": 0,
+      "frames": [
+        {
+          "frame": "frame_02_001.74s.jpg",
+          "candidates": 2,
+          "text": "바5215",
+          "confidence": 0.9992,
+          "bbox_xywh": [
+            931,
+            839,
+            102,
+            32
+          ],
+          "plate_px_height": 32,
+          "illegal_letters": [],
+          "verdict": "TRUTH_UNKNOWN"
+        },
+        {
+          "frame": "frame_07_006.08s.jpg",
+          "candidates": 2,
+          "text": "바5215",
+          "confidence": 0.9979,
+          "bbox_xywh": [
+            931,
+            837,
+            102,
+            35
+          ],
+          "plate_px_height": 35,
+          "illegal_letters": [],
+          "verdict": "TRUTH_UNKNOWN"
+        },
+        {
+          "frame": "frame_12_010.42s.jpg",
+          "candidates": 2,
+          "text": "바5215",
+          "confidence": 0.9991,
+          "bbox_xywh": [
+            929,
+            838,
+            104,
+            35
+          ],
+          "plate_px_height": 35,
+          "illegal_letters": [],
+          "verdict": "TRUTH_UNKNOWN"
+        },
+        {
+          "frame": "frame_17_014.76s.jpg",
+          "candidates": 1,
+          "text": "바5215",
+          "confidence": 0.9994,
+          "bbox_xywh": [
+            929,
+            837,
+            104,
+            35
+          ],
+          "plate_px_height": 35,
+          "illegal_letters": [],
+          "verdict": "TRUTH_UNKNOWN"
+        },
+        {
+          "frame": "frame_22_019.11s.jpg",
+          "candidates": 2,
+          "text": "바5215",
+          "confidence": 0.9992,
+          "bbox_xywh": [
+            931,
+            839,
+            101,
+            32
+          ],
+          "plate_px_height": 32,
+          "illegal_letters": [],
+          "verdict": "TRUTH_UNKNOWN"
+        }
+      ],
+      "tagging": {
+        "would_be_runtime_kind": null,
+        "kind_registered": null,
+        "would_be_failure_code": null,
+        "code_registered": null,
+        "post_hoc": "OVERCONFIDENT",
+        "would_be_abstain_reason": null,
+        "open_question": "2줄 번호판의 아랫줄만 만장일치·고신뢰로 읽었다. 영역을 못 찾은 것도(PLATE_DETECTION) 문자를 잘못 읽은 것도(PLATE_RECOGNITION) 아닌 「영역을 부분만 잡음」이며 taxonomy에 해당 값이 없다. Owner 결정 필요.",
+        "note": "현재 api.py는 만장일치 + 고신뢰이므로 abstained=false · status=OK로 확정한다. 완전성 검사가 없어 막히지 않는다."
+      }
+    }
+  ]
+}

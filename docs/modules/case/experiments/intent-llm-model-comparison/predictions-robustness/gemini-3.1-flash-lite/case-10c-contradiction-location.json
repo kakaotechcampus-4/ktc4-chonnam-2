@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10c-contradiction-location",
+  "scenario_tag": "모순_정보",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": \"차로 변경\",\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 기존의 상무중앙로를 죽전로로 정정하였으며, 위반 상황으로 차로 변경을 언급함.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "차로 변경",
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 기존의 상무중앙로를 죽전로로 정정하였으며, 위반 상황으로 차로 변경을 언급함."
+  },
+  "latency_ms": 1994.2241999087855,
+  "prompt_tokens": 318,
+  "completion_tokens": 102,
+  "cost_krw": 0.35370599999999996,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건인 '어제 18시쯤'을 정확히 채택했고 두 사건을 섞지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건의 차량인 '흰색 SUV'만 채택했고 두 번째 사건(검은색 세단/오토바이)과 속성을 조합하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건의 상황인 '신호위반'만 채택했고 두 번째 사건(헬멧 미착용)과 혼합하지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건의 장소인 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 상황이 아니므로 null 처리한 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"한 문장에 두 개의 서로 다른 사건이 섞여 있어 어떤 사건을 신고 대상으로 할지 애매한 상황인데, confidence를 'high'로 매긴 것은 이 애매함을 반영하지 못해 기준(confidence=low 권장)에 부합하지 않는다. 다만 추출 자체(속성 교차조합 없음)는 올바르게 했으므로 방향은 맞다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건인 '어제 18시쯤'을 정확히 채택했고 두 사건을 섞지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건의 차량인 '흰색 SUV'만 채택했고 두 번째 사건(검은색 세단/오토바이)과 속성을 조합하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건의 상황인 '신호위반'만 채택했고 두 번째 사건(헬멧 미착용)과 혼합하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건의 장소인 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 상황이 아니므로 null 처리한 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "한 문장에 두 개의 서로 다른 사건이 섞여 있어 어떤 사건을 신고 대상으로 할지 애매한 상황인데, confidence를 'high'로 매긴 것은 이 애매함을 반영하지 못해 기준(confidence=low 권장)에 부합하지 않는다. 다만 추출 자체(속성 교차조합 없음)는 올바르게 했으므로 방향은 맞다."
+    }
+  },
+  "latency_ms": 7188.733599963598,
+  "prompt_tokens": 2911,
+  "completion_tokens": 625,
+  "cost_krw": null,
+  "error": null
+}

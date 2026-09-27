@@ -1,0 +1,22 @@
+{
+  "case_id": "case-07-correction",
+  "scenario_tag": "잘못_입력_후_correction",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 세단\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"vehicle_hint\", \"confidence\": \"high\", \"reasoning\": \"발화에서 화자는 이전에 지목된 흰색 SUV가 아니라 '은색 세단'이라고 정정하고 있다. 따라서 수정 대상 필드는 vehicle_hint로 판단하며, 이번 발화에는 시간/상황/위치에 대한 새로운 정보가 없으므로 해당 필드는 null로 둔다. 또한 prior_hints의 값을 그대로 병합하지 않고 새로 언급된 내용만 반영한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 세단",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "발화에서 화자는 이전에 지목된 흰색 SUV가 아니라 '은색 세단'이라고 정정하고 있다. 따라서 수정 대상 필드는 vehicle_hint로 판단하며, 이번 발화에는 시간/상황/위치에 대한 새로운 정보가 없으므로 해당 필드는 null로 둔다. 또한 prior_hints의 값을 그대로 병합하지 않고 새로 언급된 내용만 반영한다."
+  },
+  "latency_ms": 17109.152500052005,
+  "prompt_tokens": 844,
+  "completion_tokens": 2584,
+  "cost_krw": 1.6378,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

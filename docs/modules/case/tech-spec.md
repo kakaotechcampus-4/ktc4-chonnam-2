@@ -9,6 +9,10 @@
 > `docs/architecture/contracts/contract-job-execution.md` · `docs/architecture/contracts/contract-correction-record.md` ·
 > `docs/modules/case/decisions/*.md` · `docs/modules/case/checklists/phase1-completion-checklist.md`.
 
+> **2026-09-19 갱신 — W5/W6 Real E2E 이후.** 아래 §6·§7·§8·§9는 2026-09-13(1차 구현) 시점 기준으로 남아있다. 2026-09-18 이후 `RealAdapter` 실제 호출 배선, `service.py::get_view(case_id, *, store)`, `store.py::CaseStore`가 추가됐다.
+>
+> 다음 우선순위/미결 항목은 §9를 반복 갱신하는 대신 `docs/modules/case/design-refinement-w7-baseline.md`로 이관한다.
+
 ---
 
 ## 1. 이 모듈이 하는 일 (§4-모듈5 요약)
@@ -191,6 +195,8 @@ docstring에 명시해뒀다.
 담는다. §4-모듈5 「Public Capability」의 함수 이름은 설계 시점 placeholder였고 아래가 그걸 대체한다.
 다른 모듈은 **이 함수들만** 호출한다 — `MockFixtureAdapter`는 예외(1차 구현 한정 내부 stand-in).
 
+`service.py::get_view(case_id, *, store)`가 web이 실제로 부를 단일 진입점으로 추가됐다. 아래 표의 개별 함수 목록도 여전히 유효하다.
+
 | 파일 | 함수/메서드 | 시그니처 | 설명 |
 | --- | --- | --- | --- |
 | `domain.py` | `CaseAggregate.intake` | `(case_id: str, hints: dict, manifest_summary: dict) -> CaseAggregate` | Case 생성 |
@@ -214,8 +220,8 @@ docstring에 명시해뒀다.
 
 ## 8. 검증 현황
 
-- `pytest src/daesingo/case/tests/ -v` → **12 passed** (도메인 6 + jobs 4 + happy-path smoke 2).
-- `python3 scripts/check_boundaries.py --only=boundary` → **PASS — 경계·계약 정합성 위반 0건.**
+- `pytest src/daesingo/case/tests/ -v` → **54 passed**(2026-09-19 재확인 — 1차 구현 시점 12건에서 시나리오 스모크 테스트 등이 늘어남). Real E2E 병합 후에는 `pytest tests/case/` 기준으로도 검증 범위가 확장됐다.
+- `python3 scripts/check_boundaries.py --only=boundary` → **PASS — 경계·계약 정합성 위반 0건.**(2026-09-19 재확인)
 - `tests/test_scenario_happy_smoke.py`가 `data/mock/case/scenario_happy_001.json`의
   `case_views[0]`(SEARCHING)과 `case_views[-1]`(READY)을 실제 코드 실행 결과와 대조 — READY 스냅샷은
   `evidence`/`requirements_evidence`/`requirements_package`/`package.*` 필드가 완전 일치함을 확인했다.
@@ -226,7 +232,9 @@ docstring에 명시해뒀다.
 
 ---
 
-## 9. 다음 단계 (이번 라운드 이후)
+## 9. 다음 단계 (2026-09-13 시점 기록 — 최신 우선순위는 `design-refinement-w7-baseline.md` 참고)
+
+⚠️ 이 목록은 1차 구현 직후 기록이다. Real E2E 이후 재우선순위화된 최신 목록은 `docs/modules/case/design-refinement-w7-baseline.md`를 따른다.
 
 - FastAPI 엔드포인트로 `domain`/`jobs`/`correction`/`view` 함수들을 감싸는 배선.
 - 영속성 계층(MySQL) — 현재는 순수 메모리 객체.

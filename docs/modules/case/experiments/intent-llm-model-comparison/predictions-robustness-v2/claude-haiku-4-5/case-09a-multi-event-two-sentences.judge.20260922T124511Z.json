@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건(어제 18시쯤)을 일관되게 채택했고 이는 원문에 명확히 존재하는 시간 정보이며 다른 사건 속성과 섞이지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색 SUV는 신호위반 사건과 함께 원문에 명시된 값으로, 헬멧 미착용 사건의 검은색 세단과 섞이지 않고 하나의 사건에서 일관되게 채택되었다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"신호위반은 첫 번째 사건(흰색 SUV)에 대응하는 상황으로 정확히 매칭되며 다른 사건(헬멧 미착용)과 교차조합되지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 첫 번째 사건의 위치로 원문과 일치하며 두 번째 사건과 섞이지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이므로 정정 대상이 없다는 판단이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 사건이 한 문장에 섞여 있어 애매함이 존재하므로 expected_notes 기준상 confidence는 low여야 하는데, 모델은 high로 표기해 애매함을 반영하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건(어제 18시쯤)을 일관되게 채택했고 이는 원문에 명확히 존재하는 시간 정보이며 다른 사건 속성과 섞이지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색 SUV는 신호위반 사건과 함께 원문에 명시된 값으로, 헬멧 미착용 사건의 검은색 세단과 섞이지 않고 하나의 사건에서 일관되게 채택되었다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반은 첫 번째 사건(흰색 SUV)에 대응하는 상황으로 정확히 매칭되며 다른 사건(헬멧 미착용)과 교차조합되지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 첫 번째 사건의 위치로 원문과 일치하며 두 번째 사건과 섞이지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이므로 정정 대상이 없다는 판단이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 사건이 한 문장에 섞여 있어 애매함이 존재하므로 expected_notes 기준상 confidence는 low여야 하는데, 모델은 high로 표기해 애매함을 반영하지 않았다."
+    }
+  },
+  "latency_ms": 7314.944999990985,
+  "prompt_tokens": 3087,
+  "completion_tokens": 639,
+  "cost_krw": null,
+  "error": null
+}

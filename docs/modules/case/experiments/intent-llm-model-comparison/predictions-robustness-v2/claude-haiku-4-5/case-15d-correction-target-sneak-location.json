@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 트럭\", \"situation_hint\": \"신호 무시\", \"location_hint\": \"죽전로\", \"correction_target\": \"location_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 명확히 위치를 정정했다(\\\"아니고 죽전로였어요\\\"). 추가로 검은색 트럭의 신호 무시 상황을 새로 언급했으나, 이는 원래 신고 대상(흰색 SUV)과 별개의 차량으로 보이므로 vehicle_hint와 situation_hint를 이번 발화의 새 정보로 반영했다. 시간은 이번 발화에서 언급되지 않았으므로 null.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호 무시",
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 명확히 위치를 정정했다(\"아니고 죽전로였어요\"). 추가로 검은색 트럭의 신호 무시 상황을 새로 언급했으나, 이는 원래 신고 대상(흰색 SUV)과 별개의 차량으로 보이므로 vehicle_hint와 situation_hint를 이번 발화의 새 정보로 반영했다. 시간은 이번 발화에서 언급되지 않았으므로 null."
+  },
+  "latency_ms": 2814.2722999909893,
+  "prompt_tokens": 1920,
+  "completion_tokens": 311,
+  "cost_krw": 5.289572,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

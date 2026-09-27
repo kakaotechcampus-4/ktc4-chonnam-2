@@ -35,15 +35,18 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     `case.receive_candidates()`에 반영한다. 반환값은 호출자가 (예: 로그·검증용으로)
     그대로 참고할 수 있게 넘겨준다 — `case` 상태 반영은 이 함수 안에서 이미 끝나 있다.
 
-    `at`/`at_provenance`는 여기서 채우지 않는다 — 후보 단계의 시각 확정은 readout/evidence
-    쪽 책임이라 `search`의 `CandidateEvent`에는 없는 값이다(스모크 테스트와 동일하게 None).
+    `at`는 여기서 채우지 않는다 — 절대시각 확정은 readout/evidence 쪽 책임이라 `search`의
+    `CandidateEvent`에는 없는 값이다. `at_provenance`는 `at is None`인 이 상태를 위해 이미
+    등록된 case 소유 enum 값(`recording.timeline_relative_only`,
+    `docs/modules/case/decisions/candidate-at-provenance-label-key.md`)을 쓴다 — `None`을
+    두면 계약(`caseView.ts`/contract 문서 §7)이 기대하는 non-null과 어긋난다(이슈 #104).
     """
     raw_candidates = adapter.get_candidate_events()
     candidates = [
         Candidate(
             candidate_id=c["candidate_id"],
             at=None,
-            at_provenance=None,
+            at_provenance="recording.timeline_relative_only",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
         )

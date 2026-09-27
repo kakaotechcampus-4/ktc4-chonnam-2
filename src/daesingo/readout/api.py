@@ -68,7 +68,7 @@ from .contracts import (
 # ── 계약 버전 ────────────────────────────────────────────────
 # 값의 원문은 계약 문서다. fixture가 쓰는 것과 같은 문자열을 쓴다.
 READOUT_RUN_VERSION = "readout-run/v1"
-PLATE_READOUT_VERSION = "plate-readout/v1.2"
+PLATE_READOUT_VERSION = "plate-readout/v1.3"
 OVERLAY_TIME_READOUT_VERSION = "overlay-time-readout/v1.2"
 OBSERVATION_VERSION = "observation/v1"
 
@@ -98,6 +98,13 @@ OVERLAY_TIME_FORMATS = (
     "%Y.%m.%d %H:%M:%S",
 )
 """지원하는 overlay 날짜/시간 형식. 여기서 못 읽으면 `format_ok=false`다(계약 §7)."""
+
+OVERLAY_TIME_IN_TEXT = re.compile(r"\d{4}[-/.]\d{2}[-/.]\d{2}[ T]\d{2}:\d{2}:\d{2}")
+"""OCR 원문 **안에서** 시각 부분을 찾는 패턴. 위 형식들이 쓰는 구분자를 그대로 받는다.
+
+여기서 찾은 문자열만 `OVERLAY_TIME_FORMATS`로 해석한다 — 이 패턴은 자리를 찾을 뿐이고
+유효성은 `strptime`이 판정한다(`13/45/99 99:99:99`는 이 패턴을 통과하고 거기서 걸린다).
+왜 원문 전체를 쓰지 않는지는 `_parse_overlay_text()`에 있다."""
 
 TZ_OFFSET = re.compile(r"(?:[+-]\d{2}:\d{2}|Z)")
 """계약이 정한 `tz_offset` **표기**. overlay 문자열에는 timezone이 없어서 clip의 source
@@ -323,6 +330,15 @@ def _abstain_reason(association, best, disagreed):
     if disagreed:
         return "FRAME_DISAGREEMENT"
     if best is not None:
+        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 한글 1자+일련번호만 읽힌 값은
+        # 완전한 번호판이 아니다. 관찰값은 보존하지만 자동 확정하지 않는다.
+        normalized = re.sub(r"\\s+", "", best.text or "")
+        if re.fullmatch(r"[가-힣]\\d{4}", normalized):
+            return "PARTIAL_PLATE_READ"
+        # 대상 crop은 검출용으로 한글이 빠진 숫자 문자열도 보존한다. 다만 이것은
+        # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
+        if best.text and not re.search(r"[가-힣]", best.text):
+            return "OCR_LOW_CONFIDENCE"
         height = best.quality.get("plate_px_height")
         if height is not None and height < MIN_PLATE_PX_HEIGHT:
             return "LOW_RESOLUTION"
@@ -406,9 +422,13 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         value, status = None, "UNKNOWN"
         abstained, reason = False, None
 
+    # 대상 차량 영역은 association이 소유한다. 대표 프레임의 번호판 박스에서 만들지 않는다 —
+    # 그러면 「어느 차량을 읽었나」와 「번호판이 어디 있나」가 한 값이 되고, 계약 §4가
+    # `plate_bbox_xywh`를 따로 둔 이유가 사라진다. 둘은 프레임이 다를 수도 있다.
     region = None
-    if best is not None:
-        region = AssociatedRegion(frame_ref=best.frame_ref, bbox_xywh=list(best.bbox_xywh))
+    if association.region is not None:
+        frame_ref, bbox = association.region
+        region = AssociatedRegion(frame_ref=frame_ref, bbox_xywh=list(bbox))
 
     return PlateReadout(
         readout_id=_new_id("readout"),
@@ -434,11 +454,16 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         ),
         abstained=abstained,
         abstain_reason=reason,
+        # PARTIAL_PLATE_READ의 bbox는 2줄 번호판 중 텍스트 한 줄일 수 있다. 이를
+        # 전체 번호판 bbox로 내보내 Case가 PLATE_IMAGE를 잘못 만들게 하지 않는다.
         best_frame=BestFrame(
             frame_ref=best.frame_ref,
             crop_ref=crop_refs[best_at],
             quality=dict(best.quality),
-        ) if best is not None else None,
+            # provider가 프레임마다 돌려주던 값을 여기서 버리고 있었다 (v1.3에서 실었다).
+            # 새로 만드는 값이 아니라 대표 프레임의 번호판 영역을 그대로 싣는 것이다.
+            plate_bbox_xywh=list(best.bbox_xywh),
+        ) if best is not None and reason != "PARTIAL_PLATE_READ" else None,
         frame_results=frame_results,
         contract="PlateReadout",
         contract_version=PLATE_READOUT_VERSION,
@@ -448,11 +473,32 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
 # ── read_overlay_time ────────────────────────────────────────
 
 def _parse_overlay_text(raw, tz_offset):
+    """overlay OCR 원문에서 시각을 뽑는다. **원문 전체가 시각일 것을 요구하지 않는다.**
+
+    블랙박스는 시각 옆에 다른 값을 같은 줄에 찍는다. 실측(`20260810_175721_EVT_1`,
+    conf 0.9724)에서 OCR이 돌려준 것은 이렇다 —
+
+        '2026/08/10 17:57:36 13.20 ×:+0.020 Y:-0.043 2:-0.012'
+
+    뒤쪽은 속도와 G센서 값이고 provider가 떼어 주지 않는다. 원문 전체를 `strptime`에
+    넣으면 시각이 멀쩡히 찍혀 있는데도 `format_ok=false`로 떨어진다 — fixture는 깨끗한
+    문자열이라 통과했지만 실제 영상에서는 전부 여기서 막힌다.
+
+    그래서 **시각으로 보이는 부분을 먼저 찾고 그 부분만** 등재 형식으로 해석한다.
+    원문은 `OverlaySample.raw_text`에 그대로 남으므로 무엇을 보고 뽑았는지 추적할 수 있다.
+
+    한 줄에 시각이 둘 이상이면 **처음 것**을 쓴다. 어느 것이 프레임 시각인지 고를 근거가
+    여기 없고, 임의로 고르면 그 판정이 이 함수에 숨는다.
+    """
     if not raw:
         return None
+    found = OVERLAY_TIME_IN_TEXT.search(raw)
+    if found is None:
+        return None
+    stamp = found.group(0)
     for fmt in OVERLAY_TIME_FORMATS:
         try:
-            parsed = datetime.strptime(raw.strip(), fmt)
+            parsed = datetime.strptime(stamp, fmt)
         except ValueError:
             continue
         return parsed.isoformat() + tz_offset

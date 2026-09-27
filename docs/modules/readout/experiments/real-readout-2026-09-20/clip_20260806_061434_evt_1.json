@@ -1,0 +1,143 @@
+{
+  "source_video": "C:\\Users\\tlsdb\\Downloads\\20260806_061434_EVT_1.avi",
+  "incident_clip_ref": "clip_20260806_061434_evt_1",
+  "provider_label": "paddleocr-3.7.0-ppocrv5-korean",
+  "known_simplifications": [
+    "frame_ref는 recording이 발급한 정식 ref가 아니다 — LocalVideoFrameSource의 임시값이다",
+    "tz_offset을 +09:00으로 고정했다 — 정식 출처는 clip의 source 메타데이터다",
+    "target_hint 없이 실행했다 — association은 provider 자체 선택이라 LOW_CONFIDENCE다"
+  ],
+  "plate_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_7b5105da2ef2",
+    "operation": "PLATE_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-20T21:17:48+09:00",
+    "ended_at": "2026-09-20T21:19:03+09:00"
+  },
+  "plate_readout": {
+    "contract": "PlateReadout",
+    "contract_version": "plate-readout/v1.2",
+    "readout_id": "readout_2ba257a60719",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_7b5105da2ef2"
+    },
+    "case_id": "case_real_001",
+    "candidate_id": "candidate_real_001",
+    "input_ref": {
+      "incident_clip_ref": "clip_20260806_061434_evt_1",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "target_association": {
+      "status": "NOT_PROVIDED",
+      "target_hint_used": false,
+      "track_ref": null,
+      "association_method": "FALLBACK_ONLY",
+      "associated_region": null,
+      "evidence": []
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": null,
+      "status": "UNKNOWN",
+      "source": {
+        "kind": "readout.plate_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_7b5105da2ef2"
+        }
+      }
+    },
+    "consensus": {
+      "text": "",
+      "disagree_positions": [],
+      "method": "SINGLE_FRAME"
+    },
+    "abstained": false,
+    "abstain_reason": null,
+    "best_frame": null,
+    "frame_results": []
+  },
+  "overlay_run": {
+    "contract": "ReadoutRun",
+    "contract_version": "readout-run/v1",
+    "run_id": "rr_d372bb10c085",
+    "operation": "OVERLAY_TIME_READ",
+    "outcome": "SUCCEEDED",
+    "failure": null,
+    "usage_refs": [],
+    "started_at": "2026-09-20T21:19:03+09:00",
+    "ended_at": "2026-09-20T21:19:03+09:00"
+  },
+  "overlay_time_readout": {
+    "contract": "OverlayTimeReadout",
+    "contract_version": "overlay-time-readout/v1.2",
+    "readout_id": "readout_275e5eed97f9",
+    "run_ref": {
+      "kind": "readout_run",
+      "ref": "rr_d372bb10c085"
+    },
+    "case_id": "case_real_001",
+    "candidate_id": "candidate_real_001",
+    "input_ref": {
+      "incident_clip_ref": "clip_20260806_061434_evt_1",
+      "source_profile": "readout-native",
+      "provenance": "SOURCE_DERIVED_INCIDENT_CLIP"
+    },
+    "observation": {
+      "contract_version": "observation/v1",
+      "value": null,
+      "status": "UNKNOWN",
+      "reason": {
+        "code": "readout.overlay.ocr_failed",
+        "note": null
+      },
+      "source": {
+        "kind": "readout.overlay_ocr"
+      },
+      "support_refs": [],
+      "produced_by": {
+        "module": "readout",
+        "run_ref": {
+          "kind": "readout_run",
+          "ref": "rr_d372bb10c085"
+        }
+      }
+    },
+    "validation": {
+      "format_ok": false,
+      "monotonic_ok": null,
+      "duration_match_ok": null,
+      "sample_count": 3
+    },
+    "samples": [
+      {
+        "frame_ref": "fr_provisional_clip_20260806_061434_evt_1_006.007",
+        "offset_sec": 6.007,
+        "raw_text": "2026/08/06 06:14:34 13.80 ×:+0.062 Y:*0.020 2:-0.062",
+        "parsed_at": "2026-08-06T06:14:34+09:00"
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_061434_evt_1_010.012",
+        "offset_sec": 10.012,
+        "raw_text": "2026/08/06 06:14:39 13.80 ×:+0.008 Y:-0.105 2:+0.043",
+        "parsed_at": "2026-08-06T06:14:39+09:00"
+      },
+      {
+        "frame_ref": "fr_provisional_clip_20260806_061434_evt_1_014.017",
+        "offset_sec": 14.017,
+        "raw_text": "2026/08/0606:14:43 13.80 ×:+0.094 Y:-0.129 2:-0.055",
+        "parsed_at": null
+      }
+    ]
+  }
+}

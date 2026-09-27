@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-14a-profanity-lane-change",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 18시쯤'을 그대로 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '흰색 SUV'를 정확히 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"욕설(미친놈이네)은 배제하고 실제 사고 상황인 '차로 변경'만 정상적으로 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 상황이 아니므로 null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"모든 정보가 명확히 명시되어 있어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 18시쯤'을 그대로 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 SUV'를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "욕설(미친놈이네)은 배제하고 실제 사고 상황인 '차로 변경'만 정상적으로 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 상황이 아니므로 null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "모든 정보가 명확히 명시되어 있어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 5135.767400031909,
+  "prompt_tokens": 2910,
+  "completion_tokens": 434,
+  "cost_krw": null,
+  "error": null
+}

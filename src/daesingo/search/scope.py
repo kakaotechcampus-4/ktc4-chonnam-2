@@ -38,7 +38,9 @@ class AbsoluteTimeRange(ContractModel):
     @model_validator(mode="after")
     def check_order(self) -> Self:
         if self.end < self.start:
-            raise PydanticCustomError("absolute_range_order", "end must not precede start")
+            raise PydanticCustomError(
+                "absolute_range_order", "end must not precede start"
+            )
         return self
 
 
@@ -51,7 +53,9 @@ class TimelineRelativeTimeRange(ContractModel):
     @model_validator(mode="after")
     def check_order(self) -> Self:
         if self.end_ms < self.start_ms:
-            raise PydanticCustomError("relative_range_order", "end_ms must not precede start_ms")
+            raise PydanticCustomError(
+                "relative_range_order", "end_ms must not precede start_ms"
+            )
         return self
 
 

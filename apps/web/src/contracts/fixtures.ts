@@ -1,4 +1,4 @@
-// data/mock/case/*.json 로더.
+// data/mock/case/*.json · data/real/case/*.json 로더.
 //
 // 저장소 원본을 그대로 읽는다(vite.config.ts의 server.fs.allow). 스냅샷을 이
 // 앱 안에 복사해 두지 않는 이유는 「web이 CaseView를 값 재계산 없이 그대로
@@ -28,10 +28,13 @@ export interface Snapshot {
   index: number
 }
 
-const modules = import.meta.glob('../../../../data/mock/case/*.json', { eager: true }) as Record<
-  string,
-  { default: ScenarioFile }
->
+// mock pack과 실제 `case.get_view()` 산출물을 같은 로더로 읽는다. real 쪽은
+// `scripts/dump_real_caseview.py`가 쓰고, 파일이 없으면 glob이 비어 mock만 뜬다.
+// 화면이 둘을 다르게 다루지 않는 것이 요점이다 — 같은 계약이면 같은 경로로 그려진다.
+const modules = {
+  ...import.meta.glob('../../../../data/mock/case/*.json', { eager: true }),
+  ...import.meta.glob('../../../../data/real/case/*.json', { eager: true }),
+} as Record<string, { default: ScenarioFile }>
 
 export interface LoadIssue {
   where: string

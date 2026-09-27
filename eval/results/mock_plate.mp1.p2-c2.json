@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "run_id": "mock_plate",
+    "impl": "mock_pack:contracts",
+    "stage": "plate",
+    "manifest": "mock_pack",
+    "gt_version": "mp1",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "p2",
+    "cost_scorer_version": "c2",
+    "prediction_ref": {
+      "path": "eval/predictions/mock_plate.json",
+      "sha256": "6f96b501b3a462c4421a03e372f4c4c2db1cbc319ecff7966cb054584cbfdae4"
+    }
+  },
+  "candidate": {
+    "recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "localization_recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "type_accuracy_given_localized": null,
+    "onset_error_sec": {
+      "mean": null,
+      "median": null,
+      "tolerance_sec": null
+    },
+    "containment_rate": null,
+    "fp_per_clip": null,
+    "n_events": null,
+    "n_negative_clips": null,
+    "excluded_by_reason": null,
+    "by_type": null,
+    "coverage": "NOT_RUN — stage=plate 실행이다"
+  },
+  "classification": {
+    "recall_macro": null,
+    "precision_macro": null,
+    "recall_by_label": null,
+    "confusion": null,
+    "target_correctness": null,
+    "by_condition": null,
+    "n": null,
+    "n_invalid_predictions": null,
+    "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
+    "coverage": "NOT_RUN — stage=plate 실행이다"
+  },
+  "plate": {
+    "exact_accuracy": 1.0,
+    "wrong_accept_rate": 0.0,
+    "abstention_recall": 1.0,
+    "readable_abstention_rate": 0.0,
+    "n_readable": 4,
+    "abstain_reasons": {
+      "FRAME_DISAGREEMENT": 1
+    },
+    "n_abstained_without_reason": 0,
+    "n": 5,
+    "coverage": "순환 경고 — mock tier 의 true_text 는 판독 결과에서 유도한 값이라 exact_accuracy 는 구조상 만점이다. 성능 근거가 아니다; wrong_accept_rate 분자 0건 — pack 에 「확신에 차서 틀리게 읽은」 케이스가 없다. 안전하다는 증거가 아니다"
+  },
+  "cost": {
+    "cost_per_case": {
+      "case_h001": 938.0,
+      "case_p001": 728.0,
+      "case_r001": 630.0,
+      "case_u001": 756.0,
+      "case_x001": 0.0
+    },
+    "cost_per_source_video_hour": 1464.9599999999998,
+    "total": 3052.0,
+    "currency": "KRW",
+    "n_rows": 24,
+    "latency_ms": {
+      "p50": 15000,
+      "p90": 60000,
+      "max": 65000,
+      "n": 23,
+      "n_missing": 1
+    },
+    "latency_per_source_video_hour": 285.9504,
+    "scenarios": [
+      "scenario_happy_001",
+      "scenario_plate_reread_001",
+      "scenario_correction_rerun_001",
+      "scenario_unknown_abstain_partial_001",
+      "scenario_infra_failure_001"
+    ],
+    "coverage": "ZERO_COST_CASES — case_x001; PARTIAL_LATENCY — 1/24 row 에 latency_ms 가 없어 분포에서 뺐다",
+    "scorer_version": "c2"
+  }
+}

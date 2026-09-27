@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '19시였어요'로 명확히 정정했고, 모델이 '어제 19시'로 정확히 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은 오토바이'는 완전히 다른 사건(헬멧 미착용 목격)에 대한 언급인데, 모델이 이를 기존 vehicle_hint('흰색 SUV')를 덮어쓰는 값으로 사용해 별개 사건 정보를 주 차량 정보인 것처럼 오염시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"situation_hint를 null로 비웠는데, 원문에서 정정 대상이 아닌 '차로 변경'이라는 기존 정보를 유지했어야 하나 지워버려 정보 손실이 발생했다(정정 안 된 필드를 임의로 null 처리한 것도 원문 반영 실패).\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"location_hint 역시 정정 대상이 아닌데 null로 지워, 기존 '상무중앙로' 정보를 유지하지 않고 누락시켰다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"time_hint 하나만 명시적 정정 대상으로 잡은 것이 expected_notes와 일치한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"low로 낮춘 것은 별도 사건 취급 신호로 방향은 맞으나, 실제로는 vehicle_hint를 오염시켜놓고 confidence만 낮춘 것이라 근본적인 오류(잘못된 vehicle_hint 대입)를 confidence로 가리는 형태라 완전히 correct로 보기 어렵다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '19시였어요'로 명확히 정정했고, 모델이 '어제 19시'로 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은 오토바이'는 완전히 다른 사건(헬멧 미착용 목격)에 대한 언급인데, 모델이 이를 기존 vehicle_hint('흰색 SUV')를 덮어쓰는 값으로 사용해 별개 사건 정보를 주 차량 정보인 것처럼 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "situation_hint를 null로 비웠는데, 원문에서 정정 대상이 아닌 '차로 변경'이라는 기존 정보를 유지했어야 하나 지워버려 정보 손실이 발생했다(정정 안 된 필드를 임의로 null 처리한 것도 원문 반영 실패)."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "location_hint 역시 정정 대상이 아닌데 null로 지워, 기존 '상무중앙로' 정보를 유지하지 않고 누락시켰다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "time_hint 하나만 명시적 정정 대상으로 잡은 것이 expected_notes와 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "low로 낮춘 것은 별도 사건 취급 신호로 방향은 맞으나, 실제로는 vehicle_hint를 오염시켜놓고 confidence만 낮춘 것이라 근본적인 오류(잘못된 vehicle_hint 대입)를 confidence로 가리는 형태라 완전히 correct로 보기 어렵다."
+    }
+  },
+  "latency_ms": 12322.706799954176,
+  "prompt_tokens": 3062,
+  "completion_tokens": 757,
+  "cost_krw": null,
+  "error": null
+}

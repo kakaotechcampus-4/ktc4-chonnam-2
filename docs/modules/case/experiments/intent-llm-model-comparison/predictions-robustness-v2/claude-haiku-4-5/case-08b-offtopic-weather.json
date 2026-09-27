@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08b-offtopic-weather",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘\", \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화가 날씨 언급일 뿐 교통위반 사고 상황과 무관하다. 시간 표현 \\\"오늘\\\"만 추출했지만, 차량, 위반 상황, 장소 등 교통위반 신고에 필요한 실질적 정보가 없어 confidence를 low로 표시했다.\"}",
+  "parsed": {
+    "time_hint": "오늘",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화가 날씨 언급일 뿐 교통위반 사고 상황과 무관하다. 시간 표현 \"오늘\"만 추출했지만, 차량, 위반 상황, 장소 등 교통위반 신고에 필요한 실질적 정보가 없어 confidence를 low로 표시했다."
+  },
+  "latency_ms": 4084.2995999846607,
+  "prompt_tokens": 1825,
+  "completion_tokens": 250,
+  "cost_krw": 4.68065,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

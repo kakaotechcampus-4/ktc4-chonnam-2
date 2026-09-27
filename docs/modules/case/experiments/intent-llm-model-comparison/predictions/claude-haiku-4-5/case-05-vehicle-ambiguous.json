@@ -1,0 +1,22 @@
+{
+  "case_id": "case-05-vehicle-ambiguous",
+  "scenario_tag": "차량_애매",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"SUV\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 SUV 종류였을 것 같다고 불확실하게 표현했으며(\\\"것 같아요\\\"), 색상은 명확히 모른다고 했으므로 vehicle_hint만 추출했다. 색상도 vehicle 관련 정보이지만 확실하지 않아 담지 않았다. 불확실성이 있어 confidence를 low로 표시했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "SUV",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 SUV 종류였을 것 같다고 불확실하게 표현했으며(\"것 같아요\"), 색상은 명확히 모른다고 했으므로 vehicle_hint만 추출했다. 색상도 vehicle 관련 정보이지만 확실하지 않아 담지 않았다. 불확실성이 있어 confidence를 low로 표시했다."
+  },
+  "latency_ms": 3266.08899992425,
+  "prompt_tokens": 1843,
+  "completion_tokens": 262,
+  "cost_krw": 4.79939,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

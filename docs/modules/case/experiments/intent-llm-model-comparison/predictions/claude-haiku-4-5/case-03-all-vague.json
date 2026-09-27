@@ -1,0 +1,22 @@
+{
+  "case_id": "case-03-all-vague",
+  "scenario_tag": "전부_모호",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"어떤 차\", \"situation_hint\": \"이상하게 운전함\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"시간이 명시적으로 언급되지 않았고 사용자가 \\\"기억이 잘 안 난다\\\"고 직접 표현했다. 차량과 상황(이상한 운전)은 언급되었으나 구체적 특징이 없어 신뢰도가 낮으며, 위치 정보도 전혀 없다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "어떤 차",
+    "situation_hint": "이상하게 운전함",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간이 명시적으로 언급되지 않았고 사용자가 \"기억이 잘 안 난다\"고 직접 표현했다. 차량과 상황(이상한 운전)은 언급되었으나 구체적 특징이 없어 신뢰도가 낮으며, 위치 정보도 전혀 없다."
+  },
+  "latency_ms": 3306.77630007267,
+  "prompt_tokens": 1853,
+  "completion_tokens": 263,
+  "cost_krw": 4.822222,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

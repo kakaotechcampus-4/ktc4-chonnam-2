@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13a-english-only",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"Yesterday around 6pm\",\"vehicle_hint\":\"white SUV\",\"situation_hint\":\"changed lanes on a solid line\",\"location_hint\":\"near Sangmu-jungang-ro\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 시간 표현('Yesterday around 6pm'), 차량 특징('white SUV'), 행위('changed lanes on a solid line'), 위치('near Sangmu-jungang-ro')가 직접 제시되어 있어 각 필드를 그대로 채웠다. 또한 명시적 진술 외의 정보는 없고 prior_hints가 null이므로 correction_target는 null이며, 이 경우 confidence는 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "Yesterday around 6pm",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "changed lanes on a solid line",
+    "location_hint": "near Sangmu-jungang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 시간 표현('Yesterday around 6pm'), 차량 특징('white SUV'), 행위('changed lanes on a solid line'), 위치('near Sangmu-jungang-ro')가 직접 제시되어 있어 각 필드를 그대로 채웠다. 또한 명시적 진술 외의 정보는 없고 prior_hints가 null이므로 correction_target는 null이며, 이 경우 confidence는 high로 판단했다."
+  },
+  "latency_ms": 13831.34389994666,
+  "prompt_tokens": 791,
+  "completion_tokens": 1752,
+  "cost_krw": 1.1270840000000002,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16e-new-incident-not-correction-5",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"버스\", \"situation_hint\": \"버스 급정거\", \"location_hint\": \"정류장 아닌 곳\", \"correction_target\": \"situation_hint\", \"confidence\": \"high\", \"reasoning\": \"발화에서 이전의 '차로 변경'이라는 상황이 아니라 '버스가 급정거했다'는 새로운 사건이 언급되었다. 이로 인해 prior_hints의 상황 관련 내용을 정정 대상으로 판단했고, 시간 정보가 명시되지 않았으므로 time_hint는 null로 두었다. 구체적 위치도 제시되지 않아 location_hint는 발화의 표현인 '정류장 아닌 곳'을 반영했다. 버스가 등장하고 급정거가 중심 사건이므로 vehicle_hint를 '버스'로 채택했고, 이 새로운 사건이 이전 정보를 대체한다는 점에서 correction_target을 situation_hint로 설정했다. 자신이 새 사건임을 밝힘으로써 신뢰도는 높다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "버스",
+    "situation_hint": "버스 급정거",
+    "location_hint": "정류장 아닌 곳",
+    "correction_target": "situation_hint",
+    "confidence": "high",
+    "reasoning": "발화에서 이전의 '차로 변경'이라는 상황이 아니라 '버스가 급정거했다'는 새로운 사건이 언급되었다. 이로 인해 prior_hints의 상황 관련 내용을 정정 대상으로 판단했고, 시간 정보가 명시되지 않았으므로 time_hint는 null로 두었다. 구체적 위치도 제시되지 않아 location_hint는 발화의 표현인 '정류장 아닌 곳'을 반영했다. 버스가 등장하고 급정거가 중심 사건이므로 vehicle_hint를 '버스'로 채택했고, 이 새로운 사건이 이전 정보를 대체한다는 점에서 correction_target을 situation_hint로 설정했다. 자신이 새 사건임을 밝힘으로써 신뢰도는 높다."
+  },
+  "latency_ms": 27160.250299959444,
+  "prompt_tokens": 847,
+  "completion_tokens": 3623,
+  "cost_krw": 2.270779,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

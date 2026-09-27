@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13e-korean-english-mix-2",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"그저께 밤 9시쯤\", \"vehicle_hint\": \"black motorcycle\", \"situation_hint\": \"헬멧 안 쓰고\", \"location_hint\": \"assembly로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명확하게 시간(그저께 밤 9시쯤), 차량(black motorcycle), 위반행위(헬멧 미착용), 장소(assembly로)를 모두 언급했다. prior_hints가 없으므로 정정 대상은 없다. 모든 정보가 구체적으로 제시되었기에 confidence는 high로 평가했다.\"}",
+  "parsed": {
+    "time_hint": "그저께 밤 9시쯤",
+    "vehicle_hint": "black motorcycle",
+    "situation_hint": "헬멧 안 쓰고",
+    "location_hint": "assembly로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 시간(그저께 밤 9시쯤), 차량(black motorcycle), 위반행위(헬멧 미착용), 장소(assembly로)를 모두 언급했다. prior_hints가 없으므로 정정 대상은 없다. 모든 정보가 구체적으로 제시되었기에 confidence는 high로 평가했다."
+  },
+  "latency_ms": 2564.9238999467343,
+  "prompt_tokens": 1847,
+  "completion_tokens": 283,
+  "cost_krw": 4.96533,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -222,6 +222,18 @@
                 "ref": "ev_p001"
               }
             ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001"
+              }
+            ]
           }
         ]
       },
@@ -368,7 +380,7 @@
         "reason_code": null
       },
       "requirements_evidence": {
-        "readiness": "PASS",
+        "readiness": "WARN",
         "checks": [
           {
             "code": "evidence.vehicle_number.present",
@@ -399,6 +411,18 @@
             "category": "EVIDENCE",
             "outcome": "PASS",
             "reason_code": "evidence.value_confirmed",
+            "subject_refs": [
+              {
+                "kind": "evidence_record",
+                "ref": "ev_p001_v2"
+              }
+            ]
+          },
+          {
+            "code": "evidence.location.present",
+            "category": "EVIDENCE",
+            "outcome": "WARN",
+            "reason_code": "evidence.location_unavailable",
             "subject_refs": [
               {
                 "kind": "evidence_record",

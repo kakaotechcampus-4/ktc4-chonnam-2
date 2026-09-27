@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"검은 오토바이\", \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 \\\"18시였어요\\\"를 \\\"19시\\\"로 명확히 정정했으므로 time_hint를 correction_target으로 설정. 하지만 오토바이 헬멧 미착용은 시각적 관찰에 기반한 것으로 보이며, vehicle_hint만 단독으로 제시된 것이 아니라 \\\"그 옆에\\\"라는 상황 설명이 모호해서 현 발화의 주 초점인지 부 내용인지 명확하지 않아 confidence를 low로 표시.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 \"18시였어요\"를 \"19시\"로 명확히 정정했으므로 time_hint를 correction_target으로 설정. 하지만 오토바이 헬멧 미착용은 시각적 관찰에 기반한 것으로 보이며, vehicle_hint만 단독으로 제시된 것이 아니라 \"그 옆에\"라는 상황 설명이 모호해서 현 발화의 주 초점인지 부 내용인지 명확하지 않아 confidence를 low로 표시."
+  },
+  "latency_ms": 3017.385800019838,
+  "prompt_tokens": 1913,
+  "completion_tokens": 321,
+  "cost_krw": 5.355038,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

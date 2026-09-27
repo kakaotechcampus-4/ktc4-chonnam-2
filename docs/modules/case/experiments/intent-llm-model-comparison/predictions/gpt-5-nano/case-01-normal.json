@@ -1,0 +1,22 @@
+{
+  "case_id": "case-01-normal",
+  "scenario_tag": "정상_단서",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"흰색 SUV가 백색 실선 구간에서 차로 바꿨어요\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"time_hint, location_hint, vehicle_hint, situation_hint은 원문에서 직접 발췌했고 상대 시간 표현은 원문 그대로 보존했다. prior_hints가 null이므로 correction_target도 null이며, 진술이 구체적이므로 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "흰색 SUV가 백색 실선 구간에서 차로 바꿨어요",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "time_hint, location_hint, vehicle_hint, situation_hint은 원문에서 직접 발췌했고 상대 시간 표현은 원문 그대로 보존했다. prior_hints가 null이므로 correction_target도 null이며, 진술이 구체적이므로 confidence를 high로 판단했다."
+  },
+  "latency_ms": 15321.023399941623,
+  "prompt_tokens": 805,
+  "completion_tokens": 2130,
+  "cost_krw": 1.35835,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

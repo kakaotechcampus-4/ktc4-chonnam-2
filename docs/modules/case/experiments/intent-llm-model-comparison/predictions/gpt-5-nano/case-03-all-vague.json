@@ -1,0 +1,22 @@
+{
+  "case_id": "case-03-all-vague",
+  "scenario_tag": "전부_모호",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"어떤 차가 이상하게 운전했다\", \"situation_hint\": \"차가 이상하게 운전했다\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화에 구체적 시간 정보가 없고 '어떤 차가 이상하게 운전했다'는 진술이 명확히 드러나므로 vehicle_hint와 situation_hint를 채움. 시간 정보 부재로 time_hint는 null. 불확실한 진술로 판단되므로 confidence를 low로 설정했고, prior_hints가 없으므로 correction_target도 null.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "어떤 차가 이상하게 운전했다",
+    "situation_hint": "차가 이상하게 운전했다",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에 구체적 시간 정보가 없고 '어떤 차가 이상하게 운전했다'는 진술이 명확히 드러나므로 vehicle_hint와 situation_hint를 채움. 시간 정보 부재로 time_hint는 null. 불확실한 진술로 판단되므로 confidence를 low로 설정했고, prior_hints가 없으므로 correction_target도 null."
+  },
+  "latency_ms": 13823.455199948512,
+  "prompt_tokens": 793,
+  "completion_tokens": 2075,
+  "cost_krw": 1.323943,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

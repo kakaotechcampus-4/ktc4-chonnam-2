@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 시간 언급이 없고, 새 사고이므로 이전 값을 끌어오지 않고 null로 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '검은색 세단'을 새 사고의 vehicle_hint로 정확히 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '중앙선 침범'을 새 사고의 situation_hint로 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 장소 언급이 없고, 이전 상무중앙로 값을 끌어오지 않고 null로 둔 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'다른 건데요'는 완전히 새로운 사고로의 전환 신호인데, 모델은 이를 기존 필드의 정정으로 오인해 correction_target='vehicle_hint'를 지어냈다. 기준상 correction_target은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"correction_target을 잘못 채운 상태에서 매겨진 confidence이며, 새 사고 전환 상황에서는 correction_target=null과 함께 confidence도 해당되지 않아야 하므로 이 값은 근거 없이 지어낸 것이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 시간 언급이 없고, 새 사고이므로 이전 값을 끌어오지 않고 null로 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '검은색 세단'을 새 사고의 vehicle_hint로 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '중앙선 침범'을 새 사고의 situation_hint로 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 장소 언급이 없고, 이전 상무중앙로 값을 끌어오지 않고 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'다른 건데요'는 완전히 새로운 사고로의 전환 신호인데, 모델은 이를 기존 필드의 정정으로 오인해 correction_target='vehicle_hint'를 지어냈다. 기준상 correction_target은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "correction_target을 잘못 채운 상태에서 매겨진 confidence이며, 새 사고 전환 상황에서는 correction_target=null과 함께 confidence도 해당되지 않아야 하므로 이 값은 근거 없이 지어낸 것이다."
+    }
+  },
+  "latency_ms": 7215.84790002089,
+  "prompt_tokens": 3047,
+  "completion_tokens": 624,
+  "cost_krw": null,
+  "error": null
+}

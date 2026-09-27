@@ -37,13 +37,15 @@
 
 걸린 것은 두 건뿐이며 **둘 다 같은 문장이고 생산자가 아니다** — `contract-requirement-report-package.md:234`와 그 근거 ADR(`contracts/adr/adr-data-contract-call-closure-2026-09-07.md:172`)의 *"`duration + timeline_range`는 `FINAL_PACKAGE`에서 사건 전후 coverage rule을 실제 적용하는 경우 조건부"*. 이것은 **관찰이 아니라 산술 경로를 위한 asset 필드**이며, §2.3이 보이듯 ADR-002가 그 경로를 택하지 않았다.
 
-비교 대상이 있다. 같은 관찰 경로를 쓰는 다른 fact는 생산자와 계약이 모두 있다.
+비교 대상이 있다. 다만 2026-09-20 Owner 재확인 결과, 남아 있는 번호판·시각 가시성 fact도 **최종 `REPORT_VIDEO`를 대상으로 한 Runtime Producer는 아직 계약상 연결돼 있지 않다.**
 
-| 관찰 fact | 생산자 | 계약 |
+| 관찰 fact | 현재 Producer 상태 | 계약 상태 |
 | --- | --- | --- |
-| `plate_visible_in_report_video` | `readout` | [`contract-plate-overlay-readout.md`](../../../architecture/contracts/contract-plate-overlay-readout.md) §「`observation`」 |
-| `time_overlay_visible` | `readout` | 같은 계약, `readout.overlay_ocr` |
+| `plate_visible_in_report_video` | **미연결** — 현재 readout은 `IncidentClip`만 읽으며 최종 `REPORT_VIDEO`를 재관찰하지 않는다 | `contract-plate-overlay-readout.md`의 `input_ref.incident_clip_ref`는 존재하지만 `DerivedAsset(REPORT_VIDEO)` 입력 경로는 없음 |
+| `time_overlay_visible` | **미연결** — 현재 overlay readout도 `IncidentClip` 기준 관찰이다 | 위와 동일. 최종 `REPORT_VIDEO` 재관찰 계약이 필요 |
 | **사건 장면·전 상황·후 상황** | **없음** | **없음** |
+
+즉 제거한 세 rule과 남은 두 가시성 rule의 차이는 「이미 Producer가 있다」가 아니라, **남은 두 rule은 readout 관찰 기능을 확장해 Producer를 만들 수 있는 구체적 후속(I4)이 등록돼 있다는 점**이다.
 
 ### 2.3 ADR-002가 산술 경로를 명시적으로 거절했다
 
@@ -164,9 +166,9 @@
 | `violation_visible_in_report_video` | **제거** |
 | `pre_context_present_in_report_video` | **제거** |
 | `post_context_present_in_report_video` | **제거** |
-| `plate_visible_in_report_video` | 유지 (`readout`) |
-| `time_overlay_visible` | 유지 (`readout`) |
-| `post_stamp_applied` | 유지 |
+| `plate_visible_in_report_video` | 유지 — 최종 `REPORT_VIDEO` 관찰 Producer는 I4에서 연결 |
+| `time_overlay_visible` | 유지 — 최종 `REPORT_VIDEO` 관찰 Producer는 I4에서 연결 |
+| `post_stamp_applied` | 유지 — 실제 사후각인 수행 사실은 `recording` transform provenance로 확인 |
 
 관찰 fact의 구조 검증(boolean·`subject_refs`)과 `PolicyConfigurationError` 처리는 남는 셋에 그대로 적용된다(ADR-002 §5.12).
 
@@ -184,7 +186,9 @@
 
 ADR-002 §5.15가 지적한 「I4 범위를 사건 장면·전후 상황까지 넓혀야 한다」는 **이 결정으로 해소된다** — 넓힐 대상이 사라졌다. [`reviews/14_…`](../reviews/14_instruction-conflict-analysis-and-doc-fixes_2026-09-14.md) §5-①의 I4-b 제안도 함께 폐기된다.
 
-**다만 I4 자체는 여전히 필요하다.** 제거 후 `plate_visible_in_report_video`가 무조건 rule에 남는 **유일한 관찰 입력**이 되는데, 현재 공용 입력에서 `mock_only: true`로 주입되고 있어 Mock에서만 값이 있다. **실제 Runtime에서는 I4가 끝나기 전까지 이 rule이 `not_observed → UNKNOWN`이 되어 Package가 다시 막힌다.** 제거한 세 rule과 다른 점은 생산자(`readout`)와 계약([`contract-plate-overlay-readout.md`](../../../architecture/contracts/contract-plate-overlay-readout.md))이 이미 존재해 **배선만 하면 되는 정상 후속**이라는 것이다. 이 결정은 그 의존성을 해소하지 않는다.
+**다만 I4 자체는 여전히 필요하다.** 제거 후 `plate_visible_in_report_video`가 무조건 rule에 남는 **유일한 관찰 입력**이 되는데, 현재 공용 입력에서 `mock_only: true`로 주입되고 있어 Mock에서만 값이 있다. **실제 Runtime에서는 I4가 끝나기 전까지 이 rule이 `not_observed → UNKNOWN`이 되어 Package가 다시 막힌다.**
+
+2026-09-20 Owner 재확인으로 I4의 선행 조건도 분명해졌다. 현재 readout 계약은 `IncidentClip`을 입력으로 읽는 경로만 정의하고 있어, 최종 `REPORT_VIDEO(DerivedAsset)`의 번호판·시각 가시성을 다시 관찰하는 Producer는 아직 없다. 따라서 I4는 단순 배선이 아니라 **REPORT_VIDEO를 관찰 대상으로 받을 수 있는 readout 입력 계약/capability 확장 → 관찰 결과를 case가 evidence의 `observation_facts`로 전달**하는 순서로 닫아야 한다. `post_stamp_applied`는 별개로, recording이 실제 각인을 수행한 경우 transform provenance에서 적용 사실을 확인한다.
 
 ## 6. 검토한 대안
 

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11e-emoji-only",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"이모지(자동차)만으로 구체적 차종 등을 유추할 근거가 없으므로 null 처리가 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고 상황에 대한 텍스트 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"위치 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청으로 볼 내용이 없으므로 null 처리가 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"내용이 이모지뿐이라 정보가 거의 없음을 반영해 low로 설정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이모지(자동차)만으로 구체적 차종 등을 유추할 근거가 없으므로 null 처리가 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고 상황에 대한 텍스트 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "위치 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청으로 볼 내용이 없으므로 null 처리가 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "내용이 이모지뿐이라 정보가 거의 없음을 반영해 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 4551.387100014836,
+  "prompt_tokens": 2671,
+  "completion_tokens": 469,
+  "cost_krw": null,
+  "error": null
+}

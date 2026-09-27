@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정정 언급이 없고 모델도 null로 뒀다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"색깔을 은색으로 정정한다고 명확히 말했고 기존 SUV 형태를 유지해 '은색 SUV'로 반영한 것은 타당하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"상황 관련 언급이 없어 null로 둔 것이 맞다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'좀 더 아래쪽'이라는 모호한 표현을 '상무중앙로 아래쪽'이라는 구체적인 값으로 확정해 지어낸 것으로, expected_notes가 지적한 전형적인 hallucination이다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"vehicle_hint는 정확히 짚었지만, 원문에는 위치 정정도 함께 언급되어 있어 correction_target이 여러 필드('vehicle_hint','location_hint')에 걸쳐야 하는데 vehicle_hint만 단일로 지정해 일부만 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"전체 confidence를 low로 설정했는데, vehicle_hint 정정은 명확하므로 low로 뭉뚱그리는 것은 부적절하며 location_hint의 모호함만 낮은 신뢰도로 표현했어야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정정 언급이 없고 모델도 null로 뒀다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "색깔을 은색으로 정정한다고 명확히 말했고 기존 SUV 형태를 유지해 '은색 SUV'로 반영한 것은 타당하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "상황 관련 언급이 없어 null로 둔 것이 맞다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 '상무중앙로 아래쪽'이라는 구체적인 값으로 확정해 지어낸 것으로, expected_notes가 지적한 전형적인 hallucination이다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 정확히 짚었지만, 원문에는 위치 정정도 함께 언급되어 있어 correction_target이 여러 필드('vehicle_hint','location_hint')에 걸쳐야 하는데 vehicle_hint만 단일로 지정해 일부만 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "전체 confidence를 low로 설정했는데, vehicle_hint 정정은 명확하므로 low로 뭉뚱그리는 것은 부적절하며 location_hint의 모호함만 낮은 신뢰도로 표현했어야 한다."
+    }
+  },
+  "latency_ms": 7121.045500040054,
+  "prompt_tokens": 2970,
+  "completion_tokens": 651,
+  "cost_krw": null,
+  "error": null
+}

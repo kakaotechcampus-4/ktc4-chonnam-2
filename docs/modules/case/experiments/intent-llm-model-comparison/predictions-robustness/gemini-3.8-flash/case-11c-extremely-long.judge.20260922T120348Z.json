@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11c-extremely-long",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 관련 언급이 전혀 없으므로 null 처리가 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"무의미한 반복과 모호한 표현만 있을 뿐 구체적 상황 묘사가 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"위치 관련 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 대상 언급도 없으므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"무의미한 반복 입력으로 유의미한 정보가 없으므로 low로 판단한 것이 기준에 부합하며, 길이가 길다고 신뢰도를 높이지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 관련 언급이 전혀 없으므로 null 처리가 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "무의미한 반복과 모호한 표현만 있을 뿐 구체적 상황 묘사가 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "위치 관련 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 대상 언급도 없으므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "무의미한 반복 입력으로 유의미한 정보가 없으므로 low로 판단한 것이 기준에 부합하며, 길이가 길다고 신뢰도를 높이지 않았다."
+    }
+  },
+  "latency_ms": 5272.027599974535,
+  "prompt_tokens": 3382,
+  "completion_tokens": 497,
+  "cost_krw": null,
+  "error": null
+}

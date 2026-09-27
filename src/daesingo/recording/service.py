@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from io import RawIOBase
+from io import BytesIO, RawIOBase
+import hashlib
+import math
+from pathlib import Path
 from typing import Any, BinaryIO
 from uuid import uuid4
 
@@ -23,16 +26,27 @@ from .models import (
     FrameLocator,
     FrameRef,
     IncidentClip,
+    IncidentClipProvenance,
+    MediaStream,
     RecordingTimeline,
     RemoteCopy,
     RemoteCopyInfo,
     SpanResolution,
+    SourceAsset,
     StreamPositionLocator,
     TimelinePositionLocator,
     TimeRange,
     TimelineRef,
 )
 from .repository import InMemoryRecordingRepository
+from .probe import FfprobeMediaProbe, MediaProbe
+from .timeline import build_relative_timeline
+from .frames import FfmpegFrameExtractor, FrameExtractor
+from .facts import inspect_local_source
+from .spans import resolve_local_span
+from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
+from .incidents import LocalIncidentMaterializer
+from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -44,6 +58,14 @@ class OpenedAnalysisSource:
     stream: BinaryIO
     content_type: str
     byte_size: int
+
+
+@dataclass(frozen=True)
+class RegisteredSource:
+    """기존 계약 객체를 묶는 Python 반환값. 새 Canonical Contract가 아니다."""
+
+    source_asset: SourceAsset
+    media_streams: tuple[MediaStream, ...]
 
 
 class _SyntheticBinaryStream(RawIOBase):
@@ -85,8 +107,128 @@ class _SyntheticBinaryStream(RawIOBase):
 
 
 class RecordingService:
-    def __init__(self, repository: InMemoryRecordingRepository | None = None) -> None:
+    def __init__(
+        self, repository: InMemoryRecordingRepository | None = None,
+        *, media_probe: MediaProbe | None = None,
+        frame_extractor: FrameExtractor | None = None,
+        analysis_materializer: LocalAnalysisMaterializer | None = None,
+        incident_materializer: LocalIncidentMaterializer | None = None,
+        time_source_observer: LocalTimeSourceObserver | None = None,
+    ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
+        self._media_probe = media_probe or FfprobeMediaProbe()
+        self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
+        self._analysis_materializer = analysis_materializer
+        self._local_analysis: dict[str, tuple[AnalysisSource, bytes]] = {}
+        self._analysis_reuse: dict[tuple, str] = {}
+        self._local_analysis_refs: set[str] = set()
+        self._analysis_closed = False
+        self._incident_materializer = incident_materializer
+        self._local_clips: dict[str, tuple[IncidentClip, bytes]] = {}
+        self._clip_identity: dict[tuple, str] = {}
+        self._local_clip_refs: set[str] = set()
+        self._time_source_observer = time_source_observer or LocalTimeSourceObserver()
+        self._time_observations: dict[str, ObservedTimeSources] = {}
+        self._time_candidates: dict[str, TimeSourceCandidate] = {}
+
+    def observe_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
+        local = self._repository.get_local_source(source_asset_ref)
+        if local is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록된 로컬 원본 ref가 필요합니다")
+        self._time_source_observer.verify_source(local)
+        if source_asset_ref not in self._time_observations:
+            observed = self._time_source_observer.observe(source_asset_ref, local)
+            self._time_observations[source_asset_ref] = observed
+            for candidate in observed.candidates:
+                self._time_candidates[candidate.candidate_id] = candidate
+        return self.get_time_sources(source_asset_ref)
+
+    def get_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
+        observed = self._time_observations.get(source_asset_ref)
+        if observed is None:
+            raise RecordingCapabilityError("NOT_FOUND", "이 원본의 시간 관찰 결과가 없습니다")
+        return ObservedTimeSources(tuple(c.model_copy(deep=True) for c in observed.candidates),
+                                   tuple(c.model_copy(deep=True) for c in observed.checks))
+
+    def get_time_source_candidate(self, candidate_id: str) -> TimeSourceCandidate:
+        candidate = self._time_candidates.get(candidate_id)
+        if candidate is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 시각 후보입니다")
+        return candidate.model_copy(deep=True)
+
+    def apply_filename_anchor(self, timeline_ref: TimelineRef | dict[str, Any], candidate_id: str | None,
+                              *, overlay_matches: bool | None, trusted: bool = False) -> AnchorApplication:
+        """수동 대조 입력을 별도 실행 결과로 보존한다. Candidate의 검증 상태는 바꾸지 않는다."""
+        if (overlay_matches is not None and type(overlay_matches) is not bool) or type(trusted) is not bool:
+            raise ValueError("수동 대조와 신뢰 입력은 명시적 bool이어야 합니다")
+        ref = TimelineRef.model_validate(timeline_ref)
+        timeline = self.get_timeline(ref.timeline_id, ref.revision)
+        latest = self.get_latest_timeline(timeline.timeline_id)
+        if timeline.revision != latest.revision:
+            raise ValueError("stale timeline revision: 최신 revision만 anchor 적용 대상으로 사용할 수 있습니다")
+        if (timeline.timeline_status != "USABLE_RELATIVE_ONLY" or len(timeline.source_placements) != 1
+                or timeline.source_placements[0].timeline_start_sec != 0.0):
+            raise ValueError("단일 원본의 0초 시작 relative-only Timeline이 필요합니다")
+        if overlay_matches is not True or trusted is not True or candidate_id is None:
+            return AnchorApplication(timeline, overlay_matches, trusted, False)
+        candidate = self.get_time_source_candidate(candidate_id)
+        placement = timeline.source_placements[0]
+        if (candidate.source_kind != "FILENAME" or candidate.applies_to.source_asset_ref != placement.source_asset_ref
+                or candidate.applies_to.source_offset_sec != 0.0):
+            raise ValueError("해당 원본 시작점의 filename 후보만 anchor로 적용할 수 있습니다")
+        local = self._repository.get_local_source(placement.source_asset_ref)
+        if local is None:
+            raise RecordingCapabilityError("UNAVAILABLE", "anchor 원본에 접근할 수 없습니다")
+        self._time_source_observer.verify_source(local)
+        payload = timeline.model_dump()
+        payload.update(revision=latest.revision + 1, timeline_status="USABLE",
+                       time_source_candidates=[c.candidate_id for c in self.get_time_sources(placement.source_asset_ref).candidates])
+        payload["time_basis"]["working_anchor"] = {
+            "value": candidate.value, "source_candidate_ref": candidate.candidate_id, "status": "OK"}
+        anchored = RecordingTimeline.model_validate(payload)
+        self._repository.add_timeline(anchored)
+        return AnchorApplication(anchored, overlay_matches, trusted, True)
+
+    def close(self) -> None:
+        """로컬 prepared media 메모리를 해제한다. 이미 열린 독립 stream은 호출자가 닫는다."""
+        self._local_analysis.clear()
+        self._analysis_reuse.clear()
+        self._local_clips.clear()
+        self._clip_identity.clear()
+        self._analysis_closed = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def register_local_source(self, path: str | Path) -> RegisteredSource:
+        """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
+
+        실패 시 자산을 등록하지 않는다. 매 성공 호출은 새 opaque ref를 발급한다.
+        Source는 파일 읽기를 확인했으므로 AVAILABLE, stream은 decode 검사 전이므로
+        UNKNOWN이다. 카메라 방향과 누락된 stream duration을 추정하지 않는다.
+        """
+        source = self._media_probe.probe(Path(path))
+        source_ref = f"sa_{uuid4().hex}"
+        streams = tuple(
+            MediaStream(
+                contract="MediaStream", contract_version="source-asset-media-stream/v1",
+                media_stream_ref=f"ms_{uuid4().hex}", source_asset_ref=source_ref,
+                media_type=stream.media_type,
+                role="UNKNOWN" if stream.media_type == "VIDEO" else None,
+                availability="UNKNOWN", duration_sec=stream.duration_sec,
+            ) for stream in source.streams
+        )
+        asset = SourceAsset(
+            contract="SourceAsset", contract_version="source-asset-media-stream/v1",
+            source_asset_ref=source_ref, asset_kind="SOURCE_ASSET", external_source_ref=None,
+            media_stream_refs=[stream.media_stream_ref for stream in streams],
+            byte_size=source.byte_size, availability="AVAILABLE", duration_sec=source.duration_sec,
+        )
+        self._repository.add_local_source(asset, streams, source)
+        return RegisteredSource(asset, streams)
 
     @classmethod
     def from_fixture(
@@ -159,9 +301,35 @@ class RecordingService:
                 )
             return frames[0]
 
+        if not math.isfinite(parsed.source_offset_sec):
+            raise ValueError("source_offset_sec은 유한한 값이어야 합니다")
         stream = self._repository.get_media_stream(parsed.media_stream_ref)
         if stream is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 MediaStream입니다")
+        local = self._repository.get_local_source(stream.source_asset_ref)
+        if local is not None:
+            if stream.media_type != "VIDEO":
+                raise RecordingCapabilityError("FRAME_NOT_FOUND", "video stream에만 frame이 있습니다")
+            if stream.availability == "UNAVAILABLE":
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "MediaStream을 읽을 수 없습니다")
+            if stream.duration_sec is not None and parsed.source_offset_sec >= stream.duration_sec:
+                raise RecordingCapabilityError("OUT_OF_RANGE", "요청 위치가 MediaStream 범위를 벗어납니다")
+            index = self._repository.get_local_stream_index(stream.media_stream_ref)
+            if index is None:
+                raise RecordingCapabilityError("STREAM_UNAVAILABLE", "원본 stream index가 없습니다")
+            decoded = self._frame_extractor.extract(local, index, parsed.source_offset_sec)
+            frame = self._repository.find_frame_at(stream.media_stream_ref, decoded.source_offset_sec)
+            if frame is not None:
+                if self._repository.get_frame_content(frame.frame_ref) != decoded.content:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "동일 frame 위치의 내용이 달라졌습니다")
+                return frame
+            frame = FrameRef(
+                contract="FrameRef", contract_version="source-asset-media-stream/v1",
+                frame_ref=f"fr_{uuid4().hex}", media_stream_ref=stream.media_stream_ref,
+                source_offset_sec=decoded.source_offset_sec,
+            )
+            self._repository.add_frame(frame, content=decoded.content)
+            return frame
         if stream.availability != "AVAILABLE":
             raise RecordingCapabilityError("STREAM_UNAVAILABLE", "MediaStream을 읽을 수 없습니다")
         if stream.duration_sec is not None and parsed.source_offset_sec > stream.duration_sec:
@@ -191,10 +359,36 @@ class RecordingService:
                 "INVALID_REF_KIND",
                 "이 ref kind는 AssetFacts 조회 대상이 아닙니다",
             )
+        if parsed.kind == "source_asset":
+            local = self._repository.get_local_source(parsed.ref)
+            if local is not None:
+                asset = self._repository.get_source_asset(parsed.ref)
+                if asset is None:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록된 원본 정보를 읽을 수 없습니다")
+                return inspect_local_source(asset, local)
         facts = self._repository.get_asset_facts(parsed.kind, parsed.ref)
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts
+
+    def create_relative_timeline(self, source_asset_ref: str) -> RecordingTimeline:
+        """등록된 단일 Source를 [0, duration)에 배치한 새 revision 1을 생성한다.
+
+        등록 당시 metadata를 사용한다. 절대시각 추정·파일 연결·rebase는 하지 않는다.
+        stream 길이/가용성은 원래 사실을 유지하며 이후 span 해석에서 별도로 다룬다.
+        """
+        asset = self._repository.get_source_asset(source_asset_ref)
+        if asset is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 SourceAsset입니다")
+        streams = []
+        for ref in asset.media_stream_refs:
+            stream = self._repository.get_media_stream(ref)
+            if stream is None:
+                raise ValueError("SourceAsset이 참조하는 MediaStream이 등록되지 않았습니다")
+            streams.append(stream)
+        timeline = build_relative_timeline(asset, tuple(streams))
+        self._repository.add_timeline(timeline)
+        return timeline
 
     def get_timeline(
         self,
@@ -217,11 +411,39 @@ class RecordingService:
         self,
         timeline_ref: TimelineRef | dict[str, Any],
         requested_range: TimeRange | dict[str, Any],
+        *, media_stream_ref: str | None = None,
     ) -> SpanResolution:
+        """로컬 계산에는 Case가 전달한 VIDEO ref가 필수다. 무선택 fixture 호출만 호환한다."""
         parsed_ref = TimelineRef.model_validate(timeline_ref)
         parsed_range = TimeRange.model_validate(requested_range)
-        if self._repository.get_timeline(parsed_ref) is None:
+        if (not all(math.isfinite(value) for value in (parsed_range.start_sec, parsed_range.end_sec))
+                or parsed_range.start_sec < 0 or parsed_range.end_sec <= parsed_range.start_sec):
+            raise ValueError("요청 범위는 유한하며 0 <= start < end를 만족해야 합니다")
+        timeline = self._repository.get_timeline(parsed_ref)
+        if timeline is None:
             raise ValueError("존재하지 않는 timeline reference입니다")
+
+        is_local = any(self._repository.get_local_source(p.source_asset_ref) is not None
+                       for p in timeline.source_placements)
+        if is_local or media_stream_ref is not None:
+            if not isinstance(media_stream_ref, str) or not media_stream_ref:
+                raise ValueError("명시적인 VIDEO media_stream_ref가 필요합니다")
+            matches = [p for p in timeline.source_placements
+                       for ref in p.media_stream_refs if ref == media_stream_ref]
+            stream = self._repository.get_media_stream(media_stream_ref)
+            if len(matches) != 1 or stream is None or stream.media_type != "VIDEO":
+                raise ValueError("선택 ref는 해당 Timeline revision에 한 번 소속된 VIDEO여야 합니다")
+            placement = matches[0]
+            source = self._repository.get_source_asset(placement.source_asset_ref)
+            if (source is None or stream.source_asset_ref != placement.source_asset_ref
+                    or source.media_stream_refs.count(media_stream_ref) != 1):
+                raise ValueError("선택 ref의 원본 소속이 Timeline과 일치하지 않습니다")
+        if is_local:
+            resolution = resolve_local_span(self._repository, timeline, parsed_range,
+                                            selected_stream_ref=media_stream_ref)
+            if len(resolution.spans) > 1 or any(s.media_stream_ref != media_stream_ref for s in resolution.spans):
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "Baseline에서 선택 ref의 단일 span을 확정할 수 없습니다")
+            return resolution
 
         resolution = self._repository.get_span_resolution(parsed_ref, parsed_range)
         if resolution is None:
@@ -229,16 +451,67 @@ class RecordingService:
                 "TEMPORARY_FAILURE",
                 "이 요청 범위의 SpanResolution이 fixture adapter에 등록되지 않았습니다",
             )
+        if media_stream_ref is not None and (
+                len(resolution.spans) != 1 or resolution.spans[0].media_stream_ref != media_stream_ref):
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "fixture 결과가 선택 ref의 단일 span과 일치하지 않습니다")
         return resolution
 
     def prepare_analysis_source(
         self,
         span: AssetSpan | dict[str, Any],
         profile_ref: str,
+        *, timeline_ref: TimelineRef | dict[str, Any] | None = None,
     ) -> AnalysisSource:
         parsed_span = AssetSpan.model_validate(span)
         if not profile_ref:
             raise ValueError("profile_ref는 비어 있을 수 없습니다")
+        local = self._repository.get_local_source(parsed_span.source_asset_ref)
+        if local is not None:
+            if self._analysis_closed:
+                raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
+            if timeline_ref is None:
+                raise ValueError("실제 AnalysisSource에는 명시적인 timeline_ref가 필요합니다")
+            ref = TimelineRef.model_validate(timeline_ref)
+            resolution = self.resolve_span(ref, parsed_span.timeline_range,
+                                           media_stream_ref=parsed_span.media_stream_ref)
+            if resolution.status != "COMPLETE":
+                reasons = {missing.reason for missing in resolution.missing_ranges}
+                failure = resolution.failure
+                # 구체적인 검사 실패 코드는 그대로 전달한다. 일반적인 전체 실패는
+                # 단일 missing reason이 있으면 그 관측 원인을 보존한다.
+                if failure is not None and failure.code != "NO_USABLE_SPAN":
+                    code = failure.code
+                elif len(reasons) == 1:
+                    code = next(iter(reasons))
+                else:
+                    code = failure.code if failure is not None else "TEMPORARY_FAILURE"
+                raise RecordingCapabilityError(code, "현재 원본 상태에서 AnalysisSource 구간을 준비할 수 없습니다")
+            if resolution.spans != [parsed_span]:
+                raise ValueError("span이 해당 Timeline revision의 실제 매핑과 일치하지 않습니다")
+            if self._analysis_materializer is None:
+                raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "로컬 materialization configuration이 없습니다")
+            if not self._analysis_materializer.has_profile(profile_ref):
+                raise ValueError("등록되지 않은 profile_ref입니다")
+            key = (ref.timeline_id, ref.revision, parsed_span.model_dump_json(), profile_ref)
+            cached = self._analysis_reuse.get(key)
+            if cached is not None:
+                return self._local_analysis[cached][0].model_copy(deep=True)
+            index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
+            if index is None:
+                raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
+            prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
+            source = AnalysisSource(
+                contract="AnalysisSource", contract_version="analysis-source-derived/v1",
+                analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
+                source_refs=[ContractRef(kind="source_asset", ref=parsed_span.source_asset_ref)],
+                media_stream_refs=[parsed_span.media_stream_ref], byte_size=len(prepared.content),
+                availability="AVAILABLE", duration_sec=prepared.duration_sec,
+                timeline_ref=ref, timeline_range=prepared.timeline_range, profile_ref=profile_ref,
+            )
+            self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
+            self._local_analysis_refs.add(source.analysis_source_ref)
+            self._analysis_reuse[key] = source.analysis_source_ref
+            return source
         sources = self._repository.find_analysis_sources(parsed_span, profile_ref)
         if not sources:
             raise RecordingCapabilityError(
@@ -253,6 +526,12 @@ class RecordingService:
         return sources[0]
 
     def open_analysis_source(self, analysis_source_ref: str) -> OpenedAnalysisSource:
+        prepared = self._local_analysis.get(analysis_source_ref)
+        if prepared is not None:
+            source, content = prepared
+            return OpenedAnalysisSource(BytesIO(content), "video/mp4", len(content))
+        if analysis_source_ref in self._local_analysis_refs:
+            raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         source = self._repository.get_analysis_source(analysis_source_ref)
         if source is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 AnalysisSource입니다")
@@ -322,6 +601,48 @@ class RecordingService:
                 "INCIDENT_CLIP_BUILD_FAILED",
                 "usable AssetSpan이 없어 IncidentClip을 만들 수 없습니다",
             )
+        if any(self._repository.get_local_source(s.source_asset_ref) is not None
+               for s in parsed_resolution.spans):
+            if (self._analysis_closed or self._incident_materializer is None
+                    or len(parsed_resolution.spans) != 1):
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "실행 중인 단일 VIDEO 생성 설정이 필요합니다")
+            span = parsed_resolution.spans[0]
+            try:
+                current = self.resolve_span(parsed_resolution.timeline_ref, parsed_resolution.requested_range,
+                                            media_stream_ref=span.media_stream_ref)
+                if current != parsed_resolution:
+                    raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "현재 원본 해소 결과와 입력 provenance가 다릅니다")
+                local = self._repository.get_local_source(span.source_asset_ref)
+                index = self._repository.get_local_stream_index(span.media_stream_ref)
+                if local is None or index is None:
+                    raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
+                prepared = self._incident_materializer.materialize(local, index, span)
+            except _FrameCoverageError as error:
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", str(error)) from None
+            except (RecordingCapabilityError, ValueError, OSError):
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "원본 검증 또는 IncidentClip 생성에 실패했습니다") from None
+            provenance = IncidentClipProvenance(
+                timeline_ref=parsed_resolution.timeline_ref,
+                requested_range=parsed_resolution.requested_range,
+                asset_spans=parsed_resolution.spans,
+            )
+            identity = (provenance.model_dump_json(), self._incident_materializer.generation_conditions,
+                        hashlib.sha256(prepared.content).hexdigest(), prepared.duration_sec,
+                        prepared.timeline_range.model_dump_json())
+            previous = self._clip_identity.get(identity)
+            if previous is not None:
+                return self._local_clips[previous][0].model_copy(deep=True)
+            clip = IncidentClip(
+                contract="IncidentClip", contract_version="analysis-source-derived/v1",
+                incident_clip_ref=f"clip_{uuid4().hex}", asset_kind="INCIDENT_CLIP",
+                source_provenance=provenance, media_stream_refs=[span.media_stream_ref],
+                byte_size=len(prepared.content), availability="AVAILABLE", duration_sec=prepared.duration_sec,
+                timeline_ref=parsed_resolution.timeline_ref, timeline_range=prepared.timeline_range,
+            )
+            self._local_clips[clip.incident_clip_ref] = (clip.model_copy(deep=True), prepared.content)
+            self._local_clip_refs.add(clip.incident_clip_ref)
+            self._clip_identity[identity] = clip.incident_clip_ref
+            return clip.model_copy(deep=True)
         clips = self._repository.find_incident_clips(parsed_resolution)
         if not clips:
             raise RecordingCapabilityError(
@@ -336,6 +657,11 @@ class RecordingService:
         return clips[0]
 
     def get_incident_clip(self, incident_clip_ref: str) -> IncidentClip:
+        local = self._local_clips.get(incident_clip_ref)
+        if local is not None:
+            return local[0].model_copy(deep=True)
+        if incident_clip_ref in self._local_clip_refs:
+            raise RecordingCapabilityError("UNAVAILABLE", "로컬 IncidentClip 실행이 종료되었습니다")
         clip = self._repository.get_incident_clip(incident_clip_ref)
         if clip is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
