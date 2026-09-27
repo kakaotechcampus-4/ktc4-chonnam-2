@@ -395,11 +395,13 @@ class RealVideoAdapter:
         case: CaseAggregate,
         local_video_path: Path | str,
         scope_id: str,
+        target_event_types: list[str] | None = None,
     ) -> None:
         self.case_id = case_id
         self._case = case
         self._local_video_path = local_video_path
         self._scope_id = scope_id
+        self._target_event_types = target_event_types
         self._context: real_e2e.RealVideoContext | None = None
         self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
@@ -417,6 +419,7 @@ class RealVideoAdapter:
                 local_video_path=self._local_video_path,
                 case=self._case,
                 scope_id=self._scope_id,
+                target_event_types=self._target_event_types,
             )
         return self._context
 
