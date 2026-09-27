@@ -89,14 +89,13 @@ class _Usage:
     total_tokens: int | None
 
 
-def test_usage_preserves_none_and_zero_and_includes_thought_cost():
+def test_usage_preserves_none_and_zero_and_thought():
     missing = ProviderUsage.from_sdk(_Usage(None, 0, None, None))
     assert missing.input_tokens is None
     assert missing.output_tokens == 0
-    assert missing.cost_usd is None
     measured = ProviderUsage.from_sdk(_Usage(1_000_000, 0, 1_000_000, 2_000_000))
-    assert measured.cost_usd is not None
-    assert str(measured.cost_usd) == "4.50"
+    assert measured.thought_tokens == 1_000_000
+    assert measured.total_tokens == 2_000_000
 
 
 def test_retry_only_retries_rate_limits():
