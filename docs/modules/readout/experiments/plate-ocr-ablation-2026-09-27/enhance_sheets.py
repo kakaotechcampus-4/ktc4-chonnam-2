@@ -15,7 +15,7 @@ import numpy as np
 picks_path, videos, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 out.mkdir(parents=True, exist_ok=True)
 data = json.loads(picks_path.read_text(encoding="utf-8"))
-TOP = 3
+TOP = int(__import__("os").environ.get("SHEET_TOP", "3"))
 WINDOW_SEC = 0.5
 TARGET_W = 420          # 표시 폭 — 작은 번호판도 같은 크기로 보이게 키운다
 
@@ -40,7 +40,7 @@ for name, info in data.items():
     picks = sorted(info["picks"], key=lambda p: -(p["plate"][3] * p["conf"]))[:TOP]
     if not picks:
         continue
-    cap = cv2.VideoCapture(str(videos / f"{name}.avi"))
+    cap = cv2.VideoCapture(str(next(videos.glob(f"{name}.*"))))
     fps = info["fps"]
     rows = []
     for p in sorted(picks, key=lambda p: p["t"]):

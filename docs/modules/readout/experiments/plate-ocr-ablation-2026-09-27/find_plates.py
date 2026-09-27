@@ -21,7 +21,7 @@ from klpd.models.loader import ONNXModel, get_model_path  # noqa: E402
 from ultralytics import YOLO  # noqa: E402
 
 STEP_SEC = 0.5
-TOP = 6
+TOP = int(os.environ.get("FIND_TOP", "6"))
 MIN_GAP_SEC = 1.0
 VEHICLES = [2, 3, 5, 7]
 

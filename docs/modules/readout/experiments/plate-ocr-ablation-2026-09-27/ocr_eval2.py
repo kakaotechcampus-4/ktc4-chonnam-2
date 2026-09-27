@@ -161,7 +161,7 @@ def main():
         if seed_box is None:
             top = max(info["picks"], key=lambda p: p["plate"][3] * p["conf"])
             seed_t, seed_box = top["t"], top["plate"]
-        cap = cv2.VideoCapture(str(videos / f"{item['video']}.avi"))
+        cap = cv2.VideoCapture(str(next(videos.glob(f"{item['video']}.*"))))
         fps = info["fps"]
         seed_frame = round(seed_t * fps)
         tracked = track_frames(cap, fps, seed_frame, seed_box)
