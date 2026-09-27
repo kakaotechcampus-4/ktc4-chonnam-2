@@ -299,6 +299,30 @@ abstention_recall   1.0      <- 기권해야 할 걸 전부 기권했다
 - `wrong_accept_rate` 의 **분자가 0이면 경고를 단다** — 「안전하다」가 아니라 「pack 에 그런 케이스가
   없다」이기 때문이다(`ZERO_NUMERATOR`).
 
+### 5-3. Exact / CER 수치를 나란히 놓기 위한 기록 요건
+
+**정규화 규칙이 다르면 같은 판독 결과에서 다른 Exact 가 나온다.** 정의가 갈려서가 아니라
+정규화가 갈려서다 — 그리고 그 사실은 숫자만 봐서는 드러나지 않는다.
+
+실제로 레포 안에서 한 번 벌어졌다. 같은 PaddleOCR 인데 **15장 Exact 53.3% · CER 16.2%** 와
+**500장 Exact 5.6% · CER 55.3%** 가 공존하고, 15장 쪽에는 정규화도 이미지 출처도 적혀 있지
+않아 **어느 쪽이 맞는지 이전에 비교 자체가 불가능**하다(readout PR
+[#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §, 신유민).
+
+그래서 **어떤 Exact·CER 수치든 아래 셋을 함께 적지 않으면 다른 수치와 나란히 놓지 않는다.**
+
+| | 무엇을 적나 |
+| --- | --- |
+| **정규화 규칙** | 원문 그대로 비교인가 · 공백·하이픈을 떼는가 · 전각/반각을 접는가 |
+| **이미지 출처** | 어느 데이터셋의 어떤 crop 인가 (원본 프레임 · 확대 · ROI) |
+| **표본 식별** | 몇 장이고 어떻게 뽑았나 (seed · 규칙) |
+
+이것은 **값을 정하는 규칙이 아니라 비교 가능성의 전제**다. 그래서 C tier 확보 전에도 정할 수
+있고, 나중에 정규화 규칙이 확정돼도 다시 만들지 않는다.
+
+**기록이 없는 과거 수치를 지우지 않는다.** 「정규화·출처 미기록 — 비교 불가」 꼬리표를 달아
+남긴다 — 지우면 그때 무엇을 보고 그 결정을 했는지가 사라진다.
+
 ---
 
 ## 6. Cost — `eval/scorers/cost.py` (`c3`)
@@ -462,8 +486,11 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
 | — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
-| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않아, 같은 판독 결과에 다른 Exact 가 나올 수 있다 — **정의가 갈려서가 아니라 정규화가 갈려서**다. eval 소유이고 eval 이 닫는다. 다만 C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다** (readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) 의 Exact 5.6% · CER 55.3% 실측이 후보를 보여준다) |
-| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다(32~35px vs 1줄 39~44px — readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) ⓑ). 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다** |
+| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않다. eval 소유이고 eval 이 닫되, C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다.** **기록 요건은 먼저 닫았다**(§5-3) — 규칙이 없어도 「어떤 정규화 위에서 잰 값인가」를 적게 하면 수치가 조용히 어긋나지는 않는다 |
+| — | **`legibility` 라벨이 eval 정답지에만 있다** | `wrong_accept_rate`·`abstention_recall` 은 분모가 **GT 의 legibility** 다(§5-1). readout 의 baseline 측정에는 이 라벨이 없어 **계산 자체가 불가능**하고, 그쪽 「틀리게 확정 / 제대로 포기」는 분모가 **예측 기준**이라 이름이 비슷해도 다른 값이다(readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120)). C tier 정답지를 만들 때 `legibility` 를 같이 라벨링해야 두 축이 이어진다 |
+| — | **plate 천장은 전처리로 올라가지 않는다** | 같은 AI-Hub `172` crop 에서 **학습 모델 CER 0.76% vs pretrained 55.3%** 다 (Sensors 2026 · readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §4). plate 실측이 낮게 나올 때 **원인을 전처리에서 찾지 않는다** — 파인튜닝 전까지의 천장이다 |
+| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다. 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다.** 실물: readout PR [#113](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/113) 의 `clip_20260810_175721_evt_1.json` — 황색 2줄이 `bbox_xywh [930,837,103,36]` · `plate_px_height 36` · `value "바5215"` · `abstained false` 로 확정된다 |
+| — | **정답지에 번호판 「1줄/2줄」 라벨이 없다** | `MIN_ASPECT` 필터가 1줄 기준이라 **2줄이 1줄처럼 파이프라인에 들어온다**(readout `paddle_provider.py`). 정답지에 줄 수가 없으면 plate 지표에서 그 혼입을 **사후에 분리할 수 없다.** C tier 정답지를 만들 때 `legibility` 와 함께 라벨링한다 |
 | — | **촬영조건별 성능을 못 잰다** | `by_condition` 을 `cl2` 에서 **철회했다**(§4-4) — AI-Hub 71555 의 조명·날씨 라벨이 무작위에 가까웠다. `road_type` 은 멀쩡하지만 원래 의도한 축이 아니라 갈아타지 않았다. **조명·날씨별 성능을 재려면 라벨이 새로 필요하다** — 코드로 못 푼다 |
 | — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
 
