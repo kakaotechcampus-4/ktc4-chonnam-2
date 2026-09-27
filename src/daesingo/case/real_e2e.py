@@ -12,8 +12,12 @@ Worker 배선은 이번 범위 밖).
   필드 자체가 없다(1차 구현 범위 밖) — 공개 함수로 노출된 적이 없으므로 recording의
   raw fixture JSON에서 그대로 읽는다. 이 한 곳만 mock이고 나머지는 전부 real 함수
   호출이다.
-- **`situation_response`/`observation_facts`**: case에 이 값을 만드는 로직이 아직
-  없어(intake UI 미구현) `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
+- **`situation_response`**: 2026-09-28부터 `CaseAggregate.record_situation_response()`로
+  기록된 사용자 응답을 `assemble_evidence_bundle()`에 그대로 전달한다(#171 B-2 · 통합 항목
+  I1). 응답 전에는 `None`(= `NOT_ASKED`)이고, ADR-EVIDENCE-005 D2-c에 따라 Package가 나가지
+  않는다. web에서 응답을 보내는 경로(#106 command)는 아직 없다.
+- **`observation_facts`**: case에 이 값을 만드는 로직이 아직
+  없어 `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
@@ -313,12 +317,14 @@ def assemble_evidence_bundle(
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
+    situation_response: dict[str, Any] | None = None,
 ) -> EvidenceBundle:
     """관찰 결과로 TimeResolution → EvidenceRecord → Needs → RequirementReport 2종 →
     ReportPackage를 조립한다. 다른 모듈 호출 없이 evidence 순수 함수만 부르므로, 정정이
     들어올 때마다 다시 불러도 Search·Fine·readout은 다시 돌지 않는다(이슈 #73).
 
-    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다.
+    `correction_records`는 case의 사용자 정정을, `situation_response`는 사용자의 신고 상황
+    응답을 evidence 계산에 그대로 전달한다(`None` = 응답 전 `NOT_ASKED`, 통합 항목 I1).
     """
     obs = observations
     if obs.disposition.decision == NOT_ASSEMBLED:
@@ -355,8 +361,8 @@ def assemble_evidence_bundle(
         incident_clip=obs.incident_clip,
         record_id=f"er_{case_id}_001",
         location_hint=location_hint,
-        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
-        situation_response=None,
+        situation_response=situation_response,
+        # GPS 단순화 (모듈 docstring 참고).
         gps_observation=None,
         correction_records=correction_records or [],
     )

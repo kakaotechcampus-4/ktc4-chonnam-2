@@ -350,6 +350,7 @@ class RealAdapter:
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
                 location_hint=self._case.hints.get("location"),
+                situation_response=self._case.situation_response,
             )
             self._evidence_bundle_case_rev = self._case.case_rev
         return self._evidence_bundle
@@ -519,6 +520,7 @@ class RealVideoAdapter:
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
                 location_hint=self._case.hints.get("location"),
+                situation_response=self._case.situation_response,
             )
             self._evidence_bundle_case_rev = self._case.case_rev
         return self._evidence_bundle

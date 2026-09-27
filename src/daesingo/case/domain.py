@@ -59,6 +59,9 @@ def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+_SITUATION_RESPONSE_VALUES = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
+
+
 @dataclass
 class Candidate:
     candidate_id: str
@@ -92,6 +95,11 @@ class CaseAggregate:
     candidates: list[Candidate] = field(default_factory=list)
     job_records: list[dict[str, Any]] = field(default_factory=list)
     correction_records: list[dict[str, Any]] = field(default_factory=list)
+
+    # 사용자의 신고 상황 응답 — `EvidenceRecord.situation_response`와 같은 모양
+    # (`value`·`responded_at`·`candidate_ref`). 응답 전에는 `None`(= CaseView `NOT_ASKED`)이며,
+    # 무응답을 `USER_UNSURE`로 만들지 않는다(#171 B-2, 통합 항목 I1).
+    situation_response: dict[str, Any] | None = None
 
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
@@ -135,6 +143,7 @@ class CaseAggregate:
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        self.situation_response = None
         self._advance("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", bump_case_rev=False)
 
     def mark_ready(self) -> None:
@@ -195,6 +204,30 @@ class CaseAggregate:
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        # 응답은 선택된 candidate에 묶인다(`candidate_ref`) — 새 후보에 대해서는 다시 묻는다.
+        self.situation_response = None
+
+    def record_situation_response(self, value: str, *, responded_at: str) -> dict[str, Any]:
+        """결과 화면 「신고 상황」 항목에서 사용자가 실제로 누른 응답을 기록한다(#171 B-2 ·
+        통합 항목 I1). `value`는 `CONFIRMED`(맞아요)·`CORRECTED`(다른 상황)·`USER_UNSURE`
+        (잘 모르겠어요) 중 하나이고, `candidate_ref`는 지금 선택된 candidate다.
+
+        새 사용자 요청이라 `case_rev`를 올린다(§3-E) — adapter는 이를 보고 evidence를 다시
+        조립한다(관찰 결과는 재사용, 이슈 #73). `CORRECTED`에 필요한 `SITUATION_CHANGE`
+        CorrectionRecord 존재 여부는 evidence가 조립 시 검증한다.
+        """
+        if value not in _SITUATION_RESPONSE_VALUES:
+            raise ValueError(f"알 수 없는 situation_response 값: {value!r}")
+        selected = next((c for c in self.candidates if c.selected), None)
+        if selected is None:
+            raise InvalidTransition("선택된 candidate가 없어 신고 상황 응답을 기록할 수 없다")
+        self.situation_response = {
+            "value": value,
+            "responded_at": responded_at,
+            "candidate_ref": {"kind": "candidate_event", "ref": selected.candidate_id},
+        }
+        self.bump_revision()
+        return dict(self.situation_response)
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.
