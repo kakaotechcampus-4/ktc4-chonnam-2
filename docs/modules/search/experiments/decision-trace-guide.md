@@ -53,7 +53,7 @@ Manifest는 로컬 파일이며 정답 시각을 담지 않는다. source 상대
 
 ## 기록 읽기
 
-전체 JSON/Markdown은 Git 제외 `.superpowers/decision-trace/trace_<UUID>.*`에만 저장한다. 실행 조건에는 model, 모드, profile, HEAD SHA, 미커밋 Search 코드 fingerprint, config fingerprint, fps/해상도/padding/retry/reasoning/예산/단가가 있다. 각 호출에는 prompt version/fingerprint, 준비 영상 해시·바이트·원본 범위, latency, usage와 응답 또는 고정 실패 코드가 있다. `input_sha256`은 원본 영상, `prepared_media_sha256`은 실제 provider에 전달한 미디어다.
+실행기가 생성하는 전체 JSON/Markdown은 Git 제외 `.superpowers/decision-trace/trace_<UUID>.*`에 저장한다. 이번 7영상 실험의 저장소 보관 범위는 [보관 결정](../decisions/decision-trace-2026-09-26.md#보관과-전환)을 따른다. 실행 조건에는 model, 모드, profile, HEAD SHA, 미커밋 Search 코드 fingerprint, config fingerprint, fps/해상도/padding/retry/reasoning/예산/단가가 있다. 각 호출에는 prompt version/fingerprint, 준비 영상 해시·바이트·원본 범위, latency, usage와 응답 또는 고정 실패 코드가 있다. `input_sha256`은 원본 영상, `prepared_media_sha256`은 실제 provider에 전달한 미디어다.
 
 코드 fingerprint는 Search `.py`와 프롬프트 원문 파일명·바이트를 정렬하여 SHA-256으로 계산한다. 템플릿 fingerprint는 렌더링 전 프롬프트 기준이다. 서로 다른 후보 clip 자체를 동일 입력이라고 주장하지 않는다.
 
