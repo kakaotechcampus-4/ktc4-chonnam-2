@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel, ValidationError
 
 from .config import GeminiSearchConfig
+from .execution import RunDeadline
 from .media import PreparedMedia
 from .prompts import COARSE_PROMPT, fine_prompt_for
 from .retry import RetryPolicy, call_with_retry
@@ -40,6 +41,9 @@ class CoarseRequest:
     event_types: tuple[VisualEventType, ...]
     media: PreparedMedia | None = field(default=None)
     timeout_sec: float = field(default=60.0)
+    # 있으면 retry 루프가 이 예산을 존중한다(시도 전 check + sleep clamp).
+    # 없으면 timeout_sec 만으로 per-attempt timeout 을 잡는 기존 동작.
+    deadline: RunDeadline | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +55,7 @@ class FineRequest:
     end_sec: float
     media: PreparedMedia | None = field(default=None)
     timeout_sec: float = field(default=60.0)
+    deadline: RunDeadline | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +140,9 @@ class GeminiProvider:
             event_types=", ".join(event.value for event in request.event_types),
             duration_sec=request.source.duration_sec,
         )
-        return self._invoke(request.media, prompt, CoarseResponse, request.timeout_sec)
+        return self._invoke(
+            request.media, prompt, CoarseResponse, request.timeout_sec, request.deadline
+        )
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
         if request.media is None:
@@ -148,7 +155,9 @@ class GeminiProvider:
             start_sec=request.start_sec,
             end_sec=request.end_sec,
         )
-        return self._invoke(request.media, prompt, FineResponse, request.timeout_sec)
+        return self._invoke(
+            request.media, prompt, FineResponse, request.timeout_sec, request.deadline
+        )
 
     def _invoke[ResponseT: BaseModel](
         self,
@@ -156,6 +165,7 @@ class GeminiProvider:
         prompt: str,
         response_model: type[ResponseT],
         timeout_sec: float,
+        deadline: RunDeadline | None = None,
     ) -> ProviderResult[ResponseT]:
         # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 서버측 구간
         # 클리핑·fps·해상도는 미결이라 Fine 구간은 프롬프트로만 지시한다 —
@@ -198,13 +208,20 @@ class GeminiProvider:
             )
 
         def operation() -> ProviderResult[ResponseT]:
+            # deadline 이 있으면 매 시도마다 남은 예산으로 timeout 을 다시 잡는다.
+            # (재시도 sleep 뒤 이전 시도의 큰 timeout 을 재사용하면 예산을 넘긴다.)
+            if deadline is not None:
+                deadline.check()
+                attempt_timeout = deadline.remaining_sec()
+            else:
+                attempt_timeout = timeout_sec
             started = time.monotonic()
             completion = self._client.chat.completions.parse(
                 model=self._config.model,
                 messages=cast("list[ChatCompletionMessageParam]", messages),
                 response_format=response_model,
                 reasoning_effort=cast("ReasoningEffort", self._config.reasoning_effort),
-                timeout=timeout_sec,
+                timeout=attempt_timeout,
             )
             latency_ms = round((time.monotonic() - started) * 1000)
             parsed = completion.choices[0].message.parsed
@@ -219,6 +236,7 @@ class GeminiProvider:
             return call_with_retry(
                 operation,
                 RetryPolicy(self._config.max_retries, self._config.retry_base_sec),
+                deadline=deadline,
             )
         except (BadRequestError, ValidationError) as error:
             raise ProviderPayloadError("provider rejected the request") from error

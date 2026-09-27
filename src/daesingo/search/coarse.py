@@ -105,6 +105,7 @@ def search_coarse(
                     scope.target_event_types,
                     media=prepared,
                     timeout_sec=deadline.remaining_sec(),
+                    deadline=deadline,
                 )
             )
         except DeadlineExceededError as error:

@@ -25,12 +25,18 @@ type_accuracy_given_localized 는 시간이 맞은 사건 중 유형까지 맞�
 **두 축은 서로 다른 배정에서 나온다.** 유형을 요구하면 그래프가 달라지고
 최대 매칭도 달라지므로, recall_at 은 localization_recall_at 과
 type_accuracy_given_localized 의 곱이 아니다. 곱으로 검산하지 않는다.
+
+**비율 지표에는 95% 신뢰구간(`*_ci95`)을 함께 낸다** (2026-09-21). B tier 의
+채점 대상 사건이 10건이고 by_type 은 유형당 2~6건이다 — SIGNAL 2건에서 나올
+수 있는 recall 은 0 · 0.5 · 1 셋뿐인데 결과 파일은 `0.5` 라고만 적어 소수점이
+정밀해 보인다. 방법과 Wald 를 쓰지 않는 이유는 `interval.py`.
 """
 import statistics
 
 from eval.enums import VIOLATION_TYPES
+from eval.scorers.interval import wilson95
 
-SCORER_VERSION = "s4"   # 2026-09-20 시간 축(localization)과 유형 축 분리
+SCORER_VERSION = "s5"   # 2026-09-21 비율 지표에 95% 신뢰구간
 DEFAULT_TOLERANCE_SEC = 2.0
 
 CIRCULARITY = ("순환 경고 — mock tier 의 onset 은 채점 대상인 예측과 같은 fixture "
@@ -227,22 +233,31 @@ def score(normalized, gt, ks=(1, 3, 10), tolerance_sec=DEFAULT_TOLERANCE_SEC):
 
     return {
         "recall_at": {str(k): (hits[k] / n_events if n_events else None) for k in ks},
+        "recall_at_ci95": {str(k): wilson95(hits[k], n_events) for k in ks},
         "localization_recall_at": {
             str(k): (loc_hits[k] / n_events if n_events else None) for k in ks},
+        "localization_recall_at_ci95": {
+            str(k): wilson95(loc_hits[k], n_events) for k in ks},
         "type_accuracy_given_localized": (
             (n_type_correct / n_localized) if n_localized else None),
+        "type_accuracy_given_localized_ci95": wilson95(n_type_correct, n_localized),
         "onset_error_sec": {
             "mean": statistics.fmean(onset_errors) if onset_errors else None,
             "median": statistics.median(onset_errors) if onset_errors else None,
             "tolerance_sec": tolerance_sec,
         },
         "containment_rate": (sum(contained) / len(contained)) if contained else None,
+        "containment_rate_ci95": wilson95(sum(contained), len(contained)),
         "fp_per_clip": (fp / len(negative_clips)) if negative_clips else None,
         "n_events": n_events,
         "n_negative_clips": len(negative_clips),
         "excluded_by_reason": excluded_by_reason,
         "by_type": {
-            vt: {"recall_at": {str(k): v["hits"][k] / v["n"] for k in ks}, "n": v["n"]}
+            # by_type 이 구간을 가장 절실히 필요로 한다 — 유형당 사건이 2건이면
+            # 값이 0 · 0.5 · 1 셋뿐이라 점추정만으로는 아무것도 말하지 못한다.
+            vt: {"recall_at": {str(k): v["hits"][k] / v["n"] for k in ks},
+                 "recall_at_ci95": {str(k): wilson95(v["hits"][k], v["n"]) for k in ks},
+                 "n": v["n"]}
             for vt, v in sorted(by_type.items())
         },
         "coverage": "; ".join(reasons) if reasons else None,
@@ -259,10 +274,14 @@ def not_run(reason, ks=(1, 3, 10)):
     """
     return {
         "recall_at": {str(k): None for k in ks},
+        "recall_at_ci95": {str(k): None for k in ks},
         "localization_recall_at": {str(k): None for k in ks},
+        "localization_recall_at_ci95": {str(k): None for k in ks},
         "type_accuracy_given_localized": None,
+        "type_accuracy_given_localized_ci95": None,
         "onset_error_sec": {"mean": None, "median": None, "tolerance_sec": None},
         "containment_rate": None,
+        "containment_rate_ci95": None,
         "fp_per_clip": None,
         "n_events": None,
         "n_negative_clips": None,

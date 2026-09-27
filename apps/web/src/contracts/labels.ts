@@ -90,7 +90,11 @@ export function reviewReason(code: string | null): string {
   return REVIEW_REASON_MESSAGES[code] ?? REVIEW_REASON_FALLBACK
 }
 
-/** 안내 문구 — `notices[].message_key` (v5 fixture 실측 13종) */
+/** 안내 문구 — `notices[].message_key` (v5 fixture 실측 13종 + 계약 등재 1종).
+ *
+ * 마지막 1종은 fixture에 아직 안 나온다. 아래 테스트가 fixture에 있는 키만
+ * 훑으므로 이 항목은 검사에 안 걸린다 — 키 문자열은 계약에서 그대로 옮긴다
+ * (`contract-job-record-case-view.md` §`notices[].code`, 2026-09-14 등재). */
 const NOTICE_MESSAGES: Record<string, string> = {
   'notice.event_time_needs_review': '사건 시각을 확인해 주세요.',
   'notice.time_conflict': '시각 단서가 서로 달라 확인이 필요합니다.',
@@ -105,6 +109,11 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.search_no_candidates': '조건에 맞는 장면을 찾지 못했습니다.',
   'notice.visual_event_unconfirmed': '어떤 상황인지 아직 확인되지 않았습니다.',
   'notice.report_video_not_generated': '신고용 영상이 아직 만들어지지 않았습니다.',
+  // 이슈 #48 확정 — 문구 뜻은 계약이 정했다(「지도에 붙여넣을 검색어를 제공하지
+  // 못한다, 기억나는 장소를 직접 검색해야 한다」). 발동 기준은 `location` 부재가
+  // 아니라 `location_display.search_keyword == null`이다.
+  'notice.location_search_keyword_missing':
+    '지도에 붙여넣을 검색어를 만들지 못했습니다. 기억나는 장소로 직접 검색해 주세요.',
 }
 
 export const NOTICE_FALLBACK = '확인이 필요한 항목이 있습니다.'

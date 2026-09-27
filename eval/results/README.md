@@ -28,13 +28,13 @@ scorer 집계 결과 JSON. **git으로 추적**한다. 실험 기록 방법은 `
 
 | run_id | impl | manifest · stage | 현행 세대 | 남아 있는 옛 세대 |
 | --- | --- | --- | --- | --- |
-| `demo_correct` | `fake:always_correct` | `b_youtube` · `candidate` | `g3.s4-c3` | `g3.s4-c2` |
-| `demo_wrong` | `fake:always_wrong` | `b_youtube` · `candidate` | `g3.s4-c3` | `g3.s4-c2` |
-| `demo_correct_cls` | `fake:always_correct` | `a_aihub` · `classification` | `g1.cl2-c3` | `g1.cl1-c2` · `g1.cl2-c2` |
-| `demo_wrong_cls` | `fake:always_wrong` | `a_aihub` · `classification` | `g1.cl2-c3` | `g1.cl1-c2` · `g1.cl2-c2` |
-| `demo_correct_abmix` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) | `ag1.cl2-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` |
-| `demo_wrong_abmix` | `fake:always_wrong` | `ab_mixed` · `classification` | `ag1.cl2-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` |
-| `mock_e2e` | `mock_pack:contracts` | `mock_pack` · `candidate` | `mp1.s4-c3` | `mp1.s4-c2` |
+| `demo_correct` | `fake:always_correct` | `b_youtube` · `candidate` | `g3.s5-c3` | `g3.s4-c2` · `g3.s4-c3` |
+| `demo_wrong` | `fake:always_wrong` | `b_youtube` · `candidate` | `g3.s5-c3` | `g3.s4-c2` · `g3.s4-c3` |
+| `demo_correct_cls` | `fake:always_correct` | `a_aihub` · `classification` | `g1.cl3-c3` | `g1.cl1-c2` · `g1.cl2-c2` · `g1.cl2-c3` |
+| `demo_wrong_cls` | `fake:always_wrong` | `a_aihub` · `classification` | `g1.cl3-c3` | `g1.cl1-c2` · `g1.cl2-c2` · `g1.cl2-c3` |
+| `demo_correct_abmix` | `fake:always_correct` | `ab_mixed` · `classification` (5×5 전부 채워짐) | `ag1.cl3-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` · `ag1.cl2-c3` |
+| `demo_wrong_abmix` | `fake:always_wrong` | `ab_mixed` · `classification` | `ag1.cl3-c3` | `ag1.cl1-c2` · `ag1.cl2-c2` · `ag1.cl2-c3` |
+| `mock_e2e` | `mock_pack:contracts` | `mock_pack` · `candidate` | `mp1.s5-c3` | `mp1.s4-c2` · `mp1.s4-c3` |
 | `mock_plate` | `mock_pack:contracts` | `mock_pack` · `plate` | `mp1.p2-c3` | `mp1.p2-c2` |
 
 **옛 세대를 지우지 않는다.** 채점기가 바뀌면 이름이 달라져 나란히 남는다 —
