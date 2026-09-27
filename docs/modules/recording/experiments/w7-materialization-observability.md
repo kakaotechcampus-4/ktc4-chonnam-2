@@ -1,5 +1,7 @@
 # W7 materialization 내부 비용 관찰 v3
 
+전후 비교 결과: [source inspection 재사용 v3 baseline 비교](w7-source-inspection-comparison.md).
+
 목적은 [분리 범위 baseline](w7-baseline-negative-001.md)에서 크게 측정된 AnalysisSource와
 IncidentClip의 비용을 분해하는 것이다. 최적화나 encoder/profile 변경을 하지 않는다.
 LocalIncidentMaterializer가 재사용하는 LocalAnalysisMaterializer의 실제 실행 지점을 측정한다.

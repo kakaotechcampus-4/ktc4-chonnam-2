@@ -1,5 +1,7 @@
 # W7 Recording Benchmark 실행기 v1
 
+전후 비교 결과: [source inspection 재사용 v3 baseline 비교](w7-source-inspection-comparison.md).
+
 선택적 v3 측정: [materialization 내부 단계 관찰](w7-materialization-observability.md).
 
 실제 측정 결과: [W7 분리 범위 baseline negative-001](w7-baseline-negative-001.md).
