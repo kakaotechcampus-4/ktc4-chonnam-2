@@ -1,5 +1,7 @@
 # G5 Recording Baseline bundle v1
 
+선택적 v3 동결·phase 통계: [materialization 내부 단계 관찰](w7-materialization-observability.md).
+
 동결 결과: [W7 분리 범위 baseline negative-001](w7-baseline-negative-001.md).
 
 ## 넓은 analysis / 좁은 incident baseline v2
