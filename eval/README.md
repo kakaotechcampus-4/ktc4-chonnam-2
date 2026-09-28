@@ -90,3 +90,18 @@ python -m pytest tests/eval/ -q
 ```
 
 미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 123개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.
+
+### readout 번호판 인식 평가 (비공개 manifest)
+
+`readout:paddle-crop`은 번호판 crop 이미지를 readout 공개 함수 `read_plate`와 `PaddleOcrProvider`로 판독한다. crop 한 장이 프레임 한 장이다. 검출 단계가 빠져 있어서 **인식(recognition)만** 잰다.
+
+정답과 예측에 실제 차량번호가 들어간다. 그래서 이름이 `private_`로 시작하는 manifest는 manifest·prediction·result를 전부 `.env`의 `DAESINGO_EVAL_PRIVATE_ROOT` 아래에 둔다(`eval/paths.py`). 레포에는 집계 수치만 `docs/modules/eval/experiments/`에 남긴다.
+
+```bash
+uv sync --extra test --extra readout-paddle
+# 1회: aihub172.py sample 산출물 → private manifest
+uv run python -m eval.tools.build_private_aihub172 --source <.../aihub172/track2_recognition>
+uv run python -m eval.run --impl readout:paddle-crop --manifest private_aihub172_plate --stage plate --run-id <run_id>
+uv run python -m eval.score --prediction <run_id>
+```
+

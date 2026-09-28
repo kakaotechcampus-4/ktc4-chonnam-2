@@ -14,15 +14,29 @@ from eval import manifests_io, paths
 from eval.scorers import candidate, classification, cost, plate
 
 
+def _prediction_path(run_id):
+    """레포의 predictions/ 를 먼저 보고, 없으면 private root 를 본다."""
+    public = os.path.join(paths.predictions_dir(), run_id + ".json")
+    if os.path.exists(public):
+        return public
+    try:
+        private = os.path.join(paths.private_predictions_dir(), run_id + ".json")
+    except OSError:
+        return public
+    return private if os.path.exists(private) else public
+
+
 def _load_prediction(run_id):
-    with open(os.path.join(paths.predictions_dir(), run_id + ".json"), encoding="utf-8") as f:
+    with open(_prediction_path(run_id), encoding="utf-8") as f:
         return json.load(f)
 
 
-def _prediction_ref(run_id):
-    path = os.path.join(paths.predictions_dir(), run_id + ".json")
-    return {"path": os.path.relpath(path, paths.REPO_ROOT).replace("\\", "/"),
-            "sha256": manifests_io.sha256_file(path)}
+def _prediction_ref(run_id, private=False):
+    path = _prediction_path(run_id)
+    # private 경로는 담당자 PC 에만 있다. 절대경로를 결과에 박지 않는다.
+    shown = ("<DAESINGO_EVAL_PRIVATE_ROOT>/predictions/%s.json" % run_id if private
+             else os.path.relpath(path, paths.REPO_ROOT).replace("\\", "/"))
+    return {"path": shown, "sha256": manifests_io.sha256_file(path)}
 
 
 class ContractMismatch(Exception):
@@ -89,7 +103,8 @@ def build_result(env):
             "code_commit": env["meta"]["code_commit"],
             "scorer_version": _scorer_version(stage),
             "cost_scorer_version": cost.SCORER_VERSION,
-            "prediction_ref": _prediction_ref(env["meta"]["run_id"]),
+            "prediction_ref": _prediction_ref(env["meta"]["run_id"],
+                                              paths.is_private(manifest)),
         },
         "candidate": None,
         "classification": None,
@@ -143,7 +158,8 @@ def main(argv=None):
     except ContractMismatch as e:
         print("실패: %s" % e, file=sys.stderr)
         return 4
-    outdir = paths.results_dir()
+    outdir = (paths.private_results_dir() if paths.is_private(result["meta"]["manifest"])
+              else paths.results_dir())
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, result_filename(args.prediction, result["meta"]))
     if os.path.exists(out):
