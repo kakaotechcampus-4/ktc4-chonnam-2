@@ -138,7 +138,12 @@ class CaseAggregate:
         self.selection_rev += 1
         self._advance("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", bump_case_rev=False)
 
-    def mark_ready(self) -> None:
+    def mark_ready(self, *, report_package: dict[str, Any] | None) -> None:
+        """`READY` = `PACKAGE_READY` 파생 gate 성립 시점(CaseView 계약 B절, #171 C). ReportPackage는
+        ready-only라 존재 자체가 FINAL `PASS`/`WARN`의 증거다 — 없으면 전이를 거부한다(#167).
+        downstream 스냅샷에서 판단하는 호출자는 `service.mark_ready_if_package_ready()`를 쓴다."""
+        if report_package is None:
+            raise InvalidTransition("READY는 준비된 ReportPackage 없이 들어갈 수 없다(#167)")
         self._advance("EVIDENCE_REVIEW", "READY")
 
     def bump_revision(self) -> None:

@@ -7,12 +7,17 @@ real E2E 경로(`scripts/dump_real_video_caseview.py`)가 evidence·Package를 �
 """
 from __future__ import annotations
 
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from daesingo.case import service
-from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case import jobs, real_e2e, service
+from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
+from daesingo.case.domain import Candidate, CaseAggregate, InvalidTransition
+
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 class _SnapshotAdapter:
@@ -26,7 +31,7 @@ class _SnapshotAdapter:
         report_package: dict[str, Any] | None,
     ) -> None:
         self._evidence_record = evidence_record
-        self._final = None if final_readiness is None else {"readiness": final_readiness, "checks": []}
+        self._final = None if final_readiness is None else {"overall": final_readiness, "checks": []}
         self._package = report_package
 
     def get_evidence_record(self) -> dict[str, Any] | None:
@@ -98,3 +103,77 @@ def test_package_without_passing_final_report_is_not_ready() -> None:
 
     assert service.mark_ready_if_package_ready(case, adapter) is False
     assert case.stage == "EVIDENCE_REVIEW"
+
+
+# ── domain 가드 — READY는 준비된 Package 없이 들어갈 수 없다 ──────────────
+
+
+def test_domain_rejects_ready_without_package() -> None:
+    """real 스크립트만 고치면 누가 `mark_ready()`를 직접 불러 같은 버그가 다시 난다 —
+    domain이 Package 없이 READY로 가는 전이를 거부한다."""
+    case = _case_in_evidence_review()
+    rev = case.case_rev
+
+    with pytest.raises(InvalidTransition):
+        case.mark_ready(report_package=None)
+
+    assert case.stage == "EVIDENCE_REVIEW"
+    assert case.case_rev == rev
+
+
+def test_domain_ready_with_package() -> None:
+    case = _case_in_evidence_review()
+    case.mark_ready(report_package=_PACKAGE)
+    assert case.stage == "READY"
+
+
+# ── 실제 adapter 경로 ──────────────────────────────────────────────────
+
+
+class _DictModel(dict):
+    def model_dump(self, mode: str = "json") -> dict:
+        return dict(self)
+
+
+def _selected_real_adapter(case_id: str) -> tuple[CaseAggregate, RealAdapter]:
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id=case_id, hints={}, manifest_summary={})
+    real = RealAdapter(case_id=case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint=f"sha1:{case_id}-coarse")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+    return case, real
+
+
+def test_real_adapter_not_observed_does_not_reach_ready(monkeypatch) -> None:
+    """Fine `NOT_OBSERVED` → `NOT_ASSEMBLED`(evidence·Package 없음)이 실제 adapter 경로에서도
+    READY가 되지 않는다."""
+    original = real_e2e._resolve_via_search_stream_context
+
+    def resolve_not_observed(**kwargs):
+        result, media_stream_ref = original(**kwargs)
+        visual = dict(result.visual_evidence.model_dump(mode="json"), verification="NOT_OBSERVED", visual_event_type=None)
+        fake = SimpleNamespace(visual_evidence=_DictModel(visual), analysis_run=result.analysis_run)
+        return fake, media_stream_ref
+
+    monkeypatch.setattr(real_e2e, "_resolve_via_search_stream_context", resolve_not_observed)
+    case, real = _selected_real_adapter("case_ready_not_observed")
+
+    assert service.mark_ready_if_package_ready(case, real) is False
+    view = service.build_view_from_adapter(case, real)
+    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["evidence"] is None
+    assert view["package"] is None
+
+
+def test_mock_happy_path_with_package_still_reaches_ready() -> None:
+    """Package가 있는 정상 경로(공용 Mock happy_001, `pkg_h001`)는 이 함수로 READY가 된다."""
+    case = _case_in_evidence_review()
+    adapter = MockFixtureAdapter(MOCK_ROOT, "happy_001")
+
+    assert service.mark_ready_if_package_ready(case, adapter) is True
+    assert case.stage == "READY"
+    view = service.build_view_from_adapter(case, adapter)
+    assert view["stage"] == "READY"
+    assert view["package"] is not None
