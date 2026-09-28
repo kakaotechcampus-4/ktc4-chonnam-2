@@ -74,11 +74,12 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   동일성/재사용 판단용 opaque 설정일 뿐 계약 기본값이 아니다.
 - **`AnalysisScope`의 `budget`/`target_event_types`**: case Producer 소유(recording
   소유 아님). 공용 Mock Pack의 happy 기준(`target_event_types=["SOLID_LINE_LANE_CHANGE"]`,
-  `budget={max_cost_krw:1000, max_latency_sec:180}`)을 월요일 GT 없는 배관 E2E에
-  재사용한다(정철원 확인, 2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의
-  정답을 단정하는 값이 아니라 search에 요청하는 탐지 대상이다. Elice 실제 호출
-  한도로 다른 값이 필요하면 서어진 확인이 남는다 — 계약 기본값으로 새로 확정된 게
-  아니다.
+  `max_cost_krw:1000`)을 월요일 GT 없는 배관 E2E에 재사용한다(정철원 확인,
+  2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의 정답을 단정하는 값이 아니라
+  search에 요청하는 탐지 대상이다. `max_latency_sec`는 2026-09-28부터 A-1 잠정값
+  「Coarse 클립당 150초」(`docs/modules/case/decisions/timeout-fallback.md`, #72)를 쓴다 —
+  이 경로는 영상 전체를 한 번에 올려 사실상 클립 1개이고, 인라인 상한을 넘는 영상은
+  search가 `MediaTooLargeError`로 막는다. 클립 분할 발주는 #168 후속 결정 뒤 구현한다.
 - **candidate 선택은 `candidates[0]`으로 고정한다.** GT 없는 배관 확인이 목적이라
   "어느 candidate가 맞는지"는 이번 범위 밖이다 — `happy_001`이 후보 1개라 우연히
   안전했던 것과 같은 자리다. 후보가 여럿이면 이 단순화가 그대로 드러난다.
@@ -145,7 +146,9 @@ SCENARIO_ID = "scenario_happy_001"
 # 공용 Mock Pack happy 기준(정철원 확인, 2026-09-21) — 계약 기본값으로 확정된 게
 # 아니라 월요일 GT 없는 배관 E2E용 재사용 값이다.
 _MONDAY_TARGET_EVENT_TYPES = ["SOLID_LINE_LANE_CHANGE"]
-_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": 180}
+# A-1 잠정값(timeout-fallback.md, #72) — Coarse 클립당 150초. runtime 머신 재측정 후 확정.
+_COARSE_CLIP_TIMEOUT_SEC = 150
+_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": _COARSE_CLIP_TIMEOUT_SEC}
 
 
 class StreamSelectionError(Exception):

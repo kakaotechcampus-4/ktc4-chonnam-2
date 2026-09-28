@@ -189,6 +189,9 @@ def test_real_video_context_can_be_reused_for_multiple_candidates(monkeypatch: p
         local_video_path=VIDEO_PATH, case=case, scope_id="scope_monday_reuse_test"
     )
     try:
+        # Coarse 실행 상한은 A-1 잠정값 「Coarse 클립당 150초」(timeout-fallback.md, #72). 지금 경로는
+        # 영상 전체를 한 번에 올려 사실상 클립 1개다(인라인 상한을 넘으면 search가 MediaTooLargeError).
+        assert context.scope.budget.max_latency_sec == 150
         candidates = real_e2e.get_real_video_candidates(context)
         assert len(candidates) == 1
         bundle = real_e2e.build_evidence_for_real_video_candidate(
