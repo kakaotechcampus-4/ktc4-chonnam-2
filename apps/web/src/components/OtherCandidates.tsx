@@ -12,11 +12,16 @@ import '../styles/candidates.css'
 //
 // 이 후보로 새 초안을 만드는 버튼은 없다. 고른 후보를 보내는 경로가 계약에
 // 없다(#106).
+//
+// 건수는 지금 신고자료 기준(`selected`)을 뺀 나머지만 센다. 나머지가 없으면
+// 열어도 같은 후보만 나오므로 출구를 두지 않는다. 펼친 그리드에는 기준 후보도
+// 함께 둔다 — 나란히 놓아야 비교가 된다.
 export function OtherCandidates(props: { view: CaseView }): JSX.Element | null {
-  if (props.view.candidates.length === 0) return null
+  const others = props.view.candidates.filter((c) => !c.selected).length
+  if (others === 0) return null
   return (
     <details className="other-cands">
-      <summary>다른 후보 보기 ({props.view.candidates.length}건)</summary>
+      <summary>다른 후보 보기 ({others}건)</summary>
       <div className="other-cands-body">
         <CandidatesScreen view={props.view} />
       </div>

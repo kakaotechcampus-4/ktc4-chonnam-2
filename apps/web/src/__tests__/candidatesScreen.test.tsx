@@ -183,7 +183,19 @@ describe('OtherCandidates — 「다른 후보 보기」', () => {
     const details = container.querySelector('details.other-cands') as HTMLDetailsElement
     expect(details).not.toBeNull()
     expect(details.open).toBe(false)
-    expect(details.querySelector('summary')!.textContent).toBe('다른 후보 보기 (2건)')
+    expect(details.querySelector('summary')!.textContent).toBe('다른 후보 보기 (1건)')
+  })
+
+  it('지금 신고자료 기준 후보는 세지 않는다 — selected 1 + 다른 후보 1 → (1건)', () => {
+    const { container } = render(
+      <OtherCandidates view={view([candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })])} />,
+    )
+    expect(container.querySelector('summary')!.textContent).toBe('다른 후보 보기 (1건)')
+  })
+
+  it('selected 1건뿐이면 출구를 두지 않는다 — 열어도 같은 후보만 나온다', () => {
+    const { container } = render(<OtherCandidates view={view([candidate({ candidate_id: 'c1', selected: true })])} />)
+    expect(container.innerHTML).toBe('')
   })
 
   it('안에 같은 후보 그리드를 담는다', () => {
