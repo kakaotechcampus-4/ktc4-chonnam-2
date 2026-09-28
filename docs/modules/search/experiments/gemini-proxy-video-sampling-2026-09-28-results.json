@@ -1,0 +1,145 @@
+{
+  "run_date": "2026-09-28",
+  "model": "gemini-3.8-flash",
+  "reasoning_effort": "low",
+  "endpoint": "Elice MLAPI OpenAI-compatible /v1/chat/completions (config.base_url)",
+  "source": "src/daesingo/search/video/20260620_141628_EVT_1.avi",
+  "source_sha256": "7ab930fa0d04b30bfc7f45105c715b3a726476bbbc4f6a5ff3079ff8cf3e4433",
+  "clip": "0-7s, libx264, no audio",
+  "prompt": "Reply with the single word OK.",
+  "probe1_fps_resolution": [
+    {
+      "cond": "text-only",
+      "bytes": 0,
+      "frames": 0,
+      "prompt_tokens": 8
+    },
+    {
+      "cond": "1fps/360p",
+      "bytes": 161535,
+      "frames": "7",
+      "prompt_tokens": 470
+    },
+    {
+      "cond": "1fps/720p",
+      "bytes": 547201,
+      "frames": "7",
+      "prompt_tokens": 470
+    },
+    {
+      "cond": "2fps/360p",
+      "bytes": 217600,
+      "frames": "14",
+      "prompt_tokens": 470
+    },
+    {
+      "cond": "2fps/720p",
+      "bytes": 795841,
+      "frames": "14",
+      "prompt_tokens": 470
+    },
+    {
+      "cond": "4fps/720p",
+      "bytes": 1083371,
+      "frames": "28",
+      "prompt_tokens": 470
+    },
+    {
+      "cond": "8fps/720p",
+      "bytes": 1366367,
+      "frames": "56",
+      "prompt_tokens": 470
+    }
+  ],
+  "probe2_param_passthrough_clip": "2fps/720p (14 frames)",
+  "probe2_param_passthrough": [
+    {
+      "variant": "baseline",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "top media_resolution=high",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"media_resolution\": Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT'"
+    },
+    {
+      "variant": "top media_resolution=ENUM_HIGH",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"media_resolution\": Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT'"
+    },
+    {
+      "variant": "google.media_resolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"media_resolution\" at \\'extra_body.google\\': Cannot find field.', 'type': 'invalid_request_error', 'param': None, '"
+    },
+    {
+      "variant": "google(flat).media_resolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"google\": Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT'}}"
+    },
+    {
+      "variant": "generation_config.media_resolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"generation_config\": Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT"
+    },
+    {
+      "variant": "file.detail=high",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "file.media_resolution=high",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "file.video_metadata.fps=2",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "file.format+video_metadata.fps=2",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "part.video_metadata.fps=2",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "top fps=2",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"fps\": Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT'}}"
+    },
+    {
+      "variant": "google.video_metadata.fps=2",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"video_metadata\" at \\'extra_body.google\\': Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'co"
+    },
+    {
+      "variant": "file.video_metadata.end_offset=3s",
+      "prompt_tokens": 470
+    },
+    {
+      "variant": "google.thinking_config (sanity: google key accepted?)",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Expected one of either `reasoning_effort` or custom `thinking_config`; found both.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUMENT'}}"
+    },
+    {
+      "variant": "google.generation_config.media_resolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"generation_config\" at \\'extra_body.google\\': Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARG"
+    },
+    {
+      "variant": "google.mediaResolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"mediaResolution\" at \\'extra_body.google\\': Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGUM"
+    },
+    {
+      "variant": "google.generationConfig.mediaResolution",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Invalid JSON payload received. Unknown name \"generationConfig\" at \\'extra_body.google\\': Cannot find field.', 'type': 'invalid_request_error', 'param': None, 'code': 'INVALID_ARGU"
+    },
+    {
+      "variant": "native v1beta plain",
+      "error": "RuntimeError: HTTP 404: Not Found"
+    },
+    {
+      "variant": "native v1beta fps2+high",
+      "error": "RuntimeError: HTTP 404: Not Found"
+    },
+    {
+      "variant": "native v1 plain",
+      "error": "RuntimeError: HTTP 405: {\"error\":{\"message\":\"Method Not Allowed\",\"type\":\"api_error\",\"param\":null,\"code\":\"405\"}}"
+    },
+    {
+      "variant": "native v1 fps2+high",
+      "error": "RuntimeError: HTTP 405: {\"error\":{\"message\":\"Method Not Allowed\",\"type\":\"api_error\",\"param\":null,\"code\":\"405\"}}"
+    }
+  ]
+}
