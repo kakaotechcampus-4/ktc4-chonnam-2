@@ -100,7 +100,12 @@ describe('HintRecall — 결과 화면의 「다른 후보 보기」 안에서 �
   it('단서는 후보 비교를 열었을 때의 맥락에 들어 있다', () => {
     // 후보 비교는 기본 화면이 아니라 결과 화면의 선택 경로다(§8-1). 단서도
     // 그 안에 담겨야 결과 화면 위에 따로 떠 있지 않는다.
-    const view = SNAPSHOTS.find((s) => s.scenarioId === 'real_e2e_happy_001')!.view
+    //
+    // 실제 산출물은 후보가 selected 1건뿐이라 출구 자체가 없다(#124). 단서는
+    // 실제 값을 쓰고, 후보만 selected 1 + 다른 후보 1로 만든 테스트용 뷰다.
+    const real = SNAPSHOTS.find((s) => s.scenarioId === 'real_e2e_happy_001')!.view
+    const selected = real.candidates.find((c) => c.selected)!
+    const view = { ...real, candidates: [selected, { ...selected, candidate_id: 'c_other', selected: false }] }
     const { container } = render(<OtherCandidates view={view} />)
     expect(container.querySelector('details.other-cands .hint-recall')).not.toBeNull()
   })
