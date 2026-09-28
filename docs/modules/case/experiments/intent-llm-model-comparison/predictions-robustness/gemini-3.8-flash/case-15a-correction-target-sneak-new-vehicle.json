@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"19시\",\n  \"vehicle_hint\": \"검은 오토바이\",\n  \"situation_hint\": \"헬멧 안 썼던데\",\n  \"location_hint\": null,\n  \"correction_target\": \"time_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 '시간 그거 말고 19시'라며 이전 time_hint를 명시적으로 정정하여 correction_target을 time_hint로 지정했고, 함께 언급된 차량 및 위반 상황(검은 오토바이, 헬멧 미착용)을 추출했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "19시",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": "헬멧 안 썼던데",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 '시간 그거 말고 19시'라며 이전 time_hint를 명시적으로 정정하여 correction_target을 time_hint로 지정했고, 함께 언급된 차량 및 위반 상황(검은 오토바이, 헬멧 미착용)을 추출했습니다."
+  },
+  "latency_ms": 4721.049500047229,
+  "prompt_tokens": 373,
+  "completion_tokens": 547,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

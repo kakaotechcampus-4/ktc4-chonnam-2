@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 종류 언급이 없으므로 null 처리가 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경 봤어요'라는 원문 내용을 situation_hint로 잘 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로에서 죽전로로 자체 정정한 마지막 값을 채택했으며, 이는 판정 기준에서 허용하는 처리 방식이다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target을 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"같은 슬롯(위치)에 대해 두 값을 언급하는 자기 정정 상황에서 confidence를 high로 두지 않고 low로 낮춘 것이 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 종류 언급이 없으므로 null 처리가 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경 봤어요'라는 원문 내용을 situation_hint로 잘 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로에서 죽전로로 자체 정정한 마지막 값을 채택했으며, 이는 판정 기준에서 허용하는 처리 방식이다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target을 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "같은 슬롯(위치)에 대해 두 값을 언급하는 자기 정정 상황에서 confidence를 high로 두지 않고 low로 낮춘 것이 기준에 부합한다."
+    }
+  },
+  "latency_ms": 4916.68300004676,
+  "prompt_tokens": 2942,
+  "completion_tokens": 508,
+  "cost_krw": null,
+  "error": null
+}

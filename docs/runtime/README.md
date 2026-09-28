@@ -22,7 +22,9 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | 문서 | 역할 |
 | --- | --- |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
-| [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD |
+| [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
+| [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
+| [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
 | `decisions/` | 장기 영향을 주는 실제 Runtime 결정이 생겼을 때만 ADR 추가 |
 
 빈 ADR 폴더를 미리 만들지는 않는다.
@@ -117,6 +119,29 @@ Issue #41에서 이미 합의된 경계:
 - [Recording architecture input](../modules/recording/research/architecture-input-memo.md)
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
 
+### Issue #95 이후 Runtime 라우팅
+
+Issue #95의 Elice 전환 P0/P1 결과는 Recording/Search가 소유한 실험 사실이며, Runtime은 그 결과에서 **실행 환경에 영향을 주는 질문만** 가져온다.
+
+```text
+#95 P0/P1
+→ provider inline media 경로 / materialization / local reuse 사실
+→ Runtime cross-cutting 질문 추출
+→ experiments/에서 capacity · working set · recovery 검증
+→ 반복 가능한 결과만 runtime-tech-spec / ops-spec에 승격
+→ 장기 구조 결정이면 decisions/ ADR
+```
+
+현재 다음 경계는 별도 후속 이슈 #153에서 Search 주도로 전수조사 중이므로 Runtime 문서가 먼저 확정하지 않는다.
+
+- provider/usage legacy 표현의 유지·변경 여부
+- pricing 데이터의 SSOT 및 Search/Eval/Runtime 소비 경계
+- provider config/key naming의 유지·migration 여부
+
+Runtime 쪽에서 확정된 책임은 Final `UsageRecord` persistence, Worker/composition root의 config·secret 주입 경계, queue/retry/lease/heartbeat/observability다.
+
+P2 Runtime Capacity Smoke의 계획과 결과는 [`experiments/`](./experiments/README.md)에서 관리한다.
+
 ## 현재 열린 Runtime/Ops 결정
 
 ### Runtime Tech
@@ -131,7 +156,7 @@ Issue #41에서 이미 합의된 경계:
 - heartbeat interval
 - STALE threshold
 - Worker polling/sweep interval
-- UsageRecord persistence / pricing config
+- UsageRecord persistence / pricing SSOT 소비 경계 — #153 조사 결과를 받아 확정
 
 ### Ops
 
@@ -143,6 +168,10 @@ Issue #41에서 이미 합의된 경계:
 - UsageRecord retention
 - scaling threshold
 - deployment workflow
+- build-time/runtime configuration 주입 방식
+- immutable release 식별 / known-good revision 기록
+- post-deploy health/readiness + external smoke test
+- rollback exact command
 
 정확한 수치는 실제 Runtime integration과 Recording/Search benchmark 결과 없이 임의 확정하지 않는다.
 
@@ -170,7 +199,8 @@ Runtime 관련 변경 시:
 2. Contract 변경이 아니라 구현 선택이면 Runtime Tech Spec에 기록한다.
 3. 배포·운영 선택이면 Ops Spec에 기록한다.
 4. recording/search 실험값은 Owner 문서에 남기고 Runtime에는 결정 영향만 링크한다.
-5. 같은 설정값을 두 문서가 동시에 소유하지 않게 한다.
+5. Runtime cross-cutting 실험은 `experiments/`에 plan/result를 남기고, 반복 가능한 결과만 Tech/Ops 결정으로 승격한다.
+6. 같은 설정값을 두 문서가 동시에 소유하지 않게 한다.
 
 ## Related
 

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14d-profanity-illegal-uturn",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": \"죽전로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"문장에 시간 표현이 없고, 차량은 트럭이며, 행위는 불법 유턴이고, 장소는 죽전로로 명시되어 있다. 따라서 해당 필드를 채웠고, 정정 대상은 없다. 상황은 명확하므로 자신감은 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "문장에 시간 표현이 없고, 차량은 트럭이며, 행위는 불법 유턴이고, 장소는 죽전로로 명시되어 있다. 따라서 해당 필드를 채웠고, 정정 대상은 없다. 상황은 명확하므로 자신감은 high로 판단했다."
+  },
+  "latency_ms": 9787.343599949963,
+  "prompt_tokens": 791,
+  "completion_tokens": 1410,
+  "cost_krw": 0.918806,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11c-extremely-long",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 무의미한 반복과 모호한 표현뿐이라 구체적 상황 정보가 없으므로 null이 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이나 이전 값 수정 내용이 없으므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"모든 필드가 null인 극도로 모호하고 반복적인 입력이므로 confidence를 low로 매긴 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문이 무의미한 반복과 모호한 표현뿐이라 구체적 상황 정보가 없으므로 null이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 관련 정보가 전혀 없으므로 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이나 이전 값 수정 내용이 없으므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "모든 필드가 null인 극도로 모호하고 반복적인 입력이므로 confidence를 low로 매긴 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 6238.707499927841,
+  "prompt_tokens": 3381,
+  "completion_tokens": 495,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"검은색 트럭\",\n  \"situation_hint\": \"신호 무시\",\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 명확하게 기존 위치 정보를 '죽전로'로 정정하였으며, 추가로 새로운 위반 상황인 검은색 트럭의 신호 위반을 언급함.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호 무시",
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 기존 위치 정보를 '죽전로'로 정정하였으며, 추가로 새로운 위반 상황인 검은색 트럭의 신호 위반을 언급함."
+  },
+  "latency_ms": 1632.8545999713242,
+  "prompt_tokens": 372,
+  "completion_tokens": 118,
+  "cost_krw": 0.41075399999999995,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

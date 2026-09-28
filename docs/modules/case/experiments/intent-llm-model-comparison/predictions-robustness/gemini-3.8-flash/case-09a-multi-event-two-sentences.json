@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤, 오늘 아침\",\"vehicle_hint\":\"흰색 SUV, 검은색 세단, 오토바이\",\"situation_hint\":\"신호위반, 헬멧 없이 운전\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"서로 다른 두 시점의 위반 상황이 한 번에 진술되었고, '세단이 오토바이를 탄다'는 불일치한 설명이 섞여 있어 특정 사건을 명확히 분리하기 어려우므로 confidence를 low로 지정했습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤, 오늘 아침",
+    "vehicle_hint": "흰색 SUV, 검은색 세단, 오토바이",
+    "situation_hint": "신호위반, 헬멧 없이 운전",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "서로 다른 두 시점의 위반 상황이 한 번에 진술되었고, '세단이 오토바이를 탄다'는 불일치한 설명이 섞여 있어 특정 사건을 명확히 분리하기 어려우므로 confidence를 low로 지정했습니다."
+  },
+  "latency_ms": 3826.028099982068,
+  "prompt_tokens": 338,
+  "completion_tokens": 569,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

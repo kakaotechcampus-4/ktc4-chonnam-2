@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없어 null 처리한 것은 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색과 은색 두 값이 모두 언급되어 불확실함을 '흰색 또는 은색 SUV'로 표현한 것은 원문의 자기정정 상황을 잘 반영한 값이다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경이라는 상황이 원문에 명시되어 있어 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없어 null 처리한 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 대상 필드로 특정 슬롯을 명시하지 않고 null로 둔 것은 이 케이스에서 vehicle_hint 값 자체에 불확실성을 녹여낸 처리 방식과 일관되며, 별도의 정정 타겟을 지어내지 않은 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상에 대해 상충되는 진술이 있음을 인지하고 confidence를 high가 아닌 low로 설정한 것은 채점 기준에서 가장 중요하게 보는 '과신 방지'를 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없어 null 처리한 것은 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색과 은색 두 값이 모두 언급되어 불확실함을 '흰색 또는 은색 SUV'로 표현한 것은 원문의 자기정정 상황을 잘 반영한 값이다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경이라는 상황이 원문에 명시되어 있어 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없어 null 처리한 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상 필드로 특정 슬롯을 명시하지 않고 null로 둔 것은 이 케이스에서 vehicle_hint 값 자체에 불확실성을 녹여낸 처리 방식과 일관되며, 별도의 정정 타겟을 지어내지 않은 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상에 대해 상충되는 진술이 있음을 인지하고 confidence를 high가 아닌 low로 설정한 것은 채점 기준에서 가장 중요하게 보는 '과신 방지'를 충족한다."
+    }
+  },
+  "latency_ms": 7127.033700002357,
+  "prompt_tokens": 2873,
+  "completion_tokens": 607,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 단서가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색과 은색이 혼재된 정정 상황을 '은색 차(SUV로 추정, 색상 확인 중)'로 불확실성을 유지한 채 반영했고, 차종(SUV)도 놓치지 않아 원문 내용에 부합한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경(차선 변경) 상황은 situation_hint가 아니라 correction_target/vehicle 쪽 맥락이며 별도 상황 단서가 없어 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 관련 단서가 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"흰색→은색으로 정정하는 대상이 vehicle_hint이므로 정확히 지목했다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"색상 정정으로 인한 불확실성을 인지하여 confidence를 low로 낮춘 것은 expected_notes의 핵심 기준(임의 확정+high 부여를 피해야 함)에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 단서가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색과 은색이 혼재된 정정 상황을 '은색 차(SUV로 추정, 색상 확인 중)'로 불확실성을 유지한 채 반영했고, 차종(SUV)도 놓치지 않아 원문 내용에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경(차선 변경) 상황은 situation_hint가 아니라 correction_target/vehicle 쪽 맥락이며 별도 상황 단서가 없어 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 관련 단서가 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "흰색→은색으로 정정하는 대상이 vehicle_hint이므로 정확히 지목했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "색상 정정으로 인한 불확실성을 인지하여 confidence를 low로 낮춘 것은 expected_notes의 핵심 기준(임의 확정+high 부여를 피해야 함)에 부합한다."
+    }
+  },
+  "latency_ms": 7522.775499965064,
+  "prompt_tokens": 3050,
+  "completion_tokens": 587,
+  "cost_krw": null,
+  "error": null
+}

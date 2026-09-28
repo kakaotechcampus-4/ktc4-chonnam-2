@@ -26,8 +26,9 @@ _TARGET_BBOX_IOU_THRESHOLD 이상이면 correct 다. bbox 한 픽셀 밀림까�
 import collections
 
 from eval.enums import CLASS_LABELS
+from eval.scorers.interval import wilson95
 
-SCORER_VERSION = "cl2"   # 2026-09-20 by_condition 철회 (못 믿을 라벨)
+SCORER_VERSION = "cl3"   # 2026-09-21 비율 지표에 95% 신뢰구간
 
 _LABEL_SET = set(CLASS_LABELS)
 
@@ -47,6 +48,12 @@ def _is_wellformed_box(box):
 
 
 def _macro(per_label):
+    """라벨별 값의 단순 평균. **신뢰구간을 붙이지 않는다.**
+
+    macro 는 비율이 아니라 「비율들의 평균」이라 Wilson 구간의 가정(이항 분포)
+    밖이다. 구간이 필요하면 recall_by_label_ci95 를 라벨별로 읽는다 — 어차피
+    표본이 얇은 곳은 개별 라벨이지 평균이 아니다.
+    """
     vals = [v for v in per_label.values() if v is not None]
     return sum(vals) / len(vals) if vals else None
 
@@ -141,11 +148,13 @@ def score(normalized, gt):
                 target_hits += 1
 
     recall = {}
+    recall_ci = {}
     precision = {}
     for label in CLASS_LABELS:
         denom_r = tp[label] + fn[label]
         denom_p = tp[label] + fp[label]
         recall[label] = tp[label] / denom_r if denom_r else None
+        recall_ci[label] = wilson95(tp[label], denom_r)
         precision[label] = tp[label] / denom_p if denom_p else None
 
     reasons = []
@@ -175,8 +184,10 @@ def score(normalized, gt):
         "recall_macro": _macro(recall),
         "precision_macro": _macro(precision),
         "recall_by_label": recall,
+        "recall_by_label_ci95": recall_ci,
         "confusion": confusion,
         "target_correctness": (target_hits / target_total) if target_total else None,
+        "target_correctness_ci95": wilson95(target_hits, target_total),
         "n": n_scored,
         "n_invalid_predictions": n_invalid_predictions,
         "n_invalid_gt_labels": n_invalid_gt_labels,
@@ -191,8 +202,10 @@ def not_run(reason):
         "recall_macro": None,
         "precision_macro": None,
         "recall_by_label": None,
+        "recall_by_label_ci95": None,
         "confusion": None,
         "target_correctness": None,
+        "target_correctness_ci95": None,
         "n": None,
         "n_invalid_predictions": None,
         "n_invalid_gt_labels": None,

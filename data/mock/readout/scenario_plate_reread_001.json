@@ -115,7 +115,8 @@
         "quality": {
           "plate_px_height": 24,
           "sharpness": 0.44
-        }
+        },
+        "plate_bbox_xywh": [660, 508, 56, 24]
       },
       "frame_results": [
         {
@@ -201,7 +202,8 @@
         "quality": {
           "plate_px_height": 27,
           "sharpness": 0.52
-        }
+        },
+        "plate_bbox_xywh": [658, 506, 62, 27]
       },
       "frame_results": [
         {

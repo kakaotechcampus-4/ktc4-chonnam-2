@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13c-japanese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"昨日18時ごろ\",\n  \"vehicle_hint\": \"白いSUV\",\n  \"situation_hint\": \"車線変更しました\",\n  \"location_hint\": \"商武中央路\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"발화에서 시간(昨日18時ごろ), 차량(白いSUV), 장소(商武中央路), 상황(車線変更しました)에 대한 정보가 명확히 진술되어 있어 각각 추출했으며, 불확실한 요소가 없어 confidence를 high로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "昨日18時ごろ",
+    "vehicle_hint": "白いSUV",
+    "situation_hint": "車線変更しました",
+    "location_hint": "商武中央路",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 시간(昨日18時ごろ), 차량(白いSUV), 장소(商武中央路), 상황(車線変更しました)에 대한 정보가 명확히 진술되어 있어 각각 추출했으며, 불확실한 요소가 없어 confidence를 high로 지정했습니다."
+  },
+  "latency_ms": 5977.8424999676645,
+  "prompt_tokens": 311,
+  "completion_tokens": 315,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13e-korean-english-mix-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '그저께 밤 9시쯤'을 그대로 추출했으며 정보 손실이 없다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'black motorcycle'을 언어(영어 혼용)를 이유로 지우지 않고 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '헬멧 안 쓰고'라는 위반 상황을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'assembly로'를 영어 혼용 표기 그대로 보존해 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 원문에 정정 의도가 없으므로 null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간, 차량, 상황, 장소가 모두 구체적이고 모호함이 없으므로 high는 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '그저께 밤 9시쯤'을 그대로 추출했으며 정보 손실이 없다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'black motorcycle'을 언어(영어 혼용)를 이유로 지우지 않고 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '헬멧 안 쓰고'라는 위반 상황을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'assembly로'를 영어 혼용 표기 그대로 보존해 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 원문에 정정 의도가 없으므로 null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간, 차량, 상황, 장소가 모두 구체적이고 모호함이 없으므로 high는 적절하다."
+    }
+  },
+  "latency_ms": 5983.529899967834,
+  "prompt_tokens": 2931,
+  "completion_tokens": 484,
+  "cost_krw": null,
+  "error": null
+}

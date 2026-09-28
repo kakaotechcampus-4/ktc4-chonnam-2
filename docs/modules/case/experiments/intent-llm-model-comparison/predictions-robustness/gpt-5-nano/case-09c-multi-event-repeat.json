@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09c-multi-event-repeat",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"오늘 오전엔; 방금 전엔\",\"vehicle_hint\":\"버스, 택시\",\"situation_hint\":\"버스가 중앙선을 넘었고, 방금 전엔 택시도 중앙선을 넘었다\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"문장에 두 시점의 표현이 있어 시간 힌트로 두 표현을 반영했다. 차량은 버스와 택시 모두 언급되었으므로 vehicle_hint에 반영했고, 구체적으로 '중앙선을 넘었다'는 사건이 두 차례 언급되어 situation_hint에 간략히 기술했다. 위치 정보는 제시되지 않아 null로 두었다. prior_hints가 null이므로 정정 대상도 없다. 애매한 진술이므로 confidence를 low로 표기했다.\"}",
+  "parsed": {
+    "time_hint": "오늘 오전엔; 방금 전엔",
+    "vehicle_hint": "버스, 택시",
+    "situation_hint": "버스가 중앙선을 넘었고, 방금 전엔 택시도 중앙선을 넘었다",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "문장에 두 시점의 표현이 있어 시간 힌트로 두 표현을 반영했다. 차량은 버스와 택시 모두 언급되었으므로 vehicle_hint에 반영했고, 구체적으로 '중앙선을 넘었다'는 사건이 두 차례 언급되어 situation_hint에 간략히 기술했다. 위치 정보는 제시되지 않아 null로 두었다. prior_hints가 null이므로 정정 대상도 없다. 애매한 진술이므로 confidence를 low로 표기했다."
+  },
+  "latency_ms": 19298.52860001847,
+  "prompt_tokens": 795,
+  "completion_tokens": 2434,
+  "cost_krw": 1.5427259999999998,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

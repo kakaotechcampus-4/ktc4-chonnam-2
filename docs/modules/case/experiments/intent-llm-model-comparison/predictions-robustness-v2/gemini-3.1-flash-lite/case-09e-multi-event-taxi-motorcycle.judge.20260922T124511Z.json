@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"아침, 저녁 두 시점을 모두 나열했는데, 이는 두 사건을 하나로 뭉개지 않았다는 점에서 방향은 맞지만, 기준에서 요구하는 '하나만 채택하거나 애매함 반영' 방식이 아니라 단순 나열이라 confidence 처리와 함께 봤을 때 완전한 정답으로 보기 어렵다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"택시와 오토바이 둘 다 원문에 명시된 차량이며 교차조합 없이 그대로 나열했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"택시 급정거와 오토바이 헬멧 미착용 인도 주행을 각각 분리해서 서술했고, 두 사건의 속성을 섞어 존재하지 않는 사건을 만들지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"정류장과 인도를 각 사건에 맞게 나열했고 교차조합 없이 정확히 대응된다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"원문에 정정 요청이 없으므로 null 처리가 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 개의 서로 다른 사건이 섞인 모호한 상황임에도 confidence를 high로 매겨 애매함을 전혀 반영하지 않았다 — 기준상 low가 되어야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "아침, 저녁 두 시점을 모두 나열했는데, 이는 두 사건을 하나로 뭉개지 않았다는 점에서 방향은 맞지만, 기준에서 요구하는 '하나만 채택하거나 애매함 반영' 방식이 아니라 단순 나열이라 confidence 처리와 함께 봤을 때 완전한 정답으로 보기 어렵다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "택시와 오토바이 둘 다 원문에 명시된 차량이며 교차조합 없이 그대로 나열했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "택시 급정거와 오토바이 헬멧 미착용 인도 주행을 각각 분리해서 서술했고, 두 사건의 속성을 섞어 존재하지 않는 사건을 만들지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "정류장과 인도를 각 사건에 맞게 나열했고 교차조합 없이 정확히 대응된다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문에 정정 요청이 없으므로 null 처리가 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 개의 서로 다른 사건이 섞인 모호한 상황임에도 confidence를 high로 매겨 애매함을 전혀 반영하지 않았다 — 기준상 low가 되어야 한다."
+    }
+  },
+  "latency_ms": 7277.588999946602,
+  "prompt_tokens": 2892,
+  "completion_tokens": 655,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null로 둔 것은 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 색깔을 '은색'으로 명확히 정정했으므로 vehicle_hint를 '은색'으로 갱신한 것은 원문과 일치한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"상황 관련 정정 언급이 없으므로 null로 둔 것이 적절하다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'좀 더 아래쪽'이라는 모호한 표현을 그대로 location_hint 값으로 확정해 넣었는데, expected_notes에 따르면 이런 모호한 표현을 구체적 값으로 지어내는 것은 hallucination에 해당한다. 모호함을 반영하려면 null로 두거나 낮은 confidence로 처리했어야 한다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"vehicle_hint를 correction_target으로 잡은 것은 맞지만, 원문에는 위치 정정도 함께 언급되어 있어 correction_target이 여러 필드('vehicle_hint', 'location_hint')에 걸쳐 있어야 하는데 vehicle_hint 단일 값만 제시해 위치 정정 측면을 놓쳤다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"전체를 'low'로 통일했는데, 차량 색깔 정정은 명확하므로 high여야 하고 위치 정정만 낮은 confidence로 구분했어야 한다. 필드별로 confidence를 분리하지 않고 일괄 low로 처리한 것은 기준과 다르다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null로 둔 것은 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 색깔을 '은색'으로 명확히 정정했으므로 vehicle_hint를 '은색'으로 갱신한 것은 원문과 일치한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "상황 관련 정정 언급이 없으므로 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 그대로 location_hint 값으로 확정해 넣었는데, expected_notes에 따르면 이런 모호한 표현을 구체적 값으로 지어내는 것은 hallucination에 해당한다. 모호함을 반영하려면 null로 두거나 낮은 confidence로 처리했어야 한다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint를 correction_target으로 잡은 것은 맞지만, 원문에는 위치 정정도 함께 언급되어 있어 correction_target이 여러 필드('vehicle_hint', 'location_hint')에 걸쳐 있어야 하는데 vehicle_hint 단일 값만 제시해 위치 정정 측면을 놓쳤다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 'low'로 통일했는데, 차량 색깔 정정은 명확하므로 high여야 하고 위치 정정만 낮은 confidence로 구분했어야 한다. 필드별로 confidence를 분리하지 않고 일괄 low로 처리한 것은 기준과 다르다."
+    }
+  },
+  "latency_ms": 7965.94569995068,
+  "prompt_tokens": 2953,
+  "completion_tokens": 744,
+  "cost_krw": null,
+  "error": null
+}

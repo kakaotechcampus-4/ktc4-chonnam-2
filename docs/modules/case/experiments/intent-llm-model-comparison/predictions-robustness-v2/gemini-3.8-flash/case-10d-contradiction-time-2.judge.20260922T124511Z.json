@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"20시에서 21시로 자기 정정하는 발화에서 마지막 값인 21시를 채택했으므로 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명확히 '오토바이'라고 언급되어 있다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '신호위반'이 명확히 언급되어 있다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '죽전로'가 명확히 언급되어 있다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 발화 내 자체 정정이어도 correction_target을 null로 둔 것은 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간을 두 번 다르게 말하며 '아마', '~였던 거 같은데' 같은 불확실 표현을 사용했으므로 confidence를 low로 책정한 것이 판정 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "20시에서 21시로 자기 정정하는 발화에서 마지막 값인 21시를 채택했으므로 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명확히 '오토바이'라고 언급되어 있다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '신호위반'이 명확히 언급되어 있다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '죽전로'가 명확히 언급되어 있다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 발화 내 자체 정정이어도 correction_target을 null로 둔 것은 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간을 두 번 다르게 말하며 '아마', '~였던 거 같은데' 같은 불확실 표현을 사용했으므로 confidence를 low로 책정한 것이 판정 기준에 부합한다."
+    }
+  },
+  "latency_ms": 4417.85839991644,
+  "prompt_tokens": 2888,
+  "completion_tokens": 489,
+  "cost_krw": null,
+  "error": null
+}

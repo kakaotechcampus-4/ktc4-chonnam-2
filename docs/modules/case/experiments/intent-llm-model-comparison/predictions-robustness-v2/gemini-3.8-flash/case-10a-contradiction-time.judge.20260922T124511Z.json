@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에서 18시를 정정해 마지막으로 언급한 19시를 채택했으며, 이는 자기 정정으로 합리적인 처리다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '흰색 SUV'를 정확히 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target을 null로 둔 것이 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"한 문장 안에서 시간이 18시에서 19시로 번복되는 불확실한 진술을 반영해 confidence를 low로 설정한 것은 기준에서 요구하는 대로 high를 피한 올바른 판단이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 18시를 정정해 마지막으로 언급한 19시를 채택했으며, 이는 자기 정정으로 합리적인 처리다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '흰색 SUV'를 정확히 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target을 null로 둔 것이 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "한 문장 안에서 시간이 18시에서 19시로 번복되는 불확실한 진술을 반영해 confidence를 low로 설정한 것은 기준에서 요구하는 대로 high를 피한 올바른 판단이다."
+    }
+  },
+  "latency_ms": 5746.929700020701,
+  "prompt_tokens": 2955,
+  "completion_tokens": 494,
+  "cost_krw": null,
+  "error": null
+}

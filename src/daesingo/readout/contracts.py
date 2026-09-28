@@ -282,20 +282,34 @@ class Consensus:
 
 @dataclass
 class BestFrame:
+    """대표 근거 프레임. `plate_bbox_xywh`는 **그 프레임 안의 번호판 영역**이다 (v1.3).
+
+    `target_association.associated_region`과 다른 값이다. 저쪽은 「어느 차량을 대상으로
+    읽었나」의 근거이고 authoritative한 번호판 위치가 아니다 — `scenario_plate_reread_001`의
+    재판독 결과가 실제로 두 값을 다른 프레임에 두고 있다(`fr_p001_plate1` vs `fr_p001_plate3`).
+    소비자가 번호판을 그리려고 association 필드를 읽어야 했던 것이 신설 이유다.
+
+    타입은 Optional로 둔다 — 파싱은 관대하고 값 검사는 `invariants.py` R19가 한다.
+    """
     frame_ref: str
     crop_ref: str
     quality: dict
+    plate_bbox_xywh: Optional[list] = None
 
     @classmethod
     def from_dict(cls, d: dict) -> "BestFrame":
-        frame_ref, crop_ref, quality = _take(d, "frame_ref", "crop_ref", "quality")
-        return cls(frame_ref, crop_ref, dict(quality))
+        frame_ref, crop_ref, quality, bbox = _take(
+            d, "frame_ref", "crop_ref", "quality", "plate_bbox_xywh")
+        return cls(frame_ref, crop_ref, dict(quality),
+                   None if bbox is None else list(bbox))
 
     def to_dict(self) -> dict:
         return {
             "frame_ref": self.frame_ref,
             "crop_ref": self.crop_ref,
             "quality": dict(self.quality),
+            "plate_bbox_xywh": (None if self.plate_bbox_xywh is None
+                                else list(self.plate_bbox_xywh)),
         }
 
 

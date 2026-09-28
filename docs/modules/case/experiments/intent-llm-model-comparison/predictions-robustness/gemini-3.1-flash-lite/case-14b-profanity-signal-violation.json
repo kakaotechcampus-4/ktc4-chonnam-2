@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14b-profanity-signal-violation",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"검은색 트럭\",\n  \"situation_hint\": \"신호위반 후 도주\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자의 발화에서 차량 정보인 검은색 트럭과 상황인 신호위반 및 도주가 명확히 추출되었습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호위반 후 도주",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자의 발화에서 차량 정보인 검은색 트럭과 상황인 신호위반 및 도주가 명확히 추출되었습니다."
+  },
+  "latency_ms": 1788.3721000980586,
+  "prompt_tokens": 319,
+  "completion_tokens": 106,
+  "cost_krw": 0.363218,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

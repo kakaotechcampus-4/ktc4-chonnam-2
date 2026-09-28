@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09b-multi-event-also",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"두 사건의 시점('아까', '지난주')을 각각 정확히 나눠 담았고 속성 교차조합은 없으나, 두 사건을 하나의 time_hint 문자열에 뭉쳐 담아 사건 구분이 명확치 않게 처리한 점에서 완전한 정답은 아니다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색 SUV와 트럭을 각각의 사건에 대응하는 차량으로 분리해 나열했고, 서로 다른 사건의 속성을 섞어 새로운 차량을 만들어내지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색 SUV=신호위반, 트럭=불법 유턴으로 각 사건의 속성을 올바르게 대응시켜 교차조합 없이 정확히 기술했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없어 정정 대상이 없는 것이 맞으므로 null 처리가 적절하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 개의 서로 다른 사건이 한 문장에 섞여 있어 하나로 확정하기 애매한 상황임에도 confidence를 high로 매겨 기준에서 요구하는 low 반영을 하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "두 사건의 시점('아까', '지난주')을 각각 정확히 나눠 담았고 속성 교차조합은 없으나, 두 사건을 하나의 time_hint 문자열에 뭉쳐 담아 사건 구분이 명확치 않게 처리한 점에서 완전한 정답은 아니다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색 SUV와 트럭을 각각의 사건에 대응하는 차량으로 분리해 나열했고, 서로 다른 사건의 속성을 섞어 새로운 차량을 만들어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "흰색 SUV=신호위반, 트럭=불법 유턴으로 각 사건의 속성을 올바르게 대응시켜 교차조합 없이 정확히 기술했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없어 정정 대상이 없는 것이 맞으므로 null 처리가 적절하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 개의 서로 다른 사건이 한 문장에 섞여 있어 하나로 확정하기 애매한 상황임에도 confidence를 high로 매겨 기준에서 요구하는 low 반영을 하지 않았다."
+    }
+  },
+  "latency_ms": 7416.603300021961,
+  "prompt_tokens": 2972,
+  "completion_tokens": 658,
+  "cost_krw": null,
+  "error": null
+}

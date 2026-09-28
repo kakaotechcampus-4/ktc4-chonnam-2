@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08b-offtopic-weather",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"발화가 교통위반 신고와 무관한 단순 날씨 관련 대화이므로 사건 관련 정보를 전혀 추출할 수 없어 모든 필드를 null로 두고 confidence를 low로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화가 교통위반 신고와 무관한 단순 날씨 관련 대화이므로 사건 관련 정보를 전혀 추출할 수 없어 모든 필드를 null로 두고 confidence를 low로 지정했습니다."
+  },
+  "latency_ms": 3403.611300047487,
+  "prompt_tokens": 300,
+  "completion_tokens": 402,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

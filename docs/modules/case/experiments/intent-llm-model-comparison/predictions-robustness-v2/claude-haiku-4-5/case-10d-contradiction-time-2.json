@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10d-contradiction-time-2",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"21시\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반\", \"location_hint\": \"죽전로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"시간이 애매하게 표현되었다. 사용자가 \\\"20시쯤\\\"에서 \\\"21시였던 거 같은데\\\"로 수정하면서 불확실함을 드러냈기 때문에 confidence를 low로 설정했다. 최종 진술인 21시를 채택했다.\"}",
+  "parsed": {
+    "time_hint": "21시",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간이 애매하게 표현되었다. 사용자가 \"20시쯤\"에서 \"21시였던 거 같은데\"로 수정하면서 불확실함을 드러냈기 때문에 confidence를 low로 설정했다. 최종 진술인 21시를 채택했다."
+  },
+  "latency_ms": 2222.4327999865636,
+  "prompt_tokens": 1857,
+  "completion_tokens": 248,
+  "cost_krw": 4.71413,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

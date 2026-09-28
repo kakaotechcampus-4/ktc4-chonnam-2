@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 밤\",\"vehicle_hint\":\"택시\",\"situation_hint\":\"정류장에서 출발, 승객 안전벨트 미착용\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에서 어제 밤에 본 다른 사고를 언급했고 시나리오의 핵심은 택시가 정류장에서 승객의 안전벨트를 채우지 않은 채 출발한 상황임. 따라서 시간 표현은 원문인 '어제 밤'으로 보존하고, 차량은 '택시'로 식별하며, 상황은 '정류장에서 출발'과 '승객 안전벨트 미착용'을 함께 반영한다. 이전의 힌트들(흰색 SUV, 차로 변경, 상무중앙로)은 이번 발화와 직접적으로 동일 사건의 진술이 아니므로 정정 대상으로 삼지 않고, 명시적으로 언급되지 않은 필드는 null로 두었다. 측정 신뢰도는 발화가 명시적으로 사실로 제시되므로 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": "택시",
+    "situation_hint": "정류장에서 출발, 승객 안전벨트 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 어제 밤에 본 다른 사고를 언급했고 시나리오의 핵심은 택시가 정류장에서 승객의 안전벨트를 채우지 않은 채 출발한 상황임. 따라서 시간 표현은 원문인 '어제 밤'으로 보존하고, 차량은 '택시'로 식별하며, 상황은 '정류장에서 출발'과 '승객 안전벨트 미착용'을 함께 반영한다. 이전의 힌트들(흰색 SUV, 차로 변경, 상무중앙로)은 이번 발화와 직접적으로 동일 사건의 진술이 아니므로 정정 대상으로 삼지 않고, 명시적으로 언급되지 않은 필드는 null로 두었다. 측정 신뢰도는 발화가 명시적으로 사실로 제시되므로 high로 판단했다."
+  },
+  "latency_ms": 40119.55429997761,
+  "prompt_tokens": 858,
+  "completion_tokens": 5495,
+  "cost_krw": 3.411663,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

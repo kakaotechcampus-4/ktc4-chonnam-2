@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15c-correction-target-full-reset",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 언급이 없고, 새 신고이므로 이전 값(어제 18시)을 끌어오지 않고 null로 처리한 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '트럭'을 정확히 반영했고 이전 값(흰색 SUV)과 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 정확히 반영했고 이전 값(차로 변경)과 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없고, 새 신고이므로 이전 값(상무중앙로)을 끌어오지 않고 null로 처리한 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"이건 정정이 아니라 완전히 새로운 신고이므로 correction_target은 null이어야 하는데, 모델이 'time_hint, vehicle_hint, situation_hint, location_hint'를 정정 대상으로 지어냈다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 신고 상황에서 confidence 판단 자체는 그럴듯하나 correction_target을 잘못 설정한 상태에서의 high 확신이므로 전체 판단 체계가 어긋나 있어 부분 정답으로 본다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없고, 새 신고이므로 이전 값(어제 18시)을 끌어오지 않고 null로 처리한 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '트럭'을 정확히 반영했고 이전 값(흰색 SUV)과 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 정확히 반영했고 이전 값(차로 변경)과 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없고, 새 신고이므로 이전 값(상무중앙로)을 끌어오지 않고 null로 처리한 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "이건 정정이 아니라 완전히 새로운 신고이므로 correction_target은 null이어야 하는데, 모델이 'time_hint, vehicle_hint, situation_hint, location_hint'를 정정 대상으로 지어냈다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 신고 상황에서 confidence 판단 자체는 그럴듯하나 correction_target을 잘못 설정한 상태에서의 high 확신이므로 전체 판단 체계가 어긋나 있어 부분 정답으로 본다."
+    }
+  },
+  "latency_ms": 6480.5708000203595,
+  "prompt_tokens": 3033,
+  "completion_tokens": 633,
+  "cost_krw": null,
+  "error": null
+}

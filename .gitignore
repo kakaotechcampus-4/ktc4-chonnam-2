@@ -87,7 +87,7 @@ target/
 .impeccable/
 .agents/
 skills-lock.json
-
+.omc
 # ── 자료조사 원본 ───────────────────────────────────
 # 로컬 아카이브 레포에만 둔다. README.md "Archive" 절 참고.
 doc/

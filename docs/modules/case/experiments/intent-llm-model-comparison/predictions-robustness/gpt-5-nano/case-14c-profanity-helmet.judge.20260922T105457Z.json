@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-14c-profanity-helmet",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '방금'을 그대로 time_hint로 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '오토바이'를 정확히 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"욕설('미쳤다')은 배제하고 실제 사고 정보인 '헬멧 미착용'만 뽑아 기준에 부합한다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 맥락도 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량과 상황 정보가 명확히 드러나 있어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '방금'을 그대로 time_hint로 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '오토바이'를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "욕설('미쳤다')은 배제하고 실제 사고 정보인 '헬멧 미착용'만 뽑아 기준에 부합한다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 맥락도 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량과 상황 정보가 명확히 드러나 있어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 4967.348900041543,
+  "prompt_tokens": 2902,
+  "completion_tokens": 445,
+  "cost_krw": null,
+  "error": null
+}

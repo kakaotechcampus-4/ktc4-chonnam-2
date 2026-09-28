@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"'시간 그거 말고 19시였어요'는 명시적 정정으로, time_hint를 '19시'(어제 19시 의미)로 갱신한 것은 기준과 일치한다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"검은 오토바이는 원문에서 '옆에' 있던 별개 사건의 차량으로 언급된 것인데, 모델이 이를 기존 vehicle_hint('흰색 SUV')를 덮어쓰는 값으로 사용해 별도 사건 정보를 주 사건 필드에 오염시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"헬멧 미착용은 검은 오토바이라는 별도 사건에 대한 정보인데, 이를 기존 situation_hint('차로 변경')를 덮어쓰는 값으로 넣어 서로 다른 사건을 하나로 섞어버렸다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정정이나 새로운 언급이 없으므로 null로 둔 것은 문제없다(단, 병합 시 기존 값 유지 필요하나 이 필드 자체 판정은 정답).\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상은 time_hint 하나이며 모델도 이를 정확히 지목했다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"검은 오토바이 사건은 완전히 별개의 정보로 불확실성이 크고 별도 취급 신호가 필요한데, 모델은 이를 기존 정정과 동일한 'high'로 처리해 불확실성을 전혀 반영하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'시간 그거 말고 19시였어요'는 명시적 정정으로, time_hint를 '19시'(어제 19시 의미)로 갱신한 것은 기준과 일치한다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "검은 오토바이는 원문에서 '옆에' 있던 별개 사건의 차량으로 언급된 것인데, 모델이 이를 기존 vehicle_hint('흰색 SUV')를 덮어쓰는 값으로 사용해 별도 사건 정보를 주 사건 필드에 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "헬멧 미착용은 검은 오토바이라는 별도 사건에 대한 정보인데, 이를 기존 situation_hint('차로 변경')를 덮어쓰는 값으로 넣어 서로 다른 사건을 하나로 섞어버렸다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정정이나 새로운 언급이 없으므로 null로 둔 것은 문제없다(단, 병합 시 기존 값 유지 필요하나 이 필드 자체 판정은 정답)."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 time_hint 하나이며 모델도 이를 정확히 지목했다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "검은 오토바이 사건은 완전히 별개의 정보로 불확실성이 크고 별도 취급 신호가 필요한데, 모델은 이를 기존 정정과 동일한 'high'로 처리해 불확실성을 전혀 반영하지 않았다."
+    }
+  },
+  "latency_ms": 8197.33009999618,
+  "prompt_tokens": 3000,
+  "completion_tokens": 739,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09c-multi-event-repeat",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"오늘 오전, 방금 전\",\n  \"vehicle_hint\": \"버스, 택시\",\n  \"situation_hint\": \"중앙선 넘음\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"오늘 오전의 버스 위반과 방금 전의 택시 위반이라는 서로 다른 두 사건이 한 문장에 나열되어 단일 신고 대상을 특정하기 모호하므로 confidence를 low로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 오전, 방금 전",
+    "vehicle_hint": "버스, 택시",
+    "situation_hint": "중앙선 넘음",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "오늘 오전의 버스 위반과 방금 전의 택시 위반이라는 서로 다른 두 사건이 한 문장에 나열되어 단일 신고 대상을 특정하기 모호하므로 confidence를 low로 판단했습니다."
+  },
+  "latency_ms": 2956.885499996133,
+  "prompt_tokens": 313,
+  "completion_tokens": 380,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

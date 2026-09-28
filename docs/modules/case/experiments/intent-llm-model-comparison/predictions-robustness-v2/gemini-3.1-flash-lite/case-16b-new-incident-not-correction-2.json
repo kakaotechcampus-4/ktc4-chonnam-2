@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"오늘 아침\",\n  \"vehicle_hint\": \"트럭\",\n  \"situation_hint\": \"불법 유턴\",\n  \"location_hint\": null,\n  \"correction_target\": \"time_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 '그건 됐고'라고 하며 새로운 사건을 언급했으므로 기존 내용을 수정하는 것으로 판단했습니다. 시간, 차종, 상황이 명확히 새로 제시되었습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 '그건 됐고'라고 하며 새로운 사건을 언급했으므로 기존 내용을 수정하는 것으로 판단했습니다. 시간, 차종, 상황이 명확히 새로 제시되었습니다."
+  },
+  "latency_ms": 1549.1617999505252,
+  "prompt_tokens": 363,
+  "completion_tokens": 114,
+  "cost_krw": 0.398202,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

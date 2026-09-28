@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14d-profanity-illegal-uturn",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"트럭\",\n  \"situation_hint\": \"불법 유턴\",\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 차량 종류, 위반 상황, 정확한 위치를 명확하게 언급하였으므로 높은 신뢰도를 부여함.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 차량 종류, 위반 상황, 정확한 위치를 명확하게 언급하였으므로 높은 신뢰도를 부여함."
+  },
+  "latency_ms": 1563.6241000611335,
+  "prompt_tokens": 313,
+  "completion_tokens": 99,
+  "cost_krw": 0.344957,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

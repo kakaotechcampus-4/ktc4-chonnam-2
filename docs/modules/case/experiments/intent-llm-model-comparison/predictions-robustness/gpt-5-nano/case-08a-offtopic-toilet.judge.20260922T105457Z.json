@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-08a-offtopic-toilet",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 정보가 전혀 없으므로 null 처리가 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고나 위반 상황에 대한 언급이 전혀 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"화장실 위치를 묻는 질문일 뿐 실제 위치 정보를 제공하지 않으며, 모델이 이를 임의로 채우지 않고 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"이전 값에 대한 정정 요청이 아니므로 null 처리가 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"추출 가능한 정보가 전혀 없는 상황이므로 confidence를 low로 매긴 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 정보가 전혀 없으므로 null 처리가 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고나 위반 상황에 대한 언급이 전혀 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "화장실 위치를 묻는 질문일 뿐 실제 위치 정보를 제공하지 않으며, 모델이 이를 임의로 채우지 않고 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "이전 값에 대한 정정 요청이 아니므로 null 처리가 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "추출 가능한 정보가 전혀 없는 상황이므로 confidence를 low로 매긴 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 5933.060600073077,
+  "prompt_tokens": 2728,
+  "completion_tokens": 506,
+  "cost_krw": null,
+  "error": null
+}

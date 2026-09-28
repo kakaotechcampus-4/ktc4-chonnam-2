@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09b-multi-event-also",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"아까 본, 지난주에 본\",\"vehicle_hint\":\"흰색 SUV, 트럭\",\"situation_hint\":\"신호위반 및 불법 유턴\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에서 두 건의 위반이 명시되어 있다(흰색 SUV의 신호위반과 트럭의 불법 유턴). 따라서 time_hint에는 상대 시간 표현인 '아까 본'과 '지난주에 본'을 그대로 담고, vehicle_hint에는 두 차량을 함께 기술하기 위해 '흰색 SUV, 트럭'으로 표시했고, situation_hint에는 두 위반 유형을 합쳐 '신호위반 및 불법 유턴'으로 요약했다. 이전 힌트(prior_hints)가 없으므로 correction_target도 null이다. 확실한 정보가 담겨 있어 confidence를 high로 판단했다. 만약 추가 확인이 필요했더라도 1회만의 묻지 않기로 규정상 이미 처리되었다. \"}",
+  "parsed": {
+    "time_hint": "아까 본, 지난주에 본",
+    "vehicle_hint": "흰색 SUV, 트럭",
+    "situation_hint": "신호위반 및 불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 두 건의 위반이 명시되어 있다(흰색 SUV의 신호위반과 트럭의 불법 유턴). 따라서 time_hint에는 상대 시간 표현인 '아까 본'과 '지난주에 본'을 그대로 담고, vehicle_hint에는 두 차량을 함께 기술하기 위해 '흰색 SUV, 트럭'으로 표시했고, situation_hint에는 두 위반 유형을 합쳐 '신호위반 및 불법 유턴'으로 요약했다. 이전 힌트(prior_hints)가 없으므로 correction_target도 null이다. 확실한 정보가 담겨 있어 confidence를 high로 판단했다. 만약 추가 확인이 필요했더라도 1회만의 묻지 않기로 규정상 이미 처리되었다. "
+  },
+  "latency_ms": 19189.768900047056,
+  "prompt_tokens": 800,
+  "completion_tokens": 2605,
+  "cost_krw": 1.647245,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

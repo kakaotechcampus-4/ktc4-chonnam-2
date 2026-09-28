@@ -133,3 +133,12 @@
 .hint-chip-v { font-size: calc(14px * var(--font-scale)); font-weight: 700; color: var(--ink); }
 
 .hint-none { font-size: calc(13px * var(--font-scale)); color: var(--slate); font-weight: 600; }
+
+/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(§8-1). 접힌 채로 시작한다. */
+.other-cands { border: 1px solid var(--border); border-radius: var(--R); background: var(--panel); }
+.other-cands > summary {
+  cursor: pointer; padding: 12px 14px;
+  font-size: calc(14px * var(--font-scale)); font-weight: 800; color: var(--ink-2);
+}
+.other-cands > summary:hover { color: var(--ink); }
+.other-cands-body { padding: 0 12px 12px; }

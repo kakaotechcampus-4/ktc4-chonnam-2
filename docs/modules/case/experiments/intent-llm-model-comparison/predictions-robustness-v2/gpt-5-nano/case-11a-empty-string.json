@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11a-empty-string",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"주어진 발화가 비어 있어 추출할 정보가 전혀 없었습니다. prior_hints도 null이므로 정정 대상으로 볼 수 있는 내용이 없고, 내용이 없으므로 모든 필드를 null로 두었습니다. 내용의 부재로 인해 판단 근거를 제시하기 어렵고 불확실성으로 판단해 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "주어진 발화가 비어 있어 추출할 정보가 전혀 없었습니다. prior_hints도 null이므로 정정 대상으로 볼 수 있는 내용이 없고, 내용이 없으므로 모든 필드를 null로 두었습니다. 내용의 부재로 인해 판단 근거를 제시하기 어렵고 불확실성으로 판단해 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 7569.120800006203,
+  "prompt_tokens": 769,
+  "completion_tokens": 1088,
+  "cost_krw": 0.721036,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

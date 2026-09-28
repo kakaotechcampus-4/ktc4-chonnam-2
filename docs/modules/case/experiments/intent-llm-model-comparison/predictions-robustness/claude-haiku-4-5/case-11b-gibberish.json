@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11b-gibberish",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화가 의미 있는 내용을 담지 않고 있습니다. 무작위 자음과 숫자, 기호만으로 이루어져 있어 교통사고 상황에 대한 정보를 추출할 수 없습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화가 의미 있는 내용을 담지 않고 있습니다. 무작위 자음과 숫자, 기호만으로 이루어져 있어 교통사고 상황에 대한 정보를 추출할 수 없습니다."
+  },
+  "latency_ms": 2349.0303000435233,
+  "prompt_tokens": 1842,
+  "completion_tokens": 223,
+  "cost_krw": 4.501,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

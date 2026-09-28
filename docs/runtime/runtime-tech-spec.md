@@ -371,7 +371,18 @@ Run contract의 `usage_refs[]`와 ledger가 어긋나면 `UsageRecord.run_ref`�
 
 실행 시점 cost를 이후 가격표로 덮어쓰지 않는다.
 
-Runtime config가 `pricing_id → 가격표` mapping을 소유한다. exact 저장 형식·개정 절차는 아직 구현값이다.
+Runtime이 확정적으로 소유하는 것은 **Final `UsageRecord`에 실행 시 사용한 `pricing_id`, usage, 실행 시점 cost snapshot을 보존하는 책임**이다.
+
+가격표 숫자 자체의 SSOT를 Runtime config가 독점한다고 현재 단계에서 선결하지 않는다. Search는 실험/실행 중 budget 판단, Eval은 비용 비교·보고를 위해 서버 Runtime과 독립적으로 같은 가격 정보가 필요할 수 있다.
+
+따라서 다음 경계는 Issue #153의 Search 전수조사 결과를 받은 뒤 Search/Eval/Runtime이 함께 닫는다.
+
+- versioned pricing catalog가 필요한가
+- 필요하다면 exact 위치와 schema는 무엇인가
+- Search/Eval/Runtime이 같은 `pricing_id`를 어떤 방식으로 소비하는가
+- provider/model 가격 변경 이력을 어떻게 보존하는가
+
+공용 catalog가 채택되더라도 Search의 실행 중 cost estimate와 Runtime의 authoritative ledger는 서로 다른 목적의 소비자일 수 있다. **SSOT는 가격표 데이터에 하나만 두고, 사용 주체를 하나로 제한하지 않는다.**
 
 ### 11.4 아직 열려 있는 값
 
@@ -445,9 +456,30 @@ lease duration
 heartbeat interval
 STALE threshold
 stale sweep interval
-pricing table reference
+pricing catalog/reference (채택 시)
 log level
 ```
+
+### 15.1 Module / Provider configuration 주입 경계
+
+Worker composition root는 domain module이 실행에 필요한 config와 secret을 **주입**할 수 있어야 하지만, common/runtime이 provider-specific 의미를 해석하지 않는다.
+
+```text
+deployment / Worker composition root
+→ module config · secret 주입
+→ search public capability / provider adapter
+
+common/runtime
+→ 전달 경계와 secret 비노출 책임
+
+search
+→ Elice base_url, model, reasoning_effort,
+   OpenAI-compatible schema, media transport 등 provider 의미 해석
+```
+
+따라서 Runtime이 Elice request schema나 `reasoning_effort` 같은 provider semantics를 별도 설정 모델로 복제하지 않는다.
+
+현재 `GEMINI_API_KEY` 같은 compatibility naming의 유지·migration, provider label, pricing config의 exact ownership은 Issue #153의 Search 전수조사 결과를 기다린다. Runtime 구현 편의를 이유로 먼저 rename하거나 별도 가격표를 복제하지 않는다.
 
 secret은 repository config에 저장하지 않는다.
 
@@ -526,7 +558,9 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [ ] stale sweep interval
 - [ ] worker polling interval
 - [ ] Runtime configuration shape
-- [ ] UsageRecord persistence / pricing config shape
+- [ ] UsageRecord persistence shape
+- [ ] pricing SSOT / catalog consumption boundary — Issue #153 조사 결과 후 Search/Eval/Runtime 공동 결정
+- [ ] provider config/key naming boundary — Issue #153 조사 결과 후 확정
 
 결정이 여러 구현에 장기 영향을 주면 `docs/runtime/decisions/`에 ADR을 추가한다. 단순 config 튜닝값마다 ADR을 만들지는 않는다.
 
@@ -540,4 +574,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [UsageRecord Contract](../architecture/contracts/contract-usage-record.md)
 - [AnalysisSource / Derived Asset Contract](../architecture/contracts/contract-analysis-source-derived.md)
 - [Runtime Ops Spec](./ops-spec.md)
+- [Runtime experiments router](./experiments/README.md)
+- [Issue #95 — Elice ML API migration tracker](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95)
+- [Issue #153 — provider usage · pricing · runtime config boundary review](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153)
 - [common runtime README](../../src/daesingo/common/README.md)

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10d-contradiction-time-2",
+  "scenario_tag": "모순_정보",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"그게 아마 20시쯤... 아니 21시였던 거 같은데\",\"vehicle_hint\":\"오토바이\",\"situation_hint\":\"신호위반\",\"location_hint\":\"죽전로에서\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"시간 표현에 불확실성이 있어 time_hint에 모호한 시간 구문을 담았고, 차량은 오토바이로 명시되어 있으며, 신호위반은 사건의 핵심 사실로 포함되었다. prior_hints가 없으므로 correction_target는 null이고, 다른 필드는 언급된 내용 외에는 null로 남겼다. 이 판단은 시간 불확실성 때문에 confidence를 low로 내렸다.\"}",
+  "parsed": {
+    "time_hint": "그게 아마 20시쯤... 아니 21시였던 거 같은데",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반",
+    "location_hint": "죽전로에서",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간 표현에 불확실성이 있어 time_hint에 모호한 시간 구문을 담았고, 차량은 오토바이로 명시되어 있으며, 신호위반은 사건의 핵심 사실로 포함되었다. prior_hints가 없으므로 correction_target는 null이고, 다른 필드는 언급된 내용 외에는 null로 남겼다. 이 판단은 시간 불확실성 때문에 confidence를 low로 내렸다."
+  },
+  "latency_ms": 14262.08310003858,
+  "prompt_tokens": 804,
+  "completion_tokens": 2155,
+  "cost_krw": 1.373499,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

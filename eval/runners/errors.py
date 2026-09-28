@@ -1,0 +1,2 @@
+class RunnerPreflightError(RuntimeError):
+    pass

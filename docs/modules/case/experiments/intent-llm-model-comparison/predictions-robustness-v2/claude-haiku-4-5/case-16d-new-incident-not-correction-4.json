@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 밤\", \"vehicle_hint\": \"택시\", \"situation_hint\": \"정류장에서 승객 안전벨트도 안 채우고 출발\", \"location_hint\": \"정류장\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"또 다른 사고\\\"라며 이전 상황과 완전히 다른 새로운 사건을 보고하고 있다. 따라서 correction_target은 null이다. 택시, 안전벨트 미착용, 정류장 출발 등의 세부 사항이 명확히 언급되었으므로 confidence는 high로 설정했다.\"}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": "택시",
+    "situation_hint": "정류장에서 승객 안전벨트도 안 채우고 출발",
+    "location_hint": "정류장",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"또 다른 사고\"라며 이전 상황과 완전히 다른 새로운 사건을 보고하고 있다. 따라서 correction_target은 null이다. 택시, 안전벨트 미착용, 정류장 출발 등의 세부 사항이 명확히 언급되었으므로 confidence는 high로 설정했다."
+  },
+  "latency_ms": 2521.6326999943703,
+  "prompt_tokens": 1929,
+  "completion_tokens": 290,
+  "cost_krw": 5.143418,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

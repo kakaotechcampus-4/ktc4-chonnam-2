@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반, 헬멧 미착용\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"또 다른 사고\\\"라고 명확히 구분하여 이전 사고와 다른 신규 사건을 보고하고 있다. 시간(\\\"방금\\\"), 차량(\\\"오토바이\\\"), 위반 행위(\\\"신호위반\\\", \\\"헬멧 없이\\\")가 명확하게 언급되었다. 장소는 이 발화에서 언급되지 않았으므로 null로 둔다. 정정이 아니라 새로운 사건이므로 correction_target은 null이다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"또 다른 사고\"라고 명확히 구분하여 이전 사고와 다른 신규 사건을 보고하고 있다. 시간(\"방금\"), 차량(\"오토바이\"), 위반 행위(\"신호위반\", \"헬멧 없이\")가 명확하게 언급되었다. 장소는 이 발화에서 언급되지 않았으므로 null로 둔다. 정정이 아니라 새로운 사건이므로 correction_target은 null이다."
+  },
+  "latency_ms": 2869.3636999232695,
+  "prompt_tokens": 1917,
+  "completion_tokens": 319,
+  "cost_krw": 5.345902000000001,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

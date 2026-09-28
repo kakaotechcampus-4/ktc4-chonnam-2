@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "scenario_tag": "모순_정보",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 처음에 흰색 SUV라고 언급했다가 바로 은색인지 불확실하다고 정정하여 vehicle_hint의 정확도가 낮음.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 처음에 흰색 SUV라고 언급했다가 바로 은색인지 불확실하다고 정정하여 vehicle_hint의 정확도가 낮음."
+  },
+  "latency_ms": 1658.3365000551566,
+  "prompt_tokens": 310,
+  "completion_tokens": 84,
+  "cost_krw": 0.309572,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

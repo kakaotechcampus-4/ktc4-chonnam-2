@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 명확히 새로운 사건에 대해 말하고 있으므로(시간, 차량, 상황 모두 바뀜) prior_hints와의 관계는 정정이 아닌 새로운 신고로 판단. 다만 구체적인 위치 정보가 없고 \\\"오늘 아침\\\"만 언급되어 정확한 시각을 특정하기 어려워 confidence를 low로 설정.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 명확히 새로운 사건에 대해 말하고 있으므로(시간, 차량, 상황 모두 바뀜) prior_hints와의 관계는 정정이 아닌 새로운 신고로 판단. 다만 구체적인 위치 정보가 없고 \"오늘 아침\"만 언급되어 정확한 시각을 특정하기 어려워 confidence를 low로 설정."
+  },
+  "latency_ms": 2703.1214999733493,
+  "prompt_tokens": 1903,
+  "completion_tokens": 292,
+  "cost_krw": 5.11907,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

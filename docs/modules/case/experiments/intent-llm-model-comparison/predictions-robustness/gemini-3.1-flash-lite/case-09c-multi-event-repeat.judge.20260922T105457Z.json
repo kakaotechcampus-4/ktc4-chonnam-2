@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09c-multi-event-repeat",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건 중 가장 최근 사건('방금 전')을 채택했고, 오전 버스 사건과 교차 조합하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'방금 전' 사건의 차량인 택시를 채택했고 버스와 섞이지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"택시의 중앙선 침범이라는 단일 사건의 상황을 정확히 반영했고 두 사건의 속성이 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 정보가 없어 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"두 개의 서로 다른 시점·차량 사건이 한 문장에 섞여 있어 어느 사건을 신고 대상으로 볼지 애매한 상황인데도 confidence를 'high'로 매겨 이 애매함을 반영하지 못했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "두 사건 중 가장 최근 사건('방금 전')을 채택했고, 오전 버스 사건과 교차 조합하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'방금 전' 사건의 차량인 택시를 채택했고 버스와 섞이지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "택시의 중앙선 침범이라는 단일 사건의 상황을 정확히 반영했고 두 사건의 속성이 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 정보가 없어 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "두 개의 서로 다른 시점·차량 사건이 한 문장에 섞여 있어 어느 사건을 신고 대상으로 볼지 애매한 상황인데도 confidence를 'high'로 매겨 이 애매함을 반영하지 못했다."
+    }
+  },
+  "latency_ms": 5829.75949998945,
+  "prompt_tokens": 2892,
+  "completion_tokens": 536,
+  "cost_krw": null,
+  "error": null
+}

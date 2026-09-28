@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 색깔을 '은색'으로 명확히 정정했고 원문과 일치한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 상황 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 '좀 더 아래쪽이었던 것 같아요'라는 모호한 표현일 뿐인데, 이를 그대로 구체적인 location_hint 값으로 확정해 넣은 것은 모호한 진술을 구체적 값으로 지어낸 것에 해당한다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"vehicle_hint를 correction_target으로 명시한 것은 맞지만, 위치도 정정 대상으로 언급되었으므로 여러 필드에 걸친 정정 가능성을 반영하지 못해 부분 정답이다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"전체를 'low'로 통일했는데, vehicle_hint는 명확한 정정이므로 high여야 하고 location_hint만 low여야 한다는 기준과 어긋나 방향은 맞지만 세분화되지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 색깔을 '은색'으로 명확히 정정했고 원문과 일치한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '좀 더 아래쪽이었던 것 같아요'라는 모호한 표현일 뿐인데, 이를 그대로 구체적인 location_hint 값으로 확정해 넣은 것은 모호한 진술을 구체적 값으로 지어낸 것에 해당한다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint를 correction_target으로 명시한 것은 맞지만, 위치도 정정 대상으로 언급되었으므로 여러 필드에 걸친 정정 가능성을 반영하지 못해 부분 정답이다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 'low'로 통일했는데, vehicle_hint는 명확한 정정이므로 high여야 하고 location_hint만 low여야 한다는 기준과 어긋나 방향은 맞지만 세분화되지 않았다."
+    }
+  },
+  "latency_ms": 7040.485900011845,
+  "prompt_tokens": 2981,
+  "completion_tokens": 615,
+  "cost_krw": null,
+  "error": null
+}

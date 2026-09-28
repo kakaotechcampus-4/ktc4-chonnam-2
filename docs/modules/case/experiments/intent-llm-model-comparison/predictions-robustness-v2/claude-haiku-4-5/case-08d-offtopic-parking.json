@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08d-offtopic-parking",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": \"주차\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자 발화가 구체적인 교통위반 상황이 아니라 주차 방법에 대한 일반적인 질문이다. situation_hint에 '주차'만 언급되었으나, 시간, 차량 유형, 구체적 위치 등 사고 신고에 필요한 대부분의 정보가 부재하고, 위반 상황이 명확하지 않아 confidence를 low로 표시했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "주차",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자 발화가 구체적인 교통위반 상황이 아니라 주차 방법에 대한 일반적인 질문이다. situation_hint에 '주차'만 언급되었으나, 시간, 차량 유형, 구체적 위치 등 사고 신고에 필요한 대부분의 정보가 부재하고, 위반 상황이 명확하지 않아 confidence를 low로 표시했다."
+  },
+  "latency_ms": 2317.237799987197,
+  "prompt_tokens": 1822,
+  "completion_tokens": 281,
+  "cost_krw": 4.912056,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

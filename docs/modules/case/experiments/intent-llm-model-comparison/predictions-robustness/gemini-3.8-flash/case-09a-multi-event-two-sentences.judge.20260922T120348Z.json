@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"두 시점(어제 18시쯤, 오늘 아침)을 모두 나열하고 하나로 뭉개지 않았으므로 올바르다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"두 사건의 차량(흰색 SUV, 검은색 세단, 오토바이)을 모두 한 필드에 나열하여 마치 하나의 사건 속성인 것처럼 조합했다 — 특히 검은색 세단과 오토바이는 서로 다른 사건인데 병기되어 존재하지 않는 조합처럼 보이게 만들었다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"신호위반과 헬멧 없이 운전을 나열했는데, 이는 두 사건의 상황을 뭉쳐 마치 하나의 사건 설명처럼 제시한 것으로 속성 교차조합 위험이 있다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 원문에 명시된 위치로 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 상황이 아니므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞여 있어 애매함을 low로 반영했고 reasoning도 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "두 시점(어제 18시쯤, 오늘 아침)을 모두 나열하고 하나로 뭉개지 않았으므로 올바르다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "두 사건의 차량(흰색 SUV, 검은색 세단, 오토바이)을 모두 한 필드에 나열하여 마치 하나의 사건 속성인 것처럼 조합했다 — 특히 검은색 세단과 오토바이는 서로 다른 사건인데 병기되어 존재하지 않는 조합처럼 보이게 만들었다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "신호위반과 헬멧 없이 운전을 나열했는데, 이는 두 사건의 상황을 뭉쳐 마치 하나의 사건 설명처럼 제시한 것으로 속성 교차조합 위험이 있다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 원문에 명시된 위치로 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 상황이 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞여 있어 애매함을 low로 반영했고 reasoning도 타당하다."
+    }
+  },
+  "latency_ms": 6191.460500005633,
+  "prompt_tokens": 2982,
+  "completion_tokens": 611,
+  "cost_krw": null,
+  "error": null
+}

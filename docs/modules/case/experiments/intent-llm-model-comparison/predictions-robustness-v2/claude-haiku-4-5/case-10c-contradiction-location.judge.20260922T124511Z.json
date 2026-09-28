@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에 차량 종류나 특징에 대한 구체적 언급이 없는데 '차'라는 값을 채워 넣었다. '차로 변경'은 상황 설명(차선 변경)이지 차량 힌트가 아니므로 지어낸 값이다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '차로 변경 봤어요'라는 상황(차선 변경 목격)이 명확히 있는데 situation_hint를 null로 비워 놓쳤다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로에서 죽전로로 정정된 것을 마지막 값인 죽전로로 채택한 것은 합리적인 처리다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"위치에 대해 두 값이 언급되고 정정된 것이므로 correction_target을 location_hint로 잡은 것은 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정정된 값 자체가 '것 같아요'로 불확실하게 표현되었으므로 confidence를 low로 낮춘 것은 기준에서 요구하는 '과신 금지'에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에 차량 종류나 특징에 대한 구체적 언급이 없는데 '차'라는 값을 채워 넣었다. '차로 변경'은 상황 설명(차선 변경)이지 차량 힌트가 아니므로 지어낸 값이다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '차로 변경 봤어요'라는 상황(차선 변경 목격)이 명확히 있는데 situation_hint를 null로 비워 놓쳤다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로에서 죽전로로 정정된 것을 마지막 값인 죽전로로 채택한 것은 합리적인 처리다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "위치에 대해 두 값이 언급되고 정정된 것이므로 correction_target을 location_hint로 잡은 것은 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정정된 값 자체가 '것 같아요'로 불확실하게 표현되었으므로 confidence를 low로 낮춘 것은 기준에서 요구하는 '과신 금지'에 부합한다."
+    }
+  },
+  "latency_ms": 7774.726099916734,
+  "prompt_tokens": 2971,
+  "completion_tokens": 609,
+  "cost_krw": null,
+  "error": null
+}

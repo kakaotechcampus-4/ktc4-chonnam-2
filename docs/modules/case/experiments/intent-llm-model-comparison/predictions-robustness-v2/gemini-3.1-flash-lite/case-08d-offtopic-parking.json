@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08d-offtopic-parking",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자의 질문은 일반적인 주차 문의일 뿐 구체적인 교통위반 사고 정황이나 시간, 장소 정보가 전혀 포함되어 있지 않습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자의 질문은 일반적인 주차 문의일 뿐 구체적인 교통위반 사고 정황이나 시간, 장소 정보가 전혀 포함되어 있지 않습니다."
+  },
+  "latency_ms": 1790.0542999850586,
+  "prompt_tokens": 298,
+  "completion_tokens": 96,
+  "cost_krw": 0.332408,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}
