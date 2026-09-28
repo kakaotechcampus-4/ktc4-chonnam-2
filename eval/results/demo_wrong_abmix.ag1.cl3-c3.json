@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "run_id": "demo_wrong_abmix",
+    "impl": "fake:always_wrong",
+    "stage": "classification",
+    "manifest": "ab_mixed",
+    "gt_version": "ag1",
+    "normalizer_version": "n2",
+    "code_commit": "9859d7d",
+    "scorer_version": "cl3",
+    "cost_scorer_version": "c3",
+    "prediction_ref": {
+      "path": "eval/predictions/demo_wrong_abmix.json",
+      "sha256": "a9b29c12ce2c617f80b6a909d102ac022f4c7c097b3cf638a317a2fd00db6fa0"
+    }
+  },
+  "candidate": {
+    "recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "recall_at_ci95": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "localization_recall_at": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "localization_recall_at_ci95": {
+      "1": null,
+      "3": null,
+      "10": null
+    },
+    "type_accuracy_given_localized": null,
+    "type_accuracy_given_localized_ci95": null,
+    "onset_error_sec": {
+      "mean": null,
+      "median": null,
+      "tolerance_sec": null
+    },
+    "containment_rate": null,
+    "containment_rate_ci95": null,
+    "fp_per_clip": null,
+    "n_events": null,
+    "n_negative_clips": null,
+    "excluded_by_reason": null,
+    "by_type": null,
+    "coverage": "NOT_RUN — stage=classification 실행이다"
+  },
+  "classification": {
+    "recall_macro": 0.0,
+    "precision_macro": 0.0,
+    "recall_by_label": {
+      "SIGNAL": 0.0,
+      "CENTER_LINE_CROSSING": 0.0,
+      "SOLID_LINE_LANE_CHANGE": 0.0,
+      "MOTORCYCLE_HELMET_NON_USE": 0.0,
+      "NONE": 0.0
+    },
+    "recall_by_label_ci95": {
+      "SIGNAL": [
+        0.0,
+        0.11351339317396876
+      ],
+      "CENTER_LINE_CROSSING": [
+        0.0,
+        0.11351339317396876
+      ],
+      "SOLID_LINE_LANE_CHANGE": [
+        0.0,
+        0.11351339317396876
+      ],
+      "MOTORCYCLE_HELMET_NON_USE": [
+        0.0,
+        0.11351339317396876
+      ],
+      "NONE": [
+        0.0,
+        0.11351339317396876
+      ]
+    },
+    "confusion": {
+      "SIGNAL": {
+        "SIGNAL": 0,
+        "CENTER_LINE_CROSSING": 30,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "CENTER_LINE_CROSSING": {
+        "SIGNAL": 30,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "SOLID_LINE_LANE_CHANGE": {
+        "SIGNAL": 30,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "MOTORCYCLE_HELMET_NON_USE": {
+        "SIGNAL": 30,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      },
+      "NONE": {
+        "SIGNAL": 30,
+        "CENTER_LINE_CROSSING": 0,
+        "SOLID_LINE_LANE_CHANGE": 0,
+        "MOTORCYCLE_HELMET_NON_USE": 0,
+        "NONE": 0
+      }
+    },
+    "target_correctness": 0.0,
+    "target_correctness_ci95": [
+      0.0,
+      0.03232423144931307
+    ],
+    "n": 150,
+    "n_invalid_predictions": 0,
+    "n_invalid_gt_labels": 0,
+    "n_invalid_bboxes": 0,
+    "coverage": "NO_TARGET_BBOX_GT — GT 에 위반 차량 bbox 가 없는 35건을 target_correctness 분모에서 뺐다"
+  },
+  "plate": {
+    "exact_accuracy": null,
+    "wrong_accept_rate": null,
+    "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
+    "n": null,
+    "coverage": "NOT_RUN — stage=classification 실행이다"
+  },
+  "cost": {
+    "cost_per_case": null,
+    "cost_per_source_video_hour": null,
+    "total": null,
+    "currency": null,
+    "n_rows": 0,
+    "n_unknown_cost": 0,
+    "latency_ms": {
+      "p50": null,
+      "p90": null,
+      "max": null,
+      "n": 0,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": null,
+    "scenarios": [],
+    "coverage": "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다",
+    "scorer_version": "c3"
+  }
+}

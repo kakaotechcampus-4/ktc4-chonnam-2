@@ -126,6 +126,14 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
     for (const key of keys) expect(noticeMessage(key)).not.toBe(NOTICE_FALLBACK)
   })
 
+  it('fixture에 아직 없는 계약 등재 문구도 매핑돼 있다', () => {
+    // 위 테스트는 fixture에 있는 키만 훑는다. #48에서 확정된 이 키는 아직
+    // 어느 fixture도 내지 않아 그 그물에 안 걸린다 — 오타가 나면 화면에만
+    // fallback이 뜨고 아무도 모른다.
+    expect(noticeMessage('notice.location_search_keyword_missing'))
+      .not.toBe(NOTICE_FALLBACK)
+  })
+
   it('notices code는 12종이다', () => {
     const codes = [...new Set(views.flatMap((v) => v.notices.map((n) => n.code)))]
     expect(codes).toHaveLength(12)
