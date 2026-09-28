@@ -106,6 +106,10 @@ class ModuleAdapter(Protocol):
 
     def get_report_package(self) -> dict[str, Any] | None: ...
 
+    def get_plate_read_status(self) -> str | None:
+        """번호판 판독 실행 상태(`JobExecution.status` 값 공간). 보고할 실행 상태가 없으면 None."""
+        ...
+
     def get_job_executions(self) -> list[dict[str, Any]]: ...
 
 
@@ -177,6 +181,11 @@ class MockFixtureAdapter:
     def get_report_package(self) -> dict[str, Any] | None:
         packages = self._load("evidence").get("report_packages", [])
         return packages[0] if packages else None
+
+    def get_plate_read_status(self) -> str | None:
+        """mock fixture에는 이 case의 실행 상태 원장이 없다 — 시나리오 테스트가
+        `plate_read_status`를 JobExecution fixture에서 직접 넘긴다(`scenario_infra_failure_001`)."""
+        return None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
@@ -363,6 +372,12 @@ class RealAdapter:
         이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
         return self._build_evidence_bundle().report_package
 
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -515,6 +530,12 @@ class RealVideoAdapter:
 
     def get_report_package(self) -> dict[str, Any] | None:
         return self._build_evidence_bundle().report_package
+
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:

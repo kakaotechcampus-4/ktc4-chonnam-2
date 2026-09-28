@@ -278,6 +278,10 @@ class EvidenceBundle:
     visual_evidence: dict[str, Any]
     fine_run: dict[str, Any]
     disposition: VisualEvidenceDisposition
+    # 번호판 판독 실행 결과 `ReadoutRun.outcome`(SUCCEEDED·PARTIAL·FAILED). 판독을 시작하지
+    # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
+    # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
+    plate_read_outcome: str | None = None
 
     @property
     def assembled(self) -> bool:
@@ -383,7 +387,7 @@ def build_happy_001_evidence_bundle(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    _plate_run, plate_readout = readout_api.read_plate(
+    plate_run, plate_readout = readout_api.read_plate(
         read_request, provider=readout_providers.FixtureOcrProvider()
     )
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
@@ -475,6 +479,7 @@ def build_happy_001_evidence_bundle(
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        plate_read_outcome=plate_run.outcome,
     )
 
 
@@ -749,7 +754,7 @@ def build_evidence_for_real_video_candidate(
             {incident_clip.incident_clip_ref: str(context.local_video_path)}
         )
     )
-    _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
+    plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
         read_request, provider=ocr_provider
     )
@@ -849,6 +854,7 @@ def build_evidence_for_real_video_candidate(
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        plate_read_outcome=plate_run.outcome,
     )
 
 
