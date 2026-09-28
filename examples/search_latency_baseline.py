@@ -11,7 +11,7 @@
 
     uv run python examples/search_latency_baseline.py \\
         --clip doc/latency/clip_020s.mp4 --repeats 1 --fine-top-k 1 \\
-        --out docs/modules/search/experiments/latency-baseline-72/dry-run.jsonl
+        --out docs/modules/search/experiments/latency-baseline-2026-09-28/dry-run.jsonl
 """
 
 import argparse
