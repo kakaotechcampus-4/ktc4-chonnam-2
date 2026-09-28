@@ -278,6 +278,9 @@ class EvidenceBundle:
     visual_evidence: dict[str, Any]
     fine_run: dict[str, Any]
     disposition: VisualEvidenceDisposition
+    # 조립에 쓴 `PlateReadout`(판독 결과가 없거나 조립 전이면 `None`). CaseView
+    # `evidence.plate_preview_ref`(#47)가 `best_frame.frame_ref`를 여기서 찾는다.
+    plate_readout: dict[str, Any] | None = None
 
     @property
     def assembled(self) -> bool:
@@ -475,6 +478,7 @@ def build_happy_001_evidence_bundle(
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        plate_readout=plate_readout.to_dict() if plate_readout else None,
     )
 
 
@@ -849,6 +853,7 @@ def build_evidence_for_real_video_candidate(
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        plate_readout=plate_readout.to_dict() if plate_readout else None,
     )
 
 

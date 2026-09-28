@@ -183,6 +183,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_p001_plate1",
+        "plate_preview_ref": null,
         "review_needed": false,
         "reason_code": null
       },
@@ -387,6 +388,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_p001_plate1",
+        "plate_preview_ref": "fr_p001_plate3",
         "review_needed": false,
         "reason_code": null
       },

@@ -84,6 +84,7 @@ def test_unknown_abstain_partial_ready_matches_fixture():
     view = build_case_view(
         case,
         evidence_record=evidence_record,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=requirement_evidence,
         requirement_report_package=requirement_package,
         report_package=report_package,

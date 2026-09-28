@@ -106,6 +106,11 @@ class ModuleAdapter(Protocol):
 
     def get_report_package(self) -> dict[str, Any] | None: ...
 
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        """선택된 후보의 `PlateReadout` 목록(원판독·재판독). `evidence.plate_preview_ref`(#47)가
+        현재 값의 근거 판독을 `readout_id`로 찾는 데 쓴다."""
+        ...
+
     def get_job_executions(self) -> list[dict[str, Any]]: ...
 
 
@@ -177,6 +182,9 @@ class MockFixtureAdapter:
     def get_report_package(self) -> dict[str, Any] | None:
         packages = self._load("evidence").get("report_packages", [])
         return packages[0] if packages else None
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        return self._load("readout").get("plate_readouts", [])
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
@@ -365,6 +373,10 @@ class RealAdapter:
         이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
         return self._build_evidence_bundle().report_package
 
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -519,6 +531,10 @@ class RealVideoAdapter:
 
     def get_report_package(self) -> dict[str, Any] | None:
         return self._build_evidence_bundle().report_package
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:

@@ -101,6 +101,7 @@ def test_plate_reread_pending_and_resolved_match_fixture():
     view_pending = build_case_view(
         case,
         evidence_record=evidence_v1,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v1,
         running_jobs=[
             {
@@ -136,6 +137,7 @@ def test_plate_reread_pending_and_resolved_match_fixture():
     view_resolved = build_case_view(
         case,
         evidence_record=evidence_v2,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v2,
         notices=resolved_view["notices"],
     )
