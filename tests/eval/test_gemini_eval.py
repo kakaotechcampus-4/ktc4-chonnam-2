@@ -64,8 +64,10 @@ def test_eval_cli_reports_preflight_failure_without_creating_provider(
         del scope
         raise gemini_preflight.PreflightError("missing media")
 
-    def should_not_build(prepared: gemini_preflight.PreparedEval) -> SearchService:
-        del prepared
+    def should_not_build(
+        prepared: gemini_preflight.PreparedEval, clip: gemini_preflight.PreparedClip
+    ) -> SearchService:
+        del prepared, clip
         nonlocal built
         built = True
         raise AssertionError("provider must not be created")
@@ -125,7 +127,7 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
         RunDeadline(lambda: 0.0, budget_ms=300_000),
     )
     monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
-    monkeypatch.setattr(search_gemini, "_build_service", lambda _: service)
+    monkeypatch.setattr(search_gemini, "_build_service", lambda *_: service)
     monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
     monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
 
@@ -151,3 +153,63 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
     result = next((tmp_path / "results").glob("gemini_mock_e2e.g3.*.json"))
     assert result.is_file()
     assert len(service.ledger.records()) == 123
+
+
+def test_build_service_opens_the_prepared_clip_file(tmp_path: Path):
+    media = tmp_path / "clip.mp4"
+    media.write_bytes(b"not-really-mp4")
+    clip = gemini_preflight.PreparedClip("clip-a", media, 1.0, "0" * 64)
+    prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", (clip,))
+
+    service = search_gemini._build_service(prepared, clip)
+
+    ref = ContractRef(kind="analysis_source", ref="clip-a")
+    with service.resolver.open_source(ref) as opened:
+        assert opened.stream.read() == b"not-really-mp4"
+
+
+class _FailingProvider(_EmptyProvider):
+    def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
+        raise RuntimeError("proxy down")
+
+
+def test_run_builds_a_service_per_clip_and_records_failed_clips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    clips = tuple(
+        gemini_preflight.PreparedClip(clip_id, tmp_path / clip_id, 1.0, "0" * 64)
+        for clip_id in ("ok-1", "bad", "ok-2")
+    )
+    prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", clips)
+    built: list[str] = []
+
+    def build(
+        prepared: gemini_preflight.PreparedEval, clip: gemini_preflight.PreparedClip
+    ) -> SearchService:
+        del prepared
+        built.append(clip.clip_id)
+        source = ResolvedAnalysisSource(
+            ContractRef(kind="analysis_source", ref=clip.clip_id), 1.0, clip.clip_id, 1
+        )
+        resolver = StaticAnalysisSourceResolver(
+            {clip.clip_id: (source,)}, {clip.clip_id: source}
+        )
+        return SearchService(
+            OpenableResolver(resolver),
+            _FailingProvider() if clip.clip_id == "bad" else _EmptyProvider(),
+            GeminiSearchConfig(),
+            FixtureMediaPreparer(1.0),
+            RunDeadline(lambda: 0.0, budget_ms=300_000),
+        )
+
+    monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
+    monkeypatch.setattr(search_gemini, "_build_service", build)
+
+    raw = search_gemini.run({"manifest": "b_youtube", "stage": "candidate"})
+    facts = search_gemini.run_facts({})
+
+    assert built == ["ok-1", "bad", "ok-2"]
+    assert [item["outcome"] for item in raw] == ["SUCCEEDED", "FAILED", "SUCCEEDED"]
+    assert facts["n_not_succeeded_clips"] == 1
+    assert facts["not_succeeded_clips"][0]["clip_id"] == "bad"
+    assert len(facts["provider_usage_records"]) == 2
