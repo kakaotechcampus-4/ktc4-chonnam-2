@@ -16,4 +16,4 @@
 
 초기 비교 세트는 **4종 × 15개 = 60개**의 event-centered clip으로 구성한다. 유형마다 clear positive 5개, hard negative 5개, ambiguous 5개를 마련하고 대상·후보 창·핵심 시각·필수 증거 가시성·predicate별 상태를 사람 검토로 라벨링한다. 개인 영상과 원본 미디어는 저장소에 커밋하지 않는다.
 
-동일 영상에 p3와 p4를 각각 실행한다. 모델 3.8, 프록시, FPS, 해상도, reasoning 설정을 고정하고 prompt revision만 바꾼다. 유형별 Coarse recall·시각 오차, Fine precision·false positive·unsupported evidence·UNCERTAIN 비율, token·latency·cost를 함께 보고한다. 15개/유형은 3pp 차이를 안정적으로 판별할 수 없으므로 이 세트는 초기 회귀 확인용이다. 기본값 전환은 충분한 추가 평가와 Search Owner의 별도 채택 결정 이후에만 진행한다. 채택 비교 기준은 [9월 16일 개정안 §10](./gemini-coarse-fine-prompt-revision-plan-2026-09-16.md#10-비교-실험과-채택-게이트)을 따른다.
+동일 영상에 p3와 p4를 각각 실행한다. 모델 3.8, 프록시, FPS, 해상도, reasoning 설정을 고정하고 prompt revision만 바꾼다. 유형별 Coarse recall·시각 오차, Fine precision·false positive·unsupported evidence·UNCERTAIN 비율, token·latency·cost를 함께 보고한다. 15개/유형은 3pp 차이를 안정적으로 판별할 수 없으므로 이 세트는 초기 회귀 확인용이다. 기본값 전환은 충분한 추가 평가와 Search Owner의 별도 채택 결정 이후에만 진행한다. 채택 비교 기준은 9월 16일 개정안 §10을 따랐다(개정안은 2026-09-28 삭제, 채택 기준은 eval과 #158에서 합의 대기).

@@ -1,5 +1,7 @@
 # Coarse / Fine 영상 탐침 실험 총정리
 
+> 2026-09-12 Interactions API 경로 기록이다. 현재 OpenAI 호환 프록시 경로의 fps·해상도 처리는 [09-28 실험](gemini-proxy-video-sampling-2026-09-28.md)을 따른다.
+
 작성: 2026-09-12
 
 대상: Gemini 기반 블랙박스 영상 검색 2단계 파이프라인
