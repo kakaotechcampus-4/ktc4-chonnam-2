@@ -76,6 +76,14 @@ describe('화면 선택', () => {
     expect(selectScreen(empty).kind).toBe('NO_RESULT')
   })
 
+  it('후보가 있는 CANDIDATE_REVIEW는 후보 화면이 아니라 진행 화면이다', () => {
+    // 가장 유력한 후보로 초안을 먼저 준비한다(core-user-flow.md §8-1). 후보
+    // 비교는 결과 화면의 「다른 후보 보기」에서만 연다.
+    const found = views.filter((v) => v.stage === 'CANDIDATE_REVIEW' && v.candidates.length > 0)
+    expect(found.length).toBeGreaterThan(0)
+    for (const view of found) expect(selectScreen(view).kind).toBe('PROGRESS')
+  })
+
   it('evidence 조립 전은 진행 상태 화면이다', () => {
     const before = views.filter((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)
     expect(before.length).toBeGreaterThan(0)
