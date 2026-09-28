@@ -105,3 +105,12 @@ uv run python -m eval.run --impl readout:paddle-crop --manifest private_aihub172
 uv run python -m eval.score --prediction <run_id>
 ```
 
+트랙① 차량 검출 지속성은 `readout-exp:yolo11n`이다. readout 실험 설정(YOLO11n)을 옮긴 것이고 **제품 코드가 아니다**. readout에 검출 공개 함수가 생기면 그 함수로 바꾼다.
+
+```bash
+uv sync --extra test --extra eval-yolo
+uv run python -m eval.tools.build_private_aihub172 --track 1 --source <.../aihub172/track1_association>
+uv run python -m eval.run --impl readout-exp:yolo11n --manifest private_aihub172_track1 --stage persistence --run-id <run_id>
+uv run python -m eval.score --prediction <run_id>
+```
+
