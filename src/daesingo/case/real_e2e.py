@@ -37,6 +37,10 @@ IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정�
 `EvidenceBundle`의 조립 산출물이 전부 `None`인 것이 그 상태다. `build_evidence_for_real_video_candidate()`도
 같은 분류를 거친다(PR #131→#142 후속 정합화, 2026-09-22).
 
+`UNCERTAIN`은 사용자가 「잘 모르겠어요」(`USER_UNSURE`)로 답하기 전까지
+`AWAIT_SITUATION_RESPONSE`다(#165). 관찰 단계는 그대로 진행하고, `assemble_evidence_bundle()`이
+응답까지 넣어 다시 분류해 응답 전에는 조립하지 않는다. 응답이 오면 조립만 다시 한다.
+
 `NOT_OBSERVED`를 `UNCERTAIN` fallback으로 합치지 않는다. `UNCERTAIN + USER_UNSURE`는
 사용자가 "잘 모르겠지만 진행"을 택한 generic 신고 경로이고, `NOT_OBSERVED`는 Fine이 후보를
 기각한 것이라 둘을 합치면 관찰되지 않은 위반으로 신고문을 만들게 된다.
@@ -118,6 +122,7 @@ from daesingo.case.domain import CaseAggregate
 from daesingo.case.scope import build_analysis_scope
 from daesingo.common.env import load_env_file
 from daesingo.evidence import (
+    ASSEMBLE,
     NOT_ASSEMBLED,
     VisualEvidenceDisposition,
     assemble_evidence,
@@ -325,9 +330,15 @@ def assemble_evidence_bundle(
 
     `correction_records`는 case의 사용자 정정을, `situation_response`는 사용자의 신고 상황
     응답을 evidence 계산에 그대로 전달한다(`None` = 응답 전 `NOT_ASKED`, 통합 항목 I1).
+
+    조립 여부는 사용자 응답까지 넣어 여기서 다시 분류한다(#165). Fine `UNCERTAIN`은
+    `USER_UNSURE` 응답이 오기 전까지 `AWAIT_SITUATION_RESPONSE`라 조립하지 않고 관찰 결과만
+    돌려준다 — 응답이 오면 같은 관찰 결과로 이 함수만 다시 부르면 된다. 무응답을
+    `USER_UNSURE`로 채우지 않는다(#171 B-2).
     """
     obs = observations
-    if obs.disposition.decision == NOT_ASSEMBLED:
+    disposition = classify_visual_evidence(obs.visual_evidence, situation_response)
+    if disposition.decision != ASSEMBLE:
         return EvidenceBundle(
             evidence_record=None,
             evidence_needs=None,
@@ -337,7 +348,7 @@ def assemble_evidence_bundle(
             package_error=None,
             visual_evidence=obs.visual_evidence,
             fine_run=obs.fine_run,
-            disposition=obs.disposition,
+            disposition=disposition,
         )
 
     candidate_event = obs.candidate.model_dump(mode="json")
@@ -414,7 +425,7 @@ def assemble_evidence_bundle(
         package_error=package_error,
         visual_evidence=obs.visual_evidence,
         fine_run=obs.fine_run,
-        disposition=obs.disposition,
+        disposition=disposition,
     )
 
 
