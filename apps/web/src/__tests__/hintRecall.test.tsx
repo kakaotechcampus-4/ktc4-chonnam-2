@@ -4,13 +4,14 @@
 //
 // 이 파일이 지키는 것은 「무엇을 보여주는가」보다 **「무엇을 하지 않는가」**다.
 // 단서와 후보를 화면이 대조하면 판정 재계산이라 Merge 중단 대상이고, 근거가
-// 되는 값은 `CaseView`에 없다(이슈 #122).
+// 되는 값은 `CaseView`에 없다. 대조는 MVP 밖이다(이슈 #122).
 
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { HintRecall } from '../components/HintRecall'
+import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 
 afterEach(cleanup)
@@ -92,5 +93,15 @@ describe('CandidatesScreen — 실제 산출물의 단서', () => {
     // 단서 패널만 덩그러니 뜨는 화면이 생기지 않는 것을 여기서 고정한다.
     const empty = SNAPSHOTS.find((s) => s.view.candidates.length === 0 && s.view.stage === 'CANDIDATE_REVIEW')
     expect(empty).toBeDefined()
+  })
+})
+
+describe('HintRecall — 결과 화면의 「다른 후보 보기」 안에서 보인다', () => {
+  it('단서는 후보 비교를 열었을 때의 맥락에 들어 있다', () => {
+    // 후보 비교는 기본 화면이 아니라 결과 화면의 선택 경로다(§8-1). 단서도
+    // 그 안에 담겨야 결과 화면 위에 따로 떠 있지 않는다.
+    const view = SNAPSHOTS.find((s) => s.scenarioId === 'real_e2e_happy_001')!.view
+    const { container } = render(<OtherCandidates view={view} />)
+    expect(container.querySelector('details.other-cands .hint-recall')).not.toBeNull()
   })
 })
