@@ -110,7 +110,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 | 할 일 | 지금 | worker 배선 때 |
 | --- | --- | --- |
-| **현재 선택 후보의 evidence만 투영** | adapter가 새 후보로 evidence를 동기로 바로 다시 만들어 문제 없음. `build_case_view()`는 받은 evidence가 현재 선택의 것인지 대조하지 않는다 | `EvidenceRecord.basis.candidate_ref`·`selection_rev`가 현재 선택과 다르면 `evidence=null`로 투영. web은 `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로(`selectScreen.ts`) **아래 조건 1의 전제**다 |
+| **현재 선택 후보의 evidence만 투영** — ✅ 선반영(PR #191) | `build_case_view()`가 `EvidenceRecord.basis.candidate_ref`·`selection_rev`를 현재 선택과 비교해, 다르면 evidence·RequirementReport·ReportPackage를 투영하지 않는다(`evidence=null`) | 추가 작업 없음. web은 `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로(`selectScreen.ts`) **아래 조건 1의 전제**다 |
 | 조건 1 — 새 후보 준비 중 재선택 금지 | Flow §8-1대로 web 진행 화면이 재선택 동작을 제공하지 않는 규칙에 기댄다(신유민 확인 요청: PR #189 [댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/189#issuecomment-5865059619)) | 새 선택에 대해 발주한 Job의 `JobExecution` 완료 여부로 case가 `check_reselect()`에서 거부 |
 | 조건 2 — 늦게 온 이전 후보 결과 버리기 | 결과를 동기로만 받아 해당 없음 | 결과물의 `candidate_id`(readout `ReadRequest`, Fine `VisualEvidence`)를 현재 선택 후보와 대조해 다르면 버림. JobRecord 계약 변경은 필요 없음(관찰 결과는 후보에 묶이고, 사용자 입력만 선택 context에 묶인다) |
 
