@@ -49,6 +49,7 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
             at_provenance="recording.timeline_relative_only",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
         )
         for c in raw_candidates
     ]

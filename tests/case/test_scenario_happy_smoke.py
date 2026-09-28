@@ -83,6 +83,7 @@ def test_happy_path_ready_matches_fixture():
             at_provenance=None,
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
         )
         for c in raw_candidates
     ]

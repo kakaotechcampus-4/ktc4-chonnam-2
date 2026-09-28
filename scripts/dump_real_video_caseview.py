@@ -60,7 +60,9 @@ def build_view(video_path: str, target_event_types: list[str] | None = None):
                 raw_candidate.span.representative_ms,
             )
         )
-        case.select_candidate(candidates[0].candidate_id)
+        # 가장 유력한 후보(rank=1)를 case가 자동 선택한다(#122, core-user-flow §8-1).
+        if case.select_top_ranked() is None:
+            raise SystemExit("자동 선택할 rank=1 후보가 없습니다(후보 없음 또는 stale).")
 
         jobs.issue_plate_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-plate-read")
         jobs.issue_overlay_time_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-overlay-read")

@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.4` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.5` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -27,7 +27,7 @@ from daesingo.case.labels import (
     report_type_label,
 )
 
-CONTRACT_VERSION = "case-view/v1.4"
+CONTRACT_VERSION = "case-view/v1.5"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -207,7 +207,8 @@ def _build_candidates_view(
     # current_timeline_revision=2≠timeline_revision:1 → stale_revision:true,
     # stale_revision_label_key:"candidate.stale_timeline_revision")로 확인.
     out = []
-    for c in case.candidates:
+    # rank 오름차순(#122). rank가 없는 후보(구 fixture 등)는 뒤로, 같은 rank면 받은 순서를 유지한다.
+    for c in sorted(case.candidates, key=lambda c: (c.rank is None, c.rank or 0)):
         at, at_provenance = c.at, c.at_provenance
         situation_confirmation = c.situation_confirmation
         if current_timeline_revision is None:
@@ -225,6 +226,7 @@ def _build_candidates_view(
         out.append(
             {
                 "candidate_id": c.candidate_id,
+                "rank": c.rank,
                 "at": at,
                 "at_provenance": at_provenance,
                 "at_provenance_label_key": at_provenance_label_key(at_provenance),

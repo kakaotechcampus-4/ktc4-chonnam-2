@@ -112,6 +112,7 @@
       "candidates": [
         {
           "candidate_id": "candidate_r001",
+          "rank": 1,
           "at": "2026-08-27T13:15:30+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -314,6 +315,7 @@
       "candidates": [
         {
           "candidate_id": "candidate_r001",
+          "rank": 1,
           "at": "2026-08-27T13:15:30+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",

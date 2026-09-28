@@ -71,6 +71,8 @@ class Candidate:
     stale_revision: bool = False
     stale_revision_label_key: str | None = None
     situation_confirmation: str = "NOT_ASKED"
+    # search `CandidateEvent.rank`(Run 안의 순위, 1부터) 그대로. case가 다시 매기지 않는다(#122).
+    rank: int | None = None
 
 
 @dataclass
@@ -137,6 +139,20 @@ class CaseAggregate:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
         self._advance("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", bump_case_rev=False)
+
+    def select_top_ranked(self) -> str | None:
+        """가장 유력한 후보(`rank=1`)를 자동 선택한다(core-user-flow §8-1, #168 결정 1).
+
+        case가 들고 있는 후보는 최근 `CANDIDATE_SEARCH` Run의 것이라(#168 결정 2, `receive_candidates()`가
+        목록을 교체한다) 그 안의 `rank=1`이 곧 최근 Run의 rank1이다. stale이면(과거 timeline
+        revision 기준) 고르지 않는다 — 최신 후보가 아니면 가장 유력한 후보를 임의로 정하지 않는다
+        (§8). 후보가 없거나 고를 수 없으면 `None`이고 stage는 그대로다.
+        """
+        top = next((c for c in self.candidates if c.rank == 1), None)
+        if top is None or top.stale_revision:
+            return None
+        self.select_candidate(top.candidate_id)
+        return top.candidate_id
 
     def mark_ready(self) -> None:
         self._advance("EVIDENCE_REVIEW", "READY")

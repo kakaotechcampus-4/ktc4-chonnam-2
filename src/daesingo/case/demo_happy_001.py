@@ -46,9 +46,12 @@ def run() -> dict[str, Any]:
 
     _step(1, 4, "Recording+Search: 후보 탐색 중 (search.search_candidates 실제 호출)...")
     candidates = service.receive_search_candidates(case, real)
-    candidate = candidates[0]
+    # 가장 유력한 후보(rank=1)를 case가 자동 선택한다(#122, core-user-flow §8-1).
+    chosen = case.select_top_ranked()
+    if chosen is None:
+        raise SystemExit("자동 선택할 rank=1 후보가 없습니다(후보 없음 또는 stale).")
+    candidate = next(c for c in candidates if c.candidate_id == chosen)
     print(f"        -> 후보 발견: {candidate.candidate_id} ({candidate.observed})")
-    case.select_candidate(candidate.candidate_id)
 
     _step(
         2,
