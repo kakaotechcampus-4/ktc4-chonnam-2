@@ -102,3 +102,12 @@
 .cand-meta { margin: 0; margin-top: auto; padding-top: 9px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
 .cand-meta dt { font-size: calc(12px * var(--font-scale)); font-weight: 700; color: var(--muted); }
 .cand-meta dd { margin: 0; font-size: calc(14px * var(--font-scale)); font-weight: 650; color: var(--ink); line-height: 1.4; }
+
+/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(§8-1). 접힌 채로 시작한다. */
+.other-cands { border: 1px solid var(--border); border-radius: var(--R); background: var(--panel); }
+.other-cands > summary {
+  cursor: pointer; padding: 12px 14px;
+  font-size: calc(14px * var(--font-scale)); font-weight: 800; color: var(--ink-2);
+}
+.other-cands > summary:hover { color: var(--ink); }
+.other-cands-body { padding: 0 12px 12px; }

@@ -11,6 +11,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
+import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 
 afterEach(cleanup)
@@ -35,7 +36,9 @@ function view(candidates: Candidate[]): CaseView {
   return {
     case_id: 'case_test',
     case_rev: 1,
-    stage: 'CANDIDATE_REVIEW',
+    // 후보 비교는 결과 화면의 「다른 후보 보기」에서 연다(§8-1). 후보가 자동
+    // 선택된 뒤이므로 CANDIDATE_REVIEW가 아니라 결과 쪽 단계로 둔다.
+    stage: 'EVIDENCE_REVIEW',
     user_reviewed: false,
     manifest_summary: { file_count: 1, ok_file_count: 1, failed_file_count: 0, duration_sec: 600, range: null },
     hints: { time: '18시쯤', vehicle: '흰색 SUV', situation: null, location: null },
@@ -151,10 +154,13 @@ describe('CandidatesScreen — 실제 case.get_view() 산출물', () => {
     expect(container.textContent).not.toContain('시각 출처 확인 중')
   })
 
-  it('선택된 후보를 테두리 색만으로 알리지 않는다', () => {
+  it('현재 초안의 기준 후보를 테두리 색만으로 알리지 않는다', () => {
+    // `selected`는 사용자가 고른 것이 아니라 case가 자동 선택한 현재 초안의
+    // 기준이다(#122). 「선택된 장면」처럼 사용자가 고른 것으로 읽히면 안 된다.
     const { container } = render(<CandidatesScreen view={real!.view} />)
     expect(container.querySelector('.cand')!.classList.contains('sel')).toBe(true)
-    expect(container.textContent).toContain('선택된 장면')
+    expect(container.textContent).toContain('지금 신고자료 기준')
+    expect(container.textContent).not.toContain('선택된 장면')
   })
 
   it('후보 1건이면 카드가 패널을 채운다 — 고정 3열의 빈 칸이 남지 않는다', () => {
@@ -162,5 +168,40 @@ describe('CandidatesScreen — 실제 case.get_view() 산출물', () => {
     const grid = container.querySelector('.cands')
     expect(grid).not.toBeNull()
     expect(grid!.children).toHaveLength(1)
+  })
+})
+
+// ── 결과 화면에서 여는 선택 경로 ──────────────────────────────────
+//
+// core-user-flow.md §8-1: 기본은 결과 검토이고, 후보 비교는 사용자가 현재
+// 결과가 아니라고 볼 때만 연다.
+describe('OtherCandidates — 「다른 후보 보기」', () => {
+  it('접힌 채로 시작한다', () => {
+    const { container } = render(
+      <OtherCandidates view={view([candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })])} />,
+    )
+    const details = container.querySelector('details.other-cands') as HTMLDetailsElement
+    expect(details).not.toBeNull()
+    expect(details.open).toBe(false)
+    expect(details.querySelector('summary')!.textContent).toBe('다른 후보 보기 (2건)')
+  })
+
+  it('안에 같은 후보 그리드를 담는다', () => {
+    const { container } = render(
+      <OtherCandidates view={view([candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })])} />,
+    )
+    expect(container.querySelectorAll('.other-cands .cand')).toHaveLength(2)
+  })
+
+  it('이 후보로 새 초안을 만드는 버튼을 만들지 않는다 — 계약(#106)이 열리기 전까지', () => {
+    const { container } = render(
+      <OtherCandidates view={view([candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })])} />,
+    )
+    expect(container.querySelectorAll('button')).toHaveLength(0)
+  })
+
+  it('후보가 없으면 출구 자체를 두지 않는다', () => {
+    const { container } = render(<OtherCandidates view={view([])} />)
+    expect(container.innerHTML).toBe('')
   })
 })
