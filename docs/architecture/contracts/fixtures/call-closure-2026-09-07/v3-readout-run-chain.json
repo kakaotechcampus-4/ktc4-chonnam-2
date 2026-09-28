@@ -10,7 +10,7 @@
   ],
   "readout_runs": [
     { "run_id": "rr_881", "operation": "PLATE_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5521" ], "started_at": "2026-09-05T09:12:00+09:00", "ended_at": "2026-09-05T09:12:07+09:00" },
-    { "run_id": "rr_882", "operation": "PLATE_READ", "outcome": "FAILED", "failure": { "kind": "PLATE_DETECTION", "code": "NO_PLATE_REGION_FOUND" }, "usage_refs": [ "usage_5522" ], "started_at": "2026-09-05T09:13:00+09:00", "ended_at": "2026-09-05T09:13:04+09:00" },
+    { "run_id": "rr_882", "operation": "PLATE_READ", "outcome": "FAILED", "failure": { "kind": "INFRA", "code": "READOUT_PROVIDER_TIMEOUT" }, "usage_refs": [ "usage_5522" ], "started_at": "2026-09-05T09:13:00+09:00", "ended_at": "2026-09-05T09:13:04+09:00" },
     { "run_id": "rr_883", "operation": "OVERLAY_TIME_READ", "outcome": "SUCCEEDED", "failure": null, "usage_refs": [ "usage_5523" ], "started_at": "2026-09-05T09:12:10+09:00", "ended_at": "2026-09-05T09:12:14+09:00" }
   ],
   "plate_readouts": [

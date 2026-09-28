@@ -132,6 +132,8 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
     // fallback이 뜨고 아무도 모른다.
     expect(noticeMessage('notice.location_search_keyword_missing'))
       .not.toBe(NOTICE_FALLBACK)
+    expect(noticeMessage('notice.situation_response_pending'))
+      .not.toBe(NOTICE_FALLBACK)
   })
 
   it('notices code는 12종이다', () => {
