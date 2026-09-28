@@ -108,8 +108,14 @@ def _install_stubbed_search(monkeypatch: pytest.MonkeyPatch) -> None:
             thumbnail_ref=None,
         )
 
+        class _Run:
+            outcome = "SUCCEEDED"
+
         class _Result:
+            # 실제 `CandidateSearchResult`처럼 run outcome도 싣는다 — case는 실패 Run을
+            # 「후보 없음」과 구분하려고 outcome을 본다(PR #187 리뷰 후속).
             candidates = (candidate,)
+            analysis_run = _Run()
 
         return _Result()
 

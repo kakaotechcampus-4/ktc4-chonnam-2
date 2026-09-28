@@ -636,9 +636,13 @@ def get_real_video_candidates(
     """real Gemini/Elice **Coarse**를 실제로 호출한다(유료). `prepare_real_video_context()`가
     만든 `context`를 그대로 재사용 — candidate 탐색용 AnalysisSource를 다시 만들지
     않는다."""
-    return search_module.search_candidates(
-        context.scope, service=context.gemini_service
-    ).candidates
+    return run_real_video_candidate_search(context).candidates
+
+
+def run_real_video_candidate_search(context: RealVideoContext) -> search_module.CandidateSearchResult:
+    """real Coarse(유료) 결과 전체 — `AnalysisRun.outcome`까지 보존한다. 실패 Run은 후보 0개라
+    후보만 보면 「찾았지만 없음」과 구분되지 않는다(PR #187 리뷰)."""
+    return search_module.search_candidates(context.scope, service=context.gemini_service)
 
 
 def build_evidence_for_real_video_candidate(

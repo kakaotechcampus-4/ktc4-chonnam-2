@@ -42,6 +42,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     두면 계약(`caseView.ts`/contract 문서 §7)이 기대하는 non-null과 어긋난다(이슈 #104).
     """
     raw_candidates = adapter.get_candidate_events()
+    if str(adapter.get_candidate_search_outcome()) == "FAILED":
+        # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — 계약 §7 `RESUME_SEARCH` 행.
+        case.record_candidate_search_failure()
+        return []
     candidates = [
         Candidate(
             candidate_id=c["candidate_id"],
@@ -124,8 +128,20 @@ LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
 }
 
 
+# 후보 탐색 실패(PR #187 리뷰). 계약 B절 `notices[].code` 등재(2026-09-28).
+CANDIDATE_SEARCH_FAILED_NOTICE: dict[str, Any] = {
+    "code": "search.candidate_search_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.candidate_search_failed",
+    "actions": ["RETRY_SEARCH"],
+}
+
+
 def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
+
+    - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
 
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
@@ -135,13 +151,17 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
+    derived = []
+    # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
+    if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
+        derived.append(CANDIDATE_SEARCH_FAILED_NOTICE)
     evidence = view.get("evidence")
-    if evidence is None or evidence["location_display"]["search_keyword"] is not None:
-        return view
-    notice = LOCATION_SEARCH_KEYWORD_MISSING_NOTICE
-    if any(n["code"] == notice["code"] for n in view["notices"]):
-        return view
-    view["notices"] = [*view["notices"], dict(notice, actions=[])]
+    if evidence is not None and evidence["location_display"]["search_keyword"] is None:
+        derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+    present = {n["code"] for n in view["notices"]}
+    additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
+    if additions:
+        view["notices"] = [*view["notices"], *additions]
     return view
 
 
