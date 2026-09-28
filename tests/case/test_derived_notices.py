@@ -82,6 +82,9 @@ def test_build_view_from_adapter_attaches_notice():
     """실제 진입점(`build_view_from_adapter()`)에서도 붙는지 — 호출자는 notice를 넘기지 않는다."""
     adapter = MockFixtureAdapter(MOCK_ROOT, "unknown_abstain_partial_001")
     case = CaseAggregate.intake(case_id="case_u001", hints={}, manifest_summary={})
+    case.start_search()
+    service.receive_search_candidates(case, adapter)
+    case.select_candidate("candidate_u001")  # 현재 선택의 evidence만 투영된다(W7 6.6순위)
     view = service.build_view_from_adapter(case, adapter)
 
     assert view["evidence"]["location_display"]["search_keyword"] is None
