@@ -1,6 +1,6 @@
 // CaseView 소비 회귀 테스트.
 //
-// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「17건이 전부
+// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「스냅샷이 전부
 // 렌더된다」·「미등록 값이 fallback으로 새지 않는다」를 여기서 고정한다.
 // 렌더러가 아니라 계약 소비 지점(로더·화면 선택·라벨 맵)을 검증한다 — 화면
 // 자체는 목업 설계가 들어오면 바뀌지만 이 규칙들은 바뀌지 않는다.
@@ -39,11 +39,14 @@ import { ACTION_INTENT, describeIntent } from '../contracts/actionIntent'
 import { representativeJobs, selectScreen } from '../state/selectScreen'
 
 const views = SNAPSHOTS.map((s) => s.view)
+// 개수는 mock pack에만 건다. data/real/case/는 case가 Real E2E를 돌릴 때마다
+// 산출물을 떨어뜨리는 폴더라 개수가 계속 늘어난다.
+const mockViews = SNAPSHOTS.filter((s) => s.scenarioId.startsWith('scenario_')).map((s) => s.view)
 
 describe('Input (web)', () => {
-  it('mock 7 시나리오 16건 + real 산출물 1건을 로딩한다', () => {
-    expect(SCENARIO_IDS).toHaveLength(8)
-    expect(SNAPSHOTS).toHaveLength(17)
+  it('mock 7 시나리오 16건을 로딩한다', () => {
+    expect(SCENARIO_IDS.filter((id) => id.startsWith('scenario_'))).toHaveLength(7)
+    expect(mockViews).toHaveLength(16)
   })
 
   it('실제 case.get_view() 산출물도 같은 로더를 통과한다', () => {
@@ -67,7 +70,7 @@ describe('Input (web)', () => {
 })
 
 describe('화면 선택', () => {
-  it('17건 전부 화면이 정해진다', () => {
+  it('스냅샷 전부 화면이 정해진다', () => {
     for (const view of views) expect(selectScreen(view).kind).toBeTruthy()
   })
 
@@ -93,7 +96,7 @@ describe('화면 선택', () => {
     // 미배선 → package 미발행, case의 「알려진 단순화 2」). stage만 보고
     // HANDOFF로 보내면 빈 신고자료 화면이 뜬다.
     const ready = views.filter((v) => v.stage === 'READY' && !v.package)
-    expect(ready.length).toBe(1)
+    expect(ready.length).toBeGreaterThan(0)
     for (const view of ready) expect(selectScreen(view).kind).toBe('EVIDENCE')
   })
 
@@ -121,8 +124,9 @@ describe('화면 선택', () => {
 
 describe('라벨 매핑 — fallback으로 새지 않는다', () => {
   it('notices message_key 전부가 매핑돼 있다', () => {
+    const mockKeys = new Set(mockViews.flatMap((v) => v.notices.map((n) => n.message_key)))
+    expect(mockKeys.size).toBe(13)
     const keys = [...new Set(views.flatMap((v) => v.notices.map((n) => n.message_key)))]
-    expect(keys).toHaveLength(13)
     for (const key of keys) expect(noticeMessage(key)).not.toBe(NOTICE_FALLBACK)
   })
 
@@ -135,7 +139,7 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
   })
 
   it('notices code는 12종이다', () => {
-    const codes = [...new Set(views.flatMap((v) => v.notices.map((n) => n.code)))]
+    const codes = [...new Set(mockViews.flatMap((v) => v.notices.map((n) => n.code)))]
     expect(codes).toHaveLength(12)
   })
 
