@@ -58,6 +58,7 @@ def _build_case_and_candidate(adapter: MockFixtureAdapter, hints: dict, manifest
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
             rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]

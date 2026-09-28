@@ -101,6 +101,7 @@
         {
           "candidate_id": "candidate_x001",
           "rank": 1,
+          "marker_ms": null,
           "at": "2026-08-30T09:10:10+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -184,6 +185,7 @@
         {
           "candidate_id": "candidate_x001",
           "rank": 1,
+          "marker_ms": null,
           "at": "2026-08-30T09:10:10+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -269,6 +271,7 @@
         {
           "candidate_id": "candidate_x001",
           "rank": 1,
+          "marker_ms": null,
           "at": "2026-08-30T09:10:10+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -354,6 +357,7 @@
         {
           "candidate_id": "candidate_x001",
           "rank": 1,
+          "marker_ms": null,
           "at": "2026-08-30T09:10:10+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",

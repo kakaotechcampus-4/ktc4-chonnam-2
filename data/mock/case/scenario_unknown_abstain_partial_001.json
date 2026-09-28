@@ -125,6 +125,7 @@
         {
           "candidate_id": "candidate_u001",
           "rank": 1,
+          "marker_ms": 615000,
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -342,6 +343,7 @@
         {
           "candidate_id": "candidate_u001",
           "rank": 1,
+          "marker_ms": 615000,
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",

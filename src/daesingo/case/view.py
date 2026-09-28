@@ -227,6 +227,8 @@ def _build_candidates_view(
             {
                 "candidate_id": c.candidate_id,
                 "rank": c.rank,
+                # 시간축 마커(#184). stale 후보는 rebase 후 좌표 보장이 확인되기 전까지 null.
+                "marker_ms": None if stale_revision else c.representative_ms,
                 "at": at,
                 "at_provenance": at_provenance,
                 "at_provenance_label_key": at_provenance_label_key(at_provenance),
