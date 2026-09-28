@@ -500,11 +500,22 @@ class RealVideoContext:
 
 
 def prepare_real_video_context(
-    *, local_video_path: str | Path, case: CaseAggregate, scope_id: str
+    *,
+    local_video_path: str | Path,
+    case: CaseAggregate,
+    scope_id: str,
+    target_event_types: list[str] | None = None,
 ) -> RealVideoContext:
     """`register_local_source()`부터 real Gemini/Elice service 조립까지 — candidate
     탐색 이전 단계. 이 단계는 candidate와 무관하게 한 번만 한다(전체 영상 범위
     AnalysisSource 하나 재사용 — 모듈 docstring 참고).
+
+    `target_event_types`는 `scope.py`가 이미 명시한 대로("1차 구현 범위" —
+    case에는 아직 intake UI가 이 값을 스스로 결정하는 로직이 없어 호출자가 그대로
+    공급해야 한다) 호출자 책임이다. 생략하면 월요일 대표 영상용 값
+    (`_MONDAY_TARGET_EVENT_TYPES`)으로 fallback한다 — 이건 계약 기본값이 아니라
+    그 영상 하나를 위한 opaque 재사용값일 뿐이다(모듈 docstring 참고, 2026-09-23
+    real_e2e_yt0002 실행에서 다른 영상엔 안 맞는다는 게 드러나 매개변수화함).
     """
     # 월요일 대표 파일(20260620_141956_EVT_1.avi) 기준 profile 설정 — 480p H.264,
     # preset=veryfast, crf=23, audio off(정철원 확인, 2026-09-21). canonical profile
@@ -570,7 +581,7 @@ def prepare_real_video_context(
                 "end_ms": duration_ms,
             }
         ],
-        target_event_types=_MONDAY_TARGET_EVENT_TYPES,
+        target_event_types=target_event_types or _MONDAY_TARGET_EVENT_TYPES,
         max_cost_krw=_MONDAY_BUDGET["max_cost_krw"],
         max_latency_sec=_MONDAY_BUDGET["max_latency_sec"],
     )
@@ -851,6 +862,7 @@ def build_real_video_evidence_bundle(
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
     on_visual_result: Any = None,
+    target_event_types: list[str] | None = None,
 ) -> tuple[EvidenceBundle, RecordingService]:
     """`prepare_real_video_context()` + `get_real_video_candidates()`(candidates[0]
     고정) + `build_evidence_for_real_video_candidate()`를 한 번에 묶은 편의 함수 —
@@ -863,7 +875,10 @@ def build_real_video_evidence_bundle(
     참고).
     """
     context = prepare_real_video_context(
-        local_video_path=local_video_path, case=case, scope_id=scope_id
+        local_video_path=local_video_path,
+        case=case,
+        scope_id=scope_id,
+        target_event_types=target_event_types,
     )
     candidates = get_real_video_candidates(context)
     if not candidates:

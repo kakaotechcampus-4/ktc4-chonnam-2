@@ -152,6 +152,7 @@ def verify_fine(
                 end_sec,
                 media=prepared,
                 timeout_sec=deadline.remaining_sec(),
+                deadline=deadline,
             )
         )
         ledger.append(

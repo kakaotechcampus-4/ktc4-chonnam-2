@@ -1,5 +1,9 @@
 # [Readout·Web] Architecture Input Memo
 
+> ⚠️ **2026-08-29 기준이다. 이후 실측으로 뒤집힌 항목이 있다** — Best Frame 기준 · 검출
+> baseline · tracker 미결. 본문은 당시 기록이므로 고치지 않는다.
+> [`lpr-deep-research-verification-2026-09-20.md`](lpr-deep-research-verification-2026-09-20.md) 참조.
+
 > **성격:** 모듈 구조 설계 v4(`docs/architecture/module-architecture.md`) 작성의 근거가 된 Owner 자료조사 메모다. **조사 결과이지 결정이 아니다.** v4에 반영되지 않은 제안은 제안 상태로 남아 있고, 결정은 v4와 이 모듈의 `decisions/`에서만 한다. 문서 안의 `v3 §N`·`테크스펙 §N` 인용은 작성 당시(v3) 번호다.
 
 **Owner:** 신유민
