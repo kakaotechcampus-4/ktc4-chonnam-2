@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"자기 정정 후 마지막 값인 '19시쯤'을 '어제 19시쯤'으로 정확히 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '흰색 SUV'를 그대로 반영했으며 정정 대상이 아니다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 그대로 반영했다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"시간 슬롯에서 18시->19시로 자기 정정이 발생했음에도 correction_target을 null로 두어 정정 발생 사실 자체를 명시하지 않았다; 최종 시간 값은 맞게 채택했으나 정정 필드로서는 정보가 누락되었다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정정으로 확정한 값임에도 confidence를 low로 두어, 판정 기준에서 요구하는 'high로 나오지 않아야 한다'는 조건을 충족했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "자기 정정 후 마지막 값인 '19시쯤'을 '어제 19시쯤'으로 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 SUV'를 그대로 반영했으며 정정 대상이 아니다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 그대로 반영했다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "시간 슬롯에서 18시->19시로 자기 정정이 발생했음에도 correction_target을 null로 두어 정정 발생 사실 자체를 명시하지 않았다; 최종 시간 값은 맞게 채택했으나 정정 필드로서는 정보가 누락되었다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정정으로 확정한 값임에도 confidence를 low로 두어, 판정 기준에서 요구하는 'high로 나오지 않아야 한다'는 조건을 충족했다."
+    }
+  },
+  "latency_ms": 6327.8887999476865,
+  "prompt_tokens": 3053,
+  "completion_tokens": 544,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14a-profanity-lane-change",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"차로 변경\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"문장에 시간(어제 18시쯤), 차량 색상과 종류(흰색 SUV), 차로 변경 행위, 위치(상무중앙로)가 직접적으로 명시되어 있어 각 필드를 그대로 매핑했다. prior_hints가 null이므로 수정 대상은 없고, 정보의 모호성이 없어 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "문장에 시간(어제 18시쯤), 차량 색상과 종류(흰색 SUV), 차로 변경 행위, 위치(상무중앙로)가 직접적으로 명시되어 있어 각 필드를 그대로 매핑했다. prior_hints가 null이므로 수정 대상은 없고, 정보의 모호성이 없어 confidence를 high로 판단했다."
+  },
+  "latency_ms": 12893.985099974088,
+  "prompt_tokens": 803,
+  "completion_tokens": 1617,
+  "cost_krw": 1.045781,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

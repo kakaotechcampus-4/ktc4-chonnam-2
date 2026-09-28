@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '아침'과 '저녁'이라는 시간 정보가 명확히 있으나 모델은 null로 응답해 이를 빠뜨렸다.\"}, \"vehicle_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '택시'와 '오토바이'라는 차량 정보가 명확히 있으나 모델은 null로 응답해 이를 빠뜨렸다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '정류장 급정거', '헬멧 미착용 인도 주행'이라는 상황 정보가 있으나 모델은 null로 응답해 이를 빠뜨렸다.\"}, \"location_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '정류장', '인도'라는 장소 정보가 있으나 모델은 null로 응답해 이를 빠뜨렸다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 상황이 아니므로 correction_target을 null로 둔 것은 적절하다.\"}, \"confidence\": {\"verdict\": \"missed\", \"reason\": \"두 사건이 섞여 있어 애매함을 반영해 confidence=low로 표시해야 하는데, 모델은 아무 값도 내지 않고 null로 응답해 이를 빠뜨렸다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '아침'과 '저녁'이라는 시간 정보가 명확히 있으나 모델은 null로 응답해 이를 빠뜨렸다."
+    },
+    "vehicle_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '택시'와 '오토바이'라는 차량 정보가 명확히 있으나 모델은 null로 응답해 이를 빠뜨렸다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '정류장 급정거', '헬멧 미착용 인도 주행'이라는 상황 정보가 있으나 모델은 null로 응답해 이를 빠뜨렸다."
+    },
+    "location_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '정류장', '인도'라는 장소 정보가 있으나 모델은 null로 응답해 이를 빠뜨렸다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 상황이 아니므로 correction_target을 null로 둔 것은 적절하다."
+    },
+    "confidence": {
+      "verdict": "missed",
+      "reason": "두 사건이 섞여 있어 애매함을 반영해 confidence=low로 표시해야 하는데, 모델은 아무 값도 내지 않고 null로 응답해 이를 빠뜨렸다."
+    }
+  },
+  "latency_ms": 6579.514499986544,
+  "prompt_tokens": 2662,
+  "completion_tokens": 596,
+  "cost_krw": null,
+  "error": null
+}

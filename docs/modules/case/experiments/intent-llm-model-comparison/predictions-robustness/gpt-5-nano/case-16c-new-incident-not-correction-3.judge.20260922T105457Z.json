@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 정보가 없으므로 null로 둔 것이 맞고, 이전 정보를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '검은색 세단'을 명확히 언급했으며 이전 흰색 SUV를 끌어오지 않고 새 값으로 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화의 '중앙선 침범'을 정확히 반영했고 이전 상황(차로 변경)을 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없으므로 null로 둔 것이 맞고 이전 상무중앙로를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"이건 '다른 건데요'라는 명시적 전환 신호로 완전히 새로운 사고를 설명하는 것이므로 correction_target은 null이어야 하는데, 모델은 이를 기존 situation_hint에 대한 정정으로 오인해 situation_hint를 지어냈다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"correction_target을 잘못 설정한 상태에서의 confidence이므로 방향성 자체가 잘못된 판단에 기반해 있어 의미가 없으며, 새로운 사고 신고라는 맥락에서 confidence 판단 자체가 틀린 전제 위에 서 있다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 정보가 없으므로 null로 둔 것이 맞고, 이전 정보를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '검은색 세단'을 명확히 언급했으며 이전 흰색 SUV를 끌어오지 않고 새 값으로 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "새 발화의 '중앙선 침범'을 정확히 반영했고 이전 상황(차로 변경)을 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없으므로 null로 둔 것이 맞고 이전 상무중앙로를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "이건 '다른 건데요'라는 명시적 전환 신호로 완전히 새로운 사고를 설명하는 것이므로 correction_target은 null이어야 하는데, 모델은 이를 기존 situation_hint에 대한 정정으로 오인해 situation_hint를 지어냈다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "correction_target을 잘못 설정한 상태에서의 confidence이므로 방향성 자체가 잘못된 판단에 기반해 있어 의미가 없으며, 새로운 사고 신고라는 맥락에서 confidence 판단 자체가 틀린 전제 위에 서 있다."
+    }
+  },
+  "latency_ms": 8083.94710009452,
+  "prompt_tokens": 3056,
+  "completion_tokens": 668,
+  "cost_krw": null,
+  "error": null
+}

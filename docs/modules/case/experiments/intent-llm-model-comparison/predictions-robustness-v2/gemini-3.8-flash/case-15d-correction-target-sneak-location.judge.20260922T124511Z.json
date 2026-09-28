@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15d-correction-target-sneak-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"time_hint는 원문에서 언급되지 않았고, 정정 케이스에서 이전 값을 복사하지 않고 null로 둔 것은 올바르다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은색 트럭'은 신호 무시한 별개 차량/사건에 대한 언급으로, 기존 사건의 vehicle_hint('흰색 SUV')를 덮어써서는 안 되는데 모델이 이를 vehicle_hint로 대체해 오염시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'신호 무시'는 검은색 트럭이라는 별도 차량/사건에 대한 정보인데, 기존 situation_hint('차로 변경')를 이 무관한 사건 정보로 덮어써서 오염시켰다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 명시적으로 '죽전로'로 정정했고 모델이 이를 정확히 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상은 location_hint 하나뿐이며 모델이 이를 정확히 지정했다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"별도 사건인 검은색 트럭 정보까지 섞여 vehicle/situation을 오염시킨 상태에서 confidence를 'high'로 매긴 것은 부적절하며, 별도 사건에 대해서는 낮은 신뢰도로 구분했어야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "time_hint는 원문에서 언급되지 않았고, 정정 케이스에서 이전 값을 복사하지 않고 null로 둔 것은 올바르다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은색 트럭'은 신호 무시한 별개 차량/사건에 대한 언급으로, 기존 사건의 vehicle_hint('흰색 SUV')를 덮어써서는 안 되는데 모델이 이를 vehicle_hint로 대체해 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'신호 무시'는 검은색 트럭이라는 별도 차량/사건에 대한 정보인데, 기존 situation_hint('차로 변경')를 이 무관한 사건 정보로 덮어써서 오염시켰다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 명시적으로 '죽전로'로 정정했고 모델이 이를 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 location_hint 하나뿐이며 모델이 이를 정확히 지정했다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "별도 사건인 검은색 트럭 정보까지 섞여 vehicle/situation을 오염시킨 상태에서 confidence를 'high'로 매긴 것은 부적절하며, 별도 사건에 대해서는 낮은 신뢰도로 구분했어야 한다."
+    }
+  },
+  "latency_ms": 7373.690200038254,
+  "prompt_tokens": 2982,
+  "completion_tokens": 679,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16e-new-incident-not-correction-5",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"버스\",\n  \"situation_hint\": \"정류장 아닌 곳에서 급정거\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"기존 단서를 일부 정정하는 것이 아니라 완전히 새로운 건을 신고하는 발화이므로 correction_target은 null이며, 언급된 차량(버스)과 상황(정류장 아닌 곳에서 급정거)을 명확하게 진술하여 confidence는 high로 판단함.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "버스",
+    "situation_hint": "정류장 아닌 곳에서 급정거",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "기존 단서를 일부 정정하는 것이 아니라 완전히 새로운 건을 신고하는 발화이므로 correction_target은 null이며, 언급된 차량(버스)과 상황(정류장 아닌 곳에서 급정거)을 명확하게 진술하여 confidence는 high로 판단함."
+  },
+  "latency_ms": 2872.474899981171,
+  "prompt_tokens": 367,
+  "completion_tokens": 504,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

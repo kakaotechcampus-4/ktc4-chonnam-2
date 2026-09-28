@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"오늘 아침\",\"vehicle_hint\":\"트럭\",\"situation_hint\":\"불법 유턴\",\"location_hint\":null,\"correction_target\":\"time_hint; vehicle_hint; situation_hint\",\"confidence\":\"high\",\"reasoning\":\"이 발화는 시간을 '오늘 아침'으로, 차량을 '트럭'으로, 상황을 '불법 유턴'으로 명시하며 이전 힌트의 시간, 차종, 차로 변경 정보를 모두 정정한다. 따라서 time_hint, vehicle_hint, situation_hint이 정정 대상이며 위치 정보는 언급되지 않아 null로 둔다.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint; vehicle_hint; situation_hint",
+    "confidence": "high",
+    "reasoning": "이 발화는 시간을 '오늘 아침'으로, 차량을 '트럭'으로, 상황을 '불법 유턴'으로 명시하며 이전 힌트의 시간, 차종, 차로 변경 정보를 모두 정정한다. 따라서 time_hint, vehicle_hint, situation_hint이 정정 대상이며 위치 정보는 언급되지 않아 null로 둔다."
+  },
+  "latency_ms": 22830.927500035614,
+  "prompt_tokens": 840,
+  "completion_tokens": 3788,
+  "cost_krw": 2.370732,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

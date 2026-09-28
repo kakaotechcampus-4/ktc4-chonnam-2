@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"검은색 세단\",\"situation_hint\":null,\"location_hint\":null,\"correction_target\":\"vehicle_hint\",\"confidence\":\"high\",\"reasoning\":\"이번 발화에서 제시된 검은색 세단은 prior_hints의 흰색 SUV와 충돌하는 정보이므로 정정 대상은 vehicle_hint이다. 발화에 시간/상황/장소는 명시되지 않아 해당 필드들은 null로 처리한다. 진술이 명확하므로 confidence를 high로 판단한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 세단",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "high",
+    "reasoning": "이번 발화에서 제시된 검은색 세단은 prior_hints의 흰색 SUV와 충돌하는 정보이므로 정정 대상은 vehicle_hint이다. 발화에 시간/상황/장소는 명시되지 않아 해당 필드들은 null로 처리한다. 진술이 명확하므로 confidence를 high로 판단한다."
+  },
+  "latency_ms": 20206.33389998693,
+  "prompt_tokens": 834,
+  "completion_tokens": 2753,
+  "cost_krw": 1.739961,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

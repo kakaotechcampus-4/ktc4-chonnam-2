@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11e-emoji-only",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 전혀 없고 모델도 null로 처리함.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"자동차 이모지만으로 구체적 차종/차량 정보를 지어내지 않고 null로 둠.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"화난 이모지만으로 구체적 상황을 지어내지 않고 null로 처리함.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소 정보가 전혀 없고 null로 처리함.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아니므로 null 처리가 적절함.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정보가 전무한 입력이므로 low로 설정한 것이 기준에 부합함.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 전혀 없고 모델도 null로 처리함."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "자동차 이모지만으로 구체적 차종/차량 정보를 지어내지 않고 null로 둠."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "화난 이모지만으로 구체적 상황을 지어내지 않고 null로 처리함."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소 정보가 전혀 없고 null로 처리함."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아니므로 null 처리가 적절함."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정보가 전무한 입력이므로 low로 설정한 것이 기준에 부합함."
+    }
+  },
+  "latency_ms": 4893.205899978057,
+  "prompt_tokens": 2753,
+  "completion_tokens": 424,
+  "cost_krw": null,
+  "error": null
+}

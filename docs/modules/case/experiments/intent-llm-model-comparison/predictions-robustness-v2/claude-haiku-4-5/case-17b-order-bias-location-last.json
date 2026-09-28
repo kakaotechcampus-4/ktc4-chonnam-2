@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "scenario_tag": "정보_위치순서_편향",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"백색 실선 구간에서 차로 바꿈\", \"location_hint\": \"상무중앙로 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 시간, 차량, 위반 상황, 장소가 명확하게 제시되었다. 백색 실선 구간에서의 차로 변경은 도로교통법 위반 행위로 상황이 구체적으로 기술되었다. prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꿈",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 시간, 차량, 위반 상황, 장소가 명확하게 제시되었다. 백색 실선 구간에서의 차로 변경은 도로교통법 위반 행위로 상황이 구체적으로 기술되었다. prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 2428.4862000495195,
+  "prompt_tokens": 1863,
+  "completion_tokens": 285,
+  "cost_krw": 5.004906,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

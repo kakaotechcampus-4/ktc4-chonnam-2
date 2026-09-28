@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"19시\",\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":\"time_hint\",\"confidence\":\"high\",\"reasoning\":\"발화에서 시간 정보를 19시로 수정하고 있으며, 따라서 time_hint를 '19시'로 설정하고 correction_target를 'time_hint'로 지정했다. 이전 힌트의 차량/상황/위치 정보는 이번 발화에서 구체적으로 재진술되지 않아 null로 두고, '검은 오토바이...'의 내용은 이 스키마의 필드 매핑에 해당하지 않아 반영하지 않았다.\"}",
+  "parsed": {
+    "time_hint": "19시",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "발화에서 시간 정보를 19시로 수정하고 있으며, 따라서 time_hint를 '19시'로 설정하고 correction_target를 'time_hint'로 지정했다. 이전 힌트의 차량/상황/위치 정보는 이번 발화에서 구체적으로 재진술되지 않아 null로 두고, '검은 오토바이...'의 내용은 이 스키마의 필드 매핑에 해당하지 않아 반영하지 않았다."
+  },
+  "latency_ms": 32757.765699992888,
+  "prompt_tokens": 851,
+  "completion_tokens": 4757,
+  "cost_krw": 2.961689,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

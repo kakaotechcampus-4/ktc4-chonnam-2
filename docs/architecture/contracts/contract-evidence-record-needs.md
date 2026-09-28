@@ -183,6 +183,7 @@ Coordinate {
 - `value=null`일 때도 `EvidenceValue<T>`의 나머지 필드(`source`·`support_refs`·`user_corrected`·`needs_review`)는 §4.2·§3 「`needs_review`」 절 규칙을 그대로 따른다 — `value=null`에는 `needs_review=true`를 만들지 않는다.
 - 하위 소비자 처리는 새 규칙이 아니라 기존 규칙의 적용이다: `CaseView.case_type_display`는 `contract-job-record-case-view.md` B절 §7 파생 규칙 (1)을 그대로 타서 `value==null → INFO_UNKNOWN`으로 떨어진다(`docs/modules/case/decisions/generic-warn-package-and-situation-response.md` 항목 2, `scenario_unknown_abstain_partial_001` fixture로 실증됨).
 - 값 의미·값 공간을 바꾸지 않고 이미 합의된 내용을 스키마 문면에 반영하는 것이므로 `evidence-record/v1.3`을 유지한다(버전을 올리지 않음).
+- **이 null 예외는 `UNCERTAIN` 전용이다 — `NOT_OBSERVED`는 여기 들어오지 않는다(명확화, 2026-09-22, 이슈 #137).** `verification=NOT_OBSERVED`는 Fine이 정상 실행됐고 해당 후보를 지지하는 근거가 없다는 뜻이라(`contract-visual-evidence.md` §4-1) **`EvidenceRecord` 생성 이전에 종료되는 정상적인 비채택 결과**다. 소비자는 이 입력으로 Record·`RequirementReport`·`ReportPackage`를 만들지 않으며, 계약 위반으로 처리하지도 않는다. 두 상태를 같은 fallback으로 합치면 관찰되지 않은 사건에 대해 사용자 응답 없이 generic 신고문이 만들어질 수 있다. 값 공간·스키마를 바꾸지 않는 소비 규칙 명확화이므로 버전을 올리지 않는다.
 
 ### `source.observability` · `source.label_key` (v1.1, 2026-09-06)
 

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11a-empty-string",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 빈 문자열이므로 시간 관련 정보가 없어 null 처리한 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 비어 있어 차량 관련 정보가 없으므로 null 처리가 타당하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 비어 있어 상황 정보가 없으므로 null 처리가 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 비어 있어 위치 정보가 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 원문도 비어 있어 정정 대상이 없으므로 null 처리가 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"입력이 완전히 비어 추출 근거가 전혀 없으므로 confidence를 low로 설정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문이 빈 문자열이므로 시간 관련 정보가 없어 null 처리한 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문이 비어 있어 차량 관련 정보가 없으므로 null 처리가 타당하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문이 비어 있어 상황 정보가 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문이 비어 있어 위치 정보가 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 원문도 비어 있어 정정 대상이 없으므로 null 처리가 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "입력이 완전히 비어 추출 근거가 전혀 없으므로 confidence를 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 4347.268400015309,
+  "prompt_tokens": 2565,
+  "completion_tokens": 482,
+  "cost_krw": null,
+  "error": null
+}

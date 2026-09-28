@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09b-multi-event-also",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"아까 / 지난주\", \"vehicle_hint\": \"흰색 SUV / 트럭\", \"situation_hint\": \"신호위반 / 불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 서로 다른 두 건의 사건을 혼합해서 언급했는데, 구체적인 위치 정보가 없고 각 차량과 위반 행위의 대응 관계가 명확하지 않다. \\\"아까\\\"와 \\\"지난주\\\"는 상대적 시간 표현이므로 그대로 기록했고, 각 건마다 추출하기보다는 전체 맥락에서 언급된 요소들을 모았다. 이로 인해 신뢰도를 낮게 평가했다.\"}",
+  "parsed": {
+    "time_hint": "아까 / 지난주",
+    "vehicle_hint": "흰색 SUV / 트럭",
+    "situation_hint": "신호위반 / 불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 서로 다른 두 건의 사건을 혼합해서 언급했는데, 구체적인 위치 정보가 없고 각 차량과 위반 행위의 대응 관계가 명확하지 않다. \"아까\"와 \"지난주\"는 상대적 시간 표현이므로 그대로 기록했고, 각 건마다 추출하기보다는 전체 맥락에서 언급된 요소들을 모았다. 이로 인해 신뢰도를 낮게 평가했다."
+  },
+  "latency_ms": 3958.5962999844924,
+  "prompt_tokens": 1861,
+  "completion_tokens": 343,
+  "cost_krw": 5.443358,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

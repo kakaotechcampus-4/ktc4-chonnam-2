@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"신호위반\",\n  \"location_hint\": \"상무중앙로\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 발화한 첫 번째 사례를 중심으로 정보를 추출했습니다. 두 번째 언급된 오토바이 관련 내용은 시점이 다르므로 포함하지 않았습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "신호위반",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 발화한 첫 번째 사례를 중심으로 정보를 추출했습니다. 두 번째 언급된 오토바이 관련 내용은 시점이 다르므로 포함하지 않았습니다."
+  },
+  "latency_ms": 1717.03499997966,
+  "prompt_tokens": 338,
+  "completion_tokens": 114,
+  "cost_krw": 0.388702,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

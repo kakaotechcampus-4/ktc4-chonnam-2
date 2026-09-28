@@ -1,0 +1,22 @@
+{
+  "case_id": "case-11e-emoji-only",
+  "scenario_tag": "구조적_경계_입력",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 자동차 이모지와 화난 표정 이모지만 제공했으며, 교통위반 상황에 대한 구체적인 자연어 설명이 없습니다. 차량 관련 불만이나 분노를 표현하는 것으로 보이지만, 시간, 장소, 구체적인 상황 등 어떤 정보도 추출할 수 없어 모든 필드를 null로 처리했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 자동차 이모지와 화난 표정 이모지만 제공했으며, 교통위반 상황에 대한 구체적인 자연어 설명이 없습니다. 차량 관련 불만이나 분노를 표현하는 것으로 보이지만, 시간, 장소, 구체적인 상황 등 어떤 정보도 추출할 수 없어 모든 필드를 null로 처리했습니다."
+  },
+  "latency_ms": 2658.9198000729084,
+  "prompt_tokens": 1824,
+  "completion_tokens": 288,
+  "cost_krw": 4.968384,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

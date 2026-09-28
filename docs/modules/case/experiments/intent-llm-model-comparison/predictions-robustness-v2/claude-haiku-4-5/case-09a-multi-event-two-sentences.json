@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"신호위반\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 두 가지 위반 상황을 언급했으나, 첫 번째 사례(어제 18시쯤 상무중앙로에서 흰색 SUV의 신호위반)가 명확하고 구체적이어서 이를 추출했습니다. 두 번째 사례(오늘 아침 검은색 세단 헬멧 미착용)는 시간이 \\\"오늘 아침\\\"으로 모호하고 위치 정보가 없어서 별도 처리 필요하나, 현재 호출에서는 첫 번째 사례에 집중했습니다. Prior_hints가 null이므로 correction_target은 null입니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "신호위반",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 두 가지 위반 상황을 언급했으나, 첫 번째 사례(어제 18시쯤 상무중앙로에서 흰색 SUV의 신호위반)가 명확하고 구체적이어서 이를 추출했습니다. 두 번째 사례(오늘 아침 검은색 세단 헬멧 미착용)는 시간이 \"오늘 아침\"으로 모호하고 위치 정보가 없어서 별도 처리 필요하나, 현재 호출에서는 첫 번째 사례에 집중했습니다. Prior_hints가 null이므로 correction_target은 null입니다."
+  },
+  "latency_ms": 3218.568700016476,
+  "prompt_tokens": 1881,
+  "completion_tokens": 374,
+  "cost_krw": 5.70977,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

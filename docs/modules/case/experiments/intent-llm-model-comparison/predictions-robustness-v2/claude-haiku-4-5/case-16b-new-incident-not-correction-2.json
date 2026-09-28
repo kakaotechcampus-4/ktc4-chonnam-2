@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명시적으로 \\\"오늘 아침\\\", \\\"트럭\\\", \\\"불법 유턴\\\"을 언급했으므로 이들은 high confidence. 위치는 언급되지 않아 null. \\\"그건 됐고\\\"는 이전 사건(어제 18시 흰색 SUV)에 대한 종료 선언이므로 correction_target은 아니며, 새로운 사건 리포트로 판단.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명시적으로 \"오늘 아침\", \"트럭\", \"불법 유턴\"을 언급했으므로 이들은 high confidence. 위치는 언급되지 않아 null. \"그건 됐고\"는 이전 사건(어제 18시 흰색 SUV)에 대한 종료 선언이므로 correction_target은 아니며, 새로운 사건 리포트로 판단."
+  },
+  "latency_ms": 2587.6606000820175,
+  "prompt_tokens": 1903,
+  "completion_tokens": 286,
+  "cost_krw": 5.073398,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

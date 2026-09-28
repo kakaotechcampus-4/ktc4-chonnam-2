@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08c-offtopic-howto",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"사용자가 서비스 이용 방법을 질문하고 있어 교통위반 신고와 관련된 어떠한 구체적인 정보도 포함되어 있지 않습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 서비스 이용 방법을 질문하고 있어 교통위반 신고와 관련된 어떠한 구체적인 정보도 포함되어 있지 않습니다."
+  },
+  "latency_ms": 1880.8271000161767,
+  "prompt_tokens": 300,
+  "completion_tokens": 66,
+  "cost_krw": 0.26467799999999997,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

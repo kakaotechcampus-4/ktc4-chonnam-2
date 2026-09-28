@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"18시->19시로 정정되는 발화를 원문 그대로('...아니다 19시쯤')로 담아, 두 값 모두 반영하고 임의 확정을 피했다는 점에서 정정 상황을 적절히 표현했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '흰색 SUV'를 그대로 추출했으며 다른 값과 상충하지 않는다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경했다'는 상황을 차량 정보와 함께 정확히 담았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간 값이 문장 내에서 상충하는 자기 정정 상황임을 인지하고 confidence를 low로 매겨, high로 과신하는 위험 패턴을 피했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "18시->19시로 정정되는 발화를 원문 그대로('...아니다 19시쯤')로 담아, 두 값 모두 반영하고 임의 확정을 피했다는 점에서 정정 상황을 적절히 표현했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '흰색 SUV'를 그대로 추출했으며 다른 값과 상충하지 않는다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경했다'는 상황을 차량 정보와 함께 정확히 담았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이므로 정정 대상이 없다고 판단한 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간 값이 문장 내에서 상충하는 자기 정정 상황임을 인지하고 confidence를 low로 매겨, high로 과신하는 위험 패턴을 피했다."
+    }
+  },
+  "latency_ms": 6638.702300027944,
+  "prompt_tokens": 3011,
+  "completion_tokens": 540,
+  "cost_krw": null,
+  "error": null
+}

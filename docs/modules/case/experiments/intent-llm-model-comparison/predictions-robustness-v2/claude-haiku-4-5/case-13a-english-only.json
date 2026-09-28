@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13a-english-only",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"Yesterday around 6pm\", \"vehicle_hint\": \"white SUV\", \"situation_hint\": \"changed lanes on a solid line\", \"location_hint\": \"near Sangmu-jungang-ro\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"All key details are explicitly stated in the user's report with clear temporal reference (yesterday around 6pm), vehicle description (white SUV), traffic violation type (changing lanes on solid line), and location (Sangmu-jungang-ro). No contradictions or ambiguities detected that would warrant lower confidence.\"}",
+  "parsed": {
+    "time_hint": "Yesterday around 6pm",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "changed lanes on a solid line",
+    "location_hint": "near Sangmu-jungang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "All key details are explicitly stated in the user's report with clear temporal reference (yesterday around 6pm), vehicle description (white SUV), traffic violation type (changing lanes on solid line), and location (Sangmu-jungang-ro). No contradictions or ambiguities detected that would warrant lower confidence."
+  },
+  "latency_ms": 2274.104699958116,
+  "prompt_tokens": 1833,
+  "completion_tokens": 227,
+  "cost_krw": 4.51775,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-08b-offtopic-weather",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"사고 관련 시간 정보가 전혀 없는 발화이므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 관련 언급이 전혀 없으므로 null 처리가 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"날씨 잡담일 뿐 사고 상황 설명이 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"위치 정보를 지어내지 않고 null로 둔 것이 기준에 부합한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정할 대상이 언급되지 않았으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정보가 전혀 없는 상황이므로 low로 설정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "사고 관련 시간 정보가 전혀 없는 발화이므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 관련 언급이 전혀 없으므로 null 처리가 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "날씨 잡담일 뿐 사고 상황 설명이 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "위치 정보를 지어내지 않고 null로 둔 것이 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정할 대상이 언급되지 않았으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정보가 전혀 없는 상황이므로 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 5075.177600025199,
+  "prompt_tokens": 2702,
+  "completion_tokens": 449,
+  "cost_krw": null,
+  "error": null
+}

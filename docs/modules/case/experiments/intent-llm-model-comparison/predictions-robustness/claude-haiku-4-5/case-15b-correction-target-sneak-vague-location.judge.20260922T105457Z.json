@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정정 언급이 없으므로 null 유지는 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 색깔을 '은색'으로 명확히 정정한 것을 그대로 반영했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"상황(차로 변경)에 대한 정정 언급이 없으므로 null 처리가 맞다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 '좀 더 아래쪽이었던 것 같아요'라는 모호한 상대적 표현일 뿐인데, 모델은 이를 '상무중앙로 아래쪽'이라는 구체적 지명으로 확정해 지어냈다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"차량 색깔과 위치 두 필드 모두 정정 대상으로 언급했으므로 vehicle_hint, location_hint를 correction_target으로 잡은 것은 기준과 부합한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"위치가 모호하다는 점을 인지해 low로 낮춘 것은 방향이 맞지만, location_hint 자체를 구체값으로 지어낸 상태에서 confidence만 낮춘 것은 불일치이며 애초에 location_hint를 모호하게 남기고 낮은 확신을 표현했어야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정정 언급이 없으므로 null 유지는 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 색깔을 '은색'으로 명확히 정정한 것을 그대로 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "상황(차로 변경)에 대한 정정 언급이 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '좀 더 아래쪽이었던 것 같아요'라는 모호한 상대적 표현일 뿐인데, 모델은 이를 '상무중앙로 아래쪽'이라는 구체적 지명으로 확정해 지어냈다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "차량 색깔과 위치 두 필드 모두 정정 대상으로 언급했으므로 vehicle_hint, location_hint를 correction_target으로 잡은 것은 기준과 부합한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "위치가 모호하다는 점을 인지해 low로 낮춘 것은 방향이 맞지만, location_hint 자체를 구체값으로 지어낸 상태에서 confidence만 낮춘 것은 불일치이며 애초에 location_hint를 모호하게 남기고 낮은 확신을 표현했어야 한다."
+    }
+  },
+  "latency_ms": 7331.9754000985995,
+  "prompt_tokens": 3078,
+  "completion_tokens": 631,
+  "cost_krw": null,
+  "error": null
+}

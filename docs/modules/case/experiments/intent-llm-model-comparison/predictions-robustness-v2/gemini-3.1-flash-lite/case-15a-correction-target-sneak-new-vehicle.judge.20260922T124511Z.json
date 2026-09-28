@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"명시적으로 '19시였어요'라고 정정한 내용을 정확히 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"검은 오토바이는 별도 사건(헬멧 미착용) 언급이며 기존 vehicle_hint인 '흰색 SUV'를 정정 대상으로 명시하지 않았는데, 모델이 이를 덮어써 원래 차량 정보를 오염시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'헬멧 미착용'은 별도 사건(검은 오토바이)에 대한 것으로 기존 situation_hint('차로 변경')를 정정하라는 명시적 지시가 없었는데 이를 덮어써 오염시켰다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정정 언급이 없으므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 대상이 time_hint 하나뿐이라는 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"별도 사건이 섞여 들어간 상황임에도 high로 유지해 이 혼입을 반영하지 못했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '19시였어요'라고 정정한 내용을 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "검은 오토바이는 별도 사건(헬멧 미착용) 언급이며 기존 vehicle_hint인 '흰색 SUV'를 정정 대상으로 명시하지 않았는데, 모델이 이를 덮어써 원래 차량 정보를 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'헬멧 미착용'은 별도 사건(검은 오토바이)에 대한 것으로 기존 situation_hint('차로 변경')를 정정하라는 명시적 지시가 없었는데 이를 덮어써 오염시켰다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정정 언급이 없으므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상이 time_hint 하나뿐이라는 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "별도 사건이 섞여 들어간 상황임에도 high로 유지해 이 혼입을 반영하지 못했다."
+    }
+  },
+  "latency_ms": 6507.979099988006,
+  "prompt_tokens": 2922,
+  "completion_tokens": 581,
+  "cost_krw": null,
+  "error": null
+}

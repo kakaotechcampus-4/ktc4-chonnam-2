@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10a-contradiction-time",
+  "scenario_tag": "모순_정보",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 시간을 \\\"18시쯤이었나... 아니다 19시쯤\\\"으로 수정했으므로 최종 발언인 19시쯤을 반영했으나, 정확한 시각이 아닌 추정치(\\\"쯤\\\")이고 상대 시간 표현(\\\"어제\\\")을 포함하고 있어 확실성이 낮다. 차로 변경 행위가 교통위반인지 여부(신호 상황, 안전거리 등)가 불명확하기도 하다.\"}",
+  "parsed": {
+    "time_hint": "어제 19시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 시간을 \"18시쯤이었나... 아니다 19시쯤\"으로 수정했으므로 최종 발언인 19시쯤을 반영했으나, 정확한 시각이 아닌 추정치(\"쯤\")이고 상대 시간 표현(\"어제\")을 포함하고 있어 확실성이 낮다. 차로 변경 행위가 교통위반인지 여부(신호 상황, 안전거리 등)가 불명확하기도 하다."
+  },
+  "latency_ms": 3169.722400023602,
+  "prompt_tokens": 1857,
+  "completion_tokens": 326,
+  "cost_krw": 5.307866,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

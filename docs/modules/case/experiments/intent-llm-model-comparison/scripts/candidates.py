@@ -48,14 +48,16 @@ MODEL_IDS = {
     "gpt-5-nano": "gpt-5-nano",
     "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",  # 스트리밍 예제로 확인됨
     "claude-haiku-4-5": "claude-haiku-4-5",  # 사용자가 모델 카드에서 직접 확인한 값
+    "gemini-3.8-flash": "gemini-3.8-flash",  # search 모듈이 이미 실사용 중(config.py) — Preview 아님
 }
 
-# 후보 3개의 model_name -> base_url을 담은 환경변수 이름. judge 모델(MODEL_IDS 밖)은
+# 후보 4개의 model_name -> base_url을 담은 환경변수 이름. judge 모델(MODEL_IDS 밖)은
 # 여기 없고 JUDGE_MODEL_URL 하나로 따로 처리한다(.env 참고).
 _MODEL_BASE_URL_ENV = {
     "gpt-5-nano": "ELICE_URL_GPT_5_NANO",
     "gemini-3.1-flash-lite": "ELICE_URL_GEMINI_3_1_FLASH_LITE",
     "claude-haiku-4-5": "ELICE_URL_CLAUDE_HAIKU_4_5",
+    "gemini-3.8-flash": "ELICE_URL_GEMINI_3_8_FLASH",
 }
 
 

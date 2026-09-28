@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤, 오늘 아침에는\",\"vehicle_hint\":\"흰색 SUV, 검은색 세단\",\"situation_hint\":\"신호위반; 헬멧 없이 오토바이를 타던 상황(주어 불일치로 보이는 부분 포함)\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"발화에 두 개의 시간 표현이 있어 시간 힌트에 둘 다 반영했고, 두 차종이 나타나지만 두 번째 진술의 주체가 모순돼 보인다. 따라서 불확실성을 이유로 confidence를 low로 표시했고, prior_hints는 null이므로 정정 대상도 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤, 오늘 아침에는",
+    "vehicle_hint": "흰색 SUV, 검은색 세단",
+    "situation_hint": "신호위반; 헬멧 없이 오토바이를 타던 상황(주어 불일치로 보이는 부분 포함)",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화에 두 개의 시간 표현이 있어 시간 힌트에 둘 다 반영했고, 두 차종이 나타나지만 두 번째 진술의 주체가 모순돼 보인다. 따라서 불확실성을 이유로 confidence를 low로 표시했고, prior_hints는 null이므로 정정 대상도 없다."
+  },
+  "latency_ms": 22432.532700011507,
+  "prompt_tokens": 821,
+  "completion_tokens": 3436,
+  "cost_krw": 2.15492,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

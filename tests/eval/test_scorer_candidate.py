@@ -494,3 +494,75 @@ def test_not_run_keeps_the_new_axes(ks=(1, 3, 10)):
     block = candidate.not_run("NOT_RUN — 테스트")
     assert block["localization_recall_at"] == {"1": None, "3": None, "10": None}
     assert block["type_accuracy_given_localized"] is None
+
+
+# --- 신뢰구간 (2026-09-21) ---
+#
+# B tier 채점 대상 사건이 10건이고 by_type 은 유형당 2~6건이다.
+# 「Recall 0.5」가 실제로는 0.24~0.76 인데 결과 파일이 그걸 말하지 않으면
+# 사람들이 소수점을 믿는다.
+
+
+def test_recall_carries_its_interval():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0), _gt(100.0))
+
+    lo, hi = out["recall_at_ci95"]["1"]
+    assert hi == 1.0
+    assert lo < 1.0, "사건 1건으로 「확실히 100%」라고 말하면 안 된다"
+
+
+def test_no_events_leaves_the_interval_null_not_zero():
+    gt = {"items": [{"clip_id": "c1", "targets": []}]}
+    out = candidate.score(_pred(rep=1.0, start=0.0, end=2.0), gt)
+
+    assert out["recall_at"]["1"] is None
+    assert out["recall_at_ci95"]["1"] is None
+
+
+def test_the_localization_axis_carries_an_interval_too():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0,
+                                event_type="CENTER_LINE_CROSSING"),
+                          _gt(100.0, violation_type="SIGNAL"))
+
+    assert out["localization_recall_at_ci95"]["1"] is not None
+    assert out["type_accuracy_given_localized_ci95"] is not None
+
+
+def test_type_accuracy_interval_is_null_when_nothing_was_localized():
+    out = candidate.score(_pred(rep=500.0, start=490.0, end=510.0), _gt(100.0))
+
+    assert out["type_accuracy_given_localized"] is None
+    assert out["type_accuracy_given_localized_ci95"] is None
+
+
+def test_by_type_carries_intervals_because_that_is_where_n_is_smallest():
+    """유형당 사건이 2건이면 recall 값이 사실상 아무것도 말하지 않는다."""
+    gt = {"items": [{"clip_id": "c1", "targets": [
+        {"event_id": "E1", "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": 10.0},
+        {"event_id": "E2", "scoring": "INCLUDED",
+         "violation_type": "SIGNAL", "t_onset_sec": 40.0},
+    ]}]}
+    pred = [{"clip_id": "c1", "candidates": [
+        {"rank": 1, "t_start_sec": 9.0, "t_end_sec": 11.0, "representative_sec": 10.2,
+         "timeline_revision": 1, "event_type": "SIGNAL", "score": 0.9},
+    ]}]
+    out = candidate.score(pred, gt)
+
+    slot = out["by_type"]["SIGNAL"]
+    assert slot["recall_at"]["3"] == 0.5
+    lo, hi = slot["recall_at_ci95"]["3"]
+    assert hi - lo > 0.8, "2건짜리 구간은 거의 전 구간이어야 한다"
+
+
+def test_containment_rate_carries_an_interval():
+    out = candidate.score(_pred(rep=100.5, start=100.0, end=101.0), _gt(100.0))
+    assert out["containment_rate_ci95"] is not None
+
+
+def test_not_run_keeps_every_interval_key():
+    block = candidate.not_run("NOT_RUN — 테스트")
+    assert block["recall_at_ci95"] == {"1": None, "3": None, "10": None}
+    assert block["localization_recall_at_ci95"] == {"1": None, "3": None, "10": None}
+    assert block["type_accuracy_given_localized_ci95"] is None
+    assert block["containment_rate_ci95"] is None

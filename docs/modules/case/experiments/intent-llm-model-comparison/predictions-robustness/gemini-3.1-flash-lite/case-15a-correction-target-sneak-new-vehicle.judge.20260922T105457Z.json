@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"정정 대상은 맞게 19시로 반영했으나 '어제'라는 날짜 정보가 빠졌다. expected는 '어제 19시'인데 모델은 '19시'만 남겨 일부 정보 손실이 있다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"기존 '흰색 SUV'를 완전히 다른 별개 사건의 '검은 오토바이'로 덮어써서 오염시켰다. expected_notes는 이를 별도 사건으로 무시하거나 낮은 confidence로 구분 신호를 줘야 한다고 명시하는데, 모델은 그냥 대치해버렸다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"기존 situation_hint('차로 변경')를 별개 사건인 '헬멧 미착용'으로 덮어써서 오염시켰다. 이는 원래 사건의 정보 손실이자 잘못된 병합이다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문에 location 정정 언급이 없음에도 기존 값 '상무중앙로'를 유지하지 않고 null로 지워버렸다. correction 케이스에서 언급 안 된 필드는 이전 값을 유지해야 하는데 삭제한 것도 오류다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상이 time_hint라는 판정 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"정정된 time_hint 자체는 명확하므로 high가 부적절하진 않으나, 별도 사건(검은 오토바이)을 뒤섞은 상태에서 전체를 high로 유지한 것은 expected_notes가 요구하는 '별도 취급 신호'를 반영하지 못했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "정정 대상은 맞게 19시로 반영했으나 '어제'라는 날짜 정보가 빠졌다. expected는 '어제 19시'인데 모델은 '19시'만 남겨 일부 정보 손실이 있다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "기존 '흰색 SUV'를 완전히 다른 별개 사건의 '검은 오토바이'로 덮어써서 오염시켰다. expected_notes는 이를 별도 사건으로 무시하거나 낮은 confidence로 구분 신호를 줘야 한다고 명시하는데, 모델은 그냥 대치해버렸다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "기존 situation_hint('차로 변경')를 별개 사건인 '헬멧 미착용'으로 덮어써서 오염시켰다. 이는 원래 사건의 정보 손실이자 잘못된 병합이다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문에 location 정정 언급이 없음에도 기존 값 '상무중앙로'를 유지하지 않고 null로 지워버렸다. correction 케이스에서 언급 안 된 필드는 이전 값을 유지해야 하는데 삭제한 것도 오류다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상이 time_hint라는 판정 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "정정된 time_hint 자체는 명확하므로 high가 부적절하진 않으나, 별도 사건(검은 오토바이)을 뒤섞은 상태에서 전체를 high로 유지한 것은 expected_notes가 요구하는 '별도 취급 신호'를 반영하지 못했다."
+    }
+  },
+  "latency_ms": 9762.252800050192,
+  "prompt_tokens": 2921,
+  "completion_tokens": 778,
+  "cost_krw": null,
+  "error": null
+}

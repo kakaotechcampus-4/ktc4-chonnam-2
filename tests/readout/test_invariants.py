@@ -162,6 +162,37 @@ class RuleFiresTest(unittest.TestCase):
             raw["overlay_time_readouts"][0]["validation"]["sample_count"] = 99
         self.assertIn("R18", _rules(self._check("scenario_happy_001", mutate)))
 
+    def test_R19_missing_plate_bbox_is_caught(self):
+        def mutate(raw):
+            del raw["plate_readouts"][0]["best_frame"]["plate_bbox_xywh"]
+        self.assertIn("R19", _rules(self._check("scenario_happy_001", mutate)))
+
+    def test_R19_malformed_plate_bbox_is_caught(self):
+        for bad in ([858, 422, 100], [858, 422, 100, 0], [-1, 422, 100, 44],
+                    [858, 422, 100, "44"]):
+            with self.subTest(bbox=bad):
+                def mutate(raw, bad=bad):
+                    raw["plate_readouts"][0]["best_frame"]["plate_bbox_xywh"] = bad
+                self.assertIn("R19", _rules(self._check("scenario_happy_001", mutate)))
+
+    def test_R19_does_not_compare_with_associated_region(self):
+        """`associated_region`과 같든 다르든 R19는 말하지 않는다 — 계약이 정한 바가 없다.
+
+        재판독 결과는 실제로 둘이 **다른 프레임**을 가리킨다. 여기서 같다고 단언하면
+        그 fixture 자체가 위반이 된다.
+        """
+        def same(raw):
+            plate = raw["plate_readouts"][0]
+            plate["best_frame"]["plate_bbox_xywh"] = \
+                list(plate["target_association"]["associated_region"]["bbox_xywh"])
+        self.assertNotIn("R19", _rules(self._check("scenario_happy_001", same)))
+
+        reread = ReadoutFixture.from_dict(copy.deepcopy(_raw("scenario_plate_reread_001")))
+        plate = reread.plate_readouts[1]
+        self.assertNotEqual(plate.best_frame.frame_ref,
+                            plate.target_association.associated_region.frame_ref)
+        self.assertNotIn("R19", _rules(invariants.check_fixture(reread)))
+
     def test_R16_crop_ref_is_not_reused_across_runs(self):
         """재판독이 앞 run의 crop_ref를 다시 쓰면 잡힌다."""
         raw = copy.deepcopy(_raw("scenario_plate_reread_001"))

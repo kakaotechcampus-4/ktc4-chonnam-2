@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '오늘 아침'을 그대로 추출했고 이전 '어제 18시' 정보를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화의 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"발화의 '불법 유턴'을 정확히 추출했고 이전 '차로 변경'을 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'그건 됐고'라는 명시적 전환 신호로 새 사고를 설명하는 상황이므로 correction_target을 null로 둔 것이 정답 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 시간/차량/상황이 모두 명확히 언급되어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '오늘 아침'을 그대로 추출했고 이전 '어제 18시' 정보를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화의 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "발화의 '불법 유턴'을 정확히 추출했고 이전 '차로 변경'을 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "발화에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'그건 됐고'라는 명시적 전환 신호로 새 사고를 설명하는 상황이므로 correction_target을 null로 둔 것이 정답 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "새 발화에서 시간/차량/상황이 모두 명확히 언급되어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 5565.357799991034,
+  "prompt_tokens": 2961,
+  "completion_tokens": 548,
+  "cost_krw": null,
+  "error": null
+}

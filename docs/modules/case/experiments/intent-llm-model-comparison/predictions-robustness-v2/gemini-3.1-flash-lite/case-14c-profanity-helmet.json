@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14c-profanity-helmet",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"방금\",\n  \"vehicle_hint\": \"오토바이\",\n  \"situation_hint\": \"헬멧 미착용\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 방금 발생한 상황과 차량 종류, 구체적인 위반 사항인 헬멧 미착용을 명확히 언급하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 방금 발생한 상황과 차량 종류, 구체적인 위반 사항인 헬멧 미착용을 명확히 언급하였습니다."
+  },
+  "latency_ms": 1698.9170999731869,
+  "prompt_tokens": 314,
+  "completion_tokens": 104,
+  "cost_krw": 0.35675199999999996,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

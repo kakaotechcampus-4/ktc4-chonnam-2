@@ -1,0 +1,22 @@
+{
+  "case_id": "case-08c-offtopic-howto",
+  "scenario_tag": "무관한_질문_잡담",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"발화 내용은 서비스 사용 방법을 묻는 일반적 문의로, 사고 상황이나 차량, 위치 등의 구체 정보가 포함되어 있지 않아 어떤 필드도 확정할 수 없다. 따라서 모든 필드는 null로 두고, 정보의 부족으로 confidence를 low로 판단한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화 내용은 서비스 사용 방법을 묻는 일반적 문의로, 사고 상황이나 차량, 위치 등의 구체 정보가 포함되어 있지 않아 어떤 필드도 확정할 수 없다. 따라서 모든 필드는 null로 두고, 정보의 부족으로 confidence를 low로 판단한다."
+  },
+  "latency_ms": 8708.88290007133,
+  "prompt_tokens": 781,
+  "completion_tokens": 1272,
+  "cost_krw": 0.8340039999999999,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "scenario_tag": "새사고_정정오인_방지",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"검은색 세단\",\"situation_hint\":\"중앙선 침범\",\"location_hint\":null,\"correction_target\":\"situation_hint\",\"confidence\":\"high\",\"reasoning\":\"발화에 '검은색 세단'과 '중앙선 침범'이 명시되어 prior_hints의 차량 묘사(흰색 SUV)와 위반 유형(차로 변경)을 갱신한다. 이 중 위반 유형의 변화를 가장 핵심 정정으로 판단하여 correction_target를 situation_hint로 설정한다. 시간/장소 정보는 발화에 없으므로 null로 두고, 차량 색상은 새 진술에 따라 vehicle_hint에 반영한다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 세단",
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "high",
+    "reasoning": "발화에 '검은색 세단'과 '중앙선 침범'이 명시되어 prior_hints의 차량 묘사(흰색 SUV)와 위반 유형(차로 변경)을 갱신한다. 이 중 위반 유형의 변화를 가장 핵심 정정으로 판단하여 correction_target를 situation_hint로 설정한다. 시간/장소 정보는 발화에 없으므로 null로 두고, 차량 색상은 새 진술에 따라 vehicle_hint에 반영한다."
+  },
+  "latency_ms": 26015.554999932647,
+  "prompt_tokens": 834,
+  "completion_tokens": 4137,
+  "cost_krw": 2.582817,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

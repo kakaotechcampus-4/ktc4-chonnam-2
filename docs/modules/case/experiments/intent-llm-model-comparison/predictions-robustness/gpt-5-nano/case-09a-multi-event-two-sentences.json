@@ -1,0 +1,22 @@
+{
+  "case_id": "case-09a-multi-event-two-sentences",
+  "scenario_tag": "여러_사건_혼합",
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV, 검은색 세단, 오토바이\",\"situation_hint\":\"신호위반 및 헬멧 미착용\",\"location_hint\":\"상무중앙로\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"time_hint은 원문 '어제 18시쯤'을 그대로 보존했고, vehicle_hint는 언급된 차량들을 반영했다. situation_hint는 '신호위반'과 '헬멧 미착용'으로 해석했고 location_hint는 '상무중앙로'를 추출했다. correction_target는 null이고 prior_hints가 null이므로 수정 대상도 없으며, 불확실 표현은 없으므로 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV, 검은색 세단, 오토바이",
+    "situation_hint": "신호위반 및 헬멧 미착용",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "time_hint은 원문 '어제 18시쯤'을 그대로 보존했고, vehicle_hint는 언급된 차량들을 반영했다. situation_hint는 '신호위반'과 '헬멧 미착용'으로 해석했고 location_hint는 '상무중앙로'를 추출했다. correction_target는 null이고 prior_hints가 null이므로 수정 대상도 없으며, 불확실 표현은 없으므로 confidence를 high로 판단했다."
+  },
+  "latency_ms": 27513.39720003307,
+  "prompt_tokens": 821,
+  "completion_tokens": 3718,
+  "cost_krw": 2.326658,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

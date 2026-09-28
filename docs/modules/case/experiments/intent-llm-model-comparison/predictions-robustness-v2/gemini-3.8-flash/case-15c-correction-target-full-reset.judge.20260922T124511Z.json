@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15c-correction-target-full-reset",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 신고이므로 시간 언급이 없어 null로 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '트럭'을 정확히 채웠고 이전 값(흰색 SUV)을 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 정확히 채웠고 이전 값(차로 변경)을 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 신고에서 장소 언급이 없으므로 null 처리가 맞고 이전 장소(상무중앙로)를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'다 취소하고 완전히 다른 얘기'라는 표현으로 이는 정정이 아닌 새 신고이므로 correction_target=null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"새 사건에 대한 정보가 명확히 제시되어 high 확신도가 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 신고이므로 시간 언급이 없어 null로 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '트럭'을 정확히 채웠고 이전 값(흰색 SUV)을 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 정확히 채웠고 이전 값(차로 변경)을 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 신고에서 장소 언급이 없으므로 null 처리가 맞고 이전 장소(상무중앙로)를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'다 취소하고 완전히 다른 얘기'라는 표현으로 이는 정정이 아닌 새 신고이므로 correction_target=null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "새 사건에 대한 정보가 명확히 제시되어 high 확신도가 적절하다."
+    }
+  },
+  "latency_ms": 6468.513600062579,
+  "prompt_tokens": 2921,
+  "completion_tokens": 516,
+  "cost_krw": null,
+  "error": null
+}

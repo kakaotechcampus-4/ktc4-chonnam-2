@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13a-english-only",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"yesterday around 6pm\", \"vehicle_hint\": \"white SUV\", \"situation_hint\": \"changed lanes on a solid line\", \"location_hint\": \"near Sangmu-jungang-ro\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"All key details are explicitly stated in the user's account: the temporal reference \\\"yesterday around 6pm\\\" is preserved as relative time, vehicle description is clearly identified as \\\"white SUV\\\", the traffic violation (lane change on solid line) is explicitly mentioned, and location is specified as \\\"Sangmu-jungang-ro\\\". No prior hints to evaluate for corrections. High confidence due to clear, straightforward language.\"}",
+  "parsed": {
+    "time_hint": "yesterday around 6pm",
+    "vehicle_hint": "white SUV",
+    "situation_hint": "changed lanes on a solid line",
+    "location_hint": "near Sangmu-jungang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "All key details are explicitly stated in the user's account: the temporal reference \"yesterday around 6pm\" is preserved as relative time, vehicle description is clearly identified as \"white SUV\", the traffic violation (lane change on solid line) is explicitly mentioned, and location is specified as \"Sangmu-jungang-ro\". No prior hints to evaluate for corrections. High confidence due to clear, straightforward language."
+  },
+  "latency_ms": 2797.0933999167755,
+  "prompt_tokens": 1833,
+  "completion_tokens": 248,
+  "cost_krw": 4.677602,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

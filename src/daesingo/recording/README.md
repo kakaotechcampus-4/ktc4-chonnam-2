@@ -21,6 +21,11 @@
 
 Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
+실제 시각 관찰은 `observe_time_sources()`, `get_time_sources()`,
+`get_time_source_candidate()`를 사용한다. 명시적인 수동 확인 입력으로만
+`apply_filename_anchor()`가 새 Timeline revision을 만든다.
+설정과 재현 방법은 [로컬 시각 관찰](../../../docs/modules/recording/local-time-sources.md)에 있다.
+
 ## 상태
 
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

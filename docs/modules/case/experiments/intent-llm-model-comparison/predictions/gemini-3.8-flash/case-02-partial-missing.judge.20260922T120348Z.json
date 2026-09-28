@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-02-partial-missing",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 언급이 없고 모델도 null로 처리함.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '흰색 SUV'를 그대로 정확히 추출함.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'갑자기 끼어들었어요'라는 상황을 원문 그대로 반영함.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없고 모델도 null로 처리함.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청이 아니므로 null 처리가 적절함.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"언급된 내용이 명확하므로 high로 판단한 것이 기준과 일치함.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없고 모델도 null로 처리함."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 SUV'를 그대로 정확히 추출함."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'갑자기 끼어들었어요'라는 상황을 원문 그대로 반영함."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없고 모델도 null로 처리함."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청이 아니므로 null 처리가 적절함."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "언급된 내용이 명확하므로 high로 판단한 것이 기준과 일치함."
+    }
+  },
+  "latency_ms": 6933.283200021833,
+  "prompt_tokens": 2717,
+  "completion_tokens": 411,
+  "cost_krw": null,
+  "error": null
+}

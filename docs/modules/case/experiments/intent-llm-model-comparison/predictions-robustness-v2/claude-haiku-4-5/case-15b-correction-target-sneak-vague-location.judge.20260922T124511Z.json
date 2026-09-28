@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없고 정정 대상도 아니므로 null 처리가 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에서 '은색이었어요'로 명확히 정정했으므로 vehicle_hint를 '은색'으로 갱신한 것은 정확하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 상황 관련 언급이 없으므로 null 처리가 적절하다.\"}, \"location_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문은 '좀 더 아래쪽'이라는 모호한 표현만 있을 뿐 구체적 위치를 특정하지 않았는데, 모델은 '상무중앙로 아래쪽'이라는 구체적 값으로 지어냈다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"vehicle_hint는 명확한 정정 대상이 맞으나, location_hint는 원문상 모호한 언급일 뿐 구체적 정정으로 확정할 근거가 부족해 이를 정정 대상으로 명시한 것은 과도하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"위치 정보의 모호함을 인지해 confidence를 low로 낮춘 것은 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없고 정정 대상도 아니므로 null 처리가 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '은색이었어요'로 명확히 정정했으므로 vehicle_hint를 '은색'으로 갱신한 것은 정확하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 관련 언급이 없으므로 null 처리가 적절하다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '좀 더 아래쪽'이라는 모호한 표현만 있을 뿐 구체적 위치를 특정하지 않았는데, 모델은 '상무중앙로 아래쪽'이라는 구체적 값으로 지어냈다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 명확한 정정 대상이 맞으나, location_hint는 원문상 모호한 언급일 뿐 구체적 정정으로 확정할 근거가 부족해 이를 정정 대상으로 명시한 것은 과도하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "위치 정보의 모호함을 인지해 confidence를 low로 낮춘 것은 기준에 부합한다."
+    }
+  },
+  "latency_ms": 5962.56610006094,
+  "prompt_tokens": 3017,
+  "completion_tokens": 595,
+  "cost_krw": null,
+  "error": null
+}

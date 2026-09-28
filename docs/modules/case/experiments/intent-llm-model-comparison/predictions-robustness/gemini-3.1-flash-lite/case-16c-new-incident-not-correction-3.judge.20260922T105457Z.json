@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 정보가 없으므로 null로 둔 것이 맞고, 이전 값(어제 18시)을 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에서 '검은색 세단'이라는 새로운 차량 정보를 정확히 추출했고 이전 흰색 SUV를 끌어오지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화의 '중앙선 침범'을 정확히 반영했고 이전 상황(차로 변경)을 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고, 이전 상무중앙로 정보를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"이건 기존 필드의 정정이 아니라 '다른 건데요'라는 명시적 전환 신호로 시작된 완전히 새로운 사고 설명인데, 모델이 이를 vehicle_hint에 대한 correction으로 오인해 correction_target을 채웠다. expected_notes에 따르면 이 경우 correction_target=null이어야 한다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"correction_target을 잘못 채운 것과 연동되어 confidence=high로 정정 확신도를 부여했는데, 실제로는 정정 상황이 아니므로 이 필드도 함께 잘못되었다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 정보가 없으므로 null로 둔 것이 맞고, 이전 값(어제 18시)을 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에서 '검은색 세단'이라는 새로운 차량 정보를 정확히 추출했고 이전 흰색 SUV를 끌어오지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "새 발화의 '중앙선 침범'을 정확히 반영했고 이전 상황(차로 변경)을 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 정보가 없으므로 null로 둔 것이 맞고, 이전 상무중앙로 정보를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "이건 기존 필드의 정정이 아니라 '다른 건데요'라는 명시적 전환 신호로 시작된 완전히 새로운 사고 설명인데, 모델이 이를 vehicle_hint에 대한 correction으로 오인해 correction_target을 채웠다. expected_notes에 따르면 이 경우 correction_target=null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "correction_target을 잘못 채운 것과 연동되어 confidence=high로 정정 확신도를 부여했는데, 실제로는 정정 상황이 아니므로 이 필드도 함께 잘못되었다."
+    }
+  },
+  "latency_ms": 8013.628000044264,
+  "prompt_tokens": 2917,
+  "completion_tokens": 679,
+  "cost_krw": null,
+  "error": null
+}

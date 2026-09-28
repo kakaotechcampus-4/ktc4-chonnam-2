@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "scenario_tag": "correction_target_오염_시도",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"은색\",\n  \"situation_hint\": null,\n  \"location_hint\": \"좀 더 아래쪽\",\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존의 차량 색상을 '은색'으로 번복 정정하여 correction_target을 vehicle_hint로 판단했으며, 위치 관련 진술이 모호하고 불확실하여 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "기존의 차량 색상을 '은색'으로 번복 정정하여 correction_target을 vehicle_hint로 판단했으며, 위치 관련 진술이 모호하고 불확실하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 5228.461500024423,
+  "prompt_tokens": 368,
+  "completion_tokens": 599,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

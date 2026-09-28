@@ -1,0 +1,22 @@
+{
+  "case_id": "case-10a-contradiction-time",
+  "scenario_tag": "모순_정보",
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 19시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"차로 변경\",\n  \"location_hint\": \"상무중앙로\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"발화 내에서 18시와 19시 사이를 번복하며 망설이는 불확실한 진술이 포함되어 confidence를 low로 설정하였으며, prior_hints가 주어지지 않았으므로 correction_target은 null로 처리했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 19시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "발화 내에서 18시와 19시 사이를 번복하며 망설이는 불확실한 진술이 포함되어 confidence를 low로 설정하였으며, prior_hints가 주어지지 않았으므로 correction_target은 null로 처리했습니다."
+  },
+  "latency_ms": 4833.570400020108,
+  "prompt_tokens": 323,
+  "completion_tokens": 663,
+  "cost_krw": null,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

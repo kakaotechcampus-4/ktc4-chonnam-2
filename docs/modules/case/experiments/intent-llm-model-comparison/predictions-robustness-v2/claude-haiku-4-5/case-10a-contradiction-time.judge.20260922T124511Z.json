@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T124511Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"자기 정정으로 마지막 값 '19시쯤'을 채택했고, 정정 사실을 반영해 confidence도 낮췄으므로 정책상 허용되는 처리다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명확히 한 번만 언급된 '흰색 SUV'를 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '차로 변경'을 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 정확히 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없는 최초 발화이므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간 표현이 한 문장 안에서 두 번 정정된 불확실한 상황을 반영해 confidence를 high가 아닌 low로 매겨, 가장 위험한 오답 패턴(임의 확정+high)을 피했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "자기 정정으로 마지막 값 '19시쯤'을 채택했고, 정정 사실을 반영해 confidence도 낮췄으므로 정책상 허용되는 처리다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명확히 한 번만 언급된 '흰색 SUV'를 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '차로 변경'을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없는 최초 발화이므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간 표현이 한 문장 안에서 두 번 정정된 불확실한 상황을 반영해 confidence를 high가 아닌 low로 매겨, 가장 위험한 오답 패턴(임의 확정+high)을 피했다."
+    }
+  },
+  "latency_ms": 5958.189600030892,
+  "prompt_tokens": 2990,
+  "completion_tokens": 519,
+  "cost_krw": null,
+  "error": null
+}

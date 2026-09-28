@@ -1,0 +1,22 @@
+{
+  "case_id": "case-13d-chinese",
+  "scenario_tag": "비한국어_언어혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"昨天晚上八点左右 (어제 저녁 8시경)\", \"vehicle_hint\": \"黑色卡车 (검은색 화물차)\", \"situation_hint\": \"违反信号灯 (신호위반)\", \"location_hint\": \"世宗路 (세종로)\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 시간(어제 저녁 8시경), 차량(검은색 화물차), 위반상황(신호위반), 장소(세종로)가 명확하게 기술되어 있다. 상대 시간 표현 '昨天晚上八点左右'를 원문 그대로 유지했으며, prior_hints가 없으므로 정정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "昨天晚上八点左右 (어제 저녁 8시경)",
+    "vehicle_hint": "黑色卡车 (검은색 화물차)",
+    "situation_hint": "违反信号灯 (신호위반)",
+    "location_hint": "世宗路 (세종로)",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 시간(어제 저녁 8시경), 차량(검은색 화물차), 위반상황(신호위반), 장소(세종로)가 명확하게 기술되어 있다. 상대 시간 표현 '昨天晚上八点左右'를 원문 그대로 유지했으며, prior_hints가 없으므로 정정 대상은 없다."
+  },
+  "latency_ms": 2638.1193000124767,
+  "prompt_tokens": 1840,
+  "completion_tokens": 319,
+  "cost_krw": 5.228708,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11b-gibberish",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 의미를 읽을 수 없는 문자열이므로 시간 단서가 없어 null 처리한 것이 타당하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 관련 언급이 전혀 없으므로 null 처리가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"상황을 유추할 근거가 전혀 없는 무의미한 문자열이므로 null 처리가 타당하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소 관련 정보가 전혀 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 요청으로 볼 내용이 없으므로 null 처리가 타당하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"무의미한 문자열에 대해 low로 설정한 것은 판정 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문이 의미를 읽을 수 없는 문자열이므로 시간 단서가 없어 null 처리한 것이 타당하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 관련 언급이 전혀 없으므로 null 처리가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "상황을 유추할 근거가 전혀 없는 무의미한 문자열이므로 null 처리가 타당하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소 관련 정보가 전혀 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 요청으로 볼 내용이 없으므로 null 처리가 타당하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "무의미한 문자열에 대해 low로 설정한 것은 판정 기준에 부합한다."
+    }
+  },
+  "latency_ms": 6559.154900023714,
+  "prompt_tokens": 2667,
+  "completion_tokens": 462,
+  "cost_krw": null,
+  "error": null
+}

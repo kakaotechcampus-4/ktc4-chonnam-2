@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T105457Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 정보가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"원문의 '차로 변경'은 차선 변경(situation)을 의미하는 표현일 가능성이 높은데, 이를 vehicle_hint='차'로 구체화한 것은 원문에 없는 차량 정보를 지어낸 것이다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '차로 변경 봤어요'라는 상황 정보가 명확히 있는데 situation_hint를 null로 두어 놓쳤다.\"}, \"location_hint\": {\"verdict\": \"partial\", \"reason\": \"상무중앙로와 죽전로 두 값이 한 문장에서 충돌하는 상황에서 마지막 값(죽전로)을 채택한 것은 방향은 맞지만, 이는 정책적으로 확정하기 애매한 값이라 완전한 correct로 보기는 어렵다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"위치 슬롯 내에서 값이 정정되었으므로 correction_target을 location_hint로 지정한 것은 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"정정된 값에 대해 '것 같아요'라는 불확실한 표현이 있으므로 confidence를 low로 설정한 것이 판정 기준(high가 되면 안 됨)에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 정보가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문의 '차로 변경'은 차선 변경(situation)을 의미하는 표현일 가능성이 높은데, 이를 vehicle_hint='차'로 구체화한 것은 원문에 없는 차량 정보를 지어낸 것이다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '차로 변경 봤어요'라는 상황 정보가 명확히 있는데 situation_hint를 null로 두어 놓쳤다."
+    },
+    "location_hint": {
+      "verdict": "partial",
+      "reason": "상무중앙로와 죽전로 두 값이 한 문장에서 충돌하는 상황에서 마지막 값(죽전로)을 채택한 것은 방향은 맞지만, 이는 정책적으로 확정하기 애매한 값이라 완전한 correct로 보기는 어렵다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "위치 슬롯 내에서 값이 정정되었으므로 correction_target을 location_hint로 지정한 것은 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "정정된 값에 대해 '것 같아요'라는 불확실한 표현이 있으므로 confidence를 low로 설정한 것이 판정 기준(high가 되면 안 됨)에 부합한다."
+    }
+  },
+  "latency_ms": 7974.316900013946,
+  "prompt_tokens": 2980,
+  "completion_tokens": 648,
+  "cost_krw": null,
+  "error": null
+}

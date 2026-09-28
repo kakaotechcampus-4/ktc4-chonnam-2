@@ -1,0 +1,22 @@
+{
+  "case_id": "case-14d-profanity-illegal-uturn",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": \"죽전로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 차량(트럭), 위반 행위(불법 유턴), 장소(죽전로)가 명확히 언급되었다. 시간은 언급되지 않았으므로 null. 욕설적 표현은 신고 내용과 무관하므로 제외했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "죽전로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 차량(트럭), 위반 행위(불법 유턴), 장소(죽전로)가 명확히 언급되었다. 시간은 언급되지 않았으므로 null. 욕설적 표현은 신고 내용과 무관하므로 제외했다."
+  },
+  "latency_ms": 2180.141899967566,
+  "prompt_tokens": 1845,
+  "completion_tokens": 246,
+  "cost_krw": 4.680642000000001,
+  "error": null,
+  "schema_valid": true,
+  "schema_errors": []
+}

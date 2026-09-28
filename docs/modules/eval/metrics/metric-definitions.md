@@ -1,7 +1,7 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s4` · classification `cl2` · plate `p2` · cost `c3` · normalizer `n3`
+> **버전:** candidate `s5` · classification `cl3` · plate `p2` · cost `c3` · normalizer `n3`
 
 ---
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 3. Candidate — `eval/scorers/candidate.py` (`s4`)
+## 3. Candidate — `eval/scorers/candidate.py` (`s5`)
 
 입력은 clip 단위 후보 목록. 후보는 `score` 내림차순으로 **rank 를 1부터 재계산**한다
 (impl 이 보낸 rank 값은 무시한다, `normalize.py`).
@@ -112,6 +112,29 @@
 
 없으면 `null` 이다. 근거를 주지 않는 impl 도 있으므로 빈 문자열을 지어내지 않는다.
 
+### 3-1-3. 비율에는 신뢰구간을 함께 낸다
+
+**B tier 의 채점 대상 사건은 10건이고, `by_type` 은 유형당 2~6건이다.** 그래서 `recall_at` 한 값이
+얼마나 흔들리는지를 결과가 스스로 말하지 않으면 사람들이 소수점을 믿는다.
+
+모든 사건을 맞히는 치트 구현(`fake:always_correct`)을 현행 정답지로 채점한 실측이다:
+
+| 지표 | 값 | 95% 구간 | 폭 |
+| --- | ---: | --- | ---: |
+| `recall_at[3]` (n=10) | 1.00 | [0.72, 1.00] | 0.28 |
+| `by_type.SIGNAL` (n=2) | 1.00 | **[0.34, 1.00]** | 0.66 |
+| `by_type.CENTER_LINE_CROSSING` (n=2) | 1.00 | **[0.34, 1.00]** | 0.66 |
+
+**완벽한 모델조차 SIGNAL 에서 34% 보다 낫다고 말할 수 없다.** 이 정답지로는 만점과 34% 짜리를
+구분할 방법이 없다는 뜻이고, 그건 모델의 문제가 아니라 **표본의 문제**다.
+
+- 방법은 **Wilson score 구간**이다. 정규근사(Wald)는 `k=n` 에서 `[1.0, 1.0]` 을 내는데,
+  2건 맞혔다고 「확실히 100%」라고 말하는 셈이라 우리가 실제로 마주치는 자리에서 무너진다.
+  근거는 `eval/scorers/interval.py` 의 docstring
+- **분모가 0 이면 구간도 `null`** 이다 — 0.0 이 아니다
+- **평균·비율이 아닌 값에는 붙이지 않는다.** `onset_error_sec` 은 평균이고 `fp_per_clip` 은
+  0~1 로 묶이지 않아 둘 다 이 구간의 가정 밖이다. `recall_macro` 도 「비율들의 평균」이라 붙이지 않는다
+
 ### 3-2. 지표
 
 | 지표 | 분자 | 분모 | `null` 이 되는 때 |
@@ -123,6 +146,7 @@
 | `containment_rate` | 적중 후보의 창이 `t_start ≤ onset ≤ t_end` 인 건수 | 위와 같은 적중 사건 | 적중이 0건 |
 | `fp_per_clip` | negative 클립에서 나온 **후보 개수 전부** | **negative 클립 수** | negative 클립이 0개 |
 | `by_type[유형].recall_at.K` | 해당 유형에서 적중한 사건 수 | 해당 유형의 사건 수 | — (유형이 없으면 키가 없고, `coverage` 에 `NO_EVENTS_FOR_TYPE` 로 적힌다) |
+| `*_ci95` | 같은 분자·분모의 **Wilson 95% 구간** (§3-1-3) | — | 분모가 0 |
 
 `onset_error_sec.tolerance_sec` 는 지표가 아니라 **그 실행에 쓴 임계값의 기록**이다. 결과 파일이
 자기 판정 기준을 스스로 말하게 하려고 넣는다.
@@ -147,7 +171,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 
 ---
 
-## 4. Classification — `eval/scorers/classification.py` (`cl2`)
+## 4. Classification — `eval/scorers/classification.py` (`cl3`)
 
 입력은 시퀀스 단위 분류 결과. 라벨 공간은 **4종 + `NONE` = 5** (`eval/enums.py`, 원본은 v4 §3-5).
 
@@ -159,6 +183,7 @@ B tier 의 `YT_0002` 는 20초 원본에서 나온 조각 1개뿐이고 그 조�
 | `precision_macro` / `recall_macro` | 라벨별 값의 **단순 평균**. 값이 `null` 인 라벨은 평균에서 **뺀다** | 모든 라벨이 `null` |
 | `confusion[truth][pred]` | 5×5 건수 | stage 미실행 |
 | `target_correctness` | 예측 bbox 와 GT bbox 의 **2-D IoU ≥ 0.5** 인 비율 | `target_bbox` 있는 GT 가 0건 |
+| `recall_by_label_ci95` · `target_correctness_ci95` | 위 두 값의 **Wilson 95% 구간** (§3-1-3). `recall_macro` 에는 붙이지 않는다 — 「비율들의 평균」이라 가정 밖이다 | 분모가 0 |
 
 **macro 를 쓰는 이유.** A tier 시퀀스가 SIGNAL 2,065 : 안전모 412 로 5배 차이 난다. micro 로 재면
 신호위반만 잘하는 모델이 전체 점수를 가져간다. 제품은 4종을 **모두** 약속했다.
@@ -299,6 +324,30 @@ abstention_recall   1.0      <- 기권해야 할 걸 전부 기권했다
 - `wrong_accept_rate` 의 **분자가 0이면 경고를 단다** — 「안전하다」가 아니라 「pack 에 그런 케이스가
   없다」이기 때문이다(`ZERO_NUMERATOR`).
 
+### 5-3. Exact / CER 수치를 나란히 놓기 위한 기록 요건
+
+**정규화 규칙이 다르면 같은 판독 결과에서 다른 Exact 가 나온다.** 정의가 갈려서가 아니라
+정규화가 갈려서다 — 그리고 그 사실은 숫자만 봐서는 드러나지 않는다.
+
+실제로 레포 안에서 한 번 벌어졌다. 같은 PaddleOCR 인데 **15장 Exact 53.3% · CER 16.2%** 와
+**500장 Exact 5.6% · CER 55.3%** 가 공존하고, 15장 쪽에는 정규화도 이미지 출처도 적혀 있지
+않아 **어느 쪽이 맞는지 이전에 비교 자체가 불가능**하다(readout PR
+[#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §, 신유민).
+
+그래서 **어떤 Exact·CER 수치든 아래 셋을 함께 적지 않으면 다른 수치와 나란히 놓지 않는다.**
+
+| | 무엇을 적나 |
+| --- | --- |
+| **정규화 규칙** | 원문 그대로 비교인가 · 공백·하이픈을 떼는가 · 전각/반각을 접는가 |
+| **이미지 출처** | 어느 데이터셋의 어떤 crop 인가 (원본 프레임 · 확대 · ROI) |
+| **표본 식별** | 몇 장이고 어떻게 뽑았나 (seed · 규칙) |
+
+이것은 **값을 정하는 규칙이 아니라 비교 가능성의 전제**다. 그래서 C tier 확보 전에도 정할 수
+있고, 나중에 정규화 규칙이 확정돼도 다시 만들지 않는다.
+
+**기록이 없는 과거 수치를 지우지 않는다.** 「정규화·출처 미기록 — 비교 불가」 꼬리표를 달아
+남긴다 — 지우면 그때 무엇을 보고 그 결정을 했는지가 사라진다.
+
 ---
 
 ## 6. Cost — `eval/scorers/cost.py` (`c3`)
@@ -402,7 +451,7 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s4` · classification `cl2` · plate `p2` · cost `c3` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s5` · classification `cl3` · plate `p2` · cost `c3` |
 | `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
 | `normalizer_version` | impl 출력 → scorer 입력 변환 | `n3` |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
@@ -423,11 +472,13 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
   meta        run_id · impl · stage · manifest · gt_version · scorer_version ·
               cost_scorer_version · normalizer_version · code_commit ·
               prediction_ref{path, sha256}
-  candidate   { recall_at, localization_recall_at, type_accuracy_given_localized,
-                onset_error_sec, containment_rate, fp_per_clip,
+  candidate   { recall_at, recall_at_ci95,
+                localization_recall_at, localization_recall_at_ci95,
+                type_accuracy_given_localized, type_accuracy_given_localized_ci95,
+                onset_error_sec, containment_rate, containment_rate_ci95, fp_per_clip,
                 n_events, n_negative_clips, excluded_by_reason, by_type, coverage }
-  classification { recall_macro, precision_macro, recall_by_label, confusion,
-                   target_correctness, n,
+  classification { recall_macro, precision_macro, recall_by_label, recall_by_label_ci95,
+                   confusion, target_correctness, target_correctness_ci95, n,
                    n_invalid_predictions, n_invalid_gt_labels, coverage }
   plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
                 readable_abstention_rate, n_readable,
@@ -446,6 +497,9 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 
 **어떤 블록이든 먼저 `coverage` 를 읽는다.** 숫자만 보고 판단하지 않는다.
 
+**비율 값은 `*_ci95` 와 함께 읽는다.** 점추정만 인용하면 표본이 2건인 것과 200건인 것이
+같아 보인다 (§3-1-3).
+
 ---
 
 ## 10. 아직 확정되지 않은 것
@@ -462,8 +516,11 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
 | — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
-| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않아, 같은 판독 결과에 다른 Exact 가 나올 수 있다 — **정의가 갈려서가 아니라 정규화가 갈려서**다. eval 소유이고 eval 이 닫는다. 다만 C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다** (readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) 의 Exact 5.6% · CER 55.3% 실측이 후보를 보여준다) |
-| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다(32~35px vs 1줄 39~44px — readout PR [#80](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/80) ⓑ). 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다** |
+| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않다. eval 소유이고 eval 이 닫되, C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다.** **기록 요건은 먼저 닫았다**(§5-3) — 규칙이 없어도 「어떤 정규화 위에서 잰 값인가」를 적게 하면 수치가 조용히 어긋나지는 않는다 |
+| — | **`legibility` 라벨이 eval 정답지에만 있다** | `wrong_accept_rate`·`abstention_recall` 은 분모가 **GT 의 legibility** 다(§5-1). readout 의 baseline 측정에는 이 라벨이 없어 **계산 자체가 불가능**하고, 그쪽 「틀리게 확정 / 제대로 포기」는 분모가 **예측 기준**이라 이름이 비슷해도 다른 값이다(readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120)). C tier 정답지를 만들 때 `legibility` 를 같이 라벨링해야 두 축이 이어진다 |
+| — | **plate 천장은 전처리로 올라가지 않는다** | 같은 AI-Hub `172` crop 에서 **학습 모델 CER 0.76% vs pretrained 55.3%** 다 (Sensors 2026 · readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §4). plate 실측이 낮게 나올 때 **원인을 전처리에서 찾지 않는다** — 파인튜닝 전까지의 천장이다 |
+| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다. 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다.** 실물: readout PR [#113](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/113) 의 `clip_20260810_175721_evt_1.json` — 황색 2줄이 `bbox_xywh [930,837,103,36]` · `plate_px_height 36` · `value "바5215"` · `abstained false` 로 확정된다 |
+| — | **정답지에 번호판 「1줄/2줄」 라벨이 없다** | `MIN_ASPECT` 필터가 1줄 기준이라 **2줄이 1줄처럼 파이프라인에 들어온다**(readout `paddle_provider.py`). 정답지에 줄 수가 없으면 plate 지표에서 그 혼입을 **사후에 분리할 수 없다.** C tier 정답지를 만들 때 `legibility` 와 함께 라벨링한다 |
 | — | **촬영조건별 성능을 못 잰다** | `by_condition` 을 `cl2` 에서 **철회했다**(§4-4) — AI-Hub 71555 의 조명·날씨 라벨이 무작위에 가까웠다. `road_type` 은 멀쩡하지만 원래 의도한 축이 아니라 갈아타지 않았다. **조명·날씨별 성능을 재려면 라벨이 새로 필요하다** — 코드로 못 푼다 |
 | — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
 

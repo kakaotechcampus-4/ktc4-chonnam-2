@@ -1,0 +1,38 @@
+{
+  "run_id": "20260922T120348Z",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13b-korean-english-mix",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 6시쯤'을 그대로 추출했으며 시간 정보가 언어 혼용과 무관하게 잘 보존되었다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'white SUV'를 그대로 추출했으며 차량 정보 손실이 없다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'lane change'를 그대로 추출했으며 상황 정보가 정확히 반영되었다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"원문에 정정 요청이 없으므로 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·차량·상황·위치가 모두 명확히 언급되어 있어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 6시쯤'을 그대로 추출했으며 시간 정보가 언어 혼용과 무관하게 잘 보존되었다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'white SUV'를 그대로 추출했으며 차량 정보 손실이 없다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'lane change'를 그대로 추출했으며 상황 정보가 정확히 반영되었다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문에 정정 요청이 없으므로 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·차량·상황·위치가 모두 명확히 언급되어 있어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 5105.768000008538,
+  "prompt_tokens": 2893,
+  "completion_tokens": 472,
+  "cost_krw": null,
+  "error": null
+}

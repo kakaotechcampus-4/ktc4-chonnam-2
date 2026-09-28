@@ -47,6 +47,37 @@ python -m eval.score --prediction demo_correct
 
 `mock_pack` manifest 는 팀 공용 Mock Pack(`data/mock/`) 산출물을 `mock_pack:contracts` impl 로 읽어 파이프라인이 끝까지 연결되는지 본다(`candidate`·`plate` 지원). 여기서 나오는 지표는 정답지가 채점 대상 fixture 에서 파생돼 순환적이다 — 성능 근거가 아니라 배관 확인용이다(결과의 `coverage` 경고 참조).
 
+### Gemini Coarse 공식 평가
+
+`search:gemini-coarse-p3`는 제품과 같은 `daesingo.search.search_candidates(scope)` 공개 경계를 사용해 `b_youtube` 123클립의 candidate stage를 실행한다. 개인 회귀 영상은 이 manifest나 GT에 추가하지 않는다.
+
+모든 설정은 저장소 루트의 `.env` 에서만 읽는다 (shell 환경변수는 쓰지 않는다). `.env.example` 을 `.env` 로 복사해 채운다.
+
+```bash
+uv sync --extra test --extra eval-gemini
+```
+```
+# repo 루트의 .env (예시는 .env.example)
+GEMINI_API_KEY=...
+DAESINGO_EVAL_DATA_ROOT=/absolute/data/root
+# 선택: 프록시 override. 미설정 시 지정 프록시가 기본값이다.
+# DAESINGO_GEMINI_BASE_URL=https://mlapi.run/<tenant>/v1
+```
+```bash
+uv run python -m eval.run \
+  --impl search:gemini-coarse-p3 \
+  --manifest b_youtube \
+  --stage candidate \
+  --run-id <run_id>
+uv run python -m eval.score --prediction <run_id>
+```
+
+`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `google-genai>=2.13`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
+
+평가는 담당자 로컬에서 돈다 — 데이터·`GEMINI_API_KEY`·프록시 접근은 각자의 로컬 `.env` 에 있다. 모든 Gemini 호출은 프록시 base URL(Bearer 인증, `GEMINI_API_KEY`)을 경유한다. 운영 baseline과 프록시 규칙은 `docs/modules/search/decisions/gemini-3.8-proxy-baseline-2026-09-18.md`.
+
+prediction의 `facts`에는 모델, `coarse-p3` 버전과 SHA-256 fingerprint, 설정 버전과 fingerprint, SDK 버전, 처리 영상 길이, clip 목록, 토큰·비용 기록이 남는다. 최초 실제 실행 결과가 baseline이며 특정 Recall 값은 실행 전 인수 조건이 아니다.
+
 | 폴더 | 무엇이 들어 있나 |
 | --- | --- |
 | `predictions/` | impl 이 낸 **원문(`raw`) + 정규화 뷰(`normalized`) + `meta`**. GT나 지표 정의가 바뀌어도 다시 만들지 않는다 — scorer 만 다시 돈다 |
