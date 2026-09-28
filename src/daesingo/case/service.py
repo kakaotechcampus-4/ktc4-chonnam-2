@@ -80,6 +80,26 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
     )
 
 
+_PACKAGE_READY_READINESS = frozenset({"PASS", "WARN"})
+
+
+def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> bool:
+    """`PACKAGE_READY` gate가 성립할 때만 `READY`로 올린다(#167). 올렸으면 `True`.
+
+    CaseView 계약 B절: `READY` = FINAL `RequirementReport`가 `PASS`/`WARN`이고 ReportPackage가
+    있는 시점(#171 C 결정). evidence·Package는 adapter가 downstream 결과로 갖고 있어 domain
+    `mark_ready()`는 이를 모른다 — 그래서 전이 판단을 여기서 한다. Package가 막혔거나
+    (상황 응답 전 등) evidence가 조립되지 않았으면(`NOT_ASSEMBLED`) stage를 바꾸지 않는다.
+    그 결과를 어느 화면으로 보일지는 #168·#171 결정 몫이라 여기서 정하지 않는다.
+    """
+    snapshot = fetch_case_view_inputs(adapter)
+    final = snapshot.requirement_report_package or {}
+    if snapshot.report_package is None or final.get("readiness") not in _PACKAGE_READY_READINESS:
+        return False
+    case.mark_ready()
+    return True
+
+
 def build_view_from_adapter(
     case: CaseAggregate,
     adapter: ModuleAdapter,
