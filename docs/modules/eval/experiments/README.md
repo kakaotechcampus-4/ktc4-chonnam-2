@@ -7,3 +7,4 @@
 | 날짜 | 기록 | impl | manifest · GT | 역할 |
 | --- | --- | --- | --- | --- |
 | 2026-09-28 | [Gemini Coarse 베이스라인](2026-09-28-gemini-coarse-p3-baseline.md) | `search:gemini-coarse-p3` | `b_youtube` m3 · g3 | baseline |
+| 2026-09-28 | [readout 번호판 인식 베이스라인](2026-09-28-readout-paddle-crop-baseline.md) | `readout:paddle-crop` | `private_aihub172_plate` m1 · ap1 (비공개) | baseline |
