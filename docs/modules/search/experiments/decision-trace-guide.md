@@ -12,7 +12,7 @@ python -m daesingo.search.diagnostic_cli --manifest .superpowers/seven-video-man
 
 `--profile p3`는 기존 출력 형식의 비교군이다. 운영 설정에 새 prompt 선택 옵션을 추가하지 않는다. `--provider-fixture <JSON>`는 네트워크 없이 실제 미디어 준비와 CLI 출력을 확인하며, 결과에 `mode=FIXTURE`를 표시한다. 실제 호출은 `mode=LIVE`다.
 
-Manifest는 로컬 파일이며 정답 시각을 담지 않는다. source 상대 경로의 기준은 manifest 폴더다. 각 영상은 60초 이내여야 한다. 중복 case_id/유형, 실제 길이 차이, 입력 용량, 출력 폴더의 Git ignore를 호출 전에 확인한다.
+Manifest는 로컬 파일이며 확인한 사건 시각을 담지 않는다. source 상대 경로의 기준은 manifest 폴더다. 각 영상은 60초 이내여야 한다. 중복 case_id/유형, 실제 길이 차이, 입력 용량, 출력 폴더의 Git ignore를 호출 전에 확인한다.
 
 ```json
 {"cases":[{"case_id":"clip_01","source":"../local-video.mp4","duration_sec":20.025,"event_types":["SOLID_LINE_LANE_CHANGE"]}]}
@@ -49,6 +49,13 @@ Manifest는 로컬 파일이며 정답 시각을 담지 않는다. source 상대
 
 확인 항목은 `CHECKLISTS`를 그대로 프롬프트에 전달한다. 신호: 대상·이동 방향·관련 신호·침범 전/시점 신호·경계·통과·시간 순서. 중앙선: 대상·도로 방향·중앙선 식별·차량 전/후 위치·접촉/침범·지속·도로 형태. 실선: 대상·원래 차로·횡이동·경계 식별·횡단 시점 선 종류·횡단·도착 차로·시간 순서. 안전모: 이륜차·탑승자 연관·역할·머리 가시성·착용/미착용·부재 판정 가시성·관찰 일관성.
 
+Fine 변형 profile은 `diagnostic-v1`과 Coarse·출력 형식이 같고 Fine 지시문 하나만 덧붙인다. 비교는 `diagnostic-v1` 회차와 한다. 근거와 채택 경로는 [Coarse→Fine 인계 실험 결정](../decisions/fine-coarse-handoff-experiment-2026-09-28.md)이 소유한다.
+
+| profile | 덧붙이는 Fine 지시문 |
+| --- | --- |
+| `diagnostic-uncertain-v1` | 실선·중앙선에만 `fine-uncertain-v1-<사건>.txt` — 선 종류·횡단이 모호하면 UNCERTAIN. 신호·안전모는 `diagnostic-v1`과 같다 |
+| `diagnostic-handoff-v1` | `fine-handoff-v1.txt` — Coarse `observed`(운영 `CandidateEvent.summary`와 같은 문자열)와 clip 기준 핵심 시각을 검증되지 않은 단서로 전달 |
+
 원본 시각은 `prepared_origin_start_sec × 1000 + at_offset_ms`로 읽는다. 준비 clip의 길이·끝 경계도 기록한다. 확인 항목 누락·중복과 시간 초과는 issue code로 남기되 p4 의미 검증처럼 설명을 버리지 않는다. 음수 시각·p3 판정/사건 유형 불변조건 위반 같은 기본 형식 오류는 `PROVIDER_PAYLOAD` 실패로 기록한다. 실패 응답 원문은 저장하지 않는다.
 
 ## 기록 읽기
@@ -57,4 +64,4 @@ Manifest는 로컬 파일이며 정답 시각을 담지 않는다. source 상대
 
 코드 fingerprint는 Search `.py`와 프롬프트 원문 파일명·바이트를 정렬하여 SHA-256으로 계산한다. 템플릿 fingerprint는 렌더링 전 프롬프트 기준이다. 서로 다른 후보 clip 자체를 동일 입력이라고 주장하지 않는다.
 
-stdout은 요약만 출력한다. 종료 코드 0은 호출·진단 구조 점검 통과, 1은 실행 중 실패 또는 진단 issue, 2는 호출 전 입력 조건 실패다. 코드 0도 검출 정답이나 설명의 신뢰도를 보장하지 않는다. 오류 호출 사용량 미보고는 unknown, 단가 미설정 비용은 null이다. 실행 예산은 영상마다 적용하고 진단 CLI는 재시도를 0회로 고정한다.
+stdout은 요약만 출력한다. 종료 코드 0은 호출·진단 구조 점검 통과, 1은 실행 중 실패 또는 진단 issue, 2는 호출 전 입력 조건 실패다. 코드 0도 검출 정확성이나 설명의 신뢰도를 보장하지 않는다. 오류 호출 사용량 미보고는 unknown, 단가 미설정 비용은 null이다. 실행 예산은 영상마다 적용하고 진단 CLI는 재시도를 0회로 고정한다.

@@ -2,6 +2,7 @@
 
 import json
 from hashlib import sha256
+from typing import Final
 
 from .decision_trace import CHECKLISTS, review_windows
 from .prompts import COARSE_PROMPT, PromptTemplate, fine_prompt_for, load_prompt
@@ -25,6 +26,22 @@ def diagnostic_coarse_prompt() -> PromptTemplate:
 
 def diagnostic_fine_prompt(event_type: VisualEventType) -> PromptTemplate:
     return _compose(fine_prompt_for(event_type), "fine-diagnostic-v1")
+
+
+_UNCERTAIN_DELTAS: Final = {
+    VisualEventType.SOLID_LINE_LANE_CHANGE: "fine-uncertain-v1-solid-line-lane-change",
+    VisualEventType.CENTER_LINE_CROSSING: "fine-uncertain-v1-center-line-crossing",
+}
+
+
+def uncertain_fine_prompt(event_type: VisualEventType) -> PromptTemplate:
+    base = diagnostic_fine_prompt(event_type)
+    suffix = _UNCERTAIN_DELTAS.get(event_type)
+    return base if suffix is None else _compose(base, suffix)
+
+
+def handoff_fine_prompt(event_type: VisualEventType) -> PromptTemplate:
+    return _compose(diagnostic_fine_prompt(event_type), "fine-handoff-v1")
 
 
 def window_instruction(duration_sec: float) -> str:

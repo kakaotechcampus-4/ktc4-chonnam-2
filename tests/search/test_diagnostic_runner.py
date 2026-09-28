@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Generator
+from collections.abc import Generator
 
 from pydantic import BaseModel
 

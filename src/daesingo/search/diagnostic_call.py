@@ -22,6 +22,8 @@ from .diagnostic_prompts import (
     checklist_instruction,
     diagnostic_coarse_prompt,
     diagnostic_fine_prompt,
+    handoff_fine_prompt,
+    uncertain_fine_prompt,
     window_instruction,
 )
 from .execution import DeadlineExceededError, RunDeadline
@@ -171,7 +173,11 @@ def _coarse_spec(case: DiagnosticCase, profile: DiagnosticProfile) -> CallSpec:
             return CallSpec(
                 COARSE_PROMPT, COARSE_PROMPT.render(**values), CoarseResponse, "COARSE"
             )
-        case DiagnosticProfile.DIAGNOSTIC:
+        case (
+            DiagnosticProfile.DIAGNOSTIC
+            | DiagnosticProfile.DIAGNOSTIC_UNCERTAIN
+            | DiagnosticProfile.DIAGNOSTIC_HANDOFF
+        ):
             template = diagnostic_coarse_prompt()
             return CallSpec(
                 template,
@@ -188,7 +194,7 @@ def _coarse_spec(case: DiagnosticCase, profile: DiagnosticProfile) -> CallSpec:
 def _fine_spec(probe: FineInput, profile: DiagnosticProfile) -> CallSpec:
     candidate, index, prepared = probe.candidate, probe.index, probe.prepared
     event = candidate.event_type
-    values = {
+    values: dict[str, object] = {
         "event_type": event.value,
         "target_hint": "없음",
         "start_sec": prepared.origin_start_sec,
@@ -201,14 +207,35 @@ def _fine_spec(probe: FineInput, profile: DiagnosticProfile) -> CallSpec:
                 template, template.render(**values), FineResponse, "FINE", index, event
             )
         case DiagnosticProfile.DIAGNOSTIC:
-            template = diagnostic_fine_prompt(event)
-            return CallSpec(
-                template,
-                template.render(**values, criteria=checklist_instruction(event)),
-                DiagnosticFineResponse,
-                "FINE",
-                index,
-                event,
+            return _diagnostic_fine(diagnostic_fine_prompt(event), values, index, event)
+        case DiagnosticProfile.DIAGNOSTIC_UNCERTAIN:
+            return _diagnostic_fine(uncertain_fine_prompt(event), values, index, event)
+        case DiagnosticProfile.DIAGNOSTIC_HANDOFF:
+            # 운영 CandidateEvent.summary와 같은 문자열을 넘긴다(coarse._candidate).
+            handoff = {
+                "coarse_observation": "; ".join(candidate.observed) or "관찰 사실 없음",
+                "coarse_at_offset_sec": max(
+                    0.0, candidate.at_sec - prepared.origin_start_sec
+                ),
+            }
+            return _diagnostic_fine(
+                handoff_fine_prompt(event), values | handoff, index, event
             )
         case unreachable:
             assert_never(unreachable)
+
+
+def _diagnostic_fine(
+    template: PromptTemplate,
+    values: dict[str, object],
+    index: int,
+    event: VisualEventType,
+) -> CallSpec:
+    return CallSpec(
+        template,
+        template.render(**values, criteria=checklist_instruction(event)),
+        DiagnosticFineResponse,
+        "FINE",
+        index,
+        event,
+    )

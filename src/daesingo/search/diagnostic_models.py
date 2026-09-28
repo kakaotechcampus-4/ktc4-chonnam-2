@@ -15,6 +15,8 @@ from .usage import ProviderUsage
 class DiagnosticProfile(StrEnum):
     P3 = "p3"
     DIAGNOSTIC = "diagnostic-v1"
+    DIAGNOSTIC_UNCERTAIN = "diagnostic-uncertain-v1"
+    DIAGNOSTIC_HANDOFF = "diagnostic-handoff-v1"
 
 
 class DiagnosticCase(WireModel):
