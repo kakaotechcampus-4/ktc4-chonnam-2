@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
-from daesingo.search.execution import RunDeadline
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
 from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse, FineResponse
@@ -122,7 +121,7 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
         _EmptyProvider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(1.0),
-        RunDeadline(lambda: 0.0, budget_ms=300_000),
+        lambda: 0.0,
     )
     monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
     monkeypatch.setattr(search_gemini, "_build_service", lambda _: service)

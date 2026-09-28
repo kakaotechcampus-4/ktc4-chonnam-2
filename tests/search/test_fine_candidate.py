@@ -33,7 +33,8 @@ from daesingo.search.usage import ProviderUsage
 from tests.search._search_service_support import (
     FixtureMediaPreparer,
     OpenableResolver,
-    make_deadline,
+    frozen_clock,
+    remember_coarse_run,
 )
 
 
@@ -113,7 +114,7 @@ def _service(
     scope_id: str | None = None,
 ) -> SearchService:
     sources_by_scope = {} if scope_id is None else {scope_id: (source,)}
-    return SearchService(
+    service = SearchService(
         OpenableResolver(
             StaticAnalysisSourceResolver(
                 sources_by_scope, {source.source_ref.ref: source}
@@ -122,8 +123,9 @@ def _service(
         provider,
         config,
         FixtureMediaPreparer(source.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
+    return remember_coarse_run(service, _candidate().run_id)
 
 
 def test_verify_visual_fixture_accepts_omitted_candidate() -> None:
