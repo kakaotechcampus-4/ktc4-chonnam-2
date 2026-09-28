@@ -13,6 +13,7 @@
 """
 import collections
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -26,6 +27,8 @@ SPAN_SEC = 1.5
 TARGET_H = 120
 PLATE_FORMAT = re.compile(r"^(?:[가-힣]{2}\d{2}[가-힣]\d{4}|\d{2,3}[가-힣]\d{4})$")
 """1줄 신형·구형(`12가3456`, `123가4567`)과 2줄 영업용(`전남82바5215`)."""
+# TRACKS=<verify_tracks.py 결과>면 CSRT 대신 검증된 프레임을 쓴다
+VERIFIED = json.loads(Path(os.environ["TRACKS"]).read_text(encoding="utf-8")) if os.environ.get("TRACKS") else None
 
 
 def norm(text):
@@ -137,6 +140,12 @@ def track_frames(cap, fps, seed_frame, seed_box):
     return sorted(out.items())
 
 
+def frames_for(n, cap, fps, seed_frame, seed_box):
+    if VERIFIED is None:
+        return track_frames(cap, fps, seed_frame, seed_box)
+    return [(f, tuple(b)) for f, b in VERIFIED[n]["verified"]]
+
+
 def crop(cap, frame_no, box):
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
     ok, img = cap.read()
@@ -155,7 +164,7 @@ def main():
     items = json.loads(gt_path.read_text(encoding="utf-8"))["items"]
     picks = json.loads(picks_path.read_text(encoding="utf-8"))
     rows = []
-    for item in items:
+    for n, item in enumerate(items):
         info = picks[item["video"]]
         seed_t, seed_box = item["seed_t"], item["seed_plate"]
         if seed_box is None:
@@ -164,7 +173,7 @@ def main():
         cap = cv2.VideoCapture(str(next(videos.glob(f"{item['video']}.*"))))
         fps = info["fps"]
         seed_frame = round(seed_t * fps)
-        tracked = track_frames(cap, fps, seed_frame, seed_box)
+        tracked = frames_for(n, cap, fps, seed_frame, seed_box)
         # 추적 구간에서 K장을 고르게 — 큰 것만 고르면 같은 순간이 몰린다
         idx = np.linspace(0, len(tracked) - 1, min(K, len(tracked))).round().astype(int)
         frames = [tracked[i] for i in sorted(set(idx))]

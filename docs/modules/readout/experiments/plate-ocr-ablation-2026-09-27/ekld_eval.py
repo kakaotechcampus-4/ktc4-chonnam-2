@@ -47,7 +47,7 @@ def main():
     items = json.loads(base.gt_path.read_text(encoding="utf-8"))["items"]
     picks = json.loads(base.picks_path.read_text(encoding="utf-8"))
     rows = []
-    for item in items:
+    for n, item in enumerate(items):
         info = picks[item["video"]]
         seed_t, seed_box = item["seed_t"], item["seed_plate"]
         if seed_box is None:
@@ -56,13 +56,13 @@ def main():
         cap = cv2.VideoCapture(str(next(base.videos.glob(f"{item['video']}.*"))))
         fps = info["fps"]
         seed_frame = round(seed_t * fps)
-        tracked = base.track_frames(cap, fps, seed_frame, seed_box)
+        tracked = base.frames_for(n, cap, fps, seed_frame, seed_box)
         idx = np.linspace(0, len(tracked) - 1, min(base.K, len(tracked))).round().astype(int)
         crops = [c for c in (tight(cap, *tracked[i]) for i in sorted(set(idx))) if c is not None]
         seed = tight(cap, seed_frame, seed_box)
         cap.release()
         results = {"K1": read(seed), "K2": base.vote([read(c) for c in crops])}
-        row = {"video": item["video"], "gt": item["gt"], "kind": item["kind"]}
+        row = {"video": item["video"], "gt": item["gt"], "kind": item["kind"], "used": len(crops)}
         for m, (text, conf) in results.items():
             row[m] = {"text": text, "conf": round(conf, 3), **base.verdict(text, item["gt"], item["kind"])}
         rows.append(row)
