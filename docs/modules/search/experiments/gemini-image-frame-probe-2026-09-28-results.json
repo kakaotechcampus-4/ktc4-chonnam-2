@@ -1,0 +1,100 @@
+{
+  "prompt": "Reply with the single word OK.",
+  "video": "20260620_141628_EVT_1.avi",
+  "interval": [
+    0.0,
+    7.0
+  ],
+  "rows": [
+    {
+      "label": "text-only(baseline)",
+      "frames": 0,
+      "max_height": null,
+      "detail": null,
+      "request_bytes": 150,
+      "status": "200",
+      "prompt_tokens": 8,
+      "image_tokens": 0
+    },
+    {
+      "label": "1f/720p/detail=low",
+      "frames": 1,
+      "max_height": 720,
+      "detail": "low",
+      "request_bytes": 110380,
+      "status": "200",
+      "prompt_tokens": 1108,
+      "image_tokens": 1100
+    },
+    {
+      "label": "1f/720p/detail=high",
+      "frames": 1,
+      "max_height": 720,
+      "detail": "high",
+      "request_bytes": 110381,
+      "status": "200",
+      "prompt_tokens": 1108,
+      "image_tokens": 1100
+    },
+    {
+      "label": "1f/720p/detail=omit",
+      "frames": 1,
+      "max_height": 720,
+      "detail": null,
+      "request_bytes": 110365,
+      "status": "200",
+      "prompt_tokens": 1108,
+      "image_tokens": 1100
+    },
+    {
+      "label": "1f/360p/detail=high",
+      "frames": 1,
+      "max_height": 360,
+      "detail": "high",
+      "request_bytes": 37877,
+      "status": "200",
+      "prompt_tokens": 1108,
+      "image_tokens": 1100
+    },
+    {
+      "label": "1f/native/detail=high",
+      "frames": 1,
+      "max_height": null,
+      "detail": "high",
+      "request_bytes": 191789,
+      "status": "200",
+      "prompt_tokens": 1108,
+      "image_tokens": 1100
+    },
+    {
+      "label": "7s@1.0fps/720p/detail=high",
+      "frames": 7,
+      "max_height": 720,
+      "detail": "high",
+      "request_bytes": 787647,
+      "status": "200",
+      "prompt_tokens": 7708,
+      "image_tokens": 7700
+    },
+    {
+      "label": "7s@2.0fps/720p/detail=high",
+      "frames": 14,
+      "max_height": 720,
+      "detail": "high",
+      "request_bytes": 1578432,
+      "status": "200",
+      "prompt_tokens": 15408,
+      "image_tokens": 15400
+    },
+    {
+      "label": "7s@4.0fps/720p/detail=high",
+      "frames": 28,
+      "max_height": 720,
+      "detail": "high",
+      "request_bytes": 3171250,
+      "status": "200",
+      "prompt_tokens": 30808,
+      "image_tokens": 30800
+    }
+  ]
+}
