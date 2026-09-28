@@ -95,9 +95,12 @@ def build_view_from_adapter(
     `running_jobs`/`notices`는 adapter가 아니라 호출자가 직접 안다(어떤 job을 방금
     발주했는지는 이 함수가 추측하지 않는다 — 모듈 docstring 「여기 없는 것」과 동일한
     이유). 그대로 `build_case_view()`에 전달만 한다.
+
+    예외는 `derive_notices()` 하나 — 조립된 `CaseView` 값만으로 발동 조건이 정해지는
+    notice는 호출자가 알 필요가 없으므로 여기서 붙인다.
     """
     snapshot = fetch_case_view_inputs(adapter)
-    return build_case_view(
+    view = build_case_view(
         case,
         evidence_record=snapshot.evidence_record,
         requirement_report_evidence=snapshot.requirement_report_evidence,
@@ -106,6 +109,40 @@ def build_view_from_adapter(
         running_jobs=running_jobs,
         notices=notices,
     )
+    return derive_notices(view)
+
+
+# `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).
+# 접두어 `evidence.`는 발동 근거(`search_keyword`)를 만든 모듈을 뜻하는 명명 규칙이며,
+# CaseView에 싣는 것은 case다.
+LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
+    "code": "evidence.location_search_keyword_missing",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.location_search_keyword_missing",
+    "actions": [],
+}
+
+
+def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
+    """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
+
+    - `evidence.location_search_keyword_missing` — 계약 발동 조건이
+      `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
+      이슈 #48). `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로
+      붙이지 않는다.
+
+    호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
+    `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
+    """
+    evidence = view.get("evidence")
+    if evidence is None or evidence["location_display"]["search_keyword"] is not None:
+        return view
+    notice = LOCATION_SEARCH_KEYWORD_MISSING_NOTICE
+    if any(n["code"] == notice["code"] for n in view["notices"]):
+        return view
+    view["notices"] = [*view["notices"], dict(notice, actions=[])]
+    return view
 
 
 def get_view(
