@@ -28,6 +28,9 @@ readout-paddle = [
   "paddleocr==3.7.0",
   "paddlepaddle==3.3.1",
 ]
+eval-yolo = [
+  "ultralytics==8.4.133",
+]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

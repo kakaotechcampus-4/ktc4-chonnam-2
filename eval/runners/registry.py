@@ -9,6 +9,7 @@ from eval.runners.impls import (
     mock_pack,
     readout_paddle,
     search_gemini,
+    yolo_persistence,
 )
 
 _REGISTRY = {
@@ -18,6 +19,7 @@ _REGISTRY = {
     "mock_pack:contracts": mock_pack.run,
     "search:gemini-coarse-p3": search_gemini.run,
     "readout:paddle-crop": readout_paddle.run,
+    "readout-exp:yolo11n": yolo_persistence.run,
 }
 
 

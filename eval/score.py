@@ -11,7 +11,7 @@ import os
 import sys
 
 from eval import manifests_io, paths
-from eval.scorers import candidate, classification, cost, plate
+from eval.scorers import candidate, classification, cost, persistence, plate
 
 
 def _prediction_path(run_id):
@@ -50,6 +50,7 @@ _SCORER_MODULES = {
     "candidate": candidate,
     "classification": classification,
     "plate": plate,
+    "persistence": persistence,
 }
 
 
@@ -109,6 +110,7 @@ def build_result(env):
         "candidate": None,
         "classification": None,
         "plate": None,
+        "persistence": None,
         "cost": cost.score(
             (env.get("facts") or {}).get("usage_records", []),
             env["meta"].get("processed_duration_sec"),
@@ -128,6 +130,12 @@ def build_result(env):
         result["plate"] = plate.score(norm, gt)
         result["candidate"] = candidate.not_run("NOT_RUN — stage=plate 실행이다")
         result["classification"] = classification.not_run("NOT_RUN — stage=plate 실행이다")
+    elif stage == "persistence":
+        result["persistence"] = persistence.score(norm, gt)
+        result["candidate"] = candidate.not_run("NOT_RUN — stage=persistence 실행이다")
+        result["classification"] = classification.not_run(
+            "NOT_RUN — stage=persistence 실행이다")
+        result["plate"] = plate.not_run("NOT_RUN — stage=persistence 실행이다")
     return result
 
 

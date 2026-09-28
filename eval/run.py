@@ -19,6 +19,7 @@ _NORMALIZERS = {
     "candidate": normalize.normalize_candidate,
     "classification": normalize.normalize_classification,
     "plate": normalize.normalize_plate,
+    "persistence": normalize.normalize_persistence,
 }
 
 
