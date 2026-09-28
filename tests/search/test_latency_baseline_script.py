@@ -123,3 +123,22 @@ def test_measure_records_fine_error_type_without_message_and_continues(
     assert [r["rank"] for r in fines] == [1, 2]
     assert all(r["error_type"] for r in fines)
     assert "secret" not in repr(rows)
+
+
+def test_measure_concurrent_runs_coarse_only_in_batches(tmp_path: Path) -> None:
+    provider = _Provider()
+    clips = [
+        baseline.Clip(f"clip_{i}", _clip(tmp_path).path, 10.0, 7) for i in range(5)
+    ]
+
+    rows = list(baseline.measure_concurrent(
+        clips, concurrency=2, max_latency_sec=600,
+        build_service=_builder(provider), clock=_seconds(),
+    ))
+
+    assert [r["clip"] for r in rows] == [c.label for c in clips]
+    assert [r["batch"] for r in rows] == [1, 1, 2, 2, 3]
+    assert [r["batch_size"] for r in rows] == [2, 2, 2, 2, 1]
+    assert all(r["stage"] == "coarse" and r["outcome"] == "SUCCEEDED" for r in rows)
+    assert all(r["concurrency"] == 2 for r in rows)
+    assert provider.fine_calls == 0

@@ -19,6 +19,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,7 +29,7 @@ from daesingo.common import load_env_file
 from daesingo.search import build_gemini_search_service
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.ledger import UsageRecord
-from daesingo.search.runs import ContractRef
+from daesingo.search.runs import CandidateSearchResult, ContractRef
 from daesingo.search.scope import (
     AnalysisScope,
     SearchBudget,
@@ -107,6 +108,40 @@ def _usage(records: tuple[UsageRecord, ...]) -> dict[str, object]:
     }
 
 
+def _base(clip: Clip, repeat: int) -> dict[str, object]:
+    return {
+        "clip": clip.label,
+        "clip_duration_sec": clip.duration_sec,
+        "clip_bytes": clip.byte_size,
+        "repeat": repeat,
+    }
+
+
+def _run_coarse(
+    service: SearchService,
+    clip: Clip,
+    max_latency_sec: int,
+    clock: Callable[[], float],
+) -> tuple[dict[str, object], CandidateSearchResult | None]:
+    """Coarse 1회를 재서 (행, 결과)를 돌려준다. 예외면 결과는 None이다."""
+    row: dict[str, object] = {"stage": "coarse", "started_at": datetime.now(UTC).isoformat()}
+    t0 = clock()
+    try:
+        result = service.search_candidates(_scope(clip, max_latency_sec))
+    except Exception as error:  # noqa: BLE001 — 측정은 실패 종류를 기록하고 계속한다
+        row["wall_ms"] = round((clock() - t0) * 1000)
+        row["error_type"] = type(error).__name__
+        row.update(_usage(service.ledger.records()))
+        return row, None
+    row["wall_ms"] = round((clock() - t0) * 1000)
+    run = result.analysis_run
+    row["outcome"] = run.outcome.value
+    row["issues"] = [f"{issue.kind.value}:{issue.code}" for issue in run.issues]
+    row["candidates"] = len(result.candidates)
+    row.update(_usage(service.ledger.records()))
+    return row, result
+
+
 def measure(
     clips: list[Clip],
     repeats: int,
@@ -122,32 +157,13 @@ def measure(
     """
     for repeat in range(1, repeats + 1):
         for clip in clips:
-            base = {
-                "clip": clip.label,
-                "clip_duration_sec": clip.duration_sec,
-                "clip_bytes": clip.byte_size,
-                "repeat": repeat,
-            }
+            base = _base(clip, repeat)
             service = build_service(_resolver(clip))
-            seen = 0
-            started_at = datetime.now(UTC).isoformat()
-            t0 = clock()
-            try:
-                result = service.search_candidates(_scope(clip, max_latency_sec))
-            except Exception as error:  # noqa: BLE001 — 측정은 실패 종류를 기록하고 계속한다
-                yield {**base, "stage": "coarse", "started_at": started_at,
-                       "wall_ms": round((clock() - t0) * 1000),
-                       "error_type": type(error).__name__,
-                       **_usage(service.ledger.records())}
+            coarse_row, result = _run_coarse(service, clip, max_latency_sec, clock)
+            yield {**base, **coarse_row}
+            if result is None:
                 continue
-            wall_ms = round((clock() - t0) * 1000)
-            records = service.ledger.records()
-            seen = len(records)
-            run = result.analysis_run
-            yield {**base, "stage": "coarse", "started_at": started_at, "wall_ms": wall_ms,
-                   "outcome": run.outcome.value,
-                   "issues": [f"{issue.kind.value}:{issue.code}" for issue in run.issues],
-                   "candidates": len(result.candidates), **_usage(records)}
+            seen = len(service.ledger.records())
 
             input_ref = ContractRef(kind="analysis_source", ref=clip.label)
             for candidate in sorted(result.candidates, key=lambda c: c.rank)[:fine_top_k]:
@@ -172,6 +188,35 @@ def measure(
                 yield row
 
 
+def measure_concurrent(
+    clips: list[Clip],
+    concurrency: int,
+    max_latency_sec: int,
+    build_service: ServiceBuilder,
+    clock: Callable[[], float] = perf_counter,
+) -> Iterator[dict[str, object]]:
+    """클립을 concurrency개씩 묶어 Coarse만 동시에 부른다.
+
+    Case가 클립별 Job을 동시에 발주하는 상황을 흉내 낸다. 한 프로세스 안의 thread라
+    로컬 ffmpeg는 같은 CPU를 나눠 쓴다.
+    """
+    for batch_index, start in enumerate(range(0, len(clips), concurrency), start=1):
+        batch = clips[start:start + concurrency]
+        services = [build_service(_resolver(clip)) for clip in batch]
+        t0 = clock()
+        with ThreadPoolExecutor(max_workers=len(batch)) as pool:
+            futures = [
+                pool.submit(_run_coarse, service, clip, max_latency_sec, clock)
+                for service, clip in zip(services, batch, strict=True)
+            ]
+            rows = [future.result()[0] for future in futures]
+        batch_wall_ms = round((clock() - t0) * 1000)
+        for clip, row in zip(batch, rows, strict=True):
+            yield {**_base(clip, 1), **row, "concurrency": concurrency,
+                   "batch": batch_index, "batch_size": len(batch),
+                   "batch_wall_ms": batch_wall_ms}
+
+
 def _git_commit() -> str:
     run = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
                          capture_output=True, text=True, timeout=10, check=False)
@@ -194,6 +239,7 @@ def meta(config: GeminiSearchConfig, args: argparse.Namespace) -> dict[str, obje
         "repeats": args.repeats,
         "fine_top_k": args.fine_top_k,
         "max_latency_sec": args.max_latency_sec,
+        "concurrency": args.concurrency,
     }
 
 
@@ -204,6 +250,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fine-top-k", type=int, default=1)
     parser.add_argument("--max-latency-sec", type=int, default=600)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--concurrency", type=int, default=None,
+        help="지정하면 Coarse만 이 개수씩 동시에 부른다 (--repeats·--fine-top-k 무시)",
+    )
     args = parser.parse_args(argv)
 
     api_key = load_env_file().get("GEMINI_API_KEY", "").strip()
@@ -219,8 +269,15 @@ def main(argv: list[str] | None = None) -> int:
         out.write(json.dumps({"stage": "clips", "clips": [
             {**asdict(clip), "path": clip.path.name} for clip in clips
         ]}, ensure_ascii=False) + "\n")
-        for row in measure(clips, args.repeats, args.fine_top_k, args.max_latency_sec,
-                           lambda resolver: build_gemini_search_service(api_key, resolver)):
+        def build(resolver: LocalAnalysisSourceResolver) -> SearchService:
+            return build_gemini_search_service(api_key, resolver)
+
+        rows = (
+            measure_concurrent(clips, args.concurrency, args.max_latency_sec, build)
+            if args.concurrency
+            else measure(clips, args.repeats, args.fine_top_k, args.max_latency_sec, build)
+        )
+        for row in rows:
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
             out.flush()
             print(f"{row['clip']} r{row['repeat']} {row['stage']}"
