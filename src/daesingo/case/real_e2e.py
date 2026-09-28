@@ -54,13 +54,13 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   `build_gemini_search_service(api_key, resolver)`로 `search_candidates()`/
   `verify_visual_with_stream_context()`에 `service=`를 실제로 넘긴다. API 키는
   `.env`의 `GEMINI_API_KEY`(커밋 안 됨, `daesingo.common.env.load_env_file()`로 읽음).
-- **readout `FixtureOcrProvider` — 종결(대체 경로로).** `RecordingOcrProvider`(#130)는
-  `IncidentClipFrames`를 감쌀 plate_reader/overlay_reader 콜러블이 아직 없어(새
-  capability라 여기서 만들지 않음), 대신 이미 실제로 검증된
-  `paddle_provider.PaddleOcrProvider(LocalVideoFrameSource({ref: local_video_path}))`
-  경로(`scripts/run_readout_real.py`와 동일 패턴)를 쓴다. clip 범위가 아니라 파일
-  전체의 30/50/70% 지점을 본다는 제약이 있다 — 이번 목표(실제 pixel→실제 OCR)엔
-  영향 없다.
+- **readout `FixtureOcrProvider` — 종결.** `PaddleOcrProvider(RecordingFrameSource(rec_service))`로
+  **IncidentClip 구간 안의 프레임**을 읽는다(`_build_ocr_provider()`, 2026-09-28 — PR #146 멘토
+  리뷰 r4084810910 후속). readout의 `RecordingFrameSource`(#138)가 recording 공개 경로
+  (`get_incident_clip()` → `resolve_frame()` → `read_frame()`)로 프레임과 recording이 발급한
+  `frame_ref`를 넘긴다. 예전엔 `LocalVideoFrameSource(원본 경로)`로 원본 파일 전체의
+  30/50/70% 지점을 읽어 위반 구간 밖의 프레임을 볼 수 있었다. 샘플링 간격·장수는 readout이
+  정한다(계약 §13 미결).
 - **`time_source_candidates = []` — 종결.** `rec_service.observe_time_sources()`
   결과를 그대로 전달한다.
 
@@ -641,6 +641,17 @@ def get_real_video_candidates(
     ).candidates
 
 
+def _build_ocr_provider(context: RealVideoContext) -> paddle_provider.PaddleOcrProvider:
+    """실영상 번호판·시각 판독용 PaddleOCR — IncidentClip 구간 프레임을 recording에서 받는다.
+
+    `RecordingFrameSource`는 clip 길이 기준 샘플 지점을 recording이 발급한 `FrameRef`와 PNG로
+    받아 온다. 원본 파일 경로를 readout에 넘기지 않는다(공개 계약 안에서만 접근).
+    """
+    return paddle_provider.PaddleOcrProvider(
+        paddle_provider.RecordingFrameSource(context.rec_service)
+    )
+
+
 def build_evidence_for_real_video_candidate(
     context: RealVideoContext,
     candidate: search_module.CandidateEvent,
@@ -735,20 +746,7 @@ def build_evidence_for_real_video_candidate(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    # 실제 PaddleOCR — `RecordingOcrProvider`(#130)는 `IncidentClipFrames`를 감싸는
-    # plate_reader/overlay_reader 콜러블이 아직 없어서(paddle_provider.py에
-    # `PaddleOcrProvider`가 기대하는 `frame_source.frames(clip_ref)` 모양의 어댑터가
-    # 없음 — 새 capability라 여기서 만들지 않는다), 이미 실제로 쓰이고 검증된
-    # `LocalVideoFrameSource(로컬 경로)` + `PaddleOcrProvider` 경로를 그대로 쓴다
-    # (`scripts/run_readout_real.py`와 동일 패턴). `LocalVideoFrameSource`는 clip
-    # 범위가 아니라 파일 전체의 30/50/70% 지점을 본다 — candidate 구간과 정확히
-    # 안 맞을 수 있지만, 이번 목표(실제 pixel→실제 OCR)엔 영향 없다(모듈 docstring
-    # "readout provider" 절 참고).
-    ocr_provider = paddle_provider.PaddleOcrProvider(
-        paddle_provider.LocalVideoFrameSource(
-            {incident_clip.incident_clip_ref: str(context.local_video_path)}
-        )
-    )
+    ocr_provider = _build_ocr_provider(context)
     _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
         read_request, provider=ocr_provider
