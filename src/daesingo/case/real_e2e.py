@@ -54,13 +54,13 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   `build_gemini_search_service(api_key, resolver)`로 `search_candidates()`/
   `verify_visual_with_stream_context()`에 `service=`를 실제로 넘긴다. API 키는
   `.env`의 `GEMINI_API_KEY`(커밋 안 됨, `daesingo.common.env.load_env_file()`로 읽음).
-- **readout `FixtureOcrProvider` — 종결(대체 경로로).** `RecordingOcrProvider`(#130)는
-  `IncidentClipFrames`를 감쌀 plate_reader/overlay_reader 콜러블이 아직 없어(새
-  capability라 여기서 만들지 않음), 대신 이미 실제로 검증된
-  `paddle_provider.PaddleOcrProvider(LocalVideoFrameSource({ref: local_video_path}))`
-  경로(`scripts/run_readout_real.py`와 동일 패턴)를 쓴다. clip 범위가 아니라 파일
-  전체의 30/50/70% 지점을 본다는 제약이 있다 — 이번 목표(실제 pixel→실제 OCR)엔
-  영향 없다.
+- **readout `FixtureOcrProvider` — 종결.** `PaddleOcrProvider(RecordingFrameSource(rec_service))`로
+  **IncidentClip 구간 안의 프레임**을 읽는다(`_build_ocr_provider()`, 2026-09-28 — PR #146 멘토
+  리뷰 r4084810910 후속). readout의 `RecordingFrameSource`(#138)가 recording 공개 경로
+  (`get_incident_clip()` → `resolve_frame()` → `read_frame()`)로 프레임과 recording이 발급한
+  `frame_ref`를 넘긴다. 예전엔 `LocalVideoFrameSource(원본 경로)`로 원본 파일 전체의
+  30/50/70% 지점을 읽어 위반 구간 밖의 프레임을 볼 수 있었다. 샘플링 간격·장수는 readout이
+  정한다(계약 §13 미결).
 - **`time_source_candidates = []` — 종결.** `rec_service.observe_time_sources()`
   결과를 그대로 전달한다.
 
@@ -74,11 +74,12 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   동일성/재사용 판단용 opaque 설정일 뿐 계약 기본값이 아니다.
 - **`AnalysisScope`의 `budget`/`target_event_types`**: case Producer 소유(recording
   소유 아님). 공용 Mock Pack의 happy 기준(`target_event_types=["SOLID_LINE_LANE_CHANGE"]`,
-  `budget={max_cost_krw:1000, max_latency_sec:180}`)을 월요일 GT 없는 배관 E2E에
-  재사용한다(정철원 확인, 2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의
-  정답을 단정하는 값이 아니라 search에 요청하는 탐지 대상이다. Elice 실제 호출
-  한도로 다른 값이 필요하면 서어진 확인이 남는다 — 계약 기본값으로 새로 확정된 게
-  아니다.
+  `max_cost_krw:1000`)을 월요일 GT 없는 배관 E2E에 재사용한다(정철원 확인,
+  2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의 정답을 단정하는 값이 아니라
+  search에 요청하는 탐지 대상이다. `max_latency_sec`는 2026-09-28부터 A-1 잠정값
+  「Coarse 클립당 150초」(`docs/modules/case/decisions/timeout-fallback.md`, #72)를 쓴다 —
+  이 경로는 영상 전체를 한 번에 올려 사실상 클립 1개이고, 인라인 상한을 넘는 영상은
+  search가 `MediaTooLargeError`로 막는다. 클립 분할 발주는 #168 후속 결정 뒤 구현한다.
 - **candidate 선택은 `candidates[0]`으로 고정한다.** GT 없는 배관 확인이 목적이라
   "어느 candidate가 맞는지"는 이번 범위 밖이다 — `happy_001`이 후보 1개라 우연히
   안전했던 것과 같은 자리다. 후보가 여럿이면 이 단순화가 그대로 드러난다.
@@ -103,7 +104,7 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -145,7 +146,9 @@ SCENARIO_ID = "scenario_happy_001"
 # 공용 Mock Pack happy 기준(정철원 확인, 2026-09-21) — 계약 기본값으로 확정된 게
 # 아니라 월요일 GT 없는 배관 E2E용 재사용 값이다.
 _MONDAY_TARGET_EVENT_TYPES = ["SOLID_LINE_LANE_CHANGE"]
-_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": 180}
+# A-1 잠정값(timeout-fallback.md, #72) — Coarse 클립당 150초. runtime 머신 재측정 후 확정.
+_COARSE_CLIP_TIMEOUT_SEC = 150
+_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": _COARSE_CLIP_TIMEOUT_SEC}
 
 
 class StreamSelectionError(Exception):
@@ -288,6 +291,138 @@ class EvidenceBundle:
         return self.evidence_record is not None
 
 
+@dataclass
+class ObservationBundle:
+    """선택된 candidate 하나에 대한 관찰 단계(Fine·IncidentClip·OCR·시간 source·AssetFacts)
+    결과. 사용자 정정과 무관하게 정해지는 값만 담는다.
+
+    이슈 #73 WARN ① — 부분 재실행 정책 표에서 `EVENT_TIME_MANUAL`·`REPORT_TYPE_CHANGE` 등은
+    "요건 검사만 다시, 절대 안 건드리는 것: 전부"다. 정정이 들어오면 이 묶음은 그대로 두고
+    `assemble_evidence_bundle()`(시각·evidence·요건·Package)만 다시 부른다. `NOT_OBSERVED`면
+    조립할 것이 없어 `incident_clip` 이하가 전부 `None`/빈 값이다.
+    """
+
+    candidate: search_module.CandidateEvent
+    visual_evidence: dict[str, Any]
+    fine_run: dict[str, Any]
+    disposition: VisualEvidenceDisposition
+    incident_clip: dict[str, Any] | None = None
+    plate_readout: dict[str, Any] | None = None
+    overlay_readout: dict[str, Any] | None = None
+    time_source_candidates: list[dict[str, Any]] = field(default_factory=list)
+    asset_facts: list[dict[str, Any]] = field(default_factory=list)
+    # 번호판 판독 `ReadoutRun.outcome`(#172 [D]). 판독을 시작하지 않았으면 None.
+    plate_read_outcome: str | None = None
+
+
+def assemble_evidence_bundle(
+    observations: ObservationBundle,
+    *,
+    case_id: str,
+    selection_rev: int = 1,
+    correction_records: list[dict[str, Any]] | None = None,
+    location_hint: str | None = None,
+) -> EvidenceBundle:
+    """관찰 결과로 TimeResolution → EvidenceRecord → Needs → RequirementReport 2종 →
+    ReportPackage를 조립한다. 다른 모듈 호출 없이 evidence 순수 함수만 부르므로, 정정이
+    들어올 때마다 다시 불러도 Search·Fine·readout은 다시 돌지 않는다(이슈 #73).
+
+    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다.
+    """
+    obs = observations
+    if obs.disposition.decision == NOT_ASSEMBLED:
+        return EvidenceBundle(
+            evidence_record=None,
+            evidence_needs=None,
+            requirement_report_evidence=None,
+            requirement_report_package=None,
+            report_package=None,
+            package_error=None,
+            visual_evidence=obs.visual_evidence,
+            fine_run=obs.fine_run,
+            disposition=obs.disposition,
+            plate_read_outcome=obs.plate_read_outcome,
+        )
+
+    candidate_event = obs.candidate.model_dump(mode="json")
+    time_resolution = resolve_time(
+        time_source_candidates=obs.time_source_candidates,
+        overlay_time_readout=obs.overlay_readout,
+        candidate_event=candidate_event,
+        correction_records=correction_records or [],
+        case_id=case_id,
+        selection_rev=selection_rev,
+        resolution_id=f"tr_{case_id}_001",
+    )
+
+    evidence_record = assemble_evidence(
+        case_id=case_id,
+        selection_rev=selection_rev,
+        candidate_event=candidate_event,
+        visual_evidence=obs.visual_evidence,
+        time_resolution=time_resolution,
+        plate_readout=obs.plate_readout,
+        incident_clip=obs.incident_clip,
+        record_id=f"er_{case_id}_001",
+        location_hint=location_hint,
+        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
+        situation_response=None,
+        gps_observation=None,
+        correction_records=correction_records or [],
+    )
+
+    evidence_needs = calculate_evidence_needs(
+        evidence_record,
+        obs.plate_readout,
+        emit_empty=True,
+    )
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    requirement_report_evidence = evaluate_requirements(
+        evidence_record,
+        scope="EVIDENCE",
+        report_id=f"rr_{case_id}_evidence",
+        evaluated_at=now,
+        time_resolution=time_resolution,
+    )
+    requirement_report_package = evaluate_requirements(
+        evidence_record,
+        scope="FINAL_PACKAGE",
+        report_id=f"rr_{case_id}_package",
+        evaluated_at=now,
+        time_resolution=time_resolution,
+        asset_facts=obs.asset_facts,
+        # 알려진 단순화 2와 같은 이유로 None (모듈 docstring 참고).
+        observation_facts=None,
+    )
+
+    report_package: dict[str, Any] | None = None
+    package_error: str | None = None
+    try:
+        report_package = build_report_package(
+            evidence_record,
+            requirement_report_package,
+            package_id=f"pkg_{case_id}_001",
+            created_at=now,
+            asset_facts=obs.asset_facts,
+        )
+    except PackageNotReady as exc:
+        package_error = str(exc)
+
+    return EvidenceBundle(
+        evidence_record=evidence_record,
+        evidence_needs=evidence_needs,
+        requirement_report_evidence=requirement_report_evidence,
+        requirement_report_package=requirement_report_package,
+        report_package=report_package,
+        package_error=package_error,
+        visual_evidence=obs.visual_evidence,
+        fine_run=obs.fine_run,
+        disposition=obs.disposition,
+        plate_read_outcome=obs.plate_read_outcome,
+    )
+
+
 def build_happy_001_evidence_bundle(
     *,
     case_id: str,
@@ -302,8 +437,30 @@ def build_happy_001_evidence_bundle(
     실제 함수로 이어서 실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw
     fixture/`None`이고 나머지는 전부 각 모듈의 공개 함수 호출 결과다.
 
-    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다(이슈 #73).
+    `observe_happy_001_candidate()` + `assemble_evidence_bundle()`을 이어 부른다. 정정 후
+    다시 계산할 때는 관찰 결과를 재사용하고 조립만 다시 부른다(이슈 #73, `RealAdapter`).
     """
+    observations = observe_happy_001_candidate(
+        case_id=case_id, candidate=candidate, scope=scope, mock_root=mock_root
+    )
+    return assemble_evidence_bundle(
+        observations,
+        case_id=case_id,
+        selection_rev=selection_rev,
+        correction_records=correction_records,
+        location_hint=location_hint,
+    )
+
+
+def observe_happy_001_candidate(
+    *,
+    case_id: str,
+    candidate: search_module.CandidateEvent,
+    scope: search_module.AnalysisScope,
+    mock_root: Path,
+) -> ObservationBundle:
+    """`build_happy_001_evidence_bundle()`의 관찰 단계 — recording → Fine → IncidentClip →
+    readout(fixture OCR) → 시간 source·AssetFacts까지. 정정과 무관한 값만 만든다."""
     fixture = load_recording_fixture(SCENARIO_ID)
     rec_service = RecordingService.from_fixture(fixture, case_id=case_id)
 
@@ -349,13 +506,8 @@ def build_happy_001_evidence_bundle(
     # 아니다 — `core-user-flow.md`가 정본화된 뒤 별도로 결정한다.
     disposition = classify_visual_evidence(visual_evidence)
     if disposition.decision == NOT_ASSEMBLED:
-        return EvidenceBundle(
-            evidence_record=None,
-            evidence_needs=None,
-            requirement_report_evidence=None,
-            requirement_report_package=None,
-            report_package=None,
-            package_error=None,
+        return ObservationBundle(
+            candidate=candidate,
             visual_evidence=visual_evidence,
             fine_run=fine_run,
             disposition=disposition,
@@ -400,85 +552,21 @@ def build_happy_001_evidence_bundle(
     )
     time_source_candidates = raw_recording.get("time_source_candidates", [])
 
-    time_resolution = resolve_time(
-        time_source_candidates=time_source_candidates,
-        overlay_time_readout=overlay_readout.to_dict() if overlay_readout else None,
-        candidate_event=candidate.model_dump(mode="json"),
-        correction_records=correction_records or [],
-        case_id=case_id,
-        selection_rev=selection_rev,
-        resolution_id=f"tr_{case_id}_001",
-    )
-
-    evidence_record = assemble_evidence(
-        case_id=case_id,
-        selection_rev=selection_rev,
-        candidate_event=candidate.model_dump(mode="json"),
-        visual_evidence=visual_evidence,
-        time_resolution=time_resolution,
-        plate_readout=plate_readout.to_dict() if plate_readout else None,
-        incident_clip=incident_clip.model_dump(mode="json"),
-        record_id=f"er_{case_id}_001",
-        location_hint=location_hint,
-        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
-        situation_response=None,
-        gps_observation=None,
-        correction_records=correction_records or [],
-    )
-
-    evidence_needs = calculate_evidence_needs(
-        evidence_record,
-        plate_readout.to_dict() if plate_readout else None,
-        emit_empty=True,
-    )
-
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    requirement_report_evidence = evaluate_requirements(
-        evidence_record,
-        scope="EVIDENCE",
-        report_id=f"rr_{case_id}_evidence",
-        evaluated_at=now,
-        time_resolution=time_resolution,
-    )
-
     asset_refs = [facts.asset_ref for facts in fixture.asset_facts]
     asset_facts_real = [
         rec_service.lookup_asset_facts(ref).model_dump(mode="json") for ref in asset_refs
     ]
-    requirement_report_package = evaluate_requirements(
-        evidence_record,
-        scope="FINAL_PACKAGE",
-        report_id=f"rr_{case_id}_package",
-        evaluated_at=now,
-        time_resolution=time_resolution,
-        asset_facts=asset_facts_real,
-        # 알려진 단순화 2와 같은 이유로 None (모듈 docstring 참고).
-        observation_facts=None,
-    )
 
-    report_package: dict[str, Any] | None = None
-    package_error: str | None = None
-    try:
-        report_package = build_report_package(
-            evidence_record,
-            requirement_report_package,
-            package_id=f"pkg_{case_id}_001",
-            created_at=now,
-            asset_facts=asset_facts_real,
-        )
-    except PackageNotReady as exc:
-        package_error = str(exc)
-
-    return EvidenceBundle(
-        evidence_record=evidence_record,
-        evidence_needs=evidence_needs,
-        requirement_report_evidence=requirement_report_evidence,
-        requirement_report_package=requirement_report_package,
-        report_package=report_package,
-        package_error=package_error,
+    return ObservationBundle(
+        candidate=candidate,
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        incident_clip=incident_clip.model_dump(mode="json"),
+        plate_readout=plate_readout.to_dict() if plate_readout else None,
+        overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
+        time_source_candidates=time_source_candidates,
+        asset_facts=asset_facts_real,
         plate_read_outcome=plate_run.outcome,
     )
 
@@ -646,6 +734,17 @@ def get_real_video_candidates(
     ).candidates
 
 
+def _build_ocr_provider(context: RealVideoContext) -> paddle_provider.PaddleOcrProvider:
+    """실영상 번호판·시각 판독용 PaddleOCR — IncidentClip 구간 프레임을 recording에서 받는다.
+
+    `RecordingFrameSource`는 clip 길이 기준 샘플 지점을 recording이 발급한 `FrameRef`와 PNG로
+    받아 온다. 원본 파일 경로를 readout에 넘기지 않는다(공개 계약 안에서만 접근).
+    """
+    return paddle_provider.PaddleOcrProvider(
+        paddle_provider.RecordingFrameSource(context.rec_service)
+    )
+
+
 def build_evidence_for_real_video_candidate(
     context: RealVideoContext,
     candidate: search_module.CandidateEvent,
@@ -659,6 +758,32 @@ def build_evidence_for_real_video_candidate(
     """선택된 candidate 하나에 대해 real Gemini/Elice **Fine**을 실제로 호출하고
     (유료) IncidentClip~evidence까지 조립한다. `case.select_candidate()`가 고른
     candidate를 그대로 받는다 — 여기서 다시 고르지 않는다.
+
+    `observe_real_video_candidate()` + `assemble_evidence_bundle()`을 이어 부른다. 정정 후
+    다시 계산할 때는 관찰 결과를 재사용하고 조립만 다시 부른다(이슈 #73, `RealVideoAdapter`).
+    `on_visual_result`는 `observe_real_video_candidate()`로 그대로 전달된다.
+    """
+    observations = observe_real_video_candidate(
+        context, candidate, case_id=case_id, on_visual_result=on_visual_result
+    )
+    return assemble_evidence_bundle(
+        observations,
+        case_id=case_id,
+        selection_rev=selection_rev,
+        correction_records=correction_records,
+        location_hint=location_hint,
+    )
+
+
+def observe_real_video_candidate(
+    context: RealVideoContext,
+    candidate: search_module.CandidateEvent,
+    *,
+    case_id: str,
+    on_visual_result: Any = None,
+) -> ObservationBundle:
+    """`build_evidence_for_real_video_candidate()`의 관찰 단계 — real Fine(유료) →
+    IncidentClip → PaddleOCR → 시간 source·AssetFacts까지. 정정과 무관한 값만 만든다.
 
     `on_visual_result`는 `(visual_result, media_stream_ref)`를 받는 선택적
     콜백이다 — Fine 응답을 실제로 받은 **직후**, 이후 단계(IncidentClip·readout·
@@ -700,13 +825,8 @@ def build_evidence_for_real_video_candidate(
     # 여기서 조립을 시작하지 않고 정상 종료한다.
     disposition = classify_visual_evidence(visual_evidence)
     if disposition.decision == NOT_ASSEMBLED:
-        return EvidenceBundle(
-            evidence_record=None,
-            evidence_needs=None,
-            requirement_report_evidence=None,
-            requirement_report_package=None,
-            report_package=None,
-            package_error=None,
+        return ObservationBundle(
+            candidate=candidate,
             visual_evidence=visual_evidence,
             fine_run=fine_run,
             disposition=disposition,
@@ -740,20 +860,7 @@ def build_evidence_for_real_video_candidate(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    # 실제 PaddleOCR — `RecordingOcrProvider`(#130)는 `IncidentClipFrames`를 감싸는
-    # plate_reader/overlay_reader 콜러블이 아직 없어서(paddle_provider.py에
-    # `PaddleOcrProvider`가 기대하는 `frame_source.frames(clip_ref)` 모양의 어댑터가
-    # 없음 — 새 capability라 여기서 만들지 않는다), 이미 실제로 쓰이고 검증된
-    # `LocalVideoFrameSource(로컬 경로)` + `PaddleOcrProvider` 경로를 그대로 쓴다
-    # (`scripts/run_readout_real.py`와 동일 패턴). `LocalVideoFrameSource`는 clip
-    # 범위가 아니라 파일 전체의 30/50/70% 지점을 본다 — candidate 구간과 정확히
-    # 안 맞을 수 있지만, 이번 목표(실제 pixel→실제 OCR)엔 영향 없다(모듈 docstring
-    # "readout provider" 절 참고).
-    ocr_provider = paddle_provider.PaddleOcrProvider(
-        paddle_provider.LocalVideoFrameSource(
-            {incident_clip.incident_clip_ref: str(context.local_video_path)}
-        )
-    )
+    ocr_provider = _build_ocr_provider(context)
     plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
         read_request, provider=ocr_provider
@@ -769,46 +876,6 @@ def build_evidence_for_real_video_candidate(
         c.model_dump(mode="json") for c in observed_time_sources.candidates
     ]
 
-    time_resolution = resolve_time(
-        time_source_candidates=time_source_candidates,
-        overlay_time_readout=overlay_readout.to_dict() if overlay_readout else None,
-        candidate_event=candidate.model_dump(mode="json"),
-        correction_records=correction_records or [],
-        case_id=case_id,
-        selection_rev=selection_rev,
-        resolution_id=f"tr_{case_id}_001",
-    )
-
-    evidence_record = assemble_evidence(
-        case_id=case_id,
-        selection_rev=selection_rev,
-        candidate_event=candidate.model_dump(mode="json"),
-        visual_evidence=visual_evidence,
-        time_resolution=time_resolution,
-        plate_readout=plate_readout.to_dict() if plate_readout else None,
-        incident_clip=incident_clip.model_dump(mode="json"),
-        record_id=f"er_{case_id}_001",
-        location_hint=location_hint,
-        situation_response=None,
-        gps_observation=None,
-        correction_records=correction_records or [],
-    )
-
-    evidence_needs = calculate_evidence_needs(
-        evidence_record,
-        plate_readout.to_dict() if plate_readout else None,
-        emit_empty=True,
-    )
-
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    requirement_report_evidence = evaluate_requirements(
-        evidence_record,
-        scope="EVIDENCE",
-        report_id=f"rr_{case_id}_evidence",
-        evaluated_at=now,
-        time_resolution=time_resolution,
-    )
-
     # 알려진 단순화(모듈 docstring) — `lookup_asset_facts()`는 로컬로 materialize된
     # analysis_source/incident_clip에 대해서는 AssetFacts를 등록하지 않는다
     # (`RecordingService.prepare_analysis_source()`/`build_incident_clip()`의 로컬
@@ -821,39 +888,16 @@ def build_evidence_for_real_video_candidate(
             {"kind": "source_asset", "ref": registered.source_asset.source_asset_ref}
         ).model_dump(mode="json"),
     ]
-    requirement_report_package = evaluate_requirements(
-        evidence_record,
-        scope="FINAL_PACKAGE",
-        report_id=f"rr_{case_id}_package",
-        evaluated_at=now,
-        time_resolution=time_resolution,
-        asset_facts=asset_facts_real,
-        observation_facts=None,
-    )
-
-    report_package: dict[str, Any] | None = None
-    package_error: str | None = None
-    try:
-        report_package = build_report_package(
-            evidence_record,
-            requirement_report_package,
-            package_id=f"pkg_{case_id}_001",
-            created_at=now,
-            asset_facts=asset_facts_real,
-        )
-    except PackageNotReady as exc:
-        package_error = str(exc)
-
-    return EvidenceBundle(
-        evidence_record=evidence_record,
-        evidence_needs=evidence_needs,
-        requirement_report_evidence=requirement_report_evidence,
-        requirement_report_package=requirement_report_package,
-        report_package=report_package,
-        package_error=package_error,
+    return ObservationBundle(
+        candidate=candidate,
         visual_evidence=visual_evidence,
         fine_run=fine_run,
         disposition=disposition,
+        incident_clip=incident_clip.model_dump(mode="json"),
+        plate_readout=plate_readout.to_dict() if plate_readout else None,
+        overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
+        time_source_candidates=time_source_candidates,
+        asset_facts=asset_facts_real,
         plate_read_outcome=plate_run.outcome,
     )
 

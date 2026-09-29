@@ -64,7 +64,8 @@ def build_view(video_path: str, target_event_types: list[str] | None = None):
 
         jobs.issue_plate_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-plate-read")
         jobs.issue_overlay_time_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-overlay-read")
-        case.mark_ready()
+        # Package가 실제로 준비됐을 때만 READY(#167). 막히면 EVIDENCE_REVIEW에 남는다.
+        service.mark_ready_if_package_ready(case, real)
 
         view = service.build_view_from_adapter(case, real)
         # `_build_evidence_bundle()`가 위 build_view_from_adapter() 호출 중에 이미

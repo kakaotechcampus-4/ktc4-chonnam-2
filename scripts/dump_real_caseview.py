@@ -54,7 +54,8 @@ def build_view():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    # Package가 실제로 준비됐을 때만 READY(#167).
+    service.mark_ready_if_package_ready(case, real)
 
     return service.build_view_from_adapter(case, real)
 
