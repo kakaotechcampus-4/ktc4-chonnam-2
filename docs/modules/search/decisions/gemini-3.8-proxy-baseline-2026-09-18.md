@@ -4,14 +4,17 @@
 
 적용 대상: Coarse / Fine 기반 블랙박스 영상 검색 파이프라인 (`src/daesingo/search`, `eval`)
 
-이 문서는 운영 baseline 결정을 기록한다. `gemini-change-application-plan-2026-09-12.md`는
-계측·A/B 실험 계획서로 유효하지만, "3.8 전환은 A/B 뒤"(같은 문서 §1·§8·Phase 3) 항목은
-아래 Owner 결정으로 **운영 기본값에 한해 선행 적용**되어 대체된다. 실험 계획 자체는 그대로다.
+이 문서는 운영 baseline 결정을 기록한다. 당시 기준이던 `gemini-change-application-plan-2026-09-12.md`의
+"3.8 전환은 A/B 뒤" 항목을 운영 기본값에 한해 선행 적용했다. 그 계획서는 Interactions API 전제가
+더는 맞지 않아 2026-09-28 삭제했다.
+
+> 2026-09-28 현재: 호출은 OpenAI 호환 `/v1/chat/completions`에 영상을 base64 인라인으로 보낸다
+> (`files.upload`·`interactions.create` 서술은 당시 기준). 결정 2의 FPS 값은 이 경로에서 모델 입력에
+> 반영되지 않는다 — [09-28 실험](../experiments/gemini-proxy-video-sampling-2026-09-28.md). 처리 방향은 미정.
 
 ## 결정
 
-1. **모델 기본값을 `gemini-3.8-flash`로 올린다.** Interactions API 호출 구조는 3.7과 같다
-   (같은 문서 §2.1). 토큰/비용/품질 재측정은 여전히 필요하지만 baseline 자체는 3.8로 둔다.
+1. **모델 기본값을 `gemini-3.8-flash`로 올린다.** Interactions API 호출 구조는 3.7과 같다. 토큰/비용/품질 재측정은 여전히 필요하지만 baseline 자체는 3.8로 둔다.
 2. **FPS는 현재값이 기준이다** — coarse 1.0 / fine 2.0. 코드 변경 없음, 기준으로 고정.
 3. **모든 Gemini 호출은 프록시를 경유한다.** base URL을 프록시로 돌리면
    `files.upload`(영상)와 `interactions.create`가 모두 프록시를 탄다. 인증은

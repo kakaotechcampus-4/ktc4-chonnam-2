@@ -1,0 +1,6 @@
+이 실행은 Coarse 관찰을 Fine에 넘기는 실험입니다.
+Coarse 관찰: {coarse_observation}
+Coarse 핵심 시각: 잘라낸 영상 기준 약 {coarse_at_offset_sec:.1f}초
+Coarse 관찰과 핵심 시각은 저해상도 탐색 단계가 보고한 단서이며 검증된 사실이 아닙니다.
+그 차량과 시각을 먼저 찾아 확인하되, 영상에서 직접 본 사실이 Coarse 관찰과 다르면
+영상을 따르고 그 차이를 불확실성으로 남기세요.

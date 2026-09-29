@@ -1,0 +1,110 @@
+{
+  "config": {
+    "profile": "p3",
+    "transport": "image",
+    "coarse_fps": 2.0,
+    "fine_fps": 4.0,
+    "model": "gemini-3.8-flash",
+    "reasoning_effort": "low"
+  },
+  "invocations": 17,
+  "verification_counts": {
+    "NOT_OBSERVED": 6,
+    "OBSERVED": 4
+  },
+  "reported_total_tokens": 864947,
+  "cases": [
+    {
+      "case_id": "20260620_141628_EVT_1",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "NOT_OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 2,
+      "fine_verifications": [
+        "NOT_OBSERVED",
+        "NOT_OBSERVED"
+      ],
+      "issue_codes": []
+    },
+    {
+      "case_id": "20260620_141927_EVT_1",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 1,
+      "fine_verifications": [
+        "NOT_OBSERVED"
+      ],
+      "issue_codes": []
+    },
+    {
+      "case_id": "20260620_141956_EVT_1",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "NOT_OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 1,
+      "fine_verifications": [
+        "NOT_OBSERVED"
+      ],
+      "issue_codes": [
+        "RESPONSE_TIME_OUT_OF_BOUNDS"
+      ]
+    },
+    {
+      "case_id": "20260620_150504_EVT_1",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "NOT_OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 1,
+      "fine_verifications": [
+        "NOT_OBSERVED"
+      ],
+      "issue_codes": []
+    },
+    {
+      "case_id": "youtube_clip_01",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 1,
+      "fine_verifications": [
+        "OBSERVED"
+      ],
+      "issue_codes": []
+    },
+    {
+      "case_id": "YT_0003_C05",
+      "event": "SOLID_LINE_LANE_CHANGE",
+      "expected": "OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 3,
+      "fine_verifications": [
+        "OBSERVED",
+        "OBSERVED",
+        "NOT_OBSERVED"
+      ],
+      "issue_codes": []
+    },
+    {
+      "case_id": "YT_0002_C00",
+      "event": "CENTER_LINE_CROSSING",
+      "expected": "OBSERVED",
+      "coarse_succeeded": true,
+      "n_candidates": 1,
+      "fine_verifications": [
+        "OBSERVED"
+      ],
+      "issue_codes": []
+    }
+  ],
+  "baseline_p3_video": {
+    "invocations": 16,
+    "verification_counts": {
+      "NOT_OBSERVED": 7,
+      "OBSERVED": 2
+    },
+    "reported_total_tokens": 28607,
+    "coarse_fps": 1.0,
+    "fine_fps": 2.0
+  }
+}
