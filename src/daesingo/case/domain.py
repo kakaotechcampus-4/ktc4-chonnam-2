@@ -135,9 +135,9 @@ class CaseAggregate:
         실제 fixture로 검증: `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`도 검색 자체는
         성공이므로 `CANDIDATE_REVIEW`로 전진한다). 빈 배열이든 아니든 전진 여부는 같고,
         차이는 이후 단계(선택 가능한 candidate가 없어 evidence 파이프라인이 발주되지 않음)와
-        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — notice 자체는
-        `build_case_view()` 호출자가 채운다(CaseView 값만으로 발동하는 notice는
-        `service.derive_notices()`가 붙인다 — 이슈 #48)."""
+        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — 이 notice는
+        CaseView 값(`CANDIDATE_REVIEW` + 빈 `candidates`)만으로 발동해 `service.derive_notices()`가
+        붙인다."""
         self.candidates = list(candidates)
         self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
