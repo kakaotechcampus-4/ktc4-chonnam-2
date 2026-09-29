@@ -13,6 +13,8 @@ import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
+import { EvidenceScreen } from '../screens/EvidenceScreen'
+import { HandoffScreen } from '../screens/HandoffScreen'
 
 afterEach(cleanup)
 
@@ -215,5 +217,27 @@ describe('OtherCandidates — 「다른 후보 보기」', () => {
   it('후보가 없으면 출구 자체를 두지 않는다', () => {
     const { container } = render(<OtherCandidates view={view([])} />)
     expect(container.innerHTML).toBe('')
+  })
+})
+
+// 결과 화면 두 곳(EvidenceScreen·HandoffScreen)에 출구가 붙어 있는지 본다.
+// 스냅샷에는 다른 후보가 있는 뷰가 없어서, 실제 스냅샷에 후보 하나만 더한다.
+describe('결과 화면에 「다른 후보 보기」가 붙는다', () => {
+  function withOther(pick: (v: CaseView) => boolean): CaseView {
+    const real = SNAPSHOTS.map((s) => s.view).find(pick)!
+    const selected = real.candidates.find((c) => c.selected)!
+    return { ...real, candidates: [selected, { ...selected, candidate_id: 'c_other', selected: false }] }
+  }
+
+  it('확인한 내용 화면(EvidenceScreen)', () => {
+    const v = withOther((x) => x.stage === 'EVIDENCE_REVIEW' && x.evidence !== null)
+    const { container } = render(<EvidenceScreen view={v} />)
+    expect(container.querySelector('details.other-cands')).not.toBeNull()
+  })
+
+  it('신고자료 화면(HandoffScreen) — READY에서도 고를 수 있다', () => {
+    const v = withOther((x) => x.stage === 'READY' && x.package !== null)
+    const { container } = render(<HandoffScreen view={v} />)
+    expect(container.querySelector('details.other-cands')).not.toBeNull()
   })
 })
