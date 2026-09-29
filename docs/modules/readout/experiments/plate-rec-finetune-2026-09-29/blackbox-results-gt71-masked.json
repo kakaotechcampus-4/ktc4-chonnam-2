@@ -1,0 +1,5335 @@
+{
+ "_note": "블랙박스 사람 판독 GT 71항목(전체 판독 43) × 모델 3개, 검출기 → 인식기 경로. 번호판 문자열은 끝 두 자리와, 문자열 어디에 나오든 GT 일련번호 4자리의 뒤 두 자리를 가렸다. 추적 프레임은 tracks_verified(CSRT+재검출). format_ok는 가리기 전 문자열에 plate_rule.valid를 건 값.",
+ "runs": [
+  "pretrained_det",
+  "run1_det",
+  "desk_detline_det"
+ ],
+ "items": [
+  {
+   "video": "20260620_141956_EVT_1",
+   "kind": "full",
+   "gt": "390두27**",
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "390521**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "90521**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "39052**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "390누21**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "391두**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "391두**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260729_191553_EVT_1",
+   "kind": "partial",
+   "gt": "???12**",
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "2부12**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "2부12**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "2부12**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260731_060401_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "4경52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "4경52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "49117**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1352**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1352**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260731_060401_EVT_1",
+   "kind": "full",
+   "gt": "05도32**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "3**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?5?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경울도37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?울도37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "17**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "05도32**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "05도32**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "주로**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260803_210212_EVT_1",
+   "kind": "partial",
+   "gt": "340?23**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "02**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "340023**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "34002**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "기023**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "??23**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "23**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "40루25**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "40루23**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "40부23**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260805_060120_EVT_1",
+   "kind": "partial",
+   "gt": "385???**",
+   "verified_frames": 4,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "천",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "1",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260806_061434_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "3",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "3",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경울천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경울천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "6",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "5**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "5**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260807_211824_EVT_1",
+   "kind": "not_plate",
+   "gt": null,
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "4",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260810_175721_EVT_1",
+   "kind": "full",
+   "gt": "47소03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47소03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260811_060734_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?경?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?경?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "0부**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260811_185525_EVT_1",
+   "kind": "full",
+   "gt": "전남82바52**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "2바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "천경2바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "5?6?바52**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260908_182051_INF_1",
+   "kind": "full",
+   "gt": "150소99**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "150소99**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260810_183258_EVT_1",
+   "kind": "full",
+   "gt": "36수31**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "3631**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "36주31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "36주31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "36수31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260806_192353_EVT_1",
+   "kind": "full",
+   "gt": "23두48**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "23두48**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "full",
+   "gt": "183고31**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "full",
+   "gt": "183고31**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "083131**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "183331**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183331**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "083고31**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "183고31**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "partial",
+   "gt": "?60?21**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "1604**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "2",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "021**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "60기경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?경02**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "60서71**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "60**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "602**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "not_plate",
+   "gt": null,
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "아이안경콘**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "아이안경콘**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경콘틱트00**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "아인경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "아인경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경콘덕트아아**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "90인경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "90인경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경천천65**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "full",
+   "gt": "311고55**",
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "311255**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "311255**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "311055**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "311고55**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "311고55**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "311고55**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "311055**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "311055**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "311055**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125711",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 2,
+   "pretrained_det": {
+    "A": {
+     "text": "3",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "3",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "0인울**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "0인울**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "7",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "01**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "01**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "partial",
+   "gt": "47?68**",
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "8**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "8**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경기고기6**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경기고기6**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "6145**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "6145**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "full",
+   "gt": "200허11**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "111**20**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "200011**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "42000111**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "4111**20**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "111**20**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "117200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "17200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "full",
+   "gt": "200허11**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "200011**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "200011**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "200011**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "40200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "4200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "4200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "40200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "11200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "11200허11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "partial",
+   "gt": "206?10**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "20**10**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "20**0**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "206010**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "206대10**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "206?10**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "206대10**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "205나10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "206고10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "206?10**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "MDR_260829_125810",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 1,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "5",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "5",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "youtube_clip_01",
+   "kind": "full",
+   "gt": "125호11**",
+   "verified_frames": 6,
+   "pretrained_det": {
+    "A": {
+     "text": "125011**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "125?11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "125?11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "1수25호11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "125호11**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "125호11**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "125호11**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "125호11**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "125호11**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260630_195927_EVT_1",
+   "kind": "partial",
+   "gt": "162?41**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "162041**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "162041**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "162041**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "162마41**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260701_191539_EVT_1",
+   "kind": "full",
+   "gt": "92소97**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "97**9**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "97**9**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "97**9**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "92소97**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260702_182622_EVT_1",
+   "kind": "full",
+   "gt": "05하37**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "05037**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "050370**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "050370**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "3기1천05하37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "기05037**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기05037**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "51105하37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "51105하37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "51105하37**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260702_182622_EVT_1",
+   "kind": "partial",
+   "gt": "113?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "1154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "11서나54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "113나54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "113나54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "113나54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "113나54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "113나54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260702_182622_EVT_1",
+   "kind": "partial",
+   "gt": "113?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "기3배3**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1?천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "15**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260706_175043_EVT_1",
+   "kind": "full",
+   "gt": "152보29**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "52보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260713_202834_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 5,
+   "pretrained_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260713_202834_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 4,
+   "pretrained_det": {
+    "A": {
+     "text": "백54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260713_202834_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경천0천배54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260713_202834_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "민설82비54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "?남82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "진천82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "천남82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "천남82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "경울82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "천582바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "천582바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260714_201140_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "집82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "서82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경기82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "경기82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "전천남82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "전남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "전남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260714_201140_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경기82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "경기82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "경기82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "전천82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "전남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "전남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260715_184317_EVT_1",
+   "kind": "full",
+   "gt": "152보29**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_123948_EVT_1",
+   "kind": "full",
+   "gt": "244고63**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "244?63**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_123948_EVT_1",
+   "kind": "full",
+   "gt": "47보50**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "47보50**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_123948_EVT_1",
+   "kind": "full",
+   "gt": "244고63**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "24063**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "244?63**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244?63**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "24고6**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "244고63**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "244고6**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_123948_EVT_1",
+   "kind": "full",
+   "gt": "322주82**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "282**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?282**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "32282**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경기2주8**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "322주82**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "천22주82**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "302주82**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "3?2주82**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "322주82**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_133327_EVT_1",
+   "kind": "full",
+   "gt": "185소42**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "2185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "2185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "12185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "12185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "417185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "51185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "51185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_133327_EVT_1",
+   "kind": "full",
+   "gt": "181나37**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "181037**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "18137**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "18137**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "181나37**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260716_133327_EVT_1",
+   "kind": "full",
+   "gt": "185소42**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "185소42**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "111185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "111185소42**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "리",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "???1**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "???1**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "부경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "울35?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "울35?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "44**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "582?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "582?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "서3**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "4천2부54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "482주54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "482주54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "215**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "기2154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "기2154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기2154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "582로54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "582로54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "582로54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?54**",
+   "verified_frames": 2,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "02549**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "02549**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "고25**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "고25**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "2154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "682호54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "682호54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "854**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "0**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "바기54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경8바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경454**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "5",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "56**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "전님82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "전님82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "전남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "전82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "천남82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "천남82바54**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "경남82바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "경?82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경?82바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "full",
+   "gt": "전남82바54**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "울바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기854**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "719354**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1154**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "전남82???**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "09254**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "92854**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "92854**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경울2천54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경기2천54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경기2천54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "경바54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "87바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "87바54**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260721_080131_EVT_1",
+   "kind": "partial",
+   "gt": "??82?55**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "682****",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "582****",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "82****",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경82버55**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경82바55**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경82바55**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "882버55**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+R": {
+     "text": "182바55**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "182바55**",
+     "format_ok": false,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260721_192527_EVT_1",
+   "kind": "partial",
+   "gt": "239?10**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "23**0**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "239더10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "239더10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "239다10**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "너427도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1경호영경27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "6627도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "127도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경경627도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "127도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": false,
+     "wrong_accept": true
+    },
+    "B+RS": {
+     "text": "6127도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "천827도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "?경927도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도033**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "인너천03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1천부027도5043386**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "1너27도03**0**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "8부53903**12**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1127도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "??27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "10027도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "바라1다100860000646527도83**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "두27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "551195727도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1155827도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "41?27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260727_192536_EVT_1",
+   "kind": "full",
+   "gt": "152보29**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "152보29**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260728_103421_EVT_1",
+   "kind": "full",
+   "gt": "27도03**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "기울호27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "???27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "다울너경천27도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "41527도03**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "03**2**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "27도03**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260728_190035_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 4,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "천천천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "서**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "4",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "4",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260728_190035_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 5,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "0",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "1천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "?천기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "기기**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "54**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "1?**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "11**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260728_190035_EVT_1",
+   "kind": "unreadable",
+   "gt": null,
+   "verified_frames": 4,
+   "pretrained_det": {
+    "A": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "경천**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "경경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "경경**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "4**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "4**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "4**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": null,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260728_190035_EVT_1",
+   "kind": "full",
+   "gt": "232호59**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "232359**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "232359**",
+     "format_ok": false,
+     "accepted": false,
+     "correct": false,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "232호59**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  },
+  {
+   "video": "20260725_111018_EVT_1",
+   "kind": "full",
+   "gt": "17더40**",
+   "verified_frames": 7,
+   "pretrained_det": {
+    "A": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "run1_det": {
+    "A": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   },
+   "desk_detline_det": {
+    "A": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+R": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    },
+    "B+RS": {
+     "text": "17더40**",
+     "format_ok": true,
+     "accepted": true,
+     "correct": true,
+     "wrong_accept": false
+    }
+   }
+  }
+ ]
+}
