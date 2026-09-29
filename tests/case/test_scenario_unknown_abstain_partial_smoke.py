@@ -61,6 +61,7 @@ def test_unknown_abstain_partial_ready_matches_fixture():
             at_provenance="recording.filename_time",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
         )
         for c in raw_candidates
     ]

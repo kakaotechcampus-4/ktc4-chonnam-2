@@ -67,6 +67,7 @@ def test_correction_rerun_before_and_after_match_fixture():
             at_provenance="recording.filename_time",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
         )
         for c in raw_candidates
     ]
