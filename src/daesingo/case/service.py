@@ -42,6 +42,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     두면 계약(`caseView.ts`/contract 문서 §7)이 기대하는 non-null과 어긋난다(이슈 #104).
     """
     raw_candidates = adapter.get_candidate_events()
+    if str(adapter.get_candidate_search_outcome()) == "FAILED":
+        # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — 계약 §7 `RESUME_SEARCH` 행.
+        case.record_candidate_search_failure()
+        return []
     candidates = [
         Candidate(
             candidate_id=c["candidate_id"],
@@ -149,6 +153,16 @@ LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
 }
 
 
+# 후보 탐색 실패(PR #187 리뷰). 계약 B절 `notices[].code` 등재(2026-09-28).
+CANDIDATE_SEARCH_FAILED_NOTICE: dict[str, Any] = {
+    "code": "search.candidate_search_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.candidate_search_failed",
+    "actions": ["RETRY_SEARCH"],
+}
+
+
 # 번호판 판독 실행 실패(#172 [D] 4a). mock fixture(`scenario_infra_failure_001` rev2)가 이미 쓰는
 # 모양 그대로다 — 계약 B절 `notices[].code` 등재(2026-09-28).
 PLATE_READ_FAILED_NOTICE: dict[str, Any] = {
@@ -174,6 +188,8 @@ SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
 def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
+    - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
+      evidence 유무와 무관하다.
     - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
       유무와 무관하다.
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
@@ -188,6 +204,9 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
     derived = []
+    # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
+    if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
+        derived.append(CANDIDATE_SEARCH_FAILED_NOTICE)
     # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):

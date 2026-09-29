@@ -143,6 +143,10 @@ def _build_progress(
         "coarse_search": state_for(1),
         "candidate_review": state_for(2),
     }
+    # 후보 탐색 Run이 실패했으면 진행 중(RUNNING)으로 보이지 않게 한다 — 「결과 없음」과도,
+    # 「아직 찾는 중」과도 다른 상태다(PR #187 리뷰).
+    if case.candidate_search_failed:
+        progress["coarse_search"] = "FAILED"
     if stage_rank < 3:
         for step in ("plate_read", "overlay_time_read", "evidence_assembly", "requirement_check", "package_assembly"):
             progress[step] = "PENDING"

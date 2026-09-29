@@ -104,6 +104,10 @@ class ModuleAdapter(Protocol):
 
     def get_candidate_events(self) -> list[dict[str, Any]]: ...
 
+    def get_candidate_search_outcome(self) -> str | None:
+        """마지막 `CANDIDATE_SEARCH` Run의 `outcome`(SUCCEEDED·PARTIAL·FAILED). 없으면 None."""
+        ...
+
     def get_analysis_scopes(self) -> list[dict[str, Any]]: ...
 
     def get_evidence_record(self) -> dict[str, Any] | None: ...
@@ -148,6 +152,14 @@ class MockFixtureAdapter:
             if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH":
                 candidates.extend(entry.get("candidates", []))
         return candidates
+
+    def get_candidate_search_outcome(self) -> str | None:
+        runs = [
+            entry["analysis_run"]
+            for entry in self._load("search").get("analysis_run_candidate_events", [])
+            if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH"
+        ]
+        return runs[-1]["outcome"] if runs else None
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """search fixture에 실려있는 `AnalysisScope`(case가 Producer로 만들어 보낸 것)를
@@ -269,6 +281,7 @@ class RealAdapter:
         if not isinstance(scope, search_module.AnalysisScope):
             scope = search_module.AnalysisScope.model_validate(scope)
         result = search_module.search_candidates(scope)
+        self._last_search_outcome = str(result.analysis_run.outcome)
         return [
             {
                 "candidate_id": c.candidate_id,
@@ -277,6 +290,9 @@ class RealAdapter:
             }
             for c in result.candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """실제 대응이 없다 — case가 `AnalysisScope`의 Producer라(§`scope.py`), 다른
@@ -481,7 +497,9 @@ class RealVideoAdapter:
         선택한 것과 같은 객체를 다시 찾아 쓰게 한다(`RealAdapter`와 동일 원칙,
         2026-09-19 수정 참고)."""
         context = self._ensure_context()
-        candidates = real_e2e.get_real_video_candidates(context)
+        result = real_e2e.run_real_video_candidate_search(context)
+        self._last_search_outcome = str(result.analysis_run.outcome)
+        candidates = result.candidates
         self._candidates_by_id = {c.candidate_id: c for c in candidates}
         return [
             {
@@ -491,6 +509,9 @@ class RealVideoAdapter:
             }
             for c in candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         self._not_ready(

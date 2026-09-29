@@ -93,6 +93,10 @@ class CaseAggregate:
     job_records: list[dict[str, Any]] = field(default_factory=list)
     correction_records: list[dict[str, Any]] = field(default_factory=list)
 
+    # 마지막 후보 탐색(CANDIDATE_SEARCH Run)이 실패했는가. 실패 Run은 후보 0개라 「찾았지만 없음」과
+    # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
+    candidate_search_failed: bool = False
+
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
@@ -112,6 +116,15 @@ class CaseAggregate:
         # case_rev를 올리지 않는다 — "요청 시점 케이스 리비전"은 아직 바뀔 내용이 없다.
         self._advance("INTAKE", "SEARCHING", bump_case_rev=False)
 
+    def record_candidate_search_failure(self) -> None:
+        """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
+        바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
+        web이 「결과 없음」으로 그린다). stage는 `SEARCHING`에 머물고 실패 사실만 남긴다.
+        실패는 사용자 요청이 아니라 실행 결과라 `case_rev`를 올리지 않는다(§3-E)."""
+        if self.stage != "SEARCHING":
+            raise InvalidTransition(f"{self.stage}에서는 후보 탐색 실패를 받을 수 없다(SEARCHING 전용)")
+        self.candidate_search_failed = True
+
     def receive_candidates(self, candidates: list[Candidate]) -> None:
         """빈 배열(candidates=[])은 실패가 아니다 — `scenario_empty_001` 원칙(2026-09-14,
         실제 fixture로 검증: `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`도 검색 자체는
@@ -121,6 +134,7 @@ class CaseAggregate:
         `build_case_view()` 호출자가 채운다(CaseView 값만으로 발동하는 notice는
         `service.derive_notices()`가 붙인다 — 이슈 #48)."""
         self.candidates = list(candidates)
+        self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
 
     def select_candidate(self, candidate_id: str) -> None:
