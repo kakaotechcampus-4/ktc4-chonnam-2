@@ -48,13 +48,13 @@ _EVIDENCE = {"record_ref": {"kind": "evidence_record", "ref": "er_test_001"}}
 _PACKAGE = {"package_ref": {"kind": "report_package", "ref": "pkg_test_001"}}
 
 
-def _case_in_evidence_review() -> CaseAggregate:
+def _case_in_evidence_review(candidate_id: str = "cand_ready_gate") -> CaseAggregate:
     case = CaseAggregate.intake(case_id="case_ready_gate", hints={}, manifest_summary={})
     case.start_search()
     case.receive_candidates(
         [
             Candidate(
-                candidate_id="cand_ready_gate",
+                candidate_id=candidate_id,
                 at=None,
                 at_provenance="recording.timeline_relative_only",
                 observed="테스트 후보",
@@ -62,7 +62,7 @@ def _case_in_evidence_review() -> CaseAggregate:
             )
         ]
     )
-    case.select_candidate("cand_ready_gate")
+    case.select_candidate(candidate_id)
     return case
 
 
@@ -168,8 +168,9 @@ def test_real_adapter_not_observed_does_not_reach_ready(monkeypatch) -> None:
 
 
 def test_mock_happy_path_with_package_still_reaches_ready() -> None:
-    """Package가 있는 정상 경로(공용 Mock happy_001, `pkg_h001`)는 이 함수로 READY가 된다."""
-    case = _case_in_evidence_review()
+    """Package가 있는 정상 경로(공용 Mock happy_001, `pkg_h001`)는 이 함수로 READY가 된다.
+    fixture evidence의 `basis.candidate_ref`(`candidate_h001`)를 골라야 현재 선택 context로 투영된다(#173 E-4)."""
+    case = _case_in_evidence_review("candidate_h001")
     adapter = MockFixtureAdapter(MOCK_ROOT, "happy_001")
 
     assert service.mark_ready_if_package_ready(case, adapter) is True

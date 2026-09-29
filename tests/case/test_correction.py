@@ -137,7 +137,7 @@ def test_reselect_from_ready_starts_new_draft():
     """#173 E-4: 결과(READY) 화면에서도 다른 후보를 고를 수 있다. 새 selection context·새 초안이라
     EVIDENCE_REVIEW로 돌아가고, 이전 초안의 최종 검토(USER_REVIEWED)는 새 초안에 쓰지 않는다."""
     case = _case_at_evidence_review()
-    case.mark_ready()
+    case.mark_ready(report_package={"package_ref": {"kind": "report_package", "ref": "pkg_test_001"}})
     case.mark_reviewed()
     rev_before, sel_before = case.case_rev, case.selection_rev
 
