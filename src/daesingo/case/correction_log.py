@@ -80,7 +80,8 @@ def _anonymize_entry(record: dict[str, Any]) -> dict[str, Any]:
         "target_field": target_field,
         # §9-5 — correction이 발생한 selection_rev(candidate context)는 보존한다.
         "selection_rev": record["selection_rev"],
-        "supersedes_id": record["supersedes_id"],
+        # 학습 로그는 case 자체 내보내기 형식이라 ID 문자열로 평탄화해 둔다(형식 유지).
+        "supersedes_id": (record["supersedes_ref"] or {}).get("ref"),
         "corrected_at": record["corrected_at"],
         **values,
     }

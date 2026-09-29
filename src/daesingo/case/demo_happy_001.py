@@ -67,7 +67,8 @@ def run() -> dict[str, Any]:
         "(evidence.assemble_evidence/evaluate_requirements 등 실제 호출)...",
     )
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    # Package가 실제로 준비됐을 때만 READY(#167). 상황 응답 전이면 EVIDENCE_REVIEW에 남는다.
+    service.mark_ready_if_package_ready(case, real)
 
     _step(4, 4, "CaseView 조립 중 (case.get_view 실제 호출)...")
     view = service.get_view(CASE_ID, store=store)

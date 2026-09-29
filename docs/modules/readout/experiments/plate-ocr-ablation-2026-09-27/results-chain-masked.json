@@ -1,0 +1,1163 @@
+[
+  {
+    "video": "20260620_141956_EVT_1",
+    "gt": "390두27**",
+    "kind": "full",
+    "tracked": 1,
+    "used": 1,
+    "two_line": true,
+    "A": {
+      "text": "390521**",
+      "conf": 0.817,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "390521**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "90521**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "90521**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260729_191553_EVT_1",
+    "gt": "???12**",
+    "kind": "partial",
+    "tracked": 1,
+    "used": 1,
+    "two_line": false,
+    "A": {
+      "text": "**",
+      "conf": 0.218,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260731_060401_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 19,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "**",
+      "conf": 0.593,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 0.799,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 0.799,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "**",
+      "conf": 0.799,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "0001**",
+      "conf": 0.504,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260731_060401_EVT_1",
+    "gt": "05도32**",
+    "kind": "full",
+    "tracked": 18,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "3**",
+      "conf": 0.652,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "05532**",
+      "conf": 0.582,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "05532**",
+      "conf": 0.738,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260803_210212_EVT_1",
+    "gt": "340?23**",
+    "kind": "partial",
+    "tracked": 31,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "02**",
+      "conf": 0.477,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "341025**",
+      "conf": 0.884,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "341025**",
+      "conf": 0.884,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "300025**",
+      "conf": 0.881,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "30?2**",
+      "conf": 0.641,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260805_060120_EVT_1",
+    "gt": "385???**",
+    "kind": "partial",
+    "tracked": 4,
+    "used": 4,
+    "two_line": true,
+    "A": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260806_061434_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 5,
+    "used": 5,
+    "two_line": true,
+    "A": {
+      "text": "**",
+      "conf": 0.348,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 0.566,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 0.566,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "**",
+      "conf": 0.735,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260807_211824_EVT_1",
+    "gt": null,
+    "kind": "not_plate",
+    "tracked": 1,
+    "used": 1,
+    "two_line": true,
+    "A": {
+      "text": "",
+      "conf": 0.451,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260810_175721_EVT_1",
+    "gt": "47소03**",
+    "kind": "full",
+    "tracked": 31,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "47소03**",
+      "conf": 0.983,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "47소03**",
+      "conf": 0.979,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "47소03**",
+      "conf": 0.976,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "47소03**",
+      "conf": 0.954,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "47소03**",
+      "conf": 0.953,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260811_060734_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 29,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "",
+      "conf": 0.36,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "03**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260811_185525_EVT_1",
+    "gt": "전남82바52**",
+    "kind": "full",
+    "tracked": 25,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "바52**",
+      "conf": 0.947,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "바52**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "바52**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "천강2바52**",
+      "conf": 0.882,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "??2바52**",
+      "conf": 0.806,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260908_182051_INF_1",
+    "gt": "150소99**",
+    "kind": "full",
+    "tracked": 14,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "150소99**",
+      "conf": 0.994,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "150소99**",
+      "conf": 0.982,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "150소99**",
+      "conf": 0.982,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "150소99**",
+      "conf": 0.982,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "150소99**",
+      "conf": 0.957,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260810_183258_EVT_1",
+    "gt": "36수31**",
+    "kind": "full",
+    "tracked": 28,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "3631**",
+      "conf": 0.997,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "3631**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "3631**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "3631**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "3631**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260806_192353_EVT_1",
+    "gt": "23두48**",
+    "kind": "full",
+    "tracked": 31,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "23두48**",
+      "conf": 0.994,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "23?48**",
+      "conf": 0.665,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "23?48**",
+      "conf": 0.665,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "23?48**",
+      "conf": 0.665,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "48742**",
+      "conf": 0.577,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "183고31**",
+    "kind": "full",
+    "tracked": 31,
+    "used": 7,
+    "two_line": false,
+    "A": {
+      "text": "183고31**",
+      "conf": 0.996,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "183고31**",
+      "conf": 0.983,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "183고31**",
+      "conf": 0.983,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "183고31**",
+      "conf": 0.983,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "183고31**",
+      "conf": 0.974,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "183고31**",
+    "kind": "full",
+    "tracked": 16,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "083131**",
+      "conf": 0.856,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "183131**",
+      "conf": 0.919,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "183131**",
+      "conf": 0.919,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "183231**",
+      "conf": 0.917,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "183131**",
+      "conf": 0.895,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "?60?21**",
+    "kind": "partial",
+    "tracked": 19,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "1604**",
+      "conf": 0.513,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 0.606,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 0.606,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "60**",
+      "conf": 0.688,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "60**",
+      "conf": 0.609,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": null,
+    "kind": "not_plate",
+    "tracked": 1,
+    "used": 1,
+    "two_line": true,
+    "A": {
+      "text": "아이안경콘**",
+      "conf": 0.758,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "아이안경콘**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "아이안경콘**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "경콘틱트00**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "경콘틱트00**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "311고55**",
+    "kind": "full",
+    "tracked": 3,
+    "used": 3,
+    "two_line": true,
+    "A": {
+      "text": "311255**",
+      "conf": 0.938,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "311255**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "311255**",
+      "conf": 0.535,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "20368**",
+      "conf": 0.523,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "20368**",
+      "conf": 0.689,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 8,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "**",
+      "conf": 0.433,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "**",
+      "conf": 0.779,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "**",
+      "conf": 0.779,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "**",
+      "conf": 0.519,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "**",
+      "conf": 0.519,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "47?68**",
+    "kind": "partial",
+    "tracked": 2,
+    "used": 2,
+    "two_line": true,
+    "A": {
+      "text": "8**",
+      "conf": 0.391,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "8**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "8**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 1,
+    "used": 1,
+    "two_line": false,
+    "A": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "200허11**",
+    "kind": "full",
+    "tracked": 24,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "1114420**",
+      "conf": 0.808,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "200011**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "20011**",
+      "conf": 0.912,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "200011**",
+      "conf": 0.965,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "200011**",
+      "conf": 0.969,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "200허11**",
+    "kind": "full",
+    "tracked": 19,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "200011**",
+      "conf": 0.453,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "200011**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "20001**",
+      "conf": 0.941,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "200011**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "200011**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "206?10**",
+    "kind": "partial",
+    "tracked": 23,
+    "used": 7,
+    "two_line": true,
+    "A": {
+      "text": "206110**",
+      "conf": 0.837,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "20610**",
+      "conf": 0.822,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "20610**",
+      "conf": 0.817,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "206010**",
+      "conf": 0.919,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "206010**",
+      "conf": 0.926,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": null,
+    "kind": "unreadable",
+    "tracked": 1,
+    "used": 1,
+    "two_line": true,
+    "A": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "",
+      "conf": 0.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "youtube_clip_01",
+    "gt": "125호11**",
+    "kind": "full",
+    "tracked": 6,
+    "used": 6,
+    "two_line": false,
+    "A": {
+      "text": "125011**",
+      "conf": 0.808,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B": {
+      "text": "125?11**",
+      "conf": 0.892,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+R": {
+      "text": "125?11**",
+      "conf": 0.892,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RS": {
+      "text": "125?11**",
+      "conf": 0.892,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "B+RSV": {
+      "text": "125?11**",
+      "conf": 0.924,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  }
+]

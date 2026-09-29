@@ -14,7 +14,7 @@
 
 1. `JobRecord`는 "작업 1건당 하나의 Intent 기록"이다(`contract-job-record-case-view.md` A절 §4). 사용자가 "이어서 찾기" 버튼을 누르는 행위 자체가 새 Intent이므로, 정의상 새 `JobRecord`/`job_id`가 맞다.
 2. 기존 `actions[]` → 발주 매핑 컨벤션(`RETRY_PLATE_READ`, `RETRY_SEARCH`, `PLATE_REREAD` 발주 규칙)이 전부 "사용자가 재요청하면 새 `job_id`"로 일관돼 있다. "이어서 찾기"만 예외로 두면 이 원칙이 깨진다.
-3. "이미 찾은 후보를 버리지 않는다"(`docs/product/core-user-flow.md` §4)는 이 결정과 무관하게 이미 만족된다 — `CandidateEvent`는 case에 종속된 독립 레코드지 특정 `job_id`/`JobExecution.produced`에 갇혀 있지 않다. 어느 `job_id`가 만들었든 `CaseView.candidates[]`는 case 단위로 계속 유지된다. `RETRY_SEARCH`(조건 변경 후 재검색)도 이미 새 `job_id`를 쓰면서 "후보를 버리지 않는다"를 만족시키고 있어 이 요구가 job_id 재사용을 강제하지 않는다는 걸 보여준다.
+3. "이미 찾은 후보를 버리지 않는다"(`docs/product/core-user-flow.md` §4)는 이 결정과 무관하게 이미 만족된다 — `CandidateEvent`는 case에 종속된 독립 레코드지 특정 `job_id`/`JobExecution.produced`에 갇혀 있지 않다. 어느 `job_id`가 만들었든 `CandidateEvent`는 search Run 기록으로 계속 남는다. **(2026-09-28 갱신, #168 — 원래 문장 「`CaseView.candidates[]`는 case 단위로 계속 유지된다」를 대체):** 「버리지 않는다」는 `CandidateEvent`가 search Run 기록으로 남는다는 뜻으로 좁힌다. `CaseView.candidates[]` 투영은 가장 최근 성공한(`SUCCEEDED`) `CANDIDATE_SEARCH` Run의 후보만 내린다(Run 간 `rank` 겹침·중복 장면 방지, 실패 Run은 투영 대상을 바꾸지 않음) — `contract-job-record-case-view.md` §7 `RESUME_SEARCH` 행. `RETRY_SEARCH`(조건 변경 후 재검색)도 이미 새 `job_id`를 쓰면서 "후보를 버리지 않는다"를 만족시키고 있어 이 요구가 job_id 재사용을 강제하지 않는다는 걸 보여준다.
 
 ## 아직 미결로 남는 것
 
