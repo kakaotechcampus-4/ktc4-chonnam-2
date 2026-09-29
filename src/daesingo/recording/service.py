@@ -45,6 +45,7 @@ from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
 from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
+from .inspection import SourceFrameInspections, source_inspections
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 
@@ -119,6 +120,7 @@ class RecordingService:
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
         self._analysis_materializer = analysis_materializer
+        self._source_inspections = SourceFrameInspections()
         self._local_analysis: dict[str, tuple[AnalysisSource, bytes]] = {}
         self._analysis_reuse: dict[tuple, str] = {}
         self._local_analysis_refs: set[str] = set()
@@ -195,6 +197,7 @@ class RecordingService:
         self._analysis_reuse.clear()
         self._local_clips.clear()
         self._clip_identity.clear()
+        self._source_inspections.close()
         self._analysis_closed = True
 
     def __enter__(self):
@@ -499,7 +502,8 @@ class RecordingService:
             index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
             if index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
-            prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
+            with source_inspections(self._source_inspections):
+                prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
             source = AnalysisSource(
                 contract="AnalysisSource", contract_version="analysis-source-derived/v1",
                 analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
@@ -616,7 +620,8 @@ class RecordingService:
                 index = self._repository.get_local_stream_index(span.media_stream_ref)
                 if local is None or index is None:
                     raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
-                prepared = self._incident_materializer.materialize(local, index, span)
+                with source_inspections(self._source_inspections):
+                    prepared = self._incident_materializer.materialize(local, index, span)
             except _FrameCoverageError as error:
                 raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", str(error)) from None
             except (RecordingCapabilityError, ValueError, OSError):
