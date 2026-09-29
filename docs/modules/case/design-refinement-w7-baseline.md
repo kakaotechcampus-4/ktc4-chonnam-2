@@ -104,6 +104,20 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **참고:** 이슈 #106
 
+### 6.6순위 — worker 배선 시 재선택 가드 (#173 E-4 후속)
+
+**문제:** #173 E-4로 결과(`READY`) 화면에서도 다른 후보 선택을 허용했다(원자성·전이는 PR #189). E-4의 조건 두 개는 case가 비동기 Job 결과를 받는 경로가 생겨야 강제할 수 있어, 지금은 아래처럼 미뤄 뒀다(#173 [댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/173#issuecomment-5865032697)).
+
+| 할 일 | 지금 | worker 배선 때 |
+| --- | --- | --- |
+| **현재 선택 후보의 evidence만 투영** — ✅ 선반영(PR #191) | `build_case_view()`가 `EvidenceRecord.basis.candidate_ref`·`selection_rev`를 현재 선택과 비교해, 다르면 evidence·RequirementReport·ReportPackage를 투영하지 않는다(`evidence=null`) | 추가 작업 없음. web은 `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로(`selectScreen.ts`) **아래 조건 1의 전제**다 |
+| 조건 1 — 새 후보 준비 중 재선택 금지 | Flow §8-1대로 web 진행 화면이 재선택 동작을 제공하지 않는 규칙에 기댄다(신유민 확인 요청: PR #189 [댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/189#issuecomment-5865059619)) | 새 선택에 대해 발주한 Job의 `JobExecution` 완료 여부로 case가 `check_reselect()`에서 거부 |
+| 조건 2 — 늦게 온 이전 후보 결과 버리기 | 결과를 동기로만 받아 해당 없음 | 결과물의 `candidate_id`(readout `ReadRequest`, Fine `VisualEvidence`)를 현재 선택 후보와 대조해 다르면 버림. JobRecord 계약 변경은 필요 없음(관찰 결과는 후보에 묶이고, 사용자 입력만 선택 context에 묶인다) |
+
+**왜 이 순위:** 6순위(transport)·6.5순위(command 표면)와 같은 계열로, worker가 생기기 전에는 강제할 대상 자체가 없다. 추측으로 막으면 상황 응답 대기(준비 중이 아님)와 구분하지 못한다.
+
+**참고:** 이슈 #173 · #166 · PR #189
+
 ### 7순위 — Orchestration 평가 지표
 
 **문제:** 지금까지 이야기한 평가(intent-llm-model-comparison 등)는 전부 "LLM이 내용을 잘 뽑았는가"만 잰다. "Case가 올바르게 오케스트레이션했는가"는 따로 재는 게 없어서, 나중에 "LLM은 잘 답했는데 Case가 잘못 재실행했다"와 "Case는 맞는데 모델이 잘못 추출했다"를 구분할 수 없다.

@@ -57,9 +57,11 @@ export function selectScreen(view: CaseView): Screen {
       return { ...base, kind: 'PROGRESS', reason: 'stage=SEARCHING' }
     case 'CANDIDATE_REVIEW':
       // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다.
+      // 후보가 있으면 가장 유력한 후보로 초안을 준비하는 중이다(core-user-flow.md
+      // §8-1). 후보 비교는 기본 화면이 아니라 결과 화면의 「다른 후보 보기」다.
       return view.candidates.length === 0
         ? { ...base, kind: 'NO_RESULT', reason: 'stage=CANDIDATE_REVIEW · candidates 0건' }
-        : { ...base, kind: 'CANDIDATES', reason: `stage=CANDIDATE_REVIEW · 후보 ${view.candidates.length}건` }
+        : { ...base, kind: 'PROGRESS', reason: `stage=CANDIDATE_REVIEW · 후보 ${view.candidates.length}건 · 초안 준비 중` }
     case 'EVIDENCE_REVIEW':
       return { ...base, kind: 'EVIDENCE', reason: 'stage=EVIDENCE_REVIEW · evidence 있음' }
     case 'READY':

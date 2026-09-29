@@ -1,0 +1,542 @@
+[
+  {
+    "video": "20260620_141956_EVT_1",
+    "gt": "390두27**",
+    "kind": "full",
+    "used": 1,
+    "K1": {
+      "text": "51두21**",
+      "conf": 0.695,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "51두21**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    }
+  },
+  {
+    "video": "20260729_191553_EVT_1",
+    "gt": "???12**",
+    "kind": "partial",
+    "used": 1,
+    "K1": {
+      "text": "4로113**",
+      "conf": 0.474,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "4로113**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260731_060401_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 7,
+    "K1": {
+      "text": "1가4**",
+      "conf": 0.259,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "0가3?**",
+      "conf": 0.582,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260731_060401_EVT_1",
+    "gt": "05도32**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "25도32**",
+      "conf": 0.974,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "0도32**",
+      "conf": 0.586,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260803_210212_EVT_1",
+    "gt": "340?23**",
+    "kind": "partial",
+    "used": 7,
+    "K1": {
+      "text": "10부23**",
+      "conf": 0.995,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "2부23**",
+      "conf": 0.811,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260805_060120_EVT_1",
+    "gt": "385???**",
+    "kind": "partial",
+    "used": 4,
+    "K1": {
+      "text": "38마09**",
+      "conf": 0.142,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "556**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260806_061434_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 5,
+    "K1": {
+      "text": "55506**",
+      "conf": 0.467,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "5592**",
+      "conf": 0.769,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260807_211824_EVT_1",
+    "gt": null,
+    "kind": "not_plate",
+    "used": 1,
+    "K1": {
+      "text": "002**",
+      "conf": 0.295,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "002**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260810_175721_EVT_1",
+    "gt": "47소03**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "47소03**",
+      "conf": 0.88,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "47소03**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260811_060734_EVT_1",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 7,
+    "K1": {
+      "text": "49서95**",
+      "conf": 0.427,
+      "accepted": true,
+      "correct": null,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "49693**",
+      "conf": 0.713,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260811_185525_EVT_1",
+    "gt": "전남82바52**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "05구29**",
+      "conf": 0.398,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "035구29**",
+      "conf": 0.897,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    }
+  },
+  {
+    "video": "20260908_182051_INF_1",
+    "gt": "150소99**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "150소99**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "150소99**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260810_183258_EVT_1",
+    "gt": "36수31**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "36수31**",
+      "conf": 0.876,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "36수31**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "20260806_192353_EVT_1",
+    "gt": "23두48**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "23두48**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "23두48**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "183고31**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "183고3**",
+      "conf": 0.688,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "183고3**",
+      "conf": 0.971,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "183고31**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "2가오39**",
+      "conf": 0.111,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "???39**",
+      "conf": 0.503,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "?60?21**",
+    "kind": "partial",
+    "used": 7,
+    "K1": {
+      "text": "62소52**",
+      "conf": 0.305,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "????2**",
+      "conf": 0.502,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": null,
+    "kind": "not_plate",
+    "used": 1,
+    "K1": {
+      "text": "5오48**",
+      "conf": 0.372,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "5오48**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": "311고55**",
+    "kind": "full",
+    "used": 3,
+    "K1": {
+      "text": "371고55**",
+      "conf": 0.539,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "3987**",
+      "conf": 0.611,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125711",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 7,
+    "K1": {
+      "text": "5655502**",
+      "conf": 0.51,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "?5???**",
+      "conf": 0.471,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "47?68**",
+    "kind": "partial",
+    "used": 2,
+    "K1": {
+      "text": "56가52**",
+      "conf": 0.456,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    },
+    "K2": {
+      "text": "56가52**",
+      "conf": 1.0,
+      "accepted": true,
+      "correct": false,
+      "wrong_accept": true
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 1,
+    "K1": {
+      "text": "655**",
+      "conf": 0.318,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "655**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "200허11**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "200허11**",
+      "conf": 0.583,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "200허11**",
+      "conf": 0.931,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "200허11**",
+    "kind": "full",
+    "used": 7,
+    "K1": {
+      "text": "200허11**",
+      "conf": 0.931,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "200허11**",
+      "conf": 0.948,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": "206?10**",
+    "kind": "partial",
+    "used": 7,
+    "K1": {
+      "text": "20510**",
+      "conf": 0.973,
+      "accepted": false,
+      "correct": false,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "206라10**",
+      "conf": 0.851,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "MDR_260829_125810",
+    "gt": null,
+    "kind": "unreadable",
+    "used": 1,
+    "K1": {
+      "text": "505**",
+      "conf": 0.319,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "505**",
+      "conf": 1.0,
+      "accepted": false,
+      "correct": null,
+      "wrong_accept": false
+    }
+  },
+  {
+    "video": "youtube_clip_01",
+    "gt": "125호11**",
+    "kind": "full",
+    "used": 6,
+    "K1": {
+      "text": "125호11**",
+      "conf": 0.982,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    },
+    "K2": {
+      "text": "125호11**",
+      "conf": 0.896,
+      "accepted": true,
+      "correct": true,
+      "wrong_accept": false
+    }
+  }
+]
