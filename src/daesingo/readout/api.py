@@ -332,8 +332,8 @@ def _abstain_reason(association, best, disagreed):
     if best is not None:
         # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 한글 1자+일련번호만 읽힌 값은
         # 완전한 번호판이 아니다. 관찰값은 보존하지만 자동 확정하지 않는다.
-        normalized = re.sub(r"\\s+", "", best.text or "")
-        if re.fullmatch(r"[가-힣]\\d{4}", normalized):
+        normalized = re.sub(r"\s+", "", best.text or "")
+        if re.fullmatch(r"[가-힣]\d{4}", normalized):
             return "PARTIAL_PLATE_READ"
         # 대상 crop은 검출용으로 한글이 빠진 숫자 문자열도 보존한다. 다만 이것은
         # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
