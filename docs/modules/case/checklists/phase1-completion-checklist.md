@@ -119,7 +119,7 @@
 
 ### H. Operational
 
-- [ ] Timeout / Long-running Job Fallback 정책(A-1) 최소 구현 — `docs/modules/case/decisions/timeout-fallback.md` 기준 — **막힘(2026-09-14)**: 결정 문서 자체가 구체 threshold 수치를 `search` baseline 실측 대기로 명시하고, job 유지/취소 정책 표도 "미결"로 남겨뒀다 — case가 숫자를 임의로 정하면 결정문이 금지하는 것을 그대로 어기게 되어 보류(negligence 아니라 결정문 자체의 blocking)
+- [ ] Timeout / Long-running Job Fallback 정책(A-1) 최소 구현 — `docs/modules/case/decisions/timeout-fallback.md` 기준 — **막힘(2026-09-14)**: 결정 문서 자체가 구체 threshold 수치를 `search` baseline 실측 대기로 명시하고, job 유지/취소 정책 표도 "미결"로 남겨뒀다 — case가 숫자를 임의로 정하면 결정문이 금지하는 것을 그대로 어기게 되어 보류(negligence 아니라 결정문 자체의 blocking) → **2026-09-28 갱신:** search 현재 경로 실측(#182)으로 잠정값과 Job 유지/취소 원칙을 결정 문서에 적었다(#72). 남은 것은 구현(클립 분할 발주·Job별 `max_latency_sec` 적용)과 runtime 머신 재측정 후 확정
 - [ ] `purge_case(case_id) -> DeletionReport` 발주 경로 — recording의 `case_asset_links`(§9 접합부 참고, `erd-draft.md` §4.1)가 이 호출의 삭제 대상 조회 근거가 된다 — recording 쪽 등록 경계 호출 방식이 §3-F/§9와 같은 이유로 아직 통합 대기라 case 혼자 완결 불가
 
 ---
@@ -211,7 +211,7 @@ Merge PR에 아래 중 **case가 실제로 낼 수 있는 것**을 첨부한다(
 | Eval Ground Truth(`expected/*.expected.json`) | 통합 대기(타 담당) | `case`는 이 디렉터리를 손대지 않기로 합의(`eval-round2-ground-truth-and-usage.md`), 김대원 담당 |
 | ~~`EvidenceNeeds.items` → Job Intent 자동 매핑~~ | **해소(2026-09-14)** | `jobs.issue_needed_jobs()` — 원본 Job의 `input_fingerprint` 재사용, `force_rerun=true` 세팅까지 `test_jobs.py` 3건 + `scenario_plate_reread_001` smoke test로 검증됨 |
 | ~~`candidates[].stale_revision` 파생 계산~~ | **해소(2026-09-14)** | `view._build_candidates_view()` — `current_timeline_revision` 비교 방식, `scenario_relative_rebase_001` smoke test로 검증됨 |
-| Timeout/Long-running Job Fallback 수치·정책(A-1) | 통합 대기(막힘) | `timeout-fallback.md`가 threshold 수치를 `search` baseline 실측 대기로, job 유지/취소 정책을 "미결"로 명시 — case가 임의로 숫자를 정하면 결정문 위반, 실제 미완료 아니라 case 혼자 끝낼 수 없는 항목 |
+| Timeout/Long-running Job Fallback 수치·정책(A-1) | 잠정값 기재(2026-09-28, #72) · 구현 남음 | `timeout-fallback.md`가 threshold 수치를 `search` baseline 실측 대기로, job 유지/취소 정책을 "미결"로 명시 — case가 임의로 숫자를 정하면 결정문 위반, 실제 미완료 아니라 case 혼자 끝낼 수 없는 항목 |
 | hints(time/vehicle/situation/location) 구조화 | 통합 대기(막힘) | "구조화"의 정의(파싱 규칙 vs 필드 검증 vs 기타)가 어느 문서에도 없음 — 팀 확인 없이 case 혼자 스펙을 만들 수 없어 현재는 pass-through만 구현 |
 | ~~`TIME_HINT_EDIT`/`OTHER_CANDIDATE` 역행·재선택 전이~~ | **해소(2026-09-14)** | `domain.regress_to_searching()`/`reselect_candidate()` + `correction.edit_time_hint()`/`reselect_candidate()` — `부분 재실행 정책 표 초안` 근거로 구현, `test_domain.py`/`test_correction.py`로 검증(fixture 없이 연구 메모 기준 자체 설계) |
 | major `TIMELINE_REBASE` 역행 전이 | 통합 대기(막힘) | `부분 재실행 정책 표 초안` 문서 자체가 "신유민(web)과 화면 흐름을 확인해야 한다"고 명시 — case 혼자 결정할 수 없는 접합부 항목 |
