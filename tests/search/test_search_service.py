@@ -23,7 +23,8 @@ from daesingo.search.usage import ProviderUsage
 from tests.search._search_service_support import (
     FixtureMediaPreparer,
     OpenableResolver,
-    make_deadline,
+    frozen_clock,
+    remember_coarse_run,
 )
 
 
@@ -88,7 +89,7 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
         _Provider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(source.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
     scope = AnalysisScope(
         scope_id="scope-1",
@@ -129,7 +130,7 @@ def test_fine_routes_legacy_event_name_to_the_contract_enum():
         _Provider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(source.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
     candidate = CandidateEvent(
         candidate_id=CandidateId("candidate-1"),
@@ -149,6 +150,7 @@ def test_fine_routes_legacy_event_name_to_the_contract_enum():
         thumbnail_ref=None,
     )
 
+    remember_coarse_run(service, candidate.run_id)
     result = service.verify_visual(
         ContractRef(kind="analysis_source", ref="source-1"),
         candidate,

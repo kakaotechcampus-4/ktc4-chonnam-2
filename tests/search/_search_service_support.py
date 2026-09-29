@@ -5,8 +5,9 @@ from pathlib import Path
 
 from daesingo.search.execution import RunDeadline
 from daesingo.search.media import MediaInput, PreparedMedia
-from daesingo.search.runs import ContractRef
+from daesingo.search.runs import ContractRef, RunId
 from daesingo.search.scope import AnalysisScope
+from daesingo.search.service import SearchService
 from daesingo.search.sources import AnalysisSourceResolver, ResolvedAnalysisSource
 
 
@@ -86,5 +87,18 @@ def _prepared_fine_media(start_sec: float, end_sec: float) -> Generator[Prepared
     )
 
 
-def make_deadline() -> RunDeadline:
-    return RunDeadline(lambda: 0.0, budget_ms=30_000)
+def frozen_clock() -> float:
+    """시간이 흐르지 않는 monotonic — deadline이 테스트 도중 만료되지 않는다."""
+    return 0.0
+
+
+def remember_coarse_run(
+    service: SearchService, run_id: RunId, budget_ms: int = 30_000
+) -> SearchService:
+    """손으로 만든 후보의 Coarse run을 service가 실행한 것처럼 등록한다.
+
+    실제로는 search_candidates()가 등록한다. Fine 단위 테스트가 Coarse를 매번
+    돌리지 않도록 그 결과만 재현한다.
+    """
+    service._run_budget_ms[run_id] = budget_ms  # pyright: ignore[reportPrivateUsage]
+    return service
