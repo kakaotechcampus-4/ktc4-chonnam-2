@@ -60,11 +60,14 @@ def build_view(video_path: str, target_event_types: list[str] | None = None):
                 raw_candidate.span.representative_ms,
             )
         )
-        case.select_candidate(candidates[0].candidate_id)
+        # 가장 유력한 후보(rank=1)를 case가 자동 선택한다(#122, core-user-flow §8-1).
+        if case.select_top_ranked() is None:
+            raise SystemExit("자동 선택할 rank=1 후보가 없습니다(후보 없음 또는 stale).")
 
         jobs.issue_plate_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-plate-read")
         jobs.issue_overlay_time_read(case, input_fingerprint=f"sha1:{SCOPE_ID}-overlay-read")
-        case.mark_ready()
+        # Package가 실제로 준비됐을 때만 READY(#167). 막히면 EVIDENCE_REVIEW에 남는다.
+        service.mark_ready_if_package_ready(case, real)
 
         view = service.build_view_from_adapter(case, real)
         # `_build_evidence_bundle()`가 위 build_view_from_adapter() 호출 중에 이미

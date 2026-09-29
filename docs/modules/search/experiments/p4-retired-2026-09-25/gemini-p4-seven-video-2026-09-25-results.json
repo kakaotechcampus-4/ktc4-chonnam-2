@@ -1,0 +1,359 @@
+{
+  "schema_version": "search-p4-seven-video-probe/v1",
+  "started_at_utc": "2026-09-25T11:17:54.020297+00:00",
+  "model": "gemini-3.8-flash",
+  "prompt_revision": "p4",
+  "config_fingerprint": "159784d7c372470d15b9ff8f031684632157806b2e5c5388ffce62d0f0828e05",
+  "coarse_fps": 1.0,
+  "fine_fps": 2.0,
+  "fine_padding_sec": 4.0,
+  "max_retries": 0,
+  "target_policy": "ground_truth_event_type_per_video",
+  "fine_policy": "every_coarse_candidate",
+  "cases": [
+    {
+      "file": "20260620_141628_EVT_1.avi",
+      "sha256": "7ab930fa0d04b30bfc7f45105c715b3a726476bbbc4f6a5ff3079ff8cf3e4433",
+      "duration_sec": 20.023322,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": null,
+      "truth_label": "no_lane_change",
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 0,
+          "end_ms": 3500,
+          "representative_ms": 1500,
+          "ranking_score": 1.0,
+          "overlaps_truth": false,
+          "fine": {
+            "outcome": "SUCCEEDED",
+            "verification": "NOT_OBSERVED",
+            "visual_event_type": null,
+            "non_present_primitives": [
+              {
+                "kind": "solid_line_lane_change.marking_at_crossing",
+                "state": "ABSENT"
+              }
+            ],
+            "uncertainty_codes": []
+          },
+          "uncertainty_count": 1
+        }
+      ],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 2099,
+          "input_tokens": 1826,
+          "output_tokens": 273,
+          "latency_ms": 5563
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2058,
+          "input_tokens": 1202,
+          "output_tokens": 856,
+          "latency_ms": 5687
+        }
+      ]
+    },
+    {
+      "file": "20260620_141927_EVT_1.avi",
+      "sha256": "38613ce89e712365c4da11d6dba97a919cc7751ab82dd549c9fc2512a5fb2490",
+      "duration_sec": 20.024656,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": [
+        4000,
+        9000
+      ],
+      "truth_label": "solid_crossing",
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 11000,
+          "end_ms": 15000,
+          "representative_ms": 13000,
+          "ranking_score": 0.6,
+          "overlaps_truth": false,
+          "fine": {
+            "error_type": "ProviderPayloadError",
+            "error": "p4 lane marking contradicts predicate state"
+          },
+          "uncertainty_count": 1
+        }
+      ],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 2122,
+          "input_tokens": 1826,
+          "output_tokens": 296,
+          "latency_ms": 3906
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2542,
+          "input_tokens": 1473,
+          "output_tokens": 1069,
+          "latency_ms": 9828
+        }
+      ]
+    },
+    {
+      "file": "20260620_141956_EVT_1.avi",
+      "sha256": "5c82b6f7b163ae400fbdc20a2a121f639ed32b141e0b0c9682eef531a6114008",
+      "duration_sec": 20.024656,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": null,
+      "truth_label": "dashed_change_10000_14000",
+      "candidates": [],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 1835,
+          "input_tokens": 1826,
+          "output_tokens": 9,
+          "latency_ms": 3125
+        }
+      ]
+    },
+    {
+      "file": "20260620_150504_EVT_1.avi",
+      "sha256": "b03f2652caccda5b1bafa63a2c29f9b725e9ebdb30aa5390535a8bad5802e85a",
+      "duration_sec": 20.025323,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": null,
+      "truth_label": "no_lane_change",
+      "candidates": [],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 1835,
+          "input_tokens": 1826,
+          "output_tokens": 9,
+          "latency_ms": 3157
+        }
+      ]
+    },
+    {
+      "file": "youtube_clip_01.mp4",
+      "sha256": "1a430ba27eb95568bcaa79eb092786eac9030046c073f09853258ba543bdcd64",
+      "duration_sec": 5.533333,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": [
+        2000,
+        5000
+      ],
+      "truth_label": "solid_crossing",
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 0,
+          "end_ms": 3500,
+          "representative_ms": 1500,
+          "ranking_score": 1.0,
+          "overlaps_truth": true,
+          "fine": {
+            "outcome": "SUCCEEDED",
+            "verification": "UNCERTAIN",
+            "visual_event_type": null,
+            "non_present_primitives": [
+              {
+                "kind": "solid_line_lane_change.marking_at_crossing",
+                "state": "UNCERTAIN"
+              }
+            ],
+            "uncertainty_codes": [
+              "ROAD_MARKING_IDENTITY_AMBIGUITY"
+            ]
+          },
+          "uncertainty_count": 1
+        }
+      ],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 1141,
+          "input_tokens": 901,
+          "output_tokens": 240,
+          "latency_ms": 2953
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2035,
+          "input_tokens": 1070,
+          "output_tokens": 965,
+          "latency_ms": 5328
+        }
+      ]
+    },
+    {
+      "file": "YT_0003_C05.mp4",
+      "sha256": "efdc135c5f86d5cffb8657defdea388e47d55c91006bdd1e541375ab0e73259f",
+      "duration_sec": 60.0,
+      "target_event_type": "SOLID_LINE_LANE_CHANGE",
+      "truth_span_ms": [
+        10000,
+        13000
+      ],
+      "truth_label": "solid_crossing",
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 2000,
+          "end_ms": 7000,
+          "representative_ms": 4500,
+          "ranking_score": 1.0,
+          "overlaps_truth": false,
+          "fine": {
+            "outcome": "SUCCEEDED",
+            "verification": "NOT_OBSERVED",
+            "visual_event_type": null,
+            "non_present_primitives": [
+              {
+                "kind": "solid_line_lane_change.marking_at_crossing",
+                "state": "ABSENT"
+              }
+            ],
+            "uncertainty_codes": []
+          },
+          "uncertainty_count": 1
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 30000,
+          "end_ms": 36000,
+          "representative_ms": 33000,
+          "ranking_score": 1.0,
+          "overlaps_truth": false,
+          "fine": {
+            "error_type": "ProviderPayloadError",
+            "error": "p4 lane marking contradicts predicate state"
+          },
+          "uncertainty_count": 1
+        },
+        {
+          "rank": 3,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "start_ms": 53000,
+          "end_ms": 58000,
+          "representative_ms": 55500,
+          "ranking_score": 0.6,
+          "overlaps_truth": false,
+          "fine": {
+            "error_type": "ProviderPayloadError",
+            "error": "p4 lane marking contradicts predicate state"
+          },
+          "uncertainty_count": 1
+        }
+      ],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 5223,
+          "input_tokens": 4466,
+          "output_tokens": 757,
+          "latency_ms": 6187
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2251,
+          "input_tokens": 1405,
+          "output_tokens": 846,
+          "latency_ms": 6015
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2694,
+          "input_tokens": 1607,
+          "output_tokens": 1087,
+          "latency_ms": 5609
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "aa39ac84834a0683ebfd690ced7f944c1bd4fd86f3608695767226a191a2f716",
+          "tokens": 2356,
+          "input_tokens": 1408,
+          "output_tokens": 948,
+          "latency_ms": 5422
+        }
+      ]
+    },
+    {
+      "file": "YT_0002_C00.mp4",
+      "sha256": "8104ed56befd62334410aa9c5bbf1a3690dc995d52794e3edee744c5e830edb2",
+      "duration_sec": 20.079365,
+      "target_event_type": "CENTER_LINE_CROSSING",
+      "truth_span_ms": [
+        11000,
+        14000
+      ],
+      "truth_label": "centerline_crossing",
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "start_ms": 11000,
+          "end_ms": 15000,
+          "representative_ms": 13000,
+          "ranking_score": 1.0,
+          "overlaps_truth": true,
+          "fine": {
+            "error_type": "ProviderPayloadError",
+            "error": "p4 NOT_OBSERVED lacks a visible contradiction"
+          },
+          "uncertainty_count": 1
+        }
+      ],
+      "coarse_outcome": "SUCCEEDED",
+      "coarse_issues": [],
+      "usage": [
+        {
+          "prompt_version": "coarse-p4",
+          "prompt_fingerprint": "f51753ef96df96fc6fff154a55def6e5464a893f037a238a4b3a9873eccbfe96",
+          "tokens": 2100,
+          "input_tokens": 1824,
+          "output_tokens": 276,
+          "latency_ms": 3406
+        },
+        {
+          "prompt_version": "fine-p4",
+          "prompt_fingerprint": "457d679814cd0cf5ad8d41af42b2d0380584d57c49da283fae01cc2425512140",
+          "tokens": 2378,
+          "input_tokens": 1421,
+          "output_tokens": 957,
+          "latency_ms": 7188
+        }
+      ]
+    }
+  ]
+}

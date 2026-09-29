@@ -112,6 +112,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_r001",
+          "rank": 1,
+          "marker_ms": 930000,
           "at": "2026-08-27T13:15:30+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -169,6 +171,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_r001_plate1",
+        "plate_preview_ref": "fr_r001_plate1",
         "review_needed": true,
         "reason_code": "evidence.event_time_needs_review"
       },
@@ -244,6 +247,20 @@
           "blocking": false,
           "message_key": "notice.overlay_not_present",
           "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
+          "actions": []
         }
       ]
     },
@@ -307,6 +324,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_r001",
+          "rank": 1,
+          "marker_ms": 930000,
           "at": "2026-08-27T13:15:30+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -364,6 +383,7 @@
         },
         "user_edited": true,
         "preview_ref": "fr_r001_plate1",
+        "plate_preview_ref": "fr_r001_plate1",
         "review_needed": false,
         "reason_code": null
       },
@@ -438,6 +458,20 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.overlay_not_present",
+          "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
           "actions": []
         }
       ]

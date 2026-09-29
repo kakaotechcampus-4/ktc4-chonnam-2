@@ -1,15 +1,15 @@
 {
   "scenario_id": "real_e2e_happy_001",
   "module": "case",
-  "generated_at": "2026-09-20T21:19:50+09:00",
+  "generated_at": "2026-09-28T21:40:44+09:00",
   "generated_by": "scripts/dump_real_caseview.py",
   "case_views": [
     {
       "contract": "CaseView",
       "contract_version": "case-view/v1.4",
       "case_id": "case_h001_real_e2e",
-      "case_rev": 3,
-      "stage": "READY",
+      "case_rev": 2,
+      "stage": "EVIDENCE_REVIEW",
       "user_reviewed": false,
       "manifest_summary": {},
       "hints": {
@@ -49,7 +49,7 @@
         },
         {
           "step": "package_assembly",
-          "state": "DONE"
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -103,20 +103,20 @@
           "source_label_key": "time.source.overlay_ocr"
         },
         "location_display": {
-          "value": null,
+          "value": "상무중앙로 사거리 부근",
           "needs_review": false,
-          "info_state": "INFO_UNKNOWN",
-          "source_label_key": null,
+          "info_state": "INFO_NEEDS_REVIEW",
+          "source_label_key": "location.source.user_hint",
           "coord": null,
           "search_keyword": null
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
-        "review_needed": false,
-        "reason_code": null
+        "review_needed": true,
+        "reason_code": "evidence.location_needs_review"
       },
       "requirements_evidence": {
-        "readiness": "WARN",
+        "readiness": "PASS",
         "checks": [
           {
             "code": "evidence.vehicle_number.present",
@@ -157,8 +157,8 @@
           {
             "code": "evidence.location.present",
             "category": "LOCATION",
-            "outcome": "WARN",
-            "reason_code": "evidence.location_unavailable",
+            "outcome": "PASS",
+            "reason_code": "evidence.location_available",
             "subject_refs": [
               {
                 "kind": "evidence_record",
@@ -193,8 +193,8 @@
           {
             "code": "package.location.present",
             "category": "LOCATION",
-            "outcome": "WARN",
-            "reason_code": "package.location_unavailable",
+            "outcome": "PASS",
+            "reason_code": "package.location_available",
             "subject_refs": [
               {
                 "kind": "evidence_record",
@@ -370,7 +370,7 @@
               }
             ],
             "measurement": {
-              "actual": 1789906790,
+              "actual": 1790599244,
               "limit": 1787756400,
               "unit": "deadline.epoch_seconds"
             },
@@ -393,7 +393,15 @@
       },
       "package": null,
       "running_jobs": [],
-      "notices": []
+      "notices": [
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        }
+      ]
     }
   ]
 }

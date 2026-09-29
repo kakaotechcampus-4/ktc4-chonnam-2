@@ -72,7 +72,7 @@ uv run python -m eval.run \
 uv run python -m eval.score --prediction <run_id>
 ```
 
-`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `google-genai>=2.13`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
+`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `openai>=1.40`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
 
 평가는 담당자 로컬에서 돈다 — 데이터·`GEMINI_API_KEY`·프록시 접근은 각자의 로컬 `.env` 에 있다. 모든 Gemini 호출은 프록시 base URL(Bearer 인증, `GEMINI_API_KEY`)을 경유한다. 운영 baseline과 프록시 규칙은 `docs/modules/search/decisions/gemini-3.8-proxy-baseline-2026-09-18.md`.
 

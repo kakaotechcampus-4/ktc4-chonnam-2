@@ -1,0 +1,181 @@
+{
+  "video": "20260810_183258_EVT_1.avi",
+  "at_sec": 10.013,
+  "fps": 30.012,
+  "frame_wh": [
+    1920,
+    1080
+  ],
+  "plate_bbox": [
+    618,
+    682,
+    105,
+    39
+  ],
+  "crop_box": [
+    592,
+    656,
+    157,
+    91
+  ],
+  "gt": "36수3105",
+  "fusion_frames_used": [
+    0,
+    -4,
+    -3,
+    -2,
+    -1,
+    1,
+    2,
+    3,
+    4
+  ],
+  "rows": [
+    {
+      "variant": "00_원본(1x)",
+      "size": "157x91",
+      "texts": [
+        [
+          "",
+          0.0
+        ],
+        [
+          "363105",
+          0.99
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 1.64
+    },
+    {
+      "variant": "01_3x_cubic(현재)",
+      "size": "471x273",
+      "texts": [
+        [
+          "36 3105",
+          0.932
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 0.98
+    },
+    {
+      "variant": "02_3x_lanczos",
+      "size": "471x273",
+      "texts": [
+        [
+          "36 3105",
+          0.938
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 0.98
+    },
+    {
+      "variant": "03_3x+CLAHE",
+      "size": "471x273",
+      "texts": [
+        [
+          "366 3105",
+          0.842
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 1.01
+    },
+    {
+      "variant": "04_3x+unsharp",
+      "size": "471x273",
+      "texts": [
+        [
+          "363105",
+          0.996
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 0.99
+    },
+    {
+      "variant": "05_3x+denoise+unsharp",
+      "size": "471x273",
+      "texts": [
+        [
+          "36",
+          0.968
+        ],
+        [
+          "3105",
+          0.968
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 1.62
+    },
+    {
+      "variant": "06_fusion(9프레임)",
+      "size": "471x273",
+      "texts": [
+        [
+          "363105",
+          0.998
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 1.03
+    },
+    {
+      "variant": "07_fusion+unsharp",
+      "size": "471x273",
+      "texts": [
+        [
+          "363105",
+          0.996
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 0.98
+    },
+    {
+      "variant": "08_fusion+CLAHE+unsharp",
+      "size": "471x273",
+      "texts": [
+        [
+          "36",
+          0.987
+        ],
+        [
+          "3105",
+          0.938
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 1.71
+    },
+    {
+      "variant": "09_5x_cubic",
+      "size": "785x455",
+      "texts": [
+        [
+          "3105",
+          0.994
+        ],
+        [
+          "36",
+          0.996
+        ]
+      ],
+      "exact": false,
+      "has_hangul": false,
+      "sec": 2.58
+    }
+  ]
+}

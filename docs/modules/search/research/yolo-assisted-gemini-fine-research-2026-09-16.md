@@ -87,6 +87,7 @@ Gemini 입력으로는 원본 영상과 key frame 조합을 우선 비교한다.
 - [Gemini video understanding 문서](https://ai.google.dev/gemini-api/docs/video-understanding):
   한 요청에서 여러 영상과 텍스트를 조합할 수 있고 static 처리의 FPS를 지정할 수 있다.
   기본 static 처리는 1 FPS이므로 빠른 사건은 별도 key frame 또는 높은 FPS가 필요하다.
+  (2026-09-28: 현재 프록시 경로에서는 FPS·해상도 지정이 전달되지 않는다. [09-28 실험](../experiments/gemini-proxy-video-sampling-2026-09-28.md))
 - [Ultralytics 라이선스 안내](https://www.ultralytics.com/ko/license): 전체 프로젝트의
   AGPL-3.0 준수 또는 Enterprise license가 필요한 사용 조건을 안내한다. 현재 저장소는 MIT이므로
   실제 의존성·가중치 도입 전 별도 라이선스 검토가 필요하다.
@@ -392,7 +393,7 @@ Fine 비교안은 다음을 포함한다.
 
 1. 원본 후보 클립을 현재 Fine 설정으로 처리
 2. critical timestamp 전후의 주석 key frame을 별도 이미지로 전달
-3. 필요 시 Fine video FPS를 올리되 비용·지연을 함께 기록
+3. 필요 시 Fine video FPS를 올리되 비용·지연을 함께 기록 (현재 프록시 경로에서는 불가 — [09-28 실험](../experiments/gemini-proxy-video-sampling-2026-09-28.md))
 
 Gemini에 전체 원본 clip과 전체 overlay clip을 동시에 넣는 방식은 입력량이 커지므로 독립 variant로
 측정하고 기본안으로 가정하지 않는다.
@@ -403,12 +404,7 @@ Gemini에 전체 원본 clip과 전체 overlay clip을 동시에 넣는 방식�
 
 ### 11.1 개방 전제
 
-아래 실험은 다음 절차를 통과한 뒤 수행한다.
-
-1. `eval`이 동일 정답지로 baseline failure를 집계한다.
-2. `PRIMITIVE_FAILURE` 또는 `TARGET_ASSOCIATION`이 CV challenger 필요성을 지목한다.
-3. Search Owner가 근거·예상 비용과 함께 주간 회의 안건으로 올린다.
-4. PM 승인 뒤 Spike 실행과 결과를 `experiments/`에 기록한다.
+아래 실험은 [챌린저 정책](../decisions/challenger-policy.md)의 개방 절차를 통과한 뒤 수행한다. 이 조사에 해당하는 실패 분류는 `PRIMITIVE_FAILURE`·`TARGET_ASSOCIATION`이다.
 
 ### 11.2 비교 variant
 
@@ -462,7 +458,7 @@ Gemini에 전체 원본 clip과 전체 overlay clip을 동시에 넣는 방식�
 
 ### 11.5 채택 게이트 제안
 
-최종 게이트는 실험 전에 `eval`과 합의해야 한다. 시작점으로 기존 Fine 비교 계획을 따른다.
+최종 게이트는 실험 전에 `eval`과 합의해야 한다(#158 합의 대기). 아래는 가설값이다.
 
 - E2E recall 저하 3 percentage points 이내
 - precision 5pp 이상 증가 또는 false positive 25% 이상 감소

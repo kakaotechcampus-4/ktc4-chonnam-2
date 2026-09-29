@@ -90,9 +90,9 @@ export function reviewReason(code: string | null): string {
   return REVIEW_REASON_MESSAGES[code] ?? REVIEW_REASON_FALLBACK
 }
 
-/** 안내 문구 — `notices[].message_key` (v5 fixture 실측 13종 + 계약 등재 1종).
+/** 안내 문구 — `notices[].message_key` (v5 fixture 실측 13종 + 계약 등재 2종).
  *
- * 마지막 1종은 fixture에 아직 안 나온다. 아래 테스트가 fixture에 있는 키만
+ * 마지막 2종은 fixture에 아직 안 나온다. 아래 테스트가 fixture에 있는 키만
  * 훑으므로 이 항목은 검사에 안 걸린다 — 키 문자열은 계약에서 그대로 옮긴다
  * (`contract-job-record-case-view.md` §`notices[].code`, 2026-09-14 등재). */
 const NOTICE_MESSAGES: Record<string, string> = {
@@ -114,6 +114,9 @@ const NOTICE_MESSAGES: Record<string, string> = {
   // 아니라 `location_display.search_keyword == null`이다.
   'notice.location_search_keyword_missing':
     '지도에 붙여넣을 검색어를 만들지 못했습니다. 기억나는 장소로 직접 검색해 주세요.',
+  // #171 C-2 — 상황 응답 전이라 Package가 나가지 않은 상태. 응답 버튼은 이
+  // notice의 action이 아니라 #106 command로 연다.
+  'notice.situation_response_pending': '신고 상황을 확인해 주시면 신고자료를 준비하겠습니다.',
 }
 
 export const NOTICE_FALLBACK = '확인이 필요한 항목이 있습니다.'
