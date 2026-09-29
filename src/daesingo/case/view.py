@@ -156,6 +156,11 @@ def _build_progress(
                 progress[step] = "RUNNING"
             else:
                 progress[step] = "PENDING"
+        # 번호판 판독이 실행 실패여도 evidence는 번호판 없이 조립된다 — evidence가 있다는 이유로
+        # plate_read를 DONE으로 덮으면 실행 실패(4a)가 「읽지 못함」(1·3)과 구분되지 않는다
+        # (#172 [D]). 실행 상태가 보고됐으면 그 값을 쓴다.
+        if plate_read_status is not None:
+            progress["plate_read"] = _job_execution_status_to_progress_state(plate_read_status)
         # ⚠️ requirement_check은 package_assembly와 별개 게이트다(`scenario_plate_reread_001`로
         # 확인 — requirements_evidence가 이미 존재해도 report_package는 아예 발주 안 될 수 있다).
         # package_assembly는 신뢰 가능한 "생성 중" 신호가 없어 낙관적으로 RUNNING을 보여주지 않는다

@@ -281,6 +281,10 @@ class EvidenceBundle:
     visual_evidence: dict[str, Any]
     fine_run: dict[str, Any]
     disposition: VisualEvidenceDisposition
+    # 번호판 판독 실행 결과 `ReadoutRun.outcome`(SUCCEEDED·PARTIAL·FAILED). 판독을 시작하지
+    # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
+    # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
+    plate_read_outcome: str | None = None
 
     @property
     def assembled(self) -> bool:
@@ -307,6 +311,8 @@ class ObservationBundle:
     overlay_readout: dict[str, Any] | None = None
     time_source_candidates: list[dict[str, Any]] = field(default_factory=list)
     asset_facts: list[dict[str, Any]] = field(default_factory=list)
+    # 번호판 판독 `ReadoutRun.outcome`(#172 [D]). 판독을 시작하지 않았으면 None.
+    plate_read_outcome: str | None = None
 
 
 def assemble_evidence_bundle(
@@ -335,6 +341,7 @@ def assemble_evidence_bundle(
             visual_evidence=obs.visual_evidence,
             fine_run=obs.fine_run,
             disposition=obs.disposition,
+            plate_read_outcome=obs.plate_read_outcome,
         )
 
     candidate_event = obs.candidate.model_dump(mode="json")
@@ -412,6 +419,7 @@ def assemble_evidence_bundle(
         visual_evidence=obs.visual_evidence,
         fine_run=obs.fine_run,
         disposition=obs.disposition,
+        plate_read_outcome=obs.plate_read_outcome,
     )
 
 
@@ -531,7 +539,7 @@ def observe_happy_001_candidate(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    _plate_run, plate_readout = readout_api.read_plate(
+    plate_run, plate_readout = readout_api.read_plate(
         read_request, provider=readout_providers.FixtureOcrProvider()
     )
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
@@ -559,6 +567,7 @@ def observe_happy_001_candidate(
         overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
         time_source_candidates=time_source_candidates,
         asset_facts=asset_facts_real,
+        plate_read_outcome=plate_run.outcome,
     )
 
 
@@ -852,7 +861,7 @@ def observe_real_video_candidate(
         ),
     )
     ocr_provider = _build_ocr_provider(context)
-    _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
+    plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
         read_request, provider=ocr_provider
     )
@@ -889,6 +898,7 @@ def observe_real_video_candidate(
         overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
         time_source_candidates=time_source_candidates,
         asset_facts=asset_facts_real,
+        plate_read_outcome=plate_run.outcome,
     )
 
 

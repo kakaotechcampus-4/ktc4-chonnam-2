@@ -68,6 +68,7 @@ class AdapterSnapshot:
     requirement_report_evidence: dict[str, Any] | None
     requirement_report_package: dict[str, Any] | None
     report_package: dict[str, Any] | None
+    plate_read_status: str | None = None
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -77,6 +78,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         requirement_report_evidence=adapter.get_requirement_report("EVIDENCE"),
         requirement_report_package=adapter.get_requirement_report("FINAL_PACKAGE"),
         report_package=adapter.get_report_package(),
+        plate_read_status=adapter.get_plate_read_status(),
     )
 
 
@@ -130,6 +132,7 @@ def build_view_from_adapter(
         report_package=snapshot.report_package,
         running_jobs=running_jobs,
         notices=notices,
+        plate_read_status=snapshot.plate_read_status,
     )
     return derive_notices(view)
 
@@ -143,6 +146,17 @@ LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
     "blocking": False,
     "message_key": "notice.location_search_keyword_missing",
     "actions": [],
+}
+
+
+# 번호판 판독 실행 실패(#172 [D] 4a). mock fixture(`scenario_infra_failure_001` rev2)가 이미 쓰는
+# 모양 그대로다 — 계약 B절 `notices[].code` 등재(2026-09-28).
+PLATE_READ_FAILED_NOTICE: dict[str, Any] = {
+    "code": "readout.plate_read_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.plate_read_failed_retry_exhausted",
+    "actions": ["RETRY_PLATE_READ"],
 }
 
 
@@ -160,6 +174,8 @@ SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
 def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
+    - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
+      유무와 무관하다.
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
       이슈 #48).
@@ -167,25 +183,28 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
       `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
       전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
 
-    둘 다 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
+    뒤 두 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
-    evidence = view.get("evidence")
-    if evidence is None:
-        return view
     derived = []
-    if evidence["location_display"]["search_keyword"] is None:
-        derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
-    selected = [c for c in view["candidates"] if c["selected"]]
-    if (
-        view.get("package") is None
-        and len(selected) == 1
-        and selected[0]["situation_confirmation"] == "NOT_ASKED"
-    ):
-        derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
+    # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
+    # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
+    if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
+        derived.append(PLATE_READ_FAILED_NOTICE)
+    evidence = view.get("evidence")
+    if evidence is not None:
+        if evidence["location_display"]["search_keyword"] is None:
+            derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+        selected = [c for c in view["candidates"] if c["selected"]]
+        if (
+            view.get("package") is None
+            and len(selected) == 1
+            and selected[0]["situation_confirmation"] == "NOT_ASKED"
+        ):
+            derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     present = {n["code"] for n in view["notices"]}
-    additions = [dict(n, actions=[]) for n in derived if n["code"] not in present]
+    additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
     if additions:
         view["notices"] = [*view["notices"], *additions]
     return view
