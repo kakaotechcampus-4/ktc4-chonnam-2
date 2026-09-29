@@ -140,7 +140,7 @@ def _install_stubbed_search(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @_NEEDS_REAL_VIDEO_ENV
-def test_real_video_adapter_reaches_ready_caseview(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_real_video_adapter_reaches_caseview_without_premature_ready(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_stubbed_search(monkeypatch)
 
     case = CaseAggregate.intake(case_id="case_monday_real_video_test", hints={}, manifest_summary={})
@@ -162,13 +162,16 @@ def test_real_video_adapter_reaches_ready_caseview(monkeypatch: pytest.MonkeyPat
 
         jobs.issue_plate_read(case, input_fingerprint="sha1:monday-plate")
         jobs.issue_overlay_time_read(case, input_fingerprint="sha1:monday-overlay")
-        case.mark_ready()
+        service.mark_ready_if_package_ready(case, real)
 
         view = service.build_view_from_adapter(case, real)
     finally:
         real.close()
 
-    assert view["stage"] == "READY"
+    # READY는 Package가 실제로 준비됐을 때만(#167). 상황 응답 전이라 Package가 막혀
+    # (ADR-EVIDENCE-005 D2-c) EVIDENCE_REVIEW에 머문다.
+    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["package"] is None
     # 실제 dashcam overlay OCR이 실제로 읽은 값이다(스텁이 아님) — 파일명
     # (20260620_141956)과 초 단위까지 일치해야 한다.
     # 발생시각은 overlay(화면 시계) OCR에서 샘플 중 가장 이른 프레임의 시각이다(readout
