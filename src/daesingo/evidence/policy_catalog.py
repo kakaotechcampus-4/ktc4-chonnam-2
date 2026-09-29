@@ -12,7 +12,7 @@ from .errors import PolicyConfigurationError
 
 Contract = dict[str, Any]
 _POLICY_DIR = Path(__file__).parent
-_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v4.json"
+_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v5.json"
 _CATEGORIES = {"EVIDENCE", "TIME", "VEHICLE", "LOCATION", "ASSET", "DEADLINE", "REPORT_CONTENT"}
 _OUTCOMES = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
 

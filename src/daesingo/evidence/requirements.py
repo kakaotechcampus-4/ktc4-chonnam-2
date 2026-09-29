@@ -103,12 +103,18 @@ def _evidence_check(rule: Contract, record: Contract) -> Contract:
     if code == "evidence.vehicle_number.present":
         vehicle_number = record.get("vehicle_number")
         value = vehicle_number.get("value") if isinstance(vehicle_number, dict) else None
-        condition = (
-            "value_present"
-            if isinstance(value, str) and bool(value.strip())
-            else "value_absent"
+        # ADR-EVIDENCE-008 §5.1: a PlateReadout that ran but read nothing is WARN; a missing
+        # PlateReadout (execution failure) stays UNKNOWN so it never reaches a WARN Package.
+        readout_performed = any(
+            isinstance(ref, dict) and ref.get("kind") == "plate_readout"
+            for ref in record.get("provenance", {}).get("input_refs", [])
         )
-        reason = "evidence.value_confirmed" if condition == "value_present" else "evidence.pending_plate_reread"
+        if isinstance(value, str) and value.strip():
+            condition, reason = "value_present", "evidence.value_confirmed"
+        elif readout_performed:
+            condition, reason = "readout_performed_value_absent", "evidence.plate_unidentified"
+        else:
+            condition, reason = "readout_absent", "evidence.plate_readout_missing"
     elif code == "evidence.occurred_at.present":
         occurred = record.get("occurred_at")
         if not occurred:
@@ -194,8 +200,9 @@ def _observation_check(rule: Contract, observation_facts: Contract) -> Contract:
     }
     suffix = {"observed_true": "confirmed", "observed_false": "failed",
               "not_observed": "not_observed"}[condition]
+    overrides = rule.get("reason_codes") or {}
     return _check(code=code, category=rule["category"], outcome=_mapped_outcome(rule, condition),
-                  reason_code=f"{reason_roots[code]}.{suffix}",
+                  reason_code=overrides.get(condition) or f"{reason_roots[code]}.{suffix}",
                   subject_refs=[] if fact is None else fact["subject_refs"])
 
 

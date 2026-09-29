@@ -331,21 +331,29 @@ class PolicyDecisionTests(unittest.TestCase):
         self.assertEqual("UNKNOWN", self._check(
             report, "package.report.content_length")["outcome"])
 
-    def test_invalid_vehicle_value_is_not_evidence_ready(self):
+    def test_invalid_vehicle_value_is_never_pass_and_splits_on_plate_readout_d3(self):
+        # v4까지는 값이 없으면 전부 UNKNOWN이었다. #172 D-3(ADR-EVIDENCE-008 §5.1)부터는
+        # PlateReadout이 있으면 WARN(판독했지만 못 읽음), 없으면 UNKNOWN(판독 결과 없음)이다.
         for invalid_value in (None, "", "  "):
-            with self.subTest(invalid_value=invalid_value):
-                record = deepcopy(self.happy_record)
-                record["vehicle_number"]["value"] = invalid_value
-                report = evaluate_requirements(
-                    record,
-                    scope="EVIDENCE",
-                    report_id="req_invalid_vehicle",
-                    evaluated_at="2026-08-24T18:23:00+09:00",
-                    time_resolution=self.happy_time,
-                )
-                check = self._check(report, "evidence.vehicle_number.present")
-                self.assertEqual("UNKNOWN", check["outcome"])
-                self.assertEqual("UNKNOWN", report["overall"])
+            for with_readout in (True, False):
+                with self.subTest(invalid_value=invalid_value, with_readout=with_readout):
+                    record = deepcopy(self.happy_record)
+                    record["vehicle_number"]["value"] = invalid_value
+                    if not with_readout:
+                        record["provenance"]["input_refs"] = [
+                            ref for ref in record["provenance"]["input_refs"]
+                            if ref["kind"] != "plate_readout"]
+                    report = evaluate_requirements(
+                        record,
+                        scope="EVIDENCE",
+                        report_id="req_invalid_vehicle",
+                        evaluated_at="2026-08-24T18:23:00+09:00",
+                        time_resolution=self.happy_time,
+                    )
+                    check = self._check(report, "evidence.vehicle_number.present")
+                    expected = "WARN" if with_readout else "UNKNOWN"
+                    self.assertEqual(expected, check["outcome"])
+                    self.assertEqual(expected, report["overall"])
 
     def test_package_rejects_invalid_report_and_unevaluated_asset_refs(self):
         report = self._evaluate(report_id="req_package_gate")

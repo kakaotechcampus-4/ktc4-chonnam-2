@@ -32,10 +32,13 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `deadline_policy_v1.json` — K2의 2개 달력일 계산, 결과 매핑, 2026·2027 대한민국 공휴일 snapshot. 외부 공휴일 API를 사용하지 않는다.
 - `requirement_rules_v2.json` — K3에서 채택됐으나 D1 반영으로 첫 실행 전에 대체된 보존 revision. 수정하거나 활성화하지 않는다.
 - `requirement_rules_v3.json` — D1 반영 후 실제 실행됐으나 ADR-EVIDENCE-005 D2로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
-- `requirement_rules_v4.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택한다. 판정 주체가 없던 사건 장면·전후 상황 세 rule을 제거하고 나머지 outcome 매핑은 v3에서 그대로 계승한다.
+- `requirement_rules_v4.json` — ADR-EVIDENCE-005 D2로 사건 장면·전후 상황 세 rule을 제거한 revision. 실제 실행됐으나 ADR-EVIDENCE-008(#172 D-3)로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
+- `requirement_rules_v5.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택한다. v4에서 번호판 두 rule만 바꿨다 — `evidence.vehicle_number.present`는 값이 없을 때 `PlateReadout` 존재 여부로 `WARN`(판독 후 못 읽음)/`UNKNOWN`(판독 결과 없음·실행 실패)을 나누고, `package.vehicle.plate_visible_in_report_video`의 관찰 `false`는 `BLOCK` → `WARN`이다. 나머지는 v4에서 그대로 계승한다.
 - `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑.
 
-활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v4.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
+활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v5.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
+
+번호판을 읽지 못한 기록의 번호판 rule은 더 이상 blocker가 아니지만, 번호판 없는 `ReportPackage`는 아직 발행되지 않는다 — `report_inputs.vehicle_number`가 `string` 필수이고 신고문 template이 차량번호 문장을 전제해 `package.report.content_length`가 `UNKNOWN`이 된다. 후속은 ADR-EVIDENCE-008 §6.
 
 loader는 각 정책의 식별자·필수 구조·공휴일 coverage·catalog rule 구성을 검증한다. 깨진 구성은 `PolicyConfigurationError`로 정상 `RequirementReport` 발행 전에 중단하고, 관찰 사실 부족은 check의 `UNKNOWN`으로 남긴다.
 
@@ -53,4 +56,4 @@ python -m daesingo.evidence.mock_integration
 
 ## 상태
 
-**ADR-EVIDENCE-002(K1~K4)·003(D1)·005(D2) 정책 엔진 반영 완료.** 공용 H/U Mock에서 각각 `PASS`·`WARN` FINAL_PACKAGE와 Package 발행을 확인했다. 다만 번호판·시각 관찰은 여전히 `mock_only` 입력이므로 실제 Runtime의 I4 배선, 실제 영상 생성, `case`의 CaseView projection과 외부 제출은 포함하지 않는다. 현재 검증 범위와 후속 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.
+**ADR-EVIDENCE-002(K1~K4)·003(D1)·005(D2)·008(#172 D-3) 정책 엔진 반영 완료.** 공용 H/U Mock에서 각각 `PASS`·`WARN` FINAL_PACKAGE와 Package 발행을 확인했다. 다만 번호판·시각 관찰은 여전히 `mock_only` 입력이므로 실제 Runtime의 I4 배선, 실제 영상 생성, `case`의 CaseView projection과 외부 제출은 포함하지 않는다. 현재 검증 범위와 후속 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.
