@@ -6,7 +6,7 @@
     잘못 가정돼 있었다 — 실제 fixture(`case_rev:2`, `stage=CANDIDATE_REVIEW`)를 보면
     빈 배열도 검색 성공이므로 `CANDIDATE_REVIEW`로 전진한다(`test_domain.py` 참고).
   - `notices[]`(`search.no_candidates`, 비차단 INFO, `actions=[EDIT_HINT, RETRY_SEARCH]`)는
-    `build_case_view()`가 자동 합성하지 않는다 — 호출자가 채운다(§11 제외 범위, 이 테스트도
+    `build_case_view()`가 자동 합성하지 않는다 — 호출자가 채운다(이 테스트도
     `test_scenario_happy_smoke.py`의 rev1(SEARCHING) 뷰가 `running_jobs`를 직접 채워 넣는
     것과 같은 패턴으로 fixture 값을 그대로 넘긴다).
 """
@@ -50,7 +50,7 @@ def test_empty_candidates_matches_fixture():
 
     view = build_case_view(
         case,
-        notices=ready["notices"],  # notice 자동 합성은 §11 제외 범위 — fixture 값을 그대로 공급
+        notices=ready["notices"],  # build_case_view()는 notice를 합성하지 않는다 — fixture 값을 그대로 공급
     )
 
     assert view["stage"] == ready["stage"]
