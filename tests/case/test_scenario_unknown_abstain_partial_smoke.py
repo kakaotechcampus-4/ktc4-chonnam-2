@@ -79,7 +79,7 @@ def test_unknown_abstain_partial_ready_matches_fixture():
     report_package = adapter.get_report_package()
 
     jobs.issue_report_video_export(case, input_fingerprint="sha1:u001-report-video-export")
-    case.mark_ready()
+    case.mark_ready(report_package=report_package)
 
     view = build_case_view(
         case,

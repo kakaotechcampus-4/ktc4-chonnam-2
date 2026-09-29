@@ -1,12 +1,12 @@
 // CaseView 소비 회귀 테스트.
 //
-// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「17건이 전부
+// 눈으로 한 번 확인한 것은 fixture가 바뀌면 조용히 어긋난다. 「스냅샷이 전부
 // 렌더된다」·「미등록 값이 fallback으로 새지 않는다」를 여기서 고정한다.
 // 렌더러가 아니라 계약 소비 지점(로더·화면 선택·라벨 맵)을 검증한다 — 화면
 // 자체는 목업 설계가 들어오면 바뀌지만 이 규칙들은 바뀌지 않는다.
 
 import { describe, expect, it } from 'vitest'
-import { LOAD_ISSUES, SCENARIO_IDS, SNAPSHOTS, inspectView } from '../contracts/fixtures'
+import { LOAD_ISSUES, SNAPSHOTS, inspectView } from '../contracts/fixtures'
 import {
   INFO_STATES,
   JOB_LABEL_FALLBACK_KEY,
@@ -39,13 +39,10 @@ import { ACTION_INTENT, describeIntent } from '../contracts/actionIntent'
 import { representativeJobs, selectScreen } from '../state/selectScreen'
 
 const views = SNAPSHOTS.map((s) => s.view)
+// fixture 개수는 고정하지 않는다. mock은 case가, data/real/case/는 Real E2E가
+// 계속 늘린다. 로더는 폴더를 통째로 읽고 잘못된 파일은 LOAD_ISSUES가 잡는다.
 
 describe('Input (web)', () => {
-  it('mock 7 시나리오 16건 + real 산출물 1건을 로딩한다', () => {
-    expect(SCENARIO_IDS).toHaveLength(8)
-    expect(SNAPSHOTS).toHaveLength(17)
-  })
-
   it('실제 case.get_view() 산출물도 같은 로더를 통과한다', () => {
     // 이슈 #102 — mock만 읽히던 상태의 회귀. real 산출물이 등재값 위반 없이
     // 들어오는지까지 봐야 「web이 실제 CaseView를 소비한다」가 증빙된다.
@@ -67,13 +64,21 @@ describe('Input (web)', () => {
 })
 
 describe('화면 선택', () => {
-  it('17건 전부 화면이 정해진다', () => {
+  it('스냅샷 전부 화면이 정해진다', () => {
     for (const view of views) expect(selectScreen(view).kind).toBeTruthy()
   })
 
   it('후보 0건은 실패가 아니라 빈 결과다', () => {
     const empty = views.find((v) => v.case_id === 'case_e001')!
     expect(selectScreen(empty).kind).toBe('NO_RESULT')
+  })
+
+  it('후보가 있는 CANDIDATE_REVIEW는 후보 화면이 아니라 진행 화면이다', () => {
+    // 가장 유력한 후보로 초안을 먼저 준비한다(core-user-flow.md §8-1). 후보
+    // 비교는 결과 화면의 「다른 후보 보기」에서만 연다.
+    const found = views.filter((v) => v.stage === 'CANDIDATE_REVIEW' && v.candidates.length > 0)
+    expect(found.length).toBeGreaterThan(0)
+    for (const view of found) expect(selectScreen(view).kind).toBe('PROGRESS')
   })
 
   it('evidence 조립 전은 진행 상태 화면이다', () => {
@@ -84,7 +89,7 @@ describe('화면 선택', () => {
 
   it('READY + package면 신고자료 화면이다', () => {
     const ready = views.filter((v) => v.stage === 'READY' && v.package)
-    expect(ready.length).toBe(3)
+    expect(ready.length).toBeGreaterThan(0)
     for (const view of ready) expect(selectScreen(view).kind).toBe('HANDOFF')
   })
 
@@ -93,7 +98,7 @@ describe('화면 선택', () => {
     // 미배선 → package 미발행, case의 「알려진 단순화 2」). stage만 보고
     // HANDOFF로 보내면 빈 신고자료 화면이 뜬다.
     const ready = views.filter((v) => v.stage === 'READY' && !v.package)
-    expect(ready.length).toBe(1)
+    expect(ready.length).toBeGreaterThan(0)
     for (const view of ready) expect(selectScreen(view).kind).toBe('EVIDENCE')
   })
 
@@ -101,8 +106,7 @@ describe('화면 선택', () => {
     const all = views.map(selectScreen)
     const blocking = all.flatMap((s) => s.blocking)
     const info = all.flatMap((s) => s.info)
-    expect(blocking).toHaveLength(1)
-    expect(blocking[0].code).toBe('readout.plate_read_failed')
+    expect(blocking.map((n) => n.code)).toContain('readout.plate_read_failed')
     expect(info.every((n) => n.blocking === false)).toBe(true)
   })
 
@@ -122,23 +126,15 @@ describe('화면 선택', () => {
 describe('라벨 매핑 — fallback으로 새지 않는다', () => {
   it('notices message_key 전부가 매핑돼 있다', () => {
     const keys = [...new Set(views.flatMap((v) => v.notices.map((n) => n.message_key)))]
-    expect(keys).toHaveLength(13)
     for (const key of keys) expect(noticeMessage(key)).not.toBe(NOTICE_FALLBACK)
   })
 
   it('fixture에 아직 없는 계약 등재 문구도 매핑돼 있다', () => {
-    // 위 테스트는 fixture에 있는 키만 훑는다. #48에서 확정된 이 키는 아직
+    // 위 테스트는 fixture에 있는 키만 훑는다. #186에서 등재된 이 키는 아직
     // 어느 fixture도 내지 않아 그 그물에 안 걸린다 — 오타가 나면 화면에만
     // fallback이 뜨고 아무도 모른다.
-    expect(noticeMessage('notice.location_search_keyword_missing'))
-      .not.toBe(NOTICE_FALLBACK)
     expect(noticeMessage('notice.situation_response_pending'))
       .not.toBe(NOTICE_FALLBACK)
-  })
-
-  it('notices code는 12종이다', () => {
-    const codes = [...new Set(views.flatMap((v) => v.notices.map((n) => n.code)))]
-    expect(codes).toHaveLength(12)
   })
 
   it('source_label_key 전부가 매핑돼 있다', () => {

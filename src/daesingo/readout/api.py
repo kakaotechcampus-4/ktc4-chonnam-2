@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import NamedTuple, Optional
 
@@ -84,6 +84,10 @@ PLATE_ACCEPT_CONFIDENCE = 0.50
 
 MIN_PLATE_PX_HEIGHT = 20
 """번호판 영역 높이(px) 하한. 이 아래면 문자 판독 자체가 성립하지 않는다고 본다."""
+
+FULL_PLATE = re.compile(r"\d{2,3}[가-힣]\d{4}|[가-힣]{2}\d{1,2}[가-힣]\d{4}")
+"""온전한 번호판 형식 — 신형(`12가3456`·`123가4567`)과 지역명 포함(`서울12가3456`).
+이 형식이 아닌 값은 번호판 전체가 아니라 글자 한 줄을 골라 온 것이라 보류한다."""
 
 OVERLAY_QUANTIZATION_SEC = 1.0
 """overlay는 초 단위로 찍힌다. 어느 두 sample이든 이만큼은 어긋날 수 있다."""
@@ -330,15 +334,14 @@ def _abstain_reason(association, best, disagreed):
     if disagreed:
         return "FRAME_DISAGREEMENT"
     if best is not None:
-        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 한글 1자+일련번호만 읽힌 값은
-        # 완전한 번호판이 아니다. 관찰값은 보존하지만 자동 확정하지 않는다.
-        normalized = re.sub(r"\\s+", "", best.text or "")
-        if re.fullmatch(r"[가-힣]\\d{4}", normalized):
-            return "PARTIAL_PLATE_READ"
         # 대상 crop은 검출용으로 한글이 빠진 숫자 문자열도 보존한다. 다만 이것은
         # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
         if best.text and not re.search(r"[가-힣]", best.text):
             return "OCR_LOW_CONFIDENCE"
+        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 형식이 온전하지 않은 값은 번호판 일부다.
+        # 관찰값은 보존하지만 자동 확정하지 않는다.
+        if not FULL_PLATE.fullmatch(best.text):
+            return "PARTIAL_PLATE_READ"
         height = best.quality.get("plate_px_height")
         if height is not None and height < MIN_PLATE_PX_HEIGHT:
             return "LOW_RESOLUTION"
@@ -393,7 +396,10 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         raise _provider_broke_contract(
             "provider가 target_hint를 썼다고 보고했으나 hint가 없었다")
 
-    crop_refs = _issue_crop_refs(reading.frames)
+    # 번호판 번호에 공백은 없다 — `12가 3456`처럼 띄어 읽힌 값을 여기서 한 번 붙인다.
+    frames = [replace(f, text=re.sub(r"\s+", "", f.text) if f.text else f.text)
+              for f in reading.frames]
+    crop_refs = _issue_crop_refs(frames)
     frame_results = [
         FrameResult(
             frame_ref=f.frame_ref,      # 파싱하지 않고 그대로 보존한다
@@ -401,12 +407,12 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
             text=f.text,
             confidence=f.confidence,
         )
-        for f, crop_ref in zip(reading.frames, crop_refs)
+        for f, crop_ref in zip(frames, crop_refs)
     ]
 
-    text, disagree_positions, disagreed = _consensus_of([f.text for f in reading.frames])
-    best_at = _best_index(reading.frames)
-    best = reading.frames[best_at] if best_at is not None else None
+    text, disagree_positions, disagreed = _consensus_of([f.text for f in frames])
+    best_at = _best_index(frames)
+    best = frames[best_at] if best_at is not None else None
     reason = _abstain_reason(association, best, disagreed)
     abstained = reason is not None
 
@@ -449,7 +455,7 @@ def _interpret_plate(reading, target_hint, request, run_id) -> PlateReadout:
         consensus=Consensus(
             text=text,
             disagree_positions=disagree_positions,
-            method="MULTI_FRAME" if len([f for f in reading.frames if f.text]) > 1
+            method="MULTI_FRAME" if len([f for f in frames if f.text]) > 1
             else "SINGLE_FRAME",
         ),
         abstained=abstained,
