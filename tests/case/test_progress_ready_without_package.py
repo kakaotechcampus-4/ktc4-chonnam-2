@@ -29,7 +29,9 @@ def _case_at_ready_with_selected_candidate() -> CaseAggregate:
         ]
     )
     case.select_candidate("candidate_progress_test")
-    case.mark_ready()
+    # domain은 Package 없이 READY를 거부한다(#167). 여기서는 view에 넘기는 스냅샷과 어긋난
+    # 경우에도 progress가 정직한지 보려는 것이라, 전이용 ref만 넘긴다.
+    case.mark_ready(report_package={"package_ref": {"kind": "report_package", "ref": "pkg_test_001"}})
     return case
 
 

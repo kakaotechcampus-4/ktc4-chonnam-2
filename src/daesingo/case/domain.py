@@ -98,6 +98,10 @@ class CaseAggregate:
     job_records: list[dict[str, Any]] = field(default_factory=list)
     correction_records: list[dict[str, Any]] = field(default_factory=list)
 
+    # 마지막 후보 탐색(CANDIDATE_SEARCH Run)이 실패했는가. 실패 Run은 후보 0개라 「찾았지만 없음」과
+    # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
+    candidate_search_failed: bool = False
+
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
@@ -117,6 +121,15 @@ class CaseAggregate:
         # case_rev를 올리지 않는다 — "요청 시점 케이스 리비전"은 아직 바뀔 내용이 없다.
         self._advance("INTAKE", "SEARCHING", bump_case_rev=False)
 
+    def record_candidate_search_failure(self) -> None:
+        """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
+        바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
+        web이 「결과 없음」으로 그린다). stage는 `SEARCHING`에 머물고 실패 사실만 남긴다.
+        실패는 사용자 요청이 아니라 실행 결과라 `case_rev`를 올리지 않는다(§3-E)."""
+        if self.stage != "SEARCHING":
+            raise InvalidTransition(f"{self.stage}에서는 후보 탐색 실패를 받을 수 없다(SEARCHING 전용)")
+        self.candidate_search_failed = True
+
     def receive_candidates(self, candidates: list[Candidate]) -> None:
         """빈 배열(candidates=[])은 실패가 아니다 — `scenario_empty_001` 원칙(2026-09-14,
         실제 fixture로 검증: `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`도 검색 자체는
@@ -126,6 +139,7 @@ class CaseAggregate:
         `build_case_view()` 호출자가 채운다(CaseView 값만으로 발동하는 notice는
         `service.derive_notices()`가 붙인다 — 이슈 #48)."""
         self.candidates = list(candidates)
+        self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
 
     def select_candidate(self, candidate_id: str) -> None:
@@ -157,7 +171,12 @@ class CaseAggregate:
         self.select_candidate(top.candidate_id)
         return top.candidate_id
 
-    def mark_ready(self) -> None:
+    def mark_ready(self, *, report_package: dict[str, Any] | None) -> None:
+        """`READY` = `PACKAGE_READY` 파생 gate 성립 시점(CaseView 계약 B절, #171 C). ReportPackage는
+        ready-only라 존재 자체가 FINAL `PASS`/`WARN`의 증거다 — 없으면 전이를 거부한다(#167).
+        downstream 스냅샷에서 판단하는 호출자는 `service.mark_ready_if_package_ready()`를 쓴다."""
+        if report_package is None:
+            raise InvalidTransition("READY는 준비된 ReportPackage 없이 들어갈 수 없다(#167)")
         self._advance("EVIDENCE_REVIEW", "READY")
 
     def bump_revision(self) -> None:
@@ -198,23 +217,43 @@ class CaseAggregate:
         self.stage = "SEARCHING"
         self.candidates = []
 
-    def reselect_candidate(self, candidate_id: str) -> None:
-        """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤(`EVIDENCE_REVIEW`) 사용자가 "다른 후보가
-        맞다"고 정정하는 경로. `부분 재실행 정책 표 초안` 2행: stage는 "제자리"(그대로
-        `EVIDENCE_REVIEW`)로 머물고, `selected` 플래그만 새 candidate로 옮긴다. 최초 선택
-        (`select_candidate()`, `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW` 전이 포함)과는 다른
-        메서드다 — 여긴 전이가 없다. `selection_rev`는 새 선택 context를 나타내려고 올린다
-        (`case-selection-revision-persistence.md`와 동일 원칙: candidate가 바뀌면 selection_rev도
-        바뀐다). `case_rev`는 여기서 올리지 않는다 — `correction.reselect_candidate()`가
-        `apply_correction()`으로 이미 올린다."""
-        if self.stage != "EVIDENCE_REVIEW":
-            raise InvalidTransition(f"{self.stage}에서는 OTHER_CANDIDATE 재선택을 쓸 수 없다(EVIDENCE_REVIEW 전용)")
+    def check_reselect(self, candidate_id: str) -> None:
+        """`OTHER_CANDIDATE`를 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(#166).
+
+        `correction.reselect_candidate()`가 CorrectionRecord를 남기기 전에 먼저 부른다 — 예전엔
+        기록을 먼저 남긴 뒤 domain이 거부해 `case_rev`·CorrectionRecord만 남는 불일치가 있었다.
+        허용 stage는 `EVIDENCE_REVIEW`와 `READY`(#173 E-4: 결과 화면에서도 다른 후보 선택 허용).
+        이미 선택된 후보를 다시 고르는 것은 값이 바뀌지 않는 요청이라 거부한다
+        (correction-record §8-7: 무변경 입력은 기록하지 않는다).
+        """
+        if self.stage not in ("EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(
+                f"{self.stage}에서는 OTHER_CANDIDATE 재선택을 쓸 수 없다(EVIDENCE_REVIEW·READY 전용)"
+            )
         match = next((c for c in self.candidates if c.candidate_id == candidate_id), None)
         if match is None:
             raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
+        if match.selected:
+            raise InvalidTransition(f"이미 선택된 candidate_id다: {candidate_id}")
+
+    def reselect_candidate(self, candidate_id: str) -> None:
+        """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤 사용자가 "다른 후보가 맞다"고 정정하는 경로.
+        `selected` 플래그를 새 candidate로 옮기고, 새 선택 context를 나타내려고 `selection_rev`를
+        올린다(`case-selection-revision-persistence.md`). 최초 선택(`select_candidate()`,
+        `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW` 전이 포함)과는 다른 메서드다.
+
+        `EVIDENCE_REVIEW`에서는 제자리에 머문다(`부분 재실행 정책 표 초안` 2행). `READY`에서는
+        새 초안을 준비해야 하므로 `EVIDENCE_REVIEW`로 돌아간다 — 이전 Package로 handoff하지
+        않는다(#173 E-4). 어느 쪽이든 이전 초안의 최종 검토(`user_reviewed`)는 새 초안의 확인이
+        아니므로 되돌린다(#173 값별 경계표). `case_rev`는 여기서 올리지 않는다 —
+        `correction.reselect_candidate()`가 `apply_correction()`으로 이미 올린다."""
+        self.check_reselect(candidate_id)
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        self.user_reviewed = False
+        if self.stage == "READY":
+            self.stage = "EVIDENCE_REVIEW"
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.
