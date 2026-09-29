@@ -60,6 +60,7 @@ def test_relative_rebase_two_revisions_match_fixture():
         observed=raw["observed"],
         thumb_ref=raw["thumb_ref"],
         rank=raw["rank"],
+        representative_ms=raw["marker_ms"],
         selected=raw["selected"],  # select_candidate()를 호출하지 않고 그대로 선택 상태로 구성
         timeline_revision=raw["timeline_revision"],
     )

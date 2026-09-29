@@ -54,6 +54,9 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
             rank=c["rank"],
+            # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
+            representative_ms=c["span"]["representative_ms"],
+            timeline_revision=c["span"]["timeline_revision"],
         )
         for c in raw_candidates
     ]

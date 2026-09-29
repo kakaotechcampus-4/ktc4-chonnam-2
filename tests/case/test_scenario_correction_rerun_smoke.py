@@ -68,6 +68,7 @@ def test_correction_rerun_before_and_after_match_fixture():
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
             rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]

@@ -288,6 +288,7 @@ class RealAdapter:
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
                 "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in result.candidates
         ]
@@ -508,6 +509,7 @@ class RealVideoAdapter:
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
                 "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in candidates
         ]

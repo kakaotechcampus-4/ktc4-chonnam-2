@@ -197,6 +197,7 @@
         {
           "candidate_id": "candidate_h001",
           "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -471,6 +472,7 @@
         {
           "candidate_id": "candidate_h001",
           "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",

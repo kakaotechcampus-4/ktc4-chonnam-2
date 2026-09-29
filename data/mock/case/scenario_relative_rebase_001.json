@@ -54,6 +54,7 @@
         {
           "candidate_id": "candidate_rb001",
           "rank": 1,
+          "marker_ms": 512000,
           "at": null,
           "at_provenance": "recording.timeline_relative_only",
           "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",
@@ -111,6 +112,7 @@
         {
           "candidate_id": "candidate_rb001",
           "rank": 1,
+          "marker_ms": null,
           "at": null,
           "at_provenance": "recording.timeline_relative_only",
           "at_provenance_label_key": "candidate.at_provenance.timeline_relative_only",

@@ -125,6 +125,7 @@
         {
           "candidate_id": "candidate_p001",
           "rank": 1,
+          "marker_ms": 612000,
           "at": "2026-08-29T20:10:12+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -335,6 +336,7 @@
         {
           "candidate_id": "candidate_p001",
           "rank": 1,
+          "marker_ms": 612000,
           "at": "2026-08-29T20:10:12+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",

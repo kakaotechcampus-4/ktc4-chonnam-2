@@ -62,6 +62,7 @@ def test_unknown_abstain_partial_ready_matches_fixture():
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
             rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]

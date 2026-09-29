@@ -73,6 +73,9 @@ class Candidate:
     situation_confirmation: str = "NOT_ASKED"
     # search `CandidateEvent.rank`(Run 안의 순위, 1부터) 그대로. case가 다시 매기지 않는다(#122).
     rank: int | None = None
+    # search `CandidateEvent.span.representative_ms`(그 후보 timeline revision 기준 상대 ms) 그대로.
+    # CaseView `candidates[].marker_ms`의 원천이다(#184). case가 계산·보정하지 않는다.
+    representative_ms: int | None = None
 
 
 @dataclass

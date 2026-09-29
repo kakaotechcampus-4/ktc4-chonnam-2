@@ -93,6 +93,7 @@ def test_infra_failure_four_revisions_match_fixture():
                 observed=c["observed"],
                 thumb_ref=c["thumb_ref"],
                 rank=c["rank"],
+                representative_ms=c["marker_ms"],
                 selected=c["selected"],
             )
             for c in rev1["candidates"]
