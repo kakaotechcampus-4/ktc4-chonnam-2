@@ -146,24 +146,48 @@ LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
 }
 
 
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-28, #171 C-2 Case 결정).
+# 응답 버튼은 notice action이 아니라 #106 command라 `actions`는 비운다.
+SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
+    "code": "case.situation_response_pending",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.situation_response_pending",
+    "actions": [],
+}
+
+
 def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
-      이슈 #48). `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로
-      붙이지 않는다.
+      이슈 #48).
+    - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
+      `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
+      전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
 
+    둘 다 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
     evidence = view.get("evidence")
-    if evidence is None or evidence["location_display"]["search_keyword"] is not None:
+    if evidence is None:
         return view
-    notice = LOCATION_SEARCH_KEYWORD_MISSING_NOTICE
-    if any(n["code"] == notice["code"] for n in view["notices"]):
-        return view
-    view["notices"] = [*view["notices"], dict(notice, actions=[])]
+    derived = []
+    if evidence["location_display"]["search_keyword"] is None:
+        derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+    selected = [c for c in view["candidates"] if c["selected"]]
+    if (
+        view.get("package") is None
+        and len(selected) == 1
+        and selected[0]["situation_confirmation"] == "NOT_ASKED"
+    ):
+        derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
+    present = {n["code"] for n in view["notices"]}
+    additions = [dict(n, actions=[]) for n in derived if n["code"] not in present]
+    if additions:
+        view["notices"] = [*view["notices"], *additions]
     return view
 
 

@@ -174,7 +174,12 @@ def test_real_video_adapter_reaches_caseview_without_premature_ready(monkeypatch
     assert view["package"] is None
     # 실제 dashcam overlay OCR이 실제로 읽은 값이다(스텁이 아님) — 파일명
     # (20260620_141956)과 초 단위까지 일치해야 한다.
-    assert view["evidence"]["event_time_display"]["value"] == "2026-06-20T14:19:56+09:00"
+    # 발생시각은 overlay(화면 시계) OCR에서 샘플 중 가장 이른 프레임의 시각이다(readout
+    # `_interpret_overlay` min(parsed)). IncidentClip(파일 6.7~13.4초) 구간 프레임을 읽으면서
+    # 가장 이른 샘플이 파일 8.7초(clip 2.0초) → 14:19:59가 됐다. 예전 기대값 14:19:56은 원본
+    # 전체 30/50/70% 샘플 중 파일 6.0초 — 사건 구간 **밖** 프레임에서 읽은 값이었다(PR #146
+    # 멘토 리뷰 r4084810910).
+    assert view["evidence"]["event_time_display"]["value"] == "2026-06-20T14:19:59+09:00"
     assert view["evidence"]["event_time_display"]["info_state"] == "INFO_SOURCE_VERIFIED"
     assert view["requirements_evidence"]["readiness"] == "UNKNOWN"
 
@@ -192,11 +197,19 @@ def test_real_video_context_can_be_reused_for_multiple_candidates(monkeypatch: p
         local_video_path=VIDEO_PATH, case=case, scope_id="scope_monday_reuse_test"
     )
     try:
+        # Coarse 실행 상한은 A-1 잠정값 「Coarse 클립당 150초」(timeout-fallback.md, #72). 지금 경로는
+        # 영상 전체를 한 번에 올려 사실상 클립 1개다(인라인 상한을 넘으면 search가 MediaTooLargeError).
+        assert context.scope.budget.max_latency_sec == 150
         candidates = real_e2e.get_real_video_candidates(context)
         assert len(candidates) == 1
         bundle = real_e2e.build_evidence_for_real_video_candidate(
             context, candidates[0], case_id=case.case_id
         )
-        assert bundle.evidence_record["occurred_at"]["value"] == "2026-06-20T14:19:56+09:00"
+        # 발생시각은 overlay(화면 시계) OCR에서 샘플 중 가장 이른 프레임의 시각이다(readout
+        # `_interpret_overlay` min(parsed)). IncidentClip(파일 6.7~13.4초) 구간 프레임을 읽으면서
+        # 가장 이른 샘플이 파일 8.7초(clip 2.0초) → 14:19:59가 됐다. 예전 기대값 14:19:56은 원본
+        # 전체 30/50/70% 샘플 중 파일 6.0초 — 사건 구간 **밖** 프레임에서 읽은 값이었다(PR #146
+        # 멘토 리뷰 r4084810910).
+        assert bundle.evidence_record["occurred_at"]["value"] == "2026-06-20T14:19:59+09:00"
     finally:
         context.rec_service.close()

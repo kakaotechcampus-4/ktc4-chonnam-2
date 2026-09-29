@@ -184,23 +184,43 @@ class CaseAggregate:
         self.stage = "SEARCHING"
         self.candidates = []
 
-    def reselect_candidate(self, candidate_id: str) -> None:
-        """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤(`EVIDENCE_REVIEW`) 사용자가 "다른 후보가
-        맞다"고 정정하는 경로. `부분 재실행 정책 표 초안` 2행: stage는 "제자리"(그대로
-        `EVIDENCE_REVIEW`)로 머물고, `selected` 플래그만 새 candidate로 옮긴다. 최초 선택
-        (`select_candidate()`, `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW` 전이 포함)과는 다른
-        메서드다 — 여긴 전이가 없다. `selection_rev`는 새 선택 context를 나타내려고 올린다
-        (`case-selection-revision-persistence.md`와 동일 원칙: candidate가 바뀌면 selection_rev도
-        바뀐다). `case_rev`는 여기서 올리지 않는다 — `correction.reselect_candidate()`가
-        `apply_correction()`으로 이미 올린다."""
-        if self.stage != "EVIDENCE_REVIEW":
-            raise InvalidTransition(f"{self.stage}에서는 OTHER_CANDIDATE 재선택을 쓸 수 없다(EVIDENCE_REVIEW 전용)")
+    def check_reselect(self, candidate_id: str) -> None:
+        """`OTHER_CANDIDATE`를 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(#166).
+
+        `correction.reselect_candidate()`가 CorrectionRecord를 남기기 전에 먼저 부른다 — 예전엔
+        기록을 먼저 남긴 뒤 domain이 거부해 `case_rev`·CorrectionRecord만 남는 불일치가 있었다.
+        허용 stage는 `EVIDENCE_REVIEW`와 `READY`(#173 E-4: 결과 화면에서도 다른 후보 선택 허용).
+        이미 선택된 후보를 다시 고르는 것은 값이 바뀌지 않는 요청이라 거부한다
+        (correction-record §8-7: 무변경 입력은 기록하지 않는다).
+        """
+        if self.stage not in ("EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(
+                f"{self.stage}에서는 OTHER_CANDIDATE 재선택을 쓸 수 없다(EVIDENCE_REVIEW·READY 전용)"
+            )
         match = next((c for c in self.candidates if c.candidate_id == candidate_id), None)
         if match is None:
             raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
+        if match.selected:
+            raise InvalidTransition(f"이미 선택된 candidate_id다: {candidate_id}")
+
+    def reselect_candidate(self, candidate_id: str) -> None:
+        """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤 사용자가 "다른 후보가 맞다"고 정정하는 경로.
+        `selected` 플래그를 새 candidate로 옮기고, 새 선택 context를 나타내려고 `selection_rev`를
+        올린다(`case-selection-revision-persistence.md`). 최초 선택(`select_candidate()`,
+        `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW` 전이 포함)과는 다른 메서드다.
+
+        `EVIDENCE_REVIEW`에서는 제자리에 머문다(`부분 재실행 정책 표 초안` 2행). `READY`에서는
+        새 초안을 준비해야 하므로 `EVIDENCE_REVIEW`로 돌아간다 — 이전 Package로 handoff하지
+        않는다(#173 E-4). 어느 쪽이든 이전 초안의 최종 검토(`user_reviewed`)는 새 초안의 확인이
+        아니므로 되돌린다(#173 값별 경계표). `case_rev`는 여기서 올리지 않는다 —
+        `correction.reselect_candidate()`가 `apply_correction()`으로 이미 올린다."""
+        self.check_reselect(candidate_id)
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        self.user_reviewed = False
+        if self.stage == "READY":
+            self.stage = "EVIDENCE_REVIEW"
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.
