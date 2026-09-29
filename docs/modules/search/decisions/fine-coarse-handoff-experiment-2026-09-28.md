@@ -40,4 +40,4 @@
 
 - 반복 횟수와 공식 매칭 기준: [#158](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/158) 답변 대기.
 - 제품에서 사용자 `target_hint`와 Coarse 관찰을 함께 줄 때의 우선순위: 미정.
-- 실험 결과: 미실행.
+- 실험 결과: 2026-09-29 1차 실행([트레이스](../experiments/gemini-handoff-trace-2026-09-29.md)). 조건당 2회로는 handoff 효과가 구분되지 않았고 음성 끌림은 없었다. 채택 판단은 하지 않았다.

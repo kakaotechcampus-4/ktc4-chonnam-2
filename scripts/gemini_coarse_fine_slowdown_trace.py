@@ -12,6 +12,10 @@ run_case 에 넘긴다. 프롬프트·스키마·후보 핸드오프·padding·c
 
 1x 도 같은 invoker(재인코딩 없음)로 같은 실행에서 돌려 통제 비교한다.
 
+--transport image 는 같은 조건을 이미지로 보낸다(gemini_coarse_fine_image_trace.ImageInvoker).
+이때 배속 s 는 준비 fps 1/s 를 뜻한다(0.5:0.25 = Coarse 2fps / Fine 4fps).
+--profiles 로 diagnostic-v1·diagnostic-handoff-v1 등을 같은 실행에서 비교한다.
+
 실행(유료): uv run --extra eval-gemini python scripts/gemini_coarse_fine_slowdown_trace.py --out <json>
 """
 
@@ -31,6 +35,7 @@ from pathlib import Path
 
 from daesingo.common import load_env_file
 from daesingo.search.config import GeminiSearchConfig
+from daesingo.search.decision_trace import DiagnosticCoarseResponse, DiagnosticFineResponse
 from daesingo.search.diagnostic import run_case
 from daesingo.search.diagnostic_call import DiagnosticDependencies
 from daesingo.search.diagnostic_models import DiagnosticCase, DiagnosticProfile
@@ -76,13 +81,18 @@ def _slow(src: Path, dest: Path, speed: float) -> None:
         raise ProviderPayloadError(f"slowdown failed: {r.stderr.decode(errors='replace')[-200:]}")
 
 
-def _note(speed: float) -> str:
+def _note(speed: float, handoff: bool) -> str:
     factor = round(1 / speed)
+    extra = (
+        f" Coarse 핵심 시각도 원본 기준이므로 제공 영상에서는 그 {factor}배 위치입니다."
+        if handoff else ""
+    )
     return (
         f"\n\n주의: 제공 영상은 원본을 {factor}배 느리게 재생하도록 늘린 것입니다. "
         f"위에 적힌 길이·구간은 원본 기준이고, 제공 영상의 길이는 그 {factor}배입니다. "
         "모든 시각은 제공 영상(느려진 영상) 기준으로 답하세요. "
         "움직임이 느려 보이는 것은 재생 속도 때문이며 판단 근거가 아닙니다."
+        + extra
     )
 
 
@@ -90,7 +100,7 @@ def _to_origin(parsed, speed: float):
     """느려진 영상 기준 시각 -> 원본 기준 시각."""
     if speed == 1.0:
         return parsed
-    if isinstance(parsed, CoarseResponse):
+    if isinstance(parsed, (CoarseResponse, DiagnosticCoarseResponse)):
         cands = [
             c.model_copy(update={
                 "at_sec": c.at_sec * speed,
@@ -101,14 +111,23 @@ def _to_origin(parsed, speed: float):
             })
             for c in parsed.candidates
         ]
-        return parsed.model_copy(update={"candidates": cands})
+        update: dict = {"candidates": cands}
+        if isinstance(parsed, DiagnosticCoarseResponse):
+            update["window_reviews"] = [
+                w.model_copy(update={"start_sec": w.start_sec * speed,
+                                     "end_sec": w.end_sec * speed})
+                for w in parsed.window_reviews
+            ]
+        return parsed.model_copy(update=update)
     if isinstance(parsed, FineResponse):
-        facts = [
-            f.model_copy(update={"at_offset_ms": None if f.at_offset_ms is None
-                                 else round(f.at_offset_ms * speed)})
-            for f in parsed.temporal_facts
-        ]
-        return parsed.model_copy(update={"temporal_facts": facts})
+        def scale(items):
+            return [i.model_copy(update={"at_offset_ms": None if i.at_offset_ms is None
+                                         else round(i.at_offset_ms * speed)})
+                    for i in items]
+        update = {"temporal_facts": scale(parsed.temporal_facts)}
+        if isinstance(parsed, DiagnosticFineResponse):
+            update["decision_basis"] = scale(parsed.decision_basis)
+        return parsed.model_copy(update=update)
     raise ProviderPayloadError(f"unexpected response type {type(parsed).__name__}")
 
 
@@ -123,7 +142,7 @@ class SlowVideoInvoker:
         self._fine_speed = fine_speed
 
     def invoke_structured(self, request: StructuredInvocation) -> ProviderResult:
-        coarse = issubclass(request.response_model, CoarseResponse)
+        coarse = issubclass(request.response_model, (CoarseResponse, DiagnosticCoarseResponse))
         speed = self._coarse_speed if coarse else self._fine_speed
         with tempfile.TemporaryDirectory(prefix="cf_slow_") as td:
             path = request.media.path
@@ -131,7 +150,7 @@ class SlowVideoInvoker:
             if speed != 1.0:
                 path = Path(td) / "slow.mp4"
                 _slow(request.media.path, path, speed)
-                prompt += _note(speed)
+                prompt += _note(speed, "Coarse 핵심 시각" in prompt)
             url = "data:video/mp4;base64," + base64.b64encode(path.read_bytes()).decode()
             messages = [{"role": "user", "content": [
                 {"type": "text", "text": prompt},
@@ -168,14 +187,19 @@ def _overlaps(span: tuple[float, float], truth: tuple[float, float] | None) -> b
 
 
 def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
-                  fine_speed: float, timeout: float) -> dict:
+                  fine_speed: float, timeout: float,
+                  profile: DiagnosticProfile = DiagnosticProfile.P3,
+                  transport: str = "video") -> dict:
     # 준비 fps = 1/speed -> 늘린 뒤 재생 1초당 원본 프레임 1장(프록시 샘플링과 1:1).
+    # image 는 늘리지 않고 그 fps 프레임을 전량 image_url 로 보낸다.
     cfg = replace(base_cfg, coarse_fps=1 / coarse_speed, fine_fps=1 / fine_speed, max_retries=0)
-    deps = DiagnosticDependencies(
-        SlowVideoInvoker(client, cfg, coarse_speed, fine_speed), MediaPreparer(cfg), cfg,
-        DiagnosticProfile.P3, timeout,
-    )
-    tag = f"{coarse_speed}x/{fine_speed}x"
+    if transport == "image":
+        from gemini_coarse_fine_image_trace import ImageInvoker
+        invoker = ImageInvoker(client, cfg)
+    else:
+        invoker = SlowVideoInvoker(client, cfg, coarse_speed, fine_speed)
+    deps = DiagnosticDependencies(invoker, MediaPreparer(cfg), cfg, profile, timeout)
+    tag = f"{profile.value}/{transport}/{coarse_speed}x/{fine_speed}x"
     verifs: Counter[str] = Counter()
     cases = []
     invocations = prompt_tok = total_tok = 0
@@ -190,7 +214,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
                 if call.usage:
                     prompt_tok += call.usage.input_tokens or 0
                     total_tok += call.usage.total_tokens or 0
-            if call.stage == "COARSE" and isinstance(call.response, CoarseResponse):
+            if call.stage == "COARSE" and isinstance(call.response, (CoarseResponse, DiagnosticCoarseResponse)):
                 for c in sorted(call.response.candidates, key=lambda c: (-c.score, c.at_sec)):
                     span = (round(c.span.start_sec, 2), round(c.span.end_sec, 2))
                     cands.append({"span": span, "at_sec": round(c.at_sec, 2),
@@ -212,6 +236,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
                       "issue_codes": sorted({ic for c in res.calls for ic in c.issue_codes})})
         print(f"  [{tag}] {cid:<24} cand={[c['span'] for c in cands]} fine={fine} -> {verdict}")
     return {
+        "profile": profile.value, "transport": transport,
         "coarse_speed": coarse_speed, "fine_speed": fine_speed,
         "coarse_fps_prepared": cfg.coarse_fps, "fine_fps_prepared": cfg.fine_fps,
         "invocations": invocations, "verification_counts": dict(verifs),
@@ -230,6 +255,8 @@ def main() -> None:
     # coarse:fine 배속. 기본 = 1x 기준 + 이미지 trace(coarse 2fps / fine 4fps)와 같은 밀도.
     ap.add_argument("--conditions", default="1:1,0.5:0.25")
     ap.add_argument("--repeats", type=int, default=1)
+    ap.add_argument("--profiles", default="p3")
+    ap.add_argument("--transport", choices=("video", "image"), default="video")
     args = ap.parse_args()
 
     env = load_env_file(args.env)
@@ -242,10 +269,12 @@ def main() -> None:
     )
     runs = []
     for rep in range(args.repeats):
-        for cond in args.conditions.split(","):
+        for cond, prof in ((c, p) for c in args.conditions.split(",")
+                           for p in args.profiles.split(",")):
             cs, fs = (float(x) for x in cond.split(":"))
-            print(f"=== repeat {rep + 1} / coarse {cs}x, fine {fs}x ===")
-            r = run_condition(client, base_cfg, cs, fs, args.timeout_sec)
+            print(f"=== repeat {rep + 1} / {prof} / {args.transport} / coarse {cs}x, fine {fs}x ===")
+            r = run_condition(client, base_cfg, cs, fs, args.timeout_sec,
+                              DiagnosticProfile(prof), args.transport)
             r["repeat"] = rep + 1
             runs.append(r)
             print(f"  -> positives {r['positives_hit']}/4, negatives {r['negatives_correct']}/3, "
@@ -253,7 +282,7 @@ def main() -> None:
                   f"total_tok {r['reported_total_tokens']}")
             if args.out:  # 조건마다 저장해 중간에 끊겨도 남긴다
                 args.out.write_text(json.dumps({
-                    "config": {"profile": "p3", "transport": "video(slowed)", "model": base_cfg.model,
+                    "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model,
                                "reasoning_effort": base_cfg.reasoning_effort,
                                "fine_padding_sec": base_cfg.fine_padding_sec},
                     "runs": runs}, ensure_ascii=False, indent=2), encoding="utf-8")
