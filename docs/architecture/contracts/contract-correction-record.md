@@ -20,6 +20,8 @@
 
 > `eval`은 이 계약을 직접 읽지 않는다. 평가·재사용은 `case/decisions/correction-log-reuse.md`의 **익명화 copy**를 통해서만 이뤄지며(`product-spec.md` §7 불변 경계), 그 copy는 본 계약의 범위 밖이다.
 
+> **2026-09-28 명확화 (#173 E-1 · #188, Decider 유소연 `case`) — 버전 유지.** supersede chain은 **후보에 종속된 값(evidence 의미 경로)이면 같은 `selection_rev` 안에서만** 잇는다. 다른 후보를 고르면(새 selection context) 그 후보의 첫 정정은 `supersedes_ref: null`로 시작하고, 이전 후보의 정정을 새 후보 값으로 승계하지 않는다. `hints`·`candidate.selected_id`처럼 case 전체에 걸린 case 네임스페이스 값은 후보가 바뀌어도 chain을 잇는다. evidence의 head 판정(`correction_heads`)이 이미 현재 `selection_rev` 안에서만 head를 고르므로 소비 규칙은 바뀌지 않는다. §7 두 번째 예시가 선택 context를 넘어 chain을 이은 모양이라 같은 context의 재수정으로 정정했다.
+>
 > **`v1.1` 변경 (2026-09-10) — v1(Draft)의 §9 미해결 항목 4건을 evidence Consumer Review 수용 조건으로 확정하고 Final로 승격했다.** ① `target_field`를 자유 문자열에서 **evidence가 실제 소비하는 의미 경로(semantic path)** 값 공간으로 좁힘 ② append-only supersede chain(`supersedes_ref`) 신설 — 동일 `target_field` 재수정은 새 `correction_id` + `supersedes_ref`로 이전 correction을 가리키고, "현재 유효값"은 최신 `corrected_at`이 아니라 **chain의 head**다 ③ `previous_value`/`new_value`에 target별 타입 검증 추가(무제한 `any` 저장 금지) ④ lifecycle 3원칙 확정(무효/무변경 입력 미생성, 유효 수정은 downstream보다 먼저 append-only 기록, downstream 실패해도 삭제하지 않음) ⑤ `kind`에 `SITUATION_CHANGE` 추가(9종) ⑥ 「잘 모르겠어요」 단순 응답은 값 수정이 아니라 case workflow state이므로 CorrectionRecord를 만들지 않는다 — 그 provenance는 `contract-evidence-record-needs.md` v1.3의 `EvidenceRecord.event.situation_response`가 대신 보존한다. Decider 유소연(`case`) · Consumer Review 김준영(`evidence`).
 
 ---
@@ -80,7 +82,7 @@
 | `kind` | enum(9) | Y | 수정 종류 | **확인됨(v1.1, `SITUATION_CHANGE` 추가)** |
 | `target_field` | string(semantic path) | Y | 수정 대상 필드 — §6 값 공간 | **확인됨(v1.1)** |
 | `previous_value` / `new_value` | target별 타입 | Y | 수정 전/후 값. 무제한 `any` 아님 — §6 검증 규칙 | **확인됨(v1.1)** |
-| `supersedes_ref` | `ContractRef{kind:correction_record}` \| null | Y(키) | 동일 `target_field`를 다시 수정했을 때 직전 correction을 가리킨다. 최초 수정이면 `null` | **신규(v1.1)** |
+| `supersedes_ref` | `ContractRef{kind:correction_record}` \| null | Y(키) | 동일 `target_field`를 다시 수정했을 때 직전 correction을 가리킨다. 최초 수정이면 `null`. 후보에 종속된 값은 **같은 `selection_rev` 안의** 직전 correction만 가리킨다(새 selection context의 첫 수정은 `null`, §8-12) | **신규(v1.1)** · 2026-09-28 명확화 |
 | `corrected_at` | ISO8601 | Y | 수정 시각 | 확인됨 |
 
 ## 5. ContractRef 표기
@@ -130,13 +132,13 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 }
 ```
 
-동일 `target_field`를 다시 수정한 경우 — supersede chain:
+동일 `target_field`를 같은 selection context 안에서 다시 수정한 경우 — supersede chain:
 
 ```json
 {
   "correction_id": "corr_205",
   "case_id": "case_3",
-  "selection_rev": 3,
+  "selection_rev": 2,
   "kind": "PLATE_MANUAL_EDIT",
   "target_field": "vehicle_number",
   "previous_value": "12가 3475",
@@ -174,7 +176,8 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 8. **(v1.1)** 유효한 사용자 수정은 downstream Evidence 재조립·Job 발주보다 먼저 append-only로 기록한다
 9. **(v1.1)** 기록 이후 downstream 재조립·실행이 실패해도 이미 기록된 CorrectionRecord를 삭제하거나 되돌리지 않는다
 10. **(v1.1)** 단순 「잘 모르겠어요」(사건 유형을 특정하지 않고 불확실하다고만 답한 경우)는 값 correction이 아니라 case workflow state이므로 이 계약으로 기록하지 않는다 — `SITUATION_CHANGE`는 사용자가 **다른 구체적 상황을 실제로 선택**했을 때만 쓴다
-11. **(v1.1)** 동일 `case_id`·동일 `target_field`의 현재 유효값은 최신 `corrected_at`이 아니라 `supersedes_ref` chain의 **head**(어느 correction도 자신을 `supersedes_ref`로 가리키지 않는 레코드)다
+11. **(v1.1)** 동일 `case_id`·동일 `target_field`의 현재 유효값은 최신 `corrected_at`이 아니라 `supersedes_ref` chain의 **head**(어느 correction도 자신을 `supersedes_ref`로 가리키지 않는 레코드)다. 후보에 종속된 값은 현재 `selection_rev`의 chain에서 head를 고른다(§8-12)
+12. **(2026-09-28 명확화)** 후보에 종속된 값(evidence 의미 경로)의 supersede chain은 같은 `selection_rev` 안에서만 잇는다 — 다른 후보를 고른 뒤의 첫 수정은 `supersedes_ref: null`이며, 이전 selection context의 correction을 새 후보의 값으로 승계하지 않는다(#173 E-1). case 네임스페이스 중 case 전체에 걸린 값(`hints`·`candidate.selected_id`)은 selection context를 넘어 잇는다
 
 ## 9. 남은 것
 

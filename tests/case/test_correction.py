@@ -71,7 +71,8 @@ def test_edit_time_hint_supersede_chain_for_repeated_edits():
     case.select_candidate("c3")
     second = correction.edit_time_hint(case, {"time": "20시쯤"})
 
-    assert second["supersedes_id"] == first["correction_id"]
+    # hints는 case 전체에 걸린 값이라 후보가 바뀌어도 chain이 이어진다.
+    assert second["supersedes_ref"] == {"kind": "correction_record", "ref": first["correction_id"]}
 
 
 def test_reselect_candidate_submits_other_candidate_correction_and_bumps_case_rev():
@@ -87,3 +88,48 @@ def test_reselect_candidate_submits_other_candidate_correction_and_bumps_case_re
     assert case.stage == "EVIDENCE_REVIEW"  # 제자리
     assert case.case_rev == rev_before + 1  # apply_correction()이 한 번 올린다
     assert [c.candidate_id for c in case.candidates if c.selected] == ["c2"]
+
+
+# ── supersede chain (correction-record/v1.1 `supersedes_ref`) ───────────────
+
+
+def test_supersede_chain_uses_contract_ref_and_evidence_accepts_it():
+    """같은 필드를 한 선택 안에서 두 번 고치면 두 번째가 첫 번째를 `supersedes_ref`로 가리킨다.
+    예전엔 `supersedes_id`(문자열)로 적어 evidence가 chain을 못 읽고 두 기록을 모두 head로 봐
+    `multiple correction heads`로 실패했다(#173)."""
+    from daesingo.evidence.corrections import correction_heads
+
+    case = _case_at_evidence_review()
+    first = correction.apply_correction(
+        case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value="12가3456", new_value="12가3457",
+    )
+    second = correction.apply_correction(
+        case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value="12가3457", new_value="12가3458",
+    )
+
+    assert first["supersedes_ref"] is None
+    assert second["supersedes_ref"] == {"kind": "correction_record", "ref": first["correction_id"]}
+    assert "supersedes_id" not in second
+    heads = correction_heads(case.correction_records, case_id=case.case_id, selection_rev=case.selection_rev)
+    assert heads["vehicle_number"]["correction_id"] == second["correction_id"]
+
+
+def test_candidate_bound_chain_restarts_in_new_selection():
+    """#173 E-1: 후보에 종속된 값의 정정은 선택 context 안에서만 잇는다 — 새 후보의 첫 정정은
+    이전 후보의 정정을 supersede하지 않는다."""
+    case = _case_at_evidence_review()
+    correction.apply_correction(
+        case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value="12가3456", new_value="12가3457",
+    )
+    case.candidates.append(Candidate(candidate_id="c9", at=None, at_provenance=None, observed="obs9", thumb_ref="fr9"))
+    correction.reselect_candidate(case, "c9")
+
+    fresh = correction.apply_correction(
+        case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value="34나5678", new_value="34나5679",
+    )
+
+    assert fresh["supersedes_ref"] is None
