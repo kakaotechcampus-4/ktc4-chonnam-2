@@ -89,6 +89,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     view_before = build_case_view(
         case,
         evidence_record=evidence_v1,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v1,
         notices=before_view["notices"],
     )
@@ -126,6 +127,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     view_after = build_case_view(
         case,
         evidence_record=evidence_v2,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v2,
         notices=after_view["notices"],
     )

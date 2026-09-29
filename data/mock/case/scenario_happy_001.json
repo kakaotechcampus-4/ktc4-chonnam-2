@@ -258,6 +258,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },
@@ -533,6 +534,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },

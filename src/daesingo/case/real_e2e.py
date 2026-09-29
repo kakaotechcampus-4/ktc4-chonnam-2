@@ -281,6 +281,9 @@ class EvidenceBundle:
     visual_evidence: dict[str, Any]
     fine_run: dict[str, Any]
     disposition: VisualEvidenceDisposition
+    # 조립에 쓴 `PlateReadout`(판독 결과가 없거나 조립 전이면 `None`). CaseView
+    # `evidence.plate_preview_ref`(#47)가 `best_frame.frame_ref`를 여기서 찾는다.
+    plate_readout: dict[str, Any] | None = None
     # 번호판 판독 실행 결과 `ReadoutRun.outcome`(SUCCEEDED·PARTIAL·FAILED). 판독을 시작하지
     # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
     # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
@@ -420,6 +423,7 @@ def assemble_evidence_bundle(
         fine_run=obs.fine_run,
         disposition=obs.disposition,
         plate_read_outcome=obs.plate_read_outcome,
+        plate_readout=obs.plate_readout,
     )
 
 

@@ -21,7 +21,7 @@ orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from daesingo.case.adapters import ModuleAdapter
@@ -76,6 +76,8 @@ class AdapterSnapshot:
     requirement_report_evidence: dict[str, Any] | None
     requirement_report_package: dict[str, Any] | None
     report_package: dict[str, Any] | None
+    # `evidence.plate_preview_ref`(#47)의 원천 — 번호판 근거 프레임을 찾는 데만 쓴다.
+    plate_readouts: list[dict[str, Any]] = field(default_factory=list)
     plate_read_status: str | None = None
 
 
@@ -86,6 +88,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         requirement_report_evidence=adapter.get_requirement_report("EVIDENCE"),
         requirement_report_package=adapter.get_requirement_report("FINAL_PACKAGE"),
         report_package=adapter.get_report_package(),
+        plate_readouts=adapter.get_plate_readouts(),
         plate_read_status=adapter.get_plate_read_status(),
     )
 
@@ -138,6 +141,7 @@ def build_view_from_adapter(
         requirement_report_evidence=snapshot.requirement_report_evidence,
         requirement_report_package=snapshot.requirement_report_package,
         report_package=snapshot.report_package,
+        plate_readouts=snapshot.plate_readouts,
         running_jobs=running_jobs,
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
