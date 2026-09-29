@@ -487,6 +487,21 @@ def _build_package_view(report_package: dict[str, Any] | None, evidence_record: 
     }
 
 
+def _belongs_to_current_selection(
+    case: CaseAggregate, selected: Any, evidence_record: dict[str, Any]
+) -> bool:
+    """`EvidenceRecord`가 지금 선택된 candidate·selection context에서 조립된 것인가.
+    둘 다 evidence 계약 필드(`basis.candidate_ref`·`selection_rev`)를 그대로 비교할 뿐 값을
+    재해석하지 않는다. 같은 candidate라도 selection_rev가 다르면(A→B→A) 이전 context다."""
+    if selected is None:
+        return False
+    candidate_ref = (evidence_record.get("basis") or {}).get("candidate_ref") or {}
+    return (
+        candidate_ref.get("ref") == selected.candidate_id
+        and evidence_record.get("selection_rev") == case.selection_rev
+    )
+
+
 def build_case_view(
     case: CaseAggregate,
     *,
@@ -502,6 +517,17 @@ def build_case_view(
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
+
+    # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
+    # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은
+    # `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로, 이전 evidence가 내려가면 준비
+    # 중인데도 결과 화면(「다른 후보 보기」 포함)이 뜬다. 그 evidence에서 나온 RequirementReport·
+    # ReportPackage도 같이 뺀다.
+    if evidence_record is not None and not _belongs_to_current_selection(case, selected, evidence_record):
+        evidence_record = None
+        requirement_report_evidence = None
+        requirement_report_package = None
+        report_package = None
 
     return {
         "contract": "CaseView",
