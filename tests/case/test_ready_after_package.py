@@ -21,7 +21,7 @@ MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 class _SnapshotAdapter:
-    """`fetch_case_view_inputs()`가 읽는 6개 getter만 가진 스냅샷."""
+    """`fetch_case_view_inputs()`가 읽는 7개 getter만 가진 스냅샷."""
 
     def __init__(
         self,
@@ -48,6 +48,9 @@ class _SnapshotAdapter:
 
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         return []
+
+    def get_visual_evidence_decision(self) -> str | None:
+        return None
 
 
 _EVIDENCE = {"record_ref": {"kind": "evidence_record", "ref": "er_test_001"}}

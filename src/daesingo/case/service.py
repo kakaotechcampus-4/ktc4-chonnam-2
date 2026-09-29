@@ -28,6 +28,7 @@ from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
 from daesingo.case.view import build_case_view
+from daesingo.evidence import NOT_ASSEMBLED
 
 
 def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> list[Candidate]:
@@ -79,6 +80,8 @@ class AdapterSnapshot:
     # `evidence.plate_preview_ref`(#47)의 원천 — 번호판 근거 프레임을 찾는 데만 쓴다.
     plate_readouts: list[dict[str, Any]] = field(default_factory=list)
     plate_read_status: str | None = None
+    # 선택된 후보 Fine 결과의 소비 판정 — 음성 결과 notice(#168 [A])의 원천.
+    visual_evidence_decision: str | None = None
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -90,6 +93,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         report_package=adapter.get_report_package(),
         plate_readouts=adapter.get_plate_readouts(),
         plate_read_status=adapter.get_plate_read_status(),
+        visual_evidence_decision=adapter.get_visual_evidence_decision(),
     )
 
 
@@ -131,8 +135,8 @@ def build_view_from_adapter(
     발주했는지는 이 함수가 추측하지 않는다 — 모듈 docstring 「여기 없는 것」과 동일한
     이유). 그대로 `build_case_view()`에 전달만 한다.
 
-    예외는 `derive_notices()` 하나 — 조립된 `CaseView` 값만으로 발동 조건이 정해지는
-    notice는 호출자가 알 필요가 없으므로 여기서 붙인다.
+    예외는 `derive_notices()` 하나 — 조립된 `CaseView` 값(과 adapter의 Fine 판정)만으로 발동
+    조건이 정해지는 notice는 호출자가 알 필요가 없으므로 여기서 붙인다.
     """
     snapshot = fetch_case_view_inputs(adapter)
     view = build_case_view(
@@ -146,7 +150,7 @@ def build_view_from_adapter(
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
     )
-    return derive_notices(view)
+    return derive_notices(view, visual_evidence_decision=snapshot.visual_evidence_decision)
 
 
 # `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).
@@ -193,7 +197,19 @@ SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
 }
 
 
-def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
+# 음성 결과(#168 [A] 후속, @uminshin 요청). 계약 B절 `notices[].code` 등재(2026-09-29). 접두어는
+# 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 출구(「다른 후보 보기」)는
+# 결과 화면 1차 명령이라 `actions`는 비운다.
+VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
+    "code": "evidence.visual_event_not_observed",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.visual_event_not_observed",
+    "actions": [],
+}
+
+
+def derive_notices(view: dict[str, Any], *, visual_evidence_decision: str | None = None) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
@@ -206,8 +222,11 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
       `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
       전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
+    - `evidence.visual_event_not_observed` — evidence가 없고, adapter가 보고한 선택 후보의 Fine
+      판정(`visual_evidence_decision`)이 `NOT_ASSEMBLED`일 때(#168 [A]). 음성 결과는 evidence가
+      없어 CaseView 값만으로는 조립 전과 구분되지 않으므로 이 판정만 따로 받는다.
 
-    뒤 두 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
+    검색어·응답 전 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
@@ -220,6 +239,8 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
         derived.append(PLATE_READ_FAILED_NOTICE)
     evidence = view.get("evidence")
+    if evidence is None and visual_evidence_decision == NOT_ASSEMBLED:
+        derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
     if evidence is not None:
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
