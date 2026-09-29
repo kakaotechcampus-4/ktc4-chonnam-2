@@ -58,13 +58,13 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   `build_gemini_search_service(api_key, resolver)`로 `search_candidates()`/
   `verify_visual_with_stream_context()`에 `service=`를 실제로 넘긴다. API 키는
   `.env`의 `GEMINI_API_KEY`(커밋 안 됨, `daesingo.common.env.load_env_file()`로 읽음).
-- **readout `FixtureOcrProvider` — 종결(대체 경로로).** `RecordingOcrProvider`(#130)는
-  `IncidentClipFrames`를 감쌀 plate_reader/overlay_reader 콜러블이 아직 없어(새
-  capability라 여기서 만들지 않음), 대신 이미 실제로 검증된
-  `paddle_provider.PaddleOcrProvider(LocalVideoFrameSource({ref: local_video_path}))`
-  경로(`scripts/run_readout_real.py`와 동일 패턴)를 쓴다. clip 범위가 아니라 파일
-  전체의 30/50/70% 지점을 본다는 제약이 있다 — 이번 목표(실제 pixel→실제 OCR)엔
-  영향 없다.
+- **readout `FixtureOcrProvider` — 종결.** `PaddleOcrProvider(RecordingFrameSource(rec_service))`로
+  **IncidentClip 구간 안의 프레임**을 읽는다(`_build_ocr_provider()`, 2026-09-28 — PR #146 멘토
+  리뷰 r4084810910 후속). readout의 `RecordingFrameSource`(#138)가 recording 공개 경로
+  (`get_incident_clip()` → `resolve_frame()` → `read_frame()`)로 프레임과 recording이 발급한
+  `frame_ref`를 넘긴다. 예전엔 `LocalVideoFrameSource(원본 경로)`로 원본 파일 전체의
+  30/50/70% 지점을 읽어 위반 구간 밖의 프레임을 볼 수 있었다. 샘플링 간격·장수는 readout이
+  정한다(계약 §13 미결).
 - **`time_source_candidates = []` — 종결.** `rec_service.observe_time_sources()`
   결과를 그대로 전달한다.
 
@@ -78,11 +78,12 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   동일성/재사용 판단용 opaque 설정일 뿐 계약 기본값이 아니다.
 - **`AnalysisScope`의 `budget`/`target_event_types`**: case Producer 소유(recording
   소유 아님). 공용 Mock Pack의 happy 기준(`target_event_types=["SOLID_LINE_LANE_CHANGE"]`,
-  `budget={max_cost_krw:1000, max_latency_sec:180}`)을 월요일 GT 없는 배관 E2E에
-  재사용한다(정철원 확인, 2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의
-  정답을 단정하는 값이 아니라 search에 요청하는 탐지 대상이다. Elice 실제 호출
-  한도로 다른 값이 필요하면 서어진 확인이 남는다 — 계약 기본값으로 새로 확정된 게
-  아니다.
+  `max_cost_krw:1000`)을 월요일 GT 없는 배관 E2E에 재사용한다(정철원 확인,
+  2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의 정답을 단정하는 값이 아니라
+  search에 요청하는 탐지 대상이다. `max_latency_sec`는 2026-09-28부터 A-1 잠정값
+  「Coarse 클립당 150초」(`docs/modules/case/decisions/timeout-fallback.md`, #72)를 쓴다 —
+  이 경로는 영상 전체를 한 번에 올려 사실상 클립 1개이고, 인라인 상한을 넘는 영상은
+  search가 `MediaTooLargeError`로 막는다. 클립 분할 발주는 #168 후속 결정 뒤 구현한다.
 - **candidate 선택은 `candidates[0]`으로 고정한다.** GT 없는 배관 확인이 목적이라
   "어느 candidate가 맞는지"는 이번 범위 밖이다 — `happy_001`이 후보 1개라 우연히
   안전했던 것과 같은 자리다. 후보가 여럿이면 이 단순화가 그대로 드러난다.
@@ -149,7 +150,9 @@ SCENARIO_ID = "scenario_happy_001"
 # 공용 Mock Pack happy 기준(정철원 확인, 2026-09-21) — 계약 기본값으로 확정된 게
 # 아니라 월요일 GT 없는 배관 E2E용 재사용 값이다.
 _MONDAY_TARGET_EVENT_TYPES = ["SOLID_LINE_LANE_CHANGE"]
-_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": 180}
+# A-1 잠정값(timeout-fallback.md, #72) — Coarse 클립당 150초. runtime 머신 재측정 후 확정.
+_COARSE_CLIP_TIMEOUT_SEC = 150
+_MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": _COARSE_CLIP_TIMEOUT_SEC}
 
 
 class StreamSelectionError(Exception):
@@ -282,6 +285,13 @@ class EvidenceBundle:
     visual_evidence: dict[str, Any]
     fine_run: dict[str, Any]
     disposition: VisualEvidenceDisposition
+    # 조립에 쓴 `PlateReadout`(판독 결과가 없거나 조립 전이면 `None`). CaseView
+    # `evidence.plate_preview_ref`(#47)가 `best_frame.frame_ref`를 여기서 찾는다.
+    plate_readout: dict[str, Any] | None = None
+    # 번호판 판독 실행 결과 `ReadoutRun.outcome`(SUCCEEDED·PARTIAL·FAILED). 판독을 시작하지
+    # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
+    # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
+    plate_read_outcome: str | None = None
 
     @property
     def assembled(self) -> bool:
@@ -308,6 +318,8 @@ class ObservationBundle:
     overlay_readout: dict[str, Any] | None = None
     time_source_candidates: list[dict[str, Any]] = field(default_factory=list)
     asset_facts: list[dict[str, Any]] = field(default_factory=list)
+    # 번호판 판독 `ReadoutRun.outcome`(#172 [D]). 판독을 시작하지 않았으면 None.
+    plate_read_outcome: str | None = None
 
 
 def assemble_evidence_bundle(
@@ -338,6 +350,7 @@ def assemble_evidence_bundle(
             visual_evidence=obs.visual_evidence,
             fine_run=obs.fine_run,
             disposition=obs.disposition,
+            plate_read_outcome=obs.plate_read_outcome,
         )
 
     candidate_event = obs.candidate.model_dump(mode="json")
@@ -415,6 +428,8 @@ def assemble_evidence_bundle(
         visual_evidence=obs.visual_evidence,
         fine_run=obs.fine_run,
         disposition=obs.disposition,
+        plate_read_outcome=obs.plate_read_outcome,
+        plate_readout=obs.plate_readout,
     )
 
 
@@ -534,7 +549,7 @@ def observe_happy_001_candidate(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    _plate_run, plate_readout = readout_api.read_plate(
+    plate_run, plate_readout = readout_api.read_plate(
         read_request, provider=readout_providers.FixtureOcrProvider()
     )
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
@@ -562,6 +577,7 @@ def observe_happy_001_candidate(
         overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
         time_source_candidates=time_source_candidates,
         asset_facts=asset_facts_real,
+        plate_read_outcome=plate_run.outcome,
     )
 
 
@@ -723,9 +739,24 @@ def get_real_video_candidates(
     """real Gemini/Elice **Coarse**를 실제로 호출한다(유료). `prepare_real_video_context()`가
     만든 `context`를 그대로 재사용 — candidate 탐색용 AnalysisSource를 다시 만들지
     않는다."""
-    return search_module.search_candidates(
-        context.scope, service=context.gemini_service
-    ).candidates
+    return run_real_video_candidate_search(context).candidates
+
+
+def run_real_video_candidate_search(context: RealVideoContext) -> search_module.CandidateSearchResult:
+    """real Coarse(유료) 결과 전체 — `AnalysisRun.outcome`까지 보존한다. 실패 Run은 후보 0개라
+    후보만 보면 「찾았지만 없음」과 구분되지 않는다(PR #187 리뷰)."""
+    return search_module.search_candidates(context.scope, service=context.gemini_service)
+
+
+def _build_ocr_provider(context: RealVideoContext) -> paddle_provider.PaddleOcrProvider:
+    """실영상 번호판·시각 판독용 PaddleOCR — IncidentClip 구간 프레임을 recording에서 받는다.
+
+    `RecordingFrameSource`는 clip 길이 기준 샘플 지점을 recording이 발급한 `FrameRef`와 PNG로
+    받아 온다. 원본 파일 경로를 readout에 넘기지 않는다(공개 계약 안에서만 접근).
+    """
+    return paddle_provider.PaddleOcrProvider(
+        paddle_provider.RecordingFrameSource(context.rec_service)
+    )
 
 
 def build_evidence_for_real_video_candidate(
@@ -843,21 +874,8 @@ def observe_real_video_candidate(
             provenance="SOURCE_DERIVED_INCIDENT_CLIP",
         ),
     )
-    # 실제 PaddleOCR — `RecordingOcrProvider`(#130)는 `IncidentClipFrames`를 감싸는
-    # plate_reader/overlay_reader 콜러블이 아직 없어서(paddle_provider.py에
-    # `PaddleOcrProvider`가 기대하는 `frame_source.frames(clip_ref)` 모양의 어댑터가
-    # 없음 — 새 capability라 여기서 만들지 않는다), 이미 실제로 쓰이고 검증된
-    # `LocalVideoFrameSource(로컬 경로)` + `PaddleOcrProvider` 경로를 그대로 쓴다
-    # (`scripts/run_readout_real.py`와 동일 패턴). `LocalVideoFrameSource`는 clip
-    # 범위가 아니라 파일 전체의 30/50/70% 지점을 본다 — candidate 구간과 정확히
-    # 안 맞을 수 있지만, 이번 목표(실제 pixel→실제 OCR)엔 영향 없다(모듈 docstring
-    # "readout provider" 절 참고).
-    ocr_provider = paddle_provider.PaddleOcrProvider(
-        paddle_provider.LocalVideoFrameSource(
-            {incident_clip.incident_clip_ref: str(context.local_video_path)}
-        )
-    )
-    _plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
+    ocr_provider = _build_ocr_provider(context)
+    plate_run, plate_readout = readout_api.read_plate(read_request, provider=ocr_provider)
     _overlay_run, overlay_readout = readout_api.read_overlay_time(
         read_request, provider=ocr_provider
     )
@@ -894,6 +912,7 @@ def observe_real_video_candidate(
         overlay_readout=overlay_readout.to_dict() if overlay_readout else None,
         time_source_candidates=time_source_candidates,
         asset_facts=asset_facts_real,
+        plate_read_outcome=plate_run.outcome,
     )
 
 

@@ -380,8 +380,11 @@ def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
 
 
 def test_real_e2e_happy_path_reaches_ready_caseview():
-    """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`가
-    `READY`까지 도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다."""
+    """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`까지
+    도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다.
+
+    `READY`는 Package가 실제로 준비됐을 때만이다(#167). 상황 응답 전에는 ADR-EVIDENCE-005
+    D2-c로 Package가 막혀 `EVIDENCE_REVIEW`에 머문다."""
     scope = _real_scope()
     case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints=_real_hints(), manifest_summary={})
     real = RealAdapter(case_id="case_h001_full_e2e", case=case, search_scope=scope, mock_root=MOCK_ROOT)
@@ -398,11 +401,13 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    service.mark_ready_if_package_ready(case, real)
 
     view = service.build_view_from_adapter(case, real)
 
-    assert view["stage"] == "READY"
+    # READY ⇔ Package 존재(#167). 상황 응답 전이라 지금은 둘 다 아니다.
+    assert (view["stage"] == "READY") == (view["package"] is not None)
+    assert view["stage"] == "EVIDENCE_REVIEW"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
     assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"

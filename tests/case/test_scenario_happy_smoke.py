@@ -11,7 +11,7 @@ Producer fixture, 정답지 역할). 이 테스트가 통과한다는 것은 "�
 import json
 from pathlib import Path
 
-from daesingo.case import jobs
+from daesingo.case import jobs, service
 from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.view import build_case_view
@@ -85,6 +85,8 @@ def test_happy_path_ready_matches_fixture():
             at_provenance=None,
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]
@@ -104,11 +106,12 @@ def test_happy_path_ready_matches_fixture():
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
     # 결과 화면 「신고 상황」에서 사용자가 [맞아요]를 누른 뒤에야 Package가 나온다(#171 B-2).
     case.record_situation_response("CONFIRMED", responded_at="2026-08-24T18:22:30+09:00")
-    case.mark_ready()
+    case.mark_ready(report_package=report_package)
 
     view = build_case_view(
         case,
         evidence_record=evidence_record,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=requirement_evidence,
         requirement_report_package=requirement_package,
         report_package=report_package,
@@ -152,6 +155,7 @@ def test_happy_path_before_situation_response_has_no_package():
     case.start_search()
     jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
     fixture_candidate = before["candidates"][0]
+    raw_candidate = adapter.get_candidate_events()[0]
     case.receive_candidates(
         [
             Candidate(
@@ -160,17 +164,24 @@ def test_happy_path_before_situation_response_has_no_package():
                 at_provenance=fixture_candidate["at_provenance"],
                 observed=fixture_candidate["observed"],
                 thumb_ref=fixture_candidate["thumb_ref"],
+                rank=raw_candidate["rank"],
+                representative_ms=raw_candidate["span"]["representative_ms"],
             )
         ]
     )
     case.select_candidate("candidate_h001")
 
-    view = build_case_view(
-        case,
-        evidence_record=records[0],
-        requirement_report_evidence=evidence_reports[0],
-        requirement_report_package=package_reports[0],
-        report_package=None,
+    # 실제 진입점(`build_view_from_adapter()`)처럼 파생 notice까지 붙인다 — 응답 전이라
+    # `case.situation_response_pending`, 검색어가 없어 `evidence.location_search_keyword_missing`.
+    view = service.derive_notices(
+        build_case_view(
+            case,
+            evidence_record=records[0],
+            plate_readouts=adapter.get_plate_readouts(),
+            requirement_report_evidence=evidence_reports[0],
+            requirement_report_package=package_reports[0],
+            report_package=None,
+        )
     )
 
     assert package_reports[0]["overall"] == "UNKNOWN"

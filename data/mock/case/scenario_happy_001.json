@@ -196,6 +196,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_h001",
+          "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -256,6 +258,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },
@@ -551,7 +554,22 @@
       },
       "package": null,
       "running_jobs": [],
-      "notices": []
+      "notices": [
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
+          "actions": []
+        }
+      ]
     },
     {
       "contract": "CaseView",
@@ -613,6 +631,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_h001",
+          "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -673,6 +693,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },
@@ -1020,7 +1041,15 @@
         ]
       },
       "running_jobs": [],
-      "notices": []
+      "notices": [
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        }
+      ]
     },
     {
       "contract": "CaseView",
@@ -1082,6 +1111,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_h001",
+          "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -1142,6 +1173,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },
@@ -1489,7 +1521,15 @@
         ]
       },
       "running_jobs": [],
-      "notices": []
+      "notices": [
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        }
+      ]
     }
   ]
 }

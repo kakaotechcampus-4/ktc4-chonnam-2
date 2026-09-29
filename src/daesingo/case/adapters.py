@@ -104,6 +104,10 @@ class ModuleAdapter(Protocol):
 
     def get_candidate_events(self) -> list[dict[str, Any]]: ...
 
+    def get_candidate_search_outcome(self) -> str | None:
+        """마지막 `CANDIDATE_SEARCH` Run의 `outcome`(SUCCEEDED·PARTIAL·FAILED). 없으면 None."""
+        ...
+
     def get_analysis_scopes(self) -> list[dict[str, Any]]: ...
 
     def get_evidence_record(self) -> dict[str, Any] | None: ...
@@ -117,6 +121,15 @@ class ModuleAdapter(Protocol):
     def get_evidence_needs(self) -> list[dict[str, Any]]: ...
 
     def get_report_package(self) -> dict[str, Any] | None: ...
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        """선택된 후보의 `PlateReadout` 목록(원판독·재판독). `evidence.plate_preview_ref`(#47)가
+        현재 값의 근거 판독을 `readout_id`로 찾는 데 쓴다."""
+        ...
+
+    def get_plate_read_status(self) -> str | None:
+        """번호판 판독 실행 상태(`JobExecution.status` 값 공간). 보고할 실행 상태가 없으면 None."""
+        ...
 
     def get_job_executions(self) -> list[dict[str, Any]]: ...
 
@@ -144,6 +157,14 @@ class MockFixtureAdapter:
             if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH":
                 candidates.extend(entry.get("candidates", []))
         return candidates
+
+    def get_candidate_search_outcome(self) -> str | None:
+        runs = [
+            entry["analysis_run"]
+            for entry in self._load("search").get("analysis_run_candidate_events", [])
+            if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH"
+        ]
+        return runs[-1]["outcome"] if runs else None
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """search fixture에 실려있는 `AnalysisScope`(case가 Producer로 만들어 보낸 것)를
@@ -194,6 +215,14 @@ class MockFixtureAdapter:
     def get_report_package(self) -> dict[str, Any] | None:
         packages = self._load("evidence").get("report_packages", [])
         return packages[-1] if packages else None
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        return self._load("readout").get("plate_readouts", [])
+
+    def get_plate_read_status(self) -> str | None:
+        """mock fixture에는 이 case의 실행 상태 원장이 없다 — 시나리오 테스트가
+        `plate_read_status`를 JobExecution fixture에서 직접 넘긴다(`scenario_infra_failure_001`)."""
+        return None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
@@ -265,14 +294,20 @@ class RealAdapter:
         if not isinstance(scope, search_module.AnalysisScope):
             scope = search_module.AnalysisScope.model_validate(scope)
         result = search_module.search_candidates(scope)
+        self._last_search_outcome = str(result.analysis_run.outcome)
         return [
             {
                 "candidate_id": c.candidate_id,
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
+                "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in result.candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """실제 대응이 없다 — case가 `AnalysisScope`의 Producer라(§`scope.py`), 다른
@@ -395,6 +430,16 @@ class RealAdapter:
         이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
         return self._build_evidence_bundle().report_package
 
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
+
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -472,16 +517,23 @@ class RealVideoAdapter:
         선택한 것과 같은 객체를 다시 찾아 쓰게 한다(`RealAdapter`와 동일 원칙,
         2026-09-19 수정 참고)."""
         context = self._ensure_context()
-        candidates = real_e2e.get_real_video_candidates(context)
+        result = real_e2e.run_real_video_candidate_search(context)
+        self._last_search_outcome = str(result.analysis_run.outcome)
+        candidates = result.candidates
         self._candidates_by_id = {c.candidate_id: c for c in candidates}
         return [
             {
                 "candidate_id": c.candidate_id,
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
+                "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -558,6 +610,16 @@ class RealVideoAdapter:
 
     def get_report_package(self) -> dict[str, Any] | None:
         return self._build_evidence_bundle().report_package
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
+
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:

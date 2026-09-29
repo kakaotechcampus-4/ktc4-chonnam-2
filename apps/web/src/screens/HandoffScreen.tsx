@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { DisplayRow } from '../components/DisplayRow'
+import { OtherCandidates } from '../components/OtherCandidates'
 import { Panel } from '../components/Panel'
 import { readinessLabel, reportFieldLabel } from '../contracts/labels'
 
@@ -79,6 +80,9 @@ export function HandoffScreen(props: { view: CaseView }): JSX.Element {
           </div>
         )}
       </Panel>
+
+      {/* READY에서도 다른 후보를 고를 수 있다(core-user-flow.md §8-1, #173 E-4) */}
+      <OtherCandidates view={props.view} />
     </div>
   )
 }

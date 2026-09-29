@@ -57,6 +57,8 @@ def _build_case_and_candidate(adapter: MockFixtureAdapter, hints: dict, manifest
             at_provenance="recording.filename_time",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]
@@ -99,6 +101,7 @@ def test_plate_reread_pending_and_resolved_match_fixture():
     view_pending = build_case_view(
         case,
         evidence_record=evidence_v1,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v1,
         running_jobs=[
             {
@@ -134,6 +137,7 @@ def test_plate_reread_pending_and_resolved_match_fixture():
     view_resolved = build_case_view(
         case,
         evidence_record=evidence_v2,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v2,
         notices=resolved_view["notices"],
     )

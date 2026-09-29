@@ -124,6 +124,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_u001",
+          "rank": 1,
+          "marker_ms": 615000,
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -181,6 +183,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_u001_plate1",
+        "plate_preview_ref": "fr_u001_plate1",
         "review_needed": true,
         "reason_code": "evidence.multiple_fields_need_review"
       },
@@ -270,6 +273,13 @@
           "blocking": false,
           "message_key": "notice.time_post_stamp_required",
           "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
         }
       ]
     },
@@ -333,6 +343,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_u001",
+          "rank": 1,
+          "marker_ms": 615000,
           "at": "2026-08-26T22:20:15+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -390,6 +402,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_u001_plate1",
+        "plate_preview_ref": "fr_u001_plate1",
         "review_needed": true,
         "reason_code": "evidence.multiple_fields_need_review"
       },
@@ -587,6 +600,13 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.time_post_stamp_required",
+          "actions": []
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
           "actions": []
         }
       ]
