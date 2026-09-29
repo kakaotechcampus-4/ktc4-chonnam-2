@@ -252,6 +252,13 @@
           "blocking": false,
           "message_key": "notice.location_search_keyword_missing",
           "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
+          "actions": []
         }
       ]
     },
@@ -454,6 +461,13 @@
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
           "actions": []
         }
       ]

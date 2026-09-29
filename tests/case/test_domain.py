@@ -2,6 +2,9 @@ import pytest
 
 from daesingo.case.domain import Candidate, CaseAggregate, InvalidTransition
 
+# `mark_ready()`는 준비된 ReportPackage를 요구한다(#167). 상태 기계만 보는 테스트라 ref만 둔다.
+_PACKAGE = {"package_ref": {"kind": "report_package", "ref": "pkg_test_001"}}
+
 
 def _make_case() -> CaseAggregate:
     return CaseAggregate.intake(
@@ -37,7 +40,7 @@ def test_forward_transitions_bump_case_rev():
     assert case.case_rev == 2
     assert case.selection_rev == 1  # candidate 선택 1회 = selection_rev 1회 증가
 
-    case.mark_ready()
+    case.mark_ready(report_package=_PACKAGE)
     assert case.stage == "READY"
     assert case.case_rev == 3
 
@@ -78,7 +81,7 @@ def test_mark_reviewed_sets_flag_and_bumps_case_rev():
     case.start_search()
     case.receive_candidates([Candidate(candidate_id="c1", at=None, at_provenance=None, observed="obs", thumb_ref="fr1")])
     case.select_candidate("c1")
-    case.mark_ready()
+    case.mark_ready(report_package=_PACKAGE)
     assert case.user_reviewed is False
     assert case.case_rev == 3
 
@@ -116,7 +119,7 @@ def test_regress_to_searching_from_each_later_stage_clears_candidates():
         if reach_stage in ("EVIDENCE_REVIEW", "READY"):
             case.select_candidate("c1")
         if reach_stage == "READY":
-            case.mark_ready()
+            case.mark_ready(report_package=_PACKAGE)
         assert case.stage == reach_stage
 
         case.regress_to_searching()

@@ -42,6 +42,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     두면 계약(`caseView.ts`/contract 문서 §7)이 기대하는 non-null과 어긋난다(이슈 #104).
     """
     raw_candidates = adapter.get_candidate_events()
+    if str(adapter.get_candidate_search_outcome()) == "FAILED":
+        # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — 계약 §7 `RESUME_SEARCH` 행.
+        case.record_candidate_search_failure()
+        return []
     candidates = [
         Candidate(
             candidate_id=c["candidate_id"],
@@ -69,6 +73,7 @@ class AdapterSnapshot:
     requirement_report_evidence: dict[str, Any] | None
     requirement_report_package: dict[str, Any] | None
     report_package: dict[str, Any] | None
+    plate_read_status: str | None = None
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -78,7 +83,30 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         requirement_report_evidence=adapter.get_requirement_report("EVIDENCE"),
         requirement_report_package=adapter.get_requirement_report("FINAL_PACKAGE"),
         report_package=adapter.get_report_package(),
+        plate_read_status=adapter.get_plate_read_status(),
     )
+
+
+_PACKAGE_READY_READINESS = frozenset({"PASS", "WARN"})
+
+
+def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> bool:
+    """`PACKAGE_READY` gate가 성립할 때만 `READY`로 올린다(#167). 올렸으면 `True`.
+
+    CaseView 계약 B절: `READY` = FINAL `RequirementReport`가 `PASS`/`WARN`이고 ReportPackage가
+    있는 시점(#171 C 결정). evidence·Package는 adapter가 downstream 결과로 갖고 있어, 스냅샷을
+    읽어 판단하고 Package를 domain `mark_ready()`에 넘긴다(domain은 Package 없는 전이를
+    거부한다). Package가 막혔거나
+    (상황 응답 전 등) evidence가 조립되지 않았으면(`NOT_ASSEMBLED`) stage를 바꾸지 않는다.
+    그 결과를 어느 화면으로 보일지는 #168·#171 결정 몫이라 여기서 정하지 않는다.
+    """
+    snapshot = fetch_case_view_inputs(adapter)
+    # RequirementReport의 판정 필드는 `overall`이다(CaseView에서 `readiness`로 옮겨 싣는다).
+    final = snapshot.requirement_report_package or {}
+    if snapshot.report_package is None or final.get("overall") not in _PACKAGE_READY_READINESS:
+        return False
+    case.mark_ready(report_package=snapshot.report_package)
+    return True
 
 
 def build_view_from_adapter(
@@ -109,6 +137,7 @@ def build_view_from_adapter(
         report_package=snapshot.report_package,
         running_jobs=running_jobs,
         notices=notices,
+        plate_read_status=snapshot.plate_read_status,
     )
     return derive_notices(view)
 
@@ -125,24 +154,79 @@ LOCATION_SEARCH_KEYWORD_MISSING_NOTICE: dict[str, Any] = {
 }
 
 
+# 후보 탐색 실패(PR #187 리뷰). 계약 B절 `notices[].code` 등재(2026-09-28).
+CANDIDATE_SEARCH_FAILED_NOTICE: dict[str, Any] = {
+    "code": "search.candidate_search_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.candidate_search_failed",
+    "actions": ["RETRY_SEARCH"],
+}
+
+
+# 번호판 판독 실행 실패(#172 [D] 4a). mock fixture(`scenario_infra_failure_001` rev2)가 이미 쓰는
+# 모양 그대로다 — 계약 B절 `notices[].code` 등재(2026-09-28).
+PLATE_READ_FAILED_NOTICE: dict[str, Any] = {
+    "code": "readout.plate_read_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.plate_read_failed_retry_exhausted",
+    "actions": ["RETRY_PLATE_READ"],
+}
+
+
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-28, #171 C-2 Case 결정).
+# 응답 버튼은 notice action이 아니라 #106 command라 `actions`는 비운다.
+SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
+    "code": "case.situation_response_pending",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.situation_response_pending",
+    "actions": [],
+}
+
+
 def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
+    - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
+      evidence 유무와 무관하다.
+    - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
+      유무와 무관하다.
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
-      이슈 #48). `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로
-      붙이지 않는다.
+      이슈 #48).
+    - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
+      `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
+      전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
 
+    뒤 두 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
+    derived = []
+    # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
+    if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
+        derived.append(CANDIDATE_SEARCH_FAILED_NOTICE)
+    # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
+    # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
+    if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
+        derived.append(PLATE_READ_FAILED_NOTICE)
     evidence = view.get("evidence")
-    if evidence is None or evidence["location_display"]["search_keyword"] is not None:
-        return view
-    notice = LOCATION_SEARCH_KEYWORD_MISSING_NOTICE
-    if any(n["code"] == notice["code"] for n in view["notices"]):
-        return view
-    view["notices"] = [*view["notices"], dict(notice, actions=[])]
+    if evidence is not None:
+        if evidence["location_display"]["search_keyword"] is None:
+            derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+        selected = [c for c in view["candidates"] if c["selected"]]
+        if (
+            view.get("package") is None
+            and len(selected) == 1
+            and selected[0]["situation_confirmation"] == "NOT_ASKED"
+        ):
+            derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
+    present = {n["code"] for n in view["notices"]}
+    additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
+    if additions:
+        view["notices"] = [*view["notices"], *additions]
     return view
 
 

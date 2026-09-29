@@ -117,7 +117,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     assert record["target_field"] == "occurred_at"
     assert record["previous_value"] == correction_fixture["previous_value"]
     assert record["new_value"] == correction_fixture["new_value"]
-    assert record["supersedes_id"] is None  # 이 target_field의 첫 correction
+    assert record["supersedes_ref"] is None  # 이 target_field의 첫 correction
     assert record["selection_rev"] == 1  # select_candidate() 1회 = selection_rev 1
     assert case.correction_records == [record]
 
