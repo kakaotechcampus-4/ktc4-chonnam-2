@@ -1,7 +1,4 @@
-import time
-
 from .config import GeminiSearchConfig
-from .execution import RunDeadline
 from .media import MediaPreparer
 from .provider import GeminiProvider
 from .service import SearchService
@@ -19,5 +16,4 @@ def build_gemini_search_service(
         GeminiProvider(api_key, selected),
         selected,
         MediaPreparer(selected),
-        RunDeadline(time.monotonic, budget_ms=60_000),
     )

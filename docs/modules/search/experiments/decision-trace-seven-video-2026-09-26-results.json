@@ -1,0 +1,888 @@
+{
+  "schema_version": "search-decision-trace-summary/v1",
+  "scope": "local-observation-probe-not-adoption",
+  "runs": [
+    {
+      "context": {
+        "run_id": "trace_e0699a3eab3b480c9efa2181fa087b51",
+        "created_at": "2026-09-26T05:00:06.150851+00:00",
+        "mode": "LIVE",
+        "profile": "p3",
+        "git_sha": "bae28184f9940c0da0bce3fe334a1432920bea97",
+        "implementation_fingerprint": "70d9de39e13dd4493c3c99eb7e67f3465cd3251d30f82cbfb4f650bb9ab9049c",
+        "model": "gemini-3.8-flash",
+        "config_fingerprint": "1ff610f1562d469200ab9be6327635c0f13b36761c5a6f5f2708022ace9b8a0c",
+        "coarse_fps": 1.0,
+        "fine_fps": 2.0,
+        "coarse_max_height": 360,
+        "fine_max_height": 720,
+        "fine_padding_sec": 4.0,
+        "reasoning_effort": "low",
+        "max_retries": 0,
+        "timeout_sec": 180.0,
+        "input_usd_per_million": 0.0,
+        "output_usd_per_million": 0.0
+      },
+      "invocations": 16,
+      "failures": 0,
+      "diagnostic_issues": 0,
+      "verification_counts": {
+        "NOT_OBSERVED": 7,
+        "OBSERVED": 2
+      },
+      "reported_total_tokens": 28607,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "input_sha256": "7ab930fa0d04b30bfc7f45105c715b3a726476bbbc4f6a5ff3079ff8cf3e4433",
+          "duration_sec": 20.023,
+          "coarse_media_sha256": "30cc17503bc359583929d47980cc14a45f4ec7f65b4bd89a6f9dc76b04e11e38",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 0.0,
+                "end_sec": 3.0
+              },
+              "at_sec": 1.5,
+              "score": 0.85
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.023322,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "30cc17503bc359583929d47980cc14a45f4ec7f65b4bd89a6f9dc76b04e11e38",
+              "latency_ms": 6830,
+              "usage": {
+                "input_tokens": 1722,
+                "output_tokens": 170,
+                "thought_tokens": 0,
+                "total_tokens": 1892
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 7.0,
+              "prepared_duration_sec": 7.0,
+              "prepared_media_sha256": "6fe8fd8588c1e6ba64d56f0a94d4231d10d7ad667855637d8e62c6a18cb9ca93",
+              "latency_ms": 4212,
+              "usage": {
+                "input_tokens": 831,
+                "output_tokens": 416,
+                "thought_tokens": 0,
+                "total_tokens": 1247
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "input_sha256": "38613ce89e712365c4da11d6dba97a919cc7751ab82dd549c9fc2512a5fb2490",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "632dacc6094feffdd44c6ba0a003f1964e1fb5e05165b222e606657d06b38b9c",
+          "candidates": [],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.024656,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "632dacc6094feffdd44c6ba0a003f1964e1fb5e05165b222e606657d06b38b9c",
+              "latency_ms": 3439,
+              "usage": {
+                "input_tokens": 1722,
+                "output_tokens": 9,
+                "thought_tokens": 0,
+                "total_tokens": 1731
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "input_sha256": "5c82b6f7b163ae400fbdc20a2a121f639ed32b141e0b0c9682eef531a6114008",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "6a207304245a5450e9a51055e5896cee56826e9c0da0ce45aab57590e8dd7e8f",
+          "candidates": [],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.024656,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "6a207304245a5450e9a51055e5896cee56826e9c0da0ce45aab57590e8dd7e8f",
+              "latency_ms": 3739,
+              "usage": {
+                "input_tokens": 1722,
+                "output_tokens": 9,
+                "thought_tokens": 0,
+                "total_tokens": 1731
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "input_sha256": "b03f2652caccda5b1bafa63a2c29f9b725e9ebdb30aa5390535a8bad5802e85a",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "f1f776c9517f5a2729600dba60e67403c9ff93c431c323c52d710a9bb94fcc90",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 0.0,
+                "end_sec": 3.0
+              },
+              "at_sec": 1.0,
+              "score": 0.45
+            },
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 6.0,
+                "end_sec": 9.0
+              },
+              "at_sec": 7.5,
+              "score": 0.4
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.025323,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "f1f776c9517f5a2729600dba60e67403c9ff93c431c323c52d710a9bb94fcc90",
+              "latency_ms": 6143,
+              "usage": {
+                "input_tokens": 1722,
+                "output_tokens": 338,
+                "thought_tokens": 0,
+                "total_tokens": 2060
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 7.0,
+              "prepared_duration_sec": 7.0,
+              "prepared_media_sha256": "f92d37b6adad1fa9dfb00c25648154cee30d0e57d5eacf4d51e0a966eff5b112",
+              "latency_ms": 3236,
+              "usage": {
+                "input_tokens": 831,
+                "output_tokens": 254,
+                "thought_tokens": 0,
+                "total_tokens": 1085
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 1,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 2.0,
+              "prepared_origin_end_sec": 13.0,
+              "prepared_duration_sec": 11.0,
+              "prepared_media_sha256": "c60c2161a8c971deb7ba57387ca425f96cacd5a8be9947b72f89011f62286dae",
+              "latency_ms": 3540,
+              "usage": {
+                "input_tokens": 1096,
+                "output_tokens": 253,
+                "thought_tokens": 0,
+                "total_tokens": 1349
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "input_sha256": "1a430ba27eb95568bcaa79eb092786eac9030046c073f09853258ba543bdcd64",
+          "duration_sec": 5.533,
+          "coarse_media_sha256": "b9902c80c5148d2732a330027671b75339355ea1ff9825d7c0a4b259134f0b0c",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 0.0,
+                "end_sec": 3.2
+              },
+              "at_sec": 1.5,
+              "score": 0.78
+            },
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 0.0,
+                "end_sec": 2.5
+              },
+              "at_sec": 0.8,
+              "score": 0.55
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 5.533333,
+              "prepared_duration_sec": 6.0,
+              "prepared_media_sha256": "b9902c80c5148d2732a330027671b75339355ea1ff9825d7c0a4b259134f0b0c",
+              "latency_ms": 3462,
+              "usage": {
+                "input_tokens": 797,
+                "output_tokens": 329,
+                "thought_tokens": 0,
+                "total_tokens": 1126
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 5.533,
+              "prepared_duration_sec": 5.5,
+              "prepared_media_sha256": "410903f6fd1e0f57982c86432108f0c267e297b07e311425bb036666de790b6f",
+              "latency_ms": 5704,
+              "usage": {
+                "input_tokens": 765,
+                "output_tokens": 855,
+                "thought_tokens": 0,
+                "total_tokens": 1620
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 1,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 5.533,
+              "prepared_duration_sec": 5.5,
+              "prepared_media_sha256": "410903f6fd1e0f57982c86432108f0c267e297b07e311425bb036666de790b6f",
+              "latency_ms": 3531,
+              "usage": {
+                "input_tokens": 765,
+                "output_tokens": 412,
+                "thought_tokens": 0,
+                "total_tokens": 1177
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "input_sha256": "efdc135c5f86d5cffb8657defdea388e47d55c91006bdd1e541375ab0e73259f",
+          "duration_sec": 60.0,
+          "coarse_media_sha256": "34162e566de321314c50e6ffc5834d0bdb891a32fb18d2417bf6fb4c75c744d9",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 3.0,
+                "end_sec": 7.0
+              },
+              "at_sec": 5.0,
+              "score": 0.95
+            },
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 54.0,
+                "end_sec": 57.0
+              },
+              "at_sec": 55.5,
+              "score": 0.82
+            },
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 30.0,
+                "end_sec": 33.0
+              },
+              "at_sec": 31.5,
+              "score": 0.75
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 60.0,
+              "prepared_duration_sec": 60.0,
+              "prepared_media_sha256": "34162e566de321314c50e6ffc5834d0bdb891a32fb18d2417bf6fb4c75c744d9",
+              "latency_ms": 4115,
+              "usage": {
+                "input_tokens": 4362,
+                "output_tokens": 443,
+                "thought_tokens": 0,
+                "total_tokens": 4805
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 11.0,
+              "prepared_duration_sec": 11.0,
+              "prepared_media_sha256": "4a77494bbceb712a63826bf57f55f82ef29ea416e991a225d0933f8d49432e56",
+              "latency_ms": 3680,
+              "usage": {
+                "input_tokens": 1096,
+                "output_tokens": 484,
+                "thought_tokens": 0,
+                "total_tokens": 1580
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 1,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 50.0,
+              "prepared_origin_end_sec": 60.0,
+              "prepared_duration_sec": 10.0,
+              "prepared_media_sha256": "57876d09d2883434a5083442dafb352298982a9258550d79f7194abdc61a7843",
+              "latency_ms": 6846,
+              "usage": {
+                "input_tokens": 1031,
+                "output_tokens": 706,
+                "thought_tokens": 0,
+                "total_tokens": 1737
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 2,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+              "prepared_origin_start_sec": 26.0,
+              "prepared_origin_end_sec": 37.0,
+              "prepared_duration_sec": 11.0,
+              "prepared_media_sha256": "333f8bea3456009da1f92659da8876e3a7fbf9c949e7bb74ee8ce7ac482b4d5d",
+              "latency_ms": 3182,
+              "usage": {
+                "input_tokens": 1097,
+                "output_tokens": 248,
+                "thought_tokens": 0,
+                "total_tokens": 1345
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "input_sha256": "8104ed56befd62334410aa9c5bbf1a3690dc995d52794e3edee744c5e830edb2",
+          "duration_sec": 20.079,
+          "coarse_media_sha256": "f2312f8a8ad95e68626dcc112fafaffe13d40cd8379eab918578ec2a19171a62",
+          "candidates": [
+            {
+              "event_type": "CENTER_LINE_CROSSING",
+              "span": {
+                "start_sec": 9.5,
+                "end_sec": 14.5
+              },
+              "at_sec": 12.0,
+              "score": 0.88
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-p3",
+              "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.079365,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "f2312f8a8ad95e68626dcc112fafaffe13d40cd8379eab918578ec2a19171a62",
+              "latency_ms": 3546,
+              "usage": {
+                "input_tokens": 1720,
+                "output_tokens": 196,
+                "thought_tokens": 0,
+                "total_tokens": 1916
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "OBSERVED",
+              "prompt_version": "fine-p3",
+              "prompt_fingerprint": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+              "prepared_origin_start_sec": 5.5,
+              "prepared_origin_end_sec": 18.5,
+              "prepared_duration_sec": 13.0,
+              "prepared_media_sha256": "c4cd560ebcb3d8a791a500c0ba00851579df394eb93ba35d61bfcf6f852c3a99",
+              "latency_ms": 7260,
+              "usage": {
+                "input_tokens": 1199,
+                "output_tokens": 1007,
+                "thought_tokens": 0,
+                "total_tokens": 2206
+              },
+              "cost_usd": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": {
+        "run_id": "trace_602dfe9e53c14776b25446317d6b4b10",
+        "created_at": "2026-09-26T05:03:01.427782+00:00",
+        "mode": "LIVE",
+        "profile": "diagnostic-v1",
+        "git_sha": "bae28184f9940c0da0bce3fe334a1432920bea97",
+        "implementation_fingerprint": "70d9de39e13dd4493c3c99eb7e67f3465cd3251d30f82cbfb4f650bb9ab9049c",
+        "model": "gemini-3.8-flash",
+        "config_fingerprint": "1ff610f1562d469200ab9be6327635c0f13b36761c5a6f5f2708022ace9b8a0c",
+        "coarse_fps": 1.0,
+        "fine_fps": 2.0,
+        "coarse_max_height": 360,
+        "fine_max_height": 720,
+        "fine_padding_sec": 4.0,
+        "reasoning_effort": "low",
+        "max_retries": 0,
+        "timeout_sec": 180.0,
+        "input_usd_per_million": 0.0,
+        "output_usd_per_million": 0.0
+      },
+      "invocations": 11,
+      "failures": 0,
+      "diagnostic_issues": 0,
+      "verification_counts": {
+        "NOT_OBSERVED": 4
+      },
+      "reported_total_tokens": 32498,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "input_sha256": "7ab930fa0d04b30bfc7f45105c715b3a726476bbbc4f6a5ff3079ff8cf3e4433",
+          "duration_sec": 20.023,
+          "coarse_media_sha256": "30cc17503bc359583929d47980cc14a45f4ec7f65b4bd89a6f9dc76b04e11e38",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 0.5,
+                "end_sec": 3.2
+              },
+              "at_sec": 1.8,
+              "score": 0.85
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.023322,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "30cc17503bc359583929d47980cc14a45f4ec7f65b4bd89a6f9dc76b04e11e38",
+              "latency_ms": 6961,
+              "usage": {
+                "input_tokens": 2136,
+                "output_tokens": 1054,
+                "thought_tokens": 0,
+                "total_tokens": 3190
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-diagnostic-v1",
+              "prompt_fingerprint": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 7.2,
+              "prepared_duration_sec": 7.0,
+              "prepared_media_sha256": "6fe8fd8588c1e6ba64d56f0a94d4231d10d7ad667855637d8e62c6a18cb9ca93",
+              "latency_ms": 5200,
+              "usage": {
+                "input_tokens": 1157,
+                "output_tokens": 913,
+                "thought_tokens": 0,
+                "total_tokens": 2070
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "input_sha256": "38613ce89e712365c4da11d6dba97a919cc7751ab82dd549c9fc2512a5fb2490",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "632dacc6094feffdd44c6ba0a003f1964e1fb5e05165b222e606657d06b38b9c",
+          "candidates": [],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.024656,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "632dacc6094feffdd44c6ba0a003f1964e1fb5e05165b222e606657d06b38b9c",
+              "latency_ms": 5812,
+              "usage": {
+                "input_tokens": 2136,
+                "output_tokens": 908,
+                "thought_tokens": 0,
+                "total_tokens": 3044
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "input_sha256": "5c82b6f7b163ae400fbdc20a2a121f639ed32b141e0b0c9682eef531a6114008",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "6a207304245a5450e9a51055e5896cee56826e9c0da0ce45aab57590e8dd7e8f",
+          "candidates": [],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.024656,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "6a207304245a5450e9a51055e5896cee56826e9c0da0ce45aab57590e8dd7e8f",
+              "latency_ms": 4752,
+              "usage": {
+                "input_tokens": 2136,
+                "output_tokens": 797,
+                "thought_tokens": 0,
+                "total_tokens": 2933
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "input_sha256": "b03f2652caccda5b1bafa63a2c29f9b725e9ebdb30aa5390535a8bad5802e85a",
+          "duration_sec": 20.025,
+          "coarse_media_sha256": "f1f776c9517f5a2729600dba60e67403c9ff93c431c323c52d710a9bb94fcc90",
+          "candidates": [],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.025323,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "f1f776c9517f5a2729600dba60e67403c9ff93c431c323c52d710a9bb94fcc90",
+              "latency_ms": 5291,
+              "usage": {
+                "input_tokens": 2136,
+                "output_tokens": 744,
+                "thought_tokens": 0,
+                "total_tokens": 2880
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "input_sha256": "1a430ba27eb95568bcaa79eb092786eac9030046c073f09853258ba543bdcd64",
+          "duration_sec": 5.533,
+          "coarse_media_sha256": "b9902c80c5148d2732a330027671b75339355ea1ff9825d7c0a4b259134f0b0c",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 1.0,
+                "end_sec": 3.8
+              },
+              "at_sec": 2.2,
+              "score": 0.78
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 5.533333,
+              "prepared_duration_sec": 6.0,
+              "prepared_media_sha256": "b9902c80c5148d2732a330027671b75339355ea1ff9825d7c0a4b259134f0b0c",
+              "latency_ms": 4451,
+              "usage": {
+                "input_tokens": 1174,
+                "output_tokens": 635,
+                "thought_tokens": 0,
+                "total_tokens": 1809
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-diagnostic-v1",
+              "prompt_fingerprint": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 5.533,
+              "prepared_duration_sec": 5.5,
+              "prepared_media_sha256": "410903f6fd1e0f57982c86432108f0c267e297b07e311425bb036666de790b6f",
+              "latency_ms": 5272,
+              "usage": {
+                "input_tokens": 1091,
+                "output_tokens": 990,
+                "thought_tokens": 0,
+                "total_tokens": 2081
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "input_sha256": "efdc135c5f86d5cffb8657defdea388e47d55c91006bdd1e541375ab0e73259f",
+          "duration_sec": 60.0,
+          "coarse_media_sha256": "34162e566de321314c50e6ffc5834d0bdb891a32fb18d2417bf6fb4c75c744d9",
+          "candidates": [
+            {
+              "event_type": "SOLID_LINE_LANE_CHANGE",
+              "span": {
+                "start_sec": 3.0,
+                "end_sec": 7.0
+              },
+              "at_sec": 5.0,
+              "score": 0.9
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 60.0,
+              "prepared_duration_sec": 60.0,
+              "prepared_media_sha256": "34162e566de321314c50e6ffc5834d0bdb891a32fb18d2417bf6fb4c75c744d9",
+              "latency_ms": 8406,
+              "usage": {
+                "input_tokens": 4858,
+                "output_tokens": 1845,
+                "thought_tokens": 0,
+                "total_tokens": 6703
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-diagnostic-v1",
+              "prompt_fingerprint": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 11.0,
+              "prepared_duration_sec": 11.0,
+              "prepared_media_sha256": "4a77494bbceb712a63826bf57f55f82ef29ea416e991a225d0933f8d49432e56",
+              "latency_ms": 14483,
+              "usage": {
+                "input_tokens": 1422,
+                "output_tokens": 948,
+                "thought_tokens": 0,
+                "total_tokens": 2370
+              },
+              "cost_usd": null
+            }
+          ]
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "input_sha256": "8104ed56befd62334410aa9c5bbf1a3690dc995d52794e3edee744c5e830edb2",
+          "duration_sec": 20.079,
+          "coarse_media_sha256": "f2312f8a8ad95e68626dcc112fafaffe13d40cd8379eab918578ec2a19171a62",
+          "candidates": [
+            {
+              "event_type": "CENTER_LINE_CROSSING",
+              "span": {
+                "start_sec": 9.5,
+                "end_sec": 14.5
+              },
+              "at_sec": 11.5,
+              "score": 0.85
+            }
+          ],
+          "calls": [
+            {
+              "stage": "COARSE",
+              "candidate_index": null,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": null,
+              "prompt_version": "coarse-diagnostic-v1",
+              "prompt_fingerprint": "2888c38befc51eee8db901e7de652dbb270e9dd4f619e3c61a5e1a88b2556e87",
+              "prepared_origin_start_sec": 0.0,
+              "prepared_origin_end_sec": 20.079365,
+              "prepared_duration_sec": 20.0,
+              "prepared_media_sha256": "f2312f8a8ad95e68626dcc112fafaffe13d40cd8379eab918578ec2a19171a62",
+              "latency_ms": 6319,
+              "usage": {
+                "input_tokens": 2134,
+                "output_tokens": 1032,
+                "thought_tokens": 0,
+                "total_tokens": 3166
+              },
+              "cost_usd": null
+            },
+            {
+              "stage": "FINE",
+              "candidate_index": 0,
+              "status": "SUCCEEDED",
+              "issue_codes": [],
+              "verification": "NOT_OBSERVED",
+              "prompt_version": "fine-diagnostic-v1",
+              "prompt_fingerprint": "0b1cfbf1b10e8863a028308bded77daa1644ac96844e9f49831b4141aa102943",
+              "prepared_origin_start_sec": 5.5,
+              "prepared_origin_end_sec": 18.5,
+              "prepared_duration_sec": 13.0,
+              "prepared_media_sha256": "c4cd560ebcb3d8a791a500c0ba00851579df394eb93ba35d61bfcf6f852c3a99",
+              "latency_ms": 5186,
+              "usage": {
+                "input_tokens": 1524,
+                "output_tokens": 728,
+                "thought_tokens": 0,
+                "total_tokens": 2252
+              },
+              "cost_usd": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

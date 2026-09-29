@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from .runs import CandidateId, ContractRef
+from .runs import CandidateId, ContractRef, RunId
 
 
 class GeminiBaseUrlRejectionReason(StrEnum):
@@ -90,6 +90,24 @@ class UnknownCandidateError(Exception):
 
     def __str__(self) -> str:
         return f"unknown candidate: {self.candidate_id!r}"
+
+
+class UnknownCandidateRunError(Exception):
+    """Fine은 같은 SearchService가 실행한 Coarse run의 후보만 받는다.
+
+    그 run의 scope budget을 모르면 기본 상한을 지어내지 않고 여기서 멈춘다.
+    """
+
+    def __init__(self, candidate_id: CandidateId, run_id: RunId) -> None:
+        self.candidate_id = candidate_id
+        self.run_id = run_id
+        super().__init__(str(self))
+
+    def __str__(self) -> str:
+        return (
+            f"candidate {self.candidate_id!r} comes from run {self.run_id!r}, "
+            "which this service did not execute; its scope budget is unknown"
+        )
 
 
 class InvalidFineSpanError(Exception):

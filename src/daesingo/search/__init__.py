@@ -2,7 +2,12 @@ from pathlib import Path
 from typing import Final
 
 from .coarse import LinkedCoarseResult
-from .errors import MissingCandidateError, UnknownCandidateError, VideoStreamSelectionError
+from .errors import (
+    MissingCandidateError,
+    UnknownCandidateError,
+    UnknownCandidateRunError,
+    VideoStreamSelectionError,
+)
 from .factory import build_gemini_search_service
 from .fixtures import FixtureNotFoundError, FixtureSearchService
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
@@ -91,6 +96,7 @@ __all__ = [
     "SearchHint",
     "SearchService",
     "UnknownCandidateError",
+    "UnknownCandidateRunError",
     "VideoStreamSelectionError",
     "VisualEventType",
     "VisualVerificationExecution",
