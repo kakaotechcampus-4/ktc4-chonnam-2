@@ -4,8 +4,10 @@
 v1...md`(연구 메모, decisions/로 승격되지 않은 초안) 1·2행 그대로 구현했다 — 실제 fixture는
 없으므로 이 테스트가 유일한 검증이다.
 """
+import pytest
+
 from daesingo.case import correction
-from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case.domain import Candidate, CaseAggregate, InvalidTransition
 
 
 def _case_at_evidence_review() -> CaseAggregate:
@@ -88,6 +90,65 @@ def test_reselect_candidate_submits_other_candidate_correction_and_bumps_case_re
     assert case.stage == "EVIDENCE_REVIEW"  # 제자리
     assert case.case_rev == rev_before + 1  # apply_correction()이 한 번 올린다
     assert [c.candidate_id for c in case.candidates if c.selected] == ["c2"]
+
+
+# ── 재선택 원자성(#166) · READY 재선택(#173 E-4) ─────────────────────────
+
+
+def _snapshot(case: CaseAggregate) -> tuple:
+    return (
+        case.case_rev,
+        case.selection_rev,
+        case.stage,
+        [c.selected for c in case.candidates],
+        len(case.correction_records),
+    )
+
+
+@pytest.mark.parametrize("bad_id", ["does-not-exist", "c1"])
+def test_rejected_reselect_leaves_no_side_effects(bad_id):
+    """#166: 거부된 재선택은 case_rev·CorrectionRecord·선택을 바꾸지 않는다. `c1`은 이미 선택된
+    후보라 값이 바뀌지 않는 요청이다(correction-record §8-7: 무변경 입력은 기록하지 않음)."""
+    case = _case_at_evidence_review()
+    before = _snapshot(case)
+
+    with pytest.raises(InvalidTransition):
+        correction.reselect_candidate(case, bad_id)
+
+    assert _snapshot(case) == before
+
+
+def test_rejected_reselect_outside_allowed_stage_is_atomic():
+    case = CaseAggregate.intake(case_id="case_rs001", hints={}, manifest_summary={})
+    case.start_search()
+    case.receive_candidates([
+        Candidate(candidate_id="c1", at=None, at_provenance=None, observed="o1", thumb_ref=None),
+        Candidate(candidate_id="c2", at=None, at_provenance=None, observed="o2", thumb_ref=None),
+    ])
+    before = _snapshot(case)  # CANDIDATE_REVIEW — 아직 최초 선택 전
+
+    with pytest.raises(InvalidTransition):
+        correction.reselect_candidate(case, "c2")
+
+    assert _snapshot(case) == before
+
+
+def test_reselect_from_ready_starts_new_draft():
+    """#173 E-4: 결과(READY) 화면에서도 다른 후보를 고를 수 있다. 새 selection context·새 초안이라
+    EVIDENCE_REVIEW로 돌아가고, 이전 초안의 최종 검토(USER_REVIEWED)는 새 초안에 쓰지 않는다."""
+    case = _case_at_evidence_review()
+    case.mark_ready()
+    case.mark_reviewed()
+    rev_before, sel_before = case.case_rev, case.selection_rev
+
+    record = correction.reselect_candidate(case, "c2")
+
+    assert record["kind"] == "OTHER_CANDIDATE"
+    assert case.stage == "EVIDENCE_REVIEW"
+    assert case.user_reviewed is False
+    assert [c.candidate_id for c in case.candidates if c.selected] == ["c2"]
+    assert case.selection_rev == sel_before + 1
+    assert case.case_rev == rev_before + 1
 
 
 # ── supersede chain (correction-record/v1.1 `supersedes_ref`) ───────────────
