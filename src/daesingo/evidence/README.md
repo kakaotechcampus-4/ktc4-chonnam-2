@@ -20,7 +20,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `calculate_evidence_needs(...) -> EvidenceNeeds | None`
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
-- `render_report(...) -> dict`: `safety-report-policy/v1.1`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을 고른다.
+- `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 
@@ -33,12 +33,13 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `requirement_rules_v2.json` — K3에서 채택됐으나 D1 반영으로 첫 실행 전에 대체된 보존 revision. 수정하거나 활성화하지 않는다.
 - `requirement_rules_v3.json` — D1 반영 후 실제 실행됐으나 ADR-EVIDENCE-005 D2로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
 - `requirement_rules_v4.json` — ADR-EVIDENCE-005 D2로 사건 장면·전후 상황 세 rule을 제거한 revision. 실제 실행됐으나 ADR-EVIDENCE-008(#172 D-3)로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
-- `requirement_rules_v5.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택한다. v4에서 번호판 두 rule만 바꿨다 — `evidence.vehicle_number.present`는 값이 없을 때 `PlateReadout` 존재 여부로 `WARN`(판독 후 못 읽음)/`UNKNOWN`(판독 결과 없음·실행 실패)을 나누고, `package.vehicle.plate_visible_in_report_video`의 관찰 `false`는 `BLOCK` → `WARN`이다. 나머지는 v4에서 그대로 계승한다.
-- `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑.
+- `requirement_rules_v5.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택한다. v4에서 번호판 두 rule만 바꿨다 — `evidence.vehicle_number.present`는 값이 없을 때 `PlateReadout` 존재 여부로 `WARN`(판독 후 못 읽음)/`UNKNOWN`(판독 결과 없음·실행 실패)을 나누고, `package.vehicle.plate_visible_in_report_video`의 관찰 `false`는 `BLOCK` → `WARN`이다. `package.report.content_length`에는 번호판 없는 렌더 mode 두 개(`*_without_plate`, `plate_readout_performed` 필수)를 더했고, 신고문 policy는 `safety-report-policy/v1.2`를 참조한다. 나머지는 v4에서 그대로 계승한다.
+- `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑. v1.2로 대체된 보존 revision.
+- `safety_report_policy_v1_2.json` — **활성 신고문 policy.** v1.1의 네 template을 그대로 두고, 판독 후 번호판을 식별하지 못한 경우의 차량번호 슬롯 없는 네 template을 더했다(`docs/modules/evidence/decisions/safety-report-policy-v1.2.md`).
 
 활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v5.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
 
-번호판을 읽지 못한 기록의 번호판 rule은 더 이상 blocker가 아니지만, 번호판 없는 `ReportPackage`는 아직 발행되지 않는다 — `report_inputs.vehicle_number`가 `string` 필수이고 신고문 template이 차량번호 문장을 전제해 `package.report.content_length`가 `UNKNOWN`이 된다. 후속은 ADR-EVIDENCE-008 §6.
+번호판 판독을 수행했지만 식별하지 못한 기록은 번호판 없는 신고문으로 `ReportPackage`(`report-package/v1.2`, `vehicle_number=null`)가 발행된다. 판독 결과 자체가 없는 기록(실행 실패)은 렌더 입력이 불완전해 Package가 없다. 두 경우를 가르는 판별은 `requirements.py`의 `_plate_readout_performed()` 한 곳이다(ADR-EVIDENCE-008 §6).
 
 loader는 각 정책의 식별자·필수 구조·공휴일 coverage·catalog rule 구성을 검증한다. 깨진 구성은 `PolicyConfigurationError`로 정상 `RequirementReport` 발행 전에 중단하고, 관찰 사실 부족은 check의 `UNKNOWN`으로 남긴다.
 

@@ -7,7 +7,7 @@
     "attachment": "policy/safety-report-attachment-size/v1",
     "deadline": "policy/safety-report-deadline/v1",
     "calendar": "calendar/kr-public-holidays/2026-2027/r1",
-    "report_template": "safety-report-policy/v1.1"
+    "report_template": "safety-report-policy/v1.2"
   },
   "applies_to_report_types": [
     "TRAFFIC_VIOLATION",
@@ -111,8 +111,22 @@
               "vehicle_number",
               "violation_expression",
               "situation_response"
+            ],
+            "with_location_without_plate": [
+              "occurred_at",
+              "package_display_location",
+              "plate_readout_performed",
+              "violation_expression",
+              "situation_response"
+            ],
+            "without_location_without_plate": [
+              "occurred_at",
+              "plate_readout_performed",
+              "violation_expression",
+              "situation_response"
             ]
-          }
+          },
+          "note": "번호판 없는 template은 PlateReadout이 수행된 경우(plate_readout_performed)에만 렌더 입력이 완전하다. 실행 실패(PlateReadout=None)는 render_inputs_incomplete → UNKNOWN (ADR-EVIDENCE-008 §6)."
         },
         {
           "code": "package.evidence.situation_response",

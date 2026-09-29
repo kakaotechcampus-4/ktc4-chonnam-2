@@ -51,7 +51,7 @@ _IMPLEMENTATION_FILES = (
     "src/daesingo/evidence/policy_catalog.py",
     "src/daesingo/evidence/requirement_rules_v5.json",
     "src/daesingo/evidence/requirements.py",
-    "src/daesingo/evidence/safety_report_policy_v1_1.json",
+    "src/daesingo/evidence/safety_report_policy_v1_2.json",
     "src/daesingo/evidence/time_resolution.py",
     "src/daesingo/evidence/validation.py",
     "tests/evidence/fixtures/adapter_inputs.json",
@@ -451,10 +451,10 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
     }
     if scenario_id == "scenario_happy_001":
         comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
-        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and safety-report-policy/v1.1; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.")
+        comparison["known_differences"].append("The executable Package uses report-package/v1.2 and safety-report-policy/v1.2; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.")
         comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
     if scenario_id == "scenario_unknown_abstain_partial_001":
-        comparison["known_differences"].append("The executable Package uses report-package/v1.1 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.")
+        comparison["known_differences"].append("The executable Package uses report-package/v1.2 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.")
         comparison["known_differences"].append("The no-location generic renderer omits the location phrase and never invents a location value.")
 
     return {
@@ -473,7 +473,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
                 "evidence-record/v1.3",
                 "evidence-needs/v1",
                 "requirement-report/v1",
-                "report-package/v1.1",
+                "report-package/v1.2",
                 "correction-record/v1.1",
             ],
             "safety_report_policy": SAFETY_REPORT_POLICY_REF,

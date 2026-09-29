@@ -394,17 +394,26 @@ class PolicyDecisionTests(unittest.TestCase):
                 asset_facts=replacement_assets,
             )
 
-        missing_plate = deepcopy(self.happy_record)
-        missing_plate.pop("vehicle_number")
-        report = self._evaluate(record=missing_plate)
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.report.content_length")["outcome"])
+        # #146 · #172 D-3: 판독 후 번호판을 못 읽은 기록은 번호판 없는 template으로 렌더된다.
+        # 렌더 입력이 모자라 UNKNOWN이 되는 것은 PlateReadout 자체가 없을 때(실행 실패)뿐이다.
+        for mutation in ("pop", "null"):
+            with self.subTest(mutation=mutation):
+                missing_plate = deepcopy(self.happy_record)
+                if mutation == "pop":
+                    missing_plate.pop("vehicle_number")
+                else:
+                    missing_plate["vehicle_number"]["value"] = None
+                report = self._evaluate(record=missing_plate)
+                self.assertEqual("PASS", self._check(
+                    report, "package.report.content_length")["outcome"])
+                self.assertEqual("tmpl/safety-report-specific-no-plate-v1", report["basis"]["template_ref"])
 
-        null_plate = deepcopy(self.happy_record)
-        null_plate["vehicle_number"]["value"] = None
-        report = self._evaluate(record=null_plate)
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.report.content_length")["outcome"])
+                missing_plate["provenance"]["input_refs"] = [
+                    ref for ref in missing_plate["provenance"]["input_refs"] if ref["kind"] != "plate_readout"]
+                report = self._evaluate(record=missing_plate)
+                self.assertEqual("UNKNOWN", self._check(
+                    report, "package.report.content_length")["outcome"])
+                self.assertNotIn("template_ref", report["basis"])
 
     def test_location_snapshot_skips_empty_higher_priority_value(self):
         record = deepcopy(self.happy_record)
@@ -431,8 +440,8 @@ class PolicyDecisionTests(unittest.TestCase):
             asset_facts=self.unknown_assets)
         self.assertEqual([], validate_contract(package))
         self.assertIsNone(package["report_inputs"]["location"])
-        self.assertEqual("report-package/v1.1", package["contract_version"])
-        self.assertEqual("safety-report-policy/v1.1", package["provenance"]["policy_ref"])
+        self.assertEqual("report-package/v1.2", package["contract_version"])
+        self.assertEqual("safety-report-policy/v1.2", package["provenance"]["policy_ref"])
         self.assertEqual("tmpl/safety-report-generic-no-location-v1", package["report"]["template_ref"])
         self.assertNotIn("위치 미상", package["report"]["description"])
         self.assertNotIn("발생장소", package["report"]["description"])

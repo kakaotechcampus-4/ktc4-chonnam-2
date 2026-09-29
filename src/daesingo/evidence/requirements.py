@@ -9,12 +9,16 @@ from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .deadline import evaluate_deadline
 from .errors import PackageNotReady, PolicyConfigurationError
 from .policy import (
+    GENERIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
     GENERIC_NO_LOCATION_TEMPLATE_REF,
+    GENERIC_NO_PLATE_TEMPLATE_REF,
     GENERIC_TEMPLATE_REF,
     REPORT_TEXT_MAX_LENGTH,
     REPORT_TEXT_MIN_LENGTH,
     SAFETY_REPORT_POLICY_REF,
+    SPECIFIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
     SPECIFIC_NO_LOCATION_TEMPLATE_REF,
+    SPECIFIC_NO_PLATE_TEMPLATE_REF,
     SPECIFIC_TEMPLATE_REF,
     render_report,
     report_type_label,
@@ -97,21 +101,31 @@ def _selected_rules(catalog: Contract, scope: str, record: Contract,
     return rules
 
 
+def _plate_value(record: Contract) -> str | None:
+    vehicle_number = record.get("vehicle_number")
+    value = vehicle_number.get("value") if isinstance(vehicle_number, dict) else None
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _plate_readout_performed(record: Contract) -> bool:
+    """ADR-EVIDENCE-008 §5.1: a PlateReadout was an assembly input for this selection.
+
+    Separates "read but not identified" (plate-less Package allowed) from an execution
+    failure (`PlateReadout=None`), which must never reach a WARN Package.
+    """
+    return any(
+        isinstance(ref, dict) and ref.get("kind") == "plate_readout"
+        for ref in record.get("provenance", {}).get("input_refs", [])
+    )
+
+
 def _evidence_check(rule: Contract, record: Contract) -> Contract:
     code = rule["code"]
     subject = [deepcopy(record["record_ref"])]
     if code == "evidence.vehicle_number.present":
-        vehicle_number = record.get("vehicle_number")
-        value = vehicle_number.get("value") if isinstance(vehicle_number, dict) else None
-        # ADR-EVIDENCE-008 §5.1: a PlateReadout that ran but read nothing is WARN; a missing
-        # PlateReadout (execution failure) stays UNKNOWN so it never reaches a WARN Package.
-        readout_performed = any(
-            isinstance(ref, dict) and ref.get("kind") == "plate_readout"
-            for ref in record.get("provenance", {}).get("input_refs", [])
-        )
-        if isinstance(value, str) and value.strip():
+        if _plate_value(record) is not None:
             condition, reason = "value_present", "evidence.value_confirmed"
-        elif readout_performed:
+        elif _plate_readout_performed(record):
             condition, reason = "readout_performed_value_absent", "evidence.plate_unidentified"
         else:
             condition, reason = "readout_absent", "evidence.plate_readout_missing"
@@ -231,18 +245,30 @@ def _selected_template_ref(record: Contract) -> str | None:
     response = record.get("situation_response", {}).get("value")
     visual_type = record.get("event", {}).get("visual_event_type", {}).get("value")
     has_location = _location_snapshot(record) is not None
+    has_plate = _plate_value(record) is not None
+    if not has_plate and not _plate_readout_performed(record):
+        return None
     if visual_type is not None and response in {"CONFIRMED", "CORRECTED"}:
-        return SPECIFIC_TEMPLATE_REF if has_location else SPECIFIC_NO_LOCATION_TEMPLATE_REF
+        return {
+            (True, True): SPECIFIC_TEMPLATE_REF,
+            (False, True): SPECIFIC_NO_LOCATION_TEMPLATE_REF,
+            (True, False): SPECIFIC_NO_PLATE_TEMPLATE_REF,
+            (False, False): SPECIFIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
+        }[(has_location, has_plate)]
     if visual_type is None and response == "USER_UNSURE":
-        return GENERIC_TEMPLATE_REF if has_location else GENERIC_NO_LOCATION_TEMPLATE_REF
+        return {
+            (True, True): GENERIC_TEMPLATE_REF,
+            (False, True): GENERIC_NO_LOCATION_TEMPLATE_REF,
+            (True, False): GENERIC_NO_PLATE_TEMPLATE_REF,
+            (False, False): GENERIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
+        }[(has_location, has_plate)]
     return None
 
 
 def _render_from_record(record: Contract) -> Contract | None:
     occurred = record.get("occurred_at")
-    plate = record.get("vehicle_number")
     template_ref = _selected_template_ref(record)
-    if not isinstance(occurred, dict) or not isinstance(plate, dict) or template_ref is None:
+    if not isinstance(occurred, dict) or template_ref is None:
         return None
     event = record.get("event") or {}
     expression = event.get("violation_expression", {}).get("value")
@@ -254,7 +280,7 @@ def _render_from_record(record: Contract) -> Contract | None:
         situation_response=record.get("situation_response", {}).get("value"),
         occurred_at=occurred.get("value"),
         location_display=None if location is None else location["display_text"],
-        vehicle_number=plate.get("value"), violation_expression=expression)
+        vehicle_number=_plate_value(record), violation_expression=expression)
 
 
 def _render_inputs_complete(rule: Contract, record: Contract) -> bool:
@@ -262,9 +288,11 @@ def _render_inputs_complete(rule: Contract, record: Contract) -> bool:
     if not isinstance(required_by_template, dict):
         raise PolicyConfigurationError("content-length template requirements are not configured")
     mode = "with_location" if _location_snapshot(record) is not None else "without_location"
+    if _plate_value(record) is None:
+        mode += "_without_plate"
     required = required_by_template.get(mode)
     allowed = {"occurred_at", "package_display_location", "vehicle_number",
-               "violation_expression", "situation_response"}
+               "plate_readout_performed", "violation_expression", "situation_response"}
     if not isinstance(required, list) or not required or any(item not in allowed for item in required):
         raise PolicyConfigurationError("content-length template requirements are malformed")
     if len(required) != len(set(required)):
@@ -273,9 +301,8 @@ def _render_inputs_complete(rule: Contract, record: Contract) -> bool:
         "occurred_at": isinstance(record.get("occurred_at"), dict)
         and isinstance(record["occurred_at"].get("value"), str),
         "package_display_location": _location_snapshot(record) is not None,
-        "vehicle_number": isinstance(record.get("vehicle_number"), dict)
-        and isinstance(record["vehicle_number"].get("value"), str)
-        and bool(record["vehicle_number"]["value"]),
+        "vehicle_number": _plate_value(record) is not None,
+        "plate_readout_performed": _plate_readout_performed(record),
         "violation_expression": bool(record.get("event", {}).get("violation_expression", {}).get("value")),
         "situation_response": record.get("situation_response", {}).get("value")
         in {"CONFIRMED", "CORRECTED", "USER_UNSURE"},
@@ -497,16 +524,18 @@ def build_report_package(evidence_record: Contract, requirement_report: Contract
         raise PackageNotReady("package.input.user_unsure_required")
     if visual_event_type is not None and situation_response not in {"CONFIRMED", "CORRECTED"}:
         raise PackageNotReady("package.input.situation_unconfirmed")
-    occurred, plate = evidence_record.get("occurred_at"), evidence_record.get("vehicle_number")
+    occurred, plate = evidence_record.get("occurred_at"), _plate_value(evidence_record)
     if occurred is None:
         raise PackageNotReady("package.input.occurred_at_missing")
-    if plate is None:
+    # A plate-less Package exists only when the plate was read but not identified; an
+    # execution failure (no PlateReadout) is not that result (ADR-EVIDENCE-008 §6).
+    if plate is None and not _plate_readout_performed(evidence_record):
         raise PackageNotReady("package.input.vehicle_number_missing")
     location = _location_snapshot(evidence_record)
     rendered = render_report(visual_event_type=visual_event_type, situation_response=situation_response,
                              occurred_at=occurred["value"],
                              location_display=None if location is None else location["display_text"],
-                             vehicle_number=plate["value"],
+                             vehicle_number=plate,
                              violation_expression=event["violation_expression"]["value"])
     expected_template = requirement_report.get("basis", {}).get("template_ref")
     if expected_template and expected_template != rendered["template_ref"]:
@@ -524,7 +553,7 @@ def build_report_package(evidence_record: Contract, requirement_report: Contract
         package_assets["plate_image_ref"] = deepcopy(plate_image["asset_ref"])
         derived_refs.append(deepcopy(plate_image["asset_ref"]))
     package: Contract = {
-        "contract_version": "report-package/v1.1",
+        "contract_version": "report-package/v1.2",
         "package_ref": contract_ref("report_package", package_id),
         "evidence_record_ref": deepcopy(evidence_record["record_ref"]),
         "requirement_report_ref": deepcopy(requirement_report["requirement_report_ref"]),
@@ -532,7 +561,7 @@ def build_report_package(evidence_record: Contract, requirement_report: Contract
         "report_inputs": {
             "safety_report_type": report_type_label(event["safety_report_type"]["value"]),
             "occurred_at": occurred["value"], "location": location,
-            "vehicle_number": plate["value"],
+            "vehicle_number": plate,
             "violation_expression": event["violation_expression"]["value"],
         },
         "report": {"title": rendered["title"], "description": rendered["description"],

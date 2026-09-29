@@ -8,7 +8,7 @@
 >
 > 동의: 유소연(`case`, D · D-3 필수 동의) · 의견: 정철원(`recording`)
 >
-> 적용 범위: 번호판 값 표현, `policy/requirement-rules-v4`의 번호판 두 rule(`evidence.vehicle_number.present` · `package.vehicle.plate_visible_in_report_video`)의 outcome 매핑
+> 적용 범위: 번호판 값 표현, `policy/requirement-rules-v4`의 번호판 두 rule(`evidence.vehicle_number.present` · `package.vehicle.plate_visible_in_report_video`)의 outcome 매핑, 번호판 없는 신고문·Package 경로(`report-package/v1.2` · `safety-report-policy/v1.2`)
 >
 > 근거: 결정 카드 [#172](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/172)의 `[D] 결정` · `[D-2] 결정` · `[D-3] 결정` 댓글 · #146 9/25 Evidence/Product Owner 답변(번호판 식별 실패를 경고 있는 UNKNOWN으로 허용) · [`ADR-EVIDENCE-002`](adr-first-completion-owner-decisions.md) §5.4·§5.6 · [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md) §5.5·§5.7(I4)
 
@@ -99,7 +99,8 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 | `readout_performed_value_absent` | 값 없음 + `provenance.input_refs`에 `plate_readout` ref 있음(= `PlateReadout` 존재) | `UNKNOWN` | **`WARN`** | `evidence.plate_unidentified` |
 | `readout_absent` | 값 없음 + `plate_readout` ref 없음(= `PlateReadout = None`) | `UNKNOWN` | `UNKNOWN` | `evidence.plate_readout_missing` |
 
-- 판별은 `EvidenceRecord`가 이미 싣는 계약 필드(`vehicle_number`, `provenance.input_refs`)만 쓴다. 새 입력 필드를 만들지 않는다. `assemble_evidence_record()`는 `PlateReadout`이 있으면 그 ref를 `input_refs`에 넣고, 없으면 넣지 않는다.
+- 판별은 `EvidenceRecord`가 이미 싣는 계약 필드(`vehicle_number`, `provenance.input_refs`)만 쓴다. 새 입력 필드를 만들지 않는다.
+- **판별이 기대는 불변조건:** 현재 selection의 `PlateReadout`이 Evidence 조립 입력으로 존재했을 때에만 `provenance.input_refs`에 해당 `plate_readout` ref가 들어간다. `assemble_evidence()`는 `PlateReadout`이 있으면 그 `candidate_id`·`case_id`·`incident_clip_ref`가 현재 선택과 같은지 확인한 뒤 ref를 넣고, 없으면 넣지 않는다. 이 불변조건은 `contract-evidence-record-needs.md`의 `provenance.input_refs` 설명에 적었다.
 - 1·3(`status=UNKNOWN`)과 1·2(`NEEDS_REVIEW`)는 같은 `WARN`이다. 둘의 차이는 재판독 Need(`calculate_evidence_needs()` — `NEEDS_REVIEW`·abstain일 때만 `PLATE_REREAD`)와 표시 문구에서 드러나고, 이 rule은 가르지 않는다.
 - 사용자가 번호판을 직접 입력하면 정정값이 `vehicle_number`에 들어와 `value_present`가 된다.
 
@@ -117,26 +118,53 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 
 ### 5.3 활성 catalog 전환
 
-활성 catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 `requirement_rules_v5.json`으로 바꾼다. 출력 `policy_ref`는 로드한 파일의 값(`policy/requirement-rules-v5`)이다.
+활성 catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 `requirement_rules_v5.json`으로 바꾼다. 출력 `policy_ref`는 로드한 파일의 값(`policy/requirement-rules-v5`)이다. v5는 신고문 policy로 `safety-report-policy/v1.2`를 참조한다(§6).
 
-## 6. 이 결정이 바꾸지 않는 것 · 후속
+## 6. 번호판 없는 Package 경로 — 기존 결정의 구현 완성
 
-**번호판 없는 Package는 이 revision만으로 아직 발행되지 않는다.** 번호판 rule이 더 이상 blocker가 아니게 된 것까지가 이 ADR의 범위이고, Package 입력 쪽 gate 세 곳은 그대로다.
+#146 Owner 답변과 #172 D-3이 이미 「번호판 식별 실패 자체는 Package blocker가 아니다」를 정했고, #146 답변은 그때 renderer의 `vehicle_number` 필수까지 정합화 대상으로 적었다. 따라서 번호판 없는 신고문·Package 경로는 **새 Product 결정이 아니라 이 결정의 구현 범위**다.
 
-| gate | 현재 | 후속 |
+> **작업 이력.** 이 ADR의 첫 판(PR #212 첫 커밋)은 rule 두 건만 바꾸고, Package 입력 쪽 gate 세 곳(아래 표)을 「신고문 문구·계약 개정이 필요한 후속」으로 남겼다. 그 상태에서는 1·2·3의 FINAL이 `package.report.content_length = UNKNOWN`이 되어 Package가 나오지 않았고, `core-user-flow.md` §12 「번호판을 읽지 못한 것 자체는 신고자료를 막지 않는다」와 runtime 결과가 달랐다. 리뷰에서 이를 기존 결정의 미완료로 정정해 같은 PR에서 세 gate를 함께 정렬했다.
+
+| gate | 이전 | 이 ADR 이후 |
 | --- | --- | --- |
-| `report_inputs.vehicle_number` | `string` 필수 (`contract-requirement-report-package.md`) | nullable 여부 · wire type — evidence 계약 개정 |
-| `build_report_package()` | plate 부재면 `package.input.vehicle_number_missing` | 위 계약 개정과 함께 |
-| 신고문 template 4종 · `render_required_inputs_by_template` | 차량번호 문장을 전제, 필수 입력에 `vehicle_number` → 번호판 없으면 `package.report.content_length = UNKNOWN` | 번호판 없는 문장 구성 — 새 template revision |
+| `report_inputs.vehicle_number` | `string` 필수 (`report-package/v1.1`) | 키 필수·값 `string \| null` — `report-package/v1.2`. `null` = 판독 수행 후 식별 못 함. sentinel 금지 |
+| 신고문 template | 4종 모두 차량번호 문장 전제 (`safety-report-policy/v1.1`) | 번호판 없는 4종 추가 — `safety-report-policy/v1.2`(`decisions/safety-report-policy-v1.2.md`). 번호판 있는 4종은 글자 그대로 |
+| `render_required_inputs_by_template` | 모든 mode가 `vehicle_number` 필수 | 번호판 없는 두 mode(`*_without_plate`)는 `vehicle_number` 대신 `plate_readout_performed`를 요구 |
+| `build_report_package()` | plate 부재면 `package.input.vehicle_number_missing` | 부재이면서 `PlateReadout`도 없을 때만 그 오류 |
 
-그래서 1·2·3 상태의 FINAL은 지금도 `package.report.content_length`가 `UNKNOWN`이라 Package가 나가지 않는다. 이 세 곳은 신고문 문구(제품 결정)와 계약 개정이 함께 필요해 이번 ADR에서 임의로 채우지 않는다. 반대로 번호판 값이 있는 상태에서 I4가 「안 보임」을 관찰한 경우는 이 revision만으로 `WARN` Package가 발행된다.
+**번호판 없음을 허용하는 판별은 한 곳이다.** §5.1의 「현재 selection의 `plate_readout` ref가 `input_refs`에 있다」를 evidence rule(`WARN`/`UNKNOWN`), 렌더 입력 완전성(`plate_readout_performed`), template 선택, Package builder가 **같은 함수**로 쓴다. 그래서 두 경로가 갈린다.
 
-그 밖의 후속(이 ADR 범위 밖):
+```text
+판독 수행 + 식별 실패 (PlateReadout 있음, 값 없음)
+→ EVIDENCE WARN → 번호판 없는 template 렌더 → FINAL은 다른 blocker가 없으면 PASS/WARN
+→ ReportPackage(vehicle_number=null) → READY 가능
 
-- `evidence.plate_abstained`(1·2) notice 계약 등재·발행 — case(#172 `[D-3]` Case 의견)
-- `readout.plate_read_failed`(4a) 투영 — case가 #193으로 반영했다(`ERROR` · blocking · `RETRY_PLATE_READ`)
+판독 실행 실패 (PlateReadout 없음)
+→ EVIDENCE UNKNOWN → 렌더 입력 불완전 → package.report.content_length UNKNOWN → FINAL UNKNOWN
+→ ReportPackage 없음 → READY 불가 · case는 readout.plate_read_failed(ERROR · blocking) 투영(#193)
+```
+
+builder는 FINAL이 어떤 이유로 `PASS`/`WARN`이어도 `PlateReadout` 없는 번호판 부재 기록으로는 Package를 만들지 않는다(이중 방어).
+
+### 6.1 provenance 판별의 안정성 검토
+
+`input_refs`로 식별 실패와 실행 실패를 가르는 것이 계약상 안정적인지 검토했다.
+
+| 관점 | 판단 |
+| --- | --- |
+| 새 필드 없이 계약 필드만 쓰는가 | 예. `provenance.input_refs`는 `evidence-record/v1.3` 필수 필드다 |
+| 생산자가 하나인가 | 예. runtime에서 `EvidenceRecord`를 만드는 곳은 evidence `assemble_evidence()` 하나이고(case real 경로 `real_e2e.assemble_evidence_bundle()`도 이것을 부른다), `plate_readout` ref는 `PlateReadout` 입력이 있을 때만 들어간다. 다른 모듈이 이 배열을 채우지 않는다. 공용 Mock fixture(`data/mock/*`)의 Record는 정적 기대값이다 |
+| 이전 selection의 ref가 섞일 수 있는가 | 아니다. 조립은 selection 단위로 새 Record를 만들고, `PlateReadout`의 `candidate_id`가 현재 후보와 다르면 조립을 거절한다 |
+| 약한 점 | ① 의미가 「ref가 있다」는 **존재 여부**에 걸려 있어, 누군가 조립 밖에서 Record를 만들거나 `input_refs`를 편집하면 판별이 흔들린다 — Record는 immutable이고 조립 밖 생산 경로가 없어서 지금은 성립한다. ② `ReadoutRun.outcome=PARTIAL`인데 `PlateReadout`이 있는 경우는 「판독 수행」으로 본다(D-3이 `PlateReadout` 존재로 가르기로 했다) |
+| 대안 | `EvidenceRecord`에 판독 상태 필드를 신설하는 것 — 계약 변경이 크고 D-3이 요구하지 않아 채택하지 않았다. 위 불변조건을 계약 문서에 명시하는 것으로 충분하다고 본다 |
+
+### 6.2 남은 후속 (이 ADR 범위 밖)
+
+- `evidence.plate_abstained`(1·2) notice 계약 등재·발행 — case(#172 `[D-3]` Case 의견). 1·3은 notice 없이 `INFO_UNKNOWN`으로 보인다(#193)
+- 결과 화면의 「차량번호 정보가 부족할 수 있다」 안내 문구 — web(#146 답변). CaseView에는 `plate_display.info_state=INFO_UNKNOWN`과 `report_field_states.vehicle_number`가 이미 있다
 - 재판독 Need의 필수성·횟수 — `contract-evidence-record-needs.md`
-- 최종 `REPORT_VIDEO` 관찰 Producer(I4) — readout 입력 계약 확장 후 case 배선(ADR-005 §5.7)
+- 최종 `REPORT_VIDEO` 관찰 Producer(I4) — readout 입력 계약 확장 후 case 배선(ADR-005 §5.7). **I4가 없는 동안 실제 runtime의 FINAL은 `plate_visible_in_report_video`가 `not_observed → UNKNOWN`이라 번호판 유무와 관계없이 Package가 나오지 않는다.** 이 제약은 v4부터 있던 것이며 이 ADR이 바꾸지 않는다
 - 1과 3의 구분 — readout이 번호판 영역 검출을 갖기 전까지 「읽지 못함」 하나(D-2)
 
 ## 7. 영향을 받는 기존 결정
@@ -151,14 +179,17 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 
 ## 8. 검증
 
-`tests/evidence/test_plate_boundary_d3.py`가 §4.3 표의 각 행을 활성 catalog로 검증한다.
+`tests/evidence/test_plate_boundary_d3.py`가 §4.3 표의 각 행을 활성 catalog → FINAL → 실제 `build_report_package()` → case `mark_ready_if_package_ready()`까지 검증한다.
 
-| 행 | 검증 |
-| --- | --- |
-| 정상 확보 | `PASS` |
-| 판독 후 못 읽음(`PlateReadout` 존재, value null) | `WARN`, 값 `null`, 이 rule이 `BLOCK`/`UNKNOWN`을 만들지 않음 |
-| `NEEDS_REVIEW` · abstain | `WARN` + `PLATE_REREAD` Need 유지 |
-| I4 `observed_false` | `WARN`, 번호판 값이 있으면 `WARN` Package 발행 |
-| I4 미관찰 | `UNKNOWN` |
-| 실행 실패(`PlateReadout = None`) | `UNKNOWN`, FINAL이 `PASS`/`WARN`이 아니어서 Package 미발행 — case 쪽 notice는 `tests/case/test_plate_read_failure_projection.py` |
-| v4 보존 | `requirement_rules_v4.json`이 여전히 `observed_false → BLOCK`을 담고 있음 |
+| 행 | EVIDENCE | FINAL | Package | READY |
+| --- | --- | --- | --- | --- |
+| 정상 확보 | `PASS` | `PASS` | 생성(`vehicle_number` 값) | 가능 |
+| 판독 후 못 읽음(`PlateReadout` 존재, value null) | `WARN` | `PASS`/`WARN` | 생성(`vehicle_number=null`, no-plate template) | 가능 |
+| `NEEDS_REVIEW` · abstain | `WARN` + `PLATE_REREAD` Need | `PASS`/`WARN` | 생성(`vehicle_number=null`, 부분 판독값 미사용) | 가능 |
+| I4 `observed_false` | — | `WARN` | 생성 | 가능 |
+| I4 미관찰 | — | `UNKNOWN` | 없음 | 불가 |
+| 실행 실패(`PlateReadout = None`) | `UNKNOWN` | `UNKNOWN`(렌더 입력 불완전) | 없음 · builder도 거절 | 불가 — notice는 `tests/case/test_plate_read_failure_projection.py` |
+| 번호판 없는 신고문 | — | — | 4 template 렌더, `UNKNOWN`·차량번호 슬롯 없음, 식별 못 함 문장 포함 | — |
+| v4·v1.1 보존 | `requirement_rules_v4.json`의 `observed_false → BLOCK`, 번호판 있는 신고문 문구 v1.1 동일 | | | |
+
+계약 검증은 `tests/evidence/test_contract_validation.py`가 `report-package/v1.2`의 `vehicle_number=null` 허용과 빈 문자열·키 누락 거절을 확인한다.
