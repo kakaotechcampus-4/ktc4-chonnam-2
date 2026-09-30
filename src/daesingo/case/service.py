@@ -27,7 +27,7 @@ from typing import Any
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
-from daesingo.case.view import build_case_view
+from daesingo.case.view import _belongs_to_current_selection, build_case_view
 
 
 def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> list[Candidate]:
@@ -110,6 +110,12 @@ def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> 
     # RequirementReport의 판정 필드는 `overall`이다(CaseView에서 `readiness`로 옮겨 싣는다).
     final = snapshot.requirement_report_package or {}
     if snapshot.report_package is None or final.get("overall") not in _PACKAGE_READY_READINESS:
+        return False
+    # 현재 선택 context의 결과일 때만 — CaseView가 evidence를 거르는 기준(#191)과 같다. 다르면 stage는
+    # READY인데 CaseView의 evidence·package가 null이 된다. 결과가 늦게 도착하는 경로(W7 6.6순위)에서
+    # 이전 선택의 Package가 올 수 있다.
+    selected = next((c for c in case.candidates if c.selected), None)
+    if snapshot.evidence_record is None or not _belongs_to_current_selection(case, selected, snapshot.evidence_record):
         return False
     case.mark_ready(report_package=snapshot.report_package)
     return True

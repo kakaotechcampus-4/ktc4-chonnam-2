@@ -128,6 +128,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 이 순위:** 6순위(transport)·6.5순위(command 표면)와 같은 계열로, worker가 생기기 전에는 강제할 대상 자체가 없다. 추측으로 막으면 상황 응답 대기(준비 중이 아님)와 구분하지 못한다.
 
+> **2026-09-30 선반영(worker 없이 할 수 있는 것):** `READY` 전이는 현재 선택 context의 결과일 때만 한다 — `mark_ready_if_package_ready()`가 evidence의 `basis.candidate_ref`·`selection_rev`를 CaseView와 같은 기준(#191)으로 확인한다. 예전엔 이전 선택의 Package로도 `READY`가 돼, stage는 `READY`인데 CaseView evidence·package는 `null`이 될 수 있었다(#216 테스트 중 mock adapter로 재현). 위 조건 1·2(준비 중 재선택 금지 등)는 그대로 worker 배선 몫이다.
+
 **참고:** 이슈 #173 · #166 · PR #189
 
 ### 7순위 — Orchestration 평가 지표
