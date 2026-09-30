@@ -1,28 +1,62 @@
+import json
+from contextlib import AbstractContextManager
+from dataclasses import dataclass
 from pathlib import Path
+from typing import override
 
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import RunDeadline
+from daesingo.search.media import MediaInput, PreparedMedia
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
-from daesingo.search.runs import ContractRef
-from daesingo.search.schemas import CoarseResponse, FineResponse
+from daesingo.search.schemas import CoarseCandidate, CoarseResponse, CoarseSpan, FineResponse
+from daesingo.search.scope import VisualEventType
 from daesingo.search.service import SearchService
-from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
+from daesingo.search.sources import AnalysisSourceResolver
 from daesingo.search.usage import ProviderUsage
 from eval import gemini_preflight, paths, run, score
 from eval.runners.impls import search_gemini
-from tests.search._search_service_support import FixtureMediaPreparer, OpenableResolver
+from tests.search._search_service_support import FixtureMediaPreparer
 
 
-class _EmptyProvider:
+@dataclass(frozen=True, slots=True)
+class _CandidateProvider:
+    unknown_cost_clip_id: str | None
+
     def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
+        unknown_cost = request.source.source_id == self.unknown_cost_clip_id
         return ProviderResult(
-            CoarseResponse(candidates=()), ProviderUsage(1, 0, 0, 1), 1
+            CoarseResponse(
+                candidates=(
+                    CoarseCandidate(
+                        event_type=VisualEventType.SIGNAL,
+                        span=CoarseSpan(start_sec=0.0, end_sec=1.0),
+                        at_sec=0.5,
+                        observed=("앞차가 정지선을 넘었다", "저해상도로 번호판 불확실"),
+                        score=0.8,
+                    ),
+                ),
+            ),
+            (
+                ProviderUsage(None, None, None, None)
+                if unknown_cost
+                else ProviderUsage(1, 0, 0, 1)
+            ),
+            1000 if unknown_cost else 1,
         )
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
         raise AssertionError("not called")
+
+
+class _ManifestMediaPreparer(FixtureMediaPreparer):
+    @override
+    def prepare_coarse(
+        self, media_input: MediaInput, deadline: RunDeadline
+    ) -> AbstractContextManager[PreparedMedia]:
+        duration = float(media_input.stream.read())
+        return FixtureMediaPreparer(duration).prepare_coarse(media_input, deadline)
 
 
 def test_preflight_reports_all_boundary_requirements_before_provider_creation(
@@ -64,10 +98,8 @@ def test_eval_cli_reports_preflight_failure_without_creating_provider(
         del scope
         raise gemini_preflight.PreflightError("missing media")
 
-    def should_not_build(
-        prepared: gemini_preflight.PreparedEval, clip: gemini_preflight.PreparedClip
-    ) -> SearchService:
-        del prepared, clip
+    def should_not_build(prepared: gemini_preflight.PreparedEval) -> SearchService:
+        del prepared
         nonlocal built
         built = True
         raise AssertionError("provider must not be created")
@@ -94,9 +126,10 @@ def test_eval_cli_reports_preflight_failure_without_creating_provider(
     assert "missing media" in capsys.readouterr().err
 
 
-def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+@pytest.mark.parametrize("unknown_cost", [False, True], ids=["known-cost", "unknown-cost"])
+def test_mock_provider_preserves_evidence_and_usage_through_prediction_and_score(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unknown_cost: bool
+) -> None:
     clips_doc = search_gemini.gemini_preflight.manifests_io.load_clips("b_youtube")
     prepared_clips = tuple(
         gemini_preflight.PreparedClip(
@@ -108,26 +141,23 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
         for item in clips_doc["clips"]
     )
     prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", prepared_clips)
-    resolved = {
-        clip.clip_id: ResolvedAnalysisSource(
-            ContractRef(kind="analysis_source", ref=clip.clip_id),
-            clip.duration_sec,
-            clip.clip_id,
-            1,
+    for clip in prepared_clips:
+        clip.path.write_bytes(str(clip.duration_sec).encode("ascii"))
+    services: list[SearchService] = []
+
+    def build_service(api_key: str, resolver: AnalysisSourceResolver) -> SearchService:
+        service = SearchService(
+            resolver,
+            _CandidateProvider(prepared_clips[0].clip_id if unknown_cost else None),
+            GeminiSearchConfig(input_usd_per_million=1.0, output_usd_per_million=2.0),
+            _ManifestMediaPreparer(1.0),
+            lambda: 0.0,
         )
-        for clip in prepared_clips
-    }
-    sources = {clip_id: (src,) for clip_id, src in resolved.items()}
-    sources_by_ref = {clip_id: src for clip_id, src in resolved.items()}
-    service = SearchService(
-        OpenableResolver(StaticAnalysisSourceResolver(sources, sources_by_ref)),
-        _EmptyProvider(),
-        GeminiSearchConfig(),
-        FixtureMediaPreparer(1.0),
-        RunDeadline(lambda: 0.0, budget_ms=300_000),
-    )
+        services.append(service)
+        return service
+
     monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
-    monkeypatch.setattr(search_gemini, "_build_service", lambda *_: service)
+    monkeypatch.setattr(search_gemini, "build_gemini_search_service", build_service)
     monkeypatch.setattr(paths, "predictions_dir", lambda: str(tmp_path / "predictions"))
     monkeypatch.setattr(paths, "results_dir", lambda: str(tmp_path / "results"))
 
@@ -152,64 +182,62 @@ def test_mock_provider_runs_prediction_then_score_for_all_official_clips(
     assert prediction.is_file()
     result = next((tmp_path / "results").glob("gemini_mock_e2e.g3.*.json"))
     assert result.is_file()
-    assert len(service.ledger.records()) == 123
+    assert len(services) == 1
+    assert len(services[0].ledger.records()) == 123
+
+    prediction_doc = json.loads(prediction.read_text(encoding="utf-8"))
+    cost = json.loads(result.read_text(encoding="utf-8"))["cost"]
+    assert len(prediction_doc["facts"]["usage_records"]) == 123
+    assert cost["n_rows"] == 123
+    assert cost["n_unknown_cost"] == int(unknown_cost)
+    assert cost["latency_ms"]["n"] == 123
+    assert cost["latency_ms"]["max"] == (1000 if unknown_cost else 1)
+    if unknown_cost:
+        assert prediction_doc["facts"]["usage_records"][0]["cost"] is None
+        assert "UNKNOWN_COST" in cost["coverage"]
+    else:
+        assert cost["coverage"] is None
+    for rows in (prediction_doc["raw"], prediction_doc["normalized"]):
+        assert len(rows) == 123
+        for row in rows:
+            candidate = row["candidates"][0]
+            assert candidate["summary"] == "앞차가 정지선을 넘었다; 저해상도로 번호판 불확실"
+            assert candidate["uncertainties"] == ["저해상도로 번호판 불확실"]
 
 
-def test_build_service_opens_the_prepared_clip_file(tmp_path: Path):
-    media = tmp_path / "clip.mp4"
-    media.write_bytes(b"not-really-mp4")
-    clip = gemini_preflight.PreparedClip("clip-a", media, 1.0, "0" * 64)
-    prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", (clip,))
-
-    service = search_gemini._build_service(prepared, clip)
-
-    ref = ContractRef(kind="analysis_source", ref="clip-a")
-    with service.resolver.open_source(ref) as opened:
-        assert opened.stream.read() == b"not-really-mp4"
-
-
-class _FailingProvider(_EmptyProvider):
+class _FailingForClip(_CandidateProvider):
     def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
-        raise RuntimeError("proxy down")
+        if request.source.source_id == "bad":
+            raise RuntimeError("proxy down")
+        return _CandidateProvider.search_coarse(self, request)
 
 
-def test_run_builds_a_service_per_clip_and_records_failed_clips(
+def test_run_records_clips_that_did_not_succeed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+) -> None:
     clips = tuple(
         gemini_preflight.PreparedClip(clip_id, tmp_path / clip_id, 1.0, "0" * 64)
         for clip_id in ("ok-1", "bad", "ok-2")
     )
+    for clip in clips:
+        clip.path.write_bytes(b"1.0")
     prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", clips)
-    built: list[str] = []
 
-    def build(
-        prepared: gemini_preflight.PreparedEval, clip: gemini_preflight.PreparedClip
-    ) -> SearchService:
-        del prepared
-        built.append(clip.clip_id)
-        source = ResolvedAnalysisSource(
-            ContractRef(kind="analysis_source", ref=clip.clip_id), 1.0, clip.clip_id, 1
-        )
-        resolver = StaticAnalysisSourceResolver(
-            {clip.clip_id: (source,)}, {clip.clip_id: source}
-        )
+    def build_service(api_key: str, resolver: AnalysisSourceResolver) -> SearchService:
         return SearchService(
-            OpenableResolver(resolver),
-            _FailingProvider() if clip.clip_id == "bad" else _EmptyProvider(),
+            resolver,
+            _FailingForClip(None),
             GeminiSearchConfig(),
-            FixtureMediaPreparer(1.0),
-            RunDeadline(lambda: 0.0, budget_ms=300_000),
+            _ManifestMediaPreparer(1.0),
+            lambda: 0.0,
         )
 
     monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
-    monkeypatch.setattr(search_gemini, "_build_service", build)
+    monkeypatch.setattr(search_gemini, "build_gemini_search_service", build_service)
 
     raw = search_gemini.run({"manifest": "b_youtube", "stage": "candidate"})
     facts = search_gemini.run_facts({})
 
-    assert built == ["ok-1", "bad", "ok-2"]
     assert [item["outcome"] for item in raw] == ["SUCCEEDED", "FAILED", "SUCCEEDED"]
     assert facts["n_not_succeeded_clips"] == 1
     assert facts["not_succeeded_clips"][0]["clip_id"] == "bad"
-    assert len(facts["provider_usage_records"]) == 2

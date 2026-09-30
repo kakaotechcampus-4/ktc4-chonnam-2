@@ -48,13 +48,16 @@ def build_view():
                              input_fingerprint="sha1:h001-coarse-search")
 
     candidates = service.receive_search_candidates(case, real)
-    case.select_candidate(candidates[0].candidate_id)
+    # 가장 유력한 후보(rank=1)를 case가 자동 선택한다(#122, core-user-flow §8-1).
+    if case.select_top_ranked() is None:
+        raise SystemExit("자동 선택할 rank=1 후보가 없습니다(후보 없음 또는 stale).")
 
     jobs.issue_plate_read(case, input_fingerprint="sha1:h001-plate-read-clip_h001")
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    # Package가 실제로 준비됐을 때만 READY(#167).
+    service.mark_ready_if_package_ready(case, real)
 
     return service.build_view_from_adapter(case, real)
 

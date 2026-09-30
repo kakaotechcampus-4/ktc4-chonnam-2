@@ -8,7 +8,7 @@ class DeadlineExceededError(Exception):
 
 @final
 class RunDeadline:
-    """Monotonic time budget injected at construction time.
+    """Monotonic time budget that starts counting at construction time.
 
     All downstream units (hash, probe, subprocess, provider) call check()
     before starting work and use remaining_sec() as their per-attempt timeout.
@@ -23,16 +23,6 @@ class RunDeadline:
         self._monotonic = monotonic
         self._budget_ms = budget_ms
         self._start = monotonic()
-
-    def narrowed_to(self, budget_ms: int) -> "RunDeadline":
-        """Return the same deadline bounded by a tighter budget.
-
-        Start instant and clock are preserved, so already elapsed time still
-        counts. Narrowing only shortens: a larger budget_ms is ignored.
-        """
-        narrowed = RunDeadline(self._monotonic, min(self._budget_ms, budget_ms))
-        narrowed._start = self._start
-        return narrowed
 
     def elapsed_ms(self) -> int:
         return round((self._monotonic() - self._start) * 1000)

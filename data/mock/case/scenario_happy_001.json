@@ -196,6 +196,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_h001",
+          "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -256,6 +258,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },
@@ -469,6 +472,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_h001",
+          "rank": 1,
+          "marker_ms": 312480,
           "at": "2026-08-24T18:05:12+09:00",
           "at_provenance": "readout.overlay_ocr",
           "at_provenance_label_key": "candidate.at_provenance.overlay_ocr",
@@ -529,6 +534,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_h001_thumb",
+        "plate_preview_ref": "fr_h001_plate1",
         "review_needed": true,
         "reason_code": "evidence.location_needs_review"
       },

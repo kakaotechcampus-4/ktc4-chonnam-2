@@ -84,7 +84,7 @@ def test_build_view_from_adapter_matches_manual_wiring():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    assert service.mark_ready_if_package_ready(case, adapter) is True
 
     view = service.build_view_from_adapter(case, adapter)
 

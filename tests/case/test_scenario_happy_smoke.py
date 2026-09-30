@@ -83,6 +83,8 @@ def test_happy_path_ready_matches_fixture():
             at_provenance=None,
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]
@@ -100,11 +102,12 @@ def test_happy_path_ready_matches_fixture():
     report_package = adapter.get_report_package()
 
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    case.mark_ready(report_package=report_package)
 
     view = build_case_view(
         case,
         evidence_record=evidence_record,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=requirement_evidence,
         requirement_report_package=requirement_package,
         report_package=report_package,

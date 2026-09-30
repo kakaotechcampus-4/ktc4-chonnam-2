@@ -1,0 +1,8 @@
+SOLID_LINE_LANE_CHANGE: 원래 차로에서 안정 주행, 횡이동 시작,
+경계선과의 겹침, 실제 횡단, 새 차로에서 안정 주행을 시간 순서대로 확인하세요.
+횡단 지점의 경계선이 금지 실선인지 별도 predicate인 marking_at_crossing에
+기록하세요. 이 필드의 OBSERVED는 실선이 확인됨, NOT_OBSERVED는 점선 등
+비제한 표지가 명확함, UNCERTAIN은 종류를 판별할 수 없음입니다.
+marking_type_at_crossing은 SOLID, DASHED, OTHER, UNCERTAIN 중 하나이며
+앞의 state와 일치해야 합니다.
+차로변경 자체만으로 제한 위반이라고 답하지 마세요.

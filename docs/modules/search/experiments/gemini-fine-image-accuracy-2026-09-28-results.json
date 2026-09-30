@@ -1,0 +1,191 @@
+{
+  "event": "SOLID_LINE_LANE_CHANGE",
+  "resolution": "720p",
+  "fps_list": [
+    1.0,
+    2.0,
+    4.0
+  ],
+  "rows": [
+    {
+      "clip": "20260620_141927_EVT_1.avi",
+      "fps": 1.0,
+      "frames": 5,
+      "expected": "OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": false,
+      "input_tokens": 5869,
+      "output_tokens": 439
+    },
+    {
+      "clip": "20260620_141927_EVT_1.avi",
+      "fps": 2.0,
+      "frames": 10,
+      "expected": "OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": false,
+      "input_tokens": 11369,
+      "output_tokens": 332
+    },
+    {
+      "clip": "20260620_141927_EVT_1.avi",
+      "fps": 4.0,
+      "frames": 20,
+      "expected": "OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": false,
+      "input_tokens": 22369,
+      "output_tokens": 388
+    },
+    {
+      "clip": "20260620_141956_EVT_1.avi",
+      "fps": 1.0,
+      "frames": 4,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 4769,
+      "output_tokens": 442
+    },
+    {
+      "clip": "20260620_141956_EVT_1.avi",
+      "fps": 2.0,
+      "frames": 8,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 9169,
+      "output_tokens": 381
+    },
+    {
+      "clip": "20260620_141956_EVT_1.avi",
+      "fps": 4.0,
+      "frames": 16,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 17969,
+      "output_tokens": 686
+    },
+    {
+      "clip": "20260620_141628_EVT_1.avi",
+      "fps": 1.0,
+      "frames": 7,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 8069,
+      "output_tokens": 424
+    },
+    {
+      "clip": "20260620_141628_EVT_1.avi",
+      "fps": 2.0,
+      "frames": 14,
+      "expected": "NOT_OBSERVED",
+      "got": "OBSERVED",
+      "correct": false,
+      "input_tokens": 15769,
+      "output_tokens": 1473
+    },
+    {
+      "clip": "20260620_141628_EVT_1.avi",
+      "fps": 4.0,
+      "frames": 28,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 31169,
+      "output_tokens": 1258
+    },
+    {
+      "clip": "20260620_150504_EVT_1.avi",
+      "fps": 1.0,
+      "frames": 8,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 9169,
+      "output_tokens": 353
+    },
+    {
+      "clip": "20260620_150504_EVT_1.avi",
+      "fps": 2.0,
+      "frames": 16,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 17969,
+      "output_tokens": 645
+    },
+    {
+      "clip": "20260620_150504_EVT_1.avi",
+      "fps": 4.0,
+      "frames": 32,
+      "expected": "NOT_OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": true,
+      "input_tokens": 35569,
+      "output_tokens": 333
+    },
+    {
+      "clip": "youtube_clip_01.mp4",
+      "fps": 1.0,
+      "frames": 3,
+      "expected": "OBSERVED",
+      "got": "OBSERVED",
+      "correct": true,
+      "input_tokens": 3669,
+      "output_tokens": 679
+    },
+    {
+      "clip": "youtube_clip_01.mp4",
+      "fps": 2.0,
+      "frames": 6,
+      "expected": "OBSERVED",
+      "got": "OBSERVED",
+      "correct": true,
+      "input_tokens": 6969,
+      "output_tokens": 448
+    },
+    {
+      "clip": "youtube_clip_01.mp4",
+      "fps": 4.0,
+      "frames": 12,
+      "expected": "OBSERVED",
+      "got": "OBSERVED",
+      "correct": true,
+      "input_tokens": 13569,
+      "output_tokens": 1023
+    },
+    {
+      "clip": "YT_0003_C05.mp4",
+      "fps": 1.0,
+      "frames": 3,
+      "expected": "OBSERVED",
+      "got": "UNCERTAIN",
+      "correct": false,
+      "input_tokens": 3669,
+      "output_tokens": 906
+    },
+    {
+      "clip": "YT_0003_C05.mp4",
+      "fps": 2.0,
+      "frames": 6,
+      "expected": "OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": false,
+      "input_tokens": 6969,
+      "output_tokens": 655
+    },
+    {
+      "clip": "YT_0003_C05.mp4",
+      "fps": 4.0,
+      "frames": 12,
+      "expected": "OBSERVED",
+      "got": "NOT_OBSERVED",
+      "correct": false,
+      "input_tokens": 13569,
+      "output_tokens": 679
+    }
+  ]
+}

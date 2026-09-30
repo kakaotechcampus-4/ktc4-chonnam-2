@@ -7,7 +7,6 @@ import pytest
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.errors import CoarseDurationMismatchError
-from daesingo.search.execution import RunDeadline
 from daesingo.search.media import (
     FfprobeError,
     MediaInput,
@@ -121,7 +120,7 @@ def _service(
         provider,
         config,
         media_preparer=MediaPreparer(config),
-        deadline=RunDeadline(lambda: 10.0, budget_ms=30_000),
+        monotonic=lambda: 10.0,
     )
 
 
@@ -230,14 +229,13 @@ def test_deadline_after_preparation_skips_provider_and_cleans_temp(
     provider = _ProviderSpy()
     config = GeminiSearchConfig()
     clock = ControllableClock()
-    deadline = RunDeadline(clock, budget_ms=30_000)
     temp_dirs = capture_temp_dirs(monkeypatch)
     service = SearchService(
         resolver,
         provider,
         config,
         media_preparer=ExpiringMediaPreparer(config, clock),
-        deadline=deadline,
+        monotonic=clock,
     )
 
     # When

@@ -67,6 +67,8 @@ def test_correction_rerun_before_and_after_match_fixture():
             at_provenance="recording.filename_time",
             observed=c["summary"],
             thumb_ref=c["thumbnail_ref"],
+            rank=c["rank"],
+            representative_ms=c["span"]["representative_ms"],
         )
         for c in raw_candidates
     ]
@@ -87,6 +89,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     view_before = build_case_view(
         case,
         evidence_record=evidence_v1,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v1,
         notices=before_view["notices"],
     )
@@ -116,7 +119,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     assert record["target_field"] == "occurred_at"
     assert record["previous_value"] == correction_fixture["previous_value"]
     assert record["new_value"] == correction_fixture["new_value"]
-    assert record["supersedes_id"] is None  # 이 target_field의 첫 correction
+    assert record["supersedes_ref"] is None  # 이 target_field의 첫 correction
     assert record["selection_rev"] == 1  # select_candidate() 1회 = selection_rev 1
     assert case.correction_records == [record]
 
@@ -124,6 +127,7 @@ def test_correction_rerun_before_and_after_match_fixture():
     view_after = build_case_view(
         case,
         evidence_record=evidence_v2,
+        plate_readouts=adapter.get_plate_readouts(),
         requirement_report_evidence=report_v2,
         notices=after_view["notices"],
     )
