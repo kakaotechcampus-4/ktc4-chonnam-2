@@ -79,6 +79,9 @@ class AdapterSnapshot:
     # `evidence.plate_preview_ref`(#47)의 원천 — 번호판 근거 프레임을 찾는 데만 쓴다.
     plate_readouts: list[dict[str, Any]] = field(default_factory=list)
     plate_read_status: str | None = None
+    # `evidence.plate_abstained`(#172 D-3)의 발동 근거 — CaseView 값만으로는 번호판 보류(1·2)와
+    # 읽지 못함(1·3)이 같게 보인다. notice 판단에만 쓰고 CaseView에 싣지 않는다.
+    evidence_needs: list[dict[str, Any]] = field(default_factory=list)
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -90,6 +93,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         report_package=adapter.get_report_package(),
         plate_readouts=adapter.get_plate_readouts(),
         plate_read_status=adapter.get_plate_read_status(),
+        evidence_needs=adapter.get_evidence_needs(),
     )
 
 
@@ -146,7 +150,7 @@ def build_view_from_adapter(
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
     )
-    return derive_notices(view)
+    return derive_notices(view, evidence_needs=snapshot.evidence_needs)
 
 
 # `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).
@@ -193,7 +197,31 @@ SITUATION_RESPONSE_PENDING_NOTICE: dict[str, Any] = {
 }
 
 
-def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
+# 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
+# 전에는 보낼 경로가 없어 `actions`를 비운다.
+PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
+    "code": "evidence.plate_abstained",
+    "severity": "WARN",
+    "blocking": False,
+    "message_key": "notice.plate_abstained",
+    "actions": [],
+}
+
+
+def _plate_reread_needed(evidence: dict[str, Any], evidence_needs: list[dict[str, Any]]) -> bool:
+    """현재 EvidenceRecord를 basis로 계산된 Needs에 `PLATE_REREAD`가 있는가. 이전 revision의 Need는
+    보지 않는다 — 재판독으로 값이 채워진 v2에는 v1의 Need가 남아 있어도 해당하지 않는다."""
+    return any(
+        (needs.get("basis_record_ref") or {}).get("ref") == evidence["record_id"]
+        and any(item.get("kind") == "PLATE_REREAD" for item in needs.get("items", []))
+        for needs in evidence_needs
+    )
+
+
+def derive_notices(
+    view: dict[str, Any], *, evidence_needs: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
@@ -206,8 +234,12 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
     - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
       `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
       전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
+    - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
+      basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
+      CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
+      본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
 
-    뒤 두 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
+    evidence에 걸린 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
@@ -221,6 +253,8 @@ def derive_notices(view: dict[str, Any]) -> dict[str, Any]:
         derived.append(PLATE_READ_FAILED_NOTICE)
     evidence = view.get("evidence")
     if evidence is not None:
+        if evidence["plate_display"]["value"] is None and _plate_reread_needed(evidence, evidence_needs or []):
+            derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
         selected = [c for c in view["candidates"] if c["selected"]]

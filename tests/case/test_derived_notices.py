@@ -139,3 +139,83 @@ def test_no_pending_notice_when_package_exists():
     view["package"] = {"package_ref": "pkg_x"}
     codes = [n["code"] for n in service.derive_notices(_without_notice(view))["notices"]]
     assert PENDING_CODE not in codes
+
+
+# ── evidence.plate_abstained ────────────────────────────────────────────
+# #172 D-3(09-29 확정): 일부 판독 / `NEEDS_REVIEW`(1·2)는 「검토·재판독 필요」를 표시한다. 읽지 못함
+# (1·3)·실행 실패(4a)와 CaseView 값(`plate_display.value=null`, `INFO_UNKNOWN`)이 같아서, 발동 근거는
+# evidence가 현재 EvidenceRecord에 대해 낸 `EvidenceNeeds`의 `PLATE_REREAD` 항목이다.
+
+ABSTAINED_CODE = "evidence.plate_abstained"
+
+
+def _evidence_needs(scenario_id: str) -> list[dict]:
+    path = MOCK_ROOT / "evidence" / f"scenario_{scenario_id}.json"
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)["evidence_needs"]
+
+
+def _without(view: dict, code: str) -> dict:
+    stripped = _without_notice(view)
+    stripped["notices"] = [n for n in stripped["notices"] if n["code"] != code]
+    return stripped
+
+
+def test_abstained_notice_shape_matches_contract():
+    """`actions[]`는 비운다 — `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106) 전에는 보낼 경로가 없다."""
+    assert service.PLATE_ABSTAINED_NOTICE == {
+        "code": ABSTAINED_CODE,
+        "severity": "WARN",
+        "blocking": False,
+        "message_key": "notice.plate_abstained",
+        "actions": [],
+    }
+
+
+def test_abstained_notice_when_current_record_needs_plate_reread():
+    """`plate_reread_001` rev3 — v1 basis(`ev_p001`)에 `PLATE_REREAD` Need가 있다."""
+    expected = _case_views("plate_reread_001")[0]
+    assert ABSTAINED_CODE in [n["code"] for n in expected["notices"]]
+
+    derived = service.derive_notices(
+        _without(expected, ABSTAINED_CODE), evidence_needs=_evidence_needs("plate_reread_001")
+    )
+
+    codes = [n["code"] for n in derived["notices"]]
+    assert codes.count(ABSTAINED_CODE) == 1
+    assert next(n for n in derived["notices"] if n["code"] == ABSTAINED_CODE)["actions"] == []
+
+
+def test_no_abstained_notice_after_reread_fills_plate():
+    """rev4 — 재판독 v2 basis(`ev_p001_v2`)의 Need는 비었다. v1의 Need로 발동하지 않는다."""
+    view = _without(_case_views("plate_reread_001")[1], ABSTAINED_CODE)
+    derived = service.derive_notices(view, evidence_needs=_evidence_needs("plate_reread_001"))
+    assert ABSTAINED_CODE not in [n["code"] for n in derived["notices"]]
+
+
+def test_no_abstained_notice_for_unread_plate_without_need():
+    """1·3(읽지 못함) — 값은 똑같이 없지만 Need가 없다. 「보류」로 보이지 않는다."""
+    view = _without(_case_views("plate_reread_001")[0], ABSTAINED_CODE)
+    record_id = view["evidence"]["record_id"]
+    needs = [{"basis_record_ref": {"kind": "evidence_record", "ref": record_id}, "items": []}]
+    derived = service.derive_notices(view, evidence_needs=needs)
+    assert ABSTAINED_CODE not in [n["code"] for n in derived["notices"]]
+
+
+def test_build_view_from_adapter_attaches_abstained_notice():
+    """실제 진입점에서 adapter의 EvidenceNeeds로 붙는지 — 호출자는 notice를 넘기지 않는다."""
+    adapter = MockFixtureAdapter(MOCK_ROOT, "plate_reread_001")
+    case = CaseAggregate.intake(case_id="case_p001", hints={}, manifest_summary={})
+    case.start_search()
+    service.receive_search_candidates(case, adapter)
+    case.select_candidate("candidate_p001")
+
+    view = service.build_view_from_adapter(case, adapter)
+    record_id = view["evidence"]["record_id"]
+    reread_pending = any(
+        n["basis_record_ref"]["ref"] == record_id and any(i["kind"] == "PLATE_REREAD" for i in n["items"])
+        for n in adapter.get_evidence_needs()
+    )
+
+    assert reread_pending  # mock은 v1(`ev_p001`)을 현재 기록으로 준다
+    assert ABSTAINED_CODE in [n["code"] for n in view["notices"]]
