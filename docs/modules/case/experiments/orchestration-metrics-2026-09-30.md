@@ -114,6 +114,7 @@ baseline 커밋에서 **이미 고쳐진 버그 3건을 모두 검출**했다. �
 ## 한계
 
 - fixture 기반이라 **case 로직의 커버리지**만 본다. 실제 영상마다 달라지는 AI 결과의 다양성은 search·readout 평가 몫이다.
+- recording 조회(`resolve_span`·`prepare_analysis_source`·`lookup_asset_facts`)와 시간 source는 따로 세지 않는다. fixture 경로에서 모두 관찰 함수 안에서 IncidentClip과 함께만 불리고(실측: `lookup_asset_facts`는 행동 8,476개 중 IncidentClip 없이 불린 경우 0, 항상 asset 수 3배), 시간 source는 raw 파일 읽기다. 조회만 다시 도는 경로(예: `SPAN_ADJUST`)가 생기면 asset ref를 키에 넣어 센다.
 - 크래시가 나면 그 세션의 이후 행동은 판정하지 못한다. 남은 크래시 370건(번호판 직접 입력)이 풀리면 판정 수가 더 늘어난다.
 - 「다른 후보 선택」은 합성 rank2로 잰다 — span·관찰 내용이 rank1과 같아 **선택 context가 바뀌는 것**만 본다. 후보마다 관찰 결과가 달라지는 경우는 보지 않는다.
 - 축(관찰 상태·행동)을 빠뜨리면 그 축은 보이지 않는다. 축이 늘어나면(위 「측정하지 않은 칸」) 다시 돌린다.
