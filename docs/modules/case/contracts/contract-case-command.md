@@ -72,10 +72,11 @@
 | `kind` | `payload` | 허용 상태 | 성공하면 |
 | --- | --- | --- | --- |
 | `SELECT_OTHER_CANDIDATE` | `{ "candidate_id": "string" }` | `EVIDENCE_REVIEW` · `READY` | `OTHER_CANDIDATE` CorrectionRecord 1건, `selection_rev` +1, `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아가고 `user_reviewed=false` |
-| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1 |
+| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1. 이 응답으로 Package가 준비되면 아래 「성공 뒤 `READY` 재확인」으로 `READY`가 되고 `case_rev`가 +1 더 오른다 |
 | `MARK_REVIEWED` | `{}` | `READY` | `user_reviewed=true`, `case_rev` +1 |
 | `RUN_NOTICE_ACTION` | `{ "notice_code": "string", "action": "GENERATE_REPORT_VIDEO \| RETRY_PLATE_READ \| RETRY_SEARCH \| GENERATE_PLATE_IMAGE" }` | 현재 CaseView의 `notices[]`에 **그 `code`를 가진 notice가 있고, 그 notice의 `actions[]`에 그 `action`이 있을 때** | CaseView 계약 B절 §7 매핑대로 새 `JobRecord` 1건 |
 
+- **성공 뒤 `READY` 재확인(2026-09-30).** command가 성공하고 stage가 `EVIDENCE_REVIEW`면 case가 `PACKAGE_READY`(FINAL `PASS`/`WARN` + ReportPackage, #167 gate 그대로)를 다시 보고, 성립하면 같은 command 안에서 `READY`로 올린다. `READY` 전이도 `case_rev`를 올리므로 그때는 위 표의 증가분에 +1이 더해진다. transport·web이 따로 전이를 부르지 않는다 — 통로에 판단을 넣지 않는다(#106). 실패한 command 뒤에는 보지 않는다(§6).
 - `RUN_NOTICE_ACTION`의 허용 조건은 「화면에 그 버튼이 떠 있었는가」와 같다. web은 `notices[].actions[]`에 있는 값으로만 버튼을 그리므로(CaseView 계약 B절 §7), case도 같은 근거로만 받는다.
 - `SELECT_OTHER_CANDIDATE`의 「새 후보 초안을 준비하는 중에는 다시 고르지 않는다」(#173 E-4 조건 1)는 case domain에 「준비 완료」 신호가 없어 이 판본에서 검사하지 않는다 — 진행 화면에서 버튼을 주지 않는 web 규칙에 기대고, worker 배선 때 case가 막는다(PR #190 — W7 기준 문서 6.6순위로 추가 중).
 - `responded_at`은 web이 보내지 않고 case가 채운다 — 사용자 기기 시계를 기록값으로 쓰지 않는다.
@@ -131,5 +132,5 @@
 - `CaseAggregate.mark_reviewed()`에는 여전히 stage 가드가 없다 — command 층이 `READY`만 받는다.
 - domain이 「알 수 없는 후보」와 「지금 상태에서 불가」를 같은 `InvalidTransition`으로 던진다 — command 층이 대상을 먼저 확인해 §6의 두 코드로 나눈다.
 - `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 `input_fingerprint`·`scope_ref`를 그대로 쓴다(`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 계산하지 않으므로 이전 발주가 없으면 `not_allowed`다 — `GENERATE_PLATE_IMAGE`처럼 처음 발주되는 kind는 fingerprint 출처가 정해질 때까지 이 경로로 열리지 않는다.
-- command 뒤 `READY` 전이(`mark_ready_if_package_ready()`)는 부르지 않는다 — §5 「성공하면」에 없다. 상황 응답으로 Package가 준비돼도 stage는 호출자가 올린다.
+- 성공 뒤 `READY` 재확인은 `service.mark_ready_if_package_ready()`를 그대로 부른다. real(fixture) 경로는 최종 신고영상 관찰(I4, `observation_facts`)이 없어 상황 응답 뒤에도 FINAL이 `UNKNOWN`이라 `READY`에 가지 않는다(ADR-EVIDENCE-008 §6.2) — 이 재확인과 별개로 evidence 쪽 입력이 있어야 한다.
 - `RECORD_SITUATION_RESPONSE`는 PR #177이 머지돼야 develop에서 동작한다.

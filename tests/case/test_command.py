@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 
 from daesingo import case as case_package
-from daesingo.case import command, jobs
-from daesingo.case.adapters import MockFixtureAdapter
+from daesingo.case import command, jobs, service
+from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
 
@@ -28,6 +28,17 @@ PLATE_READ_FAILED = {
 }
 
 
+class _NoPackageAdapter(MockFixtureAdapter):
+    """mock `happy_001`은 선택·응답과 무관하게 FINAL PASS + ReportPackage를 준다. 합성 후보로 command
+    규칙만 보는 테스트는 Package가 없는 상태로 둔다 — 성공 뒤 READY 재확인(§5)이 끼어들지 않게."""
+
+    def get_report_package(self):
+        return None
+
+    def get_requirement_report(self, scope):
+        return None if scope == "FINAL_PACKAGE" else super().get_requirement_report(scope)
+
+
 def _candidate(cid: str, rank: int) -> Candidate:
     return Candidate(candidate_id=cid, at=None, at_provenance=None, observed="", thumb_ref=None, rank=rank)
 
@@ -41,7 +52,7 @@ def _store_with_selected_case() -> tuple[CaseStore, CaseAggregate]:
     case.select_candidate("cand_a")
     jobs.issue_plate_read(case, input_fingerprint="sha1:cmd-plate")
     store = CaseStore()
-    store.register(case, MockFixtureAdapter(MOCK_ROOT, "happy_001"))
+    store.register(case, _NoPackageAdapter(MOCK_ROOT, "happy_001"))
     return store, case
 
 
@@ -325,3 +336,91 @@ def test_malformed_request_is_invalid_payload(overrides):
     _assert_rejected(response, "case.command.invalid_payload")
     assert response["case_view"]["case_id"] == case.case_id
     assert _state(case) == before
+
+
+# --- 성공 뒤 PACKAGE_READY 재확인(§5) ----------------------------------------
+# transport가 `mark_ready_if_package_ready()`를 부르면 통로에 판단이 들어간다(#106). command가
+# 성공하고 stage가 `EVIDENCE_REVIEW`면 case가 #167 gate를 다시 본다.
+
+
+def _real_happy_store() -> tuple[CaseStore, CaseAggregate]:
+    """상황 응답 뒤에도 FINAL이 UNKNOWN이라(I4 부재) Package가 나오지 않는 real(fixture) 경로."""
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id="case_cmd_real", hints={}, manifest_summary={})
+    real = RealAdapter(case_id=case.case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
+    service.receive_search_candidates(case, real)
+    case.select_top_ranked()
+    store = CaseStore()
+    store.register(case, real)
+    return store, case
+
+
+def _mock_happy_store() -> tuple[CaseStore, CaseAggregate]:
+    """mock `happy_001`의 실제 후보를 고른 case — FINAL PASS + ReportPackage가 준비된 상태."""
+    adapter = MockFixtureAdapter(MOCK_ROOT, "happy_001")
+    case = CaseAggregate.intake(case_id="case_cmd_mock_ready", hints={}, manifest_summary={})
+    case.start_search()
+    service.receive_search_candidates(case, adapter)
+    case.select_top_ranked()
+    store = CaseStore()
+    store.register(case, adapter)
+    return store, case
+
+
+def test_successful_command_moves_to_ready_when_package_is_ready():
+    store, case = _mock_happy_store()
+    rev = case.case_rev
+
+    response = command.handle_command(
+        _request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store
+    )
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "READY"
+    assert response["case_view"]["package"] is not None
+    assert response["case_view"]["case_rev"] == rev + 2  # 응답 +1, READY 전이 +1
+
+
+def test_mark_reviewed_follows_in_one_flow():
+    """상황 응답 → READY → 최종 확인이 transport 판단 없이 이어진다."""
+    store, case = _mock_happy_store()
+    first = command.handle_command(
+        _request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store
+    )
+
+    second = command.handle_command(
+        _request(case, "MARK_REVIEWED", {}, expected_case_rev=first["case_view"]["case_rev"]), store=store
+    )
+
+    assert second["ok"] is True
+    assert second["case_view"]["user_reviewed"] is True
+
+
+def test_command_stays_in_evidence_review_when_package_blocked():
+    store, case = _real_happy_store()
+    rev = case.case_rev
+
+    response = command.handle_command(
+        _request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store
+    )
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "EVIDENCE_REVIEW"
+    assert response["case_view"]["package"] is None
+    assert response["case_view"]["case_rev"] == rev + 1
+
+
+def test_rejected_command_does_not_move_to_ready():
+    """실패한 command는 아무것도 바꾸지 않는다(§6) — Package가 준비돼 있어도 전이하지 않는다."""
+    store, case = _mock_happy_store()
+    before = _state(case)
+
+    response = command.handle_command(
+        _request(case, "MARK_REVIEWED", {}), store=store  # EVIDENCE_REVIEW라 not_allowed
+    )
+
+    assert response["ok"] is False
+    assert _state(case) == before
+    assert case.stage == "EVIDENCE_REVIEW"

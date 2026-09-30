@@ -19,7 +19,7 @@ from typing import Any
 
 from daesingo.case import correction, jobs
 from daesingo.case.domain import CaseAggregate, InvalidTransition
-from daesingo.case.service import get_view
+from daesingo.case.service import get_view, mark_ready_if_package_ready
 from daesingo.case.store import CaseStore
 
 # 이 판본(v0)에서 받는 `CORRECTED` 제외 값 — `CORRECTED`는 `SITUATION_CHANGE`를 보낼 입력형
@@ -145,7 +145,8 @@ def handle_command(
 ) -> dict[str, Any]:
     """command 하나를 받아 `{ok, error, case_view}`를 돌려준다(§4).
 
-    검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
+    성공하면 stage가 `EVIDENCE_REVIEW`일 때 `PACKAGE_READY`를 다시 보고 준비됐으면 `READY`로 올린다
+    (§5 — 그 전이도 `case_rev`를 올린다). 검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
     싣는다 — case_id가 없을 때만 `case_view=None`이다. `running_jobs`·`notices`는 `get_view()`에
     그대로 넘긴다(사용자가 본 화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해).
@@ -177,4 +178,8 @@ def handle_command(
         _HANDLERS[request["kind"]](case, request["payload"], view)
     except _Rejected as rejected:
         return _response(rejected.reason, view)
+    # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
+    # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
+    if case.stage == "EVIDENCE_REVIEW":
+        mark_ready_if_package_ready(case, store.get_adapter(case_id))
     return _response(None, get_view(case_id, **view_kwargs))
