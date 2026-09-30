@@ -126,8 +126,10 @@
 
 ## 10. 구현할 때 맞출 것 (case 내부)
 
-규칙이 아니라 현재 코드와의 차이다. 합의 뒤 구현 PR에서 고친다.
+규칙이 아니라 현재 코드와의 차이다. 진입 함수는 `case.handle_command(request, *, store)`(`src/daesingo/case/command.py`)다.
 
-- `CaseAggregate.mark_reviewed()`에 stage 가드가 없다 — §5는 `READY`만 허용한다.
-- domain이 「알 수 없는 후보」와 「지금 상태에서 불가」를 같은 `InvalidTransition`으로 던진다 — §6의 두 코드로 나누려면 command 층에서 대상을 먼저 확인하거나 예외를 나눠야 한다.
-- `RECORD_SITUATION_RESPONSE`는 PR #177, `SELECT_OTHER_CANDIDATE`의 원자성·`READY` 허용은 PR #189가 머지돼야 §5대로 동작한다.
+- `CaseAggregate.mark_reviewed()`에는 여전히 stage 가드가 없다 — command 층이 `READY`만 받는다.
+- domain이 「알 수 없는 후보」와 「지금 상태에서 불가」를 같은 `InvalidTransition`으로 던진다 — command 층이 대상을 먼저 확인해 §6의 두 코드로 나눈다.
+- `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 `input_fingerprint`·`scope_ref`를 그대로 쓴다(`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 계산하지 않으므로 이전 발주가 없으면 `not_allowed`다 — `GENERATE_PLATE_IMAGE`처럼 처음 발주되는 kind는 fingerprint 출처가 정해질 때까지 이 경로로 열리지 않는다.
+- command 뒤 `READY` 전이(`mark_ready_if_package_ready()`)는 부르지 않는다 — §5 「성공하면」에 없다. 상황 응답으로 Package가 준비돼도 stage는 호출자가 올린다.
+- `RECORD_SITUATION_RESPONSE`는 PR #177이 머지돼야 develop에서 동작한다.
