@@ -124,6 +124,26 @@ def normalize_plate(raw):
     return out
 
 
+def normalize_persistence(raw):
+    """영상별 프레임 검출 목록. 정답 매칭은 scorer 가 한다 — 여기서는 모양만 본다."""
+    out = []
+    for i, video in enumerate(raw):
+        where = "normalize_persistence: raw[%d]" % i
+        _require_dict(video, where)
+        frames = []
+        for j, f in enumerate(_require_field(video, "frames", where)):
+            fwhere = "%s.frames[%d]" % (where, j)
+            _require_dict(f, fwhere)
+            frames.append({
+                "frame_no": _require_field(f, "frame_no", fwhere),
+                "detections": [{"bbox_xywh": [float(v) for v in d["bbox_xywh"]],
+                                "conf": float(d["conf"]), "cls": d.get("cls")}
+                               for d in _require_field(f, "detections", fwhere)],
+            })
+        out.append({"video_id": _require_field(video, "video_id", where), "frames": frames})
+    return out
+
+
 def from_candidate_events(raw):
     """CandidateEvent 계약 목록의 이름과 단위를 eval 뷰로 옮긴다.
 

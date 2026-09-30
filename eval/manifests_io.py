@@ -35,7 +35,15 @@ def load_manifest_meta(manifest_name):
     clips_path = os.path.join(paths.manifest_dir(manifest_name), "clips.json")
     if os.path.exists(clips_path):
         return _read_json(clips_path)["meta"]
+    samples_path = os.path.join(paths.manifest_dir(manifest_name), "samples.json")
+    if os.path.exists(samples_path):
+        return _read_json(samples_path)["meta"]
     return load_sequences(manifest_name)["meta"]
+
+
+def load_samples(manifest_name):
+    """이미지 표본 manifest (예: 번호판 crop). 클립도 시퀀스도 아니다."""
+    return _read_json(os.path.join(paths.manifest_dir(manifest_name), "samples.json"))
 
 
 def load_gt(manifest_name, stage):
