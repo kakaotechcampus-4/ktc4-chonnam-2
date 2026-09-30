@@ -127,6 +127,48 @@ def _plate_unread(original: Callable) -> Callable:
     return read_plate
 
 
+SECOND_CANDIDATE_SUFFIX = "_r2"
+
+
+def _with_second_candidate(original: Callable) -> Callable:
+    """mock search fixture는 전부 후보 1개라 「다른 후보 선택」을 돌릴 수 없다 — rank1을 복사해 rank2를
+    하나 더 만든다. span이 같아서 recording·Fine·판독 fixture가 그대로 풀리고, 달라지는 것은
+    `candidate_id`뿐이다(선택 context가 바뀌는 것 자체를 보려는 축이라 이걸로 충분하다)."""
+    def search_candidates(scope, **kwargs):
+        payload = original(scope, **kwargs).model_dump(mode="json")
+        if len(payload["candidates"]) == 1:
+            second = json.loads(json.dumps(payload["candidates"][0]))
+            second["candidate_id"] += SECOND_CANDIDATE_SUFFIX
+            second["rank"] = 2
+            payload["candidates"].append(second)
+        return search_module.CandidateSearchResult.model_validate(payload)
+    return search_candidates
+
+
+def _fine_for_selected(recorder: "Recorder") -> Callable[[Callable], Callable]:
+    """Fine fixture의 `VisualEvidence.candidate_id`는 rank1로 고정이다 — 합성 rank2가 선택됐을 때만
+    그 후보로 바꾼다(evidence가 CandidateEvent와 대조한다). 관찰 내용은 그대로다."""
+    def make(original: Callable) -> Callable:
+        def verify(*args, **kwargs):
+            result = original(*args, **kwargs)
+            case = recorder.case
+            selected = next((c.candidate_id for c in case.candidates if c.selected), None) if case else None
+            if not (selected or "").endswith(SECOND_CANDIDATE_SUFFIX):
+                return result
+            payload = result.model_dump(mode="json")
+            payload["visual_evidence"]["candidate_id"] = selected
+            return search_module.VisualVerificationResult.model_validate(payload)
+        return verify
+    return make
+
+
+def _common(recorder: "Recorder") -> list[tuple[Any, str, Callable[[Callable], Callable]]]:
+    """모든 관찰 상태에 공통으로 까는 주입 — 후보 2개 합성."""
+    return [
+        (search_module, "search_candidates", _with_second_candidate),
+        (search_module, "verify_visual", _fine_for_selected(recorder)),
+    ]
+
 OBSERVATIONS: dict[str, list[tuple[Any, str, Callable[[Callable], Callable]]]] = {
     "ASSEMBLE": [],
     "NOT_ASSEMBLED": [(search_module, "verify_visual", _not_observed)],
@@ -208,6 +250,10 @@ def _current(case: CaseAggregate) -> str:
     return next((c.candidate_id for c in case.candidates if c.selected), "none-selected")
 
 
+def _other(case: CaseAggregate) -> str:
+    return next((c.candidate_id for c in case.candidates if not c.selected), "no-other-candidate")
+
+
 # name → (실행, 허용 단계(①), 거부돼야 하는가, 기대 case_rev 증가)
 ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], bool, int | None]] = {
     "PLATE_MANUAL_EDIT": (_plate_edit, _ASSEMBLE_ONLY, False, 1),
@@ -218,9 +264,10 @@ ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], bool, int | None
     "TIME_HINT_EDIT": (_time_hint, _EVERYTHING, False, None),
     "RESELECT_MISSING": (_reselect(lambda case: "does-not-exist"), frozenset(), True, 0),
     "RESELECT_CURRENT": (_reselect(_current), frozenset(), True, 0),
+    # 정책 표 2행: 2차 확인(필요시)+병렬 보강·증거 재조립, 1차 탐색은 절대 안 건드린다.
+    "OTHER_CANDIDATE": (_reselect(_other), _EVERYTHING - {"coarse_search"}, False, 1),
 }
 NOT_YET = {
-    "OTHER_CANDIDATE": "후보 2개 합성 미구현 — mock search fixture가 전부 후보 1개",
     "PLATE_REREAD · SPAN_ADJUST · TIMELINE_REBASE×2": "real 경로에 흐름 없음",
     "situation_response": "#177 미머지",
     "READY 시점 행동 · 불변식 1(READY ⇒ Package)": "상황 응답(#177) + observation_facts 주입 필요",
@@ -266,8 +313,9 @@ def run_session(observation: str, actions: tuple[str, ...]) -> dict[str, Any]:
     recorder = Recorder()
     patches: list[tuple[Any, str, Any]] = []
     injected: dict[tuple[int, str], Callable] = {}
-    for owner, name, make in OBSERVATIONS[observation]:
-        injected[(id(owner), name)] = make(getattr(owner, name))
+    for owner, name, make in _common(recorder) + OBSERVATIONS[observation]:
+        base = injected.get((id(owner), name), getattr(owner, name))
+        injected[(id(owner), name)] = make(base)
     for owner, name, stage in _STAGES:
         base = injected.get((id(owner), name), getattr(owner, name))
         patches.append((owner, name, _counting(recorder, stage, base)))
