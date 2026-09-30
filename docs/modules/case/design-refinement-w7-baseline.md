@@ -70,13 +70,19 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 5순위:** 작고, 2순위(situation_response/observation_facts)가 먼저 풀려야 의미가 커진다 — 패키지 조립 자체가 막혀 있는 동안은 다듬어도 효과가 잘 안 보인다.
 
-### 6순위 — HTTP 진입점 / transport
+### 6순위 — HTTP 진입점 / transport — ✅ case 몫 종결(2026-09-30)
 
 **문제:** `case.get_view(case_id, store=store)`는 만들었지만(오늘 완료) 이걸 실제로 네트워크에 노출하는 FastAPI 같은 transport 계층이 없다.
 
 **왜 6순위:** case 단독 결정 사안이 아니다 — `api/` 모듈(현재 껍데기만 있음) 또는 web 쪽 몫일 가능성이 높다. "만들기"보다 "누가 만들지부터 확인"이 먼저라 순서상 뒤로 미룬다(급하지 않다는 뜻은 아님).
 
-**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표
+**해소 내용(누가 만드는가):** transport는 case 몫이 아니다. `src/daesingo/api/README.md`가 `api/`(FastAPI composition root)의 Owner를 김준영으로 적고 있고, 코드는 아직 없다. web 구현 일정(목요일) 때문에 이번에는 **신유민(`web`)이 진행**하기로 했다 — 통로는 case 공개 함수를 부르기만 하고, 검사·실패 코드는 case에 둔다(이슈 #106 [코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/106#issuecomment-5907616288)). case가 transport에 붙인 조건은 셋이다: 통로에 판단을 넣지 않는다 · case 공개 함수만 부른다 · 긴 작업을 요청 안에서 돌리지 않는다.
+
+**case 쪽 진입 함수:** 읽기 `case.get_view()`, 쓰기 `case.handle_command()`(PR #216, `contract-case-command.md` Draft v0). transport가 부를 대상은 이 둘이다.
+
+**여전히 범위 밖:** HTTP 경로·인증·직렬화는 transport를 만드는 쪽이 정한다. 인증 방식은 미결이다(`module-architecture.md` §1-7 A2). `api/` Owner(김준영)와 web 구현의 관계 정리도 case가 정하지 않는다.
+
+**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/command.py`(`handle_command`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표, 이슈 #106
 
 ### 6.5순위 — web→case 공용 command 표면 (구 "후보 선택 제출 command 노출")
 
