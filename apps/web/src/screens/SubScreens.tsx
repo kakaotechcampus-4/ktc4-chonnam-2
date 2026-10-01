@@ -92,14 +92,16 @@ export function PlateCheck(props: { view: CaseView; onBack: () => void; onEdit: 
       </div>
       <div className="panel panel-p">
         {editing === null ? (
-          <div className="kv kv-rows">
-            <DisplayRow
-              label="차량 번호"
-              value={plate.value}
-              infoState={plate.info_state}
-              sourceLabelKey={plate.source_label_key}
-            />
-            <button type="button" className="btn sm" style={{ marginTop: 12 }} onClick={() => setEditing(plate.value ?? '')}>
+          <div className="plate-value-row">
+            <div className="kv kv-rows">
+              <DisplayRow
+                label="차량 번호"
+                value={plate.value}
+                infoState={plate.info_state}
+                sourceLabelKey={plate.source_label_key}
+              />
+            </div>
+            <button type="button" className="btn sm" onClick={() => setEditing(plate.value ?? '')}>
               번호 수정
             </button>
           </div>

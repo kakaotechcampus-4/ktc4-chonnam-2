@@ -349,3 +349,5 @@ button.thumb { cursor: pointer; }
 .plate-frames .video-main { min-height: 200px; }
 .plate-crop { background: linear-gradient(135deg, #2b3a63, #4a5a8c); }
 .plate-form { display: flex; gap: 10px; margin-top: 12px; }
+.plate-value-row { display: flex; align-items: center; gap: 16px; }
+.plate-value-row .kv { flex: 1; }

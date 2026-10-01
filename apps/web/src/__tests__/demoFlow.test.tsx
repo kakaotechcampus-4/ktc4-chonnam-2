@@ -129,7 +129,7 @@ it('번호판은 자세히 보기에서 읽은 값을 채운 채 고치고, 결�
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  fireEvent.click(getByText('자세히 보기 · 수정'))
+  fireEvent.click(getByText('자세히 보기'))
   expect(text()).toContain('번호판을 읽은 장면')
   fireEvent.click(getByText('번호 수정'))
   const input = container.querySelector('.plate-input') as HTMLInputElement

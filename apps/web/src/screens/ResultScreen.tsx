@@ -92,7 +92,7 @@ export function ResultScreen(props: {
             <StatusBadge state={evidence.plate_display.info_state} />
           </span>
           <button type="button" className="btn sm" onClick={props.onPlate}>
-            자세히 보기 · 수정
+            자세히 보기
           </button>
         </div>
       </section>
