@@ -51,7 +51,8 @@ export function CandidateCompare(props: {
 export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
   return (
     <SubPage title="어떻게 정했는지" onBack={props.onBack}>
-      <EvidenceScreen view={props.view} />
+      {/* 다른 후보는 결과 화면의 「다른 후보 영상」에서만 연다 */}
+      <EvidenceScreen view={props.view} hideOthers />
     </SubPage>
   )
 }
