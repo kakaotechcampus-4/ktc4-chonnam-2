@@ -233,7 +233,7 @@ body {
 .snapshot-bar .btn { min-height: 34px; font-size: 14px; padding: 0 10px; }
 .snapshot-bar .btn.on { background: var(--green-solid); border-color: var(--green-solid); color: #fff; }
 
-.web-main { max-width: 760px; margin: 0 auto; padding: 20px; display: grid; gap: 12px; }
+.web-main { max-width: 1040px; margin: 0 auto; padding: 20px; display: grid; gap: 12px; }
 .web-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .web-meta .mono { font-family: 'Roboto Mono', 'SF Mono', Consolas, monospace; }
 
@@ -253,3 +253,61 @@ body {
 .dev-extra-body { padding: 0 12px 12px; }
 
 .action-intent { border-left: 4px solid var(--slate); }
+
+/* ============================================================
+   DEMO FLOW — 와이어프레임(docs/design/wireframe) 틀만 옮긴 것
+   ============================================================ */
+.app-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 28px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; flex-direction: column; align-items: flex-start; background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+.brand-name { font-size: 22px; font-weight: 900; color: var(--brand-ink); line-height: 1.2; }
+.brand-sub { font-size: 13px; color: var(--brand-sub); }
+.flow-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.flow-steps li { padding: 6px 12px; border-bottom: 3px solid var(--border); color: var(--muted); font-size: 15px; font-weight: 700; }
+.flow-steps li.done { border-bottom-color: var(--green-bd); color: var(--ink-2); }
+.flow-steps li.on { border-bottom-color: var(--green); color: var(--green-deep); }
+
+.page-title { font-size: calc(26px * var(--font-scale)); font-weight: 900; margin: 0; line-height: 1.3; }
+
+.hero { background: linear-gradient(120deg, #1d4ed8, #3b82f6); color: #fff; border-radius: 14px; padding: 28px; }
+.hero h1 { margin: 0 0 8px; font-size: 24px; }
+.hero p { margin: 0 0 18px; opacity: .9; }
+.hero .btn { color: #1d4ed8; border-color: #fff; }
+
+.step-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.step-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.step-card .btn { margin-top: auto; width: 100%; }
+.step-no { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sunken); font-size: 14px; font-weight: 700; }
+
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 44px 20px;
+  border: 2px dashed var(--border-2); border-radius: var(--R); background: var(--panel); cursor: pointer;
+}
+.dropzone.over { border-color: var(--green); background: var(--green-soft); }
+.field.situation { height: auto; padding: 14px 16px; resize: vertical; }
+.cta { align-self: center; min-width: 220px; }
+.demo-pick { justify-self: end; }
+
+.run-summary { display: flex; flex-direction: column; gap: 2px; }
+
+.timeline { list-style: none; margin: 0; padding: 0 0 0 6px; }
+.timeline li { position: relative; display: flex; justify-content: space-between; padding: 10px 0 10px 26px; border-left: 2px solid var(--border); }
+.timeline li::before {
+  content: ''; position: absolute; left: -8px; top: 15px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--border-2);
+}
+.timeline .tl-done::before { background: var(--green); border-color: var(--green); }
+.timeline .tl-running::before { background: var(--orange); border-color: var(--orange); animation: tl-pulse 1.2s ease-in-out infinite; }
+.timeline .tl-failed::before { background: var(--red); border-color: var(--red); }
+.timeline .tl-partial::before { background: var(--orange-soft); border-color: var(--orange); }
+.timeline .tl-pending .tl-label { color: var(--muted-2); }
+.tl-label { font-weight: 700; }
+@keyframes tl-pulse { 50% { opacity: .35; } }
+
+.result-head { display: flex; align-items: center; gap: 16px; }
+.result-check { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; background: var(--green-soft); color: var(--green); font-size: 28px; font-weight: 900; }
+.result-head p { margin: 2px 0 0; }
+.result-cols { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
+.result-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--R); background: var(--panel); }
