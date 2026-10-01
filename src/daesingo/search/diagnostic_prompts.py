@@ -37,7 +37,9 @@ _UNCERTAIN_DELTAS: Final = {
 def uncertain_fine_prompt(event_type: VisualEventType) -> PromptTemplate:
     base = diagnostic_fine_prompt(event_type)
     suffix = _UNCERTAIN_DELTAS.get(event_type)
-    return base if suffix is None else _compose(base, suffix)
+    if suffix is None:
+        return base
+    return _compose(_compose(base, "fine-uncertain-v1"), suffix)
 
 
 def handoff_fine_prompt(event_type: VisualEventType) -> PromptTemplate:

@@ -64,6 +64,9 @@ def test_uncertain_profile_adds_the_ambiguity_rule_only_to_line_events(
 
     assert "모호하면 UNCERTAIN을 사용" in uncertain.prompt
     assert "모호하면 UNCERTAIN을 사용" not in diagnostic.prompt
+    # 9/26: 불확실성을 비운 채 confidence 0.9 이상으로 기각 -> 보고 규칙을 함께 준다
+    assert "uncertainties를 비우는 것은" in uncertain.prompt
+    assert "uncertainties를 비우는 것은" not in diagnostic.prompt
     assert "Coarse 관찰" not in uncertain.prompt
 
 
