@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import stat
 import subprocess
 from typing import Literal, Protocol
@@ -63,6 +64,24 @@ def _duration(value: object) -> float | None:
     return duration
 
 
+def _stream_duration(item: dict) -> float | None:
+    duration = _duration(item.get("duration"))
+    if duration is not None:
+        return duration
+    tags = item.get("tags", {})
+    if not isinstance(tags, dict):
+        raise ValueError("유효하지 않은 stream duration metadata입니다")
+    value = tags.get("DURATION")
+    if value is None or value == "N/A":
+        return None
+    # Matroska stream tag: elapsed hours (24 이상 가능), minutes, seconds.fraction.
+    # Container duration은 다른 stream을 포함하므로 fallback 근거로 쓰지 않는다.
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{2,}:[0-5][0-9]:[0-5][0-9]\.[0-9]+", value):
+        raise ValueError("유효하지 않은 stream duration metadata입니다")
+    hours, minutes, seconds = value.split(":")
+    return _duration(float(hours) * 3600 + int(minutes) * 60 + float(seconds))
+
+
 def _parse_metadata(payload: object) -> tuple[float | None, tuple[ProbedStream, ...]]:
     if not isinstance(payload, dict) or not isinstance(payload.get("streams"), list):
         raise ValueError("ffprobe stream metadata가 없습니다")
@@ -89,7 +108,7 @@ def _parse_metadata(payload: object) -> tuple[float | None, tuple[ProbedStream, 
             raise ValueError("ffprobe stream index가 유효하지 않습니다")
         indices.add(index)
         streams.append(ProbedStream(index, "VIDEO" if media_type == "video" else "AUDIO",
-                                    _duration(item.get("duration"))))
+                                    _stream_duration(item)))
     if not any(stream.media_type == "VIDEO" for stream in streams):
         raise ValueError("등록 가능한 video stream이 없습니다")
     return _duration(format_info.get("duration")), tuple(streams)
@@ -110,7 +129,7 @@ class FfprobeMediaProbe:
             before = _snapshot(resolved)
             result = subprocess.run(
                 [self.executable, "-v", "error", "-protocol_whitelist", "file",
-                 "-show_entries", "format=duration:stream=index,codec_type,duration:stream_disposition=attached_pic",
+                 "-show_entries", "format=duration:stream=index,codec_type,duration:stream_tags=DURATION:stream_disposition=attached_pic",
                  "-of", "json", str(resolved)],
                 stdin=subprocess.DEVNULL, capture_output=True, timeout=self.timeout_sec,
                 check=False,
