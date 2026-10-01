@@ -23,7 +23,6 @@ export function ResultScreen(props: {
   // 요약 칩은 상태별 개수를 셀 뿐 판정하지 않는다.
   const counts = new Map<InfoState, number>()
   const fields = Object.entries(pkg.report_fields).filter(([key]) => !HIDDEN.has(key))
-  const unconfirmed = pkg.unconfirmed_fields.filter((key) => !HIDDEN.has(key))
   for (const [key, s] of Object.entries(pkg.report_field_states)) {
     if (!HIDDEN.has(key)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
   }
@@ -95,18 +94,6 @@ export function ResultScreen(props: {
             </div>
           ))}
         </div>
-        {unconfirmed.length > 0 && (
-          <div className="unconfirmed">
-            <b>아직 확인하지 않은 항목 {unconfirmed.length}개</b>
-            <div className="chips">
-              {unconfirmed.map((f) => (
-                <span key={f} className="chip warn">
-                  {reportFieldLabel(f)} 수정
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
 
       <div className="btnrow center">
