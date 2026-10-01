@@ -332,3 +332,4 @@ button.thumb { cursor: pointer; }
 .nav-link:hover { color: var(--green); }
 .thumb-img.how { background: var(--green-soft); color: var(--green-deep); font-size: 18px; }
 .hint { margin: -8px 0 0; }
+.center-text { text-align: center; margin: -6px 0 0; }

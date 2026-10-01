@@ -1,10 +1,12 @@
 import type { JSX } from 'react'
 import type { CaseView, InfoState } from '../contracts/caseView'
-import { INFO_STATE_LABELS, reportFieldLabel } from '../contracts/labels'
+import { INFO_STATE_LABELS, noticeMessage, reportFieldLabel } from '../contracts/labels'
 import { StatusBadge } from '../components/StatusBadge'
 
-// Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판·위치 → 신고서 초안 → 동작.
+// Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판·근거 → 신고서 초안 → 동작.
 // 값과 상태는 package.report_field_states를 그대로 쓴다(value-state-display.md §5-1).
+// 무엇이 잘 됐든 안 됐든 결과는 여기서 알린다 — 진행 화면은 멈추지 않는다.
+// blocking notice가 있으면(예: 번호판 판독 실행 실패, #172) 제출 단계로 넘기지 않는다.
 // ponytail: 위치(지도·검색어 복사)는 아직 구현하지 못해 이 화면에서 뺀다. 구현되면 HIDDEN을 비운다.
 const HIDDEN = new Set(['location'])
 export function ResultScreen(props: {
@@ -22,15 +24,23 @@ export function ResultScreen(props: {
   const counts = new Map<InfoState, number>()
   const fields = Object.entries(pkg.report_fields).filter(([key]) => !HIDDEN.has(key))
   const unconfirmed = pkg.unconfirmed_fields.filter((key) => !HIDDEN.has(key))
-  for (const [key, s] of Object.entries(pkg.report_field_states)) if (!HIDDEN.has(key)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
+  for (const [key, s] of Object.entries(pkg.report_field_states)) {
+    if (!HIDDEN.has(key)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
+  }
   const others = view.candidates.filter((c) => !c.selected).length
+  const blocking = view.notices.filter((n) => n.blocking)
 
   return (
     <div className="stack">
       <h1 className="page-title">신고자료</h1>
 
       <section className="panel panel-p">
-        <h2 className="panel-t">신고자료가 준비됐어요.</h2>
+        <h2 className="panel-t">{blocking.length > 0 ? '신고자료를 완성하지 못했어요.' : '신고자료가 준비됐어요.'}</h2>
+        {view.notices.map((n) => (
+          <div key={n.code} className={`flow-notice${n.blocking ? ' blocking' : ''}`} style={{ marginTop: 10 }}>
+            {noticeMessage(n.message_key)}
+          </div>
+        ))}
         <div className="chips">
           {[...counts].map(([state, n]) => (
             <span key={state} className="chip">
@@ -48,13 +58,15 @@ export function ResultScreen(props: {
             </span>
             <span className="video-cap mono">신고용 영상</span>
           </div>
-          <button type="button" className="video-side" onClick={props.onCandidates}>
-            다른 후보 영상{others > 0 ? ` ${others}` : ''} →
-          </button>
+          {others > 0 && (
+            <button type="button" className="video-side" onClick={props.onCandidates}>
+              다른 후보 영상 {others} →
+            </button>
+          )}
         </div>
         <div className="thumb-row">
           <button type="button" className="thumb" onClick={props.onPlate}>
-            <span className="thumb-img plate">{evidence.plate_display.value ?? '번호판'}</span>
+            <span className="thumb-img plate">{evidence.plate_display.value ?? '번호판 없음'}</span>
             <span className="thumb-cap">
               번호판 <StatusBadge state={evidence.plate_display.info_state} />
             </span>
@@ -99,16 +111,17 @@ export function ResultScreen(props: {
 
       <div className="btnrow center">
         {pkg.capabilities.includes('COPY_FIELDS') && (
-          <button type="button" className="btn">
+          <button type="button" className="btn" disabled={blocking.length > 0}>
             전체 복사
           </button>
         )}
         {pkg.capabilities.includes('OPEN_DESTINATION') && (
-          <button type="button" className="btn btn-blue">
+          <button type="button" className="btn btn-blue" disabled={blocking.length > 0}>
             안전신문고로 이동
           </button>
         )}
       </div>
+      {blocking.length > 0 && <p className="kv-src center-text">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
 
       <p className="disclaimer">
         대신고는 신고를 <b>대신 접수하지 않습니다.</b> 자료를 받아 안전신문고에서 내용을 다시 확인하고 직접

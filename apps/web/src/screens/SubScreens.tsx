@@ -19,47 +19,30 @@ function SubPage(props: { title: string; onBack: () => void; children: ReactNode
   )
 }
 
-// 03_Sub_Candidate_Video — 후보를 나란히 놓는다. 「아니에요」는 고른 후보를
-// 보내는 경로가 계약에 없어 비활성이다(#106).
+// 03_Sub_Candidate_Video — 지금 신고자료 기준 후보는 빼고 다른 후보만 나란히 놓는다.
+// 번호는 candidates[] 안의 자리라 시간축 마커 번호와 같다. 고르면 그 후보로 신고자료를
+// 새로 준비한다(core-user-flow §8-1) — 실제 전송은 #106 command가 생기면 붙는다.
 export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
-  onDetail: (candidateId: string) => void
+  onSelect: (candidateId: string) => void
 }): JSX.Element {
-  const { candidates } = props.view
+  const others = props.view.candidates
+    .map((c, i) => ({ c, ordinal: i + 1 }))
+    .filter(({ c }) => !c.selected)
   return (
-    <SubPage title="후보 비교" onBack={props.onBack}>
-      <h2 className="panel-t">찾은 장면 {candidates.length}개입니다.</h2>
+    <SubPage title="다른 후보" onBack={props.onBack}>
+      <h2 className="panel-t">다른 후보 {others.length}개</h2>
       <div className="cand-grid">
-        {candidates.map((c, i) => (
+        {others.map(({ c, ordinal }) => (
           <div key={c.candidate_id} className="cand-col">
-            <CandidateCard candidate={c} ordinal={i + 1} />
-            <div className="btnrow">
-              <button type="button" className="btn sm" disabled title="계약 대기(#106)">
-                아니에요
-              </button>
-              <button type="button" className="btn sm" onClick={() => props.onDetail(c.candidate_id)}>
-                자세히
-              </button>
-            </div>
+            <CandidateCard candidate={c} ordinal={ordinal} />
+            <button type="button" className="btn sm pri" onClick={() => props.onSelect(c.candidate_id)}>
+              이 장면으로 다시 준비
+            </button>
           </div>
         ))}
       </div>
-    </SubPage>
-  )
-}
-
-// 03_Sub_CandidateVideo_Details
-export function CandidateDetail(props: { view: CaseView; candidateId: string; onBack: () => void }): JSX.Element {
-  const index = props.view.candidates.findIndex((c) => c.candidate_id === props.candidateId)
-  return (
-    <SubPage title="후보 자세히" onBack={props.onBack}>
-      <div className="video-main tall">
-        <span className="video-play" aria-hidden>
-          ▶
-        </span>
-      </div>
-      {index >= 0 && <CandidateCard candidate={props.view.candidates[index]} ordinal={index + 1} />}
     </SubPage>
   )
 }

@@ -43,13 +43,38 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('신고자료가 준비됐어요')
 })
 
-it('번호판 판독 실패: 진행 화면에서 실패 단계로 멈춘다', () => {
-  const { wait, getByText, container, text } = start('fail')
+it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 알리며 제출을 막는다', () => {
+  const { wait, getByText, text } = start('fail')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
+  expect(text()).toContain('신고자료를 완성하지 못했어요')
+  expect(text()).toContain('번호판 판독에 실패했습니다')
+  expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
+})
+
+it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한다', () => {
+  const { wait, getByText, text } = start('notFound')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(text()).toContain('조건에 맞는 장면을 찾지 못했습니다')
+  fireEvent.click(getByText('다시 찾기'))
   expect(text()).toContain('올리면 진행')
-  expect(container.querySelector('.tl-failed')).not.toBeNull()
+  wait()
+  expect(text()).toContain('신고자료가 준비됐어요')
+})
+
+it('다른 후보: 지금 기준 후보는 빼고 보여 주고, 고르면 다시 준비한다', () => {
+  const { wait, getByText, text, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  fireEvent.click(getByText('다른 후보 영상 2 →'))
+  expect(container.querySelectorAll('.cand')).toHaveLength(2)
+  expect(text()).not.toContain('지금 신고자료 기준')
+  fireEvent.click(container.querySelector('.cand-col button')!)
+  expect(text()).toContain('올리면 진행')
 })
 
 it('업로드 실패: 다시 선택하면 다시 올린다', () => {

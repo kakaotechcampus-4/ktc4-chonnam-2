@@ -38,3 +38,31 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
     </Panel>
   )
 }
+
+// 결과 없음의 출구(와이어프레임 12 「기억 단서 고치기」). 단서를 다시 글로 받아 새 탐색을
+// 시작한다 — 홈과 같은 입력 방식이라 사용자가 새로 배울 것이 없다. 조건별 「넓히기」
+// 버튼은 단서를 항목으로 나누는 창구(#210)와 범위 확대 비용 표시(§22)가 생기면 붙인다.
+export function RetrySearch(props: {
+  situation: string
+  onSituation: (text: string) => void
+  onRetry: () => void
+}): JSX.Element {
+  return (
+    <Panel title="기억나는 걸 다시 적어 주세요">
+      <div className="stack">
+        <span className="kv-src">시간·차량·상황을 조금 다르게 적으면 다른 장면을 찾을 수 있어요.</span>
+        <textarea
+          className="field situation"
+          rows={3}
+          aria-label="다시 찾을 상황"
+          placeholder="예: 7시 전후, 검은 승용차, 중앙선 침범"
+          value={props.situation}
+          onChange={(e) => props.onSituation(e.target.value)}
+        />
+        <button type="button" className="btn pri cta" onClick={props.onRetry}>
+          다시 찾기
+        </button>
+      </div>
+    </Panel>
+  )
+}
