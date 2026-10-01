@@ -15,15 +15,17 @@ const DROP_TEXT: Record<UploadState, string> = {
 // 네 프레임은 같은 틀이고 끌어다 놓는 영역만 상태에 따라 바뀐다.
 export function UploadScreen(props: {
   state: UploadState
-  file: File | null
+  files: File[]
+  /** 열 수 없어 건너뛴 파일. 일부 실패를 전체 실패로 만들지 않는다(core-user-flow §23) */
+  skipped: string[]
   situation: string
-  onFile: (file: File) => void
+  onFiles: (files: File[]) => void
   onSituation: (text: string) => void
   onSearch: () => void
 }): JSX.Element {
   const [over, setOver] = useState(false)
   const pick = (files: FileList | null) => {
-    if (files?.[0]) props.onFile(files[0])
+    if (files?.length) props.onFiles([...files])
   }
 
   return (
@@ -52,13 +54,19 @@ export function UploadScreen(props: {
         {props.state !== 'idle' && <span className={`dz-ring dz-ring-${props.state}`} aria-hidden />}
         <b>{DROP_TEXT[props.state]}</b>
         {props.state === 'idle' && <span className="kv-src">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>}
-        {props.file && <span className="kv-src">{props.file.name}</span>}
+        {props.files.length > 0 && <span className="kv-src">{props.files.map((f) => f.name).join(', ')}</span>}
         {props.state === 'fail' && <span className="kv-src">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
         {(props.state === 'idle' || props.state === 'fail') && (
           <span className="btn sm pri">{props.state === 'fail' ? '다시 선택' : '파일 선택'}</span>
         )}
-        <input type="file" accept="video/*" hidden onChange={(e) => pick(e.target.files)} />
+        <input type="file" accept="video/*" multiple hidden onChange={(e) => pick(e.target.files)} />
       </label>
+      {props.state === 'done' && props.skipped.length > 0 && (
+        <p className="skip-list">
+          열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')} — 지원하지 않는 형식이거나
+          손상된 파일이에요. 나머지 영상으로 찾아볼게요.
+        </p>
+      )}
       <SituationInput
         label="어떤 상황이었나요?"
         example={EXAMPLE}

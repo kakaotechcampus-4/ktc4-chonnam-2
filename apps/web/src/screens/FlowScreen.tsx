@@ -12,6 +12,7 @@ export function FlowScreen(props: {
   fileName: string
   situation: string
   startedAt: number
+  title?: string
 }): JSX.Element {
   const screen = selectScreen(props.view)
   // 장면 찾기가 끝나기 전에는 「찾는 중」, 끝나면 「준비 중」(core-user-flow §7·§19).
@@ -26,7 +27,7 @@ export function FlowScreen(props: {
   const elapsed = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
   return (
     <div className="stack">
-      <h1 className="page-title">{found ? '신고자료를 준비하고 있어요' : '사건을 찾고 있어요'}</h1>
+      <h1 className="page-title">{props.title ?? (found ? '신고자료를 준비하고 있어요' : '사건을 찾고 있어요')}</h1>
       <div className="panel panel-p tight run-summary">
         <b>{props.fileName}</b>
         {props.situation && <span className="kv-src">“{props.situation}”</span>}

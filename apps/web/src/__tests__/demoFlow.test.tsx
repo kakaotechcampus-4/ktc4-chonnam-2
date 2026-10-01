@@ -46,7 +46,7 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
 })
 
 it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 알리며 제출을 막는다', () => {
-  const { wait, getByText, text } = start('fail')
+  const { wait, getByText, text } = start('plateFailed')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
@@ -124,17 +124,80 @@ it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 �
   expect(container.querySelector('textarea')!.value).toBe('')
 })
 
-it('번호판 직접 입력은 결과 화면 차량 번호에 「사용자 확인됨」으로 반영된다', () => {
+it('번호판 「수정」은 읽은 값을 채운 채 열리고, 저장하면 「사용자 확인됨」이 된다', () => {
   const { wait, getByText, text, container } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  fireEvent.click(getByText('자세히 보기'))
-  fireEvent.change(container.querySelector('.plate-form input')!, { target: { value: '34나5678' } })
-  fireEvent.click(getByText('이 번호로 바꾸기'))
-  expect(text()).toContain('신고자료가 준비됐어요')
-  expect(text()).toContain('34나5678')
+  fireEvent.click(getByText('수정'))
+  const input = container.querySelector('.plate-input') as HTMLInputElement
+  expect(input.value).toBe('12가3456')
+  fireEvent.change(input, { target: { value: '12가3458' } })
+  fireEvent.click(getByText('저장'))
+  expect(text()).toContain('12가3458')
   expect(text()).toContain('사용자 확인됨')
+})
+
+it('복사 버튼은 붙여넣을 칸에만 있다', () => {
+  const { wait, getByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  const rows = [...container.querySelectorAll('.kv-row.draft')]
+  const withCopy = rows.filter((r) => r.textContent!.includes('복사')).map((r) => r.querySelector('.kv-k')!.textContent)
+  expect(withCopy).toEqual(['차량 번호', '위반 내용'])
+})
+
+it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
+  const { wait, getByText, text } = start('plateUnread')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(text()).toContain('신고자료가 준비됐어요')
+  expect(text()).toContain('번호판을 확정하지 못했습니다')
+  expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(false)
+})
+
+it('신고용 영상 생성 실패: 제출을 막고 「신고용 영상 만들기」로 다시 만든다', () => {
+  const { wait, getByText, text } = start('videoFailed')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(text()).toContain('신고자료를 완성하지 못했어요')
+  expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(getByText('신고용 영상 만들기'))
+  expect(text()).toContain('신고용 영상을 다시 만들고 있어요')
+  wait()
+  expect(text()).toContain('신고자료가 준비됐어요')
+})
+
+it('장면 찾기 실패: 실패 화면에서 「다시 찾기」로 이어서 찾는다', () => {
+  const { wait, getByText, text } = start('searchFailed')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(text()).toContain('영상을 살펴보다가 문제가 생겼어요')
+  fireEvent.click(getByText('다시 찾기'))
+  expect(text()).toContain('장면을 다시 찾고 있어요')
+  wait()
+  expect(text()).toContain('신고자료가 준비됐어요')
+})
+
+it('업로드 일부 실패: 건너뛴 파일을 알리고 나머지로 계속한다', () => {
+  const { wait, getByText, text } = start('uploadPartial')
+  wait()
+  expect(text()).toContain('FILE_017.mp4')
+  expect((getByText('영상에서 찾아보기') as HTMLButtonElement).disabled).toBe(false)
+})
+
+it('다른 후보를 고르면 「새 후보 기준으로」 다시 준비한다고 말한다', () => {
+  const { wait, getByText, text, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  fireEvent.click(getByText('다른 후보 영상 2 →'))
+  fireEvent.click(container.querySelector('.cand-col button')!)
+  expect(text()).toContain('새 후보 기준으로 신고자료를 다시 준비하고 있어요')
 })
 
 it('위반 미관찰: 다른 후보를 버튼 없이 바로 펼쳐 둔다', () => {

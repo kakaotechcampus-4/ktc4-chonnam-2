@@ -1,4 +1,4 @@
-import { useState, type JSX, type ReactNode } from 'react'
+import type { JSX, ReactNode } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { CandidateCard } from '../components/CandidateCard'
 import { DisplayRow } from '../components/DisplayRow'
@@ -65,12 +65,9 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
   )
 }
 
-// 03_Sub_Plate_Check — 원본 프레임 + 번호판 값 + 직접 입력. 번호판 프레임을
-// 가리키는 필드가 CaseView에 아직 없어 자리만 둔다(#47).
-// ponytail: 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
-// 시연에서는 화면 안에서만 반영한다 — command가 생기면 onApply 자리에서 보낸다.
-export function PlateCheck(props: { view: CaseView; onBack: () => void; onApply: (plate: string) => void }): JSX.Element {
-  const [typed, setTyped] = useState('')
+// 03_Sub_Plate_Check — 원본 프레임 + 번호판 값. 번호판 프레임을 가리키는 필드가 CaseView에
+// 아직 없어 자리만 둔다(#47). 수정은 결과 화면 번호판 줄의 「수정」에서 한다.
+export function PlateCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
   const plate = props.view.evidence?.plate_display
   return (
     <SubPage title="번호판 확인" onBack={props.onBack}>
@@ -87,23 +84,6 @@ export function PlateCheck(props: { view: CaseView; onBack: () => void; onApply:
               sourceLabelKey={plate.source_label_key}
             />
           </div>
-          <form
-            className="plate-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (typed.trim()) props.onApply(typed.trim())
-            }}
-          >
-            <input
-              className="field"
-              placeholder="내가 아는 번호 입력 (예: 12가3456)"
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-            />
-            <button type="submit" className="btn pri" disabled={!typed.trim()}>
-              이 번호로 바꾸기
-            </button>
-          </form>
         </div>
       )}
     </SubPage>

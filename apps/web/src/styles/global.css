@@ -328,6 +328,9 @@ button.thumb { cursor: pointer; }
 .cand-col .btnrow .btn { flex: 1; }
 
 .demo-pick { justify-self: end; }
+.pick-hint { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.plate-input { flex: 1; font-size: 20px; font-weight: 800; letter-spacing: .04em; }
+.skip-list { margin: 0; padding: 10px 14px; border-radius: var(--R); background: var(--orange-soft); color: var(--orange-ink); font-size: 14px; }
 .app-header { display: flex; align-items: center; justify-content: space-between; }
 .nav-link { border: 0; background: none; font-family: inherit; font-size: 16px; font-weight: 800; color: var(--ink-2); cursor: pointer; padding: 6px 10px; }
 .nav-link:hover { color: var(--green); }
