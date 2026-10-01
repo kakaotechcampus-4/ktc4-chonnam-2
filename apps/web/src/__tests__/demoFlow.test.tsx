@@ -79,7 +79,7 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  expect(text()).toContain('조건에 맞는 장면을 찾지 못했습니다')
+  expect(text()).toContain('말씀하신 장면을 찾지 못했어요')
   const box = container.querySelector('textarea')!
   fireEvent.change(box, { target: { value: '' } })
   fireEvent.keyDown(box, { key: 'Tab' })

@@ -1,6 +1,6 @@
 import { useState, type JSX } from 'react'
 
-const EXAMPLE = '6시 반쯤, 흰색 SUV, 실선 침범, 미금역 근처'
+const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
@@ -30,7 +30,11 @@ export function UploadScreen(props: {
     <div className="stack">
       <div>
         <h1 className="page-title">블랙박스 영상을 올려주세요</h1>
-        <p className="kv-src">여러 파일을 한 번에 올리셔도 됩니다. 촬영 시각은 파일에서 자동으로 읽습니다.</p>
+        <p className="kv-src">
+          신호위반 · 중앙선 침범 · 진로변경 · 이륜차 안전모 미착용 장면을 찾아 드려요.
+          <br />
+          찾은 장면은 신고할 가능성이 있는 후보예요. 제출 전에 꼭 직접 확인해 주세요.
+        </p>
       </div>
       <label
         className={`dropzone dz-${props.state}${over ? ' over' : ''}`}
@@ -47,6 +51,7 @@ export function UploadScreen(props: {
       >
         {props.state !== 'idle' && <span className={`dz-ring dz-ring-${props.state}`} aria-hidden />}
         <b>{DROP_TEXT[props.state]}</b>
+        {props.state === 'idle' && <span className="kv-src">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>}
         {props.file && <span className="kv-src">{props.file.name}</span>}
         {props.state === 'fail' && <span className="kv-src">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
         {(props.state === 'idle' || props.state === 'fail') && (
@@ -61,12 +66,7 @@ export function UploadScreen(props: {
         value={props.situation}
         onChange={props.onSituation}
       />
-      <p className="kv-src hint">Tab 키를 누르면 예시가 들어가요. 비워 둬도 영상에서 찾아볼 수 있어요.</p>
-      <p className="scope-note">
-        지금 찾을 수 있는 위반: 신호위반 · 중앙선 침범 · 진로변경 · 이륜차 안전모 미착용
-        <br />
-        AI가 보여 드리는 결과는 법적 위반 확정이 아니라 신고할 가능성이 있는 장면이에요. 제출 전에 직접 확인해 주세요.
-      </p>
+      <p className="kv-src hint">Tab 키를 누르면 예시 문장이 들어가요. 비워 두셔도 영상에서 찾아볼게요.</p>
       <button type="button" className="btn pri cta" disabled={props.state !== 'done'} onClick={props.onSearch}>
         영상에서 찾아보기
       </button>

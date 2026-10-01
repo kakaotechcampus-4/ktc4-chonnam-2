@@ -8,8 +8,8 @@ import { SituationInput } from './UploadScreen'
 export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   const { hints, manifest_summary } = props.view
   return (
-    <Panel title="조건에 맞는 장면을 찾지 못했습니다">
-      <div className="kv-src">영상은 정상적으로 등록됐습니다. 설명을 바꿔 다시 찾을 수 있습니다.</div>
+    <Panel title="말씀하신 장면을 찾지 못했어요">
+      <div className="kv-src">영상은 잘 받았어요. 설명을 조금 바꿔 주시면 다시 찾아볼게요.</div>
       <div className="kv kv-rows">
         <div className="kv-row">
           <span className="kv-k">등록된 영상</span>
@@ -49,17 +49,17 @@ export function RetrySearch(props: {
   onRetry: () => void
 }): JSX.Element {
   return (
-    <Panel title="기억나는 걸 다시 적어 주세요">
+    <Panel title="어떤 장면이었는지 조금만 더 알려 주세요">
       <div className="stack">
-        <span className="kv-src">시간·차량·상황을 조금 다르게 적으면 다른 장면을 찾을 수 있어요.</span>
+        <span className="kv-src">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 적어 주세요. 처음과 조금만 달라도 다른 장면을 찾을 수 있어요.</span>
         <SituationInput
           label="다시 찾을 상황"
-          example="7시 전후, 검은 승용차, 중앙선 침범"
+          example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
           rows={3}
           value={props.situation}
           onChange={props.onSituation}
         />
-        <span className="kv-src">Tab 키를 누르면 예시가 들어가요.</span>
+        <span className="kv-src">Tab 키를 누르면 예시 문장이 들어가요.</span>
         <button type="button" className="btn pri cta" onClick={props.onRetry}>
           다시 찾기
         </button>
