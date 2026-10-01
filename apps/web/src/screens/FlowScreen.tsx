@@ -14,7 +14,7 @@ export function FlowScreen(props: { view: CaseView; fileName: string; situation:
       <h1 className="page-title">올리면 진행</h1>
       <div className="panel panel-p tight run-summary">
         <b>{props.fileName}</b>
-        <span className="kv-src">“{props.situation}”</span>
+        {props.situation && <span className="kv-src">“{props.situation}”</span>}
       </div>
       {props.view.notices.map((n) => (
         <div key={n.code} className={`flow-notice${n.blocking ? ' blocking' : ''}`}>

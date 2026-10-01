@@ -46,7 +46,9 @@ export function UploadScreen(props: {
         {props.state !== 'idle' && <span className={`dz-ring dz-ring-${props.state}`} aria-hidden />}
         <b>{DROP_TEXT[props.state]}</b>
         {props.file && <span className="kv-src">{props.file.name}</span>}
-        {props.state === 'idle' && <span className="btn sm pri">파일 선택</span>}
+        {(props.state === 'idle' || props.state === 'fail') && (
+          <span className="btn sm pri">{props.state === 'fail' ? '다시 선택' : '파일 선택'}</span>
+        )}
         <input type="file" accept="video/*" hidden onChange={(e) => pick(e.target.files)} />
       </label>
       <textarea

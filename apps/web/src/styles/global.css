@@ -326,4 +326,4 @@ button.thumb { cursor: pointer; }
 .cand-col { display: flex; flex-direction: column; gap: 8px; }
 .cand-col .btnrow .btn { flex: 1; }
 
-.demo-keys { position: fixed; right: 12px; bottom: 12px; padding: 4px 10px; border-radius: 6px; background: var(--ink); color: #fff; font-size: 12px; opacity: .55; }
+.demo-pick { justify-self: end; }
