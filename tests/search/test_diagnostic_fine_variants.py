@@ -103,3 +103,20 @@ def test_operational_fine_prompt_stays_p3() -> None:
     assert template.version == "fine-p3"
     assert "coarse_observation" not in template.placeholders
     assert "모호하면 UNCERTAIN을 사용" not in template.text
+
+
+def test_handoff_time_is_given_in_slowed_video_time() -> None:
+    # Given: Fine 준비 영상이 0.25x로 늘어남(원본 clip 기준 6.0초 = 제공 영상 24.0초)
+    probe = _probe(VisualEventType.CENTER_LINE_CROSSING, (_OBSERVED,))
+    slowed = PreparedMedia(Path("clip.mp4"), "video/mp4", 1, 52.0, 5.5, 18.5, 0.25)
+
+    spec = _fine_spec(FineInput(probe.candidate, 0, slowed), DiagnosticProfile.DIAGNOSTIC_HANDOFF)
+
+    assert "약 24.0초" in spec.prompt
+
+
+def test_review_windows_are_given_in_slowed_video_time() -> None:
+    from daesingo.search.diagnostic_prompts import window_instruction
+
+    assert window_instruction(10.0, 0.5) == "[[0.0, 10.0], [10.0, 20.0]]"
+    assert window_instruction(10.0) == "[[0.0, 5.0], [5.0, 10.0]]"

@@ -98,6 +98,7 @@ def _call[T: BaseModel](
         "prepared_origin_start_sec": prepared.origin_start_sec,
         "prepared_origin_end_sec": prepared.origin_end_sec,
         "prepared_duration_sec": prepared.duration_sec,
+        "prepared_playback_speed": prepared.playback_speed,
         "prepared_media_bytes": prepared.byte_size,
     }
     started = False
@@ -163,7 +164,9 @@ def _call[T: BaseModel](
     )
 
 
-def _coarse_spec(case: DiagnosticCase, profile: DiagnosticProfile) -> CallSpec:
+def _coarse_spec(
+    case: DiagnosticCase, profile: DiagnosticProfile, playback_speed: float = 1.0
+) -> CallSpec:
     values = {
         "event_types": ", ".join(event.value for event in case.event_types),
         "duration_sec": case.duration_sec,
@@ -182,7 +185,9 @@ def _coarse_spec(case: DiagnosticCase, profile: DiagnosticProfile) -> CallSpec:
             return CallSpec(
                 template,
                 template.render(
-                    **values, review_windows=window_instruction(case.duration_sec)
+                    **values,
+                    # 제공 영상 기준 초로 준다. provider가 응답 구간을 원본으로 되돌린다.
+                    review_windows=window_instruction(case.duration_sec, playback_speed),
                 ),
                 DiagnosticCoarseResponse,
                 "COARSE",
@@ -214,9 +219,11 @@ def _fine_spec(probe: FineInput, profile: DiagnosticProfile) -> CallSpec:
             # 운영 CandidateEvent.summary와 같은 문자열을 넘긴다(coarse._candidate).
             handoff = {
                 "coarse_observation": "; ".join(candidate.observed) or "관찰 사실 없음",
+                # 프롬프트는 제공(늘린) 영상 기준 시각을 요구하므로 그 시간축으로 준다.
                 "coarse_at_offset_sec": max(
                     0.0, candidate.at_sec - prepared.origin_start_sec
-                ),
+                )
+                / prepared.playback_speed,
             }
             return _diagnostic_fine(
                 handoff_fine_prompt(event), values | handoff, index, event

@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 from .config import GeminiSearchConfig
 from .execution import RunDeadline
 from .media import PreparedMedia
-from .prompts import COARSE_PROMPT, fine_prompt_for
+from .prompts import COARSE_PROMPT, fine_prompt_for, load_prompt
 from .retry import RetryPolicy, call_with_retry
 from .schemas import CoarseResponse, FineResponse
 from .scope import VisualEventType
@@ -91,6 +91,27 @@ class SearchProvider(Protocol):
 def _video_data_url(path: Path, content_type: str) -> str:
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{content_type};base64,{encoded}"
+
+
+_PLAYBACK_NOTE = load_prompt("playback-slowdown-v1")
+_TIME_KEYS = frozenset({"start_sec", "end_sec", "at_sec"})
+
+
+def _to_origin_times(value: object, speed: float) -> object:
+    """늘린 영상 기준으로 답한 시각 필드를 원본 기준으로 되돌린다(응답 스키마 전체를 순회)."""
+    if isinstance(value, dict):
+        out: dict[object, object] = {}
+        for key, item in value.items():
+            if key in _TIME_KEYS and isinstance(item, int | float):
+                out[key] = item * speed
+            elif key == "at_offset_ms" and isinstance(item, int | float):
+                out[key] = round(item * speed)
+            else:
+                out[key] = _to_origin_times(item, speed)
+        return out
+    if isinstance(value, list | tuple):
+        return [_to_origin_times(item, speed) for item in value]
+    return value
 
 
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
@@ -184,9 +205,11 @@ class GeminiProvider:
         timeout_sec: float,
         deadline: RunDeadline | None = None,
     ) -> ProviderResult[ResponseT]:
-        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 서버측 구간
-        # 클리핑·fps·해상도는 미결이라 Fine 구간은 프롬프트로만 지시한다 —
-        # config.media_resolution/fps 는 그 처리 도입 시 사용할 자리로 남긴다.
+        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
+        # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
+        speed = media.playback_speed
+        if speed != 1.0:
+            prompt += "\n\n" + _PLAYBACK_NOTE.render(factor=f"{1 / speed:g}")
 
         # --- Cap 1: raw media bytes (BEFORE encoding) ---
         if media.byte_size > self._config.max_inline_media_bytes:
@@ -244,6 +267,10 @@ class GeminiProvider:
             parsed = completion.choices[0].message.parsed
             if parsed is None:
                 raise ProviderPayloadError("provider returned no parsed content")
+            if speed != 1.0:
+                parsed = response_model.model_validate(
+                    _to_origin_times(parsed.model_dump(), speed)
+                )
             usage = _usage_from_completion(getattr(completion, "usage", None))
             return ProviderResult(parsed, usage, latency_ms)
 

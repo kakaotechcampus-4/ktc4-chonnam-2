@@ -46,8 +46,11 @@ def handoff_fine_prompt(event_type: VisualEventType) -> PromptTemplate:
     return _compose(diagnostic_fine_prompt(event_type), "fine-handoff-v1")
 
 
-def window_instruction(duration_sec: float) -> str:
-    return json.dumps(review_windows(duration_sec))
+def window_instruction(duration_sec: float, playback_speed: float = 1.0) -> str:
+    windows = review_windows(duration_sec)
+    if playback_speed != 1.0:
+        windows = tuple((a / playback_speed, b / playback_speed) for a, b in windows)
+    return json.dumps(windows)
 
 
 def checklist_instruction(event_type: VisualEventType) -> str:

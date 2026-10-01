@@ -1,6 +1,6 @@
 # Search 최종 구조 제안: 느린 영상 Coarse→Fine, p3 프롬프트
 
-날짜: 2026-10-01. 상태: **제안 — 운영 코드 반영 전.** 2026-09-12 이후 Search 실험 전체에서 성능 근거가 있는 선택만 남긴다. 근거가 없거나 효과가 없었던 선택은 넣지 않는다.
+날짜: 2026-10-01. 상태: **제안 — 코드는 `experiment/search-fine-uncertainty-prompt` 브랜치에 반영, 실영상 검증·Eval 통지 전.** 2026-09-12 이후 Search 실험 전체에서 성능 근거가 있는 선택만 남긴다. 근거가 없거나 효과가 없었던 선택은 넣지 않는다.
 
 ## 1. 최종 구조
 
@@ -91,4 +91,6 @@ VisualVerificationResult (OBSERVED / NOT_OBSERVED / UNCERTAIN)
 
 - Fine 전송을 느린 영상과 이미지로 같은 고정 구간에서 직접 비교한 측정은 없다(2026-10-01 느린 영상 Fine은 `141927`·`141956`만).
 - 늘린 영상의 Coarse 지연 증가량: 미측정.
-- 5분 클립을 0.5x로 늘렸을 때 인라인 12 MiB 상한 여유: 미측정(재생 길이 2배이나 프레임 수는 원본 2 fps 기준).
+- 인라인 상한: 원본 2 fps Coarse의 5분 준비 영상은 16–22 MiB로 기존 12 MiB를 넘는다. 프록시는 요청 81 MiB까지 받으므로([크기 한도](../experiments/gemini-proxy-size-probe-2026-10-01.md)) 상한을 영상 40 MiB·요청 56 MiB로 올렸다(`config.version` = `gemini-search-v3`). 큰 요청은 업로드 시간만큼 응답이 늦어진다.
+- 모델이 배속 안내를 무시하고 원본 시각으로 답하면 시각이 1/2·1/4로 줄어도 검증을 통과한다. 빨간 사각형 probe에서는 그런 응답이 없었지만 운영 응답에서 감지하는 장치는 없다.
+- 기록: `UsageRecord.prepared_duration_ms`는 이제 늘린 길이이고 `prompt_fingerprint`는 배속 안내 단락을 포함하지 않는다. 구분은 `config_version`(v3)으로 한다.

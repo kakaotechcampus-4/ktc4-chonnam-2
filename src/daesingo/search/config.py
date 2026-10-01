@@ -24,14 +24,16 @@ class GeminiSearchConfig:
 
     model: str = "gemini-3.8-flash"
     media_resolution: str = "low"  # Coarse. 넓게 싸게 훑는다
-    fine_media_resolution: str = (
-        "high"  # Fine. 실선/점선·신호색 판별이 화질에 직접 걸린다
-    )
-    coarse_fps: float = 1.0
-    fine_fps: float = 2.0
+    # 원본 1초당 모델에 넣을 프레임 수. 프록시는 영상을 재생 1초당 1장(66토큰)으로만
+    # 보므로 준비 영상을 이 배수만큼 늘려 재생 1초 = 원본 프레임 1장으로 만든다
+    # (decisions/search-final-structure-2026-10-01.md).
+    coarse_fps: float = 2.0
+    fine_fps: float = 4.0
     max_materialized_source_bytes: int = 512 * 1024 * 1024  # 512 MiB
-    max_inline_media_bytes: int = 12 * 1024 * 1024  # 12 MiB
-    max_inline_request_bytes: int = 18 * 1024 * 1024  # 18 MiB
+    # 프록시 실측: 영상 61 MiB·요청 81 MiB까지 수용(experiments/gemini-proxy-size-probe-2026-10-01.md).
+    # 여유를 두고 그 아래로 잡는다. 크기는 토큰이 아니라 업로드 시간을 늘린다.
+    max_inline_media_bytes: int = 40 * 1024 * 1024  # 40 MiB
+    max_inline_request_bytes: int = 56 * 1024 * 1024  # 56 MiB
     max_retries: int = 3
     retry_base_sec: float = 5.0
     fine_padding_sec: float = 4.0
@@ -45,7 +47,8 @@ class GeminiSearchConfig:
     # 모든 Gemini 호출은 이 프록시(Bearer 인증)를 거친다. 운영자가 로컬에서
     # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
     base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
-    version: str = "gemini-search-v2"
+    # v3: 늘린 영상 전송(coarse 2 / fine 4 fps)·배속 안내·시각 환산. prepared_duration_ms 는 늘린 길이다.
+    version: str = "gemini-search-v3"
 
     def __post_init__(self) -> None:
         try:

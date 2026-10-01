@@ -148,8 +148,10 @@ class SlowVideoInvoker:
             path = request.media.path
             prompt = request.prompt
             if speed != 1.0:
-                path = Path(td) / "slow.mp4"
-                _slow(request.media.path, path, speed)
+                # MediaPreparer 가 이미 1/fps 배로 늘려 준다(2026-10-01 운영 반영). 그때는 다시 늘리지 않는다.
+                if request.media.playback_speed == 1.0:
+                    path = Path(td) / "slow.mp4"
+                    _slow(request.media.path, path, speed)
                 prompt += _note(speed, "Coarse 핵심 시각" in prompt)
             url = "data:video/mp4;base64," + base64.b64encode(path.read_bytes()).decode()
             messages = [{"role": "user", "content": [
