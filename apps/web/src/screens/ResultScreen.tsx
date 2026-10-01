@@ -1,9 +1,9 @@
 import type { JSX } from 'react'
-import type { CaseView, InfoState } from '../contracts/caseView'
-import { INFO_STATE_LABELS, noticeMessage, reportFieldLabel } from '../contracts/labels'
+import { isAction, type Action, type CaseView, type InfoState } from '../contracts/caseView'
+import { ACTION_LABELS, INFO_STATE_LABELS, noticeMessage, reportFieldLabel } from '../contracts/labels'
 import { StatusBadge } from '../components/StatusBadge'
 
-// Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판·근거 → 신고서 초안 → 동작.
+// Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판 → 신고서 초안(+어떻게 정했는지) → 동작.
 // 값과 상태는 package.report_field_states를 그대로 쓴다(value-state-display.md §5-1).
 // 무엇이 잘 됐든 안 됐든 결과는 여기서 알린다 — 진행 화면은 멈추지 않는다.
 // blocking notice가 있으면(예: 번호판 판독 실행 실패, #172) 제출 단계로 넘기지 않는다.
@@ -14,6 +14,7 @@ export function ResultScreen(props: {
   onCandidates: () => void
   onPlate: () => void
   onDetails: () => void
+  onAction: (action: Action) => void
 }): JSX.Element {
   const { view } = props
   const pkg = view.package
@@ -38,6 +39,12 @@ export function ResultScreen(props: {
         {view.notices.map((n) => (
           <div key={n.code} className={`flow-notice${n.blocking ? ' blocking' : ''}`} style={{ marginTop: 10 }}>
             {noticeMessage(n.message_key)}
+            {/* notice가 실은 actions[]만 버튼으로 연다(예: RETRY_PLATE_READ) — 계약 밖 버튼은 만들지 않는다 */}
+            {n.actions.filter(isAction).map((a) => (
+              <button key={a} type="button" className="btn sm notice-action" onClick={() => props.onAction(a)}>
+                {ACTION_LABELS[a]}
+              </button>
+            ))}
           </div>
         ))}
         <div className="chips">
@@ -63,22 +70,25 @@ export function ResultScreen(props: {
             </button>
           )}
         </div>
-        <div className="thumb-row">
-          <button type="button" className="thumb" onClick={props.onPlate}>
-            <span className="thumb-img plate">{evidence.plate_display.value ?? '번호판 없음'}</span>
-            <span className="thumb-cap">
-              번호판 <StatusBadge state={evidence.plate_display.info_state} />
-            </span>
-          </button>
-          <button type="button" className="thumb" onClick={props.onDetails}>
-            <span className="thumb-img how">어떻게 정했는지</span>
-            <span className="thumb-cap">값마다 출처와 근거 보기 →</span>
+        <div className="plate-row">
+          <span className="plate-img">{evidence.plate_display.value ?? '번호판 없음'}</span>
+          <span className="plate-meta">
+            <b>번호판</b>
+            <StatusBadge state={evidence.plate_display.info_state} />
+          </span>
+          <button type="button" className="btn sm" onClick={props.onPlate}>
+            자세히 보기
           </button>
         </div>
       </section>
 
       <section className="panel panel-p">
-        <div className="sec-label">안전신문고 신고서 초안</div>
+        <div className="sec-label">
+          안전신문고 신고서 초안
+          <button type="button" className="link-btn" onClick={props.onDetails}>
+            어떻게 정했는지 →
+          </button>
+        </div>
         <div className="kv kv-rows">
           {fields.map(([key, value]) => (
             <div className="kv-row" key={key}>
@@ -86,6 +96,7 @@ export function ResultScreen(props: {
               <span className="kv-v">
                 <span className="kv-val">{value ?? '알 수 없음'}</span>
               </span>
+              {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
               {pkg.capabilities.includes('COPY_FIELDS') && (
                 <button type="button" className="btn sm" onClick={() => value && navigator.clipboard?.writeText(value)}>
                   복사

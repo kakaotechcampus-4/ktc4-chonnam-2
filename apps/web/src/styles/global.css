@@ -334,3 +334,8 @@ button.thumb { cursor: pointer; }
 .thumb-img.how { background: var(--green-soft); color: var(--green-deep); font-size: 18px; }
 .hint { margin: -8px 0 0; }
 .center-text { text-align: center; margin: -6px 0 0; }
+.notice-action { margin-left: 12px; background: #fff; color: var(--red); border-color: var(--red-bd); }
+.plate-row { display: flex; align-items: center; gap: 16px; padding: 10px; border: 1px solid var(--border); border-radius: var(--R); }
+.plate-img { display: grid; place-items: center; width: 220px; height: 72px; border-radius: 6px; background: linear-gradient(135deg, #2b3a63, #4a5a8c); color: #fff; font-weight: 900; font-size: 22px; }
+.plate-meta { flex: 1; display: flex; align-items: center; gap: 10px; }
+.link-btn { border: 0; background: none; color: var(--green); font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; padding: 0; }

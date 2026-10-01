@@ -81,9 +81,15 @@ const STEPS = SEARCHING.progress.map((p) => p.step)
 const PLATE = STEPS.indexOf('plate_read')
 type StepState = CaseView['progress'][number]['state']
 
-function at(running: number, failedAt = -1): CaseView {
+function at(running: number, failedAt = -1, stopped = false): CaseView {
   const state = (i: number): StepState =>
-    i === failedAt && i <= running ? 'FAILED' : i < running ? 'DONE' : i > running ? 'PENDING' : 'RUNNING'
+    i === failedAt && i <= running
+      ? 'FAILED'
+      : i < running
+        ? 'DONE'
+        : i > running || stopped
+          ? 'PENDING'
+          : 'RUNNING'
   return {
     ...SEARCHING,
     running_jobs: [],
@@ -91,10 +97,11 @@ function at(running: number, failedAt = -1): CaseView {
     progress: STEPS.map((step, i) => ({ step, state: state(i) })),
   }
 }
-// 0..until-1 단계를 차례로 진행하고, 마지막에 until 앞까지 모두 끝난 화면을 하나 더 둔다.
+// 0..until-1 단계를 차례로 진행하고, 마지막에 until 앞까지 끝난 화면을 하나 더 둔다.
+// until 뒤 단계는 시작하지 않은 채(대기) 멈춘다 — 결과 없음·위반 미관찰은 거기서 끝난다.
 const walk = (until: number, failedAt = -1) => [
   ...STEPS.slice(0, until).map((_, i) => at(i, failedAt)),
-  at(until, failedAt),
+  at(until, failedAt, true),
 ]
 
 // 한 번의 진행: 재생할 CaseView들과, 끝나면 보여 줄 마지막 화면.
@@ -118,11 +125,13 @@ const CASES: Record<string, { label: string; uploadOk: boolean; run: Run }> = {
   notObserved: {
     label: '찾은 장면에서 위반 미관찰',
     uploadOk: true,
-    run: { frames: walk(STEPS.length), end: 'notObserved', view: NOT_OBSERVED },
+    // 1순위 장면을 자세히 본 「후보 확인」에서 끝난다. 번호판·시각은 읽지 않는다(#168 [A], #171 B).
+    run: { frames: walk(STEPS.indexOf('candidate_review') + 1), end: 'notObserved', view: NOT_OBSERVED },
   },
   notFound: {
     label: '결과 없음(장면 0개)',
     uploadOk: true,
+    // 장면 찾기에서 후보 0개로 끝난다. 그 뒤 단계는 하지 않는다(#197).
     run: { frames: walk(STEPS.indexOf('coarse_search') + 1), end: 'notFound', view: NOT_FOUND },
   },
   uploadFail: { label: '업로드 실패', uploadOk: false, run: FULL_RUN },
@@ -227,6 +236,8 @@ export function DemoFlow(): JSX.Element {
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
+            // 다시 읽기는 처음부터가 아니라 번호판 판독부터 이어서 한다(core-user-flow §23).
+            onAction={(a) => a === 'RETRY_PLATE_READ' && start({ ...FULL_RUN, frames: FULL_RUN.frames.slice(PLATE) })}
           />
         )}
 

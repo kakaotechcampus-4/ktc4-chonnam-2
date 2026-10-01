@@ -37,7 +37,7 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('신고자료가 준비됐어요')
   // 위치는 아직 구현하지 않아 결과 화면에 없다
   expect(text()).not.toContain('발생 장소')
-  fireEvent.click(getByText('어떻게 정했는지'))
+  fireEvent.click(getByText('어떻게 정했는지 →'))
   expect(text()).toContain('어떻게 정했는지')
   fireEvent.click(container.querySelector('.back')!)
   expect(text()).toContain('신고자료가 준비됐어요')
@@ -51,6 +51,25 @@ it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 �
   expect(text()).toContain('신고자료를 완성하지 못했어요')
   expect(text()).toContain('번호판 판독에 실패했습니다')
   expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
+  // 번호판 다시 읽기 → 번호판부터 다시 진행해 정상 결과로 끝난다
+  fireEvent.click(getByText('번호판 다시 읽기'))
+  expect(text()).toContain('올리면 진행')
+  wait()
+  expect(text()).toContain('신고자료가 준비됐어요')
+})
+
+it('위반 미관찰: 후보 확인에서 멈추고 번호판 판독은 시작하지 않는다', () => {
+  const { wait, getByText, text, container } = start('notObserved')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  const seen = new Set<string>()
+  for (let i = 0; i < 20; i++) {
+    container.querySelectorAll('.tl-running .tl-label, .tl-done .tl-label').forEach((el) => seen.add(el.textContent!))
+    act(() => vi.advanceTimersByTime(5_000))
+  }
+  expect(seen.has('후보 확인')).toBe(true)
+  expect(seen.has('번호판 판독')).toBe(false)
+  expect(text()).toContain('위반을 확인하지 못했어요')
 })
 
 it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한다', () => {
