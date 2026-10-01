@@ -339,3 +339,5 @@ button.thumb { cursor: pointer; }
 .plate-img { display: grid; place-items: center; width: 220px; height: 72px; border-radius: 6px; background: linear-gradient(135deg, #2b3a63, #4a5a8c); color: #fff; font-weight: 900; font-size: 22px; }
 .plate-meta { flex: 1; display: flex; align-items: center; gap: 10px; }
 .link-btn { border: 0; background: none; color: var(--green); font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; padding: 0; }
+.kv-row.draft { grid-template-columns: 118px minmax(0, 1fr) auto auto; align-items: center; }
+.plate-form { display: flex; gap: 10px; margin-top: 12px; }

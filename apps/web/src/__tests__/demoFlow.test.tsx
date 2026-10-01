@@ -120,3 +120,24 @@ it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 �
   expect(text()).toContain('블랙박스 영상을 올려주세요')
   expect(container.querySelector('textarea')!.value).toBe('')
 })
+
+it('번호판 직접 입력은 결과 화면 차량 번호에 「사용자 확인됨」으로 반영된다', () => {
+  const { wait, getByText, text, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  fireEvent.click(getByText('자세히 보기'))
+  fireEvent.change(container.querySelector('.plate-form input')!, { target: { value: '34나5678' } })
+  fireEvent.click(getByText('이 번호로 바꾸기'))
+  expect(text()).toContain('신고자료가 준비됐어요')
+  expect(text()).toContain('34나5678')
+  expect(text()).toContain('사용자 확인됨')
+})
+
+it('위반 미관찰: 다른 후보를 버튼 없이 바로 펼쳐 둔다', () => {
+  const { wait, getByText, container } = start('notObserved')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(container.querySelectorAll('.cand')).toHaveLength(2)
+})

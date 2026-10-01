@@ -91,7 +91,7 @@ export function ResultScreen(props: {
         </div>
         <div className="kv kv-rows">
           {fields.map(([key, value]) => (
-            <div className="kv-row" key={key}>
+            <div className="kv-row draft" key={key}>
               <span className="kv-k">{reportFieldLabel(key)}</span>
               <span className="kv-v">
                 <span className="kv-val">{value ?? '알 수 없음'}</span>

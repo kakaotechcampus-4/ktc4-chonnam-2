@@ -143,12 +143,33 @@ type Main =
   | { kind: 'done'; run: Run }
 type Sub = 'candidates' | 'plate' | 'details'
 
+// 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다(시연용, PlateCheck 주석 참고).
+function withPlate(view: CaseView, plate: string | null): CaseView {
+  if (!plate || !view.evidence || !view.package) return view
+  return {
+    ...view,
+    evidence: {
+      ...view.evidence,
+      plate_display: { value: plate, needs_review: false, info_state: 'INFO_USER_CONFIRMED', source_label_key: null },
+    },
+    package: {
+      ...view.package,
+      report_fields: { ...view.package.report_fields, vehicle_number: plate },
+      report_field_states: {
+        ...view.package.report_field_states,
+        vehicle_number: { info_state: 'INFO_USER_CONFIRMED', source_label_key: null },
+      },
+    },
+  }
+}
+
 export function DemoFlow(): JSX.Element {
   const [caseKey, setCaseKey] = useState('main')
   const [main, setMain] = useState<Main>({ kind: 'upload', state: 'idle' })
   const [subs, setSubs] = useState<Sub[]>([])
   const [file, setFile] = useState<File | null>(null)
   const [situation, setSituation] = useState('')
+  const [plate, setPlate] = useState<string | null>(null)
   const demo = CASES[caseKey]
 
   // 업로드가 끝나면 완료/실패로 넘어간다.
@@ -169,13 +190,16 @@ export function DemoFlow(): JSX.Element {
     return () => clearTimeout(t)
   }, [main])
 
+  // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
   const start = (run: Run) => {
     setSubs([])
+    setPlate(null)
     setMain({ kind: 'flow', run, frame: 0 })
   }
   const newReport = () => {
     setMain({ kind: 'upload', state: 'idle' })
     setSubs([])
+    setPlate(null)
     setFile(null)
     setSituation('')
   }
@@ -183,6 +207,8 @@ export function DemoFlow(): JSX.Element {
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
+  const doneView = done && withPlate(done.view, plate)
+  const reselect = () => start({ ...FULL_RUN, frames: FULL_RUN.frames.slice(PLATE) })
 
   return (
     <>
@@ -228,16 +254,16 @@ export function DemoFlow(): JSX.Element {
           </>
         )}
         {done?.end === 'notObserved' && !sub && (
-          <NotObservedScreen view={done.view} onCandidates={() => open('candidates')} />
+          <NotObservedScreen view={done.view} onSelect={reselect} />
         )}
         {done?.end === 'result' && !sub && (
           <ResultScreen
-            view={done.view}
+            view={doneView!}
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
             // 다시 읽기는 처음부터가 아니라 번호판 판독부터 이어서 한다(core-user-flow §23).
-            onAction={(a) => a === 'RETRY_PLATE_READ' && start({ ...FULL_RUN, frames: FULL_RUN.frames.slice(PLATE) })}
+            onAction={(a) => a === 'RETRY_PLATE_READ' && reselect()}
           />
         )}
 
@@ -247,11 +273,20 @@ export function DemoFlow(): JSX.Element {
           <CandidateCompare
             view={done.view}
             onBack={back}
-            onSelect={() => start({ ...FULL_RUN, frames: FULL_RUN.frames.slice(PLATE) })}
+            onSelect={reselect}
           />
         )}
-        {done && sub === 'plate' && <PlateCheck view={done.view} onBack={back} />}
-        {done && sub === 'details' && <DetailsCheck view={done.view} onBack={back} />}
+        {doneView && sub === 'plate' && (
+          <PlateCheck
+            view={doneView}
+            onBack={back}
+            onApply={(value) => {
+              setPlate(value)
+              back()
+            }}
+          />
+        )}
+        {doneView && sub === 'details' && <DetailsCheck view={doneView} onBack={back} />}
       </main>
     </>
   )

@@ -1,4 +1,4 @@
-import type { JSX, ReactNode } from 'react'
+import { useState, type JSX, type ReactNode } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { CandidateCard } from '../components/CandidateCard'
 import { DisplayRow } from '../components/DisplayRow'
@@ -19,30 +19,38 @@ function SubPage(props: { title: string; onBack: () => void; children: ReactNode
   )
 }
 
-// 03_Sub_Candidate_Video — 지금 신고자료 기준 후보는 빼고 다른 후보만 나란히 놓는다.
-// 번호는 candidates[] 안의 자리라 시간축 마커 번호와 같다. 고르면 그 후보로 신고자료를
-// 새로 준비한다(core-user-flow §8-1) — 실제 전송은 #106 command가 생기면 붙는다.
+// 지금 신고자료 기준 후보는 빼고 다른 후보만 나란히 놓는다. 번호는 candidates[] 안의
+// 자리라 시간축 마커 번호와 같다. 고르면 그 후보로 신고자료를 새로 준비한다
+// (core-user-flow §8-1) — 실제 전송은 #106 command가 생기면 붙는다.
+export function OtherCandidateGrid(props: { view: CaseView; onSelect: (candidateId: string) => void }): JSX.Element {
+  const others = props.view.candidates
+    .map((c, i) => ({ c, ordinal: i + 1 }))
+    .filter(({ c }) => !c.selected)
+  return (
+    <div className="cand-grid">
+      {others.map(({ c, ordinal }) => (
+        <div key={c.candidate_id} className="cand-col">
+          <CandidateCard candidate={c} ordinal={ordinal} />
+          <button type="button" className="btn sm pri" onClick={() => props.onSelect(c.candidate_id)}>
+            이 장면으로 다시 준비
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// 03_Sub_Candidate_Video
 export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
 }): JSX.Element {
-  const others = props.view.candidates
-    .map((c, i) => ({ c, ordinal: i + 1 }))
-    .filter(({ c }) => !c.selected)
+  const count = props.view.candidates.filter((c) => !c.selected).length
   return (
     <SubPage title="다른 후보" onBack={props.onBack}>
-      <h2 className="panel-t">다른 후보 {others.length}개</h2>
-      <div className="cand-grid">
-        {others.map(({ c, ordinal }) => (
-          <div key={c.candidate_id} className="cand-col">
-            <CandidateCard candidate={c} ordinal={ordinal} />
-            <button type="button" className="btn sm pri" onClick={() => props.onSelect(c.candidate_id)}>
-              이 장면으로 다시 준비
-            </button>
-          </div>
-        ))}
-      </div>
+      <h2 className="panel-t">다른 후보 {count}개</h2>
+      <OtherCandidateGrid view={props.view} onSelect={props.onSelect} />
     </SubPage>
   )
 }
@@ -59,7 +67,10 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 
 // 03_Sub_Plate_Check — 원본 프레임 + 번호판 값 + 직접 입력. 번호판 프레임을
 // 가리키는 필드가 CaseView에 아직 없어 자리만 둔다(#47).
-export function PlateCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
+// ponytail: 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
+// 시연에서는 화면 안에서만 반영한다 — command가 생기면 onApply 자리에서 보낸다.
+export function PlateCheck(props: { view: CaseView; onBack: () => void; onApply: (plate: string) => void }): JSX.Element {
+  const [typed, setTyped] = useState('')
   const plate = props.view.evidence?.plate_display
   return (
     <SubPage title="번호판 확인" onBack={props.onBack}>
@@ -76,7 +87,23 @@ export function PlateCheck(props: { view: CaseView; onBack: () => void }): JSX.E
               sourceLabelKey={plate.source_label_key}
             />
           </div>
-          <input className="field" style={{ marginTop: 12 }} placeholder="내가 아는 번호 입력" />
+          <form
+            className="plate-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (typed.trim()) props.onApply(typed.trim())
+            }}
+          >
+            <input
+              className="field"
+              placeholder="내가 아는 번호 입력 (예: 12가3456)"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+            />
+            <button type="submit" className="btn pri" disabled={!typed.trim()}>
+              이 번호로 바꾸기
+            </button>
+          </form>
         </div>
       )}
     </SubPage>
