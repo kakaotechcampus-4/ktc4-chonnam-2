@@ -1,35 +1,49 @@
 // @vitest-environment jsdom
 //
-// 시연 흐름: 진행 스냅샷만 자동으로 넘기고, 결과 화면에서 멈춘다.
+// 시연 흐름: Figma Memo의 키 규칙(d 진행 · a 실패 · w 재시도 · s 뒤로)대로 넘어간다.
 
-import { act, cleanup, fireEvent, render } from '@testing-library/react'
-import { afterEach, expect, it, vi } from 'vitest'
-import { SNAPSHOTS } from '../contracts/fixtures'
-import { CaseScreen } from '../screens/CaseScreen'
+import { cleanup, fireEvent, render } from '@testing-library/react'
+import { afterEach, expect, it } from 'vitest'
 import { DemoFlow } from '../screens/DemoFlow'
 
-afterEach(() => {
-  cleanup()
-  vi.useRealTimers()
-})
+afterEach(cleanup)
 
-it('happy 시나리오는 결과 화면(2번째 스냅샷)에서 멈추고 3번째로 넘어가지 않는다', () => {
-  vi.useFakeTimers()
-  const happy = SNAPSHOTS.filter((s) => s.scenarioId === 'scenario_happy_001')
-  expect(happy).toHaveLength(3)
+const press = (key: string) => fireEvent.keyDown(window, { key })
 
+it('업로드 → 진행 → 결과, a는 실패 화면, s는 한 칸 뒤로', () => {
   const { container, getByText } = render(<DemoFlow />)
-  fireEvent.click(getByText('+ 새 신고 시작하기'))
+  const text = () => container.querySelector('main')!.textContent!
+
   fireEvent.change(container.querySelector('input[type=file]')!, {
     target: { files: [new File([''], 'a.mp4', { type: 'video/mp4' })] },
   })
-  fireEvent.change(container.querySelector('textarea')!, { target: { value: '신호위반' } })
-  fireEvent.click(getByText('영상에서 찾아보기'))
-  expect(container.textContent).toContain('진행 상태')
+  expect(text()).toContain('올리는 중')
+  press('d')
+  expect(text()).toContain('올리기 완료')
 
-  act(() => vi.advanceTimersByTime(60_000))
-  expect(container.textContent).not.toContain('준비하고 있어요')
-  const at = (i: number) => render(<CaseScreen view={happy[i].view} />).container.textContent
-  expect(at(1)).not.toBe(at(2))
-  expect(container.querySelector('main')!.textContent).toContain(at(1))
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  expect(text()).toContain('올리면 진행')
+
+  press('a')
+  expect(container.querySelector('.tl-failed')).not.toBeNull()
+  press('s')
+  press('w')
+  expect(container.querySelector('.tl-running')).not.toBeNull()
+  press('s')
+
+  press('d')
+  expect(text()).toContain('신고자료가 준비됐어요')
+  fireEvent.click(getByText('어떻게 정했는지 확인 →'))
+  expect(text()).toContain('어떻게 정했는지')
+  press('s')
+  expect(text()).toContain('신고자료가 준비됐어요')
+})
+
+it('입력칸에 글을 쓰는 중에는 키로 화면이 넘어가지 않는다', () => {
+  const { container } = render(<DemoFlow />)
+  fireEvent.change(container.querySelector('input[type=file]')!, {
+    target: { files: [new File([''], 'a.mp4', { type: 'video/mp4' })] },
+  })
+  fireEvent.keyDown(container.querySelector('textarea')!, { key: 'd' })
+  expect(container.textContent).toContain('올리는 중')
 })
