@@ -48,6 +48,7 @@ export function UploadScreen(props: {
         {props.state !== 'idle' && <span className={`dz-ring dz-ring-${props.state}`} aria-hidden />}
         <b>{DROP_TEXT[props.state]}</b>
         {props.file && <span className="kv-src">{props.file.name}</span>}
+        {props.state === 'fail' && <span className="kv-src">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
         {(props.state === 'idle' || props.state === 'fail') && (
           <span className="btn sm pri">{props.state === 'fail' ? '다시 선택' : '파일 선택'}</span>
         )}
@@ -61,6 +62,11 @@ export function UploadScreen(props: {
         onChange={props.onSituation}
       />
       <p className="kv-src hint">Tab 키를 누르면 예시가 들어가요. 비워 둬도 영상에서 찾아볼 수 있어요.</p>
+      <p className="scope-note">
+        지금 찾을 수 있는 위반: 신호위반 · 중앙선 침범 · 진로변경 · 이륜차 안전모 미착용
+        <br />
+        AI가 보여 드리는 결과는 법적 위반 확정이 아니라 신고할 가능성이 있는 장면이에요. 제출 전에 직접 확인해 주세요.
+      </p>
       <button type="button" className="btn pri cta" disabled={props.state !== 'done'} onClick={props.onSearch}>
         영상에서 찾아보기
       </button>

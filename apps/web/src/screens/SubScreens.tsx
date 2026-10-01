@@ -75,7 +75,7 @@ export function PlateCheck(props: { view: CaseView; onBack: () => void; onApply:
   return (
     <SubPage title="번호판 확인" onBack={props.onBack}>
       <div className="video-main tall">
-        <span className="video-cap">원본 프레임 (계약 대기 #47)</span>
+        <span className="video-cap">번호판 장면 미리보기 준비 중</span>
       </div>
       {plate && (
         <div className="panel panel-p">

@@ -32,10 +32,12 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   wait()
   expect(text()).toContain('올리기 완료')
   fireEvent.click(getByText('영상에서 찾아보기'))
-  expect(text()).toContain('올리면 진행')
+  expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
-  // 위치는 아직 구현하지 않아 결과 화면에 없다
+  // 시각은 보기 좋은 모양으로, 위치는 아직 구현하지 않아 결과 화면에 없다
+  expect(text()).toContain('2026-08-24 18:05:12')
+  expect(text()).not.toContain('T18:05')
   expect(text()).not.toContain('발생 장소')
   fireEvent.click(getByText('어떻게 정했는지 →'))
   expect(text()).toContain('어떻게 정했는지')
@@ -53,7 +55,7 @@ it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 �
   expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
   // 번호판 다시 읽기 → 번호판부터 다시 진행해 정상 결과로 끝난다
   fireEvent.click(getByText('번호판 다시 읽기'))
-  expect(text()).toContain('올리면 진행')
+  expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
 })
@@ -83,7 +85,7 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   fireEvent.keyDown(box, { key: 'Tab' })
   expect(box.value).toContain('검은 승용차')
   fireEvent.click(getByText('다시 찾기'))
-  expect(text()).toContain('올리면 진행')
+  expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
 })
@@ -97,7 +99,7 @@ it('다른 후보: 지금 기준 후보는 빼고 보여 주고, 고르면 다�
   expect(container.querySelectorAll('.cand')).toHaveLength(2)
   expect(text()).not.toContain('지금 신고자료 기준')
   fireEvent.click(container.querySelector('.cand-col button')!)
-  expect(text()).toContain('올리면 진행')
+  expect(text()).toContain('경과 시간')
 })
 
 it('업로드 실패: 다시 선택하면 다시 올린다', () => {
@@ -105,6 +107,7 @@ it('업로드 실패: 다시 선택하면 다시 올린다', () => {
   wait()
   expect(text()).toContain('업로드 실패')
   expect(text()).toContain('다시 선택')
+  expect(text()).toContain('다른 파일을 골라 주세요')
 })
 
 it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 처음 화면으로 돌아간다', () => {

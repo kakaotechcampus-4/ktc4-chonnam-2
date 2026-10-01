@@ -139,7 +139,7 @@ const CASES: Record<string, { label: string; uploadOk: boolean; run: Run }> = {
 
 type Main =
   | { kind: 'upload'; state: UploadState }
-  | { kind: 'flow'; run: Run; frame: number }
+  | { kind: 'flow'; run: Run; frame: number; startedAt: number }
   | { kind: 'done'; run: Run }
 type Sub = 'candidates' | 'plate' | 'details'
 
@@ -194,7 +194,7 @@ export function DemoFlow(): JSX.Element {
   const start = (run: Run) => {
     setSubs([])
     setPlate(null)
-    setMain({ kind: 'flow', run, frame: 0 })
+    setMain({ kind: 'flow', run, frame: 0, startedAt: Date.now() })
   }
   const newReport = () => {
     setMain({ kind: 'upload', state: 'idle' })
@@ -241,7 +241,12 @@ export function DemoFlow(): JSX.Element {
         )}
 
         {main.kind === 'flow' && (
-          <FlowScreen view={main.run.frames[main.frame]} fileName={file?.name ?? ''} situation={situation} />
+          <FlowScreen
+            view={main.run.frames[main.frame]}
+            fileName={file?.name ?? ''}
+            situation={situation}
+            startedAt={main.startedAt}
+          />
         )}
 
         {done?.end === 'notFound' && (

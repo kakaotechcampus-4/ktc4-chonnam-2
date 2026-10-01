@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 import { isAction, type Action, type CaseView, type InfoState } from '../contracts/caseView'
-import { ACTION_LABELS, INFO_STATE_LABELS, noticeMessage, reportFieldLabel } from '../contracts/labels'
+import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, noticeMessage, reportFieldLabel } from '../contracts/labels'
 import { StatusBadge } from '../components/StatusBadge'
 
 // Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판 → 신고서 초안(+어떻게 정했는지) → 동작.
@@ -62,7 +62,7 @@ export function ResultScreen(props: {
             <span className="video-play" aria-hidden>
               ▶
             </span>
-            <span className="video-cap mono">신고용 영상</span>
+            <span className="video-cap">신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요</span>
           </div>
           {others > 0 && (
             <button type="button" className="video-side" onClick={props.onCandidates}>
@@ -94,11 +94,11 @@ export function ResultScreen(props: {
             <div className="kv-row draft" key={key}>
               <span className="kv-k">{reportFieldLabel(key)}</span>
               <span className="kv-v">
-                <span className="kv-val">{value ?? '알 수 없음'}</span>
+                <span className="kv-val">{value === null ? '알 수 없음' : formatValue(value)}</span>
               </span>
               {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
               {pkg.capabilities.includes('COPY_FIELDS') && (
-                <button type="button" className="btn sm" onClick={() => value && navigator.clipboard?.writeText(value)}>
+                <button type="button" className="btn sm" onClick={() => value && navigator.clipboard?.writeText(formatValue(value))}>
                   복사
                 </button>
               )}

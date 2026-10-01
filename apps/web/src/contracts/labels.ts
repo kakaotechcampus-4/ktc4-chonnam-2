@@ -121,6 +121,12 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.situation_response_pending': '신고 상황을 확인해 주시면 신고자료를 준비하겠습니다.',
 }
 
+// ISO 시각(`2026-08-24T18:05:12+09:00`)을 `2026-08-24 18:05:12`로 보여준다. 포맷만 web이
+// 한다(value-state-display.md §3-4) — 시각이 아닌 값은 그대로 돌려준다.
+export function formatValue(value: string): string {
+  return value.replace(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/, '$1 $2')
+}
+
 export const NOTICE_FALLBACK = '확인이 필요한 항목이 있습니다.'
 
 export function noticeMessage(key: string): string {
