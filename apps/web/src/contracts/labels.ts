@@ -108,6 +108,8 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.plate_read_cancelled': '번호판 판독이 중단됐습니다.',
   'notice.search_no_candidates': '조건에 맞는 장면을 찾지 못했습니다.',
   'notice.visual_event_unconfirmed': '어떤 상황인지 아직 확인되지 않았습니다.',
+  // #168 [A] — 가장 유력한 후보에서 위반이 관찰되지 않은 음성 결과.
+  'notice.visual_event_not_observed': '이 장면에서는 신고할 위반을 확인하지 못했어요.',
   'notice.report_video_not_generated': '신고용 영상이 아직 만들어지지 않았습니다.',
   // 이슈 #48 확정 — 문구 뜻은 계약이 정했다(「지도에 붙여넣을 검색어를 제공하지
   // 못한다, 기억나는 장소를 직접 검색해야 한다」). 발동 기준은 `location` 부재가

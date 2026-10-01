@@ -9,6 +9,8 @@ import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
 import { HandoffScreen } from './HandoffScreen'
 import { NoResultScreen } from './NoResultScreen'
+import { NotObservedScreen } from './NotObservedScreen'
+import { OtherCandidates } from '../components/OtherCandidates'
 
 // CaseView 1건 → 화면. 화면 내용은 전부 그 CaseView에서 파생된다.
 export function CaseScreen(props: { view: CaseView; showReason?: boolean }): JSX.Element {
@@ -36,6 +38,12 @@ export function CaseScreen(props: { view: CaseView; showReason?: boolean }): JSX
 
       {screen.kind === 'PROGRESS' && <ProgressPanel view={view} jobs={screen.jobs} />}
       {screen.kind === 'NO_RESULT' && <NoResultScreen view={view} />}
+      {screen.kind === 'NOT_OBSERVED' && (
+        <>
+          <NotObservedScreen view={view} />
+          <OtherCandidates view={view} />
+        </>
+      )}
       {screen.kind === 'CANDIDATES' && <CandidatesScreen view={view} />}
       {screen.kind === 'EVIDENCE' && (
         <>

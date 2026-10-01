@@ -6,7 +6,7 @@
 
 import type { CaseView, Notice, RunningJob } from '../contracts/caseView'
 
-export type ScreenKind = 'PROGRESS' | 'NO_RESULT' | 'CANDIDATES' | 'EVIDENCE' | 'HANDOFF'
+export type ScreenKind = 'PROGRESS' | 'NO_RESULT' | 'NOT_OBSERVED' | 'CANDIDATES' | 'EVIDENCE' | 'HANDOFF'
 
 export interface Screen {
   kind: ScreenKind
@@ -43,6 +43,12 @@ export function selectScreen(view: CaseView): Screen {
   const info = view.notices.filter((n) => !n.blocking)
   const jobs = representativeJobs(view.running_jobs)
   const base = { blocking, info, jobs }
+
+  // 음성 결과도 evidence=null이라 값만으로는 조립 전과 구분되지 않는다. 계약이
+  // 구분 수단으로 정한 notice code로만 가른다(계약 B절 notices[].code, #168 [A]).
+  if (view.evidence === null && view.notices.some((n) => n.code === 'evidence.visual_event_not_observed')) {
+    return { ...base, kind: 'NOT_OBSERVED', reason: 'evidence=null · evidence.visual_event_not_observed' }
+  }
 
   // evidence=null은 「값이 없다」가 아니라 「증거 조립 전」이다. 값 상태 화면이
   // 아니라 진행 상태 화면이 담당한다(value-state-display.md §4).

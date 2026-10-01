@@ -87,6 +87,18 @@ describe('화면 선택', () => {
     for (const view of before) expect(selectScreen(view).kind).toBe('PROGRESS')
   })
 
+  it('evidence=null이어도 위반 미관찰 notice가 있으면 음성 결과 화면이다', () => {
+    const base = views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)!
+    const notice = {
+      code: 'evidence.visual_event_not_observed',
+      severity: 'INFO' as const,
+      blocking: false,
+      message_key: 'notice.visual_event_not_observed',
+      actions: [],
+    }
+    expect(selectScreen({ ...base, notices: [notice] }).kind).toBe('NOT_OBSERVED')
+  })
+
   it('READY + package면 신고자료 화면이다', () => {
     const ready = views.filter((v) => v.stage === 'READY' && v.package)
     expect(ready.length).toBeGreaterThan(0)
