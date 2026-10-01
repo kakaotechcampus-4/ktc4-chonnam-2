@@ -198,6 +198,11 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
     if transport == "image":
         from gemini_coarse_fine_image_trace import ImageInvoker
         invoker = ImageInvoker(client, cfg)
+    elif transport == "provider":
+        # 운영 경로 그대로: MediaPreparer 가 늘리고 GeminiProvider 가 안내·시각 환산을 한다.
+        from daesingo.search.provider import GeminiProvider, ProviderRuntimeOptions
+        invoker = GeminiProvider(client.api_key, cfg,
+                                 runtime=ProviderRuntimeOptions(request_timeout_sec=timeout))
     else:
         invoker = SlowVideoInvoker(client, cfg, coarse_speed, fine_speed)
     deps = DiagnosticDependencies(invoker, MediaPreparer(cfg), cfg, profile, timeout)
@@ -205,6 +210,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
     verifs: Counter[str] = Counter()
     cases = []
     invocations = prompt_tok = total_tok = 0
+    latencies: dict[str, list[int]] = {"COARSE": [], "FINE": []}
     for cid, fname, dur, event, expected, truth in CASES:
         case = DiagnosticCase(case_id=cid, source=Path(VID) / fname,
                               duration_sec=dur, event_types=(event,))
@@ -213,6 +219,8 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
         for call in res.calls:
             if call.status == "SUCCEEDED":
                 invocations += 1
+                if call.latency_ms is not None:
+                    latencies[call.stage].append(call.latency_ms)
                 if call.usage:
                     prompt_tok += call.usage.input_tokens or 0
                     total_tok += call.usage.total_tokens or 0
@@ -243,6 +251,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
         "coarse_fps_prepared": cfg.coarse_fps, "fine_fps_prepared": cfg.fine_fps,
         "invocations": invocations, "verification_counts": dict(verifs),
         "reported_input_tokens": prompt_tok, "reported_total_tokens": total_tok,
+        "provider_latency_ms": latencies,
         "positives_hit": sum(c["verdict"] == "HIT" for c in cases),
         "negatives_correct": sum(c["verdict"] == "CORRECT_REJECT" for c in cases),
         "cases": cases,
@@ -258,7 +267,7 @@ def main() -> None:
     ap.add_argument("--conditions", default="1:1,0.5:0.25")
     ap.add_argument("--repeats", type=int, default=1)
     ap.add_argument("--profiles", default="p3")
-    ap.add_argument("--transport", choices=("video", "image"), default="video")
+    ap.add_argument("--transport", choices=("video", "image", "provider"), default="video")
     args = ap.parse_args()
 
     env = load_env_file(args.env)

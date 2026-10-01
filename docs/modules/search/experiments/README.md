@@ -17,4 +17,5 @@
 - [Coarse recall 프롬프트 변형](gemini-coarse-recall-prompt-2026-10-01.md) — Coarse만 느린 영상으로 p3·subject-v1·multi-v1 각 3회; recall 6/12로 동일, 141927은 위반 SUV를 찾지만 시각이 늦음 ([JSON](gemini-coarse-recall-prompt-2026-10-01-results.json))
 - [느린 영상 시각 환산 검증](gemini-slow-video-time-probe-2026-10-01.md) — 프레임 대응(API 없음)과 빨간 사각형 probe; 변환·모델 응답 모두 0.5초 이내, Coarse 시각 오차는 환산 문제가 아님 ([JSON](gemini-slow-video-time-probe-2026-10-01-results.json))
 - [프록시 인라인 요청 크기 한도](gemini-proxy-size-probe-2026-10-01.md) — 10초 영상을 10–61 MiB로 키워 1회씩; 요청 81 MiB까지 성공, 토큰 불변·응답 시간만 증가 ([JSON](gemini-proxy-size-probe-2026-10-01-results.json))
+- [운영 경로 검증 v3](search-v3-production-verify-2026-10-01.md) — GeminiProvider 그대로 7클립 3회; 위반 2/4·1/4·1/4, 오탐 0, 회차 평균 5.5만 토큰, 영상 밖 후보 1건(#181) ([JSON](search-v3-production-verify-2026-10-01-results.json))
 - [p4-retired-2026-09-25/conditions.md](p4-retired-2026-09-25/conditions.md) — 종료한 p4의 구현 계획, 두 회차 조건·보고서·결과, 원문 프롬프트 보존

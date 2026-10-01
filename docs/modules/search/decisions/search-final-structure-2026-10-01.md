@@ -1,6 +1,6 @@
 # Search 최종 구조 제안: 느린 영상 Coarse→Fine, p3 프롬프트
 
-날짜: 2026-10-01. 상태: **제안 — 코드는 `experiment/search-fine-uncertainty-prompt` 브랜치에 반영, 실영상 검증·Eval 통지 전.** 2026-09-12 이후 Search 실험 전체에서 성능 근거가 있는 선택만 남긴다. 근거가 없거나 효과가 없었던 선택은 넣지 않는다.
+날짜: 2026-10-01. 상태: **제안 — 코드는 `experiment/search-fine-uncertainty-prompt` 브랜치에 반영. 운영 경로 7클립 검증에서 기대치 재현([검증](../experiments/search-v3-production-verify-2026-10-01.md)). Eval 통지·5분 클립 지연 측정 전.** 2026-09-12 이후 Search 실험 전체에서 성능 근거가 있는 선택만 남긴다. 근거가 없거나 효과가 없었던 선택은 넣지 않는다.
 
 ## 1. 최종 구조
 
