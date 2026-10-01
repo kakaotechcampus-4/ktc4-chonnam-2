@@ -189,7 +189,7 @@ type Sub = 'candidates' | 'plate' | 'details'
 
 // 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다.
 // ponytail: 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
-// 시연에서는 화면 안에서만 반영한다 — command가 생기면 onPlateEdit 자리에서 보낸다.
+// 시연에서는 화면 안에서만 반영한다 — command가 생기면 PlateCheck onEdit 자리에서 보낸다.
 function withPlate(view: CaseView, plate: string | null): CaseView {
   if (!plate || !view.evidence || !view.package) return view
   return {
@@ -319,14 +319,13 @@ export function DemoFlow(): JSX.Element {
             view={doneView}
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
-            onPlateEdit={setPlate}
             onDetails={() => open('details')}
             onAction={onAction}
           />
         )}
 
         {done && sub === 'candidates' && <CandidateCompare view={done.view} onBack={back} onSelect={reselect} />}
-        {doneView && sub === 'plate' && <PlateCheck view={doneView} onBack={back} />}
+        {doneView && sub === 'plate' && <PlateCheck view={doneView} onBack={back} onEdit={setPlate} />}
         {doneView && sub === 'details' && <DetailsCheck view={doneView} onBack={back} />}
       </main>
     </>

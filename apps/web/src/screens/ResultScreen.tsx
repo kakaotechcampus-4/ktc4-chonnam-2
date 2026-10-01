@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import type { JSX } from 'react'
 import { isAction, type Action, type CaseView, type InfoState } from '../contracts/caseView'
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, noticeMessage, reportFieldLabel } from '../contracts/labels'
 import { StatusBadge } from '../components/StatusBadge'
@@ -17,14 +17,12 @@ export function ResultScreen(props: {
   view: CaseView
   onCandidates: () => void
   onPlate: () => void
-  onPlateEdit: (plate: string) => void
   onDetails: () => void
   onAction: (action: Action) => void
 }): JSX.Element {
   const { view } = props
   const pkg = view.package
   const evidence = view.evidence
-  const [editing, setEditing] = useState<string | null>(null)
   if (!pkg || !evidence) return <div className="panel panel-p">아직 신고자료가 없습니다.</div>
 
   // 요약 칩은 상태별 개수를 셀 뿐 판정하지 않는다.
@@ -87,45 +85,16 @@ export function ResultScreen(props: {
             </button>
           )}
         </div>
-        {/* 번호판은 틀리면 다른 차가 신고되므로 항상 고칠 수 있게 둔다. 읽은 값을 채운 채로 연다. */}
-        {editing === null ? (
-          <div className="plate-row">
-            <span className="plate-img">{evidence.plate_display.value ?? '번호판 없음'}</span>
-            <span className="plate-meta">
-              <b>번호판</b>
-              <StatusBadge state={evidence.plate_display.info_state} />
-            </span>
-            <button type="button" className="btn sm" onClick={() => setEditing(evidence.plate_display.value ?? '')}>
-              수정
-            </button>
-            <button type="button" className="btn sm" onClick={props.onPlate}>
-              자세히 보기
-            </button>
-          </div>
-        ) : (
-          <form
-            className="plate-row"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (editing.trim()) props.onPlateEdit(editing.trim())
-              setEditing(null)
-            }}
-          >
-            <input
-              className="field plate-input"
-              aria-label="차량 번호"
-              autoFocus
-              value={editing}
-              onChange={(e) => setEditing(e.target.value)}
-            />
-            <button type="submit" className="btn sm pri" disabled={!editing.trim()}>
-              저장
-            </button>
-            <button type="button" className="btn sm" onClick={() => setEditing(null)}>
-              취소
-            </button>
-          </form>
-        )}
+        <div className="plate-row">
+          <span className="plate-img">{evidence.plate_display.value ?? '번호판 없음'}</span>
+          <span className="plate-meta">
+            <b>번호판</b>
+            <StatusBadge state={evidence.plate_display.info_state} />
+          </span>
+          <button type="button" className="btn sm" onClick={props.onPlate}>
+            자세히 보기 · 수정
+          </button>
+        </div>
       </section>
 
       <section className="panel panel-p">
@@ -142,8 +111,10 @@ export function ResultScreen(props: {
               <span className="kv-v">
                 <span className="kv-val">{value === null ? '알 수 없음' : formatValue(value)}</span>
               </span>
-              {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
-              {PASTE.has(key) ? (
+              {/* 오른쪽은 2줄 — 위에 상태, 아래에 동작. 줄마다 폭이 달라 들쭉날쭉하지 않게 한다 */}
+              <span className="draft-side">
+                {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
+                {PASTE.has(key) ? (
                 <button
                   type="button"
                   className="btn sm"
@@ -155,6 +126,7 @@ export function ResultScreen(props: {
               ) : (
                 <span className="pick-hint">안전신문고에서 직접 골라요</span>
               )}
+              </span>
             </div>
           ))}
         </div>

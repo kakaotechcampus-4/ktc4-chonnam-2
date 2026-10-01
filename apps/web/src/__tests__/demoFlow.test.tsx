@@ -124,16 +124,20 @@ it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 �
   expect(container.querySelector('textarea')!.value).toBe('')
 })
 
-it('번호판 「수정」은 읽은 값을 채운 채 열리고, 저장하면 「사용자 확인됨」이 된다', () => {
+it('번호판은 자세히 보기에서 읽은 값을 채운 채 고치고, 결과 화면에 「사용자 확인됨」으로 반영된다', () => {
   const { wait, getByText, text, container } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  fireEvent.click(getByText('수정'))
+  fireEvent.click(getByText('자세히 보기 · 수정'))
+  expect(text()).toContain('번호판을 읽은 장면')
+  fireEvent.click(getByText('번호 수정'))
   const input = container.querySelector('.plate-input') as HTMLInputElement
   expect(input.value).toBe('12가3456')
   fireEvent.change(input, { target: { value: '12가3458' } })
   fireEvent.click(getByText('저장'))
+  expect(text()).toContain('12가3458')
+  fireEvent.click(container.querySelector('.back')!)
   expect(text()).toContain('12가3458')
   expect(text()).toContain('사용자 확인됨')
 })
