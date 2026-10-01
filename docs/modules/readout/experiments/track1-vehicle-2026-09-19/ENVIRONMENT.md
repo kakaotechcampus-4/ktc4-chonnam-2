@@ -94,10 +94,11 @@ python scripts/aihub71555_clips.py --detections .../clip-detections.json > .../C
 
 표본 manifest 3개는 레포에 두지 않는다(0.8 · 1.4 · 2.9MB). `aihub71555_labels.py sample`이 같은 `VL.zip`과 seed로
 같은 표본을 만들기 때문이다. 2026-09-30에 다시 만들어 커밋돼 있던 파일과 대조했다.
+원본은 git 기록에 남아 있다 — `git show bda0be64bd:<경로>` (`VL.zip`이 없어도 꺼낼 수 있다).
 
 | 파일 | 명령 | 커밋본 sha256 (LF) | 재생성 결과 |
 | --- | --- | --- | --- |
-| `sample-manifest.json` | `sample --n 1600 --seed 20260919` | `58cdd7190bd7149fe27d3760f19d72bbe93ab5932691a750e25f410f928e0f76` | 1,600항목 · 같은 파일 집합·순서 — 이후 스크립트가 `frame_index`·`by_clip` 필드를 더해 바이트는 다르다 |
+| `sample-manifest.json` | `sample --n 1600 --seed 20260919` | `58cdd7190bd7149fe27d3760f19d72bbe93ab5932691a750e25f410f928e0f76` | 1,600항목 · `image_entry` 목록·순서 동일 — 지금 스크립트는 `by_clip`·`max_frames_per_clip`·`frame_index` 필드를 더 써서 해시는 다르다(`aihub71555_detect.py`는 이 필드를 읽지 않는다) |
 | `clip-sample-manifest.json` | `sample --by-clip --n 96 --seed 20260919` | `1d688ef2d7526156e734378db8bc6ba5322e06604f9c532506ef3ae7baea4cb7` | 바이트 동일 (Windows 출력의 CRLF 제외) |
 | `holdout-manifest.json` | `sample --by-clip --n 200 --seed 20260927` | `8125e46ea51e52e9b73d1aee7099257ae33706f1229f8f103430e6150133abf1` | 바이트 동일 (CRLF 제외) |
 
