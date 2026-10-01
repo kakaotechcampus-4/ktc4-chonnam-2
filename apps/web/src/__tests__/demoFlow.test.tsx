@@ -54,11 +54,15 @@ it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 �
 })
 
 it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한다', () => {
-  const { wait, getByText, text } = start('notFound')
+  const { wait, getByText, text, container } = start('notFound')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   expect(text()).toContain('조건에 맞는 장면을 찾지 못했습니다')
+  const box = container.querySelector('textarea')!
+  fireEvent.change(box, { target: { value: '' } })
+  fireEvent.keyDown(box, { key: 'Tab' })
+  expect(box.value).toContain('검은 승용차')
   fireEvent.click(getByText('다시 찾기'))
   expect(text()).toContain('올리면 진행')
   wait()

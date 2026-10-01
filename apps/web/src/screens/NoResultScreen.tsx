@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { Panel } from '../components/Panel'
+import { SituationInput } from './UploadScreen'
 
 // 후보 0건은 실패가 아니다. candidates=[]·evidence=null·package=null을
 // 실패 화면으로 그리지 않는다(체크리스트 Failure/Partial · scenario_empty_001).
@@ -51,14 +52,14 @@ export function RetrySearch(props: {
     <Panel title="기억나는 걸 다시 적어 주세요">
       <div className="stack">
         <span className="kv-src">시간·차량·상황을 조금 다르게 적으면 다른 장면을 찾을 수 있어요.</span>
-        <textarea
-          className="field situation"
+        <SituationInput
+          label="다시 찾을 상황"
+          example="7시 전후, 검은 승용차, 중앙선 침범"
           rows={3}
-          aria-label="다시 찾을 상황"
-          placeholder="예: 7시 전후, 검은 승용차, 중앙선 침범"
           value={props.situation}
-          onChange={(e) => props.onSituation(e.target.value)}
+          onChange={props.onSituation}
         />
+        <span className="kv-src">Tab 키를 누르면 예시가 들어가요.</span>
         <button type="button" className="btn pri cta" onClick={props.onRetry}>
           다시 찾기
         </button>
