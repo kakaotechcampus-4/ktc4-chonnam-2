@@ -84,7 +84,7 @@ body {
   box-shadow: var(--sh-soft); cursor: pointer; text-align: center;
 }
 .btn:hover { border-color: var(--border-2); box-shadow: var(--sh-lift); }
-.btn:disabled { background: var(--panel-soft); color: #98a2b3; cursor: not-allowed; box-shadow: none; }
+.btn:disabled, .btn.pri:disabled { background: var(--panel-soft); color: #98a2b3; cursor: not-allowed; box-shadow: none; }
 
 .btn.pri, .btn-primary { background: var(--green-solid); border-color: var(--green-solid); color: #fff; font-weight: 800; }
 .btn.pri:hover, .btn-primary:hover { background: var(--green-deep); border-color: var(--green-deep); }
