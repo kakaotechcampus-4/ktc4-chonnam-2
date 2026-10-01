@@ -5,6 +5,8 @@ import { StatusBadge } from '../components/StatusBadge'
 
 // Figma 03_Main_Result 틀: 요약 → 신고용 영상(+다른 후보) → 번호판·위치 → 신고서 초안 → 동작.
 // 값과 상태는 package.report_field_states를 그대로 쓴다(value-state-display.md §5-1).
+// ponytail: 위치(지도·검색어 복사)는 아직 구현하지 못해 이 화면에서 뺀다. 구현되면 HIDDEN을 비운다.
+const HIDDEN = new Set(['location'])
 export function ResultScreen(props: {
   view: CaseView
   onCandidates: () => void
@@ -18,7 +20,9 @@ export function ResultScreen(props: {
 
   // 요약 칩은 상태별 개수를 셀 뿐 판정하지 않는다.
   const counts = new Map<InfoState, number>()
-  for (const s of Object.values(pkg.report_field_states)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
+  const fields = Object.entries(pkg.report_fields).filter(([key]) => !HIDDEN.has(key))
+  const unconfirmed = pkg.unconfirmed_fields.filter((key) => !HIDDEN.has(key))
+  for (const [key, s] of Object.entries(pkg.report_field_states)) if (!HIDDEN.has(key)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
   const others = view.candidates.filter((c) => !c.selected).length
 
   return (
@@ -55,21 +59,17 @@ export function ResultScreen(props: {
               번호판 <StatusBadge state={evidence.plate_display.info_state} />
             </span>
           </button>
-          <div className="thumb">
-            <span className="thumb-img map" aria-hidden>
-              📍
-            </span>
-            <span className="thumb-cap">
-              위치 <StatusBadge state={evidence.location_display.info_state} />
-            </span>
-          </div>
+          <button type="button" className="thumb" onClick={props.onDetails}>
+            <span className="thumb-img how">어떻게 정했는지</span>
+            <span className="thumb-cap">값마다 출처와 근거 보기 →</span>
+          </button>
         </div>
       </section>
 
       <section className="panel panel-p">
         <div className="sec-label">안전신문고 신고서 초안</div>
         <div className="kv kv-rows">
-          {Object.entries(pkg.report_fields).map(([key, value]) => (
+          {fields.map(([key, value]) => (
             <div className="kv-row" key={key}>
               <span className="kv-k">{reportFieldLabel(key)}</span>
               <span className="kv-v">
@@ -83,11 +83,11 @@ export function ResultScreen(props: {
             </div>
           ))}
         </div>
-        {pkg.unconfirmed_fields.length > 0 && (
+        {unconfirmed.length > 0 && (
           <div className="unconfirmed">
-            <b>아직 확인하지 않은 항목 {pkg.unconfirmed_fields.length}개</b>
+            <b>아직 확인하지 않은 항목 {unconfirmed.length}개</b>
             <div className="chips">
-              {pkg.unconfirmed_fields.map((f) => (
+              {unconfirmed.map((f) => (
                 <span key={f} className="chip warn">
                   {reportFieldLabel(f)} 수정
                 </span>
@@ -98,9 +98,6 @@ export function ResultScreen(props: {
       </section>
 
       <div className="btnrow center">
-        <button type="button" className="btn" onClick={props.onDetails}>
-          어떻게 정했는지 확인 →
-        </button>
         {pkg.capabilities.includes('COPY_FIELDS') && (
           <button type="button" className="btn">
             전체 복사

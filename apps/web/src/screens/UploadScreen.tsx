@@ -1,5 +1,7 @@
 import { useState, type JSX } from 'react'
 
+const EXAMPLE = '6시 반쯤, 흰색 SUV, 실선 침범, 미금역 근처'
+
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
 const DROP_TEXT: Record<UploadState, string> = {
@@ -55,10 +57,18 @@ export function UploadScreen(props: {
         className="field situation"
         rows={4}
         aria-label="어떤 상황이었나요?"
-        placeholder="예: 6시 반쯤, 흰색 SUV, 실선 침범, 미금역 근처"
+        placeholder={`예: ${EXAMPLE}`}
         value={props.situation}
         onChange={(e) => props.onSituation(e.target.value)}
+        onKeyDown={(e) => {
+          // 비어 있을 때만 Tab이 예시를 채운다. 글이 있으면 원래 Tab(다음 칸으로 이동)이다.
+          if (e.key === 'Tab' && !e.shiftKey && !props.situation) {
+            e.preventDefault()
+            props.onSituation(EXAMPLE)
+          }
+        }}
       />
+      <p className="kv-src hint">Tab 키를 누르면 예시가 들어가요. 비워 둬도 영상에서 찾아볼 수 있어요.</p>
       <button type="button" className="btn pri cta" disabled={props.state !== 'done'} onClick={props.onSearch}>
         영상에서 찾아보기
       </button>

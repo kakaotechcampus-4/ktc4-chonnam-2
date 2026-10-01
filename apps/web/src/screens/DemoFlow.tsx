@@ -11,11 +11,11 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
-// ponytail: API(case.get_view)가 아직 없어 업로드는 타이머로, 진행은 fixture
-// CaseView를 차례로 재생해 흉내 낸다. API가 생기면 이 두 타이머 자리를
-// 업로드 응답과 get_view() 폴링으로 바꾼다.
+// ponytail: API(case.get_view)가 아직 없어 업로드는 타이머로, 진행은 단계를
+// 하나씩 넘기는 CaseView를 만들어 재생해 흉내 낸다. API가 생기면 이 두 타이머
+// 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
-const STEP_MS = 2500
+const STEP_MS = 1200
 
 function snapshot(scenarioId: string, index: number): CaseView {
   const found = SNAPSHOTS.find((s) => s.scenarioId === scenarioId && s.index === index)
@@ -25,7 +25,6 @@ function snapshot(scenarioId: string, index: number): CaseView {
 
 const SEARCHING = snapshot('scenario_happy_001', 1)
 const RESULT = snapshot('scenario_happy_001', 2)
-const PLATE_RETRY = snapshot('scenario_infra_failure_001', 1)
 const PLATE_FAILED = snapshot('scenario_infra_failure_001', 2)
 const NOT_FOUND = snapshot('scenario_empty_001', 1)
 
@@ -58,15 +57,37 @@ const NOT_OBSERVED: CaseView = {
   ],
 }
 
+// 단계 순서는 fixture(progress)를 따른다. i번째 단계가 진행 중이면 앞은 완료, 뒤는 대기다.
+const STEPS = SEARCHING.progress.map((p) => p.step)
+const PLATE = STEPS.indexOf('plate_read')
+
+function at(running: number, failed = false): CaseView {
+  const state = (i: number) =>
+    i < running ? 'DONE' : i > running ? 'PENDING' : failed ? 'FAILED' : 'RUNNING'
+  return {
+    ...SEARCHING,
+    running_jobs: [],
+    notices: failed ? PLATE_FAILED.notices : [],
+    progress: STEPS.map((step, i) => ({ step, state: state(i) as CaseView['progress'][number]['state'] })),
+  }
+}
+// 0..until-1 단계를 차례로 진행하고, 마지막에 until 앞까지 모두 완료된 화면을 하나 더 둔다.
+const walk = (until: number) => [...STEPS.slice(0, until).map((_, i) => at(i)), at(until)]
+
 // 실패·재시도·결과 없음은 사용자가 고르는 게 아니라 작업이 정한다. 시연에서
 // 어느 경우를 보여 줄지만 미리 고른다.
 type End = 'result' | 'notFound' | 'notObserved' | 'stay'
 const CASES = {
-  main: { label: '정상 — 신고자료 준비', uploadOk: true, frames: [SEARCHING], end: 'result' },
-  retry: { label: '번호판 다시 읽은 뒤 신고자료', uploadOk: true, frames: [SEARCHING, PLATE_RETRY], end: 'result' },
-  fail: { label: '번호판 판독 실패', uploadOk: true, frames: [SEARCHING, PLATE_RETRY, PLATE_FAILED], end: 'stay' },
-  notObserved: { label: '찾은 장면에서 위반 미관찰', uploadOk: true, frames: [SEARCHING], end: 'notObserved' },
-  notFound: { label: '결과 없음(장면 0개)', uploadOk: true, frames: [SEARCHING], end: 'notFound' },
+  main: { label: '정상 — 신고자료 준비', uploadOk: true, frames: walk(STEPS.length), end: 'result' },
+  retry: {
+    label: '번호판 다시 읽은 뒤 신고자료',
+    uploadOk: true,
+    frames: [...walk(PLATE), at(PLATE), ...walk(STEPS.length).slice(PLATE)],
+    end: 'result',
+  },
+  fail: { label: '번호판 판독 실패', uploadOk: true, frames: [...walk(PLATE).slice(0, -1), at(PLATE, true)], end: 'stay' },
+  notObserved: { label: '찾은 장면에서 위반 미관찰', uploadOk: true, frames: walk(STEPS.length), end: 'notObserved' },
+  notFound: { label: '결과 없음(장면 0개)', uploadOk: true, frames: walk(STEPS.indexOf('coarse_search') + 1), end: 'notFound' },
   uploadFail: { label: '업로드 실패', uploadOk: false, frames: [], end: 'stay' },
 } satisfies Record<string, { label: string; uploadOk: boolean; frames: CaseView[]; end: End }>
 type CaseKey = keyof typeof CASES
@@ -105,6 +126,12 @@ export function DemoFlow(): JSX.Element {
     return () => clearTimeout(t)
   }, [main, demo])
 
+  const newReport = () => {
+    setMain({ kind: 'upload', state: 'idle' })
+    setSubs([])
+    setFile(null)
+    setSituation('')
+  }
   const open = (sub: Sub) => setSubs((s) => [...s, sub])
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
@@ -113,7 +140,7 @@ export function DemoFlow(): JSX.Element {
 
   return (
     <>
-      <AppHeader />
+      <AppHeader onNewReport={newReport} />
       <main className="web-main">
         {main.kind === 'upload' && (
           <>

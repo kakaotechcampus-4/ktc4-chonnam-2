@@ -327,3 +327,8 @@ button.thumb { cursor: pointer; }
 .cand-col .btnrow .btn { flex: 1; }
 
 .demo-pick { justify-self: end; }
+.app-header { display: flex; align-items: center; justify-content: space-between; }
+.nav-link { border: 0; background: none; font-family: inherit; font-size: 16px; font-weight: 800; color: var(--ink-2); cursor: pointer; padding: 6px 10px; }
+.nav-link:hover { color: var(--green); }
+.thumb-img.how { background: var(--green-soft); color: var(--green-deep); font-size: 18px; }
+.hint { margin: -8px 0 0; }
