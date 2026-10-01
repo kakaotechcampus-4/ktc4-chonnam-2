@@ -90,5 +90,19 @@ python scripts/aihub71555_clips.py --selfcheck
 python scripts/aihub71555_clips.py --detections .../clip-detections.json > .../CLIPS.md
 ```
 
+## 표본 manifest
+
+표본 manifest 3개는 레포에 두지 않는다(0.8 · 1.4 · 2.9MB). `aihub71555_labels.py sample`이 같은 `VL.zip`과 seed로
+같은 표본을 만들기 때문이다. 2026-09-30에 다시 만들어 커밋돼 있던 파일과 대조했다.
+
+| 파일 | 명령 | 커밋본 sha256 (LF) | 재생성 결과 |
+| --- | --- | --- | --- |
+| `sample-manifest.json` | `sample --n 1600 --seed 20260919` | `58cdd7190bd7149fe27d3760f19d72bbe93ab5932691a750e25f410f928e0f76` | 1,600항목 · 같은 파일 집합·순서 — 이후 스크립트가 `frame_index`·`by_clip` 필드를 더해 바이트는 다르다 |
+| `clip-sample-manifest.json` | `sample --by-clip --n 96 --seed 20260919` | `1d688ef2d7526156e734378db8bc6ba5322e06604f9c532506ef3ae7baea4cb7` | 바이트 동일 (Windows 출력의 CRLF 제외) |
+| `holdout-manifest.json` | `sample --by-clip --n 200 --seed 20260927` | `8125e46ea51e52e9b73d1aee7099257ae33706f1229f8f103430e6150133abf1` | 바이트 동일 (CRLF 제외) |
+
+`--out`은 위 절차의 경로를 쓴다(holdout은 `track-association-2026-09-27/`). 이 manifest를 넣는 `aihub71555_detect.py`의
+`--manifest`는 재생성한 파일을 그대로 받는다.
+
 `ROOT` 경로는 `scripts/aihub71555_labels.py` 상단에 하드코딩돼 있다. 다른 기계에서는
 그 줄을 고친다.
