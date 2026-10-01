@@ -7,7 +7,7 @@ from .execution import RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
-from .prompts import FINE_PROMPT, fine_prompt_for
+from .prompts import FINE_PROMPT, fine_prompt_for, sent_prompt_fingerprint
 from .provider import FineRequest, SearchProvider
 from .runs import (
     AnalysisRun,
@@ -165,7 +165,9 @@ def verify_fine(
                 case_id=source.source_id,
                 model=config.model,
                 prompt_version=FINE_PROMPT.version,
-                prompt_fingerprint=fine_prompt_for(event_type).fingerprint,
+                prompt_fingerprint=sent_prompt_fingerprint(
+                    fine_prompt_for(event_type), prepared.playback_speed
+                ),
                 config_version=config.version,
                 processed_duration_sec=source.duration_sec,
                 latency_ms=result.latency_ms,

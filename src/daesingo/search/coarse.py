@@ -14,7 +14,7 @@ from .execution import DeadlineExceededError, RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
-from .prompts import COARSE_PROMPT
+from .prompts import COARSE_PROMPT, sent_prompt_fingerprint
 from .provider import CoarseRequest, ProviderResult, SearchProvider
 from .runs import (
     AnalysisRun,
@@ -293,7 +293,9 @@ def _usage_record(
         case_id=source.source_id,
         model=config.model,
         prompt_version=COARSE_PROMPT.version,
-        prompt_fingerprint=COARSE_PROMPT.fingerprint,
+        prompt_fingerprint=sent_prompt_fingerprint(
+            COARSE_PROMPT, prepared.playback_speed
+        ),
         config_version=config.version,
         processed_duration_sec=source.duration_sec,
         latency_ms=result.latency_ms,

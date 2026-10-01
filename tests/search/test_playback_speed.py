@@ -6,7 +6,9 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
+from daesingo.search import prompts
 from daesingo.search.media import PreparedMedia
+from daesingo.search.prompts import COARSE_PROMPT, playback_note, sent_prompt_fingerprint
 from daesingo.search.provider import CoarseRequest, FineRequest, GeminiProvider
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import VisualEventType
@@ -76,6 +78,7 @@ def test_slowed_coarse_gets_note_and_origin_times(
 
     # Then: 안내 단락이 붙고, 시각은 원본 4–6초(핵심 5초)로 돌아온다
     assert "2배 느리게" in _prompt(completions)
+    assert _prompt(completions).endswith(playback_note(0.5))
     candidate = result.response.candidates[0]
     assert (candidate.span.start_sec, candidate.span.end_sec, candidate.at_sec) == (4.0, 6.0, 5.0)
 
@@ -111,3 +114,29 @@ def test_unslowed_media_is_sent_as_is(
         _source(), (VisualEventType.SIGNAL,), media=_media(tmp_path, 1.0, (0.0, 12.0))))
 
     assert "느리게" not in _prompt(completions)
+
+
+def test_sent_fingerprint_matches_template_at_original_speed() -> None:
+    # 원본 속도면 안내가 붙지 않으므로 v2 기록과 같은 값이다
+    assert sent_prompt_fingerprint(COARSE_PROMPT, 1.0) == COARSE_PROMPT.fingerprint
+
+
+def test_sent_fingerprint_follows_speed_and_note_resource(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given: 같은 템플릿을 0.5x·0.25x로 보낸다
+    half = sent_prompt_fingerprint(COARSE_PROMPT, 0.5)
+    quarter = sent_prompt_fingerprint(COARSE_PROMPT, 0.25)
+    assert len({COARSE_PROMPT.fingerprint, half, quarter}) == 3
+
+    # When: config.version은 그대로인 채 배속 안내 리소스 문구만 바뀐다
+    edited = prompts.PromptTemplate(
+        prompts.PLAYBACK_NOTE.version,
+        prompts.PLAYBACK_NOTE.text + " 추가 문구.",
+        "",
+        prompts.PLAYBACK_NOTE.placeholders,
+    )
+    monkeypatch.setattr(prompts, "PLAYBACK_NOTE", edited)
+
+    # Then: 기록되는 fingerprint가 달라져 provenance로 구분된다
+    assert sent_prompt_fingerprint(COARSE_PROMPT, 0.5) != half

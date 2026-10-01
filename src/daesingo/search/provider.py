@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 from .config import GeminiSearchConfig
 from .execution import RunDeadline
 from .media import PreparedMedia
-from .prompts import COARSE_PROMPT, fine_prompt_for, load_prompt
+from .prompts import COARSE_PROMPT, fine_prompt_for, playback_note
 from .retry import RetryPolicy, call_with_retry
 from .schemas import CoarseResponse, FineResponse
 from .scope import VisualEventType
@@ -93,7 +93,6 @@ def _video_data_url(path: Path, content_type: str) -> str:
     return f"data:{content_type};base64,{encoded}"
 
 
-_PLAYBACK_NOTE = load_prompt("playback-slowdown-v1")
 _TIME_KEYS = frozenset({"start_sec", "end_sec", "at_sec"})
 
 
@@ -208,8 +207,7 @@ class GeminiProvider:
         # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
         # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
         speed = media.playback_speed
-        if speed != 1.0:
-            prompt += "\n\n" + _PLAYBACK_NOTE.render(factor=f"{1 / speed:g}")
+        prompt += playback_note(speed)
 
         # --- Cap 1: raw media bytes (BEFORE encoding) ---
         if media.byte_size > self._config.max_inline_media_bytes:

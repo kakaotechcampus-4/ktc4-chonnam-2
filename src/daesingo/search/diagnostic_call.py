@@ -31,7 +31,12 @@ from .media import (
     PreparedMedia,
 )
 from .media_contract import CoarseMediaPreparer
-from .prompts import COARSE_PROMPT, PromptTemplate, fine_prompt_for
+from .prompts import (
+    COARSE_PROMPT,
+    PromptTemplate,
+    fine_prompt_for,
+    sent_prompt_fingerprint,
+)
 from .provider import (
     MediaSizeError,
     ProviderResult,
@@ -94,7 +99,9 @@ def _call[T: BaseModel](
         "candidate_index": spec.candidate_index,
         "event_type": spec.event_type,
         "prompt_version": spec.template.version,
-        "prompt_fingerprint": spec.template.fingerprint,
+        "prompt_fingerprint": sent_prompt_fingerprint(
+            spec.template, prepared.playback_speed
+        ),
         "prepared_origin_start_sec": prepared.origin_start_sec,
         "prepared_origin_end_sec": prepared.origin_end_sec,
         "prepared_duration_sec": prepared.duration_sec,
