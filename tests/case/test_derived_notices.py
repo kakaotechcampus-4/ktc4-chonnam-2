@@ -205,20 +205,47 @@ def test_no_abstained_notice_for_unread_plate_without_need():
     assert ABSTAINED_CODE not in [n["code"] for n in derived["notices"]]
 
 
-def test_build_view_from_adapter_attaches_abstained_notice():
-    """실제 진입점에서 adapter의 EvidenceNeeds로 붙는지 — 호출자는 notice를 넘기지 않는다."""
-    adapter = MockFixtureAdapter(MOCK_ROOT, "plate_reread_001")
+class _RereadPendingAdapter(MockFixtureAdapter):
+    """재판독 전(v1 `ev_p001`) 시점의 스냅샷 — `MockFixtureAdapter`는 체인의 마지막(v2)을 현재로 준다(#177)."""
+
+    def get_evidence_record(self):
+        records = self.get_evidence_records()
+        return records[0] if records else None
+
+    def get_requirement_report(self, scope):
+        return next(iter(self.get_requirement_reports(scope)), None)
+
+    def get_report_package(self):
+        packages = self._load("evidence").get("report_packages", [])
+        return packages[0] if packages else None
+
+
+def _selected_plate_reread_case(adapter: MockFixtureAdapter) -> CaseAggregate:
     case = CaseAggregate.intake(case_id="case_p001", hints={}, manifest_summary={})
     case.start_search()
     service.receive_search_candidates(case, adapter)
     case.select_candidate("candidate_p001")
+    return case
 
-    view = service.build_view_from_adapter(case, adapter)
+
+def test_build_view_from_adapter_attaches_abstained_notice():
+    """실제 진입점에서 adapter의 EvidenceNeeds로 붙는지 — 호출자는 notice를 넘기지 않는다."""
+    adapter = _RereadPendingAdapter(MOCK_ROOT, "plate_reread_001")
+    view = service.build_view_from_adapter(_selected_plate_reread_case(adapter), adapter)
     record_id = view["evidence"]["record_id"]
     reread_pending = any(
         n["basis_record_ref"]["ref"] == record_id and any(i["kind"] == "PLATE_REREAD" for i in n["items"])
         for n in adapter.get_evidence_needs()
     )
 
-    assert reread_pending  # mock은 v1(`ev_p001`)을 현재 기록으로 준다
+    assert reread_pending  # v1(`ev_p001`)이 현재 기록이다
     assert ABSTAINED_CODE in [n["code"] for n in view["notices"]]
+
+
+def test_build_view_from_adapter_drops_abstained_notice_after_reread():
+    """재판독 뒤(v2 `ev_p001_v2`)에는 현재 기록에 `PLATE_REREAD` Need가 없어 붙지 않는다."""
+    adapter = MockFixtureAdapter(MOCK_ROOT, "plate_reread_001")
+    view = service.build_view_from_adapter(_selected_plate_reread_case(adapter), adapter)
+
+    assert view["evidence"]["record_id"] == "ev_p001_v2"
+    assert ABSTAINED_CODE not in [n["code"] for n in view["notices"]]
