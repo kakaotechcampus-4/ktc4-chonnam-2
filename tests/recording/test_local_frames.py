@@ -72,7 +72,13 @@ def test_actual_pixels_positions_identity_and_original_preserved(media):
     with pytest.raises(RecordingCapabilityError) as caught:
         locate(service, audio.media_stream_ref, 0.0)
     assert caught.value.code == "FRAME_NOT_FOUND"
-    # stream duration이 없는 MKV도 decoded EOF에서 실패하며 마지막 frame을 재사용하지 않는다.
+    # MKV의 DURATION tag로 경계가 관측되면 끝점은 OUT_OF_RANGE다.
+    assert video_a.duration_sec == 1.0
+    with pytest.raises(RecordingCapabilityError) as caught:
+        locate(service, video_a.media_stream_ref, 1.0)
+    assert caught.value.code == "OUT_OF_RANGE"
+    # 길이 metadata가 정말 없는 경우의 기존 decoded EOF 정책도 유지한다.
+    service._repository.add_media_stream(video_a.model_copy(update={"duration_sec": None}))
     with pytest.raises(RecordingCapabilityError) as caught:
         locate(service, video_a.media_stream_ref, 1.0)
     assert caught.value.code == "FRAME_NOT_FOUND"

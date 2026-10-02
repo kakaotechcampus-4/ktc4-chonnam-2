@@ -1,0 +1,6 @@
+CENTER_LINE_CROSSING: 반대 방향 차로 구조, 중앙선의 정체와 종류, 차량의
+이전/이후 위치, 접촉, 지속성, 주변 도로 형상을 각각 확인하세요.
+crossing_extent는 NONE, CONTACT_ONLY, PARTIAL_CROSSING,
+SUBSTANTIAL_CROSSING, FULL_CROSSING, UNCERTAIN 중 하나입니다.
+접촉만 한 경우를 침범으로 판정하지 마세요. 원근이나 화면 좌우 위치만으로
+중앙선 정체 또는 차량 횡단을 추론하지 마세요.

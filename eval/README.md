@@ -72,7 +72,7 @@ uv run python -m eval.run \
 uv run python -m eval.score --prediction <run_id>
 ```
 
-`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `google-genai>=2.13`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
+`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `openai>=1.40`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
 
 평가는 담당자 로컬에서 돈다 — 데이터·`GEMINI_API_KEY`·프록시 접근은 각자의 로컬 `.env` 에 있다. 모든 Gemini 호출은 프록시 base URL(Bearer 인증, `GEMINI_API_KEY`)을 경유한다. 운영 baseline과 프록시 규칙은 `docs/modules/search/decisions/gemini-3.8-proxy-baseline-2026-09-18.md`.
 
@@ -90,3 +90,27 @@ python -m pytest tests/eval/ -q
 ```
 
 미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 123개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.
+
+### readout 번호판 인식 평가 (비공개 manifest)
+
+`readout:paddle-crop`은 번호판 crop 이미지를 readout 공개 함수 `read_plate`와 `PaddleOcrProvider`로 판독한다. crop 한 장이 프레임 한 장이다. 검출 단계가 빠져 있어서 **인식(recognition)만** 잰다.
+
+정답과 예측에 실제 차량번호가 들어간다. 그래서 이름이 `private_`로 시작하는 manifest는 manifest·prediction·result를 전부 `.env`의 `DAESINGO_EVAL_PRIVATE_ROOT` 아래에 둔다(`eval/paths.py`). 레포에는 집계 수치만 `docs/modules/eval/experiments/`에 남긴다.
+
+```bash
+uv sync --extra test --extra readout-paddle
+# 1회: aihub172.py sample 산출물 → private manifest
+uv run python -m eval.tools.build_private_aihub172 --source <.../aihub172/track2_recognition>
+uv run python -m eval.run --impl readout:paddle-crop --manifest private_aihub172_plate --stage plate --run-id <run_id>
+uv run python -m eval.score --prediction <run_id>
+```
+
+트랙① 차량 검출 지속성은 `readout-exp:yolo11n`이다. readout 실험 설정(YOLO11n)을 옮긴 것이고 **제품 코드가 아니다**. readout에 검출 공개 함수가 생기면 그 함수로 바꾼다.
+
+```bash
+uv sync --extra test --extra eval-yolo
+uv run python -m eval.tools.build_private_aihub172 --track 1 --source <.../aihub172/track1_association>
+uv run python -m eval.run --impl readout-exp:yolo11n --manifest private_aihub172_track1 --stage persistence --run-id <run_id>
+uv run python -m eval.score --prediction <run_id>
+```
+

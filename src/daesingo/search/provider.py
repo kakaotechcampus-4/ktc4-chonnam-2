@@ -66,6 +66,16 @@ class ProviderResult[ResponseT: BaseModel]:
 
 
 @dataclass(frozen=True, slots=True)
+class StructuredInvocation[ResponseT: BaseModel]:
+    """Search-private structured call reused by the local diagnostic runner."""
+
+    media: PreparedMedia
+    prompt: str
+    response_model: type[ResponseT]
+    timeout_sec: float
+
+
+@dataclass(frozen=True, slots=True)
 class ProviderRuntimeOptions:
     request_timeout_sec: float = 60.0
 
@@ -157,6 +167,13 @@ class GeminiProvider:
         )
         return self._invoke(
             request.media, prompt, FineResponse, request.timeout_sec, request.deadline
+        )
+
+    def invoke_structured[ResponseT: BaseModel](
+        self, request: StructuredInvocation[ResponseT]
+    ) -> ProviderResult[ResponseT]:
+        return self._invoke(
+            request.media, request.prompt, request.response_model, request.timeout_sec
         )
 
     def _invoke[ResponseT: BaseModel](
