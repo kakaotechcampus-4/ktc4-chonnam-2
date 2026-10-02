@@ -78,6 +78,20 @@ uv run python -m eval.score --prediction <run_id>
 
 prediction의 `facts`에는 모델, `coarse-p3` 버전과 SHA-256 fingerprint, 설정 버전과 fingerprint, SDK 버전, 처리 영상 길이, clip 목록, 토큰·비용 기록이 남는다. 최초 실제 실행 결과가 baseline이며 특정 Recall 값은 실행 전 인수 조건이 아니다.
 
+#### 반복 실행 일관성 (candidate)
+
+비결정적 모델은 같은 클립도 회차마다 답이 다르다. 같은 설정으로 run_id만 바꿔 여러 번 돌린 뒤 묶어 채점한다 (#226).
+
+```bash
+for i in 1 2 3 4 5; do
+  uv run python -m eval.run --impl search:gemini-coarse-p3 --manifest b_youtube \
+    --stage candidate --run-id <name>_r$i
+done
+uv run python -m eval.repeat --name <name> --predictions <name>_r1 <name>_r2 <name>_r3 <name>_r4 <name>_r5
+```
+
+impl·manifest·code_commit·모델·프롬프트/설정 fingerprint 중 하나라도 회차 사이에 다르면 채점하지 않는다(rc 4). 결과는 정답 사건마다 top-3 적중 횟수(k/n)와 항상 맞힘·흔들림·항상 놓침 개수, 회차별 Recall@3·음성 클립 오탐을 낸다. 적중 정의는 `scorers/candidate.py`와 같다. 정확도와 일관성을 합친 단일 점수는 #226에서 합의 전이라 내지 않는다.
+
 | 폴더 | 무엇이 들어 있나 |
 | --- | --- |
 | `predictions/` | impl 이 낸 **원문(`raw`) + 정규화 뷰(`normalized`) + `meta`**. GT나 지표 정의가 바뀌어도 다시 만들지 않는다 — scorer 만 다시 돈다 |

@@ -12,4 +12,6 @@ prediction + GT version + metric version → metrics.
 | `classification.py` | Classification | `cl3` |
 | `plate.py` | Plate | `p2` |
 | `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c3` |
+| `persistence.py` | Persistence (트랙① 검출 지속성) | `t1` |
+| `consistency.py` | Candidate 반복 실행 일관성 (`eval.repeat`) | `r1` |
 | `interval.py` | 비율 지표의 Wilson 95% 구간 (stage 무관 · 공용) | — |
