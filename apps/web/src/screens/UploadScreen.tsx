@@ -7,7 +7,7 @@ export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
 const DROP_TEXT: Record<Exclude<UploadState, 'done'>, string> = {
   idle: '여기에 영상 파일을 끌어다 놓으세요',
-  uploading: '올리는 중',
+  uploading: '업로드 중',
   fail: '업로드 실패',
 }
 

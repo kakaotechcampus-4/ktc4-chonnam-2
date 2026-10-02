@@ -21,7 +21,7 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
         </div>
         {hints.situation && (
           <div className="kv-row">
-            <span className="kv-k">말한 상황</span>
+            <span className="kv-k">적어 주신 상황</span>
             <span className="kv-v">
               <span className="kv-val">{hints.situation}</span>
             </span>
@@ -29,7 +29,7 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
         )}
         {hints.time && (
           <div className="kv-row">
-            <span className="kv-k">말한 시각</span>
+            <span className="kv-k">적어 주신 시각</span>
             <span className="kv-v">
               <span className="kv-val">{hints.time}</span>
             </span>

@@ -257,6 +257,12 @@ export function DemoFlow(): JSX.Element {
   // 새 모양(refresh.css)을 입힌 화면만 페이지 바탕을 바꾼다. 결과·다른 후보·번호판 확인·
   // 자세히 보기·위반 미관찰은 협의 뒤에 옮긴다.
   const restyled = main.kind !== 'done' || done?.end === 'notFound' || done?.end === 'failed'
+  // 새 모양 화면으로 넘어가면 맨 위에서 시작한다 — 업로드 화면 아래쪽 버튼을 누른 스크롤
+  // 위치가 진행 화면에 그대로 남지 않게. 제외한 화면의 동작은 바꾸지 않는다.
+  const screenKey = main.kind === 'done' ? `done-${done?.end}` : main.kind
+  useEffect(() => {
+    if (restyled && window.scrollY > 0) window.scrollTo(0, 0)
+  }, [screenKey, restyled])
   const reselect = () => start(rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요'))
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
   const onAction = (a: Action) => {
@@ -299,7 +305,7 @@ export function DemoFlow(): JSX.Element {
         {main.kind === 'flow' && (
           <FlowScreen
             view={main.run.frames[main.frame]}
-            fileName={files.map((f) => f.name).join(', ')}
+            files={files.map((f) => f.name)}
             situation={situation}
             startedAt={main.startedAt}
             title={main.run.title}

@@ -28,7 +28,7 @@ function start(caseKey: string) {
 
 it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 돌아온다', () => {
   const { text, wait, getByText, container } = start('main')
-  expect(text()).toContain('올리는 중')
+  expect(text()).toContain('업로드 중')
   wait()
   expect(text()).toContain('업로드 완료 · 영상 1개')
   fireEvent.click(getByText('영상에서 찾아보기'))
