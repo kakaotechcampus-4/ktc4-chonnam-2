@@ -27,6 +27,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
 | [`official-inputs/README.md`](./official-inputs/README.md) | 카테캠 운영진 공지(AWS 환경 · ML API 등) 사본. 외부 입력이며 결정이 아님 |
 | [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
+| [`reviews/README.md`](./reviews/README.md) | 특정 시점의 Runtime/Ops 정합성 검수·review evidence. Audited SHA 기준으로만 읽으며 결정의 SoT가 아님 |
 | `decisions/` | 장기 영향을 주는 실제 Runtime 결정이 생겼을 때만 ADR 추가 |
 
 빈 ADR 폴더를 미리 만들지는 않는다.
@@ -72,28 +73,32 @@ Runtime 구현 시 다음 문서를 직접 참조한다.
 
 schema, enum, 불변조건을 Runtime 문서로 복사해 별도 SoT를 만들지 않는다. Logical ERD에서 JSON/관계 테이블처럼 물리 저장 선택이 열려 있으면 Runtime Tech Spec이 구현 근거를 가지고 닫는다.
 
-## 현재 구현 상태 — 2026-09-19
+## 현재 구현 상태 — 2026-10-02 (`develop` `9c204ee` 기준)
 
 ### 확인된 구현
 
 - 여러 domain module Python 구현과 pytest
-- `JobExecution v1.1` in-memory lifecycle
-- recording fixture/in-memory public capability + `purge_case`
+- Python 3.12 정렬 — root `pyproject.toml` · `uv.lock` · `.python-version` · CI workflow
+- CI: repo-wide pytest(offline fixture) · Recording 합성 media smoke · boundary / contract fixture 검사 (상세 [Ops Spec](./ops-spec.md) §19)
+- `JobExecution v1.1` in-memory lifecycle (`InMemoryJobExecutionStore`)
+- recording 실제 ffmpeg AnalysisSource materialization · 다중 원본 Timeline · `purge_case`
+- search 실제 Elice ML API 호출 경로
+- case 동기 real 경로 — case adapter가 Search·Fine·Readout을 **같은 프로세스에서 동기로 직접 호출**한다. Runtime queue와 JobExecution을 거치지 않고, case가 남기는 JobRecord는 in-memory case store에만 있다
 - Mock Pack / contract validator / boundary checker
-- boundary-check GitHub Action
-- root `pyproject.toml` / `uv.lock`
 
 ### 아직 구현되지 않은 Runtime
 
+- MySQL Runtime persistence (JobExecution · UsageRecord · migration)
 - MySQL DB Queue / claim
 - lease / heartbeat / stale sweep
-- API composition root
-- Worker composition root
-- UsageRecord DB persistence
-- live / ready endpoint
-- Runtime Docker Compose deployment
+- API composition root (`src/daesingo/api/`는 README만 있음)
+- Worker composition root (`src/daesingo/worker/`는 README만 있음)
+- Final `UsageRecord` persistence — Search 내부 ledger는 있으나 Final Contract 원장이 아니다
+- live / ready health endpoint
+- Runtime Docker / Compose deployment
+- deployment workflow
 
-따라서 Runtime Tech/Ops 문서의 일부는 **현재 동작 설명이 아니라 구현 acceptance criteria**다.
+따라서 Runtime Tech/Ops 문서의 일부는 **현재 동작 설명이 아니라 구현 acceptance criteria**다. 검수 근거는 [`reviews/runtime-ops-consistency-audit-2026-10-02.md`](./reviews/runtime-ops-consistency-audit-2026-10-02.md) §4 A-01 · §6.
 
 ## Recording / Search Benchmark와의 관계
 
@@ -134,13 +139,9 @@ Issue #95의 Elice 전환 P0/P1 결과는 Recording/Search가 소유한 실험 �
 → 장기 구조 결정이면 decisions/ ADR
 ```
 
-현재 다음 경계는 별도 후속 이슈 #153에서 Search 주도로 전수조사 중이므로 Runtime 문서가 먼저 확정하지 않는다.
+provider/usage/pricing/config 경계는 후속 Issue #153에서 Search 전수조사 후 Search·Runtime Owner가 합의했다(2026-09-26). 통화 정규화는 그보다 앞서 #19 답변으로 결정됐다([`budget-krw-normalization.md`](../modules/case/decisions/budget-krw-normalization.md), 2026-09-09). Runtime 쪽 반영은 [Tech Spec](./runtime-tech-spec.md) §11.3(pricing · 통화)과 §15.1(config · key naming)이 담는다.
 
-- provider/usage legacy 표현의 유지·변경 여부
-- pricing 데이터의 SSOT 및 Search/Eval/Runtime 소비 경계
-- provider config/key naming의 유지·migration 여부
-
-Runtime 쪽에서 확정된 책임은 Final `UsageRecord` persistence, Worker/composition root의 config·secret 주입 경계, queue/retry/lease/heartbeat/observability다.
+Runtime 쪽에서 확정된 책임은 Final `UsageRecord` persistence와 실행 시점 pricing context · cost snapshot 보존, Worker/composition root의 config·secret 주입 경계, queue/retry/lease/heartbeat/observability다. 합의 항목(`pricing_id` · key rename · KRW 정규화)은 아직 develop에 구현되지 않았다.
 
 P2 Runtime Capacity Smoke의 계획과 결과는 [`experiments/`](./experiments/README.md)에서 관리한다.
 
@@ -153,12 +154,14 @@ P2 Runtime Capacity Smoke의 계획과 결과는 [`experiments/`](./experiments/
 - `JobExecution.produced` 물리 저장: JSON vs 관계 테이블
 - `JobExecution.usage_refs` materialization: 별도 저장 vs `UsageRecord.execution_ref` projection
 - UsageRecord final append timing / in-flight invocation 복구·중복 방지
+- retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 (Tech Spec §6.3)
 - retry max/backoff/jitter
 - lease duration
 - heartbeat interval
 - STALE threshold
 - Worker polling/sweep interval
-- UsageRecord persistence / pricing SSOT 소비 경계 — #153 조사 결과를 받아 확정
+- UsageRecord persistence shape
+- `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · KRW 환산 출처 — 정책 자체(Search rate 주입 유지 · KRW 정규화)는 닫혔다(Tech Spec §11.3)
 
 ### Ops
 

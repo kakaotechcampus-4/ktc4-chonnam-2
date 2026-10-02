@@ -78,7 +78,7 @@
 | --- | --- | --- | --- | --- |
 | `execution_id` | string | Y | 실행 1회분의 고유 식별자. 재사용하지 않는다 | 신규 (§10-1) |
 | `job_id` | string | Y | 소속 `JobRecord.job_id` | ADR 부록-A §6 |
-| `status` | enum(5) | Y | 실행 상태 | **ADR 부록-A §13-2 확정** |
+| `status` | enum(6) | Y | 실행 상태. 값은 §6 (v1.1에서 `CANCELLED` 추가) | **ADR 부록-A §13-2 확정** · v1.1 |
 | `attempt` | int | Y | 이 `job_id`에 대한 몇 번째 시도인가. 1부터 시작 | ADR 부록-A §6 이관 목록 |
 | `queued_at` | ISO8601 | Y | queue에 들어간 시각 | 신규 (§10-2) |
 | `started_at` | ISO8601 \| null | Y(키) | `RUNNING` 진입 시각. `QUEUED`면 null | 신규 (§10-2) |

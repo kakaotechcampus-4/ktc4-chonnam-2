@@ -97,7 +97,7 @@ json
 {  "job_id": "string",  "case_id": "string",  "case_rev": "int",  "kind": "string",  "scope_ref": "string | null",  "input_fingerprint": "string",  "force_rerun": "boolean",  "requested_at": "ISO8601"}
 ```
 
-> status/attempt/cost/produced/failure_kind는 별도 `JobExecution` 계약으로 이관한다. `JobExecution`은 runtime/common이 소유하며 주요 Owner는 김준영, 구현 담당은 정철원이다. 실행 상태 enum은 `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE`로 고정한다.
+> status/attempt/cost/produced/failure_kind는 별도 `JobExecution` 계약으로 이관한다. `JobExecution`은 runtime/common이 소유하며 주요 Owner는 김준영, 구현 담당은 정철원이다. 실행 상태 enum은 `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE`로 고정한다. **(2026-10-02 · 표기 정합, 버전 유지)** `job-execution/v1.1`(2026-09-10)에서 `CANCELLED`가 추가돼 현재 6값이다 — 값 목록의 정본은 `contract-job-execution.md` §6이다.
 > 
 
 ### 6. 필드 정의
@@ -164,7 +164,7 @@ json
 ### 12. 후속 구현 범위
 
 - `JobExecution` Producer/Owner: runtime/common, 주요 Owner 김준영, 구현 담당 정철원 — 2026-09-04 백엔드 회의에서 확정
-- `JobExecution.status`: `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE`
+- `JobExecution.status`: `QUEUED / RUNNING / SUCCEEDED / FAILED / STALE` (v1 당시. `job-execution/v1.1`에서 `CANCELLED` 추가 — 정본 `contract-job-execution.md` §6)
 - heartbeat/lease/retry/backoff/DB 구조는 Runtime 구현 세부이며 본 Job Intent 계약의 closure를 막지 않는다.
 - kind 표시용 `label_key`/fallback은 부록-B `CaseView` 계약에서 확정한다. 등재된 `label_key`: `job.plate_read` · `job.overlay_time_read`(2026-09-07 추가) · `job.fine_verify` · `job.report_video_export`(2026-09-09 추가) · `job.plate_image_export`(2026-09-28 추가, 이슈 #47). `COARSE_SEARCH`는 아직 전용 `label_key`가 없어 `job.generic_processing` fallback을 그대로 쓴다(유소연 확인, 우선순위 낮음 — 필요해지면 `job.coarse_search`로 등재). 미등록 kind는 `job.generic_processing` fallback(B절 §12).
 

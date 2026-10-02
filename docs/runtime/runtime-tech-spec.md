@@ -220,6 +220,8 @@ retry 필요
 → 시간이 된 뒤 새 JobExecution 생성
 ```
 
+> **Open Decision:** retry backoff 동안 다음 attempt의 생성 시점과 CaseView 대표 상태 계약([JobRecord/CaseView Contract](../architecture/contracts/contract-job-record-case-view.md) A절 §10-6)의 정합을 구현 전에 닫아야 한다. 위 순서는 그 결정 전까지 확정된 구현 순서가 아니다. 근거는 [2026-10-02 검수](./reviews/runtime-ops-consistency-audit-2026-10-02.md) B-02.
+
 ### 6.4 아직 열려 있는 Runtime 값
 
 다음 값은 Final Contract가 의도적으로 정하지 않았다.
@@ -283,6 +285,8 @@ Worker loop
 - heartbeat persistence 방식
 
 이 값은 첫 실제 DB Queue/Worker integration에서 config로 고정하고 테스트 근거를 남긴다.
+
+값을 정할 때의 입력: Job timeout과 「진행 중 Job은 강제 취소하지 않는다」는 정책은 `case`가 소유한다([`timeout-fallback.md`](../modules/case/decisions/timeout-fallback.md), 잠정값). Runtime 문서에 그 값을 복제하지 않는다.
 
 ## 8. 실패 이력과 DLQ
 
@@ -373,23 +377,30 @@ Run contract의 `usage_refs[]`와 ledger가 어긋나면 `UsageRecord.run_ref`�
 
 Runtime이 확정적으로 소유하는 것은 **Final `UsageRecord`에 실행 시 사용한 `pricing_id`, usage, 실행 시점 cost snapshot을 보존하는 책임**이다.
 
-가격표 숫자 자체의 SSOT를 Runtime config가 독점한다고 현재 단계에서 선결하지 않는다. Search는 실험/실행 중 budget 판단, Eval은 비용 비교·보고를 위해 서버 Runtime과 독립적으로 같은 가격 정보가 필요할 수 있다.
+가격표 숫자 자체의 SSOT를 Runtime config가 독점하지 않는다. Issue #153에서 Search·Runtime Owner가 합의한 현재 경계(2026-09-26)는 다음과 같다.
 
-따라서 다음 경계는 Issue #153의 Search 전수조사 결과를 받은 뒤 Search/Eval/Runtime이 함께 닫는다.
+- 현재 MVP에서는 Search가 rate를 주입받아 cost를 계산한다.
+- 공용 versioned pricing catalog는 지금 만들지 않는다. Search/Eval/Runtime이 가격표를 직접 소비해야 하는 요구가 실제로 생기면 다시 검토한다.
+- `pricing_id`는 지금 추가하는 방향이다. 의미는 「실행 시 cost 계산에 실제로 사용된 가격표의 opaque stable identifier」이고, Runtime은 내부 구조를 파싱하지 않고 전달받은 값을 그대로 보존한다. Search → Runtime 접합에는 `pricing_context.unit`과 cost도 함께 전달한다.
+- provider invocation → Search가 usage/cost/pricing context 확정 → Runtime이 Final UsageRecord append.
 
-- versioned pricing catalog가 필요한가
-- 필요하다면 exact 위치와 schema는 무엇인가
-- Search/Eval/Runtime이 같은 `pricing_id`를 어떤 방식으로 소비하는가
-- provider/model 가격 변경 이력을 어떻게 보존하는가
+통화는 별도 결정이다. budget 대상 `UsageRecord.cost`는 저장 전에 KRW로 정규화하고 `currency="KRW"`로 기록하며, provider-native 통화와 환율 provenance는 `pricing_id`가 가리키는 versioned artifact가 보존한다([`budget-krw-normalization.md`](../modules/case/decisions/budget-krw-normalization.md), 2026-09-09, #19).
 
-공용 catalog가 채택되더라도 Search의 실행 중 cost estimate와 Runtime의 authoritative ledger는 서로 다른 목적의 소비자일 수 있다. **SSOT는 가격표 데이터에 하나만 두고, 사용 주체를 하나로 제한하지 않는다.**
+아직 닫히지 않은 것은 정책이 아니라 구현 세부다.
+
+- `pricing_id`가 가리킬 versioned pricing/FX artifact의 위치와 schema
+- KRW 환산에 쓰는 FX source
+- provider/model 가격 변경 이력 보존 방식
+- provider별 실제 정산 기준(원화 크레딧과 표시 가격의 관계, [`mlapi.md`](./official-inputs/mlapi.md))
+
+공용 catalog가 나중에 채택되더라도 Search의 실행 중 cost estimate와 Runtime의 authoritative ledger는 서로 다른 목적의 소비자일 수 있다. **SSOT는 가격표 데이터에 하나만 두고, 사용 주체를 하나로 제한하지 않는다.**
 
 ### 11.4 아직 열려 있는 값
 
 - UsageRecord DB table/migration
 - invocation 시작 → final append 사이의 in-flight 추적/복구 방식
 - 호출 1건당 중복 append 방지/idempotency
-- pricing config 형식과 history 보관
+- `pricing_id`가 가리킬 pricing/FX artifact 형식·위치와 history 보관 (§11.3)
 - UsageRecord retention
 - `purge_case()`와 ledger 삭제 관계
 
@@ -479,7 +490,7 @@ search
 
 따라서 Runtime이 Elice request schema나 `reasoning_effort` 같은 provider semantics를 별도 설정 모델로 복제하지 않는다.
 
-현재 `GEMINI_API_KEY` 같은 compatibility naming의 유지·migration, provider label, pricing config의 exact ownership은 Issue #153의 Search 전수조사 결과를 기다린다. Runtime 구현 편의를 이유로 먼저 rename하거나 별도 가격표를 복제하지 않는다.
+provider label · provider config 의미와 validation은 Search가 소유한다(Issue #153 합의, 2026-09-26). key naming은 `GEMINI_API_KEY → ELICE_ML_API_KEY` rename 방향으로 합의됐고, 기존 `.env` 호환 alias는 `common/env.py`가 아니라 **Search config 내부**에 둔다. alias 제거는 팀 `.env`와 deployment secret migration이 끝난 뒤다. rename 자체는 Search 작업이며 develop에 아직 반영되지 않았다. Runtime은 구현 편의를 이유로 Search보다 먼저 rename하거나 별도 가격표를 복제하지 않는다. pricing 경계는 §11.3을 따른다.
 
 secret은 repository config에 저장하지 않는다.
 
@@ -517,26 +528,31 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 
 실제 외부 AI provider 호출은 일반 PR CI의 결정론적 gate에서 분리한다.
 
-## 17. 현재 구현 상태 — 2026-09-19
+## 17. 현재 구현 상태 — 2026-10-02 (`develop` `9c204ee` 기준)
 
 현재 `develop`에서 확인된 것:
 
 - `src/daesingo/common/job_execution.py`
   - JobExecution v1.1 model
   - 허용 상태 전이
-  - in-memory attempt 연속성
+  - in-memory attempt 연속성 (`InMemoryJobExecutionStore`)
   - STALE/CANCELLED
 - 여러 domain module pytest / Mock Pack / contract validator
+- CI: repo-wide pytest · Recording media smoke · boundary / contract fixture 검사 (Python 3.12, [Ops Spec](./ops-spec.md) §5 · §19)
+- 동기 real 경로: case adapter가 Search·Fine·Readout public capability를 같은 프로세스에서 직접 호출한다. Runtime queue와 JobExecution을 거치지 않으며, case가 남기는 JobRecord는 in-memory case store에만 있다
+- Search 내부 usage ledger (Final `UsageRecord` Contract 원장이 아니다)
 - API/Worker 책임 README
 
 아직 구현되지 않은 것:
 
+- MySQL Runtime persistence · migration
 - 실제 MySQL DB Queue / claim
 - lease / heartbeat
 - stale sweep
 - API composition root
 - Worker composition root
-- Runtime UsageRecord DB persistence
+- case → Runtime 발주 경로
+- Final UsageRecord persistence
 - Runtime health endpoint
 
 따라서 이 문서는 **구현 완료 설명서가 아니라 다음 Runtime 구현의 acceptance 기준**이다.
@@ -550,6 +566,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [ ] `JobExecution.usage_refs` materialization — 별도 저장 vs `UsageRecord.execution_ref` projection
 - [ ] UsageRecord final append timing / in-flight recovery / duplicate prevention
 - [ ] claim transaction / locking query
+- [ ] retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 (§6.3 Open Decision)
 - [ ] retry max
 - [ ] backoff + jitter
 - [ ] lease duration
@@ -559,8 +576,8 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [ ] worker polling interval
 - [ ] Runtime configuration shape
 - [ ] UsageRecord persistence shape
-- [ ] pricing SSOT / catalog consumption boundary — Issue #153 조사 결과 후 Search/Eval/Runtime 공동 결정
-- [ ] provider config/key naming boundary — Issue #153 조사 결과 후 확정
+- [ ] `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · FX source — 정책은 §11.3에서 닫힘 (Search rate 주입 유지 · KRW 정규화)
+- [x] provider config/key naming boundary — Issue #153 합의로 닫힘 (§15.1). rename 구현은 Search 작업으로 남음
 
 결정이 여러 구현에 장기 영향을 주면 `docs/runtime/decisions/`에 ADR을 추가한다. 단순 config 튜닝값마다 ADR을 만들지는 않는다.
 
