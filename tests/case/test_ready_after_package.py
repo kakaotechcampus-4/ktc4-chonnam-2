@@ -21,7 +21,7 @@ MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 
 
 class _SnapshotAdapter:
-    """`fetch_case_view_inputs()`가 읽는 6개 getter만 가진 스냅샷."""
+    """`fetch_case_view_inputs()`가 읽는 getter만 가진 스냅샷."""
 
     def __init__(
         self,
@@ -46,11 +46,22 @@ class _SnapshotAdapter:
     def get_plate_read_status(self) -> str | None:
         return None
 
+    def get_evidence_needs(self) -> list[dict[str, Any]]:
+        return []
+
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         return []
 
+    def get_visual_evidence_decision(self) -> str | None:
+        return None
 
-_EVIDENCE = {"record_ref": {"kind": "evidence_record", "ref": "er_test_001"}}
+
+_EVIDENCE = {
+    "record_ref": {"kind": "evidence_record", "ref": "er_test_001"},
+    # 아래 `_case_in_evidence_review()`의 선택 context — 첫 선택이라 selection_rev=1.
+    "basis": {"candidate_ref": {"kind": "candidate_event", "ref": "cand_ready_gate"}},
+    "selection_rev": 1,
+}
 _PACKAGE = {"package_ref": {"kind": "report_package", "ref": "pkg_test_001"}}
 
 
@@ -109,6 +120,26 @@ def test_package_without_passing_final_report_is_not_ready() -> None:
 
     assert service.mark_ready_if_package_ready(case, adapter) is False
     assert case.stage == "EVIDENCE_REVIEW"
+
+
+@pytest.mark.parametrize(
+    "basis_candidate, selection_rev",
+    [("cand_other", 1), ("cand_ready_gate", 0)],
+    ids=["other-candidate", "previous-selection-context"],
+)
+def test_package_from_another_selection_is_not_ready(basis_candidate: str, selection_rev: int) -> None:
+    """READY는 **현재 선택**의 Package로만 — CaseView가 evidence를 거르는 기준(#191)과 같다.
+    다르면 stage는 READY인데 CaseView의 evidence·package는 null이 된다(I1). 결과가 늦게 도착하는
+    worker 경로(W7 6.6순위)에서 이전 선택의 Package가 오는 경우다."""
+    case = _case_in_evidence_review()
+    rev = case.case_rev
+    evidence = dict(_EVIDENCE, basis={"candidate_ref": {"kind": "candidate_event", "ref": basis_candidate}},
+                    selection_rev=selection_rev)
+    adapter = _SnapshotAdapter(evidence_record=evidence, final_readiness="PASS", report_package=_PACKAGE)
+
+    assert service.mark_ready_if_package_ready(case, adapter) is False
+    assert case.stage == "EVIDENCE_REVIEW"
+    assert case.case_rev == rev
 
 
 # ── domain 가드 — READY는 준비된 Package 없이 들어갈 수 없다 ──────────────
