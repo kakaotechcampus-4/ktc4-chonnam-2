@@ -194,3 +194,30 @@ def test_candidate_bound_chain_restarts_in_new_selection():
     )
 
     assert fresh["supersedes_ref"] is None
+
+
+# ── 무변경 정정(correction-record §8-7) ─────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("kind", "target_field", "value"),
+    [
+        ("EVENT_TIME_MANUAL", "occurred_at", "2026-08-24T18:05:12+09:00"),
+        ("PLATE_MANUAL_EDIT", "vehicle_number", "12가3456"),
+        ("REPORT_TYPE_CHANGE", "event.safety_report_type", "TRAFFIC_VIOLATION"),
+    ],
+)
+def test_apply_correction_with_no_actual_change_creates_nothing(kind, target_field, value):
+    """§8-7: `new_value`가 `previous_value`와 같으면 CorrectionRecord를 만들지 않는다. 예전엔 기록하고
+    `case_rev`를 올려, evidence가 조립할 때 `a correction must change the value`로 거부했다 — 기록은
+    되돌리지 않으므로(§8-9) 그 case는 이후 CaseView를 만들 수 없었다(orchestration 러너로 발견)."""
+    case = _case_at_evidence_review()
+    rev_before = case.case_rev
+
+    record = correction.apply_correction(
+        case, kind=kind, target_field=target_field, previous_value=value, new_value=value,
+    )
+
+    assert record is None
+    assert case.correction_records == []
+    assert case.case_rev == rev_before

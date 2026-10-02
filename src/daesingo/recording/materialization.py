@@ -44,6 +44,25 @@ class MaterializedVideo:
     timeline_range: TimeRange
 
 
+def _millisecond_quantization(payload, base, frames):
+    """좁은 Matroska 반올림 패턴만 인정한다. fps를 생성/길이 추정에 사용하지 않는다."""
+    if (base != Fraction(1, 1000)
+            or "matroska" not in payload.get("format", {}).get("format_name", "").split(",")
+            or len(frames) < 3 or len({length for _, length in frames}) != 1):
+        return False
+    length = frames[0][1]
+    if length <= base:
+        return False
+    # 모든 PTS가 동일 주기를 nearest-tick으로 반올림한 시각과 양립해야 한다.
+    # 각 frame의 제약을 교차시켜 단발 gap이나 누적 drift를 무조건 허용하지 않는다.
+    lower, upper = length - base, length + base
+    origin = frames[0][0]
+    for i, (at, _) in enumerate(frames[1:], 1):
+        lower = max(lower, (at - origin - base / 2) / i)
+        upper = min(upper, (at - origin + base / 2) / i)
+    return lower < upper
+
+
 class LocalAnalysisMaterializer:
     def __init__(self, profiles: dict[str, AnalysisProfile], *, ffmpeg="ffmpeg", ffprobe="ffprobe",
                  timeout_sec=120.0, temp_root: Path | None = None):
@@ -76,7 +95,7 @@ class LocalAnalysisMaterializer:
         return json.loads(self._run(args))
 
     @staticmethod
-    def _frames(payload):
+    def _frames(payload, *, expected_coverage=None):
         streams = payload["streams"]
         if len(streams) != 1 or streams[0]["codec_type"] != "video":
             raise ValueError("단일 VIDEO 검증 실패")
@@ -100,11 +119,36 @@ class LocalAnalysisMaterializer:
                 # 다음 presentation timestamp까지의 표시 구간. 일정 fps를 가정하지 않는다.
                 length = timestamps[i + 1] - at
             else:
-                # container duration은 다른 stream을 포함할 수 있어 마지막 frame의 근거가 아니다.
-                raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                # 검증한 원본 coverage와 출력의 모든 상대 PTS/개수, stream 끝을
+                # 교차 확인한다. container 길이나 고정 fps만으로 tail을 추정하지 않는다.
+                matched = (expected_coverage is not None
+                    and len(timestamps) == len(expected_coverage)
+                    and timestamps[0] == 0
+                    and all(at == expected_at and length > 0
+                            for at, (expected_at, length) in zip(timestamps, expected_coverage))
+                    and all(a + length == b for (a, length), (b, _) in
+                            zip(expected_coverage, expected_coverage[1:])))
+                try:
+                    stream_end = Fraction(streams[0].get("duration", "N/A"))
+                except (ValueError, TypeError, ZeroDivisionError):
+                    stream_end = None
+                if (not matched or stream_end != expected_coverage[-1][0] + expected_coverage[-1][1]):
+                    raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                length = stream_end - at
             frames.append((at, length))
         if any(a + length != b for (a, length), (b, _) in zip(frames, frames[1:])):
-            raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
+            # 출력은 검증된 millisecond source에서 선택한 PTS와 정확히 같을 때만 허용한다.
+            matched_output = (expected_coverage is not None and base == Fraction(1, 1000)
+                and len(frames) == len(expected_coverage)
+                and all(at - frames[0][0] == expected_at
+                        for (at, _), (expected_at, _) in zip(frames, expected_coverage)))
+            if ((not matched_output and not _millisecond_quantization(payload, base, frames))
+                    or any(abs(b - a - length) > base
+                           for (a, length), (b, _) in zip(frames, frames[1:]))):
+                raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
+            # PTS는 보존한다. 중간 coverage만 다음 관측 PTS까지 정규화한다.
+            # 마지막 frame은 위에서 검증한 duration/출력 coverage 근거를 그대로 유지한다.
+            frames = [(a, b - a) for (a, _), (b, _) in zip(frames, frames[1:])] + [frames[-1]]
         return base, [(at - frames[0][0], length) for at, length in frames]
 
     @observed_materialization
@@ -129,7 +173,7 @@ class LocalAnalysisMaterializer:
                     raw = self._probe(source.path, index)
                     base, frames = self._frames(raw)
                     # raw frame JSON은 보관하지 않고 검증된 coverage와 stream metadata만 보관한다.
-                    inspected = ({"streams": raw["streams"]}, base, frames)
+                    inspected = ({"streams": raw["streams"], "format": raw.get("format", {})}, base, frames)
                 raw, base, frames = inspected
             with phase("frame_prepare"):
                 input_stream = raw["streams"][0]
@@ -155,7 +199,10 @@ class LocalAnalysisMaterializer:
                 with phase("output_probe"):
                     probed = self._probe(output)
                 with phase("output_validate"):
-                    output_base, output_frames = self._frames(probed)
+                    expected = ([(at - actual_start, length) for _, at, length in selected]
+                        if base == Fraction(1, 1000)
+                        and "matroska" in raw.get("format", {}).get("format_name", "").split(",") else None)
+                    output_base, output_frames = self._frames(probed, expected_coverage=expected)
                     stream = probed["streams"][0]
                     if (stream["codec_name"] != "h264" or stream["height"] != profile.height
                             or stream["width"] != width or stream["pix_fmt"] != "yuv420p"

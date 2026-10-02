@@ -19,6 +19,7 @@ _NORMALIZERS = {
     "candidate": normalize.normalize_candidate,
     "classification": normalize.normalize_classification,
     "plate": normalize.normalize_plate,
+    "persistence": normalize.normalize_persistence,
 }
 
 
@@ -93,7 +94,9 @@ def main(argv=None):
         print("실패: %s" % e, file=sys.stderr)
         return 5
 
-    outdir = paths.predictions_dir()
+    # private manifest 의 예측에는 차량번호가 들어간다 — 레포 밖에만 쓴다.
+    outdir = (paths.private_predictions_dir() if paths.is_private(args.manifest)
+              else paths.predictions_dir())
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, run_id + ".json")
     if os.path.exists(out):

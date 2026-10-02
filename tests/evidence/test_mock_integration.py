@@ -27,7 +27,8 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(set(), unknown_codes)
         self.assertEqual("CONFIRMED", record["situation_response"]["value"])
         guard = result["policy_guard_check"]
-        self.assertEqual("NOT_ASKED", guard["shared_case_situation_confirmation"])
+        self.assertEqual("CONFIRMED", guard["shared_case_situation_confirmation"])
+        self.assertEqual(guard["shared_case_situation_confirmation"], CONFIGS["scenario_happy_001"]["situation_response"]["value"])
         self.assertEqual("report.input.situation_unconfirmed", guard["without_confirmation"]["render_error"])
         self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
         self.assertFalse(guard["without_confirmation"]["report_package_emitted"])

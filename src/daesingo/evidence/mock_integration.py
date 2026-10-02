@@ -36,6 +36,7 @@ SCENARIOS = (
     "scenario_plate_reread_001",
     "scenario_correction_rerun_001",
 )
+PACKAGE_VERSION_DIFFERENCE = "The executable Package uses report-package/v1.2 and safety-report-policy/v1.2 (ADR-EVIDENCE-008); the I2-owned shared package still records report-package/v1.1 and safety-report-policy/v1.1. Only these version labels differ; the rendered report and report_inputs match."
 _IMPLEMENTATION_FILES = (
     "src/daesingo/evidence/__init__.py",
     "src/daesingo/evidence/_contract.py",
@@ -450,11 +451,10 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         "known_differences": [],
     }
     if scenario_id == "scenario_happy_001":
-        comparison["known_differences"].append("The executable Package uses an explicit test-derived CONFIRMED response because the shared CaseView remains NOT_ASKED; the guard result preserves the unconfirmed shared-input path.")
-        comparison["known_differences"].append("The executable Package uses report-package/v1.2 and safety-report-policy/v1.2; the I2-owned shared package still uses report-package/v1 text and policy/package-assembly-v1.")
-        comparison["known_differences"].append("Baseline location uses the case hint directly and does not invent the shared fixture search_keyword.")
+        comparison["known_differences"].append("The shared fixture records the pre-response ev_h001 (FINAL_PACKAGE UNKNOWN) superseded by the CONFIRMED ev_h001_v2; the executable baseline assembles one CONFIRMED record from the adapter response, so requirement overalls and the Package evidence/requirement refs differ while the rendered Package content matches. The guard result preserves the pre-response path.")
+        comparison["known_differences"].append(PACKAGE_VERSION_DIFFERENCE)
     if scenario_id == "scenario_unknown_abstain_partial_001":
-        comparison["known_differences"].append("The executable Package uses report-package/v1.2 and the no-location generic template; the I2-owned shared package still uses report-package/v1 and the location-bearing generic template.")
+        comparison["known_differences"].append(PACKAGE_VERSION_DIFFERENCE)
         comparison["known_differences"].append("The no-location generic renderer omits the location phrase and never invents a location value.")
 
     return {
