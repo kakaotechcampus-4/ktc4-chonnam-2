@@ -38,6 +38,8 @@ OPEN DECISION
 
 단순 문서 위생 문제는 묶어서 처리하고, 구현 방향을 잘못 유도할 수 있는 정합성 문제는 즉시 별도 Issue로 만든다. 이 단계에서 나온 `OPEN DECISION`은 §2 Decision Register의 입력으로 넘긴다.
 
+검수 결과는 Audited SHA와 함께 [`reviews/`](./reviews/README.md)에 evidence로 보존한다. review는 결정의 SoT가 아니다.
+
 ---
 
 ## 1. 공식정보·외부 제약 확인
@@ -130,11 +132,12 @@ Docker service command
 
 ```text
 HTTP API Contract
-pricing SSOT
-provider config/key naming
+pricing/FX artifact 위치 · FX source
 AnalysisSource storage/reuse
 retention
 ```
+
+pricing 정책(Search rate 주입 유지 · `pricing_id` 추가 · KRW 정규화)과 provider config/key naming은 이미 닫혔다([Tech Spec](./runtime-tech-spec.md) §11.3 · §15.1). 여기서 다시 결정 후보로 올리지 않는다.
 
 필요한 Owner만 호출해서 Issue에서 빠르게 결정한다.
 
