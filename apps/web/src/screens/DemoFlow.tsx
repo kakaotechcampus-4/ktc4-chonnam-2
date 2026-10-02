@@ -305,7 +305,8 @@ export function DemoFlow(): JSX.Element {
         {main.kind === 'flow' && (
           <FlowScreen
             view={main.run.frames[main.frame]}
-            files={files.map((f) => f.name)}
+            files={files}
+            skipped={demo.upload === 'partial' ? DEMO_SKIPPED : []}
             situation={situation}
             startedAt={main.startedAt}
             title={main.run.title}

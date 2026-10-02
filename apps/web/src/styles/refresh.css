@@ -194,11 +194,18 @@ body:has(.rs-page) { background: #fff; }
 /* ============================================================
    진행 화면 — 지금 하는 작업이 가장 크고, 영상·상황·경과 시간은 보조, 단계 목록은 아래에 작게
    ============================================================ */
-.rs.flow { width: 100%; max-width: 760px; margin: 0 auto; padding: 64px 0 8px; display: flex; flex-direction: column; }
+.rs.flow {
+  width: 100%; max-width: 1040px; margin: 0 auto; padding: 56px 0 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 64px; align-items: start;
+}
+.flow-main { min-width: 0; display: flex; flex-direction: column; }
 .flow-overall { margin: 0 0 10px; font-size: 17px; color: var(--rs-sub); }
 .rs .flow-now { margin: 0; animation: rs-swap .35s var(--rs-ease) both; }
 /* 제목 아래 상태 줄 — 단계 목록과 같은 표시(검정 원형 로딩·검정 체크·빨강). 높이는 늘 같다 */
-.flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 12px 0 0; font-size: 15px; color: var(--rs-sub); }
+.flow-status-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 12px 0 0; }
+.flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 0; font-size: 15px; color: var(--rs-sub); }
+.flow-elapsed { margin: 0; font-size: 15px; color: var(--rs-sub); }
+.flow-elapsed span { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
 .flow-status-mark { position: relative; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--rs-line); transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease); }
 .flow-status.is-running { color: var(--rs-ink); }
 .flow-status.is-running .flow-status-mark { border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin .9s linear infinite; }
@@ -215,12 +222,28 @@ body:has(.rs-page) { background: #fff; }
 .flow-partial-mark { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--red); transform: translateY(-1px); }
 @keyframes rs-swap { from { opacity: 0; transform: translateY(6px); } }
 
-.flow-meta { list-style: none; margin: 28px 0 48px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.flow-meta li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.55; color: var(--rs-sub); }
-.flow-meta li svg { flex: 0 0 auto; margin-top: 3px; }
-/* 긴 파일 이름·상황 설명은 자르지 않고 줄을 바꾼다. 여러 파일은 쉼표로 잇는다 */
-.flow-meta li > span, .flow-meta li > details { min-width: 0; overflow-wrap: anywhere; }
+/* 대표 영상 — 정지 화면 한 장(16:9). 못 그리면 필름 아이콘과 파일 이름 */
+.flow-thumb { margin: 32px 0 0; }
+.flow-thumb-frame {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+  background: var(--rs-fill); border: 1px solid #e8e8ed; border-radius: 16px;
+  display: grid; place-items: center;
+}
+.flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-screen-in .35s var(--rs-ease) both; }
+.flow-thumb-fallback {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 24px;
+  text-align: center; font-size: 15px; color: var(--rs-sub); overflow-wrap: anywhere;
+}
+.flow-thumb-fallback svg { color: var(--rs-ink); }
+.flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 10px; font-size: 14px; color: var(--rs-sub); }
+.flow-thumb-name { min-width: 0; text-align: right; overflow-wrap: anywhere; color: var(--rs-ink); }
+
+.flow-situation { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rs-line); }
+.flow-situation h2 { margin: 0 0 6px; font-size: 14px; font-weight: 500; color: var(--rs-sub); }
+.flow-situation p { margin: 0; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+
 /* 여러 파일 — 「영상 N개」를 눌러(또는 Enter·Space) 펼친다. 기본은 접힘 */
+.flow-files { margin-top: 20px; font-size: 15px; min-width: 0; }
 .flow-files summary {
   display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none;
   color: var(--rs-ink); border-radius: 6px;
@@ -232,10 +255,12 @@ body:has(.rs-page) { background: #fff; }
 .flow-files ul { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid #ececf0; }
 .flow-files[open] ul { animation: rs-drop-in .3s var(--rs-ease) both; }
 .flow-files li { padding: 6px 0; border-bottom: 1px solid #ececf0; overflow-wrap: anywhere; }
-.flow-elapsed { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
 
 /* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
-.rs.flow .panel { padding: 20px 0 0; background: none; border: 0; border-top: 1px solid var(--rs-line); border-radius: 0; box-shadow: none; }
+.rs.flow .panel { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.flow-steps { padding-top: 8px; }
+.rs.flow .flow-steps .sec-label { padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--rs-line); font-size: 16px; font-weight: 650; color: var(--rs-ink); }
+.flow-steps-count { font-size: 14px; font-weight: 500; color: var(--rs-sub); }
 .rs.flow .sec-label { margin: 0 0 4px; padding: 0; border: 0; font-size: 14px; font-weight: 600; color: var(--rs-sub); }
 .rs.flow .timeline { padding: 0; }
 .rs.flow .timeline li {
@@ -327,7 +352,7 @@ body:has(.rs-page) { background: #fff; }
 
 @media (max-width: 640px) {
   .rs.upload, .rs.flow { padding-top: 32px; }
-  .flow-meta { margin: 20px 0 32px; }
+  .rs.flow { grid-template-columns: 1fr; gap: 40px; }
   .rs-lede { margin-bottom: 32px; font-size: 16px; }
   .rs-drop-in { padding: 40px 18px 32px; }
   .rs-drop.is-idle .rs-drop-in, .rs-drop.is-uploading .rs-drop-in { min-height: 0; }

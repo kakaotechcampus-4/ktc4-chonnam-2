@@ -47,3 +47,13 @@ export const CURRENT_STEP_STATE = {
 
 /** 파일이 여러 개일 때 접힌 목록의 제목 */
 export const videoCount = (n: number): string => `영상 ${n}개`
+
+/** 진행 화면 오른쪽 단계 목록 제목과 개수(progress 길이 그대로) */
+export const STEPS_HEADING = '진행 단계'
+export const stepCount = (n: number): string => `전체 ${n}단계`
+
+/** 업로드에서 정상으로 받아들인 첫 파일의 정지 화면 자리. 분석 중인 파일이라는 뜻이 아니다 */
+export const REPRESENTATIVE_VIDEO = '대표 영상'
+
+/** 상황 설명 제목 — 결과 없음 화면의 「적어 주신 상황」과 같은 말 */
+export const SITUATION_HEADING = '적어 주신 상황'

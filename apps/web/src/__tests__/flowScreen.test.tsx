@@ -24,7 +24,9 @@ function view(states: Record<string, State>, notices: Notice[] = []): CaseView {
 }
 const DONE_TO_REVIEW = { file_intake: 'DONE', coarse_search: 'DONE', candidate_review: 'DONE' } as const
 
-function show(v: CaseView, files = ['a.mp4']) {
+const file = (name: string) => new File([''], name, { type: 'video/mp4' })
+
+function show(v: CaseView, files = [file('a.mp4')]) {
   return render(<FlowScreen view={v} files={files} situation="" startedAt={Date.now()} />)
 }
 
@@ -52,7 +54,7 @@ it('진행 중인 단계가 잠깐 없으면 「계속」이라고도 「중단�
   r.rerender(
     <FlowScreen
       view={view({ ...DONE_TO_REVIEW, plate_read: 'FAILED' })}
-      files={['a.mp4']}
+      files={[file('a.mp4')]}
       situation=""
       startedAt={Date.now()}
     />,
@@ -77,7 +79,7 @@ it('blocking notice가 있으면 「나머지 작업은 계속」을 내지 않�
 
 it('끝난 단계를 제목으로 둘 때는 「이 단계 완료」로 전체 완료와 구분한다', () => {
   const r = show(view({ file_intake: 'RUNNING' }))
-  r.rerender(<FlowScreen view={view({ file_intake: 'DONE' })} files={['a.mp4']} situation="" startedAt={Date.now()} />)
+  r.rerender(<FlowScreen view={view({ file_intake: 'DONE' })} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />)
   expect(r.container.querySelector('.flow-status')!.textContent).toBe('이 단계 완료')
 })
 
@@ -85,7 +87,7 @@ it('파일이 하나면 이름을, 여럿이면 접힌 「영상 N개」를 보�
   expect(show(view({ file_intake: 'RUNNING' })).container.querySelector('details')).toBeNull()
   cleanup()
 
-  const files = ['a.mp4', 'b.mp4', 'c.mp4']
+  const files = [file('a.mp4'), file('b.mp4'), file('c.mp4')]
   const r = show(view({ file_intake: 'RUNNING' }), files)
   const details = r.container.querySelector('details')!
   expect(details.open).toBe(false)

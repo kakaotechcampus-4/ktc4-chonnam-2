@@ -1,0 +1,103 @@
+import { useEffect, useState, type JSX } from 'react'
+import { Film } from 'lucide-react'
+import { REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
+
+// 대표 영상의 정지 화면 한 장. 브라우저 안에서 원본 File로 임시 주소를 만들어 앞부분 한
+// 장면을 그린다 — 서버 업로드·분석과 무관하고, 재생 기능도 없다.
+//
+// 그리지 못하면(지원하지 않는 형식·손상·시간 초과·원본 없음) 필름 아이콘과 파일 이름으로
+// 대신한다. 이것은 브라우저가 미리보기를 못 만든 것일 뿐 분석 실패가 아니다 — 진행 상태나
+// 분석 대상에는 아무 영향이 없다. 준비되는 동안에도 나머지 화면은 그대로 그려진다.
+const SEEK_SEC = 1
+const GIVE_UP_MS = 4000
+const MAX_WIDTH = 960
+
+export function VideoThumb(props: { file: File | null; name: string }): JSX.Element {
+  const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
+  const [failed, setFailed] = useState<File | null>(null)
+
+  useEffect(() => {
+    const file = props.file
+    if (!file) return
+    // 임시 주소를 못 만드는 환경(테스트용 jsdom 등)에서는 바로 대체 화면이다.
+    if (typeof URL.createObjectURL !== 'function') {
+      setFailed(file)
+      return
+    }
+    const url = URL.createObjectURL(file)
+    const video = document.createElement('video')
+    video.muted = true
+    video.preload = 'auto'
+    video.playsInline = true
+    let done = false
+
+    // 파일이 바뀌거나 화면을 벗어나면 임시 주소와 디코더를 놓는다. 성공·실패·정리 어느 쪽에서
+    // 불려도 한 번만 놓는다.
+    const release = () => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      video.removeAttribute('src')
+      video.load()
+      URL.revokeObjectURL(url)
+    }
+    const fail = () => {
+      if (done) return
+      release()
+      setFailed(file)
+    }
+    const timer = setTimeout(fail, GIVE_UP_MS)
+
+    video.addEventListener('error', fail)
+    video.addEventListener('loadedmetadata', () => {
+      const d = video.duration
+      video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+    })
+    video.addEventListener('seeked', () => {
+      if (done) return
+      const w = video.videoWidth
+      const h = video.videoHeight
+      if (!w || !h) return fail()
+      const scale = Math.min(1, MAX_WIDTH / w)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(w * scale)
+      canvas.height = Math.round(h * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return fail()
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      let src: string
+      try {
+        src = canvas.toDataURL('image/jpeg', 0.82)
+      } catch {
+        return fail()
+      }
+      release()
+      setShot({ file, src })
+    })
+    video.src = url
+    return release
+  }, [props.file])
+
+  const src = shot && shot.file === props.file ? shot.src : null
+  const showFallback = !props.file || failed === props.file
+  return (
+    <figure className="flow-thumb">
+      <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
+        {src ? (
+          <img src={src} alt="" />
+        ) : (
+          showFallback && (
+            <span className="flow-thumb-fallback">
+              <Film size={26} strokeWidth={1.6} aria-hidden />
+              <span>{props.name}</span>
+            </span>
+          )
+        )}
+      </div>
+      <figcaption>
+        <span>{REPRESENTATIVE_VIDEO}</span>
+        {src && <span className="flow-thumb-name">{props.name}</span>}
+      </figcaption>
+    </figure>
+  )
+}
