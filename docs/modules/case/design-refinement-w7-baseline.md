@@ -74,15 +74,21 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 5순위:** 작고, 2순위(situation_response/observation_facts)가 먼저 풀려야 의미가 커진다 — 패키지 조립 자체가 막혀 있는 동안은 다듬어도 효과가 잘 안 보인다.
 
-### 6순위 — HTTP 진입점 / transport
+### 6순위 — HTTP 진입점 / transport — ✅ case 몫 종결(2026-09-30)
 
 **문제:** `case.get_view(case_id, store=store)`는 만들었지만(오늘 완료) 이걸 실제로 네트워크에 노출하는 FastAPI 같은 transport 계층이 없다.
 
 **왜 6순위:** case 단독 결정 사안이 아니다 — `api/` 모듈(현재 껍데기만 있음) 또는 web 쪽 몫일 가능성이 높다. "만들기"보다 "누가 만들지부터 확인"이 먼저라 순서상 뒤로 미룬다(급하지 않다는 뜻은 아님).
 
-**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표
+**해소 내용(누가 만드는가):** transport는 case 몫이 아니다. `src/daesingo/api/README.md`가 `api/`(FastAPI composition root)의 Owner를 김준영으로 적고 있고, 코드는 아직 없다. web 구현 일정(목요일) 때문에 이번에는 **신유민(`web`)이 진행**하기로 했다 — 통로는 case 공개 함수를 부르기만 하고, 검사·실패 코드는 case에 둔다(이슈 #106 [코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/106#issuecomment-5907616288)). case가 transport에 붙인 조건은 셋이다: 통로에 판단을 넣지 않는다 · case 공개 함수만 부른다 · 긴 작업을 요청 안에서 돌리지 않는다.
 
-### 6.5순위 — web→case 공용 command 표면 (구 "후보 선택 제출 command 노출")
+**case 쪽 진입 함수:** 읽기 `case.get_view()`, 쓰기 `case.handle_command()`(PR #216, `contract-case-command.md` Draft v0). transport가 부를 대상은 이 둘이다.
+
+**여전히 범위 밖:** HTTP 경로·인증·직렬화는 transport를 만드는 쪽이 정한다. 인증 방식은 미결이다(`module-architecture.md` §1-7 A2). `api/` Owner(김준영)와 web 구현의 관계 정리도 case가 정하지 않는다.
+
+**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/command.py`(`handle_command`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표, 이슈 #106
+
+### 6.5순위 — web→case 공용 command 표면 (구 "후보 선택 제출 command 노출") — ✅ case 몫 종결(2026-09-30)
 
 **문제:** `case.select_candidate()`는 이미 구현·E2E 테스트까지 됐지만(`domain.py:125`, `test_real_e2e.py`), 이걸 여는 외부 command 계약이 없다 — web이 `CaseView` 계약만 보고는 후보를 어떻게 제출해야 하는지 알 수 없다(이슈 #106).
 
@@ -98,15 +104,21 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 이 순위:** 6순위(HTTP 진입점/transport)와 같은 계열이다 — 표면 아래 "도메인 로직은 있는데 네트워크로 노출하는 경로가 없다"는 결손이 같고, 실제 노출은 6순위가 막고 있는 "누가 transport를 만드는가"에 그대로 종속된다. 표면을 web이 직접 붙일지 `api/` 모듈을 세울지도 6순위와 같은 이유로 지금 정하지 않는다("만들기보다 누가 만들지부터"). 다만 월요일 Real E2E 블로커는 아니다(`test_real_e2e.py`가 python에서 직접 호출) — 김대원 판단에 동의 완료(이슈 #106 코멘트).
 
-**결정된 것 (`select_candidate` 한정):**
+> **2026-09-30:** 누가 transport를 만드는가는 6순위에서 정리됐다 — 이번에는 web이 진행하고, case는 진입 함수까지만 둔다.
+
+**결정된 것 (`select_candidate` 한정):** — 2026-09-30 이후 판본은 `contract-case-command.md`가 원문이다. 초기 선택은 `rank=1` 자동 선택이라 command가 아니게 됐고(#168 결정 1), 결과 화면의 다른 후보 선택은 `SELECT_OTHER_CANDIDATE`(`OTHER_CANDIDATE` CorrectionRecord, `case_rev` +1)로 열렸다. 실패는 `notices[].code`가 아니라 command 응답의 `error.code`(`case.command.*`)로 알린다. 아래는 09-20 당시 기록이다.
 - `notices[].actions[]` 7종에 넣지 않고 별도 command로 연다 — `notices[].actions[]`는 notice에 매인 복구 액션 전용이라 1차 명령을 끼워 넣지 않는다. 기존 도메인 시그니처(`candidate_id`)를 그대로 쓴다.
 - `case_rev`는 안 오른다(선택=새 요청 아님, 기존 결정 유지). `stage`는 `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW`로 전이된다.
 - 실패 시(`candidate_id` 불일치 등) 대응하는 `notices[].code`는 아직 없어 이번에 새로 정한다.
 - `rejected_candidate_ids`는 **받지 않는다** — 지금 화면(`CandidatesScreen`)엔 개별 후보를 지목하는 버튼이 없고(§8이 정의하는 "아니오"는 "조금 전/후"(고른 후보의 시간 보정)·"다 아니에요"(전체 거절) 둘뿐, 개별 지목이 아님), `candidates[].selected=false`로 이미 파생 가능하다(신유민 확인, 이슈 #106). 후보 카드별 "이건 아니에요"가 생기면 그때 재검토.
 
-**미결:** command 표면 모양(전송 경로·응답·실패 신호) 자체 — `select_candidate`·`USER_REVIEWED`·JOB 3종이 공유할 형태를 case가 초안 작성해야 한다. transport owner(`api/` 또는 web)가 정해지는 6순위와 별개로, 표면 모양은 case가 먼저 정할 수 있다.
+~~**미결:** command 표면 모양(전송 경로·응답·실패 신호) 자체 — `select_candidate`·`USER_REVIEWED`·JOB 3종이 공유할 형태를 case가 초안 작성해야 한다. transport owner(`api/` 또는 web)가 정해지는 6순위와 별개로, 표면 모양은 case가 먼저 정할 수 있다.~~
 
-**참고:** 이슈 #106
+**해소 내용:** 표면 모양은 `contract-case-command.md`(Draft v0, PR #206)로 정했다 — 요청 `{case_id, expected_case_rev, kind, payload}` → 응답 `{ok, error, case_view}`, command 4종(`SELECT_OTHER_CANDIDATE` · `RECORD_SITUATION_RESPONSE` · `MARK_REVIEWED` · `RUN_NOTICE_ACTION`). 진입 함수는 `case.handle_command()`(PR #216)다.
+
+**여전히 남은 것:** 계약은 아직 `Draft`다 — web 합의 뒤 `docs/architecture/contracts/`로 옮긴다. 입력형 action(`EDIT_EVENT_TIME` 등)은 다음 판본이고, 계약 §9 미결(`case_rev`로 잡히지 않는 변경 · `RUN_NOTICE_ACTION` 중복 제출 · `message_key` 목록)은 그대로다.
+
+**참고:** 이슈 #106, PR #206, PR #216, `docs/modules/case/contracts/contract-case-command.md`
 
 ### 6.6순위 — worker 배선 시 재선택 가드 (#173 E-4 후속)
 
@@ -119,6 +131,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | 조건 2 — 늦게 온 이전 후보 결과 버리기 | 결과를 동기로만 받아 해당 없음 | 결과물의 `candidate_id`(readout `ReadRequest`, Fine `VisualEvidence`)를 현재 선택 후보와 대조해 다르면 버림. JobRecord 계약 변경은 필요 없음(관찰 결과는 후보에 묶이고, 사용자 입력만 선택 context에 묶인다) |
 
 **왜 이 순위:** 6순위(transport)·6.5순위(command 표면)와 같은 계열로, worker가 생기기 전에는 강제할 대상 자체가 없다. 추측으로 막으면 상황 응답 대기(준비 중이 아님)와 구분하지 못한다.
+
+> **2026-09-30 선반영(worker 없이 할 수 있는 것):** `READY` 전이는 현재 선택 context의 결과일 때만 한다 — `mark_ready_if_package_ready()`가 evidence의 `basis.candidate_ref`·`selection_rev`를 CaseView와 같은 기준(#191)으로 확인한다. 예전엔 이전 선택의 Package로도 `READY`가 돼, stage는 `READY`인데 CaseView evidence·package는 `null`이 될 수 있었다(#216 테스트 중 mock adapter로 재현). 위 조건 1·2(준비 중 재선택 금지 등)는 그대로 worker 배선 몫이다.
 
 **참고:** 이슈 #173 · #166 · PR #189
 
