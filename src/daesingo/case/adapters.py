@@ -261,10 +261,11 @@ class RealAdapter:
         self._mock_root = mock_root
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
         self._evidence_bundle_case_rev: int | None = None
-        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 선택된 candidate가 같으면 재사용한다(이슈 #73).
-        self._observations: real_e2e.ObservationBundle | None = None
-        # (candidate_id, selection_rev) — 같은 candidate라도 새로 선택되면 새 선택 context다.
-        self._observations_key: tuple[str, int] | None = None
+        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 같은 탐색 결과(`case.candidate_generation`) 안에서
+        # 후보별로 재사용한다 — 정정(이슈 #73)과 A→B→A 재선택(`decisions/reselect-observation-reuse.md`).
+        # 세대가 바뀌면(재탐색) 같은 candidate_id라도 버린다(정책 표 1행).
+        self._observations_by_candidate: dict[str, real_e2e.ObservationBundle] = {}
+        self._observations_generation: int | None = None
         # 마지막 `get_candidate_events()`의 CandidateEvent — evidence 조립이 선택된 것을 여기서 찾는다.
         self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._clients = clients
@@ -321,6 +322,14 @@ class RealAdapter:
         )
 
     # ── evidence ────────────────────────────────────────────────────────
+    def _cached_observations(self, candidate_id: str) -> real_e2e.ObservationBundle | None:
+        """같은 탐색 결과 세대 안에서 이미 관찰한 후보면 그 관찰을 준다. 세대가 바뀌었으면 전부 버린다."""
+        generation = self._case.candidate_generation
+        if self._observations_generation != generation:
+            self._observations_by_candidate = {}
+            self._observations_generation = generation
+        return self._observations_by_candidate.get(candidate_id)
+
     def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
         """evidence로 넘기는 candidate/selection_rev는 **case가 실제로 선택한 값**이어야
         한다(2026-09-19 수정) — 이전엔 이 메서드가 `search.search_candidates()`를 다시
@@ -336,7 +345,9 @@ class RealAdapter:
         다시 계산한다(이슈 #73). 이때 다시 부르는 것은 `assemble_evidence_bundle()`(시각·
         evidence·요건·Package)뿐이다 — 선택 context(`candidate_id`, `selection_rev`)가 그대로면
         search·Fine·readout을 다시 돌리지 않고 관찰 결과를 재사용한다(부분 재실행 정책 표:
-        `EVENT_TIME_MANUAL` 등 "요건 검사만 다시"). 새로 선택되면 관찰부터 다시 한다."""
+        `EVENT_TIME_MANUAL` 등 "요건 검사만 다시"). 처음 보는 후보를 고르거나 재탐색으로 후보 목록이
+        바뀌면 관찰부터 다시 한다 — 같은 탐색 결과에서 이미 본 후보로 돌아오면(A→B→A) 관찰은 재사용하고
+        조립만 새 선택 context로 한다(`decisions/reselect-observation-reuse.md`)."""
         if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             if self._search_scope is None or self._mock_root is None:
                 self._not_ready(
@@ -365,8 +376,8 @@ class RealAdapter:
             scope = self._search_scope
             if not isinstance(scope, search_module.AnalysisScope):
                 scope = search_module.AnalysisScope.model_validate(scope)
-            observation_key = (selected.candidate_id, self._case.selection_rev)
-            if self._observations is None or self._observations_key != observation_key:
+            observations = self._cached_observations(selected.candidate_id)
+            if observations is None:
                 candidate = self._candidates_by_id.get(selected.candidate_id)
                 if candidate is None:
                     raise ValueError(
@@ -374,15 +385,15 @@ class RealAdapter:
                         "get_candidate_events() 결과에서 찾을 수 없다 — 같은 인스턴스로 "
                         "먼저 후보를 받아왔는지 확인해야 한다."
                     )
-                self._observations = real_e2e.observe_happy_001_candidate(
+                observations = real_e2e.observe_happy_001_candidate(
                     case_id=self.case_id,
                     candidate=candidate,
                     scope=scope,
                     mock_root=self._mock_root,
                 )
-                self._observations_key = observation_key
+                self._observations_by_candidate[selected.candidate_id] = observations
             self._evidence_bundle = real_e2e.assemble_evidence_bundle(
-                self._observations,
+                observations,
                 case_id=self.case_id,
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
@@ -479,10 +490,11 @@ class RealVideoAdapter:
         self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
         self._evidence_bundle_case_rev: int | None = None
-        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 선택된 candidate가 같으면 재사용한다(이슈 #73).
-        self._observations: real_e2e.ObservationBundle | None = None
-        # (candidate_id, selection_rev) — 같은 candidate라도 새로 선택되면 새 선택 context다.
-        self._observations_key: tuple[str, int] | None = None
+        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 같은 탐색 결과(`case.candidate_generation`) 안에서
+        # 후보별로 재사용한다 — 정정(이슈 #73)과 A→B→A 재선택(`decisions/reselect-observation-reuse.md`).
+        # 세대가 바뀌면(재탐색) 같은 candidate_id라도 버린다(정책 표 1행).
+        self._observations_by_candidate: dict[str, real_e2e.ObservationBundle] = {}
+        self._observations_generation: int | None = None
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
         raise NotImplementedError(
@@ -539,10 +551,18 @@ class RealVideoAdapter:
         )
 
     # ── evidence ────────────────────────────────────────────────────────
+    def _cached_observations(self, candidate_id: str) -> real_e2e.ObservationBundle | None:
+        """같은 탐색 결과 세대 안에서 이미 관찰한 후보면 그 관찰을 준다. 세대가 바뀌었으면 전부 버린다."""
+        generation = self._case.candidate_generation
+        if self._observations_generation != generation:
+            self._observations_by_candidate = {}
+            self._observations_generation = generation
+        return self._observations_by_candidate.get(candidate_id)
+
     def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
         """`RealAdapter._build_evidence_bundle()`과 같은 원칙 — case가 실제로
         선택한 candidate로만 계산하고, case_rev가 바뀌면(정정 등) 조립만 다시 한다.
-        real Gemini/Elice **Fine**은 새로 선택될 때만 실제로 호출한다(유료) — 정정은
+        real Gemini/Elice **Fine**은 같은 탐색 결과에서 처음 보는 후보일 때만 실제로 호출한다(유료) — 정정은
         관찰 결과를 재사용한다(이슈 #73)."""
         if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             selected = next((c for c in self._case.candidates if c.selected), None)
@@ -560,15 +580,15 @@ class RealVideoAdapter:
                     "get_candidate_events() 결과에서 찾을 수 없다 — 같은 인스턴스로 "
                     "먼저 후보를 받아왔는지 확인해야 한다."
                 )
-            observation_key = (selected.candidate_id, self._case.selection_rev)
-            if self._observations is None or self._observations_key != observation_key:
+            observations = self._cached_observations(selected.candidate_id)
+            if observations is None:
                 context = self._ensure_context()
-                self._observations = real_e2e.observe_real_video_candidate(
+                observations = real_e2e.observe_real_video_candidate(
                     context, candidate, case_id=self.case_id
                 )
-                self._observations_key = observation_key
+                self._observations_by_candidate[selected.candidate_id] = observations
             self._evidence_bundle = real_e2e.assemble_evidence_bundle(
-                self._observations,
+                observations,
                 case_id=self.case_id,
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,

@@ -16,3 +16,4 @@
 - `agent-framework-adoption-criteria.md — LangGraph/Google ADK 등 agent framework를 지금 도입하지 않는다는 결정 + 재검토 트리거 4개`
 - `input-fingerprint-implementation-label-deferred.md — input_fingerprint의 implementation label 조합 로직을 지금 만들지 않는다는 결정 + 재검토 트리거 2개 (이슈 #77)`
 - `intent-hint-robustness-policy.md — 도메인 밖 입력은 스키마 변경 없이 null/low로 처리, 모순 정보는 마지막 값+confidence low 채택 (PM 재검토, 2026-09-22)`
+- `reselect-observation-reuse.md — 다른 후보를 골랐다가 돌아오면(A→B→A) 같은 탐색 결과 안에서는 관찰(Fine·판독)을 재사용, 후보 목록이 바뀌면 버림 (W7 7순위, 2026-09-30)`
