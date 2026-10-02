@@ -77,6 +77,8 @@
 | §8 사건 선택 `[이 사건 맞아요]` | **이 영상이 내가 신고하려는 사건이다** | **입력의 전제.** 선택된 후보에서 IncidentClip·REPORT_VIDEO가 만들어지므로 evidence는 이미 선택된 결과만 받는다. 판정할 rule이 없고 있어서도 안 된다 |
 | §15 상황 확인 `[맞아요]` | **AI가 정리한 위반 상황 설명이 맞다** | `situation_response` → **`package.evidence.situation_response`가 판정**(ADR-002 §5.9 — `CONFIRMED`/`CORRECTED` → `PASS`, `USER_UNSURE` → `WARN`, `NOT_ASKED` → `UNKNOWN`) |
 
+> **#171 B-2에 따른 재검토 (2026-09-29).** 위 표의 §8 `[이 사건 맞아요]` 단계는 #145 결과 중심 흐름에서 사라졌고 다시 만들지 않는다. 사건 전제는 이제 evidence 밖에서 결과 화면의 사건 근거 장면(`preview_ref`)과 handoff 시점의 `USER_REVIEWED`가 받친다. §15 행과 D2-c는 그대로다. [`ADR-EVIDENCE-009`](adr-situation-response-timing.md) §3.
+
 `violation_visible_in_report_video`가 물으려는 「위반이 이 신고영상 안에 있는가」는 **첫 단계가 이미 확정한 입력의 전제**다. 사용자가 고르지 않은 영상은 애초에 REPORT_VIDEO가 되지 않는다. 그 위에서 두 번째 단계가 「그 위반이 어떤 상황인가」를 확인하고, 그것만 evidence의 rule이 판정한다.
 
 즉 세 rule은 **이미 확정된 전제를 다시 묻는 것**이며, 게다가 물을 대상(관찰 fact)을 아무도 만들지 않는다.
@@ -156,6 +158,8 @@
 `USER_UNSURE → WARN`도 유지한다. `core-user-flow.md` §15가 *"`잘 모르겠어요`도 진행을 막지 않는다"* 로 이미 정했다.
 
 > **UX 변경 시 재검토 대상.** 사용자 확인 단계(§8·§15)의 구성이 바뀌면 이 관문의 의미도 바뀐다. 그때는 이 ADR을 고치지 않고 새 결정으로 기록한다(§10).
+>
+> **재검토됨 (2026-09-29).** #171 B-2의 재검토는 [`ADR-EVIDENCE-009`](adr-situation-response-timing.md)에 기록했다. D2-c는 유지된다.
 
 ### 5.5 D2-d — 관찰 fact 입력 경계
 
@@ -171,6 +175,8 @@
 | `post_stamp_applied` | 유지 — 실제 사후각인 수행 사실은 `recording` transform provenance로 확인 |
 
 관찰 fact의 구조 검증(boolean·`subject_refs`)과 `PolicyConfigurationError` 처리는 남는 셋에 그대로 적용된다(ADR-002 §5.12).
+
+> **#172 D-3에 따른 대체 (2026-09-29).** `plate_visible_in_report_video` 입력 key 유지는 그대로이고, 그 rule의 outcome 매핑(관찰 `false → BLOCK`)만 [`ADR-EVIDENCE-008`](adr-plate-identification-failure-boundary.md) §5.2로 `WARN`이 됐다(`policy/requirement-rules-v5`).
 
 ### 5.6 D2-e — 남는 구멍을 `recording` 미결로 등재한다 (OPEN)
 
