@@ -24,7 +24,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
-| [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → Open Decision 수집 → Provisional Baseline → 구현 → 실험 → 갱신. 결정은 담지 않음 |
+| [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
 | [`official-inputs/README.md`](./official-inputs/README.md) | 카테캠 운영진 공지(AWS 환경 · ML API 등) 사본. 외부 입력이며 결정이 아님 |
 | [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
 | `decisions/` | 장기 영향을 주는 실제 Runtime 결정이 생겼을 때만 ADR 추가 |

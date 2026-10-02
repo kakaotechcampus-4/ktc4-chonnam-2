@@ -18,7 +18,7 @@
 - Final Contract — [`docs/architecture/contracts/`](../architecture/contracts/README.md)
 - 현재 develop 코드
 - GitHub Actions — `.github/workflows/`
-- 카테캠 공식 공지
+- 카테캠 공식 공지와 [Official Inputs](./official-inputs/README.md)
 
 발견 항목은 다음처럼 분류한다.
 
@@ -33,16 +33,16 @@ IMPLEMENTATION GAP
 → 설계는 확정됐지만 구현되지 않음
 
 OPEN DECISION
-→ 구현 전에 결정을 내려야 함
+→ 구현 전에 결정·baseline·실측 여부를 판단해야 함
 ```
 
-단순 문서 위생 문제는 묶어서 처리하고, 구현 방향을 잘못 유도할 수 있는 정합성 문제는 즉시 별도 Issue로 만든다.
+단순 문서 위생 문제는 묶어서 처리하고, 구현 방향을 잘못 유도할 수 있는 정합성 문제는 즉시 별도 Issue로 만든다. 이 단계에서 나온 `OPEN DECISION`은 §2 Decision Register의 입력으로 넘긴다.
 
 ---
 
-## 1. 공식정보·외부 제약 리서치
+## 1. 공식정보·외부 제약 확인
 
-설계 브레인스토밍 전에 외부에서 이미 확인할 수 있는 사실을 최대한 수집한다.
+설계 브레인스토밍 전에 **우리 프로젝트에 실제 적용되는 외부 사실과 환경 제약**을 먼저 확인한다. 이 단계는 결정을 내리는 단계가 아니라 결정 가능한 범위를 좁히는 단계다.
 
 ### 카테캠 / AWS
 
@@ -75,29 +75,15 @@ rate limit / concurrency
 retention / logging / delete 정책
 ```
 
-### 외부 기술 사례
+카테캠 AWS/ML API 공지처럼 프로젝트에 직접 적용되는 외부 입력은 [`official-inputs/`](./official-inputs/README.md)에 보존한다.
 
-현재 Open Decision을 닫는 데 필요한 범위에서 조사한다.
-
-```text
-MySQL DB Queue 사례
-SKIP LOCKED
-영상 처리 서버 resource 특성
-ffmpeg working set
-base64/JSON memory overhead
-Object Storage 사용 패턴
-Worker scaling 사례
-```
-
-리서치는 결정을 대신하는 것이 아니라 **Baseline과 실험 설계를 더 현실적으로 만드는 입력**으로 사용한다.
-
-카테캠 AWS/ML API 공지처럼 공식성이 높은 자료는 [`official-inputs/`](./official-inputs/README.md)에 보존한다.
+MySQL Queue, ffmpeg, Object Storage, Worker scaling 같은 **일반 외부 기술 사례는 이 단계에 섞지 않는다.** 그런 조사는 §2–§3에서 실제 Open Decision을 정리한 뒤 필요한 질문만 §4에서 조사한다.
 
 ---
 
 ## 2. Open Decision 전수 수집
 
-Runtime Tech / Ops / Runbook에 남아 있는 미결정 사항을 하나의 Decision Register로 모은다.
+Runtime Tech / Ops / Runbook, §0의 정합성 검수 결과, §1의 공식 제약에서 아직 닫히지 않은 항목을 하나의 Decision Register로 모은다.
 
 각 항목에는 최소 다음을 기록한다.
 
@@ -114,13 +100,17 @@ ADR 필요 여부
 실험 필요 여부
 ```
 
+이 단계에서는 답을 임의로 만들지 않는다. 이미 상위 Contract/Accepted Decision에서 닫힌 항목은 Open Decision으로 다시 올리지 않는다.
+
 ---
 
-## 3. 결정 유형 분류
+## 3. Decision 유형·결정 시점 분류
 
-모든 결정을 같은 회의에 올리지 않는다.
+모든 결정을 같은 방식으로 처리하지 않는다. 먼저 **누가 결정하는지**와 **언제 닫아야 하는지**를 함께 분류한다.
 
-### Runtime 단독 결정
+### 3.1 책임 유형
+
+#### Runtime 단독 결정
 
 Runtime 구현 내부에서 닫을 수 있는 항목.
 
@@ -134,7 +124,7 @@ stale sweep
 Docker service command
 ```
 
-### 공동 결정
+#### 공동 결정
 
 다른 모듈과 계약이 맞물리는 항목.
 
@@ -148,7 +138,7 @@ retention
 
 필요한 Owner만 호출해서 Issue에서 빠르게 결정한다.
 
-### 제품/정책 결정
+#### 제품/정책 결정
 
 ```text
 사용자 자산 보관기간
@@ -157,9 +147,9 @@ retention
 사용자 flow와 연관된 retention
 ```
 
-### 실측 후 결정
+#### 실측 기반 결정
 
-현재 숫자를 확정하면 안 되는 항목.
+현재 숫자나 인프라 선택을 확정하면 안 되는 항목.
 
 ```text
 Worker 수
@@ -172,9 +162,99 @@ GPU
 capacity threshold
 ```
 
+### 3.2 결정 시점
+
+```text
+A. 구현 전에 반드시 닫아야 함
+→ 계약/구조가 정해지지 않으면 구현 자체가 달라짐
+
+B. Provisional Baseline이면 구현 가능
+→ 초기값으로 구현한 뒤 실험으로 조정 가능
+
+C. 구현 후 실측해야 닫을 수 있음
+→ capacity / scaling / 운영 threshold
+
+D. 현재 MVP에서 보류 가능
+→ 관측된 필요가 생길 때 다시 연다
+```
+
+모든 Open Decision을 미리 완결하려 하지 않는다. 구현을 막는 Decision과 실측 뒤 닫을 Decision을 분리한다.
+
 ---
 
-## 4. Provisional Baseline v0.1 확정
+## 4. Decision-driven 외부 기술 조사
+
+외부 기술 사례는 §2–§3에서 **실제로 남은 Decision을 닫는 데 필요한 질문만** 조사한다.
+
+예:
+
+```text
+Decision: DB Queue exact claim transaction
+→ MySQL 8.4 / InnoDB
+→ SELECT ... FOR UPDATE SKIP LOCKED
+→ lock 범위 / ORDER BY / LIMIT
+→ transaction boundary / commit 시점
+→ concurrent worker failure mode
+
+Decision: Runtime working set
+→ 영상 처리 서버 resource 특성
+→ ffmpeg CPU/RAM/temp disk
+→ base64/JSON request construction
+→ process RSS / copy overhead
+
+Decision: local-only storage 유지 여부
+→ Object Storage 사용 패턴
+→ restart / multi-worker reuse
+→ lifecycle / retention
+
+Decision: Worker 1 → N
+→ CPU-bound vs I/O-bound scaling
+→ queue wait / backpressure
+→ DB contention / resource isolation
+```
+
+자료 우선순위는 대략 다음과 같다.
+
+```text
+1. 기술 자체 공식 문서
+2. 신뢰할 수 있는 engineering / architecture 사례
+3. 오픈소스 구현·issue·benchmark
+4. 커뮤니티 자료는 보조 근거
+```
+
+외부 사례의 숫자를 그대로 대신고 baseline으로 복사하지 않는다. 외부 자료는 **후보·failure mode·실험 항목을 현실화하는 근거**로 사용한다.
+
+구현 가능성 자체가 불명확하면 작은 **pre-implementation spike**를 수행할 수 있다. 이 spike는 P2 capacity 같은 운영 실험과 구분한다.
+
+---
+
+## 5. 구현 전 필수 Decision 처리
+
+§3에서 **A. 구현 전에 반드시 닫아야 함**으로 분류한 항목을 먼저 처리한다.
+
+```text
+공동 계약 필요
+→ Decision Issue 생성
+→ 필요한 Owner / Consult만 호출
+→ Accepted Decision 반영
+
+Runtime 단독 + reversible
+→ 근거를 남기고 Runtime Spec에서 결정 가능
+
+기술 semantics 불확실
+→ §4의 작은 spike 결과로 닫음
+
+실측 후 결정
+→ 지금 최종값을 만들지 않음
+```
+
+예를 들어 HTTP API Contract처럼 다른 모듈과 맞물린 계약은 Baseline을 만들기 전에 닫는다. 반대로 Worker 수나 Object Storage처럼 실측이 필요한 선택은 이 단계에서 확정하지 않는다.
+
+Decision Issue는 이후 §7의 Implementation Issue와 구분한다.
+
+---
+
+## 6. Provisional Baseline v0.1 확정
 
 구현에 필요한 값이 TBD로 남아 구현자가 임의 결정하지 않도록 초기값을 정한다.
 
@@ -213,40 +293,20 @@ stale sweep interval
 ```text
 Implementation Baseline
 → 시스템을 실행하기 위해 지금 필요한 숫자
-→ 구현 전 결정
+→ 구현 전 provisional 값으로 결정 가능
 
 Operational Threshold
 → 실제 성능/운영 데이터를 보고 정할 숫자
-→ 실험 후 결정
+→ 구현·실험 후 결정
 ```
 
-임의의 CPU 70%, Disk 80% 같은 운영 threshold는 아직 만들지 않는다.
+임의의 CPU 70%, Disk 80% 같은 운영 threshold는 만들지 않는다.
 
 ---
 
-## 5. 결정·후속 작업 Issue화
+## 7. Runtime Implementation Plan 작성 및 Task 분해
 
-Decision Register를 정리한 뒤 필요한 Issue를 일괄 생성한다.
-
-Issue는 대략 다음 종류로 나눈다.
-
-```text
-A. 정합성 수정
-B. 공동 계약 결정
-C. Runtime 구현
-D. 실험
-E. 문서 반영
-```
-
-공동 결정 Issue에는 필요한 담당자만 호출한다.
-
-이미 확정된 사항은 다시 토론하지 않고 바로 구현 Issue로 넘긴다.
-
----
-
-## 6. Runtime Implementation Plan 작성
-
-위 결정 결과를 기준으로 실제 구현 담당자에게 넘길 플래닝 문서를 만든다.
+§5의 필수 Decision과 §6의 Baseline을 기준으로 실제 구현 담당자에게 넘길 Implementation Plan을 먼저 만든다.
 
 우선순위는 대략:
 
@@ -290,80 +350,51 @@ E. 문서 반영
 8. Runtime integration tests
 ```
 
-Deployment automation은 이 실행 단위가 만들어진 뒤 별도 단계로 붙인다.
+Implementation Plan에는 dependency, acceptance criteria, 필요한 test/observability/experiment를 함께 적는다. 그 뒤 구현 slice를 Issue로 분해한다.
+
+Issue 종류는 구분한다.
+
+```text
+Decision Issue
+→ §5에서 결정 자체를 닫기 위해 사용
+
+Implementation Issue
+→ §7에서 확정된 Plan을 구현하기 위해 사용
+
+Experiment Issue
+→ 구현 후 실측이 필요한 경우
+
+Documentation Issue
+→ 결과를 SoT에 반영해야 하는 경우
+```
+
+Deployment automation은 실행 단위가 만들어진 뒤 별도 slice로 붙인다.
 
 ---
 
-## 7. CI 확장
+## 8. Baseline 기반 구현 + Test / CI / Observability
 
-현재 boundary/contract CI에 deterministic test를 점진적으로 추가한다.
-
-```text
-boundary / fixture
-+
-repo-wide pytest
-+
-Mock validator
-+
-Ruff
-+
-type checker
-+
-secret scan
-```
-
-pytest 내부에서도 성격을 구분한다.
-
-```text
-Unit
-Contract
-Integration
-Runtime Integration
-External / Real E2E
-```
-
-일반 PR CI에는 다음을 넣는다.
-
-```text
-Unit
-Contract
-deterministic Integration
-필요 시 MySQL Runtime Integration
-```
-
-실제 ML API 호출, 긴 영상, P2 Capacity Smoke는 일반 PR gate와 분리한다.
-
----
-
-## 8. Baseline 기반 구현
-
-이미 확정된 Architecture/Contract와 Provisional Baseline을 기준으로 develop 구현을 진행한다.
+이미 확정된 Architecture/Contract와 Provisional Baseline을 기준으로 구현한다.
 
 ```text
 확정된 것
 → 바로 구현
 
-공동 결정이 필요한 것
-→ Issue 결과 반영
+공동 Decision 결과
+→ 그대로 반영
 
 실측이 필요한 것
 → Baseline으로 먼저 구현
 ```
 
-완벽한 연구가 끝날 때까지 구현을 멈추지 않는다.
-
----
-
-## 9. 구현과 동시에 관측 가능하게 만들기
-
-각 구현 Task를 단순히 "기능 구현"으로 끝내지 않는다.
-
-가능하면 다음을 함께 정의한다.
+각 구현 Task는 기능 코드만으로 끝내지 않고 가능하면 다음을 한 묶음으로 정의한다.
 
 ```text
 Implementation
 Acceptance Test
+Integration Test
 Observability
+필요한 CI gate
 Experiment
 Evidence location
 Decision affected
@@ -373,18 +404,46 @@ Decision affected
 
 ```text
 Worker claim 구현
-
 → duplicate claim integration test
 → queue wait / claim latency 기록 가능
+→ deterministic Runtime Integration을 CI에서 실행
 → P2에서 Worker resource 측정
 → Worker scaling 판단 근거로 사용
 ```
 
+### CI 원칙
+
+기존 CI를 먼저 확인하고 **없는 gate만 추가**한다. `.github/workflows/python-tests.yml`은 이미 repo-wide pytest regression을 실행하므로 이를 새 작업으로 중복 기재하지 않는다.
+
+pytest와 CI는 성격을 구분한다.
+
+```text
+Unit
+Contract
+Integration
+Runtime Integration
+External / Real E2E
+```
+
+일반 PR gate에는 결정론적으로 재현 가능한 항목만 둔다.
+
+```text
+기존 repo-wide pytest regression
+Unit / Contract
+deterministic Integration
+필요 시 MySQL Runtime Integration
+추가로 필요성이 확인된 lint / type / secret gate
+```
+
+실제 ML API 호출, 긴 영상, P2 Capacity Smoke는 일반 PR gate와 분리한다.
+
+완벽한 연구가 끝날 때까지 구현을 멈추지 않되, 관측 불가능한 상태로 구현만 끝내지도 않는다.
+
 ---
 
-## 10. Runtime 실험 수행
+## 9. Runtime Integration / Capacity / Real E2E
 
-구현된 Baseline을 기준으로 실제 실험을 진행한다.
+구현된 Baseline을 기준으로 실제 동작과 운영 가정을 검증한다.
 
 우선 다음 조건에서 확인한다. P2 계획은 [`experiments/elice-runtime-capacity-smoke-plan.md`](./experiments/elice-runtime-capacity-smoke-plan.md)에 있다.
 
@@ -409,7 +468,7 @@ failure recovery
 restart/reuse
 ```
 
-그 뒤 필요하면 다음 실험으로 확장한다.
+그 뒤 근거가 있을 때만 다음으로 확장한다.
 
 ```text
 concurrency >= 2
@@ -421,9 +480,11 @@ RDS
 GPU
 ```
 
+Pre-implementation spike는 기술 semantics 확인용이고, 이 단계의 Runtime experiment는 **실제 capacity / performance / recovery / operation 검증**용이다.
+
 ---
 
-## 11. 실험 결과 기록
+## 10. Evidence 기록
 
 실험은 실행만 하고 끝내지 않는다.
 
@@ -443,60 +504,88 @@ known limitation
 Raw 결과와 반복 가능한 결론을 분리한다.
 
 ```text
-실험 결과
+실험 결과 / raw evidence
 → docs/runtime/experiments/
 
 반복 가능한 운영 결론
 → Runtime Tech / Ops Spec
 ```
 
+다른 모듈이 소유한 실험은 원문을 복제하지 않고 Runtime에 영향을 주는 결론만 링크한다.
+
 ---
 
-## 12. Baseline 및 설계 갱신
+## 11. Baseline 및 설계 갱신
 
-실험 결과에 따라 다음 중 하나를 결정한다.
+Evidence를 바탕으로 다음 중 하나를 결정한다.
 
 ```text
 Baseline 유지
 Baseline 수정
 Architecture 변경 검토
 Infrastructure 확장
+Decision 종료 / 재오픈
 ```
 
-장기적으로 여러 구현에 영향을 주는 구조 결정이면 ADR로 승격한다.
+장기적으로 여러 구현에 영향을 주는 구조 결정이면 ADR로 승격한다. 단순 tuning 값 변경까지 ADR을 만들지는 않는다.
 
-단순 tuning 값 변경까지 ADR을 만들지는 않는다.
+실험 한 번의 raw 수치를 곧바로 운영 보장값으로 승격하지 않는다.
+
+---
+
+## 12. 다음 iteration
+
+남은 Open Decision과 새로 관측된 failure mode를 Decision Register에 반영하고 다시 필요한 단계로 돌아간다.
+
+```text
+새로운 정합성 문제
+→ §0
+
+새 외부 제약
+→ §1
+
+새 Open Decision
+→ §2–§5
+
+Baseline 조정
+→ §6
+
+구현 후 capacity 문제
+→ §9–§11
+```
+
+모든 iteration을 처음부터 반복할 필요는 없다. 변경된 근거가 영향을 주는 단계부터 다시 진행한다.
 
 ---
 
 ## 전체 흐름
 
 ```text
-정합성 검수
+0. 현재 상태 정합성 검수
       ↓
-공식정보 / 외부 제약 리서치
+1. 공식정보 / 외부 제약 확인
       ↓
-Open Decision 전수 수집
+2. Open Decision 전수 수집
       ↓
-Runtime 단독 / 공동 / 정책 / 실측 분류
+3. 책임 유형 + 결정 시점 분류
       ↓
-필요한 결정 Issue 처리
+4. 필요한 외부 기술 사례 / 기술 검증 조사
       ↓
-Provisional Baseline v0.1
+5. 구현 전 필수 Decision 처리
       ↓
-Runtime Implementation Plan
+6. Provisional Baseline v0.1
       ↓
-CI 확장 + Runtime 구현
+7. Runtime Implementation Plan + Task/Issue 분해
       ↓
-관측 가능한 상태 확보
+8. 구현 + Test / CI / Observability
       ↓
-Runtime Integration / P2 / Real E2E
+9. Runtime Integration / Capacity / Real E2E
       ↓
-결과 기록
+10. Evidence 기록
       ↓
-Tech / Ops / ADR 갱신
+11. Tech / Ops / ADR / Baseline 갱신
       ↓
-다음 Baseline
+12. 다음 iteration
 ```
 
 ## 핵심 원칙
@@ -504,12 +593,25 @@ Tech / Ops / ADR 갱신
 **추측으로 인프라를 늘리지 않고, 그렇다고 모든 값을 TBD로 남겨 구현자가 임의 결정하게 두지도 않는다.**
 
 ```text
-공식정보와 기존 실측으로
-가장 합리적인 초기 Baseline을 잡는다.
+현재 상태를 먼저 검수한다.
 
 ↓
 
-일단 구현한다.
+실제 적용되는 외부 제약을 확인한다.
+
+↓
+
+Open Decision을 모으고
+필요한 조사만 수행한다.
+
+↓
+
+구현을 막는 결정은 닫고
+나머지는 Provisional Baseline으로 실행 가능하게 만든다.
+
+↓
+
+Test / CI / Observability와 함께 구현한다.
 
 ↓
 
@@ -517,9 +619,6 @@ Tech / Ops / ADR 갱신
 
 ↓
 
-결과를 기록한다.
-
-↓
-
+Evidence를 기록하고
 필요한 부분만 설계와 인프라를 확장한다.
 ```

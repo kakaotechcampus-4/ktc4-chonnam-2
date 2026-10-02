@@ -17,6 +17,7 @@
 ## 추가 규칙
 
 - 파일명은 `<주제>.md` (kebab-case 영어), 이미지는 `images/<주제>-NN.png`.
+- 이 폴더에는 프로젝트에 직접 적용되는 외부 조건만 둔다. MySQL Queue·ffmpeg·Object Storage·Worker scaling 같은 일반 기술 사례는 Open Decision에 필요한 research로 분리하고 여기의 공식 입력과 섞지 않는다.
 - 레포는 공개이고 공지는 비공개다. **원문을 싣지 않는다.**
   - 카테캠 고유 조건(사양·기간·제한·요청 경로)은 사실만 요약한다.
   - 보편적인 절차(AWS·provider 사용법)는 공식 문서 기준으로 재서술하고 공식 문서를 링크한다.
