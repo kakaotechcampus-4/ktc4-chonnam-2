@@ -12,7 +12,12 @@ const SEEK_SEC = 1
 const GIVE_UP_MS = 4000
 const MAX_WIDTH = 960
 
-export function VideoThumb(props: { file: File | null; name: string }): JSX.Element {
+export function VideoThumb(props: {
+  file: File | null
+  name: string
+  /** 장면 찾기가 시작될 때 바뀌는 값 — 바뀔 때마다 테두리 빛이 한 번 지나간다. null이면 없음 */
+  scan?: { id: number; delayMs: number } | null
+}): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
 
@@ -79,19 +84,28 @@ export function VideoThumb(props: { file: File | null; name: string }): JSX.Elem
   }, [props.file])
 
   const src = shot && shot.file === props.file ? shot.src : null
-  const showFallback = !props.file || failed === props.file
+  // 준비 중에는 필름 아이콘만, 끝내 못 그리면 「미리보기를 표시할 수 없어요」까지 보인다.
+  const unavailable = !props.file || failed === props.file
   return (
     <figure className="flow-thumb">
-      <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
-        {src ? (
-          <img src={src} alt="" />
-        ) : (
-          showFallback && (
+      <div className="flow-thumb-box">
+        <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
+          {!src && (
             <span className="flow-thumb-fallback">
-              <Film size={24} strokeWidth={1.6} aria-hidden />
-              <span>{PREVIEW_UNAVAILABLE}</span>
+              <Film size={24} strokeWidth={1.8} aria-hidden />
+              {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
             </span>
-          )
+          )}
+          {src && <img src={src} alt="" />}
+        </div>
+        {/* 장면 찾기 시작 장식 — 프레임 바깥 테두리만 지난다. 탐지 위치·진행률이 아니다 */}
+        {props.scan && (
+          <span
+            className="flow-scan"
+            key={props.scan.id}
+            style={{ animationDelay: `${props.scan.delayMs}ms` }}
+            aria-hidden
+          />
         )}
       </div>
       <figcaption>

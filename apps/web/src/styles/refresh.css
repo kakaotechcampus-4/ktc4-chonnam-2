@@ -114,7 +114,14 @@ body:has(.rs-page) { background: #fff; }
 /* 완료 — 한 줄 요약: 체크 · 제목(여럿이면 눌러 펼침) · 다시 선택 */
 .rs-drop.is-done .rs-drop-in { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px; text-align: left; }
 .rs-done { flex-direction: row; align-items: flex-start; gap: 16px; min-width: 0; flex: 1; }
-.rs-done .rs-drop-icon { flex: 0 0 auto; width: 40px; height: 40px; margin: 0; }
+.rs-done .rs-drop-icon { flex: 0 0 auto; width: 40px; height: 40px; margin: 0; animation: rs-pop .3s var(--rs-ease) both; }
+/* 업로드 성공 연출(한 번, 약 0.65초) — 배지가 나타나며 체크 선이 그려지고(0.08~0.4s), 그동안 영역이
+   요약으로 줄어든다(0.35s). 이어서 「영상에서 찾아보기」 둘레가 한 번 옅게 퍼진다(0.2~0.65s).
+   모두 요소가 생기거나 is-done이 붙는 순간에만 재생되어, 다시 그려지거나 목록을 펼쳐도 반복되지 않는다 */
+.rs-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rs-draw .32s var(--rs-ease) .08s forwards; }
+@keyframes rs-draw { to { stroke-dashoffset: 0; } }
+.rs.upload.is-done .rs-actions .rs-btn.pri:not(:disabled) { animation: rs-cta-ready .45s var(--rs-ease) .2s both; }
+@keyframes rs-cta-ready { from { box-shadow: 0 0 0 0 rgba(29, 29, 31, .28); } to { box-shadow: 0 0 0 10px rgba(29, 29, 31, 0); } }
 .rs-done-text { flex: 1; min-width: 0; padding-top: 7px; }
 .rs-done .rs-drop-title { font-size: 18px; }
 .rs-done-name { display: block; margin-top: 4px; font-size: 15px; line-height: 1.5; color: var(--rs-sub); overflow-wrap: anywhere; }
@@ -138,7 +145,10 @@ body:has(.rs-page) { background: #fff; }
 .rs-drop.is-done .rs-drop-icon { background: var(--rs-ink); border-color: var(--rs-ink); color: #fff; }
 .rs-drop.is-fail .rs-drop-icon { border-color: var(--red-bd); color: var(--red); }
 /* 회전 표시 → 체크처럼 아이콘이 바뀔 때는 겹쳐 나타난다 */
-.rs-drop-icon > svg, /* 바깥은 나타나기만, 안쪽 호가 회전한다. 회전은 세 곳 모두 1초에 한 바퀴 */
+.rs-drop-icon > svg, .rs-spin { animation: rs-pop .3s var(--rs-ease) both; }
+@keyframes rs-pop { from { opacity: 0; transform: scale(.9); } }
+
+/* 바깥은 나타나기만, 안쪽 호가 회전한다. 회전은 세 곳 모두 1초에 한 바퀴 */
 .rs-spin { display: block; width: 56px; height: 56px; margin-bottom: 8px; }
 .rs-spin-arc {
   display: block; width: 100%; height: 100%; border-radius: 50%;
@@ -165,7 +175,7 @@ body:has(.rs-page) { background: #fff; }
   border-bottom: 1px solid var(--rs-line);
   font-size: 15px; line-height: 1.45; color: var(--rs-ink);
 }
-.rs-files li svg { flex: 0 0 auto; margin-top: 1px; color: var(--rs-sub); }
+.rs-files li svg { flex: 0 0 auto; margin-top: 3px; color: var(--rs-sub); }
 /* 긴 파일 이름도 자르지 않고 줄을 바꾼다 */
 .rs-files li span { min-width: 0; overflow-wrap: anywhere; }
 
@@ -215,6 +225,25 @@ body:has(.rs-page) { background: #fff; }
   width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 8px;
   display: grid; grid-template-columns: minmax(0, 1fr) 336px; column-gap: 48px; row-gap: 32px; align-items: start;
 }
+/* 업로드 → 진행 대표 전환(약 0.55초). 실제 상태는 이미 진행 화면이고, 업로드 화면 겉모습 복사본
+   (.rs-upload-exit)이 위에서 흐려지며 빠지는 동안(0.26초) 진행 화면이 아래에서 열린다.
+   영상 프레임은 96.5%에서 제 크기로, 큰 제목은 60ms, 단계 목록은 130ms 늦게 올라온다. 헤더는 그대로다 */
+.web-main.rs-page { position: relative; }
+.rs-upload-exit {
+  position: absolute; top: 20px; left: 20px; right: 20px; z-index: 5; pointer-events: none; background: #fff;
+  animation: rs-upload-out .26s cubic-bezier(0.22, 1, 0.36, 1) both; /* .rs 밖이라 --rs-ease 대신 같은 값 */
+}
+.rs-upload-exit * { animation: none !important; transition: none !important; }
+.rs-upload-exit .rs-check path { stroke-dashoffset: 0; }
+@keyframes rs-upload-out { to { opacity: 0; transform: translateY(-16px); filter: blur(4px); } }
+.rs.flow:focus, .rs.flow:focus-visible { outline: none; }
+.rs-enter .flow-head { animation: rs-enter-up .38s var(--rs-ease) .06s both; }
+.rs-enter .flow-thumb-box { animation: rs-frame-open .45s var(--rs-ease) both; }
+.rs-enter .flow-thumb figcaption, .rs-enter .flow-files, .rs-enter .flow-situation { animation: rs-fade-in .3s var(--rs-ease) .2s both; }
+.rs-enter .flow-steps { animation: rs-enter-up .38s var(--rs-ease) .13s both; }
+@keyframes rs-enter-up { from { opacity: 0; transform: translateY(10px); } }
+@keyframes rs-frame-open { from { opacity: 0; transform: scale(.965); } }
+
 /* 진행 화면만 본문 폭을 넓힌다(헤더·다른 화면은 1040 그대로) */
 .web-main:has(> .rs.flow) { max-width: 1160px; }
 /* 1행: 위쪽 안내(왼쪽 칸). 2행: 대표 영상과 단계 목록이 같은 높이에서 시작 — 안내가 늘어나도
@@ -260,7 +289,21 @@ body:has(.rs-page) { background: #fff; }
   box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px rgba(0, 0, 0, .06);
   display: grid; place-items: center;
 }
-.flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-screen-in .35s var(--rs-ease) both; }
+.flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-fade-in .35s var(--rs-ease) both; }
+.flow-thumb-box { position: relative; }
+
+/* 장면 찾기 시작 — 프레임 바깥 테두리(영상 밖 2px)를 따라 회색·흰 빛이 한 바퀴(0.85초) 지나간다.
+   반복하지 않고, 단계가 끝나면 요소째 지운다. 탐지 위치·진행률을 뜻하지 않는다 */
+@property --rs-scan { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.flow-scan {
+  position: absolute; inset: -5px; border-radius: 20px; padding: 3px; pointer-events: none;
+  background: conic-gradient(from var(--rs-scan), transparent 0deg 250deg, rgba(134, 134, 139, .35) 300deg, rgba(58, 58, 60, .9) 342deg, #fff 354deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, .16));
+  animation: rs-scan .85s var(--rs-ease) both;
+}
+@keyframes rs-scan { from { --rs-scan: 0deg; opacity: 1; } 80% { opacity: 1; } to { --rs-scan: 360deg; opacity: 0; } }
 .flow-thumb-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; color: var(--rs-sub); }
 .flow-thumb-fallback svg { color: var(--rs-sub); }
 .flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font-size: 15px; color: var(--rs-sub); }
@@ -406,10 +449,11 @@ body:has(.rs-page) { background: #fff; }
   }
   .rs-drop.over .rs-drop-icon, .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
   .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
-  .rs .flow-now-leaving { display: none; }
+  .rs .flow-now-leaving, .rs-upload-exit, .flow-scan { display: none; }
   .flow-step-hl, .flow-step-hl.slide { transition: none !important; }
   .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
   .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
   .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
   .rs-spin-arc { border-color: var(--rs-ink); border-right-color: var(--rs-fill); }
+  .rs-check path { stroke-dashoffset: 0; }
 }

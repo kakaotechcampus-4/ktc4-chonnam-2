@@ -28,6 +28,8 @@ import { VideoThumb } from '../components/VideoThumb'
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
 // 흔들리지 않게 한다. 아직 한 단계도 시작하지 않았을 때만 전체 흐름 문구를 제목으로 쓴다.
 const TITLE_OUT_MS = 260
+// 진입 연출이 끝나는 시간 — 그 안에 장면 찾기가 시작되면 빛은 연출이 끝난 뒤에 지나간다.
+const ENTER_MS = 450
 
 export function FlowScreen(props: {
   view: CaseView
@@ -39,6 +41,13 @@ export function FlowScreen(props: {
   title?: string
 }): JSX.Element {
   const screen = selectScreen(props.view)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const mountedAt = useRef(Date.now())
+  // 「영상에서 찾아보기」가 사라져 포커스가 갈 곳을 잃으면 진행 화면이 받는다(보이는 요소).
+  useEffect(() => {
+    if (!document.activeElement || document.activeElement === document.body)
+      rootRef.current?.focus({ preventScroll: true })
+  }, [])
   // 장면 찾기가 끝나기 전에는 「찾는 중」, 끝나면 「준비 중」(core-user-flow §7·§19).
   const found = props.view.progress.some((p) => p.step === 'coarse_search' && p.state === 'DONE')
   const overall = props.title ?? (found ? '신고자료를 준비하고 있어요' : '사건을 찾고 있어요')
@@ -79,6 +88,15 @@ export function FlowScreen(props: {
     return () => clearTimeout(t)
   }, [leaving])
 
+  // 장면 찾기 시작 장식 — coarse_search가 실제로 RUNNING이 되는 순간 한 번. 단계가 끝나면 지운다.
+  const scanning = props.view.progress.some((p) => p.step === 'coarse_search' && p.state === 'RUNNING')
+  const [scan, setScan] = useState<{ id: number; delayMs: number } | null>(null)
+  useEffect(() => {
+    if (!scanning) return setScan(null)
+    const now = Date.now()
+    setScan({ id: now, delayMs: Math.max(0, ENTER_MS - (now - mountedAt.current)) })
+  }, [scanning])
+
   // 진행 중 강조 면 — 진행 중인 단계가 정확히 하나일 때만 면 하나가 그 행으로 옮겨 간다.
   // 이웃 행으로 넘어갈 때만 미끄러지고, 건너뛰면 그 자리에 바로 나타난다(지나친 행을 진행
   // 중처럼 보이지 않게). 여럿이 동시에 진행 중이면 각 행이 따로 강조된다(CSS). 하나도 없으면
@@ -95,10 +113,15 @@ export function FlowScreen(props: {
       return
     }
     const top = li.getBoundingClientRect().top - root.getBoundingClientRect().top
-    setHl((prev) => ({ top, height: li.offsetHeight, index: single, slide: !!prev && Math.abs(prev.index - single) === 1 }))
+    setHl((prev) => ({
+      top,
+      height: li.offsetHeight,
+      index: single,
+      slide: !!prev && Math.abs(prev.index - single) === 1,
+    }))
   }, [single, props.view.progress.length])
   return (
-    <div className="rs rs-screen flow">
+    <div className="rs rs-enter flow" ref={rootRef} tabIndex={-1}>
       {/* 위: 현재 작업·상태·안내(두 칸 전체). 아래 행에 대표 영상과 단계 목록이 같은 높이에서 시작한다 */}
       <div className="flow-head" aria-live="polite">
         {current && <p className="flow-overall">{overall}</p>}
@@ -139,7 +162,7 @@ export function FlowScreen(props: {
       </div>
 
       <div className="flow-main">
-        <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} />
+        <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} scan={scan} />
 
         {props.files.length > 1 && (
           // 여러 파일은 접어 둔다. open은 브라우저가 들고 있어 단계가 바뀌어 다시 그려져도 유지된다.

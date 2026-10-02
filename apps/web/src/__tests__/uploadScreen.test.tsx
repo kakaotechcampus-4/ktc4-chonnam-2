@@ -3,8 +3,9 @@
 // 업로드 화면: 완료되면 한 줄 요약으로 줄지만, 파일 고르기 버튼은 같은 요소로 남아 포커스를
 // 잃지 않고, 요약 안의 펼침은 파일 창을 열지 않는다.
 
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { DemoFlow } from '../screens/DemoFlow'
 import { UploadScreen, type UploadState } from '../screens/UploadScreen'
 
 afterEach(() => {
@@ -60,4 +61,38 @@ it('파일이 하나면 펼침 없이 이름을 바로 보인다', () => {
   const r = render(screen('done', [file('REC_2026_09_14_LONG_NAME.mp4')]))
   expect(r.container.querySelector('details')).toBeNull()
   expect(r.container.querySelector('.rs-done-name')!.textContent).toBe('REC_2026_09_14_LONG_NAME.mp4')
+})
+
+it('성공 체크는 완료될 때 한 번 생기고, 다시 그려지거나 목록을 펼쳐도 새로 만들어지지 않는다', () => {
+  const files = [file('a.mp4'), file('b.mp4')]
+  const r = render(screen('done', files))
+  const check = r.container.querySelector('.rs-check')
+  r.rerender(screen('done', files))
+  fireEvent.click(r.container.querySelector('summary')!)
+  expect(r.container.querySelector('.rs-check')).toBe(check)
+})
+
+it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 복사본은 읽히지 않으며 곧 사라진다 — 새 신고면 즉시', () => {
+  vi.useFakeTimers()
+  try {
+    const r = render(<DemoFlow />)
+    fireEvent.change(r.container.querySelector('input[type=file]')!, { target: { files: [file('a.mp4')] } })
+    act(() => vi.advanceTimersByTime(2000))
+    fireEvent.click(r.getByText('영상에서 찾아보기'))
+    const ghost = r.container.querySelector('.rs-upload-exit')!
+    expect(r.container.querySelector('.rs.flow')).not.toBeNull()
+    expect(ghost.getAttribute('aria-hidden')).toBe('true')
+    expect(ghost.hasAttribute('inert')).toBe(true)
+    act(() => vi.advanceTimersByTime(300))
+    expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
+
+    fireEvent.click(r.getByText('새 신고'))
+    fireEvent.change(r.container.querySelector('input[type=file]')!, { target: { files: [file('a.mp4')] } })
+    act(() => vi.advanceTimersByTime(2000))
+    fireEvent.click(r.getByText('영상에서 찾아보기'))
+    fireEvent.click(r.getByText('새 신고'))
+    expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
 })

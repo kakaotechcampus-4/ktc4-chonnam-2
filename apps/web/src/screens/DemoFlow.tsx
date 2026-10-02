@@ -18,6 +18,10 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 // 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
+// 「영상에서 찾아보기」 뒤 업로드 화면이 흐려지며 빠지는 시간. 실제 상태는 누르는 즉시 진행으로
+// 넘어가고, 이 시간 동안 겉모습 복사본만 위에 겹쳐 둔다.
+const UPLOAD_EXIT_MS = 260
+const noop = () => {}
 
 function snapshot(scenarioId: string, index: number): CaseView {
   const found = SNAPSHOTS.find((s) => s.scenarioId === scenarioId && s.index === index)
@@ -216,7 +220,14 @@ export function DemoFlow(): JSX.Element {
   const [files, setFiles] = useState<File[]>([])
   const [situation, setSituation] = useState('')
   const [plate, setPlate] = useState<string | null>(null)
+  const [uploadLeaving, setUploadLeaving] = useState(false)
   const demo = CASES[caseKey]
+
+  useEffect(() => {
+    if (!uploadLeaving) return
+    const t = setTimeout(() => setUploadLeaving(false), UPLOAD_EXIT_MS)
+    return () => clearTimeout(t)
+  }, [uploadLeaving])
 
   // 업로드가 끝나면 완료/실패로 넘어간다. 일부만 실패하면 나머지로 계속한다.
   useEffect(() => {
@@ -243,6 +254,7 @@ export function DemoFlow(): JSX.Element {
     setMain({ kind: 'flow', run, frame: 0, startedAt: Date.now() })
   }
   const newReport = () => {
+    setUploadLeaving(false)
     setMain({ kind: 'upload', state: 'idle' })
     setSubs([])
     setPlate(null)
@@ -287,7 +299,10 @@ export function DemoFlow(): JSX.Element {
                 setMain({ kind: 'upload', state: 'uploading' })
               }}
               onSituation={setSituation}
-              onSearch={() => start(demo.run)}
+              onSearch={() => {
+                setUploadLeaving(true)
+                start(demo.run)
+              }}
             />
             <label className="kv-src demo-pick">
               시연할 경우{' '}
@@ -302,6 +317,20 @@ export function DemoFlow(): JSX.Element {
           </>
         )}
 
+        {main.kind === 'flow' && uploadLeaving && (
+          // 겉모습만 남긴 업로드 화면 — 누를 수도, 읽히지도 않는다. 진행 화면은 이미 아래에 열려 있다.
+          <div className="rs-upload-exit" aria-hidden inert>
+            <UploadScreen
+              state="done"
+              files={files}
+              skipped={demo.upload === 'partial' ? DEMO_SKIPPED : []}
+              situation={situation}
+              onFiles={noop}
+              onSituation={noop}
+              onSearch={noop}
+            />
+          </div>
+        )}
         {main.kind === 'flow' && (
           <FlowScreen
             view={main.run.frames[main.frame]}

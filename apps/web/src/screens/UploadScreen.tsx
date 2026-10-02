@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
-import { Check, ChevronDown, CircleAlert, FileVideo, Upload } from 'lucide-react'
+import { ChevronDown, CircleAlert, FileVideo, Upload } from 'lucide-react'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -70,7 +70,7 @@ export function UploadScreen(props: {
     <ul className="rs-files">
       {props.files.map((f, i) => (
         <li key={`${f.name}-${i}`}>
-          <FileVideo size={18} strokeWidth={1.8} aria-hidden />
+          <FileVideo size={16} strokeWidth={1.8} aria-hidden />
           <span>{f.name}</span>
         </li>
       ))}
@@ -110,7 +110,20 @@ export function UploadScreen(props: {
             {state === 'done' ? (
               <div className="rs-drop-body rs-done rs-appear" key="done">
                 <span className="rs-drop-icon" aria-hidden>
-                  <Check size={22} strokeWidth={2.2} />
+                  {/* 업로드 성공 — 체크 선이 한 번 그려진다(pathLength=1이라 CSS로 0→1을 그린다) */}
+                  <svg
+                    className="rs-check"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} />
+                  </svg>
                 </span>
                 <div className="rs-done-text">
                   {props.files.length > 1 ? (
@@ -119,7 +132,7 @@ export function UploadScreen(props: {
                         <b className="rs-drop-title" aria-live="polite">
                           {title}
                         </b>
-                        <ChevronDown size={18} strokeWidth={1.8} aria-hidden />
+                        <ChevronDown size={16} strokeWidth={1.8} aria-hidden />
                       </summary>
                       {fileList}
                     </details>
@@ -143,7 +156,7 @@ export function UploadScreen(props: {
                 ) : (
                   <span className="rs-drop-icon" aria-hidden key={`icon-${state}`}>
                     {state === 'fail' ? (
-                      <CircleAlert size={26} strokeWidth={1.8} />
+                      <CircleAlert size={24} strokeWidth={1.8} />
                     ) : (
                       <Upload size={24} strokeWidth={1.8} />
                     )}
@@ -155,7 +168,9 @@ export function UploadScreen(props: {
                 {state === 'idle' && (
                   <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>
                 )}
-                {state === 'fail' && <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
+                {state === 'fail' && (
+                  <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>
+                )}
                 {props.files.length > 0 && <div className="rs-appear">{fileList}</div>}
               </div>
             )}
