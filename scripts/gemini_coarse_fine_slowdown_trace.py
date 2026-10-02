@@ -265,6 +265,19 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
     }
 
 
+def _patch_fine_height(height: int) -> None:
+    # ponytail: 운영 media.py 를 고치지 않으려고 모듈 함수를 바꿔 끼운다. 운영에 넣을 때는 config 값으로.
+    from daesingo.search import media
+    original = media._run_ffmpeg_encode
+
+    def encode(*a, max_height: int, start_sec: float | None = None, **kw):
+        if start_sec is not None:  # Fine 준비만 구간(start_sec)을 받는다
+            max_height = height
+        return original(*a, max_height=max_height, start_sec=start_sec, **kw)
+
+    media._run_ffmpeg_encode = encode
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", default=DEFAULT_ENV)
@@ -278,10 +291,14 @@ def main() -> None:
     ap.add_argument("--reasoning", default=None,
                     help="쉼표로 나눈 reasoning_effort 값들(video transport 만 스트리밍). 없으면 설정값")
     ap.add_argument("--clips", default=None, help="쉼표로 나눈 case_id 앞부분으로 거른다")
+    ap.add_argument("--fine-height", type=int, default=None,
+                    help="Fine 준비 영상 최대 높이(운영 MediaPreparer 는 360 고정). 실험에서만 바꾼다")
     args = ap.parse_args()
     if args.clips:
         CASES[:] = [c for c in CASES if c[0].startswith(tuple(args.clips.split(",")))]
 
+    if args.fine_height:
+        _patch_fine_height(args.fine_height)
     env = load_env_file(args.env)
     base_cfg = GeminiSearchConfig.from_dotenv(env)
     key = env.get("GEMINI_API_KEY", "").strip()
@@ -309,7 +326,7 @@ def main() -> None:
                   f"total_tok {r['reported_total_tokens']}")
             if args.out:  # 조건마다 저장해 중간에 끊겨도 남긴다
                 args.out.write_text(json.dumps({
-                    "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model,
+                    "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model, "fine_height": args.fine_height or 360,
                                "reasoning_efforts": efforts,
                                "fine_padding_sec": base_cfg.fine_padding_sec},
                     "runs": runs}, ensure_ascii=False, indent=2), encoding="utf-8")

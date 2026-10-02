@@ -23,4 +23,6 @@
 - [운영 구조 모델 비교 gpt-5.6-luna](search-v3-gpt-luna-image-2026-10-02.md) — 영상 미지원이라 이미지 전송(Coarse 2 / Fine 4 fps)으로 3회; 위반 2·1·2/4, 오탐 0, 141927·YT_0003은 Coarse 후보 0, 토큰 flash 영상의 약 2.5배 ([JSON](search-v3-gpt-luna-image-2026-10-02-results.json))
 - [운영 구조 모델 비교 gpt-5.6-sol](search-v3-gpt-sol-image-2026-10-02.md) — 이미지 전송 3회; 위반 2/4 ×3, 오탐 0. 141927에서 처음으로 위반 SUV·정답 시각을 잡았으나 선을 점선으로 봐 기각 ([JSON](search-v3-gpt-sol-image-2026-10-02-results.json))
 - [Fine 고정 구간 sol × AI-Hub 참고 예시](gpt-sol-fine-fewshot-2026-10-02.md) — 예시 3장 유무 각 24호출; 양성 10/12 같음·음성 11→12/12로 효과 구분 안 됨. 예시 없이도 sol은 720p 고정 구간에서 141927을 3/3(정답 차량·실선) ([JSON](gpt-sol-fine-fewshot-2026-10-02-results.json))
+- [Fine 고정 구간 sol 해상도·detail·구간 폭](gpt-sol-fine-resolution-window-2026-10-02.md) — 하나씩 바꾼 4조건 각 24호출; 141927은 720p 9/9 대 360p 3/6로 해상도가 원인, detail·구간 폭은 무관. 720p 토큰 약 3배 ([JSON](gpt-sol-fine-resolution-window-2026-10-02-results.json))
+- [sol 파이프라인 Fine 720p](search-v3-gpt-sol-fine720-2026-10-02.md) — Fine만 720p로 3회; 위반 3·3·2/4, 오탐 0, 141927 처음 통과(2/3). 남은 실패는 모두 Coarse 후보 없음. 토큰 360p의 1.7배 ([JSON](search-v3-gpt-sol-fine720-2026-10-02-results.json))
 - [p4-retired-2026-09-25/conditions.md](p4-retired-2026-09-25/conditions.md) — 종료한 p4의 구현 계획, 두 회차 조건·보고서·결과, 원문 프롬프트 보존
