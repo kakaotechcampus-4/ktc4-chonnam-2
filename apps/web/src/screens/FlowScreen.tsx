@@ -62,34 +62,35 @@ export function FlowScreen(props: {
   const elapsed = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
   return (
     <div className="rs rs-screen flow">
-      <div className="flow-main">
-        <div className="flow-head" aria-live="polite">
-          {current && <p className="flow-overall">{overall}</p>}
-          {/* key가 바뀌면 다시 그려져 제목이 부드럽게 바뀐다 */}
-          <h1 className="rs-title flow-now" key={current ?? 'overall'}>
-            {current ? stepLabel(current) : overall}
-          </h1>
-          <div className="flow-status-row">
-            <p className={`flow-status${currentState ? ` is-${currentState.toLowerCase()}` : ''}`}>
-              {currentState && (
-                <>
-                  <span className="flow-status-mark" aria-hidden />
-                  {CURRENT_STEP_STATE[currentState]}
-                </>
-              )}
-            </p>
-            <p className="flow-elapsed">
-              경과 시간 <span>{elapsed}</span>
-            </p>
-          </div>
-          {continuing && (
-            <p className="flow-partial">
-              <span className="flow-partial-mark" aria-hidden />
-              {failed.length === 1 ? stepFailedLabel(failed[0].step) : SOME_STEPS_FAILED} {OTHERS_CONTINUING}
-            </p>
-          )}
+      {/* 위: 현재 작업·상태·안내(두 칸 전체). 아래 행에 대표 영상과 단계 목록이 같은 높이에서 시작한다 */}
+      <div className="flow-head" aria-live="polite">
+        {current && <p className="flow-overall">{overall}</p>}
+        {/* key가 바뀌면 다시 그려져 제목이 부드럽게 바뀐다 */}
+        <h1 className="rs-title flow-now" key={current ?? 'overall'}>
+          {current ? stepLabel(current) : overall}
+        </h1>
+        <div className="flow-status-row">
+          <p className={`flow-status${currentState ? ` is-${currentState.toLowerCase()}` : ''}`}>
+            {currentState && (
+              <>
+                <span className="flow-status-mark" aria-hidden />
+                {CURRENT_STEP_STATE[currentState]}
+              </>
+            )}
+          </p>
+          <p className="flow-elapsed">
+            경과 시간 <span>{elapsed}</span>
+          </p>
         </div>
+        {continuing && (
+          <p className="flow-partial">
+            <span className="flow-partial-mark" aria-hidden />
+            {failed.length === 1 ? stepFailedLabel(failed[0].step) : SOME_STEPS_FAILED} {OTHERS_CONTINUING}
+          </p>
+        )}
+      </div>
 
+      <div className="flow-main">
         <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} />
 
         {props.files.length > 1 && (
