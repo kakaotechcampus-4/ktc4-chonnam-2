@@ -18,4 +18,9 @@
 - [느린 영상 시각 환산 검증](gemini-slow-video-time-probe-2026-10-01.md) — 프레임 대응(API 없음)과 빨간 사각형 probe; 변환·모델 응답 모두 0.5초 이내, Coarse 시각 오차는 환산 문제가 아님 ([JSON](gemini-slow-video-time-probe-2026-10-01-results.json))
 - [프록시 인라인 요청 크기 한도](gemini-proxy-size-probe-2026-10-01.md) — 10초 영상을 10–61 MiB로 키워 1회씩; 요청 81 MiB까지 성공, 토큰 불변·응답 시간만 증가 ([JSON](gemini-proxy-size-probe-2026-10-01-results.json))
 - [운영 경로 검증 v3](search-v3-production-verify-2026-10-01.md) — GeminiProvider 그대로 7클립 3회; 위반 2/4·1/4·1/4, 오탐 0, 회차 평균 5.5만 토큰, 영상 밖 후보 1건(#181) ([JSON](search-v3-production-verify-2026-10-01-results.json))
+- [Coarse 원본 4 fps](gemini-coarse-4fps-2026-10-02.md) — Coarse p3를 0.25x로 3회; 적중 6→9/12지만 141927 증가분은 틀린 차량(흰색 SUV) 구간이 정답과 겹친 것, YT_0003 변화 없음, 토큰 1.85배 ([JSON](gemini-coarse-4fps-2026-10-02-results.json))
+- [운영 경로 모델 비교 3.1-pro](search-v3-pro-model-verify-2026-10-02.md) — v3 구조 그대로 모델만 gemini-3.1-pro-preview로 3회; 위반 3/4·2/4·3/4지만 위반 없음 정답 9/9→2/9(점선 정상 변경도 실선으로), 141927 HIT는 틀린 차량. high는 위반 없음 0/9 ([JSON](search-v3-pro-model-verify-2026-10-02-results.json), [high JSON](search-v3-pro-model-high-2026-10-02-results.json))
+- [운영 구조 모델 비교 gpt-5.6-luna](search-v3-gpt-luna-image-2026-10-02.md) — 영상 미지원이라 이미지 전송(Coarse 2 / Fine 4 fps)으로 3회; 위반 2·1·2/4, 오탐 0, 141927·YT_0003은 Coarse 후보 0, 토큰 flash 영상의 약 2.5배 ([JSON](search-v3-gpt-luna-image-2026-10-02-results.json))
+- [운영 구조 모델 비교 gpt-5.6-sol](search-v3-gpt-sol-image-2026-10-02.md) — 이미지 전송 3회; 위반 2/4 ×3, 오탐 0. 141927에서 처음으로 위반 SUV·정답 시각을 잡았으나 선을 점선으로 봐 기각 ([JSON](search-v3-gpt-sol-image-2026-10-02-results.json))
+- [Fine 고정 구간 sol × AI-Hub 참고 예시](gpt-sol-fine-fewshot-2026-10-02.md) — 예시 3장 유무 각 24호출; 양성 10/12 같음·음성 11→12/12로 효과 구분 안 됨. 예시 없이도 sol은 720p 고정 구간에서 141927을 3/3(정답 차량·실선) ([JSON](gpt-sol-fine-fewshot-2026-10-02-results.json))
 - [p4-retired-2026-09-25/conditions.md](p4-retired-2026-09-25/conditions.md) — 종료한 p4의 구현 계획, 두 회차 조건·보고서·결과, 원문 프롬프트 보존

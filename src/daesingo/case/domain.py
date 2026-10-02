@@ -110,6 +110,11 @@ class CaseAggregate:
     # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
     candidate_search_failed: bool = False
 
+    # 후보 목록 세대 — `receive_candidates()`가 목록을 교체하거나 `regress_to_searching()`이 비울 때마다
+    # 오른다. adapter는 같은 세대 안에서만 후보별 관찰(Fine·판독)을 재사용한다
+    # (`decisions/reselect-observation-reuse.md`). `selection_rev`와 달리 재선택으로는 오르지 않는다. CaseView 비노출.
+    candidate_generation: int = 0
+
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
@@ -143,10 +148,11 @@ class CaseAggregate:
         실제 fixture로 검증: `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`도 검색 자체는
         성공이므로 `CANDIDATE_REVIEW`로 전진한다). 빈 배열이든 아니든 전진 여부는 같고,
         차이는 이후 단계(선택 가능한 candidate가 없어 evidence 파이프라인이 발주되지 않음)와
-        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — notice 자체는
-        `build_case_view()` 호출자가 채운다(CaseView 값만으로 발동하는 notice는
-        `service.derive_notices()`가 붙인다 — 이슈 #48)."""
+        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — 이 notice는
+        CaseView 값(`CANDIDATE_REVIEW` + 빈 `candidates`)만으로 발동해 `service.derive_notices()`가
+        붙인다."""
         self.candidates = list(candidates)
+        self.candidate_generation += 1
         self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
 
@@ -225,6 +231,7 @@ class CaseAggregate:
             raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
         self.stage = "SEARCHING"
         self.candidates = []
+        self.candidate_generation += 1
 
     def check_reselect(self, candidate_id: str) -> None:
         """`OTHER_CANDIDATE`를 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(#166).

@@ -426,7 +426,8 @@ def _run_ffmpeg_encode(
     args += ["-i", str(src)]
     args += [
         "-vf",
-        f"fps={fps},{_scale_filter(max_height)},setpts=(PTS-STARTPTS)*{fps}",
+        # 끝의 fps=1: ffmpeg 6.x는 setpts 뒤에도 앞 fps 값으로 CFR 출력해 프레임을 복제한다.
+        f"fps={fps},{_scale_filter(max_height)},setpts=(PTS-STARTPTS)*{fps},fps=1",
         "-c:v",
         "libx264",
         "-an",  # no audio

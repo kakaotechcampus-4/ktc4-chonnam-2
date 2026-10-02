@@ -52,9 +52,13 @@ class Recorder:
     def key(self, stage: str) -> tuple:
         case = self.case
         selected = next((c.candidate_id for c in case.candidates if c.selected), None) if case else None
-        selection = (selected, case.selection_rev if case else None)
-        # assemble은 정정마다 입력이 바뀐다(순수 계산) — case_rev를 입력에 넣는다.
-        return selection + ((case.case_rev,) if stage == "assemble" and case else ())
+        if stage == "assemble":
+            # 조립은 선택 context·정정마다 입력이 바뀐다(순수 계산) — selection_rev·case_rev를 입력에 넣는다.
+            return (selected, case.selection_rev if case else None, case.case_rev if case else None)
+        # 관찰은 같은 탐색 결과의 같은 후보면 입력이 같다(decisions/reselect-observation-reuse.md) —
+        # 「탐색 결과 세대」는 지금까지의 1차 탐색 호출 수로 센다. 재선택(selection_rev)은 입력을 바꾸지 않는다.
+        generation = sum(1 for s, _ in self.calls if s == "coarse_search")
+        return (selected, generation)
 
     def mark(self) -> int:
         return len(self.calls)

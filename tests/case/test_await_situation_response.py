@@ -1,0 +1,175 @@
+"""#165 — Fine `UNCERTAIN` + 상황 응답 전(`AWAIT_SITUATION_RESPONSE`)을 조립 전에 소비한다.
+
+real E2E가 disposition을 `NOT_ASSEMBLED`만 분기하고 AWAIT는 `assemble_evidence()`로 흘려
+`ContractInputError: an uncertain event requires USER_UNSURE context`로 끝났다. 또 분류할
+때 사용자 응답을 넘기지 않아, 응답이 와도 계속 AWAIT로 분류됐다.
+
+- 무응답이면 조립하지 않고 관찰 결과만 보존한다. `USER_UNSURE`를 만들어 넣지 않는다.
+- 실제 응답이 오면 같은 selection context의 관찰 결과로 조립만 다시 한다(Fine·OCR 재실행 없음).
+- 응답 전에 어디까지 실행할지는 #171 B 결정 몫 — 지금 관찰 단계(IncidentClip·OCR·시간
+  source)는 그대로 진행한다(추천 A안과 같은 동작).
+"""
+from __future__ import annotations
+
+from dataclasses import replace
+from pathlib import Path
+
+import pytest
+
+from daesingo import search as search_module
+from daesingo.case import jobs, real_e2e, service
+from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
+from daesingo.case.domain import CaseAggregate
+from daesingo.evidence import ASSEMBLE, AWAIT_SITUATION_RESPONSE
+
+MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
+
+
+def _uncertain(visual_evidence: dict) -> dict:
+    return dict(visual_evidence, verification="UNCERTAIN", visual_event_type=None)
+
+
+@pytest.fixture(scope="module")
+def uncertain_observations() -> real_e2e.ObservationBundle:
+    """happy_001 관찰 결과에서 Fine만 `UNCERTAIN`으로 바꾼다."""
+    scope = search_module.AnalysisScope.model_validate(
+        MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    )
+    candidate = search_module.search_candidates(scope).candidates[0]
+    obs = real_e2e.observe_happy_001_candidate(
+        case_id="case_await_001", candidate=candidate, scope=scope, mock_root=MOCK_ROOT
+    )
+    return replace(obs, visual_evidence=_uncertain(obs.visual_evidence))
+
+
+def test_await_without_response_does_not_assemble_or_raise(uncertain_observations) -> None:
+    bundle = real_e2e.assemble_evidence_bundle(uncertain_observations, case_id="case_await_001")
+
+    assert bundle.disposition.decision == AWAIT_SITUATION_RESPONSE
+    assert bundle.evidence_record is None
+    assert bundle.report_package is None
+    # 관찰 결과(Fine 판정·비용 기록)는 지우지 않는다.
+    assert bundle.visual_evidence["verification"] == "UNCERTAIN"
+    assert bundle.fine_run == uncertain_observations.fine_run
+
+
+def test_user_unsure_response_resumes_assembly_from_same_observations(uncertain_observations) -> None:
+    response = {
+        "value": "USER_UNSURE",
+        "responded_at": "2026-08-24T18:22:30+09:00",
+        "candidate_ref": {"kind": "candidate_event", "ref": uncertain_observations.candidate.candidate_id},
+    }
+
+    bundle = real_e2e.assemble_evidence_bundle(
+        uncertain_observations, case_id="case_await_001", situation_response=response
+    )
+
+    assert bundle.disposition.decision == ASSEMBLE
+    assert bundle.evidence_record is not None
+    assert bundle.evidence_record["situation_response"]["value"] == "USER_UNSURE"
+
+
+def test_real_adapter_caseview_for_await_has_no_evidence_and_is_not_ready(monkeypatch) -> None:
+    """adapter 경로 — 무응답 AWAIT는 CaseView 조립까지 예외 없이 가고, evidence·Package가 없다."""
+    original = real_e2e.observe_happy_001_candidate
+
+    def observe_uncertain(**kwargs):
+        obs = original(**kwargs)
+        return replace(obs, visual_evidence=_uncertain(obs.visual_evidence))
+
+    monkeypatch.setattr(real_e2e, "observe_happy_001_candidate", observe_uncertain)
+
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id="case_await_002", hints={}, manifest_summary={})
+    real = RealAdapter(case_id="case_await_002", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:await-coarse")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    view = service.build_view_from_adapter(case, real)
+
+    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["evidence"] is None
+    assert view["package"] is None
+
+
+def test_real_adapter_resumes_after_user_unsure_without_reobserving(monkeypatch) -> None:
+    """응답 뒤 같은 selection context로 재개 — 관찰(Fine·OCR)은 다시 돌지 않는다."""
+    original = real_e2e.observe_happy_001_candidate
+    calls = []
+
+    def observe_uncertain(**kwargs):
+        calls.append(kwargs["candidate"].candidate_id)
+        obs = original(**kwargs)
+        return replace(obs, visual_evidence=_uncertain(obs.visual_evidence))
+
+    monkeypatch.setattr(real_e2e, "observe_happy_001_candidate", observe_uncertain)
+
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id="case_await_003", hints={}, manifest_summary={})
+    real = RealAdapter(case_id="case_await_003", case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:await-coarse")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+    assert service.build_view_from_adapter(case, real)["evidence"] is None
+
+    case.record_situation_response("USER_UNSURE", responded_at="2026-08-24T18:22:30+09:00")
+    view = service.build_view_from_adapter(case, real)
+
+    assert view["evidence"] is not None
+    assert len(calls) == 1
+
+
+PENDING_CODE = "case.situation_response_pending"
+
+
+def _await_view(monkeypatch, case_id: str, *, plate_outcome: str | None = None) -> dict:
+    original = real_e2e.observe_happy_001_candidate
+
+    def observe_uncertain(**kwargs):
+        obs = original(**kwargs)
+        obs = replace(obs, visual_evidence=_uncertain(obs.visual_evidence))
+        return replace(obs, plate_read_outcome=plate_outcome) if plate_outcome else obs
+
+    monkeypatch.setattr(real_e2e, "observe_happy_001_candidate", observe_uncertain)
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id=case_id, hints={}, manifest_summary={})
+    real = RealAdapter(case_id=case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint=f"sha1:{case_id}")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+    return service.build_view_from_adapter(case, real)
+
+
+def test_await_view_says_response_pending(monkeypatch) -> None:
+    """응답 대기는 evidence가 없어도 「상황 응답 전」으로 알린다 — 조립 중과 구분된다(PR #224 리뷰)."""
+    view = _await_view(monkeypatch, "case_await_004")
+
+    assert view["evidence"] is None
+    assert PENDING_CODE in [n["code"] for n in view["notices"]]
+
+
+def test_await_progress_shows_finished_observations_not_running(monkeypatch) -> None:
+    """응답 전에도 관찰(OCR·시간 source)은 끝났다. 조립 이후는 응답 뒤에 하므로 PENDING이다."""
+    view = _await_view(monkeypatch, "case_await_005")
+
+    assert {p["step"]: p["state"] for p in view["progress"]} == {
+        "file_intake": "DONE",
+        "coarse_search": "DONE",
+        "candidate_review": "DONE",
+        "plate_read": "DONE",
+        "overlay_time_read": "DONE",
+        "evidence_assembly": "PENDING",
+        "requirement_check": "PENDING",
+        "package_assembly": "PENDING",
+    }
+
+
+def test_await_progress_keeps_plate_read_failure(monkeypatch) -> None:
+    view = _await_view(monkeypatch, "case_await_006", plate_outcome="FAILED")
+
+    assert next(p["state"] for p in view["progress"] if p["step"] == "plate_read") == "FAILED"
+    assert "readout.plate_read_failed" in [n["code"] for n in view["notices"]]
