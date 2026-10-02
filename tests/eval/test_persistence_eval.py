@@ -89,7 +89,8 @@ def test_run_and_score_persistence_under_private_root(tmp_path, private_root, mo
                   [{"bbox_xywh": [1, 2, 10, 20], "conf": 0.8, "cls": "car"}]])
     monkeypatch.setattr(yolo_persistence, "_load_model", lambda: object())
     monkeypatch.setattr(yolo_persistence, "_detect", lambda model, image: next(calls))
-    monkeypatch.setattr("cv2.imdecode", lambda buf, flag: "image")
+    # cv2 가 없는 환경(eval-yolo extra 미설치)에서도 돌아야 한다.
+    monkeypatch.setattr(yolo_persistence, "_read_image", lambda path: "image")
 
     assert run.main(["--impl", "readout-exp:yolo11n", "--manifest", "private_aihub172_track1",
                      "--stage", "persistence", "--run-id", "track1_t"]) == 0

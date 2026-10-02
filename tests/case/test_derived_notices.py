@@ -2,8 +2,9 @@
 
 `evidence.location_search_keyword_missing`의 계약 발동 조건은
 `evidence.location_display.search_keyword == null`이다(`contract-job-record-case-view.md`
-B절 `notices[].code`, 2026-09-14 등재). 정답지는 이 notice가 들어간 case fixture 3개와,
-검색어가 있어 대상이 아닌 `happy_001`이다.
+B절 `notices[].code`, 2026-09-14 등재). 정답지는 이 notice가 들어간 case fixture 4개다.
+`happy_001`도 #48 I2 재생성으로 근거 없던 `search_keyword`가 빠져 대상이 됐다 — 검색어가 있는
+경우는 fixture 값에 검색어를 채운 사본으로 확인한다.
 
 `case.situation_response_pending` — #171 C-2(Case 결정): Package 전 결과 화면의 「준비 전」
 이유를 notice로 내린다. 발동 조건은 evidence가 있고, 선택된 후보의 `situation_confirmation`이
@@ -38,7 +39,7 @@ def _without_notice(view: dict) -> dict:
 
 
 @pytest.mark.parametrize(
-    "scenario_id", ["correction_rerun_001", "plate_reread_001", "unknown_abstain_partial_001"]
+    "scenario_id", ["correction_rerun_001", "happy_001", "plate_reread_001", "unknown_abstain_partial_001"]
 )
 def test_derives_notice_when_search_keyword_is_null(scenario_id):
     for expected in _case_views(scenario_id):
@@ -60,11 +61,13 @@ def test_notice_shape_matches_contract():
 
 
 def test_no_notice_when_search_keyword_present():
-    for view in _case_views("happy_001"):
-        if view["evidence"] is None:
+    for expected in _case_views("happy_001"):
+        if expected["evidence"] is None:
             continue
-        assert view["evidence"]["location_display"]["search_keyword"] is not None
-        assert service.derive_notices(copy.deepcopy(view))["notices"] == view["notices"]
+        view = _without_notice(expected)
+        view["evidence"]["location_display"]["search_keyword"] = "광주 상무지구 상무중앙로 사거리"
+        codes = [n["code"] for n in service.derive_notices(view)["notices"]]
+        assert CODE not in codes
 
 
 def test_no_notice_before_evidence():

@@ -53,7 +53,11 @@ def _coarse(session: DiagnosticSession) -> DiagnosticCall:
                     prompt_version="",
                     prompt_fingerprint="",
                 )
-            call = _call(_coarse_spec(case, deps.profile), prepared, session)
+            call = _call(
+                _coarse_spec(case, deps.profile, prepared.playback_speed),
+                prepared,
+                session,
+            )
             if isinstance(call.response, DiagnosticCoarseResponse):
                 call = call.model_copy(
                     update={
