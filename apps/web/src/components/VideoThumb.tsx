@@ -1,12 +1,12 @@
 import { useEffect, useState, type JSX } from 'react'
 import { Film } from 'lucide-react'
-import { REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
+import { PREVIEW_UNAVAILABLE, REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
 
 // 대표 영상의 정지 화면 한 장. 브라우저 안에서 원본 File로 임시 주소를 만들어 앞부분 한
 // 장면을 그린다 — 서버 업로드·분석과 무관하고, 재생 기능도 없다.
 //
-// 그리지 못하면(지원하지 않는 형식·손상·시간 초과·원본 없음) 필름 아이콘과 파일 이름으로
-// 대신한다. 이것은 브라우저가 미리보기를 못 만든 것일 뿐 분석 실패가 아니다 — 진행 상태나
+// 그리지 못하면(지원하지 않는 형식·손상·시간 초과·원본 없음) 같은 크기의 프레임에 필름
+// 아이콘과 「미리보기를 표시할 수 없어요」를 둔다. 파일 이름은 어느 쪽이든 프레임 아래다. 이것은 브라우저가 미리보기를 못 만든 것일 뿐 분석 실패가 아니다 — 진행 상태나
 // 분석 대상에는 아무 영향이 없다. 준비되는 동안에도 나머지 화면은 그대로 그려진다.
 const SEEK_SEC = 1
 const GIVE_UP_MS = 4000
@@ -88,15 +88,15 @@ export function VideoThumb(props: { file: File | null; name: string }): JSX.Elem
         ) : (
           showFallback && (
             <span className="flow-thumb-fallback">
-              <Film size={26} strokeWidth={1.6} aria-hidden />
-              <span>{props.name}</span>
+              <Film size={24} strokeWidth={1.6} aria-hidden />
+              <span>{PREVIEW_UNAVAILABLE}</span>
             </span>
           )
         )}
       </div>
       <figcaption>
         <span>{REPRESENTATIVE_VIDEO}</span>
-        {src && <span className="flow-thumb-name">{props.name}</span>}
+        {props.name && <span className="flow-thumb-name">{props.name}</span>}
       </figcaption>
     </figure>
   )

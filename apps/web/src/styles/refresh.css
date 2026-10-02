@@ -196,7 +196,7 @@ body:has(.rs-page) { background: #fff; }
    ============================================================ */
 .rs.flow {
   width: 100%; max-width: 1040px; margin: 0 auto; padding: 56px 0 8px;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 64px; align-items: start;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 64px; align-items: start;
 }
 .flow-main { min-width: 0; display: flex; flex-direction: column; }
 .flow-overall { margin: 0 0 10px; font-size: 17px; color: var(--rs-sub); }
@@ -226,16 +226,14 @@ body:has(.rs-page) { background: #fff; }
 .flow-thumb { margin: 32px 0 0; }
 .flow-thumb-frame {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden;
-  background: var(--rs-fill); border: 1px solid #e8e8ed; border-radius: 16px;
+  background: var(--rs-fill); border: 1px solid rgba(0, 0, 0, .08); border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px rgba(0, 0, 0, .06);
   display: grid; place-items: center;
 }
 .flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-screen-in .35s var(--rs-ease) both; }
-.flow-thumb-fallback {
-  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 24px;
-  text-align: center; font-size: 15px; color: var(--rs-sub); overflow-wrap: anywhere;
-}
-.flow-thumb-fallback svg { color: var(--rs-ink); }
-.flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 10px; font-size: 14px; color: var(--rs-sub); }
+.flow-thumb-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; color: var(--rs-sub); }
+.flow-thumb-fallback svg { color: var(--rs-sub); }
+.flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font-size: 14px; color: var(--rs-sub); }
 .flow-thumb-name { min-width: 0; text-align: right; overflow-wrap: anywhere; color: var(--rs-ink); }
 
 .flow-situation { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rs-line); }
@@ -259,16 +257,15 @@ body:has(.rs-page) { background: #fff; }
 /* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
 .rs.flow .panel { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
 .flow-steps { padding-top: 8px; }
-.rs.flow .flow-steps .sec-label { padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--rs-line); font-size: 16px; font-weight: 650; color: var(--rs-ink); }
+.rs.flow .flow-steps .sec-label { padding-bottom: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 16px; font-weight: 650; color: var(--rs-ink); }
 .flow-steps-count { font-size: 14px; font-weight: 500; color: var(--rs-sub); }
 .rs.flow .sec-label { margin: 0 0 4px; padding: 0; border: 0; font-size: 14px; font-weight: 600; color: var(--rs-sub); }
-.rs.flow .timeline { padding: 0; }
+.rs.flow .timeline { display: flex; flex-direction: column; gap: 4px; padding: 0; }
 .rs.flow .timeline li {
   align-items: center; gap: 12px;
-  padding: 10px 0 10px 30px; border-left: 0; border-bottom: 1px solid #ececf0;
+  padding: 10px 0 10px 30px; border-left: 0; border-bottom: 0;
   font-size: 15px;
 }
-.rs.flow .timeline li:last-child { border-bottom: 0; }
 .rs.flow .timeline li::before {
   left: 0; top: 50%; width: 16px; height: 16px; margin-top: -8px;
   background: #fff; border: 1.5px solid var(--rs-line);

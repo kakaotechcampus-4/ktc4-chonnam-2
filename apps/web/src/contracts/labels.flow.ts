@@ -55,5 +55,8 @@ export const stepCount = (n: number): string => `전체 ${n}단계`
 /** 업로드에서 정상으로 받아들인 첫 파일의 정지 화면 자리. 분석 중인 파일이라는 뜻이 아니다 */
 export const REPRESENTATIVE_VIDEO = '대표 영상'
 
+/** 브라우저가 정지 화면을 못 만들었을 때 — 미리보기만의 문제이고 분석과는 무관하다 */
+export const PREVIEW_UNAVAILABLE = '미리보기를 표시할 수 없어요'
+
 /** 상황 설명 제목 — 결과 없음 화면의 「적어 주신 상황」과 같은 말 */
 export const SITUATION_HEADING = '적어 주신 상황'
