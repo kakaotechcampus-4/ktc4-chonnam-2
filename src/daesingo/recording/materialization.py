@@ -119,8 +119,22 @@ class LocalAnalysisMaterializer:
                 # 다음 presentation timestamp까지의 표시 구간. 일정 fps를 가정하지 않는다.
                 length = timestamps[i + 1] - at
             else:
-                # container duration은 다른 stream을 포함할 수 있어 마지막 frame의 근거가 아니다.
-                raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                # 검증한 원본 coverage와 출력의 모든 상대 PTS/개수, stream 끝을
+                # 교차 확인한다. container 길이나 고정 fps만으로 tail을 추정하지 않는다.
+                matched = (expected_coverage is not None
+                    and len(timestamps) == len(expected_coverage)
+                    and timestamps[0] == 0
+                    and all(at == expected_at and length > 0
+                            for at, (expected_at, length) in zip(timestamps, expected_coverage))
+                    and all(a + length == b for (a, length), (b, _) in
+                            zip(expected_coverage, expected_coverage[1:])))
+                try:
+                    stream_end = Fraction(streams[0].get("duration", "N/A"))
+                except (ValueError, TypeError, ZeroDivisionError):
+                    stream_end = None
+                if (not matched or stream_end != expected_coverage[-1][0] + expected_coverage[-1][1]):
+                    raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                length = stream_end - at
             frames.append((at, length))
         if any(a + length != b for (a, length), (b, _) in zip(frames, frames[1:])):
             # 출력은 검증된 millisecond source에서 선택한 PTS와 정확히 같을 때만 허용한다.
@@ -133,7 +147,7 @@ class LocalAnalysisMaterializer:
                            for (a, length), (b, _) in zip(frames, frames[1:]))):
                 raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
             # PTS는 보존한다. 중간 coverage만 다음 관측 PTS까지 정규화한다.
-            # 마지막 frame은 위에서 검증한 실제 duration 근거를 그대로 유지한다.
+            # 마지막 frame은 위에서 검증한 duration/출력 coverage 근거를 그대로 유지한다.
             frames = [(a, b - a) for (a, _), (b, _) in zip(frames, frames[1:])] + [frames[-1]]
         return base, [(at - frames[0][0], length) for at, length in frames]
 
