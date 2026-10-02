@@ -37,7 +37,7 @@ CASES = [
     ("20260620_141956_EVT_1.avi", 10.0, 14.0, "NOT_OBSERVED"),  # 백색 점선(합법)
     ("20260620_141628_EVT_1.avi", 0.0, 7.0, "NOT_OBSERVED"),   # 무변경(모델 FP 이력)
     ("20260620_150504_EVT_1.avi", 0.0, 8.0, "NOT_OBSERVED"),   # 무변경
-    ("youtube_clip_01.mp4", 2.0, 5.0, "OBSERVED"),             # 실선
+    ("youtube_clip_01.mp4", 0.0, 2.0, "OBSERVED"),             # 실선
     ("YT_0003_C05.mp4", 10.0, 13.0, "OBSERVED"),               # 실선
 ]
 FPS_LIST = [1.0, 2.0, 4.0]

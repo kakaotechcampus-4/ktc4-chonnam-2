@@ -115,3 +115,6 @@ eval/manifests/**/*.private.json
 # events_draft.json 은 events.json 을 만들기 위한 중간 작업 파일이다.
 # 검토 사실은 gt/*.json 의 meta.coverage 가 소유한다.
 eval/manifests/**/events_draft.json
+
+# search 실험용 로컬 영상·정답지(원본 영상은 저장소에 두지 않는다)
+src/daesingo/search/video/

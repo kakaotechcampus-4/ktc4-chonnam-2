@@ -54,10 +54,10 @@ DEFAULT_ENV = "C:/Users/User/orca/ktc4-chonnam-2/.env"
 # 정답지.md: (case_id, file, duration, event, 기대, 정답 구간(원본 초) 또는 None)
 CASES = [
     ("20260620_141628_EVT_1", "20260620_141628_EVT_1.avi", 20.023, "SOLID_LINE_LANE_CHANGE", "NOT_OBSERVED", None),
-    ("20260620_141927_EVT_1", "20260620_141927_EVT_1.avi", 20.025, "SOLID_LINE_LANE_CHANGE", "OBSERVED", (4.0, 9.0)),
+    ("20260620_141927_EVT_1", "20260620_141927_EVT_1.avi", 20.025, "SOLID_LINE_LANE_CHANGE", "OBSERVED", (4.0, 10.0)),
     ("20260620_141956_EVT_1", "20260620_141956_EVT_1.avi", 20.025, "SOLID_LINE_LANE_CHANGE", "NOT_OBSERVED", None),
     ("20260620_150504_EVT_1", "20260620_150504_EVT_1.avi", 20.025, "SOLID_LINE_LANE_CHANGE", "NOT_OBSERVED", None),
-    ("youtube_clip_01", "youtube_clip_01.mp4", 5.533, "SOLID_LINE_LANE_CHANGE", "OBSERVED", (2.0, 5.0)),
+    ("youtube_clip_01", "youtube_clip_01.mp4", 5.533, "SOLID_LINE_LANE_CHANGE", "OBSERVED", (0.0, 2.0)),
     ("YT_0003_C05", "YT_0003_C05.mp4", 60.0, "SOLID_LINE_LANE_CHANGE", "OBSERVED", (10.0, 13.0)),
     ("YT_0002_C00", "YT_0002_C00.mp4", 20.079, "CENTER_LINE_CROSSING", "OBSERVED", (11.0, 14.0)),
 ]
@@ -148,8 +148,10 @@ class SlowVideoInvoker:
             path = request.media.path
             prompt = request.prompt
             if speed != 1.0:
-                path = Path(td) / "slow.mp4"
-                _slow(request.media.path, path, speed)
+                # MediaPreparer 가 이미 1/fps 배로 늘려 준다(2026-10-01 운영 반영). 그때는 다시 늘리지 않는다.
+                if request.media.playback_speed == 1.0:
+                    path = Path(td) / "slow.mp4"
+                    _slow(request.media.path, path, speed)
                 prompt += _note(speed, "Coarse 핵심 시각" in prompt)
             url = "data:video/mp4;base64," + base64.b64encode(path.read_bytes()).decode()
             messages = [{"role": "user", "content": [
@@ -158,12 +160,16 @@ class SlowVideoInvoker:
             ]}]
             started = time.monotonic()
             try:
-                comp = self._client.chat.completions.parse(
+                # 프록시는 non-streaming 응답을 2,000토큰으로 자른다(medium·high 는 사고 토큰만으로
+                # 넘는다). 스트리밍이면 상한이 풀린다. 응답 내용은 같고 전달 방식만 다르다.
+                with self._client.chat.completions.stream(
                     model=self._cfg.model, messages=messages,
                     response_format=request.response_model,
                     reasoning_effort=self._cfg.reasoning_effort,
+                    max_tokens=16384, stream_options={"include_usage": True},
                     timeout=request.timeout_sec,
-                )
+                ) as stream:
+                    comp = stream.get_final_completion()
             except Exception as exc:  # noqa: BLE001
                 from openai import APIError, BadRequestError
                 if isinstance(exc, BadRequestError):
@@ -196,6 +202,11 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
     if transport == "image":
         from gemini_coarse_fine_image_trace import ImageInvoker
         invoker = ImageInvoker(client, cfg)
+    elif transport == "provider":
+        # 운영 경로 그대로: MediaPreparer 가 늘리고 GeminiProvider 가 안내·시각 환산을 한다.
+        from daesingo.search.provider import GeminiProvider, ProviderRuntimeOptions
+        invoker = GeminiProvider(client.api_key, cfg,
+                                 runtime=ProviderRuntimeOptions(request_timeout_sec=timeout))
     else:
         invoker = SlowVideoInvoker(client, cfg, coarse_speed, fine_speed)
     deps = DiagnosticDependencies(invoker, MediaPreparer(cfg), cfg, profile, timeout)
@@ -203,14 +214,17 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
     verifs: Counter[str] = Counter()
     cases = []
     invocations = prompt_tok = total_tok = 0
+    latencies: dict[str, list[int]] = {"COARSE": [], "FINE": []}
     for cid, fname, dur, event, expected, truth in CASES:
         case = DiagnosticCase(case_id=cid, source=Path(VID) / fname,
                               duration_sec=dur, event_types=(event,))
         res = run_case(case, deps)
-        cands, fine = [], []
+        cands, fine, fine_responses = [], [], []
         for call in res.calls:
             if call.status == "SUCCEEDED":
                 invocations += 1
+                if call.latency_ms is not None:
+                    latencies[call.stage].append(call.latency_ms)
                 if call.usage:
                     prompt_tok += call.usage.input_tokens or 0
                     total_tok += call.usage.total_tokens or 0
@@ -218,12 +232,14 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
                 for c in sorted(call.response.candidates, key=lambda c: (-c.score, c.at_sec)):
                     span = (round(c.span.start_sec, 2), round(c.span.end_sec, 2))
                     cands.append({"span": span, "at_sec": round(c.at_sec, 2),
-                                  "hits_truth": _overlaps(span, truth)})
+                                  "hits_truth": _overlaps(span, truth),
+                                  "score": c.score, "observed": list(c.observed)})
             if call.stage == "FINE":
                 v = getattr(call.response, "verification", None) if call.response else None
                 label = v.value if v is not None else f"FAILED:{','.join(call.issue_codes)}"
                 verifs[label if v is not None else "FAILED"] += 1
                 fine.append(label)
+                fine_responses.append(call.response.model_dump(mode="json") if call.response else None)
         # 클립 판정: 정답 구간과 겹친 후보가 OBSERVED 면 검출. 음성 클립은 OBSERVED 가 하나라도 있으면 오탐.
         if expected == "OBSERVED":
             detected = any(c["hits_truth"] and i < len(fine) and fine[i] == "OBSERVED"
@@ -232,7 +248,8 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
         else:
             verdict = "FALSE_POSITIVE" if "OBSERVED" in fine else "CORRECT_REJECT"
         cases.append({"case_id": cid, "event": event, "expected": expected, "truth": truth,
-                      "candidates": cands, "fine": fine, "verdict": verdict,
+                      "candidates": cands, "fine": fine, "fine_responses": fine_responses,
+                      "verdict": verdict,
                       "issue_codes": sorted({ic for c in res.calls for ic in c.issue_codes})})
         print(f"  [{tag}] {cid:<24} cand={[c['span'] for c in cands]} fine={fine} -> {verdict}")
     return {
@@ -241,6 +258,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
         "coarse_fps_prepared": cfg.coarse_fps, "fine_fps_prepared": cfg.fine_fps,
         "invocations": invocations, "verification_counts": dict(verifs),
         "reported_input_tokens": prompt_tok, "reported_total_tokens": total_tok,
+        "provider_latency_ms": latencies,
         "positives_hit": sum(c["verdict"] == "HIT" for c in cases),
         "negatives_correct": sum(c["verdict"] == "CORRECT_REJECT" for c in cases),
         "cases": cases,
@@ -256,8 +274,13 @@ def main() -> None:
     ap.add_argument("--conditions", default="1:1,0.5:0.25")
     ap.add_argument("--repeats", type=int, default=1)
     ap.add_argument("--profiles", default="p3")
-    ap.add_argument("--transport", choices=("video", "image"), default="video")
+    ap.add_argument("--transport", choices=("video", "image", "provider"), default="video")
+    ap.add_argument("--reasoning", default=None,
+                    help="쉼표로 나눈 reasoning_effort 값들(video transport 만 스트리밍). 없으면 설정값")
+    ap.add_argument("--clips", default=None, help="쉼표로 나눈 case_id 앞부분으로 거른다")
     args = ap.parse_args()
+    if args.clips:
+        CASES[:] = [c for c in CASES if c[0].startswith(tuple(args.clips.split(",")))]
 
     env = load_env_file(args.env)
     base_cfg = GeminiSearchConfig.from_dotenv(env)
@@ -267,23 +290,27 @@ def main() -> None:
     client = importlib.import_module("openai").OpenAI(
         base_url=base_cfg.base_url, api_key=key, max_retries=0, timeout=args.timeout_sec
     )
+    efforts = args.reasoning.split(",") if args.reasoning else [base_cfg.reasoning_effort]
     runs = []
     for rep in range(args.repeats):
-        for cond, prof in ((c, p) for c in args.conditions.split(",")
-                           for p in args.profiles.split(",")):
+        for cond, prof, effort in ((c, p, e) for c in args.conditions.split(",")
+                                   for p in args.profiles.split(",") for e in efforts):
             cs, fs = (float(x) for x in cond.split(":"))
-            print(f"=== repeat {rep + 1} / {prof} / {args.transport} / coarse {cs}x, fine {fs}x ===")
-            r = run_condition(client, base_cfg, cs, fs, args.timeout_sec,
-                              DiagnosticProfile(prof), args.transport)
+            print(f"=== repeat {rep + 1} / {prof} / {args.transport} / {effort} / coarse {cs}x, fine {fs}x ===")
+            started = time.monotonic()
+            r = run_condition(client, replace(base_cfg, reasoning_effort=effort), cs, fs,
+                              args.timeout_sec, DiagnosticProfile(prof), args.transport)
             r["repeat"] = rep + 1
+            r["reasoning_effort"] = effort
+            r["wall_sec"] = round(time.monotonic() - started, 1)
             runs.append(r)
-            print(f"  -> positives {r['positives_hit']}/4, negatives {r['negatives_correct']}/3, "
+            print(f"  -> [{effort}] {r['wall_sec']}s positives {r['positives_hit']}/4, negatives {r['negatives_correct']}/3, "
                   f"fine {r['verification_counts']}, input_tok {r['reported_input_tokens']}, "
                   f"total_tok {r['reported_total_tokens']}")
             if args.out:  # 조건마다 저장해 중간에 끊겨도 남긴다
                 args.out.write_text(json.dumps({
                     "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model,
-                               "reasoning_effort": base_cfg.reasoning_effort,
+                               "reasoning_efforts": efforts,
                                "fine_padding_sec": base_cfg.fine_padding_sec},
                     "runs": runs}, ensure_ascii=False, indent=2), encoding="utf-8")
 
