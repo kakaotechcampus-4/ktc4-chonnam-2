@@ -37,7 +37,7 @@
 - API 호출에는 API Key 인증이 필요하다.
 - Serverless와 Dedicated Key는 구분되어 관리된다.
 - 모델 상세에서 실행 방식, 가격, API 사용 예시를 확인한다.
-- Key와 endpoint/model 정보는 공개 저장소에 비밀값으로 남기지 않는다.
+- API Key는 공개 저장소에 남기지 않는다. endpoint/model 정보는 모델 상세를 기준으로 확인한다.
 
 ## 2. 엘리스 Serverless의 공식 동작
 
