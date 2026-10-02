@@ -104,6 +104,8 @@ ADR 필요 여부
 
 이 단계에서는 답을 임의로 만들지 않는다. 이미 상위 Contract/Accepted Decision에서 닫힌 항목은 Open Decision으로 다시 올리지 않는다.
 
+현재 Register: [`open-decision-register.md`](./open-decision-register.md).
+
 ---
 
 ## 3. Decision 유형·결정 시점 분류
