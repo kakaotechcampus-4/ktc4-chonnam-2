@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { stepLabel } from '../contracts/labels'
@@ -27,6 +27,8 @@ import { VideoThumb } from '../components/VideoThumb'
 // 가장 크게 보이는 제목은 지금 RUNNING인 단계의 이름이다(progress에서 그대로 읽는다).
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
 // 흔들리지 않게 한다. 아직 한 단계도 시작하지 않았을 때만 전체 흐름 문구를 제목으로 쓴다.
+const TITLE_OUT_MS = 260
+
 export function FlowScreen(props: {
   view: CaseView
   files: File[]
@@ -60,15 +62,57 @@ export function FlowScreen(props: {
   }, [])
   const sec = Math.max(0, Math.floor((now - props.startedAt) / 1000))
   const elapsed = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+
+  // 큰 제목 전환 — 새 제목이 나타나는 동안 이전 제목이 같은 자리에서 짧게 사라진다(빈 순간 없음).
+  // 이전 제목은 장식이라 읽지 않게 숨기고, 빠르게 바뀌면 가장 최근 것만 남긴다.
+  const titleText = current ? stepLabel(current) : overall
+  const shownTitle = useRef(titleText)
+  const [leaving, setLeaving] = useState<{ text: string; id: number } | null>(null)
+  useLayoutEffect(() => {
+    if (shownTitle.current === titleText) return
+    setLeaving({ text: shownTitle.current, id: Date.now() })
+    shownTitle.current = titleText
+  }, [titleText])
+  useEffect(() => {
+    if (!leaving) return
+    const t = setTimeout(() => setLeaving(null), TITLE_OUT_MS)
+    return () => clearTimeout(t)
+  }, [leaving])
+
+  // 진행 중 강조 면 — 진행 중인 단계가 정확히 하나일 때만 면 하나가 그 행으로 옮겨 간다.
+  // 이웃 행으로 넘어갈 때만 미끄러지고, 건너뛰면 그 자리에 바로 나타난다(지나친 행을 진행
+  // 중처럼 보이지 않게). 여럿이 동시에 진행 중이면 각 행이 따로 강조된다(CSS). 하나도 없으면
+  // 면을 숨긴다 — 끝난 단계를 진행 중처럼 남기지 않는다.
+  const runningIdx = props.view.progress.flatMap((p, i) => (p.state === 'RUNNING' ? [i] : []))
+  const single = runningIdx.length === 1 ? runningIdx[0] : -1
+  const stepsRef = useRef<HTMLDivElement>(null)
+  const [hl, setHl] = useState<{ top: number; height: number; index: number; slide: boolean } | null>(null)
+  useLayoutEffect(() => {
+    const root = stepsRef.current
+    const li = single < 0 ? null : root?.querySelectorAll<HTMLElement>('.timeline > li')[single]
+    if (!root || !li) {
+      setHl(null)
+      return
+    }
+    const top = li.getBoundingClientRect().top - root.getBoundingClientRect().top
+    setHl((prev) => ({ top, height: li.offsetHeight, index: single, slide: !!prev && Math.abs(prev.index - single) === 1 }))
+  }, [single, props.view.progress.length])
   return (
     <div className="rs rs-screen flow">
       {/* 위: 현재 작업·상태·안내(두 칸 전체). 아래 행에 대표 영상과 단계 목록이 같은 높이에서 시작한다 */}
       <div className="flow-head" aria-live="polite">
         {current && <p className="flow-overall">{overall}</p>}
-        {/* key가 바뀌면 다시 그려져 제목이 부드럽게 바뀐다 */}
-        <h1 className="rs-title flow-now" key={current ?? 'overall'}>
-          {current ? stepLabel(current) : overall}
-        </h1>
+        <div className="flow-now-box">
+          {leaving && (
+            <span className="rs-title flow-now-leaving" key={leaving.id} aria-hidden>
+              {leaving.text}
+            </span>
+          )}
+          {/* key가 바뀌면 다시 그려져 새 제목이 부드럽게 나타난다 */}
+          <h1 className="rs-title flow-now" key={current ?? 'overall'}>
+            {titleText}
+          </h1>
+        </div>
         <div className="flow-status-row">
           <p className={`flow-status${currentState ? ` is-${currentState.toLowerCase()}` : ''}`}>
             {currentState && (
@@ -82,12 +126,16 @@ export function FlowScreen(props: {
             경과 시간 <span>{elapsed}</span>
           </p>
         </div>
-        {continuing && (
-          <p className="flow-partial">
-            <span className="flow-partial-mark" aria-hidden />
-            {failed.length === 1 ? stepFailedLabel(failed[0].step) : SOME_STEPS_FAILED} {OTHERS_CONTINUING}
-          </p>
-        )}
+        {/* 안내 한 줄 자리는 늘 비워 둔다 — 안내가 나타나거나 사라져도 아래 영상·단계 목록이
+            밀리지 않는다. 문구가 길어 줄이 바뀌면 그만큼만 늘어난다(자르지 않음) */}
+        <div className="flow-partial-slot">
+          {continuing && (
+            <p className="flow-partial">
+              <span className="flow-partial-mark" aria-hidden />
+              {failed.length === 1 ? stepFailedLabel(failed[0].step) : SOME_STEPS_FAILED} {OTHERS_CONTINUING}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flow-main">
@@ -116,7 +164,16 @@ export function FlowScreen(props: {
         )}
       </div>
 
-      <div className="flow-steps">
+      <div
+        className="flow-steps"
+        ref={stepsRef}
+        data-running={runningIdx.length === 0 ? 'none' : runningIdx.length === 1 ? 'one' : 'many'}
+      >
+        <span
+          className={`flow-step-hl${hl ? ' on' : ''}${hl?.slide ? ' slide' : ''}`}
+          style={hl ? ({ transform: `translateY(${hl.top}px)`, height: hl.height } as CSSProperties) : undefined}
+          aria-hidden
+        />
         <ProgressPanel
           view={props.view}
           jobs={screen.jobs}

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
-import { Check, CircleAlert, FileVideo, Upload } from 'lucide-react'
+import { Check, ChevronDown, CircleAlert, FileVideo, Upload } from 'lucide-react'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -32,8 +32,13 @@ function useAutoHeight<T extends HTMLElement>(border: number) {
 
 // Figma 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
 // 네 프레임은 같은 틀이고 끌어다 놓는 영역만 상태에 따라 바뀐다.
-// 파일 고르기는 영역 안의 버튼 하나로만 키보드가 멈춘다 — 영역 클릭은 마우스용 지름길이고,
-// 파일 입력칸은 숨겨 두어 Tab이 두 번 서지 않는다.
+// 파일 고르기는 영역 안의 버튼 하나로만 키보드가 멈춘다 — 영역 클릭은 고르기 전(idle)과
+// 실패 때만 쓰는 마우스용 지름길이고, 파일 입력칸은 숨겨 두어 Tab이 두 번 서지 않는다.
+// 버튼은 모든 상태에서 같은 요소로 남는다(문구·모양만 바뀜) — 업로드가 끝나 영역이 바뀌어도
+// 키보드 포커스가 사라지지 않는다.
+//
+// 업로드가 끝나면(done) 큰 영역이 한 줄 요약으로 줄어든다. 높이는 useAutoHeight로 잇는다.
+// 파일이 여럿이면 요약 제목을 눌러 목록을 펼친다.
 export function UploadScreen(props: {
   state: UploadState
   files: File[]
@@ -60,9 +65,20 @@ export function UploadScreen(props: {
   const { state } = props
   const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
+  const canClickArea = state === 'idle' || state === 'fail'
+  const fileList = (
+    <ul className="rs-files">
+      {props.files.map((f, i) => (
+        <li key={`${f.name}-${i}`}>
+          <FileVideo size={18} strokeWidth={1.8} aria-hidden />
+          <span>{f.name}</span>
+        </li>
+      ))}
+    </ul>
+  )
 
   return (
-    <div className={`rs upload${intro ? ' rs-intro' : ''}`}>
+    <div className={`rs upload is-${state}${intro ? ' rs-intro' : ''}`}>
       <div className="rs-group" style={{ '--i': 0 } as CSSProperties}>
         <h1 className="rs-title">블랙박스 영상을 올려주세요</h1>
         <p className="rs-lede">
@@ -76,7 +92,7 @@ export function UploadScreen(props: {
         <div
           className={`rs-drop is-${state}${over ? ' over' : ''}`}
           style={{ height: box.height }}
-          onClick={choose}
+          onClick={canClickArea ? choose : undefined}
           onDragOver={(e) => {
             e.preventDefault()
             setOver(true)
@@ -91,50 +107,66 @@ export function UploadScreen(props: {
           }}
         >
           <div className="rs-drop-in" ref={box.inner}>
-            {state === 'uploading' ? (
-              <span className="rs-spin" aria-hidden />
+            {state === 'done' ? (
+              <div className="rs-drop-body rs-done rs-appear" key="done">
+                <span className="rs-drop-icon" aria-hidden>
+                  <Check size={22} strokeWidth={2.2} />
+                </span>
+                <div className="rs-done-text">
+                  {props.files.length > 1 ? (
+                    <details className="rs-done-files">
+                      <summary>
+                        <b className="rs-drop-title" aria-live="polite">
+                          {title}
+                        </b>
+                        <ChevronDown size={18} strokeWidth={1.8} aria-hidden />
+                      </summary>
+                      {fileList}
+                    </details>
+                  ) : (
+                    <>
+                      <b className="rs-drop-title" aria-live="polite">
+                        {title}
+                      </b>
+                      <span className="rs-done-name">{props.files[0]?.name}</span>
+                    </>
+                  )}
+                </div>
+              </div>
             ) : (
-              <span className="rs-drop-icon" aria-hidden key={`icon-${state}`}>
-                {state === 'done' ? (
-                  <Check size={26} strokeWidth={2.2} />
-                ) : state === 'fail' ? (
-                  <CircleAlert size={26} strokeWidth={1.8} />
+              <div className="rs-drop-body" key="big">
+                {state === 'uploading' ? (
+                  <span className="rs-spin" aria-hidden />
                 ) : (
-                  <Upload size={24} strokeWidth={1.8} />
+                  <span className="rs-drop-icon" aria-hidden key={`icon-${state}`}>
+                    {state === 'fail' ? (
+                      <CircleAlert size={26} strokeWidth={1.8} />
+                    ) : (
+                      <Upload size={24} strokeWidth={1.8} />
+                    )}
+                  </span>
                 )}
-              </span>
+                <b className="rs-drop-title" aria-live="polite">
+                  {title}
+                </b>
+                {state === 'idle' && (
+                  <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>
+                )}
+                {state === 'fail' && <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
+                {props.files.length > 0 && <div className="rs-appear">{fileList}</div>}
+              </div>
             )}
-            <b className="rs-drop-title" aria-live="polite">
-              {title}
-            </b>
-            {state === 'idle' && (
-              <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>
-            )}
-            {state === 'fail' && <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
-            {props.files.length > 0 && (
-              <ul className="rs-files rs-appear">
-                {props.files.map((f, i) => (
-                  <li key={`${f.name}-${i}`}>
-                    <FileVideo size={18} strokeWidth={1.8} aria-hidden />
-                    <span>{f.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {state !== 'uploading' && (
-              <button
-                type="button"
-                // 파일을 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 다시 고르기는 보조로 낮춘다.
-                key={`btn-${state}`}
-                className={`rs-btn ${state === 'done' ? 'sec' : 'pri'}${state === 'idle' ? '' : ' rs-appear'}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  choose()
-                }}
-              >
-                {state === 'idle' ? '파일 선택' : '다시 선택'}
-              </button>
-            )}
+            <button
+              type="button"
+              // 고르기 전·실패 때는 주 동작, 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 보조로 낮춘다.
+              className={`rs-btn ${canClickArea ? 'pri' : 'sec'}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                choose()
+              }}
+            >
+              {state === 'idle' ? '파일 선택' : '다시 선택'}
+            </button>
             <input
               ref={input}
               type="file"

@@ -100,3 +100,45 @@ it('파일이 하나면 이름을, 여럿이면 접힌 「영상 N개」를 보�
   expect(r.container.querySelector('details')).toBe(details)
   expect(details.open).toBe(true)
 })
+
+it('안내 자리는 안내가 없을 때도 남아 있어 나타나도 아래가 밀리지 않는다', () => {
+  const r = show(view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING' }))
+  expect(r.container.querySelector('.flow-partial-slot')).not.toBeNull()
+  expect(r.container.querySelector('.flow-partial')).toBeNull()
+})
+
+it('진행 중 강조 면은 진행 중이 하나일 때만, 여럿이면 행마다, 없으면 아무 행도 강조하지 않는다', () => {
+  const r = show(view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING' }))
+  const steps = () => r.container.querySelector('.flow-steps')!
+  expect(steps().getAttribute('data-running')).toBe('one')
+  expect(r.container.querySelector('.flow-step-hl.on')).not.toBeNull()
+
+  r.rerender(
+    <FlowScreen
+      view={view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING', overlay_time_read: 'RUNNING' })}
+      files={[file('a.mp4')]}
+      situation=""
+      startedAt={Date.now()}
+    />,
+  )
+  expect(steps().getAttribute('data-running')).toBe('many')
+  expect(r.container.querySelector('.flow-step-hl.on')).toBeNull()
+  expect(r.container.querySelectorAll('.tl-running')).toHaveLength(2)
+
+  r.rerender(
+    <FlowScreen view={view({ ...DONE_TO_REVIEW, plate_read: 'DONE' })} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />,
+  )
+  expect(steps().getAttribute('data-running')).toBe('none')
+  expect(r.container.querySelector('.flow-step-hl.on')).toBeNull()
+})
+
+it('제목이 바뀌면 이전 제목이 잠깐 겹쳐 남고, 화면에 읽히는 제목은 최신 것 하나다', () => {
+  const r = show(view({ file_intake: 'RUNNING' }))
+  r.rerender(
+    <FlowScreen view={view({ file_intake: 'DONE', coarse_search: 'RUNNING' })} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />,
+  )
+  expect(r.container.querySelector('.flow-now-leaving')!.textContent).toBe('영상 등록')
+  expect(r.container.querySelector('.flow-now-leaving')!.getAttribute('aria-hidden')).toBe('true')
+  expect(r.container.querySelectorAll('h1')).toHaveLength(1)
+  expect(r.container.querySelector('h1')!.textContent).toBe('장면 찾기')
+})
