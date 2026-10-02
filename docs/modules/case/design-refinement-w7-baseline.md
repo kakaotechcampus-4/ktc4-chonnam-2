@@ -6,7 +6,7 @@
 
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.
 
-⚠️ 아래 §1·§4가 참조하는 `real_e2e.py`/`w6-real-e2e-happy-001.md`/`orchestration-service-layer.md`는 이 브랜치(`docs/design-refinement`)엔 아직 없다 — `feature/case-mock-real-service-adapter`가 develop에 병합돼야 링크가 유효해진다(§4 참고).
+> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -26,6 +26,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 2순위 — situation_response / observation_facts 워크플로우
 
+> **2026-09-30:** situation_response 기록·전달은 PR #177(evidence 테스트 반영 대기). observation_facts(최종 영상 관찰, I4)는 producer가 없어 case 몫이 아니다(ADR-EVIDENCE-008 §6.2) — I4가 없는 동안 real 경로 FINAL은 `UNKNOWN`이다.
+
 **문제:** 오늘 데모(`demo_happy_001.py`)에서 실제로 관찰됨 — `situation_response`/`observation_facts`가 없어서 `FINAL_PACKAGE` 판정이 `UNKNOWN`에 걸리고 `build_report_package()`가 `PackageNotReady`를 던진다. `package`가 항상 `null`이다.
 
 **왜 2순위(1순위와 병렬 가능):** 최종 신고 패키지 생성의 핵심 결손 — 다른 걸 아무리 잘해도 이게 없으면 신고 패키지를 영원히 못 만든다.
@@ -37,6 +39,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 **참고:** `docs/modules/case/experiments/w6-real-e2e-happy-001.md` "알려진 단순화 2"
 
 ### 3순위 — Intent LLM 통합
+
+> **2026-09-30:** 1차 구현(09-24)은 case 모듈 경계 위반(프롬프트·provider 호출이 case 안)으로 머지 전 되돌렸다. 호출 창구 위치는 이슈 #210에서 search와 조율 중이고, 모델 선정·평가 체계는 멘토 피드백 후 확정(`미결 유지`). 아래 「API 키/모델 ID 확정이 유일한 외부 의존」은 더 이상 맞지 않는다.
 
 **문제:** `CaseAggregate.intake()`가 여전히 구조화된 `hints`만 파라미터로 받는다. 원문 자연어를 구조화하는 실제 호출이 `domain.py`/`scope.py` 어디에도 없다.
 
@@ -50,7 +54,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 3.5순위 — Correction 로그 재사용 정책 미결 5건 종결
 
-**상태:** Issue #74에 case 제안 초안을 코멘트로 게시 완료(2026-09-19). PM 승인 대기 중.
+**상태:** ✅ 종결 — Issue #74 PM 결정(2026-09-20): 정책 방향 채택, 구현은 Deferred. ~~Issue #74에 case 제안 초안을 코멘트로 게시 완료(2026-09-19). PM 승인 대기 중.~~
 
 **내용:** 동의 문구/저장 위치, 익명화 수준의 Contract화, 보관기간, 철회 처리, 1단계(평가)/2단계(학습) 고지 분리 — 5건. 배포 전 self-review(`docs/management/pre-deploy-security-review.md`)가 이미 이 항목의 실제 구현 여부를 확인하도록 돼 있어서, 배포 직전에 처음 정하면 구현과 문구를 동시에 고쳐야 하는 위험이 있다.
 
@@ -120,6 +124,10 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 7순위 — Orchestration 평가 지표
 
+> **2026-09-30 1차 측정:** 아래 「바로 가능」·「작은 계측」 3개를 러너(`scripts/measure_case_orchestration.py`)로 구현했다. 「불필요한 재실행률」은 `force_rerun` 비율이 아니라 같은 입력의 중복 호출로 쟀다(`force_rerun=True`는 재판독·재시도처럼 필요한 재실행이라 근사로 쓸 수 없다). 「잘못된 stage transition」은 `InvalidTransition` 횟수가 아니라 불변식 위반으로 쟀다(예외는 막힌 시도이지 잘못된 전이가 아니다 — #167은 예외 없이 통과했다). 결과·baseline·측정 안 한 칸은 `experiments/orchestration-metrics-2026-09-30.md`. 「새 인프라 필요」 4건은 그대로다.
+>
+> **2026-09-30 2차 측정:** 「다른 후보 선택」 축을 합성 rank2로 추가했다(3,276 세션). `RealAdapter`가 evidence 조립 때 1차 탐색을 다시 부르던 것을 ①로 찾아 고쳤다(① 994 → 0). 남은 칸은 #177·#203·#209 머지 뒤 다시 돈다.
+
 **문제:** 지금까지 이야기한 평가(intent-llm-model-comparison 등)는 전부 "LLM이 내용을 잘 뽑았는가"만 잰다. "Case가 올바르게 오케스트레이션했는가"는 따로 재는 게 없어서, 나중에 "LLM은 잘 답했는데 Case가 잘못 재실행했다"와 "Case는 맞는데 모델이 잘못 추출했다"를 구분할 수 없다.
 
 **지표 후보 7개, 실현 가능성으로 3단 분류(`job_records`/`correction_records`/`InvalidTransition`을 다시 확인해서 나눔):**
@@ -159,7 +167,7 @@ case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 
 - `docs/modules/case/experiments/w6-real-e2e-happy-001.md` — `scenario_happy_001` real E2E 실행 로그
 - `docs/modules/case/decisions/orchestration-service-layer.md` §6·§7·§8 — search/evidence/`get_view()` real 교체 과정에서 확인한 것들
 
-⚠️ **위 3개 파일은 이 문서를 쓰는 시점(`docs/design-refinement`)엔 아직 없다.** `feature/case-mock-real-service-adapter` 브랜치에만 있고 아직 develop에 병합 전이다 — 그 브랜치가 병합되면 이 참조가 유효해진다. 지금 이 링크를 따라가려면 `feature/case-mock-real-service-adapter`를 별도로 체크아웃해야 한다.
+(위 3개 파일은 이후 develop에 병합됐다.)
 
 ## 5. 완료 조건 — 이 문서의 각 항목을 "끝났다"고 부르는 기준
 
