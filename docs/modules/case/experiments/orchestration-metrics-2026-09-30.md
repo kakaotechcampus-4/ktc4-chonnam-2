@@ -123,17 +123,19 @@ W7 기준 문서 7순위의 「필요한 Job 발주 누락률」(「"필요한"�
 - **④-b 발주(`JobRecord`):** 행동 `NOTICE_ACTION`(12번째)을 더했다 — 직전 CaseView에 떠 있는 발주형 버튼을 `RUN_NOTICE_ACTION`으로 누르고, CaseView 계약 B절 §7 매핑(`GENERATE_REPORT_VIDEO`→`REPORT_VIDEO_EXPORT` · `RETRY_PLATE_READ`→`PLATE_READ` · `RETRY_SEARCH`→`COARSE_SEARCH` · `GENERATE_PLATE_IMAGE`→`PLATE_IMAGE_EXPORT`)의 `JobRecord`가 생겼는지 본다. 화면에 버튼이 없으면 거부돼야 한다(I5).
 - 12 + 12² + 12³ = 1,884 × 관찰 7 = **13,188 세션**.
 
-| | 이 PR |
-| --- | --- |
-| 판정한 행동 | 36,591 |
-| ① 위반 | 0 |
-| ② 불변식 위반 | 421 (전부 I5 @ `NOTICE_ACTION` — 아래 ④-b와 같은 건) |
-| ③ 불필요한 재실행 / 전체 호출 | 0 / 77,502 |
-| **④ 필요한 단계 누락** | **0** / 36,591 행동 |
-| **④-b 필요한 Job 발주 누락** | **421** / 1,335 버튼 |
-| 크래시 세션 | 909 (번호판 직접 입력 842 · 응답 대기 중 정정 67 — 4차와 같은 두 원인, 행동이 늘어 세션 수만 늘었다) |
+| | 버튼 수정 전 | 버튼 수정 후 (최종, develop `8332c27b` 머지 반영) |
+| --- | --- | --- |
+| 판정한 행동 | 36,591 | 36,591 |
+| ① 위반 | 0 | 0 |
+| ② 불변식 위반 | 421 (전부 I5 @ `NOTICE_ACTION`) | **0** |
+| ③ 불필요한 재실행 / 전체 호출 | 0 / 77,502 | 0 / 77,919 |
+| **④ 필요한 단계 누락** | 0 | **0** / 36,591 행동 |
+| **④-b 필요한 Job 발주 누락** | **421** / 1,335 버튼 | **0** / 914 버튼 |
+| 크래시 세션 | 909 | 909 (번호판 직접 입력 842 · 응답 대기 중 정정 67 — 4차와 같은 두 원인, 행동이 늘어 세션 수만 늘었다) |
 
-④-b 버튼별:
+최종 기준 `READY` 도달 1,100 세션 · `READY`에서 판정한 행동 992개(develop 머지로 FINAL 판정이 바뀌어 4차보다 늘었다).
+
+④-b 버튼별(수정 전):
 
 | 버튼 @ notice | 눌림 | 발주 누락 |
 | --- | --- | --- |
@@ -141,17 +143,18 @@ W7 기준 문서 7순위의 「필요한 Job 발주 누락률」(「"필요한"�
 | `RETRY_SEARCH` @ `search.no_candidates` | 457 | 0 |
 | `RETRY_PLATE_READ` @ `readout.plate_read_failed` | 421 | **421** |
 
-- **찾은 것 — 번호판 다시 판독 버튼이 real 경로에서 늘 거부된다.** `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 입력을 가져오고 없으면 `not_allowed`다(case-command 계약 §10). 동기 real 경로는 번호판 판독을 Job 없이 adapter가 직접 부르므로 `PLATE_READ` `JobRecord`가 생기지 않고, 그래서 화면에 뜬 버튼이 거부된다 — 계약 §5 「허용 조건 = 화면에 그 버튼이 떠 있었는가」와 어긋난다. 탐색은 진입점에서 `COARSE_SEARCH` `JobRecord`를 남겨 같은 문제가 없다. **미결** — 관찰 단계도 `JobRecord`를 남길지, 발주 근거가 없으면 notice에 action을 싣지 않을지(`GENERATE_PLATE_IMAGE`의 「`PlateReadout`이 없으면 이 action을 싣지 않는다」와 같은 방식), worker 배선 때 같이 정할지.
+- **찾은 것 — 번호판 다시 판독 버튼이 real 경로에서 늘 거부됐다.** `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 입력을 가져오고 없으면 `not_allowed`다(case-command 계약 §10). 동기 real 경로는 번호판 판독을 Job 없이 adapter가 직접 부르므로 `PLATE_READ` `JobRecord`가 생기지 않는데, notice는 버튼을 늘 실었다 — 계약 §5 「허용 조건 = 화면에 그 버튼이 떠 있었는가」와 어긋난다. 탐색은 진입점에서 `COARSE_SEARCH` `JobRecord`를 남겨 같은 문제가 없다.
+- **수정:** 발주 근거(이전 `PLATE_READ` `JobRecord`)가 있을 때만 버튼을 싣는다 — 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B절)·`GENERATE_PLATE_IMAGE`와 같은 원칙. 버튼 조건과 command 허용 조건이 같은 판단(`jobs.latest_job_record`)을 쓴다. 관찰 단계도 `JobRecord`를 남길지는 worker 배선(runtime) 때 정한다 — 그러면 버튼이 다시 실린다.
 - `GENERATE_REPORT_VIDEO`·`GENERATE_PLATE_IMAGE`는 한 번도 눌리지 않았다 — 동기 real 경로에서 이 notice(`case.report_video_not_generated` 등)를 내는 코드가 없다(fixture에만 있다).
 
 **④가 실제로 잡는가** — 알려진 종류의 결함을 러너 안에서 넣어 봤다(`--mutate`, 제품 코드 무수정). 같은 13,188 세션:
 
 | 넣은 결함 | ①·③ | ② | ④ 누락 |
 | --- | --- | --- | --- |
-| `stale-observation` — 재탐색 뒤에도 옛 탐색 결과의 관찰 재사용(세대 무시, 정책 표 1행 위반) | 0 · 0 | 421 (전부 I5 @ `NOTICE_ACTION`, 결함 없을 때와 같음) | **2,221** (시간 단서 정정 2,211 · 다른 후보 10 → Fine·IncidentClip·판독 누락) |
-| `stale-assembly` — 정정으로 `case_rev`가 바뀌어도 다시 조립하지 않음(#73에서 고친 종류) | 0 · 0 | 455 (전부 I5 @ `NOTICE_ACTION` — 크래시가 줄어 판정한 행동이 38,190으로 늘었다) | **6,835** (값 정정·상황 응답 5종 각 1,367 → 조립 누락) |
+| `stale-observation` — 재탐색 뒤에도 옛 탐색 결과의 관찰 재사용(세대 무시, 정책 표 1행 위반) | 0 · 0 | 0 | **2,221** (시간 단서 정정 2,211 · 다른 후보 10 → Fine·IncidentClip·판독 누락) |
+| `stale-assembly` — 정정으로 `case_rev`가 바뀌어도 다시 조립하지 않음(#73에서 고친 종류) | 0 · 0 | 0 (크래시가 줄어 판정한 행동이 38,190) | **6,835** (값 정정·상황 응답 5종 각 1,367 → 조립 누락) |
 
-두 결함 모두 ①·③은 0이고 ②는 결함과 무관한 `NOTICE_ACTION` 건뿐이다 — ④만 잡았다 — 특히 `stale-assembly`는 정정이 반영되지 않은 옛 CaseView가 나가는데도 불변식 위반이 없고 크래시는 오히려 줄었다(150). ④가 없으면 보이지 않는 종류다.
+두 결함 모두 ①·②·③은 0이고 ④만 잡았다(최종 코드 기준) — 특히 `stale-assembly`는 정정이 반영되지 않은 옛 CaseView가 나가는데도 불변식 위반이 없고 크래시는 오히려 줄었다(150). ④가 없으면 보이지 않는 종류다.
 
 ### 지표가 실제로 잡는가 (baseline)
 
@@ -175,7 +178,7 @@ baseline 커밋에서 **이미 고쳐진 버그 3건을 모두 검출**했다. �
 | 선택 전 값 정정 · 탐색 실패 뒤 시간 단서 정정의 흔적 · `READY`인데 Package 없음(② 4,122) — 4차 측정 | 이 PR에서 수정 — 수정 후 0 (위 4차 표) |
 | 번호판 직접 입력 크래시가 관찰 상태 둘(판독 실패·못 읽음)에서 706으로 — 4차 측정 | 위 PR #212 줄과 같은 원인 |
 | 응답 대기(evidence 없음) 중 값 정정 → 「잘 모르겠어요」 응답 뒤 evidence가 그 정정을 거부(`invalid previous_value`·`datetime must be a string`·`correction chain values are discontinuous`) → 기록은 되돌리지 않으므로 **그 case는 이후 CaseView를 못 만든다** (크래시 61) — 4차 측정 | 미결 — 화면에 값이 없어 이전 값이 `null`로 기록된다. correction-record §8-6(형식이 틀린 입력은 기록하지 않는다)을 case가 지키려면 evidence의 값 검사를 공개 함수로 받아야 한다(규칙 복제 금지) — PR #212에 제기. web은 이 상태에서 값 칸을 그리지 않아 실사용 경로는 아직 없다 |
-| 번호판 판독 실패 notice의 `RETRY_PLATE_READ` 버튼이 real 경로에서 늘 `not_allowed`(④-b 421) — 판독이 Job 없이 직접 불려 근거 `PLATE_READ` `JobRecord`가 없다. case-command 계약 §5 「허용 조건 = 화면에 버튼」과 §10 「이전 발주가 없으면 `not_allowed`」가 이 경로에서 충돌 — 5차 측정 | 미결 — 관찰 단계도 `JobRecord`를 남길지 · 근거가 없으면 action을 싣지 않을지 · worker 배선 때 정할지 |
+| 번호판 판독 실패 notice의 `RETRY_PLATE_READ` 버튼이 real 경로에서 늘 `not_allowed`(④-b 421) — 판독이 Job 없이 직접 불려 근거 `PLATE_READ` `JobRecord`가 없다. case-command 계약 §5 「허용 조건 = 화면에 버튼」과 §10 「이전 발주가 없으면 `not_allowed`」가 이 경로에서 충돌 — 5차 측정 | 이 PR에서 수정 — 근거가 있을 때만 버튼을 싣는다. 수정 후 0. 관찰 단계의 `JobRecord`는 runtime(worker) 때 |
 
 ## 측정하지 않은 칸
 
