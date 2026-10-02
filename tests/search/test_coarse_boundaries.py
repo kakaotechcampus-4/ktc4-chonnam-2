@@ -38,7 +38,7 @@ from daesingo.search.usage import ProviderUsage
 from tests.search._search_service_support import (
     FixtureMediaPreparer,
     OpenableResolver,
-    make_deadline,
+    frozen_clock,
 )
 
 
@@ -101,7 +101,7 @@ def _service(source: ResolvedAnalysisSource, response: CoarseResponse) -> Search
         _CoarseProvider(response),
         GeminiSearchConfig(),
         FixtureMediaPreparer(source.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
 
 

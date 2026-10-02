@@ -46,9 +46,12 @@ def run() -> dict[str, Any]:
 
     _step(1, 4, "Recording+Search: 후보 탐색 중 (search.search_candidates 실제 호출)...")
     candidates = service.receive_search_candidates(case, real)
-    candidate = candidates[0]
+    # 가장 유력한 후보(rank=1)를 case가 자동 선택한다(#122, core-user-flow §8-1).
+    chosen = case.select_top_ranked()
+    if chosen is None:
+        raise SystemExit("자동 선택할 rank=1 후보가 없습니다(후보 없음 또는 stale).")
+    candidate = next(c for c in candidates if c.candidate_id == chosen)
     print(f"        -> 후보 발견: {candidate.candidate_id} ({candidate.observed})")
-    case.select_candidate(candidate.candidate_id)
 
     _step(
         2,
@@ -67,7 +70,8 @@ def run() -> dict[str, Any]:
         "(evidence.assemble_evidence/evaluate_requirements 등 실제 호출)...",
     )
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    # Package가 실제로 준비됐을 때만 READY(#167). 상황 응답 전이면 EVIDENCE_REVIEW에 남는다.
+    service.mark_ready_if_package_ready(case, real)
 
     _step(4, 4, "CaseView 조립 중 (case.get_view 실제 호출)...")
     view = service.get_view(CASE_ID, store=store)

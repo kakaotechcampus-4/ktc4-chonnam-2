@@ -4,8 +4,10 @@
 자산 계층 ref(`analysis_source`)의 소문자 규칙과 다른 값 공간이다.
 """
 
+from collections.abc import Callable
+from itertools import chain, repeat
+
 from daesingo.search.config import GeminiSearchConfig
-from daesingo.search.execution import RunDeadline
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
 from daesingo.search.runs import ContractRef, FailureKind, RunOutcome
 from daesingo.search.schemas import CoarseResponse, FineResponse
@@ -24,7 +26,7 @@ from daesingo.search.usage import ProviderUsage
 from tests.search._search_service_support import (
     FixtureMediaPreparer,
     OpenableResolver,
-    make_deadline,
+    frozen_clock,
 )
 
 _SOURCE_REF = ContractRef(kind="analysis_source", ref="clip-run-1")
@@ -84,7 +86,7 @@ def _make_service() -> SearchService:
         _MinimalProvider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(_SOURCE.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
 
 
@@ -124,7 +126,7 @@ def _service_with(provider: object) -> SearchService:
         provider,
         GeminiSearchConfig(),
         FixtureMediaPreparer(_SOURCE.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
 
 
@@ -146,6 +148,12 @@ def test_provider_failure_records_infra_issue_with_scope_ref() -> None:
     assert issue.scope_ref == "scope-run-1"
 
 
+def _clock_past_any_budget() -> Callable[[], float]:
+    """시계 시작(0초) 직후 한 시간이 흐른 것처럼 보이게 한다 — scope budget이 소진된다."""
+    readings = chain((0.0,), repeat(3600.0))
+    return lambda: next(readings)
+
+
 def test_exhausted_deadline_records_cost_issue() -> None:
     """taxonomy의 COST = 비용·지연 상한 초과로 중단."""
     resolver = StaticAnalysisSourceResolver(
@@ -157,7 +165,7 @@ def test_exhausted_deadline_records_cost_issue() -> None:
         _MinimalProvider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(_SOURCE.duration_sec),
-        RunDeadline(lambda: 0.0, budget_ms=0),
+        _clock_past_any_budget(),
     )
 
     result = service.search_candidates(_SCOPE)

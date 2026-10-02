@@ -60,7 +60,7 @@ def test_get_view_with_mock_adapter_matches_smoke_fixture():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    assert service.mark_ready_if_package_ready(case, adapter) is True
 
     view = service.get_view("case_h001_getview_mock", store=store)
     assert view["stage"] == "READY"
@@ -87,9 +87,12 @@ def test_get_view_with_real_adapter_reaches_ready_caseview():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
-    case.mark_ready()
+    service.mark_ready_if_package_ready(case, real)
 
     view = case_package.get_view("case_h001_getview_real", store=store)
 
-    assert view["stage"] == "READY"
+    # READY는 Package가 실제로 준비됐을 때만(#167). 상황 응답 전이라 ADR-EVIDENCE-005 D2-c로
+    # Package가 막혀 EVIDENCE_REVIEW에 머문다.
+    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["package"] is None
     assert view["evidence"]["plate_display"]["value"] == "12가3456"

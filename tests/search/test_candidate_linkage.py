@@ -22,7 +22,7 @@ from daesingo.search.usage import ProviderUsage
 from tests.search._search_service_support import (
     FixtureMediaPreparer,
     OpenableResolver,
-    make_deadline,
+    frozen_clock,
 )
 
 _SOURCE_REF = ContractRef(kind="analysis_source", ref="clip-link-1")
@@ -82,7 +82,7 @@ def _make_service() -> SearchService:
         _MinimalProvider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(_SOURCE.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
 
 
@@ -171,7 +171,7 @@ def test_zero_sources_raises_assertion_error() -> None:
         _MinimalProvider(),
         GeminiSearchConfig(),
         FixtureMediaPreparer(_SOURCE.duration_sec),
-        make_deadline(),
+        frozen_clock,
     )
     with pytest.raises(AssertionError, match="no sources"):
         _ = service.search_candidates_linked(_SCOPE)

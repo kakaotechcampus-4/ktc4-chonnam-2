@@ -18,7 +18,7 @@
       },
       "derived_case_context": {
         "kind": "TEST_DERIVED_CONFIRMATION",
-        "reason": "The shared CaseView is NOT_ASKED; the accepted specific-template policy requires explicit confirmation."
+        "reason": "The shared CaseView records the selected candidate as CONFIRMED after the user response (#171 B-2), but carries no responded_at; the adapter supplies the full response matching shared ev_h001_v2."
       },
       "evidence_rules": [
         "evidence.vehicle_number.present",

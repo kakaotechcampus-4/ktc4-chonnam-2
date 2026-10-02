@@ -120,7 +120,7 @@ def test_digits_only_target_candidate_is_explicitly_abstained():
 
     _, plate = api.read_plate(request, hint, provider=provider)
 
-    assert plate.observation.value == "36 3105"
+    assert plate.observation.value == "363105"
     assert plate.observation.status == "NEEDS_REVIEW"
     assert plate.abstained is True
     assert plate.abstain_reason == "OCR_LOW_CONFIDENCE"

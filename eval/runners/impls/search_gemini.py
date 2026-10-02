@@ -15,7 +15,8 @@ from daesingo.search.scope import (
     TimeRangeKind,
     VisualEventType,
 )
-from daesingo.search.sources import StaticAnalysisSourceResolver
+from daesingo.search.runs import ContractRef, RunOutcome
+from daesingo.search.sources import LocalAnalysisSourceResolver
 from eval import gemini_preflight
 
 IMPL_VERSION = "v1"
@@ -26,18 +27,19 @@ _last_facts: dict[str, object] = {}
 
 def _build_service(prepared: gemini_preflight.PreparedEval) -> SearchService:
     sources = {
-        clip.clip_id: (
-            ResolvedAnalysisSource(
-                source_id=clip.clip_id,
-                path=clip.path,
-                duration_sec=clip.duration_sec,
-                timeline_id=clip.clip_id,
-                timeline_revision=1,
-            ),
+        clip.clip_id: ResolvedAnalysisSource(
+            source_ref=ContractRef(kind="analysis_source", ref=clip.clip_id),
+            duration_sec=clip.duration_sec,
+            timeline_id=clip.clip_id,
+            timeline_revision=1,
         )
         for clip in prepared.clips
     }
-    resolver = StaticAnalysisSourceResolver(sources_by_scope=sources, sources_by_ref={})
+    resolver = LocalAnalysisSourceResolver(
+        sources_by_scope={clip_id: (source,) for clip_id, source in sources.items()},
+        sources_by_ref=sources,
+        paths_by_ref={clip.clip_id: clip.path for clip in prepared.clips},
+    )
     return build_gemini_search_service(prepared.api_key, resolver)
 
 
@@ -45,8 +47,18 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
     prepared = gemini_preflight.prepare(scope)
     service = _build_service(prepared)
     raw: list[dict[str, object]] = []
+    failed: list[dict[str, object]] = []
     for clip in prepared.clips:
         result = search_candidates(_scope_for(clip), service=service)
+        run_record = result.analysis_run
+        if run_record.outcome is not RunOutcome.SUCCEEDED:
+            failed.append(
+                {
+                    "clip_id": clip.clip_id,
+                    "outcome": run_record.outcome.value,
+                    "issues": [issue.code for issue in run_record.issues],
+                }
+            )
         candidates = [
             {
                 "rank": candidate.rank,
@@ -60,10 +72,18 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
                 "t_end_sec": candidate.span.end_ms / 1000,
                 "representative_sec": candidate.span.representative_ms / 1000,
                 "timeline_revision": candidate.span.timeline_revision,
+                "summary": candidate.summary,
+                "uncertainties": list(candidate.uncertainties),
             }
             for candidate in result.candidates
         ]
-        raw.append({"clip_id": clip.clip_id, "candidates": candidates})
+        raw.append(
+            {
+                "clip_id": clip.clip_id,
+                "outcome": run_record.outcome.value,
+                "candidates": candidates,
+            }
+        )
 
     records = service.ledger.records()
     global _last_facts
@@ -76,12 +96,14 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
         "config_version": service.config.version,
         "config_fingerprint": service.config.fingerprint,
         "sdk_version": prepared.sdk_version,
-        "usage_records": [
-            record.as_eval_fact() for record in records if record.cost_usd is not None
-        ],
+        "usage_records": [record.as_eval_fact() for record in records],
         "provider_usage_records": [record.as_eval_fact() for record in records],
         "clips": [clip.clip_id for clip in prepared.clips],
         "scenarios": [clip.clip_id for clip in prepared.clips],
+        # FAILED/PARTIAL 클립은 후보 0개로 채점된다. 지표만 보고 원인을 오해하지
+        # 않도록 어떤 클립이 왜 실패했는지 남긴다.
+        "n_not_succeeded_clips": len(failed),
+        "not_succeeded_clips": failed,
     }
     return raw
 

@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from statistics import median
 from uuid import uuid4
+from daesingo.recording.observability import PHASES
 
 
 _spec = importlib.util.spec_from_file_location("recording_benchmark", Path(__file__).with_name("recording_benchmark.py"))
@@ -31,7 +32,7 @@ def statistics(values):
 def summarize(reports):
     """SKIPPED는 0초로 바꾸지 않고 제외하며, 실패 시간은 성공 시간과 별도로 요약한다."""
     stages = {}
-    names = benchmark.SPLIT_STAGES if reports[0].get("schema_version") == "recording-benchmark/v2" else benchmark.STAGES
+    names = benchmark.SPLIT_STAGES if "requested_ranges" in reports[0] else benchmark.STAGES
     for name in names:
         entries = [s for r in reports for s in r["stages"] if s["name"] == name]
         stages[name] = {
@@ -51,6 +52,22 @@ def _write_json(path, value):
     with path.open("xb") as stream:
         stream.write(data)
     return hashlib.sha256(data).hexdigest()
+
+
+def summarize_materialization(reports):
+    result = {}
+    for kind in ("analysis_source", "incident_clip"):
+        traces = [t for r in reports for t in r["materialization_trace"][kind]]
+        phases = {}
+        for name in PHASES:
+            entries = [p for t in traces for p in t["phases"] if p["name"] == name]
+            phases[name] = {
+                "status_counts": dict(Counter(p["status"] for p in entries)),
+                "elapsed_sec": statistics([p["elapsed_sec"] for p in entries if p["status"] == "SUCCESS"]),
+                "failed_elapsed_sec": statistics([p["elapsed_sec"] for p in entries if p["status"] == "FAILED"]),
+            }
+        result[kind] = {"invocation_count": len(traces), "phases": phases}
+    return result
 
 
 def _freeze_checks(reports, repeats):
@@ -75,7 +92,8 @@ def _freeze_checks(reports, repeats):
 
 
 def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec=None, end_sec=None, height=480,
-                 analysis_start=None, analysis_end=None, incident_start=None, incident_end=None):
+                 analysis_start=None, analysis_end=None, incident_start=None, incident_end=None,
+                 materialization_trace=False):
     """기존 단일 실행 결과는 수정하지 않는다. 생성된 bundle.json을 반환한다."""
     # 자유로운 설명·파일명·경로를 ID에 복사하지 못하도록 opaque UUID 표기만 받는다.
     if not isinstance(dataset_id, str) or re.fullmatch(r"ds_[0-9a-f]{32}", dataset_id) is None:
@@ -99,7 +117,8 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec=N
     for index in range(1, repeats + 1):
         report = benchmark.run_benchmark(video, video_index=video_index, start_sec=start_sec,
                                          end_sec=end_sec, height=height, analysis_start=analysis_start,
-                                         analysis_end=analysis_end, incident_start=incident_start, incident_end=incident_end)
+                                         analysis_end=analysis_end, incident_start=incident_start, incident_end=incident_end,
+                                         materialization_trace=materialization_trace)
         filename = f"runs/{index:04d}.json"
         digest = _write_json(destination / filename, report)
         reports.append(report)
@@ -109,6 +128,12 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec=N
             break
     first = reports[0]
     checks = _freeze_checks(reports, repeats)
+    if materialization_trace:
+        checks["materialization_trace_complete"] = all(
+            len(r["materialization_trace"][kind]) == 1
+            and all(t["status"] == "SUCCESS" and all(p["status"] == "SUCCESS" for p in t["phases"])
+                    for t in r["materialization_trace"][kind])
+            for r in reports for kind in ("analysis_source", "incident_clip"))
     bundle = {
         "schema_version": "recording-baseline/v1", "bundle_id": f"baseline_{uuid4().hex}",
         "status": "FROZEN" if all(checks.values()) else "INCOMPLETE", "freeze_checks": checks,
@@ -124,6 +149,9 @@ def run_baseline(video, *, dataset_id, output, repeats, video_index, start_sec=N
     else:
         bundle["schema_version"] = "recording-baseline/v2"
         bundle["execution"]["requested_ranges"] = first["requested_ranges"]
+    if materialization_trace:
+        bundle["schema_version"] = "recording-baseline/v3"
+        bundle["summary"]["materialization_trace"] = summarize_materialization(reports)
     # manifest는 마지막에 발행한다. 중단된 디렉터리를 FROZEN으로 취급하지 않는다.
     temporary = destination / "bundle.pending.json"
     _write_json(temporary, bundle)
@@ -139,12 +167,14 @@ def main(argv=None):
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--video-index", type=int, required=True)
     benchmark.add_range_arguments(parser)
+    parser.add_argument("--materialization-trace", action="store_true")
     args = parser.parse_args(argv)
     try:
         bundle = run_baseline(args.video, dataset_id=args.dataset_id, output=args.output, repeats=args.repeats,
                               video_index=args.video_index, start_sec=args.start, end_sec=args.end,
                               analysis_start=args.analysis_start, analysis_end=args.analysis_end,
-                              incident_start=args.incident_start, incident_end=args.incident_end)
+                              incident_start=args.incident_start, incident_end=args.incident_end,
+                              materialization_trace=args.materialization_trace)
     except Exception as error:
         print(json.dumps({"status": "FAILED", "failure": {"code": error.code if isinstance(error, BaselineError)
                                                            else "BUNDLE_WRITE_OR_RUN_FAILED"}}))

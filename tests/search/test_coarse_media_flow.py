@@ -7,7 +7,6 @@ import pytest
 
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.errors import CoarseDurationMismatchError
-from daesingo.search.execution import RunDeadline
 from daesingo.search.media import (
     FfprobeError,
     MediaInput,
@@ -121,7 +120,7 @@ def _service(
         provider,
         config,
         media_preparer=MediaPreparer(config),
-        deadline=RunDeadline(lambda: 10.0, budget_ms=30_000),
+        monotonic=lambda: 10.0,
     )
 
 
@@ -194,7 +193,8 @@ def test_coarse_uses_one_prepared_proxy_and_records_metrics(
     record = service.ledger.records()[0]
     assert record.processed_duration_sec == pytest.approx(2.0, abs=0.05)
     assert record.prepared_media_bytes == len(provider.prepared_bytes or b"")
-    assert record.prepared_duration_ms == pytest.approx(2000, abs=100)
+    # 준비 영상은 coarse_fps 배로 늘어난다(재생 1초 = 원본 프레임 1장).
+    assert record.prepared_duration_ms == pytest.approx(2000 * config.coarse_fps, abs=600)
     assert record.cost_usd == Decimal("0.000032")
     assert provider.prepared_path is not None and not provider.prepared_path.exists()
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
@@ -216,7 +216,8 @@ def test_coarse_usage_record_keeps_declared_duration_separate_from_prepared(
     # Then
     record = service.ledger.records()[0]
     assert record.processed_duration_sec == 2.2
-    assert record.prepared_duration_ms == 2000
+    expected_ms = 2000 * GeminiSearchConfig().coarse_fps
+    assert record.prepared_duration_ms == pytest.approx(expected_ms, abs=600)
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
 
 
@@ -230,14 +231,13 @@ def test_deadline_after_preparation_skips_provider_and_cleans_temp(
     provider = _ProviderSpy()
     config = GeminiSearchConfig()
     clock = ControllableClock()
-    deadline = RunDeadline(clock, budget_ms=30_000)
     temp_dirs = capture_temp_dirs(monkeypatch)
     service = SearchService(
         resolver,
         provider,
         config,
         media_preparer=ExpiringMediaPreparer(config, clock),
-        deadline=deadline,
+        monotonic=clock,
     )
 
     # When

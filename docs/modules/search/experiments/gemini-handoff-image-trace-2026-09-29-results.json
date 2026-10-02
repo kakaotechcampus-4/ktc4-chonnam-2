@@ -1,0 +1,614 @@
+{
+  "config": {
+    "profiles": "diagnostic-v1,diagnostic-handoff-v1",
+    "transport": "image",
+    "model": "gemini-3.8-flash",
+    "reasoning_effort": "low",
+    "fine_padding_sec": 4.0
+  },
+  "runs": [
+    {
+      "profile": "diagnostic-v1",
+      "transport": "image",
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 12,
+      "verification_counts": {
+        "OBSERVED": 2,
+        "NOT_OBSERVED": 3
+      },
+      "reported_input_tokens": 615306,
+      "reported_total_tokens": 632891,
+      "positives_hit": 1,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.0,
+                4.5
+              ],
+              "at_sec": 2.5,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                3.0,
+                8.0
+              ],
+              "at_sec": 5.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                23.0,
+                29.0
+              ],
+              "at_sec": 26.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                50.0,
+                56.0
+              ],
+              "at_sec": 53.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                14.5,
+                17.5
+              ],
+              "at_sec": 15.8,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 1
+    },
+    {
+      "profile": "diagnostic-handoff-v1",
+      "transport": "image",
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 13,
+      "verification_counts": {
+        "OBSERVED": 3,
+        "NOT_OBSERVED": 3
+      },
+      "reported_input_tokens": 669890,
+      "reported_total_tokens": 685095,
+      "positives_hit": 1,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.5,
+                4.5
+              ],
+              "at_sec": 2.8,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                5.0,
+                10.0
+              ],
+              "at_sec": 6.8,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                16.0,
+                21.0
+              ],
+              "at_sec": 18.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                27.0,
+                32.0
+              ],
+              "at_sec": 29.3,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                39.0,
+                44.0
+              ],
+              "at_sec": 41.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                14.5,
+                17.5
+              ],
+              "at_sec": 16.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 1
+    },
+    {
+      "profile": "diagnostic-v1",
+      "transport": "image",
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 12,
+      "verification_counts": {
+        "OBSERVED": 2,
+        "NOT_OBSERVED": 3
+      },
+      "reported_input_tokens": 586706,
+      "reported_total_tokens": 603098,
+      "positives_hit": 1,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.5,
+                4.5
+              ],
+              "at_sec": 2.5,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                5.0,
+                8.0
+              ],
+              "at_sec": 6.8,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                24.5,
+                28.0
+              ],
+              "at_sec": 26.2,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                50.0,
+                53.0
+              ],
+              "at_sec": 51.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                14.5,
+                18.0
+              ],
+              "at_sec": 16.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 2
+    },
+    {
+      "profile": "diagnostic-handoff-v1",
+      "transport": "image",
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 10,
+      "verification_counts": {
+        "OBSERVED": 2,
+        "NOT_OBSERVED": 1
+      },
+      "reported_input_tokens": 495622,
+      "reported_total_tokens": 505852,
+      "positives_hit": 1,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.2,
+                4.5
+              ],
+              "at_sec": 2.8,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                5.0,
+                10.0
+              ],
+              "at_sec": 7.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                14.5,
+                17.5
+              ],
+              "at_sec": 15.8,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 2
+    }
+  ]
+}

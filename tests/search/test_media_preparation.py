@@ -288,10 +288,29 @@ def test_fine_duration_matches_clamped_interval() -> None:
         fine_end_sec=7.0,
         deadline=_real_deadline(),
     ) as fine:
-        # Physical interval is 5s; allow ±1.5s tolerance for encoder rounding
-        assert abs(fine.duration_sec - 5.0) <= 1.5, (
-            f"Fine duration={fine.duration_sec} not close to expected 5.0s"
+        # 원본 5초를 fine_fps 배로 늘린다(재생 1초 = 원본 프레임 1장).
+        assert (fine.origin_start_sec, fine.origin_end_sec) == (2.0, 7.0)
+        expected = 5.0 * _DEFAULT_CFG.fine_fps
+        assert abs(fine.duration_sec - expected) <= 1.5, (
+            f"Fine duration={fine.duration_sec} not close to expected {expected}s"
         )
+
+
+@_NEEDS_FFMPEG
+def test_prepared_media_plays_one_source_frame_per_second() -> None:
+    # 프록시는 재생 1초당 1장만 본다(66토큰/프레임). 원본 fps 배로 늘려 그 밀도를 넣는다.
+    data = _make_test_mp4(duration_sec=6.0, size="640x480")
+    preparer = MediaPreparer(_DEFAULT_CFG)
+    with preparer.prepare_coarse(_media_input(data), deadline=_real_deadline()) as coarse:
+        assert coarse.playback_speed == 1 / _DEFAULT_CFG.coarse_fps
+        assert abs(coarse.duration_sec - 6.0 * _DEFAULT_CFG.coarse_fps) <= 1.5
+        assert _stream_fps(_video_stream(coarse.path)) <= 1.0 + 1e-3
+    with preparer.prepare_fine(
+        _media_input(data), fine_start_sec=1.0, fine_end_sec=4.0, deadline=_real_deadline()
+    ) as fine:
+        assert fine.playback_speed == 1 / _DEFAULT_CFG.fine_fps
+        assert _stream_fps(_video_stream(fine.path)) <= 1.0 + 1e-3
+        assert int(str(_video_stream(fine.path)["height"])) <= 360
 
 
 @_NEEDS_FFMPEG

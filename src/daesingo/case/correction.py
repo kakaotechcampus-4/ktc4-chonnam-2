@@ -25,6 +25,11 @@ def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+# case가 스스로 정의한 non-evidence target_field 네임스페이스 중 후보에 묶이지 않는 것
+# (`contract-correction-record.md` §6).
+_CASE_SCOPED_TARGETS = frozenset({"hints", "candidate.selected_id"})
+
+
 def apply_correction(
     case: CaseAggregate,
     *,
@@ -32,11 +37,23 @@ def apply_correction(
     target_field: str,
     previous_value: Any,
     new_value: Any,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
+    # 값이 실제로 바뀌지 않았으면 기록하지 않는다(correction-record §8-7, `edit_time_hint()`와 같은
+    # 원칙) — 반환값 `None`, `case_rev`도 그대로. 기록하면 evidence가 조립할 때 거부하고, 기록은
+    # 되돌리지 않으므로(§8-9) 그 case는 이후 CaseView를 만들 수 없게 된다.
+    if previous_value == new_value:
+        return None
     # 같은 target_field의 최신(=supersede 체인의 head) correction을 찾는다 — 순환 방지를 위해
     # "가장 최근에 추가된 것"만 후보로 삼는다(같은 target_field에 여러 개가 있어도 head는 하나).
+    # 후보에 종속된 값(evidence 의미 경로)은 같은 선택 context 안에서만 잇는다(#173 E-1) — 새
+    # 후보의 첫 정정이 이전 후보의 정정을 supersede하면 evidence의 chain 연속성 검사에 걸린다.
+    # hints·candidate.selected_id처럼 case 전체에 걸린 값은 후보가 바뀌어도 잇는다.
     previous = next(
-        (c for c in reversed(case.correction_records) if c["target_field"] == target_field),
+        (
+            c for c in reversed(case.correction_records)
+            if c["target_field"] == target_field
+            and (target_field in _CASE_SCOPED_TARGETS or c["selection_rev"] == case.selection_rev)
+        ),
         None,
     )
     record: dict[str, Any] = {
@@ -45,7 +62,10 @@ def apply_correction(
         "correction_id": f"corr_{case.case_id}_{uuid.uuid4().hex[:8]}",
         "case_id": case.case_id,
         "selection_rev": case.selection_rev,  # 스냅샷 — 이 호출로 증가시키지 않는다
-        "supersedes_id": previous["correction_id"] if previous else None,
+        # correction-record/v1.1 §3 — `supersedes_ref: ContractRef{kind: correction_record} | null`.
+        "supersedes_ref": (
+            {"kind": "correction_record", "ref": previous["correction_id"]} if previous else None
+        ),
         "kind": kind,
         "target_field": target_field,
         "previous_value": previous_value,
@@ -101,10 +121,13 @@ def edit_time_hint(case: CaseAggregate, hints_patch: dict[str, str | None]) -> d
 
 def reselect_candidate(case: CaseAggregate, candidate_id: str) -> dict[str, Any]:
     """`OTHER_CANDIDATE` — 표 2행: 이미 선택한 뒤(`EVIDENCE_REVIEW`) 다른 후보가 맞다고
-    정정한다. stage는 그대로 머물고(`domain.reselect_candidate()`가 전이를 만들지 않는다),
-    `selected` 플래그만 옮겨간다. `target_field="candidate.selected_id"`도 case가 스스로 정의한
+    정정한다. `EVIDENCE_REVIEW`면 제자리, `READY`면 새 초안을 위해 `EVIDENCE_REVIEW`로 돌아가고
+    (#173 E-4), `selected` 플래그를 옮긴다. `target_field="candidate.selected_id"`도 case가 스스로 정의한
     네임스페이스다(§6, 예시로 명시된 이름 그대로 재사용).
     """
+    # 거부될 요청이면 CorrectionRecord를 남기기 전에 멈춘다(#166 — 기록 후 거부되면
+    # case_rev·CorrectionRecord만 남아 실제 선택 상태와 어긋났다).
+    case.check_reselect(candidate_id)
     previous_id = next((c.candidate_id for c in case.candidates if c.selected), None)
     record = apply_correction(
         case, kind="OTHER_CANDIDATE", target_field="candidate.selected_id",

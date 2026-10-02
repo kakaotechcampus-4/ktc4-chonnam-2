@@ -104,6 +104,10 @@ class ModuleAdapter(Protocol):
 
     def get_candidate_events(self) -> list[dict[str, Any]]: ...
 
+    def get_candidate_search_outcome(self) -> str | None:
+        """마지막 `CANDIDATE_SEARCH` Run의 `outcome`(SUCCEEDED·PARTIAL·FAILED). 없으면 None."""
+        ...
+
     def get_analysis_scopes(self) -> list[dict[str, Any]]: ...
 
     def get_evidence_record(self) -> dict[str, Any] | None: ...
@@ -117,6 +121,15 @@ class ModuleAdapter(Protocol):
     def get_evidence_needs(self) -> list[dict[str, Any]]: ...
 
     def get_report_package(self) -> dict[str, Any] | None: ...
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        """선택된 후보의 `PlateReadout` 목록(원판독·재판독). `evidence.plate_preview_ref`(#47)가
+        현재 값의 근거 판독을 `readout_id`로 찾는 데 쓴다."""
+        ...
+
+    def get_plate_read_status(self) -> str | None:
+        """번호판 판독 실행 상태(`JobExecution.status` 값 공간). 보고할 실행 상태가 없으면 None."""
+        ...
 
     def get_job_executions(self) -> list[dict[str, Any]]: ...
 
@@ -144,6 +157,14 @@ class MockFixtureAdapter:
             if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH":
                 candidates.extend(entry.get("candidates", []))
         return candidates
+
+    def get_candidate_search_outcome(self) -> str | None:
+        runs = [
+            entry["analysis_run"]
+            for entry in self._load("search").get("analysis_run_candidate_events", [])
+            if entry["analysis_run"]["operation"] == "CANDIDATE_SEARCH"
+        ]
+        return runs[-1]["outcome"] if runs else None
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """search fixture에 실려있는 `AnalysisScope`(case가 Producer로 만들어 보낸 것)를
@@ -195,6 +216,14 @@ class MockFixtureAdapter:
         packages = self._load("evidence").get("report_packages", [])
         return packages[-1] if packages else None
 
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        return self._load("readout").get("plate_readouts", [])
+
+    def get_plate_read_status(self) -> str | None:
+        """mock fixture에는 이 case의 실행 상태 원장이 없다 — 시나리오 테스트가
+        `plate_read_status`를 JobExecution fixture에서 직접 넘긴다(`scenario_infra_failure_001`)."""
+        return None
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         """`JobExecution`(job-execution/v1.1) 전체 목록 — case는 이 계약의 Producer가
@@ -237,10 +266,13 @@ class RealAdapter:
         self._mock_root = mock_root
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
         self._evidence_bundle_case_rev: int | None = None
-        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 선택된 candidate가 같으면 재사용한다(이슈 #73).
-        self._observations: real_e2e.ObservationBundle | None = None
-        # (candidate_id, selection_rev) — 같은 candidate라도 새로 선택되면 새 선택 context다.
-        self._observations_key: tuple[str, int] | None = None
+        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 같은 탐색 결과(`case.candidate_generation`) 안에서
+        # 후보별로 재사용한다 — 정정(이슈 #73)과 A→B→A 재선택(`decisions/reselect-observation-reuse.md`).
+        # 세대가 바뀌면(재탐색) 같은 candidate_id라도 버린다(정책 표 1행).
+        self._observations_by_candidate: dict[str, real_e2e.ObservationBundle] = {}
+        self._observations_generation: int | None = None
+        # 마지막 `get_candidate_events()`의 CandidateEvent — evidence 조립이 선택된 것을 여기서 찾는다.
+        self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._clients = clients
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
@@ -265,14 +297,23 @@ class RealAdapter:
         if not isinstance(scope, search_module.AnalysisScope):
             scope = search_module.AnalysisScope.model_validate(scope)
         result = search_module.search_candidates(scope)
+        self._last_search_outcome = str(result.analysis_run.outcome)
+        # evidence 조립이 선택된 CandidateEvent를 여기서 찾는다 — 조립 때 search를 다시 부르지
+        # 않는다(정책 표 2행: 선택이 바뀌어도 1차 탐색은 안 건드림, `RealVideoAdapter`와 같은 원칙).
+        self._candidates_by_id = {c.candidate_id: c for c in result.candidates}
         return [
             {
                 "candidate_id": c.candidate_id,
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
+                "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in result.candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         """실제 대응이 없다 — case가 `AnalysisScope`의 Producer라(§`scope.py`), 다른
@@ -286,6 +327,14 @@ class RealAdapter:
         )
 
     # ── evidence ────────────────────────────────────────────────────────
+    def _cached_observations(self, candidate_id: str) -> real_e2e.ObservationBundle | None:
+        """같은 탐색 결과 세대 안에서 이미 관찰한 후보면 그 관찰을 준다. 세대가 바뀌었으면 전부 버린다."""
+        generation = self._case.candidate_generation
+        if self._observations_generation != generation:
+            self._observations_by_candidate = {}
+            self._observations_generation = generation
+        return self._observations_by_candidate.get(candidate_id)
+
     def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
         """evidence로 넘기는 candidate/selection_rev는 **case가 실제로 선택한 값**이어야
         한다(2026-09-19 수정) — 이전엔 이 메서드가 `search.search_candidates()`를 다시
@@ -293,15 +342,17 @@ class RealAdapter:
         같았을 뿐이고, `case.select_candidate()`가 고른 candidate와 무관하게 항상 같은
         결과가 나왔다 — 후보가 여럿인 시나리오에서는 case가 고른 것과 evidence가 받는
         것이 어긋날 수 있는 실제 버그였다. 지금은 `self._case.candidates`에서
-        `selected=True`인 candidate를 찾아 그 `candidate_id`로 search 결과에서 일치하는
-        `CandidateEvent`를 골라 넘기고, `selection_rev`도 `self._case.selection_rev`를
+        `selected=True`인 candidate를 찾아 그 `candidate_id`로 `get_candidate_events()`가 받아 둔
+        `CandidateEvent`를 골라 넘기고(search를 다시 부르지 않는다 — W7 7순위 러너), `selection_rev`도 `self._case.selection_rev`를
         그대로 쓴다.
 
         correction이 적용돼 `case_rev`가 바뀌면 최신 `case.correction_records`로 evidence를
         다시 계산한다(이슈 #73). 이때 다시 부르는 것은 `assemble_evidence_bundle()`(시각·
         evidence·요건·Package)뿐이다 — 선택 context(`candidate_id`, `selection_rev`)가 그대로면
         search·Fine·readout을 다시 돌리지 않고 관찰 결과를 재사용한다(부분 재실행 정책 표:
-        `EVENT_TIME_MANUAL` 등 "요건 검사만 다시"). 새로 선택되면 관찰부터 다시 한다."""
+        `EVENT_TIME_MANUAL` 등 "요건 검사만 다시"). 처음 보는 후보를 고르거나 재탐색으로 후보 목록이
+        바뀌면 관찰부터 다시 한다 — 같은 탐색 결과에서 이미 본 후보로 돌아오면(A→B→A) 관찰은 재사용하고
+        조립만 새 선택 context로 한다(`decisions/reselect-observation-reuse.md`)."""
         if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             if self._search_scope is None or self._mock_root is None:
                 self._not_ready(
@@ -330,27 +381,24 @@ class RealAdapter:
             scope = self._search_scope
             if not isinstance(scope, search_module.AnalysisScope):
                 scope = search_module.AnalysisScope.model_validate(scope)
-            observation_key = (selected.candidate_id, self._case.selection_rev)
-            if self._observations is None or self._observations_key != observation_key:
-                search_candidates = search_module.search_candidates(scope).candidates
-                candidate = next(
-                    (c for c in search_candidates if c.candidate_id == selected.candidate_id), None
-                )
+            observations = self._cached_observations(selected.candidate_id)
+            if observations is None:
+                candidate = self._candidates_by_id.get(selected.candidate_id)
                 if candidate is None:
                     raise ValueError(
                         f"case가 선택한 candidate_id={selected.candidate_id!r}를 "
-                        "search.search_candidates() 결과에서 찾을 수 없다 — case와 search가 "
-                        "같은 scope를 보고 있는지 확인해야 한다."
+                        "get_candidate_events() 결과에서 찾을 수 없다 — 같은 인스턴스로 "
+                        "먼저 후보를 받아왔는지 확인해야 한다."
                     )
-                self._observations = real_e2e.observe_happy_001_candidate(
+                observations = real_e2e.observe_happy_001_candidate(
                     case_id=self.case_id,
                     candidate=candidate,
                     scope=scope,
                     mock_root=self._mock_root,
                 )
-                self._observations_key = observation_key
+                self._observations_by_candidate[selected.candidate_id] = observations
             self._evidence_bundle = real_e2e.assemble_evidence_bundle(
-                self._observations,
+                observations,
                 case_id=self.case_id,
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
@@ -395,6 +443,16 @@ class RealAdapter:
         이건 조용한 실패가 아니다 — `EvidenceBundle.package_error`에 사유가 남는다."""
         return self._build_evidence_bundle().report_package
 
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
+
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -438,10 +496,11 @@ class RealVideoAdapter:
         self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._evidence_bundle: real_e2e.EvidenceBundle | None = None
         self._evidence_bundle_case_rev: int | None = None
-        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 선택된 candidate가 같으면 재사용한다(이슈 #73).
-        self._observations: real_e2e.ObservationBundle | None = None
-        # (candidate_id, selection_rev) — 같은 candidate라도 새로 선택되면 새 선택 context다.
-        self._observations_key: tuple[str, int] | None = None
+        # 관찰 단계 결과(Fine·IncidentClip·OCR)는 같은 탐색 결과(`case.candidate_generation`) 안에서
+        # 후보별로 재사용한다 — 정정(이슈 #73)과 A→B→A 재선택(`decisions/reselect-observation-reuse.md`).
+        # 세대가 바뀌면(재탐색) 같은 candidate_id라도 버린다(정책 표 1행).
+        self._observations_by_candidate: dict[str, real_e2e.ObservationBundle] = {}
+        self._observations_generation: int | None = None
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
         raise NotImplementedError(
@@ -472,16 +531,23 @@ class RealVideoAdapter:
         선택한 것과 같은 객체를 다시 찾아 쓰게 한다(`RealAdapter`와 동일 원칙,
         2026-09-19 수정 참고)."""
         context = self._ensure_context()
-        candidates = real_e2e.get_real_video_candidates(context)
+        result = real_e2e.run_real_video_candidate_search(context)
+        self._last_search_outcome = str(result.analysis_run.outcome)
+        candidates = result.candidates
         self._candidates_by_id = {c.candidate_id: c for c in candidates}
         return [
             {
                 "candidate_id": c.candidate_id,
                 "summary": c.summary,
                 "thumbnail_ref": c.thumbnail_ref,
+                "rank": c.rank,
+                "span": c.span.model_dump(mode="json"),
             }
             for c in candidates
         ]
+
+    def get_candidate_search_outcome(self) -> str | None:
+        return getattr(self, "_last_search_outcome", None)
 
     def get_analysis_scopes(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -491,10 +557,18 @@ class RealVideoAdapter:
         )
 
     # ── evidence ────────────────────────────────────────────────────────
+    def _cached_observations(self, candidate_id: str) -> real_e2e.ObservationBundle | None:
+        """같은 탐색 결과 세대 안에서 이미 관찰한 후보면 그 관찰을 준다. 세대가 바뀌었으면 전부 버린다."""
+        generation = self._case.candidate_generation
+        if self._observations_generation != generation:
+            self._observations_by_candidate = {}
+            self._observations_generation = generation
+        return self._observations_by_candidate.get(candidate_id)
+
     def _build_evidence_bundle(self) -> real_e2e.EvidenceBundle:
         """`RealAdapter._build_evidence_bundle()`과 같은 원칙 — case가 실제로
         선택한 candidate로만 계산하고, case_rev가 바뀌면(정정 등) 조립만 다시 한다.
-        real Gemini/Elice **Fine**은 새로 선택될 때만 실제로 호출한다(유료) — 정정은
+        real Gemini/Elice **Fine**은 같은 탐색 결과에서 처음 보는 후보일 때만 실제로 호출한다(유료) — 정정은
         관찰 결과를 재사용한다(이슈 #73)."""
         if self._evidence_bundle is None or self._evidence_bundle_case_rev != self._case.case_rev:
             selected = next((c for c in self._case.candidates if c.selected), None)
@@ -512,15 +586,15 @@ class RealVideoAdapter:
                     "get_candidate_events() 결과에서 찾을 수 없다 — 같은 인스턴스로 "
                     "먼저 후보를 받아왔는지 확인해야 한다."
                 )
-            observation_key = (selected.candidate_id, self._case.selection_rev)
-            if self._observations is None or self._observations_key != observation_key:
+            observations = self._cached_observations(selected.candidate_id)
+            if observations is None:
                 context = self._ensure_context()
-                self._observations = real_e2e.observe_real_video_candidate(
+                observations = real_e2e.observe_real_video_candidate(
                     context, candidate, case_id=self.case_id
                 )
-                self._observations_key = observation_key
+                self._observations_by_candidate[selected.candidate_id] = observations
             self._evidence_bundle = real_e2e.assemble_evidence_bundle(
-                self._observations,
+                observations,
                 case_id=self.case_id,
                 selection_rev=self._case.selection_rev,
                 correction_records=self._case.correction_records,
@@ -558,6 +632,16 @@ class RealVideoAdapter:
 
     def get_report_package(self) -> dict[str, Any] | None:
         return self._build_evidence_bundle().report_package
+
+    def get_plate_readouts(self) -> list[dict[str, Any]]:
+        plate_readout = self._build_evidence_bundle().plate_readout
+        return [plate_readout] if plate_readout else []
+
+    def get_plate_read_status(self) -> str | None:
+        """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
+        실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
+        evidence 조립 여부로 진행 상태가 정해지므로 보고하지 않는다."""
+        return "FAILED" if self._build_evidence_bundle().plate_read_outcome == "FAILED" else None
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:

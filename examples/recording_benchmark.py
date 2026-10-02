@@ -16,6 +16,7 @@ from daesingo.recording import (
     AnalysisProfile, IncidentClipEncoding, LocalAnalysisMaterializer,
     LocalIncidentMaterializer, RecordingCapabilityError, RecordingService,
 )
+from daesingo.recording.observability import capture_materialization
 
 
 STAGES = ("input_fingerprint", "tool_versions", "register_probe", "timeline", "stream_selection",
@@ -72,7 +73,8 @@ def add_range_arguments(parser):
 
 
 def run_benchmark(video, *, video_index, start_sec=None, end_sec=None, height=480,
-                  analysis_start=None, analysis_end=None, incident_start=None, incident_end=None):
+                  analysis_start=None, analysis_end=None, incident_start=None, incident_end=None,
+                  materialization_trace=False):
     """Benchmark 전용 report를 반환한다. Canonical Contract/profile registry와 별개다."""
     split = any(v is not None for v in (analysis_start, analysis_end, incident_start, incident_end))
     report = {
@@ -87,13 +89,21 @@ def run_benchmark(video, *, video_index, start_sec=None, end_sec=None, height=48
         report["schema_version"] = "recording-benchmark/v2"
         del report["requested_range"]
         report["requested_ranges"] = None
+    if materialization_trace:
+        report["schema_version"] = "recording-benchmark/v3"
+        report["materialization_trace"] = {"analysis_source": [], "incident_clip": []}
     started = perf_counter()
 
     def step(name, action):
         entry = next(item for item in report["stages"] if item["name"] == name)
         at = perf_counter()
         try:
-            result = action()
+            if materialization_trace and name in report["materialization_trace"]:
+                with capture_materialization() as traces:
+                    report["materialization_trace"][name] = traces
+                    result = action()
+            else:
+                result = action()
             entry["status"] = "SUCCESS"
             return result
         except Exception as error:
@@ -139,6 +149,8 @@ def run_benchmark(video, *, video_index, start_sec=None, end_sec=None, height=48
             report["settings"] = {"video_index": video_index, "height": height,
                 "codec": "h264", "preset": "veryfast", "crf": 23, "audio": False,
                 "pixel_format": "yuv420p", "faststart": True, "profile_scope": "benchmark_trial"}
+            if materialization_trace:
+                report["settings"]["materialization_trace"] = True
             if split:
                 report["requested_ranges"] = ranges
             else:
@@ -270,10 +282,12 @@ def main(argv=None):
     parser.add_argument("video", nargs="?", default=os.environ.get("DAESINGO_RECORDING_VIDEO"))
     parser.add_argument("--video-index", type=int, required=True, help="VIDEO만 센 명시적 0 기반 순번")
     add_range_arguments(parser)
+    parser.add_argument("--materialization-trace", action="store_true")
     args = parser.parse_args(argv)
     report = run_benchmark(args.video, video_index=args.video_index, start_sec=args.start, end_sec=args.end,
                           analysis_start=args.analysis_start, analysis_end=args.analysis_end,
-                          incident_start=args.incident_start, incident_end=args.incident_end)
+                          incident_start=args.incident_start, incident_end=args.incident_end,
+                          materialization_trace=args.materialization_trace)
     print(json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2))
     return 1 if report["status"] == "FAILED" else 0
 

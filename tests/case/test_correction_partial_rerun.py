@@ -46,6 +46,24 @@ def _happy_case_with_selection() -> tuple[CaseAggregate, RealAdapter]:
     return case, real
 
 
+def test_evidence_after_selection_does_not_rerun_coarse_search(monkeypatch):
+    """정책 표 2행(`OTHER_CANDIDATE`): 선택이 바뀌어도 1차 탐색은 「절대 안 건드리는 것」이다.
+    evidence 조립은 선택된 CandidateEvent를 이미 받은 탐색 결과에서 찾아야 한다 — search를 다시
+    부르면 실제 search 서비스에서는 영상 전체 Coarse가 다시 돈다(W7 7순위 러너가 찾음).
+    `RealVideoAdapter`는 이미 `candidate_id`별로 캐시한다."""
+    scope = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID).get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id="case_h001_no_coarse_rerun", hints={}, manifest_summary={})
+    real = RealAdapter(case_id=case.case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    search_calls = _count_calls(monkeypatch, adapters.search_module, "search_candidates")
+    case.start_search()
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+
+    real.get_evidence_record()
+
+    assert search_calls["calls"] == 1  # receive_search_candidates()의 한 번뿐
+
+
 def test_event_time_manual_does_not_rerun_search_fine_or_readout(monkeypatch):
     case, real = _happy_case_with_selection()
     search_calls = _count_calls(monkeypatch, adapters.search_module, "search_candidates")
@@ -57,7 +75,7 @@ def test_event_time_manual_does_not_rerun_search_fine_or_readout(monkeypatch):
     counts_before = (
         search_calls["calls"], fine_calls["calls"], plate_calls["calls"], overlay_calls["calls"]
     )
-    assert counts_before == (1, 1, 1, 1)
+    assert counts_before == (0, 1, 1, 1)  # search는 후보를 받을 때 한 번 — 조립은 다시 부르지 않는다
 
     corrected_value = "2026-08-24T18:10:00+09:00"
     correction.apply_correction(
@@ -186,3 +204,83 @@ def test_real_video_other_candidate_observes_again(monkeypatch):
 
     assert calls["observe"] == ["cand_a", "cand_b"]
     assert record["candidate_id"] == "cand_b"
+
+
+# ── A→B→A 재선택 (decisions/reselect-observation-reuse.md) ─────────────
+# 같은 탐색 결과 안에서 이미 관찰한 후보로 돌아오면 관찰(Fine·클립·판독)을 재사용하고, 조립만 현재
+# 선택 context(`selection_rev`·그 선택의 정정)로 다시 한다. 후보 목록이 바뀌면(재탐색) 버린다 —
+# 그 경우는 위 `test_real_video_new_selection_of_same_candidate_observes_again`.
+
+
+def test_real_video_return_to_observed_candidate_reuses_observation(monkeypatch):
+    case, adapter, calls = _fake_real_video_adapter(monkeypatch)
+
+    adapter.get_evidence_record()
+    correction.reselect_candidate(case, "cand_b")
+    adapter.get_evidence_record()
+    correction.reselect_candidate(case, "cand_a")
+    adapter.get_evidence_record()
+
+    assert calls["observe"] == ["cand_a", "cand_b"]
+    # 조립은 매번 현재 선택 context로 — A로 돌아온 조립은 새 selection_rev다.
+    assert [(c[0], c[2]) for c in calls["assemble"]] == [("cand_a", 1), ("cand_b", 2), ("cand_a", 3)]
+
+
+def _fake_real_adapter(monkeypatch) -> tuple[CaseAggregate, RealAdapter, dict[str, list]]:
+    """`RealAdapter`의 관찰·조립을 가짜로 바꾼다 — 후보 2개짜리 fixture가 없어서."""
+    scope = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID).get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id="case_ra_reselect", hints={}, manifest_summary={})
+    case.start_search()
+    case.receive_candidates(
+        [
+            Candidate(candidate_id=cid, at=None, at_provenance=None, observed="", thumb_ref=None)
+            for cid in ("cand_a", "cand_b")
+        ]
+    )
+    case.select_candidate("cand_a")
+    adapter = RealAdapter(case_id=case.case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    adapter._candidates_by_id = {
+        "cand_a": SimpleNamespace(candidate_id="cand_a"),
+        "cand_b": SimpleNamespace(candidate_id="cand_b"),
+    }
+    calls: dict[str, list] = {"observe": [], "assemble": []}
+
+    def fake_observe(*, candidate, **kwargs):
+        calls["observe"].append(candidate.candidate_id)
+        return SimpleNamespace(candidate_id=candidate.candidate_id)
+
+    def fake_assemble(observations, **kwargs):
+        calls["assemble"].append((observations.candidate_id, kwargs["selection_rev"]))
+        return SimpleNamespace(evidence_record={"candidate_id": observations.candidate_id})
+
+    monkeypatch.setattr(real_e2e, "observe_happy_001_candidate", fake_observe)
+    monkeypatch.setattr(real_e2e, "assemble_evidence_bundle", fake_assemble)
+    return case, adapter, calls
+
+
+def test_real_adapter_return_to_observed_candidate_reuses_observation(monkeypatch):
+    case, adapter, calls = _fake_real_adapter(monkeypatch)
+
+    adapter.get_evidence_record()
+    correction.reselect_candidate(case, "cand_b")
+    adapter.get_evidence_record()
+    correction.reselect_candidate(case, "cand_a")
+    adapter.get_evidence_record()
+
+    assert calls["observe"] == ["cand_a", "cand_b"]
+    assert calls["assemble"] == [("cand_a", 1), ("cand_b", 2), ("cand_a", 3)]
+
+
+def test_real_adapter_drops_observations_when_candidates_are_replaced(monkeypatch):
+    """재탐색으로 후보 목록이 바뀌면 같은 candidate_id라도 다시 관찰한다(정책 표 1행)."""
+    case, adapter, calls = _fake_real_adapter(monkeypatch)
+
+    adapter.get_evidence_record()
+    correction.edit_time_hint(case, {"time": "18시 10분쯤"})
+    case.receive_candidates(
+        [Candidate(candidate_id="cand_a", at=None, at_provenance=None, observed="", thumb_ref=None)]
+    )
+    case.select_candidate("cand_a")
+    adapter.get_evidence_record()
+
+    assert calls["observe"] == ["cand_a", "cand_a"]
