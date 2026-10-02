@@ -12,6 +12,7 @@
 | 문서 | 내용 |
 | --- | --- |
 | [`aws-environment.md`](./aws-environment.md) | 팀 AWS 환경 — EC2 사양·리전·제공 기간, 접속 방법(SSM), 사용 범위, 제한 사항, 증설 요청 경로 |
+| [`mlapi.md`](./mlapi.md) | 2단계 ML API — Serverless 전용, 모델 선택 경계, 팀 ₩120,000 크레딧, API Key·비용·미확인 provider 제약 |
 
 ## 추가 규칙
 
