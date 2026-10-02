@@ -28,6 +28,7 @@ from daesingo.evidence import (
     validate_contract,
 )
 from daesingo.evidence import mock_integration as mock
+from daesingo.evidence.disposition import ASSEMBLE
 from daesingo.evidence.policy_catalog import load_requirement_catalog
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,13 +39,24 @@ CREATED_AT = CONFIGS[SCENARIO]["package_created_at"]
 
 
 class _Snapshot:
-    """case `fetch_case_view_inputs()`가 읽는 getter만 가진 evidence 결과 스냅샷."""
+    """case `fetch_case_view_inputs()`가 읽는 getter만 가진 evidence 결과 스냅샷.
 
-    def __init__(self, record: dict[str, Any], final: dict[str, Any], package: dict[str, Any] | None):
-        self._record, self._final, self._package = record, final, package
+    record는 항상 조립된 뒤이므로 Fine 소비 판정은 `ASSEMBLE`이고, needs는 같은 record·PlateReadout으로
+    evidence가 계산한 값이다(real adapter의 `get_visual_evidence_decision`·`get_evidence_needs`와 같은 의미).
+    """
+
+    def __init__(self, record: dict[str, Any], final: dict[str, Any], package: dict[str, Any] | None,
+                 needs: dict[str, Any]):
+        self._record, self._final, self._package, self._needs = record, final, package, needs
 
     def get_evidence_record(self):
         return self._record
+
+    def get_evidence_needs(self):
+        return [self._needs]
+
+    def get_visual_evidence_decision(self):
+        return ASSEMBLE
 
     def get_requirement_report(self, scope):
         return self._final if scope == "FINAL_PACKAGE" else None
@@ -112,12 +124,14 @@ class PlateBoundaryD3Tests(unittest.TestCase):
                                            created_at=CREATED_AT, asset_facts=self.assets)
         except PackageNotReady:
             package = None
+        # case는 현재 선택 context(candidate_ref·selection_rev)의 record일 때만 READY로 올린다(#191).
+        candidate_id = record["basis"]["candidate_ref"]["ref"]
         case = CaseAggregate.intake(case_id="case_d3", hints={}, manifest_summary={})
         case.start_search()
-        case.receive_candidates([Candidate(candidate_id="cand_d3", at=None, at_provenance=None,
+        case.receive_candidates([Candidate(candidate_id=candidate_id, at=None, at_provenance=None,
                                            observed="", thumb_ref=None, rank=1)])
-        case.select_candidate("cand_d3")
-        ready = case_service.mark_ready_if_package_ready(case, _Snapshot(record, final, package))
+        case.select_candidate(candidate_id)
+        ready = case_service.mark_ready_if_package_ready(case, _Snapshot(record, final, package, calculate_evidence_needs(record, plate)))
         return record, evidence, final, package, ready, case.stage
 
     @staticmethod
