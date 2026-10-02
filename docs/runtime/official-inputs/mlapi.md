@@ -10,6 +10,8 @@
 > 카테캠 공지 원문과 내부 포털 URL은 공개 레포에 싣지 않는다. §1은 2단계 최신 운영 공지를 사실만 요약했고, §2–§4는 엘리스 공식 공개 문서와 날짜를 명시한 조직 Model Library 관측을 구분해 재서술했다. 1단계 가이드는 과거 사용 방식 확인에만 사용하며, **2단계와 충돌하는 모델 제한은 2단계 공지를 우선**한다.
 >
 > 이 문서는 외부 입력이며 결정이 아니다. 실제 provider/model 선택, retry/timeout, concurrency, 비용 guardrail 등 Runtime/Ops 결정은 별도 Spec/Decision에서 이 문서를 근거로 정한다.
+>
+> 본문은 운영진 공지·플랫폼 공식 문서·Model Library 관측을 다룬다. 대신고의 실제 proxy 호출 실험은 **§7 Related internal evidence의 링크로만 연결**하며, 실측값을 이 문서의 공식 조건으로 합치지 않는다. Search 실험은 Search 원문, Runtime 교차 실험은 Runtime experiments, 계약·결정은 각 Contract/Spec/Decision이 소유한다.
 
 ## 1. 카테캠 2단계 지원 조건
 
@@ -57,7 +59,7 @@
 
 카테캠 조직에서 **공개 + 추천 + Serverless** 필터로 조회한 결과는 21개였다. 이는 해당 날짜와 필터의 관측이며, 추천 제외 모델이나 기관 전용 모델까지 포함한 전체 목록 또는 영구적인 지원 목록이 아니다. **실제 사용 모델 집합은 선택 시점의 조직 Model Library에서 다시 확인한다.**
 
-로컬 evidence의 `manifest.json` → `models.json` → `report.md` 순서로 확인한 수집 규모는 21개 모델, 391개 수집 화면, 881행 version history다. 모델별 endpoint, modality, context, 표시 가격 및 일부 parameter/reasoning/usage 설명을 확인했다. 원본은 `.codex-scratch/elice-serverless-2026-10-02/`에만 보존하며 Git에는 포함하지 않는다. **실제 API inference 호출과 provider 원문 정책 별도 검증은 미수행**이므로 아래 내용은 화면 관측이며 실행 호환성·정책 보장이 아니다.
+로컬 evidence의 `manifest.json` → `models.json` → `report.md` 순서로 확인한 수집 규모는 21개 모델, 391개 수집 화면, 881행 version history다. 모델별 endpoint, modality, context, 표시 가격 및 일부 parameter/reasoning/usage 설명을 확인했다. 원본은 `.codex-scratch/elice-serverless-2026-10-02/`에만 보존하며 Git에는 포함하지 않는다. **이번 Model Library 수집에서 실제 API inference 호출과 provider 원문 정책 별도 검증은 미수행**이므로 아래 내용은 화면 관측이며 실행 호환성·정책 보장이 아니다. 기존 프로젝트의 실제 호출 evidence는 §7에서 별도로 연결한다.
 
 ## 3. API Key와 호출 방식
 
@@ -91,6 +93,8 @@ Endpoint와 지원 API는 모델별 상세 정보를 기준으로 확인한다.
 ## 4. Runtime 관점에서 확인된 제약과 미확인 항목
 
 워크플로우 §1의 조사 항목을 2026-10-02 기준 공식 자료 및 §2.1의 조직 Model Library 관측과 대조했다.
+
+여기서 미확정은 **외부 보장값 또는 선택 시점의 provider 계약이 닫히지 않았다**는 의미다. 기존 Search 경로의 성공 사례·실측이 없다는 의미는 아니며, 재확인 시 §7의 원문을 먼저 활용한다.
 
 | 조사 항목 | 현재 확인 상태 | 근거 / 비고 |
 | --- | --- | --- |
@@ -222,3 +226,34 @@ payload retention / logging / delete
 - [Elice 공개 Model Library 예시 — Gemini 3.6 Flash](https://elice.io/en/ax/model-library/76ff490d-7908-4a0c-a6fb-7b65be0b6d7a)
 
 카테캠 2단계 과정 고유 조건(사용 가능 mode, 팀 크레딧, 초기화, 사용량 조회 제한)은 위 일반 제품 문서보다 **카테캠 운영 공지를 우선**한다.
+
+## 7. Related internal evidence — 공식 외부 조건과 분리
+
+아래는 대신고에서 수행한 migration·실험·후속 설계의 탐색 경로다. **실측 수치·실험 표·모델 추천은 재생산하지 않는다.** 특정 model, proxy path, date, calling mode, experiment scope의 관측이며 Elice Serverless 전체의 공식 보장이 아니다. 내부 endpoint URL이나 인증정보 대신 모델명과 API path로 범위를 식별한다.
+
+### 7.1 Search migration / experiment / decision
+
+- [Issue #95 — migration tracker와 D3, P0/P1 결과](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95), [PR #128 — Real E2E proxy 전환](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/128): 2026-09-20~21의 `gemini-3.8-flash` / KTC Elice OpenAI-compatible `/v1/chat/completions` 호출·media probe 범위. Files API/file_uri 재사용, provider offset/fps, thinking_budget 전제의 변경은 이 프로젝트 migration 기록에서 확인하며 플랫폼 전 모델의 제약으로 승격하지 않는다.
+
+아래 Flash 실험은 해당 날짜의 `gemini-3.8-flash` / KTC Elice OpenAI-compatible `/v1/chat/completions` 경로 기준이다. 호출 mode와 표본은 각 원문을 따른다.
+
+| 상세 원문 | 날짜 · 호출 mode · 실험 범위 / 재사용 목적 |
+| --- | --- |
+| [Video sampling probe](../../modules/search/experiments/gemini-proxy-video-sampling-2026-09-28.md) | 2026-09-28 · `type:file` base64 inline(streaming 여부 원문 미명시) · 단일 원본 구간의 로컬 fps/해상도와 요청 parameter 비교 |
+| [Image frame probe](../../modules/search/experiments/gemini-image-frame-probe-2026-09-28.md) | 2026-09-28 · non-streaming `image_url` · 같은 원본 구간의 해상도/detail/장수 비교, video와의 token·payload tradeoff |
+| [Slowdown token probe](../../modules/search/experiments/gemini-video-slowdown-token-probe-2026-09-29.md) | 2026-09-29 · non-streaming inline video · 단일 구간의 배속/재생 길이 비교. Search transport workaround이며 공식 sampling 기능이 아님 |
+| [Inline request-size probe](../../modules/search/experiments/gemini-proxy-size-probe-2026-10-01.md) | 2026-10-01 · non-streaming inline video · 고정 길이·크기별 단회 호출. 성공 범위와 latency 관측이며 provider hard limit 확정이 아님 |
+| [Reasoning-effort experiment](../../modules/search/experiments/gemini-reasoning-effort-2026-10-01.md) | 2026-10-01 · 운영 low non-streaming과 실험 medium/high streaming의 호출 차이 명시 · Coarse→Fine 표본 비교, 출력 절단·usage 관측 |
+| [Search final structure](../../modules/search/decisions/search-final-structure-2026-10-01.md), [운영 경로 검증](../../modules/search/experiments/search-v3-production-verify-2026-10-01.md), [PR #219](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/219) | 2026-10-01 · `GeminiProvider` non-streaming · v3 transport·시각 환산의 채택 근거와 운영 경로 표본 검증. Search 선택이며 Runtime 공통 상수가 아님 |
+| [지연 baseline](../../modules/search/experiments/latency-baseline-2026-09-28.md), [Issue #72](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/72), [PR #182](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/182) | 2026-09-28 · 운영 non-streaming inline · 로컬 Windows의 길이·동시 발주 실험. provider latency와 전처리 포함 wall을 분리하며 EC2 capacity/rate limit으로 일반화하지 않음 |
+
+후속 [PR #231 — 모델별 경로 비교](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/231)와 [PR #237 — sol 이미지 Fine 조건 분리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/237)는 2026-10-02 별도 모델 endpoint/transport의 실험이다. Flash probe의 이미지 처리·video 지원 관측을 Pro/GPT 경로에 그대로 적용하지 않는다. 세부 범위와 호출 mode는 각 PR의 Search experiment 원문으로 이동하며, 이 문서에서 최종 provider/model을 선택하지 않는다.
+
+### 7.2 Runtime / UsageRecord / security로 이동
+
+- [Issue #153 — usage·pricing·config ownership 조사와 후속 합의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153): provider 의미와 config validation은 Search adapter, config/secret 주입과 Final UsageRecord persistence는 Runtime 경계다. 가격표 숫자의 공용 SSOT는 별도 요구가 생길 때 공동 검토하며, 이 문서가 catalog 위치/schema를 정하지 않는다.
+- [UsageRecord Contract](../../architecture/contracts/contract-usage-record.md), [Runtime Tech Spec](../runtime-tech-spec.md) §11·§15: Final 원장 계약과 실행 시 usage/cost/pricing context 보존·주입 경계. #95 D3와 이후 reasoning 실험은 시점·호출 mode별 usage shape 관측이 다르므로 reasoning-specific field를 stable provider contract로 가정하지 않는다. Final 계약은 유지하며 실제 adapter normalization은 선정 모델/호출 경로 smoke에서 재확인한다. 가격표 소유 표현의 기존 정합화 후속은 #153으로 연결하고 여기서 Final Contract를 개정하지 않는다.
+- [PR #154 — Runtime input 승격 경계](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/154), [Runtime Experiments](../experiments/README.md), [P2 capacity smoke plan](../experiments/elice-runtime-capacity-smoke-plan.md), [Ops Spec](../ops-spec.md) §12·§16: inline request working set, ffmpeg/host 자원, cleanup/restart/reuse는 기존 P2에서 검증한다. Search probe 성공을 P2 완료나 Runtime baseline 보장으로 처리하지 않는다.
+- [Pre-deploy security review](../../management/pre-deploy-security-review.md) §1·§3: `RemoteCopy` 미사용과 provider payload retention은 별개다. inline request logging/retention 확인은 기존 검수 경로를 따른다.
+
+기존 모듈 실측을 먼저 읽고 **현재 선택 모델·endpoint·호출 mode와 달라진 부분**을 smoke로 재확인한 뒤, Runtime 교차 실험 결과가 실제 운영 선택을 바꿀 때만 Tech/Ops Spec 또는 Decision/ADR로 승격한다.
