@@ -67,6 +67,8 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 | 4b | I4 미실행 / 최종 영상 fact 없음 | 미관찰 `UNKNOWN`. 실패가 아니다 |
 | — | `REPORT_VIDEO` 생성 실패 | Recording 경계(`REPORT_VIDEO_EXPORT_FAILED`). 4a와 따로 둔다 |
 
+1·2행의 「사유 코드 등」에는 `TARGET_AMBIGUOUS`도 들어간다 — 글자를 모두 읽었어도 대상 차량 association이 애매하면 `NEEDS_REVIEW`(abstain)다(사유 값 공간은 `docs/modules/readout/decisions/failure-taxonomy.md`). Evidence는 이 값도 확정 번호판으로 승격하지 않으므로 §4.3의 「일부 판독 / `NEEDS_REVIEW`」 행과 같이 처리된다.
+
 ### 4.3 D-3 — Requirement outcome
 
 | 상태 | Requirement |
