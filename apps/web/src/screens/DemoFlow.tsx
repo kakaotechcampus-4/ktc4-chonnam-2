@@ -254,6 +254,9 @@ export function DemoFlow(): JSX.Element {
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withPlate(done.view, plate)
+  // 새 모양(refresh.css)을 입힌 화면만 페이지 바탕을 바꾼다. 결과·다른 후보·번호판 확인·
+  // 자세히 보기·위반 미관찰은 협의 뒤에 옮긴다.
+  const restyled = main.kind !== 'done' || done?.end === 'notFound' || done?.end === 'failed'
   const reselect = () => start(rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요'))
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
   const onAction = (a: Action) => {
@@ -265,7 +268,7 @@ export function DemoFlow(): JSX.Element {
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main">
+      <main className={`web-main${restyled ? ' rs-page' : ''}`}>
         {main.kind === 'upload' && (
           <>
             <UploadScreen
