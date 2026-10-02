@@ -122,6 +122,8 @@ class PreparedMedia:
     duration_sec: float
     origin_start_sec: float
     origin_end_sec: float
+    # 준비 영상 재생 속도 = 원본 1초가 재생 1/playback_speed 초. 모델이 답한 시각에 곱하면 원본 시각이다.
+    playback_speed: float = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +241,8 @@ class MediaPreparer:
         media_input: MediaInput,
         deadline: RunDeadline,
     ) -> AbstractContextManager[PreparedMedia]:
-        """Materialize + probe + 1fps/360p/no-audio proxy; yield it; rmtree in finally.
+        """Materialize + probe + coarse_fps/360p/no-audio proxy, slowed to 1 frame per
+        playback second; yield it; rmtree in finally.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
         and cancellation (KeyboardInterrupt / asyncio.CancelledError).
@@ -286,6 +289,7 @@ class MediaPreparer:
                 duration_sec=coarse_probe.duration_sec,
                 origin_start_sec=0.0,
                 origin_end_sec=materialized.probe.duration_sec,
+                playback_speed=1 / cfg.coarse_fps,
             )
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
@@ -297,7 +301,8 @@ class MediaPreparer:
         fine_end_sec: float,
         deadline: RunDeadline,
     ) -> AbstractContextManager[PreparedMedia]:
-        """Materialize + probe + clamp [start,end] to probed duration + 2fps/720p/no-audio clip.
+        """Materialize + probe + clamp [start,end] to probed duration + fine_fps/360p/no-audio
+        clip, slowed to 1 frame per playback second.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
         and cancellation (KeyboardInterrupt / asyncio.CancelledError).
@@ -338,7 +343,7 @@ class MediaPreparer:
                 src_path,
                 fine_path,
                 fps=cfg.fine_fps,
-                max_height=720,
+                max_height=360,  # 프록시가 low로 줄이므로 720p는 전송 크기만 키운다
                 deadline=deadline,
                 start_sec=start,
                 end_sec=end,
@@ -352,6 +357,7 @@ class MediaPreparer:
                 duration_sec=fine_probe.duration_sec,
                 origin_start_sec=start,
                 origin_end_sec=end,
+                playback_speed=1 / cfg.fine_fps,
             )
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
@@ -410,16 +416,17 @@ def _run_ffmpeg_encode(
     start_sec: float | None = None,
     end_sec: float | None = None,
 ) -> None:
-    """Encode src → dest as H.264 MP4, downscale-only, no audio."""
+    """Encode src → dest as H.264 MP4, downscale-only, no audio, 1 frame per playback second."""
     args = [_ffmpeg_path(), "-y"]
     if start_sec is not None:
         args += ["-ss", str(start_sec)]
-    args += ["-i", str(src)]
+    # -t 를 입력 옵션으로 둔다: 출력 옵션이면 늘어난 재생 시간에서 잘려 원본 구간이 짧아진다.
     if end_sec is not None and start_sec is not None:
         args += ["-t", str(end_sec - start_sec)]
+    args += ["-i", str(src)]
     args += [
         "-vf",
-        f"fps={fps},{_scale_filter(max_height)}",
+        f"fps={fps},{_scale_filter(max_height)},setpts=(PTS-STARTPTS)*{fps}",
         "-c:v",
         "libx264",
         "-an",  # no audio

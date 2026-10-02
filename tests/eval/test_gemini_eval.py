@@ -203,3 +203,41 @@ def test_mock_provider_preserves_evidence_and_usage_through_prediction_and_score
             candidate = row["candidates"][0]
             assert candidate["summary"] == "앞차가 정지선을 넘었다; 저해상도로 번호판 불확실"
             assert candidate["uncertainties"] == ["저해상도로 번호판 불확실"]
+
+
+class _FailingForClip(_CandidateProvider):
+    def search_coarse(self, request: CoarseRequest) -> ProviderResult[CoarseResponse]:
+        if request.source.source_id == "bad":
+            raise RuntimeError("proxy down")
+        return _CandidateProvider.search_coarse(self, request)
+
+
+def test_run_records_clips_that_did_not_succeed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    clips = tuple(
+        gemini_preflight.PreparedClip(clip_id, tmp_path / clip_id, 1.0, "0" * 64)
+        for clip_id in ("ok-1", "bad", "ok-2")
+    )
+    for clip in clips:
+        clip.path.write_bytes(b"1.0")
+    prepared = gemini_preflight.PreparedEval("redacted", "2.24.0", clips)
+
+    def build_service(api_key: str, resolver: AnalysisSourceResolver) -> SearchService:
+        return SearchService(
+            resolver,
+            _FailingForClip(None),
+            GeminiSearchConfig(),
+            _ManifestMediaPreparer(1.0),
+            lambda: 0.0,
+        )
+
+    monkeypatch.setattr(search_gemini.gemini_preflight, "prepare", lambda _: prepared)
+    monkeypatch.setattr(search_gemini, "build_gemini_search_service", build_service)
+
+    raw = search_gemini.run({"manifest": "b_youtube", "stage": "candidate"})
+    facts = search_gemini.run_facts({})
+
+    assert [item["outcome"] for item in raw] == ["SUCCEEDED", "FAILED", "SUCCEEDED"]
+    assert facts["n_not_succeeded_clips"] == 1
+    assert facts["not_succeeded_clips"][0]["clip_id"] == "bad"

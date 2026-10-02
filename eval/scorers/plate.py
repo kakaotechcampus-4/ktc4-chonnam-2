@@ -58,7 +58,10 @@ def score(normalized, gt):
     if gt is None:
         return not_run(NO_GT)
 
-    truth = {t["readout_id"]: t for t in gt["items"]}
+    # mock 정답지는 fixture 의 readout_id 로 잇는다. 실제 판독은 readout_id 를
+    # 실행마다 새로 발급하므로, 그런 정답지는 scenario_id(표본 id)로 잇는다.
+    truth = {t["readout_id"]: t for t in gt["items"] if t.get("readout_id")}
+    by_scenario = {t["scenario_id"]: t for t in gt["items"] if t.get("scenario_id")}
     n_exact_den = n_exact_hit = 0
     n_unreadable = n_abstained = n_wrong_accept = 0
     n_readable = n_readable_abstained = 0
@@ -68,7 +71,7 @@ def score(normalized, gt):
     n_no_reason = 0
 
     for pred in normalized:
-        t = truth.get(pred["readout_id"])
+        t = truth.get(pred["readout_id"]) or by_scenario.get(pred.get("scenario_id"))
         if t is None:
             continue                      # 정답지에 없는 판독은 채점 대상이 아니다
         n_scored += 1

@@ -27,7 +27,7 @@ from typing import Any
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
-from daesingo.case.view import build_case_view
+from daesingo.case.view import _belongs_to_current_selection, build_case_view
 from daesingo.evidence import NOT_ASSEMBLED
 
 
@@ -82,6 +82,9 @@ class AdapterSnapshot:
     plate_read_status: str | None = None
     # 선택된 후보 Fine 결과의 소비 판정 — 음성 결과 notice(#168 [A])의 원천.
     visual_evidence_decision: str | None = None
+    # `evidence.plate_abstained`(#172 D-3)의 발동 근거 — CaseView 값만으로는 번호판 보류(1·2)와
+    # 읽지 못함(1·3)이 같게 보인다. notice 판단에만 쓰고 CaseView에 싣지 않는다.
+    evidence_needs: list[dict[str, Any]] = field(default_factory=list)
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -94,6 +97,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         plate_readouts=adapter.get_plate_readouts(),
         plate_read_status=adapter.get_plate_read_status(),
         visual_evidence_decision=adapter.get_visual_evidence_decision(),
+        evidence_needs=adapter.get_evidence_needs(),
     )
 
 
@@ -129,6 +133,12 @@ def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> 
     # RequirementReport의 판정 필드는 `overall`이다(CaseView에서 `readiness`로 옮겨 싣는다).
     final = snapshot.requirement_report_package or {}
     if snapshot.report_package is None or final.get("overall") not in _PACKAGE_READY_READINESS:
+        return False
+    # 현재 선택 context의 결과일 때만 — CaseView가 evidence를 거르는 기준(#191)과 같다. 다르면 stage는
+    # READY인데 CaseView의 evidence·package가 null이 된다. 결과가 늦게 도착하는 경로(W7 6.6순위)에서
+    # 이전 선택의 Package가 올 수 있다.
+    selected = next((c for c in case.candidates if c.selected), None)
+    if snapshot.evidence_record is None or not _belongs_to_current_selection(case, selected, snapshot.evidence_record):
         return False
     case.mark_ready(report_package=snapshot.report_package)
     return True
@@ -167,7 +177,11 @@ def build_view_from_adapter(
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
     )
-    return derive_notices(view, visual_evidence_decision=snapshot.visual_evidence_decision)
+    return derive_notices(
+        view,
+        evidence_needs=snapshot.evidence_needs,
+        visual_evidence_decision=snapshot.visual_evidence_decision,
+    )
 
 
 # `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).
@@ -237,7 +251,34 @@ VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
 }
 
 
-def derive_notices(view: dict[str, Any], *, visual_evidence_decision: str | None = None) -> dict[str, Any]:
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
+# 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
+# 전에는 보낼 경로가 없어 `actions`를 비운다.
+PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
+    "code": "evidence.plate_abstained",
+    "severity": "WARN",
+    "blocking": False,
+    "message_key": "notice.plate_abstained",
+    "actions": [],
+}
+
+
+def _plate_reread_needed(evidence: dict[str, Any], evidence_needs: list[dict[str, Any]]) -> bool:
+    """현재 EvidenceRecord를 basis로 계산된 Needs에 `PLATE_REREAD`가 있는가. 이전 revision의 Need는
+    보지 않는다 — 재판독으로 값이 채워진 v2에는 v1의 Need가 남아 있어도 해당하지 않는다."""
+    return any(
+        (needs.get("basis_record_ref") or {}).get("ref") == evidence["record_id"]
+        and any(item.get("kind") == "PLATE_REREAD" for item in needs.get("items", []))
+        for needs in evidence_needs
+    )
+
+
+def derive_notices(
+    view: dict[str, Any],
+    *,
+    evidence_needs: list[dict[str, Any]] | None = None,
+    visual_evidence_decision: str | None = None,
+) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
@@ -255,8 +296,12 @@ def derive_notices(view: dict[str, Any], *, visual_evidence_decision: str | None
     - `evidence.visual_event_not_observed` — evidence가 없고, adapter가 보고한 선택 후보의 Fine
       판정(`visual_evidence_decision`)이 `NOT_ASSEMBLED`일 때(#168 [A]). 음성 결과는 evidence가
       없어 CaseView 값만으로는 조립 전과 구분되지 않으므로 이 판정만 따로 받는다.
+    - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
+      basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
+      CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
+      본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
 
-    검색어·응답 전 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
+    evidence에 걸린 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
     `build_case_view()`가 그대로 싣기 때문에, 제자리 append 대신 새 리스트로 바꾼다.
     """
@@ -274,6 +319,8 @@ def derive_notices(view: dict[str, Any], *, visual_evidence_decision: str | None
     if evidence is None and visual_evidence_decision == NOT_ASSEMBLED:
         derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
     if evidence is not None:
+        if evidence["plate_display"]["value"] is None and _plate_reread_needed(evidence, evidence_needs or []):
+            derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
         selected = [c for c in view["candidates"] if c["selected"]]

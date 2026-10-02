@@ -148,7 +148,7 @@ def test_media_too_large_raises_before_network_call(
     media = PreparedMedia(
         path=small_file,
         content_type="video/mp4",
-        byte_size=13 * 1024 * 1024,  # 13 MiB > cap of 12 MiB
+        byte_size=41 * 1024 * 1024,  # 41 MiB > cap of 40 MiB
         duration_sec=5.0,
         origin_start_sec=0.0,
         origin_end_sec=5.0,

@@ -1,0 +1,2083 @@
+{
+ "model": "gemini-3.8-flash",
+ "reasoning_effort": "low",
+ "transport": "image-720p",
+ "fps": 4.0,
+ "note": "응답 원문(관찰 문장)은 저장소 밖 .superpowers/fine-window/에 둔다",
+ "rows": [
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.5,
+    7.0
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 999,
+   "latency_sec": 9.36,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.5,
+    6.5
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 919,
+   "latency_sec": 6.66,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.5,
+    6.0,
+    6.5
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 838,
+   "latency_sec": 7.11,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.5,
+    6.0,
+    6.5
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 968,
+   "latency_sec": 6.59,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.75,
+    7.0
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 948,
+   "latency_sec": 6.74,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.5,
+    6.5,
+    9.0
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 921,
+   "latency_sec": 6.3,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.85
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    2.75,
+    3.0,
+    3.5
+   ],
+   "input_tokens": 13895,
+   "output_tokens": 1042,
+   "latency_sec": 7.69,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.93
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.5
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    3.0
+   ],
+   "input_tokens": 14105,
+   "output_tokens": 1159,
+   "latency_sec": 8.3,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.92
+    ],
+    [
+     "PRESENT",
+     0.96
+    ],
+    [
+     "PRESENT",
+     0.94
+    ],
+    [
+     "PRESENT",
+     0.93
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    2.75,
+    3.0
+   ],
+   "input_tokens": 13895,
+   "output_tokens": 1059,
+   "latency_sec": 7.19,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.92
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    3.0,
+    3.25,
+    3.5
+   ],
+   "input_tokens": 14105,
+   "output_tokens": 1121,
+   "latency_sec": 6.5,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.92
+    ],
+    [
+     "PRESENT",
+     0.96
+    ],
+    [
+     "PRESENT",
+     0.93
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    2.75,
+    3.0,
+    4.0
+   ],
+   "input_tokens": 13895,
+   "output_tokens": 1057,
+   "latency_sec": 7.12,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.94
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.96
+    ]
+   ]
+  },
+  {
+   "clip": "youtube_clip_01.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    2.0,
+    5.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    2.0,
+    2.25,
+    2.5,
+    3.0
+   ],
+   "input_tokens": 14105,
+   "output_tokens": 982,
+   "latency_sec": 5.8,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    10.5,
+    11.5,
+    12.0,
+    13.0
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 1025,
+   "latency_sec": 6.28,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    10.2,
+    10.5,
+    11.2,
+    11.5,
+    11.8,
+    12.5,
+    12.8,
+    12.9
+   ],
+   "input_tokens": 14107,
+   "output_tokens": 1041,
+   "latency_sec": 6.34,
+   "association_status": "MATCHED",
+   "association_confidence": 0.88,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.85
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 1075,
+   "latency_sec": 6.02,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 14107,
+   "output_tokens": 1007,
+   "latency_sec": 5.67,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.8
+    ],
+    [
+     "ABSENT",
+     0.85
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    13.0
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 1045,
+   "latency_sec": 6.55,
+   "association_status": "MATCHED",
+   "association_confidence": 0.8,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.85
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    12.8
+   ],
+   "input_tokens": 14107,
+   "output_tokens": 1018,
+   "latency_sec": 5.56,
+   "association_status": "MATCHED",
+   "association_confidence": 0.8,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.85
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "0b1cfbf1b10e8863a028308bded77daa1644ac96844e9f49831b4141aa102943",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    11.0,
+    11.27,
+    12.36,
+    12.64,
+    13.18,
+    13.46,
+    13.73,
+    14.0
+   ],
+   "input_tokens": 13867,
+   "output_tokens": 1055,
+   "latency_sec": 7.77,
+   "association_status": "MATCHED",
+   "association_confidence": 0.98,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-center-line-crossing",
+   "prompt_sha256": "308dcbc9e08fc378e6bb344912d8e367ff0bf3444b65def135a21db0661932f0",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    11.0,
+    11.5,
+    12.5,
+    13.2,
+    13.7,
+    13.9
+   ],
+   "input_tokens": 14075,
+   "output_tokens": 1002,
+   "latency_sec": 6.98,
+   "association_status": "MATCHED",
+   "association_confidence": 0.98,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.96
+    ],
+    [
+     "PRESENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "0b1cfbf1b10e8863a028308bded77daa1644ac96844e9f49831b4141aa102943",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    11.0,
+    11.27,
+    12.36,
+    13.18,
+    13.73,
+    14.0
+   ],
+   "input_tokens": 13867,
+   "output_tokens": 1079,
+   "latency_sec": 7.17,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-center-line-crossing",
+   "prompt_sha256": "308dcbc9e08fc378e6bb344912d8e367ff0bf3444b65def135a21db0661932f0",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    11.0,
+    11.5,
+    12.5,
+    13.0,
+    13.5,
+    13.73,
+    14.0
+   ],
+   "input_tokens": 14075,
+   "output_tokens": 1033,
+   "latency_sec": 6.53,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "0b1cfbf1b10e8863a028308bded77daa1644ac96844e9f49831b4141aa102943",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    11.0,
+    11.54,
+    12.36,
+    12.91,
+    13.46,
+    13.73
+   ],
+   "input_tokens": 13867,
+   "output_tokens": 1002,
+   "latency_sec": 6.23,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0002_C00.mp4",
+   "event": "CENTER_LINE_CROSSING",
+   "window": [
+    11.0,
+    14.0
+   ],
+   "expected": "OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-uncertain-v1-center-line-crossing",
+   "prompt_sha256": "308dcbc9e08fc378e6bb344912d8e367ff0bf3444b65def135a21db0661932f0",
+   "verification": "OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    11.0,
+    12.27,
+    13.0,
+    13.73
+   ],
+   "input_tokens": 14075,
+   "output_tokens": 991,
+   "latency_sec": 6.64,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    3.5,
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.0,
+    7.0,
+    7.5
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 1032,
+   "latency_sec": 7.36,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    4.0,
+    4.33,
+    4.67,
+    5.33,
+    5.5,
+    5.67,
+    6.0,
+    7.67
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 1092,
+   "latency_sec": 6.73,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    3.5,
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    7.0
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 1028,
+   "latency_sec": 6.01,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    4.33,
+    5.0,
+    7.0
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 1405,
+   "latency_sec": 7.62,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.0,
+    6.5,
+    8.0
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 1038,
+   "latency_sec": 7.2,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    3.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    3.0,
+    4.0,
+    5.0,
+    5.5,
+    7.0,
+    8.0
+   ],
+   "input_tokens": 22905,
+   "output_tokens": 955,
+   "latency_sec": 6.05,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.96
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 906,
+   "latency_sec": 8.08,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    12.67,
+    14.0
+   ],
+   "input_tokens": 18507,
+   "output_tokens": 997,
+   "latency_sec": 5.78,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.96
+    ],
+    [
+     "PRESENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    13.0,
+    14.0
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 930,
+   "latency_sec": 7.38,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    12.5,
+    14.0
+   ],
+   "input_tokens": 18507,
+   "output_tokens": 933,
+   "latency_sec": 6.64,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    12.5,
+    14.0
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 916,
+   "latency_sec": 6.95,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "UNCERTAIN",
+     0.5
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18507,
+   "output_tokens": 978,
+   "latency_sec": 6.09,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.3
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 28,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    0.5,
+    1.0,
+    1.5,
+    2.5,
+    2.8,
+    3.5,
+    4.0
+   ],
+   "input_tokens": 31495,
+   "output_tokens": 1005,
+   "latency_sec": 8.25,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 28,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    0.3,
+    1.0,
+    1.8,
+    2.0,
+    2.5,
+    3.0,
+    3.5
+   ],
+   "input_tokens": 31705,
+   "output_tokens": 911,
+   "latency_sec": 6.76,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 28,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    1.0,
+    1.5,
+    2.0,
+    2.5,
+    3.6
+   ],
+   "input_tokens": 31495,
+   "output_tokens": 1012,
+   "latency_sec": 7.2,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 28,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    1.2,
+    1.5,
+    1.8,
+    2.0,
+    2.3,
+    2.5,
+    3.6
+   ],
+   "input_tokens": 31705,
+   "output_tokens": 1097,
+   "latency_sec": 7.09,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 28,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    0.5,
+    1.5,
+    2.0,
+    2.8,
+    3.0,
+    3.6
+   ],
+   "input_tokens": 31495,
+   "output_tokens": 929,
+   "latency_sec": 6.67,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141628_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    7.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 28,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    1.0,
+    2.0,
+    2.33,
+    3.0,
+    3.67,
+    4.0
+   ],
+   "input_tokens": 31705,
+   "output_tokens": 2522,
+   "latency_sec": 12.67,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 1,
+   "frames": 32,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    2.0,
+    3.0,
+    4.0,
+    8.0
+   ],
+   "input_tokens": 35895,
+   "output_tokens": 1336,
+   "latency_sec": 9.91,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 1,
+   "frames": 32,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    0.0,
+    2.0,
+    4.0,
+    8.0
+   ],
+   "input_tokens": 36105,
+   "output_tokens": 1018,
+   "latency_sec": 7.42,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 2,
+   "frames": 32,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    2.0,
+    3.0,
+    4.0,
+    8.0
+   ],
+   "input_tokens": 35895,
+   "output_tokens": 865,
+   "latency_sec": 7.11,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 2,
+   "frames": 32,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    0.0,
+    2.0,
+    4.0,
+    8.0
+   ],
+   "input_tokens": 36105,
+   "output_tokens": 947,
+   "latency_sec": 7.11,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.0
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-v1",
+   "repeat": 3,
+   "frames": 32,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    0.0,
+    1.0,
+    4.0,
+    8.0
+   ],
+   "input_tokens": 35895,
+   "output_tokens": 817,
+   "latency_sec": 6.48,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_150504_EVT_1.avi",
+   "event": "SOLID_LINE_LANE_CHANGE",
+   "window": [
+    0.0,
+    8.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "profile": "diagnostic-uncertain-v1",
+   "repeat": 3,
+   "frames": 32,
+   "prompt_version": "fine-uncertain-v1-solid-line-lane-change",
+   "prompt_sha256": "2dcbe15cdcd3631696d1e9177378d07e9e28c3015b9e808b869a18263dbb329c",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    0.0,
+    1.0,
+    8.0
+   ],
+   "input_tokens": 36105,
+   "output_tokens": 871,
+   "latency_sec": 6.91,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.8
+    ],
+    [
+     "UNCERTAIN",
+     null
+    ]
+   ]
+  }
+ ]
+}

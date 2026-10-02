@@ -40,6 +40,9 @@ class _Adapter:
     def get_plate_read_status(self) -> str | None:
         return None
 
+    def get_evidence_needs(self) -> list[dict[str, Any]]:
+        return []
+
     def get_visual_evidence_decision(self) -> str | None:
         return self._decision
 
