@@ -313,16 +313,16 @@ export function DemoFlow(): JSX.Element {
         )}
 
         {done?.end === 'notFound' && (
-          <>
+          <div className="rs rs-screen state-page noresult">
             <NoResultScreen
               view={{ ...done.view, hints: { time: null, vehicle: null, location: null, situation: situation || null } }}
             />
             {/* 다시 찾기는 새 탐색이다(core-user-flow §4-2). 시연에서는 찾아지는 경우로 다시 돈다. */}
             <RetrySearch situation={situation} onSituation={setSituation} onRetry={() => start(FULL_RUN)} />
-          </>
+          </div>
         )}
         {done?.end === 'failed' && <FailedScreen view={done.view} onAction={onAction} />}
-        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} />}
+        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} restyled />}
         {done?.end === 'result' && !sub && doneView && (
           <ResultScreen
             view={doneView}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { Clock, FileVideo, MessageSquareText } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
-import { stepLabel } from '../contracts/labels'
+import { PROGRESS_LABELS, stepLabel } from '../contracts/labels'
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 
@@ -28,6 +28,9 @@ export function FlowScreen(props: {
   const last = useRef<string | undefined>(undefined)
   if (running) last.current = running
   const current = running ?? last.current
+  // 제목 아래 상태 줄 — 제목으로 둔 단계의 실제 상태(진행 중·완료·실패)를 함께 보여
+  // 끝난 단계가 계속 진행 중으로 보이지 않게 한다. 줄 자리는 늘 비워 두어 높이가 같다.
+  const currentState = props.view.progress.find((p) => p.step === current)?.state
   // 경과 시간만 보여준다. 남은 시간·퍼센트는 내지 않는다(§7).
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -44,6 +47,14 @@ export function FlowScreen(props: {
         <h1 className="rs-title flow-now" key={current ?? 'overall'}>
           {current ? stepLabel(current) : overall}
         </h1>
+        <p className={`flow-status${currentState ? ` is-${currentState.toLowerCase()}` : ''}`}>
+          {currentState && (
+            <>
+              <span className="flow-status-mark" aria-hidden />
+              {PROGRESS_LABELS[currentState]}
+            </>
+          )}
+        </p>
       </div>
 
       <ul className="flow-meta">
