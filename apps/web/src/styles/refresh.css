@@ -210,14 +210,28 @@ body:has(.rs-page) { background: #fff; }
 .flow-status.is-failed { color: var(--red); }
 .flow-status.is-failed .flow-status-mark { background: var(--red); border-color: var(--red); }
 .flow-status.is-partial .flow-status-mark { background: var(--orange-soft); border-color: var(--orange); }
+/* 일부 단계 실패 + 나머지 계속 — 빨간 점과 기본 글자색 한 줄 */
+.flow-partial { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--rs-ink); animation: rs-drop-in .3s var(--rs-ease) both; }
+.flow-partial-mark { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--red); transform: translateY(-1px); }
 @keyframes rs-swap { from { opacity: 0; transform: translateY(6px); } }
 
 .flow-meta { list-style: none; margin: 28px 0 48px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .flow-meta li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.55; color: var(--rs-sub); }
 .flow-meta li svg { flex: 0 0 auto; margin-top: 3px; }
 /* 긴 파일 이름·상황 설명은 자르지 않고 줄을 바꾼다. 여러 파일은 쉼표로 잇는다 */
-.flow-meta li > span { min-width: 0; overflow-wrap: anywhere; }
-.flow-files > span + span::before { content: ', '; }
+.flow-meta li > span, .flow-meta li > details { min-width: 0; overflow-wrap: anywhere; }
+/* 여러 파일 — 「영상 N개」를 눌러(또는 Enter·Space) 펼친다. 기본은 접힘 */
+.flow-files summary {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none;
+  color: var(--rs-ink); border-radius: 6px;
+}
+.flow-files summary::-webkit-details-marker { display: none; }
+.flow-files summary svg { color: var(--rs-sub); transition: transform .25s var(--rs-ease); }
+.flow-files[open] summary svg { transform: rotate(180deg); }
+.flow-files summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+.flow-files ul { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid #ececf0; }
+.flow-files[open] ul { animation: rs-drop-in .3s var(--rs-ease) both; }
+.flow-files li { padding: 6px 0; border-bottom: 1px solid #ececf0; overflow-wrap: anywhere; }
 .flow-elapsed { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
 
 /* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
@@ -330,7 +344,7 @@ body:has(.rs-page) { background: #fff; }
     transition-duration: .1s !important;
   }
   .rs-drop.over .rs-drop-icon, .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
-  .rs-screen, .rs .flow-now { animation: none !important; }
+  .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
   .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
   .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
   .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }

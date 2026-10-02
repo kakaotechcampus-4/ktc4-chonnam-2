@@ -1,14 +1,24 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
-import { Clock, FileVideo, MessageSquareText } from 'lucide-react'
+import { ChevronDown, Clock, FileVideo, MessageSquareText } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
-import { PROGRESS_LABELS, stepLabel } from '../contracts/labels'
+import { stepLabel } from '../contracts/labels'
+import {
+  CURRENT_STEP_STATE,
+  OTHERS_CONTINUING,
+  SOME_STEPS_FAILED,
+  stepFailedLabel,
+  videoCount,
+} from '../contracts/labels.flow'
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
-// 진행 화면에는 버튼도 알림 문구도 없다. 실패는 그 단계를 빨갛게만 칠하고,
-// 무슨 일이 있었는지는 결과 화면에서 알린다.
+// 진행 화면에는 버튼이 없다. 실패한 단계는 목록에서 빨갛게 칠하고, 다른 단계가 실제로
+// RUNNING일 때만 「나머지 작업은 계속하고 있어요」를 한 줄 붙인다. 전체 작업이 멈췄는지는
+// 화면이 RUNNING 유무로 단정하지 않는다 — 단계 사이에도 RUNNING이 잠깐 없을 수 있다.
+// 멈춤은 blocking notice(계약 B절 notices[].blocking)로만 알 수 있고, 그때는 이 안내를
+// 내지 않는다. 무슨 일이 있었는지는 실패·결과 화면에서 알린다.
 //
 // 가장 크게 보이는 제목은 지금 RUNNING인 단계의 이름이다(progress에서 그대로 읽는다).
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
@@ -31,6 +41,8 @@ export function FlowScreen(props: {
   // 제목 아래 상태 줄 — 제목으로 둔 단계의 실제 상태(진행 중·완료·실패)를 함께 보여
   // 끝난 단계가 계속 진행 중으로 보이지 않게 한다. 줄 자리는 늘 비워 두어 높이가 같다.
   const currentState = props.view.progress.find((p) => p.step === current)?.state
+  const failed = props.view.progress.filter((p) => p.state === 'FAILED')
+  const continuing = failed.length > 0 && running !== undefined && screen.blocking.length === 0
   // 경과 시간만 보여준다. 남은 시간·퍼센트는 내지 않는다(§7).
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -51,20 +63,37 @@ export function FlowScreen(props: {
           {currentState && (
             <>
               <span className="flow-status-mark" aria-hidden />
-              {PROGRESS_LABELS[currentState]}
+              {CURRENT_STEP_STATE[currentState]}
             </>
           )}
         </p>
+        {continuing && (
+          <p className="flow-partial">
+            <span className="flow-partial-mark" aria-hidden />
+            {failed.length === 1 ? stepFailedLabel(failed[0].step) : SOME_STEPS_FAILED} {OTHERS_CONTINUING}
+          </p>
+        )}
       </div>
 
       <ul className="flow-meta">
         <li>
           <FileVideo size={16} strokeWidth={1.8} aria-hidden />
-          <span className="flow-files">
-            {props.files.map((name, i) => (
-              <span key={`${name}-${i}`}>{name}</span>
-            ))}
-          </span>
+          {props.files.length > 1 ? (
+            // 여러 파일은 접어 둔다. open은 브라우저가 들고 있어 단계가 바뀌어 다시 그려져도 유지된다.
+            <details className="flow-files">
+              <summary>
+                {videoCount(props.files.length)}
+                <ChevronDown size={16} strokeWidth={1.8} aria-hidden />
+              </summary>
+              <ul>
+                {props.files.map((name, i) => (
+                  <li key={`${name}-${i}`}>{name}</li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <span>{props.files[0]}</span>
+          )}
         </li>
         {props.situation && (
           <li>
