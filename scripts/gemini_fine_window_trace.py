@@ -11,6 +11,8 @@ uv run --extra eval-gemini python scripts/gemini_fine_window_trace.py --out .sup
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import importlib
 import json
 import tempfile
@@ -59,6 +61,16 @@ def _origin_sec(payload: dict, start: float) -> list[float]:
     return sorted({round(start + o / 1000, 2) for o in offsets if o is not None})
 
 
+def _fewshot_parts(spec: dict) -> list[dict]:
+    """--fewshot JSON 의 참고 예시를 검증 대상 프레임 앞에 넣을 content 조각으로 만든다."""
+    parts: list[dict] = [{"type": "text", "text": spec["intro"]}]
+    for ex in spec["examples"]:
+        url = "data:image/jpeg;base64," + base64.b64encode(Path(ex["image"]).read_bytes()).decode()
+        parts += [{"type": "text", "text": ex["text"]},
+                  {"type": "image_url", "image_url": {"url": url, "detail": "high"}}]
+    return parts + [{"type": "text", "text": spec["outro"]}]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", default=DEFAULT_ENV)
@@ -70,7 +82,13 @@ def main() -> None:
                     help="비교할 reasoning_effort 값들. 없으면 설정값 하나")
     ap.add_argument("--transport", choices=["image", "video"], default="image",
                     help="video: 1/fps 배속으로 늘린 영상(운영 v3 전송)")
+    ap.add_argument("--fewshot", type=Path, default=None,
+                    help="참고 예시 JSON(intro·examples[image,text]·outro·events). 예시 이미지는 저장소 밖에 둔다")
     args = ap.parse_args()
+    fewshot = json.loads(args.fewshot.read_text(encoding="utf-8")) if args.fewshot else None
+    fewshot_parts = _fewshot_parts(fewshot) if fewshot else []
+    fewshot_sha = (hashlib.sha256(json.dumps(fewshot_parts, sort_keys=True).encode()).hexdigest()
+                   if fewshot else None)
     video = args.transport == "video"
     if video:  # crop_hint 가 이 모듈을 import 하므로 순환을 피해 여기서 가져온다
         from gemini_coarse_fine_slowdown_trace import _note
@@ -108,11 +126,17 @@ def main() -> None:
                            "fps": args.fps, "frames": n_frames,
                            "prompt_version": spec.template.version,
                            "prompt_sha256": spec.template.fingerprint}
+                    use_fewshot = bool(fewshot) and event.value in fewshot["events"]
+                    row |= {"fewshot": fewshot["name"] if use_fewshot else None,
+                            "fewshot_sha256": fewshot_sha if use_fewshot else None}
+                    messages = _video_msg(prompt, media) if video else _msg(prompt, media)
+                    if use_fewshot:  # 지시문 바로 뒤, 검증 대상 프레임 앞
+                        messages[0]["content"][1:1] = fewshot_parts
                     t0 = time.monotonic()
                     try:
                         comp = client.chat.completions.parse(
                             model=cfg.model,
-                            messages=_video_msg(prompt, media) if video else _msg(prompt, media),
+                            messages=messages,
                             response_format=spec.response_model,
                             reasoning_effort=effort,
                         )
@@ -142,7 +166,8 @@ def main() -> None:
                     # 조건마다 저장해 중간에 끊겨도 남긴다
                     args.out.write_text(json.dumps(
                         {"model": cfg.model, "reasoning_efforts": efforts,
-                         "transport": args.transport, "fps": args.fps, "rows": rows},
+                         "transport": args.transport, "fps": args.fps,
+                         "fewshot": fewshot["name"] if fewshot else None, "rows": rows},
                         ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("\n=== reasoning × profile 별 ===")
