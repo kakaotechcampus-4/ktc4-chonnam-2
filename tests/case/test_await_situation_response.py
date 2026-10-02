@@ -120,3 +120,56 @@ def test_real_adapter_resumes_after_user_unsure_without_reobserving(monkeypatch)
 
     assert view["evidence"] is not None
     assert len(calls) == 1
+
+
+PENDING_CODE = "case.situation_response_pending"
+
+
+def _await_view(monkeypatch, case_id: str, *, plate_outcome: str | None = None) -> dict:
+    original = real_e2e.observe_happy_001_candidate
+
+    def observe_uncertain(**kwargs):
+        obs = original(**kwargs)
+        obs = replace(obs, visual_evidence=_uncertain(obs.visual_evidence))
+        return replace(obs, plate_read_outcome=plate_outcome) if plate_outcome else obs
+
+    monkeypatch.setattr(real_e2e, "observe_happy_001_candidate", observe_uncertain)
+    scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
+    case = CaseAggregate.intake(case_id=case_id, hints={}, manifest_summary={})
+    real = RealAdapter(case_id=case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint=f"sha1:{case_id}")
+    candidates = service.receive_search_candidates(case, real)
+    case.select_candidate(candidates[0].candidate_id)
+    return service.build_view_from_adapter(case, real)
+
+
+def test_await_view_says_response_pending(monkeypatch) -> None:
+    """응답 대기는 evidence가 없어도 「상황 응답 전」으로 알린다 — 조립 중과 구분된다(PR #224 리뷰)."""
+    view = _await_view(monkeypatch, "case_await_004")
+
+    assert view["evidence"] is None
+    assert PENDING_CODE in [n["code"] for n in view["notices"]]
+
+
+def test_await_progress_shows_finished_observations_not_running(monkeypatch) -> None:
+    """응답 전에도 관찰(OCR·시간 source)은 끝났다. 조립 이후는 응답 뒤에 하므로 PENDING이다."""
+    view = _await_view(monkeypatch, "case_await_005")
+
+    assert {p["step"]: p["state"] for p in view["progress"]} == {
+        "file_intake": "DONE",
+        "coarse_search": "DONE",
+        "candidate_review": "DONE",
+        "plate_read": "DONE",
+        "overlay_time_read": "DONE",
+        "evidence_assembly": "PENDING",
+        "requirement_check": "PENDING",
+        "package_assembly": "PENDING",
+    }
+
+
+def test_await_progress_keeps_plate_read_failure(monkeypatch) -> None:
+    view = _await_view(monkeypatch, "case_await_006", plate_outcome="FAILED")
+
+    assert next(p["state"] for p in view["progress"] if p["step"] == "plate_read") == "FAILED"
+    assert "readout.plate_read_failed" in [n["code"] for n in view["notices"]]

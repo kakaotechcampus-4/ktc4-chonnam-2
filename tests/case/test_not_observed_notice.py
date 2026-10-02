@@ -82,7 +82,7 @@ def test_not_assembled_result_gets_notice_and_stays_in_evidence_review():
 
 @pytest.mark.parametrize("decision", [None, "AWAIT_SITUATION_RESPONSE"])
 def test_no_notice_while_not_negative(decision):
-    """조립 전(판정 없음)·응답 대기(`UNCERTAIN`)는 음성 결과가 아니다 — 응답 대기는 C-2 후속 몫."""
+    """조립 전(판정 없음)·응답 대기(`UNCERTAIN`)는 음성 결과가 아니다 — 응답 대기는 `case.situation_response_pending`."""
     view = service.build_view_from_adapter(_case_with_selection(), _Adapter(visual_evidence_decision=decision))
     assert CODE not in _codes(view)
 
@@ -94,3 +94,16 @@ def test_notice_not_duplicated():
     again = service.derive_notices(view, visual_evidence_decision="NOT_ASSEMBLED")
     assert _codes(again).count(CODE) == 1
 
+
+
+def test_not_assembled_progress_ends_at_candidate_review():
+    """음성 결과는 IncidentClip~package를 시작하지 않는다 — 뒤 단계를 RUNNING으로 보이지 않고 뺀다.
+    `candidates=[]`로 멈춘 경우와 같은 step 집합 규칙 3이다(PR #224 리뷰)."""
+    view = service.build_view_from_adapter(
+        _case_with_selection(), _Adapter(visual_evidence_decision="NOT_ASSEMBLED")
+    )
+    assert view["progress"] == [
+        {"step": "file_intake", "state": "DONE"},
+        {"step": "coarse_search", "state": "DONE"},
+        {"step": "candidate_review", "state": "DONE"},
+    ]
