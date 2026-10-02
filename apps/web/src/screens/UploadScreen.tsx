@@ -136,7 +136,10 @@ export function UploadScreen(props: {
             ) : (
               <div className="rs-drop-body" key="big">
                 {state === 'uploading' ? (
-                  <span className="rs-spin" aria-hidden />
+                  // 나타나기(rs-pop)와 회전(rs-spin)은 둘 다 transform이라 한 요소에 두면 회전이 덮인다 — 나눈다.
+                  <span className="rs-spin" aria-hidden>
+                    <span className="rs-spin-arc" />
+                  </span>
                 ) : (
                   <span className="rs-drop-icon" aria-hidden key={`icon-${state}`}>
                     {state === 'fail' ? (
