@@ -1,4 +1,4 @@
-# case Orchestration 지표 — 1차 측정 (2026-09-30)
+# case Orchestration 지표 — 1차 측정 (2026-09-30) · 4차까지 (2026-10-02)
 
 > W7 고도화 7순위(`design-refinement-w7-baseline.md`). 러너 `scripts/measure_case_orchestration.py`.
 > 이 문서는 설정 · 요약 결과 · 판단 근거만 담는다. 세션별 raw 결과는 git에 올리지 않았다(PR #146 멘토 피드백 — 실험 산출물은 git 밖).
@@ -81,6 +81,38 @@ mock search fixture가 전부 후보 1개라 1차에는 거부되는 재선택�
 - 322 = Fine 100 + IncidentClip·번호판·시각 판독 각 74. Fine이 더 많은 것은 음성(`NOT_ASSEMBLED`) 세션이 Fine 뒤 관찰을 하지 않기 때문이다.
 - 수정: `CaseAggregate.candidate_generation`(후보 목록 교체·역행 때만 오름, CaseView 비노출)을 두고, 두 adapter가 같은 세대 안에서 후보별로 관찰을 보관한다. 재탐색 뒤에는 같은 `candidate_id`라도 다시 관찰한다(정책 표 1행 — 기존 테스트 그대로 통과).
 
+### 4차 측정 — 상황 응답 · 응답 대기 · 후보 0개 · 탐색 실패 · READY (2026-10-02)
+
+#177·#203·#209가 머지돼 「측정하지 않은 칸」 넷을 열었다.
+
+- **관찰 상태 +3 (7종):** 응답 대기(Fine `UNCERTAIN`) · 후보 0개(탐색 `SUCCEEDED` + 0건) · 탐색 실패(`FAILED`)
+- **행동 +2 (11종):** 상황 응답 `CONFIRMED` · `USER_UNSURE`. 순서 길이 1~3 = 11 + 11² + 11³ = 1,463 × 관찰 7 = **10,241 세션**.
+- **command 경로:** command 대상 행동(다른 후보 · 상황 응답 · 최종 검토)은 web이 실제로 부를 `handle_command`(#216)로 보낸다 — 성공 뒤 `READY` 재확인까지 같은 경로다. 정정(입력형)은 command 판본이 없어 domain을 그대로 부른다.
+- **READY에 가려면:** real 경로 FINAL은 최종 신고영상 관찰(I4, `observation_facts`)이 없어 늘 `UNKNOWN`이다(ADR-EVIDENCE-008 §6.2 — producer가 없고 case 몫이 아니다). evidence mock 하니스가 쓰는 happy 값(`tests/evidence/fixtures/adapter_inputs.json`)을 **러너 안에서만** 넣었다(제품 코드 무수정). 그 결과 616 세션이 `READY`에 갔고(정상 조립 324 · 응답 대기 292), `READY`에서 판정한 행동이 561개다. **#202를 이 러너로 처음 검증했다.**
+- **거부 기대값:** 「거부돼야 하는가」를 행동 직전 case로 판단하고, 기대 밖 거부(「허용돼야 하는데 거부」)와 모든 거부 뒤 상태 불변을 함께 본다. 값 정정은 `EVIDENCE_REVIEW`·`READY`에서만, 시간 단서 정정은 `CANDIDATE_REVIEW`·`EVIDENCE_REVIEW`·`READY`에서만 받는다(`doc-research/상태 기계 설계 초안 v1` §3·§4).
+
+| | develop (`4d07d8cf`) | 이 PR |
+| --- | --- | --- |
+| 판정한 행동 | 28,207 | 28,207 |
+| ① 위반 | 0 | 0 |
+| ② 불변식 위반 | **4,122건** | **0건** |
+| ③ 불필요한 재실행 / 전체 호출 | 0 / 61,824 | 0 / 61,874 |
+| 크래시 세션 | 767 | 767 |
+
+실행 시간: 10,241 세션에 368~690초.
+
+develop의 ② 4,122건:
+
+| 건수 | 무엇 | 처리 |
+| --- | --- | --- |
+| 3,088 (I5) | 후보 선택 전(후보 0개·탐색 실패) 값 정정이 거부되지 않고 기록 — `selection_rev`도 반영할 evidence도 없는 기록 | 상태 기계 설계 초안 §4대로 `EVIDENCE_REVIEW`·`READY`에서만 받는다 |
+| 386 (I5) + 386 (I6) | 탐색 실패로 `SEARCHING`에 머문 case의 시간 단서 정정 — 역행은 거부되는데 정정 기록·`hints`·`case_rev`가 먼저 남음 | `check_regress_to_searching()`으로 먼저 검사(#166과 같은 원칙) |
+| 144 (I1) | `READY`에서 시각 정정·상황 응답 변경으로 재조립하자 Package가 사라졌는데 `READY`로 남음 — CaseView 계약 §10-9 위반. #202는 오르는 쪽만 막았다 | 다시 조립되는 변경이 오면 `EVIDENCE_REVIEW`로 내리고, command 성공 뒤 재확인이 gate가 성립할 때만 다시 올린다. `user_reviewed`는 유지(계약 B절 · #173) |
+| 118 (I6) | `READY`에서 받은 상황 응답의 `case_rev` — 위 규칙에서는 내렸다 다시 올라 +2가 기대값이다(case-command 계약 §5에 추가) | 위와 같은 수정 |
+
+- ③ 전체 호출 +50은 `READY`에서 내려간 뒤 재조립이 한 번씩 더 도는 몫이다(조립만 — 관찰 재호출 0).
+- 크래시 767은 수정 전후 같다 — 아래 「이번에 새로 찾은 것」 마지막 두 줄.
+
 ### 지표가 실제로 잡는가 (baseline)
 
 baseline 커밋에서 **이미 고쳐진 버그 3건을 모두 검출**했다. 지표가 0을 낼 때 그 0을 믿을 근거다.
@@ -100,21 +132,24 @@ baseline 커밋에서 **이미 고쳐진 버그 3건을 모두 검출**했다. �
 | 선택 전(후보 0개) CaseView가 real 진입점에서 크래시 | PR #209에 수정 포함 |
 | `RealAdapter`가 evidence 조립 때 1차 탐색을 다시 호출(① 994) — 2차 측정 | 이 PR에서 수정 — 수정 후 0 |
 | A→B→A로 돌아올 때 관찰을 다시 돔(③ 322, 그중 Fine 100) — 3차 측정 | 결정 문서 + 수정 — 수정 후 0 |
+| 선택 전 값 정정 · 탐색 실패 뒤 시간 단서 정정의 흔적 · `READY`인데 Package 없음(② 4,122) — 4차 측정 | 이 PR에서 수정 — 수정 후 0 (위 4차 표) |
+| 번호판 직접 입력 크래시가 관찰 상태 둘(판독 실패·못 읽음)에서 706으로 — 4차 측정 | 위 PR #212 줄과 같은 원인 |
+| 응답 대기(evidence 없음) 중 값 정정 → 「잘 모르겠어요」 응답 뒤 evidence가 그 정정을 거부(`invalid previous_value`·`datetime must be a string`·`correction chain values are discontinuous`) → 기록은 되돌리지 않으므로 **그 case는 이후 CaseView를 못 만든다** (크래시 61) — 4차 측정 | 미결 — 화면에 값이 없어 이전 값이 `null`로 기록된다. correction-record §8-6(형식이 틀린 입력은 기록하지 않는다)을 case가 지키려면 evidence의 값 검사를 공개 함수로 받아야 한다(규칙 복제 금지) — PR #212에 제기. web은 이 상태에서 값 칸을 그리지 않아 실사용 경로는 아직 없다 |
 
 ## 측정하지 않은 칸
 
 | 칸 | 이유 |
 | --- | --- |
-| READY 시점 행동 · **I1** | 상황 응답(#177) + `observation_facts` 주입 필요. 그래서 **#202는 이 러너로 아직 검증하지 않았다** |
-| 상황 응답 | #177 미머지 |
-| 응답 대기(Fine `UNCERTAIN`) | #203 미머지 |
-| 후보 0개 · 탐색 실패 | #209 미머지 |
 | 번호판 재판독 · 구간 조정 · rebase | real 경로에 흐름 없음 |
+| `RUN_NOTICE_ACTION`(재시도 발주) | 동기 경로에서는 JobRecord만 남고 실행이 없다 — worker 배선 뒤 |
+| 상황 응답 `CORRECTED` | case-command v0이 받지 않는다(입력형 판본) |
+| `READY`의 값 정정이 command로 오는 경로 | 입력형 command 판본 전 — 지금은 domain에서 내리기만 하고, 다시 오르는 것은 다음 command 때다 |
 
 ## 한계
 
 - fixture 기반이라 **case 로직의 커버리지**만 본다. 실제 영상마다 달라지는 AI 결과의 다양성은 search·readout 평가 몫이다.
 - recording 조회(`resolve_span`·`prepare_analysis_source`·`lookup_asset_facts`)와 시간 source는 따로 세지 않는다. fixture 경로에서 모두 관찰 함수 안에서 IncidentClip과 함께만 불리고(실측: `lookup_asset_facts`는 행동 8,476개 중 IncidentClip 없이 불린 경우 0, 항상 asset 수 3배), 시간 source는 raw 파일 읽기다. 조회만 다시 도는 경로(예: `SPAN_ADJUST`)가 생기면 asset ref를 키에 넣어 센다.
-- 크래시가 나면 그 세션의 이후 행동은 판정하지 못한다. 남은 크래시 370건(번호판 직접 입력)이 풀리면 판정 수가 더 늘어난다.
+- 크래시가 나면 그 세션의 이후 행동은 판정하지 못한다. 남은 크래시 767건(번호판 직접 입력 706 · 응답 대기 중 정정 61, 4차 기준)이 풀리면 판정 수가 더 늘어난다.
+- `READY`는 러너가 넣은 `observation_facts`(happy 값 하나)로만 간다. 최종 관찰 사실이 실제로 달라지는 경우(번호판이 신고영상에 안 보임 등)는 보지 않는다.
 - 「다른 후보 선택」은 합성 rank2로 잰다 — span·관찰 내용이 rank1과 같아 **선택 context가 바뀌는 것**만 본다. 후보마다 관찰 결과가 달라지는 경우는 보지 않는다.
 - 축(관찰 상태·행동)을 빠뜨리면 그 축은 보이지 않는다. 축이 늘어나면(위 「측정하지 않은 칸」) 다시 돌린다.

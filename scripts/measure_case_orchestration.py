@@ -24,7 +24,9 @@ from typing import Any, Callable
 from daesingo import search as search_module
 from daesingo.case import correction, jobs, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter, RealAdapter
+from daesingo.case.command import handle_command
 from daesingo.case.domain import CaseAggregate, InvalidTransition
+from daesingo.case.store import CaseStore
 from daesingo.recording.service import RecordingService
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +115,28 @@ def _not_observed(original_verify: Callable) -> Callable:
     return verify
 
 
+def _uncertain(original_verify: Callable) -> Callable:
+    """Fine `UNCERTAIN` — 상황 응답 전에는 `AWAIT_SITUATION_RESPONSE`로 조립하지 않는다(#165·#203)."""
+    def verify(*args, **kwargs):
+        payload = original_verify(*args, **kwargs).model_dump(mode="json")
+        payload["visual_evidence"]["verification"] = "UNCERTAIN"
+        payload["visual_evidence"]["visual_event_type"] = None
+        return search_module.VisualVerificationResult.model_validate(payload)
+    return verify
+
+
+def _search_outcome(outcome: str) -> Callable[[Callable], Callable]:
+    """후보 0개로 끝나는 1차 탐색 — `SUCCEEDED`면 결과 없음, `FAILED`면 탐색 실패(#197·#209)."""
+    def make(original: Callable) -> Callable:
+        def search_candidates(scope, **kwargs):
+            payload = original(scope, **kwargs).model_dump(mode="json")
+            payload["candidates"] = []
+            payload["analysis_run"]["outcome"] = outcome
+            return search_module.CandidateSearchResult.model_validate(payload)
+        return search_candidates
+    return make
+
+
 def _plate_failed(_original: Callable) -> Callable:
     def read_plate(request, **kwargs):
         return SimpleNamespace(outcome="FAILED"), None
@@ -166,11 +190,28 @@ def _fine_for_selected(recorder: "Recorder") -> Callable[[Callable], Callable]:
     return make
 
 
+_HAPPY_OBSERVATION_FACTS = json.loads(
+    (ROOT / "tests" / "evidence" / "fixtures" / "adapter_inputs.json").read_text(encoding="utf-8")
+)["scenarios"][f"scenario_{SCENARIO_ID}"]["requirement_observation_facts"]
+
+
+def _with_observation_facts(original: Callable) -> Callable:
+    """최종 신고영상 관찰(I4, `observation_facts`)은 producer가 없어 real 경로 FINAL이 늘 `UNKNOWN`이고
+    `READY`에 못 간다(ADR-EVIDENCE-008 §6.2, case 몫 아님). READY 시점 행동과 I1을 재려고 evidence mock
+    하니스가 쓰는 happy 값을 러너 안에서만 넣는다."""
+    def evaluate_requirements(record, *, scope, **kwargs):
+        if scope == "FINAL_PACKAGE" and kwargs.get("observation_facts") is None:
+            kwargs["observation_facts"] = _HAPPY_OBSERVATION_FACTS
+        return original(record, scope=scope, **kwargs)
+    return evaluate_requirements
+
+
 def _common(recorder: "Recorder") -> list[tuple[Any, str, Callable[[Callable], Callable]]]:
-    """모든 관찰 상태에 공통으로 까는 주입 — 후보 2개 합성."""
+    """모든 관찰 상태에 공통으로 까는 주입 — 후보 2개 합성 · 최종 관찰 사실."""
     return [
         (search_module, "search_candidates", _with_second_candidate),
         (search_module, "verify_visual", _fine_for_selected(recorder)),
+        (real_e2e, "evaluate_requirements", _with_observation_facts),
     ]
 
 OBSERVATIONS: dict[str, list[tuple[Any, str, Callable[[Callable], Callable]]]] = {
@@ -178,6 +219,9 @@ OBSERVATIONS: dict[str, list[tuple[Any, str, Callable[[Callable], Callable]]]] =
     "NOT_ASSEMBLED": [(search_module, "verify_visual", _not_observed)],
     "PLATE_FAILED": [(real_e2e.readout_api, "read_plate", _plate_failed)],
     "PLATE_UNREAD": [(real_e2e.readout_api, "read_plate", _plate_unread)],
+    "AWAIT_RESPONSE": [(search_module, "verify_visual", _uncertain)],
+    "NO_CANDIDATES": [(search_module, "search_candidates", _search_outcome("SUCCEEDED"))],
+    "SEARCH_FAILED": [(search_module, "search_candidates", _search_outcome("FAILED"))],
 }
 
 # ── 행동 ────────────────────────────────────────────────────────────────
@@ -192,6 +236,8 @@ _REPORT_TYPES = ("TRAFFIC_VIOLATION", "MOTORCYCLE_VIOLATION")
 class Ctx:
     def __init__(self, case: CaseAggregate, real: RealAdapter) -> None:
         self.case, self.real, self.n = case, real, Counter()
+        self.store = CaseStore()
+        self.store.register(case, real)
 
     def record(self) -> dict[str, Any] | None:
         return self.real.get_evidence_record() if any(c.selected for c in self.case.candidates) else None
@@ -244,10 +290,26 @@ def _time_hint(ctx: Ctx) -> None:
     _auto_select(ctx.case)
 
 
-def _reselect(target: Callable[[CaseAggregate], str]) -> Callable[[Ctx], None]:
+def _command(kind: str, payload: Callable[[CaseAggregate], dict[str, Any]]) -> Callable[[Ctx], None]:
+    """web → case 진입점(`handle_command`, #216)으로 보낸다 — 성공 뒤 `READY` 재확인까지 같은 경로다.
+    command 거부(`error`)는 domain 거부와 같이 `InvalidTransition`으로 센다."""
     def run(ctx: Ctx) -> None:
-        correction.reselect_candidate(ctx.case, target(ctx.case))
+        response = handle_command(
+            {"case_id": ctx.case.case_id, "expected_case_rev": ctx.case.case_rev, "kind": kind,
+             "payload": payload(ctx.case)},
+            store=ctx.store,
+        )
+        if response["error"] is not None:
+            raise InvalidTransition(response["error"]["code"])
     return run
+
+
+def _select(target: Callable[[CaseAggregate], str]) -> Callable[[Ctx], None]:
+    return _command("SELECT_OTHER_CANDIDATE", lambda case: {"candidate_id": target(case)})
+
+
+def _respond(value: str) -> Callable[[Ctx], None]:
+    return _command("RECORD_SITUATION_RESPONSE", lambda case: {"value": value})
 
 
 def _current(case: CaseAggregate) -> str:
@@ -258,25 +320,48 @@ def _other(case: CaseAggregate) -> str:
     return next((c.candidate_id for c in case.candidates if not c.selected), "no-other-candidate")
 
 
-# name → (실행, 허용 단계(①), 거부돼야 하는가, 기대 case_rev 증가)
-ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], bool, int | None]] = {
-    "PLATE_MANUAL_EDIT": (_plate_edit, _ASSEMBLE_ONLY, False, 1),
-    "REPORT_TYPE_CHANGE": (_report_type, _ASSEMBLE_ONLY, False, 1),
-    "EVENT_TIME_MANUAL": (_event_time, _ASSEMBLE_ONLY, False, 1),
-    "NOOP_SAME_VALUE": (_noop, frozenset(), False, 0),  # correction-record §8-7: 무변경 입력은 기록하지 않음
-    "USER_REVIEWED": (lambda ctx: ctx.case.mark_reviewed(), _ASSEMBLE_ONLY, False, 1),
-    "TIME_HINT_EDIT": (_time_hint, _EVERYTHING, False, None),
-    "RESELECT_MISSING": (_reselect(lambda case: "does-not-exist"), frozenset(), True, 0),
-    "RESELECT_CURRENT": (_reselect(_current), frozenset(), True, 0),
+def _no_selection(case: CaseAggregate) -> bool:
+    return not any(c.selected for c in case.candidates)
+
+
+def _before_selection(case: CaseAggregate) -> bool:
+    """값 정정은 `EVIDENCE_REVIEW`·`READY`에서만 받는다(상태 기계 설계 초안 v1 §4)."""
+    return case.stage not in ("EVIDENCE_REVIEW", "READY")
+
+
+def _always(case: CaseAggregate) -> bool:
+    return True
+
+
+# name → (실행, 허용 단계(①), 거부돼야 하는가(행동 직전 case로 판단), 기대 case_rev 증가)
+# command가 같은 요청 안에서 `READY`로 올리면 기대 증가에 +1을 더한다(case-command 계약 §5).
+# 4차 측정부터 command 대상 행동(다른 후보 · 상황 응답 · 최종 검토)은 `handle_command`로 보낸다.
+# 정정(입력형)은 command 판본이 아직 없어 domain을 그대로 부른다.
+ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], Callable[[CaseAggregate], bool], int | None]] = {
+    "PLATE_MANUAL_EDIT": (_plate_edit, _ASSEMBLE_ONLY, _before_selection, 1),
+    "REPORT_TYPE_CHANGE": (_report_type, _ASSEMBLE_ONLY, _before_selection, 1),
+    "EVENT_TIME_MANUAL": (_event_time, _ASSEMBLE_ONLY, _before_selection, 1),
+    "NOOP_SAME_VALUE": (_noop, frozenset(), _before_selection, 0),  # correction-record §8-7: 무변경 입력은 기록하지 않음
+    "USER_REVIEWED": (_command("MARK_REVIEWED", lambda case: {}), _ASSEMBLE_ONLY,
+                      lambda case: case.stage != "READY", 1),
+    # 상태 기계 설계 초안 v1 §3: 시간 단서 정정은 CANDIDATE_REVIEW·EVIDENCE_REVIEW·READY에서만 —
+    # 탐색 실패로 SEARCHING에 머문 case는 `RETRY_SEARCH`가 출구다.
+    "TIME_HINT_EDIT": (_time_hint, _EVERYTHING,
+                       lambda case: case.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"), None),
+    "RESELECT_MISSING": (_select(lambda case: "does-not-exist"), frozenset(), _always, 0),
+    "RESELECT_CURRENT": (_select(_current), frozenset(), _always, 0),
     # 정책 표 2행: 2차 확인(필요시)+병렬 보강·증거 재조립, 1차 탐색은 절대 안 건드린다.
-    "OTHER_CANDIDATE": (_reselect(_other), _EVERYTHING - {"coarse_search"}, False, 1),
+    "OTHER_CANDIDATE": (_select(_other), _EVERYTHING - {"coarse_search"},
+                        lambda case: case.stage not in ("EVIDENCE_REVIEW", "READY") or len(case.candidates) < 2, 1),
+    # 상황 응답은 관찰을 다시 돌리지 않고 조립만 다시 한다(#203 — 같은 selection context의 관찰 재사용).
+    "SITUATION_CONFIRMED": (_respond("CONFIRMED"), _ASSEMBLE_ONLY, _no_selection, 1),
+    "SITUATION_UNSURE": (_respond("USER_UNSURE"), _ASSEMBLE_ONLY, _no_selection, 1),
 }
+_RESPONSES = frozenset({"SITUATION_CONFIRMED", "SITUATION_UNSURE"})
 NOT_YET = {
     "PLATE_REREAD · SPAN_ADJUST · TIMELINE_REBASE×2": "real 경로에 흐름 없음",
-    "situation_response": "#177 미머지",
-    "READY 시점 행동 · 불변식 1(READY ⇒ Package)": "상황 응답(#177) + observation_facts 주입 필요",
-    "UNCERTAIN(응답 대기)": "#203 미머지 — develop에선 ContractInputError",
-    "후보 0개 · 탐색 실패": "#209 미머지 — 선택 전 CaseView 크래시",
+    "RUN_NOTICE_ACTION(재시도 발주)": "동기 경로에서는 JobRecord만 남고 실행이 없다 — worker 배선 뒤",
+    "상황 응답 CORRECTED": "case-command v0이 받지 않는다(입력형 판본)",
 }
 
 # ── 불변식 (②) ──────────────────────────────────────────────────────────
@@ -316,13 +401,15 @@ def check_view(case: CaseAggregate, real: RealAdapter, view: dict[str, Any]) -> 
 def run_session(observation: str, actions: tuple[str, ...]) -> dict[str, Any]:
     recorder = Recorder()
     patches: list[tuple[Any, str, Any]] = []
-    injected: dict[tuple[int, str], Callable] = {}
+    injected: dict[tuple[int, str], tuple[Any, str, Callable]] = {}
     for owner, name, make in _common(recorder) + OBSERVATIONS[observation]:
-        base = injected.get((id(owner), name), getattr(owner, name))
-        injected[(id(owner), name)] = make(base)
+        base = injected.get((id(owner), name), (owner, name, getattr(owner, name)))[2]
+        injected[(id(owner), name)] = (owner, name, make(base))
     for owner, name, stage in _STAGES:
-        base = injected.get((id(owner), name), getattr(owner, name))
+        base = injected.pop((id(owner), name), (owner, name, getattr(owner, name)))[2]
         patches.append((owner, name, _counting(recorder, stage, base)))
+    # 세지 않는 함수에 건 주입(최종 관찰 사실 등)도 깐다 — 위에서 단계로 감싼 것은 이미 빠졌다.
+    patches += list(injected.values())
 
     result: dict[str, Any] = {"observation": observation, "actions": list(actions), "steps": [],
                               "violations": [], "error": None, "error_step": None}
@@ -343,7 +430,8 @@ def run_session(observation: str, actions: tuple[str, ...]) -> dict[str, Any]:
 
             for i, action in enumerate(actions, 1):
                 step = f"{i}:{action}"
-                run, allowed, must_reject, rev_delta = ACTIONS[action]
+                run, allowed, reject_if, rev_delta = ACTIONS[action]
+                must_reject = reject_if(case)
                 before, stage_before = _snapshot(case), case.stage
                 mark = recorder.mark()
                 rejected = False
@@ -356,16 +444,26 @@ def run_session(observation: str, actions: tuple[str, ...]) -> dict[str, Any]:
                 after = _snapshot(case)
                 extra = sorted(set(called) - allowed)
                 result["steps"].append({"action": action, "rerun_ok": not extra, "extra": extra,
-                                        "called": dict(Counter(called))})
+                                        "called": dict(Counter(called)), "rejected": rejected,
+                                        "stage_before": stage_before, "stage": case.stage})
                 result["violations"] += [f"{step}: {v}" for v in check_view(case, real, view)]
                 if stage_before != case.stage and (stage_before, case.stage) not in _ALLOWED_EDGES:
                     result["violations"].append(f"{step}: I4 허용 안 된 전이 {stage_before}→{case.stage}")
                 if must_reject and not rejected:
                     result["violations"].append(f"{step}: I5 거부돼야 하는데 통과")
-                if must_reject and before != after:
+                if rejected and not must_reject:
+                    result["violations"].append(f"{step}: I5 허용돼야 하는데 거부")
+                if rejected and before != after:
                     result["violations"].append(f"{step}: I5 거부됐는데 상태가 바뀜")
-                if rev_delta is not None and after[1] - before[1] != rev_delta:
-                    result["violations"].append(f"{step}: I6 case_rev +{after[1] - before[1]} (기대 +{rev_delta})")
+                expected = 0 if rejected else rev_delta
+                # command가 같은 요청 안에서 READY로 올리면 +1. READY에서 받은 상황 응답은 먼저 내렸다가
+                # gate가 그대로면 다시 올리므로 이것도 +1이다(case-command 계약 §5).
+                if expected is not None and case.stage == "READY" and (
+                    stage_before != "READY" or action in _RESPONSES
+                ):
+                    expected += 1
+                if expected is not None and after[1] - before[1] != expected:
+                    result["violations"].append(f"{step}: I6 case_rev +{after[1] - before[1]} (기대 +{expected})")
         except Exception as exc:  # 크래시도 결과다 — 숨기지 않는다
             result["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             result["error_step"] = step
