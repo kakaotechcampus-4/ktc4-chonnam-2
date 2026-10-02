@@ -29,7 +29,7 @@ from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
 from daesingo.case.view import _belongs_to_current_selection, build_case_view
-from daesingo.evidence import NOT_ASSEMBLED
+from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
 
 def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> list[Candidate]:
@@ -177,6 +177,7 @@ def build_view_from_adapter(
         running_jobs=running_jobs,
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
+        visual_evidence_decision=snapshot.visual_evidence_decision,
     )
     return derive_notices(
         view,
@@ -298,6 +299,8 @@ def derive_notices(
     - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
       `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
       전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
+      evidence가 없어도 adapter가 보고한 Fine 판정이 `AWAIT_SITUATION_RESPONSE`(Fine `UNCERTAIN` +
+      응답 전, #165)면 붙인다 — 그렇지 않으면 응답 대기가 조립 중과 같아 보인다(PR #224 리뷰).
     - `evidence.visual_event_not_observed` — evidence가 없고, adapter가 보고한 선택 후보의 Fine
       판정(`visual_evidence_decision`)이 `NOT_ASSEMBLED`일 때(#168 [A]). 음성 결과는 evidence가
       없어 CaseView 값만으로는 조립 전과 구분되지 않으므로 이 판정만 따로 받는다.
@@ -321,19 +324,22 @@ def derive_notices(
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
         derived.append(PLATE_READ_FAILED_NOTICE if plate_read_retry_basis else dict(PLATE_READ_FAILED_NOTICE, actions=[]))
     evidence = view.get("evidence")
+    selected = [c for c in view.get("candidates", []) if c["selected"]]
+    awaiting_response = (
+        view.get("package") is None and len(selected) == 1 and selected[0]["situation_confirmation"] == "NOT_ASKED"
+    )
     if evidence is None and visual_evidence_decision == NOT_ASSEMBLED:
         derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
+    # Fine `UNCERTAIN` 응답 대기는 evidence가 없어 CaseView 값만으로는 조립 중과 같아 보인다 —
+    # 음성 결과와 같은 방식으로 adapter의 Fine 판정을 본다(PR #224 리뷰).
+    if evidence is None and visual_evidence_decision == AWAIT_SITUATION_RESPONSE and awaiting_response:
+        derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     if evidence is not None:
         if evidence["plate_display"]["value"] is None and _plate_reread_needed(evidence, evidence_needs or []):
             derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
-        selected = [c for c in view["candidates"] if c["selected"]]
-        if (
-            view.get("package") is None
-            and len(selected) == 1
-            and selected[0]["situation_confirmation"] == "NOT_ASKED"
-        ):
+        if awaiting_response:
             derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     present = {n["code"] for n in view["notices"]}
     additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
