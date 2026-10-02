@@ -52,6 +52,9 @@ class _SnapshotAdapter:
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         return []
 
+    def get_visual_evidence_decision(self) -> str | None:
+        return None
+
 
 _EVIDENCE = {
     "record_ref": {"kind": "evidence_record", "ref": "er_test_001"},
