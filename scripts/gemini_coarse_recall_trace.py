@@ -27,7 +27,7 @@ from daesingo.search.diagnostic_prompts import _compose
 from daesingo.search.prompts import COARSE_PROMPT
 from daesingo.search.schemas import CoarseResponse
 
-SPEED = 0.5  # 원본 2 fps
+SPEED = 0.5  # 원본 2 fps. --speed 0.25 = 원본 4 fps
 PROFILES = {"coarse-p3": None, "coarse-subject-v1": "coarse-subject-v1",
             "coarse-multi-v1": "coarse-multi-v1"}
 # YT_0003 은 0–10초가 정상 주행(사용자 확인). 그 구간 후보를 오탐으로 따로 센다.
@@ -52,12 +52,15 @@ def _overlaps(a: tuple[float, float], b: tuple[float, float] | None) -> bool:
 
 
 def main() -> None:
+    global SPEED
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", default=DEFAULT_ENV)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--profiles", nargs="+", default=list(PROFILES))
     ap.add_argument("--repeat", type=int, default=3)
+    ap.add_argument("--speed", type=float, default=SPEED)
     args = ap.parse_args()
+    SPEED = args.speed
 
     env = load_env_file(args.env)
     cfg = GeminiSearchConfig.from_dotenv(env)
@@ -115,7 +118,7 @@ def main() -> None:
                           f"cands={[c['span'] for c in row['candidates']]} hit={row['hit']}")
                     args.out.write_text(json.dumps(
                         {"model": cfg.model, "reasoning_effort": cfg.reasoning_effort,
-                         "transport": "video-360p-0.5x", "rows": rows},
+                         "transport": f"video-360p-{SPEED}x", "rows": rows},
                         ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("\n=== profile 별 ===")
