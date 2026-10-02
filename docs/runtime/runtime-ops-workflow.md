@@ -91,7 +91,7 @@ Worker scaling 사례
 
 리서치는 결정을 대신하는 것이 아니라 **Baseline과 실험 설계를 더 현실적으로 만드는 입력**으로 사용한다.
 
-카테캠 AWS/ML API 공지처럼 공식성이 높은 자료는 별도 Research/Input 문서로 보존한다.
+카테캠 AWS/ML API 공지처럼 공식성이 높은 자료는 [`official-inputs/`](./official-inputs/README.md)에 보존한다.
 
 ---
 
