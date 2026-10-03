@@ -83,7 +83,7 @@ it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 �
     expect(r.container.querySelector('.rs.flow')).not.toBeNull()
     expect(ghost.getAttribute('aria-hidden')).toBe('true')
     expect(ghost.hasAttribute('inert')).toBe(true)
-    act(() => vi.advanceTimersByTime(300))
+    act(() => vi.advanceTimersByTime(400))
     expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
 
     fireEvent.click(r.getByText('새 신고'))
@@ -92,6 +92,49 @@ it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 �
     fireEvent.click(r.getByText('영상에서 찾아보기'))
     fireEvent.click(r.getByText('새 신고'))
     expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·열린 문이 남지 않고, 파일을 바꾸면 처음부터 다시 한다', () => {
+  vi.useFakeTimers()
+  try {
+    const a = [file('a.mp4')]
+    const r = render(screen('uploading', a))
+    expect(r.container.querySelectorAll('.rs-vcard')).toHaveLength(1)
+    expect(r.container.querySelector('.rs-drop.is-open')).not.toBeNull()
+    r.rerender(screen('done', a)) // 탑승 연출이 끝나기 전에 완료
+    expect(r.container.querySelector('.rs-vcard')).toBeNull()
+    expect(r.container.querySelector('.rs-drop.is-open')).toBeNull()
+
+    const b = [file('b.mp4'), file('c.mp4'), file('d.mp4'), file('e.mp4')]
+    r.rerender(screen('uploading', b)) // 다시 선택으로 교체 — 카드는 최대 3장, 개수는 문구로
+    expect(r.container.querySelectorAll('.rs-vcard')).toHaveLength(3)
+    act(() => vi.advanceTimersByTime(600))
+    expect(r.container.querySelector('.rs-vcard')).toBeNull()
+    expect(r.container.querySelector('.upload.bg-off')).not.toBeNull() // 바퀴로 이동 — 배경 숨김
+    r.rerender(screen('fail', b))
+    expect(r.container.querySelector('.upload.bg-off')).not.toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('분석 시작은 한 번만 — 누른 뒤 남는 버튼은 누를 수 없는 출발용 복사본뿐이다', () => {
+  vi.useFakeTimers()
+  try {
+    const r = render(<DemoFlow />)
+    fireEvent.change(r.container.querySelector('input[type=file]')!, { target: { files: [file('a.mp4')] } })
+    act(() => vi.advanceTimersByTime(2000))
+    const go = r.getByText('영상에서 찾아보기')
+    fireEvent.click(go)
+    fireEvent.click(go) // 연타 — 이미 사라진 버튼
+    const left = r.getAllByText('영상에서 찾아보기')
+    expect(left).toHaveLength(1)
+    expect(left[0].closest('.rs-upload-exit')!.hasAttribute('inert')).toBe(true)
+    expect(r.container.querySelector('.rs-upload-exit .upload.is-departing .rs-mini-car')).not.toBeNull()
+    expect(r.container.querySelectorAll('.rs.flow')).toHaveLength(1)
   } finally {
     vi.useRealTimers()
   }

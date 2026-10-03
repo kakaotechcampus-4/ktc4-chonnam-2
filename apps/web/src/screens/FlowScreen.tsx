@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type JSX } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { stepLabel } from '../contracts/labels'
@@ -15,6 +15,7 @@ import {
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 import { VideoThumb } from '../components/VideoThumb'
+import carTop from '../assets/car/car-top.webp'
 
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
@@ -28,8 +29,8 @@ import { VideoThumb } from '../components/VideoThumb'
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
 // 흔들리지 않게 한다. 아직 한 단계도 시작하지 않았을 때만 전체 흐름 문구를 제목으로 쓴다.
 const TITLE_OUT_MS = 260
-// 진입 연출이 끝나는 시간 — 그 안에 장면 찾기가 시작되면 빛은 연출이 끝난 뒤에 지나간다.
-const ENTER_MS = 450
+// 위에서 본 자동차(car-top.webp, 앞이 아래) 표시 크기 — 이미지 여백을 빼면 보이는 차는 약 23×49
+const CAR_H = 53
 
 export function FlowScreen(props: {
   view: CaseView
@@ -42,7 +43,6 @@ export function FlowScreen(props: {
 }): JSX.Element {
   const screen = selectScreen(props.view)
   const rootRef = useRef<HTMLDivElement>(null)
-  const mountedAt = useRef(Date.now())
   // 「영상에서 찾아보기」가 사라져 포커스가 갈 곳을 잃으면 진행 화면이 받는다(보이는 요소).
   useEffect(() => {
     if (!document.activeElement || document.activeElement === document.body)
@@ -88,38 +88,37 @@ export function FlowScreen(props: {
     return () => clearTimeout(t)
   }, [leaving])
 
-  // 장면 찾기 시작 장식 — coarse_search가 실제로 RUNNING이 되는 순간 한 번. 단계가 끝나면 지운다.
-  const scanning = props.view.progress.some((p) => p.step === 'coarse_search' && p.state === 'RUNNING')
-  const [scan, setScan] = useState<{ id: number; delayMs: number } | null>(null)
-  useEffect(() => {
-    if (!scanning) return setScan(null)
-    const now = Date.now()
-    setScan({ id: now, delayMs: Math.max(0, ENTER_MS - (now - mountedAt.current)) })
-  }, [scanning])
-
-  // 진행 중 강조 면 — 진행 중인 단계가 정확히 하나일 때만 면 하나가 그 행으로 옮겨 간다.
-  // 이웃 행으로 넘어갈 때만 미끄러지고, 건너뛰면 그 자리에 바로 나타난다(지나친 행을 진행
-  // 중처럼 보이지 않게). 여럿이 동시에 진행 중이면 각 행이 따로 강조된다(CSS). 하나도 없으면
-  // 면을 숨긴다 — 끝난 단계를 진행 중처럼 남기지 않는다.
-  const runningIdx = props.view.progress.flatMap((p, i) => (p.state === 'RUNNING' ? [i] : []))
-  const single = runningIdx.length === 1 ? runningIdx[0] : -1
+  // 세로 경로 위 자동차 — 위치는 실제 단계 상태로만 정한다. 진행 중 단계 중 가장 앞(위) 단계 옆에
+  // 서고, 진행 중이 잠깐 없으면 마지막 위치에서 기다린다(재시도로 앞 단계가 다시 진행되면 돌아간다).
+  // 처음 열 때 진행 중이 없으면 이미 지난 마지막 단계 옆에서 시작한다 — 첫 단계부터 가짜로 달리지 않는다.
+  // 시간이 흐른다고 움직이지 않으며, 진행률·남은 시간·도착을 뜻하지 않는다.
+  const progress = props.view.progress
+  const firstRunning = progress.findIndex((p) => p.state === 'RUNNING')
+  const carAt = useRef<number | null>(null)
+  if (firstRunning >= 0) carAt.current = firstRunning
+  else if (carAt.current === null) {
+    let reached = -1
+    progress.forEach((p, i) => {
+      if (p.state !== 'PENDING') reached = i
+    })
+    carAt.current = Math.max(0, reached)
+  }
+  const carIndex = progress.length > 0 ? Math.min(carAt.current, progress.length - 1) : null
   const stepsRef = useRef<HTMLDivElement>(null)
-  const [hl, setHl] = useState<{ top: number; height: number; index: number; slide: boolean } | null>(null)
+  const [stops, setStops] = useState<number[]>([])
   useLayoutEffect(() => {
     const root = stepsRef.current
-    const li = single < 0 ? null : root?.querySelectorAll<HTMLElement>('.timeline > li')[single]
-    if (!root || !li) {
-      setHl(null)
-      return
-    }
-    const top = li.getBoundingClientRect().top - root.getBoundingClientRect().top
-    setHl((prev) => ({
-      top,
-      height: li.offsetHeight,
-      index: single,
-      slide: !!prev && Math.abs(prev.index - single) === 1,
-    }))
-  }, [single, props.view.progress.length])
+    if (!root) return
+    const top = root.getBoundingClientRect().top
+    setStops(
+      [...root.querySelectorAll<HTMLElement>('.timeline > li')].map((li) => {
+        const r = li.getBoundingClientRect()
+        return r.top - top + r.height / 2
+      }),
+    )
+  }, [progress.length])
+  const carY = carIndex !== null && stops[carIndex] !== undefined ? stops[carIndex] - CAR_H / 2 : null
+
   return (
     <div className="rs rs-enter flow" ref={rootRef} tabIndex={-1}>
       {/* 위: 현재 작업·상태·안내(두 칸 전체). 아래 행에 대표 영상과 단계 목록이 같은 높이에서 시작한다 */}
@@ -162,7 +161,7 @@ export function FlowScreen(props: {
       </div>
 
       <div className="flow-main">
-        <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} scan={scan} />
+        <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} />
 
         {props.files.length > 1 && (
           // 여러 파일은 접어 둔다. open은 브라우저가 들고 있어 단계가 바뀌어 다시 그려져도 유지된다.
@@ -187,16 +186,20 @@ export function FlowScreen(props: {
         )}
       </div>
 
-      <div
-        className="flow-steps"
-        ref={stepsRef}
-        data-running={runningIdx.length === 0 ? 'none' : runningIdx.length === 1 ? 'one' : 'many'}
-      >
-        <span
-          className={`flow-step-hl${hl ? ' on' : ''}${hl?.slide ? ' slide' : ''}`}
-          style={hl ? ({ transform: `translateY(${hl.top}px)`, height: hl.height } as CSSProperties) : undefined}
-          aria-hidden
-        />
+      <div className="flow-steps" ref={stepsRef}>
+        {stops.length > 0 && (
+          <div className="flow-lane" aria-hidden>
+            <span className="flow-lane-line" style={{ top: stops[0], height: stops[stops.length - 1] - stops[0] }} />
+            {stops.map((y, i) => (
+              <span key={i} className="flow-stop" style={{ top: y }} />
+            ))}
+            {carY !== null && (
+              <span className="flow-car" data-step={carIndex ?? undefined} style={{ transform: `translateY(${carY}px)` }}>
+                <img src={carTop} alt="" />
+              </span>
+            )}
+          </div>
+        )}
         <ProgressPanel
           view={props.view}
           jobs={screen.jobs}

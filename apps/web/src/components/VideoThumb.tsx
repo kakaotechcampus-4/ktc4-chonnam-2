@@ -15,8 +15,6 @@ const MAX_WIDTH = 960
 export function VideoThumb(props: {
   file: File | null
   name: string
-  /** 장면 찾기가 시작될 때 바뀌는 값 — 바뀔 때마다 테두리 빛이 한 번 지나간다. null이면 없음 */
-  scan?: { id: number; delayMs: number } | null
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
@@ -98,15 +96,6 @@ export function VideoThumb(props: {
           )}
           {src && <img src={src} alt="" />}
         </div>
-        {/* 장면 찾기 시작 장식 — 프레임 바깥 테두리만 지난다. 탐지 위치·진행률이 아니다 */}
-        {props.scan && (
-          <span
-            className="flow-scan"
-            key={props.scan.id}
-            style={{ animationDelay: `${props.scan.delayMs}ms` }}
-            aria-hidden
-          />
-        )}
       </div>
       <figcaption>
         <span>{REPRESENTATIVE_VIDEO}</span>

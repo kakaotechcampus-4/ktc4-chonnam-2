@@ -89,42 +89,89 @@ body:has(.rs-page) { background: #fff; }
 .rs-intro .rs-group:focus-within { animation: none; }
 @keyframes rs-rise { from { opacity: 0; transform: translateY(8px); } }
 
-/* 업로드 영역 — 바깥(.rs-drop)이 안쪽(.rs-drop-in) 높이를 따라가며 늘고 준다(useAutoHeight).
-   점선↔실선은 바로 바뀌고 색·배경만 부드럽게 바뀐다. */
+/* 업로드 칸 = 자동차 앞문. 위는 그림 창(320px, 원본 한 장의 위치·배율만 바뀜), 아래는 안내 줄.
+   완료되면 그림 창이 접혀 한 줄 요약만 남는다. 테두리는 색만 부드럽게 바뀐다. */
+.g-drop { position: relative; }
 .rs-drop {
-  overflow: hidden;
-  background: var(--rs-fill);
-  border: 1.5px dashed var(--rs-line);
+  position: relative; z-index: 1; overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .10);
   border-radius: 18px;
-  transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease), height .35s var(--rs-ease);
+  transition: border-color .25s var(--rs-ease);
 }
-/* 영역 클릭으로 파일 창을 여는 것은 고르기 전·실패 때만 */
 .rs-drop.is-idle, .rs-drop.is-fail { cursor: pointer; }
-.rs-drop.is-idle:hover { border-color: var(--rs-line-strong); }
-.rs-drop.over { background: #fff; border-style: solid; border-color: var(--rs-ink); }
-.rs-drop.is-uploading, .rs-drop.is-done { background: #fff; border-style: solid; border-color: var(--rs-line); }
-.rs-drop.is-fail { background: #fff; border-style: solid; border-color: var(--red-bd); }
+.rs-drop.over { border-color: var(--rs-ink); }
+.rs-drop.is-fail { border-color: var(--red-bd); }
 
-.rs-drop-in {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-  padding: 48px 24px 40px;
-  text-align: center;
+.rs-scene { position: relative; height: 320px; overflow: hidden; background: #fff; transition: height .35s var(--rs-ease); }
+.rs-drop.is-done .rs-scene { height: 0; }
+.rs-scene-car, .rs-scene-open { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; pointer-events: none; }
+.rs-scene-car { width: 1774px; height: 887px; transition: transform .35s var(--rs-ease); }
+/* 문 열림 — 열림 사진을 원본 문 위치에 겹친다(회전 아님). 문·입구 밖은 흐려 원본에 섞는다 */
+.rs-scene-open {
+  width: 900px; height: 675px; opacity: 0;
+  transition: transform .35s var(--rs-ease), opacity .15s var(--rs-ease);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 83%, transparent 88%), linear-gradient(180deg, transparent 0, #000 13%, #000 93%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 83%, transparent 88%), linear-gradient(180deg, transparent 0, #000 13%, #000 93%, transparent 100%);
+  mask-composite: intersect;
 }
-.rs-drop-body { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
-/* 완료 — 한 줄 요약: 체크 · 제목(여럿이면 눌러 펼침) · 다시 선택 */
-.rs-drop.is-done .rs-drop-in { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px; text-align: left; }
-.rs-done { flex-direction: row; align-items: flex-start; gap: 16px; min-width: 0; flex: 1; }
-.rs-done .rs-drop-icon { flex: 0 0 auto; width: 40px; height: 40px; margin: 0; animation: rs-pop .3s var(--rs-ease) both; }
-/* 업로드 성공 연출(한 번, 약 0.65초) — 배지가 나타나며 체크 선이 그려지고(0.08~0.4s), 그동안 영역이
-   요약으로 줄어든다(0.35s). 이어서 「영상에서 찾아보기」 둘레가 한 번 옅게 퍼진다(0.2~0.65s).
-   모두 요소가 생기거나 is-done이 붙는 순간에만 재생되어, 다시 그려지거나 목록을 펼쳐도 반복되지 않는다 */
+.rs-drop.is-open .rs-scene-open { opacity: 1; }
+/* 영상 카드 — 검정 카드 + 흰 재생 표시. 위에서 열린 입구 쪽으로 작아지며 들어간다(약 0.3초) */
+.rs-cards { position: absolute; inset: 0; pointer-events: none; }
+.rs-vcard {
+  position: absolute; left: 0; top: 0; width: 64px; height: 40px; border-radius: 7px; background: #1d1d1f;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, .25); display: grid; place-items: center; opacity: 0;
+  animation: rs-board .24s var(--rs-ease) forwards; animation-delay: var(--d, 0ms);
+}
+.rs-vcard::after { content: ''; margin-left: 3px; border-left: 11px solid #fff; border-top: 6.5px solid transparent; border-bottom: 6.5px solid transparent; }
+@keyframes rs-board {
+  0% { opacity: 0; transform: translate(calc(500px + var(--x, 0px)), -50px) scale(1); }
+  20% { opacity: 1; }
+  80% { opacity: 1; transform: translate(400px, 150px) scale(.5); }
+  100% { opacity: 0; transform: translate(392px, 168px) scale(.34); }
+}
+
+/* 배경 — 같은 원본 전체를 10%로. 업로드 칸 가운데·칸 높이 안(제목 뒤로 올라오지 않음).
+   바퀴로 이동하기 시작하면 0.2초 동안 흐려지고 완료·실패에서도 숨긴다 */
+.rs-bgcar {
+  position: absolute; left: 50%; top: 178px; z-index: 0; width: 1048px; height: auto; max-width: none;
+  transform: translate(-50%, -50%); opacity: .10; pointer-events: none; transition: opacity .2s var(--rs-ease);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+.rs.upload.bg-off .rs-bgcar { opacity: 0; }
+
+/* 안내 줄 — 글자·버튼은 그림과 겹치지 않고 제자리 */
+.rs-cap { display: flex; align-items: center; gap: 16px; padding: 18px 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
+.rs-drop.is-done .rs-cap { border-top: 0; }
+.rs-cap-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rs-cap .rs-btn { flex: 0 0 auto; }
+.rs-drop-title { display: inline-flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; }
+.rs-drop.is-fail .rs-drop-title { color: var(--red); }
+.rs-drop-note { font-size: 14px; line-height: 1.55; color: var(--rs-sub); overflow-wrap: anywhere; }
+.rs-drop-note.one { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 업로드 중 작은 로딩 — 바퀴 회전 소재가 없어 함께 둔다(1초에 한 바퀴) */
+.rs-spin-sm { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
+@keyframes rs-spin { to { transform: rotate(360deg); } }
+@keyframes rs-pop { from { opacity: 0; transform: scale(.9); } }
+
+/* 완료 요약 — [작은 자동차(앞이 왼쪽, 출발 방향)] [체크 · 업로드 완료 · 영상 N개] [다시 선택] */
+.rs-mini-car {
+  flex: 0 0 auto; width: 96px; height: 32px;
+  background: url('../assets/car/car-side.webp') no-repeat; background-size: 100.6px auto; background-position: -2.3px -11.4px;
+  animation: rs-fade-in .3s var(--rs-ease) both;
+}
+.rs-done-text { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; }
+.rs-done-badge { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; margin-top: -1px; border-radius: 50%; background: var(--rs-ink); color: #fff; animation: rs-pop .3s var(--rs-ease) both; }
+.rs-done-one { display: flex; flex-direction: column; min-width: 0; }
+.rs-done-files { min-width: 0; }
 .rs-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rs-draw .32s var(--rs-ease) .08s forwards; }
 @keyframes rs-draw { to { stroke-dashoffset: 0; } }
 .rs.upload.is-done .rs-actions .rs-btn.pri:not(:disabled) { animation: rs-cta-ready .45s var(--rs-ease) .2s both; }
 @keyframes rs-cta-ready { from { box-shadow: 0 0 0 0 rgba(29, 29, 31, .28); } to { box-shadow: 0 0 0 10px rgba(29, 29, 31, 0); } }
-.rs-done-text { flex: 1; min-width: 0; padding-top: 7px; }
-.rs-done .rs-drop-title { font-size: 18px; }
-.rs-done-name { display: block; margin-top: 4px; font-size: 15px; line-height: 1.5; color: var(--rs-sub); overflow-wrap: anywhere; }
+.rs-done-text .rs-drop-title { font-size: 18px; }
+.rs-done-name { display: block; margin-top: 2px; font-size: 15px; line-height: 1.5; color: var(--rs-sub); overflow-wrap: anywhere; }
 .rs-done-files summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; border-radius: 6px; }
 .rs-done-files summary::-webkit-details-marker { display: none; }
 .rs-done-files summary svg { flex: 0 0 auto; color: var(--rs-sub); transition: transform .25s var(--rs-ease); }
@@ -132,33 +179,19 @@ body:has(.rs-page) { background: #fff; }
 .rs-done-files summary:hover .rs-drop-title { text-decoration: underline; text-underline-offset: 3px; }
 .rs-done-files .rs-files { width: 100%; margin-top: 10px; }
 .rs-done-files[open] .rs-files { animation: rs-drop-in .3s var(--rs-ease) both; }
-.rs-drop.is-done .rs-btn { flex: 0 0 auto; margin-top: 0; }
-/* 파일 선택 전·업로드 중 기준 높이 — 넓은 화면에서 약 16:7. 완료 뒤에는 한 줄 요약으로 줄어든다 */
-.rs-drop.is-idle .rs-drop-in, .rs-drop.is-uploading .rs-drop-in { min-height: clamp(280px, 30vw, 340px); }
 
-.rs-drop-icon {
-  display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 8px;
-  border-radius: 50%; background: #fff; border: 1px solid var(--rs-line); color: var(--rs-ink);
-  transition: transform .25s var(--rs-ease), background-color .3s var(--rs-ease), border-color .3s var(--rs-ease);
-}
-.rs-drop.over .rs-drop-icon { transform: translateY(-3px) scale(1.04); }
-.rs-drop.is-done .rs-drop-icon { background: var(--rs-ink); border-color: var(--rs-ink); color: #fff; }
-.rs-drop.is-fail .rs-drop-icon { border-color: var(--red-bd); color: var(--red); }
-/* 회전 표시 → 체크처럼 아이콘이 바뀔 때는 겹쳐 나타난다 */
-.rs-drop-icon > svg, .rs-spin { animation: rs-pop .3s var(--rs-ease) both; }
-@keyframes rs-pop { from { opacity: 0; transform: scale(.9); } }
-
-/* 바깥은 나타나기만, 안쪽 호가 회전한다. 회전은 세 곳 모두 1초에 한 바퀴 */
-.rs-spin { display: block; width: 56px; height: 56px; margin-bottom: 8px; }
-.rs-spin-arc {
-  display: block; width: 100%; height: 100%; border-radius: 50%;
-  border: 3px solid var(--rs-fill); border-top-color: var(--rs-ink);
-  animation: rs-spin 1s linear infinite;
-}
-@keyframes rs-spin { to { transform: rotate(360deg); } }
-
-.rs-drop-title { font-size: 20px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; }
-.rs-drop-note { font-size: 15px; line-height: 1.55; color: var(--rs-sub); }
+/* 출발 — 「영상에서 찾아보기」 직후 겉모습 복사본(.is-departing)에서만. 작은 자동차는 앞(왼쪽)으로
+   0.34초 동안 빠져나가고, 나머지 글자·칸은 0.26초 동안 흐려지며 위로 빠진다. 연기·속도선 없음 */
+.rs.upload.is-departing .rs-group:not(.g-drop), .rs.upload.is-departing .skip-list,
+.rs.upload.is-departing .rs-cap > :not(.rs-mini-car) { animation: rs-leave .26s var(--rs-ease) both; }
+.rs.upload.is-departing .rs-drop { overflow: visible; animation: rs-leave-box .26s var(--rs-ease) both; }
+.rs.upload.is-departing .rs-mini-car { animation: rs-depart .36s cubic-bezier(.5, 0, .8, .4) both; }
+.rs.upload.is-departing .rs-check path { animation: none; stroke-dashoffset: 0; }
+.rs.upload.is-departing .rs-actions .rs-btn.pri { animation: none; }
+@keyframes rs-leave { to { opacity: 0; transform: translateY(-14px); filter: blur(3px); } }
+@keyframes rs-leave-box { to { border-color: transparent; background-color: transparent; } }
+/* 정지에서 점점 빨라지며 앞(왼쪽)으로 — 칸 밖까지 달려 나가고 마지막에만 흐려진다 */
+@keyframes rs-depart { 0% { transform: none; opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(-460px); opacity: 0; } }
 
 /* 새로 들어오는 목록·버튼은 위에서 4px 내려오며 나타난다 */
 .rs-appear { animation: rs-drop-in .3s var(--rs-ease) both; }
@@ -223,19 +256,19 @@ body:has(.rs-page) { background: #fff; }
    ============================================================ */
 .rs.flow {
   width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 8px;
-  display: grid; grid-template-columns: minmax(0, 1fr) 336px; column-gap: 48px; row-gap: 32px; align-items: start;
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px; column-gap: 48px; row-gap: 32px; align-items: start;
 }
-/* 업로드 → 진행 대표 전환(약 0.55초). 실제 상태는 이미 진행 화면이고, 업로드 화면 겉모습 복사본
-   (.rs-upload-exit)이 위에서 흐려지며 빠지는 동안(0.26초) 진행 화면이 아래에서 열린다.
-   영상 프레임은 96.5%에서 제 크기로, 큰 제목은 60ms, 단계 목록은 130ms 늦게 올라온다. 헤더는 그대로다 */
+/* 업로드 → 진행 전환(약 0.5초). 실제 상태는 누르는 즉시 진행 화면이고, 업로드 화면 겉모습 복사본
+   (.rs-upload-exit, 누를 수도 읽히지도 않음)에서 작은 자동차가 앞(왼쪽)으로 출발하고(0.34초) 글자·칸은
+   흐려지며 빠진다(0.26초). 그 아래에서 진행 화면이 겹쳐 열린다 — 영상 프레임은 96.5%에서 제 크기로,
+   큰 제목은 60ms, 단계 목록은 130ms 늦게. 헤더는 그대로다 */
 .web-main.rs-page { position: relative; }
 .rs-upload-exit {
-  position: absolute; top: 20px; left: 20px; right: 20px; z-index: 5; pointer-events: none; background: #fff;
-  animation: rs-upload-out .26s cubic-bezier(0.22, 1, 0.36, 1) both; /* .rs 밖이라 --rs-ease 대신 같은 값 */
+  position: absolute; top: 20px; left: 20px; right: 20px; z-index: 5; pointer-events: none;
 }
-.rs-upload-exit * { animation: none !important; transition: none !important; }
-.rs-upload-exit .rs-check path { stroke-dashoffset: 0; }
-@keyframes rs-upload-out { to { opacity: 0; transform: translateY(-16px); filter: blur(4px); } }
+/* 복사본은 새로 그려진 것이라 완료 연출(체크 그리기·배지·요약 등장)을 다시 하지 않는다 */
+.rs-upload-exit .rs-done-badge, .rs-upload-exit .rs-appear, .rs-upload-exit .rs-group { animation: none; }
+.rs-upload-exit .rs-scene, .rs-upload-exit .rs-scene-car { transition: none; }
 .rs.flow:focus, .rs.flow:focus-visible { outline: none; }
 .rs-enter .flow-head { animation: rs-enter-up .38s var(--rs-ease) .06s both; }
 .rs-enter .flow-thumb-box { animation: rs-frame-open .45s var(--rs-ease) both; }
@@ -292,18 +325,6 @@ body:has(.rs-page) { background: #fff; }
 .flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-fade-in .35s var(--rs-ease) both; }
 .flow-thumb-box { position: relative; }
 
-/* 장면 찾기 시작 — 프레임 바깥 테두리(영상 밖 2px)를 따라 회색·흰 빛이 한 바퀴(0.85초) 지나간다.
-   반복하지 않고, 단계가 끝나면 요소째 지운다. 탐지 위치·진행률을 뜻하지 않는다 */
-@property --rs-scan { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.flow-scan {
-  position: absolute; inset: -5px; border-radius: 20px; padding: 3px; pointer-events: none;
-  background: conic-gradient(from var(--rs-scan), transparent 0deg 250deg, rgba(134, 134, 139, .35) 300deg, rgba(58, 58, 60, .9) 342deg, #fff 354deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  filter: drop-shadow(0 0 6px rgba(0, 0, 0, .16));
-  animation: rs-scan .85s var(--rs-ease) both;
-}
-@keyframes rs-scan { from { --rs-scan: 0deg; opacity: 1; } 80% { opacity: 1; } to { --rs-scan: 360deg; opacity: 0; } }
 .flow-thumb-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; color: var(--rs-sub); }
 .flow-thumb-fallback svg { color: var(--rs-sub); }
 .flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font-size: 15px; color: var(--rs-sub); }
@@ -335,11 +356,11 @@ body:has(.rs-page) { background: #fff; }
 .rs.flow .timeline { display: flex; flex-direction: column; gap: 2px; padding: 0; }
 .rs.flow .timeline li {
   align-items: center; gap: 12px; min-height: 54px;
-  padding: 12px 0 12px 30px; border-left: 0; border-bottom: 0;
+  padding: 12px 0 12px 70px; border-left: 0; border-bottom: 0;
   font-size: 16px;
 }
 .rs.flow .timeline li::before {
-  left: 0; top: 50%; width: 16px; height: 16px; margin-top: -8px;
+  left: 40px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
   background: #fff; border: 1.5px solid var(--rs-line);
   animation: none;
 }
@@ -348,7 +369,7 @@ body:has(.rs-page) { background: #fff; }
 /* 완료 — 검정 원 + 흰 체크 */
 .rs.flow .timeline .tl-done::before { background: var(--rs-ink); border-color: var(--rs-ink); }
 .rs.flow .timeline .tl-done::after {
-  content: ''; position: absolute; left: 6px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
+  content: ''; position: absolute; left: 46px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
   border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
 }
 /* 진행 중 — 검정 원형 로딩 */
@@ -357,20 +378,16 @@ body:has(.rs-page) { background: #fff; }
   animation: rs-spin 1s linear infinite;
 }
 .rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
-/* 진행 중인 행만 아주 연한 회색 면 — 완료 단계 사이에서 바로 찾게 */
-.rs.flow .timeline .tl-running { margin: 0 -12px; padding: 12px 12px 12px 42px; background: var(--rs-fill); border-radius: 10px; border-bottom-color: transparent; }
-.rs.flow .timeline .tl-running::before { left: 12px; }
-/* 진행 중이 하나면 행 대신 면 하나(.flow-step-hl)가 옮겨 다닌다. 여럿이면 각 행이 칠해진다 */
+/* 진행 중인 행만 아주 연한 회색 면 — 경로 칸(왼쪽 40px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 칠한다 */
+.rs.flow .timeline .tl-running { background: linear-gradient(90deg, transparent 30px, var(--rs-fill) 30px); border-radius: 0 10px 10px 0; }
+/* 세로 경로 — 경로 칸(40px) 가운데 얇은 회색 선, 단계마다 정류장 점(색이 바뀌지 않아 완료를 뜻하지 않음).
+   위에서 본 같은 은색 자동차가 실제 진행 단계 옆에 서고, 단계가 바뀔 때만 이동한다(시간으로 움직이지 않음) */
 .flow-steps { position: relative; }
-.flow-steps .panel { position: relative; z-index: 1; }
-.flow-step-hl {
-  position: absolute; left: -12px; right: -12px; top: 0; z-index: 0;
-  border-radius: 10px; background: var(--rs-fill); opacity: 0; pointer-events: none;
-  transition: opacity .2s var(--rs-ease);
-}
-.flow-step-hl.on { opacity: 1; }
-.flow-step-hl.slide { transition: transform .28s var(--rs-ease), height .28s var(--rs-ease), opacity .2s var(--rs-ease); }
-.flow-steps[data-running="one"] .timeline .tl-running { background: transparent; }
+.flow-lane { position: absolute; left: 0; top: 0; width: 40px; height: 100%; pointer-events: none; z-index: 1; }
+.flow-lane-line { position: absolute; left: 19px; width: 2px; background: #e3e3e8; }
+.flow-stop { position: absolute; left: 17px; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #c7c7cc; }
+.flow-car { position: absolute; left: 5px; top: 0; width: 30px; height: 53px; transition: transform .45s var(--rs-ease); animation: rs-fade-in .3s var(--rs-ease) both; }
+.flow-car img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .16)); }
 .rs.flow .timeline .tl-running .kv-src { color: var(--rs-ink); }
 /* 대기 — 회색 원 */
 .rs.flow .timeline .tl-pending .tl-label { color: var(--rs-off); }
@@ -447,13 +464,14 @@ body:has(.rs-page) { background: #fff; }
     transition-property: background-color, border-color, color !important;
     transition-duration: .1s !important;
   }
-  .rs-drop.over .rs-drop-icon, .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
+  .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
   .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
-  .rs .flow-now-leaving, .rs-upload-exit, .flow-scan { display: none; }
-  .flow-step-hl, .flow-step-hl.slide { transition: none !important; }
+  .rs .flow-now-leaving, .rs-upload-exit { display: none; }
+  .flow-car { transition: none !important; }
   .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
   .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
   .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs-spin-arc { border-color: var(--rs-ink); border-right-color: var(--rs-fill); }
+  .rs-spin-sm { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs-vcard { display: none; }
   .rs-check path { stroke-dashoffset: 0; }
 }

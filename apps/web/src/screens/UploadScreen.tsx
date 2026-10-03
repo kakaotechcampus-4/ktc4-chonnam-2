@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
-import { ChevronDown, CircleAlert, FileVideo, Upload } from 'lucide-react'
+import { ChevronDown, CircleAlert } from 'lucide-react'
+import carSide from '../assets/car/car-side.webp'
+import carDoorOpen from '../assets/car/car-door-open.webp'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -15,30 +17,40 @@ const DROP_TEXT: Record<Exclude<UploadState, 'done'>, string> = {
 let introPlayed = false
 const INTRO_MS = 700
 
-// 업로드 영역 높이가 내용(안내 문구 ↔ 파일 목록)에 따라 바뀔 때 갑자기 튀지 않도록,
-// 바깥 높이를 안쪽 높이에 맞춰 주고 CSS transition으로 잇는다. 테두리 두께만큼 더한다.
-function useAutoHeight<T extends HTMLElement>(border: number) {
-  const inner = useRef<T>(null)
-  const [height, setHeight] = useState<number>()
-  useLayoutEffect(() => {
-    const el = inner.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => setHeight(el.offsetHeight + border * 2))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [border])
-  return { inner, height }
+// ── 자동차 장면 ────────────────────────────────────────────────
+// 원본 car-side.webp(1774×887, 앞이 왼쪽) 한 장의 위치·배율만 바꿔 문과 앞바퀴를 보인다 —
+// 정지 이미지의 이동·확대이지 3D 카메라 이동이 아니다. 문 열림은 열림 사진(car-door-open)을
+// 원본의 문 위치(원본 사진 1448px 기준 배율 .388·원점 466,274)에 겹친 임시 표현이고 실제 회전이
+// 아니다. 바퀴 회전 소재가 없어 업로드 중에는 작은 로딩을 함께 둔다.
+const SCENE_H = 320
+const VIEW = {
+  door: { x: 735, y: 440, span: 440 },
+  hover: { x: 735, y: 440, span: 415 },
+  wheel: { x: 340, y: 600, span: 400 },
+}
+type View = keyof typeof VIEW
+const OPEN_FIT = { x: 466, y: 274, s: (0.388 * 1448) / 900 }
+// 업로드 연출: 카드 탑승 → 문 닫힘 → 닫힌 상태 → 바퀴로 이동(이동 자체는 CSS 0.35초).
+// 실제 업로드는 접수 즉시 시작하고, 완료·실패가 먼저 오면 그 자리에서 최신 상태로 바뀐다.
+const BOARD_MS = 300
+const CLOSE_MS = 150
+const HOLD_MS = 50
+type Phase = 'boarding' | 'closing' | 'wheel' | null
+
+function sceneTransform(view: View, width: number): string {
+  const f = VIEW[view]
+  const s = SCENE_H / f.span
+  return `translate(${width / 2 - f.x * s}px, ${SCENE_H / 2 - f.y * s}px) scale(${s})`
 }
 
 // Figma 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
-// 네 프레임은 같은 틀이고 끌어다 놓는 영역만 상태에 따라 바뀐다.
-// 파일 고르기는 영역 안의 버튼 하나로만 키보드가 멈춘다 — 영역 클릭은 고르기 전(idle)과
-// 실패 때만 쓰는 마우스용 지름길이고, 파일 입력칸은 숨겨 두어 Tab이 두 번 서지 않는다.
-// 버튼은 모든 상태에서 같은 요소로 남는다(문구·모양만 바뀜) — 업로드가 끝나 영역이 바뀌어도
-// 키보드 포커스가 사라지지 않는다.
+// 업로드 칸 = 자동차 앞문. 커서나 파일이 칸에 들어오면 문이 열리고(접수 전만), 파일을 놓거나
+// 고르면 한 번 접수한다. 파일 고르기는 칸 안의 버튼 하나로만 키보드가 멈춘다 — 칸 클릭은 고르기
+// 전(idle)과 실패 때만 쓰는 마우스용 지름길이다. 버튼은 모든 상태에서 같은 요소로 남아(문구·모양만
+// 바뀜) 업로드가 끝나 칸이 바뀌어도 키보드 포커스가 사라지지 않는다.
 //
-// 업로드가 끝나면(done) 큰 영역이 한 줄 요약으로 줄어든다. 높이는 useAutoHeight로 잇는다.
-// 파일이 여럿이면 요약 제목을 눌러 목록을 펼친다.
+// 업로드가 끝나면(done) 그림이 접히고 한 줄 요약이 남는다. 요약 왼쪽의 작은 자동차는 「영상에서
+// 찾아보기」를 누르면(departing — DemoFlow의 겉모습 복사본에서만) 왼쪽으로 출발한다.
 export function UploadScreen(props: {
   state: UploadState
   files: File[]
@@ -48,29 +60,78 @@ export function UploadScreen(props: {
   onFiles: (files: File[]) => void
   onSituation: (text: string) => void
   onSearch: () => void
+  /** 분석 시작 직후 화면이 빠지는 동안 — 작은 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
+  departing?: boolean
 }): JSX.Element {
   const [over, setOver] = useState(false)
+  const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
   useEffect(() => {
     introPlayed = true
     const t = setTimeout(() => setIntro(false), INTRO_MS)
     return () => clearTimeout(t)
   }, [])
-  const box = useAutoHeight<HTMLDivElement>(1.5)
   const input = useRef<HTMLInputElement>(null)
   const choose = () => input.current?.click()
   const pick = (files: FileList | null) => {
     if (files?.length) props.onFiles([...files])
   }
   const { state } = props
+
+  // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 업로드가 새로 시작될 때마다(파일 교체 포함)
+  // 처음부터 다시 하고, 업로드 중이 아니면 바로 지운다.
+  const [phase, setPhase] = useState<Phase>(null)
+  useEffect(() => {
+    if (state !== 'uploading') return setPhase(null)
+    setPhase('boarding')
+    const a = setTimeout(() => setPhase('closing'), BOARD_MS)
+    const b = setTimeout(() => setPhase('wheel'), BOARD_MS + CLOSE_MS + HOLD_MS)
+    return () => {
+      clearTimeout(a)
+      clearTimeout(b)
+    }
+  }, [state, props.files])
+
+  // 장면의 폭(칸 너비)만 따라간다 — 높이는 설계값이라 칸이 접혀도 배율이 흔들리지 않는다.
+  const scene = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(720)
+  useLayoutEffect(() => {
+    const el = scene.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth || 720))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const open = phase === 'boarding' || (state === 'idle' && (over || pointerIn))
+  const view: View = phase === 'wheel' ? 'wheel' : state === 'idle' && open ? 'hover' : 'door'
+  // 실패는 이동을 멈춘 그 자리에서 — 직전 값을 그대로 둔다.
+  const transform = sceneTransform(view, width)
+  const shown = useRef(transform)
+  if (state !== 'fail') shown.current = transform
+  // 이동 중에 실패하면 그 자리에서 멈춘다 — 지금 그려진 위치를 읽어 전환 없이 고정한다.
+  const carImg = useRef<HTMLImageElement>(null)
+  useLayoutEffect(() => {
+    const el = carImg.current
+    if (state !== 'fail' || !el) return
+    const now = getComputedStyle(el).transform
+    el.style.transition = 'none'
+    if (now && now !== 'none') el.style.transform = now
+    return () => {
+      el.style.transition = ''
+    }
+  }, [state])
+  // 바퀴로 이동하는 순간부터 완료·실패까지 배경 차를 숨긴다(두 대처럼 보이지 않게).
+  const bgOff = phase === 'wheel' || state === 'done' || state === 'fail'
+
   const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
   const canClickArea = state === 'idle' || state === 'fail'
+  const names = props.files.map((f) => f.name).join(', ')
   const fileList = (
     <ul className="rs-files">
       {props.files.map((f, i) => (
         <li key={`${f.name}-${i}`}>
-          <FileVideo size={16} strokeWidth={1.8} aria-hidden />
           <span>{f.name}</span>
         </li>
       ))}
@@ -78,7 +139,9 @@ export function UploadScreen(props: {
   )
 
   return (
-    <div className={`rs upload is-${state}${intro ? ' rs-intro' : ''}`}>
+    <div
+      className={`rs upload is-${state}${intro ? ' rs-intro' : ''}${props.departing ? ' is-departing' : ''}${bgOff ? ' bg-off' : ''}`}
+    >
       <div className="rs-group" style={{ '--i': 0 } as CSSProperties}>
         <h1 className="rs-title">블랙박스 영상을 올려주세요</h1>
         <p className="rs-lede">
@@ -88,11 +151,14 @@ export function UploadScreen(props: {
         </p>
       </div>
 
-      <div className="rs-group" style={{ '--i': 1 } as CSSProperties}>
+      <div className="rs-group g-drop" style={{ '--i': 1 } as CSSProperties}>
+        {/* 같은 원본을 은은하게 깐 자동차 전체 — 업로드 칸 가운데, 칸 높이 안에서 */}
+        <img className="rs-bgcar" src={carSide} alt="" aria-hidden />
         <div
-          className={`rs-drop is-${state}${over ? ' over' : ''}`}
-          style={{ height: box.height }}
+          className={`rs-drop is-${state}${over ? ' over' : ''}${open ? ' is-open' : ''}`}
           onClick={canClickArea ? choose : undefined}
+          onPointerEnter={() => setPointerIn(true)}
+          onPointerLeave={() => setPointerIn(false)}
           onDragOver={(e) => {
             e.preventDefault()
             setOver(true)
@@ -106,72 +172,90 @@ export function UploadScreen(props: {
             pick(e.dataTransfer.files)
           }}
         >
-          <div className="rs-drop-in" ref={box.inner}>
+          <div className="rs-scene" ref={scene} aria-hidden>
+            <img
+              ref={carImg}
+              className="rs-scene-car"
+              src={carSide}
+              alt=""
+              style={{ transform: shown.current }}
+            />
+            <img
+              className="rs-scene-open"
+              src={carDoorOpen}
+              alt=""
+              style={{ transform: `${transform} translate(${OPEN_FIT.x}px, ${OPEN_FIT.y}px) scale(${OPEN_FIT.s})` }}
+            />
+            {phase === 'boarding' && (
+              // 영상 카드 — 열린 입구(실내) 쪽으로 작아지며 들어간다. 최대 3장, 개수는 문구로 정확히.
+              <div className="rs-cards" key={names}>
+                {props.files.slice(0, 3).map((f, i) => (
+                  <span
+                    key={`${f.name}-${i}`}
+                    className="rs-vcard"
+                    style={{ '--d': `${i * 30}ms`, '--x': `${i * 20}px` } as CSSProperties}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rs-cap">
+            {state === 'done' && <span className="rs-mini-car" aria-hidden />}
             {state === 'done' ? (
-              <div className="rs-drop-body rs-done rs-appear" key="done">
-                <span className="rs-drop-icon" aria-hidden>
+              <div className="rs-done-text">
+                <span className="rs-done-badge" aria-hidden>
                   {/* 업로드 성공 — 체크 선이 한 번 그려진다(pathLength=1이라 CSS로 0→1을 그린다) */}
                   <svg
                     className="rs-check"
-                    width="20"
-                    height="20"
+                    width="16"
+                    height="16"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth={2.2}
+                    strokeWidth={2.4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
                     <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} />
                   </svg>
                 </span>
-                <div className="rs-done-text">
-                  {props.files.length > 1 ? (
-                    <details className="rs-done-files">
-                      <summary>
-                        <b className="rs-drop-title" aria-live="polite">
-                          {title}
-                        </b>
-                        <ChevronDown size={16} strokeWidth={1.8} aria-hidden />
-                      </summary>
-                      {fileList}
-                    </details>
-                  ) : (
-                    <>
+                {props.files.length > 1 ? (
+                  <details className="rs-done-files">
+                    <summary>
                       <b className="rs-drop-title" aria-live="polite">
                         {title}
                       </b>
-                      <span className="rs-done-name">{props.files[0]?.name}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="rs-drop-body" key="big">
-                {state === 'uploading' ? (
-                  // 나타나기(rs-pop)와 회전(rs-spin)은 둘 다 transform이라 한 요소에 두면 회전이 덮인다 — 나눈다.
-                  <span className="rs-spin" aria-hidden>
-                    <span className="rs-spin-arc" />
-                  </span>
+                      <ChevronDown size={16} strokeWidth={1.8} aria-hidden />
+                    </summary>
+                    {fileList}
+                  </details>
                 ) : (
-                  <span className="rs-drop-icon" aria-hidden key={`icon-${state}`}>
-                    {state === 'fail' ? (
-                      <CircleAlert size={24} strokeWidth={1.8} />
-                    ) : (
-                      <Upload size={24} strokeWidth={1.8} />
-                    )}
+                  <span className="rs-done-one">
+                    <b className="rs-drop-title" aria-live="polite">
+                      {title}
+                    </b>
+                    <span className="rs-done-name">{props.files[0]?.name}</span>
                   </span>
                 )}
+              </div>
+            ) : (
+              <div className="rs-cap-text">
                 <b className="rs-drop-title" aria-live="polite">
+                  {state === 'uploading' && <span className="rs-spin-sm" aria-hidden />}
+                  {state === 'fail' && <CircleAlert size={18} strokeWidth={1.8} aria-hidden />}
                   {title}
                 </b>
                 {state === 'idle' && (
                   <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>
                 )}
-                {state === 'fail' && (
-                  <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>
+                {state === 'uploading' && (
+                  // 칸 높이를 지키려고 업로드 중 파일 이름은 한 줄. 전체 이름은 완료 요약에 남는다.
+                  <span className="rs-drop-note one" title={names}>
+                    {names}
+                  </span>
                 )}
-                {props.files.length > 0 && <div className="rs-appear">{fileList}</div>}
+                {state === 'fail' && <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
               </div>
             )}
             <button
@@ -185,19 +269,19 @@ export function UploadScreen(props: {
             >
               {state === 'idle' ? '파일 선택' : '다시 선택'}
             </button>
-            <input
-              ref={input}
-              type="file"
-              accept="video/*"
-              multiple
-              hidden
-              onChange={(e) => {
-                pick(e.target.files)
-                // 같은 파일을 다시 골라도 change가 나도록 비운다.
-                e.target.value = ''
-              }}
-            />
           </div>
+          <input
+            ref={input}
+            type="file"
+            accept="video/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              pick(e.target.files)
+              // 같은 파일을 다시 골라도 change가 나도록 비운다.
+              e.target.value = ''
+            }}
+          />
         </div>
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">

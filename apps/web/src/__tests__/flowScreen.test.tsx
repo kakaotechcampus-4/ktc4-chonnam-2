@@ -107,29 +107,29 @@ it('안내 자리는 안내가 없을 때도 남아 있어 나타나도 아래�
   expect(r.container.querySelector('.flow-partial')).toBeNull()
 })
 
-it('진행 중 강조 면은 진행 중이 하나일 때만, 여럿이면 행마다, 없으면 아무 행도 강조하지 않는다', () => {
+it('경로 위 자동차는 진행 중 가장 앞 단계 옆, 없으면 마지막 위치, 재시도면 앞 단계로 돌아간다', () => {
+  const at = (r: ReturnType<typeof show>) => r.container.querySelector('.flow-car')?.getAttribute('data-step')
+  const again = (r: ReturnType<typeof show>, v: CaseView) =>
+    r.rerender(<FlowScreen view={v} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />)
   const r = show(view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING' }))
-  const steps = () => r.container.querySelector('.flow-steps')!
-  expect(steps().getAttribute('data-running')).toBe('one')
-  expect(r.container.querySelector('.flow-step-hl.on')).not.toBeNull()
-
-  r.rerender(
-    <FlowScreen
-      view={view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING', overlay_time_read: 'RUNNING' })}
-      files={[file('a.mp4')]}
-      situation=""
-      startedAt={Date.now()}
-    />,
-  )
-  expect(steps().getAttribute('data-running')).toBe('many')
-  expect(r.container.querySelector('.flow-step-hl.on')).toBeNull()
+  expect(at(r)).toBe('3')
+  // 두 단계 동시 진행 — 앞 단계 옆, 두 행 모두 진행 중
+  again(r, view({ ...DONE_TO_REVIEW, plate_read: 'RUNNING', overlay_time_read: 'RUNNING' }))
+  expect(at(r)).toBe('3')
   expect(r.container.querySelectorAll('.tl-running')).toHaveLength(2)
+  // 진행 중이 잠깐 없음 — 마지막 위치에서 대기
+  again(r, view({ ...DONE_TO_REVIEW, plate_read: 'DONE', overlay_time_read: 'DONE' }))
+  expect(at(r)).toBe('3')
+  // 재시도로 장면 찾기가 다시 진행 — 그 단계로 돌아간다
+  again(r, view({ file_intake: 'DONE', coarse_search: 'RUNNING' }))
+  expect(at(r)).toBe('1')
+})
 
-  r.rerender(
-    <FlowScreen view={view({ ...DONE_TO_REVIEW, plate_read: 'DONE' })} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />,
-  )
-  expect(steps().getAttribute('data-running')).toBe('none')
-  expect(r.container.querySelector('.flow-step-hl.on')).toBeNull()
+it('처음 열 때 진행 중이 없으면 이미 지난 마지막 단계 옆에서 시작하고, 빈 단계 목록이면 자동차가 없다', () => {
+  expect(show(view({ ...DONE_TO_REVIEW })).container.querySelector('.flow-car')!.getAttribute('data-step')).toBe('2')
+  cleanup()
+  const empty = render(<FlowScreen view={{ ...BASE, progress: [] }} files={[file('a.mp4')]} situation="" startedAt={Date.now()} />)
+  expect(empty.container.querySelector('.flow-car')).toBeNull()
 })
 
 it('제목이 바뀌면 이전 제목이 잠깐 겹쳐 남고, 화면에 읽히는 제목은 최신 것 하나다', () => {

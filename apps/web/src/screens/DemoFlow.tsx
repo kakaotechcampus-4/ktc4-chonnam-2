@@ -18,9 +18,9 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 // 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
-// 「영상에서 찾아보기」 뒤 업로드 화면이 흐려지며 빠지는 시간. 실제 상태는 누르는 즉시 진행으로
-// 넘어가고, 이 시간 동안 겉모습 복사본만 위에 겹쳐 둔다.
-const UPLOAD_EXIT_MS = 260
+// 「영상에서 찾아보기」 뒤 작은 자동차가 출발하고 업로드 화면이 빠지는 시간. 실제 상태는 누르는 즉시
+// 진행으로 넘어가고, 이 시간 동안 겉모습 복사본만 위에 겹쳐 둔다(진행 화면 진입과 겹친다).
+const UPLOAD_EXIT_MS = 380
 const noop = () => {}
 
 function snapshot(scenarioId: string, index: number): CaseView {
@@ -328,6 +328,7 @@ export function DemoFlow(): JSX.Element {
               onFiles={noop}
               onSituation={noop}
               onSearch={noop}
+              departing
             />
           </div>
         )}
