@@ -1,6 +1,6 @@
 # Research Result — Deployment / Observability / Operations
 
-**Status:** Evidence — 외부 기술 조사 결과 · **Owner 검토 전**\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/04-deployment-observability-operations.md`](./prompts/04-deployment-observability-operations.md)\
@@ -8,6 +8,30 @@
 **조사 기준일:** 2026-10-03
 
 > 이 문서는 Decision 근거이며 결정이 아니다. 내용은 Owner 검토를 거쳐 Spec · Contract · ADR로 옮겨질 때만 효력이 있다. 외부 자료의 숫자는 대신고 baseline이 아니다.
+
+## Review notes (2026-10-03)
+
+> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+
+**판정:** Part A(RD-12)는 아래 High 1건을 반영한 뒤, Part B(RD-13a · 11a)는 경미한 보완 후 Decision 근거로 쓸 수 있다. 출처 대조 36건 — 일치 31 · 부분 일치 4 · **반대 1**. transport · rotation · retention을 세 문제로 나눈 구조는 prompt대로다. 최종 선택 문장 · alert threshold · retention 값 · 범위 밖 topology는 없다.
+
+### 정정 · 보완
+
+| Sev | 본문 위치 | 정정 | 근거 |
+| --- | --- | --- | --- |
+| High | §1 · §3 · §5 MySQL downgrade | **공식 문서와 반대다.** 같은 LTS 안(8.4.y → 8.4.x)의 downgrade는 in-place · logical dump/load · Clone · replication 모두 지원된다. 8.4 → 8.3 / 8.0은 in-place가 안 되고 logical dump/load 또는 replication으로만, 새 기능을 쓰지 않은 rollback 목적에 한해 지원된다. §5 failure mode 「MySQL image downgrade attempted」는 **LTS series 경계를 넘는 image 변경**으로 좁혀 읽는다. RD-12e · 12f · 12g 판단에 직접 걸린다 ★ | [MySQL 8.4 downgrading](https://dev.mysql.com/doc/refman/8.4/en/downgrading.html) |
+| Med | §4 A-2 waiter | `aws ssm wait command-executed`는 5초 간격 20회(약 100초)까지만 확인하고 exit 255로 끝난다. 배포가 그보다 길면 명령이 실행 중인데도 Actions가 실패로 판정할 수 있다 | [ssm wait command-executed](https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html) |
+| Med | §1 · §3 BuildKit cache | 「prune/GC 대상」만으로는 부족하다. docker driver의 GC는 **기본 활성**이고 기본 policy가 있다. 20GB 예시는 Docker Desktop 기준이고 Linux Engine 기본 한도는 확인하지 못했다 → `docker buildx du`로 실측한다. image 누적은 builder GC 대상이 아니다 | [build cache GC](https://docs.docker.com/build/cache/garbage-collection/) |
+| Med | §1 · §3 · §9 T3 credit | 누락: T3의 launch **기본값은 Unlimited**다(계정 default로 변경 가능). 따라서 기본값에서 host build의 영향은 throttling보다 surplus 과금 쪽이다. 실제 instance 설정은 여전히 확인 대상이다 | [T3 unlimited mode](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html) |
+| Med | §4 B-8 IAM | 「`CloudWatchAgentServerPolicy`가 instance role에 이미 있다」는 단정이다. repo 사실은 「CloudWatch Agent server 권한이 준비돼 있다」는 관측뿐이고 SCP · guardrail이 최종 상한이다 → 실제 policy 이름과 effective permission은 확인 대상 | [`aws-environment.md`](../official-inputs/aws-environment.md) |
+| Med | §3 · §4 A-7 EBS snapshot pre-script | AWS가 주는 MySQL용 flush/freeze script는 **사용자가 고쳐 쓰는 sample**이다. sample은 host의 `mysqld.service`(systemd)를 확인하고 inactive면 FTWRL을 건너뛴다 → container MySQL에 그대로 쓰면 fs-freeze만 되고 DB lock은 걸리지 않는다(failure mode 추가) | [automate app-consistent backups](https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html) |
+| Med | §4 A-7 · A-8 · §6 RD-12g · §8 snapshot restore | prompt에 없던 제약: 카테캠 정책상 **「추가 볼륨」이 불가**다. snapshot 복원은 새 volume 생성 · attach 또는 root volume 교체를 요구하므로, 이 경로가 허용되는지가 RD-12g의 **External Input**이다 ★ | [`aws-environment.md`](../official-inputs/aws-environment.md) 권한 표 |
+| Med | §4 B-2 · §5 CloudWatch Agent | `file_path` wildcard는 **수정 시각 기준 가장 최근 파일 하나만** 수집한다. `/var/lib/docker/containers/*/*-json.log` 같은 glob은 container 하나의 log만 보낼 수 있고, recreate 때마다 container ID 경로가 바뀐다 | [CloudWatch Agent config](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html) |
+| Med | Q-A2.7 output 노출 | 입력 쪽 plaintext 경고만 다뤘다. Run Command output을 CloudWatch로 보내고 group을 지정하지 않으면 `/aws/ssm/<문서명>` group이 **자동 생성**되고, retention을 두지 않으면 영구 보관된다. stdout/stderr에 env · config가 섞이는 경로와 이 group의 retention 소유를 함께 본다 | Run Command CloudWatch output 설정 문서 |
+| Med | §4 A-5 known-good tag | ECR tag immutability는 모든 tag에 적용되므로 `known-good` 같은 moving tag와 충돌한다. 예외는 `IMMUTABLE_WITH_EXCLUSION` filter로만 둘 수 있다 → RD-12c | [ECR tag mutability](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html) |
+| Low | 여러 곳 | 「취급되어야 한다」 · 「구성할 필요가 있다」 · 「편이 근거에 맞다」는 규범형 → 조건형으로 읽음 · §1의 한 bullet에 여러 사실과 출처 하나(OIDC · T3는 해당 URL에 없음, status 목록은 monitor-commands 페이지) · 기존 Log Group에 `retention_in_days`를 설정하면 그보다 오래된 log가 즉시 삭제됨 · host 재부팅 시 restart policy 동작은 `docker.service` boot 활성화가 전제 · §7 External Input 누락: deploy role의 ECR push · `ssm:SendCommand` effective 권한, EC2 role의 ECR pull 권한 · 2026-07-15 이후 생성된 repo는 GitHub OIDC `sub` claim에 immutable owner/repo ID가 들어감(OIDC 검증 spike 관찰값) | 각 공식 문서 |
+
+---
 
 > 범위: EC2 1대 + Docker Compose (`api` · `worker` · `mysql`) baseline 내부의 배포·rollback·backup·logging 선택지 조사.\
 > 아래 내용은 **Decision 추천이 아니라 선택지를 현실화하기 위한 근거**다. Kubernetes/ECS/RDS/ALB/추가 EC2 전환은 다루지 않았다.

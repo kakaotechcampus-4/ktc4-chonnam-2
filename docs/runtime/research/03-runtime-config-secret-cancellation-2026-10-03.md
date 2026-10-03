@@ -1,6 +1,6 @@
 # Research Result — Runtime Config / Secret / Cancellation
 
-**Status:** Evidence — 외부 기술 조사 결과 · **Owner 검토 전**\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/03-runtime-config-secret-cancellation.md`](./prompts/03-runtime-config-secret-cancellation.md)\
@@ -8,6 +8,45 @@
 **조사 기준일:** 2026-10-03
 
 > 이 문서는 Decision 근거이며 결정이 아니다. 내용은 Owner 검토를 거쳐 Spec · Contract · ADR로 옮겨질 때만 효력이 있다. 외부 자료의 숫자는 대신고 baseline이 아니다.
+
+## Review notes (2026-10-03)
+
+> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+
+**판정:** Part A(RD-07a · 07c)는 경미한 보완 후, Part B(RD-19b · 19c)는 아래 High 2건을 반영한 뒤 Decision 근거로 쓸 수 있다. 출처 대조 약 40건 — 부분 일치 4 · 인용 출처에 없음 1 · **반대 1**(SDK 최신 버전, 영향 적음), 나머지 일치. Temporal 인용 URL은 실재하고 인용 문구도 원문과 같다. 최종 선택 문장 · 외부 숫자의 baseline화는 없다.
+
+### 정정 · 보완
+
+| Sev | 본문 위치 | 정정 | 근거 |
+| --- | --- | --- | --- |
+| High | §4 Part B 「UsageRecord 시점」 | 「호출 row를 먼저 만들고 outcome을 **갱신**」하는 일반 원장 패턴은 **UsageRecord row 자체에는 적용할 수 없다** — row는 append-only다(§8-1). UsageRecord 밖의 별도 in-flight 추적 구조라면 RD-01e · 01f에서 열려 있는 선택지다. 사용량 미확정은 `token_usage=null`(§8-3)로 일부 표현할 수 있다 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §8-1 · §8-3 |
+| High | §1 · §3 · §9 Part B SDK / transport 전제 | 본문은 openai v3.x + HTTPX2를 전제로 쓰고 HTTPX 0.28은 비교 근거로만 둔다. **대신고 현재 pin은 openai 2.54.0 + httpx 0.28.1**이다(`pyproject.toml`의 `eval-gemini` extra는 `openai>=1.40,<3.0`). 중단 semantics는 HTTPX 0.28 쪽이 적용 대상이고, §8 spike도 이 pin 기준으로 한다. 덧붙여 「최신 release v3.20.0」은 틀렸다 — 3.24.0(2026-10-02)까지 나와 있다 ★ | `uv.lock` · PyPI openai |
+| Med | §6 RD-19b `CANCELLED` 「의미」 후보 | `CANCELLED`의 의미는 Contract §6에서 닫혔다: 「사용자가 진행 중인 분석을 중단해 **종료됨**」, status는 닫힌 enum 6값이다(Already fixed). 열린 것은 의미가 아니라 **기록 시점**이다. 「요청 수락」을 표시하려면 status 밖의 별도 표식이 필요하다는 제약으로 읽는다 ★ | [`contract-job-execution.md`](../../architecture/contracts/contract-job-execution.md) §6 |
+| Med | §1 · §6 「timeout과 cancellation」 | repo 사실: 두 timeout은 이미 다른 층이다. 제품 timeout은 case가 Job을 기다리는 시간(`timeout-fallback.md`)이고, ffmpeg/ffprobe의 `subprocess.run(timeout=…)`은 recording 내부 안전 한도로 `TEMPORARY_FAILURE`로 변환된다. 「분리될 필요가 있다」는 지시형이 아니라 이 사실로 읽는다 | [`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md) · `recording/materialization.py` · `frames.py` · `probe.py` |
+| Med | Part A 노출 경로(Q-A1.5 · Q-A2) | 누락: **child process env 상속** — 현재 `subprocess.run`은 `env=`를 넘기지 않으므로 secret을 process env로 주입하면 ffmpeg까지 API key를 물려받는다. crash dump · error report, host shell history, process listing(argv)도 빠졌다. IMDS hop limit을 2로 열면 그 host의 어느 container든 instance role 자격 증명을 얻을 수 있다는 의미도 implication으로 추가한다 | `recording/materialization.py` |
+| Med | §6 RQ 사례 | RQ는 「요청 / 실제 정지」를 분리하는 사례가 아니다. 상태(queued / running)별로 기능이 나뉘고, `send_stop_job_command`는 실행 중 job을 **즉시** 멈추며 결과는 `stopped`(FailedJobRegistry)다 → Q-B1.4(process 격리)의 근거로 읽는다 | [RQ jobs](https://python-rq.org/docs/jobs/) · [RQ workers](https://python-rq.org/docs/workers/) |
+| Med | §1 「cooperative cancellation은 checkpoint 사이에서만 반응」 | 출처 없는 Verified fact → Interpretation | — |
+| Med | §9-8 SIGTERM cleanup · Q-B1.5 PID 1 | 미결로 남겼으나 공식 문서로 닫힌다 → 아래 「보완 확인」 | — |
+| Med | Q-B4.2 취소 · 완료 경합 | 다루지 않았다 → 아래 「보완 확인」 | — |
+| Low | 여러 곳 | Compose `secrets` file source의 `uid`/`gid`/`mode`는 「제약」이 아니라 원문대로 **silently ignored**(host 파일 권한을 따름) · ffmpeg stdin `q`는 현재 코드가 `-nostdin` + `stdin=DEVNULL`이라 막힌 경로 · ffmpeg는 signal 3회 초과 시 hard exit, signal 종료 시 exit 255, SIGQUIT · SIGXCPU도 같은 handler · OpenAI client는 `_idempotency_header=None`이라 idempotency header를 보내지 않음 · 「protocol 수준 보장 없음」은 Interpretation · 취소 요청이 「DB flag」로 온다는 전제는 RD-19a 범위라 경로를 특정하지 않고 읽음 · AnyIO 기본 `abandon_on_cancel=False`면 thread가 끝날 때까지 돌아오지 않음 · GitHub `add-mask` 「출력 전에 등록」은 인용 페이지에 없음 · §10 출처 누락(compose config, Parameter Store advanced tier, Run Command CloudWatch output) | 각 공식 문서 · source |
+
+### 보완 확인 (검토 단계 추가)
+
+- **PID 1과 SIGTERM (Q-B1.5 · §9-8)** ★
+  - Verified fact — PID namespace의 init(PID 1)에는 **handler를 설치한 signal만** 전달된다. ancestor namespace에서 보낸 SIGKILL · SIGSTOP만 예외로 강제 전달된다. ([pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html))
+  - Verified fact — Python이 시작 시 설치하는 handler는 SIGPIPE(무시)와 SIGINT(→ `KeyboardInterrupt`)뿐이다. handler는 main thread에서만 실행되고 설정할 수 있다. ([signal (3.12)](https://docs.python.org/3.12/library/signal.html))
+  - Interpretation — Python이 container의 PID 1이고 SIGTERM handler가 없으면 `docker stop`의 SIGTERM은 전달되지 않고 grace period 뒤 SIGKILL로 끝난다. `init: true` 등으로 init이 PID 1이면 Python은 SIGTERM의 OS 기본 동작(종료)을 받는다. **어느 쪽이든 handler가 없으면 `finally` · `TemporaryDirectory` 정리는 실행되지 않는다.**
+- **취소 · 완료 경합 (Q-B4.2)** ★
+  - Verified fact — Celery: revoke를 받으면 아직 시작하지 않은 task는 건너뛰지만, 실행 중 task는 `terminate` 없이는 멈추지 않는다. 그런데 result backend는 **즉시 `REVOKED`로 갱신**된다 → 기록 상태와 실제 실행이 어긋날 수 있는, 「요청 시점 기록」 사례다. ([Celery workers guide](https://docs.celeryq.dev/en/stable/userguide/workers.html))
+  - Verified fact — Temporal: Activity는 heartbeat를 해야 취소를 받는다. ([Activity execution](https://docs.temporal.io/activity-execution))
+  - 두 문서 모두 **취소 요청 뒤 성공으로 끝난 경우의 최종 상태를 명시하지 않는다.** → 경합 시 우선순위는 외부 사례로 정할 수 없고 RD-19b 내부 합의 대상이다.
+
+### Decision 입력으로 옮길 때
+
+- §7 RD-19c 「retry attempt마다 row인가, logical call마다 row인가」는 먼저 UsageRecord Contract §8-14(「실제 capability/provider invocation이 시작된 호출에만 row」)와 대조한다 — 이미 좁혀져 있을 수 있다.
+- §8 Part A 2번(loader 도달 확인)에는 선택지 하나가 더 있다: `common/env.py`의 `load_env_file(path)`는 경로를 받으므로, `/run/secrets` 아래 KEY=VALUE 파일은 현재 loader로도 읽을 수 있다(선택이 아니라 사실).
+
+---
 
 > 이 문서는 RD-07a · RD-07c · RD-19b · RD-19c의 선택지를 현실화하기 위한 외부 기술 조사 결과이다.\
 > 최종 config source, secret 전달 경로, cancellation 구현 방식은 선택하지 않는다.

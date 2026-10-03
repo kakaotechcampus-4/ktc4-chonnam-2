@@ -1,6 +1,6 @@
 # Research Result — API ↔ Worker Media Persistence / Upload
 
-**Status:** Evidence — 외부 기술 조사 결과 · **Owner 검토 전**\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/02-api-worker-media-persistence-upload.md`](./prompts/02-api-worker-media-persistence-upload.md)\
@@ -8,6 +8,32 @@
 **조사 기준일:** 2026-10-03
 
 > 이 문서는 Decision 근거이며 결정이 아니다. 내용은 Owner 검토를 거쳐 Spec · Contract · ADR로 옮겨질 때만 효력이 있다. 외부 자료의 숫자는 대신고 baseline이 아니다.
+
+## Review notes (2026-10-03)
+
+> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+
+**판정:** 아래 정정을 반영하면 RD-17a · 17b · 05e(인접 17c · 17d)의 Decision 근거로 쓸 수 있다. 출처 대조 24건 — 일치 20 · 부분 일치 3 · 인용 출처에 없음 1 · **반대 0**. 명시된 library 버전 · 날짜(FastAPI 0.142.2 · Starlette 1.7.0 · python-multipart 0.0.32 · Uvicorn 0.54.0)는 PyPI와 일치한다. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
+
+### 정정 · 보완
+
+| Sev | 본문 위치 | 정정 | 근거 |
+| --- | --- | --- | --- |
+| Med | §1 · §3 · §4.3 · §6 RD-17a `rename()` | 조건은 「같은 mounted filesystem」이 아니라 **같은 mount point**다. man page는 같은 filesystem이 두 곳에 mount돼 있어도 mount point가 다르면 `EXDEV`라고 쓴다. Docker에서는 bind mount · volume이 각각 별도 mount이므로, 같은 root EBS 위라도 staging과 final이 서로 다른 volume이면 rename이 실패한다. §6 「원본과 파생 asset을 같은 volume에 둘지 나눌지」에 직접 걸린다 | [rename(2)](https://man7.org/linux/man-pages/man2/rename.2.html) `EXDEV` |
+| Med | §1 · §3 · §4.7 body limit | `max_body_size` · `RequestBodyLimitMiddleware`는 Starlette **1.6.0 이상**에만 있다. FastAPI 0.142.2의 의존성 하한은 `starlette>=0.46.0`이라 FastAPI만으로는 보장되지 않는다. 현재 repo에는 fastapi · starlette pin이 없다 | FastAPI 0.142.2 `pyproject.toml` · Starlette 1.6.0 tag |
+| Med | §3 · §4.5 · §4.8 Pattern 1 | 누락: FastAPI는 `await request.form()` 직후 `UploadFile`을 request 종료 시 close하도록 등록한다. 따라서 202 응답 뒤에는 temp spool이 사라진다 — Worker가 보려면 **응답 전에** managed 위치로 옮겨야 한다. RD-05e에 직결된다 | FastAPI 0.142.2 `fastapi/routing.py`(`file_stack.push_async_callback`) |
+| Med | §3 · §4.5 container `/tmp` | 누락(Interpretation): 기본 container `/tmp`는 container writable layer라 root EBS의 Docker 저장 영역에 쌓인다. Compose에서 `/tmp`를 `tmpfs`로 잡으면 spool이 **RAM**을 쓴다. §8 Spike E 조건에 「`/tmp`가 tmpfs인지」를 넣는다 | Compose `tmpfs` 옵션 |
+| Med | §3 · §8 Spike E · F temp 파일 | Python `TemporaryFile`은 Linux에서 `O_TMPFILE`이거나 생성 직후 unlink된다. 따라서 (a) hard kill 뒤에도 Starlette spool 잔여 파일은 남지 않는다(Part B Q5의 답), (b) 사용 중 용량은 `du` · `ls`로 보이지 않고 `df` · `lsof +L1` · `/proc/<pid>/fd`로 본다 | [tempfile (3.12)](https://docs.python.org/3.12/library/tempfile.html) |
+| Med | §6 RD-17a | prompt에 없던 기존 guardrail: Ops §11 「50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다」. shared volume을 원본 보존소로 보는 후보는 이 원칙과 대조해야 한다 | [`ops-spec.md`](../ops-spec.md) §11 |
+| Low | 여러 곳 | §1 「독립 지표로 관찰해야 한다」 · 「protocol이 필요하다」는 단정형 → 조건형으로 읽는다. §1 body limit bullet 후반의 「별도 limit이 필요하다」는 implication · §4.3 「partial file을 발견하는 시간을 없앤다」는 Interpretation · durability(fsync) 주장의 출처는 rename(2)가 아니라 fsync(2) · Content-Length early rejection은 문서가 아니라 source(`middleware/body_limit.py`)에만 있고 app이 처음 `receive()`할 때 일어남 · tus 「maximum size」는 extension이 아니라 `Tus-Max-Size` header · §6 「API container가 쓴 file을 Worker에 mount하지 않았다」는 결함이 아니라 미정(compose 파일 · upload endpoint가 아직 없음) · Nginx `proxy_request_buffering` **기본값 on**, chunked 요청은 설정과 무관하게 buffering될 수 있음 · Uvicorn `--limit-concurrency`(초과 시 503)와 `Expect: 100-continue` 동작 누락 · orphan · stuck upload 정리는 Ops §10의 External Source / Managed Source Copy 구분과 연결 · 인용 링크 일부가 `blob/main` · Python 3.16 문서 → tag 고정 링크로 읽을 것 | 각 공식 문서 · source |
+
+### Daesingo 사실 보강 (repo)
+
+- `recording/materialization.py`는 ffprobe · ffmpeg를 `-protocol_whitelist file`로 실행한다 → Object Storage 후보에서는 처리 전 local materialization이 「가능성」이 아니라 현 구조상 필수다.
+- 같은 파일의 `_snapshot` 비교는 **변환 도중** 원본 변경은 감지하지만, 시작 시점에 이미 partial인 파일은 감지하지 못한다 → publish 패턴(§4.3)의 필요성과 연결된다.
+- cross-container `flock`은 공식 문서 근거가 없다 — 본문 §9가 Interpretation으로 둔 분류가 맞다. §8 Spike B에 「서로 다른 두 volume 사이 rename(EXDEV)」 케이스를 추가한다.
+
+---
 
 **버전 기준:** FastAPI **0.142.2** (2026-09-30), Starlette **1.7.0** (2026-09-23), `python-multipart` **0.0.32** (2026-06-04), Uvicorn **0.54.0** (2026-09-25), Python **3.12** 문서 계열을 기준으로 확인했다. ([pypi.org](https://pypi.org/project/fastapi/0.142.2/))
 

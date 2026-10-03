@@ -1,6 +1,6 @@
 # Research Result — MySQL Runtime Persistence
 
-**Status:** Evidence — 외부 기술 조사 결과 · **Owner 검토 전**\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/01-mysql-runtime-persistence.md`](./prompts/01-mysql-runtime-persistence.md)\
@@ -8,6 +8,40 @@
 **조사 기준일:** 2026-10-03
 
 > 이 문서는 Decision 근거이며 결정이 아니다. 내용은 Owner 검토를 거쳐 Spec · Contract · ADR로 옮겨질 때만 효력이 있다. 외부 자료의 숫자는 대신고 baseline이 아니다.
+
+## Review notes (2026-10-03)
+
+> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+
+**판정:** 아래 정정을 반영하면 RD-01b · 01c · 01d · 01g · 01j의 Decision 근거로 쓸 수 있다. 출처 대조 31건 — 일치 24 · 부분 일치 5 · 인용 출처에 없음 1 · 확인 불가 1 · **반대 0**. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
+
+### 정정 · 보완
+
+| Sev | 본문 위치 | 정정 | 근거 |
+| --- | --- | --- | --- |
+| High | §1 · §3 「`SKIP LOCKED`는 gap locking을 없애지 않는다」 | **Verified fact가 아니다.** 인용한 공식 문서는 `SKIP LOCKED`와 gap · next-key lock의 관계를 명시하지 않는다(WL#8919도 row lock 대상만 말한다). Interpretation · 「문서에 명시 없음」으로 읽고, `performance_schema.data_locks`를 보는 spike(§8 Spike A)로 확인한다. RD-01b 핵심 질문이다 | [innodb-locking-reads](https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html) · [innodb-locks-set](https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html) · [WL#8919](https://dev.mysql.com/worklog/task/?id=8919) |
+| Med | §1 LIMIT · filesort와 lock 범위 | 출처는 innodb-locks-set이 아니라 limit-optimization이고 그 페이지는 lock을 말하지 않는다 → 두 문서를 합친 Interpretation. 원문은 filesort일 때 「LIMIT 없이 일치하는 모든 row를 select한다」로, 본문의 「넓게 읽을 수 있다」보다 강하다 | [limit-optimization](https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html) |
+| Med | §1 · §3 · §4.2 `READ COMMITTED` | 누락: RC에서는 WHERE 평가 뒤 조건에 맞지 않는 row의 record lock을 해제하고, UPDATE는 semi-consistent read를 쓴다. lock footprint와 Pattern B(조건부 UPDATE)의 대기 동작을 바꾼다. RC 문장의 출처도 isolation-levels 페이지로 바꿔 읽는다 | [innodb-transaction-isolation-levels](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html) |
+| Med | §1 · §4.2 Solid Queue | 누락: README는 MySQL/MariaDB에서 heavy load 시 `READ COMMITTED` 고려를 권하고 Solid Queue 자체 table에는 안전하다고 쓴다 — **그 환경의 사실**이다. §4.2 SQL 예시의 `FOR UPDATE SKIP LOCKED`는 README 원문이 아니다. 공식 deadlock 문서의 「deadlock 가능성은 isolation level의 영향을 받지 않는다」와의 긴장도 함께 본다 | [rails/solid_queue](https://github.com/rails/solid_queue) · [innodb-deadlocks](https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html) |
+| Med | §3 표 | Evidence 열에 URL이 없는 Verified fact 행이 9건이다. 해당 행은 출처가 붙기 전까지 Interpretation 수준으로 읽는다 | prompt 출력 원칙 |
+| Med | §1 multi-valued index | 출처는 json-validation-functions가 아니라 create-index다. 누락: 문자열 값은 `utf8mb4_0900_as_cs`(또는 binary) collation만 지원하고, 빈 배열은 index로 찾을 수 없다. `produced` · `usage_refs`의 ID가 문자열이라 RD-01c · 01d에 직결된다 | [create-index](https://dev.mysql.com/doc/refman/8.4/en/create-index.html) |
+| Med | §4.8 · §4.9 MySQL Connector/Python | SQLAlchemy 문서가 이 driver에 대해 「frequent, major regressions」 · CI 제외 · server-side cursor 비활성을 경고한다. 본문은 「제한 사항도 기술」로 축소했다 | [SQLAlchemy MySQL dialect](https://docs.sqlalchemy.org/en/21/dialects/mysql.html) |
+| Med | §4.7 · §7 `token_usage` · `pricing_context` | **Contract에 이미 고정된 부분이 있다.** `token_usage`는 `input/output/total` 세 필드이고 「객체 전체 null이거나 세 필드 모두 존재」(§8-3), `pricing_context`는 `pricing_id` · `unit` key를 갖는다. 열린 것은 opaque 확장 영역뿐이다 — §7의 해당 항목은 이 범위로 좁혀 읽는다 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §4 · §8 |
+| Med | §4.6 · §7 `Money` | Contract는 `amount`를 `"decimal string \| null"`로 두고 예시가 `"184.20"` KRW다. 「소수 KRW 허용 여부」가 이미 닫혔는지는 **확인 필요** — 여기서 채우지 않는다 ★ | 같은 Contract L81 · L130 |
+| Med | §2 Q1.6 | AUTO_INCREMENT lock mode를 다루지 않았다 → 아래 「보완 확인」 | prompt Q1.6 |
+| Med | §4.11 · §4.13 Alembic | Alembic의 동시 실행 lock 여부를 적지 않았다. 공식 문서에 명시 없음 → api · worker가 동시에 migration을 시도하는 경쟁은 spike(§8 Spike H)로 확인한다 | [Alembic branches](https://alembic.sqlalchemy.org/en/latest/branches.html) |
+| Low | 여러 곳 | Solid Queue 「MySQL 8.4 deadlock 사용자 보고」에 issue 링크 없음(§9) · Liquibase 최신은 5.0.4(2026-08-20)이고 5.0부터 Community가 FSL license · Atlas는 확인 가능(v1.3.0, 2026-08-02, repo Apache-2.0 — 배포 binary EULA는 미확인) · yoyo 9.0.0은 2024-08-10, aiomysql 최근 release 2025-10(유지보수 근거) · §4.9 「sync DB layer와 자연스럽게 맞는」은 기울기 표현 · §7 상태 전이 경합은 `QUEUED→CANCELLED`만 다루고 `RUNNING→CANCELLED`는 빠짐 | PyPI · Maven Central · GitHub |
+
+### 보완 확인 (검토 단계 추가)
+
+- **AUTO_INCREMENT lock mode (Q1.6)** ★ — MySQL 8.4 기본값은 `innodb_autoinc_lock_mode=2`(interleaved)다. 이 모드에서는 INSERT 계열 statement가 table-level `AUTO-INC` lock을 쓰지 않고 동시에 실행되며, 값은 unique · 단조 증가지만 statement 안에서 연속적이지 않을 수 있다. statement-based replication에서는 안전하지 않고 row-based · mixed에서는 안전하다. ([innodb-auto-increment-handling](https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html))
+  - Daesingo implication — JobExecution 등의 PK를 AUTO_INCREMENT로 둘지는 RD-01a · 01b에서 열려 있다. 둔다면 기본 설정에서는 claim transaction 안 INSERT가 table-level AUTO-INC lock으로 직렬화되지 않는다. 남는 lock은 본문 §4.1의 insert intention · unique · FK lock이다.
+
+### Decision 입력으로 옮길 때
+
+- prompt에 넣지 않았던 Contract 사실을 함께 본다: UsageRecord row는 append-only(§8-1), 실제 invocation이 시작된 호출에만 row 생성(§8-14), `run_ref`가 `usage_refs`보다 authoritative(§8-11 · 12 — RD-01d의 선례 입력).
+
+---
 
 **기준 환경: MySQL 8.4 LTS / InnoDB · Python 3.12**
 
