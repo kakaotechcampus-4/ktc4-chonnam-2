@@ -18,6 +18,8 @@
 
 이 조사는 결정을 내리는 작업이 아닙니다. 아래 Decision의 **선택지 · 제약 · failure mode · 검증 항목을 현실화하는 근거**를 모으는 작업입니다. 최종 선택은 별도 단계에서 팀이 합니다.
 
+**우선순위:** R1(Q-A1 · Part B 전체)이 R2(Q-A2)보다 먼저입니다. 조사 분량이 부족하면 R1 질문의 깊이를 우선하고, Q-A2는 패턴 비교 수준으로 줄여도 됩니다.
+
 ## 1. 공통 프로젝트 맥락
 
 **대신고**는 블랙박스 영상을 받아 교통법규 위반 신고 자료 준비를 보조하는 서비스입니다. 사용자가 영상을 올리면 서버가 비동기로 영상 변환(ffmpeg), 외부 AI API 호출을 통한 후보 구간 탐색, 번호판 판독 등을 실행합니다. 6명 팀의 10주 MVP입니다.
@@ -120,6 +122,7 @@ loader를 어떻게 바꿀지는 팀 내부 결정입니다. 이 조사는 **Com
 - Worker는 Python process 1개이고 한 번에 작업 1개를 실행한다.
 - **외부 AI API 호출:** OpenAI Python SDK의 **동기(sync) client**로 OpenAI-compatible HTTP API를 호출한다. 영상은 request body 안에 base64 data URL로 inline 전송한다. SDK 자체 재시도는 끄고(`max_retries=0`), 호출하는 adapter가 자체 재시도 loop와 attempt별 timeout을 둔다. 호출 하나가 오래 걸릴 수 있다.
 - **ffmpeg / ffprobe:** `subprocess.run(..., timeout=...)`으로 실행한다.
+- **주의:** 외부 AI provider의 모델 · 전송 방식은 다른 모듈에서 재선정 중이라, 위 SDK · inline 전송 방식이 바뀔 수 있다. 따라서 Q-B2는 OpenAI Python SDK에만 한정하지 말고 **Python의 sync / async HTTP client 일반**(SDK가 내부에서 쓰는 HTTP client 포함)의 중단 semantics로 답하고, SDK 고유 동작은 따로 표시하세요.
 - 중단 요청이 Worker에 어떤 경로로 도달하는지(DB flag · 별도 신호 등)는 아직 열려 있습니다. 이 조사는 **Worker가 중단 요청을 알게 된 뒤** 무엇을 멈출 수 있는지를 다룹니다.
 
 조사 질문은 하나입니다.
@@ -168,6 +171,14 @@ loader를 어떻게 바꿀지는 팀 내부 결정입니다. 이 조사는 **Com
 6. **temp file · partial file cleanup** — Python `tempfile.TemporaryDirectory` 등의 정리가 정상 종료 · 예외 · SIGTERM · SIGKILL 각각에서 실행되는가. 비정상 종료 뒤 잔여 파일을 다음 시작 때 회수하는 일반 패턴.
 7. **idempotency** — 중단된 변환을 다시 실행할 때 이전 partial output을 덮어쓰거나 무시하는 패턴(출력 경로 · 임시 이름 · rename).
 
+### Q-B4 — 기존 job · workflow 시스템의 cancel semantics (참고 사례)
+
+RD-19b의 「언제 `CANCELLED`로 기록하는가」에 근거를 주기 위한 질문입니다. **이 시스템들의 도입을 추천하지 마세요.** semantics만 비교합니다.
+
+1. 대표 job queue · workflow 시스템(예: Celery · RQ · Temporal 등 — 예시이며 다른 시스템도 가능)이 실행 중 작업 cancel을 어떻게 정의하는가 — 「취소 요청됨」과 「실제로 멈춤」을 별도 상태로 구분하는지, 실행 중 작업에 취소를 어떤 경로(heartbeat 응답 · 신호 · flag)로 전달하는지, 작업이 협조하지 않을 때 무엇을 보장하는지.
+2. 취소 요청과 작업 완료가 경합할 때(취소 요청 직후 작업이 성공으로 끝남) 최종 상태를 어떻게 정하는가.
+3. 각 시스템이 문서에서 명시한 한계(강제 종료 시 정리 보장 없음 등).
+
 ---
 
 # 공통 — 범위 · 방법 · 출력 (Part A · B 모두)
@@ -208,6 +219,10 @@ loader를 어떻게 바꿀지는 팀 내부 결정입니다. 이 조사는 **Com
 
 **외부 숫자를 대신고 baseline으로 쓰지 마세요.** 다른 서비스가 「grace period N초」 「cancel polling 주기 N초」 「timeout N초」를 쓴다면, 그 숫자는 **그 환경의 숫자이며 대신고에 직접 적용할 수 없다**고 구분해서 적으세요. 도구의 기본값은 Verified fact로 적되 「기본값」임을 표시하세요.
 
+**작성 언어와 기준일.** 결과는 한국어로 쓰고, 기술 용어 · 설정 이름 · 원문 인용은 영어 그대로 둡니다. 결과 맨 위에 조사 기준일을 적으세요.
+
+**제출 전 자기 점검.** 결과를 내기 전에 「~해야 한다」 「~가 최선이다」 「권장한다」처럼 선택을 확정하는 문장이 남아 있는지 확인하고, 있으면 조건과 trade-off를 설명하는 문장으로 바꾸세요. 출처가 없는 Verified fact가 있으면 Interpretation으로 내리거나 9절(Unresolved)로 옮기세요.
+
 ## 5. 결과 형식
 
 다음 구조로 작성하세요. 3 · 4 · 5 · 6절 안에서는 **Part A와 Part B를 소제목으로 나눠** 적으세요.
@@ -220,7 +235,7 @@ loader를 어떻게 바꿀지는 팀 내부 결정입니다. 이 조사는 **Com
 - 최종 Decision 추천은 하지 않음
 
 ## 2. Questions Investigated
-- Q-A1 · Q-A2 · Q-B1 · Q-B2 · Q-B3 질문별 실제 조사 범위
+- Q-A1 · Q-A2 · Q-B1 ~ Q-B4 질문별 실제 조사 범위
 
 ## 3. Verified Technical Facts
 ### Part A
@@ -282,6 +297,7 @@ loader를 어떻게 바꿀지는 팀 내부 결정입니다. 이 조사는 **Com
 - timeout과 cancellation, connection close와 provider 측 처리 중단의 차이를 설명할 수 있는가?
 - 중단 시점별로 provider 호출의 「시작 여부」와 「사용량 확인 가능 여부」가 어떻게 달라지는지 설명할 수 있는가?
 - partial file · temp file · zombie process · child process의 대표 failure mode와 정리 패턴을 설명할 수 있는가?
+- 「취소 요청됨」과 「실제로 멈춤」을 구분하는 기존 시스템의 semantics와, 취소 · 완료 경합 처리 방식을 비교할 수 있는가?
 
 **공통**
 

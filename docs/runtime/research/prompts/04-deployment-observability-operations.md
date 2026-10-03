@@ -97,6 +97,8 @@ RD-12a(Dockerfile 구조 · Compose entrypoint)는 application 실행 단위 구
 4. **health check** — Compose `healthcheck` · `depends_on` 조건 · `docker compose up --wait` 등이 배포 판정에 쓰일 수 있는 범위와 한계. 외부 smoke와 container health의 차이.
 5. **restart** — Compose `restart` policy의 종류와 host 재부팅 · Docker daemon 재시작 · container crash 때의 동작.
 6. **rollback** — 이전 revision으로 되돌리는 명령 패턴, rollback도 실패할 때의 상태.
+   - rollback 대상인 **직전 known-good revision을 어디에 기록하는가**의 대표 패턴(host의 파일 · SSM Parameter Store · GitHub Deployments / Releases · registry tag 등)과, 각 위치가 배포 실패 · host 재생성 때 남아 있는지
+   - Compose 파일 자체(service 정의 변경)도 revision과 함께 되돌려야 하는 경우의 처리
 7. **output · 노출** — SSM 명령 output을 어디에 남길 수 있고(콘솔 · S3 · CloudWatch) 그 output에 secret이 섞일 위험.
 
 #### Q-A3 — MySQL container 운영
@@ -110,7 +112,7 @@ RD-12a(Dockerfile 구조 · Compose entrypoint)는 application 실행 단위 구
 
 1. 새 application image 배포와 DB schema migration 중 무엇을 먼저 실행하는 패턴들이 있는가 — migration 먼저 / 배포 먼저 / expand-contract(병행 호환 단계를 두는 방식).
 2. **backward compatibility** — 이전 version application이 새 schema에서, 새 version이 이전 schema에서 돌 수 있어야 하는 조건. api와 worker가 잠시 서로 다른 version으로 돌 수 있는 상황.
-3. **failure 시 rollback** — MySQL DDL은 implicit commit이라 migration 중간 실패 시 일부만 적용될 수 있다. application rollback은 가능하지만 schema rollback은 자동으로 하지 않는다는 전제에서 가능한 복구 경로(backup restore · forward fix · down migration).
+3. **failure 시 rollback** — MySQL DDL의 implicit commit과 MySQL 8.x atomic DDL의 보장 범위를 확인하고, 여러 단계로 된 migration이 중간에 실패했을 때 남을 수 있는 상태를 정리하세요. application rollback은 가능하지만 schema rollback은 자동으로 하지 않는다는 전제에서 가능한 복구 경로(backup restore · forward fix · down migration).
 4. migration을 배포 sequence의 어느 단계에서 · 어떤 실행 단위(one-off container · 별도 service · application startup)로 돌리는지가 Q-A2의 partial deployment와 어떻게 맞물리는가.
 
 ### Part B (R2 · RD-13a · RD-11a) — Log transport / rotation / retention
@@ -178,6 +180,10 @@ RD-12a(Dockerfile 구조 · Compose entrypoint)는 application 실행 단위 구
 **최종 선택을 하지 마세요.** 「따라서 ECR을 써야 한다」 「따라서 awslogs를 써야 한다」 「따라서 mysqldump로 매일 backup한다」 같은 결론을 쓰지 않습니다. 선택지와 trade-off까지만 정리합니다.
 
 **외부 숫자를 대신고 baseline으로 쓰지 마세요.** 다른 서비스가 「log 보관 30일」 「backup 주기 N시간」 「max-size N MB」 「health check 간격 N초」를 쓴다면, 그 숫자는 **그 환경의 숫자이며 대신고에 직접 적용할 수 없다**고 구분해서 적으세요. 도구의 기본값은 Verified fact로 적되 「기본값」임을 표시하세요.
+
+**작성 언어와 기준일.** 결과는 한국어로 쓰고, 기술 용어 · 설정 이름 · 원문 인용은 영어 그대로 둡니다. 결과 맨 위에 조사 기준일을 적으세요.
+
+**제출 전 자기 점검.** 결과를 내기 전에 「~해야 한다」 「~가 최선이다」 「권장한다」처럼 선택을 확정하는 문장이 남아 있는지 확인하고, 있으면 조건과 trade-off를 설명하는 문장으로 바꾸세요. 출처가 없는 Verified fact가 있으면 Interpretation으로 내리거나 9절(Unresolved)로 옮기세요.
 
 ## 7. 결과 형식
 

@@ -72,6 +72,7 @@ R1이 먼저입니다. 조사 분량이 부족하면 R1 질문의 깊이를 우�
    - filesort가 개입하면 lock 범위가 어떻게 되는가
    - 정렬 순서가 공정성 · starvation에 주는 영향
 4. **여러 Worker의 concurrent claim.** 둘 이상의 session이 같은 query를 동시에 실행할 때 중복 claim · deadlock · lock wait · 빈 결과가 생길 수 있는 조건. `innodb_lock_wait_timeout`과 deadlock detection이 이 패턴에서 어떻게 작동하는가.
+   - claim만 같은 row를 건드리는 것이 아니다. **실행 중 heartbeat · lease 갱신 UPDATE, stale sweep UPDATE(RUNNING → STALE), 사용자 중단에 따른 QUEUED → CANCELLED UPDATE**가 claim과 같은 row · 같은 index 범위에서 동시에 일어날 수 있다. 이 writer들과 claim이 lock으로 서로 막거나 deadlock을 만드는 조건, `SKIP LOCKED` 때문에 claim이 「방금 취소된 row」나 「sweep 중인 row」를 어떻게 보게 되는지 확인하세요.
 5. **비교 대상 claim 패턴.** `SELECT … FOR UPDATE SKIP LOCKED` 후 `UPDATE`, 조건부 단일 `UPDATE … WHERE … LIMIT`(claim token 기록 후 조회), version column 기반 optimistic claim 등 대표 패턴의 semantics 차이와 failure mode. 어느 것이 좋다고 결론 내리지 말고 차이만 정리하세요.
 6. **claim과 `JobExecution(RUNNING)` INSERT를 한 transaction에 둘 때.**
    - INSERT가 거는 lock(insert intention lock · unique check · foreign key 검사 시 부모 row lock · AUTO_INCREMENT lock mode)이 claim lock과 상호작용해 deadlock을 만들 수 있는 조건
@@ -80,6 +81,7 @@ R1이 먼저입니다. 조사 분량이 부족하면 R1 질문의 깊이를 우�
    - commit 후 실제 작업 시작 전에 Worker가 죽는 경우 — lease 만료로만 회복된다는 점의 의미
    - 실제 작업(수 분 이상 걸릴 수 있음)이 끝날 때까지 transaction을 열어 두는 방식과, claim만 짧게 commit하는 방식의 semantics 차이
 7. **공식 문서의 주의사항.** MySQL 공식 문서가 `SKIP LOCKED` · `NOWAIT`에 대해 적은 제약(일관되지 않은 view, replication 관련 주의 등)이 있으면 원문 근거와 함께 정리하세요.
+8. **실제 구현 사례.** MySQL(가능하면 8.x)을 backend로 쓰는 공개 DB-backed job queue 구현(예: Rails Solid Queue 등 — 예시이며 다른 구현도 가능)이 claim query · transaction 경계 · index를 어떻게 구성했는지, 그 프로젝트의 공식 issue · changelog에 보고된 lock · deadlock · 성능 문제와 해결을 정리하세요. 그 구현의 설정값(polling 주기 · batch 크기 등)은 **그 환경의 숫자**로만 적으세요. PostgreSQL 기반 구현은 lock semantics가 다르므로, 인용한다면 차이를 명시하세요.
 
 ### Q2 (R1 · RD-01c · RD-01d · RD-01g) — MySQL 8.4에서 JSON column vs 관계형 구조
 
@@ -124,7 +126,7 @@ R1이 먼저입니다. 조사 분량이 부족하면 R1 질문의 깊이를 우�
 3. **ORM 사용 여부** — Q1의 claim query(`FOR UPDATE SKIP LOCKED` · 명시적 transaction 경계)와 Q2의 JSON column을 각 접근 방식이 어떻게 표현 · 지원하는가.
 4. **장시간 process의 connection 관리** — MySQL `wait_timeout` · 끊긴 connection 감지 · pool 재사용 시 동작.
 5. **migration version 관리** — version 기록 방식, 여러 branch에서 동시에 migration을 만들 때의 충돌(분기 head 등)과 해결 방식, downgrade 지원 여부.
-6. **MySQL DDL 특성과 migration** — MySQL DDL은 implicit commit을 일으키므로 migration 도중 실패하면 일부만 적용될 수 있다. 각 도구가 이 상황을 어떻게 다루는가.
+6. **MySQL DDL 특성과 migration** — MySQL DDL의 implicit commit과 MySQL 8.x atomic DDL이 각각 무엇을 보장하고 무엇을 보장하지 않는지(statement 하나 단위인가, 여러 statement로 된 migration 전체인가) 확인하세요. 그 결과 migration이 도중에 실패하면 어떤 상태가 남을 수 있고, 각 도구가 그 상황을 어떻게 다루는가.
 7. **Docker Compose 환경에서 migration 실행 방식** — 별도 one-off 실행(`docker compose run` 등), 별도 migration service + `depends_on` 조건, application startup 안에서 실행하는 방식의 차이. api · worker가 둘 다 startup에서 migration을 시도할 때의 경쟁 조건. application startup과 migration을 분리할지에 대한 근거.
 
 배포 순서(새 image 배포와 migration 중 무엇을 먼저 하는가, 실패 시 rollback)는 별도 조사 대상입니다. 여기서는 **도구가 제공하는 실행 방식과 그 semantics**까지만 다루세요.
@@ -164,6 +166,10 @@ R1이 먼저입니다. 조사 분량이 부족하면 R1 질문의 깊이를 우�
 **최종 선택을 하지 마세요.** 「따라서 SKIP LOCKED를 써야 한다」 「따라서 SQLAlchemy/Alembic을 써야 한다」 「따라서 JSON column이 최선이다」 같은 결론을 쓰지 않습니다. 선택지와 trade-off까지만 정리합니다.
 
 **외부 숫자를 대신고 baseline으로 쓰지 마세요.** 다른 서비스나 글이 「lock wait timeout N초」 「worker N개」 「pool size N」을 쓴다면, 그 숫자는 **그 환경의 숫자이며 대신고에 직접 적용할 수 없다**고 구분해서 적으세요.
+
+**작성 언어와 기준일.** 결과는 한국어로 쓰고, 기술 용어 · 설정 이름 · 원문 인용은 영어 그대로 둡니다. 결과 맨 위에 조사 기준일을 적으세요.
+
+**제출 전 자기 점검.** 결과를 내기 전에 「~해야 한다」 「~가 최선이다」 「권장한다」처럼 선택을 확정하는 문장이 남아 있는지 확인하고, 있으면 조건과 trade-off를 설명하는 문장으로 바꾸세요. 출처가 없는 Verified fact가 있으면 Interpretation으로 내리거나 9절(Unresolved)로 옮기세요.
 
 ## 7. 결과 형식
 
