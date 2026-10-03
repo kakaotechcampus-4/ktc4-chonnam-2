@@ -77,6 +77,12 @@ rate limit / concurrency
 retention / logging / delete 정책
 ```
 
+### 법령 / 공식 가이드
+
+```text
+사용자 영상 · 식별정보 보관 · 파기 제약
+```
+
 카테캠 AWS/ML API 공지처럼 프로젝트에 직접 적용되는 외부 입력은 [`official-inputs/`](./official-inputs/README.md)에 보존한다.
 
 MySQL Queue, ffmpeg, Object Storage, Worker scaling 같은 **일반 외부 기술 사례는 이 단계에 섞지 않는다.** 그런 조사는 §2–§3에서 실제 Open Decision을 정리한 뒤 필요한 질문만 §4에서 조사한다.

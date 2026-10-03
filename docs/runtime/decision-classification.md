@@ -4,7 +4,7 @@
 **Owner:** common/runtime — 김준영\
 **Classified at:** 2026-10-03 · `origin/develop` `10787d8` (PR #241 merge 직후)\
 **Workflow step:** [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) §3 Decision 유형 · 결정 시점 분류\
-**Input:** [Open Decision Register](./open-decision-register.md) — 18 group · External Input EI-01~EI-07
+**Input:** [Open Decision Register](./open-decision-register.md) — 18 group · External Input EI-01~EI-08
 
 > 이 문서는 Register의 각 Open Decision을 **누가 · 언제까지 · 어떤 절차로 닫는가**로 분류한다.
 >
@@ -48,13 +48,13 @@ workflow §3.1의 책임 유형 네 가지를 출발점으로 하되, 「실측 
 | `ARCH_OPS` | 인프라 · 배포 · 장기 운영 topology 선택이다. 되돌리는 비용이 크고 Ops Spec · ADR에 반영될 가능성이 높다 | 실측 기반 결정의 「무엇」 부분 |
 
 - 한 RD에 **Primary 1개**만 둔다. 두 번째 성격이 결정권이나 closure route를 실제로 바꿀 때만 Secondary를 붙인다.
-- workflow §3.1 예시와 다르게 분류한 경우는 [§3.1](#31-rd별-분류-근거)에 이유를 적었다(RD-03 · RD-14).
+- workflow §3.1 예시와 다르게 분류한 경우는 [§3.1](#31-rd별-분류-근거)에 이유를 적었다(RD-03 · RD-14 · RD-19).
 
 ### 2.2 결정권
 
 | 칸 | 뜻 |
 | --- | --- |
-| **Decider** | 결정을 닫을 권한이 있는 Owner. 공동 결정이면 `Joint`로 쓰고 각자의 범위를 나눈다 |
+| **Decider** | 결정을 닫을 권한이 있는 Owner. 공동 결정이면 `Joint`로 쓰고 각자의 범위를 나눈다. `Joint`는 공동 소유가 아니라 **각 Owner가 자기 surface를 승인한다**는 뜻이다(모듈 Owner 1명 원칙 유지) |
 | **Required Consult** | 결정 전에 반드시 확인을 받아야 하는 Owner. 그 Owner의 Contract · Owner 결정과 충돌하면 닫을 수 없다 |
 | **Informed** | 결과를 알려야 하지만 확인 없이 닫을 수 있는 Owner. 매트릭스에는 적지 않고 [§3.1](#31-rd별-분류-근거)에만 적는다 |
 | **Runtime alone?** | `YES` = Decider가 common/runtime뿐이고 Required Consult가 없다. 그 밖은 `NO` |
@@ -172,7 +172,7 @@ Upstream은 Register 각 group의 「선행」 Decision만 적는다(External In
 | [RD-07](./open-decision-register.md#rd-07--runtime-configuration--secret-주입) | CROSS_MODULE / ARCH_OPS | runtime | search (RD-07a · d) · eval (RD-07e) | NO | A | M4 (RD-07c: M6) | JOINT_ISSUE → OWNER_DECISION · LOCAL_SPEC | OA · ER(R1 · R2) | — |
 | [RD-08](./open-decision-register.md#rd-08--pricing--fx-artifact) | CROSS_MODULE | Joint: runtime + search | case | NO | B | M1(placeholder) → 최종 M9 | JOINT_ISSUE → LOCAL_SPEC · OWNER_DECISION | OA · EI | — |
 | [RD-09](./open-decision-register.md#rd-09--worker-domain-service-수명--analysissource-process-local-reuse) | CROSS_MODULE | Joint: recording + runtime | — | NO | B | M2 → 최종 M8 | JOINT_ISSUE → EXPERIMENT_BASELINE | OA · EXP | RD-17 |
-| [RD-10](./open-decision-register.md#rd-10--자산--원장-retention과-purge-범위-제품정책) | PRODUCT_POLICY / CROSS_MODULE | Joint: recording (RD-10a · b · e) + runtime (RD-10c · d) | case | NO | D | M9 | JOINT_ISSUE → CONTRACT · ADR(조건부) | OA · EI · ER(R3) | RD-17 |
+| [RD-10](./open-decision-register.md#rd-10--자산--원장-retention과-purge-범위-제품정책) | PRODUCT_POLICY / CROSS_MODULE | Joint: recording (RD-10a · b · e) + runtime (RD-10c · d) | case | NO | D | M9 | JOINT_ISSUE → CONTRACT · ADR(조건부) | OA · EI | RD-17 |
 | [RD-11](./open-decision-register.md#rd-11--ops-retention--cleanup) | LOCAL | runtime | recording (RD-11b · c) | NO | B | M7 → 최종 M9 | LOCAL_SPEC | EI · EXP · ER(R2) | RD-10 · RD-13 |
 | [RD-12](./open-decision-register.md#rd-12--deployment-pipeline-세부) | LOCAL / ARCH_OPS | runtime | — | **YES** | B | M4 (RD-12a · g) → 최종 M6 | LOCAL_SPEC → ADR(조건부) | ER(R2) | RD-01 · RD-05 · RD-07 · RD-17 |
 | [RD-13](./open-decision-register.md#rd-13--운영-관측-수단) | LOCAL | runtime | — | **YES** | B | M7 → 최종 M8 (RD-13c) | LOCAL_SPEC → EXPERIMENT_BASELINE | ER(R2) · EXP | RD-01 · RD-12 |
@@ -318,7 +318,6 @@ RD-01 · RD-12 · RD-13. 단 RD-01은 상류 Joint Decision(RD-03 · RD-06 · RD
 | R2 | RD-07 (07c) | 단일 EC2에서 SSM Parameter Store 값을 Compose container에 전달하는 패턴(배포 시 fetch → env / file · 권한 범위)과 host 파일 방식의 운영 차이 | Ops §4-1 · Runbook §8이 secret source를 미결로 둔다. [`aws-environment.md`](./official-inputs/aws-environment.md)에 Parameter Store 사용 사례가 있다 | secret source를 배포 workflow 구현 중에 처음 정한다 |
 | R2 | RD-12 | 단일 EC2 + Compose에서 ECR pull과 host build의 운영 차이(revision 식별 · rollback · build 자원), SSM Run Command 배포 명령 패턴, MySQL container volume backup / restore 방식, Compose 배포에서 DB migration 실행 순서 | Runbook §8 미결 10개를 닫는 데 필요한 운영 사례다 | Runbook 미결을 구현 PR에서 처음 정한다 |
 | R2 | RD-13 (13a) · RD-11 (11a) | EC2 단일 서버에서 CloudWatch Agent와 Docker `awslogs` logging driver의 운영 차이, Docker log rotation · 보관을 설정하는 위치 | Ops §8은 방향만 있고 CloudWatch Agent · Log Group이 아직 없다([`aws-environment.md`](./official-inputs/aws-environment.md)). log rotation은 RD-11a와 같은 설정면이다 | log transport와 rotation을 P2 직전에 정한다 |
-| R3 | RD-10 | 블랙박스 영상(제3자 번호판 · 얼굴이 담길 수 있음)을 처리하는 서비스의 보관 · 파기에 국내 개인정보 법령 · 가이드가 주는 제약 | Ops §14는 retention 값을 「개인정보/재현성/비용/사용자 flow」로 정하라고 하지만, 개인정보 축의 근거 문서가 repository에 없다 | 개인정보 축 근거 없이 retention을 정하게 되어 Ops §14 금지(근거 없는 숫자 선결)와 충돌할 수 있다 |
 | R3 | RD-14 | 단일 EC2 + Compose에서 reverse proxy(Caddy가 첫 후보)의 자동 TLS · 무료 서브도메인 · OAuth callback 구성 요구사항(EIP · 80 / 443 · DNS) | Ops §2-2 순서의 실행 근거. trigger(M10) 전에는 조사하지 않는다(Register 「그때」) | trigger 발생 뒤 조사한다 — 지금 가정할 것 없음 |
 | R3 | RD-15 | CPU-bound(ffmpeg · OCR)와 I/O-bound(provider 대기) workload에서 Worker 수를 늘릴 때의 scaling 특성, MySQL DB Queue claim contention | Ops §16 · §17 trigger를 P2 결과에 적용하는 해석 근거 | P2 측정값만으로 해석하고 failure mode 후보는 사례 없이 정한다 |
 
@@ -330,6 +329,7 @@ RD-01 · RD-12 · RD-13. 단 RD-01은 상류 Joint Decision(RD-03 · RD-06 · RD
 | HTTP 202 · async job polling 관행 | RD-05 (05b~d) | case-command Draft §3 · Tech Spec §9 · §13이 응답 범위를 이미 좁혔다. Owner 합의가 핵심이다 |
 | transactional outbox · dual-write | RD-06 (06a) | 필요 여부가 RD-06b(case persistence 위치)에 먼저 걸린다. RD-06b가 Runtime과 같은 MySQL transaction에 들어가지 않는 쪽으로 닫힐 때만 추가한다 |
 | KRW 환산 FX source 후보 | RD-08 (08b) | EI-06(크레딧 정산 기준) 결과에 따라 필요 여부가 갈린다. EI-06 확인 뒤 판단한다 |
+| 개인정보 법령 · 공식 가이드상 보관 · 파기 제약 | RD-10 | 우리가 고르는 기술 사례가 아니라 RD-10의 선택 범위를 좁히는 외부 사실이다 → External Input **EI-08**(workflow §1). §4에서는 EI-08 확인 결과의 해석이 필요할 때만 보조 조사한다 |
 
 ---
 
@@ -346,9 +346,10 @@ EI 원문 · 확인 경로 · 담당은 Register [External Inputs](./open-decisi
 | EI-05 | RD-03f | M9 | Provisional — 계정 수준 실패 처리를 가정으로 표기 | 재검토 trigger |
 | EI-06 | RD-08a · RD-08b | M9 | placeholder `pricing_id`로 진행 | **RD-08 최종 closure의 전제** — Tech Spec §11.3이 정산 기준을 artifact · FX source와 같은 미결 목록에 둔다 |
 | EI-07 | RD-10b · RD-11c | M9 | Provisional — 현재 Elice 경로는 RemoteCopy를 쓰지 않는다 | **RD-10b · RD-11c 최종 closure의 전제** — pre-deploy-security-review #19가 provider 보관 · logging 확인을 요구한다 |
+| EI-08 | RD-10a · RD-10b | M9 | RD-10은 D라 확인 전 Provisional 가정이 필요 없다 | **RD-10a · RD-10b 최종 closure의 전제** — Ops §14가 retention 값을 「개인정보」 축으로 정하라고 하고 그 근거가 repository에 없다 |
 
-- **A Decision을 반드시 막는 EI는 없다.** A group 중 EI 입력이 있는 RD-03 · RD-18은 Register가 「확인 전에는 Provisional 가정을 명시하고 진행할 수 있다」고 적었다. EI-06 · EI-07은 B · D Decision의 최종 closure 전제이지 구현 선행 조건이 아니다.
-- **확인 시점 주의.** 모든 EI는 Search가 선택한 운영 모델 기준이다(Register EI 전제). 운영 모델 · 전송 방식 재선정 Issue #240이 OPEN이므로, 그 결정 전에 확인한 값은 모델이 바뀌면 다시 확인한다. 모델 선택은 Search 소유이고 Runtime Open Decision이 아니다.
+- **A Decision을 반드시 막는 EI는 없다.** A group 중 EI 입력이 있는 RD-03 · RD-18은 Register가 「확인 전에는 Provisional 가정을 명시하고 진행할 수 있다」고 적었다. EI-06 · EI-07 · EI-08은 B · D Decision의 최종 closure 전제이지 구현 선행 조건이 아니다.
+- **확인 시점 주의.** EI-01~EI-07은 Search가 선택한 운영 모델 기준이다(Register EI 전제). 운영 모델 · 전송 방식 재선정 Issue #240이 OPEN이므로, 그 결정 전에 확인한 값은 모델이 바뀌면 다시 확인한다. 모델 선택은 Search 소유이고 Runtime Open Decision이 아니다.
 
 ---
 
@@ -434,8 +435,8 @@ RD-01은 Gate가 가장 이르면서(M1) dependency상 가장 늦다. Wave 1 · 
 | Runtime alone | YES 3 (RD-01 · RD-12 · RD-13) · NO 15 |
 | Joint Decider | 9 (RD-03 · RD-05 · RD-06 · RD-08 · RD-09 · RD-10 · RD-17 · RD-18 · RD-19) |
 | Primary Closure Route | LOCAL_SPEC 6 · JOINT_ISSUE 11 · EXPERIMENT_BASELINE 1 · CONTRACT · OWNER_DECISION · ADR은 Primary 0 (Follow-up으로만) |
-| §4 External Research | 11 RD — R1 6행 · R2 4행 · R3 3행 |
-| External Input 연결 | EI-01~EI-07 전부. A를 막는 EI 없음 |
+| §4 External Research | 10 RD — R1 6행 · R2 4행 · R3 2행 |
+| External Input 연결 | EI-01~EI-08 전부. A를 막는 EI 없음 |
 | Experiment 뒤 closure | RD-15 (최종값 조정: RD-04 · RD-09 · RD-11 · RD-13) |
 | group 분할 · 새 RD | 없음 |
 
@@ -448,8 +449,13 @@ RD-01은 Gate가 가장 이르면서(M1) dependency상 가장 늦다. Wave 1 · 
 - RD-01 → RD-13 edge가 graph에 없었다. 양쪽 본문(RD-01 「막는 것」 · RD-13 「선행」)에는 있었다.
 - RD-12 「막는 것」에 RD-14가 없었다. RD-14 「선행」과 graph에는 있었다.
 
+외부 사실 1건을 External Input으로 추가했다.
+
+- **EI-08** — 개인정보 법령 · 공식 가이드상 영상 · 식별정보 보관 · 파기 제약 → RD-10a · RD-10b. 처음에는 §4 조사(R3)로 분류했으나, 법령상 제약은 일반 기술 사례가 아니라 결정 범위를 좁히는 외부 사실이라 workflow §1 경로로 옮겼다.
+
 ## Change log
 
 | 날짜 | 변경 | 기준 |
 | --- | --- | --- |
 | 2026-10-03 | 최초 작성 — 18 group 분류. Timing 변경 없음 · group 분할 없음 · 답 선택 없음 | `origin/develop` `10787d8` |
+| 2026-10-03 | 검토 반영 — §2.1 예외 목록에 RD-19 추가, RD-10 개인정보 법령 조사를 R3에서 EI-08로 이동, `Joint` 뜻(각 Owner가 자기 surface 승인) 명시 | `origin/develop` `10787d8` |
