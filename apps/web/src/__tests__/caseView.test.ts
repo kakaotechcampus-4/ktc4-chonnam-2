@@ -99,6 +99,18 @@ describe('화면 선택', () => {
     expect(selectScreen({ ...base, notices: [notice] }).kind).toBe('NOT_OBSERVED')
   })
 
+  it('evidence=null이어도 상황 응답 대기 notice가 있으면 진행 화면이 아니다(#232)', () => {
+    const base = views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)!
+    const notice = {
+      code: 'case.situation_response_pending',
+      severity: 'INFO' as const,
+      blocking: false,
+      message_key: 'notice.situation_response_pending',
+      actions: [],
+    }
+    expect(selectScreen({ ...base, notices: [notice] }).kind).toBe('AWAIT_RESPONSE')
+  })
+
   it('READY + package면 신고자료 화면이다', () => {
     const ready = views.filter((v) => v.stage === 'READY' && v.package)
     expect(ready.length).toBeGreaterThan(0)

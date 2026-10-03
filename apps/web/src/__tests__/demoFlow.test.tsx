@@ -115,7 +115,7 @@ it('업로드 실패: 다시 선택하면 다시 올린다', () => {
   wait()
   expect(text()).toContain('업로드 실패')
   expect(text()).toContain('다시 선택')
-  expect(text()).toContain('다른 파일을 골라 주세요')
+  expect(text()).toContain('파일을 올리지 못했어요')
 })
 
 it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 처음 화면으로 돌아간다', () => {

@@ -53,9 +53,10 @@ export function UploadScreen(props: {
       >
         {props.state !== 'idle' && <span className={`dz-ring dz-ring-${props.state}`} aria-hidden />}
         <b>{DROP_TEXT[props.state]}</b>
-        {props.state === 'idle' && <span className="kv-src">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>}
+        {props.state === 'idle' && <span className="kv-src">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각 정보도 확인해요.</span>}
         {props.files.length > 0 && <span className="kv-src">{props.files.map((f) => f.name).join(', ')}</span>}
-        {props.state === 'fail' && <span className="kv-src">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
+        {/* 원인(형식·손상·네트워크)을 단정하지 않는다 — 화면은 알 수 없다(#224 recording 리뷰) */}
+        {props.state === 'fail' && <span className="kv-src">파일을 올리지 못했어요. 다시 골라 주세요.</span>}
         {(props.state === 'idle' || props.state === 'fail') && (
           <span className="btn sm pri">{props.state === 'fail' ? '다시 선택' : '파일 선택'}</span>
         )}
@@ -63,8 +64,8 @@ export function UploadScreen(props: {
       </label>
       {props.state === 'done' && props.skipped.length > 0 && (
         <p className="skip-list">
-          열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')} — 지원하지 않는 형식이거나
-          손상된 파일이에요. 나머지 영상으로 찾아볼게요.
+          올리지 못했거나 열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')}. 나머지
+          영상으로 찾아볼게요.
         </p>
       )}
       <SituationInput
