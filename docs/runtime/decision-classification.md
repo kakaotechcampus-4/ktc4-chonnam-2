@@ -223,6 +223,8 @@ Register 원문을 반복하지 않고 **분류를 그렇게 한 이유**만 적
 | RD-17 | M3 | RD-05e · Compose volume(RD-12) · 첫 비동기 Real E2E(M5) |
 | RD-07 | M4 | Compose 주입 경로 · RD-12 (RD-07c는 M6) |
 
+**§5 진행(2026-10-03):** 9개 모두 Decision Issue로 연결했다 — 상태 · Issue · 남은 blocker는 Register [§5 진행 상태](./open-decision-register.md#5-진행-상태--timing-a)가 추적한다(Umbrella [#251](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/251)). 이 분류의 Type · 결정권 · Timing · Gate는 바꾸지 않았다.
+
 ### 4.2 B — Provisional 가능 (6)
 
 | RD | Provisional 가정이 필요한 시점 | 최종 Gate | 최종을 정하는 것 |
@@ -459,3 +461,4 @@ RD-01은 Gate가 가장 이르면서(M1) dependency상 가장 늦다. Wave 1 · 
 | --- | --- | --- |
 | 2026-10-03 | 최초 작성 — 18 group 분류. Timing 변경 없음 · group 분할 없음 · 답 선택 없음 | `origin/develop` `10787d8` |
 | 2026-10-03 | 검토 반영 — §2.1 예외 목록에 RD-19 추가, RD-10 개인정보 법령 조사를 R3에서 EI-08로 이동, `Joint` 뜻(각 Owner가 자기 surface 승인) 명시 | `origin/develop` `10787d8` |
+| 2026-10-03 | §4.1에 workflow §5 진행 포인터 추가(Register §5 진행 상태 · #251). 분류 변경 없음 | `origin/develop` `43dd8ec` |

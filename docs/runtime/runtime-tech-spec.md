@@ -156,7 +156,37 @@ claim은 다음을 만족해야 한다.
 4. lease가 유효한 다른 Worker의 실행을 빼앗지 않는다.
 5. 여러 Worker로 확장되더라도 claim 알고리즘 자체를 바꾸지 않고 concurrency만 늘릴 수 있어야 한다.
 
-MySQL에서는 `SELECT ... FOR UPDATE SKIP LOCKED`를 우선 후보로 사용한다. exact transaction/query는 구현 PR에서 확정하고 integration test로 검증한다.
+MySQL에서는 `SELECT ... FOR UPDATE SKIP LOCKED`를 사용한다. 다음 규칙은 확정이다(RD-01b 핵심 규칙, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03).
+
+- Runtime DB session isolation은 **`READ COMMITTED`**다. 기본값 `REPEATABLE READ`에서는 `SKIP LOCKED` claim이 첫 실행 가능 index entry 앞의 gap을 잠가, claim transaction이 끝날 때까지 다른 row의 `FAILED` · `CANCELLED` 전이와 이른 `available_at` enqueue를 막는 것이 관찰됐다([spike S1](./experiments/pre-implementation-spike-2026-10-03.md#s1--claim-lock-footprint-rd-01b)).
+- claim transaction은 `ORDER BY`를 그대로 만족하는 covering index 위의 `LIMIT 1 FOR UPDATE SKIP LOCKED` + 조건부 UPDATE로 끝내고 **INSERT를 넣지 않는다.** commit한 뒤에 실제 작업을 시작하며, provider 호출 · ffmpeg 같은 작업 동안 DB transaction을 열어 두지 않는다.
+- 모든 terminal 전이는 현재 status를 조건으로 한 UPDATE다. 같은 execution에 두 전이가 겹치면 먼저 commit한 쪽이 남고 다른 쪽은 0 rows다([spike S2](./experiments/pre-implementation-spike-2026-10-03.md#s2--conditional-update-경합-rd-19b--rd-02a)).
+- claim 순서는 다음 실행 가능 시각 → 고유 tiebreaker의 best-effort다. `SKIP LOCKED`는 잠긴 앞 row를 건너뛰므로 strict FIFO를 보장하지 않는다.
+
+queue 항목을 어느 table의 어떤 row로 둘지와 exact index(RD-01a · RD-01b 모양)는 RD-02 · RD-06 결정 뒤에 고정한다 — 추천안은 [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250). 최종 query는 integration test로 검증한다.
+
+### 4.4 DB 접근 계층 · Migration
+
+확정(RD-01j, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03):
+
+- driver는 **PyMySQL**(sync, pure Python), 접근 계층은 **SQLAlchemy Core 2.x**(connection pool · transaction)이고 ORM은 쓰지 않는다. API와 Worker는 같은 **sync DB access stack**을 쓴다. claim처럼 lock · transaction 경계가 정합성의 일부인 query는 명시적 textual SQL로 둘 수 있다.
+- idle connection 끊김은 pool pre-ping · recycle로 다룬다(값은 Provisional Baseline).
+- 이 결정은 DB access stack만 정한다. **FastAPI route를 `def`로 둘지 `async def`로 둘지는 정하지 않는다** — HTTP/API 구현에서 I/O 경계(예: upload의 `UploadFile` 수신)를 보고 정한다. `async def` route가 sync DB service를 부르면 event loop를 막지 않도록 threadpool 등의 adapter 경계를 구현 단계에서 둔다.
+- migration 도구는 **Alembic**이다. 운영 계약은 forward-only이며 schema 변경은 expand → contract 순서로 나눈다. downgrade script를 운영 rollback 경로로 쓰지 않는다 — MySQL DDL은 statement 단위로만 atomic하다.
+- migration은 api · worker 시작 전 **단일 실행 단계**로만 돌린다. application startup에서 migration을 실행하지 않는다. 실행 명령과 위치는 Ops/Runbook(RD-12f)이 정한다.
+
+근거: [Research 01](./research/01-mysql-runtime-persistence-2026-10-03.md) §4.8 ~ §4.13 · Review notes.
+
+### 4.5 결과 · 원장 물리 표현
+
+확정(RD-01c · 01d, RD-01g는 물리 표현까지 — [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03). 필드 의미는 각 Contract가 authoritative하다.
+
+- **`JobExecution.produced`** — execution row의 JSON column에 `ContractRef[]` 그대로 저장한다. 별도 child table을 두지 않는다. produced ref로 execution을 찾는 요구가 생기면 다시 연다.
+- **`JobExecution.usage_refs`** — 저장하지 않는다. `UsageRecord.execution_ref`(index)로 projection한다. 두 방향을 독립 원장으로 두지 않는다(ERD↔Runtime ADR D6).
+- **UsageRecord** — Contract 필드를 typed column으로 둔다. `token_usage` 세 값은 nullable 정수이고 「전부 null 또는 전부 존재」 · 「total = input + output」을 DB 제약으로 건다(Contract §8-3 · §8-4). `pricing_context`는 `pricing_id` · `unit` column. `cost`는 nullable `DECIMAL` 계열 exact numeric amount + 별도 typed currency column이다. 애플리케이션은 금액을 `Decimal` ↔ 문자열 경계로만 다루고 float를 쓰지 않으며, 저장 scale보다 자릿수가 많은 값은 DB에 넣을 때 조용히 반올림하지 않고 거부한다. Contract에 없는 opaque 확장 column은 두지 않는다.
+  - **아직 고정하지 않은 것:** `DECIMAL` precision · scale 값. 새 Open Decision이 아니라 RD-01g 안의 구현 세부로, **첫 migration에서** cost 생산자 출력 범위([#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244) U-2)와 Contract 예시를 기준으로 고정한다.
+
+UsageRecord의 append 시점 · in-flight 추적 · 중복 방지(RD-01e · 01f)는 Search → Runtime 전달 모양([#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244)) 결정 뒤에 닫는다(§11.1 · §11.4).
 
 ## 5. Idempotency / Cache Reuse 접합
 
@@ -220,7 +250,7 @@ retry 필요
 → 시간이 된 뒤 새 JobExecution 생성
 ```
 
-> **Open Decision:** retry backoff 동안 다음 attempt의 생성 시점과 CaseView 대표 상태 계약([JobRecord/CaseView Contract](../architecture/contracts/contract-job-record-case-view.md) A절 §10-6)의 정합을 구현 전에 닫아야 한다. 위 순서는 그 결정 전까지 확정된 구현 순서가 아니다. 근거는 [2026-10-02 검수](./reviews/runtime-ops-consistency-audit-2026-10-02.md) B-02.
+> **Open Decision:** retry backoff 동안 다음 attempt의 생성 시점과 CaseView 대표 상태 계약([JobRecord/CaseView Contract](../architecture/contracts/contract-job-record-case-view.md) A절 §10-6)의 정합을 구현 전에 닫아야 한다. 위 순서는 그 결정 전까지 확정된 구현 순서가 아니다. 근거는 [2026-10-02 검수](./reviews/runtime-ops-consistency-audit-2026-10-02.md) B-02. 결정 카드: [#248](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/248)(추천안 단계).
 
 ### 6.4 아직 열려 있는 Runtime 값
 
@@ -561,11 +591,12 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 
 첫 DB Queue/Worker 구현에서 닫아야 한다.
 
-- [ ] queue table / execution table의 물리 schema
-- [ ] `JobExecution.produced` 물리 저장 — JSON vs `job_execution_products`
-- [ ] `JobExecution.usage_refs` materialization — 별도 저장 vs `UsageRecord.execution_ref` projection
-- [ ] UsageRecord final append timing / in-flight recovery / duplicate prevention
-- [ ] claim transaction / locking query
+- [ ] queue table / execution table의 물리 schema — 추천안 [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), RD-02 · RD-06 대기
+- [x] `JobExecution.produced` 물리 저장 — JSON column으로 닫힘 (§4.5)
+- [x] `JobExecution.usage_refs` materialization — `UsageRecord.execution_ref` projection으로 닫힘 (§4.5)
+- [ ] UsageRecord final append timing / in-flight recovery / duplicate prevention — 추천안 [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), [#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244) 대기
+- [ ] claim transaction / locking query — isolation · transaction 규칙은 닫힘(§4.3), exact table · index는 위 schema와 함께
+- [x] DB 접근 계층 · migration 도구 — sync DB access stack · Alembic으로 닫힘 (§4.4). FastAPI route `def`/`async def`는 이 항목이 정하지 않음
 - [ ] retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 (§6.3 Open Decision)
 - [ ] retry max
 - [ ] backoff + jitter
@@ -574,8 +605,8 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [ ] STALE threshold
 - [ ] stale sweep interval
 - [ ] worker polling interval
-- [ ] Runtime configuration shape
-- [ ] UsageRecord persistence shape
+- [ ] Runtime configuration shape — 추천안 [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249)
+- [x] UsageRecord persistence shape — 물리 표현(typed column · exact numeric · float 금지)으로 닫힘 (§4.5). `DECIMAL` precision/scale은 첫 migration에서 고정
 - [ ] `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · FX source — 정책은 §11.3에서 닫힘 (Search rate 주입 유지 · KRW 정규화)
 - [x] provider config/key naming boundary — Issue #153 합의로 닫힘 (§15.1). rename 구현은 Search 작업으로 남음
 
