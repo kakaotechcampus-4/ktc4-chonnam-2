@@ -6,6 +6,7 @@ from pathlib import Path
 from .materialization import AnalysisProfile, LocalAnalysisMaterializer, MaterializedVideo
 from .models import AssetSpan
 from .probe import LocalSource
+from .analysis_tail import analysis_tail_scope
 
 
 @dataclass(frozen=True)
@@ -30,4 +31,5 @@ class LocalIncidentMaterializer:
         return self._identity
 
     def materialize(self, source: LocalSource, index: int, span: AssetSpan) -> MaterializedVideo:
-        return self._engine.materialize(source, index, span, "incident-encoding")
+        with analysis_tail_scope(False):
+            return self._engine.materialize(source, index, span, "incident-encoding")

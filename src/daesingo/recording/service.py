@@ -43,6 +43,7 @@ from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .multi_source import build_placed_timeline, resolve_placed_span
 from .multi_analysis import materialize_chain
+from .analysis_tail import analysis_tail_scope
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
@@ -519,7 +520,7 @@ class RecordingService:
             index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
             if index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
-            with source_inspections(self._source_inspections):
+            with source_inspections(self._source_inspections), analysis_tail_scope():
                 prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
             source = AnalysisSource(
                 contract="AnalysisSource", contract_version="analysis-source-derived/v1",
@@ -604,7 +605,7 @@ class RecordingService:
             if local is None or index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 또는 stream index가 없습니다")
             inputs.append((local, index, span))
-        with source_inspections(self._source_inspections):
+        with source_inspections(self._source_inspections), analysis_tail_scope():
             prepared = materialize_chain(engine, inputs, profile_ref)
         source = AnalysisSource(contract="AnalysisSource", contract_version="analysis-source-derived/v1",
             analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",

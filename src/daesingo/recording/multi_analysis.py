@@ -18,6 +18,7 @@ def materialize_chain(engine, inputs, profile_ref):
             if snapshot[2:] != (source.byte_size, source.mtime_ns, source.sha256):
                 raise RecordingCapabilityError("UNAVAILABLE", "등록 이후 원본이 변경되었습니다")
         parts = [engine.materialize(source, index, span, profile_ref) for source, index, span in inputs]
+        best_effort = any(p.best_effort for p in parts)
         if any(not p.frames or p.time_base != parts[0].time_base or p.video_size != parts[0].video_size for p in parts):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 time base 또는 해상도가 일치하지 않습니다")
         # 초 단위 decimal metadata의 표현 오차에만 사용하는 비교 상한이다.
@@ -60,12 +61,14 @@ def materialize_chain(engine, inputs, profile_ref):
                     or (stream["width"], stream["height"]) != parts[0].video_size
                     or "mp4" not in raw["format"]["format_name"].split(",")
                     or len(frames) != len(expected)
-                    or any(abs(a - b) > 2 * base or abs(x - y) > 2 * base
+                    or any(abs(a - b) > (0 if best_effort else 2 * base)
+                           or abs(x - y) > (0 if best_effort else 2 * base)
                            for (a, x), (b, y) in zip(frames, expected))):
                 raise ValueError("연결 출력 검증 실패")
             duration = float(raw["format"]["duration"])
             if not math.isfinite(duration) or duration <= 0 or abs(duration - float(offset)) > .001 + float(2 * base):
                 raise ValueError("연결 출력 duration 불일치")
+            engine._strict_decode(output)
             content = output.read_bytes()
             boxes, position = [], 0
             while position + 8 <= len(content):
@@ -78,7 +81,7 @@ def materialize_chain(engine, inputs, profile_ref):
                 raise ValueError("faststart 검증 실패")
             if any(_snapshot(source.path) != before for (source, _, _), before in zip(inputs, snapshots)):
                 raise RecordingCapabilityError("UNAVAILABLE", "연결 중 원본 변경을 감지했습니다")
-            return MaterializedVideo(content, duration, timeline_range, tuple(frames), base, parts[0].video_size)
+            return MaterializedVideo(content, duration, timeline_range, tuple(frames), base, parts[0].video_size, best_effort)
     except subprocess.TimeoutExpired:
         raise RecordingCapabilityError("TEMPORARY_FAILURE", "연결 materialization 제한 시간을 초과했습니다") from None
     except OSError:

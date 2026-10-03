@@ -168,7 +168,7 @@ def test_two_spans_within_larger_timeline_and_actual_outer_range(chain):
         service.prepare_analysis_source_from_resolution(resolution, "profile")
 
 
-def test_opt_in_damaged_real_pair_fails_safely(tmp_path, monkeypatch):
+def test_opt_in_tail_only_real_pair_analysis(tmp_path, monkeypatch):
     paths = [os.environ.get("DAESINGO_RECORDING_PAIR_A"), os.environ.get("DAESINGO_RECORDING_PAIR_B")]
     placement_json = os.environ.get("DAESINGO_RECORDING_CHAIN_PLACEMENTS")
     if not all(paths) or not placement_json:
@@ -199,12 +199,11 @@ def test_opt_in_damaged_real_pair_fails_safely(tmp_path, monkeypatch):
             resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
                 dict(start_sec=boundary-1, end_sec=boundary+1), media_stream_refs=[v.media_stream_ref for v in videos])
             assert resolution.status == "COMPLETE"
-            with pytest.raises(RecordingCapabilityError) as caught:
-                service.prepare_analysis_source_from_resolution(resolution, "profile")
-            assert caught.value.code == "TEMPORARY_FAILURE"
-            assert attempted == [0]  # 첫 원본 tail에서 종료. 연결 출력은 발급하지 않는다.
-            assert not service._local_analysis and not service._analysis_reuse
-            assert all(str(p) not in str(caught.value) and p.name not in str(caught.value) for p in paths)
+            source = service.prepare_analysis_source_from_resolution(resolution, "profile")
+            assert attempted == [0, 1]
+            with service.open_analysis_source(source.analysis_source_ref).stream as stream:
+                assert len(stream.read()) == source.byte_size > 0
+            assert all(str(p) not in source.model_dump_json() and p.name not in source.model_dump_json() for p in paths)
     finally:
         assert [fingerprint(p) for p in paths] == before
         assert not list(work.iterdir())
