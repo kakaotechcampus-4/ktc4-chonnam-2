@@ -185,6 +185,8 @@ D. 현재 MVP에서 보류 가능
 
 모든 Open Decision을 미리 완결하려 하지 않는다. 구현을 막는 Decision과 실측 뒤 닫을 Decision을 분리한다.
 
+현재 분류: [`decision-classification.md`](./decision-classification.md). §3.1 책임 유형과 그 문서 Decision Type의 대응은 그 문서 §2.1에 있다.
+
 ---
 
 ## 4. Decision-driven 외부 기술 조사

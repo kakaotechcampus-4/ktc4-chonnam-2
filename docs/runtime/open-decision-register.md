@@ -27,7 +27,7 @@
 이미 결정된 것과 구현만 안 된 것(Implementation Gap)은 하단 [제외 표](#excluded-from-open-decision-register)에 둔다.
 
 - **Group 경계:** Owner · Contract surface · Timing · 의존 관계가 같으면 한 group, 그중 하나가 현저히 다르면 분리를 검토한다. 특히 B/C/D group 안에 구현을 막는 A sub-decision을 예외로 두지 않는다(A group 안의 일부 세부가 B로 내려갈 수 있다는 표시는 허용).
-- **Timing candidate**는 §3 정식 분류 전의 **현재 후보값**이다. A = 구현 전 필수 · B = Provisional Baseline으로 구현 가능 · C = 구현 후 실측 · D = MVP 보류 가능 (workflow §3.2). 후보가 근거 없이 붙은 경우는 없지만 확정 판정도 아니다.
+- **Timing candidate**는 §3 정식 분류 전의 **현재 후보값**이다. A = 구현 전 필수 · B = Provisional Baseline으로 구현 가능 · C = 구현 후 실측 · D = MVP 보류 가능 (workflow §3.2). 후보가 근거 없이 붙은 경우는 없지만 확정 판정도 아니다. §3 정식 분류(Timing · Gate · 결정권 · Closure route · §4 조사 필요)는 [`decision-classification.md`](./decision-classification.md)에 있다.
 - **Already fixed / Do not reopen**은 이미 Contract · ADR · Owner 결정으로 닫힌 것이다. 논의가 그쪽으로 되돌아가면 이 칸을 먼저 본다.
 - **Issue needed**는 `YES` / `NO` / `LATER`만 표시한다. 이번 단계에서 Issue를 만들지 않는다(§5에서 처리).
 - **Research needed**는 조사할 질문만 적는다. 실제 조사는 workflow §4다.
@@ -835,7 +835,7 @@ Ops §4 「정확한 Dockerfile/Compose service command는 composition root 구�
 ### Dependencies
 
 - **선행:** RD-07(config/secret 주입) · RD-01j(migration 방식) · RD-05(smoke endpoint) · RD-17(api · worker가 공유해야 하는 파일 · 상태 경계 — volume 구성에 반영) · API/Worker composition root 구현
-- **막는 것:** 실제 배포 · RD-13(log 수집 위치) · pre-deploy review
+- **막는 것:** 실제 배포 · RD-13(log 수집 위치) · RD-14(endpoint 구성의 전제) · pre-deploy review
 
 ### Current evidence
 
@@ -1320,6 +1320,7 @@ flowchart TD
   RD06 ---|함께 본다| RD17
   RD19 --> RD01
   RD01 --> RD04
+  RD01 --> RD13
   RD17 --> RD05
   RD17 --> RD09
   RD17 --> RD10
@@ -1365,7 +1366,8 @@ RD-17 recording persistence ─┬→ RD-05 (upload) ─→ RD-12
                              ├→ RD-10 retention ─→ RD-11
                              └→ RD-12
 RD-01 ─┬→ RD-04 (heartbeat 구조)
-       └→ RD-12
+       ├→ RD-12
+       └→ RD-13 (heartbeat 구조 → 관측)
 RD-07 config ─→ RD-12 deployment ─┬→ RD-13 관측 ─→ RD-11
                                   └→ RD-14 endpoint
 RD-08 pricing artifact — 다른 Decision을 막지 않음 (EI-06만 입력)
@@ -1475,6 +1477,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | --- | --- | --- |
 | 2026-10-02 | 최초 작성 — D-01~D-17 정규화, 16 group / 90 sub-decision | `origin/develop` `9ebb55f` |
 | 2026-10-03 | 분류 경계 정리 — Decision / External Input / Experiment / Follow-up 분리, group 경계 재조정. 18 group / 85 sub-decision / EI 7. 새 조사 · 답 확정 없음 | `origin/develop` `9ebb55f` |
+| 2026-10-03 | §3 분류 중 정합 — dependency graph에 RD-01 → RD-13 edge 추가, RD-12 「막는 것」에 RD-14 추가(본문 Dependencies와 graph 일치). 「읽는 법」에 §3 분류 문서 링크. Timing · Owner · group 변경 없음 | `origin/develop` `10787d8` |
 
 2026-10-03 ID 대응표(이전 → 현재):
 
