@@ -169,8 +169,9 @@ queue 항목을 어느 table의 어떤 row로 둘지와 exact index(RD-01a · RD
 
 확정(RD-01j, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03):
 
-- driver는 **PyMySQL**(sync, pure Python), 접근 계층은 **SQLAlchemy Core 2.x**(connection pool · transaction)이고 ORM은 쓰지 않는다. claim처럼 lock · transaction 경계가 정합성의 일부인 query는 textual SQL로 둔다.
-- DB를 쓰는 API route는 sync 함수로 두어 Worker와 같은 sync stack을 쓴다. idle connection 끊김은 pool pre-ping · recycle로 다룬다(값은 Provisional Baseline).
+- driver는 **PyMySQL**(sync, pure Python), 접근 계층은 **SQLAlchemy Core 2.x**(connection pool · transaction)이고 ORM은 쓰지 않는다. API와 Worker는 같은 **sync DB access stack**을 쓴다. claim처럼 lock · transaction 경계가 정합성의 일부인 query는 명시적 textual SQL로 둘 수 있다.
+- idle connection 끊김은 pool pre-ping · recycle로 다룬다(값은 Provisional Baseline).
+- 이 결정은 DB access stack만 정한다. **FastAPI route를 `def`로 둘지 `async def`로 둘지는 정하지 않는다** — HTTP/API 구현에서 I/O 경계(예: upload의 `UploadFile` 수신)를 보고 정한다. `async def` route가 sync DB service를 부르면 event loop를 막지 않도록 threadpool 등의 adapter 경계를 구현 단계에서 둔다.
 - migration 도구는 **Alembic**이다. 운영 계약은 forward-only이며 schema 변경은 expand → contract 순서로 나눈다. downgrade script를 운영 rollback 경로로 쓰지 않는다 — MySQL DDL은 statement 단위로만 atomic하다.
 - migration은 api · worker 시작 전 **단일 실행 단계**로만 돌린다. application startup에서 migration을 실행하지 않는다. 실행 명령과 위치는 Ops/Runbook(RD-12f)이 정한다.
 
@@ -178,11 +179,12 @@ queue 항목을 어느 table의 어떤 row로 둘지와 exact index(RD-01a · RD
 
 ### 4.5 결과 · 원장 물리 표현
 
-확정(RD-01c · 01d · 01g, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03). 필드 의미는 각 Contract가 authoritative하다.
+확정(RD-01c · 01d, RD-01g는 물리 표현까지 — [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03). 필드 의미는 각 Contract가 authoritative하다.
 
 - **`JobExecution.produced`** — execution row의 JSON column에 `ContractRef[]` 그대로 저장한다. 별도 child table을 두지 않는다. produced ref로 execution을 찾는 요구가 생기면 다시 연다.
 - **`JobExecution.usage_refs`** — 저장하지 않는다. `UsageRecord.execution_ref`(index)로 projection한다. 두 방향을 독립 원장으로 두지 않는다(ERD↔Runtime ADR D6).
-- **UsageRecord** — Contract 필드를 typed column으로 둔다. `token_usage` 세 값은 nullable 정수이고 「전부 null 또는 전부 존재」 · 「total = input + output」을 DB 제약으로 건다(Contract §8-3 · §8-4). `pricing_context`는 `pricing_id` · `unit` column. `cost`는 nullable `DECIMAL` amount + currency column이다. 애플리케이션은 금액을 `Decimal` ↔ 문자열로만 다루고 float를 쓰지 않으며, 저장 scale보다 자릿수가 많은 값은 조용히 반올림하지 않고 거부한다. precision/scale 값은 migration에서 Contract 예시와 cost 생산자 출력을 덮도록 정한다. Contract에 없는 opaque 확장 column은 두지 않는다.
+- **UsageRecord** — Contract 필드를 typed column으로 둔다. `token_usage` 세 값은 nullable 정수이고 「전부 null 또는 전부 존재」 · 「total = input + output」을 DB 제약으로 건다(Contract §8-3 · §8-4). `pricing_context`는 `pricing_id` · `unit` column. `cost`는 nullable `DECIMAL` 계열 exact numeric amount + 별도 typed currency column이다. 애플리케이션은 금액을 `Decimal` ↔ 문자열 경계로만 다루고 float를 쓰지 않으며, 저장 scale보다 자릿수가 많은 값은 DB에 넣을 때 조용히 반올림하지 않고 거부한다. Contract에 없는 opaque 확장 column은 두지 않는다.
+  - **아직 고정하지 않은 것:** `DECIMAL` precision · scale 값. 새 Open Decision이 아니라 RD-01g 안의 구현 세부로, **첫 migration에서** cost 생산자 출력 범위([#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244) U-2)와 Contract 예시를 기준으로 고정한다.
 
 UsageRecord의 append 시점 · in-flight 추적 · 중복 방지(RD-01e · 01f)는 Search → Runtime 전달 모양([#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244)) 결정 뒤에 닫는다(§11.1 · §11.4).
 
@@ -594,7 +596,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [x] `JobExecution.usage_refs` materialization — `UsageRecord.execution_ref` projection으로 닫힘 (§4.5)
 - [ ] UsageRecord final append timing / in-flight recovery / duplicate prevention — 추천안 [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), [#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244) 대기
 - [ ] claim transaction / locking query — isolation · transaction 규칙은 닫힘(§4.3), exact table · index는 위 schema와 함께
-- [x] DB 접근 계층 · migration 도구 — 닫힘 (§4.4)
+- [x] DB 접근 계층 · migration 도구 — sync DB access stack · Alembic으로 닫힘 (§4.4). FastAPI route `def`/`async def`는 이 항목이 정하지 않음
 - [ ] retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 (§6.3 Open Decision)
 - [ ] retry max
 - [ ] backoff + jitter
@@ -604,7 +606,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 - [ ] stale sweep interval
 - [ ] worker polling interval
 - [ ] Runtime configuration shape — 추천안 [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249)
-- [x] UsageRecord persistence shape — typed column으로 닫힘 (§4.5)
+- [x] UsageRecord persistence shape — 물리 표현(typed column · exact numeric · float 금지)으로 닫힘 (§4.5). `DECIMAL` precision/scale은 첫 migration에서 고정
 - [ ] `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · FX source — 정책은 §11.3에서 닫힘 (Search rate 주입 유지 · KRW 정규화)
 - [x] provider config/key naming boundary — Issue #153 합의로 닫힘 (§15.1). rename 구현은 Search 작업으로 남음
 
