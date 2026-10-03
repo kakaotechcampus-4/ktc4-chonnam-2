@@ -191,16 +191,21 @@ body:has(.rs-page) { background: #fff; }
 
 /* 출발 — 「영상에서 찾아보기」 직후 겉모습 복사본(.is-departing)에서만. 이전 업로드 칸 자리에 같은
    자동차 전체가 겹쳐 나타나고(0.1초) 정지에서 점점 빨라지며 앞(왼쪽)으로 달려 나간다(0.44초). 휠은 같은
-   시간·같은 가속으로 구르고, 빨라지면 한 바퀴 평균한 흐린 층으로 넘어간다. 연기·속도선·흔들림 없음 */
+   시간·같은 가속으로 구른다. 출발 초반(0.12초까지)은 휠살이 그대로 보이고, 속도가 붙는 0.12~0.28초에
+   한 바퀴 평균한 흐린 층으로 천천히 넘어간다. 차가 거의 떠난 0.3초부터 칸(테두리·바탕)도 함께 흐려져
+   빈 상자가 남지 않는다(전환 시간은 그대로). 연기·속도선·흔들림 없음 */
 .rs-depart {
   position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 320px;
   background: #fff; border: 1px solid rgba(0, 0, 0, .10); border-radius: 18px;
-  animation: rs-fade-in .1s var(--rs-ease) both;
+  animation: rs-fade-in .1s var(--rs-ease) both, rs-depart-out .14s linear .3s forwards;
 }
+@keyframes rs-depart-out { to { opacity: 0; } }
+/* 칸이 흐려지며 아래 요약이 비쳐도 작은 자동차가 두 번째 차로 보이지 않게 */
+.rs.upload.is-departing .rs-mini-car { visibility: hidden; }
 .rs-depart-car { position: absolute; inset: 0; animation: rs-drive .44s cubic-bezier(.55, .085, .68, .53) .04s both; }
 .rs-depart .rs-rig { transition: none; }
-.rs-depart .rs-wheel-spin { animation: rs-roll .44s cubic-bezier(.55, .085, .68, .53) .04s both, rs-sharp-out .1s linear .07s both; }
-.rs-depart .rs-wheel-blur { animation: rs-blur-in .1s linear .07s both; }
+.rs-depart .rs-wheel-spin { animation: rs-roll .44s cubic-bezier(.55, .085, .68, .53) .04s both, rs-sharp-out .16s ease-in .12s both; }
+.rs-depart .rs-wheel-blur { animation: rs-blur-in .14s ease-out .1s both; }
 @keyframes rs-drive { to { transform: translateX(var(--go)); } }
 @keyframes rs-roll { to { transform: rotate(var(--roll)); } }
 @keyframes rs-sharp-out { to { opacity: 0; } }
