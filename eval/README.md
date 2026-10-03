@@ -90,7 +90,7 @@ done
 uv run python -m eval.repeat --name <name> --predictions <name>_r1 <name>_r2 <name>_r3 <name>_r4 <name>_r5
 ```
 
-impl·manifest·code_commit·모델·프롬프트/설정 fingerprint 중 하나라도 회차 사이에 다르면 채점하지 않는다(rc 4). 결과는 정답 사건마다 top-3 적중 횟수(k/n)와 항상 맞힘·흔들림·항상 놓침 개수, 회차별 Recall@3·음성 클립 오탐을 낸다. 적중 정의는 `scorers/candidate.py`와 같다. 정확도와 일관성을 합친 단일 점수는 #226에서 합의 전이라 내지 않는다.
+impl·manifest·code_commit·모델·프롬프트/설정 fingerprint 중 하나라도 회차 사이에 다르면 채점하지 않는다(rc 4). 주 점수 `primary_score`는 n회 모두 top-3에 맞힌 사건 비율(pass^n)이다(#226 합의). 그 밖에 정답 사건마다 적중 횟수(k/n)와 항상 맞힘·흔들림·항상 놓침, 회차별 Recall@3을 낸다. 오탐은 주 점수에 섞지 않고 `negative_baseline`(음성 클립마다 n회 중 몇 번 후보를 냈나)으로 따로 본다. 적중 정의는 `scorers/candidate.py`와 같고 **대상 차량은 판정하지 않는다**(`hit_basis`).
 
 | 폴더 | 무엇이 들어 있나 |
 | --- | --- |

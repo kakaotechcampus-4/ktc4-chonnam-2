@@ -58,6 +58,31 @@ def test_counts_always_flaky_never_per_event():
     assert out["coverage"] is None
 
 
+def test_primary_score_is_all_runs_hit_ratio_and_ignores_false_positives():
+    """주 점수는 n회 모두 맞힌 비율이다. 오탐이 늘어도 주 점수는 그대로고,
+    음성 기준선에서만 드러난다 (#226 합의)."""
+    clean = consistency.score([_run(True, 0)] * 3, _gt())
+    noisy = consistency.score([_run(True, 5)] * 3, _gt())
+    assert clean["primary_score"]["name"] == "pass^3@3"
+    assert clean["primary_score"]["value"] == noisy["primary_score"]["value"] == pytest.approx(
+        2 / 3)                                   # E1·E2 는 매번, E3 는 매번 놓침
+    assert clean["negative_baseline"]["always_clean"] == 1
+    assert noisy["negative_baseline"]["always_flagged"] == 1
+    assert noisy["negative_baseline"]["clean_ratio"] == 0.0
+
+
+def test_negative_baseline_counts_runs_that_flagged_each_negative_clip():
+    out = consistency.score([_run(True, 0), _run(False, 2), _run(True, 1)], _gt())
+    nb = out["negative_baseline"]
+    assert (nb["always_clean"], nb["flaky"], nb["always_flagged"]) == (0, 1, 0)
+    assert nb["flag_count_histogram"] == {"0": 0, "1": 0, "2": 1, "3": 0}
+
+
+def test_result_states_hit_basis_does_not_check_target_vehicle():
+    out = consistency.score([_run(True, 0)] * 2, _gt())
+    assert "대상 차량은 판정하지 않는다" in out["hit_basis"]
+
+
 def test_single_run_is_flagged_not_scored_as_consistent():
     out = consistency.score([_run(True, 0)], _gt())
     assert "SINGLE_RUN" in out["coverage"]
