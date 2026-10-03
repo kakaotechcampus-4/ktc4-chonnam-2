@@ -40,8 +40,11 @@ export function FlowScreen(props: {
   situation: string
   startedAt: number
   title?: string
+  /** 업로드 화면에서 자동차가 출발하며 넘어올 때 — 오른쪽에서 밀려 들어온다(처음 그릴 때만 본다) */
+  pushIn?: boolean
 }): JSX.Element {
   const screen = selectScreen(props.view)
+  const [enter] = useState(() => (props.pushIn ? 'rs-push-in' : 'rs-enter'))
   const rootRef = useRef<HTMLDivElement>(null)
   // 「영상에서 찾아보기」가 사라져 포커스가 갈 곳을 잃으면 진행 화면이 받는다(보이는 요소).
   useEffect(() => {
@@ -120,7 +123,7 @@ export function FlowScreen(props: {
   const carY = carIndex !== null && stops[carIndex] !== undefined ? stops[carIndex] - CAR_H / 2 : null
 
   return (
-    <div className="rs rs-enter flow" ref={rootRef} tabIndex={-1}>
+    <div className={`rs ${enter} flow`} ref={rootRef} tabIndex={-1}>
       {/* 위: 현재 작업·상태·안내(두 칸 전체). 아래 행에 대표 영상과 단계 목록이 같은 높이에서 시작한다 */}
       <div className="flow-head" aria-live="polite">
         {current && <p className="flow-overall">{overall}</p>}

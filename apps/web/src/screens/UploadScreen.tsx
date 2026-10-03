@@ -2,6 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { ChevronDown, CircleAlert } from 'lucide-react'
 import carSide from '../assets/car/car-side.webp'
 import carDoorOpen from '../assets/car/car-door-open.webp'
+import frontBack from '../assets/car/wheel-front-back.webp'
+import frontSpin from '../assets/car/wheel-front-spin.webp'
+import frontBlur from '../assets/car/wheel-front-blur.webp'
+import rearBack from '../assets/car/wheel-rear-back.webp'
+import rearSpin from '../assets/car/wheel-rear-spin.webp'
+import rearBlur from '../assets/car/wheel-rear-blur.webp'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -21,12 +27,19 @@ const INTRO_MS = 700
 // 원본 car-side.webp(1774×887, 앞이 왼쪽) 한 장의 위치·배율만 바꿔 문과 앞바퀴를 보인다 —
 // 정지 이미지의 이동·확대이지 3D 카메라 이동이 아니다. 문 열림은 열림 사진(car-door-open)을
 // 원본의 문 위치(원본 사진 1448px 기준 배율 .388·원점 466,274)에 겹친 임시 표현이고 실제 회전이
-// 아니다. 바퀴 회전 소재가 없어 업로드 중에는 작은 로딩을 함께 둔다.
+// 아니다.
+//
+// 휠은 같은 원본에서 나눈 두 층을 원본 위 같은 자리에 겹친다 — 고정 층(디스크·캘리퍼·타이어 옆면)과
+// 도는 층(휠살·림·허브·너트). 도는 층은 휠살이 5번 반복되는 성질로 5곳을 겹쳐 캘리퍼를 뺀 것이라
+// 사진 전체를 돌리지 않는다. 차체·캘리퍼·바닥 그림자는 그대로다. 빠르게 돌 때(출발)는 같은 층을 한 바퀴
+// 평균한 흐린 층으로 넘어간다. 업로드 중 회전 속도는 일정하며 진행률·남은 시간을 뜻하지 않는다.
 const SCENE_H = 320
 const VIEW = {
   door: { x: 735, y: 440, span: 440 },
   hover: { x: 735, y: 440, span: 415 },
   wheel: { x: 340, y: 600, span: 400 },
+  /** 출발 장면 — 자동차 전체 */
+  whole: { x: 887, y: 470, span: 820 },
 }
 type View = keyof typeof VIEW
 const OPEN_FIT = { x: 466, y: 274, s: (0.388 * 1448) / 900 }
@@ -36,6 +49,27 @@ const BOARD_MS = 300
 const CLOSE_MS = 150
 const HOLD_MS = 50
 type Phase = 'boarding' | 'closing' | 'wheel' | null
+// 원본 기준 휠 층 위치(243px 정사각, 가운데가 휠 중심)와 타이어 반지름
+const WHEELS = {
+  front: { x: 200.5, y: 509.5, back: frontBack, spin: frontSpin, blur: frontBlur },
+  rear: { x: 1265, y: 509.5, back: rearBack, spin: rearSpin, blur: rearBlur },
+}
+const TIRE_R = 123
+// 출발 — 차가 장면 안에서 앞(왼쪽)으로 달려 나가는 거리. 휠은 같은 시간·같은 가속으로 이 거리만큼
+// 구른다(미끄러지지 않는 회전각 = 거리 ÷ 화면 속 타이어 반지름).
+const DEPART_PX = 1000
+const DEPART_ROLL_DEG = (-DEPART_PX / (TIRE_R * (SCENE_H / VIEW.whole.span)) / Math.PI) * 180
+
+function Wheel(props: { at: keyof typeof WHEELS }): JSX.Element {
+  const w = WHEELS[props.at]
+  return (
+    <span className="rs-wheel" style={{ left: w.x, top: w.y }}>
+      <img className="rs-wheel-back" src={w.back} alt="" />
+      <img className="rs-wheel-spin" src={w.spin} alt="" />
+      <img className="rs-wheel-blur" src={w.blur} alt="" />
+    </span>
+  )
+}
 
 function sceneTransform(view: View, width: number): string {
   const f = VIEW[view]
@@ -49,8 +83,9 @@ function sceneTransform(view: View, width: number): string {
 // 전(idle)과 실패 때만 쓰는 마우스용 지름길이다. 버튼은 모든 상태에서 같은 요소로 남아(문구·모양만
 // 바뀜) 업로드가 끝나 칸이 바뀌어도 키보드 포커스가 사라지지 않는다.
 //
-// 업로드가 끝나면(done) 그림이 접히고 한 줄 요약이 남는다. 요약 왼쪽의 작은 자동차는 「영상에서
-// 찾아보기」를 누르면(departing — DemoFlow의 겉모습 복사본에서만) 왼쪽으로 출발한다.
+// 업로드가 끝나면(done) 그림이 접히고 한 줄 요약이 남는다. 「영상에서 찾아보기」를 누르면
+// (departing — DemoFlow의 겉모습 복사본에서만) 이전 업로드 칸 자리에 같은 자동차 전체가 나타나
+// 휠이 구르며 앞(왼쪽)으로 출발한다. 칸이 다시 펼쳐지지 않으므로 입력칸을 밀지 않는다.
 export function UploadScreen(props: {
   state: UploadState
   files: File[]
@@ -60,7 +95,7 @@ export function UploadScreen(props: {
   onFiles: (files: File[]) => void
   onSituation: (text: string) => void
   onSearch: () => void
-  /** 분석 시작 직후 화면이 빠지는 동안 — 작은 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
+  /** 분석 시작 직후 화면이 빠지는 동안 — 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
   departing?: boolean
 }): JSX.Element {
   const [over, setOver] = useState(false)
@@ -97,6 +132,7 @@ export function UploadScreen(props: {
   const [width, setWidth] = useState(720)
   useLayoutEffect(() => {
     const el = scene.current
+    if (el?.clientWidth) setWidth(el.clientWidth) // 첫 그림부터 맞는 자리(출발 장면이 튀지 않게)
     if (!el || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(() => setWidth(el.clientWidth || 720))
     ro.observe(el)
@@ -110,7 +146,7 @@ export function UploadScreen(props: {
   const shown = useRef(transform)
   if (state !== 'fail') shown.current = transform
   // 이동 중에 실패하면 그 자리에서 멈춘다 — 지금 그려진 위치를 읽어 전환 없이 고정한다.
-  const carImg = useRef<HTMLImageElement>(null)
+  const carImg = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const el = carImg.current
     if (state !== 'fail' || !el) return
@@ -123,6 +159,8 @@ export function UploadScreen(props: {
   }, [state])
   // 바퀴로 이동하는 순간부터 완료·실패까지 배경 차를 숨긴다(두 대처럼 보이지 않게).
   const bgOff = phase === 'wheel' || state === 'done' || state === 'fail'
+  // 휠은 바퀴 화면에 도착한 뒤 업로드가 끝날 때까지만 돈다. 끝나거나 실패하면 그 각도에서 멈춘다.
+  const spinning = phase === 'wheel'
 
   const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
@@ -155,7 +193,7 @@ export function UploadScreen(props: {
         {/* 같은 원본을 은은하게 깐 자동차 전체 — 업로드 칸 가운데, 칸 높이 안에서 */}
         <img className="rs-bgcar" src={carSide} alt="" aria-hidden />
         <div
-          className={`rs-drop is-${state}${over ? ' over' : ''}${open ? ' is-open' : ''}`}
+          className={`rs-drop is-${state}${over ? ' over' : ''}${open ? ' is-open' : ''}${spinning ? ' is-spinning' : ''}`}
           onClick={canClickArea ? choose : undefined}
           onPointerEnter={() => setPointerIn(true)}
           onPointerLeave={() => setPointerIn(false)}
@@ -173,19 +211,17 @@ export function UploadScreen(props: {
           }}
         >
           <div className="rs-scene" ref={scene} aria-hidden>
-            <img
-              ref={carImg}
-              className="rs-scene-car"
-              src={carSide}
-              alt=""
-              style={{ transform: shown.current }}
-            />
-            <img
-              className="rs-scene-open"
-              src={carDoorOpen}
-              alt=""
-              style={{ transform: `${transform} translate(${OPEN_FIT.x}px, ${OPEN_FIT.y}px) scale(${OPEN_FIT.s})` }}
-            />
+            {/* 원본 좌표 그대로의 판 — 차·앞휠·문 열림이 함께 옮겨진다 */}
+            <div ref={carImg} className="rs-rig" style={{ transform: shown.current }}>
+              <img className="rs-scene-car" src={carSide} alt="" />
+              <Wheel at="front" />
+              <img
+                className="rs-scene-open"
+                src={carDoorOpen}
+                alt=""
+                style={{ transform: `translate(${OPEN_FIT.x}px, ${OPEN_FIT.y}px) scale(${OPEN_FIT.s})` }}
+              />
+            </div>
             {phase === 'boarding' && (
               // 영상 카드 — 열린 입구(실내) 쪽으로 작아지며 들어간다. 최대 3장, 개수는 문구로 정확히.
               <div className="rs-cards" key={names}>
@@ -283,6 +319,18 @@ export function UploadScreen(props: {
             }}
           />
         </div>
+        {props.departing && (
+          // 출발 장면 — 이전 업로드 칸 자리에 겹쳐 그린다(아래 요소를 밀지 않음).
+          <div className="rs-depart" aria-hidden>
+            <div className="rs-depart-car" style={{ '--roll': `${DEPART_ROLL_DEG}deg`, '--go': `${-DEPART_PX}px` } as CSSProperties}>
+              <div className="rs-rig" style={{ transform: sceneTransform('whole', width) }}>
+                <img className="rs-scene-car" src={carSide} alt="" />
+                <Wheel at="front" />
+                <Wheel at="rear" />
+              </div>
+            </div>
+          </div>
+        )}
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">
             열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')} — 지원하지 않는

@@ -83,7 +83,10 @@ it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 �
     expect(r.container.querySelector('.rs.flow')).not.toBeNull()
     expect(ghost.getAttribute('aria-hidden')).toBe('true')
     expect(ghost.hasAttribute('inert')).toBe(true)
-    act(() => vi.advanceTimersByTime(400))
+    // 진행 화면은 오른쪽에서 밀려 들어온다 — 출발 장면(앞·뒤 휠)은 복사본에만 있다
+    expect(r.container.querySelector('.rs.flow.rs-push-in')).not.toBeNull()
+    expect(ghost.querySelectorAll('.rs-depart .rs-wheel')).toHaveLength(2)
+    act(() => vi.advanceTimersByTime(600))
     expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
 
     fireEvent.click(r.getByText('새 신고'))
@@ -114,8 +117,10 @@ it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·
     act(() => vi.advanceTimersByTime(600))
     expect(r.container.querySelector('.rs-vcard')).toBeNull()
     expect(r.container.querySelector('.upload.bg-off')).not.toBeNull() // 바퀴로 이동 — 배경 숨김
+    expect(r.container.querySelector('.rs-drop.is-spinning')).not.toBeNull() // 업로드 중 휠 회전
     r.rerender(screen('fail', b))
     expect(r.container.querySelector('.upload.bg-off')).not.toBeNull()
+    expect(r.container.querySelector('.rs-drop.is-spinning')).toBeNull() // 실패하면 그 각도에서 멈춤
   } finally {
     vi.useRealTimers()
   }
@@ -133,8 +138,24 @@ it('분석 시작은 한 번만 — 누른 뒤 남는 버튼은 누를 수 없�
     const left = r.getAllByText('영상에서 찾아보기')
     expect(left).toHaveLength(1)
     expect(left[0].closest('.rs-upload-exit')!.hasAttribute('inert')).toBe(true)
-    expect(r.container.querySelector('.rs-upload-exit .upload.is-departing .rs-mini-car')).not.toBeNull()
+    expect(r.container.querySelector('.rs-upload-exit .upload.is-departing .rs-depart')).not.toBeNull()
     expect(r.container.querySelectorAll('.rs.flow')).toHaveLength(1)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('휠은 바퀴 화면에 도착한 뒤 업로드 중에만 돌고, 완료되면 멈춘다 — 출발 장면은 누를 때까지 없다', () => {
+  vi.useFakeTimers()
+  try {
+    const a = [file('a.mp4')]
+    const r = render(screen('uploading', a))
+    expect(r.container.querySelector('.rs-drop.is-spinning')).toBeNull() // 탑승·문 닫힘 동안은 아직
+    act(() => vi.advanceTimersByTime(500))
+    expect(r.container.querySelector('.rs-drop.is-spinning')).not.toBeNull()
+    r.rerender(screen('done', a))
+    expect(r.container.querySelector('.rs-drop.is-spinning')).toBeNull()
+    expect(r.container.querySelector('.rs-depart')).toBeNull()
   } finally {
     vi.useRealTimers()
   }
