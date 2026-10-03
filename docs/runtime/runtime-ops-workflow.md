@@ -77,6 +77,12 @@ rate limit / concurrency
 retention / logging / delete 정책
 ```
 
+### 법령 / 공식 가이드
+
+```text
+사용자 영상 · 식별정보 보관 · 파기 제약
+```
+
 카테캠 AWS/ML API 공지처럼 프로젝트에 직접 적용되는 외부 입력은 [`official-inputs/`](./official-inputs/README.md)에 보존한다.
 
 MySQL Queue, ffmpeg, Object Storage, Worker scaling 같은 **일반 외부 기술 사례는 이 단계에 섞지 않는다.** 그런 조사는 §2–§3에서 실제 Open Decision을 정리한 뒤 필요한 질문만 §4에서 조사한다.
@@ -184,6 +190,8 @@ D. 현재 MVP에서 보류 가능
 ```
 
 모든 Open Decision을 미리 완결하려 하지 않는다. 구현을 막는 Decision과 실측 뒤 닫을 Decision을 분리한다.
+
+현재 분류: [`decision-classification.md`](./decision-classification.md). §3.1 책임 유형과 그 문서 Decision Type의 대응은 그 문서 §2.1에 있다.
 
 ---
 

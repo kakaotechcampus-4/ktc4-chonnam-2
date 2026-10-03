@@ -20,14 +20,14 @@
 | 분류 | 뜻 | 어디에 두는가 |
 | --- | --- | --- |
 | **Decision** | 여러 선택지 가운데 우리가 정책·구조를 골라야 한다 | 각 RD group의 Sub-decisions |
-| **External Input** | 우리가 고르는 것이 아니라 밖에서 확인해야 하는 사실(운영진 공지 · provider 정책 · 선정 모델 smoke). Decision 가능한 범위를 좁힌다(workflow §1) | [External Inputs](#external-inputs--decision이-아니라-확인할-사실) — `EI-xx` |
+| **External Input** | 우리가 고르는 것이 아니라 밖에서 확인해야 하는 사실(운영진 공지 · provider 정책 · 선정 모델 smoke · 법령 · 공식 가이드). Decision 가능한 범위를 좁힌다(workflow §1) | [External Inputs](#external-inputs--decision이-아니라-확인할-사실) — `EI-xx` |
 | **Experiment** | 구현 후 측정으로 얻는 값 · 근거 | 각 group의 Follow-up needs 「Experiment」 · 하단 [Experiment-derived](#experiment-derived-최종-숫자--선택) |
 | **Follow-up / Trigger** | 결정 뒤에 할 문서 · Issue · 검증 작업, 또는 Decision을 다시 여는 조건 | 각 group의 Follow-up needs 「Follow-up」 · 「Trigger」 |
 
 이미 결정된 것과 구현만 안 된 것(Implementation Gap)은 하단 [제외 표](#excluded-from-open-decision-register)에 둔다.
 
 - **Group 경계:** Owner · Contract surface · Timing · 의존 관계가 같으면 한 group, 그중 하나가 현저히 다르면 분리를 검토한다. 특히 B/C/D group 안에 구현을 막는 A sub-decision을 예외로 두지 않는다(A group 안의 일부 세부가 B로 내려갈 수 있다는 표시는 허용).
-- **Timing candidate**는 §3 정식 분류 전의 **현재 후보값**이다. A = 구현 전 필수 · B = Provisional Baseline으로 구현 가능 · C = 구현 후 실측 · D = MVP 보류 가능 (workflow §3.2). 후보가 근거 없이 붙은 경우는 없지만 확정 판정도 아니다.
+- **Timing candidate**는 §3 정식 분류 전의 **현재 후보값**이다. A = 구현 전 필수 · B = Provisional Baseline으로 구현 가능 · C = 구현 후 실측 · D = MVP 보류 가능 (workflow §3.2). 후보가 근거 없이 붙은 경우는 없지만 확정 판정도 아니다. §3 정식 분류(Timing · Gate · 결정권 · Closure route · §4 조사 필요)는 [`decision-classification.md`](./decision-classification.md)에 있다.
 - **Already fixed / Do not reopen**은 이미 Contract · ADR · Owner 결정으로 닫힌 것이다. 논의가 그쪽으로 되돌아가면 이 칸을 먼저 본다.
 - **Issue needed**는 `YES` / `NO` / `LATER`만 표시한다. 이번 단계에서 Issue를 만들지 않는다(§5에서 처리).
 - **Research needed**는 조사할 질문만 적는다. 실제 조사는 workflow §4다.
@@ -46,7 +46,7 @@
 | Timing C 후보 | 1 — RD-15 |
 | Timing D 후보 | 2 — RD-10(단 pre-deploy 전 필수) · RD-14 |
 | 다른 Timing group 안의 A 후보 sub-decision | 없음 |
-| External Input | **7** — EI-01~EI-07 |
+| External Input | **8** — EI-01~EI-08 |
 | Sub-decision에서 내린 비-Decision | 6 — Follow-up 3 · Trigger 3 ([목록](#sub-decision에서-내린-항목)) |
 
 | ID | Decision Group | Owner | Timing | Source candidates |
@@ -714,7 +714,7 @@ Managed Source Copy · AnalysisSource · IncidentClip · DerivedAsset · RemoteC
 
 ### Dependencies
 
-- **선행:** RD-17(관리 자산이 process 밖 어디에 머무는가). External Input EI-07(provider delete 지원)이 RD-10b의 입력
+- **선행:** RD-17(관리 자산이 process 밖 어디에 머무는가). External Input EI-07(provider delete 지원)이 RD-10b의 입력, EI-08(개인정보 법령 · 공식 가이드상 보관 · 파기 제약)이 RD-10a · RD-10b의 입력
 - **막는 것:** RD-11 cleanup 구현 · pre-deploy review(Ops §21 「cleanup/retention이 실제 adapter에 구현됐는가」)
 
 ### Current evidence
@@ -835,7 +835,7 @@ Ops §4 「정확한 Dockerfile/Compose service command는 composition root 구�
 ### Dependencies
 
 - **선행:** RD-07(config/secret 주입) · RD-01j(migration 방식) · RD-05(smoke endpoint) · RD-17(api · worker가 공유해야 하는 파일 · 상태 경계 — volume 구성에 반영) · API/Worker composition root 구현
-- **막는 것:** 실제 배포 · RD-13(log 수집 위치) · pre-deploy review
+- **막는 것:** 실제 배포 · RD-13(log 수집 위치) · RD-14(endpoint 구성의 전제) · pre-deploy review
 
 ### Current evidence
 
@@ -1236,8 +1236,8 @@ provider 호출은 Search adapter 안에서 일어나고 UsageRecord는 common/r
 
 workflow §1의 경계를 따른다. 아래 항목은 **우리가 고르는 것이 아니라 밖에서 확인해야 하는 사실**이고, 위 Decision 가능한 범위를 좁히는 입력이다. 이 문서에서 답을 조사하거나 채우지 않는다.
 
-- **전제:** 모든 EI는 Search가 선택한 운영 모델 기준이다. 모델 선택은 Search 소유(다른 모듈 결정)이고, 모델이 바뀌면 다시 확인한다. Flash 관측을 다른 모델에 일반화하지 않는다 ([`mlapi.md`](./official-inputs/mlapi.md) §7.1, Ops §12-1).
-- **확인 경로:** 미확정 외부 정책 = 운영진 문의(PM 경로) · 모델별 호환성과 과금 관측 = 선정 모델 API smoke · 실제 부하 = Runtime capacity / Real E2E ([`mlapi.md`](./official-inputs/mlapi.md) §5).
+- **전제:** EI-01~EI-07은 Search가 선택한 운영 모델 기준이다(EI-08은 모델과 무관). 모델 선택은 Search 소유(다른 모듈 결정)이고, 모델이 바뀌면 다시 확인한다. Flash 관측을 다른 모델에 일반화하지 않는다 ([`mlapi.md`](./official-inputs/mlapi.md) §7.1, Ops §12-1).
+- **확인 경로:** 미확정 외부 정책 = 운영진 문의(PM 경로) · 모델별 호환성과 과금 관측 = 선정 모델 API smoke · 실제 부하 = Runtime capacity / Real E2E ([`mlapi.md`](./official-inputs/mlapi.md) §5) · 법령 · 규제 = 법령 원문과 감독기관 공식 가이드.
 - **이미 확인된 외부 사실**은 [`mlapi.md`](./official-inputs/mlapi.md) §5 「외부 제약으로 확정」에 있다. 여기에 복제하지 않는다.
 - **Decision과의 관계:** EI가 확인되지 않아도 입력 대상 Decision은 Provisional 가정을 명시하고 진행할 수 있다. EI 확인은 Decision을 막는 선행이 아니라 재검토 trigger다. Runtime 문서는 provider timeout · rate · codec을 확정값으로 쓰지 않는다 (Tech Spec §6.4 · §7.4, Ops §12-1).
 - **확인되면:** 결과는 [`official-inputs/`](./official-inputs/README.md)(공지 · 정책) 또는 smoke evidence로 남기고, 여기서는 상태를 `CONFIRMED`(링크)로 바꾼다.
@@ -1251,8 +1251,9 @@ workflow §1의 경계를 따른다. 아래 항목은 **우리가 고르는 것�
 | EI-05 | 크레딧 한도 초과 시 Key 자동 삭제의 범위와 복구 절차 | 운영진 문의 | PM | RD-03f | UNCONFIRMED |
 | EI-06 | 팀 원화 크레딧과 provider 표시 가격의 환산 · 정산 기준 | 운영진 문의 | PM | RD-08a · RD-08b | UNCONFIRMED |
 | EI-07 | provider의 payload retention · logging · delete 지원 | 운영진 문의 | PM · search — 서어진 | RD-10b · RD-11c | UNCONFIRMED |
+| EI-08 | 블랙박스 영상과 그 안의 식별정보(제3자 번호판 · 얼굴 등)의 보관 · 파기에 국내 개인정보 법령 · 공식 가이드가 주는 제약 | 법령 원문 · 감독기관 공식 가이드 | PM(C-2 Review Coordinator) · recording — 정철원 | RD-10a · RD-10b | UNCONFIRMED |
 
-이전 RD-16(「선정 provider/model의 운영 한도 입력」)은 이 표로 해체했다. RD-16a~d는 EI-01~EI-04, RD-16e는 사실 부분(EI-05)과 Runtime 대응 부분(RD-03f)으로 나눴다. RD-08e는 EI-06, RD-10b에 괄호로 있던 provider delete 지원 여부는 EI-07로 옮겼다.
+이전 RD-16(「선정 provider/model의 운영 한도 입력」)은 이 표로 해체했다. RD-16a~d는 EI-01~EI-04, RD-16e는 사실 부분(EI-05)과 Runtime 대응 부분(RD-03f)으로 나눴다. RD-08e는 EI-06, RD-10b에 괄호로 있던 provider delete 지원 여부는 EI-07로 옮겼다. EI-08은 §3 분류 때 추가했다 — Ops §14가 retention 값을 「개인정보」 축으로 정하라고 하지만 그 근거가 repository에 없고, 법령상 제약은 우리가 고르는 기술 사례가 아니라 RD-10의 선택 범위를 좁히는 외부 사실이다(workflow §1).
 
 ---
 
@@ -1274,6 +1275,7 @@ flowchart TD
     EI05[/"EI-05 Key 삭제 범위 · 복구"/]
     EI06[/"EI-06 크레딧 정산 기준"/]
     EI07[/"EI-07 payload retention · delete"/]
+    EI08[/"EI-08 개인정보 보관 · 파기 법령"/]
   end
 
   RD03["RD-03 retry 층위 · failure"]
@@ -1307,6 +1309,7 @@ flowchart TD
   EI06 -.-> RD08
   EI07 -.-> RD10
   EI07 -.-> RD11
+  EI08 -.-> RD10
 
   RD03 --> RD02
   RD03 --> RD04
@@ -1320,6 +1323,7 @@ flowchart TD
   RD06 ---|함께 본다| RD17
   RD19 --> RD01
   RD01 --> RD04
+  RD01 --> RD13
   RD17 --> RD05
   RD17 --> RD09
   RD17 --> RD10
@@ -1350,6 +1354,7 @@ EI-04 실패 호출 과금 ·········→ RD-03 · RD-18
 EI-05 Key 삭제 범위 · 복구 ···→ RD-03
 EI-06 크레딧 정산 기준 ·······→ RD-08
 EI-07 retention · delete ·····→ RD-10 · RD-11
+EI-08 개인정보 보관 · 파기 ···→ RD-10
 
 [Decisions — 실선 ─→ 는 앞이 닫혀야 뒤를 확정]
 RD-03 retry 층위 ─┬→ RD-02 attempt 생성 시점 ─→ RD-01 persistence/queue
@@ -1365,7 +1370,8 @@ RD-17 recording persistence ─┬→ RD-05 (upload) ─→ RD-12
                              ├→ RD-10 retention ─→ RD-11
                              └→ RD-12
 RD-01 ─┬→ RD-04 (heartbeat 구조)
-       └→ RD-12
+       ├→ RD-12
+       └→ RD-13 (heartbeat 구조 → 관측)
 RD-07 config ─→ RD-12 deployment ─┬→ RD-13 관측 ─→ RD-11
                                   └→ RD-14 endpoint
 RD-08 pricing artifact — 다른 Decision을 막지 않음 (EI-06만 입력)
@@ -1416,7 +1422,7 @@ RD-08 pricing artifact — 다른 Decision을 막지 않음 (EI-06만 입력)
 
 ### External input / fact-finding
 
-provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하는 사실은 Decision에서 뺐다. 목록과 입력 대상 Decision은 [External Inputs](#external-inputs--decision이-아니라-확인할-사실) — EI-01~EI-07.
+provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하는 사실은 Decision에서 뺐다. 목록과 입력 대상 Decision은 [External Inputs](#external-inputs--decision이-아니라-확인할-사실) — EI-01~EI-08.
 
 ### Experiment-derived (최종 숫자 · 선택)
 
@@ -1475,6 +1481,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | --- | --- | --- |
 | 2026-10-02 | 최초 작성 — D-01~D-17 정규화, 16 group / 90 sub-decision | `origin/develop` `9ebb55f` |
 | 2026-10-03 | 분류 경계 정리 — Decision / External Input / Experiment / Follow-up 분리, group 경계 재조정. 18 group / 85 sub-decision / EI 7. 새 조사 · 답 확정 없음 | `origin/develop` `9ebb55f` |
+| 2026-10-03 | §3 분류 중 정합 — dependency graph에 RD-01 → RD-13 edge 추가, RD-12 「막는 것」에 RD-14 추가(본문 Dependencies와 graph 일치). 「읽는 법」에 §3 분류 문서 링크. EI-08(개인정보 법령 · 공식 가이드상 보관 · 파기 제약) 추가 — RD-10 입력. Timing · Owner · group 변경 없음 | `origin/develop` `10787d8` |
 
 2026-10-03 ID 대응표(이전 → 현재):
 
