@@ -1,6 +1,6 @@
 # Research Result — MySQL Runtime Persistence
 
-**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 · High/Med 정정 본문 반영 2026-10-03** — 반영 기록과 미반영 Low는 [Review notes](#review-notes-2026-10-03)\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/01-mysql-runtime-persistence.md`](./prompts/01-mysql-runtime-persistence.md)\
@@ -11,31 +11,31 @@
 
 ## Review notes (2026-10-03)
 
-> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+> High · Med 정정은 2026-10-03 본문에 반영했다. Low는 본문에 반영하지 않았으므로 해당 위치를 읽을 때 아래 Low 표를 함께 본다. 검토는 Claude Code 보조 검토다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
 
-**판정:** 아래 정정을 반영하면 RD-01b · 01c · 01d · 01g · 01j의 Decision 근거로 쓸 수 있다. 출처 대조 31건 — 일치 24 · 부분 일치 5 · 인용 출처에 없음 1 · 확인 불가 1 · **반대 0**. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
+**판정:** High · Med 정정을 반영한 현재 본문은 RD-01b · 01c · 01d · 01g · 01j의 Decision 근거로 쓸 수 있다. 출처 대조 31건 — 일치 24 · 부분 일치 5 · 인용 출처에 없음 1 · 확인 불가 1 · **반대 0**. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
 
-### 정정 · 보완
+### 반영 기록 (High · Med)
+
+| Sev | 반영 위치 | 반영 내용 | 근거 |
+| --- | --- | --- | --- |
+| High | §1 · §3 · §8 Spike A · §9-2 · Completion Check | `SKIP LOCKED`와 gap · next-key lock의 관계를 Verified fact에서 「Interpretation · 문서에 명시 없음」으로 바꾸고, `performance_schema.data_locks` spike(Spike A) 확인 대상으로 명시했다 | [innodb-locking-reads](https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html) · [innodb-locks-set](https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html) · [WL#8919](https://dev.mysql.com/worklog/task/?id=8919) |
+| Med | §1 · §3 · §4.3 · §5 filesort | LIMIT/filesort 사실의 출처를 limit-optimization으로 분리하고 「`LIMIT` 없이 일치하는 모든 row를 select」로 고쳤다. lock 범위와의 연결은 locks-set과 합친 Interpretation으로 표시했다 | [limit-optimization](https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html) |
+| Med | §1 · §3 · §4.1 Pattern B · §4.2 RC | RC의 record lock 해제와 `UPDATE` semi-consistent read를 추가하고(§3 새 행), RC 문장 출처를 isolation-levels 페이지로 바꿨다. Pattern B 대기 동작 차이는 Interpretation으로 적었다 | [innodb-transaction-isolation-levels](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html) |
+| Med | §1 · §4.2 Solid Queue | README의 heavy-load RC 권고(Solid Queue 환경의 사실)를 추가하고, §4.2 SQL 예시를 「README 원문 query가 아닌 재구성」으로 표시했으며, 공식 deadlock 문서와의 긴장을 Interpretation으로 적었다 | [rails/solid_queue](https://github.com/rails/solid_queue) · [innodb-deadlocks](https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html) |
+| Med | §3 표 | URL 없던 Verified fact 9행: 같은 주장이 §1에 출처와 함께 있는 5행(inconsistent view · JSON Schema CHECK · MVI 제약 · DECIMAL · atomic DDL)은 그 출처를 Evidence에 옮겼고, 나머지(SKIP LOCKED-gap · RR consistent/locking read · lock wait timeout · MVI membership)와 §1에 없는 부속 주장(Draft 4 · `ALGORITHM=COPY`)은 「출처 미첨부 — Interpretation 수준」으로 표시했다 | prompt 출력 원칙 |
+| Med | §1 · §3 multi-valued index | MVI 문장의 출처를 create-index로 바꾸고, 문자열 collation(`utf8mb4_0900_as_cs`/binary) 제약과 빈 배열 미검색을 추가했다. `produced` · `usage_refs` 문자열 ID와의 연결은 Daesingo implication으로 적었다 | [create-index](https://dev.mysql.com/doc/refman/8.4/en/create-index.html) |
+| Med | §4.8 표 · §4.9 | Connector/Python에 대한 SQLAlchemy 경고(「frequent, major regressions」 · CI 제외 · server-side cursor 비활성)를 그대로 적었다 | [SQLAlchemy MySQL dialect](https://docs.sqlalchemy.org/en/21/dialects/mysql.html) |
+| Med | §4.7 · §6 RD-01g · §7 | Contract 고정 부분(`token_usage` 세 필드 · null 규칙, `pricing_context`의 `pricing_id` · `unit`)을 「Already fixed — Contract」로 추가하고, 비교 · 미결 항목을 opaque 확장 영역으로 좁혔다 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §4 · §8 |
+| Med | §4.6 · §7 `Money` | Contract의 `amount` 정의(decimal string \| null, 예시 `"184.20"` KRW)를 적고 「소수 KRW 허용 여부」가 닫혔는지는 **확인 필요**로 남겼다 ★ | 같은 Contract L81 · L130 |
+| Med | §2 Q1 6 · §3 · §4.1 Pattern A · §10 | AUTO_INCREMENT lock mode(기본 `innodb_autoinc_lock_mode=2`) Verified fact와 Daesingo implication을 §4.1로 옮기고 §3에 행을 추가했다 ★ | [innodb-auto-increment-handling](https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html) |
+| Med | §4.11 표 · §4.13 C · §8 Spike H | Alembic 동시 실행 lock이 공식 문서에 명시 없음을 적고 Spike H 확인 대상으로 연결했다 | [Alembic branches](https://alembic.sqlalchemy.org/en/latest/branches.html) |
+
+### 미반영 (Low)
 
 | Sev | 본문 위치 | 정정 | 근거 |
 | --- | --- | --- | --- |
-| High | §1 · §3 「`SKIP LOCKED`는 gap locking을 없애지 않는다」 | **Verified fact가 아니다.** 인용한 공식 문서는 `SKIP LOCKED`와 gap · next-key lock의 관계를 명시하지 않는다(WL#8919도 row lock 대상만 말한다). Interpretation · 「문서에 명시 없음」으로 읽고, `performance_schema.data_locks`를 보는 spike(§8 Spike A)로 확인한다. RD-01b 핵심 질문이다 | [innodb-locking-reads](https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html) · [innodb-locks-set](https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html) · [WL#8919](https://dev.mysql.com/worklog/task/?id=8919) |
-| Med | §1 LIMIT · filesort와 lock 범위 | 출처는 innodb-locks-set이 아니라 limit-optimization이고 그 페이지는 lock을 말하지 않는다 → 두 문서를 합친 Interpretation. 원문은 filesort일 때 「LIMIT 없이 일치하는 모든 row를 select한다」로, 본문의 「넓게 읽을 수 있다」보다 강하다 | [limit-optimization](https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html) |
-| Med | §1 · §3 · §4.2 `READ COMMITTED` | 누락: RC에서는 WHERE 평가 뒤 조건에 맞지 않는 row의 record lock을 해제하고, UPDATE는 semi-consistent read를 쓴다. lock footprint와 Pattern B(조건부 UPDATE)의 대기 동작을 바꾼다. RC 문장의 출처도 isolation-levels 페이지로 바꿔 읽는다 | [innodb-transaction-isolation-levels](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html) |
-| Med | §1 · §4.2 Solid Queue | 누락: README는 MySQL/MariaDB에서 heavy load 시 `READ COMMITTED` 고려를 권하고 Solid Queue 자체 table에는 안전하다고 쓴다 — **그 환경의 사실**이다. §4.2 SQL 예시의 `FOR UPDATE SKIP LOCKED`는 README 원문이 아니다. 공식 deadlock 문서의 「deadlock 가능성은 isolation level의 영향을 받지 않는다」와의 긴장도 함께 본다 | [rails/solid_queue](https://github.com/rails/solid_queue) · [innodb-deadlocks](https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html) |
-| Med | §3 표 | Evidence 열에 URL이 없는 Verified fact 행이 9건이다. 해당 행은 출처가 붙기 전까지 Interpretation 수준으로 읽는다 | prompt 출력 원칙 |
-| Med | §1 multi-valued index | 출처는 json-validation-functions가 아니라 create-index다. 누락: 문자열 값은 `utf8mb4_0900_as_cs`(또는 binary) collation만 지원하고, 빈 배열은 index로 찾을 수 없다. `produced` · `usage_refs`의 ID가 문자열이라 RD-01c · 01d에 직결된다 | [create-index](https://dev.mysql.com/doc/refman/8.4/en/create-index.html) |
-| Med | §4.8 · §4.9 MySQL Connector/Python | SQLAlchemy 문서가 이 driver에 대해 「frequent, major regressions」 · CI 제외 · server-side cursor 비활성을 경고한다. 본문은 「제한 사항도 기술」로 축소했다 | [SQLAlchemy MySQL dialect](https://docs.sqlalchemy.org/en/21/dialects/mysql.html) |
-| Med | §4.7 · §7 `token_usage` · `pricing_context` | **Contract에 이미 고정된 부분이 있다.** `token_usage`는 `input/output/total` 세 필드이고 「객체 전체 null이거나 세 필드 모두 존재」(§8-3), `pricing_context`는 `pricing_id` · `unit` key를 갖는다. 열린 것은 opaque 확장 영역뿐이다 — §7의 해당 항목은 이 범위로 좁혀 읽는다 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §4 · §8 |
-| Med | §4.6 · §7 `Money` | Contract는 `amount`를 `"decimal string \| null"`로 두고 예시가 `"184.20"` KRW다. 「소수 KRW 허용 여부」가 이미 닫혔는지는 **확인 필요** — 여기서 채우지 않는다 ★ | 같은 Contract L81 · L130 |
-| Med | §2 Q1.6 | AUTO_INCREMENT lock mode를 다루지 않았다 → 아래 「보완 확인」 | prompt Q1.6 |
-| Med | §4.11 · §4.13 Alembic | Alembic의 동시 실행 lock 여부를 적지 않았다. 공식 문서에 명시 없음 → api · worker가 동시에 migration을 시도하는 경쟁은 spike(§8 Spike H)로 확인한다 | [Alembic branches](https://alembic.sqlalchemy.org/en/latest/branches.html) |
 | Low | 여러 곳 | Solid Queue 「MySQL 8.4 deadlock 사용자 보고」에 issue 링크 없음(§9) · Liquibase 최신은 5.0.4(2026-08-20)이고 5.0부터 Community가 FSL license · Atlas는 확인 가능(v1.3.0, 2026-08-02, repo Apache-2.0 — 배포 binary EULA는 미확인) · yoyo 9.0.0은 2024-08-10, aiomysql 최근 release 2025-10(유지보수 근거) · §4.9 「sync DB layer와 자연스럽게 맞는」은 기울기 표현 · §7 상태 전이 경합은 `QUEUED→CANCELLED`만 다루고 `RUNNING→CANCELLED`는 빠짐 | PyPI · Maven Central · GitHub |
-
-### 보완 확인 (검토 단계 추가)
-
-- **AUTO_INCREMENT lock mode (Q1.6)** ★ — MySQL 8.4 기본값은 `innodb_autoinc_lock_mode=2`(interleaved)다. 이 모드에서는 INSERT 계열 statement가 table-level `AUTO-INC` lock을 쓰지 않고 동시에 실행되며, 값은 unique · 단조 증가지만 statement 안에서 연속적이지 않을 수 있다. statement-based replication에서는 안전하지 않고 row-based · mixed에서는 안전하다. ([innodb-auto-increment-handling](https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html))
-  - Daesingo implication — JobExecution 등의 PK를 AUTO_INCREMENT로 둘지는 RD-01a · 01b에서 열려 있다. 둔다면 기본 설정에서는 claim transaction 안 INSERT가 table-level AUTO-INC lock으로 직렬화되지 않는다. 남는 lock은 본문 §4.1의 insert intention · unique · FK lock이다.
 
 ### Decision 입력으로 옮길 때
 
@@ -51,17 +51,29 @@
 
 - **Verified fact — RD-01b:** MySQL 8.4의 `SELECT ... FOR UPDATE SKIP LOCKED`에서 `SKIP LOCKED`는 획득할 수 없는 **row-level lock을 기다리지 않고 해당 row를 결과에서 제외**한다. MySQL은 그 결과가 일관된 DB view가 아니므로 일반적인 transactional query에는 적합하지 않을 수 있으나, queue-like table에는 사용할 수 있다고 명시한다.\
   Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html
-- **Verified fact — RD-01b:** `SKIP LOCKED`가 gap locking을 없애는 것은 아니다. InnoDB locking read 자체는 검색에 사용된 index record를 잠그며, 기본 `REPEATABLE READ`에서는 범위 검색에 next-key lock이 사용될 수 있다. `READ COMMITTED`에서는 일반 search/index scan의 gap locking이 비활성화되고 FK/duplicate-key 검사는 예외다.\
+- **Verified fact — RD-01b:** InnoDB locking read는 검색에 사용된 index record를 잠그며, 기본 `REPEATABLE READ`에서는 범위 검색에 next-key lock이 사용될 수 있다.\
   Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html
+- **Verified fact — RD-01b:** `READ COMMITTED`에서는 일반 search/index scan의 gap locking이 비활성화되고 FK/duplicate-key 검사는 예외다. 또한 RC에서는 WHERE 조건 평가 뒤 조건에 맞지 않는 row의 record lock을 해제하고, `UPDATE`는 semi-consistent read를 사용한다.\
+  Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html
+- **Interpretation — RD-01b:** `SKIP LOCKED`와 gap · next-key lock의 관계는 **공식 문서에 명시되어 있지 않다.** 인용한 locking-reads · locks-set 문서는 이 관계를 말하지 않고, WL#8919도 row lock 대상만 말한다. 따라서 `SKIP LOCKED`가 gap locking을 없애는지 여부는 Verified fact로 둘 수 없으며 `performance_schema.data_locks`를 보는 spike(§8 Spike A)로 확인할 RD-01b 핵심 질문이다.\
+  Sources: https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html · https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html · https://dev.mysql.com/worklog/task/?id=8919
 - **Interpretation — RD-01b:** 따라서 `LIMIT 1`이라는 이유만으로 실제 lock footprint가 1 row라고 볼 수 없다. 어떤 index를 어떤 방향으로 scan하는지, filesort가 필요한지까지 claim query의 동시성 semantics 일부가 된다.
-- **Verified fact — RD-01b:** MySQL은 locking statement가 일반적으로 **검색 중 scan한 index records**에 lock을 건다고 설명한다. 적절한 index가 없어서 full scan이 되면 사실상 모든 row가 잠길 수 있다. 반대로 `ORDER BY`를 index로 충족하면서 `LIMIT`을 사용할 경우 필요한 row 수만 찾고 scan을 조기에 끝낼 수 있다. filesort가 필요하면 `LIMIT`을 적용하기 전에 matching rows를 넓게 읽고 정렬할 수 있다.\
+- **Verified fact — RD-01b:** MySQL은 locking statement가 일반적으로 **검색 중 scan한 index records**에 lock을 건다고 설명한다. 적절한 index가 없어서 full scan이 되면 사실상 모든 row가 잠길 수 있다.\
   Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html
-- **Verified fact — RD-01b:** Solid Queue도 MySQL 8+에서 `FOR UPDATE SKIP LOCKED`와 정렬 가능한 covering index를 사용한다. 프로젝트 문서는 MySQL/MariaDB의 기본 `REPEATABLE READ`에서 polling index에 걸리는 gap lock 때문에 enqueue와 claim/dispatch 사이에 간헐적 deadlock이 발생할 수 있다고 설명한다. 이는 Solid Queue 환경에서의 관찰이지 대신고 baseline 값은 아니다.\
+- **Verified fact — RD-01b:** `ORDER BY`를 index로 충족하면서 `LIMIT`을 사용할 경우 필요한 row 수만 찾고 scan을 조기에 끝낼 수 있다. filesort가 필요하면 `LIMIT` 없이 query에 일치하는 모든 row를 select한 뒤 정렬한다. 이 문서는 lock을 말하지 않는다.\
+  Source: https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html
+- **Interpretation — RD-01b:** 위 두 문서를 합치면, filesort plan에서는 `LIMIT 1`이어도 일치하는 모든 row가 scan되고 그 범위가 lock 대상이 될 수 있다. 두 문서를 합친 해석이며 실제 lock set은 Spike A 확인 대상이다.
+- **Verified fact — RD-01b:** Solid Queue도 MySQL 8+에서 `FOR UPDATE SKIP LOCKED`와 정렬 가능한 covering index를 사용한다. 프로젝트 문서는 MySQL/MariaDB의 기본 `REPEATABLE READ`에서 polling index에 걸리는 gap lock 때문에 enqueue와 claim/dispatch 사이에 간헐적 deadlock이 발생할 수 있다고 설명하고, heavy load 시 `READ COMMITTED` 고려를 권하며 Solid Queue 자체 table에는 그것이 안전하다고 쓴다. 이는 Solid Queue 환경의 사실이지 대신고 baseline 값은 아니다.\
   Source: https://github.com/rails/solid_queue/
+- **Interpretation — RD-01b:** MySQL 공식 deadlock 문서는 「deadlock 가능성은 isolation level의 영향을 받지 않는다」고 쓴다. Solid Queue의 RC 권고와 이 문장 사이의 긴장은 RR/RC 비교 spike에서 함께 본다.\
+  Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html
 - **Interpretation — RD-01b:** claim 상태 변경과 `JobExecution(RUNNING)` INSERT를 하나의 DB transaction에 넣으면 두 DB 변경의 commit/rollback 경계는 일치한다. 다만 INSERT가 FK check, unique check, secondary-index update 등을 추가하므로 transaction의 lock graph는 claim row 하나보다 복잡해진다.
 - **Daesingo implication — RD-01b:** commit 이후 실제 ffmpeg/API 작업을 시작하기 전에 Worker가 죽는 구간은 DB transaction만으로 제거되지 않는다. 현재 논리 모델에서는 이미 committed 된 `RUNNING` execution이므로 lease expiry → stale sweep이 이 구간의 recovery mechanism이 된다.
-- **Verified fact — RD-01c/d/g:** MySQL 8.4 JSON은 `JSON_SCHEMA_VALID()`을 `CHECK`에 활용할 수 있고, generated column index와 multi-valued JSON index도 제공한다. 그러나 JSON 내부 reference에 FK를 거는 일반적인 관계형 제약은 제공하지 않으며 multi-valued index 역시 FK에 사용할 수 없고 covering/range/order index로도 제약이 있다.\
+- **Verified fact — RD-01c/d/g:** MySQL 8.4 JSON은 `JSON_SCHEMA_VALID()`을 `CHECK`에 활용할 수 있다.\
   Source: https://dev.mysql.com/doc/refman/8.4/en/json-validation-functions.html
+- **Verified fact — RD-01c/d/g:** generated column index와 multi-valued JSON index를 제공한다. 그러나 JSON 내부 reference에 FK를 거는 일반적인 관계형 제약은 제공하지 않으며 multi-valued index 역시 FK에 사용할 수 없고 covering/range/order index로도 제약이 있다. multi-valued index의 문자열 값은 `utf8mb4_0900_as_cs`(또는 binary) collation만 지원하고, 빈 배열은 index로 찾을 수 없다.\
+  Source: https://dev.mysql.com/doc/refman/8.4/en/create-index.html
+- **Daesingo implication — RD-01c/d:** `produced` · `usage_refs`의 ID는 문자열이므로, 이를 multi-valued index로 찾는 후보는 위 collation 제약과 빈 배열 제약을 그대로 받는다.
 - **Verified fact — RD-01g:** MySQL `DECIMAL`은 exact numeric type이며 precision은 최대 65 digits까지 지원한다. JSON property가 단순히 numeric이라는 사실만으로 `DECIMAL(M,D)` column과 같은 명시적 금액 scale constraint가 생기는 것은 아니다.\
   Source: https://dev.mysql.com/doc/refman/8.4/en/precision-math-decimal-characteristics.html
 - **Verified fact — RD-01j:** MySQL 8.4의 atomic DDL은 **하나의 지원 DDL statement**가 dictionary/storage engine/binlog 사이에서 전부 commit되거나 rollback된다는 의미이다. 여러 DDL로 구성된 migration 전체가 transaction이 되는 것은 아니며 DDL은 implicit commit을 일으킨다.\
@@ -83,7 +95,7 @@
 3. `WHERE + ORDER BY + LIMIT`과 index/filesort가 scan·lock 범위에 미치는 영향
 4. claim과 heartbeat / stale sweep / cancel UPDATE의 경쟁
 5. `SKIP LOCKED`, conditional UPDATE, optimistic CAS claim의 semantics 차이
-6. claim + `RUNNING` INSERT transaction과 crash/commit 경계
+6. claim + `RUNNING` INSERT transaction과 crash/commit 경계(AUTO_INCREMENT lock mode 포함 — §4.1)
 7. MySQL 공식 `SKIP LOCKED` 주의사항
 8. 실제 MySQL-backed queue인 Solid Queue의 query/index/isolation 사례
 
@@ -123,29 +135,32 @@
 | unique index로 단일 row를 정확히 찾는 경우 record lock만으로 좁아질 수 있다. 범위/비unique 검색에는 next-key locking이 사용될 수 있다. | `REPEATABLE READ` | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html |
 | gap lock은 purely inhibitive하여 주로 해당 gap으로의 INSERT를 막으며 gap S/X끼리는 충돌하지 않는다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html |
 | `SKIP LOCKED`는 row lock을 기다리는 대신 locked row를 결과에서 제외한다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html |
-| `SKIP LOCKED`는 gap/next-key locking 자체를 disable하는 옵션이 아니다. | RR/RC 차이와 결합 | **Verified fact + interpretation.** Locking rules는 그대로 적용되며 `SKIP LOCKED` 문서는 row-level lock에 대한 skip을 정의한다. |
-| `SKIP LOCKED` 결과는 inconsistent view일 수 있다. | MySQL 8.4 | **Verified fact.** MySQL이 queue-like table을 사용 사례로 직접 언급한다. |
+| `SKIP LOCKED`와 gap/next-key lock의 관계는 공식 문서에 명시되어 있지 않다. | RR/RC 차이와 결합 | **Interpretation · 문서에 명시 없음.** locking-reads · locks-set 문서와 [WL#8919](https://dev.mysql.com/worklog/task/?id=8919)는 row lock 대상만 말한다. §8 Spike A(`performance_schema.data_locks`)로 확인한다. |
+| `SKIP LOCKED` 결과는 inconsistent view일 수 있다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html (§1과 같은 출처). MySQL이 queue-like table을 사용 사례로 직접 언급한다. |
 | `SKIP LOCKED`/`NOWAIT`는 statement-based replication에 unsafe다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html |
 | InnoDB 기본 isolation은 `REPEATABLE READ`. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html |
-| RR consistent read는 transaction snapshot을 사용할 수 있지만 locking read는 현재 lock 가능한 DB state를 대상으로 한다. | RR | **Verified fact.** 동일 transaction에서 일반 snapshot SELECT와 locking SELECT를 혼합하면 서로 다른 state를 관찰할 수 있다. |
+| RR consistent read는 transaction snapshot을 사용할 수 있지만 locking read는 현재 lock 가능한 DB state를 대상으로 한다. | RR | **출처 미첨부 — Interpretation 수준.** 동일 transaction에서 일반 snapshot SELECT와 locking SELECT를 혼합하면 서로 다른 state를 관찰할 수 있다. |
 | RC에서는 각 consistent read가 새 snapshot을 얻으며 ordinary search/index scan의 gap locks가 비활성화된다. FK/duplicate-key 검사는 예외다. | RC | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html |
+| RC에서는 WHERE 조건 평가 뒤 조건에 맞지 않는 row의 record lock을 해제하고, `UPDATE`는 semi-consistent read를 사용한다. | RC | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html |
 | index가 `ORDER BY`를 충족하면 `LIMIT`과 함께 scan을 조기에 끝낼 수 있다. | Query plan dependent | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html |
-| filesort가 필요하면 LIMIT 이전에 matching rows를 넓게 읽고 정렬할 수 있다. | Query plan dependent | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html |
+| filesort가 필요하면 `LIMIT` 없이 query에 일치하는 모든 row를 select한 뒤 정렬한다. | Query plan dependent | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html — 이 문서는 lock을 말하지 않는다. lock 범위와의 연결은 locks-set과 합친 Interpretation(§1 · §4.3). |
 | 동일 ORDER BY key끼리의 순서는 추가 unique tiebreaker가 없으면 deterministic하지 않을 수 있다. | MySQL | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html |
 | deadlock detection은 기본적으로 활성화되어 있고 victim transaction을 rollback한다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html |
-| deadlock과 달리 일반 lock wait timeout은 기본적으로 waiting statement만 rollback할 수 있으며 transaction 전체 rollback과 동일하지 않다. | default behavior | **Verified fact.** `innodb_rollback_on_timeout` 설정에 따라 달라질 수 있다. |
+| deadlock과 달리 일반 lock wait timeout은 기본적으로 waiting statement만 rollback할 수 있으며 transaction 전체 rollback과 동일하지 않다. | default behavior | **출처 미첨부 — Interpretation 수준.** `innodb_rollback_on_timeout` 설정에 따라 달라질 수 있다. |
 | INSERT는 insert-intention gap lock과 새 index record X lock을 사용한다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html |
+| 기본 `innodb_autoinc_lock_mode=2`(interleaved)에서는 INSERT 계열 statement가 table-level `AUTO-INC` lock을 쓰지 않고 동시에 실행된다. 값은 unique · 단조 증가지만 statement 안에서 연속적이지 않을 수 있다. statement-based replication에서는 안전하지 않고 row-based · mixed에서는 안전하다. | MySQL 8.4 기본값 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html |
 | FK 검사에서는 검사 대상 record에 shared record lock이 걸린다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html |
 | duplicate-key 검사 경로도 lock 및 deadlock의 원인이 될 수 있다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html |
 | InnoDB lock은 transaction commit/abort 시 해제된다. | InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html |
-| JSON Schema validation을 `CHECK`와 결합할 수 있다. | MySQL 8.4 | **Verified fact.** Draft 4 기반이며 일부 JSON Schema 기능에는 제한이 있다. |
+| JSON Schema validation을 `CHECK`와 결합할 수 있다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/json-validation-functions.html (§1과 같은 출처). 「Draft 4 기반이며 일부 JSON Schema 기능에는 제한이 있다」는 출처 미첨부 — Interpretation 수준. |
 | `JSON_TABLE()`로 JSON 배열/객체를 typed relational rows로 펼칠 수 있다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/json-table-functions.html |
 | JSON column 자체를 일반 B-tree처럼 직접 index하지 않고 generated/extracted value를 index하는 패턴을 지원한다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/create-table-secondary-indexes.html |
-| multi-valued index는 JSON arrays의 membership query를 지원한다. | MySQL 8.4 | **Verified fact.** `MEMBER OF`, `JSON_CONTAINS`, `JSON_OVERLAPS` 등이 대상이다. |
-| multi-valued index는 FK에 쓸 수 없고 covering index가 아니며 ordering/range/index-only access에 제약이 있다. | MySQL 8.4 | **Verified fact.** 생성 시 online `ALGORITHM=INPLACE`가 아니라 `COPY`가 필요한 제약도 있다. |
-| `DECIMAL`은 exact numeric type이다. | MySQL 8.4 | **Verified fact.** 최대 precision 65 digits. |
+| multi-valued index는 JSON arrays의 membership query를 지원한다. | MySQL 8.4 | **출처 미첨부 — Interpretation 수준.** `MEMBER OF`, `JSON_CONTAINS`, `JSON_OVERLAPS` 등이 대상이다. |
+| multi-valued index는 FK에 쓸 수 없고 covering index가 아니며 ordering/range/index-only access에 제약이 있다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/create-index.html (§1과 같은 출처). 「생성 시 online `ALGORITHM=INPLACE`가 아니라 `COPY`가 필요」는 출처 미첨부 — Interpretation 수준. |
+| multi-valued index의 문자열 값은 `utf8mb4_0900_as_cs`(또는 binary) collation만 지원하고, 빈 배열은 index로 찾을 수 없다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/create-index.html |
+| `DECIMAL`은 exact numeric type이다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/precision-math-decimal-characteristics.html (§1과 같은 출처). 최대 precision 65 digits. |
 | 여러 `ALTER TABLE` 변경 중 일부는 `ALGORITHM=INSTANT`가 가능하지만 type 변경이나 구조에 따라 rebuild/copy가 필요하다. | MySQL 8.4 | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/innodb-online-ddl-operations.html |
-| atomic DDL은 transactional DDL이 아니다. | MySQL 8.4 / InnoDB | **Verified fact.** DDL은 active transaction을 implicit commit하며 여러 statement를 하나의 transaction으로 묶지 못한다. |
+| atomic DDL은 transactional DDL이 아니다. | MySQL 8.4 / InnoDB | **Verified fact.** https://dev.mysql.com/doc/refman/8.4/en/atomic-ddl.html (§1과 같은 출처). DDL은 active transaction을 implicit commit하며 여러 statement를 하나의 transaction으로 묶지 못한다. |
 
 ---
 
@@ -175,7 +190,15 @@ Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html
 
 따라서 deadlock graph가 단순한 “worker A와 worker B가 queue row 하나를 경쟁”하는 것보다 넓어진다.
 
+**Verified fact — AUTO_INCREMENT lock mode**
+
+MySQL 8.4 기본값은 `innodb_autoinc_lock_mode=2`(interleaved)다. 이 모드에서는 INSERT 계열 statement가 table-level `AUTO-INC` lock을 쓰지 않고 동시에 실행되며, 값은 unique · 단조 증가지만 statement 안에서 연속적이지 않을 수 있다. statement-based replication에서는 안전하지 않고 row-based · mixed에서는 안전하다.
+
+Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html
+
 **Daesingo implication — RD-01b**
+
+JobExecution 등의 PK를 AUTO_INCREMENT로 둘지는 RD-01a · 01b에서 열려 있다. 둔다면 기본 설정에서는 claim transaction 안 INSERT가 table-level AUTO-INC lock으로 직렬화되지 않는다. 남는 lock은 위 목록의 insert intention · unique · FK lock이다.
 
 exact transaction 안에서 `queue → execution` 순으로 접근한다면 heartbeat/sweep/cancel 및 다른 code path가 반대 순서인 `execution/job → queue`를 취하는지까지 확인 대상이다.
 
@@ -187,6 +210,7 @@ exact transaction 안에서 `queue → execution` 순으로 접근한다면 hear
 
 - ownership 변경 자체는 하나의 DML statement로 확정할 수 있다.
 - `SKIP LOCKED` locking read와 달리 대상 row가 이미 X-locked 되었을 때 우회보다 lock wait가 발생하는 query plan이 가능하다.
+- 이 대기 동작은 isolation level에 따라 달라진다. `READ COMMITTED`에서는 `UPDATE`가 semi-consistent read를 쓰고 WHERE에 맞지 않는 row의 record lock을 해제하므로(§4.2), RR과 RC에서 Pattern B의 wait · lock footprint가 다를 수 있다.
 - `JobExecution(RUNNING)` 생성이 별도 transaction이면 ownership과 execution ledger 사이에 crash window가 생긴다.
 - 둘을 같은 transaction에 넣으면 다시 Pattern A와 유사한 INSERT lock graph가 생긴다.
 
@@ -218,7 +242,7 @@ Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html
 
 queue index에서 “현재 실행 가능한 row들”을 range로 찾는 구조라면 claim이 기존 row뿐 아니라 index gap에 영향을 주어 동시에 enqueue되는 새로운 entry의 insert-intention lock과 만날 가능성이 있다.
 
-Solid Queue가 실제 MySQL queue에서 문서화한 문제가 이 유형이다. Solid Queue는 다음 형태의 query를 사용한다.
+Solid Queue가 실제 MySQL queue에서 문서화한 문제가 이 유형이다. 아래는 Solid Queue polling query의 형태를 조사용으로 재구성한 것이며 **README 원문 query가 아니다.**
 
 ```sql
 SELECT job_id
@@ -228,19 +252,27 @@ LIMIT ?
 FOR UPDATE SKIP LOCKED;
 ```
 
-또는 queue name equality filter를 추가한다. polling query가 covering index를 사용하도록 schema/query를 제한하고 있으며, 기본 RR에서 gap lock에 의해 enqueue와 claim/dispatch가 deadlock될 수 있다고 프로젝트 문서에 명시되어 있다.
+또는 queue name equality filter를 추가한다. polling query가 covering index를 사용하도록 schema/query를 제한하고 있으며, 기본 RR에서 gap lock에 의해 enqueue와 claim/dispatch가 deadlock될 수 있다고 프로젝트 문서에 명시되어 있다. 같은 README는 MySQL/MariaDB에서 heavy load 시 `READ COMMITTED` 고려를 권하고, Solid Queue 자체 table에는 그것이 안전하다고 쓴다.
 
 Source: https://github.com/rails/solid_queue/
 
-이는 Solid Queue 환경의 근거이며 대신고에서 동일한 발생률이나 load threshold를 의미하지 않는다.
+이는 Solid Queue 환경의 사실이며 대신고에서 동일한 발생률이나 load threshold, RC의 안전성을 의미하지 않는다.
+
+한편 MySQL 공식 deadlock 문서는 「deadlock 가능성은 isolation level의 영향을 받지 않는다」고 쓴다. heavy load 시 RC를 권하는 Solid Queue README와 이 문장 사이의 긴장은 RR/RC 비교 spike(§8 Spike A)에서 함께 본다.
+
+Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-deadlocks.html
 
 #### `READ COMMITTED`
 
 **Verified fact**
 
-normal search/index scan의 gap locks가 감소하고 각 consistent read가 새로운 snapshot을 얻는다. FK 및 duplicate-key check에는 gap-related locking 예외가 남는다.
+normal search/index scan의 gap locks가 비활성화되고 각 consistent read가 새로운 snapshot을 얻는다. FK 및 duplicate-key check에는 gap-related locking 예외가 남는다. 또한 WHERE 조건 평가 뒤 조건에 맞지 않는 row의 record lock을 해제하고, `UPDATE`는 semi-consistent read를 사용한다.
 
 Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html
+
+**Interpretation**
+
+record lock 해제와 semi-consistent read는 RC에서 claim query의 lock footprint와 Pattern B(조건부 UPDATE)의 대기 동작을 RR과 다르게 만든다. 두 isolation level의 실제 차이는 Spike A matrix로 관찰한다.
 
 **Daesingo implication — RD-01b**
 
@@ -272,7 +304,7 @@ Source: https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html
 **Interpretation**
 
 - 실제 WHERE와 ORDER BY를 하나의 index scan으로 만족하고 첫 candidate에서 stop하면 lock footprint가 좁아질 여지가 있다.
-- 적절한 ordering index가 없어 filesort가 필요하면 더 많은 qualifying rows가 LIMIT 이전에 읽히므로 lock footprint가 커질 가능성이 있다.
+- 적절한 ordering index가 없어 filesort가 필요하면 `LIMIT` 없이 query에 일치하는 모든 row가 select된다([limit-optimization](https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html)). 이를 scan한 index record에 lock이 걸린다는 locks-set 규칙과 합치면 lock footprint가 일치 row 전체로 커질 수 있다. limit-optimization 문서 자체는 lock을 말하지 않으므로 이 연결은 두 문서를 합친 해석이다.
 - 다만 MySQL 문서는 모든 optimizer plan별 “최종적으로 commit까지 정확히 몇 개의 record lock이 남는다”를 공식 표로 규정하지 않는다.
 
 따라서 최종 schema에서 `EXPLAIN`만 확인하는 것과 실제 `performance_schema.data_locks`를 보는 것은 서로 다른 검증이다.
@@ -401,9 +433,18 @@ Source: https://dev.mysql.com/doc/refman/8.4/en/precision-math-decimal-character
 
 **Daesingo implication — RD-01g**
 
-KRW 정규화가 이미 정해져 있으므로 남은 내부 입력은 실제 금액 범위, 소수 KRW 허용 여부, 환산 rounding contract다.
+KRW 정규화가 이미 정해져 있다. 또한 [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md)는 `amount`를 `"decimal string | null"`로 두고 예시가 `"184.20"` KRW다. 이 정의로 「소수 KRW 허용 여부」가 이미 닫혔는지는 **확인 필요**다. 남은 내부 입력은 실제 금액 범위, 소수 KRW 허용 여부(위 확인 결과에 따라), 환산 rounding contract다.
 
 ### 4.7 RD-01g — `pricing_context` / `token_usage`
+
+**Already fixed — Contract**
+
+[`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §4 · §8에 이미 고정된 부분이 있다.
+
+- `token_usage`는 `input` · `output` · `total` 세 필드이고, 「객체 전체 null이거나 세 필드 모두 존재」한다(§8-3).
+- `pricing_context`는 `pricing_id` · `unit` key를 갖는다.
+
+열린 것은 두 객체의 opaque 확장 영역뿐이다. 아래 물리 표현 비교는 고정된 field는 Contract대로 두고 이 확장 영역을 어떻게 담을지에 대한 것이다.
 
 #### JSON
 
@@ -413,17 +454,17 @@ provider별 shape 변화나 추가 metadata를 DDL 없이 보존할 수 있다.
 
 #### Typed columns
 
-예를 들어 stable한 `input_tokens`, `output_tokens` 등이 확정되면 SQL aggregation과 constraints가 직접적이다.
+Contract가 고정한 `token_usage`의 `input` · `output` · `total`을 column으로 두면 SQL aggregation과 constraints가 직접적이다. 이때 「세 필드 모두 존재 또는 객체 전체 null」 규칙을 column 제약으로 어떻게 표현할지가 함께 따라온다.
 
 provider-specific field가 지속적으로 추가되면 nullable columns/schema evolution 비용이 생긴다.
 
 #### Hybrid
 
-stable aggregate fields는 columns, provider/pricing-specific context는 JSON에 두는 물리 모델도 기술적으로 가능하다.
+Contract가 고정한 field는 columns, opaque 확장 영역은 JSON에 두는 물리 모델도 기술적으로 가능하다.
 
 **Daesingo implication — RD-01g**
 
-어떤 token fields가 UsageRecord의 장기적인 contract이고 어떤 fields가 provider-specific opaque context인지가 외부 문서가 정할 수 없는 경계다.
+고정 field는 이미 Contract에 있으므로, 외부 문서가 정할 수 없는 경계는 opaque 확장 영역 중 무엇을 장기적으로 집계 대상으로 끌어올릴지다.
 
 ### 4.8 RD-01j — Python driver 후보
 
@@ -433,7 +474,7 @@ stable aggregate fields는 columns, provider/pricing-specific context는 JSON에
 |---|---:|---|---|---|
 | PyMySQL | 1.2.3, 2026-09-17 | 지원 | Pure Python · MIT | MySQL LTS 지원 표기. `caching_sha2_password`/`sha256_password` 사용 시 RSA extra가 필요한 경우가 문서화됨. |
 | mysqlclient | 2.3.0, 2026-09-14 | 지원 | C extension · GPL-2.0-or-later | Linux build 시 client/dev headers와 compiler/pkg-config 의존 가능. |
-| MySQL Connector/Python | 26.7.0, 2026-07-29 | 지원 | Oracle connector · GPLv2 + FOSS exception | pure/native distributions 존재. MySQL 8 authentication plugins 문서 제공. |
+| MySQL Connector/Python | 26.7.0, 2026-07-29 | 지원 | Oracle connector · GPLv2 + FOSS exception | pure/native distributions 존재. MySQL 8 authentication plugins 문서 제공. SQLAlchemy 문서가 이 driver에 대해 「frequent, major regressions」를 경고하고 CI에서 제외하며 server-side cursor를 비활성화한다(§4.9). |
 | aiomysql | 0.3.2, 2025-10-22 | 지원 | async · Pure Python/PyMySQL 기반 · MIT | asyncio 기반 MySQL driver. |
 | asyncmy | 0.2.15, 2026-09-21 | 지원 | asyncio · Cython/native wheels · Apache-2.0 | CPython 3.12 wheels 확인. |
 
@@ -463,7 +504,7 @@ Sources:
 
 #### SQL toolkit / SQLAlchemy Core
 
-현재 SQLAlchemy 2.1 계열은 Python 3.12를 지원하며 MySQL dialect에 mysqlclient, PyMySQL, asyncmy, aiomysql 등을 제공한다. Connector/Python dialect에 대해서는 upstream driver 변화와 관련한 제한 사항도 공식 문서에 기술되어 있다.
+현재 SQLAlchemy 2.1 계열은 Python 3.12를 지원하며 MySQL dialect에 mysqlclient, PyMySQL, asyncmy, aiomysql 등을 제공한다. Connector/Python dialect에 대해서는 공식 문서가 driver의 「frequent, major regressions」를 경고하고, 이 driver를 CI 대상에서 제외하며, server-side cursor를 비활성화한다고 명시한다.
 
 Source: https://docs.sqlalchemy.org/en/21/dialects/mysql.html
 
@@ -505,7 +546,7 @@ Source: https://docs.sqlalchemy.org/en/21/core/pooling.html
 
 | Tool / 방식 | Version / current evidence | Version tracking / branching | Rollback · MySQL failure semantics |
 |---|---|---|---|
-| Alembic | 1.20.0, 2026-09-11 | revision DAG. multiple heads와 merge revision 지원. `alembic_version`이 current revision을 기록. | upgrade/downgrade functions 제공. 단 MySQL DDL 자체의 implicit commit을 transaction으로 바꾸지는 못함. |
+| Alembic | 1.20.0, 2026-09-11 | revision DAG. multiple heads와 merge revision 지원. `alembic_version`이 current revision을 기록. 동시 실행 lock 여부는 공식 문서에 명시 없음(§8 Spike H). | upgrade/downgrade functions 제공. 단 MySQL DDL 자체의 implicit commit을 transaction으로 바꾸지는 못함. |
 | yoyo-migrations | 9.0.0 | SQL/Python migration과 dependency 제공. `_yoyo_*` metadata/locking 사용. | 공식 문서가 MySQL DDL rollback 제한과 오류 후 manual intervention 가능성을 명시. |
 | Flyway | 현재 문서에서 13.9.0 계열 확인 | schema history table에 version/checksum/success 상태 기록. | failed migration 후 leftover user objects는 직접 정리해야 할 수 있으며 `repair`는 schema history 수리에 사용된다. |
 | Liquibase | Community 5.0/5.0.3 문서 확인 | `DATABASECHANGELOG`, `DATABASECHANGELOGLOCK`. lock table로 한 DB에 동시에 한 updater만 실행. | rollback 지원. formatted SQL은 rollback SQL을 직접 기술한다. |
@@ -598,7 +639,9 @@ API와 Worker가 동시에 뜨면 둘 다 migration을 시도할 수 있다. 결
 
 Source: https://docs.liquibase.com/secure/user-guide-5-1-1/what-is-the-database-changelog-lock-table
 
-반면 모든 migration tool이 동일한 방식의 global database lock을 제공한다고 일반화할 수 없다.
+반면 모든 migration tool이 동일한 방식의 global database lock을 제공한다고 일반화할 수 없다. 예를 들어 Alembic은 동시 실행 lock 여부가 공식 문서에 명시되어 있지 않다. api · worker가 동시에 migration을 시도하는 경쟁은 §8 Spike H로 확인한다.
+
+Source: https://alembic.sqlalchemy.org/en/latest/branches.html
 
 ---
 
@@ -609,7 +652,7 @@ Source: https://docs.liquibase.com/secure/user-guide-5-1-1/what-is-the-database-
 | 동일 work의 이중 claim | ownership write가 원자적으로 검증되지 않거나 optimistic UPDATE의 affected rows를 무시 | 두 Worker가 같은 작업을 실행 | lock/CAS 조건 및 concurrent test로 검증 가능 |
 | Queue가 순간적으로 empty처럼 보임 | eligible rows가 다른 transaction에 lock되어 있고 `SKIP LOCKED`가 모두 제외 | Worker poll이 빈 결과 반환 | `SKIP LOCKED`의 의도된 semantics. 다음 poll과 구분 필요 |
 | 예상보다 넓은 lock | WHERE/ORDER를 지원하지 않는 index, broad range scan | enqueue/update blocking 증가 | final index + query plan + `data_locks` spike |
-| filesort와 broad scan | ORDER BY를 index로 해결하지 못함 | LIMIT 1인데도 다수 candidate scan 가능 | final query/index 조합 확인 |
+| filesort와 broad scan | ORDER BY를 index로 해결하지 못함 | LIMIT 1인데도 일치 candidate 전체 select · scan | final query/index 조합 확인 |
 | strict FIFO 위반 / starvation 가능성 | 앞 candidate가 지속적으로 lock됨 | 뒤 row가 먼저 claim | fairness requirement 자체를 내부에서 정의 |
 | RR gap-lock contention | claim range와 enqueue insert가 같은 index gap 사용 | wait/deadlock | RC 비교 spike 및 actual index 검증 |
 | claim ↔ heartbeat/sweep/cancel contention | 동일 queue/execution row를 동시에 UPDATE/lock | skip, wait, deadlock | 공통 state predicate와 access order 검증 |
@@ -675,8 +718,8 @@ claim + RUNNING INSERT가 같은 transaction이면 **DB-level claim/RUNNING 불�
 `Money`와 `pricing_context/token_usage`는 같은 이유로 JSON/relational을 선택할 필요가 없다.
 
 - Money: exact arithmetic, scale, aggregation이 주요 축
-- token usage: stable aggregate dimensions가 무엇인지가 주요 축
-- pricing context: opaque/versioned context의 schema evolution이 주요 축
+- token usage: `input/output/total`은 Contract에 고정 — opaque 확장 영역 중 무엇을 집계 차원으로 둘지가 주요 축
+- pricing context: `pricing_id` · `unit`은 Contract에 고정 — opaque/versioned 확장 영역의 schema evolution이 주요 축
 
 서로 다른 physical representation을 조합하는 것도 기술적으로 가능하다.
 
@@ -718,8 +761,8 @@ downgrade/rollback 표현
 - `produced` reference에 DB FK가 실제 필요한지
 - `usage_refs`를 저장한다면 authoritative인지 projection/cache인지
 - Money 최대 크기와 scale
-- KRW 정규화 후 소수 KRW를 허용하는지
-- token usage 중 장기적으로 stable하다고 보는 fields
+- KRW 정규화 후 소수 KRW를 허용하는지 — Contract의 `amount`는 decimal string이고 예시가 `"184.20"` KRW라 이미 닫혔는지 **확인 필요**
+- `token_usage` · `pricing_context`의 opaque 확장 영역 중 장기적으로 stable하다고 보는 fields(`input/output/total`, `pricing_id` · `unit`은 Contract에 고정)
 - DB abstraction을 API와 Worker가 어디까지 공유할지
 - migration downgrade를 실제 운영 contract로 둘지
 
@@ -736,7 +779,7 @@ downgrade/rollback 표현
 
 ### External Input이 필요한 항목
 
-- 향후 다른 모듈이 제공할 `token_usage` 및 `pricing_context` stable schema
+- 향후 다른 모듈이 제공할 `token_usage` 및 `pricing_context` opaque 확장 영역의 schema(Contract 고정 field 제외)
 - artifact reference의 lifecycle/deletion contract
 - API route의 실제 sync/async architecture
 - 팀 차원의 dependency/license 제약
@@ -763,7 +806,7 @@ RR / RC
 - duplicate claim 여부
 - empty result 여부
 - lock wait / deadlock
-- `performance_schema.data_locks`
+- `performance_schema.data_locks` — 특히 `SKIP LOCKED` claim이 gap · next-key lock을 보유하는지(공식 문서에 명시 없음, §1 · §3)
 - `performance_schema.data_lock_waits`
 - `SHOW ENGINE INNODB STATUS`
 - `EXPLAIN`
@@ -851,7 +894,7 @@ DDL C — 미실행
 
 ### Spike H — Concurrent migration
 
-동일 empty schema에 migration runner 두 개를 동시에 실행한다.
+동일 empty schema에 migration runner 두 개를 동시에 실행한다. 동시 실행 lock이 공식 문서에 명시되지 않은 도구(예: Alembic)는 이 spike로 동작을 확인한다.
 
 관찰:
 
@@ -867,8 +910,8 @@ DDL C — 미실행
 1. **Final claim schema에서 filesort가 발생할 때 정확히 어떤 record locks가 commit까지 유지되는가**\
    MySQL 문서는 scan과 locking의 일반 규칙은 제공하지만 모든 optimizer plan별 lock set을 완전히 열거하지 않는다. 실제 schema spike 대상이다.
 
-2. **`SKIP LOCKED`와 gap-only lock의 모든 corner case**\
-   공식 문서는 `SKIP LOCKED`를 row-level lock skip으로 설명하며 gap lock을 disable한다고 말하지 않는다. gap lock끼리는 서로 충돌하지 않고 insert를 방해한다는 규칙은 확인됐다. final query/index에서 실제 상태는 lock instrumentation 확인 대상이다.
+2. **`SKIP LOCKED`와 gap · next-key lock의 관계**\
+   공식 문서(locking-reads · locks-set)와 WL#8919는 `SKIP LOCKED`를 row-level lock skip으로만 설명하며, gap · next-key lock과의 관계는 어느 쪽으로도 명시하지 않는다. gap lock끼리는 서로 충돌하지 않고 insert를 방해한다는 규칙은 확인됐다. final query/index에서 실제 상태는 lock instrumentation(§8 Spike A) 확인 대상이다.
 
 3. **COMMIT response-loss 후 application recovery**\
    “client가 결과를 모른다”는 distributed transaction boundary 해석은 명확하지만, 이번 조사에서 이를 대신고 형태의 recovery algorithm까지 설명하는 MySQL 8.4 공식 문서는 확인하지 못했다.
@@ -901,6 +944,12 @@ DDL C — 미실행
   https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html
 - MySQL 8.4 Reference Manual — InnoDB Locking\
   https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html
+- MySQL 8.4 Reference Manual — Locks Set by Different SQL Statements in InnoDB\
+  https://dev.mysql.com/doc/refman/8.4/en/innodb-locks-set.html
+- MySQL Worklog WL#8919\
+  https://dev.mysql.com/worklog/task/?id=8919
+- MySQL 8.4 Reference Manual — AUTO_INCREMENT Handling in InnoDB\
+  https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html
 - MySQL 8.4 Reference Manual — Transaction Isolation Levels\
   https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html
 - MySQL 8.4 Reference Manual — Atomic Data Definition Statement Support\
@@ -977,7 +1026,7 @@ DDL C — 미실행
 
 | Completion criterion | 결과 |
 |---|---|
-| `SKIP LOCKED` lock 종류/범위/isolation/index 설명 | 충족. optimizer-specific exact footprint는 spike로 분리 |
+| `SKIP LOCKED` lock 종류/범위/isolation/index 설명 | 충족. `SKIP LOCKED`와 gap · next-key lock의 관계(문서에 명시 없음)와 optimizer-specific exact footprint는 spike로 분리 |
 | claim + RUNNING transaction crash boundary | 충족. COMMIT response-loss 공식 recovery는 Unresolved 표시 |
 | `produced` JSON vs child table | 충족 |
 | `usage_refs` stored vs projection | 충족 |

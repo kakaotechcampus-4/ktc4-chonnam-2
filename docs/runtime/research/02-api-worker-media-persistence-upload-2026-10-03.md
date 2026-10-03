@@ -1,6 +1,6 @@
 # Research Result — API ↔ Worker Media Persistence / Upload
 
-**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 · High/Med 정정 본문 반영 2026-10-03** — 반영 기록과 미반영 Low는 [Review notes](#review-notes-2026-10-03)\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/02-api-worker-media-persistence-upload.md`](./prompts/02-api-worker-media-persistence-upload.md)\
@@ -11,27 +11,32 @@
 
 ## Review notes (2026-10-03)
 
-> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+> High · Med 정정은 2026-10-03 본문에 반영했다. Low는 본문에 반영하지 않았으므로 해당 위치를 읽을 때 아래 Low 표를 함께 본다. 검토는 Claude Code 보조 검토다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
 
-**판정:** 아래 정정을 반영하면 RD-17a · 17b · 05e(인접 17c · 17d)의 Decision 근거로 쓸 수 있다. 출처 대조 24건 — 일치 20 · 부분 일치 3 · 인용 출처에 없음 1 · **반대 0**. 명시된 library 버전 · 날짜(FastAPI 0.142.2 · Starlette 1.7.0 · python-multipart 0.0.32 · Uvicorn 0.54.0)는 PyPI와 일치한다. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
+**판정:** High · Med 정정을 반영한 현재 본문은 RD-17a · 17b · 05e(인접 17c · 17d)의 Decision 근거로 쓸 수 있다. 출처 대조 24건 — 일치 20 · 부분 일치 3 · 인용 출처에 없음 1 · **반대 0**. 명시된 library 버전 · 날짜(FastAPI 0.142.2 · Starlette 1.7.0 · python-multipart 0.0.32 · Uvicorn 0.54.0)는 PyPI와 일치한다. 최종 선택 문장 · 외부 숫자의 baseline화 · 범위 밖 내용은 없다.
 
-### 정정 · 보완
+### 반영 기록 (High · Med)
+
+| Sev | 반영 위치 | 반영 내용 | 근거 |
+| --- | --- | --- | --- |
+| Med | §1 · §2 Part A-3 · §3 표 · §4.3 · §5 cross-mount 행 · §6 RD-17a · §7 실험 · §8 Spike B | `rename()` 조건을 「같은 mount point」로 고치고, 같은 filesystem이라도 mount point가 다르면 `EXDEV` · Docker volume · bind mount는 각각 별도 mount라 서로 다른 volume 사이 rename이 실패한다는 함의를 넣음. §6에 원본/파생 asset volume 분리 시 atomic publish 불가를 추가, Spike B에 서로 다른 두 volume 사이 rename 케이스 추가 | [rename(2)](https://man7.org/linux/man-pages/man2/rename.2.html) `EXDEV` |
+| Med | §1 · §3 표(신규 행) · Version-sensitive note · §4.7 Starlette · FastAPI 행 · §8 Spike G | body limit이 Starlette 1.6.0 이상에만 있고 FastAPI 0.142.2 하한(`starlette>=0.46.0`)으로는 보장되지 않으며 repo에 pin이 없다는 사실을 추가. Spike G 전제에 설치 Starlette 버전 확인을 넣음 | FastAPI 0.142.2 `pyproject.toml` · Starlette 1.6.0 tag |
+| Med | §1 · §3 표(신규 행) · §4.5 · §4.8 Pattern 1 · §6 RD-05e | FastAPI가 `UploadFile`을 request 종료 시 close한다는 사실과, Worker가 보려면 응답 전에 managed 위치로 옮겨야 한다는 RD-05e 함의를 추가 | FastAPI 0.142.2 `fastapi/routing.py`(`file_stack.push_async_callback`) |
+| Med | §1 · §3 표(신규 Interpretation 행) · §4.5 · §5 temp disk exhaustion 행 · §6 RD-05e · RAM/disk 절 · §8 Spike E | 기본 container `/tmp`는 writable layer(root EBS), `tmpfs`면 RAM이라는 Interpretation을 추가하고 「spool = disk」 단정을 조건형으로 고침. Spike E에 「`/tmp`가 tmpfs인지」 조건 추가 | Compose `tmpfs` 옵션 |
+| Med | §3 `TemporaryFile` 행 · §4.5 · §5 hard termination 행 · §8 Spike E · F | `TemporaryFile`이 `O_TMPFILE`/즉시 unlink이므로 hard kill 뒤 Starlette spool 잔여 파일이 남지 않음(Part B Q5)과, 사용량은 `df` · `lsof +L1` · `/proc/<pid>/fd`로 측정한다는 점을 반영 | [tempfile (3.12)](https://docs.python.org/3.12/library/tempfile.html) |
+| Med | §6 RD-17a | Ops §11 guardrail(50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않음)과 대조 필요를 추가 | [`ops-spec.md`](../ops-spec.md) §11 |
+
+### 미반영 (Low)
 
 | Sev | 본문 위치 | 정정 | 근거 |
 | --- | --- | --- | --- |
-| Med | §1 · §3 · §4.3 · §6 RD-17a `rename()` | 조건은 「같은 mounted filesystem」이 아니라 **같은 mount point**다. man page는 같은 filesystem이 두 곳에 mount돼 있어도 mount point가 다르면 `EXDEV`라고 쓴다. Docker에서는 bind mount · volume이 각각 별도 mount이므로, 같은 root EBS 위라도 staging과 final이 서로 다른 volume이면 rename이 실패한다. §6 「원본과 파생 asset을 같은 volume에 둘지 나눌지」에 직접 걸린다 | [rename(2)](https://man7.org/linux/man-pages/man2/rename.2.html) `EXDEV` |
-| Med | §1 · §3 · §4.7 body limit | `max_body_size` · `RequestBodyLimitMiddleware`는 Starlette **1.6.0 이상**에만 있다. FastAPI 0.142.2의 의존성 하한은 `starlette>=0.46.0`이라 FastAPI만으로는 보장되지 않는다. 현재 repo에는 fastapi · starlette pin이 없다 | FastAPI 0.142.2 `pyproject.toml` · Starlette 1.6.0 tag |
-| Med | §3 · §4.5 · §4.8 Pattern 1 | 누락: FastAPI는 `await request.form()` 직후 `UploadFile`을 request 종료 시 close하도록 등록한다. 따라서 202 응답 뒤에는 temp spool이 사라진다 — Worker가 보려면 **응답 전에** managed 위치로 옮겨야 한다. RD-05e에 직결된다 | FastAPI 0.142.2 `fastapi/routing.py`(`file_stack.push_async_callback`) |
-| Med | §3 · §4.5 container `/tmp` | 누락(Interpretation): 기본 container `/tmp`는 container writable layer라 root EBS의 Docker 저장 영역에 쌓인다. Compose에서 `/tmp`를 `tmpfs`로 잡으면 spool이 **RAM**을 쓴다. §8 Spike E 조건에 「`/tmp`가 tmpfs인지」를 넣는다 | Compose `tmpfs` 옵션 |
-| Med | §3 · §8 Spike E · F temp 파일 | Python `TemporaryFile`은 Linux에서 `O_TMPFILE`이거나 생성 직후 unlink된다. 따라서 (a) hard kill 뒤에도 Starlette spool 잔여 파일은 남지 않는다(Part B Q5의 답), (b) 사용 중 용량은 `du` · `ls`로 보이지 않고 `df` · `lsof +L1` · `/proc/<pid>/fd`로 본다 | [tempfile (3.12)](https://docs.python.org/3.12/library/tempfile.html) |
-| Med | §6 RD-17a | prompt에 없던 기존 guardrail: Ops §11 「50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다」. shared volume을 원본 보존소로 보는 후보는 이 원칙과 대조해야 한다 | [`ops-spec.md`](../ops-spec.md) §11 |
 | Low | 여러 곳 | §1 「독립 지표로 관찰해야 한다」 · 「protocol이 필요하다」는 단정형 → 조건형으로 읽는다. §1 body limit bullet 후반의 「별도 limit이 필요하다」는 implication · §4.3 「partial file을 발견하는 시간을 없앤다」는 Interpretation · durability(fsync) 주장의 출처는 rename(2)가 아니라 fsync(2) · Content-Length early rejection은 문서가 아니라 source(`middleware/body_limit.py`)에만 있고 app이 처음 `receive()`할 때 일어남 · tus 「maximum size」는 extension이 아니라 `Tus-Max-Size` header · §6 「API container가 쓴 file을 Worker에 mount하지 않았다」는 결함이 아니라 미정(compose 파일 · upload endpoint가 아직 없음) · Nginx `proxy_request_buffering` **기본값 on**, chunked 요청은 설정과 무관하게 buffering될 수 있음 · Uvicorn `--limit-concurrency`(초과 시 503)와 `Expect: 100-continue` 동작 누락 · orphan · stuck upload 정리는 Ops §10의 External Source / Managed Source Copy 구분과 연결 · 인용 링크 일부가 `blob/main` · Python 3.16 문서 → tag 고정 링크로 읽을 것 | 각 공식 문서 · source |
 
 ### Daesingo 사실 보강 (repo)
 
 - `recording/materialization.py`는 ffprobe · ffmpeg를 `-protocol_whitelist file`로 실행한다 → Object Storage 후보에서는 처리 전 local materialization이 「가능성」이 아니라 현 구조상 필수다.
 - 같은 파일의 `_snapshot` 비교는 **변환 도중** 원본 변경은 감지하지만, 시작 시점에 이미 partial인 파일은 감지하지 못한다 → publish 패턴(§4.3)의 필요성과 연결된다.
-- cross-container `flock`은 공식 문서 근거가 없다 — 본문 §9가 Interpretation으로 둔 분류가 맞다. §8 Spike B에 「서로 다른 두 volume 사이 rename(EXDEV)」 케이스를 추가한다.
+- cross-container `flock`은 공식 문서 근거가 없다 — 본문 §9가 Interpretation으로 둔 분류가 맞다. 서로 다른 두 volume 사이 rename(EXDEV) 케이스는 §8 Spike B에 반영했다.
 
 ---
 
@@ -43,13 +48,13 @@
 
 - **Verified fact** — Docker의 bind mount와 named volume 모두 여러 container가 같은 파일을 볼 수 있게 할 수 있다. 차이는 bind mount가 **host의 지정 경로**를 그대로 연결하는 반면, named volume은 Docker가 host 내부 저장 위치와 lifecycle을 관리한다는 점이다. Named volume은 container가 재생성되어도 남지만 `docker compose down -v`의 삭제 대상이다. ([docs.docker.com](https://docs.docker.com/engine/storage/bind-mounts/))
 - **Daesingo implication — RD-17a** — shared mount는 **영상 bytes의 process/container 경계**만 해결한다. 현재 `sa_*`, `ms_*`, locator, timeline이 process-local dict에 있는 문제는 별도로 남는다. Worker가 같은 path를 볼 수 있어도 어떤 파일이 어떤 ref인지 알 수 없기 때문이다.
-- **Verified fact** — Linux에서 `temp → rename(final)`은 같은 mounted filesystem 안이면 pathname 교체가 atomic하다. 서로 다른 mount를 넘으면 `EXDEV`가 발생한다. `rename()`의 atomic visibility와 crash/power-loss durability는 별개이며, 후자까지 보장하려면 file `fsync()`와 경우에 따라 containing directory `fsync()`까지 고려해야 한다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
+- **Verified fact** — Linux에서 `temp → rename(final)`은 source와 target이 같은 mount point 아래에 있으면 pathname 교체가 atomic하다. mount point가 다르면 `EXDEV`가 발생하며, 같은 filesystem이 두 곳에 mount돼 있어도 mount point가 다르면 마찬가지다. Docker에서는 bind mount · volume이 각각 별도 mount이므로, 같은 root EBS 위라도 staging과 final이 서로 다른 volume이면 rename이 실패한다. `rename()`의 atomic visibility와 crash/power-loss durability는 별개이며, 후자까지 보장하려면 file `fsync()`와 경우에 따라 containing directory `fsync()`까지 고려해야 한다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
 - **Interpretation — RD-17a/RD-17b** — 파일과 metadata가 filesystem + MySQL처럼 서로 다른 저장소에 있으면 하나의 평범한 DB transaction으로 둘을 동시에 commit할 수 없다. 따라서 어떤 후보를 택해도 `file exists / row missing`, `row exists / file missing`, `IN_PROGRESS 상태에서 crash` 같은 중간상태를 다루는 protocol이 필요하다.
 - **Verified fact** — 현재 Starlette 1.7.0의 multipart file은 `SpooledTemporaryFile(max_size=1,048,576)`를 사용한다. 즉 기본적으로 file part마다 최대 **1 MiB까지 memory spool**, 그 이상은 Python temporary file로 rollover된다. 이 값은 **library default**일 뿐 대신고 업로드 한도가 아니다. ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/formparsers.py))
 - **Verified fact** — 현재 `request.form(max_part_size=...)`의 `max_part_size`는 업로드된 **file part의 최대 크기가 아니다**. Starlette 1.7.0 문서와 source 모두 file part는 이 검사에서 제외되고 temporary storage로 spool된다고 명확히 한다. 전체 영상 크기 제한은 별도의 total request-body limit이 필요하다. ([starlette.io](https://www.starlette.io/requests/))
-- **Verified fact** — FastAPI에서 `File`/`UploadFile` dependency를 선언한 일반 endpoint는 FastAPI가 먼저 `await request.form()`을 끝낸 뒤 dependency 해결과 endpoint 실행으로 넘어간다. 따라서 큰 영상은 endpoint 함수에 진입하기 전에 이미 Starlette temp storage에 전부 수신·파싱된 상태가 된다. 단, 이는 “전부 RAM에 적재”된다는 뜻은 아니다. large file은 spool disk로 내려간다. ([raw.githubusercontent.com](https://raw.githubusercontent.com/fastapi/fastapi/0.142.2/fastapi/routing.py))
-- **Daesingo implication — RD-05e** — 이 표준 경로에서 수신 완료 후 `UploadFile`을 managed source 위치로 다시 복사한다면, 큰 영상은 구조적으로 **Starlette temp disk write → managed source disk write**의 두 단계가 된다. 앞에 Nginx처럼 request buffering을 하는 proxy가 있다면 proxy temp write가 하나 더 생길 수 있다.
-- **Verified fact** — Starlette는 1.6.0부터 total raw request body를 제한하는 `max_body_size`/`RequestBodyLimitMiddleware`를 제공한다. 반면 FastAPI 0.142.2의 `FastAPI()` 생성자는 이를 직접 노출하지 않으며, 알 수 없는 keyword는 `extra`에 저장되고 FastAPI에서 사용되지 않는다. Starlette middleware 자체는 FastAPI 같은 ASGI app에 명시적으로 적용할 수 있다. ([starlette.io](https://www.starlette.io/release-notes/))
+- **Verified fact** — FastAPI에서 `File`/`UploadFile` dependency를 선언한 일반 endpoint는 FastAPI가 먼저 `await request.form()`을 끝낸 뒤 dependency 해결과 endpoint 실행으로 넘어간다. 따라서 큰 영상은 endpoint 함수에 진입하기 전에 이미 Starlette temp storage에 전부 수신·파싱된 상태가 된다. 단, 이는 “전부 RAM에 적재”된다는 뜻은 아니다. large file은 temp directory의 spool file로 rollover된다(그 temp directory가 `tmpfs`면 RAM을 쓴다 — §4.5). 또한 FastAPI는 이 `UploadFile`들을 request 종료 시 close하도록 등록하므로, 응답이 끝나면 temp spool은 사라진다. ([raw.githubusercontent.com](https://raw.githubusercontent.com/fastapi/fastapi/0.142.2/fastapi/routing.py))
+- **Daesingo implication — RD-05e** — 이 표준 경로에서 수신 완료 후 `UploadFile`을 managed source 위치로 다시 복사한다면, 큰 영상은 구조적으로 **Starlette temp disk write → managed source disk write**의 두 단계가 된다. 앞에 Nginx처럼 request buffering을 하는 proxy가 있다면 proxy temp write가 하나 더 생길 수 있다. Worker가 그 bytes를 보려면 이 이동은 **202 응답 전에** 끝나야 한다.
+- **Verified fact** — Starlette는 1.6.0부터 total raw request body를 제한하는 `max_body_size`/`RequestBodyLimitMiddleware`를 제공한다. 이 기능은 Starlette **1.6.0 이상**에만 있고, FastAPI 0.142.2의 Starlette 의존성 하한은 `starlette>=0.46.0`이라 FastAPI 버전만으로는 보장되지 않는다(FastAPI 0.142.2 `pyproject.toml`). 현재 대신고 repo에는 fastapi · starlette pin이 없다. 또한 FastAPI 0.142.2의 `FastAPI()` 생성자는 이를 직접 노출하지 않으며, 알 수 없는 keyword는 `extra`에 저장되고 FastAPI에서 사용되지 않는다. Starlette middleware 자체는 FastAPI 같은 ASGI app에 명시적으로 적용할 수 있다. ([starlette.io](https://www.starlette.io/release-notes/))
 - **Interpretation — resource pressure** — 업로드 크기 분포가 아직 없으므로 “RAM이 먼저” 또는 “disk가 먼저”라고 외부 조사만으로 단정할 수 없다. 대신고에서는 Worker가 이미 영상 bytes를 RSS에 쌓는다는 관측이 있으므로 **Worker RSS/OOM 위험과 API upload temp/final disk 위험을 독립 지표로 관찰**해야 한다.
 
 ---
@@ -62,7 +67,7 @@
 
 1. bind mount / named volume의 host 노출, 초기 content copy, lifecycle, `down -v`, container recreation.
 2. non-root container의 UID/GID와 host ownership 관계, user namespace가 켜진 경우의 차이.
-3. partial file visibility, same-filesystem rename, `fsync`.
+3. partial file visibility, same-mount-point rename, `fsync`.
 4. 동일 filesystem에 대한 `flock()`/file-lock semantics.
 5. delete-while-open, stale reference, orphan file.
 6. process/container/host restart 시 파일과 metadata가 각각 받는 영향.
@@ -96,7 +101,7 @@
 | **Verified fact** — named volume은 Docker CLI/API로 관리하며 Docker docs는 별도 container를 통해 tar backup/restore하는 절차를 제공한다. Bind mount는 host path 자체가 운영자에게 직접 노출된다. | current docs | ([docs.docker.com](https://docs.docker.com/engine/storage/volumes/)) |
 | **Verified fact** — Docker는 image user에 명시적 UID/GID를 둘 수 있고, user namespace/rootless를 사용하면 container UID/GID와 host UID/GID가 remap된다. Bind-access permission은 이 mapping의 영향을 받는다. | Linux Docker Engine | ([docs.docker.com](https://docs.docker.com/engine/security/rootless/uid-gid-mapping/)) |
 | **Verified fact** — Compose volume syntax에는 일반 named volume의 content ownership을 자동으로 API/Worker user에 맞춰주는 portable `uid`/`gid` 옵션이 없다. `read_only`와 `nocopy`는 제공된다. | Compose Specification | ([docs.docker.com](https://docs.docker.com/reference/compose-file/services/)) |
-| **Verified fact** — Linux `rename()`은 target이 존재해도 atomic replacement를 제공하지만 source/target이 서로 다른 mounted filesystem이면 `EXDEV`로 실패한다. | Linux man-pages 6.19 | ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html)) |
+| **Verified fact** — Linux `rename()`은 target이 존재해도 atomic replacement를 제공하지만 source/target이 같은 mount point 아래에 있지 않으면 `EXDEV`로 실패한다. 같은 filesystem이 두 곳에 mount돼 있어도 mount point가 다르면 `EXDEV`다. | Linux man-pages 6.19 | ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html)) |
 | **Verified fact** — `fsync(file)`은 file data/metadata durability를 다루지만 directory entry의 persistence까지 반드시 보장하지는 않는다. Directory 자체에 별도 `fsync()`가 필요할 수 있다. | Linux | ([man7.org](https://www.man7.org/linux/man-pages/man2/fsync.2.html)) |
 | **Verified fact** — Unix `unlink()` 후에도 누군가 그 file descriptor를 열고 있다면 기존 opener는 계속 파일을 사용할 수 있고 storage는 마지막 descriptor가 닫힐 때 해제된다. | Linux | ([man7.org](https://man7.org/linux/man-pages/man2/unlink.2.html)) |
 | **Verified fact** — `flock()`은 advisory lock이다. cooperating process가 lock을 지켜야 의미가 있고 Linux local filesystem에서는 `flock`과 POSIX `fcntl` record lock은 서로 다른 locking 계열이다. | Linux | ([man7.org](https://www.man7.org/linux/man-pages/man2/flock.2.html)) |
@@ -106,21 +111,24 @@
 | **Verified fact** — Starlette `UploadFile.file`은 `SpooledTemporaryFile`이다. 현재 `MultiPartParser.spool_max_size` 기본값은 `1024*1024` bytes다. | Starlette 1.7.0 | ([starlette.io](https://www.starlette.io/requests/)) |
 | **Verified fact** — `SpooledTemporaryFile`은 threshold 초과 또는 `fileno()` 호출 시 on-disk `TemporaryFile`로 rollover한다. | Python 3.12 | ([docs.python.org](https://docs.python.org/ko/3.12/library/tempfile.html)) |
 | **Verified fact** — Starlette는 `SpooledTemporaryFile` 생성 시 `dir=`를 지정하지 않는다. 따라서 Python temp directory selection을 따른다. `TMPDIR`, `TEMP`, `TMP`, 그 후 Unix에서는 `/tmp`, `/var/tmp`, `/usr/tmp`, 마지막으로 cwd 순이다. | Python 3.12 + Starlette 1.7 | ([docs.python.org](https://docs.python.org/ko/3.12/library/tempfile.html)) |
+| **Interpretation** — `TMPDIR` 등을 두지 않은 container에서 spool 위치는 `/tmp`다. 기본 container `/tmp`는 container writable layer라 root EBS의 Docker 저장 영역에 쌓인다. Compose에서 `/tmp`를 `tmpfs`로 잡으면 spool이 **RAM**을 쓴다. | Docker Compose | Compose `tmpfs` 옵션 ([docs.docker.com](https://docs.docker.com/reference/compose-file/services/)) |
 | **Verified fact** — `max_part_size`는 현재 multipart **non-file field**에만 적용되며 uploaded file bytes는 이 check를 통과하지 않는다. | Starlette 1.7.0 | ([starlette.io](https://www.starlette.io/requests/)) |
 | **Verified fact** — Starlette parser는 network stream을 chunk 단위로 `python-multipart` parser에 공급하고 file chunks를 `UploadFile.write()`로 spool한다. | Starlette 1.7.0 | ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/formparsers.py)) |
 | **Verified fact** — `python-multipart` 자체는 callback 기반 streaming parser이며 parser-level `max_size`의 기본은 unbounded다. Starlette의 현재 `MultiPartParser` 생성 코드는 이 `max_size`를 넘기지 않는다. | python-multipart 0.0.32 + Starlette 1.7 | ([multipart.fastapiexpert.com](https://multipart.fastapiexpert.com/api/)) |
 | **Verified fact** — `Request.stream()`은 entire body를 memory에 저장하지 않고 ASGI body chunks를 전달한다. 이후 `.body()`, `.form()`, `.json()`을 사용할 수 없다. | Starlette 1.7 | ([starlette.io](https://www.starlette.io/requests/)) |
 | **Verified fact** — 반대로 `Request.body()`는 chunks를 모아서 `b"".join()`한다. 즉 large raw request에서 이를 사용하면 complete body materialization이 가능하다. | Starlette source | ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/requests.py)) |
 | **Verified fact** — client disconnect가 stream에 전달되면 `Request.stream()`은 `ClientDisconnect`를 raise한다. Multipart parser는 parsing/stream exception 경로에서 생성한 spooled temporary files를 close한다. | Starlette current source | ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/requests.py)) |
-| **Verified fact** — `TemporaryFile`은 Unix에서 directory entry를 만들지 않거나 생성 직후 unlink하며 close되면 storage가 정리된다. `SpooledTemporaryFile` rollover 이후 이 semantics를 따른다. | Python tempfile | ([docs.python.org](https://docs.python.org/3.16/library/tempfile.html)) |
+| **Verified fact** — `TemporaryFile`은 Linux에서 `O_TMPFILE`로 만들어 directory entry가 없거나 생성 직후 unlink하며 close되면 storage가 정리된다. `SpooledTemporaryFile` rollover 이후 이 semantics를 따른다. 따라서 (a) process가 hard kill돼도 Starlette spool 잔여 파일은 directory에 남지 않고, (b) 사용 중 용량은 `du` · `ls`로 보이지 않으며 `df` · `lsof +L1` · `/proc/<pid>/fd`로 확인한다. | Python tempfile | ([docs.python.org](https://docs.python.org/3.16/library/tempfile.html)) ([tempfile (3.12)](https://docs.python.org/3.12/library/tempfile.html)) |
 | **Verified fact** — Starlette 1.6.0부터 total raw request body bytes를 제한하는 `max_body_size`가 추가됐으며 `RequestBodyLimitMiddleware`는 Content-Length를 이용한 early rejection과 실제 수신 byte counting 모두 수행한다. 초과 시 413이다. | Starlette ≥1.6 | ([starlette.io](https://www.starlette.io/release-notes/)) |
+| **Verified fact** — FastAPI 0.142.2의 Starlette 의존성 하한은 `starlette>=0.46.0`이다. 따라서 FastAPI 0.142.2를 쓴다는 사실만으로 `max_body_size` · `RequestBodyLimitMiddleware`가 있는 Starlette ≥1.6.0이 설치된다고 보장되지 않는다. 현재 대신고 repo에는 fastapi · starlette pin이 없다. | FastAPI 0.142.2 | FastAPI 0.142.2 `pyproject.toml` · Starlette 1.6.0 tag |
 | **Verified fact** — FastAPI 0.142.2의 unknown `FastAPI(...)` keyword는 `extra`에 저장되고 FastAPI에서 사용되지 않는다. 따라서 `FastAPI(max_body_size=...)`를 Starlette 설정과 동일한 것으로 취급할 수 없다. | FastAPI 0.142.2 | ([github.com](https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py)) |
+| **Verified fact** — FastAPI는 `await request.form()` 직후 form의 `UploadFile`들을 request 종료 시 close하도록 등록한다(`file_stack.push_async_callback`). 따라서 응답이 끝나면 `UploadFile`의 temp spool은 close되어 사라진다. | FastAPI 0.142.2 | ([raw.githubusercontent.com](https://raw.githubusercontent.com/fastapi/fastapi/0.142.2/fastapi/routing.py)) |
 | **Verified fact** — Uvicorn은 buffered request body가 high-water mark에 도달하면 transport reading을 pause하고 application이 `receive()`할 때 resume하는 read flow control을 사용한다. | Uvicorn current docs | ([uvicorn.org](https://www.uvicorn.org/server-behavior/)) |
 | **Verified fact** — Uvicorn current settings의 `--h11-max-incomplete-event-size`는 **h11 incomplete event buffer** 제한이며 upload/request total-body limit이 아니다. | Uvicorn 0.54 docs | ([uvicorn.org](https://www.uvicorn.org/settings/)) |
 
 ### Version-sensitive note
 
-Starlette upload protection은 최근에 꽤 바뀌었다. `max_part_size`는 0.40.0에서 security fix로 들어왔고, 이후 request API 노출과 form-limit 수정이 이어졌으며, **total request-body limit은 1.6.0(2026-08-08)** 에 추가됐다. 따라서 2024~2025 예제를 현재 동작으로 그대로 가져오면 안 된다. ([starlette.io](https://www.starlette.io/release-notes/))
+Starlette upload protection은 최근에 꽤 바뀌었다. `max_part_size`는 0.40.0에서 security fix로 들어왔고, 이후 request API 노출과 form-limit 수정이 이어졌으며, **total request-body limit은 1.6.0(2026-08-08)** 에 추가됐다. 따라서 2024~2025 예제를 현재 동작으로 그대로 가져오면 안 된다. ([starlette.io](https://www.starlette.io/release-notes/)) FastAPI 0.142.2의 Starlette 하한은 `starlette>=0.46.0`이므로, 실제로 설치되는 Starlette가 1.6.0 이상인지는 FastAPI 버전과 별개로 확인해야 한다.
 
 ---
 
@@ -150,15 +158,15 @@ Starlette upload protection은 최근에 꽤 바뀌었다. `max_part_size`는 0.
 
 ### 4.3 완성 파일 publish pattern
 
-**Verified fact:** 같은 filesystem 안에서
+**Verified fact:** 같은 mount point 안에서
 
 `hidden/staging file → close/write completion → rename(final)`
 
-형태는 consumer가 final pathname에서 partial file을 발견하는 시간을 없앨 수 있다. `rename()`은 same mounted filesystem 조건이 필요하다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
+형태는 consumer가 final pathname에서 partial file을 발견하는 시간을 없앨 수 있다. `rename()`은 같은 mount point 조건이 필요하다. 같은 filesystem이 두 곳에 mount돼 있어도 mount point가 다르면 `EXDEV`다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
 
-**Interpretation:** container `/tmp/upload-xyz`에서 shared volume `/media/source.mp4`로 rename하면 `/tmp`와 `/media`가 별도 mount일 가능성이 높아 `EXDEV`가 날 수 있다. 이 경우 library가 copy+unlink로 fallback하면 그 copy 자체는 atomic publish가 아니다.
+**Interpretation:** container `/tmp/upload-xyz`에서 shared volume `/media/source.mp4`로 rename하면 `/tmp`와 `/media`가 별도 mount일 가능성이 높아 `EXDEV`가 날 수 있다. Docker에서는 bind mount · volume이 각각 별도 mount이므로, 같은 root EBS 위라도 staging과 final이 서로 다른 volume이면 rename은 `EXDEV`로 실패한다. 이 경우 library가 copy+unlink로 fallback하면 그 copy 자체는 atomic publish가 아니다.
 
-따라서 이 pattern을 후보로 실험하려면 **staging과 final이 같은 shared filesystem에 있는지**가 핵심 조건이다.
+따라서 이 pattern을 후보로 실험하려면 **staging과 final이 같은 mount point(같은 volume 또는 같은 bind mount) 아래에 있는지**가 핵심 조건이다.
 
 **Interpretation:** `rename()`은 “다른 process가 partial final name을 보지 않는다”는 visibility 문제와 관련 있고, “EC2가 바로 crash해도 마지막 bytes와 directory entry가 반드시 durable하다”는 문제는 `fsync` 계층의 별도 선택이다. ([man7.org](https://www.man7.org/linux/man-pages/man2/fsync.2.html))
 
@@ -228,7 +236,13 @@ WAL을 사용한다면 database file뿐 아니라 `-wal`/`-shm` semantics와 bac
 
 **Verified fact:** 처음부터 전체 file bytes를 Python `bytes` 한 덩어리로 보관하지는 않는다. Starlette가 streaming parser를 사용한다. 다만 file 전체가 parse 완료될 때까지 `UploadFile` backing storage에 들어간다. ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/formparsers.py))
 
-**Verified fact:** 기본 threshold를 넘은 file은 temp disk로 rollover한다.
+**Verified fact:** 기본 threshold를 넘은 file은 Python temp directory의 `TemporaryFile`로 rollover한다. 이 file은 unlink 상태라 `du` · `ls`로 보이지 않는다(§3).
+
+**Interpretation:** `TMPDIR` 등을 두지 않은 container에서 그 위치는 `/tmp`다. 기본 container `/tmp`는 container writable layer라 root EBS의 Docker 저장 영역에 쌓이고, Compose에서 `/tmp`를 `tmpfs`로 잡으면 spool이 **RAM**을 쓴다. ([docs.docker.com](https://docs.docker.com/reference/compose-file/services/))
+
+**Verified fact:** FastAPI는 `await request.form()` 직후 `UploadFile`을 request 종료 시 close하도록 등록한다(`file_stack.push_async_callback`). 따라서 응답이 끝나면 temp spool은 사라진다. ([raw.githubusercontent.com](https://raw.githubusercontent.com/fastapi/fastapi/0.142.2/fastapi/routing.py))
+
+**Daesingo implication — RD-05e:** endpoint가 202를 돌려주고 Worker가 나중에 처리하는 구조라면, Worker가 bytes를 보려면 `UploadFile` 내용을 **응답 전에** managed 위치로 옮겨야 한다. 202 뒤에는 spool이 남아 있지 않다.
 
 **Daesingo implication:** endpoint 안에서 다시 다음처럼 전체를 읽는다면:
 
@@ -254,9 +268,9 @@ WAL을 사용한다면 database file뿐 아니라 `-wal`/`-shm` semantics와 bac
 
 | 층 | 현재 확인 결과 |
 |---|---|
-| **Starlette** | **Verified fact:** 1.6+에는 total raw body limit이 있다. `RequestBodyLimitMiddleware`는 `Content-Length`로 가능한 경우 일찍 거부하고 실제 ASGI bytes도 count하므로 header가 없거나 축소된 경우에도 enforcement한다. 413 반환. ([starlette.io](https://www.starlette.io/middleware/)) |
+| **Starlette** | **Verified fact:** 1.6.0 이상에만 total raw body limit이 있다. FastAPI 0.142.2의 하한은 `starlette>=0.46.0`이라 FastAPI만으로는 1.6+가 보장되지 않으며, 현재 repo에는 fastapi · starlette pin이 없다. `RequestBodyLimitMiddleware`는 `Content-Length`로 가능한 경우 일찍 거부하고 실제 ASGI bytes도 count하므로 header가 없거나 축소된 경우에도 enforcement한다. 413 반환. ([starlette.io](https://www.starlette.io/middleware/)) |
 | **Starlette multipart `max_part_size`** | **Verified fact:** file-size limit이 아니다. 현재는 non-file field limit이다. ([starlette.io](https://www.starlette.io/requests/)) |
-| **FastAPI 0.142.2** | **Verified fact:** `FastAPI(max_body_size=...)`는 Starlette 설정 전달로 취급할 수 없다. explicit Starlette middleware를 ASGI middleware로 사용하는 것은 가능하다. ([github.com](https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py)) |
+| **FastAPI 0.142.2** | **Verified fact:** `FastAPI(max_body_size=...)`는 Starlette 설정 전달로 취급할 수 없다. explicit Starlette middleware를 ASGI middleware로 사용하는 것은 가능하다(설치된 Starlette가 1.6.0 이상일 때). ([github.com](https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py)) |
 | **application raw stream** | **Interpretation:** 수신 bytes를 직접 세어 threshold 초과 시 중단할 수 있다. `Content-Length`는 early hint로 활용할 수 있지만 streaming byte count가 실제 enforcement boundary가 된다. |
 | **Uvicorn 0.54** | **Interpretation based on official settings:** current settings에 general HTTP total-body-size option이 문서화되어 있지 않다. `--h11-max-incomplete-event-size`는 upload limit이 아니다. Uvicorn flow control은 buffer explosion을 억제하지만 total accepted bytes를 제한하지 않는다. ([uvicorn.org](https://www.uvicorn.org/server-behavior/)) |
 | **Nginx, 둔다면** | **Verified fact:** `client_max_body_size`가 request size limit을 제공한다. `client_body_buffer_size`를 넘는 body는 whole/part가 temp file로 갈 수 있다. `proxy_request_buffering on`이면 upstream 전송 전에 request body를 먼저 읽는다. **Nginx default 숫자는 대신고 baseline이 아니다.** ([nginx.org](https://nginx.org/en/docs/http/ngx_http_core_module.html)) |
@@ -270,7 +284,7 @@ WAL을 사용한다면 database file뿐 아니라 `-wal`/`-shm` semantics와 bac
 
 **Interpretation:** 가장 단순한 API surface다. 수신이 전부 성공한 뒤 validation, publish, DB metadata registration을 수행한다.
 
-Trade-off는 장시간 request lifecycle과 crash window다. Standard `UploadFile`을 쓰면 application logic이 시작될 때에는 이미 full multipart reception/spooling이 끝났다는 특성이 있다.
+Trade-off는 장시간 request lifecycle과 crash window다. Standard `UploadFile`을 쓰면 application logic이 시작될 때에는 이미 full multipart reception/spooling이 끝났다는 특성이 있다. 또한 FastAPI가 `UploadFile`을 request 종료 시 close하므로(§4.5), 수신 직후 응답하고 Worker가 나중에 처리하는 변형에서는 publish/copy가 응답 전에 끝나야 한다.
 
 ---
 
@@ -311,7 +325,7 @@ Checksum은 **content identity/integrity 확인 도구**이지 filesystem/DB ato
 | Failure mode | 발생 조건 | 영향 | 완화 가능성 |
 |---|---|---|---|
 | **Interpretation — partial read** | API가 Worker-visible final pathname에 직접 쓰는 동안 Worker가 open | Worker가 incomplete media를 ffprobe/ffmpeg에 전달할 수 있음 | staging pathname + completion publish, DB state gate 등의 protocol |
-| **Verified/Interpretation — cross-mount rename failure** | `/tmp` → shared volume 등 다른 mount | `rename()`이 `EXDEV`; copy fallback이면 atomic publish 상실 | staging을 같은 filesystem에 두는 variant를 spike로 검증 ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html)) |
+| **Verified/Interpretation — cross-mount rename failure** | `/tmp` → shared volume, 또는 같은 root EBS 위 서로 다른 Docker volume 사이 등 mount point가 다른 경우 | `rename()`이 `EXDEV`; copy fallback이면 atomic publish 상실 | staging을 final과 같은 mount point에 두는 variant를 spike로 검증 ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html)) |
 | **Interpretation — stale reference** | metadata READY commit 후 file publish 실패/운영 삭제/disk 손실 | `sa_*`는 존재하지만 locator target 없음 | lookup 시 existence/integrity check, persistent error state, reconciliation |
 | **Interpretation — orphan file** | file publish 성공 후 DB registration 전 crash | disk 사용량 증가, 어떤 ref에도 연결되지 않음 | staging/final naming convention, age/status scan, managed-artifact reconciliation |
 | **Interpretation — stuck upload** | PENDING/session row 후 client/process crash | 영구 IN_PROGRESS record, staging bytes 잔존 | timeout/age-based reconciliation policy |
@@ -320,11 +334,11 @@ Checksum은 **content identity/integrity 확인 도구**이지 filesystem/DB ato
 | **Interpretation — permission denial** | API/Worker UID/GID 또는 host remapping 불일치 | create/open/rename/delete `EACCES` | image UID/GID와 mount permission integration test |
 | **Verified fact — accidental named-volume removal** | `docker compose down -v` | media volume 삭제 | lifecycle choice와 deployment command guard가 분리된 운영 결정 ([docs.docker.com](https://docs.docker.com/reference/cli/docker/compose/down/)) |
 | **Verified fact — Docker disk accumulation** | unused images/container layers/build cache를 계속 유지 | same host disk 소비 | Docker provides explicit prune/usage mechanisms; volume pruning은 데이터 위험과 별개 ([docs.docker.com](https://docs.docker.com/engine/manage-resources/pruning/)) |
-| **Interpretation — temp disk exhaustion** | large/multiple standard multipart uploads | Starlette spooled temp가 root disk를 채움 | total body/concurrency limit, temp usage observation, alternate receive path 등의 선택지 |
+| **Interpretation — temp disk exhaustion** | large/multiple standard multipart uploads | Starlette spooled temp가 root disk(container writable layer)를 채움; `/tmp`가 `tmpfs`면 대신 RAM을 씀 | total body/concurrency limit, temp usage observation, alternate receive path 등의 선택지 |
 | **Interpretation — duplicate disk write** | standard `UploadFile` rollover 후 final source copy | 대략 temp payload write + final payload write | raw streaming/direct storage 등과 비교 실험 |
 | **Interpretation — proxy duplicate buffering** | Nginx request buffering + Starlette spool + final copy | proxy temp + application temp + final source까지 동일 root disk에 쓰일 수 있음 | proxy 설정까지 포함한 I/O trace |
 | **Verified fact — client disconnect** | upload 중 network/client 종료 | Starlette stream에서 `ClientDisconnect`; parser-owned spool files close | app-managed staging을 만들었다면 그 file의 cleanup은 application lifecycle 문제 ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/requests.py)) |
-| **Interpretation — hard process/container termination** | app가 named staging file에 쓰다가 kill | shared mount의 partial staging file이 restart 뒤 남을 수 있음 | staging namespace + startup/periodic reconciliation |
+| **Interpretation — hard process/container termination** | app가 named staging file에 쓰다가 kill | shared mount의 partial staging file이 restart 뒤 남을 수 있음. Starlette spool(`TemporaryFile`)은 unlink 상태라 남지 않음 | staging namespace + startup/periodic reconciliation |
 | **Interpretation — RAM pressure** | Worker가 analysis/clip bytes를 계속 보유 + API concurrent work | host OOM 또는 process kill 가능 | API/Worker RSS를 분리 측정 |
 | **Interpretation — disk/I/O contention** | upload write + ffmpeg read/write + MySQL + Docker/log I/O 동시 | latency 증가, disk queue 증가, 최악의 경우 ENOSPC가 여러 service로 전파 | root disk/free space + I/O latency/queue 관찰 |
 | **Verified fact — SQLite writer contention** | sidecar DB 후보에서 동시 writes | `SQLITE_BUSY`, WAL도 writer 1개 | timeout/retry/write serialization 선택지가 있으나 실측 필요 ([sqlite.org](https://www.sqlite.org/wal.html)) |
@@ -352,7 +366,9 @@ Docker docs가 volume을 container lifecycle 밖 persistence로 정의하지만,
 
 API가 원본을 쓰고 Worker는 원본을 읽기만 한다는 현재 역할을 이용하면, filesystem 후보에서는 **API RW / Worker RO** 형태도 semantic candidate가 된다. Docker는 bind와 named volume 모두 read-only mount를 지원한다. ([docs.docker.com](https://docs.docker.com/engine/storage/bind-mounts/))
 
-원본과 Worker 파생 assets를 같은 volume에 둘지 나눌지는 외부 기술 사실로 결정되지 않는다. 다만 같은 root EBS라면 logical volume/path를 나눠도 physical disk-capacity와 I/O budget은 공유한다.
+원본과 Worker 파생 assets를 같은 volume에 둘지 나눌지는 외부 기술 사실로 결정되지 않는다. 다만 같은 root EBS라면 logical volume/path를 나눠도 physical disk-capacity와 I/O budget은 공유한다. 또 Docker volume · bind mount는 각각 별도 mount이므로, 둘을 서로 다른 volume으로 나누면 그 사이에서는 `rename()`이 `EXDEV`로 실패한다 — 한 volume의 staging에서 다른 volume의 final로 atomic publish(§4.3)하는 경로는 성립하지 않는다.
+
+기존 guardrail로 Ops §11 「50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다」가 있다. shared volume을 원본 보존소로 보는 후보는 이 원칙과 대조해야 한다. ([`ops-spec.md`](../ops-spec.md) §11)
 
 ---
 
@@ -398,6 +414,8 @@ locator를 외부 API에 노출할 필요는 없다. Public ref와 internal stor
 
 `network → Starlette memory spool window → Starlette temp disk → endpoint → final source disk`
 
+여기서 Starlette temp disk는 기본 container `/tmp`(writable layer)일 때의 이야기이고, `/tmp`가 `tmpfs`면 그 구간은 RAM이다. 또한 `UploadFile`은 request 종료 시 close되므로 `endpoint → final source disk` 이동은 응답 전에 끝나야 한다(§4.5).
+
 따라서 large file 하나가 최종 source가 될 때 application path상 대략:
 
 - memory: spool threshold + transient parser/network buffers,
@@ -416,7 +434,7 @@ locator를 외부 API에 노출할 필요는 없다. Public ref와 internal stor
 
 **Daesingo implication:** 현재 정보만으로 하나를 선택할 수 없다.
 
-Standard large `UploadFile` 자체는 1 MiB 이후 disk로 spool하므로 file size 전체가 API RAM으로 증가하지는 않는다. 하지만:
+Standard large `UploadFile` 자체는 1 MiB 이후 temp directory로 spool하므로, 그 위치가 disk(기본 container `/tmp`)라면 file size 전체가 API RAM으로 증가하지는 않는다. `/tmp`가 `tmpfs`라면 spool이 RAM을 쓴다. 하지만:
 
 - 동시 upload마다 memory spool/parser overhead가 생기고,
 - application이 `await upload.read()` 전체 읽기를 하면 full-size RAM copy가 추가되며,
@@ -465,7 +483,7 @@ Standard large `UploadFile` 자체는 1 MiB 이후 disk로 spool하므로 file s
 - standard `UploadFile`에서 temp/final copy 중 실제 peak disk usage.
 - API + Worker 동시 처리 시 EBS latency.
 - 실제 Docker image의 UID/GID 및 bind/named volume permission.
-- same-volume `rename()` 성공 여부.
+- 같은 volume(같은 mount point) 안 `rename()` 성공 여부와 서로 다른 volume 사이 `EXDEV`.
 - container kill/restart 뒤 staging artifacts.
 - FastAPI 0.142.2에 explicit Starlette body-limit middleware를 넣었을 때 multipart endpoint의 실제 413 timing.
 - proxy가 포함된 실제 deployment에서 temp file copy 횟수.
@@ -505,7 +523,7 @@ shared filesystem 안에서:
 
 를 수행하고 Worker가 final pathname만 polling/open하게 한다.
 
-비교 대상으로 container `/tmp → shared mount` rename도 실행해 `EXDEV` 여부를 기록한다. 이를 통해 “temp dir을 어디에 둘 때 atomic rename을 쓸 수 있는가”를 실제 baseline에서 확인할 수 있다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
+비교 대상으로 container `/tmp → shared mount` rename과 서로 다른 두 volume 사이 rename도 실행해 `EXDEV` 여부를 기록한다. 이를 통해 “temp dir을 어디에 둘 때 atomic rename을 쓸 수 있는가”를 실제 baseline에서 확인할 수 있다. ([man7.org](https://man7.org/linux/man-pages/man2/rename.2.html))
 
 ---
 
@@ -541,11 +559,11 @@ shared filesystem 안에서:
 
 ### Spike E — upload resource trace
 
-대표 크기를 임의 production limit으로 정하지 말고, 여러 test file size에서:
+대표 크기를 임의 production limit으로 정하지 말고, `/tmp`가 `tmpfs`인지(container writable layer인지)를 조건으로 기록한 뒤 여러 test file size에서:
 
 - API RSS
 - Worker RSS
-- `/tmp` 또는 `TMPDIR` usage
+- `/tmp` 또는 `TMPDIR` usage — spool은 unlink된 `TemporaryFile`이라 `du` · `ls`로 보이지 않으므로 `df` · `lsof +L1` · `/proc/<pid>/fd`로 측정
 - final media bytes
 - root free bytes
 - disk write bytes
@@ -572,7 +590,7 @@ shared filesystem 안에서:
 - metadata row,
 - emitted ref
 
-상태를 기록한다.
+상태를 기록한다. Starlette temp file은 unlink된 `TemporaryFile`이므로 hard kill 뒤에도 directory에 잔여 파일로 남지 않으며, 진행 중 상태는 `lsof +L1` · `/proc/<pid>/fd`로 관찰한다.
 
 Starlette parser 자체는 parsing error/disconnect 시 owned spool files를 close하지만, application이 만든 persistent staging file까지 자동으로 지우지는 않는다. ([github.com](https://github.com/Kludex/starlette/blob/main/starlette/formparsers.py))
 
@@ -580,7 +598,7 @@ Starlette parser 자체는 parsing error/disconnect 시 owned spool files를 clo
 
 ### Spike G — total-body limit
 
-현재 FastAPI 0.142.2 기준으로:
+현재 FastAPI 0.142.2 기준으로, 먼저 설치된 Starlette가 1.6.0 이상인지 확인한 뒤(FastAPI 하한은 `starlette>=0.46.0`, repo pin 없음):
 
 - `FastAPI(max_body_size=...)`가 limit으로 작동하지 않음을 regression test로 고정,
 - explicit `RequestBodyLimitMiddleware`,

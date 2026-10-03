@@ -1,6 +1,6 @@
 # Research Result — Deployment / Observability / Operations
 
-**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 · High/Med 정정 본문 반영 2026-10-03** — 반영 기록과 미반영 Low는 [Review notes](#review-notes-2026-10-03)\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/04-deployment-observability-operations.md`](./prompts/04-deployment-observability-operations.md)\
@@ -11,24 +11,29 @@
 
 ## Review notes (2026-10-03)
 
-> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+> High · Med 정정은 2026-10-03 본문에 반영했다. Low는 본문에 반영하지 않았으므로 해당 위치를 읽을 때 아래 Low 표를 함께 본다. 검토는 Claude Code 보조 검토다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
 
-**판정:** Part A(RD-12)는 아래 High 1건을 반영한 뒤, Part B(RD-13a · 11a)는 경미한 보완 후 Decision 근거로 쓸 수 있다. 출처 대조 36건 — 일치 31 · 부분 일치 4 · **반대 1**. transport · rotation · retention을 세 문제로 나눈 구조는 prompt대로다. 최종 선택 문장 · alert threshold · retention 값 · 범위 밖 topology는 없다.
+**판정:** 반영한 현재 본문은 Part A(RD-12) · Part B(RD-13a · 11a) 모두 Decision 근거로 쓸 수 있다. 출처 대조 36건 — 일치 31 · 부분 일치 4 · **반대 1**(MySQL downgrade, 반영 완료). transport · rotation · retention을 세 문제로 나눈 구조는 prompt대로다. 최종 선택 문장 · alert threshold · retention 값 · 범위 밖 topology는 없다.
 
-### 정정 · 보완
+### 반영 기록 (High · Med)
+
+| Sev | 반영 위치 | 반영 내용 | 근거 |
+| --- | --- | --- | --- |
+| High | §1 Part A · §3 Part A · §5 Part A · §6 RD-12e · §8 | 같은 LTS 안(8.4.y → 8.4.x) downgrade는 in-place · logical · Clone · replication 지원, 8.4 → 8.3 / 8.0은 in-place 불가 · logical 또는 replication으로만(새 기능 미사용 rollback에 한해). §5 failure mode를 「LTS series 경계를 넘는 image 변경」으로 좁힘 ★ | [MySQL 8.4 downgrading](https://dev.mysql.com/doc/refman/8.4/en/downgrading.html) |
+| Med | §3 Part A · §4 A-2 · §5 Part A · §7 · §8 | `aws ssm wait command-executed`는 5초 × 20회(약 100초) 뒤 exit 255 — 긴 배포에서 실행 중인데도 Actions 실패 판정 가능 | [ssm wait command-executed](https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html) |
+| Med | §1 Part A · §3 Part A · §5 Part A · §7 | docker driver build cache GC는 기본 활성 · 기본 policy 있음, 20GB 예시는 Docker Desktop 기준, Linux Engine 한도 미확인 → `docker buildx du` 실측, image 누적은 builder GC 대상 아님 | [build cache GC](https://docs.docker.com/build/cache/garbage-collection/) |
+| Med | §1 Part A · §3 Part A · §5 Part A · §7 · §9-2 | T3 launch 기본값은 Unlimited(계정 default로 변경 가능) → 기본값에서 host build 영향은 surplus 과금 쪽, 실제 설정은 확인 대상 | [T3 unlimited mode](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html) |
+| Med | §4 B-8 · §6 RD-13a · §7 | 「policy가 instance role에 이미 있다」 단정 제거 → repo는 「CloudWatch Agent server 권한 준비」 관측뿐, 실제 policy 이름 · effective permission은 확인 대상, SCP · guardrail이 최종 상한 | [`aws-environment.md`](../official-inputs/aws-environment.md) |
+| Med | §3 Part A · §4 A-7 · §5 Part A · §6 RD-12g · §8 | AWS MySQL flush/freeze script는 고쳐 쓰는 sample, host `mysqld.service` 없으면 FTWRL 건너뜀 → container MySQL에서 fs-freeze만 됨(failure mode 추가) | [automate app-consistent backups](https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html) |
+| Med | §4 A-7 · A-8 · §5 Part A · §6 RD-12g · §7 · §8 · §9-8 | 카테캠 「추가 볼륨」 불가 → snapshot 복원(새 volume 생성 · attach 또는 root volume 교체) 허용 여부를 RD-12g External Input으로 추가 ★ | [`aws-environment.md`](../official-inputs/aws-environment.md) 권한 표 |
+| Med | §3 Part B · §4 B-2 · §5 Part B · §6 RD-13a · §8 | Agent `file_path` wildcard는 수정 시각 기준 최근 파일 하나만 수집 → Docker log glob은 container 하나만 보낼 수 있고 recreate 때 경로가 바뀜 | [CloudWatch Agent config](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html) |
+| Med | §3 Part A · §4 A-2 · §5 Part A · §7 | Run Command output을 group 미지정으로 CloudWatch에 보내면 `/aws/ssm/<문서명>` 자동 생성 · retention 없으면 영구 보관 → stdout/stderr의 env · config 노출과 retention 소유를 함께 봄 | [Run Command CloudWatch output](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-rc-setting-up-cwlogs.html) |
+| Med | §3 Part A · §4 A-5 · §6 RD-12c | ECR tag immutability는 모든 tag에 적용 → `known-good` moving tag와 충돌, 예외는 `IMMUTABLE_WITH_EXCLUSION` filter로만 | [ECR tag mutability](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html) |
+
+### 미반영 (Low)
 
 | Sev | 본문 위치 | 정정 | 근거 |
 | --- | --- | --- | --- |
-| High | §1 · §3 · §5 MySQL downgrade | **공식 문서와 반대다.** 같은 LTS 안(8.4.y → 8.4.x)의 downgrade는 in-place · logical dump/load · Clone · replication 모두 지원된다. 8.4 → 8.3 / 8.0은 in-place가 안 되고 logical dump/load 또는 replication으로만, 새 기능을 쓰지 않은 rollback 목적에 한해 지원된다. §5 failure mode 「MySQL image downgrade attempted」는 **LTS series 경계를 넘는 image 변경**으로 좁혀 읽는다. RD-12e · 12f · 12g 판단에 직접 걸린다 ★ | [MySQL 8.4 downgrading](https://dev.mysql.com/doc/refman/8.4/en/downgrading.html) |
-| Med | §4 A-2 waiter | `aws ssm wait command-executed`는 5초 간격 20회(약 100초)까지만 확인하고 exit 255로 끝난다. 배포가 그보다 길면 명령이 실행 중인데도 Actions가 실패로 판정할 수 있다 | [ssm wait command-executed](https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html) |
-| Med | §1 · §3 BuildKit cache | 「prune/GC 대상」만으로는 부족하다. docker driver의 GC는 **기본 활성**이고 기본 policy가 있다. 20GB 예시는 Docker Desktop 기준이고 Linux Engine 기본 한도는 확인하지 못했다 → `docker buildx du`로 실측한다. image 누적은 builder GC 대상이 아니다 | [build cache GC](https://docs.docker.com/build/cache/garbage-collection/) |
-| Med | §1 · §3 · §9 T3 credit | 누락: T3의 launch **기본값은 Unlimited**다(계정 default로 변경 가능). 따라서 기본값에서 host build의 영향은 throttling보다 surplus 과금 쪽이다. 실제 instance 설정은 여전히 확인 대상이다 | [T3 unlimited mode](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html) |
-| Med | §4 B-8 IAM | 「`CloudWatchAgentServerPolicy`가 instance role에 이미 있다」는 단정이다. repo 사실은 「CloudWatch Agent server 권한이 준비돼 있다」는 관측뿐이고 SCP · guardrail이 최종 상한이다 → 실제 policy 이름과 effective permission은 확인 대상 | [`aws-environment.md`](../official-inputs/aws-environment.md) |
-| Med | §3 · §4 A-7 EBS snapshot pre-script | AWS가 주는 MySQL용 flush/freeze script는 **사용자가 고쳐 쓰는 sample**이다. sample은 host의 `mysqld.service`(systemd)를 확인하고 inactive면 FTWRL을 건너뛴다 → container MySQL에 그대로 쓰면 fs-freeze만 되고 DB lock은 걸리지 않는다(failure mode 추가) | [automate app-consistent backups](https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html) |
-| Med | §4 A-7 · A-8 · §6 RD-12g · §8 snapshot restore | prompt에 없던 제약: 카테캠 정책상 **「추가 볼륨」이 불가**다. snapshot 복원은 새 volume 생성 · attach 또는 root volume 교체를 요구하므로, 이 경로가 허용되는지가 RD-12g의 **External Input**이다 ★ | [`aws-environment.md`](../official-inputs/aws-environment.md) 권한 표 |
-| Med | §4 B-2 · §5 CloudWatch Agent | `file_path` wildcard는 **수정 시각 기준 가장 최근 파일 하나만** 수집한다. `/var/lib/docker/containers/*/*-json.log` 같은 glob은 container 하나의 log만 보낼 수 있고, recreate 때마다 container ID 경로가 바뀐다 | [CloudWatch Agent config](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html) |
-| Med | Q-A2.7 output 노출 | 입력 쪽 plaintext 경고만 다뤘다. Run Command output을 CloudWatch로 보내고 group을 지정하지 않으면 `/aws/ssm/<문서명>` group이 **자동 생성**되고, retention을 두지 않으면 영구 보관된다. stdout/stderr에 env · config가 섞이는 경로와 이 group의 retention 소유를 함께 본다 | Run Command CloudWatch output 설정 문서 |
-| Med | §4 A-5 known-good tag | ECR tag immutability는 모든 tag에 적용되므로 `known-good` 같은 moving tag와 충돌한다. 예외는 `IMMUTABLE_WITH_EXCLUSION` filter로만 둘 수 있다 → RD-12c | [ECR tag mutability](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html) |
 | Low | 여러 곳 | 「취급되어야 한다」 · 「구성할 필요가 있다」 · 「편이 근거에 맞다」는 규범형 → 조건형으로 읽음 · §1의 한 bullet에 여러 사실과 출처 하나(OIDC · T3는 해당 URL에 없음, status 목록은 monitor-commands 페이지) · 기존 Log Group에 `retention_in_days`를 설정하면 그보다 오래된 log가 즉시 삭제됨 · host 재부팅 시 restart policy 동작은 `docker.service` boot 활성화가 전제 · §7 External Input 누락: deploy role의 ECR push · `ssm:SendCommand` effective 권한, EC2 role의 ECR pull 권한 · 2026-07-15 이후 생성된 repo는 GitHub OIDC `sub` claim에 immutable owner/repo ID가 들어감(OIDC 검증 spike 관찰값) | 각 공식 문서 |
 
 ---
@@ -44,8 +49,10 @@
   Evidence: https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html
 - **Interpretation:** 따라서 `commit SHA tag + immutable digest`가 존재하는 registry-pull 방식은 rollback 시 “동일 commit을 다시 build”하는 과정과 분리된다. 반대로 EC2 host build는 이전 local image가 그대로 남아 있지 않으면 rebuild가 필요하며, mutable base image나 build 시점에 다시 해결되는 dependency가 있다면 같은 source commit만으로 byte-identical artifact를 보장하지 않는다. Docker도 mutable base tag가 이후 다른 digest를 가리킬 수 있음을 명시한다.\
   Evidence: https://docs.docker.com/build/building/best-practices/
-- **Verified fact:** BuildKit cache는 host storage를 사용하며 prune/GC 대상이다. T3는 CPU credit model을 사용하고, Unlimited에서 baseline을 초과하면 surplus credit/추가 비용이 발생할 수 있으며 Standard에서는 credit 고갈 후 baseline으로 제한될 수 있다. 실제 T3 credit mode는 instance/account 설정에 따라 확인이 필요하다.\
+- **Verified fact:** BuildKit cache는 host storage를 사용한다. docker driver의 build cache GC는 **기본 활성**이고 기본 policy가 있다. 문서의 20GB 예시는 Docker Desktop 기준이며 Linux Engine의 기본 한도는 확인하지 못했다 → `docker buildx du`로 실측 대상이다. image 누적은 builder GC 대상이 아니다.\
   Evidence: https://docs.docker.com/build/cache/garbage-collection/
+- **Verified fact:** T3는 CPU credit model을 사용하고, Unlimited에서 baseline을 초과하면 surplus credit/추가 비용이 발생할 수 있으며 Standard에서는 credit 고갈 후 baseline으로 제한될 수 있다. T3의 launch **기본값은 Unlimited**다(계정 default로 변경 가능). 따라서 기본값에서 host build의 영향은 throttling보다 surplus 과금 쪽이다. 실제 instance의 credit mode는 여전히 확인 대상이다.\
+  Evidence: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html
 - **Daesingo implication:** 2 vCPU, 약 3.7 GiB usable RAM, 50 GiB 단일 root EBS에서는 host build가 `api`·`worker`·`mysql`과 CPU/RAM/disk/cache를 직접 경쟁한다. ECR pull도 image layer 저장·압축 해제와 network/disk를 사용하지만 image compilation/build cache는 EC2에서 발생하지 않는다. 이는 **RD-12b**의 trade-off다.
 - **Verified fact:** SSM Run Command의 `AWS-RunShellScript`는 Linux 명령을 실행할 수 있고 `workingDirectory`, execution timeout 등을 가진다. Linux SSM Agent는 기본적으로 root 권한으로 명령을 실행한다. Run Command는 `Pending`, `InProgress`, `Success`, `Failed`, `DeliveryTimedOut`, `ExecutionTimedOut` 등의 상태를 반환한다.\
   Evidence: https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-command-ssm-plugin-reference.html
@@ -58,9 +65,11 @@
 - **Interpretation:** 따라서 `api` recreate 성공 → `worker` 또는 후속 health step 실패와 같은 **partial deployment**가 가능한 운영 상태로 취급되어야 한다. 이는 **RD-12d/e/h**와 연결된다.
 - **Verified fact:** MySQL 8.4 atomic DDL은 지원되는 **개별 DDL statement**를 crash-safe하게 commit/rollback시키지만 transactional DDL을 제공하지 않으며 DDL은 implicit commit을 발생시킨다. 여러 DDL statement로 구성된 migration 전체가 atomic한 것은 아니다.\
   Evidence: https://dev.mysql.com/doc/refman/8.4/en/atomic-ddl.html
-- **Verified fact:** MySQL 8.4는 data dictionary upgrade가 필요한 경우 startup에서 자동 upgrade할 수 있다. 성공적으로 upgrade된 data directory에 대해 이전 8.4 patch나 8.3으로 server downgrade하는 것은 지원되지 않으며, 이전 버전으로 돌아갈 때의 공식 경로는 upgrade 전 backup 복원이다.\
+- **Verified fact:** MySQL 8.4는 data dictionary upgrade가 필요한 경우 startup에서 자동 upgrade할 수 있다.\
   Evidence: https://dev.mysql.com/doc/refman/8.4/en/data-dictionary-schema.html
-- **Daesingo implication:** application rollback과 DB rollback은 서로 다른 작업이다. 특히 MySQL image 자체를 upgrade하는 배포는 일반 `api/worker` image rollback과 같은 의미로 다룰 수 없다. **RD-12e/f/g**에 직접 연결된다.
+- **Verified fact:** 같은 LTS series 안(8.4.y → 8.4.x)의 downgrade는 in-place · logical dump/load · Clone · replication 모두 지원된다. 8.4 → 8.3 / 8.0은 in-place downgrade가 지원되지 않고, logical dump/load 또는 replication으로만, 새 기능을 쓰지 않은 rollback 목적에 한해 지원된다.\
+  Evidence: https://dev.mysql.com/doc/refman/8.4/en/downgrading.html
+- **Daesingo implication:** application rollback과 DB rollback은 서로 다른 작업이다. 특히 **LTS series 경계를 넘는** MySQL image 변경은 in-place로 되돌릴 수 없으므로 일반 `api/worker` image rollback과 같은 의미로 다룰 수 없다. 같은 LTS 안의 patch 간 이동은 in-place downgrade가 지원되는 범위다. **RD-12e/f/g**에 직접 연결된다.
 
 ### Part B — Logging
 
@@ -122,18 +131,21 @@ migration-first, deploy-first, expand-contract의 compatibility 조건, mixed ap
 | Mutable base tag는 이후 다른 image를 가리킬 수 있다. digest pinning은 해당 base image identity를 고정한다. | Docker Build current docs | https://docs.docker.com/build/building/best-practices/ |
 | BuildKit은 provenance/SBOM attestation을 생성할 수 있고 provenance에 VCS/source/material 정보를 넣을 수 있다. | BuildKit current | https://docs.docker.com/build/metadata/attestations/slsa-provenance |
 | ECR authentication token은 12시간 유효하며 AWS IAM principal의 권한 범위를 따른다. Docker 자체에는 IAM authentication 기능이 없으므로 `get-login-password` 또는 ECR credential helper가 사용될 수 있다. | Amazon ECR private registry | https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html |
-| ECR tag immutability를 설정하면 기존 immutable tag를 overwrite하려는 push가 `ImageTagAlreadyExistsException`으로 실패한다. | Current ECR | https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html |
+| ECR tag immutability를 설정하면 기존 immutable tag를 overwrite하려는 push가 `ImageTagAlreadyExistsException`으로 실패한다. immutability는 모든 tag에 적용되며, 예외는 `IMMUTABLE_WITH_EXCLUSION` filter로만 둘 수 있다. | Current ECR | https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html |
 | ECR lifecycle policy는 조건에 맞는 image를 expire할 수 있으며 실제 action은 조건 충족 후 수행된다. | Current ECR | https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecycle_policy_parameters.html |
 | ECR 비용은 주로 repository storage와 일부 data transfer로 구성된다. 같은 Region의 ECR↔EC2 직접 전송은 $0/GB다. 공식 pricing 예시는 private image storage를 $0.10/GB-month로 제시하지만 region별 실제 가격 확인이 별도 필요하다. | 확인일 2026-10-03 | https://aws.amazon.com/ecr/pricing/ |
 | GitHub Actions AWS OIDC에서는 workflow에 `id-token: write`가 필요하며 action이 GitHub JWT를 AWS credential로 교환한다. | Current GitHub Actions/AWS flow | https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws |
-| BuildKit cache는 disk를 사용하며 GC/prune할 수 있다. | Current Docker BuildKit | https://docs.docker.com/build/cache/garbage-collection/ |
+| BuildKit cache는 disk를 사용하며 prune할 수 있다. docker driver의 build cache GC는 기본 활성이고 기본 policy가 있다. 20GB 예시는 Docker Desktop 기준이며 Linux Engine 기본 한도는 확인하지 못했다(`docker buildx du`로 실측). image 누적은 builder GC 대상이 아니다. | Current Docker BuildKit · docker driver | https://docs.docker.com/build/cache/garbage-collection/ |
 | T3는 CPU credit 기반이다. Unlimited/Standard 동작이 다르고 실제 credit specification은 API로 확인 가능하다. | EC2 T3 | https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-standard-mode.html |
+| T3의 launch 기본 credit mode는 Unlimited이며 계정 default로 변경할 수 있다. | EC2 T3 | https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html |
 | `docker save`는 image와 tag를 tar archive로 만들 수 있고 `docker load`는 이를 복원한다. | Docker Engine current | https://docs.docker.com/reference/cli/docker/image/save/ |
 | `AWS-RunShellScript`는 Linux shell command를 실행하며 working directory 및 timeout을 지정할 수 있다. | SSM Run Command current | https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-command-ssm-plugin-reference.html |
 | Linux SSM Agent가 실행하는 명령은 기본적으로 root 권한으로 실행된다. | Linux managed node | https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/ssm-agent-restrict-root-level-commands.html |
 | Run Command의 script exit status는 마지막 command의 exit status가 될 수 있다. | `aws:runShellScript` | https://docs.aws.amazon.com/systems-manager/latest/userguide/run-command-handle-exit-status.html |
 | Run Command에는 `DeliveryTimedOut`과 `ExecutionTimedOut`이 구분되어 있으며 `Success`/`Failed` 등 terminal status가 존재한다. | Current SSM | https://docs.aws.amazon.com/systems-manager/latest/userguide/monitor-commands.html |
 | Run Command output은 S3 또는 CloudWatch Logs로 보낼 수 있다. 기본 SSM 결과 화면/API output은 24,000 characters까지만 반환한다. | Current SSM | https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-rc-setting-up-cwlogs.html |
+| Run Command output을 CloudWatch Logs로 보내면서 group을 지정하지 않으면 `/aws/ssm/<문서명>` Log Group이 자동 생성된다. retention을 두지 않으면 이 group의 log는 영구 보관된다. | Current SSM / CloudWatch Logs | https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-rc-setting-up-cwlogs.html |
+| `aws ssm wait command-executed`는 5초 간격 20회(약 100초)까지만 확인하고 exit 255로 끝난다. | AWS CLI | https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html |
 | Run Command 실행 이력은 최대 30일 확인 가능하며 command에 plaintext secret을 넣지 말라고 AWS가 경고한다. | Current SSM | https://docs.aws.amazon.com/systems-manager/latest/userguide/running-commands.html |
 | S3 command output write 권한은 EC2의 instance profile이 사용된다. | EC2 managed node | https://docs.aws.amazon.com/systems-manager/latest/userguide/running-commands-console.html |
 | Compose `up`은 변경된 config/image의 container를 recreate하고 mounted volume은 보존한다. | Compose current | https://docs.docker.com/reference/cli/docker/compose/up/ |
@@ -146,10 +158,10 @@ migration-first, deploy-first, expand-contract의 compatibility 조건, mixed ap
 | `mysqldump --single-transaction`은 InnoDB에 consistent snapshot을 사용할 수 있지만 dump 중 DDL 변경은 dump consistency/failure에 영향을 줄 수 있다. | InnoDB | https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html |
 | MySQL Shell `dumpInstance`/`dumpSchemas`/`dumpTables`와 `loadDump`가 존재하며 parallel dump/load를 지원한다. 8.4 API의 `consistent` 기본값은 `true`. | MySQL Shell 8.4 | https://dev.mysql.com/doc/dev/mysqlsh-api-python/8.4/group__util.html |
 | Physical backup은 raw database files에 가까운 형태이고 logical backup과 portability·restore 구조가 다르다. 실행 중인 DB 파일을 단순 복사하는 것은 consistency를 보장하지 않는다. | MySQL 8.4/InnoDB | https://dev.mysql.com/doc/refman/8.4/en/backup-types.html |
-| EBS snapshot의 application consistency를 self-managed MySQL에서 보장하려면 I/O freeze/flush 같은 적절한 pre/post action이 필요하다. 실패 시 crash-consistent snapshot으로 fallback하는 구성도 존재한다. | Amazon EBS | https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html |
+| EBS snapshot의 application consistency를 self-managed MySQL에서 보장하려면 I/O freeze/flush 같은 적절한 pre/post action이 필요하다. 실패 시 crash-consistent snapshot으로 fallback하는 구성도 존재한다. AWS가 주는 MySQL용 flush/freeze script는 사용자가 고쳐 쓰는 **sample**이며, host의 `mysqld.service`(systemd)를 확인하고 inactive면 FTWRL을 건너뛴다. | Amazon EBS | https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html |
 | MySQL 8.4 atomic DDL은 개별 지원 DDL statement 단위다. DDL은 transactional group으로 묶이지 않고 implicit commit을 일으킨다. | MySQL 8.4 | https://dev.mysql.com/doc/refman/8.4/en/atomic-ddl.html |
 | MySQL online DDL도 metadata lock 대기나 disk/resource 문제 등으로 실패할 수 있다. | MySQL 8.4 | https://dev.mysql.com/doc/refman/8.4/en/innodb-online-ddl-limitations.html |
-| MySQL data dictionary upgrade가 성공하면 이전 server binary로의 단순 downgrade는 일반적인 rollback 방식으로 지원되지 않는다. | MySQL 8.4 upgrade | https://dev.mysql.com/doc/refman/8.4/en/data-dictionary-schema.html |
+| 같은 LTS series 안(8.4.y → 8.4.x)의 downgrade는 in-place · logical dump/load · Clone · replication 모두 지원된다. 8.4 → 8.3 / 8.0은 in-place가 지원되지 않고 logical dump/load 또는 replication으로만, 새 기능을 쓰지 않은 rollback 목적에 한해 지원된다. | MySQL 8.4 downgrade | https://dev.mysql.com/doc/refman/8.4/en/downgrading.html |
 
 ### Part B
 
@@ -166,6 +178,7 @@ migration-first, deploy-first, expand-contract의 compatibility 조건, mixed ap
 | Remote logging driver와 함께 Docker dual logging cache가 활성화되면 `docker logs`용 local cache가 남는다. | 지원되는 remote driver | https://docs.docker.com/engine/logging/dual-logging/ |
 | Logging delivery의 기본 mode는 `blocking`. `non-blocking` mode는 in-memory ring buffer를 사용하고 buffer가 가득 차면 log가 drop된다. | Docker Engine | https://docs.docker.com/engine/logging/configure/ |
 | Unified CloudWatch Agent는 `logs_collected.files.collect_list.file_path`로 host file을 수집할 수 있다. | Current unified CWA | https://docs.aws.amazon.com/en_en/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file.html |
+| `file_path`에 wildcard를 쓰면 **수정 시각 기준 가장 최근 파일 하나만** 수집한다. | Unified CWA | https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html |
 | CloudWatch Agent config는 host JSON 또는 Parameter Store 등을 사용 가능하고 변경 시 config fetch/restart가 필요하다. | Unified CWA | https://docs.aws.amazon.com/en_en/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file.html |
 | `CloudWatchAgentServerPolicy` v3은 `PutLogEvents`, `PutRetentionPolicy`, `CreateLogStream`, `CreateLogGroup` 등을 포함한다. | AWS managed policy v3 | https://docs.aws.amazon.com/aws-managed-policy/latest/reference/CloudWatchAgentServerPolicy.html |
 | CloudWatch Agent 상태는 command/SSM으로 확인할 수 있고 자체 operational log와 config-validation log를 가진다. | Unified CWA | https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/troubleshooting-CloudWatch-Agent.html |
@@ -236,6 +249,16 @@ GitHub Actions
 **Verified fact:** `SendCommand`는 asynchronous command ID를 돌려주며 invocation status/response code를 조회할 수 있다. AWS CLI waiter 또는 polling으로 terminal state를 확인할 수 있다. SSM은 eventual consistency 특성도 문서화한다.\
 Evidence: https://docs.aws.amazon.com/cli/latest/reference/ssm/get-command-invocation.html
 
+**Verified fact:** `aws ssm wait command-executed`는 5초 간격 20회(약 100초)까지만 확인하고 exit 255로 끝난다.\
+Evidence: https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html
+
+**Interpretation:** 배포가 약 100초보다 길면 명령이 EC2에서 아직 실행 중인데도 waiter가 끝나 Actions가 실패로 판정할 수 있다. waiter 종료와 command terminal status는 같은 신호가 아니다.
+
+**Verified fact:** Run Command output을 CloudWatch Logs로 보내면서 group을 지정하지 않으면 `/aws/ssm/<문서명>` group이 자동 생성되고, retention을 두지 않으면 영구 보관된다.\
+Evidence: https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-rc-setting-up-cwlogs.html
+
+**Interpretation:** command 입력의 plaintext secret 경고와 별개로, deploy script의 stdout/stderr에 env · config 값이 섞이면 이 output group에 남는다. output 경로와 이 group의 retention 소유를 함께 볼 대상이다.
+
 **Interpretation:** shell script 내부에서는 앞 명령의 non-zero status가 반드시 최종 command failure로 전파되도록 구성할 필요가 있다. 예를 들어 fail-fast shell convention이나 각 단계의 explicit return-code check가 여기에 해당한다. 이는 AWS가 앞 command failure를 자동 aggregate해 준다는 의미가 아니다.
 
 #### Partial deployment
@@ -293,7 +316,7 @@ deployment command = failed
 | Host file | 보통 남을 수 있음 | 같이 소실 가능 | 가장 단순하지만 host-local |
 | SSM Parameter Store | host와 독립 | 남음 | parameter version도 존재. AWS-side state |
 | GitHub Deployment status | host와 독립 | 남음 | deployment를 source `ref`/SHA와 연결하고 status 기록 가능 |
-| ECR `known-good` 같은 tag | ECR에 남음 | 남음 | mutable tag라면 그 tag 자체는 historical identity가 아님. digest를 함께 보존할 수 있음. lifecycle expiry와도 관계됨 |
+| ECR `known-good` 같은 tag | ECR에 남음 | 남음 | moving tag라 그 tag 자체는 historical identity가 아님. digest를 함께 보존할 수 있음. lifecycle expiry와도 관계됨. ECR tag immutability는 모든 tag에 적용되므로 immutability를 켜면 이 moving tag와 충돌하고, 예외는 `IMMUTABLE_WITH_EXCLUSION` filter로만 둘 수 있음 (https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-tag-mutability.html) |
 | GitHub Release/tag | host와 독립 | 남음 | source release identity에는 적합하지만 deployment success 자체는 별도 convention 필요 |
 
 **Interpretation:** “known-good”은 *commit이 존재함*과 *실제 production 검증을 통과함*을 구분하는 상태다. 어느 저장소가 이 authoritative status를 가지는지는 외부 조사로 결정되지 않는다. **RD-12c/e** 내부 합의 항목이다.
@@ -322,10 +345,10 @@ deployment command = failed
 | 축 | Logical dump | Cold/physical copy | EBS snapshot |
 |---|---|---|---|
 | 예 | `mysqldump`, MySQL Shell dump | MySQL 정지 후 data directory 보존 | EBS block snapshot |
-| Consistency | `--single-transaction`/Shell consistent dump로 InnoDB point-in-time consistency 구성 가능. concurrent DDL 제약 존재. | 실행 중 단순 file copy는 consistency 위험. DB quiesce/stop/backup mechanism 필요. | 아무 조치 없는 snapshot은 application-consistent가 보장되지 않음. MySQL용 flush/freeze pre-script가 공식 지원 pattern. |
+| Consistency | `--single-transaction`/Shell consistent dump로 InnoDB point-in-time consistency 구성 가능. concurrent DDL 제약 존재. | 실행 중 단순 file copy는 consistency 위험. DB quiesce/stop/backup mechanism 필요. | 아무 조치 없는 snapshot은 application-consistent가 보장되지 않음. AWS는 MySQL용 flush/freeze pre-script를 사용자가 고쳐 쓰는 **sample**로 제공한다. sample은 host의 `mysqld.service`(systemd)를 확인하고 inactive면 FTWRL을 건너뛰므로, container MySQL에 그대로 쓰면 fs-freeze만 되고 DB lock은 걸리지 않는다. |
 | Granularity | schema/table/database 단위 가능 | data directory 중심 | volume 단위 |
 | Portability | 상대적으로 높음 | MySQL/version/platform 종속성 큼 | EBS/volume 구조에 종속 |
-| Restore 구조 | SQL replay 또는 `util.loadDump()` | data files 복원 후 compatible server 기동 | snapshot→EBS volume 생성→필요 데이터 복구 |
+| Restore 구조 | SQL replay 또는 `util.loadDump()` | data files 복원 후 compatible server 기동 | snapshot→새 EBS volume 생성·attach 또는 root volume 교체→필요 데이터 복구. 카테캠 정책상 「추가 볼륨」 불가 — 이 경로의 허용 여부는 External Input |
 | Performance 형태 | SQL decode/insert/index rebuild 비용 | raw files라 restore가 상대적으로 직접적 | block-volume restore |
 | Backup size | SQL/dump representation; compression 가능 | raw DB files | first snapshot 이후 incremental storage |
 | Same-disk 위험 | dump를 50 GiB root에만 놓으면 DB와 같은 failure domain | 동일 | snapshot은 AWS-side에 source volume과 독립적으로 보존 |
@@ -358,6 +381,8 @@ backup artifact readable
 **Verified fact:** EBS snapshot은 source volume과 별도로 유지되고 snapshot에서 새 EBS volume을 생성할 수 있다. Application-consistent MySQL snapshot에는 적절한 pre/post scripts가 필요하다.
 
 **Daesingo implication:** baseline은 root EBS 1개이므로 snapshot은 MySQL만이 아니라 OS/Docker/video/log 등 같은 block device 전체를 포함한다. “MySQL data만 어느 directory로 꺼내 복원할지” 혹은 “root volume 단위로 복원할지”는 restore spike에서 실제 절차 확인이 필요하다.
+
+**Daesingo implication:** 카테캠 정책상 **「추가 볼륨」이 불가**하다([`aws-environment.md`](../official-inputs/aws-environment.md) 권한 표). snapshot 복원은 새 volume 생성 · attach 또는 root volume 교체를 요구하므로, 이 경로가 허용되는지가 RD-12g의 **External Input**이다.
 
 ---
 
@@ -467,6 +492,11 @@ CloudWatch Log Group
 | Config ownership | Agent config + AWS Log Group + source log rotation config | Compose `logging:` 또는 daemon config + AWS Log Group | Compose/daemon config |
 | `docker logs` | source driver에 따라 가능 | dual logging cache가 enabled이면 가능 | 가능 |
 | Deployment coupling | Agent 설치/config가 host configuration으로 존재 | Compose service config와 함께 versioning 가능 | Compose 또는 daemon-wide host config |
+
+**Verified fact:** CloudWatch Agent `file_path`의 wildcard는 **수정 시각 기준 가장 최근 파일 하나만** 수집한다.\
+Evidence: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html
+
+**Interpretation:** 따라서 `/var/lib/docker/containers/*/*-json.log` 같은 glob 하나로는 여러 container 중 하나의 log만 보낼 수 있다. 또한 container를 recreate할 때마다 container ID 경로가 바뀐다. Agent file-tail 열의 「Docker driver가 먼저 host file에 기록 → Agent가 file 읽음」은 이 path 지정 제약을 전제로 읽는다.
 
 #### Structured JSON nuance
 
@@ -578,13 +608,13 @@ Remote network outage 때문에 log transport가 실패하는 경로 자체는 �
 
 `logs:PutLogEvents`, `logs:PutRetentionPolicy`, `logs:DescribeLogStreams`, `logs:DescribeLogGroups`, `logs:CreateLogStream`, `logs:CreateLogGroup`.
 
-**Daesingo implication:** 주어진 baseline상 이 managed policy가 instance role에 이미 있으므로 Agent transport에 필요한 기본 AWS-side permission의 상당 부분은 존재한다. 하지만 Agent software 설치/config 자체는 아직 없다.
+**Daesingo implication:** repo의 [`aws-environment.md`](../official-inputs/aws-environment.md)는 「CloudWatch Agent server 권한이 준비돼 있다」는 관측만 기록한다. 실제 attached policy 이름이 `CloudWatchAgentServerPolicy`인지와 effective permission은 확인 대상이며, SCP · guardrail이 최종 상한이다. Agent software 설치/config 자체는 아직 없다.
 
 ##### `awslogs`
 
 Docker daemon이 instance profile credentials를 사용할 수 있다. Log Group 자동 생성까지 driver에 맡길 경우 `CreateLogGroup` permission이 필요하다.
 
-**Daesingo implication:** 실제 instance role이 `awslogs`가 사용할 CloudWatch Logs permissions도 가지고 있는지는 policy attachment/effective permission 확인 대상이다. `CloudWatchAgentServerPolicy`가 이미 attached돼 있다는 사실만 보면 위 actions는 포함되어 있다.
+**Daesingo implication:** 실제 instance role이 `awslogs`가 사용할 CloudWatch Logs permissions도 가지고 있는지는 policy attachment/effective permission 확인 대상이다. `CloudWatchAgentServerPolicy`가 attached돼 있다면 위 actions는 포함되지만, attachment 여부 자체가 확인 대상이다.
 
 ---
 
@@ -624,11 +654,13 @@ ECR 역시 저장된 private image 용량 기준 비용이 있으며 같은 Regi
 |---|---|---|---|
 | Same commit rebuild ≠ same artifact | mutable base/dependency resolution | rollback artifact가 과거와 달라질 수 있음 | immutable image digest, dependency/base pinning, retained artifact로 identity 강화 가능 |
 | Host build resource contention | production EC2에서 build | api/worker/mysql CPU·RAM·I/O 경쟁 | build timing/cache/resource 실측 또는 off-host prebuilt artifact와 비교 가능 |
-| Build cache disk exhaustion | BuildKit/image cache 누적 | 50 GiB root pressure, DB/video/log에도 영향 | cache size 확인·GC/prune 정책 검증 |
-| T3 CPU credit depletion/surplus | build가 baseline 초과 CPU 지속 사용 | Standard이면 throttling, Unlimited이면 surplus 비용 가능 | actual credit mode와 metrics 확인 |
+| Build cache disk exhaustion | BuildKit cache 누적(docker driver GC는 기본 활성이나 Linux Engine 기본 한도 미확인) 또는 local image 누적(builder GC 대상 아님) | 50 GiB root pressure, DB/video/log에도 영향 | `docker buildx du` 실측·GC policy 확인, image 정리는 별도 경로로 검증 |
+| T3 CPU credit depletion/surplus | build가 baseline 초과 CPU 지속 사용 | launch 기본값인 Unlimited이면 surplus 비용, Standard이면 throttling 가능 | actual credit mode와 metrics 확인 |
 | ECR rollback image expired | lifecycle policy가 old image 삭제 | known-good digest를 pull 못 함 | lifecycle policy와 rollback retention convention 연동 가능 |
 | SSM false-success script | 중간 명령 실패 후 마지막 명령이 0 | Actions가 성공으로 판단 | script exit propagation 검증 |
 | SSM timeout | delivery 또는 command execution timeout | 배포 중단, 일부 step 완료 가능 | 두 timeout을 분리해 관측하고 post-state 확인 |
+| CLI waiter gives up early | `aws ssm wait command-executed` 한도(5초 × 20회, 약 100초)보다 배포가 김 | command는 실행 중인데 waiter가 exit 255 → Actions 실패 판정 | waiter 종료와 command terminal status를 구분해 판정 |
+| SSM output exposes env/config | deploy script stdout/stderr에 env · config 출력 + CloudWatch output, group 미지정 | `/aws/ssm/<문서명>` group 자동 생성, retention 미설정 시 영구 보관 | output 내용과 output group retention 소유를 함께 확인 |
 | Partial Compose deployment | service 일부 recreate 후 후속 실패 | api/worker mixed revision | 실제 container image/digest를 재조회한 뒤 rollback/forward recovery |
 | Health passes but service unavailable externally | healthcheck 범위가 좁음 | deploy success 오판 | external smoke를 별도 gate로 둘 수 있음 |
 | `depends_on` misunderstanding | short form만 사용 | mysql 시작 직후 아직 ready 전 application 실행 가능 | health condition semantics 확인 |
@@ -637,12 +669,14 @@ ECR 역시 저장된 private image 용량 기준 비용이 있으며 같은 Regi
 | Named volume accidentally deleted | `down -v`, 수동 volume delete | MySQL data loss | destructive command boundary/backup 검증 |
 | Inconsistent file backup | running MySQL data dir 단순 copy | unusable/inconsistent backup | logical consistent dump 또는 DB-aware quiesce/physical backup |
 | Crash-consistent EBS snapshot only | MySQL I/O freeze/flush 없이 snapshot | application-level consistency 미보장 | application-consistent snapshot spike |
+| AWS sample pre-script on container MySQL | sample을 그대로 사용 — host에 `mysqld.service`가 없어 FTWRL을 건너뜀 | fs-freeze만 되고 DB lock은 걸리지 않음 → application consistency 미보장 | container MySQL 대상으로 script를 고쳐 쓰고 FTWRL 실행 여부 검증 |
+| Snapshot restore path not permitted | 「추가 볼륨」 불가 정책 아래에서 새 volume 생성 · attach 또는 root volume 교체가 필요 | snapshot이 있어도 복원 경로가 막힐 수 있음 | 허용 여부를 External Input으로 확인 |
 | Backup shares root disk | dump만 같은 50 GiB에 저장 | disk loss와 backup 동시 상실, capacity pressure | host-external copy와 비교 |
 | Backup exists but restore fails | backup artifact만 생성하고 restore 미검증 | 실제 incident 때 복구 불가 | isolated restore rehearsal |
 | Migration partially applied | multi-statement DDL 중 후속 실패 | schema intermediate state | forward fix, explicit down path, backup restore 등의 복구경로 사전 정의 |
 | Old app incompatible with new schema | migration-first + destructive change | mixed version 동안 old process failure | backward-compatible migration 단계 |
 | New app incompatible with old schema | deploy-first | migration 전 new process failure | new app compatibility/feature gate |
-| MySQL image downgrade attempted | data dictionary upgrade 완료 | 이전 image가 data dir를 못 열 수 있음 | pre-upgrade backup restore 또는 supported upgrade path |
+| MySQL image change across LTS series boundary | 8.4 data directory를 이전 series(8.3 / 8.0) image로 되돌리려 함 | in-place downgrade 미지원 | logical dump/load 또는 replication(새 기능을 쓰지 않은 rollback에 한해), pre-upgrade backup restore. 같은 LTS 안(8.4.y → 8.4.x)은 in-place 포함 지원 범위 |
 | Rollback also fails | old artifact missing/config mismatch/schema incompatible | 서비스 복구 지연 | known-good artifact + config + schema compatibility를 서로 독립 확인 |
 
 ### Part B
@@ -655,6 +689,7 @@ ECR 역시 저장된 private image 용량 기준 비용이 있으며 같은 Regi
 | Logs dropped | non-blocking ring buffer full | observability gap | log rate/buffer behavior spike |
 | Log Group missing | `awslogs-create-group=false` + group 없음 | container logging initialization/start failure 가능 | provisioning ownership 결정 |
 | Agent stopped/misconfigured | config/path/IAM/network 문제 | CloudWatch 수집 중단 | Agent status + local agent logs |
+| Agent wildcard collects one file | `file_path`에 `/var/lib/docker/containers/*/*-json.log` 같은 glob | 수정 시각 기준 최근 파일 하나 = container 하나의 log만 전송 가능, recreate 때마다 container ID 경로 변경 | path 지정 방식 spike |
 | External tail of Docker private log | Agent/logrotate가 Docker-managed files 직접 취급 | unsupported interference 가능성 | Docker warning 고려, spike/alternative path 비교 |
 | Nested JSON query inconvenience | Agent가 Docker `json-file` envelope를 전송 | application fields가 top-level로 바로 discovery되지 않을 수 있음 | Logs Insights parse test |
 | Multiline split incorrectly | stack trace physical lines + pattern mismatch | 한 event가 여러 records로 분리 | one-line JSON 또는 multiline rules 검증 |
@@ -694,7 +729,7 @@ image digest        = exact built artifact identity
 known-good status   = 실제 deploy + health + smoke 결과
 ```
 
-어느 system을 authoritative record로 삼을지는 내부 합의 대상이다.
+어느 system을 authoritative record로 삼을지는 내부 합의 대상이다. ECR tag immutability와 `known-good` 같은 moving tag를 함께 쓰려면 `IMMUTABLE_WITH_EXCLUSION` filter가 필요하다는 제약이 이 선택에 걸린다.
 
 #### RD-12d — SSM commands
 
@@ -720,6 +755,8 @@ Application rollback은 최소 다음 세 축이 있다.
 
 DB schema 자체는 이미 baseline상 자동 rollback 대상이 아니므로 **application rollback이 항상 완전한 runtime rollback을 뜻하지 않는다.**
 
+MySQL image 자체의 rollback 범위는 LTS series 경계에 따라 다르다. 같은 LTS 안(8.4.y → 8.4.x)은 in-place downgrade가 지원되고, series 경계를 넘으면 logical dump/load 또는 replication으로만(새 기능 미사용 rollback에 한해) 되돌릴 수 있다.
+
 #### RD-12f — Migration
 
 `api`와 `worker`가 잠시 다른 revision일 가능성을 배제하지 않는다면 migration ordering은 mixed-version compatibility 문제와 직접 연결된다.
@@ -731,6 +768,8 @@ MySQL atomic DDL을 이유로 multi-statement migration 전체 rollback을 전�
 50 GiB root EBS 1개에서는 named volume도, bind mount도, 같은 disk의 dump file도 **같은 physical failure/capacity domain**이다.
 
 logical dump의 “DB-level 복원”과 EBS snapshot의 “volume-level 복원”은 서로 다른 목표다.
+
+EBS snapshot 쪽은 두 전제가 더 걸린다. (1) AWS의 MySQL flush/freeze script는 sample이라 container MySQL에서는 FTWRL이 건너뛰어질 수 있다. (2) snapshot 복원은 새 volume 생성 · attach 또는 root volume 교체를 요구하는데 카테캠 정책상 「추가 볼륨」이 불가하므로, 이 경로의 허용 여부가 External Input이다.
 
 #### RD-12h — Health
 
@@ -753,7 +792,7 @@ host-only
 application → Docker daemon → host
 ```
 
-현재 대신고 instance role에는 CloudWatch Agent 권한이 있지만 Agent executable/config는 아직 없으므로 Agent 방식에는 **host installation/configuration lifecycle**이 추가된다.
+repo 관측상 대신고 instance role에는 CloudWatch Agent server 권한이 준비돼 있다(실제 policy 이름 · effective permission은 확인 대상). Agent executable/config는 아직 없으므로 Agent 방식에는 **host installation/configuration lifecycle**이 추가된다. Agent `file_path` wildcard는 최근 파일 하나만 수집하므로 container별 Docker log path를 어떻게 지정할지도 이 lifecycle에 포함된다.
 
 `awslogs` 방식은 Compose service의 logging config와 AWS Log Group provisioning이 연결된다.
 
@@ -794,8 +833,9 @@ Agent's own internal log rotation:
 
 - EC2 host Docker build 시 CPU/RAM peak.
 - build 시간과 ECR pull 시간.
-- BuildKit/image cache 증가량.
-- 현재 T3 CPU credit mode와 build 중 credit 변화.
+- BuildKit/image cache 증가량(`docker buildx du`), Linux Engine에서 실제 적용되는 build cache GC 한도.
+- 현재 T3 CPU credit mode(launch 기본값은 Unlimited)와 build 중 credit 변화 또는 surplus 발생.
+- 배포 command 소요 시간과 CLI waiter 한도(약 100초)의 관계.
 - image size.
 - 평시/peak application JSON log byte rate.
 - `awslogs` blocking 시 network failure가 실제 application latency에 주는 영향.
@@ -809,10 +849,10 @@ Agent's own internal log rotation:
 ### External Input이 필요한 것
 
 - ECR repository 신규 생성 가능 여부.
-- CloudWatch Log Group 신규 생성 및 naming/retention ownership.
-- 현재 EC2 instance role의 최종 effective IAM permissions.
+- CloudWatch Log Group 신규 생성 및 naming/retention ownership(Run Command output이 자동 생성하는 `/aws/ssm/<문서명>` group 포함).
+- 현재 EC2 instance role의 실제 attached policy 이름과 최종 effective IAM permissions(SCP · guardrail 포함).
 - 필요 시 S3 backup prefix/bucket write policy.
-- AWS 운영 측에서 허용되는 EBS snapshot 관리 방식.
+- AWS 운영 측에서 허용되는 EBS snapshot 관리 방식 — 특히 카테캠 「추가 볼륨」 불가 정책 아래에서 snapshot 복원(새 volume 생성 · attach 또는 root volume 교체)이 허용되는지(RD-12g).
 
 ---
 
@@ -822,18 +862,18 @@ Decision을 대신하지 않고 사실을 확인하기 위한 작은 spike 기�
 
 | Spike | 확인하는 RD | 관찰값 |
 |---|---|---|
-| GitHub OIDC → `SendCommand` → harmless command → Actions terminal 판정 | RD-12d | command ID, status, response code, timeout/failure propagation |
+| GitHub OIDC → `SendCommand` → harmless command → Actions terminal 판정 | RD-12d | command ID, status, response code, timeout/failure propagation, 약 100초를 넘는 command에서 CLI waiter 종료와 terminal status의 차이 |
 | Shell step 2에서 의도적으로 실패 후 step 3 성공 | RD-12d | 전체 Run Command가 실제로 실패 처리되는지 |
 | api/worker 중 하나를 의도적으로 unhealthy하게 한 `compose up --wait` | RD-12d/h | Compose exit code와 partial container state |
 | 현재 image digest/SHA를 container에서 조회 | RD-12c | runtime에서 revision을 단일 command로 확인 가능한지 |
 | known-good artifact로 실제 rollback 1회 | RD-12e | image + Compose + schema까지 필요한 단계 |
 | `mysqldump` 또는 Shell dump → 신규 empty MySQL에 restore | RD-12g | backup size, dump/load success, domain query |
-| EBS/MySQL application-consistent snapshot restore rehearsal | RD-12g | root-volume baseline에서 실제 restore sequence |
+| EBS/MySQL application-consistent snapshot restore rehearsal (「추가 볼륨」 불가 정책 아래 허용 경로 확인 후) | RD-12g | root-volume baseline에서 실제 restore sequence, pre-script가 container MySQL에 FTWRL을 실제로 거는지 |
 | migration 두 번째 DDL을 의도적으로 실패 | RD-12f | schema intermediate state와 migration runner behavior |
-| actual MySQL patch image upgrade rehearsal | RD-12e/f/g | data-directory upgrade log와 rollback boundary |
+| actual MySQL patch image upgrade rehearsal | RD-12e/f/g | data-directory upgrade log와 rollback boundary(같은 LTS 안 in-place downgrade 포함) |
 | 현재 `docker info`/`docker inspect` logging config 기록 | RD-13a/11a | default driver, service-specific options, dual cache |
 | one-line JSON → `awslogs` → Logs Insights | RD-13a | field discovery/query shape |
-| one-line JSON → `json-file` → Agent → Logs Insights | RD-13a | Docker envelope/nested JSON query shape |
+| one-line JSON → `json-file` → Agent → Logs Insights | RD-13a | Docker envelope/nested JSON query shape, container 여러 개 · recreate 후에도 `file_path` 지정이 모든 container log를 수집하는지 |
 | logging destination network failure test | RD-13a | blocking latency / non-blocking drop visibility |
 | bounded log generation | RD-11a | actual rotation files 및 disk behavior |
 
@@ -844,13 +884,13 @@ Decision을 대신하지 않고 사실을 확인하기 위한 작은 spike 기�
 ## 9. Unresolved / Unverified
 
 1. **Docker Compose 실제 설치 version:** 현재 docs의 `--wait` 등 사용 가능 여부는 EC2에 설치할 exact Compose release로 확인할 필요가 있다. 특히 최신 Compose에 추가된 일부 lifecycle 기능을 “Compose v2 어디서나 존재”한다고 전제하지 않았다.
-2. **T3 credit mode:** `t3.medium`이라는 instance type만으로 현재 instance가 Standard인지 Unlimited인지 확정할 수 없다. AWS API/instance setting 확인이 필요하다.
+2. **T3 credit mode:** T3의 launch 기본값은 Unlimited지만 계정 default로 바뀔 수 있으므로, `t3.medium`이라는 instance type만으로 현재 instance가 Standard인지 Unlimited인지 확정할 수 없다. AWS API/instance setting 확인이 필요하다.
 3. **Unified CloudWatch Agent의 exact delivery guarantee:** arbitrary file rotation + agent restart + network outage 조합에 대한 exactly-once/no-loss/no-duplicate 보장을 current unified-Agent 공식 문서에서 확인하지 못했다. 따라서 그러한 보장을 Verified fact로 적지 않았다.
 4. **Docker internal JSON file 직접 tail:** CloudWatch Agent는 arbitrary file을 tail할 수 있지만 Docker는 `json-file` 내부 file의 external access를 경고한다. 이 조합을 AWS와 Docker가 end-to-end 공식 integration으로 보증한다는 문서는 확인하지 못했다.
 5. **Seoul CloudWatch Logs 정확한 현재 단가:** AWS 공식 pricing page의 Region별 dynamic table에서 2026-10-03 `ap-northeast-2`의 ingestion/storage/Logs Insights 정확한 세 단가를 이번 조사 결과에 안정적으로 추출하지 못했다. N. Virginia 공식 예시 가격은 서울 가격으로 사용하지 않았다.
 6. **MySQL storage engine:** `--single-transaction` 및 Shell consistent dump의 강한 consistency 설명은 InnoDB table 전제다. 대신고 schema 전체가 InnoDB인지 구현 시 확인이 필요하다.
 7. **MySQL exact patch pin:** `mysql:8.4`처럼 floating LTS tag를 쓸지 `8.4.x` exact patch를 쓸지는 주어진 정보에 없다. 이 선택은 data-directory upgrade/rollback 검증과 직접 연결된다.
-8. **EBS snapshot 복원 단위:** root EBS 1개 구조에서 entire root volume rollback과 MySQL data extraction 중 실제 운영 절차는 external docs만으로 대신고에 맞게 확정되지 않는다.
+8. **EBS snapshot 복원 단위:** root EBS 1개 구조에서 entire root volume rollback과 MySQL data extraction 중 실제 운영 절차는 external docs만으로 대신고에 맞게 확정되지 않는다. 두 경로 모두 새 volume 생성 · attach 또는 root volume 교체를 요구하므로 카테캠 「추가 볼륨」 불가 정책 아래 허용 여부가 먼저 확인 대상이다.
 
 ---
 
@@ -906,6 +946,10 @@ Decision을 대신하지 않고 사실을 확인하기 위한 작은 spike 기�
   https://docs.aws.amazon.com/systems-manager/latest/userguide/running-commands.html
 - AWS Systems Manager — CloudWatch Logs for Run Command\
   https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-rc-setting-up-cwlogs.html
+- AWS CLI — ssm wait command-executed\
+  https://docs.aws.amazon.com/cli/latest/reference/ssm/wait/command-executed.html
+- Amazon EC2 — Unlimited mode concepts for burstable performance instances\
+  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html
 - Amazon EBS — Application-consistent snapshots with Data Lifecycle Manager\
   https://docs.aws.amazon.com/ebs/latest/userguide/automate-app-consistent-backups.html
 - Amazon EBS — How pre/post scripts work\
@@ -919,6 +963,8 @@ Decision을 대신하지 않고 사실을 확인하기 위한 작은 spike 기�
   https://dev.mysql.com/doc/refman/8.4/en/using-mysqldump.html
 - MySQL Shell 8.4 — Utilities\
   https://dev.mysql.com/doc/mysql-shell/8.4/en/mysql-shell-utilities.html
+- MySQL 8.4 Reference Manual — Downgrading MySQL\
+  https://dev.mysql.com/doc/refman/8.4/en/downgrading.html
 - MySQL 8.4 Reference Manual — Atomic Data Definition Statement Support\
   https://dev.mysql.com/doc/refman/8.4/en/atomic-ddl.html
 - MySQL 8.4 Reference Manual — Statements That Cause an Implicit Commit\

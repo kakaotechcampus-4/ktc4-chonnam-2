@@ -1,6 +1,6 @@
 # Research Result — Runtime Config / Secret / Cancellation
 
-**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 2026-10-03 · Owner 확인 전** — 정정 사항은 [Review notes](#review-notes-2026-10-03)가 본문보다 우선\
+**Status:** Evidence — 외부 기술 조사 결과 · **보조 검토 완료 · High/Med 정정 본문 반영 2026-10-03** — 반영 기록과 미반영 Low는 [Review notes](#review-notes-2026-10-03)\
 **Owner:** common/runtime — 김준영\
 **Workflow step:** [`runtime-ops-workflow.md`](../runtime-ops-workflow.md) §4 Decision-driven 외부 기술 조사\
 **Prompt:** [`prompts/03-runtime-config-secret-cancellation.md`](./prompts/03-runtime-config-secret-cancellation.md)\
@@ -11,35 +11,29 @@
 
 ## Review notes (2026-10-03)
 
-> 이 절이 본문보다 우선한다. 본문은 조사 원문 그대로 두었다. 검토는 Claude Code 보조 검토이며 Owner 최종 확인 전이다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
+> High · Med 정정은 2026-10-03 본문에 반영했다. Low는 본문에 반영하지 않았으므로 해당 위치를 읽을 때 아래 Low 표를 함께 본다. 검토는 Claude Code 보조 검토다. **★** = 검토 뒤 원문(공식 문서 · repo)을 다시 열어 재확인한 항목, 표시 없음 = 검토 단계에서 인용 출처와 대조한 항목.
 
-**판정:** Part A(RD-07a · 07c)는 경미한 보완 후, Part B(RD-19b · 19c)는 아래 High 2건을 반영한 뒤 Decision 근거로 쓸 수 있다. 출처 대조 약 40건 — 부분 일치 4 · 인용 출처에 없음 1 · **반대 1**(SDK 최신 버전, 영향 적음), 나머지 일치. Temporal 인용 URL은 실재하고 인용 문구도 원문과 같다. 최종 선택 문장 · 외부 숫자의 baseline화는 없다.
+**판정:** High · Med를 반영한 현재 본문은 Part A(RD-07a · 07c)와 Part B(RD-19b · 19c)의 Decision 근거로 쓸 수 있다(Low는 아래 표를 함께 읽는 조건). 출처 대조 약 40건 — 부분 일치 4 · 인용 출처에 없음 1 · **반대 1**(SDK 최신 버전, 영향 적음), 나머지 일치. Temporal 인용 URL은 실재하고 인용 문구도 원문과 같다. 최종 선택 문장 · 외부 숫자의 baseline화는 없다.
 
-### 정정 · 보완
+### 반영 기록 (High · Med)
+
+| Sev | 반영 위치 | 반영 내용 | 근거 |
+| --- | --- | --- | --- |
+| High | §4 Part B 「UsageRecord 시점」 · §5 Part B · §6 RD-19c | 「row를 먼저 만들고 outcome을 갱신」 패턴은 UsageRecord row에 적용할 수 없음(append-only §8-1), in-flight 추적은 UsageRecord 밖 별도 구조(RD-01e · 01f 선택지), 사용량 미확정은 `token_usage=null`(§8-3)로 일부 표현 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §8-1 · §8-3 |
+| High | §1 Part B · §3 Part B · §7 · §8 Part B 2 · 4 · §9-3 · 4 · §10 | 기준 전제를 대신고 pin(openai 2.54.0 + httpx 0.28.1, `eval-gemini` extra `openai>=1.40,<3.0`)으로 바꾸고 HTTPX 0.28을 적용 대상, v3.x/HTTPX2는 upgrade 시 참고로 내림. 최신 release를 3.24.0(2026-10-02)로 정정. spike 기준을 pin으로 ★ | `uv.lock` · PyPI openai |
+| Med | §6 RD-19b status timing · §7 RD-19b | `CANCELLED` 의미는 Contract §6에서 닫힘(Already fixed, 닫힌 enum 6값), 열린 것은 기록 시점, 「요청 수락」 표시는 status 밖 별도 표식이 필요하다는 제약 ★ | [`contract-job-execution.md`](../../architecture/contracts/contract-job-execution.md) §6 |
+| Med | §1 Part B · §5 Part B · §6 「Timeout과 cancellation」 · §7 RD-19b | 두 timeout은 이미 다른 층이라는 repo 사실로 고쳐 씀(제품 timeout = case의 Job 대기, `subprocess.run(timeout=…)` = recording 내부 안전 한도 → `TEMPORARY_FAILURE`). §7의 「별개 개념으로 둘지」 항목 삭제 | [`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md) · `recording/materialization.py` · `frames.py` · `probe.py` |
+| Med | §1 Part A · §4 A-1 · A-7 · §5 Part A | child process env 상속, crash dump · error report, host shell history, process listing(argv), IMDS hop limit 2의 implication 추가 | `recording/materialization.py` |
+| Med | §1 Part B · §3 Part B · §6 RD-19b status timing | RQ를 「요청 / 실제 정지」 분리 사례에서 빼고 상태별 기능 · `send_stop_job_command` 즉시 정지(`stopped`, FailedJobRegistry) → process 격리(Q-B1.4) 근거로 둠 | [RQ jobs](https://python-rq.org/docs/jobs/) · [RQ workers](https://python-rq.org/docs/workers/) |
+| Med | §1 Part B | 「cooperative cancellation은 checkpoint에서만 반응」을 Interpretation으로 재분류 | — |
+| Med | §3 Part B(PID 1 · Python signal 행 + Interpretation) · §5 Part B · §8 Part B 8 · §9-8 | 보완 확인 내용을 본문으로 옮기고 §9-8을 「공식 문서로 닫힘」으로 고침 ★ | [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) · [signal (3.12)](https://docs.python.org/3.12/library/signal.html) |
+| Med | §1 Part B · §3 Part B(Temporal · Celery 행) · §5 Part B · §6 RD-19b 「cancel/completion race (Q-B4.2)」 · §7 · §9-9 | Celery result backend 즉시 `REVOKED`(요청 시점 기록 사례), Temporal heartbeat, 두 문서 모두 취소 뒤 성공 시 최종 상태 미명시 → 경합 우선순위는 RD-19b 내부 합의 대상 ★ | [Celery workers guide](https://docs.celeryq.dev/en/stable/userguide/workers.html) · [Activity execution](https://docs.temporal.io/activity-execution) |
+
+### 미반영 (Low)
 
 | Sev | 본문 위치 | 정정 | 근거 |
 | --- | --- | --- | --- |
-| High | §4 Part B 「UsageRecord 시점」 | 「호출 row를 먼저 만들고 outcome을 **갱신**」하는 일반 원장 패턴은 **UsageRecord row 자체에는 적용할 수 없다** — row는 append-only다(§8-1). UsageRecord 밖의 별도 in-flight 추적 구조라면 RD-01e · 01f에서 열려 있는 선택지다. 사용량 미확정은 `token_usage=null`(§8-3)로 일부 표현할 수 있다 ★ | [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §8-1 · §8-3 |
-| High | §1 · §3 · §9 Part B SDK / transport 전제 | 본문은 openai v3.x + HTTPX2를 전제로 쓰고 HTTPX 0.28은 비교 근거로만 둔다. **대신고 현재 pin은 openai 2.54.0 + httpx 0.28.1**이다(`pyproject.toml`의 `eval-gemini` extra는 `openai>=1.40,<3.0`). 중단 semantics는 HTTPX 0.28 쪽이 적용 대상이고, §8 spike도 이 pin 기준으로 한다. 덧붙여 「최신 release v3.20.0」은 틀렸다 — 3.24.0(2026-10-02)까지 나와 있다 ★ | `uv.lock` · PyPI openai |
-| Med | §6 RD-19b `CANCELLED` 「의미」 후보 | `CANCELLED`의 의미는 Contract §6에서 닫혔다: 「사용자가 진행 중인 분석을 중단해 **종료됨**」, status는 닫힌 enum 6값이다(Already fixed). 열린 것은 의미가 아니라 **기록 시점**이다. 「요청 수락」을 표시하려면 status 밖의 별도 표식이 필요하다는 제약으로 읽는다 ★ | [`contract-job-execution.md`](../../architecture/contracts/contract-job-execution.md) §6 |
-| Med | §1 · §6 「timeout과 cancellation」 | repo 사실: 두 timeout은 이미 다른 층이다. 제품 timeout은 case가 Job을 기다리는 시간(`timeout-fallback.md`)이고, ffmpeg/ffprobe의 `subprocess.run(timeout=…)`은 recording 내부 안전 한도로 `TEMPORARY_FAILURE`로 변환된다. 「분리될 필요가 있다」는 지시형이 아니라 이 사실로 읽는다 | [`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md) · `recording/materialization.py` · `frames.py` · `probe.py` |
-| Med | Part A 노출 경로(Q-A1.5 · Q-A2) | 누락: **child process env 상속** — 현재 `subprocess.run`은 `env=`를 넘기지 않으므로 secret을 process env로 주입하면 ffmpeg까지 API key를 물려받는다. crash dump · error report, host shell history, process listing(argv)도 빠졌다. IMDS hop limit을 2로 열면 그 host의 어느 container든 instance role 자격 증명을 얻을 수 있다는 의미도 implication으로 추가한다 | `recording/materialization.py` |
-| Med | §6 RQ 사례 | RQ는 「요청 / 실제 정지」를 분리하는 사례가 아니다. 상태(queued / running)별로 기능이 나뉘고, `send_stop_job_command`는 실행 중 job을 **즉시** 멈추며 결과는 `stopped`(FailedJobRegistry)다 → Q-B1.4(process 격리)의 근거로 읽는다 | [RQ jobs](https://python-rq.org/docs/jobs/) · [RQ workers](https://python-rq.org/docs/workers/) |
-| Med | §1 「cooperative cancellation은 checkpoint 사이에서만 반응」 | 출처 없는 Verified fact → Interpretation | — |
-| Med | §9-8 SIGTERM cleanup · Q-B1.5 PID 1 | 미결로 남겼으나 공식 문서로 닫힌다 → 아래 「보완 확인」 | — |
-| Med | Q-B4.2 취소 · 완료 경합 | 다루지 않았다 → 아래 「보완 확인」 | — |
 | Low | 여러 곳 | Compose `secrets` file source의 `uid`/`gid`/`mode`는 「제약」이 아니라 원문대로 **silently ignored**(host 파일 권한을 따름) · ffmpeg stdin `q`는 현재 코드가 `-nostdin` + `stdin=DEVNULL`이라 막힌 경로 · ffmpeg는 signal 3회 초과 시 hard exit, signal 종료 시 exit 255, SIGQUIT · SIGXCPU도 같은 handler · OpenAI client는 `_idempotency_header=None`이라 idempotency header를 보내지 않음 · 「protocol 수준 보장 없음」은 Interpretation · 취소 요청이 「DB flag」로 온다는 전제는 RD-19a 범위라 경로를 특정하지 않고 읽음 · AnyIO 기본 `abandon_on_cancel=False`면 thread가 끝날 때까지 돌아오지 않음 · GitHub `add-mask` 「출력 전에 등록」은 인용 페이지에 없음 · §10 출처 누락(compose config, Parameter Store advanced tier, Run Command CloudWatch output) | 각 공식 문서 · source |
-
-### 보완 확인 (검토 단계 추가)
-
-- **PID 1과 SIGTERM (Q-B1.5 · §9-8)** ★
-  - Verified fact — PID namespace의 init(PID 1)에는 **handler를 설치한 signal만** 전달된다. ancestor namespace에서 보낸 SIGKILL · SIGSTOP만 예외로 강제 전달된다. ([pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html))
-  - Verified fact — Python이 시작 시 설치하는 handler는 SIGPIPE(무시)와 SIGINT(→ `KeyboardInterrupt`)뿐이다. handler는 main thread에서만 실행되고 설정할 수 있다. ([signal (3.12)](https://docs.python.org/3.12/library/signal.html))
-  - Interpretation — Python이 container의 PID 1이고 SIGTERM handler가 없으면 `docker stop`의 SIGTERM은 전달되지 않고 grace period 뒤 SIGKILL로 끝난다. `init: true` 등으로 init이 PID 1이면 Python은 SIGTERM의 OS 기본 동작(종료)을 받는다. **어느 쪽이든 handler가 없으면 `finally` · `TemporaryDirectory` 정리는 실행되지 않는다.**
-- **취소 · 완료 경합 (Q-B4.2)** ★
-  - Verified fact — Celery: revoke를 받으면 아직 시작하지 않은 task는 건너뛰지만, 실행 중 task는 `terminate` 없이는 멈추지 않는다. 그런데 result backend는 **즉시 `REVOKED`로 갱신**된다 → 기록 상태와 실제 실행이 어긋날 수 있는, 「요청 시점 기록」 사례다. ([Celery workers guide](https://docs.celeryq.dev/en/stable/userguide/workers.html))
-  - Verified fact — Temporal: Activity는 heartbeat를 해야 취소를 받는다. ([Activity execution](https://docs.temporal.io/activity-execution))
-  - 두 문서 모두 **취소 요청 뒤 성공으로 끝난 경우의 최종 상태를 명시하지 않는다.** → 경합 시 우선순위는 외부 사례로 정할 수 없고 RD-19b 내부 합의 대상이다.
 
 ### Decision 입력으로 옮길 때
 
@@ -61,6 +55,7 @@
 - **Verified fact — service `env_file:`은 파일 자체를 mount하는 기능이 아니다.** 해당 파일의 key/value를 container environment로 전달한다. `environment:`가 같은 이름을 갖고 있으면 `env_file:`보다 우선한다. 일반 `env_file`의 unquoted/double-quoted value에는 Compose interpolation이 적용되며, Compose 2.30+의 `format: raw`는 이 해석을 끌 수 있다.
 - **Interpretation — 따라서 현재 대신고 loader가 cwd의 `.env` 파일만 읽고 `os.environ`을 보지 않는다면**, Compose `environment:`/`env_file:`에 값을 주입하는 것만으로는 현재 loader가 그 값을 소비하지 않는다. 별도로 container filesystem에 `.env`가 존재하거나 loader source 규칙이 바뀌어야 한다.
 - **Verified fact — environment secret은 container configuration/process environment의 일부가 된다.** Linux에서는 `/proc/<pid>/environ`을 적절한 권한이 있는 주체가 읽을 수 있고, Docker는 container의 상세 configuration을 `docker inspect`로 노출한다. Docker도 secret 값에는 environment보다 Compose `secrets` 사용을 별도 기능으로 제공하고 있다.
+- **Daesingo implication — environment로 준 secret은 child process에도 상속된다.** 현재 `recording/materialization.py`의 `subprocess.run`은 `env=`를 넘기지 않으므로, secret을 process environment로 주입하면 ffmpeg/ffprobe까지 API key를 물려받는다. 이 밖에 crash dump · error report, host shell history, process listing(argv)도 노출 경로다.
 - **Verified fact — Compose `secrets`는 standalone Linux Compose에서도 `/run/secrets/<name>` 파일로 bind-mount된다.** service별 명시적 grant가 필요하다. long syntax 기본 mode는 `0444`이며 file source의 `uid`/`gid`/`mode` remap에는 Compose 구현상 제약이 있다.
 - **Verified fact — SSM Parameter Store의 `SecureString` 복호화에는 Parameter Store read 권한과 KMS 권한을 별도로 고려해야 한다.** decrypted `SecureString`을 읽는 principal은 `kms:Decrypt`가 필요하다. `GetParametersByPath`는 상위 path 접근으로 하위 값을 가져올 수 있으므로 path 정책도 함께 검토 대상이다.
 - **Verified fact — Run Command command input에 plaintext secret을 넣는 것은 별도 노출면을 만든다.** AWS는 plaintext password/config/secret을 Run Command command에 넣지 말라고 명시하며 Systems Manager API activity와 command history의 audit 경로를 설명한다. SSM Document의 일반 parameter reference는 `SecureString`을 직접 지원하지 않아, AWS 공식 예제도 managed node에서 `aws ssm get-parameters --with-decryption`을 실행하는 패턴을 별도로 보여준다.
@@ -69,17 +64,19 @@
 ### Part B — Cancellation
 
 - **Verified fact — Python thread에는 일반적인 강제 중단 API가 없다.** CPython 3.12 `threading.Thread`는 running thread를 destroy/stop/suspend/interrupt할 수 없다. Python signal handler는 main interpreter의 main thread에서 실행되며 inter-thread cancellation mechanism으로 사용할 수 없다.
-- **Verified fact — cooperative cancellation은 cancellation checkpoint 사이에서만 반응한다.** handler가 flag를 polling하는 구조라면 긴 sync HTTP call이나 blocking subprocess wait 동안에는 flag를 다시 읽지 못한다.
+- **Interpretation — cooperative cancellation은 cancellation checkpoint에서만 반응하는 것으로 볼 수 있다.** handler가 flag를 polling하는 구조라면 긴 sync HTTP call이나 blocking subprocess wait 동안에는 flag를 다시 읽지 못할 수 있다.
 - **Verified fact — `asyncio.Task.cancel()`도 “즉시 강제 종료”가 아니다.** 다음 cancellation opportunity에서 `CancelledError`를 주입하며 coroutine이 이를 정리하거나 심지어 suppress할 수도 있다. `asyncio.timeout()`은 내부적으로 현재 task를 cancel하므로, “상위 대기만 끝내고 실제 작업은 계속한다”는 timeout semantics와는 다른 동작이다.
 - **Verified fact — thread로 넘긴 sync code는 async wrapper가 취소되어도 자동으로 죽지 않는다.** AnyIO는 이를 명시적으로 문서화하여 `abandon_on_cancel=True`일 경우 기다리는 task만 빠져나가고 worker thread는 계속 실행한다고 설명한다.
 - **Interpretation — 현재 sync HTTP 호출을 같은 Worker thread 안에서 직접 수행하는 구조에서는**, cancellation flag를 Worker가 이미 알아도 HTTP client가 반환하기 전에는 Python handler가 다음 cancellation checkpoint에 도달하지 못할 수 있다.
-- **Verified fact — current OpenAI Python SDK v3.20.0은 HTTPX2 기반이다.** HTTPX2 migration 자체는 v3.0.0에서 이루어졌다. 현재 source에는 sync client 전체를 `close()`하는 API와 response stream의 `close()`/`aclose()`가 있지만, “다른 thread가 특정 진행 중 sync request 하나를 안전하게 cancel한다”는 public contract는 확인되지 않았다.
-- **Interpretation — 따라서 sync client의 `close()`를 cross-thread request cancellation primitive로 간주할 근거는 부족하다.** 실제 socket interruption 여부는 SDK/transport version을 고정한 spike 대상이다.
+- **Verified fact — 대신고 현재 pin은 openai 2.54.0 + httpx 0.28.1이다.** (`uv.lock`; `pyproject.toml`의 `eval-gemini` extra는 `openai>=1.40,<3.0`.) 따라서 중단 semantics의 적용 대상 transport는 HTTPX 0.28이다. OpenAI Python SDK는 v3.0.0에서 HTTPX2로 옮겼고 2026-10-03 기준 최신 release는 3.24.0(2026-10-02)이다 — pin 범위 밖이므로 향후 upgrade 시의 참고 근거다.
+- **Verified fact — 조사한 SDK source(main, v3.x)에는 sync client 전체를 `close()`하는 API와 response stream의 `close()`/`aclose()`가 있지만, “다른 thread가 특정 진행 중 sync request 하나를 안전하게 cancel한다”는 public contract는 확인되지 않았다.** pin 버전(2.54.0)에서 같은지는 spike에서 확인한다.
+- **Interpretation — 따라서 sync client의 `close()`를 cross-thread request cancellation primitive로 간주할 근거는 부족하다.** 실제 socket interruption 여부는 대신고 pin(openai 2.54.0 + httpx 0.28.1)을 고정한 spike 대상이다.
 - **Verified fact — HTTP connection을 client가 끊는 것과 provider가 계산을 중단하는 것은 동일한 보장이 아니다.** HTTP/1.1에서는 incomplete request가 될 수 있으나 server는 이미 완성된 request를 처리하고 있을 수 있다. HTTP/2 `CANCEL`은 stream이 더 필요 없음을 뜻하지만, application processing이 전혀 시작되지 않았음을 명시적으로 보장하는 것은 `REFUSED_STREAM`이다.
 - **Verified fact — ffmpeg의 current source는 `SIGINT`와 `SIGTERM`을 graceful termination path에 넣고 있으며 `q`도 main transcode loop를 빠져나가게 한다.** 이후 output마다 trailer를 쓰는 code path가 실행된다. 이것은 정상적인 trailer 작성 “시도”이며 모든 format의 partial output 유효성을 보장한다는 뜻은 아니다.
 - **Verified fact — Python 3.12의 `subprocess.run(..., timeout=...)`은 timeout이 나면 child를 kill하고 wait한다.** POSIX에서 `Popen.kill()`은 `SIGKILL`이다. 따라서 이 timeout path는 ffmpeg의 SIGTERM/SIGINT graceful path와 다르다.
-- **Daesingo implication — 현재 “timeout은 실행 중 작업을 취소하지 않고 상위 orchestrator가 기다리는 것만 멈춘다”는 제품 semantics와 `subprocess.run(timeout=...)`의 강제 child kill semantics는 동일하지 않다.** 현재 코드의 timeout이 어느 종류를 의미하는지 RD-19b에서 분리될 필요가 있다.
-- **Verified fact — 기존 job 시스템도 cancel request와 actual stop을 분리한다.** Temporal Activity는 cancellation을 다음 heartbeat에서 알며 heartbeat가 없으면 completion/timeout까지 실행될 수 있다. RQ는 queued job `cancel()`과 running job `stop`을 별도 operation으로 둔다. Celery의 revoke도 기본적으로 이미 실행 중인 task를 종료하지 않고, `terminate=True`는 worker child process를 죽이는 별도·위험한 수단으로 문서화한다.
+- **Daesingo implication — 대신고 코드에서 두 timeout은 이미 다른 층이다.** 제품 timeout은 case가 Job을 기다리는 시간([`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md))으로, 실행 중 작업을 취소하지 않고 상위 orchestrator의 대기만 멈춘다. ffmpeg/ffprobe의 `subprocess.run(timeout=…)`은 recording 내부 안전 한도이며 `TEMPORARY_FAILURE`로 변환된다(`recording/materialization.py` · `frames.py` · `probe.py`). 후자는 강제 child kill semantics를 가지므로 제품 timeout과 같은 의미로 읽지 않는다.
+- **Verified fact — Temporal과 Celery는 cancel request와 actual stop을 분리한다.** Temporal Activity는 heartbeat를 해야 cancellation을 받으며 heartbeat가 없으면 completion/timeout까지 실행될 수 있다. Celery의 revoke는 아직 시작하지 않은 task는 건너뛰지만 이미 실행 중인 task는 종료하지 않고, `terminate=True`는 worker child process를 죽이는 별도·위험한 수단으로 문서화한다. 그런데 result backend는 revoke 즉시 `REVOKED`로 갱신되어 기록 상태와 실제 실행이 어긋날 수 있다.
+- **Verified fact — RQ는 「요청 / 실제 정지」를 분리하는 사례가 아니다.** job 상태(queued / running)별로 기능이 나뉘고, `send_stop_job_command`는 실행 중 job을 즉시 멈추며 결과는 `stopped`(FailedJobRegistry)다. process 격리의 사례로 읽는다.
 
 ---
 
@@ -92,7 +89,7 @@
 | **Q-B1 · R1** | Python 3.12 cooperative polling, thread, signal, asyncio/AnyIO, process isolation, Docker shutdown |
 | **Q-B2 · R1** | generic sync/async HTTP cancellation, OpenAI Python SDK current behavior, streaming close, timeout vs cancellation, HTTP/1.1·HTTP/2 disconnect semantics, usage uncertainty, idempotency |
 | **Q-B3 · R1** | ffmpeg `q`/SIGINT/SIGTERM/SIGKILL, `run`/`Popen`, process group, pipe deadlock, zombies, temp/partial files |
-| **Q-B4 · R1** | Temporal · RQ · Celery에서 cancel requested와 actual termination을 분리하는 방식 및 한계 |
+| **Q-B4 · R1** | Temporal · RQ · Celery에서 cancel requested와 actual termination을 다루는 방식 및 한계 |
 
 ---
 
@@ -140,11 +137,15 @@
 | **Verified fact.** 강제 process termination 중 pipe/queue가 손상되거나 lock/semaphore를 잡고 있으면 다른 process가 deadlock될 수 있다. | Python 3.12 | Python 3.12 `multiprocessing` docs |
 | **Verified fact.** Docker/Compose stop은 기본적으로 SIGTERM 후 grace period를 거쳐 SIGKILL로 escalate한다. Compose의 documented default grace period는 10초다. 이는 도구 기본값이지 대신고 baseline 값이 아니다. | Current Compose | Docker Compose docs |
 | **Verified fact.** `init: true`는 container 안에 init process를 두어 signal forwarding 및 child reaping 역할을 한다. | Current Compose | Docker Compose docs |
-| **Verified fact.** OpenAI Python SDK의 2026-10-03 최신 release는 v3.20.0이며 default sync/async HTTP layer는 HTTPX2이다. Migration은 v3.0.0에서 이루어졌다. | openai-python v3.x | OpenAI Python release/source |
-| **Verified fact.** Current OpenAI sync client `close()`는 underlying HTTP client를 닫는다. Current streaming abstraction도 response `close()`/`aclose()`를 노출하고 미완주 stream을 정리한다. | Current SDK source | `openai-python` source |
-| **Interpretation.** Current public SDK 문서/source에서 진행 중인 **특정 sync request를 다른 thread가 cancel하는 공식 request-level primitive**는 확인되지 않았다. Client-wide `close()`의 concurrent abort 동작을 request cancellation contract로 간주할 근거도 확인되지 않았다. | OpenAI SDK current source/API 조사 | `openai-python` source |
-| **Verified fact.** HTTPX 0.28 계열 documentation의 timeout은 connect/read/write/pool로 구분되며 read/write는 chunk 단위 inactivity 개념이다. 이는 generic HTTPX 참고 사실이며 현재 OpenAI SDK의 HTTPX2 구현 자체를 증명하는 근거는 아니다. | HTTPX stable reference | HTTPX Docs |
-| **Verified fact.** Current OpenAI SDK는 timeout과 granular timeout configuration을 문서화한다. | openai-python v3.x | OpenAI Python docs/source |
+| **Verified fact.** PID namespace의 init(PID 1)에는 **handler를 설치한 signal만** 전달된다. ancestor namespace에서 보낸 SIGKILL · SIGSTOP만 예외로 강제 전달된다. | Linux | [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) |
+| **Verified fact.** Python이 시작 시 설치하는 signal handler는 SIGPIPE(무시)와 SIGINT(→ `KeyboardInterrupt`)뿐이다. SIGTERM handler는 기본으로 설치되지 않는다. | Python 3.12 | [signal (3.12)](https://docs.python.org/3.12/library/signal.html) |
+| **Interpretation.** Python이 container의 PID 1이고 SIGTERM handler가 없으면 `docker stop`의 SIGTERM은 전달되지 않고 grace period 뒤 SIGKILL로 끝난다. `init: true` 등으로 init이 PID 1이면 Python은 SIGTERM의 OS 기본 동작(종료)을 받는다. **어느 쪽이든 handler가 없으면 `finally` · `TemporaryDirectory` 정리는 실행되지 않는다.** | 위 두 사실과 Compose stop semantics의 결합 | pid_namespaces(7) · Python `signal` docs |
+| **Verified fact.** 대신고 현재 pin은 openai 2.54.0 + httpx 0.28.1이다. `pyproject.toml`의 `eval-gemini` extra는 `openai>=1.40,<3.0`이다. | 대신고 repo, 2026-10-03 | `uv.lock` · `pyproject.toml` |
+| **Verified fact.** OpenAI Python SDK는 v3.0.0에서 default sync/async HTTP layer를 HTTPX2로 바꿨다. 2026-10-03 기준 최신 release는 3.24.0(2026-10-02)이다. 대신고 pin 범위(`<3.0`) 밖이므로 upgrade 시의 참고 근거다. | openai-python v3.x | OpenAI Python release/source · PyPI openai |
+| **Verified fact.** 조사한 SDK source의 sync client `close()`는 underlying HTTP client를 닫는다. streaming abstraction도 response `close()`/`aclose()`를 노출하고 미완주 stream을 정리한다. | openai-python main(v3.x) source — pin 2.54.0과의 동일성은 spike 확인 대상 | `openai-python` source |
+| **Interpretation.** 조사한 public SDK 문서/source에서 진행 중인 **특정 sync request를 다른 thread가 cancel하는 공식 request-level primitive**는 확인되지 않았다. Client-wide `close()`의 concurrent abort 동작을 request cancellation contract로 간주할 근거도 확인되지 않았다. | OpenAI SDK source/API 조사 | `openai-python` source |
+| **Verified fact.** HTTPX 0.28 계열 documentation의 timeout은 connect/read/write/pool로 구분되며 read/write는 chunk 단위 inactivity 개념이다. 대신고 pin(httpx 0.28.1)이 이 계열이므로 중단 semantics의 적용 대상 transport 문서다. | HTTPX 0.28 (대신고 pin 0.28.1) | HTTPX Docs |
+| **Verified fact.** OpenAI SDK는 timeout과 granular timeout configuration을 문서화한다. | openai-python (조사 source v3.x) | OpenAI Python docs/source |
 | **Verified fact.** HTTP/1.1에서 request body가 다 도착하기 전에 connection이 끊기면 server는 incomplete request로 취급한다. 그러나 이미 완성된 request가 application processing에 전달된 뒤 client disconnect가 그 처리를 취소한다는 protocol-level 보장은 없다. | RFC 9112 | RFC 9112 |
 | **Verified fact.** HTTP/2 `CANCEL`은 stream이 더 이상 필요 없다는 의미다. `REFUSED_STREAM`만 “application processing 전 거부”를 명시적으로 뜻한다. | RFC 9113 | RFC 9113 |
 | **Verified fact.** OpenAI Chat Completions streaming의 `include_usage`는 마지막 추가 chunk에 total usage를 보내며 stream이 끊기면 이 final usage chunk를 못 받을 수 있다. | OpenAI API | OpenAI API reference |
@@ -156,6 +157,10 @@
 | **Verified fact.** Current ffmpeg source는 SIGINT/SIGTERM을 same termination handler로 처리하고 transcode loop를 빠져나온 뒤 output trailer를 쓰는 path를 가진다. `q` 입력 역시 같은 loop에서 exit 조건으로 사용된다. | FFmpeg current trunk, checked 2026-10-03 | FFmpeg source |
 | **Verified fact.** `TemporaryDirectory`는 정상 context exit/destruction/interpreter cleanup path에서 cleanup을 수행한다. | Python 3.12 | Python 3.12 `tempfile` docs |
 | **Interpretation.** SIGKILL이나 abrupt container termination은 Python cleanup code가 실행될 기회를 주지 않으므로 temporary/partial output의 잔존을 별도로 고려해야 한다. | Python process + signal semantics 종합 | Python docs |
+| **Verified fact.** Temporal Activity는 heartbeat를 해야 cancellation을 받는다. | Temporal | [Activity execution](https://docs.temporal.io/activity-execution) |
+| **Verified fact.** Celery revoke는 아직 시작하지 않은 task를 건너뛰지만 실행 중 task는 `terminate` 없이는 멈추지 않는다. 그런데 result backend는 **즉시 `REVOKED`로 갱신**된다 — 기록 상태와 실제 실행이 어긋날 수 있는 「요청 시점 기록」 사례다. | Celery stable | [Celery workers guide](https://docs.celeryq.dev/en/stable/userguide/workers.html) |
+| **Verified fact.** Temporal · Celery 문서 모두 **취소 요청 뒤 작업이 성공으로 끝난 경우의 최종 상태를 명시하지 않는다.** | Temporal · Celery | 위 두 문서 |
+| **Verified fact.** RQ는 job 상태(queued / running)별로 기능이 나뉜다. `send_stop_job_command`는 실행 중 job을 즉시 멈추며 결과는 `stopped`(FailedJobRegistry)다. 「요청 / 실제 정지」 분리 사례가 아니라 process 격리 사례다. | RQ | [RQ jobs](https://python-rq.org/docs/jobs/) · [RQ workers](https://python-rq.org/docs/workers/) |
 
 ---
 
@@ -178,6 +183,7 @@ Source는 shell, project `.env`, `--env-file` 등이 될 수 있다.
 - 별도 file-reading logic 없이 일반 process environment로 전달 가능하다.
 - secret은 process environment라는 비교적 넓은 surface에 들어간다.
 - resolved Compose config, Docker container configuration, `/proc` 등 운영권한을 가진 주체에게 노출될 가능성을 고려해야 한다.
+- `env=`를 넘기지 않는 현재 `subprocess.run` 구조에서는 ffmpeg/ffprobe child process도 secret을 상속한다.
 - 이미 실행 중인 container의 environment는 rotation으로 변경되지 않는다.
 - 현재 대신고 loader가 `os.environ`을 읽지 않는 상태에서는 application까지 연결되지 않는다.
 
@@ -263,6 +269,7 @@ A-3과 동일한 container-side semantics에 SSM fetch가 붙는다.
 - plaintext host env file/secret file을 만들지 않는 구성이 가능하다.
 - 반대로 application runtime 자체가 `ssm:GetParameter*`와 `kms:Decrypt` 권한을 행사할 수 있는 주체가 된다.
 - container에서 IMDS 접근 가능 여부와 hop limit 설정이 실제 dependency가 된다.
+- **Implication —** hop limit을 2로 열면 특정 application container만이 아니라 그 host의 어느 container든 instance role 자격 증명을 얻을 수 있다.
 - Parameter Store/network/IAM failure가 application startup 또는 runtime failure domain으로 들어온다.
 - rotation 반영 시점은 startup fetch, per-use fetch, cache refresh 등 application semantics에 달려 있다.
 
@@ -343,11 +350,11 @@ Async request가 network await 중이라면 owning `Task` cancellation은 sync t
 
 OpenAI API의 `X-Client-Request-Id`는 timeout/network ambiguity에서 provider receipt 조사에 도움을 주지만 “중복 실행 방지” 기능은 아니다.
 
-**Interpretation — 일반 원장 패턴**
+**Interpretation — 일반 원장 패턴과 UsageRecord 제약**
 
-시작된 호출 row를 먼저 만들고 이후 outcome을 `completed`, `cancelled-client-side`, `transport-error`, `usage-unknown` 등으로 갱신하는 구조는 “시작된 호출마다 row” 원칙과 양립할 수 있다. `usage=null/unknown`과 `usage=estimated`를 구분하는 것도 가능한 표현 방식이다.
+외부 원장에서 흔한 “시작된 호출 row를 먼저 만들고 이후 outcome을 갱신하는” 구조는 **UsageRecord row 자체에는 적용할 수 없다** — UsageRecord row는 append-only다([`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §8-1). in-flight 호출을 추적하려면 UsageRecord 밖의 별도 구조가 필요하며, 이는 RD-01e · 01f에서 열려 있는 선택지다. 사용량 미확정은 `token_usage=null`(같은 Contract §8-3)로 일부 표현할 수 있다.
 
-이는 RD-19c의 schema 선택을 확정하는 결론이 아니라, 외부 API가 항상 exact usage를 반환하지 않는다는 제약에서 나온 선택지다.
+이는 RD-19c의 schema 선택을 확정하는 결론이 아니라, 외부 API가 항상 exact usage를 반환하지 않는다는 제약과 Contract의 append-only 제약에서 나온 범위다.
 
 #### Idempotency
 
@@ -380,6 +387,10 @@ Current OpenAI Python SDK 내부에는 retry 관련 idempotency-key helper가 �
 | `environment`가 `env_file` override | 같은 key 중복 | env file 수정이 효과 없음 | resolved config 확인 가능 |
 | Secret이 `docker compose config`에 materialize | secret을 `${VAR}`로 Compose model에 interpolation | operator terminal/log에 노출 가능 | command output 취급 정책으로 완화 가능 |
 | Container env 노출 | secret을 process environment로 전달 | inspect/proc/debug surface 증가 | file-based 전달과 trade-off 가능 |
+| Child process env 상속 | secret을 process env로 주입하고 `subprocess.run`이 `env=`를 넘기지 않음(현재 recording 코드) | ffmpeg/ffprobe까지 API key 보유 | child env 지정 또는 file-based 전달과 trade-off |
+| Crash dump · error report 노출 | process 상태 · environment가 dump/report에 포함 | report 수신처로 secret 전파 | report 범위 확인 가능 |
+| Host shell history · process listing | secret을 command line(argv)이나 interactive shell에 직접 넣음 | shell history · `ps` 관찰자에게 노출 | argv · shell 입력에 secret을 넣지 않는 경로로 구분 가능 |
+| IMDS hop limit 확대 | container runtime fetch를 위해 hop limit을 2로 설정 | host의 어느 container든 instance role 자격 증명 획득 가능 | role 권한 범위와 함께 판단 |
 | Host plaintext file 잔존 | fetch 후 env/secret file 생성, cleanup 실패 | EC2 disk에 secret 잔존 | restrictive permissions/cleanup/startup audit 가능 |
 | Run Command history/API exposure | GitHub runner가 plaintext secret을 command input에 넣음 | CloudTrail/history reader가 value 관찰 가능 | fetch location 변경 등 선택지 존재 |
 | Run Command output leak | script가 secret을 stdout/stderr로 출력 | console/S3/CloudWatch 전파 | script/log hygiene로 완화 가능 |
@@ -402,15 +413,16 @@ Current OpenAI Python SDK 내부에는 retry 관련 idempotency-key helper가 �
 | Sync HTTP `client.close()` race | 다른 thread에서 shared client close | 동작이 transport/version-dependent | SDK-version-specific spike |
 | Client disconnected, provider still running | request가 이미 provider에 전달 | cost/side effect 발생 가능 | provider contract 확인 필요 |
 | Ambiguous HTTP retry | disconnect 후 같은 call 재실행 | provider 중복 processing 가능 | provider idempotency 확인 필요 |
-| UsageRecord exact usage 없음 | network failure/stream interruption | 호출 row는 있으나 usage 미확정 | unknown/estimated state 표현 가능 |
-| `subprocess.run(timeout)` kills ffmpeg | run timeout 만료 | graceful trailer path 우회 | timeout 종류 분리 가능 |
+| UsageRecord exact usage 없음 | network failure/stream interruption | 호출 row는 있으나 usage 미확정 | `token_usage=null`(Contract §8-3)로 일부 표현 가능; row는 append-only(§8-1)라 사후 갱신 불가 |
+| `subprocess.run(timeout)` kills ffmpeg | recording 내부 안전 한도 만료 | graceful trailer path 우회; `TEMPORARY_FAILURE`로 변환 | 제품 timeout(case의 Job 대기)과는 이미 다른 층 |
+| SIGTERM이 Python에 전달되지 않음 | Python이 container PID 1이고 SIGTERM handler 없음 | grace period 뒤 SIGKILL, `finally` · temp cleanup 미실행 | `init: true` 여부와 무관하게 cleanup 실행은 SIGTERM handler 유무에 달림 |
 | SIGKILL partial output | forced escalation | invalid/incomplete output 잔존 가능 | temp-name/validation 패턴 가능 |
 | Child만 kill되고 descendant 잔존 | subprocess가 process tree 생성 | orphan workload | process group/isolation 선택지 |
 | Pipe deadlock | stdout/stderr PIPE를 drain하지 않음 | cancellation/finish 모두 지연 | `communicate` 또는 drain 구조 |
 | Zombie | child exit 후 parent가 wait/reap 안 함 | process table entry 잔존 | `Popen.wait/communicate`, init 역할 |
 | Parent hard kill | container/worker SIGKILL | `finally`, temp cleanup 미실행 | next-start scavenging 가능 |
 | Process terminate 중 DB/queue corruption | force kill at critical section | transaction/IPC ambiguity | isolation boundary·transaction design 필요 |
-| Cancel/completion race | cancel request와 handler completion 동시 | final status 경쟁 | DB state transition rule 필요 |
+| Cancel/completion race | cancel request와 handler completion 동시 | final status 경쟁 | DB state transition rule 필요; 외부 문서(Temporal · Celery)는 이 경우의 최종 상태를 명시하지 않음 |
 | Provider 완료와 local cancel race | response 도착 직전 cancel | provider cost/result 존재하지만 execution CANCELLED 가능 | RD-19b/19c 내부 상태 규칙 필요 |
 
 ---
@@ -495,18 +507,22 @@ RUNNING 이후는 하나의 “cancel” primitive로 표현되지 않는다.
 
 **Daesingo implication — status timing**
 
-외부 시스템 사례도 이 둘을 분리한다.
+외부 시스템은 request와 actual stop의 관계를 서로 다르게 다룬다.
 
-- Temporal: cancel request → heartbeat에서 전달 → Activity cancellation
-- RQ: queued `CANCELED`와 running `stop` 별도
-- Celery: revoke와 forced terminate 별도
+- Temporal: cancel request → heartbeat에서 전달 → Activity cancellation (요청과 정지 분리)
+- Celery: revoke와 forced terminate 별도 — 단, result backend는 revoke 즉시 `REVOKED`로 갱신되어 기록 상태와 실제 실행이 어긋날 수 있다 (요청 시점 기록 사례)
+- RQ: 요청/정지 분리 사례가 아니다. 상태(queued / running)별로 기능이 나뉘고 running job의 `send_stop_job_command`는 즉시 정지(`stopped`, FailedJobRegistry)한다 → process 격리(Q-B1.4)의 근거
 
-따라서 RD-19b에서 `CANCELLED`가 의미할 수 있는 후보는 최소한 다음 두 계열이다.
+`CANCELLED`의 **의미**는 [`contract-job-execution.md`](../../architecture/contracts/contract-job-execution.md) §6에서 이미 닫혀 있다(Already fixed): 「사용자가 진행 중인 분석을 중단해 **종료됨**」이며, status는 닫힌 enum 6값이다. RD-19b에서 열린 것은 의미가 아니라 **기록 시점**이다.
 
-- cancellation request를 accepted한 상태
-- handler/resource가 실제 종료된 terminal 상태
+- cancellation request를 accepted한 시점에 기록
+- handler/resource가 실제 종료된 뒤 기록
 
-어느 의미로 고정할지는 외부 조사로 결정할 수 없다.
+「요청 수락」을 별도로 표시하려면 status 밖의 별도 표식이 필요하다는 제약이 있다. 어느 시점으로 고정할지는 외부 조사로 결정할 수 없다.
+
+**Daesingo implication — cancel/completion race (Q-B4.2)**
+
+Temporal · Celery 문서 모두 취소 요청 뒤 작업이 성공으로 끝난 경우의 최종 상태를 명시하지 않는다. 따라서 경합 시 어느 terminal transition이 우선하는지는 외부 사례로 정할 수 없고 RD-19b 내부 합의 대상이다.
 
 #### Timeout과 cancellation
 
@@ -524,7 +540,7 @@ Python primitive의 실제 semantics:
 
 따라서 코드에서 이름이 모두 `timeout`이라고 해도 동작이 서로 다르다.
 
-현재 ffmpeg/ffprobe의 `subprocess.run(..., timeout=...)`이 제품에서 말하는 “wait-only timeout”과 동일한 timeout이라면 정책과 primitive semantics가 충돌한다. 별도의 subprocess safety timeout이라면 서로 다른 timeout category로 볼 수 있다.
+대신고 코드에서 두 timeout은 이미 다른 층이다. 제품 timeout은 case가 Job을 기다리는 시간([`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md))이고, ffmpeg/ffprobe의 `subprocess.run(..., timeout=...)`은 recording 내부 안전 한도로 `TEMPORARY_FAILURE`로 변환된다(`recording/materialization.py` · `frames.py` · `probe.py`). 후자의 child kill semantics는 제품의 wait-only timeout 정책과 다른 category에 속한다.
 
 #### RD-19c — provider call / UsageRecord
 
@@ -556,7 +572,9 @@ UsageRecord는 외부 research 관점에서 최소한 다음 상황을 표현할
 - response 일부는 받았지만 final usage metadata를 못 받음
 - provider는 이미 처리했지만 client는 result를 버림
 
-어떤 columns/status로 표현할지는 RD-19c 내부 결정이다.
+UsageRecord row는 append-only(Contract §8-1)이므로 이 상황들은 row 생성 시점에 알려진 정보로 표현해야 하고, 사후 갱신이 필요한 in-flight 추적은 UsageRecord 밖의 별도 구조(RD-01e · 01f 선택지)가 된다. 사용량 미확정은 `token_usage=null`(§8-3)로 일부 표현할 수 있다.
+
+나머지를 어떤 columns/status로 표현할지는 RD-19c 내부 결정이다.
 
 #### ffmpeg cancellation
 
@@ -614,10 +632,9 @@ Current FFmpeg source 기준으로:
   - rotation 후 recreate/restart/re-read 동작
 
 - **RD-19b**
-  - `CANCELLED`를 cancellation request acceptance 시점에 기록할지 실제 handler stop 이후에 기록할지
-  - cancel와 success가 동시에 발생할 때 어느 terminal transition이 승리하는지
+  - `CANCELLED`를 cancellation request acceptance 시점에 기록할지 실제 handler stop 이후에 기록할지 (의미는 Contract §6에서 닫힘 — 열린 것은 기록 시점)
+  - cancel와 success가 동시에 발생할 때 어느 terminal transition이 승리하는지 (외부 문서가 명시하지 않음)
   - graceful cancellation 이후 force escalation을 둘지
-  - subprocess safety timeout과 orchestrator wait timeout을 별개 개념으로 둘지
 
 - **RD-19c**
   - “provider call started”의 operational boundary
@@ -629,7 +646,7 @@ Current FFmpeg source 기준으로:
 
 - 대신고에 실제 설치될 Docker Compose v2 version에서 env/interpolation matrix
 - Compose secret backing file update 방식별 running container 관찰
-- 현재 OpenAI SDK/실제 provider adapter의 sync in-flight close semantics
+- 대신고 pin(openai 2.54.0 + httpx 0.28.1)/실제 provider adapter의 sync in-flight close semantics
 - async cancellation 때 사용 transport가 connection에 어떤 signal을 보내는지
 - packaged ffmpeg version에서 signal별 output integrity
 - ffmpeg가 대신고 command line에서 실제 descendant process를 만드는 경우가 있는지
@@ -716,7 +733,7 @@ Current FFmpeg source 기준으로:
    - ffmpeg wait
    각 state에서 cancel flag가 실제로 다시 확인되는 boundary만 기록
 
-2. **Sync HTTP mock server**
+2. **Sync HTTP mock server** — 대신고 pin(openai 2.54.0 + httpx 0.28.1) 기준
    - request upload 중 pause
    - request 완전 수신 뒤 response delay
    - streaming response 중 pause
@@ -734,7 +751,7 @@ Current FFmpeg source 기준으로:
    을 별도로 기록
 
 4. **OpenAI-compatible proxy**
-   - 실제 adapter와 동일 transport/version에서 request ID를 남기고 cancel 실험
+   - 실제 adapter와 동일 transport/version(대신고 pin openai 2.54.0 + httpx 0.28.1)에서 request ID를 남기고 cancel 실험
    - 결과는 “provider billing baseline”으로 사용하지 않고 semantics evidence로만 저장
 
 5. **ffmpeg signal matrix**
@@ -760,6 +777,7 @@ Current FFmpeg source 기준으로:
    - SIGTERM
    - SIGKILL
    별 residue 확인
+   - SIGTERM은 Python이 PID 1인 경우와 `init: true`인 경우, SIGTERM handler 유무별로 나눠 관찰
    - Worker restart 때 stale directory 탐지 가능성 확인
 
 9. **Cancel/completion race**
@@ -778,13 +796,13 @@ Current FFmpeg source 기준으로:
    - 어떤 daemon authorization model/운영계정에서 `Config.Env`를 읽을 수 있는지는 대신고 EC2의 Docker access model에 따라 달라진다.
 
 3. **OpenAI Python sync in-flight request cancellation**
-   - current SDK가 `client.close()`를 제공한다는 것은 Verified다.
+   - 조사한 SDK source(v3.x)가 `client.close()`를 제공한다는 것은 Verified다.
    - 다른 thread가 이를 호출하면 특정 진행 중 request가 즉시/안전하게 abort된다는 documented guarantee는 확인하지 못했다.
-   - SDK/HTTPX2 version-specific spike가 필요하다.
+   - 대신고 pin(openai 2.54.0 + httpx 0.28.1) 기준 spike가 필요하다.
 
-4. **HTTPX2의 cancellation 세부 transport semantics**
-   - current OpenAI SDK가 HTTPX2를 사용한다는 것은 확인했다.
-   - HTTPX 0.28의 timeout 문서는 비교 근거로 사용했으며 HTTPX2가 모든 세부 semantics를 동일하게 유지한다고 가정하지 않았다.
+4. **적용 대상 transport와 HTTPX2**
+   - 대신고 pin은 httpx 0.28.1이므로 중단 semantics의 적용 대상은 HTTPX 0.28이다.
+   - OpenAI SDK v3.x는 HTTPX2를 쓰지만 pin 범위(`<3.0`) 밖이다. HTTPX2의 세부 transport semantics는 확인하지 않았고 SDK 3.x upgrade 시 확인 대상이다.
 
 5. **Provider-side disconnect cancellation**
    - ordinary OpenAI REST request에서 client disconnect가 inference를 중단하거나 billing을 중단한다는 일반 보장은 공식 문서에서 확인하지 못했다.
@@ -798,14 +816,15 @@ Current FFmpeg source 기준으로:
    - signal/trailer code path는 2026-10-03 current FFmpeg trunk source로 검증했다.
    - 대신고 EC2 image에 실제 설치되는 ffmpeg package version의 source가 동일하다고 가정하지 않는다.
 
-8. **SIGTERM과 Python `TemporaryDirectory` cleanup**
+8. **SIGTERM과 Python `TemporaryDirectory` cleanup** — 공식 문서로 닫힘
    - context normal exit에서 cleanup되는 것은 Verified다.
-   - SIGTERM 시 Python application이 custom handler 없이 종료될 경우 context cleanup/finally가 보장된다고 간주하지 않았다.
-   - actual Worker signal handling과 함께 확인해야 한다.
+   - PID 1에는 handler를 설치한 signal만 전달되고, Python은 SIGTERM handler를 기본 설치하지 않는다(§3 Part B, pid_namespaces(7) · Python `signal` docs). 따라서 Python이 PID 1이면 SIGTERM은 전달되지 않고 grace period 뒤 SIGKILL로 끝나며, `init: true`로 init이 PID 1이면 SIGTERM 기본 동작(종료)을 받는다. 어느 쪽이든 handler가 없으면 `finally` · `TemporaryDirectory` 정리는 실행되지 않는다.
+   - 남는 것은 미확인 semantics가 아니라 실제 Worker가 handler를 어떻게 구성하는지이며, §8 Part B 8로 관찰한다.
 
 9. **Cancel-vs-completion final-state race**
    - Celery/RQ/Temporal 모두 cancellation의 전달·강제종료 semantics가 서로 다르다.
-   - 대신고의 DB terminal transition winner를 외부 사례에서 그대로 가져올 수 없다.
+   - Temporal · Celery 문서 모두 취소 요청 뒤 성공으로 끝난 경우의 최종 상태를 명시하지 않는다.
+   - 따라서 대신고의 DB terminal transition winner는 외부 사례로 정할 수 없고 RD-19b 내부 합의 대상이다.
 
 ---
 
@@ -841,6 +860,7 @@ Current FFmpeg source 기준으로:
 - https://docs.python.org/3.12/library/subprocess.html — Python 3.12, **subprocess**.
 - https://docs.python.org/3.12/library/multiprocessing.html — Python 3.12, **multiprocessing**.
 - https://docs.python.org/3.12/library/tempfile.html — Python 3.12, **tempfile**.
+- https://man7.org/linux/man-pages/man7/pid_namespaces.7.html — Linux man-pages, **pid_namespaces(7)**.
 
 ### HTTP / OpenAI
 
@@ -859,5 +879,16 @@ Current FFmpeg source 기준으로:
 - https://www.ffmpeg.org/doxygen/trunk/ffmpeg_8c_source.html — FFmpeg current source, **fftools/ffmpeg.c**, 확인 2026-10-03.
 - https://ffmpeg.org/faq.html — FFmpeg, **FAQ**, 확인 2026-10-03.
 - https://docs.celeryq.dev/en/latest/userguide/workers.html — Celery 5.6.x, **Workers Guide**, 확인 2026-10-03.
+- https://docs.celeryq.dev/en/stable/userguide/workers.html — Celery stable, **Workers Guide** (revoke · result backend `REVOKED`).
 - https://python-rq.org/docs/jobs/ — RQ, **Jobs**, 확인 2026-10-03.
+- https://python-rq.org/docs/workers/ — RQ, **Workers** (`send_stop_job_command`).
 - https://docs.temporal.io/nexus/standalone-activity — Temporal, **Activity cancellation behavior**, 확인 2026-10-03.
+- https://docs.temporal.io/activity-execution — Temporal, **Activity execution** (heartbeat · cancellation).
+
+### 대신고 repo
+
+- `uv.lock` · `pyproject.toml` — openai 2.54.0 · httpx 0.28.1 pin, `eval-gemini` extra `openai>=1.40,<3.0`.
+- [`contract-usage-record.md`](../../architecture/contracts/contract-usage-record.md) §8-1 · §8-3 — append-only · `token_usage` null 규칙.
+- [`contract-job-execution.md`](../../architecture/contracts/contract-job-execution.md) §6 — `CANCELLED` 의미 · status enum.
+- [`timeout-fallback.md`](../../modules/case/decisions/timeout-fallback.md) — 제품 timeout.
+- `recording/materialization.py` · `frames.py` · `probe.py` — `subprocess.run(timeout=…)` → `TEMPORARY_FAILURE`. `materialization.py`의 `subprocess.run`은 `env=`를 넘기지 않는다.
