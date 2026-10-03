@@ -19,7 +19,7 @@ export function ResultScreen(props: {
   onCandidates: () => void
   onPlate: () => void
   onDetails: () => void
-  onAction: (action: Action) => void
+  onAction: (noticeCode: string, action: Action) => void
 }): JSX.Element {
   const { view } = props
   const pkg = view.package
@@ -50,7 +50,7 @@ export function ResultScreen(props: {
             {noticeMessage(n.message_key)}
             {/* notice가 실은 actions[]만 버튼으로 연다 — 계약 밖 버튼은 만들지 않는다 */}
             {n.actions.filter(isAction).map((a) => (
-              <button key={a} type="button" className="btn sm notice-action" onClick={() => props.onAction(a)}>
+              <button key={a} type="button" className="btn sm notice-action" onClick={() => props.onAction(n.code, a)}>
                 {ACTION_LABELS[a]}
               </button>
             ))}
@@ -70,7 +70,7 @@ export function ResultScreen(props: {
           <div className="video-box">
             <div className="video-main">
               {noVideo ? (
-                <span>신고용 영상을 아직 만들지 못했어요</span>
+                <span>신고용 영상이 아직 없어요</span>
               ) : (
                 <>
                   <span className="video-play" aria-hidden>

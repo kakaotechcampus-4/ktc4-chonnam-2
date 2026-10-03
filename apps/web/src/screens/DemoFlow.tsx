@@ -97,8 +97,10 @@ const PLATE_FAILED_RESULT: CaseView = {
 const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [
   { code: 'evidence.plate_abstained', severity: 'WARN', blocking: false, message_key: 'notice.plate_abstained', actions: [] },
 ])
-// 신고용 영상 생성 실패(§23) — 묶음이 완성되지 않아 READY가 아니다.
-const VIDEO_FAILED_RESULT: CaseView = {
+// 신고용 영상 미생성 — 아직 만들지 않아 GENERATE_REPORT_VIDEO 발주가 필요한 상태다. 묶음이
+// 완성되지 않아 READY가 아니다. export 실패(recording.report_video_export_failed)와 다르다 —
+// 그 notice는 message_key·actions 모양이 아직 없어 시연하지 않는다(#224 recording 리뷰).
+const VIDEO_NOT_GENERATED_RESULT: CaseView = {
   ...RESULT,
   stage: 'EVIDENCE_REVIEW',
   notices: [fixtureNotice('case.report_video_not_generated')],
@@ -157,10 +159,11 @@ const CASES: Record<string, DemoCase> = {
     upload: 'ok',
     run: { frames: walk(STEPS.length, PLATE), end: 'result', view: PLATE_FAILED_RESULT },
   },
-  videoFailed: {
-    label: '신고용 영상 생성 실패',
+  videoNotGenerated: {
+    label: '신고용 영상 미생성',
     upload: 'ok',
-    run: { frames: walk(STEPS.length, PACKAGE), end: 'result', view: VIDEO_FAILED_RESULT },
+    // 실패가 아니라 시작하지 않은 것이다 — 마지막 단계는 실패가 아니라 대기로 남는다.
+    run: { frames: walk(PACKAGE), end: 'result', view: VIDEO_NOT_GENERATED_RESULT },
   },
   notObserved: {
     label: '찾은 장면에서 위반 미관찰',
@@ -258,11 +261,19 @@ export function DemoFlow(): JSX.Element {
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withPlate(done.view, plate)
-  const reselect = () => start(rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요'))
+  // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비한다.
+  // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
+  // ponytail: 시연은 기준 표시만 옮긴다 — evidence·초안 값은 원래 후보 것 그대로다.
+  const reselect = (candidateId: string) =>
+    start({
+      ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요'),
+      view: { ...RESULT, candidates: RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId })) },
+    })
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
-  const onAction = (a: Action) => {
+  // API가 생기면 RUN_NOTICE_ACTION { notice_code, action }으로 보낸다 — 그래서 code도 받아 둔다.
+  const onAction = (_noticeCode: string, a: Action) => {
     if (a === 'RETRY_PLATE_READ') start(rerunFrom(PLATE, '번호판을 다시 읽고 있어요'))
-    if (a === 'GENERATE_REPORT_VIDEO') start(rerunFrom(PACKAGE, '신고용 영상을 다시 만들고 있어요'))
+    if (a === 'GENERATE_REPORT_VIDEO') start(rerunFrom(PACKAGE, '신고용 영상을 만들고 있어요'))
     if (a === 'RETRY_SEARCH') start(rerunFrom(COARSE, '장면을 다시 찾고 있어요'))
   }
 

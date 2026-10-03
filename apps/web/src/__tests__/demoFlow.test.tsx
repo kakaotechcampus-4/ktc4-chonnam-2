@@ -101,8 +101,13 @@ it('다른 후보: 기준 후보를 같이 놓되 버튼은 다른 후보에만 
   expect(text()).toContain('지금 신고자료 기준')
   expect(container.querySelector('.hint-recall')).not.toBeNull()
   expect(getAllByText('이 장면으로 다시 준비')).toHaveLength(2)
+  // 2번 후보를 고르면 다시 준비한 뒤 2번이 기준 후보가 된다
   fireEvent.click(container.querySelector('.cand-col button')!)
   expect(text()).toContain('경과 시간')
+  wait()
+  fireEvent.click(getByText('다른 후보 영상 2 →'))
+  const cards = [...container.querySelectorAll('.cand')]
+  expect(cards.map((c) => c.classList.contains('sel'))).toEqual([false, true, false])
 })
 
 it('업로드 실패: 다시 선택하면 다시 올린다', () => {
@@ -165,15 +170,16 @@ it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
   expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(false)
 })
 
-it('신고용 영상 생성 실패: 제출을 막고 「신고용 영상 만들기」로 다시 만든다', () => {
-  const { wait, getByText, text } = start('videoFailed')
+it('신고용 영상 미생성: 제출을 막고 「신고용 영상 만들기」로 만든다', () => {
+  const { wait, getByText, text } = start('videoNotGenerated')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   expect(text()).toContain('신고자료를 완성하지 못했어요')
+  expect(text()).toContain('신고용 영상이 아직 만들어지지 않았습니다')
   expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
   fireEvent.click(getByText('신고용 영상 만들기'))
-  expect(text()).toContain('신고용 영상을 다시 만들고 있어요')
+  expect(text()).toContain('신고용 영상을 만들고 있어요')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
 })
