@@ -27,6 +27,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
 | [`open-decision-register.md`](./open-decision-register.md) | 아직 닫히지 않은 Runtime/Ops 결정의 통합 추적표(workflow §2 산출물). 답을 정하지 않으며, 닫히면 Spec/Contract/ADR로 승격하고 CLOSED 처리 |
 | [`decision-classification.md`](./decision-classification.md) | Register의 각 결정을 유형 · 결정권 · Timing · Gate · Closure route · §4 조사 필요로 분류(workflow §3 산출물). 답을 정하지 않으며 Register 내용을 복제하지 않음 |
+| `research/prompts/` | workflow §4 조사 실행용 self-contained prompt 4개(decision-classification §6 R1 · R2 Queue). 조사 결과 · 결정이 아님 |
 | [`official-inputs/README.md`](./official-inputs/README.md) | 카테캠 운영진 공지(AWS 환경 · ML API 등) 사본. 외부 입력이며 결정이 아님 |
 | [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
 | [`reviews/README.md`](./reviews/README.md) | 특정 시점의 Runtime/Ops 정합성 검수·review evidence. Audited SHA 기준으로만 읽으며 결정의 SoT가 아님 |
