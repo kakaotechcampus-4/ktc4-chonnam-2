@@ -7,7 +7,12 @@ import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 // 않는다(#197). 다시 시도는 처음부터가 아니라 실패한 단계부터 이어서 한다.
 // 빨강은 오류 아이콘과 짧은 핵심 안내에만 쓴다. 원인(notice 문구)과 다시 시도 안내는
 // 기본 글자색으로 둔다.
-export function FailedScreen(props: { view: CaseView; onAction: (noticeCode: string, action: Action) => void }): JSX.Element {
+export function FailedScreen(props: {
+  view: CaseView
+  onAction: (noticeCode: string, action: Action) => void
+  /** 지금 연결된 동작만 버튼으로 연다 — 나머지는 사용 불가와 이유를 보인다 */
+  canRun: (action: Action) => boolean
+}): JSX.Element {
   const blocking = props.view.notices.filter((n) => n.blocking)
   // 버튼은 한 줄에 모으되, 누르면 어느 notice의 동작인지(code)도 함께 넘긴다(RUN_NOTICE_ACTION).
   const actions = blocking.flatMap((n) => n.actions.filter(isAction).map((a) => ({ code: n.code, a })))
@@ -27,11 +32,22 @@ export function FailedScreen(props: { view: CaseView; onAction: (noticeCode: str
         <p className="state-body">지금까지 끝난 작업은 저장돼 있어요. 다시 시도하면 멈춘 곳부터 이어서 할게요.</p>
         {actions.length > 0 && (
           <div className="state-actions">
-            {actions.map(({ code, a }) => (
-              <button key={`${code}-${a}`} type="button" className="rs-btn pri" onClick={() => props.onAction(code, a)}>
-                {ACTION_LABELS[a]}
-              </button>
-            ))}
+            {actions.map(({ code, a }) =>
+              props.canRun(a) ? (
+                <button key={`${code}-${a}`} type="button" className="rs-btn pri" onClick={() => props.onAction(code, a)}>
+                  {ACTION_LABELS[a]}
+                </button>
+              ) : (
+                <span key={`${code}-${a}`} className="res-action-off">
+                  <button type="button" className="rs-btn sec" disabled aria-describedby={`off-${code}-${a}`}>
+                    {ACTION_LABELS[a]}
+                  </button>
+                  <span id={`off-${code}-${a}`} className="res-off-why">
+                    아직 이 화면에서 할 수 없어요
+                  </span>
+                </span>
+              ),
+            )}
           </div>
         )}
       </section>

@@ -35,10 +35,12 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
-  // 시각은 보기 좋은 모양으로. 위치는 지도 없이 초안 행만 있다
-  expect(text()).toContain('2026-08-24 18:05:12')
+  // 신고 양식 순서. 발생 일시는 일자·시간으로 나눈다. 위치는 지도 없이 값·검색어만 있다
+  const labels = [...container.querySelectorAll('.res-item-k')].map((h) => h.textContent)
+  expect(labels).toEqual(['유형', '동영상', '위치 선택', '제목', '신고 내용', '차량 번호', '발생 일자', '발생 시간'])
+  expect(text()).toContain('2026-08-24')
+  expect(text()).toContain('18:05:12')
   expect(text()).not.toContain('T18:05')
-  expect(text()).toContain('발생 장소')
   fireEvent.click(getByText('어떻게 정했는지'))
   expect(text()).toContain('어떻게 정했는지')
   fireEvent.click(container.querySelector('.sub-back')!)
@@ -161,14 +163,15 @@ it('번호판은 자세히 보기에서 읽은 값을 채운 채 고치고, 결�
   expect(text()).toContain('사용자 확인됨')
 })
 
-it('복사 버튼은 붙여넣을 칸에만 있다', () => {
+it('복사 버튼은 붙여넣을 칸과 위치 검색어에만 있다', () => {
   const { wait, getByText, container } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  const rows = [...container.querySelectorAll('.res-row')]
-  const withCopy = rows.filter((r) => r.textContent!.includes('복사')).map((r) => r.querySelector('.res-row-k')!.textContent)
-  expect(withCopy).toEqual(['차량 번호', '위반 내용'])
+  const items = [...container.querySelectorAll('.res-item')]
+  const withCopy = items.filter((r) => r.querySelector('button[aria-label$="복사"]')).map((r) => r.querySelector('.res-item-k')!.textContent)
+  // 붙여넣을 것(신고 내용·차량 번호)과 위치 검색어만 복사한다. 직접 고를 칸에는 복사 버튼이 없다
+  expect(withCopy).toEqual(['위치 선택', '신고 내용', '차량 번호'])
 })
 
 it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
@@ -305,4 +308,79 @@ it('위반 미관찰: 1순위 카드는 신고자료 기준이 아니라 「먼�
   wait()
   expect(text()).toContain('먼저 확인한 장면')
   expect(text()).not.toContain('지금 신고자료 기준')
+})
+
+it('후보 A → B: A의 번호판·일시·장소·내용·검색어·영상·수정값이 B의 자료로 남지 않는다', () => {
+  const { wait, getByText, getAllByText, container, text } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  // A에서 번호판을 고쳐 둔다
+  fireEvent.click(getByText('자세히 보기'))
+  fireEvent.click(getByText('번호 수정'))
+  fireEvent.change(container.querySelector('.plate-input')!, { target: { value: '12가3457' } })
+  fireEvent.click(getByText('저장'))
+  fireEvent.click(container.querySelector('.sub-back')!)
+  // B(2번)로 바꾼다
+  fireEvent.click(getByText('다른 후보 영상 2'))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  wait()
+  expect(container.querySelector('.rs.result')).not.toBeNull()
+  for (const a of ['12가3456', '12가3457', '2026-08-24', '18:05:12', '상무중앙로', '광주 상무지구', '흰색 SUV가 편도', '교통위반', '영상 파일을 내려받는']) {
+    expect(text()).not.toContain(a)
+  }
+  // 값은 모두 알 수 없음, 복사·이동·다운로드는 열리지 않는다
+  expect(text()).toContain('신고자료를 완성하지 못했어요')
+  expect(text()).toContain('신고용 영상이 아직 없어요')
+  expect(container.querySelectorAll('button[aria-label$="복사"]')).toHaveLength(0)
+  expect(text()).not.toContain('안전신문고로 이동')
+  expect((getByText('신고용 영상 다운로드').closest('button') as HTMLButtonElement).disabled).toBe(true)
+  // 사건 전체 값(기억 단서)은 그대로, 기준 후보는 2번
+  fireEvent.click(getByText('다른 후보 영상 2'))
+  expect(container.querySelector('.hint-recall')!.textContent).toContain('흰색 SUV')
+  expect(container.querySelector('.cand.sel .cnum')!.textContent).toBe('2')
+})
+
+it('후보를 바꾸는 중에 이전 진행의 남은 타이머가 와도 새 후보 화면을 덮지 않는다', () => {
+  const { wait, getByText, getAllByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  act(() => vi.advanceTimersByTime(1_300)) // 진행 중
+  fireEvent.click(getByText('새 신고'))
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File([''], 'b.mp4')] } })
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  fireEvent.click(getByText('다른 후보 영상 2'))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[1]) // 3번
+  wait()
+  fireEvent.click(getByText('다른 후보 영상 2'))
+  expect(container.querySelector('.cand.sel .cnum')!.textContent).toBe('3')
+})
+
+it('「번호판 직접 입력」 notice는 번호판 고치는 칸을 바로 열고, 고친 값은 화면에서만 바뀐 것이라 알린다', () => {
+  const { wait, getByText, container, text } = start('plateUnread')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  fireEvent.click(getByText('번호판 직접 입력'))
+  const input = container.querySelector('.plate-input') as HTMLInputElement
+  expect(document.activeElement).toBe(input)
+  fireEvent.change(input, { target: { value: '34나5678' } })
+  fireEvent.submit(input.form!)
+  expect(text()).toContain('서버에는 아직 저장되지 않아요')
+  fireEvent.click(container.querySelector('.sub-back')!)
+  expect(container.querySelector('.res-plate-v')!.textContent).toBe('34나5678')
+  expect(text()).toContain('서버에는 아직 저장되지 않아요')
+})
+
+it('실제 데이터의 시각 notice: 연결 안 된 「시각 직접 입력」「시각 확인하기」는 사용 불가와 이유를 보이고, 제출은 막지 않는다', () => {
+  const { wait, getByText, getAllByText } = start('timeReview')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect((getByText('시각 직접 입력').closest('button') as HTMLButtonElement).disabled).toBe(true)
+  expect((getByText('시각 확인하기').closest('button') as HTMLButtonElement).disabled).toBe(true)
+  expect(getAllByText('아직 이 화면에서 할 수 없어요')).toHaveLength(2)
+  expect((getByText('안전신문고로 이동').closest('button') as HTMLButtonElement).disabled).toBe(false)
 })

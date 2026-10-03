@@ -11,9 +11,13 @@ import { EvidenceScreen } from './EvidenceScreen'
 // 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
 function SubPage(props: { title: string; onBack: () => void; children: ReactNode; className?: string }): JSX.Element {
   const head = useRef<HTMLHeadingElement>(null)
-  useEffect(() => head.current?.focus({ preventScroll: true }), [])
+  const root = useRef<HTMLDivElement>(null)
+  // 안의 입력칸이 이미 포커스를 받았으면(번호판 직접 입력으로 연 경우) 빼앗지 않는다.
+  useEffect(() => {
+    if (!root.current?.contains(document.activeElement)) head.current?.focus({ preventScroll: true })
+  }, [])
   return (
-    <div className={`rs rs-screen sub${props.className ? ` ${props.className}` : ''}`}>
+    <div ref={root} className={`rs rs-screen sub${props.className ? ` ${props.className}` : ''}`}>
       <div className="sub-head">
         <button type="button" className="sub-back" onClick={props.onBack} aria-label="뒤로">
           <ChevronLeft size={22} strokeWidth={2} aria-hidden />
@@ -72,10 +76,14 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 export function PlateCheck(props: {
   view: CaseView
   aiValue: string | null
+  /** 「번호판 직접 입력」 notice 동작으로 열면 바로 고치는 칸을 연다 */
+  startEditing?: boolean
   onBack: () => void
   onEdit: (plate: string) => void
 }): JSX.Element {
-  const [editing, setEditing] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(() =>
+    props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
+  )
   const editButton = useRef<HTMLButtonElement>(null)
   const refocus = useRef(false)
   useEffect(() => {
@@ -127,9 +135,12 @@ export function PlateCheck(props: {
                   {src && <span className="res-src">{src}</span>}
                 </div>
                 {edited && (
-                  <p className="plate-ai">
-                    AI가 읽은 값 <b>{props.aiValue ?? '알 수 없음'}</b>
-                  </p>
+                  <>
+                    <p className="plate-ai">
+                      AI가 읽은 값 <b>{props.aiValue ?? '알 수 없음'}</b>
+                    </p>
+                    <p className="plate-local">이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.</p>
+                  </>
                 )}
                 <button
                   type="button"
