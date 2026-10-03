@@ -47,7 +47,7 @@
 | Timing D 후보 | 2 — RD-10(단 pre-deploy 전 필수) · RD-14 |
 | 다른 Timing group 안의 A 후보 sub-decision | 없음 |
 | External Input | **7** — EI-01~EI-07 |
-| Sub-decision에서 내린 비-Decision | 6 — Follow-up 3 · Trigger 2 · Experiment 1 ([목록](#sub-decision에서-내린-항목)) |
+| Sub-decision에서 내린 비-Decision | 6 — Follow-up 3 · Trigger 3 ([목록](#sub-decision에서-내린-항목)) |
 
 | ID | Decision Group | Owner | Timing | Source candidates |
 | --- | --- | --- | --- | --- |
@@ -1029,8 +1029,9 @@ P2/P3 결과를 근거로 **Worker concurrency 증가 · EC2 사양 상향 · di
 - **Issue needed:** LATER — Experiment Issue(workflow §7)
 - **Research needed:** §4 단계 — CPU-bound(ffmpeg/OCR) vs I/O-bound(provider) scaling · MySQL claim contention
 - **Pre-implementation spike:** 아니오
-- **Experiment:** 예 — P2. P2 이후 P3(30분~1시간) 실행 여부는 P2 결과를 보고 Experiment Issue로 정한다(workflow §7 · §9) *(이전 RD-15e)*
+- **Experiment:** 예 — P2. P3(30분~1시간)를 실제로 수행하면 그 측정값도 Experiment다
 - **ADR 후보:** 결과에 따라 (Object Storage · RDS · 전용 Queue 도입 시)
+- **Trigger:** P2 결과를 Tech/Ops 가정과 대조해 장시간 workload가 여전히 중요한 미확인 변수이면 P3 plan을 별도 Experiment Issue로 연다([P2 plan](./experiments/elice-runtime-capacity-smoke-plan.md) §12 · workflow §9) *(이전 RD-15e)*
 
 ---
 
@@ -1437,7 +1438,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | RD-05g | HTTP API Contract 문서 위치 · Status 경로 | Follow-up | RD-05 Follow-up |
 | RD-09e | Object Storage 검토를 여는 시점 | Trigger | RD-09 Trigger — 선택 자체는 RD-15d |
 | RD-14a | 외부 공개 endpoint 요구 발생 여부 · 시점 | Trigger | RD-14 Trigger |
-| RD-15e | P2 이후 P3 실행 여부 | Experiment | RD-15 Experiment (workflow §9) |
+| RD-15e | P2 결과에 따라 P3 추가 수행 여부를 판단하는 조건 | Trigger | RD-15 Trigger — P2 · P3 측정값 자체는 RD-15 Experiment |
 
 ### 다른 모듈 소유 (Register에서 다루지 않음)
 
@@ -1458,7 +1459,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | Tech Spec §18 「UsageRecord persistence shape」 · 「heartbeat persistence 방식」 | RD-01g · RD-01h |
 | Ops §23 「Dockerfile/Compose」 · 「MySQL volume/backup」 · 「immutable release」 · 「rollback」 · 「post-deploy health/smoke」 · 「OIDC+SSM workflow 구현」 · 「artifact 전달」 + Runbook §8 | RD-12 (OIDC+SSM 방식 자체는 제외 — 이미 결정) |
 | Ops §23 「build-time/runtime 주입」 · Runbook §8 「runtime secret source」 | RD-07 |
-| Ops §23 「disk working-set guardrail」 · 「capacity/scaling threshold」 · 「P2 수행」 · 「P3 계획」 | RD-15 (P2 수행 · P3 실행 여부는 Experiment) |
+| Ops §23 「disk working-set guardrail」 · 「capacity/scaling threshold」 · 「P2 수행」 · 「P3 계획」 | RD-15 (P2 수행은 Experiment · P3 추가 수행 여부는 Trigger) |
 | Ops §23 「Object Storage 사용 범위」 | RD-15d (P2 결과 확인은 RD-09 Trigger) |
 | Ops §23 「Managed asset retention」 · 「UsageRecord retention」 | RD-10 |
 | Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 | RD-11 |
@@ -1493,5 +1494,5 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | RD-02c · RD-04f · RD-05g | 각 group Follow-up | 결정 뒤 작업 |
 | RD-14a | RD-14 Trigger | 요구 발생 여부는 trigger |
 | RD-14b · c · d | RD-14a · b · c | 위 이동에 따른 재번호 |
-| RD-15e | RD-15 Experiment | 실행 여부는 실험 계획 |
+| RD-15e | RD-15 Trigger | P2 결과에 따라 P3를 여는 조건 |
 | RD-10b 괄호 「provider delete 지원 여부」 | EI-07 | 외부 사실 |
