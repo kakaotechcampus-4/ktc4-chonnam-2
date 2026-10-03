@@ -283,7 +283,7 @@ export function UploadScreen(props: {
                   {title}
                 </b>
                 {state === 'idle' && (
-                  <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각은 자동으로 읽어요.</span>
+                  <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각 정보도 확인해요.</span>
                 )}
                 {state === 'uploading' && (
                   // 칸 높이를 지키려고 업로드 중 파일 이름은 한 줄. 전체 이름은 완료 요약에 남는다.
@@ -291,7 +291,8 @@ export function UploadScreen(props: {
                     {names}
                   </span>
                 )}
-                {state === 'fail' && <span className="rs-drop-note">이 파일은 열 수 없어요. 다른 파일을 골라 주세요.</span>}
+                {/* 원인(형식·손상·네트워크)을 단정하지 않는다 — 화면은 알 수 없다(#224 recording 리뷰) */}
+                {state === 'fail' && <span className="rs-drop-note">파일을 올리지 못했어요. 다시 골라 주세요.</span>}
               </div>
             )}
             <button
@@ -333,8 +334,8 @@ export function UploadScreen(props: {
         )}
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">
-            열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')} — 지원하지 않는
-            형식이거나 손상된 파일이에요. 나머지 영상으로 찾아볼게요.
+            올리지 못했거나 열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')}. 나머지
+            영상으로 찾아볼게요.
           </p>
         )}
       </div>
