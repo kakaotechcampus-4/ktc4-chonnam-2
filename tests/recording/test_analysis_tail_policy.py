@@ -1,6 +1,7 @@
 """후행 packet 허용은 Search capability에만 한정한다."""
 from copy import deepcopy
 import logging
+import subprocess
 
 import pytest
 
@@ -46,6 +47,49 @@ def test_packet_byte_intervals(case):
         assert validate_tail(data, riff_end, 400, [0, 1]) == 1
     else:
         with pytest.raises(ValueError): validate_tail(data, riff_end, 400, [0, 1])
+
+
+@pytest.mark.parametrize("bad", ["inside_riff", "frame_after_error"])
+def test_internal_packet_is_not_a_tail_exception(bad):
+    from daesingo.recording.analysis_tail import validate_tail
+    data = evidence()
+    if bad == "inside_riff":
+        data["packets_and_frames"][-1]["pos"] = "190"
+    else:
+        data["packets_and_frames"] += [
+            dict(type="packet", pos="330", size="40", pts=2),
+            dict(type="frame", pkt_pos="330", pkt_size="40", best_effort_timestamp=2)]
+    with pytest.raises(ValueError):
+        validate_tail(data, 200, 400, [0, 1] if bad == "inside_riff" else [0, 1, 2])
+
+
+@pytest.mark.parametrize("tail_candidate", [False, True])
+def test_subprocess_failure_policy_is_platform_independent(media, tmp_path, monkeypatch, tail_candidate):
+    from daesingo.recording.analysis_tail import validate_tail
+    service, _, registered, ref, profile, engine, work = setup(media, tmp_path)
+    video = [s for s in registered.media_streams if s.media_type == "VIDEO"][0]
+    span = span_for(service, ref, video, 0, 1)
+    before, real_run, attempts, inspections = fingerprint(media), subprocess.run, [], []
+    def run(args, **kwargs):
+        if "-vf" in args:
+            attempts.append("-xerror" in args)
+            stderr = (b"No start code is found. Error submitting packet to decoder" if tail_candidate
+                      else b"synthetic encoder failure")
+            return subprocess.CompletedProcess(args, 1, stdout=b"", stderr=stderr)
+        return real_run(args, **kwargs)
+    def verify(*args):
+        inspections.append(True)
+        data = evidence()
+        data["packets_and_frames"][-1]["pos"] = "190"  # RIFF 내부 packet
+        return validate_tail(data, 200, 400, [0, 1], audit=args[-1])
+    monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setattr(engine, "_verify_tail", verify)
+    with service, pytest.raises(RecordingCapabilityError) as caught:
+        service.prepare_analysis_source(span, profile, timeline_ref=ref)
+    assert caught.value.code == ("UNSUPPORTED_MEDIA" if tail_candidate else "TEMPORARY_FAILURE")
+    assert attempts == [True] and inspections == ([True] if tail_candidate else [])
+    assert not service._local_analysis and not service._analysis_reuse
+    assert fingerprint(media) == before and not list(work.iterdir())
 
 
 @pytest.mark.parametrize("bad", [None, "interior", "missing", "flags", "size", "duplicate", "bframes"])
