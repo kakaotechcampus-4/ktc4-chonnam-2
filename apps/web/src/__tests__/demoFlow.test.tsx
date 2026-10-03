@@ -35,10 +35,10 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
-  // 시각은 보기 좋은 모양으로, 위치는 아직 구현하지 않아 결과 화면에 없다
+  // 시각은 보기 좋은 모양으로. 위치는 지도 없이 초안 행만 있다
   expect(text()).toContain('2026-08-24 18:05:12')
   expect(text()).not.toContain('T18:05')
-  expect(text()).not.toContain('발생 장소')
+  expect(text()).toContain('발생 장소')
   fireEvent.click(getByText('어떻게 정했는지 →'))
   expect(text()).toContain('어떻게 정했는지')
   fireEvent.click(container.querySelector('.back')!)
@@ -52,7 +52,8 @@ it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 �
   wait()
   expect(text()).toContain('신고자료를 완성하지 못했어요')
   expect(text()).toContain('번호판 판독에 실패했습니다')
-  expect((getByText('안전신문고로 이동') as HTMLButtonElement).disabled).toBe(true)
+  // package가 없으니 초안·제출 버튼은 없고, notice와 다시 시도만 있다
+  expect(text()).not.toContain('안전신문고로 이동')
   // 번호판 다시 읽기 → 번호판부터 다시 진행해 정상 결과로 끝난다
   fireEvent.click(getByText('번호판 다시 읽기'))
   expect(text()).toContain('경과 시간')

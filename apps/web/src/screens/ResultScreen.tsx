@@ -7,8 +7,9 @@ import { StatusBadge } from '../components/StatusBadge'
 // 값과 상태는 package.report_field_states를 그대로 쓴다(value-state-display.md §5-1).
 // 무엇이 잘 됐든 안 됐든 결과는 여기서 알린다 — 진행 화면은 멈추지 않는다.
 // 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다(#171 C, #172).
-// ponytail: 위치(지도·검색어 복사)는 아직 구현하지 못해 이 화면에서 뺀다. 구현되면 HIDDEN을 비운다.
-const HIDDEN = new Set(['location'])
+// 실패해도 package·evidence가 없을 수 있다(판독 실패·상황 응답 대기). 그래도 notice와
+// 다시 시도는 보여야 하므로, 요약은 항상 그리고 나머지는 있는 것만 그린다.
+// ponytail: 위치는 지도·검색어 복사 없이 초안 행만 둔다. 붙여넣을 칸이 아니라 직접 고른다.
 // 안전신문고 칸 중 붙여넣을 수 있는 것만 복사 버튼을 둔다. 나머지는 거기서 직접 고른다(core-user-flow §21).
 // 「제목」 칸은 report_fields에 아직 없다.
 const PASTE = new Set(['vehicle_number', 'violation_expression'])
@@ -23,13 +24,12 @@ export function ResultScreen(props: {
   const { view } = props
   const pkg = view.package
   const evidence = view.evidence
-  if (!pkg || !evidence) return <div className="panel panel-p">아직 신고자료가 없습니다.</div>
 
   // 요약 칩은 상태별 개수를 셀 뿐 판정하지 않는다.
   const counts = new Map<InfoState, number>()
-  const fields = Object.entries(pkg.report_fields).filter(([key]) => !HIDDEN.has(key))
-  for (const [key, s] of Object.entries(pkg.report_field_states)) {
-    if (!HIDDEN.has(key)) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
+  const fields = pkg ? Object.entries(pkg.report_fields) : []
+  for (const s of Object.values(pkg?.report_field_states ?? {})) {
+    counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
   }
   const others = view.candidates.filter((c) => !c.selected).length
   const ready = view.stage === 'READY' && !view.notices.some((n) => n.blocking)
@@ -65,92 +65,98 @@ export function ResultScreen(props: {
         </div>
       </section>
 
-      <section className="panel panel-p stack">
-        <div className="video-box">
-          <div className="video-main">
-            {noVideo ? (
-              <span>신고용 영상을 아직 만들지 못했어요</span>
-            ) : (
-              <>
-                <span className="video-play" aria-hidden>
-                  ▶
-                </span>
-                <span className="video-cap">신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요</span>
-              </>
+      {evidence && (
+        <section className="panel panel-p stack">
+          <div className="video-box">
+            <div className="video-main">
+              {noVideo ? (
+                <span>신고용 영상을 아직 만들지 못했어요</span>
+              ) : (
+                <>
+                  <span className="video-play" aria-hidden>
+                    ▶
+                  </span>
+                  <span className="video-cap">신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요</span>
+                </>
+              )}
+            </div>
+            {others > 0 && (
+              <button type="button" className="video-side" onClick={props.onCandidates}>
+                다른 후보 영상 {others} →
+              </button>
             )}
           </div>
-          {others > 0 && (
-            <button type="button" className="video-side" onClick={props.onCandidates}>
-              다른 후보 영상 {others} →
+          <div className="plate-row">
+            <span className="plate-img">{evidence.plate_display.value ?? '번호판 없음'}</span>
+            <span className="plate-meta">
+              <b>번호판</b>
+              <StatusBadge state={evidence.plate_display.info_state} />
+            </span>
+            <button type="button" className="btn sm" onClick={props.onPlate}>
+              자세히 보기
             </button>
-          )}
-        </div>
-        <div className="plate-row">
-          <span className="plate-img">{evidence.plate_display.value ?? '번호판 없음'}</span>
-          <span className="plate-meta">
-            <b>번호판</b>
-            <StatusBadge state={evidence.plate_display.info_state} />
-          </span>
-          <button type="button" className="btn sm" onClick={props.onPlate}>
-            자세히 보기
-          </button>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
-      <section className="panel panel-p">
-        <div className="sec-label">
-          안전신문고 신고서 초안
-          <button type="button" className="link-btn" onClick={props.onDetails}>
-            어떻게 정했는지 →
-          </button>
-        </div>
-        <div className="kv kv-rows">
-          {fields.map(([key, value]) => (
-            <div className="kv-row draft" key={key}>
-              <span className="kv-k">{reportFieldLabel(key)}</span>
-              <span className="kv-v">
-                <span className="kv-val">{value === null ? '알 수 없음' : formatValue(value)}</span>
-              </span>
-              {/* 오른쪽은 2줄 — 위에 상태, 아래에 동작. 줄마다 폭이 달라 들쭉날쭉하지 않게 한다 */}
-              <span className="draft-side">
-                {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
-                {PASTE.has(key) ? (
-                <button
-                  type="button"
-                  className="btn sm"
-                  disabled={value === null}
-                  onClick={() => value && navigator.clipboard?.writeText(formatValue(value))}
-                >
-                  복사
-                </button>
-              ) : (
-                <span className="pick-hint">안전신문고에서 직접 골라요</span>
-              )}
-              </span>
+      {pkg && (
+        <>
+          <section className="panel panel-p">
+            <div className="sec-label">
+              안전신문고 신고서 초안
+              <button type="button" className="link-btn" onClick={props.onDetails}>
+                어떻게 정했는지 →
+              </button>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="btnrow center">
-        {pkg.capabilities.includes('COPY_FIELDS') && (
-          // 전체 복사는 붙여넣을 칸만, 칸 이름을 붙여 복사한다(§21)
-          <button
-            type="button"
-            className="btn"
-            disabled={!ready || !pasteText}
-            onClick={() => navigator.clipboard?.writeText(pasteText)}
-          >
-            붙여넣을 내용 전체 복사
-          </button>
-        )}
-        {pkg.capabilities.includes('OPEN_DESTINATION') && (
-          <button type="button" className="btn btn-blue" disabled={!ready}>
-            안전신문고로 이동
-          </button>
-        )}
-      </div>
-      {!ready && <p className="kv-src center-text">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
+            <div className="kv kv-rows">
+              {fields.map(([key, value]) => (
+                <div className="kv-row draft" key={key}>
+                  <span className="kv-k">{reportFieldLabel(key)}</span>
+                  <span className="kv-v">
+                    <span className="kv-val">{value === null ? '알 수 없음' : formatValue(value)}</span>
+                  </span>
+                  {/* 오른쪽은 2줄 — 위에 상태, 아래에 동작. 줄마다 폭이 달라 들쭉날쭉하지 않게 한다 */}
+                  <span className="draft-side">
+                    {pkg.report_field_states[key] && <StatusBadge state={pkg.report_field_states[key].info_state} />}
+                    {PASTE.has(key) ? (
+                    <button
+                      type="button"
+                      className="btn sm"
+                      disabled={value === null}
+                      onClick={() => value && navigator.clipboard?.writeText(formatValue(value))}
+                    >
+                      복사
+                    </button>
+                  ) : (
+                    <span className="pick-hint">안전신문고에서 직접 골라요</span>
+                  )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+    
+          <div className="btnrow center">
+            {pkg.capabilities.includes('COPY_FIELDS') && (
+              // 전체 복사는 붙여넣을 칸만, 칸 이름을 붙여 복사한다(§21)
+              <button
+                type="button"
+                className="btn"
+                disabled={!ready || !pasteText}
+                onClick={() => navigator.clipboard?.writeText(pasteText)}
+              >
+                붙여넣을 내용 전체 복사
+              </button>
+            )}
+            {pkg.capabilities.includes('OPEN_DESTINATION') && (
+              <button type="button" className="btn btn-blue" disabled={!ready}>
+                안전신문고로 이동
+              </button>
+            )}
+          </div>
+          {!ready && <p className="kv-src center-text">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
+      </>
+      )}
 
       <p className="disclaimer">
         대신고는 신고를 <b>대신 접수하지 않습니다.</b> 자료를 받아 안전신문고에서 내용을 다시 확인하고 직접

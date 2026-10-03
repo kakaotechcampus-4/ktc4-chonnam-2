@@ -88,7 +88,11 @@ function withoutPlate(view: CaseView, notices: Notice[]): CaseView {
   }
 }
 // 번호판 판독 실행 실패(#172 D) — blocking notice. 이 상태로는 제출 단계로 넘기지 않는다.
-const PLATE_FAILED_RESULT = withoutPlate(RESULT, [fixtureNotice('readout.plate_read_failed')])
+// 실제 CaseView는 evidence만 있고 package가 없다(#224 case 확인).
+const PLATE_FAILED_RESULT: CaseView = {
+  ...withoutPlate(RESULT, [fixtureNotice('readout.plate_read_failed')]),
+  package: null,
+}
 // 번호판을 읽었지만 확정하지 못함(#172 D-3) — 경고만 달고 제출은 막지 않는다.
 const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [
   { code: 'evidence.plate_abstained', severity: 'WARN', blocking: false, message_key: 'notice.plate_abstained', actions: [] },
