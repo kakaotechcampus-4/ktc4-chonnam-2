@@ -91,14 +91,16 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   expect(text()).toContain('신고자료가 준비됐어요')
 })
 
-it('다른 후보: 지금 기준 후보는 빼고 보여 주고, 고르면 다시 준비한다', () => {
-  const { wait, getByText, text, container } = start('main')
+it('다른 후보: 기준 후보를 같이 놓되 버튼은 다른 후보에만 달고, 고르면 다시 준비한다', () => {
+  const { wait, getByText, getAllByText, text, container } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   fireEvent.click(getByText('다른 후보 영상 2 →'))
-  expect(container.querySelectorAll('.cand')).toHaveLength(2)
-  expect(text()).not.toContain('지금 신고자료 기준')
+  expect(container.querySelectorAll('.cand')).toHaveLength(3)
+  expect(text()).toContain('지금 신고자료 기준')
+  expect(container.querySelector('.hint-recall')).not.toBeNull()
+  expect(getAllByText('이 장면으로 다시 준비')).toHaveLength(2)
   fireEvent.click(container.querySelector('.cand-col button')!)
   expect(text()).toContain('경과 시간')
 })
@@ -206,9 +208,10 @@ it('다른 후보를 고르면 「새 후보 기준으로」 다시 준비한다
 })
 
 it('위반 미관찰: 다른 후보를 버튼 없이 바로 펼쳐 둔다', () => {
-  const { wait, getByText, container } = start('notObserved')
+  const { wait, getByText, getAllByText, container } = start('notObserved')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
-  expect(container.querySelectorAll('.cand')).toHaveLength(2)
+  expect(container.querySelectorAll('.cand')).toHaveLength(3)
+  expect(getAllByText('이 장면으로 다시 준비')).toHaveLength(2)
 })

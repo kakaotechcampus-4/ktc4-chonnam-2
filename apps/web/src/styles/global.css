@@ -323,10 +323,6 @@ button.thumb { cursor: pointer; }
 .btn-blue:disabled { background: var(--panel-soft); border-color: var(--border); color: #98a2b3; }
 .disclaimer { margin: 0; padding: 12px 16px; border-radius: var(--R); background: var(--blue-soft); border: 1px solid var(--blue-bd); font-size: 14px; color: var(--ink-2); }
 
-.cand-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.cand-col { display: flex; flex-direction: column; gap: 8px; }
-.cand-col .btnrow .btn { flex: 1; }
-
 .demo-pick { justify-self: end; }
 .pick-hint { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .plate-input { flex: 1; font-size: 20px; font-weight: 800; letter-spacing: .04em; }

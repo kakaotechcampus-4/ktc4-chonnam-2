@@ -1,7 +1,7 @@
 import { useState, type JSX, type ReactNode } from 'react'
 import type { CaseView } from '../contracts/caseView'
-import { CandidateCard } from '../components/CandidateCard'
 import { DisplayRow } from '../components/DisplayRow'
+import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
 
 // Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
@@ -19,38 +19,16 @@ function SubPage(props: { title: string; onBack: () => void; children: ReactNode
   )
 }
 
-// 지금 신고자료 기준 후보는 빼고 다른 후보만 나란히 놓는다. 번호는 candidates[] 안의
-// 자리라 시간축 마커 번호와 같다. 고르면 그 후보로 신고자료를 새로 준비한다
-// (core-user-flow §8-1) — 실제 전송은 #106 command가 생기면 붙는다.
-export function OtherCandidateGrid(props: { view: CaseView; onSelect: (candidateId: string) => void }): JSX.Element {
-  const others = props.view.candidates
-    .map((c, i) => ({ c, ordinal: i + 1 }))
-    .filter(({ c }) => !c.selected)
-  return (
-    <div className="cand-grid">
-      {others.map(({ c, ordinal }) => (
-        <div key={c.candidate_id} className="cand-col">
-          <CandidateCard candidate={c} ordinal={ordinal} />
-          <button type="button" className="btn sm pri" onClick={() => props.onSelect(c.candidate_id)}>
-            이 장면으로 다시 준비
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// 03_Sub_Candidate_Video
+// 03_Sub_Candidate_Video — 기준 후보와 다른 후보를 나란히 두고, 고르면 그 후보로
+// 신고자료를 새로 준비한다(core-user-flow §8-1). 그리드·기억 단서는 CandidatesScreen 것을 쓴다.
 export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
 }): JSX.Element {
-  const count = props.view.candidates.filter((c) => !c.selected).length
   return (
     <SubPage title="다른 후보" onBack={props.onBack}>
-      <h2 className="panel-t">다른 후보 {count}개</h2>
-      <OtherCandidateGrid view={props.view} onSelect={props.onSelect} />
+      <CandidatesScreen view={props.view} onSelect={props.onSelect} />
     </SubPage>
   )
 }

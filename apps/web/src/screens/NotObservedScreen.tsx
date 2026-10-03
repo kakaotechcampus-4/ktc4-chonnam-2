@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { noticeMessage } from '../contracts/labels'
-import { OtherCandidateGrid } from './SubScreens'
+import { CandidatesScreen } from './CandidatesScreen'
 
 // 음성 결과(#168 [A]) — 가장 유력한 후보에서 위반이 관찰되지 않았다. 결과 화면의
 // 변형이라 값 칸은 그리지 않는다. 다음 후보를 자동으로 확인하지 않고, 남은 후보를
@@ -19,10 +19,7 @@ export function NotObservedScreen(props: { view: CaseView; onSelect?: (candidate
         </p>
       </section>
       {others > 0 && props.onSelect && (
-        <section className="stack">
-          <h2 className="panel-t">다른 후보 {others}개</h2>
-          <OtherCandidateGrid view={props.view} onSelect={props.onSelect} />
-        </section>
+        <CandidatesScreen view={props.view} onSelect={props.onSelect} />
       )}
     </div>
   )
