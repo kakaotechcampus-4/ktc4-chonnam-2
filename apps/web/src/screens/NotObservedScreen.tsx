@@ -7,8 +7,8 @@ import { CandidatesScreen } from './CandidatesScreen'
 // 변형이라 값 칸은 그리지 않는다. 다음 후보를 자동으로 확인하지 않고, 남은 후보를
 // 바로 펼쳐 사용자가 고르게 한다. onSelect가 없으면(개발용 화면) 후보를 펼치지 않는다.
 //
-// restyled면 위쪽 안내 영역에만 새 모양(refresh.css .rs)을 입힌다. 아래 후보 그리드는 다른 후보
-// 화면과 같은 부품이라 협의가 끝날 때까지 기존 모양 그대로 둔다.
+// restyled면 새 모양(refresh.css .rs)을 입힌다 — 아래 후보 그리드도 다른 후보 화면과 같은 모양이다.
+// 이 화면에는 신고자료가 없으므로 1순위 카드 태그는 「지금 신고자료 기준」 대신 「먼저 확인한 장면」이다.
 export function NotObservedScreen(props: {
   view: CaseView
   onSelect?: (candidateId: string) => void
@@ -30,7 +30,9 @@ export function NotObservedScreen(props: {
         </section>
       </div>
       {others > 0 && props.onSelect && (
-        <CandidatesScreen view={props.view} onSelect={props.onSelect} />
+        <div className={r ? 'rs notobs-cands' : undefined}>
+          <CandidatesScreen view={props.view} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" />
+        </div>
       )}
     </div>
   )

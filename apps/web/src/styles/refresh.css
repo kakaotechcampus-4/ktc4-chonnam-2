@@ -2,8 +2,8 @@
    대신고 — refresh.css
    레퍼런스(Apple MacBook Air · Creative Marketing AI · Opal) 기준의 새 모양.
    작업 대상 화면에만 붙는다 — 모든 규칙은 `.rs`(화면 본문)·`.rs-page`(페이지
-   바탕)·`.rs-header`(공통 헤더) 안에서만 산다. 결과·다른 후보·번호판 확인·
-   자세히 보기 화면은 헤더만 바뀌고 본문은 global.css 그대로다.
+   바탕)·`.rs-header`(공통 헤더) 안에서만 산다. 개발용 화면(?dev)은 .rs가 없어
+   global.css 그대로다.
 
    글꼴은 'Pretendard Variable'로 따로 불러와 이 범위에서만 쓴다 — global.css의
    'Pretendard'와 이름이 달라서 제외 화면의 글꼴은 바뀌지 않는다.
@@ -475,10 +475,192 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .rs .btn:active:not(:disabled) { transform: scale(.98); }
 .rs .btn.cta { align-self: flex-end; justify-self: end; min-width: 0; }
 
+/* ============================================================
+   신고자료 결과 · 하위 화면(다른 후보 · 번호판 확인 · 어떻게 정했는지) · 위반 미관찰 후보
+   큰 상태 문장 → 영상과 번호판 → 신고서 초안 → 안전신문고 연결 순서로 크기와 여백만으로 위계를
+   나눈다. 공용 부품(후보 카드·값 행·상태 배지)은 개발용 화면에서도 쓰므로 .rs 안에서만 바꾼다.
+   ============================================================ */
+.web-main:has(> .rs.result), .web-main:has(> .rs.sub) { max-width: 1160px; }
+.rs .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.rs .rs-btn.sm { min-height: 36px; padding: 0 16px; font-size: 14px; }
+
+/* 상태 배지 — 출처·사용자 확인은 검정 점, AI 추정은 회색 점, 확인 필요만 주황, 알 수 없음은 빈 원 */
+.rs .badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border: 1px solid transparent; border-radius: 980px; background: var(--rs-fill);
+  font-size: 13px; font-weight: 600; line-height: 1; color: var(--rs-ink); white-space: nowrap;
+}
+.rs .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rs-ink); }
+.rs .badge-estimated { color: var(--rs-sub); }
+.rs .badge-estimated .dot { background: var(--rs-line-strong); }
+.rs .badge-attention { background: var(--orange-soft); color: var(--orange-ink); }
+.rs .badge-attention .dot { background: var(--orange); }
+.rs .badge-unknown { background: #fff; border-color: var(--rs-line); color: var(--rs-sub); }
+.rs .badge-unknown .dot { background: #fff; box-shadow: inset 0 0 0 1.5px var(--rs-line-strong); }
+
+/* ── 결과 ── */
+.rs.result { width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 24px; display: flex; flex-direction: column; gap: 44px; }
+.res-head { display: flex; flex-direction: column; gap: 12px; }
+.res-head .state-context { margin: 0; }
+.res-title { margin: 0; font-size: clamp(32px, 3.4vw, 44px); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }
+.res-counts { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 4px 0 0; padding: 0; font-size: 15px; color: var(--rs-sub); }
+.res-count { display: inline-flex; align-items: center; gap: 7px; }
+.res-count b { font-weight: 650; color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.res-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rs-line-strong); }
+.res-count.is-info_needs_review .res-dot { background: var(--orange); }
+.res-count.is-info_unknown .res-dot { background: #fff; box-shadow: inset 0 0 0 1.5px var(--rs-line-strong); }
+.res-count.is-info_source_verified .res-dot, .res-count.is-info_user_confirmed .res-dot { background: var(--rs-ink); }
+.res-notices { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 8px 0 0; padding: 0; }
+.res-notice { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: var(--rs-fill); font-size: 16px; line-height: 1.5; }
+.res-notice > svg { flex: 0 0 auto; color: var(--rs-sub); }
+.res-notice-text { flex: 1; min-width: 0; }
+.res-notice.is-review { background: var(--orange-soft); }
+.res-notice.is-review > svg { color: var(--orange); }
+.res-notice.is-fail { background: var(--red-soft); }
+.res-notice.is-fail > svg { color: var(--red); }
+.res-notice.is-fail .res-notice-text { font-weight: 600; color: var(--red); }
+
+/* 영상(왼쪽)과 번호판(오른쪽). 영상은 아직 재생할 수 없는 자리라 화면 절반 남짓만 써서
+   신고서 초안이 첫 화면 가까이 올라오게 한다 */
+.res-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr); gap: 48px; align-items: start; }
+.res-frame {
+  aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  border-radius: 18px; background: var(--rs-fill); color: var(--rs-sub); font-size: 15px;
+}
+.res-frame-cap { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; font-size: 14px; color: var(--rs-sub); }
+.res-plate { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.res-k { margin: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.res-plate-v { margin: 0; font-size: 52px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.res-plate-v.is-none { font-size: 30px; font-weight: 600; color: var(--rs-sub); }
+.res-plate-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.res-src { font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-plate > .rs-btn { margin-top: 10px; }
+
+/* 신고서 초안 — 이름 / 값(바로 옆에 상태, 아래에 출처) / 복사 또는 안내 */
+.res-draft { padding-top: 32px; border-top: 1px solid var(--rs-line); }
+.res-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.res-sec-head h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.res-link {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px 2px; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink); cursor: pointer;
+}
+.res-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.res-row { display: grid; grid-template-columns: 140px minmax(0, 1fr) 190px; gap: 24px; align-items: start; padding: 18px 0; border-bottom: 1px solid #ececf0; }
+.res-row.is-review { margin: 0 -16px; padding: 18px 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
+.res-row-k { padding-top: 3px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.res-row-v { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.res-val-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.res-val { font-size: 18px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.res-val.is-none { font-weight: 500; color: var(--rs-sub); }
+.res-row-act { justify-self: end; padding-top: 1px; text-align: right; }
+.res-pick { display: inline-block; padding-top: 3px; font-size: 14px; color: var(--rs-sub); }
+
+/* 안전신문고 연결 — 접수가 아니라 이동이라는 안내를 버튼 바로 옆에 둔다 */
+.res-handoff {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 32px; align-items: center;
+  padding: 28px 32px; border-radius: 18px; background: var(--rs-fill);
+}
+.res-disclaimer { margin: 0; font-size: 15px; line-height: 1.65; color: var(--rs-ink); }
+.res-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.res-block-note { grid-column: 1 / -1; margin: 0; font-size: 14px; color: var(--rs-sub); }
+/* 복사 결과 — 버튼 아래 여백에 잠깐 뜬다(자리를 차지하지 않음) */
+.res-toast { position: absolute; right: 32px; bottom: 6px; margin: 0; font-size: 14px; }
+.res-toast span { font-weight: 600; color: var(--rs-ink); animation: rs-fade-in .2s var(--rs-ease) both; }
+
+/* ── 하위 화면 공통 ── */
+.rs.sub { width: 100%; max-width: 1120px; margin: 0 auto; padding: 40px 0 24px; display: flex; flex-direction: column; gap: 32px; }
+.sub-head { display: flex; align-items: center; gap: 14px; }
+.sub-back {
+  display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--rs-line); border-radius: 50%; background: #fff; color: var(--rs-ink); cursor: pointer;
+  transition: border-color .2s var(--rs-ease);
+}
+.sub-back:hover { border-color: var(--rs-ink); }
+.sub-title { margin: 0; font-size: 32px; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; }
+.sub-title:focus { outline: none; }
+
+/* 공용 값 행(DisplayRow) — 자세히 보기·근거 화면에서만 */
+.rs.sub .panel { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.rs.sub .panel-title { margin: 0 0 12px; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+.rs.sub .kv-rows { border-top: 1px solid var(--rs-line); }
+/* 상태 배지를 값 바로 옆에 — 값 칸을 내용 폭만큼만 잡는다 */
+.rs.sub .kv-row { grid-template-columns: 120px fit-content(560px) auto; justify-content: start; gap: 20px; padding: 16px 0; border-bottom: 1px solid #ececf0; }
+.rs.sub .kv-row.est { margin: 0; padding: 16px 0; background: none; border-bottom-color: #ececf0; }
+.rs.sub .kv-row.act { margin: 0 -16px; padding: 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
+.rs.sub .kv-k { padding-top: 2px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.rs.sub .kv-val { font-size: 18px; font-weight: 600; line-height: 1.45; color: var(--rs-ink); }
+.rs.sub .kv-val.unk { font-weight: 500; color: var(--rs-sub); }
+.rs.sub .kv-src { margin-top: 4px; font-size: 14px; font-weight: 400; color: var(--rs-sub); }
+.rs.sub .panel > .kv-src { margin-top: 14px !important; font-size: 15px; color: var(--rs-ink); }
+
+/* 어떻게 정했는지 — 왼쪽 기준 장면, 오른쪽 그 장면에서 정한 값 */
+.details-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 48px; align-items: start; }
+
+/* 번호판 확인 — 장면(넓게) | 확대 + 값·수정 */
+.plate-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.plate-side { display: flex; flex-direction: column; gap: 32px; }
+.plate-fig { margin: 0; }
+.plate-fig figcaption { margin-top: 12px; font-size: 14px; color: var(--rs-sub); }
+.plate-frame {
+  aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  border-radius: 18px; background: var(--rs-fill); color: var(--rs-sub); font-size: 15px;
+}
+.plate-frame.plate-crop { aspect-ratio: 3 / 1; border-radius: 14px; }
+.plate-value { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 24px; border-top: 1px solid var(--rs-line); }
+.plate-value > .rs-btn { margin-top: 10px; }
+.plate-ai { margin: 0; font-size: 15px; color: var(--rs-sub); }
+.plate-ai b { margin-left: 6px; font-weight: 600; color: var(--rs-ink); }
+.plate-form { display: flex; flex-direction: column; gap: 14px; align-self: stretch; }
+.plate-input {
+  width: 100%; height: 64px; padding: 0 18px; border: 1px solid var(--rs-ink); border-radius: 14px; background: #fff;
+  font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink);
+}
+.plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
+.plate-form-actions { display: flex; gap: 10px; }
+
+/* 후보 카드 · 기억 단서(다른 후보 · 위반 미관찰 · 어떻게 정했는지) */
+.rs .cands { gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.rs .cand-col { gap: 12px; }
+.rs .cand { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--rs-line); border-radius: 18px; background: #fff; box-shadow: none; }
+.rs .cand.sel { border-color: var(--rs-ink); box-shadow: inset 0 0 0 1px var(--rs-ink); }
+.rs .cand-th { border-bottom: 0; background: var(--rs-fill); }
+.rs .cand-th-note { font-size: 13px; font-weight: 500; color: var(--rs-sub); }
+.rs .cand-b { gap: 12px; padding: 18px 20px 20px; }
+.rs .cand-h { gap: 10px; }
+.rs .cnum { width: 26px; height: 26px; flex-basis: 26px; border: 1.5px solid var(--rs-line-strong); background: #fff; color: var(--rs-ink); font-family: inherit; font-size: 13px; font-weight: 700; }
+.rs .cand.sel .cnum { border-color: var(--rs-ink); background: var(--rs-ink); color: #fff; }
+.rs .cand-tc { font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+/* 기준 후보 표시는 미리보기 왼쪽 위 — 카드마다 본문 줄 위치가 같아 나란히 비교하기 쉽다 */
+.rs .cand { position: relative; }
+.rs .cand-tag { position: absolute; top: 12px; left: 12px; margin: 0; padding: 5px 11px; border: 0; background: var(--rs-ink); color: #fff; font-size: 12px; font-weight: 600; }
+.rs .cand-obs { min-height: 3em; font-size: 15px; font-weight: 500; line-height: 1.5; color: var(--rs-ink); }
+.rs .cand-meta { gap: 10px; padding-top: 14px; border-top-color: #ececf0; }
+.rs .cand-meta dt { font-size: 13px; font-weight: 500; color: var(--rs-sub); }
+.rs .cand-meta dd { font-size: 15px; font-weight: 600; color: var(--rs-ink); }
+.rs .cand .badge { align-self: flex-start; }
+.rs .cand-col > .btn {
+  min-height: 44px; border: 1px solid var(--rs-line); border-radius: 980px; background: #fff; box-shadow: none;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink);
+  transition: border-color .2s var(--rs-ease), background-color .2s var(--rs-ease), color .2s var(--rs-ease);
+}
+.rs .cand-col > .btn:hover { border-color: var(--rs-ink); background: var(--rs-ink); color: #fff; }
+.rs .hint-recall { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 24px; padding: 0; border: 0; border-radius: 0; background: none; }
+.rs .hint-recall .sec-label { margin: 0; padding: 0; border: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.rs .hint-chip { padding: 7px 14px; border: 0; background: var(--rs-fill); }
+.rs .hint-chip-k { font-size: 13px; font-weight: 500; color: var(--rs-sub); }
+.rs .hint-chip-v { font-size: 15px; font-weight: 600; color: var(--rs-ink); }
+.rs .hint-none { font-size: 15px; font-weight: 400; color: var(--rs-sub); }
+.rs.notobs-cands { margin-top: 8px; }
+.rs.notobs-cands .panel, .rs.cands-page .panel { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.rs.notobs-cands .panel-title, .rs.cands-page .panel-title { margin: 0 0 16px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.details-scene .cand-obs { min-height: 0; }
+
 /* 낮은 PC 화면(1280×800 등) — 진행 화면의 단계 목록 마지막 줄이 화면 아래끝에 걸리지 않게 위 여백과
    두 행 사이만 줄인다. 글자 크기는 그대로다 */
 @media (min-width: 641px) and (max-height: 860px) {
   .rs.flow { padding-top: 16px; row-gap: 20px; }
+  .rs.result { padding-top: 24px; gap: 32px; }
+  .rs.sub { padding-top: 24px; gap: 24px; }
 }
 
 @media (max-width: 640px) {

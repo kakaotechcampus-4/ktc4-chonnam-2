@@ -15,8 +15,9 @@ import '../styles/candidates.css'
 // 번호를 그 값으로 바꾼다.
 //
 // `selected`는 사용자가 고른 후보가 아니라 case가 자동 선택한 현재 초안의
-// 기준 후보다(§8-1, #122). 태그 문구도 그 뜻으로 적는다.
-export function CandidateCard(props: { candidate: Candidate; ordinal: number }): JSX.Element {
+// 기준 후보다(§8-1, #122). 태그 문구도 그 뜻으로 적는다. 신고자료가 없는 화면(위반 미관찰)은
+// selectedLabel로 그 뜻에 맞는 문구를 넘긴다.
+export function CandidateCard(props: { candidate: Candidate; ordinal: number; selectedLabel?: string }): JSX.Element {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
   return (
@@ -28,7 +29,7 @@ export function CandidateCard(props: { candidate: Candidate; ordinal: number }):
         <div className="cand-h">
           <span className="cnum">{props.ordinal}</span>
           <span className="cand-tc">{c.at === null ? '시각 미확정' : formatValue(c.at)}</span>
-          {c.selected && <span className="cand-tag">지금 신고자료 기준</span>}
+          {c.selected && <span className="cand-tag">{props.selectedLabel ?? '지금 신고자료 기준'}</span>}
         </div>
         {c.stale_revision && stale && <span className="badge badge-unknown sm">{stale}</span>}
         <p className="cand-obs">{c.observed}</p>

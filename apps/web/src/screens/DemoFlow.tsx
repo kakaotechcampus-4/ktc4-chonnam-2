@@ -257,6 +257,7 @@ export function DemoFlow(): JSX.Element {
   // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
   const start = (run: Run) => {
     setSubs([])
+    setReturnY([])
     setPlate(null)
     setMain({ kind: 'flow', run, frame: 0, startedAt: Date.now() })
   }
@@ -264,24 +265,30 @@ export function DemoFlow(): JSX.Element {
     setUploadLeaving(false)
     setMain({ kind: 'upload', state: 'idle' })
     setSubs([])
+    setReturnY([])
     setPlate(null)
     setFiles([])
     setSituation('')
   }
-  const open = (sub: Sub) => setSubs((s) => [...s, sub])
+  // 하위 화면은 맨 위에서 열고, 뒤로 오면 결과 화면을 보던 자리로 돌아간다.
+  const [returnY, setReturnY] = useState<number[]>([])
+  const open = (sub: Sub) => {
+    setReturnY((y) => [...y, window.scrollY])
+    setSubs((s) => [...s, sub])
+  }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withPlate(done.view, plate)
-  // 새 모양(refresh.css)을 입힌 화면만 페이지 바탕을 바꾼다. 결과·다른 후보·번호판 확인·
-  // 자세히 보기·위반 미관찰은 협의 뒤에 옮긴다.
-  const restyled = main.kind !== 'done' || done?.end === 'notFound' || done?.end === 'failed'
-  // 새 모양 화면으로 넘어가면 맨 위에서 시작한다 — 업로드 화면 아래쪽 버튼을 누른 스크롤
-  // 위치가 진행 화면에 그대로 남지 않게. 제외한 화면의 동작은 바꾸지 않는다.
-  const screenKey = main.kind === 'done' ? `done-${done?.end}` : main.kind
+  // 화면이 바뀌면 맨 위에서 시작한다 — 업로드 화면 아래쪽 버튼을 누른 스크롤 위치가 다음 화면에
+  // 그대로 남지 않게. 하위 화면에서 돌아올 때만 저장해 둔 자리로 간다.
+  const screenKey = main.kind === 'done' ? `done-${done?.end}-${subs.join('/')}` : main.kind
   useEffect(() => {
-    if (restyled && window.scrollY > 0) window.scrollTo(0, 0)
-  }, [screenKey, restyled])
+    const y = subs.length < returnY.length ? returnY[returnY.length - 1] : 0
+    if (subs.length < returnY.length) setReturnY((r) => r.slice(0, subs.length))
+    if (window.scrollY !== y) window.scrollTo(0, y)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
+  }, [screenKey])
   // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비한다.
   // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
   // ponytail: 시연은 기준 표시만 옮긴다 — evidence·초안 값은 원래 후보 것 그대로다.
@@ -301,7 +308,7 @@ export function DemoFlow(): JSX.Element {
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className={`web-main${restyled ? ' rs-page' : ''}`}>
+      <main className="web-main rs-page">
         {main.kind === 'upload' && (
           <>
             <UploadScreen
@@ -381,7 +388,14 @@ export function DemoFlow(): JSX.Element {
         )}
 
         {done && sub === 'candidates' && <CandidateCompare view={done.view} onBack={back} onSelect={reselect} />}
-        {doneView && sub === 'plate' && <PlateCheck view={doneView} onBack={back} onEdit={setPlate} />}
+        {doneView && sub === 'plate' && (
+          <PlateCheck
+            view={doneView}
+            aiValue={done.view.evidence?.plate_display.value ?? null}
+            onBack={back}
+            onEdit={setPlate}
+          />
+        )}
         {doneView && sub === 'details' && <DetailsCheck view={doneView} onBack={back} />}
       </main>
     </>

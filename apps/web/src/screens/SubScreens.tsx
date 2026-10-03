@@ -1,19 +1,27 @@
-import { useState, type JSX, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
+import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
-import { DisplayRow } from '../components/DisplayRow'
+import { sourceLabel } from '../contracts/labels'
+import { CandidateCard } from '../components/CandidateCard'
+import { StatusBadge } from '../components/StatusBadge'
 import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
 
 // Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
-function SubPage(props: { title: string; onBack: () => void; children: ReactNode }): JSX.Element {
+// 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
+function SubPage(props: { title: string; onBack: () => void; children: ReactNode; className?: string }): JSX.Element {
+  const head = useRef<HTMLHeadingElement>(null)
+  useEffect(() => head.current?.focus({ preventScroll: true }), [])
   return (
-    <div className="stack">
-      <h1 className="page-title sub-title">
-        <button type="button" className="back" onClick={props.onBack} aria-label="뒤로">
-          &lt;
+    <div className={`rs rs-screen sub${props.className ? ` ${props.className}` : ''}`}>
+      <div className="sub-head">
+        <button type="button" className="sub-back" onClick={props.onBack} aria-label="뒤로">
+          <ChevronLeft size={22} strokeWidth={2} aria-hidden />
         </button>
-        {props.title}
-      </h1>
+        <h1 className="sub-title" ref={head} tabIndex={-1}>
+          {props.title}
+        </h1>
+      </div>
       {props.children}
     </div>
   )
@@ -27,18 +35,28 @@ export function CandidateCompare(props: {
   onSelect: (candidateId: string) => void
 }): JSX.Element {
   return (
-    <SubPage title="다른 후보" onBack={props.onBack}>
+    <SubPage title="다른 후보" onBack={props.onBack} className="cands-page">
       <CandidatesScreen view={props.view} onSelect={props.onSelect} />
     </SubPage>
   )
 }
 
-// 03_Sub_Details_Check
+// 03_Sub_Details_Check — 왼쪽에 지금 신고자료의 기준 장면(후보 카드: AI가 본 내용·시각 출처),
+// 오른쪽에 그 장면에서 정한 값과 출처·상태를 나란히 둔다. 어느 장면에서 무엇을 정했는지 한 화면에서 본다.
 export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
+  const i = props.view.candidates.findIndex((c) => c.selected)
+  const basis = i >= 0 ? props.view.candidates[i] : null
   return (
-    <SubPage title="어떻게 정했는지" onBack={props.onBack}>
-      {/* 다른 후보는 결과 화면의 「다른 후보 영상」에서만 연다 */}
-      <EvidenceScreen view={props.view} hideOthers />
+    <SubPage title="어떻게 정했는지" onBack={props.onBack} className="details-page">
+      <div className={basis ? 'details-grid' : undefined}>
+        {basis && (
+          <aside className="details-scene">
+            <CandidateCard candidate={basis} ordinal={i + 1} />
+          </aside>
+        )}
+        {/* 다른 후보는 결과 화면의 「다른 후보 영상」에서만 연다 */}
+        <EvidenceScreen view={props.view} hideOthers />
+      </div>
     </SubPage>
   )
 }
@@ -47,66 +65,112 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 // 두 이미지는 계약상 FrameRef(evidence.preview_ref · plate_preview_ref)로만 와서 아직 그릴 수 없다 —
 // ref로 이미지를 가져오는 경로가 생기면(#47) 자리에 넣는다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
-export function PlateCheck(props: { view: CaseView; onBack: () => void; onEdit: (plate: string) => void }): JSX.Element {
+//   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
+//   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
+// aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
+// ponytail: 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
+export function PlateCheck(props: {
+  view: CaseView
+  aiValue: string | null
+  onBack: () => void
+  onEdit: (plate: string) => void
+}): JSX.Element {
   const [editing, setEditing] = useState<string | null>(null)
+  const editButton = useRef<HTMLButtonElement>(null)
+  const refocus = useRef(false)
+  useEffect(() => {
+    if (editing === null && refocus.current) {
+      refocus.current = false
+      editButton.current?.focus()
+    }
+  }, [editing])
+  const close = () => {
+    refocus.current = true
+    setEditing(null)
+  }
   const evidence = props.view.evidence
-  if (!evidence) return <SubPage title="번호판 확인" onBack={props.onBack}>번호판 정보가 없어요.</SubPage>
+  if (!evidence)
+    return (
+      <SubPage title="번호판 확인" onBack={props.onBack}>
+        <p className="state-body">번호판 정보가 없어요.</p>
+      </SubPage>
+    )
   const plate = evidence.plate_display
+  const src = sourceLabel(plate.source_label_key)
+  const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== plate.value
   return (
-    <SubPage title="번호판 확인" onBack={props.onBack}>
-      <div className="plate-frames">
-        <figure>
-          <div className="video-main">
-            <span className="video-cap">장면 이미지 준비 중</span>
+    <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
+      <div className="plate-grid">
+        <figure className="plate-fig plate-scene">
+          <div className="plate-frame">
+            <Film size={26} strokeWidth={1.5} aria-hidden />
+            <span>장면 이미지 준비 중</span>
           </div>
-          <figcaption className="kv-src">번호판을 읽은 장면</figcaption>
+          <figcaption>번호판을 읽은 장면</figcaption>
         </figure>
-        <figure>
-          <div className="video-main plate-crop">
-            <span className="video-cap">번호판 이미지 준비 중</span>
-          </div>
-          <figcaption className="kv-src">번호판 확대</figcaption>
-        </figure>
-      </div>
-      <div className="panel panel-p">
-        {editing === null ? (
-          <div className="plate-value-row">
-            <div className="kv kv-rows">
-              <DisplayRow
-                label="차량 번호"
-                value={plate.value}
-                infoState={plate.info_state}
-                sourceLabelKey={plate.source_label_key}
-              />
+        <div className="plate-side">
+          <figure className="plate-fig">
+            <div className="plate-frame plate-crop">
+              <span>번호판 이미지 준비 중</span>
             </div>
-            <button type="button" className="btn sm" onClick={() => setEditing(plate.value ?? '')}>
-              번호 수정
-            </button>
-          </div>
-        ) : (
-          <form
-            className="plate-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (editing.trim()) props.onEdit(editing.trim())
-              setEditing(null)
-            }}
-          >
-            <input
-              className="field plate-input"
-              aria-label="차량 번호"
-              autoFocus
-              value={editing}
-              onChange={(e) => setEditing(e.target.value)}
-            />
-            <button type="submit" className="btn pri" disabled={!editing.trim()}>
-              저장
-            </button>
-            <button type="button" className="btn" onClick={() => setEditing(null)}>
-              취소
-            </button>
-          </form>
-        )}
+            <figcaption>번호판 확대</figcaption>
+          </figure>
+          <section className="plate-value" aria-labelledby="plate-k">
+            <h2 className="res-k" id="plate-k">
+              차량 번호
+            </h2>
+            {editing === null ? (
+              <>
+                <p className={`res-plate-v${plate.value === null ? ' is-none' : ''}`}>{plate.value ?? '알 수 없음'}</p>
+                <div className="res-plate-meta">
+                  <StatusBadge state={plate.info_state} />
+                  {src && <span className="res-src">{src}</span>}
+                </div>
+                {edited && (
+                  <p className="plate-ai">
+                    AI가 읽은 값 <b>{props.aiValue ?? '알 수 없음'}</b>
+                  </p>
+                )}
+                <button
+                  type="button"
+                  ref={editButton}
+                  className="rs-btn sec"
+                  onClick={() => setEditing(plate.value ?? '')}
+                >
+                  번호 수정
+                </button>
+              </>
+            ) : (
+              <form
+                className="plate-form"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (editing.trim()) props.onEdit(editing.trim())
+                  close()
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') close()
+                }}
+              >
+                <input
+                  className="plate-input"
+                  aria-label="차량 번호"
+                  autoFocus
+                  value={editing}
+                  onChange={(e) => setEditing(e.target.value)}
+                />
+                <div className="plate-form-actions">
+                  <button type="submit" className="rs-btn pri" disabled={!editing.trim()}>
+                    저장
+                  </button>
+                  <button type="button" className="rs-btn sec" onClick={close}>
+                    취소
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
       </div>
     </SubPage>
   )
