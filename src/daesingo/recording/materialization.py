@@ -42,6 +42,10 @@ class MaterializedVideo:
     content: bytes
     duration_sec: float
     timeline_range: TimeRange
+    # 내부 연결 검증용 관측값. Canonical AnalysisSource에는 직렬화하지 않는다.
+    frames: tuple[tuple[Fraction, Fraction], ...] = ()
+    time_base: Fraction | None = None
+    video_size: tuple[int, int] | None = None
 
 
 def _millisecond_quantization(payload, base, frames):
@@ -237,7 +241,8 @@ class LocalAnalysisMaterializer:
                         raise RecordingCapabilityError("UNAVAILABLE", "변환 중 원본 변경을 감지했습니다")
                 shift = Fraction(str(span.timeline_range.start_sec)) - start
                 result = MaterializedVideo(content, duration, TimeRange(
-                    start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)))
+                    start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)),
+                    tuple(output_frames), output_base, (width, profile.height))
             # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
             if inspections is not None:
                 inspections.put(inspection_key, inspected)
