@@ -1,9 +1,15 @@
-from scripts.aihub_hybrid_candidates import ClipInput
-from scripts.aihub_hybrid_score import Truth
-from scripts.aihub_lrcn_candidates import Prediction, select
-from scripts.aihub_lrcn_prompt import classification_prompt
-from scripts.aihub_lrcn_score import score_event
-from tests.search.test_aihub_hybrid_score import make_result
+import pytest
+
+# scripts/aihub_* 는 uv 단독 실행 스크립트라 typer·pycocotools 가 프로젝트 의존성에 없다(CI 미설치).
+pytest.importorskip("typer")
+pytest.importorskip("pycocotools")
+
+from scripts.aihub_hybrid_candidates import ClipInput  # noqa: E402
+from scripts.aihub_hybrid_score import Truth  # noqa: E402
+from scripts.aihub_lrcn_candidates import Prediction, select  # noqa: E402
+from scripts.aihub_lrcn_prompt import classification_prompt  # noqa: E402
+from scripts.aihub_lrcn_score import score_event  # noqa: E402
+from tests.search.test_aihub_hybrid_score import make_result  # noqa: E402
 
 
 def test_selection_ignores_oracle_and_truth_and_limits_nonoverlapping_windows() -> None:

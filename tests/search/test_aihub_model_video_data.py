@@ -1,6 +1,11 @@
-from pathlib import Path
+import pytest
 
-from scripts.aihub_model_video_data import read_truth, sha256
+# scripts/aihub_* 는 uv 단독 실행 스크립트라 typer 가 프로젝트 의존성에 없다(CI 미설치).
+pytest.importorskip("typer")
+
+from pathlib import Path  # noqa: E402
+
+from scripts.aihub_model_video_data import read_truth, sha256  # noqa: E402
 
 
 def test_multiple_events_do_not_turn_onset_markers_into_intervals(

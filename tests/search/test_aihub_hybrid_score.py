@@ -1,7 +1,13 @@
-from daesingo.search.schemas import FineResponse
-from scripts.aihub_hybrid_candidates import Candidate
-from scripts.aihub_hybrid_fine import FineResult
-from scripts.aihub_hybrid_score import Truth, accepted, score_event
+import pytest
+
+# scripts/aihub_* 는 uv 단독 실행 스크립트라 typer·pycocotools 가 프로젝트 의존성에 없다(CI 미설치).
+pytest.importorskip("typer")
+pytest.importorskip("pycocotools")
+
+from daesingo.search.schemas import FineResponse  # noqa: E402
+from scripts.aihub_hybrid_candidates import Candidate  # noqa: E402
+from scripts.aihub_hybrid_fine import FineResult  # noqa: E402
+from scripts.aihub_hybrid_score import Truth, accepted, score_event  # noqa: E402
 
 
 def make_result(failure: str | None = None) -> FineResult:

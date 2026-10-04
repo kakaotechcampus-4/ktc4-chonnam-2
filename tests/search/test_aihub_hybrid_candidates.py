@@ -1,4 +1,10 @@
-from scripts.aihub_hybrid_candidates import (
+import pytest
+
+# scripts/aihub_* 는 uv 단독 실행 스크립트라 typer·pycocotools 가 프로젝트 의존성에 없다(CI 미설치).
+pytest.importorskip("typer")
+pytest.importorskip("pycocotools")
+
+from scripts.aihub_hybrid_candidates import (  # noqa: E402
     Candidate,
     ClipInput,
     Detection,
