@@ -24,6 +24,8 @@ JOB_KINDS = frozenset(
         "OVERLAY_TIME_READ",
         "FINE_VERIFY",
         "REPORT_VIDEO_EXPORT",
+        # 신고용 번호판 이미지 생성 발주(#47). 실행 capability는 recording 구현 대기.
+        "PLATE_IMAGE_EXPORT",
     }
 )
 

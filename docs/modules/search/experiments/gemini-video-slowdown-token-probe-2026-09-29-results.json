@@ -1,0 +1,96 @@
+{
+  "prompt": "Reply with the single word OK.",
+  "model": "gemini-3.8-flash",
+  "video": "20260620_141628_EVT_1.avi",
+  "interval": [
+    0.0,
+    7.0
+  ],
+  "text_baseline_tokens": 8,
+  "rows": [
+    {
+      "label": "1.0x/1.0fps/360p",
+      "speed": 1.0,
+      "encode_fps": 1.0,
+      "max_height": 360,
+      "duration_sec": 7.0,
+      "frames": 7,
+      "file_bytes": 161536,
+      "status": "200",
+      "prompt_tokens": 470,
+      "video_tokens": 462
+    },
+    {
+      "label": "1.0x/4.0fps/360p",
+      "speed": 1.0,
+      "encode_fps": 4.0,
+      "max_height": 360,
+      "duration_sec": 7.0,
+      "frames": 28,
+      "file_bytes": 283841,
+      "status": "200",
+      "prompt_tokens": 470,
+      "video_tokens": 462
+    },
+    {
+      "label": "0.5x/1.0fps/360p",
+      "speed": 0.5,
+      "encode_fps": 1.0,
+      "max_height": 360,
+      "duration_sec": 14.0,
+      "frames": 14,
+      "file_bytes": 307559,
+      "status": "200",
+      "prompt_tokens": 932,
+      "video_tokens": 924
+    },
+    {
+      "label": "0.5x/4.0fps/360p",
+      "speed": 0.5,
+      "encode_fps": 4.0,
+      "max_height": 360,
+      "duration_sec": 14.0,
+      "frames": 56,
+      "file_bytes": 509173,
+      "status": "200",
+      "prompt_tokens": 932,
+      "video_tokens": 924
+    },
+    {
+      "label": "0.5x/1.0fps/720p",
+      "speed": 0.5,
+      "encode_fps": 1.0,
+      "max_height": 720,
+      "duration_sec": 14.0,
+      "frames": 14,
+      "file_bytes": 1073164,
+      "status": "200",
+      "prompt_tokens": 932,
+      "video_tokens": 924
+    },
+    {
+      "label": "0.25x/1.0fps/360p",
+      "speed": 0.25,
+      "encode_fps": 1.0,
+      "max_height": 360,
+      "duration_sec": 28.0,
+      "frames": 28,
+      "file_bytes": 575951,
+      "status": "200",
+      "prompt_tokens": 1856,
+      "video_tokens": 1848
+    },
+    {
+      "label": "0.25x/4.0fps/360p",
+      "speed": 0.25,
+      "encode_fps": 4.0,
+      "max_height": 360,
+      "duration_sec": 28.0,
+      "frames": 112,
+      "file_bytes": 899200,
+      "status": "200",
+      "prompt_tokens": 1856,
+      "video_tokens": 1848
+    }
+  ]
+}

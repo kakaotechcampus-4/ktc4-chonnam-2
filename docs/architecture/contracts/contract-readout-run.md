@@ -130,12 +130,14 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
   "run_id": "rr_882",
   "operation": "PLATE_READ",
   "outcome": "FAILED",
-  "failure": { "kind": "PLATE_DETECTION", "code": "NO_PLATE_REGION_FOUND" },
+  "failure": { "kind": "INFRA", "code": "READOUT_PROVIDER_TIMEOUT" },
   "usage_refs": ["usage_5522"],
   "started_at": "2026-09-05T09:13:00+09:00",
   "ended_at": "2026-09-05T09:13:04+09:00"
 }
 ```
+
+> **예시 정정 (2026-09-28, 이슈 [#172](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/172)).** 이 예시는 원래 `PLATE_DETECTION`/`NO_PLATE_REGION_FOUND`였다. 번호판을 찾지 못한 것은 실행 실패가 아니라 `outcome=SUCCEEDED` + `PlateReadout.observation.status=UNKNOWN`이고, `outcome=FAILED`를 만드는 kind는 `INFRA`뿐이며 `NO_PLATE_REGION_FOUND`는 등재 code가 아니다(`modules/readout/decisions/failure-taxonomy.md`). 스키마 변경이 아니므로 `readout-run/v1`을 유지한다.
 
 ## 9. 불변조건
 

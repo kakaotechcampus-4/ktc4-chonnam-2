@@ -1,0 +1,11 @@
+SIGNAL: subject_vehicle, subject_role, movement_direction, applicable_signal,
+signal_state_before_crossing, signal_state_at_crossing,
+stop_line_or_intersection_boundary, crossing_event를 각각 확인하세요.
+signal_state_at_crossing의 OBSERVED는 대상 진행에 적용되는 정지 신호가 통과
+당시에 확인됨을 뜻하고, NOT_OBSERVED는 허용 신호가 명확함을 뜻합니다.
+signal_aspect_at_crossing은 STOP_ASPECT, PERMISSIVE_ASPECT, UNCERTAIN 중
+하나이며 앞의 state와 일치해야 합니다.
+다른 방향의 적색 신호를 applicable_signal로 묶지 마세요. 실제 통과와 신호의
+선후 관계를 temporal_relation에 기록하세요. crossing_observation_mode는
+DIRECT, CAMERA_PROXY, UNCERTAIN 중 하나입니다. 화면 아래로 선이 사라진
+사실만으로 범퍼 통과를 직접 관찰한 것으로 쓰지 마세요.

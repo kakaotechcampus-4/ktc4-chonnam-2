@@ -7,7 +7,8 @@ codec·ffmpeg / Worker lifecycle 구현)은 여기 코드에도 그대로 적용
 (복제하면 이 파일 자체가 검사에 걸린다).
 """
 
+from daesingo.case.command import handle_command
 from daesingo.case.service import get_view
 from daesingo.case.store import CaseStore
 
-__all__ = ["CaseStore", "get_view"]
+__all__ = ["CaseStore", "get_view", "handle_command"]

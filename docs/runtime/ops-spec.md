@@ -163,23 +163,27 @@ GitHub Actions
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것
+### 현재 develop에서 확인된 것 — 2026-10-02 (`9c204ee` 기준)
 
 - domain module 구현 및 Mock integration
+- Python 3.12 정렬 (§5)
+- CI: repo-wide pytest · Recording 합성 media smoke · boundary / contract fixture 검사 (§19)
 - `JobExecution` in-memory lifecycle
-- `recording` fixture/in-memory capability
-- boundary / contract fixture GitHub Action
+- `recording` 실제 ffmpeg AnalysisSource materialization · 다중 원본 Timeline
+- `search` 실제 Elice ML API 호출 경로
+- case 동기 real 경로 — Search·Fine·Readout을 같은 프로세스에서 직접 호출하며 Runtime queue를 거치지 않는다
 - `api/`, `worker/` 책임 README
 
 ### 아직 없는 것
 
 - 실제 api composition root
 - 실제 worker composition root
-- MySQL DB Queue
-- Runtime Docker Compose
+- MySQL Runtime persistence / DB Queue
+- Final UsageRecord persistence
+- Runtime Docker / Compose
 - 배포 workflow
 - live/ready endpoint
-- 운영 log pipeline
+- 운영 log pipeline · structured logging
 - queue/lease/heartbeat metric
 
 따라서 이 문서의 배포/monitoring 절은 **현재 동작 설명이 아니라 구현 목표와 운영 acceptance criteria**다.
@@ -234,25 +238,24 @@ Runtime
 
 팀 문서 기준 목표는 Python 3.12 + root `pyproject.toml` + `uv.lock`이다.
 
-다만 2026-09-19 현재 repository는 아직 불일치가 있다.
+2026-09-19 당시 있던 불일치(pyproject `>=3.10` · uv.lock `>=3.13` · boundary CI 3.11)는 커밋 `10cfca4`(2026-09-20)에서 해소됐다. 2026-10-02 `develop` 기준 실제 값:
 
 ```text
-root pyproject.toml   requires-python >=3.10
-uv.lock               requires-python >=3.13
-boundary CI           Python 3.11
-목표                  Python 3.12
+root pyproject.toml   requires-python >=3.12
+uv.lock               requires-python >=3.12
+.python-version       3.12
+python-tests CI       Python 3.12 · uv sync --locked
+boundary-check CI     Python 3.12
 ```
-
-따라서 “Python 3.12 통일 완료”로 보지 않는다.
 
 구현 체크:
 
-- [ ] root `pyproject.toml`을 3.12 기준으로 정합
-- [ ] `.python-version` 정합
-- [ ] `uv.lock` 3.12 기준 재생성
-- [ ] `uv sync --locked` 재현
-- [ ] GitHub Actions Python 3.12 통일
-- [ ] repo-wide type checker 한 개로 수렴
+- [x] root `pyproject.toml`을 3.12 기준으로 정합
+- [x] `.python-version` 정합
+- [x] `uv.lock` 3.12 기준 재생성
+- [x] `uv sync --locked` 재현 (`python-tests.yml`)
+- [x] GitHub Actions Python 3.12 통일
+- [ ] repo-wide type checker 한 개로 수렴 — type checker 설정과 CI step이 아직 없다
 
 Python version의 executable SoT는 prose가 아니라 실제 config/workflow다.
 
@@ -456,6 +459,8 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
+> **현재 구현 사실 (2026-10-02 `develop` 기준):** recording은 준비된 AnalysisSource · IncidentClip bytes를 `RecordingService` 인스턴스 메모리에 보관하고 `close()` 때 해제한다. 임시 디렉터리는 ffmpeg encode 동안만 쓴다. 따라서 지금 이 working set은 local disk보다 **Worker process memory(RSS)**에 먼저 쌓인다. 위 목록의 AnalysisSource · IncidentClip 항목은 저장 위치가 바뀔 경우의 후보로 읽는다. service 수명과 AnalysisSource 저장·재사용 범위는 아직 결정되지 않았다.
+
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
 따라서 Runtime은 persistent/shared cache를 먼저 도입하지 않고 다음을 capacity 실험에서 함께 관측한다.
@@ -496,9 +501,9 @@ search    → recall/provider suitability 검증
 
 ### 12-1. Issue #95 P0/P1에서 Runtime이 받아들이는 사실
 
-Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실은 다음 정도다.
+Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실은 다음 정도다. 범위는 2026-09 시점 운영 경로 — `gemini-3.8-flash` · OpenAI-compatible `/v1/chat/completions` · base64 data URL — 이며, 다른 모델·전송 방식에 그대로 일반화하지 않는다([`mlapi.md`](./official-inputs/mlapi.md)).
 
-- Elice ML API의 inline video 경로가 실제 호출에서 동작했다.
+- Elice ML API의 inline video 경로가 위 모델·경로의 실제 호출에서 동작했다.
 - Files API / provider-side reusable object를 Elice 기본 경로로 전제할 수 없으며, Search가 AnalysisSource stream을 provider 전송 형식으로 변환한다.
 - binary media를 base64 data URL + JSON request로 만들기 때문에 transport 단계에서 request body와 process memory working set이 원본 binary보다 증가할 수 있다.
 - AnalysisSource materialization에는 ffmpeg CPU/RAM/time/temp disk 비용이 존재한다.
@@ -659,29 +664,59 @@ API server 2대 이상 또는 load balancing/health routing이 필요할 때.
 
 ## 19. CI Quality Gate — 현재와 목표
 
-### 현재 실제 CI
+### 현재 실제 CI — 2026-10-02 (`develop` `9c204ee` 기준)
 
-`.github/workflows/boundary-check.yml`:
+두 workflow 모두 trigger는 같다.
 
 ```text
 pull_request → develop/main
 push         → develop
 workflow_dispatch
+```
 
-Python 3.11
+`.github/workflows/python-tests.yml`:
+
+```text
+ubuntu-24.04 · Python 3.12 · uv 0.11.15
+uv sync --locked --extra test --extra eval-gemini   (PaddleOCR 제외)
+ffmpeg 설치 · -fps_mode / libx264 지원 검사
+Recording 합성 media smoke 1건 — skip 금지 assert
+python -m pytest -q                                 (testpaths = tests, offline fixture)
+```
+
+`.github/workflows/boundary-check.yml`:
+
+```text
+Python 3.12
 python scripts/check_boundaries.py
 python scripts/check_contract_fixtures.py
 ```
 
-따라서 현재 CI가 이미 repo-wide pytest/Ruff/type/gitleaks까지 수행한다고 쓰지 않는다.
+Gate별 현재 상태:
+
+| Gate | 상태 |
+| --- | --- |
+| Python 3.12 | 있음 |
+| `uv sync --locked` | 있음 (`python-tests`) |
+| boundary / contract fixture | 있음 (`boundary-check`) |
+| repo-wide pytest (offline) | 있음 (`python-tests`). Mock Pack fixture 검증은 이 pytest 안의 module별 테스트로 돈다. 별도 Mock validator job은 없다 |
+| Recording media smoke | 있음 (`python-tests`) |
+| Ruff | 없음 (CI step · 설정 파일 없음) |
+| type checker | 없음 |
+| secret scan | 없음 |
+| MySQL Runtime integration | 없음 (대상 Runtime persistence 미구현) |
+| deployment workflow | 없음 |
+| 외부 AI 실제 호출 | CI 밖 (의도) |
+
+따라서 현재 CI가 Ruff/type/secret scan/MySQL integration/배포까지 수행한다고 쓰지 않는다.
 
 ### 목표 확장 순서
 
-1. Python 3.12 정합
-2. `uv sync --locked`
-3. boundary / contract fixture
-4. repo-wide pytest
-5. Mock validator
+1. ~~Python 3.12 정합~~ — 완료
+2. ~~`uv sync --locked`~~ — 완료
+3. ~~boundary / contract fixture~~ — 완료
+4. ~~repo-wide pytest~~ — 완료
+5. Mock validator — 현재는 pytest 안에서 부분 충족. 별도 gate 필요 여부는 미정
 6. root Ruff
 7. 선택한 repo-wide type checker
 8. pre-deploy secret scan
@@ -690,7 +725,7 @@ python scripts/check_contract_fixtures.py
 
 ### Deployment workflow 분리 원칙
 
-현재 `.github/workflows/boundary-check.yml`은 모듈 경계·계약 검사용 CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
+현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사)과 `python-tests.yml`(pytest · media smoke)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
 
 향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
 

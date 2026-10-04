@@ -1,4 +1,3 @@
-import time
 from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, replace
@@ -137,7 +136,6 @@ def build_live_smoke_service(
         provider,
         config,
         MediaPreparer(config),
-        RunDeadline(time.monotonic, round(timeout_sec * 1000)),
     )
     event_types: tuple[VisualEventType, ...] = tuple(VisualEventType)
     try:
@@ -328,7 +326,6 @@ def build_smoke_service(
                 SmokeFixtureProvider(fixture),
                 config,
                 _FixtureMediaPreparer(options.duration_sec),
-                RunDeadline(time.monotonic, round(options.timeout_sec * 1000)),
             ),
             config,
         )
@@ -346,7 +343,6 @@ def build_smoke_service(
             provider,
             config,
             MediaPreparer(config),
-            RunDeadline(time.monotonic, round(options.timeout_sec * 1000)),
         ),
         config,
     )

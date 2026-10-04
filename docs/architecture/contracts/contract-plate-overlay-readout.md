@@ -272,7 +272,7 @@ Tech Spec이 소유한다. 이 계약은 「좌표로 성립하는 값인가」�
 }
 ```
 
-**완전 실패 예시는 없다 — 그것이 규칙이다.** `ReadoutRun rr_882`(`outcome=FAILED`, `failure.kind=PLATE_DETECTION` — `contract-readout-run.md` §8)처럼 실행이 완전히 실패하면 `PlateReadout`은 **생성되지 않는다.** 실패 사실·원인은 `ReadoutRun`만 갖는다.
+**완전 실패 예시는 없다 — 그것이 규칙이다.** `ReadoutRun rr_882`(`outcome=FAILED`, `failure.kind=INFRA` — `contract-readout-run.md` §8)처럼 실행이 완전히 실패하면 `PlateReadout`은 **생성되지 않는다.** 실패 사실·원인은 `ReadoutRun`만 갖는다.
 
 ---
 

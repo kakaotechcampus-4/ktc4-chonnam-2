@@ -11,6 +11,8 @@ from tempfile import TemporaryDirectory
 from .errors import RecordingCapabilityError
 from .models import AssetSpan, TimeRange
 from .probe import LocalSource, _snapshot
+from .observability import observed_materialization, phase
+from .inspection import active_inspections
 
 
 class _FrameCoverageError(RecordingCapabilityError):
@@ -40,6 +42,25 @@ class MaterializedVideo:
     content: bytes
     duration_sec: float
     timeline_range: TimeRange
+
+
+def _millisecond_quantization(payload, base, frames):
+    """좁은 Matroska 반올림 패턴만 인정한다. fps를 생성/길이 추정에 사용하지 않는다."""
+    if (base != Fraction(1, 1000)
+            or "matroska" not in payload.get("format", {}).get("format_name", "").split(",")
+            or len(frames) < 3 or len({length for _, length in frames}) != 1):
+        return False
+    length = frames[0][1]
+    if length <= base:
+        return False
+    # 모든 PTS가 동일 주기를 nearest-tick으로 반올림한 시각과 양립해야 한다.
+    # 각 frame의 제약을 교차시켜 단발 gap이나 누적 drift를 무조건 허용하지 않는다.
+    lower, upper = length - base, length + base
+    origin = frames[0][0]
+    for i, (at, _) in enumerate(frames[1:], 1):
+        lower = max(lower, (at - origin - base / 2) / i)
+        upper = min(upper, (at - origin + base / 2) / i)
+    return lower < upper
 
 
 class LocalAnalysisMaterializer:
@@ -74,7 +95,7 @@ class LocalAnalysisMaterializer:
         return json.loads(self._run(args))
 
     @staticmethod
-    def _frames(payload):
+    def _frames(payload, *, expected_coverage=None):
         streams = payload["streams"]
         if len(streams) != 1 or streams[0]["codec_type"] != "video":
             raise ValueError("단일 VIDEO 검증 실패")
@@ -98,79 +119,136 @@ class LocalAnalysisMaterializer:
                 # 다음 presentation timestamp까지의 표시 구간. 일정 fps를 가정하지 않는다.
                 length = timestamps[i + 1] - at
             else:
-                # container duration은 다른 stream을 포함할 수 있어 마지막 frame의 근거가 아니다.
-                raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                # 검증한 원본 coverage와 출력의 모든 상대 PTS/개수, stream 끝을
+                # 교차 확인한다. container 길이나 고정 fps만으로 tail을 추정하지 않는다.
+                matched = (expected_coverage is not None
+                    and len(timestamps) == len(expected_coverage)
+                    and timestamps[0] == 0
+                    and all(at == expected_at and length > 0
+                            for at, (expected_at, length) in zip(timestamps, expected_coverage))
+                    and all(a + length == b for (a, length), (b, _) in
+                            zip(expected_coverage, expected_coverage[1:])))
+                try:
+                    stream_end = Fraction(streams[0].get("duration", "N/A"))
+                except (ValueError, TypeError, ZeroDivisionError):
+                    stream_end = None
+                if (not matched or stream_end != expected_coverage[-1][0] + expected_coverage[-1][1]):
+                    raise _FrameCoverageError("마지막 frame duration 근거가 없습니다 (duration/pkt_duration 누락)")
+                length = stream_end - at
             frames.append((at, length))
         if any(a + length != b for (a, length), (b, _) in zip(frames, frames[1:])):
-            raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
+            # 출력은 검증된 millisecond source에서 선택한 PTS와 정확히 같을 때만 허용한다.
+            matched_output = (expected_coverage is not None and base == Fraction(1, 1000)
+                and len(frames) == len(expected_coverage)
+                and all(at - frames[0][0] == expected_at
+                        for (at, _), (expected_at, _) in zip(frames, expected_coverage)))
+            if ((not matched_output and not _millisecond_quantization(payload, base, frames))
+                    or any(abs(b - a - length) > base
+                           for (a, length), (b, _) in zip(frames, frames[1:]))):
+                raise _FrameCoverageError("불연속 frame coverage는 지원하지 않습니다")
+            # PTS는 보존한다. 중간 coverage만 다음 관측 PTS까지 정규화한다.
+            # 마지막 frame은 위에서 검증한 duration/출력 coverage 근거를 그대로 유지한다.
+            frames = [(a, b - a) for (a, _), (b, _) in zip(frames, frames[1:])] + [frames[-1]]
         return base, [(at - frames[0][0], length) for at, length in frames]
 
+    @observed_materialization
     def materialize(self, source: LocalSource, index: int, span: AssetSpan, profile_ref: str) -> MaterializedVideo:
         if profile_ref not in self._profiles:
             raise ValueError("등록되지 않은 profile_ref입니다")
         profile = self._profiles[profile_ref]
+        inspections = active_inspections()
+        inspection_key = None
+        completed = False
         try:
-            before = _snapshot(source.path)
-            if (before[2], before[3], before[4]) != (source.byte_size, source.mtime_ns, source.sha256):
-                raise RecordingCapabilityError("UNAVAILABLE", "등록 이후 원본이 변경되었습니다")
-            raw = self._probe(source.path, index)
-            base, frames = self._frames(raw)
-            input_stream = raw["streams"][0]
-            width = max(2, 2 * math.floor(input_stream["width"] * profile.height / input_stream["height"] / 2 + 0.5))
-            start, end = Fraction(str(span.source_range.start_sec)), Fraction(str(span.source_range.end_sec))
-            selected = [(i, at, length) for i, (at, length) in enumerate(frames) if start <= at < end]
-            if not selected:
-                raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "요청 구간에 선택 가능한 frame이 없습니다")
-            first, last = selected[0], selected[-1]
-            # 출력은 frame 경계의 실제 coverage를 보존한다. 요청 시각으로 위장하지 않는다.
-            actual_start, actual_end = first[1], last[1] + last[2]
+            with phase("source_snapshot"):
+                before = _snapshot(source.path)
+                if (before[2], before[3], before[4]) != (source.byte_size, source.mtime_ns, source.sha256):
+                    raise RecordingCapabilityError("UNAVAILABLE", "등록 이후 원본이 변경되었습니다")
+            with phase("source_probe"):
+                # snapshot에는 device/inode/크기/mtime/SHA-256이 포함된다.
+                # 서로 다른 probe 실행 설정은 보수적으로 공유하지 않는다.
+                inspection_key = (before, index, self._ffprobe)
+                inspected = inspections.get(inspection_key) if inspections is not None else None
+                if inspected is None:
+                    raw = self._probe(source.path, index)
+                    base, frames = self._frames(raw)
+                    # raw frame JSON은 보관하지 않고 검증된 coverage와 stream metadata만 보관한다.
+                    inspected = ({"streams": raw["streams"], "format": raw.get("format", {})}, base, frames)
+                raw, base, frames = inspected
+            with phase("frame_prepare"):
+                input_stream = raw["streams"][0]
+                width = max(2, 2 * math.floor(input_stream["width"] * profile.height / input_stream["height"] / 2 + 0.5))
+                start, end = Fraction(str(span.source_range.start_sec)), Fraction(str(span.source_range.end_sec))
+                selected = [(i, at, length) for i, (at, length) in enumerate(frames) if start <= at < end]
+                if not selected:
+                    raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "요청 구간에 선택 가능한 frame이 없습니다")
+                first, last = selected[0], selected[-1]
+                # 출력은 frame 경계의 실제 coverage를 보존한다. 요청 시각으로 위장하지 않는다.
+                actual_start, actual_end = first[1], last[1] + last[2]
             with TemporaryDirectory(prefix="recording-analysis-", dir=self._temp_root) as work:
                 output = Path(work) / "prepared.mp4"
-                self._run([self._ffmpeg, "-nostdin", "-v", "error", "-xerror", "-n",
-                    "-protocol_whitelist", "file", "-noautorotate", "-i", str(source.path),
-                    "-map", f"0:{index}", "-an", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
-                    "-vf", f"trim=start_frame={first[0]}:end_frame={last[0]+1},setpts=PTS-STARTPTS,scale={width}:{profile.height}",
-                    "-fps_mode", "passthrough", "-enc_time_base", str(base),
-                    "-video_track_timescale", str(base.denominator),
-                    "-c:v", "libx264", "-preset", profile.preset, "-crf", str(profile.crf),
-                    "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)])
-                probed = self._probe(output)
-                output_base, output_frames = self._frames(probed)
-                stream = probed["streams"][0]
-                if (stream["codec_name"] != "h264" or stream["height"] != profile.height
-                        or stream["width"] != width or stream["pix_fmt"] != "yuv420p"
-                        or "mp4" not in probed["format"]["format_name"].split(",")
-                        or len(output_frames) != len(selected)):
-                    raise ValueError("출력 media 형식 불일치")
-                tolerance = 2 * output_base
-                for (_, at, length), (out_at, out_length) in zip(selected, output_frames):
-                    if abs(at - actual_start - out_at) > tolerance or abs(length - out_length) > tolerance:
-                        raise ValueError("출력 frame timestamp 불일치")
-                duration = float(probed["format"]["duration"])
-                # MP4 format duration은 millisecond 단위로 반올림될 수 있다.
-                if (not math.isfinite(duration) or duration <= 0
-                        or abs(duration - float(actual_end - actual_start)) > 0.001 + float(tolerance)):
-                    raise ValueError("출력 duration 불일치")
-                content = output.read_bytes()
-                if not content:
-                    raise ValueError("빈 출력 media")
-                boxes, position = [], 0
-                while position + 8 <= len(content):
-                    size = int.from_bytes(content[position:position+4], "big")
-                    boxes.append(content[position+4:position+8])
-                    if size < 8:
-                        raise ValueError("지원하지 않는 MP4 box")
-                    position += size
-                if position != len(content) or boxes.index(b"moov") > boxes.index(b"mdat"):
-                    raise ValueError("faststart 검증 실패")
-                if _snapshot(source.path) != before:
-                    raise RecordingCapabilityError("UNAVAILABLE", "변환 중 원본 변경을 감지했습니다")
+                with phase("encode"):
+                    self._run([self._ffmpeg, "-nostdin", "-v", "error", "-xerror", "-n",
+                        "-protocol_whitelist", "file", "-noautorotate", "-i", str(source.path),
+                        "-map", f"0:{index}", "-an", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
+                        "-vf", f"trim=start_frame={first[0]}:end_frame={last[0]+1},setpts=PTS-STARTPTS,scale={width}:{profile.height}",
+                        "-fps_mode", "passthrough", "-enc_time_base", str(base),
+                        "-video_track_timescale", str(base.denominator),
+                        "-c:v", "libx264", "-preset", profile.preset, "-crf", str(profile.crf),
+                        "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)])
+                with phase("output_probe"):
+                    probed = self._probe(output)
+                with phase("output_validate"):
+                    expected = ([(at - actual_start, length) for _, at, length in selected]
+                        if base == Fraction(1, 1000)
+                        and "matroska" in raw.get("format", {}).get("format_name", "").split(",") else None)
+                    output_base, output_frames = self._frames(probed, expected_coverage=expected)
+                    stream = probed["streams"][0]
+                    if (stream["codec_name"] != "h264" or stream["height"] != profile.height
+                            or stream["width"] != width or stream["pix_fmt"] != "yuv420p"
+                            or "mp4" not in probed["format"]["format_name"].split(",")
+                            or len(output_frames) != len(selected)):
+                        raise ValueError("출력 media 형식 불일치")
+                    tolerance = 2 * output_base
+                    for (_, at, length), (out_at, out_length) in zip(selected, output_frames):
+                        if abs(at - actual_start - out_at) > tolerance or abs(length - out_length) > tolerance:
+                            raise ValueError("출력 frame timestamp 불일치")
+                    duration = float(probed["format"]["duration"])
+                    # MP4 format duration은 millisecond 단위로 반올림될 수 있다.
+                    if (not math.isfinite(duration) or duration <= 0
+                            or abs(duration - float(actual_end - actual_start)) > 0.001 + float(tolerance)):
+                        raise ValueError("출력 duration 불일치")
+                with phase("bytes_read"):
+                    content = output.read_bytes()
+                with phase("bytes_validate"):
+                    if not content:
+                        raise ValueError("빈 출력 media")
+                    boxes, position = [], 0
+                    while position + 8 <= len(content):
+                        size = int.from_bytes(content[position:position+4], "big")
+                        boxes.append(content[position+4:position+8])
+                        if size < 8:
+                            raise ValueError("지원하지 않는 MP4 box")
+                        position += size
+                    if position != len(content) or boxes.index(b"moov") > boxes.index(b"mdat"):
+                        raise ValueError("faststart 검증 실패")
+                with phase("source_verify"):
+                    if _snapshot(source.path) != before:
+                        raise RecordingCapabilityError("UNAVAILABLE", "변환 중 원본 변경을 감지했습니다")
                 shift = Fraction(str(span.timeline_range.start_sec)) - start
-                return MaterializedVideo(content, duration, TimeRange(
+                result = MaterializedVideo(content, duration, TimeRange(
                     start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)))
+            # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
+            if inspections is not None:
+                inspections.put(inspection_key, inspected)
+            completed = True
+            return result
         except subprocess.TimeoutExpired:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "materialization 제한 시간을 초과했습니다") from None
         except OSError:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "media 파일 또는 도구에 접근할 수 없습니다") from None
         except (ValueError, KeyError, TypeError, ZeroDivisionError, OverflowError):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "실제 media의 형식·frame coverage·시각을 검증할 수 없습니다") from None
+        finally:
+            if inspections is not None and inspection_key is not None and not completed:
+                inspections.discard(inspection_key)

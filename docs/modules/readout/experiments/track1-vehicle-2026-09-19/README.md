@@ -10,8 +10,8 @@
 | **클립(span) 단위 표** | [`CLIPS.md`](CLIPS.md) — **지속성 · multi-frame · 프레임 선택** |
 | **association 표** | [`ASSOCIATION.md`](ASSOCIATION.md) — hint 없는 대상 선택 |
 | 검출 표 (상한 계산용) | [`RESULTS.md`](RESULTS.md) |
-| 원자료 (프레임 표본) | [`detections.json`](detections.json) · [`sample-manifest.json`](sample-manifest.json) |
-| 원자료 (클립 표본) | [`clip-detections.json`](clip-detections.json) · [`clip-sample-manifest.json`](clip-sample-manifest.json) |
+| 원자료 (프레임 표본) | [`detections.json`](detections.json) · `sample-manifest.json`(레포에 없음 — [`ENVIRONMENT.md`](ENVIRONMENT.md) 「표본 manifest」) |
+| 원자료 (클립 표본) | [`clip-detections.json`](clip-detections.json) · `clip-sample-manifest.json`(레포에 없음 — 같은 절) |
 | 실행 환경 | [`ENVIRONMENT.md`](ENVIRONMENT.md) |
 | 실행 로그 | [`run-log.txt`](run-log.txt) · [`clip-run-log.txt`](clip-run-log.txt) · [`label-stats.txt`](label-stats.txt) |
 | 앞선 문서 | `../datasets-inventory-2026-09-18.md` (PR #80 브랜치에 있다) |

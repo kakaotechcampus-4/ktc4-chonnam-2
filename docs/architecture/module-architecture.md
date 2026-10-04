@@ -38,6 +38,7 @@
 | 2026-09-08 (2차 반영) | §5-3 안내 | 상태 안내 문구만 갱신 — 규칙·계약 목록·enum은 바꾸지 않았다. 자산 계약 2건이 Consumer Review 종결로 **`Final — Accepted`(`…/v1`)**, `MissingRange.source_ref`·`AssetSpan` identity 결정 종결 | 같은 ADR §4.7~§4.10 |
 | 2026-09-08 (주요 문서 동기화) | §5-3 안내 · §11-1 안내 · §11-4 포인터 | **규칙·계약 목록·enum은 바꾸지 않았다.** §5-3에 겹쳐 쌓인 과거 상태 안내 5개(「작성 예정」·「최소 schema 제공 전」·B06~B09 Pending·1차/2차 갱신)를 **2026-09-08 최종 상태 한 블록으로 합쳤다.** 위 행들의 당시 상태는 이 표가 역사 기록으로 보존한다 | 같은 ADR §4.7~§4.10 · §9 · §10.2 |
 | 2026-09-19 (maintenance) | 문서 머리말 · §9-5 · §10-3 · §11 안내 · §13-2·§13-3 | **Architecture 결정 변경 없음.** 계약·Mock·구현 이후 상태 드리프트를 정리했다. `CorrectionRecord`/EvidenceNeeds·cache 규칙 등 이미 닫힌 Data Contract 항목을 현재 미결에서 제거하고, §11·§13을 historical handoff로 명시했다. Web stack은 모듈 Decision으로 이미 확정됐으므로 Architecture 미결에서 제외했다 | Final Contract 16건 현재 상태 · `modules/web/decisions/web-stack.md` · `README.md` 현재 구현 상태 · `runtime/` · `erd-draft.md` |
+| 2026-10-02 (maintenance) | §4-모듈5 ④ · §5-13 · §6-2 · §8-2 · §10-2 | **Architecture 결정 변경 없음.** Final Contract와 어긋난 잔존 표현을 정합화했다. `JobExecution` status에 v1.1 `CANCELLED` 반영, §5-13의 `JobRecord` 실행 lifecycle을 `JobExecution`으로 이동, §6-2 결과 기록 대상을 `JobExecution`으로 정정, §8-2의 「case_rev mismatch → STALE」을 Contract 의미(STALE = Worker 소멸, old `case_rev` 결과는 SUCCEEDED 유지·case가 미반영)로 정정, §10-2 Search baseline을 #95 Elice 전환 이후 상태로 갱신 | `contracts/contract-job-execution.md` §6·§9 · `contracts/contract-job-record-case-view.md` A절 · `runtime/reviews/runtime-ops-consistency-audit-2026-10-02.md` A-05·A-06·B-01 |
 
 ---
 
@@ -852,7 +853,7 @@ case
   └─ 무엇을 / 왜 / 어떤 revision으로 실행할지 결정
       ↓ Job Intent
 common/runtime
-  └─ QUEUED → RUNNING → SUCCEEDED / FAILED / STALE
+  └─ QUEUED → RUNNING → SUCCEEDED / FAILED / STALE / CANCELLED
      lease · heartbeat · retry timing · available_at · execution error
       ↓ produced refs
 case
@@ -861,7 +862,7 @@ case
 
 즉 **발주 정책은 case**, **실행 lifecycle은 common/runtime**이다.
 
-계약 이름은 다음과 같이 확정됐다 — 발주 의도는 **`JobRecord`**(case 소유, append-only), 실행 상태는 **`JobExecution`**(common/runtime 소유)이다. `JobExecution`의 계약 Owner는 `evidence`/common Owner이고 **구현 담당은 `recording` Owner**다(2026-09-04 백엔드 회의). `CANCELLED`는 제품 요구가 없어 status에 두지 않는다. 상세는 `architecture/contracts/contract-job-execution.md`.
+계약 이름은 다음과 같이 확정됐다 — 발주 의도는 **`JobRecord`**(case 소유, append-only), 실행 상태는 **`JobExecution`**(common/runtime 소유)이다. `JobExecution`의 계약 Owner는 `evidence`/common Owner이고 **구현 담당은 `recording` Owner**다(2026-09-04 백엔드 회의). `CANCELLED`는 v1에서 두지 않았으나 사용자 「중단」 흐름이 확인돼 `job-execution/v1.1`(2026-09-10)에서 추가됐다. status 값과 전이는 `architecture/contracts/contract-job-execution.md`가 소유한다.
 
 ### ⑤ 소유 데이터
 
@@ -1287,29 +1288,28 @@ web은 `notices`와 backend-projected 상태를 표현하고 raw threshold로 �
 
 `case`가 만드는 **도메인 발주 의미**다. 최소한 작업 종류, 대상 case/revision, 입력 ref, 실행 정책 식별에 필요한 정보를 담고 runtime 내부 상태(lease/heartbeat)는 담지 않는다.
 
-### JobRecord
+### JobRecord / JobExecution
 
-의미상 다음 lifecycle을 지원한다.
+> **2026-10-02 표기 정합:** 이 절은 Job Intent / Execution 분해(2026-09-05) 이전 표현으로 `JobRecord`에 실행 lifecycle을 두고 있었다. 의미는 Final Contract를 따른다 — `JobRecord`는 실행 상태가 없는 Intent이고, 실행 lifecycle은 `JobExecution`이다. 필드·enum은 `contracts/contract-job-record-case-view.md` A절과 `contracts/contract-job-execution.md`가 소유한다.
 
-```
-QUEUED → RUNNING → SUCCEEDED
-                 → FAILED
-                 → STALE
-```
-
-runtime 측 필수 개념:
+`JobRecord`(case 소유, append-only)는 발주 의도를 담는다.
 
 ```
 case_id / case_rev
 kind
 input_fingerprint
+```
+
+실행 lifecycle은 `JobExecution`(common/runtime 소유)이 담는다.
+
+```
+QUEUED → RUNNING → SUCCEEDED / FAILED / STALE / CANCELLED
 attempt
-available_at
-lease / heartbeat
-progress
 produced refs
 masked error/failure kind
 ```
+
+`available_at` · lease / heartbeat 같은 queue scheduling 값은 Runtime persistence의 구현 세부이며 Contract 필드가 아니다. `progress`는 `CaseView` projection이다.
 
 **발주 이유와 rerun 정책은 case**, 이 execution lifecycle persistence는 **common/runtime**이다.
 
@@ -1364,7 +1364,7 @@ Worker 1
   ↓ public module capability
 search / readout / recording
   ↓ result ref + usage
-JobRecord / UsageRecord
+JobExecution / UsageRecord
   ↓
 case applies only if revision is current
 ```
@@ -1536,20 +1536,22 @@ Report Video
 ```
 API request
   ↓
-case creates JobIntent + expected case_rev
+case가 JobRecord(Intent) 발주 + expected case_rev
   ↓
-application/runtime composition root가 JobRecord 생성·enqueue
+application/runtime composition root가 Runtime queue에 enqueue
   ↓
 Worker claims row
   ↓
-RUNNING + heartbeat
+JobExecution RUNNING + heartbeat
   ↓
 module result
   ↓
 SUCCEEDED / FAILED
   ↓
-case_rev mismatch이면 STALE로 처리하고 현재 CaseView를 덮지 않음
+case_rev mismatch이면 execution은 SUCCEEDED 그대로 두고, case가 produced를 반영하지 않아 현재 CaseView를 덮지 않음
 ```
+
+`STALE`은 old `case_rev` 결과가 아니라 **실행 중 Worker가 살아 있지 않다고 Runtime이 판정한 terminal 실행 상태**다. 상태 의미는 `contracts/contract-job-execution.md` §6 · §9-8이 소유한다. (2026-10-02 표기 정합 — 이전 문구 「case_rev mismatch이면 STALE로 처리」는 Final Contract와 충돌해 바로잡았다.)
 
 같은 input fingerprint를 재사용할지, reread처럼 cache bypass할지는 **case rerun policy**가 결정한다.
 
@@ -1702,9 +1704,9 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 
 | 영역 | 현재 방향 | Architecture 의미 |
 | --- | --- | --- |
-| Search | Gemini Files API / Flash-Lite 계열 | provider adapter 내부 |
+| Search | KTC Elice ML API(OpenAI-compatible) 경유, media는 base64 inline 전송 (Issue #95 전환 이후). 모델·transport는 Search decision이 소유 | provider adapter 내부 |
 | Search media | low-resolution, no-audio profile가 유력 | profile 자체는 recording/search 계약 |
-| Remote reuse | 한 RemoteCopy를 coarse/fine에서 재사용 | lifecycle/fingerprint 필요 |
+| Remote reuse | Elice 경로는 provider-side reusable object(Files API · RemoteCopy)를 전제하지 않는다. 현재 재사용은 recording의 process-local AnalysisSource reuse뿐 | 저장·재사용 범위는 하위 문서(Runtime Ops)에서 결정 |
 | Readout OCR | PaddleOCR pretrained baseline | readout 내부 교체 가능 |
 | Plate detection | 현 Owner baseline 후보 | readout 내부 |
 | Eval result | JSON + git | 제품 DB와 분리 |

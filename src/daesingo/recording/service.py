@@ -41,10 +41,12 @@ from .models import (
 from .repository import InMemoryRecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
+from .multi_source import build_placed_timeline, resolve_placed_span
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
 from .spans import resolve_local_span
 from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
+from .inspection import SourceFrameInspections, source_inspections
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 
@@ -119,6 +121,7 @@ class RecordingService:
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
         self._analysis_materializer = analysis_materializer
+        self._source_inspections = SourceFrameInspections()
         self._local_analysis: dict[str, tuple[AnalysisSource, bytes]] = {}
         self._analysis_reuse: dict[tuple, str] = {}
         self._local_analysis_refs: set[str] = set()
@@ -195,6 +198,7 @@ class RecordingService:
         self._analysis_reuse.clear()
         self._local_clips.clear()
         self._clip_identity.clear()
+        self._source_inspections.close()
         self._analysis_closed = True
 
     def __enter__(self):
@@ -390,6 +394,15 @@ class RecordingService:
         self._repository.add_timeline(timeline)
         return timeline
 
+    def create_relative_timeline_from_placements(
+        self, placements: list[dict[str, Any]], *,
+        base_timeline_ref: TimelineRef | dict[str, Any] | None = None,
+    ) -> RecordingTimeline:
+        """같은 논리 카메라의 명시적 비중복 배치. 각 source local offset은 0부터다."""
+        timeline = build_placed_timeline(self._repository, placements, base_timeline_ref)
+        self._repository.add_timeline(timeline)
+        return timeline
+
     def get_timeline(
         self,
         timeline_id: str,
@@ -412,6 +425,7 @@ class RecordingService:
         timeline_ref: TimelineRef | dict[str, Any],
         requested_range: TimeRange | dict[str, Any],
         *, media_stream_ref: str | None = None,
+        media_stream_refs: list[str] | None = None,
     ) -> SpanResolution:
         """로컬 계산에는 Case가 전달한 VIDEO ref가 필수다. 무선택 fixture 호출만 호환한다."""
         parsed_ref = TimelineRef.model_validate(timeline_ref)
@@ -422,6 +436,11 @@ class RecordingService:
         timeline = self._repository.get_timeline(parsed_ref)
         if timeline is None:
             raise ValueError("존재하지 않는 timeline reference입니다")
+
+        if media_stream_refs is not None:
+            if media_stream_ref is not None:
+                raise ValueError("단일 ref와 복수 ref 입력을 함께 사용할 수 없습니다")
+            return resolve_placed_span(self._repository, timeline, parsed_range, media_stream_refs)
 
         is_local = any(self._repository.get_local_source(p.source_asset_ref) is not None
                        for p in timeline.source_placements)
@@ -499,7 +518,8 @@ class RecordingService:
             index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
             if index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
-            prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
+            with source_inspections(self._source_inspections):
+                prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
             source = AnalysisSource(
                 contract="AnalysisSource", contract_version="analysis-source-derived/v1",
                 analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
@@ -616,7 +636,8 @@ class RecordingService:
                 index = self._repository.get_local_stream_index(span.media_stream_ref)
                 if local is None or index is None:
                     raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
-                prepared = self._incident_materializer.materialize(local, index, span)
+                with source_inspections(self._source_inspections):
+                    prepared = self._incident_materializer.materialize(local, index, span)
             except _FrameCoverageError as error:
                 raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", str(error)) from None
             except (RecordingCapabilityError, ValueError, OSError):

@@ -14,7 +14,7 @@ from .execution import DeadlineExceededError, RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
-from .prompts import COARSE_PROMPT
+from .prompts import COARSE_PROMPT, sent_prompt_fingerprint
 from .provider import CoarseRequest, ProviderResult, SearchProvider
 from .runs import (
     AnalysisRun,
@@ -83,10 +83,10 @@ def search_coarse(
             f"resolve() must yield exactly one source for coarse search; got {len(sources)}"
         )
     source = sources[0]
-    # scope.budget은 이 scope 실행 전체의 상한이다(contract-analysis-scope.md §103).
-    # 주입된 deadline을 좁히기만 한다 — 남은 실행 시간을 늘리지 않는다.
+    # dependencies.deadline은 SearchService가 호출 시점에 scope.budget.max_latency_sec로
+    # 만든 실행 상한이다(contract-analysis-scope.md §104, #149 A안) — 다른 상한과 겹치지 않는다.
     # budget.max_cost_krw는 KRW↔USD 환산이 미결이라 여기서 집행하지 않는다.
-    deadline = dependencies.deadline.narrowed_to(scope.budget.max_latency_sec * 1000)
+    deadline = dependencies.deadline
     with (
         dependencies.resolver.open_source(source.source_ref) as media_input,
         dependencies.media_preparer.prepare_coarse(media_input, deadline) as prepared,
@@ -293,7 +293,9 @@ def _usage_record(
         case_id=source.source_id,
         model=config.model,
         prompt_version=COARSE_PROMPT.version,
-        prompt_fingerprint=COARSE_PROMPT.fingerprint,
+        prompt_fingerprint=sent_prompt_fingerprint(
+            COARSE_PROMPT, prepared.playback_speed
+        ),
         config_version=config.version,
         processed_duration_sec=source.duration_sec,
         latency_ms=result.latency_ms,

@@ -29,6 +29,8 @@ K1-K4가 모두 결정되어 ADR 전체 상태를 `ACCEPTED`로 올렸다. 각 �
 
 > **후속 (2026-09-14).** K3가 열어둔 D1(Q1)이 [`ADR-EVIDENCE-003`](adr-location-absent-package.md)으로 종결됐다. **K3는 §5.4·§5.6·§5.8·§5.11·§5.12·§5.14·§5.15 일곱 절이 영향을 받는다** — 각 절에 종결 표시를 달아 두었고 v2 당시 판단은 지우지 않고 보존했다. 그중 §5.12(위치 부재가 `UNKNOWN`이 아니다)와 §5.15 Artifact 영향(D1 반영이 재실행보다 먼저)은 **구현 순서를 바꾸는 내용**이므로 반드시 읽어야 한다. 영향 범위 전체 표는 ADR-003 §5.8에 있다. K1·K2·K4는 영향을 받지 않으며 그 근거도 같은 절에 적었다.
 
+> **후속 3 (2026-09-29).** [`ADR-EVIDENCE-008`](adr-plate-identification-failure-boundary.md)이 **K3의 번호판 rule 두 건의 outcome 매핑을 대체**했다(#172 D-3). 영향 절은 §5.4(`evidence.vehicle_number.present`)·§5.6(`package.vehicle.plate_visible_in_report_video`)이며 각 표 아래에 표시만 달고 원문은 보존했다. 활성 catalog는 `policy/requirement-rules-v5`가 된다. rule 수와 다른 rule은 바뀌지 않는다.
+
 > **후속 2 (2026-09-14).** [`ADR-EVIDENCE-005`](adr-event-context-rules-removal.md)가 **K3의 `FINAL_PACKAGE` 무조건 rule 세 건(사건 장면·전 상황·후 상황)을 제거**했다. 판정 입력을 생산하는 모듈이 계약 어디에도 없어 공용 Scenario 전부가 영구 `UNKNOWN`으로 막혀 있었고, 제품은 이 판정을 사용자 확인(`core-user-flow.md` §8·§15)에 맡기기로 이미 정해 두었다. **영향 절은 §5.6·§5.12·§5.14·§5.15**이며 각 절에 표시를 달고 원문은 보존했다. rule 수는 15 → 12, 활성 catalog는 `policy/requirement-rules-v4`가 된다. K1·K2·K4와 D1은 영향을 받지 않는다.
 
 ## 3. K1 — 첨부 용량·개수 policy
@@ -355,6 +357,8 @@ K1·K2는 개별 rule의 **판정 내용**을 확정했을 뿐, 그 rule을 **�
 | `evidence.location.present` | `LOCATION` | 위치 단서 하나 이상 있음 | `PASS` |
 | | | 없음 | `WARN` |
 
+> **#172 D-3에 따른 대체 (2026-09-29).** 위 표의 `evidence.vehicle_number.present` 「없음 → `UNKNOWN`」은 [`ADR-EVIDENCE-008`](adr-plate-identification-failure-boundary.md) §5.1로 대체됐다 — 없음을 `PlateReadout` 존재 여부로 나눠 판독 후 못 읽음은 `WARN`, `PlateReadout` 부재(실행 실패 등)는 `UNKNOWN`이다(`policy/requirement-rules-v5`). 다른 세 rule은 바뀌지 않았다.
+
 Research는 초기 4종 전부에서 번호판 식별·위반일시·발생장소를 baseline 요건으로 둔다. 안전모 미착용이라고 해서 번호판 rule을 빼지 않는다.
 
 `EVIDENCE`에서 위치 부재를 `WARN`으로 두는 이유는 이 scope가 **증거 충분성** gate이기 때문이다. 위치는 나중에 사용자가 입력할 수 있고, 위치가 없다는 이유로 번호판 재판독이나 신고영상 생성까지 멈출 근거는 없다. ~~`FINAL_PACKAGE`에서는 같은 사실을 `UNKNOWN`으로 다르게 판정한다(§5.6).~~
@@ -390,6 +394,8 @@ v2에서는 H/U/P/R 네 Scenario가 모두 같은 `EVIDENCE` 기본 4개를 실�
 | `package.asset.video.count` | `ASSET` | K1 §3.6 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.asset.total_count` | `ASSET` | K1 §3.6 | `PASS` / `BLOCK` / `UNKNOWN` |
 | `package.deadline.within_policy` | `DEADLINE` | K2 §4.6 | `PASS` / `WARN` / `UNKNOWN` |
+
+> **#172 D-3에 따른 대체 (2026-09-29).** 위 표의 `package.vehicle.plate_visible_in_report_video` 관찰 `false → BLOCK`은 [`ADR-EVIDENCE-008`](adr-plate-identification-failure-boundary.md) §5.2로 `WARN`이 됐다(`policy/requirement-rules-v5`). 관찰 `true → PASS`, 미관찰 `→ UNKNOWN`은 그대로다.
 
 `category`는 Final Contract §3이 고정한 7개 값(`EVIDENCE`·`TIME`·`VEHICLE`·`LOCATION`·`ASSET`·`DEADLINE`·`REPORT_CONTENT`)만 사용한다. 사건 장면·전후 상황은 별도 `EVENT` category를 신설하지 않고 `EVIDENCE`로 분류한다. K3는 evidence 내부 정책이므로 Contract enum을 확장하지 않는다.
 

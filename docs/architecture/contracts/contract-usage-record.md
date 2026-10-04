@@ -109,7 +109,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 | `pricing_id` | 이 호출에 적용된 가격표의 식별자. 가격표가 바뀌면 새 `pricing_id`가 생긴다 |
 | `unit` | 과금 단위 (`per_1k_tokens` · `per_second` 등) |
 
-**가격표 자체는 이 계약에 넣지 않는다.** row에 단가를 복제하면 가격표 개정 때 원천이 둘이 된다. `pricing_id`로 「어떤 가격표를 봤는지」만 남기고 표는 `common/runtime` config가 소유한다.
+**가격표 자체는 이 계약에 넣지 않는다.** row에 단가를 복제하면 가격표 개정 때 원천이 둘이 된다. `pricing_id`로 「어떤 가격표를 봤는지」만 남긴다. ~~표는 `common/runtime` config가 소유한다.~~ **(2026-10-02 · 표기 정합, 버전 유지)** 가격표 숫자의 위치는 이 계약이 정하지 않는다. 현재 MVP에서는 `search`가 rate를 주입받아 cost를 계산하고, 공용 versioned pricing catalog는 가격표를 직접 소비하는 요구가 실제로 여럿 생기면 다시 검토한다. `common/runtime`은 실행 시 전달받은 `pricing_context`와 `cost` snapshot을 그대로 보존한다. 근거: [Issue #153](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153) 2026-09-26 Search·common/runtime Owner 코멘트 합의.
 
 ## 6. 정상 예시
 
@@ -231,7 +231,7 @@ v4 §4-모듈2 ⑥은 정규화 사용량·가격 맥락의 상위 요구다. �
 
 - ~~**B05 — ReadoutRun 연결**~~ → **종결 (2026-09-07, §9-5).** `AnalysisRun.usage_refs[]`의 「조회 편의 파생값」 표기도 **종결 (2026-09-08, search Owner 서어진 · eval 김대원 확인, §8-12).** 두 Run 계약의 `usage_refs`는 같은 지위이고 원장 `run_ref`가 유일한 집계 기준이다. `run_ref=null`의 의미는 (§8-10이 v1.1 당시 서술했던 「Run 개념이 없는 직접 호출만」에서) **v1.2(§7-1·§8-13, 이슈 #33 A-1/Required-5)로 두 사유로 넓어졌다** — 「Run 개념이 없는 직접 호출」과 「Run을 시도했으나 산출물이 못 만들어진 호출」이며 `run_ref_reason`이 구분한다. 「아직 정식 연결 방식이 없는 호출」이라는 세 번째 의미로는 넓히지 않았다 — 그런 호출이 실제로 있다면 이 계약 Owner가 별도로 판단한다.
 
-- **통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).
-- **가격표(`pricing_id` → 단가) 저장 위치와 개정 절차** — `common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.
+- ~~**통화를 KRW로 고정할 것인가.** `AnalysisScope.budget.max_cost_krw`는 KRW를 전제하고 `AnalysisRun.usage_summary.total_cost`는 `currency` 필드를 둔다. 본 계약도 `currency`를 유지했으나 **MVP에서 KRW 외 통화를 허용할지는 정하지 않았다.** 다중 통화를 허용하면 `case`의 예산 비교에 환율이 끼어든다 → **Consumer Review 항목**(유소연·김대원).~~ → **종결 (2026-09-09, [이슈 #19](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/19) common/runtime 답변 · `docs/modules/case/decisions/budget-krw-normalization.md`. 이 문서 표기 정합 2026-10-02, 버전 유지).** MVP에서 budget 대상 `UsageRecord.cost`는 저장 전에 KRW로 정규화해 `cost.currency="KRW"`로 기록한다. provider-native 통화와 환율/요율 provenance는 `pricing_id`가 가리키는 versioned pricing artifact가 보존한다. 남은 것은 그 artifact의 위치와 FX source다(다음 항목).
+- **가격표·환율(`pricing_id` → 단가/FX) artifact의 위치·schema와 개정 절차** — ~~`common/runtime` config가 소유한다고만 정했다. 파일 형식·이력 보관은 구현 세부.~~ **(2026-10-02 · 표기 정합)** 위치를 정하지 않았다(§5 `pricing_context` 아래 문단). `pricing_id`가 가리킬 versioned pricing/FX artifact의 위치·schema, KRW 환산 FX source, 이력 보관은 미결이다. `budget-krw-normalization.md` 「남은 것」은 이를 common/runtime 구현 시점에 결정한다고 둔다.
 - **보관 기간.** `recording`의 보관·일괄 삭제 정책(v4 §8-4)이 사용자 원본에 대한 것이고, 비용 원장은 개인정보가 아니므로 다른 주기가 맞을 수 있다. **`purge_case`가 UsageRecord를 지우는지 정하지 않았다** → 정철원(보관·삭제)과 확인 필요.
 - **`operation` 전체 값 목록** — 닫지 않는다. 모듈 접두어 규칙만 고정한다.

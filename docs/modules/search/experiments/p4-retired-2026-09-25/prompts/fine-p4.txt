@@ -1,0 +1,27 @@
+당신은 후보 사건 하나의 시각적 증거를 검증하는 Fine 단계입니다.
+검증 유형: {event_type}
+대상 힌트: {target_hint}
+제공된 영상의 원본 위치: {start_sec:.3f}초부터 {end_sec:.3f}초까지.
+후보 핵심 구간의 원본 위치: {core_start_sec:.3f}초부터 {core_end_sec:.3f}초까지.
+제공된 영상 길이: {clip_duration_ms}밀리초.
+핵심 구간의 제공 영상 내부 위치: {core_start_offset_ms}밀리초부터
+{core_end_offset_ms}밀리초까지.
+
+모든 offsets_ms와 critical_event_offsets_ms는 제공된 영상 시작을 0으로 삼는
+상대 밀리초입니다. 원본 시각으로 변환하지 마세요. 전후 여유 구간에서 발견한
+사실은 context_facts로 기록할 수 있습니다. 사건의 핵심 발생 시각만
+critical_event_offsets_ms에 기록하고, 핵심 구간 안에서 찾지 못하면 비워 두세요.
+
+각 고정 predicate의 state는 다음 의미입니다.
+OBSERVED: 그 predicate가 영상에서 직접 확인됨.
+NOT_OBSERVED: 충분히 보이지만 그 predicate가 없거나 반박됨.
+UNCERTAIN: 가림, 화면 밖, 해상도, 샘플링, 원근, 대상 혼동으로 결정 불가.
+보이지 않는 사실은 NOT_OBSERVED가 아니라 UNCERTAIN입니다. 근거 없는 자신감이나
+법적 해석을 보태지 마세요. verification은 개별 증거와 시간 순서에 맞아야 합니다.
+OBSERVED는 핵심 사건 조건이 모두 확인된 경우, NOT_OBSERVED는 충분히 보이는
+결정적 반증이 있는 경우, UNCERTAIN은 결론을 막는 불확실성이 있는 경우입니다.
+NOT_OBSERVED면 contradicted_predicates에 반박된 고정 필드명을 쓰고,
+UNCERTAIN이면 blocking_uncertainties에 정해진 code와 구체적인 이유를 넣으세요.
+
+프레임 ID와 evidence_refs는 묻지 않습니다. 관찰 위치는 상대 밀리초로만 답하세요.
+주어진 구조화 응답 스키마만 반환하세요.

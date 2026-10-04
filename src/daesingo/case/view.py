@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.4` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.6` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -26,8 +26,9 @@ from daesingo.case.labels import (
     occurred_at_info_state,
     report_type_label,
 )
+from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.4"
+CONTRACT_VERSION = "case-view/v1.6"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -70,6 +71,12 @@ def _job_execution_status_to_progress_state(status: str | None) -> str:
     return _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE[status]
 
 
+def _observed_state(status: str | None) -> str:
+    """이미 끝난 관찰 단계 — 실행 상태가 보고됐으면(판독 실패 등) 그 값, 아니면 DONE이다.
+    `_job_execution_status_to_progress_state()`와 달리 None을 「막 발주함」으로 읽지 않는다."""
+    return "DONE" if status is None else _job_execution_status_to_progress_state(status)
+
+
 def _build_progress(
     case: CaseAggregate,
     evidence_record: dict[str, Any] | None,
@@ -78,6 +85,7 @@ def _build_progress(
     *,
     plate_read_status: str | None = None,
     overlay_time_read_status: str | None = None,
+    visual_evidence_decision: str | None = None,
 ) -> list[dict[str, str]]:
     # ⚠️ CANDIDATE_REVIEW 단계면 후보가 있든 없든(2026-09-14 확인 — 처음엔 "후보 0개"만의
     # 특수 케이스로 좁게 봤었는데, `scenario_relative_rebase_001`이 후보가 1개 있고 심지어
@@ -102,6 +110,35 @@ def _build_progress(
     # 목록에서 아예 뺀다(CANDIDATE_REVIEW-빈 배열과 같은 원칙). `scenario_infra_failure_001`
     # 4개 revision 전부(plate_read가 RUNNING/FAILED/PARTIAL을 오가는 동안 overlay_time_read는
     # 독립적으로 DONE일 수 있다는 것까지) 이 분기로 확인됨(2026-09-14).
+    # evidence가 없는 이유를 Fine 판정이 알려 주면 그것을 먼저 본다(PR #224 리뷰). 판정이 없으면
+    # 아래 「조립 전」 분기 그대로다.
+    # - 음성 결과(`NOT_ASSEMBLED`)는 IncidentClip~package를 시작하지 않는다(#168 [A]) — 뒤 단계는
+    #   이 case 생애주기에서 일어날 계획이 없어 step 집합 규칙 3(`candidates=[]`와 같은 취급)으로 뺀다.
+    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다.
+    # - 상황 응답 대기(`AWAIT_SITUATION_RESPONSE`)는 관찰(OCR·시간 source)을 마쳤고 조립만 응답을
+    #   기다린다(#165). 응답 뒤 package까지 이어지므로 규칙 1대로 8단계를 싣고, 조립 이후는 PENDING이다.
+    if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and visual_evidence_decision == NOT_ASSEMBLED:
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+        ]
+    if (
+        case.stage == "EVIDENCE_REVIEW"
+        and evidence_record is None
+        and visual_evidence_decision == AWAIT_SITUATION_RESPONSE
+    ):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": _observed_state(plate_read_status)},
+            {"step": "overlay_time_read", "state": _observed_state(overlay_time_read_status)},
+            {"step": "evidence_assembly", "state": "PENDING"},
+            {"step": "requirement_check", "state": "PENDING"},
+            {"step": "package_assembly", "state": "PENDING"},
+        ]
+
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
         return [
             {"step": "file_intake", "state": "DONE"},
@@ -143,6 +180,10 @@ def _build_progress(
         "coarse_search": state_for(1),
         "candidate_review": state_for(2),
     }
+    # 후보 탐색 Run이 실패했으면 진행 중(RUNNING)으로 보이지 않게 한다 — 「결과 없음」과도,
+    # 「아직 찾는 중」과도 다른 상태다(PR #187 리뷰).
+    if case.candidate_search_failed:
+        progress["coarse_search"] = "FAILED"
     if stage_rank < 3:
         for step in ("plate_read", "overlay_time_read", "evidence_assembly", "requirement_check", "package_assembly"):
             progress[step] = "PENDING"
@@ -156,6 +197,11 @@ def _build_progress(
                 progress[step] = "RUNNING"
             else:
                 progress[step] = "PENDING"
+        # 번호판 판독이 실행 실패여도 evidence는 번호판 없이 조립된다 — evidence가 있다는 이유로
+        # plate_read를 DONE으로 덮으면 실행 실패(4a)가 「읽지 못함」(1·3)과 구분되지 않는다
+        # (#172 [D]). 실행 상태가 보고됐으면 그 값을 쓴다.
+        if plate_read_status is not None:
+            progress["plate_read"] = _job_execution_status_to_progress_state(plate_read_status)
         # ⚠️ requirement_check은 package_assembly와 별개 게이트다(`scenario_plate_reread_001`로
         # 확인 — requirements_evidence가 이미 존재해도 report_package는 아예 발주 안 될 수 있다).
         # package_assembly는 신뢰 가능한 "생성 중" 신호가 없어 낙관적으로 RUNNING을 보여주지 않는다
@@ -207,7 +253,8 @@ def _build_candidates_view(
     # current_timeline_revision=2≠timeline_revision:1 → stale_revision:true,
     # stale_revision_label_key:"candidate.stale_timeline_revision")로 확인.
     out = []
-    for c in case.candidates:
+    # rank 오름차순(#122). rank가 없는 후보(구 fixture 등)는 뒤로, 같은 rank면 받은 순서를 유지한다.
+    for c in sorted(case.candidates, key=lambda c: (c.rank is None, c.rank or 0)):
         at, at_provenance = c.at, c.at_provenance
         situation_confirmation = c.situation_confirmation
         if current_timeline_revision is None:
@@ -225,6 +272,9 @@ def _build_candidates_view(
         out.append(
             {
                 "candidate_id": c.candidate_id,
+                "rank": c.rank,
+                # 시간축 마커(#184). stale 후보는 rebase 후 좌표 보장이 확인되기 전까지 null.
+                "marker_ms": None if stale_revision else c.representative_ms,
                 "at": at,
                 "at_provenance": at_provenance,
                 "at_provenance_label_key": at_provenance_label_key(at_provenance),
@@ -320,7 +370,12 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     }
 
 
-def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | None, user_edited: bool) -> dict[str, Any]:
+def _build_evidence_view(
+    evidence_record: dict[str, Any],
+    preview_ref: str | None,
+    user_edited: bool,
+    plate_preview_ref: str | None = None,
+) -> dict[str, Any]:
     # ⚠️ 2026-09-14 확인(`scenario_correction_rerun_001`): evidence.user_edited은 record 내부
     # 개별 필드의 user_corrected를 OR로 묶은 게 아니다 — `scenario_happy_001`의
     # location.user_hint는 user_corrected=true지만 evidence.user_edited=false다(user_hint는
@@ -446,9 +501,31 @@ def _build_evidence_view(evidence_record: dict[str, Any], preview_ref: str | Non
         ),
         "user_edited": user_edited,
         "preview_ref": preview_ref,
+        "plate_preview_ref": plate_preview_ref,
         "review_needed": review_needed,
         "reason_code": reason_code,
     }
+
+
+def _plate_preview_ref(
+    evidence_record: dict[str, Any], plate_readouts: list[dict[str, Any]] | None
+) -> str | None:
+    """`evidence.plate_preview_ref`(#47) — 현재 번호판 값의 근거 PlateReadout의 `best_frame.frame_ref`.
+
+    근거 PlateReadout은 `vehicle_number.source.ref` → `support_refs` 순서로 처음 나오는
+    `kind=plate_readout` ref다(evidence가 준 연결을 그대로 따른다 — case가 판독을 고르지 않는다).
+    재판독 뒤에는 재판독 결과를 가리키므로 첫 판독 프레임이 남지 않는다. 번호판 값이 없거나
+    (판독 abstain) PlateReadout 근거가 없으면 `None`. `crop_ref`는 opaque identity라 내리지 않는다
+    (`contract-plate-overlay-readout.md` §3·§9).
+    """
+    vehicle_number = evidence_record.get("vehicle_number") or {}
+    refs = [(vehicle_number.get("source") or {}).get("ref") or {}, *(vehicle_number.get("support_refs") or [])]
+    readout_id = next((r.get("ref") for r in refs if r.get("kind") == "plate_readout"), None)
+    if readout_id is None:
+        return None
+    readout = next((p for p in plate_readouts or [] if p.get("readout_id") == readout_id), None)
+    best_frame = (readout or {}).get("best_frame") or {}
+    return best_frame.get("frame_ref")
 
 
 def _build_requirements_view(requirement_report: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -487,6 +564,21 @@ def _build_package_view(report_package: dict[str, Any] | None, evidence_record: 
     }
 
 
+def _belongs_to_current_selection(
+    case: CaseAggregate, selected: Any, evidence_record: dict[str, Any]
+) -> bool:
+    """`EvidenceRecord`가 지금 선택된 candidate·selection context에서 조립된 것인가.
+    둘 다 evidence 계약 필드(`basis.candidate_ref`·`selection_rev`)를 그대로 비교할 뿐 값을
+    재해석하지 않는다. 같은 candidate라도 selection_rev가 다르면(A→B→A) 이전 context다."""
+    if selected is None:
+        return False
+    candidate_ref = (evidence_record.get("basis") or {}).get("candidate_ref") or {}
+    return (
+        candidate_ref.get("ref") == selected.candidate_id
+        and evidence_record.get("selection_rev") == case.selection_rev
+    )
+
+
 def build_case_view(
     case: CaseAggregate,
     *,
@@ -499,9 +591,22 @@ def build_case_view(
     plate_read_status: str | None = None,
     overlay_time_read_status: str | None = None,
     current_timeline_revision: int | None = None,
+    plate_readouts: list[dict[str, Any]] | None = None,
+    visual_evidence_decision: str | None = None,
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
+
+    # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
+    # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은
+    # `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로, 이전 evidence가 내려가면 준비
+    # 중인데도 결과 화면(「다른 후보 보기」 포함)이 뜬다. 그 evidence에서 나온 RequirementReport·
+    # ReportPackage도 같이 뺀다.
+    if evidence_record is not None and not _belongs_to_current_selection(case, selected, evidence_record):
+        evidence_record = None
+        requirement_report_evidence = None
+        requirement_report_package = None
+        report_package = None
 
     return {
         "contract": "CaseView",
@@ -519,10 +624,16 @@ def build_case_view(
             requirement_report_evidence,
             plate_read_status=plate_read_status,
             overlay_time_read_status=overlay_time_read_status,
+            visual_evidence_decision=visual_evidence_decision,
         ),
         "candidates": _build_candidates_view(case, evidence_record, current_timeline_revision),
         "evidence": (
-            _build_evidence_view(evidence_record, preview_ref, bool(case.correction_records))
+            _build_evidence_view(
+                evidence_record,
+                preview_ref,
+                bool(case.correction_records),
+                _plate_preview_ref(evidence_record, plate_readouts),
+            )
             if evidence_record
             else None
         ),

@@ -124,6 +124,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_p001",
+          "rank": 1,
+          "marker_ms": 612000,
           "at": "2026-08-29T20:10:12+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -181,6 +183,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_p001_plate1",
+        "plate_preview_ref": null,
         "review_needed": false,
         "reason_code": null
       },
@@ -256,6 +259,20 @@
           "actions": [
             "MANUAL_PLATE_INPUT"
           ]
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
+          "actions": []
         }
       ]
     },
@@ -319,6 +336,8 @@
       "candidates": [
         {
           "candidate_id": "candidate_p001",
+          "rank": 1,
+          "marker_ms": 612000,
           "at": "2026-08-29T20:10:12+09:00",
           "at_provenance": "recording.filename_time",
           "at_provenance_label_key": "candidate.at_provenance.filename_time",
@@ -376,6 +395,7 @@
         },
         "user_edited": false,
         "preview_ref": "fr_p001_plate1",
+        "plate_preview_ref": "fr_p001_plate3",
         "review_needed": false,
         "reason_code": null
       },
@@ -444,6 +464,20 @@
           "actions": [
             "GENERATE_REPORT_VIDEO"
           ]
+        },
+        {
+          "code": "evidence.location_search_keyword_missing",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.location_search_keyword_missing",
+          "actions": []
+        },
+        {
+          "code": "case.situation_response_pending",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.situation_response_pending",
+          "actions": []
         }
       ]
     }

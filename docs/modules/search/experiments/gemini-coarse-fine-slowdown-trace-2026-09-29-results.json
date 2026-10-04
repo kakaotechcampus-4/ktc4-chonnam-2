@@ -1,0 +1,764 @@
+{
+  "config": {
+    "profile": "p3",
+    "transport": "video(slowed)",
+    "model": "gemini-3.8-flash",
+    "reasoning_effort": "low",
+    "fine_padding_sec": 4.0
+  },
+  "runs": [
+    {
+      "coarse_speed": 1.0,
+      "fine_speed": 1.0,
+      "coarse_fps_prepared": 1.0,
+      "fine_fps_prepared": 1.0,
+      "invocations": 14,
+      "verification_counts": {
+        "NOT_OBSERVED": 7
+      },
+      "reported_input_tokens": 20815,
+      "reported_total_tokens": 27870,
+      "positives_hit": 0,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                3.5
+              ],
+              "at_sec": 1.8,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                3.5
+              ],
+              "at_sec": 1.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.0,
+                4.5
+              ],
+              "at_sec": 2.5,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                3.0,
+                7.0
+              ],
+              "at_sec": 5.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                22.0,
+                25.0
+              ],
+              "at_sec": 23.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                53.5,
+                57.0
+              ],
+              "at_sec": 55.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                10.0,
+                14.5
+              ],
+              "at_sec": 12.5,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 1
+    },
+    {
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 15,
+      "verification_counts": {
+        "NOT_OBSERVED": 6,
+        "OBSERVED": 2
+      },
+      "reported_input_tokens": 48107,
+      "reported_total_tokens": 55906,
+      "positives_hit": 1,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                3.25
+              ],
+              "at_sec": 2.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                2.0,
+                6.5
+              ],
+              "at_sec": 4.0,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                11.5,
+                16.5
+              ],
+              "at_sec": 14.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                2.0,
+                5.0
+              ],
+              "at_sec": 3.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                1.0,
+                3.5
+              ],
+              "at_sec": 2.25,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.0,
+                3.25
+              ],
+              "at_sec": 2.25,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                3.5,
+                6.5
+              ],
+              "at_sec": 5.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                10.0,
+                14.5
+              ],
+              "at_sec": 11.0,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 1
+    },
+    {
+      "coarse_speed": 1.0,
+      "fine_speed": 1.0,
+      "coarse_fps_prepared": 1.0,
+      "fine_fps_prepared": 1.0,
+      "invocations": 17,
+      "verification_counts": {
+        "NOT_OBSERVED": 8,
+        "OBSERVED": 2
+      },
+      "reported_input_tokens": 24237,
+      "reported_total_tokens": 32731,
+      "positives_hit": 2,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                3.5
+              ],
+              "at_sec": 1.8,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [],
+          "fine": [],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [],
+          "fine": [],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                4.0
+              ],
+              "at_sec": 2.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                1.0,
+                3.5
+              ],
+              "at_sec": 2.2,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                3.0,
+                7.0
+              ],
+              "at_sec": 5.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                21.0,
+                25.0
+              ],
+              "at_sec": 23.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                53.0,
+                57.0
+              ],
+              "at_sec": 55.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                29.0,
+                32.0
+              ],
+              "at_sec": 30.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                13.0,
+                16.0
+              ],
+              "at_sec": 14.5,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                34.0,
+                38.0
+              ],
+              "at_sec": 36.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                9.5,
+                14.5
+              ],
+              "at_sec": 12.0,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 2
+    },
+    {
+      "coarse_speed": 0.5,
+      "fine_speed": 0.25,
+      "coarse_fps_prepared": 2.0,
+      "fine_fps_prepared": 4.0,
+      "invocations": 16,
+      "verification_counts": {
+        "NOT_OBSERVED": 7,
+        "OBSERVED": 2
+      },
+      "reported_input_tokens": 51594,
+      "reported_total_tokens": 59062,
+      "positives_hit": 2,
+      "negatives_correct": 3,
+      "cases": [
+        {
+          "case_id": "20260620_141628_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                0.0,
+                3.5
+              ],
+              "at_sec": 1.75,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                9.5,
+                13.0
+              ],
+              "at_sec": 11.75,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141927_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            4.0,
+            9.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                2.25,
+                6.5
+              ],
+              "at_sec": 4.25,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_141956_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                12.0,
+                16.5
+              ],
+              "at_sec": 14.0,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "20260620_150504_EVT_1",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "NOT_OBSERVED",
+          "truth": null,
+          "candidates": [
+            {
+              "span": [
+                1.5,
+                4.0
+              ],
+              "at_sec": 2.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED"
+          ],
+          "verdict": "CORRECT_REJECT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "youtube_clip_01",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            2.0,
+            5.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                0.75,
+                2.75
+              ],
+              "at_sec": 1.8,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0003_C05",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "expected": "OBSERVED",
+          "truth": [
+            10.0,
+            13.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                3.5,
+                6.5
+              ],
+              "at_sec": 5.0,
+              "hits_truth": false
+            },
+            {
+              "span": [
+                22.5,
+                24.5
+              ],
+              "at_sec": 23.5,
+              "hits_truth": false
+            }
+          ],
+          "fine": [
+            "NOT_OBSERVED",
+            "NOT_OBSERVED"
+          ],
+          "verdict": "MISS",
+          "issue_codes": []
+        },
+        {
+          "case_id": "YT_0002_C00",
+          "event": "CENTER_LINE_CROSSING",
+          "expected": "OBSERVED",
+          "truth": [
+            11.0,
+            14.0
+          ],
+          "candidates": [
+            {
+              "span": [
+                10.5,
+                14.0
+              ],
+              "at_sec": 12.0,
+              "hits_truth": true
+            }
+          ],
+          "fine": [
+            "OBSERVED"
+          ],
+          "verdict": "HIT",
+          "issue_codes": []
+        }
+      ],
+      "repeat": 2
+    }
+  ]
+}
