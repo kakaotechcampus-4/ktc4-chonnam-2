@@ -8,7 +8,7 @@ W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18)
 
 > **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
 >
-> **상태 갱신 (2026-10-04)** — 8순위 신설: Runtime/Ops 구현 전 필수 Decision(#244 ~ #248)에 case가 확인 댓글로 약속한 후속 작업. 각 카드가 결정되기 전에는 착수하지 않는다.
+> **상태 갱신 (2026-10-04)** — 8순위 신설: Runtime/Ops 구현 전 필수 Decision(#244 ~ #248)에 case가 확인 댓글로 약속한 후속 작업. 각 카드가 결정되기 전에는 착수하지 않는다. 결정 없이 할 수 있던 것은 선반영했다 — 8-14 · 8-15 ✅, 8-10 · 8-16 일부, 8-1 분석 시작 초안(case-command Draft §11).
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -43,14 +43,16 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 ### 3순위 — Intent LLM 통합
 
 > **2026-09-30:** 1차 구현(09-24)은 case 모듈 경계 위반(프롬프트·provider 호출이 case 안)으로 머지 전 되돌렸다. 호출 창구 위치는 이슈 #210에서 search와 조율 중이고, 모델 선정·평가 체계는 멘토 피드백 후 확정(`미결 유지`). 아래 「API 키/모델 ID 확정이 유일한 외부 의존」은 더 이상 맞지 않는다.
+>
+> **2026-10-04:** #210 Search 의견(a) — 프롬프트 · structured 스키마 · provider 호출 · 실패 분류는 search public 함수, case는 원문 전달 · 6필드→4키 매핑 · 실패 처리. 결과는 `OK` / `ABSTAINED` / `FAILED`로 나뉘고 intent 모델은 Coarse · Fine과 다른 설정 키를 쓴다. case는 [동의 답글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/210#issuecomment-5979330944)을 달았고, 호출은 **1회짜리 비동기 Job**으로 붙인다(`decisions/intent-llm-model-selection.md` §5). 흐름은 case-command Draft §11 `START_ANALYSIS` 초안(분석 시작 → 단서 구조화 Job → 결과 반영 때 `COARSE_SEARCH` 발주). **Search PR(텍스트 structured public 함수) 대기** — 매핑 코드 · 실험 하네스 import 변경 · Job 배선은 그 뒤다(배선은 #245 D-5 · D-7도 필요).
 
 **문제:** `CaseAggregate.intake()`가 여전히 구조화된 `hints`만 파라미터로 받는다. 원문 자연어를 구조화하는 실제 호출이 `domain.py`/`scope.py` 어디에도 없다.
 
 **왜 3순위:** case의 헤드라인 책임(`tech-spec.md` §1)이자 실사용자 입력 경로의 시작점이지만, `docs/case-llm-model-comparison-20260916` 브랜치에 하네스·locked dataset·Elice 연동이 이미 준비돼 있어서 상대적으로 빨리 붙일 수 있다(API 키/모델 ID 확정이 유일한 외부 의존).
 
 **서브 항목 (A4와 동시에 결정해야 함, 따로 뗄 수 없음):**
-- **원 입력 텍스트 저장 여부/위치** — `CorrectionRecord`는 `previous_value → new_value`(수정 전/후 값)만 기록하고 사용자가 실제로 입력한 원문은 어디에도 안 남는다. "원 입력 → 최초 추출 → 수정 → 최종값"을 사건 단위로 재현하려면 A4를 만들 때 같이 결정해야 한다.
-- **UsageRecord 구현 요청(common/runtime)** — LLM 호출 원본 로그(프롬프트·응답·모델명·비용·latency)를 남길 계약이 문서(`module-architecture.md`)엔 있지만 코드는 아직 없다(`common/job_execution.py` 확인함). case가 자체 로그를 새로 만들기보다 common/runtime에 `UsageRecord` 구현을 요청하고 case는 거기 맞춰 채우는 쪽을 제안한다.
+- **원 입력 텍스트 저장 여부/위치** — *(2026-10-04: 원문 보존은 Draft §11 `START_ANALYSIS`에 반영 — case aggregate에 두고 #245 D-1 case table로 영속화. CaseView 최상위 `description`으로 내리기로 case 결정 — 계약 반영은 §11 미결 1, web 확인 #259.)* `CorrectionRecord`는 `previous_value → new_value`(수정 전/후 값)만 기록하고 사용자가 실제로 입력한 원문은 어디에도 안 남는다. "원 입력 → 최초 추출 → 수정 → 최종값"을 사건 단위로 재현하려면 A4를 만들 때 같이 결정해야 한다.
+- **UsageRecord 구현 요청(common/runtime)** — *(2026-10-04: #244 U-1로 넘어감 — search provider adapter가 시도마다 common/runtime의 `UsageSink`에 기록하고 UsageRecord Producer는 common/runtime. case가 따로 채우지 않는다. #244 결정 대기.)* LLM 호출 원본 로그(프롬프트·응답·모델명·비용·latency)를 남길 계약이 문서(`module-architecture.md`)엔 있지만 코드는 아직 없다(`common/job_execution.py` 확인함). case가 자체 로그를 새로 만들기보다 common/runtime에 `UsageRecord` 구현을 요청하고 case는 거기 맞춰 채우는 쪽을 제안한다.
 
 **참고:** `docs/case-llm-model-comparison-20260916` 브랜치 전체, `research/llm-model-comparison-hint-extraction.md`
 
@@ -170,7 +172,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 | # | 할 일 | 출처 |
 | --- | --- | --- |
-| 8-1 | case-command Draft에 분석 시작 · 중단 command 추가 — 이름 · payload · 허용 상태, 시작 command가 hints를 어디서 받는지 포함 | #245 C-1 · #247 H-2 |
+| 8-1 | case-command Draft에 분석 시작 · 중단 command 추가 — 이름 · payload · 허용 상태, 시작 command가 hints를 어디서 받는지 포함. **분석 시작은 초안 작성(2026-10-04, Draft §11 — #210 Search 의견 반영 · case 결정 4건(`HINT_EXTRACT` · 실패 notice 없음 · 빈 설명은 구조화 생략 · CaseView `description`) · 남은 미결 5건)**, 중단은 C-1a 결정 뒤 | #245 C-1 · #247 H-2 |
 | 8-2 | case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 | #247 H-6 |
 | 8-3 | CaseView 계약에 `running_jobs[]` 정의 추가 — 「case가 아직 결과를 기다리는 job」, execution 종료(T1)부터 case 반영(T2)까지는 `RUNNING`, 중단 · timeout으로 기다리기를 멈춘 job은 제외 | #247 H-4 |
 | 8-4 | CaseView 계약에 「중단된 job은 실제 실행 상태와 상관없이 `PARTIAL`로 투영」 추가 — 마지막 attempt가 `STALE`이어도 `FAILED`로 보이지 않게 | #245 C-3 · #248 Q-1 |
@@ -184,11 +186,13 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | 8-7 | command 처리가 「이번 command로 append한 JobRecord 목록」을 응답 body 밖으로 돌려준다 — composition root의 dispatch와 HTTP 202/200 판단에 쓴다 | #245 D-2 · #247 H-3 |
 | 8-8 | 결과 반영 함수를 `execution_id` 기준 idempotent로 | #245 D-5 |
 | 8-9 | 중단 command 처리 + 「중단된 `job_id` 집합」으로 늦은 결과를 거르는 guard. 6.6순위 조건 2(현재 선택 context 대조)와 함께 동작한다 | #245 C-1a · C-4 |
-| 8-10 | JobExecution read port 연결 + attempt 최댓값 선택(CaseView 계약 A§10-6)을 case가 구현. `view.py`의 「최신 attempt 선택은 runtime이 건네준다」 주석 수정 | #245 D-6 · #248 Q-1 |
+| 8-10 | JobExecution read port 연결 + attempt 최댓값 선택(CaseView 계약 A§10-6)을 case가 구현. `view.py`의 「최신 attempt 선택은 runtime이 건네준다」 주석 수정. **선택 규칙 · 주석 수정은 선반영(2026-10-04, `view.representative_execution_status()`)** — read port 연결만 D-6 뒤 | #245 D-6 · #248 Q-1 |
 | 8-11 | `running_jobs` 투영을 8-3 정의대로 구현 | #247 H-4 |
 | 8-12 | 빈 case 생성 경로 — `CaseAggregate.intake()` 필수 인자(`hints` · `manifest_summary`) 정리, adapter 없이 등록, 업로드마다 `manifest_summary` 갱신 | #247 H-2 |
 | 8-13 | source asset을 `RealVideoAdapter`의 local path 대신 recording 공개 함수로 조회 | #246 S-3 |
-| 8-14 | `FINE_VERIFY` 실행 실패의 notice · action 정하기 — 지금은 CaseView에 보일 notice가 없어 FAILED가 terminal이 되면 막다른 상태다 | #244 R-1 |
+| 8-14 | ✅ `FINE_VERIFY` 실행 실패의 notice · action 정하기 — **2026-10-04 `search.visual_verify_failed`**(ERROR · blocking · `actions:[]`, 출구는 「다른 후보 보기」, CaseView 계약 등재). 실행 상태는 호출자가 `visual_verify_status`로 넘긴다. 동기 real 경로의 Fine 예외 → 실행 실패 분류는 Search failure taxonomy 접합(#244) 뒤 | #244 R-1 |
+| 8-15 | ✅ **2026-10-04 overlay 판독 결과 notice 3종**(`readout.overlay_not_present` · `_presence_undetermined` · `_ocr_failed`)을 case가 붙인다 — readout `failure-taxonomy.md` 매핑 그대로, 현재 선택 후보의 가장 나중 판독 기준. 이 카드들의 후속은 아니고 8순위 검토 중 찾은 공백(코드가 붙이지 않았고 CaseView 계약 등재도 둘 빠짐) | readout `failure-taxonomy.md` |
+| 8-16 | 단서 구조화(`HINT_EXTRACT`) 결과 반영 — **결과 반영 함수만 선반영(2026-10-04, `service.receive_hint_extraction()`)**. 결과 모양은 #210 Search 의견 가정, 발주 · 배선은 Search PR · D-5 뒤. 3순위와 같은 일 | #210 · 3순위 |
 
 **case가 정할 미결** — 정하기 전에는 위 해당 항목을 끝냈다고 부르지 않는다.
 

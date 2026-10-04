@@ -33,6 +33,7 @@
 - **초기 후보 선택** — `rank=1` 자동 선택이라 사용자 명령이 아니다(#168 결정 1, #194). 후보 command는 결과 화면에서 다른 후보를 고를 때만 쓴다(#106 신유민 09-23).
 - **`rejected_candidate_ids`** — 받지 않는다(#106 결론). 개별 후보를 「아니다」로 지목하는 화면 신호가 생기면 다시 본다.
 - **시간 보정 버튼 4종**(조금 전·조금 후 등) — W7 밖(#106 결론).
+- **분석 시작 · 중단** — 다음 판본 후보. 분석 시작은 §11에 초안이 있다. 중단은 Runtime 결정(#245 C-1 · C-1a) 뒤에 쓴다.
 - **transport**(HTTP 경로·인증·직렬화) — 누가 만들지부터 정한다(`design-refinement-w7-baseline.md` 6순위). 이 문서는 transport와 무관한 요청·응답 모양만 정한다.
 
 ## 3. 책임 경계
@@ -134,3 +135,59 @@
 - `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 `input_fingerprint`·`scope_ref`를 그대로 쓴다(`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 계산하지 않으므로 이전 발주가 없으면 `not_allowed`다 — `GENERATE_PLATE_IMAGE`처럼 처음 발주되는 kind는 fingerprint 출처가 정해질 때까지 이 경로로 열리지 않는다.
 - 성공 뒤 `READY` 재확인은 `service.mark_ready_if_package_ready()`를 그대로 부른다. real(fixture) 경로는 최종 신고영상 관찰(I4, `observation_facts`)이 없어 상황 응답 뒤에도 FINAL이 `UNKNOWN`이라 `READY`에 가지 않는다(ADR-EVIDENCE-008 §6.2) — 이 재확인과 별개로 evidence 쪽 입력이 있어야 한다.
 - `RECORD_SITUATION_RESPONSE`는 PR #177이 머지돼야 develop에서 동작한다.
+
+## 11. 다음 판본 초안 — 분석 시작 `START_ANALYSIS` (2026-10-04, 제안)
+
+> **상태: 제안 — 이 판본(v0)에 들어 있지 않고, 코드도 없다.** 분석 시작을 별도 endpoint가 아니라 commands의 `kind`로 두는 방향은 #247 H-2(`PROPOSED`)를, 단서 구조화 호출 창구는 #210 Search 의견((a) search에 둔다, 합의 확정 전)을 따른다. 고도화 기준 문서 8순위 8-1. 아래 「미결」이 닫히기 전에는 §2 「이 판본에 넣는 command」로 옮기지 않는다.
+
+**사용자가 하는 일:** 홈 화면에서 블랙박스 영상을 올리고(파일마다 따로 업로드, #247 H-5) 기억나는 상황을 자유롭게 적은 뒤 「분석 시작」(`core-user-flow.md` §5). AI가 단서를 구조화하고 탐색 범위를 구성한 뒤 바로 분석을 시작하며, 사용자는 이 내부 계획을 승인하거나 수정하지 않는다(§6).
+
+| `kind` | `payload` | 허용 상태 | 성공하면 |
+| --- | --- | --- | --- |
+| `START_ANALYSIS` | `{ "description": "string" }` — 사용자가 적은 원문 그대로. 빈 문자열을 허용한다 | `INTAKE`이고, 이 case에 처리할 수 있는 영상이 1개 이상 있을 때(`manifest_summary.ok_file_count >= 1`) | 설명 원문 보존 · `INTAKE→SEARCHING` · **`HINT_EXTRACT` `JobRecord` 1건**(`COARSE_SEARCH`는 결과 반영 때). 설명이 비었으면 구조화 없이 `AnalysisScope` 1건 · `COARSE_SEARCH` 1건을 바로 발주한다. `case_rev`는 그대로다 |
+
+**흐름**
+
+```
+START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──▶ (응답: 발주 있음)
+                                                        │ Worker: search public 함수 1회
+                                                        ▼
+               결과 반영(#245 D-5) ── hints 채움 · AnalysisScope 1건 · COARSE_SEARCH 1건 발주
+```
+
+- **원문을 그대로 받는다.** web은 원문을 파싱하거나 구조화하지 않는다 — 입력 중 실시간 파싱 결과를 보여 주지 않고(`core-user-flow.md` §5), 구조화는 AI가 한다(§4). case는 원문을 「구조화 전 단서」로 보존한다(§4-2).
+- **구조화는 비동기 Job 1회다.** `decisions/intent-llm-model-selection.md` §5가 이 호출을 「요청 안에서 동기로 끝내는 것이 아니라 1회짜리 비동기 Job」으로 보고 모델을 채택했고, 동기로 붙이면 같은 문서 §7 재검토 트리거에 걸린다. command 응답은 발주까지만이고 진행은 다음 CaseView로 본다(§3).
+- **호출은 search, 판단은 case다(#210 Search 의견).** 프롬프트 · structured 스키마 · provider 호출 · 실패 분류는 search public 함수가 맡는다. case는 원문을 넘기고, 결과를 `hints` 4개 키로 옮기는 매핑(6필드→4키)과 실패 처리를 맡는다. provider 사용량은 다른 Search 호출과 같은 경로로 원장에 남는다(#244 U-1).
+- **결과 반영.** 결과 상태가 `OK`면 매핑대로 `hints`를 채운다(일부 필드가 비어 있을 수 있다). `ABSTAINED`(모델이 전부 보류)나 `FAILED`(호출 · 파싱 실패)면 `hints` 4개를 모두 `null`로 두고 그대로 진행한다 — 값을 지어내지 않는다. 어느 쪽이든 이어서 `AnalysisScope`를 만들고 `COARSE_SEARCH` 1건을 발주한다(빈 단서면 「시간 단서 없이 전체 찾기」, `core-user-flow.md` §5). 결과 반영은 사용자 요청이 아니라 `case_rev`를 올리지 않는다(`record_candidate_search_failure()`와 같다).
+- **빈 설명을 막지 않고, 구조화도 건너뛴다(2026-10-04 case 결정).** `description`이 빈 문자열이어도 `invalid_payload`가 아니다(키가 없거나 문자열이 아니면 `invalid_payload`). 앞뒤 공백을 지운 뒤 비었으면 `HINT_EXTRACT`를 발주하지 않고 `hints` 4개를 `null`로 둔 채 `AnalysisScope` · `COARSE_SEARCH`를 바로 발주한다 — 부를 이유가 없는 provider 호출과 대기를 만들지 않고, `ABSTAINED`가 「모델이 판단을 보류함」이라는 뜻으로만 남게 한다.
+- **Job 이름은 `HINT_EXTRACT`(label_key `job.hint_extract`)다(2026-10-04 case 결정).** 기존 kind의 `대상_동작` 꼴(`PLATE_READ` · `FINE_VERIFY`)과 조사 문서 · 스키마 용어(`llm-model-comparison-hint-extraction` · `IntentHintExtraction`)를 따른다.
+- **구조화 실패는 notice로 알리지 않는다(2026-10-04 case 결정).** search 결과가 `FAILED`면 Worker가 그 Job을 JobExecution `FAILED` + `failure_kind`로 기록하고, 「설정이 깨져 매번 실패」는 Runtime 원장으로 알아챈다(#210 3번의 목적). 사용자 흐름은 `ABSTAINED`와 같아(빈 단서로 탐색 계속) 사용자가 할 일이 없고, 사용자가 적은 내용은 아래 `description`으로 화면에 남는다.
+- **설명 원문을 CaseView 최상위 `description`(`string | null`)으로 내린다(2026-10-04 case 결정).** 구조화가 진행 중이거나 `ABSTAINED` · `FAILED`로 `hints`가 비어도 사용자가 자기 원문을 본다 — 그렇지 않으면 「기억하신 것」(web `HintRecall`)이 「없음」으로 떠, 단서를 적은 사용자에게 AI가 아무것도 이해하지 못한 것처럼 보인다(`core-user-flow.md` 「AI가 이해한 기억 단서가 맞는가?」). `hints` 안에 넣지 않는 이유는 `hints`가 「구조화된 4개」라는 뜻을 지키기 위해서다. `START_ANALYSIS` 전에는 `null`, 빈 설명이면 `""`다. CaseView 계약 변경이라 반영은 미결 1.
+- **일부 영상 실패는 막지 않는다.** 읽을 수 없는 파일은 건너뛴 사실을 보여 주고 나머지로 진행한다(§23 「다른 영상은 계속 분석」). 처리할 수 있는 영상이 하나도 없을 때만 `not_allowed`다.
+- **`case_rev`는 올리지 않는다** — `start_search()`가 `INTAKE→SEARCHING`에서 올리지 않는 현재 규칙 그대로다(`scenario_happy_001`: SEARCHING · `COARSE_SEARCH` 모두 `case_rev:1`). 같은 버튼을 두 번 눌러도 두 번째는 stage가 이미 `SEARCHING`이라 `not_allowed`로 막힌다 — §9 첫 항목(`case_rev`로 잡히지 않는 변경)이 이 command에서는 stage 검사로 해소된다.
+- **`COARSE_SEARCH`는 1건이다.** 긴 영상의 클립 분할 발주는 아직 구현되지 않았고(#168 후속, `src/daesingo/case/real_e2e.py` 모듈 docstring), 생기면 클립별 발주로 고친다.
+- 실패 코드는 §6의 네 가지를 그대로 쓴다. 새 코드를 만들지 않는다.
+
+**예시**
+
+```json
+// 요청 — 홈 화면 「분석 시작」
+{ "case_id": "case_h001", "expected_case_rev": 1, "kind": "START_ANALYSIS",
+  "payload": { "description": "6시 반쯤 흰 SUV가 실선을 넘어 끼어들었어요" } }
+
+// 응답 — 성공(발주 있음 → HTTP 202, #247 H-3). 구조화 Job이 진행 중이라 hints는 아직 비어 있다
+{ "ok": true, "error": null,
+  "case_view": { "case_id": "case_h001", "case_rev": 1, "stage": "SEARCHING",
+                 "description": "6시 반쯤 흰 SUV가 실선을 넘어 끼어들었어요",
+                 "hints": { "time": null, "vehicle": null, "situation": null, "location": null },
+                 "running_jobs": [ { "job_id": "...", "kind": "HINT_EXTRACT", "label_key": "job.hint_extract", "status": "PENDING" } ],
+                 "...": "..." } }
+```
+
+**미결 — 이 초안이 정하지 않는다**
+
+1. **계약 반영.** 위 case 결정을 계약에 올리는 일이다 — CaseView 최상위 `description` 신설(필드 추가라 CaseView 버전을 올리고 web Consumer 확인이 필요하다), JobRecord 계약 A§7에 `HINT_EXTRACT` 등재 · A§12 `label_key` 목록에 `job.hint_extract` 추가(web 문구 필요). 신유민 확인 뒤 반영한다 — 확인 요청 #259.
+2. **`AnalysisScope` 값의 출처.** `scope.py`는 `time_ranges` · `target_event_types` · `budget`을 호출자에게 받는다(intake 흐름이 정해지지 않았던 범위). 지금 real 경로는 영상 전체 1구간과 월요일 E2E 기본값을 쓴다(`real_e2e.py`).
+3. **첫 발주의 `input_fingerprint`.** case는 fingerprint를 계산하지 않고 공식도 미정이다(`decisions/input-fingerprint-implementation-label-deferred.md`). `HINT_EXTRACT`와 `COARSE_SEARCH` 모두 재사용할 이전 `JobRecord`가 없다.
+4. **`HINT_EXTRACT`를 얼마나 기다리는가.** 이 호출에는 `AnalysisScope`가 없어 실행 상한을 어떻게 받을지 #210 Search PR에서 정하기로 했다. 그 값을 보고 case 대기 시간(`decisions/timeout-fallback.md`)과 기다리다 멈췄을 때 빈 단서로 진행할지를 정한다.
+5. **선행 작업.** 빈 case 생성과 업로드마다 `manifest_summary` 갱신(고도화 8-12, #247 H-2 · H-5), search의 텍스트 structured public 함수(#210 Search 작업), Worker 결과 반영 경로 · handler 등록(#245 D-5 · D-7).
