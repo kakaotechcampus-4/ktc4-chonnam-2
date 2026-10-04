@@ -48,10 +48,10 @@ _REPORT_FIELDS = ("safety_report_type", "occurred_at", "location", "vehicle_numb
 # `contract-job-record-case-view.md` 헤더 ③ / §13 「JobExecution → CaseView 상태 projection」 —
 # QUEUED→PENDING, RUNNING→RUNNING, SUCCEEDED→DONE, FAILED/STALE→FAILED, CANCELLED→PARTIAL
 # (CANCELLED은 새 enum 값을 만들지 않고 기존 PARTIAL로 흡수, 이슈 #33 A-2). 이 다섯 매핑
-# 자체는 case-view 계약이 소유하는 projection 표라 case 코드가 그대로 옮긴다 — "지금
-# 이 job_id/kind의 최신 실행이 어떤 JobExecution.status인가"를 고르는 일(여러 attempt
-# 중 최신을 고르는 것, force_rerun 이후 새 job_id로 갈아타는 것)은 이 함수의 책임이
-# 아니다(그건 JobExecution을 소유한 common/runtime 쪽에서 이미 해석해 건네준다고 본다).
+# 자체는 case-view 계약이 소유하는 projection 표라 case 코드가 그대로 옮긴다. 「이 kind의
+# 대표 실행이 어떤 JobExecution.status인가」를 고르는 일(가장 나중 job · attempt 최댓값)은
+# `representative_execution_status()`가 한다 — JobExecution read port(#245 D-6)는 Contract
+# 모양을 그대로 돌려주므로 case가 고른다(A§10-6 · §10-7).
 _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
     "QUEUED": "PENDING",
     "RUNNING": "RUNNING",
@@ -60,6 +60,20 @@ _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
     "STALE": "FAILED",
     "CANCELLED": "PARTIAL",
 }
+
+
+def representative_execution_status(
+    job_records: list[dict[str, Any]], job_executions: list[dict[str, Any]], kind: str
+) -> str | None:
+    """`kind`의 대표 `JobExecution.status`. 대표 job은 그 kind로 `job_records[]`에 가장 나중에
+    기록된 job이고(A§10-7 — `case_rev`는 정렬 키가 아니다), 그 안의 대표 execution은 `attempt`
+    최댓값이다(A§10-6 — 재시도 중 이전 attempt의 STALE을 보이지 않는다). 그 kind의 job이 없거나
+    대표 job에 아직 실행 보고가 없으면 `None` — 이전 job의 상태로 대신하지 않는다."""
+    job_id = next((j["job_id"] for j in reversed(job_records) if j["kind"] == kind), None)
+    attempts = [e for e in job_executions if e["job_id"] == job_id]
+    if not attempts:
+        return None
+    return max(attempts, key=lambda e: e["attempt"])["status"]
 
 
 def _job_execution_status_to_progress_state(status: str | None) -> str:
