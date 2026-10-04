@@ -7,6 +7,7 @@
 - 계약의 의미와 경계는 `architecture/module-architecture.md`를 따른다.
 - 아직 합의되지 않은 필드를 빈칸 채우기 식으로 확정하지 않는다.
 - 계약 1건은 `contract-<slug>.md`(현재 규칙)와 `adr/adr-<slug>.md`(확정 근거) 한 짝으로 둔다.
+- 예외: `contract-http-api.md`(web ↔ api transport, §5-1 목록 밖)는 [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) 결정대로 처음부터 이 폴더에 `Draft — Consumer Review`로 둔다. 짝 ADR `adr/adr-http-api.md`는 Proposed다. 아래 「16건 모두 Final」 집계에 들지 않는다.
 
 ## 감사 후속 상태 (2026-09-08 snapshot · 2026-09-19 maintenance)
 
