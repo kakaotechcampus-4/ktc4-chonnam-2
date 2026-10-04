@@ -104,6 +104,8 @@ class AdapterSnapshot:
     report_package: dict[str, Any] | None
     # `evidence.plate_preview_ref`(#47)의 원천 — 번호판 근거 프레임을 찾는 데만 쓴다.
     plate_readouts: list[dict[str, Any]] = field(default_factory=list)
+    # `readout.overlay_*` notice의 원천 — 현재 선택 후보의 가장 나중 판독만 본다.
+    overlay_time_readouts: list[dict[str, Any]] = field(default_factory=list)
     plate_read_status: str | None = None
     # 선택된 후보 Fine 결과의 소비 판정 — 음성 결과 notice(#168 [A])의 원천.
     visual_evidence_decision: str | None = None
@@ -120,6 +122,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         requirement_report_package=adapter.get_requirement_report("FINAL_PACKAGE"),
         report_package=adapter.get_report_package(),
         plate_readouts=adapter.get_plate_readouts(),
+        overlay_time_readouts=adapter.get_overlay_time_readouts(),
         plate_read_status=adapter.get_plate_read_status(),
         visual_evidence_decision=adapter.get_visual_evidence_decision(),
         evidence_needs=adapter.get_evidence_needs(),
@@ -212,6 +215,7 @@ def build_view_from_adapter(
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
         visual_verify_status=visual_verify_status,
+        overlay_time_readouts=snapshot.overlay_time_readouts,
     )
 
 
@@ -306,6 +310,37 @@ PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
 }
 
 
+# overlay 판독이 정상 종료했지만 시각을 얻지 못한 갈래(readout `failure-taxonomy.md` 「`CaseView.notices[].code`
+# 매핑」, #31 A-1). `observation.reason.code`와 1:1이고(점 → 밑줄) 셋을 합치지 않는다 — 「화면에 시각이 없다」
+# (사실)와 「확인하지 못했다」(모름)는 다른 말이다(`core-user-flow.md` §5). 실행 실패가 아니라 `INFO`이고,
+# 사용자가 할 시각 확인은 `evidence.time_*` notice가 나른다.
+OVERLAY_REASON_NOTICES: dict[str, dict[str, Any]] = {
+    reason: {
+        "code": f"readout.overlay_{detail}",
+        "severity": "INFO",
+        "blocking": False,
+        "message_key": f"notice.overlay_{detail}",
+        "actions": [],
+    }
+    for reason, detail in (
+        ("readout.overlay.not_present", "not_present"),
+        ("readout.overlay.presence_undetermined", "presence_undetermined"),
+        ("readout.overlay.ocr_failed", "ocr_failed"),
+    )
+}
+
+
+def _overlay_notice(view: dict[str, Any], overlay_time_readouts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """현재 선택 후보의 가장 나중 overlay 판독(A§10-7 — 재판독 뒤에는 이전 판독의 notice를 남기지 않는다)의
+    `reason.code`에 대응하는 notice. 매핑에 없는 reason은 지어내지 않는다."""
+    selected = next((c["candidate_id"] for c in view.get("candidates", []) if c["selected"]), None)
+    latest = next((r for r in reversed(overlay_time_readouts) if r.get("candidate_id") == selected), None)
+    if selected is None or latest is None:
+        return None
+    reason = ((latest.get("observation") or {}).get("reason") or {}).get("code")
+    return OVERLAY_REASON_NOTICES.get(reason)
+
+
 def _plate_reread_needed(evidence: dict[str, Any], evidence_needs: list[dict[str, Any]]) -> bool:
     """현재 EvidenceRecord를 basis로 계산된 Needs에 `PLATE_REREAD`가 있는가. 이전 revision의 Need는
     보지 않는다 — 재판독으로 값이 채워진 v2에는 v1의 Need가 남아 있어도 해당하지 않는다."""
@@ -322,6 +357,7 @@ def derive_notices(
     evidence_needs: list[dict[str, Any]] | None = None,
     visual_evidence_decision: str | None = None,
     visual_verify_status: str | None = None,
+    overlay_time_readouts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -349,6 +385,9 @@ def derive_notices(
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
       본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
+    - `readout.overlay_not_present` · `readout.overlay_presence_undetermined` · `readout.overlay_ocr_failed` —
+      현재 선택 후보의 가장 나중 overlay 판독 `observation.reason.code`에 1:1로 대응할 때(readout
+      `failure-taxonomy.md`). evidence 유무와 무관하다. `overlay_time_readouts`를 넘기지 않으면 붙이지 않는다.
 
     evidence에 걸린 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
@@ -364,6 +403,9 @@ def derive_notices(
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
         derived.append(PLATE_READ_FAILED_NOTICE)
+    overlay_notice = _overlay_notice(view, overlay_time_readouts or [])
+    if overlay_notice is not None:
+        derived.append(overlay_notice)
     evidence = view.get("evidence")
     selected = [c for c in view.get("candidates", []) if c["selected"]]
     awaiting_response = (
