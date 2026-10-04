@@ -7,6 +7,8 @@
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.
 
 > **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
+>
+> **상태 갱신 (2026-10-04)** — 8순위 신설: Runtime/Ops 구현 전 필수 Decision(#244 ~ #248)에 case가 확인 댓글로 약속한 후속 작업. 각 카드가 결정되기 전에는 착수하지 않는다.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -158,6 +160,55 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 7순위:** "바로 가능" 1건, "작은 계측" 2건은 사실 비용이 낮아서 더 앞에서 같이 해도 되지만, 나머지 4건이 A1/UsageRecord(둘 다 case 파트 아님)에 종속적이라 전체 항목으로는 뒤로 뒀다.
 
+### 8순위 — Runtime/Ops 필수 Decision(#244 ~ #248) 후속
+
+**문제:** api · worker가 별도 process가 되면서(Ops §2) case의 동기 · in-memory 전제가 깨진다. Runtime/Ops 카드 5장에 case 확인 댓글을 달면서 case가 맡겠다고 한 일을 여기 모은다. 카드 상태는 모두 `PROPOSED — OWNER ALIGNMENT REQUIRED`라 **결정이 나기 전에는 착수하지 않는다** — 결정이 댓글과 다르게 나면 이 표를 먼저 고친다.
+
+**case 댓글:** [#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244#issuecomment-5978870101) · [#245](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/245#issuecomment-5978830198) · [#246](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/246#issuecomment-5978917389) · [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247#issuecomment-5978955168) · [#248](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/248#issuecomment-5978979193)
+
+**문서 (case 소유)**
+
+| # | 할 일 | 출처 |
+| --- | --- | --- |
+| 8-1 | case-command Draft에 분석 시작 · 중단 command 추가 — 이름 · payload · 허용 상태, 시작 command가 hints를 어디서 받는지 포함 | #245 C-1 · #247 H-2 |
+| 8-2 | case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 | #247 H-6 |
+| 8-3 | CaseView 계약에 `running_jobs[]` 정의 추가 — 「case가 아직 결과를 기다리는 job」, execution 종료(T1)부터 case 반영(T2)까지는 `RUNNING`, 중단 · timeout으로 기다리기를 멈춘 job은 제외 | #247 H-4 |
+| 8-4 | CaseView 계약에 「중단된 job은 실제 실행 상태와 상관없이 `PARTIAL`로 투영」 추가 — 마지막 attempt가 `STALE`이어도 `FAILED`로 보이지 않게 | #245 C-3 · #248 Q-1 |
+| 8-5 | `decisions/budget-krw-normalization.md` 「남은 것」에 정규화 층(cost를 계산하는 Search)과 `amount=null`은 0이 아니라는 원칙 반영 | #244 U-2 |
+
+**구현 (case 코드)**
+
+| # | 할 일 | 출처 |
+| --- | --- | --- |
+| 8-6 | `CaseStore` MySQL 구현 — case마다 adapter를 들고 CaseView 때마다 adapter에서 다시 읽는 구조도 함께 바꾼다. 영속화 대상: Case aggregate(`Candidate.thumb_ref` 포함) · JobRecord · `scope_ref`가 가리키는 AnalysisScope · 처리한 `execution_id`. **첫 비동기 Real E2E의 선행**이고 8-7 ~ 8-11은 이 위에서 한다 | #245 D-1 · #246 S-4 |
+| 8-7 | command 처리가 「이번 command로 append한 JobRecord 목록」을 응답 body 밖으로 돌려준다 — composition root의 dispatch와 HTTP 202/200 판단에 쓴다 | #245 D-2 · #247 H-3 |
+| 8-8 | 결과 반영 함수를 `execution_id` 기준 idempotent로 | #245 D-5 |
+| 8-9 | 중단 command 처리 + 「중단된 `job_id` 집합」으로 늦은 결과를 거르는 guard. 6.6순위 조건 2(현재 선택 context 대조)와 함께 동작한다 | #245 C-1a · C-4 |
+| 8-10 | JobExecution read port 연결 + attempt 최댓값 선택(CaseView 계약 A§10-6)을 case가 구현. `view.py`의 「최신 attempt 선택은 runtime이 건네준다」 주석 수정 | #245 D-6 · #248 Q-1 |
+| 8-11 | `running_jobs` 투영을 8-3 정의대로 구현 | #247 H-4 |
+| 8-12 | 빈 case 생성 경로 — `CaseAggregate.intake()` 필수 인자(`hints` · `manifest_summary`) 정리, adapter 없이 등록, 업로드마다 `manifest_summary` 갱신 | #247 H-2 |
+| 8-13 | source asset을 `RealVideoAdapter`의 local path 대신 recording 공개 함수로 조회 | #246 S-3 |
+| 8-14 | `FINE_VERIFY` 실행 실패의 notice · action 정하기 — 지금은 CaseView에 보일 notice가 없어 FAILED가 terminal이 되면 막다른 상태다 | #244 R-1 |
+
+**case가 정할 미결** — 정하기 전에는 위 해당 항목을 끝냈다고 부르지 않는다.
+
+- 「초안 준비 중」(`core-user-flow.md` 230행)에 중단할 때 판독 job까지 멈추는가 — product에 정해져 있지 않다(#245 C-1a에서 보류). 8-1 · 8-9
+- timeout된 job을 `running_jobs`에서 빼는가 — 빼면 timeout 뒤 늦게 반영된 결과는 web이 다시 조회할 때까지 보이지 않는다. 8-3 · 8-11
+- budget guard가 「계산 불가」(`amount=null` 포함)일 때 발주를 막는가 계속하는가 — guard 구현 때 정한다(#244 U-2)
+- 시작 command payload 모양 — 8-1과 함께 정한다
+
+**다른 Owner 쪽 반영 대기** — case가 고치지 않고 결과만 확인한다.
+
+| 할 일 | 소유 | 카드 |
+| --- | --- | --- |
+| 「현재 `case_rev`와 맞는 결과만 반영」 문구를 「case가 현재 context에 유효하다고 판단한 결과만 반영」으로 — JobExecution §9-8 · §2 case Consumer 행, `module-architecture.md` §4-모듈5 ④ · §8-2 | common/runtime (Architecture 문서 포함) | #245 C-1a |
+| C-4 문구를 「중단된 `job_id` 집합에 있는 job의 결과는 반영하지 않는다」로 | common/runtime | #245 C-4 |
+| process 경계를 넘는 recording 상태 목록에 CaseView FrameRef 3종(`thumb_ref` · `preview_ref` · `plate_preview_ref`) 포함 | recording | #246 S-4 |
+
+**왜 8순위:** 전부 Runtime 결정에 종속된 배선 작업이라 결정 전에는 할 수 없다. 다만 8-6은 Real E2E의 비동기 전환(M5)을 막는 선행이므로, 카드가 결정되면 이 섹션 안에서는 가장 먼저 한다.
+
+**참고:** 이슈 #244 · #245 · #246 · #247 · #248, 목록 #251, evidence PR #253
+
 ## 2. case가 의존하는 외부 블로커 (case 파트 아님, 참고용)
 
 case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 그 결과를 그대로 쓰는 항목이다. 이 문서의 우선순위 대상이 아니다.
@@ -199,7 +250,7 @@ case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 
 | --- | --- | --- |
 | 7순위(Orchestration 평가 지표) | 전체 사이클 | "개선"이 실제로 측정 가능한 수치 변화라 baseline/재평가가 의미 있다 |
 | 3순위(Intent LLM 통합) | 전체 사이클(이미 진행 중) | `intent-llm-model-comparison` 실험이 이미 eval dataset(locked v1)·baseline 측정 단계를 밟고 있다 |
-| 1·2·4·5·6·6.5순위(A3/D8/B5/B6/A2) | 축약 — 조사 문서/선택안/구현/테스트까지만 | 순수 배선·설계 작업이라 "eval dataset로 개선폭을 측정"할 대상 자체가 없다(정답/오답이 명확한 정합성 문제) — 테스트 통과 여부가 곧 검증이다 |
+| 1·2·4·5·6·6.5·8순위(A3/D8/B5/B6/A2) | 축약 — 조사 문서/선택안/구현/테스트까지만 | 순수 배선·설계 작업이라 "eval dataset로 개선폭을 측정"할 대상 자체가 없다(정답/오답이 명확한 정합성 문제) — 테스트 통과 여부가 곧 검증이다 |
 | 3.5순위(correction 로그 정책) | 사이클 밖 — 정책/승인 프로세스 | 성능 개선이 아니라 동의·법무 성격이라 이 사이클이 안 맞는다. Issue #74의 완료 조건 체크리스트를 그대로 따른다 |
 
 새 항목이 이 문서에 추가될 때도 "성능/품질 개선 항목인지, 순수 배선 항목인지, 정책 항목인지"를 먼저 구분하고 맞는 사이클(또는 생략)을 적용한다.
