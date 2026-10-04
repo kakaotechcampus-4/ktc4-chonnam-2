@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"은색\",\n  \"situation_hint\": null,\n  \"location_hint\": \"좀 더 아래쪽\",\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"차량 색상에 대한 정정은 명확하나 위치 정보를 '좀 더 아래쪽'이라고 모호하게 표현하여 confidence를 low로 설정했습니다. 정정 대상이 vehicle_hint로 명시되었으나 위치 정보도 함께 변경되어 정정 범위가 복합적입니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "차량 색상에 대한 정정은 명확하나 위치 정보를 '좀 더 아래쪽'이라고 모호하게 표현하여 confidence를 low로 설정했습니다. 정정 대상이 vehicle_hint로 명시되었으나 위치 정보도 함께 변경되어 정정 범위가 복합적입니다."
+  },
+  "latency_ms": 1769.9297999497503,
+  "prompt_tokens": 540,
+  "completion_tokens": 132,
+  "cost_krw": 0.506556,
+  "error": null
+}

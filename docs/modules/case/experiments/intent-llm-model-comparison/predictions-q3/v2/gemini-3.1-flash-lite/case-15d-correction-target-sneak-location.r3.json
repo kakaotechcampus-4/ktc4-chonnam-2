@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "group": "slip_in",
+  "prompt": "v2",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"위치 정보를 정확히 정정하였으나, 별개의 사건인 검은색 트럭의 신호 위반 사실이 함께 언급되어 정정 대상 이외의 정보 혼입으로 인해 confidence를 low로 설정하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "위치 정보를 정확히 정정하였으나, 별개의 사건인 검은색 트럭의 신호 위반 사실이 함께 언급되어 정정 대상 이외의 정보 혼입으로 인해 confidence를 low로 설정하였습니다."
+  },
+  "latency_ms": 1858.1079998984933,
+  "prompt_tokens": 455,
+  "completion_tokens": 116,
+  "cost_krw": 0.437728,
+  "error": null
+}

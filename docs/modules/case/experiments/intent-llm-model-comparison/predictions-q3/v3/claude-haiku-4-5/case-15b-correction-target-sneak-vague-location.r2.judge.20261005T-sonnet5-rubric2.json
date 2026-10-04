@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화는 시간에 대해 언급이 없고 정정 케이스이므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '은색이었어요'로 명확히 정정했고 모델이 '은색'으로 정확히 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 상황에 대한 언급이 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '좀 더 아래쪽'이라는 모호한 표현일 뿐인데 모델이 '상무중앙로 (아래쪽)'이라는 구체적 값으로 확정해 지어냈다. 모호한 표현은 낮은 confidence로 남기되 구체화하면 안 된다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 정확히 짚었으나 location_hint를 정정 대상에 포함시키면서 실제로는 구체화(hallucination)했기 때문에 정정 대상 판단 자체는 방향이 맞지만 처리 방식이 틀렸다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 low로 뭉뚱그렸는데, vehicle_hint 정정은 명확하므로 high여야 하고 location_hint만 low여야 한다 — 필드별 confidence 구분 없이 일괄 low로 처리한 것은 부정확하다."
+    }
+  },
+  "prompt_tokens": 3424,
+  "completion_tokens": 664,
+  "cost_krw": 20.53548,
+  "error": null
+}

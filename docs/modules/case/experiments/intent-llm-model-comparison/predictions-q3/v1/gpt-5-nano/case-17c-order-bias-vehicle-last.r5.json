@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 5,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간으로 차로를 변경하는 차\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\": null,\"confidence\":\"high\",\"reasoning\":\"발화에 explicit하게 시간 표현인 '어제 18시쯤'이 있으며, 위치는 '상무중앙로 사거리', 차량은 '흰색 SUV', 상황은 '백색 실선 구간으로 차로를 변경하는 차'로 직접 기술되어 있다. prior_hints가 null이므로 정정 대상은 없다. 불확실한 표현도 없고 진술이 명확하므로 confidence를 high로 판단했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간으로 차로를 변경하는 차",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 explicit하게 시간 표현인 '어제 18시쯤'이 있으며, 위치는 '상무중앙로 사거리', 차량은 '흰색 SUV', 상황은 '백색 실선 구간으로 차로를 변경하는 차'로 직접 기술되어 있다. prior_hints가 null이므로 정정 대상은 없다. 불확실한 표현도 없고 진술이 명확하므로 confidence를 high로 판단했다."
+  },
+  "latency_ms": 10629.92600002326,
+  "prompt_tokens": 809,
+  "completion_tokens": 1841,
+  "cost_krw": 1.1826530000000002,
+  "error": null
+}

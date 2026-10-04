@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "group": "slip_in",
+  "prompt": "v1",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"검은색 트럭\",\n  \"situation_hint\": \"신호 무시\",\n  \"location_hint\": \"죽전로\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"기존 장소 정보를 '그거 아니고 죽전로'라며 명시적으로 바로잡았으므로 correction_target을 location_hint로 지정했고, 함께 언급된 검은색 트럭과 신호 무시 사실을 각각 vehicle_hint, situation_hint로 추출했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호 무시",
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "기존 장소 정보를 '그거 아니고 죽전로'라며 명시적으로 바로잡았으므로 correction_target을 location_hint로 지정했고, 함께 언급된 검은색 트럭과 신호 무시 사실을 각각 vehicle_hint, situation_hint로 추출했습니다."
+  },
+  "latency_ms": 3494.892399990931,
+  "prompt_tokens": 372,
+  "completion_tokens": 625,
+  "cost_krw": null,
+  "error": null
+}

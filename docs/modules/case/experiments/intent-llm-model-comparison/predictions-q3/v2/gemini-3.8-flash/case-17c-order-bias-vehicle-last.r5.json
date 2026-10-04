@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 5,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"백색 실선 구간으로 차로를 변경\",\n  \"location_hint\": \"상무중앙로 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 위치, 위반 정황, 차량 특징이 발화에 명확하게 진술되어 있고 불확실한 표현이나 정정 대상이 없으므로 high로 판정함.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간으로 차로를 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 위치, 위반 정황, 차량 특징이 발화에 명확하게 진술되어 있고 불확실한 표현이나 정정 대상이 없으므로 high로 판정함."
+  },
+  "latency_ms": 2750.2592001110315,
+  "prompt_tokens": 412,
+  "completion_tokens": 388,
+  "cost_krw": null,
+  "error": null
+}

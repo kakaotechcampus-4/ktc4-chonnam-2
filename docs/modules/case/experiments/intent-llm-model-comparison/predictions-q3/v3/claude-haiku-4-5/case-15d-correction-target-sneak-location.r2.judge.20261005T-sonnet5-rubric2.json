@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 시간 언급이 없으므로 null로 둔 것이 정정 케이스 규칙상 correct다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색 트럭은 별도 사건으로 봐야 하고 기존 흰색 SUV를 덮어쓰지 않아야 하는데, null로 두어 오염시키지 않았으므로 correct다(이전 값 복사도 하지 않음)."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경이라는 기존 situation을 신호 위반 정보로 덮어쓰지 않고 null로 두어 오염을 피했으므로 correct다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 죽전로로 정정했다는 원문 내용을 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상이 location_hint 하나뿐이라는 기준과 정확히 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "검은색 트럭 정보가 섞여 들어와 해석이 모호하다는 점을 반영해 low로 낮춘 것은 기준의 '낮은 confidence로 별도 취급' 요구와 부합한다."
+    }
+  },
+  "prompt_tokens": 3444,
+  "completion_tokens": 585,
+  "cost_krw": 19.393605,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"그건 됐고\\\"로 명시적인 전환 신호를 제시했으므로 이전 사고는 폐기하고 새로운 사고로 처리. 시간(\\\"오늘 아침\\\"), 차량(\\\"트럭\\\"), 상황(\\\"불법 유턴\\\")은 명확히 진술됨. 위치는 언급되지 않았으므로 null로 처리. 새 발화 기준으로 진술이 분명하므로 confidence는 high.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"그건 됐고\"로 명시적인 전환 신호를 제시했으므로 이전 사고는 폐기하고 새로운 사고로 처리. 시간(\"오늘 아침\"), 차량(\"트럭\"), 상황(\"불법 유턴\")은 명확히 진술됨. 위치는 언급되지 않았으므로 null로 처리. 새 발화 기준으로 진술이 분명하므로 confidence는 high."
+  },
+  "latency_ms": 2743.68240009062,
+  "prompt_tokens": 2194,
+  "completion_tokens": 302,
+  "cost_krw": 5.638092,
+  "error": null
+}

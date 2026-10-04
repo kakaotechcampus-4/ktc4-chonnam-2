@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"시간을 18시에서 19시로 명확히 정정했으므로 correction_target을 time_hint로 설정했습니다. 다만 사용자가 동시에 \\\"옆에 검은 오토바이\\\"라는 새로운 객체를 언급했는데, 이것이 원래 차로변경 상황과 무관한 별개 위반인지, 아니면 같은 상황에 포함되는지 불명확합니다. 이처럼 정정 발화에 무관한 새 사실이 혼재되어 정정 대상의 의도가 모호하므로 confidence를 low로 표시합니다.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "시간을 18시에서 19시로 명확히 정정했으므로 correction_target을 time_hint로 설정했습니다. 다만 사용자가 동시에 \"옆에 검은 오토바이\"라는 새로운 객체를 언급했는데, 이것이 원래 차로변경 상황과 무관한 별개 위반인지, 아니면 같은 상황에 포함되는지 불명확합니다. 이처럼 정정 발화에 무관한 새 사실이 혼재되어 정정 대상의 의도가 모호하므로 confidence를 low로 표시합니다."
+  },
+  "latency_ms": 3284.005100140348,
+  "prompt_tokens": 2204,
+  "completion_tokens": 359,
+  "cost_krw": 6.087196,
+  "error": null
+}

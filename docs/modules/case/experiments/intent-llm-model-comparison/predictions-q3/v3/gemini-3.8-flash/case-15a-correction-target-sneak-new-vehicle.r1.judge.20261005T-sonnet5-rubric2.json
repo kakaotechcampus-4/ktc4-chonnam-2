@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 '19시였어요'로 명시적으로 정정했고, 모델이 '19시'로 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은 오토바이는 별도 사건이고 기존 흰색 SUV 정정 언급도 없으므로, 이번 발화가 vehicle_hint를 언급하지 않은 것으로 보아 null이 정답이며 모델도 null로 처리했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화는 차로 변경 상황에 대한 언급이 없으므로 null 처리가 맞다(이전 값을 복사하지 않음)."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 장소 정보가 없으므로 null이 정답이며 모델도 null로 처리했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상이 time_hint 하나뿐이라는 기준과 일치하게 'time_hint'로 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "정정 자체(time_hint)는 명확하므로 그 부분은 high여야 하나, 모델은 뒤에 섞인 오토바이 언급 때문에 전체를 low로 낮춰 정정 신뢰도를 과소평가했다."
+    }
+  },
+  "prompt_tokens": 3301,
+  "completion_tokens": 612,
+  "cost_krw": 19.369245,
+  "error": null
+}

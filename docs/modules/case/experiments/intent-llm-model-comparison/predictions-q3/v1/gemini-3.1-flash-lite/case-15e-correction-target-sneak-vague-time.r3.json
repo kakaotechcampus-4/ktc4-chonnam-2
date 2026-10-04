@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v1",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"19시쯤\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": \"중앙선 침범\",\n  \"location_hint\": null,\n  \"correction_target\": \"situation_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"상황과 시간을 수정하였으나, 시간이 '19시쯤'과 같이 불확실하게 표현되었고 이전 상황인 '신호위반' 언급을 통해 위반 유형을 수정하려 했으므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "상황과 시간을 수정하였으나, 시간이 '19시쯤'과 같이 불확실하게 표현되었고 이전 상황인 '신호위반' 언급을 통해 위반 유형을 수정하려 했으므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1822.6892999373376,
+  "prompt_tokens": 383,
+  "completion_tokens": 128,
+  "cost_krw": 0.437764,
+  "error": null
+}

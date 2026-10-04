@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 시간 언급이 없고 정정 케이스이므로 null이 정답이며, 모델이 null로 처리해 올바르다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "검은색 트럭은 정정 대상인 기존 사건(흰색 SUV)과 무관한 별도 사건의 차량인데, 이를 vehicle_hint에 그대로 덮어써서 기존 사건 정보를 오염시켰다 - 원문에 없는 '같은 사건의 차량 정정'으로 지어낸 것과 같은 효과다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "신호 무시는 검은색 트럭이라는 별개 차량/사건에 대한 정보인데 이를 situation_hint에 덮어써 기존 사건의 situation을 오염시켰다 - 정정 대상이 아닌 필드를 구체적인 값으로 바꿔버린 것이다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '죽전로'로 정정한다고 발화했고 모델이 이를 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상이 location_hint 하나뿐이라는 기준과 일치하게 모델이 location_hint로 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "location_hint 정정 자체는 명확해 high가 타당할 수 있으나, 별도 사건(검은색 트럭)을 섞어넣으면서도 confidence를 구분 없이 high로 매겨 혼재된 정보에 대한 불확실성을 반영하지 못했다."
+    }
+  },
+  "prompt_tokens": 3358,
+  "completion_tokens": 729,
+  "cost_krw": 21.324135,
+  "error": null
+}

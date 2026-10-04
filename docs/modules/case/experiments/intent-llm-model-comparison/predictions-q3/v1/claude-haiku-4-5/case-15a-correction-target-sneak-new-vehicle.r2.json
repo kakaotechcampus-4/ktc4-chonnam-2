@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v1",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"검은 오토바이\", \"situation_hint\": \"헬멧 미착용\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"시간 그거 말고 19시였어요\\\"라고 명확하게 정정하여 time_hint를 18시에서 19시로 변경(correction_target: time_hint). 새로운 발화에서 검은 오토바이와 헬멧 미착용이 언급되었으므로 vehicle_hint와 situation_hint를 업데이트. 이전 prior_hints의 다른 정보(상무중앙로 위치)는 이번 발화에 언급되지 않았으므로 null로 처리.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": "헬멧 미착용",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"시간 그거 말고 19시였어요\"라고 명확하게 정정하여 time_hint를 18시에서 19시로 변경(correction_target: time_hint). 새로운 발화에서 검은 오토바이와 헬멧 미착용이 언급되었으므로 vehicle_hint와 situation_hint를 업데이트. 이전 prior_hints의 다른 정보(상무중앙로 위치)는 이번 발화에 언급되지 않았으므로 null로 처리."
+  },
+  "latency_ms": 2812.8214001189917,
+  "prompt_tokens": 1913,
+  "completion_tokens": 324,
+  "cost_krw": 5.377874,
+  "error": null
+}

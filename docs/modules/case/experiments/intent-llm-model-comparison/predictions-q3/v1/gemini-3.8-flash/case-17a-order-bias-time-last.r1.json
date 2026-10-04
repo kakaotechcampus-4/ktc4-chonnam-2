@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17a-order-bias-time-last",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"백색 실선 구간에서 차로 변경\",\n  \"location_hint\": \"상무중앙로 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"발화에서 발생 시각(어제 18시쯤), 장소(상무중앙로 사거리), 대상 차량(흰색 SUV), 위반 상황(백색 실선 구간에서 차로 변경)이 불확실성 없이 명확하게 진술되어 있습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 발생 시각(어제 18시쯤), 장소(상무중앙로 사거리), 대상 차량(흰색 SUV), 위반 상황(백색 실선 구간에서 차로 변경)이 불확실성 없이 명확하게 진술되어 있습니다."
+  },
+  "latency_ms": 2696.940500056371,
+  "prompt_tokens": 328,
+  "completion_tokens": 373,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명확히 \\\"그건 됐고\\\"라며 이전 상황(어제 흰색 SUV)을 종료하고 새로운 사건(오늘 아침 트럭 불법 유턴)을 소개하고 있다. 따라서 정정(correction)이 아니라 완전히 새로운 사건이므로 correction_target은 null. 시간, 차량, 상황은 명시되어 있고, 장소는 언급되지 않았다.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명확히 \"그건 됐고\"라며 이전 상황(어제 흰색 SUV)을 종료하고 새로운 사건(오늘 아침 트럭 불법 유턴)을 소개하고 있다. 따라서 정정(correction)이 아니라 완전히 새로운 사건이므로 correction_target은 null. 시간, 차량, 상황은 명시되어 있고, 장소는 언급되지 않았다."
+  },
+  "latency_ms": 2722.8443000931293,
+  "prompt_tokens": 2048,
+  "completion_tokens": 305,
+  "cost_krw": 5.438715999999999,
+  "error": null
+}

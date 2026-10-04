@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"그건 됐고\\\"라고 시작하며 이전 상황(어제 18시, 흰색 SUV 차로 변경)을 중단하고 새로운 상황으로 전환함. 시간은 \\\"오늘 아침\\\"으로 명확하고, 차량은 \\\"트럭\\\"으로 구체적이며, 위반 상황은 \\\"불법 유턴\\\"으로 명시됨. 위치는 언급되지 않음. 이전 time_hint를 정정하는 발화이므로 correction_target을 \\\"time_hint\\\"로 설정.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"그건 됐고\"라고 시작하며 이전 상황(어제 18시, 흰색 SUV 차로 변경)을 중단하고 새로운 상황으로 전환함. 시간은 \"오늘 아침\"으로 명확하고, 차량은 \"트럭\"으로 구체적이며, 위반 상황은 \"불법 유턴\"으로 명시됨. 위치는 언급되지 않음. 이전 time_hint를 정정하는 발화이므로 correction_target을 \"time_hint\"로 설정."
+  },
+  "latency_ms": 3131.1484000179917,
+  "prompt_tokens": 1903,
+  "completion_tokens": 336,
+  "cost_krw": 5.453998,
+  "error": null
+}

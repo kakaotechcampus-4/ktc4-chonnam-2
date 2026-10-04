@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "group": "vague",
+  "prompt": "v2",
+  "repeat": 5,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"은색\",\n  \"situation_hint\": null,\n  \"location_hint\": \"좀 더 아래쪽\",\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"vehicle_hint에 대한 정정은 명확하나, location_hint를 '좀 더 아래쪽'이라는 모호한 표현으로 변경하고자 하여 전체적인 신뢰도를 낮음으로 설정하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "vehicle_hint에 대한 정정은 명확하나, location_hint를 '좀 더 아래쪽'이라는 모호한 표현으로 변경하고자 하여 전체적인 신뢰도를 낮음으로 설정하였습니다."
+  },
+  "latency_ms": 1619.3924001418054,
+  "prompt_tokens": 451,
+  "completion_tokens": 114,
+  "cost_krw": 0.43164199999999997,
+  "error": null
+}

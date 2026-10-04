@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"방금\",\"vehicle_hint\":\"오토바이\",\"situation_hint\":\"헬멧 없이 신호위반\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"'아까 얘기한 거 말고', '또 다른 사고'라는 명시적인 전환 표현이 있어 기존 단서의 정정이 아닌 새로운 사건으로 분류하였고, 진술이 명확하여 높은 신뢰도로 새 사건 정보를 추출했습니다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 없이 신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "'아까 얘기한 거 말고', '또 다른 사고'라는 명시적인 전환 표현이 있어 기존 단서의 정정이 아닌 새로운 사건으로 분류하였고, 진술이 명확하여 높은 신뢰도로 새 사건 정보를 추출했습니다."
+  },
+  "latency_ms": 3006.459000054747,
+  "prompt_tokens": 544,
+  "completion_tokens": 398,
+  "cost_krw": null,
+  "error": null
+}

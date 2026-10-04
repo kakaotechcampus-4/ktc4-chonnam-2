@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '19시'로 명확히 정정했고, expected_notes 기준과 일치한다(날짜 표기 생략은 허용 범위)."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "검은 오토바이는 완전히 다른 별개 사건의 차량으로 언급된 것인데, 이를 vehicle_hint에 덮어씀으로써 기존 사건의 흰색 SUV 정보를 오염시켰다 - expected_notes는 이를 명확히 오답으로 규정한다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "헬멧 미착용은 별개 사건(검은 오토바이 관련)의 상황인데 이를 situation_hint에 그대로 덮어써 기존 '차로 변경' 사건 정보를 오염시켰다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "정정 발화에서 location 언급이 없으므로 null이 정답인데, 이번 경우는 null로 처리되어 맞다 - 이 필드는 correct로 판정해야 한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 time_hint 하나뿐이라는 기준과 일치하게 time_hint로 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "시간 정정 자체는 명확해 high가 타당할 수 있으나, 별도 사건(오토바이)을 기존 필드에 섞어 넣은 오염을 고려하면 전체적으로 낮은 confidence나 별도 신호가 필요했는데 이를 반영하지 못했다."
+    }
+  },
+  "prompt_tokens": 3306,
+  "completion_tokens": 714,
+  "cost_krw": 20.93742,
+  "error": null
+}

@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '19시'로 정정했고, 원문의 '19시였어요'와 일치한다(날짜 표기 '어제'는 생략됐으나 기준상 핵심 정정 내용은 반영됨)."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은 오토바이는 별도 사건으로 봐야 하므로 기존 흰색 SUV를 덮어쓰지 않고 null로 둔 것은 기준에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 situation을 언급하지 않았으므로 null이 정답이며, 이전 값을 덮어쓰지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 위치 언급이 없으므로 null이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "time_hint만 명시적으로 정정 대상으로 지정해 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "정정 자체(time_hint)는 명확한데도 confidence를 low로 낮춘 것은 과도하다 - 기준은 '검은 오토바이' 건에 대해서만 낮은 확신이나 별도 취급을 요구했지, 전체 confidence를 낮추라는 것은 아니어서 방향은 이해되나 적용이 다소 부정확하다."
+    }
+  },
+  "prompt_tokens": 3281,
+  "completion_tokens": 631,
+  "cost_krw": 19.59762,
+  "error": null
+}

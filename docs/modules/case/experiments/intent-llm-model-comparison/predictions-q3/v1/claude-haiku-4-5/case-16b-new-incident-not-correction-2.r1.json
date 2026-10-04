@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 1,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"그건 됐고\\\"로 이전 상황을 명확히 끝내고 새로운 사건을 소개하면서 time_hint, vehicle_hint, situation_hint를 교체했다. time_hint는 \\\"어제 18시\\\"에서 \\\"오늘 아침\\\"으로 정정되었으므로 correction_target을 time_hint로 표시했다. 나머지 필드 중 location_hint는 언급되지 않았으므로 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 \"그건 됐고\"로 이전 상황을 명확히 끝내고 새로운 사건을 소개하면서 time_hint, vehicle_hint, situation_hint를 교체했다. time_hint는 \"어제 18시\"에서 \"오늘 아침\"으로 정정되었으므로 correction_target을 time_hint로 표시했다. 나머지 필드 중 location_hint는 언급되지 않았으므로 null로 처리했다."
+  },
+  "latency_ms": 2612.9461000673473,
+  "prompt_tokens": 1903,
+  "completion_tokens": 303,
+  "cost_krw": 5.202802,
+  "error": null
+}

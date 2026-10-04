@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반, 헬멧 미착용\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"\\\"또 다른 사고\\\"라는 명시적인 전환 신호로 새로운 사건이다. 오토바이, 신호위반, 헬멧 미착용은 명확히 진술되었다. 시간(\\\"방금\\\")도 명확하다. 다만 위치 정보가 없어 이전 사건의 위치 정보를 복사하지 않고 null로 둔다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "\"또 다른 사고\"라는 명시적인 전환 신호로 새로운 사건이다. 오토바이, 신호위반, 헬멧 미착용은 명확히 진술되었다. 시간(\"방금\")도 명확하다. 다만 위치 정보가 없어 이전 사건의 위치 정보를 복사하지 않고 null로 둔다."
+  },
+  "latency_ms": 2785.3985000401735,
+  "prompt_tokens": 2208,
+  "completion_tokens": 283,
+  "cost_krw": 5.514772,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v2",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"19시\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": \"time_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존의 시간 정보를 19시로 정정하려는 발화로 판단하여 correction_target을 time_hint로 설정했으나, 정정과 무관한 다른 대상(오토바이 헬멧 미착용)에 관한 진술이 혼재되어 있어 confidence를 low로 지정하고 해당 내용은 반영하지 않았습니다.\"\n}",
+  "parsed": {
+    "time_hint": "19시",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "기존의 시간 정보를 19시로 정정하려는 발화로 판단하여 correction_target을 time_hint로 설정했으나, 정정과 무관한 다른 대상(오토바이 헬멧 미착용)에 관한 진술이 혼재되어 있어 confidence를 low로 지정하고 해당 내용은 반영하지 않았습니다."
+  },
+  "latency_ms": 3549.2800001520663,
+  "prompt_tokens": 456,
+  "completion_tokens": 616,
+  "cost_krw": null,
+  "error": null
+}

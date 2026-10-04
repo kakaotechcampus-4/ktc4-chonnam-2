@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 명시적으로 '19시였어요'라고 정정했고 모델이 '어제 19시'로 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "이번 발화는 time_hint만 정정했고 vehicle_hint는 언급하지 않았으므로(검은 오토바이는 별개 사건) null이 정답인데, 모델이 prior_hints의 '흰색 SUV'를 그대로 복사해 넣었다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "이번 발화에서 situation_hint에 대한 언급이 없으므로 null이어야 하는데, 모델이 이전 값 '차로 변경'을 그대로 복사했다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "이번 발화에서 위치에 대한 언급이 전혀 없으므로 null이어야 하는데, 모델이 이전 값 '상무중앙로'를 그대로 복사했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "발화에서 명시적으로 정정된 것은 시간뿐이므로 correction_target='time_hint'는 정답과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "검은 오토바이 언급이 별도 사건으로 신호를 줘야 한다는 기준에 따라 confidence를 낮춘 방향성은 맞지만, time_hint 정정 자체는 명확하므로 전체를 low로 낮춘 것은 과도하고 기준이 요구하는 '별도 사건으로 낮은 confidence'의 의도와는 다소 어긋난다."
+    }
+  },
+  "prompt_tokens": 3381,
+  "completion_tokens": 719,
+  "cost_krw": 21.24192,
+  "error": null
+}

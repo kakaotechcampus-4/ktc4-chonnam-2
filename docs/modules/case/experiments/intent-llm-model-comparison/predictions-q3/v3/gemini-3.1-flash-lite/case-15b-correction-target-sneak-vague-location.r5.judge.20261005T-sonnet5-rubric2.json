@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 시간 관련 언급이 없으므로 null이 정답이다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "색깔 정정 '은색'을 반영했고, 차종 SUV는 prior_hints의 '흰색 SUV'에서 색만 바뀐 것이 아니라 발화에서 색깔만 언급했는데 차종까지 붙여 '은색 SUV'로 재구성한 점이 있으나, 이는 색상 정정 맥락에서 차종을 유지한 것으로 자연스러운 해석이며 색상 정정 자체는 정확하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 상황 관련 언급이 없으므로 null이 정답이다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 '상무중앙로 아래쪽'이라는 구체적 위치로 확정해 지어냈다. 원문은 방향성만 암시할 뿐 구체적 지명을 언급하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 명확히 정정 대상으로 잡았으나, location_hint도 애매하게 언급되었는데 correction_target에 포함하지 않아 위치 정정이 있었다는 사실이 누락되었다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 low로 설정했는데, 실제로는 vehicle_hint(색깔 정정)는 명확하므로 high여야 하고 location_hint만 모호하므로 low여야 한다 — 단일 confidence로 뭉뚱그려 필드별 구분이 안 됐다."
+    }
+  },
+  "prompt_tokens": 3308,
+  "completion_tokens": 752,
+  "cost_krw": 21.52206,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17a-order-bias-time-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 18시쯤\",\n  \"vehicle_hint\": \"흰색 SUV\",\n  \"situation_hint\": \"백색 실선 구간에서 차로 변경\",\n  \"location_hint\": \"상무중앙로 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"발화에서 발생 일시, 대상 차량, 위반 상황, 발생 위치가 명확하게 진술되어 각 필드에 매핑하였으며 prior_hints가 없어 correction_target은 null로 처리했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 발생 일시, 대상 차량, 위반 상황, 발생 위치가 명확하게 진술되어 각 필드에 매핑하였으며 prior_hints가 없어 correction_target은 null로 처리했습니다."
+  },
+  "latency_ms": 2500.911599956453,
+  "prompt_tokens": 411,
+  "completion_tokens": 344,
+  "cost_krw": null,
+  "error": null
+}

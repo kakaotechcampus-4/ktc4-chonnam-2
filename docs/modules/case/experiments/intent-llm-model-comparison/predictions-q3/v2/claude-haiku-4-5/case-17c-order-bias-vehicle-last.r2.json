@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"백색 실선 구간으로 차로를 변경\", \"location_hint\": \"상무중앙로 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"발화에서 시간, 장소, 차량 유형, 위반 상황이 모두 명확하게 언급되었다. 백색 실선 구간 차로 변경은 교통법상 명백한 위반이며, 상대 시간 표현 \\\"어제 18시쯤\\\"을 원문 그대로 유지했다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간으로 차로를 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 시간, 장소, 차량 유형, 위반 상황이 모두 명확하게 언급되었다. 백색 실선 구간 차로 변경은 교통법상 명백한 위반이며, 상대 시간 표현 \"어제 18시쯤\"을 원문 그대로 유지했다."
+  },
+  "latency_ms": 3121.9339000526816,
+  "prompt_tokens": 2014,
+  "completion_tokens": 286,
+  "cost_krw": 5.24234,
+  "error": null
+}

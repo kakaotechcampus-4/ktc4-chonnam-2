@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존 사건에 대한 정정이 아니라 완전히 다른 새로운 사건을 언급하고 있으므로, 새 사실로 필드를 채우지 않고 무시 처리하며 신뢰도를 low로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "기존 사건에 대한 정정이 아니라 완전히 다른 새로운 사건을 언급하고 있으므로, 새 사실로 필드를 채우지 않고 무시 처리하며 신뢰도를 low로 지정했습니다."
+  },
+  "latency_ms": 4837.226799922064,
+  "prompt_tokens": 455,
+  "completion_tokens": 899,
+  "cost_krw": null,
+  "error": null
+}

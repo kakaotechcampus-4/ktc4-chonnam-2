@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧 없이 신호위반\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"아까 얘기한 거 말고\\\"라고 명확히 구분하여 새로운 별개의 사고를 보고하고 있다. 이전 사건(어제 18시, 흰색 SUV, 상무중앙로)과 무관한 새로운 사건이므로 이전 정보는 참조하지 않고 현재 발화만 추출했다. 시간은 \\\"방금\\\", 차량은 \\\"오토바이\\\", 위반 상황은 \\\"헬멧 없이 신호위반\\\"으로 명확하게 언급되었으나 위치는 언급되지 않아 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 없이 신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"아까 얘기한 거 말고\"라고 명확히 구분하여 새로운 별개의 사고를 보고하고 있다. 이전 사건(어제 18시, 흰색 SUV, 상무중앙로)과 무관한 새로운 사건이므로 이전 정보는 참조하지 않고 현재 발화만 추출했다. 시간은 \"방금\", 차량은 \"오토바이\", 위반 상황은 \"헬멧 없이 신호위반\"으로 명확하게 언급되었으나 위치는 언급되지 않아 null로 처리했다."
+  },
+  "latency_ms": 3210.1192998234183,
+  "prompt_tokens": 2062,
+  "completion_tokens": 358,
+  "cost_krw": 5.86346,
+  "error": null
+}

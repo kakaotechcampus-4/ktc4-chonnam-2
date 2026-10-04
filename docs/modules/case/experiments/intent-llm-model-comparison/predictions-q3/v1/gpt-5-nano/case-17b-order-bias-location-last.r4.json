@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 4,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간에서 차로 바꿨다\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 시간, 차량 색상/종류, 차로 변경 행동, 위치가 모두 명시되어 있어 각 필드를 명확히 추출할 수 있다. prior_hints가 null이므로 수정 대상은 없다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꿨다",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 시간, 차량 색상/종류, 차로 변경 행동, 위치가 모두 명시되어 있어 각 필드를 명확히 추출할 수 있다. prior_hints가 null이므로 수정 대상은 없다."
+  },
+  "latency_ms": 9872.959099942818,
+  "prompt_tokens": 808,
+  "completion_tokens": 1791,
+  "cost_krw": 1.152127,
+  "error": null
+}

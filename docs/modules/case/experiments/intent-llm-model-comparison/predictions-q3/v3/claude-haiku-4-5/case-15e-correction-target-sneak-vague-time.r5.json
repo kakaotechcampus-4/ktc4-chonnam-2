@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 \\\"상황 설명 다시 할게요\\\"로 situation_hint를 명시적으로 정정했으므로 correction_target으로 지정. 다만 time_hint도 \\\"쯤\\\"과 \\\"것 같기도\\\"라는 표현으로 불확실성을 드러내고 있으며, 이전 \\\"어제 18시\\\"에서 1시간 차이가 나는 정정으로 진술이 명확하지 않아 전체 confidence를 low로 표시.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 \"상황 설명 다시 할게요\"로 situation_hint를 명시적으로 정정했으므로 correction_target으로 지정. 다만 time_hint도 \"쯤\"과 \"것 같기도\"라는 표현으로 불확실성을 드러내고 있으며, 이전 \"어제 18시\"에서 1시간 차이가 나는 정정으로 진술이 명확하지 않아 전체 confidence를 low로 표시."
+  },
+  "latency_ms": 4827.182900160551,
+  "prompt_tokens": 2229,
+  "completion_tokens": 303,
+  "cost_krw": 5.698974,
+  "error": null
+}

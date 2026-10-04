@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "group": "vague",
+  "prompt": "v2",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색\", \"situation_hint\": null, \"location_hint\": \"상무중앙로 아래쪽\", \"correction_target\": \"vehicle_hint, location_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 이전의 \\\"흰색 SUV\\\"를 \\\"은색\\\"으로 정정하고, \\\"상무중앙로\\\"의 위치를 \\\"아래쪽\\\"으로 정정했다. 다만 \\\"아래쪽\\\"은 상대적·모호한 표현이고, 정확한 도로명이나 교차로 정보가 없어 위치 특정도 불확실해서 confidence를 low로 표시했다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "상무중앙로 아래쪽",
+    "correction_target": "vehicle_hint, location_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 이전의 \"흰색 SUV\"를 \"은색\"으로 정정하고, \"상무중앙로\"의 위치를 \"아래쪽\"으로 정정했다. 다만 \"아래쪽\"은 상대적·모호한 표현이고, 정확한 도로명이나 교차로 정보가 없어 위치 특정도 불확실해서 confidence를 low로 표시했다."
+  },
+  "latency_ms": 2737.3699999880046,
+  "prompt_tokens": 2065,
+  "completion_tokens": 293,
+  "cost_krw": 5.373246,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"헬멧 없이 신호위반\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"또 다른 사고\\\"라는 명시적 전환 신호로 이전 사고와 별개의 새로운 사건임을 명확히 했다. 따라서 prior_hints를 무시하고 현 발화만으로 필드를 채웠다. 오토바이, 헬멧 미착용, 신호위반이 명확하게 언급되었으므로 confidence는 high. 위치 정보는 제시되지 않았으므로 null.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "헬멧 없이 신호위반",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"또 다른 사고\"라는 명시적 전환 신호로 이전 사고와 별개의 새로운 사건임을 명확히 했다. 따라서 prior_hints를 무시하고 현 발화만으로 필드를 채웠다. 오토바이, 헬멧 미착용, 신호위반이 명확하게 언급되었으므로 confidence는 high. 위치 정보는 제시되지 않았으므로 null."
+  },
+  "latency_ms": 3100.251999916509,
+  "prompt_tokens": 2208,
+  "completion_tokens": 307,
+  "cost_krw": 5.6974599999999995,
+  "error": null
+}

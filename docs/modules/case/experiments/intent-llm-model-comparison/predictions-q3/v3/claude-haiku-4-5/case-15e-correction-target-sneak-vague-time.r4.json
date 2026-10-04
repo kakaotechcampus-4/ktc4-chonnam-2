@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"situation_hint를 \\\"차로 변경\\\"에서 \\\"중앙선 침범\\\"으로 명확히 정정했고, time_hint도 \\\"어제 18시\\\"에서 \\\"19시쯤\\\"으로 수정했다. 다만 사용자가 시간을 \\\"쯤\\\"이라며 불확실하게 표현했고, 정정 발화 내에서 시간과 상황 두 개 필드를 동시에 수정하고 있어서 신뢰도를 낮게 평가했다.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "situation_hint를 \"차로 변경\"에서 \"중앙선 침범\"으로 명확히 정정했고, time_hint도 \"어제 18시\"에서 \"19시쯤\"으로 수정했다. 다만 사용자가 시간을 \"쯤\"이라며 불확실하게 표현했고, 정정 발화 내에서 시간과 상황 두 개 필드를 동시에 수정하고 있어서 신뢰도를 낮게 평가했다."
+  },
+  "latency_ms": 2755.4985999595374,
+  "prompt_tokens": 2229,
+  "completion_tokens": 309,
+  "cost_krw": 5.7446459999999995,
+  "error": null
+}

@@ -75,6 +75,21 @@ CANDIDATE_SYSTEM_PROMPT = """\
   않고 판단 과정을 설명한다.
 """
 
+# Q3 실험용 후보 프롬프트 변형(멘토 피드백 2026-10-04 Q3 — 「정정에 무관한 정보를 끼워 넣으면 confidence가
+# 낮게 나오는지 보고, 낮으면 서비스에서 재입력을 유도할 수 있다」). v1 규칙에 한 줄을 더한다. 기본 실험은 v1 그대로다.
+CANDIDATE_SYSTEM_PROMPT_V2 = CANDIDATE_SYSTEM_PROMPT + """\
+- prior_hints가 있을 때 정정 발화 안에 정정과 무관한 새 사실(다른 차량 · 다른 사건 등)이 섞여 있으면,
+  그 새 사실로 필드를 채우거나 기존 값을 덮어쓰지 말고 무시한다. 이렇게 무관한 사실이 섞였거나
+  정정 대상이 모호하면 confidence를 low로 표시한다.
+"""
+
+# v2는 Gemini 계열이 「명시적 새 사고」까지 무관 사실로 보고 무시 · low로 처리했다(Q3 실험 2026-10-05) — 예외를 더한다.
+CANDIDATE_SYSTEM_PROMPT_V3 = CANDIDATE_SYSTEM_PROMPT_V2 + """\
+- 단, "다른 건데요" · "그건 됐고" · "다 취소하고" · "또 다른 사고"처럼 명시적인 전환 신호가 있으면 정정이
+  아니라 새 사고다. 이때는 위 규칙을 적용하지 않는다 — 새 발화 기준으로 필드를 채우고(correction_target은
+  null), confidence는 진술이 분명한 정도대로 매긴다.
+"""
+
 CANDIDATE_USER_TEMPLATE = """\
 prior_hints: {prior_hints_json}
 

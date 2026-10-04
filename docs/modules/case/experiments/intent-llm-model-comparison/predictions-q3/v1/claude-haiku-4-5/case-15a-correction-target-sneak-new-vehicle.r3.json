@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v1",
+  "repeat": 3,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"검은 오토바이\", \"situation_hint\": \"헬멧 미착용\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 명확히 \\\"시간 그거 말고 19시였어요\\\"라고 정정하여 time_hint를 어제 19시로 수정. 새로운 차량(검은 오토바이)과 상황(헬멧 미착용)이 언급되었으나, 이는 이전 흰색 SUV와는 다른 대상이므로 차량 정보를 업데이트. 위치는 이번 발화에서 언급 안 됨. correction_target은 명시적 정정이 있었던 time_hint로 지정.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": "헬멧 미착용",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 명확히 \"시간 그거 말고 19시였어요\"라고 정정하여 time_hint를 어제 19시로 수정. 새로운 차량(검은 오토바이)과 상황(헬멧 미착용)이 언급되었으나, 이는 이전 흰색 SUV와는 다른 대상이므로 차량 정보를 업데이트. 위치는 이번 발화에서 언급 안 됨. correction_target은 명시적 정정이 있었던 time_hint로 지정."
+  },
+  "latency_ms": 3022.4845001939684,
+  "prompt_tokens": 1913,
+  "completion_tokens": 332,
+  "cost_krw": 5.43877,
+  "error": null
+}

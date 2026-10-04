@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "group": "reset",
+  "prompt": "v1",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명시적으로 \\\"아까 말한 거 다 취소\\\"하고 새로운 상황을 보고하고 있다. 새 발화에서는 차량(트럭)과 위반 상황(불법 유턴)만 명확히 언급되었으므로 해당 필드만 추출했다. 시간과 장소는 이번 발화에서 언급되지 않았으므로 null 처리했다. correction_target은 null인데, 이는 단순 정정이 아니라 완전히 새로운 사안을 보고하는 것이기 때문이다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명시적으로 \"아까 말한 거 다 취소\"하고 새로운 상황을 보고하고 있다. 새 발화에서는 차량(트럭)과 위반 상황(불법 유턴)만 명확히 언급되었으므로 해당 필드만 추출했다. 시간과 장소는 이번 발화에서 언급되지 않았으므로 null 처리했다. correction_target은 null인데, 이는 단순 정정이 아니라 완전히 새로운 사안을 보고하는 것이기 때문이다."
+  },
+  "latency_ms": 3051.654899958521,
+  "prompt_tokens": 1922,
+  "completion_tokens": 336,
+  "cost_krw": 5.4829159999999995,
+  "error": null
+}

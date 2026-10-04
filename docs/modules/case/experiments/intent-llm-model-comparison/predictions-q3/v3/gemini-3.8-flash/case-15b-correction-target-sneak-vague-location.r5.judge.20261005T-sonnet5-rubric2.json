@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null은 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 색깔을 '은색'으로 정정한다고 명확히 말했으므로 vehicle_hint='은색'은 정확하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 관련 언급이 없으므로 null은 적절하다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 그대로 location_hint 값으로 넣었는데, 이는 원문의 모호함을 해소하지 못한 채 구체적 값인 것처럼 필드에 확정해 넣은 것이라 hallucination이다. 모호한 내용은 null로 두거나 낮은 confidence로 처리했어야 한다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 정확히 짚었으나, 원문에 위치 정정도 함께 언급되어 있어 correction_target이 복수 필드(vehicle_hint, location_hint)에 걸쳐야 하는데 단일 값만 제시해 일부만 반영했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 low로 뭉뚱그렸는데, 실제로는 vehicle_hint는 명확(high)하고 location_hint만 모호(low)해야 하므로 필드별 confidence 구분 없이 하나로 처리한 것은 절반만 맞다."
+    }
+  },
+  "prompt_tokens": 3298,
+  "completion_tokens": 681,
+  "cost_krw": 20.410635,
+  "error": null
+}

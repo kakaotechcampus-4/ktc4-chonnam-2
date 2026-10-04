@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정정 언급이 없고 prior_hints 값을 복사하지 않았으므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'은색이었어요'라는 명확한 정정 내용을 그대로 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 정정 언급이 없으므로 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 구체적인 location_hint 값 '더 아래쪽'으로 확정해 넣었다 — expected_notes에 따르면 이는 지어낸 값으로 처리해야 한다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "vehicle_hint는 정확히 짚었으나, 위치도 정정 대상에 포함되어 있다는 점(여러 필드에 걸친 정정)을 반영하지 않아 일부만 맞다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "전체를 low로 설정했는데, vehicle_hint 정정은 명확하므로 high여야 하고 location_hint만 low여야 한다 — 필드별 구분 없이 일괄 low로 처리해 부정확하다."
+    }
+  },
+  "prompt_tokens": 3279,
+  "completion_tokens": 602,
+  "cost_krw": 19.150005,
+  "error": null
+}

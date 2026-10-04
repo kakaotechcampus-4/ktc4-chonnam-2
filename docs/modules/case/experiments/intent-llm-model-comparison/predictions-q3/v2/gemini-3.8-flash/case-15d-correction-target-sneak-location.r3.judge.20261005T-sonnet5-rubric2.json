@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 시간 관련 언급이 없으므로 null 처리가 정정 케이스 규칙에 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색 트럭은 별도 사건의 차량이므로 기존 vehicle_hint를 덮어쓰지 않고 null로 둔 것이 올바르다 - 오염 방지에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호 무시는 별도 사건이므로 기존 situation_hint('차로 변경')를 유지/언급하지 않고 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '죽전로였어요'로 명시적으로 정정했고 모델이 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "location_hint 하나만 정정 대상으로 지정한 것이 expected_notes와 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "정정 자체는 명확한 진술이라 confidence를 high로 둬도 될 사안인데, 무관한 정보가 섞였다는 이유로 low로 낮춘 것은 정정의 명확성과는 별개 문제를 혼동한 것으로 보여 다소 부적절하지만 방향성(주의 환기)은 expected_notes의 '낮은 confidence로 별도 취급'과 일부 부합한다."
+    }
+  },
+  "prompt_tokens": 3317,
+  "completion_tokens": 649,
+  "cost_krw": 19.98129,
+  "error": null
+}

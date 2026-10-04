@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 \\\"다시 할게요\\\"로 명시적으로 정정을 선언했으므로 correction_target을 situation_hint로 표시. 시간은 \\\"19시쯤\\\"이라며 직접 수정했으나 \\\"쯤\\\"이라는 애매한 표현과 \\\"같기도 하고\\\"라는 불확실한 진술이 있어 confidence는 low. 기존 발화에 언급되지 않은 vehicle_hint, location_hint는 null로 유지.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 \"다시 할게요\"로 명시적으로 정정을 선언했으므로 correction_target을 situation_hint로 표시. 시간은 \"19시쯤\"이라며 직접 수정했으나 \"쯤\"이라는 애매한 표현과 \"같기도 하고\"라는 불확실한 진술이 있어 confidence는 low. 기존 발화에 언급되지 않은 vehicle_hint, location_hint는 null로 유지."
+  },
+  "latency_ms": 2933.303900063038,
+  "prompt_tokens": 2229,
+  "completion_tokens": 301,
+  "cost_krw": 5.68375,
+  "error": null
+}

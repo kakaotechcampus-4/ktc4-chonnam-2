@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 3,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"그건 됐고\\\"라고 명시하며 이전 건(어제 18시 흰색 SUV 차로 변경 on 상무중앙로)과는 완전히 다른 별개의 사건을 보고하려고 한다. 새 사건에서 명시된 정보는 시간(\\\"오늘 아침\\\"), 차량(\\\"트럭\\\"), 위반행위(\\\"불법 유턴\\\")이고, 위치는 언급되지 않았으므로 null로 처리. 정정(correction_target)은 없으며, 새 사건의 핵심 요소들이 명확하므로 confidence는 high.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"그건 됐고\"라고 명시하며 이전 건(어제 18시 흰색 SUV 차로 변경 on 상무중앙로)과는 완전히 다른 별개의 사건을 보고하려고 한다. 새 사건에서 명시된 정보는 시간(\"오늘 아침\"), 차량(\"트럭\"), 위반행위(\"불법 유턴\")이고, 위치는 언급되지 않았으므로 null로 처리. 정정(correction_target)은 없으며, 새 사건의 핵심 요소들이 명확하므로 confidence는 high."
+  },
+  "latency_ms": 3267.1254000160843,
+  "prompt_tokens": 2048,
+  "completion_tokens": 349,
+  "cost_krw": 5.773644,
+  "error": null
+}

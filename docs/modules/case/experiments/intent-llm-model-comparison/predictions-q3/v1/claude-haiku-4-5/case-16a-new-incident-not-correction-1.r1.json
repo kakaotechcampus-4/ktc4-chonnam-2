@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 1,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반, 헬멧 미착용\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"또 다른 사고\\\"라고 명확히 새로운 사건을 보고하고 있으므로 이전 단서들을 정정하는 것이 아닌 별개의 사건입니다. 시간(방금), 차량(오토바이), 위반 행위(신호위반, 헬멧 미착용)는 발화에서 명시적으로 언급되었고, 장소는 언급되지 않아 null로 처리했습니다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"또 다른 사고\"라고 명확히 새로운 사건을 보고하고 있으므로 이전 단서들을 정정하는 것이 아닌 별개의 사건입니다. 시간(방금), 차량(오토바이), 위반 행위(신호위반, 헬멧 미착용)는 발화에서 명시적으로 언급되었고, 장소는 언급되지 않아 null로 처리했습니다."
+  },
+  "latency_ms": 2798.538099974394,
+  "prompt_tokens": 1917,
+  "completion_tokens": 309,
+  "cost_krw": 5.269782,
+  "error": null
+}

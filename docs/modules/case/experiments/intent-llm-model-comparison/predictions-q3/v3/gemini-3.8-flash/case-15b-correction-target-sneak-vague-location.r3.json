@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"은색\",\n  \"situation_hint\": null,\n  \"location_hint\": \"좀 더 아래쪽\",\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존의 차량 정보를 '은색'으로 정정하면서 동시에 위치도 정정하려는 복합 발화이며, 위치 진술이 불명확하고 정정 대상이 단일하지 않아 confidence를 low로 평가했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "좀 더 아래쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "기존의 차량 정보를 '은색'으로 정정하면서 동시에 위치도 정정하려는 복합 발화이며, 위치 진술이 불명확하고 정정 대상이 단일하지 않아 confidence를 low로 평가했습니다."
+  },
+  "latency_ms": 3879.9932000692934,
+  "prompt_tokens": 540,
+  "completion_tokens": 690,
+  "cost_krw": null,
+  "error": null
+}

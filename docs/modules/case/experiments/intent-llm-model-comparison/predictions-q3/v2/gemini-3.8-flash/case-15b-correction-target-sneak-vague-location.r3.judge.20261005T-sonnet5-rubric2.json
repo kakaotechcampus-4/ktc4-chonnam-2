@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없고 정정 케이스이므로 null이 정답이다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 색깔을 '은색'으로 정정한다고 명확히 언급했으므로 올바르게 추출되었다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에 상황 관련 언급이 없고 정정 케이스이므로 null이 정답이다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "'좀 더 아래쪽'이라는 모호한 표현을 그대로 location_hint 값으로 구체화해 넣었는데, 기준상 이런 모호한 표현은 확정된 위치값으로 지어내면 안 되고 null로 두거나 모호함을 나타내야 한다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "차량 색깔 정정은 맞게 vehicle_hint로 잡았지만, 위치도 함께 정정 대상임이 같은 문장에 명시되어 있는데 location_hint 쪽 정정 대상 처리가 누락되어 부분적으로만 맞다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "위치의 모호함을 이유로 confidence를 low로 낮췄는데, 기준에 따르면 모호한 location_hint는 아예 지어내지 말고 vehicle_hint 쪽은 명확하므로 전체를 low로 뭉뚱그리기보다 필드별 신뢰도 구분이 필요했던 상황이라 방향은 맞지만 처리가 거칠다."
+    }
+  },
+  "prompt_tokens": 3287,
+  "completion_tokens": 700,
+  "cost_krw": 20.666415,
+  "error": null
+}

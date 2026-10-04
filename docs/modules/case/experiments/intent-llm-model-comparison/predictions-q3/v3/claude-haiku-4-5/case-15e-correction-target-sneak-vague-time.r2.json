@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 상황을 \\\"차로 변경\\\"에서 \\\"중앙선 침범\\\"으로 명시적으로 정정했으므로 correction_target을 situation_hint로 설정. 다만 시간에 대해 \\\"19시쯤이었던 것 같기도 하고\\\"라고 불확실성을 드러냈으므로 confidence를 low로 표시. time_hint도 정정 대상이지만 primary correction으로 situation_hint를 선택.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 상황을 \"차로 변경\"에서 \"중앙선 침범\"으로 명시적으로 정정했으므로 correction_target을 situation_hint로 설정. 다만 시간에 대해 \"19시쯤이었던 것 같기도 하고\"라고 불확실성을 드러냈으므로 confidence를 low로 표시. time_hint도 정정 대상이지만 primary correction으로 situation_hint를 선택."
+  },
+  "latency_ms": 2772.8484999388456,
+  "prompt_tokens": 2229,
+  "completion_tokens": 295,
+  "cost_krw": 5.638078,
+  "error": null
+}

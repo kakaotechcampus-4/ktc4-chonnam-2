@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v1",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 상황을 \\\"중앙선 침범\\\"으로 정정했으므로 situation_hint의 정정 대상을 명시했다. 다만 시간은 \\\"19시쯤\\\"이라고 불확실하게 표현(\\\"쯤\\\")했고, 이전의 \\\"어제 18시\\\"와 모순되므로 confidence를 low로 내렸다.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 상황을 \"중앙선 침범\"으로 정정했으므로 situation_hint의 정정 대상을 명시했다. 다만 시간은 \"19시쯤\"이라고 불확실하게 표현(\"쯤\")했고, 이전의 \"어제 18시\"와 모순되므로 confidence를 low로 내렸다."
+  },
+  "latency_ms": 5146.035199984908,
+  "prompt_tokens": 1938,
+  "completion_tokens": 266,
+  "cost_krw": 4.974428,
+  "error": null
+}

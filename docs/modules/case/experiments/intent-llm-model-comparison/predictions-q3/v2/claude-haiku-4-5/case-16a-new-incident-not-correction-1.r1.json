@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 1,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반, 헬멧 미착용\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"아까 얘기한 거 말고\\\"라고 명시하며 이전 사건과 별개의 새로운 사건을 보고하고 있다. 이는 정정이 아니라 새로운 신고이므로 prior_hints와는 독립적으로 처리된다. 시간(\\\"방금\\\"), 차량(\\\"오토바이\\\"), 상황(\\\"신호위반, 헬멧 미착용\\\")은 명확히 언급되었고, 위치는 언급되지 않아 null로 처리했다.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"아까 얘기한 거 말고\"라고 명시하며 이전 사건과 별개의 새로운 사건을 보고하고 있다. 이는 정정이 아니라 새로운 신고이므로 prior_hints와는 독립적으로 처리된다. 시간(\"방금\"), 차량(\"오토바이\"), 상황(\"신호위반, 헬멧 미착용\")은 명확히 언급되었고, 위치는 언급되지 않아 null로 처리했다."
+  },
+  "latency_ms": 2945.003200089559,
+  "prompt_tokens": 2062,
+  "completion_tokens": 321,
+  "cost_krw": 5.581816,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 5,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간에서 차로 바꾼 행위\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에 시각 표현이 '어제 18시쯤'으로 명시되어 있고 차량은 '흰색 SUV'로 언급되며, 상황은 '백색 실선 구간에서 차로 바꾼 행위'로 기술되어 있습니다. 위치는 '상무중앙로 사거리'로 확인됩니다. prior_hints는 없으므로 수정 대상은 없습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꾼 행위",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에 시각 표현이 '어제 18시쯤'으로 명시되어 있고 차량은 '흰색 SUV'로 언급되며, 상황은 '백색 실선 구간에서 차로 바꾼 행위'로 기술되어 있습니다. 위치는 '상무중앙로 사거리'로 확인됩니다. prior_hints는 없으므로 수정 대상은 없습니다."
+  },
+  "latency_ms": 8450.935899978504,
+  "prompt_tokens": 808,
+  "completion_tokens": 1448,
+  "cost_krw": 0.9432400000000001,
+  "error": null
+}

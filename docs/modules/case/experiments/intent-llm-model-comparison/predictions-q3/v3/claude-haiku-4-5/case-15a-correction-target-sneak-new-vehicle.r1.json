@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 \\\"시간 그거 말고 19시였어요\\\"라고 명시적으로 time_hint를 18시에서 19시로 정정했다. 그러나 \\\"근데 그 옆에 검은 오토바이도 헬멧 안 썼던데\\\"라는 발언이 추가되어 있는데, 이는 원래 신고 대상(흰색 SUV의 차로변경)과 무관한 새로운 사실이다. 정정과 새 사실이 혼재되어 있어 신뢰도를 낮춘다.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 \"시간 그거 말고 19시였어요\"라고 명시적으로 time_hint를 18시에서 19시로 정정했다. 그러나 \"근데 그 옆에 검은 오토바이도 헬멧 안 썼던데\"라는 발언이 추가되어 있는데, 이는 원래 신고 대상(흰색 SUV의 차로변경)과 무관한 새로운 사실이다. 정정과 새 사실이 혼재되어 있어 신뢰도를 낮춘다."
+  },
+  "latency_ms": 4034.213100094348,
+  "prompt_tokens": 2204,
+  "completion_tokens": 338,
+  "cost_krw": 5.927344,
+  "error": null
+}

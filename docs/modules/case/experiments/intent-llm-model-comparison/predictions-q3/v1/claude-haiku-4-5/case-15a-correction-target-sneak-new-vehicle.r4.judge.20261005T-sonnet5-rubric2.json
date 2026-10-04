@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "사용자가 18시를 19시로 명시적으로 정정했고, 모델이 '어제 19시'로 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "prior_hints의 '흰색 SUV'를 이번 발화에서 언급하지 않았음에도 그대로 복사해 넣었고, 게다가 전혀 다른 사건인 '검은 오토바이'를 같은 필드에 병합해 오염시켰다 — expected_notes는 이를 명확히 오답으로 규정한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 상황(차로 변경 등)에 대한 언급이 없으므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 장소 언급이 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 time_hint 하나뿐이며 모델이 이를 정확히 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "time_hint 정정 자체는 확실하므로 high는 그 부분에서는 타당하나, 별도 사건(검은 오토바이)이 뒤섞여 들어간 상황을 반영하지 않아 전체적으로 부적절하게 높게 매겨졌다."
+    }
+  },
+  "prompt_tokens": 3377,
+  "completion_tokens": 627,
+  "cost_krw": 19.82904,
+  "error": null
+}

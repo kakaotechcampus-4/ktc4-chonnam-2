@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "group": "vague",
+  "prompt": "v2",
+  "repeat": 3,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"19시쯤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 침범\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 situation_hint를 \\\"차로 변경\\\"에서 \\\"중앙선 침범\\\"으로 명확히 정정했으므로 correction_target으로 표시했다. 다만 시간은 \\\"19시쯤\\\"과 \\\"기도 하고\\\" 표현으로 불확실성이 드러나며, 새로운 상황 설명이 이전 차량·위치 정보와 일관성 있는지 판단 불가하여 confidence를 low로 설정했다.\"}",
+  "parsed": {
+    "time_hint": "19시쯤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 침범",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 situation_hint를 \"차로 변경\"에서 \"중앙선 침범\"으로 명확히 정정했으므로 correction_target으로 표시했다. 다만 시간은 \"19시쯤\"과 \"기도 하고\" 표현으로 불확실성이 드러나며, 새로운 상황 설명이 이전 차량·위치 정보와 일관성 있는지 판단 불가하여 confidence를 low로 설정했다."
+  },
+  "latency_ms": 3510.0480001419783,
+  "prompt_tokens": 2083,
+  "completion_tokens": 302,
+  "cost_krw": 5.469150000000001,
+  "error": null
+}

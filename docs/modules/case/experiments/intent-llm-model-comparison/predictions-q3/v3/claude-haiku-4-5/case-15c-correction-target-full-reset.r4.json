@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "group": "reset",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"다 취소하고 완전히 다른 얘기\\\"라고 명시적으로 전환했으므로 새로운 사고로 판단. 이전 정보는 무시하고 현재 발화만 추출. 트럭과 불법 유턴은 명확하게 언급되었으나, 시간과 장소는 언급되지 않았음. confidence는 high로 설정(진술이 분명함).\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"다 취소하고 완전히 다른 얘기\"라고 명시적으로 전환했으므로 새로운 사고로 판단. 이전 정보는 무시하고 현재 발화만 추출. 트럭과 불법 유턴은 명확하게 언급되었으나, 시간과 장소는 언급되지 않았음. confidence는 high로 설정(진술이 분명함)."
+  },
+  "latency_ms": 2678.493599873036,
+  "prompt_tokens": 2213,
+  "completion_tokens": 286,
+  "cost_krw": 5.545218,
+  "error": null
+}

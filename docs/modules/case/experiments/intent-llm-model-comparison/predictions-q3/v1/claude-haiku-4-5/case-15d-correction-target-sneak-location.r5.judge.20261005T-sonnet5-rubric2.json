@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "뒤에 언급된 '검은색 트럭'은 신호위반을 한 제3의 차량으로 완전히 다른 사건인데, 이를 기존 vehicle_hint('흰색 SUV') 자리에 덮어써서 마치 주요 신고 차량인 것처럼 오염시켰다 - expected_notes가 명확히 경고한 오답 패턴이다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'신호 무시'는 검은색 트럭이라는 별개 차량/사건에 대한 정보인데 이를 situation_hint에 덮어써서 기존 '차로 변경' 상황을 지워버렸다 - 별도 사건으로 구분하지 않고 오염시킨 오답이다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '위치 그거 아니고 죽전로였어요'라고 정정했으므로 location_hint='죽전로'는 정확하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 location_hint 하나이며 모델이 이를 정확히 지목했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "location_hint 정정 자체는 명확하여 high가 맞지만, 별개 사건인 검은색 트럭 정보를 vehicle/situation에 섞어 넣고도 high를 유지한 것은 혼재된 정보에 대한 불확실성을 전혀 반영하지 못한 것이다."
+    }
+  },
+  "prompt_tokens": 3347,
+  "completion_tokens": 714,
+  "cost_krw": 21.062265,
+  "error": null
+}

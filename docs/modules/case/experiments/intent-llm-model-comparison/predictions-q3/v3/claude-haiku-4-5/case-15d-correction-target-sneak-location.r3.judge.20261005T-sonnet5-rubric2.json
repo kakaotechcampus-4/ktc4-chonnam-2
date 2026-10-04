@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 시간 관련 언급이 없으므로 null 처리는 정정 케이스 규칙에 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색 트럭은 별개 사건이므로 vehicle_hint에 반영하지 않고 null로 둔 것이 적절하며, 흰색 SUV를 그대로 복사하지 않은 것도 정정 케이스 규칙에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 situation_hint에 대한 언급이나 정정이 없으므로 null이 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '죽전로'로 정정했으므로 location_hint를 죽전로로 갱신한 것이 정확하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상이 location_hint 하나뿐이라는 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "검은색 트럭이라는 별도 사건이 섞였다는 이유로 confidence를 낮춘 것은 방향은 맞지만, 정정 자체(location_hint)는 명확하므로 low보다는 medium 정도가 더 적절해 보여 일부만 맞는다고 판단."
+    }
+  },
+  "prompt_tokens": 3381,
+  "completion_tokens": 600,
+  "cost_krw": 19.430145,
+  "error": null
+}

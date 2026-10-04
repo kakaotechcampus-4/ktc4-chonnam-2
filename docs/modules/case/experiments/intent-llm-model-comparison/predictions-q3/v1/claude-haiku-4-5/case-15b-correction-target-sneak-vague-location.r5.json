@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15b-correction-target-sneak-vague-location",
+  "group": "vague",
+  "prompt": "v1",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색\", \"situation_hint\": null, \"location_hint\": \"상무중앙로 아래쪽\", \"correction_target\": \"vehicle_hint, location_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 차량 색깔을 흰색에서 은색으로 정정했으므로 vehicle_hint 수정. 위치도 \\\"좀 더 아래쪽\\\"이라고 불명확하게 정정했는데, 정확한 위치명을 언급하지 않아 불확실성이 높음. 따라서 confidence를 low로 표시.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색",
+    "situation_hint": null,
+    "location_hint": "상무중앙로 아래쪽",
+    "correction_target": "vehicle_hint, location_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 차량 색깔을 흰색에서 은색으로 정정했으므로 vehicle_hint 수정. 위치도 \"좀 더 아래쪽\"이라고 불명확하게 정정했는데, 정확한 위치명을 언급하지 않아 불확실성이 높음. 따라서 confidence를 low로 표시."
+  },
+  "latency_ms": 2586.277100024745,
+  "prompt_tokens": 1920,
+  "completion_tokens": 273,
+  "cost_krw": 5.000316,
+  "error": null
+}

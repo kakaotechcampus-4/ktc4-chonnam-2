@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "parsed": {
+    "time_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 추측 표현인데, 모델이 이를 '19시쯤'이라는 구체적 time_hint 값으로 확정해버렸다. expected_notes에 따르면 모호한 정정은 지어내지 말고 null이나 낮은 확신으로 남겨야 한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 차량에 대한 언급이 없으므로 null로 둔 것이 정정 케이스 규칙상 올바르다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반에서 중앙선 침범으로의 정정이 원문에 명확히 드러나 있고 모델이 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 위치 언급이 없으므로 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "situation_hint를 correction_target으로 잡은 것은 맞지만, 시간 정정도 같은 발화에 섞여 있어 사실상 두 필드에 걸친 정정인데 time_hint 쪽은 모호함을 무시하고 확정값으로 처리해버려 정정 처리가 반쪽짜리다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "confidence를 low로 낮춘 방향은 적절하나, 정작 time_hint 값 자체는 모호함에도 구체적으로 확정해버려 confidence 판단과 실제 값 처리가 일관되지 않는다."
+    }
+  },
+  "prompt_tokens": 3416,
+  "completion_tokens": 705,
+  "cost_krw": 21.135345,
+  "error": null
+}

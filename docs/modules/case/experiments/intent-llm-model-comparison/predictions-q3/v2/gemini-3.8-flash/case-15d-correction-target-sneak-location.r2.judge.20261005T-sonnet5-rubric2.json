@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 시간 언급이 없고 정정 대상도 아니므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색 트럭은 별도 사건의 차량이므로 vehicle_hint에 반영하지 않고 null로 둔 것이 적절하며, 기존 흰색 SUV를 덮어쓰지도 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호 무시 사건은 별도 사건으로 기존 situation_hint(차로 변경)를 덮어쓰지 않고 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적 정정 발화대로 location_hint를 '죽전로'로 정확히 갱신했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상이 location_hint임을 정확히 식별했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "location_hint 정정 자체는 명확한 발화이므로 confidence를 low로 낮출 근거가 약하며, 오히려 별도 사건(트럭) 삽입으로 전체 신뢰도를 과도하게 낮춘 점이 기준과는 다소 어긋난다."
+    }
+  },
+  "prompt_tokens": 3272,
+  "completion_tokens": 581,
+  "cost_krw": 18.808965,
+  "error": null
+}

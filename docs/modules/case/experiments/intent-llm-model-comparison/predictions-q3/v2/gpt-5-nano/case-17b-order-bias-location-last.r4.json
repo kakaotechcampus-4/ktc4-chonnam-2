@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 4,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"차로 변경(백색 실선 구간에서)\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"time_hint를 원문 표현으로 보존. vehicle_hint에서 색상과 차종을 추출. situation_hint은 문장 내 '차로 바꿨는데'를 '차로 변경'으로 해석하고 필요 시 구간 정보를 괄호로 보충. location_hint는 지명인 '상무중앙로 사거리'를 추출. prior_hints가 null이므로 correction_target는 null. 정보가 원문에 직접 나타나므로 신뢰도는 high.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경(백색 실선 구간에서)",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "time_hint를 원문 표현으로 보존. vehicle_hint에서 색상과 차종을 추출. situation_hint은 문장 내 '차로 바꿨는데'를 '차로 변경'으로 해석하고 필요 시 구간 정보를 괄호로 보충. location_hint는 지명인 '상무중앙로 사거리'를 추출. prior_hints가 null이므로 correction_target는 null. 정보가 원문에 직접 나타나므로 신뢰도는 high."
+  },
+  "latency_ms": 12524.399700108916,
+  "prompt_tokens": 893,
+  "completion_tokens": 1847,
+  "cost_krw": 1.192691,
+  "error": null
+}

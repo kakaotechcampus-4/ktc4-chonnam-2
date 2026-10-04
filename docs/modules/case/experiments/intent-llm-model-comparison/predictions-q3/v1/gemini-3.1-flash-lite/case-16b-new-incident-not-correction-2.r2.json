@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"오늘 아침\", \"vehicle_hint\": \"트럭\", \"situation_hint\": \"불법 유턴\", \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 앞선 진술을 무시하고 새로운 사건(오늘 아침, 트럭, 불법 유턴)을 언급했으므로 기존의 시간, 차량, 상황 정보를 모두 교체 대상으로 판단하여 time_hint를 정정 대상으로 지정했습니다.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 앞선 진술을 무시하고 새로운 사건(오늘 아침, 트럭, 불법 유턴)을 언급했으므로 기존의 시간, 차량, 상황 정보를 모두 교체 대상으로 판단하여 time_hint를 정정 대상으로 지정했습니다."
+  },
+  "latency_ms": 1681.40870006755,
+  "prompt_tokens": 363,
+  "completion_tokens": 113,
+  "cost_krw": 0.395919,
+  "error": null
+}

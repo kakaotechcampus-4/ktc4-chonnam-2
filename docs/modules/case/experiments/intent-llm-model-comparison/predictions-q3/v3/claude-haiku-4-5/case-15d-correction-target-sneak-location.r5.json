@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "group": "slip_in",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": \"죽전로\", \"correction_target\": \"location_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 명확하게 위치를 정정했으므로 location_hint를 죽전로로 추출했고 correction_target을 location_hint로 지정했습니다. 그러나 발화 후반에 검은색 트럭의 신호 무시 행위라는 새로운 사실이 추가로 언급되었는데, 이것이 원래 신고 대상(흰색 SUV의 차로 변경)과 무관한 다른 사건으로 보여 무시했습니다. 이렇게 정정과 무관한 새 사실이 섞여 있으므로 confidence를 low로 표시했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 명확하게 위치를 정정했으므로 location_hint를 죽전로로 추출했고 correction_target을 location_hint로 지정했습니다. 그러나 발화 후반에 검은색 트럭의 신호 무시 행위라는 새로운 사실이 추가로 언급되었는데, 이것이 원래 신고 대상(흰색 SUV의 차로 변경)과 무관한 다른 사건으로 보여 무시했습니다. 이렇게 정정과 무관한 새 사실이 섞여 있으므로 confidence를 low로 표시했습니다."
+  },
+  "latency_ms": 3162.4716999940574,
+  "prompt_tokens": 2211,
+  "completion_tokens": 347,
+  "cost_krw": 6.006506,
+  "error": null
+}

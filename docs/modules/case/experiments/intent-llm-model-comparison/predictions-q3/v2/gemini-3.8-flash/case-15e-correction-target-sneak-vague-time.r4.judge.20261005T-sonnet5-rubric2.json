@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "원문은 '19시쯤이었던 것 같기도 하고'라는 모호한 표현인데 모델은 '19시쯤'으로 비교적 구체적으로 확정해 적었다. 완전히 틀린 값은 아니지만 모호함을 낮은 confidence로 남기거나 정정 보류했어야 하는데 값 자체를 확정한 것은 과도하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 차량에 대한 언급이 없으므로 null로 둔 것은 정정 케이스 규칙에 맞는 올바른 처리다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 '신호위반'이 아니라 '중앙선 침범'이라고 명확히 정정했으므로 situation_hint를 '중앙선 침범'으로 바꾼 것은 정확하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 위치 관련 언급이 없으므로 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "situation_hint가 명확한 정정 대상인 것은 맞지만, 시간도 모호하게나마 정정 시도가 있었으므로 correction_target이 situation_hint 단일 값으로만 표시된 것은 복합 정정 상황을 완전히 반영하지 못한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "모델이 confidence를 low로 낮춘 것은 방향상 맞으나, 실제로는 time_hint 값 자체를 모호한 상태로 남기거나 null 처리했어야 할 상황에서 값은 확정해놓고 confidence만 낮춘 것이라 완전히 적절하다고 보기 어렵다."
+    }
+  },
+  "prompt_tokens": 3341,
+  "completion_tokens": 764,
+  "cost_krw": 21.805245,
+  "error": null
+}

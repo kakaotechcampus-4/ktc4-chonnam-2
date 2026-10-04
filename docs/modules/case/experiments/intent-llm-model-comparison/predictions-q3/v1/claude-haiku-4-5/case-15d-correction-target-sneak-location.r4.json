@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15d-correction-target-sneak-location",
+  "group": "slip_in",
+  "prompt": "v1",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 트럭\", \"situation_hint\": \"신호 무시\", \"location_hint\": \"죽전로\", \"correction_target\": \"location_hint\", \"confidence\": \"high\", \"reasoning\": \"사용자가 위치를 명확하게 정정했으므로 location_hint를 correction_target으로 지정. 검은색 트럭과 신호 무시는 이번 발화에서 새로 언급된 정보. 시간과 원래의 차로변경 상황은 이번 발화에서 언급되지 않았으므로 null 처리.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 트럭",
+    "situation_hint": "신호 무시",
+    "location_hint": "죽전로",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 위치를 명확하게 정정했으므로 location_hint를 correction_target으로 지정. 검은색 트럭과 신호 무시는 이번 발화에서 새로 언급된 정보. 시간과 원래의 차로변경 상황은 이번 발화에서 언급되지 않았으므로 null 처리."
+  },
+  "latency_ms": 2558.3413999993354,
+  "prompt_tokens": 1920,
+  "completion_tokens": 270,
+  "cost_krw": 4.97748,
+  "error": null
+}

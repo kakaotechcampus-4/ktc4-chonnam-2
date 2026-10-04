@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "case-15d-correction-target-sneak-location",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 시간 언급이 없고 정정 케이스이므로 null이 정답이다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "검은색 트럭은 완전히 다른 사건(신호 무시 목격)에 등장한 차량인데, 이를 vehicle_hint로 덮어써서 기존 '흰색 SUV' 사건과 혼동되게 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "신호 무시는 별도 사건(검은색 트럭)에 대한 상황인데 이를 주 situation_hint로 덮어써서 기존 '차로 변경' 사건과 혼동되게 만들었다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '위치 그거 아니고 죽전로'라고 정정했으므로 location_hint를 '죽전로'로 바꾼 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 대상은 location_hint 하나뿐이며 모델이 이를 정확히 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "location_hint 정정 자체는 high가 맞을 수 있으나, 별도 사건(검은색 트럭)을 구분 없이 섞어 넣었으므로 전체적으로 낮은 confidence나 별도 취급 신호가 필요했는데 그러지 못했다."
+    }
+  },
+  "prompt_tokens": 3301,
+  "completion_tokens": 645,
+  "cost_krw": 19.87167,
+  "error": null
+}

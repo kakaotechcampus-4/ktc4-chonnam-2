@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17a-order-bias-time-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 5,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 18시쯤\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"백색 실선 구간에서 차로 변경\", \"location_hint\": \"상무중앙로 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 명확하게 시간(어제 18시쯤), 차량(흰색 SUV), 위반 상황(백색 실선 구간에서 차로 변경), 장소(상무중앙로 사거리)를 모두 구체적으로 언급했으므로 high 신뢰도로 추출했습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 변경",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 시간(어제 18시쯤), 차량(흰색 SUV), 위반 상황(백색 실선 구간에서 차로 변경), 장소(상무중앙로 사거리)를 모두 구체적으로 언급했으므로 high 신뢰도로 추출했습니다."
+  },
+  "latency_ms": 2766.5613000281155,
+  "prompt_tokens": 2012,
+  "completion_tokens": 285,
+  "cost_krw": 5.231684,
+  "error": null
+}

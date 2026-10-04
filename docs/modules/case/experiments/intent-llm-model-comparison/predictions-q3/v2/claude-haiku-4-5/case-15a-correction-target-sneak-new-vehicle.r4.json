@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v2",
+  "repeat": 4,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": \"흰색 SUV\", \"situation_hint\": \"차로 변경\", \"location_hint\": \"상무중앙로\", \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 명확히 시간을 \\\"18시\\\"에서 \\\"19시\\\"로 정정했으므로 correction_target은 time_hint. 하지만 발화에 검은 오토바이의 헬멧 미착용이라는 무관한 새로운 사실이 섞여 있어서(신고 대상 위반사항이 추가되거나 변경된 듯함) 정정 의도가 순수하지 않아 confidence를 low로 표시.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "차로 변경",
+    "location_hint": "상무중앙로",
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 명확히 시간을 \"18시\"에서 \"19시\"로 정정했으므로 correction_target은 time_hint. 하지만 발화에 검은 오토바이의 헬멧 미착용이라는 무관한 새로운 사실이 섞여 있어서(신고 대상 위반사항이 추가되거나 변경된 듯함) 정정 의도가 순수하지 않아 confidence를 low로 표시."
+  },
+  "latency_ms": 2872.9417000431567,
+  "prompt_tokens": 2058,
+  "completion_tokens": 306,
+  "cost_krw": 5.4615480000000005,
+  "error": null
+}

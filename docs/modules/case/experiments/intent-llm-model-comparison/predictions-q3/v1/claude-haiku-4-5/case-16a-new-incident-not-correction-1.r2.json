@@ -1,0 +1,22 @@
+{
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "group": "regression",
+  "prompt": "v1",
+  "repeat": 2,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"방금\", \"vehicle_hint\": \"오토바이\", \"situation_hint\": \"신호위반, 헬멧 미착용\", \"location_hint\": null, \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 \\\"아까 얘기한 거 말고\\\"라며 이전 사건과 명확히 구분하고 있으므로 새로운 사건 정보로 처리. 시간(\\\"방금\\\"), 차량 유형(오토바이), 상황(신호위반, 헬멧 미착용)은 명확히 언급되었으나 장소는 언급되지 않음. prior_hints의 필드들은 이전 사건에 대한 것이므로 새 발화에서 언급되지 않은 필드는 null로 유지.\"}",
+  "parsed": {
+    "time_hint": "방금",
+    "vehicle_hint": "오토바이",
+    "situation_hint": "신호위반, 헬멧 미착용",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 \"아까 얘기한 거 말고\"라며 이전 사건과 명확히 구분하고 있으므로 새로운 사건 정보로 처리. 시간(\"방금\"), 차량 유형(오토바이), 상황(신호위반, 헬멧 미착용)은 명확히 언급되었으나 장소는 언급되지 않음. prior_hints의 필드들은 이전 사건에 대한 것이므로 새 발화에서 언급되지 않은 필드는 null로 유지."
+  },
+  "latency_ms": 2952.241600025445,
+  "prompt_tokens": 1917,
+  "completion_tokens": 330,
+  "cost_krw": 5.429634,
+  "error": null
+}

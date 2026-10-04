@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15c-correction-target-full-reset",
+  "group": "reset",
+  "prompt": "v1",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"트럭\",\"situation_hint\":\"불법 유턴\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"이전 단서 중 특정 필드를 정정하는 것이 아니라 기존 내용을 취소하고 새로운 사건을 진술하고 있으므로 correction_target은 null로 처리하고, 새로 언급된 트럭과 불법 유턴을 각각 차량과 상황 단서로 명확히 추출했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "이전 단서 중 특정 필드를 정정하는 것이 아니라 기존 내용을 취소하고 새로운 사건을 진술하고 있으므로 correction_target은 null로 처리하고, 새로 언급된 트럭과 불법 유턴을 각각 차량과 상황 단서로 명확히 추출했습니다."
+  },
+  "latency_ms": 2918.7308000400662,
+  "prompt_tokens": 374,
+  "completion_tokens": 460,
+  "cost_krw": null,
+  "error": null
+}

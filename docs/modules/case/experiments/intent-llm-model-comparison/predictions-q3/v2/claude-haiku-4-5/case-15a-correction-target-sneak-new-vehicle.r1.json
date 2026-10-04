@@ -1,0 +1,22 @@
+{
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "group": "slip_in",
+  "prompt": "v2",
+  "repeat": 1,
+  "model_name": "claude-haiku-4-5",
+  "raw_text": "{\"time_hint\": \"어제 19시\", \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"사용자가 시간을 18시에서 19시로 명확히 정정했으므로 correction_target은 time_hint. 다만 \\\"그 옆에 검은 오토바이\\\"와 \\\"헬멧 안 씀\\\"이라는 새로운 정보가 주 정정 내용(시간)과 혼재되어 있고, 이것이 원래 차로 변경 사건과 관련된 것인지 별개 위반인지 불명확하므로 confidence를 low로 표시. prior_hints의 다른 필드들은 이번 발화에서 언급되지 않았으므로 null로 둠.\"}",
+  "parsed": {
+    "time_hint": "어제 19시",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "사용자가 시간을 18시에서 19시로 명확히 정정했으므로 correction_target은 time_hint. 다만 \"그 옆에 검은 오토바이\"와 \"헬멧 안 씀\"이라는 새로운 정보가 주 정정 내용(시간)과 혼재되어 있고, 이것이 원래 차로 변경 사건과 관련된 것인지 별개 위반인지 불명확하므로 confidence를 low로 표시. prior_hints의 다른 필드들은 이번 발화에서 언급되지 않았으므로 null로 둠."
+  },
+  "latency_ms": 3685.5637999251485,
+  "prompt_tokens": 2058,
+  "completion_tokens": 341,
+  "cost_krw": 5.727968000000001,
+  "error": null
+}

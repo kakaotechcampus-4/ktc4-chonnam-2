@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17b-order-bias-location-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 2,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간에서 차로 바꿨다\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"시간 표현은 원문 그대로 '어제 18시쯤'을 채택. 차량은 '흰색 SUV'로 명시되어 있어 vehicle_hint에 반영. 행동은 '백색 실선 구간에서 차로 바꿨다'로 명시되어 상황 설명으로 채움. 위치는 '상무중앙로 사거리'로 반영. prior_hints가 null이므로 정정 대상 없이 null로 두고, 애매한 표현이 없어 confidence를 high로 판단.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간에서 차로 바꿨다",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간 표현은 원문 그대로 '어제 18시쯤'을 채택. 차량은 '흰색 SUV'로 명시되어 있어 vehicle_hint에 반영. 행동은 '백색 실선 구간에서 차로 바꿨다'로 명시되어 상황 설명으로 채움. 위치는 '상무중앙로 사거리'로 반영. prior_hints가 null이므로 정정 대상 없이 null로 두고, 애매한 표현이 없어 confidence를 high로 판단."
+  },
+  "latency_ms": 9849.071299890056,
+  "prompt_tokens": 893,
+  "completion_tokens": 1534,
+  "cost_krw": 1.002074,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "group": "regression",
+  "prompt": "v2",
+  "repeat": 2,
+  "model_name": "gpt-5-nano",
+  "raw_text": "{\"time_hint\":\"어제 18시쯤\",\"vehicle_hint\":\"흰색 SUV\",\"situation_hint\":\"백색 실선 구간으로 차로를 변경하는 차량이 있었다\",\"location_hint\":\"상무중앙로 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"시간 표현은 원문인 '어제 18시쯤'을 그대로 보존했고, 차량은 '흰색 SUV', 상황은 '백색 실선 구간으로 차로를 변경'으로 직접 진술된 내용을 추출했다. 현재 진술에 모호한 부분은 없어 confidence는 high이다.\"}",
+  "parsed": {
+    "time_hint": "어제 18시쯤",
+    "vehicle_hint": "흰색 SUV",
+    "situation_hint": "백색 실선 구간으로 차로를 변경하는 차량이 있었다",
+    "location_hint": "상무중앙로 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간 표현은 원문인 '어제 18시쯤'을 그대로 보존했고, 차량은 '흰색 SUV', 상황은 '백색 실선 구간으로 차로를 변경'으로 직접 진술된 내용을 추출했다. 현재 진술에 모호한 부분은 없어 confidence는 high이다."
+  },
+  "latency_ms": 11430.9712999966,
+  "prompt_tokens": 894,
+  "completion_tokens": 1752,
+  "cost_krw": 1.1349120000000001,
+  "error": null
+}
