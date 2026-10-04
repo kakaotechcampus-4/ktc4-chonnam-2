@@ -12,6 +12,8 @@
 
 **Related ADR:** `adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` §6 R-1·R-2 · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2·§4.3·§4.9 (v1.2 근거)
 
+> **표기 정합 (2026-10-04, [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) H-4 · [#245](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/245) C-3, 유소연 답변 · 김준영 결정) — 버전 유지 `case-view/v1.6`, 필드 · schema · enum 변경 없음.** `running_jobs[]`는 Runtime에서 실제 `RUNNING`인 모든 실행의 목록이 아니라 **case가 아직 결과를 기다리는 job 목록**이다. B절 §10 불변조건 5의 「`running_jobs`가 비어 있으면 진행 중인 작업 없음」을 이 의미로 바로잡는다.
+
 > **명확화 (2026-09-29, #168 클립 분할 후속 결정 · #170 F, 유소연 결정 · 서어진 답변) — 버전 유지 `case-view/v1.6`.** v1.5 ③의 「최근 `CANDIDATE_SEARCH` Run」은 **탐색 intent 하나 = Run 하나**를 전제로 쓴 표현이다. 인라인 상한 안의 일반 영상은 지금처럼 클립 1개 = Run 1개이므로 그 규칙이 그대로 성립한다. 상한을 넘는 긴 영상을 클립으로 나누면 **하나의 탐색 intent가 여러 클립 Run**을 가지며, 그때 투영·자동 선택의 단위는 Run이 아니라 **그 intent의 성공한 클립 Run 묶음**이다. 상세는 §6 `candidates[].rank` 행과 §7 `RESUME_SEARCH` 행. 스키마·serialization은 바뀌지 않고 단일 Run 동작도 바뀌지 않으며, 클립 분할은 아직 구현되지 않았다(real E2E는 클립 1개 경로, #200). 묶음에서 `rank` 값을 어떻게 채울지는 클립 분할을 도입할 때 정하므로(§7 `미결 유지`), 그때 필드 의미가 바뀌면 버전을 올린다.
 
 > **`case-view/v1.6` 변경 (2026-09-28, 이슈 #47, 유소연 결정 · 신유민·정철원 합의 반영).**
@@ -402,7 +404,7 @@ json
 2. `evidence`/`package`가 선택/완료 이전이면 null
 3. `package`가 non-null이면 `requirements_package`가 non-null이고 `requirements_package.readiness ∈ {PASS, WARN}`이다 (`contract-requirement-report-package.md` §5.2·§8.1의 Package 생성 조건의 귀결. B02 종결 2026-09-07)
 4. `evidence`/`package`는 EvidenceRecord/ReportPackage의 원본 필드를 그대로 포함하지 않는다(safe projection만 포함)
-5. `running_jobs`가 비어 있으면 진행 중인 작업 없음
+5. `running_jobs[]`는 **case가 아직 결과를 기다리는 job 목록**이다 — Runtime에서 실제 `RUNNING`인 실행 전체가 아니다. `running_jobs=[]`는 **case가 더 기다리는 job이 없다**는 뜻이며, baseline web polling은 이때 멈출 수 있다. 실행 terminal 기록과 case 반영 · 후속 발주 사이, 자동 retry의 backoff 동안에도 그 job은 빠지지 않는다. 반대로 사용자 중단 · case timeout처럼 case가 기다리기를 멈춘 job은 Runtime execution이 협력적 중단 때문에 아직 `RUNNING`이어도 `running_jobs`에서 빠진다 (2026-10-04 표기 정합, #247 H-4 · #245 C-3)
 6. `info_state`는 §7의 확정 규칙으로만 파생한다. `case`가 threshold나 source 분류를 독립 정책으로 추가하지 않는다 (B01 종결 2026-09-07)
 7. `stage=READY`는 `PACKAGE_READY` 파생 gate가 성립한 시점이며, gate 자체는 `RequirementReport`/`ReportPackage`가 소유한다. `case`는 gate를 재계산하지 않는다
 8. **`user_reviewed`(workflow) · `evidence.user_edited`(record 단위) · `info_state=INFO_USER_CONFIRMED`(필드 단위 `user_corrected` 파생)는 서로 다른 세 가지 사실이며 하나로 합치지 않는다.** `contract-time-resolution.md` §10 항목 5 「`user_corrected`는 `USER_REVIEWED` workflow 상태와 동일하지 않다」와 같은 구분이다

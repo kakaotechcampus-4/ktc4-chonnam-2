@@ -57,7 +57,7 @@
 | [RD-02](#rd-02--retry-attempt-생성-시점과-queued_at-의미) | Retry attempt 생성 시점 · `queued_at` 의미 (B-02) | common/runtime | A | D-02 · B-02 |
 | [RD-03](#rd-03--retry-책임-층위--failure-lifecycle) | Retry 책임 층위 · Failure lifecycle | common/runtime | A | D-03 · D-17 일부 |
 | [RD-04](#rd-04--execution-timing-provisional-baseline의-축과-제약) | Execution timing Provisional Baseline의 축과 제약 | common/runtime | B | D-04 |
-| [RD-05](#rd-05--http-api-contract와-transport-담당) | HTTP API Contract와 transport 담당 | 확정 필요 (api ↔ web) | A | D-08 |
+| [RD-05](#rd-05--http-api-contract와-transport-담당) | HTTP API Contract와 transport 담당 | `api` composition root (Web Consumer) — [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) | A | D-08 |
 | [RD-06](#rd-06--case--runtime-dispatch-port와-결과-반영-경로) | case → Runtime dispatch port와 결과 반영 경로 | case + common/runtime | A | D-09 |
 | [RD-07](#rd-07--runtime-configuration--secret-주입) | Runtime configuration / secret 주입 | common/runtime | A | D-10 |
 | [RD-08](#rd-08--pricing--fx-artifact) | Pricing / FX artifact | common/runtime + search | B | D-07 |
@@ -394,8 +394,9 @@ retry max · backoff · jitter · lease duration · heartbeat interval · STALE 
 ## RD-05 — HTTP API Contract와 transport 담당
 
 **Status:** CLOSED — 2026-10-04 · Decision [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) ACCEPTED → [Tech Spec](./runtime-tech-spec.md) §13 (방향 · surface). HTTP API Contract 문서 작성은 다음 단계(Follow-up 「CONTRACT」)\
-**Owner:** 확정 필요 — `api` composition root Owner 김준영(`src/daesingo/api/README.md`) ↔ web 신유민(#106에서 transport 진행 합의)\
-**Consult:** case — 유소연(`get_view` · `handle_command` 진입점) · recording — 정철원(upload 입력)\
+**Owner:** HTTP API Contract Producer / Owner = `api` composition root — 김준영 ([#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) H-1, 2026-10-04). route 구현자는 Contract Owner와 같을 필요가 없다\
+**Consumer:** web — 신유민\
+**Consult:** case — 유소연(`get_view` · `handle_command` 진입점 · command 경계) · recording — 정철원(upload · frame · asset 경계) — boundary consult\
 **Source candidates:** D-08
 
 ### Question
@@ -422,7 +423,7 @@ Web ↔ Backend HTTP 경계의 **경로 · 응답 모양 · 비동기 작업 조
 
 ### Sub-decisions
 
-- **RD-05a** — HTTP API Contract와 transport 구현의 Owner 확정(`api/` composition root ↔ web 진행분의 관계)
+- **RD-05a** — *(CLOSED → [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) H-1 — Producer / Owner = `api` composition root, web = Consumer)* HTTP API Contract와 transport 구현의 Owner 확정(`api/` composition root ↔ web 진행분의 관계)
 - **RD-05b** — endpoint 집합: CaseView 조회 · command 제출 · upload · 별도 job 상태 조회의 필요 여부
 - **RD-05c** — `202 Accepted` 응답 모양과 반환하는 조회 식별자(`case_id` · `case_rev` · `job_id` 중 무엇)
 - **RD-05d** — polling 계약(클라이언트가 무엇을 다시 부르는가). interval 숫자는 계약 밖
@@ -459,7 +460,7 @@ Web ↔ Backend HTTP 경계의 **경로 · 응답 모양 · 비동기 작업 조
 - **Pre-implementation spike:** 아니오
 - **Experiment:** 아니오
 - **ADR / Contract 후보:** 예 — HTTP API Contract
-- **Follow-up:** RD-05a가 닫히면 Owner가 HTTP API Contract 문서의 위치와 Status 경로(Draft → Final)를 정해 둔다 *(이전 RD-05g)*
+- **Follow-up:** RD-05a가 닫혔으므로 Owner(`api`)가 HTTP API Contract 문서의 위치와 Status 경로(Draft → Final)를 정한다 — 다음 단계(`docs/architecture/contracts/`, Web 필수 Consumer review) *(이전 RD-05g)*
 
 ---
 
