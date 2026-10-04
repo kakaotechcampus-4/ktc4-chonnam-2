@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '방금'이라는 시간 표현을 그대로 반영했고, 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 명시된 '오토바이'를 그대로 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 끌어오지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'헬멧 없이 신호위반'이라는 원문 내용에서 '신호위반'을 뽑아 새 사고 상황을 적절히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없으므로 null이 맞고, 이전 '상무중앙로'를 복사해 넣지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'또 다른 사고'라는 명시적 전환 신호가 있어 correction이 아닌 새 사건인데, 이전 vehicle_hint에 대한 정정으로 오인해 correction_target을 지어냈다(기준상 null이어야 함).\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 발화의 단서들이 명확해 high 자체는 과하지 않으나, correction으로 잘못 해석한 판단에 근거해 high를 부여한 점에서 근거가 부분적으로만 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '방금'이라는 시간 표현을 그대로 반영했고, 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 명시된 '오토바이'를 그대로 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 끌어오지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'헬멧 없이 신호위반'이라는 원문 내용에서 '신호위반'을 뽑아 새 사고 상황을 적절히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없으므로 null이 맞고, 이전 '상무중앙로'를 복사해 넣지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'또 다른 사고'라는 명시적 전환 신호가 있어 correction이 아닌 새 사건인데, 이전 vehicle_hint에 대한 정정으로 오인해 correction_target을 지어냈다(기준상 null이어야 함)."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 발화의 단서들이 명확해 high 자체는 과하지 않으나, correction으로 잘못 해석한 판단에 근거해 high를 부여한 점에서 근거가 부분적으로만 타당하다."
+    }
+  },
+  "latency_ms": 7765.5146000906825,
+  "prompt_tokens": 2973,
+  "completion_tokens": 638,
+  "cost_krw": null,
+  "error": null
+}

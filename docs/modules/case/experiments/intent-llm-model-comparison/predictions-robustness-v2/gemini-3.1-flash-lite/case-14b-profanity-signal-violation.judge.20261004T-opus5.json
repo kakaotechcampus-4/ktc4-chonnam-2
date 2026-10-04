@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-14b-profanity-signal-violation",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간을 가리키는 표현이 전혀 없으므로 null이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'검은색 트럭이었고'라는 원문 진술을 그대로 반영했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반 하고 그냥 가버렸어요'를 '신호위반 후 도주'로 정리했고, 욕설 표현은 값에 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없어 null이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 이전 발화를 정정하는 표현도 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상·종류와 위반 행위가 모두 명시적으로 진술되어 있어 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간을 가리키는 표현이 전혀 없으므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'검은색 트럭이었고'라는 원문 진술을 그대로 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반 하고 그냥 가버렸어요'를 '신호위반 후 도주'로 정리했고, 욕설 표현은 값에 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없어 null이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 이전 발화를 정정하는 표현도 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상·종류와 위반 행위가 모두 명시적으로 진술되어 있어 high가 타당하다."
+    }
+  },
+  "latency_ms": 5821.354600135237,
+  "prompt_tokens": 2699,
+  "completion_tokens": 475,
+  "cost_krw": null,
+  "error": null
+}

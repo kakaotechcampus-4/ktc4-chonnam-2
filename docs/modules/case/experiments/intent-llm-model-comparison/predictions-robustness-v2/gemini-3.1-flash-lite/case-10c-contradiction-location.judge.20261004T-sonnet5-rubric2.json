@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 정보 언급이 없으므로 null 처리가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경'이라는 상황이 원문에 명확히 있고 그대로 반영됐다.\"}, \"location_hint\": {\"verdict\": \"partial\", \"reason\": \"같은 문장 안에서 상무중앙로와 죽전로 두 값이 언급된 모호한 상황인데, 모델이 마지막 값인 죽전로로 임의 확정했다. 자기 정정으로 읽을 여지는 있으나 이는 confidence가 낮게 동반될 때만 정당화되는 처리라 단독으로는 완전한 정답으로 보기 어렵다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"위치값이 상무중앙로에서 죽전로로 정정된 것으로 보아 correction_target을 location_hint로 잡은 것은 타당하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"같은 문장 안에서 위치값이 두 번 바뀌어 불확실성이 큰 상황인데도 confidence를 high로 매겨, 임의로 확정한 값에 과신을 부여하는 가장 위험한 오답 패턴을 보였다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 정보 언급이 없으므로 null 처리가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경'이라는 상황이 원문에 명확히 있고 그대로 반영됐다."
+    },
+    "location_hint": {
+      "verdict": "partial",
+      "reason": "같은 문장 안에서 상무중앙로와 죽전로 두 값이 언급된 모호한 상황인데, 모델이 마지막 값인 죽전로로 임의 확정했다. 자기 정정으로 읽을 여지는 있으나 이는 confidence가 낮게 동반될 때만 정당화되는 처리라 단독으로는 완전한 정답으로 보기 어렵다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "위치값이 상무중앙로에서 죽전로로 정정된 것으로 보아 correction_target을 location_hint로 잡은 것은 타당하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "같은 문장 안에서 위치값이 두 번 바뀌어 불확실성이 큰 상황인데도 confidence를 high로 매겨, 임의로 확정한 값에 과신을 부여하는 가장 위험한 오답 패턴을 보였다."
+    }
+  },
+  "latency_ms": 6349.36450002715,
+  "prompt_tokens": 3252,
+  "completion_tokens": 632,
+  "cost_krw": null,
+  "error": null
+}

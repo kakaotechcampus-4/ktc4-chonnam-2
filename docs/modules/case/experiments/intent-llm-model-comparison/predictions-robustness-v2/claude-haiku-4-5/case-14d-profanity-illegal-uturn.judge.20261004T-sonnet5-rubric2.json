@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-14d-profanity-illegal-uturn",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"욕설을 제외하고 '트럭'만 추출해 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"욕설 표현을 섞지 않고 실제 위반 행위인 '불법 유턴'만 정확히 뽑았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '죽전로'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"핵심 정보(차량, 상황, 장소)가 모두 명확히 언급되어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "욕설을 제외하고 '트럭'만 추출해 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "욕설 표현을 섞지 않고 실제 위반 행위인 '불법 유턴'만 정확히 뽑았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '죽전로'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "핵심 정보(차량, 상황, 장소)가 모두 명확히 언급되어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 6372.167400084436,
+  "prompt_tokens": 3153,
+  "completion_tokens": 436,
+  "cost_krw": null,
+  "error": null
+}

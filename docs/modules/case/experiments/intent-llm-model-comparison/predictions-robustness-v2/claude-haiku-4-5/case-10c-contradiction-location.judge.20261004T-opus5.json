@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-10c-contradiction-location",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없는데 null로 비워 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"\\\"차로 변경\\\"은 차선 변경을 뜻하는 표현이고 차종에 대한 정보가 아닌데, 이를 차량 단서 \\\"차\\\"로 뽑아냈다. 원문에 특정 차량을 지목하는 근거가 없다.\"}, \"situation_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 \\\"차로 변경 봤어요\\\"라는 상황 서술이 명확히 있는데 situation_hint를 null로 빠뜨렸다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"자기 정정의 마지막 값인 \\\"죽전로\\\"를 채택한 것은 허용되는 처리이며, 이 케이스의 1차 기준인 confidence 과신도 범하지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로→죽전로로 같은 위치 슬롯을 두 번 말한 자기 정정이므로 정정 대상을 location_hint로 본 것이 원문과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"expected_notes의 1차 기준대로 high가 아닌 low를 줬고, \\\"것 같아요\\\"라는 불확실 표현을 근거로 삼은 점도 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없는데 null로 비워 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "\"차로 변경\"은 차선 변경을 뜻하는 표현이고 차종에 대한 정보가 아닌데, 이를 차량 단서 \"차\"로 뽑아냈다. 원문에 특정 차량을 지목하는 근거가 없다."
+    },
+    "situation_hint": {
+      "verdict": "missed",
+      "reason": "원문에 \"차로 변경 봤어요\"라는 상황 서술이 명확히 있는데 situation_hint를 null로 빠뜨렸다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "자기 정정의 마지막 값인 \"죽전로\"를 채택한 것은 허용되는 처리이며, 이 케이스의 1차 기준인 confidence 과신도 범하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "상무중앙로→죽전로로 같은 위치 슬롯을 두 번 말한 자기 정정이므로 정정 대상을 location_hint로 본 것이 원문과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "expected_notes의 1차 기준대로 high가 아닌 low를 줬고, \"것 같아요\"라는 불확실 표현을 근거로 삼은 점도 타당하다."
+    }
+  },
+  "latency_ms": 7590.986700030044,
+  "prompt_tokens": 2903,
+  "completion_tokens": 643,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에서 '20시쯤... 아니 21시'로 자기 정정이 일어났고 마지막 값인 '21시'를 채택한 것은 원문 근거에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '오토바이'가 명시되어 있고 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '신호위반'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '죽전로'가 명시되어 있고 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"한 문장 안에서 값이 두 번 바뀐 슬롯은 시간('20시'→'21시')이므로 correction_target=time_hint는 타당하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"자기 정정으로 값이 흔들린 발화인데 confidence=high를 부여했다. expected_notes가 1차 채점 기준으로 명시한 '확신 없는 값에 과신' 패턴에 정확히 해당한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 '20시쯤... 아니 21시'로 자기 정정이 일어났고 마지막 값인 '21시'를 채택한 것은 원문 근거에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '오토바이'가 명시되어 있고 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '신호위반'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '죽전로'가 명시되어 있고 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "한 문장 안에서 값이 두 번 바뀐 슬롯은 시간('20시'→'21시')이므로 correction_target=time_hint는 타당하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "자기 정정으로 값이 흔들린 발화인데 confidence=high를 부여했다. expected_notes가 1차 채점 기준으로 명시한 '확신 없는 값에 과신' 패턴에 정확히 해당한다."
+    }
+  },
+  "latency_ms": 6851.2761001475155,
+  "prompt_tokens": 2750,
+  "completion_tokens": 536,
+  "cost_krw": null,
+  "error": null
+}

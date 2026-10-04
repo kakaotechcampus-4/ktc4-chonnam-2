@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13b-korean-english-mix",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 6시쯤'을 그대로 보존했다. 오전/오후가 명시되지 않은 모호함을 임의로 확정하지 않은 점도 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 영어로 쓰인 'white SUV'를 언어를 이유로 삭제하지 않고 그대로 추출했다. 혼용 입력에서 정보를 보존해야 한다는 최소 요구사항을 충족한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'lane change'라는 영어 표현의 상황 정보를 누락 없이 추출했고, 원문에 없는 위반 판단(예: 진로변경 위반 확정)을 덧붙이지도 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로'를 그대로 반영했으며 구/도시 등 없는 정보를 덧붙이지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 정정 표현이 없으므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 필드 모두 원문에 명시적으로 등장해 추출 근거가 분명하므로 high가 타당하다. 언어 혼용이라는 점이 추출 자체의 확신도를 낮출 이유는 아니다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 6시쯤'을 그대로 보존했다. 오전/오후가 명시되지 않은 모호함을 임의로 확정하지 않은 점도 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 영어로 쓰인 'white SUV'를 언어를 이유로 삭제하지 않고 그대로 추출했다. 혼용 입력에서 정보를 보존해야 한다는 최소 요구사항을 충족한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'lane change'라는 영어 표현의 상황 정보를 누락 없이 추출했고, 원문에 없는 위반 판단(예: 진로변경 위반 확정)을 덧붙이지도 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로'를 그대로 반영했으며 구/도시 등 없는 정보를 덧붙이지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 정정 표현이 없으므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 필드 모두 원문에 명시적으로 등장해 추출 근거가 분명하므로 high가 타당하다. 언어 혼용이라는 점이 추출 자체의 확신도를 낮출 이유는 아니다."
+    }
+  },
+  "latency_ms": 7801.90320010297,
+  "prompt_tokens": 2829,
+  "completion_tokens": 647,
+  "cost_krw": null,
+  "error": null
+}

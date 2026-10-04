@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09b-multi-event-also",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 등장한 두 시점 '아까'와 '지난주'를 구분해서 그대로 기록했고, 하나로 뭉개거나 조합하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"흰색 SUV와 트럭을 각각 구분해 병기했을 뿐 서로 속성을 섞어 새로운 차량을 만들어내지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"신호위반과 불법 유턴을 각 사건에 대응되게 분리 표기했고 교차조합하지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 위치 정보가 없으므로 null로 둔 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞인 애매한 상황을 반영해 confidence를 low로 설정한 것이 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 등장한 두 시점 '아까'와 '지난주'를 구분해서 그대로 기록했고, 하나로 뭉개거나 조합하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "흰색 SUV와 트럭을 각각 구분해 병기했을 뿐 서로 속성을 섞어 새로운 차량을 만들어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "신호위반과 불법 유턴을 각 사건에 대응되게 분리 표기했고 교차조합하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 위치 정보가 없으므로 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞인 애매한 상황을 반영해 confidence를 low로 설정한 것이 기준에 부합한다."
+    }
+  },
+  "latency_ms": 7340.511200018227,
+  "prompt_tokens": 3359,
+  "completion_tokens": 507,
+  "cost_krw": null,
+  "error": null
+}

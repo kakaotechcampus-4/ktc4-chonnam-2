@@ -1,0 +1,40 @@
+{
+  "run_id": "20261004T-opus5-retry",
+  "retry_of": "20261004T-opus5",
+  "attempts": 1,
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16a-new-incident-not-correction-1",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '방금'을 그대로 반영했고, 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화의 '오토바이'를 정확히 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 유지하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'헬멧 없이 신호위반'이라는 원문 내용을 '헬멧 미착용 및 신호위반'으로 충실히 반영했고 이전 '차로 변경'을 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 전혀 없어 null로 둔 것이 맞고, 이전 '상무중앙로'를 복사하지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'아까 얘기한 거 말고, 방금 또 다른 사고'는 명시적 전환 신호이므로 기존 필드 정정이 아니며 null이 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량·상황·시점이 새 발화에 명확히 드러나고 전환 신호도 분명해 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '방금'을 그대로 반영했고, 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화의 '오토바이'를 정확히 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 유지하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'헬멧 없이 신호위반'이라는 원문 내용을 '헬멧 미착용 및 신호위반'으로 충실히 반영했고 이전 '차로 변경'을 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 전혀 없어 null로 둔 것이 맞고, 이전 '상무중앙로'를 복사하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'아까 얘기한 거 말고, 방금 또 다른 사고'는 명시적 전환 신호이므로 기존 필드 정정이 아니며 null이 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량·상황·시점이 새 발화에 명확히 드러나고 전환 신호도 분명해 high가 타당하다."
+    }
+  },
+  "latency_ms": 6863.57819987461,
+  "prompt_tokens": 2873,
+  "completion_tokens": 589,
+  "cost_krw": null,
+  "error": null
+}

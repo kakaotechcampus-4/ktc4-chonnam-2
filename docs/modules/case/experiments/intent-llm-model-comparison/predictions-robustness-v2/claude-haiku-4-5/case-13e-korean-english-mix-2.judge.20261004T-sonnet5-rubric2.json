@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-13e-korean-english-mix-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '그저께 밤 9시쯤'을 그대로 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'black motorcycle'을 언어를 이유로 지우지 않고 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '헬멧 안 쓰고'라는 위반 상황을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'assembly로'를 언어 혼용임에도 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없어 정정 케이스가 아니므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간, 차량, 상황, 장소가 모두 구체적으로 언급되어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '그저께 밤 9시쯤'을 그대로 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'black motorcycle'을 언어를 이유로 지우지 않고 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '헬멧 안 쓰고'라는 위반 상황을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'assembly로'를 언어 혼용임에도 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없어 정정 케이스가 아니므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간, 차량, 상황, 장소가 모두 구체적으로 언급되어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 5478.604700183496,
+  "prompt_tokens": 3272,
+  "completion_tokens": 457,
+  "cost_krw": null,
+  "error": null
+}

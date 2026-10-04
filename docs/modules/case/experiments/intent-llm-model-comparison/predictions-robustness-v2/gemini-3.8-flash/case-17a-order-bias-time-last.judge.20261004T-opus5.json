@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-17a-order-bias-time-last",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 문장 뒤쪽에 위치한 '어제 18시쯤'을 그대로 정확히 추출했다. 순서가 뒤로 밀렸음에도 누락 없이 잡았으므로 기준에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '흰색 SUV'를 색상까지 포함해 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'백색 실선 구간에서 차로 변경'은 원문의 '백색 실선 구간에서 차로 바꿨는데'와 의미가 동일한 표현이다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로 사거리'를 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 정정 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 단서가 모두 명시적이고 모호한 표현이 없으므로 high가 적절하다. time_hint가 문장 뒤에 왔다는 이유로 낮추지 않은 점도 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문 문장 뒤쪽에 위치한 '어제 18시쯤'을 그대로 정확히 추출했다. 순서가 뒤로 밀렸음에도 누락 없이 잡았으므로 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 SUV'를 색상까지 포함해 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'백색 실선 구간에서 차로 변경'은 원문의 '백색 실선 구간에서 차로 바꿨는데'와 의미가 동일한 표현이다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로 사거리'를 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 정정 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 단서가 모두 명시적이고 모호한 표현이 없으므로 high가 적절하다. time_hint가 문장 뒤에 왔다는 이유로 낮추지 않은 점도 기준에 부합한다."
+    }
+  },
+  "latency_ms": 6705.558700021356,
+  "prompt_tokens": 2960,
+  "completion_tokens": 569,
+  "cost_krw": null,
+  "error": null
+}

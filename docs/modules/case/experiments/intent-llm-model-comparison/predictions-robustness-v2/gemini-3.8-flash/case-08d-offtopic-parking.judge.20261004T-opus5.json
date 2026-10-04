@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-08d-offtopic-parking",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 \\\"여기 주차 어떻게 해요?\\\"에는 시점에 대한 언급이 전혀 없으므로 null이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 종류·색상·번호 등 차량 관련 단서가 원문에 없으므로 null로 둔 것이 기준에 부합한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고나 위반 상황 설명이 전혀 없는 일반 질문이라 null이 정답이며, 주차 안내 등을 지어내지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"\\\"여기\\\"는 구체적 장소를 특정하지 못하는 지시어일 뿐이라 값으로 채우지 않고 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 발화가 아니므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"유효한 단서가 하나도 없는 발화이므로 expected_notes 기준대로 low가 맞고, reasoning에서도 단서 부재를 명시해 일관적이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문 \"여기 주차 어떻게 해요?\"에는 시점에 대한 언급이 전혀 없으므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 종류·색상·번호 등 차량 관련 단서가 원문에 없으므로 null로 둔 것이 기준에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고나 위반 상황 설명이 전혀 없는 일반 질문이라 null이 정답이며, 주차 안내 등을 지어내지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "\"여기\"는 구체적 장소를 특정하지 못하는 지시어일 뿐이라 값으로 채우지 않고 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 발화가 아니므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "유효한 단서가 하나도 없는 발화이므로 expected_notes 기준대로 low가 맞고, reasoning에서도 단서 부재를 명시해 일관적이다."
+    }
+  },
+  "latency_ms": 6980.063199996948,
+  "prompt_tokens": 2609,
+  "completion_tokens": 573,
+  "cost_krw": null,
+  "error": null
+}

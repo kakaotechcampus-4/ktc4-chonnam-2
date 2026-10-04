@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10a-contradiction-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"자기 정정으로 보고 마지막 값(19시)을 채택한 것은 합리적 해석이지만, 18시→19시 번복이 있었다는 사실 자체가 time_hint 값에는 드러나지 않아 모호함이 일부 소실됐다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 흰색 SUV를 그대로 추출했고 번복 없이 일관된 값이다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"차로 변경이라는 상황이 원문 그대로 반영되었다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로라는 위치가 원문과 일치하며 번복 없이 명확하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target을 null로 둔 것은 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간 슬롯에서 18시/19시 번복이 있었음을 반영해 confidence를 low로 낮춘 것은 판정 기준이 요구하는 핵심(high로 과신하지 않음)을 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "자기 정정으로 보고 마지막 값(19시)을 채택한 것은 합리적 해석이지만, 18시→19시 번복이 있었다는 사실 자체가 time_hint 값에는 드러나지 않아 모호함이 일부 소실됐다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 흰색 SUV를 그대로 추출했고 번복 없이 일관된 값이다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "차로 변경이라는 상황이 원문 그대로 반영되었다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로라는 위치가 원문과 일치하며 번복 없이 명확하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target을 null로 둔 것은 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간 슬롯에서 18시/19시 번복이 있었음을 반영해 confidence를 low로 낮춘 것은 판정 기준이 요구하는 핵심(high로 과신하지 않음)을 충족한다."
+    }
+  },
+  "latency_ms": 5469.592700013891,
+  "prompt_tokens": 3296,
+  "completion_tokens": 551,
+  "cost_krw": null,
+  "error": null
+}

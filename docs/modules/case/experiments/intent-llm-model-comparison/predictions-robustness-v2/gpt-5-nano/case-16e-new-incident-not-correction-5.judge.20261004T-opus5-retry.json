@@ -1,0 +1,40 @@
+{
+  "run_id": "20261004T-opus5-retry",
+  "retry_of": "20261004T-opus5",
+  "attempts": 1,
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16e-new-incident-not-correction-5",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 정보가 전혀 없으므로 null이 맞다. 이전 '어제 18시'를 끌어오지 않은 것도 기준에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '버스가'라고 명시되어 있어 '버스'는 근거가 있고, 이전 '흰색 SUV'를 덮어쓰지 않고 새 발화 기준으로 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'정류장 아닌 곳에서 급정거했다'는 원문 내용을 그대로 반영했고 이전 '차로 변경'을 유지하지 않았다.\"}, \"location_hint\": {\"verdict\": \"partial\", \"reason\": \"'정류장 아닌 곳'은 원문 표현을 가져온 것이라 지어낸 값은 아니지만 실제 장소 정보가 아니어서 location_hint로는 부적절하다(null이 더 적절). 다만 이전 '상무중앙로'를 끌어오지 않은 점은 기준에 맞다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'잠깐만요 그거 아니고, 완전 새로운 건이에요'는 기존 필드 정정이 아니라 새 사건으로의 전환 신호이므로 correction_target=null이어야 하는데 situation_hint로 채웠다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"사용자가 명시적으로 새 건임을 밝혀 단서 자체는 명확하므로 high 자체는 과하지 않으나, 정정 건으로 잘못 해석한 전제 위에서 high를 부여해 근거가 어긋난다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 정보가 전혀 없으므로 null이 맞다. 이전 '어제 18시'를 끌어오지 않은 것도 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '버스가'라고 명시되어 있어 '버스'는 근거가 있고, 이전 '흰색 SUV'를 덮어쓰지 않고 새 발화 기준으로 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'정류장 아닌 곳에서 급정거했다'는 원문 내용을 그대로 반영했고 이전 '차로 변경'을 유지하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "partial",
+      "reason": "'정류장 아닌 곳'은 원문 표현을 가져온 것이라 지어낸 값은 아니지만 실제 장소 정보가 아니어서 location_hint로는 부적절하다(null이 더 적절). 다만 이전 '상무중앙로'를 끌어오지 않은 점은 기준에 맞다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'잠깐만요 그거 아니고, 완전 새로운 건이에요'는 기존 필드 정정이 아니라 새 사건으로의 전환 신호이므로 correction_target=null이어야 하는데 situation_hint로 채웠다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "사용자가 명시적으로 새 건임을 밝혀 단서 자체는 명확하므로 high 자체는 과하지 않으나, 정정 건으로 잘못 해석한 전제 위에서 high를 부여해 근거가 어긋난다."
+    }
+  },
+  "latency_ms": 8755.308200139552,
+  "prompt_tokens": 2928,
+  "completion_tokens": 738,
+  "cost_krw": null,
+  "error": null
+}

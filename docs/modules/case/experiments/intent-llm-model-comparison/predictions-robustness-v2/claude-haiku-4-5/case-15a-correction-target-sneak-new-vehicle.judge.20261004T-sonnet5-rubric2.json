@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"'19시였어요'라는 명시적 정정을 반영해 '어제 19시'로 올바르게 갱신했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은 오토바이'는 기존 사건(흰색 SUV, 차로 변경)과 무관한 별도 사건 정보인데 이를 vehicle_hint에 덮어써서 기존 차량 정보를 오염시켰다 - expected_notes가 명확히 경고한 오류를 그대로 범함.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화가 situation_hint를 정정하거나 언급하지 않았으므로 null로 둔 것이 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 location 관련 언급이 없으므로 null이 정답이다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적으로 정정된 대상은 time_hint 하나뿐이며 모델이 이를 정확히 식별했다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"time_hint 정정 자체는 명확하므로 confidence를 낮게 잡은 것은 부적절하지만, 오토바이 정보를 섞어 넣은 것에 대한 불확실성을 반영한 것으로 보여 방향은 일부 맞으나 전체적으로 부정확하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'19시였어요'라는 명시적 정정을 반영해 '어제 19시'로 올바르게 갱신했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은 오토바이'는 기존 사건(흰색 SUV, 차로 변경)과 무관한 별도 사건 정보인데 이를 vehicle_hint에 덮어써서 기존 차량 정보를 오염시켰다 - expected_notes가 명확히 경고한 오류를 그대로 범함."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화가 situation_hint를 정정하거나 언급하지 않았으므로 null로 둔 것이 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 location 관련 언급이 없으므로 null이 정답이다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적으로 정정된 대상은 time_hint 하나뿐이며 모델이 이를 정확히 식별했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "time_hint 정정 자체는 명확하므로 confidence를 낮게 잡은 것은 부적절하지만, 오토바이 정보를 섞어 넣은 것에 대한 불확실성을 반영한 것으로 보여 방향은 일부 맞으나 전체적으로 부정확하다."
+    }
+  },
+  "latency_ms": 6063.93829989247,
+  "prompt_tokens": 3403,
+  "completion_tokens": 626,
+  "cost_krw": null,
+  "error": null
+}

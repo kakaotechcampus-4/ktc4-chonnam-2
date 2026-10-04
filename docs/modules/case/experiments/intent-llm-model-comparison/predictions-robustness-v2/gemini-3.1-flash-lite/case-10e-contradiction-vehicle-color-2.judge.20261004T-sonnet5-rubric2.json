@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10e-contradiction-vehicle-color-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 없으므로 null로 둔 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"검은색과 남색 두 값이 모두 언급되었고, 이를 '검은색 또는 남색 트럭'으로 불확실성을 보존하여 표현한 것은 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"불법 유턴이 원문에 명시되어 있고 정확히 추출되었다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"죽전로가 원문에 명시되어 있고 정확히 추출되었다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 이번 발화는 정정이 아닌 최초 신고이므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 색상이 두 값 중 불확실하게 언급된 상황을 반영해 confidence를 low로 설정한 것이 판정 기준(high가 되면 안 됨)에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 없으므로 null로 둔 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "검은색과 남색 두 값이 모두 언급되었고, 이를 '검은색 또는 남색 트럭'으로 불확실성을 보존하여 표현한 것은 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "불법 유턴이 원문에 명시되어 있고 정확히 추출되었다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "죽전로가 원문에 명시되어 있고 정확히 추출되었다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 이번 발화는 정정이 아닌 최초 신고이므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 색상이 두 값 중 불확실하게 언급된 상황을 반영해 confidence를 low로 설정한 것이 판정 기준(high가 되면 안 됨)에 부합한다."
+    }
+  },
+  "latency_ms": 6406.05859993957,
+  "prompt_tokens": 3159,
+  "completion_tokens": 515,
+  "cost_krw": null,
+  "error": null
+}

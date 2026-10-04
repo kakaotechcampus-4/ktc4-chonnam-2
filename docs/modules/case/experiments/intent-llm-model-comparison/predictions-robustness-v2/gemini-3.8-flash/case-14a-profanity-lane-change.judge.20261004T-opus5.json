@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-14a-profanity-lane-change",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 18시쯤'을 그대로 정확히 뽑았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'흰색 SUV'는 원문에 명시된 차량 정보로, 색상과 차종을 모두 올바르게 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경'이라는 실제 사고 상황만 담았고 욕설·감정 표현('아 진짜 미친놈이네')이 섞여 들어가지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로'를 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 원문에 이전 진술을 정정하는 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·장소·차량·상황이 모두 명확히 진술되고 모호한 표현이 없어 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 18시쯤'을 그대로 정확히 뽑았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'흰색 SUV'는 원문에 명시된 차량 정보로, 색상과 차종을 모두 올바르게 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경'이라는 실제 사고 상황만 담았고 욕설·감정 표현('아 진짜 미친놈이네')이 섞여 들어가지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로'를 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 원문에 이전 진술을 정정하는 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·장소·차량·상황이 모두 명확히 진술되고 모호한 표현이 없어 high가 타당하다."
+    }
+  },
+  "latency_ms": 5948.767699999735,
+  "prompt_tokens": 2798,
+  "completion_tokens": 502,
+  "cost_krw": null,
+  "error": null
+}

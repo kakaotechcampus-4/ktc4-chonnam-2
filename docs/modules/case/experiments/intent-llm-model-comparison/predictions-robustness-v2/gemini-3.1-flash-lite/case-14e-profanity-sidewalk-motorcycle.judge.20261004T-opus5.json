@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-14e-profanity-sidewalk-motorcycle",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 표현이 전혀 없어 null로 둔 것이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'저 오토바이'라고 명시되어 있어 '오토바이'는 원문 근거가 명확하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'헬멧도 안 쓰고 인도로 달리네'라는 실제 정보만 '헬멧 미착용 및 인도 주행'으로 담았고 욕설·감정 표현은 섞이지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'인도로 달리네'에서 주행 위치가 인도임이 명시되어 있어 근거가 있다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 이전 발화를 정정하는 표현도 없어 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량·상황·장소가 모두 원문에 직접적으로 드러나 있어 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 표현이 전혀 없어 null로 둔 것이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'저 오토바이'라고 명시되어 있어 '오토바이'는 원문 근거가 명확하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'헬멧도 안 쓰고 인도로 달리네'라는 실제 정보만 '헬멧 미착용 및 인도 주행'으로 담았고 욕설·감정 표현은 섞이지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'인도로 달리네'에서 주행 위치가 인도임이 명시되어 있어 근거가 있다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 이전 발화를 정정하는 표현도 없어 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량·상황·장소가 모두 원문에 직접적으로 드러나 있어 high가 타당하다."
+    }
+  },
+  "latency_ms": 6227.54089999944,
+  "prompt_tokens": 2721,
+  "completion_tokens": 512,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09b-multi-event-also",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '아까'와 '지난주' 두 시점을 임의로 하나로 뭉개지 않고 구분자('/')로 병기해 원문 그대로 보존했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'흰색 SUV'와 '트럭'을 각각 원문대로 병기했고, 두 사건의 차량 속성을 교차조합한 흔적(예: 흰색 트럭)이 없다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반'과 '불법 유턴'을 원문대로 병기했으며, 존재하지 않는 위반 사항을 추가하거나 차량과 잘못 대응시키지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 전혀 없으므로 null이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"이전 값을 정정하는 발화가 아니라 두 건을 함께 신고하려는 발화이므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"서로 다른 두 사건이 한 문장에 섞여 단일 사건으로 확정할 수 없는 상황을 low로 반영해 기준에 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '아까'와 '지난주' 두 시점을 임의로 하나로 뭉개지 않고 구분자('/')로 병기해 원문 그대로 보존했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'흰색 SUV'와 '트럭'을 각각 원문대로 병기했고, 두 사건의 차량 속성을 교차조합한 흔적(예: 흰색 트럭)이 없다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반'과 '불법 유턴'을 원문대로 병기했으며, 존재하지 않는 위반 사항을 추가하거나 차량과 잘못 대응시키지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 전혀 없으므로 null이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "이전 값을 정정하는 발화가 아니라 두 건을 함께 신고하려는 발화이므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "서로 다른 두 사건이 한 문장에 섞여 단일 사건으로 확정할 수 없는 상황을 low로 반영해 기준에 부합한다."
+    }
+  },
+  "latency_ms": 10767.735600005835,
+  "prompt_tokens": 2950,
+  "completion_tokens": 584,
+  "cost_krw": null,
+  "error": null
+}

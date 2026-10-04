@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-10e-contradiction-vehicle-color-2",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없는데 null로 비워 뒀다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 '검은색 트럭이었나... 남색이었나'로 색을 확정하지 못했는데, 한쪽을 임의로 고르지 않고 '검은색 또는 남색 트럭'으로 불확실성을 보존해 담았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'불법 유턴 했어요'라는 원문 표현을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '죽전로'가 명시되어 있고 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없어 이전 값을 정정하는 케이스가 아니며, 한 문장 내 자기 정정도 별도 정정 대상으로 지정할 근거가 없으므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"이 케이스의 핵심 기준인 'high가 아닐 것'을 충족했고, 화자 스스로 색상을 확신하지 못한 점을 근거로 low를 준 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없는데 null로 비워 뒀다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문이 '검은색 트럭이었나... 남색이었나'로 색을 확정하지 못했는데, 한쪽을 임의로 고르지 않고 '검은색 또는 남색 트럭'으로 불확실성을 보존해 담았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'불법 유턴 했어요'라는 원문 표현을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '죽전로'가 명시되어 있고 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없어 이전 값을 정정하는 케이스가 아니며, 한 문장 내 자기 정정도 별도 정정 대상으로 지정할 근거가 없으므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "이 케이스의 핵심 기준인 'high가 아닐 것'을 충족했고, 화자 스스로 색상을 확신하지 못한 점을 근거로 low를 준 것이 타당하다."
+    }
+  },
+  "latency_ms": 7017.701999982819,
+  "prompt_tokens": 2815,
+  "completion_tokens": 578,
+  "cost_krw": null,
+  "error": null
+}

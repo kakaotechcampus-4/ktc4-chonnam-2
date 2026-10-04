@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09c-multi-event-repeat",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"원문의 두 시점('오늘 오전', '방금 전')을 모두 보존해 속성 교차조합은 피했지만, 하나의 시점으로 확정하지 않고 두 값을 한 문자열에 병기해 단일 사건 단서로는 모호한 값이 되었다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"'버스 / 택시'로 두 차량을 병기해 존재하지 않는 조합을 만들지는 않았으나, 하나의 사건으로 확정하지 않아 단서 값으로는 불완전하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건 모두 중앙선 침범이므로 '중앙선 침범'은 원문과 일치하며 섞임 문제도 없다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 전혀 없는데 null로 비워 뒀다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 이전 진술을 정정하는 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"서로 다른 시점·차량의 사건 2개가 섞여 단일 사건이 확정되지 않은 상황인데 high로 매겼다. 기준상 애매함을 반영해 low여야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "원문의 두 시점('오늘 오전', '방금 전')을 모두 보존해 속성 교차조합은 피했지만, 하나의 시점으로 확정하지 않고 두 값을 한 문자열에 병기해 단일 사건 단서로는 모호한 값이 되었다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "'버스 / 택시'로 두 차량을 병기해 존재하지 않는 조합을 만들지는 않았으나, 하나의 사건으로 확정하지 않아 단서 값으로는 불완전하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "두 사건 모두 중앙선 침범이므로 '중앙선 침범'은 원문과 일치하며 섞임 문제도 없다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 전혀 없는데 null로 비워 뒀다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 이전 진술을 정정하는 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "서로 다른 시점·차량의 사건 2개가 섞여 단일 사건이 확정되지 않은 상황인데 high로 매겼다. 기준상 애매함을 반영해 low여야 한다."
+    }
+  },
+  "latency_ms": 7746.082700090483,
+  "prompt_tokens": 2876,
+  "completion_tokens": 623,
+  "cost_krw": null,
+  "error": null
+}

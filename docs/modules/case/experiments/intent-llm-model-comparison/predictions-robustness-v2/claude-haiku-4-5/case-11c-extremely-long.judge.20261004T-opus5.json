@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-11c-extremely-long",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 표현이 전혀 없으므로 null이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 종류·색상·번호 등 어떤 차량 단서도 언급되지 않아 null이 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'그런 일이 있었던 것 같기도 하고 아닌 것 같기도 하고'뿐이라 구체적 상황이 없고, 모델이 억지로 상황을 만들어내지 않고 null로 뒀다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소를 가리키는 표현이 원문에 없으므로 null이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 발화도 아니므로 correction_target은 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"극단적으로 긴 무의미 반복에도 길이에 휘둘리지 않고 low를 유지했으며, 화자 스스로의 불확실성 표현을 근거로 삼은 점도 기준과 부합한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 표현이 전혀 없으므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 종류·색상·번호 등 어떤 차량 단서도 언급되지 않아 null이 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'그런 일이 있었던 것 같기도 하고 아닌 것 같기도 하고'뿐이라 구체적 상황이 없고, 모델이 억지로 상황을 만들어내지 않고 null로 뒀다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소를 가리키는 표현이 원문에 없으므로 null이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 발화도 아니므로 correction_target은 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "극단적으로 긴 무의미 반복에도 길이에 휘둘리지 않고 low를 유지했으며, 화자 스스로의 불확실성 표현을 근거로 삼은 점도 기준과 부합한다."
+    }
+  },
+  "latency_ms": 6666.359100025147,
+  "prompt_tokens": 3414,
+  "completion_tokens": 543,
+  "cost_krw": null,
+  "error": null
+}

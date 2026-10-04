@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-08c-offtopic-howto",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 정보가 전혀 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 정보가 전혀 없으므로 null 처리가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고 설명이 전혀 없는 단순 문의이므로 null 처리가 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"위치 정보가 전혀 없으므로 null 처리가 맞으며, 임의로 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 correction_target null이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"모든 단서가 없는 상황이므로 기준상 confidence는 low여야 하는데 모델은 high로 지어내어 틀렸다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 정보가 전혀 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 정보가 전혀 없으므로 null 처리가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고 설명이 전혀 없는 단순 문의이므로 null 처리가 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "위치 정보가 전혀 없으므로 null 처리가 맞으며, 임의로 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 correction_target null이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "모든 단서가 없는 상황이므로 기준상 confidence는 low여야 하는데 모델은 high로 지어내어 틀렸다."
+    }
+  },
+  "latency_ms": 4681.421899935231,
+  "prompt_tokens": 3042,
+  "completion_tokens": 459,
+  "cost_krw": null,
+  "error": null
+}

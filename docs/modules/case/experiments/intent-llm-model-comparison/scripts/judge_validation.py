@@ -154,6 +154,22 @@ def cmd_agree(args: argparse.Namespace) -> None:
     print(json.dumps(agreement(a, b), ensure_ascii=False, indent=2))
 
 
+def cmd_export(args: argparse.Namespace) -> None:
+    """표본 항목(items.jsonl)에 대해 다른 judge run의 판정을 key와 같은 모양으로 꺼낸다 — `agree`로 비교한다."""
+    out = Path(args.out_dir)
+    rows = _load_verdicts(Path(args.dataset), Path(args.predictions), args.judge_run_id)
+    by_key = {(r["model_name"], r["case_id"], r["field"]): r for r in rows}
+    exported, missing = [], []
+    for item in _read_jsonl(out / "items.jsonl"):
+        row = by_key.get((item["model_name"], item["case_id"], item["field"]))
+        if row is None:
+            missing.append(item["item_id"])
+            continue
+        exported.append({"item_id": item["item_id"], "verdict": row["judge_verdict"], "reason": row["judge_reason"]})
+    _write_jsonl(out / args.name, exported)
+    print(f"{len(exported)}개 → {out / args.name}" + (f" (판정 없음 {missing})" if missing else ""))
+
+
 _HINT_FIELDS = ("time_hint", "vehicle_hint", "situation_hint", "location_hint")
 
 
@@ -223,6 +239,13 @@ def main() -> None:
     c.add_argument("--judge-run-id", required=True)
     c.add_argument("--exclude", nargs="*", help="model/case_id/field — 모델이 실제로 놓친 것으로 사람이 확인한 항목")
     c.set_defaults(func=cmd_scan)
+    e = sub.add_parser("export", help="표본 항목에 대한 다른 judge run의 판정을 key 모양으로 꺼낸다")
+    e.add_argument("--dataset", required=True)
+    e.add_argument("--predictions", required=True)
+    e.add_argument("--judge-run-id", required=True)
+    e.add_argument("--out-dir", required=True)
+    e.add_argument("--name", required=True, help="예: key-opus5.jsonl")
+    e.set_defaults(func=cmd_export)
     args = parser.parse_args()
     args.func(args)
 

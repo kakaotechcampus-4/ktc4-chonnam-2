@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"원문은 '19시쯤이었던 것 같기도 하고'라는 불확실한 표현인데 모델이 '19시쯤'으로 값을 채웠다. 다만 '쯤'이라는 모호성 표지를 남기고 confidence를 low로 떨어뜨려 확정적 단정은 피했으므로 완전한 날조보다는 부분 인정.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 차량 언급이 전혀 없으므로 null이 맞다. prior_hints의 '흰색 SUV'를 복사해 넣지 않은 점이 적절하다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반이 아니라 중앙선 침범이었어요'라는 명시적 정정을 그대로 '중앙선 침범'으로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 장소 언급이 없어 null이 맞고, 이전 값 '상무중앙로'를 그대로 복사하지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"상황 정정은 명확하고 시간도 '다시 보니'라며 정정 의도를 드러냈으므로 situation_hint와 time_hint 두 필드를 정정 대상으로 잡은 것은 기준(여러 필드에 걸칠 수 있음)에 부합한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"모호한 시간 정정이 섞여 있으므로 낮은 confidence로 남기라는 기준에 맞게 low를 부여했고, 그 근거도 시간 표현의 불확실성으로 적절히 설명했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "원문은 '19시쯤이었던 것 같기도 하고'라는 불확실한 표현인데 모델이 '19시쯤'으로 값을 채웠다. 다만 '쯤'이라는 모호성 표지를 남기고 confidence를 low로 떨어뜨려 확정적 단정은 피했으므로 완전한 날조보다는 부분 인정."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 차량 언급이 전혀 없으므로 null이 맞다. prior_hints의 '흰색 SUV'를 복사해 넣지 않은 점이 적절하다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반이 아니라 중앙선 침범이었어요'라는 명시적 정정을 그대로 '중앙선 침범'으로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 장소 언급이 없어 null이 맞고, 이전 값 '상무중앙로'를 그대로 복사하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "상황 정정은 명확하고 시간도 '다시 보니'라며 정정 의도를 드러냈으므로 situation_hint와 time_hint 두 필드를 정정 대상으로 잡은 것은 기준(여러 필드에 걸칠 수 있음)에 부합한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "모호한 시간 정정이 섞여 있으므로 낮은 confidence로 남기라는 기준에 맞게 low를 부여했고, 그 근거도 시간 표현의 불확실성으로 적절히 설명했다."
+    }
+  },
+  "latency_ms": 8646.62989997305,
+  "prompt_tokens": 3085,
+  "completion_tokens": 733,
+  "cost_krw": null,
+  "error": null
+}

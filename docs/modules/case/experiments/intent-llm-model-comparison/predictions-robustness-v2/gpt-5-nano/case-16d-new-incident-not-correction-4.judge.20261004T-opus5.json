@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 밤'을 그대로 반영했고, 이전 힌트의 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 명시된 '택시'를 정확히 뽑았고 이전의 '흰색 SUV'를 덮어쓰거나 유지하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'정류장에서 출발, 승객 안전벨트 미착용'은 새 발화 내용을 그대로 담았고 이전의 '차로 변경'을 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에는 '정류장'이라는 일반적 언급만 있고 구체적 장소가 없어 null로 둔 것이 적절하며, 이전의 '상무중앙로'를 복사하지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'그거 말고'는 기존 필드 정정이 아니라 새로운 사고로의 화제 전환이므로 correction_target=null이 기준에 부합한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량·시간·상황이 발화에 명시적으로 진술되어 추론 여지가 적으므로 high 판정이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 밤'을 그대로 반영했고, 이전 힌트의 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 명시된 '택시'를 정확히 뽑았고 이전의 '흰색 SUV'를 덮어쓰거나 유지하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'정류장에서 출발, 승객 안전벨트 미착용'은 새 발화 내용을 그대로 담았고 이전의 '차로 변경'을 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에는 '정류장'이라는 일반적 언급만 있고 구체적 장소가 없어 null로 둔 것이 적절하며, 이전의 '상무중앙로'를 복사하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'그거 말고'는 기존 필드 정정이 아니라 새로운 사고로의 화제 전환이므로 correction_target=null이 기준에 부합한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량·시간·상황이 발화에 명시적으로 진술되어 추론 여지가 적으므로 high 판정이 타당하다."
+    }
+  },
+  "latency_ms": 7220.807600067928,
+  "prompt_tokens": 3201,
+  "completion_tokens": 605,
+  "cost_krw": null,
+  "error": null
+}

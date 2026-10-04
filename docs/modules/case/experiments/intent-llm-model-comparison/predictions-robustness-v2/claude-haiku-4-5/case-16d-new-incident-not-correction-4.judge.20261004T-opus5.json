@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 밤에'를 그대로 '어제 밤'으로 뽑았고, 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 명시된 '택시'를 값으로 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 유지하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'정류장에서 승객 안전벨트도 안 채우고 출발'은 원문 상황 설명을 그대로 반영했고 이전 '차로 변경'을 남기지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 언급된 '정류장'을 위치로 뽑았고 이전 '상무중앙로'를 가져오지 않았다. 구체 지명이 없는 발화에서 지명을 지어내지도 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'그거 말고 ... 또 다른 사고'는 주제 전환 신호이므로 기존 필드 정정이 아니며, 모델이 null로 두어 판정 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"차량 종류·상황·장소가 새 발화에 명시적으로 드러나 있어 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 밤에'를 그대로 '어제 밤'으로 뽑았고, 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 명시된 '택시'를 값으로 뽑았고 이전 '흰색 SUV'를 덮어쓰거나 유지하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'정류장에서 승객 안전벨트도 안 채우고 출발'은 원문 상황 설명을 그대로 반영했고 이전 '차로 변경'을 남기지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 언급된 '정류장'을 위치로 뽑았고 이전 '상무중앙로'를 가져오지 않았다. 구체 지명이 없는 발화에서 지명을 지어내지도 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'그거 말고 ... 또 다른 사고'는 주제 전환 신호이므로 기존 필드 정정이 아니며, 모델이 null로 두어 판정 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "차량 종류·상황·장소가 새 발화에 명시적으로 드러나 있어 high가 타당하다."
+    }
+  },
+  "latency_ms": 7757.176300045103,
+  "prompt_tokens": 2976,
+  "completion_tokens": 616,
+  "cost_krw": null,
+  "error": null
+}

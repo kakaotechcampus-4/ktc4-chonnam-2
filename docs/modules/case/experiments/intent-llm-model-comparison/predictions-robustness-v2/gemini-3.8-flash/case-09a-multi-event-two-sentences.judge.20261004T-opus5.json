@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 있는 '어제 18시쯤'과 '오늘 아침' 두 시점을 합치거나 하나로 뭉개 확정하지 않고 둘 다 나열해 보존했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'흰색 SUV', '검은색 세단', '오토바이' 모두 원문에 실제로 등장한 표현이며, 서로 다른 사건의 차량 속성을 하나로 합성하지 않고 병렬로 남겼다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반'과 '헬멧 미착용' 모두 원문에 있고, 특정 차량과 잘못 결합(예: 흰색 SUV가 헬멧 미착용)하지 않고 나열에 그쳤다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로'를 그대로 뽑았고, 두 번째 사건에 없는 장소를 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"원문은 앞선 진술을 정정하는 발화가 아니라 두 사건을 나열한 것이므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"서로 다른 시점·차량의 사건이 섞인 애매한 발화라는 점을 low로 반영했고, 그 근거도 다중 사건 혼재로 설명하고 있다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 있는 '어제 18시쯤'과 '오늘 아침' 두 시점을 합치거나 하나로 뭉개 확정하지 않고 둘 다 나열해 보존했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'흰색 SUV', '검은색 세단', '오토바이' 모두 원문에 실제로 등장한 표현이며, 서로 다른 사건의 차량 속성을 하나로 합성하지 않고 병렬로 남겼다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반'과 '헬멧 미착용' 모두 원문에 있고, 특정 차량과 잘못 결합(예: 흰색 SUV가 헬멧 미착용)하지 않고 나열에 그쳤다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로'를 그대로 뽑았고, 두 번째 사건에 없는 장소를 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문은 앞선 진술을 정정하는 발화가 아니라 두 사건을 나열한 것이므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "서로 다른 시점·차량의 사건이 섞인 애매한 발화라는 점을 low로 반영했고, 그 근거도 다중 사건 혼재로 설명하고 있다."
+    }
+  },
+  "latency_ms": 7609.536100178957,
+  "prompt_tokens": 2906,
+  "completion_tokens": 652,
+  "cost_krw": null,
+  "error": null
+}

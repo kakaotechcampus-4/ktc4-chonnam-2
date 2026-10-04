@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13a-english-only",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 'Yesterday around 6pm'을 그대로 보존했고, 영어 입력이라는 이유로 정보를 삭제하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'white SUV'는 원문에 명시된 차량 정보이며 색상+차종을 그대로 담았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'changed lanes on a solid line'은 원문에 명시된 위반 상황(실선 차선변경)을 누락·과장 없이 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'near Sangmu-jungang-ro'는 원문 표기를 그대로 유지했고, 구·동 등 원문에 없는 행정구역을 덧붙이지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 발화에 정정 의도가 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 항목 모두 발화에 명시적으로 드러나 추론이 거의 필요 없으므로 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 'Yesterday around 6pm'을 그대로 보존했고, 영어 입력이라는 이유로 정보를 삭제하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'white SUV'는 원문에 명시된 차량 정보이며 색상+차종을 그대로 담았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'changed lanes on a solid line'은 원문에 명시된 위반 상황(실선 차선변경)을 누락·과장 없이 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'near Sangmu-jungang-ro'는 원문 표기를 그대로 유지했고, 구·동 등 원문에 없는 행정구역을 덧붙이지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 발화에 정정 의도가 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 항목 모두 발화에 명시적으로 드러나 추론이 거의 필요 없으므로 high가 타당하다."
+    }
+  },
+  "latency_ms": 6630.916399881244,
+  "prompt_tokens": 2903,
+  "completion_tokens": 537,
+  "cost_krw": null,
+  "error": null
+}

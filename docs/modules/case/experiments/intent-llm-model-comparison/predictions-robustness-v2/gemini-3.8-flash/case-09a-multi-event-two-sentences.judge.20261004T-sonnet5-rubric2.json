@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"두 사건의 시점(어제 18시쯤, 오늘 아침)을 모두 나열했고 둘을 섞어 하나로 확정하지 않았으므로 올바르다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"세 가지 차량(흰색 SUV, 검은색 세단, 오토바이)을 모두 나열했는데, '검은색 세단'과 '오토바이'는 사실 같은 사건의 차량 표현이 모순되게 중복 기재된 것으로 사건 속성이 명확히 분리되지 않고 혼재되어 있어 완전히 깔끔하다고 보기 어렵다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'신호위반, 헬멧 미착용'을 나열만 했을 뿐인데 vehicle_hint에서 검은색 세단과 오토바이가 함께 묶여 있어 실제로는 두 사건의 속성(검은색 세단+헬멧 미착용 탑승)이 교차 조합된 존재하지 않는 사건을 암시하는 결과가 되어버렸다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"상무중앙로는 원문에 명시된 첫 번째 사건의 장소로 정확히 추출되었다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 케이스가 아니므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"두 사건이 섞여 있고 모순된 진술(세단+오토바이)이 있음을 인지해 low로 설정한 것은 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "두 사건의 시점(어제 18시쯤, 오늘 아침)을 모두 나열했고 둘을 섞어 하나로 확정하지 않았으므로 올바르다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "세 가지 차량(흰색 SUV, 검은색 세단, 오토바이)을 모두 나열했는데, '검은색 세단'과 '오토바이'는 사실 같은 사건의 차량 표현이 모순되게 중복 기재된 것으로 사건 속성이 명확히 분리되지 않고 혼재되어 있어 완전히 깔끔하다고 보기 어렵다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'신호위반, 헬멧 미착용'을 나열만 했을 뿐인데 vehicle_hint에서 검은색 세단과 오토바이가 함께 묶여 있어 실제로는 두 사건의 속성(검은색 세단+헬멧 미착용 탑승)이 교차 조합된 존재하지 않는 사건을 암시하는 결과가 되어버렸다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "상무중앙로는 원문에 명시된 첫 번째 사건의 장소로 정확히 추출되었다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 케이스가 아니므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "두 사건이 섞여 있고 모순된 진술(세단+오토바이)이 있음을 인지해 low로 설정한 것은 적절하다."
+    }
+  },
+  "latency_ms": 7160.487300017849,
+  "prompt_tokens": 3316,
+  "completion_tokens": 705,
+  "cost_krw": null,
+  "error": null
+}

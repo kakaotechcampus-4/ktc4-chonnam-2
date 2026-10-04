@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13c-japanese",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 「昨日18時ごろ」를 그대로 보존했다 — 일본어 입력이라는 이유로 시간 정보를 임의로 지우지 않았으므로 최소 요구사항을 충족한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 「白いSUV」(흰색 SUV)를 색상+차종 그대로 담았고, 원문에 없는 번호판·차종 세부를 덧붙이지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"「車線変更しました」에서 차선 변경이라는 상황을 그대로 추출했으며, 사고·위반 여부 같은 원문에 없는 해석을 추가하지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 「商武中央路」를 그대로 유지했다 — 비한국어 지명이라고 누락시키지 않았으므로 언어 변형 간 일관성 기준에 부합한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 이전 발화를 정정하는 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 항목 모두 원문에 명시적으로 등장하고 중의적 표현이 없어 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 「昨日18時ごろ」를 그대로 보존했다 — 일본어 입력이라는 이유로 시간 정보를 임의로 지우지 않았으므로 최소 요구사항을 충족한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 「白いSUV」(흰색 SUV)를 색상+차종 그대로 담았고, 원문에 없는 번호판·차종 세부를 덧붙이지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "「車線変更しました」에서 차선 변경이라는 상황을 그대로 추출했으며, 사고·위반 여부 같은 원문에 없는 해석을 추가하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 「商武中央路」를 그대로 유지했다 — 비한국어 지명이라고 누락시키지 않았으므로 언어 변형 간 일관성 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 이전 발화를 정정하는 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 항목 모두 원문에 명시적으로 등장하고 중의적 표현이 없어 high가 타당하다."
+    }
+  },
+  "latency_ms": 7804.935600142926,
+  "prompt_tokens": 2856,
+  "completion_tokens": 615,
+  "cost_krw": null,
+  "error": null
+}

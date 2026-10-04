@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15c-correction-target-full-reset",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 언급이 없고, 새 신고이므로 이전 값(어제 18시)을 가져오지 않고 null로 둔 것이 올바르다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'트럭이 불법 유턴 했어요'에서 명시된 트럭을 정확히 반영했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없고 이전 값(상무중앙로)을 끌어오지 않고 null로 둔 것이 올바르다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"'아까 말한 거 다 취소하고 완전히 다른 얘기'는 정정이 아니라 새 신고이므로 correction_target=null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"새 사건의 핵심 정보(차량, 상황)가 명확히 진술되었으므로 high는 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 언급이 없고, 새 신고이므로 이전 값(어제 18시)을 가져오지 않고 null로 둔 것이 올바르다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'트럭이 불법 유턴 했어요'에서 명시된 트럭을 정확히 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없고 이전 값(상무중앙로)을 끌어오지 않고 null로 둔 것이 올바르다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "'아까 말한 거 다 취소하고 완전히 다른 얘기'는 정정이 아니라 새 신고이므로 correction_target=null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "새 사건의 핵심 정보(차량, 상황)가 명확히 진술되었으므로 high는 타당하다."
+    }
+  },
+  "latency_ms": 4837.90190005675,
+  "prompt_tokens": 3353,
+  "completion_tokens": 517,
+  "cost_krw": null,
+  "error": null
+}

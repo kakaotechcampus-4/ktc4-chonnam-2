@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16d-new-incident-not-correction-4",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화의 '어제 밤'을 그대로 반영했고 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '택시'를 정확히 반영했고 이전 '흰색 SUV'를 끌어오지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"정류장에서 안전벨트 미착용 출발이라는 새 사고 상황을 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없어 null로 둔 것이 적절하며 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"완전히 새로운 사고를 설명하는 상황이므로 correction_target=null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"발화가 명확한 사실 진술로 제시되어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화의 '어제 밤'을 그대로 반영했고 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '택시'를 정확히 반영했고 이전 '흰색 SUV'를 끌어오지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "정류장에서 안전벨트 미착용 출발이라는 새 사고 상황을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없어 null로 둔 것이 적절하며 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "완전히 새로운 사고를 설명하는 상황이므로 correction_target=null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "발화가 명확한 사실 진술로 제시되어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 7153.332199901342,
+  "prompt_tokens": 3611,
+  "completion_tokens": 500,
+  "cost_krw": null,
+  "error": null
+}

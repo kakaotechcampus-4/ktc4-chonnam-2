@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-11d-whitespace-only",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 공백뿐이라 시간 정보가 없고, 모델이 null로 둔 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 정보 언급이 없는 공백 입력에 대해 null로 처리한 것이 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"상황 정보가 전혀 없는 입력이므로 null 처리가 타당하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"위치 정보가 없는 공백 입력에 null로 둔 것은 올바르다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정을 암시하는 내용이 없어 null로 둔 것이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"내용이 전혀 없는 입력이므로 confidence를 low로 설정한 것이 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문이 공백뿐이라 시간 정보가 없고, 모델이 null로 둔 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 정보 언급이 없는 공백 입력에 대해 null로 처리한 것이 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "상황 정보가 전혀 없는 입력이므로 null 처리가 타당하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "위치 정보가 없는 공백 입력에 null로 둔 것은 올바르다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정을 암시하는 내용이 없어 null로 둔 것이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "내용이 전혀 없는 입력이므로 confidence를 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "latency_ms": 4603.276900015771,
+  "prompt_tokens": 2969,
+  "completion_tokens": 459,
+  "cost_krw": null,
+  "error": null
+}

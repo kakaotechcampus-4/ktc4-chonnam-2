@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 20시와 21시 두 값이 언급되었고, 모델은 두 표현을 모두 담아 불확실성을 보존했다 - 임의로 하나만 확정하지 않아 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '오토바이'를 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '신호위반'을 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '죽전로에서'를 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target은 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간 값이 한 문장 안에서 두 번 바뀌는 불확실성이 있음을 인지해 confidence를 low로 낮췄다 - 판정 기준의 핵심 요구사항을 충족한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 20시와 21시 두 값이 언급되었고, 모델은 두 표현을 모두 담아 불확실성을 보존했다 - 임의로 하나만 확정하지 않아 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '오토바이'를 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '신호위반'을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '죽전로에서'를 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target은 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간 값이 한 문장 안에서 두 번 바뀌는 불확실성이 있음을 인지해 confidence를 low로 낮췄다 - 판정 기준의 핵심 요구사항을 충족한다."
+    }
+  },
+  "latency_ms": 4843.267299933359,
+  "prompt_tokens": 3332,
+  "completion_tokens": 492,
+  "cost_krw": null,
+  "error": null
+}

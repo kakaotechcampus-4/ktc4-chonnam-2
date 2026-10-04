@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-14e-profanity-sidewalk-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 단서가 전혀 없으므로 null 처리가 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"오토바이가 명시적으로 언급되었고 욕설 없이 깔끔하게 추출되었다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"헬멧 미착용, 인도 주행이라는 실제 사고 정보가 욕설 없이 정확히 추출되었다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"인도로 달린다는 내용에서 '인도'를 location_hint로 뽑은 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"오토바이, 헬멧 미착용, 인도 주행 등 구체적 정보가 명확히 언급되어 high로 판단한 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 단서가 전혀 없으므로 null 처리가 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "오토바이가 명시적으로 언급되었고 욕설 없이 깔끔하게 추출되었다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "헬멧 미착용, 인도 주행이라는 실제 사고 정보가 욕설 없이 정확히 추출되었다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "인도로 달린다는 내용에서 '인도'를 location_hint로 뽑은 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "오토바이, 헬멧 미착용, 인도 주행 등 구체적 정보가 명확히 언급되어 high로 판단한 것이 타당하다."
+    }
+  },
+  "latency_ms": 4415.898900013417,
+  "prompt_tokens": 3166,
+  "completion_tokens": 479,
+  "cost_krw": null,
+  "error": null
+}

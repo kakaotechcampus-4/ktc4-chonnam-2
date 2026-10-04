@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13a-english-only",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 \\\"Yesterday around 6pm\\\"을 그대로 보존했고, 영어 입력이라는 이유로 정보를 지우지 않아 최소 요구사항을 충족한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"\\\"white SUV\\\"는 원문에 명시된 차량 정보로, 색상과 차종을 임의 추가·삭제 없이 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"\\\"changed lanes on a solid line\\\"은 원문에 그대로 있는 위반 상황 서술이며 과장 없이 반영됐다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"\\\"near Sangmu-jungang-ro\\\"는 원문에 명시된 위치이며, 상무중앙로로의 임의 번역·구체화 없이 원문 범위 내로 유지했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 정정 의도가 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"4개 단서가 모두 원문에 명시적으로 나와 있고 모호하거나 상충하는 표현이 없으므로 high가 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 \"Yesterday around 6pm\"을 그대로 보존했고, 영어 입력이라는 이유로 정보를 지우지 않아 최소 요구사항을 충족한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "\"white SUV\"는 원문에 명시된 차량 정보로, 색상과 차종을 임의 추가·삭제 없이 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "\"changed lanes on a solid line\"은 원문에 그대로 있는 위반 상황 서술이며 과장 없이 반영됐다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "\"near Sangmu-jungang-ro\"는 원문에 명시된 위치이며, 상무중앙로로의 임의 번역·구체화 없이 원문 범위 내로 유지했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 정정 의도가 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "4개 단서가 모두 원문에 명시적으로 나와 있고 모호하거나 상충하는 표현이 없으므로 high가 타당하다."
+    }
+  },
+  "latency_ms": 7452.678599860519,
+  "prompt_tokens": 2895,
+  "completion_tokens": 579,
+  "cost_krw": null,
+  "error": null
+}

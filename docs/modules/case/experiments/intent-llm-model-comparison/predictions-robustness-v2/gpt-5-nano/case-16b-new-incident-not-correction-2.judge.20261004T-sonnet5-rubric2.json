@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에서 '오늘 아침에'라는 시간 표현을 정확히 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 끌어오지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 명시된 '불법 유턴'을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"발화에 장소 언급이 없어 null로 둔 것이 적절하다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'그건 됐고'는 기존 사고를 접고 완전히 새로운 사고를 얘기하겠다는 전환 신호인데, 이를 time_hint에 대한 정정으로 오인해 correction_target을 채웠다. 정답은 null이어야 한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 발화의 정보 자체는 명확해 high로 볼 여지는 있으나, correction_target을 잘못 판단한 상태에서의 confidence이므로 전체 판단의 신뢰도로는 부적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "발화에서 '오늘 아침에'라는 시간 표현을 정확히 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '트럭'을 정확히 추출했고 이전 '흰색 SUV'를 끌어오지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "발화에 명시된 '불법 유턴'을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "발화에 장소 언급이 없어 null로 둔 것이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'그건 됐고'는 기존 사고를 접고 완전히 새로운 사고를 얘기하겠다는 전환 신호인데, 이를 time_hint에 대한 정정으로 오인해 correction_target을 채웠다. 정답은 null이어야 한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 발화의 정보 자체는 명확해 high로 볼 여지는 있으나, correction_target을 잘못 판단한 상태에서의 confidence이므로 전체 판단의 신뢰도로는 부적절하다."
+    }
+  },
+  "latency_ms": 5543.6778999865055,
+  "prompt_tokens": 3406,
+  "completion_tokens": 561,
+  "cost_krw": null,
+  "error": null
+}

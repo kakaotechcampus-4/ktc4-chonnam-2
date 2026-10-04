@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"원문의 '아침'과 '저녁'을 둘 다 담아 지어낸 값은 없지만, 두 사건을 분리하지 않고 한 필드에 병렬 나열해 단일 사건으로 확정 가능한 형태가 아니다 — 기준이 요구한 '하나만 채택' 또는 애매함 반영에는 못 미친다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"'택시'와 '오토바이' 모두 원문에 등장하므로 허위 값은 아니지만, 어느 사건의 차량인지 가르지 않고 나열해 단서로서 하나의 사건을 지목하지 못한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'택시가 정류장에서 급정거', '오토바이가 헬멧 미착용으로 인도 주행'을 각각 원문 그대로 분리 서술해 서로 다른 사건의 속성을 교차조합한 흔적이 없다.\"}, \"location_hint\": {\"verdict\": \"partial\", \"reason\": \"'정류장'과 '인도'는 둘 다 원문에 있으나 사건별로 귀속되지 않은 채 나열돼, 어느 사건의 장소인지 확정되지 않는다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"원문은 이전 진술을 고치는 발화가 아니고 prior_hints도 null이므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"시점·차량이 다른 사건 2개가 한 문장에 섞여 단일 사건을 특정할 수 없는데도 high로 단정했고, reasoning에서도 '명확하게 진술'이라며 애매함을 전혀 반영하지 않았다 — 기준은 low를 요구한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "원문의 '아침'과 '저녁'을 둘 다 담아 지어낸 값은 없지만, 두 사건을 분리하지 않고 한 필드에 병렬 나열해 단일 사건으로 확정 가능한 형태가 아니다 — 기준이 요구한 '하나만 채택' 또는 애매함 반영에는 못 미친다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "'택시'와 '오토바이' 모두 원문에 등장하므로 허위 값은 아니지만, 어느 사건의 차량인지 가르지 않고 나열해 단서로서 하나의 사건을 지목하지 못한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'택시가 정류장에서 급정거', '오토바이가 헬멧 미착용으로 인도 주행'을 각각 원문 그대로 분리 서술해 서로 다른 사건의 속성을 교차조합한 흔적이 없다."
+    },
+    "location_hint": {
+      "verdict": "partial",
+      "reason": "'정류장'과 '인도'는 둘 다 원문에 있으나 사건별로 귀속되지 않은 채 나열돼, 어느 사건의 장소인지 확정되지 않는다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문은 이전 진술을 고치는 발화가 아니고 prior_hints도 null이므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "시점·차량이 다른 사건 2개가 한 문장에 섞여 단일 사건을 특정할 수 없는데도 high로 단정했고, reasoning에서도 '명확하게 진술'이라며 애매함을 전혀 반영하지 않았다 — 기준은 low를 요구한다."
+    }
+  },
+  "latency_ms": 9784.816100029275,
+  "prompt_tokens": 2824,
+  "completion_tokens": 763,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13b-korean-english-mix",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 6시쯤'을 그대로 보존했다. 오전/오후 모호성은 원문에도 없으므로 임의 보정 없이 유지한 것이 적절하다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"영어 표현 'white SUV'를 언어를 이유로 삭제하지 않고 원문 그대로 보존했다. 혼용 입력에서도 정보를 유지하라는 기준에 부합한다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'lane change'라는 영어 상황 표현을 누락 없이 추출했다. 한국어로 번역하지 않았더라도 정보가 보존됐으므로 최소 요구사항을 충족한다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '상무중앙로'를 그대로 추출했고, 구간·방향 등 없는 정보를 덧붙이지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 발화에 정정 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 필드 모두 원문에 명시적으로 등장하고 모호한 지시나 정정이 없어 high가 타당하다. 언어 혼용 자체는 정보의 명확성을 떨어뜨리지 않는다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 6시쯤'을 그대로 보존했다. 오전/오후 모호성은 원문에도 없으므로 임의 보정 없이 유지한 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "영어 표현 'white SUV'를 언어를 이유로 삭제하지 않고 원문 그대로 보존했다. 혼용 입력에서도 정보를 유지하라는 기준에 부합한다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'lane change'라는 영어 상황 표현을 누락 없이 추출했다. 한국어로 번역하지 않았더라도 정보가 보존됐으므로 최소 요구사항을 충족한다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '상무중앙로'를 그대로 추출했고, 구간·방향 등 없는 정보를 덧붙이지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 발화에 정정 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 필드 모두 원문에 명시적으로 등장하고 모호한 지시나 정정이 없어 high가 타당하다. 언어 혼용 자체는 정보의 명확성을 떨어뜨리지 않는다."
+    }
+  },
+  "latency_ms": 8075.679700123146,
+  "prompt_tokens": 2838,
+  "completion_tokens": 629,
+  "cost_krw": null,
+  "error": null
+}

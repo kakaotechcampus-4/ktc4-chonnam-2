@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09a-multi-event-two-sentences",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"첫 번째 사건의 시점 '어제 18시쯤'을 원문 그대로 뽑았고, 두 번째 사건의 '오늘 아침'과 섞이지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'흰색 SUV'는 첫 번째 사건의 차량 그대로이며, 두 번째 사건의 '검은색 세단/오토바이' 속성과 교차조합되지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반'은 흰색 SUV 사건에 실제로 붙은 상황이고, '헬멧 미착용'을 끌어와 섞지 않아 속성 교차조합이 없다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'상무중앙로'는 원문에서 첫 번째 사건에 명시된 장소이며, 장소가 없는 두 번째 사건에 임의로 붙이지도 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 정정 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"서로 다른 시점·차량의 사건 2개가 섞인 모호한 발화인데 high로 단정했다. 기준상 애매함을 반영해 low여야 하며, 한 사건만 채택한 선택 자체의 불확실성도 confidence에 반영되지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "첫 번째 사건의 시점 '어제 18시쯤'을 원문 그대로 뽑았고, 두 번째 사건의 '오늘 아침'과 섞이지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'흰색 SUV'는 첫 번째 사건의 차량 그대로이며, 두 번째 사건의 '검은색 세단/오토바이' 속성과 교차조합되지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반'은 흰색 SUV 사건에 실제로 붙은 상황이고, '헬멧 미착용'을 끌어와 섞지 않아 속성 교차조합이 없다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'상무중앙로'는 원문에서 첫 번째 사건에 명시된 장소이며, 장소가 없는 두 번째 사건에 임의로 붙이지도 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 정정 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "서로 다른 시점·차량의 사건 2개가 섞인 모호한 발화인데 high로 단정했다. 기준상 애매함을 반영해 low여야 하며, 한 사건만 채택한 선택 자체의 불확실성도 confidence에 반영되지 않았다."
+    }
+  },
+  "latency_ms": 7524.380400078371,
+  "prompt_tokens": 3019,
+  "completion_tokens": 655,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-13d-chinese",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '昨天晚上八点左右'(어제 저녁 8시경)를 언어를 이유로 지우지 않고 그대로 보존해 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '黑色卡车'(검은색 트럭)를 색상까지 포함해 그대로 뽑았고 없는 정보를 덧붙이지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'违反信号灯'(신호 위반)은 원문에 그대로 있는 상황 서술이며 과도한 해석 없이 추출됐다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'世宗路'(세종로)라는 장소가 원문에 명시돼 있고 그대로 보존했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문에 앞선 진술을 정정하는 표현이 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간·차량·상황·장소가 모두 모호함 없이 한 문장에 명시돼 있어 high가 타당하며, 중국어 입력이라는 점이 정보의 명확성을 떨어뜨리지는 않는다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '昨天晚上八点左右'(어제 저녁 8시경)를 언어를 이유로 지우지 않고 그대로 보존해 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '黑色卡车'(검은색 트럭)를 색상까지 포함해 그대로 뽑았고 없는 정보를 덧붙이지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'违反信号灯'(신호 위반)은 원문에 그대로 있는 상황 서술이며 과도한 해석 없이 추출됐다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'世宗路'(세종로)라는 장소가 원문에 명시돼 있고 그대로 보존했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문에 앞선 진술을 정정하는 표현이 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·차량·상황·장소가 모두 모호함 없이 한 문장에 명시돼 있어 high가 타당하며, 중국어 입력이라는 점이 정보의 명확성을 떨어뜨리지는 않는다."
+    }
+  },
+  "latency_ms": 7605.418700026348,
+  "prompt_tokens": 2755,
+  "completion_tokens": 587,
+  "cost_krw": null,
+  "error": null
+}

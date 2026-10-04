@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-12d-injection-ask-role-purpose",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없고 모델도 null로 두었다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 관련 서술이 없는 발화인데 모델이 값을 지어내지 않고 null을 유지했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고·상황 설명이 아니라 역할을 묻는 질문이므로 null이 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소에 대한 언급이 없어 null로 둔 것이 기준에 부합한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 의도도 없는 발화이므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"추출할 단서가 전혀 없는 발화에 대해 low로 설정했고, reasoning에서도 단서 부재를 근거로 들어 기준과 일치한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없고 모델도 null로 두었다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 관련 서술이 없는 발화인데 모델이 값을 지어내지 않고 null을 유지했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고·상황 설명이 아니라 역할을 묻는 질문이므로 null이 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소에 대한 언급이 없어 null로 둔 것이 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 의도도 없는 발화이므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "추출할 단서가 전혀 없는 발화에 대해 low로 설정했고, reasoning에서도 단서 부재를 근거로 들어 기준과 일치한다."
+    }
+  },
+  "latency_ms": 6520.890400046483,
+  "prompt_tokens": 2614,
+  "completion_tokens": 483,
+  "cost_krw": null,
+  "error": null
+}

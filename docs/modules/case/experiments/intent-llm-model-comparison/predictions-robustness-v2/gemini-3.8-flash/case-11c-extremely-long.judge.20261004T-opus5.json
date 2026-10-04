@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-11c-extremely-long",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간과 관련된 표현이 전혀 없으므로 null이 정답이며, 모델도 null로 뒀다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 종류·색상·번호 등 어떤 차량 단서도 원문에 없어 null이 맞고, 모델이 null로 유지했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'그런 일이 있었던 것 같기도 하고 아닌 것 같기도 하고'처럼 내용 없는 모호한 서술뿐이라 상황 단서를 지어내지 않고 null로 둔 것이 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소를 가리키는 표현이 원문에 전혀 없으므로 null이 정답이며, 모델도 null로 처리했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 이전 값을 정정하는 발화도 없으므로 correction_target은 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"추출된 단서가 하나도 없고 발화 자체가 무의미한 반복이므로 low가 기준에 부합하며, 긴 길이에 휘둘려 신뢰도를 올리지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간과 관련된 표현이 전혀 없으므로 null이 정답이며, 모델도 null로 뒀다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 종류·색상·번호 등 어떤 차량 단서도 원문에 없어 null이 맞고, 모델이 null로 유지했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'그런 일이 있었던 것 같기도 하고 아닌 것 같기도 하고'처럼 내용 없는 모호한 서술뿐이라 상황 단서를 지어내지 않고 null로 둔 것이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소를 가리키는 표현이 원문에 전혀 없으므로 null이 정답이며, 모델도 null로 처리했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 이전 값을 정정하는 발화도 없으므로 correction_target은 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "추출된 단서가 하나도 없고 발화 자체가 무의미한 반복이므로 low가 기준에 부합하며, 긴 길이에 휘둘려 신뢰도를 올리지 않았다."
+    }
+  },
+  "latency_ms": 7673.478200100362,
+  "prompt_tokens": 3313,
+  "completion_tokens": 595,
+  "cost_krw": null,
+  "error": null
+}

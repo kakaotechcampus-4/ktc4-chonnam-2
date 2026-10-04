@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"아침, 저녁 두 시점을 모두 나열해 정보 손실 없이 담았으나, 두 사건이 섞여 있다는 애매함을 confidence에 반영하지 않고 병렬 나열만 해 확정적으로 처리한 점이 기준과 어긋난다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"택시와 오토바이를 각각 구분해 나열했고 속성을 교차 조합하지 않아 사실관계가 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"택시의 급정거와 오토바이의 헬멧 미착용 인도 주행을 각각 올바른 차량에 매칭해 서술했고 교차 조합한 오류가 없다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"정류장과 인도를 각각 나열했으며 어느 장소가 어느 사건인지 섞이지 않게 situation_hint와 짝지어 서술했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니므로 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 개의 서로 다른 사건이 한 문장에 섞여 있어 모호함이 있는데도 confidence를 high로 매겨 애매함을 전혀 반영하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "아침, 저녁 두 시점을 모두 나열해 정보 손실 없이 담았으나, 두 사건이 섞여 있다는 애매함을 confidence에 반영하지 않고 병렬 나열만 해 확정적으로 처리한 점이 기준과 어긋난다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "택시와 오토바이를 각각 구분해 나열했고 속성을 교차 조합하지 않아 사실관계가 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "택시의 급정거와 오토바이의 헬멧 미착용 인도 주행을 각각 올바른 차량에 매칭해 서술했고 교차 조합한 오류가 없다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "정류장과 인도를 각각 나열했으며 어느 장소가 어느 사건인지 섞이지 않게 situation_hint와 짝지어 서술했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 개의 서로 다른 사건이 한 문장에 섞여 있어 모호함이 있는데도 confidence를 high로 매겨 애매함을 전혀 반영하지 않았다."
+    }
+  },
+  "latency_ms": 6719.044800149277,
+  "prompt_tokens": 3233,
+  "completion_tokens": 616,
+  "cost_krw": null,
+  "error": null
+}

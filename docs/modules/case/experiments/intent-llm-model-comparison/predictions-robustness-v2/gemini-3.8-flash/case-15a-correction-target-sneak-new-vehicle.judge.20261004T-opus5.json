@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"'시간 그거 말고 19시였어요'라는 명시적 정정을 반영해 19시로 갱신했다. 날짜('어제')가 표기되지 않았으나 원문에 날짜 언급이 없으므로 허용 범위 내의 정답이다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'검은 오토바이'는 기존 사건 차량(흰색 SUV)이 아니라 '그 옆에' 있던 별개 차량인데, 이를 기존 vehicle_hint 자리에 덮어써 사건 차량 정보를 오염시켰다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"'헬멧 안 썼던데'는 옆 오토바이에 대한 별개 사건 정보인데 기존 '차로 변경' 상황을 대체하는 값으로 넣어, 원 사건에 근거 없는 상황 설명을 부여했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에 장소 언급이 전혀 없으므로 null이 맞다. 이전 값('상무중앙로')을 복사하지 않은 점도 기준에 부합한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상은 시간 하나뿐이며 모델이 'time_hint'로 정확히 지정했다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"시간 정정 자체는 명확해 high가 타당하지만, 별개 사건 정보를 기존 필드에 섞어 넣은 상태에서 high를 준 것은 별도 취급 신호(낮은 confidence)를 줘야 한다는 기준에 어긋난다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'시간 그거 말고 19시였어요'라는 명시적 정정을 반영해 19시로 갱신했다. 날짜('어제')가 표기되지 않았으나 원문에 날짜 언급이 없으므로 허용 범위 내의 정답이다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "'검은 오토바이'는 기존 사건 차량(흰색 SUV)이 아니라 '그 옆에' 있던 별개 차량인데, 이를 기존 vehicle_hint 자리에 덮어써 사건 차량 정보를 오염시켰다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "'헬멧 안 썼던데'는 옆 오토바이에 대한 별개 사건 정보인데 기존 '차로 변경' 상황을 대체하는 값으로 넣어, 원 사건에 근거 없는 상황 설명을 부여했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에 장소 언급이 전혀 없으므로 null이 맞다. 이전 값('상무중앙로')을 복사하지 않은 점도 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상은 시간 하나뿐이며 모델이 'time_hint'로 정확히 지정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "시간 정정 자체는 명확해 high가 타당하지만, 별개 사건 정보를 기존 필드에 섞어 넣은 상태에서 high를 준 것은 별도 취급 신호(낮은 confidence)를 줘야 한다는 기준에 어긋난다."
+    }
+  },
+  "latency_ms": 8871.690599946305,
+  "prompt_tokens": 2931,
+  "completion_tokens": 738,
+  "cost_krw": null,
+  "error": null
+}

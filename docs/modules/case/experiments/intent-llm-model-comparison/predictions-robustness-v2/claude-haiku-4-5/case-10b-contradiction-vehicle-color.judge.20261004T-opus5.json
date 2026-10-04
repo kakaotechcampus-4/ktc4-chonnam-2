@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-10b-contradiction-vehicle-color",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없고 모델도 null로 두었다.\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"원문이 '흰색 SUV'와 '은색'을 번복하는 상황에서 마지막 값인 '은색 SUV'를 채택했는데, SUV는 명확한 근거가 있고 색상은 자기 정정의 마지막 값으로 읽을 수 있어 방향은 맞지만 확정값으로 하나를 고른 점에서 완전히 맞다고 보긴 어렵다(null 처리도 허용 가능한 정책).\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'차로 변경했어요'라는 상황 표현이 있어 채울 여지는 있으나, 이 케이스의 채점 초점은 색상 번복 처리이고 situation을 비워둔 것이 원문에 없는 내용을 지어낸 것은 아니다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 정보가 없고 모델도 null로 두어 지어내지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"한 문장 안에서 차량 색상을 번복하고 있어 정정 대상이 vehicle_hint라는 판단은 원문과 일치한다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"이 케이스의 1차 채점 기준인 'confidence가 high로 나오지 않는가'를 충족했고, 번복된 값에 대해 low를 준 것은 과신 오답 패턴을 피한 처리다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없고 모델도 null로 두었다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "원문이 '흰색 SUV'와 '은색'을 번복하는 상황에서 마지막 값인 '은색 SUV'를 채택했는데, SUV는 명확한 근거가 있고 색상은 자기 정정의 마지막 값으로 읽을 수 있어 방향은 맞지만 확정값으로 하나를 고른 점에서 완전히 맞다고 보긴 어렵다(null 처리도 허용 가능한 정책)."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'차로 변경했어요'라는 상황 표현이 있어 채울 여지는 있으나, 이 케이스의 채점 초점은 색상 번복 처리이고 situation을 비워둔 것이 원문에 없는 내용을 지어낸 것은 아니다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 정보가 없고 모델도 null로 두어 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "한 문장 안에서 차량 색상을 번복하고 있어 정정 대상이 vehicle_hint라는 판단은 원문과 일치한다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "이 케이스의 1차 채점 기준인 'confidence가 high로 나오지 않는가'를 충족했고, 번복된 값에 대해 low를 준 것은 과신 오답 패턴을 피한 처리다."
+    }
+  },
+  "latency_ms": 9200.00349986367,
+  "prompt_tokens": 2941,
+  "completion_tokens": 699,
+  "cost_krw": null,
+  "error": null
+}

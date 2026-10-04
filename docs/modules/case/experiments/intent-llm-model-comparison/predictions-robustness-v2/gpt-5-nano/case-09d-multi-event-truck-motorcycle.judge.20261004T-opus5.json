@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-09d-multi-event-truck-motorcycle",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 두 시점('지난달', '방금')을 임의로 하나로 뭉개지 않고 둘 다 원문 그대로 나열했으며, 없는 시점을 지어내지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '파란색 트럭'과 '오토바이' 두 차량을 각각 분리해 유지했고, 두 사건의 속성을 섞은 조합(예: '파란색 오토바이')을 만들지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"불법 주차는 트럭, 신호위반은 오토바이로 각각 올바르게 귀속해 기술했고 교차조합이 없다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 전혀 없어 null로 둔 것이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 원문도 이전 내용을 정정하는 발화가 아니므로 null이 적절하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"서로 다른 시점·차량의 사건 2개가 한 발화에 섞여 단일 사건으로 확정할 수 없는 상황인데 high로 매겨 애매함을 반영하지 못했다. 기준상 low가 되어야 한다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 두 시점('지난달', '방금')을 임의로 하나로 뭉개지 않고 둘 다 원문 그대로 나열했으며, 없는 시점을 지어내지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '파란색 트럭'과 '오토바이' 두 차량을 각각 분리해 유지했고, 두 사건의 속성을 섞은 조합(예: '파란색 오토바이')을 만들지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "불법 주차는 트럭, 신호위반은 오토바이로 각각 올바르게 귀속해 기술했고 교차조합이 없다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 전혀 없어 null로 둔 것이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 원문도 이전 내용을 정정하는 발화가 아니므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "서로 다른 시점·차량의 사건 2개가 한 발화에 섞여 단일 사건으로 확정할 수 없는 상황인데 high로 매겨 애매함을 반영하지 못했다. 기준상 low가 되어야 한다."
+    }
+  },
+  "latency_ms": 8012.126399902627,
+  "prompt_tokens": 2916,
+  "completion_tokens": 620,
+  "cost_krw": null,
+  "error": null
+}

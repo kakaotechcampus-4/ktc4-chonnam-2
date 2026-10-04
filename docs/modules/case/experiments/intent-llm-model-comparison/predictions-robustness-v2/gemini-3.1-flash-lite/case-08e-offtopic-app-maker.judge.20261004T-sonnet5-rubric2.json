@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-08e-offtopic-app-maker",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없으므로 null이 맞다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 차량 관련 언급이 전혀 없으므로 null이 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고 상황에 대한 언급이 전혀 없으므로 null이 맞다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소 관련 언급이 전혀 없으므로 null이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"정정 발화가 아니며 prior_hints도 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"신고와 무관한 질문으로 추출할 정보가 전혀 없으므로 low로 설정한 것이 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없으므로 null이 맞다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 차량 관련 언급이 전혀 없으므로 null이 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고 상황에 대한 언급이 전혀 없으므로 null이 맞다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소 관련 언급이 전혀 없으므로 null이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니며 prior_hints도 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "신고와 무관한 질문으로 추출할 정보가 전혀 없으므로 low로 설정한 것이 적절하다."
+    }
+  },
+  "latency_ms": 3853.2608998939395,
+  "prompt_tokens": 2987,
+  "completion_tokens": 439,
+  "cost_krw": null,
+  "error": null
+}

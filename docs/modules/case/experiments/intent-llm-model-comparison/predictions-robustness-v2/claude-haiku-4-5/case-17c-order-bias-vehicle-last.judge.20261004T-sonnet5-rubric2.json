@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-17c-order-bias-vehicle-last",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '어제 18시쯤'을 그대로 정확히 추출했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"문장 뒤쪽에 위치했지만 '흰색 SUV'를 정확히 추출했다 - 위치/순서와 무관하게 올바르다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'백색 실선 구간으로 차로를 변경'이라는 위반 상황을 정확히 추출했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'상무중앙로 사거리'를 정확히 추출했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 정정 발화가 아니므로 null이 올바르다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"모든 정보가 명확히 직접 기술되어 모호함이 없으므로 high가 적절하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 18시쯤'을 그대로 정확히 추출했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "문장 뒤쪽에 위치했지만 '흰색 SUV'를 정확히 추출했다 - 위치/순서와 무관하게 올바르다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'백색 실선 구간으로 차로를 변경'이라는 위반 상황을 정확히 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'상무중앙로 사거리'를 정확히 추출했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 발화가 아니므로 null이 올바르다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "모든 정보가 명확히 직접 기술되어 모호함이 없으므로 high가 적절하다."
+    }
+  },
+  "latency_ms": 4167.489500017837,
+  "prompt_tokens": 3238,
+  "completion_tokens": 462,
+  "cost_krw": null,
+  "error": null
+}

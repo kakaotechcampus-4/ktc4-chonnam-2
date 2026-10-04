@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-14c-profanity-helmet",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"missed\", \"reason\": \"원문에 '방금'이라는 명확한 시간 표현이 있는데 모델이 null로 뒀다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '오토바이'가 명시되어 있고 그대로 뽑았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'헬멧도 안 쓰고 가네'를 '헬멧 미착용'으로 정확히 요약했고, 감탄·격한 감정 표현은 값에 섞지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소를 특정할 수 있는 표현이 없어 null이 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없고 이전 발화를 정정하는 내용도 없으므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"차량·상황은 직접 명시되어 high가 과하지 않으나, 원문에 있는 '방금' 시간 단서를 놓친 채 high를 준 것이므로 완전히 타당하다고 보기 어렵다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "missed",
+      "reason": "원문에 '방금'이라는 명확한 시간 표현이 있는데 모델이 null로 뒀다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '오토바이'가 명시되어 있고 그대로 뽑았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'헬멧도 안 쓰고 가네'를 '헬멧 미착용'으로 정확히 요약했고, 감탄·격한 감정 표현은 값에 섞지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소를 특정할 수 있는 표현이 없어 null이 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 이전 발화를 정정하는 내용도 없으므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "차량·상황은 직접 명시되어 high가 과하지 않으나, 원문에 있는 '방금' 시간 단서를 놓친 채 high를 준 것이므로 완전히 타당하다고 보기 어렵다."
+    }
+  },
+  "latency_ms": 6104.293100070208,
+  "prompt_tokens": 2816,
+  "completion_tokens": 534,
+  "cost_krw": null,
+  "error": null
+}

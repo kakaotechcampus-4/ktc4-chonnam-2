@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16c-new-incident-not-correction-3",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 시간 언급이 전혀 없고 이전 '어제 18시'를 끌어오지 않고 null로 뒀다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 명시된 '검은색 세단'을 그대로 추출했고 이전 '흰색 SUV'를 남기지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'중앙선 침범'이라는 새 발화의 상황을 정확히 뽑았고 이전 '차로 변경'을 유지하지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없어 null로 뒀고 이전 '상무중앙로'를 복사하지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'다른 건데요'는 완전히 새로운 사고로의 전환 신호이므로 correction_target은 null이어야 하는데, 기존 필드 정정으로 오인해 'vehicle_hint'를 지어냈다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 발화의 차량·상황이 명확해 high 자체는 과하지 않지만, 전환을 correction으로 잘못 해석한 상태에서 high를 부여해 근거가 어긋난다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 시간 언급이 전혀 없고 이전 '어제 18시'를 끌어오지 않고 null로 뒀다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 명시된 '검은색 세단'을 그대로 추출했고 이전 '흰색 SUV'를 남기지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'중앙선 침범'이라는 새 발화의 상황을 정확히 뽑았고 이전 '차로 변경'을 유지하지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없어 null로 뒀고 이전 '상무중앙로'를 복사하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'다른 건데요'는 완전히 새로운 사고로의 전환 신호이므로 correction_target은 null이어야 하는데, 기존 필드 정정으로 오인해 'vehicle_hint'를 지어냈다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 발화의 차량·상황이 명확해 high 자체는 과하지 않지만, 전환을 correction으로 잘못 해석한 상태에서 high를 부여해 근거가 어긋난다."
+    }
+  },
+  "latency_ms": 7477.071499917656,
+  "prompt_tokens": 2979,
+  "completion_tokens": 602,
+  "cost_krw": null,
+  "error": null
+}

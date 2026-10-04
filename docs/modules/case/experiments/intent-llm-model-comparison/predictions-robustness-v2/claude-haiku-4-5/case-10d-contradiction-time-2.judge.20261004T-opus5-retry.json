@@ -1,0 +1,40 @@
+{
+  "run_id": "20261004T-opus5-retry",
+  "retry_of": "20261004T-opus5",
+  "attempts": 1,
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-10d-contradiction-time-2",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"화자가 '20시쯤... 아니 21시'로 자기 정정했고 마지막 값인 '21시'를 채택한 것은 원문 근거에 맞는 해석이다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '오토바이'가 명시되어 있고 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '신호위반'을 그대로 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 '죽전로'가 명시되어 있고 그대로 추출했다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"prior_hints가 없는 단일 발화라 이전 턴 정정 대상은 없지만, 한 문장 안에서 시간 값을 번복한 자기 정정이 있었으므로 time으로 표시할 여지가 있었는데 null로 두었다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"이 케이스의 핵심 기준인 'high가 아닐 것'을 충족했고, 시간 값 번복으로 인한 불확실성을 low로 반영했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "화자가 '20시쯤... 아니 21시'로 자기 정정했고 마지막 값인 '21시'를 채택한 것은 원문 근거에 맞는 해석이다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '오토바이'가 명시되어 있고 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '신호위반'을 그대로 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 '죽전로'가 명시되어 있고 그대로 추출했다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "prior_hints가 없는 단일 발화라 이전 턴 정정 대상은 없지만, 한 문장 안에서 시간 값을 번복한 자기 정정이 있었으므로 time으로 표시할 여지가 있었는데 null로 두었다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "이 케이스의 핵심 기준인 'high가 아닐 것'을 충족했고, 시간 값 번복으로 인한 불확실성을 low로 반영했다."
+    }
+  },
+  "latency_ms": 7381.130299996585,
+  "prompt_tokens": 2813,
+  "completion_tokens": 542,
+  "cost_krw": null,
+  "error": null
+}

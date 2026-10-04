@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"'오늘 아침'이 명확히 언급되었고 이전 '어제 18시'를 끌어오지 않고 새 발화 기준으로만 채웠다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"'트럭'이 원문에 명시되어 있고 이전 '흰색 SUV'를 덮어쓰지 않고 새로 정확히 채웠다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'불법 유턴'이 원문에 명시되어 있고 이전 '차로 변경' 정보를 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"완전히 새로운 사고를 설명하는 전환 신호('그건 됐고')가 있으므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"시간, 차량, 상황이 모두 명확히 언급되어 확신도를 high로 매긴 것이 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'오늘 아침'이 명확히 언급되었고 이전 '어제 18시'를 끌어오지 않고 새 발화 기준으로만 채웠다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'트럭'이 원문에 명시되어 있고 이전 '흰색 SUV'를 덮어쓰지 않고 새로 정확히 채웠다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'불법 유턴'이 원문에 명시되어 있고 이전 '차로 변경' 정보를 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문에 장소 언급이 없으므로 null로 둔 것이 맞고, 이전 '상무중앙로'를 끌어오지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "완전히 새로운 사고를 설명하는 전환 신호('그건 됐고')가 있으므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간, 차량, 상황이 모두 명확히 언급되어 확신도를 high로 매긴 것이 타당하다."
+    }
+  },
+  "latency_ms": 5086.72000002116,
+  "prompt_tokens": 3302,
+  "completion_tokens": 561,
+  "cost_krw": null,
+  "error": null
+}

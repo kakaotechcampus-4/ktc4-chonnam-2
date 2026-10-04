@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-08a-offtopic-toilet",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 시간 관련 언급이 전혀 없는데 모델이 null로 두어 기준에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량에 대한 언급이 없는 발화인데 임의 값을 지어내지 않고 null로 처리했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고나 위반 상황 설명이 전혀 없어 null이 맞고, 모델도 null을 반환했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"'화장실이 어디예요?'는 위치를 묻는 질문일 뿐 사고 장소 정보가 아니므로 null이 맞고, 임의의 위치를 채워 넣지 않았다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 발화도 아니므로 correction_target은 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"추출할 단서가 전혀 없는 무관한 발화이므로 기준대로 low를 반환했고, reasoning에서도 관련 정보 부재를 명시해 일관적이다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 전혀 없는데 모델이 null로 두어 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량에 대한 언급이 없는 발화인데 임의 값을 지어내지 않고 null로 처리했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고나 위반 상황 설명이 전혀 없어 null이 맞고, 모델도 null을 반환했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'화장실이 어디예요?'는 위치를 묻는 질문일 뿐 사고 장소 정보가 아니므로 null이 맞고, 임의의 위치를 채워 넣지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 발화도 아니므로 correction_target은 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "추출할 단서가 전혀 없는 무관한 발화이므로 기준대로 low를 반환했고, reasoning에서도 관련 정보 부재를 명시해 일관적이다."
+    }
+  },
+  "latency_ms": 7465.952500002459,
+  "prompt_tokens": 2554,
+  "completion_tokens": 545,
+  "cost_krw": null,
+  "error": null
+}

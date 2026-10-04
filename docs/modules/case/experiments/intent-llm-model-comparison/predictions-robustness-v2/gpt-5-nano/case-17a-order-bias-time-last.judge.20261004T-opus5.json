@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-17a-order-bias-time-last",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 맨 뒤의 '그게 어제 18시쯤이었어요'를 '어제 18시쯤'으로 정확히 뽑았고, 문장 뒤로 이동했다는 이유로 누락하지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '흰색 SUV'를 그대로 추출했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'백색 실선 구간에서 차로 바꿨는데'를 '백색 실선 구간에서 차로 변경'으로 의미 손실 없이 정리했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '상무중앙로 사거리'와 일치한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 표현이 없는 최초 발화이므로 null이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"네 단서가 모두 명시적으로 제시돼 있어 high가 적절하며, time_hint가 문장 뒤에 왔다는 이유로 confidence를 낮추지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문 맨 뒤의 '그게 어제 18시쯤이었어요'를 '어제 18시쯤'으로 정확히 뽑았고, 문장 뒤로 이동했다는 이유로 누락하지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 SUV'를 그대로 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'백색 실선 구간에서 차로 바꿨는데'를 '백색 실선 구간에서 차로 변경'으로 의미 손실 없이 정리했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '상무중앙로 사거리'와 일치한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 표현이 없는 최초 발화이므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "네 단서가 모두 명시적으로 제시돼 있어 high가 적절하며, time_hint가 문장 뒤에 왔다는 이유로 confidence를 낮추지 않았다."
+    }
+  },
+  "latency_ms": 6172.8376999963075,
+  "prompt_tokens": 2921,
+  "completion_tokens": 540,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-08c-offtopic-howto",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문은 서비스 사용법 문의일 뿐 시간 관련 언급이 전혀 없는데 모델이 null로 두었다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량에 대한 어떤 언급도 없는 발화에서 null을 유지해 지어내지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고나 위반 상황 설명이 전혀 없으므로 null이 적절하다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소 언급이 없는데 임의의 위치를 채우지 않고 null로 두어 기준을 충족한다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 발화도 아니므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"추출할 단서가 전혀 없는 발화에 대해 low로 판단했고, reasoning에서도 구체 정보 부재를 명시해 근거가 일관된다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문은 서비스 사용법 문의일 뿐 시간 관련 언급이 전혀 없는데 모델이 null로 두었다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량에 대한 어떤 언급도 없는 발화에서 null을 유지해 지어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고나 위반 상황 설명이 전혀 없으므로 null이 적절하다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소 언급이 없는데 임의의 위치를 채우지 않고 null로 두어 기준을 충족한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 발화도 아니므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "추출할 단서가 전혀 없는 발화에 대해 low로 판단했고, reasoning에서도 구체 정보 부재를 명시해 근거가 일관된다."
+    }
+  },
+  "latency_ms": 6877.716500079259,
+  "prompt_tokens": 2601,
+  "completion_tokens": 511,
+  "cost_krw": null,
+  "error": null
+}

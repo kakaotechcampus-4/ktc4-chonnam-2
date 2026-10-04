@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-09e-multi-event-taxi-motorcycle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"partial\", \"reason\": \"두 시점을 모두 나열해 각 사건과의 대응관계는 보존했지만, 교차조합을 피하려면 confidence=low나 단일 사건 채택이 바람직했는데 이 모델은 둘을 그대로 병기해 모호함을 해소하지 않았다(치명적이진 않으나 방향성에서 애매함 반영 부족).\"}, \"vehicle_hint\": {\"verdict\": \"partial\", \"reason\": \"택시와 오토바이를 모두 나열했지만 각각 어떤 사건과 연결되는지 구분이 모호해 사실상 두 속성을 섞어 제시한 것과 유사한 리스크가 있으며, 속성 교차조합 방지 원칙에 따라 더 명확한 처리가 필요했다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 문장을 그대로 보존해 두 사건의 속성(택시-급정거, 오토바이-헬멧 미착용·인도주행)을 섞지 않고 각각 올바르게 묶어 서술했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"정류장(택시 사건)과 인도(오토바이 사건)를 각각 올바르게 나열했고 교차조합 없이 원문 그대로 반영했다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 없으므로 correction_target을 null로 둔 것은 올바르다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"두 사건이 한 문장에 섞여 있어 애매함이 존재함에도 high로 판정해 기준에서 요구하는 low 반영을 하지 않았다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "partial",
+      "reason": "두 시점을 모두 나열해 각 사건과의 대응관계는 보존했지만, 교차조합을 피하려면 confidence=low나 단일 사건 채택이 바람직했는데 이 모델은 둘을 그대로 병기해 모호함을 해소하지 않았다(치명적이진 않으나 방향성에서 애매함 반영 부족)."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "택시와 오토바이를 모두 나열했지만 각각 어떤 사건과 연결되는지 구분이 모호해 사실상 두 속성을 섞어 제시한 것과 유사한 리스크가 있으며, 속성 교차조합 방지 원칙에 따라 더 명확한 처리가 필요했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문 문장을 그대로 보존해 두 사건의 속성(택시-급정거, 오토바이-헬멧 미착용·인도주행)을 섞지 않고 각각 올바르게 묶어 서술했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "정류장(택시 사건)과 인도(오토바이 사건)를 각각 올바르게 나열했고 교차조합 없이 원문 그대로 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없으므로 correction_target을 null로 둔 것은 올바르다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "두 사건이 한 문장에 섞여 있어 애매함이 존재함에도 high로 판정해 기준에서 요구하는 low 반영을 하지 않았다."
+    }
+  },
+  "latency_ms": 7593.912499956787,
+  "prompt_tokens": 3428,
+  "completion_tokens": 718,
+  "cost_krw": null,
+  "error": null
+}

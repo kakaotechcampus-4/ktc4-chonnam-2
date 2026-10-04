@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-11b-gibberish",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문이 무의미한 키보드 입력이라 시간 단서가 전혀 없는데 모델이 null로 두었다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"차량 관련 언급이 전혀 없는 문자열이므로 null이 정답이고 모델도 null을 냈다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"사고 상황을 유추할 근거가 원문에 없어 null이 맞으며, 억지로 상황을 지어내지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"장소를 가리키는 표현이 없는 발화이므로 null 처리가 적절하다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"prior_hints가 null이고 정정 의도 표현도 없으므로 correction_target을 null로 둔 것이 맞다.\"}, \"confidence\": {\"verdict\": \"correct\", \"reason\": \"의미를 읽을 수 없는 입력이라 low가 기준에 부합하며, 모델도 불확실성을 인정해 low로 설정했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문이 무의미한 키보드 입력이라 시간 단서가 전혀 없는데 모델이 null로 두었다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "차량 관련 언급이 전혀 없는 문자열이므로 null이 정답이고 모델도 null을 냈다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "사고 상황을 유추할 근거가 원문에 없어 null이 맞으며, 억지로 상황을 지어내지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소를 가리키는 표현이 없는 발화이므로 null 처리가 적절하다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 null이고 정정 의도 표현도 없으므로 correction_target을 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "의미를 읽을 수 없는 입력이라 low가 기준에 부합하며, 모델도 불확실성을 인정해 low로 설정했다."
+    }
+  },
+  "latency_ms": 6761.708500096574,
+  "prompt_tokens": 2603,
+  "completion_tokens": 514,
+  "cost_krw": null,
+  "error": null
+}

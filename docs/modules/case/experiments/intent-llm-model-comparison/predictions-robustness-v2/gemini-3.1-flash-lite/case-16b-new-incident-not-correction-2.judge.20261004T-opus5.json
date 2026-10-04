@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-opus5",
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-16b-new-incident-not-correction-2",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"원문 '오늘 아침'을 그대로 새 발화 기준으로 추출했고 이전 '어제 18시'를 끌어오지 않았다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문에 명시된 '트럭'을 뽑았고 이전 '흰색 SUV'를 유지하지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'을 정확히 반영했고 이전 '차로 변경'을 덮어쓰지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없으므로 null이 맞고, 이전 '상무중앙로'를 복사하지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'그건 됐고'는 새로운 사고로의 전환 신호인데 이를 기존 필드 정정으로 오인해 원문에 근거 없는 correction_target='time_hint'를 지어냈다(기준상 null이어야 함).\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"새 발화에 시간·차종·상황이 명확히 드러나 high 자체는 과하지 않으나, correction으로 잘못 해석한 상태에서 불확실성 인정 없이 high를 부여해 근거가 부분적으로만 타당하다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문 '오늘 아침'을 그대로 새 발화 기준으로 추출했고 이전 '어제 18시'를 끌어오지 않았다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문에 명시된 '트럭'을 뽑았고 이전 '흰색 SUV'를 유지하지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'을 정확히 반영했고 이전 '차로 변경'을 덮어쓰지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없으므로 null이 맞고, 이전 '상무중앙로'를 복사하지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'그건 됐고'는 새로운 사고로의 전환 신호인데 이를 기존 필드 정정으로 오인해 원문에 근거 없는 correction_target='time_hint'를 지어냈다(기준상 null이어야 함)."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "새 발화에 시간·차종·상황이 명확히 드러나 high 자체는 과하지 않으나, correction으로 잘못 해석한 상태에서 불확실성 인정 없이 high를 부여해 근거가 부분적으로만 타당하다."
+    }
+  },
+  "latency_ms": 7731.2183000613,
+  "prompt_tokens": 2884,
+  "completion_tokens": 619,
+  "cost_krw": null,
+  "error": null
+}

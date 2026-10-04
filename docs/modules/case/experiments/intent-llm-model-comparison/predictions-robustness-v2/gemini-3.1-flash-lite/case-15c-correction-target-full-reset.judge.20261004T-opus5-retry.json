@@ -1,0 +1,40 @@
+{
+  "run_id": "20261004T-opus5-retry",
+  "retry_of": "20261004T-opus5",
+  "attempts": 1,
+  "judge_model": "anthropic/claude-opus-5",
+  "case_id": "case-15c-correction-target-full-reset",
+  "model_name": "anthropic/claude-opus-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"새 신고 발화에 시간 언급이 전혀 없으므로 null이 맞고, 이전 힌트의 '어제 18시'를 끌어오지 않은 것도 기준에 부합한다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '트럭'을 그대로 새 값으로 채웠고 이전 '흰색 SUV'를 섞지 않았다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"원문의 '불법 유턴'만 반영했고 이전 '차로 변경'을 끌어오지 않았다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"새 발화에 장소 언급이 없어 null이 맞고, 이전 '상무중앙로'를 복사해 넣지 않았다.\"}, \"correction_target\": {\"verdict\": \"hallucinated\", \"reason\": \"'다 취소하고 완전히 다른 얘기'라고 명시한 새 신고이므로 null이어야 하는데, 원문에 근거 없는 'vehicle_hint' 정정으로 단정했다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"트럭/불법 유턴은 명시적이라 high 자체가 부당하진 않으나, 근거 없는 정정 판단까지 포함한 출력에 high를 부여한 점에서 완전히 맞다고 보기 어렵다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "새 신고 발화에 시간 언급이 전혀 없으므로 null이 맞고, 이전 힌트의 '어제 18시'를 끌어오지 않은 것도 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '트럭'을 그대로 새 값으로 채웠고 이전 '흰색 SUV'를 섞지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '불법 유턴'만 반영했고 이전 '차로 변경'을 끌어오지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "새 발화에 장소 언급이 없어 null이 맞고, 이전 '상무중앙로'를 복사해 넣지 않았다."
+    },
+    "correction_target": {
+      "verdict": "hallucinated",
+      "reason": "'다 취소하고 완전히 다른 얘기'라고 명시한 새 신고이므로 null이어야 하는데, 원문에 근거 없는 'vehicle_hint' 정정으로 단정했다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "트럭/불법 유턴은 명시적이라 high 자체가 부당하진 않으나, 근거 없는 정정 판단까지 포함한 출력에 high를 부여한 점에서 완전히 맞다고 보기 어렵다."
+    }
+  },
+  "latency_ms": 9906.9958999753,
+  "prompt_tokens": 2811,
+  "completion_tokens": 618,
+  "cost_krw": null,
+  "error": null
+}

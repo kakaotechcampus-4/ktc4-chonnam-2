@@ -12,6 +12,9 @@ KRW_PER_1M_TOKENS: dict[str, dict[str, float]] = {
     "gpt-5-nano": {"input": 76, "output": 609},
     "gemini-3.1-flash-lite": {"input": 380, "output": 2283},
     "claude-haiku-4-5": {"input": 1522, "output": 7612},
+    # judge 모델(2026-10-04 Elice 모델 카드 확인). 이전엔 표에 없어 judge 비용이 기록되지 않았다.
+    "anthropic/claude-sonnet-5": {"input": 3045, "output": 15225},
+    "anthropic/claude-opus-5": {"input": 7612, "output": 38062},
 }
 
 

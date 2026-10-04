@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15e-correction-target-sneak-vague-time",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"발화는 '19시쯤이었던 것 같기도 하고'라며 모호하게 흐린 표현인데, 모델이 이를 '19시쯤'이라는 구체적 time_hint로 확정해버렸다. 불확실한 추정은 정정하지 않거나 낮은 확신으로 남겨야 했다.\"}, \"vehicle_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에서 차량 관련 언급이 없으므로 null 처리한 것이 맞다.\"}, \"situation_hint\": {\"verdict\": \"correct\", \"reason\": \"'신호위반이 아니라 중앙선 침범이었다'는 명확한 정정 내용을 정확히 반영했다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에서 위치 언급이 없으므로 null 처리가 맞다.\"}, \"correction_target\": {\"verdict\": \"partial\", \"reason\": \"situation_hint를 정정 대상으로 잡은 것은 맞지만, 시간 또한 모호하게나마 정정 대상으로 언급되었으므로 이를 전혀 반영하지 않은 것은 불완전하다.\"}, \"confidence\": {\"verdict\": \"hallucinated\", \"reason\": \"time_hint를 구체값으로 확정해놓고 confidence만 낮췄는데, 기준상 모호한 time_hint는 애초에 확정값으로 만들지 않아야 했으므로 confidence 설정 자체가 hallucination을 가리는 용도로 쓰였다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "hallucinated",
+      "reason": "발화는 '19시쯤이었던 것 같기도 하고'라며 모호하게 흐린 표현인데, 모델이 이를 '19시쯤'이라는 구체적 time_hint로 확정해버렸다. 불확실한 추정은 정정하지 않거나 낮은 확신으로 남겨야 했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 차량 관련 언급이 없으므로 null 처리한 것이 맞다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'신호위반이 아니라 중앙선 침범이었다'는 명확한 정정 내용을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 위치 언급이 없으므로 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "partial",
+      "reason": "situation_hint를 정정 대상으로 잡은 것은 맞지만, 시간 또한 모호하게나마 정정 대상으로 언급되었으므로 이를 전혀 반영하지 않은 것은 불완전하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "time_hint를 구체값으로 확정해놓고 confidence만 낮췄는데, 기준상 모호한 time_hint는 애초에 확정값으로 만들지 않아야 했으므로 confidence 설정 자체가 hallucination을 가리는 용도로 쓰였다."
+    }
+  },
+  "latency_ms": 6615.435100160539,
+  "prompt_tokens": 3453,
+  "completion_tokens": 658,
+  "cost_krw": null,
+  "error": null
+}

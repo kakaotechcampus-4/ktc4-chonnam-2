@@ -1,0 +1,38 @@
+{
+  "run_id": "20261004T-sonnet5-rubric2",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "case_id": "case-15a-correction-target-sneak-new-vehicle",
+  "model_name": "anthropic/claude-sonnet-5",
+  "raw_text": "{\"time_hint\": {\"verdict\": \"correct\", \"reason\": \"명시적으로 '19시였어요'라고 정정한 내용을 정확히 반영했다.\"}, \"vehicle_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"정정 대상은 time_hint뿐인데 모델이 기존 '흰색 SUV'를 전혀 다른 사건인 '검은 오토바이'로 덮어써 오염시켰다. 별도 사건으로 구분하지 않고 메인 vehicle_hint 필드를 교체한 것은 오답이다.\"}, \"situation_hint\": {\"verdict\": \"hallucinated\", \"reason\": \"기존 situation_hint('차로 변경')를 완전히 다른 사건인 '헬멧 미착용'으로 덮어써 오염시켰다. 이는 별도 사건 정보이지 기존 상황의 정정이 아니다.\"}, \"location_hint\": {\"verdict\": \"correct\", \"reason\": \"이번 발화에서 위치 언급이 없고 정정 대상도 아니므로 null이 맞다.\"}, \"correction_target\": {\"verdict\": \"correct\", \"reason\": \"명시적 정정 대상이 time_hint 하나뿐이라는 기준과 일치한다.\"}, \"confidence\": {\"verdict\": \"partial\", \"reason\": \"time_hint 정정 자체는 명확해 high가 타당할 수 있으나, 별도 사건(오토바이 헬�델 미착용)을 구분 없이 섞어 넣었음에도 여전히 high를 유지해 혼재된 정보에 대한 불확실성을 전혀 반영하지 못했다.\"}}",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "명시적으로 '19시였어요'라고 정정한 내용을 정확히 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "hallucinated",
+      "reason": "정정 대상은 time_hint뿐인데 모델이 기존 '흰색 SUV'를 전혀 다른 사건인 '검은 오토바이'로 덮어써 오염시켰다. 별도 사건으로 구분하지 않고 메인 vehicle_hint 필드를 교체한 것은 오답이다."
+    },
+    "situation_hint": {
+      "verdict": "hallucinated",
+      "reason": "기존 situation_hint('차로 변경')를 완전히 다른 사건인 '헬멧 미착용'으로 덮어써 오염시켰다. 이는 별도 사건 정보이지 기존 상황의 정정이 아니다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 위치 언급이 없고 정정 대상도 아니므로 null이 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명시적 정정 대상이 time_hint 하나뿐이라는 기준과 일치한다."
+    },
+    "confidence": {
+      "verdict": "partial",
+      "reason": "time_hint 정정 자체는 명확해 high가 타당할 수 있으나, 별도 사건(오토바이 헬�델 미착용)을 구분 없이 섞어 넣었음에도 여전히 high를 유지해 혼재된 정보에 대한 불확실성을 전혀 반영하지 못했다."
+    }
+  },
+  "latency_ms": 6554.1655998677015,
+  "prompt_tokens": 3263,
+  "completion_tokens": 665,
+  "cost_krw": null,
+  "error": null
+}

@@ -127,6 +127,12 @@ reason(한두 문장 근거)을 같이 남긴다.
 - expected_notes는 정답 문자열이 아니라 사람이 쓴 판정 기준이다. 문자열 완전일치를 요구하지 않는다.
 - hallucinated와 missed는 방향이 반대다 — 헷갈리면 "모델이 원문보다 더 많이 말했는가(hallucinated)
   아니면 더 적게 말했는가(missed)"로 구분한다.
+- **정정 케이스(prior_hints가 있음)에서 이번 발화가 언급하지 않은 필드는 null이 정답(correct)이다.**
+  prior_hints에 값이 있어도 "이전 값을 유지했어야 한다"며 missed나 hallucinated로 판정하지 않는다 —
+  이전 값과 합치는 것은 이 호출이 아니라 뒤의 병합 단계가 한다. 반대로 언급하지 않은 필드에 이전 값을
+  채웠으면 hallucinated다. 예: prior_hints={"vehicle_hint": "흰색 SUV"}, 발화 "시간 그거 말고 19시였어요"
+  → vehicle_hint=null은 correct, vehicle_hint="흰색 SUV"는 hallucinated(2026-10-04 judge 검증에서 이
+  규칙을 어긴 판정 11건이 확인돼 명시했다 — `results/judge-validation-robustness-v2.md`).
 - reason은 그 필드 하나에 대한 근거만 담는다(다른 필드 얘기를 섞지 않는다) — 나중에
   사람이 이 필드가 왜 이렇게 판정됐는지만 보고 이해할 수 있어야 한다.
 - **같은 필드가 같은 값이면 모델이 달라도 같은 verdict를 매긴다.** 그 필드의 verdict는
