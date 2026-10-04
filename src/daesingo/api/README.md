@@ -5,7 +5,7 @@
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobIntent`를 queue에 넣고 `202 Accepted`를 반환한다.
 - 즉시 처리하는 것(§8-1): `CaseView` 조회 · hint 수정 · candidate 선택 · pure evidence recompute · requirement recompute · 상태 전이.
 - 인증은 MVP 최소 수준이며 방식은 미결(§1-7 A2).
-- `web`이 부르는 유일한 read endpoint는 `case.get_view()`를 노출하는 것 하나다 (§4-모듈6 ③).
+- `web`이 읽는 상태는 `case.get_view()`를 노출하는 CaseView 하나다 (§4-모듈6 ③). 그 밖의 read는 CaseView가 가리키는 FrameRef · 신고용 artifact의 바이너리 조회뿐이다. HTTP surface 결정은 `docs/runtime/runtime-tech-spec.md` §13(RD-05, #247), HTTP API Contract는 작성 예정이다.
 
 ## 상태
 
