@@ -35,6 +35,9 @@ class _Adapter:
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         return []
 
+    def get_overlay_time_readouts(self) -> list[dict[str, Any]]:
+        return []
+
     def get_plate_read_status(self) -> str | None:
         return None
 
