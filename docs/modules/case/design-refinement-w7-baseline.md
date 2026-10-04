@@ -9,6 +9,8 @@ W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18)
 > **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
 >
 > **상태 갱신 (2026-10-04)** — 8순위 신설: Runtime/Ops 구현 전 필수 Decision(#244 ~ #248)에 case가 확인 댓글로 약속한 후속 작업. 각 카드가 결정되기 전에는 착수하지 않는다. 결정 없이 할 수 있던 것은 선반영했다 — 8-14 · 8-15 ✅, 8-10 · 8-16 일부, 8-1 분석 시작 초안(case-command Draft §11).
+>
+> **상태 갱신 (2026-10-05)** — 카드 5장(#244 ~ #248)이 2026-10-04 모두 `ACCEPTED`로 닫혔다. case 제안(#245 C-1a B · C-4, #246 S-4 FrameRef, #247 H-4 `running_jobs` 정의)이 채택돼 다른 Owner 문서에 반영됐다. 8순위는 이제 착수할 수 있다. HTTP API Contract Draft(#265)의 case 경계 리뷰에서 나온 할 일(8-17 · 8-18)을 더했다.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -164,7 +166,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 8순위 — Runtime/Ops 필수 Decision(#244 ~ #248) 후속
 
-**문제:** api · worker가 별도 process가 되면서(Ops §2) case의 동기 · in-memory 전제가 깨진다. Runtime/Ops 카드 5장에 case 확인 댓글을 달면서 case가 맡겠다고 한 일을 여기 모은다. 카드 상태는 모두 `PROPOSED — OWNER ALIGNMENT REQUIRED`라 **결정이 나기 전에는 착수하지 않는다** — 결정이 댓글과 다르게 나면 이 표를 먼저 고친다.
+**문제:** api · worker가 별도 process가 되면서(Ops §2) case의 동기 · in-memory 전제가 깨진다. Runtime/Ops 카드 5장에 case 확인 댓글을 달면서 case가 맡겠다고 한 일을 여기 모은다. **2026-10-04 카드 5장이 모두 `ACCEPTED`로 닫혀 착수할 수 있다** — 결정은 case 댓글과 같은 방향으로 났다(각 카드 「최종 결정란」).
 
 **case 댓글:** [#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244#issuecomment-5978870101) · [#245](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/245#issuecomment-5978830198) · [#246](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/246#issuecomment-5978917389) · [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247#issuecomment-5978955168) · [#248](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/248#issuecomment-5978979193)
 
@@ -173,10 +175,11 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | # | 할 일 | 출처 |
 | --- | --- | --- |
 | 8-1 | case-command Draft에 분석 시작 · 중단 command 추가 — 이름 · payload · 허용 상태, 시작 command가 hints를 어디서 받는지 포함. **분석 시작은 초안 작성(2026-10-04, Draft §11 — #210 Search 의견 반영 · case 결정 4건(`HINT_EXTRACT` · 실패 notice 없음 · 빈 설명은 구조화 생략 · CaseView `description`) · 남은 미결 5건)**, 중단은 C-1a 결정 뒤 | #245 C-1 · #247 H-2 |
-| 8-2 | case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 | #247 H-6 |
-| 8-3 | CaseView 계약에 `running_jobs[]` 정의 추가 — 「case가 아직 결과를 기다리는 job」, execution 종료(T1)부터 case 반영(T2)까지는 `RUNNING`, 중단 · timeout으로 기다리기를 멈춘 job은 제외 | #247 H-4 |
+| 8-2 | case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 — Contract는 `docs/architecture/contracts/contract-http-api.md`(Draft, #265). #265 merge 뒤 그 경로로 고친다 | #247 H-6 |
+| 8-3 | ✅ CaseView 계약에 `running_jobs[]` 정의 추가 — 「case가 아직 결과를 기다리는 job」, 실행 종료부터 case 반영까지 · backoff 중에도 유지, 중단 · timeout으로 기다리기를 멈춘 job은 제외. **2026-10-04 B절 §10 불변조건 5로 반영됨**(#263, common/runtime이 case 답변대로 정합) | #247 H-4 |
 | 8-4 | CaseView 계약에 「중단된 job은 실제 실행 상태와 상관없이 `PARTIAL`로 투영」 추가 — 마지막 attempt가 `STALE`이어도 `FAILED`로 보이지 않게 | #245 C-3 · #248 Q-1 |
 | 8-5 | `decisions/budget-krw-normalization.md` 「남은 것」에 정규화 층(cost를 계산하는 Search)과 `amount=null`은 0이 아니라는 원칙 반영 | #244 U-2 |
+| 8-18 | CaseView 계약 B절 §5 schema에 `contract` · `contract_version` 등재 — 구현(`view.py`)은 이미 싣고 있고, 다른 계약 8개(SourceAsset · AnalysisScope 등)도 schema에 두는 관례다(2026-10-05 case 결정, #265 §9) | #265 |
 
 **구현 (case 코드)**
 
@@ -187,31 +190,33 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | 8-8 | 결과 반영 함수를 `execution_id` 기준 idempotent로 | #245 D-5 |
 | 8-9 | 중단 command 처리 + 「중단된 `job_id` 집합」으로 늦은 결과를 거르는 guard. 6.6순위 조건 2(현재 선택 context 대조)와 함께 동작한다 | #245 C-1a · C-4 |
 | 8-10 | JobExecution read port 연결 + attempt 최댓값 선택(CaseView 계약 A§10-6)을 case가 구현. `view.py`의 「최신 attempt 선택은 runtime이 건네준다」 주석 수정. **선택 규칙 · 주석 수정은 선반영(2026-10-04, `view.representative_execution_status()`)** — read port 연결만 D-6 뒤 | #245 D-6 · #248 Q-1 |
-| 8-11 | `running_jobs` 투영을 8-3 정의대로 구현 | #247 H-4 |
+| 8-11 | `running_jobs` 투영을 8-3 정의대로 구현 — `handle_command()`가 `running_jobs`를 호출자에게 받지 않고 case가 직접 계산한다. **command 응답의 `case_view`에는 이번 command로 append한 job이 들어 있어야 한다**(HTTP 202 직후 polling이 멈추지 않게, #265 §5.3 · §7-2). 응답을 만드는 시점에는 enqueue 전이라 실행 기록이 없으므로, JobRecord는 있고 실행 기록이 없는 job은 `PENDING`으로 싣는다 | #247 H-4 · #265 |
 | 8-12 | 빈 case 생성 경로 — `CaseAggregate.intake()` 필수 인자(`hints` · `manifest_summary`) 정리, adapter 없이 등록, 업로드마다 `manifest_summary` 갱신 | #247 H-2 |
 | 8-13 | source asset을 `RealVideoAdapter`의 local path 대신 recording 공개 함수로 조회 | #246 S-3 |
 | 8-14 | ✅ `FINE_VERIFY` 실행 실패의 notice · action 정하기 — **2026-10-04 `search.visual_verify_failed`**(ERROR · blocking · `actions:[]`, 출구는 「다른 후보 보기」, CaseView 계약 등재). 실행 상태는 호출자가 `visual_verify_status`로 넘긴다. 동기 real 경로의 Fine 예외 → 실행 실패 분류는 Search failure taxonomy 접합(#244) 뒤 | #244 R-1 |
 | 8-15 | ✅ **2026-10-04 overlay 판독 결과 notice 3종**(`readout.overlay_not_present` · `_presence_undetermined` · `_ocr_failed`)을 case가 붙인다 — readout `failure-taxonomy.md` 매핑 그대로, 현재 선택 후보의 가장 나중 판독 기준. 이 카드들의 후속은 아니고 8순위 검토 중 찾은 공백(코드가 붙이지 않았고 CaseView 계약 등재도 둘 빠짐) | readout `failure-taxonomy.md` |
 | 8-16 | 단서 구조화(`HINT_EXTRACT`) 결과 반영 — **결과 반영 함수만 선반영(2026-10-04, `service.receive_hint_extraction()`)**. 결과 모양은 #210 Search 의견 가정, 발주 · 배선은 Search PR · D-5 뒤. 3순위와 같은 일 | #210 · 3순위 |
+| 8-17 | source 연결은 `INTAKE`에서만 받는다 — 분석 시작 뒤 추가 업로드는 거부. product에 분석 시작 뒤 업로드 흐름이 없고 `START_ANALYSIS` 초안도 `INTAKE` 전용이다(2026-10-05 case 결정, #265 §9). 거부 status · code 모양은 HTTP Contract가 정한다 | #265 |
 
 **case가 정할 미결** — 정하기 전에는 위 해당 항목을 끝냈다고 부르지 않는다.
 
 - 「초안 준비 중」(`core-user-flow.md` 230행)에 중단할 때 판독 job까지 멈추는가 — product에 정해져 있지 않다(#245 C-1a에서 보류). 8-1 · 8-9
-- timeout된 job을 `running_jobs`에서 빼는가 — 빼면 timeout 뒤 늦게 반영된 결과는 web이 다시 조회할 때까지 보이지 않는다. 8-3 · 8-11
+- ~~timeout된 job을 `running_jobs`에서 빼는가~~ → **뺀다(2026-10-04, B절 §10 불변조건 5).** timeout 뒤 늦게 반영된 결과는 web이 다시 조회할 때 보인다.
+- 파일별 upload에서 `manifest_summary.failed_file_count`가 무엇을 세는가 — 계약 정의는 「파일 등록 실패 수」인데 #265는 거부된 upload를 기록 없이 버려(422) 셀 수 없다. case 제안: 손상 파일은 recording이 `availability=UNAVAILABLE`로 등록 · 연결해 case가 세고, 파일 이름은 web이 upload 응답으로 보여 준다(CaseView에는 파일 목록이 없다). recording · web과 정한다(#265 §9). 8-12
 - budget guard가 「계산 불가」(`amount=null` 포함)일 때 발주를 막는가 계속하는가 — guard 구현 때 정한다(#244 U-2)
 - 시작 command payload 모양 — 8-1과 함께 정한다
 
-**다른 Owner 쪽 반영 대기** — case가 고치지 않고 결과만 확인한다.
+**다른 Owner 쪽 반영** — case가 고치지 않고 결과만 확인한다. **2026-10-05 세 건 모두 반영 확인.**
 
 | 할 일 | 소유 | 카드 |
 | --- | --- | --- |
-| 「현재 `case_rev`와 맞는 결과만 반영」 문구를 「case가 현재 context에 유효하다고 판단한 결과만 반영」으로 — JobExecution §9-8 · §2 case Consumer 행, `module-architecture.md` §4-모듈5 ④ · §8-2 | common/runtime (Architecture 문서 포함) | #245 C-1a |
-| C-4 문구를 「중단된 `job_id` 집합에 있는 job의 결과는 반영하지 않는다」로 | common/runtime | #245 C-4 |
-| process 경계를 넘는 recording 상태 목록에 CaseView FrameRef 3종(`thumb_ref` · `preview_ref` · `plate_preview_ref`) 포함 | recording | #246 S-4 |
+| ✅ 「현재 `case_rev`와 맞는 결과만 반영」 문구를 「case가 현재 context에 유효하다고 판단한 결과만 반영」으로 — JobExecution §9-8 · §2 case Consumer 행, `module-architecture.md` §4-모듈5 ④ · §8-2 | common/runtime (Architecture 문서 포함) | #245 C-1a |
+| ✅ C-4 문구를 「중단된 `job_id` 집합에 있는 job의 결과는 반영하지 않는다」로 — Runtime Tech Spec §12.2 · §12.5 | common/runtime | #245 C-4 |
+| ✅ process 경계를 넘는 recording 상태 목록에 CaseView FrameRef 3종(`thumb_ref` · `preview_ref` · `plate_preview_ref`) 포함 — #246 S-4 「case 보완 채택」 | recording | #246 S-4 |
 
-**왜 8순위:** 전부 Runtime 결정에 종속된 배선 작업이라 결정 전에는 할 수 없다. 다만 8-6은 Real E2E의 비동기 전환(M5)을 막는 선행이므로, 카드가 결정되면 이 섹션 안에서는 가장 먼저 한다.
+**왜 8순위:** 전부 Runtime 결정에 종속된 배선 작업이었다. 2026-10-04 결정이 모두 나서 이제 착수할 수 있고, 8-6(case store MySQL)이 Real E2E 비동기 전환(M5)의 선행이라 이 섹션 안에서는 가장 먼저 한다.
 
-**참고:** 이슈 #244 · #245 · #246 · #247 · #248, 목록 #251, evidence PR #253
+**참고:** 이슈 #244 · #245 · #246 · #247 · #248, 목록 #251, evidence PR #253, CaseView 정합 PR #263, HTTP API Contract Draft PR #265
 
 ## 2. case가 의존하는 외부 블로커 (case 파트 아님, 참고용)
 
