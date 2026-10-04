@@ -25,6 +25,9 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
 | [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
+| [`open-decision-register.md`](./open-decision-register.md) | 아직 닫히지 않은 Runtime/Ops 결정의 통합 추적표(workflow §2 산출물). 답을 정하지 않으며, 닫히면 Spec/Contract/ADR로 승격하고 CLOSED 처리 |
+| [`decision-classification.md`](./decision-classification.md) | Register의 각 결정을 유형 · 결정권 · Timing · Gate · Closure route · §4 조사 필요로 분류(workflow §3 산출물). 답을 정하지 않으며 Register 내용을 복제하지 않음 |
+| `research/` | workflow §4 외부 기술 조사. `prompts/NN-<topic>.md` = 실행용 self-contained prompt(decision-classification §6 R1 · R2 Queue), `NN-<topic>-<조사 기준일>.md` = 그 결과. 결과는 Decision 근거이며 결정이 아님 — Owner 검토 뒤 Spec · Contract · ADR로 옮긴다 |
 | [`official-inputs/README.md`](./official-inputs/README.md) | 카테캠 운영진 공지(AWS 환경 · ML API 등) 사본. 외부 입력이며 결정이 아님 |
 | [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
 | [`reviews/README.md`](./reviews/README.md) | 특정 시점의 Runtime/Ops 정합성 검수·review evidence. Audited SHA 기준으로만 읽으며 결정의 SoT가 아님 |
@@ -147,36 +150,9 @@ P2 Runtime Capacity Smoke의 계획과 결과는 [`experiments/`](./experiments/
 
 ## 현재 열린 Runtime/Ops 결정
 
-### Runtime Tech
+열린 결정의 통합 목록은 [`open-decision-register.md`](./open-decision-register.md)가 추적한다 — group별 Owner · Consult · 이미 닫힌 범위 · 의존 관계 · Timing 후보를 담고, 이미 결정된 항목 · Implementation Gap · 실험값은 그 문서 하단에서 제외 근거와 함께 구분한다. 이 README에는 목록을 복제하지 않는다.
 
-- queue/execution 물리 schema
-- claim transaction
-- `JobExecution.produced` 물리 저장: JSON vs 관계 테이블
-- `JobExecution.usage_refs` materialization: 별도 저장 vs `UsageRecord.execution_ref` projection
-- UsageRecord final append timing / in-flight invocation 복구·중복 방지
-- retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 (Tech Spec §6.3)
-- retry max/backoff/jitter
-- lease duration
-- heartbeat interval
-- STALE threshold
-- Worker polling/sweep interval
-- UsageRecord persistence shape
-- `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · KRW 환산 출처 — 정책 자체(Search rate 주입 유지 · KRW 정규화)는 닫혔다(Tech Spec §11.3)
-
-### Ops
-
-- Docker/Compose exact command
-- log transport/retention
-- disk working-set guardrail
-- Object Storage 범위
-- managed asset retention
-- UsageRecord retention
-- scaling threshold
-- deployment workflow
-- build-time/runtime configuration 주입 방식
-- immutable release 식별 / known-good revision 기록
-- post-deploy health/readiness + external smoke test
-- rollback exact command
+각 Spec의 미결 체크리스트는 해당 문서 범위의 원문으로 남는다 — [Tech Spec](./runtime-tech-spec.md) §18 · [Ops Spec](./ops-spec.md) §23 · [Runbook](./deployment-runbook.md) §8.
 
 정확한 수치는 실제 Runtime integration과 Recording/Search benchmark 결과 없이 임의 확정하지 않는다.
 
