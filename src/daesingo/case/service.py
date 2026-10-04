@@ -27,7 +27,7 @@ from typing import Any
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
-from daesingo.case.view import _belongs_to_current_selection, build_case_view
+from daesingo.case.view import _belongs_to_current_selection, build_case_view, execution_failed
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
 
@@ -150,6 +150,7 @@ def build_view_from_adapter(
     *,
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
+    visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
     """`fetch_case_view_inputs()` + `build_case_view()`를 이어붙인 편의 함수 —
     스모크 테스트에서 매번 반복되던 4줄을 한 호출로 줄인다. `case`(상태)와 `adapter`
@@ -158,7 +159,9 @@ def build_view_from_adapter(
 
     `running_jobs`/`notices`는 adapter가 아니라 호출자가 직접 안다(어떤 job을 방금
     발주했는지는 이 함수가 추측하지 않는다 — 모듈 docstring 「여기 없는 것」과 동일한
-    이유). 그대로 `build_case_view()`에 전달만 한다.
+    이유). 그대로 `build_case_view()`에 전달만 한다. `visual_verify_status`(선택 후보 Fine의 대표
+    `JobExecution.status`)도 같은 이유로 호출자가 넘긴다 — worker 경로에서는
+    `view.representative_execution_status(..., "FINE_VERIFY")`가 만든다.
 
     예외는 `derive_notices()` 하나 — 조립된 `CaseView` 값(과 adapter의 Fine 판정)만으로 발동
     조건이 정해지는 notice는 호출자가 알 필요가 없으므로 여기서 붙인다.
@@ -177,11 +180,13 @@ def build_view_from_adapter(
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
         visual_evidence_decision=snapshot.visual_evidence_decision,
+        visual_verify_status=visual_verify_status,
     )
     return derive_notices(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
+        visual_verify_status=visual_verify_status,
     )
 
 
@@ -252,6 +257,18 @@ VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
 }
 
 
+# Fine 실행 실패(고도화 문서 8-14, #244 R-1 후속). 계약 B절 `notices[].code` 등재(2026-10-04). 접두어는
+# Fine Run을 만드는 search를 따른다. 같은 후보를 다시 Fine하는 action은 닫힌 `actions[]` 목록에 없어
+# 비운다 — 출구는 결과 화면 1차 명령 「다른 후보 보기」다(음성 결과와 같다).
+VISUAL_VERIFY_FAILED_NOTICE: dict[str, Any] = {
+    "code": "search.visual_verify_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.visual_verify_failed",
+    "actions": [],
+}
+
+
 # `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
 # 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
 # 전에는 보낼 경로가 없어 `actions`를 비운다.
@@ -279,6 +296,7 @@ def derive_notices(
     *,
     evidence_needs: list[dict[str, Any]] | None = None,
     visual_evidence_decision: str | None = None,
+    visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -299,6 +317,9 @@ def derive_notices(
     - `evidence.visual_event_not_observed` — evidence가 없고, adapter가 보고한 선택 후보의 Fine
       판정(`visual_evidence_decision`)이 `NOT_ASSEMBLED`일 때(#168 [A]). 음성 결과는 evidence가
       없어 CaseView 값만으로는 조립 전과 구분되지 않으므로 이 판정만 따로 받는다.
+    - `search.visual_verify_failed` — evidence가 없고, 호출자가 넘긴 선택 후보 Fine의 대표 실행 상태
+      (`visual_verify_status`)가 terminal 실패(`FAILED` · 재시도가 끝난 `STALE`)일 때(8-14). 진행 상태에
+      Fine step이 없어 CaseView 값만으로는 조립 전과 구분되지 않는다.
     - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
@@ -325,6 +346,8 @@ def derive_notices(
     )
     if evidence is None and visual_evidence_decision == NOT_ASSEMBLED:
         derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
+    if evidence is None and execution_failed(visual_verify_status):
+        derived.append(VISUAL_VERIFY_FAILED_NOTICE)
     # Fine `UNCERTAIN` 응답 대기는 evidence가 없어 CaseView 값만으로는 조립 중과 같아 보인다 —
     # 음성 결과와 같은 방식으로 adapter의 Fine 판정을 본다(PR #224 리뷰).
     if evidence is None and visual_evidence_decision == AWAIT_SITUATION_RESPONSE and awaiting_response:
@@ -349,6 +372,7 @@ def get_view(
     store: CaseStore,
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
+    visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
     """`web → case.get_view() → CaseView`(`module-architecture.md` §5-1 ⑪, §6 모듈6
     ③)의 실제 진입점. 지금까지 스모크 테스트 안에만 있던 "case_id로 저장된 case를
@@ -361,4 +385,6 @@ def get_view(
     """
     case = store.get_case(case_id)
     adapter = store.get_adapter(case_id)
-    return build_view_from_adapter(case, adapter, running_jobs=running_jobs, notices=notices)
+    return build_view_from_adapter(
+        case, adapter, running_jobs=running_jobs, notices=notices, visual_verify_status=visual_verify_status
+    )
