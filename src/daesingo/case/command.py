@@ -110,7 +110,7 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     # 같은 입력을 다시 보는 발주라 가장 최근 같은 kind JobRecord의 입력을 그대로 쓴다
     # (`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 새로 계산하지 않으므로, 이전
     # 발주가 없으면 만들 수 없다.
-    prior = next((j for j in reversed(case.job_records) if j["kind"] == kind), None)
+    prior = jobs.latest_job_record(case, kind)
     if prior is None:
         raise _Rejected("not_allowed")
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).

@@ -24,6 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from daesingo.case import jobs
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
@@ -182,6 +183,7 @@ def build_view_from_adapter(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
+        plate_read_retry_basis=jobs.latest_job_record(case, "PLATE_READ") is not None,
     )
 
 
@@ -279,6 +281,7 @@ def derive_notices(
     *,
     evidence_needs: list[dict[str, Any]] | None = None,
     visual_evidence_decision: str | None = None,
+    plate_read_retry_basis: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -287,7 +290,9 @@ def derive_notices(
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
       `SEARCHING`에 머물므로(PR #197) 이 조건에 들지 않는다.
     - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
-      유무와 무관하다.
+      유무와 무관하다. 「다시 판독」(`RETRY_PLATE_READ`)은 발주 근거(같은 kind의 이전 `PLATE_READ`
+      JobRecord, `plate_read_retry_basis`)가 있을 때만 싣는다 — 없으면 command가 늘 거부한다
+      (case-command 계약 §10). 실행 경로가 없는 action은 싣지 않는다(CaseView 계약 B절).
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
       이슈 #48).
@@ -317,7 +322,7 @@ def derive_notices(
     # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(PLATE_READ_FAILED_NOTICE)
+        derived.append(PLATE_READ_FAILED_NOTICE if plate_read_retry_basis else dict(PLATE_READ_FAILED_NOTICE, actions=[]))
     evidence = view.get("evidence")
     selected = [c for c in view.get("candidates", []) if c["selected"]]
     awaiting_response = (

@@ -6,7 +6,7 @@
 
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.
 
-> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
+> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 5차 측정까지(`experiments/orchestration-metrics-2026-09-30.md`, 2026-10-02 — 「바로 가능」·「작은 계측」 3개 + 「필요한 Job 발주 누락률」 완료, 「새 인프라 필요」 3개 남음). 나머지는 아래 본문 그대로.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -141,6 +141,12 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 > **2026-09-30 1차 측정:** 아래 「바로 가능」·「작은 계측」 3개를 러너(`scripts/measure_case_orchestration.py`)로 구현했다. 「불필요한 재실행률」은 `force_rerun` 비율이 아니라 같은 입력의 중복 호출로 쟀다(`force_rerun=True`는 재판독·재시도처럼 필요한 재실행이라 근사로 쓸 수 없다). 「잘못된 stage transition」은 `InvalidTransition` 횟수가 아니라 불변식 위반으로 쟀다(예외는 막힌 시도이지 잘못된 전이가 아니다 — #167은 예외 없이 통과했다). 결과·baseline·측정 안 한 칸은 `experiments/orchestration-metrics-2026-09-30.md`. 「새 인프라 필요」 4건은 그대로다.
 >
 > **2026-09-30 2차 측정:** 「다른 후보 선택」 축을 합성 rank2로 추가했다(3,276 세션). `RealAdapter`가 evidence 조립 때 1차 탐색을 다시 부르던 것을 ①로 찾아 고쳤다(① 994 → 0). 남은 칸은 #177·#203·#209 머지 뒤 다시 돈다.
+>
+> **2026-09-30 3차 측정:** A→B→A로 돌아올 때 같은 탐색 결과의 관찰을 재사용하도록 정했다(`decisions/reselect-observation-reuse.md`, ③ 322 → 0, PR #218·#230).
+>
+> **2026-10-02 4차 측정:** #177·#203·#209 머지로 상황 응답 · 응답 대기 · 후보 0개 · 탐색 실패 · READY 시점 행동을 열었다(10,241 세션, command 대상 행동은 `handle_command` 경유). 선택 전 값 정정 · 탐색 실패 뒤 시간 단서 정정의 흔적 · READY인데 Package 없음(#202가 막지 않은 하강 쪽)을 찾아 고쳤다(② 4,122 → 0, PR #234). 남은 것: 크래시 767(번호판 직접 입력 706 · 응답 대기 중 정정 61 — 둘 다 PR #212), 측정 안 한 칸 4(worker·입력형 command 판본 대기), 아래 「새 인프라 필요」 4개.
+>
+> **2026-10-02 5차 측정:** 「필요한 Job 발주 누락률」을 정의했다 — 단계는 함수 호출로 「반드시 불려야 하는 단계 ⊆ 호출」(④, 정책 표 「다시 도는 것」 칸), `JobRecord`는 계약이 발주를 정한 notice 버튼에서만(④-b, CaseView 계약 B절 §7). ④ 0 · ④-b 421/1,335 → 0(번호판 다시 판독 버튼이 real 경로에서 근거 `PLATE_READ` JobRecord 없이 실려 늘 거부되던 것 — 근거가 있을 때만 싣도록 수정). 알려진 결함 2종을 넣어 ④만 잡는 것을 확인했다. EvidenceNeeds 자동 재판독은 #172 결정 뒤.
 
 **문제:** 지금까지 이야기한 평가(intent-llm-model-comparison 등)는 전부 "LLM이 내용을 잘 뽑았는가"만 잰다. "Case가 올바르게 오케스트레이션했는가"는 따로 재는 게 없어서, 나중에 "LLM은 잘 답했는데 Case가 잘못 재실행했다"와 "Case는 맞는데 모델이 잘못 추출했다"를 구분할 수 없다.
 
@@ -152,7 +158,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | **작은 계측 추가로 가능** | 잘못된 stage transition 0건 | `domain.py`에 `InvalidTransition` 예외가 이미 있음 — 지금은 그냥 죽기만 하고 카운트가 안 남는다. 잡아서 세기만 하면 됨 |
 | **작은 계측 추가로 가능** | 불필요한 재실행률 | `job_records.force_rerun` 비율로 근사 시작 가능 |
 | **새 인프라 필요** | 정상 workflow completion rate | 여러 case에 걸쳐 집계해야 하는데 `CaseStore`가 in-memory뿐이라 case가 끝나면 데이터가 사라짐(persistence 필요, A1 인접) |
-| **새 인프라 필요** | 필요한 Job 발주 누락률 | "필요한"의 기준(정책)을 코드로 인코딩하는 추가 설계 필요 |
+| ~~새 인프라 필요~~ → **5차 측정에서 정의(2026-10-02)** | 필요한 Job 발주 누락률 | 「필요한」 = 정책 표 「다시 도는 것」(단계, ④) · CaseView 계약 B절 §7 버튼 → 발주 매핑(`JobRecord`, ④-b). worker·EvidenceNeeds 자동 발주는 측정 안 한 칸 |
 | **새 인프라 필요** | stale 결과 적용 오류 | `JobExecution`(A1, common/runtime) 필요 |
 | **새 인프라 필요** | case당 latency/token/cost | `UsageRecord`(3순위 서브 항목과 동일 — common/runtime) 필요 |
 

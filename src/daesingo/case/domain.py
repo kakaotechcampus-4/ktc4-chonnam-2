@@ -216,6 +216,14 @@ class CaseAggregate:
         self.user_reviewed = True
         self.bump_revision()
 
+    def check_regress_to_searching(self) -> None:
+        """`TIME_HINT_EDIT` 역행을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(`check_reselect()`와
+        같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기 전에 먼저 부른다 —
+        예전엔 기록·`hints`·`case_rev`를 먼저 바꾼 뒤 역행이 거부돼 그것들만 남았다(탐색 실패로
+        `SEARCHING`에 머문 case, orchestration 지표 4차 측정)."""
+        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+
     def regress_to_searching(self) -> None:
         """`TIME_HINT_EDIT` 역행 전이 — `CANDIDATE_REVIEW`/`EVIDENCE_REVIEW`/`READY` 중 어디서든
         `SEARCHING`으로 되돌아간다(`부분 재실행 정책 표 초안` 1행: "다시 도는 것=1차 탐색,
@@ -227,8 +235,7 @@ class CaseAggregate:
         `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
         `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
         """
-        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
-            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+        self.check_regress_to_searching()
         self.stage = "SEARCHING"
         self.candidates = []
         self.candidate_generation += 1
@@ -292,8 +299,24 @@ class CaseAggregate:
             "responded_at": responded_at,
             "candidate_ref": {"kind": "candidate_event", "ref": selected.candidate_id},
         }
+        self.leave_ready()
         self.bump_revision()
         return dict(self.situation_response)
+
+    def leave_ready(self) -> None:
+        """다시 조립되는 변경(값 정정·상황 응답)이 오면 `READY`에서 `EVIDENCE_REVIEW`로 내린다.
+
+        `READY`는 `PACKAGE_READY` 파생 gate이고(CaseView 계약 §10-9: READY면 FINAL이 PASS/WARN),
+        재조립 뒤에도 성립하는지는 새 결과를 봐야 안다 — 내리지 않으면 Package가 사라져도
+        `READY`로 남는다(orchestration 지표 4차 측정 I1). 상태 기계 설계 초안 v1 §3 「READY에서
+        어떤 정정이 들어와도 package는 즉시 무효화」. 성립하면 command의 성공 뒤 재확인이 다시
+        올린다(case-command 계약 §5).
+
+        `user_reviewed`는 건드리지 않는다 — 필드 수정과 별개다(계약 B절 `user_reviewed` ·
+        #173 값별 경계표). 새 초안이 되는 다른 후보 선택만 되돌린다(`reselect_candidate()`).
+        `case_rev`도 따로 올리지 않는다 — 같은 요청의 결과다(재선택과 같다)."""
+        if self.stage == "READY":
+            self.stage = "EVIDENCE_REVIEW"
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.
