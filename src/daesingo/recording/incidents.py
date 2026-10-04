@@ -7,6 +7,7 @@ from .materialization import AnalysisProfile, LocalAnalysisMaterializer, Materia
 from .models import AssetSpan
 from .probe import LocalSource
 from .analysis_tail import analysis_tail_scope
+from .multi_analysis import materialize_chain
 
 
 @dataclass(frozen=True)
@@ -33,3 +34,8 @@ class LocalIncidentMaterializer:
     def materialize(self, source: LocalSource, index: int, span: AssetSpan) -> MaterializedVideo:
         with analysis_tail_scope(False):
             return self._engine.materialize(source, index, span, "incident-encoding")
+
+    def _materialize_many(self, inputs) -> MaterializedVideo:
+        # Search 호출에 중첩돼도 모든 구간과 최종 연결은 strict다.
+        with analysis_tail_scope(False):
+            return materialize_chain(self._engine, inputs, "incident-encoding")
