@@ -2,6 +2,8 @@
 
 **날짜:** 2026-10-05 · **작성:** 유소연(case) · **계기:** 멘토 피드백 Q3 — 「`correction_target_오염_시도`처럼 모델 공통으로 낮은 카테고리는 confidence가 낮게 나올 것이다. 테스트해 보고, 낮게 나오면 서비스에서 『문장이 모호하여 이해하지 못했어요』처럼 재입력을 유도할 수 있다」
 
+**원본:** 예측 · 판정 JSON(`predictions-q3/`, 729개)은 레포에 두지 않는다(멘토 리뷰 #146). [팀 공유 드라이브](https://drive.google.com/drive/folders/1Aeo_kkCzfJ9uhdMjb0GlLK2L3XqL80BR)의 `intent-llm-raw-q3-and-judge-rerun-2026-10-05.zip` — 풀면 이 폴더 기준 경로 그대로 복원된다.
+
 **도구:** `scripts/confidence_experiment.py`(run · judge · summarize), 후보 프롬프트 `scripts/schema.py`의 `CANDIDATE_SYSTEM_PROMPT`(v1) · `_V2` · `_V3`, 결과 `predictions-q3/<v1|v2|v3>/<model>/<case>.r<k>.json`.
 
 ## 1. 설계
