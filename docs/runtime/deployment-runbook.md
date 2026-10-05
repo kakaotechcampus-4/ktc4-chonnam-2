@@ -89,7 +89,7 @@ GitHub Actions
 ### Runtime Health
 
 - [ ] `GET /health/live`
-- [ ] `GET /health/ready`
+- [ ] `GET /health/ready` — 호출 쪽 timeout은 ready budget([Provisional Baseline v0.1](./provisional-baseline-v0.1.md) B-H3)보다 길게 둔다
 
 외부 AI provider 하나의 장애만으로 API liveness가 실패하도록 설계하지 않는다.
 
