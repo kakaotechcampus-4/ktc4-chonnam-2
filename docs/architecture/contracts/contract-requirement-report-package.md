@@ -1,4 +1,4 @@
-# Final Data Contract — RequirementReport v1 + ReportPackage v1.1
+# Final Data Contract — RequirementReport v1 + ReportPackage v1.2
 
 **Status:** `Final — Accepted`
 
@@ -6,11 +6,13 @@
 
 **Contract:** `RequirementReport + ReportPackage`
 
-**Contract Version:** `requirement-report/v1` / `report-package/v1.1`
+**Contract Version:** `requirement-report/v1` / `report-package/v1.2`
 
 **Accepted:** `2026-09-04`
 
 **Related ADR:** `adr/adr-requirement-report-package.md` (노션 표기 `ADR-10`) · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.2(B02)·§4.6(B07) · `../../modules/evidence/adr/adr-location-absent-package.md` (`ADR-EVIDENCE-003`, 이슈 #48)
+
+> **2026-09-29 v1.2 개정.** #146 · #172 D-3과 [`ADR-EVIDENCE-008`](../../modules/evidence/adr/adr-plate-identification-failure-boundary.md) §6에 따라 `ReportPackage.report_inputs.vehicle_number`를 키 필수·값 nullable로 바꿨다(v1.1의 `location`과 같은 방식). `null`은 번호판 판독을 **수행했지만** 차량번호를 식별하지 못했다는 확정된 부재 사실이며, 판독 실행 실패(`PlateReadout` 없음)로는 Package가 만들어지지 않는다. 개정 범위는 §7·§8.2와 version 표기뿐이며 `RequirementReport`는 v1을 유지한다. v1.1 Package의 의미는 바뀌지 않는다.
 
 > **2026-09-14 v1.1 개정.** ADR-EVIDENCE-003과 이슈 #48에 따라 `ReportPackage.report_inputs.location`을 키 필수·값 nullable로 바꿨다. 개정 범위는 §7·§8.2와 version 표기뿐이며 `RequirementReport`는 v1을 유지한다.
 
@@ -342,7 +344,7 @@ ReportPackage {
             search_keyword?: string
         }
 
-        vehicle_number: string
+        vehicle_number: string | null
         violation_expression: string
     }
 
@@ -375,6 +377,13 @@ ReportPackage {
 ```
 
 `report_inputs.location` 키는 항상 존재해야 한다. `null`은 위치를 아직 받지 못했다는 뜻이 아니라, Package 생성 시점에 표시할 위치를 확보하지 못했다는 **확정된 부재 사실**이다. 키 생략과 빈 객체 `{}`는 허용하지 않는다.
+
+`report_inputs.vehicle_number` 키도 항상 존재해야 한다(v1.2). 값은 확정된 차량번호 문자열이거나 `null`이다.
+
+- `null`은 **번호판 판독을 수행했지만 차량번호를 식별하지 못했다**는 확정된 부재 사실이다(#172 D-2의 1·2·3). 근거 `EvidenceRecord`의 `provenance.input_refs`에 현재 selection의 `plate_readout` ref가 있을 때만 만들어진다.
+- 번호판 판독 **실행 실패**(`PlateReadout` 없음, #172 D-2의 4a)는 `null`로 표현하지 않는다. 그 경우 신고문 렌더 입력이 완전하지 않아 `package.report.content_length`가 `UNKNOWN`이 되고 Package 자체가 만들어지지 않는다(§8.1).
+- `"UNKNOWN"`·빈 문자열 같은 sentinel은 허용하지 않는다. 사용자용 「읽을 수 없음」 표시는 Consumer가 `null`과 상태 표시로 만든다.
+- `null`이면 신고문은 번호판 없는 template으로 만든다(§8.3, `safety-report-policy/v1.2`).
 
 ---
 
@@ -413,7 +422,7 @@ AND deterministic package assembly 성공
 - safety report type
 - occurred_at
 - location display/search 정보 또는 그 위치를 확보하지 못했다는 부재 사실
-- vehicle number
+- vehicle number 또는 판독을 수행했지만 식별하지 못했다는 부재 사실(v1.2)
 - violation expression
 
 이 중복은 실수가 아니라 **handoff 시점 재현성을 위한 의도된 snapshot**이다.

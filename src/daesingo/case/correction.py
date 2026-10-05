@@ -37,7 +37,12 @@ def apply_correction(
     target_field: str,
     previous_value: Any,
     new_value: Any,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
+    # 값이 실제로 바뀌지 않았으면 기록하지 않는다(correction-record §8-7, `edit_time_hint()`와 같은
+    # 원칙) — 반환값 `None`, `case_rev`도 그대로. 기록하면 evidence가 조립할 때 거부하고, 기록은
+    # 되돌리지 않으므로(§8-9) 그 case는 이후 CaseView를 만들 수 없게 된다.
+    if previous_value == new_value:
+        return None
     # 같은 target_field의 최신(=supersede 체인의 head) correction을 찾는다 — 순환 방지를 위해
     # "가장 최근에 추가된 것"만 후보로 삼는다(같은 target_field에 여러 개가 있어도 head는 하나).
     # 후보에 종속된 값(evidence 의미 경로)은 같은 선택 context 안에서만 잇는다(#173 E-1) — 새

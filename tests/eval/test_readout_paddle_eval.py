@@ -111,3 +111,21 @@ def test_private_root_must_be_configured(monkeypatch):
         paths.private_root()
     assert paths.is_private("private_x") and not paths.is_private("b_youtube")
     assert os.path.basename(paths.manifest_dir("b_youtube")) == "b_youtube"
+
+
+def test_builder_m2_drops_samples_whose_plate_is_in_another_split(tmp_path, private_root):
+    import zipfile
+
+    other = tmp_path / "valid_labels.zip"
+    with zipfile.ZipFile(other, "w") as z:
+        z.writestr("a.json", json.dumps({"value": PLATES["P172_TRAIN_0001"]}, ensure_ascii=False))
+        z.writestr("b.json", json.dumps({"value": "99하9999"}, ensure_ascii=False))
+    assert build_private_aihub172.main(
+        ["--source", str(_source(tmp_path)), "--exclude-plates-zip", str(other)]) == 0
+    base = private_root / "manifests" / "private_aihub172_plate_m2"
+    samples = json.loads((base / "samples.json").read_text(encoding="utf-8"))
+    assert [s["sample_id"] for s in samples["samples"]] == ["P172_TRAIN_0000", "P172_TRAIN_0002"]
+    assert samples["meta"]["manifest_version"] == "m2"
+    assert samples["meta"]["exclusion"]["n_excluded"] == 1
+    gt = json.loads((base / "gt" / "gt_plate.json").read_text(encoding="utf-8"))
+    assert gt["meta"]["gt_version"] == "ap2" and len(gt["items"]) == 2

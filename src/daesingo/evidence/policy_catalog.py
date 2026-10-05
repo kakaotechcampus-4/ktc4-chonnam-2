@@ -12,7 +12,7 @@ from .errors import PolicyConfigurationError
 
 Contract = dict[str, Any]
 _POLICY_DIR = Path(__file__).parent
-_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v4.json"
+_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v5.json"
 _CATEGORIES = {"EVIDENCE", "TIME", "VEHICLE", "LOCATION", "ASSET", "DEADLINE", "REPORT_CONTENT"}
 _OUTCOMES = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
 
@@ -206,17 +206,32 @@ def validate_requirement_catalog(value: Contract) -> Contract:
     return deepcopy(value)
 
 
+_REPORT_TEMPLATES_V1_1 = {
+    "specific_template_ref": "tmpl/safety-report-specific-v1",
+    "generic_template_ref": "tmpl/safety-report-generic-v1",
+    "specific_no_location_template_ref": "tmpl/safety-report-specific-no-location-v1",
+    "generic_no_location_template_ref": "tmpl/safety-report-generic-no-location-v1",
+}
+# v1.2 adds the no-plate variants (ADR-EVIDENCE-008 §6); v1.1 stays loadable for its history.
+_REPORT_POLICY_REVISIONS = {
+    "safety-report-policy/v1.1": ("safety-report-policy/v1", _REPORT_TEMPLATES_V1_1, ()),
+    "safety-report-policy/v1.2": ("safety-report-policy/v1.1", {
+        **_REPORT_TEMPLATES_V1_1,
+        "specific_no_plate_template_ref": "tmpl/safety-report-specific-no-plate-v1",
+        "generic_no_plate_template_ref": "tmpl/safety-report-generic-no-plate-v1",
+        "specific_no_location_no_plate_template_ref": "tmpl/safety-report-specific-no-location-no-plate-v1",
+        "generic_no_location_no_plate_template_ref": "tmpl/safety-report-generic-no-location-no-plate-v1",
+    }, ("no_plate_notice",)),
+}
+
+
 def validate_report_policy(value: Contract) -> Contract:
-    if value.get("policy_ref") != "safety-report-policy/v1.1":
+    revision = _REPORT_POLICY_REVISIONS.get(value.get("policy_ref"))
+    if revision is None:
         _fail("invalid report policy_ref")
-    if value.get("supersedes_policy_ref") != "safety-report-policy/v1":
+    supersedes, expected_templates, extra_text = revision
+    if value.get("supersedes_policy_ref") != supersedes:
         _fail("invalid superseded report policy_ref")
-    expected_templates = {
-        "specific_template_ref": "tmpl/safety-report-specific-v1",
-        "generic_template_ref": "tmpl/safety-report-generic-v1",
-        "specific_no_location_template_ref": "tmpl/safety-report-specific-no-location-v1",
-        "generic_no_location_template_ref": "tmpl/safety-report-generic-no-location-v1",
-    }
     if any(value.get(key) != expected for key, expected in expected_templates.items()):
         _fail("invalid report template registry")
     minimum = value.get("report_text_min_length")
@@ -235,7 +250,7 @@ def validate_report_policy(value: Contract) -> Contract:
         _fail("invalid report event registry")
     required_text = {
         "generic_title", "generic_violation_expression", "generic_description_tail",
-        "specific_description_tail",
+        "specific_description_tail", *extra_text,
     }
     if any(not isinstance(value.get(key), str) or not value[key] for key in required_text):
         _fail("invalid report template text")
@@ -261,4 +276,4 @@ def load_requirement_catalog() -> Contract:
 
 
 def load_report_policy() -> Contract:
-    return validate_report_policy(_read_json("safety_report_policy_v1_1.json"))
+    return validate_report_policy(_read_json("safety_report_policy_v1_2.json"))

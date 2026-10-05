@@ -12,8 +12,12 @@ Worker 배선은 이번 범위 밖).
   필드 자체가 없다(1차 구현 범위 밖) — 공개 함수로 노출된 적이 없으므로 recording의
   raw fixture JSON에서 그대로 읽는다. 이 한 곳만 mock이고 나머지는 전부 real 함수
   호출이다.
-- **`situation_response`/`observation_facts`**: case에 이 값을 만드는 로직이 아직
-  없어(intake UI 미구현) `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
+- **`situation_response`**: 2026-09-28부터 `CaseAggregate.record_situation_response()`로
+  기록된 사용자 응답을 `assemble_evidence_bundle()`에 그대로 전달한다(#171 B-2 · 통합 항목
+  I1). 응답 전에는 `None`(= `NOT_ASKED`)이고, ADR-EVIDENCE-005 D2-c에 따라 Package가 나가지
+  않는다. web에서 응답을 보내는 경로(#106 command)는 아직 없다.
+- **`observation_facts`**: case에 이 값을 만드는 로직이 아직
+  없어 `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
@@ -32,6 +36,10 @@ Fine 결과를 받자마자 `evidence.classify_visual_evidence()`로 분류하�
 IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정상 종료한다 —
 `EvidenceBundle`의 조립 산출물이 전부 `None`인 것이 그 상태다. `build_evidence_for_real_video_candidate()`도
 같은 분류를 거친다(PR #131→#142 후속 정합화, 2026-09-22).
+
+`UNCERTAIN`은 사용자가 「잘 모르겠어요」(`USER_UNSURE`)로 답하기 전까지
+`AWAIT_SITUATION_RESPONSE`다(#165). 관찰 단계는 그대로 진행하고, `assemble_evidence_bundle()`이
+응답까지 넣어 다시 분류해 응답 전에는 조립하지 않는다. 응답이 오면 조립만 다시 한다.
 
 `NOT_OBSERVED`를 `UNCERTAIN` fallback으로 합치지 않는다. `UNCERTAIN + USER_UNSURE`는
 사용자가 "잘 모르겠지만 진행"을 택한 generic 신고 경로이고, `NOT_OBSERVED`는 Fine이 후보를
@@ -115,6 +123,7 @@ from daesingo.case.domain import CaseAggregate
 from daesingo.case.scope import build_analysis_scope
 from daesingo.common.env import load_env_file
 from daesingo.evidence import (
+    ASSEMBLE,
     NOT_ASSEMBLED,
     VisualEvidenceDisposition,
     assemble_evidence,
@@ -288,6 +297,9 @@ class EvidenceBundle:
     # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
     # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
     plate_read_outcome: str | None = None
+    # 관찰 단계의 `OverlayTimeReadout`(판독하지 않았으면 `None`). 시각을 얻지 못한 갈래의 notice
+    # (`readout.overlay_*`)가 `observation.reason.code`를 여기서 읽는다 — evidence 조립 전에도 필요하다.
+    overlay_readout: dict[str, Any] | None = None
 
     @property
     def assembled(self) -> bool:
@@ -325,15 +337,23 @@ def assemble_evidence_bundle(
     selection_rev: int = 1,
     correction_records: list[dict[str, Any]] | None = None,
     location_hint: str | None = None,
+    situation_response: dict[str, Any] | None = None,
 ) -> EvidenceBundle:
     """관찰 결과로 TimeResolution → EvidenceRecord → Needs → RequirementReport 2종 →
     ReportPackage를 조립한다. 다른 모듈 호출 없이 evidence 순수 함수만 부르므로, 정정이
     들어올 때마다 다시 불러도 Search·Fine·readout은 다시 돌지 않는다(이슈 #73).
 
-    `correction_records`는 case의 사용자 정정을 evidence 계산에 전달한다.
+    `correction_records`는 case의 사용자 정정을, `situation_response`는 사용자의 신고 상황
+    응답을 evidence 계산에 그대로 전달한다(`None` = 응답 전 `NOT_ASKED`, 통합 항목 I1).
+
+    조립 여부는 사용자 응답까지 넣어 여기서 다시 분류한다(#165). Fine `UNCERTAIN`은
+    `USER_UNSURE` 응답이 오기 전까지 `AWAIT_SITUATION_RESPONSE`라 조립하지 않고 관찰 결과만
+    돌려준다 — 응답이 오면 같은 관찰 결과로 이 함수만 다시 부르면 된다. 무응답을
+    `USER_UNSURE`로 채우지 않는다(#171 B-2).
     """
     obs = observations
-    if obs.disposition.decision == NOT_ASSEMBLED:
+    disposition = classify_visual_evidence(obs.visual_evidence, situation_response)
+    if disposition.decision != ASSEMBLE:
         return EvidenceBundle(
             evidence_record=None,
             evidence_needs=None,
@@ -343,8 +363,9 @@ def assemble_evidence_bundle(
             package_error=None,
             visual_evidence=obs.visual_evidence,
             fine_run=obs.fine_run,
-            disposition=obs.disposition,
+            disposition=disposition,
             plate_read_outcome=obs.plate_read_outcome,
+            overlay_readout=obs.overlay_readout,
         )
 
     candidate_event = obs.candidate.model_dump(mode="json")
@@ -368,8 +389,8 @@ def assemble_evidence_bundle(
         incident_clip=obs.incident_clip,
         record_id=f"er_{case_id}_001",
         location_hint=location_hint,
-        # 알려진 단순화 2 및 GPS 단순화 (모듈 docstring 참고).
-        situation_response=None,
+        situation_response=situation_response,
+        # GPS 단순화 (모듈 docstring 참고).
         gps_observation=None,
         correction_records=correction_records or [],
     )
@@ -421,9 +442,10 @@ def assemble_evidence_bundle(
         package_error=package_error,
         visual_evidence=obs.visual_evidence,
         fine_run=obs.fine_run,
-        disposition=obs.disposition,
+        disposition=disposition,
         plate_read_outcome=obs.plate_read_outcome,
         plate_readout=obs.plate_readout,
+        overlay_readout=obs.overlay_readout,
     )
 
 

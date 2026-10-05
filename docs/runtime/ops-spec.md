@@ -163,23 +163,27 @@ GitHub Actions
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것
+### 현재 develop에서 확인된 것 — 2026-10-02 (`9c204ee` 기준)
 
 - domain module 구현 및 Mock integration
+- Python 3.12 정렬 (§5)
+- CI: repo-wide pytest · Recording 합성 media smoke · boundary / contract fixture 검사 (§19)
 - `JobExecution` in-memory lifecycle
-- `recording` fixture/in-memory capability
-- boundary / contract fixture GitHub Action
+- `recording` 실제 ffmpeg AnalysisSource materialization · 다중 원본 Timeline
+- `search` 실제 Elice ML API 호출 경로
+- case 동기 real 경로 — Search·Fine·Readout을 같은 프로세스에서 직접 호출하며 Runtime queue를 거치지 않는다
 - `api/`, `worker/` 책임 README
 
 ### 아직 없는 것
 
 - 실제 api composition root
 - 실제 worker composition root
-- MySQL DB Queue
-- Runtime Docker Compose
+- MySQL Runtime persistence / DB Queue
+- Final UsageRecord persistence
+- Runtime Docker / Compose
 - 배포 workflow
 - live/ready endpoint
-- 운영 log pipeline
+- 운영 log pipeline · structured logging
 - queue/lease/heartbeat metric
 
 따라서 이 문서의 배포/monitoring 절은 **현재 동작 설명이 아니라 구현 목표와 운영 acceptance criteria**다.
@@ -228,31 +232,56 @@ Runtime
 - Compose/Dockerfile에는 secret 값 자체보다 변수 이름과 주입 경계만 남긴다.
 - `.env.example`을 둘 경우 non-secret key 이름과 안전한 예시만 제공한다.
 - CI에 등록된 값이라도 build 단계에서 필요한 값인지 runtime 단계에서 필요한 값인지 구분한다.
-- exact secret source와 주입 방식은 실제 deployment workflow를 구현할 때 확정하되 repository/image/log에 secret을 남기지 않는 원칙은 유지한다.
+
+Runtime secret source와 전달 경로는 확정이다(RD-07, [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249), 2026-10-04). 앱이 파일을 읽는 규칙(값은 파일에서만 · `DAESINGO_ENV_FILE`은 composition root만 해석 · startup fail-fast · key 이름만 로그)은 [Tech Spec](./runtime-tech-spec.md) §15.2가 소유한다.
+
+```text
+SSM Parameter Store SecureString
+→ EC2 instance role로 fetch (EC2 쪽 배포 script)
+→ host의 보호된 파일 (container UID 소유 · 최소 권한, 예: 0400 · 값을 stdout/log에 남기지 않음)
+→ Compose secret / file mount → api · worker
+→ DAESINGO_ENV_FILE = mount된 파일 경로
+```
+
+- **GitHub Actions는 secret 값을 조회하거나 전달하지 않는다.** OIDC로 deploy role을 얻어 SSM Run Command로 「배포 절차를 실행하라」만 지시한다. Run Command 입력에 평문 secret을 싣지 않는다. 역할은 `deploy.yml`(배포 orchestration) · EC2 배포 script(Parameter Store fetch · 보호 파일 렌더 · migration · Compose 실행) · Compose 파일(secret file mount · 실행 구조)로 나뉜다. exact 단계 · 명령은 RD-12.
+- Compose는 file source secret의 `uid` · `gid` · `mode`를 적용하지 않으므로 **host 파일 권한이 접근 제어**다.
+- **rotation.** Parameter Store 재조회 → host 파일 갱신 → `docker compose up -d --force-recreate api worker`. `docker compose restart`를 rotation 보장 수단으로 쓰지 않는다.
+- **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
+- secret을 process environment로 넣지 않으므로 `docker inspect` · `/proc/<pid>/environ` · ffmpeg 같은 자식 process에 값이 노출되지 않는다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)).
+
+### 4-2. API ↔ Worker 공유 저장 경계
+
+확정(RD-17, [#246](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/246), 2026-10-04). recording metadata schema · ref 복원 · FrameRef durability 구현은 recording이 소유한다.
+
+- **bytes.** api와 worker는 같은 host의 **local filesystem mount 하나**를 공유한다. 그 안에 staging · source · derived 계열 경계를 둔다. api · worker는 같은 image 계열과 **같은 numeric UID**로 실행한다. baseline에 Object Storage를 두지 않는다(§13).
+- **publish 순서 — 파일 먼저, row 나중.** upload bytes를 같은 mount의 staging에 쓰고 → `fsync` → 같은 mount의 final 위치로 publish → recording 등록 · metadata commit. staging에 container `/tmp`나 다른 volume을 쓰지 않는다 — 다른 mount에서 오는 rename은 `EXDEV`다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)). 정상 순서에서 crash가 남기는 것은 row 없는 orphan · staging 파일뿐이고 dangling DB ref가 아니다. orphan · staging 정리 나이는 workflow §6 값이다.
+- **metadata.** SourceAsset · MediaStream · local locator · case↔asset 연결처럼 process 사이에 공유해야 하는 recording metadata는 recording 소유 MySQL table에 둔다. Runtime은 recording schema를 소유하지 않는다.
+- **persistent 범위 원칙.** ref가 process 경계나 process 수명을 넘어 다시 역참조되면 persistent다 — SourceAsset · MediaStream · locator · case↔asset 연결 · restart 뒤 다시 필요한 timeline · span resolution · IncidentClip · DerivedAsset, 그리고 **CaseView에 노출된 FrameRef**(`thumb_ref` · `preview_ref` · `plate_preview_ref`). FrameRef를 bytes로 저장할지 locator · timestamp를 저장해 재생성할지는 recording 구현 선택이다. Worker 안에서만 쓰고 다시 만들 수 있는 AnalysisSource bytes · frame inspection cache는 process-local로 둘 수 있다(RD-09).
+- **restart.** ref는 등록 때 한 번 발급해 persist하고 restart 뒤에는 다시 등록하지 않고 복원한다. 같은 파일을 사용자가 새로 등록하면 새 logical asset이라는 현재 의미는 유지한다.
+- Compose 표기 · host 경로 값은 RD-12a. local disk working set이 P2에서 안전하지 않거나 multi-host 요구가 생기면 §13 기준으로 Object Storage를 다시 본다.
 
 ## 5. Python / Dependency Runtime
 
 팀 문서 기준 목표는 Python 3.12 + root `pyproject.toml` + `uv.lock`이다.
 
-다만 2026-09-19 현재 repository는 아직 불일치가 있다.
+2026-09-19 당시 있던 불일치(pyproject `>=3.10` · uv.lock `>=3.13` · boundary CI 3.11)는 커밋 `10cfca4`(2026-09-20)에서 해소됐다. 2026-10-02 `develop` 기준 실제 값:
 
 ```text
-root pyproject.toml   requires-python >=3.10
-uv.lock               requires-python >=3.13
-boundary CI           Python 3.11
-목표                  Python 3.12
+root pyproject.toml   requires-python >=3.12
+uv.lock               requires-python >=3.12
+.python-version       3.12
+python-tests CI       Python 3.12 · uv sync --locked
+boundary-check CI     Python 3.12
 ```
-
-따라서 “Python 3.12 통일 완료”로 보지 않는다.
 
 구현 체크:
 
-- [ ] root `pyproject.toml`을 3.12 기준으로 정합
-- [ ] `.python-version` 정합
-- [ ] `uv.lock` 3.12 기준 재생성
-- [ ] `uv sync --locked` 재현
-- [ ] GitHub Actions Python 3.12 통일
-- [ ] repo-wide type checker 한 개로 수렴
+- [x] root `pyproject.toml`을 3.12 기준으로 정합
+- [x] `.python-version` 정합
+- [x] `uv.lock` 3.12 기준 재생성
+- [x] `uv sync --locked` 재현 (`python-tests.yml`)
+- [x] GitHub Actions Python 3.12 통일
+- [ ] repo-wide type checker 한 개로 수렴 — type checker 설정과 CI step이 아직 없다
 
 Python version의 executable SoT는 prose가 아니라 실제 config/workflow다.
 
@@ -312,7 +341,7 @@ HTTP request
 - `case_id`, `job_id`, `execution_id`가 생긴 시점부터는 같은 로그 event에 함께 남긴다.
 - `trace_id`는 observability용 상관관계 값이며 business identity나 Final Contract의 authoritative key를 대체하지 않는다.
 - provider가 안전한 metadata/correlation field를 지원하면 최소 식별자만 전달할 수 있고, 지원하지 않으면 local log에서 invocation과 execution의 관계를 남긴다.
-- exact persistence/queue metadata 방식은 첫 Runtime DB Queue/Worker 구현에서 정하되 Final Contract schema를 관측 편의를 위해 임의 확장하지 않는다.
+- `trace_id`는 `job_execution` row의 Runtime 내부 column이다. API request context에서 dispatch 때 기록하고 retry attempt에도 같은 trace lineage를 잇는다. Contract 필드로 공개하지 않는다(RD-01i, [Tech Spec](./runtime-tech-spec.md) §4.2). Final Contract schema를 관측 편의를 위해 임의 확장하지 않는다.
 
 ## 7. Logging / Privacy Guardrail
 
@@ -456,6 +485,8 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
+> **현재 구현 사실 (2026-10-02 `develop` 기준):** recording은 준비된 AnalysisSource · IncidentClip bytes를 `RecordingService` 인스턴스 메모리에 보관하고 `close()` 때 해제한다. 임시 디렉터리는 ffmpeg encode 동안만 쓴다. 따라서 지금 이 working set은 local disk보다 **Worker process memory(RSS)**에 먼저 쌓인다. 위 목록의 AnalysisSource · IncidentClip 항목은 저장 위치가 바뀔 경우의 후보로 읽는다. service 수명과 AnalysisSource 저장·재사용 범위는 아직 결정되지 않았다(RD-09). API ↔ Worker가 공유하는 원본 · 파생물 bytes와 persistent ref의 위치는 §4-2(RD-17)가 정한다 — 그 파일도 이 disk의 working set에 들어간다.
+
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
 따라서 Runtime은 persistent/shared cache를 먼저 도입하지 않고 다음을 capacity 실험에서 함께 관측한다.
@@ -496,9 +527,9 @@ search    → recall/provider suitability 검증
 
 ### 12-1. Issue #95 P0/P1에서 Runtime이 받아들이는 사실
 
-Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실은 다음 정도다.
+Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실은 다음 정도다. 범위는 2026-09 시점 운영 경로 — `gemini-3.8-flash` · OpenAI-compatible `/v1/chat/completions` · base64 data URL — 이며, 다른 모델·전송 방식에 그대로 일반화하지 않는다([`mlapi.md`](./official-inputs/mlapi.md)).
 
-- Elice ML API의 inline video 경로가 실제 호출에서 동작했다.
+- Elice ML API의 inline video 경로가 위 모델·경로의 실제 호출에서 동작했다.
 - Files API / provider-side reusable object를 Elice 기본 경로로 전제할 수 없으며, Search가 AnalysisSource stream을 provider 전송 형식으로 변환한다.
 - binary media를 base64 data URL + JSON request로 만들기 때문에 transport 단계에서 request body와 process memory working set이 원본 binary보다 증가할 수 있다.
 - AnalysisSource materialization에는 ffmpeg CPU/RAM/time/temp disk 비용이 존재한다.
@@ -659,29 +690,59 @@ API server 2대 이상 또는 load balancing/health routing이 필요할 때.
 
 ## 19. CI Quality Gate — 현재와 목표
 
-### 현재 실제 CI
+### 현재 실제 CI — 2026-10-02 (`develop` `9c204ee` 기준)
 
-`.github/workflows/boundary-check.yml`:
+두 workflow 모두 trigger는 같다.
 
 ```text
 pull_request → develop/main
 push         → develop
 workflow_dispatch
+```
 
-Python 3.11
+`.github/workflows/python-tests.yml`:
+
+```text
+ubuntu-24.04 · Python 3.12 · uv 0.11.15
+uv sync --locked --extra test --extra eval-gemini   (PaddleOCR 제외)
+ffmpeg 설치 · -fps_mode / libx264 지원 검사
+Recording 합성 media smoke 1건 — skip 금지 assert
+python -m pytest -q                                 (testpaths = tests, offline fixture)
+```
+
+`.github/workflows/boundary-check.yml`:
+
+```text
+Python 3.12
 python scripts/check_boundaries.py
 python scripts/check_contract_fixtures.py
 ```
 
-따라서 현재 CI가 이미 repo-wide pytest/Ruff/type/gitleaks까지 수행한다고 쓰지 않는다.
+Gate별 현재 상태:
+
+| Gate | 상태 |
+| --- | --- |
+| Python 3.12 | 있음 |
+| `uv sync --locked` | 있음 (`python-tests`) |
+| boundary / contract fixture | 있음 (`boundary-check`) |
+| repo-wide pytest (offline) | 있음 (`python-tests`). Mock Pack fixture 검증은 이 pytest 안의 module별 테스트로 돈다. 별도 Mock validator job은 없다 |
+| Recording media smoke | 있음 (`python-tests`) |
+| Ruff | 없음 (CI step · 설정 파일 없음) |
+| type checker | 없음 |
+| secret scan | 없음 |
+| MySQL Runtime integration | 없음 (대상 Runtime persistence 미구현) |
+| deployment workflow | 없음 |
+| 외부 AI 실제 호출 | CI 밖 (의도) |
+
+따라서 현재 CI가 Ruff/type/secret scan/MySQL integration/배포까지 수행한다고 쓰지 않는다.
 
 ### 목표 확장 순서
 
-1. Python 3.12 정합
-2. `uv sync --locked`
-3. boundary / contract fixture
-4. repo-wide pytest
-5. Mock validator
+1. ~~Python 3.12 정합~~ — 완료
+2. ~~`uv sync --locked`~~ — 완료
+3. ~~boundary / contract fixture~~ — 완료
+4. ~~repo-wide pytest~~ — 완료
+5. Mock validator — 현재는 pytest 안에서 부분 충족. 별도 gate 필요 여부는 미정
 6. root Ruff
 7. 선택한 repo-wide type checker
 8. pre-deploy secret scan
@@ -690,7 +751,7 @@ python scripts/check_contract_fixtures.py
 
 ### Deployment workflow 분리 원칙
 
-현재 `.github/workflows/boundary-check.yml`은 모듈 경계·계약 검사용 CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
+현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사)과 `python-tests.yml`(pytest · media smoke)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
 
 향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
 
@@ -792,7 +853,7 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
 - [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
 - [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
-- [ ] build-time / runtime configuration 주입 방식과 변수 ownership
+- [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command
 - [ ] post-deploy health/readiness + external smoke test 연결
 - [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토

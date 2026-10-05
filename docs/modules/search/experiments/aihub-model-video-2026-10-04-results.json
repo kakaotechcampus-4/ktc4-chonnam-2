@@ -1,0 +1,5852 @@
+{
+  "dataset": {
+    "video_count": 15,
+    "duration_sec": 645.6580465698812,
+    "frames_per_spatial_model": 651,
+    "positive_videos": 12,
+    "negative_videos": 3,
+    "positive_events": 13,
+    "truth_sha256": "b7e7db2fe6feb2c367beeeefd90b40e37e117a47c076cfe1e183ed3f2599d725",
+    "videos": [
+      {
+        "file": "20260620_141628_EVT_1.avi",
+        "event": "NONE",
+        "intervals": [],
+        "sha256": "7ab930fa0d04b30bfc7f45105c715b3a726476bbbc4f6a5ff3079ff8cf3e4433",
+        "source": "user",
+        "confidence": "중"
+      },
+      {
+        "file": "20260620_141927_EVT_1.avi",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            4.0,
+            10.0
+          ]
+        ],
+        "sha256": "38613ce89e712365c4da11d6dba97a919cc7751ab82dd549c9fc2512a5fb2490",
+        "source": "user + claude_frame",
+        "confidence": "상"
+      },
+      {
+        "file": "20260620_141956_EVT_1.avi",
+        "event": "NONE",
+        "intervals": [],
+        "sha256": "5c82b6f7b163ae400fbdc20a2a121f639ed32b141e0b0c9682eef531a6114008",
+        "source": "user",
+        "confidence": "중"
+      },
+      {
+        "file": "20260620_150504_EVT_1.avi",
+        "event": "NONE",
+        "intervals": [],
+        "sha256": "b03f2652caccda5b1bafa63a2c29f9b725e9ebdb30aa5390535a8bad5802e85a",
+        "source": "user",
+        "confidence": "중"
+      },
+      {
+        "file": "youtube_clip_01.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "sha256": "1a430ba27eb95568bcaa79eb092786eac9030046c073f09853258ba543bdcd64",
+        "source": "user",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            10.0,
+            12.0
+          ],
+          [
+            20.0,
+            22.0
+          ]
+        ],
+        "sha256": "efdc135c5f86d5cffb8657defdea388e47d55c91006bdd1e541375ab0e73259f",
+        "source": "user + set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0002_C00.mp4",
+        "event": "CENTER_LINE_CROSSING",
+        "intervals": [
+          [
+            10.0,
+            14.0
+          ]
+        ],
+        "sha256": "8104ed56befd62334410aa9c5bbf1a3690dc995d52794e3edee744c5e830edb2",
+        "source": "user + set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0001_C08.mp4",
+        "event": "SIGNAL",
+        "intervals": [
+          [
+            15.0,
+            17.8
+          ]
+        ],
+        "sha256": "b338ae4a574fd070a6d6d65f2c11aa471295c9d02ce74de4cd503a8a8be371f8",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0001_C09.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            9.0,
+            11.0
+          ]
+        ],
+        "sha256": "ee21fabd5140f299b0a87fc887d7932c3bed43875bc1e04aca802089518bc850",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0001_C33.mp4",
+        "event": "SIGNAL",
+        "intervals": [
+          [
+            50.0,
+            52.0
+          ]
+        ],
+        "sha256": "25fb8e6351a3f123c4cbe1dd2425a61067918b148789b619df0e1a3ee5be8019",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0001_C39.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            52.0,
+            55.0
+          ]
+        ],
+        "sha256": "b5770dd2f6d78ee711ca1408d68af1c88f28fc60f7d0c070fa9bacedf65740d8",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0001_C47.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            0.5,
+            3.0
+          ]
+        ],
+        "sha256": "214a35bf284ab226024240327bffdf137a1861de8bd65195eb925519a53cef0a",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0003_C10.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            7.0,
+            9.0
+          ]
+        ],
+        "sha256": "d0022966bab9477fb14b065a0ff73c8cef9a912f1093ba178cb42f73e0b1a4d2",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0003_C28.mp4",
+        "event": "CENTER_LINE_CROSSING",
+        "intervals": [
+          [
+            9.0,
+            10.0
+          ]
+        ],
+        "sha256": "62150ae7c68ae5b823c7198565c8e5ba16e8701df344f3c8c0ba91cd3b2c4520",
+        "source": "set1_g3",
+        "confidence": "중"
+      },
+      {
+        "file": "YT_0003_C44.mp4",
+        "event": "SOLID_LINE_LANE_CHANGE",
+        "intervals": [
+          [
+            28.0,
+            30.0
+          ]
+        ],
+        "sha256": "05f62ea807355daffb758bcfdf3844210184af0403f36ab4e2fc996b7ae006f4",
+        "source": "set1_g3",
+        "confidence": "중"
+      }
+    ]
+  },
+  "spatial": [
+    {
+      "key": "yolo_signal",
+      "metadata": {
+        "key": "yolo_signal",
+        "weights_sha256": "507bd154524c0ebcae8f6c92f4eac2e7feb31e5e2c2bf2e3d10d64a717f0ab38",
+        "weights_file": "model_객체탐지_신호위반.pt",
+        "confidence": 0.25,
+        "names": [
+          "car",
+          "red_signal",
+          "yellow_signal",
+          "green_signal",
+          "left_signal"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": null
+      },
+      "frames": 651,
+      "latency_mean_ms": 11.435654224021741,
+      "latency_p50_ms": 10.935400001471862,
+      "latency_p95_ms": 15.4280499991728,
+      "warm_inference_fps": 87.44580593381352,
+      "class_counts": {
+        "0.25": {
+          "car": 3750,
+          "red_signal": 210,
+          "green_signal": 45,
+          "yellow_signal": 97
+        },
+        "0.5": {
+          "car": 2959,
+          "red_signal": 147,
+          "yellow_signal": 28,
+          "green_signal": 31
+        },
+        "0.8": {
+          "car": 1823,
+          "yellow_signal": 1,
+          "red_signal": 55,
+          "green_signal": 3
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 42,
+                "red_signal": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 24
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 8,
+              "class_counts": {
+                "car": 8
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 33,
+                "red_signal": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 30
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 27
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "car": 30
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 15,
+              "class_counts": {
+                "car": 25
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 11,
+              "class_counts": {
+                "car": 13
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 95,
+                "red_signal": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 66
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 18,
+              "class_counts": {
+                "car": 22
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 24,
+                "red_signal": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 19
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 14
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 118,
+                "green_signal": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 98
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 47,
+              "class_counts": {
+                "car": 54
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 69,
+                "red_signal": 19
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 33
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 8,
+              "class_counts": {
+                "car": 9
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 550,
+                "yellow_signal": 10,
+                "green_signal": 5,
+                "red_signal": 74
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 435,
+                "red_signal": 65,
+                "yellow_signal": 6,
+                "green_signal": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 275,
+                "yellow_signal": 1,
+                "red_signal": 55,
+                "green_signal": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 683,
+                "yellow_signal": 21,
+                "red_signal": 26,
+                "green_signal": 16
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 530,
+                "green_signal": 15,
+                "yellow_signal": 7,
+                "red_signal": 24
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 316,
+                "green_signal": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 496,
+                "yellow_signal": 16,
+                "red_signal": 71,
+                "green_signal": 9
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 413,
+                "red_signal": 57,
+                "green_signal": 8,
+                "yellow_signal": 6
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 286
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 252,
+                "red_signal": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 210
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 57,
+              "class_counts": {
+                "car": 149
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 524
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 443
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 305
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 34,
+              "class_counts": {
+                "car": 48
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 26,
+              "class_counts": {
+                "car": 35
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 9,
+              "class_counts": {
+                "car": 10
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 432,
+                "yellow_signal": 18,
+                "red_signal": 1,
+                "green_signal": 13
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 321,
+                "yellow_signal": 7,
+                "green_signal": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 169,
+                "green_signal": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 354,
+                "red_signal": 11,
+                "yellow_signal": 32
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 277,
+                "red_signal": 1,
+                "yellow_signal": 2
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 166
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [
+        {
+          "file": "YT_0001_C08.mp4",
+          "event_index": 0,
+          "interval": [
+            15.0,
+            17.8
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "event_index": 0,
+          "interval": [
+            50.0,
+            52.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 0,
+              "frames_sampled": 3,
+              "any_primitive": false
+            }
+          ]
+        }
+      ],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "yolo_center",
+      "metadata": {
+        "key": "yolo_center",
+        "weights_sha256": "1414fdf815043d09c4fa5cc7a5fa0a27ce21aaf6607d746ef31f3421cbbf8814",
+        "weights_file": "model_객체탐지_중앙선침범.pt",
+        "confidence": 0.25,
+        "names": [
+          "car"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": null
+      },
+      "frames": 651,
+      "latency_mean_ms": 10.89238847971403,
+      "latency_p50_ms": 10.595800005830824,
+      "latency_p95_ms": 14.421700005186722,
+      "warm_inference_fps": 91.80722867738316,
+      "class_counts": {
+        "0.25": {
+          "car": 3493
+        },
+        "0.5": {
+          "car": 2693
+        },
+        "0.8": {
+          "car": 1663
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 35
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 13,
+              "class_counts": {
+                "car": 14
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 8,
+              "class_counts": {
+                "car": 8
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 32
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 30
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 28
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "car": 29
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 14,
+              "class_counts": {
+                "car": 22
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 10,
+              "class_counts": {
+                "car": 12
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 88
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 59
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "car": 32
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 24
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 20
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 18
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 109
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 85
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 40,
+              "class_counts": {
+                "car": 43
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 85
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 68
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 18,
+              "class_counts": {
+                "car": 24
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 522
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 394
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 237
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 601
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 454
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 261
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 476
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 393
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 251
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "car": 242
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "car": 198
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 56,
+              "class_counts": {
+                "car": 145
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 463
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 384
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 273
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 25,
+              "class_counts": {
+                "car": 39
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 16,
+              "class_counts": {
+                "car": 20
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 5,
+              "class_counts": {
+                "car": 5
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 435
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 313
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 177
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 313
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 239
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 149
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "yolo_lane",
+      "metadata": {
+        "key": "yolo_lane",
+        "weights_sha256": "43002e26fa3b8a1f42f5498328f3e42e38df1e1aa33301c047fe14a544cf8e2c",
+        "weights_file": "model_객체탐지_진로변경.pt",
+        "confidence": 0.25,
+        "names": [
+          "car",
+          "tunnel_light"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": null
+      },
+      "frames": 651,
+      "latency_mean_ms": 10.925499539512614,
+      "latency_p50_ms": 10.40669999201782,
+      "latency_p95_ms": 16.417349994299002,
+      "warm_inference_fps": 91.52899566591441,
+      "class_counts": {
+        "0.25": {
+          "car": 4248,
+          "tunnel_light": 1199
+        },
+        "0.5": {
+          "car": 3114,
+          "tunnel_light": 579
+        },
+        "0.8": {
+          "car": 1764,
+          "tunnel_light": 66
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 53
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "car": 20
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 8,
+              "class_counts": {
+                "car": 8
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 34
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 31
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 28
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "car": 33,
+                "tunnel_light": 24
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 18,
+              "class_counts": {
+                "tunnel_light": 8,
+                "car": 24
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 10,
+              "class_counts": {
+                "car": 11
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 106
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 69
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "car": 37
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 28
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 24
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "car": 18
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 143,
+                "tunnel_light": 760
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 107,
+                "tunnel_light": 399
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 56,
+              "class_counts": {
+                "car": 55,
+                "tunnel_light": 62
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 86
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "car": 52
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "car": 25
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 643
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 450
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 234
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 733
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 523
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 275
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 534
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 440
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 270
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 287,
+                "tunnel_light": 143
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 234,
+                "tunnel_light": 36
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 57,
+              "class_counts": {
+                "car": 153
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 541
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 440
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 288
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 49,
+              "class_counts": {
+                "car": 48,
+                "tunnel_light": 272
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 42,
+              "class_counts": {
+                "car": 29,
+                "tunnel_light": 136
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "car": 8,
+                "tunnel_light": 4
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 539
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 386
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 195
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 440
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 285
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "car": 159
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "yolo_helmet",
+      "metadata": {
+        "key": "yolo_helmet",
+        "weights_sha256": "b8cf4a1cd54f9b665e47e8865676cbb6a8feaa1eab4eab5122b5b7b26fb5b58c",
+        "weights_file": "model_객체탐지_안전모.pt",
+        "confidence": 0.25,
+        "names": [
+          "no_helmet",
+          "helmet",
+          "motorcycle",
+          "no_helmet_motorcycle"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "915bbf294bb74c859f0b41f1c23bc395014ea679",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": null
+      },
+      "frames": 651,
+      "latency_mean_ms": 9.765268970830236,
+      "latency_p50_ms": 9.467100026085973,
+      "latency_p95_ms": 13.27605001279153,
+      "warm_inference_fps": 102.40373337253615,
+      "class_counts": {
+        "0.25": {
+          "no_helmet_motorcycle": 78,
+          "no_helmet": 62,
+          "motorcycle": 4,
+          "helmet": 5
+        },
+        "0.5": {
+          "no_helmet_motorcycle": 67,
+          "motorcycle": 4,
+          "helmet": 1,
+          "no_helmet": 36
+        },
+        "0.8": {
+          "no_helmet_motorcycle": 54,
+          "motorcycle": 2
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "no_helmet_motorcycle": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "no_helmet_motorcycle": 1
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "no_helmet_motorcycle": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "no_helmet_motorcycle": 4,
+                "no_helmet": 3
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "no_helmet_motorcycle": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "no_helmet_motorcycle": 2
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 7,
+              "class_counts": {
+                "no_helmet_motorcycle": 6,
+                "no_helmet": 5,
+                "motorcycle": 1,
+                "helmet": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "no_helmet_motorcycle": 5,
+                "motorcycle": 1,
+                "helmet": 1,
+                "no_helmet": 3
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 5,
+              "class_counts": {
+                "no_helmet_motorcycle": 4,
+                "motorcycle": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 29,
+              "class_counts": {
+                "no_helmet_motorcycle": 27,
+                "no_helmet": 27,
+                "motorcycle": 3,
+                "helmet": 4
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 27,
+              "class_counts": {
+                "no_helmet_motorcycle": 26,
+                "no_helmet": 14,
+                "motorcycle": 3
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "no_helmet_motorcycle": 21,
+                "motorcycle": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 37,
+              "class_counts": {
+                "no_helmet_motorcycle": 38,
+                "no_helmet": 27
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 31,
+              "class_counts": {
+                "no_helmet_motorcycle": 31,
+                "no_helmet": 19
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 27,
+              "class_counts": {
+                "no_helmet_motorcycle": 27
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        }
+      ],
+      "primitive_events": [],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "mask_stop",
+      "metadata": {
+        "key": "mask_stop",
+        "weights_sha256": "1b239f6b32d9d3787195ba2bbca1b68c4dbccfa8fbc2b12b7e2a53ea12b75670",
+        "weights_file": "model_차선탐지_신호위반.pth",
+        "confidence": 0.25,
+        "names": [
+          "stop_line"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "d1e04565d3bec8719335b88be9e9b961bf3ec464",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": "mask_rcnn_R_50_FPN_3x / short edge 800 / max 1333"
+      },
+      "frames": 651,
+      "latency_mean_ms": 90.70482918502299,
+      "latency_p50_ms": 88.16620000288822,
+      "latency_p95_ms": 109.73974999797065,
+      "warm_inference_fps": 11.0247713267853,
+      "class_counts": {
+        "0.25": {
+          "stop_line": 1521
+        },
+        "0.5": {
+          "stop_line": 461
+        },
+        "0.8": {
+          "stop_line": 74
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "stop_line": 48
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 11,
+              "class_counts": {
+                "stop_line": 11
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "stop_line": 37
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 9,
+              "class_counts": {
+                "stop_line": 14
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "stop_line": 3
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "stop_line": 17
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 5,
+              "class_counts": {
+                "stop_line": 5
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "stop_line": 2
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "stop_line": 42
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "stop_line": 16
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "stop_line": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "stop_line": 7
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "stop_line": 2
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 55,
+              "class_counts": {
+                "stop_line": 118
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 34,
+              "class_counts": {
+                "stop_line": 41
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "stop_line": 5
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 15,
+              "class_counts": {
+                "stop_line": 50
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 7,
+              "class_counts": {
+                "stop_line": 12
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 5,
+              "class_counts": {
+                "stop_line": 5
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 54,
+              "class_counts": {
+                "stop_line": 215
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 41,
+              "class_counts": {
+                "stop_line": 87
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 11,
+              "class_counts": {
+                "stop_line": 13
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 47,
+              "class_counts": {
+                "stop_line": 201
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 26,
+              "class_counts": {
+                "stop_line": 61
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 13,
+              "class_counts": {
+                "stop_line": 13
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 48,
+              "class_counts": {
+                "stop_line": 163
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 24,
+              "class_counts": {
+                "stop_line": 35
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "stop_line": 7
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 43,
+              "class_counts": {
+                "stop_line": 99
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 10,
+              "class_counts": {
+                "stop_line": 14
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "stop_line": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 58,
+              "class_counts": {
+                "stop_line": 337
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 48,
+              "class_counts": {
+                "stop_line": 95
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "stop_line": 13
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 28,
+              "class_counts": {
+                "stop_line": 50
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 22,
+              "class_counts": {
+                "stop_line": 28
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "stop_line": 3
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "stop_line": 70
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "stop_line": 28
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "stop_line": 6
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 28,
+              "class_counts": {
+                "stop_line": 67
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 7,
+              "class_counts": {
+                "stop_line": 12
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "stop_line": 2
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [
+        {
+          "file": "YT_0001_C08.mp4",
+          "event_index": 0,
+          "interval": [
+            15.0,
+            17.8
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 2,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "event_index": 0,
+          "interval": [
+            50.0,
+            52.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 2,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 0,
+              "frames_sampled": 3,
+              "any_primitive": false
+            }
+          ]
+        }
+      ],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "mask_center",
+      "metadata": {
+        "key": "mask_center",
+        "weights_sha256": "e91f73723b097d9eb1286f2c273d7748fca8b3d549f9682de721f9be7340a06d",
+        "weights_file": "model_차선탐지_중앙선침범.pth",
+        "confidence": 0.25,
+        "names": [
+          "yellow_solid",
+          "yellow_double_solid"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "d1e04565d3bec8719335b88be9e9b961bf3ec464",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": "mask_rcnn_R_50_FPN_3x / short edge 800 / max 1333"
+      },
+      "frames": 651,
+      "latency_mean_ms": 91.20971305670822,
+      "latency_p50_ms": 89.07109999563545,
+      "latency_p95_ms": 106.47925001103431,
+      "warm_inference_fps": 10.963744611040115,
+      "class_counts": {
+        "0.25": {
+          "yellow_double_solid": 1051,
+          "yellow_solid": 903
+        },
+        "0.5": {
+          "yellow_double_solid": 365,
+          "yellow_solid": 392
+        },
+        "0.8": {
+          "yellow_solid": 149,
+          "yellow_double_solid": 62
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "yellow_double_solid": 20,
+                "yellow_solid": 20
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 11,
+              "class_counts": {
+                "yellow_double_solid": 11,
+                "yellow_solid": 1
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 7,
+              "class_counts": {
+                "yellow_double_solid": 6,
+                "yellow_solid": 2
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "yellow_double_solid": 1,
+                "yellow_solid": 1
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 11,
+              "class_counts": {
+                "yellow_double_solid": 11,
+                "yellow_solid": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 15,
+              "class_counts": {
+                "yellow_double_solid": 31,
+                "yellow_solid": 10
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "yellow_double_solid": 4,
+                "yellow_solid": 1
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "yellow_solid": 5,
+                "yellow_double_solid": 1
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "yellow_solid": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "yellow_solid": 84,
+                "yellow_double_solid": 75
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 46,
+              "class_counts": {
+                "yellow_solid": 44,
+                "yellow_double_solid": 19
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 16,
+              "class_counts": {
+                "yellow_solid": 17,
+                "yellow_double_solid": 3
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "yellow_double_solid": 27,
+                "yellow_solid": 19
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 18,
+              "class_counts": {
+                "yellow_double_solid": 23,
+                "yellow_solid": 13
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "yellow_double_solid": 19,
+                "yellow_solid": 9
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 56,
+              "class_counts": {
+                "yellow_solid": 49,
+                "yellow_double_solid": 102
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 27,
+              "class_counts": {
+                "yellow_solid": 10,
+                "yellow_double_solid": 28
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "yellow_solid": 1,
+                "yellow_double_solid": 5
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 55,
+              "class_counts": {
+                "yellow_solid": 82,
+                "yellow_double_solid": 109
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 37,
+              "class_counts": {
+                "yellow_double_solid": 35,
+                "yellow_solid": 20
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "yellow_solid": 4,
+                "yellow_double_solid": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 49,
+              "class_counts": {
+                "yellow_double_solid": 92,
+                "yellow_solid": 42
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "yellow_double_solid": 17,
+                "yellow_solid": 6
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "yellow_double_solid": 4
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "yellow_double_solid": 119,
+                "yellow_solid": 53
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 43,
+              "class_counts": {
+                "yellow_double_solid": 45,
+                "yellow_solid": 15
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 15,
+              "class_counts": {
+                "yellow_double_solid": 10,
+                "yellow_solid": 6
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "yellow_double_solid": 234,
+                "yellow_solid": 132
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 56,
+              "class_counts": {
+                "yellow_double_solid": 98,
+                "yellow_solid": 29
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 14,
+              "class_counts": {
+                "yellow_double_solid": 13,
+                "yellow_solid": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 44,
+              "class_counts": {
+                "yellow_solid": 106,
+                "yellow_double_solid": 20
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 40,
+              "class_counts": {
+                "yellow_solid": 73,
+                "yellow_double_solid": 8
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 18,
+              "class_counts": {
+                "yellow_solid": 21
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 55,
+              "class_counts": {
+                "yellow_solid": 102,
+                "yellow_double_solid": 121
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 39,
+              "class_counts": {
+                "yellow_solid": 28,
+                "yellow_double_solid": 52
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "yellow_double_solid": 2,
+                "yellow_solid": 2
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "yellow_solid": 196,
+                "yellow_double_solid": 83
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "yellow_solid": 147,
+                "yellow_double_solid": 24
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 54,
+              "class_counts": {
+                "yellow_solid": 88,
+                "yellow_double_solid": 5
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [
+        {
+          "file": "YT_0002_C00.mp4",
+          "event_index": 0,
+          "interval": [
+            10.0,
+            14.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 5,
+              "frames_sampled": 5,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 5,
+              "frames_sampled": 5,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 5,
+              "frames_sampled": 5,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "event_index": 0,
+          "interval": [
+            9.0,
+            10.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 2,
+              "frames_sampled": 2,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 2,
+              "frames_sampled": 2,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 0,
+              "frames_sampled": 2,
+              "any_primitive": false
+            }
+          ]
+        }
+      ],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "mask_lane",
+      "metadata": {
+        "key": "mask_lane",
+        "weights_sha256": "71041c2a32ae36863e219194743799d8677f2aa19af8339a26a69404ffbb7002",
+        "weights_file": "model_차선탐지_진로변경.pth",
+        "confidence": 0.25,
+        "names": [
+          "white_solid"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "d1e04565d3bec8719335b88be9e9b961bf3ec464",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": "mask_rcnn_R_50_FPN_3x / short edge 800 / max 1333"
+      },
+      "frames": 651,
+      "latency_mean_ms": 98.00676420874989,
+      "latency_p50_ms": 92.99500001361594,
+      "latency_p95_ms": 130.1861999963876,
+      "warm_inference_fps": 10.203377369648141,
+      "class_counts": {
+        "0.25": {
+          "white_solid": 5163
+        },
+        "0.5": {
+          "white_solid": 3037
+        },
+        "0.8": {
+          "white_solid": 1548
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 103
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 75
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "white_solid": 53
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 100
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 79
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 50
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 82
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 63
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 36
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 125
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "white_solid": 86
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "white_solid": 46
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "white_solid": 35
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "white_solid": 23
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "white_solid": 12
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 325
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 223
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 51,
+              "class_counts": {
+                "white_solid": 127
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "white_solid": 69
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 12,
+              "class_counts": {
+                "white_solid": 19
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "white_solid": 3
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 745
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 361
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 43,
+              "class_counts": {
+                "white_solid": 119
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 742
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 405
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 55,
+              "class_counts": {
+                "white_solid": 178
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 746
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 415
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "white_solid": 167
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 290
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 157
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 91
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 591
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 358
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 204
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 241
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 180
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 58,
+              "class_counts": {
+                "white_solid": 139
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 521
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "white_solid": 310
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 53,
+              "class_counts": {
+                "white_solid": 141
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 448
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 283
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "white_solid": 182
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "event_index": 0,
+          "interval": [
+            4.0,
+            10.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 6,
+              "frames_sampled": 6,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 6,
+              "frames_sampled": 6,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 6,
+              "frames_sampled": 6,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "event_index": 0,
+          "interval": [
+            0.0,
+            2.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "event_index": 0,
+          "interval": [
+            10.0,
+            12.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "event_index": 1,
+          "interval": [
+            20.0,
+            22.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "event_index": 0,
+          "interval": [
+            9.0,
+            11.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "event_index": 0,
+          "interval": [
+            52.0,
+            55.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 4,
+              "frames_sampled": 4,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 4,
+              "frames_sampled": 4,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 4,
+              "frames_sampled": 4,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "event_index": 0,
+          "interval": [
+            0.5,
+            3.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "event_index": 0,
+          "interval": [
+            7.0,
+            9.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "event_index": 0,
+          "interval": [
+            28.0,
+            30.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        }
+      ],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    },
+    {
+      "key": "mask_area",
+      "metadata": {
+        "key": "mask_area",
+        "weights_sha256": "7391412b41fba89b25d799b7ddb81df8297cc3e53fa3c8a2008ea68dfb2e8806",
+        "weights_file": "model_교통영역탐지.pth",
+        "confidence": 0.25,
+        "names": [
+          "crosswalk",
+          "intersection"
+        ],
+        "torch": "2.5.1+cu121",
+        "device": "NVIDIA GeForce RTX 3060",
+        "source_revision": "d1e04565d3bec8719335b88be9e9b961bf3ec464",
+        "warmup_frames": 3,
+        "jpeg_quality": 95,
+        "sampling_fps": 1,
+        "mask_config": "mask_rcnn_R_50_FPN_3x / short edge 800 / max 1333"
+      },
+      "frames": 651,
+      "latency_mean_ms": 96.79328264228137,
+      "latency_p50_ms": 91.8606000195723,
+      "latency_p95_ms": 127.72530000074767,
+      "warm_inference_fps": 10.331295444289216,
+      "class_counts": {
+        "0.25": {
+          "intersection": 2325,
+          "crosswalk": 2389
+        },
+        "0.5": {
+          "intersection": 822,
+          "crosswalk": 696
+        },
+        "0.8": {
+          "crosswalk": 190,
+          "intersection": 156
+        }
+      },
+      "per_video": [
+        {
+          "file": "20260620_141628_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "intersection": 64,
+                "crosswalk": 36
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "intersection": 28,
+                "crosswalk": 17
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "crosswalk": 6
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141927_EVT_1.avi",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "intersection": 48,
+                "crosswalk": 40
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "intersection": 24,
+                "crosswalk": 8
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "crosswalk": 2,
+                "intersection": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_141956_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "intersection": 60,
+                "crosswalk": 20
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 15,
+              "class_counts": {
+                "intersection": 20,
+                "crosswalk": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 1,
+              "class_counts": {
+                "crosswalk": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "20260620_150504_EVT_1.avi",
+          "expected": "NONE",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 20,
+              "class_counts": {
+                "intersection": 39,
+                "crosswalk": 71
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 17,
+              "class_counts": {
+                "intersection": 16,
+                "crosswalk": 20
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 5,
+              "class_counts": {
+                "intersection": 4,
+                "crosswalk": 1
+              }
+            }
+          ]
+        },
+        {
+          "file": "youtube_clip_01.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 6,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "intersection": 21,
+                "crosswalk": 7
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 6,
+              "class_counts": {
+                "intersection": 7,
+                "crosswalk": 2
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C05.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 42,
+              "class_counts": {
+                "crosswalk": 62,
+                "intersection": 19
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 2,
+              "class_counts": {
+                "crosswalk": 2
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 0,
+              "class_counts": {}
+            }
+          ]
+        },
+        {
+          "file": "YT_0002_C00.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 21,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "intersection": 141,
+                "crosswalk": 123
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 21,
+              "class_counts": {
+                "intersection": 52,
+                "crosswalk": 42
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 10,
+              "class_counts": {
+                "intersection": 9,
+                "crosswalk": 13
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C08.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "intersection": 406,
+                "crosswalk": 457
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "intersection": 172,
+                "crosswalk": 174
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 50,
+              "class_counts": {
+                "crosswalk": 63,
+                "intersection": 46
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C09.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "intersection": 438,
+                "crosswalk": 319
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "intersection": 178,
+                "crosswalk": 107
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 42,
+              "class_counts": {
+                "intersection": 59,
+                "crosswalk": 28
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "expected": "SIGNAL",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "crosswalk": 350,
+                "intersection": 326
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 58,
+              "class_counts": {
+                "crosswalk": 88,
+                "intersection": 97
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 36,
+              "class_counts": {
+                "crosswalk": 30,
+                "intersection": 18
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C39.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "crosswalk": 193,
+                "intersection": 132
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 49,
+              "class_counts": {
+                "crosswalk": 46,
+                "intersection": 45
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 4,
+              "class_counts": {
+                "crosswalk": 4
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C47.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "intersection": 187,
+                "crosswalk": 296
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 54,
+              "class_counts": {
+                "intersection": 48,
+                "crosswalk": 61
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 7,
+              "class_counts": {
+                "crosswalk": 8,
+                "intersection": 2
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C10.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 41,
+              "class_counts": {
+                "crosswalk": 159,
+                "intersection": 67
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 26,
+              "class_counts": {
+                "crosswalk": 61,
+                "intersection": 4
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 10,
+              "class_counts": {
+                "crosswalk": 10
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C28.mp4",
+          "expected": "CENTER_LINE_CROSSING",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 60,
+              "class_counts": {
+                "intersection": 287,
+                "crosswalk": 131
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 51,
+              "class_counts": {
+                "intersection": 106,
+                "crosswalk": 41
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 19,
+              "class_counts": {
+                "intersection": 17,
+                "crosswalk": 20
+              }
+            }
+          ]
+        },
+        {
+          "file": "YT_0003_C44.mp4",
+          "expected": "SOLID_LINE_LANE_CHANGE",
+          "frames": 60,
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_detection": 59,
+              "class_counts": {
+                "intersection": 90,
+                "crosswalk": 125
+              }
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_detection": 37,
+              "class_counts": {
+                "intersection": 25,
+                "crosswalk": 23
+              }
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_detection": 3,
+              "class_counts": {
+                "crosswalk": 4
+              }
+            }
+          ]
+        }
+      ],
+      "primitive_events": [
+        {
+          "file": "YT_0001_C08.mp4",
+          "event_index": 0,
+          "interval": [
+            15.0,
+            17.8
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        },
+        {
+          "file": "YT_0001_C33.mp4",
+          "event_index": 0,
+          "interval": [
+            50.0,
+            52.0
+          ],
+          "thresholds": [
+            {
+              "threshold": 0.25,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.5,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            },
+            {
+              "threshold": 0.8,
+              "frames_with_primitive": 3,
+              "frames_sampled": 3,
+              "any_primitive": true
+            }
+          ]
+        }
+      ],
+      "spatial_accuracy": null,
+      "limitation": "No box/mask GT. Primitive presence is not violation or localization recall."
+    }
+  ],
+  "lrcn": {
+    "metadata": {
+      "weights_sha256": "7f8d10a43f99463f252dd2b02987259e3e6d38475c7ee3599cfd36e6787b0c02",
+      "class_order": [
+        "SIGNAL",
+        "CENTER_LINE_CROSSING",
+        "SOLID_LINE_LANE_CHANGE"
+      ],
+      "input_shape": [
+        null,
+        25,
+        64,
+        64,
+        3
+      ],
+      "output_shape": [
+        null,
+        3
+      ],
+      "preprocessing": "OpenCV BGR / resize 64x64 / divide 255 (original notebook)",
+      "sequence_fps": 5,
+      "device": "CPU / TensorFlow 2.15.1 native Windows",
+      "normal_class": false,
+      "sampling_caveat": "Original training sequence frame interval unspecified; video sampling is an adaptation."
+    },
+    "metrics": [
+      {
+        "mode": "whole_clip",
+        "correct": 10,
+        "total": 12,
+        "accuracy": 0.8333333333333334,
+        "confusion_matrix": {
+          "SIGNAL": {
+            "SIGNAL": 2,
+            "CENTER_LINE_CROSSING": 0,
+            "SOLID_LINE_LANE_CHANGE": 0
+          },
+          "CENTER_LINE_CROSSING": {
+            "SIGNAL": 0,
+            "CENTER_LINE_CROSSING": 2,
+            "SOLID_LINE_LANE_CHANGE": 0
+          },
+          "SOLID_LINE_LANE_CHANGE": {
+            "SIGNAL": 2,
+            "CENTER_LINE_CROSSING": 0,
+            "SOLID_LINE_LANE_CHANGE": 6
+          }
+        }
+      },
+      {
+        "mode": "oracle_event",
+        "correct": 10,
+        "total": 13,
+        "accuracy": 0.7692307692307693,
+        "confusion_matrix": {
+          "SIGNAL": {
+            "SIGNAL": 2,
+            "CENTER_LINE_CROSSING": 0,
+            "SOLID_LINE_LANE_CHANGE": 0
+          },
+          "CENTER_LINE_CROSSING": {
+            "SIGNAL": 1,
+            "CENTER_LINE_CROSSING": 1,
+            "SOLID_LINE_LANE_CHANGE": 0
+          },
+          "SOLID_LINE_LANE_CHANGE": {
+            "SIGNAL": 2,
+            "CENTER_LINE_CROSSING": 0,
+            "SOLID_LINE_LANE_CHANGE": 7
+          }
+        }
+      }
+    ],
+    "forced_violation_negative_clips": 3,
+    "negative_clips": 3,
+    "latency_mean_ms": 38.099795306628465,
+    "latency_p95_ms": 41.70048001687973,
+    "sliding_class_overlap_diagnostic": [
+      {
+        "file": "20260620_141927_EVT_1.avi",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "youtube_clip_01.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "event_index": 1,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0002_C00.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0001_C08.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0001_C09.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": false
+      },
+      {
+        "file": "YT_0001_C33.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0001_C39.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0001_C47.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      },
+      {
+        "file": "YT_0003_C10.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": false
+      },
+      {
+        "file": "YT_0003_C28.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": false
+      },
+      {
+        "file": "YT_0003_C44.mp4",
+        "event_index": 0,
+        "class_correct_overlap_at_0_8": true
+      }
+    ],
+    "sliding_negative_diagnostic": [
+      {
+        "file": "20260620_141628_EVT_1.avi",
+        "total_windows": 8,
+        "high_confidence_windows": 8
+      },
+      {
+        "file": "20260620_141956_EVT_1.avi",
+        "total_windows": 8,
+        "high_confidence_windows": 8
+      },
+      {
+        "file": "20260620_150504_EVT_1.avi",
+        "total_windows": 8,
+        "high_confidence_windows": 8
+      }
+    ],
+    "whole_clip_predictions": [
+      {
+        "file": "20260620_141628_EVT_1.avi",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          20.023321672497083
+        ],
+        "input_times": [
+          0.0,
+          0.7996001999000499,
+          1.5992003998000999,
+          2.39880059970015,
+          3.3983008495752123,
+          4.197901049475262,
+          4.997501249375312,
+          5.797101449275362,
+          6.5967016491754125,
+          7.596201899050475,
+          8.395802098950524,
+          9.195402298850574,
+          9.995002498750624,
+          10.794602698650674,
+          11.594202898550725,
+          12.593703148425787,
+          13.393303348325837,
+          14.192903548225887,
+          14.992503748125937,
+          15.792103948025987,
+          16.591704147926038,
+          17.5912043978011,
+          18.39080459770115,
+          19.1904047976012,
+          19.99000499750125
+        ],
+        "expected": "NONE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          7.855595322325826e-05,
+          0.0014549536863341928,
+          0.9984664916992188
+        ],
+        "processing_ms": 40.65239999908954
+      },
+      {
+        "file": "20260620_141927_EVT_1.avi",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          20.024655982407623
+        ],
+        "input_times": [
+          0.0,
+          0.7996534834904874,
+          1.5993069669809747,
+          2.398960450471462,
+          3.3985273048345714,
+          4.198180788325059,
+          4.997834271815546,
+          5.797487755306034,
+          6.597141238796521,
+          7.596708093159631,
+          8.396361576650119,
+          9.196015060140605,
+          9.995668543631092,
+          10.79532202712158,
+          11.594975510612068,
+          12.594542364975176,
+          13.394195848465664,
+          14.193849331956152,
+          14.99350281544664,
+          15.793156298937127,
+          16.592809782427615,
+          17.59237663679072,
+          18.39203012028121,
+          19.191683603771697,
+          19.991337087262185
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.0003338812675792724,
+          0.0546213835477829,
+          0.9450446963310242
+        ],
+        "processing_ms": 31.896500004222617
+      },
+      {
+        "file": "20260620_141956_EVT_1.avi",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          20.024655982407623
+        ],
+        "input_times": [
+          0.0,
+          0.7996534834904874,
+          1.5993069669809747,
+          2.398960450471462,
+          3.3985273048345714,
+          4.198180788325059,
+          4.997834271815546,
+          5.797487755306034,
+          6.597141238796521,
+          7.596708093159631,
+          8.396361576650119,
+          9.196015060140605,
+          9.995668543631092,
+          10.79532202712158,
+          11.594975510612068,
+          12.594542364975176,
+          13.394195848465664,
+          14.193849331956152,
+          14.99350281544664,
+          15.793156298937127,
+          16.592809782427615,
+          17.59237663679072,
+          18.39203012028121,
+          19.191683603771697,
+          19.991337087262185
+        ],
+        "expected": "NONE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.00018561267643235624,
+          0.013254149816930294,
+          0.9865602254867554
+        ],
+        "processing_ms": 37.83319998183288
+      },
+      {
+        "file": "20260620_150504_EVT_1.avi",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          20.025323204051713
+        ],
+        "input_times": [
+          0.0,
+          0.7996801279488205,
+          1.599360255897641,
+          2.3990403838464616,
+          3.398640543782487,
+          4.198320671731308,
+          4.998000799680128,
+          5.7976809276289485,
+          6.597361055577768,
+          7.596961215513795,
+          8.396641343462615,
+          9.196321471411435,
+          9.996001599360255,
+          10.795681727309077,
+          11.595361855257897,
+          12.594962015193921,
+          13.394642143142743,
+          14.194322271091563,
+          14.994002399040383,
+          15.793682526989205,
+          16.593362654938023,
+          17.59296281487405,
+          18.39264294282287,
+          19.192323070771693,
+          19.99200319872051
+        ],
+        "expected": "NONE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.0008663025801070035,
+          0.12758803367614746,
+          0.871545672416687
+        ],
+        "processing_ms": 37.35880000749603
+      },
+      {
+        "file": "youtube_clip_01.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          5.533333333333333
+        ],
+        "input_times": [
+          0.0,
+          0.2,
+          0.4,
+          0.6,
+          0.8,
+          1.2,
+          1.4,
+          1.6,
+          1.8,
+          2.0,
+          2.2,
+          2.4,
+          2.8,
+          3.0,
+          3.2,
+          3.4,
+          3.6,
+          3.8,
+          4.0,
+          4.2,
+          4.4,
+          4.8,
+          5.0,
+          5.2,
+          5.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.00010769618529593572,
+          0.0008677697042003274,
+          0.9990246295928955
+        ],
+        "processing_ms": 36.39809999731369
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          6.387966550391866e-06,
+          1.606732803338673e-05,
+          0.9999774694442749
+        ],
+        "processing_ms": 38.78360000089742
+      },
+      {
+        "file": "YT_0002_C00.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          20.02675639518385
+        ],
+        "input_times": [
+          0.0,
+          0.8107998540560262,
+          1.5810597154092512,
+          2.3918595694652773,
+          3.4053593870353103,
+          4.216159241091336,
+          4.986419102444561,
+          5.797218956500587,
+          6.608018810556613,
+          7.580978635423845,
+          8.391778489479872,
+          9.202578343535897,
+          10.013378197591924,
+          10.783638058945149,
+          11.594437913001174,
+          12.607937730571207,
+          13.418737584627234,
+          14.188997445980458,
+          14.999797300036485,
+          15.81059715409251,
+          16.580857015445737,
+          17.59435683301577,
+          18.405156687071795,
+          19.21595654112782,
+          19.986216402481045
+        ],
+        "expected": "CENTER_LINE_CROSSING",
+        "predicted": "CENTER_LINE_CROSSING",
+        "probabilities": [
+          0.008586582727730274,
+          0.9910874962806702,
+          0.00032592503703199327
+        ],
+        "processing_ms": 36.75599998678081
+      },
+      {
+        "file": "YT_0001_C08.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SIGNAL",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9997963309288025,
+          0.00016439991304650903,
+          3.9345955883618444e-05
+        ],
+        "processing_ms": 38.05639999336563
+      },
+      {
+        "file": "YT_0001_C09.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9975691437721252,
+          0.00234328699298203,
+          8.752717985771596e-05
+        ],
+        "processing_ms": 39.124200004152954
+      },
+      {
+        "file": "YT_0001_C33.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SIGNAL",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9993911981582642,
+          0.0005606490303762257,
+          4.808305675396696e-05
+        ],
+        "processing_ms": 39.806899992981926
+      },
+      {
+        "file": "YT_0001_C39.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.0001094384424504824,
+          0.00028688667225651443,
+          0.9996036887168884
+        ],
+        "processing_ms": 37.70689998054877
+      },
+      {
+        "file": "YT_0001_C47.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.00028489073156379163,
+          0.00029238915885798633,
+          0.9994227886199951
+        ],
+        "processing_ms": 46.409200003836304
+      },
+      {
+        "file": "YT_0003_C10.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.00011437252396717668,
+          0.0001343303156318143,
+          0.9997512698173523
+        ],
+        "processing_ms": 39.04440000769682
+      },
+      {
+        "file": "YT_0003_C28.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "CENTER_LINE_CROSSING",
+        "predicted": "CENTER_LINE_CROSSING",
+        "probabilities": [
+          0.38437724113464355,
+          0.608044445514679,
+          0.00757831335067749
+        ],
+        "processing_ms": 38.10890001477674
+      },
+      {
+        "file": "YT_0003_C44.mp4",
+        "mode": "whole_clip",
+        "event_index": null,
+        "interval": [
+          0.0,
+          60.0
+        ],
+        "input_times": [
+          0.0,
+          2.4,
+          5.0,
+          7.4,
+          10.0,
+          12.4,
+          15.0,
+          17.4,
+          20.0,
+          22.4,
+          25.0,
+          27.4,
+          30.0,
+          32.4,
+          34.8,
+          37.4,
+          39.8,
+          42.4,
+          44.8,
+          47.4,
+          49.8,
+          52.4,
+          54.8,
+          57.4,
+          59.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.7539322376251221,
+          0.01789194345474243,
+          0.22817589342594147
+        ],
+        "processing_ms": 37.33959997771308
+      }
+    ],
+    "oracle_event_predictions": [
+      {
+        "file": "20260620_141927_EVT_1.avi",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          3.0,
+          11.0
+        ],
+        "input_times": [
+          3.1986139339619495,
+          3.5984406757071934,
+          3.7983540465798153,
+          4.198180788325059,
+          4.39809415919768,
+          4.797920900942924,
+          5.197747642688168,
+          5.39766101356079,
+          5.797487755306034,
+          6.197314497051277,
+          6.397227867923899,
+          6.797054609669143,
+          7.196881351414387,
+          7.396794722287009,
+          7.796621464032253,
+          7.996534834904874,
+          8.396361576650119,
+          8.79618831839536,
+          8.996101689267983,
+          9.395928431013227,
+          9.595841801885848,
+          9.995668543631092,
+          10.395495285376336,
+          10.595408656248958,
+          10.995235397994202
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.00020487171423155814,
+          0.00016085691459011286,
+          0.9996342658996582
+        ],
+        "processing_ms": 39.81399998883717
+      },
+      {
+        "file": "youtube_clip_01.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          0.0,
+          3.5
+        ],
+        "input_times": [
+          0.0,
+          0.2,
+          0.2,
+          0.4,
+          0.6,
+          0.8,
+          0.8,
+          1.0,
+          1.2,
+          1.2,
+          1.4,
+          1.6,
+          1.6,
+          1.8,
+          2.0,
+          2.2,
+          2.2,
+          2.4,
+          2.6,
+          2.6,
+          2.8,
+          3.0,
+          3.2,
+          3.2,
+          3.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.03366447985172272,
+          0.07217533141374588,
+          0.8941601514816284
+        ],
+        "processing_ms": 40.207199985161424
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          8.5,
+          13.5
+        ],
+        "input_times": [
+          8.6,
+          8.8,
+          9.0,
+          9.2,
+          9.4,
+          9.6,
+          9.8,
+          10.0,
+          10.2,
+          10.4,
+          10.6,
+          10.8,
+          11.0,
+          11.2,
+          11.4,
+          11.6,
+          11.8,
+          12.0,
+          12.2,
+          12.4,
+          12.6,
+          12.8,
+          13.0,
+          13.2,
+          13.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          9.679111826699227e-06,
+          3.2928706787060946e-05,
+          0.9999574422836304
+        ],
+        "processing_ms": 37.750699993921444
+      },
+      {
+        "file": "YT_0003_C05.mp4",
+        "mode": "oracle_event",
+        "event_index": 1,
+        "interval": [
+          18.5,
+          23.5
+        ],
+        "input_times": [
+          18.6,
+          18.8,
+          19.0,
+          19.2,
+          19.4,
+          19.6,
+          19.8,
+          20.0,
+          20.2,
+          20.4,
+          20.6,
+          20.8,
+          21.0,
+          21.2,
+          21.4,
+          21.6,
+          21.8,
+          22.0,
+          22.2,
+          22.4,
+          22.6,
+          22.8,
+          23.0,
+          23.2,
+          23.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          8.758713192946743e-06,
+          2.313656295882538e-05,
+          0.9999681711196899
+        ],
+        "processing_ms": 36.888100003125146
+      },
+      {
+        "file": "YT_0002_C00.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          9.0,
+          15.0
+        ],
+        "input_times": [
+          9.202578343535897,
+          9.405278307049905,
+          9.60797827056391,
+          10.013378197591924,
+          10.21607816110593,
+          10.418778124619937,
+          10.580938095431142,
+          10.783638058945149,
+          11.189037985973162,
+          11.391737949487169,
+          11.594437913001174,
+          11.797137876515182,
+          11.999837840029189,
+          12.405237767057201,
+          12.607937730571207,
+          12.810637694085214,
+          13.013337657599221,
+          13.418737584627234,
+          13.580897555438439,
+          13.783597518952446,
+          13.986297482466453,
+          14.188997445980458,
+          14.594397373008471,
+          14.797097336522478,
+          14.999797300036485
+        ],
+        "expected": "CENTER_LINE_CROSSING",
+        "predicted": "CENTER_LINE_CROSSING",
+        "probabilities": [
+          0.015604100190103054,
+          0.9839497208595276,
+          0.0004461743519641459
+        ],
+        "processing_ms": 36.33150001405738
+      },
+      {
+        "file": "YT_0001_C08.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          13.899999999999999,
+          18.9
+        ],
+        "input_times": [
+          14.0,
+          14.2,
+          14.4,
+          14.6,
+          14.8,
+          15.0,
+          15.2,
+          15.4,
+          15.6,
+          15.8,
+          16.0,
+          16.2,
+          16.4,
+          16.6,
+          16.8,
+          17.0,
+          17.2,
+          17.4,
+          17.6,
+          17.8,
+          18.0,
+          18.2,
+          18.4,
+          18.6,
+          18.8
+        ],
+        "expected": "SIGNAL",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9999656677246094,
+          2.3484115445171483e-05,
+          1.0902874237217475e-05
+        ],
+        "processing_ms": 37.37519998685457
+      },
+      {
+        "file": "YT_0001_C09.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          7.5,
+          12.5
+        ],
+        "input_times": [
+          7.6,
+          7.8,
+          8.0,
+          8.2,
+          8.4,
+          8.6,
+          8.8,
+          9.0,
+          9.2,
+          9.4,
+          9.6,
+          9.8,
+          10.0,
+          10.2,
+          10.4,
+          10.6,
+          10.8,
+          11.0,
+          11.2,
+          11.4,
+          11.6,
+          11.8,
+          12.0,
+          12.2,
+          12.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.999823272228241,
+          6.541760376421735e-05,
+          0.00011129903577966616
+        ],
+        "processing_ms": 41.063199983909726
+      },
+      {
+        "file": "YT_0001_C33.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          48.5,
+          53.5
+        ],
+        "input_times": [
+          48.6,
+          48.8,
+          49.0,
+          49.2,
+          49.4,
+          49.6,
+          49.8,
+          50.0,
+          50.2,
+          50.4,
+          50.6,
+          50.8,
+          51.0,
+          51.2,
+          51.4,
+          51.6,
+          51.8,
+          52.0,
+          52.2,
+          52.4,
+          52.6,
+          52.8,
+          53.0,
+          53.2,
+          53.4
+        ],
+        "expected": "SIGNAL",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9999716281890869,
+          1.9011707991012372e-05,
+          9.46749969443772e-06
+        ],
+        "processing_ms": 39.79760000947863
+      },
+      {
+        "file": "YT_0001_C39.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          51.0,
+          56.0
+        ],
+        "input_times": [
+          51.0,
+          51.2,
+          51.4,
+          51.6,
+          51.8,
+          52.0,
+          52.2,
+          52.4,
+          52.6,
+          52.8,
+          53.0,
+          53.2,
+          53.4,
+          53.6,
+          53.8,
+          54.0,
+          54.2,
+          54.4,
+          54.6,
+          54.8,
+          55.0,
+          55.2,
+          55.4,
+          55.6,
+          55.8
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          9.043896716320887e-05,
+          0.00012280498049221933,
+          0.9997867941856384
+        ],
+        "processing_ms": 38.75269999844022
+      },
+      {
+        "file": "YT_0001_C47.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          0.0,
+          4.25
+        ],
+        "input_times": [
+          0.0,
+          0.2,
+          0.4,
+          0.6,
+          0.8,
+          0.8,
+          1.0,
+          1.2,
+          1.4,
+          1.6,
+          1.8,
+          2.0,
+          2.0,
+          2.2,
+          2.4,
+          2.6,
+          2.8,
+          3.0,
+          3.2,
+          3.4,
+          3.6,
+          3.6,
+          3.8,
+          4.0,
+          4.2
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          2.4388153178733774e-05,
+          0.0002585963229648769,
+          0.9997169375419617
+        ],
+        "processing_ms": 37.23739998531528
+      },
+      {
+        "file": "YT_0003_C10.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          5.5,
+          10.5
+        ],
+        "input_times": [
+          5.6,
+          5.8,
+          6.0,
+          6.2,
+          6.4,
+          6.6,
+          6.8,
+          7.0,
+          7.2,
+          7.4,
+          7.6,
+          7.8,
+          8.0,
+          8.2,
+          8.4,
+          8.6,
+          8.8,
+          9.0,
+          9.2,
+          9.4,
+          9.6,
+          9.8,
+          10.0,
+          10.2,
+          10.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9953131675720215,
+          0.0005792405572719872,
+          0.004107548389583826
+        ],
+        "processing_ms": 37.43869997560978
+      },
+      {
+        "file": "YT_0003_C28.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          7.0,
+          12.0
+        ],
+        "input_times": [
+          7.0,
+          7.2,
+          7.4,
+          7.6,
+          7.8,
+          8.0,
+          8.2,
+          8.4,
+          8.6,
+          8.8,
+          9.0,
+          9.2,
+          9.4,
+          9.6,
+          9.8,
+          10.0,
+          10.2,
+          10.4,
+          10.6,
+          10.8,
+          11.0,
+          11.2,
+          11.4,
+          11.6,
+          11.8
+        ],
+        "expected": "CENTER_LINE_CROSSING",
+        "predicted": "SIGNAL",
+        "probabilities": [
+          0.9980918765068054,
+          0.001711278222501278,
+          0.0001967989664990455
+        ],
+        "processing_ms": 37.05330000957474
+      },
+      {
+        "file": "YT_0003_C44.mp4",
+        "mode": "oracle_event",
+        "event_index": 0,
+        "interval": [
+          26.5,
+          31.5
+        ],
+        "input_times": [
+          26.6,
+          26.8,
+          27.0,
+          27.2,
+          27.4,
+          27.6,
+          27.8,
+          28.0,
+          28.2,
+          28.4,
+          28.6,
+          28.8,
+          29.0,
+          29.2,
+          29.4,
+          29.6,
+          29.8,
+          30.0,
+          30.2,
+          30.4,
+          30.6,
+          30.8,
+          31.0,
+          31.2,
+          31.4
+        ],
+        "expected": "SOLID_LINE_LANE_CHANGE",
+        "predicted": "SOLID_LINE_LANE_CHANGE",
+        "probabilities": [
+          0.008354545570909977,
+          0.0008545191958546638,
+          0.9907909631729126
+        ],
+        "processing_ms": 38.42870000516996
+      }
+    ],
+    "warning": "No normal/helmet class. Oracle event accuracy is not end-to-end recall; sliding overlap is not target/localization accuracy."
+  }
+}

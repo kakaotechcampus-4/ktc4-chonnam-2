@@ -6,7 +6,7 @@
 
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.
 
-⚠️ 아래 §1·§4가 참조하는 `real_e2e.py`/`w6-real-e2e-happy-001.md`/`orchestration-service-layer.md`는 이 브랜치(`docs/design-refinement`)엔 아직 없다 — `feature/case-mock-real-service-adapter`가 develop에 병합돼야 링크가 유효해진다(§4 참고).
+> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -26,6 +26,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 2순위 — situation_response / observation_facts 워크플로우
 
+> **2026-09-30:** situation_response 기록·전달은 PR #177(evidence 테스트 반영 대기). observation_facts(최종 영상 관찰, I4)는 producer가 없어 case 몫이 아니다(ADR-EVIDENCE-008 §6.2) — I4가 없는 동안 real 경로 FINAL은 `UNKNOWN`이다.
+
 **문제:** 오늘 데모(`demo_happy_001.py`)에서 실제로 관찰됨 — `situation_response`/`observation_facts`가 없어서 `FINAL_PACKAGE` 판정이 `UNKNOWN`에 걸리고 `build_report_package()`가 `PackageNotReady`를 던진다. `package`가 항상 `null`이다.
 
 **왜 2순위(1순위와 병렬 가능):** 최종 신고 패키지 생성의 핵심 결손 — 다른 걸 아무리 잘해도 이게 없으면 신고 패키지를 영원히 못 만든다.
@@ -37,6 +39,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 **참고:** `docs/modules/case/experiments/w6-real-e2e-happy-001.md` "알려진 단순화 2"
 
 ### 3순위 — Intent LLM 통합
+
+> **2026-09-30:** 1차 구현(09-24)은 case 모듈 경계 위반(프롬프트·provider 호출이 case 안)으로 머지 전 되돌렸다. 호출 창구 위치는 이슈 #210에서 search와 조율 중이고, 모델 선정·평가 체계는 멘토 피드백 후 확정(`미결 유지`). 아래 「API 키/모델 ID 확정이 유일한 외부 의존」은 더 이상 맞지 않는다.
 
 **문제:** `CaseAggregate.intake()`가 여전히 구조화된 `hints`만 파라미터로 받는다. 원문 자연어를 구조화하는 실제 호출이 `domain.py`/`scope.py` 어디에도 없다.
 
@@ -50,7 +54,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 ### 3.5순위 — Correction 로그 재사용 정책 미결 5건 종결
 
-**상태:** Issue #74에 case 제안 초안을 코멘트로 게시 완료(2026-09-19). PM 승인 대기 중.
+**상태:** ✅ 종결 — Issue #74 PM 결정(2026-09-20): 정책 방향 채택, 구현은 Deferred. ~~Issue #74에 case 제안 초안을 코멘트로 게시 완료(2026-09-19). PM 승인 대기 중.~~
 
 **내용:** 동의 문구/저장 위치, 익명화 수준의 Contract화, 보관기간, 철회 처리, 1단계(평가)/2단계(학습) 고지 분리 — 5건. 배포 전 self-review(`docs/management/pre-deploy-security-review.md`)가 이미 이 항목의 실제 구현 여부를 확인하도록 돼 있어서, 배포 직전에 처음 정하면 구현과 문구를 동시에 고쳐야 하는 위험이 있다.
 
@@ -70,15 +74,21 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 5순위:** 작고, 2순위(situation_response/observation_facts)가 먼저 풀려야 의미가 커진다 — 패키지 조립 자체가 막혀 있는 동안은 다듬어도 효과가 잘 안 보인다.
 
-### 6순위 — HTTP 진입점 / transport
+### 6순위 — HTTP 진입점 / transport — ✅ case 몫 종결(2026-09-30)
 
 **문제:** `case.get_view(case_id, store=store)`는 만들었지만(오늘 완료) 이걸 실제로 네트워크에 노출하는 FastAPI 같은 transport 계층이 없다.
 
 **왜 6순위:** case 단독 결정 사안이 아니다 — `api/` 모듈(현재 껍데기만 있음) 또는 web 쪽 몫일 가능성이 높다. "만들기"보다 "누가 만들지부터 확인"이 먼저라 순서상 뒤로 미룬다(급하지 않다는 뜻은 아님).
 
-**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표
+**해소 내용(누가 만드는가):** transport는 case 몫이 아니다. `src/daesingo/api/README.md`가 `api/`(FastAPI composition root)의 Owner를 김준영으로 적고 있고, 코드는 아직 없다. web 구현 일정(목요일) 때문에 이번에는 **신유민(`web`)이 진행**하기로 했다 — 통로는 case 공개 함수를 부르기만 하고, 검사·실패 코드는 case에 둔다(이슈 #106 [코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/106#issuecomment-5907616288)). case가 transport에 붙인 조건은 셋이다: 통로에 판단을 넣지 않는다 · case 공개 함수만 부른다 · 긴 작업을 요청 안에서 돌리지 않는다.
 
-### 6.5순위 — web→case 공용 command 표면 (구 "후보 선택 제출 command 노출")
+**case 쪽 진입 함수:** 읽기 `case.get_view()`, 쓰기 `case.handle_command()`(PR #216, `contract-case-command.md` Draft v0). transport가 부를 대상은 이 둘이다.
+
+**여전히 범위 밖:** HTTP 경로·인증·직렬화는 transport를 만드는 쪽이 정한다. 인증 방식은 미결이다(`module-architecture.md` §1-7 A2). `api/` Owner(김준영)와 web 구현의 관계 정리도 case가 정하지 않는다.
+
+**참고:** `src/daesingo/case/service.py`(`get_view`), `src/daesingo/case/command.py`(`handle_command`), `src/daesingo/case/store.py`(`CaseStore`), `docs/modules/case/experiments/w6-real-e2e-happy-001.md` 완료 증빙 표, 이슈 #106
+
+### 6.5순위 — web→case 공용 command 표면 (구 "후보 선택 제출 command 노출") — ✅ case 몫 종결(2026-09-30)
 
 **문제:** `case.select_candidate()`는 이미 구현·E2E 테스트까지 됐지만(`domain.py:125`, `test_real_e2e.py`), 이걸 여는 외부 command 계약이 없다 — web이 `CaseView` 계약만 보고는 후보를 어떻게 제출해야 하는지 알 수 없다(이슈 #106).
 
@@ -94,15 +104,21 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 이 순위:** 6순위(HTTP 진입점/transport)와 같은 계열이다 — 표면 아래 "도메인 로직은 있는데 네트워크로 노출하는 경로가 없다"는 결손이 같고, 실제 노출은 6순위가 막고 있는 "누가 transport를 만드는가"에 그대로 종속된다. 표면을 web이 직접 붙일지 `api/` 모듈을 세울지도 6순위와 같은 이유로 지금 정하지 않는다("만들기보다 누가 만들지부터"). 다만 월요일 Real E2E 블로커는 아니다(`test_real_e2e.py`가 python에서 직접 호출) — 김대원 판단에 동의 완료(이슈 #106 코멘트).
 
-**결정된 것 (`select_candidate` 한정):**
+> **2026-09-30:** 누가 transport를 만드는가는 6순위에서 정리됐다 — 이번에는 web이 진행하고, case는 진입 함수까지만 둔다.
+
+**결정된 것 (`select_candidate` 한정):** — 2026-09-30 이후 판본은 `contract-case-command.md`가 원문이다. 초기 선택은 `rank=1` 자동 선택이라 command가 아니게 됐고(#168 결정 1), 결과 화면의 다른 후보 선택은 `SELECT_OTHER_CANDIDATE`(`OTHER_CANDIDATE` CorrectionRecord, `case_rev` +1)로 열렸다. 실패는 `notices[].code`가 아니라 command 응답의 `error.code`(`case.command.*`)로 알린다. 아래는 09-20 당시 기록이다.
 - `notices[].actions[]` 7종에 넣지 않고 별도 command로 연다 — `notices[].actions[]`는 notice에 매인 복구 액션 전용이라 1차 명령을 끼워 넣지 않는다. 기존 도메인 시그니처(`candidate_id`)를 그대로 쓴다.
 - `case_rev`는 안 오른다(선택=새 요청 아님, 기존 결정 유지). `stage`는 `CANDIDATE_REVIEW`→`EVIDENCE_REVIEW`로 전이된다.
 - 실패 시(`candidate_id` 불일치 등) 대응하는 `notices[].code`는 아직 없어 이번에 새로 정한다.
 - `rejected_candidate_ids`는 **받지 않는다** — 지금 화면(`CandidatesScreen`)엔 개별 후보를 지목하는 버튼이 없고(§8이 정의하는 "아니오"는 "조금 전/후"(고른 후보의 시간 보정)·"다 아니에요"(전체 거절) 둘뿐, 개별 지목이 아님), `candidates[].selected=false`로 이미 파생 가능하다(신유민 확인, 이슈 #106). 후보 카드별 "이건 아니에요"가 생기면 그때 재검토.
 
-**미결:** command 표면 모양(전송 경로·응답·실패 신호) 자체 — `select_candidate`·`USER_REVIEWED`·JOB 3종이 공유할 형태를 case가 초안 작성해야 한다. transport owner(`api/` 또는 web)가 정해지는 6순위와 별개로, 표면 모양은 case가 먼저 정할 수 있다.
+~~**미결:** command 표면 모양(전송 경로·응답·실패 신호) 자체 — `select_candidate`·`USER_REVIEWED`·JOB 3종이 공유할 형태를 case가 초안 작성해야 한다. transport owner(`api/` 또는 web)가 정해지는 6순위와 별개로, 표면 모양은 case가 먼저 정할 수 있다.~~
 
-**참고:** 이슈 #106
+**해소 내용:** 표면 모양은 `contract-case-command.md`(Draft v0, PR #206)로 정했다 — 요청 `{case_id, expected_case_rev, kind, payload}` → 응답 `{ok, error, case_view}`, command 4종(`SELECT_OTHER_CANDIDATE` · `RECORD_SITUATION_RESPONSE` · `MARK_REVIEWED` · `RUN_NOTICE_ACTION`). 진입 함수는 `case.handle_command()`(PR #216)다.
+
+**여전히 남은 것:** 계약은 아직 `Draft`다 — web 합의 뒤 `docs/architecture/contracts/`로 옮긴다. 입력형 action(`EDIT_EVENT_TIME` 등)은 다음 판본이고, 계약 §9 미결(`case_rev`로 잡히지 않는 변경 · `RUN_NOTICE_ACTION` 중복 제출 · `message_key` 목록)은 그대로다.
+
+**참고:** 이슈 #106, PR #206, PR #216, `docs/modules/case/contracts/contract-case-command.md`
 
 ### 6.6순위 — worker 배선 시 재선택 가드 (#173 E-4 후속)
 
@@ -116,9 +132,15 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 **왜 이 순위:** 6순위(transport)·6.5순위(command 표면)와 같은 계열로, worker가 생기기 전에는 강제할 대상 자체가 없다. 추측으로 막으면 상황 응답 대기(준비 중이 아님)와 구분하지 못한다.
 
+> **2026-09-30 선반영(worker 없이 할 수 있는 것):** `READY` 전이는 현재 선택 context의 결과일 때만 한다 — `mark_ready_if_package_ready()`가 evidence의 `basis.candidate_ref`·`selection_rev`를 CaseView와 같은 기준(#191)으로 확인한다. 예전엔 이전 선택의 Package로도 `READY`가 돼, stage는 `READY`인데 CaseView evidence·package는 `null`이 될 수 있었다(#216 테스트 중 mock adapter로 재현). 위 조건 1·2(준비 중 재선택 금지 등)는 그대로 worker 배선 몫이다.
+
 **참고:** 이슈 #173 · #166 · PR #189
 
 ### 7순위 — Orchestration 평가 지표
+
+> **2026-09-30 1차 측정:** 아래 「바로 가능」·「작은 계측」 3개를 러너(`scripts/measure_case_orchestration.py`)로 구현했다. 「불필요한 재실행률」은 `force_rerun` 비율이 아니라 같은 입력의 중복 호출로 쟀다(`force_rerun=True`는 재판독·재시도처럼 필요한 재실행이라 근사로 쓸 수 없다). 「잘못된 stage transition」은 `InvalidTransition` 횟수가 아니라 불변식 위반으로 쟀다(예외는 막힌 시도이지 잘못된 전이가 아니다 — #167은 예외 없이 통과했다). 결과·baseline·측정 안 한 칸은 `experiments/orchestration-metrics-2026-09-30.md`. 「새 인프라 필요」 4건은 그대로다.
+>
+> **2026-09-30 2차 측정:** 「다른 후보 선택」 축을 합성 rank2로 추가했다(3,276 세션). `RealAdapter`가 evidence 조립 때 1차 탐색을 다시 부르던 것을 ①로 찾아 고쳤다(① 994 → 0). 남은 칸은 #177·#203·#209 머지 뒤 다시 돈다.
 
 **문제:** 지금까지 이야기한 평가(intent-llm-model-comparison 등)는 전부 "LLM이 내용을 잘 뽑았는가"만 잰다. "Case가 올바르게 오케스트레이션했는가"는 따로 재는 게 없어서, 나중에 "LLM은 잘 답했는데 Case가 잘못 재실행했다"와 "Case는 맞는데 모델이 잘못 추출했다"를 구분할 수 없다.
 
@@ -159,7 +181,7 @@ case가 직접 고칠 수 없고, 각 모듈 Owner의 작업을 기다리거나 
 - `docs/modules/case/experiments/w6-real-e2e-happy-001.md` — `scenario_happy_001` real E2E 실행 로그
 - `docs/modules/case/decisions/orchestration-service-layer.md` §6·§7·§8 — search/evidence/`get_view()` real 교체 과정에서 확인한 것들
 
-⚠️ **위 3개 파일은 이 문서를 쓰는 시점(`docs/design-refinement`)엔 아직 없다.** `feature/case-mock-real-service-adapter` 브랜치에만 있고 아직 develop에 병합 전이다 — 그 브랜치가 병합되면 이 참조가 유효해진다. 지금 이 링크를 따라가려면 `feature/case-mock-real-service-adapter`를 별도로 체크아웃해야 한다.
+(위 3개 파일은 이후 develop에 병합됐다.)
 
 ## 5. 완료 조건 — 이 문서의 각 항목을 "끝났다"고 부르는 기준
 

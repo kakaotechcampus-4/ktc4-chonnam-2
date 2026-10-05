@@ -3,7 +3,7 @@
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
 - 배포 단위 「Worker 1」. `common/jobs`에서 row를 claim → RUNNING + heartbeat → 도메인 모듈의 **public capability**를 dispatch → 결과 ref + usage 기록.
-- `case_rev`가 현재와 다르면 결과를 STALE로 처리하고 `CaseView`를 덮지 않는다 (§8-2).
+- `STALE`은 실행 중 Worker가 살아 있지 않다고 Runtime이 판정한 terminal 실행 상태다. `case`가 현재 context에 유효하지 않다고 판단해 반영하지 않는 늦은 결과(중단된 job 등)와는 다른 개념이다 — 그런 실행은 `SUCCEEDED`를 유지하고, `case`가 그 `produced`를 domain state에 반영하지 않아 현재 `CaseView`를 덮지 않는다 (`docs/architecture/contracts/contract-job-execution.md` §6 · §9-8).
 - Background로 가는 것(§8-1): 큰 source/proxy 준비 · RemoteCopy upload · Coarse/Fine 외부 AI · 장시간 OCR · Incident Clip / Report Video export.
 
 ## 상태
