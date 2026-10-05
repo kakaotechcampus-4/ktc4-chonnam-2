@@ -21,6 +21,7 @@ orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -132,7 +133,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
 _PACKAGE_READY_READINESS = frozenset({"PASS", "WARN"})
 
 
-def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter) -> AdapterSnapshot:
+def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter | None) -> AdapterSnapshot:
     """선택된 candidate가 없으면(탐색 중 · 후보 0개) downstream 값이 아직 없다 — adapter를
     조회하지 않고 빈 스냅샷을 돌려준다. real adapter는 선택 전 evidence 조회를 명확히 실패시키므로
     (#92 안전장치), 이 판단을 adapter가 아니라 case 상태로 먼저 한다. 선택이 있으면 그대로
@@ -144,10 +145,12 @@ def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter) -> AdapterSnapshot:
             requirement_report_package=None,
             report_package=None,
         )
+    if adapter is None:
+        raise AdapterNotAttached(f"선택된 후보가 있는데 adapter가 없다: case_id={case.case_id!r}")
     return fetch_case_view_inputs(adapter)
 
 
-def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> bool:
+def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter | None) -> bool:
     """`PACKAGE_READY` gate가 성립할 때만 `READY`로 올린다(#167). 올렸으면 `True`.
 
     CaseView 계약 B절: `READY` = FINAL `RequirementReport`가 `PASS`/`WARN`이고 ReportPackage가
@@ -174,7 +177,7 @@ def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> 
 
 def build_view_from_adapter(
     case: CaseAggregate,
-    adapter: ModuleAdapter,
+    adapter: ModuleAdapter | None,
     *,
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
@@ -431,6 +434,31 @@ def derive_notices(
     if additions:
         view["notices"] = [*view["notices"], *additions]
     return view
+
+
+class AdapterNotAttached(RuntimeError):
+    """adapter 없이 등록된 case(빈 case)가 후보를 고른 뒤에도 adapter 없이 조회됐다. 선택 전에는 adapter를
+    조회하지 않으므로(`_inputs_for()`) INTAKE · SEARCHING 동안은 adapter가 없어도 된다."""
+
+
+def create_case(*, store: CaseStore) -> str:
+    """빈 case를 만들어 등록하고 `case_id`를 돌려준다(HTTP API Contract §5.1 `POST /cases`).
+
+    `case_id`는 case가 발급한다 — `case_` + uuid4 hex(ASCII 37자). aggregate는 밖으로 내보내지 않는다.
+    `decisions/empty-case-and-manifest.md`.
+    """
+    case_id = f"case_{uuid.uuid4().hex}"
+    store.register(CaseAggregate.empty(case_id))
+    return case_id
+
+
+def record_source_registered(case_id: str, source_asset: dict[str, Any], *, store: CaseStore) -> None:
+    """recording이 이 case에 등록 · 연결한 원본 1개(`SourceAsset` 계약 dict)를 반영한다(§5.2 upload).
+
+    composition root가 recording 등록과 같은 transaction에서 부른다. `INTAKE`가 아니면
+    `SourceNotAccepted` — 같은 transaction이라 recording 등록도 함께 rollback된다.
+    """
+    store.get_case(case_id).record_source_registered(source_asset)
 
 
 def get_view(

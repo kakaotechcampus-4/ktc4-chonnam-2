@@ -55,6 +55,16 @@ class InvalidTransition(Exception):
     pass
 
 
+class SourceNotAccepted(Exception):
+    """원본 연결은 `INTAKE`에서만 받는다(8-17 case 쪽) — 분석 시작 뒤 추가 업로드는 거부한다.
+    HTTP status · code는 HTTP API Contract가 정한다."""
+
+
+# 빈 case의 초기값(HTTP API Contract §5.1 예시) — `decisions/empty-case-and-manifest.md`.
+_EMPTY_HINTS = ("time", "vehicle", "situation", "location")
+_EMPTY_MANIFEST = {"file_count": 0, "ok_file_count": 0, "failed_file_count": 0, "duration_sec": 0, "range": None}
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
@@ -117,7 +127,32 @@ class CaseAggregate:
 
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
+        """hints · manifest를 한 번에 받는 진입점 — fixture · 테스트 경로용. 제품 진입점은 빈 case를 만드는
+        `service.create_case()`이고, 원본은 `record_source_registered()`로 하나씩 들어온다."""
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
+
+    @classmethod
+    def empty(cls, case_id: str) -> "CaseAggregate":
+        return cls(
+            case_id=case_id,
+            stage="INTAKE",
+            hints={key: None for key in _EMPTY_HINTS},
+            manifest_summary=dict(_EMPTY_MANIFEST),
+        )
+
+    def record_source_registered(self, source_asset: dict[str, Any]) -> None:
+        """recording이 등록 · 연결한 원본 1개를 `manifest_summary`에 센다.
+
+        `file_count` +1, `availability=AVAILABLE`이면 `ok_file_count` +1. `failed_file_count`(의미 미결) ·
+        `duration_sec`(「전체 구간 길이」 — 전방 · 후방이 같은 시간대를 찍으면 합산이 틀린다) · `range`는
+        recording timeline 몫이라 여기서 계산하지 않는다. `case_rev`는 올리지 않는다 — 이후 판단의 입력이
+        아니고, 동시 업로드 응답이 뒤섞여도 분석 시작이 `stale_revision`에 걸리지 않게.
+        """
+        if self.stage != "INTAKE":
+            raise SourceNotAccepted(f"원본 연결은 INTAKE에서만 받는다: stage={self.stage}")
+        self.manifest_summary["file_count"] += 1
+        if source_asset.get("availability") == "AVAILABLE":
+            self.manifest_summary["ok_file_count"] += 1
 
     def _advance(self, expected_from: str, to: str, *, bump_case_rev: bool = True) -> None:
         if self.stage != expected_from:
