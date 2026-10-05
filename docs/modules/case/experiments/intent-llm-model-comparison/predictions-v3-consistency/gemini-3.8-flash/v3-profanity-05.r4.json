@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-profanity-05",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"택시\",\n  \"situation_hint\": \"횡단보도에 애들 건너는데 안 서고 그냥 갔어요\",\n  \"location_hint\": \"금호동 쪽\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"장소('금호동 쪽'), 차량 종류('택시'), 위반 정황('횡단보도에 애들 건너는데 안 서고 그냥 감')이 명확하게 진술되어 각 필드를 추출하였고, 시간에 대한 언급은 없어 null로 처리했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "택시",
+    "situation_hint": "횡단보도에 애들 건너는데 안 서고 그냥 갔어요",
+    "location_hint": "금호동 쪽",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "장소('금호동 쪽'), 차량 종류('택시'), 위반 정황('횡단보도에 애들 건너는데 안 서고 그냥 감')이 명확하게 진술되어 각 필드를 추출하였고, 시간에 대한 언급은 없어 null로 처리했습니다."
+  },
+  "latency_ms": 3151.70820010826,
+  "prompt_tokens": 499,
+  "completion_tokens": 401,
+  "cost_krw": null,
+  "error": null
+}

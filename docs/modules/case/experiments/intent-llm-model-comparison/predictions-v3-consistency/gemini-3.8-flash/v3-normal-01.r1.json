@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-normal-01",
+  "scenario_tag": "정상_단서",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"그저께 밤 9시 반쯤\",\n  \"vehicle_hint\": \"검은색 그랜저\",\n  \"situation_hint\": \"빨간불인데 그냥 지나갔어요\",\n  \"location_hint\": \"금남로4가역 앞\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 장소, 대상 차량 및 신호위반 상황이 명확하고 구체적으로 서술되어 confidence를 high로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "그저께 밤 9시 반쯤",
+    "vehicle_hint": "검은색 그랜저",
+    "situation_hint": "빨간불인데 그냥 지나갔어요",
+    "location_hint": "금남로4가역 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 장소, 대상 차량 및 신호위반 상황이 명확하고 구체적으로 서술되어 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 3917.6441999152303,
+  "prompt_tokens": 496,
+  "completion_tokens": 298,
+  "cost_krw": null,
+  "error": null
+}

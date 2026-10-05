@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-location-vague-02",
+  "scenario_tag": "위치_애매",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"오늘 아침\",\n  \"vehicle_hint\": \"검은 오토바이\",\n  \"situation_hint\": \"인도로 달렸어요\",\n  \"location_hint\": \"큰 마트 근처, 아마 상무 쪽\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"시간, 차량, 위반 상황은 명확히 서술되었으나, 위치에 대해 '어디 큰 마트 근처였던 것 같은데, 아마 상무 쪽이었나'라며 불확실하고 모호하게 진술하여 confidence를 low로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "검은 오토바이",
+    "situation_hint": "인도로 달렸어요",
+    "location_hint": "큰 마트 근처, 아마 상무 쪽",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간, 차량, 위반 상황은 명확히 서술되었으나, 위치에 대해 '어디 큰 마트 근처였던 것 같은데, 아마 상무 쪽이었나'라며 불확실하고 모호하게 진술하여 confidence를 low로 판단했습니다."
+  },
+  "latency_ms": 2690.4169996269047,
+  "prompt_tokens": 500,
+  "completion_tokens": 427,
+  "cost_krw": null,
+  "error": null
+}

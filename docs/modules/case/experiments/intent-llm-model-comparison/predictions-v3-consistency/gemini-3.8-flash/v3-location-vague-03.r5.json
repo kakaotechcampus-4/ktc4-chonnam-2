@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-location-vague-03",
+  "scenario_tag": "위치_애매",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"2시쯤\",\"vehicle_hint\":\"흰색 화물차\",\"situation_hint\":\"엄청 빨리 지나갔어요\",\"location_hint\":\"학교 앞 어린이보호구역\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"시간, 차량, 상황, 장소 단서를 추출할 수 있으나, 어느 학교인지 기억나지 않는다는 불확실한 진술이 포함되어 있어 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": "2시쯤",
+    "vehicle_hint": "흰색 화물차",
+    "situation_hint": "엄청 빨리 지나갔어요",
+    "location_hint": "학교 앞 어린이보호구역",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간, 차량, 상황, 장소 단서를 추출할 수 있으나, 어느 학교인지 기억나지 않는다는 불확실한 진술이 포함되어 있어 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 3736.974500119686,
+  "prompt_tokens": 500,
+  "completion_tokens": 417,
+  "cost_krw": null,
+  "error": null
+}

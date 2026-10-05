@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-mixed-lang-06",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "'last week'을 '아마'라는 불확실성과 함께 그대로 추출했으며, 지어낸 구체적 날짜가 아니라 원문 표현을 유지했으므로 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "partial",
+      "reason": "'어떤 car'는 차종 식별 불가를 의미하므로 null 또는 모호 표시가 기대되나, 모델은 'car'라는 값을 채워 완전히 모호함을 반영하지 못했다. 다만 구체적 차종(세단, SUV 등)을 지어내지는 않았으므로 hallucinated까지는 아니다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '중앙선 넘었던 것 같아요'를 그대로 반영해 불확실성을 포함한 상황을 올바르게 추출했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'Mujin-daero'는 원문에 명시된 장소로 정확히 추출되었다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null로 둔 것이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "'I'm not sure', '아마', '~것 같아요' 등 전반적 불확실성 표현을 반영해 low로 설정한 것이 적절하다."
+    }
+  },
+  "prompt_tokens": 3081,
+  "completion_tokens": 610,
+  "cost_krw": 18.668895,
+  "error": null
+}

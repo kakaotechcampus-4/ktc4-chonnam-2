@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-order-bias-06",
+  "scenario_tag": "정보_위치순서_편향",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"어제 저녁 6시쯤\",\"vehicle_hint\":\"하얀 카니발\",\"situation_hint\":\"사람이 건너는데도 안 멈추고 지나갔어요\",\"location_hint\":\"양림동 펭귄마을 입구 앞 횡단보도\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에서 발생 시각, 장소, 차량 및 위반 정황이 구체적이고 명확히 제시되어 각 항목을 추출했으며 모호한 내용이 없어 높은 신뢰도로 판정했습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 저녁 6시쯤",
+    "vehicle_hint": "하얀 카니발",
+    "situation_hint": "사람이 건너는데도 안 멈추고 지나갔어요",
+    "location_hint": "양림동 펭귄마을 입구 앞 횡단보도",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 발생 시각, 장소, 차량 및 위반 정황이 구체적이고 명확히 제시되어 각 항목을 추출했으며 모호한 내용이 없어 높은 신뢰도로 판정했습니다."
+  },
+  "latency_ms": 3028.0927000567317,
+  "prompt_tokens": 513,
+  "completion_tokens": 320,
+  "cost_krw": null,
+  "error": null
+}

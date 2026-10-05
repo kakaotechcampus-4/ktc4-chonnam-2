@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-offtopic-05",
+  "scenario_tag": "무관한_질문_잡담",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자의 질문이 교통 위반 신고와 직접적인 관련이 없는 블랙박스 장비 사양에 대한 문의이므로 관련 정보가 추출되지 않았습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자의 질문이 교통 위반 신고와 직접적인 관련이 없는 블랙박스 장비 사양에 대한 문의이므로 관련 정보가 추출되지 않았습니다."
+  },
+  "latency_ms": 1755.9473998844624,
+  "prompt_tokens": 484,
+  "completion_tokens": 81,
+  "cost_krw": 0.36884300000000003,
+  "error": null
+}

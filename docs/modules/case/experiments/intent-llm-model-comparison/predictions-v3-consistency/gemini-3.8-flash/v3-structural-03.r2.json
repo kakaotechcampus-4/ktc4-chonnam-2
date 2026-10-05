@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-structural-03",
+  "scenario_tag": "구조적_경계_입력",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"무의미한 자음 및 숫자/영문 나열로 교통위반이나 사고와 관련된 유의미한 정보가 전혀 없어 모든 필드를 null로 처리하고 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "무의미한 자음 및 숫자/영문 나열로 교통위반이나 사고와 관련된 유의미한 정보가 전혀 없어 모든 필드를 null로 처리하고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 3318.559099920094,
+  "prompt_tokens": 480,
+  "completion_tokens": 324,
+  "cost_krw": null,
+  "error": null
+}

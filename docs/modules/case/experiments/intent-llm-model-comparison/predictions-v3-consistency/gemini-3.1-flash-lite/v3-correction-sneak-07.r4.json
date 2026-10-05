@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-07",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"흰색 투싼\",\n  \"situation_hint\": null,\n  \"location_hint\": \"사거리보다 좀 더 위쪽\",\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"차종이 스포티지에서 투싼으로 정정되었고, 위치 정보도 '좀 더 위쪽'이라는 불확실한 표현을 사용하고 있어 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 투싼",
+    "situation_hint": null,
+    "location_hint": "사거리보다 좀 더 위쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "차종이 스포티지에서 투싼으로 정정되었고, 위치 정보도 '좀 더 위쪽'이라는 불확실한 표현을 사용하고 있어 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1619.36130002141,
+  "prompt_tokens": 559,
+  "completion_tokens": 119,
+  "cost_krw": 0.484097,
+  "error": null
+}

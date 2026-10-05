@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-profanity-05",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"택시\",\n  \"situation_hint\": \"횡단보도 보행자 보호 의무 위반\",\n  \"location_hint\": \"금호동\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 사고가 발생한 구체적인 장소와 차량 종류, 위반 상황을 명확하게 진술하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "택시",
+    "situation_hint": "횡단보도 보행자 보호 의무 위반",
+    "location_hint": "금호동",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 사고가 발생한 구체적인 장소와 차량 종류, 위반 상황을 명확하게 진술하였습니다."
+  },
+  "latency_ms": 1765.6153999269009,
+  "prompt_tokens": 499,
+  "completion_tokens": 106,
+  "cost_krw": 0.43161799999999995,
+  "error": null
+}

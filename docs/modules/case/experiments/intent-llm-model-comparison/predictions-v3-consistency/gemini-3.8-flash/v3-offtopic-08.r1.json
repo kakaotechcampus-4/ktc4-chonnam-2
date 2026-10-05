@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-offtopic-08",
+  "scenario_tag": "무관한_질문_잡담",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"교통위반 또는 사고 상황과 무관한 앱 이용 문의 발화이므로 모든 추출 필드를 null로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "교통위반 또는 사고 상황과 무관한 앱 이용 문의 발화이므로 모든 추출 필드를 null로 설정했습니다."
+  },
+  "latency_ms": 3587.9542003385723,
+  "prompt_tokens": 480,
+  "completion_tokens": 428,
+  "cost_krw": null,
+  "error": null
+}

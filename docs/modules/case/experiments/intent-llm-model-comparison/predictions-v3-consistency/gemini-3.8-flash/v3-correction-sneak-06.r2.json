@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-06",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"지난주 목요일 오후 3시\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": \"time_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존 사건의 시간을 '지난주 목요일 오후 3시'로 정정하였으나 다른 사건(출근길 SUV 불법 유턴)에 관한 내용이 함께 섞여 있어, 새 사실은 무시하고 time_hint만 정정 대상으로 처리한 뒤 confidence를 low로 평가했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "지난주 목요일 오후 3시",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "기존 사건의 시간을 '지난주 목요일 오후 3시'로 정정하였으나 다른 사건(출근길 SUV 불법 유턴)에 관한 내용이 함께 섞여 있어, 새 사실은 무시하고 time_hint만 정정 대상으로 처리한 뒤 confidence를 low로 평가했습니다."
+  },
+  "latency_ms": 3528.500400017947,
+  "prompt_tokens": 564,
+  "completion_tokens": 580,
+  "cost_krw": null,
+  "error": null
+}

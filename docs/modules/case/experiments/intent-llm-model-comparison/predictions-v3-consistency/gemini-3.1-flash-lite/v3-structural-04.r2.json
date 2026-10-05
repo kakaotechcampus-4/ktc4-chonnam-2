@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-structural-04",
+  "scenario_tag": "구조적_경계_입력",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": null, \"confidence\": \"low\", \"reasoning\": \"사용자가 이모지만 입력하여 구체적인 시간, 장소, 상황을 파악할 수 없음.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 이모지만 입력하여 구체적인 시간, 장소, 상황을 파악할 수 없음."
+  },
+  "latency_ms": 1626.5670000575483,
+  "prompt_tokens": 470,
+  "completion_tokens": 70,
+  "cost_krw": 0.33841,
+  "error": null
+}

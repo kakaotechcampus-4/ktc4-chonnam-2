@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-06",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"어제 밤\", \"vehicle_hint\": \"흰색 그랜저\", \"situation_hint\": \"버스전용차로 위반\", \"location_hint\": \"광주역 앞\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 제시한 상황 중 첫 번째 사고인 '흰색 그랜저의 버스전용차로 위반'을 기준으로 정보를 추출하였습니다. 뒤에 언급된 오토바이 관련 내용은 명시적인 사고 전환 신호로 판단하여 현재 추출 대상에서 제외하였습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": "흰색 그랜저",
+    "situation_hint": "버스전용차로 위반",
+    "location_hint": "광주역 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 제시한 상황 중 첫 번째 사고인 '흰색 그랜저의 버스전용차로 위반'을 기준으로 정보를 추출하였습니다. 뒤에 언급된 오토바이 관련 내용은 명시적인 사고 전환 신호로 판단하여 현재 추출 대상에서 제외하였습니다."
+  },
+  "latency_ms": 1896.3156999088824,
+  "prompt_tokens": 505,
+  "completion_tokens": 124,
+  "cost_krw": 0.474992,
+  "error": null
+}

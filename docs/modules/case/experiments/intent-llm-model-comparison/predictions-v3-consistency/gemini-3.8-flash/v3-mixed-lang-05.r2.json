@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-mixed-lang-05",
+  "scenario_tag": "비한국어_언어혼합",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"Tối qua khoảng 10 giờ\",\n  \"vehicle_hint\": \"chiếc xe máy\",\n  \"situation_hint\": \"chạy trên vỉa hè\",\n  \"location_hint\": \"Chungjang-ro\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간(어젯밤 10시경), 대상 차량(오토바이), 위반 상황(보도 주행), 장소(충장로)가 문장에서 명확히 진술되어 있어 각 필드를 추출하고 confidence를 high로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "Tối qua khoảng 10 giờ",
+    "vehicle_hint": "chiếc xe máy",
+    "situation_hint": "chạy trên vỉa hè",
+    "location_hint": "Chungjang-ro",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간(어젯밤 10시경), 대상 차량(오토바이), 위반 상황(보도 주행), 장소(충장로)가 문장에서 명확히 진술되어 있어 각 필드를 추출하고 confidence를 high로 설정했습니다."
+  },
+  "latency_ms": 2994.4977001287043,
+  "prompt_tokens": 489,
+  "completion_tokens": 340,
+  "cost_krw": null,
+  "error": null
+}

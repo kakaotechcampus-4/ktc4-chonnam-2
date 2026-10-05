@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-relative-time-02",
+  "scenario_tag": "상대시간_표현",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"아까 점심 먹고 나오다가\",\n  \"vehicle_hint\": \"흰색 레이\",\n  \"situation_hint\": \"실선에서 확 끼어들었어요\",\n  \"location_hint\": \"화정동 염주체육관 앞\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간대, 위치, 대상 차량 및 위반 상황이 명확히 언급되어 각 필드에 매핑하였으며 모호한 표현이 없어 confidence를 high로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아까 점심 먹고 나오다가",
+    "vehicle_hint": "흰색 레이",
+    "situation_hint": "실선에서 확 끼어들었어요",
+    "location_hint": "화정동 염주체육관 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간대, 위치, 대상 차량 및 위반 상황이 명확히 언급되어 각 필드에 매핑하였으며 모호한 표현이 없어 confidence를 high로 지정했습니다."
+  },
+  "latency_ms": 3136.4429998211563,
+  "prompt_tokens": 494,
+  "completion_tokens": 321,
+  "cost_krw": null,
+  "error": null
+}

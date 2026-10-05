@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-vehicle-vague-01",
+  "scenario_tag": "차량_애매",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"어제 오후\",\n  \"vehicle_hint\": \"어두운 색 (승용차 또는 SUV)\",\n  \"situation_hint\": \"신호위반\",\n  \"location_hint\": \"금남로\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"차량 종류(승용차인지 SUV인지)에 대해 헷갈린다고 불확실하게 진술하였으므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 오후",
+    "vehicle_hint": "어두운 색 (승용차 또는 SUV)",
+    "situation_hint": "신호위반",
+    "location_hint": "금남로",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "차량 종류(승용차인지 SUV인지)에 대해 헷갈린다고 불확실하게 진술하였으므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2959.911699872464,
+  "prompt_tokens": 502,
+  "completion_tokens": 375,
+  "cost_krw": null,
+  "error": null
+}

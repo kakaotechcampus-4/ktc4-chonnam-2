@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-new-incident-02",
+  "scenario_tag": "새사고_정정오인_방지",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"오늘 아침 출근길\",\"vehicle_hint\":\"노란 학원차\",\"situation_hint\":\"중앙선 넘어서 추월\",\"location_hint\":\"양림동 펭귄마을 앞\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"'다 취소하고요, 새로 신고할게요'라는 명시적 전환 신호가 있어 기존 단서의 정정이 아닌 새 사고 신고로 처리하여 correction_target을 null로 두고 새 발화의 단서들을 추출했습니다. 모든 항목이 구체적이고 명확하므로 confidence는 high입니다.\"}",
+  "parsed": {
+    "time_hint": "오늘 아침 출근길",
+    "vehicle_hint": "노란 학원차",
+    "situation_hint": "중앙선 넘어서 추월",
+    "location_hint": "양림동 펭귄마을 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "'다 취소하고요, 새로 신고할게요'라는 명시적 전환 신호가 있어 기존 단서의 정정이 아닌 새 사고 신고로 처리하여 correction_target을 null로 두고 새 발화의 단서들을 추출했습니다. 모든 항목이 구체적이고 명확하므로 confidence는 high입니다."
+  },
+  "latency_ms": 3163.61409984529,
+  "prompt_tokens": 559,
+  "completion_tokens": 445,
+  "cost_krw": null,
+  "error": null
+}

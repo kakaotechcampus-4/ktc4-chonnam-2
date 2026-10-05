@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-03",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자가 두 건의 서로 다른 사고를 한 번에 언급하였으며, 단일 사고에 대한 특정 정보가 명확히 분리되지 않아 개별 필드를 채우기에 모호합니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 두 건의 서로 다른 사고를 한 번에 언급하였으며, 단일 사고에 대한 특정 정보가 명확히 분리되지 않아 개별 필드를 채우기에 모호합니다."
+  },
+  "latency_ms": 1780.708400066942,
+  "prompt_tokens": 512,
+  "completion_tokens": 106,
+  "cost_krw": 0.436558,
+  "error": null
+}

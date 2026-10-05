@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-05",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"일반 은색 쏘나타\",\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존 차량 정보를 은색 쏘나타로 정정하는 내용은 명확하나, 뒤에 언급된 시내버스 신호 위반 건은 기존 사고 상황과 다른 별개의 사실이 섞여 있어 전체적인 정보의 일관성이 낮아 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "일반 은색 쏘나타",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "기존 차량 정보를 은색 쏘나타로 정정하는 내용은 명확하나, 뒤에 언급된 시내버스 신호 위반 건은 기존 사고 상황과 다른 별개의 사실이 섞여 있어 전체적인 정보의 일관성이 낮아 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1661.2539999186993,
+  "prompt_tokens": 564,
+  "completion_tokens": 135,
+  "cost_krw": 0.522525,
+  "error": null
+}

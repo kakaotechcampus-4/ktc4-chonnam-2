@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-correction-sneak-07",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 시간 언급이 없고 정정 케이스이므로 null이 정답이며 모델도 null로 처리했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "스포티지가 아니라 투싼이라는 명확한 정정을 '흰색 투싼'으로 정확히 반영했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 상황 관련 언급이 없고 정정 케이스이므로 null이 정답이며 모델도 null로 처리했다."
+    },
+    "location_hint": {
+      "verdict": "hallucinated",
+      "reason": "원문은 '그 사거리보다 좀 더 위쪽이었던 것 같기도 하고요'라는 모호한 진술인데, 모델이 이를 '장덕동 사거리 좀 더 위쪽'이라는 구체적 지명으로 확정해 지어냈다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "명확한 정정 대상인 vehicle_hint로 올바르게 지정했다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "위치 진술의 모호함을 반영해 confidence를 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "prompt_tokens": 3274,
+  "completion_tokens": 565,
+  "cost_krw": 18.571455,
+  "error": null
+}

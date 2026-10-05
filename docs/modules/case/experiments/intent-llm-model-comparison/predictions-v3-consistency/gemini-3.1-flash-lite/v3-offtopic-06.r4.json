@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-offtopic-06",
+  "scenario_tag": "무관한_질문_잡담",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"주말\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"양림동 펭귄마을\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"교통 위반 신고와 무관한 단순 장소 정보 문의이며, 상황 설명이 전혀 포함되어 있지 않아 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "주말",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "양림동 펭귄마을",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "교통 위반 신고와 무관한 단순 장소 정보 문의이며, 상황 설명이 전혀 포함되어 있지 않아 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1642.8461000323296,
+  "prompt_tokens": 486,
+  "completion_tokens": 104,
+  "cost_krw": 0.422112,
+  "error": null
+}

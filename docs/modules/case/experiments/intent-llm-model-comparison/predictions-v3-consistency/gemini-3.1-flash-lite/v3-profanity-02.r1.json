@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-profanity-02",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 밤 10시쯤\",\n  \"vehicle_hint\": \"검은색 K5\",\n  \"situation_hint\": \"빨간불 무시하고 쌩 달림\",\n  \"location_hint\": \"상무지구 먹자골목\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간, 장소, 차종, 위반 상황이 명확하게 진술되어 높은 신뢰도로 추출함.\"\n}",
+  "parsed": {
+    "time_hint": "어제 밤 10시쯤",
+    "vehicle_hint": "검은색 K5",
+    "situation_hint": "빨간불 무시하고 쌩 달림",
+    "location_hint": "상무지구 먹자골목",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간, 장소, 차종, 위반 상황이 명확하게 진술되어 높은 신뢰도로 추출함."
+  },
+  "latency_ms": 1726.8115999177098,
+  "prompt_tokens": 503,
+  "completion_tokens": 119,
+  "cost_krw": 0.462817,
+  "error": null
+}

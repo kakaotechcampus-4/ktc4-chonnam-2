@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-contradiction-08",
+  "scenario_tag": "모순_정보",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"회색 카니발\",\n  \"situation_hint\": \"깜빡이 없이 차선 바꿨어요\",\n  \"location_hint\": \"운암동 쪽\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"발화 내에서 수완지구를 운암동 쪽으로 직접 바로잡았으므로 위치를 운암동 쪽으로 추출했습니다. prior_hints가 주어지지 않아 correction_target은 null이며, 차량과 위반 상황 진술이 명확하므로 confidence는 high입니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "회색 카니발",
+    "situation_hint": "깜빡이 없이 차선 바꿨어요",
+    "location_hint": "운암동 쪽",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화 내에서 수완지구를 운암동 쪽으로 직접 바로잡았으므로 위치를 운암동 쪽으로 추출했습니다. prior_hints가 주어지지 않아 correction_target은 null이며, 차량과 위반 상황 진술이 명확하므로 confidence는 high입니다."
+  },
+  "latency_ms": 6352.466400247067,
+  "prompt_tokens": 507,
+  "completion_tokens": 483,
+  "cost_krw": null,
+  "error": null
+}

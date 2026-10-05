@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-02",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":\"주월동 사거리\",\"correction_target\":\"location_hint\",\"confidence\":\"low\",\"reasoning\":\"기존의 장소 정보를 주월동 사거리로 정정하였으나 발화 내에 다른 차량(택시)의 별도 위반 사실이 함께 언급되어 해당 내용은 제외하고 confidence를 low로 판단했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "주월동 사거리",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "기존의 장소 정보를 주월동 사거리로 정정하였으나 발화 내에 다른 차량(택시)의 별도 위반 사실이 함께 언급되어 해당 내용은 제외하고 confidence를 low로 판단했습니다."
+  },
+  "latency_ms": 3632.739400025457,
+  "prompt_tokens": 560,
+  "completion_tokens": 529,
+  "cost_krw": null,
+  "error": null
+}

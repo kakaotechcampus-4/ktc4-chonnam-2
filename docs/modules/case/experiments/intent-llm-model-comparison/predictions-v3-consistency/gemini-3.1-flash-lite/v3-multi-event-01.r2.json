@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-01",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"어제 저녁 7시쯤\", \"vehicle_hint\": \"검은색 카니발\", \"situation_hint\": \"불법 유턴\", \"location_hint\": \"수완지구\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"두 가지 사건이 모두 명확하게 진술되어 있으나, 첫 번째 사건을 기준으로 필드를 채웠습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 저녁 7시쯤",
+    "vehicle_hint": "검은색 카니발",
+    "situation_hint": "불법 유턴",
+    "location_hint": "수완지구",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "두 가지 사건이 모두 명확하게 진술되어 있으나, 첫 번째 사건을 기준으로 필드를 채웠습니다."
+  },
+  "latency_ms": 1901.3805002905428,
+  "prompt_tokens": 512,
+  "completion_tokens": 94,
+  "cost_krw": 0.40916199999999997,
+  "error": null
+}

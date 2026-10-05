@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-mixed-lang-07",
+  "scenario_tag": "비한국어_언어혼합",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"Cheomdan\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 장소 정보가 잘못되었다고 명시하고 올바른 장소로 'Cheomdan'을 제시하여 location_hint에 대한 정정이 이루어짐.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "Cheomdan",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 장소 정보가 잘못되었다고 명시하고 올바른 장소로 'Cheomdan'을 제시하여 location_hint에 대한 정정이 이루어짐."
+  },
+  "latency_ms": 1818.1118997745216,
+  "prompt_tokens": 536,
+  "completion_tokens": 106,
+  "cost_krw": 0.445678,
+  "error": null
+}

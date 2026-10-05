@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-all-vague-03",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에 시간 관련 언급이 없어 null로 둔 것이 적절하다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'차 한 대'라는 모호한 표현을 그대로 유지했고 차종을 지어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "'뭘 잘못했던 것'이라는 모호한 표현을 그대로 반영했고 구체적인 위반 유형을 지어내지 않았다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'그 동네 어디쯤'이라는 모호한 표현을 그대로 유지했고 동네 이름을 지어내지 않았다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "모호한 정보만 있어 confidence를 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "prompt_tokens": 3038,
+  "completion_tokens": 478,
+  "cost_krw": 16.52826,
+  "error": null
+}

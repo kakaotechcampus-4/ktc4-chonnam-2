@@ -1,0 +1,37 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-location-vague-01",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 저녁'을 그대로 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 그랜저'를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '갓길로 추월' 상황을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'무슨 대로'는 실제 도로명을 지어내지 않고 이름 모르는 대로 수준으로 표현해 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 상황이 아니므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "장소가 불확실해 기준상 confidence는 low여야 하는데 모델은 근거 없이 high로 지어냈다."
+    }
+  },
+  "prompt_tokens": 3077,
+  "completion_tokens": 454,
+  "cost_krw": 16.281615,
+  "error": null,
+  "reused_from": "v3-location-vague-01.r2.judge.20261005T-v3-sonnet5.json"
+}

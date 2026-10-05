@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-order-bias-02",
+  "scenario_tag": "정보_위치순서_편향",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"오늘 아침 8시쯤\",\n  \"vehicle_hint\": \"흰색 모닝\",\n  \"situation_hint\": \"차로를 갑자기 바꿨고\",\n  \"location_hint\": \"백운광장 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 사고 발생 장소, 차량 종류, 상황, 시간 정보를 명확하게 모두 진술하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 아침 8시쯤",
+    "vehicle_hint": "흰색 모닝",
+    "situation_hint": "차로를 갑자기 바꿨고",
+    "location_hint": "백운광장 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 사고 발생 장소, 차량 종류, 상황, 시간 정보를 명확하게 모두 진술하였습니다."
+  },
+  "latency_ms": 1900.2873999997973,
+  "prompt_tokens": 498,
+  "completion_tokens": 110,
+  "cost_krw": 0.44037000000000004,
+  "error": null
+}

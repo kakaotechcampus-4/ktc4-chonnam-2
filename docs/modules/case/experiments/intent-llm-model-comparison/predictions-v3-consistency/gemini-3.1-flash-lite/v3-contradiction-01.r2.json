@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-contradiction-01",
+  "scenario_tag": "모순_정보",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"파란 트럭\",\"situation_hint\":\"불법 유턴\",\"location_hint\":\"수완지구\",\"correction_target\":\"location_hint\",\"confidence\":\"high\",\"reasoning\":\"사용자가 첨단에서 수완지구로 위치를 명확히 정정하였으며, 차량과 상황 정보가 구체적으로 제시됨.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "파란 트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "수완지구",
+    "correction_target": "location_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 첨단에서 수완지구로 위치를 명확히 정정하였으며, 차량과 상황 정보가 구체적으로 제시됨."
+  },
+  "latency_ms": 1631.9926003925502,
+  "prompt_tokens": 491,
+  "completion_tokens": 81,
+  "cost_krw": 0.371503,
+  "error": null
+}

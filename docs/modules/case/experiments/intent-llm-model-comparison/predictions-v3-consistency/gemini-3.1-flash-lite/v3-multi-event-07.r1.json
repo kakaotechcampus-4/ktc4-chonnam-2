@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-07",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"아침, 퇴근길\",\n  \"vehicle_hint\": \"화물차, 마티즈\",\n  \"situation_hint\": \"중앙선 침범, 횡단보도 보행자 보호 의무 위반\",\n  \"location_hint\": \"하남산단, 운암동\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"두 건의 서로 다른 위반 사례가 명확히 제시되었으며, 위치와 시간, 차종 및 위반 상황이 구체적으로 분리되어 기술되었습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아침, 퇴근길",
+    "vehicle_hint": "화물차, 마티즈",
+    "situation_hint": "중앙선 침범, 횡단보도 보행자 보호 의무 위반",
+    "location_hint": "하남산단, 운암동",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "두 건의 서로 다른 위반 사례가 명확히 제시되었으며, 위치와 시간, 차종 및 위반 상황이 구체적으로 분리되어 기술되었습니다."
+  },
+  "latency_ms": 1800.1835001632571,
+  "prompt_tokens": 513,
+  "completion_tokens": 139,
+  "cost_krw": 0.512277,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-contradiction-03",
+  "scenario_tag": "모순_정보",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"남색 제네시스\",\n  \"situation_hint\": \"보도 위로 올라가서 달림\",\n  \"location_hint\": \"충장로\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 발화 중 차량 색상을 검은색에서 남색으로 직접 정정하여 최종적으로 남색 제네시스로 추출하였으며, 위치와 위반 상황이 명확히 기술되어 confidence를 high로 부여함.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "남색 제네시스",
+    "situation_hint": "보도 위로 올라가서 달림",
+    "location_hint": "충장로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 발화 중 차량 색상을 검은색에서 남색으로 직접 정정하여 최종적으로 남색 제네시스로 추출하였으며, 위치와 위반 상황이 명확히 기술되어 confidence를 high로 부여함."
+  },
+  "latency_ms": 3529.4222999364138,
+  "prompt_tokens": 500,
+  "completion_tokens": 389,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-08",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"전남대 정문 앞\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존의 전남대 후문을 정문 앞으로 명시하여 정정 대상을 location_hint로 판단했습니다. 다만 시간에 대해 불확실하고 모호하게 언급하여 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "전남대 정문 앞",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "기존의 전남대 후문을 정문 앞으로 명시하여 정정 대상을 location_hint로 판단했습니다. 다만 시간에 대해 불확실하고 모호하게 언급하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 4281.140900216997,
+  "prompt_tokens": 556,
+  "completion_tokens": 790,
+  "cost_krw": null,
+  "error": null
+}

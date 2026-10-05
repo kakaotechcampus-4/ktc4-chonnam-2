@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-all-vague-01",
+  "scenario_tag": "전부_모호",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":\"위험하게 달리는\",\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"위험하게 달리는 상황에 대한 단서는 언급되었으나 기억이 불확실하고 가물가물하다고 진술하여 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "위험하게 달리는",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "위험하게 달리는 상황에 대한 단서는 언급되었으나 기억이 불확실하고 가물가물하다고 진술하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 4705.816099885851,
+  "prompt_tokens": 488,
+  "completion_tokens": 500,
+  "cost_krw": null,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-vehicle-vague-02",
+  "scenario_tag": "차량_애매",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"트럭\",\n  \"situation_hint\": \"불법 유턴\",\n  \"location_hint\": \"첨단 2지구\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 트럭이라는 차종과 첨단 2지구라는 장소, 불법 유턴이라는 상황을 명확하게 진술하였습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "트럭",
+    "situation_hint": "불법 유턴",
+    "location_hint": "첨단 2지구",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 트럭이라는 차종과 첨단 2지구라는 장소, 불법 유턴이라는 상황을 명확하게 진술하였습니다."
+  },
+  "latency_ms": 1866.5114999748766,
+  "prompt_tokens": 493,
+  "completion_tokens": 107,
+  "cost_krw": 0.431621,
+  "error": null
+}

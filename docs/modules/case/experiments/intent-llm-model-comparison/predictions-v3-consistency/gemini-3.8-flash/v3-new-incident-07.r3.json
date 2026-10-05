@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-new-incident-07",
+  "scenario_tag": "새사고_정정오인_방지",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"어제였나 그저께였나\",\"vehicle_hint\":null,\"situation_hint\":\"역주행\",\"location_hint\":\"송정역 근처\",\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"'앞에 거랑은 다른 사고'라는 명시적 전환 신호가 있어 정정이 아닌 새 사고로 판단하여 correction_target은 null로 두었습니다. 발생 시각('어제였나 그저께였나')이 불분명하고 차량을 특정하지 못해 confidence를 low로 매겼습니다.\"}",
+  "parsed": {
+    "time_hint": "어제였나 그저께였나",
+    "vehicle_hint": null,
+    "situation_hint": "역주행",
+    "location_hint": "송정역 근처",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "'앞에 거랑은 다른 사고'라는 명시적 전환 신호가 있어 정정이 아닌 새 사고로 판단하여 correction_target은 null로 두었습니다. 발생 시각('어제였나 그저께였나')이 불분명하고 차량을 특정하지 못해 confidence를 low로 매겼습니다."
+  },
+  "latency_ms": 3985.081600025296,
+  "prompt_tokens": 566,
+  "completion_tokens": 528,
+  "cost_krw": null,
+  "error": null
+}

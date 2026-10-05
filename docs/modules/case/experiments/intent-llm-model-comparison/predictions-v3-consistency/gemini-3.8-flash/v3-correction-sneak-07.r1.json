@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-07",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":\"흰색 투싼\",\"situation_hint\":null,\"location_hint\":\"그 사거리보다 좀 더 위쪽\",\"correction_target\":\"vehicle_hint\",\"confidence\":\"low\",\"reasoning\":\"차량 정보를 스포티지에서 흰색 투싼으로 명확히 정정하고 있어 correction_target을 vehicle_hint로 판단했으나, 위치에 대해 '위쪽이었던 것 같기도 하다'며 불확실하게 진술하고 두 가지 이상의 수정이 섞여 있어 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "흰색 투싼",
+    "situation_hint": null,
+    "location_hint": "그 사거리보다 좀 더 위쪽",
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "차량 정보를 스포티지에서 흰색 투싼으로 명확히 정정하고 있어 correction_target을 vehicle_hint로 판단했으나, 위치에 대해 '위쪽이었던 것 같기도 하다'며 불확실하게 진술하고 두 가지 이상의 수정이 섞여 있어 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 5566.992900334299,
+  "prompt_tokens": 559,
+  "completion_tokens": 882,
+  "cost_krw": null,
+  "error": null
+}

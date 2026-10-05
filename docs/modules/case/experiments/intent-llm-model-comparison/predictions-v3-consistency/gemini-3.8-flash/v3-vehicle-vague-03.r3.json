@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-vehicle-vague-03",
+  "scenario_tag": "차량_애매",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"택시 또는 흰 승용차\",\n  \"situation_hint\": \"꼬리물기\",\n  \"location_hint\": \"수완지구 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"위반 장소(수완지구 사거리)와 행위(꼬리물기)는 명확하나, 대상 차량이 택시인지 일반 흰 승용차인지 진술이 불확실하고 모호하므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "택시 또는 흰 승용차",
+    "situation_hint": "꼬리물기",
+    "location_hint": "수완지구 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "위반 장소(수완지구 사거리)와 행위(꼬리물기)는 명확하나, 대상 차량이 택시인지 일반 흰 승용차인지 진술이 불확실하고 모호하므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2969.6630998514593,
+  "prompt_tokens": 504,
+  "completion_tokens": 395,
+  "cost_krw": null,
+  "error": null
+}

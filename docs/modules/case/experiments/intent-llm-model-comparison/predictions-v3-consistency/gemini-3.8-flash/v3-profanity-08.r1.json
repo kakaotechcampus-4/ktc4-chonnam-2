@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-profanity-08",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"아까\",\n  \"vehicle_hint\": \"배달 스쿠터\",\n  \"situation_hint\": \"빨간불에 그냥 쌩 감\",\n  \"location_hint\": \"용봉동 전남대 후문\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"시간(아까), 위치(용봉동 전남대 후문), 차량(배달 스쿠터), 위반 상황(빨간불 주행)에 대한 정보가 직접적이고 분명하게 나타나 있어 confidence를 high로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아까",
+    "vehicle_hint": "배달 스쿠터",
+    "situation_hint": "빨간불에 그냥 쌩 감",
+    "location_hint": "용봉동 전남대 후문",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간(아까), 위치(용봉동 전남대 후문), 차량(배달 스쿠터), 위반 상황(빨간불 주행)에 대한 정보가 직접적이고 분명하게 나타나 있어 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 4892.131600063294,
+  "prompt_tokens": 505,
+  "completion_tokens": 355,
+  "cost_krw": null,
+  "error": null
+}

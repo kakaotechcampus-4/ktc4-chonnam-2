@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-new-incident-06",
+  "scenario_tag": "새사고_정정오인_방지",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 오후\",\n  \"vehicle_hint\": \"25톤 화물차\",\n  \"situation_hint\": \"실선에서 차선 변경하여 끼어듦\",\n  \"location_hint\": \"하남산단 쪽\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 '또 다른 사고 얘기'라고 명시적으로 새로운 사건임을 밝혀 이전 힌트를 무시하고 새로운 사고 정보를 추출함.\"\n}",
+  "parsed": {
+    "time_hint": "어제 오후",
+    "vehicle_hint": "25톤 화물차",
+    "situation_hint": "실선에서 차선 변경하여 끼어듦",
+    "location_hint": "하남산단 쪽",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 '또 다른 사고 얘기'라고 명시적으로 새로운 사건임을 밝혀 이전 힌트를 무시하고 새로운 사고 정보를 추출함."
+  },
+  "latency_ms": 1951.0051999241114,
+  "prompt_tokens": 550,
+  "completion_tokens": 117,
+  "cost_krw": 0.476111,
+  "error": null
+}

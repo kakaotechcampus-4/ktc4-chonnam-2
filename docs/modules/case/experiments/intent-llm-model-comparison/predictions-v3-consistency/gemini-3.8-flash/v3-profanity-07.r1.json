@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-profanity-07",
+  "scenario_tag": "욕설_유효신고_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"은색 벤츠\", \"situation_hint\": \"실선인데 차로 확 바꿔버림\", \"location_hint\": \"빛고을대로\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"차량(은색 벤츠), 장소(빛고을대로), 위반 정황(실선 차로 변경)이 분명하게 진술되었으며, 시간 정보는 언급되지 않아 null로 두었습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 벤츠",
+    "situation_hint": "실선인데 차로 확 바꿔버림",
+    "location_hint": "빛고을대로",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "차량(은색 벤츠), 장소(빛고을대로), 위반 정황(실선 차로 변경)이 분명하게 진술되었으며, 시간 정보는 언급되지 않아 null로 두었습니다."
+  },
+  "latency_ms": 3799.1590998135507,
+  "prompt_tokens": 494,
+  "completion_tokens": 299,
+  "cost_krw": null,
+  "error": null
+}

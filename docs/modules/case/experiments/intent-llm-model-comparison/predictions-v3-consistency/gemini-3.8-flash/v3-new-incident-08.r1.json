@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-new-incident-08",
+  "scenario_tag": "새사고_정정오인_방지",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"오늘 오후 1시쯤\",\n  \"vehicle_hint\": \"시내버스\",\n  \"situation_hint\": \"정류장 아닌 데 서서 손님 내려줬어요\",\n  \"location_hint\": \"봉선동 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"'완전 다른 사건 하나 더 있어요'라는 명시적 전환 신호가 있어 기존 신고 정정이 아닌 새 사고로 판단하여 correction_target을 null로 설정하고 새 발화 내용을 바탕으로 필드를 추출했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 오후 1시쯤",
+    "vehicle_hint": "시내버스",
+    "situation_hint": "정류장 아닌 데 서서 손님 내려줬어요",
+    "location_hint": "봉선동 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "'완전 다른 사건 하나 더 있어요'라는 명시적 전환 신호가 있어 기존 신고 정정이 아닌 새 사고로 판단하여 correction_target을 null로 설정하고 새 발화 내용을 바탕으로 필드를 추출했습니다."
+  },
+  "latency_ms": 3659.3879000283778,
+  "prompt_tokens": 569,
+  "completion_tokens": 576,
+  "cost_krw": null,
+  "error": null
+}

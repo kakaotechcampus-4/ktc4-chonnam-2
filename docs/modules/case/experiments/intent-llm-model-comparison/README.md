@@ -54,6 +54,7 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 - 어떤 모델/프롬프트를 실측하든 이 파일을 그대로 재사용한다. 비교 대상이 바뀔 때마다 케이스를 새로 쓰면 이전 실측과 비교가 깨진다.
 - 케이스를 추가/수정해야 하면 파일을 고치지 않고 `intent-hint-eval-v2.jsonl`을 새로 만든다. 이전 버전으로 만든 `predictions/`·`results/`는 그대로 보존한다.
 - 버전 변경 사유는 이 README에 짧게 추가한다.
+- **`intent-hint-robustness-v3.jsonl`(2026-10-05, 100케이스)** — 멘토 피드백 Q2(데이터 증강 · 지식 증류). 기존 55건을 seed로 Claude Opus 5.5(Claude Code)가 만들었다(지원금 소모 없음). robustness 10개 카테고리 × 8 + 정상 계열 20. 행마다 규칙 채점용 구조화 정답 `expected`(+ 여러 사건은 `events`)가 있다 — 형식 · 생성 규칙은 `datasets/intent-hint-robustness-v3.SPEC.md`, 검증 과정 · 한계는 `results/consistency-robustness-v3.md`. v1 · v2 파일은 그대로다.
 
 ### 카테고리 (최소 고정 — v1은 카테고리당 1케이스)
 

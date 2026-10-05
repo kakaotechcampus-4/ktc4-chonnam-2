@@ -1,0 +1,37 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-all-vague-02",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문에서 시각을 모른다고 명시했고 모델은 null로 처리했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "'어떤 차'로만 언급되어 식별 불가능하며 모델은 null로 둬 구체 값을 지어내지 않았다."
+    },
+    "situation_hint": {
+      "verdict": "partial",
+      "reason": "원문 그대로 '좀 이상하게 움직였어요'를 인용했으나 이는 추상적 표현일 뿐 구체적 위반 상황을 특정하지 못한 것으로, 기준상 식별 불가에 가까운 내용을 그대로 옮긴 것은 방향은 맞지만 모호함을 그대로 둔 수준이라 partial로 본다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "장소 언급이 전혀 없어 null 처리가 맞다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "prior_hints가 없고 정정 상황이 아니므로 null이 맞다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "시간·장소·차량·상황 모두 불명확하므로 confidence=low가 타당하다."
+    }
+  },
+  "prompt_tokens": 3009,
+  "completion_tokens": 548,
+  "cost_krw": 17.505705,
+  "error": null,
+  "reused_from": "v3-all-vague-02.r2.judge.20261005T-v3-sonnet5.json"
+}

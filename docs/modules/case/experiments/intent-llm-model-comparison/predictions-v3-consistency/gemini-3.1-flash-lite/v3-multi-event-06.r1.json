@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-06",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 밤\",\n  \"vehicle_hint\": \"흰색 그랜저\",\n  \"situation_hint\": \"버스전용차로 위반\",\n  \"location_hint\": \"광주역 앞\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"사용자가 하나의 발화 내에서 서로 다른 두 사건(어제 밤 그랜저, 오늘 새벽 오토바이)을 언급하고 있어 정황이 혼재되어 있습니다. 신고 대상이 모호하므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": "흰색 그랜저",
+    "situation_hint": "버스전용차로 위반",
+    "location_hint": "광주역 앞",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "사용자가 하나의 발화 내에서 서로 다른 두 사건(어제 밤 그랜저, 오늘 새벽 오토바이)을 언급하고 있어 정황이 혼재되어 있습니다. 신고 대상이 모호하므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1860.2656000293791,
+  "prompt_tokens": 505,
+  "completion_tokens": 133,
+  "cost_krw": 0.495539,
+  "error": null
+}

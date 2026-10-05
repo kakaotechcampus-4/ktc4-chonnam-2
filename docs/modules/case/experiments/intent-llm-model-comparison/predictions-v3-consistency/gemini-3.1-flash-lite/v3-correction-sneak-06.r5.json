@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-06",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"지난주 목요일 오후 3시\", \"vehicle_hint\": null, \"situation_hint\": null, \"location_hint\": null, \"correction_target\": \"time_hint\", \"confidence\": \"low\", \"reasoning\": \"시간에 대한 명확한 정정이 포함되었으나, 뒤에 언급된 SUV 불법 유턴 건은 기존 사고와 무관한 별개의 사건이므로 필드에 반영하지 않고 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": "지난주 목요일 오후 3시",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "low",
+    "reasoning": "시간에 대한 명확한 정정이 포함되었으나, 뒤에 언급된 SUV 불법 유턴 건은 기존 사고와 무관한 별개의 사건이므로 필드에 반영하지 않고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1689.7430000826716,
+  "prompt_tokens": 564,
+  "completion_tokens": 105,
+  "cost_krw": 0.454035,
+  "error": null
+}

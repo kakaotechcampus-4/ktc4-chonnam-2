@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-mixed-lang-01",
+  "scenario_tag": "비한국어_언어혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"Yesterday around 6pm\",\n  \"vehicle_hint\": \"black Benz\",\n  \"situation_hint\": \"ran the red light\",\n  \"location_hint\": \"상무지구\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"The user provided clear information regarding the time, vehicle, situation, and location in a single cohesive sentence.\"\n}",
+  "parsed": {
+    "time_hint": "Yesterday around 6pm",
+    "vehicle_hint": "black Benz",
+    "situation_hint": "ran the red light",
+    "location_hint": "상무지구",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "The user provided clear information regarding the time, vehicle, situation, and location in a single cohesive sentence."
+  },
+  "latency_ms": 1707.5562998652458,
+  "prompt_tokens": 483,
+  "completion_tokens": 99,
+  "cost_krw": 0.40955699999999995,
+  "error": null
+}

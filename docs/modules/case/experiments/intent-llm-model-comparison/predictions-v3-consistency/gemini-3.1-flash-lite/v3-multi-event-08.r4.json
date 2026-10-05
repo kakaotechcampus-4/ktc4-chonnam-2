@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-08",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"그저께\",\n  \"vehicle_hint\": \"은색 BMW\",\n  \"situation_hint\": \"실선에서 차로 변경\",\n  \"location_hint\": \"용봉동\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"두 가지 사건이 섞여 있고 사건 간의 인과관계나 신고 대상이 명확하지 않아 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "그저께",
+    "vehicle_hint": "은색 BMW",
+    "situation_hint": "실선에서 차로 변경",
+    "location_hint": "용봉동",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "두 가지 사건이 섞여 있고 사건 간의 인과관계나 신고 대상이 명확하지 않아 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1770.9829998202622,
+  "prompt_tokens": 504,
+  "completion_tokens": 107,
+  "cost_krw": 0.435801,
+  "error": null
+}

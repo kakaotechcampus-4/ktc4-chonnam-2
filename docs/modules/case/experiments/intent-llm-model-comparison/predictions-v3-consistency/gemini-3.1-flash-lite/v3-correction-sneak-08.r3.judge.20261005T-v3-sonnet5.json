@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-correction-sneak-08",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '그것보다 좀 더 이르긴 했던 것 같은데 잘 모르겠다'는 모호한 진술을 구체적 시각으로 확정하지 않고 '11시보다 좀 더 이른 시간'이라는 모호한 표현 그대로 반영했으므로 expected_notes 기준에 부합한다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 차량에 대한 언급이 없으므로 null로 둔 것이 정정 케이스 규칙상 올바르다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "이번 발화에서 상황에 대한 언급이 없으므로 null로 둔 것이 정정 케이스 규칙상 올바르다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "'전남대 후문 말고 정문 앞'이라는 명확한 정정을 '전남대 정문 앞'으로 정확히 반영했다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "원문이 '장소 정정이요'로 명시했고 실제 변경된 핵심 필드도 location_hint이므로 correction_target='location_hint'는 정확하다."
+    },
+    "confidence": {
+      "verdict": "correct",
+      "reason": "장소는 명확히 정정됐지만 시간은 모호한 상태로 남아있어 confidence를 low로 설정한 것이 기준과 일치한다."
+    }
+  },
+  "prompt_tokens": 3267,
+  "completion_tokens": 635,
+  "cost_krw": 19.61589,
+  "error": null
+}

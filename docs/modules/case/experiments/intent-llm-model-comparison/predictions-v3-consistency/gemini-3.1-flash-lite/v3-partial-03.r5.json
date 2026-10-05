@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-partial-03",
+  "scenario_tag": "일부_누락",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": \"검은색 벤츠 SUV\", \"situation_hint\": \"횡단보도 보행자 무시 통과\", \"location_hint\": \"양림동\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 사고 차량, 상황, 장소를 명확하게 진술함.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "검은색 벤츠 SUV",
+    "situation_hint": "횡단보도 보행자 무시 통과",
+    "location_hint": "양림동",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 사고 차량, 상황, 장소를 명확하게 진술함."
+  },
+  "latency_ms": 1700.1073998399079,
+  "prompt_tokens": 490,
+  "completion_tokens": 84,
+  "cost_krw": 0.377972,
+  "error": null
+}

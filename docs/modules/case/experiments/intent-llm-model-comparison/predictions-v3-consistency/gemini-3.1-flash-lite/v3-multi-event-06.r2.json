@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-06",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"어제 밤\", \"vehicle_hint\": \"흰색 그랜저\", \"situation_hint\": \"버스전용차로 위반\", \"location_hint\": \"광주역 앞\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 언급한 첫 번째 사건인 흰색 그랜저의 버스전용차로 위반에 대한 정보가 명확하며, 뒤에 언급된 오토바이 사고는 별개의 사건으로 판단되어 무시하였습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": "흰색 그랜저",
+    "situation_hint": "버스전용차로 위반",
+    "location_hint": "광주역 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 언급한 첫 번째 사건인 흰색 그랜저의 버스전용차로 위반에 대한 정보가 명확하며, 뒤에 언급된 오토바이 사고는 별개의 사건으로 판단되어 무시하였습니다."
+  },
+  "latency_ms": 1675.0866998918355,
+  "prompt_tokens": 505,
+  "completion_tokens": 115,
+  "cost_krw": 0.45444500000000004,
+  "error": null
+}

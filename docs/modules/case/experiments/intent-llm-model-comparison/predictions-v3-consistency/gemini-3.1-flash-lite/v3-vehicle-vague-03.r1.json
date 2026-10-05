@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-vehicle-vague-03",
+  "scenario_tag": "차량_애매",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"택시 혹은 흰 승용차 (지붕에 구조물 유무 불확실)\",\n  \"situation_hint\": \"꼬리물기\",\n  \"location_hint\": \"수완지구 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"차종에 대해 택시와 흰 승용차 사이에서 명확한 확신이 없고, 지붕의 구조물 또한 불확실하게 진술하여 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "택시 혹은 흰 승용차 (지붕에 구조물 유무 불확실)",
+    "situation_hint": "꼬리물기",
+    "location_hint": "수완지구 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "차종에 대해 택시와 흰 승용차 사이에서 명확한 확신이 없고, 지붕의 구조물 또한 불확실하게 진술하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1731.2870002351701,
+  "prompt_tokens": 504,
+  "completion_tokens": 132,
+  "cost_krw": 0.492876,
+  "error": null
+}

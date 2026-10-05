@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-mixed-lang-04",
+  "scenario_tag": "비한국어_언어혼합",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"昨天下午三点左右\",\"vehicle_hint\":\"一辆绿色公交车\",\"situation_hint\":\"闯红灯\",\"location_hint\":\"光州站前面\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"발화에서 시간, 차량 종류 및 색상, 장소, 신호위반 상황이 명확하게 기술되어 있어 각 필드를 추출하였고 이전 맥락이 없어 correction_target은 null로 지정했습니다.\"}",
+  "parsed": {
+    "time_hint": "昨天下午三点左右",
+    "vehicle_hint": "一辆绿色公交车",
+    "situation_hint": "闯红灯",
+    "location_hint": "光州站前面",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화에서 시간, 차량 종류 및 색상, 장소, 신호위반 상황이 명확하게 기술되어 있어 각 필드를 추출하였고 이전 맥락이 없어 correction_target은 null로 지정했습니다."
+  },
+  "latency_ms": 3618.3044998906553,
+  "prompt_tokens": 485,
+  "completion_tokens": 344,
+  "cost_krw": null,
+  "error": null
+}

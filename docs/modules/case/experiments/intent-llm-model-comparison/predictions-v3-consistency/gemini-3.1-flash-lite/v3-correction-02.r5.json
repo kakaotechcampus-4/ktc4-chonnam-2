@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-02",
+  "scenario_tag": "잘못_입력_후_correction",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": \"중앙선 넘어서 추월\",\n  \"location_hint\": null,\n  \"correction_target\": \"situation_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 명확하게 '유턴이 아니라'라고 언급하며 situation_hint에 대한 정정 의사를 밝혔으므로 correction_target을 situation_hint로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 넘어서 추월",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 '유턴이 아니라'라고 언급하며 situation_hint에 대한 정정 의사를 밝혔으므로 correction_target을 situation_hint로 설정했습니다."
+  },
+  "latency_ms": 1773.6595002934337,
+  "prompt_tokens": 533,
+  "completion_tokens": 110,
+  "cost_krw": 0.45367,
+  "error": null
+}

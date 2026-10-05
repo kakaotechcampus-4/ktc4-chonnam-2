@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-01",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"은색 모닝\",\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": \"vehicle_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"기존 vehicle_hint('흰색 모닝')를 '은색 모닝'으로 정정하고 있으나, 정정과 무관한 다른 차량(버스)에 관한 진술이 섞여 있어 규칙에 따라 해당 내용을 제외하고 confidence를 low로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "은색 모닝",
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "vehicle_hint",
+    "confidence": "low",
+    "reasoning": "기존 vehicle_hint('흰색 모닝')를 '은색 모닝'으로 정정하고 있으나, 정정과 무관한 다른 차량(버스)에 관한 진술이 섞여 있어 규칙에 따라 해당 내용을 제외하고 confidence를 low로 지정했습니다."
+  },
+  "latency_ms": 5210.961599834263,
+  "prompt_tokens": 548,
+  "completion_tokens": 539,
+  "cost_krw": null,
+  "error": null
+}

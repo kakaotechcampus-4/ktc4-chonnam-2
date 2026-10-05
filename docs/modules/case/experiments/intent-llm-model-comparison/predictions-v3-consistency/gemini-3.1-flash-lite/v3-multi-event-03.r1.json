@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-03",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"지난주, 그저께\",\n  \"vehicle_hint\": \"배달 오토바이, 레미콘 트럭\",\n  \"situation_hint\": \"인도 주행, 신호 위반\",\n  \"location_hint\": \"봉선동, 양림동\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"두 개의 서로 다른 사건을 동시에 언급하였으나, 스키마는 하나의 사고에 대한 정보를 담는 구조여서 사건 간의 관계가 불분명해 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "지난주, 그저께",
+    "vehicle_hint": "배달 오토바이, 레미콘 트럭",
+    "situation_hint": "인도 주행, 신호 위반",
+    "location_hint": "봉선동, 양림동",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "두 개의 서로 다른 사건을 동시에 언급하였으나, 스키마는 하나의 사고에 대한 정보를 담는 구조여서 사건 간의 관계가 불분명해 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2195.6536998040974,
+  "prompt_tokens": 512,
+  "completion_tokens": 137,
+  "cost_krw": 0.507331,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-all-vague-02",
+  "scenario_tag": "전부_모호",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"어떤 차\",\n  \"situation_hint\": \"좀 이상하게 움직였어요\",\n  \"location_hint\": null,\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"시간을 모른다고 명시했고, 차량이나 상황에 대한 설명이 매우 모호하고 불확실하여 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "어떤 차",
+    "situation_hint": "좀 이상하게 움직였어요",
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간을 모른다고 명시했고, 차량이나 상황에 대한 설명이 매우 모호하고 불확실하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 3422.2289002500474,
+  "prompt_tokens": 485,
+  "completion_tokens": 323,
+  "cost_krw": null,
+  "error": null
+}

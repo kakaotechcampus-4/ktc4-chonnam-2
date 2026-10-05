@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-contradiction-06",
+  "scenario_tag": "모순_정보",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"오늘 아침\",\n  \"vehicle_hint\": \"트럭\",\n  \"situation_hint\": \"빨간불에 지나갔어요\",\n  \"location_hint\": \"송정역 앞\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"화자가 발화 내에서 오토바이에서 트럭으로 스스로 정정하여 차량을 '트럭'으로 확정하였으며, 시간, 장소, 신호위반 정황이 모두 구체적이어서 confidence를 high로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 아침",
+    "vehicle_hint": "트럭",
+    "situation_hint": "빨간불에 지나갔어요",
+    "location_hint": "송정역 앞",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "화자가 발화 내에서 오토바이에서 트럭으로 스스로 정정하여 차량을 '트럭'으로 확정하였으며, 시간, 장소, 신호위반 정황이 모두 구체적이어서 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 3396.621400024742,
+  "prompt_tokens": 493,
+  "completion_tokens": 395,
+  "cost_krw": null,
+  "error": null
+}

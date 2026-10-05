@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-01",
+  "scenario_tag": "잘못_입력_후_correction",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"오늘 오후 4시쯤\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": null,\n  \"correction_target\": \"time_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 명확하게 시간을 3시에서 4시로 정정해달라고 요청하여 time_hint 필드를 수정하고 correction_target에 반영함.\"\n}",
+  "parsed": {
+    "time_hint": "오늘 오후 4시쯤",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": "time_hint",
+    "confidence": "high",
+    "reasoning": "사용자가 명확하게 시간을 3시에서 4시로 정정해달라고 요청하여 time_hint 필드를 수정하고 correction_target에 반영함."
+  },
+  "latency_ms": 2058.538000099361,
+  "prompt_tokens": 535,
+  "completion_tokens": 107,
+  "cost_krw": 0.447581,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-03",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"그저께\",\n  \"vehicle_hint\": \"레미콘 트럭\",\n  \"situation_hint\": \"신호 무시하고 감\",\n  \"location_hint\": \"양림동\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"한 발화에 서로 다른 두 건의 위반 사실(봉선동 배달 오토바이 인도 주행, 양림동 레미콘 트럭 신호위반)이 동시에 언급되어 단일 사건으로 특정하기 모호하므로 confidence를 low로 지정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "그저께",
+    "vehicle_hint": "레미콘 트럭",
+    "situation_hint": "신호 무시하고 감",
+    "location_hint": "양림동",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "한 발화에 서로 다른 두 건의 위반 사실(봉선동 배달 오토바이 인도 주행, 양림동 레미콘 트럭 신호위반)이 동시에 언급되어 단일 사건으로 특정하기 모호하므로 confidence를 low로 지정했습니다."
+  },
+  "latency_ms": 7167.742600198835,
+  "prompt_tokens": 512,
+  "completion_tokens": 802,
+  "cost_krw": 5.1628099999999995,
+  "error": null
+}

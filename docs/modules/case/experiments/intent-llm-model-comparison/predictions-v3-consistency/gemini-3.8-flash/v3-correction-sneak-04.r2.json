@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-04",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 2,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\": null, \"vehicle_hint\": null, \"situation_hint\": \"횡단보도에 사람 있는데 안 멈춘 거\", \"location_hint\": null, \"correction_target\": \"situation_hint\", \"confidence\": \"low\", \"reasoning\": \"기존 situation_hint인 신호위반을 횡단보도 보행자 보호 불이행으로 정정하고 있으나, 다른 차량(배달 오토바이)과 관련된 무관한 사실이 함께 언급되어 confidence를 low로 판단했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "횡단보도에 사람 있는데 안 멈춘 거",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "low",
+    "reasoning": "기존 situation_hint인 신호위반을 횡단보도 보행자 보호 불이행으로 정정하고 있으나, 다른 차량(배달 오토바이)과 관련된 무관한 사실이 함께 언급되어 confidence를 low로 판단했습니다."
+  },
+  "latency_ms": 3289.4863998517394,
+  "prompt_tokens": 571,
+  "completion_tokens": 626,
+  "cost_krw": null,
+  "error": null
+}

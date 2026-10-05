@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-offtopic-05",
+  "scenario_tag": "무관한_질문_잡담",
+  "prompt": "v3",
+  "repeat": 5,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":null,\"vehicle_hint\":null,\"situation_hint\":null,\"location_hint\":null,\"correction_target\":null,\"confidence\":\"low\",\"reasoning\":\"교통위반이나 사고 신고와 무관한 블랙박스 기기 관련 일반 질문이므로 추출할 수 있는 단서가 없어 모든 필드를 null로 두고 confidence를 low로 설정했습니다.\"}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": null,
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "교통위반이나 사고 신고와 무관한 블랙박스 기기 관련 일반 질문이므로 추출할 수 있는 단서가 없어 모든 필드를 null로 두고 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 2998.9383001811802,
+  "prompt_tokens": 484,
+  "completion_tokens": 318,
+  "cost_krw": null,
+  "error": null
+}

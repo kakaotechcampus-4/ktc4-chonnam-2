@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-04",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": \"아까\",\n  \"vehicle_hint\": \"회색 쏘렌토, 빨간 스쿠터\",\n  \"situation_hint\": \"꼬리물기, 헬멧 미착용\",\n  \"location_hint\": \"화정동 사거리\",\n  \"correction_target\": null,\n  \"confidence\": \"low\",\n  \"reasoning\": \"시간, 장소, 차량, 위반 행위가 구체적으로 진술되었으나, 회색 쏘렌토(꼬리물기)와 빨간 스쿠터(헬멧 미착용)라는 두 건의 서로 다른 위반 대상이 하나의 발화에 혼재되어 있어 주 신고 대상을 특정하기 모호하므로 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "아까",
+    "vehicle_hint": "회색 쏘렌토, 빨간 스쿠터",
+    "situation_hint": "꼬리물기, 헬멧 미착용",
+    "location_hint": "화정동 사거리",
+    "correction_target": null,
+    "confidence": "low",
+    "reasoning": "시간, 장소, 차량, 위반 행위가 구체적으로 진술되었으나, 회색 쏘렌토(꼬리물기)와 빨간 스쿠터(헬멧 미착용)라는 두 건의 서로 다른 위반 대상이 하나의 발화에 혼재되어 있어 주 신고 대상을 특정하기 모호하므로 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 4938.199299853295,
+  "prompt_tokens": 508,
+  "completion_tokens": 765,
+  "cost_krw": null,
+  "error": null
+}

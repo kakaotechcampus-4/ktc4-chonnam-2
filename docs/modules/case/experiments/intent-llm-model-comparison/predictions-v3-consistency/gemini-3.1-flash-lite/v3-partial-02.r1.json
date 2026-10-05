@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-partial-02",
+  "scenario_tag": "일부_누락",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\"time_hint\": \"어제 밤\", \"vehicle_hint\": null, \"situation_hint\": \"중앙선 넘어서 불법 유턴\", \"location_hint\": \"광주역 앞 사거리\", \"correction_target\": null, \"confidence\": \"high\", \"reasoning\": \"사용자가 시간, 장소, 위반 상황을 명확하게 진술하였습니다.\"}",
+  "parsed": {
+    "time_hint": "어제 밤",
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 넘어서 불법 유턴",
+    "location_hint": "광주역 앞 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 시간, 장소, 위반 상황을 명확하게 진술하였습니다."
+  },
+  "latency_ms": 1891.5248000994325,
+  "prompt_tokens": 488,
+  "completion_tokens": 83,
+  "cost_krw": 0.37492899999999996,
+  "error": null
+}

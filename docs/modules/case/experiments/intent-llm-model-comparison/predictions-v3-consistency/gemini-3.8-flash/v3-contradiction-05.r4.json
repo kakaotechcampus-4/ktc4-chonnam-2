@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-contradiction-05",
+  "scenario_tag": "모순_정보",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": \"스타렉스\",\n  \"situation_hint\": \"중앙선 넘어서 끼어든 것\",\n  \"location_hint\": \"상무지구\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"발화 내에서 불법 유턴을 취소하고 중앙선 넘어 끼어든 상황으로 자가 정정하여 명확히 진술했습니다. prior_hints가 제공되지 않았으므로 correction_target은 null입니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": "스타렉스",
+    "situation_hint": "중앙선 넘어서 끼어든 것",
+    "location_hint": "상무지구",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "발화 내에서 불법 유턴을 취소하고 중앙선 넘어 끼어든 상황으로 자가 정정하여 명확히 진술했습니다. prior_hints가 제공되지 않았으므로 correction_target은 null입니다."
+  },
+  "latency_ms": 3658.9857996441424,
+  "prompt_tokens": 494,
+  "completion_tokens": 415,
+  "cost_krw": null,
+  "error": null
+}

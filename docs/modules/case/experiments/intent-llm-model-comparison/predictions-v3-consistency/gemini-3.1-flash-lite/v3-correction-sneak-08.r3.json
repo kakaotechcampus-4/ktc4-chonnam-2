@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-sneak-08",
+  "scenario_tag": "correction_target_오염_시도",
+  "prompt": "v3",
+  "repeat": 3,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 밤 11시보다 좀 더 이른 시간\",\n  \"vehicle_hint\": null,\n  \"situation_hint\": null,\n  \"location_hint\": \"전남대 정문 앞\",\n  \"correction_target\": \"location_hint\",\n  \"confidence\": \"low\",\n  \"reasoning\": \"장소는 '정문 앞'으로 명확히 정정되었으나 시간은 '좀 더 이른 것 같은데 잘 모르겠다'는 모호한 표현을 사용하여 confidence를 low로 설정했습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 밤 11시보다 좀 더 이른 시간",
+    "vehicle_hint": null,
+    "situation_hint": null,
+    "location_hint": "전남대 정문 앞",
+    "correction_target": "location_hint",
+    "confidence": "low",
+    "reasoning": "장소는 '정문 앞'으로 명확히 정정되었으나 시간은 '좀 더 이른 것 같은데 잘 모르겠다'는 모호한 표현을 사용하여 confidence를 low로 설정했습니다."
+  },
+  "latency_ms": 1644.5577000267804,
+  "prompt_tokens": 556,
+  "completion_tokens": 129,
+  "cost_krw": 0.505787,
+  "error": null
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-multi-event-04",
+  "scenario_tag": "여러_사건_혼합",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\"time_hint\":\"아까\",\"vehicle_hint\":\"회색 쏘렌토, 빨간 스쿠터\",\"situation_hint\":\"꼬리물기, 헬멧 미착용\",\"location_hint\":\"화정동 사거리\",\"correction_target\":null,\"confidence\":\"high\",\"reasoning\":\"시간(아까), 장소(화정동 사거리), 두 위반 차량 및 각 위반 행위(꼬리물기, 헬멧 미착용)가 명확하게 진술되어 high로 판단함.\"}",
+  "parsed": {
+    "time_hint": "아까",
+    "vehicle_hint": "회색 쏘렌토, 빨간 스쿠터",
+    "situation_hint": "꼬리물기, 헬멧 미착용",
+    "location_hint": "화정동 사거리",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "시간(아까), 장소(화정동 사거리), 두 위반 차량 및 각 위반 행위(꼬리물기, 헬멧 미착용)가 명확하게 진술되어 high로 판단함."
+  },
+  "latency_ms": 5160.401999950409,
+  "prompt_tokens": 508,
+  "completion_tokens": 557,
+  "cost_krw": null,
+  "error": null
+}

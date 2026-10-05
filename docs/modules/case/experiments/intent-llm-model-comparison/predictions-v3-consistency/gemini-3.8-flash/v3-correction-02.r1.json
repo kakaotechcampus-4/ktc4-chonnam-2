@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-correction-02",
+  "scenario_tag": "잘못_입력_후_correction",
+  "prompt": "v3",
+  "repeat": 1,
+  "model_name": "gemini-3.8-flash",
+  "raw_text": "{\n  \"time_hint\": null,\n  \"vehicle_hint\": null,\n  \"situation_hint\": \"중앙선 넘어서 추월\",\n  \"location_hint\": null,\n  \"correction_target\": \"situation_hint\",\n  \"confidence\": \"high\",\n  \"reasoning\": \"기존 단서의 위반 상황(불법 유턴)을 '중앙선 넘어서 추월'로 명확하게 바로잡는 정정 발화이므로 correction_target을 situation_hint로 설정하고 confidence를 high로 판단했습니다.\"\n}",
+  "parsed": {
+    "time_hint": null,
+    "vehicle_hint": null,
+    "situation_hint": "중앙선 넘어서 추월",
+    "location_hint": null,
+    "correction_target": "situation_hint",
+    "confidence": "high",
+    "reasoning": "기존 단서의 위반 상황(불법 유턴)을 '중앙선 넘어서 추월'로 명확하게 바로잡는 정정 발화이므로 correction_target을 situation_hint로 설정하고 confidence를 high로 판단했습니다."
+  },
+  "latency_ms": 3275.8692000061274,
+  "prompt_tokens": 533,
+  "completion_tokens": 424,
+  "cost_krw": null,
+  "error": null
+}

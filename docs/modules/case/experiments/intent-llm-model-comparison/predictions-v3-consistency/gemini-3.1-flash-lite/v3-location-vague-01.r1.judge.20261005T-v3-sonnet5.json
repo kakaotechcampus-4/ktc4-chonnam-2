@@ -1,0 +1,36 @@
+{
+  "run_id": "20261005T-v3-sonnet5",
+  "judge_model": "anthropic/claude-sonnet-5",
+  "attempts": 1,
+  "case_id": "v3-location-vague-01",
+  "parsed": {
+    "time_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '어제 저녁 퇴근길'을 그대로 반영했다."
+    },
+    "vehicle_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '흰색 그랜저'를 정확히 추출했다."
+    },
+    "situation_hint": {
+      "verdict": "correct",
+      "reason": "원문의 '갓길로 추월했다'는 상황을 정확히 반영했다."
+    },
+    "location_hint": {
+      "verdict": "correct",
+      "reason": "실제 도로명을 지어내지 않고 '무슨 대로'라는 모호한 표현 그대로 남겨 기준에 부합한다."
+    },
+    "correction_target": {
+      "verdict": "correct",
+      "reason": "정정 발화가 아니므로 null이 적절하다."
+    },
+    "confidence": {
+      "verdict": "hallucinated",
+      "reason": "장소가 불확실한 상태인데도 confidence를 high로 매겨 기준(low)과 어긋나게 과신했다."
+    }
+  },
+  "prompt_tokens": 3086,
+  "completion_tokens": 451,
+  "cost_krw": 16.263345,
+  "error": null
+}

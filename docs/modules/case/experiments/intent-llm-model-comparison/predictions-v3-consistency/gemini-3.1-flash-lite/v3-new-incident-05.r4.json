@@ -1,0 +1,22 @@
+{
+  "case_id": "v3-new-incident-05",
+  "scenario_tag": "새사고_정정오인_방지",
+  "prompt": "v3",
+  "repeat": 4,
+  "model_name": "gemini-3.1-flash-lite",
+  "raw_text": "{\n  \"time_hint\": \"어제 새벽 2시쯤\",\n  \"vehicle_hint\": \"택시\",\n  \"situation_hint\": \"빨간불에 그냥 쌩 지나갔어요\",\n  \"location_hint\": \"금남로5가\",\n  \"correction_target\": null,\n  \"confidence\": \"high\",\n  \"reasoning\": \"사용자가 '그건 됐고요'라고 명시적으로 이전 사고와 다른 사건임을 알렸으므로 새로운 사고로 판단하여 필드를 채웠습니다.\"\n}",
+  "parsed": {
+    "time_hint": "어제 새벽 2시쯤",
+    "vehicle_hint": "택시",
+    "situation_hint": "빨간불에 그냥 쌩 지나갔어요",
+    "location_hint": "금남로5가",
+    "correction_target": null,
+    "confidence": "high",
+    "reasoning": "사용자가 '그건 됐고요'라고 명시적으로 이전 사고와 다른 사건임을 알렸으므로 새로운 사고로 판단하여 필드를 채웠습니다."
+  },
+  "latency_ms": 1755.2410997450352,
+  "prompt_tokens": 559,
+  "completion_tokens": 120,
+  "cost_krw": 0.48638000000000003,
+  "error": null
+}
