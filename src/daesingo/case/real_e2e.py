@@ -297,6 +297,9 @@ class EvidenceBundle:
     # 않았으면(NOT_OBSERVED) None. `FAILED`면 PlateReadout이 없어 evidence는 번호판 없이
     # 조립되므로, 실행 실패를 「읽지 못함」과 가르려면 이 값이 필요하다(#172 [D]).
     plate_read_outcome: str | None = None
+    # 관찰 단계의 `OverlayTimeReadout`(판독하지 않았으면 `None`). 시각을 얻지 못한 갈래의 notice
+    # (`readout.overlay_*`)가 `observation.reason.code`를 여기서 읽는다 — evidence 조립 전에도 필요하다.
+    overlay_readout: dict[str, Any] | None = None
 
     @property
     def assembled(self) -> bool:
@@ -362,6 +365,7 @@ def assemble_evidence_bundle(
             fine_run=obs.fine_run,
             disposition=disposition,
             plate_read_outcome=obs.plate_read_outcome,
+            overlay_readout=obs.overlay_readout,
         )
 
     candidate_event = obs.candidate.model_dump(mode="json")
@@ -441,6 +445,7 @@ def assemble_evidence_bundle(
         disposition=disposition,
         plate_read_outcome=obs.plate_read_outcome,
         plate_readout=obs.plate_readout,
+        overlay_readout=obs.overlay_readout,
     )
 
 
