@@ -125,3 +125,29 @@ def test_get_view_after_selection_without_adapter_fails_clearly():
 def test_create_case_and_record_source_are_exported_from_case_package():
     assert case_package.create_case is service.create_case
     assert case_package.record_source_registered is service.record_source_registered
+
+
+def test_empty_case_progress_lists_all_steps_pending():
+    """CaseView 계약 B절 `progress[]` step 집합 규칙 1 — 도달 전 step은 `PENDING`. 원본은 파일마다 따로
+    들어오므로 「다 올렸다」는 분석 시작(INTAKE 이탈)으로만 안다 — 그 전에는 `file_intake`도 `PENDING`."""
+    store = CaseStore()
+    case_id = service.create_case(store=store)
+    service.record_source_registered(case_id, _source_asset("sa_1"), store=store)
+
+    progress = service.get_view(case_id, store=store)["progress"]
+
+    assert [p["step"] for p in progress] == [
+        "file_intake", "coarse_search", "candidate_review", "plate_read",
+        "overlay_time_read", "evidence_assembly", "requirement_check", "package_assembly",
+    ]
+    assert {p["state"] for p in progress} == {"PENDING"}
+
+
+def test_file_intake_is_done_once_analysis_starts():
+    store = CaseStore()
+    case_id = service.create_case(store=store)
+    store.get_case(case_id).start_search()
+
+    progress = service.get_view(case_id, store=store)["progress"]
+
+    assert progress[0] == {"step": "file_intake", "state": "DONE"}

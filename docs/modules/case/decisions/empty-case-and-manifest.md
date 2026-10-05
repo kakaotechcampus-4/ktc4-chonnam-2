@@ -19,7 +19,8 @@ HTTP API Contract는 case를 **빈 상태로 먼저 만들고**(`POST /cases`, b
    - `failed_file_count` · `duration_sec` · `range`는 바꾸지 않는다.
    - `case_rev`를 올리지 않는다.
    - `INTAKE`에서만 받는다. 아니면 `SourceNotAccepted`(같은 transaction이라 recording 등록도 rollback된다).
-5. 기존 `CaseAggregate.intake()`는 남긴다 — fixture · 테스트 경로용이다. aggregate는 밖으로 내보내지 않는다 — composition root는 `case_id`로만 다룬다(`domain.py` `CaseAggregate` docstring, module-architecture §4-모듈5 ⑥).
+5. **빈 case의 `progress`는 8단계 전부 `PENDING`이다.** `file_intake`는 분석 시작으로 `INTAKE`를 벗어날 때 `DONE`이 된다. CaseView 계약 B절 `progress[]` step 집합 규칙 1(「도달 여부와 무관하게 8단계 전부, 도달하지 않은 step은 `PENDING`」) 그대로이고 새 규칙이 아니다. 예전 코드는 `file_intake`를 「INTAKE 완료 즉시 `DONE`」으로 봤는데, 파일을 한 번에 받던 `intake()` 전제였다 — 원본이 파일마다 따로 들어오면 「다 올렸다」는 분석 시작으로만 안다. HTTP API Contract §5.1 예시의 `progress: []`는 「모양만 보이는 예시」라 이 값으로 맞춘다.
+6. 기존 `CaseAggregate.intake()`는 남긴다 — fixture · 테스트 경로용이다. aggregate는 밖으로 내보내지 않는다 — composition root는 `case_id`로만 다룬다(`domain.py` `CaseAggregate` docstring, module-architecture §4-모듈5 ⑥).
 
 ## 고른 이유 · 고르지 않은 안
 
