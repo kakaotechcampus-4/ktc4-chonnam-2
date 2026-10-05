@@ -686,7 +686,11 @@ class RecordingService:
         resolution: SpanResolution | dict[str, Any],
         options: dict[str, Any] | None = None,
     ) -> IncidentClip:
-        parsed_resolution = SpanResolution.model_validate(resolution)
+        try:
+            parsed_resolution = SpanResolution.model_validate(
+                resolution.model_dump() if isinstance(resolution, SpanResolution) else resolution)
+        except ValueError:
+            raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "유효한 span resolution이 필요합니다") from None
         if options:
             raise ValueError("build_incident_clip options schema는 아직 확정되지 않았습니다")
         if parsed_resolution.status == "FAILED" or not parsed_resolution.spans:
@@ -696,21 +700,43 @@ class RecordingService:
             )
         if any(self._repository.get_local_source(s.source_asset_ref) is not None
                for s in parsed_resolution.spans):
-            if (self._analysis_closed or self._incident_materializer is None
-                    or len(parsed_resolution.spans) != 1):
-                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "실행 중인 단일 VIDEO 생성 설정이 필요합니다")
-            span = parsed_resolution.spans[0]
+            if self._analysis_closed or self._incident_materializer is None:
+                raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "실행 중인 VIDEO 생성 설정이 필요합니다")
+            spans = parsed_resolution.spans
             try:
-                current = self.resolve_span(parsed_resolution.timeline_ref, parsed_resolution.requested_range,
-                                            media_stream_ref=span.media_stream_ref)
+                timeline = self._repository.get_timeline(parsed_resolution.timeline_ref)
+                if timeline is None:
+                    raise ValueError("존재하지 않는 Timeline revision")
+                if len(spans) > 1 or len(timeline.source_placements) > 1:
+                    if (parsed_resolution.status != "COMPLETE"
+                            or len({s.source_asset_ref for s in spans}) != len(spans)
+                            or any(a.timeline_range.end_sec != b.timeline_range.start_sec
+                                   for a, b in zip(spans, spans[1:]))):
+                        raise ValueError("중복 없는 연속 COMPLETE span이 필요합니다")
+                    request = parsed_resolution.requested_range
+                    placements = [p for p in timeline.source_placements
+                        if p.timeline_start_sec < request.end_sec and p.timeline_end_sec > request.start_sec]
+                    gaps = [g for g in timeline.gaps if placements
+                        and g.start_sec >= min(p.timeline_start_sec for p in placements)
+                        and g.end_sec <= max(p.timeline_end_sec for p in placements)]
+                    current = resolve_placed_span(self._repository,
+                        timeline.model_copy(update={"source_placements": placements, "gaps": gaps}),
+                        request, [s.media_stream_ref for s in spans])
+                else:
+                    current = self.resolve_span(parsed_resolution.timeline_ref, parsed_resolution.requested_range,
+                                                media_stream_ref=spans[0].media_stream_ref)
                 if current != parsed_resolution:
                     raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "현재 원본 해소 결과와 입력 provenance가 다릅니다")
-                local = self._repository.get_local_source(span.source_asset_ref)
-                index = self._repository.get_local_stream_index(span.media_stream_ref)
-                if local is None or index is None:
-                    raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
+                inputs = []
+                for span in spans:
+                    local = self._repository.get_local_source(span.source_asset_ref)
+                    index = self._repository.get_local_stream_index(span.media_stream_ref)
+                    if local is None or index is None:
+                        raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", "등록된 원본 stream에 접근할 수 없습니다")
+                    inputs.append((local, index, span))
                 with source_inspections(self._source_inspections):
-                    prepared = self._incident_materializer.materialize(local, index, span)
+                    prepared = (self._incident_materializer.materialize(*inputs[0]) if len(inputs) == 1
+                                else self._incident_materializer._materialize_many(inputs))
             except _FrameCoverageError as error:
                 raise RecordingCapabilityError("INCIDENT_CLIP_BUILD_FAILED", str(error)) from None
             except (RecordingCapabilityError, ValueError, OSError):
@@ -729,7 +755,7 @@ class RecordingService:
             clip = IncidentClip(
                 contract="IncidentClip", contract_version="analysis-source-derived/v1",
                 incident_clip_ref=f"clip_{uuid4().hex}", asset_kind="INCIDENT_CLIP",
-                source_provenance=provenance, media_stream_refs=[span.media_stream_ref],
+                source_provenance=provenance, media_stream_refs=[s.media_stream_ref for s in spans],
                 byte_size=len(prepared.content), availability="AVAILABLE", duration_sec=prepared.duration_sec,
                 timeline_ref=parsed_resolution.timeline_ref, timeline_range=prepared.timeline_range,
             )
