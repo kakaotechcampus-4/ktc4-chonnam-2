@@ -82,6 +82,11 @@ def main() -> None:
                     help="비교할 reasoning_effort 값들. 없으면 설정값 하나")
     ap.add_argument("--transport", choices=["image", "video"], default="image",
                     help="video: 1/fps 배속으로 늘린 영상(운영 v3 전송)")
+    ap.add_argument("--height", type=int, default=720, help="이미지 프레임 최대 높이(운영 MediaPreparer 는 360)")
+    ap.add_argument("--detail", choices=["high", "low", "auto"], default="high",
+                    help="image_url detail. auto 는 값을 보내지 않는다(파이프라인 ImageInvoker 와 같음)")
+    ap.add_argument("--pad", type=float, default=0.0,
+                    help="구간 앞뒤 확장 초(운영 fine_padding_sec=4 재현용). 시작은 0 아래로 내려가지 않는다")
     ap.add_argument("--fewshot", type=Path, default=None,
                     help="참고 예시 JSON(intro·examples[image,text]·outro·events). 예시 이미지는 저장소 밖에 둔다")
     args = ap.parse_args()
@@ -109,12 +114,14 @@ def main() -> None:
     rows: list[dict] = []
     with tempfile.TemporaryDirectory(prefix="win_") as td:
         for i, (clip, event, start, end, expected) in enumerate(CASES):
+            start, end = max(0.0, start - args.pad), end + args.pad
             if video:
                 media = _slow_clip(Path(VID) / clip, start, end, args.fps, False,
                                    Path(td) / f"{i}.mp4")
                 n_frames = round((end - start) * args.fps)
             else:
-                media = _extract(Path(VID) / clip, start, end, args.fps, Path(td) / str(i))
+                media = _extract(Path(VID) / clip, start, end, args.fps, Path(td) / str(i), args.height)
+                end = min(end, start + len(media) / args.fps)  # 클립 끝을 넘은 pad 를 실제 길이로
                 n_frames = len(media)
             for rep in range(1, args.repeat + 1):
                 for effort, profile in arms:
@@ -123,13 +130,15 @@ def main() -> None:
                     row = {"clip": clip, "event": event.value, "window": [start, end],
                            "expected": expected, "profile": profile.value, "repeat": rep,
                            "reasoning_effort": effort, "transport": args.transport,
-                           "fps": args.fps, "frames": n_frames,
+                           "fps": args.fps, "frames": n_frames, "height": args.height,
+                           "detail": args.detail, "pad": args.pad,
                            "prompt_version": spec.template.version,
                            "prompt_sha256": spec.template.fingerprint}
                     use_fewshot = bool(fewshot) and event.value in fewshot["events"]
                     row |= {"fewshot": fewshot["name"] if use_fewshot else None,
                             "fewshot_sha256": fewshot_sha if use_fewshot else None}
-                    messages = _video_msg(prompt, media) if video else _msg(prompt, media)
+                    detail = None if args.detail == "auto" else args.detail
+                    messages = _video_msg(prompt, media) if video else _msg(prompt, media, detail)
                     if use_fewshot:  # 지시문 바로 뒤, 검증 대상 프레임 앞
                         messages[0]["content"][1:1] = fewshot_parts
                     t0 = time.monotonic()

@@ -50,11 +50,12 @@ def _ffmpeg() -> str:
     return p
 
 
-def _extract(video: Path, start: float, end: float, fps: float, outdir: Path) -> list[Path]:
+def _extract(video: Path, start: float, end: float, fps: float, outdir: Path,
+             height: int = 720) -> list[Path]:
     outdir.mkdir(parents=True, exist_ok=True)
     args = [
         _ffmpeg(), "-y", "-ss", str(start), "-to", str(end), "-i", str(video),
-        "-vf", f"fps={fps},scale=-2:'min(720,ih)'", "-qscale:v", "2",
+        "-vf", f"fps={fps},scale=-2:'min({height},ih)'", "-qscale:v", "2",
         str(outdir / "f_%03d.jpg"),
     ]
     r = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
@@ -63,11 +64,12 @@ def _extract(video: Path, start: float, end: float, fps: float, outdir: Path) ->
     return sorted(outdir.glob("f_*.jpg"))
 
 
-def _msg(prompt: str, frames: list[Path]) -> list[dict]:
+def _msg(prompt: str, frames: list[Path], detail: str | None = "high") -> list[dict]:
     content: list[dict] = [{"type": "text", "text": prompt}]
     for f in frames:
         url = "data:image/jpeg;base64," + base64.b64encode(f.read_bytes()).decode()
-        content.append({"type": "image_url", "image_url": {"url": url, "detail": "high"}})
+        image = {"url": url} | ({"detail": detail} if detail else {})  # None = detail 생략(auto)
+        content.append({"type": "image_url", "image_url": image})
     return [{"role": "user", "content": content}]
 
 
