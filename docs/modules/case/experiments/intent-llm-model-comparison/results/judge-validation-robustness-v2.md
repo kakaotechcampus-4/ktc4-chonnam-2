@@ -2,6 +2,8 @@
 
 **날짜:** 2026-10-04 · **작성:** 유소연(case) · **계기:** 멘토 피드백 Q1(「이 규모에서도 judge 판정을 믿을 수 있는가 — 검증하는 게 좋겠다」)
 
+**원본:** 재판정(보강 Sonnet 5 · Opus 5) JSON 398개은 레포에 두지 않는다(멘토 리뷰 #146). [팀 공유 드라이브](https://drive.google.com/drive/folders/1Aeo_kkCzfJ9uhdMjb0GlLK2L3XqL80BR)의 `intent-llm-raw-q3-and-judge-rerun-2026-10-05.zip` — 풀면 이 폴더 기준 경로 그대로 복원된다.
+
 **대상:** judge_run_id `20260922T124511Z`, judge `anthropic/claude-sonnet-5`(Elice), 4모델 × 48케이스 × 6필드 = 판정 1,152개.
 
 **도구:** `scripts/judge_validation.py`(`sample` · `agree` · `scan`), 산출물 `judge-validation-v2/`.
