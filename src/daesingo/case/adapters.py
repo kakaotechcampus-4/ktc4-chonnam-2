@@ -127,6 +127,11 @@ class ModuleAdapter(Protocol):
         현재 값의 근거 판독을 `readout_id`로 찾는 데 쓴다."""
         ...
 
+    def get_overlay_time_readouts(self) -> list[dict[str, Any]]:
+        """`OverlayTimeReadout` 목록(원판독·재판독). 시각을 얻지 못한 갈래의 notice(`readout.overlay_*`,
+        readout `failure-taxonomy.md`)가 현재 선택 후보의 가장 나중 판독을 근거로 쓴다."""
+        ...
+
     def get_plate_read_status(self) -> str | None:
         """번호판 판독 실행 상태(`JobExecution.status` 값 공간). 보고할 실행 상태가 없으면 None."""
         ...
@@ -224,6 +229,9 @@ class MockFixtureAdapter:
 
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         return self._load("readout").get("plate_readouts", [])
+
+    def get_overlay_time_readouts(self) -> list[dict[str, Any]]:
+        return self._load("readout").get("overlay_time_readouts", [])
 
     def get_plate_read_status(self) -> str | None:
         """mock fixture에는 이 case의 실행 상태 원장이 없다 — 시나리오 테스트가
@@ -457,6 +465,10 @@ class RealAdapter:
         plate_readout = self._build_evidence_bundle().plate_readout
         return [plate_readout] if plate_readout else []
 
+    def get_overlay_time_readouts(self) -> list[dict[str, Any]]:
+        overlay_readout = self._build_evidence_bundle().overlay_readout
+        return [overlay_readout] if overlay_readout else []
+
     def get_plate_read_status(self) -> str | None:
         """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
         실행 실패로 보고한다(#172 [D] — 실행 실패를 「읽지 못함」과 가른다). 성공·부분 성공은
@@ -649,6 +661,10 @@ class RealVideoAdapter:
     def get_plate_readouts(self) -> list[dict[str, Any]]:
         plate_readout = self._build_evidence_bundle().plate_readout
         return [plate_readout] if plate_readout else []
+
+    def get_overlay_time_readouts(self) -> list[dict[str, Any]]:
+        overlay_readout = self._build_evidence_bundle().overlay_readout
+        return [overlay_readout] if overlay_readout else []
 
     def get_plate_read_status(self) -> str | None:
         """동기 real 경로에는 JobExecution이 없어, 판독 호출 결과 `ReadoutRun.outcome=FAILED`를
