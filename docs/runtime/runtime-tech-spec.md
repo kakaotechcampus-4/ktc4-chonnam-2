@@ -550,7 +550,7 @@ API request의 책임:
 
 실제 media transform/search/readout은 request lifecycle 밖에서 Worker가 실행한다.
 
-HTTP 경계의 방향은 확정이다(RD-05, [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247), 2026-10-04). **request · response · schema · status · error의 세부는 [HTTP API Contract](../architecture/contracts/contract-http-api.md)(`http-api/v0`, `Draft — Consumer Review`)가 정한다.** 여기에는 결정된 surface와 원칙만 두고 schema를 복제하지 않는다.
+HTTP 경계의 방향은 확정이다(RD-05, [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247), 2026-10-04). **request · response · schema · status · error의 세부는 [HTTP API Contract](../architecture/contracts/contract-http-api.md)(`http-api/v1`, `Final — Accepted`)가 정한다.** 여기에는 결정된 surface와 원칙만 두고 schema를 복제하지 않는다.
 
 - **Owner.** HTTP API Contract Producer = `api` composition root, Web = Consumer. route 구현자는 Contract Owner와 같은 사람일 필요가 없고 Contract를 따른다.
 - **필수 surface.** 정확한 경로 표기는 Contract §2다.
@@ -728,7 +728,7 @@ workflow §5 Timing A 9개는 2026-10-04에 모두 닫혔다(Register [§5 진�
 - [x] retry backoff 동안 다음 attempt 생성 시점 ↔ CaseView 대표 상태 계약 정합 — 같은 transaction에서 QUEUED 생성으로 닫힘 (§6.3)
 - [x] heartbeat persistence 구조 — RUNNING row lease + 별도 heartbeat thread로 닫힘 (§7.2)
 - [x] case ↔ Runtime dispatch · 결과 반영 · 사용자 중단 — 닫힘 (§12.1 ~ §12.5)
-- [x] HTTP 경계 방향 — 닫힘 (§13). [HTTP API Contract](../architecture/contracts/contract-http-api.md)는 Draft — Consumer review 뒤 Final
+- [x] HTTP 경계 방향 — 닫힘 (§13). [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` Final — Accepted(2026-10-05). 구현 선행 조건은 Contract §9.1
 - [ ] retry max
 - [ ] backoff + jitter
 - [ ] lease duration
