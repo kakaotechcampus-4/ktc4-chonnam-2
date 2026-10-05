@@ -4,6 +4,8 @@
 - Q2: 「테스트 케이스가 48건이라면 더 늘려도 좋겠다. 좋은 모델에게 데이터 증강을 요청할 수 있다(지식 증류). 비결정적인 모델은 같은 요청을 여러 번 해 일관적인지 확인하는 평가도 필요하다.」
 - #213: 「각 테스트케이스를 5회 정도 반복해 일관성을 수치화하고, 정확도를 더해 하나의 점수로 만들어 그 점수로 판단하라.」
 
+**원본:** 모델 출력 · 규칙 판정 · judge 판정 JSON(`predictions-v3-consistency/`, 2,075개)은 레포에 두지 않는다(멘토 리뷰 #146). [팀 공유 드라이브](https://drive.google.com/drive/folders/1Aeo_kkCzfJ9uhdMjb0GlLK2L3XqL80BR)의 `intent-llm-raw-v3-consistency-2026-10-05.zip` — 풀면 이 폴더 기준 경로 그대로 복원되고, `consistency_eval.py summarize`로 이 문서의 숫자를 다시 만든다.
+
 **판단 기준(측정 전에 등재):** `decisions/intent-llm-eval-target-thresholds.md` §1.0 — 단일 점수 = 평균 필드 정확도 × 필드 일관성, 통과 조건 hallucination ≤5%.
 
 ## 1. 결과

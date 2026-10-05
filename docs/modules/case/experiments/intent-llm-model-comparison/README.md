@@ -70,6 +70,10 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 
 각 row의 `expected_notes`는 모델이 뱉어야 할 정확한 문자열이 아니라 judge가 채점할 때 참고하는 사람이 쓴 판정 기준이다(자유 텍스트 필드는 문자열 완전일치로 채점할 수 없음).
 
+## 실험 원본 저장 (2026-10-05~)
+
+모델 출력 · judge 판정 JSON은 레포에 두지 않는다(멘토 리뷰 #146 — 결과는 문서로, 큰 원본은 공용 저장소로). 실험마다 zip으로 묶어 [팀 공유 드라이브](https://drive.google.com/drive/folders/1Aeo_kkCzfJ9uhdMjb0GlLK2L3XqL80BR)에 두고, 결과 문서 첫머리 「원본」 줄에 파일 이름을 적는다. 폴더의 `.gitignore`가 원본이 다시 들어오는 것을 막는다. 이 정책 전에 커밋된 `predictions/` · `predictions-robustness/` · `predictions-robustness-v2/` 첫 실행분은 그대로 둔다.
+
 ## 하네스 구조
 
 ```
