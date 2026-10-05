@@ -135,6 +135,8 @@ W7 기준 문서 7순위의 「필요한 Job 발주 누락률」(「"필요한"�
 
 최종 기준 `READY` 도달 1,100 세션 · `READY`에서 판정한 행동 992개(develop 머지로 FINAL 판정이 바뀌어 4차보다 늘었다).
 
+**재측정(2026-10-05, develop `751f6880` · #261 머지 반영):** 위 최종 열과 모든 칸이 같다 — ①②③④④-b 0, 크래시 909, `--mutate` 두 결함도 ④만 2,221 · 6,835. #261의 notice 4종(`search.visual_verify_failed` · overlay 3종)은 이 수치에 들어가지 않는다(아래 「측정하지 않은 칸」).
+
 ④-b 버튼별(수정 전):
 
 | 버튼 @ notice | 눌림 | 발주 누락 |
@@ -189,6 +191,7 @@ baseline 커밋에서 **이미 고쳐진 버그 3건을 모두 검출**했다. �
 | EvidenceNeeds → 재판독 자동 발주(`jobs.issue_needed_jobs`) | 제품 경로가 부르지 않는다(테스트만). 계약은 「자동 발주할 수 있다」(evidence-record-needs §8, 허용)이고 횟수·필수성은 evidence D-3 후속으로 미뤄 둔 상태(#172) — 정해지면 ④-b에 넣는다 |
 | `GENERATE_REPORT_VIDEO`·`GENERATE_PLATE_IMAGE` 버튼 | 동기 real 경로에서 그 notice를 내는 코드가 없다(fixture에만 있다) |
 | 상황 응답 `CORRECTED` | case-command v0이 받지 않는다(입력형 판본) |
+| #261 notice 4종 — `search.visual_verify_failed` · `readout.overlay_*` 3종 | 러너에 축이 없다 — Fine 실행 실패는 호출자가 `visual_verify_status`로 넘겨야 붙는데 러너가 넘기지 않고, overlay 판독 reason을 바꾸는 관찰 상태가 없다. 세션 기록에도 notice를 남기지 않는다. 축을 더하면 다시 돈다 |
 | `READY`의 값 정정이 command로 오는 경로 | 입력형 command 판본 전 — 지금은 domain에서 내리기만 하고, 다시 오르는 것은 다음 command 때다 |
 
 ## 한계
