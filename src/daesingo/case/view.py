@@ -62,6 +62,38 @@ _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
 }
 
 
+# `running_jobs[].label_key` — 계약 A§12 · B§12 등재 키. 미등록 kind와 `COARSE_SEARCH`는 fallback.
+JOB_LABEL_KEYS = {
+    "PLATE_READ": "job.plate_read",
+    "OVERLAY_TIME_READ": "job.overlay_time_read",
+    "FINE_VERIFY": "job.fine_verify",
+    "REPORT_VIDEO_EXPORT": "job.report_video_export",
+    "PLATE_IMAGE_EXPORT": "job.plate_image_export",
+}
+JOB_LABEL_FALLBACK = "job.generic_processing"
+
+
+def derive_running_jobs(
+    case: CaseAggregate, job_executions: list[dict[str, Any]] | None = None
+) -> list[dict[str, Any]]:
+    """case가 아직 결과를 기다리는 job(B§10 불변조건 5) = 정산되지 않은 JobRecord. status는 그 job의
+    대표 execution(`attempt` 최댓값, A§10-6)이 없거나 `QUEUED`면 `PENDING`, 그 밖은 `RUNNING`이다 —
+    terminal인데 아직 반영 전이거나 retry backoff 중이어도 case는 기다리는 중이다."""
+    running = []
+    for record in case.waiting_job_records():
+        attempts = [e for e in job_executions or [] if e["job_id"] == record["job_id"]]
+        status = max(attempts, key=lambda e: e["attempt"])["status"] if attempts else None
+        running.append(
+            {
+                "job_id": record["job_id"],
+                "kind": record["kind"],
+                "label_key": JOB_LABEL_KEYS.get(record["kind"], JOB_LABEL_FALLBACK),
+                "status": "PENDING" if status in (None, "QUEUED") else "RUNNING",
+            }
+        )
+    return running
+
+
 def representative_execution_status(
     job_records: list[dict[str, Any]], job_executions: list[dict[str, Any]], kind: str
 ) -> str | None:
@@ -613,7 +645,7 @@ def build_case_view(
     requirement_report_evidence: dict[str, Any] | None = None,
     requirement_report_package: dict[str, Any] | None = None,
     report_package: dict[str, Any] | None = None,
-    running_jobs: list[dict[str, Any]] | None = None,
+    job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
     plate_read_status: str | None = None,
     overlay_time_read_status: str | None = None,
@@ -669,6 +701,6 @@ def build_case_view(
         "requirements_evidence": _build_requirements_view(requirement_report_evidence),
         "requirements_package": _build_requirements_view(requirement_report_package),
         "package": _build_package_view(report_package, evidence_record),
-        "running_jobs": running_jobs or [],
+        "running_jobs": derive_running_jobs(case, job_executions),
         "notices": notices or [],
     }
