@@ -50,7 +50,7 @@ def _address(value: object) -> KakaoAddress | None:
 def _parse(body: bytes) -> KakaoGeocoderResult:
     try:
         data = json.loads(body)
-    except (ValueError, UnicodeError):
+    except (ValueError, UnicodeError, RecursionError):
         return KakaoGeocoderResult("FAILED", "INVALID_JSON")
     try:
         if not isinstance(data, dict) or not isinstance(data.get("meta"), dict):
@@ -117,4 +117,8 @@ class KakaoReverseGeocoder:
             return KakaoGeocoderResult("FAILED", "TRANSPORT_ERROR")
         finally:
             if connection is not None:
-                connection.close()
+                try:
+                    connection.close()
+                except OSError:
+                    # Cleanup must not replace the completed request's result.
+                    pass

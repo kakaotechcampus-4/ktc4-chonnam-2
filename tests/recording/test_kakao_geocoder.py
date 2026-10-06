@@ -28,6 +28,7 @@ def http(monkeypatch):
         body = json.dumps(payload()).encode()
         error = None
         read_error = None
+        close_error = None
         instances = []
 
         def __init__(self, host, *, timeout):
@@ -50,6 +51,8 @@ def http(monkeypatch):
 
         def close(self):
             self.closed = True
+            if self.close_error:
+                raise self.close_error
 
     monkeypatch.setattr(module, "HTTPSConnection", Connection)
     return Connection
@@ -106,6 +109,66 @@ def test_transport_failure(http, error, code):
 def test_read_timeout_closes_connection(http):
     http.read_error = TimeoutError("sensitive-response")
     assert adapter().reverse_geocode(observation()).failure == "TIMEOUT"
+    assert http.instances[0].closed
+
+
+@pytest.mark.parametrize("http_status,error_type,read_error_type,status,code", [
+    (200, None, None, "OK", None),
+    (401, None, None, "FAILED", "AUTHENTICATION"),
+    (200, TimeoutError, None, "FAILED", "TIMEOUT"),
+    (200, OSError, None, "FAILED", "TRANSPORT_ERROR"),
+    (200, None, TimeoutError, "FAILED", "TIMEOUT"),
+    (200, None, OSError, "FAILED", "TRANSPORT_ERROR"),
+])
+def test_close_oserror_preserves_result_and_privacy(
+    http, caplog, http_status, error_type, read_error_type, status, code,
+):
+    caplog.set_level(logging.DEBUG)
+    gps = observation()
+    message = f"{KEY} {gps.value.lat} {gps.value.lon} {ROAD} {LOT} sensitive-close-error"
+    http.status = http_status
+    http.error = error_type(message) if error_type else None
+    http.read_error = read_error_type(message) if read_error_type else None
+    http.close_error = OSError(message)
+    geocoder = adapter()
+
+    result = geocoder.reverse_geocode(gps)
+
+    assert result.status == status and result.failure == code
+    if status == "OK":
+        assert result.address.address_name == LOT
+        assert result.road_address.address_name == ROAD
+    else:
+        assert result.address is None and result.road_address is None
+    assert len(http.instances) == 1 and http.instances[0].closed
+    text = str(result) + repr(result) + repr(geocoder) + caplog.text
+    for secret in (KEY, str(gps.value.lat), str(gps.value.lon), ROAD, LOT, "sensitive-close-error"):
+        assert secret not in text
+    assert not caplog.records
+
+
+def test_close_non_oserror_is_not_suppressed(http):
+    http.close_error = RuntimeError("synthetic-close-error")
+    with pytest.raises(RuntimeError, match="synthetic-close-error"):
+        adapter().reverse_geocode(observation())
+
+
+def test_excessively_nested_json_is_invalid_json(http):
+    http.body = b"[" * 4096 + b"0" + b"]" * 4096
+    result = adapter().reverse_geocode(observation())
+    assert result.status == "FAILED" and result.failure == "INVALID_JSON"
+    assert result.address is None and result.road_address is None
+    assert len(http.instances) == 1 and http.instances[0].closed
+
+
+@pytest.mark.parametrize("error_type", [MemoryError, KeyboardInterrupt])
+def test_json_parser_other_exceptions_are_not_suppressed(http, monkeypatch, error_type):
+    def fail_parse(body):
+        raise error_type("synthetic-parser-error")
+
+    monkeypatch.setattr(module.json, "loads", fail_parse)
+    with pytest.raises(error_type, match="synthetic-parser-error"):
+        adapter().reverse_geocode(observation())
     assert http.instances[0].closed
 
 
