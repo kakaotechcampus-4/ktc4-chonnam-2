@@ -21,7 +21,7 @@ from typing import Any
 
 from daesingo.case import correction, jobs
 from daesingo.case.domain import CaseAggregate, InvalidTransition
-from daesingo.case.service import get_view, mark_ready_if_package_ready
+from daesingo.case.service import build_view_from_adapter, get_view, mark_ready_if_package_ready
 from daesingo.case.store import CaseStore
 
 # 이 판본(v0)에서 받는 `CORRECTED` 제외 값 — `CORRECTED`는 `SITUATION_CHANGE`를 보낼 입력형
@@ -185,17 +185,20 @@ def execute_command(
         except KeyError:
             return None
 
+    def view_of(case: CaseAggregate) -> dict[str, Any]:
+        return build_view_from_adapter(case, store.get_adapter(case.case_id, case), running_jobs=running_jobs, notices=notices)
+
     try:
         _check_payload(request)
     except _Rejected as rejected:
         return CommandResult(_response(rejected.reason, current_view() if isinstance(case_id, str) else None))
 
     try:
-        case = store.get_case(case_id)
+        case = store.load_for_update(case_id)
     except KeyError:
         return CommandResult(_response("unknown_target", None))
 
-    view = get_view(case_id, **view_kwargs)
+    view = view_of(case)
     if request["expected_case_rev"] != case.case_rev:
         return CommandResult(_response("stale_revision", view))
 
@@ -207,6 +210,7 @@ def execute_command(
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW":
-        mark_ready_if_package_ready(case, store.get_adapter(case_id))
+        mark_ready_if_package_ready(case, store.get_adapter(case_id, case))
+    store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])
-    return CommandResult(_response(None, get_view(case_id, **view_kwargs)), appended)
+    return CommandResult(_response(None, view_of(case)), appended)
