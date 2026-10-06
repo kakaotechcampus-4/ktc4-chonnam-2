@@ -25,3 +25,14 @@
 - `contracts/`: 이 모듈이 생산/소비하는 계약의 초안·검토 메모. cross-module 최종 계약은 `architecture/contracts/`로 승격
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
+
+### MySQL 통합 테스트 (opt-in)
+
+case 저장소의 MySQL 구현은 `DAESINGO_MYSQL_URL`이 있을 때만 테스트한다(CI는 아직 MySQL 없음 — Runtime Implementation Plan에서 통합).
+
+    docker run -d --rm --name daesingo-mysql -e MYSQL_ROOT_PASSWORD=devpw -e MYSQL_DATABASE=daesingo_test -p 3306:3306 mysql:8.4
+    DAESINGO_MYSQL_URL="mysql+pymysql://root:devpw@127.0.0.1:3306/daesingo_test" python -m pytest tests/case -q
+
+3306이 이미 쓰이고 있으면 `-p 3307:3306`처럼 다른 포트를 쓰고 URL의 포트를 맞춘다.
+
+테스트 fixture가 시작할 때 case 테이블을 지우고 migration을 다시 올린다 — **테스트 전용 DB만** 가리킨다. migration(잠정 배치): `PYTHONPATH=src DAESINGO_MYSQL_URL=... alembic -c migrations/case/alembic.ini upgrade head`.

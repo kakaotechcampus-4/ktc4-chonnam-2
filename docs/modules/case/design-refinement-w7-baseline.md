@@ -195,7 +195,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 
 | # | 할 일 | 출처 |
 | --- | --- | --- |
-| 8-6 | 🔄 **1단계 설계 — `decisions/case-store-mysql.md`(#267, Runtime §9 확인 완료). 구현 · adapter 제거(2단계)는 남음.** `CaseStore` MySQL 구현 — case마다 adapter를 들고 CaseView 때마다 adapter에서 다시 읽는 구조도 함께 바꾼다. 영속화 대상: Case aggregate(`Candidate.thumb_ref` 포함) · JobRecord · `scope_ref`가 가리키는 AnalysisScope · 처리한 `execution_id`. **첫 비동기 Real E2E의 선행**이고 8-7 ~ 8-11은 이 위에서 한다 | #245 D-1 · #246 S-4 |
+| 8-6 | 🔄 **1단계 구현(2026-10-06) — `MySQLCaseRepository` · in-memory 복사본 load · `CaseStore` facade. 처리 execution · 중단 job 테이블(8-8 · 8-9)과 adapter 제거(2단계)는 남음.** 설계: `decisions/case-store-mysql.md`(#267, Runtime §9 확인 완료). `CaseStore` MySQL 구현 — case마다 adapter를 들고 CaseView 때마다 adapter에서 다시 읽는 구조도 함께 바꾼다. 영속화 대상: Case aggregate(`Candidate.thumb_ref` 포함) · JobRecord · `scope_ref`가 가리키는 AnalysisScope · 처리한 `execution_id`. **첫 비동기 Real E2E의 선행**이고 8-7 ~ 8-11은 이 위에서 한다 | #245 D-1 · #246 S-4 |
 | 8-7 | ✅ **2026-10-06 `execute_command()` → `CommandResult.appended_job_records`(#268, 결정 `decisions/command-appended-job-records.md`).** command 처리가 「이번 command로 append한 JobRecord 목록」을 응답 body 밖으로 돌려준다 — composition root의 dispatch와 HTTP 202/200 판단에 쓴다 | #245 D-2 · #247 H-3 |
 | 8-8 | 결과 반영 함수를 `execution_id` 기준 idempotent로 | #245 D-5 |
 | 8-9 | 중단 command 처리 + 「중단된 `job_id` 집합」으로 늦은 결과를 거르는 guard. 6.6순위 조건 2(현재 선택 context 대조)와 함께 동작한다 | #245 C-1a · C-4 |

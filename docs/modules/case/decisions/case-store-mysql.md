@@ -1,6 +1,6 @@
 # CaseStore MySQL 영속화 — 1단계 설계
 
-> **상태: 설계 승인 (구현 전)** · 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6(`design-refinement-w7-baseline.md`), #245 D-1 · D-2 · D-5, #246 S-4, #250 RD-01
+> **상태: 1단계 구현(2026-10-06, `case-store-mysql-plan.md`). §6 진입점은 `store=` 인자를 유지하고 `CaseStore`가 repository · conn · adapters를 묶는다 — 동작은 이 문서 그대로** · 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6(`design-refinement-w7-baseline.md`), #245 D-1 · D-2 · D-5, #246 S-4, #250 RD-01
 > case schema · 저장소 인터페이스는 case 결정 범위다(#245 D-1 「Case table/schema는 case가 소유」). 다른 Owner와 맞춰야 하는 것은 §9에 따로 둔다.
 
 ## 1. 배경
