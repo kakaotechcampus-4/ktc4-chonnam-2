@@ -16,3 +16,59 @@ def test_migration_creates_case_tables_with_ascii_bin_ids(mysql_engine):
             "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'case_id'"
         ).scalar_one()
         assert coll == "ascii_bin"
+
+
+from daesingo.case.domain import CaseAggregate  # noqa: E402
+
+
+def test_rollback_leaves_nothing(mysql_engine):
+    """command 하나 = case 저장이 한 commit — 실패하면 남지 않는다(runtime-tech-spec §16 item 9의 case 쪽)."""
+    from daesingo.case.store_mysql import MySQLCaseRepository
+
+    repo = MySQLCaseRepository()
+    with mysql_engine.connect() as conn:
+        trans = conn.begin()
+        repo.insert(conn, CaseAggregate.empty("case_rb001"))
+        trans.rollback()
+    with mysql_engine.connect() as conn:
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM cases WHERE case_id = 'case_rb001'").scalar_one() == 0
+
+
+def test_update_lock_makes_second_writer_wait(mysql_engine):
+    """같은 case 동시 쓰기는 줄을 선다(Review Focus 3)."""
+    from daesingo.case.store_mysql import MySQLCaseRepository
+
+    repo = MySQLCaseRepository()
+    with mysql_engine.begin() as conn:
+        repo.insert(conn, CaseAggregate.empty("case_lock001"))
+    with mysql_engine.connect() as a, mysql_engine.connect() as b:
+        ta = a.begin()
+        repo.load(a, "case_lock001", lock="update")
+        tb = b.begin()
+        b.exec_driver_sql("SET SESSION innodb_lock_wait_timeout = 1")
+        with pytest.raises(sa.exc.OperationalError) as err:
+            repo.load(b, "case_lock001", lock="update")
+        assert "1205" in str(err.value)  # Lock wait timeout exceeded
+        tb.rollback()
+        ta.rollback()
+    with mysql_engine.begin() as conn:
+        for table in ("analysis_scopes", "correction_records", "job_records"):
+            conn.exec_driver_sql(f"DELETE FROM {table} WHERE case_id = 'case_lock001'")
+        conn.exec_driver_sql("DELETE FROM cases WHERE case_id = 'case_lock001'")
+
+
+def test_repository_never_commits(mysql_engine):
+    """저장소는 commit하지 않는다 — 호출자가 rollback하면 save도 사라진다."""
+    from daesingo.case.store_mysql import MySQLCaseRepository
+
+    repo = MySQLCaseRepository()
+    with mysql_engine.begin() as conn:
+        repo.insert(conn, CaseAggregate.empty("case_nc001"))
+    with mysql_engine.connect() as conn:
+        trans = conn.begin()
+        case = repo.load(conn, "case_nc001", lock="update")
+        case.start_search()
+        repo.save(conn, case)
+        trans.rollback()
+    with mysql_engine.connect() as conn:
+        assert repo.load(conn, "case_nc001").stage == "INTAKE"
