@@ -41,6 +41,8 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 ### 3순위 — Intent LLM 통합
 
 > **2026-09-30:** 1차 구현(09-24)은 case 모듈 경계 위반(프롬프트·provider 호출이 case 안)으로 머지 전 되돌렸다. 호출 창구 위치는 이슈 #210에서 search와 조율 중이고, 모델 선정·평가 체계는 멘토 피드백 후 확정(`미결 유지`). 아래 「API 키/모델 ID 확정이 유일한 외부 의존」은 더 이상 맞지 않는다.
+>
+> **2026-10-05:** 모델 선정 · 평가 체계의 `미결 유지`를 해제했다 — **Gemini 3.8 Flash 확정**(`decisions/intent-llm-model-selection.md` §13). 멘토 피드백 Q1(judge 신뢰도 검증) · Q2(지식 증류로 robustness-v3 100케이스 증강, 5회 반복 일관성) · Q3(confidence 실험)과 #213의 단일 점수(정확도 × 일관성, `decisions/intent-llm-eval-target-thresholds.md` §1.0)로 판단했다 — 3.8 Flash 0.941 vs Flash-Lite 0.884. 연동은 그대로 Search public 함수(#210) 대기.
 
 **문제:** `CaseAggregate.intake()`가 여전히 구조화된 `hints`만 파라미터로 받는다. 원문 자연어를 구조화하는 실제 호출이 `domain.py`/`scope.py` 어디에도 없다.
 

@@ -46,6 +46,11 @@ HTTP API Contract는 case를 **빈 상태로 먼저 만들고**(`POST /cases`, b
 
 **`INTAKE`에서만 받는 이유** — product에 분석 시작 뒤 업로드 흐름이 없고, `START_ANALYSIS` 초안도 `INTAKE` 전용이다(8-17, #265 §9 case 결정). 큰 파일을 다 받은 뒤에야 거부되는 것이 아깝다면 composition root가 업로드 전에 `get_view()`의 `stage`로 먼저 걸러도 된다 — case에 따로 함수를 두지 않는다.
 
+## 배선 조건 (recording 리뷰, #270 @cheol1203)
+
+- **입력 형식:** recording 공개 capability는 `SourceAsset` typed model(pydantic)을 돌려준다. `record_source_registered()`는 계약 dict를 받으므로 composition root가 `model_dump(mode="json")`로 바꿔 넘긴다 — 변환은 composition root의 일이고 case는 typed model을 import하지 않는다.
+- **같은 transaction의 rollback은 아직 전제다.** 「recording 등록과 case 반영이 한 DB transaction이라 함께 rollback된다」는 recording persistence(RD-17) 구현 뒤에 성립한다. 지금 recording 등록은 process-local이라 case가 `SourceNotAccepted`로 거부해도 recording 쪽 등록은 남는다 — 향후 통합 전제로 구분한다.
+
 ## 남은 것
 
 - **`failed_file_count`의 의미** — 계약은 「파일 등록 실패 수」인데 거부된 upload(`422`)는 기록 없이 버려져 셀 수 없다. case 제안은 「손상 파일을 recording이 `UNAVAILABLE`로 등록 · 연결하면 case가 센다」이고 recording · web과 정한다(#265 §9). 그 전까지 0이라 `UNAVAILABLE` · `UNKNOWN` 파일이 오면 `file_count ≠ ok_file_count + failed_file_count`다 — web은 `file_count - ok_file_count`를 「실패」로 계산하지 않는다.
