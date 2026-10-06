@@ -16,7 +16,7 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 
 시드 7건 × 후보 3개 + judge 21건 기준으로 계산하면 **총 실행 비용은 ₩50 미만**(1 크레딧=₩1 가정 시 12만 크레딧의 0.05% 미만) — `search`와 예산을 나눠 써도 문제없는 수준이다. 10배 여유를 둬도 ₩500 이내.
 
-**실측 결과(2026-09-19):** 후보 3개 실제 비용 합계 44.93 KRW(claude-haiku-4-5 34.21 + gpt-5-nano 8.34 + gemini-3.1-flash-lite 2.38) — 위 어림값과 같은 자릿수. judge(claude-sonnet-5) 비용은 `pricing.py`의 `KRW_PER_1M_TOKENS`에 없는 모델이라 집계에서 `None`으로 빠졌다(조용히 0으로 세지 않는다는 정책대로).
+**실측 결과(2026-09-19):** 후보 3개 실제 비용 합계 44.93 KRW(claude-haiku-4-5 34.21 + gpt-5-nano 8.34 + gemini-3.1-flash-lite 2.38) — 위 어림값과 같은 자릿수. judge(claude-sonnet-5) 비용은 `pricing.py`의 `KRW_PER_1M_TOKENS`에 없는 모델이라 집계에서 `None`으로 빠졌다(조용히 0으로 세지 않는다는 정책대로). **2026-10-04: judge 단가(Sonnet 5 · Opus 5)를 `pricing.py`에 넣어 이후 judge run부터 비용이 기록된다** — 48케이스 1회 판정 실측 Sonnet 5 약 ₩3,400 · Opus 5 약 ₩8,200(`results/judge-validation-robustness-v2.md` §6).
 
 ## 채점 방식 — 1차 가설, 실측 전 잠정
 
