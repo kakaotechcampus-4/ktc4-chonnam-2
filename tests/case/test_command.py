@@ -493,3 +493,95 @@ def test_response_in_ready_drops_to_evidence_review_when_package_gone():
     assert response["case_view"]["package"] is None
     assert response["case_view"]["user_reviewed"] is True
     assert response["case_view"]["case_rev"] == rev + 1  # 내려가는 것은 같은 요청의 결과 — 따로 올리지 않는다
+
+
+# --- 이번 command로 append된 JobRecord (8-7, HTTP API Contract §5.3) ----------------
+
+
+def test_execute_command_returns_job_record_appended_by_this_command():
+    """composition root는 이 목록마다 enqueue하고 200/202를 정한다 — 응답 body에는 싣지 않는다."""
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(
+        _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),
+        store=store,
+        notices=[PLATE_READ_FAILED],
+    )
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == [case.job_records[-1]]
+    assert set(result.response) == {"ok", "error", "case_view"}
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload"),
+    [
+        ("SELECT_OTHER_CANDIDATE", {"candidate_id": "cand_b"}),
+        ("RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}),
+    ],
+)
+def test_execute_command_without_job_returns_empty_list(kind, payload):
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(_request(case, kind, payload), store=store)
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == []
+
+
+def test_execute_command_mark_reviewed_returns_empty_list():
+    store, case = _store_with_selected_case()
+    case.mark_ready(report_package={"package_id": "pkg_cmd"})
+
+    result = command.execute_command(_request(case, "MARK_REVIEWED", {}), store=store)
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == []
+
+
+@pytest.mark.parametrize(
+    "make_request",
+    [
+        lambda case: {"case_id": case.case_id, "kind": "MARK_REVIEWED", "payload": {}},  # invalid_payload
+        lambda case: _request(case, "MARK_REVIEWED", {}, case_id="case_missing"),  # unknown_target(case)
+        lambda case: _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}, expected_case_rev=case.case_rev - 1),  # stale_revision
+        lambda case: _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),  # unknown_target(대상) — 화면에 버튼 없음
+        lambda case: _request(case, "MARK_REVIEWED", {}),  # not_allowed — EVIDENCE_REVIEW
+    ],
+)
+def test_execute_command_rejected_returns_empty_list(make_request):
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(make_request(case), store=store)
+
+    assert result.response["ok"] is False
+    assert result.appended_job_records == []
+
+
+def test_execute_command_returned_records_do_not_alias_case_state():
+    store, case = _store_with_selected_case()
+    result = command.execute_command(
+        _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),
+        store=store,
+        notices=[PLATE_READ_FAILED],
+    )
+    job_id = case.job_records[-1]["job_id"]
+
+    result.appended_job_records[0]["job_id"] = "tampered"
+
+    assert case.job_records[-1]["job_id"] == job_id
+
+
+def test_handle_command_returns_execute_command_response():
+    store, case = _store_with_selected_case()
+    request = _request(case, "SELECT_OTHER_CANDIDATE", {"candidate_id": "cand_b"})
+
+    response = command.handle_command(request, store=store)
+
+    assert response["ok"] is True
+    assert set(response) == {"ok", "error", "case_view"}
+
+
+def test_execute_command_is_exported_from_case_package():
+    assert case_package.execute_command is command.execute_command
+    assert case_package.CommandResult is command.CommandResult
