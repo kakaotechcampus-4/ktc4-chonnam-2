@@ -94,6 +94,10 @@ class Candidate:
     extra: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
 
 
+# JobRecord 정산 사유 — case가 그 job의 결과를 더 기다리지 않게 된 이유(`decisions/running-jobs-derivation.md`).
+JOB_SETTLE_REASONS = ("REFLECTED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")
+
+
 @dataclass
 class CaseAggregate:
     """case가 소유하는 내부 상태. `CaseView`는 이 상태 + 다른 모듈 산출물의 projection이다
@@ -131,6 +135,10 @@ class CaseAggregate:
     # COARSE_SEARCH가 쓴 AnalysisScope(`scope_id` → scope). JobRecord는 `scope_ref`만 들고 있어, process가
     # 바뀌어도 scope를 다시 읽을 수 있게 aggregate에 남긴다(#246 S-4). CaseView 비노출. scope는 불변.
     analysis_scopes: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    # case가 더는 결과를 기다리지 않는 job(`job_id` → `JOB_SETTLE_REASONS` 중 하나). `running_jobs[]`는
+    # 여기 없는 JobRecord다(계약 B§10 불변조건 5). 처음 사유가 이긴다. CaseView 비노출.
+    settled_jobs: dict[str, str] = field(default_factory=dict)
 
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -206,6 +214,7 @@ class CaseAggregate:
         if self.stage != "SEARCHING":
             raise InvalidTransition(f"{self.stage}에서는 후보 탐색 실패를 받을 수 없다(SEARCHING 전용)")
         self.candidate_search_failed = True
+        self._reflect_waiting("COARSE_SEARCH")
 
     def receive_candidates(self, candidates: list[Candidate]) -> None:
         """빈 배열(candidates=[])은 실패가 아니다 — `scenario_empty_001` 원칙(2026-09-14,
@@ -219,6 +228,7 @@ class CaseAggregate:
         self.candidate_generation += 1
         self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
+        self._reflect_waiting("COARSE_SEARCH")
 
     def select_candidate(self, candidate_id: str) -> None:
         """후보 선택은 case 소유(ownership.md §6) — evidence는 참조만 하고 복사해 갖지 않는다.
@@ -391,3 +401,24 @@ class CaseAggregate:
 
     def record_job(self, job_record: dict[str, Any]) -> None:
         self.job_records.append(job_record)
+
+    def settle_job(self, job_id: str, reason: str) -> bool:
+        """case가 `job_id`의 결과를 더 기다리지 않는다고 기록한다. 이미 정산된 job이면 처음 사유를
+        유지하고 `False` — 같은 결과가 두 번 와도 같다(#245 D-5). `case_rev`는 올리지 않는다."""
+        if reason not in JOB_SETTLE_REASONS:
+            raise ValueError(f"알 수 없는 정산 사유: {reason!r} (등록된 사유: {JOB_SETTLE_REASONS})")
+        if not any(r["job_id"] == job_id for r in self.job_records):
+            raise ValueError(f"이 case가 발주하지 않은 job_id: {job_id!r}")
+        if job_id in self.settled_jobs:
+            return False
+        self.settled_jobs[job_id] = reason
+        return True
+
+    def waiting_job_records(self) -> list[dict[str, Any]]:
+        """아직 정산되지 않은 JobRecord — `running_jobs[]`의 원천. `job_records` 순서."""
+        return [r for r in self.job_records if r["job_id"] not in self.settled_jobs]
+
+    def _reflect_waiting(self, kind: str) -> None:
+        for record in self.waiting_job_records():
+            if record["kind"] == kind:
+                self.settle_job(record["job_id"], "REFLECTED")
