@@ -1,15 +1,4 @@
-"""case_id → `CaseAggregate` 최소 in-memory 저장소.
-
-`common.InMemoryJobExecutionStore`와 같은 패턴이다 — 정식 DB 영속화·동시성 제어는
-이번 범위 밖이다(W5/W6 요청 문서 "이번엔 안 해도 되는 것"). 프로세스가 재시작되면
-사라진다. 나중에 실제 저장소로 교체할 때도 `register`/`get_case`/`get_adapter`
-시그니처만 유지하면 `service.get_view()`는 그대로 동작한다.
-
-`ModuleAdapter`를 case와 함께 등록해서 들고 있는 이유 — 어떤 case가 Mock 시나리오
-기반인지 Real 데이터 기반인지는 등록 시점에 정해지고 그 case의 생애주기 동안 안
-바뀐다(스모크 테스트·`real_e2e.py`가 지금까지 해온 방식과 동일). 매 조회마다 호출자가
-어댑터를 다시 구성해서 넘기게 하면 `get_view(case_id)`가 사실상 한 개 인자로 안 끝난다.
-"""
+"""case 저장소 — repository(in-memory · MySQL) · adapter registry · `CaseStore` facade. `decisions/case-store-mysql.md`."""
 
 from __future__ import annotations
 
@@ -95,26 +84,54 @@ class InMemoryCaseRepository:
         self._rows[case.case_id] = new
 
 
-class CaseStore:
+class AdapterRegistry:
+    """case_id → adapter(process 메모리). adapter는 2단계에서 없앨 대상이라 DB에 넣지 않는다.
+
+    `RealAdapter` · `RealVideoAdapter`는 생성 때 받은 aggregate를 들고 있다. load가 늘 새 객체를 주므로
+    요청마다 방금 로드한 aggregate를 `bind_case`로 다시 붙인다(spec §5)."""
+
     def __init__(self) -> None:
-        self._cases: dict[str, CaseAggregate] = {}
-        self._adapters: dict[str, ModuleAdapter | None] = {}
+        self._by_case: dict[str, ModuleAdapter | None] = {}
+
+    def put(self, case_id: str, adapter: ModuleAdapter | None) -> None:
+        self._by_case[case_id] = adapter
+
+    def for_case(self, case_id: str, case: CaseAggregate | None = None) -> ModuleAdapter | None:
+        adapter = self._by_case.get(case_id)
+        if adapter is not None and case is not None and hasattr(adapter, "bind_case"):
+            adapter.bind_case(case)
+        return adapter
+
+
+class CaseStore:
+    """repository · conn · adapter registry를 묶는다. 진입점(`get_view` · `execute_command` · `create_case` ·
+    `record_source_registered`)은 이것 하나를 받는다 — composition root는 요청 transaction마다
+    `CaseStore(repository=MySQLCaseRepository(), adapters=registry, conn=connection)`을 만든다.
+    기본값은 in-memory(테스트 · 로컬)."""
+
+    def __init__(
+        self,
+        repository: CaseRepository | None = None,
+        adapters: AdapterRegistry | None = None,
+        conn: Any = None,
+    ) -> None:
+        self.repository: CaseRepository = repository if repository is not None else InMemoryCaseRepository()
+        self.adapters = adapters if adapters is not None else AdapterRegistry()
+        self.conn = conn
 
     def register(self, case: CaseAggregate, adapter: ModuleAdapter | None = None) -> None:
         """`adapter=None`은 빈 case(`service.create_case()`)다 — 선택 전에는 adapter를 조회하지 않는다."""
-        if case.case_id in self._cases:
-            raise ValueError(f"case_id는 재등록할 수 없다: {case.case_id!r}")
-        self._cases[case.case_id] = case
-        self._adapters[case.case_id] = adapter
+        self.repository.insert(self.conn, case)
+        self.adapters.put(case.case_id, adapter)
 
     def get_case(self, case_id: str) -> CaseAggregate:
-        try:
-            return self._cases[case_id]
-        except KeyError:
-            raise KeyError(f"등록되지 않은 case_id: {case_id!r}") from None
+        return self.repository.load(self.conn, case_id, lock="share")
 
-    def get_adapter(self, case_id: str) -> ModuleAdapter | None:
-        try:
-            return self._adapters[case_id]
-        except KeyError:
-            raise KeyError(f"등록되지 않은 case_id: {case_id!r}") from None
+    def load_for_update(self, case_id: str) -> CaseAggregate:
+        return self.repository.load(self.conn, case_id, lock="update")
+
+    def save(self, case: CaseAggregate) -> None:
+        self.repository.save(self.conn, case)
+
+    def get_adapter(self, case_id: str, case: CaseAggregate | None = None) -> ModuleAdapter | None:
+        return self.adapters.for_case(case_id, case)
