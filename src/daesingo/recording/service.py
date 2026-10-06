@@ -16,6 +16,7 @@ from pydantic import TypeAdapter
 from .errors import RecordingCapabilityError
 from .fixtures import RecordingFixture
 from .models import (
+    GPSObservation,
     AnalysisSource,
     AssetSpan,
     AssetFacts,
@@ -209,6 +210,10 @@ class RecordingService:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def list_gps_observations(self) -> list[GPSObservation]:
+        """등록된 Mock GPS 관찰값의 독립 복사본. 미기재는 UNKNOWN이 아니라 []다."""
+        return self._repository.list_gps_observations()
+
     def register_local_source(self, path: str | Path) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
 
@@ -243,11 +248,19 @@ class RecordingService:
         *,
         case_id: str | None = None,
     ) -> RecordingService:
+        # frozen 모델의 내부 list/model_copy로 변조한 값도 등록 전에 다시 검증한다.
+        payload = fixture.model_dump()
+        # default list를 나중에 수정한 경우도 빠짐없이 검사한다. GPS 내부의
+        # optional 필드 생략 여부는 revalidate_instances 모델을 통해 보존한다.
+        payload["gps_observations"] = fixture.gps_observations
+        fixture = RecordingFixture.model_validate(payload)
         service = cls()
         for asset in fixture.source_assets:
             service._repository.add_source_asset(asset)
         for stream in fixture.media_streams:
             service._repository.add_media_stream(stream)
+        for observation in fixture.gps_observations:
+            service._repository.add_gps_observation(observation)
         for frame in fixture.frame_refs:
             stub_content = f"fixture-frame:{frame.frame_ref}".encode()
             service._repository.add_frame(frame, content=stub_content)
