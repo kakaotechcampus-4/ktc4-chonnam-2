@@ -315,6 +315,8 @@ Operational Threshold
 
 임의의 CPU 70%, Disk 80% 같은 운영 threshold는 만들지 않는다.
 
+현재 산출물: [Provisional Baseline v0.1](./provisional-baseline-v0.1.md).
+
 ---
 
 ## 7. Runtime Implementation Plan 작성 및 Task 분해

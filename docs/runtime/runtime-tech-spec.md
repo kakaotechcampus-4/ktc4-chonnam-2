@@ -171,7 +171,7 @@ MySQL에서는 `SELECT ... FOR UPDATE SKIP LOCKED`를 사용한다. 다음 규�
 확정(RD-01j, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-03):
 
 - driver는 **PyMySQL**(sync, pure Python), 접근 계층은 **SQLAlchemy Core 2.x**(connection pool · transaction)이고 ORM은 쓰지 않는다. API와 Worker는 같은 **sync DB access stack**을 쓴다. claim처럼 lock · transaction 경계가 정합성의 일부인 query는 명시적 textual SQL로 둘 수 있다.
-- idle connection 끊김은 pool pre-ping · recycle로 다룬다(값은 Provisional Baseline).
+- idle connection 끊김은 pool pre-ping · recycle로 다룬다(값은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) B-D5 · B-D6, pool · timeout · transaction 재시도는 같은 문서 §2.5).
 - 이 결정은 DB access stack만 정한다. **FastAPI route를 `def`로 둘지 `async def`로 둘지는 정하지 않는다** — HTTP/API 구현에서 I/O 경계(예: upload의 `UploadFile` 수신)를 보고 정한다. `async def` route가 sync DB service를 부르면 event loop를 막지 않도록 threadpool 등의 adapter 경계를 구현 단계에서 둔다.
 - migration 도구는 **Alembic**이다. 운영 계약은 forward-only이며 schema 변경은 expand → contract 순서로 나눈다. downgrade script를 운영 rollback 경로로 쓰지 않는다 — MySQL DDL은 statement 단위로만 atomic하다.
 - migration은 api · worker 시작 전 **단일 실행 단계**로만 돌린다. application startup에서 migration을 실행하지 않는다. 실행 명령과 위치는 Ops/Runbook(RD-12f)이 정한다.
@@ -267,14 +267,9 @@ retry 필요 (§6.2 — STALE)
 - 다음 attempt가 terminal 기록과 같은 commit에 생기므로 CaseView 대표 execution(attempt 최댓값, CaseView Contract A§10-6)은 backoff 동안 `QUEUED`(→ `PENDING`)이고 `FAILED`로 깜빡이지 않는다.
 - `queued_at`은 그 execution row가 queue에 들어간 시각 = 생성 시각이다. 따라서 attempt ≥ 2의 `queued_at → started_at`은 계획된 backoff와 실제 queue 대기를 함께 포함한다(JobExecution Contract §5). `available_at`은 Runtime 내부 scheduling metadata이고 Contract 필드가 아니다.
 
-### 6.4 아직 열려 있는 Runtime 값
+### 6.4 Runtime 값
 
-다음 값은 Final Contract가 의도적으로 정하지 않았다. workflow §6 Provisional Baseline에서 정한다.
-
-- retry max
-- backoff curve
-- jitter
-- `available_at` 계산 규칙
+다음 값은 Final Contract가 의도적으로 정하지 않았다(JobExecution Contract §11). 시작값은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.4(B-R1 retry 상한 · B-R2 backoff · `available_at` · B-R3 jitter)가 정하고, 최종값은 P2 뒤다. 이 문서에 숫자를 복제하지 않는다.
 
 기존 working 문서에 있던 “최대 3회”, “2s→4s→8s” 같은 값은 확정값으로 사용하지 않는다.
 
@@ -323,14 +318,9 @@ Worker loop
 
 다중 Worker로 확장할 때 sweep의 중복 실행이 안전하도록 DB transaction/idempotency를 보장해야 한다.
 
-### 7.4 아직 열려 있는 Runtime 값
+### 7.4 Runtime 값
 
-- lease duration
-- heartbeat interval
-- STALE threshold
-- periodic sweep interval
-
-heartbeat persistence 구조는 §7.2로 닫혔다. 위 값은 workflow §6 Provisional Baseline에서 config로 정하고 첫 실제 DB Queue/Worker integration에서 테스트 근거를 남긴다.
+lease duration · heartbeat interval · STALE threshold · periodic sweep interval의 시작값과 서로의 관계는 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.3(B-L1 ~ B-L6) · §3.1이 정한다. STALE threshold는 별도 축이 아니라 lease 만료다(B-L3). heartbeat persistence 구조는 §7.2로 닫혔고, 값은 첫 실제 DB Queue/Worker integration에서 테스트 근거를 남긴 뒤 P2에서 조정한다.
 
 값을 정할 때의 입력: Job timeout과 「진행 중 Job은 강제 취소하지 않는다」는 정책은 `case`가 소유한다([`timeout-fallback.md`](../modules/case/decisions/timeout-fallback.md), 잠정값). Runtime 문서에 그 값을 복제하지 않는다.
 
@@ -592,7 +582,7 @@ Worker는 public health endpoint 대신 Runtime DB의 heartbeat/lease 관측으�
 
 ## 15. Runtime Configuration
 
-환경별 변경 가능성이 있는 Runtime 값은 코드 상수보다 config로 둔다.
+환경별 변경 가능성이 있는 Runtime 값은 코드 상수보다 config로 둔다. 각 값의 시작값 · key 후보 · config로 열지 않는 값은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md)가 정한다.
 
 후보:
 
@@ -716,7 +706,7 @@ Python/dependency의 executable SoT는 root `pyproject.toml`, `uv.lock`, CI work
 
 첫 DB Queue/Worker 구현에서 닫아야 한다.
 
-workflow §5 Timing A 9개는 2026-10-04에 모두 닫혔다(Register [§5 진행 상태](./open-decision-register.md#5-진행-상태--timing-a)). 남은 항목은 workflow §6 Provisional Baseline 값 또는 B · C · D Decision이다.
+workflow §5 Timing A 9개는 2026-10-04에 모두 닫혔다(Register [§5 진행 상태](./open-decision-register.md#5-진행-상태--timing-a)). workflow §6 값은 2026-10-05 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md)로 Provisional이 정해졌다(최종값 P2). 남은 항목은 B · C · D Decision이다.
 
 - [x] queue table / execution table의 물리 schema — `job_execution` 단일 table = 실행 원장 + queue로 닫힘 (§4.2). column 이름은 첫 migration
 - [x] `JobExecution.produced` 물리 저장 — JSON column으로 닫힘 (§4.5)
@@ -729,13 +719,13 @@ workflow §5 Timing A 9개는 2026-10-04에 모두 닫혔다(Register [§5 진�
 - [x] heartbeat persistence 구조 — RUNNING row lease + 별도 heartbeat thread로 닫힘 (§7.2)
 - [x] case ↔ Runtime dispatch · 결과 반영 · 사용자 중단 — 닫힘 (§12.1 ~ §12.5)
 - [x] HTTP 경계 방향 — 닫힘 (§13). [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` Final — Accepted(2026-10-05). 구현 선행 조건은 Contract §9.1
-- [ ] retry max
-- [ ] backoff + jitter
-- [ ] lease duration
-- [ ] heartbeat interval
-- [ ] STALE threshold
-- [ ] stale sweep interval
-- [ ] worker polling interval
+- [x] retry max — Provisional v0.1 B-R1 (최종값 P2)
+- [x] backoff + jitter — Provisional v0.1 B-R2 · B-R3 (최종값 P2)
+- [x] lease duration — Provisional v0.1 B-L2 (최종값 P2)
+- [x] heartbeat interval — Provisional v0.1 B-L1 (최종값 P2)
+- [x] STALE threshold — Provisional v0.1 B-L3 (최종값 P2)
+- [x] stale sweep interval — Provisional v0.1 B-L4 · B-L5 (최종값 P2)
+- [x] worker polling interval — Provisional v0.1 B-Q1 ~ B-Q3 (최종값 P2)
 - [x] Runtime configuration shape · secret 주입 — 닫힘 (§15.2 · Ops §4-1)
 - [x] UsageRecord persistence shape — 물리 표현(typed column · exact numeric · float 금지)으로 닫힘 (§4.5). `DECIMAL` precision/scale은 첫 migration에서 고정
 - [ ] `pricing_id`가 가리킬 versioned pricing/FX artifact 위치·schema · FX source — 정책은 §11.3에서 닫힘 (Search rate 주입 유지 · KRW 정규화)
