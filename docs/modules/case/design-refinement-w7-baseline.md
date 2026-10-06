@@ -6,13 +6,13 @@
 
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.
 
-> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 1차 측정(`experiments/orchestration-metrics-2026-09-30.md`). 나머지는 아래 본문 그대로.
+> **상태 갱신 (2026-09-30)** — 1순위 ✅ · 2순위 → PR #177(case 구현) · 3순위 → 이슈 #210(호출 창구 조율, 모델은 멘토 피드백 후) · 3.5순위 ✅ 종결(#74, 구현 Deferred) · 6순위 ✅ case 몫 종결(transport는 이번엔 web 진행, #106) · 6.5순위 ✅ → PR #206(계약 Draft) · PR #216(`handle_command`) · 7순위 🔄 5차 측정까지(`experiments/orchestration-metrics-2026-09-30.md`, 2026-10-02 — 「바로 가능」·「작은 계측」 3개 + 「필요한 Job 발주 누락률」 완료, 「새 인프라 필요」 3개 남음). 나머지는 아래 본문 그대로.
 >
 > **상태 갱신 (2026-10-04)** — 8순위 신설: Runtime/Ops 구현 전 필수 Decision(#244 ~ #248)에 case가 확인 댓글로 약속한 후속 작업. 각 카드가 결정되기 전에는 착수하지 않는다. 결정 없이 할 수 있던 것은 선반영했다 — 8-14 · 8-15 ✅, 8-10 · 8-16 일부, 8-1 분석 시작 초안(case-command Draft §11).
 >
 > **상태 갱신 (2026-10-05)** — 카드 5장(#244 ~ #248)이 2026-10-04 모두 `ACCEPTED`로 닫혔다. case 제안(#245 C-1a B · C-4, #246 S-4 FrameRef, #247 H-4 `running_jobs` 정의)이 채택돼 다른 Owner 문서에 반영됐다. 8순위는 이제 착수할 수 있다. HTTP API Contract Draft(#265)의 case 경계 리뷰에서 나온 할 일(8-17 · 8-18)을 더했다.
 >
-> **상태 갱신 (2026-10-06)** — 8순위에서 결정 없이 할 수 있던 항목을 끝냈다: 8-4 · 8-5 · 8-18(#269), 8-7(#268) ✅, 8-6 1단계 설계(#267) · 8-12 · 8-17 case 쪽(#270)은 리뷰 반영 뒤 머지 대기. 3순위 모델은 Gemini 3.8 Flash로 확정(#278). 남은 8순위(8-1 · 8-2 · 8-8 · 8-9 · 8-10 · 8-11 · 8-13 · 8-16)는 #265 머지 · 8-6 구현 · recording 영속화 · Search PR(#210)을 기다린다.
+> **상태 갱신 (2026-10-06)** — 8순위에서 결정 없이 할 수 있던 항목을 끝냈다: 8-4 · 8-5 · 8-18(#269), 8-7(#268) ✅, 8-12 · 8-17 case 쪽(#270) ✅, 8-6 1단계 설계(#267)는 리뷰 반영 뒤 머지 대기. 7순위 orchestration 지표 4 · 5차(#234) 머지. 3순위 모델은 Gemini 3.8 Flash로 확정(#278). 남은 8순위(8-1 · 8-2 · 8-8 · 8-9 · 8-10 · 8-11 · 8-13 · 8-16)는 #265 머지 · 8-6 구현 · recording 영속화 · Search PR(#210)을 기다린다.
 
 ## 0. 범위 정의 — case가 직접 할 것과 아닌 것을 먼저 나눈다
 
@@ -151,6 +151,12 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 > **2026-09-30 1차 측정:** 아래 「바로 가능」·「작은 계측」 3개를 러너(`scripts/measure_case_orchestration.py`)로 구현했다. 「불필요한 재실행률」은 `force_rerun` 비율이 아니라 같은 입력의 중복 호출로 쟀다(`force_rerun=True`는 재판독·재시도처럼 필요한 재실행이라 근사로 쓸 수 없다). 「잘못된 stage transition」은 `InvalidTransition` 횟수가 아니라 불변식 위반으로 쟀다(예외는 막힌 시도이지 잘못된 전이가 아니다 — #167은 예외 없이 통과했다). 결과·baseline·측정 안 한 칸은 `experiments/orchestration-metrics-2026-09-30.md`. 「새 인프라 필요」 4건은 그대로다.
 >
 > **2026-09-30 2차 측정:** 「다른 후보 선택」 축을 합성 rank2로 추가했다(3,276 세션). `RealAdapter`가 evidence 조립 때 1차 탐색을 다시 부르던 것을 ①로 찾아 고쳤다(① 994 → 0). 남은 칸은 #177·#203·#209 머지 뒤 다시 돈다.
+>
+> **2026-09-30 3차 측정:** A→B→A로 돌아올 때 같은 탐색 결과의 관찰을 재사용하도록 정했다(`decisions/reselect-observation-reuse.md`, ③ 322 → 0, PR #218·#230).
+>
+> **2026-10-02 4차 측정:** #177·#203·#209 머지로 상황 응답 · 응답 대기 · 후보 0개 · 탐색 실패 · READY 시점 행동을 열었다(10,241 세션, command 대상 행동은 `handle_command` 경유). 선택 전 값 정정 · 탐색 실패 뒤 시간 단서 정정의 흔적 · READY인데 Package 없음(#202가 막지 않은 하강 쪽)을 찾아 고쳤다(② 4,122 → 0, PR #234). 남은 것: 크래시 767(번호판 직접 입력 706 · 응답 대기 중 정정 61 — 둘 다 PR #212), 측정 안 한 칸 4(worker·입력형 command 판본 대기), 아래 「새 인프라 필요」 4개.
+>
+> **2026-10-02 5차 측정:** 「필요한 Job 발주 누락률」을 정의했다 — 단계는 함수 호출로 「반드시 불려야 하는 단계 ⊆ 호출」(④, 정책 표 「다시 도는 것」 칸), `JobRecord`는 계약이 발주를 정한 notice 버튼에서만(④-b, CaseView 계약 B절 §7). ④ 0 · ④-b 421/1,335 → 0(번호판 다시 판독 버튼이 real 경로에서 근거 `PLATE_READ` JobRecord 없이 실려 늘 거부되던 것 — 근거가 있을 때만 싣도록 수정). 알려진 결함 2종을 넣어 ④만 잡는 것을 확인했다. EvidenceNeeds 자동 재판독은 #172 결정 뒤.
 
 **문제:** 지금까지 이야기한 평가(intent-llm-model-comparison 등)는 전부 "LLM이 내용을 잘 뽑았는가"만 잰다. "Case가 올바르게 오케스트레이션했는가"는 따로 재는 게 없어서, 나중에 "LLM은 잘 답했는데 Case가 잘못 재실행했다"와 "Case는 맞는데 모델이 잘못 추출했다"를 구분할 수 없다.
 
@@ -162,7 +168,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | **작은 계측 추가로 가능** | 잘못된 stage transition 0건 | `domain.py`에 `InvalidTransition` 예외가 이미 있음 — 지금은 그냥 죽기만 하고 카운트가 안 남는다. 잡아서 세기만 하면 됨 |
 | **작은 계측 추가로 가능** | 불필요한 재실행률 | `job_records.force_rerun` 비율로 근사 시작 가능 |
 | **새 인프라 필요** | 정상 workflow completion rate | 여러 case에 걸쳐 집계해야 하는데 `CaseStore`가 in-memory뿐이라 case가 끝나면 데이터가 사라짐(persistence 필요, A1 인접) |
-| **새 인프라 필요** | 필요한 Job 발주 누락률 | "필요한"의 기준(정책)을 코드로 인코딩하는 추가 설계 필요 |
+| ~~새 인프라 필요~~ → **5차 측정에서 정의(2026-10-02)** | 필요한 Job 발주 누락률 | 「필요한」 = 정책 표 「다시 도는 것」(단계, ④) · CaseView 계약 B절 §7 버튼 → 발주 매핑(`JobRecord`, ④-b). worker·EvidenceNeeds 자동 발주는 측정 안 한 칸 |
 | **새 인프라 필요** | stale 결과 적용 오류 | `JobExecution`(A1, common/runtime) 필요 |
 | **새 인프라 필요** | case당 latency/token/cost | `UsageRecord`(3순위 서브 항목과 동일 — common/runtime) 필요 |
 
@@ -195,12 +201,12 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | 8-9 | 중단 command 처리 + 「중단된 `job_id` 집합」으로 늦은 결과를 거르는 guard. 6.6순위 조건 2(현재 선택 context 대조)와 함께 동작한다 | #245 C-1a · C-4 |
 | 8-10 | JobExecution read port 연결 + attempt 최댓값 선택(CaseView 계약 A§10-6)을 case가 구현. `view.py`의 「최신 attempt 선택은 runtime이 건네준다」 주석 수정. **선택 규칙 · 주석 수정은 선반영(2026-10-04, `view.representative_execution_status()`)** — read port 연결만 D-6 뒤 | #245 D-6 · #248 Q-1 |
 | 8-11 | `running_jobs` 투영을 8-3 정의대로 구현 — `handle_command()`가 `running_jobs`를 호출자에게 받지 않고 case가 직접 계산한다. **command 응답의 `case_view`에는 이번 command로 append한 job이 들어 있어야 한다**(HTTP 202 직후 polling이 멈추지 않게, #265 §5.3 · §7-2). 응답을 만드는 시점에는 enqueue 전이라 실행 기록이 없으므로, JobRecord는 있고 실행 기록이 없는 job은 `PENDING`으로 싣는다 | #247 H-4 · #265 |
-| 8-12 | 🔄 **구현 — `create_case()` · `record_source_registered()`(#270, 결정 `decisions/empty-case-and-manifest.md`).** 빈 case 생성 경로 — `CaseAggregate.intake()` 필수 인자(`hints` · `manifest_summary`) 정리, adapter 없이 등록, 업로드마다 `manifest_summary` 갱신 | #247 H-2 |
+| 8-12 | ✅ **2026-10-06 구현 — `create_case()` · `record_source_registered()`(#270, 결정 `decisions/empty-case-and-manifest.md`).** 빈 case 생성 경로 — `CaseAggregate.intake()` 필수 인자(`hints` · `manifest_summary`) 정리, adapter 없이 등록, 업로드마다 `manifest_summary` 갱신 | #247 H-2 |
 | 8-13 | source asset을 `RealVideoAdapter`의 local path 대신 recording 공개 함수로 조회 | #246 S-3 |
 | 8-14 | ✅ `FINE_VERIFY` 실행 실패의 notice · action 정하기 — **2026-10-04 `search.visual_verify_failed`**(ERROR · blocking · `actions:[]`, 출구는 「다른 후보 보기」, CaseView 계약 등재). 실행 상태는 호출자가 `visual_verify_status`로 넘긴다. 동기 real 경로의 Fine 예외 → 실행 실패 분류는 Search failure taxonomy 접합(#244) 뒤 | #244 R-1 |
 | 8-15 | ✅ **2026-10-04 overlay 판독 결과 notice 3종**(`readout.overlay_not_present` · `_presence_undetermined` · `_ocr_failed`)을 case가 붙인다 — readout `failure-taxonomy.md` 매핑 그대로, 현재 선택 후보의 가장 나중 판독 기준. 이 카드들의 후속은 아니고 8순위 검토 중 찾은 공백(코드가 붙이지 않았고 CaseView 계약 등재도 둘 빠짐) | readout `failure-taxonomy.md` |
 | 8-16 | 단서 구조화(`HINT_EXTRACT`) 결과 반영 — **결과 반영 함수만 선반영(2026-10-04, `service.receive_hint_extraction()`)**. 결과 모양은 #210 Search 의견 가정, 발주 · 배선은 Search PR · D-5 뒤. 3순위와 같은 일 | #210 · 3순위 |
-| 8-17 | 🔄 **case 쪽 — `INTAKE`에서만 받고 아니면 `SourceNotAccepted`(#270). HTTP 매핑은 #265.** source 연결은 `INTAKE`에서만 받는다 — 분석 시작 뒤 추가 업로드는 거부. product에 분석 시작 뒤 업로드 흐름이 없고 `START_ANALYSIS` 초안도 `INTAKE` 전용이다(2026-10-05 case 결정, #265 §9). 거부 status · code 모양은 HTTP Contract가 정한다 | #265 |
+| 8-17 | 🔄 **case 쪽 완료(2026-10-06) — `INTAKE`에서만 받고 아니면 `SourceNotAccepted`(#270). HTTP 매핑은 #265.** source 연결은 `INTAKE`에서만 받는다 — 분석 시작 뒤 추가 업로드는 거부. product에 분석 시작 뒤 업로드 흐름이 없고 `START_ANALYSIS` 초안도 `INTAKE` 전용이다(2026-10-05 case 결정, #265 §9). 거부 status · code 모양은 HTTP Contract가 정한다 | #265 |
 
 **case가 정할 미결** — 정하기 전에는 위 해당 항목을 끝냈다고 부르지 않는다.
 

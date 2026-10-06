@@ -109,6 +109,12 @@ def issue_overlay_time_reread(case: CaseAggregate, *, input_fingerprint: str) ->
     return issue_job(case, "OVERLAY_TIME_READ", input_fingerprint=input_fingerprint, force_rerun=True)
 
 
+def latest_job_record(case: CaseAggregate, kind: str) -> dict[str, Any] | None:
+    """같은 kind로 가장 나중에 발주된 `JobRecord` — 재시도·재판독은 이 입력(`input_fingerprint`·
+    `scope_ref`)을 그대로 쓴다(case는 fingerprint를 계산하지 않는다). 없으면 None."""
+    return next((j for j in reversed(case.job_records) if j["kind"] == kind), None)
+
+
 _NEED_KIND_TO_SOURCE_JOB_KIND = {
     "PLATE_REREAD": "PLATE_READ",
     "OVERLAY_TIME_OCR": "OVERLAY_TIME_READ",
@@ -133,7 +139,7 @@ def issue_needed_jobs(case: CaseAggregate, evidence_needs: dict[str, Any]) -> li
         source_kind = _NEED_KIND_TO_SOURCE_JOB_KIND.get(kind)
         if source_kind is None:
             raise ValueError(f"알 수 없는 EvidenceNeeds item.kind: {kind!r}")
-        prior = next((j for j in reversed(case.job_records) if j["kind"] == source_kind), None)
+        prior = latest_job_record(case, source_kind)
         if prior is None:
             raise ValueError(
                 f"{kind!r} Need를 처리할 원본 {source_kind!r} JobRecord가 없다 (case_id={case.case_id!r})"

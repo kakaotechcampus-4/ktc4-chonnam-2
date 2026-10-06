@@ -21,9 +21,11 @@ orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from daesingo.case import jobs
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
@@ -132,7 +134,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
 _PACKAGE_READY_READINESS = frozenset({"PASS", "WARN"})
 
 
-def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter) -> AdapterSnapshot:
+def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter | None) -> AdapterSnapshot:
     """선택된 candidate가 없으면(탐색 중 · 후보 0개) downstream 값이 아직 없다 — adapter를
     조회하지 않고 빈 스냅샷을 돌려준다. real adapter는 선택 전 evidence 조회를 명확히 실패시키므로
     (#92 안전장치), 이 판단을 adapter가 아니라 case 상태로 먼저 한다. 선택이 있으면 그대로
@@ -144,10 +146,12 @@ def _inputs_for(case: CaseAggregate, adapter: ModuleAdapter) -> AdapterSnapshot:
             requirement_report_package=None,
             report_package=None,
         )
+    if adapter is None:
+        raise AdapterNotAttached(f"선택된 후보가 있는데 adapter가 없다: case_id={case.case_id!r}")
     return fetch_case_view_inputs(adapter)
 
 
-def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> bool:
+def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter | None) -> bool:
     """`PACKAGE_READY` gate가 성립할 때만 `READY`로 올린다(#167). 올렸으면 `True`.
 
     CaseView 계약 B절: `READY` = FINAL `RequirementReport`가 `PASS`/`WARN`이고 ReportPackage가
@@ -174,7 +178,7 @@ def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter) -> 
 
 def build_view_from_adapter(
     case: CaseAggregate,
-    adapter: ModuleAdapter,
+    adapter: ModuleAdapter | None,
     *,
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
@@ -214,6 +218,7 @@ def build_view_from_adapter(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
+        plate_read_retry_basis=jobs.latest_job_record(case, "PLATE_READ") is not None,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
     )
@@ -356,6 +361,7 @@ def derive_notices(
     *,
     evidence_needs: list[dict[str, Any]] | None = None,
     visual_evidence_decision: str | None = None,
+    plate_read_retry_basis: bool = False,
     visual_verify_status: str | None = None,
     overlay_time_readouts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -366,7 +372,9 @@ def derive_notices(
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
       `SEARCHING`에 머물므로(PR #197) 이 조건에 들지 않는다.
     - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
-      유무와 무관하다.
+      유무와 무관하다. 「다시 판독」(`RETRY_PLATE_READ`)은 발주 근거(같은 kind의 이전 `PLATE_READ`
+      JobRecord, `plate_read_retry_basis`)가 있을 때만 싣는다 — 없으면 command가 늘 거부한다
+      (case-command 계약 §10). 실행 경로가 없는 action은 싣지 않는다(CaseView 계약 B절).
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
       이슈 #48).
@@ -402,7 +410,7 @@ def derive_notices(
     # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다.
     if any(s["step"] == "plate_read" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(PLATE_READ_FAILED_NOTICE)
+        derived.append(PLATE_READ_FAILED_NOTICE if plate_read_retry_basis else dict(PLATE_READ_FAILED_NOTICE, actions=[]))
     overlay_notice = _overlay_notice(view, overlay_time_readouts or [])
     if overlay_notice is not None:
         derived.append(overlay_notice)
@@ -431,6 +439,31 @@ def derive_notices(
     if additions:
         view["notices"] = [*view["notices"], *additions]
     return view
+
+
+class AdapterNotAttached(RuntimeError):
+    """adapter 없이 등록된 case(빈 case)가 후보를 고른 뒤에도 adapter 없이 조회됐다. 선택 전에는 adapter를
+    조회하지 않으므로(`_inputs_for()`) INTAKE · SEARCHING 동안은 adapter가 없어도 된다."""
+
+
+def create_case(*, store: CaseStore) -> str:
+    """빈 case를 만들어 등록하고 `case_id`를 돌려준다(HTTP API Contract §5.1 `POST /cases`).
+
+    `case_id`는 case가 발급한다 — `case_` + uuid4 hex(ASCII 37자). aggregate는 밖으로 내보내지 않는다.
+    `decisions/empty-case-and-manifest.md`.
+    """
+    case_id = f"case_{uuid.uuid4().hex}"
+    store.register(CaseAggregate.empty(case_id))
+    return case_id
+
+
+def record_source_registered(case_id: str, source_asset: dict[str, Any], *, store: CaseStore) -> None:
+    """recording이 이 case에 등록 · 연결한 원본 1개(`SourceAsset` 계약 dict)를 반영한다(§5.2 upload).
+
+    composition root가 recording 등록과 같은 transaction에서 부른다. `INTAKE`가 아니면
+    `SourceNotAccepted` — 같은 transaction이라 recording 등록도 함께 rollback된다.
+    """
+    store.get_case(case_id).record_source_registered(source_asset)
 
 
 def get_view(

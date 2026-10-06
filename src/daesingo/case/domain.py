@@ -55,6 +55,16 @@ class InvalidTransition(Exception):
     pass
 
 
+class SourceNotAccepted(Exception):
+    """원본 연결은 `INTAKE`에서만 받는다(8-17 case 쪽) — 분석 시작 뒤 추가 업로드는 거부한다.
+    HTTP status · code는 HTTP API Contract가 정한다."""
+
+
+# 빈 case의 초기값(HTTP API Contract §5.1 예시) — `decisions/empty-case-and-manifest.md`.
+_EMPTY_HINTS = ("time", "vehicle", "situation", "location")
+_EMPTY_MANIFEST = {"file_count": 0, "ok_file_count": 0, "failed_file_count": 0, "duration_sec": 0, "range": None}
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
@@ -117,7 +127,32 @@ class CaseAggregate:
 
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
+        """hints · manifest를 한 번에 받는 진입점 — fixture · 테스트 경로용. 제품 진입점은 빈 case를 만드는
+        `service.create_case()`이고, 원본은 `record_source_registered()`로 하나씩 들어온다."""
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
+
+    @classmethod
+    def empty(cls, case_id: str) -> "CaseAggregate":
+        return cls(
+            case_id=case_id,
+            stage="INTAKE",
+            hints={key: None for key in _EMPTY_HINTS},
+            manifest_summary=dict(_EMPTY_MANIFEST),
+        )
+
+    def record_source_registered(self, source_asset: dict[str, Any]) -> None:
+        """recording이 등록 · 연결한 원본 1개를 `manifest_summary`에 센다.
+
+        `file_count` +1, `availability=AVAILABLE`이면 `ok_file_count` +1. `failed_file_count`(의미 미결) ·
+        `duration_sec`(「전체 구간 길이」 — 전방 · 후방이 같은 시간대를 찍으면 합산이 틀린다) · `range`는
+        recording timeline 몫이라 여기서 계산하지 않는다. `case_rev`는 올리지 않는다 — 이후 판단의 입력이
+        아니고, 동시 업로드 응답이 뒤섞여도 분석 시작이 `stale_revision`에 걸리지 않게.
+        """
+        if self.stage != "INTAKE":
+            raise SourceNotAccepted(f"원본 연결은 INTAKE에서만 받는다: stage={self.stage}")
+        self.manifest_summary["file_count"] += 1
+        if source_asset.get("availability") == "AVAILABLE":
+            self.manifest_summary["ok_file_count"] += 1
 
     def _advance(self, expected_from: str, to: str, *, bump_case_rev: bool = True) -> None:
         if self.stage != expected_from:
@@ -225,6 +260,14 @@ class CaseAggregate:
         self.user_reviewed = True
         self.bump_revision()
 
+    def check_regress_to_searching(self) -> None:
+        """`TIME_HINT_EDIT` 역행을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(`check_reselect()`와
+        같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기 전에 먼저 부른다 —
+        예전엔 기록·`hints`·`case_rev`를 먼저 바꾼 뒤 역행이 거부돼 그것들만 남았다(탐색 실패로
+        `SEARCHING`에 머문 case, orchestration 지표 4차 측정)."""
+        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+
     def regress_to_searching(self) -> None:
         """`TIME_HINT_EDIT` 역행 전이 — `CANDIDATE_REVIEW`/`EVIDENCE_REVIEW`/`READY` 중 어디서든
         `SEARCHING`으로 되돌아간다(`부분 재실행 정책 표 초안` 1행: "다시 도는 것=1차 탐색,
@@ -236,8 +279,7 @@ class CaseAggregate:
         `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
         `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
         """
-        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
-            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+        self.check_regress_to_searching()
         self.stage = "SEARCHING"
         self.candidates = []
         self.candidate_generation += 1
@@ -301,8 +343,24 @@ class CaseAggregate:
             "responded_at": responded_at,
             "candidate_ref": {"kind": "candidate_event", "ref": selected.candidate_id},
         }
+        self.leave_ready()
         self.bump_revision()
         return dict(self.situation_response)
+
+    def leave_ready(self) -> None:
+        """다시 조립되는 변경(값 정정·상황 응답)이 오면 `READY`에서 `EVIDENCE_REVIEW`로 내린다.
+
+        `READY`는 `PACKAGE_READY` 파생 gate이고(CaseView 계약 §10-9: READY면 FINAL이 PASS/WARN),
+        재조립 뒤에도 성립하는지는 새 결과를 봐야 안다 — 내리지 않으면 Package가 사라져도
+        `READY`로 남는다(orchestration 지표 4차 측정 I1). 상태 기계 설계 초안 v1 §3 「READY에서
+        어떤 정정이 들어와도 package는 즉시 무효화」. 성립하면 command의 성공 뒤 재확인이 다시
+        올린다(case-command 계약 §5).
+
+        `user_reviewed`는 건드리지 않는다 — 필드 수정과 별개다(계약 B절 `user_reviewed` ·
+        #173 값별 경계표). 새 초안이 되는 다른 후보 선택만 되돌린다(`reselect_candidate()`).
+        `case_rev`도 따로 올리지 않는다 — 같은 요청의 결과다(재선택과 같다)."""
+        if self.stage == "READY":
+            self.stage = "EVIDENCE_REVIEW"
 
     def next_job_id(self, kind: str) -> str:
         """case가 발주하는 모든 JobRecord는 **항상 새 job_id**를 받는다.
