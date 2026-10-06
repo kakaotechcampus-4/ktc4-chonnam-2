@@ -4,6 +4,8 @@
     python scripts/consistency_eval.py rule-score                                           # 규칙 채점(호출 없음)
     python scripts/consistency_eval.py judge --run-id <id>                                   # 규칙으로 못 정한 것만 judge(JUDGE_MODEL)
     python scripts/consistency_eval.py summarize --judge-run-id <id>                         # 표 출력
+    python scripts/consistency_eval.py run --models gpt-6-luna@none gemini-3.8-flash@low --sample 10 --repeats 1 --out predictions-luna/smoke
+        # `model@effort`는 reasoning_effort 지정(#281), `--sample n`은 카테고리별로 고르게 n케이스만(smoke)
 
 비용을 줄이려고 채점을 둘로 나눈다(`results/consistency-robustness-v3.md` §비용).
 
