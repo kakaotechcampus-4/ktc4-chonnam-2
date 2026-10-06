@@ -1,10 +1,11 @@
 # Runtime Implementation Plan
 
-**Status:** Implementation Plan — workflow §7\
-**Owner:** common/runtime — 김준영(@flosure23) · Runtime 구현 담당 정철원(@cheol1203)\
+**Status:** Implementation Plan — workflow §7 CLOSED (PR #304) · §8 실행 모델 보정 2026-10-06(§12 — §7 reopen 아님)\
+**Owner:** common/runtime — Runtime/Ops Owner · HTTP API Contract Owner · Deferred Acceptance 김준영(@flosure23) · **Primary Implementer RT-01 ~ RT-15 정철원(@cheol1203)** (§12)\
 **Date:** 2026-10-06 · 기준 `origin/develop` `4052ada` (PR #276 merge 직후)\
 **Workflow step:** [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) §7 → 다음은 §8 Implementation / Test / CI / Observability\
-**Inputs:** [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §9 · [Tech Spec](./runtime-tech-spec.md) · [Ops Spec](./ops-spec.md) · [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` · JobExecution · UsageRecord · JobRecord/CaseView Contract · Decision #244 ~ #250
+**Inputs:** [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §9 · [Tech Spec](./runtime-tech-spec.md) · [Ops Spec](./ops-spec.md) · [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` · JobExecution · UsageRecord · JobRecord/CaseView Contract · Decision #244 ~ #250\
+**실제 구현 기록:** [Runtime Implementation Log](./runtime-implementation-log.md) — 이 Plan 대비 무엇이 달라졌는지는 Log에 남기고 이 문서를 구현에 맞춰 다시 쓰지 않는다(§12.5)
 
 > 이 문서는 **무엇을 · 어떤 순서로 · 어떤 Issue/PR 단위로** 만들지만 정한다. Architecture · Contract · Accepted Decision · Baseline 값의 의미를 바꾸지 않는다. 숫자는 Baseline ID(`B-xx`)로만 가리키고 복제하지 않는다(Baseline 머리말 규칙). Task 본문의 「Scope」는 구현 범위이지 새 규칙이 아니다 — 충돌하면 위 Inputs가 맞다.
 
@@ -14,7 +15,7 @@
 Final Contract > Accepted Decision > Provisional Baseline v0.1 > Runtime/Ops Spec > 이 Plan
 ```
 
-- **이 Plan이 정하는 것:** Task · Issue 분해, dependency, 순서, Owner, PR 경계, acceptance test 배치, Decision Gate 위치. 그리고 상위 문서가 「구현 플래닝 · §7」로 **명시적으로 넘긴** 구현 선택(§0.1).
+- **이 Plan이 정하는 것:** Task · Issue 분해, dependency, 순서, Owner · Implementer(§12), PR 경계, acceptance test 배치, Decision Gate 위치. 그리고 상위 문서가 「구현 플래닝 · §7」로 **명시적으로 넘긴** 구현 선택(§0.1).
 - **정하지 않는 것:** 새 Decision · 새 정책 · Baseline 값 재조정 · 다른 Owner의 capability 모양. 열린 Decision(Timing B · C · D)은 답을 만들지 않고 Gate로만 표시한다(§7).
 - 구현 Task가 SoT와 모순을 발견하면 Task 안에서 고치지 않고 해당 SoT Owner에게 올린다.
 
@@ -173,7 +174,7 @@ HTTP command → case JobRecord append → JobExecution enqueue (같은 commit)
 6. RT-09 첫 비동기 E2E
 ```
 
-- **RT-05 · RT-06(heartbeat · STALE · retry)은 happy path에 필요 없어서 critical path에서 뺐다.** 정철원이 RT-05 · RT-06을 하는 동안 김준영이 RT-08 · RT-09를 한다. Runtime 코어 위험(claim · transaction)은 RT-03 · RT-04에서 먼저 검증된다.
+- **RT-05 · RT-06(heartbeat · STALE · retry)은 happy path에 필요 없어서 critical path에서 뺐다.** RT-08 · RT-09는 RT-05 · RT-06을 기다리지 않는다 — Implementer가 한 명(§12)이라 실제 순서는 case 선행 작업(§6.1) 상황에 맞춰 고른다. Runtime 코어 위험(claim · transaction)은 RT-03 · RT-04에서 먼저 검증된다.
 - **RT-09는 single process다.** API(TestClient)와 Worker loop(thread · 별도 engine)를 한 process에서 돌린다. case의 모듈 adapter가 8-6 2단계 전까지 process 메모리에 있어서다(case-store-mysql §1 「1단계가 주지 않는 것」). api · worker **별도 process** 증명은 RT-10(case 2단계 뒤) · RT-13(Compose)이 맡는다.
 - **E2E 진입 command.** case 분석 시작 command(8-1)가 develop에 있으면 그것을 쓰고, 없으면 JobRecord를 append하는 기존 command kind + fixture case를 쓴다. HTTP 층은 kind를 해석하지 않으므로(Contract §5.3) 어느 쪽이든 경로 검증은 같다.
 - **critical path를 막지 않는 것:** CloudWatch · log transport(RD-13a) · cleanup 전체 · capacity tuning · Compose · 배포 자동화 · 실제 provider · upload · frame/asset.
@@ -211,12 +212,12 @@ HTTP command → case JobRecord append → JobExecution enqueue (같은 commit)
 
 공통 DoD(각 Task): **code · test(아래 표) · observability(아래 event) · docs pointer**. Final Contract · SoT를 바꾸지 않는 구현은 docs 수정 없이 implementation PR이면 된다 — 단 `src/daesingo/{api,worker,common}/README.md`의 「아직 코드가 없다」 같은 상태 문구는 해당 Task가 고친다.
 
-Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flosure23 · 정철원 @cheol1203 · 유소연 @yuusoyeon · 서어진 @kong2488-star · 신유민 @uminshin · 김대원 @kim1034.
+책임 표기(§12): **Implementer**(실제 구현 · implementation detail 선택 · PR merge) · **Owner / Acceptance**(Contract · Decision · Baseline authority, 구현 뒤 deferred acceptance — merge 전 승인 gate 아님, §12.2) · **Consult**(해당 Owner surface의 모양을 맞출 때 확인) · **Consumer 통지**. RT-01 ~ RT-15는 모두 Implementer 정철원 · Owner / Acceptance 김준영이다. REC-1 · SRCH-1은 각 모듈 Owner 표기를 유지한다. GitHub — 김준영 @flosure23 · 정철원 @cheol1203 · 유소연 @yuusoyeon · 서어진 @kong2488-star · 신유민 @uminshin · 김대원 @kim1034.
 
 ### RT-01 — Runtime config · composition bootstrap · structured log 기반
 
 - **Goal:** api · worker가 startup에 한 파일에서 Runtime 값을 읽어 불변 config로 만들고, 잘못되면 뜨지 않는다. 모든 후속 Task가 쓰는 log 기반을 둔다.
-- **Owner:** Primary 김준영 · Review 정철원
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** 없음
 - **Inputs / SoT:** Tech Spec §15.2(RD-07) · Baseline §9 「Config / Secret」 행 · Baseline §2 각 표의 Config 칸 · B-O2 · Ops §6 · §6-1 · §7 · §0.1 P-8
 - **Implementation scope:**
@@ -237,7 +238,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-02 — DB access 기반 · Alembic 배치 · MySQL integration harness · CI
 
 - **Goal:** 모든 Runtime · case · recording MySQL 코드가 같은 sync DB stack · 같은 session 설정 · 같은 test harness 위에 선다. MySQL 테스트가 CI에서 실제로 돈다.
-- **Owner:** Primary 정철원 · Review 김준영 · Consult 유소연(#282 Alembic · harness 공용화)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영 · Consult 유소연(#282 Alembic · harness 공용화)
 - **Dependencies:** RT-01의 `DbSettings`(interface만 — 병렬 착수 가능, §11) · #282와 의존성 추가 순서(먼저 merge되는 쪽이 `pyproject.toml`에 넣고 다른 쪽이 맞춤 — #267 합의)
 - **Inputs / SoT:** Tech Spec §4.3(RC) · §4.4 · Baseline B-D1 ~ B-D9 · B-H1 · Baseline §9 「Persistence / Queue」 행 · Research 01 Spike F · §0.1 P-1 · P-2
 - **Implementation scope:**
@@ -257,7 +258,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-03 — `job_execution` schema · queue repository
 
 - **Goal:** 실행 원장 = queue 단일 table과, 호출자 transaction에 참여하는 enqueue · 짧은 claim · 조건부 전이 · read port.
-- **Owner:** Primary 정철원 · Review 김준영
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-02(a)(b)
 - **Inputs / SoT:** Tech Spec §4.2 · §4.3 · §4.5 · §6.3 · §12.1 · §12.4 · Ops §6-1(`trace_id` column) · JobExecution Contract §4 ~ §6 · §9 · Baseline B-W3 · B-L2(claim 시 lease) · B-L6 · Spike S1 · S2
 - **Implementation scope:**
@@ -278,7 +279,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-04 — Worker core: claim loop · kind registry · dispatch · T1/T2 (E2E-0)
 
 - **Goal:** Worker process가 queue를 돌려 handler를 실행하고 결과를 기록 · case에 넘긴다. Runtime만으로 닫히는 E2E-0을 통과한다.
-- **Owner:** Primary 정철원 · Review 김준영 · Consult 유소연(T2 `ResultReflector` 모양)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영 · Consult 유소연(T2 `ResultReflector` 모양)
 - **Dependencies:** RT-03 · RT-01
 - **Inputs / SoT:** Tech Spec §2 · §6.2(handler 밖 예외 = `RUNTIME_`) · §12 · §12.2 · §12.3 · Baseline B-W1 · B-W2 · B-Q1 ~ B-Q3 · B-D8(소진 규칙) · §0.1 P-3 · P-5
 - **Implementation scope:**
@@ -302,7 +303,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-05 — Lease · heartbeat · fencing · 협력적 중단
 
 - **Goal:** 실행 중 lease를 유지하고, 소유를 잃은 Worker는 결과를 commit하지 않으며, 사용자 중단이 checkpoint에서 실행을 멈춘다.
-- **Owner:** Primary 정철원 · Review 김준영 · Consult 유소연(case 중단 command가 부르는 cancel port 모양)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영 · Consult 유소연(case 중단 command가 부르는 cancel port 모양)
 - **Dependencies:** RT-04
 - **Inputs / SoT:** Tech Spec §7.2 · §12.5 · JobExecution Contract §6 · §9 · Baseline B-L1 · B-L2 · B-L6 · B-D9 · B-X1 · §3.1 · §3.6 · Baseline §9 「Worker lifecycle」 · 「Cancellation」 행 · §0.1 P-3 · P-4
 - **Implementation scope:**
@@ -321,7 +322,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-06 — STALE sweep · 자동 retry · T2 재전달
 
 - **Goal:** 죽은 Worker의 실행을 STALE로 정리하고 상한 안에서 다음 attempt를 같은 tx에 만들며, 반영되지 않은 terminal을 case에 다시 넘긴다.
-- **Owner:** Primary 정철원 · Review 김준영
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-05
 - **Inputs / SoT:** Tech Spec §6.2 · §6.3 · §7.2 · §7.3 · §12.2 · JobExecution Contract §5(`queued_at`) · Baseline B-L3 ~ B-L5 · B-R1 ~ B-R3 · §2.4 · §3.2 · Baseline §9 「Retry / Recovery」 행
 - **Implementation scope:**
@@ -342,7 +343,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-07 — Usage ledger: in-flight · Final UsageRecord · reconciliation
 
 - **Goal:** provider HTTP 시도 1회 = Final UsageRecord 1건을, Worker가 죽어도 관측값을 잃지 않고 정확히 한 번 남긴다.
-- **Owner:** Primary 김준영 · Review 정철원(sweep hook · execution context) · Consult 서어진(sink 사용 모양 — SRCH-1 소비자)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영 · Consult 서어진(sink 사용 모양 — SRCH-1 소비자). Runtime 쪽 `UsageSink` port까지가 이 Task다 — Search adapter 안의 배선은 SRCH-1(search Owner)
 - **Dependencies:** RT-03(execution context · read port) · RT-06(sweep hook — reconciliation PR만). schema · Final append PR은 RT-02 뒤 병렬 가능
 - **Inputs / SoT:** Tech Spec §3.3 · §4.5 · §11.1 ~ §11.4 · UsageRecord Contract §4 ~ §8 · #244 U-1 ~ U-4 · Baseline B-G1 · §2.12 · §0.1 P-7 · P-10
 - **Implementation scope:**
@@ -362,7 +363,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-08 — API composition root: `/cases` · `/commands` · `/view` · `/health/*`
 
 - **Goal:** HTTP API Contract의 JSON · health surface를 Contract 표 그대로 구현하고 command + enqueue를 한 commit으로 묶는다.
-- **Owner:** Primary 김준영 · Review 정철원(enqueue · cancel · read port 사용) · Consult 유소연(case 함수 호출 · 잠금 순서) · Consumer 통지 신유민
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance · HTTP Contract Owner 김준영 · Consult 유소연(case 함수 호출 · 잠금 순서) · Consumer 통지 신유민
 - **Dependencies:** RT-01 · RT-02 · RT-03 · case #282 · #284 · 8-10(read port 주입 지점). 중단 command 경로(PR d)만 RT-05(b) cancel port + case 8-9 뒤 — RT-09는 (d)를 기다리지 않는다
 - **Inputs / SoT:** HTTP API Contract §2 · §3 · §5.1 · §5.3 · §5.4 · §5.7 · §6 · §7 · Tech Spec §12.1 · §12.4 · §12.5 · §13 · §14 · Baseline B-W4 · B-U2 · B-U5 · B-D3 · B-D4 · B-D8 · B-H1 ~ B-H3 · §0.1 P-5 · P-9
 - **Implementation scope:**
@@ -385,7 +386,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-09 — 첫 비동기 E2E (integration acceptance)
 
 - **Goal:** §4 critical path를 실제 MySQL 위 자동 테스트로 통과한다.
-- **Owner:** Primary 김준영 · Review 정철원 · 유소연
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance · HTTP Contract Owner 김준영 · Consult 유소연(case T2 반영 경로)
 - **Dependencies:** RT-04 · RT-08(b)(c) · case #282 · #284 · **case T2 진입 함수(8-8)** · 8-10. RT-08(d) · RT-05 · RT-06은 기다리지 않는다
 - **Inputs / SoT:** Tech Spec §2 · §12.1 · §12.2 · HTTP Contract §5.3 · §5.4 · §6 · §7 · CaseView Contract B절 §10 불변조건 5 · Ops §6-1
 - **Implementation scope:** `POST /cases` → JobRecord를 append하는 command(§4) → `202` → Worker loop(thread · 별도 engine) claim → test 등록 fake capability handler → T1 `SUCCEEDED` → T2 case 반영 → `GET /view` polling → `running_jobs=[]` · 해당 progress 반영. single process 이유는 §4
@@ -400,7 +401,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-10 — Worker composition root: 실제 kind handler 등록 · cross-process E2E
 
 - **Goal:** case가 발주하는 kind를 각 모듈 public capability 호출로 연결하고, api · worker를 별도 process로 띄운 비동기 E2E(fake provider)를 통과한다.
-- **Owner:** Primary 김준영 · Review 정철원 · Consult 서어진(search capability · sink) · 신유민(readout 1 execution = public 호출 1회) · 정철원(recording export) · 유소연(handler가 읽는 case 입력)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영 · Consult 서어진(search capability · sink) · 신유민(readout 1 execution = public 호출 1회) · 유소연(handler가 읽는 case 입력). recording export는 Implementer가 recording Owner를 겸한다
 - **Dependencies:** RT-09 · RT-05(checkpoint) · RT-07 · SRCH-1 · REC-1 · case 8-13(source를 recording 공개 함수로 조회) · 8-16(`HINT_EXTRACT` 반영 배선) · **Gate: case 8-6 2단계**(§7) · RD-09a Provisional 가정(RT-04 착수 전 기록 — 실제 handler가 그 가정을 따른다)
 - **Inputs / SoT:** Tech Spec §12 · §12.3 · §15.1 · JobExecution Contract §9-9 · case JobRecord kind 목록(`case/jobs.py: JOB_KINDS`, #286 `HINT_EXTRACT`)
 - **Implementation scope:** kind별 handler — 입력 조회(공개 함수) → capability 호출 → capability 사이 `checkpoint()` → `produced`. readout 계열은 public 호출 정확히 1회. 모듈 config · secret은 env mapping을 각 모듈 factory에 주입(해석은 모듈). execution마다 `UsageSink` 주입. recording export 2종은 public capability가 생긴 뒤 등록(그 전에는 미등록 → `RUNTIME_` `FAILED`, Tech Spec §12.3)
@@ -415,7 +416,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-11 — Media HTTP: `POST /sources` · frames · assets
 
 - **Goal:** 원본 upload를 응답 전에 durable하게 등록하고, CaseView ref의 이미지 · 신고용 파일을 case 격리를 지켜 내보낸다.
-- **Owner:** Primary 김준영 · Review 정철원(recording 경계) · Consumer 통지 신유민
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance · HTTP Contract Owner 김준영 · Consumer 통지 신유민. recording 경계는 REC-1 공개 surface만 소비한다(Implementer가 recording Owner를 겸해도 recording 내부를 route에서 읽지 않는다)
 - **Dependencies:** RT-08(a)(b) · case #282(upload의 case 확인 · 연결이 같은 tx) · REC-1(upload PR: 영속 등록 · 원본 파일명 · 실패 taxonomy · case 연결 / frames · assets PR: 소유 조회 · DerivedAsset read · 이미지 형식)
 - **Inputs / SoT:** HTTP Contract §3.5 · §5.2 · §5.5 · §5.6 · §7-6 ~ §7-9 · Ops §4-2(RD-17) · Tech Spec §13 · Baseline B-U1 · B-U3 · B-U4 · §2.6 아래 주석 · B-F1 · B-F2 · §2.8 · §0.1 P-9
 - **Implementation scope:**
@@ -434,7 +435,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-12 — 운영 위생: cleanup · 관측 집계
 
 - **Goal:** ref에 연결되지 않은 운영 잔여물만 안전하게 지우고, Baseline §6 지표를 local · integration에서 DB query + structured log로 볼 수 있게 한다.
-- **Owner:** Primary 김준영 · Review 정철원(recording `temp_root` · orphan 조회)
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영. P-6(orphan 판정 조회)은 recording Owner 판단이다 — Implementer와 같은 사람이어도 Gate는 유지하고 판단을 recording 문서에 남긴다
 - **Dependencies:** RT-11(upload staging/publish 배치) · RT-06 · RT-07(지표 원천) · (orphan 부분만) P-6 확인
 - **Inputs / SoT:** Baseline B-C1 ~ B-C4 · §2.9 · §6 · §9 「Cleanup」 · 「Observability」 행 · Ops §6 · §7 · §8 · §14 · RD-11b · §0.1 P-6
 - **Implementation scope:**
@@ -451,7 +452,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-13 — Docker / Compose local runtime
 
 - **Goal:** api · worker · mysql을 Compose로 띄워 별도 container 사이에서 Runtime 경로가 동작한다.
-- **Owner:** Primary 김준영 · Review 정철원
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-09 · RT-02(b) · RT-06(재시작 복구 acceptance) · RT-11(upload) · **Gate: RD-12a · RD-12g · Baseline NOT_BASELINED Compose 값**(§7)
 - **Inputs / SoT:** Ops §4 · §4-1 · §4-2 · §5 · Tech Spec §4.4 · §15.2 · Baseline B-W1 · B-W4 · B-O1 · B-H3(healthcheck timeout 조건) · §2.6 주석(spool non-tmpfs)
 - **Implementation scope:** Dockerfile(Python 3.12 · `uv sync --locked` · ffmpeg) · compose(api · worker · mysql 8.4 named volume · 공유 media volume을 api · worker 같은 경로 · 같은 numeric UID · env 파일 secret mount + `DAESINGO_ENV_FILE`, `environment:`로 값 주입 안 함 · api/worker 전 migration 단계 · ready healthcheck · B-O1 `logging:`)
@@ -466,19 +467,19 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### RT-14 — EC2 배포 · 운영 (Issue는 RT-13 착수 때 생성)
 
 - **Goal:** 카테캠 EC2 1대에 Compose stack을 OIDC → SSM으로 배포하고 revision · health · smoke · rollback을 식별 가능하게 한다(M6 → P2).
-- **Owner:** Primary 김준영 · Review 정철원
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-13 · **Gate: RD-12b ~ e · RD-12h · RD-13a · RD-13c · RD-13d · RD-11a · RD-07c 확인 · RD-14(외부 공개 시)**
 - **Inputs / SoT:** Ops §2 · §2-1 · §4-1 · §8 · §9 · §19 · Runbook 전체 · Baseline B-O1
 - **Implementation scope:** OIDC 인증 전용 workflow → 배포 workflow(새 파일) · EC2 배포 script(Parameter Store → 보호 파일 → migration → compose up) · revision 식별 · post-deploy health/smoke · rollback · backup/restore · log transport · restart policy
 - **Out of scope:** capacity 확장(RD-15)
 - **Decision gate:** 위 Gate가 모두 닫히거나 Provisional이 정해진 뒤 착수. **local Runtime core를 막지 않는다**
 - **PR boundary:** Gate 결정 뒤 이 Plan을 갱신해 정한다
-- **Issue:** 지금 만들지 않는다 — 막는 Decision이 5개 이상 열린 채 Issue를 만들면 범위가 고정되지 않은 Task가 생긴다. RT-13 착수 시점에 RD-12 Gate와 함께 연다
+- **Issue:** 지금 만들지 않는다 — 막는 Decision이 5개 이상 열린 채 Issue를 만들면 범위가 고정되지 않은 Task가 생긴다. RT-13 착수 시점에 RD-12 Gate와 함께 연다. 만들 때 Implementer 정철원 · Owner / Acceptance 김준영(§12)
 
 ### RT-15 — CI 품질 gate · Runtime import 경계
 
 - **Goal:** Register 「Implementation Gap」의 CI 묶음(검수 C-10 · Ops §19 목표 순서 6 ~ 8)을 Runtime 코드부터 닫는다.
-- **Owner:** Primary 김준영 · Review 정철원
+- **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-01 · RT-02(a) — 대상 package가 생긴 뒤. critical path 아님
 - **Inputs / SoT:** Ops §19 「목표 확장 순서」 · Register 「Implementation Gap」(C-10 · Ruff · type checker · secret scan) · Architecture 「package import cycle을 만들지 않는다」 · Tech Spec §12 금지 목록 · Tech Spec §16 Contract/Boundary
 - **Implementation scope:**
@@ -497,7 +498,7 @@ Owner 표기: **Primary**(1명) · Review · Consult. GitHub — 김준영 @flos
 ### REC-1 — recording 영속화 · HTTP/Worker용 capability (recording Owner)
 
 - **Goal:** api · worker 두 process가 같은 recording 상태를 보고, HTTP route와 cleanup이 필요한 공개 capability를 recording이 제공한다.
-- **Owner:** Primary 정철원(recording) · Review 김준영(api 소비자) · Consult 유소연(case ↔ asset 연결 의미)
+- **Responsibility:** Owner · Implementer 정철원(recording — 변경 없음) · Consumer 김준영(api 소비자 — deferred review, merge gate 아님) · Consult 유소연(case ↔ asset 연결 의미)
 - **Dependencies:** RT-02(DB 기반 · Alembic 배치)
 - **Inputs / SoT (모두 기존 의무):** Ops §4-2 · #246(RD-17 후속 — recording MySQL repository · FrameRef durability · persistent 목록) · HTTP Contract §9.1(원본 파일명 인자 · 등록 실패 taxonomy 세분화 · ref → case 소유 조회 · DerivedAsset bytes · 형식 read · FrameRef 이미지 형식) · Baseline B-C3(`temp_root` 주입 — 기존 인자). orphan 판정용 등록 조회(P-6)는 **여기 포함하지 않는다** — 새 요청이라 RT-12 Gate에서 따로 확인한다
 - **Implementation scope (모양은 recording이 정한다):** recording MySQL repository(호출자 `Connection` 참여 · 자체 commit 없음) · persistent ref 복원 · 원본 파일명을 받는 등록 · `UNSUPPORTED_MEDIA` / `TEMPORARY_FAILURE` 구분 · `frame_ref` / `asset_ref` → case 소유 조회 · DerivedAsset bytes · `Content-Type` · FrameRef bytes vs 재생성(recording 선택)
@@ -684,10 +685,20 @@ Baseline §9의 11개 묶음 모두 Task에 배치됐다.
 
 | # | Task | 왜 먼저 |
 | --- | --- | --- |
-| 1 | **RT-01** (김준영) | 모든 Task가 읽는 config · log 기반이다. 의존 없음 · 작은 PR |
-| 2 | **RT-02** (정철원) | 이후 모든 MySQL 테스트와 CI gate의 바닥이다. RC · lock wait · tx 재시도 위험을 가장 먼저 실측한다. #282 case MySQL 테스트도 CI에서 돌기 시작한다 |
-| 3 | **RT-03** (정철원, RT-02 뒤) | critical path 핵심 — claim 중복 · transaction 경계 위험을 조기에 제거한다 |
-| 4 | **RT-08(a)** (김준영, RT-01 뒤) | case PR과 무관한 app skeleton · envelope · health로 HTTP 층 위험을 일찍 드러내고 RT-08(b)(c)를 case PR merge 즉시 붙일 수 있게 한다 |
+| 1 | **RT-01** (정철원) | 모든 Task가 읽는 config · log 기반이다. 의존 없음 · 작은 PR |
+| 2 | **RT-02** (정철원) | 이후 모든 MySQL 테스트와 CI gate의 바닥이다. RC · lock wait · tx 재시도 위험을 가장 먼저 실측한다. #282 case MySQL 테스트도 CI에서 돌기 시작한다. (a)는 RT-01과 dependency상 병렬 가능 |
+| 3 | **RT-03** (정철원, RT-02(a)(b) 뒤) | critical path 핵심 — claim 중복 · transaction 경계 위험을 조기에 제거한다 |
+| 4 | **RT-08(a)** (정철원, **RT-01 + RT-02(a) 뒤**) | case PR과 무관한 app skeleton · envelope · health로 HTTP 층 위험을 일찍 드러내고 RT-08(b)(c)를 case PR merge 즉시 붙일 수 있게 한다 |
+
+```text
+RT-01 ∥ RT-02(a)
+        ↓
+RT-02(b) → RT-03
+        ∥
+     RT-08(a)        ← RT-01 + RT-02(a)
+```
+
+∥는 dependency상 병렬이 **가능하다**는 뜻이다. Implementer가 한 명이라 실제 실행 순서는 상황에 따라 순차로 정한다. dependency는 §3 · §9 표가 맞다.
 
 RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisional 가정 기록이 필요하다(§7)** — 정철원(recording) · 김준영(runtime) Joint로, 첫 batch 동안 Register 절차대로 연다.
 
@@ -695,13 +706,15 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 
 ## 11. Parallel work
 
+아래 ∥는 dependency상 함께 진행해도 되는 조합이다. 두 사람이 동시에 작업한다는 뜻이 아니다 — RT는 Implementer가 한 명(§12)이라 실제로는 순서를 고른다. 사람 사이 병렬은 Runtime ∥ 다른 Owner 작업(case · search)뿐이다.
+
 | 동시에 | 조건 |
 | --- | --- |
 | RT-01 ∥ RT-02(a) | RT-02가 RT-01의 `DbSettings` 필드(B-D* · B-H1)를 interface로 맞추고, 늦게 merge되는 쪽이 연결한다 |
 | RT-03 ∥ RT-08(a) | 파일 겹침 없음 |
-| RT-05 · RT-06(정철원) ∥ RT-08(b)(c) · RT-09(김준영) | RT-09는 RT-05 · RT-06을 기다리지 않는다(§4) |
+| RT-05 · RT-06 ∥ RT-08(b)(c) · RT-09 | RT-09는 RT-05 · RT-06을 기다리지 않는다(§4) |
 | RT-07(a) ∥ RT-04 ~ RT-06 | RT-07(b)는 RT-03 read port 파일을 확장하므로 RT-03 merge 뒤 |
-| REC-1 ∥ RT-03 ~ RT-06 | 같은 사람(정철원)이라 실제 병렬도는 capacity에 달렸다 — §12 위험 |
+| REC-1 ∥ RT-03 ~ RT-06 | 같은 사람(정철원)이라 실제 병렬도는 capacity에 달렸다 — §12.7 위험 |
 | SRCH-1 ∥ RT-08 ~ RT-10 | RT-07(b) sink port merge 뒤 |
 | RT-15 ∥ RT-03 이후 전부 | 정적 검사만 — 다른 Task와 파일이 겹치면 늦게 merge되는 쪽이 맞춘다 |
 | case 8-8 · 8-9 · 8-10 · 8-6 2단계 ∥ Runtime 전부 | case 소유 |
@@ -710,20 +723,126 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 
 ---
 
-## 12. Implementation handoff
+## 12. Implementation responsibility — Single Implementer + Deferred Owner Review
 
-| 사람 | 지금 시작할 것 | 기다릴 dependency | Reviewer | 완료 기준 |
-| --- | --- | --- | --- | --- |
-| **김준영** @flosure23 (Runtime/API Contract Owner · API composition · 통합 acceptance) | RT-01 → RT-08(a). 이후 RT-07 · RT-09 · RT-10 ~ RT-13 · RT-15(여유 시) | RT-08(b)(c): RT-03 · case #282 · #284 · 8-10 · RT-09: RT-04 · 8-8 · RT-07(b): RT-03 | 정철원 | 각 Task acceptance · RT-09 CI 통과가 첫 마일스톤 |
-| **정철원** @cheol1203 (Runtime 구현 · JobExecution Worker · recording) | **RT-02(a)** — #282와 의존성 버전 맞춤(유소연과 확인) → RT-02(b) → RT-03 → RT-04 → RT-05 → RT-06. REC-1은 RT-02 뒤 capacity에 따라 | RT-01 `DbSettings` interface | 김준영 | Tech Spec §16 #1 ~ #5 · #8 · #10 · #12 ~ #15 통과. RT-04 전 RD-09a 가정 기록(김준영과 Joint) |
-| **유소연** @yuusoyeon (case) | Runtime Plan의 새 Task 없음. 기존 8순위 — #282 · #284 · 8-8 · 8-10 · 8-9 · 8-1 · 8-6 2단계가 RT-08 · RT-09 · RT-10의 선행(§6.1) | RT-02(b) Alembic 배치(P-1 = #282 배치 채택) · RT-02(a) CI(case MySQL 테스트가 CI에서 돔) | — | case 자체 기준 |
-| **서어진** @kong2488-star (search) | SRCH-1 — RT-07(b) sink port merge 뒤 | RT-07(b) | 김준영 | SRCH-1 acceptance |
-| **신유민** @uminshin (web · readout) | 없음 — RT-08 · RT-11 merge 공지 뒤 Contract §6 흐름 실연동(기존 Consumer 역할) · RT-10 readout handler Consult | RT-08 · RT-11 | — | — |
-| **김대원** @kim1034 (eval) | 없음 | — | — | — |
+2026-10-06 §8 실행 모델 보정이다. §7 reopen이 아니고 Architecture · Contract · Accepted Decision · Baseline · Task 범위 · dependency를 바꾸지 않는다. 구현 중 Owner 사이 handoff와 PR마다 승인 대기를 없애고, 나중에 문서만 보고 audit할 수 있게 기록 의무를 둔다.
 
-**정철원 첫 Task — RT-02(a)를 바로 잡는 데 필요한 것:** §0.1 P-1 · P-2 · RT-02 본문 · Baseline B-D1 ~ B-D9 · B-H1 · Research 01 Spike F · #282 diff(`pyproject.toml` · `migrations/case/` · `tests/case/conftest.py`). 추가 설계 입력은 없다.
+### 12.1 책임 구조
 
-**위험 — 정철원 집중.** RT-02 ~ RT-06(critical path 일부)과 REC-1(M5 경로)이 한 사람에게 있다. 첫 비동기 E2E는 REC-1을 기다리지 않도록 짰다. M5 일정이 REC-1에서 막히면 ownership 조정은 [`ownership.md`](../management/ownership.md) 범위이고 이 Plan이 재배정하지 않는다.
+| 역할 | 사람 | 하는 일 |
+| --- | --- | --- |
+| **Primary Implementer — RT-01 ~ RT-15** | 정철원 @cheol1203 | 코드 작성 · implementation detail 선택(§12.3) · PR 작성 · 검증 · merge(§12.2) · Implementation Notes(§12.4) · Implementation Log(§12.5) |
+| **Runtime/Ops Owner · HTTP API Contract Owner** | 김준영 @flosure23 | Architecture · Contract authority. Contract · Accepted Decision · Baseline 의미 변경의 확인처(§12.3) |
+| **Deferred Acceptance** | 김준영 @flosure23 | 구현 도중이 아니라 구현 뒤 Plan · Log · PR Notes · E2E evidence로 확인(§12.6). integration acceptance |
+
+**ownership 이전이 아니다.** Runtime/Ops Owner와 HTTP API Contract Owner는 김준영 그대로이고 [`ownership.md`](../management/ownership.md)를 바꾸지 않는다. 바뀌는 것은 「누가 코드를 쓰고 implementation detail을 고르는가」뿐이다 — 그 권한을 정철원에게 위임한다. 그래서 원래 김준영이 Primary였던 RT-01 · RT-07 ~ RT-15도 정철원이 직접 구현한다.
+
+| 사람 | 이 Plan에서 할 일 | 기다릴 dependency | 완료 기준 |
+| --- | --- | --- | --- |
+| **정철원** @cheol1203 (Primary Implementer · recording Owner) | RT-01 ∥ RT-02(a) → RT-02(b) → RT-03 · RT-08(a) → 이후 §3 · §4 순서로 RT-04 ~ RT-15. REC-1은 recording Owner로서 capacity에 따라 | case 선행(§6.1) · Gate(§7). RT-04 전 RD-09a 가정 기록(recording + runtime Joint) | 각 Task acceptance · RT-09 CI 통과가 첫 milestone · Implementation Log 누적 |
+| **김준영** @flosure23 (Runtime/Ops · HTTP Contract Owner) | 구현 Task 없음. §12.3 확인 요청 응답 · §7 Gate Decision · RD-09a Joint(runtime 쪽) · §12.6 Audit | — | Audit A · B · C |
+| **유소연** @yuusoyeon (case) | Runtime Plan의 새 Task 없음. 기존 8순위 — #282 · #284 · 8-8 · 8-10 · 8-9 · 8-1 · 8-6 2단계가 RT-08 · RT-09 · RT-10의 선행(§6.1). Runtime이 case 공개 interface를 소비하는 코드는 Implementer가 쓴다. 새 case surface가 필요하면 유소연 확인 | RT-02(b) Alembic 배치(P-1 = #282 배치 채택) · RT-02(a) CI | case 자체 기준 |
+| **서어진** @kong2488-star (search) | SRCH-1 Primary(변경 없음) — RT-07(b) sink port merge 뒤. Runtime 쪽 `UsageSink` port(RT-07)까지는 Implementer, Search adapter 안의 배선은 search Owner 범위다(서어진이 명시적으로 위임하면 별도) | RT-07(b) | SRCH-1 acceptance |
+| **신유민** @uminshin (web · readout) | 없음 — RT-08 · RT-11 merge 공지 뒤 Contract §6 흐름 실연동(기존 Consumer 역할) · RT-10 readout handler Consult | RT-08 · RT-11 | — |
+| **김대원** @kim1034 (eval) | 없음 | — | — |
+
+**첫 Task — RT-01 · RT-02(a)를 바로 잡는 데 필요한 것:** RT-01 — Tech Spec §15.2 · Baseline §2 Config 칸 · §9 Config / Secret 행 · B-O2 · Ops §6 · §6-1 · §7 · §0.1 P-8. RT-02(a) — §0.1 P-1 · P-2 · RT-02 본문 · Baseline B-D1 ~ B-D9 · B-H1 · Research 01 Spike F · #282 diff(`pyproject.toml` · `migrations/case/` · `tests/case/conftest.py`). 추가 설계 입력은 없다.
+
+### 12.2 Merge authority
+
+- Implementation PR은 **Primary Implementer가 acceptance criteria와 CI를 만족하면 merge할 수 있다.**
+- Runtime/Ops Owner의 동시 approval은 기본 merge gate가 아니다. Issue · 이 Plan의 「Owner / Acceptance」 · 「Consult」는 merge 전 승인 요구가 아니다 — Owner review는 merge 뒤 · milestone(§12.6)에서 한다.
+- 단 Contract · Accepted Decision · Baseline 의미 · 다른 Owner surface를 바꾸는 PR은 해당 authority 확인이 필요하다(§12.3). 상위 문서가 merge 전 승인을 명시한 경우도 그 문서가 맞다.
+
+김준영 사전 승인 없이 「구현 → PR → 검증 → merge」로 가는 조건:
+
+1. Final Contract 의미를 바꾸지 않는다
+2. Accepted Decision을 바꾸지 않는다
+3. Provisional Baseline 의미를 바꾸지 않는다
+4. 다른 Owner에게 새 의무를 만들지 않는다
+5. 이 Plan 범위 안이거나 합리적인 implementation detail 변경이다
+6. 해당 Task의 acceptance · integration test가 통과한다
+7. PR에 Implementation Notes(§12.4)가 있다
+
+### 12.3 진행할지 멈출지
+
+| 상황 | 처리 |
+| --- | --- |
+| implementation detail — 파일 위치 · class/function 구조 · composition root 위치 · helper · repository 내부 구성 · thread helper · FastAPI app factory · DI 구조 · test harness · logging helper · internal API 이름 | **그냥 진행.** PR Notes와 Log에 남긴다. 이 Plan의 Expected files/modules · Scope 모양과 달라도 된다 |
+| Contract 의미 — HTTP status · request/response schema · route 의미 · JobExecution · UsageRecord Contract 의미. 또는 Contract가 애매해 어느 쪽을 고르느냐에 따라 외부 동작이 달라지는 경우 | **멈추고** 해당 Contract Owner 확인(HTTP · Runtime 쪽은 김준영) |
+| Accepted Decision 변경 — 예: `FAILED` Runtime auto retry · Redis · SQS · 새 queue model · 새 ownership model | **멈추고** 해당 Decision Owner 확인 |
+| Baseline 의미 변경 — 예: heartbeat · lease · retry 상한 · upload 상한 값 | **멈추고** 김준영 확인. 실측으로 조정 후보가 생기면 구현 PR에서 바꾸지 않고 Log의 「Baseline revisit 후보」에 근거와 함께 기록한다(workflow §10 → §11 경로) |
+| 다른 Owner의 새 의무 — 예: case 새 callback 필수 · Search가 Contract에 없는 값 제공 · recording 새 public capability 필수 · Web contract 변경 | **멈추고** 해당 Owner 확인. recording 쪽(P-6 등)은 Implementer가 recording Owner를 겸하므로 recording Owner 판단으로 recording 문서에 남긴다 — 구현 PR 안에서 조용히 정하지 않는다 |
+| SoT 사이 모순 발견 | §0과 같다 — Task 안에서 고치지 않고 SoT Owner에게 올린다 |
+
+구현 중 선택한 값 · 구조가 나중에 중요해질 수 있으면(예: `DECIMAL` precision/scale · thread lifecycle 구조 · DB 재시도 helper · DI 구조 · migration runner 모양) **별도 RD Issue를 만들지 않고** Log의 「Implementation detail 색인」에 남긴다. 새 Architecture Decision이 아니기 때문이다.
+
+### 12.4 Implementation Notes — 모든 Runtime 구현 PR 필수
+
+RT-xx 구현 PR 본문에 아래 절을 넣는다. 해당 사항이 없어도 절을 지우지 않고 `없음`이라고 적는다.
+
+```markdown
+## Implementation Notes
+
+### 구현 결과
+- 실제 구현 구조
+- 주요 파일 / module
+- 주요 실행 흐름
+
+### Plan 대비 변경
+- Runtime Implementation Plan과 달라진 부분
+- 왜 변경했는지
+- 단순 implementation detail인지 여부
+
+### 새로 고정된 implementation detail
+- 이번 PR에서 처음 확정한 구현 선택
+- 선택 이유
+- 대안이 있었으면 간단 비교
+
+### Contract / Decision / Baseline 영향
+- Contract 변경: 없음 / 있음
+- Decision 변경: 없음 / 있음
+- Baseline 변경: 없음 / 있음
+
+### Owner 확인 포인트
+- 김준영이 나중에 확인해야 할 부분
+- Runtime/API boundary
+- 운영상 중요한 선택
+- 후속 revisit가 필요한 부분
+
+### Verification
+- unit
+- integration
+- CI
+- 수동 / E2E
+```
+
+「Contract / Decision / Baseline 영향」에 `있음`이 하나라도 있으면 §12.3 확인을 거친 PR이어야 한다.
+
+### 12.5 Plan과 Implementation Log
+
+| 문서 | 담는 것 |
+| --- | --- |
+| 이 Plan | 구현 **전에** 계획한 것. 구현에 맞춰 다시 쓰지 않는다 |
+| [`runtime-implementation-log.md`](./runtime-implementation-log.md) | **실제로** 구현된 것 · 이 Plan 대비 차이와 이유 · 새 implementation detail · Owner 확인 포인트 · 남은 위험 |
+
+각 Runtime PR은 가능하면 같은 PR에서 Log의 해당 Task 절을 갱신한다. merge 전이라 SHA가 없으면 `pending`으로 두고 다음 PR에서 채운다 — Log 갱신을 이유로 구현 PR merge를 막지 않는다. 기록 항목 · 형식은 Log의 「사용 규칙」이 원문이다.
+
+### 12.6 Milestone audit
+
+김준영은 PR마다 보지 않고 아래 묶음 단위로 Plan · Log · PR Notes · Integration/E2E evidence를 읽고 확인한다. **workflow gate가 아니다** — 다음 Task 착수를 막지 않고, 나중에 읽기 쉽게 묶는 용도다.
+
+| Audit | Task | 확인 대상 |
+| --- | --- | --- |
+| A — Runtime Core | RT-01 ~ RT-06 | config · DB · queue · Worker · heartbeat · STALE · retry · cancel |
+| B — Integration | RT-07 ~ RT-11 (+ REC-1 중 Runtime이 소비하는 surface) | Usage · API · 첫 비동기 E2E · Worker composition · Media HTTP |
+| C — Operations | RT-12 ~ RT-15 | cleanup · observability · Compose · deployment · CI |
+
+Audit 결과(확인 · 후속 요청)는 Log의 해당 Audit 절에 남긴다. Audit에서 Contract · Decision · Baseline 문제가 나오면 해당 SoT 절차로 보낸다.
+
+### 12.7 위험 — 한 사람 집중
+
+RT-01 ~ RT-15와 REC-1(M5 경로)이 모두 정철원에게 있다. context 전환 비용은 줄지만 일정 · 지식이 한 사람에 몰린다. 완화는 기록이다 — PR Notes와 Log만으로 다른 사람이 이어받을 수 있어야 한다. 첫 비동기 E2E는 REC-1을 기다리지 않도록 짰다(§4). 일정이 막혀 ownership을 조정해야 하면 [`ownership.md`](../management/ownership.md) 범위이고 이 Plan이 재배정하지 않는다.
 
 ---
 
@@ -734,7 +853,7 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 - [x] Task · Issue Owner 고정(§6 · §15 — #287 umbrella · #288 ~ #303)
 - [x] blocking Decision gate 식별 — 첫 batch를 막는 Gate 없음(§7)
 - [x] First Implementation Batch 선택(§10)
-- [ ] 이 Plan PR merge
+- [x] 이 Plan PR merge — PR #304
 
 ---
 
@@ -744,6 +863,8 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 | --- | --- |
 | Task 없는 Baseline §9 implementation input | 0 (§8.3) |
 | Owner 없는 Task | 0 |
+| Implementer 없는 RT Task | 0 — RT-01 ~ RT-15 전부 정철원(§12.1) |
+| 구현 중 Owner handoff · merge 전 Owner 승인 요구 | 0 — 확인은 §12.3 조건에서만 |
 | dependency 없는 blocker | 0 — 모든 Gate가 막는 Task와 시점을 가진다(§7) |
 | acceptance test 없는 Runtime core Task(RT-02 ~ RT-07) | 0 (dispatch registration test는 RT-04 틀 · RT-10 완성) |
 | Final Contract와 충돌 | 0 — HTTP status · body · header는 Contract 표를 가리키기만 한다 |
@@ -756,31 +877,32 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 
 ## 15. GitHub Issues
 
-| Task | Issue |
-| --- | --- |
-| Umbrella | #287 |
-| RT-01 | #288 |
-| RT-02 | #289 |
-| RT-03 | #290 |
-| RT-04 | #291 |
-| RT-05 | #292 |
-| RT-06 | #293 |
-| RT-07 | #294 |
-| RT-08 | #295 |
-| RT-09 | #296 |
-| RT-10 | #297 |
-| RT-11 | #298 |
-| RT-12 | #299 |
-| RT-13 | #300 |
-| RT-14 | — RT-13 착수 때 생성(§6 RT-14) |
-| RT-15 | #301 |
-| REC-1 | #302 |
-| SRCH-1 | #303 |
+| Task | Issue | Assignee (= 실제 구현자) |
+| --- | --- | --- |
+| Umbrella | #287 | 김준영 (추적) |
+| RT-01 | #288 | 정철원 |
+| RT-02 | #289 | 정철원 |
+| RT-03 | #290 | 정철원 |
+| RT-04 | #291 | 정철원 |
+| RT-05 | #292 | 정철원 |
+| RT-06 | #293 | 정철원 |
+| RT-07 | #294 | 정철원 |
+| RT-08 | #295 | 정철원 |
+| RT-09 | #296 | 정철원 |
+| RT-10 | #297 | 정철원 |
+| RT-11 | #298 | 정철원 |
+| RT-12 | #299 | 정철원 |
+| RT-13 | #300 | 정철원 |
+| RT-14 | — RT-13 착수 때 생성(§6 RT-14) | 정철원 (생성 시) |
+| RT-15 | #301 | 정철원 |
+| REC-1 | #302 | 정철원 (recording Owner) |
+| SRCH-1 | #303 | 서어진 (search Owner) |
 
-Issue 본문은 이 문서의 Task 절을 가리키는 추적용이다. 범위가 다르면 이 문서가 맞다.
+Issue 본문은 이 문서의 Task 절을 가리키는 추적용이다. 범위가 다르면 이 문서가 맞다. Assignee는 실제 구현자이고, Runtime/Ops · HTTP Contract authority는 assignee와 무관하게 김준영에게 있다(§12.1).
 
 ## Change log
 
 | 날짜 | 변경 | 기준 |
 | --- | --- | --- |
 | 2026-10-06 | 최초 작성 — workflow §7. Gap audit · critical path · 17 Task(RT-01 ~ RT-15 · REC-1 · SRCH-1) · Decision gate · test matrix · PR plan · handoff | `origin/develop` `4052ada` |
+| 2026-10-06 | §8 실행 모델 보정(§7 reopen 아님) — RT-01 ~ RT-15 Implementer를 정철원으로 단일화, 김준영은 Runtime/Ops · HTTP Contract Owner · deferred acceptance 유지. §12를 handoff 표에서 책임 구조 · merge authority · 확인 조건 · Implementation Notes · Implementation Log · Milestone audit로 교체. §6 책임 표기 · §10 · §11 · §15 정규화. Contract · Accepted Decision · Baseline · Task 범위 · dependency · 다른 Owner 소유 변경 없음 | PR #305 |

@@ -393,6 +393,8 @@ Deployment automation은 실행 단위가 만들어진 뒤 별도 slice로 붙�
 
 이미 확정된 Architecture/Contract와 Provisional Baseline을 기준으로 구현한다.
 
+현재 실행 모델(구현 책임 · merge authority · Owner 확인 조건)은 [Runtime Implementation Plan](./runtime-implementation-plan.md) §12, 실제 구현 기록은 [Runtime Implementation Log](./runtime-implementation-log.md)다.
+
 ```text
 확정된 것
 → 바로 구현
