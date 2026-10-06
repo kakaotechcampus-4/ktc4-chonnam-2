@@ -426,6 +426,75 @@ def test_rejected_command_does_not_move_to_ready():
     assert case.stage == "EVIDENCE_REVIEW"
 
 
+# --- READY에서 다시 조립되는 변경(값 정정·상황 응답) ----------------------------------------
+# READY는 PACKAGE_READY 파생 gate다(CaseView 계약 §10-9: READY면 requirements_package가 PASS/WARN).
+# 다시 조립되는 변경이 오면 domain이 EVIDENCE_REVIEW로 내리고, 성공 뒤 재확인이 gate가 여전히
+# 성립할 때만 다시 올린다. user_reviewed는 필드 수정과 별개다(계약 L264 · #173 값별 경계표).
+
+
+class _PackageOnlyWhenConfirmed(MockFixtureAdapter):
+    """응답이 CONFIRMED일 때만 Package가 준비되는 adapter — READY 뒤 응답이 바뀌면 gate가 깨진다."""
+
+    def __init__(self, case: CaseAggregate) -> None:
+        super().__init__(MOCK_ROOT, "happy_001")
+        self._case = case
+
+    def _confirmed(self) -> bool:
+        return (self._case.situation_response or {}).get("value") == "CONFIRMED"
+
+    def get_report_package(self):
+        return super().get_report_package() if self._confirmed() else None
+
+    def get_requirement_report(self, scope):
+        if scope == "FINAL_PACKAGE" and not self._confirmed():
+            return None
+        return super().get_requirement_report(scope)
+
+
+def _reviewed_ready(store: CaseStore, case: CaseAggregate) -> None:
+    first = command.handle_command(_request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store)
+    assert first["case_view"]["stage"] == "READY"
+    second = command.handle_command(_request(case, "MARK_REVIEWED", {}), store=store)
+    assert second["case_view"]["user_reviewed"] is True
+
+
+def test_response_in_ready_stays_ready_when_package_still_ready():
+    store, case = _mock_happy_store()
+    _reviewed_ready(store, case)
+    rev = case.case_rev
+
+    response = command.handle_command(_request(case, "RECORD_SITUATION_RESPONSE", {"value": "USER_UNSURE"}), store=store)
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "READY"
+    assert response["case_view"]["package"] is not None
+    assert response["case_view"]["user_reviewed"] is True
+    assert response["case_view"]["case_rev"] == rev + 2  # 응답 +1, 다시 READY 전이 +1
+
+
+def test_response_in_ready_drops_to_evidence_review_when_package_gone():
+    """READY인데 Package가 없는 CaseView를 내지 않는다(§10-9 · orchestration 지표 I1)."""
+    adapter_case = CaseAggregate.intake(case_id="case_cmd_gated", hints={}, manifest_summary={})
+    adapter = _PackageOnlyWhenConfirmed(adapter_case)
+    adapter_case.start_search()
+    service.receive_search_candidates(adapter_case, adapter)
+    adapter_case.select_top_ranked()
+    store = CaseStore()
+    store.register(adapter_case, adapter)
+    _reviewed_ready(store, adapter_case)
+    rev = adapter_case.case_rev
+
+    response = command.handle_command(
+        _request(adapter_case, "RECORD_SITUATION_RESPONSE", {"value": "USER_UNSURE"}), store=store
+    )
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "EVIDENCE_REVIEW"
+    assert response["case_view"]["package"] is None
+    assert response["case_view"]["user_reviewed"] is True
+    assert response["case_view"]["case_rev"] == rev + 1  # 내려가는 것은 같은 요청의 결과 — 따로 올리지 않는다
+
+
 # --- 이번 command로 append된 JobRecord (8-7, HTTP API Contract §5.3) ----------------
 
 

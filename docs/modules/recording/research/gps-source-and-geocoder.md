@@ -180,6 +180,10 @@ Observation<{lat, lon}>
 
 ## 8. Reverse geocoder 조사
 
+> **후속 결정 (2026-10-05):** MVP provider는 Kakao Local REST API로 확정했다.
+> 인증·실패 정책과 미구현 범위는
+> [`gps-reverse-geocoder-provider.md`](../decisions/gps-reverse-geocoder-provider.md)를 따른다.
+
 좌표 파싱과 주소 변환은 실패 원인과 외부 의존성이 다르므로 분리한다.
 
 | 후보 | 공식 기능 | 인증 | 현재 상태 |

@@ -197,12 +197,13 @@ def _build_progress(
             return "RUNNING"
         return "PENDING"
 
-    # step_rank: file_intake=0(INTAKE 완료 즉시 DONE), coarse_search=1, candidate_review=2,
+    # step_rank: file_intake=0(분석 시작으로 INTAKE를 벗어나면 DONE — 원본은 파일마다 따로 들어와 「다 올렸다」는
+    # 분석 시작으로만 안다, `decisions/empty-case-and-manifest.md`), coarse_search=1, candidate_review=2,
     # plate_read/overlay_time_read/evidence_assembly=3(EVIDENCE_REVIEW 진행), requirement_check/
     # package_assembly=3.5(EVIDENCE_REVIEW 안에서도 evidence 이후 단계) — evidence_record/
     # report_package 존재 여부로 더 세분화한다.
     progress = {
-        "file_intake": "DONE" if stage_rank >= 0 else "PENDING",
+        "file_intake": "DONE" if stage_rank >= 1 else "PENDING",
         "coarse_search": state_for(1),
         "candidate_review": state_for(2),
     }
