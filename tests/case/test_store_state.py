@@ -66,3 +66,10 @@ def test_scope_is_immutable_per_id():
     case = _case()
     with pytest.raises(ValueError):
         case.record_analysis_scope({"scope_id": "s1", "time_ranges": ["changed"]})
+
+
+@pytest.mark.parametrize("bad", ["", "s" * 129, "스코프"])
+def test_record_analysis_scope_rejects_bad_scope_id(bad):
+    case = CaseAggregate.empty("case_scope001")
+    with pytest.raises(ValueError):
+        case.record_analysis_scope({"scope_id": bad})

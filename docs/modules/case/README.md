@@ -35,4 +35,6 @@ case 저장소의 MySQL 구현은 `DAESINGO_MYSQL_URL`이 있을 때만 테스�
 
 3306이 이미 쓰이고 있으면 `-p 3307:3306`처럼 다른 포트를 쓰고 URL의 포트를 맞춘다.
 
+**격리 요건:** MySQL 저장소를 쓰는 transaction은 READ COMMITTED여야 한다(`create_engine(url, isolation_level="READ COMMITTED")`, #250 01b). 아니면 `load(lock="update")`가 첫 읽기여야 한다 — REPEATABLE READ에서는 잠금 없는 record 테이블 읽기가 낡을 수 있다(`store_mysql.py` docstring).
+
 테스트 fixture가 시작할 때 case 테이블을 지우고 migration을 다시 올린다 — **테스트 전용 DB만** 가리킨다. migration(잠정 배치): `PYTHONPATH=src DAESINGO_MYSQL_URL=... alembic -c migrations/case/alembic.ini upgrade head`.

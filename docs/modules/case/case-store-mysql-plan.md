@@ -1478,7 +1478,7 @@ git commit -m "feat(case): MySQLCaseRepository — 호출자 transaction 참여 
 
 - [ ] **Step 1: ERD case 부분 갱신** — `docs/architecture/erd-draft.md`에서 `cases`(「상세 schema 미정」) · `job_records` · `analysis_scopes` · `correction_records`(L421 「값 저장 미정」) 행을 spec §4의 칼럼 · 키로 바꾸고, 각 행 끝에 「(2026-10-06 구현, `decisions/case-store-mysql.md` §4)」를 단다. `correction_records` 값 저장은 「계약 dict를 `record` JSON으로 그대로」로 닫는다. 다른 모듈 행은 건드리지 않는다.
 
-- [ ] **Step 2: spec 상태 줄** — `decisions/case-store-mysql.md` 첫 인용 블록의 「상태: 설계 승인 (구현 전)」을 「상태: 1단계 구현(2026-10-06, `plans/2026-10-06-case-store-mysql.md`). §6 진입점은 `store=` 인자를 유지하고 `CaseStore`가 repository · conn · adapters를 묶는다 — 동작은 이 문서 그대로」로 바꾼다.
+- [ ] **Step 2: spec 상태 줄** — `decisions/case-store-mysql.md` 첫 인용 블록의 「상태: 설계 승인 (구현 전)」을 「상태: 1단계 구현(2026-10-06, `case-store-mysql-plan.md`). §6 진입점은 `store=` 인자를 유지하고 `CaseStore`가 repository · conn · adapters를 묶는다 — 동작은 이 문서 그대로」로 바꾼다.
 
 - [ ] **Step 3: 고도화 8-6 행** — `| 8-6 | 🔄 **1단계 설계 …` 앞부분을 「🔄 **1단계 구현(2026-10-06) — `MySQLCaseRepository` · in-memory 복사본 load · `CaseStore` facade. 처리 execution · 중단 job 테이블(8-8 · 8-9)과 adapter 제거(2단계)는 남음.**」으로 바꾼다.
 

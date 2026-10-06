@@ -167,6 +167,8 @@ class CaseAggregate:
     def record_analysis_scope(self, scope: dict[str, Any]) -> None:
         """scope는 불변이다 — 같은 `scope_id`로 다른 내용이 오면 거부한다."""
         scope_id = scope["scope_id"]
+        if not isinstance(scope_id, str) or not scope_id or len(scope_id) > 128 or not scope_id.isascii():
+            raise ValueError(f"scope_id는 1~128자 ASCII 문자열이어야 한다: {scope_id!r}")
         existing = self.analysis_scopes.get(scope_id)
         if existing is not None and existing != scope:
             raise ValueError(f"AnalysisScope는 바꿀 수 없다: {scope_id!r}")

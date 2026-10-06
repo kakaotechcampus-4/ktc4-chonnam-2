@@ -92,3 +92,34 @@ def test_invalid_case_id_is_refused_before_insert(repo_conn, bad):
     repo, conn = repo_conn
     with pytest.raises(InvalidCaseId):
         repo.insert(conn, CaseAggregate.empty(bad))
+
+
+def test_tuple_in_state_round_trips_as_list(repo_conn):
+    """MySQL JSON 칼럼처럼 in-memory도 tuple을 list로 돌려준다."""
+    repo, conn = repo_conn
+    case = _selected_case()
+    case.hints = {"vehicle": ("a", "b")}
+    repo.insert(conn, case)
+    assert repo.load(conn, case.case_id).hints == {"vehicle": ["a", "b"]}
+    back = repo.load(conn, case.case_id, lock="update")
+    back.hints = {"vehicle": ("c", "d")}
+    repo.save(conn, back)
+    assert repo.load(conn, case.case_id).hints == {"vehicle": ["c", "d"]}
+
+
+def test_non_json_value_in_state_is_refused(repo_conn):
+    """datetime은 JSON이 아니다 — memory는 TypeError, MySQL은 StatementError(.orig는 TypeError)."""
+    from datetime import datetime
+
+    repo, conn = repo_conn
+    case = _selected_case()
+    case.hints = {"at": datetime(2026, 10, 6)}
+    if conn is None:
+        with pytest.raises(TypeError):
+            repo.insert(conn, case)
+    else:
+        from sqlalchemy.exc import StatementError
+
+        with pytest.raises(StatementError) as exc:
+            repo.insert(conn, case)
+        assert isinstance(exc.value.orig, TypeError)

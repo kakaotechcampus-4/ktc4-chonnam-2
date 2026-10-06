@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
+import json
 from typing import Any, Literal, Protocol
 
 from daesingo.case.adapters import ModuleAdapter
@@ -47,6 +49,17 @@ def check_append_only(stored_ids: list[str], current_ids: list[str], what: str) 
         raise AppendOnlyViolation(f"{what}의 저장된 앞부분이 바뀌었다")
 
 
+def _json_round_trip(row: CaseRow) -> CaseRow:
+    """MySQL JSON 칼럼과 같게 — tuple은 list, 키는 str, datetime · set 같은 비JSON 값은 TypeError."""
+    return dataclasses.replace(
+        row,
+        state=json.loads(json.dumps(row.state)),
+        job_records=json.loads(json.dumps(row.job_records)),
+        correction_records=json.loads(json.dumps(row.correction_records)),
+        analysis_scopes=json.loads(json.dumps(row.analysis_scopes)),
+    )
+
+
 class InMemoryCaseRepository:
     """테스트 · 로컬용. load는 늘 새 객체를 준다 — 같은 객체를 주면 save를 빠뜨려도 테스트가 통과해
     MySQL에서만 상태가 사라진다(`decisions/case-store-mysql.md` §5)."""
@@ -58,7 +71,7 @@ class InMemoryCaseRepository:
         validate_case_id(case.case_id)
         if case.case_id in self._rows:
             raise CaseAlreadyExists(f"case_id는 재등록할 수 없다: {case.case_id!r}")
-        self._rows[case.case_id] = to_row(case)
+        self._rows[case.case_id] = _json_round_trip(to_row(case))
 
     def load(self, conn: Any, case_id: str, *, lock: Literal["share", "update"] = "share") -> CaseAggregate:
         try:
@@ -71,7 +84,7 @@ class InMemoryCaseRepository:
         stored = self._rows.get(case.case_id)
         if stored is None:
             raise CaseNotFound(f"등록되지 않은 case_id: {case.case_id!r}")
-        new = to_row(case)
+        new = _json_round_trip(to_row(case))
         check_append_only([r["job_id"] for r in stored.job_records], [r["job_id"] for r in new.job_records], "job_records")
         check_append_only(
             [r["correction_id"] for r in stored.correction_records],
@@ -107,7 +120,7 @@ class CaseStore:
     """repository · conn · adapter registry를 묶는다. 진입점(`get_view` · `execute_command` · `create_case` ·
     `record_source_registered`)은 이것 하나를 받는다 — composition root는 요청 transaction마다
     `CaseStore(repository=MySQLCaseRepository(), adapters=registry, conn=connection)`을 만든다.
-    기본값은 in-memory(테스트 · 로컬)."""
+    기본값은 in-memory(테스트 · 로컬). MySQL transaction은 READ COMMITTED여야 한다 — `MySQLCaseRepository` docstring 참고."""
 
     def __init__(
         self,

@@ -84,7 +84,11 @@ def _now() -> datetime:
 
 class MySQLCaseRepository:
     """호출자의 `Connection`에 참여한다 — commit · rollback하지 않는다(#245 D-2). 상태를 들지 않는다:
-    「무엇이 이미 저장됐나」는 매번 DB에서 읽는다(spec §5). 잠금은 `cases` 행에만 건다 — case 행 먼저."""
+    「무엇이 이미 저장됐나」는 매번 DB에서 읽는다(spec §5). 잠금은 `cases` 행에만 건다 — case 행 먼저.
+
+    격리 요건: 호출자의 transaction은 READ COMMITTED여야 한다(예: `create_engine(url, isolation_level="READ COMMITTED")`,
+    runtime decision #250 01b). 아니면 `load(lock="update")`가 transaction의 첫 읽기여야 한다 — REPEATABLE READ에서는
+    먼저 한 일관 읽기가 행 잠금보다 오래된 snapshot을 고정해 잠금 없는 record 테이블 읽기가 낡을 수 있다."""
 
     def insert(self, conn: Any, case: CaseAggregate) -> None:
         validate_case_id(case.case_id)

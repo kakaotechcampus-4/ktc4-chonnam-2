@@ -203,5 +203,5 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 - §8 계약 테스트가 두 구현 모두 통과(MySQL은 로컬 실행 결과를 PR에 남긴다)
 - 기존 테스트 회귀 없음 · `scripts/check_boundaries.py` PASS
 - §9 항목 확인 결과를 PR에 남긴다
-- `erd-draft.md`의 case 부분(L380~392 · L421 `correction_records` 값 저장 「미정」)을 이 schema로 갱신
+- ✅ (2026-10-06) `erd-draft.md`의 case 부분(L380~392 · L421 `correction_records` 값 저장 「미정」)을 이 schema로 갱신
 - `design-refinement-w7-baseline.md` 8-6에 1단계 완료 · 2단계 남음을 적는다
