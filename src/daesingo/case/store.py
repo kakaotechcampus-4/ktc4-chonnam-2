@@ -20,9 +20,10 @@ from daesingo.case.domain import CaseAggregate
 class CaseStore:
     def __init__(self) -> None:
         self._cases: dict[str, CaseAggregate] = {}
-        self._adapters: dict[str, ModuleAdapter] = {}
+        self._adapters: dict[str, ModuleAdapter | None] = {}
 
-    def register(self, case: CaseAggregate, adapter: ModuleAdapter) -> None:
+    def register(self, case: CaseAggregate, adapter: ModuleAdapter | None = None) -> None:
+        """`adapter=None`은 빈 case(`service.create_case()`)다 — 선택 전에는 adapter를 조회하지 않는다."""
         if case.case_id in self._cases:
             raise ValueError(f"case_id는 재등록할 수 없다: {case.case_id!r}")
         self._cases[case.case_id] = case
@@ -34,7 +35,7 @@ class CaseStore:
         except KeyError:
             raise KeyError(f"등록되지 않은 case_id: {case_id!r}") from None
 
-    def get_adapter(self, case_id: str) -> ModuleAdapter:
+    def get_adapter(self, case_id: str) -> ModuleAdapter | None:
         try:
             return self._adapters[case_id]
         except KeyError:

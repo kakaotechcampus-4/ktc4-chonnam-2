@@ -8,7 +8,15 @@ codec·ffmpeg / Worker lifecycle 구현)은 여기 코드에도 그대로 적용
 """
 
 from daesingo.case.command import CommandResult, execute_command, handle_command
-from daesingo.case.service import get_view
+from daesingo.case.service import create_case, get_view, record_source_registered
 from daesingo.case.store import CaseStore
 
-__all__ = ["CaseStore", "CommandResult", "execute_command", "get_view", "handle_command"]
+__all__ = [
+    "CaseStore",
+    "CommandResult",
+    "create_case",
+    "execute_command",
+    "get_view",
+    "handle_command",
+    "record_source_registered",
+]
