@@ -153,12 +153,24 @@ def test_close_non_oserror_is_not_suppressed(http):
         adapter().reverse_geocode(observation())
 
 
-def test_excessively_nested_json_is_invalid_json(http):
-    http.body = b"[" * 4096 + b"0" + b"]" * 4096
-    result = adapter().reverse_geocode(observation())
+def test_json_recursion_error_is_invalid_json(http, monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
+    gps = observation()
+    geocoder = adapter()
+    message = f"{KEY} {gps.value.lat} {gps.value.lon} {ROAD} {LOT} sensitive-parser-error"
+
+    def fail_parse(body):
+        raise RecursionError(message)
+
+    monkeypatch.setattr(module.json, "loads", fail_parse)
+    result = geocoder.reverse_geocode(gps)
     assert result.status == "FAILED" and result.failure == "INVALID_JSON"
     assert result.address is None and result.road_address is None
     assert len(http.instances) == 1 and http.instances[0].closed
+    text = str(result) + repr(result) + repr(geocoder) + caplog.text
+    for secret in (KEY, str(gps.value.lat), str(gps.value.lon), ROAD, LOT, "sensitive-parser-error"):
+        assert secret not in text
+    assert not caplog.records
 
 
 @pytest.mark.parametrize("error_type", [MemoryError, KeyboardInterrupt])
