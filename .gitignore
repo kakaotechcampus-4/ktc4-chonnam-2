@@ -80,9 +80,10 @@ target/
 
 # ── 로컬 도구 설정 (공유하지 않음) ──────────────────
 # `.claude/settings.json`(플러그인 1줄)은 CLAUDE.md와 짝이라 추적한다.
-# 그 아래 개인 설정·스킬만 무시한다.
+# 그 아래 개인 설정·스킬만 무시한다. 팀 공유 스킬은 아래 `!`로 하나씩 연다.
 .claude/settings.local.json
-.claude/skills/
+.claude/skills/*
+!.claude/skills/update-readme/
 .superpowers/
 .impeccable/
 .agents/

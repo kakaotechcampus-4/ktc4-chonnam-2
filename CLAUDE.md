@@ -15,6 +15,7 @@
 | 누가 무엇을 맡는지 | `docs/management/ownership.md` |
 | 운영 결정(승인 경로·리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
 | 문서 폴더 사용 규칙 · 충돌 시 우선순위 | `docs/README.md` |
+| 폴더 구조 · 실행 방법 · 의존성을 바꾼 PR의 루트 README 사실 확인 | `/update-readme` (`.claude/skills/update-readme/`) |
 
 ## 하지 말 것
 
