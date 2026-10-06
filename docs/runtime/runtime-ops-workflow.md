@@ -385,6 +385,8 @@ Documentation Issue
 
 Deployment automation은 실행 단위가 만들어진 뒤 별도 slice로 붙인다.
 
+현재 산출물: [Runtime Implementation Plan](./runtime-implementation-plan.md).
+
 ---
 
 ## 8. Baseline 기반 구현 + Test / CI / Observability

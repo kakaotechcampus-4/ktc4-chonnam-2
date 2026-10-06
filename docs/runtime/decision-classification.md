@@ -96,7 +96,7 @@ Group Timing과 Sub-decision Timing이 다를 때의 원칙은 Register 「읽�
 
 ### 2.4 Decision Gate
 
-Gate는 **늦어도 이 milestone 전에 닫혀 있어야 하는 지점**이다. 날짜가 아니다. M1~M4는 workflow §7 Implementation Plan 우선순위 순서이고, §7에서 순서가 바뀌면 Gate 이름은 그대로 두고 순서만 따라간다.
+Gate는 **늦어도 이 milestone 전에 닫혀 있어야 하는 지점**이다. 날짜가 아니다. M1~M4는 workflow §7 Implementation Plan 우선순위 순서이고, §7에서 순서가 바뀌면 Gate 이름은 그대로 두고 순서만 따라간다. M1~M5가 어느 Task 착수에 해당하는지는 [Runtime Implementation Plan](./runtime-implementation-plan.md) §3.1이다.
 
 | Gate | Milestone | 근거 |
 | --- | --- | --- |
@@ -463,3 +463,4 @@ RD-01은 Gate가 가장 이르면서(M1) dependency상 가장 늦다. Wave 1 · 
 | 2026-10-03 | 검토 반영 — §2.1 예외 목록에 RD-19 추가, RD-10 개인정보 법령 조사를 R3에서 EI-08로 이동, `Joint` 뜻(각 Owner가 자기 surface 승인) 명시 | `origin/develop` `10787d8` |
 | 2026-10-03 | §4.1에 workflow §5 진행 포인터 추가(Register §5 진행 상태 · #251). 분류 변경 없음 | `origin/develop` `43dd8ec` |
 | 2026-10-04 | §4.1 포인터를 Timing A 9/9 CLOSED로 갱신. 분류 변경 없음 | PR #253 |
+| 2026-10-06 | §2.4에 M1~M5 ↔ Implementation Plan Task 대응 pointer 추가. 분류 변경 없음 | PR #304 |
