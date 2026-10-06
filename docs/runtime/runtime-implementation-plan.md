@@ -753,6 +753,7 @@ RT-04는 RT-03 merge 직후 다음 순서다. **RT-04 착수 전 RD-09a Provisio
 - Implementation PR은 **Primary Implementer가 acceptance criteria와 CI를 만족하면 merge할 수 있다.**
 - Runtime/Ops Owner의 동시 approval은 기본 merge gate가 아니다. Issue · 이 Plan의 「Owner / Acceptance」 · 「Consult」는 merge 전 승인 요구가 아니다 — Owner review는 merge 뒤 · milestone(§12.6)에서 한다.
 - 단 Contract · Accepted Decision · Baseline 의미 · 다른 Owner surface를 바꾸는 PR은 해당 authority 확인이 필요하다(§12.3). 상위 문서가 merge 전 승인을 명시한 경우도 그 문서가 맞다.
+- **Consult는 승인이 아니다.** 그 Owner의 공개 surface에 닿는 interface 모양(예: RT-04 T2 port · RT-05 cancel port · RT-08 case 함수 호출 · 잠금 순서 · RT-02 #282 의존성 순서)을 정하기 **전에** 한 번 맞추는 것이다. 응답을 기다리는 동안은 port · fake로 진행하고(RT-04 방식) 실제 배선은 확인 뒤 붙인다. 맞춘 결과 그 Owner에게 새 의무가 생기면 §12.3 「멈춤」이다.
 
 김준영 사전 승인 없이 「구현 → PR → 검증 → merge」로 가는 조건:
 
@@ -844,6 +845,39 @@ Audit 결과(확인 · 후속 요청)는 Log의 해당 Audit 절에 남긴다. A
 
 RT-01 ~ RT-15와 REC-1(M5 경로)이 모두 정철원에게 있다. context 전환 비용은 줄지만 일정 · 지식이 한 사람에 몰린다. 완화는 기록이다 — PR Notes와 Log만으로 다른 사람이 이어받을 수 있어야 한다. 첫 비동기 E2E는 REC-1을 기다리지 않도록 짰다(§4). 일정이 막혀 ownership을 조정해야 하면 [`ownership.md`](../management/ownership.md) 범위이고 이 Plan이 재배정하지 않는다.
 
+### 12.8 RT PR 체크리스트
+
+RT 구현(AI로 진행하는 경우 포함)은 이 절을 순서대로 따른다. 각 항목의 규칙 원문은 괄호 안 위치이고, 이 절은 순서만 모은다.
+
+**착수**
+
+- [ ] §6 해당 Task 절 · §3 선행 · §7 Gate 「필요 시점」 확인 — 예: RT-04는 RD-09a 기록 뒤 · RT-13은 RD-12a · 12g 뒤
+- [ ] Log 해당 Task Status `NOT_STARTED` → `IN_PROGRESS`
+- [ ] 다른 Owner surface에 닿는 interface가 있으면 모양을 정하기 전에 Consult(§12.2)
+
+**PR 열 때**
+
+- [ ] Issue 연결 — 중간 PR은 `Refs #N (RT-xx(a))`. **`Closes`는 Task 마지막 PR에서만** 쓴다
+- [ ] `## Implementation Notes`(§12.4) — 해당 없는 절도 `없음`
+- [ ] Log 해당 Task 절 — PR 행(SHA `pending`) · 구현 결과 · Plan 대비 변경 · Owner 확인 포인트 · Verification · 남은 위험(Log 「사용 규칙」)
+- [ ] 해당하면 Log에 추가 — 새 implementation detail → 「색인」 · Baseline 조정 근거 → 「Baseline revisit 후보」 · §12.3 확인을 거침 → 「Owner 확인 기록」
+- [ ] `src/daesingo/{api,worker,common}/README.md` 상태 문구가 사실과 달라졌으면 수정(§6 공통 DoD)
+- [ ] 최상위 경로 · `pyproject.toml` · `.github/workflows/` · 모듈 골격→구현 전환을 건드렸으면 루트 README 사실 절 확인(`/update-readme` · PR 템플릿) — RT-02 · RT-13 · RT-15가 해당되기 쉽다
+- [ ] queue · transaction · lease · locking · upload를 mock으로 끝내지 않았고 CI MySQL 테스트 skip 0(§8.1 · P-2)
+
+**merge**
+
+- [ ] §12.2 조건 충족 → Implementer가 merge
+
+**다음 PR**
+
+- [ ] 직전 PR의 Log `pending` SHA를 채운다
+
+**Task 마지막 PR**
+
+- [ ] 본문에 `Closes #N` — Task의 PR이 모두 merge되고 acceptance가 통과하는 PR이다
+- [ ] Log Status `DONE`. **Issue close = Log `DONE`**이다. 둘이 어긋나면 Audit(§12.6)에서 맞춘다
+
 ---
 
 ## 13. §8 Entry Criteria
@@ -906,3 +940,4 @@ Issue 본문은 이 문서의 Task 절을 가리키는 추적용이다. 범위�
 | --- | --- | --- |
 | 2026-10-06 | 최초 작성 — workflow §7. Gap audit · critical path · 17 Task(RT-01 ~ RT-15 · REC-1 · SRCH-1) · Decision gate · test matrix · PR plan · handoff | `origin/develop` `4052ada` |
 | 2026-10-06 | §8 실행 모델 보정(§7 reopen 아님) — RT-01 ~ RT-15 Implementer를 정철원으로 단일화, 김준영은 Runtime/Ops · HTTP Contract Owner · deferred acceptance 유지. §12를 handoff 표에서 책임 구조 · merge authority · 확인 조건 · Implementation Notes · Implementation Log · Milestone audit로 교체. §6 책임 표기 · §10 · §11 · §15 정규화. Contract · Accepted Decision · Baseline · Task 범위 · dependency · 다른 Owner 소유 변경 없음 | PR #305 |
+| 2026-10-06 | §12.2에 Consult 성격(승인 아님 · interface 모양을 정하기 전 확인) 명시 · §12.8 RT PR 체크리스트 추가(Issue 연결 · close = Log `DONE` 규칙 포함). 실행 모델 · Contract · Decision · Baseline 변경 없음 | PR #307 |
