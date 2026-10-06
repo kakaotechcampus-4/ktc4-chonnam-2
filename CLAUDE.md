@@ -12,6 +12,7 @@
 | 화면 흐름 · 실패 UX | `docs/product/core-user-flow.md` |
 | 모듈 경계 · 계약 · 금지사항 | `docs/architecture/module-architecture.md` — §1 → §2 → **§4 내 모듈** → §5 → §11 내 항목. 1,900줄이므로 전체를 읽지 않는다 |
 | 내 모듈의 조사·실험·결정 | `docs/modules/<module>/` |
+| Runtime 구현 (RT-xx) | `docs/runtime/runtime-implementation-plan.md` — §6 해당 Task → §12(PR 순서는 §12.8). 900줄이므로 전체를 읽지 않는다 |
 | 누가 무엇을 맡는지 | `docs/management/ownership.md` |
 | 운영 결정(승인 경로·리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
 | 문서 폴더 사용 규칙 · 충돌 시 우선순위 | `docs/README.md` |
