@@ -54,6 +54,7 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 - 어떤 모델/프롬프트를 실측하든 이 파일을 그대로 재사용한다. 비교 대상이 바뀔 때마다 케이스를 새로 쓰면 이전 실측과 비교가 깨진다.
 - 케이스를 추가/수정해야 하면 파일을 고치지 않고 `intent-hint-eval-v2.jsonl`을 새로 만든다. 이전 버전으로 만든 `predictions/`·`results/`는 그대로 보존한다.
 - 버전 변경 사유는 이 README에 짧게 추가한다.
+- **`intent-hint-robustness-v3.jsonl`(2026-10-05, 100케이스)** — 멘토 피드백 Q2(데이터 증강 · 지식 증류). 기존 55건을 seed로 Claude Opus 5.5(Claude Code)가 만들었다(지원금 소모 없음). robustness 10개 카테고리 × 8 + 정상 계열 20. 행마다 규칙 채점용 구조화 정답 `expected`(+ 여러 사건은 `events`)가 있다 — 형식 · 생성 규칙은 `datasets/intent-hint-robustness-v3.SPEC.md`, 검증 과정 · 한계는 `results/consistency-robustness-v3.md`. v1 · v2 파일은 그대로다.
 
 ### 카테고리 (최소 고정 — v1은 카테고리당 1케이스)
 
@@ -68,6 +69,10 @@ Elice 모델 카드에서 확인한 단가(KRW/1M 토큰, `scripts/pricing.py`):
 | 잘못 입력 후 correction | 1회 호출 제한 하에서 `correction_target`을 올바르게 잡는지, 언급 안 된 다른 필드까지 덩달아 채우지 않는지 확인 — `prior_hints`로 이전 상태를 프롬프트에 준다 |
 
 각 row의 `expected_notes`는 모델이 뱉어야 할 정확한 문자열이 아니라 judge가 채점할 때 참고하는 사람이 쓴 판정 기준이다(자유 텍스트 필드는 문자열 완전일치로 채점할 수 없음).
+
+## 실험 원본 저장 (2026-10-05~)
+
+모델 출력 · judge 판정 JSON은 레포에 두지 않는다(멘토 리뷰 #146 — 결과는 문서로, 큰 원본은 공용 저장소로). 실험마다 zip으로 묶어 [팀 공유 드라이브](https://drive.google.com/drive/folders/1Aeo_kkCzfJ9uhdMjb0GlLK2L3XqL80BR)에 두고, 결과 문서 첫머리 「원본」 줄에 파일 이름을 적는다. 폴더의 `.gitignore`가 원본이 다시 들어오는 것을 막는다. 이 정책 전에 커밋된 `predictions/` · `predictions-robustness/` · `predictions-robustness-v2/` 첫 실행분은 그대로 둔다.
 
 ## 하네스 구조
 
