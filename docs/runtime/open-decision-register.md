@@ -85,7 +85,7 @@ workflow §5(구현 전 필수 Decision 처리)의 추적표다. **결정의 선
 | RD-01 | **ACCEPTED / CLOSED** | [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250) | `job_execution` 단일 table = 실행 원장 + queue · RC + `(status, available_at, execution_id)` + `SKIP LOCKED` · `produced` JSON · `usage_refs` projection · durable usage in-flight · RUNNING row lease + 별도 heartbeat thread · `trace_id` 내부 column · PyMySQL + SQLAlchemy Core · Alembic forward-only | [Tech Spec](./runtime-tech-spec.md) §4.2 · §4.3 · §4.4 · §4.5 · §7.2 · §11.1 | `DECIMAL` precision/scale은 첫 migration(구현 세부) |
 | RD-02 | **ACCEPTED / CLOSED** | [#248](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/248) | 다음 attempt는 이전 attempt terminal과 같은 transaction에서 `QUEUED` 생성 · `queued_at` = 생성 시각(attempt ≥ 2는 backoff 포함) · `available_at`은 내부 | [Tech Spec](./runtime-tech-spec.md) §6.3 · [JobExecution Contract](../architecture/contracts/contract-job-execution.md) §5 | — |
 | RD-03 | **ACCEPTED / CLOSED** | [#244](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/244) | 일시 장애 = Search in-call retry · Runtime 자동 retry = `STALE`만 · `FAILED` terminal · 매핑표 · override 없음 · 사용자 재시도 = 새 `job_id` | [Tech Spec](./runtime-tech-spec.md) §6.2 | Search taxonomy에 계정 수준 실패 kind(search) |
-| RD-05 | **ACCEPTED / CLOSED** | [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) | HTTP Contract Producer = `api` composition root · Web Consumer · 필수 surface(`/cases` · `/sources` · `/commands` · `/view` · `/frames` · `/assets` · `/health/*`) · 발주 있으면 202 / 없으면 200 · body = case-command 응답 · 1 request = 1 file | [Tech Spec](./runtime-tech-spec.md) §13 (방향) — **HTTP API Contract 문서는 다음 단계** | HTTP API Contract 작성 → Web 필수 Consumer review · Case/Recording boundary review(api) · case-command 시작 · 중단 command(case) |
+| RD-05 | **ACCEPTED / CLOSED** | [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) | HTTP Contract Producer = `api` composition root · Web Consumer · 필수 surface(`/cases` · `/sources` · `/commands` · `/view` · `/frames` · `/assets` · `/health/*`) · 발주 있으면 202 / 없으면 200 · body = case-command 응답 · 1 request = 1 file | [Tech Spec](./runtime-tech-spec.md) §13 (방향) · [HTTP API Contract](../architecture/contracts/contract-http-api.md) (`http-api/v1` Final — Accepted) | HTTP route 구현 선행 조건(Contract §9.1) — 빈 case · 원본 연결 · 202 `running_jobs` · 시작 · 중단 command(case) · 원본 파일명 · 등록 실패 taxonomy · ref 소유 조회 · DerivedAsset read(recording) |
 | RD-06 | **ACCEPTED / CLOSED** | [#245](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/245) | Case · JobRecord · Runtime이 같은 MySQL · composition root가 transaction 소유(각 repository 독자 commit 금지) · 결과 반영 push(case 반영 함수 `execution_id` idempotent) · 단일 kind registry | [Tech Spec](./runtime-tech-spec.md) §12.1 ~ §12.4 · [JobExecution Contract](../architecture/contracts/contract-job-execution.md) §9-8 · [Architecture](../architecture/module-architecture.md) §4-모듈5 ④ · §8-2 | `CaseStore` MySQL · 반영 함수(case) |
 | RD-07 | **ACCEPTED / CLOSED** | [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249) | 값은 파일에서만 · `DAESINGO_ENV_FILE`은 composition root만 해석(`load_env_file()` 기본 = `cwd/.env`) · Parameter Store → EC2 role → host 보호 파일 → Compose secret · GitHub Actions는 OIDC → SSM 지시만 · recreate rotation · startup fail-fast(key 이름만 로그) | [Tech Spec](./runtime-tech-spec.md) §15.2 · [Ops Spec](./ops-spec.md) §4-1 · [Runbook](./deployment-runbook.md) §2 | Search 결정 5항 문구 정합(search) · M6 전 EC2 role 권한 확인 |
 | RD-17 | **ACCEPTED / CLOSED** | [#246](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/246) | single-host shared mount 1개 · 같은 numeric UID · staging → `fsync` → same-mount publish → metadata commit · recording MySQL metadata · process 경계를 넘는 ref는 persistent(CaseView FrameRef 포함) | [Ops Spec](./ops-spec.md) §4-2 | recording MySQL repository · FrameRef durability 방식 · persistent 목록 확정(recording) |
@@ -94,7 +94,7 @@ workflow §5(구현 전 필수 Decision 처리)의 추적표다. **결정의 선
 
 - 「다른 Owner 후속」은 각 Owner 문서 · 구현 범위이며 Runtime 구현을 막지 않는다. 결정 때문에 생긴 cross-module 문구 중 Runtime 소유 문서와 case Owner가 요청한 Contract · Architecture 문구는 PR #253에서 정합했고, 다른 모듈 문서는 그 Owner가 고친다.
 - ADR: 분류 §3이 RD-03 · RD-17을 Follow-up ADR로 두었다. 이번 closure는 Primary route(JOINT_ISSUE)로 닫았고 결정 원문 · 선택지 · 근거는 각 Issue에 있다. 별도 ADR 문서는 PR #253에서 만들지 않았다.
-- **다음 순서.** RD-05에서 HTTP API Contract를 Runtime/API planning의 선행 입력으로 정했으므로 이번 iteration은 `§5 closure → RD-05 HTTP API Contract SoT 작성 · Consumer review → §6 Provisional Baseline v0.1 → §7 Runtime Implementation Plan` 순으로 간다. 새 workflow 단계가 아니라 §5에서 결정된 Contract 승격 작업이다.
+- **다음 순서.** RD-05에서 HTTP API Contract를 Runtime/API planning의 선행 입력으로 정했으므로 이번 iteration은 `§5 closure → RD-05 HTTP API Contract SoT 작성 · Consumer review → §6 Provisional Baseline v0.1 → §7 Runtime Implementation Plan` 순으로 간다. 새 workflow 단계가 아니라 §5에서 결정된 Contract 승격 작업이다. HTTP API Contract는 2026-10-05 `http-api/v1` Final — Accepted로 끝났고 다음은 §6이다.
 - 기존 Issue: [#153](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153) 합의는 Already fixed로 두고 남은 전달 모양 · 주입 경로만 #244 · #249에서 닫았다.
 
 ### §5 → §6 Baseline 입력
@@ -110,7 +110,9 @@ workflow §5(구현 전 필수 Decision 처리)의 추적표다. **결정의 선
 | stale sweep interval · Worker polling interval | RD-04e | 독립 config 축 여부는 RD-04 | Tech Spec §7.3 | P2 |
 | Runtime session `innodb_lock_wait_timeout` | Tech Spec §4.3 | claim은 `SKIP LOCKED`라 대기하지 않음 · 전이 UPDATE의 대기 상한 | spike S1 · S2 | Runtime integration |
 | DB pool pre-ping · recycle | Tech Spec §4.4 | MySQL `wait_timeout`보다 짧은 recycle | Research 01 §4.10 | 구현 test(Research 01 Spike F) |
-| upload 전체 body 한도 | #247 H-5 | Starlette ≥ 1.6 middleware로 강제 · 단일 EC2 disk working set(Ops §11) 안 | Research 02 §4.7 | Research 02 Spike E · G · P2 |
+| upload 전체 body 한도 | #247 H-5 · HTTP API Contract §5.2(`413`) | Starlette ≥ 1.6 middleware로 강제 · 단일 EC2 disk working set(Ops §11) 안 | Research 02 §4.7 | Research 02 Spike E · G · P2 |
+| frame 응답 `Cache-Control` `max-age` | HTTP API Contract §5.5 | `private` 고정 · 같은 `frame_ref`는 다른 frame을 가리키지 않음(SourceAsset Contract §5.2) | — | 구현 test |
+| `/health/ready` dependency 검사 제한 시간 | HTTP API Contract §5.7 · Tech Spec §14 | 외부 provider를 부르지 않음 · DB · 공유 저장소만 | Ops §9 | 배포 환경(RD-12h) |
 | staging 잔여 · orphan 파일 정리 나이 | #246 S-2 | 진행 중 upload를 지우지 않을 만큼 김 | Research 02 §4.4 · §5 | Research 02 Spike D · F |
 | UsageRecord `cost_amount` precision / scale | Tech Spec §4.5 | Contract 예시와 cost 생산자(#244 U-2) 출력 자릿수를 덮음 · 초과 자릿수는 거부 | UsageRecord Contract §4 · §6 | migration test — §6 값이 아니라 RD-01g 안의 구현 세부로 **첫 migration**에서 고정 |
 
@@ -393,7 +395,7 @@ retry max · backoff · jitter · lease duration · heartbeat interval · STALE 
 
 ## RD-05 — HTTP API Contract와 transport 담당
 
-**Status:** CLOSED — 2026-10-04 · Decision [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) ACCEPTED → [Tech Spec](./runtime-tech-spec.md) §13 (방향 · surface). HTTP API Contract 문서 작성은 다음 단계(Follow-up 「CONTRACT」)\
+**Status:** CLOSED — 2026-10-04 · Decision [#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) ACCEPTED → [Tech Spec](./runtime-tech-spec.md) §13 (방향 · surface). HTTP API Contract는 [`contract-http-api.md`](../architecture/contracts/contract-http-api.md) `http-api/v1` `Final — Accepted`(2026-10-05, Follow-up 완료)\
 **Owner:** HTTP API Contract Producer / Owner = `api` composition root — 김준영 ([#247](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/247) H-1, 2026-10-04). route 구현자는 Contract Owner와 같을 필요가 없다\
 **Consumer:** web — 신유민\
 **Consult:** case — 유소연(`get_view` · `handle_command` 진입점 · command 경계) · recording — 정철원(upload · frame · asset 경계) — boundary consult\
@@ -460,7 +462,7 @@ Web ↔ Backend HTTP 경계의 **경로 · 응답 모양 · 비동기 작업 조
 - **Pre-implementation spike:** 아니오
 - **Experiment:** 아니오
 - **ADR / Contract 후보:** 예 — HTTP API Contract
-- **Follow-up:** RD-05a가 닫혔으므로 Owner(`api`)가 HTTP API Contract 문서의 위치와 Status 경로(Draft → Final)를 정한다 — 다음 단계(`docs/architecture/contracts/`, Web 필수 Consumer review) *(이전 RD-05g)*
+- **Follow-up:** *(완료 2026-10-05)* HTTP API Contract — 위치 `docs/architecture/contracts/contract-http-api.md`, Web 필수 Consumer review · case / recording boundary review(PR #265)를 거쳐 `http-api/v1` `Final — Accepted`(Contract §10, 짝 ADR Accepted). route 구현 선행 조건은 Contract §9.1 *(이전 RD-05g)*
 
 ---
 
@@ -1486,7 +1488,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | --- | --- | --- | --- |
 | RD-02c | RD-02a 결과가 Contract 명확화를 요구하는지 · 개정 경로 | Follow-up | RD-02 Follow-up |
 | RD-04f | Provisional 값별 검증 실험 · 변경 조건 연결 | Follow-up | RD-04 Follow-up (workflow §6 형식) |
-| RD-05g | HTTP API Contract 문서 위치 · Status 경로 | Follow-up | RD-05 Follow-up |
+| RD-05g | HTTP API Contract 문서 위치 · Status 경로 | Follow-up | RD-05 Follow-up — 완료(2026-10-05 `http-api/v1` Final) |
 | RD-09e | Object Storage 검토를 여는 시점 | Trigger | RD-09 Trigger — 선택 자체는 RD-15d |
 | RD-14a | 외부 공개 endpoint 요구 발생 여부 · 시점 | Trigger | RD-14 Trigger |
 | RD-15e | P2 결과에 따라 P3 추가 수행 여부를 판단하는 조건 | Trigger | RD-15 Trigger — P2 · P3 측정값 자체는 RD-15 Experiment |
@@ -1530,6 +1532,8 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-03 | workflow §5 — Timing A 9개에 Decision Issue(#244 ~ #250, Umbrella #251) 연결 · [§5 진행 상태](#5-진행-상태--timing-a) · 「§5 → §6 Baseline 입력」 추가. RD-01b 핵심 규칙 · 01c · 01d · 01g · 01j를 Tech Spec §4.3 · §4.4 · §4.5로 승격(Runtime 단독 · upstream 독립). 나머지 A는 `PROPOSED`. Timing · Owner · group · EI 변경 없음, 새 RD 없음 | `origin/develop` `43dd8ec` |
 | 2026-10-03 | §5 보정(Owner review 전) — RD-01g는 물리 표현만 CLOSED(`DECIMAL` precision/scale은 첫 migration) · RD-01j는 sync DB access stack만 CLOSED(FastAPI route `def`/`async def`는 정하지 않음) · RD-19 C-1a(중단 때 `case_rev` +1의 병렬 Job 영향) case Owner 확인 추가 · RD-03c 「이어서 찾기」 표기를 Product 결정에 정합. 새 RD 없음 | `origin/develop` `43dd8ec` |
 | 2026-10-04 | workflow §5 closure — #244 ~ #250 최종 결정(각 Issue 마지막 결정자 댓글)을 SoT로 승격하고 Timing A 9개를 `CLOSED`로 표시. Tech Spec §4.2 · §4.3 · §6.2 · §6.3 · §7.2 · §9 · §11.1 · §11.3 · §12.1 ~ §12.5 · §13 · §15.2 · §16, Ops §4-1 · §4-2 · §6-1, Runbook §2, JobExecution Contract §2 · §5 · §9-8, UsageRecord Contract §2, Architecture §4-모듈5 ④ · §8-2. HTTP API Contract 문서는 다음 단계. B · C · D는 OPEN 그대로, Timing · Owner · group · EI 변경 없음, 새 RD 없음 | PR #253 |
+| 2026-10-04 | RD-05 Follow-up — [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v0` Draft 작성. RD-05 요약 · Status · Follow-up · RD-05g 위치를 Draft 링크로 정합, 「§5 → §6 Baseline 입력」에 frame cache 수명 · ready 검사 제한 시간 행 추가. 결정 · Timing · Owner 변경 없음 | PR #265 |
+| 2026-10-05 | RD-05 Follow-up 완료 — web Consumer review · case · recording boundary review 반영 뒤 [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` `Final — Accepted` · 짝 ADR Accepted. RD-05 요약 · Status · Follow-up · RD-05g · 「다음 순서」를 Final로 정합. 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #265 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 

@@ -14,6 +14,8 @@ stale 검사·허용 조건·실패 코드는 전부 여기서 정한다.
 """
 from __future__ import annotations
 
+import copy
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
@@ -110,7 +112,7 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     # 같은 입력을 다시 보는 발주라 가장 최근 같은 kind JobRecord의 입력을 그대로 쓴다
     # (`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 새로 계산하지 않으므로, 이전
     # 발주가 없으면 만들 수 없다.
-    prior = next((j for j in reversed(case.job_records) if j["kind"] == kind), None)
+    prior = jobs.latest_job_record(case, kind)
     if prior is None:
         raise _Rejected("not_allowed")
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
@@ -136,6 +138,17 @@ def _response(error: str | None, case_view: dict[str, Any] | None) -> dict[str, 
     }
 
 
+@dataclass(frozen=True)
+class CommandResult:
+    """`execute_command()`의 결과. `response`는 web에 그대로 가는 §4 응답이고,
+    `appended_job_records`는 이번 command로 append된 JobRecord(복사본)다 — composition root가
+    enqueue와 HTTP 200/202 판단에 쓰며 응답 body에는 싣지 않는다(HTTP API Contract §5.3,
+    `decisions/command-appended-job-records.md`). 실패한 command는 늘 `[]`다."""
+
+    response: dict[str, Any]
+    appended_job_records: list[dict[str, Any]] = field(default_factory=list)
+
+
 def handle_command(
     request: dict[str, Any],
     *,
@@ -143,7 +156,19 @@ def handle_command(
     running_jobs: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """command 하나를 받아 `{ok, error, case_view}`를 돌려준다(§4).
+    """`execute_command()`의 `response`만 돌려준다 — append된 JobRecord가 필요 없는 호출자(transport ·
+    테스트)용."""
+    return execute_command(request, store=store, running_jobs=running_jobs, notices=notices).response
+
+
+def execute_command(
+    request: dict[str, Any],
+    *,
+    store: CaseStore,
+    running_jobs: list[dict[str, Any]] | None = None,
+    notices: list[dict[str, Any]] | None = None,
+) -> CommandResult:
+    """command 하나를 받아 `{ok, error, case_view}`(§4)와 이번 command로 append된 JobRecord를 돌려준다.
 
     성공하면 stage가 `EVIDENCE_REVIEW`일 때 `PACKAGE_READY`를 다시 보고 준비됐으면 `READY`로 올린다
     (§5 — 그 전이도 `case_rev`를 올린다). 검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
@@ -163,23 +188,25 @@ def handle_command(
     try:
         _check_payload(request)
     except _Rejected as rejected:
-        return _response(rejected.reason, current_view() if isinstance(case_id, str) else None)
+        return CommandResult(_response(rejected.reason, current_view() if isinstance(case_id, str) else None))
 
     try:
         case = store.get_case(case_id)
     except KeyError:
-        return _response("unknown_target", None)
+        return CommandResult(_response("unknown_target", None))
 
     view = get_view(case_id, **view_kwargs)
     if request["expected_case_rev"] != case.case_rev:
-        return _response("stale_revision", view)
+        return CommandResult(_response("stale_revision", view))
 
+    jobs_before = len(case.job_records)
     try:
         _HANDLERS[request["kind"]](case, request["payload"], view)
     except _Rejected as rejected:
-        return _response(rejected.reason, view)
+        return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW":
         mark_ready_if_package_ready(case, store.get_adapter(case_id))
-    return _response(None, get_view(case_id, **view_kwargs))
+    appended = copy.deepcopy(case.job_records[jobs_before:])
+    return CommandResult(_response(None, get_view(case_id, **view_kwargs)), appended)

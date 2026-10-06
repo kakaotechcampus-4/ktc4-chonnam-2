@@ -424,3 +424,164 @@ def test_rejected_command_does_not_move_to_ready():
     assert response["ok"] is False
     assert _state(case) == before
     assert case.stage == "EVIDENCE_REVIEW"
+
+
+# --- READY에서 다시 조립되는 변경(값 정정·상황 응답) ----------------------------------------
+# READY는 PACKAGE_READY 파생 gate다(CaseView 계약 §10-9: READY면 requirements_package가 PASS/WARN).
+# 다시 조립되는 변경이 오면 domain이 EVIDENCE_REVIEW로 내리고, 성공 뒤 재확인이 gate가 여전히
+# 성립할 때만 다시 올린다. user_reviewed는 필드 수정과 별개다(계약 L264 · #173 값별 경계표).
+
+
+class _PackageOnlyWhenConfirmed(MockFixtureAdapter):
+    """응답이 CONFIRMED일 때만 Package가 준비되는 adapter — READY 뒤 응답이 바뀌면 gate가 깨진다."""
+
+    def __init__(self, case: CaseAggregate) -> None:
+        super().__init__(MOCK_ROOT, "happy_001")
+        self._case = case
+
+    def _confirmed(self) -> bool:
+        return (self._case.situation_response or {}).get("value") == "CONFIRMED"
+
+    def get_report_package(self):
+        return super().get_report_package() if self._confirmed() else None
+
+    def get_requirement_report(self, scope):
+        if scope == "FINAL_PACKAGE" and not self._confirmed():
+            return None
+        return super().get_requirement_report(scope)
+
+
+def _reviewed_ready(store: CaseStore, case: CaseAggregate) -> None:
+    first = command.handle_command(_request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store)
+    assert first["case_view"]["stage"] == "READY"
+    second = command.handle_command(_request(case, "MARK_REVIEWED", {}), store=store)
+    assert second["case_view"]["user_reviewed"] is True
+
+
+def test_response_in_ready_stays_ready_when_package_still_ready():
+    store, case = _mock_happy_store()
+    _reviewed_ready(store, case)
+    rev = case.case_rev
+
+    response = command.handle_command(_request(case, "RECORD_SITUATION_RESPONSE", {"value": "USER_UNSURE"}), store=store)
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "READY"
+    assert response["case_view"]["package"] is not None
+    assert response["case_view"]["user_reviewed"] is True
+    assert response["case_view"]["case_rev"] == rev + 2  # 응답 +1, 다시 READY 전이 +1
+
+
+def test_response_in_ready_drops_to_evidence_review_when_package_gone():
+    """READY인데 Package가 없는 CaseView를 내지 않는다(§10-9 · orchestration 지표 I1)."""
+    adapter_case = CaseAggregate.intake(case_id="case_cmd_gated", hints={}, manifest_summary={})
+    adapter = _PackageOnlyWhenConfirmed(adapter_case)
+    adapter_case.start_search()
+    service.receive_search_candidates(adapter_case, adapter)
+    adapter_case.select_top_ranked()
+    store = CaseStore()
+    store.register(adapter_case, adapter)
+    _reviewed_ready(store, adapter_case)
+    rev = adapter_case.case_rev
+
+    response = command.handle_command(
+        _request(adapter_case, "RECORD_SITUATION_RESPONSE", {"value": "USER_UNSURE"}), store=store
+    )
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "EVIDENCE_REVIEW"
+    assert response["case_view"]["package"] is None
+    assert response["case_view"]["user_reviewed"] is True
+    assert response["case_view"]["case_rev"] == rev + 1  # 내려가는 것은 같은 요청의 결과 — 따로 올리지 않는다
+
+
+# --- 이번 command로 append된 JobRecord (8-7, HTTP API Contract §5.3) ----------------
+
+
+def test_execute_command_returns_job_record_appended_by_this_command():
+    """composition root는 이 목록마다 enqueue하고 200/202를 정한다 — 응답 body에는 싣지 않는다."""
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(
+        _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),
+        store=store,
+        notices=[PLATE_READ_FAILED],
+    )
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == [case.job_records[-1]]
+    assert set(result.response) == {"ok", "error", "case_view"}
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload"),
+    [
+        ("SELECT_OTHER_CANDIDATE", {"candidate_id": "cand_b"}),
+        ("RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}),
+    ],
+)
+def test_execute_command_without_job_returns_empty_list(kind, payload):
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(_request(case, kind, payload), store=store)
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == []
+
+
+def test_execute_command_mark_reviewed_returns_empty_list():
+    store, case = _store_with_selected_case()
+    case.mark_ready(report_package={"package_id": "pkg_cmd"})
+
+    result = command.execute_command(_request(case, "MARK_REVIEWED", {}), store=store)
+
+    assert result.response["ok"] is True
+    assert result.appended_job_records == []
+
+
+@pytest.mark.parametrize(
+    "make_request",
+    [
+        lambda case: {"case_id": case.case_id, "kind": "MARK_REVIEWED", "payload": {}},  # invalid_payload
+        lambda case: _request(case, "MARK_REVIEWED", {}, case_id="case_missing"),  # unknown_target(case)
+        lambda case: _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}, expected_case_rev=case.case_rev - 1),  # stale_revision
+        lambda case: _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),  # unknown_target(대상) — 화면에 버튼 없음
+        lambda case: _request(case, "MARK_REVIEWED", {}),  # not_allowed — EVIDENCE_REVIEW
+    ],
+)
+def test_execute_command_rejected_returns_empty_list(make_request):
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(make_request(case), store=store)
+
+    assert result.response["ok"] is False
+    assert result.appended_job_records == []
+
+
+def test_execute_command_returned_records_do_not_alias_case_state():
+    store, case = _store_with_selected_case()
+    result = command.execute_command(
+        _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),
+        store=store,
+        notices=[PLATE_READ_FAILED],
+    )
+    job_id = case.job_records[-1]["job_id"]
+
+    result.appended_job_records[0]["job_id"] = "tampered"
+
+    assert case.job_records[-1]["job_id"] == job_id
+
+
+def test_handle_command_returns_execute_command_response():
+    store, case = _store_with_selected_case()
+    request = _request(case, "SELECT_OTHER_CANDIDATE", {"candidate_id": "cand_b"})
+
+    response = command.handle_command(request, store=store)
+
+    assert response["ok"] is True
+    assert set(response) == {"ok", "error", "case_view"}
+
+
+def test_execute_command_is_exported_from_case_package():
+    assert case_package.execute_command is command.execute_command
+    assert case_package.CommandResult is command.CommandResult
