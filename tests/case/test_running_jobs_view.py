@@ -76,3 +76,10 @@ def test_case_view_carries_derived_running_jobs():
     assert view["running_jobs"] == [
         {"job_id": job["job_id"], "kind": "COARSE_SEARCH", "label_key": "job.generic_processing", "status": "RUNNING"}
     ]
+
+
+def test_hint_extract_label_key():
+    # `HINT_EXTRACT` kind 등재는 PR #286(v1.7)이 한다 — 여기서는 기록된 JobRecord의 label만 본다.
+    case = _case()
+    case.record_job({"job_id": "job_hint", "kind": "HINT_EXTRACT", "scope_ref": None})
+    assert derive_running_jobs(case)[0]["label_key"] == "job.hint_extract"

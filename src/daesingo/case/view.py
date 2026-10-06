@@ -69,6 +69,7 @@ JOB_LABEL_KEYS = {
     "FINE_VERIFY": "job.fine_verify",
     "REPORT_VIDEO_EXPORT": "job.report_video_export",
     "PLATE_IMAGE_EXPORT": "job.plate_image_export",
+    "HINT_EXTRACT": "job.hint_extract",  # v1.7 등재(#259, PR #286)
 }
 JOB_LABEL_FALLBACK = "job.generic_processing"
 
