@@ -463,4 +463,4 @@ RD-01은 Gate가 가장 이르면서(M1) dependency상 가장 늦다. Wave 1 · 
 | 2026-10-03 | 검토 반영 — §2.1 예외 목록에 RD-19 추가, RD-10 개인정보 법령 조사를 R3에서 EI-08로 이동, `Joint` 뜻(각 Owner가 자기 surface 승인) 명시 | `origin/develop` `10787d8` |
 | 2026-10-03 | §4.1에 workflow §5 진행 포인터 추가(Register §5 진행 상태 · #251). 분류 변경 없음 | `origin/develop` `43dd8ec` |
 | 2026-10-04 | §4.1 포인터를 Timing A 9/9 CLOSED로 갱신. 분류 변경 없음 | PR #253 |
-| 2026-10-06 | §2.4에 M1~M5 ↔ Implementation Plan Task 대응 pointer 추가. 분류 변경 없음 | workflow §7 PR |
+| 2026-10-06 | §2.4에 M1~M5 ↔ Implementation Plan Task 대응 pointer 추가. 분류 변경 없음 | PR #304 |
