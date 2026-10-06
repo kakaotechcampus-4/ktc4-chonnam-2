@@ -70,6 +70,9 @@ class _Snapshot:
     def get_plate_readouts(self):
         return []
 
+    def get_overlay_time_readouts(self):
+        return []
+
 
 class PlateBoundaryD3Tests(unittest.TestCase):
     @classmethod

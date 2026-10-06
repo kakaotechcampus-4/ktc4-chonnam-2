@@ -66,6 +66,7 @@
 
 - `case_view`는 **성공·실패 모두** 싣는다. stale 실패일 때 web이 따로 다시 읽지 않고 최신 화면을 그리게 하기 위해서다.
 - `error.code`는 `notices[].code`와 같은 dotted-lowercase 규칙을 따른다(CaseView 계약 B절 §7). `message_key`는 web 문구 키다.
+- **응답 밖으로 돌려주는 것(2026-10-05, 8-7).** case는 응답과 함께 **이번 command로 append된 JobRecord 목록**을 composition root에 돌려준다(`case.execute_command()` → `CommandResult.appended_job_records`). composition root는 이 목록마다 Runtime enqueue를 하고 HTTP 200 / 202를 정한다(HTTP API Contract §5.3). 이 목록은 **위 응답 body에 싣지 않는다** — web이 받는 모양은 위 셋 그대로다. 실패한 command는 늘 빈 목록이다. 이유와 고르지 않은 안은 `../decisions/command-appended-job-records.md`.
 
 ## 5. `kind`별 payload와 규칙
 

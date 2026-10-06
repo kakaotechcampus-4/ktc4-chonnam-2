@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from daesingo.recording import RecordingFixture, RecordingService, load_recording_fixture
 
@@ -154,3 +155,35 @@ def test_mutation_of_default_empty_list_is_not_silently_discarded():
     fixture.gps_observations.pop()
     assert RecordingService.from_fixture(fixture).list_gps_observations() == [observation]
 
+
+@pytest.mark.parametrize("target,location", [
+    ("observation", ("unexpected",)),
+    ("producer", ("produced_by", "run_ref")),
+    ("coordinate", ("value", "unexpected")),
+])
+def test_repository_rejects_undeclared_fields_in_tampered_gps_models(target, location):
+    from daesingo.recording.repository import InMemoryRecordingRepository
+
+    fixture = load_recording_fixture("scenario_happy_001")
+    repository = InMemoryRecordingRepository()
+    for stream in fixture.media_streams:
+        repository.add_media_stream(stream)
+    observation = fixture.gps_observations[0]
+    if target == "observation":
+        tampered = observation.model_copy(update={"unexpected": "test"})
+    elif target == "producer":
+        producer = observation.produced_by.model_copy(update={
+            "run_ref": {"kind": "analysis_run", "ref": "run_test"},
+        })
+        tampered = observation.model_copy(update={"produced_by": producer})
+    else:
+        coordinate = observation.value.model_copy(update={"unexpected": "test"})
+        tampered = observation.model_copy(update={"value": coordinate})
+
+    with pytest.raises(ValidationError) as caught:
+        repository.add_gps_observation(tampered)
+    assert any(
+        error["type"] == "extra_forbidden" and error["loc"] == location
+        for error in caught.value.errors(include_input=False)
+    )
+    assert repository.list_gps_observations() == []

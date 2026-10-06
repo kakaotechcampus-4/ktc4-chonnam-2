@@ -83,7 +83,7 @@ class InMemoryRecordingRepository:
         return self._media_streams.get(stream_ref)
 
     def add_gps_observation(self, observation: GPSObservation) -> None:
-        checked = GPSObservation.model_validate(observation.model_dump(exclude_unset=True))
+        checked = GPSObservation.model_validate(observation)
         if checked.source.ref is not None and checked.source.ref.ref not in self._media_streams:
             raise ValueError("GPS source ref에 대응하는 MediaStream이 없습니다")
         if checked in self._gps_observations:
