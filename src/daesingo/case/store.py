@@ -13,8 +13,86 @@
 
 from __future__ import annotations
 
+import copy
+from typing import Any, Literal, Protocol
+
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.store_state import CaseRow, from_row, to_row
+
+CASE_ID_MAX = 128  # `cases.case_id` VARCHAR(128) ascii_bin
+
+
+class CaseNotFound(KeyError):
+    """등록되지 않은 case_id — `KeyError`라서 기존 `except KeyError`(command의 unknown_target)가 그대로 잡는다."""
+
+
+class CaseAlreadyExists(ValueError):
+    pass
+
+
+class AppendOnlyViolation(RuntimeError):
+    """저장된 레코드의 앞부분이 바뀌거나 지워졌다 — 정상 경로에서는 나지 않는 프로그래밍 오류."""
+
+
+class InvalidCaseId(ValueError):
+    pass
+
+
+def validate_case_id(case_id: str) -> None:
+    if not case_id or len(case_id) > CASE_ID_MAX or not case_id.isascii():
+        raise InvalidCaseId(f"case_id는 1~{CASE_ID_MAX}자 ASCII여야 한다: {case_id!r}")
+
+
+class CaseRepository(Protocol):
+    """case 저장소. `conn`은 호출자의 SQLAlchemy `Connection`이고 transaction도 호출자 것이다 —
+    저장소는 commit · rollback하지 않는다(#245 D-2). in-memory 구현은 `conn`을 무시한다."""
+
+    def insert(self, conn: Any, case: CaseAggregate) -> None: ...
+    def load(self, conn: Any, case_id: str, *, lock: Literal["share", "update"] = "share") -> CaseAggregate: ...
+    def save(self, conn: Any, case: CaseAggregate) -> None: ...
+
+
+def check_append_only(stored_ids: list[str], current_ids: list[str], what: str) -> None:
+    if current_ids[: len(stored_ids)] != stored_ids:
+        raise AppendOnlyViolation(f"{what}의 저장된 앞부분이 바뀌었다")
+
+
+class InMemoryCaseRepository:
+    """테스트 · 로컬용. load는 늘 새 객체를 준다 — 같은 객체를 주면 save를 빠뜨려도 테스트가 통과해
+    MySQL에서만 상태가 사라진다(`decisions/case-store-mysql.md` §5)."""
+
+    def __init__(self) -> None:
+        self._rows: dict[str, CaseRow] = {}
+
+    def insert(self, conn: Any, case: CaseAggregate) -> None:
+        validate_case_id(case.case_id)
+        if case.case_id in self._rows:
+            raise CaseAlreadyExists(f"case_id는 재등록할 수 없다: {case.case_id!r}")
+        self._rows[case.case_id] = to_row(case)
+
+    def load(self, conn: Any, case_id: str, *, lock: Literal["share", "update"] = "share") -> CaseAggregate:
+        try:
+            row = self._rows[case_id]
+        except KeyError:
+            raise CaseNotFound(f"등록되지 않은 case_id: {case_id!r}") from None
+        return from_row(copy.deepcopy(row))
+
+    def save(self, conn: Any, case: CaseAggregate) -> None:
+        stored = self._rows.get(case.case_id)
+        if stored is None:
+            raise CaseNotFound(f"등록되지 않은 case_id: {case.case_id!r}")
+        new = to_row(case)
+        check_append_only([r["job_id"] for r in stored.job_records], [r["job_id"] for r in new.job_records], "job_records")
+        check_append_only(
+            [r["correction_id"] for r in stored.correction_records],
+            [r["correction_id"] for r in new.correction_records],
+            "correction_records",
+        )
+        for scope_id, scope in stored.analysis_scopes.items():
+            if new.analysis_scopes.get(scope_id) != scope:
+                raise AppendOnlyViolation(f"analysis_scopes {scope_id!r}가 바뀌거나 지워졌다")
+        self._rows[case.case_id] = new
 
 
 class CaseStore:
