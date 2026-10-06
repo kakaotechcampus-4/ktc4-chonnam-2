@@ -30,7 +30,7 @@
 
 <!-- 폴더 구조 · 실행 방법 · 의존성을 바꾸지 않았으면 그냥 두셔도 됩니다. -->
 
-- [ ] 폴더 구조 · 실행 방법 · 의존성을 바꿨다면 루트 README 사실 절을 확인했다 (Claude Code: `/update-readme`)
+- [ ] 폴더 구조 · 실행 방법 · 의존성을 바꿨다면 루트 README 사실 절을 확인했다 (Claude Code: `/update-readme` · 사용법 `.claude/skills/update-readme/README.md`)
 
 ## 지난 리뷰 반영 (재리뷰 요청일 때만)
 

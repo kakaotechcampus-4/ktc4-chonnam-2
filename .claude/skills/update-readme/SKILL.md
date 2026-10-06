@@ -1,6 +1,6 @@
 ---
 name: update-readme
-description: PR을 만들거나 push하기 전에 사용한다. `gh pr create` · `git push` · "PR 올려줘" 요청이 있거나, 최상위 폴더 추가 · 이동, `package.json` · `pyproject.toml` · `.github/workflows/` 변경, 모듈 구현 상태 변화가 있을 때 루트 README.md의 사실 절(레포 구성 · 실행 · 기술 스택)을 레포 실제 상태와 대조해 어긋난 줄만 고친다.
+description: PR · push 전에 이번 변경이 최상위 경로 추가 · 삭제 · 이동, 루트 `package.json`, `pyproject.toml`, `.github/workflows/`, `src/daesingo/*` 모듈의 골격→구현 전환 중 하나를 건드렸을 때만 사용한다. 이런 변경이 없는 PR(대부분)에서는 부르지 않는다. 루트 README.md의 사실 절(레포 구성 · 실행 · 기술 스택)을 레포 실제 상태와 대조해 어긋난 줄만 고친다.
 ---
 
 # 루트 README 사실 절 갱신
@@ -19,6 +19,10 @@ description: PR을 만들거나 push하기 전에 사용한다. `gh pr create` �
 
 ## 절차
 
+0. **먼저 가볍게 판별한다.** `git diff --name-only <base>...HEAD`(base는 PR 대상, 보통 `develop`)에 아래 중 하나라도 있는지만 본다. 없으면 원천 파일을 읽지 말고 「README 사실 절과 무관한 변경」이라고 한 줄 보고하고 끝낸다.
+   - 최상위 경로가 새로 생기거나 사라진 파일(`git diff --name-status`의 `A` · `D` · `R` 중 최상위 폴더가 새로운 것)
+   - 루트 `package.json` · `pyproject.toml` · `.github/workflows/*`
+   - `src/daesingo/<모듈>/`에 README 말고 첫 `.py`가 생긴 경우
 1. 원천 파일을 먼저 읽는다. git이 추적하지 않는 폴더(`node_modules/` · 로컬 산출물)는 「레포 구성」 근거로 쓰지 않는다 — `git ls-files`로 확인한다.
 2. README 사실 절을 한 줄씩 원천과 대조한다.
 3. 어긋난 줄만 고친다. 표 모양 · 문체(한국어 평서문 「~다」) · 줄 순서는 그대로 둔다. 새 절을 만들지 않는다.

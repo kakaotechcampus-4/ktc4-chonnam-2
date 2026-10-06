@@ -124,7 +124,7 @@ npm run test:web           # apps/web 테스트 (vitest)
 Python 3.12 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
 
 ```bash
-uv sync --locked --extra test   # daesingo + pytest를 uv.lock 잠금 버전으로 설치 (루트에서 한 번, CI와 같다)
+uv sync --locked --extra test   # daesingo + pytest를 uv.lock 잠금 버전으로 설치 (루트에서 한 번)
 # uv 없이: pip install -e ".[test]" — 이 경우 아래 명령의 `uv run`은 빼고 실행한다
 uv run pytest               # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
 uv run pytest tests/case/   # 모듈 하나만
