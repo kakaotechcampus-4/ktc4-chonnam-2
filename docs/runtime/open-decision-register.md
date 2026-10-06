@@ -332,7 +332,7 @@ provider adapter 안의 재시도, Runtime의 execution 재시도, case의 timeo
 
 ## RD-04 — Execution timing Provisional Baseline의 축과 제약
 
-**Status:** OPEN — Provisional v0.1 적용(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.1 ~ §2.5 · §3 — RD-04b는 case 확인 대기, 같은 문서 §8.1). 최종값은 P2(M8)\
+**Status:** OPEN — Provisional v0.1 적용(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.1 ~ §2.5 · §3 — RD-04b는 case 확인 완료(2026-10-06), 같은 문서 §8.1). 최종값은 P2(M8)\
 **Owner:** common/runtime — 김준영 · 정철원(구현)\
 **Consult:** case — 유소연(timeout 잠정값과의 호환)\
 **Source candidates:** D-04
@@ -1535,6 +1535,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-04 | RD-05 Follow-up — [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v0` Draft 작성. RD-05 요약 · Status · Follow-up · RD-05g 위치를 Draft 링크로 정합, 「§5 → §6 Baseline 입력」에 frame cache 수명 · ready 검사 제한 시간 행 추가. 결정 · Timing · Owner 변경 없음 | PR #265 |
 | 2026-10-05 | RD-05 Follow-up 완료 — web Consumer review · case · recording boundary review 반영 뒤 [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` `Final — Accepted` · 짝 ADR Accepted. RD-05 요약 · Status · Follow-up · RD-05g · 「다음 순서」를 Final로 정합. 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #265 |
 | 2026-10-05 | workflow §6 — [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) 작성. 「§5 → §6 Baseline 입력」에 v0.1 ID 열 추가, RD-04 · RD-11 Status에 Provisional 적용 표시. RD-04 · RD-11은 OPEN 유지(최종값 P2), 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
+| 2026-10-06 | RD-04 Status — RD-04b case 확인 완료 표시(PR #276 review). 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 
