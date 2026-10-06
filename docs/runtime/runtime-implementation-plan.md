@@ -940,4 +940,4 @@ Issue 본문은 이 문서의 Task 절을 가리키는 추적용이다. 범위�
 | --- | --- | --- |
 | 2026-10-06 | 최초 작성 — workflow §7. Gap audit · critical path · 17 Task(RT-01 ~ RT-15 · REC-1 · SRCH-1) · Decision gate · test matrix · PR plan · handoff | `origin/develop` `4052ada` |
 | 2026-10-06 | §8 실행 모델 보정(§7 reopen 아님) — RT-01 ~ RT-15 Implementer를 정철원으로 단일화, 김준영은 Runtime/Ops · HTTP Contract Owner · deferred acceptance 유지. §12를 handoff 표에서 책임 구조 · merge authority · 확인 조건 · Implementation Notes · Implementation Log · Milestone audit로 교체. §6 책임 표기 · §10 · §11 · §15 정규화. Contract · Accepted Decision · Baseline · Task 범위 · dependency · 다른 Owner 소유 변경 없음 | PR #305 |
-| 2026-10-06 | §12.2에 Consult 성격(승인 아님 · interface 모양을 정하기 전 확인) 명시 · §12.8 RT PR 체크리스트 추가(Issue 연결 · close = Log `DONE` 규칙 포함). 실행 모델 · Contract · Decision · Baseline 변경 없음 | @@PR@@ |
+| 2026-10-06 | §12.2에 Consult 성격(승인 아님 · interface 모양을 정하기 전 확인) 명시 · §12.8 RT PR 체크리스트 추가(Issue 연결 · close = Log `DONE` 규칙 포함). 실행 모델 · Contract · Decision · Baseline 변경 없음 | PR #307 |
