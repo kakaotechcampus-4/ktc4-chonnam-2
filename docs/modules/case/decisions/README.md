@@ -12,9 +12,10 @@
 - `eval-round2-ground-truth-and-usage.md — plate_reread_001·unknown_abstain_partial_001 참값 라벨 확정, STALE attempt UsageRecord 컨벤션 (이슈 #22 B-3·B-4)`
 - `orchestration-service-layer.md — service.py/ModuleAdapter Protocol 도입 + Mock→Real 교체(W5/W6) 진행 기록 (RealAdapter 실측 real 교체 범위, case.get_view() 진입점)`
 - `intent-llm-eval-target-thresholds.md — intent LLM 평가 목표치(schema_compliance/field_accuracy/hallucination/missed rate) 딥리서치 기반 1차 설정 (2026-09-19 실측 완료, 3개 후보 전부 통과 — §4)`
-- `intent-llm-model-selection.md — 자연어 단서 구조화 LLM 최종 채택 Gemini 3.8 Flash(2026-09-22 재검토로 GPT-5 Nano에서 변경, §10) — §1~§9는 첫 결정 기록으로 보존`
+- `intent-llm-model-selection.md — 자연어 단서 구조화 LLM 최종 채택 Gemini 3.8 Flash(2026-09-22 재검토로 GPT-5 Nano에서 변경, §10) — §1~§9는 첫 결정 기록으로 보존. 2026-10-05 단일 점수(정확도 × 일관성)로 확정, §13`
 - `agent-framework-adoption-criteria.md — LangGraph/Google ADK 등 agent framework를 지금 도입하지 않는다는 결정 + 재검토 트리거 4개`
 - `input-fingerprint-implementation-label-deferred.md — input_fingerprint의 implementation label 조합 로직을 지금 만들지 않는다는 결정 + 재검토 트리거 2개 (이슈 #77)`
 - `intent-hint-robustness-policy.md — 도메인 밖 입력은 스키마 변경 없이 null/low로 처리, 모순 정보는 마지막 값+confidence low 채택 (PM 재검토, 2026-09-22)`
 - `reselect-observation-reuse.md — 다른 후보를 골랐다가 돌아오면(A→B→A) 같은 탐색 결과 안에서는 관찰(Fine·판독)을 재사용, 후보 목록이 바뀌면 버림 (W7 7순위, 2026-09-30)`
+- `command-appended-job-records.md — command가 이번에 append한 JobRecord를 응답 body 밖으로 돌려준다(`execute_command()` → `CommandResult`), handle_command는 response만 (W7 8순위 8-7, 2026-10-05)`
 - `case-store-mysql.md — CaseStore MySQL 영속화 1단계: 하이브리드 schema(cases + append-only 레코드 3종) · 호출자 transaction 참여 · FOR UPDATE/FOR SHARE · opt-in MySQL 테스트 (W7 8순위 8-6, 2026-10-05). adapter 제거는 2단계`

@@ -173,11 +173,19 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 
 이 문서의 결정으로 정하지 않는다. 구현 PR 전에 확인받는다.
 
+> **2026-10-05 확인 결과(#267 리뷰 — @flosure23 PM · api composition root, @cheol1203 Runtime 구현):**
+> - `conn` 타입 — **합의.** composition root가 transaction을 소유하고 Case와 Runtime이 같은 SQLAlchemy `Connection`에 참여한다. 별도 UoW 객체는 지금 고정하지 않는다.
+> - 잠금 순서 — **합의.** Case와 Runtime 행을 함께 잠그는 경로(api command · worker T2 · 중단)는 `cases` 행을 먼저 잡는다. worker T1 · heartbeat는 case 행을 건드리지 않는다.
+> - Alembic 구성 — **잠정(provisional).** 모듈이 자기 migration을 소유한다는 원칙만 합의했다. 아래 `migrations/case/` · `case_alembic_version`은 case의 임시안이고, 정확한 배치는 Runtime Implementation Plan · RD-12f에서 정한다.
+> - 의존성 — **합의.** SQLAlchemy · PyMySQL · Alembic은 공용으로 한 버전만 쓴다. 먼저 들어가는 구현 PR이 공용 `pyproject.toml`에 추가하고 다른 쪽이 맞춘다.
+> - CI MySQL — 첫 구현 단계에서 통합한다. 세부 구성은 Runtime Implementation Plan에서 정한다.
+> - 원칙 재확인 — provider · 외부 모듈 호출 동안 DB transaction · lock을 쥐고 있지 않는다(#250 01b).
+
 | 무엇 | 누구 | case 안 |
 | --- | --- | --- |
 | `conn` 타입 — Runtime enqueue API도 같은 transaction에 참여하므로 같은 SQLAlchemy `Connection`을 받아야 한다(§12.1 「UoW API 모양은 구현 플래닝」) | common/runtime | 호출자가 `Connection`을 넘기고 각자 commit하지 않는다 |
 | 잠금 순서 규칙(§5) | common/runtime | case 행 먼저 |
-| Alembic 구성 — 공용 env인지 모듈별인지 미정 | common/runtime | 임시로 case 전용 env(`migrations/case/`), version table `case_alembic_version`. 공용이 정해지면 옮긴다 |
+| Alembic 구성 — 공용 env인지 모듈별인지 미정 **(잠정, 위 확인 결과)** | common/runtime | 임시로 case 전용 env(`migrations/case/`), version table `case_alembic_version`. 공용이 정해지면 옮긴다 |
 | `pyproject.toml` 의존성(SQLAlchemy · PyMySQL · Alembic) 버전 | common/runtime (공용 파일) | Runtime과 같은 버전 |
 | CI MySQL — runtime-tech-spec §16이 실제 MySQL 통합 테스트를 요구하지만 CI에 없다(`open-decision-register.md` 「MySQL integration CI 없음」) | common/runtime | 요청만 한다. 이 PR에서 CI를 바꾸지 않는다 |
 
