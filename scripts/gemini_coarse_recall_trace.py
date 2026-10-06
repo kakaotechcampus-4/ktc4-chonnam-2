@@ -18,7 +18,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from gemini_coarse_fine_slowdown_trace import CASES, DEFAULT_ENV, VID, _ffmpeg, _note
+from gemini_coarse_fine_slowdown_trace import CASES, DEFAULT_ENV, VID, _ffmpeg, _note, _overlaps
 from gemini_fine_crop_hint_trace import _video_msg
 
 from daesingo.common import load_env_file
@@ -45,10 +45,6 @@ def _slow_coarse(video: Path, dest: Path) -> Path:
     if r.returncode != 0:
         raise SystemExit(f"ffmpeg: {r.stderr.decode(errors='replace')[-300:]}")
     return dest
-
-
-def _overlaps(a: tuple[float, float], b: tuple[float, float] | None) -> bool:
-    return b is not None and a[0] < b[1] and b[0] < a[1]
 
 
 def main() -> None:
