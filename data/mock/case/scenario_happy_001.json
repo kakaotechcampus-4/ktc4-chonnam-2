@@ -71,6 +71,7 @@
       "case_rev": 1,
       "stage": "SEARCHING",
       "user_reviewed": false,
+      "description": null,
       "manifest_summary": {
         "file_count": 2,
         "ok_file_count": 2,
@@ -143,6 +144,7 @@
       "case_rev": 2,
       "stage": "EVIDENCE_REVIEW",
       "user_reviewed": false,
+      "description": null,
       "manifest_summary": {
         "file_count": 2,
         "ok_file_count": 2,
@@ -578,6 +580,7 @@
       "case_rev": 4,
       "stage": "READY",
       "user_reviewed": false,
+      "description": null,
       "manifest_summary": {
         "file_count": 2,
         "ok_file_count": 2,
@@ -1062,6 +1065,7 @@
       "case_rev": 5,
       "stage": "READY",
       "user_reviewed": true,
+      "description": null,
       "manifest_summary": {
         "file_count": 2,
         "ok_file_count": 2,
