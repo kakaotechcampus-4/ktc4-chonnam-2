@@ -65,7 +65,14 @@ def issue_job(
     return job_record
 
 
-def issue_coarse_search(case: CaseAggregate, *, scope_ref: str, input_fingerprint: str) -> dict[str, Any]:
+def issue_coarse_search(
+    case: CaseAggregate, *, scope_ref: str, input_fingerprint: str, scope: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """`scope`를 주면 aggregate에 남긴다(#246 S-4) — 주지 않는 기존 호출(fixture · 스크립트)은 그대로 둔다."""
+    if scope is not None:
+        if scope["scope_id"] != scope_ref:
+            raise ValueError(f"scope_ref와 scope_id가 다르다: {scope_ref!r} != {scope['scope_id']!r}")
+        case.record_analysis_scope(scope)
     return issue_job(case, "COARSE_SEARCH", scope_ref=scope_ref, input_fingerprint=input_fingerprint)
 
 

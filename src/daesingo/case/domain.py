@@ -89,6 +89,9 @@ class Candidate:
     # search `CandidateEvent.span.representative_ms`(그 후보 timeline revision 기준 상대 ms) 그대로.
     # CaseView `candidates[].marker_ms`의 원천이다(#184). case가 계산·보정하지 않는다.
     representative_ms: int | None = None
+    # 저장된 상태에 있었지만 이 코드가 모르는 키(새 코드가 쓴 필드). 다시 저장할 때 그대로 쓴다 —
+    # rollback한 옛 코드가 새 필드를 지우지 않게(`decisions/case-store-mysql.md` §4).
+    extra: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
 
 
 @dataclass
@@ -125,6 +128,13 @@ class CaseAggregate:
     # (`decisions/reselect-observation-reuse.md`). `selection_rev`와 달리 재선택으로는 오르지 않는다. CaseView 비노출.
     candidate_generation: int = 0
 
+    # COARSE_SEARCH가 쓴 AnalysisScope(`scope_id` → scope). JobRecord는 `scope_ref`만 들고 있어, process가
+    # 바뀌어도 scope를 다시 읽을 수 있게 aggregate에 남긴다(#246 S-4). CaseView 비노출. scope는 불변.
+    analysis_scopes: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
+    extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
+
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
         """hints · manifest를 한 번에 받는 진입점 — fixture · 테스트 경로용. 제품 진입점은 빈 case를 만드는
@@ -153,6 +163,14 @@ class CaseAggregate:
         self.manifest_summary["file_count"] += 1
         if source_asset.get("availability") == "AVAILABLE":
             self.manifest_summary["ok_file_count"] += 1
+
+    def record_analysis_scope(self, scope: dict[str, Any]) -> None:
+        """scope는 불변이다 — 같은 `scope_id`로 다른 내용이 오면 거부한다."""
+        scope_id = scope["scope_id"]
+        existing = self.analysis_scopes.get(scope_id)
+        if existing is not None and existing != scope:
+            raise ValueError(f"AnalysisScope는 바꿀 수 없다: {scope_id!r}")
+        self.analysis_scopes[scope_id] = dict(scope)
 
     def _advance(self, expected_from: str, to: str, *, bump_case_rev: bool = True) -> None:
         if self.stage != expected_from:
