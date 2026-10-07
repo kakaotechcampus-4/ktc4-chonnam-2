@@ -12,6 +12,12 @@ def test_description_is_null_before_analysis_start():
     assert view["description"] is None
 
 
+def test_description_is_projected_from_case():
+    case = CaseAggregate.intake(case_id="case_desc2", hints={}, manifest_summary={})
+    case.description = "  "
+    assert build_case_view(case)["description"] == "  "
+
+
 def test_hint_extract_is_a_registered_job_kind():
     case = CaseAggregate.intake(case_id="case_hint", hints={}, manifest_summary={})
     case.start_search()

@@ -457,14 +457,22 @@ def create_case(*, store: CaseStore) -> str:
     return case_id
 
 
-def record_source_registered(case_id: str, source_asset: dict[str, Any], *, store: CaseStore) -> None:
+def record_source_registered(
+    case_id: str,
+    source_asset: dict[str, Any],
+    *,
+    media_streams: list[dict[str, Any]] | None = None,
+    store: CaseStore,
+) -> None:
     """recording이 이 case에 등록 · 연결한 원본 1개(`SourceAsset` 계약 dict)를 반영한다(§5.2 upload).
 
     composition root가 recording 등록과 같은 transaction에서 부른다. `INTAKE`가 아니면
     `SourceNotAccepted` — 같은 transaction이라 recording 등록도 함께 rollback된다.
+    `media_streams`(`MediaStream` 계약 dict 목록, recording 등록 결과)를 넘기면 VIDEO 스트림 ref를 함께
+    남긴다 — 분석 시작이 여러 원본을 이어 붙일 때 쓴다.
     """
     case = store.load_for_update(case_id)
-    case.record_source_registered(source_asset)
+    case.record_source_registered(source_asset, media_streams)
     store.save(case)
 
 

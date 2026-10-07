@@ -682,9 +682,8 @@ def build_case_view(
         "case_rev": case.case_rev,
         "stage": case.stage,
         "user_reviewed": case.user_reviewed,
-        # 분석 시작 때 사용자가 적은 설명 원문(v1.7, #259). 원문을 받는 `START_ANALYSIS`가 아직 없어
-        # 늘 `null`이다 — command가 생길 때 aggregate 필드와 함께 채운다(case-command Draft §11).
-        "description": None,
+        # 분석 시작 때 사용자가 적은 설명 원문(v1.7, #259) — 받은 그대로. 분석 시작 전에는 `null`.
+        "description": case.description,
         "manifest_summary": case.manifest_summary,
         "hints": case.hints,
         "progress": _build_progress(
