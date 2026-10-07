@@ -82,6 +82,17 @@ export function ResultScreen(props: {
           <div className="video-main">
             <span className="video-cap">근거 장면 준비 중</span>
           </div>
+          {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
+          <div className="kv kv-rows">
+            {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
+              <div className="kv-row" key={label}>
+                <span className="kv-k">{label}</span>
+                <span className="kv-v">
+                  <span className="kv-val">상황 응답 뒤에 정해져요</span>
+                </span>
+              </div>
+            ))}
+          </div>
           {/* 「잘 모르겠어요」도 진행을 막지 않는다. 값은 AI 추정으로 남는다(core-user-flow 「신고 상황」) */}
           <div className="btnrow">
             <button type="button" className="btn pri" onClick={() => props.onRespond!('CONFIRMED')}>

@@ -43,6 +43,8 @@ it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하
   expect(text()).toContain('신고 상황을 확인해 주세요')
   expect(text()).toContain('이 사건을 이렇게 정리했어요')
   expect(text()).not.toContain('안전신문고로 이동')
+  // 응답에 따라 정해지는 값 셋은 응답 뒤로 미룬다
+  expect(text()).toContain('상황 응답 뒤에 정해져요')
   fireEvent.click(getByText('맞아요'))
   expect(text()).toContain('신고자료를 준비하고 있어요')
   wait()
