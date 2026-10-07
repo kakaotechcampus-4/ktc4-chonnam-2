@@ -26,6 +26,7 @@ from daesingo.case.labels import (
     occurred_at_info_state,
     report_type_label,
 )
+from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
 CONTRACT_VERSION = "case-view/v1.6"
 
@@ -47,10 +48,10 @@ _REPORT_FIELDS = ("safety_report_type", "occurred_at", "location", "vehicle_numb
 # `contract-job-record-case-view.md` 헤더 ③ / §13 「JobExecution → CaseView 상태 projection」 —
 # QUEUED→PENDING, RUNNING→RUNNING, SUCCEEDED→DONE, FAILED/STALE→FAILED, CANCELLED→PARTIAL
 # (CANCELLED은 새 enum 값을 만들지 않고 기존 PARTIAL로 흡수, 이슈 #33 A-2). 이 다섯 매핑
-# 자체는 case-view 계약이 소유하는 projection 표라 case 코드가 그대로 옮긴다 — "지금
-# 이 job_id/kind의 최신 실행이 어떤 JobExecution.status인가"를 고르는 일(여러 attempt
-# 중 최신을 고르는 것, force_rerun 이후 새 job_id로 갈아타는 것)은 이 함수의 책임이
-# 아니다(그건 JobExecution을 소유한 common/runtime 쪽에서 이미 해석해 건네준다고 본다).
+# 자체는 case-view 계약이 소유하는 projection 표라 case 코드가 그대로 옮긴다. 「이 kind의
+# 대표 실행이 어떤 JobExecution.status인가」를 고르는 일(가장 나중 job · attempt 최댓값)은
+# `representative_execution_status()`가 한다 — JobExecution read port(#245 D-6)는 Contract
+# 모양을 그대로 돌려주므로 case가 고른다(A§10-6 · §10-7).
 _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
     "QUEUED": "PENDING",
     "RUNNING": "RUNNING",
@@ -59,6 +60,20 @@ _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
     "STALE": "FAILED",
     "CANCELLED": "PARTIAL",
 }
+
+
+def representative_execution_status(
+    job_records: list[dict[str, Any]], job_executions: list[dict[str, Any]], kind: str
+) -> str | None:
+    """`kind`의 대표 `JobExecution.status`. 대표 job은 그 kind로 `job_records[]`에 가장 나중에
+    기록된 job이고(A§10-7 — `case_rev`는 정렬 키가 아니다), 그 안의 대표 execution은 `attempt`
+    최댓값이다(A§10-6 — 재시도 중 이전 attempt의 STALE을 보이지 않는다). 그 kind의 job이 없거나
+    대표 job에 아직 실행 보고가 없으면 `None` — 이전 job의 상태로 대신하지 않는다."""
+    job_id = next((j["job_id"] for j in reversed(job_records) if j["kind"] == kind), None)
+    attempts = [e for e in job_executions if e["job_id"] == job_id]
+    if not attempts:
+        return None
+    return max(attempts, key=lambda e: e["attempt"])["status"]
 
 
 def _job_execution_status_to_progress_state(status: str | None) -> str:
@@ -70,6 +85,18 @@ def _job_execution_status_to_progress_state(status: str | None) -> str:
     return _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE[status]
 
 
+def execution_failed(status: str | None) -> bool:
+    """대표 실행이 terminal 실패인가 — B§13 매핑에서 `FAILED`가 되는 값(`FAILED` · 재시도가 끝난
+    `STALE`). 보고가 없으면(`None`) 실패가 아니다."""
+    return status is not None and _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE[status] == "FAILED"
+
+
+def _observed_state(status: str | None) -> str:
+    """이미 끝난 관찰 단계 — 실행 상태가 보고됐으면(판독 실패 등) 그 값, 아니면 DONE이다.
+    `_job_execution_status_to_progress_state()`와 달리 None을 「막 발주함」으로 읽지 않는다."""
+    return "DONE" if status is None else _job_execution_status_to_progress_state(status)
+
+
 def _build_progress(
     case: CaseAggregate,
     evidence_record: dict[str, Any] | None,
@@ -78,6 +105,8 @@ def _build_progress(
     *,
     plate_read_status: str | None = None,
     overlay_time_read_status: str | None = None,
+    visual_evidence_decision: str | None = None,
+    visual_verify_status: str | None = None,
 ) -> list[dict[str, str]]:
     # ⚠️ CANDIDATE_REVIEW 단계면 후보가 있든 없든(2026-09-14 확인 — 처음엔 "후보 0개"만의
     # 특수 케이스로 좁게 봤었는데, `scenario_relative_rebase_001`이 후보가 1개 있고 심지어
@@ -102,6 +131,40 @@ def _build_progress(
     # 목록에서 아예 뺀다(CANDIDATE_REVIEW-빈 배열과 같은 원칙). `scenario_infra_failure_001`
     # 4개 revision 전부(plate_read가 RUNNING/FAILED/PARTIAL을 오가는 동안 overlay_time_read는
     # 독립적으로 DONE일 수 있다는 것까지) 이 분기로 확인됨(2026-09-14).
+    # evidence가 없는 이유를 Fine 판정이 알려 주면 그것을 먼저 본다(PR #224 리뷰). 판정이 없으면
+    # 아래 「조립 전」 분기 그대로다.
+    # - 음성 결과(`NOT_ASSEMBLED`)는 IncidentClip~package를 시작하지 않는다(#168 [A]) — 뒤 단계는
+    #   이 case 생애주기에서 일어날 계획이 없어 step 집합 규칙 3(`candidates=[]`와 같은 취급)으로 뺀다.
+    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다. Fine **실행 실패**(8-14)도
+    #   판정 없이 같은 이유로 뒤 단계를 시작하지 않아 같은 3단계다.
+    # - 상황 응답 대기(`AWAIT_SITUATION_RESPONSE`)는 관찰(OCR·시간 source)을 마쳤고 조립만 응답을
+    #   기다린다(#165). 응답 뒤 package까지 이어지므로 규칙 1대로 8단계를 싣고, 조립 이후는 PENDING이다.
+    if (
+        case.stage == "EVIDENCE_REVIEW"
+        and evidence_record is None
+        and (visual_evidence_decision == NOT_ASSEMBLED or execution_failed(visual_verify_status))
+    ):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+        ]
+    if (
+        case.stage == "EVIDENCE_REVIEW"
+        and evidence_record is None
+        and visual_evidence_decision == AWAIT_SITUATION_RESPONSE
+    ):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": _observed_state(plate_read_status)},
+            {"step": "overlay_time_read", "state": _observed_state(overlay_time_read_status)},
+            {"step": "evidence_assembly", "state": "PENDING"},
+            {"step": "requirement_check", "state": "PENDING"},
+            {"step": "package_assembly", "state": "PENDING"},
+        ]
+
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
         return [
             {"step": "file_intake", "state": "DONE"},
@@ -134,12 +197,13 @@ def _build_progress(
             return "RUNNING"
         return "PENDING"
 
-    # step_rank: file_intake=0(INTAKE 완료 즉시 DONE), coarse_search=1, candidate_review=2,
+    # step_rank: file_intake=0(분석 시작으로 INTAKE를 벗어나면 DONE — 원본은 파일마다 따로 들어와 「다 올렸다」는
+    # 분석 시작으로만 안다, `decisions/empty-case-and-manifest.md`), coarse_search=1, candidate_review=2,
     # plate_read/overlay_time_read/evidence_assembly=3(EVIDENCE_REVIEW 진행), requirement_check/
     # package_assembly=3.5(EVIDENCE_REVIEW 안에서도 evidence 이후 단계) — evidence_record/
     # report_package 존재 여부로 더 세분화한다.
     progress = {
-        "file_intake": "DONE" if stage_rank >= 0 else "PENDING",
+        "file_intake": "DONE" if stage_rank >= 1 else "PENDING",
         "coarse_search": state_for(1),
         "candidate_review": state_for(2),
     }
@@ -555,6 +619,8 @@ def build_case_view(
     overlay_time_read_status: str | None = None,
     current_timeline_revision: int | None = None,
     plate_readouts: list[dict[str, Any]] | None = None,
+    visual_evidence_decision: str | None = None,
+    visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
@@ -586,6 +652,8 @@ def build_case_view(
             requirement_report_evidence,
             plate_read_status=plate_read_status,
             overlay_time_read_status=overlay_time_read_status,
+            visual_evidence_decision=visual_evidence_decision,
+            visual_verify_status=visual_verify_status,
         ),
         "candidates": _build_candidates_view(case, evidence_record, current_timeline_revision),
         "evidence": (

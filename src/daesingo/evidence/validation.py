@@ -314,7 +314,8 @@ def validate_requirement_report(value: Contract) -> list[str]:
     return errors
 
 
-def _validate_report_package(value: Contract, *, version: str, location_nullable: bool) -> list[str]:
+def _validate_report_package(value: Contract, *, version: str, location_nullable: bool,
+                             vehicle_number_nullable: bool = False) -> list[str]:
     errors: list[str] = []
     _required(value, ("contract_version", "package_ref", "evidence_record_ref", "requirement_report_ref", "created_at", "report_inputs", "report", "assets", "provenance", "handoff"), errors)
     if value.get("contract_version") != version or not _ref(value.get("package_ref"), "report_package"):
@@ -335,6 +336,10 @@ def _validate_report_package(value: Contract, *, version: str, location_nullable
     )
     if not location_present or not (valid_location or location_nullable and location is None):
         errors.append("location")
+    if vehicle_number_nullable:
+        plate = inputs.get("vehicle_number")
+        if "vehicle_number" in inputs and not (plate is None or isinstance(plate, str) and plate.strip()):
+            errors.append("vehicle_number")
     if not _ref(value.get("assets", {}).get("report_video_ref"), "derived_asset"):
         errors.append("report_video_ref")
     if "status" in value or "user_reviewed" in value or "submitted" in value:
@@ -346,6 +351,11 @@ def _validate_report_package(value: Contract, *, version: str, location_nullable
 
 
 def validate_report_package(value: Contract) -> list[str]:
+    return _validate_report_package(value, version="report-package/v1.2", location_nullable=True,
+                                    vehicle_number_nullable=True)
+
+
+def validate_report_package_v1_1(value: Contract) -> list[str]:
     return _validate_report_package(value, version="report-package/v1.1", location_nullable=True)
 
 
@@ -359,7 +369,8 @@ VALIDATORS: dict[str, Callable[[Contract], list[str]]] = {
     "evidence-needs/v1": validate_evidence_needs,
     "requirement-report/v1": validate_requirement_report,
     "report-package/v1": validate_report_package_v1,
-    "report-package/v1.1": validate_report_package,
+    "report-package/v1.1": validate_report_package_v1_1,
+    "report-package/v1.2": validate_report_package,
 }
 
 

@@ -16,6 +16,144 @@ def payload(frames):
     return {"streams": [{"codec_type": "video", "time_base": "1/10"}], "frames": frames}
 
 
+def quantized_payload():
+    return {"format": {"format_name": "matroska,webm"},
+            "streams": [{"codec_type": "video", "time_base": "1/1000"}],
+            "frames": [{"best_effort_timestamp": at, "duration": 33}
+                       for at in [0, 33, 67, 100, 133, 167, 200]]}
+
+
+def test_millisecond_quantization_preserves_pts_and_observed_tail():
+    base, frames = LocalAnalysisMaterializer._frames(quantized_payload())
+    assert base == Fraction(1, 1000)
+    assert [at for at, _ in frames] == [Fraction(at, 1000) for at in [0, 33, 67, 100, 133, 167, 200]]
+    assert [length for _, length in frames] == [Fraction(n, 1000) for n in [33, 34, 33, 33, 34, 33, 33]]
+
+
+@pytest.mark.parametrize("change", ["gap", "one_tick_gap", "reverse", "duplicate", "tail", "mp4", "coarse"])
+def test_quantization_does_not_hide_invalid_coverage(change):
+    data = quantized_payload()
+    if change in {"gap", "one_tick_gap"}:
+        for frame in data["frames"][3:]:
+            frame["best_effort_timestamp"] += 3 if change == "gap" else 1
+    elif change == "reverse":
+        data["frames"][3]["best_effort_timestamp"] = 66
+    elif change == "duplicate":
+        data["frames"][3]["best_effort_timestamp"] = 67
+    elif change == "tail":
+        del data["frames"][-1]["duration"]
+    elif change == "mp4":
+        data["format"]["format_name"] = "mov,mp4,m4a,3gp,3g2,mj2"
+    else:
+        data["streams"][0]["time_base"] = "1/10"
+    with pytest.raises(RecordingCapabilityError):
+        LocalAnalysisMaterializer._frames(data)
+
+
+def test_negative_one_tick_rounding_and_legacy_duration():
+    data = quantized_payload()
+    for frame, at in zip(data["frames"], [0, 34, 67, 101, 134, 168, 201]):
+        frame["best_effort_timestamp"] = at
+        frame["pkt_duration"] = 34
+        del frame["duration"]
+    _, frames = LocalAnalysisMaterializer._frames(data)
+    assert [length * 1000 for _, length in frames] == [34, 33, 34, 33, 34, 33, 34]
+
+
+@pytest.mark.parametrize("change", [None, "pts", "gap", "tail"])
+def test_output_quantization_requires_exact_selected_source_pts(change):
+    data = quantized_payload()
+    _, expected = LocalAnalysisMaterializer._frames(data)
+    data["format"]["format_name"] = "mov,mp4"
+    if change == "pts":
+        data["frames"][3]["best_effort_timestamp"] += 1
+    elif change == "gap":
+        data["frames"][1]["duration"] -= 2
+    elif change == "tail":
+        del data["frames"][-1]["duration"]
+    if change:
+        with pytest.raises(RecordingCapabilityError):
+            LocalAnalysisMaterializer._frames(data, expected_coverage=expected)
+    else:
+        assert LocalAnalysisMaterializer._frames(data, expected_coverage=expected)[1] == expected
+
+
+@pytest.mark.parametrize("linux_tail", [False, True])
+def test_generated_h264_mkv_public_materialization(tmp_path, monkeypatch, linux_tail):
+    if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+        pytest.skip("ffmpeg/ffprobe 필요")
+    from tests.recording.test_local_analysis_source import fingerprint
+    path = tmp_path / "quantized.mkv"
+    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
+        "testsrc2=s=64x48:r=30:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(path)],
+        check=True, capture_output=True, timeout=30)
+    before = fingerprint(path)
+    work = tmp_path / "work"
+    work.mkdir()
+    analysis = LocalAnalysisMaterializer({"profile": AnalysisProfile(48, "veryfast", 23)}, temp_root=work)
+    raw = analysis._probe(path, 0)
+    if linux_tail:
+        original_probe = LocalAnalysisMaterializer._probe
+
+        def without_output_tail(self, target, index=None):
+            data = original_probe(self, target, index)
+            if index is None:
+                data["frames"][-1].pop("duration", None)
+                data["frames"][-1].pop("pkt_duration", None)
+            return data
+
+        monkeypatch.setattr(LocalAnalysisMaterializer, "_probe", without_output_tail)
+    assert any(int(a["best_effort_timestamp"]) + int(a.get("duration", a.get("pkt_duration")))
+               != int(b["best_effort_timestamp"]) for a, b in zip(raw["frames"], raw["frames"][1:]))
+    with RecordingService(analysis_materializer=analysis,
+            incident_materializer=LocalIncidentMaterializer(IncidentClipEncoding(48, "veryfast", 23), temp_root=work)) as service:
+        registered = service.register_local_source(path)
+        video, = registered.media_streams
+        timeline = service.create_relative_timeline(registered.source_asset.source_asset_ref)
+        ref = {"timeline_id": timeline.timeline_id, "revision": timeline.revision}
+        resolved = service.resolve_span(ref, {"start_sec": 0.0, "end_sec": 1.0}, media_stream_ref=video.media_stream_ref)
+        assert resolved.status == "COMPLETE"
+        prepared = service.prepare_analysis_source(resolved.spans[0], "profile", timeline_ref=ref)
+        with service.open_analysis_source(prepared.analysis_source_ref).stream as opened:
+            assert len(opened.read()) == prepared.byte_size > 0
+        clip = service.build_incident_clip(resolved)
+        assert clip.byte_size > 0 and clip.source_provenance.asset_spans == resolved.spans
+        assert prepared.timeline_range == clip.timeline_range
+        assert prepared.duration_sec == clip.duration_sec == 1.0
+        frame = service.resolve_frame({"kind": "STREAM_POSITION", "media_stream_ref": video.media_stream_ref,
+                                       "source_offset_sec": 0.5})
+        assert service.read_frame(frame.frame_ref).startswith(b"\x89PNG\r\n\x1a\n")
+    assert fingerprint(path) == before and not list(work.iterdir())
+
+
+@pytest.mark.parametrize("change", [None, "no_expected", "no_stream_duration", "wrong_duration",
+    "count", "pts", "gap", "reverse", "duplicate", "expected_gap", "expected_tail"])
+def test_linux_output_tail_requires_verified_coverage(change):
+    data = quantized_payload()
+    _, expected = LocalAnalysisMaterializer._frames(data)
+    data["format"] = {"format_name": "mov,mp4", "duration": "0.233"}
+    data["streams"][0]["duration"] = "0.233"
+    for frame in data["frames"]:
+        frame["pkt_duration"] = frame.pop("duration")
+    del data["frames"][-1]["pkt_duration"]
+    if change == "no_expected": expected = None
+    elif change == "no_stream_duration": del data["streams"][0]["duration"]
+    elif change == "wrong_duration": data["streams"][0]["duration"] = "0.234"
+    elif change == "count": expected = expected[:-1]
+    elif change == "pts": data["frames"][3]["best_effort_timestamp"] += 1
+    elif change == "gap": data["frames"][1]["pkt_duration"] -= 2
+    elif change == "reverse": data["frames"][3]["best_effort_timestamp"] = 66
+    elif change == "duplicate": data["frames"][3]["best_effort_timestamp"] = 67
+    elif change == "expected_gap": expected[1] = (expected[1][0], Fraction(32, 1000))
+    elif change == "expected_tail": expected[-1] = (expected[-1][0], Fraction(0))
+    if change:
+        with pytest.raises(RecordingCapabilityError) as caught:
+            LocalAnalysisMaterializer._frames(data, expected_coverage=expected)
+        assert caught.value.code == "UNSUPPORTED_MEDIA"
+    else:
+        assert LocalAnalysisMaterializer._frames(data, expected_coverage=expected)[1] == expected
+
+
 @pytest.mark.parametrize("mode", ["duration", "legacy", "mixed", "adjacent"])
 def test_frame_duration_observations(mode):
     frames = [{"best_effort_timestamp": at, "duration": length} for at, length in [(7, 1), (8, 2), (10, 3)]]

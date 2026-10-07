@@ -55,8 +55,21 @@ class InvalidTransition(Exception):
     pass
 
 
+class SourceNotAccepted(Exception):
+    """원본 연결은 `INTAKE`에서만 받는다(8-17 case 쪽) — 분석 시작 뒤 추가 업로드는 거부한다.
+    HTTP status · code는 HTTP API Contract가 정한다."""
+
+
+# 빈 case의 초기값(HTTP API Contract §5.1 예시) — `decisions/empty-case-and-manifest.md`.
+_EMPTY_HINTS = ("time", "vehicle", "situation", "location")
+_EMPTY_MANIFEST = {"file_count": 0, "ok_file_count": 0, "failed_file_count": 0, "duration_sec": 0, "range": None}
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+_SITUATION_RESPONSE_VALUES = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
 
 
 @dataclass
@@ -98,13 +111,48 @@ class CaseAggregate:
     job_records: list[dict[str, Any]] = field(default_factory=list)
     correction_records: list[dict[str, Any]] = field(default_factory=list)
 
+    # 사용자의 신고 상황 응답 — `EvidenceRecord.situation_response`와 같은 모양
+    # (`value`·`responded_at`·`candidate_ref`). 응답 전에는 `None`(= CaseView `NOT_ASKED`)이며,
+    # 무응답을 `USER_UNSURE`로 만들지 않는다(#171 B-2, 통합 항목 I1).
+    situation_response: dict[str, Any] | None = None
+
     # 마지막 후보 탐색(CANDIDATE_SEARCH Run)이 실패했는가. 실패 Run은 후보 0개라 「찾았지만 없음」과
     # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
     candidate_search_failed: bool = False
 
+    # 후보 목록 세대 — `receive_candidates()`가 목록을 교체하거나 `regress_to_searching()`이 비울 때마다
+    # 오른다. adapter는 같은 세대 안에서만 후보별 관찰(Fine·판독)을 재사용한다
+    # (`decisions/reselect-observation-reuse.md`). `selection_rev`와 달리 재선택으로는 오르지 않는다. CaseView 비노출.
+    candidate_generation: int = 0
+
     @classmethod
     def intake(cls, case_id: str, hints: dict[str, Any], manifest_summary: dict[str, Any]) -> "CaseAggregate":
+        """hints · manifest를 한 번에 받는 진입점 — fixture · 테스트 경로용. 제품 진입점은 빈 case를 만드는
+        `service.create_case()`이고, 원본은 `record_source_registered()`로 하나씩 들어온다."""
         return cls(case_id=case_id, stage="INTAKE", hints=dict(hints), manifest_summary=dict(manifest_summary))
+
+    @classmethod
+    def empty(cls, case_id: str) -> "CaseAggregate":
+        return cls(
+            case_id=case_id,
+            stage="INTAKE",
+            hints={key: None for key in _EMPTY_HINTS},
+            manifest_summary=dict(_EMPTY_MANIFEST),
+        )
+
+    def record_source_registered(self, source_asset: dict[str, Any]) -> None:
+        """recording이 등록 · 연결한 원본 1개를 `manifest_summary`에 센다.
+
+        `file_count` +1, `availability=AVAILABLE`이면 `ok_file_count` +1. `failed_file_count`(의미 미결) ·
+        `duration_sec`(「전체 구간 길이」 — 전방 · 후방이 같은 시간대를 찍으면 합산이 틀린다) · `range`는
+        recording timeline 몫이라 여기서 계산하지 않는다. `case_rev`는 올리지 않는다 — 이후 판단의 입력이
+        아니고, 동시 업로드 응답이 뒤섞여도 분석 시작이 `stale_revision`에 걸리지 않게.
+        """
+        if self.stage != "INTAKE":
+            raise SourceNotAccepted(f"원본 연결은 INTAKE에서만 받는다: stage={self.stage}")
+        self.manifest_summary["file_count"] += 1
+        if source_asset.get("availability") == "AVAILABLE":
+            self.manifest_summary["ok_file_count"] += 1
 
     def _advance(self, expected_from: str, to: str, *, bump_case_rev: bool = True) -> None:
         if self.stage != expected_from:
@@ -121,6 +169,15 @@ class CaseAggregate:
         # case_rev를 올리지 않는다 — "요청 시점 케이스 리비전"은 아직 바뀔 내용이 없다.
         self._advance("INTAKE", "SEARCHING", bump_case_rev=False)
 
+    def record_extracted_hints(self, hints: dict[str, str | None]) -> None:
+        """단서 구조화(`HINT_EXTRACT`) 결과로 `hints`를 바꾼다. 결과는 분석 시작 직후 탐색 발주 전에만
+        들어오므로 `SEARCHING` 전용이다. 사용자 요청이 아니라 실행 결과라 `case_rev`를 올리지 않는다
+        (`record_candidate_search_failure()`와 같다). 어떤 값을 넣을지(매핑 · 실패 처리)는
+        `service.receive_hint_extraction()`이 정한다."""
+        if self.stage != "SEARCHING":
+            raise InvalidTransition(f"{self.stage}에서는 단서 구조화 결과를 받을 수 없다(SEARCHING 전용)")
+        self.hints = dict(hints)
+
     def record_candidate_search_failure(self) -> None:
         """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
         바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
@@ -135,10 +192,11 @@ class CaseAggregate:
         실제 fixture로 검증: `AnalysisRun.outcome=SUCCEEDED`+`candidates=[]`도 검색 자체는
         성공이므로 `CANDIDATE_REVIEW`로 전진한다). 빈 배열이든 아니든 전진 여부는 같고,
         차이는 이후 단계(선택 가능한 candidate가 없어 evidence 파이프라인이 발주되지 않음)와
-        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — notice 자체는
-        `build_case_view()` 호출자가 채운다(CaseView 값만으로 발동하는 notice는
-        `service.derive_notices()`가 붙인다 — 이슈 #48)."""
+        `CaseView.notices[]`(`search.no_candidates`, 비차단 INFO)에서만 갈린다 — 이 notice는
+        CaseView 값(`CANDIDATE_REVIEW` + 빈 `candidates`)만으로 발동해 `service.derive_notices()`가
+        붙인다."""
         self.candidates = list(candidates)
+        self.candidate_generation += 1
         self.candidate_search_failed = False
         self._advance("SEARCHING", "CANDIDATE_REVIEW")
 
@@ -155,6 +213,7 @@ class CaseAggregate:
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        self.situation_response = None
         self._advance("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", bump_case_rev=False)
 
     def select_top_ranked(self) -> str | None:
@@ -201,6 +260,14 @@ class CaseAggregate:
         self.user_reviewed = True
         self.bump_revision()
 
+    def check_regress_to_searching(self) -> None:
+        """`TIME_HINT_EDIT` 역행을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(`check_reselect()`와
+        같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기 전에 먼저 부른다 —
+        예전엔 기록·`hints`·`case_rev`를 먼저 바꾼 뒤 역행이 거부돼 그것들만 남았다(탐색 실패로
+        `SEARCHING`에 머문 case, orchestration 지표 4차 측정)."""
+        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
+            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+
     def regress_to_searching(self) -> None:
         """`TIME_HINT_EDIT` 역행 전이 — `CANDIDATE_REVIEW`/`EVIDENCE_REVIEW`/`READY` 중 어디서든
         `SEARCHING`으로 되돌아간다(`부분 재실행 정책 표 초안` 1행: "다시 도는 것=1차 탐색,
@@ -212,10 +279,10 @@ class CaseAggregate:
         `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
         `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
         """
-        if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
-            raise InvalidTransition(f"{self.stage}에서는 SEARCHING으로 역행할 수 없다")
+        self.check_regress_to_searching()
         self.stage = "SEARCHING"
         self.candidates = []
+        self.candidate_generation += 1
 
     def check_reselect(self, candidate_id: str) -> None:
         """`OTHER_CANDIDATE`를 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(#166).
@@ -251,7 +318,47 @@ class CaseAggregate:
         for c in self.candidates:
             c.selected = c.candidate_id == candidate_id
         self.selection_rev += 1
+        # 응답은 선택된 candidate에 묶인다(`candidate_ref`) — 새 후보에 대해서는 다시 묻는다.
+        self.situation_response = None
         self.user_reviewed = False
+        if self.stage == "READY":
+            self.stage = "EVIDENCE_REVIEW"
+
+    def record_situation_response(self, value: str, *, responded_at: str) -> dict[str, Any]:
+        """결과 화면 「신고 상황」 항목에서 사용자가 실제로 누른 응답을 기록한다(#171 B-2 ·
+        통합 항목 I1). `value`는 `CONFIRMED`(맞아요)·`CORRECTED`(다른 상황)·`USER_UNSURE`
+        (잘 모르겠어요) 중 하나이고, `candidate_ref`는 지금 선택된 candidate다.
+
+        새 사용자 요청이라 `case_rev`를 올린다(§3-E) — adapter는 이를 보고 evidence를 다시
+        조립한다(관찰 결과는 재사용, 이슈 #73). `CORRECTED`에 필요한 `SITUATION_CHANGE`
+        CorrectionRecord 존재 여부는 evidence가 조립 시 검증한다.
+        """
+        if value not in _SITUATION_RESPONSE_VALUES:
+            raise ValueError(f"알 수 없는 situation_response 값: {value!r}")
+        selected = next((c for c in self.candidates if c.selected), None)
+        if selected is None:
+            raise InvalidTransition("선택된 candidate가 없어 신고 상황 응답을 기록할 수 없다")
+        self.situation_response = {
+            "value": value,
+            "responded_at": responded_at,
+            "candidate_ref": {"kind": "candidate_event", "ref": selected.candidate_id},
+        }
+        self.leave_ready()
+        self.bump_revision()
+        return dict(self.situation_response)
+
+    def leave_ready(self) -> None:
+        """다시 조립되는 변경(값 정정·상황 응답)이 오면 `READY`에서 `EVIDENCE_REVIEW`로 내린다.
+
+        `READY`는 `PACKAGE_READY` 파생 gate이고(CaseView 계약 §10-9: READY면 FINAL이 PASS/WARN),
+        재조립 뒤에도 성립하는지는 새 결과를 봐야 안다 — 내리지 않으면 Package가 사라져도
+        `READY`로 남는다(orchestration 지표 4차 측정 I1). 상태 기계 설계 초안 v1 §3 「READY에서
+        어떤 정정이 들어와도 package는 즉시 무효화」. 성립하면 command의 성공 뒤 재확인이 다시
+        올린다(case-command 계약 §5).
+
+        `user_reviewed`는 건드리지 않는다 — 필드 수정과 별개다(계약 B절 `user_reviewed` ·
+        #173 값별 경계표). 새 초안이 되는 다른 후보 선택만 되돌린다(`reselect_candidate()`).
+        `case_rev`도 따로 올리지 않는다 — 같은 요청의 결과다(재선택과 같다)."""
         if self.stage == "READY":
             self.stage = "EVIDENCE_REVIEW"
 

@@ -84,10 +84,15 @@ def _detect(model, image):
     return dets
 
 
-def run(scope):
+def _read_image(path):
     import cv2
     import numpy as np
 
+    # cv2.imread 는 Windows 에서 비ASCII 경로를 못 연다.
+    return cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+
+
+def run(scope):
     base, videos, ultralytics_version = _prepare(scope)
     model = _load_model()
     raw, unreadable = [], []
@@ -95,8 +100,7 @@ def run(scope):
         frames = []
         for frame in video["frames"]:
             path = os.path.join(base, frame["file_path"])
-            # cv2.imread 는 Windows 에서 비ASCII 경로를 못 연다.
-            image = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+            image = _read_image(path)
             if image is None:
                 unreadable.append(f"{video['video_id']}/{frame['frame_no']}")
                 continue

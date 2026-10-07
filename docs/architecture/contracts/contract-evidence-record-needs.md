@@ -283,6 +283,12 @@ vehicle_number confirmed
 
 번호판 문자열 확정은 EvidenceRecord 책임이고, 신고영상에서 실제 식별 가능한지는 `RequirementReport` 책임이다.
 
+**`vehicle_number` 부재와 `provenance.input_refs` — 명확화(2026-09-29, #172 D-3 · `ADR-EVIDENCE-008` §5.1, 버전 유지 `evidence-record/v1.3`).** 확정 번호판이 없으면 `vehicle_number`는 부재이며 `"UNKNOWN"` 같은 sentinel을 넣지 않는다. 부재의 원인은 새 필드 없이 다음 불변조건으로 구분한다.
+
+- **현재 selection의 `PlateReadout`이 Evidence 조립 입력으로 존재했을 때에만** `provenance.input_refs`에 그 `plate_readout` ref(`{kind: plate_readout, ref: <readout_id>}`)가 들어간다. 조립은 그 `PlateReadout`의 `case_id`·`candidate_id`·`incident_clip_ref`가 현재 선택과 같을 때만 받는다.
+- 따라서 `vehicle_number` 부재 + `plate_readout` ref 있음 = 판독을 수행했지만 식별하지 못함(#172 D-2의 1·2·3), `vehicle_number` 부재 + ref 없음 = 판독 결과가 없음(실행 실패 4a 또는 미실행).
+- `RequirementReport`와 `ReportPackage`(`report-package/v1.2`의 `vehicle_number=null`)는 이 구분에 기댄다. 조립 밖에서 Record를 만들거나 `input_refs`를 편집하지 않는다.
+
 ## 4.6-1 `situation_response` (v1.3, 2026-09-10)
 
 `case`가 AI가 제안한 사건 상황(예: `event.visual_event_type`/`violation_expression` 후보)을 사용자에게 보여주고 확인을 받는 흐름에서, 그 **응답 자체의 provenance**를 `EvidenceRecord`가 immutable snapshot으로 보존한다.

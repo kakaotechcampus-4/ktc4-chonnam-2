@@ -87,8 +87,10 @@ class CandidateResult:
 class CandidateAdapter:
     """세 후보 모두 이 클래스 하나로 처리한다 — `model_name`만 다르게 인스턴스화."""
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, system_prompt: str = CANDIDATE_SYSTEM_PROMPT):
         self.model_name = model_name
+        # 프롬프트 변형 실험(Q3)용. 기본값은 v1 — 기존 runner 동작은 그대로다.
+        self.system_prompt = system_prompt
 
     def extract(self, input_sentence: str, prior_hints: dict | None) -> CandidateResult:
         user_prompt = CANDIDATE_USER_TEMPLATE.format(
@@ -100,7 +102,7 @@ class CandidateAdapter:
             response = _client(self.model_name).chat.completions.parse(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": CANDIDATE_SYSTEM_PROMPT},
+                    {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 response_format=IntentHintExtraction,

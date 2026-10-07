@@ -19,9 +19,11 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
 
-function snapshot(scenarioId: string, index: number): CaseView {
-  const found = SNAPSHOTS.find((s) => s.scenarioId === scenarioId && s.index === index)
-  if (!found) throw new Error(`fixture 없음: ${scenarioId} #${index}`)
+// 스냅샷은 순번이 아니라 모양으로 고른다 — fixture에 스냅샷이 끼어들면 순번이 밀린다
+// (응답 전 스냅샷 추가, #177).
+function snapshot(scenarioId: string, pick: (view: CaseView) => boolean): CaseView {
+  const found = SNAPSHOTS.find((s) => s.scenarioId === scenarioId && pick(s.view))
+  if (!found) throw new Error(`fixture 없음: ${scenarioId}`)
   return found.view
 }
 function fixtureNotice(code: string): Notice {
@@ -30,9 +32,9 @@ function fixtureNotice(code: string): Notice {
   return found
 }
 
-const SEARCHING = snapshot('scenario_happy_001', 1)
-const HAPPY = snapshot('scenario_happy_001', 2)
-const NOT_FOUND = snapshot('scenario_empty_001', 1)
+const SEARCHING = snapshot('scenario_happy_001', (v) => v.stage === 'SEARCHING')
+const HAPPY = snapshot('scenario_happy_001', (v) => v.stage === 'READY' && v.package !== null)
+const NOT_FOUND = snapshot('scenario_empty_001', () => true)
 
 // 단계 순서는 fixture(progress)를 따른다. i번째 단계가 진행 중이면 앞은 완료, 뒤는 대기다.
 // failedAt 단계는 실패한 채로 남고 뒤 단계는 계속 진행한다. stopped면 until 뒤는 시작하지 않는다.
