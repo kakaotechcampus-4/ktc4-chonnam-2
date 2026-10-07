@@ -35,6 +35,9 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('경과 시간')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
+  // 최종 신고문(v1.7)은 case가 만든 제목·내용을 그대로 보여 준다
+  expect(text()).toContain('진로변경 위반 차량 신고')
+  expect(text()).toContain('백색 실선을 넘어 진로를 변경하는 것을 확인하여 신고합니다')
   // 시각은 보기 좋은 모양으로. 위치는 지도 없이 초안 행만 있다
   expect(text()).toContain('2026-08-24 18:05:12')
   expect(text()).not.toContain('T18:05')
@@ -157,7 +160,8 @@ it('복사 버튼은 붙여넣을 칸에만 있다', () => {
   wait()
   const rows = [...container.querySelectorAll('.kv-row.draft')]
   const withCopy = rows.filter((r) => r.textContent!.includes('복사')).map((r) => r.querySelector('.kv-k')!.textContent)
-  expect(withCopy).toEqual(['차량 번호', '위반 내용'])
+  // 제목·내용은 case가 만든 신고문(v1.7)이라 통째로 복사한다. 나머지는 붙여넣을 칸만이다
+  expect(withCopy).toEqual(['제목', '내용', '차량 번호', '위반 내용'])
 })
 
 it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
