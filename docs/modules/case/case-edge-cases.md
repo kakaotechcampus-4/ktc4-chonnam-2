@@ -22,14 +22,14 @@
 
 ## 2. 사용자 반복 행동
 
-**지금 어떤 반복에도 횟수 상한이 없다.** 제품 원칙은 「탐색 비용은 사용자 행동(새 탐색 · 다른 후보 선택)에만 묶여 늘어나고, 제품이 스스로 탐색을 반복하지 않는다」뿐이다(`core-user-flow.md` 「결과 화면에서 다른 후보를 선택할 수 있다」 앞 문단). 비용이 드는 반복의 상한은 §7-1.
+**지금 어떤 반복에도 횟수 상한이 없다.** 제품 원칙은 「탐색 비용은 사용자 행동(새 탐색 · 다른 후보 선택)에만 묶여 늘어나고, 제품이 스스로 탐색을 반복하지 않는다」뿐이다(`core-user-flow.md` 「결과 화면에서 다른 후보를 선택할 수 있다」 앞 문단). 비용이 드는 반복의 상한은 §7-1(#311).
 
 | Edge case | 지금 동작 | 비용 | 상태 | 근거 · 다음 증거 |
 | --- | --- | --- | --- | --- |
 | 다른 후보 선택을 계속 함(A→B→C…) | `EVIDENCE_REVIEW` · `READY`에서 허용. 매번 `OTHER_CANDIDATE` CorrectionRecord · `selection_rev` 상승 · 새 신고자료 초안. 이미 선택된 후보 · 목록에 없는 후보는 거부 | 새 후보마다 판독 · Fine 발주 | `VERIFIED` | `test_correction.py`(reselect 계열) · `test_command.py` · #173 E-4 |
 | 같은 후보로 되돌아옴(A→B→A) | 같은 후보 목록 세대(`candidate_generation`) 안이면 이전 관찰(Fine · 판독)을 재사용 | 추가 없음 | `VERIFIED` | `decisions/reselect-observation-reuse.md` · `test_correction_partial_rerun.py` |
-| 재탐색(`RETRY_SEARCH`)을 계속 누름 | 이전 `COARSE_SEARCH`와 같은 입력으로 새 job 발주(notice에 버튼이 떠 있을 때만). 같은 kind · scope의 이전 job은 대체 처리 | 매번 Coarse 전체 비용 | `VERIFIED`(발주) · 상한 `PENDING` | `test_command.py` notice action · 대체는 #284 · 상한 §7-1 |
-| 번호판 다시 판독(`RETRY_PLATE_READ`)을 계속 누름 | 판독 실행 실패 notice가 떠 있고 이전 `PLATE_READ`가 있을 때만 새 job 발주 | 매번 판독 비용 | `VERIFIED`(발주) · 상한 `PENDING` | `test_command.py` · `test_plate_read_failure_projection.py` · 상한 §7-1 |
+| 재탐색(`RETRY_SEARCH`)을 계속 누름 | 이전 `COARSE_SEARCH`와 같은 입력으로 새 job 발주(notice에 버튼이 떠 있을 때만). 같은 kind · scope의 이전 job은 대체 처리 | 매번 Coarse 전체 비용 | `VERIFIED`(발주) · 상한 `PENDING` | `test_command.py` notice action · 대체는 #284 · 상한 §7-1 · #311 |
+| 번호판 다시 판독(`RETRY_PLATE_READ`)을 계속 누름 | 판독 실행 실패 notice가 떠 있고 이전 `PLATE_READ`가 있을 때만 새 job 발주 | 매번 판독 비용 | `VERIFIED`(발주) · 상한 `PENDING` | `test_command.py` · `test_plate_read_failure_projection.py` · 상한 §7-1 · #311 |
 | 같은 필드를 계속 정정(시각 등) | 정정마다 새 CorrectionRecord, `supersedes_ref`로 체인. 다른 후보를 고르면 후보에 묶인 체인은 새로 시작 | 재조립만(관찰 재사용) | `VERIFIED`(domain) · command 경로는 `DECIDED` | `test_correction.py` supersede 계열 · 입력형 command는 case-command 「다음 판본」 |
 | 상황 응답을 계속 바꿈(맞아요 ↔ 잘 모르겠어요) | 응답마다 덮어쓰고 `case_rev` 상승. `READY`에서 받으면 `EVIDENCE_REVIEW`로 내렸다 다시 확인. `[다른 상황]`(`CORRECTED`)은 이 판본에서 거부 | 재조립만 | `VERIFIED` | `test_situation_response.py` · `test_command.py`(READY에서 응답 · `CORRECTED` 거부) · case-command 계약 §5 |
 | 같은 버튼을 두 번 빠르게 누름 | 두 번째 요청은 `expected_case_rev`가 이미 올라 `stale_revision` | 없음 | `VERIFIED` | `test_command.py` stale 계열 |
@@ -101,7 +101,7 @@ case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTR
 
 - **정할 것:** 상한을 둘지, 둔다면 단위(횟수 · case당 비용)와 값, 넘었을 때 화면(버튼 숨김 · 안내 문구).
 - **case 제안(결정 아님):** 같은 입력의 재발주(같은 후보 재판독 · 같은 범위 재탐색)는 횟수로, 사용자가 범위를 바꾼 새 탐색 · 새 후보는 case당 비용으로 묶는다. 같은 입력을 반복해도 결과가 바뀔 가능성이 낮아 횟수가 맞고, 새 범위 · 새 후보는 사용자가 원하는 탐색이라 비용으로 보는 편이 낫다.
-- **누가:** 비용 · 남용 정책이라 case 혼자 정하지 않는다 — PM(제품) · Runtime(비용 장부) · web(화면)과 정한다. 이슈로 올린다.
+- **누가:** 비용 · 남용 정책이라 case 혼자 정하지 않는다 — PM(제품) · Runtime(비용 장부) · web(화면)과 정한다. 결정 카드 [#311](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/311).
 
 ### 7-2. 이미 다른 곳에서 추적 중인 결정
 
