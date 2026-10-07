@@ -44,7 +44,8 @@
 
   ```python
   class CaseTimelineSource(Protocol):
-      def timeline_for(self, source_asset_refs: list[str]) -> CaseTimeline: ...
+      def timeline_for(self, sources: list[dict]) -> CaseTimeline: ...
+      # sources[i] = {"source_asset_ref", "video_stream_ref" | None, "duration_sec" | None} — 등록 순서
 
   @dataclass(frozen=True)
   class CaseTimeline:
@@ -56,6 +57,7 @@
   - 영상 1개: `create_relative_timeline(source_asset_ref)`.
   - 영상 2개 이상: `create_relative_timeline_from_placements()`로 **등록 순서대로 이어 붙인다**(각 원본을 앞 원본 끝에서 시작, gap 없음). 파일마다 VIDEO 스트림 하나는 지금 real 경로(`real_e2e.py` `_unique_video_media_stream_ref`)와 같이 **VIDEO 스트림이 정확히 하나인지 검증**해 쓴다 — 고르지 않는다(정철원 확인 2026-09-21 「유일성 검증이지 임의 선택이 아니다」).
   - **이 순서 판단은 원래 recording 책임이다.** case가 임시로 대신하며, 판단은 이 구현 안에만 둔다. recording이 정렬(파일명 시각 · 전후방 겹침 · gap)을 맡게 되면 이 구현 하나만 바꾼다. recording에 작업을 요청하지 않는다(#313 의견 수렴).
+- **영상 스트림 ref는 등록할 때 받아 둔다.** recording 공개 경로에서 스트림 종류(VIDEO/AUDIO)를 알 수 있는 곳은 등록 결과(`register_local_source()` → `RegisteredSource.media_streams`)뿐이다. 그래서 `service.record_source_registered(case_id, source_asset, *, media_streams=None, store)`가 선택 인자로 스트림 목록을 받아, case가 VIDEO가 정확히 하나면 그 ref를, 아니면 `None`을 원본과 함께 저장한다(`sources`). 인자를 빼는 기존 호출은 그대로 동작한다(`video_stream_ref=None`).
 - composition root가 구현을 주입한다. 테스트는 가짜 구현을 쓴다.
 
 **알고 가는 한계**
@@ -106,7 +108,7 @@
 
 | 위치 | 변경 |
 | --- | --- |
-| `domain.py` | aggregate에 `description: str \| None`, `source_asset_refs: list[str]`(처리 가능한 등록 원본, 등록 순서) 추가. `record_source_registered()`가 `AVAILABLE`이면 ref 저장 |
+| `domain.py` | aggregate에 `description: str \| None`, `sources: list[dict]`(처리 가능한 등록 원본 `{source_asset_ref, video_stream_ref, duration_sec}`, 등록 순서) 추가. `record_source_registered(source_asset, media_streams=None)`가 `AVAILABLE`이면 저장 |
 | `store_state.py` | 위 두 필드를 `_STATE_FIELDS`에 추가 |
 | 새 `timeline_source.py` | `CaseTimeline` · `CaseTimelineSource` · `RecordingSequentialTimelineSource` |
 | 새 `analysis_start.py` | `start_analysis()` · `reflect_hint_extraction()` · `issue_initial_search()` · fingerprint · 예산 기본값(`InitialSearchBudget`) |
@@ -123,7 +125,7 @@
 - 설명: 공백만 적은 설명은 원문 그대로 저장 · 구조화 생략.
 - 범위: 4개 유형 · `[0, duration_ms]` · 예산 값 · fingerprint 결정성(같은 내용 같은 값, `scope_id` 무관).
 - port: 가짜 구현으로 case 로직, 임시 구현은 recording 실제 함수로 영상 1개 · 2개.
-- 저장: `description` · `source_asset_refs` 저장소 왕복.
+- 저장: `description` · `sources` 저장소 왕복. 등록: VIDEO 1개 → ref, 0개 · 2개 → `None`, 스트림 인자 없음 → `None`.
 - smoke: 빈 case → 업로드 2개 → `START_ANALYSIS` → 반영 → `COARSE_SEARCH`.
 
 ## 6. 고르지 않은 안
