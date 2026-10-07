@@ -26,6 +26,8 @@ JOB_KINDS = frozenset(
         "REPORT_VIDEO_EXPORT",
         # 신고용 번호판 이미지 생성 발주(#47). 실행 capability는 recording 구현 대기.
         "PLATE_IMAGE_EXPORT",
+        # 자연어 단서 구조화 발주(v1.7, #259). 발주 경로(`START_ANALYSIS`)는 case-command Draft §11 미결 뒤.
+        "HINT_EXTRACT",
     }
 )
 
