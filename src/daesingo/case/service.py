@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from daesingo.case import jobs
+from daesingo.case.analysis_start import hints_from_result
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
@@ -67,29 +68,18 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     return candidates
 
 
-# 단서 구조화 결과(#210 Search 의견) 필드 → `case.hints` 키. 매핑은 case 몫이다(#210 (a)).
-_HINT_FIELDS = {"time": "time_hint", "vehicle": "vehicle_hint", "situation": "situation_hint", "location": "location_hint"}
-
-
 def receive_hint_extraction(case: CaseAggregate, result: dict[str, Any]) -> None:
     """단서 구조화(`HINT_EXTRACT`) 결과를 `case.hints`에 반영한다 — case-command Draft §11.
 
     `OK`면 `*_hint` 4개를 `hints` 4개 키로 옮긴다(일부만 있어도 된다). 빈 문자열은 단서가 아니라 `None`
     으로 둔다. `ABSTAINED`(모델이 전부 보류) · `FAILED`(호출 · 파싱 실패)면 결과에 값이 있어도 쓰지 않고
     4개 모두 `None` — 값을 지어내지 않고 빈 단서로 탐색을 이어 간다. 그 밖의 상태는 결과 모양이 바뀐
-    것이라 `ValueError`로 멈춘다. 결과 모양은 #210 Search 의견을 가정했고 Search PR에서 맞춘다.
+    것이라 `ValueError`로 멈춘다. 결과 모양은 #210 Search 의견을 가정했고 Search PR에서 맞춘다. 매핑은 `analysis_start.hints_from_result()`.
 
     `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — scope 기본값과 첫 발주 fingerprint가
     정해지지 않았다(Draft §11 미결).
     """
-    status = result.get("status")
-    if status == "OK":
-        hints = {key: (result.get(field) or "").strip() or None for key, field in _HINT_FIELDS.items()}
-    elif status in ("ABSTAINED", "FAILED"):
-        hints = dict.fromkeys(_HINT_FIELDS)
-    else:
-        raise ValueError(f"알 수 없는 단서 구조화 결과 상태: {status!r} (OK · ABSTAINED · FAILED)")
-    case.record_extracted_hints(hints)
+    case.record_extracted_hints(hints_from_result(result))
 
 
 @dataclass
