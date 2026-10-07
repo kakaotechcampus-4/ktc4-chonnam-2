@@ -114,6 +114,8 @@ class AdapterSnapshot:
     # `evidence.plate_abstained`(#172 D-3)의 발동 근거 — CaseView 값만으로는 번호판 보류(1·2)와
     # 읽지 못함(1·3)이 같게 보인다. notice 판단에만 쓰고 CaseView에 싣지 않는다.
     evidence_needs: list[dict[str, Any]] = field(default_factory=list)
+    # 상황 응답 대기 중 evidence가 계산한 상황 독립 값 — `evidence` 부분 투영(`record_id=null`, #239)의 원천.
+    independent_facts: dict[str, Any] | None = None
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
@@ -128,6 +130,7 @@ def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
         plate_read_status=adapter.get_plate_read_status(),
         visual_evidence_decision=adapter.get_visual_evidence_decision(),
         evidence_needs=adapter.get_evidence_needs(),
+        independent_facts=adapter.get_independent_facts(),
     )
 
 
@@ -213,6 +216,7 @@ def build_view_from_adapter(
         plate_read_status=snapshot.plate_read_status,
         visual_evidence_decision=snapshot.visual_evidence_decision,
         visual_verify_status=visual_verify_status,
+        independent_facts=snapshot.independent_facts,
     )
     return derive_notices(
         view,

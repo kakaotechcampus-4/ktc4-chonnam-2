@@ -142,6 +142,12 @@ class ModuleAdapter(Protocol):
         음성 결과(`NOT_ASSEMBLED`)는 evidence가 없어 CaseView 값만으로 조립 전과 구분되지 않는다(#168 [A])."""
         ...
 
+    def get_independent_facts(self) -> dict[str, Any] | None:
+        """상황 응답 대기(`AWAIT_SITUATION_RESPONSE`) 중 evidence `resolve_independent_facts()`가 만든 상황
+        독립 값(`occurred_at` · `vehicle_number` · `location`). CaseView `evidence` 부분 투영(`record_id=null`,
+        #239)의 원천이다. EvidenceRecord가 아니며, 응답 대기가 아니면 None."""
+        ...
+
     def get_job_executions(self) -> list[dict[str, Any]]: ...
 
 
@@ -240,6 +246,10 @@ class MockFixtureAdapter:
 
     def get_visual_evidence_decision(self) -> str | None:
         """공용 mock fixture에는 음성(`NOT_OBSERVED`) 시나리오가 없다 — 판정을 보고하지 않는다."""
+        return None
+
+    def get_independent_facts(self) -> dict[str, Any] | None:
+        """공용 mock fixture에는 상황 응답 대기 시나리오가 없다."""
         return None
 
     # ── common/runtime ──────────────────────────────────────────────────
@@ -483,6 +493,9 @@ class RealAdapter:
     def get_visual_evidence_decision(self) -> str | None:
         return self._build_evidence_bundle().disposition.decision
 
+    def get_independent_facts(self) -> dict[str, Any] | None:
+        return self._build_evidence_bundle().independent_facts
+
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
         self._not_ready(
@@ -684,6 +697,9 @@ class RealVideoAdapter:
 
     def get_visual_evidence_decision(self) -> str | None:
         return self._build_evidence_bundle().disposition.decision
+
+    def get_independent_facts(self) -> dict[str, Any] | None:
+        return self._build_evidence_bundle().independent_facts
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
