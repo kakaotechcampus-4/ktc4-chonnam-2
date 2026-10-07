@@ -120,3 +120,7 @@ eval/manifests/**/events_draft.json
 
 # search 실험용 로컬 영상·정답지(원본 영상은 저장소에 두지 않는다)
 src/daesingo/search/video/
+
+# search 실험 결과 원본은 로컬에만 보관하고 요약 보고서만 커밋한다.
+/docs/modules/search/experiments/**/*.json
+/docs/modules/search/experiments/**/*.jsonl

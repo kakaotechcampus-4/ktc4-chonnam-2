@@ -1,6 +1,6 @@
 # 운영 구조 sol 파이프라인 Fine 720p: set1 10클립
 
-실행일: 2026-10-04. 구조화 결과: [JSON](./search-v3-gpt-sol-fine720-set1-2026-10-04-results.json)(후보 구간·판정·대상 연결 상태·primitive 상태·토큰·지연만 있음. 응답 원문은 저장소 밖 `.superpowers/`). 실행: `scripts/gemini_coarse_fine_slowdown_trace.py --transport image --conditions 0.5:0.25 --repeats 3 --profiles p3 --fine-height 720 --clips YT_0001,YT_0002,YT_0003 --env <임시 env>`.
+실행일: 2026-10-04. 구조화 결과: `search-v3-gpt-sol-fine720-set1-2026-10-04-results.json` (로컬 보관; 후보 구간·판정·대상 연결 상태·primitive 상태·토큰·지연만 있음. 응답 원문은 저장소 밖 `.superpowers/`). 실행: `scripts/gemini_coarse_fine_slowdown_trace.py --transport image --conditions 0.5:0.25 --repeats 3 --profiles p3 --fine-height 720 --clips YT_0001,YT_0002,YT_0003 --env <임시 env>`.
 
 ## 질문
 

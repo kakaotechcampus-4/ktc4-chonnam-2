@@ -4,7 +4,7 @@
 
 **가장 큰 원인은 이미지 입력이다.** 최신 LRCN 후보 실험의 총 1,267,644토큰 중 이미지 부분은 공식 계산식으로 약 1,182,816토큰, **93.3%**로 추정된다. 겹치는 후보를 독립 호출하고 5초 후보 앞뒤에 4초씩 붙여 4fps로 전송했다. 정상 클래스가 없는 분류 모델은 정상 영상도 Fine으로 보내게 한다. 프롬프트만 줄이는 것으로는 큰 절감이 어렵다.
 
-근거: [계산 결과 JSON](aihub-sol-token-analysis-2026-10-04-results.json), [최신 LRCN 실험](aihub-lrcn-sol-fine-2026-10-04.md), [앞선 공간 탐지 실험](aihub-coarse-sol-fine-2026-10-04.md). 실행 경로는 `scripts/aihub_hybrid_fine.py`이고 이미지 추출은 `scripts/gemini_fine_image_accuracy.py`의 `_extract`를 재사용한다.
+근거: `aihub-sol-token-analysis-2026-10-04-results.json` (로컬 보관), [최신 LRCN 실험](aihub-lrcn-sol-fine-2026-10-04.md), [앞선 공간 탐지 실험](aihub-coarse-sol-fine-2026-10-04.md). 실행 경로는 `scripts/aihub_hybrid_fine.py`이고 이미지 추출은 `scripts/gemini_fine_image_accuracy.py`의 `_extract`를 재사용한다.
 
 ## 실제 사용량과 추정 분해
 

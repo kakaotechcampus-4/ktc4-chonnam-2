@@ -4,7 +4,7 @@
 
 **이번 설정의 정답 구간·종류 중첩 판정은 4/13건으로, 앞선 공간 탐지 후보 + sol Fine의 2/13건보다 많았다.** 신규 8개 영상은 C08 신호 사건 1건을 확인했고, 정상 영상 3개에서 선택된 후보 7개는 모두 기각했다. 입력·출력 합계는 약 127만 토큰으로 앞선 약 196만보다 35.4% 적었다. 다만 후보 생성뿐 아니라 Fine의 검사 종류와 대상 힌트·신호 기준도 바뀌었고 각각 1회라, LRCN 자체의 우월성이나 운영 최적 구조를 입증한 비교는 아니다.
 
-구조화 결과·후보·호출별 판정: [results.json](aihub-lrcn-sol-fine-2026-10-04-results.json). 비교 대상: [공간 탐지 후보 + sol Fine](aihub-coarse-sol-fine-2026-10-04.md), [기존 sol set1](search-v3-gpt-sol-fine720-set1-2026-10-04.md), [AI Hub 모델 단독 평가](aihub-model-video-2026-10-04.md).
+구조화 결과·후보·호출별 판정: `aihub-lrcn-sol-fine-2026-10-04-results.json` (로컬 보관). 비교 대상: [공간 탐지 후보 + sol Fine](aihub-coarse-sol-fine-2026-10-04.md), [기존 sol set1](search-v3-gpt-sol-fine720-set1-2026-10-04.md), [AI Hub 모델 단독 평가](aihub-model-video-2026-10-04.md).
 
 ## 실행 조건
 
