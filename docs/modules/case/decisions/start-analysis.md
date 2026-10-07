@@ -23,9 +23,11 @@
    응답 202: case_view.running_jobs = [발주한 job, PENDING]  (8-7 · 8-11)
 
 [Worker T2] 단서 구조화 결과 반영 — search IntentHintResult(OK · ABSTAINED · FAILED)
+   load_for_update(case_id)
    ├─ hints: OK만 매핑, ABSTAINED · FAILED는 4개 모두 null (Draft §11)
-   ├─ HINT_EXTRACT 정산(REFLECTED, decisions/running-jobs-derivation.md)
+   ├─ 기다리던 HINT_EXTRACT 정산(REFLECTED, decisions/running-jobs-derivation.md)
    └─ [첫 탐색 발주]
+   save → 이번에 append한 JobRecord(COARSE_SEARCH)를 돌려줌 → composition root가 enqueue
 
 [첫 탐색 발주] (공용)
    timeline = CaseTimelineSource.timeline_for(등록된 영상 ref 목록)
@@ -60,7 +62,7 @@
 1. 전방 · 후방을 **별도 파일**로 찍으면 앞뒤로 이어 붙여 후방 시각이 밀린다.
 2. 이어 붙인 총 길이가 Coarse 한 번의 한도를 넘으면 실패할 수 있다 — 긴 영상 1개와 같은 기존 한계, 클립 분할(#168)로 풀린다.
 3. 여러 파일 분석 입력은 recording(`prepare_analysis_source_from_resolution`)이 지원하지만 real 경로는 파일 1개로만 검증됐다.
-4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). 실패는 §3-6 「타임라인을 만들지 못함」과 같이 처리한다.
+4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
 
 ### 3-2. 탐지 대상 유형 — 항상 4개 전부
 
@@ -87,7 +89,14 @@
 - 기다리다 멈추면 **빈 단서로 그대로 첫 탐색을 발주**한다(구조화 실패와 같은 처리, 사용자는 「전체 찾기」).
 - 값과 동작만 정한다. 실제 대기 timeout은 8-9에서 구현한다.
 
-### 3-6. 실패 처리
+### 3-6. 진입 함수 · 저장 경계
+
+- **command:** `execute_command()`(8-6 · 8-7 그대로) — 성공 시 `CommandResult.appended_job_records`에 `HINT_EXTRACT` 또는 `COARSE_SEARCH`가 담긴다.
+- **반영:** 새 `service.receive_hint_extraction_result(case_id, result, *, store, timelines, budget) -> ReflectionResult(appended_job_records)`. `load_for_update` → 반영 → **성공했을 때만** `save`, 이번에 append한 JobRecord를 돌려준다 — composition root(Worker T2)가 같은 transaction에서 enqueue한다(`CommandResult`와 같은 장치, `decisions/command-appended-job-records.md`). 저장소는 commit하지 않는다(#245 D-2).
+- **정산 대상 · 중복 결과:** 아직 기다리는 `HINT_EXTRACT`(정산되지 않은 것)를 `REFLECTED`로 정산한다. **기다리는 `HINT_EXTRACT`가 없으면 아무것도 바꾸지 않는다** — 반영 뒤에도 stage는 `SEARCHING`(Coarse 대기)이라 stage 검사만으로는 같은 결과의 두 번째 도착을 막지 못하기 때문이다. execution 단위 idempotency는 8-8에서 한다.
+- **설명 원문:** 받은 문자열을 **그대로** 저장해 CaseView `description`으로 내린다. 비었는지는 앞뒤 공백을 지운 뒤 판단한다(공백만 적으면 저장은 원문, 구조화는 생략).
+
+### 3-7. 실패 처리
 
 - **command:** 영상 0개 · `INTAKE` 아님(두 번째 클릭 포함) → `not_allowed`. payload 모양 → `invalid_payload`. 거부 시 상태를 바꾸지 않는다(case-command §6).
 - **타임라인을 만들지 못함(recording 오류):** 예외를 그대로 올린다. command 단계면 요청 실패, Worker 반영 단계면 transaction rollback 후 Runtime 재전달에 맡긴다. 탐색 실패 notice로 바꾸지 않는다 — 그 notice의 「다시 찾기」는 이전 `COARSE_SEARCH`가 있어야 동작해, 사용자가 누를 버튼 없이 막힌다. **한계:** 계속 실패하면 `SEARCHING`에 머문다(8-9 timeout에서 다룬다).
@@ -102,7 +111,7 @@
 | 새 `timeline_source.py` | `CaseTimeline` · `CaseTimelineSource` · `RecordingSequentialTimelineSource` |
 | 새 `analysis_start.py` | `start_analysis()` · `reflect_hint_extraction()` · `issue_initial_search()` · fingerprint · 예산 기본값(`InitialSearchBudget`) |
 | `command.py` | `START_ANALYSIS` handler, `execute_command(..., timelines=, budget=)` 주입 |
-| `service.py` | `receive_hint_extraction()`을 `reflect_hint_extraction()`으로 흡수(이름은 호출부 정리) |
+| `service.py` | `receive_hint_extraction_result()`(load · 반영 · save · appended 반환) 추가, 기존 aggregate 수준 `receive_hint_extraction()`은 `analysis_start.reflect_hint_extraction()`으로 흡수 |
 | `view.py` | `"description": case.description` |
 | case-command 계약 | §11을 정식 판본(§2 표 · §5 · §6)으로 이동, 미결 2 · 3 · 4 닫음 |
 | `design-refinement-w7-baseline.md` | 8-1 · 8-16 상태 |
@@ -110,7 +119,8 @@
 ## 5. 테스트
 
 - command: 영상 0개 거부 · 빈 설명 → `COARSE_SEARCH` 바로 · 설명 있음 → `HINT_EXTRACT` · 두 번째 클릭 거부 · 202 `running_jobs`에 발주 job `PENDING` · 거부 시 상태 무변화.
-- 반영: OK · ABSTAINED · FAILED 각각 hints · `HINT_EXTRACT` 정산 · scope + `COARSE_SEARCH` 1건 · `case_rev` 그대로.
+- 반영: OK · ABSTAINED · FAILED 각각 hints · `HINT_EXTRACT` 정산 · scope + `COARSE_SEARCH` 1건 · `case_rev` 그대로 · 진입 함수가 append한 `COARSE_SEARCH`를 돌려줌 · 기다리는 `HINT_EXTRACT`가 없으면(중복 결과) 아무것도 바꾸지 않음 · 실패 시 저장 안 함.
+- 설명: 공백만 적은 설명은 원문 그대로 저장 · 구조화 생략.
 - 범위: 4개 유형 · `[0, duration_ms]` · 예산 값 · fingerprint 결정성(같은 내용 같은 값, `scope_id` 무관).
 - port: 가짜 구현으로 case 로직, 임시 구현은 recording 실제 함수로 영상 1개 · 2개.
 - 저장: `description` · `source_asset_refs` 저장소 왕복.
