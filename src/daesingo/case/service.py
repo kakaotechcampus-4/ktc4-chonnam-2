@@ -463,7 +463,9 @@ def record_source_registered(case_id: str, source_asset: dict[str, Any], *, stor
     composition root가 recording 등록과 같은 transaction에서 부른다. `INTAKE`가 아니면
     `SourceNotAccepted` — 같은 transaction이라 recording 등록도 함께 rollback된다.
     """
-    store.get_case(case_id).record_source_registered(source_asset)
+    case = store.load_for_update(case_id)
+    case.record_source_registered(source_asset)
+    store.save(case)
 
 
 def get_view(
@@ -484,7 +486,7 @@ def get_view(
     "완성된 FastAPI/Worker 배선"에 해당한다.
     """
     case = store.get_case(case_id)
-    adapter = store.get_adapter(case_id)
+    adapter = store.get_adapter(case_id, case)
     return build_view_from_adapter(
         case, adapter, running_jobs=running_jobs, notices=notices, visual_verify_status=visual_verify_status
     )

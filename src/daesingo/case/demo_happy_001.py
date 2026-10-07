@@ -33,7 +33,6 @@ def run() -> dict[str, Any]:
     mock = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID)
     scope = mock.get_analysis_scopes()[0]
 
-    store = CaseStore()
     # 이슈 #103 — {}로 고정하면 후보 화면의 「기억 단서와 대조」가 그릴 값이 없다.
     case = CaseAggregate.intake(case_id=CASE_ID, hints=mock.get_hints(), manifest_summary={})
     case.start_search()
@@ -42,7 +41,6 @@ def run() -> dict[str, Any]:
     )
 
     real = RealAdapter(case_id=CASE_ID, case=case, search_scope=scope, mock_root=MOCK_ROOT)
-    store.register(case, real)
 
     _step(1, 4, "Recording+Search: 후보 탐색 중 (search.search_candidates 실제 호출)...")
     candidates = service.receive_search_candidates(case, real)
@@ -74,6 +72,9 @@ def run() -> dict[str, Any]:
     service.mark_ready_if_package_ready(case, real)
 
     _step(4, 4, "CaseView 조립 중 (case.get_view 실제 호출)...")
+    # store는 복사본을 주므로 여기까지의 변경을 한 번에 등록한다(get_view가 읽는 시점).
+    store = CaseStore()
+    store.register(case, real)
     view = service.get_view(CASE_ID, store=store)
 
     print()

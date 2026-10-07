@@ -293,6 +293,11 @@ class RealAdapter:
         self._candidates_by_id: dict[str, search_module.CandidateEvent] = {}
         self._clients = clients
 
+    def bind_case(self, case: CaseAggregate) -> None:
+        """요청마다 방금 로드한 aggregate를 붙인다(`store.AdapterRegistry`). 캐시는 객체 동일성이 아니라
+        `case_rev` · `candidate_generation` 값으로 판단하므로 그대로 동작한다."""
+        self._case = case
+
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
         raise NotImplementedError(
             f"RealAdapter.{method}()는 아직 미구현 — {reason} "
@@ -526,6 +531,11 @@ class RealVideoAdapter:
         # 세대가 바뀌면(재탐색) 같은 candidate_id라도 버린다(정책 표 1행).
         self._observations_by_candidate: dict[str, real_e2e.ObservationBundle] = {}
         self._observations_generation: int | None = None
+
+    def bind_case(self, case: CaseAggregate) -> None:
+        """요청마다 방금 로드한 aggregate를 붙인다(`store.AdapterRegistry`). 캐시는 객체 동일성이 아니라
+        `case_rev` · `candidate_generation` 값으로 판단하므로 그대로 동작한다."""
+        self._case = case
 
     def _not_ready(self, method: str, module: str, *, reason: str) -> None:
         raise NotImplementedError(

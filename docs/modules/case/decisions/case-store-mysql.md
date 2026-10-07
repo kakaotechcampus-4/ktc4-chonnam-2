@@ -1,6 +1,6 @@
 # CaseStore MySQL 영속화 — 1단계 설계
 
-> **상태: 설계 승인 (구현 전)** · 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6(`design-refinement-w7-baseline.md`), #245 D-1 · D-2 · D-5, #246 S-4, #250 RD-01
+> **상태: 1단계 구현(2026-10-06, `case-store-mysql-plan.md`). §6 진입점은 `store=` 인자를 유지하고 `CaseStore`가 repository · conn · adapters를 묶는다 — 동작은 이 문서 그대로** · 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6(`design-refinement-w7-baseline.md`), #245 D-1 · D-2 · D-5, #246 S-4, #250 RD-01
 > case schema · 저장소 인터페이스는 case 결정 범위다(#245 D-1 「Case table/schema는 case가 소유」). 다른 Owner와 맞춰야 하는 것은 §9에 따로 둔다.
 
 ## 1. 배경
@@ -203,5 +203,5 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 - §8 계약 테스트가 두 구현 모두 통과(MySQL은 로컬 실행 결과를 PR에 남긴다)
 - 기존 테스트 회귀 없음 · `scripts/check_boundaries.py` PASS
 - §9 항목 확인 결과를 PR에 남긴다
-- `erd-draft.md`의 case 부분(L380~392 · L421 `correction_records` 값 저장 「미정」)을 이 schema로 갱신
+- ✅ (2026-10-06) `erd-draft.md`의 case 부분(L380~392 · L421 `correction_records` 값 저장 「미정」)을 이 schema로 갱신
 - `design-refinement-w7-baseline.md` 8-6에 1단계 완료 · 2단계 남음을 적는다
