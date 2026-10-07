@@ -66,8 +66,10 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
 | `apps/web/` | 실제 웹 앱. `CaseView` 소비 화면·컴포넌트 구현 진행 중 (Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
-| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker` composition root는 아직 README만 있는 골격 |
+| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker`는 RT-01 설정·로그 bootstrap 구현이 있다(HTTP route·Worker loop 미구현) |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
+| `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
+| `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
 | `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
@@ -113,18 +115,20 @@ npm run dev:prototype  # Vite가 출력하는 URL 열기 (기본 http://localhos
 npm run build              # build 스크립트가 있는 workspace 전부
 npm run preview:prototype  # 프로토타입 프로덕션 빌드 서빙
 npm run dev:web            # apps/web 개발 서버
+npm run preview:web        # apps/web 프로덕션 빌드 서빙
 npm run test:web           # apps/web 테스트 (vitest)
 ```
 
 ### Python (`src/daesingo`, `eval/`)
 
-Python 3.10 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
+Python 3.12 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
 
 ```bash
-pip install -e ".[test]"   # daesingo 패키지 + pytest 설치 (루트에서 한 번)
-pytest                      # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
-pytest tests/case/          # 모듈 하나만
-python scripts/check_boundaries.py  # 모듈 경계 위반 검사
+uv sync --locked --extra test   # daesingo + pytest를 uv.lock 잠금 버전으로 설치 (루트에서 한 번)
+# uv 없이: pip install -e ".[test]" — 이 경우 아래 명령의 `uv run`은 빼고 실행한다
+uv run pytest               # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
+uv run pytest tests/case/   # 모듈 하나만
+uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 ```
 
 ### 프로토타입에 대해

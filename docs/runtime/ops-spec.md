@@ -254,7 +254,7 @@ SSM Parameter Store SecureString
 확정(RD-17, [#246](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/246), 2026-10-04). recording metadata schema · ref 복원 · FrameRef durability 구현은 recording이 소유한다.
 
 - **bytes.** api와 worker는 같은 host의 **local filesystem mount 하나**를 공유한다. 그 안에 staging · source · derived 계열 경계를 둔다. api · worker는 같은 image 계열과 **같은 numeric UID**로 실행한다. baseline에 Object Storage를 두지 않는다(§13).
-- **publish 순서 — 파일 먼저, row 나중.** upload bytes를 같은 mount의 staging에 쓰고 → `fsync` → 같은 mount의 final 위치로 publish → recording 등록 · metadata commit. staging에 container `/tmp`나 다른 volume을 쓰지 않는다 — 다른 mount에서 오는 rename은 `EXDEV`다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)). 정상 순서에서 crash가 남기는 것은 row 없는 orphan · staging 파일뿐이고 dangling DB ref가 아니다. orphan · staging 정리 나이는 workflow §6 값이다.
+- **publish 순서 — 파일 먼저, row 나중.** upload bytes를 같은 mount의 staging에 쓰고 → `fsync` → 같은 mount의 final 위치로 publish → recording 등록 · metadata commit. staging에 container `/tmp`나 다른 volume을 쓰지 않는다 — 다른 mount에서 오는 rename은 `EXDEV`다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)). 정상 순서에서 crash가 남기는 것은 row 없는 orphan · staging 파일뿐이고 dangling DB ref가 아니다. orphan · staging · temp 정리 나이와 scan 주기는 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9(B-C1 ~ B-C4), upload 한도 · 수신 timeout은 같은 문서 §2.6이다.
 - **metadata.** SourceAsset · MediaStream · local locator · case↔asset 연결처럼 process 사이에 공유해야 하는 recording metadata는 recording 소유 MySQL table에 둔다. Runtime은 recording schema를 소유하지 않는다.
 - **persistent 범위 원칙.** ref가 process 경계나 process 수명을 넘어 다시 역참조되면 persistent다 — SourceAsset · MediaStream · locator · case↔asset 연결 · restart 뒤 다시 필요한 timeline · span resolution · IncidentClip · DerivedAsset, 그리고 **CaseView에 노출된 FrameRef**(`thumb_ref` · `preview_ref` · `plate_preview_ref`). FrameRef를 bytes로 저장할지 locator · timestamp를 저장해 재생성할지는 recording 구현 선택이다. Worker 안에서만 쓰고 다시 만들 수 있는 AnalysisSource bytes · frame inspection cache는 process-local로 둘 수 있다(RD-09).
 - **restart.** ref는 등록 때 한 번 발급해 persist하고 restart 뒤에는 다시 등록하지 않고 복원한다. 같은 파일을 사용자가 새로 등록하면 새 logical asset이라는 현재 의미는 유지한다.
@@ -287,7 +287,7 @@ Python version의 executable SoT는 prose가 아니라 실제 config/workflow다
 
 ## 6. Structured Logging
 
-Runtime 운영 로그는 key-value structured log를 기본으로 한다.
+Runtime 운영 로그는 key-value structured log를 기본으로 한다. container local log rotation 상한과 application log level의 시작값은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.13(B-O1 · B-O2)이다 — log transport와 retention 기간은 그 값이 아니다(§23).
 
 권장 correlation:
 
@@ -426,7 +426,7 @@ Runtime Tech Spec의 endpoint 의미:
 - 외부 AI provider 하나의 장애를 API 전체 liveness failure로 취급하지 않음
 - Worker는 Runtime DB의 heartbeat/lease 기반으로 별도 관측 가능
 
-실제 restart/alert threshold는 deployment 환경이 생긴 뒤 정한다.
+`/health/ready` probe 제한 시간은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.10(B-H1 ~ B-H3)이다. 실제 restart/alert threshold는 deployment 환경이 생긴 뒤 정한다.
 
 ## 10. Storage Lifecycle
 

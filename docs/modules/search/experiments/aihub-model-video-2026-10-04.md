@@ -4,7 +4,7 @@
 
 **결론: 차선·차량·신호등을 관찰하는 보조 모델로 활용할 가능성이 있다. 현재 가중치만으로 위반 여부를 자동 확정하기는 어렵다.** LRCN은 정상 클래스가 없고, 차선 모델은 점선을 실선으로 높은 확신으로 탐지한 사례가 있다. 후보 차량을 추적하고 차선·신호등을 연결하는 단계가 추가로 필요하다.
 
-수치 원문: [results.json](aihub-model-video-2026-10-04-results.json). 재실행 코드: `scripts/aihub_model_video_{data,adapters,infer,lrcn,score}.py`.
+수치 원문: `aihub-model-video-2026-10-04-results.json` (로컬 보관). 재실행 코드: `scripts/aihub_model_video_{data,adapters,infer,lrcn,score}.py`.
 
 ## 1. 실제로 확인한 모델 구성
 

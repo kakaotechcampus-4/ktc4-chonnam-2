@@ -4,7 +4,7 @@
 
 **전체 영상에서 후보를 만들고 sol로 재확인했지만, 새 영상의 최종 검출 개선은 확인하지 못했다.** 정답 유형의 후보 본문은 13건 중 7건과 겹쳤고, 앞뒤 4초를 포함한 Fine 입력은 10건을 포함했다. Fine이 정답 구간·유형에 맞게 `OBSERVED`를 낸 사건은 2건이다. 신규 8개 영상은 모두 미검출이었다. 정상 영상 3개는 모두 기각했다. 다른 차량을 대상으로 답하거나 녹색 신호 주행을 신호위반으로 답하는 실패를 확인했다.
 
-수치·후보·호출별 구조화 기록: [results.json](aihub-coarse-sol-fine-2026-10-04-results.json). 직전 모델 단독 평가: [AI Hub 모델 9종](aihub-model-video-2026-10-04.md). 기존 sol 비교: [set1 10개 영상](search-v3-gpt-sol-fine720-set1-2026-10-04.md).
+수치·후보·호출별 구조화 기록: `aihub-coarse-sol-fine-2026-10-04-results.json` (로컬 보관). 직전 모델 단독 평가: [AI Hub 모델 9종](aihub-model-video-2026-10-04.md). 기존 sol 비교: [set1 10개 영상](search-v3-gpt-sol-fine720-set1-2026-10-04.md).
 
 ## 실행 구조
 

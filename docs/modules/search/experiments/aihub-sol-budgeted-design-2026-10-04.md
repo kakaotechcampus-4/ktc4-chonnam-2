@@ -27,7 +27,7 @@
 | H0 사용량 | 51호출, 2,390이미지, 입력 1,243,313·출력 24,331, 총 1,267,644토큰 |
 | H0의 한계 | 1회·이미 확인한 개발 영상, 정확한 위반 차량 GT 없음 |
 
-로컬 기준 파일은 `.omc/aihub-models/lrcn-fine/candidates.json`, `fine.jsonl`, `score.json`이다. 후보 SHA256은 `daff0081e239816a297f4f567f6af89ecff83c1ea0d24b63adb4cd8200ec075f`, Fine 응답은 `21c207ff81eae6a43982f092edf5ca4478ddd2026c700a64158878a819f98a11`, 정답·프레임 manifest `.omc/aihub-models/run/manifest.json`은 `24d776ced9bc254130beaa7485908ff414992e7612b06e200bf78bd6860ea4ed`다. 공개 수치는 [기존 결과 JSON](aihub-lrcn-sol-fine-2026-10-04-results.json)에 있다.
+로컬 기준 파일은 `.omc/aihub-models/lrcn-fine/candidates.json`, `fine.jsonl`, `score.json`이다. 후보 SHA256은 `daff0081e239816a297f4f567f6af89ecff83c1ea0d24b63adb4cd8200ec075f`, Fine 응답은 `21c207ff81eae6a43982f092edf5ca4478ddd2026c700a64158878a819f98a11`, 정답·프레임 manifest `.omc/aihub-models/run/manifest.json`은 `24d776ced9bc254130beaa7485908ff414992e7612b06e200bf78bd6860ea4ed`다. 공개 수치는 [기존 실험 보고서](aihub-lrcn-sol-fine-2026-10-04.md)에 있고, 결과 원본 JSON은 로컬에 보관한다.
 
 5초 본문은 사건 9/13건과 겹치고 앞뒤 4초 입력은 10/13건과 겹쳤다. 후보 기준으로는 각각 10/51개·14/51개다. 추가 앞뒤 구간 합계 342.61초 중 정답 구간과 겹친 시간은 약 16.03초이며 중복 전송도 포함한다. 새로 포함한 사건은 C28 한 건이고 Fine이 기각했다. 최종 확인된 네 사건은 모두 5초 본문과 겹쳤다. **이 사실만으로 전후 맥락 없이 같은 판정이 나온다고 가정하지 않는다.**
 
@@ -157,7 +157,7 @@ P1에 추가할 지침 초안:
 
 실행기는 현재 `scripts/aihub_hybrid_fine.py`의 고정 padding=4·fps=4 경로를 실험 조건으로 지정할 수 있게 확장해야 한다. 대표 원본·overlay 역할과 시각을 기록하는 입력 manifest, 실제 요청·출력·예산 ledger, 조건별 checkpoint를 추가해야 한다. 현재 CLI에 없는 옵션으로 실행 명령을 문서에 제시하지 않는다. 구현 후 후보 선택·추출·표시 정합·시각 환산·예산 중단·기존 채점과의 호환성을 검증한다.
 
-실험별 `.omc/aihub-models/budgeted-sol-2026-10-04/` 아래 입력 manifest·프롬프트·응답·표시 검토 이미지·QA를 보존하고, 저장소에는 비밀 설정·응답 원문을 제외한 결과 JSON과 한국어 보고서를 둔다. manifest에는 후보 해시, 실행 소스·프롬프트 해시, arm·repeat·candidate index, 실제 시각·역할·이미지 크기·해시를 넣어 복구 시 다른 조건을 섞지 않게 한다. 기존 후보·응답 파일과 제품 검색 경로는 그대로 유지한다.
+실험별 `.omc/aihub-models/budgeted-sol-2026-10-04/` 아래 입력 manifest·프롬프트·응답·표시 검토 이미지·QA와 결과 원본 JSON·JSONL을 로컬에 보존하고, 저장소에는 비밀 설정·응답 원문을 제외한 한국어 요약 보고서를 둔다. manifest에는 후보 해시, 실행 소스·프롬프트 해시, arm·repeat·candidate index, 실제 시각·역할·이미지 크기·해시를 넣어 복구 시 다른 조건을 섞지 않게 한다. 기존 후보·응답 파일과 제품 검색 경로는 그대로 유지한다.
 
 이번 문서는 실험 설계이며 새 추론·API 호출·제품 변경을 포함하지 않는다. 대상 crop, LRCN 후보 재선정, 새 추적 모델, 독립 신규 영상 평가를 동시에 추가하지 않는다. 원본 관찰이 개선돼도 대상 식별이 주요 실패로 남으면 3단계 결과 작성 후 crop 전달만 바꾸는 다음 설계를 만든다. 운영 채택을 고려할 수준이 되면 이 개발 영상과 분리된 추가 영상으로 검증을 설계한다.
 
