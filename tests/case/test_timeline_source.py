@@ -75,3 +75,10 @@ def test_multiple_sources_need_known_duration(tmp_path):
     sources[1] = dict(sources[1], duration_sec=None)
     with pytest.raises(TimelineUnavailable):
         RecordingSequentialTimelineSource(service).timeline_for(sources)
+
+
+def test_single_source_with_two_video_streams_is_unavailable(tmp_path):
+    # 전방 · 후방이 한 파일(VIDEO 2개)이면 영상이 1개여도 고를 기준이 없다 — 발주 전에 막는다(spec §3-1 한계 4).
+    service = _service(video_streams=2)
+    with pytest.raises(TimelineUnavailable):
+        RecordingSequentialTimelineSource(service).timeline_for([_register(service, tmp_path, "front_rear.avi")])

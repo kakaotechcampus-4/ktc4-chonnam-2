@@ -64,7 +64,8 @@
 1. 전방 · 후방을 **별도 파일**로 찍으면 앞뒤로 이어 붙여 후방 시각이 밀린다.
 2. 이어 붙인 총 길이가 Coarse 한 번의 한도를 넘으면 실패할 수 있다 — 긴 영상 1개와 같은 기존 한계, 클립 분할(#168)로 풀린다.
 3. 여러 파일 분석 입력은 recording(`prepare_analysis_source_from_resolution`)이 지원하지만 real 경로는 파일 1개로만 검증됐다.
-4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
+4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). **영상이 1개여도 같다** — 임시 구현이 발주 전에 막는다(composition root는 등록 때 `media_streams`를 넘겨야 한다). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
+5. **부를 때마다 recording 타임라인이 새로 생긴다.** 같은 원본이어도 `timeline_id`가 달라져 `COARSE_SEARCH` fingerprint도 달라진다(재전달 · 재시도 때) — 재사용 캐시가 생기면 적중하지 않는다. recording 저장소가 case와 같은 transaction이 아니면 case rollback 뒤 타임라인이 고아로 남는다. recording의 case 타임라인 기능(또는 재사용 조회)이 생기면 함께 풀린다.
 
 ### 3-2. 탐지 대상 유형 — 항상 4개 전부
 

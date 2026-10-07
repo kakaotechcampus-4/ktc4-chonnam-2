@@ -43,13 +43,16 @@ class RecordingSequentialTimelineSource:
     def timeline_for(self, sources: list[dict[str, Any]]) -> CaseTimeline:
         if not sources:
             raise TimelineUnavailable("처리 가능한 원본이 없다")
+        # 영상 개수와 무관하게 VIDEO 스트림을 정할 수 있어야 한다 — 전방 · 후방이 한 파일(VIDEO 2개)이면 발주 전에
+        # 막는다(spec §3-1 한계 4). composition root는 등록 때 `media_streams`를 넘겨야 한다.
+        for source in sources:
+            if source.get("video_stream_ref") is None:
+                raise TimelineUnavailable(f"VIDEO 스트림을 정할 수 없는 원본: {source['source_asset_ref']!r}")
         if len(sources) == 1:
             return _case_timeline(self._recording.create_relative_timeline(sources[0]["source_asset_ref"]))
         placements = []
         start = 0.0
         for source in sources:
-            if source.get("video_stream_ref") is None:
-                raise TimelineUnavailable(f"VIDEO 스트림을 정할 수 없는 원본: {source['source_asset_ref']!r}")
             duration = source.get("duration_sec")
             if not duration or duration <= 0:
                 raise TimelineUnavailable(f"길이를 모르는 원본: {source['source_asset_ref']!r}")

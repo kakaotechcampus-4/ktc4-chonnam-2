@@ -60,7 +60,23 @@ def test_start_without_sources_is_not_allowed_and_saves_nothing():
     store, case_id = _store_with_sources(0)
     result = command.execute_command(_start(case_id, "x"), store=store, timelines=FakeTimelines())
     assert result.response["error"]["code"] == "case.command.not_allowed"
-    assert store.get_case(case_id).stage == "INTAKE"
+    saved = store.get_case(case_id)
+    assert (saved.stage, saved.description, saved.job_records) == ("INTAKE", None, [])
+
+
+def test_start_with_only_unavailable_sources_is_not_allowed():
+    store = CaseStore()
+    case_id = service.create_case(store=store)
+    service.record_source_registered(
+        case_id,
+        {"source_asset_ref": "sa_bad", "availability": "UNAVAILABLE", "duration_sec": None},
+        media_streams=[{"media_stream_ref": "ms_bad", "media_type": "VIDEO"}],
+        store=store,
+    )
+    result = command.execute_command(_start(case_id, "x"), store=store, timelines=FakeTimelines())
+    assert result.response["error"]["code"] == "case.command.not_allowed"
+    saved = store.get_case(case_id)
+    assert (saved.stage, saved.description, saved.job_records) == ("INTAKE", None, [])
 
 
 def test_second_start_is_not_allowed():
