@@ -88,7 +88,7 @@ def issue_initial_search(
 def start_analysis(
     case: CaseAggregate, description: str, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
 ) -> None:
-    """`INTAKE`에서만(`start_search()`가 아니면 `InvalidTransition`), 처리 가능한 원본이 1개 이상일 때만 시작한다.
+    """`INTAKE`에서만(아니면 `InvalidTransition`), 처리 가능한 원본이 1개 이상일 때만(아니면 `AnalysisStartNotAllowed`) 시작한다.
     설명이 비었으면(공백만 포함) 구조화 없이 바로 첫 탐색, 아니면 `HINT_EXTRACT`를 발주한다. 검사는 상태를
     바꾸기 전에 한다."""
     if case.stage != "INTAKE":
