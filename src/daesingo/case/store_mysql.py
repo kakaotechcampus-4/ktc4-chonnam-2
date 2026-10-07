@@ -124,14 +124,8 @@ class MySQLCaseRepository:
 
     def save(self, conn: Any, case: CaseAggregate) -> None:
         row = to_row(case)
-        result = conn.execute(
-            cases_table.update().where(cases_table.c.case_id == row.case_id).values(
-                case_rev=row.case_rev, stage=row.stage, selection_rev=row.selection_rev,
-                state=row.state, updated_at=_now(),
-            )
-        )
-        if result.rowcount == 0:
-            raise CaseNotFound(f"등록되지 않은 case_id: {row.case_id!r}")
+        # 검사를 모든 쓰기보다 먼저 한다 — 저장소는 rollback하지 않으므로, 호출자가 예외를 삼키고 commit해도
+        # `cases` 행만 바뀐 반쪽 상태가 남지 않게(#282 Runtime 리뷰).
         stored_jobs = self._ids(conn, job_records_table, "job_id", row.case_id)
         stored_corrections = self._ids(conn, correction_records_table, "correction_id", row.case_id)
         check_append_only(stored_jobs, [r["job_id"] for r in row.job_records], "job_records")
@@ -145,6 +139,14 @@ class MySQLCaseRepository:
         for scope_id, scope in stored_scopes.items():
             if row.analysis_scopes.get(scope_id) != scope:
                 raise AppendOnlyViolation(f"analysis_scopes {scope_id!r}가 바뀌거나 지워졌다")
+        result = conn.execute(
+            cases_table.update().where(cases_table.c.case_id == row.case_id).values(
+                case_rev=row.case_rev, stage=row.stage, selection_rev=row.selection_rev,
+                state=row.state, updated_at=_now(),
+            )
+        )
+        if result.rowcount == 0:
+            raise CaseNotFound(f"등록되지 않은 case_id: {row.case_id!r}")
         self._append_records(
             conn, row, job_from=len(stored_jobs), correction_from=len(stored_corrections),
             existing_scopes=set(stored_scopes),
