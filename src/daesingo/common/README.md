@@ -25,12 +25,14 @@ storage   storage adapters
 
 1차 Mock E2E 범위로 `JobExecution` v1.1 모델, 공용 fixture loader와 in-memory lifecycle을 구현했다. `InMemoryJobExecutionStore`는 attempt 증가와 허용 상태 전이를 검증한다.
 
+RT-01은 `config/`의 불변 RuntimeConfig/DbSettings와 api·worker별 Baseline 기본값·불변조건 검증, `bootstrap.py`의 파일 1회 로딩·모듈 factory 검증·fail-fast, `logging/`의 JSON line stdout event·contextvars·trace/thread helper를 추가했다. `load_env_file()`의 기존 cwd `.env` 동작은 유지한다. DB URL·경로·credential 값과 exception 원문은 운영 event에 넣지 않는다. event helper의 식별자 필드에는 신뢰된 ID/코드만 전달하며 일반 free text를 전달하지 않는다. root/타사 logger 전체를 마스킹하는 기능은 아니다.
+
 아직 실제 구현되지 않은 범위:
 
 - MySQL DB Queue / claim
 - lease / heartbeat / stale sweep
 - Runtime UsageRecord DB persistence
-- API / Worker composition root
+- API / Worker 실제 app·handler 조립(config bootstrap만 있음)
 - Runtime health endpoint
 
 따라서 README의 Runtime 항목을 구현 완료로 해석하지 않는다.
