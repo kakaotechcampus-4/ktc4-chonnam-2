@@ -131,6 +131,8 @@ uv run pytest tests/case/   # 모듈 하나만
 uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 ```
 
+MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 MySQL 8.4 service와 `DAESINGO_REQUIRE_MYSQL=1`을 사용하고, MySQL 테스트의 skip/xfail 0·필수 시나리오·기존 Case MySQL 실행을 JSON/JUnit 보고서로 검사한다. URL이 없는 로컬 실행은 MySQL integration을 skip한다.
+
 ### 프로토타입에 대해
 
 `apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.

@@ -50,3 +50,8 @@ where = ["src"]
 addopts = "-ra"
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "mysql: requires a real MySQL 8.4 server (CI: no skips or xfails)",
+  "mysql_scenario(name): required RT-02(a) MySQL acceptance evidence",
+  "mysql_check(role, scenario): required role-specific real MySQL execution evidence",
+]
