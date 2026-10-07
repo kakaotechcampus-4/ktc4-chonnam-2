@@ -359,7 +359,7 @@ def test_malformed_request_is_invalid_payload(overrides):
 
 
 def _real_happy_store() -> tuple[CaseStore, CaseAggregate]:
-    """상황 응답 뒤에도 FINAL이 UNKNOWN이라(I4 부재) Package가 나오지 않는 real(fixture) 경로."""
+    """real(fixture) 경로 — `observation_facts=None`. 최종 영상 관찰(I4)은 FINAL을 막지 않는다(#280)."""
     scope = MockFixtureAdapter(MOCK_ROOT, "happy_001").get_analysis_scopes()[0]
     case = CaseAggregate.intake(case_id="case_cmd_real", hints={}, manifest_summary={})
     real = RealAdapter(case_id=case.case_id, case=case, search_scope=scope, mock_root=MOCK_ROOT)
@@ -413,8 +413,27 @@ def test_mark_reviewed_follows_in_one_flow():
     assert second["case_view"]["user_reviewed"] is True
 
 
+class _PackageNeverReady(MockFixtureAdapter):
+    """FINAL이 판정되지 않아 Package가 끝내 없는 adapter — 어느 rule이 막는지와 무관하게 gate만 본다."""
+
+    def __init__(self) -> None:
+        super().__init__(MOCK_ROOT, "happy_001")
+
+    def get_report_package(self):
+        return None
+
+    def get_requirement_report(self, scope):
+        return None if scope == "FINAL_PACKAGE" else super().get_requirement_report(scope)
+
+
 def test_command_stays_in_evidence_review_when_package_blocked():
-    store, case = _real_happy_store()
+    adapter = _PackageNeverReady()
+    case = CaseAggregate.intake(case_id="case_cmd_blocked", hints={}, manifest_summary={})
+    case.start_search()
+    service.receive_search_candidates(case, adapter)
+    case.select_top_ranked()
+    store = CaseStore()
+    store.register(case, adapter)
     rev = case.case_rev
 
     response = command.handle_command(
@@ -425,6 +444,21 @@ def test_command_stays_in_evidence_review_when_package_blocked():
     assert response["case_view"]["stage"] == "EVIDENCE_REVIEW"
     assert response["case_view"]["package"] is None
     assert response["case_view"]["case_rev"] == rev + 1
+
+
+def test_real_path_moves_to_ready_without_report_video_observation():
+    """#280 — real 경로는 `observation_facts=None`이지만 I4 부재만으로 FINAL이 막히지 않는다."""
+    store, case = _real_happy_store()
+    rev = case.case_rev
+
+    response = command.handle_command(
+        _request(case, "RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"}), store=store
+    )
+
+    assert response["ok"] is True
+    assert response["case_view"]["stage"] == "READY"
+    assert response["case_view"]["package"] is not None
+    assert response["case_view"]["case_rev"] == rev + 2  # 응답 +1, READY 전이 +1
 
 
 def test_rejected_command_does_not_move_to_ready():
