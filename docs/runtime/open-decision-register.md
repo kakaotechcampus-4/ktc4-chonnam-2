@@ -99,22 +99,22 @@ workflow §5(구현 전 필수 Decision 처리)의 추적표다. **결정의 선
 
 ### §5 → §6 Baseline 입력
 
-§5 결정이 필요로 하는 숫자다. **값은 여기서 정하지 않는다**(workflow §6). 축과 제약의 SoT는 [RD-04](#rd-04--execution-timing-provisional-baseline의-축과-제약)이며 아래는 §6 입력 목록이다.
+§5 결정이 필요로 하는 숫자다. **값은 여기서 정하지 않는다**(workflow §6). 축과 제약의 SoT는 [RD-04](#rd-04--execution-timing-provisional-baseline의-축과-제약)이며 아래는 §6 입력 목록이다. 2026-10-05에 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md)가 시작값을 정했다 — 마지막 열은 그 문서의 ID이고 숫자는 복제하지 않는다.
 
-| Baseline parameter | Needed by | Allowed range / constraint | Evidence | Experiment |
-| --- | --- | --- | --- | --- |
-| STALE 자동 retry 상한 | #244 R-1 · #248 | 0 이상 정수. 자동 retry는 STALE에만 적용(provider 일시 장애 재시도는 Search 소유 값) | JobExecution 머리말 · fixture `scenario_infra_failure_001` | P2 · Real E2E의 STALE 빈도 |
-| STALE retry backoff (`available_at` 계산) | #248 Q-1 | Worker가 sleep하지 않음 · attempt ≥ 2의 `queued_at → started_at`에 포함됨 | Tech Spec §6.3 | P2 |
-| lease duration · STALE threshold | RD-01h · RD-04b | 정상 실행 중 한 번의 sync provider 호출 · ffmpeg 구간보다 길거나 heartbeat가 그 구간에도 갱신돼야 함(별도 heartbeat thread) · case job wall(`max_latency_sec`)과의 관계는 RD-04b | Tech Spec §7 · `timeout-fallback.md` | P2 — 실제 호출 지연 분포 |
-| heartbeat interval | RD-01h · #245 C-3 | lease duration보다 충분히 짧음 · 중단 요청 관찰 지연의 하한을 정함 | #245 C-3 | P2 |
-| stale sweep interval · Worker polling interval | RD-04e | 독립 config 축 여부는 RD-04 | Tech Spec §7.3 | P2 |
-| Runtime session `innodb_lock_wait_timeout` | Tech Spec §4.3 | claim은 `SKIP LOCKED`라 대기하지 않음 · 전이 UPDATE의 대기 상한 | spike S1 · S2 | Runtime integration |
-| DB pool pre-ping · recycle | Tech Spec §4.4 | MySQL `wait_timeout`보다 짧은 recycle | Research 01 §4.10 | 구현 test(Research 01 Spike F) |
-| upload 전체 body 한도 | #247 H-5 · HTTP API Contract §5.2(`413`) | Starlette ≥ 1.6 middleware로 강제 · 단일 EC2 disk working set(Ops §11) 안 | Research 02 §4.7 | Research 02 Spike E · G · P2 |
-| frame 응답 `Cache-Control` `max-age` | HTTP API Contract §5.5 | `private` 고정 · 같은 `frame_ref`는 다른 frame을 가리키지 않음(SourceAsset Contract §5.2) | — | 구현 test |
-| `/health/ready` dependency 검사 제한 시간 | HTTP API Contract §5.7 · Tech Spec §14 | 외부 provider를 부르지 않음 · DB · 공유 저장소만 | Ops §9 | 배포 환경(RD-12h) |
-| staging 잔여 · orphan 파일 정리 나이 | #246 S-2 | 진행 중 upload를 지우지 않을 만큼 김 | Research 02 §4.4 · §5 | Research 02 Spike D · F |
-| UsageRecord `cost_amount` precision / scale | Tech Spec §4.5 | Contract 예시와 cost 생산자(#244 U-2) 출력 자릿수를 덮음 · 초과 자릿수는 거부 | UsageRecord Contract §4 · §6 | migration test — §6 값이 아니라 RD-01g 안의 구현 세부로 **첫 migration**에서 고정 |
+| Baseline parameter | Needed by | Allowed range / constraint | Evidence | Experiment | v0.1 |
+| --- | --- | --- | --- | --- | --- |
+| STALE 자동 retry 상한 | #244 R-1 · #248 | 0 이상 정수. 자동 retry는 STALE에만 적용(provider 일시 장애 재시도는 Search 소유 값) | JobExecution 머리말 · fixture `scenario_infra_failure_001` | P2 · Real E2E의 STALE 빈도 | B-R1 |
+| STALE retry backoff (`available_at` 계산) | #248 Q-1 | Worker가 sleep하지 않음 · attempt ≥ 2의 `queued_at → started_at`에 포함됨 | Tech Spec §6.3 | P2 | B-R2 · B-R3 |
+| lease duration · STALE threshold | RD-01h · RD-04b | 정상 실행 중 한 번의 sync provider 호출 · ffmpeg 구간보다 길거나 heartbeat가 그 구간에도 갱신돼야 함(별도 heartbeat thread) · case job wall(`max_latency_sec`)과의 관계는 RD-04b | Tech Spec §7 · `timeout-fallback.md` | P2 — 실제 호출 지연 분포 | B-L2 · B-L3 |
+| heartbeat interval | RD-01h · #245 C-3 | lease duration보다 충분히 짧음 · 중단 요청 관찰 지연의 하한을 정함 | #245 C-3 | P2 | B-L1 · B-X1 |
+| stale sweep interval · Worker polling interval | RD-04e | 독립 config 축 여부는 RD-04 | Tech Spec §7.3 | P2 | B-L4 · B-L5 · B-Q1 ~ B-Q3 |
+| Runtime session `innodb_lock_wait_timeout` | Tech Spec §4.3 | claim은 `SKIP LOCKED`라 대기하지 않음 · 전이 UPDATE의 대기 상한 | spike S1 · S2 | Runtime integration | B-D1 |
+| DB pool pre-ping · recycle | Tech Spec §4.4 | MySQL `wait_timeout`보다 짧은 recycle | Research 01 §4.10 | 구현 test(Research 01 Spike F) | B-D2 ~ B-D8 |
+| upload 전체 body 한도 | #247 H-5 · HTTP API Contract §5.2(`413`) | Starlette ≥ 1.6 middleware로 강제 · 단일 EC2 disk working set(Ops §11) 안 | Research 02 §4.7 | Research 02 Spike E · G · P2 | B-U1 ~ B-U5 |
+| frame 응답 `Cache-Control` `max-age` | HTTP API Contract §5.5 | `private` 고정 · 같은 `frame_ref`는 다른 frame을 가리키지 않음(SourceAsset Contract §5.2) | — | 구현 test | B-F1 · B-F2 |
+| `/health/ready` dependency 검사 제한 시간 | HTTP API Contract §5.7 · Tech Spec §14 | 외부 provider를 부르지 않음 · DB · 공유 저장소만 | Ops §9 | 배포 환경(RD-12h) | B-H1 ~ B-H3 |
+| staging 잔여 · orphan 파일 정리 나이 | #246 S-2 | 진행 중 upload를 지우지 않을 만큼 김 | Research 02 §4.4 · §5 | Research 02 Spike D · F | B-C1 ~ B-C4 |
+| UsageRecord `cost_amount` precision / scale | Tech Spec §4.5 | Contract 예시와 cost 생산자(#244 U-2) 출력 자릿수를 덮음 · 초과 자릿수는 거부 | UsageRecord Contract §4 · §6 | migration test — §6 값이 아니라 RD-01g 안의 구현 세부로 **첫 migration**에서 고정 | NOT_BASELINED — 첫 migration |
 
 ---
 
@@ -332,7 +332,7 @@ provider adapter 안의 재시도, Runtime의 execution 재시도, case의 timeo
 
 ## RD-04 — Execution timing Provisional Baseline의 축과 제약
 
-**Status:** OPEN\
+**Status:** OPEN — Provisional v0.1 적용(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.1 ~ §2.5 · §3 — RD-04b는 case 확인 완료(2026-10-06), 같은 문서 §8.1). 최종값은 P2(M8)\
 **Owner:** common/runtime — 김준영 · 정철원(구현)\
 **Consult:** case — 유소연(timeout 잠정값과의 호환)\
 **Source candidates:** D-04
@@ -791,7 +791,7 @@ Mock/합성 데이터 중심 개발에서는 구현을 막지 않는다. 실제 
 
 ## RD-11 — Ops retention / cleanup
 
-**Status:** OPEN\
+**Status:** OPEN — 11a의 container local rotation · 11b temp 회수 나이만 Provisional v0.1(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9 · §2.13). 11a log 보관 기간 · transport와 11c는 그대로 열림\
 **Owner:** common/runtime — 김준영\
 **Consult:** recording — 정철원(temp media 정리 · RemoteCopy cleanup 실행)\
 **Source candidates:** D-12b
@@ -1467,6 +1467,8 @@ RD-08 pricing artifact — 다른 Decision을 막지 않음 (EI-06만 입력)
 | Runtime boundary 규칙 · MySQL integration CI · dispatch registration test 없음 | 검수 C-10 |
 | Ruff · type checker · secret scan CI gate | Ops §19 목표 순서 · §23 — Implementation Plan의 CI 묶음. type checker 도구 선택도 그 안에서 다룬다 |
 
+위 Gap의 Task 배치와 각 Decision이 막는 Task는 [Runtime Implementation Plan](./runtime-implementation-plan.md) §6 · §7이 추적한다(구현 dependency pointer만 — 이 Register의 Timing · State는 바꾸지 않는다).
+
 ### External input / fact-finding
 
 provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하는 사실은 Decision에서 뺐다. 목록과 입력 대상 Decision은 [External Inputs](#external-inputs--decision이-아니라-확인할-사실) — EI-01~EI-08.
@@ -1534,6 +1536,9 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-04 | workflow §5 closure — #244 ~ #250 최종 결정(각 Issue 마지막 결정자 댓글)을 SoT로 승격하고 Timing A 9개를 `CLOSED`로 표시. Tech Spec §4.2 · §4.3 · §6.2 · §6.3 · §7.2 · §9 · §11.1 · §11.3 · §12.1 ~ §12.5 · §13 · §15.2 · §16, Ops §4-1 · §4-2 · §6-1, Runbook §2, JobExecution Contract §2 · §5 · §9-8, UsageRecord Contract §2, Architecture §4-모듈5 ④ · §8-2. HTTP API Contract 문서는 다음 단계. B · C · D는 OPEN 그대로, Timing · Owner · group · EI 변경 없음, 새 RD 없음 | PR #253 |
 | 2026-10-04 | RD-05 Follow-up — [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v0` Draft 작성. RD-05 요약 · Status · Follow-up · RD-05g 위치를 Draft 링크로 정합, 「§5 → §6 Baseline 입력」에 frame cache 수명 · ready 검사 제한 시간 행 추가. 결정 · Timing · Owner 변경 없음 | PR #265 |
 | 2026-10-05 | RD-05 Follow-up 완료 — web Consumer review · case · recording boundary review 반영 뒤 [HTTP API Contract](../architecture/contracts/contract-http-api.md) `http-api/v1` `Final — Accepted` · 짝 ADR Accepted. RD-05 요약 · Status · Follow-up · RD-05g · 「다음 순서」를 Final로 정합. 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #265 |
+| 2026-10-05 | workflow §6 — [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) 작성. 「§5 → §6 Baseline 입력」에 v0.1 ID 열 추가, RD-04 · RD-11 Status에 Provisional 적용 표시. RD-04 · RD-11은 OPEN 유지(최종값 P2), 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
+| 2026-10-06 | RD-04 Status — RD-04b case 확인 완료 표시(PR #276 review). 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
+| 2026-10-06 | workflow §7 — 「Implementation Gap」 아래에 [Runtime Implementation Plan](./runtime-implementation-plan.md) Task · Gate 배치 pointer 추가. 결정 · Timing · State · Owner 변경 없음, 새 RD 없음 | PR #304 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 

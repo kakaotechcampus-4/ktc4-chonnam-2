@@ -8,4 +8,8 @@
 
 ## 상태
 
-**아직 코드가 없다.** 데이터 계약(`docs/architecture/contracts/`)이 확정된 뒤 Owner가 채운다. 이 README는 자리를 잡아두기 위한 것이며, 폴더의 범위는 위 문서가 정한다 — 여기에 규칙을 복제하지 않는다.
+RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_ENV_FILE`(미지정 시 cwd `.env`)을 명시적으로 읽어 불변 Worker RuntimeConfig를 만들고, Search의 기존 `GeminiSearchConfig.from_dotenv(mapping)` 및 추가 등록 모듈의 factory/validator를 startup에서 호출한다. 실패 시 설정 key 이름만 기록하고 `SystemExit(1)`로 종료한다. `revision`은 호출자가 전달하는 commit SHA 등 안전한 식별자다.
+
+필수 파일 key는 `DAESINGO_RUNTIME_DB_URL` · `DAESINGO_RUNTIME_MEDIA_ROOT` · `DAESINGO_RUNTIME_WORKER_TEMP_ROOT`와 현재 Search가 사용하는 `GEMINI_API_KEY`다. Search key rename/alias 의미는 바꾸지 않는다. pricing/FX는 필수값으로 강제하지 않는다. 반환된 `Startup.modules["search"]`는 마스킹된 credential과 검증된 Search config를 보관한다.
+
+DB engine · claim loop · handler dispatch · heartbeat/sweep 실행은 아직 없다. 실제 provider 호출도 하지 않는다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. queue column을 통한 process 간 trace 전달은 RT-03 이후다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
