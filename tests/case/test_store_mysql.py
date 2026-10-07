@@ -72,3 +72,28 @@ def test_repository_never_commits(mysql_engine):
         trans.rollback()
     with mysql_engine.connect() as conn:
         assert repo.load(conn, "case_nc001").stage == "INTAKE"
+
+
+def test_append_only_violation_writes_nothing_even_if_caller_commits(mysql_engine):
+    """append-only 검사는 어떤 쓰기보다 먼저 한다 — 호출자가 예외를 삼키고 commit해도 `cases` 행이
+    반쪽만 바뀌지 않는다(#282 Runtime 리뷰)."""
+    from daesingo.case import jobs
+    from daesingo.case.store import AppendOnlyViolation
+    from daesingo.case.store_mysql import MySQLCaseRepository
+
+    repo = MySQLCaseRepository()
+    case = CaseAggregate.empty("case_ao001")
+    case.start_search()
+    jobs.issue_coarse_search(case, scope_ref="scope_ao", input_fingerprint="sha1:ao")
+    with mysql_engine.begin() as conn:
+        repo.insert(conn, case)
+    with mysql_engine.connect() as conn:
+        trans = conn.begin()
+        loaded = repo.load(conn, "case_ao001", lock="update")
+        loaded.job_records[0]["job_id"] = "job_tampered"  # 저장된 앞부분을 바꾼다
+        loaded.hints = {"time": "바뀐 값"}
+        with pytest.raises(AppendOnlyViolation):
+            repo.save(conn, loaded)
+        trans.commit()  # 잘못된 호출자 — 예외를 삼키고 commit
+    with mysql_engine.connect() as conn:
+        assert repo.load(conn, "case_ao001").hints == case.hints
