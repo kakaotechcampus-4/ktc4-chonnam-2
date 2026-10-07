@@ -21,15 +21,17 @@ orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 
 """
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
 from daesingo.case import jobs
-from daesingo.case.analysis_start import hints_from_result
+from daesingo.case.analysis_start import InitialSearchBudget, hints_from_result, reflect_hint_extraction
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
+from daesingo.case.timeline_source import CaseTimelineSource
 from daesingo.case.view import _belongs_to_current_selection, build_case_view, execution_failed
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
@@ -488,3 +490,31 @@ def get_view(
     return build_view_from_adapter(
         case, adapter, job_executions=job_executions, notices=notices, visual_verify_status=visual_verify_status
     )
+
+
+@dataclass(frozen=True)
+class ReflectionResult:
+    """`receive_hint_extraction_result()`의 결과 — `appended_job_records`는 composition root(Worker T2)가 같은
+    transaction에서 enqueue한다(`CommandResult`와 같은 장치). 반영하지 않았으면 `reflected=False` · `[]`."""
+
+    appended_job_records: list[dict[str, Any]]
+    reflected: bool
+
+
+def receive_hint_extraction_result(
+    case_id: str,
+    result: dict[str, Any],
+    *,
+    store: CaseStore,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget | None = None,
+) -> ReflectionResult:
+    """Worker가 단서 구조화 결과를 반영하는 진입점(`decisions/start-analysis.md` §3-6). `load_for_update` → 반영 →
+    성공했을 때만 `save`. 기다리던 `HINT_EXTRACT`가 없으면(중복 결과) 저장하지 않는다. 예외는 그대로 올라가고
+    저장되지 않는다 — transaction rollback은 호출자 몫이다(#245 D-2)."""
+    case = store.load_for_update(case_id)
+    jobs_before = len(case.job_records)
+    if not reflect_hint_extraction(case, result, timelines=timelines, budget=budget or InitialSearchBudget()):
+        return ReflectionResult(appended_job_records=[], reflected=False)
+    store.save(case)
+    return ReflectionResult(appended_job_records=copy.deepcopy(case.job_records[jobs_before:]), reflected=True)
