@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.7` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.8` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -28,7 +28,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.7"
+CONTRACT_VERSION = "case-view/v1.8"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -319,8 +319,12 @@ def _build_candidates_view(
 
 def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | None]]:
     """B절 §7-(1)/(2)/(3) 파생 규칙 — `report_fields`/`report_field_states`(§10 불변조건 13)와
-    `evidence.*_display`가 공유하는 5개 필드(case_type 제외)의 info_state를 여기서 만든다."""
-    event = evidence_record["event"]
+    `evidence.*_display`가 공유하는 5개 필드(case_type 제외)의 info_state를 여기서 만든다.
+
+    `evidence_record`는 EvidenceRecord이거나, 상황 응답 대기 중의 상황 독립 값(evidence
+    `resolve_independent_facts()` 결과 — `event` 없음, #239)이다. `event`가 없으면 상황 종속 두 필드는
+    `INFO_UNKNOWN`이다(값을 임의로 확정하지 않는다)."""
+    event = evidence_record.get("event")
     # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
     # (TimeResolution.status=UNKNOWN이면 assemble_evidence()가 occurred_at을 아예 안 만든다
     # — evidence/assembly.py:230-231). 실제 real 영상(시간 출처가 전혀 없는 화면녹화본)에서
@@ -331,8 +335,6 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     # `scenario_plate_reread_001`의 `ev_p001`, 2026-09-14 확인된 결함. 과거엔
     # `evidence_record["vehicle_number"]`가 KeyError를 던졌다).
     vehicle_number = evidence_record.get("vehicle_number")
-    violation = event["violation_expression"]
-    report_type = event["safety_report_type"]
     # ⚠️ location은 EvidenceRecord에 키 자체가 없을 수 있다(예: scenario_unknown_abstain_partial_001의
     # ev_u001 — 위치를 확보하지 못한 사건). 이슈 #48 Q2 조사에서 확인된 실제 결함 — `.get()`으로
     # None-safe하게 처리한다(과거에는 `evidence_record["location"]`이 KeyError를 던졌다).
@@ -376,25 +378,34 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
             "info_state": location_info_state,
             "source_label_key": location_value["source"]["label_key"] if location_value is not None else None,
         },
-        "violation_expression": {
-            "info_state": evidence_value_info_state(
-                violation["value"],
-                needs_review=violation["needs_review"],
-                user_corrected=violation["user_corrected"],
-                observability=violation["source"].get("observability"),
-            ),
-            "source_label_key": violation["source"]["label_key"],
-        },
-        "safety_report_type": {
-            "info_state": evidence_value_info_state(
-                report_type["value"],
-                needs_review=report_type["needs_review"],
-                user_corrected=report_type["user_corrected"],
-                observability=report_type["source"].get("observability"),
-            ),
-            "source_label_key": report_type["source"]["label_key"],
-        },
+        "violation_expression": _event_field_state(event, "violation_expression"),
+        "safety_report_type": _event_field_state(event, "safety_report_type"),
     }
+
+
+def _event_field_state(event: dict[str, Any] | None, field: str) -> dict[str, str | None]:
+    if event is None:
+        return {"info_state": "INFO_UNKNOWN", "source_label_key": None}
+    value = event[field]
+    return {
+        "info_state": evidence_value_info_state(
+            value["value"],
+            needs_review=value["needs_review"],
+            user_corrected=value["user_corrected"],
+            observability=value["source"].get("observability"),
+        ),
+        "source_label_key": value["source"]["label_key"],
+    }
+
+
+# 상황 응답 전 부분 투영(#239)에서 상황 종속 세 필드의 모양 — 값 없음 + `INFO_UNKNOWN`. 새 enum 값은 만들지 않는다.
+_SITUATION_PENDING_DISPLAY: dict[str, Any] = {
+    "code": None,
+    "label": None,
+    "needs_review": False,
+    "info_state": "INFO_UNKNOWN",
+    "source_label_key": None,
+}
 
 
 def _build_evidence_view(
@@ -409,28 +420,57 @@ def _build_evidence_view(
     # 애초에 사용자가 준 값이라 "정정"이 아니다). 실제로는 case가 소유하는 CorrectionRecord가
     # 하나라도 있는지(`bool(case.correction_records)`)로 판정한다 — correction 전(false)/
     # 후(true) fixture와 정확히 일치한다. 호출부(`build_case_view`)에서 계산해 넘겨준다.
-    event = evidence_record["event"]
+    #
+    # 상황 응답 대기의 부분 투영(#239)이면 `evidence_record`는 상황 독립 값만 담은 evidence
+    # `resolve_independent_facts()` 결과다 — `record_ref` · `event`가 없다. 그때 `record_id=null`, 상황 종속
+    # 세 display는 `_SITUATION_PENDING_DISPLAY`이고, 나머지 값 · `review_needed`는 아래 같은 규칙으로 만든다.
+    event = evidence_record.get("event")
     states = _field_states(evidence_record)
     # ⚠️ location 키 자체가 없는 EvidenceRecord가 정상 케이스다(위치 미확보 — 이슈 #48).
     # 아래 location_display 구성도 이에 맞춰 None-safe해야 한다.
     location = evidence_record.get("location")
     location_value, _location_key = location_representative(location)
 
-    case_type = event["visual_event_type"]
-    report_type = event["safety_report_type"]
-    violation = event["violation_expression"]
     vehicle_number = evidence_record.get("vehicle_number")
     # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
     # (TimeResolution.status=UNKNOWN — evidence/assembly.py:230-231). 실제 real 영상(시간
     # 출처가 전혀 없는 화면녹화본)에서 처음 발생 확인, 2026-09-23.
     occurred_at = evidence_record.get("occurred_at")
 
-    case_type_info_state = evidence_value_info_state(
-        case_type["value"],
-        needs_review=case_type["needs_review"],
-        user_corrected=case_type["user_corrected"],
-        observability=case_type["source"].get("observability"),
-    )
+    if event is None:
+        case_type_display = dict(_SITUATION_PENDING_DISPLAY)
+        report_type_display = dict(_SITUATION_PENDING_DISPLAY)
+        violation_display = dict(_SITUATION_PENDING_DISPLAY)
+    else:
+        case_type = event["visual_event_type"]
+        report_type = event["safety_report_type"]
+        violation = event["violation_expression"]
+        case_type_display = {
+            "code": case_type["value"],
+            "label": event_type_label(case_type["value"]),
+            "needs_review": case_type["needs_review"],
+            "info_state": evidence_value_info_state(
+                case_type["value"],
+                needs_review=case_type["needs_review"],
+                user_corrected=case_type["user_corrected"],
+                observability=case_type["source"].get("observability"),
+            ),
+            "source_label_key": case_type["source"]["label_key"],
+        }
+        report_type_display = {
+            "code": report_type["value"],
+            "label": report_type_label(report_type["value"]),
+            "needs_review": report_type["needs_review"],
+            "info_state": states["safety_report_type"]["info_state"],
+            "source_label_key": report_type["source"]["label_key"],
+        }
+        violation_display = {
+            "code": None,
+            "label": violation["value"],
+            "needs_review": violation["needs_review"],
+            "info_state": states["violation_expression"]["info_state"],
+            "source_label_key": violation["source"]["label_key"],
+        }
     event_time_needs_review = (
         occurred_at.get("resolution_status") == "NEEDS_REVIEW" if occurred_at is not None else False
     )
@@ -441,9 +481,9 @@ def _build_evidence_view(
     # reason_code는 원인이 한 필드면 evidence.<field>_needs_review, 둘 이상이면
     # evidence.multiple_fields_need_review(원인이 없으면 null).
     review_fields: dict[str, tuple[bool, str]] = {
-        "case_type": (case_type["needs_review"], case_type_info_state),
-        "report_type": (report_type["needs_review"], states["safety_report_type"]["info_state"]),
-        "violation": (violation["needs_review"], states["violation_expression"]["info_state"]),
+        "case_type": (case_type_display["needs_review"], case_type_display["info_state"]),
+        "report_type": (report_type_display["needs_review"], report_type_display["info_state"]),
+        "violation": (violation_display["needs_review"], violation_display["info_state"]),
         "plate": (
             vehicle_number["needs_review"] if vehicle_number is not None else False,
             states["vehicle_number"]["info_state"],
@@ -461,28 +501,10 @@ def _build_evidence_view(
         reason_code = "evidence.multiple_fields_need_review"
 
     return {
-        "record_id": evidence_record["record_ref"]["ref"],
-        "case_type_display": {
-            "code": case_type["value"],
-            "label": event_type_label(case_type["value"]),
-            "needs_review": case_type["needs_review"],
-            "info_state": case_type_info_state,
-            "source_label_key": case_type["source"]["label_key"],
-        },
-        "report_type_display": {
-            "code": report_type["value"],
-            "label": report_type_label(report_type["value"]),
-            "needs_review": report_type["needs_review"],
-            "info_state": states["safety_report_type"]["info_state"],
-            "source_label_key": report_type["source"]["label_key"],
-        },
-        "violation_display": {
-            "code": None,
-            "label": violation["value"],
-            "needs_review": violation["needs_review"],
-            "info_state": states["violation_expression"]["info_state"],
-            "source_label_key": violation["source"]["label_key"],
-        },
+        "record_id": (evidence_record.get("record_ref") or {}).get("ref"),
+        "case_type_display": case_type_display,
+        "report_type_display": report_type_display,
+        "violation_display": violation_display,
         "plate_display": {
             "value": vehicle_number["value"] if vehicle_number is not None else None,
             "needs_review": vehicle_number["needs_review"] if vehicle_number is not None else False,
@@ -627,6 +649,7 @@ def build_case_view(
     plate_readouts: list[dict[str, Any]] | None = None,
     visual_evidence_decision: str | None = None,
     visual_verify_status: str | None = None,
+    independent_facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
@@ -641,6 +664,18 @@ def build_case_view(
         requirement_report_evidence = None
         requirement_report_package = None
         report_package = None
+
+    # 상황 응답 대기 부분 투영(#239) — Fine `UNCERTAIN` + 응답 전이라 EvidenceRecord가 없어도, evidence가
+    # 계산한 상황 독립 값을 `evidence`에 `record_id=null`로 싣는다. requirements · package는 그대로 null이다.
+    # `independent_facts`는 adapter가 현재 선택의 응답 대기 판정과 같은 묶음에서 준 값이다.
+    evidence_source = evidence_record
+    if (
+        evidence_source is None
+        and visual_evidence_decision == AWAIT_SITUATION_RESPONSE
+        and independent_facts is not None
+        and selected is not None
+    ):
+        evidence_source = independent_facts
 
     return {
         "contract": "CaseView",
@@ -667,12 +702,12 @@ def build_case_view(
         "candidates": _build_candidates_view(case, evidence_record, current_timeline_revision),
         "evidence": (
             _build_evidence_view(
-                evidence_record,
+                evidence_source,
                 preview_ref,
                 bool(case.correction_records),
-                _plate_preview_ref(evidence_record, plate_readouts),
+                _plate_preview_ref(evidence_source, plate_readouts),
             )
-            if evidence_record
+            if evidence_source is not None
             else None
         ),
         "requirements_evidence": _build_requirements_view(requirement_report_evidence),

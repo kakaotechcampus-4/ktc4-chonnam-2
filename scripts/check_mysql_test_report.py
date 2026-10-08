@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Fail closed on skipped, xfailed, deselected, absent or incomplete MySQL tests."""
+
+import json
+from pathlib import Path
+import sys
+from xml.etree import ElementTree
+
+REQUIRED_SCENARIOS = frozenset({
+    "sessions", "session_replacements", "worker_1205", "worker_1213",
+    "worker_disconnect", "worker_exhaustion", "capability_boundary",
+    "api_precommit", "commit_response_loss", "worker_unknown_commit",
+    "pool_exhaustion", "dedicated_connections", "idle_recycle", "wait_timeout",
+    "case_compatibility", "migration_policy", "require_privileges",
+})
+
+# Stable acceptance identifiers, independent of Python test function names.
+REQUIRED_CHECKS = frozenset({
+    ("api", "sessions"), ("worker", "sessions"),
+    ("api", "idle_recycle"), ("worker", "idle_recycle"),
+    ("api", "disconnect_replacement"), ("worker", "disconnect_replacement"),
+    ("api", "wait_timeout"), ("worker", "wait_timeout"),
+    ("api", "pool_exhaustion"), ("heartbeat", "sessions"),
+    ("heartbeat", "dedicated_connections"), ("ready", "dedicated_connections"),
+    ("migration", "migration_policy"), ("api", "connect_failure"),
+    ("worker", "worker_1205"), ("worker", "worker_1213"),
+    ("worker", "worker_disconnect"), ("worker", "worker_exhaustion"),
+    ("worker", "capability_boundary"), ("worker", "worker_unknown_commit"),
+    ("api", "precommit_1205"), ("api", "precommit_disconnect"),
+    ("api", "precommit_proxy_disconnect"), ("api", "commit_response_loss"),
+    ("api", "commit_response_loss_context_exit"), ("api", "commit_response_loss_pool_checkin"),
+    ("harness", "require_privileges"), ("case", "case_compatibility"),
+    ("harness", "schema_identity"), ("harness", "schema_override_database"),
+    ("harness", "schema_override_db"), ("harness", "schema_override_init_command"),
+})
+
+# Pin the merged Case coverage without editing Case-owned tests/fixtures.
+# Future intentional test renames update this inventory alongside that change.
+REQUIRED_CASE_TESTS = {
+    "tests/case/test_store_mysql.py": {
+        "test_migration_creates_case_tables_with_ascii_bin_ids": 1,
+        "test_rollback_leaves_nothing": 1,
+        "test_update_lock_makes_second_writer_wait": 1,
+        "test_repository_never_commits": 1,
+        "test_append_only_violation_writes_nothing_even_if_caller_commits": 1,
+    },
+    "tests/case/test_case_repository_contract.py": {
+        "test_insert_then_load_round_trips": 1,
+        "test_load_returns_a_new_object_each_time": 1,
+        "test_save_persists_changes_and_appended_records": 1,
+        "test_save_refuses_changed_prefix": 1,
+        "test_save_refuses_removed_record": 1,
+        "test_load_missing_case_is_key_error": 1,
+        "test_insert_twice_is_refused": 1,
+        "test_case_ids_differ_by_case_only_are_distinct": 1,
+        "test_invalid_case_id_is_refused_before_insert": 3,
+        "test_tuple_in_state_round_trips_as_list": 1,
+        "test_non_json_value_in_state_is_refused": 1,
+    },
+}
+
+
+def validate_report(report):
+    if not str(report.get("server_version", "")).startswith("8.4."):
+        raise ValueError("real MySQL 8.4 preflight evidence missing")
+    collected = report.get("collected", [])
+    expected = {item["nodeid"] for item in collected}
+    if not expected or len(expected) != len(collected):
+        raise ValueError("MySQL collection is empty or duplicated")
+    if expected != set(report.get("selected", [])):
+        raise ValueError("MySQL tests were deselected or selection evidence is missing")
+    if report.get("collection_errors"):
+        raise ValueError("test collection had errors/skips")
+    try:
+        checks = {(check["role"], check["scenario"]) for item in collected for check in item.get("checks", [])}
+    except (KeyError, TypeError):
+        raise ValueError("invalid MySQL role/scenario evidence") from None
+    if REQUIRED_CHECKS - checks:
+        raise ValueError("required MySQL role/scenario missing")
+    scenarios = {value for item in collected for value in item.get("scenarios", [])}
+    if REQUIRED_SCENARIOS - scenarios:
+        raise ValueError("required MySQL scenarios missing: " + ", ".join(sorted(REQUIRED_SCENARIOS - scenarios)))
+    for path, functions in REQUIRED_CASE_TESTS.items():
+        for function, minimum in functions.items():
+            count = sum(node.split("::")[0] == path and node.split("::")[-1].split("[")[0] == function
+                        for node in expected)
+            if count < minimum:
+                raise ValueError("Case MySQL test coverage missing: " + function)
+    phases = {}
+    for item in report.get("reports", []):
+        if item["nodeid"] not in expected:
+            raise ValueError("uncollected MySQL execution")
+        if item["outcome"] != "passed" or item.get("xfail"):
+            raise ValueError("MySQL tests must pass: skip/xfail/failure/error forbidden")
+        key = (item["nodeid"], item["when"])
+        if key in phases:
+            raise ValueError("duplicate MySQL execution phase")
+        phases[key] = True
+    if set(phases) != {(node, phase) for node in expected for phase in ("setup", "call", "teardown")}:
+        raise ValueError("MySQL execution phases missing")
+    return len(expected)
+
+
+def validate_junit(path, report):
+    # The plugin records JUnit's classname/name pair, avoiding lossy nodeid parsing.
+    cases = {(case.get("classname"), case.get("name")): case
+             for case in ElementTree.parse(path).findall(".//testcase")}
+    for item in report["collected"]:
+        key = tuple(item["junit"])
+        if key not in cases:
+            raise ValueError("MySQL testcase missing from JUnit")
+        if any(cases[key].find(tag) is not None for tag in ("skipped", "failure", "error")):
+            raise ValueError("MySQL JUnit contains skip/failure/error")
+
+
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else argv
+    try:
+        report = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+        count = validate_report(report)
+        if len(args) > 1:
+            validate_junit(args[1], report)
+    except (OSError, ValueError, KeyError, TypeError, IndexError, ElementTree.ParseError):
+        print("MySQL execution gate FAILED: incomplete or invalid evidence", file=sys.stderr)
+        return 1
+    print(f"MySQL execution gate PASS: {count} tests, skip=0, xfail=0; required scenarios present")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
