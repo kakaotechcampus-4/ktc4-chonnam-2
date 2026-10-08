@@ -4,7 +4,10 @@
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import type { CaseView } from '../contracts/caseView'
+import { SNAPSHOTS } from '../contracts/fixtures'
 import { DemoFlow } from '../screens/DemoFlow'
+import { ResultScreen } from '../screens/ResultScreen'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => {
@@ -224,4 +227,15 @@ it('위반 미관찰: 다른 후보를 버튼 없이 바로 펼쳐 둔다', () =
   wait()
   expect(container.querySelectorAll('.cand')).toHaveLength(3)
   expect(getAllByText('이 장면으로 다시 준비')).toHaveLength(2)
+})
+
+it('package에 report가 없는 옛 판본이 와도 결과 화면이 깨지지 않는다', () => {
+  const ready = SNAPSHOTS.map((x) => x.view).find((v) => v.stage === 'READY' && v.package)!
+  const old = { ...ready, package: { ...ready.package!, report: undefined } } as unknown as CaseView
+  const noop = () => {}
+  const { container } = render(
+    <ResultScreen view={old} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} />,
+  )
+  expect(container.textContent).toContain('안전신문고 신고서 초안')
+  expect(container.textContent).not.toContain('제목')
 })

@@ -109,12 +109,14 @@ export function ResultScreen(props: {
               </button>
             </div>
             <div className="kv kv-rows">
+              {/* 계약상 package가 있으면 report도 항상 있다(v1.7). 옛 판본 응답이 와도 화면이 깨지지 않게 행만 뺀다 */}
               {(
                 [
-                  ['제목', pkg.report.title],
-                  ['내용', pkg.report.description],
+                  ['제목', pkg.report?.title],
+                  ['내용', pkg.report?.description],
                 ] as const
-              ).map(([label, text]) => (
+              ).map(([label, text]) =>
+                text == null ? null : (
                 <div className="kv-row draft" key={label}>
                   <span className="kv-k">{label}</span>
                   <span className="kv-v">
@@ -128,7 +130,8 @@ export function ResultScreen(props: {
                     </button>
                   </span>
                 </div>
-              ))}
+                ),
+              )}
               {fields.map(([key, value]) => (
                 <div className="kv-row draft" key={key}>
                   <span className="kv-k">{reportFieldLabel(key)}</span>
