@@ -35,7 +35,7 @@
 - **`rejected_candidate_ids`** — 받지 않는다(#106 결론). 개별 후보를 「아니다」로 지목하는 화면 신호가 생기면 다시 본다.
 - **시간 보정 버튼 4종**(조금 전·조금 후 등) — W7 밖(#106 결론).
 - **중단** — 다음 판본 후보. Runtime 결정(#245 C-1 · C-1a)은 났고, case 쪽 설계가 남았다(8-1 · 8-9). 분석 시작은 이 판본에 넣었다(§11).
-- **transport**(HTTP 경로·인증·직렬화) — 누가 만들지부터 정한다(`design-refinement-w7-baseline.md` 6순위). 이 문서는 transport와 무관한 요청·응답 모양만 정한다.
+- **transport**(HTTP 경로 · status · 직렬화) — HTTP API Contract(`docs/architecture/contracts/contract-http-api.md`, `http-api/v1`)가 정한다(2026-10-08, 고도화 8-2). 이 문서의 요청은 `POST /cases/{case_id}/commands` body에 그대로 실리고, HTTP 층은 body를 검사하지 않고 `case.handle_command()`에 넘긴다(그 계약 §5.3). 이 문서는 transport와 무관한 요청 · 응답 모양만 정한다. 인증은 두 문서 모두 범위 밖이다(Architecture §1-7 A2).
 
 ## 3. 책임 경계
 
@@ -127,7 +127,7 @@
 - **`case_rev`로 잡히지 않는 변경.** 탐색 시작(`start_search`)·후보 선택(`select_candidate`)처럼 `case_rev`를 올리지 않는 전이가 있다(`src/daesingo/case/domain.py` docstring — `case_rev`는 「요청 시점 케이스 리비전」이다). 그 사이의 command는 stale로 잡히지 않는다. 이 판본의 command는 모두 사용자 결과 화면(`EVIDENCE_REVIEW`·`READY`)이나 notice에서 나와 영향이 작다고 보지만, 확인 필요.
 - **`RUN_NOTICE_ACTION` 중복 제출.** 발주가 `case_rev`를 올리는지는 kind마다 정해져 있지 않다(재판독 발주는 올린다고 적혀 있고 나머지는 확인 필요). 올리지 않으면 같은 버튼을 두 번 눌렀을 때 stale 검사로 막히지 않는다. `idempotency_key`를 둘지 함께 정한다.
 - **`error.message_key` 값 목록.** web 문구 키라 web과 함께 정한다.
-- **transport** — §2.
+- ~~**transport** — §2.~~ → **종결(2026-10-08, 고도화 8-2).** HTTP API Contract(`http-api/v1`, Final)가 정한다 — §2.
 
 ## 10. 구현할 때 맞출 것 (case 내부)
 

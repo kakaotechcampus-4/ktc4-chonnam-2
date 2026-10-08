@@ -185,7 +185,7 @@ Real E2E에서 발견한 항목을 "case 작업 중에 나왔다"와 "case가 �
 | # | 할 일 | 출처 |
 | --- | --- | --- |
 | 8-1 | 🔄 **분석 시작 구현(2026-10-07) — `START_ANALYSIS` · 단서 반영 진입 함수 · 타임라인 port(임시: 등록 순서 이어 붙이기). 결정 `decisions/start-analysis.md`. 중단 command는 남음.** case-command Draft에 분석 시작 · 중단 command 추가 — 이름 · payload · 허용 상태, 시작 command가 hints를 어디서 받는지 포함. **분석 시작은 초안 작성(2026-10-04, Draft §11 — #210 Search 의견 반영 · case 결정 4건(`HINT_EXTRACT` · 실패 notice 없음 · 빈 설명은 구조화 생략 · CaseView `description`) · 남은 미결 5건)**, 중단은 C-1a 결정 뒤 | #245 C-1 · #247 H-2 |
-| 8-2 | case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 — Contract는 `docs/architecture/contracts/contract-http-api.md`(Draft, #265). #265 merge 뒤 그 경로로 고친다 | #247 H-6 |
+| 8-2 | ✅ **2026-10-08 case-command §2 반영 — HTTP API Contract(`http-api/v1`, Final) §5.3을 가리킨다.** case-command Draft §2 transport 줄을 HTTP API Contract(RD-05)를 가리키도록 수정 — Contract는 `docs/architecture/contracts/contract-http-api.md`(Draft, #265). #265 merge 뒤 그 경로로 고친다 | #247 H-6 |
 | 8-3 | ✅ CaseView 계약에 `running_jobs[]` 정의 추가 — 「case가 아직 결과를 기다리는 job」, 실행 종료부터 case 반영까지 · backoff 중에도 유지, 중단 · timeout으로 기다리기를 멈춘 job은 제외. **2026-10-04 B절 §10 불변조건 5로 반영됨**(#263, common/runtime이 case 답변대로 정합) | #247 H-4 |
 | 8-4 | ✅ **2026-10-06 CaseView 계약 B절 §7 반영(#269).** CaseView 계약에 「중단된 job은 실제 실행 상태와 상관없이 `PARTIAL`로 투영」 추가 — 마지막 attempt가 `STALE`이어도 `FAILED`로 보이지 않게 | #245 C-3 · #248 Q-1 |
 | 8-5 | ✅ **2026-10-06 budget 결정 문서 반영(#269).** `decisions/budget-krw-normalization.md` 「남은 것」에 정규화 층(cost를 계산하는 Search)과 `amount=null`은 0이 아니라는 원칙 반영 | #244 U-2 |
