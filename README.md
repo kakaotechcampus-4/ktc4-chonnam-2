@@ -133,6 +133,10 @@ uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 
 MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 MySQL 8.4 service와 `DAESINGO_REQUIRE_MYSQL=1`을 사용하고, MySQL 테스트의 skip/xfail 0·필수 시나리오·기존 Case MySQL 실행을 JSON/JUnit 보고서로 검사한다. URL이 없는 로컬 실행은 MySQL integration을 skip한다.
 
+Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`으로 실행한다. 호출자가 URL 한 개를 비대화형 stdin에 명시적으로 전달하며 credential을 argv·로그에 넣지 않는다. runner는 URL 환경변수·`.env`·RuntimeConfig를 읽지 않는다. 소스 checkout의 env를 frozen registry `case → runtime` 순서로 `head`까지 적용하며, 새 env는 registry와 필수 테스트에 등록해야 한다. 기존 MySQL gate는 RT-02(a)·Case 실행 목록과 새 migration 필수 check를 함께 검사한다.
+
+Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 현재 Runtime env는 빈 `runtime_alembic_version`만 만들고 Runtime 업무 schema는 RT-03·RT-07에서 추가한다. 배포 실행 시점·URL 출처·배포 artifact 배치는 후속 범위이며 RT-02(b)는 독립 재리뷰 전이다.
+
 ### 프로토타입에 대해
 
 `apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.

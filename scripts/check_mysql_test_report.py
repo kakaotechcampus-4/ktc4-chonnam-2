@@ -32,6 +32,13 @@ REQUIRED_CHECKS = frozenset({
     ("harness", "require_privileges"), ("case", "case_compatibility"),
     ("harness", "schema_identity"), ("harness", "schema_override_database"),
     ("harness", "schema_override_db"), ("harness", "schema_override_init_command"),
+    # RT-02(b): keep RT-02(a)'s 32 role checks and Case inventory intact.
+    ("migration", "case_external_transaction"), ("migration", "case_url_precedence"),
+    ("migration", "case_offline_precedence"), ("migration", "empty_schema"),
+    ("migration", "idempotency"), ("migration", "explicit_target"),
+    ("migration", "first_runtime_revision"), ("migration", "partial_failure"),
+    ("migration", "revision_preflight"), ("migration", "process_guard"),
+    ("migration", "cli_stdin"),
 })
 
 # Pin the merged Case coverage without editing Case-owned tests/fixtures.

@@ -33,8 +33,9 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | Baseline 밖 config key 이름 — DB 접속 · 공유 mount root · service별 temp root (Plan P-8) | `DAESINGO_RUNTIME_DB_URL` · `DAESINGO_RUNTIME_MEDIA_ROOT` · `DAESINGO_RUNTIME_API_TEMP_ROOT` · `DAESINGO_RUNTIME_WORKER_TEMP_ROOT` — 필수, 기본값 없음 | RT-01 · PR pending | 아래 RT-01 · `common/config/` |
 | RuntimeConfig · startup module 검증 경계 | frozen Runtime snapshot + frozen Pydantic 설정 묶음 · service별 defaults · read-only mapping 1회 전달 · `ModuleFactory` registry | RT-01 · PR pending | 아래 RT-01 |
 | structured log · revision · correlation | 전용 stdout JSON logger · 안전한 event 필드 허용 목록 · `revision` 명시적 인자 · contextvars + thread 제출 helper | RT-01 · PR pending | 아래 RT-01 · `common/logging/` |
-| DB 역할별 engine · callback transaction | API/Worker QueuePool · heartbeat/ready/migration NullPool · `Connection` callback과 내부 context manager · B-D8 최초 포함 총 3회 | RT-02(a) · PR pending | 아래 RT-02 · `common/db/` |
-| MySQL 실제 장애 · CI 실행 증거 | 테스트별 schema · COMMIT OK 폐기 proxy · 실제 1205/1213/KILL · JSON/JUnit 대조 · 기존 Case 18개 실행 목록 | RT-02(a) · PR pending | 아래 RT-02 · `tests/mysql_harness.py` · `scripts/check_mysql_test_report.py` |
+| DB 역할별 engine · callback transaction | API/Worker QueuePool · heartbeat/ready/migration NullPool · `Connection` callback과 내부 context manager · B-D8 최초 포함 총 3회 | RT-02(a) · PR #319 · `4a513c0` | 아래 RT-02 · `common/db/` |
+| MySQL 실제 장애 · CI 실행 증거 | 테스트별 schema · COMMIT OK 폐기 proxy · 실제 1205/1213/KILL · JSON/JUnit 대조 · 기존 Case 18개 실행 목록 | RT-02(a) · PR #319 · `4a513c0` | 아래 RT-02 · `tests/mysql_harness.py` · `scripts/check_mysql_test_report.py` |
+| Alembic runner · 빈 Runtime env | frozen registry `case → runtime` · 명시 URL API/stdin CLI · 모듈별 transaction connection · 빈 Runtime version table · 첫 실패 중단 · process 내부 중복 거부 | RT-02(b) · 로컬, PR 미생성 | 아래 RT-02(b) · `common/db/migrate.py` |
 | `DECIMAL` precision/scale (Plan P-10) | pending | RT-07 | — |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
@@ -52,7 +53,7 @@ Plan §12.3에서 「멈추고 확인」에 해당해 Owner에게 확인한 건�
 
 | 날짜 | Task · PR | 확인 내용 | 확인처 | 결과 · 기록 위치 |
 | --- | --- | --- | --- | --- |
-| 없음 | — | — | — | — |
+| 2026-10-08 확인 | RT-02(b), PR 미생성 | Case env 입력 우선순위 최소 수정·외부 transaction 참여. Case fixture/revision/metadata/version table 의미 변경 없음, 공통 helper 의무 없음 | 유소연 @yuusoyeon | [Issue #289 승인 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/289#issuecomment-6055765577). Consult 결과이며 Case env는 향후 PR에서 Owner 리뷰 예정 |
 
 ## Milestone audit
 
@@ -132,13 +133,14 @@ Status: DONE · Issue: #288 · Audit: A
 
 ## RT-02 — DB access 기반 · Alembic 배치 · MySQL integration harness · CI
 
-Status: IN_PROGRESS · Issue: #289 · Audit: A
+Status: DONE · Issue: #289 · Audit: A
 
-이번 구현은 **RT-02(a)**다. RT-02(b)는 미구현이며 Issue #289를 닫지 않는다. 향후 PR은 `Refs #289`를 쓰고 이 Log의 B-D8 명확화와 구현 근거를 Implementation Notes에 옮긴다. PR 본문 초안 파일은 저장소에서 제거했다. PR 생성·merge·Owner acceptance를 뜻하지 않는다.
+**RT-02(a)는 PR #319, `4a513c0`으로 병합됐다. RT-02(b)는 최종 독립 리뷰에서 병합 차단 문제 없음·완료 처리·커밋·PR 생성 가능 판정을 받았다(사용자 전달).** 사용자 요청에 따라 구현 완료 상태를 `DONE`으로 기록한다. RT-02(b) PR 번호와 merge SHA는 아직 `pending`이며, 원격 GitHub Actions는 PR 생성 후 확인한다. RT-02(b)는 Task의 마지막 PR이므로 PR 본문에 `Closes #289`를 사용한다. 이번 문서 갱신에서는 커밋·push·PR 생성을 하지 않는다. 아래 (a)의 최초 구현·검증 기록은 당시 결과이며, (b)의 현재 상태는 별도 절을 따른다. 향후 PR Implementation Notes에도 B-D8의 `max_attempts=3 = 초회 포함 총 3회` 명확화를 유지한다.
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| pending (로컬, PR 미생성) | RT-02(a) DB factory · callback transaction helper · MySQL harness · CI | pending |
+| [#319](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/319) | RT-02(a) DB factory · callback transaction helper · MySQL harness · CI | `4a513c0` |
+| pending (로컬, PR 미생성) | RT-02(b) Alembic env · runner · migration acceptance · 기존 gate 보강 | pending |
 
 ### 구현 결과
 
@@ -180,7 +182,7 @@ Status: IN_PROGRESS · Issue: #289 · Audit: A
 - 최종 MySQL gate: **40 passed · skip 0 · xfail 0**, 17개 필수 scenario group, setup/call/teardown 120개 phase PASS. 기존 Case MySQL 18개(전용 5 + repository 계약 13), 신규 integration 22개(session 11 + 실제 transaction fault 7 + COMMIT proxy 3 + Case 호환 1). `scripts/check_mysql_test_report.py .codex-scratch/rt02a-final-full.json .codex-scratch/rt02a-final-full.xml` PASS.
 - skip 26개는 MySQL 외 기존 opt-in이다: 선택 의존성 `typer` 부재의 Search collection skip 4 · Case 실영상 없음 2 · eval 로컬 미디어 없음 5 · Recording 실영상/VIDEO_INDEX/연속 원본 opt-in 없음 15. 신규 테스트 skip 없음. 실제 MySQL acceptance를 mock/skip으로 대체하지 않았다.
 - boundary PASS(위반 0) · Contract fixture PASS(문서 62 · JSON 26 · 의미 104) · `git diff --check` PASS. Case 코드/fixture/테스트, migration, Baseline/Contract/Decision, `uv.lock`, `recording-baseline-negative-001.json`은 수정하지 않았다. 커밋·push·PR 없음.
-- 최초 read-only 리뷰에서는 API 획득 실패 분류·preflight 진단 수정 뒤 차단 finding 없음으로 평가받았으나, 이후 독립 리뷰에서 아래 3건이 재현됐다. 최초 평가를 현재의 무결성 보장으로 해석하지 않는다. 이번 수정의 독립 재리뷰는 아직 받지 않았다.
+- 최초 read-only 리뷰에서는 API 획득 실패 분류·preflight 진단 수정 뒤 차단 finding 없음으로 평가받았으나, 이후 독립 리뷰에서 아래 3건이 재현됐다. 최초 평가를 현재의 무결성 보장으로 해석하지 않는다. 이 최초 기록 당시에는 해당 수정의 독립 재리뷰를 받기 전이었다.
 - GitHub Actions 자체는 미실행(커밋·push·PR 없음). 로컬에서 실제 MySQL과 동일한 report gate를 실행했다. service image/Ubuntu runner 검증은 향후 CI 실행이 필요하다.
 - 검증 뒤 port/version/datadir로 작업 소유를 확인하고 격리 MySQL을 종료했다. 기존 Windows MySQL service는 변경하지 않았다. 보조 YAML parser 검사는 로컬 PyYAML 부재로 미실행이며 설치하지 않았다; workflow는 diff·독립 리뷰로 확인했고 실제 Actions 실행은 위와 같이 남아 있다.
 
@@ -192,7 +194,7 @@ Status: IN_PROGRESS · Issue: #289 · Audit: A
 | COMMIT 결과 불명이 cleanup에 덮임 | connection context 바깥까지 원래 transaction failure를 보존한다. COMMIT 오류 처리 중 SQLAlchemy checkin이 덮어쓴 DBAPIError도 예외 체인에서 복원한다. 우선순위는 확인된 COMMIT 성공 > 원래 transaction 오류 > cleanup 오류다. 실패한 invalidate도 원래 body/domain 오류를 덮지 못한다 | 신규 8 RED → 8 GREEN; 기존 transaction/proxy 합계 29 PASS. 실제 COMMIT OK 폐기 뒤 context 종료와 pool checkin TimeoutError를 각각 주입하고 독립 observer row 1개·최종 CommitOutcomeUnknown·안전한 오류/event 확인 |
 | 역할별 필수 검사 누락 허용 | scenario 합집합에 더해 mysql_check(role, scenario) metadata를 수집하고 필수 32개 조합을 별도로 요구한다. API가 Worker의 session/recycle/disconnect/wait_timeout 검사를 대신 충족할 수 없으며 초기 연결 거부·heartbeat/ready·각 실제 fault도 필수다. 기존 Case 18개 목록은 유지한다 | 메모리 report 복사본에서 각 필수 조합의 node를 collected/selected/execution에서 제거: 기존 gate 32 RED → 수정 gate 32 GREEN. gate 회귀 합계 52 PASS |
 
-- 기존 `.codex-scratch/`와 `recording-baseline-negative-001.json`을 변경하지 않았다. 서버·검증 도구·pytest basetemp·JSON/JUnit은 별도의 OS 임시 디렉터리 `rt02a-review-20261008-*`를 사용한다. RT-02는 `IN_PROGRESS`이며 독립 재리뷰 전 차단 문제가 모두 없다고 단정하지 않는다.
+- 기존 `.codex-scratch/`와 `recording-baseline-negative-001.json`을 변경하지 않았다. 서버·검증 도구·pytest basetemp·JSON/JUnit은 별도의 OS 임시 디렉터리 `rt02a-review-20261008-*`를 사용했다. 당시에는 독립 재리뷰 전이어서 차단 문제가 모두 없다고 단정하지 않았다.
 - 로컬 opt-in에서도 기존 Case child fixture가 engine을 만들기 전에 pytest_configure에서 URL을 검증한다. require=0에서 위험 URL을 허용하던 경로를 추가 RED로 확인했고 require=0/1 두 subprocess 회귀를 포함한 schema 단위 43 PASS를 확인했다. Case fixture·테스트는 수정하지 않았다.
 - 실제 MySQL 8.4.7 require 모드의 DB+Case 회귀: **509 passed · 2 skipped**(기존 Case 실영상 없음). MySQL 대상 **46 passed · skip 0 · xfail 0**, 기존 Case 18개 포함, role/scenario 32개·JSON/JUnit gate PASS. 실제 실행 report의 메모리 복사본에서도 필수 조합별 node를 하나씩 제거한 32가지가 모두 거부됐다.
 - workflow 검사: 공식 release의 actionlint **1.7.12** + ShellCheck **0.11.0**, YAML parse/actionlint 오류 0건. Ubuntu Python의 기존 YAML parser로 service·require flag·gate 연결을 검사하고 5개 run step의 `bash -n`·ShellCheck PASS. repo workflow·프로젝트 의존성·lockfile은 이번 finding 수정에서 변경하지 않았다. 원격 Actions 실행을 뜻하지 않는다.
@@ -215,14 +217,66 @@ Status: IN_PROGRESS · Issue: #289 · Audit: A
 - `git status`/`git ls-files`/staged diff로 `recording-baseline-negative-001.json`은 미추적, `.codex-scratch/`는 기존 `.gitignore` 규칙으로 제외되고 두 경로 모두 추적·staging·tracked diff에 없음을 확인했다. 두 경로나 ignore 규칙은 변경하지 않았다. 검증 재개에서는 이 Log의 결과 기록만 갱신했다.
 - 이번 수정 파일은 `transactions.py`, transaction unit test, COMMIT proxy integration test, 이 Log뿐이다. schema 격리와 CI gate, Case 소유 코드/fixture/테스트, RT-02(b), Contract/Decision/Baseline, 의존성/lockfile은 변경하지 않았다. `.codex-scratch/`와 `recording-baseline-negative-001.json`도 변경하지 않았다. 검증 증거는 OS 임시 디렉터리의 `ambient-*` 파일에 보관한다.
 - 최종 독립 재리뷰 결과(사용자 전달): **RT-02(a) 병합 차단 문제 없음 · P2 수정 재리뷰 통과**. transaction targeted unit **58 passed**, 실제 MySQL 통합 **62 passed**, MySQL 필수 대상 **49 passed · skip 0 · xfail 0**를 확인했다. 기존 Case MySQL **18개**, COMMIT proxy **8개**, 필수 role/scenario **32개 조합**, 실행 phase **147개**를 포함한다. 동일 Engine의 **8-thread 상태 격리** 확인 및 `git diff --check` PASS도 기록했다.
-- RT-02는 RT-02(b)가 남아 있으므로 계속 **IN_PROGRESS**다. P2 수정은 **독립 재리뷰 통과** 상태이며 원격 GitHub Actions는 아직 미실행이다. 커밋·push·PR 생성 없음.
+- RT-02(a) P2 재리뷰 당시에는 RT-02(b)가 남아 있었다. P2 수정은 **독립 재리뷰 통과** 판정이었으며, 당시 원격 GitHub Actions 실행·커밋·push·PR 생성은 없었다.
 
-### 남은 위험
+### 2026-10-08 RT-02(b) — Alembic env · runner (최종 독립 리뷰 통과)
 
-- RT-02(b)·후속 Runtime domain transaction·heartbeat lifecycle·HTTP probe budget/E2E는 아직 미완료다. 이번 결과는 RT-02 전체 완료나 배포 준비 완료를 뜻하지 않는다.
+**구현 결과**
+
+- `common/db/migrate.py`: frozen registry의 `case → runtime`만 실행한다. 디렉터리 탐색은 미등록/누락 env 검증에만 쓴다. API `upgrade_all(url, *, migrations_root, connect_timeout, read_timeout, write_timeout)`는 명시 URL을 받아 migration engine 하나를 만들고, 모든 DB revision을 읽기 전용 connection으로 사전 검사한 뒤 모듈마다 새 `engine.begin()` connection을 전달한다.
+- registry 중복 module/경로/version table, 경로 누락·미등록 env, ini의 version table/script 경로 불일치, script multiple heads를 DB 작업 전에 거부한다. DB unknown revision/multiple version rows는 모든 모듈의 DDL 전에 거부한다. 이것은 version graph 검사이며 수동 schema drift 전체를 탐지하는 기능은 아니다.
+- `migrations/runtime/`: env·ini·forward-only template·revision 없는 `versions/`. `upgrade head`는 `runtime_alembic_version`을 생성하지만 0행이다. `job_execution`·usage 등 **Runtime 업무 schema/revision은 추가하지 않았다**(RT-03·RT-07).
+- Case Owner 승인에 따라 `migrations/case/env.py`만 최소 수정했다. online `connection → sqlalchemy.url → DAESINGO_MYSQL_URL`, offline `sqlalchemy.url → DAESINGO_MYSQL_URL`. 외부 connection이 있으면 URL 환경변수를 조회하지 않는다. 기존 Case fixture·`test_case_compatibility.py`·revision·metadata·업무 테이블·version table 의미는 그대로다.
+- stdin CLI: `python -m daesingo.common.db.migrate --database-url-stdin`. argv에는 credential을 넣지 않는다. API/runner는 URL 환경변수·RuntimeConfig·`.env`·URL 파일·secret manager를 읽지 않는다. 입력 resolver와 배포 실행 위치는 RT-14/RD-12f다. caller도 stdin 공급 과정에서 credential을 argv/로그로 노출하지 않아야 한다.
+- CLI는 URL·username·host·query·SQL·경로·exception 원문·traceback을 출력하지 않는다. 고정 메시지만 출력하며 exit는 성공 0/실행 실패 1/사용법·입력 오류 2/interrupt 130이다. terminal의 echo 입력은 허용하지 않는다.
+
+**새 implementation detail · Plan 대비 변경**
+
+- Plan P-1·RT-02(b) 범위대로 구현했다. 새 Architecture Decision, Contract, Accepted Decision, Baseline 값/의미 변경은 없다. authoritative Implementation Plan은 수정하지 않았다.
+- process 내부 비재진입 lock으로 중첩/thread 동시 호출을 즉시 거부하고 성공·실패·interrupt 후 상태를 복원한다. **단일 실행 전제이며 cross-process 동시 실행 안전성은 보장하지 않는다.** advisory lock은 이번 범위 밖이다.
+- 첫 실패에서 즉시 중단한다. 완료 module은 예외에 안전한 식별자로 남긴다. retry·stamp·downgrade·resume-from 기능은 없다. 앱 startup에서 호출하지 않는다.
+- 성공한 module은 재실행 시 version 기준 no-op이다. MySQL DDL implicit commit 때문에 실패한 revision의 부분 DDL은 남을 수 있다. caller의 transaction은 전체 DDL rollback 보장이 아니며, 부분 적용 실패는 검사·복구 없이 자동 재시도하지 않는다. migration은 (a)의 Worker retry helper를 사용하지 않는다.
+- timeout은 명시 옵션만 factory에 전달하며 생략 시 driver 기본값을 유지한다. 앱 B-D7 제한을 복사하지 않는다. 기본 migration 경로는 cwd와 독립적이다. 소스 checkout 밖 배포 artifact/wheel의 migration 동봉은 이번 검증 범위가 아니다.
+- 기존 MySQL 8.4 workflow/service를 재사용하여 JSON/JUnit gate만 보강했다. (a)의 필수 role/scenario 32개와 기존 Case MySQL 18개를 유지하고 migration check 11개를 추가했다. 의존성·lockfile·workflow·CODEOWNERS 변경은 없다.
+- 기존 `mysql_schema_url` fixture를 그대로 재사용하고 임시 migration env 생성 helper는 `tests/migration_support.py`에 뒀다. 새 conftest나 Case fixture 전환 없이 production runner를 직접 호출해 검증한다. Expected files/modules와의 차이는 test helper 배치뿐인 implementation detail이다.
+
+**Owner 확인**
+
+- [유소연 승인 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/289#issuecomment-6055765577)을 실제 조회했다. `engine.begin()`으로 열린 외부 transaction에서 Alembic이 독자 commit/close하지 않고 caller에게 맡기는 것을 실제 MySQL·SQLAlchemy commit event·새 observer로 확인한다. config URL 테스트는 `%`를 `%%`로 escape하고 percent-encoded 비밀번호도 실제 인증한다. Case에 공통 helper/fixture 전환 의무를 추가하지 않았다.
+- 김준영 deferred Audit A: registry/배포 artifact, 단일 실행 전제, 부분 DDL 실패 후 복구, stdin 공급 경계. 배포 시점·secret source는 RT-14/RD-12f에서 정한다.
+
+**구현 단계 RED → GREEN · Verification**
+
+- runner unit RED: 구현 부재 20 failed. 실제 MySQL RED: 외부 connection/config URL 우선순위·runner 부재 12 failed, 기존 환경변수 경로 2 passed. 첫 GREEN: unit+실제 migration 34 passed.
+- gate RED: 새 check 11개 제거 시 각각 DID NOT RAISE. 실제 MySQL 전체 보고서에서 항목 제거 테스트도 RED. GREEN: gate unit+실제 보고서 회귀 64 passed. 실제 보고서 회귀는 별도 폐기 schema에서 기존 (a)·Case·(b) MySQL 테스트를 실행하고 각 신규 필수 check의 수집/선택/실행 증거를 제거하여 모두 거부하는지 검사한다.
+- 추가 RED→GREEN: `python -m`의 `__main__`과 canonical import가 lock을 따로 만들던 문제를 실제 MySQL로 재현하고 parent package의 process lock을 공유하도록 수정했다. malformed graph의 중복 revision warning도 RED로 재현해 경로를 출력하기 전에 안전한 실패로 바꿨다. 최종 targeted 검증은 **101 passed**다.
+- 첫 전체 회귀는 **2124 passed · 2 failed · 26 skipped**였다. 새 테스트 계정명이 MySQL의 32자 제한을 넘긴 fixture 오류와 이를 실행하는 실제 report 테스트의 연쇄 실패였다. 계정명을 줄이고 percent-encoded 비밀번호 실제 인증 테스트를 통과시킨 뒤 아래 최종 전체 회귀로 재검증했다.
+- Runtime revision template도 별도 임시 경로에서 실제 revision 생성·downgrade 거부를 확인했다. production `migrations/runtime/versions/`에는 Python revision이 없다.
+- 구현 단계 최종 전체 pytest: **2128 passed · 26 skipped · failure/error 0**, 245.34초. 실제 **MySQL 8.4.7**, `DAESINGO_REQUIRE_MYSQL=1`, `-B -X utf8 -m pytest -q -p no:cacheprovider`로 실행했다. 최종 보고서는 OS 임시 경로의 `full-final.txt/json/xml`이다. 전체 pytest는 최종 독립 리뷰에서 재실행하지 않았다.
+- 최종 JSON/JUnit gate: **66 MySQL tests · skip 0 · xfail 0 · 198 phases · collection error 0**. 기존 Case **18개**, (a) 필수 check **32개**를 유지하고 (b) check **11개**를 더해 총 **43개**다. 신규 migration 관련 실제 MySQL 테스트는 **17개**이며 기존 (a)·Case를 mock/skip으로 대체하지 않았다. 원격 GitHub Actions 실행 결과는 아니다.
+- 전체 skip **26개**는 Search `typer` 선택 의존성 4, Case 로컬 실영상 2, Eval 로컬 B-tier 미디어 1·VL.zip 4, Recording 로컬 영상/명시 opt-in 15다. 모든 개별 node/reason을 OS 임시 경로의 `skips.json` 및 `full-final.txt`에 보관했다. MySQL 대상에는 skip이 없다.
+- 빈 별도 schema에서 production runner를 두 번 실행한 후 **새 observer connection**으로 직접 조회했다(`acceptance-state.json`). 테이블은 `cases`, `job_records`, `correction_records`, `analysis_scopes`, `case_alembic_version`, `runtime_alembic_version` 여섯 개다. Case version은 `case_0001` 한 행, Runtime version은 0행이며 공용 `alembic_version`·Runtime 업무 테이블은 없다. 해당 inspection schema는 조회 뒤 정리했다.
+- boundary PASS(위반 0), Contract fixture PASS(문서 62·JSON 26·의미 104), actionlint PASS, YAML/MySQL require 정책·Ubuntu bash syntax·ShellCheck PASS(기존 workflow run step 5개).
+- `git diff --check` PASS. authoritative Plan·Case fixture/revision·기존 `test_case_compatibility.py`·workflow는 변경하지 않았다.
+- 증거는 OS 임시 경로 `C:/Users/cheol/AppData/Local/Temp/rt02b-20261008/`에 보관한다. `.codex-scratch/`·`recording-baseline-negative-001.json`은 변경하지 않았다.
+
+**최종 독립 리뷰 결과 — 사용자 전달**
+
+- **병합 차단 문제 없음**. 완료 처리·커밋·PR 생성 가능 판정을 받았다. 아래 수치는 사용자가 전달한 최종 독립 리뷰 결과이며 이번 문서 갱신에서 테스트를 재실행한 결과가 아니다.
+- runner·gate·MySQL integration·Case **163 passed**. 실제 MySQL 필수 대상 **66개 · skip 0 · xfail 0**, 기존 Case MySQL **18개**를 포함한다.
+- 필수 check **43개**, 실행 phase **198개**. 실제 보고서에서 신규 check의 수집·선택·실행 증거를 제거한 **33가지 모두 gate가 거부**했다.
+- actionlint·YAML·Ubuntu bash·ShellCheck·boundary·Contract·diff **PASS**.
+- 전체 pytest **2128 passed / 26 skipped**는 위 구현 단계 결과이며 최종 독립 리뷰에서는 전체 pytest를 재실행하지 않았다.
+- Case env 최소 수정의 Owner 확인 근거는 [Case Owner 승인 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/289#issuecomment-6055765577)이다.
+- 원격 GitHub Actions는 **PR 생성 후 확인 예정**이다. RT-02(b) PR 번호·merge SHA는 `pending`을 유지하며, Task 마지막 PR의 본문에는 `Closes #289`를 사용한다.
+
+### 남은 위험 · 비차단 후속 후보
+
+- RT-02 구현과 최종 독립 리뷰는 완료됐으며 원격 CI 확인은 PR 생성 후 진행한다. 후속 Runtime domain transaction·heartbeat lifecycle·HTTP probe budget/E2E는 후속 Task 범위로 남아 있으며, RT-02 완료가 배포 준비 완료를 뜻하지 않는다.
 - caller가 외부 작업이나 transaction 탈출을 callback에 넣지 않아야 한다. unknown COMMIT의 재실행 안전성은 각 domain callback이 stable identity/read 조건으로 검증해야 하며 이번 helper만으로 모든 중복을 차단하지 않는다.
-- CI workflow는 수정·검토했고 로컬 gate는 실행했지만 원격 GitHub Actions 결과는 없다. Case의 의도된 테스트 rename/parametrization 변경 시 gate의 기존 실행 목록도 함께 검토해야 한다.
-- 최종 독립 재리뷰 통과는 RT-02(a) 범위의 판정이며, RT-02(b) 및 원격 CI 검증은 남아 있다.
+- 로컬 gate는 검증됐지만 원격 GitHub Actions 결과는 아직 없다. Case의 의도된 테스트 rename/parametrization 변경 시 gate의 기존 실행 목록도 함께 검토해야 한다.
+- cross-process runner 중첩과 부분 DDL 실패의 자동 복구를 지원하지 않는다.
+- 테스트 계정 생성 후 GRANT 실패·interrupt에서도 `DROP USER`가 실행되도록 테스트 cleanup 보호 범위를 넓히는 개선은 **비차단 후속 후보**다. production migration 차단 문제는 아니며 이번 문서 갱신에서 코드·테스트를 수정하지 않는다.
 
 ---
 

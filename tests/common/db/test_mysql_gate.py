@@ -31,6 +31,12 @@ REQUIRED_CHECKS = (
     ("harness", "require_privileges"), ("case", "case_compatibility"),
     ("harness", "schema_identity"), ("harness", "schema_override_database"),
     ("harness", "schema_override_db"), ("harness", "schema_override_init_command"),
+    ("migration", "case_external_transaction"), ("migration", "case_url_precedence"),
+    ("migration", "case_offline_precedence"), ("migration", "empty_schema"),
+    ("migration", "idempotency"), ("migration", "explicit_target"),
+    ("migration", "first_runtime_revision"), ("migration", "partial_failure"),
+    ("migration", "revision_preflight"), ("migration", "process_guard"),
+    ("migration", "cli_stdin"),
 )
 
 

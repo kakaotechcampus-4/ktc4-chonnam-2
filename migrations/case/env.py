@@ -10,15 +10,18 @@ from sqlalchemy import create_engine
 from daesingo.case.store_mysql import metadata
 
 config = context.config
-url = os.environ["DAESINGO_MYSQL_URL"]
 version_table = config.get_main_option("version_table") or "case_alembic_version"
 
 if context.is_offline_mode():
+    url = config.get_main_option("sqlalchemy.url") or os.environ["DAESINGO_MYSQL_URL"]
     context.configure(url=url, target_metadata=metadata, version_table=version_table, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
 else:
-    connectable = config.attributes.get("connection") or create_engine(url)
+    connectable = config.attributes.get("connection")
+    if connectable is None:
+        url = config.get_main_option("sqlalchemy.url") or os.environ["DAESINGO_MYSQL_URL"]
+        connectable = create_engine(url)
     if hasattr(connectable, "connect"):
         with connectable.connect() as connection:
             context.configure(connection=connection, target_metadata=metadata, version_table=version_table)
