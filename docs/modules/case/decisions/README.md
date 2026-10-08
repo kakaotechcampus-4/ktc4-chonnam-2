@@ -21,3 +21,4 @@
 - `empty-case-and-manifest.md — 빈 case 생성(`create_case()`, case가 `case_` + uuid4 발급) · adapter 없는 등록 · 업로드마다 `manifest_summary` 갱신(file/ok 수만, duration·range·failed는 계산 안 함, case_rev 유지, INTAKE 전용) (W7 8순위 8-12, 2026-10-05)`
 - `case-store-mysql.md — CaseStore MySQL 영속화 1단계: 하이브리드 schema(cases + append-only 레코드 3종) · 호출자 transaction 참여 · FOR UPDATE/FOR SHARE · opt-in MySQL 테스트 (W7 8순위 8-6, 2026-10-05). adapter 제거는 2단계`
 - `running-jobs-derivation.md — running_jobs를 case가 JobRecord 정산 기록(REFLECTED · STOPPED_WAITING · CANCELLED · SUPERSEDED, state JSON)으로 계산, 실행 기록 없으면 PENDING, 공개 함수의 running_jobs 인자 제거 (W7 8순위 8-11, 2026-10-06)`
+- `start-analysis.md — 분석 시작(START_ANALYSIS): case당 타임라인 하나를 교체 가능한 port로 받고(임시로 등록 순서대로 이어 붙임), 탐지 유형 4개 전부 · 예산 150초/설정 1,000원 · 첫 fingerprint sha256 · 단서 구조화 대기 90초 (W7 8순위 8-1, 2026-10-07)`

@@ -15,14 +15,17 @@ stale 검사·허용 조건·실패 코드는 전부 여기서 정한다.
 from __future__ import annotations
 
 import copy
+import functools
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from daesingo.case import correction, jobs
+from daesingo.case import analysis_start, correction, jobs
+from daesingo.case.analysis_start import AnalysisStartNotAllowed, InitialSearchBudget
 from daesingo.case.domain import CaseAggregate, InvalidTransition
 from daesingo.case.service import build_view_from_adapter, get_view, mark_ready_if_package_ready
 from daesingo.case.store import CaseStore
+from daesingo.case.timeline_source import CaseTimelineSource
 
 # 이 판본(v0)에서 받는 `CORRECTED` 제외 값 — `CORRECTED`는 `SITUATION_CHANGE`를 보낼 입력형
 # 판본에서 함께 연다(§5).
@@ -41,6 +44,7 @@ _PAYLOAD_KEYS = {
     "RECORD_SITUATION_RESPONSE": frozenset({"value"}),
     "MARK_REVIEWED": frozenset(),
     "RUN_NOTICE_ACTION": frozenset({"notice_code", "action"}),
+    "START_ANALYSIS": frozenset({"description"}),
 }
 
 
@@ -121,11 +125,29 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     )
 
 
+def _start_analysis(
+    case: CaseAggregate,
+    payload: dict[str, Any],
+    view: dict[str, Any],
+    *,
+    timelines: CaseTimelineSource | None,
+    budget: InitialSearchBudget,
+) -> None:
+    # 타임라인 구현은 composition root가 주입한다 — 없이 부르는 것은 배선 오류다(사용자 거부가 아니다).
+    if timelines is None:
+        raise RuntimeError("START_ANALYSIS에는 timelines(CaseTimelineSource) 주입이 필요하다")
+    try:
+        analysis_start.start_analysis(case, payload["description"], timelines=timelines, budget=budget)
+    except (InvalidTransition, AnalysisStartNotAllowed):
+        raise _Rejected("not_allowed") from None
+
+
 _HANDLERS = {
     "SELECT_OTHER_CANDIDATE": _select_other_candidate,
     "RECORD_SITUATION_RESPONSE": _record_situation_response,
     "MARK_REVIEWED": _mark_reviewed,
     "RUN_NOTICE_ACTION": _run_notice_action,
+    "START_ANALYSIS": _start_analysis,
 }
 
 
@@ -155,10 +177,14 @@ def handle_command(
     store: CaseStore,
     job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
+    timelines: CaseTimelineSource | None = None,
+    budget: InitialSearchBudget | None = None,
 ) -> dict[str, Any]:
     """`execute_command()`의 `response`만 돌려준다 — append된 JobRecord가 필요 없는 호출자(transport ·
     테스트)용."""
-    return execute_command(request, store=store, job_executions=job_executions, notices=notices).response
+    return execute_command(
+        request, store=store, job_executions=job_executions, notices=notices, timelines=timelines, budget=budget
+    ).response
 
 
 def execute_command(
@@ -167,6 +193,8 @@ def execute_command(
     store: CaseStore,
     job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
+    timelines: CaseTimelineSource | None = None,
+    budget: InitialSearchBudget | None = None,
 ) -> CommandResult:
     """command 하나를 받아 `{ok, error, case_view}`(§4)와 이번 command로 append된 JobRecord를 돌려준다.
 
@@ -175,6 +203,7 @@ def execute_command(
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
     싣는다 — case_id가 없을 때만 `case_view=None`이다. `job_executions`·`notices`는 `get_view()`에
     그대로 넘긴다(사용자가 본 화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해).
+    `START_ANALYSIS`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
     """
     view_kwargs = {"store": store, "job_executions": job_executions, "notices": notices}
     case_id = request.get("case_id") if isinstance(request, dict) else None
@@ -203,8 +232,11 @@ def execute_command(
         return CommandResult(_response("stale_revision", view))
 
     jobs_before = len(case.job_records)
+    handler = _HANDLERS[request["kind"]]
+    if request["kind"] == "START_ANALYSIS":
+        handler = functools.partial(_start_analysis, timelines=timelines, budget=budget or InitialSearchBudget())
     try:
-        _HANDLERS[request["kind"]](case, request["payload"], view)
+        handler(case, request["payload"], view)
     except _Rejected as rejected:
         return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가

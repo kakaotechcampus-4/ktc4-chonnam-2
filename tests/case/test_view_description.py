@@ -6,10 +6,16 @@ from daesingo.case.view import build_case_view
 
 
 def test_description_is_null_before_analysis_start():
-    # 분석 시작 command(`START_ANALYSIS`)가 아직 없어 원문이 들어올 길이 없다 — 키는 늘 있고 값은 null.
+    # 분석 시작(`START_ANALYSIS`) 전에는 원문이 없다 — 키는 늘 있고 값은 null.
     view = build_case_view(CaseAggregate.intake(case_id="case_desc", hints={}, manifest_summary={}))
     assert "description" in view
     assert view["description"] is None
+
+
+def test_description_is_projected_from_case():
+    case = CaseAggregate.intake(case_id="case_desc2", hints={}, manifest_summary={})
+    case.description = "  "
+    assert build_case_view(case)["description"] == "  "
 
 
 def test_hint_extract_is_a_registered_job_kind():

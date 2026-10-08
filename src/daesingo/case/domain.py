@@ -140,6 +140,15 @@ class CaseAggregate:
     # 여기 없는 JobRecord다(계약 B§10 불변조건 5). 처음 사유가 이긴다. CaseView 비노출.
     settled_jobs: dict[str, str] = field(default_factory=dict)
 
+    # 분석 시작 때 사용자가 적은 설명 원문(case-command Draft §11). 받은 그대로 두고 CaseView `description`으로
+    # 내린다. 분석 시작 전에는 `None`.
+    description: str | None = None
+
+    # 처리 가능한 등록 원본(등록 순서) — `{source_asset_ref, video_stream_ref, duration_sec}`. 분석 시작이 타임라인을
+    # 만들 입력이다(`decisions/start-analysis.md` §3-1). `video_stream_ref`는 등록 때 VIDEO가 정확히 하나였을 때만
+    # 있다 — case가 여러 VIDEO 중 하나를 고르지 않는다. CaseView 비노출.
+    sources: list[dict[str, Any]] = field(default_factory=list)
+
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
 
@@ -158,19 +167,32 @@ class CaseAggregate:
             manifest_summary=dict(_EMPTY_MANIFEST),
         )
 
-    def record_source_registered(self, source_asset: dict[str, Any]) -> None:
+    def record_source_registered(
+        self, source_asset: dict[str, Any], media_streams: list[dict[str, Any]] | None = None
+    ) -> None:
         """recording이 등록 · 연결한 원본 1개를 `manifest_summary`에 센다.
 
         `file_count` +1, `availability=AVAILABLE`이면 `ok_file_count` +1. `failed_file_count`(의미 미결) ·
         `duration_sec`(「전체 구간 길이」 — 전방 · 후방이 같은 시간대를 찍으면 합산이 틀린다) · `range`는
         recording timeline 몫이라 여기서 계산하지 않는다. `case_rev`는 올리지 않는다 — 이후 판단의 입력이
         아니고, 동시 업로드 응답이 뒤섞여도 분석 시작이 `stale_revision`에 걸리지 않게.
+
+        처리 가능한 원본은 `sources`에도 남긴다 — VIDEO 스트림이 정확히 하나면 그 ref, 아니면 `None`
+        (`decisions/start-analysis.md` §3-1).
         """
         if self.stage != "INTAKE":
             raise SourceNotAccepted(f"원본 연결은 INTAKE에서만 받는다: stage={self.stage}")
         self.manifest_summary["file_count"] += 1
         if source_asset.get("availability") == "AVAILABLE":
             self.manifest_summary["ok_file_count"] += 1
+            videos = [s["media_stream_ref"] for s in media_streams or [] if s.get("media_type") == "VIDEO"]
+            self.sources.append(
+                {
+                    "source_asset_ref": source_asset["source_asset_ref"],
+                    "video_stream_ref": videos[0] if len(videos) == 1 else None,
+                    "duration_sec": source_asset.get("duration_sec"),
+                }
+            )
 
     def record_analysis_scope(self, scope: dict[str, Any]) -> None:
         """scope는 불변이다 — 같은 `scope_id`로 다른 내용이 오면 거부한다."""
@@ -201,7 +223,7 @@ class CaseAggregate:
         """단서 구조화(`HINT_EXTRACT`) 결과로 `hints`를 바꾼다. 결과는 분석 시작 직후 탐색 발주 전에만
         들어오므로 `SEARCHING` 전용이다. 사용자 요청이 아니라 실행 결과라 `case_rev`를 올리지 않는다
         (`record_candidate_search_failure()`와 같다). 어떤 값을 넣을지(매핑 · 실패 처리)는
-        `service.receive_hint_extraction()`이 정한다."""
+        `analysis_start.hints_from_result()`가 정한다."""
         if self.stage != "SEARCHING":
             raise InvalidTransition(f"{self.stage}에서는 단서 구조화 결과를 받을 수 없다(SEARCHING 전용)")
         self.hints = dict(hints)

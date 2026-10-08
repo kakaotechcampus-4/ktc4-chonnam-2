@@ -71,5 +71,5 @@ def test_rejected_command_leaves_no_trace():
 def test_record_source_registered_is_persisted():
     store = CaseStore()
     case_id = service.create_case(store=store)
-    service.record_source_registered(case_id, {"availability": "AVAILABLE"}, store=store)
+    service.record_source_registered(case_id, {"source_asset_ref": "sa_1", "availability": "AVAILABLE"}, store=store)
     assert store.get_case(case_id).manifest_summary["file_count"] == 1
