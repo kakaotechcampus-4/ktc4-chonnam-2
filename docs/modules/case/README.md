@@ -29,7 +29,7 @@
 
 ### MySQL 통합 테스트 (opt-in)
 
-case 저장소의 MySQL 구현은 `DAESINGO_MYSQL_URL`이 있을 때만 테스트한다(CI는 아직 MySQL 없음 — Runtime Implementation Plan에서 통합).
+case 저장소의 MySQL 구현은 `DAESINGO_MYSQL_URL`이 있을 때만 테스트한다(로컬은 opt-in). CI는 `python-tests.yml`이 MySQL 8.4 service와 `DAESINGO_REQUIRE_MYSQL=1`로 돌려 skip을 실패로 본다(RT-02a #319).
 
     docker run -d --rm --name daesingo-mysql -e MYSQL_ROOT_PASSWORD=devpw -e MYSQL_DATABASE=daesingo_test -p 3306:3306 mysql:8.4
     DAESINGO_MYSQL_URL="mysql+pymysql://root:devpw@127.0.0.1:3306/daesingo_test" python -m pytest tests/case -q
