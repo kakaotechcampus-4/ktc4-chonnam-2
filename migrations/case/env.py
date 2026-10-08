@@ -1,4 +1,4 @@
-"""case 소유 migration env(잠정). URL은 `DAESINGO_MYSQL_URL`. forward-only — downgrade를 운영 경로로 쓰지 않는다."""
+"""case 소유 migration env(잠정). 우선순위: 외부 connection → Alembic config URL → DAESINGO_MYSQL_URL. forward-only — downgrade를 운영 경로로 쓰지 않는다."""
 
 from __future__ import annotations
 
