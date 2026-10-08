@@ -38,6 +38,7 @@ class _NoDownstream:
     def get_overlay_time_readouts(self): return []
     def get_plate_read_status(self): return None
     def get_visual_evidence_decision(self): return None
+    def get_independent_facts(self): return None
     def get_job_executions(self): return []
 
 

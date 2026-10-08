@@ -271,7 +271,10 @@ class Ctx:
         return service.build_view_from_adapter(case, self.real)
 
     def record(self) -> dict[str, Any] | None:
-        return self.real.get_evidence_record() if any(c.selected for c in self.case.candidates) else None
+        """정정의 이전 값 원천 — EvidenceRecord, 상황 응답 대기면 화면이 부분 투영으로 보는 상황 독립 값(#239)."""
+        if not any(c.selected for c in self.case.candidates):
+            return None
+        return self.real.get_evidence_record() or self.real.get_independent_facts()
 
     def next(self, key: str) -> int:
         self.n[key] += 1
@@ -437,7 +440,14 @@ def check_view(case: CaseAggregate, real: RealAdapter, view: dict[str, Any]) -> 
         bad.append("I1 READY인데 Package 없음")
     if view["stage"] == "EVIDENCE_REVIEW" and len(selected) != 1:
         bad.append(f"I2 EVIDENCE_REVIEW인데 선택 후보 {len(selected)}개")
-    if view["evidence"] is not None:
+    evidence = view["evidence"]
+    if evidence is not None and evidence["record_id"] is None:
+        # 상황 응답 대기 부분 투영(#239) — EvidenceRecord 없이 상황 독립 값만 싣는다.
+        if any(view[k] is not None for k in ("requirements_evidence", "requirements_package", "package")):
+            bad.append("I9 부분 투영인데 requirements · package 있음")
+        if any(evidence[k]["info_state"] != "INFO_UNKNOWN" for k in ("case_type_display", "report_type_display", "violation_display")):
+            bad.append("I10 부분 투영인데 상황 종속 값이 확정됨")
+    elif evidence is not None:
         record = real.get_evidence_record() or {}
         ref = (record.get("basis") or {}).get("candidate_ref", {}).get("ref")
         if not selected or ref != selected[0].candidate_id or record.get("selection_rev") != case.selection_rev:

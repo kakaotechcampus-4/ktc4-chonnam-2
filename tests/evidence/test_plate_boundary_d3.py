@@ -61,6 +61,9 @@ class _Snapshot:
     def get_visual_evidence_decision(self):
         return ASSEMBLE
 
+    def get_independent_facts(self):
+        return None
+
     def get_requirement_report(self, scope):
         return self._final if scope == "FINAL_PACKAGE" else None
 
