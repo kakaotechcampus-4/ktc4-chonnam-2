@@ -63,6 +63,10 @@ def issue_job(
         "force_rerun": force_rerun,
         "requested_at": _now(),
     }
+    # 같은 kind · scope_ref의 기다리던 job은 이 job으로 대체된다 — 대표 job은 가장 나중 job이다(A§10-7).
+    for prior in case.waiting_job_records():
+        if prior["kind"] == kind and prior["scope_ref"] == scope_ref:
+            case.settle_job(prior["job_id"], "SUPERSEDED")
     case.record_job(job_record)
     return job_record
 

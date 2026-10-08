@@ -68,6 +68,10 @@ def run() -> dict[str, Any]:
         "(evidence.assemble_evidence/evaluate_requirements 등 실제 호출)...",
     )
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
+    # 이 데모는 각 단계 결과를 adapter로 바로 읽는다 — 결과가 반영된 것이므로 기다리는 job으로 남기지
+    # 않는다(`decisions/running-jobs-derivation.md`, 비동기 반영 경로는 8-8).
+    for record in case.waiting_job_records():
+        case.settle_job(record["job_id"], "REFLECTED")
     # Package가 실제로 준비됐을 때만 READY(#167). 상황 응답 전이면 EVIDENCE_REVIEW에 남는다.
     service.mark_ready_if_package_ready(case, real)
 

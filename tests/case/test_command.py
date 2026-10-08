@@ -637,3 +637,22 @@ def test_handle_command_returns_execute_command_response():
 def test_execute_command_is_exported_from_case_package():
     assert case_package.execute_command is command.execute_command
     assert case_package.CommandResult is command.CommandResult
+
+
+# --- 202 응답의 case_view에 방금 append한 job (8-11, HTTP API Contract §5.3) ----------------
+
+
+def test_command_response_view_shows_appended_job_as_pending():
+    store, case = _store_with_selected_case()
+
+    result = command.execute_command(
+        _request(case, "RUN_NOTICE_ACTION", {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"}),
+        store=store,
+        notices=[PLATE_READ_FAILED],
+    )
+
+    appended = result.appended_job_records[0]
+    # 재시도로 대체된 이전 PLATE_READ는 빠지고, 새 job만 실행 기록 없이 PENDING으로 보인다.
+    assert result.response["case_view"]["running_jobs"] == [
+        {"job_id": appended["job_id"], "kind": "PLATE_READ", "label_key": "job.plate_read", "status": "PENDING"}
+    ]

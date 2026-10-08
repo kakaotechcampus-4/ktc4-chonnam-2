@@ -153,19 +153,19 @@ def handle_command(
     request: dict[str, Any],
     *,
     store: CaseStore,
-    running_jobs: list[dict[str, Any]] | None = None,
+    job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """`execute_command()`의 `response`만 돌려준다 — append된 JobRecord가 필요 없는 호출자(transport ·
     테스트)용."""
-    return execute_command(request, store=store, running_jobs=running_jobs, notices=notices).response
+    return execute_command(request, store=store, job_executions=job_executions, notices=notices).response
 
 
 def execute_command(
     request: dict[str, Any],
     *,
     store: CaseStore,
-    running_jobs: list[dict[str, Any]] | None = None,
+    job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
 ) -> CommandResult:
     """command 하나를 받아 `{ok, error, case_view}`(§4)와 이번 command로 append된 JobRecord를 돌려준다.
@@ -173,10 +173,10 @@ def execute_command(
     성공하면 stage가 `EVIDENCE_REVIEW`일 때 `PACKAGE_READY`를 다시 보고 준비됐으면 `READY`로 올린다
     (§5 — 그 전이도 `case_rev`를 올린다). 검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
-    싣는다 — case_id가 없을 때만 `case_view=None`이다. `running_jobs`·`notices`는 `get_view()`에
+    싣는다 — case_id가 없을 때만 `case_view=None`이다. `job_executions`·`notices`는 `get_view()`에
     그대로 넘긴다(사용자가 본 화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해).
     """
-    view_kwargs = {"store": store, "running_jobs": running_jobs, "notices": notices}
+    view_kwargs = {"store": store, "job_executions": job_executions, "notices": notices}
     case_id = request.get("case_id") if isinstance(request, dict) else None
 
     def current_view() -> dict[str, Any] | None:
@@ -186,7 +186,7 @@ def execute_command(
             return None
 
     def view_of(case: CaseAggregate) -> dict[str, Any]:
-        return build_view_from_adapter(case, store.get_adapter(case.case_id, case), running_jobs=running_jobs, notices=notices)
+        return build_view_from_adapter(case, store.get_adapter(case.case_id, case), job_executions=job_executions, notices=notices)
 
     try:
         _check_payload(request)

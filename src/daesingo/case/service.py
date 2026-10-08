@@ -183,7 +183,7 @@ def build_view_from_adapter(
     case: CaseAggregate,
     adapter: ModuleAdapter | None,
     *,
-    running_jobs: list[dict[str, Any]] | None = None,
+    job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
     visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
@@ -192,9 +192,9 @@ def build_view_from_adapter(
     (downstream 스냅샷 소스)만 있으면 `CaseView`를 조립할 수 있다는 것이 이 함수가
     보이는 계약이다.
 
-    `running_jobs`/`notices`는 adapter가 아니라 호출자가 직접 안다(어떤 job을 방금
-    발주했는지는 이 함수가 추측하지 않는다 — 모듈 docstring 「여기 없는 것」과 동일한
-    이유). 그대로 `build_case_view()`에 전달만 한다. `visual_verify_status`(선택 후보 Fine의 대표
+    `running_jobs`는 case가 정산 기록으로 계산하고(`view.derive_running_jobs`), 실행 상태만
+    `job_executions`로 받는다. `notices`는 adapter가 아니라 호출자가 직접 안다(모듈 docstring
+    「여기 없는 것」과 동일한 이유). 둘 다 그대로 `build_case_view()`에 전달만 한다. `visual_verify_status`(선택 후보 Fine의 대표
     `JobExecution.status`)도 같은 이유로 호출자가 넘긴다 — worker 경로에서는
     `view.representative_execution_status(..., "FINE_VERIFY")`가 만든다.
 
@@ -211,7 +211,7 @@ def build_view_from_adapter(
         requirement_report_package=snapshot.requirement_report_package,
         report_package=snapshot.report_package,
         plate_readouts=snapshot.plate_readouts,
-        running_jobs=running_jobs,
+        job_executions=job_executions,
         notices=notices,
         plate_read_status=snapshot.plate_read_status,
         visual_evidence_decision=snapshot.visual_evidence_decision,
@@ -476,7 +476,7 @@ def get_view(
     case_id: str,
     *,
     store: CaseStore,
-    running_jobs: list[dict[str, Any]] | None = None,
+    job_executions: list[dict[str, Any]] | None = None,
     notices: list[dict[str, Any]] | None = None,
     visual_verify_status: str | None = None,
 ) -> dict[str, Any]:
@@ -492,5 +492,5 @@ def get_view(
     case = store.get_case(case_id)
     adapter = store.get_adapter(case_id, case)
     return build_view_from_adapter(
-        case, adapter, running_jobs=running_jobs, notices=notices, visual_verify_status=visual_verify_status
+        case, adapter, job_executions=job_executions, notices=notices, visual_verify_status=visual_verify_status
     )
