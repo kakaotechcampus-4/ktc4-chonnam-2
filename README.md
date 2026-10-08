@@ -66,7 +66,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
 | `apps/web/` | 실제 웹 앱. `CaseView` 소비 화면·컴포넌트 구현 진행 중 (Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
-| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker` composition root는 아직 README만 있는 골격 |
+| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있고, `api`/`worker`는 RT-01 설정·로그 bootstrap 구현이 있다(HTTP route·Worker loop 미구현) |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
@@ -130,6 +130,8 @@ uv run pytest               # tests/ 전체 (모듈별 하위 폴더 포함, tes
 uv run pytest tests/case/   # 모듈 하나만
 uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 ```
+
+MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 MySQL 8.4 service와 `DAESINGO_REQUIRE_MYSQL=1`을 사용하고, MySQL 테스트의 skip/xfail 0·필수 시나리오·기존 Case MySQL 실행을 JSON/JUnit 보고서로 검사한다. URL이 없는 로컬 실행은 MySQL integration을 skip한다.
 
 ### 프로토타입에 대해
 
