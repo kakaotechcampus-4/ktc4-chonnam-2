@@ -27,6 +27,7 @@ job_execution = sa.Table(
     sa.Column("failure_kind", sa.String(191)),
     sa.Column("available_at", DATETIME(fsp=6), nullable=False),
     sa.Column("lease_owner", _id()),
+    sa.Column("claim_token", _id()),
     sa.Column("lease_expires_at", DATETIME(fsp=6)),
     sa.Column("heartbeat_at", DATETIME(fsp=6)),
     sa.Column("cancel_requested_at", DATETIME(fsp=6)),

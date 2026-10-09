@@ -14,6 +14,7 @@ Connection.commit()/rollback() misuse only; it cannot enforce arbitrary Python.
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 import logging
 import time
 from typing import TypeVar
@@ -31,6 +32,22 @@ from .errors import (
 T = TypeVar("T")
 MAX_ATTEMPTS = 3  # Issue #289: initial attempt + at most two retries.
 _active_attempt: ContextVar[tuple[Connection, dict] | None] = ContextVar("db_attempt", default=None)
+
+
+@dataclass(frozen=True)
+class TransactionAttempt:
+    """Sanitized begin-to-outcome timing, without connection/result/exception."""
+    outcome: str
+    duration_ms: float
+
+
+def _observe(observer, state: dict, outcome: str) -> None:
+    if observer is not None and "duration_ms" in state:
+        try:
+            observer(TransactionAttempt(outcome, state["duration_ms"]))
+        except Exception:
+            # A sink failure (even a DBAPIError) is never a transaction failure.
+            pass
 
 
 @event.listens_for(Engine, "handle_error")
@@ -51,7 +68,10 @@ def _remember_commit_error(context) -> None:
 
 def _emit(logger: logging.Logger | None, name: str, reason: str) -> None:
     if logger is not None:
-        log_event(logger, "runtime.db." + name, status=reason.upper())
+        try:
+            log_event(logger, "runtime.db." + name, status=reason.upper())
+        except Exception:
+            pass
 
 
 @contextmanager
@@ -78,6 +98,7 @@ def _attempt(engine: Engine, operation: Callable[[Connection], T], state: dict) 
             primary = None
             token = _active_attempt.set((conn, state))
             try:
+                state["started_ns"] = time.monotonic_ns()
                 with conn.begin():
                     state["phase"] = "body"
                     try:
@@ -88,7 +109,11 @@ def _attempt(engine: Engine, operation: Callable[[Connection], T], state: dict) 
                         raise
                     # Before DBAPI commit: socket send failures can be ambiguous.
                     state["phase"] = "committing"
+                # Context exit acknowledged COMMIT, before pool checkin/close.
+                state["duration_ms"] = (time.monotonic_ns() - state["started_ns"]) / 1_000_000
             except BaseException as error:
+                if "started_ns" in state:
+                    state["duration_ms"] = (time.monotonic_ns() - state["started_ns"]) / 1_000_000
                 if primary is None:
                     primary = state.get("commit_error")
                 state["failure"] = primary if primary is not None else error
@@ -145,6 +170,7 @@ def run_api_transaction(
 def run_worker_transaction(
     engine: Engine, operation: Callable[[Connection], T], *,
     sleep: Callable[[float], None] = time.sleep, logger: logging.Logger | None = None,
+    observe: Callable[[TransactionAttempt], None] | None = None,
 ) -> T:
     """At most three complete DB attempts; resources release before each 1s wait.
 
@@ -156,12 +182,18 @@ def run_worker_transaction(
     for attempt in range(1, MAX_ATTEMPTS + 1):
         state: dict = {}
         try:
-            return _attempt(engine, operation, state)
+            result = _attempt(engine, operation, state)
+            _observe(observe, state, "COMMITTED")
+            return result
         except Exception as error:
             reason = db_reason(error)
             if state.get("phase") == "committed":
                 _emit(logger, "error_count", reason or "cleanup")
+                _observe(observe, state, "COMMITTED")
                 return state["result"]
+            outcome = ("COMMIT_UNKNOWN" if state.get("phase") == "committing" and reason == "disconnect"
+                       else (reason or "failed").upper())
+            _observe(observe, state, outcome)
             if reason not in ("lock_wait_timeout", "deadlock", "disconnect"):
                 raise
             unknown |= state.get("phase") == "committing" and reason == "disconnect"

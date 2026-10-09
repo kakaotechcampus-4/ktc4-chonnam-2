@@ -21,11 +21,76 @@ MIGRATION_CHECKS = (
     "partial_failure", "revision_preflight", "process_guard", "cli_stdin",
 )
 
+LIFECYCLE_CHECKS = (
+    ("jobs", "token_migration"),
+    ("jobs", "claim_basic"),
+    ("jobs", "claim_eligibility"),
+    ("jobs", "claim_empty"),
+    ("jobs", "claim_concurrent"),
+    ("jobs", "claim_skip_locked"),
+    ("jobs", "claim_commit_boundary"),
+    ("jobs", "claim_no_insert"),
+    ("jobs", "claim_index"),
+    ("jobs", "finish_targets"),
+    ("jobs", "finish_guard"),
+    ("jobs", "finish_rollback"),
+    ("jobs", "finish_rejection"),
+    ("jobs", "finish_validation"),
+    ("jobs", "claim_unknown_commit"),
+    ("jobs", "claim_token_identity"),
+    ("jobs", "claim_disconnect"),
+    ("jobs", "finish_race"),
+    ("jobs", "claim_rc_finish"),
+    ("jobs", "finish_deadlock"),
+    ("jobs", "claim_lock_timeout"),
+    ("jobs", "claim_latency"),
+    ("api", "utc_session"), ("worker", "utc_session"),
+)
+
 JOB_PARAMETERS = (
     *(("jobs", "read_states", state) for state in
       ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
     ("jobs", "enqueue_duplicate", "separate_batch"),
     ("jobs", "enqueue_duplicate", "same_batch"),
+    ("jobs", "claim_eligibility", "past"),
+    ("jobs", "claim_eligibility", "equal"),
+    ("jobs", "claim_eligibility", "future"),
+    ("jobs", "claim_empty", "empty"),
+    ("jobs", "claim_empty", "all_locked"),
+    ("jobs", "finish_targets", "SUCCEEDED"),
+    ("jobs", "finish_targets", "FAILED"),
+    ("jobs", "finish_targets", "CANCELLED"),
+    ("jobs", "finish_guard", "missing"),
+    ("jobs", "finish_guard", "other_owner"),
+    ("jobs", "finish_guard", "QUEUED"),
+    ("jobs", "finish_guard", "SUCCEEDED"),
+    ("jobs", "finish_guard", "FAILED"),
+    ("jobs", "finish_guard", "CANCELLED"),
+    ("jobs", "finish_guard", "STALE"),
+    ("jobs", "finish_rejection", "STALE"),
+    ("jobs", "finish_rejection", "QUEUED"),
+    ("jobs", "finish_rejection", "RUNNING"),
+    ("jobs", "finish_rejection", "UNKNOWN"),
+    ("jobs", "claim_unknown_commit", "recovered"),
+    ("jobs", "claim_unknown_commit", "token"),
+    ("jobs", "claim_unknown_commit", "owner"),
+    ("jobs", "claim_unknown_commit", "terminal"),
+    ("jobs", "claim_unknown_commit", "expired"),
+    ("jobs", "claim_unknown_commit", "missing"),
+    ("jobs", "finish_race", "SUCCEEDED_commit"),
+    ("jobs", "finish_race", "SUCCEEDED_rollback"),
+    ("jobs", "finish_race", "FAILED_commit"),
+    ("jobs", "finish_race", "FAILED_rollback"),
+    ("jobs", "finish_race", "CANCELLED_commit"),
+    ("jobs", "finish_race", "CANCELLED_rollback"),
+    ("jobs", "claim_rc_finish", "FAILED"),
+    ("jobs", "claim_rc_finish", "CANCELLED"),
+    ("api", "utc_session", "fresh"),
+    ("api", "utc_session", "reused"),
+    ("api", "utc_session", "replacement"),
+    ("worker", "utc_session", "fresh"),
+    ("worker", "utc_session", "reused"),
+    ("worker", "utc_session", "replacement"),
 )
 
 
@@ -53,10 +118,11 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     gate.validate_junit(junit_path, report)
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
-                           ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states")]:
+                           ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
+                           *LIFECYCLE_CHECKS]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
-                   if {"role": role, "scenario": scenario} in item.get("checks", [])}
+                   if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
         assert removed, scenario
         broken["collected"] = [item for item in broken["collected"] if item["nodeid"] not in removed]
         broken["selected"] = [node for node in broken["selected"] if node not in removed]
@@ -96,5 +162,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == 56
+    assert len(mutations) == len(JOB_PARAMETERS) * 7
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

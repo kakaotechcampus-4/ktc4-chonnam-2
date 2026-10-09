@@ -40,13 +40,13 @@ def test_production_migration_schema_and_tracking(queue):
     with queue.connect() as conn:
         db = inspect(conn)
         assert "job_execution" in db.get_table_names()
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0002"
         assert db.get_foreign_keys("job_execution") == []
         columns = {c["name"]: c for c in db.get_columns("job_execution")}
         assert set(columns) == {
             "execution_id", "job_id", "status", "attempt", "queued_at", "started_at", "ended_at",
             "produced", "failure_kind", "available_at", "lease_owner", "lease_expires_at",
-            "heartbeat_at", "cancel_requested_at", "case_applied_at", "trace_id", "kind", "case_id",
+            "heartbeat_at", "cancel_requested_at", "case_applied_at", "trace_id", "kind", "case_id", "claim_token",
         }
         assert "usage_refs" not in columns
         for name in ("queued_at", "started_at", "ended_at", "available_at", "lease_expires_at",
