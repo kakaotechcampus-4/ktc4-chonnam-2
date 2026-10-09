@@ -23,6 +23,7 @@ from .ledger import UsageRecord
 from .prompts import load_prompt
 from .provider import GeminiProvider, ProviderResult, TextInvocation
 from .smoke_errors import ProviderPayloadError
+from .usage_sink import UsageSink
 
 INTENT_SYSTEM_PROMPT: Final = load_prompt("intent-v3")
 INTENT_USER_PROMPT: Final = load_prompt("intent-user-v1")
@@ -100,6 +101,7 @@ class IntentHintExtractor:
         case_id: str,
         prior_hints: Mapping[str, str | None] | None = None,
         timeout_sec: float = DEFAULT_INTENT_TIMEOUT_SEC,
+        usage_sink: UsageSink | None = None,
     ) -> IntentHintResult:
         """Worker에서 1회 부른다. provider 실패는 던지지 않고 `FAILED`로 돌려준다.
 
@@ -118,6 +120,7 @@ class IntentHintExtractor:
             ),
             response_model=IntentHintExtraction,
             deadline=RunDeadline(self.monotonic, round(timeout_sec * 1000)),
+            usage_sink=usage_sink,
         )
         try:
             result = self.provider.invoke_text(invocation)
