@@ -11,7 +11,8 @@ import { acceptView, reportVideoState, splitDateTime } from '../state/resultMode
 
 afterEach(cleanup)
 
-const HAPPY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.index === 2)!.view
+// 순번이 아니라 모양으로 고른다 — fixture에 스냅샷이 끼어들면 순번이 밀린다(#177, DemoFlow와 같은 방식)
+const HAPPY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
 const notice = (code: string): Notice => SNAPSHOTS.flatMap((s) => s.view.notices).find((n) => n.code === code)!
 
 describe('발생 일시 나누기', () => {

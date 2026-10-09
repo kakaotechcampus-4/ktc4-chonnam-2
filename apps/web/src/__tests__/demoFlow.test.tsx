@@ -4,7 +4,9 @@
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { SNAPSHOTS } from '../contracts/fixtures'
 import { DemoFlow } from '../screens/DemoFlow'
+import { ResultScreen } from '../screens/ResultScreen'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => {
@@ -170,8 +172,17 @@ it('복사 버튼은 붙여넣을 칸과 위치 검색어에만 있다', () => {
   wait()
   const items = [...container.querySelectorAll('.res-item')]
   const withCopy = items.filter((r) => r.querySelector('button[aria-label$="복사"]')).map((r) => r.querySelector('.res-item-k')!.textContent)
-  // 붙여넣을 것(신고 내용·차량 번호)과 위치 검색어만 복사한다. 직접 고를 칸에는 복사 버튼이 없다
-  expect(withCopy).toEqual(['위치 선택', '신고 내용', '차량 번호'])
+  // 붙여넣을 것(신고 내용·차량 번호)과 위치 검색어만 복사한다. 직접 고를 칸에는 복사 버튼이 없다.
+  // 정상 fixture는 검색어가 없다(search_keyword null + evidence.location_search_keyword_missing) — 그러면 위치에도 복사가 없다
+  expect(withCopy).toEqual(['신고 내용', '차량 번호'])
+})
+
+it('위치 검색어가 있으면 위치 칸에 검색어 복사가 붙는다', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const view = { ...happy, evidence: { ...happy.evidence!, location_display: { ...happy.evidence!.location_display, search_keyword: '광주 상무지구 상무중앙로 사거리' } } }
+  const { container, getByRole } = render(<ResultScreen view={view} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  expect(getByRole('button', { name: '검색어 복사' })).toBeTruthy()
+  expect(container.querySelector('.res-keyword-v')!.textContent).toBe('광주 상무지구 상무중앙로 사거리')
 })
 
 it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
