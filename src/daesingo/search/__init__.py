@@ -51,13 +51,20 @@ def verify_visual(
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     candidate: CandidateEvent | None = None,
+    max_latency_sec: int | None = None,
 ) -> VisualVerificationResult:
     """Return the recorded Fine run together with its visual evidence."""
     if service is None:
         return _FIXTURE_SERVICE.verify_visual(input_ref, target_hint)
     if candidate is None:
         raise MissingCandidateError(source_ref=input_ref)
-    return service.verify_visual(input_ref, candidate, target_hint, event_type)
+    return service.verify_visual(
+        input_ref,
+        candidate,
+        target_hint,
+        event_type,
+        max_latency_sec=max_latency_sec,
+    )
 
 
 def verify_visual_with_stream_context(
@@ -68,6 +75,7 @@ def verify_visual_with_stream_context(
     *,
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
+    max_latency_sec: int | None = None,
 ) -> VisualVerificationExecution:
     """Run Fine and return its non-canonical selected VIDEO stream context.
 
@@ -82,6 +90,7 @@ def verify_visual_with_stream_context(
         service=service,
         event_type=event_type,
         candidate=candidate,
+        max_latency_sec=max_latency_sec,
     )
     return VisualVerificationExecution(
         result=result,
