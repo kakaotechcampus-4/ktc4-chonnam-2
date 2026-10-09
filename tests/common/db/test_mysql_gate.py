@@ -62,9 +62,19 @@ REQUIRED_CHECKS = (
     ("jobs", "claim_lock_timeout"),
     ("jobs", "claim_latency"),
     ("api", "utc_session"), ("worker", "utc_session"),
+    ("worker_core", "success"), ("worker_core", "failure"),
+    ("worker_core", "claim_db_recovery"), ("worker_core", "terminal_db_recovery"),
+    ("worker_core", "terminal_unknown_commit"), ("worker_core", "finish_rejected"),
+    ("worker_core", "correlation"),
+    ("worker_core", "logger_isolation"),
 )
 
 REQUIRED_PARAMETERS = (
+    *(("worker_core", "logger_isolation", scenario + "_" + sink)
+      for scenario in ("started", "completed", "claim_db", "terminal_db") for sink in ("filter", "handler")),
+    *(("worker_core", "failure", mode) for mode in ("unknown", "module", "exception", "invalid")),
+    *(("worker_core", "terminal_unknown_commit", status) for status in ("SUCCEEDED", "FAILED")),
+    *(("worker_core", "correlation", mode) for mode in ("max_job_id", "path_id")),
     *(("jobs", "read_states", state) for state in
       ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
     ("jobs", "enqueue_duplicate", "separate_batch"),

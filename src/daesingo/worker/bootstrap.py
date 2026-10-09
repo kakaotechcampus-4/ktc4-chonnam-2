@@ -1,4 +1,4 @@
-"""Worker config composition bootstrap; dispatch and loop are later tasks."""
+"""Worker file configuration and module validation for the composition root."""
 
 import os
 from collections.abc import Mapping, Sequence

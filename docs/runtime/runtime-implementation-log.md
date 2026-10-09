@@ -40,6 +40,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | claim receipt · unknown COMMIT 복구 | nullable 내부 `claim_token`의 `runtime_0002` · 공개 호출의 ID/token 고정 · 같은 PK durable receipt만 복구 · Contract validation 입력 allowlist | RT-03(b) · 로컬, PR 미생성 | 아래 RT-03(b) · `common/jobs/repository.py` |
 | application/worker UTC checkout | connection 생성·checkout에서 UTC session 복원 · B-L6 `NOW(6)` 유지 | RT-03(b) · 로컬, PR 미생성 | 아래 RT-03(b) · `common/db/engines.py` |
 | attempt observer · claim latency | sanitized outcome/duration · transaction 시작 → COMMIT acknowledgement · checkout/checkin/retry 대기 제외 · 관측 실패와 retry 분리 | RT-03(b) · 로컬, PR 미생성 | 아래 RT-03(b) · `common/db/transactions.py` |
+| Worker invocation · T1 replay | 불변 kind registry · execution context/result · claim/handler/T1 분리 · 결과 보존 재시도 · durable terminal facts 재조회 | RT-04(a) · 로컬, PR 미생성 · `Refs #291` | 아래 RT-04 · `worker/composition.py` · `common/jobs/worker_loop.py` |
 | `DECIMAL` precision/scale (Plan P-10) | pending | RT-07 | — |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
@@ -427,35 +428,98 @@ Status: DONE · Issue: #290 · Audit: A
 
 ## RT-04 — Worker core: claim loop · kind registry · dispatch · T1/T2 (E2E-0)
 
-Status: NOT_STARTED · Issue: #291 · Audit: A
+Status: IN_PROGRESS · Issue: #291 · Audit: A
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| 로컬, PR 미생성 | RT-04(a) loop · registry · T1 — `Refs #291` (Issue close 아님) | pending |
 
 ### 구현 결과
 
-—
+- `python -m daesingo.worker` entrypoint가 RT-01 bootstrap과 RT-02 Worker engine을 연결한다. concurrency knob 없이 한 main thread가 실행하며, SIGINT/SIGTERM은 다음 idle 지점에서 반영한다. 실행 중 handler와 T1 기록은 중단하지 않는다.
+- 단일 `KindRegistry`는 kind→invocation mapping의 불변 snapshot이다. 실제 Recording/Search handler 등록은 비어 있으며 fake handler로 경로를 검증한다. 미등록 kind는 invocation 없이 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`, 비정상 반환값·handler/dispatch 예외는 `RUNTIME_` failure로 기록한다.
+- `ExecutionContext`는 execution/job/case/kind/attempt/trace와 cancel·usage injection 자리를 갖는다. cancel·usage 동작은 구현하지 않는다. `HandlerResult`는 성공/실패 및 produced만 담고 모듈 failure taxonomy를 재해석하지 않는다.
+- claim commit 뒤 connection을 반환하고 handler를 실행한다. T1은 기존 `finish`와 `run_worker_transaction`을 재사용한다. B-D8 소진 뒤 B-Q3 간격으로 같은 결과만 재기록하며 handler를 재호출하지 않는다. 조건부 전이 0 rows는 현재 owner·status·produced·failure를 잠금 재조회해 unknown COMMIT의 동일 결과인지 구분한다.
+- started/completed와 DB 오류 event는 RT-01 structured logging으로 기록한다. execution DB 오류에는 trace/case/job/execution correlation을 연결한다. 예외 원문, produced ref, failure taxonomy 원문, 경로, provider/user payload와 claim token은 로그에 전달하지 않는다.
 
 ### Plan 대비 변경
 
-—
+- Plan의 두 PR 경계 중 RT-04(a)만 구현했다. T2 `ResultReflector`·후속 enqueue·Case 반영·E2E-0 최종 연결은 RT-04(b)에 남긴다. Expected files/modules에 `common/jobs/execution.py`를 추가해 Runtime이 Worker registry에 의존하지 않게 했다. 구현 구조의 선택이며 Contract·Accepted Decision·Baseline 의미 변경은 없다.
+- 기존 MySQL JSON/JUnit gate에 Worker 필수 role/scenario와 parameter를 추가하고 실제 보고서 mutation 검증의 child suite에 Worker MySQL 경로를 포함한다. child timeout의 여유만 늘리며 운영 interval은 바꾸지 않는다. workflow·의존성·migration 변경 없음.
 
 ### 새 implementation detail
 
-—
+- scheduler의 idle wait와 T1 DB backoff sleep을 분리한다. idle은 signal event로 깨어나지만 T1 재시도는 종료 요청에도 결과를 유지한다. stop flag는 다음 claim 앞에서만 확인한다.
+- terminal completion log는 commit 또는 동일 owner의 동일 durable terminal 결과를 확인한 뒤에만 기록한다. 다른 owner/status/result 또는 missing row는 `runtime.execution.finish_rejected`로 관측하고 성공을 단정하지 않는다. RT-05의 lease 보유 확인·heartbeat는 아직 붙이지 않는다.
+- entrypoint의 revision은 build revision 공급 경로가 없는 현재 상태를 `unknown`으로 기록한다. RT-01의 config 파일·Search credential validation은 유지한다.
+- job ID의 event token 상한을 기존 DB 저장 경계인 191자에 맞춘다. storage-valid ID라도 경로·제어문자가 있으면 로그에서만 SHA-256 기반 `id_` alias로 일관되게 연결하고 DB/handler의 원래 ID는 유지한다. correlation 오류가 dispatch를 중단하거나 경로 원문을 노출하지 않게 하는 구현 선택이다.
 
 ### Owner 확인 포인트
 
-—
+- RD-09a Gate: [Issue #334의 Runtime Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/334#issuecomment-6081077166)을 확인했다. 실제 handler 연결 시 RecordingService mutable cache/working state는 execution마다 새 service + `finally: close()`로 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 의미는 아니다. 이 PR에서는 domain service를 만들거나 lifecycle을 확장 구현하지 않는다.
+- RT-04(b)의 T2 공개 반영 port는 Case Owner와 Consult 뒤 연결한다. 이번 작업에서 다른 Owner에게 새 공개 surface 의무를 만들지 않았다.
 
 ### Verification
 
-—
+- 초기 unit RED 22 failed → GREEN 22 passed. entrypoint RED 3 failed와 실제 MySQL composition RED 10 failed를 확인한 뒤 Worker 전체 GREEN **42 passed**, 19.43초(실제 MySQL 신규 10개, skip/xfail 없음)를 확인했다.
+- Worker 필수 MySQL check 누락 RED **6 failed** → gate GREEN **469 passed**. ID logging 경계 RED **2 failed** → unit/structured logging GREEN **33 passed**. 종료 시 dispose 오류 원문 노출 RED **1 failed**도 확인해 고정된 cleanup failure event로 처리했다.
+- 최종 관련 회귀 **540 passed**, 32.43초. Worker 47개(실제 MySQL 12개 포함), structured logging 9개, gate unit 484개이며 skip/xfail 없음.
+- 실제 MySQL require `pytest -m mysql`: **158 passed / 4 skipped / 2628 deselected**, 247.33초, exit 0. JSON/JUnit gate **158 tests · MySQL skip 0 · xfail 0 PASS**. 명령의 skip 4개는 `typer` 부재로 수집되지 않은 비-MySQL Search 테스트이며, deselected는 선택 범위 밖 검사다.
+- 전체 pytest(MySQL require): **2764 passed / 26 skipped**, 429.12초, exit 0. JUnit **2790 tests / failures 0 / errors 0 / xfail 0**. skip 사유는 Search `typer` 부재 4, Case 로컬 영상 부재 2, Eval 로컬 미디어/zip 부재 5, Recording 실영상·pair·VIDEO_INDEX opt-in 미지정 15다. MySQL test skip은 없으며 Recording synthetic media smoke도 실제 실행 PASS다.
+- 전체 실행의 최종 JSON/JUnit MySQL gate도 **158 tests · skip 0 · xfail 0 PASS**, setup/call/teardown **474 passed**. 전체 실행 안의 실제 보고서 parameter 누락 mutation도 **385/385 거부**다. evidence는 이번 작업 전용 `C:/Users/cheol/AppData/Local/Temp/rt04a-20261009/`의 `focused-final.{json,xml}`, `mysql-require.{txt,json,xml}`, `full.{txt,json,xml}`이며 기존 pytest scratch 폴더를 재사용하거나 수정하지 않았다.
+- MySQL server **8.4.7**, parent setup/call/teardown **474 passed**. 실제 보고서를 만드는 child suite는 **157 MySQL tests**이며, parameter 누락 mutation **385/385 거부**(Worker 신규 8 parameters × 7 evidence layers = **56/56** 포함)를 확인했다. child 실행 수는 parent 실행 수와 분리해 기록한다.
+- boundary PASS(위반 0), Contract fixture PASS(구조 62 / JSON 26 / 의미 104 검사), 저장소 전체 workflow 5개 Actionlint·ShellCheck PASS(0 errors), Python CI YAML policy·Ubuntu `bash -n`·ShellCheck PASS(5 run steps), `git diff --check` PASS. Actionlint의 pyflakes 검사 미실행은 기존 검사 방식과 같으며 여기서 Python type/lint gate 완료를 주장하지 않는다.
+- 읽기 전용 독립 코드 리뷰에서 RT-04(a)의 수정 필요 P1/P2/P3 결함 없음. reviewer는 테스트를 재실행하지 않았고, 실제 실행 결과의 검증 주체는 이 작업이다. 최종 gate 통과 조건부 판단이며 RT-04 전체 완료나 Owner acceptance를 뜻하지 않는다.
+- 기준 HEAD와 최신 fetch `origin/develop`은 `c319275e482a74974b434f0b2515878517d4d0b4`로 동일했다. HEAD/index 변경 없이 구현했다. 보호 대상 `recording-baseline-negative-001.json`의 SHA-256은 `27BA6EE8F681F2DF93C4E147589DD932D4632D71631A77EDE194317D42247D99`로 유지한다.
 
 ### 남은 위험
 
-—
+- heartbeat·lease 갱신·cancel·STALE/sweep·다음 attempt 생성·usage 영속·실제 handler는 제외했다. DB 장기 장애 때 T1은 B-Q3 재시도를 계속하므로 종료 신호 반영도 지연된다. RT-05의 소유 상실 관찰과 RT-06 복구가 필요하다.
+- 이번 결과는 RT-04(a)의 T1 경로 검증이며 E2E-0 전체 완료를 뜻하지 않는다. RT-04 상태는 `IN_PROGRESS`, PR 연결은 `Refs #291`이다. 커밋·push·PR 생성 및 Issue close는 하지 않는다.
+
+### 2026-10-09 후속 독립 리뷰 P2 — Worker logging sink 장애 격리
+
+- 후속 독립 리뷰에서 아래 P2 두 건이 발견됐다. 위의 최초 “수정 필요 P1/P2/P3 결함 없음” 기록은 당시 읽기 전용 리뷰 결과로 보존하며, 이번 결함까지 없다는 보장으로 해석하지 않는다. 전달된 finding을 코드와 별도 RED로 검증한 뒤 순서대로 수정했다.
+
+| Finding | RED 재현 | 수정과 GREEN |
+| --- | --- | --- |
+| loop의 직접 logging 호출에서 filter/handler 예외가 dispatch·T1 또는 DB 회복을 중단 | 실제 MySQL에서 started/completed/claim DB/T1 DB × filter/handler **8 failed**. claim_lost/finish_rejected도 별도 RED **4 failed** | Worker loop의 event 호출만 `log_event_best_effort`로 변경. 실제 commit·terminal facts·produced와 handler 1회, claim B-Q3, T1 B-D8 3회 소진 뒤 B-Q3를 검증. 관련 logging/loop/MySQL/observer **63 passed** |
+| main 오류·cleanup 로그의 sink 예외가 원래 오류 위에 전파되어 stderr에 원문 노출 | 실제 subprocess에서 loop/cleanup/동시 오류 × filter/handler **6 failed**, 정상 sink 및 정상 실행 **6 passed**. stderr traceback에 테스트용 secret·경로·payload가 포함됨 | main의 두 오류 event도 같은 helper로 변경. 정상/loop/cleanup/동시 오류 × healthy/filter/handler **12 passed**, stderr 비어 있음·기존 종료 코드·dispose·signal 복원 보존. cleanup 자체 실패의 기존 code 1 정책도 유지 |
+
+- 중앙 `log_event()` 전체의 sink 예외를 삼키는 방식은 기존 API와 다른 모듈의 동작까지 바꾼다. Worker 호출 전체를 `try/except`로 감싸면 event/correlation 검증 오류도 숨긴다. 따라서 검증 코드를 공유하는 별도 helper를 추가하고 Worker만 선택적으로 사용한다. 기존 `log_event()`의 sink 예외 전파 계약은 filter/handler 회귀로 유지 확인했다.
+- event/field/context 검증은 sink `try` **밖**에서 수행한다. unsafe name·payload field·경로 ID·NaN duration·미등록 field는 계속 `ValueError`이며 sink 호출 전 거부된다. 같은 `ValueError`라도 filter/handler 호출에서 발생하면 일반 sink 장애로 격리한다. logger 내부의 임의 버그와 transport 장애를 예외 타입만으로 완전히 구분한다는 의미는 아니다.
+- 격리는 기존 transaction `_emit`·observer처럼 일반 `Exception`에만 적용한다. `KeyboardInterrupt`/`SystemExit`는 전파되며 fallback traceback·원문·추가 stderr 진단을 출력하지 않는다. 기존 stream `OSError`의 고정 `log.write.failed` event와 정상 structured correlation은 유지한다.
+- 실제 MySQL 신규 8개에서 T1 observer에도 DBAPI 형태 예외를 동시에 주입한다. transaction 자체는 기존 helper로 실행하고 실제 `KILL CONNECTION`으로 3회 disconnect를 만든다. DB/queue/transaction mock 또는 skip으로 대체하지 않으며 결과·produced·retry·sleep·observer attempt 횟수를 확인한다.
+- JSON/JUnit gate에 `worker_core/logger_isolation`과 8개 필수 parameter를 추가했다. 독립 inventory로 family 또는 개별 parameter 전체 누락을 거부하지 못하는 gate RED **9 failed**를 확인한 뒤 필수 목록을 갱신했다.
+- 최종 targeted: Worker·entrypoint·structured logging·gate·observer **640 passed**, 69.98초, skip/xfail 없음. Worker 실제 MySQL **20 tests / 60 passed phases**를 포함한다.
+- 실제 MySQL require 필수 경로: **166 passed / 16 deselected / skip 0 / xfail 0**, 371.01초, exit 0. MySQL **8.4.7**, 최종 JSON/JUnit gate **166 tests / 498 passed phases PASS**. child는 **165 MySQL tests**이며 parent 실행 수와 분리한다. 실제 보고서 parameter 누락 mutation **441/441 거부**(Worker 16 parameters × 7 layers = **112/112**, 신규 logger 8 parameters × 7 layers = **56/56** 포함).
+- 전체 pytest(MySQL require, 2026-10-10 완료): **2859 passed / 26 skipped**, 718.87초, exit 0. JUnit **2885 tests / failures 0 / errors 0**, MySQL 최종 JSON/JUnit gate **166 tests / 498 passed phases / skip 0 / xfail 0 PASS**. 전체 실행의 child **165 tests**, parameter 누락 mutation도 **441/441 거부**(Worker **112/112**, 신규 logger **56/56**). skip 사유는 Search `typer` 부재 **4**, Case 로컬 영상 부재 **2**, Eval 로컬 미디어/zip 부재 **5**, Recording 실영상·pair·VIDEO_INDEX opt-in 미지정 **15**이며 MySQL skip은 없다. Recording synthetic media smoke도 실제 실행 PASS다.
+- evidence는 별도 `C:/Users/cheol/AppData/Local/Temp/rt04a-p2-20261009/`의 `loop-red`, `main-red`, `main-green-gate-red`, `targeted`, `mysql-require`, `full` 보고서이며 pytest basetemp도 새 `rt04a-p2-*` 경로만 사용한다. 기존 보호 JSON과 pytest scratch 폴더는 변경·staging하지 않았다. 보호 JSON SHA-256은 위 최초 기록과 동일하다. 검증 뒤 port/version/datadir로 작업 소유를 확인한 MySQL만 정상 종료했다.
+- boundary **PASS — 위반 0**, Contract fixture **PASS — 구조 62 / JSON 26 / 의미 104**, 전체 workflow **5개 Actionlint/ShellCheck PASS — 오류 0**, Python CI YAML policy·`bash -n`·ShellCheck **5 run steps PASS**. 기존 방식과 같이 Actionlint pyflakes는 실행하지 않았다.
+- 후속 읽기 전용 source 리뷰에서 이번 P2 수정 범위의 추가 actionable P1/P2/P3 finding 없음. reviewer는 테스트를 재실행하지 않고 RED/targeted artifact와 소스를 확인했으며 당시 require/full은 진행 중이었다. 최종 실제 실행 검증 주체는 구현자다. 이 source 리뷰는 RT-04 전체 완료나 merge/Owner 승인 판정이 아니다.
+- 최종 `git diff --check` **PASS**. 변경된 untracked Python 파일의 trailing whitespace도 별도 확인했다. HEAD/index 불변이며 커밋·push·PR 생성은 하지 않았다. 이번 P2 수정 결과는 사용자 독립 재리뷰 요청 가능 상태다.
+- Contract·Decision·Baseline 의미, queue/transaction 정책, RD-09a 경계, RT-04(b)의 T2/Case 반영/E2E 범위는 변경하지 않았다. sink 장애 동안 일부 event가 유실될 수 있으며 log delivery 보장은 이번 수정 범위가 아니다. 상태는 계속 `IN_PROGRESS`, PR 연결은 `Refs #291`이다.
+
+### 2026-10-10 RT-04(a) 독립 재리뷰 통과 — P2 해소 및 검증 주체 구분
+
+- 사용자에게 전달받은 독립 재리뷰 통과 결과를 후속 기록한다. 이전 P2 두 건, 즉 logger 장애가 dispatch·T1·B-Q3·B-D8 흐름을 중단하던 문제와 entrypoint 오류·cleanup 로그 실패가 traceback·예외 원문을 노출하던 문제가 해소됐음을 확인했다. 앞선 최초 리뷰 및 P2 발견·수정 기록은 당시 이력으로 보존한다.
+- `log_event_best_effort`는 event/field 검증 **이후** sink 호출에서 발생하는 일반 `Exception`만 격리한다. unsafe 입력 검증 오류와 `KeyboardInterrupt`·`SystemExit` 등 `BaseException` 전파는 유지한다. 기존 `log_event()`의 계약은 변경하지 않았다.
+
+**독립 재리뷰 직접 실행 결과 — 사용자 전달**
+
+| 검증 | 결과 |
+| --- | --- |
+| 비-MySQL 관련 회귀 | **620 passed** |
+| 실제 MySQL require | **166 passed · skip 0 · xfail 0** |
+| Worker MySQL (위 MySQL 대상에 포함) | **20 passed** |
+| entrypoint subprocess (위 비-MySQL 대상에 포함) | **12 passed** |
+| gate setup/call/teardown execution phase | **498 passed** |
+| parameter 누락 mutation | **441/441 거부** |
+| `git diff --check` | **PASS** |
+
+- 전체 pytest **2859 passed / 26 skipped**는 위 **구현 단계 직접 실행 결과**다. 독립 재리뷰에서는 전체 pytest를 다시 실행하지 않고 보존된 증거를 대조했다. boundary·Contract fixture·workflow 정적 검사는 구현 단계에서 통과했으며 이번 독립 재리뷰에서는 반복 실행하지 않았다. 이번 문서 갱신에서도 테스트나 위 정적 검사를 재실행하지 않고 `git diff --check`와 `git status --short`만 확인한다.
+- event sink 장애 중 해당 event가 유실될 수 있음은 허용된 한계다. 원격 CI는 미실행이며, T2·Case 반영·E2E-0 최종 연결은 RT-04(b)에 남아 있다.
+- RT-04 상태는 계속 **`IN_PROGRESS`**다. RT-04(a)의 PR 연결은 **`Refs #291`**, **PR 번호 `pending` · merge SHA `pending`**이며 Issue를 닫지 않는다. 이번 갱신에서 다른 코드·테스트·문서는 수정하지 않고 커밋·push·PR 생성도 하지 않는다.
 
 ---
 

@@ -66,11 +66,22 @@ REQUIRED_CHECKS = frozenset({
     ("jobs", "claim_lock_timeout"),
     ("jobs", "claim_latency"),
     ("api", "utc_session"), ("worker", "utc_session"),
+    # RT-04(a): Worker composition must execute on real MySQL in CI.
+    ("worker_core", "success"), ("worker_core", "failure"),
+    ("worker_core", "claim_db_recovery"), ("worker_core", "terminal_db_recovery"),
+    ("worker_core", "terminal_unknown_commit"), ("worker_core", "finish_rejected"),
+    ("worker_core", "correlation"),
+    ("worker_core", "logger_isolation"),
 })
 
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("worker_core", "logger_isolation", scenario + "_" + sink)
+      for scenario in ("started", "completed", "claim_db", "terminal_db") for sink in ("filter", "handler")),
+    *(("worker_core", "failure", mode) for mode in ("unknown", "module", "exception", "invalid")),
+    *(("worker_core", "terminal_unknown_commit", status) for status in ("SUCCEEDED", "FAILED")),
+    *(("worker_core", "correlation", mode) for mode in ("max_job_id", "path_id")),
     ("jobs", "read_states", "QUEUED"), ("jobs", "read_states", "RUNNING"),
     ("jobs", "read_states", "SUCCEEDED"), ("jobs", "read_states", "FAILED"),
     ("jobs", "read_states", "STALE"), ("jobs", "read_states", "CANCELLED"),
