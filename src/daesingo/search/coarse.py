@@ -270,9 +270,12 @@ def _candidate(
         span=CandidateSpan(
             timeline_id=source.timeline_id,
             timeline_revision=source.timeline_revision,
-            start_ms=round(start * 1000),
-            end_ms=round(end * 1000),
-            representative_ms=round(representative * 1000),
+            # 입력 좌표 → Timeline 좌표(#252)
+            start_ms=round((source.timeline_start_sec + start) * 1000),
+            end_ms=round((source.timeline_start_sec + end) * 1000),
+            representative_ms=round(
+                (source.timeline_start_sec + representative) * 1000
+            ),
         ),
         rank=rank,
         ranking_score=candidate.score,
