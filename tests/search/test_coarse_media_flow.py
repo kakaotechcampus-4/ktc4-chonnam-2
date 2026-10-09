@@ -6,12 +6,9 @@ from pathlib import Path
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
-from daesingo.search.errors import CoarseDurationMismatchError
 from daesingo.search.media import (
-    FfprobeError,
     MediaInput,
     MediaPreparer,
-    MediaTooLargeError,
 )
 from daesingo.search.provider import (
     CoarseRequest,
@@ -194,7 +191,9 @@ def test_coarse_uses_one_prepared_proxy_and_records_metrics(
     assert record.processed_duration_sec == pytest.approx(2.0, abs=0.05)
     assert record.prepared_media_bytes == len(provider.prepared_bytes or b"")
     # 준비 영상은 coarse_fps 배로 늘어난다(재생 1초 = 원본 프레임 1장).
-    assert record.prepared_duration_ms == pytest.approx(2000 * config.coarse_fps, abs=600)
+    assert record.prepared_duration_ms == pytest.approx(
+        2000 * config.coarse_fps, abs=600
+    )
     assert record.cost_usd == Decimal("0.000032")
     assert provider.prepared_path is not None and not provider.prepared_path.exists()
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
@@ -261,11 +260,15 @@ def test_duration_mismatch_fails_before_provider_and_cleans_temp(
     provider = _ProviderSpy()
     temp_dirs = capture_temp_dirs(monkeypatch)
 
-    # When / Then
-    with pytest.raises(CoarseDurationMismatchError):
-        _ = _service(resolver, provider, GeminiSearchConfig()).search_candidates(
-            _scope()
-        )
+    # When
+    result = _service(resolver, provider, GeminiSearchConfig()).search_candidates(
+        _scope()
+    )
+
+    # Then — 예외 대신 FAILED Run으로 남는다(#181)
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert result.analysis_run.issues[0].code == "MEDIA_PREPARATION_FAILED"
+    assert result.analysis_run.issues[0].detail == "CoarseDurationMismatchError"
     assert provider.requests == []
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
 
@@ -324,11 +327,15 @@ def test_prepared_oversize_uses_typed_error_without_provider_call(
     temp_dirs = capture_temp_dirs(monkeypatch)
     config = GeminiSearchConfig(max_inline_media_bytes=1)
 
-    # When / Then
-    with pytest.raises(MediaTooLargeError):
-        _ = _service(
-            _CountingResolver(make_source(), source_path), provider, config
-        ).search_candidates(_scope())
+    # When
+    result = _service(
+        _CountingResolver(make_source(), source_path), provider, config
+    ).search_candidates(_scope())
+
+    # Then — 예외 대신 FAILED Run으로 남는다(#181)
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert result.analysis_run.issues[0].code == "MEDIA_PREPARATION_FAILED"
+    assert result.analysis_run.issues[0].detail == "MediaTooLargeError"
     assert provider.requests == []
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
 
@@ -342,12 +349,16 @@ def test_malformed_media_fails_without_provider_and_cleans_temp(
     provider = _ProviderSpy()
     temp_dirs = capture_temp_dirs(monkeypatch)
 
-    # When / Then
-    with pytest.raises(FfprobeError):
-        _ = _service(
-            _CountingResolver(make_source(), source_path),
-            provider,
-            GeminiSearchConfig(),
-        ).search_candidates(_scope())
+    # When
+    result = _service(
+        _CountingResolver(make_source(), source_path),
+        provider,
+        GeminiSearchConfig(),
+    ).search_candidates(_scope())
+
+    # Then — 예외 대신 FAILED Run으로 남는다(#181)
+    assert result.analysis_run.outcome is RunOutcome.FAILED
+    assert result.analysis_run.issues[0].code == "MEDIA_PREPARATION_FAILED"
+    assert result.analysis_run.issues[0].detail == "FfprobeError"
     assert provider.requests == []
     assert temp_dirs and all(not path.exists() for path in temp_dirs)
