@@ -5,6 +5,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+from logging_faults import install_logging_fault
 
 from daesingo.common.logging import (
     bind_context, configure_logging, copy_context_call, log_event, new_trace_id,
@@ -130,3 +131,80 @@ def test_transport_failure_reports_only_static_metadata(capsys):
     captured = capsys.readouterr()
     assert "private" not in captured.err
     assert json.loads(captured.err)["event"] == "log.write.failed"
+
+
+@pytest.mark.parametrize("sink", ["filter", "handler"])
+def test_strict_log_event_keeps_existing_sink_exception_contract(sink):
+    logger = configure_logging("api", stream=io.StringIO())
+    error = ValueError("secret /private/filter")
+    seen, remove = install_logging_fault(logger, sink, lambda name: True, error)
+    try:
+        with pytest.raises(ValueError) as caught:
+            log_event(logger, "runtime.test.event")
+        assert caught.value is error and seen == ["runtime.test.event"]
+    finally:
+        remove()
+
+
+@pytest.mark.parametrize("sink", ["filter", "handler"])
+def test_best_effort_isolates_sink_value_error_without_stderr(sink, capsys):
+    from daesingo.common import logging as module
+    logger = configure_logging("worker", stream=io.StringIO())
+    seen, remove = install_logging_fault(logger, sink, lambda name: True)
+    try:
+        module.log_event_best_effort(logger, "runtime.test.event")
+        assert seen == ["runtime.test.event"]
+        assert capsys.readouterr().err == ""
+    finally:
+        remove()
+
+
+@pytest.mark.parametrize("event,fields", [
+    ("unsafe event\nsecret", {}), ("runtime.test.event", {"payload": "secret"}),
+    ("runtime.test.event", {"trace_id": "/private/path"}),
+    ("runtime.test.event", {"duration_ms": float("nan")}),
+    ("runtime.test.event", {"unknown_id": "id"}),
+])
+def test_best_effort_validates_before_sink_and_does_not_hide_programming_errors(event, fields):
+    from daesingo.common import logging as module
+    logger = configure_logging("worker", stream=io.StringIO())
+    seen, remove = install_logging_fault(logger, "filter", lambda name: True)
+    try:
+        with pytest.raises(ValueError, match="unsafe operational event"):
+            module.log_event_best_effort(logger, event, **fields)
+        assert seen == []
+    finally:
+        remove()
+
+
+@pytest.mark.parametrize("sink", ["filter", "handler"])
+@pytest.mark.parametrize("error", [KeyboardInterrupt(), SystemExit(7)])
+def test_best_effort_does_not_swallow_base_exceptions(sink, error):
+    from daesingo.common import logging as module
+    logger = configure_logging("worker", stream=io.StringIO())
+    seen, remove = install_logging_fault(logger, sink, lambda name: True, error)
+    try:
+        with pytest.raises(type(error)) as caught:
+            module.log_event_best_effort(logger, "runtime.test.event")
+        assert caught.value is error and seen == ["runtime.test.event"]
+    finally:
+        remove()
+
+
+def test_best_effort_keeps_structured_context_and_stream_oserror_policy(capsys):
+    from daesingo.common import logging as module
+    stream = io.StringIO()
+    logger = configure_logging("worker", stream=stream)
+    with bind_context(trace_id="trace", case_id="case", job_id="job", execution_id="exec"):
+        module.log_event_best_effort(logger, "runtime.execution.completed", status="SUCCEEDED")
+    row = json.loads(stream.getvalue())
+    assert (row["trace_id"], row["case_id"], row["job_id"], row["execution_id"]) == ("trace", "case", "job", "exec")
+    assert row["event"] == "runtime.execution.completed" and row["status"] == "SUCCEEDED"
+
+    class BrokenStream(io.StringIO):
+        def write(self, value):
+            raise OSError("secret /private/transport")
+
+    logger = configure_logging("worker", stream=BrokenStream())
+    module.log_event_best_effort(logger, "runtime.test.event")
+    assert json.loads(capsys.readouterr().err) == {"level": "ERROR", "event": "log.write.failed"}

@@ -47,6 +47,22 @@ LIFECYCLE_CHECKS = (
     ("api", "utc_session"), ("worker", "utc_session"),
 )
 
+WORKER_CHECKS = (
+    ("worker_core", "success"), ("worker_core", "failure"),
+    ("worker_core", "claim_db_recovery"), ("worker_core", "terminal_db_recovery"),
+    ("worker_core", "terminal_unknown_commit"), ("worker_core", "finish_rejected"),
+    ("worker_core", "correlation"),
+    ("worker_core", "logger_isolation"),
+)
+
+WORKER_PARAMETERS = (
+    *(("worker_core", "logger_isolation", scenario + "_" + sink)
+      for scenario in ("started", "completed", "claim_db", "terminal_db") for sink in ("filter", "handler")),
+    *(("worker_core", "failure", mode) for mode in ("unknown", "module", "exception", "invalid")),
+    *(("worker_core", "terminal_unknown_commit", status) for status in ("SUCCEEDED", "FAILED")),
+    *(("worker_core", "correlation", mode) for mode in ("max_job_id", "path_id")),
+)
+
 JOB_PARAMETERS = (
     *(("jobs", "read_states", state) for state in
       ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
@@ -103,11 +119,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # so legacy Case initialization cannot alter the parent suite's database.
     result = subprocess.run(
         [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/common/db/integration", "tests/common/jobs",
+         "tests/worker/test_worker_mysql.py",
          "tests/case/test_store_mysql.py", "tests/case/test_case_repository_contract.py",
          "--ignore=tests/common/db/integration/test_migration_gate.py", "-m", "mysql", "-q",
          "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'child'}",
          f"--mysql-report={report_path}", f"--junitxml={junit_path}"],
-        env=env, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=240,
+        env=env, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=300,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -119,7 +136,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS]:
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
@@ -133,7 +150,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in JOB_PARAMETERS:
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
@@ -162,5 +179,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == len(JOB_PARAMETERS) * 7
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS)) * 7
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

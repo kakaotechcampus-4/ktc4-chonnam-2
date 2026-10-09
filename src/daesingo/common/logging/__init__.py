@@ -5,6 +5,7 @@ This is a safe event API, not a global third-party masking logger.
 """
 
 import contextvars
+import hashlib
 import json
 import logging
 import math
@@ -20,6 +21,7 @@ from uuid import uuid4
 _CONTEXT_FIELDS = frozenset({"trace_id", "case_id", "job_id", "execution_id", "module"})
 _TOKEN_FIELDS = _CONTEXT_FIELDS | {"status", "revision"}
 _TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,128}\Z")
+_JOB_TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,191}\Z")
 _EVENT = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+\Z")
 _KEY = re.compile(r"[A-Z][A-Z0-9_]*\Z")
 _context = contextvars.ContextVar("runtime_correlation", default=None)
@@ -32,7 +34,8 @@ def new_trace_id() -> str:
 def _validate(fields):
     for name, value in fields.items():
         if name in _TOKEN_FIELDS:
-            valid = isinstance(value, str) and _TOKEN.fullmatch(value)
+            pattern = _JOB_TOKEN if name == "job_id" else _TOKEN
+            valid = isinstance(value, str) and pattern.fullmatch(value)
         elif name == "duration_ms":
             try:
                 valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
@@ -46,6 +49,20 @@ def _validate(fields):
             valid = False
         if not valid:
             raise ValueError("unsafe operational event field")
+
+
+def safe_correlation(**fields: str) -> dict[str, str]:
+    """Keep trusted IDs; use stable opaque aliases for non-token storage IDs.
+
+    Queue identity storage permits ASCII paths/control characters. They must
+    neither break dispatch through log validation nor appear verbatim in logs.
+    This does not identify secrets in arbitrary strings: callers supply IDs only.
+    """
+    if fields.keys() - _CONTEXT_FIELDS:
+        raise ValueError("unknown correlation field")
+    return {name: value if (_JOB_TOKEN if name == "job_id" else _TOKEN).fullmatch(value)
+            else "id_" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+            for name, value in fields.items()}
 
 
 @contextmanager
@@ -113,12 +130,33 @@ def configure_logging(service: str, *, level: str = "INFO", stream: TextIO | Non
     return logger
 
 
-def log_event(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+def _event_metadata(event, fields):
     if not isinstance(event, str) or not _EVENT.fullmatch(event):
         raise ValueError("unsafe operational event name")
     merged = (_context.get() or {}) | fields
     _validate(merged)
-    logger.log(level, "", extra={"runtime_event": event, "runtime_fields": merged})
+    return {"runtime_event": event, "runtime_fields": merged}
 
 
-__all__ = ["bind_context", "configure_logging", "copy_context_call", "log_event", "new_trace_id"]
+def log_event(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+    metadata = _event_metadata(event, fields)
+    logger.log(level, "", extra=metadata)
+
+
+def log_event_best_effort(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+    """Validate strictly; isolate ordinary sink failures for opted-in callers.
+
+    Validation errors remain programming errors. Filters/handlers may raise the
+    same exception types, so isolate only the sink call, never validation.
+    Like transaction _emit/observer, catch Exception, without stderr diagnostics.
+    The existing log_event API and other callers retain their strict behavior.
+    """
+    metadata = _event_metadata(event, fields)
+    try:
+        logger.log(level, "", extra=metadata)
+    except Exception:
+        pass
+
+
+__all__ = ["bind_context", "configure_logging", "copy_context_call", "log_event", "log_event_best_effort",
+           "new_trace_id", "safe_correlation"]

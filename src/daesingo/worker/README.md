@@ -12,4 +12,10 @@ RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_
 
 필수 파일 key는 `DAESINGO_RUNTIME_DB_URL` · `DAESINGO_RUNTIME_MEDIA_ROOT` · `DAESINGO_RUNTIME_WORKER_TEMP_ROOT`와 현재 Search가 사용하는 `GEMINI_API_KEY`다. Search key rename/alias 의미는 바꾸지 않는다. pricing/FX는 필수값으로 강제하지 않는다. 반환된 `Startup.modules["search"]`는 마스킹된 credential과 검증된 Search config를 보관한다.
 
-DB engine · claim loop · handler dispatch · heartbeat/sweep 실행은 아직 없다. 실제 provider 호출도 하지 않는다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. queue column을 통한 process 간 trace 전달은 RT-03 이후다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
+RT-04(a)는 `python -m daesingo.worker` 진입점 · 단일 kind registry · claim loop · ExecutionContext · T1 terminal 기록을 구현한다. 기존 Worker engine/claim/finish/transaction helper를 재사용하며 claim commit 후 handler를 실행한다. 빈 queue는 B-Q1, 완료 후 다음 claim은 즉시, DB 오류는 B-Q3 대기다. T1은 B-D8 재시도 소진 뒤에도 결과를 유지하고 B-Q3 간격으로 재기록한다. SIGINT/SIGTERM은 실행 중 handler·T1을 중단하지 않고 다음 idle 지점에서 반영한다.
+
+실제 handler 등록은 비어 있다. 미등록 kind는 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. T2/Case 반영·E2E-0 최종 연결은 RT-04(b), heartbeat/cancel은 RT-05, STALE/sweep은 RT-06, usage 영속은 RT-07, 실제 Recording/Search handler는 RT-10 범위다.
+
+RD-09a에 따라 실제 Recording invocation은 execution마다 새 `RecordingService`를 만들고 `finally`에서 닫아 mutable cache/working state를 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 뜻은 아니다. 이 PR은 service lifecycle을 구현하거나 process-global cache를 추가하지 않는다.
+
+structured event에는 queue의 trace/case/job/execution ID를 연결한다. 저장 가능한 ID라도 경로·제어문자가 포함돼 event token으로 안전하지 않으면 로그에서만 일관된 opaque alias를 쓴다. handler context와 DB의 원래 ID는 유지한다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
