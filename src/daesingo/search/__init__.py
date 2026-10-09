@@ -10,6 +10,13 @@ from .errors import (
 )
 from .factory import build_gemini_search_service
 from .fixtures import FixtureNotFoundError, FixtureSearchService
+from .intent import (
+    IntentFailureKind,
+    IntentHintExtractor,
+    IntentHintResult,
+    IntentHintStatus,
+    build_intent_hint_extractor,
+)
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .service import SearchService
@@ -90,6 +97,10 @@ __all__ = [
     "CandidateSourceLink",
     "ContractRef",
     "FixtureNotFoundError",
+    "IntentFailureKind",
+    "IntentHintExtractor",
+    "IntentHintResult",
+    "IntentHintStatus",
     "LinkedCoarseResult",
     "ResolvedAnalysisSource",
     "SelectedVideoStream",
@@ -102,6 +113,7 @@ __all__ = [
     "VisualVerificationExecution",
     "VisualVerificationResult",
     "build_gemini_search_service",
+    "build_intent_hint_extractor",
     "search_candidates",
     "select_single_video_stream",
     "verify_visual",

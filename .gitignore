@@ -80,14 +80,16 @@ target/
 
 # ── 로컬 도구 설정 (공유하지 않음) ──────────────────
 # `.claude/settings.json`(플러그인 1줄)은 CLAUDE.md와 짝이라 추적한다.
-# 그 아래 개인 설정·스킬만 무시한다.
+# 그 아래 개인 설정·스킬만 무시한다. 팀 공유 스킬은 아래 `!`로 하나씩 연다.
 .claude/settings.local.json
-.claude/skills/
+.claude/skills/*
+!.claude/skills/update-readme/
 .superpowers/
 .impeccable/
 .agents/
 skills-lock.json
 .omc
+/.codex-scratch/
 # ── 자료조사 원본 ───────────────────────────────────
 # 로컬 아카이브 레포에만 둔다. README.md "Archive" 절 참고.
 doc/
@@ -115,3 +117,10 @@ eval/manifests/**/*.private.json
 # events_draft.json 은 events.json 을 만들기 위한 중간 작업 파일이다.
 # 검토 사실은 gt/*.json 의 meta.coverage 가 소유한다.
 eval/manifests/**/events_draft.json
+
+# search 실험용 로컬 영상·정답지(원본 영상은 저장소에 두지 않는다)
+src/daesingo/search/video/
+
+# search 실험 결과 원본은 로컬에만 보관하고 요약 보고서만 커밋한다.
+/docs/modules/search/experiments/**/*.json
+/docs/modules/search/experiments/**/*.jsonl

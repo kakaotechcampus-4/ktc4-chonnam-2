@@ -7,7 +7,7 @@ from pathlib import Path
 
 from daesingo.evidence import validate_contract
 from daesingo.evidence.mock_integration import run_scenario
-from daesingo.evidence.validation import validate_report_package
+from daesingo.evidence.validation import validate_report_package, validate_report_package_v1_1
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIGS = json.loads((ROOT / "tests/evidence/fixtures/adapter_inputs.json").read_text(encoding="utf-8"))["scenarios"]
@@ -91,19 +91,48 @@ class ContractValidationTests(unittest.TestCase):
         )
         package["contract_version"] = "report-package/v1.1"
 
-        self.assertEqual([], validate_report_package(package))
+        self.assertEqual([], validate_report_package_v1_1(package))
 
         missing = json.loads(json.dumps(package))
         missing["report_inputs"].pop("location")
-        self.assertIn("location", validate_report_package(missing))
+        self.assertIn("location", validate_report_package_v1_1(missing))
 
         empty = json.loads(json.dumps(package))
         empty["report_inputs"]["location"] = {}
-        self.assertIn("location", validate_report_package(empty))
+        self.assertIn("location", validate_report_package_v1_1(empty))
 
         legacy = json.loads(json.dumps(package))
         legacy["contract_version"] = "report-package/v1"
         self.assertIn("location", validate_contract(legacy))
+
+
+    def test_report_package_v1_2_allows_null_vehicle_number_but_not_sentinel_shapes(self):
+        # #146 · #172 D-3: 판독 후 번호판을 못 읽은 Package는 vehicle_number=null로 나간다.
+        # 키는 location과 같이 필수이고, 빈 문자열은 부재 표현이 아니다.
+        fixture = json.loads(
+            (ROOT / "data/mock/evidence/scenario_unknown_abstain_partial_001.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        package = next(
+            item for item in fixture["report_packages"]
+            if item["package_ref"]["ref"] == "pkg_u001"
+        )
+        package["contract_version"] = "report-package/v1.2"
+        self.assertEqual([], validate_report_package(package))
+
+        null_plate = json.loads(json.dumps(package))
+        null_plate["report_inputs"]["vehicle_number"] = None
+        self.assertEqual([], validate_report_package(null_plate))
+
+        for broken in ("", "  "):
+            blank = json.loads(json.dumps(package))
+            blank["report_inputs"]["vehicle_number"] = broken
+            self.assertIn("vehicle_number", validate_report_package(blank))
+
+        missing = json.loads(json.dumps(package))
+        missing["report_inputs"].pop("vehicle_number")
+        self.assertIn("missing:vehicle_number", validate_report_package(missing))
 
 
 if __name__ == "__main__":

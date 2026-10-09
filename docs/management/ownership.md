@@ -250,7 +250,7 @@ v4 §4-모듈1 · §2 원칙 3·4(Source/Derived, 파일≠stream) · §3-3 · �
 - **`SourceAsset ↔ MediaStream` 스키마 · `frame_ref` 형식 · stream role 표현은 확정됐다(2026-09-08).** 이제 정할 것이 아니라 **구현하고 검증할 것**이다 — `Final — Accepted` 계약 2건 `../architecture/contracts/contract-source-asset-media-stream.md`(`source-asset-media-stream/v1` — `MediaStream[]`·`FrameRef`·`resolve_frame`/`read_frame`·canonical `AssetFacts`) · `../architecture/contracts/contract-analysis-source-derived.md`(`analysis-source-derived/v1`). 산출물은 그 계약을 따르는 구현과 fixture·Mock·통합에서의 검증이다. 필드·enum·nullable을 다시 정하지 않고, 자산 `ContractRef.kind` 값 공간은 앞 계약 §2.1 한 곳에서 읽는다
 - 샘플 폴더 하나로 도는 테스트 (시간축 정확도 / 경계 이어붙이기 / 원본 체크섬)
 - 업로드·처리 전략은 **미결 유지**(v4 A6) — 계약 뒤에 숨긴다
-- `JobExecution` 구현(queue row · lease · heartbeat · retry) — **계약은 이미 `Final — Accepted`다**(`../architecture/contracts/contract-job-execution.md`, `job-execution/v1`). 스키마와 status 5값은 김준영이 소유하고 확정돼 있으므로 계약을 기다리지 않는다. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 남은 접합 1건은 W04(`JobExecution` 소비자 확인 · domain `PARTIAL`↔runtime `status`)이며 `PENDING_OWNER`다 — 구현 착수를 막지 않는다
+- `JobExecution` 구현(queue row · lease · heartbeat · retry) — **계약은 이미 `Final — Accepted`다**(`../architecture/contracts/contract-job-execution.md`, 현재 `job-execution/v1.1`). 스키마와 status enum(v1.1부터 `CANCELLED` 포함 6값)은 김준영이 소유하고 확정돼 있으므로 계약을 기다리지 않는다. **[제안/확인 대기] `resolve_span` 목 응답 이후로 두자는 순서는 PM 제안이며 정철원 확인 전이다.** 남은 접합 1건은 W04(`JobExecution` 소비자 확인 · domain `PARTIAL`↔runtime `status`)이며 `PENDING_OWNER`다 — 구현 착수를 막지 않는다
 
 ### ⑥ 누구와 붙는가
 - **김준영과 상시** — 업로드·대용량·저장·보관은 운영 이슈라 PM의 관심 영역과 겹친다

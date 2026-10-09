@@ -12,7 +12,7 @@ from .errors import PolicyConfigurationError
 
 Contract = dict[str, Any]
 _POLICY_DIR = Path(__file__).parent
-_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v4.json"
+_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v6.json"
 _CATEGORIES = {"EVIDENCE", "TIME", "VEHICLE", "LOCATION", "ASSET", "DEADLINE", "REPORT_CONTENT"}
 _OUTCOMES = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
 
@@ -159,7 +159,7 @@ def validate_requirement_catalog(value: Contract) -> Contract:
     if not isinstance(scopes, dict) or set(scopes) != {"EVIDENCE", "FINAL_PACKAGE"}:
         _fail("requirement catalog scopes are invalid")
     all_codes: list[str] = []
-    for scope, expected_count in (("EVIDENCE", 4), ("FINAL_PACKAGE", 12)):
+    for scope, expected_count in (("EVIDENCE", 4), ("FINAL_PACKAGE", 11)):
         entry = scopes[scope]
         rules = entry.get("always") if isinstance(entry, dict) else None
         if not isinstance(rules, list) or len(rules) != expected_count:
@@ -190,10 +190,16 @@ def validate_requirement_catalog(value: Contract) -> Contract:
     cases = branch.get("cases") if isinstance(branch, dict) else None
     if not isinstance(cases, list) or len(cases) != 4:
         _fail("time display catalog cases are invalid")
-    case_codes = [case.get("code") for case in cases if isinstance(case, dict)]
-    if len(case_codes) != len(cases) or any(not isinstance(code, str) for code in case_codes):
+    if any(not isinstance(case, dict) for case in cases):
         _fail("time display rule code is invalid")
     for case in cases:
+        # A no_rule branch is still selected by the time selector but adds no check (ADR-EVIDENCE-010).
+        if case.get("no_rule") is True:
+            if any(key in case for key in ("code", "category", "outcomes")):
+                _fail("time display no_rule branch must not carry a rule")
+            continue
+        if not isinstance(case.get("code"), str):
+            _fail("time display rule code is invalid")
         if case.get("category") != "TIME":
             _fail("time display rule category is invalid")
         outcomes = case.get("outcomes")
@@ -206,17 +212,32 @@ def validate_requirement_catalog(value: Contract) -> Contract:
     return deepcopy(value)
 
 
+_REPORT_TEMPLATES_V1_1 = {
+    "specific_template_ref": "tmpl/safety-report-specific-v1",
+    "generic_template_ref": "tmpl/safety-report-generic-v1",
+    "specific_no_location_template_ref": "tmpl/safety-report-specific-no-location-v1",
+    "generic_no_location_template_ref": "tmpl/safety-report-generic-no-location-v1",
+}
+# v1.2 adds the no-plate variants (ADR-EVIDENCE-008 §6); v1.1 stays loadable for its history.
+_REPORT_POLICY_REVISIONS = {
+    "safety-report-policy/v1.1": ("safety-report-policy/v1", _REPORT_TEMPLATES_V1_1, ()),
+    "safety-report-policy/v1.2": ("safety-report-policy/v1.1", {
+        **_REPORT_TEMPLATES_V1_1,
+        "specific_no_plate_template_ref": "tmpl/safety-report-specific-no-plate-v1",
+        "generic_no_plate_template_ref": "tmpl/safety-report-generic-no-plate-v1",
+        "specific_no_location_no_plate_template_ref": "tmpl/safety-report-specific-no-location-no-plate-v1",
+        "generic_no_location_no_plate_template_ref": "tmpl/safety-report-generic-no-location-no-plate-v1",
+    }, ("no_plate_notice",)),
+}
+
+
 def validate_report_policy(value: Contract) -> Contract:
-    if value.get("policy_ref") != "safety-report-policy/v1.1":
+    revision = _REPORT_POLICY_REVISIONS.get(value.get("policy_ref"))
+    if revision is None:
         _fail("invalid report policy_ref")
-    if value.get("supersedes_policy_ref") != "safety-report-policy/v1":
+    supersedes, expected_templates, extra_text = revision
+    if value.get("supersedes_policy_ref") != supersedes:
         _fail("invalid superseded report policy_ref")
-    expected_templates = {
-        "specific_template_ref": "tmpl/safety-report-specific-v1",
-        "generic_template_ref": "tmpl/safety-report-generic-v1",
-        "specific_no_location_template_ref": "tmpl/safety-report-specific-no-location-v1",
-        "generic_no_location_template_ref": "tmpl/safety-report-generic-no-location-v1",
-    }
     if any(value.get(key) != expected for key, expected in expected_templates.items()):
         _fail("invalid report template registry")
     minimum = value.get("report_text_min_length")
@@ -235,7 +256,7 @@ def validate_report_policy(value: Contract) -> Contract:
         _fail("invalid report event registry")
     required_text = {
         "generic_title", "generic_violation_expression", "generic_description_tail",
-        "specific_description_tail",
+        "specific_description_tail", *extra_text,
     }
     if any(not isinstance(value.get(key), str) or not value[key] for key in required_text):
         _fail("invalid report template text")
@@ -261,4 +282,4 @@ def load_requirement_catalog() -> Contract:
 
 
 def load_report_policy() -> Contract:
-    return validate_report_policy(_read_json("safety_report_policy_v1_1.json"))
+    return validate_report_policy(_read_json("safety_report_policy_v1_2.json"))

@@ -15,7 +15,7 @@ def test_config_preserves_current_defaults_when_created() -> None:
     # Then: the current model, media, and tenant proxy defaults remain available
     assert config.model == "gemini-3.8-flash"
     assert config.media_resolution == "low"
-    assert config.fine_media_resolution == "high"
+    assert (config.coarse_fps, config.fine_fps) == (2.0, 4.0)
     assert (
         config.base_url == "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
     )

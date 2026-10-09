@@ -187,7 +187,13 @@ def test_real_video_adapter_reaches_caseview_without_premature_ready(monkeypatch
     # 멘토 리뷰 r4084810910).
     assert view["evidence"]["event_time_display"]["value"] == "2026-06-20T14:19:59+09:00"
     assert view["evidence"]["event_time_display"]["info_state"] == "INFO_SOURCE_VERIFIED"
-    assert view["requirements_evidence"]["readiness"] == "UNKNOWN"
+    # 이 영상은 판독은 됐지만 번호를 읽지 못한다(PlateReadout 존재, value null). #172 D-3 ·
+    # requirement-rules-v5부터 이 상태는 UNKNOWN이 아니라 WARN이다(ADR-EVIDENCE-008 §5.1).
+    # Package는 여전히 상황 응답 전이라 없다(위 stage 단언).
+    checks = {c["code"]: c["outcome"] for c in view["requirements_evidence"]["checks"]}
+    assert view["evidence"]["plate_display"]["value"] is None
+    assert checks["evidence.vehicle_number.present"] == "WARN"
+    assert view["requirements_evidence"]["readiness"] == "WARN"
 
 
 @_NEEDS_REAL_VIDEO_ENV

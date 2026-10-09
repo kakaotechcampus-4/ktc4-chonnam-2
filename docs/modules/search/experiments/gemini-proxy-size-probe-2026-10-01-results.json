@@ -1,0 +1,50 @@
+{
+  "model": "gemini-3.8-flash",
+  "rows": [
+    {
+      "target_mb": 11,
+      "media_bytes": 10822818,
+      "media_mib": 10.32,
+      "request_mib": 13.76,
+      "status": "OK",
+      "input_tokens": 668,
+      "latency_sec": 8.09
+    },
+    {
+      "target_mb": 15,
+      "media_bytes": 15071181,
+      "media_mib": 14.37,
+      "request_mib": 19.16,
+      "status": "OK",
+      "input_tokens": 668,
+      "latency_sec": 7.19
+    },
+    {
+      "target_mb": 25,
+      "media_bytes": 23599587,
+      "media_mib": 22.51,
+      "request_mib": 30.01,
+      "status": "OK",
+      "input_tokens": 668,
+      "latency_sec": 10.17
+    },
+    {
+      "target_mb": 40,
+      "media_bytes": 41940155,
+      "media_mib": 40.0,
+      "request_mib": 53.33,
+      "status": "OK",
+      "input_tokens": 668,
+      "latency_sec": 17.52
+    },
+    {
+      "target_mb": 60,
+      "media_bytes": 63536990,
+      "media_mib": 60.59,
+      "request_mib": 80.79,
+      "status": "OK",
+      "input_tokens": 668,
+      "latency_sec": 27.22
+    }
+  ]
+}

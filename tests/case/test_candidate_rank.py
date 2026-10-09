@@ -81,3 +81,16 @@ def test_auto_select_without_candidates_is_noop():
 
     assert case.select_top_ranked() is None
     assert case.stage == "CANDIDATE_REVIEW"
+
+
+def test_view_never_projects_ranking_score():
+    """`ranking_score`는 calibrated confidence가 아니다 — search 입력에 있어도 CaseView로 내리지
+    않고, web은 순서를 `rank`·배열 순서로만 받는다(v1.5 ③, #168 클립 분할 후속 명확화)."""
+    case = _searching_case()
+    service.receive_search_candidates(case, MockFixtureAdapter(MOCK_ROOT, "happy_001"))
+
+    view = build_case_view(case)
+
+    assert view["candidates"]
+    assert all("ranking_score" not in c for c in view["candidates"])
+    assert all("score" not in key for c in view["candidates"] for key in c)

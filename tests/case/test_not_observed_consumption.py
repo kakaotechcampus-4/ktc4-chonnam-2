@@ -184,3 +184,6 @@ def test_real_adapter_reports_a_case_without_evidence(not_observed_run):
     steps = [step["step"] for step in view["progress"]]
     assert "evidence_assembly" not in steps
     assert "package_assembly" not in steps
+    # 음성 결과는 evidence가 없어 조립 전과 값이 같다 — notice로 구분한다(#168 [A]).
+    assert real.get_visual_evidence_decision() == "NOT_ASSEMBLED"
+    assert [n["code"] for n in view["notices"]] == ["evidence.visual_event_not_observed"]

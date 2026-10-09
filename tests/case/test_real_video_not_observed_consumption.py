@@ -259,3 +259,9 @@ def test_real_video_adapter_reports_a_case_without_evidence(monkeypatch, not_obs
 
     assert adapter.get_evidence_record() is None
     assert adapter.get_evidence_records() == []
+    assert adapter.get_visual_evidence_decision() == "NOT_ASSEMBLED"
+
+    view = service.build_view_from_adapter(case, adapter)
+    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["evidence"] is None
+    assert [n["code"] for n in view["notices"]] == ["evidence.visual_event_not_observed"]

@@ -1,0 +1,1857 @@
+{
+  "note": "응답 원문은 저장소 밖 .superpowers/fine-window/sol-*-2026-10-02.json. 예시 이미지는 AI-Hub 교통법규 위반 상황 데이터 TRF_TURN_IMG_17210·16132·15563(저장소에 두지 않음)",
+  "arms": {
+    "nofewshot": {
+      "model": "gpt-5.6-sol",
+      "transport": "image",
+      "fps": 4.0,
+      "fewshot": null,
+      "rows": [
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            7.5,
+            8.5,
+            9.25,
+            10.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 27421,
+          "output_tokens": 596,
+          "latency_sec": 15.91,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            7.5,
+            8.5,
+            9.25,
+            10.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 27421,
+          "output_tokens": 617,
+          "latency_sec": 12.67,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            7.75,
+            8.5,
+            9.25,
+            9.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 27421,
+          "output_tokens": 542,
+          "latency_sec": 12.06,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.4,
+            1.7,
+            2.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 9757,
+          "output_tokens": 469,
+          "latency_sec": 7.53,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.4,
+            1.9
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 9757,
+          "output_tokens": 500,
+          "latency_sec": 8.14,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT",
+            "UNCERTAIN"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.3,
+            1.75,
+            1.9
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 9757,
+          "output_tokens": 452,
+          "latency_sec": 6.91,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.0,
+            11.5,
+            11.75,
+            12.5
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 4381,
+          "output_tokens": 667,
+          "latency_sec": 11.61,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.5,
+            13.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 4381,
+          "output_tokens": 516,
+          "latency_sec": 7.97,
+          "correct": false,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.5,
+            13.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 4381,
+          "output_tokens": 491,
+          "latency_sec": 7.78,
+          "correct": false,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.4,
+            13.1,
+            13.8
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 596,
+          "latency_sec": 11.56,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.4,
+            13.2,
+            13.9
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 621,
+          "latency_sec": 12.75,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.1,
+            12.9,
+            13.8
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 561,
+          "latency_sec": 12.45,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            3.5,
+            4.25,
+            5.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 6685,
+          "output_tokens": 529,
+          "latency_sec": 8.73,
+          "correct": false,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            4.4,
+            6.0,
+            8.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 6685,
+          "output_tokens": 541,
+          "latency_sec": 8.81,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            4.5,
+            6.0,
+            8.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 6685,
+          "output_tokens": 556,
+          "latency_sec": 11.24,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 18589,
+          "output_tokens": 393,
+          "latency_sec": 7.33,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 18589,
+          "output_tokens": 418,
+          "latency_sec": 8.42,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 18589,
+          "output_tokens": 481,
+          "latency_sec": 8.26,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.5,
+            4.5,
+            5.5
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 31837,
+          "output_tokens": 642,
+          "latency_sec": 13.28,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.3,
+            4.2,
+            5.6,
+            6.5
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 31837,
+          "output_tokens": 638,
+          "latency_sec": 13.33,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            3.0,
+            4.5,
+            5.6
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 31837,
+          "output_tokens": 534,
+          "latency_sec": 14.69,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            3.0,
+            5.0,
+            8.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 36253,
+          "output_tokens": 464,
+          "latency_sec": 11.39,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            4.0,
+            7.8
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 36253,
+          "output_tokens": 394,
+          "latency_sec": 10.11,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            3.5,
+            7.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 36253,
+          "output_tokens": 458,
+          "latency_sec": 11.31,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        }
+      ]
+    },
+    "fewshot": {
+      "model": "gpt-5.6-sol",
+      "transport": "image",
+      "fps": 4.0,
+      "fewshot": "turn-aihub-v1",
+      "rows": [
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            8.0,
+            8.5,
+            9.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 31042,
+          "output_tokens": 668,
+          "latency_sec": 14.56,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            8.0,
+            8.75,
+            9.25,
+            10.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 31042,
+          "output_tokens": 711,
+          "latency_sec": 14.5,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141927_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            4.0,
+            10.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 24,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            4.0,
+            8.0,
+            8.5,
+            9.25,
+            9.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 31042,
+          "output_tokens": 814,
+          "latency_sec": 18.09,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.4,
+            2.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 13378,
+          "output_tokens": 465,
+          "latency_sec": 9.2,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.2,
+            1.6,
+            2.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 13378,
+          "output_tokens": 454,
+          "latency_sec": 7.41,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "youtube_clip_01.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            2.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 8,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            0.85,
+            1.2,
+            1.45,
+            2.0
+          ],
+          "uncertainty_count": 0,
+          "input_tokens": 13378,
+          "output_tokens": 462,
+          "latency_sec": 9.25,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.25,
+            12.25,
+            12.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 8002,
+          "output_tokens": 631,
+          "latency_sec": 10.86,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.5,
+            13.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 8002,
+          "output_tokens": 489,
+          "latency_sec": 8.05,
+          "correct": false,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            13.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            11.5,
+            13.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 8002,
+          "output_tokens": 617,
+          "latency_sec": 9.91,
+          "correct": false,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.2,
+            12.9,
+            13.7,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 610,
+          "latency_sec": 14.48,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.25,
+            12.75,
+            13.25,
+            13.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 540,
+          "latency_sec": 12.92,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0002_C00.mp4",
+          "event": "CENTER_LINE_CROSSING",
+          "window": [
+            11.0,
+            14.0
+          ],
+          "expected": "OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 12,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "8a3e8de4c6f6db1af7efdf451a487d9c90d38158ab9561b309e0df8bc1fbf4f9",
+          "fewshot": null,
+          "fewshot_sha256": null,
+          "verification": "OBSERVED",
+          "observed_at_origin_sec": [
+            11.0,
+            12.2,
+            12.9,
+            13.6,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 14144,
+          "output_tokens": 537,
+          "latency_sec": 13.34,
+          "correct": true,
+          "association_status": "MATCHED",
+          "primitives": [
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            4.25,
+            5.5,
+            7.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 10306,
+          "output_tokens": 581,
+          "latency_sec": 8.75,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            4.5,
+            6.0,
+            7.75
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 10306,
+          "output_tokens": 552,
+          "latency_sec": 9.3,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "YT_0003_C05.mp4",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            3.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 20,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            3.0,
+            4.5,
+            5.5,
+            8.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 10306,
+          "output_tokens": 608,
+          "latency_sec": 10.05,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 22210,
+          "output_tokens": 396,
+          "latency_sec": 8.62,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 22210,
+          "output_tokens": 478,
+          "latency_sec": 10.64,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141956_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            10.0,
+            14.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 16,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            10.0,
+            12.0,
+            14.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 22210,
+          "output_tokens": 477,
+          "latency_sec": 10.62,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.8,
+            4.6,
+            5.2,
+            7.0
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 35458,
+          "output_tokens": 580,
+          "latency_sec": 11.89,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.5,
+            4.5,
+            5.25,
+            6.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 35458,
+          "output_tokens": 663,
+          "latency_sec": 13.06,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_141628_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            7.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 28,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.2,
+            3.9,
+            4.6,
+            6.5
+          ],
+          "uncertainty_count": 1,
+          "input_tokens": 35458,
+          "output_tokens": 615,
+          "latency_sec": 13.81,
+          "correct": true,
+          "association_status": "AMBIGUOUS",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 1,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            3.0,
+            6.0,
+            8.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 39874,
+          "output_tokens": 519,
+          "latency_sec": 13.11,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 2,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            3.0,
+            6.0,
+            8.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 39874,
+          "output_tokens": 458,
+          "latency_sec": 9.83,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        },
+        {
+          "clip": "20260620_150504_EVT_1.avi",
+          "event": "SOLID_LINE_LANE_CHANGE",
+          "window": [
+            0.0,
+            8.0
+          ],
+          "expected": "NOT_OBSERVED",
+          "profile": "p3",
+          "repeat": 3,
+          "reasoning_effort": "low",
+          "transport": "image",
+          "fps": 4.0,
+          "frames": 32,
+          "prompt_version": "fine-p3",
+          "prompt_sha256": "9bd4e54be862e65b444cf4e367b21d98ca453e59f8c2ef24b06e9e2ff118bd28",
+          "fewshot": "turn-aihub-v1",
+          "fewshot_sha256": "24c638ea2e2d916b840723129b2f9647551d8b490d2b2bc84e6ea05ef24e8ee7",
+          "verification": "NOT_OBSERVED",
+          "observed_at_origin_sec": [
+            0.0,
+            2.0,
+            5.0,
+            8.0
+          ],
+          "uncertainty_count": 2,
+          "input_tokens": 39874,
+          "output_tokens": 496,
+          "latency_sec": 15.06,
+          "correct": true,
+          "association_status": "NOT_FOUND",
+          "primitives": [
+            "ABSENT",
+            "ABSENT",
+            "ABSENT",
+            "PRESENT",
+            "PRESENT"
+          ]
+        }
+      ]
+    }
+  }
+}

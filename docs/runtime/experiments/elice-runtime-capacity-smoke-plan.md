@@ -10,7 +10,7 @@
 
 ## 1. 왜 필요한가
 
-Issue #95 P0/P1/R3에서 다음 흐름은 실제 호출/로컬 실험으로 확인됐다.
+Issue #95 P0/P1/R3에서 다음 흐름은 실제 호출/로컬 실험으로 확인됐다. 범위는 2026-09 시점 운영 경로(`gemini-3.8-flash` · OpenAI-compatible `/v1/chat/completions` · base64 inline video)이며, 모델이나 전송 방식이 바뀌면 working set 가정을 다시 확인한다([`mlapi.md`](../official-inputs/mlapi.md) §7.1).
 
 ```text
 Recording AnalysisSource materialization
@@ -66,10 +66,10 @@ P2 계획만으로 다음을 확정하지 않는다.
 - EC2 spec 상향
 - Object Storage / shared cache 도입
 - cache TTL / retention
-- pricing SSOT / provider label / key naming
+- pricing/FX artifact 위치 · schema
 - 30분~1시간 P3의 exact 입력과 threshold
 
-provider/usage/pricing/config ownership은 Issue #153의 Search 전수조사 결과를 기다린다.
+provider/usage/pricing/config ownership은 Issue #153 합의(2026-09-26)로 닫혔다 — [Runtime Tech Spec](../runtime-tech-spec.md) §11.3 · §15.1. P2는 이 경계를 다시 정하지 않는다.
 
 ## 4. 첫 시험 입력 후보
 
@@ -182,7 +182,7 @@ Queue/Worker가 아직 구현 전이라면 preflight에서는 capability 경로�
 - JobExecution terminal status
 - cleanup success/failure
 
-Usage/cost는 관측하되 pricing 데이터의 SSOT 구조는 #153 결과 전에 P2가 정하지 않는다.
+Usage/cost는 관측하되 pricing/FX artifact 구조는 P2가 정하지 않는다(Tech Spec §11.3).
 
 ## 8. 실험 순서
 

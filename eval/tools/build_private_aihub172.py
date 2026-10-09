@@ -4,6 +4,8 @@
     python -m eval.tools.build_private_aihub172 --track 1 --source .../aihub172/track1_association
 
 트랙② (기본) → `private_aihub172_plate` — 번호판 crop 인식.
+트랙② + `--exclude-plates-zip` → `private_aihub172_plate_m2` — 그 zip 의 라벨 번호와 겹치는
+표본을 뺀 셋. 다른 분할로 학습한 모델을 잴 때 쓴다(같은 차가 분할 사이에 있다, PR #215).
 트랙① → `private_aihub172_track1` — CCTV 프레임의 차량 검출 지속성. 아래 `build_track1`.
 
 입력은 `데이터셋 생성/scripts/aihub172.py sample` 의 산출물이다(manifest.json ·
@@ -20,6 +22,7 @@ import json
 import os
 import shutil
 import sys
+import zipfile
 
 from eval import paths
 
@@ -27,6 +30,8 @@ MANIFEST = "private_aihub172_plate"
 MANIFEST_VERSION = "m1"
 GT_VERSION = "ap1"
 CONTRACT_VERSION = "plate-readout/v1.3"
+
+M2_MANIFEST = "private_aihub172_plate_m2"
 
 TRACK1_MANIFEST = "private_aihub172_track1"
 TRACK1_GT_VERSION = "at1"
@@ -44,11 +49,27 @@ def _write(path, doc):
         f.write("\n")
 
 
-def build(source, out_dir):
+def _label_values(zip_path):
+    """AI-Hub 라벨 zip 의 `value`(차량번호) 집합. 파일명은 인코딩이 깨져 쓰지 않는다."""
+    with zipfile.ZipFile(zip_path) as z:
+        return {json.loads(z.read(i).decode("utf-8-sig"))["value"]
+                for i in z.infolist()
+                if not i.is_dir() and i.filename.lower().endswith(".json")}
+
+
+def build(source, out_dir, exclude_plates_zip=None):
     src_manifest = _read(os.path.join(source, "manifest.json"))
     src_gt = _read(os.path.join(source, "gt_plate.LOCAL_ONLY.json"))
     truth = {g["sample_id"]: g["gt_plate_text"] for g in src_gt["items"]}
     items = src_manifest["items"]
+    exclusion = None
+    if exclude_plates_zip:
+        seen = _label_values(exclude_plates_zip)
+        kept = [i for i in items if truth.get(i["sample_id"]) not in seen]
+        exclusion = {"rule": "라벨 value 가 이 zip 에 있는 표본을 뺀다",
+                     "zip": os.path.basename(exclude_plates_zip),
+                     "n_before": len(items), "n_excluded": len(items) - len(kept)}
+        items = kept
     missing = [i["sample_id"] for i in items if i["sample_id"] not in truth]
     if missing:
         raise ValueError(f"정답이 없는 표본 {len(missing)}건: {missing[:5]}")
@@ -60,18 +81,20 @@ def build(source, out_dir):
                         os.path.join(out_dir, item["file_path"]))
 
     src_meta = src_manifest["meta"]
-    meta = {"manifest_version": MANIFEST_VERSION, "tier": "AIHUB172",
+    meta = {"manifest_version": "m2" if exclusion else MANIFEST_VERSION, "tier": "AIHUB172",
             "source": src_meta.get("source"), "section": src_meta.get("section"),
             "split": src_meta.get("split"), "sampling": src_meta.get("sampling"),
             "track": src_meta.get("track"), "readout_taken": src_meta.get("readout_taken"),
-            "note": "crop 입력이라 검출 단계가 빠져 있다 — 인식(recognition)만 잰다"}
+            "note": "crop 입력이라 검출 단계가 빠져 있다 — 인식(recognition)만 잰다",
+            "exclusion": exclusion}
     _write(os.path.join(out_dir, "samples.json"), {
         "meta": meta,
         "samples": [{k: item[k] for k in ("sample_id", "file_path", "width", "height",
                                            "sha256")} for item in items],
     })
     _write(os.path.join(out_dir, "gt", "gt_plate.json"), {
-        "meta": {"gt_version": GT_VERSION, "tier": "AIHUB172", "stage": "plate",
+        "meta": {"gt_version": "ap2" if exclusion else GT_VERSION, "tier": "AIHUB172",
+                 "stage": "plate",
                  "contract_version": CONTRACT_VERSION,
                  "coverage": {"readouts_total": len(items), "readable": len(items),
                               "unreadable": 0, "independent_ground_truth": True,
@@ -147,16 +170,23 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="eval.tools.build_private_aihub172")
     ap.add_argument("--source", required=True)
     ap.add_argument("--track", choices=["1", "2"], default="2")
+    ap.add_argument("--exclude-plates-zip", default=None,
+                    help="트랙② 전용. 이 AI-Hub 라벨 zip 의 번호와 겹치는 표본을 뺀다 (m2)")
     args = ap.parse_args(argv)
+    name = (TRACK1_MANIFEST if args.track == "1"
+            else M2_MANIFEST if args.exclude_plates_zip else MANIFEST)
     try:
-        out_dir = paths.manifest_dir(TRACK1_MANIFEST if args.track == "1" else MANIFEST)
+        out_dir = paths.manifest_dir(name)
     except OSError as e:
         print(f"실패: {e}", file=sys.stderr)
         return 2
     if os.path.exists(os.path.join(out_dir, "samples.json")):
         print(f"실패: {out_dir} 가 이미 있다. manifest 는 덮어쓰지 않는다.", file=sys.stderr)
         return 3
-    n = (build_track1 if args.track == "1" else build)(args.source, out_dir)
+    if args.track == "1":
+        n = build_track1(args.source, out_dir)
+    else:
+        n = build(args.source, out_dir, args.exclude_plates_zip)
     print(f"{out_dir} — 표본 {n}장")
     return 0
 

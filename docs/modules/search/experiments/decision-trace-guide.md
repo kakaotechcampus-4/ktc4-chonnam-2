@@ -53,7 +53,7 @@ Fine 변형 profile은 `diagnostic-v1`과 Coarse·출력 형식이 같고 Fine �
 
 | profile | 덧붙이는 Fine 지시문 |
 | --- | --- |
-| `diagnostic-uncertain-v1` | 실선·중앙선에만 `fine-uncertain-v1-<사건>.txt` — 선 종류·횡단이 모호하면 UNCERTAIN. 신호·안전모는 `diagnostic-v1`과 같다 |
+| `diagnostic-uncertain-v1` | 실선·중앙선에만 `fine-uncertain-v1.txt`(confidence·ABSENT의 뜻, 대상 미발견 시 높은 confidence 부재 보고 금지, 기각해도 관찰 한계는 `uncertainties`에 기록) + `fine-uncertain-v1-<사건>.txt`(선 종류·횡단이 모호하면 UNCERTAIN). 신호·안전모는 `diagnostic-v1`과 같다 |
 | `diagnostic-handoff-v1` | `fine-handoff-v1.txt` — Coarse `observed`(운영 `CandidateEvent.summary`와 같은 문자열)와 clip 기준 핵심 시각을 검증되지 않은 단서로 전달 |
 
 원본 시각은 `prepared_origin_start_sec × 1000 + at_offset_ms`로 읽는다. 준비 clip의 길이·끝 경계도 기록한다. 확인 항목 누락·중복과 시간 초과는 issue code로 남기되 p4 의미 검증처럼 설명을 버리지 않는다. 음수 시각·p3 판정/사건 유형 불변조건 위반 같은 기본 형식 오류는 `PROVIDER_PAYLOAD` 실패로 기록한다. 실패 응답 원문은 저장하지 않는다.

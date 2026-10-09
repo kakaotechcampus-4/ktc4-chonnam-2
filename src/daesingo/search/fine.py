@@ -7,7 +7,7 @@ from .execution import RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
-from .prompts import FINE_PROMPT, fine_prompt_for
+from .prompts import FINE_PROMPT, fine_prompt_for, sent_prompt_fingerprint
 from .provider import FineRequest, SearchProvider
 from .runs import (
     AnalysisRun,
@@ -69,7 +69,12 @@ def _clip_relative_temporal_facts(
     `representative_ms = span.start_ms + at_offset_ms`는 padding이 0일 때의 파생식이지
     검증 조건이 아니다.
     """
-    clip_duration_ms = round(prepared.duration_sec * 1000)
+    # 준비 영상은 늘어나 있을 수 있다. provider가 시각을 원본으로 되돌리므로 원본 구간 길이로 잰다.
+    # 늘린 영상이면 마지막 준비 프레임 하나(원본 playback_speed 초)만큼 여유를 둔다.
+    slack_sec = prepared.playback_speed if prepared.playback_speed < 1.0 else 0.0
+    clip_duration_ms = round(
+        (prepared.origin_end_sec - prepared.origin_start_sec + slack_sec) * 1000
+    )
     origin_start_ms = round(prepared.origin_start_sec * 1000)
     source_duration_ms = round(source_duration_sec * 1000)
     checked: list[TemporalFact] = []
@@ -160,7 +165,9 @@ def verify_fine(
                 case_id=source.source_id,
                 model=config.model,
                 prompt_version=FINE_PROMPT.version,
-                prompt_fingerprint=fine_prompt_for(event_type).fingerprint,
+                prompt_fingerprint=sent_prompt_fingerprint(
+                    fine_prompt_for(event_type), prepared.playback_speed
+                ),
                 config_version=config.version,
                 processed_duration_sec=source.duration_sec,
                 latency_ms=result.latency_ms,

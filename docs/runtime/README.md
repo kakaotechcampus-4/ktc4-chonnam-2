@@ -24,7 +24,16 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
+| [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
+| [`provisional-baseline-v0.1.md`](./provisional-baseline-v0.1.md) | workflow §6 산출물 — Worker · polling · lease/heartbeat/STALE · retry · DB · upload · frame · cleanup · health · logging의 **Provisional 시작값의 canonical source**. 다른 문서는 ID(`B-xx`)만 가리킨다 |
+| [`runtime-implementation-plan.md`](./runtime-implementation-plan.md) | workflow §7 산출물 — 현재 구현 gap · critical path · Task/Issue 분해 · Decision Gate 위치 · integration test 배치 · 구현 책임 구조(§12 Single Implementer + Deferred Owner Review). 결정 · 값을 새로 만들지 않는다 |
+| [`runtime-implementation-log.md`](./runtime-implementation-log.md) | workflow §8 기록 — 실제로 구현된 것 · Plan 대비 변경과 이유 · 새 implementation detail · Owner 확인 포인트 · Milestone audit. Plan을 다시 쓰지 않고 차이를 여기에 남긴다 |
+| [`open-decision-register.md`](./open-decision-register.md) | 아직 닫히지 않은 Runtime/Ops 결정의 통합 추적표(workflow §2 산출물). 답을 정하지 않으며, 닫히면 Spec/Contract/ADR로 승격하고 CLOSED 처리 |
+| [`decision-classification.md`](./decision-classification.md) | Register의 각 결정을 유형 · 결정권 · Timing · Gate · Closure route · §4 조사 필요로 분류(workflow §3 산출물). 답을 정하지 않으며 Register 내용을 복제하지 않음 |
+| `research/` | workflow §4 외부 기술 조사. `prompts/NN-<topic>.md` = 실행용 self-contained prompt(decision-classification §6 R1 · R2 Queue), `NN-<topic>-<조사 기준일>.md` = 그 결과. 결과는 Decision 근거이며 결정이 아님 — Owner 검토 뒤 Spec · Contract · ADR로 옮긴다 |
+| [`official-inputs/README.md`](./official-inputs/README.md) | 카테캠 운영진 공지(AWS 환경 · ML API 등) 사본. 외부 입력이며 결정이 아님 |
 | [`experiments/README.md`](./experiments/README.md) | Runtime cross-cutting 실험의 plan/result 라우터. 실험은 근거이며 결과가 반복 가능할 때 Tech/Ops 결정으로 승격 |
+| [`reviews/README.md`](./reviews/README.md) | 특정 시점의 Runtime/Ops 정합성 검수·review evidence. Audited SHA 기준으로만 읽으며 결정의 SoT가 아님 |
 | `decisions/` | 장기 영향을 주는 실제 Runtime 결정이 생겼을 때만 ADR 추가 |
 
 빈 ADR 폴더를 미리 만들지는 않는다.
@@ -70,28 +79,32 @@ Runtime 구현 시 다음 문서를 직접 참조한다.
 
 schema, enum, 불변조건을 Runtime 문서로 복사해 별도 SoT를 만들지 않는다. Logical ERD에서 JSON/관계 테이블처럼 물리 저장 선택이 열려 있으면 Runtime Tech Spec이 구현 근거를 가지고 닫는다.
 
-## 현재 구현 상태 — 2026-09-19
+## 현재 구현 상태 — 2026-10-02 (`develop` `9c204ee` 기준)
 
 ### 확인된 구현
 
 - 여러 domain module Python 구현과 pytest
-- `JobExecution v1.1` in-memory lifecycle
-- recording fixture/in-memory public capability + `purge_case`
+- Python 3.12 정렬 — root `pyproject.toml` · `uv.lock` · `.python-version` · CI workflow
+- CI: repo-wide pytest(offline fixture) · Recording 합성 media smoke · boundary / contract fixture 검사 (상세 [Ops Spec](./ops-spec.md) §19)
+- `JobExecution v1.1` in-memory lifecycle (`InMemoryJobExecutionStore`)
+- recording 실제 ffmpeg AnalysisSource materialization · 다중 원본 Timeline · `purge_case`
+- search 실제 Elice ML API 호출 경로
+- case 동기 real 경로 — case adapter가 Search·Fine·Readout을 **같은 프로세스에서 동기로 직접 호출**한다. Runtime queue와 JobExecution을 거치지 않고, case가 남기는 JobRecord는 in-memory case store에만 있다
 - Mock Pack / contract validator / boundary checker
-- boundary-check GitHub Action
-- root `pyproject.toml` / `uv.lock`
 
 ### 아직 구현되지 않은 Runtime
 
+- MySQL Runtime persistence (JobExecution · UsageRecord · migration)
 - MySQL DB Queue / claim
 - lease / heartbeat / stale sweep
-- API composition root
-- Worker composition root
-- UsageRecord DB persistence
-- live / ready endpoint
-- Runtime Docker Compose deployment
+- API composition root (`src/daesingo/api/`는 README만 있음)
+- Worker composition root (`src/daesingo/worker/`는 README만 있음)
+- Final `UsageRecord` persistence — Search 내부 ledger는 있으나 Final Contract 원장이 아니다
+- live / ready health endpoint
+- Runtime Docker / Compose deployment
+- deployment workflow
 
-따라서 Runtime Tech/Ops 문서의 일부는 **현재 동작 설명이 아니라 구현 acceptance criteria**다.
+따라서 Runtime Tech/Ops 문서의 일부는 **현재 동작 설명이 아니라 구현 acceptance criteria**다. 검수 근거는 [`reviews/runtime-ops-consistency-audit-2026-10-02.md`](./reviews/runtime-ops-consistency-audit-2026-10-02.md) §4 A-01 · §6.
 
 ## Recording / Search Benchmark와의 관계
 
@@ -132,46 +145,17 @@ Issue #95의 Elice 전환 P0/P1 결과는 Recording/Search가 소유한 실험 �
 → 장기 구조 결정이면 decisions/ ADR
 ```
 
-현재 다음 경계는 별도 후속 이슈 #153에서 Search 주도로 전수조사 중이므로 Runtime 문서가 먼저 확정하지 않는다.
+provider/usage/pricing/config 경계는 후속 Issue #153에서 Search 전수조사 후 Search·Runtime Owner가 합의했다(2026-09-26). 통화 정규화는 그보다 앞서 #19 답변으로 결정됐다([`budget-krw-normalization.md`](../modules/case/decisions/budget-krw-normalization.md), 2026-09-09). Runtime 쪽 반영은 [Tech Spec](./runtime-tech-spec.md) §11.3(pricing · 통화)과 §15.1(config · key naming)이 담는다.
 
-- provider/usage legacy 표현의 유지·변경 여부
-- pricing 데이터의 SSOT 및 Search/Eval/Runtime 소비 경계
-- provider config/key naming의 유지·migration 여부
-
-Runtime 쪽에서 확정된 책임은 Final `UsageRecord` persistence, Worker/composition root의 config·secret 주입 경계, queue/retry/lease/heartbeat/observability다.
+Runtime 쪽에서 확정된 책임은 Final `UsageRecord` persistence와 실행 시점 pricing context · cost snapshot 보존, Worker/composition root의 config·secret 주입 경계, queue/retry/lease/heartbeat/observability다. 합의 항목(`pricing_id` · key rename · KRW 정규화)은 아직 develop에 구현되지 않았다.
 
 P2 Runtime Capacity Smoke의 계획과 결과는 [`experiments/`](./experiments/README.md)에서 관리한다.
 
 ## 현재 열린 Runtime/Ops 결정
 
-### Runtime Tech
+열린 결정의 통합 목록은 [`open-decision-register.md`](./open-decision-register.md)가 추적한다 — group별 Owner · Consult · 이미 닫힌 범위 · 의존 관계 · Timing 후보를 담고, 이미 결정된 항목 · Implementation Gap · 실험값은 그 문서 하단에서 제외 근거와 함께 구분한다. 이 README에는 목록을 복제하지 않는다.
 
-- queue/execution 물리 schema
-- claim transaction
-- `JobExecution.produced` 물리 저장: JSON vs 관계 테이블
-- `JobExecution.usage_refs` materialization: 별도 저장 vs `UsageRecord.execution_ref` projection
-- UsageRecord final append timing / in-flight invocation 복구·중복 방지
-- retry max/backoff/jitter
-- lease duration
-- heartbeat interval
-- STALE threshold
-- Worker polling/sweep interval
-- UsageRecord persistence / pricing SSOT 소비 경계 — #153 조사 결과를 받아 확정
-
-### Ops
-
-- Docker/Compose exact command
-- log transport/retention
-- disk working-set guardrail
-- Object Storage 범위
-- managed asset retention
-- UsageRecord retention
-- scaling threshold
-- deployment workflow
-- build-time/runtime configuration 주입 방식
-- immutable release 식별 / known-good revision 기록
-- post-deploy health/readiness + external smoke test
-- rollback exact command
+각 Spec의 미결 체크리스트는 해당 문서 범위의 원문으로 남는다 — [Tech Spec](./runtime-tech-spec.md) §18 · [Ops Spec](./ops-spec.md) §23 · [Runbook](./deployment-runbook.md) §8.
 
 정확한 수치는 실제 Runtime integration과 Recording/Search benchmark 결과 없이 임의 확정하지 않는다.
 

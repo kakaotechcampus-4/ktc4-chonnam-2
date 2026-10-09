@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | 전체 표 | [`TRACKS.md`](TRACKS.md) |
-| holdout 표본 | [`holdout-manifest.json`](holdout-manifest.json) (seed `20260927`, 200클립) |
+| holdout 표본 | `holdout-manifest.json`(seed `20260927`, 200클립, 레포에 없음 — `../track1-vehicle-2026-09-19/ENVIRONMENT.md` 「표본 manifest」) |
 | 스크립트 | `scripts/aihub71555_track_associate.py` (`--selfcheck` 있음) |
 | 검출기·환경 | track1과 같다 — `yolo11n.pt` COCO 사전학습, CPU (`../track1-vehicle-2026-09-19/ENVIRONMENT.md`) |
 

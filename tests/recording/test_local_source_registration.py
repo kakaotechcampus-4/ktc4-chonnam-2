@@ -52,6 +52,7 @@ def test_real_ffprobe_registration_preserves_source_and_contract(generated_video
     assert asset.availability == "AVAILABLE"
     assert asset.external_source_ref is None
     assert [s.media_type for s in streams] == ["VIDEO", "VIDEO", "AUDIO"]
+    assert all(s.duration_sec == pytest.approx(1.0) for s in streams)
     assert [s.role for s in streams] == ["UNKNOWN", "UNKNOWN", None]
     assert all(s.availability == "UNKNOWN" for s in streams)
     assert asset.media_stream_refs == [s.media_stream_ref for s in streams]
@@ -128,6 +129,7 @@ def probe_input(tmp_path):
 def mock_response(monkeypatch, payload):
     def run(command, **kwargs):
         assert isinstance(command, list)
+        assert "stream_tags=DURATION" in command[command.index("-show_entries") + 1]
         assert kwargs.get("shell", False) is False
         assert kwargs["stdin"] == subprocess.DEVNULL
         assert kwargs["timeout"] > 0
@@ -157,6 +159,62 @@ def test_missing_format_and_stream_duration_remain_unknown(monkeypatch, probe_in
     result = RecordingService().register_local_source(probe_input)
     assert result.source_asset.duration_sec is None
     assert result.media_streams[0].duration_sec is None
+
+
+@pytest.mark.parametrize("duration", [None, "N/A"])
+def test_mkv_duration_tag_resolves_public_span(monkeypatch, probe_input, duration):
+    mock_response(monkeypatch, {
+        "format": {"duration": "20.025000"},
+        "streams": [{"index": 0, "codec_type": "video", "duration": duration,
+                     "tags": {"DURATION": "00:00:20.024000000"}}],
+    })
+    with RecordingService() as service:
+        registered = service.register_local_source(probe_input)
+        video, = registered.media_streams
+        assert video.duration_sec == 20.024
+        assert registered.source_asset.duration_sec == 20.025
+        timeline = service.create_relative_timeline(registered.source_asset.source_asset_ref)
+        result = service.resolve_span(
+            {"timeline_id": timeline.timeline_id, "revision": timeline.revision},
+            {"start_sec": 1.0, "end_sec": 2.0}, media_stream_ref=video.media_stream_ref)
+        assert result.status == "COMPLETE" and not result.missing_ranges
+
+
+@pytest.mark.parametrize("tag", ["00:00:99.000", "00:00:20.024000000", "invalid"])
+def test_stream_duration_takes_priority_over_tag(monkeypatch, probe_input, tag):
+    mock_response(monkeypatch, {"streams": [
+        {"index": 0, "codec_type": "video", "duration": "0.0", "tags": {"DURATION": tag}},
+    ]})
+    result = RecordingService().register_local_source(probe_input)
+    assert result.media_streams[0].duration_sec == 0.0
+
+
+@pytest.mark.parametrize("tag,expected", [
+    ("01:02:03.125", 3723.125), ("100:00:00.000", 360000.0),
+    ("00:00:00.000000000", 0.0), (None, None), ("N/A", None),
+])
+def test_stream_tag_duration_values(monkeypatch, probe_input, tag, expected):
+    mock_response(monkeypatch, {"format": {"duration": "999999"}, "streams": [
+        {"index": 0, "codec_type": "video", "tags": {"DURATION": tag}},
+        {"index": 1, "codec_type": "audio"},
+    ]})
+    result = RecordingService().register_local_source(probe_input)
+    assert [s.duration_sec for s in result.media_streams] == [expected, None]
+
+
+@pytest.mark.parametrize("tag", [
+    "-00:00:01.0", "inf", "NaN", "00:00:inf", "00:60:00.0", "00:00:60.0",
+    "00:00:01", "0:00:01.0", "00:00:01.", "00:00:1.0", "00:00:01.0\n",
+    " 00:00:01.0", "00:00:01e2", True, 20.024, [], "9" * 400 + ":00:00.0",
+])
+def test_invalid_duration_tag_is_not_registered(monkeypatch, probe_input, tag):
+    mock_response(monkeypatch, {"streams": [
+        {"index": 0, "codec_type": "video", "tags": {"DURATION": tag}},
+    ]})
+    repo = InMemoryRecordingRepository()
+    with pytest.raises(ValueError):
+        RecordingService(repo).register_local_source(probe_input)
+    assert not repo._source_assets and not repo._media_streams
 
 
 @pytest.mark.parametrize("payload", [

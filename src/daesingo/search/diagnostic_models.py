@@ -60,6 +60,7 @@ class DiagnosticCall(WireModel):
     prepared_origin_start_sec: float | None = None
     prepared_origin_end_sec: float | None = None
     prepared_duration_sec: float | None = None
+    prepared_playback_speed: float | None = None
     prepared_media_bytes: int | None = None
     prepared_media_sha256: str | None = None
     latency_ms: int | None = None

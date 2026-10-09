@@ -21,7 +21,7 @@
 
 - 운영 `fine-p3`와 사건별 p3 지시문은 그대로 둔다. 전환은 이번 범위가 아니다.
 - 진단 실행기에 Fine 변형 profile 두 개를 추가한다. 두 profile 모두 `diagnostic-v1`의 Coarse·출력 형식을 그대로 쓰고 Fine 지시문 하나만 덧붙인다. 내용과 실행은 [진단 가이드](../experiments/decision-trace-guide.md#fine)가 소유한다.
-  - `diagnostic-uncertain-v1`: 실선·중앙선에 모호하면 UNCERTAIN을 쓰라는 지시를 덧붙인다.
+  - `diagnostic-uncertain-v1`: 실선·중앙선에 모호하면 UNCERTAIN을 쓰라는 지시를 덧붙인다. 2026-10-01 실행 전 보강: 9/26 Fine 응답 14개 중 13개가 `uncertainties`를 비운 채 primitive confidence 0.9 이상이었고, 대상 `NOT_FOUND`에서도 부재를 0.95로 보고했다. p3에는 confidence·`uncertainties` 작성 기준이 없으므로, 그 보고 규칙(`fine-uncertain-v1.txt`)을 같은 profile에 함께 넣는다. 둘 다 「근거 없는 확신 기각」 한 문제를 겨냥하므로 한 변경으로 본다.
   - `diagnostic-handoff-v1`: Coarse 관찰과 clip 기준 핵심 시각을 **검증되지 않은 단서**로 넘긴다. 영상과 다르면 영상을 따르고 차이를 불확실성으로 남기게 한다.
 - 두 변경을 한 profile에 섞지 않는다. 각각 `diagnostic-v1` 9/26 회차와 비교한다.
 - Coarse `uncertainties` 전달과 Coarse 횡단 기준 완화는 이번 변형에 넣지 않는다.
@@ -40,4 +40,4 @@
 
 - 반복 횟수와 공식 매칭 기준: [#158](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/158) 답변 대기.
 - 제품에서 사용자 `target_hint`와 Coarse 관찰을 함께 줄 때의 우선순위: 미정.
-- 실험 결과: 2026-09-29 1차 실행([트레이스](../experiments/gemini-handoff-trace-2026-09-29.md)). 조건당 2회로는 handoff 효과가 구분되지 않았고 음성 끌림은 없었다. 채택 판단은 하지 않았다.
+- 실험 결과: 2026-09-29 1차 실행([트레이스](../experiments/gemini-handoff-trace-2026-09-29.md)). 조건당 2회로는 handoff 효과가 구분되지 않았고 음성 끌림은 없었다. 채택 판단은 하지 않았다. `diagnostic-uncertain-v1`은 2026-10-01 고정 구간 실행([기록](../experiments/gemini-fine-window-uncertain-2026-10-01.md))에서 `diagnostic-v1`과 판정 차이가 없었다.

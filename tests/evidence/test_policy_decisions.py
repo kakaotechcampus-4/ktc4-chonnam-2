@@ -195,13 +195,14 @@ class PolicyDecisionTests(unittest.TestCase):
         with self.assertRaises(PolicyConfigurationError):
             validate_deadline_policy(malformed)
 
-    def test_k3_catalog_selects_four_and_thirteen_rules_from_data(self):
+    def test_k3_catalog_selects_four_and_eleven_rules_from_data(self):
+        # H는 검증된 overlay 갈래라 v6에서 시각 표시 rule이 붙지 않는다(ADR-EVIDENCE-010): 무조건 11 + 0.
         evidence = evaluate_requirements(
             self.happy_record, scope="EVIDENCE", report_id="req_catalog_evidence",
             evaluated_at="2026-08-24T18:23:00+09:00", time_resolution=self.happy_time)
         final = self._evaluate()
         self.assertEqual(4, len(evidence["checks"]))
-        self.assertEqual(13, len(final["checks"]))
+        self.assertEqual(11, len(final["checks"]))
         self.assertEqual(CONFIGS["scenario_happy_001"]["evidence_rules"],
                          [item["code"] for item in evidence["checks"]])
         self.assertEqual(CONFIGS["scenario_happy_001"]["final_rules"],
@@ -209,11 +210,12 @@ class PolicyDecisionTests(unittest.TestCase):
         self.assertEqual(load_requirement_catalog()["policy_ref"], final["policy_ref"])
 
     def test_k3_time_selector_covers_all_four_branches(self):
+        # v6: 검증된 overlay 갈래는 선택되지만 rule이 없다 — 최종 영상 관찰(I4)을 요구하지 않는다(#280).
         cases = (
-            ("OK", "time.verified_overlay_already_present", "package.time.overlay_visible", True),
-            ("OK", "time.user_confirmed_no_overlay_present", "package.time.post_stamp_applied", True),
-            ("NEEDS_REVIEW", "time.no_verified_overlay_present", "package.time.post_stamp_applied", True),
-            ("UNKNOWN", "time.no_resolvable_source", "package.time.display_unresolved", False),
+            ("OK", "time.verified_overlay_already_present", [], True),
+            ("OK", "time.user_confirmed_no_overlay_present", ["package.time.post_stamp_applied"], True),
+            ("NEEDS_REVIEW", "time.no_verified_overlay_present", ["package.time.post_stamp_applied"], True),
+            ("UNKNOWN", "time.no_resolvable_source", ["package.time.display_unresolved"], False),
         )
         for index, (status, reason, expected, has_occurred) in enumerate(cases):
             with self.subTest(status=status, reason=reason):
@@ -227,7 +229,7 @@ class PolicyDecisionTests(unittest.TestCase):
                     record.pop("occurred_at")
                 report = self._evaluate(record=record, time=time, report_id=f"req_selector_{index}")
                 selected = [item["code"] for item in report["checks"] if item["code"].startswith("package.time.")]
-                self.assertEqual([expected], selected)
+                self.assertEqual(expected, selected)
 
     def test_k3_configuration_errors_emit_no_normal_report(self):
         catalog = load_requirement_catalog()
@@ -295,10 +297,23 @@ class PolicyDecisionTests(unittest.TestCase):
         ):
             self._evaluate()
 
-        malformed_facts = self._facts()
-        malformed_facts["plate_visible_in_report_video"] = {"value": "yes"}
+        # 관찰 fact 구조 검증은 남은 관찰 rule(post_stamp_applied)에 그대로 적용된다.
+        malformed_facts = self._facts("unknown")
+        malformed_facts["post_stamp_applied"] = {"value": "yes"}
         with self.assertRaises(PolicyConfigurationError):
-            self._evaluate(facts=malformed_facts)
+            evaluate_requirements(
+                self.unknown["outputs"]["evidence_records"][0], scope="FINAL_PACKAGE",
+                report_id="req_malformed_fact",
+                evaluated_at=CONFIGS["scenario_unknown_abstain_partial_001"]["evaluated_at"][1],
+                time_resolution=self.unknown["outputs"]["time_resolutions"][0],
+                asset_facts=self.unknown_assets, observation_facts=malformed_facts)
+
+        no_rule_with_code = load_requirement_catalog()
+        branch = no_rule_with_code["scopes"]["FINAL_PACKAGE"]["conditional"][0]["cases"][0]
+        self.assertTrue(branch["no_rule"])
+        branch["code"] = "package.time.overlay_visible"
+        with self.assertRaises(PolicyConfigurationError):
+            validate_requirement_catalog(no_rule_with_code)
 
     def test_d2_removed_event_context_rules_are_absent_and_legacy_inputs_are_ignored(self):
         removed_codes = {
@@ -331,21 +346,29 @@ class PolicyDecisionTests(unittest.TestCase):
         self.assertEqual("UNKNOWN", self._check(
             report, "package.report.content_length")["outcome"])
 
-    def test_invalid_vehicle_value_is_not_evidence_ready(self):
+    def test_invalid_vehicle_value_is_never_pass_and_splits_on_plate_readout_d3(self):
+        # v4까지는 값이 없으면 전부 UNKNOWN이었다. #172 D-3(ADR-EVIDENCE-008 §5.1)부터는
+        # PlateReadout이 있으면 WARN(판독했지만 못 읽음), 없으면 UNKNOWN(판독 결과 없음)이다.
         for invalid_value in (None, "", "  "):
-            with self.subTest(invalid_value=invalid_value):
-                record = deepcopy(self.happy_record)
-                record["vehicle_number"]["value"] = invalid_value
-                report = evaluate_requirements(
-                    record,
-                    scope="EVIDENCE",
-                    report_id="req_invalid_vehicle",
-                    evaluated_at="2026-08-24T18:23:00+09:00",
-                    time_resolution=self.happy_time,
-                )
-                check = self._check(report, "evidence.vehicle_number.present")
-                self.assertEqual("UNKNOWN", check["outcome"])
-                self.assertEqual("UNKNOWN", report["overall"])
+            for with_readout in (True, False):
+                with self.subTest(invalid_value=invalid_value, with_readout=with_readout):
+                    record = deepcopy(self.happy_record)
+                    record["vehicle_number"]["value"] = invalid_value
+                    if not with_readout:
+                        record["provenance"]["input_refs"] = [
+                            ref for ref in record["provenance"]["input_refs"]
+                            if ref["kind"] != "plate_readout"]
+                    report = evaluate_requirements(
+                        record,
+                        scope="EVIDENCE",
+                        report_id="req_invalid_vehicle",
+                        evaluated_at="2026-08-24T18:23:00+09:00",
+                        time_resolution=self.happy_time,
+                    )
+                    check = self._check(report, "evidence.vehicle_number.present")
+                    expected = "WARN" if with_readout else "UNKNOWN"
+                    self.assertEqual(expected, check["outcome"])
+                    self.assertEqual(expected, report["overall"])
 
     def test_package_rejects_invalid_report_and_unevaluated_asset_refs(self):
         report = self._evaluate(report_id="req_package_gate")
@@ -386,17 +409,26 @@ class PolicyDecisionTests(unittest.TestCase):
                 asset_facts=replacement_assets,
             )
 
-        missing_plate = deepcopy(self.happy_record)
-        missing_plate.pop("vehicle_number")
-        report = self._evaluate(record=missing_plate)
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.report.content_length")["outcome"])
+        # #146 · #172 D-3: 판독 후 번호판을 못 읽은 기록은 번호판 없는 template으로 렌더된다.
+        # 렌더 입력이 모자라 UNKNOWN이 되는 것은 PlateReadout 자체가 없을 때(실행 실패)뿐이다.
+        for mutation in ("pop", "null"):
+            with self.subTest(mutation=mutation):
+                missing_plate = deepcopy(self.happy_record)
+                if mutation == "pop":
+                    missing_plate.pop("vehicle_number")
+                else:
+                    missing_plate["vehicle_number"]["value"] = None
+                report = self._evaluate(record=missing_plate)
+                self.assertEqual("PASS", self._check(
+                    report, "package.report.content_length")["outcome"])
+                self.assertEqual("tmpl/safety-report-specific-no-plate-v1", report["basis"]["template_ref"])
 
-        null_plate = deepcopy(self.happy_record)
-        null_plate["vehicle_number"]["value"] = None
-        report = self._evaluate(record=null_plate)
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.report.content_length")["outcome"])
+                missing_plate["provenance"]["input_refs"] = [
+                    ref for ref in missing_plate["provenance"]["input_refs"] if ref["kind"] != "plate_readout"]
+                report = self._evaluate(record=missing_plate)
+                self.assertEqual("UNKNOWN", self._check(
+                    report, "package.report.content_length")["outcome"])
+                self.assertNotIn("template_ref", report["basis"])
 
     def test_location_snapshot_skips_empty_higher_priority_value(self):
         record = deepcopy(self.happy_record)
@@ -423,8 +455,8 @@ class PolicyDecisionTests(unittest.TestCase):
             asset_facts=self.unknown_assets)
         self.assertEqual([], validate_contract(package))
         self.assertIsNone(package["report_inputs"]["location"])
-        self.assertEqual("report-package/v1.1", package["contract_version"])
-        self.assertEqual("safety-report-policy/v1.1", package["provenance"]["policy_ref"])
+        self.assertEqual("report-package/v1.2", package["contract_version"])
+        self.assertEqual("safety-report-policy/v1.2", package["provenance"]["policy_ref"])
         self.assertEqual("tmpl/safety-report-generic-no-location-v1", package["report"]["template_ref"])
         self.assertNotIn("위치 미상", package["report"]["description"])
         self.assertNotIn("발생장소", package["report"]["description"])

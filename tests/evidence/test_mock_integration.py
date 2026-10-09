@@ -27,7 +27,8 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(set(), unknown_codes)
         self.assertEqual("CONFIRMED", record["situation_response"]["value"])
         guard = result["policy_guard_check"]
-        self.assertEqual("NOT_ASKED", guard["shared_case_situation_confirmation"])
+        self.assertEqual("CONFIRMED", guard["shared_case_situation_confirmation"])
+        self.assertEqual(guard["shared_case_situation_confirmation"], CONFIGS["scenario_happy_001"]["situation_response"]["value"])
         self.assertEqual("report.input.situation_unconfirmed", guard["without_confirmation"]["render_error"])
         self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
         self.assertFalse(guard["without_confirmation"]["report_package_emitted"])
@@ -73,7 +74,13 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         self.assertEqual(first["occurred_at"], second["occurred_at"])
         self.assertEqual(1, second["selection_rev"])
         self.assertEqual(first["record_ref"], second["supersedes_ref"])
-        self.assertEqual(["UNKNOWN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        # 첫 판독은 abstain(NEEDS_REVIEW)이라 값이 없지만 PlateReadout은 있다. #172 D-3부터
+        # 번호판 rule은 WARN이고(ADR-EVIDENCE-008 §5.1), 재판독 Need는 위처럼 그대로 나간다.
+        self.assertEqual(["WARN", "WARN"], [item["overall"] for item in result["outputs"]["requirement_reports"]])
+        first_plate = next(item for item in result["outputs"]["requirement_reports"][0]["checks"]
+                           if item["code"] == "evidence.vehicle_number.present")
+        self.assertEqual(("WARN", "evidence.plate_unidentified"),
+                         (first_plate["outcome"], first_plate["reason_code"]))
 
     def test_manual_time_correction_is_one_way_and_preserves_plate(self):
         result = self.run_case("scenario_correction_rerun_001")

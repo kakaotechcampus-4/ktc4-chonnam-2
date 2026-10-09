@@ -6,6 +6,8 @@
 
 > **`usage_refs[]` 지위 표기 (2026-09-08 결정, 서어진 · 확인 김대원·김준영).** `AnalysisRun.usage_refs[]`는 **조회 편의용 파생값**이며 authoritative가 아니다. Run↔Usage 연결과 비용 집계의 기준은 `UsageRecord.run_ref`다(§3·§3-4·§6-1·§7·§8). `ReadoutRun.usage_refs`와 같은 지위다. 의미 변경이 아닌 표기 정합이라 **버전은 `v1.1` 유지**. 근거 `adr/adr-data-contract-call-closure-2026-09-08.md` §4.2.
 
+> **명확화 (2026-09-29, #168 클립 분할 후속 — `search` 서어진 답변 · `case` 유소연 결정) — 버전 유지 `v1.1`.** ① `ranking_score`는 **같은 탐색 intent + 같은 `impl_id`의 클립 Run 사이에서 순서 비교용으로만** 비교할 수 있다. calibrated confidence·확률이 아니라는 기존 의미와 다른 `impl_id` 사이 비교 금지는 그대로다(§4·§6-2 8). ② 클립을 잘라 provider에 넣어도 `CandidateEvent.span`은 **원본 영상의 Recording Timeline 기준**이다 — 클립 시작 기준 시각으로 내리지 않는다(§4-1). 둘 다 기존 필드의 값·serialization을 바꾸지 않는 문구 명확화라 §9에 따라 버전을 유지한다. 클립 분할 자체는 아직 구현되지 않았다.
+
 **Accepted:** `2026-09-04` (짝 ADR의 결정일 9/4) · `2026-09-07` (v1.1)
 
 **Related ADR:** `adr/adr-analysis-run-candidate-event.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.8
@@ -216,7 +218,7 @@
 | `run_id` | ID | 필수 | 자신을 생성한 `AnalysisRun.run_id`. |
 | `span` | object | 필수 | Recording Timeline 기준 canonical 위치. 생성 당시 `timeline_revision`을 함께 보존한다(v1.1). |
 | `rank` | integer | 필수 | 해당 Run 내 최종 후보 순위. 1부터 시작하며 ordering/Recall@K의 authoritative 값. |
-| `ranking_score` | number/null | 선택 | 동일 implementation 내부 ranking diagnostic. calibrated confidence가 아니다. |
+| `ranking_score` | number/null | 선택 | 동일 implementation 내부 ranking diagnostic. calibrated confidence가 아니다 — 확률이나 신뢰도로 표시·해석하지 않는다. 비교가 허용되는 범위는 §6-2 8. |
 | `event_type_hint` | VisualEvent enum/null | 선택 | 예상 visual event family. 법적 신고 유형이나 Fine 확정값이 아니다. |
 | `summary` | string/null | 선택 | Candidate Review를 위한 짧은 시각 관찰 요약. 법적 판단 문구 금지. |
 | `uncertainties` | string[] | 선택 | Coarse 단계에서 남은 불확실성. 없으면 빈 배열 가능. |
@@ -240,6 +242,7 @@
 - `end_ms`: timeline 시작 기준 상대 offset. `> start_ms`.
 - `representative_ms`: Candidate 대표 지점. `start_ms <= representative_ms <= end_ms`.
 - 이 span은 실제 SourceAsset/file boundary가 아니며 최종 신고 `occurred_at`도 아니다.
+- **클립 입력(2026-09-29 명확화, #168).** 긴 영상을 클립으로 잘라 provider에 넣더라도 `start_ms`·`end_ms`·`representative_ms`는 **원본 영상의 Recording Timeline 기준**이어야 한다. provider는 클립 시작 기준 시각으로 답하므로, 클립 시작 offset을 더해 원본 기준으로 보정하는 것은 `search` 책임이고, 그 보정에 필요한 클립의 원본 기준 시작 시각은 `case`가 발주 입력으로 넘긴다. 현재 search 구현은 source 하나를 timeline 0부터 읽는 경로뿐이라 이 보정이 없다 — 클립 분할을 도입할 때 함께 구현한다. 클립 겹침(overlap) 길이는 `미정`, 겹친 구간 중복은 search가 거르는 방향으로 합의했고 그 호출 지점은 `미결 유지`다(`contract-job-record-case-view.md` B절 §7 `RESUME_SEARCH` 행).
 - **명확화(2026-09-10, 이슈 #22 B-2·`CONTRACT_CONFLICTS.md` 불명확 항목 7 종결, 서어진 — 원문 `docs/modules/search/decisions/candidate-span-semantics-2026-09-10.md`).** `span`은 **coarse 후보 창(candidate window)이며 사건 길이(duration)와 같지 않다.** 이 span을 만드는 `AnalysisRun.operation=CANDIDATE_SEARCH`(coarse)의 산출물은 정밀 사건 구간이 아니라 대략적 후보 시간 창이고, 창 폭이 넓은 것(수십~백여 초) 자체는 정상이다. 사건의 정밀 시각은 이 계약이 아니라 별도 레이어가 담당한다 — Fine 단계(`VISUAL_VERIFY`)의 `temporal_facts[].at_offset_ms`, 그리고 최종적으로 `occurred_at`(overlay/`TimeResolution`). `representative_ms`는 이 넓은 창 안에서 실제 사건 순간(예: crossing moment)을 가리키도록 설계된 대표 시점이며 — `representative_ms = span.start_ms + fine.at_offset_ms`가 fixture 전반에서 성립한다 — coarse localization 정확도를 재는 authoritative 지점이다.
 
 ---
@@ -286,7 +289,7 @@
 5. `span.start_ms <= representative_ms <= span.end_ms`.
 6. 한 Run 안에서 `rank`는 중복되지 않으며 1부터 시작하는 positive integer다.
 7. `ranking_score`가 없어도 `rank`는 반드시 존재한다.
-8. `ranking_score`를 서로 다른 `impl_id` 사이의 calibrated confidence로 해석하지 않는다.
+8. `ranking_score`를 서로 다른 `impl_id` 사이의 calibrated confidence로 해석하지 않는다. **(2026-09-29 명확화, #168)** 같은 탐색 intent + 같은 `impl_id`의 클립 Run 사이에서는 **순서 비교(ordering) 용도로만** 비교할 수 있다. 클립 Run 묶음의 순서는 `ranking_score` 내림차순, 동점이면 원본 timeline 기준 `representative_ms`가 이른 후보가 앞이다 — 한 Run 안의 정렬 규칙과 같다. 어느 경우에도 확률·신뢰도로 표시하거나 해석하지 않으며, Evidence 판정이나 사용자 표시값으로 쓰지 않는다. 다른 탐색 intent의 후보와는 비교하지 않는다.
 9. Candidate span은 SourceAsset/file boundary나 최종 `occurred_at`을 의미하지 않는다.
 10. `event_type_hint`는 법적 신고 유형을 표현하지 않는다.
 11. Candidate ordering을 바꿔야 하면 기존 Run/Candidate를 수정하지 않고 새 Search Run을 생성한다.
@@ -316,7 +319,7 @@
 반드시:
 
 - Candidate 선택 reference로 `candidate_id`를 사용한다.
-- Candidate ordering은 `rank`로 처리한다.
+- Candidate ordering은 `rank`로 처리한다. 클립 분할된 하나의 탐색 intent에서 여러 클립 Run의 후보를 묶을 때만 §6-2 8의 순서 규칙을 쓴다(2026-09-29 명확화, #168).
 - `ranking_score` threshold로 Evidence 의미를 재판정하지 않는다.
 - Candidate absolute display time은 **현재** Timeline revision으로 projection한다. `span.timeline_revision`이 현재 `RecordingTimeline.revision`과 다르면 그 사실을 `CaseView`에 표시한다(표시 필드는 case 소유 — `contract-job-record-case-view.md` B절 §13). 과거 Candidate를 현재 anchor로 조용히 환산해 provenance를 지우지 않는다.
 - `PARTIAL`이면 필요한 coverage notice를 구성할 수 있도록 `issues`를 확인한다.

@@ -1,0 +1,2515 @@
+{
+ "model": "gemini-3.8-flash",
+ "reasoning_effort": "low",
+ "transport": "image-native",
+ "crop": "crop=iw/2:ih/2:iw/4:ih/4",
+ "fps": 4.0,
+ "note": "응답 원문(관찰 문장)은 저장소 밖 .superpowers/fine-window/에 둔다",
+ "rows": [
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    5.5,
+    6.0,
+    6.5
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 964,
+   "latency_sec": 11.24,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.32,
+    6.11,
+    6.5,
+    7.16,
+    8.74
+   ],
+   "input_tokens": 22702,
+   "output_tokens": 941,
+   "latency_sec": 7.92,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.25,
+    6.5,
+    7.0,
+    8.75
+   ],
+   "input_tokens": 22762,
+   "output_tokens": 1038,
+   "latency_sec": 7.47,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.7
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 1,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.0,
+    6.5,
+    7.0,
+    9.0
+   ],
+   "input_tokens": 22769,
+   "output_tokens": 1049,
+   "latency_sec": 6.95,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.88
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.5,
+    5.0,
+    6.0,
+    6.5,
+    9.0
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 1014,
+   "latency_sec": 7.73,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.5,
+    6.5,
+    9.0
+   ],
+   "input_tokens": 22702,
+   "output_tokens": 1015,
+   "latency_sec": 7.23,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.25,
+    6.5,
+    7.0,
+    8.75
+   ],
+   "input_tokens": 22762,
+   "output_tokens": 1043,
+   "latency_sec": 6.47,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 2,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.5,
+    7.0,
+    8.5,
+    9.0
+   ],
+   "input_tokens": 22769,
+   "output_tokens": 999,
+   "latency_sec": 6.67,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "PRESENT",
+     0.92
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.5
+   ],
+   "input_tokens": 22695,
+   "output_tokens": 975,
+   "latency_sec": 7.3,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.5,
+    6.5,
+    7.0,
+    8.75
+   ],
+   "input_tokens": 22702,
+   "output_tokens": 982,
+   "latency_sec": 7.42,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    6.0,
+    6.5,
+    7.0,
+    8.0,
+    9.0
+   ],
+   "input_tokens": 22762,
+   "output_tokens": 1063,
+   "latency_sec": 14.0,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.5
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    9.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 3,
+   "frames": 20,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.2,
+    5.0,
+    6.5,
+    7.0,
+    9.0
+   ],
+   "input_tokens": 22769,
+   "output_tokens": 1023,
+   "latency_sec": 7.19,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "UNCERTAIN",
+     0.6
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 958,
+   "latency_sec": 5.59,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13906,
+   "output_tokens": 1051,
+   "latency_sec": 6.09,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    10.2,
+    10.5,
+    11.2,
+    11.5,
+    12.0,
+    12.9
+   ],
+   "input_tokens": 13964,
+   "output_tokens": 1088,
+   "latency_sec": 6.34,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 1,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    13.0
+   ],
+   "input_tokens": 13973,
+   "output_tokens": 1086,
+   "latency_sec": 5.78,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.92
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.5,
+    12.5,
+    13.0
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 1035,
+   "latency_sec": 6.14,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    12.9
+   ],
+   "input_tokens": 13906,
+   "output_tokens": 1048,
+   "latency_sec": 5.56,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.0,
+    12.9
+   ],
+   "input_tokens": 13964,
+   "output_tokens": 1018,
+   "latency_sec": 6.17,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 2,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13973,
+   "output_tokens": 991,
+   "latency_sec": 5.67,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    10.5,
+    11.5,
+    12.0,
+    12.9
+   ],
+   "input_tokens": 13897,
+   "output_tokens": 1011,
+   "latency_sec": 5.41,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13906,
+   "output_tokens": 1022,
+   "latency_sec": 5.7,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    12.5,
+    12.9
+   ],
+   "input_tokens": 13964,
+   "output_tokens": 1018,
+   "latency_sec": 5.92,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "YT_0003_C05.mp4",
+   "window": [
+    10.0,
+    13.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "오른쪽 차로의 검은색 승용차",
+   "repeat": 3,
+   "frames": 12,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    11.5,
+    13.0
+   ],
+   "input_tokens": 13973,
+   "output_tokens": 1070,
+   "latency_sec": 5.94,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    13.8
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 1934,
+   "latency_sec": 10.28,
+   "association_status": "AMBIGUOUS",
+   "association_confidence": 0.5,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    12.5,
+    14.0
+   ],
+   "input_tokens": 18303,
+   "output_tokens": 1053,
+   "latency_sec": 7.02,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.92
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.27,
+    11.07,
+    11.6,
+    12.0,
+    12.4,
+    13.2,
+    14.0
+   ],
+   "input_tokens": 18364,
+   "output_tokens": 1247,
+   "latency_sec": 7.69,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 1,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18370,
+   "output_tokens": 997,
+   "latency_sec": 6.05,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.92
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    11.75,
+    12.0,
+    12.5,
+    13.75
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 999,
+   "latency_sec": 6.22,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18303,
+   "output_tokens": 1047,
+   "latency_sec": 6.75,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    10.8,
+    11.6,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18364,
+   "output_tokens": 1768,
+   "latency_sec": 8.7,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 2,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.27,
+    12.0,
+    12.93,
+    14.0
+   ],
+   "input_tokens": 18370,
+   "output_tokens": 836,
+   "latency_sec": 6.53,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18297,
+   "output_tokens": 928,
+   "latency_sec": 6.23,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    12.0,
+    14.0
+   ],
+   "input_tokens": 18303,
+   "output_tokens": 1234,
+   "latency_sec": 8.25,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 2,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    13.75
+   ],
+   "input_tokens": 18364,
+   "output_tokens": 1433,
+   "latency_sec": 8.42,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 3,
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.0,
+    12.0,
+    12.5,
+    13.5,
+    13.8
+   ],
+   "input_tokens": 18370,
+   "output_tokens": 993,
+   "latency_sec": 6.11,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ]
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 1,
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.5,
+    7.0,
+    10.0
+   ],
+   "input_tokens": 27170,
+   "output_tokens": 892,
+   "latency_sec": 8.64,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "4to10-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 2,
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.5,
+    5.0,
+    6.5,
+    9.0
+   ],
+   "input_tokens": 27170,
+   "output_tokens": 946,
+   "latency_sec": 6.56,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.8
+    ]
+   ],
+   "run": "4to10-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 3,
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.0,
+    6.5,
+    7.0,
+    9.0,
+    10.0
+   ],
+   "input_tokens": 27170,
+   "output_tokens": 989,
+   "latency_sec": 7.59,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "4to10-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    5.25,
+    5.5,
+    6.0,
+    7.0,
+    8.0,
+    9.0
+   ],
+   "input_tokens": 2293,
+   "output_tokens": 974,
+   "latency_sec": 8.8,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    4.5,
+    6.0,
+    6.5,
+    7.0,
+    9.5
+   ],
+   "input_tokens": 2360,
+   "output_tokens": 981,
+   "latency_sec": 6.66,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    6.5,
+    7.0,
+    8.0,
+    9.0,
+    9.5
+   ],
+   "input_tokens": 2367,
+   "output_tokens": 1033,
+   "latency_sec": 5.92,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    4.5,
+    4.75,
+    5.0,
+    6.0
+   ],
+   "input_tokens": 2293,
+   "output_tokens": 873,
+   "latency_sec": 5.89,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    6.0,
+    6.5,
+    7.0,
+    8.0,
+    9.75
+   ],
+   "input_tokens": 2360,
+   "output_tokens": 1001,
+   "latency_sec": 5.5,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    5.5,
+    6.5,
+    7.0,
+    7.5,
+    9.0,
+    9.5
+   ],
+   "input_tokens": 2367,
+   "output_tokens": 892,
+   "latency_sec": 6.02,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    4.5,
+    5.0,
+    6.0
+   ],
+   "input_tokens": 2293,
+   "output_tokens": 889,
+   "latency_sec": 6.17,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    4.25,
+    5.5,
+    6.0,
+    7.0,
+    7.75,
+    9.0,
+    9.5
+   ],
+   "input_tokens": 2360,
+   "output_tokens": 941,
+   "latency_sec": 5.31,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.96
+    ],
+    [
+     "PRESENT",
+     0.9
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141927_EVT_1.avi",
+   "window": [
+    4.0,
+    10.0
+   ],
+   "expected": "OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 멀리 보이는 회색 SUV",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 24,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": false,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    4.0,
+    6.0,
+    6.75,
+    9.5
+   ],
+   "input_tokens": 2367,
+   "output_tokens": 947,
+   "latency_sec": 5.86,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.5,
+    11.25,
+    11.75,
+    12.5,
+    13.5
+   ],
+   "input_tokens": 1766,
+   "output_tokens": 846,
+   "latency_sec": 5.78,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    11.25,
+    11.75,
+    13.5
+   ],
+   "input_tokens": 1833,
+   "output_tokens": 848,
+   "latency_sec": 5.22,
+   "association_status": "MATCHED",
+   "association_confidence": 0.9,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 1,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    11.75,
+    12.5,
+    13.5
+   ],
+   "input_tokens": 1839,
+   "output_tokens": 824,
+   "latency_sec": 4.91,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.75,
+    13.5
+   ],
+   "input_tokens": 1766,
+   "output_tokens": 801,
+   "latency_sec": 5.03,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    10.5,
+    11.5,
+    11.75,
+    12.0,
+    12.5,
+    13.0,
+    13.5
+   ],
+   "input_tokens": 1833,
+   "output_tokens": 963,
+   "latency_sec": 5.09,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 2,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    10.25,
+    11.25,
+    11.75,
+    12.5,
+    13.5
+   ],
+   "input_tokens": 1839,
+   "output_tokens": 938,
+   "latency_sec": 5.55,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "PRESENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "full",
+   "hint": "없음",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-diagnostic-v1",
+   "prompt_sha256": "b9d4ceb64b29d88516a09738bb2cabd19fc837f651f0cba72919131c0d1db122",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.25,
+    13.5
+   ],
+   "input_tokens": 1766,
+   "output_tokens": 796,
+   "latency_sec": 5.3,
+   "association_status": "NOT_FOUND",
+   "association_confidence": null,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.9
+    ],
+    [
+     "ABSENT",
+     0.95
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop",
+   "hint": "없음",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 0,
+   "observed_at_origin_sec": [
+    10.0,
+    11.75,
+    13.5
+   ],
+   "input_tokens": 1833,
+   "output_tokens": 868,
+   "latency_sec": 4.95,
+   "association_status": "MATCHED",
+   "association_confidence": 0.85,
+   "primitive_states": [
+    [
+     "PRESENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ],
+   "run": "slow-video-followup"
+  },
+  {
+   "clip": "20260620_141956_EVT_1.avi",
+   "window": [
+    10.0,
+    14.0
+   ],
+   "expected": "NOT_OBSERVED",
+   "condition": "crop+hint",
+   "hint": "앞쪽 흰색 승용차",
+   "repeat": 3,
+   "transport": "video",
+   "frames": 16,
+   "prompt_version": "fine-crop-v1",
+   "prompt_sha256": "3906d291fc3d5d78a0ec9212ffd68fab4281198696cb33da495d14194a8bc662",
+   "verification": "NOT_OBSERVED",
+   "correct": true,
+   "uncertainty_count": 1,
+   "observed_at_origin_sec": [
+    10.0,
+    11.5,
+    12.0,
+    12.5,
+    13.5
+   ],
+   "input_tokens": 1839,
+   "output_tokens": 1422,
+   "latency_sec": 7.16,
+   "association_status": "MATCHED",
+   "association_confidence": 0.95,
+   "primitive_states": [
+    [
+     "ABSENT",
+     0.95
+    ],
+    [
+     "ABSENT",
+     0.98
+    ],
+    [
+     "ABSENT",
+     0.98
+    ]
+   ],
+   "run": "slow-video-followup"
+  }
+ ]
+}

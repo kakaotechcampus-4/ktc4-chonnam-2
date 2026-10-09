@@ -12,6 +12,10 @@
 - [candidate-span-semantics-2026-09-10.md](candidate-span-semantics-2026-09-10.md) — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신
 - [fine-temporal-offset-base-2026-09-22.md](fine-temporal-offset-base-2026-09-22.md) — Fine at_offset_ms 기준 = 잘라낸 clip의 0초 확정, 이슈 #132(유소연) 회신
 
+## 제안 (운영 반영 전)
+
+- [search-final-structure-2026-10-01.md](search-final-structure-2026-10-01.md) — 실험 전체에서 근거 있는 선택만: Coarse 0.5x / Fine 0.25x 느린 영상, p3 프롬프트 유지, 시각 환산. Eval 통지 후 반영
+
 ## 접합 제안 (타 모듈 확인 대기)
 
 - [monday-real-e2e-stream-boundary-2026-09-21.md](monday-real-e2e-stream-boundary-2026-09-21.md) — 월요일 Real E2E의 Search VIDEO stream ref 전달 경계. Case·Recording 접합과 입력 연결 방식은 확인 대기

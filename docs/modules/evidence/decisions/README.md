@@ -8,3 +8,4 @@
 - `source-kind-registry.md — Mock이 신설한 source.kind 5종과 v2 사용자 correction 적용 범위`
 - `safety-report-policy-v1.md — 초기 4종→안전신문고 2종 매핑, specific/generic 신고문 template, 사용자-unsure fallback`
 - `safety-report-policy-v1.1.md — 위치 부재 Package를 위한 장소 슬롯 없는 template revision`
+- `safety-report-policy-v1.2.md — 판독 후 번호판을 식별하지 못한 Package를 위한 차량번호 슬롯 없는 template revision (#172 D-3)`

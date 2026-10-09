@@ -11,14 +11,13 @@ from typing import TYPE_CHECKING, Protocol, cast, final
 if TYPE_CHECKING:
     import openai as _openai
     from openai.types.chat import ChatCompletionMessageParam
-    from openai.types.shared_params import ReasoningEffort
 
 from pydantic import BaseModel, ValidationError
 
 from .config import GeminiSearchConfig
 from .execution import RunDeadline
 from .media import PreparedMedia
-from .prompts import COARSE_PROMPT, fine_prompt_for
+from .prompts import COARSE_PROMPT, fine_prompt_for, playback_note
 from .retry import RetryPolicy, call_with_retry
 from .schemas import CoarseResponse, FineResponse
 from .scope import VisualEventType
@@ -76,6 +75,16 @@ class StructuredInvocation[ResponseT: BaseModel]:
 
 
 @dataclass(frozen=True, slots=True)
+class TextInvocation[ResponseT: BaseModel]:
+    """영상 없이 텍스트만 넣는 structured 호출(자연어 단서 구조화, #210)."""
+
+    system_prompt: str
+    user_prompt: str
+    response_model: type[ResponseT]
+    deadline: RunDeadline
+
+
+@dataclass(frozen=True, slots=True)
 class ProviderRuntimeOptions:
     request_timeout_sec: float = 60.0
 
@@ -91,6 +100,26 @@ class SearchProvider(Protocol):
 def _video_data_url(path: Path, content_type: str) -> str:
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{content_type};base64,{encoded}"
+
+
+_TIME_KEYS = frozenset({"start_sec", "end_sec", "at_sec"})
+
+
+def _to_origin_times(value: object, speed: float) -> object:
+    """늘린 영상 기준으로 답한 시각 필드를 원본 기준으로 되돌린다(응답 스키마 전체를 순회)."""
+    if isinstance(value, dict):
+        out: dict[object, object] = {}
+        for key, item in value.items():
+            if key in _TIME_KEYS and isinstance(item, int | float):
+                out[key] = item * speed
+            elif key == "at_offset_ms" and isinstance(item, int | float):
+                out[key] = round(item * speed)
+            else:
+                out[key] = _to_origin_times(item, speed)
+        return out
+    if isinstance(value, list | tuple):
+        return [_to_origin_times(item, speed) for item in value]
+    return value
 
 
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
@@ -184,9 +213,10 @@ class GeminiProvider:
         timeout_sec: float,
         deadline: RunDeadline | None = None,
     ) -> ProviderResult[ResponseT]:
-        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 서버측 구간
-        # 클리핑·fps·해상도는 미결이라 Fine 구간은 프롬프트로만 지시한다 —
-        # config.media_resolution/fps 는 그 처리 도입 시 사용할 자리로 남긴다.
+        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
+        # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
+        speed = media.playback_speed
+        prompt += playback_note(speed)
 
         # --- Cap 1: raw media bytes (BEFORE encoding) ---
         if media.byte_size > self._config.max_inline_media_bytes:
@@ -196,7 +226,7 @@ class GeminiProvider:
             )
 
         data_url = _video_data_url(media.path, media.content_type)
-        messages = [
+        messages: list[dict[str, object]] = [
             {
                 "role": "user",
                 "content": [
@@ -208,14 +238,48 @@ class GeminiProvider:
                 ],
             }
         ]
+        return self._call(
+            messages,
+            response_model,
+            timeout_sec,
+            deadline,
+            speed=speed,
+            reasoning_effort=self._config.reasoning_effort,
+        )
+
+    def invoke_text[ResponseT: BaseModel](
+        self, request: TextInvocation[ResponseT]
+    ) -> ProviderResult[ResponseT]:
+        # reasoning_effort는 보내지 않는다 — case 실험(intent-llm-model-comparison)이
+        # 프록시 기본값으로 측정했으므로 같은 조건을 유지한다.
+        messages: list[dict[str, object]] = [
+            {"role": "system", "content": request.system_prompt},
+            {"role": "user", "content": request.user_prompt},
+        ]
+        return self._call(
+            messages,
+            request.response_model,
+            request.deadline.remaining_sec(),
+            request.deadline,
+        )
+
+    def _call[ResponseT: BaseModel](
+        self,
+        messages: list[dict[str, object]],
+        response_model: type[ResponseT],
+        timeout_sec: float,
+        deadline: RunDeadline | None,
+        *,
+        speed: float = 1.0,
+        reasoning_effort: str | None = None,
+    ) -> ProviderResult[ResponseT]:
+        options: dict[str, object] = {}
+        if reasoning_effort is not None:
+            options["reasoning_effort"] = reasoning_effort
 
         # --- Cap 2: serialized request bytes (BEFORE network call) ---
         serialized = json.dumps(
-            {
-                "model": self._config.model,
-                "messages": messages,
-                "reasoning_effort": self._config.reasoning_effort,
-            },
+            {"model": self._config.model, "messages": messages, **options},
             separators=(",", ":"),
         ).encode()
         if len(serialized) > self._config.max_inline_request_bytes:
@@ -237,13 +301,17 @@ class GeminiProvider:
                 model=self._config.model,
                 messages=cast("list[ChatCompletionMessageParam]", messages),
                 response_format=response_model,
-                reasoning_effort=cast("ReasoningEffort", self._config.reasoning_effort),
                 timeout=attempt_timeout,
+                **options,  # pyright: ignore[reportArgumentType]
             )
             latency_ms = round((time.monotonic() - started) * 1000)
             parsed = completion.choices[0].message.parsed
             if parsed is None:
                 raise ProviderPayloadError("provider returned no parsed content")
+            if speed != 1.0:
+                parsed = response_model.model_validate(
+                    _to_origin_times(parsed.model_dump(), speed)
+                )
             usage = _usage_from_completion(getattr(completion, "usage", None))
             return ProviderResult(parsed, usage, latency_ms)
 
