@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+from xml.etree import ElementTree
 
 import pytest
 
@@ -20,6 +21,13 @@ MIGRATION_CHECKS = (
     "partial_failure", "revision_preflight", "process_guard", "cli_stdin",
 )
 
+JOB_PARAMETERS = (
+    *(("jobs", "read_states", state) for state in
+      ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
+    ("jobs", "enqueue_duplicate", "separate_batch"),
+    ("jobs", "enqueue_duplicate", "same_batch"),
+)
+
 
 def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tmp_path):
     report_path = tmp_path / "mysql.json"
@@ -29,7 +37,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Exclude this test to avoid recursion. Use a separate disposable base schema
     # so legacy Case initialization cannot alter the parent suite's database.
     result = subprocess.run(
-        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/common/db/integration",
+        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/common/db/integration", "tests/common/jobs",
          "tests/case/test_store_mysql.py", "tests/case/test_case_repository_contract.py",
          "--ignore=tests/common/db/integration/test_migration_gate.py", "-m", "mysql", "-q",
          "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'child'}",
@@ -43,13 +51,50 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     spec.loader.exec_module(gate)
     gate.validate_report(report)
     gate.validate_junit(junit_path, report)
-    for scenario in MIGRATION_CHECKS:
+    for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
+                           ("jobs", "schema"), ("jobs", "enqueue_rollback"),
+                           ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states")]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
-                   if {"role": "migration", "scenario": scenario} in item.get("checks", [])}
+                   if {"role": role, "scenario": scenario} in item.get("checks", [])}
         assert removed, scenario
         broken["collected"] = [item for item in broken["collected"] if item["nodeid"] not in removed]
         broken["selected"] = [node for node in broken["selected"] if node not in removed]
         broken["reports"] = [item for item in broken["reports"] if item["nodeid"] not in removed]
         with pytest.raises(ValueError, match="role/scenario"):
             gate.validate_report(broken)
+
+    # Keep every other parameter in place. A family-level set check would
+    # incorrectly accept the "all" mutation, including deletion from JUnit.
+    mutations = []
+    for role, scenario, parameter in JOB_PARAMETERS:
+        check = {"role": role, "scenario": scenario, "parameter": parameter}
+        entry, = (n for n in report["collected"] if check in n.get("checks", []))
+        node = entry["nodeid"]
+        for layer in ("collection", "selection", "setup", "call", "teardown", "all", "junit"):
+            broken = deepcopy(report)
+            if layer in {"collection", "all"}:
+                broken["collected"] = [n for n in broken["collected"] if n["nodeid"] != node]
+            if layer in {"selection", "all"}:
+                broken["selected"].remove(node)
+            if layer in {"setup", "call", "teardown", "all"}:
+                broken["reports"] = [r for r in broken["reports"]
+                                     if r["nodeid"] != node or (layer != "all" and r["when"] != layer)]
+            xml = ElementTree.parse(junit_path)
+            if layer in {"junit", "all"}:
+                matches = 0
+                for parent in xml.iter():
+                    for case in list(parent):
+                        if case.tag == "testcase" and (case.get("classname"), case.get("name")) == tuple(entry["junit"]):
+                            parent.remove(case)
+                            matches += 1
+                assert matches == 1
+            mutation_junit = tmp_path / f"{scenario}-{parameter}-{layer}.xml"
+            xml.write(mutation_junit, encoding="utf-8")
+            with pytest.raises(ValueError):
+                gate.validate_report(broken)
+                gate.validate_junit(mutation_junit, broken)
+            mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
+                              "layer": layer, "rejected": True})
+    assert len(mutations) == 56
+    (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

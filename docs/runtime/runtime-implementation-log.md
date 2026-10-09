@@ -36,6 +36,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | DB 역할별 engine · callback transaction | API/Worker QueuePool · heartbeat/ready/migration NullPool · `Connection` callback과 내부 context manager · B-D8 최초 포함 총 3회 | RT-02(a) · PR #319 · `4a513c0` | 아래 RT-02 · `common/db/` |
 | MySQL 실제 장애 · CI 실행 증거 | 테스트별 schema · COMMIT OK 폐기 proxy · 실제 1205/1213/KILL · JSON/JUnit 대조 · 기존 Case 18개 실행 목록 | RT-02(a) · PR #319 · `4a513c0` | 아래 RT-02 · `tests/mysql_harness.py` · `scripts/check_mysql_test_report.py` |
 | Alembic runner · 빈 Runtime env | frozen registry `case → runtime` · 명시 URL API/stdin CLI · 모듈별 transaction connection · 빈 Runtime version table · 첫 실패 중단 · process 내부 중복 거부 | RT-02(b) · 로컬, PR 미생성 | 아래 RT-02(b) · `common/db/migrate.py` |
+| 실행 원장 schema · enqueue · read model | `runtime_0001` · 내부 시각 표식 column · ascii_bin ID · DB UTC microseconds · 단일 batch INSERT · Contract allowlist projection · usage_refs 비저장 | RT-03(a) · 로컬, PR 미생성 | 아래 RT-03 · `common/jobs/` |
 | `DECIMAL` precision/scale (Plan P-10) | pending | RT-07 | — |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
@@ -282,35 +283,83 @@ Status: DONE · Issue: #289 · Audit: A
 
 ## RT-03 — `job_execution` schema · queue repository
 
-Status: NOT_STARTED · Issue: #290 · Audit: A
+Status: IN_PROGRESS · Issue: #290 · Audit: A
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| pending (로컬, PR 미생성) | RT-03(a) schema · enqueue · read port — `Refs #290` | pending |
 
 ### 구현 결과
 
-—
+- `migrations/runtime/versions/0001_job_execution.py` → `runtime_0001`: `job_execution` 하나가 실행 원장과 queue를 맡는다. 기존 RT-02 runner `case → runtime`을 그대로 사용하며 모듈 간 FK는 없다. claim index `(status, available_at, execution_id)`, `job_id` index, UNIQUE `(job_id, attempt)`, 양수 attempt·닫힌 status CHECK를 둔다.
+- `common/jobs/{schema,repository,read_port}.py`: `enqueue(conn, job_records, trace_id) -> list[str]`는 attempt 1 `QUEUED`를 생성한다. 호출자의 열린 transaction이 필요하며 commit·rollback·close·retry를 하지 않는다. batch metadata 전체를 쓰기 전에 검증하고 한 INSERT로 기록하여 중복이 있으면 해당 statement의 새 row 전체가 거부된다. 호출자 transaction의 실패 처리는 호출자가 소유한다.
+- `read_executions(conn, job_ids) -> list[dict]`: 요청한 Job의 모든 attempt를 `job_id, attempt` 순서로 반환한다. 기존 JobExecution validator를 통과한 JSON 호환 Contract projection이며 대표 execution 선택은 case 소유다. 내부 column은 SELECT allowlist로 제외하고 `usage_refs=[]`를 반환한다. usage_refs column·usage ledger는 만들지 않았다.
+- claim_one·finish·Worker·heartbeat/cancel·retry attempt 생성·usage projection·HTTP API는 구현하지 않았다. RT-03 전체 완료나 Issue close가 아니다. 커밋·push·PR 생성 없음. 후속 PR 본문 연결은 `Refs #290 (RT-03(a))`를 사용한다.
 
 ### Plan 대비 변경
 
-—
+- Plan §9가 나눈 (a) schema/enqueue/read port만 구현했다. (b)의 claim/finish acceptance는 후속 검증 대상이다. authoritative Implementation Plan은 변경하지 않았다.
+- RT-02 migration acceptance의 빈 Runtime schema 기대값을 `job_execution`/`runtime_0001`로 갱신했다. 미래 revision 테스트는 새 첫 revision을 parent로 잇는다. 기존 Case-owned fixture·revision·repository·test 파일과 RT-02 helper/runner 동작은 변경하지 않았다.
+- 기존 MySQL JSON/JUnit gate에 RT-03(a) 필수 check 5개를 추가하고 실제 보고서 누락 회귀에 jobs 경로를 포함한다. workflow·의존성·lockfile 변경 없는 검증 보강이다. 실행 세부 계획은 `docs/superpowers/plans/2026-10-08-rt03a.md`다.
+- Contract·Accepted Decision·Baseline 값/의미 변경 없음. 다른 Owner에게 새 의무를 만들지 않았다.
 
 ### 새 implementation detail
 
-—
+- 내부 column 이름: `available_at`, `lease_owner`, `lease_expires_at`, `heartbeat_at`, `cancel_requested_at`, `case_applied_at`, `trace_id`, `kind`, `case_id`. lease/heartbeat/중단/반영 시각은 최초 enqueue에서 null이다. `available_at=queued_at`이며 첫 attempt에는 backoff가 없다.
+- UTC `DATETIME(6)` 저장. enqueue 시 MySQL `UTC_TIMESTAMP(6)`를 한 번 읽어 batch의 queued/available 시각을 일치시킨다. session timezone이나 API/container 시계에 의존하지 않는다. read에서 UTC aware 시각으로 변환한다. B-L6의 lease SQL은 이번에 구현하지 않았다.
+- `produced`는 native JSON `ContractRef[]`; Contract envelope/version은 read에서 구성한다. ID는 기존 Case storage와 같은 `ascii_bin`을 사용한다. `job_id` 191, `case_id`/`execution_id`/`trace_id`/`lease_owner` 128, `kind` 64, status 16, failure_kind 191자다. consumed metadata의 빈 값/길이/ASCII 등을 입력에서 검증한다. kind registry를 import하거나 등록 여부를 enqueue에서 거부하지 않는다.
+- execution ID는 `exec_`+UUID hex다. 반환 순서는 입력 순서이며 DB unique 오류는 그대로 전파한다. unknown COMMIT 뒤 무조건 재호출해도 성공하는 idempotent callback이 아니므로 composition root의 domain read 조건이 필요하다(RT-02 helper와 같은 경계).
+- frozen migration은 live metadata를 import하지 않는다. 미래 metadata 수정으로 과거 revision이 바뀌지 않게 한다.
 
 ### Owner 확인 포인트
 
-—
+- 김준영 deferred Audit A: 내부 column 명칭·길이, UTC 저장/Contract 변환, enqueue 반환 ID 순서와 batch atomicity, read port가 모든 attempt를 반환하는 경계.
+- claim/finish는 (b)에서 기존 전이표·조건부 UPDATE·lease owner·B-W3/B-L2/B-L6·RC locking을 검증해야 한다. 이번 schema의 lease column이 존재하는 것을 해당 lifecycle 구현 완료로 해석하지 않는다.
 
 ### Verification
 
-—
+- 실제 MySQL 8.4.7 별도 임시 서버/폐기 schema를 사용한다. 기존 검증 서버가 응답하지 않아 기존 MySQL 배포 파일과 임시 libaio/libnuma로 준비했다. 시스템 설치나 사용자 DB 변경은 하지 않았다. `DAESINGO_REQUIRE_MYSQL=1`로 실행한다.
+- schema/enqueue RED **15 failed**(table/repository 부재) → GREEN **15 passed**. read port RED **10 failed**(read_port 부재) → 신규 jobs 합계 **25 passed**. 첫 RED 수집 전 잘못된 transaction helper import를 바로잡았다. 수집 오류는 기능 RED 근거로 세지 않았다.
+- gate RED: 신규 필수 check 5개 각각을 뺐을 때 **DID NOT RAISE 5건** → gate unit·jobs·migration targeted GREEN **109 passed**. migration 기대값 갱신 전 **4 failed / 37 passed**, 갱신 후 위 targeted GREEN에 포함된다.
+- 독립 리뷰 P2: 기존 Case가 허용하는 ASCII `case_id`의 끝 공백/탭을 enqueue가 `rstrip()` 검사로 새로 거부했다. 실제 `CaseAggregate`·`issue_job`·`MySQLCaseRepository`를 거친 회귀 **2 failed**를 확인하고 추가 제한만 제거했다. 신규 jobs 실제 MySQL 전체 **27 passed**. 독립 재리뷰에서 해당 P2 해결·추가 actionable finding 없음(최종 전체 회귀 조건부 통과)을 확인했다.
+- 첫 전체 회귀 **2227 passed · 26 skipped · 1 failed**: 실제 보고서 생성용 하위 pytest에서 production runner가 한 번 `migration: execution_failed`로 실패했다. 예외 원문을 숨기는 runner의 정책은 바꾸지 않았다. OS 임시 진단 plugin으로 실패 코드/context 유형만 수집하며 해당 report 회귀와 migration test를 다시 실행했고 **2 passed**(실제 하위 MySQL 회귀·신규 check 누락 거부 포함), 오류는 재현되지 않았다. 최초 실패의 원인은 확인하지 못했으며 transient 원인이라고 단정하지 않는다.
+- 최종 전체 pytest **2230 passed · 26 skipped · failure/error 0**, 391.40초. Case ID 수정까지 포함한 전체 재실행이며 `DAESINGO_REQUIRE_MYSQL=1`, `-B -X utf8 -m pytest -q -p no:cacheprovider`를 사용했다. `full-final.txt/json/xml`에 증거를 저장했다.
+- MySQL JSON/JUnit execution gate **PASS — 실제 MySQL 8.4.7 · 93 tests · skip 0 · xfail 0 · 279 phases · collection error 0**. 기존 Case MySQL **18개**, 신규 jobs **27개**를 포함하며 필수 role/check **48개**를 확인했다. 실제 보고서 회귀는 기존 migration check 11개와 신규 jobs check 5개를 각각 제거해 누락을 거부한다. mock·skip·xfail로 대체하지 않았다.
+- 전체 skip 26개는 Search 선택 의존성 `typer` 4개, Case 로컬 영상 2개, Eval 로컬 미디어/VL.zip 5개, Recording 영상/명시 opt-in 15개다. 개별 node/reason은 `skips.json`, 집계는 `summary.json`에 보관한다. MySQL 대상에는 skip이 없다.
+- boundary PASS(위반 0), Contract fixture PASS(문서 62 · JSON 26 · 의미 104), `git diff --check` PASS. 원격 GitHub Actions 실행·PR 생성은 하지 않았다. 독립 source 재리뷰는 P2 해결 뒤 추가 actionable finding 없음이며, 최종 전체 회귀·gate는 구현자가 위 수치로 실행 검증했다.
+- 변경 파일 15개 목록은 OS 임시 `changed-files.txt`다. HEAD·index는 시작 상태 그대로이며 커밋·push 없음. `recording-baseline-negative-001.json`은 미추적 상태와 SHA-256 `27BA6EE8F681F2DF93C4E147589DD932D4632D71631A77EDE194317D42247D99`를 유지했다. authoritative Plan·Contract·Decision·Baseline·Case-owned 파일은 변경하지 않았다.
+- 증거 경로: OS 임시 `C:/Users/cheol/AppData/Local/Temp/rt03a-20261008/`. 최종 검증 뒤 이번에 시작한 임시 MySQL 서버만 종료하며 증거와 배포 파일은 보관한다.
+
+### 2026-10-09 독립 리뷰 P2 — 필수 MySQL parameter 누락 거부
+
+- 기존 gate는 `(role, scenario)` 집합만 확인했다. `read_states` 6개 중 한 상태 또는 `enqueue_duplicate` 2개 중 한 경로를 수집·선택·실행·JUnit에서 함께 제거해도 같은 family의 다른 parameter가 남으면 통과했다. 기존 검증은 family 전체 누락을 검사했으며 개별 parameter 필수 실행까지 보장하지 못했다.
+- RED: 개별 parameter 누락 unit 검사 **8 failed / 48 passed**. 이전 실제 MySQL `full-final.json/xml`에서 `FAILED`와 중복 `[True]`를 각각 제거해도 JSON/JUnit gate가 통과하는 것을 별도로 재현했다. 해당 RED JSON/XML과 출력은 OS 임시 `C:/Users/cheol/AppData/Local/Temp/rt03a-p2-20261009/`에 보관한다.
+- 수정: 기존 필수 check 48개와 Case MySQL inventory는 유지하고 별도 필수 `(role, scenario, parameter)` 8개를 추가했다. 기존 pytest parameter에 명시적 `mysql_check(..., parameter=...)` marker를 붙여 harness가 식별자를 기록한다. 상태는 6개 enum 값, 중복 경로는 `separate_batch`/`same_batch`다. gate 정책은 pytest 함수명이나 node ID 전체/suffix를 파싱하지 않는다. node ID와 JUnit 주소는 수집·선택·실행 증거를 연결하는 데만 사용한다.
+- 기존 선택 집합 일치·setup/call/teardown 완전성·JUnit 대조를 그대로 유지한다. 수집에서 parameter 전체가 사라지면 새 필수 tuple 검사가, 선택/실행/JUnit 중 한 곳만 사라지면 기존 연결 검사가 거부한다.
+- 신규 mutation은 8개 parameter × 수집·선택·setup·call·teardown·전체 JSON/JUnit·JUnit의 7가지 누락, 총 **56개**다. 나머지 parameter를 남긴 채 하나씩 제거하며 실제 MySQL 보고서에도 동일하게 적용한다. 기존 family/migration 누락 검사도 유지한다.
+- 구현 단계 targeted gate GREEN **124 passed**, 10.70초. 첫 일반 sandbox 실행의 4개 실패는 SQLAlchemy DLL 접근 거부였으며, sandbox 밖 재실행으로 위 결과를 확인했다. 테스트 의미나 skip 조건을 바꾸지 않았다.
+- 구현 단계 실제 MySQL 8.4.7 targeted **93 passed / 13 deselected**, 120.75초. 13개는 선택 범위 밖의 비-MySQL Case parameter다. JSON/JUnit gate **PASS — 93 tests · skip 0 · xfail 0**이며 `DAESINGO_REQUIRE_MYSQL=1`로 실행했다. 실제 하위 보고서의 개별 parameter 누락 mutation **56/56 거부**를 `mysql-targeted/test_actual_report_rejects_eac0/parameter-mutations.json`으로 확인했다. 기존 migration/jobs family 누락 검사 16개도 통과했다.
+- 구현 단계 최종 전체 pytest **2286 passed · 26 skipped · failure/error 0**, 329.69초. `DAESINGO_REQUIRE_MYSQL=1`, 실제 MySQL을 연결한 채 `-B -X utf8 -m pytest -q -p no:cacheprovider`로 실행했다. skip 26개는 기존 비-MySQL 선택 의존성/로컬 미디어 검사다. `full-final.txt/json/xml`에 증거를 저장했다.
+- 구현 단계 전체 실행의 JSON/JUnit gate도 **PASS — MySQL 93 collected/selected · 279 passed phases · skip 0 · xfail 0 · collection error 0**, jobs 27개·Case 18개를 확인했다. 전체 회귀가 생성한 실제 하위 보고서에서도 **56/56 parameter mutation 거부**, 각 필수 parameter당 7개 거부를 확인했다(`full-final/test_actual_report_rejects_eac0/parameter-mutations.json`, 집계 `summary.json`).
+- 구현 단계 boundary **PASS — 위반 0**, Contract fixture **PASS — 문서 62 · JSON 26 · 의미 104**, 최종 `git diff --check` **PASS**. 당시 독립 source 재리뷰는 추가 차단/비차단 finding 없이 통과했다. 위 구현 단계의 실제 테스트 실행 수치는 구현자가 검증했다.
+- 이번 P2 변경은 gate script, harness, marker 설명(`pyproject.toml`), jobs MySQL test 2개의 parameter marker, gate unit/실제 보고서 mutation test, 이 Log의 **8개 파일**로 한정한다. schema/enqueue/read port source와 migration revision의 수정 전후 SHA-256은 동일하다. 검증 증거는 OS 임시 `C:/Users/cheol/AppData/Local/Temp/rt03a-p2-20261009/`에 보관한다.
+- schema·enqueue·read port production 동작, migration runner, Case-owned 파일, Contract·Decision·Baseline 의미 변경 없음. 동시 enqueue 추가 실험과 schema assertion 확대는 포함하지 않았다. RT-03 `IN_PROGRESS`, PR 연결 `Refs #290`을 유지하며 커밋·push·PR 생성은 하지 않는다.
+- 검증 뒤 port `13310`·datadir `/tmp/rt03a-p2-20261009/data/`·version `8.4.7`로 작업 소유를 확인하고 이번 임시 MySQL 서버만 종료했다(exit 0). 기존 사용자 변경과 `recording-baseline-negative-001.json`을 보존했으며 보호 JSON의 SHA-256·HEAD·index는 시작 상태와 동일하다. 증거 파일과 임시 배포 파일은 보관한다.
+
+### RT-03(a) 독립 재리뷰 — P2 해소 및 검증 주체 구분
+
+- 독립 재리뷰에서 이전 필수 MySQL parameter 누락 P2가 해소됐으며, RT-03(a)에 남은 병합 차단 문제가 없음을 확인했다.
+- 재리뷰에서 targeted gate test를 직접 재실행하여 **124 passed**를 확인했다. 보존된 실제 MySQL JSON/JUnit 보고서를 대상으로 필수 parameter 8개 × 누락 위치 7개의 개별 누락 실험을 직접 재실행했고 **56/56 거부**를 확인했다.
+- 재리뷰에서 boundary·Contract fixture·`git diff --check`를 직접 실행하여 모두 **PASS**를 확인했다.
+- 전체 pytest **2286 passed / 26 skipped**와 실제 MySQL **93 passed · skip 0 · xfail 0**는 위 구현 단계에서 실행한 결과다. 재리뷰에서는 보존된 출력·JSON/JUnit 증거를 확인했으며, 전체 pytest나 실제 MySQL suite를 새로 실행한 결과로 기록하지 않는다.
+- 이 판정은 RT-03(a) 범위다. RT-03은 **IN_PROGRESS**, 이번 PR 연결은 **Refs #290**을 유지한다. 최초 migration 실패 **104.502초**와 원인 미확정 위험은 아래 남은 위험 기록 그대로 유지한다.
 
 ### 남은 위험
 
-—
+- (b)의 동시 claim/finish·lease·locking과 RT-04 이후 lifecycle은 아직 검증되지 않았다. usage_refs는 RT-07 전까지 의도적으로 빈 목록이다.
+- MySQL migration DDL의 부분 적용 실패는 runner 자동 retry/rollback으로 복구되지 않는다. 기존 RT-02 운영 경계 그대로다.
+- ID/metadata column 상한과 UTC 저장 규칙을 후속 writer도 지켜야 한다. unknown COMMIT 결과의 idempotency와 command 원자성 실제 HTTP 배선은 후속 composition에서 다룬다.
+- 첫 전체 회귀의 단발 migration 실패 검사는 하위 JUnit(`rt03a-20261008/full/test_actual_report_rejects_eac0/mysql.xml`)에 **104.502초**로 기록돼 있다. 2026-10-09 해당 testcase의 `time="104.502"`를 직접 확인했다. 원인은 미확정이며 network·timeout·파일 접근 등 특정 원인으로 단정하지 않는다. 실패를 skip/mock/retry 코드로 우회하지 않았고 진단 재실행은 통과했다. 이번 P2를 이유로 migration runner 등 production 동작은 변경하지 않았다.
 
 ---
 
