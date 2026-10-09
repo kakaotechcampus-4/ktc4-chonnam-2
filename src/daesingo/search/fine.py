@@ -23,6 +23,7 @@ from .schemas import FineTemporalFact, WireModel
 from .scope import SearchHint, VisualEventType
 from .smoke_errors import ProviderPayloadError
 from .sources import AnalysisSourceResolver, CandidateSourceLink
+from .usage_sink import UsageSink
 from .visual import (
     Primitive,
     Target,
@@ -116,6 +117,7 @@ def verify_fine(
     ledger: SearchLedger,
     media_preparer: CoarseMediaPreparer,
     deadline: RunDeadline,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
     source = resolver.resolve_reference(input_ref)
     CandidateSourceLink(source_ref=input_ref, candidate=candidate).validate(source)
@@ -158,6 +160,8 @@ def verify_fine(
                 media=prepared,
                 timeout_sec=deadline.remaining_sec(),
                 deadline=deadline,
+                usage_sink=usage_sink,
+                run_ref=run_id,
             )
         )
         ledger.append(
@@ -200,7 +204,7 @@ def verify_fine(
         started_at=started,
         completed_at=datetime.now(UTC),
         issues=(),
-        usage_refs=(f"usage:{source.source_id}",),
+        usage_refs=result.usage_ids,
         usage_summary=UsageSummary(
             processed_duration_ms=round(source.duration_sec * 1000),
             token_usage=None,

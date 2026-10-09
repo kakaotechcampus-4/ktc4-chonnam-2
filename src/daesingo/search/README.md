@@ -16,12 +16,12 @@ Coarse 후보 구간 생성·Fine/Classification visual verification·4종 event
 
 | 함수 | 입력 | 출력 |
 | --- | --- | --- |
-| `search_candidates(scope)` | `AnalysisScope` | `CandidateSearchResult(analysis_run, candidates)` |
-| `verify_visual(input_ref, target_hint=None)` | `ContractRef`, 선택 `SearchHint` | `VisualVerificationResult(analysis_run, visual_evidence)` |
-| `verify_visual_with_stream_context(input_ref, candidate, analysis_source_streams, target_hint=None)` | `ContractRef`, `CandidateEvent`, typed MediaStream facts | `VisualVerificationExecution(result, selected_video_stream)` — 월요일 Real E2E용 비정규 실행 문맥 |
-| `build_intent_hint_extractor(api_key).extract(text, case_id=..., prior_hints=None, timeout_sec=60)` | 사용자 자연어 원문, 선택 이전 단서 | `IntentHintResult(status=OK·ABSTAINED·FAILED, 단서 4개, confidence, correction_target, failure_kind, usage)` — 자연어 단서 구조화(#210). 예외를 던지지 않는다. 모델은 `DAESINGO_INTENT_MODEL` |
+| `search_candidates(scope, usage_sink=None)` | `AnalysisScope` | `CandidateSearchResult(analysis_run, candidates)` |
+| `verify_visual(input_ref, target_hint=None, usage_sink=None)` | `ContractRef`, 선택 `SearchHint` | `VisualVerificationResult(analysis_run, visual_evidence)` |
+| `verify_visual_with_stream_context(input_ref, candidate, analysis_source_streams, target_hint=None, usage_sink=None)` | `ContractRef`, `CandidateEvent`, typed MediaStream facts | `VisualVerificationExecution(result, selected_video_stream)` — 월요일 Real E2E용 비정규 실행 문맥 |
+| `build_intent_hint_extractor(api_key).extract(text, case_id=..., prior_hints=None, timeout_sec=60, usage_sink=None)` | 사용자 자연어 원문, 선택 이전 단서 | `IntentHintResult(status=OK·ABSTAINED·FAILED, 단서 4개, confidence, correction_target, failure_kind, usage)` — 자연어 단서 구조화(#210). 예외를 던지지 않는다. 모델은 `DAESINGO_INTENT_MODEL` |
 
-fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `SearchService`와 `AnalysisSourceResolver`를 구성하고 `service=`로 주입한다. 제품과 eval 모두 이 경로를 사용하며 `eval_mode`나 GT 접근 분기는 없다.
+fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `SearchService`와 `AnalysisSourceResolver`를 구성하고 `service=`로 주입한다. `usage_sink=`(`UsageSink`)를 주면 provider HTTP 시도마다 `begin`→`finish`를 기록하고, 발급된 `usage_id`가 성공 Run의 `usage_refs`가 된다(#303). 없으면 `InMemoryUsageSink`를 쓴다. 제품과 eval 모두 이 경로를 사용하며 `eval_mode`나 GT 접근 분기는 없다.
 
 입력과 출력은 Final Data Contract를 파싱한 불변 Pydantic 객체다. JSON 경계에서는
 `model_validate_json`, Consumer 전달 시에는 위 타입을 그대로 사용한다.

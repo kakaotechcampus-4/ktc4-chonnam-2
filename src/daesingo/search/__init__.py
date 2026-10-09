@@ -27,6 +27,14 @@ from .stream_context import (
     VisualVerificationExecution,
     select_single_video_stream,
 )
+from .usage_sink import (
+    InMemoryUsageSink,
+    UsageAttempt,
+    UsageCost,
+    UsageObservation,
+    UsagePersistenceError,
+    UsageSink,
+)
 from .visual import VisualVerificationResult
 
 _MOCK_DIR: Final = Path(__file__).resolve().parents[3] / "data" / "mock" / "search"
@@ -37,11 +45,12 @@ def search_candidates(
     scope: AnalysisScope,
     *,
     service: SearchService | None = None,
+    usage_sink: UsageSink | None = None,
 ) -> CandidateSearchResult:
     """Return the recorded coarse run and ranked candidates for a scope."""
     if service is None:
         return _FIXTURE_SERVICE.search_candidates(scope)
-    return service.search_candidates(scope)
+    return service.search_candidates(scope, usage_sink=usage_sink)
 
 
 def verify_visual(
@@ -51,13 +60,16 @@ def verify_visual(
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     candidate: CandidateEvent | None = None,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
     """Return the recorded Fine run together with its visual evidence."""
     if service is None:
         return _FIXTURE_SERVICE.verify_visual(input_ref, target_hint)
     if candidate is None:
         raise MissingCandidateError(source_ref=input_ref)
-    return service.verify_visual(input_ref, candidate, target_hint, event_type)
+    return service.verify_visual(
+        input_ref, candidate, target_hint, event_type, usage_sink=usage_sink
+    )
 
 
 def verify_visual_with_stream_context(
@@ -68,6 +80,7 @@ def verify_visual_with_stream_context(
     *,
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationExecution:
     """Run Fine and return its non-canonical selected VIDEO stream context.
 
@@ -82,6 +95,7 @@ def verify_visual_with_stream_context(
         service=service,
         event_type=event_type,
         candidate=candidate,
+        usage_sink=usage_sink,
     )
     return VisualVerificationExecution(
         result=result,
@@ -97,6 +111,7 @@ __all__ = [
     "CandidateSourceLink",
     "ContractRef",
     "FixtureNotFoundError",
+    "InMemoryUsageSink",
     "IntentFailureKind",
     "IntentHintExtractor",
     "IntentHintResult",
@@ -108,6 +123,11 @@ __all__ = [
     "SearchService",
     "UnknownCandidateError",
     "UnknownCandidateRunError",
+    "UsageAttempt",
+    "UsageCost",
+    "UsageObservation",
+    "UsagePersistenceError",
+    "UsageSink",
     "VideoStreamSelectionError",
     "VisualEventType",
     "VisualVerificationExecution",
