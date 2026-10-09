@@ -39,6 +39,29 @@ REQUIRED_CHECKS = (
     ("migration", "cli_stdin"),
     ("jobs", "schema"), ("jobs", "enqueue_rollback"), ("jobs", "enqueue_duplicate"),
     ("jobs", "read_contract"), ("jobs", "read_states"),
+    ("jobs", "token_migration"),
+    ("jobs", "claim_basic"),
+    ("jobs", "claim_eligibility"),
+    ("jobs", "claim_empty"),
+    ("jobs", "claim_concurrent"),
+    ("jobs", "claim_skip_locked"),
+    ("jobs", "claim_commit_boundary"),
+    ("jobs", "claim_no_insert"),
+    ("jobs", "claim_index"),
+    ("jobs", "finish_targets"),
+    ("jobs", "finish_guard"),
+    ("jobs", "finish_rollback"),
+    ("jobs", "finish_rejection"),
+    ("jobs", "finish_validation"),
+    ("jobs", "claim_unknown_commit"),
+    ("jobs", "claim_token_identity"),
+    ("jobs", "claim_disconnect"),
+    ("jobs", "finish_race"),
+    ("jobs", "claim_rc_finish"),
+    ("jobs", "finish_deadlock"),
+    ("jobs", "claim_lock_timeout"),
+    ("jobs", "claim_latency"),
+    ("api", "utc_session"), ("worker", "utc_session"),
 )
 
 REQUIRED_PARAMETERS = (
@@ -46,6 +69,45 @@ REQUIRED_PARAMETERS = (
       ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
     ("jobs", "enqueue_duplicate", "separate_batch"),
     ("jobs", "enqueue_duplicate", "same_batch"),
+    ("jobs", "claim_eligibility", "past"),
+    ("jobs", "claim_eligibility", "equal"),
+    ("jobs", "claim_eligibility", "future"),
+    ("jobs", "claim_empty", "empty"),
+    ("jobs", "claim_empty", "all_locked"),
+    ("jobs", "finish_targets", "SUCCEEDED"),
+    ("jobs", "finish_targets", "FAILED"),
+    ("jobs", "finish_targets", "CANCELLED"),
+    ("jobs", "finish_guard", "missing"),
+    ("jobs", "finish_guard", "other_owner"),
+    ("jobs", "finish_guard", "QUEUED"),
+    ("jobs", "finish_guard", "SUCCEEDED"),
+    ("jobs", "finish_guard", "FAILED"),
+    ("jobs", "finish_guard", "CANCELLED"),
+    ("jobs", "finish_guard", "STALE"),
+    ("jobs", "finish_rejection", "STALE"),
+    ("jobs", "finish_rejection", "QUEUED"),
+    ("jobs", "finish_rejection", "RUNNING"),
+    ("jobs", "finish_rejection", "UNKNOWN"),
+    ("jobs", "claim_unknown_commit", "recovered"),
+    ("jobs", "claim_unknown_commit", "token"),
+    ("jobs", "claim_unknown_commit", "owner"),
+    ("jobs", "claim_unknown_commit", "terminal"),
+    ("jobs", "claim_unknown_commit", "expired"),
+    ("jobs", "claim_unknown_commit", "missing"),
+    ("jobs", "finish_race", "SUCCEEDED_commit"),
+    ("jobs", "finish_race", "SUCCEEDED_rollback"),
+    ("jobs", "finish_race", "FAILED_commit"),
+    ("jobs", "finish_race", "FAILED_rollback"),
+    ("jobs", "finish_race", "CANCELLED_commit"),
+    ("jobs", "finish_race", "CANCELLED_rollback"),
+    ("jobs", "claim_rc_finish", "FAILED"),
+    ("jobs", "claim_rc_finish", "CANCELLED"),
+    ("api", "utc_session", "fresh"),
+    ("api", "utc_session", "reused"),
+    ("api", "utc_session", "replacement"),
+    ("worker", "utc_session", "fresh"),
+    ("worker", "utc_session", "reused"),
+    ("worker", "utc_session", "replacement"),
 )
 
 
@@ -80,7 +142,7 @@ def good_report():
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
               for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
-              if (role, scenario) not in {("jobs", "read_states"), ("jobs", "enqueue_duplicate")}]
+              if not any((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS)]
     # Deliberately opaque node IDs: policy must use stable check metadata.
     nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
                "scenarios": [], "checks": [
@@ -198,7 +260,7 @@ def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere
     report = deepcopy(good_report())
     removed = {item["nodeid"] for item in report["collected"]
                if {"role": role, "scenario": scenario} in item.get("checks", [])}
-    assert len(removed) == {("jobs", "read_states"): 6, ("jobs", "enqueue_duplicate"): 2}.get((role, scenario), 1)
+    assert len(removed) == (sum((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS) or 1)
     report["collected"] = [item for item in report["collected"] if item["nodeid"] not in removed]
     report["selected"] = [node for node in report["selected"] if node not in removed]
     report["reports"] = [item for item in report["reports"] if item["nodeid"] not in removed]
