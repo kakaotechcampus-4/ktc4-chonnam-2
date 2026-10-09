@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Final
 
 from .coarse import LinkedCoarseResult
+from .config import API_KEY_ENV_NAMES, api_key_from_env
 from .errors import (
     MissingCandidateError,
     UnknownCandidateError,
@@ -112,6 +113,8 @@ __all__ = [
     "VisualEventType",
     "VisualVerificationExecution",
     "VisualVerificationResult",
+    "API_KEY_ENV_NAMES",
+    "api_key_from_env",
     "build_gemini_search_service",
     "build_intent_hint_extractor",
     "search_candidates",
