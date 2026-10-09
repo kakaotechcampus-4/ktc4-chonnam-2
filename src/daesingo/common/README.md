@@ -31,11 +31,15 @@ RT-02(a)는 `db/`에 역할별 MySQL engine factory와 `Connection` callback tra
 
 RT-02(b)는 `db/migrate.py`에 명시 URL API와 `python -m daesingo.common.db.migrate --database-url-stdin` CLI를 추가했다. frozen registry `case → runtime` 순서로 env를 `head`까지 올리고 첫 실패에서 중단한다. engine 하나에서 모듈마다 새 transaction connection을 열며, process 내부 중첩/동시 호출은 거부한다. **단일 실행 전제이고 cross-process 동시 실행 안전성은 보장하지 않는다.** 자동 retry·stamp·downgrade·resume 기능과 startup migration은 없다. stdin 전달자는 credential을 argv·로그에 노출하지 않아야 한다. URL 출처·배포 실행 위치는 RT-14 범위다.
 
-`migrations/runtime/`은 revision 없는 version tracking 기반이다. 실행 후 `runtime_alembic_version`은 존재하지만 0행이며 **Runtime 업무 table은 아직 없다**(RT-03·RT-07). 성공 후 재실행은 version 기준 no-op이다. MySQL implicit-commit DDL은 전체 rollback되지 않으므로 실패한 revision에 부분 DDL이 남으면 검사·복구가 필요하다. RT-02(b)는 독립 재리뷰 전이며 RT-02는 `IN_PROGRESS`다.
+RT-03(a)는 `migrations/runtime/versions/0001_job_execution.py`(`runtime_0001`)에 실행 원장 겸 queue인 `job_execution`을 추가한다. `common/jobs/repository.py`의 `enqueue(conn, job_records, trace_id)`는 호출자의 열린 transaction에 attempt 1 `QUEUED`를 넣고 execution ID 목록을 반환한다. commit·rollback·retry를 하지 않으며 같은 `(job_id, attempt)`는 DB unique 제약이 거부한다. batch 입력을 쓰기 전에 검증하고 하나의 INSERT로 기록한다. 등록되지 않은 kind도 받아 Worker dispatch에 판단을 맡긴다.
+
+`common/jobs/read_port.py`의 `read_executions(conn, job_ids)`는 요청한 Job의 모든 attempt를 JSON 호환 JobExecution v1.1 모양으로 돌려준다. 대표 execution 선택은 case가 한다. 내부 column은 allowlist projection으로 제외하고 `usage_refs`는 RT-07 전까지 `[]`다. 시각은 DB `UTC_TIMESTAMP(6)`으로 생성해 UTC `DATETIME(6)`에 저장하고 read model에 UTC offset을 붙인다. lease 계산·판정은 후속 구현에서 Baseline B-L6을 따른다.
+
+runner 성공 후 재실행은 version 기준 no-op이다. MySQL implicit-commit DDL은 전체 rollback되지 않으므로 실패한 revision에 부분 DDL이 남으면 검사·복구가 필요하다. RT-02는 Implementation Log 기준 `DONE`, RT-03은 (b)의 claim·finish가 남아 `IN_PROGRESS`다.
 
 아직 실제 구현되지 않은 범위:
 
-- MySQL DB Queue / claim
+- MySQL queue claim / finish
 - lease / heartbeat / stale sweep
 - Runtime UsageRecord DB persistence
 - API / Worker 실제 app·handler 조립(config bootstrap만 있음)

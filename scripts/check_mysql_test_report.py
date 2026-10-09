@@ -39,6 +39,19 @@ REQUIRED_CHECKS = frozenset({
     ("migration", "first_runtime_revision"), ("migration", "partial_failure"),
     ("migration", "revision_preflight"), ("migration", "process_guard"),
     ("migration", "cli_stdin"),
+    # RT-03(a): require execution evidence, even if the entire jobs suite is omitted.
+    ("jobs", "schema"), ("jobs", "enqueue_rollback"), ("jobs", "enqueue_duplicate"),
+    ("jobs", "read_contract"), ("jobs", "read_states"),
+})
+
+# Each parameter is an independent acceptance obligation. Names come from
+# explicit pytest marks, never from function names or parsed node ID suffixes.
+REQUIRED_PARAMETERS = frozenset({
+    ("jobs", "read_states", "QUEUED"), ("jobs", "read_states", "RUNNING"),
+    ("jobs", "read_states", "SUCCEEDED"), ("jobs", "read_states", "FAILED"),
+    ("jobs", "read_states", "STALE"), ("jobs", "read_states", "CANCELLED"),
+    ("jobs", "enqueue_duplicate", "separate_batch"),
+    ("jobs", "enqueue_duplicate", "same_batch"),
 })
 
 # Pin the merged Case coverage without editing Case-owned tests/fixtures.
@@ -80,10 +93,14 @@ def validate_report(report):
         raise ValueError("test collection had errors/skips")
     try:
         checks = {(check["role"], check["scenario"]) for item in collected for check in item.get("checks", [])}
+        parameters = {(check["role"], check["scenario"], check["parameter"])
+                      for item in collected for check in item.get("checks", []) if "parameter" in check}
     except (KeyError, TypeError):
         raise ValueError("invalid MySQL role/scenario evidence") from None
     if REQUIRED_CHECKS - checks:
         raise ValueError("required MySQL role/scenario missing")
+    if REQUIRED_PARAMETERS - parameters:
+        raise ValueError("required MySQL role/scenario/parameter missing")
     scenarios = {value for item in collected for value in item.get("scenarios", [])}
     if REQUIRED_SCENARIOS - scenarios:
         raise ValueError("required MySQL scenarios missing: " + ", ".join(sorted(REQUIRED_SCENARIOS - scenarios)))

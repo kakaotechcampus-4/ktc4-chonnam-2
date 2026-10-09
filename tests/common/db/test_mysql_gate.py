@@ -37,6 +37,15 @@ REQUIRED_CHECKS = (
     ("migration", "first_runtime_revision"), ("migration", "partial_failure"),
     ("migration", "revision_preflight"), ("migration", "process_guard"),
     ("migration", "cli_stdin"),
+    ("jobs", "schema"), ("jobs", "enqueue_rollback"), ("jobs", "enqueue_duplicate"),
+    ("jobs", "read_contract"), ("jobs", "read_states"),
+)
+
+REQUIRED_PARAMETERS = (
+    *(("jobs", "read_states", state) for state in
+      ("QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "STALE", "CANCELLED")),
+    ("jobs", "enqueue_duplicate", "separate_batch"),
+    ("jobs", "enqueue_duplicate", "same_batch"),
 )
 
 
@@ -70,7 +79,16 @@ def good_report():
                "scenarios": []} for name in ("empty", "long", "unicode")]
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
-              for index, (role, scenario) in enumerate(REQUIRED_CHECKS)]
+              for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
+              if (role, scenario) not in {("jobs", "read_states"), ("jobs", "enqueue_duplicate")}]
+    # Deliberately opaque node IDs: policy must use stable check metadata.
+    nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
+               "scenarios": [], "checks": [
+                   {"role": role, "scenario": scenario},
+                   {"role": role, "scenario": scenario, "parameter": parameter}]}
+              for index, (role, scenario, parameter) in enumerate(REQUIRED_PARAMETERS)]
+    for index, node in enumerate(nodes):
+        node["junit"] = ["opaque.module", f"case_{index}"]
     return {"server_version": "8.4.7", "collected": nodes,
             "selected": [n["nodeid"] for n in nodes], "collection_errors": [],
             "reports": [{"nodeid": n["nodeid"], "when": when, "outcome": "passed", "xfail": False}
@@ -180,12 +198,42 @@ def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere
     report = deepcopy(good_report())
     removed = {item["nodeid"] for item in report["collected"]
                if {"role": role, "scenario": scenario} in item.get("checks", [])}
-    assert len(removed) == 1
+    assert len(removed) == {("jobs", "read_states"): 6, ("jobs", "enqueue_duplicate"): 2}.get((role, scenario), 1)
     report["collected"] = [item for item in report["collected"] if item["nodeid"] not in removed]
     report["selected"] = [node for node in report["selected"] if node not in removed]
     report["reports"] = [item for item in report["reports"] if item["nodeid"] not in removed]
     with pytest.raises(ValueError, match="role/scenario"):
         checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", REQUIRED_PARAMETERS)
+@pytest.mark.parametrize("layer", ["collection", "selection", "setup", "call", "teardown", "all", "junit"])
+def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, identity, layer):
+    from xml.etree import ElementTree
+
+    report = good_report()
+    role, scenario, parameter = identity
+    check = {"role": role, "scenario": scenario, "parameter": parameter}
+    item, = (n for n in report["collected"] if check in n.get("checks", []))
+    node = item["nodeid"]
+    root = ElementTree.Element("testsuite")
+    for collected in report["collected"]:
+        if layer in {"junit", "all"} and collected is item:
+            continue
+        ElementTree.SubElement(root, "testcase", classname=collected["junit"][0], name=collected["junit"][1])
+    junit = tmp_path / "junit.xml"
+    ElementTree.ElementTree(root).write(junit, encoding="utf-8")
+    if layer in {"collection", "all"}:
+        report["collected"] = [n for n in report["collected"] if n["nodeid"] != node]
+    if layer in {"selection", "all"}:
+        report["selected"].remove(node)
+    if layer in {"setup", "call", "teardown", "all"}:
+        report["reports"] = [r for r in report["reports"]
+                             if r["nodeid"] != node or (layer != "all" and r["when"] != layer)]
+    with pytest.raises(ValueError):
+        gate = checker()
+        gate.validate_report(report)
+        gate.validate_junit(junit, report)
 
 
 @pytest.mark.parametrize("tag", ["skipped", "failure", "error", "missing"])
