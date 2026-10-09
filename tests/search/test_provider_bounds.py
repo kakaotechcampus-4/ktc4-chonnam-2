@@ -448,7 +448,9 @@ def test_retry_stops_when_run_deadline_exhausted_between_attempts(
             now[0] += 0.2  # each attempt burns 200ms of budget
             raise _FakeApiError("rate limited", status_code=429)
 
-    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(_ClockBurningCompletions())))
+    mod = _make_openai_module(
+        lambda **_kw: _FakeClient(_Chat(_ClockBurningCompletions()))
+    )
     original = importlib.import_module
 
     def fake_import(name: str) -> ModuleType:
@@ -465,7 +467,9 @@ def test_retry_stops_when_run_deadline_exhausted_between_attempts(
         "key", GeminiSearchConfig(max_retries=3, retry_base_sec=5.0)
     )
 
-    deadline = RunDeadline(clock, budget_ms=100)  # 100ms budget; one attempt exhausts it
+    deadline = RunDeadline(
+        clock, budget_ms=100
+    )  # 100ms budget; one attempt exhausts it
     request = CoarseRequest(
         _source(),
         (VisualEventType.SIGNAL,),
