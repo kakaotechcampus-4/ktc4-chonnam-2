@@ -39,3 +39,23 @@ class HandlerResult(BaseModel):
 
 def runtime_failure(kind: str) -> HandlerResult:
     return HandlerResult(status="FAILED", failure_kind=kind)
+
+
+def validated_terminal(value: HandlerResult) -> HandlerResult:
+    """Snapshot terminal facts safely, including model_copy/object tampering.
+
+    Serialization can warn with raw values, or silently omit extra stored
+    fields. Check the stored shape first and contain serializer errors.
+    Contract reference parsing elsewhere keeps its existing extra policy.
+    """
+    try:
+        if (type(value) is not HandlerResult or set(value.__dict__) != set(HandlerResult.model_fields)
+                or value.__pydantic_extra__ or type(value.produced) is not tuple):
+            raise ValueError()
+        for ref in value.produced:
+            if (type(ref) is not RuntimeContractRef or set(ref.__dict__) != set(RuntimeContractRef.model_fields)
+                    or ref.__pydantic_extra__):
+                raise ValueError()
+        return HandlerResult.model_validate(value.model_dump(warnings="error"))
+    except Exception:
+        raise ValueError("invalid handler terminal result") from None
