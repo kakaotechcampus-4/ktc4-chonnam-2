@@ -37,7 +37,8 @@ body:has(.rs-page) { background: #fff; }
 .app-header.rs-header {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px;
   min-height: 56px;
-  padding: 10px max(20px, calc((100% - 1040px) / 2 + 20px));
+  /* 왼쪽 끝을 넓은 본문(1120 = web-main 1160 − 안쪽 여백)과 맞춘다 */
+  padding: 10px max(20px, calc((100% - 1160px) / 2 + 20px));
   background: rgba(255, 255, 255, .92);
   border-bottom: 1px solid var(--rs-line);
   position: sticky; top: 0; z-index: 10;
@@ -480,7 +481,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
    큰 상태 문장 → 영상과 번호판 → 신고서 초안 → 안전신문고 연결 순서로 크기와 여백만으로 위계를
    나눈다. 공용 부품(후보 카드·값 행·상태 배지)은 개발용 화면에서도 쓰므로 .rs 안에서만 바꾼다.
    ============================================================ */
-.web-main:has(> .rs.result), .web-main:has(> .rs.sub) { max-width: 1160px; }
+.web-main:has(> .rs.result), .web-main:has(> .rs.sub), .web-main:has(.rs.notobs) { max-width: 1160px; }
 .rs .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .rs .rs-btn.sm { min-height: 36px; padding: 0 16px; font-size: 14px; }
 
