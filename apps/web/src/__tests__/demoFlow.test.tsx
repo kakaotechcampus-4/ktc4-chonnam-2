@@ -49,6 +49,27 @@ it('정상: 업로드 완료 → 진행 → 결과, 하위 화면은 「<」로 
   expect(text()).toContain('신고자료가 준비됐어요')
 })
 
+it('진행이 끝나 결과로 넘어오면 배경 자동차가 도착하고, 하위 화면에서 돌아오면 제자리에 서 있다', () => {
+  const { wait, getByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(container.querySelector('.res-bgcar.is-arriving')).not.toBeNull()
+  fireEvent.click(getByText('어떻게 정했는지'))
+  fireEvent.click(container.querySelector('.sub-back')!)
+  expect(container.querySelector('.res-bgcar')).not.toBeNull()
+  expect(container.querySelector('.res-bgcar.is-arriving')).toBeNull()
+})
+
+it('실패 화면에는 도착하는 자동차가 없다', () => {
+  const { wait, getByText, container } = start('searchFailed')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(container.querySelector('.rs.failed')).not.toBeNull()
+  expect(container.querySelector('.res-bgcar')).toBeNull()
+})
+
 it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 알리며 제출을 막는다', () => {
   const { wait, getByText, text } = start('plateFailed')
   wait()

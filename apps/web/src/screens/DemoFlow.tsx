@@ -294,6 +294,8 @@ export function DemoFlow(): JSX.Element {
   const [situation, setSituation] = useState('')
   const [plate, setPlate] = useState<string | null>(null)
   const [uploadLeaving, setUploadLeaving] = useState(false)
+  // 진행이 끝나 결과 화면이 막 열렸는가 — 자동차 도착은 이때만. 하위 화면을 열면 끈다
+  const [arriving, setArriving] = useState(false)
   const demo = CASES[caseKey]
 
   useEffect(() => {
@@ -317,6 +319,7 @@ export function DemoFlow(): JSX.Element {
     const last = main.frame >= main.run.frames.length - 1
     const t = setTimeout(() => {
       if (last && !acceptView(main.run.view, expected.current)) return
+      if (last) setArriving(true)
       setMain(last ? { kind: 'done', run: main.run } : { ...main, frame: main.frame + 1 })
     }, STEP_MS)
     return () => clearTimeout(t)
@@ -344,6 +347,7 @@ export function DemoFlow(): JSX.Element {
   const open = (sub: Sub) => {
     setReturnY((y) => [...y, window.scrollY])
     setSubs((s) => [...s, sub])
+    setArriving(false)
   }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
@@ -455,6 +459,7 @@ export function DemoFlow(): JSX.Element {
             onAction={onAction}
             canRun={canRun}
             plateEditedLocally={plate !== null}
+            arriving={arriving}
           />
         )}
 

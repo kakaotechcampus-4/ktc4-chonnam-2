@@ -10,6 +10,7 @@ import {
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { StatusBadge } from '../components/StatusBadge'
+import carSide from '../assets/car/car-side.webp'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -69,6 +70,8 @@ export function ResultScreen(props: {
   canRun: (action: Action) => boolean
   /** 번호판을 이 화면에서만 고쳤는가(서버 저장 아님) */
   plateEditedLocally?: boolean
+  /** 진행에서 막 넘어왔는가 — 첫 화면의 배경 자동차가 오른쪽에서 들어와 멈춘다. 하위 화면에서 돌아올 때는 제자리 */
+  arriving?: boolean
 }): JSX.Element {
   const { view } = props
   const pkg = view.package
@@ -156,6 +159,7 @@ export function ResultScreen(props: {
   return (
     <div className="rs rs-screen result">
       <header className="res-head">
+        <img className={`res-bgcar${props.arriving ? ' is-arriving' : ''}`} src={carSide} alt="" aria-hidden />
         <p className="state-context">신고자료</p>
         <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : '신고자료를 완성하지 못했어요.'}</h1>
         {counts.size > 0 && (
