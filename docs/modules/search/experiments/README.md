@@ -2,6 +2,20 @@
 
 재현 가능한 실험 기록을 둔다. 입력/설정/결과/실패/다음 learning을 남긴다. AI 원문과 원본 영상은 저장소에 두지 않는다. 신규 실험 결과 원본(JSON·JSONL)은 로컬에만 보관하고, Git에는 설정·수치 요약·해석을 담은 Markdown 보고서를 남긴다.
 
+- [차선·차량·Gemini 테스트 통합 기록](lane-violation-tests-summary-2026-10-10.md) — AI Hub→2fps→실선/점선→프롬프트 변경→전체 힌트와 CV 후속 결과
+- [표시본 + 사용자 전체 정답 힌트](gemini-overlay-full-user-hints-2026-10-10.md) — 6영상×3회 완료. 양성18/18과 실제 대상·이동 근거를 구분
+- [PP-LiteSeg 실선·점선 구분](pp-liteseg-solid-dashed-2026-10-10.md) — 2영상/80관측. dashed 출력 확인, 혼합·구조물 오탐, 정확도 미평가
+- [Gemini 사건 종류 지정 A/B](gemini-lane-overlay-known-type-2026-10-10.md) — 원본만/원본+표시본 각3회, 두 조건0/3. 최초 프롬프트·스키마 보존
+- [Gemini 표시본만 짧은 프롬프트](gemini-lane-overlay-only-short-prompt-2026-10-10.md) — 141927 3회 모두 미검출
+- [Gemini 초록선 횡단 묘사](gemini-green-line-crossing-description-2026-10-10.md) — 141927 3회 양성이나 다른 흰 SUV 지목
+- [초록선 프롬프트 추가 한 영상](gemini-green-crossing-second-clip-2026-10-10.md) — 흰 세단 이동3/3 부합, 정밀 종료 시각 차이
+- [초록선 프롬프트 남은 실선 전체](gemini-green-crossing-remaining-2026-10-10.md) — 6영상18회, 양성9/18·대상/행위/구간 부합1/18
+- [CV UNKNOWN 교차 후보](cv-crossing-candidates-2026-10-10.md) — 5후보·화면3구간, 위반 확정/GT 정확도 미평가
+- [CV 후보 안정화 v2](cv-crossing-stability-2026-10-10.md) — 5→2후보, C00 동일 구간·접지 보호의 원거리 손실 가능성
+- [CV 보정 선택·차선 연결](cv-crossing-continuity-2026-10-10.md) — 실패763→656, 연결5058→5366. 정확도 미평가
+- [CV 평가 라벨 준비](cv-label-preparation-2026-10-10.md) — 1200장·29작업 자동 초안, 정답검수 대기
+- [CV 전체 진행 요약](cv-lane-track-progress-summary-2026-10-10.md) — 완료·미평가·후속 단계와 로컬 재현 자료
+
 - [CV_LANE_TRACK v1 · 차량 7모델 추론·속도 측정](cv-vehicle-model-comparison-2026-10-09.md) — 동일 원본 1,200프레임 × 3회 × 7종 완료(25,200행). 차량 bbox·ID GT 미확보로 정확도 비교·상위 2종 추적·선정 대기
 - [CV_LANE_TRACK v1 · 차선 출력·속도 비교](cv-lane-model-comparison-2026-10-09.md) — AI Hub 백색＋황색/L3 UFLDv2 동일 1,200프레임 × 3회 완료, 42시점·14시트 육안 진단. CLRerNet CUDA 환경 차단. GT 없이 속도·출력만 비교, 정확도·최종 선정 미평가
 - [CV_LANE_TRACK v1 · 전체 영상 추적 진단](cv-tracking-diagnostic-2026-10-09.md) — 임시 V1＋L3로 15영상 전체 5fps 3,233프레임, 같은 검출을 ByteTrack/BoT-SORT에 입력. 30개 출력 영상 검증·29시트 육안 진단 완료. GT 정확도·최종 선정·교차 후보 미평가
