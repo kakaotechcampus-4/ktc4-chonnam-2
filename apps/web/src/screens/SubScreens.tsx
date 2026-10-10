@@ -119,6 +119,7 @@ export function PlateCheck(props: {
         <div className="plate-side">
           <figure className="plate-fig">
             <div className="plate-frame plate-crop">
+              <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>번호판 이미지 준비 중</span>
             </div>
             <figcaption>번호판 확대</figcaption>

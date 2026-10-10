@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { Film } from 'lucide-react'
 import type { Candidate } from '../contracts/caseView'
 import { SITUATION_LABELS, atProvenanceLabel, formatValue, staleLabel } from '../contracts/labels'
 import '../styles/candidates.css'
@@ -23,6 +24,7 @@ export function CandidateCard(props: { candidate: Candidate; ordinal: number; se
   return (
     <div className={`cand${c.selected ? ' sel' : ''}`}>
       <div className="cand-th">
+        <Film className="cand-th-ico" size={24} strokeWidth={1.5} aria-hidden />
         <span className="cand-th-note">미리보기 준비 중</span>
       </div>
       <div className="cand-b">
