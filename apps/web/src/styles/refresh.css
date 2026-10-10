@@ -24,7 +24,7 @@
   --rs-h1: clamp(34px, 3.4vw, 44px);
   --rs-h2: 32px;
   /* 연한 구분선(목록 줄 사이) · 사진·영상 자리 모서리 */
-  --rs-line-soft: var(--rs-line-soft);
+  --rs-line-soft: #ececf0;
   --rs-r-media: 16px;
   /* 움직임은 한 곡선으로 — 처음엔 움직이다 끝에서 부드럽게 선다. 튕김 없음 */
   --rs-ease: cubic-bezier(0.22, 1, 0.36, 1);
