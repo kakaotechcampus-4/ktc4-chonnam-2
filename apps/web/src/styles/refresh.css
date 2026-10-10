@@ -20,6 +20,9 @@
   --rs-line: #d2d2d7;
   --rs-line-strong: #86868b;
   --rs-off: #a1a1a6;
+  /* 큰 제목은 두 단계 — 페이지 제목(업로드·진행·결과) / 하위·상태 화면 제목 */
+  --rs-h1: clamp(34px, 3.4vw, 44px);
+  --rs-h2: 32px;
   /* 움직임은 한 곡선으로 — 처음엔 움직이다 끝에서 부드럽게 선다. 튕김 없음 */
   --rs-ease: cubic-bezier(0.22, 1, 0.36, 1);
   font-family: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
@@ -433,13 +436,13 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
    결과 없음·다시 찾기 / 실패 / 위반 미관찰(위쪽 안내만) — 같은 틀(.state-page)
    ============================================================ */
 .notobs-legacy { display: contents; }
-.rs.state-page { width: 100%; max-width: 760px; margin: 0 auto; padding: 64px 0 8px; display: flex; flex-direction: column; gap: 24px; }
-/* 위반 미관찰은 아래 후보 그리드(기존 폭·바탕)와 같은 줄에 맞춘다 */
-.rs.state-page.notobs { max-width: none; margin: 0; padding: 32px 0 8px; gap: 16px; }
+/* 세 화면 모두 결과 화면처럼 면 없는 틀 — 「신고자료」 → 큰 제목 → 설명 → 버튼 */
+.rs.state-page { width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 0 8px; display: flex; flex-direction: column; gap: 12px; }
+/* 위반 미관찰은 아래 후보 그리드와 같은 줄에 맞춘다 */
+.rs.state-page.notobs { max-width: none; margin: 0; }
 .state-context { margin: 0; font-size: 17px; font-weight: 500; color: var(--rs-sub); }
-.state-card { display: flex; flex-direction: column; gap: 12px; padding: 32px; background: var(--rs-fill); border-radius: 18px; }
-.notobs .state-card { background: #fff; border: 1px solid var(--rs-line); }
-.state-head, .failed-head { margin: 0 0 4px; font-size: 28px; font-weight: 700; line-height: 1.3; letter-spacing: -0.025em; color: var(--rs-ink); }
+.state-card { display: flex; flex-direction: column; gap: 12px; }
+.state-head, .failed-head { margin: 0 0 4px; font-size: var(--rs-h2); font-weight: 700; line-height: 1.25; letter-spacing: -0.025em; color: var(--rs-ink); }
 /* 실패 — 빨강은 오류 아이콘과 짧은 핵심 안내에만 */
 .failed-head { display: flex; align-items: center; gap: 12px; color: var(--red); }
 .failed-head svg { flex: 0 0 auto; }
@@ -449,18 +452,18 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 
 /* 결과 없음 — 첫 패널은 면 없이 큰 제목, 두 번째(다시 찾기)는 연회색 면 */
 .rs.noresult .panel { border: 0; box-shadow: none; }
-.rs.noresult > .panel:first-child { padding: 0; background: none; border-radius: 0; }
-.rs.noresult > .panel:first-child > .panel-title {
-  margin: 0 0 12px; font-size: clamp(30px, 3.6vw, 40px); font-weight: 700; line-height: 1.2; letter-spacing: -0.03em;
+.rs.noresult > .panel:first-of-type { padding: 0; background: none; border-radius: 0; }
+.rs.noresult > .panel:first-of-type > .panel-title {
+  margin: 0 0 12px; font-size: var(--rs-h2); font-weight: 700; line-height: 1.25; letter-spacing: -0.025em;
 }
-.rs.noresult > .panel:first-child > .kv-src { margin: 0; font-size: 17px; color: var(--rs-sub); }
+.rs.noresult > .panel:first-of-type > .kv-src { margin: 0; font-size: 16px; line-height: 1.65; color: var(--rs-ink); }
 .rs.noresult .kv.kv-rows { margin-top: 28px; border-top: 1px solid var(--rs-line); }
 .rs.noresult .kv-row { grid-template-columns: 140px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid #ececf0; align-items: baseline; }
 .rs.noresult .kv-k { padding: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
 .rs.noresult .kv-val, .rs.noresult .kv-val.mono {
   font-family: inherit; font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--rs-ink); font-variant-numeric: tabular-nums;
 }
-.rs.noresult > .panel + .panel { padding: 32px; background: var(--rs-fill); border-radius: 18px; }
+.rs.noresult > .panel + .panel { margin-top: 20px; padding: 32px; background: var(--rs-fill); border-radius: 18px; }
 .rs.noresult > .panel + .panel > .panel-title { margin: 0 0 4px; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
 .rs.noresult > .panel + .panel .kv-src { margin: 0; font-size: 15px; color: var(--rs-sub); }
 

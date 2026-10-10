@@ -8,7 +8,7 @@ import { SituationInput } from './UploadScreen'
 export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   const { hints, manifest_summary } = props.view
   return (
-    <Panel title="말씀하신 장면을 찾지 못했어요">
+    <Panel title="말씀하신 장면을 찾지 못했어요.">
       <div className="kv-src">영상은 잘 받았어요. 설명을 조금 바꿔 주시면 다시 찾아볼게요.</div>
       <div className="kv kv-rows">
         <div className="kv-row">

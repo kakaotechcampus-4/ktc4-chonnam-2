@@ -436,6 +436,7 @@ export function DemoFlow(): JSX.Element {
 
         {done?.end === 'notFound' && (
           <div className="rs rs-screen state-page noresult">
+            <p className="state-context">신고자료</p>
             <NoResultScreen
               view={{ ...done.view, hints: { time: null, vehicle: null, location: null, situation: situation || null } }}
             />
