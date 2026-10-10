@@ -542,6 +542,9 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .res-keyword { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 4px 0 0; }
 .res-keyword-k { font-size: 14px; color: var(--rs-sub); }
 .res-keyword-v { font-size: 16px; font-weight: 600; }
+/* 검색어를 못 만들었을 때 — 검색어 자리에 안내만. 주황(확인 필요)은 쓰지 않는다 */
+.res-keyword-missing { display: flex; align-items: flex-start; gap: 6px; margin: 4px 0 0; font-size: 14px; line-height: 1.55; color: var(--rs-ink); }
+.res-keyword-missing svg { flex: 0 0 auto; margin-top: 3px; color: var(--rs-sub); }
 
 /* 동영상 — 미리보기 자리(왼쪽)와 다운로드·상태·다른 후보(오른쪽) */
 .res-video { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; }

@@ -183,6 +183,18 @@ it('위치 검색어가 있으면 위치 칸에 검색어 복사가 붙는다', 
   const { container, getByRole } = render(<ResultScreen view={view} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
   expect(getByRole('button', { name: '검색어 복사' })).toBeTruthy()
   expect(container.querySelector('.res-keyword-v')!.textContent).toBe('광주 상무지구 상무중앙로 사거리')
+  expect(container.querySelector('.res-keyword-missing')).toBeNull()
+})
+
+it('검색어를 못 만들었다는 안내는 위 목록이 아니라 위치 칸의 검색어 자리에 있다', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  expect(happy.notices.some((n) => n.code === 'evidence.location_search_keyword_missing')).toBe(true)
+  const { container } = render(<ResultScreen view={happy} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  const head = container.querySelector('.res-notices')?.textContent ?? ''
+  expect(head).not.toContain('검색어')
+  const row = [...container.querySelectorAll('.res-item')].find((r) => r.querySelector('.res-item-k')!.textContent === '위치 선택')!
+  expect(row.querySelector('.res-keyword-missing')!.textContent).toContain('지도에 붙여넣을 검색어를 만들지 못했습니다')
+  expect(row.querySelector('.res-keyword')).toBeNull()
 })
 
 it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {

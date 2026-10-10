@@ -37,6 +37,7 @@ const VIDEO_STATUS: Record<ReturnType<typeof reportVideoState>, string> = {
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
+const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 
 const COUNT_ORDER: InfoState[] = [
   'INFO_NEEDS_REVIEW',
@@ -102,6 +103,10 @@ export function ResultScreen(props: {
   const when = splitDateTime(occurred?.value ?? null)
   const keyword = ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
+  // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
+  // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
+  const keywordMissing = hasForm ? view.notices.find((n) => n.code === KEYWORD_MISSING) : undefined
+  const headNotices = keywordMissing ? view.notices.filter((n) => n !== keywordMissing) : view.notices
 
   const counts = new Map<InfoState, number>()
   for (const s of Object.values(pkg?.report_field_states ?? {})) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
@@ -162,9 +167,9 @@ export function ResultScreen(props: {
             ))}
           </ul>
         )}
-        {view.notices.length > 0 && (
+        {headNotices.length > 0 && (
           <ul className="res-notices">
-            {view.notices.map((n) => {
+            {headNotices.map((n) => {
               const t = tone(n)
               const Icon = t === 'info' ? Info : CircleAlert
               return (
@@ -250,6 +255,12 @@ export function ResultScreen(props: {
                     복사
                   </button>
                 )}
+              </p>
+            )}
+            {!keyword && keywordMissing && (
+              <p className="res-keyword-missing">
+                <Info size={15} strokeWidth={1.8} aria-hidden />
+                <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
             <p className="res-hint">{PICK_HINT}</p>
