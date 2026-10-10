@@ -25,7 +25,8 @@ const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
 const TOAST_MS = 2000
 // 아래 문구는 검토 대기 중인 새 문구다(보고서 「검토할 문구」).
-const PICK_HINT = '안전신문고에서 직접 골라요'
+// 붙여넣지 않고 안전신문고에서 사용자가 고르는 칸(유형·위치·발생 일시) 표시
+const PICK_MARK = '직접 선택'
 const NO_TITLE = '대신고가 아직 제목을 만들어 주지 않아요. 안전신문고에서 직접 적어 주세요.'
 const ACTION_UNAVAILABLE = '아직 이 화면에서 할 수 없어요'
 const VIDEO_STATUS: Record<ReturnType<typeof reportVideoState>, string> = {
@@ -213,9 +214,8 @@ export function ResultScreen(props: {
             )}
           </div>
 
-          <Item label="유형" review={reportType?.state}>
+          <Item label="유형" review={reportType?.state} pick>
             <Value f={reportType} />
-            <p className="res-hint">{PICK_HINT}</p>
           </Item>
 
           <Item label="동영상">
@@ -244,7 +244,7 @@ export function ResultScreen(props: {
             </div>
           </Item>
 
-          <Item label="위치 선택" review={location?.state}>
+          <Item label="위치 선택" review={location?.state} pick>
             <Value f={location} />
             {keyword && (
               <p className="res-keyword">
@@ -263,7 +263,6 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
-            <p className="res-hint">{PICK_HINT}</p>
           </Item>
 
           <Item label="제목">
@@ -280,27 +279,24 @@ export function ResultScreen(props: {
               <div className="res-plate-meta">
                 {plate && <StatusBadge state={plate.state} />}
                 {plate?.source && <span className="res-src">{plate.source}</span>}
+                {copyButton('차량 번호', plate?.value)}
               </div>
               {props.plateEditedLocally && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
-              <div className="res-plate-acts">
-                {copyButton('차량 번호', plate?.value)}
-                {ev && (
-                  <button type="button" className="rs-btn sec sm" onClick={props.onPlate}>
-                    자세히 보기
-                  </button>
-                )}
-              </div>
+              {ev && (
+                <button type="button" className="res-link" onClick={props.onPlate}>
+                  자세히 보기
+                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                </button>
+              )}
             </div>
           </Item>
 
-          <Item label="발생 일자" review={occurred?.state}>
+          <Item label="발생 일자" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.date }} />
-            <p className="res-hint">{PICK_HINT}</p>
           </Item>
 
-          <Item label="발생 시간" review={occurred?.state}>
+          <Item label="발생 시간" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.time }} />
-            <p className="res-hint">{PICK_HINT}</p>
           </Item>
         </section>
       )}
@@ -352,10 +348,14 @@ export function ResultScreen(props: {
 }
 
 // 양식 한 칸 — 왼쪽 칸 이름, 오른쪽 값. 확인이 필요한 칸만 주황 바탕이다.
-function Item(props: { label: string; review?: InfoState; children: ReactNode }): JSX.Element {
+// pick: 안전신문고에서 사용자가 직접 고르는 칸(붙여넣지 않음) — 칸 이름 아래에 작게 적는다.
+function Item(props: { label: string; review?: InfoState; pick?: boolean; children: ReactNode }): JSX.Element {
   return (
     <div className={`res-item${props.review === 'INFO_NEEDS_REVIEW' ? ' is-review' : ''}`}>
-      <h3 className="res-item-k">{props.label}</h3>
+      <div className="res-item-kbox">
+        <h3 className="res-item-k">{props.label}</h3>
+        {props.pick && <p className="res-item-pick">{PICK_MARK}</p>}
+      </div>
       <div className="res-item-v">{props.children}</div>
     </div>
   )

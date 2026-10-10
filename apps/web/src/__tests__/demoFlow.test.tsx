@@ -197,6 +197,18 @@ it('검색어를 못 만들었다는 안내는 위 목록이 아니라 위치 �
   expect(row.querySelector('.res-keyword')).toBeNull()
 })
 
+it('직접 고르는 칸은 칸 이름 아래 「직접 선택」만 달고, 복사는 값과 같은 줄에 둔다', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const { container } = render(<ResultScreen view={happy} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  const picked = [...container.querySelectorAll('.res-item')]
+    .filter((r) => r.querySelector('.res-item-pick'))
+    .map((r) => r.querySelector('.res-item-k')!.textContent)
+  expect(picked).toEqual(['유형', '위치 선택', '발생 일자', '발생 시간'])
+  expect(container.textContent).not.toContain('안전신문고에서 직접 골라요')
+  expect(container.querySelector('.res-val-line [aria-label="신고 내용 복사"]')).not.toBeNull()
+  expect(container.querySelector('.res-plate-meta [aria-label="차량 번호 복사"]')).not.toBeNull()
+})
+
 it('번호판 못 읽음: 경고만 달고 제출은 막지 않는다', () => {
   const { wait, getByText, text } = start('plateUnread')
   wait()
