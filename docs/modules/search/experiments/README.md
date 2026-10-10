@@ -2,6 +2,9 @@
 
 재현 가능한 실험 기록을 둔다. 입력/설정/결과/실패/다음 learning을 남긴다. AI 원문과 원본 영상은 저장소에 두지 않는다. 신규 실험 결과 원본(JSON·JSONL)은 로컬에만 보관하고, Git에는 설정·수치 요약·해석을 담은 Markdown 보고서를 남긴다.
 
+- [CV_LANE_TRACK v1 · 차량 7모델 추론·속도 측정](cv-vehicle-model-comparison-2026-10-09.md) — 동일 원본 1,200프레임 × 3회 × 7종 완료(25,200행). 차량 bbox·ID GT 미확보로 정확도 비교·상위 2종 추적·선정 대기
+- [CV_LANE_TRACK v1 · 차선 출력·속도 비교](cv-lane-model-comparison-2026-10-09.md) — AI Hub 백색＋황색/L3 UFLDv2 동일 1,200프레임 × 3회 완료, 42시점·14시트 육안 진단. CLRerNet CUDA 환경 차단. GT 없이 속도·출력만 비교, 정확도·최종 선정 미평가
+- [CV_LANE_TRACK v1 · 전체 영상 추적 진단](cv-tracking-diagnostic-2026-10-09.md) — 임시 V1＋L3로 15영상 전체 5fps 3,233프레임, 같은 검출을 ByteTrack/BoT-SORT에 입력. 30개 출력 영상 검증·29시트 육안 진단 완료. GT 정확도·최종 선정·교차 후보 미평가
 - [coarse-fine-probe-summary-2026-09-12.md](coarse-fine-probe-summary-2026-09-12.md) — 약 39분 주행 영상 Coarse·Fine 탐침 총정리
 - [decision-trace-guide.md](decision-trace-guide.md) — 로컬 진단 실행과 전체 관찰 출력 형식
 - [7영상 진단 실행 결과 JSON](decision-trace-seven-video-2026-09-26-results.json) — p3·진단 형식 각 1회의 수치·상태·해시
