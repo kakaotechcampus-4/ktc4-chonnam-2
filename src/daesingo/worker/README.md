@@ -14,7 +14,13 @@ RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_
 
 RT-04(a)는 `python -m daesingo.worker` 진입점 · 단일 kind registry · claim loop · ExecutionContext · T1 terminal 기록을 구현한다. 기존 Worker engine/claim/finish/transaction helper를 재사용하며 claim commit 후 handler를 실행한다. 빈 queue는 B-Q1, 완료 후 다음 claim은 즉시, DB 오류는 B-Q3 대기다. T1은 B-D8 재시도 소진 뒤에도 결과를 유지하고 B-Q3 간격으로 재기록한다. SIGINT/SIGTERM은 실행 중 handler·T1을 중단하지 않고 다음 idle 지점에서 반영한다.
 
-실제 handler 등록은 비어 있다. 미등록 kind는 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. T2/Case 반영·E2E-0 최종 연결은 RT-04(b), heartbeat/cancel은 RT-05, STALE/sweep은 RT-06, usage 영속은 RT-07, 실제 Recording/Search handler는 RT-10 범위다.
+실제 handler 등록은 비어 있다. 미등록 kind는 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. heartbeat/cancel은 RT-05, STALE/sweep은 RT-06, usage 영속은 RT-07, 실제 Recording/Search handler는 RT-10 범위다.
+
+RT-04(b)는 `compose_worker(reflector=...)`로 `ResultReflector`를 주입한다. T1 commit 후 별도 B-D8 transaction에서 reflector → 후속 enqueue → `case_applied_at`을 처리한다. reflector는 전달된 Connection에서 Case 행을 먼저 잠그고 `execution_id` 중복 반영을 판정하며 직접 commit·rollback·retry하지 않는다. `APPLIED`만 immutable `RuntimeJobRecord(job_id, case_id, kind)` 목록을 반환할 수 있다. `ALREADY_APPLIED`와 `NOT_APPLIED(STOPPED_WAITING/CANCELLED/SUPERSEDED)`도 전달 완료 표식을 기록한다. T2 실패는 전체 rollback하고 이미 확정된 T1을 유지한다. T2 DB 오류(재시도 소진 포함)는 안전한 DB 오류 event와 `runtime.reflect.failed`를 기록하고 다음 claim 전에 interruptible B-Q3 대기를 거친다. 일반 reflector 예외는 `runtime.reflect.failed`만 기록하고 DB 장애 대기 없이 다음 claim으로 진행한다. 표식 없는 terminal 재전달 scan은 RT-06에 남긴다.
+
+Case lock 이후 Runtime terminal facts와 표식을 잠금 확인한다. COMMIT 응답 유실 재실행은 Case idempotency와 이미 기록된 표식을 확인해 후속 execution을 다시 enqueue하지 않는다. `runtime.retry.after_case_stopped_count`는 commit된 `attempt >= 2 AND NOT_APPLIED(STOPPED_WAITING)`에서만 기록하며, 이미 전달된 결과는 집계하지 않는다. sink 장애 시 event 유실은 가능하다.
+
+실제 Case 8-8 반영 함수는 연결하지 않는다. 기본 entrypoint의 reflector는 비어 있고, T2 원자성·복구·E2E-0은 fake reflector와 실제 MySQL로 검증한다. fake의 table/receipt 구조는 실제 Case 구현 의무가 아니다.
 
 RD-09a에 따라 실제 Recording invocation은 execution마다 새 `RecordingService`를 만들고 `finally`에서 닫아 mutable cache/working state를 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 뜻은 아니다. 이 PR은 service lifecycle을 구현하거나 process-global cache를 추가하지 않는다.
 

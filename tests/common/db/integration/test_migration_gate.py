@@ -48,6 +48,10 @@ LIFECYCLE_CHECKS = (
 )
 
 WORKER_CHECKS = (
+    # RT-04(b): T2 delivery, atomicity, retry and fake E2E-0.
+    *(("worker_t2", scenario) for scenario in (
+        "delivery", "rollback", "t1_gap", "commit_recovery", "metric",
+        "zero_guard", "sink_isolation", "e2e0", "recovery")),
     ("worker_core", "success"), ("worker_core", "failure"),
     ("worker_core", "claim_db_recovery"), ("worker_core", "terminal_db_recovery"),
     ("worker_core", "terminal_unknown_commit"), ("worker_core", "finish_rejected"),
@@ -56,6 +60,18 @@ WORKER_CHECKS = (
 )
 
 WORKER_PARAMETERS = (
+    *(("worker_t2", "delivery", outcome) for outcome in
+      ("APPLIED", "ALREADY_APPLIED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")),
+    *(("worker_t2", "rollback", fault) for fault in
+      ("reflector", "enqueue", "extra", "tampered_reason", "non_applied_jobs", "cross_case", "commit", "rollback")),
+    *(("worker_t2", "t1_gap", status) for status in ("SUCCEEDED", "FAILED")),
+    *(("worker_t2", "commit_recovery", outcome) for outcome in ("APPLIED", "STOPPED_WAITING")),
+    *(("worker_t2", "metric", mode) for mode in
+      ("first_stopped", "retry_stopped", "third_stopped", "cancelled", "superseded", "already", "applied", "exception")),
+    *(("worker_t2", "zero_guard", mode) for mode in ("missing", "mismatch", "zero", "already", "insert_then_marker_failure")),
+    *(("worker_t2", "sink_isolation", mode + "_" + sink)
+      for mode in ("metric", "failure", "db_retry") for sink in ("filter", "handler")),
+    *(("worker_t2", "recovery", mode) for mode in ("exhausted", "next_job", "concurrent", "exhausted_next_job")),
     *(("worker_core", "logger_isolation", scenario + "_" + sink)
       for scenario in ("started", "completed", "claim_db", "terminal_db") for sink in ("filter", "handler")),
     *(("worker_core", "failure", mode) for mode in ("unknown", "module", "exception", "invalid")),
@@ -119,7 +135,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # so legacy Case initialization cannot alter the parent suite's database.
     result = subprocess.run(
         [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/common/db/integration", "tests/common/jobs",
-         "tests/worker/test_worker_mysql.py",
+         "tests/worker/test_worker_mysql.py", "tests/worker/test_reflection_mysql.py",
          "tests/case/test_store_mysql.py", "tests/case/test_case_repository_contract.py",
          "--ignore=tests/common/db/integration/test_migration_gate.py", "-m", "mysql", "-q",
          "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'child'}",

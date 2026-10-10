@@ -15,11 +15,14 @@ from daesingo.common.jobs.execution import ExecutionContext, HandlerResult
 from daesingo.common.jobs.repository import claim_one, finish
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.worker_loop import WorkerLoop
+from daesingo.common.jobs.reflection import ReflectionInput, ResultReflector, reflect_terminal
+from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
 from daesingo.worker.registry import KindRegistry
 
 
 def compose_worker(
     *, engine: Engine, startup: Startup, registry: KindRegistry, stop: Event,
+    reflector: ResultReflector | None = None,
     worker_id: str | None = None, sleep: Callable[[float], None] = time.sleep,
     idle_wait: Callable[[float], object] | None = None,
     clock: Callable[[], float] = time.monotonic,
@@ -57,9 +60,25 @@ def compose_worker(
 
         return run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
 
+    def reflect(context: ExecutionContext, terminal: HandlerResult):
+        incoming = ReflectionInput(context.execution_id, context.job_id, context.case_id,
+                                   context.kind, context.attempt, terminal)
+        with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
+                                            job_id=context.job_id, execution_id=context.execution_id)):
+            result = run_worker_transaction(
+                engine, lambda conn: reflect_terminal(conn, incoming, reflector, context.trace_id),
+                sleep=sleep, logger=startup.logger,
+            )
+            # A recovered/completed receipt is ALREADY_APPLIED, so no double count.
+            if incoming.attempt >= 2 and result.status == "NOT_APPLIED" and result.reason == "STOPPED_WAITING":
+                log_event_best_effort(startup.logger, "runtime.retry.after_case_stopped_count",
+                                      status="STOPPED_WAITING")
+            return result
+
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
         dispatch=registry.dispatch, record=record, settings=settings, stop=stop,
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
+        reflect=reflect if reflector is not None else None,
     )

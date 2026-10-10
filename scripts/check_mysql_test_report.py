@@ -16,6 +16,10 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    # RT-04(b): T2 delivery, atomicity, retry and fake E2E-0.
+    *(("worker_t2", scenario) for scenario in (
+        "delivery", "rollback", "t1_gap", "commit_recovery", "metric",
+        "zero_guard", "sink_isolation", "e2e0", "recovery")),
     ("api", "sessions"), ("worker", "sessions"),
     ("api", "idle_recycle"), ("worker", "idle_recycle"),
     ("api", "disconnect_replacement"), ("worker", "disconnect_replacement"),
@@ -77,6 +81,18 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("worker_t2", "delivery", outcome) for outcome in
+      ("APPLIED", "ALREADY_APPLIED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")),
+    *(("worker_t2", "rollback", fault) for fault in
+      ("reflector", "enqueue", "extra", "tampered_reason", "non_applied_jobs", "cross_case", "commit", "rollback")),
+    *(("worker_t2", "t1_gap", status) for status in ("SUCCEEDED", "FAILED")),
+    *(("worker_t2", "commit_recovery", outcome) for outcome in ("APPLIED", "STOPPED_WAITING")),
+    *(("worker_t2", "metric", mode) for mode in
+      ("first_stopped", "retry_stopped", "third_stopped", "cancelled", "superseded", "already", "applied", "exception")),
+    *(("worker_t2", "zero_guard", mode) for mode in ("missing", "mismatch", "zero", "already", "insert_then_marker_failure")),
+    *(("worker_t2", "sink_isolation", mode + "_" + sink)
+      for mode in ("metric", "failure", "db_retry") for sink in ("filter", "handler")),
+    *(("worker_t2", "recovery", mode) for mode in ("exhausted", "next_job", "concurrent", "exhausted_next_job")),
     *(("worker_core", "logger_isolation", scenario + "_" + sink)
       for scenario in ("started", "completed", "claim_db", "terminal_db") for sink in ("filter", "handler")),
     *(("worker_core", "failure", mode) for mode in ("unknown", "module", "exception", "invalid")),

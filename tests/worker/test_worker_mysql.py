@@ -45,7 +45,7 @@ def row(queue, execution_id):
             job_execution.c.execution_id == execution_id)).mappings().one())
 
 
-def composed(queue, handlers, *, stop=None, stream=None, idle_wait=None, sleep=None):
+def composed(queue, handlers, *, stop=None, stream=None, idle_wait=None, sleep=None, reflector=None):
     module = import_module("daesingo.worker.composition")
     registry = import_module("daesingo.worker.registry")
     stop = stop if stop is not None else Event()
@@ -63,6 +63,8 @@ def composed(queue, handlers, *, stop=None, stream=None, idle_wait=None, sleep=N
                   stop=stop, worker_id="worker", idle_wait=idle_wait or default_idle)
     if sleep is not None:
         kwargs["sleep"] = sleep
+    if reflector is not None:
+        kwargs["reflector"] = reflector
     return module.compose_worker(**kwargs)
 
 
