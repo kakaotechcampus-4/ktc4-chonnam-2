@@ -84,4 +84,4 @@ GT가 고정되면 기존 저점수 예측 캐시로 confidence 후보를 채점
 | `environment-*.freeze.txt` | AI Hub·공개 모델 환경의 패키지 목록 |
 | `V1..V7-inference.log` | 진행·완료 로그 |
 
-원래 전체 계획은 CV_LANE_TRACK v1 계획(`cv-lane-track-v1-2026-10-09.md`, 아직 미게시), 차량 비교의 세부 실행 계획은 [실행 계획](../../../superpowers/plans/2026-10-09-cv-vehicle-model-comparison.md)이다.
+원래 전체 계획은 CV_LANE_TRACK v1 계획(`cv-lane-track-v1-2026-10-09.md`, 아직 미게시), 차량 비교의 세부 실행 계획은 실행 계획(`2026-10-09-cv-vehicle-model-comparison.md`, 로컬 메모·미게시)이다.
