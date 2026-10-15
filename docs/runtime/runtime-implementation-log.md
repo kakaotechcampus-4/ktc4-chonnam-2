@@ -53,7 +53,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
-| 로컬 Compose image · service 배치 후보 | Python 3.12 + ffmpeg + locked uv sync; 공용 image, numeric UID 10001, MySQL/media named volume, file secret, 로컬 log rotation | RT-13(a) · draft PR pending | 아래 RT-13 · `Dockerfile` · `compose.yaml` |
+| 로컬 Compose image · service 배치 후보 | Python 3.12 + ffmpeg + locked uv sync; 공용 image, numeric UID 10001, MySQL/media named volume, file secret, 로컬 log rotation | RT-13(a) · draft PR #367 | 아래 RT-13 · `Dockerfile` · `compose.yaml` |
 | API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR pending | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
 
 ## Baseline revisit 후보
@@ -1604,7 +1604,7 @@ Status: IN_PROGRESS · Issue: #300 · Audit: C
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| draft PR pending | (a) Dockerfile · local Compose topology | pending |
+| draft PR #367 | (a) Dockerfile · local Compose topology | pending |
 
 ### 구현 결과
 
@@ -1630,7 +1630,7 @@ Status: IN_PROGRESS · Issue: #300 · Audit: C
 
 ### Verification
 
-- `git diff --check` 통과. 이 host에는 Docker가 없어 Docker/Compose runtime 검증은 미실행이다.
+- `git diff --check` 통과. PyYAML `safe_load`로 Compose YAML syntax·service/mount/environment/health 구조 확인 통과. Secret 파일 경로에 `.gitignore` 규칙이 적용된다. 이 host에는 Docker가 없어 Docker/Compose runtime 검증은 미실행이다.
 
 ### 남은 위험
 
