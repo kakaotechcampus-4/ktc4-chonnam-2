@@ -71,6 +71,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
+| `deploy/local/` | RT-13(a) 로컬 Compose 초안의 설정 예시·준비 방법. 루트 `Dockerfile`·`compose.yaml`을 사용하며 migration·smoke는 후속 RT-13(b) 범위 |
 | `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |

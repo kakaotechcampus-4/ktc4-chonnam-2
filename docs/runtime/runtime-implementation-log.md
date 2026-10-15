@@ -53,6 +53,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
+| 로컬 Compose image · service 배치 후보 | Python 3.12 + ffmpeg + locked uv sync; 공용 image, numeric UID 10001, MySQL/media named volume, file secret, 로컬 log rotation | RT-13(a) · draft PR pending | 아래 RT-13 · `Dockerfile` · `compose.yaml` |
 | API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR pending | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
 
 ## Baseline revisit 후보
@@ -1599,35 +1600,42 @@ Status: NOT_STARTED · Issue: #299 · Audit: C
 
 ## RT-13 — Docker / Compose local runtime
 
-Status: NOT_STARTED · Issue: #300 · Audit: C
+Status: IN_PROGRESS · Issue: #300 · Audit: C
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| draft PR pending | (a) Dockerfile · local Compose topology | pending |
 
 ### 구현 결과
 
-—
+- 초안: Python 3.12/ffmpeg image에 잠긴 uv 의존성과 실제 Search provider용 기존 `eval-gemini` extra를 설치한다. RT-13(b) migration runner의 source 기준 `migrations/` 탐색을 위해 source를 image에 남긴다.
+- 초안: api/worker가 같은 image·numeric UID를 쓰고 MySQL 8.4와 media를 named volume에 둔다. `prepare-volumes`가 두 process 시작 전에 공유 media 디렉터리 소유권을 맞춘다.
+- 초안: 앱·MySQL credential을 file mount로 전달한다. `docker inspect`의 service environment에는 secret 값 대신 파일 경로만 있다. B-O1 log rotation과 B-H3보다 긴 ready timeout을 설정했다.
 
 ### Plan 대비 변경
 
-—
+- 공유 volume 소유권을 설정하기 위해 일회성 `prepare-volumes` service를 추가했다. RD-12a 후보이며 아직 기록된 Decision은 아니다.
+- `develop`에는 API process entrypoint가 없어 RT-08(a) PR #366 위에 쌓았다. RT-09·RT-11도 최종 acceptance의 선행이다.
 
 ### 새 implementation detail
 
-—
+- migration runner가 source 파일 기준으로 `migrations/`를 찾으므로 image에서 editable source install(`uv sync --locked --no-dev --extra eval-gemini`)을 유지한다.
+- API port는 host loopback에만 묶는다. healthcheck는 Python 표준 라이브러리를 사용하고, Docker 5초 안에 요청 4초를 허용한다. 현재 `stop_grace_period: 30s`는 Provisional 후보이다.
 
 ### Owner 확인 포인트
 
-—
+- RD-12a: 공용 image, service command, 로컬 `prepare-volumes`, 후속 migration one-shot service.
+- RD-12g: MySQL named volume과 backup baseline. 이 PR은 backup 절차를 정하지 않는다.
+- Baseline §5: health interval/timeout과 graceful shutdown/stop grace period. merge 전에 닫아야 할 Gate로 남는다.
 
 ### Verification
 
-—
+- `git diff --check` 통과. 이 host에는 Docker가 없어 Docker/Compose runtime 검증은 미실행이다.
 
 ### 남은 위험
 
-—
+- Migration one-shot과 container 간 smoke는 RT-13(b) 범위다. 빈 MySQL volume으로 Runtime 경로를 검증할 수 없다.
+- RT-08(a) PR #366은 열려 있고 RT-09·RT-11은 미완료다. 이 branch 초안은 RT-13 acceptance를 충족하거나 #300을 닫지 않는다.
 
 ---
 
