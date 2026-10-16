@@ -24,6 +24,17 @@ from .scope import VisualEventType
 from .smoke_errors import ProviderApiError, ProviderPayloadError
 from .sources import ResolvedAnalysisSource
 from .usage import ProviderUsage
+from .usage_sink import (
+    UNPRICED_COST_UNIT,
+    UNPRICED_PRICING_ID,
+    InMemoryUsageSink,
+    UsageAttempt,
+    UsageCost,
+    UsageObservation,
+    UsageOperation,
+    UsagePersistenceError,
+    UsageSink,
+)
 
 
 class MediaSizeError(ValueError):
@@ -43,6 +54,9 @@ class CoarseRequest:
     # 있으면 retry 루프가 이 예산을 존중한다(시도 전 check + sleep clamp).
     # 없으면 timeout_sec 만으로 per-attempt timeout 을 잡는 기존 동작.
     deadline: RunDeadline | None = field(default=None)
+    # 없으면 InMemoryUsageSink. run_ref는 이 호출을 담는 AnalysisRun의 run_id.
+    usage_sink: UsageSink | None = field(default=None)
+    run_ref: str | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +69,8 @@ class FineRequest:
     media: PreparedMedia | None = field(default=None)
     timeout_sec: float = field(default=60.0)
     deadline: RunDeadline | None = field(default=None)
+    usage_sink: UsageSink | None = field(default=None)
+    run_ref: str | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +78,8 @@ class ProviderResult[ResponseT: BaseModel]:
     response: ResponseT
     usage: ProviderUsage
     latency_ms: int
+    # 이 호출의 HTTP 시도마다 sink가 발급한 usage_id(재시도 포함, 시도 순서).
+    usage_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +100,7 @@ class TextInvocation[ResponseT: BaseModel]:
     user_prompt: str
     response_model: type[ResponseT]
     deadline: RunDeadline
+    usage_sink: UsageSink | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +139,12 @@ def _to_origin_times(value: object, speed: float) -> object:
     if isinstance(value, list | tuple):
         return [_to_origin_times(item, speed) for item in value]
     return value
+
+
+def _usage_context(
+    sink: UsageSink | None, operation: UsageOperation, run_ref: str | None
+) -> tuple[UsageSink, UsageOperation, str | None]:
+    return (InMemoryUsageSink() if sink is None else sink, operation, run_ref)
 
 
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
@@ -180,7 +205,14 @@ class GeminiProvider:
             duration_sec=request.source.duration_sec,
         )
         return self._invoke(
-            request.media, prompt, CoarseResponse, request.timeout_sec, request.deadline
+            request.media,
+            prompt,
+            CoarseResponse,
+            request.timeout_sec,
+            request.deadline,
+            usage=_usage_context(
+                request.usage_sink, "CANDIDATE_SEARCH", request.run_ref
+            ),
         )
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
@@ -195,14 +227,24 @@ class GeminiProvider:
             end_sec=request.end_sec,
         )
         return self._invoke(
-            request.media, prompt, FineResponse, request.timeout_sec, request.deadline
+            request.media,
+            prompt,
+            FineResponse,
+            request.timeout_sec,
+            request.deadline,
+            usage=_usage_context(request.usage_sink, "VISUAL_VERIFY", request.run_ref),
         )
 
     def invoke_structured[ResponseT: BaseModel](
         self, request: StructuredInvocation[ResponseT]
     ) -> ProviderResult[ResponseT]:
+        # 진단 경로의 sink 연결은 PR 2(#303)에서 한다. 지금은 버리는 sink로 센다.
         return self._invoke(
-            request.media, request.prompt, request.response_model, request.timeout_sec
+            request.media,
+            request.prompt,
+            request.response_model,
+            request.timeout_sec,
+            usage=_usage_context(None, "DIAGNOSTIC", None),
         )
 
     def _invoke[ResponseT: BaseModel](
@@ -212,6 +254,8 @@ class GeminiProvider:
         response_model: type[ResponseT],
         timeout_sec: float,
         deadline: RunDeadline | None = None,
+        *,
+        usage: tuple[UsageSink, UsageOperation, str | None],
     ) -> ProviderResult[ResponseT]:
         # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
         # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
@@ -245,6 +289,7 @@ class GeminiProvider:
             deadline,
             speed=speed,
             reasoning_effort=self._config.reasoning_effort,
+            usage=usage,
         )
 
     def invoke_text[ResponseT: BaseModel](
@@ -261,6 +306,7 @@ class GeminiProvider:
             request.response_model,
             request.deadline.remaining_sec(),
             request.deadline,
+            usage=_usage_context(request.usage_sink, "HINT_EXTRACT", None),
         )
 
     def _call[ResponseT: BaseModel](
@@ -272,6 +318,7 @@ class GeminiProvider:
         *,
         speed: float = 1.0,
         reasoning_effort: str | None = None,
+        usage: tuple[UsageSink, UsageOperation, str | None],
     ) -> ProviderResult[ResponseT]:
         options: dict[str, object] = {}
         if reasoning_effort is not None:
@@ -288,6 +335,16 @@ class GeminiProvider:
                 f"serialized request is {len(serialized)} bytes, exceeds cap of {req_cap}"
             )
 
+        sink, operation_name, run_ref = usage
+        attempt = UsageAttempt(
+            run_ref=run_ref,
+            run_ref_reason="DIRECT_NO_RUN" if run_ref is None else None,
+            provider="elice",
+            model=self._config.model,
+            operation=operation_name,
+        )
+        issued: list[str] = []
+
         def operation() -> ProviderResult[ResponseT]:
             # deadline 이 있으면 매 시도마다 남은 예산으로 timeout 을 다시 잡는다.
             # (재시도 sleep 뒤 이전 시도의 큰 timeout 을 재사용하면 예산을 넘긴다.)
@@ -296,24 +353,48 @@ class GeminiProvider:
                 attempt_timeout = deadline.remaining_sec()
             else:
                 attempt_timeout = timeout_sec
+            # begin 실패면 HTTP를 보내지 않는다. 재시도 대상도 아니다.
+            try:
+                usage_id = sink.begin(attempt)
+            except Exception as error:
+                raise UsagePersistenceError("usage begin failed") from error
+            issued.append(usage_id)
             started = time.monotonic()
-            completion = self._client.chat.completions.parse(
-                model=self._config.model,
-                messages=cast("list[ChatCompletionMessageParam]", messages),
-                response_format=response_model,
-                timeout=attempt_timeout,
-                **options,  # pyright: ignore[reportArgumentType]
-            )
-            latency_ms = round((time.monotonic() - started) * 1000)
-            parsed = completion.choices[0].message.parsed
-            if parsed is None:
-                raise ProviderPayloadError("provider returned no parsed content")
-            if speed != 1.0:
-                parsed = response_model.model_validate(
-                    _to_origin_times(parsed.model_dump(), speed)
+            token_usage: ProviderUsage | None = None
+            succeeded = False
+            try:
+                completion = self._client.chat.completions.parse(
+                    model=self._config.model,
+                    messages=cast("list[ChatCompletionMessageParam]", messages),
+                    response_format=response_model,
+                    timeout=attempt_timeout,
+                    **options,  # pyright: ignore[reportArgumentType]
                 )
-            usage = _usage_from_completion(getattr(completion, "usage", None))
-            return ProviderResult(parsed, usage, latency_ms)
+                latency_ms = round((time.monotonic() - started) * 1000)
+                # 응답을 받았으면 파싱 실패여도 토큰은 관측된 것이다.
+                token_usage = _usage_from_completion(getattr(completion, "usage", None))
+                parsed = completion.choices[0].message.parsed
+                if parsed is None:
+                    raise ProviderPayloadError("provider returned no parsed content")
+                if speed != 1.0:
+                    parsed = response_model.model_validate(
+                        _to_origin_times(parsed.model_dump(), speed)
+                    )
+                succeeded = True
+                return ProviderResult(parsed, token_usage, latency_ms, tuple(issued))
+            finally:
+                # 성공 · 실패 모두 시도마다 정확히 한 번 finish한다.
+                observed = UsageObservation(
+                    succeeded=succeeded,
+                    token_usage=token_usage,
+                    latency_ms=round((time.monotonic() - started) * 1000),
+                    cost=UsageCost(None, UNPRICED_PRICING_ID, UNPRICED_COST_UNIT),
+                )
+                try:
+                    sink.finish(usage_id, observed)
+                except Exception as error:
+                    # finish 실패가 provider 재호출로 이어지지 않게 재시도 불가 오류로 바꾼다.
+                    raise UsagePersistenceError("usage finish failed") from error
 
         from openai import APIError, BadRequestError
 

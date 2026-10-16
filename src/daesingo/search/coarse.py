@@ -36,6 +36,7 @@ from .runs import (
 from .schemas import CoarseCandidate, CoarseResponse
 from .scope import AnalysisScope
 from .sources import AnalysisSourceResolver, ResolvedAnalysisSource
+from .usage_sink import UsageSink
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +62,7 @@ class CoarseExecutionDependencies:
     ledger: SearchLedger
     media_preparer: CoarseMediaPreparer
     deadline: RunDeadline
+    usage_sink: UsageSink | None = None
 
 
 def search_coarse(
@@ -106,6 +108,8 @@ def search_coarse(
                     media=prepared,
                     timeout_sec=deadline.remaining_sec(),
                     deadline=deadline,
+                    usage_sink=dependencies.usage_sink,
+                    run_ref=run_id,
                 )
             )
         except DeadlineExceededError as error:
@@ -113,7 +117,7 @@ def search_coarse(
         except Exception as error:
             failure = _issue(FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error)
         else:
-            usage_refs.append(f"usage:{source.source_id}")
+            usage_refs.extend(result.usage_ids)
             record = _usage_record(source, prepared, result, dependencies.config)
             dependencies.ledger.append(record)
             records.append(record)
