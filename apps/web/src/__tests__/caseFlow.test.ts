@@ -276,14 +276,43 @@ describe('command', () => {
     expect(flow.getState()).toMatchObject({ view: { case_rev: 7 }, error: { code: 'case.command.stale_revision' } })
   })
 
-  it('반영 여부를 모르면 다시 보내지 않고 먼저 읽는다(§3.4)', async () => {
+  it('반영 여부를 모르면 다시 보내지 않고 먼저 읽는다 — 읽는 동안은 같은 버튼이 command를 다시 보내지 못한다(§3.4)', async () => {
     const { m, flow } = setup()
     await ready(m, flow)
     m.sendCommand.mockResolvedValue(NO_RESPONSE)
-    m.getView.mockResolvedValueOnce(ok(view({ case_rev: 5 })))
-    await flow.send({ kind: 'MARK_REVIEWED', payload: {} })
+    let finishRead!: (r: unknown) => void
+    m.getView.mockImplementationOnce(() => new Promise((r) => (finishRead = r)))
+
+    const first = flow.send({ kind: 'MARK_REVIEWED', payload: {} })
+    await vi.waitFor(() => expect(m.getView).toHaveBeenCalledTimes(2)) // resume + 확인 읽기
+    expect(flow.getState().busy).toBe(true) // 확인이 끝나기 전
+    await flow.send({ kind: 'MARK_REVIEWED', payload: {} }) // 같은 버튼을 또 눌러도
     expect(m.sendCommand).toHaveBeenCalledOnce()
+
+    finishRead(ok(view({ case_rev: 5 })))
+    await first
     expect(flow.getState()).toMatchObject({ view: { case_rev: 5 }, busy: false })
+  })
+
+  it.each([
+    [5, null],
+    [4, 'web.network_error'],
+  ])('확인해 보니 case_rev가 %i면 알림은 %s이다 — 반영됐으면 알림이 필요 없고, 안 됐으면 남긴다', async (rev, code) => {
+    const { m, flow } = setup()
+    await ready(m, flow)
+    m.sendCommand.mockResolvedValue(NO_RESPONSE)
+    m.getView.mockResolvedValueOnce(ok(view({ case_rev: rev })))
+    await flow.send({ kind: 'MARK_REVIEWED', payload: {} })
+    expect(flow.getState().error?.code ?? null).toBe(code)
+  })
+
+  it('확인 읽기도 실패하면 그 오류를 알리고 버튼은 푼다', async () => {
+    const { m, flow } = setup()
+    await ready(m, flow)
+    m.sendCommand.mockResolvedValue(NO_RESPONSE)
+    m.getView.mockResolvedValueOnce(bad(503, 'http.dependency_unavailable'))
+    await flow.send({ kind: 'MARK_REVIEWED', payload: {} })
+    expect(flow.getState()).toMatchObject({ busy: false, error: { code: 'http.dependency_unavailable' }, view: { case_rev: 4 } })
   })
 
   it('503은 반영되지 않았으니 읽지 않고 오류만 남긴다', async () => {

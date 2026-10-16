@@ -159,9 +159,22 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
       return set({ busy: false })
     }
     if (res.caseView) adopt(res.caseView) // case가 실은 현재 화면 — 따로 다시 읽지 않는다(§3.2)
+    if (!res.caseView && unknownOutcome(res.status)) {
+      // 반영 여부를 모르면 다시 보내지 않고 먼저 읽는다(§3.4). 읽는 동안 `busy`를 풀지 않는다 —
+      // 그 사이 같은 버튼이 command를 다시 보내면 두 번 반영될 수 있다.
+      // ponytail: 읽기도 실패하면 끝내 모른 채 버튼을 풀어 준다 — 간격을 두고 계속 읽는 것은 실서버가 생긴 뒤에.
+      set({ error: res.error })
+      const res2 = await api.getView(caseId)
+      if (state.caseId !== caseId) return
+      if (res2.ok) {
+        adopt(res2.data)
+        if (res2.data.case_rev > view.case_rev) set({ error: null }) // 반영돼 있으면 알림이 필요 없다
+      } else {
+        set({ error: res2.error })
+      }
+      return set({ busy: false })
+    }
     set({ busy: false, error: res.error })
-    // 반영 여부를 모르면 다시 보내지 않고 먼저 읽는다(§3.4).
-    if (!res.caseView && unknownOutcome(res.status)) await refresh()
   }
 
   return {
