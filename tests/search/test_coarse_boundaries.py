@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from math import isnan
 
 import pytest
 
 from daesingo.search.config import GeminiSearchConfig
-from daesingo.search.errors import CandidateSourceMismatchError, InvalidCoarseSpanError
+from daesingo.search.errors import CandidateSourceMismatchError
 from daesingo.search.provider import CoarseRequest, FineRequest, ProviderResult
 from daesingo.search.runs import (
     CandidateEvent,
@@ -12,6 +11,7 @@ from daesingo.search.runs import (
     CandidateSpan,
     ContractRef,
     RunId,
+    RunOutcome,
 )
 from daesingo.search.schemas import (
     CoarseCandidate,
@@ -154,7 +154,7 @@ def test_search_coarse_preserves_valid_ranked_timeline_spans() -> None:
         (11.0, 12.0, 11.5),
     ],
 )
-def test_search_coarse_rejects_invalid_provider_spans(
+def test_search_coarse_drops_invalid_provider_spans_as_partial(
     start_sec: float, end_sec: float, at_sec: float
 ) -> None:
     # Given
@@ -163,16 +163,42 @@ def test_search_coarse_rejects_invalid_provider_spans(
     )
     service = _service(_source(), response)
 
-    # When / Then
-    with pytest.raises(InvalidCoarseSpanError) as captured:
-        service.search_candidates(_scope())
-    assert captured.value.source_id == "clip-1"
-    assert captured.value.duration_sec == 10.0
-    if isnan(start_sec):
-        assert isnan(captured.value.start_sec)
-    else:
-        assert captured.value.start_sec == start_sec
-    assert captured.value.end_sec == end_sec
+    # When
+    result = service.search_candidates(_scope())
+
+    # Then — 예외 대신 PARTIAL Run으로 남는다(#181)
+    assert result.candidates == ()
+    assert result.analysis_run.outcome is RunOutcome.PARTIAL
+    assert [issue.code for issue in result.analysis_run.issues] == [
+        "COARSE_SPAN_OUT_OF_SOURCE"
+    ]
+    assert result.analysis_run.usage_refs  # provider 호출 비용은 남는다
+
+
+def test_search_coarse_keeps_valid_candidates_beside_invalid_one() -> None:
+    # Given — 10초 클립에서 영상 밖 후보(점수 더 높음)와 정상 후보가 함께 온다
+    response = CoarseResponse.model_construct(
+        candidates=(
+            _candidate(11.0, 12.0, 11.5),
+            CoarseCandidate.model_construct(
+                event_type=VisualEventType.SIGNAL,
+                span=CoarseSpan.model_construct(start_sec=1.0, end_sec=3.0),
+                at_sec=2.0,
+                observed=("signal visible",),
+                score=0.5,
+            ),
+        )
+    )
+    service = _service(_source(), response)
+
+    # When
+    result = service.search_candidates(_scope())
+
+    # Then
+    assert [c.rank for c in result.candidates] == [1]
+    assert result.candidates[0].span.start_ms == 1000
+    assert result.analysis_run.outcome is RunOutcome.PARTIAL
+    assert result.analysis_run.issues[0].detail == "dropped=1"
 
 
 @pytest.mark.parametrize(
