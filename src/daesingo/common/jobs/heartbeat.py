@@ -10,6 +10,7 @@ import time
 from sqlalchemy import text
 
 from daesingo.common.logging import copy_context_call, log_event_best_effort
+from .timestamps import HEARTBEAT_TIMESTAMP_SQL
 
 
 class OwnershipLost(RuntimeError):
@@ -164,8 +165,10 @@ class Heartbeat:
                     raise
 
 
-_RENEW = text("""UPDATE job_execution SET heartbeat_at = NOW(6),
-lease_expires_at = TIMESTAMPADD(MICROSECOND, :lease_us, NOW(6))
+_RENEW = text(f"""UPDATE job_execution SET heartbeat_at = {HEARTBEAT_TIMESTAMP_SQL},
+lease_expires_at = GREATEST(COALESCE(lease_expires_at,
+TIMESTAMPADD(MICROSECOND, :lease_us, {HEARTBEAT_TIMESTAMP_SQL})),
+TIMESTAMPADD(MICROSECOND, :lease_us, {HEARTBEAT_TIMESTAMP_SQL}))
 WHERE execution_id = :execution_id AND status = 'RUNNING' AND lease_owner = :owner""")
 
 _CANCEL_OBSERVATION = text("""SELECT cancel_requested_at,

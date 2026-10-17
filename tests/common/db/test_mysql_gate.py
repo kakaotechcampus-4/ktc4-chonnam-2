@@ -12,6 +12,7 @@ import pytest
 
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
+from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -22,6 +23,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *TIMESTAMP_CHECKS,
     *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS),
     *REDELIVERY_CHECKS,
     *USAGE_CHECKS,
@@ -99,6 +101,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *TIMESTAMP_PARAMETERS,
     *API_HEALTH_PARAMETERS,
     *REDELIVERY_PARAMETERS,
     *USAGE_PARAMETERS,
@@ -251,6 +254,35 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("outcome", ["skip", "xfail", "failure"])
+def test_timestamp_acceptance_cannot_report_unsuccessful_execution(identity, outcome):
+    report = good_report()
+    role, scenario, parameter = identity
+    entry, = (n for n in report["collected"] if
+              {"role": role, "scenario": scenario, "parameter": parameter} in n.get("checks", []))
+    call, = (r for r in report["reports"] if r["nodeid"] == entry["nodeid"] and r["when"] == "call")
+    if outcome == "xfail":
+        call["xfail"] = True
+    else:
+        call["outcome"] = "skipped" if outcome == "skip" else "failed"
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("field", ["role", "scenario", "parameter"])
+def test_timestamp_acceptance_metadata_is_required(identity, field):
+    report = good_report()
+    role, scenario, parameter = identity
+    check = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if check in n.get("checks", []))
+    matching, = (c for c in entry["checks"] if c == check)
+    del matching[field]
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
 
 
 @pytest.mark.parametrize("identity", [p for p in USAGE_PARAMETERS if p[0] == "usage_reconciliation"])

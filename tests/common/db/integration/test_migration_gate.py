@@ -13,6 +13,7 @@ import pytest
 from migration_support import ROOT
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
+from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 
 pytestmark = pytest.mark.mysql
 
@@ -222,7 +223,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS,
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS,
                            *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS)]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
@@ -237,11 +238,14 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS):
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *TIMESTAMP_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
-        for layer in ("collection", "selection", "setup", "call", "teardown", "all", "junit"):
+        layers = ("collection", "selection", "setup", "call", "teardown", "all", "junit")
+        if role == "timestamp_order":
+            layers += ("skip", "xfail", "failure", "junit_skip", "junit_failure", "junit_error")
+        for layer in layers:
             broken = deepcopy(report)
             if layer in {"collection", "all"}:
                 broken["collected"] = [n for n in broken["collected"] if n["nodeid"] != node]
@@ -250,6 +254,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
             if layer in {"setup", "call", "teardown", "all"}:
                 broken["reports"] = [r for r in broken["reports"]
                                      if r["nodeid"] != node or (layer != "all" and r["when"] != layer)]
+            if layer in {"skip", "xfail", "failure"}:
+                phase, = (r for r in broken["reports"] if r["nodeid"] == node and r["when"] == "call")
+                if layer == "xfail":
+                    phase["xfail"] = True
+                else:
+                    phase["outcome"] = "skipped" if layer == "skip" else "failed"
             xml = ElementTree.parse(junit_path)
             if layer in {"junit", "all"}:
                 matches = 0
@@ -259,6 +269,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                             parent.remove(case)
                             matches += 1
                 assert matches == 1
+            if layer.startswith("junit_"):
+                matches = [c for c in xml.findall(".//testcase")
+                           if (c.get("classname"), c.get("name")) == tuple(entry["junit"])]
+                assert len(matches) == 1
+                ElementTree.SubElement(matches[0], {"junit_skip": "skipped",
+                    "junit_failure": "failure", "junit_error": "error"}[layer])
             mutation_junit = tmp_path / f"{scenario}-{parameter}-{layer}.xml"
             xml.write(mutation_junit, encoding="utf-8")
             with pytest.raises(ValueError):
@@ -266,5 +282,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS)) * 7
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS)) * 7 + len(TIMESTAMP_PARAMETERS) * 13
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

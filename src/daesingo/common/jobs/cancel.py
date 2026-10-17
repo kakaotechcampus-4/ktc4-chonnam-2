@@ -7,6 +7,7 @@ import time
 
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
+from .timestamps import TERMINAL_TIMESTAMP_SQL
 
 
 class CancellationRequested(Exception):
@@ -61,9 +62,9 @@ _LOCK_JOB = text("""SELECT execution_id, status FROM job_execution
 FORCE INDEX (uq_job_execution_job_attempt)
 WHERE job_id = :job_id
 ORDER BY job_id, attempt, execution_id FOR UPDATE""")
-_CANCEL_QUEUED = text("""UPDATE job_execution
+_CANCEL_QUEUED = text(f"""UPDATE job_execution
 SET status = 'CANCELLED', cancel_requested_at = COALESCE(cancel_requested_at, NOW(6)),
-ended_at = NOW(6), produced = JSON_ARRAY()
+ended_at = {TERMINAL_TIMESTAMP_SQL}, produced = JSON_ARRAY()
 WHERE execution_id = :execution_id AND status = 'QUEUED'""")
 _MARK_CANCEL = text("""UPDATE job_execution
 SET cancel_requested_at = COALESCE(cancel_requested_at, NOW(6))
