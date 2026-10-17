@@ -2068,3 +2068,19 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - **현재 진행 판정:** 후속 reviewer 결과에 따라 RT-08(b) 커밋·중간 PR 생성은 가능하다. 실제 병합은 원격 CI 통과 후 가능하며, 원격 Linux CI는 아직 실행되지 않았다. 이번 작업에서는 Implementation Log만 갱신하고 staging·커밋·푸시·PR 생성 및 테스트 재실행을 하지 않는다.
 - **남은 비차단 위험:** 생성 후 500 또는 COMMIT ACK 유실 시 생성 반영 여부가 불명일 수 있다. 과거 Worker 실패·timeout의 개별 직접 원인은 미확정이며, 이번 GREEN이나 #370 공통 timestamp ordering 수정으로 소급 확정하지 않는다. invalid historical row·큰 clock step·EC2 clock discipline 위험과 원격 Linux CI 미실행 한계가 남는다.
 - **상태·연결:** RT-08 **IN_PROGRESS** · **Refs #295 (RT-08(b))** · PR 번호 **pending** · merge SHA **pending**.
+
+### PR #373 원격 CI 후속 확인
+
+- **기록 근거·실행 구분:** 사용자가 원격에서 직접 확인해 전달한 PR **#373**의 CI 결과를 기록한다. run **39029507171**, test job **117386951933**이다. 이번 Log 갱신에서 원격 조회나 테스트 재실행을 수행한 결과는 아니다.
+
+| 원격 CI 항목 | 결과 | 소요 시간 |
+| --- | --- | --- |
+| boundary-check | PASS | 6초 |
+| test job | PASS | 18분 48초 |
+| 전체 pytest 단계 | PASS | 17분 44초 |
+| MySQL execution gate | PASS | 별도 소요 시간 미제공 |
+
+- **기존 구현 단계 결과와의 구분:** 로컬에서 보존한 전체 pytest 정확히 1회 **7,297 passed / 26 skipped / 실패 0**, **23분 27초**, 실제 MySQL **652 tests / 1,956 phases passed** 및 strict JSON/JUnit gate PASS는 기존 구현 단계의 결과다. 위 표는 별도의 원격 CI 실행 결과이며, 로컬 수집 건수·phase 수를 원격 결과에 전용하거나 두 실행을 합산하지 않는다. 원격 pytest 건수는 이번 전달 자료에 포함되지 않았다.
+- **후속 상태:** 앞선 「원격 Linux CI 미실행」은 당시의 한계로 보존하며, 이번에 전달된 원격 CI PASS 결과로 갱신한다. PR은 **#373**, merge SHA는 **pending**으로 유지한다. CI 통과 기록이 실제 병합 완료를 뜻하지 않는다.
+- **남은 위험 유지:** 생성 후 500·COMMIT ACK 유실의 생성 반영 불명, 과거 Worker 실패·timeout의 개별 직접 원인 미확정, invalid historical row·큰 clock step·EC2 clock discipline 위험은 유지한다. 이번 원격 CI PASS도 과거 사건의 직접 원인을 소급 확정하는 근거로 사용하지 않는다.
+- **이번 작업 범위·상태:** Implementation Log만 후속 갱신하며 테스트 재실행·staging·커밋·푸시는 하지 않는다. RT-08 **IN_PROGRESS** · **Refs #295 (RT-08(b))** · PR **#373** · merge SHA **pending**.
