@@ -50,6 +50,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | attempt별 queue 대기 관측 | claim receipt 내부 queued_at · DB queued_at→started_at · INITIAL/RETRY 묶음 · heartbeat 시작 뒤 sink 호출 | RT-06(a) · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `repository.py` · `worker_loop.py` |
 | STALE 관측 · fatal hook 비노출 | DB STALE ended_at − 마지막 heartbeat_at · post-commit 측정/누락 fallback 없음 · fatal cleanup 후 process 경계에서 원문 비노출·고정 코드 1 | RT-06(a) 후속 P2 · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `sweep.py` · `worker/__main__.py` |
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
+| PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
@@ -1854,3 +1855,20 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - 관측·CI 한계: **첫 marker 이전 blind window**, phase/관측 thread의 **timing 영향 가능성**, **원격 CI 20분 실행시간 미확인**을 유지한다. 현재 재리뷰 PASS로 이 한계나 과거 사건의 원인을 소급 확정하지 않는다.
 - 정책·상태: **timeout·gate·필수 inventory 정책 변경 없음**. 제품 종료 5초, nested 900초, workflow 20분을 유지한다. RT-08 상태는 **IN_PROGRESS**, 연결은 **Refs #295 (RT-08(a))**, PR 번호와 merge SHA는 각각 **pending**이다.
 - 이번 수정 범위는 이 Log의 후속 기록 추가뿐이다. Log 외 파일 수정, 테스트 재실행, staging·commit·push·PR 생성은 하지 않았다.
+
+## 2026-10-17 Issue #368 — CI 실행시간·timeout 후속
+
+- **연결·상태:** `Refs #368`. 로컬 미커밋, PR/merge SHA `pending`. Issue 전체 완료나 RT-08(b) 구현 완료를 뜻하지 않는다. 최신 `origin/develop` `ae9288226901b7e551595400dcb53c453c01d38e` 기반 별도 worktree/브랜치에서 작업했다.
+- **기록 위치:** Plan §12.5와 이 Log의 사용 규칙에 따라 실제 설정 선택·판단 변경 근거·검증·남은 위험을 기록한다. 기존 RT-08 기록은 당시 사실로 보존하며 Plan을 다시 쓰지 않는다.
+
+| 확인한 근거 | 판단에 미치는 영향 |
+| --- | --- |
+| [PR #352 이전 CI 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/352#issuecomment-6215216824): Ubuntu test job 14분 33초, 전체 pytest 13분 30초 성공을 근거로 20분 유지. 이후 20분 근접·실제 timeout이면 재검토한다고 기록 | 당시 성공 기록은 유지하되 현재 실행시간의 보장으로 일반화하지 않는다 |
+| [멘토 리뷰 4번](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/352#pullrequestreview-5520973090): PR CI 약 30분 허용, 협업 지장이 생기면 실패 영향·변경 관련성·실행시간을 기준으로 분리 | [Issue #368](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/368)의 CI 후속과 이번 사용자 지시에 따라 우선 job timeout을 현실화한다 |
+| [PR #371 run 39009492969 / test job 117328737070](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39009492969/job/117328737070): GitHub API에서 job/전체 pytest `cancelled`, 후속 MySQL execution gate `skipped` 확인. annotation은 `The job has exceeded the maximum execution time of 20m0s` | 원격 CI의 20분 제한 초과가 실제로 확인되어 이전 유지 판단을 변경한다 |
+
+- **원격 시각(UTC):** 2026-10-17 job 시작 `06:19:45`, 전체 pytest 시작 `06:21:08`, pytest 취소 `06:39:58`, job 완료 `06:40:01`(정리 포함). 시각 차이 직접 계산은 pytest 실행 18분 50초, job 전체 20분 16초다. job timeout은 준비 단계까지 포함하므로 pytest에 20분 전부가 주어지는 것은 아니다. 취소된 실행의 정상 완료 예상시간은 확인할 수 없다.
+- **구현 결과·Plan 대비 변경:** `.github/workflows/python-tests.yml`의 `jobs.test.timeout-minutes`만 `20 → 30`으로 조정한다. Runtime Task/Contract/Accepted Decision/Provisional Baseline 변경은 없다. CI 운영 상한 조정이며 테스트 계층화·workflow 분리는 이번 범위 밖이다.
+- **유지한 검증 경계:** 전체 pytest inventory·실행 명령, skip/xfail 정책, nested child 900초 제한, MySQL 필수 시나리오·JSON/JUnit strict gate를 그대로 유지한다. test/src/scripts/conftest 및 다른 workflow는 변경하지 않는다.
+- **검증:** 변경 전후 actionlint 1.7.12로 해당 workflow 구문·GitHub Actions expression/구조 정적 검사 PASS(ShellCheck·pyflakes 미실행). 기준 workflow와의 byte 비교로 timeout 한 줄 외 동일함을 확인하고, `git diff --check` PASS. 루트 README 사실 절에 이번 timeout 변경으로 어긋난 내용은 없어 수정하지 않는다. 전체 pytest·실제 MySQL·원격 CI는 이번 설정 수정에서 실행하지 않았다.
+- **Owner 확인 포인트·남은 위험:** 30분 안에 전체 pytest와 후속 MySQL gate가 완료되는지는 다음 원격 실행에서 확인해야 한다. timeout 증가는 실행시간 증가의 근본 원인이나 기존 nested/개별 subprocess의 미확정 timeout 원인을 해결·규명하지 않는다. 최대 대기시간·runner 점유 상한은 10분 늘며 실제 비용 증가는 이번에 측정하지 않았다. 이후에도 timeout 또는 협업 지연이 관찰되면 단계별 시간·fixture/migration 비용을 근거로 다시 판단하고, 계층화·분리는 별도 변경으로 검토한다.
