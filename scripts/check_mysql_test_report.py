@@ -16,6 +16,8 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("timestamp_order", scenario) for scenario in (
+        "terminal", "renewal", "bounds", "metrics", "retry", "commit_unknown", "concurrent")),
     ("api_health", "ready"), ("api_health", "storage"), ("api_health", "process"),
     *(("usage_reconciliation", scenario) for scenario in (
         "relation", "late", "concurrent", "isolation", "db_clock", "projection", "worker",
@@ -110,6 +112,20 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("timestamp_order", "terminal", s) for s in
+      ("SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL")),
+    *(("timestamp_order", "renewal", s) for s in
+      ("non_regression", "sweep_recheck", "null_metadata", "longer_lease")),
+    *(("timestamp_order", "bounds", s) for s in ("heartbeat", "cancel", "null")),
+    ("timestamp_order", "metrics", "duration_detect_backoff"),
+    *(("timestamp_order", "retry", f"{s}_{code}") for s in
+      ("SUCCEEDED", "FAILED", "CANCELLED", "STALE") for code in (1205, 1213)),
+    ("timestamp_order", "retry", "real_1205"),
+    ("timestamp_order", "retry", "real_1213"),
+    *(("timestamp_order", "commit_unknown", s) for s in
+      ("claim", "SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL", "T2")),
+    *(("timestamp_order", "concurrent", s) for s in
+      ("race", "heartbeat", "sweep", "cancel", "finish_snapshot")),
     *(("api_health", "ready", mode) for mode in ("normal", "pool_exhausted", "connection_lost", "server_stopped")),
     ("api_health", "storage", "readonly"), ("api_health", "process", "single_worker"),
     *(("usage_reconciliation", "relation", mode) for mode in (

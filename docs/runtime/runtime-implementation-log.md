@@ -1854,3 +1854,35 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - 관측·CI 한계: **첫 marker 이전 blind window**, phase/관측 thread의 **timing 영향 가능성**, **원격 CI 20분 실행시간 미확인**을 유지한다. 현재 재리뷰 PASS로 이 한계나 과거 사건의 원인을 소급 확정하지 않는다.
 - 정책·상태: **timeout·gate·필수 inventory 정책 변경 없음**. 제품 종료 5초, nested 900초, workflow 20분을 유지한다. RT-08 상태는 **IN_PROGRESS**, 연결은 **Refs #295 (RT-08(a))**, PR 번호와 merge SHA는 각각 **pending**이다.
 - 이번 수정 범위는 이 Log의 후속 기록 추가뿐이다. Log 외 파일 수정, 테스트 재실행, staging·commit·push·PR 생성은 하지 않았다.
+
+## #370 — durable timestamp ordering (2026-10-17)
+
+- **Status:** `IN_PROGRESS` — 별도 `codex/runtime-durable-timestamp-ordering` branch, base `ae928822`, 커밋/PR/merge SHA pending. 최종 PR 연결은 **Closes #370 / Related #295**이며 #295를 닫지 않는다.
+- **Owner 확인:** [Runtime/Contract/Baseline 승인 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934). terminal B안과 heartbeat/lease B안으로 앞선 승인 대기를 해소했다. 이 기록은 예전 RT-07/RT-08 시각 장애의 미확정 범위를 소급 확정하지 않는다.
+- **구현:** `jobs/timestamps.py`의 공통 SQL causal 하한을 T1·STALE·QUEUED cancel에 적용. heartbeat/lease는 DB 시각과 기존 값의 하한을 보존한다. 최종 T1 UPDATE가 현재 row를 재평가한다. validator·app clock·schema·status/owner fence·caller transaction·pinned receipt·COMMIT 불명 복구 정책은 바꾸지 않는다.
+- **Contract/Baseline 영향:** 승인된 ended_at causal 의미, renewal non-regression, 역행 중 duration 0 근처·lease/retry 지연·STALE 지표 의미를 명시했다. 기존 시간 간격/상한 숫자는 유지한다. #370을 authority로 기록하며 새 ADR을 만들지 않았다.
+- **검증:** 기존 진단7+정식7 RED 확인 뒤 최소 수정. 정식7 GREEN, 최종 timestamp35+claim/heartbeat 관련 MySQL82 PASS. 관련 unit/privacy/lifecycle/gate3982 PASS와 추가 metadata 누락105 PASS. 전체 MySQL acceptance 및 실제 evidence mutation의 최종 결과/실행 증거는 [구현 보고서](./reviews/durable-timestamp-ordering-implementation-2026-10-17.md)가 추적한다.
+- **운영 follow-up:** 저장소 snapshot만으로 EC2의 현재 time source/chrony 상태는 확인하지 못했다. runbook에 읽기 전용 확인 절차를 남겼고 실제 AWS 조회/변경은 하지 않았다. host/SSM/IAM/CloudWatch 변경 필요 여부는 별도 Runtime/Ops Issue에서 결정한다. 제품 수정의 선행조건이 아니다.
+- **재리뷰:** 별도 읽기 전용 코드 리뷰에서 actionable code/test-gate finding 없음. 사용자 독립 재리뷰 대체가 아니며, 커밋·푸시·PR 없이 diff/evidence를 남긴다. 기존 RT-08(b)의 미커밋 파일은 건드리지 않는다.
+- **최종 직접 실행:** 전체 MySQL **626 tests / 1878 phases PASS**, skip0/xfail0/failure0, 독립 strict CLI gate PASS. 실제 evidence mutation **3521/3521 거부**, timestamp35 parameter의 **455/455 거부**. outer acceptance 1 PASS(954.45초). 첫 nested900초 제한 실패, 이후 Windows fixture 환경변수 누락의 직접 RED/GREEN, 최종 clean 실행을 [보고서](./reviews/durable-timestamp-ordering-implementation-2026-10-17.md)에서 구분한다. 최초 timeout 원인 미확정 및 원격 CI 시간 한계를 유지하며 정책 시간을 늘리지 않았다. 디스크 약15 GiB 여유 확인 뒤 전체 pytest는 중복 범위/독립 리뷰 목적을 고려해 추가 실행하지 않기로 판단했다. 전체 pytest/원격 CI PASS로 확대하지 않는다.
+
+### #370 독립 재리뷰 최종 후속 기록 (2026-10-17)
+
+- **독립 재리뷰 판정:** **PASS / 남은 병합 차단 문제 없음**. 구현에 참여하지 않은 fresh reviewer가 미커밋 변경 전체를 읽기 전용으로 검토했고, **Owner 승인 terminal B안·heartbeat/lease B안 준수**를 확인했다. 기존 진단·실패·구현·검증 이력은 보존하며 이 후속 판정으로 과거 사건의 미확정 원인을 소급 확정하지 않는다.
+- **검증 주체·증거 구분:** fresh reviewer의 읽기 전용 검토와 재리뷰 부모 검토자의 직접 재실행을 구분한다. 아래 구현 단계 결과는 보존 증거 대조이며, 재리뷰 직접 실행 결과로 대체하거나 합산하지 않는다. **이번 Log 갱신에서는 테스트를 재실행하지 않았다.**
+
+| 증거 구분 | 검증 | 결과 |
+| --- | --- | --- |
+| 구현 단계 보존 증거 대조 | RED → GREEN / targeted·unit | 진단7 + 정식7 RED, 이후 정식7 GREEN. timestamp35 포함 MySQL82 PASS, 관련 unit3982 PASS, 추가 metadata105 PASS |
+| 구현 단계 보존 증거 대조 | 전체 MySQL acceptance / evidence mutation | **626 tests / 1878 phases PASS**, skip0/xfail0/failure0. mutation **3521/3521 거부**, timestamp **455 포함** |
+| 독립 재리뷰 직접 실행 | 실제 MySQL | **219 passed — timestamp35 포함**, skip0/xfail0 |
+| 독립 재리뷰 직접 실행 | unit/gate subset | **520 passed**. 전체 unit 실행 결과로 확대하지 않음 |
+| 독립 재리뷰 직접 실행 | Windows fixture | **1 passed** |
+| 독립 재리뷰 직접 실행 | 현재 gate로 보존된 전체 보고서 재검증 | mutation **3521/3521 거부 — timestamp455 포함**. 전체 MySQL626을 이번 리뷰에서 다시 실행한 결과는 아님 |
+| 독립 재리뷰 직접 실행 | timestamp evidence 누락 거부 | metadata **105개**, family **7개** 누락 모두 거부 |
+
+- **전체 pytest·CI 한계:** 이번 #370 구현·독립 재리뷰에서는 **전체 pytest를 재실행하지 않았다**. 원격 Linux CI 결과와 기존 workflow **20분 제한 준수는 미확인**이며, **merge 전 기존 CI 통과가 필수**다. 로컬 targeted·gate 통과를 전체 pytest 또는 원격 CI PASS로 확대하지 않는다. timeout·필수 inventory·skip/xfail 정책은 완화하지 않는다.
+- **잔여 위험:** 기존 invalid row의 backfill은 수행하지 않았으며 별도 데이터 판단 대상으로 남긴다. 실제 경과시간 왜곡, clock rollback 중 lease/retry 지연, EC2 clock discipline 미확인을 유지한다. **AWS 변경 없음**. 운영 clock discipline 확인은 별도 Runtime/Ops follow-up이며 제품 수정의 선행조건이 아니다.
+- **비차단 P3 후속 후보 — 이번 변경에 구현하지 않음:** (1) Baseline의 약82초 예시에 정상 clock 가정을 명시. (2) clock-step + COMMIT 불명 rollback·소진 조합 acceptance 보강. 두 항목은 후속 후보로만 기록한다.
+- **PR 연결·상태:** **Closes #370 / Related #295**, **#295는 닫지 않음**. PR 번호·merge SHA는 각각 **pending**이며 merge 전 상태는 `IN_PROGRESS`를 유지한다.
+- **이번 갱신 범위:** 이 Log의 #370 후속 기록 추가만 수행했다. 제품 코드·테스트·Baseline 및 다른 문서는 수정하지 않았고, 테스트 재실행·staging·commit·push·PR 생성은 하지 않았다. 확인은 `git diff --check`와 `git status --short`로 한정한다.

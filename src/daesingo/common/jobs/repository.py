@@ -19,6 +19,7 @@ from daesingo.common.job_execution import (
 from daesingo.common.logging import log_event
 
 from .schema import job_execution
+from .timestamps import terminal_timestamp
 
 
 def _identifier(value: Any, name: str, length: int) -> str:
@@ -209,10 +210,14 @@ def finish(
     snapshot = conn.execute(select(job_execution).where(*predicate)).mappings().one_or_none()
     if snapshot is None:
         return 0
-    ended = conn.scalar(select(func.now(6)))
+    ended = conn.scalar(select(terminal_timestamp()).select_from(job_execution).where(*predicate))
+    if ended is None:
+        return 0
     model = _execution_model(snapshot, status=status, ended_at=ended, produced=refs,
                              failure_kind=failure_kind)
     return conn.execute(update(job_execution).where(*predicate).values(
-        status=status, ended_at=ended, produced=[r.model_dump() for r in model.produced],
+        # Re-evaluate on the current row: heartbeat/cancel may commit after the
+        # validation snapshot. Preserve the original status/owner arbitration.
+        status=status, ended_at=terminal_timestamp(), produced=[r.model_dump() for r in model.produced],
         failure_kind=model.failure_kind,
     )).rowcount
