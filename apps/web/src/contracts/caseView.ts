@@ -1,4 +1,4 @@
-// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.3)
+// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.8)
 //
 // 이 파일이 web의 타입 정본이다. `apps/prototype/src/types.ts`의 CaseState는
 // 참고만 하고 가져오지 않는다(`docs/modules/web/decisions/web-stack.md`).
@@ -53,7 +53,12 @@ export interface CodeDisplay {
 }
 
 export interface EvidenceView {
-  record_id: string
+  /**
+   * `null`이면 상황 응답 대기 중의 부분 투영이다(v1.8, #239). EvidenceRecord가 아직 없고
+   * 상황 독립 값(번호판·시각·위치)만 채워져 있다. 상황 종속 셋(사건 분류·위반 내용·신고 유형)은
+   * `INFO_UNKNOWN`이지만 「모른다」가 아니라 「아직 정해지지 않았다」이다.
+   */
+  record_id: string | null
   case_type_display: CodeDisplay
   report_type_display: CodeDisplay
   violation_display: CodeDisplay
@@ -76,6 +81,8 @@ export interface PackageView {
   report_fields: Record<string, string | null>
   report_field_states: Record<string, FieldState>
   unconfirmed_fields: string[]
+  /** 최종 신고문(v1.7, #274). `package`가 있으면 둘 다 non-null이고 description은 줄바꿈 평문이다. */
+  report: { title: string; description: string }
   artifact_ref: string | null
   capabilities: string[]
   warnings: string[]
@@ -93,6 +100,13 @@ export interface Candidate {
    * `undefined`를 받을 수 있고, `null`과 같게 다룬다(둘 다 fallback 문구).
    */
   at_provenance_label_key?: string | null
+  /** case가 매긴 후보 순위(1부터, #122; 계약상 int|null). 배열은 rank 오름차순. mock fixture는 아직 안 내린다. */
+  rank?: number | null
+  /**
+   * 후보의 시간축 위치(ms, #184). `null`이면 마커를 그리지 않고 stale 배지만 둔다.
+   * mock fixture는 아직 안 내린다.
+   */
+  marker_ms?: number | null
   observed: string
   thumb_ref: string | null
   selected: boolean
@@ -135,6 +149,11 @@ export interface CaseView {
     duration_sec: number
     range: [string, string] | null
   }
+  /**
+   * 사용자가 분석 시작 때 적은 설명 원문(v1.7, #259). 분석 시작 전 `null`, 빈 설명이면 `""`.
+   * `package.report.description`(최종 신고문)과 이름만 같은 다른 값이다.
+   */
+  description: string | null
   hints: { time: string | null; vehicle: string | null; situation: string | null; location: string | null }
   progress: { step: string; state: ProgressState }[]
   candidates: Candidate[]

@@ -11,10 +11,31 @@ from xml.etree import ElementTree
 import pytest
 
 from migration_support import ROOT
+from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
+from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
+from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
+from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
 
 pytestmark = pytest.mark.mysql
 
 # Independent acceptance inventory, not imported from the gate under test.
+API_CASES_VIEW_PARAMETERS = tuple((role, scenario, parameter) for role, scenario, parameter in (
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    ("api_cases", "create", "contract"), ("api_cases", "create", "body_unread"),
+    ("api_view", "read", "missing"), ("api_view", "read", "queued"),
+    ("api_view", "read", "running"), ("api_view", "read", "terminal_gap"),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    ("api_cases", "failure", "pool_exhausted"), ("api_view", "failure", "pool_exhausted"),
+    ("api_view", "failure", "lock_timeout"), ("api_cases", "failure", "disconnect"),
+    ("api_view", "failure", "disconnect"), ("api_cases", "failure", "postcommit_read"),
+    ("api_cases", "failure", "commit_unknown"), ("api_view", "failure", "commit_unknown"),
+    ("api_cases", "failure", "deadlock"), ("api_cases", "logging", "correlation")))
+
+API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, parameter in (
+    ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
+    ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
+
 MIGRATION_CHECKS = (
     "case_external_transaction", "case_url_precedence", "case_offline_precedence",
     "empty_schema", "idempotency", "explicit_target", "first_runtime_revision",
@@ -48,6 +69,20 @@ LIFECYCLE_CHECKS = (
 )
 
 WORKER_CHECKS = (
+    *REDELIVERY_CHECKS,
+    *(("sweep", scenario) for scenario in ("detect_latency", "detect_boundary", "detect_fault")),
+    ("sweep_worker", "hook_fatal"), ("sweep_worker", "hook_exception"),
+    *(("sweep", scenario) for scenario in (
+        "atomicity", "eligibility", "cap_cancel", "backoff", "concurrent", "recheck",
+        "rollback_retry", "unknown_commit", "cancel_race", "expiry", "metrics")),
+    *(("sweep_worker", scenario) for scenario in (
+        "startup", "independent", "heartbeat", "queue_wait", "slow_queue_logger")),
+    ("cancel_worker", "terminal_ack"),
+    ("cancel_worker", "observe_commit"), ("cancel_worker", "queued_no_usage"),
+    *(("cancel", scenario) for scenario in (
+        "states", "transaction", "claim_race", "sweep_race", "finish_race", "lock_order", "validation", "sweep_pending")),
+    *(("cancel_worker", scenario) for scenario in (
+        "observe", "late_success", "ownership", "heartbeat_error", "cleanup", "db_clock", "observation_fault")),
     ("heartbeat_lifecycle", "owned_cleanup"),
     *(("heartbeat_lifecycle", scenario) for scenario in (
         "renewal", "zero_rows", "commit_race", "retry_fence", "cleanup", "slow_attempt", "error_isolation", "connection_fault", "zero_commit_failure")),
@@ -63,6 +98,34 @@ WORKER_CHECKS = (
 )
 
 WORKER_PARAMETERS = (
+    *REDELIVERY_PARAMETERS,
+    *(("sweep", "detect_latency", f"{lease}_{reason}") for lease in (60, 7)
+      for reason in ("RETRIED", "EXHAUSTED", "CANCELLED")),
+    *(("sweep", "detect_boundary", mode) for mode in ("transition_clock", "null", "future")),
+    *(("sweep", "detect_fault", mode) for mode in ("calculation", "logger", "filter", "handler")),
+    *(("sweep_worker", "hook_fatal", f"{phase}_{kind}_{sink}") for phase in ("startup", "periodic")
+      for kind in ("exit", "interrupt", "base") for sink in ("healthy", "logger", "filter", "handler")),
+    ("sweep_worker", "hook_exception", "startup_periodic"),
+    *(("sweep", "atomicity", mode) for mode in ("commit", "rollback")),
+    *(("sweep", "cap_cancel", mode) for mode in ("cancel", "exhausted", "disabled")),
+    *(("sweep", "recheck", mode) for mode in ("heartbeat", "finish", "cancel")),
+    *(("sweep", "cancel_race", mode) for mode in ("sweep", "cancel")),
+    *(("sweep_worker", "queue_wait", mode) for mode in ("1", "2")),
+    *(("cancel_worker", "terminal_ack", mode) for mode in
+      ("commit_delay", "slow_logger", "lock_wait", "unknown_commit", "retry",
+       "logger", "filter", "handler", "calculation", "zero_rows")),
+    *(("cancel", "states", state) for state in
+      ("QUEUED", "RUNNING", "STALE", "SUCCEEDED", "FAILED", "CANCELLED")),
+    *(("cancel", "transaction", mode) for mode in ("commit", "rollback")),
+    *(("cancel", "claim_race", mode) for mode in ("cancel", "claim", "concurrent")),
+    *(("cancel", "sweep_race", mode) for mode in ("sweep", "cancel")),
+    *(("cancel", "finish_race", mode) for mode in ("SUCCEEDED", "CANCELLED", "marker")),
+    *(("cancel_worker", "observe", sink) for sink in
+      ("healthy", "logger", "filter", "handler", "observer")),
+    *(("cancel_worker", "ownership", mode) for mode in ("ownership", "cancel")),
+    *(("cancel_worker", "cleanup", mode) for mode in
+      ("success", "failure", "exception", "interrupt", "exit", "cancel")),
+    *(("cancel_worker", "observation_fault", fault) for fault in ("read", "commit")),
     *(("heartbeat_lifecycle", "retry_fence", mode) for mode in ("transaction", "loop")),
     *(("heartbeat_lifecycle", "owned_cleanup", mode) for mode in
       ("success", "heartbeat_interrupt", "handler_interrupt")),
@@ -148,9 +211,14 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Exclude this test to avoid recursion. Use a separate disposable base schema
     # so legacy Case initialization cannot alter the parent suite's database.
     result = subprocess.run(
-        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/common/db/integration", "tests/common/jobs",
+        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/api", "tests/common/db/integration", "tests/common/jobs", "tests/common/usage",
          "tests/worker/test_worker_mysql.py", "tests/worker/test_reflection_mysql.py",
          "tests/worker/test_heartbeat_mysql.py",
+         "tests/worker/test_cancel_checkpoint_mysql.py",
+         "tests/worker/test_sweep_worker_mysql.py",
+         "tests/worker/test_redelivery_mysql.py",
+         "tests/worker/test_usage_worker_mysql.py",
+         "tests/worker/test_usage_reconciliation_worker_mysql.py",
          "tests/case/test_store_mysql.py", "tests/case/test_case_repository_contract.py",
          "--ignore=tests/common/db/integration/test_migration_gate.py", "-m", "mysql", "-q",
          "-p", "no:cacheprovider", f"--basetemp={tmp_path / 'child'}",
@@ -169,7 +237,8 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS, *WORKER_CHECKS]:
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS,
+                           *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
@@ -183,11 +252,14 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS):
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS, *COMMAND_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
-        for layer in ("collection", "selection", "setup", "call", "teardown", "all", "junit"):
+        layers = ("collection", "selection", "setup", "call", "teardown", "all", "junit")
+        if role == "timestamp_order":
+            layers += ("skip", "xfail", "failure", "junit_skip", "junit_failure", "junit_error")
+        for layer in layers:
             broken = deepcopy(report)
             if layer in {"collection", "all"}:
                 broken["collected"] = [n for n in broken["collected"] if n["nodeid"] != node]
@@ -196,6 +268,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
             if layer in {"setup", "call", "teardown", "all"}:
                 broken["reports"] = [r for r in broken["reports"]
                                      if r["nodeid"] != node or (layer != "all" and r["when"] != layer)]
+            if layer in {"skip", "xfail", "failure"}:
+                phase, = (r for r in broken["reports"] if r["nodeid"] == node and r["when"] == "call")
+                if layer == "xfail":
+                    phase["xfail"] = True
+                else:
+                    phase["outcome"] = "skipped" if layer == "skip" else "failed"
             xml = ElementTree.parse(junit_path)
             if layer in {"junit", "all"}:
                 matches = 0
@@ -205,6 +283,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                             parent.remove(case)
                             matches += 1
                 assert matches == 1
+            if layer.startswith("junit_"):
+                matches = [c for c in xml.findall(".//testcase")
+                           if (c.get("classname"), c.get("name")) == tuple(entry["junit"])]
+                assert len(matches) == 1
+                ElementTree.SubElement(matches[0], {"junit_skip": "skipped",
+                    "junit_failure": "failure", "junit_error": "error"}[layer])
             mutation_junit = tmp_path / f"{scenario}-{parameter}-{layer}.xml"
             xml.write(mutation_junit, encoding="utf-8")
             with pytest.raises(ValueError):
@@ -212,5 +296,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS)) * 7
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS) + len(COMMAND_PARAMETERS)) * 7 + len(TIMESTAMP_PARAMETERS) * 13
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

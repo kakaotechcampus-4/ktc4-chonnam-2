@@ -19,6 +19,7 @@ from daesingo.common.job_execution import (
 from daesingo.common.logging import log_event
 
 from .schema import job_execution
+from .timestamps import terminal_timestamp
 
 
 def _identifier(value: Any, name: str, length: int) -> str:
@@ -74,6 +75,7 @@ class ClaimedExecution:
     lease_owner: str
     started_at: datetime
     lease_expires_at: datetime
+    queued_at: datetime | None = None
 
 
 _CLAIM_SELECT = text("""SELECT execution_id FROM job_execution
@@ -112,6 +114,7 @@ def _claimed(row: Mapping[str, Any]) -> ClaimedExecution:
         kind=row["kind"], case_id=row["case_id"], trace_id=row["trace_id"],
         lease_owner=row["lease_owner"], started_at=model.started_at,
         lease_expires_at=row["lease_expires_at"].replace(tzinfo=timezone.utc),
+        queued_at=model.queued_at,
     )
 
 
@@ -207,10 +210,14 @@ def finish(
     snapshot = conn.execute(select(job_execution).where(*predicate)).mappings().one_or_none()
     if snapshot is None:
         return 0
-    ended = conn.scalar(select(func.now(6)))
+    ended = conn.scalar(select(terminal_timestamp()).select_from(job_execution).where(*predicate))
+    if ended is None:
+        return 0
     model = _execution_model(snapshot, status=status, ended_at=ended, produced=refs,
                              failure_kind=failure_kind)
     return conn.execute(update(job_execution).where(*predicate).values(
-        status=status, ended_at=ended, produced=[r.model_dump() for r in model.produced],
+        # Re-evaluate on the current row: heartbeat/cancel may commit after the
+        # validation snapshot. Preserve the original status/owner arbitration.
+        status=status, ended_at=terminal_timestamp(), produced=[r.model_dump() for r in model.produced],
         failure_kind=model.failure_kind,
     )).rowcount

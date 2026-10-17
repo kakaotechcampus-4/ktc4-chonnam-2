@@ -42,6 +42,14 @@
 - [ ] host의 보호된 config 파일이 container UID 소유 · 최소 권한이고, 값이 배포 log · stdout에 남지 않는가
 - [ ] 값 변경을 `docker compose up -d --force-recreate api worker`로 반영하는가 (`restart`로 보장하지 않음)
 
+### Clock discipline — Runtime/Ops follow-up (#370)
+
+Runtime correctness는 wall-clock 단조 증가를 가정하지 않는다. [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)의 clock discipline 확인은 제품 수정의 선행조건이 아니다. 저장소의 EC2 snapshot은 [AWS 환경 §8](./official-inputs/aws-environment.md)에 있으며, 현재 time source/chrony 설정·runtime backward-step 정책·offset 관측의 실제 상태는 그 snapshot으로 확인할 수 없다.
+
+후속 운영 담당자는 host를 바꾸기 전에 `timedatectl status`, `chronyc tracking`, `chronyc sources -v`, 사용 중인 chrony configuration의 source/makestep 지시와 time-correction journal을 **읽기 전용**으로 확인한다. Ubuntu snapshot만으로 chrony 설치·활성화 또는 특정 source 사용을 가정하지 않는다. 단순 drift/offset과 clock step을 구분하고 boot/runtime 중 step 허용 여부와 시점을 기록한다.
+
+이 변경에서 실제 EC2/SSM/host를 조회하거나 설정하지 않았다. 확인 후 time source/chrony/SSM 변경, CloudWatch custom metric·agent, IAM 변경이 필요하면 별도 Runtime/Ops follow-up Issue/결정으로 분리한다. 기존 AWS snapshot을 최신 조회 결과처럼 덮어쓰지 않는다. end timestamp를 raw clock correction 로그로 사용하지 않는다.
+
 ### Public endpoint가 있는 경우
 
 - [ ] DNS가 의도한 endpoint를 가리키는가

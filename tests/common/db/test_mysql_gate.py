@@ -10,11 +10,51 @@ import sys
 
 import pytest
 
+from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
+from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
+from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
+from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
+
 ROOT = Path(__file__).resolve().parents[3]
 
 # Independent role/scenario acceptance inventory, deliberately not imported
 # from the implementation being tested. Test function names are irrelevant.
+API_CASES_VIEW_PARAMETERS = tuple((role, scenario, parameter) for role, scenario, parameter in (
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    ("api_cases", "create", "contract"), ("api_cases", "create", "body_unread"),
+    ("api_view", "read", "missing"), ("api_view", "read", "queued"),
+    ("api_view", "read", "running"), ("api_view", "read", "terminal_gap"),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    ("api_cases", "failure", "pool_exhausted"), ("api_view", "failure", "pool_exhausted"),
+    ("api_view", "failure", "lock_timeout"), ("api_cases", "failure", "disconnect"),
+    ("api_view", "failure", "disconnect"), ("api_cases", "failure", "postcommit_read"),
+    ("api_cases", "failure", "commit_unknown"), ("api_view", "failure", "commit_unknown"),
+    ("api_cases", "failure", "deadlock"), ("api_cases", "logging", "correlation")))
+
+API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, parameter in (
+    ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
+    ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
+
 REQUIRED_CHECKS = (
+    *COMMAND_CHECKS,
+    *TIMESTAMP_CHECKS,
+    *((r, s) for r, s, p in API_CASES_VIEW_PARAMETERS),
+    *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS),
+    *REDELIVERY_CHECKS,
+    *USAGE_CHECKS,
+    *(("sweep", scenario) for scenario in ("detect_latency", "detect_boundary", "detect_fault")),
+    ("sweep_worker", "hook_fatal"), ("sweep_worker", "hook_exception"),
+    *(("sweep", scenario) for scenario in (
+        "atomicity", "eligibility", "cap_cancel", "backoff", "concurrent", "recheck",
+        "rollback_retry", "unknown_commit", "cancel_race", "expiry", "metrics")),
+    *(("sweep_worker", scenario) for scenario in ("startup", "independent", "heartbeat", "queue_wait", "slow_queue_logger")),
+    ("cancel_worker", "terminal_ack"),
+    ("cancel_worker", "observe_commit"), ("cancel_worker", "queued_no_usage"),
+    *(("cancel", scenario) for scenario in (
+        "states", "transaction", "claim_race", "sweep_race", "finish_race", "lock_order", "validation", "sweep_pending")),
+    *(("cancel_worker", scenario) for scenario in (
+        "observe", "late_success", "ownership", "heartbeat_error", "cleanup", "db_clock", "observation_fault")),
     ("heartbeat_lifecycle", "owned_cleanup"),
     *(("heartbeat_lifecycle", scenario) for scenario in (
         "renewal", "zero_rows", "commit_race", "retry_fence", "cleanup", "slow_attempt", "error_isolation", "connection_fault", "zero_commit_failure")),
@@ -77,6 +117,39 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *TIMESTAMP_PARAMETERS,
+    *COMMAND_PARAMETERS,
+    *API_CASES_VIEW_PARAMETERS,
+    *API_HEALTH_PARAMETERS,
+    *REDELIVERY_PARAMETERS,
+    *USAGE_PARAMETERS,
+    *(("sweep", "detect_latency", f"{lease}_{reason}") for lease in (60, 7)
+      for reason in ("RETRIED", "EXHAUSTED", "CANCELLED")),
+    *(("sweep", "detect_boundary", mode) for mode in ("transition_clock", "null", "future")),
+    *(("sweep", "detect_fault", mode) for mode in ("calculation", "logger", "filter", "handler")),
+    *(("sweep_worker", "hook_fatal", f"{phase}_{kind}_{sink}") for phase in ("startup", "periodic")
+      for kind in ("exit", "interrupt", "base") for sink in ("healthy", "logger", "filter", "handler")),
+    ("sweep_worker", "hook_exception", "startup_periodic"),
+    *(("sweep_worker", "queue_wait", mode) for mode in ("1", "2")),
+    *(("sweep", "atomicity", mode) for mode in ("commit", "rollback")),
+    *(("sweep", "cap_cancel", mode) for mode in ("cancel", "exhausted", "disabled")),
+    *(("sweep", "recheck", mode) for mode in ("heartbeat", "finish", "cancel")),
+    *(("sweep", "cancel_race", mode) for mode in ("sweep", "cancel")),
+    *(("cancel_worker", "terminal_ack", mode) for mode in
+      ("commit_delay", "slow_logger", "lock_wait", "unknown_commit", "retry",
+       "logger", "filter", "handler", "calculation", "zero_rows")),
+    *(("cancel_worker", "observation_fault", fault) for fault in ("read", "commit")),
+    *(("cancel", "states", state) for state in
+      ("QUEUED", "RUNNING", "STALE", "SUCCEEDED", "FAILED", "CANCELLED")),
+    *(("cancel", "transaction", mode) for mode in ("commit", "rollback")),
+    *(("cancel", "claim_race", mode) for mode in ("cancel", "claim", "concurrent")),
+    *(("cancel", "sweep_race", mode) for mode in ("sweep", "cancel")),
+    *(("cancel", "finish_race", mode) for mode in ("SUCCEEDED", "CANCELLED", "marker")),
+    *(("cancel_worker", "observe", sink) for sink in
+      ("healthy", "logger", "filter", "handler", "observer")),
+    *(("cancel_worker", "ownership", mode) for mode in ("ownership", "cancel")),
+    *(("cancel_worker", "cleanup", mode) for mode in
+      ("success", "failure", "exception", "interrupt", "exit", "cancel")),
     *(("heartbeat_lifecycle", "retry_fence", mode) for mode in ("transaction", "loop")),
     *(("heartbeat_lifecycle", "owned_cleanup", mode) for mode in
       ("success", "heartbeat_interrupt", "handler_interrupt")),
@@ -199,6 +272,48 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("outcome", ["skip", "xfail", "failure"])
+def test_timestamp_acceptance_cannot_report_unsuccessful_execution(identity, outcome):
+    report = good_report()
+    role, scenario, parameter = identity
+    entry, = (n for n in report["collected"] if
+              {"role": role, "scenario": scenario, "parameter": parameter} in n.get("checks", []))
+    call, = (r for r in report["reports"] if r["nodeid"] == entry["nodeid"] and r["when"] == "call")
+    if outcome == "xfail":
+        call["xfail"] = True
+    else:
+        call["outcome"] = "skipped" if outcome == "skip" else "failed"
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("field", ["role", "scenario", "parameter"])
+def test_timestamp_acceptance_metadata_is_required(identity, field):
+    report = good_report()
+    role, scenario, parameter = identity
+    check = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if check in n.get("checks", []))
+    matching, = (c for c in entry["checks"] if c == check)
+    del matching[field]
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", [p for p in USAGE_PARAMETERS if p[0] == "usage_reconciliation"])
+@pytest.mark.parametrize("field", ["role", "scenario", "parameter"])
+def test_reconciliation_parameter_metadata_cannot_be_omitted(identity, field):
+    report = good_report()
+    role, scenario, parameter = identity
+    expected = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if expected in n.get("checks", []))
+    check, = (c for c in entry["checks"] if c == expected)
+    del check[field]
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
 
 
 @pytest.mark.parametrize("scenario", ["renewal", "zero_rows", "commit_race", "retry_fence",
@@ -361,3 +476,24 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
     path.write_text("<testsuite>" + case + "</testsuite>", encoding="utf-8")
     with pytest.raises(ValueError):
         checker().validate_junit(path, report)
+
+
+@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS))
+@pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
+def test_api_http_partial_evidence_is_rejected(identity, mutation):
+    report = good_report()
+    role, scenario, parameter = identity
+    expected = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if expected in n.get("checks", []))
+    if mutation == "missing_node":
+        node = entry["nodeid"]
+        report["collected"].remove(entry)
+        report["selected"].remove(node)
+        report["reports"] = [r for r in report["reports"] if r["nodeid"] != node]
+    elif mutation == "missing_parameter":
+        entry["checks"].remove(expected)
+    else:
+        check = next(c for c in entry["checks"] if c == expected)
+        check.pop(mutation.removeprefix("missing_"))
+    with pytest.raises(ValueError, match="role/scenario"):
+        checker().validate_report(report)

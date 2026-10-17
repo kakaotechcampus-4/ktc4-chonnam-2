@@ -7,6 +7,7 @@ import { FlowScreen } from './FlowScreen'
 import { NoResultScreen, RetrySearch } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
+import { StoppedScreen } from './StoppedScreen'
 import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
 import { UploadScreen, type UploadState } from './UploadScreen'
 
@@ -41,6 +42,7 @@ const NOT_FOUND = snapshot('scenario_empty_001', () => true)
 const STEPS = SEARCHING.progress.map((p) => p.step)
 const COARSE = STEPS.indexOf('coarse_search')
 const PLATE = STEPS.indexOf('plate_read')
+const EVIDENCE = STEPS.indexOf('evidence_assembly')
 const PACKAGE = STEPS.indexOf('package_assembly')
 type StepState = CaseView['progress'][number]['state']
 
@@ -102,10 +104,19 @@ const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [
 // 신고용 영상 미생성 — 아직 만들지 않아 GENERATE_REPORT_VIDEO 발주가 필요한 상태다. 묶음이
 // 완성되지 않아 READY가 아니다. export 실패(recording.report_video_export_failed)와 다르다 —
 // 그 notice는 message_key·actions 모양이 아직 없어 시연하지 않는다(#224 recording 리뷰).
+// fixture에서 꺼내지 않는다 — fixture는 case가 실제로 만드는 상태만 담아 이 notice가 빠질 수 있다(#355).
 const VIDEO_NOT_GENERATED_RESULT: CaseView = {
   ...RESULT,
   stage: 'EVIDENCE_REVIEW',
-  notices: [fixtureNotice('case.report_video_not_generated')],
+  notices: [
+    {
+      code: 'case.report_video_not_generated',
+      severity: 'INFO',
+      blocking: false,
+      message_key: 'notice.report_video_not_generated',
+      actions: ['GENERATE_REPORT_VIDEO'],
+    },
+  ],
 }
 // 음성 결과(#168 [A]) — EVIDENCE_REVIEW + evidence=null + evidence.visual_event_not_observed.
 const NOT_OBSERVED: CaseView = {
@@ -131,8 +142,18 @@ const SEARCH_FAILED: CaseView = {
   ],
 }
 
+// 사용자 중단(#342) — SEARCHING에 머물고 coarse_search는 PARTIAL, case.analysis_stopped가 붙는다.
+const STOPPED = at(COARSE, -1, true)
+const ANALYSIS_STOPPED: CaseView = {
+  ...STOPPED,
+  progress: STOPPED.progress.map((p, i) => (i === COARSE ? { ...p, state: 'PARTIAL' as StepState } : p)),
+  notices: [
+    { code: 'case.analysis_stopped', severity: 'INFO', blocking: false, message_key: 'notice.analysis_stopped', actions: ['RETRY_SEARCH'] },
+  ],
+}
+
 // 한 번의 진행: 재생할 CaseView들, 끝나면 보여 줄 마지막 화면, 진행 화면 제목(다시 할 때만).
-type End = 'result' | 'notFound' | 'notObserved' | 'failed'
+type End = 'result' | 'notFound' | 'notObserved' | 'failed' | 'stopped'
 interface Run {
   frames: CaseView[]
   end: End
@@ -141,7 +162,22 @@ interface Run {
 }
 const FULL_RUN: Run = { frames: walk(STEPS.length), end: 'result', view: RESULT }
 // 이미 끝난 단계는 완료로 두고 from 단계부터 다시 흐른다(core-user-flow §19·§23).
-const rerunFrom = (from: number, title: string): Run => ({ ...FULL_RUN, frames: FULL_RUN.frames.slice(from), title })
+const rerunFrom = (from: number, title: string, run = FULL_RUN): Run => ({ ...run, frames: run.frames.slice(from), title })
+
+// 신고 상황 응답 대기(#232) — 관찰(번호판·시각 판독)까지 끝나고 조립 이후는 응답을 기다린다.
+// evidence·package는 없고 case.situation_response_pending이 붙는다. 응답 전 부분 결과 범위는
+// #165 미결이라 채우지 않는다.
+function awaiting(candidates: Candidate[]): CaseView {
+  return {
+    ...RESULT,
+    stage: 'EVIDENCE_REVIEW',
+    evidence: null,
+    package: null,
+    candidates: candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
+    notices: [fixtureNotice('case.situation_response_pending')],
+  }
+}
+const AWAIT_RUN: Run = { frames: walk(EVIDENCE), end: 'result', view: awaiting(RESULT.candidates) }
 
 // 실패·결과 없음은 사용자가 고르는 게 아니라 작업이 정한다. 시연에서 어느 경우를 보여 줄지만 고른다.
 interface DemoCase {
@@ -150,7 +186,7 @@ interface DemoCase {
   run: Run
 }
 const CASES: Record<string, DemoCase> = {
-  main: { label: '정상 — 신고자료 준비', upload: 'ok', run: FULL_RUN },
+  main: { label: '정상 — 신고 상황 응답 후 신고자료 준비', upload: 'ok', run: AWAIT_RUN },
   plateUnread: {
     label: '번호판 못 읽음(경고만, 제출 가능)',
     upload: 'ok',
@@ -184,8 +220,13 @@ const CASES: Record<string, DemoCase> = {
     upload: 'ok',
     run: { frames: walk(COARSE + 1, COARSE), end: 'failed', view: SEARCH_FAILED },
   },
-  uploadPartial: { label: '업로드 일부 실패(나머지로 계속)', upload: 'partial', run: FULL_RUN },
-  uploadFail: { label: '업로드 실패', upload: 'fail', run: FULL_RUN },
+  analysisStopped: {
+    label: '분석 중단(사용자가 멈춤)',
+    upload: 'ok',
+    run: { frames: walk(COARSE + 1), end: 'stopped', view: ANALYSIS_STOPPED },
+  },
+  uploadPartial: { label: '업로드 일부 실패(나머지로 계속)', upload: 'partial', run: AWAIT_RUN },
+  uploadFail: { label: '업로드 실패', upload: 'fail', run: AWAIT_RUN },
 }
 // ponytail: 일부 실패 시연용 — 실제로는 업로드 응답이 건너뛴 파일을 알려 준다.
 const DEMO_SKIPPED = ['FILE_017.mp4']
@@ -263,20 +304,28 @@ export function DemoFlow(): JSX.Element {
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withPlate(done.view, plate)
-  // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비한다.
+  // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비하고, 새 후보에 대한 응답을 새로 받는다
+  // (core-user-flow §8-1 — 이전 응답을 복사하지 않는다).
   // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
-  // ponytail: 시연은 기준 표시만 옮긴다 — evidence·초안 값은 원래 후보 것 그대로다.
   const reselect = (candidateId: string) =>
     start({
-      ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요'),
-      view: { ...RESULT, candidates: RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId })) },
+      ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요', AWAIT_RUN),
+      view: awaiting(RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId }))),
     })
+  // 신고 상황 응답 → 조립부터 이어서 한다.
+  // API가 생기면 여기서 RECORD_SITUATION_RESPONSE { value } + expected_case_rev를 보낸다.
+  // ponytail: 응답 뒤 값은 fixture(1번 후보) 것이다 — 다른 후보를 골랐어도 같다. 진짜 CaseView가 오면 풀린다.
+  const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => {
+    if (!done) return
+    const candidates = done.view.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: value } : c))
+    start({ ...rerunFrom(EVIDENCE, '신고자료를 준비하고 있어요'), view: { ...RESULT, candidates } })
+  }
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
   // API가 생기면 RUN_NOTICE_ACTION { notice_code, action }으로 보낸다 — 그래서 code도 받아 둔다.
   const onAction = (_noticeCode: string, a: Action) => {
     if (a === 'RETRY_PLATE_READ') start(rerunFrom(PLATE, '번호판을 다시 읽고 있어요'))
     if (a === 'GENERATE_REPORT_VIDEO') start(rerunFrom(PACKAGE, '신고용 영상을 만들고 있어요'))
-    if (a === 'RETRY_SEARCH') start(rerunFrom(COARSE, '장면을 다시 찾고 있어요'))
+    if (a === 'RETRY_SEARCH') start(rerunFrom(COARSE, '장면을 다시 찾고 있어요', AWAIT_RUN))
   }
 
   return (
@@ -326,10 +375,11 @@ export function DemoFlow(): JSX.Element {
               view={{ ...done.view, hints: { time: null, vehicle: null, location: null, situation: situation || null } }}
             />
             {/* 다시 찾기는 새 탐색이다(core-user-flow §4-2). 시연에서는 찾아지는 경우로 다시 돈다. */}
-            <RetrySearch situation={situation} onSituation={setSituation} onRetry={() => start(FULL_RUN)} />
+            <RetrySearch situation={situation} onSituation={setSituation} onRetry={() => start(AWAIT_RUN)} />
           </>
         )}
         {done?.end === 'failed' && <FailedScreen view={done.view} onAction={onAction} />}
+        {done?.end === 'stopped' && <StoppedScreen view={done.view} onAction={onAction} />}
         {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} />}
         {done?.end === 'result' && !sub && doneView && (
           <ResultScreen
@@ -337,6 +387,7 @@ export function DemoFlow(): JSX.Element {
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
+            onRespond={respond}
             onAction={onAction}
           />
         )}
