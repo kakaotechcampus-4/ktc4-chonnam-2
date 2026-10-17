@@ -12,6 +12,7 @@ from .errors import error_response, install_error_handlers
 from .events import ApiEvents
 from .routes_cases import cases_router
 from .routes_view import view_router
+from .routes_commands import commands_router
 
 
 def create_app(*, revision: str | None = None, startup: Startup | None = None) -> FastAPI:
@@ -45,11 +46,13 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     install_error_handlers(app, composition.readiness.events)
     app.include_router(cases_router(composition))
     app.include_router(view_router(composition))
+    app.include_router(commands_router(composition))
 
     @app.middleware("http")
     async def access(request, call_next):
         started = monotonic()
-        with bind_context(trace_id=new_trace_id(), module="api"):
+        request.state.trace_id = new_trace_id()
+        with bind_context(trace_id=request.state.trace_id, module="api"):
             try:
                 response = await call_next(request)
             except Exception:
