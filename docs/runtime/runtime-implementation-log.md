@@ -2088,7 +2088,7 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 
 ## 2026-10-17 RT-08(c) — command/enqueue API
 
-**Status: IN_PROGRESS · Refs #295 (RT-08(c)) · PR/merge SHA pending.** 별도 managed worktree의 미커밋·미스테이징 구현 기록이다. RT-08 전체 종결이나 Owner acceptance 판정이 아니다.
+**Status: IN_PROGRESS · Refs #295 (RT-08(c)) · PR #375 · merge SHA pending.** 아래는 별도 managed worktree에서의 구현·검증 이력이다. RT-08 전체 종결이나 Owner acceptance 판정이 아니다.
 
 ### 기준·범위 확정
 
@@ -2189,3 +2189,9 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - **반복 필요성의 독립 판단:** reviewer도 Case guard·회귀만 바뀌고 API/transaction/queue/worker/gate 제품 소스가 동일하며 현재 실제 거부 경로·API/Case/gate를 검증했으므로 전체 pytest·전체 MySQL664·전체 mutation의 반복은 P2 후속 검토에 필요하지 않다고 판단했다. 664/3787·metadata68/family6 및 초기 fixture6실패/수정후GREEN을 현재 HEAD 실행으로 합산하지 않는다.
 - **정리 직접 결과:** reviewer의 DB 실행 종료 후 port13350과 정확한 `@@datadir`를 검증했다. disposable schema0·테스트 계정0·다른 client connection0을 SQL로 확인하고 이번 `rt08c_p2_test`만 DROP, system schema4 확인, SHUTDOWN ACK와 observer close를 `cleanup-sql.json`에 단계별 저장했다. 성공한 Windows 전체 listener inventory의 해당 port0·launcher0, Linux PID/socket/pidfile/listener/health 임시 서버 디렉터리0을 각각 별도 exit0으로 확인했다 (`cleanup-native.json`, `cleanup-linux.txt`). 다른 서비스·과거 RAW/scratch/보존 증거는 정리하지 않았다.
 - **최종 상태:** 새 review diff·변경 파일12 목록·manifest·verification summary를 최종 내용과 일치시키고 이전 증거92 SHA 불변, HEAD75d5b7f7/branch 유지, `git diff --check` PASS 및 staging0을 최종 검증한다. 이 후속에서 바뀐 미커밋 파일은 HTTP/MySQL 회귀와 이 Log 둘뿐이며, upstream Case 두 파일·새 scratch 증거는 RT-08(c) PR 파일에서 제외한다. **IN_PROGRESS · Refs #295 (RT-08(c))**. 커밋·푸시·PR 생성 없이 미스테이징 상태로 인계한다.
+
+#### PR #375 연결·진행 중 CI 상태
+
+- **현재 연결:** PR **#375** · 상태 **IN_PROGRESS** · **Refs #295 (RT-08(c))** · merge SHA **pending**. 앞선 PR 번호 미정·로컬 인계 기록은 당시 이력으로 보존한다.
+- **원격 CI:** 사용자 전달 기준 `boundary-check` **PASS**, `python-tests` **실행 중**이다. 최종 CI PASS나 병합 완료로 기록하지 않는다. 이전 로컬 직접 실행·보존 증거·PR #374의 CI 결과와도 구분한다.
+- **이번 갱신 범위:** Implementation Log의 RT-08(c) 기록만 수정한다. 코드·테스트·다른 문서·보존 증거는 변경하지 않으며 테스트 재실행·staging·커밋·푸시는 하지 않는다. `git diff --check`와 변경 파일이 이 Log 하나뿐인지 확인한다.
