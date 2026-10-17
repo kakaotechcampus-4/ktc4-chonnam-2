@@ -27,6 +27,10 @@ request마다 서버가 발급한 trace_id를 thread/context 경계로 유지한
 
 RT-08(b)는 `POST /cases`와 `GET /cases/{case_id}/view`를 구현한다. 생성은 body를 읽지 않고 공개 `case.create_case` → caller transaction commit → 별도 read transaction에서 공개 `case.get_view` → `201` + `Location` 순서다. 조회는 CaseStore에 같은 Connection과 Runtime `read_executions`를 주입한다(PR #342 합의). Case가 share lock·job scope·대표 attempt·CaseView를 소유하고 HTTP는 응답을 재조립하지 않는다. 없는 Case는 Contract 404 envelope다.
 
-RT-02의 precommit DB 실패는 503, COMMIT 결과 불명은 500이며 자동 재시도하지 않는다. 생성 commit 뒤 응답 조회 실패는 생성이 이미 반영됐으므로 500이다. DB transaction helper에 동기 logger를 전달하지 않고 기존 ApiEvents로 요청 trace와 조회 시간·안전한 Case identity를 기록한다. commands/enqueue는 RT-08(c), 중단 배선은 (d), media HTTP는 RT-11이다. commands body 한도(B-U2)는 해당 후속 route에 연결한다. 실제 모듈 결과 adapter/reader 조립은 Case 8-6 2단계와 RT-10의 선행 범위다.
+RT-02의 precommit DB 실패는 503, COMMIT 결과 불명은 500이며 자동 재시도하지 않는다. 생성 commit 뒤 응답 조회 실패는 생성이 이미 반영됐으므로 500이다. DB transaction helper에 동기 logger를 전달하지 않고 기존 ApiEvents로 요청 trace와 조회 시간·안전한 Case identity를 기록한다.
+
+RT-08(c)는 `POST /cases/{case_id}/commands`를 연결한다. `application/json`·UTF-8과 B-U2 실제 수신 byte 한도를 검사하고 JSON 값은 Case의 공개 `execute_command`에 그대로 전달한다. Case 저장과 이번 `appended_job_records` batch enqueue는 한 Connection/transaction이며 commit 후에만 응답한다. status는 append 목록과 Case 응답 표로 정하고 body는 고치지 않는다. 요청 trace를 enqueue에 이어 주며 URL·header·payload·예외 원문은 로그에 넣지 않는다. `Content-Length`가 없거나 실제보다 작아도 수신 한도를 적용한다. 수신은 async, 동기 DB 작업은 context를 보존하는 threadpool에서 수행한다(Plan P-9 대비 구현 상세).
+
+중단 배선은 RT-08(d)다. 그 전에는 `cancelled_job_ids`가 생기는 결과를 commit하지 않고 일반 500으로 rollback하여 Case만 중단된 상태를 남기지 않는다. `START_ANALYSIS`의 `CaseTimelineSource`와 실제 모듈 결과 adapter/reader 조립도 아직 없으며, 해당 dependency가 필요한 command의 동작 완료를 주장하지 않는다. 이 slice의 실제 발주 acceptance는 기존 `RUN_NOTICE_ACTION`과 영속 fixture Case로 검증한다. media HTTP는 RT-11, 실제 capability 조립은 해당 선행 Owner/후속 Task 범위다.
 
 실제 MySQL acceptance는 기존 disposable 8.4 harness에 참여한다. SHUTDOWN 검사는 suite DB와 분리된 두 번째 서버를 사용한다. Linux CI는 서비스가 준비한 mysql:8.4 image를 Docker로 재사용하고 sudo/unshare/mount로 private RO tmpfs를 생성·해제한다. Windows 로컬 acceptance는 WSL Ubuntu 및 `DAESINGO_MYSQL_TEST_BASEDIR`/`DAESINGO_MYSQL_TEST_LIBDIR`의 테스트 전용 Linux 바이너리/라이브러리 위치가 필요하다. fixture는 기능 부재를 skip으로 대체하지 않는다.

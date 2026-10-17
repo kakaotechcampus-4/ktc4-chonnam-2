@@ -13,6 +13,7 @@ import pytest
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
 from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
+from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -36,6 +37,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *COMMAND_CHECKS,
     *TIMESTAMP_CHECKS,
     *((r, s) for r, s, p in API_CASES_VIEW_PARAMETERS),
     *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS),
@@ -116,6 +118,7 @@ REQUIRED_CHECKS = (
 
 REQUIRED_PARAMETERS = (
     *TIMESTAMP_PARAMETERS,
+    *COMMAND_PARAMETERS,
     *API_CASES_VIEW_PARAMETERS,
     *API_HEALTH_PARAMETERS,
     *REDELIVERY_PARAMETERS,
@@ -475,7 +478,7 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))
+@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS))
 @pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
 def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()

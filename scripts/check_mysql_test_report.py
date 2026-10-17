@@ -16,6 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_commands", s) for s in ("success", "domain", "rollback", "failure", "idempotency", "boundary")),
     *(("timestamp_order", scenario) for scenario in (
         "terminal", "renewal", "bounds", "metrics", "retry", "commit_unknown", "concurrent")),
     ("api_cases", "create"), ("api_cases", "transaction"), ("api_cases", "failure"), ("api_cases", "logging"),
@@ -114,6 +115,12 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_commands", "success", p) for p in ("append", "no_append")),
+    *(("api_commands", "domain", p) for p in ("invalid", "missing", "stale", "target", "not_allowed")),
+    *(("api_commands", "rollback", p) for p in ("enqueue", "save", "disconnect", "unrelated_sql")),
+    *(("api_commands", "failure", p) for p in ("pool", "lock_timeout", "commit_unknown")),
+    *(("api_commands", "idempotency", p) for p in ("sequential", "concurrent")),
+    ("api_commands", "boundary", "cancel_deferred"),
     *(("timestamp_order", "terminal", s) for s in
       ("SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL")),
     *(("timestamp_order", "renewal", s) for s in
