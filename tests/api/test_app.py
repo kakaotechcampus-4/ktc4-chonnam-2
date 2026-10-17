@@ -28,7 +28,7 @@ def test_live_unknown_methods_and_unpublished_surfaces(api_startup, monkeypatch)
     monkeypatch.setattr(httpx.HTTPTransport, "handle_request", forbidden)
     with TestClient(app) as client:
         assert client.get("/health/live").json() == {"status": "ok"}
-        for path in ("/missing?secret=private", "/docs", "/openapi.json", "/health/live/", "/cases", "/jobs"):
+        for path in ("/missing?secret=private", "/docs", "/openapi.json", "/health/live/", "/jobs"):
             response = client.get(path, follow_redirects=False)
             assert response.status_code == 404
             assert response.json() == envelope("http.not_found")
@@ -36,6 +36,10 @@ def test_live_unknown_methods_and_unpublished_surfaces(api_startup, monkeypatch)
         assert response.status_code == 405
         assert response.json() == envelope("http.method_not_allowed")
         assert response.headers["allow"] == "GET"
+        response = client.get("/cases")
+        assert response.status_code == 405
+        assert response.json() == envelope("http.method_not_allowed")
+        assert response.headers["allow"] == "POST"
     events = [json.loads(line) for line in stream.getvalue().splitlines()]
     access = [e for e in events if e["event"] == "api.request.completed"]
     assert len(access) == 8

@@ -18,6 +18,8 @@ REQUIRED_SCENARIOS = frozenset({
 REQUIRED_CHECKS = frozenset({
     *(("timestamp_order", scenario) for scenario in (
         "terminal", "renewal", "bounds", "metrics", "retry", "commit_unknown", "concurrent")),
+    ("api_cases", "create"), ("api_cases", "transaction"), ("api_cases", "failure"), ("api_cases", "logging"),
+    ("api_view", "read"), ("api_view", "transaction"), ("api_view", "failure"),
     ("api_health", "ready"), ("api_health", "storage"), ("api_health", "process"),
     *(("usage_reconciliation", scenario) for scenario in (
         "relation", "late", "concurrent", "isolation", "db_clock", "projection", "worker",
@@ -126,6 +128,16 @@ REQUIRED_PARAMETERS = frozenset({
       ("claim", "SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL", "T2")),
     *(("timestamp_order", "concurrent", s) for s in
       ("race", "heartbeat", "sweep", "cancel", "finish_snapshot")),
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    *(("api_cases", "create", mode) for mode in ("contract", "body_unread")),
+    *(("api_view", "read", mode) for mode in ("missing", "queued", "running", "terminal_gap")),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    *(("api_cases", "failure", mode) for mode in (
+        "pool_exhausted", "disconnect", "postcommit_read", "commit_unknown", "deadlock")),
+    *(("api_view", "failure", mode) for mode in (
+        "pool_exhausted", "lock_timeout", "disconnect", "commit_unknown")),
+    ("api_cases", "logging", "correlation"),
     *(("api_health", "ready", mode) for mode in ("normal", "pool_exhausted", "connection_lost", "server_stopped")),
     ("api_health", "storage", "readonly"), ("api_health", "process", "single_worker"),
     *(("usage_reconciliation", "relation", mode) for mode in (

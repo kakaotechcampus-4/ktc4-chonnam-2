@@ -18,6 +18,19 @@ from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 pytestmark = pytest.mark.mysql
 
 # Independent acceptance inventory, not imported from the gate under test.
+API_CASES_VIEW_PARAMETERS = tuple((role, scenario, parameter) for role, scenario, parameter in (
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    ("api_cases", "create", "contract"), ("api_cases", "create", "body_unread"),
+    ("api_view", "read", "missing"), ("api_view", "read", "queued"),
+    ("api_view", "read", "running"), ("api_view", "read", "terminal_gap"),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    ("api_cases", "failure", "pool_exhausted"), ("api_view", "failure", "pool_exhausted"),
+    ("api_view", "failure", "lock_timeout"), ("api_cases", "failure", "disconnect"),
+    ("api_view", "failure", "disconnect"), ("api_cases", "failure", "postcommit_read"),
+    ("api_cases", "failure", "commit_unknown"), ("api_view", "failure", "commit_unknown"),
+    ("api_cases", "failure", "deadlock"), ("api_cases", "logging", "correlation")))
+
 API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, parameter in (
     ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
@@ -224,7 +237,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
                            *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS,
-                           *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS)]:
+                           *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
@@ -238,7 +251,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *TIMESTAMP_PARAMETERS):
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
@@ -282,5 +295,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS)) * 7 + len(TIMESTAMP_PARAMETERS) * 13
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS)) * 7 + len(TIMESTAMP_PARAMETERS) * 13
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")

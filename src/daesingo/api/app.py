@@ -5,11 +5,13 @@ from time import monotonic
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 from daesingo.common.bootstrap import Startup
-from daesingo.common.logging import bind_context, new_trace_id
+from daesingo.common.logging import bind_context, new_trace_id, safe_correlation
 from .bootstrap import bootstrap
 from .composition import compose_api
 from .errors import error_response, install_error_handlers
 from .events import ApiEvents
+from .routes_cases import cases_router
+from .routes_view import view_router
 
 
 def create_app(*, revision: str | None = None, startup: Startup | None = None) -> FastAPI:
@@ -41,6 +43,8 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
                   redirect_slashes=False, debug=False)
     app.state.composition = composition
     install_error_handlers(app, composition.readiness.events)
+    app.include_router(cases_router(composition))
+    app.include_router(view_router(composition))
 
     @app.middleware("http")
     async def access(request, call_next):
@@ -53,7 +57,10 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
                 # otherwise log after context reset and return an unsafe default.
                 composition.readiness.events.emit("api.request.failed", status="500")
                 response = error_response(500)
-            composition.readiness.events.emit("api.request.completed",
+            # Only a Case-returned identity is trusted; never log raw path IDs.
+            case_id = getattr(request.state, "case_id", None)
+            correlation = safe_correlation(case_id=case_id) if case_id is not None else {}
+            composition.readiness.events.emit("api.request.completed", **correlation,
                                  status=str(response.status_code), duration_ms=(monotonic() - started) * 1000)
             return response
 

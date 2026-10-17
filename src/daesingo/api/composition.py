@@ -1,10 +1,17 @@
-"""API-owned resources; Case/command/read-port wiring belongs to RT-08(b/c)."""
+"""API-owned resources and caller transactions for the public Case boundary."""
 from dataclasses import dataclass, field
 from threading import Lock
+from time import monotonic
 
 from sqlalchemy.engine import Engine
+import daesingo.case as case_api
+from daesingo.case.store import CaseStore
+from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_api_engine, create_ready_engine
+from daesingo.common.db.transactions import run_api_transaction
+from daesingo.common.jobs.read_port import read_executions
+from daesingo.common.logging import bind_context, safe_correlation
 from .health import Readiness
 from .storage import storage_available
 
@@ -18,6 +25,34 @@ class ApiComposition:
     _lock: object = field(default_factory=Lock, repr=False, compare=False)
     _closed: bool = field(default=False, init=False, repr=False, compare=False)
     cleanup_failed: bool = field(default=False, init=False, repr=False, compare=False)
+
+    def _store(self, connection):
+        # Empty Cases need no process-local adapter cache. Keep the facade and
+        # its default registry local to this transaction (Case 8-6 is separate).
+        return CaseStore(repository=MySQLCaseRepository(),
+                         conn=connection, executions=read_executions)
+
+    def get_view(self, case_id: str):
+        started = monotonic()
+        # RT-02 owns classification, and neither Case nor Runtime owns commit.
+        # Do not pass a synchronous logger into the request's DB stack.
+        view = run_api_transaction(self.engine,
+            lambda conn: case_api.get_view(case_id, store=self._store(conn)))
+        with bind_context(**safe_correlation(case_id=view["case_id"])):
+            self.readiness.events.emit("api.view.completed", status="200",
+                                       duration_ms=(monotonic() - started) * 1000)
+        return view
+
+    def create_case(self):
+        case_id = run_api_transaction(self.engine,
+            lambda conn: case_api.create_case(store=self._store(conn)))
+        # The write is acknowledged before this separate public read begins.
+        # A failed read cannot make the already committed POST safely retryable.
+        try:
+            view = self.get_view(case_id)
+        except Exception:
+            raise RuntimeError("case response unavailable after commit") from None
+        return {"case_id": case_id, "case_view": view}
 
     def close(self):
         with self._lock:
