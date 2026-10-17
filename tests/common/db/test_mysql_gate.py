@@ -18,12 +18,26 @@ ROOT = Path(__file__).resolve().parents[3]
 
 # Independent role/scenario acceptance inventory, deliberately not imported
 # from the implementation being tested. Test function names are irrelevant.
+API_CASES_VIEW_PARAMETERS = tuple((role, scenario, parameter) for role, scenario, parameter in (
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    ("api_cases", "create", "contract"), ("api_cases", "create", "body_unread"),
+    ("api_view", "read", "missing"), ("api_view", "read", "queued"),
+    ("api_view", "read", "running"), ("api_view", "read", "terminal_gap"),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    ("api_cases", "failure", "pool_exhausted"), ("api_view", "failure", "pool_exhausted"),
+    ("api_view", "failure", "lock_timeout"), ("api_cases", "failure", "disconnect"),
+    ("api_view", "failure", "disconnect"), ("api_cases", "failure", "postcommit_read"),
+    ("api_cases", "failure", "commit_unknown"), ("api_view", "failure", "commit_unknown"),
+    ("api_cases", "failure", "deadlock"), ("api_cases", "logging", "correlation")))
+
 API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, parameter in (
     ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
     *TIMESTAMP_CHECKS,
+    *((r, s) for r, s, p in API_CASES_VIEW_PARAMETERS),
     *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS),
     *REDELIVERY_CHECKS,
     *USAGE_CHECKS,
@@ -102,6 +116,7 @@ REQUIRED_CHECKS = (
 
 REQUIRED_PARAMETERS = (
     *TIMESTAMP_PARAMETERS,
+    *API_CASES_VIEW_PARAMETERS,
     *API_HEALTH_PARAMETERS,
     *REDELIVERY_PARAMETERS,
     *USAGE_PARAMETERS,
@@ -460,9 +475,9 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", API_HEALTH_PARAMETERS)
-@pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter"])
-def test_api_health_partial_evidence_is_rejected(identity, mutation):
+@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))
+@pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
+def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()
     role, scenario, parameter = identity
     expected = {"role": role, "scenario": scenario, "parameter": parameter}
@@ -472,7 +487,10 @@ def test_api_health_partial_evidence_is_rejected(identity, mutation):
         report["collected"].remove(entry)
         report["selected"].remove(node)
         report["reports"] = [r for r in report["reports"] if r["nodeid"] != node]
-    else:
+    elif mutation == "missing_parameter":
         entry["checks"].remove(expected)
+    else:
+        check = next(c for c in entry["checks"] if c == expected)
+        check.pop(mutation.removeprefix("missing_"))
     with pytest.raises(ValueError, match="role/scenario"):
         checker().validate_report(report)

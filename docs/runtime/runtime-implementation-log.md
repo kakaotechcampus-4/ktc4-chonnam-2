@@ -54,7 +54,8 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
-| API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR pending | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
+| API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR #366 | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
+| API Case 생성·조회 transaction | 요청별 CaseStore(conn, executions) · 생성 commit 후 공개 read · postcommit read 실패 500 · bounded event만 사용 | RT-08(b) · PR pending | 아래 RT-08(b) · `api/{composition,routes_cases,routes_view}.py` |
 
 ## Baseline revisit 후보
 
@@ -1319,7 +1320,8 @@ Status: IN_PROGRESS · Issue: #295 · Audit: B
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| pending | `Refs #295 (RT-08(a))` — app skeleton · envelope · health · single API process | pending |
+| #366 | `Refs #295 (RT-08(a))` — app skeleton · envelope · health · single API process | `d436de08f8e16a11a99a322ce7fd1de36e80c05a` |
+| pending | `Refs #295 (RT-08(b))` — `/cases` · `/view` · caller transaction · Runtime read port | pending |
 
 ### 구현 결과
 
@@ -1459,6 +1461,88 @@ RT-08은 `IN_PROGRESS`, 연결은 `Refs #295 (RT-08(a))`, PR 번호와 merge SHA
 - 최종 schema/account/connection 정리는 작업 소유 MySQL8.4.7/port13341/datadir `/dev/shm/rt08a-failure-investigation-memory-20261014/data/`를 확인한 뒤 수행했다. 마지막 test schema1개 제거, 남은 test schema/계정/다른 connection(시스템 daemon 제외)0. SHUTDOWN 뒤 실제 process/port13340·13341/보조 server·RO mount 잔여0을 확인하고 tmpfs를 회수했다. 소유 Windows child/process 잔여0으로 종료 process의 thread/handler도 남지 않았다. source22 hash와 보호 파일1,069개의 전체 inventory/hash, 원본 실패 artifact, HEAD·branch·index 불변 및 diff/신규 Python whitespace PASS를 마지막 integrity 자료로 확인했다. 재개 시간대의 Kernel-Power standby 전환 기록은0이었다.
 - 이번 재개는 제품·테스트 수정이 없으며 source를 고정한 채 남은 순차 검증을 완료했다. 기존 Worker test-only scheduling/stop 수정과 세 API review finding 수정은 유지한다. Contract/Accepted Decision/Baseline 의미·HTTP status/body·Case/Search 의무·900초/20분 정책 변화는 없다. RT-08 IN_PROGRESS / `Refs #295 (RT-08(a))` / PR/SHA pending, staging·commit·push·PR 생성 없음.
 - Owner 확인: 최초 Worker/nested와 killed child의 내부 phase 증거 공백은 정확한 원인 미확정으로 남긴다. 이번 Windows full34분35초는 Linux remoteCI20분 준수의 증거가 아니며 원격 CI는 미실행이다. 정책 변경 필요성을 단정하거나 limit을 올리지 않았다. 새 전체/gate PASS와 독립 재리뷰 가능한 artifact를 제공하지만 병합 가능·Owner acceptance·외부 재리뷰/CI 승인 판정은 하지 않는다. RT-08(b/c/d),RT-11,auth/CORS/TLS 및 새 Case/Search surface는 후속 범위다.
+
+---
+
+### RT-08(b) — `/cases` · `/view` (2026-10-16)
+
+**Status: IN_PROGRESS · Refs #295 (RT-08(b)) · PR pending · merge SHA pending.** staging·commit·push·PR 생성 전 구현 기록이다.
+
+#### Implementation Notes
+
+**구현 결과**
+
+- 현재 branch `feature/runtime-api-cases-view`, HEAD `d436de08f8e16a11a99a322ce7fd1de36e80c05a`. GitHub connector에서 확인한 최신 develop tip도 같았다. 직전 RT-08(a) PR #366 merged 및 이 SHA를 PR 표/색인에 반영했다. 저장소 AGENTS.md는 root/하위 검색에서 없었으며 사용자 제공 사실 기반 지침을 적용했다.
+- Issue #295, Plan §6 RT-08/§12 전체, HTTP Contract §3/§5.1/§5.4/§7, 최신 HEAD의 Case 공개 interface/관련 테스트와 PR #342/#343/#366 최종 코드·댓글을 대조했다. PR #342의 `CaseStore(conn=connection, executions=read_executions)` 및 Case 행 우선 lock 합의로 소비 가능하다. 새 Case surface/callback·Owner 의무는 없다.
+- `POST /cases`: request body를 읽지 않는다. 공개 `case.create_case`가 identity를 발급하며 API composition의 RT-02 transaction이 commit한다. commit ACK 뒤 별도 read transaction에서 공개 `case.get_view`로 응답을 만들고 Contract의 201, `{case_id,case_view}`, 상대 Location을 반환한다.
+- `GET /cases/{case_id}/view`: 같은 Connection의 CaseStore/Runtime read port 주입으로 공개 `get_view`를 호출한다. Case가 share lock → job scope 조회 → 대표 attempt/화면 상태를 선택하고 HTTP는 CaseView 필드를 재구성하지 않는다. CaseNotFound만 404 envelope로 바꾸고 임의 KeyError를 missing Case로 숨기지 않는다.
+- RT-02 helper의 precommit DB 실패는 503, COMMIT 결과 불명은 500이며 API 자동 재시도는 없다. 생성 commit 뒤 read 실패는 이미 반영된 생성에 대해 안전한 재시도를 뜻하지 않도록 500으로 처리한다. 관계없는 SQL/domain 오류는 기존 generic 500 경계다.
+- transaction helper에 동기 logger를 넘기지 않고 RT-08(a)의 bounded ApiEvents만 쓴다. 성공한 Case에서 받은 identity만 safe_correlation으로 view/access event에 연결한다. 실패 요청의 raw path ID, header trace, URL/query/body, SQL/예외 원문/DB URL/경로/secret은 로그에 전달하지 않는다.
+- CaseStore와 기본 adapter registry는 transaction 지역 객체다. 빈 Case의 None adapter를 앱 전체 메모리에 계속 보관하지 않는다. 실제 결과 adapter/reader factory는 Case 8-6 2단계/RT-10 후속이다.
+
+**Plan 대비 변경**
+
+- Expected files의 `routes_cases.py`/`routes_view.py`를 그대로 사용하고 transaction/CaseStore factory는 기존 `composition.py`에 모았다. 생성 응답 조회는 명시적으로 두 번째 transaction이다. 생성 후 read 오류의 500 보존, request state의 trusted correlation, 지역 registry는 §12.3 implementation detail이다.
+- Contract/Accepted Decision/Baseline 의미 변경 없음. `/commands`·enqueue·cancel·media·인증/CORS/TLS·Case 내부 변경 없음. Runtime Plan 원문 및 workflow timeout 정책을 변경하지 않았다.
+
+**새 implementation detail · 대안 비교**
+
+| 선택 | 대안 | 이유 |
+| --- | --- | --- |
+| ApiComposition 메서드에 transaction/Store factory 집중 | route별 closure에서 같은 공개 Case 함수와 transaction helper 조립 | 두 안 모두 API-owned transaction이며 선택안은 engine/Store/error 경계를 한곳에서 검토 가능 |
+| 생성 commit 뒤 별도 connection scope/read transaction | 같은 Connection에서 ACK 뒤 새 read transaction 시작 | 두 안 모두 commit→get_view 순서를 지키며 선택안은 RT-02 helper를 그대로 재사용하고 Connection을 빨리 반환함(pool의 물리 connection 재사용은 가능) |
+| postcommit read 실패 500 | precommit read와 같이 503 반환 | 이미 생성된 요청의 반영 여부를 잘못 알리지 않음 |
+| transaction 지역 registry | 앱 전체 빈 adapter 캐시 | 이번 slice에 필요 없는 None 항목 누적 제거 |
+| bounded event의 trusted identity | raw path/header ID 및 동기 DB logger | 기존 안전한 logging·correlation 경계 유지 |
+
+**Owner 확인 포인트**
+
+- 김준영 Audit B: 생성 commit 이후 read 장애/ACK 유실의 500 판단과 API 무재시도, 성공 access/view event의 trace+trusted Case identity를 확인한다.
+- Case 합의는 PR #342 댓글 `6118676155` 및 공개 결정 `jobexecution-read-port.md`를 따른다. 새 확인 요청/메시지 전송은 하지 않았다. PR #343의 미등록 kind도 T2에 도착한다는 정정 댓글 `6118711293`을 확인했으며 reflector/handler 배선은 이번에 하지 않는다.
+- Case 8-6/RT-10 전에는 선택 후보의 실제 모듈 adapter를 API에서 새로 구성하지 않는다. 없는 adapter/지원하지 않는 상태를 성공으로 꾸미지 않고 기존 안전한 500으로 끝낸다.
+
+**Verification — 진행 기록**
+
+- 최초 RED: API 17 failed/1 passed(없는 Case 404는 기존 미등록 route도 만족), 신규 gate의 누락 identity 검사 36 failed/12 passed. 두 종류 실패 원본은 `.codex-scratch/rt08b-20261016/red-api-all.*`, `red-gate.txt`에 보존했다.
+- 테스트 fixture 작성 오류(초기 rev 0 가정, terminal을 PENDING으로 가정, Pydantic 설정을 dataclass로 복사, URL SecretStr 검증을 건너뛴 model_copy, fixture INSERT의 available_at 누락)는 Case 결정/타입/schema 대조 후 테스트만 바로잡았다. Case 의미나 RT-02 코드는 바꾸지 않았다.
+- 중간 broad `targeted`는 4 failed/3747 passed다. COMMIT proxy용 설정 작성 오류 2건과 실행 중 inventory 보강에 따른 synthetic report 불일치 2건으로, 최종 검증 근거로 사용하지 않는다. 최종 source hash 고정 뒤 전체 실행으로 다시 검증한다.
+- view duration RED 1건 후 event 시간 측정 추가. 내부 fresh reviewer의 Critical/Important 없음, Minor 2건(access case_id 누락/빈 registry 보존)은 별도 RED 2건 후 수정했다. 최종 신규 actual MySQL `green-review-final`은 21 passed, skip/xfail 0이다. 내부 리뷰는 외부 독립 재리뷰/Owner acceptance가 아니다.
+- broad `targeted-final`(내부 Minor 보완 전 snapshot)은 415 passed/1 failed. 기존 process-safety `test_actual_server_cleanup_failure_exit_and_listener_release`가 child 전체 5초를 넘었다(stdout/stderr 비어 있음). 원본을 보존하며 root cause를 환경 문제로 단정하지 않는다. 동일 테스트의 RT-08(a) 과거 조사 이력도 현재 실패의 원인 증명이 아니다.
+- 중간 targeted와 보강 테스트의 실행 시간이 겹쳤으므로 timing 실패의 원인을 분리하지 못했다. 이후 최초 전체 실행에서 해당 종료 테스트가 3.39초로 PASS했고 실패 Worker 함수 4 parameter와 함께 분리 실행한 `failure-targeted`도 5 passed(5.00초)였다. 이는 최초 timeout의 원인 규명이나 수정 증명이 아니다. fresh reviewer도 Case eager import에 추가 비용이 있음을 확인했지만 5초 초과의 원인으로 확정하지 않았다.
+- 최초 전체와 이번 별도 환경의 전체 pytest/JSON/JUnit/누락 검사 결과는 아래에 분리한다. 전체 GREEN 근거는 확보하지 못했다.
+- boundary/Contract fixture 검사는 UTF-8 실행에서 PASS. workflow actionlint(5개)/YAML 정책/bash -n/ShellCheck(5개 run step) PASS, pyflakes는 설치되지 않아 actionlint 해당 규칙 비활성. nested timeout=900, CI timeout-minutes=20 유지. 원격 CI는 실행하지 않았다.
+
+**중단 전 원본 보존 · Worker 시각 실패 조사**
+
+- 첫 전체 `full`은 **6797 passed / 26 skipped / 2 failed**, 1536.44초였다. 실패는 Worker의 `test_failed_marker_read_or_heartbeat_commit_never_delivers_signal[read]`, `test_hooks_run_after_stale_transactions_and_preserve_live_execution[periodic]`이며 `finish` → `_execution_model` → JobExecution의 `ended_at` 시간 순서 검증에서 발생했다. MySQL 617개 중 2개가 실패했으므로 이 전체 결과는 GREEN이 아니며 strict JSON/JUnit gate도 거부했다. 26 skip은 기존 선택형 의존성·로컬 미디어 조건이고 MySQL skip/xfail은 0이다.
+- 같은 실행의 nested 실제 MySQL은 **612 passed / skip·xfail 0**, 498.154초로 기존 900초 이내였다. parameter evidence 누락 **3213건**, 그중 신규 RT-08(b) **147건(21×7 layer)**을 거부했다. 실제 nested 보고서로 별도 role/scenario/parameter metadata까지 검사한 신규 identity 누락 **210건(21×10)** 및 family 누락 **7건**도 거부했다. 이 nested PASS가 부모 전체 실패를 상쇄하지 않는다.
+- 재개 시 최초 전체 stdout/JSON/JUnit/exit/timing 5개와 고정 source 479개의 SHA-256을 다시 대조해 변경 0을 확인했다. 원본은 `.codex-scratch/rt08b-20261016/full.*`, 해시 manifest는 `first-full-failure-hashes.json`/`final-source-hashes.json`이다. 신규 구현·완료된 TDD·내부 리뷰는 반복하지 않았다.
+- 원본 traceback의 timestamp payload는 축약되어 최초 두 실패의 정확한 started_at/ended_at 쌍은 복구하지 못했다. 두 fixture는 DB 시각으로 원장을 만들며, 정적 추적상 claim의 시작 시각 기록/commit 뒤 handler가 실행되고 finish는 새 DB 시각으로 검증한 뒤 terminal UPDATE를 한다. heartbeat는 시작 시각을 쓰지 않는다. lifecycle 테스트의 세션 `SET timestamp`는 reset/dispose 경계를 확인했으나 실패 connection으로 유출됐다는 증거는 없다.
+- 별도 진단에서 **동일 WSL MySQL connection의 NOW(6)·SYSDATE(6)가 약 0.668초 역행**한 표본은 직접 확보했다(`db-clock-samples.json`, 1500회/17.578초). 같은 구간 Windows UTC 표본은 증가했다. 이는 해당 DB 시각 역행의 관측 사실이며 **최초 두 Worker 실패의 직접 원인이라는 결론은 아니다**. RT-08(b)와의 인과관계도 확인하지 못했다.
+- 별도 환경 비교는 공식 MySQL **8.4.7 Win64** archive의 공개 MD5와 일치하는 패키지로 새 데이터 디렉터리/loopback 13345를 초기화해 진행했다. 기존 MySQL 8.0 설치와 WSL 서버 설정은 변경하지 않았다. durability 설정 flush-at-commit=1/sync-binlog=1을 유지했다. 새 환경 시각 표본 1500회/18.703초에서는 역행을 관측하지 못했으며, 무발생을 보장하지는 않는다. WSL/Win64·테이블명 대소문자 기본값·전역 timezone 차이는 `environment-comparison.json`에 보존했다. 제품 API/Worker engine의 세션 UTC/READ COMMITTED 정책은 동일 코드로 유지한다.
+- 동일 고정 소스·기존과 같은 테스트 선택 명령의 별도 환경 전체 실행은 실패 후 원본 traceback에서 시간 필드만 읽는 scratch pytest 관측기를 사용했다. 제품/테스트 함수 교체·결과 변경·DB 시각 보정은 없다. validator·Worker·Case 의미와 timeout/gate도 변경하지 않았다. 관측기의 timing 영향 및 플랫폼 차이가 있으므로 별도 실행의 개별 PASS를 최초 실패의 근본 원인 확정으로 사용하지 않는다.
+- 별도 환경 실행의 nested 검사는 **기존 900초 제한으로 TimeoutExpired**였다. 자식의 최종 JSON/JUnit 보고서는 생성되지 않았으며 완료 수·전체 nested inventory 일치를 확정할 수 없다. timeout 이후 해당 자식 PID가 남지 않은 것은 확인했다. 기존 WSL nested 612 PASS/498.154초 기록과 구분하며, 이번 별도 환경의 strict gate 통과로 대체하지 않는다. 제한이나 durability 설정을 완화하지 않았고, 정확한 지연 원인은 미확정이다.
+- 별도 실행에서 의존성 누락 검증 1건도 실패했다. scratch 관측기의 `PYTEST_PLUGINS`가 자식에 상속되는 반면 해당 검증은 `PYTHONPATH`를 자체 sitecustomize 디렉터리로 교체해 관측기 import가 먼저 실패하는 충돌을 최소 collect-only 재현으로 확인했다. 관측기 ON은 `No module named rt08b_failure_probe`/exit 1, OFF는 의도한 `MySQL required dependency unavailable`/exit 4다(`probe-child-comparison.json`, stdout/stderr 보존). 이는 이번 진단 설정의 간섭이며 제품 결함으로 분류하지 않는다. 전체 원본 결과를 수정하지 않고 관측기를 제거한 해당 테스트의 단독 결과를 별도로 기록한다.
+
+**이번 재개 최종 검증 · 판정**
+
+- 직접 별도 환경 전체 `native-full`: **6797 passed / 26 skipped / 2 failed**, pytest 2568.84초(42분 48초), runner wall 2580.791초. 실패는 nested 900초 timeout과 위 관측기 충돌이다. 실제 MySQL **617개 중 616 passed / 1 failed / skip·xfail 0**, 신규 RT-08(b)는 **21/21 passed**다. 관측기를 제거한 해당 의존성 검증만 `observer-isolated`로 **1 passed / 1.39초**를 확인했으며 전체 raw 결과를 6798 passed로 재작성하지 않는다. 최초 종료 timeout 테스트나 이미 완료한 내부 리뷰/TDD를 별도로 반복하지 않았다.
+- 최초 두 Worker 실패 노드는 이번 전체에서 모두 PASS했다(JUnit 총시간 각각 1.765초/1.701초). 기존 Uvicorn cleanup 노드도 총시간 4.634초로 PASS했다. 이 사실은 **재발하지 않은 해당 실행의 결과**이며 최초 Worker 시각 실패·targeted 5초 timeout의 원인 확정이나 해결 선언이 아니다. RT-08(b)와 최초 Worker 실패의 인과관계는 계속 미확정이다.
+- `final-preservation-inventory.json`: 고정 source 479개와 최초 실패 artifact 5개 해시 변경 0. 두 전체의 **JUnit 6825개 항목/순서 및 MySQL collected/selected 617개 identity가 일치**한다. 새 nested의 최종 보고서는 없어 nested 실제 수집 identity/완료 수 일치까지 주장하지 않는다. 이번 전체 stdout/JSON/JUnit/exit/timing/실패 frame와 관측기/runner 8개 해시는 `native-full-failure-hashes.json`에 별도로 보존했다.
+- `final-gate-audit.json`: strict JSON/JUnit CLI는 최초 전체와 별도 전체를 모두 **거부**, 보존된 실제 nested의 **612 tests / skip=0 / xfail=0** 보고서는 PASS다. 해당 정상 실제 보고서를 기준으로 신규 21개 identity의 collection/selection/setup/call/teardown/all/JUnit/role/scenario/parameter 누락 **210건 및 family 누락 7건을 다시 모두 거부**했다(`final-preserved-nested-{counts,omissions}.json`). 실패한 전체 보고서를 정상 기준으로 사용해 누락 검사 PASS를 만드는 방식은 쓰지 않았다. 중단 전의 전체 parameter 누락 3213건/신규 147건은 보존 결과이며 JSON 내용도 다시 대조했다. 새 native nested에서 3213건을 완료했다고 주장하지 않는다.
+- 추가 안전 진단: 두 DB의 실제 API/Worker connection 모두 **UTC / READ COMMITTED / lock wait 5초**였다. 두 전체에서 모두 성공한 같은 MySQL testcase 614개의 JUnit 총시간 중앙값은 기존 0.429초/새 환경 1.534초였다. 누적 InnoDB I/O counter도 `final-database-diagnostics.json`에 보존했다. 이는 환경별 지연의 관측이며 집계 범위·플랫폼이 다른 counter와 시간 상관관계만으로 native nested timeout의 정확한 근본 원인을 확정하지 않는다. timeout 뒤 남은 개인 DB schema의 공개 실행 시각/상태 snapshot은 `native-timeout-leftover-schema.json`에 보존했고 특정 test/stack으로 단정하지 않는다.
+- boundary, Contract fixture(문서 62/JSON 26/의미 104), workflow actionlint 5개/YAML 정책/bash -n/ShellCheck 5개 run step을 검증했다. pyflakes 미설치 한계를 유지한다. source·필수 evidence inventory·nested 900초·CI 20분을 완화하지 않았다. 이번 Windows 전체는 20분을 초과했고 **원격 Linux CI의 20분 준수는 미검증**이다.
+- **병합 보류**: 새 환경의 nested 900초 실패/strict gate 거부가 남았다. 최초 Worker 두 실패와 targeted 5초 timeout도 정확한 원인이 미확정이므로 재리뷰의 판단 항목으로 남긴다. 관측기 충돌은 최소 재현과 관측기 없는 단독 PASS로 분리했지만 실패 전체를 GREEN으로 만들지는 않는다. 현재 자료로 RT-08(b) 자체의 새 기능 결함이 확인됐다고 단정하지도 않는다.
+- 구현 13개 변경 파일·설계 선택·원본/직접 재실행·실패와 한계를 갖춘 **독립 재리뷰 요청 가능한 로컬 상태**이며 병합 승인·Owner 수락·원격 CI 통과 판정은 아니다. 상세 파일/증거 색인은 `.codex-scratch/rt08b-20261016/review-summary.md`다. 재개 후 제품/테스트 소스 변경 없이 문서·로컬 진단만 추가했다. **RT-08 IN_PROGRESS / Refs #295 (RT-08(b))**, PR/merge SHA pending을 유지한다.
+- 소유한 13345/13344 MySQL은 정확한 datadir·다른 접속 0을 확인한 뒤 SHUTDOWN했고 listener/native PID 종료 및 WSL 소유 pid 파일 제거를 확인했다. 진단을 위한 datadir·로그·잔여 schema snapshot·패키지는 보존했다. 새 테스트 Python process는 남지 않았으며 시작 전부터 있던 PID 22152/22184와 기존 MySQL 8.0 설치는 변경하지 않았다. staging·commit·push·PR 생성은 하지 않았다.
+- 최종 worktree audit: tracked 9개/신규 4개, 총 13개 납품 변경을 확인했다. tracked diff와 신규 4개 파일의 no-index whitespace 검사 PASS, 변경 Python 9개 AST 파싱 PASS, 다른 tracked 경계/Contract/Decision/Baseline/Runtime Plan/workflow 변경 0, staged 0, HEAD/branch 유지다. 신규 파일 no-index diff의 정상 exit 1과 whitespace 오류 exit 3은 대조 파일로 구분했다(`final-worktree-audit.json`).
+
+**남은 위험 · 후속**
+
+- 500/응답 유실은 생성 미반영을 보장하지 않는다. 특히 POST /cases identity 응답 자체가 유실되면 이 slice는 idempotency/recovery API를 추가하지 않는다.
+- process-safety 최초 실패는 최종 회귀/진단 결과와 구분해 보존한다. 제한을 완화하거나 skip으로 숨기지 않는다.
+- bounded logging은 기존대로 포화 시 lossy이며 native block을 강제 종료하지 않는다. Case 실제 adapter/Worker composition은 후속 범위다.
+- commands/enqueue는 RT-08(c), cancel 배선은 (d), media는 RT-11, 별도 metrics 집계는 RT-12. RT-08 상태와 Issue #295는 계속 진행 중이다.
 
 ---
 
@@ -1929,3 +2013,58 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 
 - **현재 연결·상태:** [PR #372](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/372), `Refs #368`, merge SHA **`a5d61cc7d1fc9d02c229deca87bd0c2a7aec2ed1`**. 현재 merge 대상 `origin/develop` 및 `MERGE_HEAD`가 이 SHA이며, 로컬 Git commit 제목 `Merge pull request #372`와 대조했다.
 - **이력·설정 보존:** 앞선 구현 당시 pending 및 PR 원격 CI 조회 당시 open·merge SHA pending 기록은 당시 snapshot으로 보존한다. PR #372의 원격 검증 수치·비차단 위험과 #368 기록 전체를 유지한다. develop에서 병합된 `.github/workflows/python-tests.yml`의 **`timeout-minutes: 30`**도 유지하며, 이번 충돌 해결에서는 workflow·제품 코드·테스트를 수정하지 않았다.
+
+## 2026-10-17 RT-08(b) — timestamp ordering 수정 이후 develop 통합
+
+- **상태·연결:** **IN_PROGRESS · Refs #295 (RT-08(b)) · PR pending · merge SHA pending**. 현재 Codex managed worktree의 `codex/rt08b-clock-integration`에서 미커밋·미스테이징 상태로 검토한다.
+- **확인한 기준:** fetch한 `origin/develop`은 **`4f383c9412593fb8e415598dfa7481fb447a1b2c`**다. #368의 [PR #372](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/372) merge SHA **`a5d61cc7d1fc9d02c229deca87bd0c2a7aec2ed1`**와 #370의 [PR #371](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/371) merge SHA **`4f383c9412593fb8e415598dfa7481fb447a1b2c`**를 포함한다. GitHub 조회에서 두 PR의 merged 상태와 SHA, #370 CLOSED, #295 open을 확인했다. 위 pending·20분·실패 기록은 당시 이력으로 보존한다.
+- **원본 보존 감사:** source-only `C:/ktc4-chonnam-2`의 HEAD `d436de08f8e16a11a99a322ce7fd1de36e80c05a`, branch `feature/runtime-api-cases-view`, status, staged/unstaged binary patch, 변경·신규 1065개 파일과 보존 증거 154개의 SHA-256을 현재 worktree의 ignored 감사 폴더에 기록했다. 당시 13개 납품 파일 모두 최종 고정 manifest와 일치한다. 원본 index와 파일은 쓰지 않는다.
+- **결합 경계:** API 제품·테스트·문서 13개만 재적용했다. 공통 gate·unit inventory·nested migration gate의 충돌은 timestamp35 및 API21의 합집합으로 병합했다. timestamp의 추가 skip/xfail/failure/JUnit 누락 차단과 nested `timeout=900`을 보존한다. #370의 causal terminal clamp, heartbeat·lease 비감소, status/owner fence 및 COMMIT 불명 복구 코드와 #372 workflow `timeout-minutes: 30`은 기준 그대로다.
+- **transaction·오류 의미:** POST 생성 ACK 후 별도 공개 get_view transaction, GET의 Case share lock 선행 및 같은 Connection의 비잠금 Runtime read를 유지한다. CaseNotFound만 404, precommit DB 실패 503, COMMIT 불명·생성 후 read 실패·관련 없는 SQL 오류 500의 원본 의미를 유지한다.
+- **과거 사건과 수정의 관계:** #370은 RT-08(b) 없이도 재현된 공통 durable timestamp ordering 결함과 승인된 정책의 수정이다. 과거 Worker timestamp 실패·개별 timeout·nested timeout의 원본 결과를 성공으로 바꾸지 않는다. 과거 사건의 실제 timestamp 쌍이나 정지 위치가 확보되지 않은 경우 #370과 같은 직접 원인이라고 확정하지 않는다. 이후 clock 진단 helper·RAW·archive·datadir는 제품에 재적용하지 않았다.
+- **추가 보존 증거:** 원본 `.codex-scratch/rt08b-final-once-20261016/verification-report.md`의 마지막 고정 소스 실행은 6798 passed / 26 skipped / 1 failed였다. nested는 611 passed / 1 failed이며 redelivery periodic의 timestamp validation 실패로 부모 gate가 거부됐다. 해당 실행에서는 900초 timeout이 없었고 mutation 단계에 도달하지 못했다. 이 별도 과거 실행도 앞선 두 전체 실패·timeout과 구분해 보존하며 이번 검증 결과로 합산하지 않는다.
+- **이번 직접 검증:** 재적용 경계 검토 후 targeted 및 실제 MySQL 검증을 수행하며, targeted 통과 뒤 전체 pytest는 정확히 한 번만 실행한다. 실행 결과는 아래 후속 기록에 추가한다. 과거 보존 결과를 이번 직접 실행 결과로 대체하지 않는다.
+
+### 통합본 직접 검증 진행 (2026-10-17)
+
+- API 전체·timestamp acceptance·gate unit targeted는 **4327 passed / 실패·skip·xfail 0**이다(427.82초, runner wall 431.885초). MySQL은 **61개 / 183 phases PASS**이며 RT-08(b) **21개**, timestamp **35개**를 포함한다. 기존 의존성 deprecation warning 1개는 테스트 실패와 구분한다.
+- 정적 검사는 boundary 위반 0, Contract fixture 문서62/JSON26/의미104 PASS다. workflow5개 actionlint 및 run step5개 YAML 정책/bash 구문/ShellCheck PASS, pyflakes 미설치 한계는 유지한다. 최초 로컬 helper의 trailing CR 종료 오류(exit127)는 원본을 보존하고 LF helper 재실행(exit0)과 구분했다. 제품 workflow는 수정하지 않았다.
+- 실제 MySQL **8.4.7**, dedicated port13348, 현재 managed worktree 아래 private memory datadir를 사용한다. flush-at-commit1/sync-binlog1과 API/Worker UTC·READ COMMITTED·lock wait5초를 직접 확인했다. 원본/기존 DB를 시작하거나 원본 datadir를 사용하지 않는다.
+- 읽기 전용 fresh 코드 리뷰에서 actionable finding 없음. 이는 실행 검증이나 사용자의 독립 재리뷰를 대체하지 않는다. 제품/API 테스트는 원본과 동일 해시이며 timestamp/fence/recovery·workflow 등 보호 파일9개는 기준 HEAD와 동일하다.
+- nested 실제 보고서 gate targeted는 **1 passed / 613.59초**다. 그 child 실제 MySQL은 **647 tests / 1941 phases PASS**, skip0/xfail0, JUnit 470.494초다. strict JSON/JUnit CLI도 직접 PASS했다. 기존 실제 evidence mutation **3668/3668 거부**, API **147건**과 timestamp **455건**을 포함한다. 추가 실제 보고서 metadata 누락 **168건**, family 전체 계층 누락 **14건**도 거부됐다. 추가 감사 helper가 처음 JUnit 대조만 호출해 실패한 실행은 별도로 보존했고, 제품 CLI와 동일하게 inventory 검증과 JUnit 대조를 함께 호출하도록 helper만 고쳐 재실행했다. 제품 gate 변경은 없다.
+- 두 targeted 실행 통과 후 전체 pytest 1회를 시작한다. 실행 당시 13개 파일 해시와 명령·시각을 별도로 고정하고 원본 결과를 보존한다. CI30분·nested900초·필수 inventory·skip/xfail 정책은 그대로다.
+
+### 통합본 전체 1회·정리·보존 최종 확인 (2026-10-17)
+
+- **전체 pytest 직접 결과:** 정확히 **1회**, **7297 passed / 26 skipped / 실패0 / warning1**, exit0. pytest **1407.92초(23분27초)**, runner wall **1413.918초**다. 26 skip은 선택형 의존성·로컬 미디어 조건이며 정책·선택을 바꾸지 않았다. 원격 Linux CI 실행 결과로 확대하지 않는다.
+- **전체 실제 MySQL·strict gate:** 수집/선택 **652/652**, **1956 phases PASS**, MySQL skip0/xfail0. 전체 원본 JSON/JUnit에 strict CLI를 직접 실행해 PASS했다. 전체 안의 nested도 **647 tests / 1941 phases PASS**, evidence mutation **3668/3668 차단**이다. API21의 transaction·404/503/500 오류 의미와 timestamp35 및 heartbeat·sweep·cancel·T1 회귀가 통과했다. 앞선 targeted 결과와 합산하지 않는다.
+- **소스 고정·검사:** 전체 실행 종료 시 시작 때 고정한 13개 파일 해시가 모두 동일함을 확인했다. 이 최종 결과 기록은 실행 후 문서에만 추가한다. 제품·테스트·gate·workflow는 실행본 그대로이며, `git diff --check`와 신규 4개 no-index whitespace 검사를 확인한다. branch `codex/rt08b-clock-integration`, HEAD `4f383c9412593fb8e415598dfa7481fb447a1b2c`, index 비어 있음. 커밋·푸시·PR 생성 없음.
+- **자원 정리:** 정확한 전용 datadir/version/port를 재확인한 뒤 테스트 schema를 DROP하고 추가 test 계정0·다른 connection0을 확인한 후 SHUTDOWN했다. 소유 Linux mysqld·socket·fixture datadir·pid, Windows test Python·WSL launcher·port13348 listener 잔여0이다. private memory datadir와 현재 worktree의 빈 datadir 폴더를 정리했고 로그·직접 결과는 보존했다. 기존 Windows MySQL PID5844/7128 및 생성 시각은 그대로다. 원본 datadir나 다른 worktree는 정리하지 않았다.
+- **원본 전후 불변:** HEAD/branch, status SHA, staged/unstaged patch SHA, tracked 변경 목록, untracked1056개 목록, 변경·신규1065개 파일 SHA 및 보존 증거154개 SHA가 전후 모두 일치한다. 원본 납품13개도 고정 manifest와 일치한다. source-only checkout을 삭제·정리하거나 파일·index를 수정하지 않았다. `.codex-scratch`의 모든 archive 바이트를 새로 해싱했다는 주장과는 구분한다.
+- **재리뷰 인계·남은 위험:** 독립 재리뷰 가능한 **미커밋·미스테이징** 상태다. 전체/실제 MySQL/strict gate의 이번 PASS가 과거 Worker 실패·timeout의 직접 원인을 소급 확정하지 않는다. 원격 CI, 기존 invalid row backfill, clock step의 경과시간·lease/retry 지연, EC2 clock discipline, 생성 후500의 반영 불명 및 기존 후속 slice 범위는 유지한다. **IN_PROGRESS · Refs #295 (RT-08(b)) · PR/SHA pending**.
+- **검토 자료·제외:** 현재 worktree의 ignored `.codex-scratch/rt08b-integration-20261017/`에 `integration-report.md`, `final-results.json`, `direct-result-hashes.json`, `full.*`, before/after 감사, source snapshot, mutation·정리·리뷰 근거를 보존한다. 이 폴더 및 `.pytest-*`, baseline negative JSON, clockdiag/RAW/archive/datadir, 외부 visualization/Temp, #370 임시 진단·PR draft/snapshot은 PR 납품에 포함하지 않는다. 실제 재적용 파일은 최초 감사의 13개뿐이다.
+
+### 독립 리뷰 P2 — README HTTP surface 정합성 후속
+
+- **지적·수정:** 독립 리뷰에서 확인된 README 140행의 health-only/Case route 후속 문구가 9·69행의 RT-08(b) 구현 설명 및 실제 route 등록과 불일치했다. 140행에 `GET /health/live`, `GET /health/ready`, `POST /cases`, `GET /cases/{case_id}/view`를 명시하고 후속 route를 command/media로 한정했다. 기존 health·오류 envelope·ready DB·metadata-only mount·MySQL gate 설명은 보존한다.
+- **범위·계수:** 제품·테스트·Contract·Decision·Baseline·workflow 및 기존 납품 파일 목록은 변경하지 않는다. `README.md`는 수정 전 delivery manifest의 13개 파일에 이미 포함돼 있으므로, 이번 수정 후에도 고유 납품 파일은 **13개**다. 요청의 「README 추가로 14개」 전제와 실제 목록의 차이를 integration report/manifest에 명시한다. 수정 전 README·Log·report·manifest는 ignored `readme-p2/`에 보존한다.
+- **수정 직후 계획·당시 판정:** 실제 등록 route와 README 9·69·140행, 보존 설명·파일 경계, `git diff --check`, conflict marker, boundary·Contract·workflow 정적 검사, 원본 checkout·보존 증거 불변을 확인할 계획이었다. 수정 직후에는 P2 수정본의 검증 결과와 최종 독립 재확인이 미확정 상태였다. 과거 전체 pytest·MySQL 결과를 이번 문서 수정 후 신규 실행 결과로 바꾸지 않는다.
+- **상태:** **IN_PROGRESS · Refs #295 (RT-08(b)) · PR/SHA pending**. staging·커밋·푸시·PR 생성 없이 후속 검토한다.
+- **이번 직접 검증 결과:** 실제 `create_app`에 등록된 schema의 route 집합이 README의 네 route와 일치함을 DB 연결 없이 확인했다. README 9·69행은 수정 전과 동일하고, 140행의 surface·후속 범위 두 문구만 변경됐으며 나머지 문구와 Log의 기존 이력은 보존됐다. 다른 납품11개 해시 동일, conflict marker0, `git diff --check` 통과. boundary 위반0·Contract 문서62/JSON26/의미104·workflow5개 actionlint 및 run step5개 YAML/bash/ShellCheck 검사가 통과했다. pyflakes 미실행 한계는 유지한다. 원본 HEAD/branch/status/patch/untracked 목록과 변경·신규1065개 및 증거154개 해시가 기존 감사와 동일하다.
+- **증거·판정 구분:** 기존 실행 artifact30개와 과거 전체 pytest/MySQL 원본은 그대로 보존한다. 이번에는 문서·route 정합성과 정적 검사를 수행했으며 pytest·MySQL을 재실행하지 않았다. P2 수정 전 report/manifest 및 이번 검증 원본은 ignored `readme-p2/`에 남긴다. **이번 P2 수정본의 최종 독립 재확인은 대기 중**이다.
+
+### README P2 후속 독립 재리뷰 결과
+
+- **기록 근거:** 사용자가 전달한 fresh reviewer의 후속 독립 재리뷰 결과를 아래에 기록한다. 직전 항목의 독립 재확인 대기는 당시 상태이며, 이번 후속 reviewer 결과로 갱신한다. 이번 Log 갱신에서 테스트를 재실행한 결과로 해석하지 않는다.
+
+| 순서 | 단계 | 결과와 근거 구분 |
+| --- | --- | --- |
+| 1 | 기존 구현 단계 | 보존된 직접 실행 결과는 API acceptance 21 passed, timestamp ordering 35 passed, 전체 pytest 1회 7,297 passed / 26 skipped / 실패 0, 실제 MySQL 652 tests / 1,956 phases passed 및 strict JSON/JUnit gate PASS다. 이번 기록 갱신에서 재실행하지 않았다. |
+| 2 | 최초 독립 리뷰 P2 | README 140행의 health-only 및 Case route 후속 설명이 README 9·69행과 실제 Case 생성·조회 route에 모순됨을 지적했다. 이 P2와 당시 독립 재확인 대기 기록은 과거 이력으로 보존한다. |
+| 3 | P2 문서 수정·검증 | README 140행에 실제 네 route를 반영하고 후속 HTTP route를 command/media로 한정했다. 기존 health·오류 envelope·ready DB·metadata-only mount·MySQL gate 설명을 보존했다. 당시 직접 수행한 route 대조·정적 검사 결과는 직전 항목과 보존 증거에 기록돼 있다. |
+| 4 | fresh reviewer 후속 독립 재리뷰 | README 140행 P2 해소, 실제 `GET /health/live`·`GET /health/ready`·`POST /cases`·`GET /cases/{case_id}/view`와 README 9·69·140행의 일치, command/media 후속 범위 한정을 확인했다. 후속 독립 재리뷰 판정은 PASS이며 남은 병합 차단 문제는 없다. |
+
+- **후속 reviewer의 파일·검증 확인:** 고유 납품 파일은 **13개**다. 후속 재리뷰 시점의 manifest와 실제 13개 파일 해시 불일치는 **0개**, README·Implementation Log를 제외한 제품·테스트·gate **11개** 해시는 불변이었다. boundary·Contract fixture·`git diff --check`는 PASS로 보고됐다. 이 해시 대조는 이번 Log 후속 기록을 추가하기 전의 검토 시점에 대한 결과이며, 이번 Log 변경 후 manifest 재대조 결과를 뜻하지 않는다.
+- **현재 진행 판정:** 후속 reviewer 결과에 따라 RT-08(b) 커밋·중간 PR 생성은 가능하다. 실제 병합은 원격 CI 통과 후 가능하며, 원격 Linux CI는 아직 실행되지 않았다. 이번 작업에서는 Implementation Log만 갱신하고 staging·커밋·푸시·PR 생성 및 테스트 재실행을 하지 않는다.
+- **남은 비차단 위험:** 생성 후 500 또는 COMMIT ACK 유실 시 생성 반영 여부가 불명일 수 있다. 과거 Worker 실패·timeout의 개별 직접 원인은 미확정이며, 이번 GREEN이나 #370 공통 timestamp ordering 수정으로 소급 확정하지 않는다. invalid historical row·큰 clock step·EC2 clock discipline 위험과 원격 Linux CI 미실행 한계가 남는다.
+- **상태·연결:** RT-08 **IN_PROGRESS** · **Refs #295 (RT-08(b))** · PR 번호 **pending** · merge SHA **pending**.
