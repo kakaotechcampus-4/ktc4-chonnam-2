@@ -50,6 +50,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | attempt별 queue 대기 관측 | claim receipt 내부 queued_at · DB queued_at→started_at · INITIAL/RETRY 묶음 · heartbeat 시작 뒤 sink 호출 | RT-06(a) · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `repository.py` · `worker_loop.py` |
 | STALE 관측 · fatal hook 비노출 | DB STALE ended_at − 마지막 heartbeat_at · post-commit 측정/누락 fallback 없음 · fatal cleanup 후 process 경계에서 원문 비노출·고정 코드 1 | RT-06(a) 후속 P2 · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `sweep.py` · `worker/__main__.py` |
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
+| PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
@@ -1886,3 +1887,45 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - **비차단 P3 후속 후보 — 이번 변경에 구현하지 않음:** (1) Baseline의 약82초 예시에 정상 clock 가정을 명시. (2) clock-step + COMMIT 불명 rollback·소진 조합 acceptance 보강. 두 항목은 후속 후보로만 기록한다.
 - **PR 연결·상태:** **Closes #370 / Related #295**, **#295는 닫지 않음**. PR 번호·merge SHA는 각각 **pending**이며 merge 전 상태는 `IN_PROGRESS`를 유지한다.
 - **이번 갱신 범위:** 이 Log의 #370 후속 기록 추가만 수행했다. 제품 코드·테스트·Baseline 및 다른 문서는 수정하지 않았고, 테스트 재실행·staging·commit·push·PR 생성은 하지 않았다. 확인은 `git diff --check`와 `git status --short`로 한정한다.
+
+### #370 PR 연결·develop 병합 후속 (2026-10-17)
+
+- **현재 연결·상태:** [PR #371](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/371), **Closes #370 / Related #295**, **#295는 닫지 않음**. merge SHA는 **pending**, merge 전 상태는 `IN_PROGRESS`다.
+- **이력 구분:** 위 구현·검증·독립 재리뷰 기록 전체와 당시 PR pending·20분 CI 제한 미확인 기록은 역사적 snapshot으로 보존한다. 이후 Issue #368 / PR #372에서 workflow 제한이 **30분**으로 변경됐으며 해당 원격 CI 결과는 아래 #368 기록에서 구분한다. #368의 CI PASS를 #370 PR #371의 CI PASS로 대체하지 않으며, **#370 merge 전 해당 PR의 CI 통과가 필수**다. 기존 검증 수치·잔여 위험·비차단 P3 후보는 유지한다.
+
+## 2026-10-17 Issue #368 — CI 실행시간·timeout 후속
+
+- **구현 당시 연결·상태:** `Refs #368`. 로컬 미커밋, PR/merge SHA `pending`. Issue 전체 완료나 RT-08(b) 구현 완료를 뜻하지 않는다. 최신 `origin/develop` `ae9288226901b7e551595400dcb53c453c01d38e` 기반 별도 worktree/브랜치에서 작업했다.
+- **기록 위치:** Plan §12.5와 이 Log의 사용 규칙에 따라 실제 설정 선택·판단 변경 근거·검증·남은 위험을 기록한다. 기존 RT-08 기록은 당시 사실로 보존하며 Plan을 다시 쓰지 않는다.
+
+| 확인한 근거 | 판단에 미치는 영향 |
+| --- | --- |
+| [PR #352 이전 CI 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/352#issuecomment-6215216824): Ubuntu test job 14분 33초, 전체 pytest 13분 30초 성공을 근거로 20분 유지. 이후 20분 근접·실제 timeout이면 재검토한다고 기록 | 당시 성공 기록은 유지하되 현재 실행시간의 보장으로 일반화하지 않는다 |
+| [멘토 리뷰 4번](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/352#pullrequestreview-5520973090): PR CI 약 30분 허용, 협업 지장이 생기면 실패 영향·변경 관련성·실행시간을 기준으로 분리 | [Issue #368](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/368)의 CI 후속과 이번 사용자 지시에 따라 우선 job timeout을 현실화한다 |
+| [PR #371 run 39009492969 / test job 117328737070](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39009492969/job/117328737070): GitHub API에서 job/전체 pytest `cancelled`, 후속 MySQL execution gate `skipped` 확인. annotation은 `The job has exceeded the maximum execution time of 20m0s` | 원격 CI의 20분 제한 초과가 실제로 확인되어 이전 유지 판단을 변경한다 |
+
+- **원격 시각(UTC):** 2026-10-17 job 시작 `06:19:45`, 전체 pytest 시작 `06:21:08`, pytest 취소 `06:39:58`, job 완료 `06:40:01`(정리 포함). 시각 차이 직접 계산은 pytest 실행 18분 50초, job 전체 20분 16초다. job timeout은 준비 단계까지 포함하므로 pytest에 20분 전부가 주어지는 것은 아니다. 취소된 실행의 정상 완료 예상시간은 확인할 수 없다.
+- **구현 결과·Plan 대비 변경:** `.github/workflows/python-tests.yml`의 `jobs.test.timeout-minutes`만 `20 → 30`으로 조정한다. Runtime Task/Contract/Accepted Decision/Provisional Baseline 변경은 없다. CI 운영 상한 조정이며 테스트 계층화·workflow 분리는 이번 범위 밖이다.
+- **유지한 검증 경계:** 전체 pytest inventory·실행 명령, skip/xfail 정책, nested child 900초 제한, MySQL 필수 시나리오·JSON/JUnit strict gate를 그대로 유지한다. test/src/scripts/conftest 및 다른 workflow는 변경하지 않는다.
+- **검증:** 변경 전후 actionlint 1.7.12로 해당 workflow 구문·GitHub Actions expression/구조 정적 검사 PASS(ShellCheck·pyflakes 미실행). 기준 workflow와의 byte 비교로 timeout 한 줄 외 동일함을 확인하고, `git diff --check` PASS. 루트 README 사실 절에 이번 timeout 변경으로 어긋난 내용은 없어 수정하지 않는다. 전체 pytest·실제 MySQL·원격 CI는 이번 설정 수정에서 실행하지 않았다.
+- **Owner 확인 포인트·남은 위험:** 30분 안에 전체 pytest와 후속 MySQL gate가 완료되는지는 다음 원격 실행에서 확인해야 한다. timeout 증가는 실행시간 증가의 근본 원인이나 기존 nested/개별 subprocess의 미확정 timeout 원인을 해결·규명하지 않는다. 최대 대기시간·runner 점유 상한은 10분 늘며 실제 비용 증가는 이번에 측정하지 않았다. 이후에도 timeout 또는 협업 지연이 관찰되면 단계별 시간·fixture/migration 비용을 근거로 다시 판단하고, 계층화·분리는 별도 변경으로 검토한다.
+
+### PR #372 원격 CI 후속 확인
+
+- **현재 연결·상태:** [PR #372](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/372), `Refs #368`, merge SHA `pending`(조회 시 open·미병합). 실행 대상 head는 `f76322a0ee7baef8ba6d8b82dd85178605fea419`다.
+- **이력 구분:** 위 검증·위험 기록은 구현 당시의 snapshot이다. 당시 30분 내 완료는 미확인이었고, 이번 PR #372 원격 실행에서 전체 필수 단계의 PASS를 처음 확인했다. 과거 PR #352 성공과 PR #371 취소, 구현 당시 미확인 사실을 소급 변경하지 않는다.
+
+| 원격 검증 | 직접 확인한 결과 |
+| --- | --- |
+| [boundary-check / run 39016580841 / job 117349827773](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39016580841/job/117349827773) | PASS · 9초 |
+| [python-tests / run 39016580855 / test job 117349827893](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39016580855/job/117349827893) | PASS · 17분 40초(2026-10-17 `08:13:58 → 08:31:38 UTC`) |
+| 같은 job의 전체 pytest 단계 | PASS · 16분 33초(`08:15:00 → 08:31:33 UTC`) |
+| 같은 job의 MySQL execution gate | PASS · 전체 pytest 이후 필수 JSON/JUnit gate 완료 |
+
+- **판정·비차단 위험:** 이번 원격 실행에서 30분 timeout 안에 전체 필수 단계가 완료되어, 제한으로 검증이 중단되는 상황을 피하려는 조정 목적은 달성했다. 단일 실행 결과가 향후 30분 내 완료를 보장하지는 않으며, 실행시간 변동·기존 개별 timeout 원인의 미확정·runner 점유 상한 증가를 비차단 위험으로 유지한다. 협업 지연이나 timeout이 다시 관찰되면 실행시간 근거로 계층화·workflow 분리를 별도 검토한다. 이번 후속은 테스트·gate·timeout 설정을 변경하지 않는다.
+- **이번 후속 검증·범위:** GitHub API 원본을 읽어 결과와 시각을 대조했으며 소요시간은 그 차이로 계산했다. Issue #368의 이 Log 기록만 갱신하고 `git diff --check` PASS를 확인했다. 테스트 재실행·staging·commit·push·PR 생성은 하지 않았다.
+
+### #368 PR #372 병합 후속 (2026-10-17)
+
+- **현재 연결·상태:** [PR #372](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/372), `Refs #368`, merge SHA **`a5d61cc7d1fc9d02c229deca87bd0c2a7aec2ed1`**. 현재 merge 대상 `origin/develop` 및 `MERGE_HEAD`가 이 SHA이며, 로컬 Git commit 제목 `Merge pull request #372`와 대조했다.
+- **이력·설정 보존:** 앞선 구현 당시 pending 및 PR 원격 CI 조회 당시 open·merge SHA pending 기록은 당시 snapshot으로 보존한다. PR #372의 원격 검증 수치·비차단 위험과 #368 기록 전체를 유지한다. develop에서 병합된 `.github/workflows/python-tests.yml`의 **`timeout-minutes: 30`**도 유지하며, 이번 충돌 해결에서는 workflow·제품 코드·테스트를 수정하지 않았다.
