@@ -1858,7 +1858,7 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 
 ## 2026-10-17 Issue #368 — CI 실행시간·timeout 후속
 
-- **연결·상태:** `Refs #368`. 로컬 미커밋, PR/merge SHA `pending`. Issue 전체 완료나 RT-08(b) 구현 완료를 뜻하지 않는다. 최신 `origin/develop` `ae9288226901b7e551595400dcb53c453c01d38e` 기반 별도 worktree/브랜치에서 작업했다.
+- **구현 당시 연결·상태:** `Refs #368`. 로컬 미커밋, PR/merge SHA `pending`. Issue 전체 완료나 RT-08(b) 구현 완료를 뜻하지 않는다. 최신 `origin/develop` `ae9288226901b7e551595400dcb53c453c01d38e` 기반 별도 worktree/브랜치에서 작업했다.
 - **기록 위치:** Plan §12.5와 이 Log의 사용 규칙에 따라 실제 설정 선택·판단 변경 근거·검증·남은 위험을 기록한다. 기존 RT-08 기록은 당시 사실로 보존하며 Plan을 다시 쓰지 않는다.
 
 | 확인한 근거 | 판단에 미치는 영향 |
@@ -1872,3 +1872,18 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - **유지한 검증 경계:** 전체 pytest inventory·실행 명령, skip/xfail 정책, nested child 900초 제한, MySQL 필수 시나리오·JSON/JUnit strict gate를 그대로 유지한다. test/src/scripts/conftest 및 다른 workflow는 변경하지 않는다.
 - **검증:** 변경 전후 actionlint 1.7.12로 해당 workflow 구문·GitHub Actions expression/구조 정적 검사 PASS(ShellCheck·pyflakes 미실행). 기준 workflow와의 byte 비교로 timeout 한 줄 외 동일함을 확인하고, `git diff --check` PASS. 루트 README 사실 절에 이번 timeout 변경으로 어긋난 내용은 없어 수정하지 않는다. 전체 pytest·실제 MySQL·원격 CI는 이번 설정 수정에서 실행하지 않았다.
 - **Owner 확인 포인트·남은 위험:** 30분 안에 전체 pytest와 후속 MySQL gate가 완료되는지는 다음 원격 실행에서 확인해야 한다. timeout 증가는 실행시간 증가의 근본 원인이나 기존 nested/개별 subprocess의 미확정 timeout 원인을 해결·규명하지 않는다. 최대 대기시간·runner 점유 상한은 10분 늘며 실제 비용 증가는 이번에 측정하지 않았다. 이후에도 timeout 또는 협업 지연이 관찰되면 단계별 시간·fixture/migration 비용을 근거로 다시 판단하고, 계층화·분리는 별도 변경으로 검토한다.
+
+### PR #372 원격 CI 후속 확인
+
+- **현재 연결·상태:** [PR #372](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/372), `Refs #368`, merge SHA `pending`(조회 시 open·미병합). 실행 대상 head는 `f76322a0ee7baef8ba6d8b82dd85178605fea419`다.
+- **이력 구분:** 위 검증·위험 기록은 구현 당시의 snapshot이다. 당시 30분 내 완료는 미확인이었고, 이번 PR #372 원격 실행에서 전체 필수 단계의 PASS를 처음 확인했다. 과거 PR #352 성공과 PR #371 취소, 구현 당시 미확인 사실을 소급 변경하지 않는다.
+
+| 원격 검증 | 직접 확인한 결과 |
+| --- | --- |
+| [boundary-check / run 39016580841 / job 117349827773](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39016580841/job/117349827773) | PASS · 9초 |
+| [python-tests / run 39016580855 / test job 117349827893](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39016580855/job/117349827893) | PASS · 17분 40초(2026-10-17 `08:13:58 → 08:31:38 UTC`) |
+| 같은 job의 전체 pytest 단계 | PASS · 16분 33초(`08:15:00 → 08:31:33 UTC`) |
+| 같은 job의 MySQL execution gate | PASS · 전체 pytest 이후 필수 JSON/JUnit gate 완료 |
+
+- **판정·비차단 위험:** 이번 원격 실행에서 30분 timeout 안에 전체 필수 단계가 완료되어, 제한으로 검증이 중단되는 상황을 피하려는 조정 목적은 달성했다. 단일 실행 결과가 향후 30분 내 완료를 보장하지는 않으며, 실행시간 변동·기존 개별 timeout 원인의 미확정·runner 점유 상한 증가를 비차단 위험으로 유지한다. 협업 지연이나 timeout이 다시 관찰되면 실행시간 근거로 계층화·workflow 분리를 별도 검토한다. 이번 후속은 테스트·gate·timeout 설정을 변경하지 않는다.
+- **이번 후속 검증·범위:** GitHub API 원본을 읽어 결과와 시각을 대조했으며 소요시간은 그 차이로 계산했다. Issue #368의 이 Log 기록만 갱신하고 `git diff --check` PASS를 확인했다. 테스트 재실행·staging·commit·push·PR 생성은 하지 않았다.
