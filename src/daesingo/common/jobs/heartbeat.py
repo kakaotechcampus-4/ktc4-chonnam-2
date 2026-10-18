@@ -10,6 +10,7 @@ import time
 from sqlalchemy import text
 
 from daesingo.common.logging import copy_context_call, log_event_best_effort
+from .timestamps import HEARTBEAT_TIMESTAMP_SQL
 
 
 class OwnershipLost(RuntimeError):
@@ -52,6 +53,11 @@ class HeartbeatObservation:
     lag_ms: float | None
     skipped_tick_count: int
     consecutive_failures: int
+
+
+@dataclass(frozen=True)
+class CancelObservation:
+    duration_ms: float
 
 
 class Heartbeat:
@@ -159,9 +165,16 @@ class Heartbeat:
                     raise
 
 
-_RENEW = text("""UPDATE job_execution SET heartbeat_at = NOW(6),
-lease_expires_at = TIMESTAMPADD(MICROSECOND, :lease_us, NOW(6))
+_RENEW = text(f"""UPDATE job_execution SET heartbeat_at = {HEARTBEAT_TIMESTAMP_SQL},
+lease_expires_at = GREATEST(COALESCE(lease_expires_at,
+TIMESTAMPADD(MICROSECOND, :lease_us, {HEARTBEAT_TIMESTAMP_SQL})),
+TIMESTAMPADD(MICROSECOND, :lease_us, {HEARTBEAT_TIMESTAMP_SQL}))
 WHERE execution_id = :execution_id AND status = 'RUNNING' AND lease_owner = :owner""")
+
+_CANCEL_OBSERVATION = text("""SELECT cancel_requested_at,
+TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0 AS latency_ms
+FROM job_execution WHERE execution_id = :execution_id
+AND status = 'RUNNING' AND lease_owner = :owner""")
 
 
 class LeaseConnection:
@@ -170,15 +183,20 @@ class LeaseConnection:
     Roll back and close after any ordinary attempt failure; reconnect at the
     next tick. There is no transaction helper or automatic replay here.
     """
-    def __init__(self, engine, execution_id, owner, lease_duration, *, fence, owns_engine=False):
+    def __init__(self, engine, execution_id, owner, lease_duration, *, fence, owns_engine=False,
+                 cancel_signal=None, logger=None, cancel_observe=None, clock=time.monotonic):
         self.engine, self.execution_id, self.owner = engine, execution_id, owner
         self.lease_us = int(lease_duration * 1_000_000)
         self.conn = None
         self.owns_engine = owns_engine
         self.fence = fence
+        self.cancel_signal, self.logger, self.cancel_observe = cancel_signal, logger, cancel_observe
+        self.clock = clock
 
     def renew(self):
         primary = None
+        cancellation = None
+        observation_started = None
         try:
             if self.conn is None:
                 self.conn = self.engine.connect()
@@ -189,7 +207,10 @@ class LeaseConnection:
                     if changed == 0:
                         # The zero-row fact needs no commit acknowledgement.
                         self.fence.mark_lost()
-                    return changed
+                    elif self.cancel_signal is not None and not self.cancel_signal.requested:
+                        observation_started = self.clock()
+                        cancellation = self.conn.execute(_CANCEL_OBSERVATION,
+                            {"execution_id": self.execution_id, "owner": self.owner}).mappings().one_or_none()
                 except BaseException as error:
                     primary = error
                     raise
@@ -201,6 +222,23 @@ class LeaseConnection:
             if primary is not None and error is not primary:
                 raise primary from None
             raise
+        # Deliver only a successfully committed heartbeat observation. Sinks run
+        # after the signal and outside the DB-failure/connection cleanup boundary.
+        if (cancellation is not None and cancellation["cancel_requested_at"] is not None
+                and self.cancel_signal.request()):
+            # DB marker age at SELECT plus elapsed read/commit acknowledgement.
+            # No host wall-clock comparison; include signal delivery latency.
+            observation = CancelObservation(max(0, float(cancellation["latency_ms"]))
+                + max(0, self.clock() - observation_started) * 1000)
+            if self.cancel_observe is not None:
+                try:
+                    self.cancel_observe(observation)
+                except Exception:
+                    pass
+            if self.logger is not None:
+                log_event_best_effort(self.logger, "runtime.cancel.observe_latency_ms",
+                                      status="REQUESTED", duration_ms=observation.duration_ms)
+        return changed
 
     def _close_connection(self):
         conn, self.conn = self.conn, None
