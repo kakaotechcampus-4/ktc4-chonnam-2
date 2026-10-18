@@ -16,6 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
     *(("api_commands", s) for s in ("success", "domain", "rollback", "failure", "idempotency", "boundary")),
     *(("timestamp_order", scenario) for scenario in (
@@ -116,6 +117,7 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    ("async_e2e", "lifecycle", "retry_search"),
     *(("api_cancel", "atomicity", p) for p in ("QUEUED", "RUNNING", "STALE", "SUCCEEDED", "multiple")),
     *(("api_cancel", "rollback", p) for p in ("before", "after", "disconnect", "sql")),
     ("api_cancel", "commit_unknown", "ack_loss"),

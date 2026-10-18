@@ -15,6 +15,7 @@ from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
 from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
 from cancel_api_acceptance import CANCEL_API_CHECKS, CANCEL_API_PARAMETERS
+from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -38,6 +39,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *ASYNC_E2E_CHECKS,
     *CANCEL_API_CHECKS,
     *COMMAND_CHECKS,
     *TIMESTAMP_CHECKS,
@@ -119,6 +121,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *ASYNC_E2E_PARAMETERS,
     *CANCEL_API_PARAMETERS,
     *TIMESTAMP_PARAMETERS,
     *COMMAND_PARAMETERS,
@@ -481,7 +484,7 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
+@pytest.mark.parametrize("identity", (*ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
 @pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
 def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()
