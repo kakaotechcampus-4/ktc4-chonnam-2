@@ -16,6 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
     *(("api_commands", s) for s in ("success", "domain", "rollback", "failure", "idempotency", "boundary")),
@@ -117,6 +118,14 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_start_analysis", "atomicity", kind) for kind in ("hint_extract", "coarse_search")),
+    *(("api_start_analysis", "rollback", kind + "_" + fault)
+      for kind in ("hint_extract", "coarse_search") for fault in ("save", "enqueue")),
+    *(("api_start_analysis", "dependency", fault) for fault in ("timeline_unavailable", "unknown_ref")),
+    *(("api_start_analysis", "commit_unknown", kind) for kind in ("hint_extract", "coarse_search")),
+    *(("api_start_analysis", "repeat", kind + "_" + mode)
+      for kind in ("hint_extract", "coarse_search") for mode in ("sequential", "concurrent")),
+    *(("api_start_analysis", "response_loss", kind) for kind in ("hint_extract", "coarse_search")),
     ("async_e2e", "lifecycle", "retry_search"),
     *(("api_cancel", "atomicity", p) for p in ("QUEUED", "RUNNING", "STALE", "SUCCEEDED", "multiple")),
     *(("api_cancel", "rollback", p) for p in ("before", "after", "disconnect", "sql")),
