@@ -11,6 +11,7 @@ from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_api_engine, create_ready_engine
 from daesingo.common.db.transactions import run_api_transaction
 from daesingo.common.jobs.read_port import read_executions
+from daesingo.common.jobs.cancel import request_cancel
 from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
 from .health import Readiness
@@ -58,10 +59,8 @@ class ApiComposition:
     def execute_command(self, payload, trace_id: str):
         def operation(conn):
             result = case_api.execute_command(payload, store=self._store(conn))
-            # RT-08(d) owns cancellation wiring. Until then, never commit only
-            # the Case half of a cancellation, or advertise it as successful.
             if result.cancelled_job_ids:
-                raise NotImplementedError("cancellation composition unavailable")
+                request_cancel(conn, result.cancelled_job_ids)
             if result.appended_job_records:
                 enqueue(conn, result.appended_job_records, trace_id)
             return result

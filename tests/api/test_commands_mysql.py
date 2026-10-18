@@ -289,13 +289,16 @@ def test_case_owns_repeat_submission_and_only_new_jobs_are_enqueued(api_db, conc
     assert state[0] == rev + 1 and state[2] is True and not rows
 
 
-@pytest.mark.mysql_check("api_commands", "boundary", parameter="cancel_deferred")
-def test_cancel_result_cannot_partially_commit_before_rt08d(api_db):
+@pytest.mark.mysql_check("api_commands", "boundary", parameter="cancel_wired")
+def test_cancel_result_commits_both_halves_in_rt08d(api_db):
     startup, _, engine = api_db
     identity, rev = seed(engine, pending=True)
     before = snapshot(engine, identity)
     payload = {"case_id": identity, "expected_case_rev": rev, "kind": "STOP_ANALYSIS", "payload": {}}
     with TestClient(create_app(startup=startup)) as client:
         response = client.post(f"/cases/{identity}/commands", json=payload)
-        assert response.status_code == 500 and response.json() == envelope("http.internal_error")
-    assert snapshot(engine, identity) == before
+        assert response.status_code == 200 and response.json()["ok"] is True
+        assert response.json()["case_view"]["running_jobs"] == []
+    after, rows = snapshot(engine, identity)
+    assert after[0] == before[0][0] + 1 and after[1] == before[0][1]
+    assert [row["status"] for row in rows] == ["CANCELLED"]

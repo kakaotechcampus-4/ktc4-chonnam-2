@@ -5,6 +5,6 @@ COMMAND_PARAMETERS = (
     *(("api_commands", "rollback", p) for p in ("enqueue", "save", "disconnect", "unrelated_sql")),
     *(("api_commands", "failure", p) for p in ("pool", "lock_timeout", "commit_unknown")),
     *(("api_commands", "idempotency", p) for p in ("sequential", "concurrent")),
-    ("api_commands", "boundary", "cancel_deferred"),
+    ("api_commands", "boundary", "cancel_wired"),
 )
 COMMAND_CHECKS = tuple(sorted({(r, s) for r, s, p in COMMAND_PARAMETERS}))
