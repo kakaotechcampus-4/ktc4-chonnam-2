@@ -15,6 +15,7 @@ from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
 from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
+from cancel_api_acceptance import CANCEL_API_CHECKS, CANCEL_API_PARAMETERS
 
 pytestmark = pytest.mark.mysql
 
@@ -237,7 +238,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS,
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS,
                            *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
@@ -252,12 +253,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS, *COMMAND_PARAMETERS):
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
         layers = ("collection", "selection", "setup", "call", "teardown", "all", "junit")
-        if role == "timestamp_order":
+        if role in ("timestamp_order", "api_cancel"):
             layers += ("skip", "xfail", "failure", "junit_skip", "junit_failure", "junit_error")
         for layer in layers:
             broken = deepcopy(report)
@@ -296,5 +297,47 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS) + len(COMMAND_PARAMETERS)) * 7 + len(TIMESTAMP_PARAMETERS) * 13
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS) + len(COMMAND_PARAMETERS)) * 7 + (len(TIMESTAMP_PARAMETERS) + len(CANCEL_API_PARAMETERS)) * 13
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")
+
+    # RT-08(d): complete passing nodes with absent metadata must also fail.
+    # Mutate the actual report, retaining its original JSON/JUnit untouched.
+    omissions = []
+    for role, scenario, parameter in CANCEL_API_PARAMETERS:
+        expected = {"role": role, "scenario": scenario, "parameter": parameter}
+        for field in ("role", "scenario", "parameter", "all_metadata"):
+            broken = deepcopy(report)
+            entry, = (n for n in broken["collected"] if expected in n.get("checks", []))
+            if field == "all_metadata":
+                entry["checks"] = []
+            else:
+                check, = (c for c in entry["checks"] if c == expected)
+                del check[field]
+            with pytest.raises(ValueError):
+                gate.validate_report(broken)
+            omissions.append({"identity": [role, scenario, parameter], "field": field, "rejected": True})
+    for role, scenario in CANCEL_API_CHECKS:
+        broken = deepcopy(report)
+        removed = {n["nodeid"] for n in broken["collected"] if any(
+            c.get("role") == role and c.get("scenario") == scenario for c in n.get("checks", []))}
+        assert removed
+        identities = {tuple(n["junit"]) for n in broken["collected"] if n["nodeid"] in removed}
+        broken["collected"] = [n for n in broken["collected"] if n["nodeid"] not in removed]
+        broken["selected"] = [n for n in broken["selected"] if n not in removed]
+        broken["reports"] = [n for n in broken["reports"] if n["nodeid"] not in removed]
+        xml = ElementTree.parse(junit_path)
+        count = 0
+        for parent in xml.iter():
+            for case in list(parent):
+                if case.tag == "testcase" and (case.get("classname"), case.get("name")) in identities:
+                    parent.remove(case)
+                    count += 1
+        assert count == len(removed)
+        mutation_junit = tmp_path / f"cancel-family-{scenario}.xml"
+        xml.write(mutation_junit, encoding="utf-8")
+        with pytest.raises(ValueError):
+            gate.validate_report(broken)
+            gate.validate_junit(mutation_junit, broken)
+        omissions.append({"identity": [role, scenario], "field": "all_family_evidence", "rejected": True})
+    assert len(omissions) == len(CANCEL_API_PARAMETERS) * 4 + len(CANCEL_API_CHECKS)
+    (tmp_path / "cancel-omissions.json").write_text(json.dumps(omissions, indent=2), encoding="utf-8")
