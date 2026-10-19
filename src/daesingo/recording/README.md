@@ -28,4 +28,10 @@ Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
 ## 상태
 
+REC-1(a)는 호출자 Connection을 사용하는 내부 MySQL repository와
+`migrations/recording/`을 추가한다. SourceAsset·FrameRef(bytes 포함)·DerivedAsset
+metadata·기존 case/ref 연결을 새 service에서 복원한다. 원본 locator는 주입한
+storage root 아래 상대 경로이며 파일 publication은 하지 않는다.
+범위와 후속 acceptance는 [구현 경계](../../../docs/modules/recording/rec1a-persistence.md)를 따른다.
+
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

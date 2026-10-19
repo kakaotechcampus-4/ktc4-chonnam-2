@@ -18,6 +18,7 @@ from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
 from cancel_api_acceptance import CANCEL_API_CHECKS, CANCEL_API_PARAMETERS
 from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
 from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARAMETERS
+from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
 
 pytestmark = pytest.mark.mysql
 
@@ -214,7 +215,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Exclude this test to avoid recursion. Use a separate disposable base schema
     # so legacy Case initialization cannot alter the parent suite's database.
     result = subprocess.run(
-        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/e2e_runtime", "tests/api", "tests/common/db/integration", "tests/common/jobs", "tests/common/usage",
+        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/e2e_runtime", "tests/api", "tests/recording/test_recording_repository_mysql.py", "tests/recording/test_recording_repository_compatibility_mysql.py", "tests/common/db/integration", "tests/common/jobs", "tests/common/usage",
          "tests/worker/test_worker_mysql.py", "tests/worker/test_reflection_mysql.py",
          "tests/worker/test_heartbeat_mysql.py",
          "tests/worker/test_cancel_checkpoint_mysql.py",
@@ -240,7 +241,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS,
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS,
                            *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         broken = deepcopy(report)
         removed = {item["nodeid"] for item in broken["collected"]
@@ -255,12 +256,12 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     # Keep every other parameter in place. A family-level set check would
     # incorrectly accept the "all" mutation, including deletion from JUnit.
     mutations = []
-    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS):
+    for role, scenario, parameter in (*JOB_PARAMETERS, *WORKER_PARAMETERS, *USAGE_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *TIMESTAMP_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS, *RECORDING_PARAMETERS):
         check = {"role": role, "scenario": scenario, "parameter": parameter}
         entry, = (n for n in report["collected"] if check in n.get("checks", []))
         node = entry["nodeid"]
         layers = ("collection", "selection", "setup", "call", "teardown", "all", "junit")
-        if role in ("timestamp_order", "api_cancel", "async_e2e", "api_start_analysis"):
+        if role in ("timestamp_order", "api_cancel", "async_e2e", "api_start_analysis", "recording"):
             layers += ("skip", "xfail", "failure", "junit_skip", "junit_failure", "junit_error")
         for layer in layers:
             broken = deepcopy(report)
@@ -299,13 +300,13 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
-    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS) + len(COMMAND_PARAMETERS)) * 7 + (len(TIMESTAMP_PARAMETERS) + len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS)) * 13
+    assert len(mutations) == (len(JOB_PARAMETERS) + len(WORKER_PARAMETERS) + len(USAGE_PARAMETERS) + len(API_HEALTH_PARAMETERS) + len(API_CASES_VIEW_PARAMETERS) + len(COMMAND_PARAMETERS)) * 7 + (len(TIMESTAMP_PARAMETERS) + len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS) + len(RECORDING_PARAMETERS)) * 13
     (tmp_path / "parameter-mutations.json").write_text(json.dumps(mutations, indent=2), encoding="utf-8")
 
     # Complete passing nodes with absent RT-08(d)/RT-09/START_ANALYSIS metadata must also fail.
     # Mutate the actual report, retaining its original JSON/JUnit untouched.
     omissions = []
-    for role, scenario, parameter in (*CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS):
+    for role, scenario, parameter in (*CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS, *RECORDING_PARAMETERS):
         expected = {"role": role, "scenario": scenario, "parameter": parameter}
         for field in ("role", "scenario", "parameter", "all_metadata"):
             broken = deepcopy(report)
@@ -318,7 +319,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
             with pytest.raises(ValueError):
                 gate.validate_report(broken)
             omissions.append({"identity": [role, scenario, parameter], "field": field, "rejected": True})
-    for role, scenario in (*CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS):
+    for role, scenario in (*CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS):
         broken = deepcopy(report)
         removed = {n["nodeid"] for n in broken["collected"] if any(
             c.get("role") == role and c.get("scenario") == scenario for c in n.get("checks", []))}
@@ -341,8 +342,8 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
             gate.validate_report(broken)
             gate.validate_junit(mutation_junit, broken)
         omissions.append({"identity": [role, scenario], "field": "all_family_evidence", "rejected": True})
-    assert len(omissions) == (len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS)) * 4 + len(CANCEL_API_CHECKS) + len(ASYNC_E2E_CHECKS) + len(START_ANALYSIS_CHECKS)
+    assert len(omissions) == (len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS) + len(RECORDING_PARAMETERS)) * 4 + len(CANCEL_API_CHECKS) + len(ASYNC_E2E_CHECKS) + len(START_ANALYSIS_CHECKS) + len(RECORDING_CHECKS)
     for role, filename in (("api_cancel", "cancel-omissions.json"), ("async_e2e", "async-e2e-omissions.json"),
-                           ("api_start_analysis", "start-analysis-omissions.json")):
+                           ("api_start_analysis", "start-analysis-omissions.json"), ("recording", "recording-omissions.json")):
         subset = [item for item in omissions if item["identity"][0] == role]
         (tmp_path / filename).write_text(json.dumps(subset, indent=2), encoding="utf-8")
