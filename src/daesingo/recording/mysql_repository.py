@@ -143,7 +143,7 @@ class MySQLRecordingRepository:
         except (OSError, ValueError, RuntimeError):
             raise ValueError("invalid recording relative locator") from None
 
-    def add_local_source(self, asset, streams, source):
+    def add_local_source(self, asset, streams, source, *, case_id=None):
         try:
             path = source.path.resolve(strict=True)
             locator = path.relative_to(self._root).as_posix()
@@ -159,11 +159,17 @@ class MySQLRecordingRepository:
                    "sha256": source.sha256, "duration_sec": source.duration_sec,
                    "streams": [{"index": s.index, "media_type": s.media_type,
                                 "duration_sec": s.duration_sec} for s in source.streams]}
+        if source.original_filename is not None:
+            payload["original_filename"] = source.original_filename
         rows = [self._row("source_asset", asset.source_asset_ref, asset.model_dump(mode="json")),
                 self._row("local_source", asset.source_asset_ref, payload)]
         for stream in streams:
             rows += [self._row("media_stream", stream.media_stream_ref, stream.model_dump(mode="json")),
                      self._row("stream_index", stream.media_stream_ref, {"index": indices[stream.media_stream_ref]})]
+        if case_id is not None:
+            ref = m.ContractRef(kind="source_asset", ref=asset.source_asset_ref)
+            rows.append(self._row("case_asset", [case_id, ref.kind, ref.ref],
+                                  {"case_id": case_id, "asset_ref": ref.model_dump(mode="json")}))
         self._write(rows)
 
     def get_local_source(self, source_ref):
@@ -175,7 +181,8 @@ class MySQLRecordingRepository:
             raise ValueError("recording storage root mismatch")
         return LocalSource(self._path(payload["locator"]), payload["byte_size"], payload["mtime_ns"],
                            payload["sha256"], payload["duration_sec"],
-                           tuple(ProbedStream(**stream) for stream in payload["streams"]))
+                           tuple(ProbedStream(**stream) for stream in payload["streams"]),
+                           original_filename=payload.get("original_filename"))
 
     def get_local_stream_index(self, stream_ref):
         row = self._get("stream_index", stream_ref)

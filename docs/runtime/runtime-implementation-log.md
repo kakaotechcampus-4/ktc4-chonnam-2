@@ -2485,3 +2485,55 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - **reviewer의 보존 증거 대조:** MySQL728/2184 phases·Recording31의 실제 실행, source/Frame PNG/Derived metadata·case 연결과 transaction/migration 오류 경계, lifecycle 비교와 cleanup 자료를 검토했다. reviewer의 독립 WSL 상태 조회는 접근 거부였으므로 OS/DB cleanup을 직접 재관측했다고 주장하지 않는다. 구현자의 최종 Windows/WSL 자원 자료와 endpoint9개 제거/primary report117개 해시 보존은 잔여0과 일관된다는 판정이다.
 - **한계·병합 차단:** aggregate parent1200초 timeout은 실패로 유지한다. 원래5초 API process test 실패도 그대로 남고 현재 원격 CI는 미확인이다. 따라서 **전체 consumer 회귀·전체 pytest·merge는 GREEN이 아니다**. 가상 HEAD/20초 lifecycle은 비교 진단일 뿐 original5초 PASS로 대체하지 않는다. 해당 실패를 이 diff에 귀속할 코드 근거는 없으며 REC-1(a) draft 준비의 비차단 위험으로 분류하되, 전체 회귀/병합의 미해결 항목으로 명시한다. nested883.700/900초의 작은 여유와 REC-1(b)/(c)/IncidentClip bytes 후속도 유지한다.
 - **종료 상태:** 제품/테스트/gate 소스는 검증/리뷰 snapshot과 같고 이 후속은 Log append뿐이다. 최종 manifest를 이 Log 해시로 갱신하고 prefix 보존·diff-check·staging0을 다시 확인한다. 기존 stash·main-checkout-recovery 보존 자료·다른 서버/branch/worktree는 수정하지 않았다. 요청한 동일 checkout/branch에20파일을 미커밋·미스테이징 상태로 남긴다.
+
+## 2026-10-19 REC-1(a) 병합 확인 · REC-1(b) 등록 입력
+
+**REC-1 Status: IN_PROGRESS · Refs #302 (REC-1(b)) · PR pending · merge SHA pending.**
+
+- **선행 병합·원격 CI 확인:** PR #379는 develop에 병합됐으며 merge SHA는 `978fed34d8bedf2cf5cf6d2c7d04e557cd670004`다. PR HEAD `dd2ec4957748af40c6dc9708158c5c03082aea26`의 [boundary-check](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39212568969)와 [python-tests](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/39212568964) 및 full pytest/strict MySQL gate step의 SUCCESS를 GitHub 원본에서 직접 확인했다. 앞선 pending/CI 미확인 기록은 당시 이력으로 유지한다. 이 CI는 REC-1(b) 미커밋 diff의 원격 CI가 아니다.
+- **시작 상태:** 같은 checkout의 `codex/rec1b-registration-input`, HEAD와 origin/develop이 지정 SHA와 일치, clean worktree·staging0을 확인했다. 원격 develop도 GitHub connector로 같은 SHA를 확인했다. 새 branch/worktree를 만들지 않았다. 저장소·상위 AGENTS.md 실파일은 없으며 사용자 제공 AGENTS 지침, CLAUDE 읽기 라우터와 docs 운영 규칙을 따랐다.
+- **SoT 직접 대조:** Plan REC-1/§12, Ops §4-2, RD-17/#246 최종 결정 댓글, HTTP §5.2/§9.1, Baseline B-C3, 현재 Issue #302 본문·댓글0건, REC-1(a) note·Log, Recording model/service/repository/migration/tests와 #379 병합 코드를 확인했다. [REC-1(b) 구현 경계](../modules/recording/rec1b-registration-input.md)에 선택과 제약을 기록했다.
+
+### Implementation Notes
+
+- **구현 결과:** `original_filename`은 내부 LocalSource metadata로 기존 JSON에 보존·복원하며 시각 관찰에 사용한다. canonical 상대 locator와 별개이며 SourceAsset Contract에 필드를 추가하지 않는다. SoT에 없는 trim/basename/Unicode 정규화/길이·확장자 제한을 만들지 않는다. 문자열은 원문 그대로의 비경로 metadata이고 잘못된 타입/비Unicode surrogate 입력은 원문 없는 ValueError로 dependency 접근 전에 거부한다.
+- **등록 taxonomy:** 안정된 입력과 ffprobe 구조화 AVERROR_INVALIDDATA 또는 유효한 metadata의 지원 video stream 부재는 UNSUPPORTED_MEDIA다. 도구/읽기/timeout/변경 감지/미확인 오류와 비정상 JSON·metadata는 TEMPORARY_FAILURE다. stderr/경로/확장자 기반 추론은 없다. HTTP422/503 매핑은 기존 Contract를 따르며 route는 구현하지 않는다.
+- **transaction·Case 경계:** 선택적 case_id는 기존 Recording case_asset 표현을 등록 행들과 한 SQL 문장에 넣는다. caller Connection·commit/rollback 소유와 COMMIT 결과 불명, 같은 파일 재등록 시 새 logical identity 의미는 유지한다. Case stage·존재·manifest는 판단하지 않는다. 기존 Case 공개 함수 `record_source_registered()`를 같은 Connection에 조립하는 테스트만 추가하며 Case-first lock 순서를 따른다. 새 Case interface/callback/역방향 의존성/schema/Owner 의무가 필요하지 않아 별도 Owner 승인을 기다리지 않고 진행했다. 실제 HTTP 조립은 RT-11이다.
+- **schema·Plan 대비 변경:** schema 변경 불필요. 기존 JSON의 선택적 내부 metadata이므로 새 migration을 추가하지 않고 recording_0001과 frozen revision을 보존한다. 과거 JSON에 키가 없어도 원문을 추정해 채우거나 row를 rewrite하지 않는다. REC-1(a) FrameRef MySQL bytes·DerivedAsset metadata·관계·locator·복구 의미를 유지한다. 권장 (b) 범위의 implementation detail이며 Plan/Contract/Accepted Decision/Baseline 의미 변경은 없다.
+- **Owner 확인 포인트:** filename의 신규 거부·정규화 정책, 최종 ref→case 공개 조회, Case stage·집계 변경은 이번 slice에서 정하지 않았다. 기존 경계 안의 등록 입력·관계 저장에 남은 Owner blocker는 없다. REC-1(c), RT-10, RT-11 조립과 다른 Owner 제품 코드는 제외한다.
+- **Verification 진행:** 기존 구현에서 unit21 FAIL/1 PASS와 실제 MySQL 신규10 FAIL을 보존했다. surrogate1 FAIL, case 입력4 FAIL을 추가 확인한 뒤 최소 구현으로 unit27 PASS를 확인했다. Recording MySQL41 PASS와 기존 Case 공개 함수 조립2 PASS, 등록·시각 관찰 선택110 PASS/외부 사용자 영상 미지정2 SKIP를 직접 실행했다. boundary0·Contract62/26/104·diff-check PASS. 전체 pytest는 필수 MySQL inventory·strict JSON/JUnit·parameter/metadata/family mutation을 포함해 기존 workflow30분/nested900초와 skip/xfail 거부 정책으로 실행 중이며 아직 PASS로 기록하지 않는다.
+- **증거·상태:** 실행 증거는 새 ignored `.codex-scratch/rec1b-20261019/`에 분리한다. 초기 tmp 접근 및 서버 준비·sandbox localhost preflight 실패도 별도 유지하며 RED/GREEN으로 오인하지 않는다. 기존 scratch·RAW·archive·pytest 산출물과 관련 없는 untracked 파일은 전달 범위가 아니다. 독립 재리뷰·최종 결과·자원 audit은 후속 기록으로 남긴다. staging/commit/push/PR 생성은 수행하지 않는다.
+
+### 2026-10-19 REC-1(b) 재개 · 리뷰 수정 · 최종 직접 검증
+
+**REC-1 Status: IN_PROGRESS · Refs #302 (REC-1(b)) · PR pending · merge SHA pending.**
+
+- **중단·재개 경계:** 같은 checkout/branch/HEAD와 staging0을 다시 확인했다. 최초 전체 pytest는 76%에서 exit124로 끝났고 최종 JSON/JUnit·nested 완료 증거가 없었다. 상위 guard는1800초였으나 wrapper elapsed는5715.203초였다. 중단과의 인과관계는 미확정이며 timeout 설정을 늘리거나 이를 PASS로 처리하지 않았다. 당시 소스 변화는 후술한 probe 수정·영구 재현 테스트2파일뿐이었다. 원본 진행표시7F와 현재 collection 순서로 추정한 실패 후보7건은 정확한 최초 traceback을 대신하지 않는다.
+- **독립 리뷰 수정:** 구현에 참여하지 않은 `/root/rec1b_independent_review`가 잘못된 format duration과 no-video가 함께 있으면 UNSUPPORTED_MEDIA로 먼저 분류되는 P2를2건 재현했다. 구현자도 재현2 FAIL, 영구 테스트2 FAIL/9 PASS를 확인한 뒤 duration 검증을 먼저 완료하게 최소 수정했다. reviewer 원래 재현2 PASS와 최종 등록·시각 선택112 PASS/외부 opt-in2 SKIP를 확인했다. 다른 제품/gate 의미는 변경하지 않았다.
+
+| 직접 실행 | 결과 |
+| --- | --- |
+| 원본 필수 MySQL inventory | 743 PASS · 2229 passing phases · skip0/xfail0 · JUnit884.009초 |
+| 원본 `test_actual_report_rejects_each_missing_migration_check` 전체 함수 | 1 PASS/1092.42초 · wrapper1096.5초/exit0 · 소스 drift0 |
+| 원본 JSON/JUnit strict CLI | PASS · reviewer 직접 재실행 PASS |
+| parameter mutation | 4814개 전부 거부 · Recording559 layer 변형 포함 |
+| Recording omission | metadata172 + family11 전부 거부 · 신규15 parameter/2 family 포함 |
+| 나머지 omission | cancel82 · async5 · START_ANALYSIS70 전부 거부 |
+| 최종 Recording 전체 | 616 PASS/외부 media·placement opt-in15 SKIP · MySQL Recording43개는 모두 실행·PASS |
+| gate unit 전체 | 5261 PASS |
+| API process-safety 최초 파일 재실행 | 44 PASS/1 FAIL · GO 전 `setup_import_watchdog_5s` |
+| 실패 API node 단독 재실행 | 1 PASS/원래 watchdog 유지 |
+| API process-safety idle 파일 재확인 | 45 PASS · 기존 Starlette deprecation warning1 |
+| boundary/Contract/static/diff | 위반0 · structure62/JSON26/semantic104 PASS · checker 함수 AST/기존 inventory/frozen migrations/workflow/nested gate 보존 · diff-check PASS |
+
+- **증거 판정:** 위 선택은 서로 겹치므로 unique 테스트 수로 합산하지 않는다. reviewer는 원본743 JSON/JUnit·전체4814 parameter/layer Counter·4 omission 집합·전부 거부 및 원본 해시 before/after 일치를 직접 확인했다. mandatory/focused snapshot의 모든 소스와 현재 코드가 일치한다. 900초 nested 제한 안에서 원본 함수를 완주했으며 JUnit884.009초는 subprocess 시작 비용까지 포함한 정확한 여유 수치가 아니다. 여유가 작은 실행시간 위험은 유지한다.
+- **전체 pytest 생략 판단:** reviewer가 최종 Recording 전체·실제 MySQL의 API/Worker/Case/migration 교차 검증·strict/mutation·gate unit·원래 deadline API 검증을 근거로 전체 pytest의 중복 replay 생략을 허용했다. 변경하지 않은 다른 모듈의 전체 unit은 재실행하지 않았다. **완료된 최종 전체 pytest PASS는 없다.** 최초 전체 부분 실행과 API44/1 실패를 후속 PASS로 덮지 않는다. API phase/stack에는 ready/GO 전 timeout이 확인되지만 부하·환경이 원인이라는 판단은 추론이며 확정하지 않는다. 후속 idle45 PASS도 원래 실패의 원인을 확정하지 않는다.
+- **보존·자원 audit:** REC-1(a) manifest의 원본 증거150파일과 기존 Log 전체 byte prefix를 재해시해 보존했다. 재개 서버 종료 전 schema는 system+owned base뿐, 계정은 기본 MySQL 계정뿐, test client0/transaction0이었다. 소유 helper의 graceful stop·port closed·datadir 제거를 확인했다. 중단 서버의 명시된 datadir은 이미 없었고 당시 로그는 읽을 수 없어 보존했다고 주장하지 않는다. 재개 서버 로그2개는 stop 전 별도 보존했다. Windows owned Python0/listener0, WSL mysqld0와 두 기록 포트의 잔여 없음을 확인했다. task-owned junction4개만 제거하고 일반 파일은 삭제하지 않았다.
+- **현재 범위·남은 한계:** 변경14파일 전체는 [REC-1(b) note](../modules/recording/rec1b-registration-input.md) 「Delivery files」에 있다. 기존 Case 공개 함수 조립만 검증했고 Case/Runtime 제품 코드·schema·Owner 의무·Contract/Decision/Baseline 의미는 바꾸지 않았다. 이 slice에 남은 Owner 판단은 없다. 최종 ownership/media API와 RT-10/RT-11 조립·추가 filename 정책은 후속 경계를 유지한다. 현재 미커밋 diff의 원격 CI는 없고 PR#379의 원격 PASS로 대체하지 않는다. 모든 scratch helper/RAW/media/pytest 산출물은 PR 제외이며 관련 없는 untracked 파일은 보존한다. 제한을 명시한 코드/중간 draft 검토 준비와 전체 회귀/병합 준비를 구분한다. 실제 staging/commit/push/PR 생성은 하지 않는다.
+
+### 2026-10-19 REC-1(b) 최종 독립 재리뷰 판정 · 종료 상태
+
+- **REC-1 Status: IN_PROGRESS · Refs #302 (REC-1(b)) · PR pending · merge SHA pending.** fresh reviewer `/root/rec1b_independent_review`의 최종 판정은 **남은 actionable P1/P2 없음, 새 Owner 승인 blocker 없음, 범위를 한정한 커밋/중간 draft PR 문안 준비 가능**이다. 전체 pytest PASS나 merge-ready 판정은 아니다. 상세 독립 보고서는 ignored `.codex-scratch/rec1b-20261019/reviewer/independent-1/final-review.md`에 보존한다.
+- **reviewer 직접 대조:** strict743/2229phases, 전체4814 parameter/layer의 정확한 Counter, Recording omission183을 포함한4 omission 집합·거부 및 원본 before/after 해시, mandatory/focused 소스 drift0, 기존150증거·전달14파일/manifest 증거145파일 해시, branch/HEAD/index·Log byte prefix·frozen migrations·기존 inventory·gate 함수 AST·30분/900초 제한을 확인했다. Recording616/15외부skip·gate5261·API최종45의 원본 실행 자료를 검토했다. OS/DB 자원 정리는 원본 audit를 검토했으며 reviewer가 독립 재관측했다고 주장하지 않는다.
+- **생략·위험·병합 경계:** final Recording·cross-module MySQL/migration·strict/mutations·gate unit·원래 deadline API 검증의 중복 범위를 근거로 reviewer가 전체 pytest replay 생략을 허용했다. 최초 전체 부분 실패와 API watchdog 실패, 중단 서버 로그 미보존2건, 작은 nested timeout 여유와 외부 opt-in 미실행을 유지한다. 현재 diff의 원격 CI는 여전히 pending이다. Issue#302를 마지막으로 원격 재조회한 결과 본문 변경 없음/댓글0/open을 확인했다.
+- **종료 상태:** 최종 판정 이후 제품/테스트/gate 변경은 없고 이 후속 Log append만 추가했다. manifest를 최신 Log/독립 보고서 해시로 갱신하고 보존·diff-check·빈 staging을 재확인한다. 같은 checkout/branch의14파일을 독립 리뷰 가능한 미커밋·미스테이징 상태로 남기며, staging/commit/push/PR 생성은 수행하지 않았다.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
 import hashlib
@@ -214,14 +214,28 @@ class RecordingService:
         """등록된 Mock GPS 관찰값의 독립 복사본. 미기재는 UNKNOWN이 아니라 []다."""
         return self._repository.list_gps_observations()
 
-    def register_local_source(self, path: str | Path) -> RegisteredSource:
+    def register_local_source(self, path: str | Path, *, original_filename: str | None = None,
+                              case_id: str | None = None) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
 
         실패 시 자산을 등록하지 않는다. 매 성공 호출은 새 opaque ref를 발급한다.
         Source는 파일 읽기를 확인했으므로 AVAILABLE, stream은 decode 검사 전이므로
         UNKNOWN이다. 카메라 방향과 누락된 stream duration을 추정하지 않는다.
         """
+        # Filename is opaque metadata. Do not normalize it or use it as a path.
+        # None keeps legacy path-only registration/observation behavior.
+        if original_filename is not None and not isinstance(original_filename, str):
+            raise ValueError("original_filename must be a string")
+        if original_filename is not None:
+            try:
+                original_filename.encode("utf-8")
+            except UnicodeError:
+                raise ValueError("original_filename must be Unicode text") from None
+        if case_id is not None and (not isinstance(case_id, str) or not case_id):
+            raise ValueError("case_id must be a nonempty string")
         source = self._media_probe.probe(Path(path))
+        if original_filename is not None:
+            source = replace(source, original_filename=original_filename)
         source_ref = f"sa_{uuid4().hex}"
         streams = tuple(
             MediaStream(
@@ -238,7 +252,10 @@ class RecordingService:
             media_stream_refs=[stream.media_stream_ref for stream in streams],
             byte_size=source.byte_size, availability="AVAILABLE", duration_sec=source.duration_sec,
         )
-        self._repository.add_local_source(asset, streams, source)
+        if case_id is None:
+            self._repository.add_local_source(asset, streams, source)
+        else:
+            self._repository.add_local_source(asset, streams, source, case_id=case_id)
         return RegisteredSource(asset, streams)
 
     @classmethod

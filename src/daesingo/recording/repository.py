@@ -62,6 +62,7 @@ class InMemoryRecordingRepository:
 
     def add_local_source(
         self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource,
+        *, case_id: str | None = None,
     ) -> None:
         indices = dict(zip(asset.media_stream_refs, (s.index for s in source.streams), strict=True))
         self.add_source_asset(asset)
@@ -69,6 +70,8 @@ class InMemoryRecordingRepository:
             self.add_media_stream(stream)
         self._local_sources[asset.source_asset_ref] = source
         self._local_stream_indices.update(indices)
+        if case_id is not None:
+            self.associate_case_asset(case_id, ContractRef(kind="source_asset", ref=asset.source_asset_ref))
 
     def get_local_source(self, source_ref: str) -> LocalSource | None:
         return self._local_sources.get(source_ref)
@@ -287,7 +290,7 @@ class RecordingRepository(Protocol):
     def get_source_asset(self, source_ref: str) -> SourceAsset | None:
         ...
 
-    def add_local_source(self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource) -> None:
+    def add_local_source(self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource, *, case_id: str | None = None) -> None:
         ...
 
     def get_local_source(self, source_ref: str) -> LocalSource | None:
