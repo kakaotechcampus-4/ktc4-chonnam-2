@@ -103,6 +103,8 @@ def test_real_png_frame_bytes_survive_service_restart_and_missing_original(db):
     path.unlink()
     with engine.begin() as conn:
         assert RecordingService(adapter(conn, root)).read_frame(frame.frame_ref) == expected
+        image = RecordingService(adapter(conn, root)).read_frame_image(frame.frame_ref)
+        assert image.content == expected and image.content_type == "image/png" and image.image_format == "png"
     assert list(root.iterdir()) == []
 
 

@@ -20,5 +20,17 @@ RECORDING_PARAMETERS = tuple(("recording", scenario, parameter) for scenario, pa
     ("registration_input", "case_accept"), ("registration_input", "case_reject"),
     ("registration_taxonomy", "unsupported"), ("registration_taxonomy", "tool"),
     ("registration_taxonomy", "read"),
+    ("media_read", "restart"), ("media_read", "rollback"),
+    ("media_read", "atomic_failure"), ("media_read", "conflict"),
+    ("media_read", "legacy"), ("media_read", "commit_unknown"), ("media_read", "concurrent"),
+    ("media_validation", "type"), ("media_validation", "digest"), ("media_validation", "size"),
+    ("media_validation", "model"), ("media_validation", "image"), ("media_validation", "empty"),
+    ("media_validation", "small"),
+    ("media_validation", "large"), ("media_validation", "ownership_lock"),
+    ("media_failure", "1205"), ("media_failure", "1213"),
+    ("media_validation", "packet_limit"), ("media_validation", "inputs"),
+    ("media_validation", "ownership_source"), ("media_validation", "ownership_derived"),
+    ("media_validation", "ownership_relation"),
+    ("media_validation", "wrong_type"), ("media_read", "png_derived"),
 ))
 RECORDING_CHECKS = tuple(sorted({(r, s) for r, s, p in RECORDING_PARAMETERS}))
