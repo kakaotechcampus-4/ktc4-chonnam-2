@@ -16,7 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
-    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy")),
+    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
@@ -138,7 +138,18 @@ REQUIRED_PARAMETERS = frozenset({
         ("registration_input", "filename_empty"), ("registration_input", "filename_nul"),
         ("registration_input", "case_accept"), ("registration_input", "case_reject"),
         ("registration_taxonomy", "unsupported"), ("registration_taxonomy", "tool"),
-        ("registration_taxonomy", "read"))),
+        ("registration_taxonomy", "read"),
+        ("media_read", "restart"), ("media_read", "rollback"),
+        ("media_read", "atomic_failure"), ("media_read", "conflict"),
+        ("media_read", "legacy"), ("media_read", "commit_unknown"), ("media_read", "concurrent"),
+        ("media_validation", "type"), ("media_validation", "digest"), ("media_validation", "size"),
+        ("media_validation", "model"), ("media_validation", "image"), ("media_validation", "empty"),
+        ("media_validation", "small"), ("media_validation", "large"), ("media_validation", "ownership_lock"),
+        ("media_failure", "1205"), ("media_failure", "1213"),
+        ("media_validation", "packet_limit"), ("media_validation", "inputs"),
+        ("media_validation", "ownership_source"), ("media_validation", "ownership_derived"),
+        ("media_validation", "ownership_relation"),
+        ("media_validation", "wrong_type"), ("media_read", "png_derived"))),
     *(("api_start_analysis", "atomicity", kind) for kind in ("hint_extract", "coarse_search")),
     *(("api_start_analysis", "rollback", kind + "_" + fault)
       for kind in ("hint_extract", "coarse_search") for fault in ("save", "enqueue")),

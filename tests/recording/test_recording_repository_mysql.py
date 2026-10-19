@@ -23,12 +23,382 @@ from daesingo.recording.models import ContractRef
 from daesingo.recording.probe import LocalSource, ProbedStream
 from mysql_fault_proxy import CommitResponseProxy
 
+from test_ownership_reads import MP4, OTHER_MP4, padded_mp4
+
 pytestmark = pytest.mark.mysql
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def check(scenario, parameter):
     return pytest.mark.mysql_check("recording", scenario, parameter=parameter)
+
+
+@check("media_read", "restart")
+def test_rec1c_new_service_reads_all_ref_types_and_ownership(db):
+    from test_ownership_reads import seed as media_seed, asset, PNG
+    engine, root = db
+    with engine.begin() as conn:
+        frame, source = media_seed(adapter(conn, root))
+        RecordingService(adapter(conn, root)).register_derived_asset(
+            asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        assert adapter(conn, root).get_source_asset(source.source_asset_ref) == source
+        assert service.read_frame_image(frame.frame_ref).content == PNG
+        opened = service.open_derived_asset(asset().derived_asset_ref)
+        assert opened.stream.read() == MP4 and opened.content_type == "video/mp4"
+        assert service.owns_frame("case-a", frame.frame_ref)
+        assert not service.owns_frame("case-b", frame.frame_ref)
+        assert not service.owns_frame("case-b", "missing")
+        for kind, ref in [("source_asset", source.source_asset_ref), ("derived_asset", asset().derived_asset_ref)]:
+            assert service.owns_asset("case-a", ContractRef(kind=kind, ref=ref))
+            assert not service.owns_asset("case-b", ContractRef(kind=kind, ref=ref))
+            assert not service.owns_asset("case-b", ContractRef(kind=kind, ref="missing"))
+
+
+@check("media_read", "rollback")
+def test_rec1c_rollback_hides_bytes_metadata_and_link(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.connect() as conn:
+        service = RecordingService(adapter(conn, root))
+        service.register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+        with engine.connect() as other:
+            assert not RecordingService(adapter(other, root)).owns_asset("case-a", ContractRef(kind="derived_asset", ref=asset().derived_asset_ref))
+        conn.rollback()
+        assert adapter(conn, root).get_derived_asset(asset().derived_asset_ref) is None
+        assert adapter(conn, root).get_case_assets("case-a") == []
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_read", "atomic_failure")
+def test_rec1c_relationship_failure_leaves_no_partial_rows_even_if_caller_commits(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.begin() as conn:
+        conn.exec_driver_sql("CREATE TRIGGER reject_rec1c BEFORE INSERT ON recording_entry FOR EACH ROW BEGIN IF NEW.kind = 'case_asset' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='secret-path'; END IF; END")
+    with engine.begin() as conn:
+        with pytest.raises(sa.exc.DBAPIError) as e:
+            RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+        assert "secret-path" not in str(e.value) and "abc" not in str(e.value)
+    with engine.connect() as conn:
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_read", "conflict")
+def test_rec1c_conflicting_bytes_cannot_partially_add_new_case(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.begin() as conn:
+        RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+    with engine.begin() as conn:
+        with pytest.raises(ValueError):
+            RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=OTHER_MP4, content_type="video/mp4", case_id="case-b")
+    with engine.begin() as conn:
+        assert adapter(conn, root).get_case_assets("case-b") == []
+        assert RecordingService(adapter(conn, root)).open_derived_asset(asset().derived_asset_ref).stream.read() == MP4
+
+
+@check("media_read", "legacy")
+def test_rec1c_frozen_schema_rerun_and_metadata_only_legacy(db):
+    from test_ownership_reads import asset, PNG
+    from daesingo.recording import RecordingCapabilityError
+    engine, root = db
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        repo.add_derived_asset(asset())
+        frame = load_recording_fixture("scenario_happy_001").frame_refs[0]
+        repo.add_frame(frame, content=PNG)
+        before = conn.exec_driver_sql("SELECT kind, entry_key, payload, content FROM recording_entry ORDER BY ordinal").all()
+    upgrade_all(engine.url)
+    with engine.begin() as conn:
+        assert conn.exec_driver_sql("SELECT kind, entry_key, payload, content FROM recording_entry ORDER BY ordinal").all() == before
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        service = RecordingService(adapter(conn, root))
+        assert service.get_derived_asset(asset().derived_asset_ref) == asset()
+        with pytest.raises(RecordingCapabilityError) as e:
+            service.open_derived_asset(asset().derived_asset_ref)
+        assert e.value.code == "UNAVAILABLE"
+        assert service.read_frame_image(frame.frame_ref).content == PNG
+        with pytest.raises(RecordingCapabilityError) as e:
+            service.open_derived_asset("missing")
+        assert e.value.code == "UNKNOWN_REF"
+
+
+@check("media_read", "commit_unknown")
+def test_rec1c_commit_ack_loss_keeps_unknown_outcome_and_idempotent_replay(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    url = engine.url
+    with CommitResponseProxy(url.host, url.port or 3306) as proxy:
+        proxied = sa.create_engine(url.set(host="127.0.0.1", port=proxy.port).update_query_dict({"ssl_disabled": "true"}), hide_parameters=True)
+        try:
+            def operation(conn):
+                RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+                proxy.arm()
+            with pytest.raises(CommitOutcomeUnknown):
+                run_api_transaction(proxied, operation)
+            assert proxy.commit_forwarded == proxy.commit_ok_dropped == 1
+        finally:
+            proxied.dispose()
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        service.register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+        assert service.open_derived_asset(asset().derived_asset_ref).stream.read() == MP4
+        assert len(adapter(conn, root).get_case_assets("case-a")) == 1
+
+
+@check("media_read", "concurrent")
+def test_rec1c_concurrent_conflicting_writers_have_one_atomic_winner(db):
+    from test_ownership_reads import asset
+    from concurrent.futures import ThreadPoolExecutor
+    engine, root = db
+    barrier = threading.Barrier(2)
+    def save(case_id, content):
+        barrier.wait(timeout=10)
+        with engine.begin() as conn:
+            try:
+                RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=content, content_type="video/mp4", case_id=case_id)
+            except ValueError:
+                return False
+        return True
+    with ThreadPoolExecutor(2) as pool:
+        futures = [pool.submit(save, "case-a", MP4), pool.submit(save, "case-b", OTHER_MP4)]
+        results = [f.result(timeout=15) for f in futures]
+    assert sum(results) == 1
+    with engine.begin() as conn:
+        winner = "case-a" if results[0] else "case-b"
+        loser = "case-b" if results[0] else "case-a"
+        assert len(adapter(conn, root).get_case_assets(winner)) == 1
+        assert adapter(conn, root).get_case_assets(loser) == []
+        assert RecordingService(adapter(conn, root)).open_derived_asset(asset().derived_asset_ref).stream.read() == (MP4 if results[0] else OTHER_MP4)
+
+
+@pytest.mark.parametrize("fault", [
+    pytest.param("type", marks=check("media_validation", "type")),
+    pytest.param("digest", marks=check("media_validation", "digest")),
+    pytest.param("size", marks=check("media_validation", "size")),
+    pytest.param("model", marks=check("media_validation", "model")),
+    pytest.param("wrong_type", marks=check("media_validation", "wrong_type")),
+])
+def test_rec1c_corrupt_stored_metadata_never_leaks_or_returns_bytes(db, fault):
+    from test_ownership_reads import asset
+    from daesingo.recording import RecordingCapabilityError
+    engine, root = db
+    with engine.begin() as conn:
+        RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4")
+        if fault == "model":
+            conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, '$.availability', 'secret-path') WHERE kind='derived_asset'")
+        else:
+            field, value = {"type": ("content_type", "video/mp4\r\nsecret-path"), "digest": ("sha256", "secret-path"), "size": ("byte_size", 55), "wrong_type": ("content_type", "image/png")}[fault]
+            conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, %s, %s) WHERE kind='derived_content'", ("$."+field, value))
+    with engine.begin() as conn:
+        with pytest.raises(RecordingCapabilityError) as e:
+            RecordingService(adapter(conn, root)).open_derived_asset(asset().derived_asset_ref)
+        assert e.value.code == "UNAVAILABLE"
+        assert "secret-path" not in str(e.value) and "input_value" not in str(e.value)
+
+
+@check("media_validation", "image")
+def test_rec1c_corrupt_frame_metadata_has_fixed_public_error(db):
+    from test_ownership_reads import seed as media_seed
+    from daesingo.recording import RecordingCapabilityError
+    engine, root = db
+    with engine.begin() as conn:
+        frame, _ = media_seed(adapter(conn, root))
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, '$.media_stream_ref', JSON_OBJECT('secret-path','value')) WHERE kind='frame'")
+    with engine.begin() as conn:
+        with pytest.raises(RecordingCapabilityError) as e:
+            RecordingService(adapter(conn, root)).read_frame_image(frame.frame_ref)
+        assert "secret-path" not in str(e.value) and "input_value" not in str(e.value)
+
+
+@pytest.mark.parametrize("kind", [
+    pytest.param("source_asset", marks=check("media_validation", "ownership_source")),
+    pytest.param("derived_asset", marks=check("media_validation", "ownership_derived")),
+    pytest.param("case_asset", marks=check("media_validation", "ownership_relation")),
+])
+def test_rec1c_ownership_corrupt_metadata_never_echoes_values(db, kind):
+    from test_ownership_reads import seed as media_seed, asset
+    from daesingo.recording import RecordingCapabilityError
+    engine, root = db
+    with engine.begin() as conn:
+        _, source = media_seed(adapter(conn, root))
+        RecordingService(adapter(conn, root)).register_derived_asset(asset(), case_id="case-a")
+        field = "asset_ref" if kind == "case_asset" else "availability"
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, %s, 'private-secret-path') WHERE kind=%s", ("$."+field, kind))
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        ref = asset().derived_asset_ref if kind == "derived_asset" else source.source_asset_ref
+        family = "derived_asset" if kind == "derived_asset" else "source_asset"
+        with pytest.raises(RecordingCapabilityError) as e:
+            service.owns_asset("case-a", ContractRef(kind=family, ref=ref))
+        assert e.value.code == "TEMPORARY_FAILURE"
+        assert "private-secret-path" not in str(e.value) and "input_value" not in str(e.value)
+
+
+@pytest.mark.parametrize("content", [
+    pytest.param(MP4, id="small", marks=check("media_validation", "small")),
+    pytest.param(padded_mp4(1024*1024), id="one_mib", marks=check("media_validation", "large")),
+])
+def test_rec1c_mysql_zero_large_roundtrip_and_no_transaction_completion(db, content):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.connect() as conn:
+        service = RecordingService(adapter(conn, root))
+        service.register_derived_asset(asset(len(content)), content=content, content_type="video/mp4", case_id="case-a")
+        tx = conn.get_transaction()
+        assert tx is not None and tx.is_active
+        assert service.open_derived_asset(asset().derived_asset_ref).stream.read() == content
+        conn.rollback()
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_validation", "ownership_lock")
+def test_rec1c_ownership_does_not_lock_stream_or_consult_case(db):
+    from test_ownership_reads import seed as media_seed
+    engine, root = db
+    with engine.begin() as conn:
+        frame, source = media_seed(adapter(conn, root))
+    with engine.begin() as reader, engine.begin() as writer:
+        service = RecordingService(adapter(reader, root))
+        assert service.owns_frame("case-a", frame.frame_ref)
+        writer.exec_driver_sql("SET SESSION innodb_lock_wait_timeout=1")
+        # A hidden FOR UPDATE in ownership would cause an actual 1205 here.
+        assert adapter(writer, root).get_media_stream(frame.media_stream_ref) is not None
+        assert not service.owns_frame("CASE-A", frame.frame_ref)
+        adapter(writer, root).associate_case_asset("case-b", ContractRef(kind="frame", ref=frame.frame_ref))
+        assert not RecordingService(adapter(writer, root)).owns_frame("case-b", frame.frame_ref)
+
+
+@check("media_failure", "1205")
+def test_rec1c_1205_preserves_errno_and_caller_rolls_back_every_row(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.begin() as conn:
+        RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-a")
+    with engine.connect() as blocker:
+        adapter(blocker, root)._get("derived_asset", asset().derived_asset_ref, lock=True)
+        def operation(conn):
+            conn.exec_driver_sql("SET SESSION innodb_lock_wait_timeout=1")
+            RecordingService(adapter(conn, root)).register_derived_asset(asset(), content=MP4, content_type="video/mp4", case_id="case-b")
+        with pytest.raises(BeforeCommitFailure) as e:
+            run_api_transaction(engine, operation)
+        assert e.value.reason == "lock_wait_timeout"
+        blocker.rollback()
+    with engine.begin() as conn:
+        assert adapter(conn, root).get_case_assets("case-b") == []
+
+
+@check("media_failure", "1213")
+def test_rec1c_deadlock_retries_whole_caller_transaction_without_partial_media(db):
+    from test_ownership_reads import asset
+    from daesingo.common.db.transactions import run_worker_transaction
+    from concurrent.futures import ThreadPoolExecutor
+    engine, root = db
+    first, second = asset(), asset(derived_asset_ref="other-derived")
+    with engine.begin() as conn:
+        for value in (first, second):
+            RecordingService(adapter(conn, root)).register_derived_asset(value, content=MP4, content_type="video/mp4")
+    barrier = threading.Barrier(2, timeout=10)
+    codes, attempts = [], {"case-a": 0, "case-b": 0}
+    def save(case_id, one, two):
+        def operation(conn):
+            attempts[case_id] += 1
+            service = RecordingService(adapter(conn, root))
+            service.register_derived_asset(one, content=MP4, content_type="video/mp4", case_id=case_id)
+            if attempts[case_id] == 1:
+                barrier.wait()
+            try:
+                service.register_derived_asset(two, content=MP4, content_type="video/mp4", case_id=case_id)
+            except sa.exc.DBAPIError as e:
+                codes.append(e.orig.args[0])
+                raise
+        run_worker_transaction(engine, operation)
+    with ThreadPoolExecutor(2) as pool:
+        futures = [pool.submit(save, "case-a", first, second), pool.submit(save, "case-b", second, first)]
+        for f in futures:
+            f.result(timeout=20)
+    assert codes == [1213] and sorted(attempts.values()) == [1,2]
+    with engine.begin() as conn:
+        for case_id in attempts:
+            assert len(adapter(conn, root).get_case_assets(case_id)) == 2
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry WHERE kind='derived_content'").scalar_one() == 2
+
+
+@check("media_validation", "packet_limit")
+def test_rec1c_current_mysql_packet_limit_fails_without_partial_rows(db):
+    from test_ownership_reads import asset
+    from sqlalchemy.pool import NullPool
+    engine, root = db
+    # This disposable test server is owned by the harness. Restore its global
+    # setting before any later test; existing sessions retain their own limit.
+    limited = sa.create_engine(engine.url.update_query_dict({"ssl_disabled": "true"}),
+                               poolclass=NullPool, hide_parameters=True,
+                               connect_args={"connect_timeout": 3, "read_timeout": 3, "write_timeout": 3})
+    with limited.connect() as control:
+        old = control.exec_driver_sql("SELECT @@GLOBAL.max_allowed_packet").scalar_one()
+        control.exec_driver_sql("SET GLOBAL max_allowed_packet=1048576")
+    try:
+        with limited.connect() as conn:
+            assert conn.exec_driver_sql("SELECT @@SESSION.max_allowed_packet").scalar_one() == 1048576
+            with pytest.raises(sa.exc.DBAPIError) as e:
+                RecordingService(adapter(conn, root)).register_derived_asset(
+                    asset(2*1024*1024), content=padded_mp4(2*1024*1024), content_type="video/mp4", case_id="case-a")
+            assert "xxxxxxxx" not in str(e.value) and "INSERT" not in str(e.value)
+            # Packet rejection can close the socket before driver invalidation.
+            # The caller discards it; rollback then clears local state only.
+            conn.invalidate()
+            conn.rollback()
+    finally:
+        # Packet rejection may invalidate the writer; restoration uses a new
+        # connection with explicit I/O deadlines, never an idle control socket.
+        with limited.connect() as control:
+            control.exec_driver_sql("SET GLOBAL max_allowed_packet=%s", (old,))
+            assert control.exec_driver_sql("SELECT @@GLOBAL.max_allowed_packet").scalar_one() == old
+        limited.dispose()
+    with engine.connect() as conn:
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_validation", "inputs")
+def test_rec1c_mysql_invalid_input_never_writes_or_echoes(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        for kwargs in ({"content": MP4, "content_type": "video/mp4\r\nsecret-path"},
+                       {"content": MP4, "content_type": "video/mp4", "case_id": ""},
+                       {"content": b"wrong-size", "content_type": "video/mp4"}):
+            with pytest.raises(ValueError) as e:
+                service.register_derived_asset(asset(), **kwargs)
+            assert "secret-path" not in str(e.value)
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_validation", "empty")
+def test_rec1c_empty_media_is_rejected_without_fabricating_format(db):
+    from test_ownership_reads import asset
+    engine, root = db
+    with engine.begin() as conn:
+        with pytest.raises(ValueError):
+            RecordingService(adapter(conn, root)).register_derived_asset(asset(0), content=b"", content_type="video/mp4", case_id="case-a")
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@check("media_read", "png_derived")
+def test_rec1c_png_derived_roundtrip_has_actual_image_content_type(db):
+    from test_ownership_reads import asset, PNG
+    engine, root = db
+    value = asset(len(PNG), derived_role="PLATE_IMAGE", duration_sec=None, timeline_ref=None, timeline_range=None)
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        with pytest.raises(ValueError):
+            service.register_derived_asset(value, content=PNG, content_type="video/mp4", case_id="case-a")
+        service.register_derived_asset(value, content=PNG, content_type="image/png", case_id="case-a")
+    with engine.begin() as conn:
+        opened = RecordingService(adapter(conn, root)).open_derived_asset(value.derived_asset_ref)
+        assert opened.content_type == "image/png" and opened.stream.read() == PNG
 
 
 def adapter(conn, root):

@@ -19,6 +19,7 @@ from sqlalchemy.exc import DBAPIError
 
 from . import models as m
 from .probe import LocalSource, ProbedStream
+from .media_content import derived_content, descriptor, checked_content, frame_format
 
 
 metadata = sa.MetaData()
@@ -104,6 +105,26 @@ class MySQLRecordingRepository:
         if lock:
             query = query.with_for_update()
         return self._execute(query).mappings().one_or_none()
+
+    def _immutable_write(self, rows):
+        # The duplicate branch deliberately raises a server JSON error on any
+        # conflict. InnoDB rolls back the entire statement, including earlier
+        # inserted case links. A SELECT-before-write check would race under RC.
+        rows = sorted(rows, key=lambda row: (row["kind"], row["entry_key"]))
+        stmt = insert(entries).values(rows)
+        compatible = sa.and_(
+            entries.c.payload == stmt.inserted.payload,
+            sa.or_(entries.c.content.is_(None), stmt.inserted.content.is_(None),
+                   entries.c.content == stmt.inserted.content))
+        try:
+            self._execute(stmt.on_duplicate_key_update(
+                payload=sa.case((compatible, entries.c.payload),
+                                else_=sa.func.json_extract("recording immutable conflict", "$")),
+                content=sa.func.coalesce(stmt.inserted.content, entries.c.content)))
+        except DBAPIError as error:
+            if error.orig.args[0] == 3141:
+                raise ValueError("recording immutable identity conflicts with stored payload") from None
+            raise
 
     def _model(self, kind, identity, model, *, lock=False):
         row = self._get(kind, identity, lock=lock)
@@ -194,6 +215,9 @@ class MySQLRecordingRepository:
     def get_media_stream(self, stream_ref):
         return self._model("media_stream", stream_ref, m.MediaStream, lock=True)
 
+    def get_ownership_stream(self, stream_ref):
+        return self._model("media_stream", stream_ref, m.MediaStream)
+
     def add_gps_observation(self, observation):
         checked = m.GPSObservation.model_validate(observation)
         if checked.source.ref is not None and self.get_media_stream(checked.source.ref.ref) is None:
@@ -212,8 +236,9 @@ class MySQLRecordingRepository:
     def _position(stream_ref, offset):
         return [stream_ref, _coordinate(offset)]
 
-    def add_frame(self, frame, *, content=None):
-        self._write([self._row("frame", frame.frame_ref, frame.model_dump(mode="json"), content),
+    def add_frame(self, frame, *, content=None, image_format=None):
+        frame_format(content, image_format)
+        self._immutable_write([self._row("frame", frame.frame_ref, frame.model_dump(mode="json"), content),
                      self._row("frame_position", self._position(frame.media_stream_ref, frame.source_offset_sec),
                                {"frame_ref": frame.frame_ref})])
 
@@ -326,8 +351,23 @@ class MySQLRecordingRepository:
     def get_incident_clip(self, clip_ref):
         return self._model("incident_clip", clip_ref, m.IncidentClip)
 
-    def add_derived_asset(self, asset):
-        self._put("derived_asset", asset.derived_asset_ref, asset, immutable=True)
+    def add_derived_asset(self, asset, *, content=None, content_type=None, case_id=None):
+        derived_content(asset, content, content_type, case_id)
+        rows = [self._row("derived_asset", asset.derived_asset_ref, asset.model_dump(mode="json"), content)]
+        if content is not None:
+            rows.append(self._row("derived_content", asset.derived_asset_ref, descriptor(content, content_type)))
+        if case_id is not None:
+            ref = m.ContractRef(kind="derived_asset", ref=asset.derived_asset_ref)
+            rows.append(self._row("case_asset", [case_id, ref.kind, ref.ref],
+                                  {"case_id": case_id, "asset_ref": ref.model_dump(mode="json")}))
+        self._immutable_write(rows)
+
+    def get_derived_content(self, asset_ref):
+        row = self._get("derived_asset", asset_ref)
+        info = self._get("derived_content", asset_ref)
+        if row is None or row["content"] is None or info is None:
+            return None
+        return checked_content(row["content"], info["payload"])
 
     def get_derived_asset(self, asset_ref):
         return self._model("derived_asset", asset_ref, m.DerivedAsset)

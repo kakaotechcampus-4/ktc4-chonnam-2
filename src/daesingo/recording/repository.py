@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import BinaryIO, Protocol
 
 from .probe import LocalSource
+from .media_content import derived_content, descriptor, checked_content, frame_format
 
 from .models import (
     AnalysisSource,
@@ -51,6 +52,7 @@ class InMemoryRecordingRepository:
         self._remote_copy_by_source_provider: dict[tuple[str, str], str] = {}
         self._incident_clips: dict[str, IncidentClip] = {}
         self._derived_assets: dict[str, DerivedAsset] = {}
+        self._derived_content: dict[str, tuple[bytes, dict]] = {}
         self._case_assets: dict[str, list[ContractRef]] = {}
         self._deleted_assets: set[tuple[str, str]] = set()
 
@@ -85,6 +87,9 @@ class InMemoryRecordingRepository:
     def get_media_stream(self, stream_ref: str) -> MediaStream | None:
         return self._media_streams.get(stream_ref)
 
+    def get_ownership_stream(self, stream_ref: str) -> MediaStream | None:
+        return self._media_streams.get(stream_ref)
+
     def add_gps_observation(self, observation: GPSObservation) -> None:
         checked = GPSObservation.model_validate(observation)
         if checked.source.ref is not None and checked.source.ref.ref not in self._media_streams:
@@ -96,7 +101,15 @@ class InMemoryRecordingRepository:
     def list_gps_observations(self) -> list[GPSObservation]:
         return [observation.model_copy(deep=True) for observation in self._gps_observations]
 
-    def add_frame(self, frame: FrameRef, *, content: bytes | None = None) -> None:
+    def add_frame(self, frame: FrameRef, *, content: bytes | None = None, image_format: str | None = None) -> None:
+        frame_format(content, image_format)
+        current = self._frames.get(frame.frame_ref)
+        position = (frame.media_stream_ref, _offset_key(frame.source_offset_sec))
+        old_content = self._frame_content.get(frame.frame_ref)
+        if ((current is not None and current != frame)
+                or self._frame_by_position.get(position, frame.frame_ref) != frame.frame_ref
+                or (old_content is not None and content is not None and old_content != content)):
+            raise ValueError("recording immutable identity conflicts with stored payload")
         self._frames[frame.frame_ref] = frame
         self._frame_by_position[(frame.media_stream_ref, _offset_key(frame.source_offset_sec))] = (
             frame.frame_ref
@@ -255,11 +268,25 @@ class InMemoryRecordingRepository:
     def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
         return self._incident_clips.get(clip_ref)
 
-    def add_derived_asset(self, asset: DerivedAsset) -> None:
+    def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None = None,
+                          content_type: str | None = None, case_id: str | None = None) -> None:
+        derived_content(asset, content, content_type, case_id)
         current = self._derived_assets.get(asset.derived_asset_ref)
         if current is not None and current != asset:
             raise ValueError("같은 DerivedAsset ref를 다른 payload로 덮어쓸 수 없습니다")
+        existing = self._derived_content.get(asset.derived_asset_ref)
+        value = (content, descriptor(content, content_type)) if content is not None else None
+        if value is not None and existing is not None and existing != value:
+            raise ValueError("recording immutable identity conflicts with stored payload")
         self._derived_assets[asset.derived_asset_ref] = asset
+        if value is not None:
+            self._derived_content[asset.derived_asset_ref] = value
+        if case_id is not None:
+            self.associate_case_asset(case_id, ContractRef(kind="derived_asset", ref=asset.derived_asset_ref))
+
+    def get_derived_content(self, asset_ref: str) -> tuple[bytes, str] | None:
+        value = self._derived_content.get(asset_ref)
+        return checked_content(*value) if value is not None else None
 
     def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:
         return self._derived_assets.get(asset_ref)
@@ -283,6 +310,9 @@ class InMemoryRecordingRepository:
 
 
 class RecordingRepository(Protocol):
+
+    def get_ownership_stream(self, stream_ref: str) -> MediaStream | None:
+        ...
 
     def add_source_asset(self, asset: SourceAsset) -> None:
         ...
@@ -311,7 +341,7 @@ class RecordingRepository(Protocol):
     def list_gps_observations(self) -> list[GPSObservation]:
         ...
 
-    def add_frame(self, frame: FrameRef, *, content: bytes | None=None) -> None:
+    def add_frame(self, frame: FrameRef, *, content: bytes | None=None, image_format: str | None=None) -> None:
         ...
 
     def find_frame_at(self, stream_ref: str, source_offset_sec: float) -> FrameRef | None:
@@ -377,7 +407,11 @@ class RecordingRepository(Protocol):
     def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
         ...
 
-    def add_derived_asset(self, asset: DerivedAsset) -> None:
+    def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None=None,
+                          content_type: str | None=None, case_id: str | None=None) -> None:
+        ...
+
+    def get_derived_content(self, asset_ref: str) -> tuple[bytes, str] | None:
         ...
 
     def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:

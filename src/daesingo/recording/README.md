@@ -15,6 +15,7 @@
 다른 모듈은 `RecordingService`와 `load_recording_fixture()`만 사용한다. 저장소와 Stub 구현은 공개 경계가 아니다.
 
 - frame·사실: `resolve_frame()`, `read_frame()`, `lookup_asset_facts()`
+- 소유·형식·영속 bytes: `owns_frame()`, `owns_asset()`, `read_frame_image()`, `open_derived_asset()`
 - timeline·구간: `get_timeline()`, `get_latest_timeline()`, `resolve_span()`
 - 분석 자산: `prepare_analysis_source()`, `open_analysis_source()`, `find_remote_copy()`, `register_remote_copy()`
 - 사건·파생 자산: `build_incident_clip()`, `get_incident_clip()`, `register_derived_asset()`, `get_derived_asset()`, `purge_case()`
@@ -40,5 +41,13 @@ REC-1(b)는 `register_local_source()`의 `original_filename` 입력을 내부 me
 기존 Recording 관계를 같은 caller transaction에 저장한다. Case 승인·집계와
 HTTP 조립은 기존 Case 공개 함수 및 RT-11 경계다.
 [등록 입력 경계](../../../docs/modules/recording/rec1b-registration-input.md)를 따른다.
+
+REC-1(c)는 Recording이 저장한 case 관계로 source/frame/derived 소유를 조회하고,
+저장된 FrameRef bytes의 PNG 형식과 DerivedAsset bytes·Content-Type을 제공한다.
+읽기는 원본·ffmpeg를 다시 실행하지 않는다. DerivedAsset 등록의 선택적 bytes·형식·
+case 관계는 같은 caller transaction에 원자적으로 저장한다. legacy metadata-only
+자산은 bytes unavailable이며, 현재 bytes adapter는 기존 Recording 출력인 PNG와
+isom MP4 container를 식별한다. 지원 범위·오류·용량 한계와 검증 결과는
+[REC-1(c) 경계](../../../docs/modules/recording/rec1c-ownership-reads.md)를 따른다.
 
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

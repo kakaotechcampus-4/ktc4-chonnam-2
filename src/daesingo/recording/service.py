@@ -14,6 +14,7 @@ from uuid import uuid4
 from pydantic import TypeAdapter
 
 from .errors import RecordingCapabilityError
+from .media_content import FrameImage, OpenedDerivedAsset, identity, png
 from .fixtures import RecordingFixture
 from .models import (
     GPSObservation,
@@ -380,13 +381,59 @@ class RecordingService:
         return frame
 
     def read_frame(self, frame_ref: str) -> bytes:
-        frame = self._repository.get_frame(frame_ref)
+        identity(frame_ref)
+        try:
+            frame = self._repository.get_frame(frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
         if frame is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 FrameRef입니다")
         content = self._repository.get_frame_content(frame_ref)
         if content is None:
             raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image를 읽을 수 없습니다")
         return content
+
+    def read_frame_image(self, frame_ref: str) -> FrameImage:
+        content = self.read_frame(frame_ref)
+        if not png(content):
+            raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image format is unavailable")
+        return FrameImage(content, "image/png", "png")
+
+    def owns_frame(self, case_id: str, frame_ref: str) -> bool:
+        identity(case_id)
+        identity(frame_ref)
+        try:
+            frame = self._repository.get_frame(frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
+        if frame is None:
+            return False
+        # Ownership reads must not use get_media_stream: its existing FOR UPDATE
+        # serializes frame generation. A projection avoids acquiring that lock.
+        try:
+            stream = self._repository.get_ownership_stream(frame.media_stream_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored stream metadata is invalid") from None
+        if stream is None:
+            return False
+        return self.owns_asset(case_id, ContractRef(kind="source_asset", ref=stream.source_asset_ref))
+
+    def owns_asset(self, case_id: str, asset_ref: ContractRef | dict[str, Any]) -> bool:
+        identity(case_id)
+        try:
+            parsed = ContractRef.model_validate(asset_ref)
+        except ValueError:
+            raise ValueError("invalid recording asset reference") from None
+        identity(parsed.ref)
+        if parsed.kind not in {"source_asset", "derived_asset"}:
+            raise RecordingCapabilityError("INVALID_REF_KIND", "unsupported ownership reference kind")
+        try:
+            if parsed not in self._repository.get_case_assets(case_id):
+                return False
+            get = self._repository.get_source_asset if parsed.kind == "source_asset" else self._repository.get_derived_asset
+            return get(parsed.ref) is not None
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
 
     def lookup_asset_facts(self, asset_ref: ContractRef | dict[str, Any]) -> AssetFacts:
         parsed = ContractRef.model_validate(asset_ref)
@@ -817,10 +864,36 @@ class RecordingService:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
         return clip
 
-    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any]) -> DerivedAsset:
-        asset = DerivedAsset.model_validate(payload)
-        self._repository.add_derived_asset(asset)
+    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any], *,
+                               content: bytes | None = None, content_type: str | None = None,
+                               case_id: str | None = None) -> DerivedAsset:
+        try:
+            asset = DerivedAsset.model_validate(payload)
+        except ValueError:
+            raise ValueError("invalid recording derived asset") from None
+        self._repository.add_derived_asset(asset, content=content, content_type=content_type, case_id=case_id)
         return asset
+
+    def open_derived_asset(self, derived_asset_ref: str) -> OpenedDerivedAsset:
+        identity(derived_asset_ref)
+        try:
+            asset = self.get_derived_asset(derived_asset_ref)
+        except RecordingCapabilityError as error:
+            if error.code == "NOT_FOUND":
+                raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 DerivedAsset입니다") from None
+            raise
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if asset.availability != "AVAILABLE":
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        try:
+            value = self._repository.get_derived_content(derived_asset_ref)
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if value is None or asset.byte_size != len(value[0]):
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        content, content_type = value
+        return OpenedDerivedAsset(BytesIO(content), content_type, len(content))
 
     def get_derived_asset(self, derived_asset_ref: str) -> DerivedAsset:
         asset = self._repository.get_derived_asset(derived_asset_ref)
