@@ -461,3 +461,196 @@ def test_failed_recording_upgrade_and_rejected_downgrade_preserve_existing_data(
         assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
         assert "recording_partial" in sa.inspect(conn).get_table_names()
         assert RecordingService(adapter(conn, root)).read_frame("fr_h001_thumb") == b"durable-image-fr_h001_thumb"
+
+
+@check("registration_input", "restore")
+def test_registration_original_filename_and_link_restore(db):
+    engine, root = db
+    source = local(root)
+    name = "20260620_141956_EVT_1.avi"
+    with engine.begin() as conn:
+        result = RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+            source.path, original_filename=name, case_id="case-a")
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        restored = repo.get_local_source(result.source_asset.source_asset_ref)
+        assert restored.path == source.path and restored.original_filename == name
+        assert repo.get_case_assets("case-a") == [ContractRef(kind="source_asset", ref=result.source_asset.source_asset_ref)]
+        assert repo.get_case_assets("case-b") == []
+        payload = conn.exec_driver_sql("SELECT payload FROM recording_entry WHERE kind='local_source'").scalar_one()
+        payload = json.loads(payload) if isinstance(payload, str) else payload
+        assert payload["locator"] == source.path.name and payload["original_filename"] == name
+        assert "original_filename" not in result.source_asset.model_dump()
+
+
+@check("registration_input", "rollback")
+def test_registration_input_and_link_follow_caller_rollback(db):
+    engine, root = db
+    source = local(root)
+    with engine.connect() as conn:
+        tx = conn.begin()
+        RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+            source.path, original_filename="original.avi", case_id="case-a")
+        tx.rollback()
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+    assert source.path.read_bytes() == b"original unchanged"
+
+
+@check("registration_input", "atomic_link")
+def test_link_write_failure_cannot_leave_registration_if_caller_commits(db):
+    engine, root = db
+    source = local(root)
+    with engine.begin() as conn:
+        conn.exec_driver_sql("CREATE TRIGGER recording_reject BEFORE INSERT ON recording_entry FOR EACH ROW BEGIN IF NEW.kind='case_asset' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='private-sql-secret'; END IF; END")
+        try:
+            with pytest.raises(sa.exc.DBAPIError) as error:
+                RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+                    source.path, original_filename="original.avi", case_id="case-a")
+            assert "private-sql-secret" not in str(error.value)
+            assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+        finally:
+            conn.exec_driver_sql("DROP TRIGGER recording_reject")
+
+
+@check("registration_input", "legacy")
+def test_legacy_json_without_original_filename_restores_without_rewrite(db):
+    engine, root = db
+    source = local(root)
+    with engine.begin() as conn:
+        result = RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(source.path)
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_REMOVE(payload, '$.original_filename') WHERE kind='local_source'")
+        before = conn.exec_driver_sql("SELECT ordinal, payload FROM recording_entry ORDER BY ordinal").all()
+    upgrade_all(engine.url)
+    with engine.begin() as conn:
+        restored = adapter(conn, root).get_local_source(result.source_asset.source_asset_ref)
+        assert restored.original_filename is None and restored.path == source.path
+        assert conn.exec_driver_sql("SELECT ordinal, payload FROM recording_entry ORDER BY ordinal").all() == before
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+
+
+@check("registration_input", "concurrent")
+def test_concurrent_registration_has_distinct_assets_and_preserved_names(db):
+    from concurrent.futures import ThreadPoolExecutor
+    engine, root = db
+    source = local(root)
+    barrier = threading.Barrier(2)
+    def worker():
+        barrier.wait(timeout=10)
+        with engine.begin() as conn:
+            return RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+                source.path, original_filename="original.avi", case_id="case-a")
+    with ThreadPoolExecutor(2) as pool:
+        futures = [pool.submit(worker) for _ in range(2)]
+        results = [future.result(timeout=15) for future in futures]
+    assert len({r.source_asset.source_asset_ref for r in results}) == 2
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        assert {ref.ref for ref in repo.get_case_assets("case-a")} == {r.source_asset.source_asset_ref for r in results}
+        for result in results:
+            assert repo.get_local_source(result.source_asset.source_asset_ref).original_filename == "original.avi"
+
+
+@check("registration_input", "commit_unknown")
+def test_registration_input_lost_commit_ack_preserves_unknown_outcome(db):
+    engine, root = db
+    source = local(root)
+    with CommitResponseProxy(engine.url.host, engine.url.port or 3306) as proxy:
+        proxied = sa.create_engine(engine.url.set(host="127.0.0.1", port=proxy.port).update_query_dict({"ssl_disabled": "true"}), hide_parameters=True)
+        refs = []
+        try:
+            def operation(conn):
+                result = RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+                    source.path, original_filename="original.avi", case_id="case-a")
+                refs.append(result.source_asset.source_asset_ref)
+                proxy.arm()
+            with pytest.raises(CommitOutcomeUnknown):
+                run_api_transaction(proxied, operation)
+            assert proxy.commit_forwarded == proxy.commit_ok_dropped == 1
+            with engine.begin() as conn:
+                repo = adapter(conn, root)
+                assert repo.get_local_source(refs[0]).original_filename == "original.avi"
+                assert repo.get_case_assets("case-a")[0].ref == refs[0]
+        finally:
+            proxied.dispose()
+
+
+@pytest.mark.parametrize("name", [
+    pytest.param("../private/escape.avi", marks=check("registration_input", "filename_path")),
+    pytest.param(" 한글 e\u0301.AVI ", marks=check("registration_input", "filename_unicode")),
+    pytest.param("", marks=check("registration_input", "filename_empty")),
+    pytest.param("a\x00b", marks=check("registration_input", "filename_nul")),
+])
+def test_filename_metadata_never_controls_locator(db, name):
+    engine, root = db
+    source = local(root)
+    with engine.begin() as conn:
+        result = RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+            source.path, original_filename=name)
+    with engine.begin() as conn:
+        restored = adapter(conn, root).get_local_source(result.source_asset.source_asset_ref)
+        assert restored.original_filename == name and restored.path == source.path
+    assert list(root.iterdir()) == [source.path]
+
+
+@pytest.mark.parametrize("fault", [
+    pytest.param("unsupported", marks=check("registration_taxonomy", "unsupported")),
+    pytest.param("tool", marks=check("registration_taxonomy", "tool")),
+    pytest.param("read", marks=check("registration_taxonomy", "read")),
+])
+def test_registration_taxonomy_never_persists_rejected_input(db, fault):
+    from daesingo.recording import FfprobeMediaProbe, RecordingCapabilityError
+    engine, root = db
+    source = local(root)
+    probe = FfprobeMediaProbe(executable="missing-rec1b-tool") if fault == "tool" else FfprobeMediaProbe()
+    if fault == "read":
+        source.path.unlink()
+    with engine.begin() as conn:
+        with pytest.raises(RecordingCapabilityError) as error:
+            RecordingService(adapter(conn, root), media_probe=probe).register_local_source(
+                source.path, original_filename="private-secret.avi", case_id="case-a")
+        assert error.value.code == ("UNSUPPORTED_MEDIA" if fault == "unsupported" else "TEMPORARY_FAILURE")
+        assert "private-secret" not in str(error.value) and str(root) not in str(error.value)
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0
+
+
+@pytest.mark.parametrize("allowed", [
+    pytest.param(True, marks=check("registration_input", "case_accept")),
+    pytest.param(False, marks=check("registration_input", "case_reject")),
+])
+def test_existing_case_public_boundary_shares_registration_transaction(db, allowed):
+    import daesingo.case as case_api
+    from daesingo.case.domain import CaseAggregate, SourceNotAccepted
+    from daesingo.case.store_mysql import MySQLCaseRepository
+    engine, root = db
+    source = local(root)
+    def store(conn):
+        return case_api.CaseStore(repository=MySQLCaseRepository(), conn=conn)
+    case = CaseAggregate.empty("case-a")
+    if not allowed:
+        case.start_search()
+    with engine.begin() as conn:
+        store(conn).register(case)
+    def operation(conn):
+        cases = store(conn)
+        cases.load_for_update("case-a")  # Existing case-first locking rule.
+        registered = RecordingService(adapter(conn, root), media_probe=Probe(source)).register_local_source(
+            source.path, original_filename="original.avi", case_id="case-a")
+        case_api.record_source_registered("case-a", registered.source_asset.model_dump(mode="json"),
+            media_streams=[s.model_dump(mode="json") for s in registered.media_streams], store=cases)
+        return registered
+    if allowed:
+        registered = run_api_transaction(engine, operation)
+    else:
+        with pytest.raises(SourceNotAccepted):
+            run_api_transaction(engine, operation)
+    with engine.begin() as conn:
+        restored = store(conn).get_case("case-a")
+        assert restored.manifest_summary["file_count"] == int(allowed)
+        assert restored.case_rev == case.case_rev
+        refs = adapter(conn, root).get_case_assets("case-a")
+        if allowed:
+            assert refs == [ContractRef(kind="source_asset", ref=registered.source_asset.source_asset_ref)]
+            assert adapter(conn, root).get_local_source(refs[0].ref).original_filename == "original.avi"
+        else:
+            assert not refs
+            assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry").scalar_one() == 0

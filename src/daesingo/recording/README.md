@@ -34,4 +34,11 @@ metadata·기존 case/ref 연결을 새 service에서 복원한다. 원본 locat
 storage root 아래 상대 경로이며 파일 publication은 하지 않는다.
 범위와 후속 acceptance는 [구현 경계](../../../docs/modules/recording/rec1a-persistence.md)를 따른다.
 
+REC-1(b)는 `register_local_source()`의 `original_filename` 입력을 내부 metadata로
+보존·복원하고, canonical locator와 분리해 시각 관찰에 사용한다. 등록 실패는
+`UNSUPPORTED_MEDIA`와 `TEMPORARY_FAILURE`로 구분하며 선택적 `case_id` 연결은
+기존 Recording 관계를 같은 caller transaction에 저장한다. Case 승인·집계와
+HTTP 조립은 기존 Case 공개 함수 및 RT-11 경계다.
+[등록 입력 경계](../../../docs/modules/recording/rec1b-registration-input.md)를 따른다.
+
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.

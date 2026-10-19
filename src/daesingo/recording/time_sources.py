@@ -107,7 +107,7 @@ class LocalTimeSourceObserver:
 
     def observe(self, source_ref: str, local: LocalSource) -> ObservedTimeSources:
         self.verify_source(local)
-        name = local.path.name
+        name = local.original_filename if local.original_filename is not None else local.path.name
         candidates, checks = [], []
 
         def record(kind, detail, status, value=None):
