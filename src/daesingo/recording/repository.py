@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from decimal import Decimal
-from typing import BinaryIO
+from typing import BinaryIO, Protocol
 
 from .probe import LocalSource
 
@@ -277,3 +277,114 @@ class InMemoryRecordingRepository:
             return False
         self._deleted_assets.add(key)
         return True
+
+
+class RecordingRepository(Protocol):
+
+    def add_source_asset(self, asset: SourceAsset) -> None:
+        ...
+
+    def get_source_asset(self, source_ref: str) -> SourceAsset | None:
+        ...
+
+    def add_local_source(self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource) -> None:
+        ...
+
+    def get_local_source(self, source_ref: str) -> LocalSource | None:
+        ...
+
+    def get_local_stream_index(self, stream_ref: str) -> int | None:
+        ...
+
+    def add_media_stream(self, stream: MediaStream) -> None:
+        ...
+
+    def get_media_stream(self, stream_ref: str) -> MediaStream | None:
+        ...
+
+    def add_gps_observation(self, observation: GPSObservation) -> None:
+        ...
+
+    def list_gps_observations(self) -> list[GPSObservation]:
+        ...
+
+    def add_frame(self, frame: FrameRef, *, content: bytes | None=None) -> None:
+        ...
+
+    def find_frame_at(self, stream_ref: str, source_offset_sec: float) -> FrameRef | None:
+        ...
+
+    def get_frame(self, frame_ref: str) -> FrameRef | None:
+        ...
+
+    def get_frame_content(self, frame_ref: str) -> bytes | None:
+        ...
+
+    def add_asset_facts(self, facts: AssetFacts) -> None:
+        ...
+
+    def get_asset_facts(self, kind: str, ref: str) -> AssetFacts | None:
+        ...
+
+    def add_timeline(self, timeline: RecordingTimeline) -> None:
+        ...
+
+    def get_timeline(self, timeline_ref: TimelineRef) -> RecordingTimeline | None:
+        ...
+
+    def get_latest_timeline(self, timeline_id: str) -> RecordingTimeline | None:
+        ...
+
+    def find_frames_at_timeline_position(self, timeline: RecordingTimeline, at_sec: float) -> list[FrameRef]:
+        ...
+
+    def add_span_resolution(self, resolution: SpanResolution) -> None:
+        ...
+
+    def get_span_resolution(self, timeline_ref: TimelineRef, requested_range: TimeRange) -> SpanResolution | None:
+        ...
+
+    def add_analysis_source(self, source: AnalysisSource, *, stream_factory: Callable[[], BinaryIO] | None=None, content_type: str='application/octet-stream') -> None:
+        ...
+
+    def get_analysis_source(self, source_ref: str) -> AnalysisSource | None:
+        ...
+
+    def find_analysis_sources(self, span: AssetSpan, profile_ref: str) -> list[AnalysisSource]:
+        ...
+
+    def open_analysis_stream(self, source_ref: str) -> tuple[BinaryIO, str] | None:
+        ...
+
+    def add_remote_copy(self, remote_copy: RemoteCopy) -> None:
+        ...
+
+    def get_remote_copy(self, analysis_source_ref: str, provider: str) -> RemoteCopy | None:
+        ...
+
+    def get_remote_copy_by_ref(self, remote_copy_ref: str) -> RemoteCopy | None:
+        ...
+
+    def add_incident_clip(self, clip: IncidentClip) -> None:
+        ...
+
+    def find_incident_clips(self, resolution: SpanResolution) -> list[IncidentClip]:
+        ...
+
+    def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
+        ...
+
+    def add_derived_asset(self, asset: DerivedAsset) -> None:
+        ...
+
+    def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:
+        ...
+
+    def associate_case_asset(self, case_id: str, asset_ref: ContractRef) -> None:
+        ...
+
+    def get_case_assets(self, case_id: str) -> list[ContractRef]:
+        ...
+
+    def mark_deleted(self, asset_ref: ContractRef) -> bool:
+        ...

@@ -39,7 +39,7 @@ from .models import (
     TimeRange,
     TimelineRef,
 )
-from .repository import InMemoryRecordingRepository
+from .repository import InMemoryRecordingRepository, RecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .multi_source import build_placed_timeline, resolve_placed_span
@@ -113,7 +113,7 @@ class _SyntheticBinaryStream(RawIOBase):
 
 class RecordingService:
     def __init__(
-        self, repository: InMemoryRecordingRepository | None = None,
+        self, repository: RecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
         analysis_materializer: LocalAnalysisMaterializer | None = None,

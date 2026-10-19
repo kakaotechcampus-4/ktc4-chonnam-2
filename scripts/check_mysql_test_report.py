@@ -16,6 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
@@ -118,6 +119,18 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("recording", s, p) for s, p in (
+        ("restore", "identities"), ("restore", "local_source"), ("restore", "timeline_span"),
+        ("transaction", "rollback"), ("transaction", "visibility"),
+        ("transaction", "failed_registration"), ("transaction", "failed_frame"),
+        ("ownership", "cross_case"), ("ownership", "duplicates"),
+        ("identity", "repeat_registration"), ("identity", "immutable_conflict"),
+        ("storage", "relative"), ("storage", "outside"), ("storage", "traversal"),
+        ("storage", "absolute"), ("storage", "symlink"), ("storage", "wrong_root"),
+        ("concurrent", "frame"), ("concurrent", "lock_scope"),
+        ("failure", "commit_unknown"), ("failure", "disconnect"), ("failure", "unrelated_sql"),
+        ("migration", "fresh"), ("migration", "previous"), ("migration", "failure"),
+        ("compatibility", "fixture"), ("transaction", "no_completion"), ("restore", "png_bytes"))),
     *(("api_start_analysis", "atomicity", kind) for kind in ("hint_extract", "coarse_search")),
     *(("api_start_analysis", "rollback", kind + "_" + fault)
       for kind in ("hint_extract", "coarse_search") for fault in ("save", "enqueue")),
