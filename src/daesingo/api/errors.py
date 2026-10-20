@@ -8,12 +8,21 @@ from daesingo.common.db.errors import BeforeCommitFailure, CommitOutcomeUnknown
 _HTTP_CODES = {
     400: "http.malformed_request", 404: "http.not_found", 405: "http.method_not_allowed",
     413: "http.payload_too_large", 415: "http.unsupported_media_type",
+    409: "http.source_not_allowed", 422: "http.source_rejected",
     500: "http.internal_error", 503: "http.dependency_unavailable",
 }
 
 
+class SourceHTTPException(HTTPException):
+    """Source-only statuses must not change unrelated framework error mapping."""
+
+
 def error_response(status: int, *, headers=None) -> JSONResponse:
     code = _HTTP_CODES[status]
+    if status == 413:
+        # The unconsumed request must not keep its connection alive after the
+        # application stops receiving; do not drain an oversized upload.
+        headers = dict(headers or {}, Connection='close')
     return JSONResponse({"ok": False, "error": {"code": code, "message_key": code},
                          "case_view": None}, status_code=status, headers=headers)
 
@@ -26,6 +35,10 @@ def install_error_handlers(app, events):
     @app.exception_handler(HTTPException)
     async def http_error(request, error):
         status = error.status_code if error.status_code in _HTTP_CODES else 500
+        if status in (409, 422) and not isinstance(error, SourceHTTPException):
+            status = 500
+        if status == 413 and getattr(request.scope.get('route'), 'path', None) == '/cases/{case_id}/sources':
+            events.emit('api.upload.rejected_413_count', count=1)
         # Framework-generated Allow is protocol metadata; arbitrary exception
         # headers can contain internal details and are deliberately not echoed.
         headers = None

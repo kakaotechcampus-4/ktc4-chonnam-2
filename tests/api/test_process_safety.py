@@ -317,7 +317,7 @@ def test_keyboard_interrupt_distinguishes_startup_from_serving(phase, expected):
         def serve(app, **kwargs):
             assert phase == "server"
             assert kwargs == {{"host": "127.0.0.1", "port": 8123, "workers": 1,
-                              "reload": False, "access_log": False, "log_config": None}}
+                              "reload": False, "access_log": False, "log_config": None, "http": cli.UploadH11Protocol}}
             interrupt()
         application.bootstrap = bootstrap
         wiring.create_api_engine, wiring.create_ready_engine = api_engine, ready_engine
