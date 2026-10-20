@@ -101,7 +101,7 @@ def scope(headers, *, close=None):
     return result
 
 
-async def invoke(app, bodies, headers, *, delays=None):
+async def invoke(app, bodies, headers, *, delays=None, on_chunk=None):
     sent, consumed, closed = [], [], []
     done = asyncio.Event()
     async def receive():
@@ -111,6 +111,8 @@ async def invoke(app, bodies, headers, *, delays=None):
             return {'type': 'http.disconnect'}
         if delays:
             await asyncio.sleep(delays[index])
+        if on_chunk is not None:
+            on_chunk(index)
         chunk = bodies[index]
         consumed.append(index)
         if chunk is None:
@@ -120,7 +122,9 @@ async def invoke(app, bodies, headers, *, delays=None):
         sent.append(message)
         if message['type'] == 'http.response.body' and not message.get('more_body'):
             done.set()
-    await app(scope(headers, close=lambda: closed.append(True)), receive, send)
+    request_scope = scope(headers)
+    request_scope['extensions'] = {'daesingo.close': lambda: closed.append(request_scope['state']['upload_aborted'])}
+    await app(request_scope, receive, send)
     return sent, consumed, closed
 
 
@@ -150,20 +154,33 @@ def replace_settings(settings, **values):
 
 
 @pytest.mark.parametrize('reason', ['idle', 'duration', 'disconnect'])
-def test_receive_abort_sends_no_status_and_never_registers(upload_app, reason):
+def test_receive_abort_sends_no_status_and_never_registers(upload_app, monkeypatch, reason):
     app, calls, output = upload_app
     startup = app.state.composition.startup
     settings = replace_settings(startup.config.upload, idle_timeout_sec=.04,
         max_duration_sec=.07 if reason == 'duration' else 1)
     object.__setattr__(startup, 'config', replace(startup.config, upload=settings))
     chunks, delays = [b'--bound', None] if reason == 'disconnect' else [b'-']*10, [.0]*2
+    on_chunk = None
     if reason == 'idle':
         delays = [.0]+[.09]*9
     elif reason == 'duration':
-        delays = [.02]*10
-    sent, consumed, closed = asyncio.run(invoke(app, chunks, MEDIA, delays=delays))
+        # Keep the part valid and open while bytes arrive before each idle limit.
+        chunks = [multipart().split(b'\r\n\r\n', 1)[0]+b'\r\n\r\n']+[b'x']*9
+        # Advance only the receiver's clock; scheduler speed cannot pick a winner.
+        # Real elapsed-time cancellation is covered by the CLI subprocess tests.
+        elapsed = 0.
+        monkeypatch.setattr('daesingo.api.upload.monotonic', lambda: elapsed)
+        def on_chunk(index):
+            nonlocal elapsed
+            elapsed = (index+1)*.02
+        delays = None
+    sent, consumed, closed = asyncio.run(invoke(app, chunks, MEDIA, delays=delays, on_chunk=on_chunk))
     assert sent == [] and calls == []
-    assert bool(closed) is (reason != 'disconnect')
+    assert closed == ([] if reason == 'disconnect' else [reason])
+    if reason == 'duration':
+        assert consumed == [0, 1, 2, 3]
+        assert next(startup.config.media_root.glob('staging/*')).read_bytes() == b'xxx'
     assert list(startup.config.media_root.glob('source/*')) == []
     assert 'PRIVATE' not in output.getvalue()
 

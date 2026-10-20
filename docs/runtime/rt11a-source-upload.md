@@ -1,6 +1,6 @@
 # RT-11(a) source upload
 
-**RT-11 IN_PROGRESS · Refs #298 (RT-11(a)) · PR pending · merge SHA pending.**
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(a)) · PR #382 · merge SHA pending.**
 
 Implementation note; Contract/Decision/Baseline and other module surfaces retain
 their existing authorities. Evidence: ignored `.codex-scratch/rt11a-20261020/`.
@@ -238,3 +238,87 @@ introduced. Current PR number/merge SHA: pending. **RT-11 IN_PROGRESS**;
 **Refs #298 (RT-11(a))**. FrameRef/DerivedAsset and all other excluded scope remain
 future work. Scratch/RAW/archive/pytest outputs/media/temp env and evidence logs
 are excluded from the22-file delivery; pre-existing unrelated files were preserved.
+
+## PR #382 CI duration fixture correction (uncommitted follow-up)
+
+The sections above preserve the original implementation evidence. This follow-up
+starts at current HEAD `fd0595def4026605530cc4f31c6613481e2a9746`, on the unchanged
+branch with clean worktree/empty staging. PR #382 is open. Remote run39418471074,
+job118613193000 reported9381 PASS/27 SKIP/1 FAIL in1538.27s: only
+`test_receive_abort_sends_no_status_and_never_registers[duration]` failed, with
+three ASGI messages forming400 `http.malformed_request`. Boundary-check passed;
+the later **MySQL execution gate was SKIPPED**, not successful. The original job
+log, job/run/PR JSON and SHA256 manifest are preserved in the new ignored
+`.codex-scratch/rt11a-ci382-20261020/`; no remote rerun was requested.
+
+The original fixture sends ten `b'-'` chunks with20ms configured delays, idle40ms,
+total70ms, and multipart `boundary=boundary`. Its third byte makes `b'---'`, which
+is malformed. The exact original test reproduced400/three messages on Ubuntu
+24.04.1, Python3.12.3, uv0.11.15 and the same locked dependencies. CI used Python
+3.12.15; that patch-version difference is disclosed. The pinned uv has no managed
+3.12.15 download entry locally, so its failed exact-version setup attempt is
+preserved. Initial local pytest missing-basetemp-parent error is setup evidence,
+not the later actual test RED.
+
+Separate instrumentation retained exact chunks/settings and receive/parser/abort
+events. The third invalid byte reached parser at upload elapsed66.931ms, before
+the70ms deadline; it returned400 with registration0. Changing only the payload to
+a valid open multipart part under the same real delays/settings produced a
+`duration` abort, zero ASGI messages and registration0. Actual CI per-chunk elapsed
+times were not logged; configured timing is known, and measured timings belong to
+the local reproduction. These observations identify a timing-dependent malformed
+test input, not evidence that production should suppress an earlier parser error.
+
+Only the test source changes: the duration input is a valid open part followed by
+data bytes, and a test-local receiver clock advances20ms per byte arrival. A controlled
+RED with the old malformed input preceded the payload correction. GREEN checks
+zero messages/registration, exact `duration` close reason, four consumed chunks,
+three staged payload bytes, and no final file. Idle/disconnect assertions remain;
+the real CLI timeout tests still exercise unmocked elapsed-time cancellation and
+transport closure. No arbitrary sleep increase, timeout relaxation, product,
+Contract/Baseline, dependency, workflow, DB or strict-gate change is made.
+
+The ASGI test helper's optional arrival callback defaults to None. Its close
+observer now records the already-set trusted scope abort reason. The MySQL helper
+consumer ignores close entries; its receive path is unchanged. Independent review
+found no need for a new local DB/full pytest replay solely for this test fixture.
+The new-head remote whole regression and strict MySQL gate remain mandatory.
+
+Focused Linux3 PASS and Windows3 PASS. Fresh reviewer independently ran33 HTTP/
+real CLI timeout checks (GiB cases2 deselected), and three in-memory negative
+controls correctly failed when duration enforcement, transport close, or the
+correct abort reason was removed. Reviewer did not edit product/tests/docs/git.
+
+The first broader Linux run preserved94 PASS/10 FAIL,149.52s. Failures involved
+short CLI-child startup/communication limits. Import-only benchmark measured
+5.545s from `/mnt/c` versus1.936s from a192-file SHA-identical native source
+snapshot. This single benchmark supports import slowdown; it does not prove the
+cause of every timeout. No Git checkout/worktree was created. The same104 tests
+then passed with native source for child imports and unchanged timeout values:
+**104 PASS/skip0,86.34s**, wrapper89.734s/exit0/source unchanged. The first94/10
+failed result is preserved separately and is not relabeled PASS.
+
+Boundary, Contract fixtures and diff checks pass.192 product source files plus
+the gate/harness/inventory/workflow/dependency files were compared against HEAD:
+198 files total, zero changes. The reviewer independently rehashed the192 native
+source copies and confirmed exact equality. Only this test and the two Runtime
+record documents change in the correction. Original Log bytes remain an exact
+prefix; old scratch/RAW/archive/pytest evidence was not edited or deleted.
+
+Root cleanup retained per-file hashes before removing67 newly owned Linux and3
+Windows upload files. No owned Linux test Python process remained; Windows process audit
+also found none. Per-test real API listener/child cleanup assertions passed in the
+native run. No new MySQL server, schema or account was created. New inactive
+Linux env/cache/source snapshot and raw reports remain excluded test tooling;
+pytest links were recorded without traversal. No shared WSL relay was stopped.
+
+Reviewer-only fixture cleanup has a separate audit limitation: its cleanup script
+removed generated upload files, then was interrupted during slow metadata checks
+before writing its in-memory per-file hashes/count. That count/hash record cannot
+be recovered or claimed. A final read-only check records zero remaining generated
+upload files in those four exact reviewer roots; raw logs/XML remain preserved.
+This does not replace root's retained67/3 records or any test result.
+
+This correction is at the user's first-report stopping point: no staging, commit,
+push or CI rerun. Current fix remote CI/MySQL gate success and merge readiness
+are not established. RT-11 IN_PROGRESS; Refs #298 (RT-11(a)).
