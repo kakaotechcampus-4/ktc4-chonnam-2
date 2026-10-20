@@ -1,5 +1,6 @@
 """API-owned resources and caller transactions for the public Case boundary."""
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock
 from time import monotonic
 
@@ -15,9 +16,48 @@ from daesingo.common.jobs.read_port import read_executions
 from daesingo.common.jobs.cancel import request_cancel
 from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
-from daesingo.recording import RecordingService
+from daesingo.recording import RecordingService, FfprobeMediaProbe, RecordingCapabilityError
+from daesingo.recording.mysql_repository import MySQLRecordingRepository
+from daesingo.case.domain import SourceNotAccepted
 from .health import Readiness
 from .storage import storage_available
+
+
+def _file_identity(path):
+    value = path.stat()
+    return value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns
+
+
+class _PreparedMediaProbe:
+    """Request-local adapter for Recording's existing public probe injection.
+
+    File hashes/ffprobe run without a checkout. A typed failed result is deferred
+    until registration so missing/non-INTAKE Case404/409 still take precedence.
+    No new Recording capability, schema, taxonomy or cache lifetime is introduced.
+    """
+    def __init__(self, path):
+        self._failure = None
+        try:
+            self._path = Path(path).resolve(strict=True)
+            self._identity = _file_identity(self._path)
+            self._source = FfprobeMediaProbe().probe(self._path)
+            if _file_identity(self._path) != self._identity:
+                raise RecordingCapabilityError('TEMPORARY_FAILURE', 'source changed during preparation')
+        except OSError:
+            self._failure = RecordingCapabilityError('TEMPORARY_FAILURE', 'source preparation unavailable')
+        except Exception as error:
+            self._failure = error
+
+    def probe(self, path):
+        if self._failure is not None:
+            raise self._failure from None
+        try:
+            unchanged = Path(path).resolve(strict=True) == self._path and _file_identity(self._path) == self._identity
+        except OSError:
+            unchanged = False
+        if not unchanged:
+            raise RecordingCapabilityError('TEMPORARY_FAILURE', 'prepared source changed') from None
+        return self._source
 
 
 @dataclass(frozen=True)
@@ -71,6 +111,29 @@ class ApiComposition:
         # One attempt, Case lock first, same Connection and acknowledged commit.
         # The returned Case body was built before enqueue and is left untouched.
         return run_api_transaction(self.engine, operation)
+
+    def register_source(self, case_id, path, original_filename):
+        prepared = _PreparedMediaProbe(path)
+        def operation(conn):
+            store = self._store(conn)
+            case = store.load_for_update(case_id)
+            if case.stage != 'INTAKE':
+                raise SourceNotAccepted()
+            with RecordingService(MySQLRecordingRepository(conn,
+                    storage_root=self.startup.config.media_root), media_probe=prepared) as recording:
+                registered = recording.register_local_source(path,
+                    original_filename=original_filename, case_id=case_id)
+                case_api.record_source_registered(case_id,
+                    registered.source_asset.model_dump(mode='json'),
+                    media_streams=[s.model_dump(mode='json') for s in registered.media_streams], store=store)
+                return registered.source_asset.source_asset_ref
+        source_ref = run_api_transaction(self.engine, operation)
+        try:
+            view = self.get_view(case_id)
+        except Exception:
+            # A post-commit view failure must never promise non-application.
+            raise RuntimeError('source response unavailable after commit') from None
+        return {'case_id': case_id, 'source_asset_ref': source_ref, 'case_view': view}
 
     def close(self):
         with self._lock:

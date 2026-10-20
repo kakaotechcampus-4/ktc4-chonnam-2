@@ -16,6 +16,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
     *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
@@ -119,6 +120,22 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_upload", s, p) for s, p in (
+        ("durability", "commit_restore"), ("durability", "response_loss"),
+        ("atomicity", "case_reject"), ("atomicity", "case_failure"),
+        ("concurrency", "same_case"), ("receive", "zero_checkout"),
+        ("receive", "probe_before_checkout"), ("receive", "prepared_mutation"),
+        ("taxonomy", "unsupported"), ("taxonomy", "tool"), ("taxonomy", "read"), ("taxonomy", "unexpected"),
+        ("filename", "traversal"), ("filename", "absolute"), ("filename", "separator"), ("filename", "unicode"),
+        ("abort", "idle"), ("abort", "duration"), ("abort", "disconnect"),
+        ("failure", "missing_case"), ("failure", "postcommit_view"), ("failure", "commit_ack_loss"),
+        ("interruption", "before_publish"), ("interruption", "after_publish"),
+        ("interruption", "before_commit"), ("interruption", "after_commit"),
+        ("limit", "exact_declared"), ("limit", "excess_declared"),
+        ("limit", "exact_stream"), ("limit", "excess_stream"),
+        ("transport", "media"), ("transport", "missing"), ("transport", "multiple"),
+        ("transport", "filename"), ("transport", "truncated"),
+        ("storage", "fsync"), ("storage", "device"), ("storage", "publish"))),
     *(("recording", s, p) for s, p in (
         ("restore", "identities"), ("restore", "local_source"), ("restore", "timeline_span"),
         ("transaction", "rollback"), ("transaction", "visibility"),

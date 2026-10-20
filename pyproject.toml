@@ -16,6 +16,8 @@ dependencies = [
   "pymysql[rsa]>=1.1,<2.0",  # MySQL 8.4 기본 인증(caching_sha2_password)에 rsa(cryptography) 필요
   "alembic>=1.13,<2.0",
   "fastapi>=0.115,<1",
+  "starlette==1.8.0",  # Existing lock; B-U1 streaming RequestBodyLimitMiddleware (>=1.6).
+  "python-multipart==0.0.32",  # Streaming callbacks; bounded headers and CR/LF scanning fixes.
   "uvicorn>=0.30,<1",
 ]
 

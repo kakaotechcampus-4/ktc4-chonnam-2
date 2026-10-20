@@ -13,6 +13,8 @@ from .events import ApiEvents
 from .routes_cases import cases_router
 from .routes_view import view_router
 from .routes_commands import commands_router
+from .routes_sources import sources_router
+from .upload import NoUploadResponse, SourceBodyLimitMiddleware
 
 
 def create_app(*, revision: str | None = None, startup: Startup | None = None) -> FastAPI:
@@ -47,6 +49,10 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     app.include_router(cases_router(composition))
     app.include_router(view_router(composition))
     app.include_router(commands_router(composition))
+    app.include_router(sources_router(composition))
+    # Keep the byte-limit receiver inside the access receive proxy: exceptions
+    # then reach the normal HTTP handler without an AnyIO ExceptionGroup wrapper.
+    app.add_middleware(SourceBodyLimitMiddleware, composition=composition)
 
     @app.middleware("http")
     async def access(request, call_next):
@@ -56,6 +62,10 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
             try:
                 response = await call_next(request)
             except Exception:
+                reason = getattr(request.state, 'upload_aborted', None)
+                if reason in ('idle', 'duration', 'disconnect'):
+                    composition.readiness.events.emit('api.upload.aborted_count', status=reason, count=1)
+                    return NoUploadResponse()
                 # Catch inside correlation scope; ServerErrorMiddleware would
                 # otherwise log after context reset and return an unsafe default.
                 composition.readiness.events.emit("api.request.failed", status="500")
