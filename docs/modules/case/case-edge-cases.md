@@ -85,12 +85,12 @@ case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTR
 
 | Edge case | 지금 동작 | 상태 | 근거 · 다음 증거 |
 | --- | --- | --- | --- |
-| 구조화 실패 · 전부 보류(`FAILED` · `ABSTAINED`) | 4개 단서 모두 `null`로 두고 탐색을 이어 간다. notice 없음 | `VERIFIED` | `test_hint_extraction.py` · `test_analysis_start.py` · case-command §11 |
+| 구조화 실패 · 전부 보류(`FAILED` · `ABSTAINED`) | 4개 단서 모두 `null`로 두고 탐색을 이어 간다. 실패는 notice 없음, 보류는 결과 화면에 `search.hint_unclear` | `VERIFIED` | `test_hint_extraction.py` · `test_analysis_start.py` · `test_hint_unclear_notice.py` · case-command §11 |
 | 결과 모양이 바뀜(알 수 없는 status) | `ValueError`로 멈춤 — 조용히 빈 단서로 넘어가지 않는다 | `VERIFIED` | `test_hint_extraction.py` |
 | 무관한 잡담 · 인젝션 · 모순 · 여러 사건 혼합 · 상대 시간 등 17개 카테고리 | 3.8 Flash 기본값 기준 카테고리별 83~100% | `MEASURED` | `experiments/intent-llm-model-comparison/results/consistency-robustness-v3.md` · `luna-reasoning-effort-v3.md` |
 | 모순된 정보(앞 값 · 뒤 값) | 마지막 값 + `confidence: low` 정책. 측정상 가장 약한 카테고리(83%) | `MEASURED` | `decisions/intent-hint-robustness-policy.md` |
 | 출력 한도 초과(내부 추론이 길어짐) | Search 함수가 `FAILED`(`RESPONSE_INVALID`)로 돌려줌 → 빈 단서. 측정상 500회 중 1회 | `MEASURED` | #278 · #277 |
-| `confidence: low`일 때 재입력 유도 | 화면 흐름 미정 | `PENDING` | #266 |
+| `confidence: low`일 때 재입력 유도 | 분석은 계속하고 결과 화면에 `search.hint_unclear`(INFO · 비차단, `actions:[]`). 「다시 적기」(`EDIT_HINT`)는 입력형 command 판본 뒤 | `VERIFIED`(1단계) | `test_hint_unclear_notice.py` · `decisions/hint-unclear-notice.md` · #266 |
 | 실사용 문장에서의 정확도 | 합성 데이터로만 측정 | `PENDING` | model-selection §13 한계 |
 
 ## 7. 결정이 필요한 것
@@ -108,6 +108,6 @@ case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTR
 | 항목 | 추적 |
 | --- | --- |
 | 응답 대기 중 Fine attempt 2 실행 중 표시 | #276 후속 |
-| `confidence: low` 재입력 유도 | #266 |
+| `confidence: low` 재입력 유도 — 「다시 적기」 action(2단계) | #266 · PR #356 |
 | ~~분석 시작 command(분석 범위 출처 · 첫 발주 fingerprint · 단서 구조화 대기 시간)~~ → 종결(#315) | `decisions/start-analysis.md` · 대기 시간 동작은 8-9 |
 | ~~중단 command~~ → 구현(2026-10-11, `decisions/stop-analysis.md`) · case timeout 구현 · 「초안 준비 중」 중단 | 8-9 · #292 · product |

@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from daesingo.case import jobs
-from daesingo.case.analysis_start import InitialSearchBudget, hints_from_result, reflect_hint_extraction
+from daesingo.case.analysis_start import InitialSearchBudget, hint_unclear, hints_from_result, reflect_hint_extraction
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
@@ -92,7 +92,7 @@ def receive_hint_extraction(case: CaseAggregate, result: dict[str, Any]) -> None
     `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — scope 기본값과 첫 발주 fingerprint가
     정해지지 않았다(Draft §11 미결).
     """
-    case.record_extracted_hints(hints_from_result(result))
+    case.record_extracted_hints(hints_from_result(result), unclear=hint_unclear(result))
 
 
 @dataclass
@@ -230,6 +230,7 @@ def build_view_from_adapter(
         report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
+        hint_unclear=case.hint_unclear,
     )
 
 
@@ -335,6 +336,16 @@ REPORT_VIDEO_NOT_GENERATED_NOTICE: dict[str, Any] = {
     "actions": ["GENERATE_REPORT_VIDEO"],
 }
 
+# 단서 구조화가 설명을 잘 이해하지 못했다(#266 — `confidence=low` · `ABSTAINED`). 접두어는 판단 근거(구조화 결과)를
+# 만드는 search를 따른다. 「다시 적기」(`EDIT_HINT`)는 입력형 command 판본(PR #356) 전에는 보낼 경로가 없어 비운다.
+HINT_UNCLEAR_NOTICE: dict[str, Any] = {
+    "code": "search.hint_unclear",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.hint_unclear",
+    "actions": [],
+}
+
 _SITUATION_RESPONDED = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
 
 
@@ -416,6 +427,7 @@ def derive_notices(
     overlay_time_readouts: list[dict[str, Any]] | None = None,
     search_retry_basis: bool = False,
     report_video_export_basis: bool = False,
+    hint_unclear: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -425,6 +437,9 @@ def derive_notices(
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
       `SEARCHING`에 머물므로(PR #197) 이 조건에 들지 않는다.
+    - `search.hint_unclear` — 단서 구조화가 설명을 잘 이해하지 못했고(`hint_unclear`, aggregate 판정) 탐색이 끝나
+      결과 화면(`INTAKE` · `SEARCHING` 뒤)일 때(#266). 진행 화면에는 붙이지 않는다(#224). 후보 0건이면
+      `search.no_candidates`와 함께 붙는다.
     - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
       유무와 무관하다. 「다시 판독」(`RETRY_PLATE_READ`)은 발주 근거(같은 kind의 이전 `PLATE_READ`
       JobRecord, `plate_read_retry_basis`)가 있을 때만 싣는다 — 없으면 command가 늘 거부한다
@@ -469,6 +484,8 @@ def derive_notices(
         derived.append(ANALYSIS_STOPPED_NOTICE if search_retry_basis else dict(ANALYSIS_STOPPED_NOTICE, actions=[]))
     if view.get("stage") == "CANDIDATE_REVIEW" and not view.get("candidates"):
         derived.append(NO_CANDIDATES_NOTICE)
+    if hint_unclear and view.get("stage") not in ("INTAKE", "SEARCHING"):
+        derived.append(HINT_UNCLEAR_NOTICE)
     # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다. 사용자가 번호판을 직접 입력했으면
     # 그 값으로 Package까지 가므로 거둔다(#235 ①). 진행 상태 `FAILED`는 실행 사실이라 그대로 둔다.
