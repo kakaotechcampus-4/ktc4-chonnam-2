@@ -48,11 +48,7 @@ def _valid_overlay(overlay: Contract | None) -> bool:
 def _correction_head(
     records: Iterable[Contract], *, case_id: str, selection_rev: int
 ) -> Contract | None:
-    head = correction_heads(records, case_id=case_id, selection_rev=selection_rev).get("occurred_at")
-    if head is None:
-        return None
-    require(head.get("kind") == "EVENT_TIME_MANUAL", "occurred_at requires EVENT_TIME_MANUAL")
-    return head
+    return correction_heads(records, case_id=case_id, selection_rev=selection_rev).get("occurred_at")
 
 
 def resolve_time(

@@ -9,6 +9,21 @@ class ContractInputError(EvidenceError):
     """An upstream value does not satisfy the consumed contract."""
 
 
+class InvalidCorrectionValue(ContractInputError):
+    """A correction's `new_value` is outside its target's value space.
+
+    Raised only by `validate_correction_append()`, before case records the correction.  It is
+    the one rejection a user can fix by entering another value; every other pre-append rejection
+    (chain, kind/target, previous value, structure) is a plain `ContractInputError` because case
+    built the record.  A stored record with the same defect is read as a plain
+    `ContractInputError` by `correction_heads()` — the read path does not reclassify it.
+    """
+
+    def __init__(self, target_field: str):
+        super().__init__(f"invalid new_value for {target_field}")
+        self.target_field = target_field
+
+
 class PolicyConfigurationError(EvidenceError):
     """A requested rule has no versioned policy value."""
 

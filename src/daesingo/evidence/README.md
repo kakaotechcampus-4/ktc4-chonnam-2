@@ -22,7 +22,8 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
 - `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
-- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
+- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
+- `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 
 `evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 사후 각인(`post_stamp_applied`)의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다(최종 영상 번호판·시각 표시 관찰은 v6에서 읽지 않는다 — ADR-EVIDENCE-010). 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다. `VisualEventNotAssembled`는 `assemble_evidence()`가 `NOT_OBSERVED`로 직접 호출됐을 때 가짜 Record 대신 멈추는 경계이며, producer 계약 위반이 아니라 호출자가 분류를 건너뛴 경우다(`ADR-EVIDENCE-007`).

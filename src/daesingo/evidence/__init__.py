@@ -1,7 +1,7 @@
 """Public pure-function boundary for the evidence module."""
 
 from .assembly import assemble_evidence, calculate_evidence_needs, resolve_independent_facts
-from .corrections import correction_heads
+from .corrections import correction_heads, validate_correction_append
 from .disposition import (
     ASSEMBLE,
     AWAIT_SITUATION_RESPONSE,
@@ -12,6 +12,7 @@ from .disposition import (
 from .errors import (
     ContractInputError,
     EvidenceError,
+    InvalidCorrectionValue,
     PackageNotReady,
     PolicyConfigurationError,
     VisualEventNotAssembled,
@@ -33,6 +34,7 @@ __all__ = [
     "SAFETY_REPORT_POLICY_REF",
     "ContractInputError",
     "EvidenceError",
+    "InvalidCorrectionValue",
     "PackageNotReady",
     "PolicyConfigurationError",
     "VisualEventNotAssembled",
@@ -48,4 +50,5 @@ __all__ = [
     "resolve_independent_facts",
     "resolve_time",
     "validate_contract",
+    "validate_correction_append",
 ]
