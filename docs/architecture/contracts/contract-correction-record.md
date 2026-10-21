@@ -1,4 +1,4 @@
-# Data Contract — CorrectionRecord v1.1
+# Data Contract — CorrectionRecord v1.2
 
 **Status:** `Final — Accepted`
 
@@ -8,7 +8,7 @@
 
 **Contract:** `CorrectionRecord`
 
-**Contract Version:** `correction-record/v1.1`
+**Contract Version:** `correction-record/v1.2`
 
 **Related ADR:** `adr/adr-correction-record.md` · Consumer Review: `docs/modules/evidence/contracts/correction-record-consumer-review-2026-09-10.md`
 
@@ -20,6 +20,8 @@
 
 > `eval`은 이 계약을 직접 읽지 않는다. 평가·재사용은 `case/decisions/correction-log-reuse.md`의 **익명화 copy**를 통해서만 이뤄지며(`product-spec.md` §7 불변 경계), 그 copy는 본 계약의 범위 밖이다.
 
+> **`v1.2` 변경 (2026-10-21) — 값이 없던 상태의 정정과 기록 전 검사 (#235 E-1 · E-2 · E-3).** ① evidence 의미 경로 10개 모두 `previous_value`에 `null`을 받는다 — 「값이 없던 상태에서 처음 입력」(번호판 판독 실패 · 상황 응답 대기 · 시각 미확보 뒤의 직접 입력). 지금까지 `null`을 받지 않던 `occurred_at` · `vehicle_number` · `location.coord`가 바뀐다. `new_value`는 §6 값 공간 그대로라 이 셋은 non-null이다 — 값을 지우는 정정은 받지 않는다 ② §8-6의 형식 검사는 case가 기록 **전에** evidence 공개 함수로 한다. target별 형식 · chain 규칙은 evidence 한 곳에만 두고 case가 복제하지 않는다 ③ 이미 기록된 위반 정정은 evidence가 건너뛰거나 고치지 않고 계약 오류로 읽는다(복구가 필요하면 별도 repair · migration). Decider 유소연(`case`, E-1 · E-2) · 김준영(`evidence`, E-3) — 결정은 [#235](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/235) 댓글, 검사 함수 경계는 `docs/modules/evidence/adr/adr-correction-append-precheck.md`(ADR-EVIDENCE-011).
+>
 > **2026-09-28 명확화 (#173 E-1 · #188, Decider 유소연 `case`) — 버전 유지.** supersede chain은 **후보에 종속된 값(evidence 의미 경로)이면 같은 `selection_rev` 안에서만** 잇는다. 다른 후보를 고르면(새 selection context) 그 후보의 첫 정정은 `supersedes_ref: null`로 시작하고, 이전 후보의 정정을 새 후보 값으로 승계하지 않는다. `hints`·`candidate.selected_id`처럼 case 전체에 걸린 case 네임스페이스 값은 후보가 바뀌어도 chain을 잇는다. evidence의 head 판정(`correction_heads`)이 이미 현재 `selection_rev` 안에서만 head를 고르므로 소비 규칙은 바뀌지 않는다. §7 두 번째 예시가 선택 context를 넘어 chain을 이은 모양이라 같은 context의 재수정으로 정정했다.
 >
 > **`v1.1` 변경 (2026-09-10) — v1(Draft)의 §9 미해결 항목 4건을 evidence Consumer Review 수용 조건으로 확정하고 Final로 승격했다.** ① `target_field`를 자유 문자열에서 **evidence가 실제 소비하는 의미 경로(semantic path)** 값 공간으로 좁힘 ② append-only supersede chain(`supersedes_ref`) 신설 — 동일 `target_field` 재수정은 새 `correction_id` + `supersedes_ref`로 이전 correction을 가리키고, "현재 유효값"은 최신 `corrected_at`이 아니라 **chain의 head**다 ③ `previous_value`/`new_value`에 target별 타입 검증 추가(무제한 `any` 저장 금지) ④ lifecycle 3원칙 확정(무효/무변경 입력 미생성, 유효 수정은 downstream보다 먼저 append-only 기록, downstream 실패해도 삭제하지 않음) ⑤ `kind`에 `SITUATION_CHANGE` 추가(9종) ⑥ 「잘 모르겠어요」 단순 응답은 값 수정이 아니라 case workflow state이므로 CorrectionRecord를 만들지 않는다 — 그 provenance는 `contract-evidence-record-needs.md` v1.3의 `EvidenceRecord.event.situation_response`가 대신 보존한다. Decider 유소연(`case`) · Consumer Review 김준영(`evidence`).
@@ -65,7 +67,7 @@
   "selection_rev": "int",
   "kind": "TIME_HINT_EDIT | OTHER_CANDIDATE | PLATE_MANUAL_EDIT | PLATE_REREAD | SPAN_ADJUST | REPORT_TYPE_CHANGE | EVENT_TIME_MANUAL | TIMELINE_REBASE | SITUATION_CHANGE",
   "target_field": "string (semantic path — §6)",
-  "previous_value": "target별 타입 — §6",
+  "previous_value": "target별 타입 | null — §6",
   "new_value": "target별 타입 — §6",
   "supersedes_ref": "{ kind: correction_record, ref: string } | null",
   "corrected_at": "ISO8601"
@@ -81,7 +83,7 @@
 | `selection_rev` | int | Y | 수정 **발생 시점**의 selection revision — 수정 횟수 카운터가 아니라 그 수정이 일어난 candidate 선택 context다 | 확인됨 |
 | `kind` | enum(9) | Y | 수정 종류 | **확인됨(v1.1, `SITUATION_CHANGE` 추가)** |
 | `target_field` | string(semantic path) | Y | 수정 대상 필드 — §6 값 공간 | **확인됨(v1.1)** |
-| `previous_value` / `new_value` | target별 타입 | Y | 수정 전/후 값. 무제한 `any` 아님 — §6 검증 규칙 | **확인됨(v1.1)** |
+| `previous_value` / `new_value` | target별 타입 | Y | 수정 전/후 값. 무제한 `any` 아님 — §6 검증 규칙. `previous_value=null`은 값이 없던 상태에서 처음 입력한 것이다 | **확인됨(v1.1)** · v1.2 이전 값 `null` |
 | `supersedes_ref` | `ContractRef{kind:correction_record}` \| null | Y(키) | 동일 `target_field`를 다시 수정했을 때 직전 correction을 가리킨다. 최초 수정이면 `null`. 후보에 종속된 값은 **같은 `selection_rev` 안의** 직전 correction만 가리킨다(새 selection context의 첫 수정은 `null`, §8-12) | **신규(v1.1)** · 2026-09-28 명확화 |
 | `corrected_at` | ISO8601 | Y | 수정 시각 | 확인됨 |
 
@@ -96,7 +98,7 @@ input_ref = { kind: correction_record, ref: <correction_id> }
 
 `contract-time-resolution.md` §5가 이미 같은 표기를 쓰고 있다.
 
-## 6. `target_field` 값 공간과 값 검증 (v1.1 확정)
+## 6. `target_field` 값 공간과 값 검증 (v1.1 확정 · v1.2 이전 값 `null`)
 
 evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `case`는 후보 선택·span·timeline용 경로를 추가할 수 있지만 evidence 필드와 같은 이름으로 뭉개지 않고 별도 namespace로 정의한다(예: `candidate.selected_id`, `span.start_ms` 등 — 닫힌 목록 아님, evidence 아래 10개 semantic path는 닫힘 — `correction-record-consumer-review-2026-09-10.md` v1.1 수용 조건 ①의 목록 그대로).
 
@@ -109,6 +111,8 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 | `vehicle_number` | string | 문자열 |
 | `location.coord` | `{lat:number, lon:number}` | 좌표 쌍 |
 | `location.address` \| `location.place_name` \| `location.search_keyword` \| `location.user_hint` | string \| null | 자유 문자열 |
+
+**(v1.2) 이전 값 `null`.** 위 경로 모두 `previous_value`는 표의 값 타입이거나 `null`이다. `null`은 「값이 없던 상태에서 처음 입력」을 뜻한다. `new_value`는 표의 값 타입 그대로다 — `occurred_at` · `vehicle_number` · `location.coord`의 `new_value`는 `null`이 될 수 없다. 필드마다 예외를 두지 않는다(#235 E-2).
 
 **`kind`** — `TIME_HINT_EDIT` · `OTHER_CANDIDATE` · `PLATE_MANUAL_EDIT` · `PLATE_REREAD` · `SPAN_ADJUST` · `REPORT_TYPE_CHANGE` · `EVENT_TIME_MANUAL` · `TIMELINE_REBASE` · `SITUATION_CHANGE`(v1.1 신규 — 사용자가 「다른 상황」을 선택해 사건 의미 자체를 바꾼 경우. 단순 「잘 모르겠어요」는 이 kind를 쓰지 않는다 — §8 불변조건 10)
 
@@ -171,7 +175,7 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 3. `kind`는 `JobRecord.kind`와 다른 값 공간이다
 4. 익명화 규칙(`case/decisions/correction-log-reuse.md`)은 본 계약(원본)이 아니라 재사용 copy에만 적용된다
 5. 이 레코드의 존재가 `EvidenceValue.user_corrected=true`를 **직접 뜻하지는 않는다.** 해당 correction이 최종값에 실제 반영됐는지는 `evidence`가 판정한다 (`contract-time-resolution.md` §10 항목 5)
-6. **(v1.1)** 입력 형식이 유효하지 않으면 CorrectionRecord를 만들지 않는다
+6. **(v1.1)** 입력 형식이 유효하지 않으면 CorrectionRecord를 만들지 않는다 — **(v1.2)** case는 기록하기 전에 evidence 공개 검사 `validate_correction_append()`를 부르고, 거부되면 기록하지 않는다. 검사 범위는 §6 값 형식과 supersede chain 연속성 · head 유일성(§8-11)이다(#235 E-3, ADR-EVIDENCE-011)
 7. **(v1.1)** `new_value`가 `previous_value`와 같다면(실질적으로 값이 바뀌지 않았다면) CorrectionRecord를 만들지 않는다
 8. **(v1.1)** 유효한 사용자 수정은 downstream Evidence 재조립·Job 발주보다 먼저 append-only로 기록한다
 9. **(v1.1)** 기록 이후 downstream 재조립·실행이 실패해도 이미 기록된 CorrectionRecord를 삭제하거나 되돌리지 않는다

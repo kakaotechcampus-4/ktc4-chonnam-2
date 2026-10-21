@@ -1681,7 +1681,7 @@ A/B/C tier를 사용하고 각 tier에서 측정할 수 없는 metric을 억지�
 
 case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린다.
 
-사건 단위 학습 이력을 위해 correction이 어떤 `selection_rev` / candidate context에서 발생했는지는 보존한다. **구체 필드와 supersede/current-value 규칙은 현재 `contracts/contract-correction-record.md`(`correction-record/v1.1`, Final — Accepted)가 소유한다.**
+사건 단위 학습 이력을 위해 correction이 어떤 `selection_rev` / candidate context에서 발생했는지는 보존한다. **구체 필드와 supersede/current-value 규칙은 현재 `contracts/contract-correction-record.md`(`correction-record/v1.2`, Final — Accepted)가 소유한다.**
 
 ---
 
