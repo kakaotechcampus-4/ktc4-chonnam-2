@@ -16,6 +16,8 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
+        "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
     *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
     *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
@@ -120,6 +122,20 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("produced_store", s, p) for s, p in (
+        ("terminal", "SUCCEEDED"), ("terminal", "FAILED"),
+        ("atomicity", "payload"), ("atomicity", "terminal"),
+        ("replay", "identical"), ("replay", "payload"), ("replay", "binding"),
+        ("concurrent", "same"), ("concurrent", "conflict"),
+        ("ownership", "stolen"), ("commit_unknown", "SUCCEEDED"), ("commit_unknown", "FAILED"),
+        ("reader", "single"), ("reader", "multiple"), ("reader", "missing"), ("reader", "wrong_kind"),
+        ("reader", "mixed_execution"), ("reader", "empty"),
+        ("process", "fresh_read"), ("redelivery", "stored_hint"),
+        ("migration", "upgrade"), ("transaction", "caller_rollback"),
+        ("receipt", "intact"), ("receipt", "missing"), ("receipt", "changed"),
+        ("replay", "batch_conflict"),
+        ("json", "large_uint"), ("json", "large_int"),
+    )),
     *(("api_upload", s, p) for s, p in (
         ("durability", "commit_restore"), ("durability", "response_loss"),
         ("atomicity", "case_reject"), ("atomicity", "case_failure"),

@@ -52,6 +52,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
 | PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
+| produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
 | API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR #366 | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
@@ -1585,35 +1586,35 @@ Plan §4가 허용한 기존 RETRY_SEARCH command + fixture를 사용한다. 제
 
 ## RT-10 — Worker composition root: 실제 kind handler 등록 · cross-process E2E
 
-Status: NOT_STARTED · Issue: #297 · Audit: B
+Status: IN_PROGRESS · Issue: #297 · Audit: B · Refs #297 (RT-10(a))
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| pending | RT-10(a) 결과 저장소 gate · Refs #297 (RT-10(a)) | pending |
 
 ### 구현 결과
 
-—
+RT-10(a)의 해석 없는 append-only 저장소·T1 원자 저장·무ID stable ref·기존 ProducedReader callable을 구현했다. [구현·검증·실패 이력](./rt10a-produced-store.md)을 따른다. 실제 handler 등록과 Case stored adapter 배선은 후속 범위다.
 
 ### Plan 대비 변경
 
-—
+#346 O-1~O-3 결과 저장소 gate를 실제 handler 등록 전 첫 slice로 분리했다. Contract·Accepted Decision·Baseline·다른 Owner 공개 surface 변경은 없다.
 
 ### 새 implementation detail
 
-—
+`runtime_0005`·strict JSON LONGTEXT snapshot·`runtime:{execution_id}:{ordinal}` opaque ref·동일 snapshot replay/no-overwrite·COMMIT 불명 payload 검증. 상세 선택과 근거는 위 note에 있다.
 
 ### Owner 확인 포인트
 
-—
+Runtime/Ops deferred review: 저장 identity·T1 receipt·append-only 경계. Case의 다중 객체 의미 조립은 기존 callable을 주입하는 후속 composition이 맡는다.
 
 ### Verification
 
-—
+단위6,364 PASS, 실제 MySQL834 PASS/2,502 phases/skip·xfail0, strict JSON/JUnit PASS, 원본 mandatory1 PASS, parameter mutation5,997건 및 신규 omission125건 모두 거부. 기존 checker/inventory·frozen migration·timeout을 보존했다. 전체 pytest/현재 diff 원격CI는 미실행이다.
 
 ### 남은 위험
 
-—
+전체 RT-10의 실제 handler·비동기 Real E2E는 미완료다. LONGTEXT의 privileged raw SQL 변경은 repository 보장 밖이다. 앞선 timeout·startup 실패·중단은 note와 원본 증거로 보존한다. 독립 재리뷰용 미커밋·미스테이징 상태로 남긴다.
 
 ---
 
@@ -2681,3 +2682,64 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 
 
 - 후속 audit 한계: reviewer 전용 fixture 정리는 파일 제거 뒤 느린 metadata 확인 중 중단되어 메모리의 개별 hash/count를 JSON으로 쓰지 못했다. 정확한 삭제 수·hash 기록을 복원하거나 추정하지 않는다. root의67 Linux/3 Windows hash 기록과 원본 raw log/XML은 보존됐으며 reviewer의 정확한4개 임시 root는 별도 읽기 전용 잔여 검사로 확인한다. 이 제한은 제품/gate 판정 및 원본 실패·성공 기록과 구분한다.
+
+
+## 2026-10-21 RT-10(a) produced object gate 착수 · TDD 검증
+
+**RT-10 IN_PROGRESS · Refs #297 (RT-10(a)) · PR pending · merge SHA pending.**
+
+- 최신 develop/HEAD 596e8a162b71949e7b3189e994921bb6247aac4b와 Issue #297·#346 본문/댓글, Plan RT-10·12.2/12.3, Case observation-storage, JobExecution Contract, 현재 Worker T1을 대조했다. #346 Implementer 댓글의 O-1~O-3 경계로 구현하며 Search O-4 대기는 유지한다.
+- common/jobs/produced.py·runtime_0005가 opaque append-only JSON 객체를 보존하고 Worker T1 terminal·produced와 동일 Connection/transaction에서 쓴다. 무ID ref는 execution/ordinal 고정이며 COMMIT 불명은 payload까지 확인하고 누락을 사후 보충하지 않는다. 기존 ProducedReader callable을 구현하고 다중 객체 의미 조립은 주입한다.
+- Plan 대비 결과 저장소 gate를 첫 slice로 분리했다. Contract/Accepted Decision/Baseline 및 다른 Owner 공개 surface 변경 없음. 실제 Search/readout handler·Case StoredObservationAdapter/8-13·recording export·RT-11 변경 없음.
+- baseline unit81 PASS; payload unit RED10→GREEN10; MySQL RED22→GREEN22; 직접 T1 receipt RED3→receipt/batch GREEN4; 실제 MySQL 기존 Worker/T2/redelivery/migration 회귀274 PASS/319.66초/drift0를 확보했다. 새 migration의 head/table 기대값만 보정하고 이전 frozen migration을 유지했다.
+- 독립 reviewer가 nested ProducedObject의 missing-ref/extra 변조 P2를 재현했다. RED3 FAIL/1 기존 PASS 뒤 exact tuple/type/stored-field 검증을 보완했다. 관련 단위회귀74 PASS 및 최종 새 MySQL26 PASS/30.49초/drift0다. 독립 후속 재리뷰와 원본 strict mandatory 전체·mutation 결과는 진행 중이다.
+- strict checker 함수 AST·기존 모든 필수 inventory·frozen migration15·workflow30분·mandatory nested900초를 보존하고 신규26parameter/12family만 추가했다. 최초 gate inventory RED11을 확보했다. 경계위반0·Contract fixture62/26/104 PASS다.
+- 최초 temp setup 오류와 WSL 접근 실패, 중간 inventory 확장 중 중단한 gate unit, migration RED8 FAIL/19 PASS와 해당 실행의 별도파일 drift3건은 별도 실패/중단 기록이며 final PASS로 소급하지 않는다. 상세 선택·원본 증거·최종 제한은 RT-10(a) note에 기록한다.
+- 소유 전용 MySQL8.4.7을 사용한다. 현재 원격CI 미실행, 전체 RT-10 IN_PROGRESS. 최종 stage/commit/push/PR 없이 독립 재리뷰 가능 상태로 남긴다.
+
+
+### RT-10(a) 독립 리뷰 P2 보완 · lossless JSON · 전체 gate 진행
+
+- 독립 reviewer는 nested object shape 변조와 native MySQL JSON의 큰 정수 coercion 두 P2를 재현했다. 전자는 exact type/field 검증으로 보완했고, 후자는 실제 MySQL RED2 뒤 strict JSON LONGTEXT binder로 보완했다. 모듈에 새 숫자 범위를 요구하지 않고 JSON primitive/정수를 그대로 보존한다. 새 MySQL28 PASS/32.43초/drift0이며 reviewer 직접 unit14·DDL 일치·binder roundtrip PASS다. 남은 P1/P2는 보고되지 않았다.
+- 최종 신규 inventory는28parameter/13family다. gate/payload/Worker unit6364 PASS/711.49초(wrapper717.562초/exit0/drift0)를 확보했다. 기존 checker 함수·기존 inventory·frozen migrations15·workflow30분·nested900/outer1800을 유지한다.
+- 첫 완료 mandatory child는834개 중832 PASS/2 FAIL,2502phase,661.778초였고 strict가 거부했다. parent1 FAIL/673.985초/drift0를 보존한다. 실패는 Recording migration head의 runtime_0004 기대값 한 곳과 로컬 비TLS PyMySQL caching_sha2 인증 오류다. Recording 테스트의 기대 문자열만0005로 보정한 원본1 PASS와 기본 TLS 인증 원본1 PASS를 확인했다. 제품/dependency/auth 정책·테스트 identity·gate 조건은 바꾸지 않았다.
+- gate unit 이후의 소스 차이는 위 Recording head assert1곳뿐이며 unit 대상 밖이다. 해당 파일의 역치환 SHA와 나머지 source/checker/inventory 해시로 동등성을 확인한다. 현재 원본 mandatory 전체를 기본 TLS로 다시 실행하며 이 결과 전에는 strict 전체 PASS를 주장하지 않는다. 전체 pytest/원격CI 미실행, RT-10 IN_PROGRESS·Refs #297 (RT-10(a)).
+
+
+### RT-10(a) 원본 mandatory timeout 보존 · 로컬 CA/TLS 비용 확인
+
+- 기본 TLS 원본 mandatory도 nested900초 TimeoutExpired, parent1 FAIL/900.93초(wrapper904.906초/drift0)였다. partial report 합성이나 timeout 증가로 성공 처리하지 않았다. 이번 command line 자식 잔여0을 확인했다.
+- 설치 PyMySQL1.2.3/SQLAlchemy2.1.3/cryptography50.0.1/pytest8.4.2는 lock과 같으며 제품/dependency 변경0이다. PyMySQL의 매 연결 default SSLContext 생성과 로컬8회 실측을 확인했다: 기본TLS0.547초, 전용 공개CA 명시TLS0.218초. 이 표본을 전체 timeout의 유일 원인으로 단정하지 않는다.
+- 이번 소유 서버의 공개CA만 scratch로 읽어 허용된 ssl_ca/ssl_check_hostname=false URL 옵션을 사용한다. TLS cipher·CA 검증을 유지하고 DB권한/durability·기존 테스트/gate/nested900/outer1800/workflow30분을 유지한다. 처음 잘못 조합한 verify 옵션의 certificate 오류는 별도 보존하고 SQLAlchemy 지원 옵션으로 고쳤다.
+- 전용CA/TLS에서 인증 원본+새저장소28개29 PASS/21.62초/drift0다. 현재 원본 mandatory 전체를 다시 실행 중이며 최종 PASS는 아직 판정하지 않는다. RT-10 IN_PROGRESS · Refs #297 (RT-10(a)).
+
+
+### RT-10(a) 전용 CA/TLS 전체 실행의 기존 startup 실패 보존
+
+- 전용CA/TLS 원본 mandatory child는834 selected/2502phase 중833 PASS/1 FAIL,720.588초였다. parent1 FAIL/732.344초/drift0이며 strict 전체 PASS가 아니다. 유일한 실패는 기존 RT-11 upload interruption before_publish의 API 자식8초 startup deadline이었다. RT-11 제품/fixture/제한은 변경하지 않았다.
+- 같은 원본 startup4모드는 재확인에서4 PASS/16.38초(wrapper19.609초/drift0)였다. 같은 소스/CA/TLS/테스트/nested900/outer1800으로 원본 전체를 다시 실행한다. 이 별도4 PASS를 앞선 전체 성공으로 합성하지 않는다.
+- 독립 reviewer는 CA 옵션이 기존 허용 목록에 있고 endpoint/account/schema가 같으며 CERT_REQUIRED·CA일치·암호화연결·plaintext fallback 없음·MySQL8.4를 직접 확인했다. 제품/dependency/gate/timeout 변경은 없다. RT-10 IN_PROGRESS · Refs #297 (RT-10(a)).
+
+
+### RT-10(a) 필수 strict gate 통과 · 최종 인계
+
+**RT-10 IN_PROGRESS · Refs #297 (RT-10(a)) · PR/merge SHA pending.**
+
+- 같은 소스·CA/TLS·원본 테스트·nested900/outer1800으로 실행한 mandatory-owned-ca-retry가1 PASS/1088.23초(wrapper1090.61초/exit0/source drift0)로 끝났다. 실제 MySQL8.4.7 child834 PASS/2502PASS phase,682.994초,skip0/xfail0이며 strict JSON/JUnit CLI PASS다.
+- 원본 함수의 parameter mutation5997건(기존5633+신규364)과 신규 metadata/family omission125건이 모두 거부됐다. root 별도 audit는 exact Counter·원본 report before/after SHA·현재 mandatory source hash를 대조했다. 기존 checker 함수 AST/필수 inventory·frozen migration15·workflow30분·900/1800제한을 보존했다.
+- 독립 reviewer는 코드 P2두건 보완·unit14·DDL·binder와 actual child834/2502·JSON/JUnit·신규28parameter/13family·563source hash 및 기존 gate 보존을 직접 확인했다. parent 전체 mutation은 root audit이며 reviewer가 원본 전체를 다시 실행한 것으로 표현하지 않는다. gate/payload/Worker unit6364 PASS와 이후 Recording head assert1곳의 별도 PASS/해시 동등성도 유지한다.
+- 앞선 전체 실패·timeout·중단은 보존한다. 현재 source의 전체 pytest와 원격CI는 미실행이다. 실제 handler/Case stored adapter/8-13/recording export/RT-11 제품·fixture 변경은 하지 않았다. Contract/Accepted Decision/Baseline·다른 Owner 공개 surface 변경 없음이다.
+- 소유 orphan schema3개를 확인·정리했고 종료 전 transaction0·기본schema5개·기본계정을 확인했다. Linux shutdown/datadir 정리 뒤 helper의 Windows relay port assertion exit1을 보존한다. 사용 한도에 따른 자동승인 검토 실패로 마지막 점검이 미실행됐으나 사용자 재개 뒤 완료했다. 현재 Windows54381/Linux listener·임시datadir·검증 자식 잔여0이며 공유relay 강제종료0이다. resource-final.json에 실제 관측과 최초 실패를 함께 남겼다.
+- 최종 전달은22파일 미커밋·미스테이징이다. 독립 재리뷰용 note는 docs/runtime/rt10a-produced-store.md, 파일/증거 해시는 ignored .codex-scratch/rt10a-20261021/handoff-manifest.json이다. stage/commit/push/PR 생성은 하지 않는다.
+
+
+### RT-10(a) 최종 fresh 독립 재리뷰 후속 기록
+
+**IN_PROGRESS · Refs #297 (RT-10(a)) · PR/merge SHA pending**
+
+- 사용자에게 전달된 최종 fresh 독립 reviewer 판정은 **추가 P1/P2 없음**이다. RT-10(a) 22개 파일은 검증 결과와 제한을 공개한 커밋·중간/draft PR 준비가 가능하다는 판정이다. 이번 후속 기록에서는 테스트를 재실행하지 않았으며, 커밋·푸시·PR 생성도 수행하지 않는다.
+- reviewer 직접 검증: produced·Worker **74 PASS**, strict JSON/JUnit CLI 재검사 **PASS**, boundary·Contract·diff 검사 **PASS**다. 아래 보존 증거 대조와 구분하며 reviewer가 전체 unit·MySQL·mutation을 새로 실행한 것으로 표현하지 않는다.
+- reviewer의 보존 증거 대조: unit **6,364 PASS**, 실제 MySQL **834 PASS / 2,502 phases**, parameter mutation **5,997건 모두 거부**, metadata/family 누락 **125건 모두 거부**다. 기존 필수 inventory와 원본 보고서를 유지하며 이전 실행들을 합성해 새로운 전체 PASS를 만들지 않는다.
+- 과거 setup error·실패·900초 timeout·startup deadline 실패는 각각의 별도 원본으로 유지한다. 앞선 이력과 원본 증거를 수정하거나 덮어쓰지 않는다. 전체 pytest와 현재 diff의 원격 CI는 미실행이다.
+- 비차단 위험: LONGTEXT에 대한 privileged raw SQL 변조를 DB JSON constraint가 차단하지 못하는 한계, 과거 timeout·startup deadline 실패의 재발 가능성이 남는다. 다중 객체의 의미 조립과 외부 ref 배선은 후속 작업이다.
+- 이번 판정은 RT-10(a) 결과 저장소 gate 범위다. 전체 RT-10은 미완료이며 실제 handler·Case adapter 등 후속 범위의 완료를 뜻하지 않는다. **IN_PROGRESS · Refs #297 (RT-10(a)) · PR/merge SHA pending**을 유지한다.

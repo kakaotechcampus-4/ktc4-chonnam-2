@@ -807,7 +807,7 @@ def test_upgrade_existing_case_runtime_revisions_keeps_their_data(mysql_engine, 
     upgrade_all(mysql_engine.url)
     with mysql_engine.connect() as conn:
         assert conn.exec_driver_sql("SELECT case_id FROM cases").scalar_one() == "retained"
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0004"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0005"
         assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
 
 

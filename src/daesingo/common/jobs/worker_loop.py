@@ -109,7 +109,7 @@ class WorkerLoop:
                         if not isinstance(result, HandlerResult):
                             result = runtime_failure("RUNTIME_INVALID_RESULT")
                         else:
-                            result = validated_terminal(result)
+                            result = validated_terminal(result, execution_id=context.execution_id)
                     except CancellationRequested:
                         result = CancelledExecution()
                     except UsageError as error:
