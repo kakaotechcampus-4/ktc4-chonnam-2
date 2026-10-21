@@ -34,9 +34,9 @@ _NON_NULL_NEW = {
 
 
 def _correction(correction_id, target, previous, new, *, kind="REPORT_TYPE_CHANGE", supersedes=None,
-                selection_rev=1, case_id="case_h001"):
+                selection_rev=1, case_id="case_h001", version="correction-record/v1.2"):
     return {
-        "contract_version": "correction-record/v1.2",
+        "contract_version": version,
         "correction_id": correction_id,
         "case_id": case_id,
         "selection_rev": selection_rev,
@@ -58,6 +58,19 @@ class NullablePreviousValueTests(unittest.TestCase):
                 record = _correction(f"corr_{target}", target, None, new, kind=kind)
                 heads = correction_heads([record], case_id="case_h001", selection_rev=1)
                 self.assertEqual(new, heads[target]["new_value"])
+
+    def test_a_v1_1_record_does_not_get_null_previous_retroactively(self):
+        # v1.1에서 이전 값 null은 위반이었다 — 이미 기록된 위반은 고쳐 읽지 않는다(#235 E-3).
+        for target, (kind, new) in _NON_NULL_NEW.items():
+            for version in ("correction-record/v1.1", None):
+                with self.subTest(target=target, version=version):
+                    record = _correction(f"corr_{target}", target, None, new, kind=kind, version=version)
+                    with self.assertRaisesRegex(ContractInputError, f"invalid previous_value for {target}"):
+                        correction_heads([record], case_id="case_h001", selection_rev=1)
+
+    def test_v1_1_paths_that_already_took_null_are_unchanged(self):
+        record = _correction("corr_place", "location.place_name", None, "수정 장소", version="correction-record/v1.1")
+        self.assertIn("location.place_name", correction_heads([record], case_id="case_h001", selection_rev=1))
 
     def test_new_value_stays_non_null_for_the_three_paths(self):
         for target, (kind, new) in _NON_NULL_NEW.items():
@@ -139,6 +152,8 @@ class AppendPrecheckTests(unittest.TestCase):
                 [], _correction("c", "vehicle_number", None, "22나2222", kind=plate, selection_rev=0)),
             "missing case_id": (
                 [], _correction("c", "vehicle_number", None, "22나2222", kind=plate, case_id=None)),
+            "null previous labelled v1.1": (
+                [], _correction("c", "vehicle_number", None, "22나2222", kind=plate, version="correction-record/v1.1")),
         }
         for label, (existing, record) in cases.items():
             with self.subTest(label):

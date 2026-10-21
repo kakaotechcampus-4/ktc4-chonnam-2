@@ -25,6 +25,9 @@ EVIDENCE_TARGET_FIELDS = {
     "location.coord",
     *_LOCATION_FIELDS,
 }
+# correction-record/v1.2 (#235 E-1 · E-2) opened `previous_value=null` for these paths; the
+# other evidence paths already took null in v1.1.
+_NULL_PREVIOUS_VERSION = "correction-record/v1.2"
 _KINDS = {
     "TIME_HINT_EDIT",
     "OTHER_CANDIDATE",
@@ -66,10 +69,15 @@ def _valid_value(target: str, value: Any) -> bool:
     return False
 
 
-def _valid_previous_value(target: str, value: Any) -> bool:
+def _valid_previous_value(record: Contract, target: str) -> bool:
     # correction-record/v1.2 §6 (#235 E-1 · E-2): `previous_value=null` is "no value before this
-    # first input" for every evidence path; `new_value` keeps the target's own value space.
-    return value is None or _valid_value(target, value)
+    # first input" for every evidence path; `new_value` keeps the target's own value space.  Only a
+    # record written under v1.2 gets that: a stored v1.1 record with null where v1.1 required a
+    # value stays a contract violation instead of being read as valid retroactively (#235 E-3).
+    value = record.get("previous_value")
+    if _valid_value(target, value):
+        return True
+    return value is None and record.get("contract_version") == _NULL_PREVIOUS_VERSION
 
 
 def validate_correction_append(correction: Contract, *, existing_records: Iterable[Contract]) -> None:
@@ -122,7 +130,7 @@ def correction_heads(
             and record["selection_rev"] >= 1,
             "invalid correction selection_rev",
         )
-        require(_valid_previous_value(target, record.get("previous_value")), f"invalid previous_value for {target}")
+        require(_valid_previous_value(record, target), f"invalid previous_value for {target}")
         require(_valid_value(target, record.get("new_value")), f"invalid new_value for {target}")
         require(
             record.get("kind") != "SITUATION_CHANGE" or target.startswith("event."),

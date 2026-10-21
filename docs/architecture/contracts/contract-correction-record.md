@@ -20,7 +20,7 @@
 
 > `eval`은 이 계약을 직접 읽지 않는다. 평가·재사용은 `case/decisions/correction-log-reuse.md`의 **익명화 copy**를 통해서만 이뤄지며(`product-spec.md` §7 불변 경계), 그 copy는 본 계약의 범위 밖이다.
 
-> **`v1.2` 변경 (2026-10-21) — 값이 없던 상태의 정정과 기록 전 검사 (#235 E-1 · E-2 · E-3).** ① evidence 의미 경로 10개 모두 `previous_value`에 `null`을 받는다 — 「값이 없던 상태에서 처음 입력」(번호판 판독 실패 · 상황 응답 대기 · 시각 미확보 뒤의 직접 입력). 지금까지 `null`을 받지 않던 `occurred_at` · `vehicle_number` · `location.coord`가 바뀐다. `new_value`는 §6 값 공간 그대로라 이 셋은 non-null이다 — 값을 지우는 정정은 받지 않는다 ② §8-6의 형식 검사는 case가 기록 **전에** evidence 공개 함수로 한다. target별 형식 · chain 규칙은 evidence 한 곳에만 두고 case가 복제하지 않는다 ③ 이미 기록된 위반 정정은 evidence가 건너뛰거나 고치지 않고 계약 오류로 읽는다(복구가 필요하면 별도 repair · migration). Decider 유소연(`case`, E-1 · E-2) · 김준영(`evidence`, E-3) — 결정은 [#235](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/235) 댓글, 검사 함수 경계는 `docs/modules/evidence/adr/adr-correction-append-precheck.md`(ADR-EVIDENCE-011).
+> **`v1.2` 변경 (2026-10-21) — 값이 없던 상태의 정정과 기록 전 검사 (#235 E-1 · E-2 · E-3).** ① evidence 의미 경로 10개 모두 `previous_value`에 `null`을 받는다 — 「값이 없던 상태에서 처음 입력」(번호판 판독 실패 · 상황 응답 대기 · 시각 미확보 뒤의 직접 입력). 지금까지 `null`을 받지 않던 `occurred_at` · `vehicle_number` · `location.coord`가 바뀐다. 이 허용은 `contract_version: correction-record/v1.2`로 기록한 레코드에만 적용된다 — v1.1로 기록된 이 셋의 이전 값 `null`은 소급해 허용하지 않고 계약 위반으로 남는다(③). `new_value`는 §6 값 공간 그대로라 이 셋은 non-null이다 — 값을 지우는 정정은 받지 않는다 ② §8-6의 형식 검사는 case가 기록 **전에** evidence 공개 함수로 한다. target별 형식 · chain 규칙은 evidence 한 곳에만 두고 case가 복제하지 않는다 ③ 이미 기록된 위반 정정은 evidence가 건너뛰거나 고치지 않고 계약 오류로 읽는다(복구가 필요하면 별도 repair · migration). Decider 유소연(`case`, E-1 · E-2) · 김준영(`evidence`, E-3) — 결정은 [#235](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/235) 댓글, 검사 함수 경계는 `docs/modules/evidence/adr/adr-correction-append-precheck.md`(ADR-EVIDENCE-011).
 >
 > **2026-09-28 명확화 (#173 E-1 · #188, Decider 유소연 `case`) — 버전 유지.** supersede chain은 **후보에 종속된 값(evidence 의미 경로)이면 같은 `selection_rev` 안에서만** 잇는다. 다른 후보를 고르면(새 selection context) 그 후보의 첫 정정은 `supersedes_ref: null`로 시작하고, 이전 후보의 정정을 새 후보 값으로 승계하지 않는다. `hints`·`candidate.selected_id`처럼 case 전체에 걸린 case 네임스페이스 값은 후보가 바뀌어도 chain을 잇는다. evidence의 head 판정(`correction_heads`)이 이미 현재 `selection_rev` 안에서만 head를 고르므로 소비 규칙은 바뀌지 않는다. §7 두 번째 예시가 선택 context를 넘어 chain을 이은 모양이라 같은 context의 재수정으로 정정했다.
 >
@@ -112,7 +112,7 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 | `location.coord` | `{lat:number, lon:number}` | 좌표 쌍 |
 | `location.address` \| `location.place_name` \| `location.search_keyword` \| `location.user_hint` | string \| null | 자유 문자열 |
 
-**(v1.2) 이전 값 `null`.** 위 경로 모두 `previous_value`는 표의 값 타입이거나 `null`이다. `null`은 「값이 없던 상태에서 처음 입력」을 뜻한다. `new_value`는 표의 값 타입 그대로다 — `occurred_at` · `vehicle_number` · `location.coord`의 `new_value`는 `null`이 될 수 없다. 필드마다 예외를 두지 않는다(#235 E-2).
+**(v1.2) 이전 값 `null`.** 위 경로 모두 `previous_value`는 표의 값 타입이거나 `null`이다. `null`은 「값이 없던 상태에서 처음 입력」을 뜻한다. `occurred_at` · `vehicle_number` · `location.coord`의 이전 값 `null`은 `contract_version`이 `correction-record/v1.2`인 레코드에서만 유효하다(v1.1 기록에 소급하지 않는다). `new_value`는 표의 값 타입 그대로다 — `occurred_at` · `vehicle_number` · `location.coord`의 `new_value`는 `null`이 될 수 없다. 필드마다 예외를 두지 않는다(#235 E-2).
 
 **`kind`** — `TIME_HINT_EDIT` · `OTHER_CANDIDATE` · `PLATE_MANUAL_EDIT` · `PLATE_REREAD` · `SPAN_ADJUST` · `REPORT_TYPE_CHANGE` · `EVENT_TIME_MANUAL` · `TIMELINE_REBASE` · `SITUATION_CHANGE`(v1.1 신규 — 사용자가 「다른 상황」을 선택해 사건 의미 자체를 바꾼 경우. 단순 「잘 모르겠어요」는 이 kind를 쓰지 않는다 — §8 불변조건 10)
 

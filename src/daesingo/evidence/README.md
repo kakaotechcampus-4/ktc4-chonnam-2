@@ -22,7 +22,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
 - `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
-- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
+- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다 — `contract_version`이 v1.2인 기록에만 적용하고 v1.1 기록에는 소급하지 않는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
 - `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
 

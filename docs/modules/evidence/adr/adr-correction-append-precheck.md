@@ -45,6 +45,7 @@ case는 CorrectionRecord를 append하기 **직전에** `validate_correction_appe
 ### 2.4 함께 바뀐 것
 
 - **`previous_value=null`(v1.2, E-1 · E-2).** evidence 의미 경로 모두 이전 값 `null`을 받는다. `new_value`는 값 공간 그대로라 `occurred_at` · `vehicle_number` · `location.coord`는 non-null이다.
+- **v1.2 기록에만 적용.** 위 셋의 이전 값 `null`은 `contract_version: correction-record/v1.2` 레코드에서만 유효하다. v1.1(또는 버전 없음)로 기록된 같은 모양은 v1.1 당시 위반이었으므로 지금도 `ContractInputError`다 — 버전을 보지 않으면 §2.3(기록된 위반을 고쳐 읽지 않음)을 어기고 #235 §1의 영구 실패 case를 조용히 되살린다. 그 결과 case는 `previous_value=null`을 기록하기 시작할 때 `CONTRACT_VERSION`을 v1.2로 **함께** 올려야 한다. 올리지 않으면 기록 전 검사가 내부 오류(`ContractInputError`)로 거부한다.
 - **시각 형식 오류를 값 오류로 판정.** `_valid_value("occurred_at", …)`는 형식이 틀리면 예외 대신 `False`를 돌려준다. 읽는 경로의 메시지는 `datetime must be a string` 등에서 `invalid new_value for occurred_at`/`invalid previous_value for occurred_at`으로 바뀌고, 예외 타입은 그대로다.
 - **`occurred_at` head의 `kind` 검사 위치.** `EVENT_TIME_MANUAL`만 최종 시각 근거가 된다는 검사(`contract-time-resolution.md` §5)를 `resolve_time()` 내부에서 `correction_heads()`의 head 선택으로 옮겼다. 기록 전 검사가 이 조합을 잡게 하려는 것이고, 조립 결과는 바뀌지 않는다(그 head는 원래도 `resolve_time()`에서 거부됐다).
 
@@ -52,9 +53,9 @@ case는 CorrectionRecord를 append하기 **직전에** `validate_correction_appe
 
 - **번호판 `new_value` 빈 문자열.** `vehicle_number`의 값 공간은 §6 「문자열」이라 `""`도 통과한다. E-1은 「번호판을 지우는 정정은 받지 않는다」고 했지만 빈 문자열을 그 정정으로 볼지는 값 공간을 좁히는 계약 변경이라 여기서 정하지 않았다 — case-command 입력형 판본(#356)에서 함께 정할 일로 남긴다.
 - **selection context를 넘는 chain(§8-12) 거부.** 지금 읽는 경로도 거부하지 않는다. 이미 저장된 기록을 새로 거부하게 되므로 이 ADR에서 소비 규칙을 넓히지 않았다.
-- **case 배선.** `apply_correction()`에서 이 함수를 부르는 것, `CONTRACT_VERSION`을 `correction-record/v1.2`로 올리는 것, `invalid_value` 응답은 case Owner 몫이다(#356).
+- **case 배선.** `apply_correction()`에서 이 함수를 부르는 것, `CONTRACT_VERSION`을 `correction-record/v1.2`로 올리는 것(§2.4 — `null` 이전 값 기록의 전제), `invalid_value` 응답은 case Owner 몫이다(#356).
 
 ## 4. 검증
 
-- `tests/evidence/test_correction_precheck.py` — v1.2 이전 값 `null` 수용 · `new_value` non-null 유지, 값 오류 8종 → `InvalidCorrectionValue`, 배선 오류 12종 → `ContractInputError`(값 오류 아님), 기존 위반 기록 비무시, 새 selection context · 다른 case · case 네임스페이스, 입력 불변, 응답 대기 중 번호판 · 시각 첫 입력의 부분 투영(#234 경로)
+- `tests/evidence/test_correction_precheck.py` — v1.2 이전 값 `null` 수용 · v1.1 · 버전 없는 기록에는 소급하지 않음 · `new_value` non-null 유지, 값 오류 8종 → `InvalidCorrectionValue`, 배선 오류 13종 → `ContractInputError`(값 오류 아님), 기존 위반 기록 비무시, 새 selection context · 다른 case · case 네임스페이스, 입력 불변, 응답 대기 중 번호판 · 시각 첫 입력의 부분 투영(#234 경로)
 - `tests/evidence/test_plate_boundary_d3.py::test_6c` — Readout 실행 실패(4a) 뒤 직접 입력이 Package · `READY`까지 간다(ADR-EVIDENCE-008 D-3 추가 행)
