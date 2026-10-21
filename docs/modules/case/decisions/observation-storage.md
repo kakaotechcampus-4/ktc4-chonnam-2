@@ -1,6 +1,6 @@
 # 모듈 결과의 위치 · case가 읽는 길 — 결과 저장소 · `StoredObservationAdapter` · 관찰 반영 (8-6 2단계)
 
-> **상태: case 쪽 결정 · RT-10 Implementer 확인 대기** · 결정일 2026-10-12 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6 2단계(`../design-refinement-w7-baseline.md`), 6.6순위 조건 2, #245 D-1 · #246 S-4, Runtime Tech Spec §12.2(T1 · T2), RT-10 Gate, REC-1(#302)
+> **상태: case 쪽 결정 · §8 1 ~ 3 RT-10(a) 반영(#385) · case 쪽 구현 중(§9)** · 결정일 2026-10-12 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6 2단계(`../design-refinement-w7-baseline.md`), 6.6순위 조건 2, #245 D-1 · #246 S-4, Runtime Tech Spec §12.2(T1 · T2), RT-10 Gate, REC-1(#302)
 > CaseView를 무엇으로 조립하는지와 T2에서 관찰 결과로 무엇을 하는지는 case 결정 범위다. 8-6 2단계는 Runtime Plan §7이 「case 주도 설계, 새 RD 아님」으로 둔 RT-10 Gate다. 다만 **결과 저장소와 T1에서의 쓰기는 Runtime 구현**이라 RT-10 Implementer(정철원)와 먼저 맞춘다(Plan §12.2 Consult, §8). 그것이 Contract · Tech Spec 의미 변경인지는 Plan §12.3대로 Implementer가 판단해 Runtime/Ops Owner(김준영)에게 올린다. 객체의 뜻 · 모양은 각 모듈 계약 몫이고, recording 저장은 REC-1 몫이다.
 
 ## 1. 목표 · 범위
@@ -80,7 +80,7 @@
 
 ## 9. case 쪽 구현 (RT-10 Implementer 확인 뒤, TDD)
 
-- `CaseStore(adapter_factory=…)` — 기본은 지금 registry factory.
+- ✅ `CaseStore(adapter_factory=…)` — 기본은 지금 registry factory. 진입점(`get_view` · `execute_command`)은 `store.adapter_for(case)`로 읽는다(2026-10-21).
 - `StoredObservationAdapter` — Runtime 저장소 전에는 가짜 `ProducedReader` · 가짜 recording으로 테스트한다.
 - `reflection._APPLIERS`에 관찰 kind 3개.
 - 테스트: 세대 · 선택 필터(재탐색 뒤 같은 id, A→B→A), 이전 후보의 늦은 결과, 관찰 반영 뒤 `READY`, `FAILED` 정산.

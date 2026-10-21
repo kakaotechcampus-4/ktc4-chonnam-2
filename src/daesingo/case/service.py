@@ -566,7 +566,7 @@ def get_view(
     실행 상태는 `store`에 꽂힌 JobExecution read port로 이 case의 job만 조회한다(8-10) — 호출자가 넘기지 않는다.
     """
     case = store.get_case(case_id)
-    adapter = store.get_adapter(case_id, case)
+    adapter = store.adapter_for(case)
     return build_view_from_adapter(case, adapter, executions=store.read_executions(case), notices=notices)
 
 
