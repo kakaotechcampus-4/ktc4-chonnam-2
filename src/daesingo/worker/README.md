@@ -41,3 +41,5 @@ Case가 지원하지 않는 kind는 T2 오류로 남고 receipt를 기록하지 
 RD-09a에 따라 실제 Recording invocation은 execution마다 새 `RecordingService`를 만들고 `finally`에서 닫아 mutable cache/working state를 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 뜻은 아니다. 이 PR은 service lifecycle을 구현하거나 process-global cache를 추가하지 않는다.
 
 structured event에는 queue의 trace/case/job/execution ID를 연결한다. 저장 가능한 ID라도 경로·제어문자가 포함돼 event token으로 안전하지 않으면 로그에서만 일관된 opaque alias를 쓴다. handler context와 DB의 원래 ID는 유지한다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
+
+RT-10(a)는 내부 `HandlerResult.objects`에 JSON payload를 받을 수 있게 한다. Worker는 module 의미를 해석하지 않고 stable ref를 결합한 snapshot을 T1에서 terminal·produced와 함께 저장한다. 기존 외부 produced 참조만 있는 handler도 유지한다. COMMIT 응답 유실 시 payload까지 동일한지 확인하며 누락 객체를 사후 복구하지 않는다. 실제 handler 등록과 기본 entrypoint의 reader/timeline 조립은 후속 범위다. 상태는 IN_PROGRESS이며 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)에 검증·제한을 기록한다.

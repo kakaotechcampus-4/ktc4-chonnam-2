@@ -193,7 +193,7 @@ def test_upgrade_0003_preserves_pending_and_final_rows_without_inventing_intent(
         assert tracker[0]["planned_run_ref"] is None and not tracker[0]["direct_no_run"]
         with engine.connect() as conn:
             assert conn.execute(sa.select(final)).all() == final_before
-            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0004"
+            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0005"
         upgrade_all(mysql_schema_url)
         assert rows(engine) == (tracker, finals)
     finally:

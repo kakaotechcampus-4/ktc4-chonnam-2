@@ -13,10 +13,11 @@ from sqlalchemy.engine import Engine
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_heartbeat_engine
 from daesingo.common.db.transactions import run_worker_transaction
-from daesingo.common.jobs.execution import ExecutionContext, HandlerResult
+from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, validated_terminal
 from daesingo.common.jobs.cancel import CancelledExecution
 from daesingo.common.jobs.heartbeat import Heartbeat, LeaseConnection
 from daesingo.common.jobs.repository import claim_one, finish
+from daesingo.common.jobs.produced import prepare_objects, append_objects, verify_objects
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.sweep import SweepService, sweep_once
 from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
@@ -54,7 +55,10 @@ def compose_worker(
     settings = startup.config.worker
 
     def record(context: ExecutionContext, result: HandlerResult | CancelledExecution) -> bool | TerminalCommit:
+        if isinstance(result, HandlerResult):
+            result = validated_terminal(result, execution_id=context.execution_id)
         produced = [ref.model_dump() for ref in result.produced]
+        objects = prepare_objects(context.execution_id, result.objects) if isinstance(result, HandlerResult) else ()
         terminal_latency = None
         sampled_at = acknowledged_at = None
 
@@ -86,6 +90,9 @@ def compose_worker(
             changed = finish(conn, context.execution_id, owner, status=result.status,
                              produced=result.produced, failure_kind=result.failure_kind)
             if changed == 1:
+                if objects:
+                    append_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
                 return True
             # A lost COMMIT acknowledgement can replay T1 against its own already
@@ -101,6 +108,9 @@ def compose_worker(
                         and stored["produced"] == produced
                         and stored["failure_kind"] == result.failure_kind)
             if recovered:
+                if objects:
+                    verify_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
             return recovered
 
