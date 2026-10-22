@@ -1,5 +1,11 @@
 # `api` — FastAPI composition root
 
+RT-12(a)는 lifespan startup에서 staging/temp 잔여 scan을 1회 수행하고 기존
+CleanupSettings 주기로 반복하며 종료 때 소유 thread를 join한다. upload의
+생성→publish까지 lease로 보호한다. `composition.media`는 기존 materializer의
+명시적 temp_root 주입·활성 보호용 factory이며 현재 기본 Recording에는
+materializer가 없다. [경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §8-1 · §8-2
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.

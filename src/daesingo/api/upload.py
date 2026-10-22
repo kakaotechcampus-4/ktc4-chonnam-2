@@ -155,6 +155,47 @@ def _open_staging(root):
     return tempfile.NamedTemporaryFile(mode='w+b', prefix='upload-', dir=staging, delete=False)
 
 
+async def _storage_call(callback, *args):
+    """Do not abandon a file/lease owner when asyncio cancellation interrupts I/O."""
+    pending = asyncio.create_task(run_in_threadpool(callback, *args))
+    try:
+        return await asyncio.shield(pending)
+    except asyncio.CancelledError:
+        # AnyIO shields its own scopes, but raw asyncio task cancellation may
+        # interrupt the await. Finish this owned operation before finally closes
+        # its descriptor/lease; never leave an unobserved worker writing to it.
+        while not pending.done():
+            try:
+                await asyncio.shield(pending)
+            except asyncio.CancelledError:
+                continue
+            except BaseException:
+                break
+        if not pending.cancelled():
+            pending.exception()
+        raise
+
+
+class _StagingOwner:
+    def __init__(self, root, scanner):
+        self.root, self.scanner = root, scanner
+        self.guard = self.target = None
+
+    def open(self):
+        self.guard = self.scanner.in_use()
+        self.guard.__enter__()
+        self.target = _open_staging(self.root)
+        return self.target
+
+    def close(self):
+        try:
+            if self.target is not None:
+                self.target.close()
+        finally:
+            if self.guard is not None:
+                self.guard.__exit__(None, None, None)
+
+
 def publish(staging: Path, root: Path) -> Path:
     final = root / 'source' / uuid4().hex
     if staging.stat().st_dev != final.parent.stat().st_dev:
@@ -178,11 +219,13 @@ async def receive_source(request, composition):
         raise HTTPException(415)
     settings = composition.startup.config.upload
     root = composition.startup.config.media_root
+    scanner = next(s for s in composition.cleanup.scanners if s.kind == 'staging')
+    owner = _StagingOwner(root, scanner)
     target = None
     started, last_byte = monotonic(), monotonic()
     total_bytes = 0
     try:
-        target = await run_in_threadpool(_open_staging, root)
+        target = await _storage_call(owner.open)
         parser = _MultipartFile(content_type, target)
         stream = request.stream().__aiter__()
         while True:
@@ -204,12 +247,12 @@ async def receive_source(request, composition):
             if chunk:
                 last_byte = monotonic()
                 total_bytes += len(chunk)
-                await run_in_threadpool(parser.write, chunk)
-        await run_in_threadpool(parser.finish)
+                await _storage_call(parser.write, chunk)
+        await _storage_call(parser.finish)
         path = Path(target.name)
-        await run_in_threadpool(target.close)
+        await _storage_call(target.close)
         target = None
-        final = await run_in_threadpool(publish, path, root)
+        final = await _storage_call(publish, path, root)
         events = composition.readiness.events
         events.emit('api.upload.bytes', count=total_bytes)
         events.emit('api.upload.duration_ms', duration_ms=(monotonic()-started)*1000)
@@ -217,10 +260,9 @@ async def receive_source(request, composition):
     except OSError:
         raise HTTPException(503) from None
     finally:
-        if target is not None:
-            # No open descriptor survives abort; a rowless named staging file
-            # may remain per B-C1. Cleanup policy belongs to RT-12.
-            target.close()
+        # Preserve rowless abort staging for B-C1, but release its live lease.
+        # The lease includes the closed staging -> publish window.
+        owner.close()
 
 
 def _abort(request, reason):
