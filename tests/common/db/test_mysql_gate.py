@@ -2,6 +2,7 @@
 
 import importlib.util
 from copy import deepcopy
+from functools import cache
 import json
 import os
 from pathlib import Path
@@ -245,6 +246,7 @@ REQUIRED_PARAMETERS = (
 )
 
 
+@cache
 def checker():
     path = ROOT / "scripts" / "check_mysql_test_report.py"
     spec = importlib.util.spec_from_file_location("mysql_report_checker", path)
@@ -254,6 +256,7 @@ def checker():
 
 
 def good_report():
+    parameter_families = {(role, scenario) for role, scenario, _ in REQUIRED_PARAMETERS}
     nodes = [{"nodeid": f"tests/common/db/integration/test_required.py::test_{name}",
               "scenarios": [name]} for name in (
         "sessions", "session_replacements", "worker_1205", "worker_1213", "worker_disconnect",
@@ -276,7 +279,7 @@ def good_report():
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
               for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
-              if not any((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS)]
+              if (role, scenario) not in parameter_families]
     # Deliberately opaque node IDs: policy must use stable check metadata.
     nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
                "scenarios": [], "checks": [
@@ -310,6 +313,40 @@ def test_case_inventory_validation_does_not_rescan_node_ids():
         item["nodeid"] = MeasuredNodeId(item["nodeid"])
     assert checker().validate_report(report) == len(report["collected"])
     assert len(splits) <= 2 * len(report["collected"])
+
+
+def test_evidence_fixture_does_not_rescan_parameters_per_family(monkeypatch):
+    scans = []
+
+    class MeasuredParameters(tuple):
+        def __iter__(self):
+            scans.append(None)
+            return super().__iter__()
+
+    monkeypatch.setitem(globals(), "REQUIRED_PARAMETERS", MeasuredParameters(REQUIRED_PARAMETERS))
+    report = good_report()
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(scans) <= 2
+
+
+def test_multiple_reports_do_not_reload_checker_or_share_mutation_state(monkeypatch):
+    loads = []
+    original_spec = importlib.util.spec_from_file_location
+
+    def observed_spec(name, *args, **kwargs):
+        if name == "mysql_report_checker":
+            loads.append(None)
+        return original_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", observed_spec)
+    report = good_report()
+    expected = checker().validate_report(report)
+    broken = deepcopy(report)
+    broken["selected"].pop()
+    with pytest.raises(ValueError):
+        checker().validate_report(broken)
+    assert checker().validate_report(report) == expected
+    assert len(loads) <= 1
 
 
 @pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
