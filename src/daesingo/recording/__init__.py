@@ -29,8 +29,11 @@ from .incidents import IncidentClipEncoding, LocalIncidentMaterializer
 from .time_sources import (AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources,
                            TimeSourceCandidate, TimeSourceCheck)
 from .service import OpenedAnalysisSource, RecordingService, RegisteredSource
+from .media_content import FrameImage, OpenedDerivedAsset
 
 __all__ = [
+    "FrameImage",
+    "OpenedDerivedAsset",
     "GPSCoordinate",
     "GPSObservation",
     "AnchorApplication",

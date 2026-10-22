@@ -31,6 +31,7 @@ class ModuleMigration:
 REGISTRY = (
     ModuleMigration("case", "case", "case_alembic_version"),
     ModuleMigration("runtime", "runtime", "runtime_alembic_version"),
+    ModuleMigration("recording", "recording", "recording_alembic_version"),
 )
 # ``python -m`` loads this file as __main__; later canonical imports must use
 # the SAME lock. The parent package is shared by both module identities.

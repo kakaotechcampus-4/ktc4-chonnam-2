@@ -9,6 +9,7 @@ import {
 } from '../contracts/caseView'
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
+import { PENDING_TEXT } from '../components/DisplayRow'
 import { StatusBadge } from '../components/StatusBadge'
 import carSide from '../assets/car/car-side.webp'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
@@ -37,7 +38,7 @@ const VIDEO_STATUS: Record<ReturnType<typeof reportVideoState>, string> = {
   unlinked: '영상 파일을 내려받는 연결이 아직 준비되지 않았어요',
 }
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
-const COPY_ALL_NOTE = '칸 이름과 함께 차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
+const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 
@@ -72,10 +73,19 @@ export function ResultScreen(props: {
   plateEditedLocally?: boolean
   /** 진행에서 막 넘어왔는가 — 첫 화면의 배경 자동차가 오른쪽에서 들어와 멈춘다. 하위 화면에서 돌아올 때는 제자리 */
   arriving?: boolean
+  /** 신고 상황 응답. RECORD_SITUATION_RESPONSE가 받는 두 값만 둔다 — 「다른 상황」은 입력형이라 command가 아직 없다 */
+  onRespond?: (value: 'CONFIRMED' | 'USER_UNSURE') => void
 }): JSX.Element {
   const { view } = props
   const pkg = view.package
   const ev = view.evidence
+  // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
+  const selected = view.candidates.find((c) => c.selected)
+  const awaiting =
+    selected?.situation_confirmation === 'NOT_ASKED' &&
+    view.notices.some((n) => n.code === 'case.situation_response_pending')
+  // 응답 전 부분 투영(v1.8, evidence.record_id null) — 상황 따라 정해지는 값은 응답 뒤에 정해진다
+  const partial = !pkg && ev?.record_id === null
 
   // 계약 대응표: report_fields 키 ↔ evidence.*_display. package가 없으면 evidence 쪽을 읽는다.
   const field = (key: string, fromEvidence: () => Field | null): Field | null => {
@@ -105,6 +115,9 @@ export function ResultScreen(props: {
     ev ? { value: ev.event_time_display.value, state: ev.event_time_display.info_state, source: sourceLabel(ev.event_time_display.source_label_key) } : null,
   )
   const when = splitDateTime(occurred?.value ?? null)
+  // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
+  // 계약상 package가 있으면 report도 항상 있다. 옛 판본 응답이 와도 깨지지 않게 없으면 예전처럼 둔다.
+  const report = pkg?.report ?? null
   const keyword = ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
@@ -119,10 +132,10 @@ export function ResultScreen(props: {
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
   // 붙여넣을 것(§21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
-  // 제목은 CaseView에 없어 빠진다.
   const pasteText = [
+    ['제목', report?.title],
     ['차량 번호', plate?.value],
-    ['신고 내용', content?.value],
+    ['신고 내용', report?.description ?? content?.value],
   ]
     .filter(([, v]) => v)
     .map(([k, v]) => `${k}: ${formatValue(v!)}`)
@@ -161,7 +174,7 @@ export function ResultScreen(props: {
       <header className="res-head">
         <img className={`res-bgcar${props.arriving ? ' is-arriving' : ''}`} src={carSide} alt="" aria-hidden />
         <p className="state-context">신고자료</p>
-        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : '신고자료를 완성하지 못했어요.'}</h1>
+        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : '신고자료를 완성하지 못했어요.'}</h1>
         {counts.size > 0 && (
           <ul className="res-counts">
             {COUNT_ORDER.filter((s) => counts.has(s)).map((s) => (
@@ -206,6 +219,47 @@ export function ResultScreen(props: {
         )}
       </header>
 
+      {awaiting && selected && props.onRespond && (
+        <section className="res-situation" aria-labelledby="res-situation-h">
+          <div className="res-sec-head">
+            <h2 id="res-situation-h">신고 상황</h2>
+          </div>
+          <p className="res-situation-text">
+            이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
+          </p>
+          {/* 근거 장면은 FrameRef로만 와서 아직 그릴 수 없다(#47) — 자리만 둔다 */}
+          <div className="res-frame">
+            <Film size={26} strokeWidth={1.5} aria-hidden />
+            <span>근거 장면 준비 중</span>
+          </div>
+          {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
+          <ul className="res-pending">
+            {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
+              <li key={label}>
+                <span className="res-pending-k">{label}</span>
+                <span className="res-val is-none">{PENDING_TEXT}</span>
+              </li>
+            ))}
+          </ul>
+          {/* 「잘 모르겠어요」도 진행을 막지 않는다. 값은 AI 추정으로 남는다(core-user-flow 「신고 상황」) */}
+          <div className="res-actions">
+            <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('CONFIRMED')}>
+              맞아요
+            </button>
+            <button type="button" className="rs-btn sec" onClick={() => props.onRespond!('USER_UNSURE')}>
+              잘 모르겠어요
+            </button>
+          </div>
+          {/* 응답 전에는 영상 칸이 없으니 다른 후보 입구를 여기에 둔다(§20 묶음 전) */}
+          {others > 0 && (
+            <button type="button" className="res-link" onClick={props.onCandidates}>
+              다른 장면이었나요? 다른 후보 {others}
+              <ChevronRight size={16} strokeWidth={2} aria-hidden />
+            </button>
+          )}
+        </section>
+      )}
+
       {hasForm && (
         <section className="res-form" aria-labelledby="res-form-h">
           <div className="res-sec-head">
@@ -219,34 +273,38 @@ export function ResultScreen(props: {
           </div>
 
           <Item label="유형" review={reportType?.state} pick>
-            <Value f={reportType} />
+            <Value f={reportType} pending={partial} />
           </Item>
 
-          <Item label="동영상">
-            <div className="res-video">
-              {/* 미리보기와 다운로드는 따로 판단한다 — 둘 다 아직 파일로 받을 경로가 없다 */}
-              <div className="res-frame">
-                <Film size={26} strokeWidth={1.5} aria-hidden />
-                <span>{video === 'unlinked' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
-              </div>
-              <div className="res-video-side">
-                {video === 'unlinked' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
-                <button type="button" className="rs-btn sec sm" disabled aria-describedby="res-video-why">
-                  <Download size={16} strokeWidth={2} aria-hidden />
-                  신고용 영상 다운로드
-                </button>
-                <p id="res-video-why" className={`res-hint${video === 'failed' ? ' is-fail' : ''}`}>
-                  {VIDEO_STATUS[video]}
-                </p>
-                {others > 0 && (
-                  <button type="button" className="res-link" onClick={props.onCandidates}>
-                    다른 후보 영상 {others}
-                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          {/* 신고용 영상은 응답 뒤 조립에서 만들어진다. 응답 전(v1.8 부분 투영 포함)에는 영상 칸을 그리지 않는다.
+              다른 후보 입구는 위 「신고 상황」에 이미 있다 */}
+          {!awaiting && (
+            <Item label="동영상">
+              <div className="res-video">
+                {/* 미리보기와 다운로드는 따로 판단한다 — 둘 다 아직 파일로 받을 경로가 없다 */}
+                <div className="res-frame">
+                  <Film size={26} strokeWidth={1.5} aria-hidden />
+                  <span>{video === 'unlinked' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                </div>
+                <div className="res-video-side">
+                  {video === 'unlinked' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
+                  <button type="button" className="rs-btn sec sm" disabled aria-describedby="res-video-why">
+                    <Download size={16} strokeWidth={2} aria-hidden />
+                    신고용 영상 다운로드
                   </button>
-                )}
+                  <p id="res-video-why" className={`res-hint${video === 'failed' ? ' is-fail' : ''}`}>
+                    {VIDEO_STATUS[video]}
+                  </p>
+                  {others > 0 && (
+                    <button type="button" className="res-link" onClick={props.onCandidates}>
+                      다른 후보 영상 {others}
+                      <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </Item>
+            </Item>
+          )}
 
           <Item label="위치 선택" review={location?.state} pick>
             <Value f={location} />
@@ -270,12 +328,28 @@ export function ResultScreen(props: {
           </Item>
 
           <Item label="제목">
-            <p className="res-missing">{NO_TITLE}</p>
+            {report ? (
+              <span className="res-val-line">
+                <span className="res-val">{report.title}</span>
+                {copyButton('제목', report.title)}
+              </span>
+            ) : (
+              <p className="res-missing">{NO_TITLE}</p>
+            )}
           </Item>
 
-          <Item label="신고 내용" review={content?.state}>
-            <Value f={content} after={copyButton('신고 내용', content?.value)} />
-          </Item>
+          {report ? (
+            <Item label="신고 내용">
+              <span className="res-val-line">
+                <span className="res-val res-report-text">{report.description}</span>
+                {copyButton('신고 내용', report.description)}
+              </span>
+            </Item>
+          ) : (
+            <Item label="신고 내용" review={content?.state}>
+              <Value f={content} pending={partial} after={copyButton('신고 내용', content?.value)} />
+            </Item>
+          )}
 
           <Item label="차량 번호" review={plate?.state}>
             <div className="res-plate">
@@ -366,8 +440,15 @@ function Item(props: { label: string; review?: InfoState; pick?: boolean; childr
 }
 
 // 값 — 바로 옆에 상태 배지(와 복사 버튼), 아래에 출처. 값이 없으면 「알 수 없음」이다(§3-3).
-function Value(props: { f: Field | null; after?: ReactNode }): JSX.Element {
+// pending: 응답 전 부분 투영에서 상황 따라 정해지는 값 — 「알 수 없음」이 아니라 응답 뒤에 정해진다.
+function Value(props: { f: Field | null; pending?: boolean; after?: ReactNode }): JSX.Element {
   const f = props.f
+  if (props.pending)
+    return (
+      <span className="res-val-line">
+        <span className="res-val is-none">{PENDING_TEXT}</span>
+      </span>
+    )
   return (
     <>
       <span className="res-val-line">

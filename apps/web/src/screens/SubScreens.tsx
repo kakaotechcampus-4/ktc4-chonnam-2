@@ -73,13 +73,14 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
 // ponytail: 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
+// `onEdit`이 없으면 수정 버튼을 두지 않는다 — 직접 입력을 case로 보내는 command가 아직 없다(#212 · #217).
 export function PlateCheck(props: {
   view: CaseView
-  aiValue: string | null
+  aiValue?: string | null
   /** 「번호판 직접 입력」 notice 동작으로 열면 바로 고치는 칸을 연다 */
   startEditing?: boolean
   onBack: () => void
-  onEdit: (plate: string) => void
+  onEdit?: (plate: string) => void
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -105,7 +106,7 @@ export function PlateCheck(props: {
     )
   const plate = evidence.plate_display
   const src = sourceLabel(plate.source_label_key)
-  const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== plate.value
+  const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
@@ -143,21 +144,23 @@ export function PlateCheck(props: {
                     <p className="plate-local">이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.</p>
                   </>
                 )}
-                <button
-                  type="button"
-                  ref={editButton}
-                  className="rs-btn sec"
-                  onClick={() => setEditing(plate.value ?? '')}
-                >
-                  번호 수정
-                </button>
+                {props.onEdit && (
+                  <button
+                    type="button"
+                    ref={editButton}
+                    className="rs-btn sec"
+                    onClick={() => setEditing(plate.value ?? '')}
+                  >
+                    번호 수정
+                  </button>
+                )}
               </>
             ) : (
               <form
                 className="plate-form"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (editing.trim()) props.onEdit(editing.trim())
+                  if (editing.trim()) props.onEdit?.(editing.trim())
                   close()
                 }}
                 onKeyDown={(e) => {

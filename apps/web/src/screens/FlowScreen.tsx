@@ -23,7 +23,8 @@ import carTop from '../assets/car/car-top.webp'
 // RUNNING일 때만 「나머지 작업은 계속하고 있어요」를 한 줄 붙인다. 전체 작업이 멈췄는지는
 // 화면이 RUNNING 유무로 단정하지 않는다 — 단계 사이에도 RUNNING이 잠깐 없을 수 있다.
 // 멈춤은 blocking notice(계약 B절 notices[].blocking)로만 알 수 있고, 그때는 이 안내를
-// 내지 않는다. 무슨 일이 있었는지는 실패·결과 화면에서 알린다.
+// 내지 않는다. 무슨 일이 있었는지는 실패·결과 화면에서 알린다. 버튼은 [분석 중단] 하나뿐이고,
+// 중단할 수 있을 때만 부모가 `onStop`을 준다(STOP_ANALYSIS, #342).
 //
 // 가장 크게 보이는 제목은 지금 RUNNING인 단계의 이름이다(progress에서 그대로 읽는다).
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
@@ -34,7 +35,8 @@ const CAR_H = 53
 
 export function FlowScreen(props: {
   view: CaseView
-  files: File[]
+  /** 올린 영상들. 브라우저에 원본(File)이 있으면 대표 영상 정지 화면을 그린다 */
+  files: { name: string }[]
   /** 업로드가 열 수 없어 건너뛴 파일 이름 — 대표 영상에서 뺀다 */
   skipped?: string[]
   situation: string
@@ -42,6 +44,7 @@ export function FlowScreen(props: {
   title?: string
   /** 업로드 화면에서 자동차가 출발하며 넘어올 때 — 오른쪽에서 밀려 들어온다(처음 그릴 때만 본다) */
   pushIn?: boolean
+  onStop?: () => void
 }): JSX.Element {
   const screen = selectScreen(props.view)
   const [enter] = useState(() => (props.pushIn ? 'rs-push-in' : 'rs-enter'))
@@ -164,7 +167,7 @@ export function FlowScreen(props: {
       </div>
 
       <div className="flow-main">
-        <VideoThumb file={representative} name={representative?.name ?? props.files[0]?.name ?? ''} />
+        <VideoThumb file={representative instanceof File ? representative : null} name={representative?.name ?? props.files[0]?.name ?? ''} />
 
         {props.files.length > 1 && (
           // 여러 파일은 접어 둔다. open은 브라우저가 들고 있어 단계가 바뀌어 다시 그려져도 유지된다.
@@ -186,6 +189,14 @@ export function FlowScreen(props: {
             <h2>{SITUATION_HEADING}</h2>
             <p>“{props.situation}”</p>
           </section>
+        )}
+
+        {props.onStop && (
+          <div className="flow-stop-row">
+            <button type="button" className="rs-btn sec" onClick={props.onStop}>
+              분석 중단
+            </button>
+          </div>
         )}
       </div>
 

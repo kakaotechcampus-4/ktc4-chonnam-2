@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
 import hashlib
@@ -14,6 +14,7 @@ from uuid import uuid4
 from pydantic import TypeAdapter
 
 from .errors import RecordingCapabilityError
+from .media_content import FrameImage, OpenedDerivedAsset, identity, png
 from .fixtures import RecordingFixture
 from .models import (
     GPSObservation,
@@ -39,7 +40,7 @@ from .models import (
     TimeRange,
     TimelineRef,
 )
-from .repository import InMemoryRecordingRepository
+from .repository import InMemoryRecordingRepository, RecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .multi_source import build_placed_timeline, resolve_placed_span
@@ -113,7 +114,7 @@ class _SyntheticBinaryStream(RawIOBase):
 
 class RecordingService:
     def __init__(
-        self, repository: InMemoryRecordingRepository | None = None,
+        self, repository: RecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
         analysis_materializer: LocalAnalysisMaterializer | None = None,
@@ -214,14 +215,28 @@ class RecordingService:
         """등록된 Mock GPS 관찰값의 독립 복사본. 미기재는 UNKNOWN이 아니라 []다."""
         return self._repository.list_gps_observations()
 
-    def register_local_source(self, path: str | Path) -> RegisteredSource:
+    def register_local_source(self, path: str | Path, *, original_filename: str | None = None,
+                              case_id: str | None = None) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
 
         실패 시 자산을 등록하지 않는다. 매 성공 호출은 새 opaque ref를 발급한다.
         Source는 파일 읽기를 확인했으므로 AVAILABLE, stream은 decode 검사 전이므로
         UNKNOWN이다. 카메라 방향과 누락된 stream duration을 추정하지 않는다.
         """
+        # Filename is opaque metadata. Do not normalize it or use it as a path.
+        # None keeps legacy path-only registration/observation behavior.
+        if original_filename is not None and not isinstance(original_filename, str):
+            raise ValueError("original_filename must be a string")
+        if original_filename is not None:
+            try:
+                original_filename.encode("utf-8")
+            except UnicodeError:
+                raise ValueError("original_filename must be Unicode text") from None
+        if case_id is not None and (not isinstance(case_id, str) or not case_id):
+            raise ValueError("case_id must be a nonempty string")
         source = self._media_probe.probe(Path(path))
+        if original_filename is not None:
+            source = replace(source, original_filename=original_filename)
         source_ref = f"sa_{uuid4().hex}"
         streams = tuple(
             MediaStream(
@@ -238,7 +253,10 @@ class RecordingService:
             media_stream_refs=[stream.media_stream_ref for stream in streams],
             byte_size=source.byte_size, availability="AVAILABLE", duration_sec=source.duration_sec,
         )
-        self._repository.add_local_source(asset, streams, source)
+        if case_id is None:
+            self._repository.add_local_source(asset, streams, source)
+        else:
+            self._repository.add_local_source(asset, streams, source, case_id=case_id)
         return RegisteredSource(asset, streams)
 
     @classmethod
@@ -363,13 +381,59 @@ class RecordingService:
         return frame
 
     def read_frame(self, frame_ref: str) -> bytes:
-        frame = self._repository.get_frame(frame_ref)
+        identity(frame_ref)
+        try:
+            frame = self._repository.get_frame(frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
         if frame is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 FrameRef입니다")
         content = self._repository.get_frame_content(frame_ref)
         if content is None:
             raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image를 읽을 수 없습니다")
         return content
+
+    def read_frame_image(self, frame_ref: str) -> FrameImage:
+        content = self.read_frame(frame_ref)
+        if not png(content):
+            raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image format is unavailable")
+        return FrameImage(content, "image/png", "png")
+
+    def owns_frame(self, case_id: str, frame_ref: str) -> bool:
+        identity(case_id)
+        identity(frame_ref)
+        try:
+            frame = self._repository.get_frame(frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
+        if frame is None:
+            return False
+        # Ownership reads must not use get_media_stream: its existing FOR UPDATE
+        # serializes frame generation. A projection avoids acquiring that lock.
+        try:
+            stream = self._repository.get_ownership_stream(frame.media_stream_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored stream metadata is invalid") from None
+        if stream is None:
+            return False
+        return self.owns_asset(case_id, ContractRef(kind="source_asset", ref=stream.source_asset_ref))
+
+    def owns_asset(self, case_id: str, asset_ref: ContractRef | dict[str, Any]) -> bool:
+        identity(case_id)
+        try:
+            parsed = ContractRef.model_validate(asset_ref)
+        except ValueError:
+            raise ValueError("invalid recording asset reference") from None
+        identity(parsed.ref)
+        if parsed.kind not in {"source_asset", "derived_asset"}:
+            raise RecordingCapabilityError("INVALID_REF_KIND", "unsupported ownership reference kind")
+        try:
+            if parsed not in self._repository.get_case_assets(case_id):
+                return False
+            get = self._repository.get_source_asset if parsed.kind == "source_asset" else self._repository.get_derived_asset
+            return get(parsed.ref) is not None
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
 
     def lookup_asset_facts(self, asset_ref: ContractRef | dict[str, Any]) -> AssetFacts:
         parsed = ContractRef.model_validate(asset_ref)
@@ -800,10 +864,36 @@ class RecordingService:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
         return clip
 
-    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any]) -> DerivedAsset:
-        asset = DerivedAsset.model_validate(payload)
-        self._repository.add_derived_asset(asset)
+    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any], *,
+                               content: bytes | None = None, content_type: str | None = None,
+                               case_id: str | None = None) -> DerivedAsset:
+        try:
+            asset = DerivedAsset.model_validate(payload)
+        except ValueError:
+            raise ValueError("invalid recording derived asset") from None
+        self._repository.add_derived_asset(asset, content=content, content_type=content_type, case_id=case_id)
         return asset
+
+    def open_derived_asset(self, derived_asset_ref: str) -> OpenedDerivedAsset:
+        identity(derived_asset_ref)
+        try:
+            asset = self.get_derived_asset(derived_asset_ref)
+        except RecordingCapabilityError as error:
+            if error.code == "NOT_FOUND":
+                raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 DerivedAsset입니다") from None
+            raise
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if asset.availability != "AVAILABLE":
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        try:
+            value = self._repository.get_derived_content(derived_asset_ref)
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if value is None or asset.byte_size != len(value[0]):
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        content, content_type = value
+        return OpenedDerivedAsset(BytesIO(content), content_type, len(content))
 
     def get_derived_asset(self, derived_asset_ref: str) -> DerivedAsset:
         asset = self._repository.get_derived_asset(derived_asset_ref)

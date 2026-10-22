@@ -216,3 +216,16 @@ def test_fine_rejects_a_candidate_from_a_run_this_service_did_not_execute() -> N
         )
 
     assert spy.fine_timeouts == []
+
+
+def test_fine_runs_on_another_service_with_an_explicit_budget() -> None:
+    """Coarse와 다른 객체(Worker)에서도 넘겨받은 상한으로 Fine을 실행한다(#226)."""
+    monotonic, _ = _make_clock()
+    candidate = _only_candidate(_service(_TimeoutSpy(), monotonic), max_latency_sec=5)
+    spy = _TimeoutSpy()
+
+    _ = _service(spy, monotonic).verify_visual(
+        _SOURCE_REF, candidate, event_type=VisualEventType.SIGNAL, max_latency_sec=70
+    )
+
+    assert spy.fine_timeouts == [70.0]

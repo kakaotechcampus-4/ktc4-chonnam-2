@@ -137,7 +137,13 @@ def pytest_collection_modifyitems(config, items):
             for mark in item.iter_markers("mysql_check"):
                 if len(mark.args) != 2 or not all(isinstance(value, str) for value in mark.args):
                     raise pytest.UsageError("Invalid MySQL role/scenario marker")
-                checks.append({"role": mark.args[0], "scenario": mark.args[1]})
+                check = {"role": mark.args[0], "scenario": mark.args[1]}
+                if mark.kwargs:
+                    if (set(mark.kwargs) != {"parameter"} or
+                            not isinstance(mark.kwargs["parameter"], str) or not mark.kwargs["parameter"]):
+                        raise pytest.UsageError("Invalid MySQL parameter marker")
+                    check["parameter"] = mark.kwargs["parameter"]
+                checks.append(check)
             config._mysql_nodes.add(item.nodeid)
             config._mysql_evidence["collected"].append({
                 "nodeid": item.nodeid, "junit": [".".join(address[:-1]), address[-1]],

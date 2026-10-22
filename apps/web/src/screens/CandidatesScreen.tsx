@@ -20,7 +20,7 @@ export function CandidatesScreen(props: {
   const { onSelect } = props
   return (
     <Panel title="찾은 장면">
-      <HintRecall hints={props.view.hints} />
+      <HintRecall hints={props.view.hints} description={props.view.description} />
       <div className="cands">
         {props.view.candidates.map((c, i) => {
           const card = (

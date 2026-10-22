@@ -28,6 +28,14 @@ def _session(engine: Engine, lock_wait: int) -> Engine:
     def initialize(dbapi_connection, connection_record):
         with dbapi_connection.cursor() as cursor:
             cursor.execute(f"SET SESSION innodb_lock_wait_timeout = {int(lock_wait)}")
+            cursor.execute("SET SESSION time_zone = '+00:00'")
+
+    @event.listens_for(engine, "checkout")
+    def utc_on_checkout(dbapi_connection, connection_record, connection_proxy):
+        # SET SESSION survives rollback. Restore UTC even if a prior borrower
+        # changed the pooled session; NOW(6) must compare UTC DATETIME(6) values.
+        with dbapi_connection.cursor() as cursor:
+            cursor.execute("SET SESSION time_zone = '+00:00'")
     return engine
 
 
