@@ -17,8 +17,13 @@ class SourceHTTPException(HTTPException):
     """Source-only statuses must not change unrelated framework error mapping."""
 
 
-def error_response(status: int, *, headers=None) -> JSONResponse:
-    code = _HTTP_CODES[status]
+class FrameUnavailable(HTTPException):
+    def __init__(self):
+        super().__init__(404)
+
+
+def error_response(status: int, *, headers=None, ref_unavailable=False) -> JSONResponse:
+    code = "http.ref_unavailable" if status == 404 and ref_unavailable else _HTTP_CODES[status]
     if status == 413:
         # The unconsumed request must not keep its connection alive after the
         # application stops receiving; do not drain an oversized upload.
@@ -28,9 +33,9 @@ def error_response(status: int, *, headers=None) -> JSONResponse:
 
 
 def install_error_handlers(app, events):
-    def failure(status, *, headers=None):
+    def failure(status, *, headers=None, ref_unavailable=False):
         events.emit("api.request.failed", status=str(status))
-        return error_response(status, headers=headers)
+        return error_response(status, headers=headers, ref_unavailable=ref_unavailable)
 
     @app.exception_handler(HTTPException)
     async def http_error(request, error):
@@ -47,7 +52,7 @@ def install_error_handlers(app, events):
             methods = getattr(route, "methods", None)
             if methods:
                 headers = {"Allow": ", ".join(sorted(methods))}
-        return failure(status, headers=headers)
+        return failure(status, headers=headers, ref_unavailable=isinstance(error, FrameUnavailable))
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):

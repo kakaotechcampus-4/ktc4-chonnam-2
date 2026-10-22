@@ -16,6 +16,7 @@
 
 - frame·사실: `resolve_frame()`, `read_frame()`, `lookup_asset_facts()`
 - 소유·형식·영속 bytes: `owns_frame()`, `owns_asset()`, `read_frame_image()`, `open_derived_asset()`
+- case 소유 저장 이미지: `read_owned_frame_image(case_id, frame_ref)` — caller transaction에서 소유를 먼저 확인하고 detached `FrameImage`를 반환한다. unknown/cross-case는 `UNKNOWN_REF`, 소유하지만 bytes/이미지 형식이 없으면 `FRAME_NOT_FOUND`다. provider·재생성·원본 재처리는 호출하지 않는다.
 - timeline·구간: `get_timeline()`, `get_latest_timeline()`, `resolve_span()`
 - 분석 자산: `prepare_analysis_source()`, `open_analysis_source()`, `find_remote_copy()`, `register_remote_copy()`
 - 사건·파생 자산: `build_incident_clip()`, `get_incident_clip()`, `register_derived_asset()`, `get_derived_asset()`, `purge_case()`
