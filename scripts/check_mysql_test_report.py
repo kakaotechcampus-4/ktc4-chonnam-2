@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed on skipped, xfailed, deselected, absent or incomplete MySQL tests."""
 
+from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -458,10 +459,14 @@ def validate_report(report):
     scenarios = {value for item in collected for value in item.get("scenarios", [])}
     if REQUIRED_SCENARIOS - scenarios:
         raise ValueError("required MySQL scenarios missing: " + ", ".join(sorted(REQUIRED_SCENARIOS - scenarios)))
+    # Parse each identity once; the mutation gates validate thousands of
+    # complete inventories, so rescanning all nodes per Case requirement adds
+    # work without providing additional evidence.
+    case_counts = Counter((node.split("::")[0], node.split("::")[-1].split("[")[0])
+                          for node in expected)
     for path, functions in REQUIRED_CASE_TESTS.items():
         for function, minimum in functions.items():
-            count = sum(node.split("::")[0] == path and node.split("::")[-1].split("[")[0] == function
-                        for node in expected)
+            count = case_counts[path, function]
             if count < minimum:
                 raise ValueError("Case MySQL test coverage missing: " + function)
     phases = {}

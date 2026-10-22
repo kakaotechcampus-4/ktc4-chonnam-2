@@ -295,6 +295,23 @@ def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
 
 
+def test_case_inventory_validation_does_not_rescan_node_ids():
+    # A larger acceptance inventory must not multiply node-ID parsing by the
+    # number of Case requirements on every parameter-omission mutation.
+    splits = []
+
+    class MeasuredNodeId(str):
+        def split(self, *args, **kwargs):
+            splits.append(self)
+            return super().split(*args, **kwargs)
+
+    report = good_report()
+    for item in report["collected"]:
+        item["nodeid"] = MeasuredNodeId(item["nodeid"])
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(splits) <= 2 * len(report["collected"])
+
+
 @pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
 @pytest.mark.parametrize("outcome", ["skip", "xfail", "failure"])
 def test_timestamp_acceptance_cannot_report_unsuccessful_execution(identity, outcome):

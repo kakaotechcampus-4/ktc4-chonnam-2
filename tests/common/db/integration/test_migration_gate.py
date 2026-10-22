@@ -10,6 +10,8 @@ from xml.etree import ElementTree
 
 import pytest
 
+from mysql_report_mutations import copy_parameter_evidence
+
 from migration_support import ROOT
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
@@ -267,7 +269,7 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
         if role in ("timestamp_order", "api_cancel", "async_e2e", "api_start_analysis", "recording", "api_upload", "produced_store", "api_frame"):
             layers += ("skip", "xfail", "failure", "junit_skip", "junit_failure", "junit_error")
         for layer in layers:
-            broken = deepcopy(report)
+            broken = copy_parameter_evidence(report, node)
             if layer in {"collection", "all"}:
                 broken["collected"] = [n for n in broken["collected"] if n["nodeid"] != node]
             if layer in {"selection", "all"}:
