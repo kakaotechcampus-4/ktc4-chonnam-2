@@ -21,7 +21,7 @@
 ## 하지 말 것
 
 1. `docs/archive/`를 현재 문서로 읽지 않는다. 분량이 가장 크고 제목이 그럴듯하지만 과거 snapshot이다.
-2. `docs/management/secret/`·`docs/management/submissions/`·`doc/`을 커밋하지 않는다. gitignore 대상이며 `git add -f` 금지.
+2. `docs/management/secret/`·`docs/management/submissions/`·`docs/final-submission/`·`doc/`을 커밋하지 않는다. gitignore 대상이며 `git add -f` 금지.
 3. 문서 간 규칙을 복제하지 않는다. 한 결정은 한 곳에만 있고 나머지는 가리킨다.
 4. 미결(`[미결 유지]`·`확인 필요`·`미정`)을 완성도를 위해 채우지 않는다. 미결은 미결로 남긴다.
 5. 다른 모듈의 문서·폴더를 고치지 않는다. 각 모듈은 Owner가 관리한다.
