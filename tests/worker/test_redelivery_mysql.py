@@ -226,16 +226,16 @@ def test_fault_isolation_next_candidate_and_next_cycle(resources, mode, monkeypa
 
 
 @pytest.mark.mysql_check("redelivery", "unsupported")
-@pytest.mark.parametrize("mode", parameters("unsupported", ("PLATE_READ", "UNKNOWN")))
+@pytest.mark.parametrize("mode", parameters("unsupported", ("REPORT_VIDEO_EXPORT", "UNKNOWN")))
 def test_unsupported_kind_failed_t1_remains_unreceipted_and_other_case_progresses(resources, mode):
     engine, cfg = resources
-    if mode == "PLATE_READ":
+    if mode == "REPORT_VIDEO_EXPORT":
         from daesingo.case import jobs as case_jobs, service
         from daesingo.common.jobs.repository import enqueue
         with engine.begin() as conn:
             case_id = service.create_case(store=store(conn))
             case = store(conn).load_for_update(case_id)
-            record = case_jobs.issue_plate_read(case, input_fingerprint="test_plate")
+            record = case_jobs.issue_report_video_export(case, input_fingerprint="test_report_video")
             store(conn).save(case)
             execution_id, = enqueue(conn, [record], "trace_redelivery")
         assert snapshot(engine, case_id).job_records[0]["kind"] == mode
@@ -264,7 +264,7 @@ def test_unsupported_kind_failed_t1_remains_unreceipted_and_other_case_progresse
     worker.run()  # Unregistered kind really reaches T1 FAILED and T2.
     assert row(engine, execution_id)["failure_kind"] == "RUNTIME_UNREGISTERED_KIND"
     assert row(engine, execution_id)["case_applied_at"] is None
-    assert reasons and all(("반영기가 없는 kind" if mode == "PLATE_READ" else "kind가 다르다") in reason
+    assert reasons and all(("반영기가 없는 kind" if mode == "REPORT_VIDEO_EXPORT" else "kind가 다르다") in reason
                            for reason in reasons)
     other_case, other = seed(engine)
     for _ in range(2):
