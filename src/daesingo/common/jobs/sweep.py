@@ -24,6 +24,7 @@ from daesingo.common.logging import bind_context, log_event_best_effort, safe_co
 
 from .retry_policy import is_stale, retry_backoff, should_retry
 from .schema import job_execution as jobs
+from .timestamps import terminal_timestamp
 
 _DB_ERRORS = (DBAPIError, PoolTimeout, TransactionRetryExhausted)
 
@@ -74,7 +75,7 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
     changed = conn.execute(update(jobs).where(
         jobs.c.execution_id == execution_id, jobs.c.status == "RUNNING",
         jobs.c.lease_expires_at < func.now(6),
-    ).values(status="STALE", ended_at=func.now(6), produced=[])).rowcount
+    ).values(status="STALE", ended_at=terminal_timestamp(), produced=[])).rowcount
     if changed != 1:
         return None
     # Use the actual UPDATE's DB timestamp for both the receipt and new attempt.

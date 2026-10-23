@@ -13,10 +13,11 @@ from sqlalchemy.engine import Engine
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_heartbeat_engine
 from daesingo.common.db.transactions import run_worker_transaction
-from daesingo.common.jobs.execution import ExecutionContext, HandlerResult
+from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, validated_terminal
 from daesingo.common.jobs.cancel import CancelledExecution
 from daesingo.common.jobs.heartbeat import Heartbeat, LeaseConnection
 from daesingo.common.jobs.repository import claim_one, finish
+from daesingo.common.jobs.produced import prepare_objects, append_objects, verify_objects
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.sweep import SweepService, sweep_once
 from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
@@ -25,6 +26,9 @@ from daesingo.common.jobs.redelivery import observe_reflection, redeliver_once
 from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
+from daesingo.common.usage.reconciliation import reconcile_once
+from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.media import MediaRoot
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -40,6 +44,7 @@ def compose_worker(
     idle_wait: Callable[[float], object] | None = None,
     clock: Callable[[], float] = time.monotonic,
     sweep_hooks: Sequence[Callable[[], object]] = (),
+    usage_observe: Callable | None = None, usage_late_observe: Callable | None = None,
 ) -> WorkerLoop:
     """One main-thread execution at a time; no domain service is instantiated.
 
@@ -52,7 +57,10 @@ def compose_worker(
     settings = startup.config.worker
 
     def record(context: ExecutionContext, result: HandlerResult | CancelledExecution) -> bool | TerminalCommit:
+        if isinstance(result, HandlerResult):
+            result = validated_terminal(result, execution_id=context.execution_id)
         produced = [ref.model_dump() for ref in result.produced]
+        objects = prepare_objects(context.execution_id, result.objects) if isinstance(result, HandlerResult) else ()
         terminal_latency = None
         sampled_at = acknowledged_at = None
 
@@ -84,6 +92,9 @@ def compose_worker(
             changed = finish(conn, context.execution_id, owner, status=result.status,
                              produced=result.produced, failure_kind=result.failure_kind)
             if changed == 1:
+                if objects:
+                    append_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
                 return True
             # A lost COMMIT acknowledgement can replay T1 against its own already
@@ -99,12 +110,23 @@ def compose_worker(
                         and stored["produced"] == produced
                         and stored["failure_kind"] == result.failure_kind)
             if recovered:
+                if objects:
+                    verify_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
             return recovered
 
         committed = run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger,
                                       before_attempt=context.ownership.check,
                                       commit_guard=commit_guard)
+        if committed:
+            # Separate from T1 and after its connection has returned. Failure
+            # leaves terminal usage for the next sweep; never replay the handler/T1.
+            try:
+                reconcile_once(engine, execution_ref=context.execution_id, recovery=False,
+                    sleep=sleep, logger=startup.logger, observe=usage_observe)
+            except Exception:
+                log_event_best_effort(startup.logger, "runtime.usage.reconciliation_failed", status="FAILED")
         if committed and result.status == "CANCELLED":
             receipt = TerminalCommit(acknowledged_at)
             # Durable T1 is already final. Calculation/sink faults must never
@@ -144,6 +166,8 @@ def compose_worker(
             observe_reflection(incoming, result, startup.logger)
             return result
 
+    cleanup = configured_cleanup(startup.config, startup.logger)
+    media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
@@ -151,13 +175,17 @@ def compose_worker(
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
         reflect=reflect if reflector is not None else None,
         heartbeat=heartbeat,
+        cleanup=cleanup, media=media,
         usage_sink_factory=lambda context: DurableUsageSink(
             execution_ref=context.execution_id, case_id=context.case_id,
+            logger=startup.logger, late_observe=usage_late_observe,
             transaction=lambda callback: run_worker_transaction(
                 engine, callback, sleep=sleep, logger=startup.logger)),
         sweeper=SweepService(
             sweep=partial(sweep_once, engine, settings, sleep=sleep, logger=startup.logger),
-            settings=settings, stop=stop, logger=startup.logger, hooks=sweep_hooks,
+            settings=settings, stop=stop, logger=startup.logger,
+            hooks=(partial(reconcile_once, engine, sleep=sleep, logger=startup.logger, observe=usage_observe),
+                   *sweep_hooks),
             redeliver=partial(redeliver_once, engine, reflector, sleep=sleep, logger=startup.logger)
                 if reflector is not None else None,
         ),

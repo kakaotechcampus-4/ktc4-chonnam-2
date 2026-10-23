@@ -69,6 +69,7 @@ def _check_payload(request: Any) -> None:
         not isinstance(request.get("case_id"), str)
         or not isinstance(rev, int)
         or isinstance(rev, bool)
+        or not isinstance(kind, str)  # dict 조회 전에 — 비문자열 kind가 TypeError로 새지 않게(#295)
         or kind not in _PAYLOAD_KEYS
         or not isinstance(payload, dict)
         or set(payload) != _PAYLOAD_KEYS[kind]

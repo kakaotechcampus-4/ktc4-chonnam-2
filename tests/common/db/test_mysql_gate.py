@@ -2,6 +2,7 @@
 
 import importlib.util
 from copy import deepcopy
+from functools import cache
 import json
 import os
 from pathlib import Path
@@ -12,12 +13,49 @@ import pytest
 
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
 from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
+from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
+from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
+from cancel_api_acceptance import CANCEL_API_CHECKS, CANCEL_API_PARAMETERS
+from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
+from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARAMETERS
+from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
+from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
+from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
+from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
 # Independent role/scenario acceptance inventory, deliberately not imported
 # from the implementation being tested. Test function names are irrelevant.
+API_CASES_VIEW_PARAMETERS = tuple((role, scenario, parameter) for role, scenario, parameter in (
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    ("api_cases", "create", "contract"), ("api_cases", "create", "body_unread"),
+    ("api_view", "read", "missing"), ("api_view", "read", "queued"),
+    ("api_view", "read", "running"), ("api_view", "read", "terminal_gap"),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    ("api_cases", "failure", "pool_exhausted"), ("api_view", "failure", "pool_exhausted"),
+    ("api_view", "failure", "lock_timeout"), ("api_cases", "failure", "disconnect"),
+    ("api_view", "failure", "disconnect"), ("api_cases", "failure", "postcommit_read"),
+    ("api_cases", "failure", "commit_unknown"), ("api_view", "failure", "commit_unknown"),
+    ("api_cases", "failure", "deadlock"), ("api_cases", "logging", "correlation")))
+
+API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, parameter in (
+    ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
+    ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
+
 REQUIRED_CHECKS = (
+    *FRAME_CHECKS,
+    *UPLOAD_CHECKS,
+    *PRODUCED_CHECKS,
+    *RECORDING_CHECKS,
+    *START_ANALYSIS_CHECKS,
+    *ASYNC_E2E_CHECKS,
+    *CANCEL_API_CHECKS,
+    *COMMAND_CHECKS,
+    *TIMESTAMP_CHECKS,
+    *((r, s) for r, s, p in API_CASES_VIEW_PARAMETERS),
+    *((role, scenario) for role, scenario, parameter in API_HEALTH_PARAMETERS),
     *REDELIVERY_CHECKS,
     *USAGE_CHECKS,
     *(("sweep", scenario) for scenario in ("detect_latency", "detect_boundary", "detect_fault")),
@@ -94,6 +132,17 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *FRAME_PARAMETERS,
+    *UPLOAD_PARAMETERS,
+    *PRODUCED_PARAMETERS,
+    *RECORDING_PARAMETERS,
+    *START_ANALYSIS_PARAMETERS,
+    *ASYNC_E2E_PARAMETERS,
+    *CANCEL_API_PARAMETERS,
+    *TIMESTAMP_PARAMETERS,
+    *COMMAND_PARAMETERS,
+    *API_CASES_VIEW_PARAMETERS,
+    *API_HEALTH_PARAMETERS,
     *REDELIVERY_PARAMETERS,
     *USAGE_PARAMETERS,
     *(("sweep", "detect_latency", f"{lease}_{reason}") for lease in (60, 7)
@@ -197,6 +246,7 @@ REQUIRED_PARAMETERS = (
 )
 
 
+@cache
 def checker():
     path = ROOT / "scripts" / "check_mysql_test_report.py"
     spec = importlib.util.spec_from_file_location("mysql_report_checker", path)
@@ -206,6 +256,7 @@ def checker():
 
 
 def good_report():
+    parameter_families = {(role, scenario) for role, scenario, _ in REQUIRED_PARAMETERS}
     nodes = [{"nodeid": f"tests/common/db/integration/test_required.py::test_{name}",
               "scenarios": [name]} for name in (
         "sessions", "session_replacements", "worker_1205", "worker_1213", "worker_disconnect",
@@ -228,7 +279,7 @@ def good_report():
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
               for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
-              if not any((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS)]
+              if (role, scenario) not in parameter_families]
     # Deliberately opaque node IDs: policy must use stable check metadata.
     nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
                "scenarios": [], "checks": [
@@ -245,6 +296,99 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+def test_case_inventory_validation_does_not_rescan_node_ids():
+    # A larger acceptance inventory must not multiply node-ID parsing by the
+    # number of Case requirements on every parameter-omission mutation.
+    splits = []
+
+    class MeasuredNodeId(str):
+        def split(self, *args, **kwargs):
+            splits.append(self)
+            return super().split(*args, **kwargs)
+
+    report = good_report()
+    for item in report["collected"]:
+        item["nodeid"] = MeasuredNodeId(item["nodeid"])
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(splits) <= 2 * len(report["collected"])
+
+
+def test_evidence_fixture_does_not_rescan_parameters_per_family(monkeypatch):
+    scans = []
+
+    class MeasuredParameters(tuple):
+        def __iter__(self):
+            scans.append(None)
+            return super().__iter__()
+
+    monkeypatch.setitem(globals(), "REQUIRED_PARAMETERS", MeasuredParameters(REQUIRED_PARAMETERS))
+    report = good_report()
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(scans) <= 2
+
+
+def test_multiple_reports_do_not_reload_checker_or_share_mutation_state(monkeypatch):
+    loads = []
+    original_spec = importlib.util.spec_from_file_location
+
+    def observed_spec(name, *args, **kwargs):
+        if name == "mysql_report_checker":
+            loads.append(None)
+        return original_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", observed_spec)
+    report = good_report()
+    expected = checker().validate_report(report)
+    broken = deepcopy(report)
+    broken["selected"].pop()
+    with pytest.raises(ValueError):
+        checker().validate_report(broken)
+    assert checker().validate_report(report) == expected
+    assert len(loads) <= 1
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("outcome", ["skip", "xfail", "failure"])
+def test_timestamp_acceptance_cannot_report_unsuccessful_execution(identity, outcome):
+    report = good_report()
+    role, scenario, parameter = identity
+    entry, = (n for n in report["collected"] if
+              {"role": role, "scenario": scenario, "parameter": parameter} in n.get("checks", []))
+    call, = (r for r in report["reports"] if r["nodeid"] == entry["nodeid"] and r["when"] == "call")
+    if outcome == "xfail":
+        call["xfail"] = True
+    else:
+        call["outcome"] = "skipped" if outcome == "skip" else "failed"
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
+@pytest.mark.parametrize("field", ["role", "scenario", "parameter"])
+def test_timestamp_acceptance_metadata_is_required(identity, field):
+    report = good_report()
+    role, scenario, parameter = identity
+    check = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if check in n.get("checks", []))
+    matching, = (c for c in entry["checks"] if c == check)
+    del matching[field]
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
+
+
+@pytest.mark.parametrize("identity", [p for p in USAGE_PARAMETERS if p[0] == "usage_reconciliation"])
+@pytest.mark.parametrize("field", ["role", "scenario", "parameter"])
+def test_reconciliation_parameter_metadata_cannot_be_omitted(identity, field):
+    report = good_report()
+    role, scenario, parameter = identity
+    expected = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if expected in n.get("checks", []))
+    check, = (c for c in entry["checks"] if c == expected)
+    del check[field]
+    with pytest.raises(ValueError):
+        checker().validate_report(report)
 
 
 @pytest.mark.parametrize("scenario", ["renewal", "zero_rows", "commit_race", "retry_fence",
@@ -407,3 +551,24 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
     path.write_text("<testsuite>" + case + "</testsuite>", encoding="utf-8")
     with pytest.raises(ValueError):
         checker().validate_junit(path, report)
+
+
+@pytest.mark.parametrize("identity", (*FRAME_PARAMETERS, *PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
+@pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
+def test_api_http_partial_evidence_is_rejected(identity, mutation):
+    report = good_report()
+    role, scenario, parameter = identity
+    expected = {"role": role, "scenario": scenario, "parameter": parameter}
+    entry, = (n for n in report["collected"] if expected in n.get("checks", []))
+    if mutation == "missing_node":
+        node = entry["nodeid"]
+        report["collected"].remove(entry)
+        report["selected"].remove(node)
+        report["reports"] = [r for r in report["reports"] if r["nodeid"] != node]
+    elif mutation == "missing_parameter":
+        entry["checks"].remove(expected)
+    else:
+        check = next(c for c in entry["checks"] if c == expected)
+        check.pop(mutation.removeprefix("missing_"))
+    with pytest.raises(ValueError, match="role/scenario"):
+        checker().validate_report(report)
