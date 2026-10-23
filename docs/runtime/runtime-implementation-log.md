@@ -61,6 +61,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | API 중단 transaction | Case가 정한 cancelled_job_ids → 같은 Connection의 request_cancel · Case 선잠금 · ACK 뒤 응답 · 기존 retry/오류 의미 유지 | RT-08(d) · 미커밋 · `Refs #295 (RT-08(d))` | 아래 RT-08(d) · `api/composition.py` |
 | 첫 비동기 E2E 테스트 조립 | HTTP 생성 Case + 실패 검색 fixture · RETRY_SEARCH · 별도 Worker thread/engine · 기존 CaseReflector · T1/T2 barrier와 독립 plain read | RT-09 · 미커밋 · `Refs #296 (RT-09)` | 아래 2026-10-18 RT-09 후속 · `tests/async_e2e_support.py` |
 | 저장 FrameRef HTTP · 승인된 DB 경계 | semaphore2 획득 뒤 짧은 caller tx에서 Recording 소유+이미지 복원 · 반환 뒤 header/bytes · 취소된 read도 cleanup 후 permit 반환 · bounded wait/latency/count 관측 | RT-11(b) · 미커밋 · Refs #298 (RT-11(b)) | [RT-11(b) note](./rt11b-frame-read.md) |
+| staging/temp cleanup · filesystem lease | 명시 root·mtime 나이·no-follow/handle 삭제·shared producer/exclusive scan·startup/주기 thread·stop/join·cleanup count/bytes/privacy | RT-12(a) · PR/merge SHA pending · Refs #299 (RT-12(a)) | [RT-12(a) note](./rt12a-cleanup.md) |
 
 ## Baseline revisit 후보
 
@@ -1655,35 +1656,252 @@ Status: NOT_STARTED · Issue: #298 · Audit: B
 
 ## RT-12 — 운영 위생: cleanup · 관측 집계
 
-Status: NOT_STARTED · Issue: #299 · Audit: C
+Status: IN_PROGRESS · Issue: #299 · Audit: C · Refs #299 (RT-12(a))
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| pending | RT-12(a) staging/temp cleanup · Refs #299 (RT-12(a)) | pending |
 
 ### 구현 결과
 
-—
+API staging 및 API/Worker temp root의 aged 잔여 scanner, producer/scan filesystem
+lease, startup 1회 + 기존 주기 scan, 안전한 stop/join과 cleanup 전용 structured
+count/bytes/failed_count를 구현했다. upload 생성→close→publish까지 보호하며 DB
+등록 순서는 유지한다. 실제 변경 목록·데이터 흐름·검증 원본·인계는
+[RT-12(a) note](./rt12a-cleanup.md)를 따른다.
 
 ### Plan 대비 변경
 
-—
+P-6 미확인 orphan publish와 RT-12(b) DB 집계·전체 event catalog는 제외한다.
+활성 producer 하나가 있으면 root 전체 scan을 미루는 보수적인 lease를 사용한다.
+현재 기본 API에는 temp materializer, Worker에는 실제 handler가 없으므로 새
+profile/encoding 정책을 만들지 않고 service별 `MediaRoot` 주입 factory까지만
+조립했다. 별도 합성 smoke로 API/Worker 주입 factory의 실제 Recording
+analysis/incident와 활성 temp 경합·close를 직접 검증했고, 기본 handler 연결의
+후속 범위와 미검증을 note에 구분했다.
 
 ### 새 implementation detail
 
-—
+기존 tempfile 생성 이름만 인식하고 unknown 항목·hardlink·reparse point를
+보존한다. Windows ancestor pin/leaf exclusive handle 삭제, POSIX dir fd/no-follow
+삭제와 root lease를 사용한다. bytes는 기존 logger 정수 count 필드의 별도 event로
+기록하고 상속 correlation을 제거한다. Contract·Decision·Baseline 의미/값 변경 없음.
 
 ### Owner 확인 포인트
 
-—
+실제 materializer 등록 시 주입 factory 사용, 서비스 전용 local root provision,
+root 전체 scan 지연과 긴 filesystem I/O의 join 지연, Linux/POSIX 검증 및 독립
+재리뷰가 남아 있다. 다른 Owner 공개 surface·새 capability 요청은 추가하지 않았다.
 
 ### Verification
 
-—
+보존된 기능상 RED 20/8/14/2/1/4 failed → 최종 focused 51 passed.
+관련 API/Worker/upload/logger/config 회귀 363 passed(마지막 두 보강 전), boundary
+및 Contract fixture 검사 PASS. workflow30분/nested MySQL900초와 gate/inventory는
+불변이다. 현재 소스의 bare 전체 pytest는 정확히 1회 실행해 **9800 passed /
+937 skipped / 1 warning**, exit 0(412.20초)이다. MySQL 미설정 911·media opt-in
+22·typer collection 4 skip이며 mandatory MySQL gate PASS를 주장하지 않는다.
+추가 실제 media smoke는 pytest 재실행 없이 PASS다. 기존/원격 PR CI를 이번 직접
+실행으로 사용하지 않았고 소유 test root/process/thread를 정리했다.
 
 ### 남은 위험
 
-—
+기본 실제 handler E2E와 Linux/POSIX·원격 CI 미실행, advisory lock에 협력하지 않는
+외부 writer, root 단위 보수적 지연 및 기존 sink 한계를 note에 명시했다. 이번 세션은
+reviewer/subagent·staging·commit·push·PR 없이 독립 재리뷰 가능한 변경을 준비한다.
+RT-12 전체 DONE·Closes #299·merge-ready/Owner acceptance를 주장하지 않는다.
+
+### 2026-10-23 — 독립 리뷰 P1/P2 후속 (원래 이력 보존)
+
+- 시작: reviewer snapshot/구현 manifest의 변경20개·index hash 일치, 기존 JUnit
+  hash 일치. 구현/리뷰 RAW의 hash를 별도 보존했다. 앞선 `9800 passed / 937 skipped`
+  및 reviewer 결과는 과거 증거이고 이번 수정 GREEN으로 사용하지 않는다.
+- P1 직접 재현: Windows와 native Linux에서 temp ancestor에 포함된 publish 파일이
+  삭제돼 `count=1, bytes=9, failed=0`이었다. 기존 동일/하위만 검사하는 방향 공백과
+  보호 경로 없는 재귀가 원인이다. 각 RED11 failed/7 passed → Windows GREEN69,
+  POSIX GREEN57이다. 기존 root 공유 구성을 보존하기 위해 상위 temp는 publish와
+  겹치는 가지 전체를 제외하고, 동일/하위 및 링크/확인 불가 구성은 lifecycle
+  할당 전에 거부한다. P-6·등록 조회·orphan policy는 추가하지 않았다.
+- P2 직접 재현: entries의 전체 metadata 리스트 선적재 때문에 첫/중간/마지막
+  PermissionError/OSError/소실이 다른 정상 삭제까지 막았다. 100000개 열거도 미리
+  적재했다. Windows/POSIX 각각 RED21 → lazy 항목별 오류 격리와 bounded 이름1개
+  empty 검사로 Windows focused90/POSIX focused78 GREEN이다. 소실은 실패/삭제로
+  세지 않고 그 밖의 metadata OSError는 항목당 failed1, 원문 예외는 보관하지 않는다.
+- 이번 Windows upload/lifecycle/logger/config 관련 회귀407 passed(102.40초).
+  공용 순회·startup validation 변경의 소비자 영향 때문에 이번 revision의 bare 전체
+  pytest를 새 증거 폴더에서 1회 실행 중이다. 실제 MySQL/원격 CI는 추가하지 않는다.
+- P3는 제품을 확장하지 않았다. POSIX 비협력 writer, 멈춘 filesystem I/O의 join
+  지연, 예상 밖 비-OSError 뒤 주기 중단, root 전체 보존, wall-clock jump 위험과
+  SoT 판단 근거를 note에 추가했다. 해당 실패 상태까지 정상/승인으로 간주하지 않는다.
+- 내부 실행 계획은 hash를 유지해 ignored scratch로 옮겨 PR 후보에서 제외했다.
+  후보21개(제품9·테스트7·문서5), 이번 제품 수정은 storage2개이며 Log/note에 원래
+  결함·RED·수정·GREEN을 시간순으로 추가한다. Log의 기존 줄바꿈 bytes는 유지한다.
+- 최종 결과·정적 검사·자원/증거 hash는 아래에 추가한다. 상태는 계속
+  IN_PROGRESS · Refs #299 (RT-12(a)), PR/merge SHA pending이다. 별도 reviewer/subagent,
+  staging·commit·push·PR 없이 기존 독립 대화의 후속 재리뷰에 인계한다.
+
+- **2026-10-23 최종 직접 결과:** 이번 revision bare 전체1회 exit0,
+  9839 passed/937 skipped/1 warning, 501.82초. MySQL911·
+  media22·collection4 skip이며 mandatory MySQL gate/
+  원격CI는 미실행이다. Windows focused90/관련회귀407, native POSIX focused78 및
+  boundary/Contract/workflow30/nested900/gate 불변/diff 검사를 직접 확인했다.
+  과거 증거와 분리하고 원래 실패를 재분류하지 않았다. 소유 root/lease를 정리하고
+  기존 구현증거37개·리뷰증거10개 hash를 보존했다. PR 후보21개,
+  내부plan 제외, staging/commit/push/PR/reviewer/subagent 없음. 기존 독립 대화의
+  후속 재리뷰를 기다리며 IN_PROGRESS · Refs #299 (RT-12(a))를 유지한다.
+
+
+### 2026-10-23 경로 별칭 P1 추가 수정
+
+**IN_PROGRESS · Refs #299 (RT-12(a))**
+
+- 후속 독립 리뷰 이후 21개 후보/branch/HEAD/index hash 일치와 기존 증거100개를
+  먼저 확인했다. 기존 P2 해소·일반 경로 P1 GREEN은 보존하며 별칭 실패와 구분한다.
+  Windows extended namespace/Linux double-slash 양방향 혼용을 OS samefile로 확인한
+  제품 RED는 각각16FAIL/46PASS,16FAIL/38PASS다. 일반/양쪽 같은 표기는 통과했다.
+- lexical anchor 불일치가 원인이다. 기존 no-follow pin으로 existing ancestor를
+  검증하고 Windows handle의 normalized volume GUID 이름, POSIX 동일 root identity
+  확인 뒤 single-root 표현을 사용한다. configuration과 보호 scan 비교가 같은
+  canonical 함수를 사용하며 삭제 중 resolve하지 않는다. 미생성 suffix는 검증하고
+  UNC/device/reparse/불명확한 이름은 lifecycle 전 거부한다. 8.3 실제 OS alias도
+  확인했다. 추가 baseline source copy10FAIL/30PASS는 현재 GREEN과 분리한다.
+- 최종 focused Windows156PASS, native POSIX122PASS/Windows전용6SKIP이며 기존
+  P2 streaming/소실·집계·privacy 및 안전성·lifecycle 회귀를 포함한다. 관련 broad는
+  470PASS/3FAIL(WinError5 exists, disconnect idle 선행, log sink9초 timeout)이다.
+  동일 deadline 선별5PASS를 broad PASS나 원인 해소로 재분류하지 않는다. 원본과
+  진단·초기 runner/권한/사용 한도 실패도 보존한다. 전체 pytest는 최종 source에서
+  정확히1회 실행하며 결과는 후속 추가한다.
+- P2 Pinned/_walk는 재작성하지 않았다. 이번 제품2파일+기존 publish test1파일+
+  note/Log 총5파일, 전체 후보21개다. 내부plan/scratch/RAW/JUnit/JSON/runner 제외,
+  기존 P3와 POSIX mount/비협력 writer 및 Windows local-volume 지원 경계를 남긴다.
+  상세 설계·실패·검증은 [RT-12(a) note](./rt12a-cleanup.md)의 별칭 후속 절에 있다.
+  staging/commit/push/PR/reviewer/subagent 없이 기존 독립 재리뷰를 기다린다.
+
+- **경로 별칭 최종 직접 감사:** 최종 source bare 전체1회 exit0,
+  ========== 9905 passed, 937 skipped, 1 warning in 490.64s (0:08:10) ===========. MySQL911·media22·collection4
+  skip이며 실제 MySQL mandatory gate/원격CI는 미실행이다. 코드·테스트 hash를 유지했다.
+  Windows focused156PASS/native POSIX122PASS·Windows전용6SKIP와 broad470PASS/3FAIL·
+  선별진단5PASS를 분리한다. 앞선 실패를 PASS/해소로 소급하지 않는다. boundary/
+  Contract/workflow30·nested900/gate 불변/diff 및 증거100개·index·후보21개/이번5개를
+  최종 감사한다. 소유 임시자원/lease만 정리하고 RAW/JUnit/JSON/runner는 제외 보존한다.
+  IN_PROGRESS · Refs #299 (RT-12(a)), 미커밋·미스테이징으로 독립 후속 재리뷰 대기다.
+
+
+### 2026-10-23 RT-12(a) 최종 독립 재리뷰 판정 후속 기록
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR·merge SHA pending**
+
+- 아래는 전달받은 독립 reviewer의 최종 판정과 직접 검증을 기록한 것이다. 이번
+  문서 갱신에서 테스트를 재실행하거나 구현자의 자체 승인으로 대체하지 않았다.
+  검증한 NTFS·Linux 범위에서 경로 별칭 P1 해소, 기존 metadata 격리 P2 해소 상태
+  유지 및 새로운 P1/P2 발견 없음으로 판정받았다. 커밋·중간 PR 준비는 가능하나,
+  실제 병합은 현재 revision의 원격 CI와 필요한 mandatory gate 성공 전까지 보류한다.
+
+**경로 별칭 P1 최종 판정**
+
+- Windows 일반 경로와 `\\?\` extended-length 경로의 양방향 혼용,
+  실제 NTFS 8.3 subset 8 passed/skip 0, native Linux /tmp·//tmp 혼용에서 publish 보호를 확인했다.
+- 동일·하위 cleanup 구성은 거부하고 상위 구성은 publish와 겹치는 보호 가지를
+  제외한다. 미존재 suffix 및 구성 후 link 교체 경계도 검증했다. canonicalization
+  성공·실패를 각각 100회 실행한 뒤 process handle은 201 → 201 → 201이었다.
+
+**기존 P2 해소 상태 유지**
+
+- metadata 오류의 첫·중간·마지막 위치 및 nested 격리, 동시 소실의 집계 제외,
+  iterator close, bounded empty 확인과 privacy 검증을 유지했다. iterator 진행 중
+  오류의 직접 결과는 (count=2, bytes=6, failed=1)이며 형제 처리를 계속했다.
+
+**Reviewer 직접 검증과 구현자 보존 증거의 구분**
+
+| 구분 | 검증·보존 결과 |
+| --- | --- |
+| reviewer 직접 | Windows focused 156 passed |
+| reviewer 직접 | 실제 NTFS 8.3 subset 8 passed, skip 0 |
+| reviewer 직접 | native Linux focused 122 passed / Windows 전용 6 skipped |
+| reviewer 직접 | API·Worker lifecycle·upload staging → publish → DB 호출 순서 144 passed |
+| reviewer 직접 | boundary·Contract fixture·workflow·whitespace 검사 통과 |
+| 구현자 보존 | alias RED: Windows 16 failed / 46 passed |
+| 구현자 보존 | alias RED: POSIX 16 failed / 38 passed |
+| 구현자 보존 | 이전 source 복사본의 8.3 검출력 RED: 10 failed / 30 passed |
+| 구현자 보존 | 넓은 회귀 470 passed / 3 failed와 이후 선별 5 passed는 별도 실행으로 유지 |
+| 구현자 보존 | 전체 pytest 9,905 passed / 937 skipped / warning 1 / 490.64초 |
+| 구현자 보존 | JUnit 10,842 cases, failure/error 0 |
+
+- 과거 실패 3건은 비차단 P3로 유지하며 이후 PASS로 소급 변경하지 않는다.
+  test_nested_partial_tree_young_child_and_unknown_root_entries의 WinError 5,
+  test_receive_abort_sends_no_status_and_never_registers[disconnect]의 disconnect보다
+  idle 제한 선행, test_failed_sink_with_unread_stderr_does_not_deadlock_interpreter의
+  stderr sink 9초 timeout 각각의 정확한 근본 원인은 미확정이다. 최종 reviewer의
+  판정이나 이후 선별·전체 PASS가 당시 원인 해소의 증거를 대신하지 않는다.
+
+**미확인·잔여 위험**
+
+- 실제 UNC 공유 동등성, 다른 Windows filesystem과 case-sensitive namespace,
+  POSIX bind mount·mount namespace는 미확인이다. POSIX API·Worker 전체 process/
+  signal 경로도 검증하지 않았다. 검증한 NTFS·native Linux 범위 밖으로 판정을
+  확대하지 않는다.
+- 비협력 writer, 무제한 filesystem I/O에 따른 join 지연, 예상 밖 비-OSError 후
+  주기 종료, 활성 producer에 따른 root 전체 보존, wall-clock 변동 위험은 남는다.
+
+**범위·상태**
+
+- PR 후보는 정확히 21개다. 내부 실행 계획·scratch·RAW·JUnit·JSON·runner·이전
+  source 복사본·임시 자료는 PR에서 제외한다. 제품·테스트·인계 문서는 이번에
+  수정하지 않았고 기존 이력과 Implementation Log의 CRLF bytes를 보존했다.
+- 실제 MySQL mandatory gate와 원격 CI는 미실행이다. 보존된 MySQL 911 skip은
+  gate 성공이 아니다. 현재 revision의 필요한 gate와 원격 CI 성공 전 병합 보류를
+  유지한다. PR·merge SHA는 pending이며 상태는 IN_PROGRESS · Refs #299 (RT-12(a))다.
+- 이번 기록에서는 staging·commit·push·PR 생성과 테스트 재실행을 하지 않았다.
+
+
+### 2026-10-23 PR #390 원격 CI correlation 실패 후속
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending**
+
+- 시작 branch/HEAD `09e9fbd83854ce54208dfcc71821d278f48313cf`가 원격 PR과 일치하고
+  worktree/index clean, 기존 PR 후보21개였다. remote run39850214180/job120074040208
+  failure(2FAIL/10791PASS/33SKIP/1warning·1422.41초), boundary39850214256 success,
+  MySQL execution gate skipped를 직접 읽고 원본을 보존했다. flaky로 재분류하지 않는다.
+- 실제 격리 MySQL8.4.7/native Linux에서 최초 API trace node를 같은 line431 KeyError로
+  RED1FAIL(23.63초) 재현했다. event 이름/trace 존재 여부만 보존했다. startup cleanup6개는
+  빈 Context로 trace 없음, request/view4개는 trace 있음이었다. 전체 stream에 trace를
+  요구한 테스트 전제가 원인이다. remote migration child도 같은 node1FAIL/905PASS여서
+  parent returncode 실패로 이어졌으며 독립 결함 둘로 단정하지 않는다.
+- prefix assertion을 명시적 request.completed/view.completed 집합에만 적용했다.
+  기존 수/trace 존재·상관·case 검증을 유지하고 field 존재로 거르는 우회는 없다.
+  실제 API queue의 cleanup private context 비상속 회귀를 추가했다. 제품 코드는
+  수정하지 않았다. 같은 MySQL node+새 회귀 GREEN2PASS(9.67초), 별도 child에서
+  Context 격리 제거 negative control1FAIL(15.81초)을 분리 보존한다.
+- Windows 실제 SHUTDOWN/private readonly mount2PASS(14.77초), 최초 잘못된 node
+  선택 collection 오류도 보존했다. timeout/retry/sleep/skip/xfail/inventory/strict 정책은
+  불변이다. 관련 회귀/전체 pytest·parent gate/strict 검사·자원 감사는 후속 추가한다.
+- 이번 테스트2+문서2 총4파일, 기존PR21개+새 포함 기존추적 test_cases_view_mysql.py로
+  합친 후보22개다. scratch/RAW/JUnit/JSON/runner/negative control/CA/이전 source·
+  임시DB/media 제외, 기존 실패/P3와 이력을 유지한다. 상세 근거는 RT-12(a) note의
+  PR390 후속 절에 있다. reviewer/subagent/commit/push/PR 수정 없이 독립 재리뷰한다.
+
+- **PR390 최종 직접 검증:** native MySQL 최초 node+privacy2PASS, 관련73PASS
+  (47.09초). Windows 관련293PASS/1FAIL(153.61초), 기존5초 process node 단독1FAIL도
+  보존한다. 4초 stack 진단은 listener close 뒤 connect_ex였으나 두 timeout의 정확한
+  원인은 확정하지 않는다. 전체는 진단 runner 설정을 포함해1회 exit1,
+  2 failed, 10815 passed, 26 skipped, 1 warning in 2902.28s (0:48:22). JUnit 10843 cases/failure·error2개,
+  실패명: test_actual_server_cleanup_failure_exit_and_listener_release, test_require_missing_dependency_fails_without_skip. 과거 실패를 이후 결과로 소급 변경하지 않는다.
+- 전체 dependency guard 실패는 진단 plugin 상속/PYTHONPATH 교체 충돌의 runner
+  오류였다. 별도1FAIL 재현→정상 guard1PASS, 저장소 정책/source는 불변이다.
+  정상 runner 관련292PASS/3FAIL의 실패명은 test_composition_failure_outranks_stalled_handler_write, test_composition_failure_exits_within_five_seconds_after_ready_trigger, test_actual_server_cleanup_failure_exit_and_listener_release다.
+  정확한 process 실패 원인은 미확정이며 flaky로 분류하지 않는다. 정상 옵션의
+  전체 재실행은 하지 않았고 남은 실패·전체 PASS 미확인을 독립 재리뷰에 인계한다.
+- 실제 parent migration gate 통과=True. fresh MySQL collected/selected
+  911/911, phase{'passed': 2733}.
+  전체 strict exit0·child strict exit0의 원본을
+  보존한다. subset gate와 전체 결과를 합성하지 않는다. 원격 CI failure/gate skipped는
+  그대로이고 재실행/PR 수정/commit/push/reviewer/subagent는 없다.
+- 소유 MySQL8.4.7 UUID datadir·port 정리, pytest root12개·
+  이번 생성 확인 lease2개 정리 및 schema/account/
+  transaction/lock 감사는 새 scratch resources.json에 있다. boundary/Contract/
+  workflow30·nested900·gate 불변/diff와 source/index hash·Log bytes를 최종 확인한다.
+  기존PR21개/합친22개·이번4개, 제외자료 유지, 미커밋·미스테이징으로 독립 재리뷰한다.
+  IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending이다.
 
 ---
 

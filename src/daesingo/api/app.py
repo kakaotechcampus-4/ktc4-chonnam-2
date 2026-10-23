@@ -1,9 +1,11 @@
 """HTTP application factory: startup validation, composition, envelope, health."""
 from contextlib import asynccontextmanager
+import sys
 from time import monotonic
 
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 from daesingo.common.bootstrap import Startup
 from daesingo.common.logging import bind_context, new_trace_id, safe_correlation
 from .bootstrap import bootstrap
@@ -41,9 +43,15 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     @asynccontextmanager
     async def lifespan(app):
         try:
+            await run_in_threadpool(composition.cleanup.start)
             yield
         finally:
-            composition.close()
+            primary = sys.exc_info()[1]
+            try:
+                composition.close()
+            except BaseException:
+                if primary is None:
+                    raise
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None,
                   redirect_slashes=False, debug=False)
     app.state.composition = composition

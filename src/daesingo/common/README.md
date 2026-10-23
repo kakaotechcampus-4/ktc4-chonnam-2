@@ -1,5 +1,10 @@
 # `common` — runtime 기반 (도메인 모듈이 아니다)
 
+RT-12(a)의 `storage/`는 명시적 staging/temp root의 나이 조건 cleanup,
+producer/scan filesystem lease, startup/주기 scan과 stop/join을 제공한다.
+publish cleanup과 DB 집계는 제외한다.
+[구현·검증·제약](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **Architecture 경계:** `docs/architecture/module-architecture.md` §6-2 · §2 원칙 6 · §5-13  
 **Runtime 문서:** [`docs/runtime/README.md`](../../../docs/runtime/README.md)
 

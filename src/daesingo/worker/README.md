@@ -1,5 +1,11 @@
 # `worker` — Worker composition root
 
+RT-12(a)는 첫 claim 전 temp 잔여 scan과 별도의 주기 cleanup thread를 시작하고,
+startup/claim 실패와 정상 종료 모두에서 stop/join한다. `loop.media`는 기존
+materializer에 service별 temp_root와 활성 lease를 주입하는 factory다. 기본
+entrypoint의 실제 handler 등록은 그대로 후속 범위다.
+[경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
 - 배포 단위 「Worker 1」. `common/jobs`에서 row를 claim → RUNNING + heartbeat → 도메인 모듈의 **public capability**를 dispatch → 결과 ref + usage 기록.
