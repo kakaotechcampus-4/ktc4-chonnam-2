@@ -422,20 +422,11 @@ class RecordingService:
         identity(case_id)
         identity(frame_ref)
         try:
-            frame = self._repository.get_frame(frame_ref)
+            # Scope before restoring metadata, as in read_owned_frame_image.
+            # The repository uses a nonlocking, statement-consistent read.
+            return self._repository.get_owned_frame(case_id, frame_ref) is not None
         except ValueError:
-            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
-        if frame is None:
-            return False
-        # Ownership reads must not use get_media_stream: its existing FOR UPDATE
-        # serializes frame generation. A projection avoids acquiring that lock.
-        try:
-            stream = self._repository.get_ownership_stream(frame.media_stream_ref)
-        except ValueError:
-            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored stream metadata is invalid") from None
-        if stream is None:
-            return False
-        return self.owns_asset(case_id, ContractRef(kind="source_asset", ref=stream.source_asset_ref))
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored owned frame metadata is invalid") from None
 
     def owns_asset(self, case_id: str, asset_ref: ContractRef | dict[str, Any]) -> bool:
         identity(case_id)
@@ -450,7 +441,8 @@ class RecordingService:
             if parsed not in self._repository.get_case_assets(case_id):
                 return False
             get = self._repository.get_source_asset if parsed.kind == "source_asset" else self._repository.get_derived_asset
-            return get(parsed.ref) is not None
+            asset = get(parsed.ref)
+            return asset is not None and getattr(asset, parsed.kind + "_ref") == parsed.ref
         except ValueError:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
 
@@ -933,9 +925,16 @@ class RecordingService:
             raise ValueError("requested_at은 offset-aware datetime이어야 합니다")
 
         items: list[DeletionItem] = []
-        for asset_ref in self._repository.get_case_assets(case_id):
+        try:
+            assets = self._repository.get_case_assets(case_id)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
+        for asset_ref in assets:
             if asset_ref.kind == "remote_copy":
-                remote_copy = self._repository.get_remote_copy_by_ref(asset_ref.ref)
+                try:
+                    remote_copy = self._repository.get_remote_copy_by_ref(asset_ref.ref)
+                except ValueError:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored remote copy metadata is invalid") from None
                 if (
                     remote_copy is not None
                     and remote_copy.expires_at is not None

@@ -21,6 +21,14 @@
 - 분석 자산: `prepare_analysis_source()`, `open_analysis_source()`, `find_remote_copy()`, `register_remote_copy()`
 - 사건·파생 자산: `build_incident_clip()`, `get_incident_clip()`, `register_derived_asset()`, `get_derived_asset()`, `purge_case()`
 
+Issue #387 — **IN_PROGRESS · Refs #387**: 소유권과 purge 대상의 `case_id`·ref는
+공백·대소문자·Unicode 표현까지 정확히 비교한다. MySQL 후보 조건은 유지하며
+exact residual로 association을 거르고, `owns_frame()`도 기존 소유 범위 조회 뒤에만
+metadata를 복원한다. foreign/unknown은 소유 아님이며, 손상된 foreign metadata를
+복원하지 않는다. 소유 관계 metadata 오류는 원문을 제외한 `TEMPORARY_FAILURE`로
+처리한다. caller Connection/transaction을 완료하지 않으며 schema·정규화·retention
+정책은 추가하지 않는다.
+
 Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
 실제 시각 관찰은 `observe_time_sources()`, `get_time_sources()`,

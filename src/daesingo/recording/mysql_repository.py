@@ -419,9 +419,19 @@ class MySQLRecordingRepository:
                               {"case_id": case_id, "asset_ref": asset_ref.model_dump(mode="json")})])
 
     def get_case_assets(self, case_id):
+        scope = entries.c.payload["case_id"]
         query = sa.select(entries.c.payload).where(entries.c.kind == "case_asset",
-            entries.c.payload["case_id"].as_string() == case_id).order_by(entries.c.ordinal)
-        return [m.ContractRef.model_validate(row[0]["asset_ref"]) for row in self._execute(query)]
+            scope.as_string() == case_id,
+            # Retain candidate predicates; PAD SPACE and JSON coercion must not
+            # authorize an alias. BINARY without a length neither pads nor truncates.
+            sa.cast(entries.c.kind, sa.LargeBinary()) == sa.cast(sa.literal("case_asset"), sa.LargeBinary()),
+            sa.func.json_type(scope) == "STRING",
+            sa.cast(scope.as_string(), sa.LargeBinary()) == sa.cast(sa.literal(case_id), sa.LargeBinary()),
+        ).order_by(entries.c.ordinal)
+        try:
+            return [m.ContractRef.model_validate(row[0]["asset_ref"]) for row in self._execute(query)]
+        except (ValueError, KeyError, TypeError):
+            raise ValueError("stored case asset metadata is invalid") from None
 
     def mark_deleted(self, asset_ref):
         identity = [asset_ref.kind, asset_ref.ref]

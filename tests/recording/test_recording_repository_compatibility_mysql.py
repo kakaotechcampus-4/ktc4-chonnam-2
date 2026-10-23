@@ -124,3 +124,211 @@ def test_adapter_does_not_end_the_caller_transaction(db):
         assert conn.in_transaction() and endings == []
         tx.rollback()
         assert endings == ["rollback"]
+
+
+# A SQL collation alias must never become an ownership or deletion authority.
+EXACT_PAIRS = (
+    ("space", "case-a", "case-a "),
+    ("case", "case-a", "CASE-A"),
+    ("unicode", "caf\u00e9", "cafe\u0301"),
+    ("unicode_case", "\u00e9", "\u00c9"),
+)
+
+
+def exact_chain(repo, case_id, source_ref, stream_ref, frame_ref, derived_ref):
+    from daesingo.recording import ContractRef
+    from test_ownership_reads import PNG, asset
+
+    fixture = load_recording_fixture("scenario_happy_001")
+    frame = fixture.frame_refs[0].model_copy(update={"frame_ref": frame_ref, "media_stream_ref": stream_ref})
+    stream = next(s for s in fixture.media_streams if s.media_stream_ref == fixture.frame_refs[0].media_stream_ref)
+    source = next(a for a in fixture.source_assets if a.source_asset_ref == stream.source_asset_ref)
+    repo.add_source_asset(source.model_copy(update={"source_asset_ref": source_ref, "media_stream_refs": [stream_ref]}))
+    repo.add_media_stream(stream.model_copy(update={"media_stream_ref": stream_ref, "source_asset_ref": source_ref}))
+    repo.add_frame(frame, content=PNG)
+    repo.associate_case_asset(case_id, ContractRef(kind="source_asset", ref=source_ref))
+    repo.add_derived_asset(asset(derived_asset_ref=derived_ref), case_id=case_id)
+    return [ContractRef(kind="source_asset", ref=source_ref), ContractRef(kind="derived_asset", ref=derived_ref)]
+
+
+@pytest.mark.parametrize("layer,name,left,right", [
+    pytest.param(layer, name, left, right, id=layer+"_"+name,
+                 marks=check("exact_ownership", layer+"_"+name))
+    for layer in ("scope", "source", "stream", "frame", "derived")
+    for name, left, right in EXACT_PAIRS
+])
+def test_recording_exact_identity_isolates_both_directions(db, layer, name, left, right):
+    from daesingo.recording import RecordingCapabilityError
+    from test_ownership_reads import PNG
+
+    engine, root = db
+    chains = []
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        for index, value in enumerate((left, right)):
+            values = dict(scope=f"owner-{index}", source=f"source-{index}", stream=f"stream-{index}",
+                          frame=f"frame-{index}", derived=f"derived-{index}")
+            values[layer] = value
+            refs = exact_chain(repo, *values.values())
+            chains.append((values, refs))
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        service = RecordingService(repo)
+        for index, (own, refs) in enumerate(chains):
+            foreign, foreign_refs = chains[1-index]
+            assert repo.get_case_assets(own["scope"]) == refs
+            for ref in refs:
+                assert service.owns_asset(own["scope"], ref) is True
+            for ref in foreign_refs:
+                assert service.owns_asset(own["scope"], ref) is False
+            assert service.owns_frame(own["scope"], own["frame"]) is True
+            assert service.owns_frame(own["scope"], foreign["frame"]) is False
+            assert service.read_owned_frame_image(own["scope"], own["frame"]).content == PNG
+            for ref in (foreign["frame"], "unknown"):
+                assert service.owns_frame(own["scope"], ref) is False
+                with pytest.raises(RecordingCapabilityError) as error:
+                    service.read_owned_frame_image(own["scope"], ref)
+                assert error.value.code == "UNKNOWN_REF"
+
+
+@pytest.mark.parametrize("reverse", [
+    pytest.param(False, marks=check("exact_purge", "forward")),
+    pytest.param(True, marks=check("exact_purge", "reverse")),
+])
+def test_purge_exact_scope_and_caller_rollback(db, reverse):
+    import sqlalchemy as sa
+    engine, root = db
+    scopes = ("case-a ", "case-a") if reverse else ("case-a", "case-a ")
+    with engine.begin() as conn:
+        refs = [exact_chain(adapter(conn, root), scope, f"s-{i}", f"m-{i}", f"f-{i}", f"d-{i}")
+                for i, scope in enumerate(scopes)]
+    with engine.connect() as conn:
+        tx = conn.begin()
+        endings = []
+        sa.event.listen(conn, "commit", lambda c: endings.append("commit"))
+        sa.event.listen(conn, "rollback", lambda c: endings.append("rollback"))
+        service = RecordingService(adapter(conn, root))
+        report = service.purge_case(scopes[0])
+        assert [item.asset_ref for item in report.items] == refs[0]
+        assert all(item.result == "DELETED" for item in report.items)
+        assert service.purge_case("unknown").items == []
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry WHERE kind='deleted'").scalar_one() == 2
+        assert conn.in_transaction() and endings == []
+        tx.rollback()
+        assert endings == ["rollback"]
+    with engine.begin() as conn:
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry WHERE kind='deleted'").scalar_one() == 0
+        service = RecordingService(adapter(conn, root))
+        assert all(item.result == "DELETED" for item in service.purge_case(scopes[1]).items)
+        assert all(item.result == "DELETED" for item in service.purge_case(scopes[0]).items)
+
+
+@pytest.mark.parametrize("kind", [
+    pytest.param(kind, marks=check("exact_privacy", kind))
+    for kind in ("source_asset", "derived_asset", "frame", "media_stream", "case_asset")
+])
+def test_foreign_damaged_metadata_has_unknown_semantics(db, kind):
+    from daesingo.recording import RecordingCapabilityError, ContractRef
+    engine, root = db
+    with engine.begin() as conn:
+        exact_chain(adapter(conn, root), "case-a", "source", "stream", "frame", "derived")
+        field = {"source_asset": "availability", "derived_asset": "availability", "frame": "source_offset_sec",
+                 "media_stream": "media_type", "case_asset": "asset_ref"}[kind]
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, %s, 'PRIVATE_METADATA') WHERE kind=%s",
+                             ("$."+field, kind))
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        service = RecordingService(repo)
+        for scope in ("foreign", "case-a "):
+            assert repo.get_case_assets(scope) == []
+            for ref in ("source", "unknown"):
+                assert service.owns_asset(scope, ContractRef(kind="source_asset", ref=ref)) is False
+            for ref in ("derived", "unknown"):
+                assert service.owns_asset(scope, ContractRef(kind="derived_asset", ref=ref)) is False
+            for ref in ("frame", "unknown"):
+                assert service.owns_frame(scope, ref) is False
+                with pytest.raises(RecordingCapabilityError) as error:
+                    service.read_owned_frame_image(scope, ref)
+                assert error.value.code == "UNKNOWN_REF"
+                assert "PRIVATE_METADATA" not in str(error.value)
+            assert service.purge_case(scope).items == []
+        if kind == "case_asset":
+            with pytest.raises(RecordingCapabilityError) as error:
+                service.purge_case("case-a")
+            assert error.value.code == "TEMPORARY_FAILURE"
+            assert "PRIVATE_METADATA" not in str(error.value) and "input_value" not in str(error.value)
+
+
+@check("exact_ownership", "concurrent")
+def test_exact_scope_remains_isolated_during_uncommitted_purge(db):
+    from concurrent.futures import ThreadPoolExecutor
+    engine, root = db
+    with engine.begin() as conn:
+        exact_chain(adapter(conn, root), "case-a", "source", "stream", "frame", "derived")
+        exact_chain(adapter(conn, root), "case-a ", "source ", "stream ", "frame ", "derived ")
+    with engine.connect() as conn:
+        tx = conn.begin()
+        report = RecordingService(adapter(conn, root)).purge_case("case-a")
+        assert len(report.items) == 2
+        def read_other():
+            with engine.begin() as other:
+                service = RecordingService(adapter(other, root))
+                assert service.owns_frame("case-a ", "frame ") is True
+                assert service.owns_frame("case-a ", "frame") is False
+                assert len(service.purge_case("case-a ").items) == 2
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pool.submit(read_other).result(timeout=5)
+        tx.rollback()
+
+
+@pytest.mark.parametrize("kind", [
+    pytest.param(kind, marks=check("exact_privacy", kind+"_identity"))
+    for kind in ("source_asset", "derived_asset")
+])
+def test_damaged_asset_identity_cannot_authorize_requested_ref(db, kind):
+    from daesingo.recording import ContractRef
+    engine, root = db
+    with engine.begin() as conn:
+        exact_chain(adapter(conn, root), "case-a", "source", "stream", "frame", "derived")
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, %s, 'FOREIGN_REF') WHERE kind=%s",
+                             ("$."+kind+"_ref", kind))
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        assert service.owns_asset("case-a", ContractRef(kind=kind, ref="source" if kind == "source_asset" else "derived")) is False
+
+
+@pytest.mark.parametrize("damage", [
+    pytest.param(damage, marks=check("exact_privacy", damage))
+    for damage in ("nonstring_case", "padded_kind")
+])
+def test_damaged_association_cannot_become_a_scope(db, damage):
+    engine, root = db
+    with engine.begin() as conn:
+        exact_chain(adapter(conn, root), "123", "source", "stream", "frame", "derived")
+        if damage == "nonstring_case":
+            conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, '$.case_id', 123) WHERE kind='case_asset'")
+        else:
+            conn.exec_driver_sql("UPDATE recording_entry SET kind='case_asset ' WHERE kind='case_asset'")
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        assert repo.get_case_assets("123") == []
+        assert RecordingService(repo).purge_case("123").items == []
+
+
+@check("exact_privacy", "remote_copy")
+def test_purge_damaged_remote_metadata_is_sanitized_after_exact_scope(db):
+    from daesingo.recording import ContractRef, RecordingCapabilityError
+    engine, root = db
+    remote = load_recording_fixture("scenario_happy_001").remote_copies[0]
+    with engine.begin() as conn:
+        repo = adapter(conn, root)
+        repo.add_remote_copy(remote)
+        repo.associate_case_asset("case-a", ContractRef(kind="remote_copy", ref=remote.remote_copy_ref))
+        conn.exec_driver_sql("UPDATE recording_entry SET payload=JSON_SET(payload, '$.expires_at', 'PRIVATE_METADATA') WHERE kind='remote_copy'")
+    with engine.begin() as conn:
+        service = RecordingService(adapter(conn, root))
+        assert service.purge_case("case-a ").items == service.purge_case("unknown").items == []
+        with pytest.raises(RecordingCapabilityError) as error:
+            service.purge_case("case-a")
+        assert error.value.code == "TEMPORARY_FAILURE"
+        assert "PRIVATE_METADATA" not in str(error.value) and "input_value" not in str(error.value)
