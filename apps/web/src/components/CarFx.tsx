@@ -33,13 +33,14 @@ export function burst(
   }))
 }
 
-export function Puffs(props: { items: Puff[] }): JSX.Element {
+/** loop: 끝나면 같은 자리에서 다시 피어난다(진행 중 박스처럼 계속 도는 장면) */
+export function Puffs(props: { items: Puff[]; loop?: boolean }): JSX.Element {
   return (
     <>
       {props.items.map((p, i) => (
         <span
           key={i}
-          className="rs-puff"
+          className={`rs-puff${props.loop ? ' is-loop' : ''}`}
           aria-hidden
           style={
             {

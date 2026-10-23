@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useState, type JSX, type ReactNode } from 'react'
 import { Film } from 'lucide-react'
 import { PREVIEW_UNAVAILABLE, REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
 
@@ -15,6 +15,8 @@ const MAX_WIDTH = 960
 export function VideoThumb(props: {
   file: File | null
   name: string
+  /** 정지 화면 위에 겹쳐 그릴 장식(진행 중 연출) */
+  overlay?: ReactNode
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
@@ -95,6 +97,7 @@ export function VideoThumb(props: {
             </span>
           )}
           {src && <img src={src} alt="" />}
+          {props.overlay}
         </div>
       </div>
       <figcaption>

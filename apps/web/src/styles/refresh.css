@@ -260,6 +260,36 @@ body:has(.rs-page) { background: #fff; }
   animation: rs-speed .45s ease-out var(--d) both;
 }
 @keyframes rs-speed { 0% { opacity: 0; transform: translateX(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateX(60px); } }
+.rs-puff.is-loop { animation-iteration-count: infinite; }
+.rs-ring {
+  position: absolute; border: 2px solid rgba(29, 29, 31, .35); border-radius: 50%; pointer-events: none; opacity: 0;
+}
+
+/* 진행 — 「장면 찾기」 중 대표 영상 박스 안(components/SearchFx.tsx). 영상 위를 옅게 덮고 도로가 흐르는 위를
+   차가 제자리에서 달린다. 바퀴 1초에 한 바퀴 반, 차체는 잘게 떨리고, 연기·레이더 파동이 계속 이어진다 */
+.flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: hidden; }
+.flow-search-fx { position: absolute; inset: 0; overflow: hidden; background: rgba(245, 245, 247, .72); animation: rs-fade-in .3s var(--rs-ease) both; }
+.flow-search-road {
+  position: absolute; left: 0; right: 0; bottom: 20%; height: 3px;
+  background: repeating-linear-gradient(90deg, #b8b8be 0 26px, transparent 26px 46px);
+  animation: flow-road .5s linear infinite;
+}
+@keyframes flow-road { to { background-position: -46px 0; } }
+/* 바퀴 바닥(원본 높이의 85%)이 도로선에 닿게 — 차 높이가 박스 높이의 약 41%라 15% 몫(6%)만큼 내린다 */
+.flow-search-car { position: absolute; left: 50%; bottom: calc(20% - 6%); width: 46%; aspect-ratio: 2 / 1; transform: translateX(-50%); }
+.flow-search-body { position: absolute; inset: 0; animation: flow-bob .24s linear infinite; }
+.flow-search-body > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flow-search-wheel { position: absolute; }
+.flow-search-wheel img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flow-search-wheel .spin { animation: flow-wheel .4s linear infinite; }
+@keyframes flow-wheel { to { transform: rotate(-360deg); } }
+@keyframes flow-bob { 0%, 100% { transform: translateY(0); } 25% { transform: translate(.5px, -1px); } 50% { transform: translateY(.4px); } 75% { transform: translate(-.5px, -.6px); } }
+.flow-search-at { position: absolute; width: 0; height: 0; }
+.flow-search-ring {
+  left: 50%; top: 52%; width: 22%; aspect-ratio: 1; margin-left: -11%; transform: translateY(-50%) scale(.4);
+  animation: flow-radar 2.4s ease-out var(--d) infinite;
+}
+@keyframes flow-radar { 0% { opacity: .75; transform: translateY(-50%) scale(.4); } 100% { opacity: 0; transform: translateY(-50%) scale(4.2); } }
 .rs.upload.is-departing .rs-check path { animation: none; stroke-dashoffset: 0; }
 .rs.upload.is-departing .rs-actions .rs-btn.pri { animation: none; }
 

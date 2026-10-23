@@ -69,6 +69,22 @@ it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하
   expect(text()).toContain('신고자료가 준비됐어요')
 })
 
+it('「장면 찾기」가 도는 동안만 대표 영상 박스 안에서 차가 달린다', () => {
+  const { wait, getByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  const seen: boolean[] = []
+  let searching = 0
+  for (let i = 0; i < 12; i++) {
+    const now = container.querySelector('.flow-now')?.textContent
+    if (now === '장면 찾기') searching++
+    seen.push(now === '장면 찾기' ? !!container.querySelector('.flow-search-fx') : !container.querySelector('.flow-search-fx'))
+    act(() => vi.advanceTimersByTime(1_200))
+  }
+  expect(searching).toBeGreaterThan(0)
+  expect(seen.every(Boolean)).toBe(true)
+})
+
 it('진행이 끝나 결과로 넘어오면 배경 자동차가 도착하고, 하위 화면에서 돌아오면 제자리에 서 있다', () => {
   const { wait, getByText, container, answer } = start('main')
   wait()
