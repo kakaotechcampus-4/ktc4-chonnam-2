@@ -1853,6 +1853,56 @@ RT-12 전체 DONE·Closes #299·merge-ready/Owner acceptance를 주장하지 않
   유지한다. PR·merge SHA는 pending이며 상태는 IN_PROGRESS · Refs #299 (RT-12(a))다.
 - 이번 기록에서는 staging·commit·push·PR 생성과 테스트 재실행을 하지 않았다.
 
+
+### 2026-10-23 PR #390 원격 CI correlation 실패 후속
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending**
+
+- 시작 branch/HEAD `09e9fbd83854ce54208dfcc71821d278f48313cf`가 원격 PR과 일치하고
+  worktree/index clean, 기존 PR 후보21개였다. remote run39850214180/job120074040208
+  failure(2FAIL/10791PASS/33SKIP/1warning·1422.41초), boundary39850214256 success,
+  MySQL execution gate skipped를 직접 읽고 원본을 보존했다. flaky로 재분류하지 않는다.
+- 실제 격리 MySQL8.4.7/native Linux에서 최초 API trace node를 같은 line431 KeyError로
+  RED1FAIL(23.63초) 재현했다. event 이름/trace 존재 여부만 보존했다. startup cleanup6개는
+  빈 Context로 trace 없음, request/view4개는 trace 있음이었다. 전체 stream에 trace를
+  요구한 테스트 전제가 원인이다. remote migration child도 같은 node1FAIL/905PASS여서
+  parent returncode 실패로 이어졌으며 독립 결함 둘로 단정하지 않는다.
+- prefix assertion을 명시적 request.completed/view.completed 집합에만 적용했다.
+  기존 수/trace 존재·상관·case 검증을 유지하고 field 존재로 거르는 우회는 없다.
+  실제 API queue의 cleanup private context 비상속 회귀를 추가했다. 제품 코드는
+  수정하지 않았다. 같은 MySQL node+새 회귀 GREEN2PASS(9.67초), 별도 child에서
+  Context 격리 제거 negative control1FAIL(15.81초)을 분리 보존한다.
+- Windows 실제 SHUTDOWN/private readonly mount2PASS(14.77초), 최초 잘못된 node
+  선택 collection 오류도 보존했다. timeout/retry/sleep/skip/xfail/inventory/strict 정책은
+  불변이다. 관련 회귀/전체 pytest·parent gate/strict 검사·자원 감사는 후속 추가한다.
+- 이번 테스트2+문서2 총4파일, 기존PR21개+새 포함 기존추적 test_cases_view_mysql.py로
+  합친 후보22개다. scratch/RAW/JUnit/JSON/runner/negative control/CA/이전 source·
+  임시DB/media 제외, 기존 실패/P3와 이력을 유지한다. 상세 근거는 RT-12(a) note의
+  PR390 후속 절에 있다. reviewer/subagent/commit/push/PR 수정 없이 독립 재리뷰한다.
+
+- **PR390 최종 직접 검증:** native MySQL 최초 node+privacy2PASS, 관련73PASS
+  (47.09초). Windows 관련293PASS/1FAIL(153.61초), 기존5초 process node 단독1FAIL도
+  보존한다. 4초 stack 진단은 listener close 뒤 connect_ex였으나 두 timeout의 정확한
+  원인은 확정하지 않는다. 전체는 진단 runner 설정을 포함해1회 exit1,
+  2 failed, 10815 passed, 26 skipped, 1 warning in 2902.28s (0:48:22). JUnit 10843 cases/failure·error2개,
+  실패명: test_actual_server_cleanup_failure_exit_and_listener_release, test_require_missing_dependency_fails_without_skip. 과거 실패를 이후 결과로 소급 변경하지 않는다.
+- 전체 dependency guard 실패는 진단 plugin 상속/PYTHONPATH 교체 충돌의 runner
+  오류였다. 별도1FAIL 재현→정상 guard1PASS, 저장소 정책/source는 불변이다.
+  정상 runner 관련292PASS/3FAIL의 실패명은 test_composition_failure_outranks_stalled_handler_write, test_composition_failure_exits_within_five_seconds_after_ready_trigger, test_actual_server_cleanup_failure_exit_and_listener_release다.
+  정확한 process 실패 원인은 미확정이며 flaky로 분류하지 않는다. 정상 옵션의
+  전체 재실행은 하지 않았고 남은 실패·전체 PASS 미확인을 독립 재리뷰에 인계한다.
+- 실제 parent migration gate 통과=True. fresh MySQL collected/selected
+  911/911, phase{'passed': 2733}.
+  전체 strict exit0·child strict exit0의 원본을
+  보존한다. subset gate와 전체 결과를 합성하지 않는다. 원격 CI failure/gate skipped는
+  그대로이고 재실행/PR 수정/commit/push/reviewer/subagent는 없다.
+- 소유 MySQL8.4.7 UUID datadir·port 정리, pytest root12개·
+  이번 생성 확인 lease2개 정리 및 schema/account/
+  transaction/lock 감사는 새 scratch resources.json에 있다. boundary/Contract/
+  workflow30·nested900·gate 불변/diff와 source/index hash·Log bytes를 최종 확인한다.
+  기존PR21개/합친22개·이번4개, 제외자료 유지, 미커밋·미스테이징으로 독립 재리뷰한다.
+  IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending이다.
+
 ---
 
 ## RT-13 — Docker / Compose local runtime

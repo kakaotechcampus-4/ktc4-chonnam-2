@@ -457,3 +457,108 @@ staging·commit·push·PR·reviewer/subagent 호출을 하지 않는다. 새 P1/
   `manifest.txt`/`manifest.json`이다. 모든 변경은 unstaged/uncommitted, branch/HEAD는
   그대로다. 새 reviewer/subagent와 staging/commit/push/PR 호출은 없다. 상태는
   **IN_PROGRESS · Refs #299 (RT-12(a))**이며 별도 독립 후속 재리뷰를 기다린다.
+
+
+## 2026-10-23 — PR #390 원격 CI correlation 실패 후속
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending**
+
+- 시작 시 branch `codex/rt12a-cleanup`, HEAD `09e9fbd83854ce54208dfcc71821d278f48313cf`,
+  worktree/index clean이었다. GitHub PR metadata의 HEAD와 일치하고 기존 PR 후보는
+  정확히 21개다. 원본 파일과 index hash를 새 ignored 증거 폴더
+  `.codex-scratch/rt12a-ci390-20261023/`에 기록했다. 기존 증거는 수정하지 않는다.
+- GitHub에서 직접 읽은 remote run `39850214180`, job `120074040208`은 failure다.
+  boundary run `39850214256`은 success, MySQL execution gate는 skipped이며 artifact는
+  없다. 전체 **2 failed / 10791 passed / 33 skipped / 1 warning**, 1422.41초다.
+  원격 실패를 flaky로 분류하거나 과거 로컬 PASS로 대체하지 않는다.
+- 최초 실패는 `test_cases_view_mysql.py::test_case_requests_keep_trace_with_broken_or_slow_sink`
+  line 431의 전체 event stream에 대한 trace assertion에서 발생한 KeyError다.
+  migration gate child도 같은 node에서 **1 failed / 905 passed**(538.41초)로 실패하고
+  parent가 child returncode를 거부했다. 두 독립 결함으로 단정하지 않는다.
+
+### 실제 MySQL RED와 원인 검증
+
+- 기존 MySQL 8.4.7 바이너리로 새 UUID datadir/loopback 전용 격리 서버를 만들고
+  native Linux에서 원래 node를 직접 실행했다. 동일 line/KeyError로 **1 failed**,
+  23.63초였다(`trace-red.raw/.xml/.json`). bootstrap·서버나 schema를 mock하지 않았다.
+- 진단은 event 이름과 `has_trace_id` boolean 두 필드만 저장했다. 실제 stream에는
+  startup cleanup 6개(staging/temp의 count/bytes/failed_count)는 모두 trace 없음,
+  API request.completed/view.completed 4개는 모두 trace 있음이었다. event 값 전체,
+  생성 case/trace ID나 개인·민감 context를 출력하지 않았다.
+- `cleanup_emitter`의 빈 Context에서 API queue에 제출하는 의도된 동작 때문에
+  cleanup에는 request/case correlation이 없다. 동일 stream을 공유한다고 모든
+  이벤트가 요청 이벤트가 되는 것은 아니다. 원인은 기존 테스트의 전제였다.
+
+### 최소 수정과 GREEN
+
+- 기존 request.completed 2개·view.completed 2개의 수/trace 존재·서로 일치/서로 다른
+  요청 trace 및 case 연관 검증을 유지했다. prefix assertion의 대상만 이 두 명시적
+  이벤트 집합으로 제한했다. trace_id가 있는 이벤트만 거르는 포괄적 우회는 없다.
+- 기존 API cleanup 테스트에 startup을 private request/case/job/execution/module
+  context 안에서 시작하는 회귀를 추가했다. 실제 API queue를 drain한 cleanup 6개가
+  고정 schema만 가지며 context를 상속하지 않고, request.completed에는 trace가
+  있어야 함을 검증한다. 실패 출력에 context 값이 나오지 않도록 schema/boolean만
+  assertion한다. 제품 cleanup/logging 코드는 수정하지 않았다.
+- 같은 native Linux/MySQL에서 최초 node와 새 회귀는 **2 passed**, 9.67초다.
+  별도 child의 negative control에서 Context 격리만 제거했을 때 새 privacy 회귀는
+  **1 failed**, 15.81초로 검출했다. 제품 source를 바꾸거나 이 의도된 실패를 실제
+  회귀 결함으로 합성하지 않았다.
+- Windows의 실제 별도 SHUTDOWN 서버/private readonly mount 검증은 **2 passed**,
+  14.77초다. 최초 잘못된 readonly node 이름의 collection 오류도 별도 원본으로
+  보존했다. timeout/retry/sleep/skip/xfail, inventory 및 strict gate 정책은 변경하지
+  않았다. 관련 회귀·전체/parent gate·strict 검사와 자원 감사 결과는 아래에 추가한다.
+
+### 범위와 후속 판정
+
+- 이번 수정은 `tests/api/test_cases_view_mysql.py`, 기존 `test_api_cleanup.py`와
+  이 note/Implementation Log의 4개 파일이다. 원래 PR 후보21개에 기존 추적 파일
+  `test_cases_view_mysql.py`가 새로 포함되어 합친 PR 후보는22개다. 제품 코드는 불변이다.
+  정확한 목록/hash는 새 `manifest.json`에 기록한다. scratch/RAW/JUnit/JSON/runner/
+  negative control/CA/이전 source·임시 DB·media 자료는 PR 제외다.
+- 기존 P1/P2 독립 판정과 과거 3개 P3 실패·원인 미확정 기록을 유지한다. 이번
+  correlation 실패는 별도 결정적 결함이며 flaky로 재분류하지 않는다. 원격 CI는
+  실패/strict gate skipped 상태 그대로이고 재실행·PR 수정·commit/push 또는 새
+  reviewer/subagent를 호출하지 않는다. 미커밋·미스테이징으로 독립 후속 재리뷰한다.
+
+### PR #390 후속 최종 직접 결과·자원 감사
+
+- native Linux 실제 MySQL 최초 node+privacy 회귀2PASS, 관련 logging/API·Worker
+  cleanup 회귀 **73 passed**, 47.09초다. negative control은 의도된1FAIL이다.
+- Windows 관련 회귀는 **293 passed / 1 failed**, 153.61초다. 실패는
+  `test_actual_server_cleanup_failure_exit_and_listener_release`의 기존5초 제한이다.
+  동일 node 단독도1FAIL이었다. 4초 stack 별도 진단은 서버/listener close 후 TCP
+  connect_ex 검증 단계였으며 실제 child exit1을 관찰했다. 단일 stack으로 두 timeout의
+  정확한 원인을 확정하지 않는다. source·timeout·sleep을 바꾸지 않고 원본을 보존했다.
+- 최종 source의 선택 없는 전체 pytest는 **진단 runner 설정을 포함해 1회**, exit 1,
+  **2 failed, 10815 passed, 26 skipped, 1 warning in 2902.28s (0:48:22)**다. JUnit 10843 cases,
+  failure/error 2개이며 실패 node는 **test_actual_server_cleanup_failure_exit_and_listener_release, test_require_missing_dependency_fails_without_skip**다.
+  기존 성공·실패와 다른 실행이며 이후 PASS로 앞선 실패를 재분류하지 않는다.
+- 전체의 dependency guard 실패는 구현자가 추가한 진단 plugin을 PYTEST_ADDOPTS로
+  상속시켜 child의 PYTHONPATH 교체와 충돌한 runner 오류다. 같은 간섭을 별도1FAIL로
+  재현하고 정상 옵션의 같은 guard1PASS로 확인했다. 저장소 guard/정책은 수정하지
+  않았다. runner 원본도 보존한다. 이 전체를 정상 환경의 전체 PASS로 취급하지 않는다.
+- 정상 runner의 관련 회귀는 **292 passed / 3 failed**,
+  runner wall 178.72초이며 실패명은 **test_composition_failure_outranks_stalled_handler_write, test_composition_failure_exits_within_five_seconds_after_ready_trigger, test_actual_server_cleanup_failure_exit_and_listener_release**다. 기존 deadline과
+  source를 유지했다. process 실패들의 정확한 원인은 미확정이고 flaky로 분류하지
+  않는다. source 고정 상태에서 runner 간섭은 해당 guard와 정상 관련 회귀로 분리
+  확인했으며, 정상 옵션의 선택 없는 전체 재실행은 하지 않았다. 남은 process 실패와
+  정상 전체 PASS 미확인 범위를 독립 재리뷰에 인계한다.
+- 실제 parent migration gate 통과 여부는 **True**다. 그 child JSON/JUnit 원본을
+  hash 일치로 복사해 따로 보존했다. fresh 전체 MySQL evidence는
+  collected 911 / selected 911,
+  phase 집계 {'passed': 2733}다. 전체 strict CLI exit 0:
+  `MySQL execution gate PASS: 911 tests, skip=0, xfail=0; required scenarios present`. child strict CLI exit 0:
+  `MySQL execution gate PASS: 906 tests, skip=0, xfail=0; required scenarios present`. 로컬 MySQL gate와 원격 gate 상태는 구분한다.
+- 원격 PR390은 기존 failure/MySQL gate skipped 상태이며 재실행·push·PR 수정은 없다.
+  이번 local source의 원격 CI 성공을 주장하지 않는다. 전체에 남은 다른 실패가
+  있다면 이를 mandatory MySQL subset 통과로 숨기지 않는다.
+- 작업 소유 loopback MySQL8.4.7을 종료하고 정확한 UUID datadir 부재·port 닫힘을
+  확인했다. per-test schema/account/transaction/lock 감사는 `resources.json`에 있다.
+  소유 pytest root 12개와 이번 생성이 확인된 lease
+  2개를 정리했다. 이전 lease는 생성 시각이 확인되지
+  않으면 보존한다. RAW/JSON/JUnit/CA/runner/negative control은 ignored로 보존한다.
+- 제품·테스트 source hash를 전체 실행 전후 확인했다. boundary/Contract fixture,
+  workflow30분/nested900초·gate/inventory 불변 및 diff 검사 결과는 `final.json`에
+  기록한다. 제품 코드와 기존 이력/Log CRLF를 유지했다. 이번 변경4개·기존PR21개·
+  합친 후보22개 목록은 `manifest.json`이다. 미커밋·미스테이징,
+  **IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending**으로 독립 재리뷰한다.

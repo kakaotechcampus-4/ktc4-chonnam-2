@@ -1,12 +1,14 @@
 """Cleanup belongs to API lifespan and upload ownership, never publish rows."""
 import asyncio
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
 from threading import Event
 
 from fastapi.testclient import TestClient
 import pytest
+from daesingo.common.logging import bind_context
 from daesingo.api.app import create_app
 from daesingo.api.composition import ApiComposition
 from daesingo.api.upload import receive_source, UploadAborted
@@ -36,6 +38,32 @@ def test_api_lifespan_scans_once_and_closes_background_thread(api_startup):
         owner.start()
         assert later.exists()
     assert not owner.thread.is_alive()
+
+
+def test_startup_cleanup_queue_does_not_inherit_request_or_private_context(api_startup):
+    startup, stream = api_startup
+    with bind_context(trace_id='tr_PRIVATE', case_id='case_PRIVATE', job_id='job_PRIVATE',
+                      execution_id='exec_PRIVATE', module='PRIVATE'):
+        app = create_app(startup=startup)
+        with TestClient(app) as client:
+            assert client.get('/health/live').status_code == 200
+    events = [json.loads(line) for line in stream.getvalue().splitlines()]
+    cleanup_events = [event for event in events if event['event'].startswith('storage.cleanup.')]
+    cleanup_count = len(cleanup_events)
+    names = {event['event'] for event in cleanup_events}
+    assert cleanup_count == 6
+    assert names == {'storage.cleanup.'+kind+'.'+metric
+                     for kind in ('staging', 'temp') for metric in ('count', 'bytes', 'failed_count')}
+    # Compare only schema/booleans: a regression must not print context values.
+    schema_is_private = all(set(event) == {'timestamp', 'level', 'service', 'event', 'count'}
+                            for event in cleanup_events)
+    assert schema_is_private
+    api_events = [event for event in events if event['event'] == 'api.request.completed']
+    api_count = len(api_events)
+    assert api_count == 1
+    api_trace_is_present = all(event['trace_id'].startswith('tr_') for event in api_events)
+    assert api_trace_is_present
+    assert not app.state.composition.cleanup.thread.is_alive()
 
 
 @pytest.mark.parametrize('outcome', ['complete', 'idle', 'duration', 'disconnect', 'exception', 'cancel'])
