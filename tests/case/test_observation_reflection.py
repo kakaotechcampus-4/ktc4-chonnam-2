@@ -155,6 +155,24 @@ def test_observation_result_reopens_ready_gate(kind):
     assert store.get_case(case_id).stage == "READY"
 
 
+def test_observation_ready_gate_uses_adapter_factory():
+    # 별도 process Worker에는 case별 registry가 없다 — gate의 adapter도 composition root factory로 받는다(§4-3).
+    evidence = {
+        "record_ref": {"kind": "evidence_record", "ref": "er_1"},
+        "basis": {"candidate_ref": {"kind": "candidate_event", "ref": "cand_1"}},
+        "selection_rev": 1,
+    }
+    ready = SnapshotAdapter(evidence_record=evidence, final="PASS", package={"package_ref": {"ref": "pkg_1"}})
+    store, case_id = _store_with_observation_job("PLATE_READ", SnapshotAdapter(final="UNKNOWN"))
+    seen = []
+    store.adapter_factory = lambda case, conn: seen.append((case.case_id, conn)) or ready
+
+    _reflect(store, _outcome(store, case_id, "PLATE_READ"), FakeReader())
+
+    assert seen == [(case_id, store.conn)]
+    assert store.get_case(case_id).stage == "READY"
+
+
 def test_observation_result_does_not_ready_without_package():
     store, case_id = _store_with_observation_job("PLATE_READ", SnapshotAdapter(final="UNKNOWN"))
     rev = store.get_case(case_id).case_rev
