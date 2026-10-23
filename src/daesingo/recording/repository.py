@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from decimal import Decimal
-from typing import BinaryIO
+from typing import BinaryIO, Protocol
 
 from .probe import LocalSource
+from .media_content import derived_content, descriptor, checked_content, frame_format
 
 from .models import (
     AnalysisSource,
@@ -51,6 +52,7 @@ class InMemoryRecordingRepository:
         self._remote_copy_by_source_provider: dict[tuple[str, str], str] = {}
         self._incident_clips: dict[str, IncidentClip] = {}
         self._derived_assets: dict[str, DerivedAsset] = {}
+        self._derived_content: dict[str, tuple[bytes, dict]] = {}
         self._case_assets: dict[str, list[ContractRef]] = {}
         self._deleted_assets: set[tuple[str, str]] = set()
 
@@ -62,6 +64,7 @@ class InMemoryRecordingRepository:
 
     def add_local_source(
         self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource,
+        *, case_id: str | None = None,
     ) -> None:
         indices = dict(zip(asset.media_stream_refs, (s.index for s in source.streams), strict=True))
         self.add_source_asset(asset)
@@ -69,6 +72,8 @@ class InMemoryRecordingRepository:
             self.add_media_stream(stream)
         self._local_sources[asset.source_asset_ref] = source
         self._local_stream_indices.update(indices)
+        if case_id is not None:
+            self.associate_case_asset(case_id, ContractRef(kind="source_asset", ref=asset.source_asset_ref))
 
     def get_local_source(self, source_ref: str) -> LocalSource | None:
         return self._local_sources.get(source_ref)
@@ -82,6 +87,9 @@ class InMemoryRecordingRepository:
     def get_media_stream(self, stream_ref: str) -> MediaStream | None:
         return self._media_streams.get(stream_ref)
 
+    def get_ownership_stream(self, stream_ref: str) -> MediaStream | None:
+        return self._media_streams.get(stream_ref)
+
     def add_gps_observation(self, observation: GPSObservation) -> None:
         checked = GPSObservation.model_validate(observation)
         if checked.source.ref is not None and checked.source.ref.ref not in self._media_streams:
@@ -93,7 +101,15 @@ class InMemoryRecordingRepository:
     def list_gps_observations(self) -> list[GPSObservation]:
         return [observation.model_copy(deep=True) for observation in self._gps_observations]
 
-    def add_frame(self, frame: FrameRef, *, content: bytes | None = None) -> None:
+    def add_frame(self, frame: FrameRef, *, content: bytes | None = None, image_format: str | None = None) -> None:
+        frame_format(content, image_format)
+        current = self._frames.get(frame.frame_ref)
+        position = (frame.media_stream_ref, _offset_key(frame.source_offset_sec))
+        old_content = self._frame_content.get(frame.frame_ref)
+        if ((current is not None and current != frame)
+                or self._frame_by_position.get(position, frame.frame_ref) != frame.frame_ref
+                or (old_content is not None and content is not None and old_content != content)):
+            raise ValueError("recording immutable identity conflicts with stored payload")
         self._frames[frame.frame_ref] = frame
         self._frame_by_position[(frame.media_stream_ref, _offset_key(frame.source_offset_sec))] = (
             frame.frame_ref
@@ -110,6 +126,25 @@ class InMemoryRecordingRepository:
 
     def get_frame_content(self, frame_ref: str) -> bytes | None:
         return self._frame_content.get(frame_ref)
+
+    def get_owned_frame(self, case_id: str, frame_ref: str) -> tuple[FrameRef, bytes | None] | None:
+        frame = self._frames.get(frame_ref)
+        stream_ref = frame.media_stream_ref if frame is not None else None
+        stream = self._media_streams.get(stream_ref) if isinstance(stream_ref, str) else None
+        source_ref = stream.source_asset_ref if stream is not None else None
+        if not isinstance(source_ref, str):
+            return None
+        source = self._source_assets.get(source_ref)
+        if source is None or ContractRef(kind='source_asset', ref=source_ref) not in self._case_assets.get(case_id, []):
+            return None
+        # Match the persistent scope-before-restore boundary, including damaged
+        # model_copy inputs used by callers/tests. Ordinary capabilities stay as is.
+        restored = FrameRef.model_validate(frame.model_dump())
+        MediaStream.model_validate(stream.model_dump())
+        SourceAsset.model_validate(source.model_dump())
+        if restored.frame_ref != frame_ref:
+            raise ValueError('stored frame identity mismatch')
+        return restored, self._frame_content.get(frame_ref)
 
     def add_asset_facts(self, facts: AssetFacts) -> None:
         key = (facts.asset_ref.kind, facts.asset_ref.ref)
@@ -252,11 +287,25 @@ class InMemoryRecordingRepository:
     def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
         return self._incident_clips.get(clip_ref)
 
-    def add_derived_asset(self, asset: DerivedAsset) -> None:
+    def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None = None,
+                          content_type: str | None = None, case_id: str | None = None) -> None:
+        derived_content(asset, content, content_type, case_id)
         current = self._derived_assets.get(asset.derived_asset_ref)
         if current is not None and current != asset:
             raise ValueError("같은 DerivedAsset ref를 다른 payload로 덮어쓸 수 없습니다")
+        existing = self._derived_content.get(asset.derived_asset_ref)
+        value = (content, descriptor(content, content_type)) if content is not None else None
+        if value is not None and existing is not None and existing != value:
+            raise ValueError("recording immutable identity conflicts with stored payload")
         self._derived_assets[asset.derived_asset_ref] = asset
+        if value is not None:
+            self._derived_content[asset.derived_asset_ref] = value
+        if case_id is not None:
+            self.associate_case_asset(case_id, ContractRef(kind="derived_asset", ref=asset.derived_asset_ref))
+
+    def get_derived_content(self, asset_ref: str) -> tuple[bytes, str] | None:
+        value = self._derived_content.get(asset_ref)
+        return checked_content(*value) if value is not None else None
 
     def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:
         return self._derived_assets.get(asset_ref)
@@ -277,3 +326,124 @@ class InMemoryRecordingRepository:
             return False
         self._deleted_assets.add(key)
         return True
+
+
+class RecordingRepository(Protocol):
+
+    def get_owned_frame(self, case_id: str, frame_ref: str) -> tuple[FrameRef, bytes | None] | None:
+        ...
+
+    def get_ownership_stream(self, stream_ref: str) -> MediaStream | None:
+        ...
+
+    def add_source_asset(self, asset: SourceAsset) -> None:
+        ...
+
+    def get_source_asset(self, source_ref: str) -> SourceAsset | None:
+        ...
+
+    def add_local_source(self, asset: SourceAsset, streams: tuple[MediaStream, ...], source: LocalSource, *, case_id: str | None = None) -> None:
+        ...
+
+    def get_local_source(self, source_ref: str) -> LocalSource | None:
+        ...
+
+    def get_local_stream_index(self, stream_ref: str) -> int | None:
+        ...
+
+    def add_media_stream(self, stream: MediaStream) -> None:
+        ...
+
+    def get_media_stream(self, stream_ref: str) -> MediaStream | None:
+        ...
+
+    def add_gps_observation(self, observation: GPSObservation) -> None:
+        ...
+
+    def list_gps_observations(self) -> list[GPSObservation]:
+        ...
+
+    def add_frame(self, frame: FrameRef, *, content: bytes | None=None, image_format: str | None=None) -> None:
+        ...
+
+    def find_frame_at(self, stream_ref: str, source_offset_sec: float) -> FrameRef | None:
+        ...
+
+    def get_frame(self, frame_ref: str) -> FrameRef | None:
+        ...
+
+    def get_frame_content(self, frame_ref: str) -> bytes | None:
+        ...
+
+    def add_asset_facts(self, facts: AssetFacts) -> None:
+        ...
+
+    def get_asset_facts(self, kind: str, ref: str) -> AssetFacts | None:
+        ...
+
+    def add_timeline(self, timeline: RecordingTimeline) -> None:
+        ...
+
+    def get_timeline(self, timeline_ref: TimelineRef) -> RecordingTimeline | None:
+        ...
+
+    def get_latest_timeline(self, timeline_id: str) -> RecordingTimeline | None:
+        ...
+
+    def find_frames_at_timeline_position(self, timeline: RecordingTimeline, at_sec: float) -> list[FrameRef]:
+        ...
+
+    def add_span_resolution(self, resolution: SpanResolution) -> None:
+        ...
+
+    def get_span_resolution(self, timeline_ref: TimelineRef, requested_range: TimeRange) -> SpanResolution | None:
+        ...
+
+    def add_analysis_source(self, source: AnalysisSource, *, stream_factory: Callable[[], BinaryIO] | None=None, content_type: str='application/octet-stream') -> None:
+        ...
+
+    def get_analysis_source(self, source_ref: str) -> AnalysisSource | None:
+        ...
+
+    def find_analysis_sources(self, span: AssetSpan, profile_ref: str) -> list[AnalysisSource]:
+        ...
+
+    def open_analysis_stream(self, source_ref: str) -> tuple[BinaryIO, str] | None:
+        ...
+
+    def add_remote_copy(self, remote_copy: RemoteCopy) -> None:
+        ...
+
+    def get_remote_copy(self, analysis_source_ref: str, provider: str) -> RemoteCopy | None:
+        ...
+
+    def get_remote_copy_by_ref(self, remote_copy_ref: str) -> RemoteCopy | None:
+        ...
+
+    def add_incident_clip(self, clip: IncidentClip) -> None:
+        ...
+
+    def find_incident_clips(self, resolution: SpanResolution) -> list[IncidentClip]:
+        ...
+
+    def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
+        ...
+
+    def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None=None,
+                          content_type: str | None=None, case_id: str | None=None) -> None:
+        ...
+
+    def get_derived_content(self, asset_ref: str) -> tuple[bytes, str] | None:
+        ...
+
+    def get_derived_asset(self, asset_ref: str) -> DerivedAsset | None:
+        ...
+
+    def associate_case_asset(self, case_id: str, asset_ref: ContractRef) -> None:
+        ...
+
+    def get_case_assets(self, case_id: str) -> list[ContractRef]:
+        ...
+
+    def mark_deleted(self, asset_ref: ContractRef) -> bool:
+        ...

@@ -1,5 +1,11 @@
 # `worker` — Worker composition root
 
+RT-12(a)는 첫 claim 전 temp 잔여 scan과 별도의 주기 cleanup thread를 시작하고,
+startup/claim 실패와 정상 종료 모두에서 stop/join한다. `loop.media`는 기존
+materializer에 service별 temp_root와 활성 lease를 주입하는 factory다. 기본
+entrypoint의 실제 handler 등록은 그대로 후속 범위다.
+[경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
 - 배포 단위 「Worker 1」. `common/jobs`에서 row를 claim → RUNNING + heartbeat → 도메인 모듈의 **public capability**를 dispatch → 결과 ref + usage 기록.
@@ -16,7 +22,9 @@ RT-04(a)는 `python -m daesingo.worker` 진입점 · 단일 kind registry · cla
 
 실제 handler 등록은 비어 있다. 미등록 kind는 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. RT-07(b)는 execution별 UsageSink 주입·begin/finish/explicit finalize를 구현한다. 실제 Recording/Search handler는 RT-10 범위다.
 
-WorkerLoop는 heartbeat 시작 뒤 dispatch 전 cancellation checkpoint를 확인하고, composition이 공급한 factory로 execution마다 새 sink를 만든다. sink에 주입하는 transaction runner는 usage DB callback만 재시도하며 provider HTTP를 포함하지 않는다. `KindRegistry`가 UsageError를 재전파하고 loop는 `RUNTIME_USAGE_PERSISTENCE/VALIDATION/CONFLICT/STATE`로 FAILED를 기록한다. T1 retry는 이 결과만 보존하고 handler를 다시 호출하지 않는다. sink는 connection을 method 사이에 유지하지 않으며 이미 관측한 usage에는 ownership fence를 적용하지 않는다. startup/sweep usage reconciliation과 recovery finalize는 연결하지 않았다.
+WorkerLoop는 heartbeat 시작 뒤 dispatch 전 cancellation checkpoint를 확인하고, composition이 공급한 factory로 execution마다 새 sink를 만든다. sink에 주입하는 transaction runner는 usage DB callback만 재시도하며 provider HTTP를 포함하지 않는다. `KindRegistry`가 UsageError를 재전파하고 loop는 `RUNTIME_USAGE_PERSISTENCE/VALIDATION/CONFLICT/STATE`로 FAILED를 기록한다. T1 retry는 이 결과만 보존하고 handler를 다시 호출하지 않는다. sink는 connection을 method 사이에 유지하지 않으며 이미 관측한 usage에는 ownership fence를 적용하지 않는다.
+
+RT-07(c)는 정상 T1 commit 이후 별도 usage transaction과 기존 startup/periodic sweep hook에 terminal reconciliation을 연결한다. begin의 예정 Run ref는 존재 근거가 아니며 terminal `JobExecution.produced`에 그 ref가 있을 때만 실제 Run에 연결한다(FAILED 포함). 없으면 `RUN_NOT_PRODUCED`, 명시적 no-Run 선언은 `DIRECT_NO_RUN`이다. Run 의도가 불분명한 legacy/pending 행은 보류한다. 살아 있는 RUNNING 행은 변경하지 않는다. recovery 이후 늦은 finish는 Final을 고정한 채 tracker에 관측값·late event marker를 보존한다. 같은 관측 replay는 no-op, 다른 관측·관계는 conflict다. 일반 metric/logger/observer 오류는 durable 결과를 바꾸지 않으며 기존 fatal/cleanup/thread 정책은 유지한다. 실제 Search adapter 배선은 SRCH-1 범위다.
 
 RT-06(a)는 첫 claim 전에 startup sweep을 실행하고, handler와 독립적인 `runtime-sweep` thread에서 같은 만료 조건으로 주기 sweep을 수행한다. 만료 후보마다 짧은 transaction에서 row 잠금·lease·중단 표식을 재확인하고 STALE과 상한 내 다음 attempt QUEUED를 함께 기록한다. backoff는 DB 생성 시각에 더한 `available_at`으로 적용한다. startup DB 장애는 성공할 때까지 B-Q3 대기하며 claim을 막고, 종료 시 sweep thread를 stop/join한다. `compose_worker(sweep_hooks=(...))`는 RT-07용 등록 지점이며 hook은 connection 반환 뒤 startup/주기 sweep에서 호출되고 일반 예외는 격리된다. RT-06(b)의 재전달 배선은 아래에 기록한다.
 
@@ -39,3 +47,5 @@ Case가 지원하지 않는 kind는 T2 오류로 남고 receipt를 기록하지 
 RD-09a에 따라 실제 Recording invocation은 execution마다 새 `RecordingService`를 만들고 `finally`에서 닫아 mutable cache/working state를 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 뜻은 아니다. 이 PR은 service lifecycle을 구현하거나 process-global cache를 추가하지 않는다.
 
 structured event에는 queue의 trace/case/job/execution ID를 연결한다. 저장 가능한 ID라도 경로·제어문자가 포함돼 event token으로 안전하지 않으면 로그에서만 일관된 opaque alias를 쓴다. handler context와 DB의 원래 ID는 유지한다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
+
+RT-10(a)는 내부 `HandlerResult.objects`에 JSON payload를 받을 수 있게 한다. Worker는 module 의미를 해석하지 않고 stable ref를 결합한 snapshot을 T1에서 terminal·produced와 함께 저장한다. 기존 외부 produced 참조만 있는 handler도 유지한다. COMMIT 응답 유실 시 payload까지 동일한지 확인하며 누락 객체를 사후 복구하지 않는다. 실제 handler 등록과 기본 entrypoint의 reader/timeline 조립은 후속 범위다. 상태는 IN_PROGRESS이며 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)에 검증·제한을 기록한다.

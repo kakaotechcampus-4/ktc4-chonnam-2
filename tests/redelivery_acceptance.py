@@ -6,7 +6,7 @@ REDELIVERY_MODES = {
     "concurrent": ("case_first",),
     "commit_unknown": ("followup", "stopped"),
     "isolation": ("reflector", "db", "logger", "filter", "handler", "scan"),
-    "unsupported": ("PLATE_READ", "UNKNOWN"),
+    "unsupported": ("REPORT_VIDEO_EXPORT", "UNKNOWN"),
     "metric": ("first_stopped", "retry_stopped", "third_stopped", "CANCELLED", "SUPERSEDED", "APPLIED"),
     "startup_periodic": ("startup", "periodic"),
     "process_kill": ("gap", "running"),

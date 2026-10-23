@@ -1,5 +1,10 @@
 # `common` — runtime 기반 (도메인 모듈이 아니다)
 
+RT-12(a)의 `storage/`는 명시적 staging/temp root의 나이 조건 cleanup,
+producer/scan filesystem lease, startup/주기 scan과 stop/join을 제공한다.
+publish cleanup과 DB 집계는 제외한다.
+[구현·검증·제약](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **Architecture 경계:** `docs/architecture/module-architecture.md` §6-2 · §2 원칙 6 · §5-13  
 **Runtime 문서:** [`docs/runtime/README.md`](../../../docs/runtime/README.md)
 
@@ -35,27 +40,33 @@ RT-03(a)는 `migrations/runtime/versions/0001_job_execution.py`(`runtime_0001`)�
 
 RT-03(b)는 `0002_claim_token.py`(`runtime_0002`)의 nullable 내부 `claim_token`으로 공개 claim 호출을 재시도 사이에 식별한다. 기존 첫 revision은 바꾸지 않는다. `claim_one(engine, worker_id, *, lease_duration_sec, logger=None)`는 ID만 `LIMIT 1 FOR UPDATE SKIP LOCKED`로 선택하고 조건부 RUNNING/lease UPDATE 뒤 PK snapshot을 읽는다. `lease_duration_sec`의 기본값은 기존 WorkerSettings이며 composition root가 설정값을 주입할 수 있다. token·선택된 ID는 호출 전체에서 고정되고, COMMIT 결과 불명 뒤에는 같은 PK의 durable receipt만 확인한다. owner/token 불일치·terminal·만료·복구 불가 상태는 `ClaimLostError`이며 빈 queue와 다르다. claim transaction에는 INSERT나 handler 호출이 없고 확인된 commit 후에만 frozen `ClaimedExecution`을 반환한다.
 
-application/worker engine은 새 연결과 pool checkout에서 session timezone을 UTC로 고정한다. B-L6 그대로 `NOW(6)`으로 eligibility·lease·시작/종료 시각을 계산하며 UTC DATETIME(6)와 비교한다. 임의 engine 대신 공용 RC/UTC engine을 사용하고, 빌린 connection의 session 정책을 application transaction 도중 변경하지 않는다.
+application/worker engine은 새 연결과 pool checkout에서 session timezone을 UTC로 고정한다. B-L6의 DB `NOW(6)`으로 eligibility·시작 시각을 계산하고, lease/terminal에는 [#370 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)의 row causal 하한을 적용하며 UTC DATETIME(6)와 비교한다. 임의 engine 대신 공용 RC/UTC engine을 사용하고, 빌린 connection의 session 정책을 application transaction 도중 변경하지 않는다.
 
 `finish(conn, execution_id, owner, *, status, produced=(), failure_kind=None) -> int`는 열린 호출자 transaction에 참여한다. SUCCEEDED/FAILED/CANCELLED만 허용하며 CANCELLED produced는 빈 배열이다. 기존 공용 전이표와 JobExecution validator로 검증하고 `RUNNING ∧ lease_owner=owner` 조건부 UPDATE가 경쟁을 결정한다. 다른 owner·없는 ID·비-RUNNING은 0 rows다. commit/rollback/retry는 호출자 소유이며 STALE 전이는 RT-06 범위다. lease/heartbeat/receipt metadata는 terminal 이후에도 감사 근거로 보존한다.
 
 claim latency는 transaction 시작부터 COMMIT 응답 확인까지의 monotonic 시간이다. checkout·checkin·retry 대기·handler 시간은 제외하며 실패/COMMIT_UNKNOWN은 성공 분포와 구분한다. 같은 receipt의 read 복구는 `runtime.db.claim_recovery_latency_ms`로 분리한다. 선택적 RT-02 attempt observer와 운영 logger의 오류는 DB 결과나 재시도 여부를 바꾸지 않는다.
 
-`common/jobs/read_port.py`의 `read_executions(conn, job_ids)`는 요청한 Job의 모든 attempt를 JSON 호환 JobExecution v1.1 모양으로 돌려준다. 대표 execution 선택은 case가 한다. claim_token을 포함한 내부 column은 allowlist projection으로 제외하고 `usage_refs`는 RT-07 전까지 `[]`다. enqueue 시각은 DB `UTC_TIMESTAMP(6)`으로 생성해 UTC `DATETIME(6)`에 저장하고 read model에 UTC offset을 붙인다. claim lease 계산·판정은 UTC session의 `NOW(6)`으로 Baseline B-L6을 따른다.
+`common/jobs/read_port.py`의 `read_executions(conn, job_ids)`는 요청한 Job의 모든 attempt를 JSON 호환 JobExecution v1.1 모양으로 돌려준다. 대표 execution 선택은 case가 한다. claim_token을 포함한 내부 column은 allowlist projection으로 제외하고 `usage_refs`는 Final `usage_record.execution_ref`별 usage identity를 결정적인 순서로 projection한다. pending tracker는 포함하지 않고 Final이 없으면 `[]`다. enqueue 시각은 DB `UTC_TIMESTAMP(6)`으로 생성해 UTC `DATETIME(6)`에 저장하고 read model에 UTC offset을 붙인다. claim lease 계산·판정은 UTC session의 `NOW(6)`으로 Baseline B-L6을 따른다.
 
 runner 성공 후 재실행은 version 기준 no-op이다. MySQL implicit-commit DDL은 전체 rollback되지 않으므로 실패한 revision에 부분 DDL이 남으면 검사·복구가 필요하다. RT-02는 Implementation Log 기준 `DONE`, RT-03은 (b) 독립 재리뷰 전까지 `IN_PROGRESS`다.
 
-RT-06(a)는 `jobs/retry_policy.py`의 만료·상한·backoff pure logic과 `jobs/sweep.py`의 caller transaction 참여·주기 thread를 추가한다. STALE과 다음 QUEUED는 같은 commit이며, 원본 row 잠금 재확인·기존 UNIQUE(job_id, attempt)·재시도 동안 고정한 retry ID로 중복을 막는다. 만료 판단과 시각은 DB `NOW(6)`을 사용한다. Worker startup에서 첫 claim 전 실행하고 handler와 별개 thread로 반복한다. RT-07 hook은 sweep commit·connection 반환 뒤 실행한다. claim receipt의 내부 `queued_at`으로 attempt별 queue 대기 지표를 기록한다.
+RT-06(a)는 `jobs/retry_policy.py`의 만료·상한·backoff pure logic과 `jobs/sweep.py`의 caller transaction 참여·주기 thread를 추가한다. STALE과 다음 QUEUED는 같은 commit이며, 원본 row 잠금 재확인·기존 UNIQUE(job_id, attempt)·재시도 동안 고정한 retry ID로 중복을 막는다. 만료 판단은 DB `NOW(6)`, terminal은 `jobs/timestamps.py`의 공통 causal timestamp를 사용한다. 같은 durable terminal을 retry queue/backoff와 unknown-COMMIT receipt에서 재사용한다. Worker startup에서 첫 claim 전 실행하고 handler와 별개 thread로 반복한다. RT-07 hook은 sweep commit·connection 반환 뒤 실행한다. claim receipt의 내부 `queued_at`으로 attempt별 queue 대기 지표를 기록한다.
 
 RT-07(a)는 `usage/`에 typed `usage_inflight`·append-only `usage_record`와 exact `DECIMAL(65,30)` 경계를 추가했다(`runtime_0003`, 기존 `runtime_0002` 뒤). `append_final(conn, record)`는 caller transaction에 INSERT하며 같은 `usage_id`·snapshot의 replay는 no-op, 다른 snapshot은 `UsageIdentityConflict`다. 내부 commit/rollback·ID 발급·in-flight 변경·provider 호출은 없다. `read_final`의 금액은 문자열 또는 null이고, null과 0을 구분한다. live Core binder도 Decimal/문자열만 받으며 float·초과 precision/scale을 DB 변환 전에 거부한다. raw SQL로 binder를 우회하면 MySQL 자체의 소수 반올림이 가능하다. `execution_ref` index가 있으며 tracker와 Final은 같은 PK로 논리 연결하고 FK를 두지 않는다. frozen migration과 live metadata는 실제 MySQL DDL로 대조한다.
 
-RT-07(b)는 stdlib-only `usage.port.UsageSink`와 execution별 `DurableUsageSink`를 추가한다. Worker composition이 DB-only transaction runner를 주입한다. `begin`은 Runtime identity를 발급해 STARTED를 commit한 뒤 반환하며 실패하면 호출자는 HTTP를 보내지 않는다. 실패한 begin의 `UsagePersistenceError.usage_id` 또는 성공 반환 ID로 같은 sink에 persistence replay할 수 있다. `finish`는 관측값을 OBSERVED로 먼저 보존하고, caller가 실제 Run 관계를 확정한 뒤 `finalize`가 기존 `append_final`과 FINALIZED 표시를 같은 transaction에서 처리한다. 실제 FAILED Run도 연결하며, execution sink의 null 사유는 `RUN_NOT_PRODUCED`만 허용한다. 동일 snapshot은 no-op, 다른 snapshot은 conflict다. usage 오류는 provider retry와 분리하며 완료된 HTTP를 재호출하지 않는다. 관측 저장은 ownership fence로 버리지 않는다. recovery·late observation 정책과 Search adapter 배선은 후속 범위다.
+RT-07(b)는 stdlib-only `usage.port.UsageSink`와 execution별 `DurableUsageSink`를 추가한다. Worker composition이 DB-only transaction runner를 주입한다. `begin`은 Runtime identity를 발급해 STARTED를 commit한 뒤 반환하며 실패하면 호출자는 HTTP를 보내지 않는다. 실패한 begin의 `UsagePersistenceError.usage_id` 또는 성공 반환 ID로 같은 sink에 persistence replay할 수 있다. `finish`는 관측값을 OBSERVED로 먼저 보존하고, caller가 실제 Run 관계를 확정한 뒤 `finalize`가 기존 `append_final`과 FINALIZED 표시를 같은 transaction에서 처리한다. 동일 snapshot은 no-op, 다른 snapshot은 conflict다. usage 오류는 provider retry와 분리하며 완료된 HTTP를 재호출하지 않는다. 관측 저장은 ownership fence로 버리지 않는다.
+
+RT-07(c)는 `runtime_0004`에서 tracker에 예정 Run 관계·명시적 no-Run 선언·복구 시각·late event 시각을 추가한다. Final schema는 변경하지 않는다. begin의 예정 ID와 terminal `JobExecution.produced`를 대조해 FAILED Run도 실제 ref에 연결하고, 산출되지 않은 예정 Run은 `RUN_NOT_PRODUCED`, 명시적으로 Run 개념이 없는 호출은 `DIRECT_NO_RUN`으로 기록한다. 정상 T1 뒤 및 startup/periodic hook에서 같은 DB-only 관계 판정을 사용한다. RUNNING과 의도 불명 행은 변경하지 않는다. P-7은 Final을 고정한 채 tracker의 늦은 관측과 event marker를 durable 보존한다. recovered/inflight count와 DB 시각의 oldest age는 observer 및 안전한 structured log로 관측한다. 실제 Search adapter 연결은 SRCH-1 범위다.
 
 아직 실제 구현되지 않은 범위:
 
 - 기본 Worker entrypoint의 실제 Case reader/timeline 조립(RT-10). RT-06(b)의 `jobs/redelivery.py` startup/periodic scan과 Worker-owned Case adapter·실제 process-kill MySQL 테스트는 구현했다. 대상은 SUCCEEDED/FAILED이고 CANCELLED·STALE은 제외한다. 후보 scan/replay receipt read는 비잠금이며 Case→Runtime 순서의 기존 T2를 재사용한다. 후보 오류는 격리하고 COMMIT 불명은 durable receipt로 복구한다.
-- reconciliation·늦은 관측·sweep hook·usage_refs projection(RT-07 후속), 실제 Search adapter 연결(SRCH-1)
-- API / Worker 실제 app·handler 조립(config bootstrap만 있음)
-- Runtime health endpoint
+- 실제 Search adapter 연결(SRCH-1)
+- Case/command HTTP route(RT-08(b/c/d)) · 기본 Worker 실제 handler 조립(RT-10)
+- media HTTP(RT-11). API app/envelope와 Runtime health는 RT-08(a)의 API composition이 RT-01 config와 RT-02 engine을 소비하여 구현한다.
 
 따라서 README의 Runtime 항목을 구현 완료로 해석하지 않는다.
+
+API 소유 structured handler는 emission I/O lock을 stdlib handler cleanup lock과 분리하며, 정상 emission에서 flush하고 종료 cleanup에서 sink를 재호출하지 않는다. 실제 stdout 및 고정 stderr fallback은 unbuffered fd write를 사용한다. 이는 RT-08(a)의 bounded telemetry 종료 경계이며 Worker strict handler·allowlist/formatter·root/제3자 handler는 변경하지 않는다.
+
+RT-10(a)는 `common.jobs.produced`에 해석 없는 append-only JSON 결과 저장소와 기존 `ProducedReader(conn, kind, produced)` callable 구현을 추가한다. `runtime_0005`의 payload는 Worker T1 terminal·produced와 같은 transaction에서 저장한다. ID 없는 객체 ref는 execution/ordinal로 고정하고 COMMIT 불명 복구는 payload까지 검증한다. 다중 객체의 의미 조립은 주입한 assembler가 맡는다. 실제 handler/Case stored adapter 배선은 후속 범위이며 RT-10은 IN_PROGRESS다. 상세는 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)를 따른다.

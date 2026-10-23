@@ -69,6 +69,7 @@ def _check_payload(request: Any) -> None:
         not isinstance(request.get("case_id"), str)
         or not isinstance(rev, int)
         or isinstance(rev, bool)
+        or not isinstance(kind, str)  # dict 조회 전에 — 비문자열 kind가 TypeError로 새지 않게(#295)
         or kind not in _PAYLOAD_KEYS
         or not isinstance(payload, dict)
         or set(payload) != _PAYLOAD_KEYS[kind]
@@ -232,7 +233,7 @@ def execute_command(
 
     def view_of(case: CaseAggregate) -> dict[str, Any]:
         return build_view_from_adapter(
-            case, store.get_adapter(case.case_id, case), executions=store.read_executions(case), notices=notices
+            case, store.adapter_for(case), executions=store.read_executions(case), notices=notices
         )
 
     try:
@@ -262,7 +263,7 @@ def execute_command(
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW":
-        mark_ready_if_package_ready(case, store.get_adapter(case_id, case))
+        mark_ready_if_package_ready(case, store.adapter_for(case))
     store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])
     cancelled = [j for j, reason in case.settled_jobs.items() if reason == "CANCELLED" and j not in settled_before]

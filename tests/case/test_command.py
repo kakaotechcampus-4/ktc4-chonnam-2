@@ -334,6 +334,11 @@ def test_invalid_payload_is_reported_before_unknown_case():
     "overrides",
     [
         {"kind": "DELETE_CASE"},
+        # 비문자열 kind — hash할 수 없는 값도 TypeError가 아니라 invalid_payload다(#295)
+        {"kind": []},
+        {"kind": {}},
+        {"kind": 1},
+        {"kind": None},
         {"expected_case_rev": "3"},
         {"expected_case_rev": True},
         {"payload": None},

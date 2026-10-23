@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed on skipped, xfailed, deselected, absent or incomplete MySQL tests."""
 
+from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -16,6 +17,23 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
+    *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
+        "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
+    *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
+    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure")),
+    *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
+    ("async_e2e", "lifecycle"),
+    *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
+    *(("api_commands", s) for s in ("success", "domain", "rollback", "failure", "idempotency", "boundary")),
+    *(("timestamp_order", scenario) for scenario in (
+        "terminal", "renewal", "bounds", "metrics", "retry", "commit_unknown", "concurrent")),
+    ("api_cases", "create"), ("api_cases", "transaction"), ("api_cases", "failure"), ("api_cases", "logging"),
+    ("api_view", "read"), ("api_view", "transaction"), ("api_view", "failure"),
+    ("api_health", "ready"), ("api_health", "storage"), ("api_health", "process"),
+    *(("usage_reconciliation", scenario) for scenario in (
+        "relation", "late", "concurrent", "isolation", "db_clock", "projection", "worker",
+        "process_kill", "commit_unknown", "retry", "migration", "direct", "intent")),
     *(("usage_sink", scenario) for scenario in (
         "invocations", "replay", "conflict", "atomicity", "concurrent", "commit_unknown",
         "state", "no_run", "retry", "worker", "validation")),
@@ -106,6 +124,151 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_frame", s, p) for s, p in (
+        ('read', 'headers_repeat'), ('read', 'process_restart'),
+        ('isolation', 'missing_case'), ('isolation', 'unknown'), ('isolation', 'cross_case'),
+        ('isolation', 'unavailable'), ('isolation', 'bad_format'),
+        ('concurrency', 'none'), ('concurrency', 'wait'), ('concurrency', 'active'),
+        ('connection', 'slow_send'), ('failure', 'pool'), ('failure', 'disconnect'),
+        ('failure', 'unexpected'), ('failure', 'temporary'), ('failure', 'read_failure'),
+        ('transaction', 'caller_rollback'), ('transaction', 'relation_snapshot'),
+        *(('corrupt_scope', p) for p in ('frame', 'stream', 'source', 'bytes', 'frame_link', 'frame_identity')),
+        *(('send_lifetime', phase + '_' + ending) for phase in ('body', 'final')
+          for ending in ('normal', 'cancel', 'disconnect', 'oserror', 'unexpected')),
+        ('send_lifetime', 'network_disconnect'),
+        *(('exact_identity', layer + '_' + boundary + '_' + variant)
+          for layer in ('capability', 'http') for boundary in ('stream', 'source', 'frame')
+          for variant in ('trailing', 'leading', 'case', 'multiple', 'unicode', 'unicode_space')),
+        ('exact_identity', 'case_scope'))),
+    *(("produced_store", s, p) for s, p in (
+        ("terminal", "SUCCEEDED"), ("terminal", "FAILED"),
+        ("atomicity", "payload"), ("atomicity", "terminal"),
+        ("replay", "identical"), ("replay", "payload"), ("replay", "binding"),
+        ("concurrent", "same"), ("concurrent", "conflict"),
+        ("ownership", "stolen"), ("commit_unknown", "SUCCEEDED"), ("commit_unknown", "FAILED"),
+        ("reader", "single"), ("reader", "multiple"), ("reader", "missing"), ("reader", "wrong_kind"),
+        ("reader", "mixed_execution"), ("reader", "empty"),
+        ("process", "fresh_read"), ("redelivery", "stored_hint"),
+        ("migration", "upgrade"), ("transaction", "caller_rollback"),
+        ("receipt", "intact"), ("receipt", "missing"), ("receipt", "changed"),
+        ("replay", "batch_conflict"),
+        ("json", "large_uint"), ("json", "large_int"),
+    )),
+    *(("api_upload", s, p) for s, p in (
+        ("durability", "commit_restore"), ("durability", "response_loss"),
+        ("atomicity", "case_reject"), ("atomicity", "case_failure"),
+        ("concurrency", "same_case"), ("receive", "zero_checkout"),
+        ("receive", "probe_before_checkout"), ("receive", "prepared_mutation"),
+        ("taxonomy", "unsupported"), ("taxonomy", "tool"), ("taxonomy", "read"), ("taxonomy", "unexpected"),
+        ("filename", "traversal"), ("filename", "absolute"), ("filename", "separator"), ("filename", "unicode"),
+        ("abort", "idle"), ("abort", "duration"), ("abort", "disconnect"),
+        ("failure", "missing_case"), ("failure", "postcommit_view"), ("failure", "commit_ack_loss"),
+        ("interruption", "before_publish"), ("interruption", "after_publish"),
+        ("interruption", "before_commit"), ("interruption", "after_commit"),
+        ("limit", "exact_declared"), ("limit", "excess_declared"),
+        ("limit", "exact_stream"), ("limit", "excess_stream"),
+        ("transport", "media"), ("transport", "missing"), ("transport", "multiple"),
+        ("transport", "filename"), ("transport", "truncated"),
+        ("storage", "fsync"), ("storage", "device"), ("storage", "publish"))),
+    *(("recording", s, p) for s, p in (
+        ("restore", "identities"), ("restore", "local_source"), ("restore", "timeline_span"),
+        ("transaction", "rollback"), ("transaction", "visibility"),
+        ("transaction", "failed_registration"), ("transaction", "failed_frame"),
+        ("ownership", "cross_case"), ("ownership", "duplicates"),
+        ("identity", "repeat_registration"), ("identity", "immutable_conflict"),
+        ("storage", "relative"), ("storage", "outside"), ("storage", "traversal"),
+        ("storage", "absolute"), ("storage", "symlink"), ("storage", "wrong_root"),
+        ("concurrent", "frame"), ("concurrent", "lock_scope"),
+        ("failure", "commit_unknown"), ("failure", "disconnect"), ("failure", "unrelated_sql"),
+        ("migration", "fresh"), ("migration", "previous"), ("migration", "failure"),
+        ("compatibility", "fixture"), ("transaction", "no_completion"), ("restore", "png_bytes"),
+        ("registration_input", "restore"), ("registration_input", "rollback"),
+        ("registration_input", "atomic_link"), ("registration_input", "legacy"),
+        ("registration_input", "concurrent"), ("registration_input", "commit_unknown"),
+        ("registration_input", "filename_path"), ("registration_input", "filename_unicode"),
+        ("registration_input", "filename_empty"), ("registration_input", "filename_nul"),
+        ("registration_input", "case_accept"), ("registration_input", "case_reject"),
+        ("registration_taxonomy", "unsupported"), ("registration_taxonomy", "tool"),
+        ("registration_taxonomy", "read"),
+        ("media_read", "restart"), ("media_read", "rollback"),
+        ("media_read", "atomic_failure"), ("media_read", "conflict"),
+        ("media_read", "legacy"), ("media_read", "commit_unknown"), ("media_read", "concurrent"),
+        ("media_validation", "type"), ("media_validation", "digest"), ("media_validation", "size"),
+        ("media_validation", "model"), ("media_validation", "image"), ("media_validation", "empty"),
+        ("media_validation", "small"), ("media_validation", "large"), ("media_validation", "ownership_lock"),
+        ("media_failure", "1205"), ("media_failure", "1213"),
+        ("media_validation", "packet_limit"), ("media_validation", "inputs"),
+        ("media_validation", "ownership_source"), ("media_validation", "ownership_derived"),
+        ("media_validation", "ownership_relation"),
+        ("media_validation", "wrong_type"), ("media_read", "png_derived"))),
+    *(("api_start_analysis", "atomicity", kind) for kind in ("hint_extract", "coarse_search")),
+    *(("api_start_analysis", "rollback", kind + "_" + fault)
+      for kind in ("hint_extract", "coarse_search") for fault in ("save", "enqueue")),
+    *(("api_start_analysis", "dependency", fault) for fault in ("timeline_unavailable", "unknown_ref")),
+    *(("api_start_analysis", "commit_unknown", kind) for kind in ("hint_extract", "coarse_search")),
+    *(("api_start_analysis", "repeat", kind + "_" + mode)
+      for kind in ("hint_extract", "coarse_search") for mode in ("sequential", "concurrent")),
+    *(("api_start_analysis", "response_loss", kind) for kind in ("hint_extract", "coarse_search")),
+    ("async_e2e", "lifecycle", "retry_search"),
+    *(("api_cancel", "atomicity", p) for p in ("QUEUED", "RUNNING", "STALE", "SUCCEEDED", "multiple")),
+    *(("api_cancel", "rollback", p) for p in ("before", "after", "disconnect", "sql")),
+    ("api_cancel", "commit_unknown", "ack_loss"),
+    *(("api_cancel", "repeat", p) for p in ("sequential", "concurrent", "current_revision")),
+    *(("api_cancel", "interruption", p) for p in ("before_cancel", "after_cancel", "after_commit")),
+    *(("api_cancel", "delivery", p) for p in ("late_success", "cancelled", "ownership")),
+    *(("api_commands", "success", p) for p in ("append", "no_append")),
+    *(("api_commands", "domain", p) for p in ("invalid", "missing", "stale", "target", "not_allowed")),
+    *(("api_commands", "rollback", p) for p in ("enqueue", "save", "disconnect", "unrelated_sql")),
+    *(("api_commands", "failure", p) for p in ("pool", "lock_timeout", "commit_unknown")),
+    *(("api_commands", "idempotency", p) for p in ("sequential", "concurrent")),
+    ("api_commands", "boundary", "cancel_wired"),
+    *(("timestamp_order", "terminal", s) for s in
+      ("SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL")),
+    *(("timestamp_order", "renewal", s) for s in
+      ("non_regression", "sweep_recheck", "null_metadata", "longer_lease")),
+    *(("timestamp_order", "bounds", s) for s in ("heartbeat", "cancel", "null")),
+    ("timestamp_order", "metrics", "duration_detect_backoff"),
+    *(("timestamp_order", "retry", f"{s}_{code}") for s in
+      ("SUCCEEDED", "FAILED", "CANCELLED", "STALE") for code in (1205, 1213)),
+    ("timestamp_order", "retry", "real_1205"),
+    ("timestamp_order", "retry", "real_1213"),
+    *(("timestamp_order", "commit_unknown", s) for s in
+      ("claim", "SUCCEEDED", "FAILED", "CANCELLED", "STALE", "QUEUED_CANCEL", "T2")),
+    *(("timestamp_order", "concurrent", s) for s in
+      ("race", "heartbeat", "sweep", "cancel", "finish_snapshot")),
+    ("api_view", "transaction", "uncommitted_scope"), ("api_view", "read", "latest_attempt"),
+    ("api_cases", "failure", "unrelated_sql"),
+    *(("api_cases", "create", mode) for mode in ("contract", "body_unread")),
+    *(("api_view", "read", mode) for mode in ("missing", "queued", "running", "terminal_gap")),
+    ("api_view", "transaction", "lock_order"), ("api_cases", "transaction", "rollback"),
+    *(("api_cases", "failure", mode) for mode in (
+        "pool_exhausted", "disconnect", "postcommit_read", "commit_unknown", "deadlock")),
+    *(("api_view", "failure", mode) for mode in (
+        "pool_exhausted", "lock_timeout", "disconnect", "commit_unknown")),
+    ("api_cases", "logging", "correlation"),
+    *(("api_health", "ready", mode) for mode in ("normal", "pool_exhausted", "connection_lost", "server_stopped")),
+    ("api_health", "storage", "readonly"), ("api_health", "process", "single_worker"),
+    *(("usage_reconciliation", "relation", mode) for mode in (
+        "SUCCEEDED", "FAILED", "CANCELLED", "STALE", "absent", "different", "direct_no_run",
+        "unknown", "RUNNING", "QUEUED", "missing", "cross_case", "invalid_produced")),
+    *(("usage_reconciliation", "late", mode) for mode in (
+        "unobserved", "observed", "direct_no_run", "replay", "conflict", "relationship")),
+    *(("usage_reconciliation", "concurrent", mode) for mode in (
+        "reconcilers", "normal_recovery", "late_same", "late_conflict")),
+    *(("usage_reconciliation", "isolation", mode) for mode in (
+        "logger", "observer", "late_logger", "late_observer", "metrics")),
+    ("usage_reconciliation", "db_clock", "oldest"),
+    ("usage_reconciliation", "projection", "final_only"),
+    *(("usage_reconciliation", "worker", mode) for mode in ("normal_t1", "startup", "periodic", "finish_persistence_replay")),
+    *(("usage_reconciliation", "process_kill", mode) for mode in ("startup", "periodic")),
+    *(("usage_reconciliation", "commit_unknown", stage + suffix)
+      for stage in ("recovery", "late") for suffix in ("", "_exhausted")),
+    *(("usage_reconciliation", "retry", f"{stage}_{code}")
+      for stage in ("recovery", "late") for code in (1205, 1213)),
+    ("usage_reconciliation", "migration", "legacy"),
+    ("usage_reconciliation", "direct", "explicit_finalize"),
+    *(("usage_reconciliation", "intent", mode) for mode in (
+        "planned_replay", "direct_replay", "different_run", "different_reason", "premature_not_produced")),
     *(("usage_sink", "replay", stage) for stage in ("begin", "finish", "finalize")),
     *(("usage_sink", "conflict", mode) for mode in
       ("token", "cost", "pricing", "outcome", "duration", "latency", "failure", "run", "null_run")),
@@ -124,7 +287,7 @@ REQUIRED_PARAMETERS = frozenset({
     ("redelivery", "concurrent", "case_first"),
     *(("redelivery", "commit_unknown", mode) for mode in ("followup", "stopped")),
     *(("redelivery", "isolation", mode) for mode in ("reflector", "db", "logger", "filter", "handler", "scan")),
-    *(("redelivery", "unsupported", mode) for mode in ("PLATE_READ", "UNKNOWN")),
+    *(("redelivery", "unsupported", mode) for mode in ("REPORT_VIDEO_EXPORT", "UNKNOWN")),
     *(("redelivery", "metric", mode) for mode in
       ("first_stopped", "retry_stopped", "third_stopped", "CANCELLED", "SUPERSEDED", "APPLIED")),
     *(("redelivery", "startup_periodic", mode) for mode in ("startup", "periodic")),
@@ -296,10 +459,14 @@ def validate_report(report):
     scenarios = {value for item in collected for value in item.get("scenarios", [])}
     if REQUIRED_SCENARIOS - scenarios:
         raise ValueError("required MySQL scenarios missing: " + ", ".join(sorted(REQUIRED_SCENARIOS - scenarios)))
+    # Parse each identity once; the mutation gates validate thousands of
+    # complete inventories, so rescanning all nodes per Case requirement adds
+    # work without providing additional evidence.
+    case_counts = Counter((node.split("::")[0], node.split("::")[-1].split("[")[0])
+                          for node in expected)
     for path, functions in REQUIRED_CASE_TESTS.items():
         for function, minimum in functions.items():
-            count = sum(node.split("::")[0] == path and node.split("::")[-1].split("[")[0] == function
-                        for node in expected)
+            count = case_counts[path, function]
             if count < minimum:
                 raise ValueError("Case MySQL test coverage missing: " + function)
     phases = {}
