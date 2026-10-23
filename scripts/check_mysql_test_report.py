@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed on skipped, xfailed, deselected, absent or incomplete MySQL tests."""
 
+from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -16,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
     *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
@@ -122,6 +124,22 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_frame", s, p) for s, p in (
+        ('read', 'headers_repeat'), ('read', 'process_restart'),
+        ('isolation', 'missing_case'), ('isolation', 'unknown'), ('isolation', 'cross_case'),
+        ('isolation', 'unavailable'), ('isolation', 'bad_format'),
+        ('concurrency', 'none'), ('concurrency', 'wait'), ('concurrency', 'active'),
+        ('connection', 'slow_send'), ('failure', 'pool'), ('failure', 'disconnect'),
+        ('failure', 'unexpected'), ('failure', 'temporary'), ('failure', 'read_failure'),
+        ('transaction', 'caller_rollback'), ('transaction', 'relation_snapshot'),
+        *(('corrupt_scope', p) for p in ('frame', 'stream', 'source', 'bytes', 'frame_link', 'frame_identity')),
+        *(('send_lifetime', phase + '_' + ending) for phase in ('body', 'final')
+          for ending in ('normal', 'cancel', 'disconnect', 'oserror', 'unexpected')),
+        ('send_lifetime', 'network_disconnect'),
+        *(('exact_identity', layer + '_' + boundary + '_' + variant)
+          for layer in ('capability', 'http') for boundary in ('stream', 'source', 'frame')
+          for variant in ('trailing', 'leading', 'case', 'multiple', 'unicode', 'unicode_space')),
+        ('exact_identity', 'case_scope'))),
     *(("produced_store", s, p) for s, p in (
         ("terminal", "SUCCEEDED"), ("terminal", "FAILED"),
         ("atomicity", "payload"), ("atomicity", "terminal"),
@@ -269,7 +287,7 @@ REQUIRED_PARAMETERS = frozenset({
     ("redelivery", "concurrent", "case_first"),
     *(("redelivery", "commit_unknown", mode) for mode in ("followup", "stopped")),
     *(("redelivery", "isolation", mode) for mode in ("reflector", "db", "logger", "filter", "handler", "scan")),
-    *(("redelivery", "unsupported", mode) for mode in ("PLATE_READ", "UNKNOWN")),
+    *(("redelivery", "unsupported", mode) for mode in ("REPORT_VIDEO_EXPORT", "UNKNOWN")),
     *(("redelivery", "metric", mode) for mode in
       ("first_stopped", "retry_stopped", "third_stopped", "CANCELLED", "SUPERSEDED", "APPLIED")),
     *(("redelivery", "startup_periodic", mode) for mode in ("startup", "periodic")),
@@ -441,10 +459,14 @@ def validate_report(report):
     scenarios = {value for item in collected for value in item.get("scenarios", [])}
     if REQUIRED_SCENARIOS - scenarios:
         raise ValueError("required MySQL scenarios missing: " + ", ".join(sorted(REQUIRED_SCENARIOS - scenarios)))
+    # Parse each identity once; the mutation gates validate thousands of
+    # complete inventories, so rescanning all nodes per Case requirement adds
+    # work without providing additional evidence.
+    case_counts = Counter((node.split("::")[0], node.split("::")[-1].split("[")[0])
+                          for node in expected)
     for path, functions in REQUIRED_CASE_TESTS.items():
         for function, minimum in functions.items():
-            count = sum(node.split("::")[0] == path and node.split("::")[-1].split("[")[0] == function
-                        for node in expected)
+            count = case_counts[path, function]
             if count < minimum:
                 raise ValueError("Case MySQL test coverage missing: " + function)
     phases = {}

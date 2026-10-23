@@ -428,5 +428,8 @@ def test_case_requests_keep_trace_with_broken_or_slow_sink(api_db):
     views = [e for e in events if e["event"] == "api.view.completed"]
     assert len(views) == 2 and all(e["duration_ms"] >= 0 for e in views)
     assert {e["trace_id"] for e in views} == {e["trace_id"] for e in completed}
-    assert all(e["trace_id"].startswith("tr_") for e in events)
+    # Startup cleanup shares this stream but intentionally has no request context.
+    # Both named API sets above must still contain their trace_id; do not filter
+    # by field presence and accidentally hide a missing API correlation field.
+    assert all(e["trace_id"].startswith("tr_") for e in (*completed, *views))
     assert "PRIVATE" not in stream.getvalue() and count(engine) == 2

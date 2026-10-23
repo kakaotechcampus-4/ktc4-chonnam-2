@@ -60,6 +60,8 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | API command/enqueue transaction | 실제 수신 byte 제한 · opaque JSON · Case 저장+append batch enqueue 한 commit · append/응답 표 status · 요청 trace 전달 | RT-08(c) · PR #375 · `da7e5e613b21fda02211aa9f47f8c61b94835d13` · `Refs #295 (RT-08(c))` | 아래 RT-08(c) · `api/{composition,routes_commands,app}.py` |
 | API 중단 transaction | Case가 정한 cancelled_job_ids → 같은 Connection의 request_cancel · Case 선잠금 · ACK 뒤 응답 · 기존 retry/오류 의미 유지 | RT-08(d) · 미커밋 · `Refs #295 (RT-08(d))` | 아래 RT-08(d) · `api/composition.py` |
 | 첫 비동기 E2E 테스트 조립 | HTTP 생성 Case + 실패 검색 fixture · RETRY_SEARCH · 별도 Worker thread/engine · 기존 CaseReflector · T1/T2 barrier와 독립 plain read | RT-09 · 미커밋 · `Refs #296 (RT-09)` | 아래 2026-10-18 RT-09 후속 · `tests/async_e2e_support.py` |
+| 저장 FrameRef HTTP · 승인된 DB 경계 | semaphore2 획득 뒤 짧은 caller tx에서 Recording 소유+이미지 복원 · 반환 뒤 header/bytes · 취소된 read도 cleanup 후 permit 반환 · bounded wait/latency/count 관측 | RT-11(b) · 미커밋 · Refs #298 (RT-11(b)) | [RT-11(b) note](./rt11b-frame-read.md) |
+| staging/temp cleanup · filesystem lease | 명시 root·mtime 나이·no-follow/handle 삭제·shared producer/exclusive scan·startup/주기 thread·stop/join·cleanup count/bytes/privacy | RT-12(a) · PR/merge SHA pending · Refs #299 (RT-12(a)) | [RT-12(a) note](./rt12a-cleanup.md) |
 
 ## Baseline revisit 후보
 
@@ -1654,35 +1656,252 @@ Status: NOT_STARTED · Issue: #298 · Audit: B
 
 ## RT-12 — 운영 위생: cleanup · 관측 집계
 
-Status: NOT_STARTED · Issue: #299 · Audit: C
+Status: IN_PROGRESS · Issue: #299 · Audit: C · Refs #299 (RT-12(a))
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| pending | RT-12(a) staging/temp cleanup · Refs #299 (RT-12(a)) | pending |
 
 ### 구현 결과
 
-—
+API staging 및 API/Worker temp root의 aged 잔여 scanner, producer/scan filesystem
+lease, startup 1회 + 기존 주기 scan, 안전한 stop/join과 cleanup 전용 structured
+count/bytes/failed_count를 구현했다. upload 생성→close→publish까지 보호하며 DB
+등록 순서는 유지한다. 실제 변경 목록·데이터 흐름·검증 원본·인계는
+[RT-12(a) note](./rt12a-cleanup.md)를 따른다.
 
 ### Plan 대비 변경
 
-—
+P-6 미확인 orphan publish와 RT-12(b) DB 집계·전체 event catalog는 제외한다.
+활성 producer 하나가 있으면 root 전체 scan을 미루는 보수적인 lease를 사용한다.
+현재 기본 API에는 temp materializer, Worker에는 실제 handler가 없으므로 새
+profile/encoding 정책을 만들지 않고 service별 `MediaRoot` 주입 factory까지만
+조립했다. 별도 합성 smoke로 API/Worker 주입 factory의 실제 Recording
+analysis/incident와 활성 temp 경합·close를 직접 검증했고, 기본 handler 연결의
+후속 범위와 미검증을 note에 구분했다.
 
 ### 새 implementation detail
 
-—
+기존 tempfile 생성 이름만 인식하고 unknown 항목·hardlink·reparse point를
+보존한다. Windows ancestor pin/leaf exclusive handle 삭제, POSIX dir fd/no-follow
+삭제와 root lease를 사용한다. bytes는 기존 logger 정수 count 필드의 별도 event로
+기록하고 상속 correlation을 제거한다. Contract·Decision·Baseline 의미/값 변경 없음.
 
 ### Owner 확인 포인트
 
-—
+실제 materializer 등록 시 주입 factory 사용, 서비스 전용 local root provision,
+root 전체 scan 지연과 긴 filesystem I/O의 join 지연, Linux/POSIX 검증 및 독립
+재리뷰가 남아 있다. 다른 Owner 공개 surface·새 capability 요청은 추가하지 않았다.
 
 ### Verification
 
-—
+보존된 기능상 RED 20/8/14/2/1/4 failed → 최종 focused 51 passed.
+관련 API/Worker/upload/logger/config 회귀 363 passed(마지막 두 보강 전), boundary
+및 Contract fixture 검사 PASS. workflow30분/nested MySQL900초와 gate/inventory는
+불변이다. 현재 소스의 bare 전체 pytest는 정확히 1회 실행해 **9800 passed /
+937 skipped / 1 warning**, exit 0(412.20초)이다. MySQL 미설정 911·media opt-in
+22·typer collection 4 skip이며 mandatory MySQL gate PASS를 주장하지 않는다.
+추가 실제 media smoke는 pytest 재실행 없이 PASS다. 기존/원격 PR CI를 이번 직접
+실행으로 사용하지 않았고 소유 test root/process/thread를 정리했다.
 
 ### 남은 위험
 
-—
+기본 실제 handler E2E와 Linux/POSIX·원격 CI 미실행, advisory lock에 협력하지 않는
+외부 writer, root 단위 보수적 지연 및 기존 sink 한계를 note에 명시했다. 이번 세션은
+reviewer/subagent·staging·commit·push·PR 없이 독립 재리뷰 가능한 변경을 준비한다.
+RT-12 전체 DONE·Closes #299·merge-ready/Owner acceptance를 주장하지 않는다.
+
+### 2026-10-23 — 독립 리뷰 P1/P2 후속 (원래 이력 보존)
+
+- 시작: reviewer snapshot/구현 manifest의 변경20개·index hash 일치, 기존 JUnit
+  hash 일치. 구현/리뷰 RAW의 hash를 별도 보존했다. 앞선 `9800 passed / 937 skipped`
+  및 reviewer 결과는 과거 증거이고 이번 수정 GREEN으로 사용하지 않는다.
+- P1 직접 재현: Windows와 native Linux에서 temp ancestor에 포함된 publish 파일이
+  삭제돼 `count=1, bytes=9, failed=0`이었다. 기존 동일/하위만 검사하는 방향 공백과
+  보호 경로 없는 재귀가 원인이다. 각 RED11 failed/7 passed → Windows GREEN69,
+  POSIX GREEN57이다. 기존 root 공유 구성을 보존하기 위해 상위 temp는 publish와
+  겹치는 가지 전체를 제외하고, 동일/하위 및 링크/확인 불가 구성은 lifecycle
+  할당 전에 거부한다. P-6·등록 조회·orphan policy는 추가하지 않았다.
+- P2 직접 재현: entries의 전체 metadata 리스트 선적재 때문에 첫/중간/마지막
+  PermissionError/OSError/소실이 다른 정상 삭제까지 막았다. 100000개 열거도 미리
+  적재했다. Windows/POSIX 각각 RED21 → lazy 항목별 오류 격리와 bounded 이름1개
+  empty 검사로 Windows focused90/POSIX focused78 GREEN이다. 소실은 실패/삭제로
+  세지 않고 그 밖의 metadata OSError는 항목당 failed1, 원문 예외는 보관하지 않는다.
+- 이번 Windows upload/lifecycle/logger/config 관련 회귀407 passed(102.40초).
+  공용 순회·startup validation 변경의 소비자 영향 때문에 이번 revision의 bare 전체
+  pytest를 새 증거 폴더에서 1회 실행 중이다. 실제 MySQL/원격 CI는 추가하지 않는다.
+- P3는 제품을 확장하지 않았다. POSIX 비협력 writer, 멈춘 filesystem I/O의 join
+  지연, 예상 밖 비-OSError 뒤 주기 중단, root 전체 보존, wall-clock jump 위험과
+  SoT 판단 근거를 note에 추가했다. 해당 실패 상태까지 정상/승인으로 간주하지 않는다.
+- 내부 실행 계획은 hash를 유지해 ignored scratch로 옮겨 PR 후보에서 제외했다.
+  후보21개(제품9·테스트7·문서5), 이번 제품 수정은 storage2개이며 Log/note에 원래
+  결함·RED·수정·GREEN을 시간순으로 추가한다. Log의 기존 줄바꿈 bytes는 유지한다.
+- 최종 결과·정적 검사·자원/증거 hash는 아래에 추가한다. 상태는 계속
+  IN_PROGRESS · Refs #299 (RT-12(a)), PR/merge SHA pending이다. 별도 reviewer/subagent,
+  staging·commit·push·PR 없이 기존 독립 대화의 후속 재리뷰에 인계한다.
+
+- **2026-10-23 최종 직접 결과:** 이번 revision bare 전체1회 exit0,
+  9839 passed/937 skipped/1 warning, 501.82초. MySQL911·
+  media22·collection4 skip이며 mandatory MySQL gate/
+  원격CI는 미실행이다. Windows focused90/관련회귀407, native POSIX focused78 및
+  boundary/Contract/workflow30/nested900/gate 불변/diff 검사를 직접 확인했다.
+  과거 증거와 분리하고 원래 실패를 재분류하지 않았다. 소유 root/lease를 정리하고
+  기존 구현증거37개·리뷰증거10개 hash를 보존했다. PR 후보21개,
+  내부plan 제외, staging/commit/push/PR/reviewer/subagent 없음. 기존 독립 대화의
+  후속 재리뷰를 기다리며 IN_PROGRESS · Refs #299 (RT-12(a))를 유지한다.
+
+
+### 2026-10-23 경로 별칭 P1 추가 수정
+
+**IN_PROGRESS · Refs #299 (RT-12(a))**
+
+- 후속 독립 리뷰 이후 21개 후보/branch/HEAD/index hash 일치와 기존 증거100개를
+  먼저 확인했다. 기존 P2 해소·일반 경로 P1 GREEN은 보존하며 별칭 실패와 구분한다.
+  Windows extended namespace/Linux double-slash 양방향 혼용을 OS samefile로 확인한
+  제품 RED는 각각16FAIL/46PASS,16FAIL/38PASS다. 일반/양쪽 같은 표기는 통과했다.
+- lexical anchor 불일치가 원인이다. 기존 no-follow pin으로 existing ancestor를
+  검증하고 Windows handle의 normalized volume GUID 이름, POSIX 동일 root identity
+  확인 뒤 single-root 표현을 사용한다. configuration과 보호 scan 비교가 같은
+  canonical 함수를 사용하며 삭제 중 resolve하지 않는다. 미생성 suffix는 검증하고
+  UNC/device/reparse/불명확한 이름은 lifecycle 전 거부한다. 8.3 실제 OS alias도
+  확인했다. 추가 baseline source copy10FAIL/30PASS는 현재 GREEN과 분리한다.
+- 최종 focused Windows156PASS, native POSIX122PASS/Windows전용6SKIP이며 기존
+  P2 streaming/소실·집계·privacy 및 안전성·lifecycle 회귀를 포함한다. 관련 broad는
+  470PASS/3FAIL(WinError5 exists, disconnect idle 선행, log sink9초 timeout)이다.
+  동일 deadline 선별5PASS를 broad PASS나 원인 해소로 재분류하지 않는다. 원본과
+  진단·초기 runner/권한/사용 한도 실패도 보존한다. 전체 pytest는 최종 source에서
+  정확히1회 실행하며 결과는 후속 추가한다.
+- P2 Pinned/_walk는 재작성하지 않았다. 이번 제품2파일+기존 publish test1파일+
+  note/Log 총5파일, 전체 후보21개다. 내부plan/scratch/RAW/JUnit/JSON/runner 제외,
+  기존 P3와 POSIX mount/비협력 writer 및 Windows local-volume 지원 경계를 남긴다.
+  상세 설계·실패·검증은 [RT-12(a) note](./rt12a-cleanup.md)의 별칭 후속 절에 있다.
+  staging/commit/push/PR/reviewer/subagent 없이 기존 독립 재리뷰를 기다린다.
+
+- **경로 별칭 최종 직접 감사:** 최종 source bare 전체1회 exit0,
+  ========== 9905 passed, 937 skipped, 1 warning in 490.64s (0:08:10) ===========. MySQL911·media22·collection4
+  skip이며 실제 MySQL mandatory gate/원격CI는 미실행이다. 코드·테스트 hash를 유지했다.
+  Windows focused156PASS/native POSIX122PASS·Windows전용6SKIP와 broad470PASS/3FAIL·
+  선별진단5PASS를 분리한다. 앞선 실패를 PASS/해소로 소급하지 않는다. boundary/
+  Contract/workflow30·nested900/gate 불변/diff 및 증거100개·index·후보21개/이번5개를
+  최종 감사한다. 소유 임시자원/lease만 정리하고 RAW/JUnit/JSON/runner는 제외 보존한다.
+  IN_PROGRESS · Refs #299 (RT-12(a)), 미커밋·미스테이징으로 독립 후속 재리뷰 대기다.
+
+
+### 2026-10-23 RT-12(a) 최종 독립 재리뷰 판정 후속 기록
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR·merge SHA pending**
+
+- 아래는 전달받은 독립 reviewer의 최종 판정과 직접 검증을 기록한 것이다. 이번
+  문서 갱신에서 테스트를 재실행하거나 구현자의 자체 승인으로 대체하지 않았다.
+  검증한 NTFS·Linux 범위에서 경로 별칭 P1 해소, 기존 metadata 격리 P2 해소 상태
+  유지 및 새로운 P1/P2 발견 없음으로 판정받았다. 커밋·중간 PR 준비는 가능하나,
+  실제 병합은 현재 revision의 원격 CI와 필요한 mandatory gate 성공 전까지 보류한다.
+
+**경로 별칭 P1 최종 판정**
+
+- Windows 일반 경로와 `\\?\` extended-length 경로의 양방향 혼용,
+  실제 NTFS 8.3 subset 8 passed/skip 0, native Linux /tmp·//tmp 혼용에서 publish 보호를 확인했다.
+- 동일·하위 cleanup 구성은 거부하고 상위 구성은 publish와 겹치는 보호 가지를
+  제외한다. 미존재 suffix 및 구성 후 link 교체 경계도 검증했다. canonicalization
+  성공·실패를 각각 100회 실행한 뒤 process handle은 201 → 201 → 201이었다.
+
+**기존 P2 해소 상태 유지**
+
+- metadata 오류의 첫·중간·마지막 위치 및 nested 격리, 동시 소실의 집계 제외,
+  iterator close, bounded empty 확인과 privacy 검증을 유지했다. iterator 진행 중
+  오류의 직접 결과는 (count=2, bytes=6, failed=1)이며 형제 처리를 계속했다.
+
+**Reviewer 직접 검증과 구현자 보존 증거의 구분**
+
+| 구분 | 검증·보존 결과 |
+| --- | --- |
+| reviewer 직접 | Windows focused 156 passed |
+| reviewer 직접 | 실제 NTFS 8.3 subset 8 passed, skip 0 |
+| reviewer 직접 | native Linux focused 122 passed / Windows 전용 6 skipped |
+| reviewer 직접 | API·Worker lifecycle·upload staging → publish → DB 호출 순서 144 passed |
+| reviewer 직접 | boundary·Contract fixture·workflow·whitespace 검사 통과 |
+| 구현자 보존 | alias RED: Windows 16 failed / 46 passed |
+| 구현자 보존 | alias RED: POSIX 16 failed / 38 passed |
+| 구현자 보존 | 이전 source 복사본의 8.3 검출력 RED: 10 failed / 30 passed |
+| 구현자 보존 | 넓은 회귀 470 passed / 3 failed와 이후 선별 5 passed는 별도 실행으로 유지 |
+| 구현자 보존 | 전체 pytest 9,905 passed / 937 skipped / warning 1 / 490.64초 |
+| 구현자 보존 | JUnit 10,842 cases, failure/error 0 |
+
+- 과거 실패 3건은 비차단 P3로 유지하며 이후 PASS로 소급 변경하지 않는다.
+  test_nested_partial_tree_young_child_and_unknown_root_entries의 WinError 5,
+  test_receive_abort_sends_no_status_and_never_registers[disconnect]의 disconnect보다
+  idle 제한 선행, test_failed_sink_with_unread_stderr_does_not_deadlock_interpreter의
+  stderr sink 9초 timeout 각각의 정확한 근본 원인은 미확정이다. 최종 reviewer의
+  판정이나 이후 선별·전체 PASS가 당시 원인 해소의 증거를 대신하지 않는다.
+
+**미확인·잔여 위험**
+
+- 실제 UNC 공유 동등성, 다른 Windows filesystem과 case-sensitive namespace,
+  POSIX bind mount·mount namespace는 미확인이다. POSIX API·Worker 전체 process/
+  signal 경로도 검증하지 않았다. 검증한 NTFS·native Linux 범위 밖으로 판정을
+  확대하지 않는다.
+- 비협력 writer, 무제한 filesystem I/O에 따른 join 지연, 예상 밖 비-OSError 후
+  주기 종료, 활성 producer에 따른 root 전체 보존, wall-clock 변동 위험은 남는다.
+
+**범위·상태**
+
+- PR 후보는 정확히 21개다. 내부 실행 계획·scratch·RAW·JUnit·JSON·runner·이전
+  source 복사본·임시 자료는 PR에서 제외한다. 제품·테스트·인계 문서는 이번에
+  수정하지 않았고 기존 이력과 Implementation Log의 CRLF bytes를 보존했다.
+- 실제 MySQL mandatory gate와 원격 CI는 미실행이다. 보존된 MySQL 911 skip은
+  gate 성공이 아니다. 현재 revision의 필요한 gate와 원격 CI 성공 전 병합 보류를
+  유지한다. PR·merge SHA는 pending이며 상태는 IN_PROGRESS · Refs #299 (RT-12(a))다.
+- 이번 기록에서는 staging·commit·push·PR 생성과 테스트 재실행을 하지 않았다.
+
+
+### 2026-10-23 PR #390 원격 CI correlation 실패 후속
+
+**IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending**
+
+- 시작 branch/HEAD `09e9fbd83854ce54208dfcc71821d278f48313cf`가 원격 PR과 일치하고
+  worktree/index clean, 기존 PR 후보21개였다. remote run39850214180/job120074040208
+  failure(2FAIL/10791PASS/33SKIP/1warning·1422.41초), boundary39850214256 success,
+  MySQL execution gate skipped를 직접 읽고 원본을 보존했다. flaky로 재분류하지 않는다.
+- 실제 격리 MySQL8.4.7/native Linux에서 최초 API trace node를 같은 line431 KeyError로
+  RED1FAIL(23.63초) 재현했다. event 이름/trace 존재 여부만 보존했다. startup cleanup6개는
+  빈 Context로 trace 없음, request/view4개는 trace 있음이었다. 전체 stream에 trace를
+  요구한 테스트 전제가 원인이다. remote migration child도 같은 node1FAIL/905PASS여서
+  parent returncode 실패로 이어졌으며 독립 결함 둘로 단정하지 않는다.
+- prefix assertion을 명시적 request.completed/view.completed 집합에만 적용했다.
+  기존 수/trace 존재·상관·case 검증을 유지하고 field 존재로 거르는 우회는 없다.
+  실제 API queue의 cleanup private context 비상속 회귀를 추가했다. 제품 코드는
+  수정하지 않았다. 같은 MySQL node+새 회귀 GREEN2PASS(9.67초), 별도 child에서
+  Context 격리 제거 negative control1FAIL(15.81초)을 분리 보존한다.
+- Windows 실제 SHUTDOWN/private readonly mount2PASS(14.77초), 최초 잘못된 node
+  선택 collection 오류도 보존했다. timeout/retry/sleep/skip/xfail/inventory/strict 정책은
+  불변이다. 관련 회귀/전체 pytest·parent gate/strict 검사·자원 감사는 후속 추가한다.
+- 이번 테스트2+문서2 총4파일, 기존PR21개+새 포함 기존추적 test_cases_view_mysql.py로
+  합친 후보22개다. scratch/RAW/JUnit/JSON/runner/negative control/CA/이전 source·
+  임시DB/media 제외, 기존 실패/P3와 이력을 유지한다. 상세 근거는 RT-12(a) note의
+  PR390 후속 절에 있다. reviewer/subagent/commit/push/PR 수정 없이 독립 재리뷰한다.
+
+- **PR390 최종 직접 검증:** native MySQL 최초 node+privacy2PASS, 관련73PASS
+  (47.09초). Windows 관련293PASS/1FAIL(153.61초), 기존5초 process node 단독1FAIL도
+  보존한다. 4초 stack 진단은 listener close 뒤 connect_ex였으나 두 timeout의 정확한
+  원인은 확정하지 않는다. 전체는 진단 runner 설정을 포함해1회 exit1,
+  2 failed, 10815 passed, 26 skipped, 1 warning in 2902.28s (0:48:22). JUnit 10843 cases/failure·error2개,
+  실패명: test_actual_server_cleanup_failure_exit_and_listener_release, test_require_missing_dependency_fails_without_skip. 과거 실패를 이후 결과로 소급 변경하지 않는다.
+- 전체 dependency guard 실패는 진단 plugin 상속/PYTHONPATH 교체 충돌의 runner
+  오류였다. 별도1FAIL 재현→정상 guard1PASS, 저장소 정책/source는 불변이다.
+  정상 runner 관련292PASS/3FAIL의 실패명은 test_composition_failure_outranks_stalled_handler_write, test_composition_failure_exits_within_five_seconds_after_ready_trigger, test_actual_server_cleanup_failure_exit_and_listener_release다.
+  정확한 process 실패 원인은 미확정이며 flaky로 분류하지 않는다. 정상 옵션의
+  전체 재실행은 하지 않았고 남은 실패·전체 PASS 미확인을 독립 재리뷰에 인계한다.
+- 실제 parent migration gate 통과=True. fresh MySQL collected/selected
+  911/911, phase{'passed': 2733}.
+  전체 strict exit0·child strict exit0의 원본을
+  보존한다. subset gate와 전체 결과를 합성하지 않는다. 원격 CI failure/gate skipped는
+  그대로이고 재실행/PR 수정/commit/push/reviewer/subagent는 없다.
+- 소유 MySQL8.4.7 UUID datadir·port 정리, pytest root12개·
+  이번 생성 확인 lease2개 정리 및 schema/account/
+  transaction/lock 감사는 새 scratch resources.json에 있다. boundary/Contract/
+  workflow30·nested900·gate 불변/diff와 source/index hash·Log bytes를 최종 확인한다.
+  기존PR21개/합친22개·이번4개, 제외자료 유지, 미커밋·미스테이징으로 독립 재리뷰한다.
+  IN_PROGRESS · Refs #299 (RT-12(a)) · PR #390 · merge SHA pending이다.
 
 ---
 
@@ -2743,3 +2962,150 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 - 과거 setup error·실패·900초 timeout·startup deadline 실패는 각각의 별도 원본으로 유지한다. 앞선 이력과 원본 증거를 수정하거나 덮어쓰지 않는다. 전체 pytest와 현재 diff의 원격 CI는 미실행이다.
 - 비차단 위험: LONGTEXT에 대한 privileged raw SQL 변조를 DB JSON constraint가 차단하지 못하는 한계, 과거 timeout·startup deadline 실패의 재발 가능성이 남는다. 다중 객체의 의미 조립과 외부 ref 배선은 후속 작업이다.
 - 이번 판정은 RT-10(a) 결과 저장소 gate 범위다. 전체 RT-10은 미완료이며 실제 handler·Case adapter 등 후속 범위의 완료를 뜻하지 않는다. **IN_PROGRESS · Refs #297 (RT-10(a)) · PR/merge SHA pending**을 유지한다.
+
+## 2026-10-21 RT-11(b) 착수 · Owner 승인 해석 · RED→GREEN
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · PR pending · merge SHA pending.**
+
+- 현재 `codex/rt11b-frame-read`/HEAD `c491a95b8726377c2eca2ac3dad6bcc6ce416670` 및 clean working tree/빈 staging, 최신 원격 develop 일치를 직접 확인했다. 새 branch/worktree를 만들지 않았다.
+- PR #382의 develop 병합 SHA `596e8a162b71949e7b3189e994921bb6247aac4b`, boundary-check/python-tests SUCCESS 및 MySQL gate811/skip0/xfail0를 직접 확인해 후속 기록한다. PR #385의 develop 병합 SHA `c491a95b8726377c2eca2ac3dad6bcc6ce416670`, boundary-check/python-tests SUCCESS 및 MySQL gate839/skip0/xfail0도 선행 상태로 확인했다. 기존 pending·실패·timeout 이력을 수정하지 않으며 이번 diff 검증으로 재사용하지 않는다.
+- Issue #298 본문·전체 댓글2개와 제안6292559346/Runtime·HTTP Owner 승인6306955258을 직접 확인했다. 승인대로 semaphore 획득→짧은 ownership+stored FrameImage load→Connection 반환→HTTP header/bytes 전송 순서로 구현한다. Plan/Baseline 원문은 고치지 않으며 새 Gate/Case association/mediation/callback은 없다.
+- Recording에 최소 공개 `read_owned_frame_image`를 추가했다. API schema/private 조회 없이 기존 소유 관계와 저장 이미지 capability를 조합하고 caller transaction 소유를 유지한다. 기본2 제한, safe404/typed unavailable, 실제 Content-Type/Length와 B-F1 cache를 적용한다. 관측은 기존 ApiEvents/allowlist의 wait/응답 준비 latency/count 이벤트이며 raw ref/path/예외는 넣지 않는다.
+- RED 보존: 초기 sandbox13 ERROR/3 FAIL 및 정지 시도는 환경 실행 실패로 분리했다. 유효 RED13 FAIL/3 PASS→GREEN16 PASS. 신규 frame inventory family 누락6 FAIL도 보존한 뒤 checker에 추가했다.
+- 실제 MySQL 첫 실행13 PASS/4 FAIL은 신규 fixture의 SecretStr env 전달 및 전역 checkout assertion 동기화 오류로 확인했다. 제품 코드를 바꾸지 않고 보정 후17 PASS/skip0/xfail0/source drift0다. 두 fresh interpreter 복원·실제 pool/disconnect·소유 격리·caller rollback/uncommitted·대기/느린 전송 checkout0·취소/permit 경계를 포함한다.
+- 전체 필수 MySQL 원본 nested900/strict JSON/JUnit·누락 mutation 및 관련 회귀를 진행 중이다. timeout·workflow30분·skip/xfail 정책은 불변이다. 현재 전체 pytest/원격CI/별도 독립 재리뷰는 미실행이며 reviewer/subagent는 사용자 요청대로 호출하지 않는다.
+- 상세 Implementation Notes/선택/위험은 [RT-11(b) note](./rt11b-frame-read.md), 원본 증거는 ignored `.codex-scratch/rt11b-20261021/`다. staging/commit/push/PR 없이 미스테이징 상태를 유지한다.
+
+### 2026-10-21 RT-11(b) 직접 검증 완료 · 제한 공개 · 별도 독립 재리뷰 대기
+
+- 같은 제품/test source로 원본 mandatory child851 PASS/2553 phases/484.666초, skip·xfail·JUnit 실패0 및 strict JSON/JUnit CLI PASS851을 확인했다. parent1 PASS/892.62초(wrapper894.672초/exit0/source drift0)이며 nested900과 workflow30분을 유지했다. parameter mutation6218건 모두 거부, 신규 frame221건과 metadata68/family6 누락 거부를 포함한다. gate unit6483 PASS/484.86초/source drift0다.
+- 관련 API/Recording 비MySQL 전체는779 PASS/기존 외부 미디어15 SKIP/1 FAIL/201 deselected다. 유일한 실패 node는 test_composition_failure_exits_within_five_seconds_after_ready_trigger이며 phase/stack은 GO 전 setup_import_watchdog_5s와 기존 search/coarse import의 importlib.get_data를 가리켰다. 새 frame route import 전이고 정확한 import 지연 원인은 단정하지 않는다. 모든 무거운 실행 종료 뒤 source/deadline 불변으로 해당 node만1 PASS/3.19초 재확인했다. 원본 broad 실패는 보존하고 합성 전체780 PASS로 바꾸지 않는다.
+- boundary0, Contract62구조/26JSON/104의미, 관련 workflow2개 actionlint, diff-check를 직접 확인했다. checker 함수AST·기존 inventory·migration16개·workflow byte는 보존하며 신규frame6 scenarios/17 parameters만 추가했다.
+- bare 전체 pytest는 미실행이다. 전체 필수 MySQL이 API/Case/Worker/Recording persistence/공용 DB·jobs·usage·migration을 포함하고 관련 API/Recording 전체 비MySQL 및 gate unit을 별도 실행했으므로 중복되는 전체/nested 재실행을 줄였다. 미변경 Search/readout/evidence 등 untouched suite 위험과 현재 diff 원격CI는 남는다. PR#382/#385의 과거 CI를 대체 증거로 쓰지 않는다.
+- 소유 MySQL 마지막 감사는 system4+base1 schema/기본계정4/다른client0/transaction0/data lock0이었다. 첫 감사 helper 자신의 transaction1은 connectionID6689 대조로 확인하고 AUTOCOMMIT 감사로 보정했으며 원본 실패도 유지했다. init/server 로그를 보존한 뒤 SHUTDOWN했다. 소유 mysqld·Linux listener·datadir·Windows Python helper는 없다. 다만 원본 helper 최종 port assertion은exit1이고 Windows 공유 wslrelay PID2736/port62840 listener가 남았다. 공유 WSL/relay를 변경하지 않았으며 전체 정리PASS/잔여0을 주장하지 않는다.
+- 비차단 위험은 현재 source의 startup watchdog 실패 이력/재발 가능성, 공유 OS relay 잔여, 큰 bytes의 packet/RSS·기존PNG 식별 범위·RAM 검증의 전원장애 내구성 한계다. 신규 제품/Owner 판단 blocker는 발견하지 않았다. 현재 CI와 사용자 주도의 별도 독립 재리뷰는 대기다.
+- 변경18파일 전체 목록과 PR Implementation Notes는 [RT-11(b) note](./rt11b-frame-read.md)에 있다. `.codex-scratch/**`·RAW·JSON/JUnit·runner·임시DB/datadir·media·진단은 PR 제외다. 사용자 요청대로 reviewer/subagent 호출·staging·commit·push·PR 생성 없이 독립 재리뷰 가능한 상태에서 멈춘다. **RT-11 IN_PROGRESS · Refs #298 (RT-11(b))**를 유지한다.
+
+### RT-11(b) 최종 자원 후속 검사
+
+- 원본 assert_port_closed를 같은62840에 다시 실행해 PASS했고 Linux listener0/MySQL handshake 없음/이 작업 소유 Windows Python0을 확인했다. 최종 검사 시 포트 잔여는 해소됐다. 공유 WSL/relay를 변경한 적은 없고 제거 시점·원인은 단정하지 않는다.
+- 초기 helper exit1 및 당시 wslrelay listener·감사 실패 원본은 그대로 보존하며 후속 poststop-status.json의 closed=true로 소급하지 않는다. 현재 소유 DB/server/schema/account/connection/datadir/listener/process 잔여는 없으며 OS forwarding 지연의 이력은 위험 설명으로 남긴다.
+
+## 2026-10-21 RT-11(b) 독립 재리뷰 P2 검증·TDD 수정
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · PR/merge SHA pending.**
+
+- 사용자 지정 final-review.md와 reproduce.py를 직접 읽고 새 scratch 복사본으로 재현했다. concurrency2에서 body send3/선행 latency200 세 건, 손상 foreign503 대 unknown404가 재현됐다. 리뷰의 손상 row probe는 live DB가 아니라 row transport 주입임을 구분하며 이번 실제 MySQL 검증을 추가했다. 원본 리뷰·기존 증거는 수정하지 않는다.
+- P2-1 RED: 실제 payload/final ASGI send와 정상/cancel/disconnect/OSError/예상 밖 오류10건 및 P3 status4건이 실패(14 FAIL/9 PASS). permit을 outer pure ASGI middleware로 옮긴 뒤 동일23 PASS다. BaseHTTPMiddleware 안의 Response 수명으로 옮기는 방식은 쓰지 않았다. read cancellation은 실제 thread/DB cleanup까지 deferred release하며 모든 경로의 단일 반환/후속 admission을 검사한다.
+- P2-2 실제 MySQL RED3 FAIL/2 PASS(손상 frame/stream/link가 foreign503), GREEN5 및 공개 capability 회귀3 PASS다. Recording repository 내부 단일 SELECT가 frame→stream→source→case_asset 관계를 binary identity로 제한하고 같은 statement snapshot에서 owned metadata/bytes만 복원한다. caller connection/transaction과 기존 standalone capability 의미는 유지한다. API의 schema/private query 우회나 새 공개 capability는 없다.
+- RC의 여러 SELECT check/read gap을 없애고 단일 statement consistent snapshot을 사용한다. uncommitted 관계 삭제는 보이지 않고 commit 뒤 다음 statement는 UNKNOWN_REF이며 reader/writer transaction은 호출자 소유임을 실제 MySQL로 검사했다. 새 retention/reassociation 정책·row locking·Case callback을 추가하지 않았다.
+- 수정된 frame/API/Recording 직접59 PASS. 실제 TCP backpressure/disconnect도1 PASS다. 앞선 TCP2실패는 단일 큰 write에서 두 동시 blocked send가 관측되지 않은 fixture 실패로 보존한다. 실제 Uvicorn send를 합법적인 ASGI chunk로 분할하는 서버 adapter로 drain을 관측했고 timeout/제품 분기는 바꾸지 않았다.
+- 신규 parameter17개를 추가해 frame34개/8families다. 새 family 누락 gate RED2도 보존했다. DB 경로와 inventory 변경 때문에 현재 source의 전체 원본 mandatory MySQL/strict/mutation 및 전체 gate unit을 직접 실행 중이다. 기존 function AST/inventory, migration16개, workflow30분과 nested900은 보존했다.
+- P3는 P2-1의 실제 전송 수명에 관측을 통합하고 실제 HTTP status를 기록하는 작은 범위에서 수정했다. 새 metric/config/Owner 정책은 만들지 않는다. ASGI send 반환은 client의 수신 ACK를 증명하지 않으며 이 transport 한계는 유지한다.
+- 과거 import watchdog의 원인 미확정 위험·원본779/1 실패와 단독1 PASS는 그대로다. reviewer/subagent, staging/commit/push/PR은 수행하지 않는다. 새 증거는 ignored `.codex-scratch/rt11b-p2-20261021/`에 보존하며 상세와 최종 결과는 RT-11(b) note에 후속 기록한다.
+
+### RT-11(b) P2 수정 직접 검증 완료 · 별도 독립 재리뷰 대기
+
+- 현재 source의 전체 필수 MySQL child868 PASS/2604 phases/621.982초, skip·xfail·failure·error0 및 원본 strict JSON/JUnit CLI PASS868이다. parent1 PASS/1216.33초(wrapper1218.719초/exit0/source drift0)이며 nested900과 workflow30분을 바꾸지 않았다. parameter 누락6439건 모두 거부(frame442 포함), frame metadata136/family8 누락144건 모두 거부했다. gate unit6672 PASS/766.81초/exit0/source drift0다.
+- API·Recording 전체 비MySQL/process 회귀790 PASS/기존 외부 미디어15 SKIP/218 deselected/262.11초/exit0/source drift0다. 과거 broad779/1 및 단독1 PASS 원본은 보존하고 현재 PASS로 소급하지 않는다. import 지연의 정확한 원인과 재발 위험은 여전히 미확정이다.
+- boundary0, Contract62구조/26JSON/104의미, 두 workflow actionlint PASS다. checker 함수AST·기존 inventory·migration16개·workflow bytes 및 strict gate 정책을 유지한다. 별도 ASGI/TCP TDD 원본과 초기 TCP fixture2 FAIL도 보존한다.
+- bare 전체 pytest는 미실행이다. 전체 필수 MySQL·누락 mutation·gate unit과 관련 API/Recording/process 비MySQL을 직접 다시 실행했으므로 겹치는 full/nested 반복은 줄였다. 미변경 도메인 비MySQL 전체·현재 diff 원격CI·별도 독립 재리뷰가 남으며 선행PR CI나 최초 구현851/6483을 이번 결과로 재사용하지 않는다.
+- 종료 전 소유 MySQL8.4.7 감사는 system4+base1 schema/기본계정4/다른client0/transaction0/data lock0/commit flush1/fsync였다. 로그 보존 후 SHUTDOWN/UUID datadir 정리했다. Linux mysqld/listener/datadir와 소유 Windows Python은 없다. helper 최종 포트 assertion exit1 및 첫 관측의 Windows52571 공유 wslrelay PID30640 listener는 별도 보존한다. 공유 WSL/relay는 변경하지 않았으며 후속 상태는 추가 기록한다.
+- 두 P2는 직접 RED→GREEN으로 수정했다. P3도 새 관측 정책 없이 실제 ASGI 수명/status로 바로잡았다. 미해결 제품 blocker는 발견하지 않았으며 별도 독립 재리뷰·현재CI가 필요하다. 과거 watchdog·OS forwarding 지연·큰 bytes/RSS·PNG 식별·RAM 내구성 한계는 남는다. 전체22파일 목록·PR Implementation Notes·원본 위치는 [RT-11(b) note](./rt11b-frame-read.md)에 있다. scratch/RAW/JSON/JUnit/runner/임시DB/진단/외부리뷰는 PR 제외이며 원본을 삭제하지 않는다. reviewer/subagent·staging·commit·push·PR 생성 없이 **RT-11 IN_PROGRESS · Refs #298 (RT-11(b))**를 유지한다.
+
+#### P2 수정 후 최종 자원 확인
+
+- 원본 assert_port_closed를 동일52571에 다시 적용해 PASS했다. Windows listener/소유Python0, Linux listener/소유mysqld0이며 WSL `test ! -e`의 직접 인자로 생성 UUID datadir 부재도 확인했다. `poststop-direct-status.json`은 최초 `poststop-status.json`과 별도로 보존한다. helper exit1/relay 잔여 이력을 소급하지 않으며 해소 시점·원인은 단정하지 않는다. 공유 WSL/relay 변경 없이 현재 소유 테스트 자원 잔여는 없다.
+
+## 2026-10-21 RT-11(b) 후속 독립 재리뷰 P1 검증·TDD 수정
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · PR/merge SHA pending.**
+
+- 후속 reviewer 보고서/실제 MySQL 재현부를 직접 읽고 복사본으로 재현했다. MySQL8.4.7의 utf8mb4_bin PAD SPACE/공백 비교1, 기존 owns_frame=False 대 신규 capability foreign PNG68bytes·HTTP200/unknown404를 확인했다. 기존 P2 후속 판정을 소급 수정하지 않는다.
+- 실제 column/index/collation과 길이 없는 CAST AS BINARY/NO PAD 후보를 대조했다. trailing/leading/multiple space·case·비ASCII/정규화 차이·긴 값은 binary cast에서 구분되고 self는 일치했다. 신규 단일 ownership query의 JSON 관계·case/kind identity와 table-kind residual만 정확 비교로 바꿨다. frame의 SHA256 unique index 후보와 기존 FrameRef 복원 validation은 유지한다. EXPLAIN frame const1row와 kind index 후보를 확인했다. schema/migration·모델 허용 범위·공개 surface·caller transaction/lock 계약은 바꾸지 않았다.
+- capability RED6 FAIL/12 PASS, 독립 HTTP RED6 FAIL/12 PASS, case-scope RED1 → 첫 GREEN37 PASS다. owned FrameRef metadata의 기존503 의미 회귀RED1을 추가해 과한 후보 predicate를 제거했고 최종 frame/API/Recording/TCP98 PASS/80.98초다. 정상 양방향 bytes200·foreign/unknown404·손상 foreign404·owned503/unavailable, 기존 P2 ASGI 수명/취소/disconnect/전송 예외/checkout0와 transaction 경계를 포함한다.
+- 신규 exact_identity family 누락RED1을 보존했다(첫 선택식0건은 유효RED가 아님). inventory는72 parameters/9families이며 이전34/8을 포함한다. 현재 source의 전체 필수 MySQL·strict 원본 JSON/JUnit·누락 mutation·gate unit·관련 process 회귀를 직접 검증 중이다. workflow30분/nested900/skip·xfail 정책과 기존 checker 함수는 유지한다.
+- 추가로 기존 get_case_assets가 정확히 존재하지 않는 case_id+공백 alias에 owns_frame=True를 반환하는 관측을 보존했다. 수정된 신규 capability는 UNKNOWN_REF/HTTP404다. 기존 경로로 범위를 확대하지 않으며 별도 Owner/보안 검토 항목으로 보고한다. 기존 전체 surface의 다른 실제 case bytes 노출을 이 probe로 단정하지 않는다.
+- 과거 watchdog 실패·기존 리뷰·실패·RAW를 보존한다. 새 원본은 ignored `.codex-scratch/rt11b-p1-20261021/`이며 상세 선택/SQL/검증/위험은 [RT-11(b) note](./rt11b-frame-read.md)에 있다. reviewer/subagent·staging·commit·push·PR 생성 없이 미스테이징 상태를 유지한다.
+
+### 2026-10-22 RT-11(b) 사용한도 중단 후 검증 재개
+
+- 중단 전 mandatory-p1 완료 원본을 확인했다. child906 PASS/2718 phases/761.840초, skip·xfail·failure·error0이며 재개 후 현재 strict JSON/JUnit CLI PASS906이다. parameter 누락 mutation6933건 전부 거부(frame936 포함), frame metadata288/family9 누락297건 전부 거부다. source drift0이고 이전868 PASS를 이번 결과로 재사용하지 않는다.
+- parent1 PASS/3453.90초(wrapper3453.063초/exit0)였다. 실행 중 System 절전/복귀 이벤트21:47:50/22:23:01을 관측했다. 원인 기여도를 임의 산정하지 않으며 parent wall time을 workflow30분 충족으로 표시하지 않는다. 설정된 child900/wrapper1800과 workflow30분은 그대로고 현재 원격CI budget은 미검증이다.
+- 재개 시 원래 helper/MySQL listener/RAM datadir는 보이지 않았다. 원래 server의 명시적SHUTDOWN/종료전 감사/로그 회수를 완료했다고 주장하지 않는다. 첫 gate-unit-p1은 끊긴DB preflight exit4로 별도 보존했다. 새 UUID server/CA는 resume-20261022/에 분리하고 남은 gate/회귀만 같은 source·900초 runner 제한으로 실행한다.
+- 기존 P2 inventory 전부 유지+38 parameters/1family 추가(최종72/9), checker 함수AST 불변, 전체 migration17/workflow5 bytes 불변을 확인했다. boundary0/Contract62구조·26JSON·104의미/두 workflow actionlint PASS다. 기존 code 필터 migration16 집계와 구분한다. watchdog·이전 실패·리뷰 증거는 소급하지 않는다.
+
+### RT-11(b) P1 검증 완료 기록 · 회귀 차단 사항 보존 · 별도 재리뷰 대기
+
+- gate-unit-p1-resumed 전체7091 PASS/447.73초(wrapper452.5초/exit0/source drift0)다. 현재 전체 필수 MySQL906/strict·mutation6933 및 frame metadata/family297건 모두 거부와 구분해 보존한다. 과거 P2의868/6672를 이번 PASS로 재사용하지 않는다.
+- 관련 API/Recording 전체 비MySQL/process는788 PASS/15 SKIP/2 FAIL/256 deselected/330.81초(wrapper337.11초/exit1/source drift0)다. 실패는 test_actual_server_cleanup_failure_exit_and_listener_release의5초 child timeout(빈 stdout/stderr), test_receive_abort_sends_no_status_and_never_registers[disconnect]의 expected[] 대 observed['idle']이다. 원본을 삭제하거나 합성 전체PASS로 바꾸지 않는다.
+- 제한/clock/assertion 변경 전에 source·call 경계를 조사하고 phase 진단을 보존했다. 실제 cleanup 진단 child는 import 후 server 반환/listener/assertions를 완료했지만 launch포함 wall5.407초이므로 원래5초 deadline PASS로 쓰지 않는다. upload 진단은 실제 request→disconnect16ms/closed[]였다. 원래 두 node 분리 확인은1 FAIL/1 PASS이며 cleanup은 동일5초 timeout 재현, disconnect만PASS다. 원본 순간의 원인은 확정할 수 없고 제품/fixture/환경 원인 미확정의 현재 검증 차단 항목으로 유지한다. upload 의미나 process 제한은 바꾸지 않았다.
+- SQL P1 재현은 해소됐고 이전 P2 targeted는 통과했으나 broad 회귀PASS/병합 준비 완료를 선언하지 않는다. 기존 case-id alias는 별도 Owner/보안 검토, 과거 import watchdog은 원인 미확정 위험으로 남는다. bare 전체pytest/현재원격CI/별도독립재리뷰는 미실행이다. 전체 필수MySQL/gate/관련회귀를 직접 실행했고 이미 관련 실패가 재현돼 중복full/nested를 반복해PASS를 만들지 않았다. 원격30분 budget·성공을 로컬/과거CI로 대체하지 않는다.
+- 재개 후 소유server 감사는 MySQL8.4.7/system4+base1 schema/기본계정4/다른client0/transaction0/data lock0/commit flush1/fsync였다. 로그 보존 후 SHUTDOWN/생성UUID datadir 정리/helper exit0을 확인했다. 중단 전server의 종료전감사가 없다는 제한은 유지한다. 최종 잔여/파일해시는 후속 감사로 보존한다.
+- 현재22개 후보 중 이번수정6개이며 전체목록/PR Implementation Notes/상세 실패·진단은 [RT-11(b) note](./rt11b-frame-read.md)에 있다. scratch·RAW·JSON/JUnit·mutation·runner·DB/CA/임시media·진단·외부리뷰는PR제외다. 기존 증거를 유지하고 reviewer/subagent·staging·commit·push·PR 생성 없이 검증 차단을 공개한 독립 재리뷰 가능 상태로 전달한다. **RT-11 IN_PROGRESS · Refs #298 (RT-11(b))**.
+
+- 최종 poststop-direct-status는 port closed/datadir absent/Windows 소유Python·listener0/Linux 소유mysqld·listener0이다. 공유 WSL/relay 변경0이며 이전 두 server 포트도 closed다. final-audit.json에22파일 해시/이번6파일 차이/source 일치/staging0/이전Log prefix 보존/미해결 broad2 FAIL·단독1 FAIL을 함께 기록했다. 감사PASS를 전체 회귀PASS로 재분류하지 않는다.
+
+### 2026-10-22 RT-11(b) 두 회귀 실패 systematic investigation 후속 기록
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b))**
+
+- 사용자 요청대로 원인 확정 전 제품/테스트를 고치지 않았다. 현재22파일/index hash를 보존하고 같은HEAD/develop c491a95b8726377c2eca2ac3dad6bcc6ce416670을 일반 archive로 추출해 비교했다. branch/worktree/reset/stash는 없었다. 새 scratch는 `.codex-scratch/rt11b-regression-20261022/`다.
+- Cleanup 원래5초는 Popen 반환 뒤 communicate budget이며 child import/setup부터 EOF까지 포함하고 별도GO가 없다. 과거 parent stack의 stdout reader join만으로 당시 child phase/근본 원인을 복원할 수 없다. 동일AST/동일deadline 계측에서 current3.141초/base4.547초, cache 없는 snapshot pair current3.094초/base2.500초 모두 expected exit1이었다. Base4.2초 stack은 main 반환 뒤 socket probe/TCP0였다. Current broad는 communicate425873.125→425875.609, main1.969초/atexit2.282초, 종료 tasks0/checkout0/permit2·waiter0/child·TCP0이다. 실제signal 전송 없이 원래 handler 복원 assertion을 검사했다. 이 관측을 과거 timeout 원인 확정으로 부르지 않는다.
+- Disconnect 순서 분할: 직전2+target3 PASS, 앞80+target81 PASS, 뒤80+target81 PASS, 전체160+target161 PASS; baseline의 존재하는 같은 묶음138 PASS다. 최소 오염 predecessor는 발견하지 못했다. thread/loop/process/socket/env/signal 복원과 fixture-local 상태를 확인했고 실제 request→disconnect/등록0/closed[]/checkout0/permit2를 관측했다. Native clock15.625ms 해상도와40ms 민감성은 관측일 뿐 과거 원인 확정이 아니다. timeout/sleep/clock/재시도/assertion/skip/xfail 정책은 바꾸지 않았다.
+- 외부 phase/timing 관측을 넣은 원래 API/Recording broad790 PASS/기존15 SKIP/256 deselected/184.38초/source drift0, fresh frame/API/Recording/TCP98 PASS/51.55초(실제MySQL72/216 phases/skip·xfail0)다. 계측 child prefix/wrapper를 공개하며 무계측 broad라고 표현하지 않는다. 원래 child를 쓴 선행161/current·138/baseline PASS와 구분한다. 과거2 FAIL/단독1 FAIL 및 import watchdog 실패는 소급하지 않는다. 제품/테스트수정0이며 추측성RED→GREEN은 없다.
+- 현재checker로 보존된 전체906/2718-phase 원본 strict PASS, 독립frame parameter936/metadata288/family9 누락1233건 모두 거부, frame gate unit801 PASS/6290 deselected/24.63초다. 기존 전체906/6933 mutation/7091 gate의 source/config 일치를 대조하며 새 전체실행으로 표현하지 않는다. Boundary0/Contract62·26·104/두workflow actionlint PASS다. 제품/test/config 불변이라 전체pytest/MySQL/gate를 반복하지 않았고 현재원격CI는 미실행이다. 기존30분/900초와inventory정책은 불변이다.
+- 현재 직접 관련 회귀는GREEN이지만 과거 child/idle 원인과 RT-11(b) 인과관계는 확정하지 못했다. 기준PASS만으로 무관함을 입증했다고 하지 않으며 역사적실패해소/최종병합승인도 선언하지 않는다. 현재GREEN 증거와 재발불확실성을 함께 독립 재리뷰할 수 있다. 별도 기존alias 보안관측/Issue 후보는 PR제외 scratch에 분리하고 기존경로를 수정하지 않았다.
+- 이번 round 변경은 note/Log의 추가기록2개뿐이며 전체22개 후보는 그대로다. reviewer/subagent·staging·commit·push·PR/Issue 생성은 하지 않는다. Scratch/archive/원본JSON·JUnit/stack·process/runner/DB·CA/media/별도보안자료는PR제외이며 이전실패·리뷰를 유지한다.
+
+- 이번 조사server는 종료 전 MySQL8.4.7/system4+base1/계정4/다른client0/transaction0/data lock0를 감사하고 로그 보존 뒤SHUTDOWN/helper exit0으로 정리했다. 최종datadir absent/port closed/Windows 소유Python·listener0/Linux mysqld·listener0, 추가 matching Python0이다. 공유 WSL/relay 변경0이며 final-audit.json에 제품/test/config 불변·이번문서2개·index byte/staging0·현재계측GREEN·역사원인미확정을 함께 기록했다. Fresh frame72개만의 부분report는 전체strict gate에서 거부됐다.
+
+### 2026-10-22 RT-11(b) 최종 독립 재리뷰 판정 및 기존 결함 후속 연결
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · PR pending · merge SHA pending**
+
+- 사용자에게 전달받은 최종 독립 재리뷰 판정: 기존 P1 exact identity, P2 ASGI 전송 lifetime, P2 ownership/손상 정보 노출 및 metric P3가 해소되었으며, 현재 RT-11(b) diff에서 새로운 P1/P2는 없다. 커밋·중간 PR 준비가 가능한 상태이며, 실제 병합은 현재 변경의 원격 CI 성공 후 진행한다. 이 기록에서는 staging·commit·push·PR 생성을 수행하지 않았다.
+- 최종 reviewer의 직접 검증과 구현 단계 보존 증거를 구분한다. 앞선 구현 단계의 계측 broad 790 PASS는 계측을 포함한 보존 증거이며, 무계측 broad PASS 또는 reviewer가 새로 직접 실행한 결과로 표현하지 않는다. 이번 기록은 전달받은 최종 판정의 후속 기록이며, reviewer 직접 검증의 실행 수치나 상세 결과를 새로 추정하지 않는다. 테스트는 재실행하지 않았다.
+- cleanup timeout, disconnect idle, import watchdog의 과거 원인은 여전히 미확정 비차단 위험으로 유지한다. 과거 실패 원본과 이력을 보존하며, 이후 성공이나 최종 재리뷰 판정으로 당시 실패의 원인이 해결되었다고 소급하지 않는다.
+- Related #387 — [Recording 소유권 판정에서 후행 공백 식별자를 구분하지 못하는 문제](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/387): 기준 develop에서도 재현되는 기존 결함이다. RT-11(b)의 신규 frame 경로에서는 exact identity로 차단되므로 RT-11(b)의 신규 회귀나 병합 차단으로 분류하지 않는다. RT-11(b)에 수정 범위를 혼입하지 않고 별도 Owner 판단·PR로 처리한다.
+- 기존 이력은 수정·삭제하지 않고 이 후속 기록만 추가했다. 상태는 RT-11 IN_PROGRESS, 연결은 Refs #298 (RT-11(b))와 Related #387이며 PR·merge SHA는 pending이다.
+
+### 2026-10-22 RT-11(b) PR #388 원격 CI 시간 초과 조사 및 gate 비용 축소
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · Related #387 · PR #388 · merge SHA pending**
+
+- 작업 시작 시 현재 branch `codex/rt11b-frame-read`, HEAD `1eb319c129ae8682c452c73231e930b4d4bdbae6`, working tree/index clean을 직접 확인했다. 같은 PR을 유지했고 staging·commit·push·PR 수정·CI 재실행·reviewer/subagent 호출은 하지 않았다. 원격 원본 로그와 새 실험 자료는 PR 제외 `.codex-scratch/rt11b-ci388-20261022/`에 보존했다.
+- GitHub에서 직접 읽은 PR 현재 상태: boundary-check run `39663616292` success, python-tests run `39663616303`/job `119442752152` cancelled, MySQL execution gate skipped다. Full pytest는 UTC 19:41:06.222부터 20:10:20.520까지 약 1,754.30초 실행되었다. 마지막 완성 progress 줄은 20:09:47.041의 97%이며 약 33.48초 뒤 job 취소 메시지가 나왔다. 명시적인 pytest failure summary는 없고 artifact도 없다. `-q` 로그만으로 취소 순간의 정확한 node/stack 또는 개별 fixture·DB·mutation 시간은 복원할 수 없다. 로컬 collection 순서에 대한 마지막 batch 매핑은 추정일 뿐 특정 테스트 hang의 증거로 쓰지 않는다.
+- 기준 develop `c491a95b8726377c2eca2ac3dad6bcc6ce416670`의 원격 run `39555360021`/job `119073755130` 로그도 직접 읽었다. Full pytest는 1,195.88초에 9,755 PASS/27 SKIP, strict MySQL gate는 839 tests PASS였다. 두 원격 실행은 동일 runner image `20261018.339.1` 및 MySQL 8.4.11을 사용했다. PR의 미완료 full step만으로 이미 기준보다 약 558.42초 길지만, 이는 완료한 suite끼리의 비교가 아니다. setup은 약 1분 규모여서 전체 비용의 주원인은 pytest step이다. 기준의 성공을 현재 diff 검증 성공으로 재사용하지 않는다.
+- 기존 archive의 관련 5개 source/config가 기준 develop과 일치함을 대조한 뒤 같은 Windows 환경에서 collection만 비교했다. 기준 9,778개와 수정 전 PR HEAD 10,677개로 RT-11(b)는 899개를 추가한다(gate unit 801개 + frame 관련 98개). 기준 원격 9,782개와 로컬 9,778개에는 환경 차이가 있어 서로 섞어 증가분을 계산하지 않는다. 조사 중 최초 895개라는 계산은 이 교차 환경 비교였으며 위 899개로 정정한다. 이번 회귀 테스트 3개는 그 이후 추가분이다.
+- 확인된 구조적 비용: 전체 suite 안의 `test_actual_report_rejects_each_missing_migration_check`가 전체 MySQL inventory를 별도 child로 재실행하며 각 fixture의 schema/migration도 반복한다. 해당 node를 포함하는 progress batch 간격은 기준 512.323초, PR 814.096초로 약 301.773초 증가했다. 이 간격은 다른 batch 내 테스트도 포함하므로 child 단독 duration으로 부르지 않는다. 이 재실행의 acceptance 의미와 900초 child 제한은 유지했다. process/network 검증과 등록된 mutation을 제거하거나 broad 조합을 축소하지 않았다. 원격 phase별 세부 증가분과 runner 부하의 기여도는 미확정이다.
+- 로컬 프로파일로 반복 계산 두 곳을 확인했다. (1) strict checker는 Case 필수 항목마다 모든 node ID를 다시 분해했다. 기존 판정의 `(path, function)` count를 Counter 한 번으로 집계하도록 바꾸었다. (2) 실제 report parameter mutation은 약 1.2MB report 전체를 6,933번 deepcopy했다. test utility `copy_parameter_evidence`로 해당 node의 metadata/phase와 변경할 목록만 소유하게 했다. 다른 evidence는 읽기 전용 공유한다. 같은 906-node report 100회 복사 실험은 전체 deepcopy 1.339초/parameter copy 0.0149초였고, 100회 validator 실험은 기존 0.444초/수정 0.274초였다. 이는 로컬 실험이며 원격 job 단축 시간이나 30분 내 완료를 보장하는 수치가 아니다. 전체 mutation cProfile 실험은 계측 deepcopy 비용 때문에 중단했고 부분 XML과 중단 기록을 남겼으며 PASS로 분류하지 않는다.
+- RED→GREEN: node 재분해 회귀는 기존 14,264회가 881 nodes의 2회 예산을 넘는 assertion으로 RED(1 FAIL), 최소 Counter 변경 뒤 GREEN(1 PASS)이었다. parameter 복사 격리는 원본 evidence가 바뀌는 두 assertion으로 RED(2 FAIL), target만 소유하는 구현 뒤 GREEN(2 PASS)이었다. 전체 gate unit 직접 실행은 7,092 PASS/skip·xfail 0, stdout 506.16초다. 원본 보존·서로 다른 mutation 간 격리와 무관한 evidence 비복사도 검사했다. 제품 코드와 Recording SQL/transaction/ASGI 경계는 수정하지 않았다.
+- 현재 integration mutation 코드를 보존된 실제 906-test JSON/JUnit에 적용한 재검사는 124.891초에 완료했다. 6,933 parameter mutation과 metadata/family omission 1,029건(그중 frame 297건)을 모두 거부했고 원본 파일 hash도 유지했다. 현재 checker CLI의 동일 전체 원본 strict JSON/JUnit 재검사도 906 tests PASS다. 이들은 현재 코드의 직접 재검사지만 DB 실행 자체는 구현 단계 보존 증거이며 새로운 전체 MySQL 실행이 아니다. 새 frame-only report는 전체 strict gate에서 의도대로 거부됐다.
+- 새 전체 pytest/MySQL 시도는 pytest 진입 전 owned server bootstrap의 기존 60초 제한에서 WSL `sh` stdin 종료 대기로 막혔다. 최소 stdin probe도 10초에 timeout, 명시적 `exit`를 넣은 probe는 3.875초/exit 0이었다. timeout을 늘리지 않고 scratch bootstrap에만 명시적 exit를 사용했다. 이후 frame 실행의 첫 구성은 MySQL preflight에서 CA 검증 오류로 중단했다. 연결 인자와 SSLContext를 대조하니 `ssl_verify_cert` 인자 사용 시 복사한 CA가 context에 없었고, 기존 `ssl_ca`/`ssl_check_hostname` 구성은 해당 CA를 포함하며 CERT_REQUIRED를 유지했다. 이 구성으로 별도 새 evidence 경로에서 실행했다. 실패한 구성의 원본을 덮어쓰거나 PASS로 소급하지 않았다. 최초 bootstrap의 child stdout/stderr·init log 전체는 별도 파일로 수집되지 못한 제한이 있으며 tool traceback/실험 기록과 후속 실패 raw를 보존한다.
+- 새 실제 MySQL 8.4.7 frame/API/Recording/process/TCP 회귀는 98 PASS/skip·xfail 0(83.89초), 그중 MySQL 72개/216 phases 전부 passed다. P1 exact identity, P2 ASGI send lifetime·checkout 0·cancel/disconnect/send exception 및 corrupt cross-case 격리를 포함한다. 테스트 소스에 계측 hook을 넣지 않았지만 소유 DB bootstrap의 명시적 exit와 CA 구성은 공개한다. pytest exit 0 뒤 controller의 기존 port-closed assertion이 실패해 controller 전체 성공으로는 부르지 않는다. 당시 port 관측 실패의 원인은 확정하지 않았고 테스트/제품 코드를 고치거나 재실행하지 않았다.
+- 종료 전 감사는 system schema 4+소유 base 1, 원래 계정 4개, 감사 connection 외 client 없음, transaction/data lock 0이었다. 종료 후 별도 직접 감사는 소유 datadir 부재, Linux mysqld 없음, 소유 Windows listener/live TCP row 없음, 소유 port 연결 미성립을 확인했다. 한 중간 관측의 PID 0 TIME_WAIT는 최종 감사에서 0개였으며 listener로 분류하지 않았다. 감사 중 현재 Python 자체와 테스트 잔여를 구분했고 공유 WSL/relay를 종료·변경하지 않았다. controller assertion 실패는 이 후속 감사로 지우거나 원인 확정하지 않는다.
+- Boundary 직접 PASS(위반 0), Contract fixture 직접 PASS(62/26/104), 두 workflow actionlint 1.7.12 직접 PASS다. 최초 boundary 실행의 Windows cp949 출력 인코딩 오류는 기록하고 UTF-8로 동일 검사 본체를 실행했으며 검사 규칙은 바꾸지 않았다. `.github/workflows/python-tests.yml`, required inventory/skip·xfail/strict JSON·JUnit 정책과 nested 900초, workflow 30분은 불변이다.
+- 검증 한계/후속: 전체 bare pytest는 위 bootstrap 실패로 완주하지 못했고 새 전체 MySQL 906개도 반복하지 않았다. 변경은 gate 계산과 fixture 복사에 국한되어 새 전체 gate unit·기존 실제 전체 report의 모든 mutation·새 frame 실제 MySQL을 조합해 검증했다. Linux 원격 전체 실행시간과 이 수정의 원격 효과는 미확인이다. 따라서 원격 CI timeout이 해결되었다고 선언하지 않으며 현재 수정의 fresh reviewer 검토와 이후 승인된 원격 전체 CI/strict gate 성공은 병합 전 남은 조건이다. 과거 cleanup timeout·disconnect idle·import watchdog 원인은 계속 미확정 비차단 위험이며, 이번 WSL/CA/controller 관측과 동일 원인으로 단정하지 않는다. Related #387도 별도 Owner 범위 그대로다.
+- 이번 후속 PR 후보 변경은 Log, checker, 기존 gate unit/integration 각 1개, 새 mutation utility/unit 각 1개로 총 6파일이다. scratch·원격 raw·RED/GREEN JSON/JUnit·runner·CA·임시 DB·프로파일·진단 자료는 PR 제외이며 기존 실패·리뷰 이력을 유지한다. 미커밋·미스테이징 상태에서 fresh review를 위해 멈춘다.
+
+- 관측 표현 보정: 새 bootstrap timeout에서 직접 확인한 phase는 WSL child communicate 대기다. stdin EOF 종료 문제는 최소 probe와 명시적 exit 결과가 지지하는 해석이며 최초 실행의 stack·init log 전체가 없어 모든 지연 원인을 확정하지는 않는다. 새 CA/port 관측도 원격 CI 또는 과거 세 실패의 원인으로 확장하지 않는다.
+
+### 2026-10-22 RT-11(b) PR #388 두 번째 원격 timeout · Linux tail 비교 · unit fixture 후속 최적화
+
+**RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · Related #387 · PR #388 · merge SHA pending**
+
+- 시작 시 현재 branch `codex/rt11b-frame-read`, HEAD `953c9234a13980476ac2420159974305d04b4961`, working tree/index clean을 확인했다. 원격 boundary run `39736631177` success, python-tests run `39736631209`/job `119683741878` cancelled와 MySQL gate skipped를 직접 읽었다. 원격 artifact는 없다. 원본 및 이번 자료는 PR 제외 `.codex-scratch/rt11b-ci388-second-20261022/`에 유지한다.
+- 같은 lock/Ubuntu 24.04/Python 3.12 Linux collection은 develop 9,778개, 원격 PR HEAD 10,680개다. 앞선 기록의 원격 9,782 대 로컬 9,778 환경 차이라는 설명을 보정한다. 9,755 PASS+27 SKIP에는 collection skip 4개가 포함되며, 실제 원격 progress의 selected node도 9,778개다. 최신 PR의 추가 902개는 RT-11(b)의 899개와 직전 후속 unit 3개이며 이번 새 unit 2개는 별도다. 이전 이력은 수정하지 않는다.
+- 로그의 마지막 완성 줄은 10,512번째 결과/98%(UTC 07:21:02.038541)이고 69.896초 뒤 취소됐다. Linux 순서 및 pytest 8.4.2 terminal 구현과 대조한 마지막 call 결과 node는 `tests/worker/test_redelivery_mysql.py::test_redelivery_metrics_preserve_after_case_stopped_meaning[CANCELLED]`다. 점은 call 이후·teardown 이전에 출력되므로 이 node의 teardown 완료는 미확정이다. 다음 72개(10,513~10,584)는 redelivery 6/reflection 40/sweep 26이며 단일 active node는 확정할 수 없다. 정상 순서·로그 전달을 전제하면 이후 96개는 미도달로 추론한다. 부분 batch에 숨은 실패 여부도 확정하지 않는다. 전체 node 목록과 phase별 monotonic 시간은 scratch `tail-timings.md`/CSV에 있다.
+- 원격 API step 시간(develop/이전PR/최신PR): setup smoke 제외 49/60/56초, synthetic smoke 2/4/3초, full pytest 1,202/1,754/1,756초다. develop pytest 내부 summary 1,195.88초와 step 전체 시간을 구분한다. nested 포함 batch는 512.323/814.096/670.406초다. 이전 최적화 뒤 약 143.690초 줄었지만 동일 pure gate-unit batch 7,056개는 293.177→345.686초로 52.509초 길어졌다. 원격 개별 child/fixture/mutation duration은 현재 로그만으로 분리할 수 없으며 batch 시간을 단일 node 시간으로 쓰지 않는다.
+- develop/PR의 rank ≥97% 동일 321개를 같은 Linux venv·lock·MySQL 8.4.7·filesystem/cache 조건에서 따로 실행해 각각 321 PASS/663.331초와 321 PASS/664.213초였다. 각각 실제 MySQL 220개/660 phases, skip·xfail 0이다. 첫 97% 표시 줄에 포함된 그 이전 63개도 별도 실행해 각각 63 PASS/13.724초와 63 PASS/13.383초를 보존했다. 이 네 targeted 실행을 전체 suite PASS로 합치지 않는다. 전체 384개 protocol 시간 합은 641.736→634.233초, setup 268.214→257.901, call 354.590→357.447, teardown 15.729→15.651초다. 해당 21개 테스트 파일 Git blob은 동일하다. 새 tail 회귀나 단일 고정 hang의 증거는 없었지만 broad 전체 순서의 영향은 배제하지 않는다. GitHub MySQL 8.4.11·filesystem·CPU/Python patch 차이 때문에 절대시간을 원격 예측으로 그대로 쓰지 않는다.
+- 가장 긴 PR node는 기존 process-kill redelivery `[running]` 21.831초(develop 24.880초)였고, 여러 OS process 경계와 DB setup에 비용이 분산됐다. sleep·assertion·timeout·fixture isolation을 바꾸지 않았다. 최초 scratch runner의 multiprocessing main guard 누락은 재귀 계측 실행으로 확인해 소유 자식만 종료했고 원본을 무효 계측으로 보존했다. v2 결과와 합치거나 제품 결함으로 분류하지 않았다.
+- 보존된 같은 실제 906-test report로 Linux에서 이전 `1eb319c`/최신 `953c9234` evidence 알고리즘을 직접 재검사했다. 217.026→85.995초, whole report deepcopy 8,213→1,280회와 parameter copy 6,933회다. parameter mutation 6,933건과 metadata/family omission 1,029건은 양쪽 모두 거부했다. validation 횟수도 8,214회로 같으며 원본과 각 실험 archive를 유지했다. 이는 과거 DB 실행 증거에 대한 현재 코드/알고리즘 비교이고 새로운 전체 MySQL 실행은 아니다. 원격 nested batch 감소와 방향은 같지만 그 감소 전부의 원인으로 확정하지 않는다.
+- 새로 확인한 unit fixture 병목: 70개 표본 프로파일에서 `good_report` 2.298초와 checker 반복 import 1.682초(inclusive)가 컸다. 무계측 100회 fixture 생성 가설 실험은 1.299→0.199초, report 동일이었다. family마다 모든 parameter를 훑던 분류를 local family set membership으로 바꾸었고, test helper `checker()`만 `@cache`로 읽기 전용 재사용한다. mutable report는 매번 새로 만들고 production validation 결과를 cache하지 않는다. production checker와 제품 코드는 수정하지 않았다.
+- 별도 RED→GREEN: family 재탐색 284회로 1 FAIL→2회 이내 1 PASS, checker load 3회로 1 FAIL→최대 1회 1 PASS였다. 후자는 valid→invalid→valid 검증도 수행한다. 동일 깊이의 일반 Git archive 참조 복사본에서 정상 pytest 전체 gate unit 2파일을 비교해 수정 전 7,094 PASS/411.780초, 수정 후 7,096 PASS/199.536초(약 51.5% 단축), 모두 skip·xfail 0이었다. 새 source hash와 모든 JSON/JUnit/RAW를 보존했다. 2개 증가는 새 회귀이며 기존 inventory는 제거하지 않았다. branch/worktree는 만들지 않았다.
+- 다음 CI 시간은 보장이 아닌 모델이다. 같은 마지막 call의 develop ordinal 9,610이 progress 9,576~9,648 사이여서 그 뒤 완료까지 65.299~99.721초라는 범위를 얻었다. 같은 tail 속도를 가정한 미수정 job은 1,810~1,845초 추정이다. 실측 unit 비율 0.48457을 원격 unit window에 적용하면 약 178.178초 절감이며 gate/post 가정상 여유 10초 포함 1,642~1,677초(약 27분 22초~27분 57초)다. 원격 변동 52.509초, filesystem·CPU 차이 및 broad-only stall/실패 가능성을 고려하면 실측 완료나 PASS로 표현할 수 없다. 상세 가정은 scratch `budget-model.json`에 있다.
+- 대안도 비교했다. DB bootstrap clone/공유는 fresh schema·migration·transaction·concurrency 격리 증명이 필요해 적용하지 않았다. evidence 계산 공유는 이번 unit helper 최소 수정으로 선택했다. outer full(단일 nested module 제외)와 그 nested parent test의 병렬 배정은 중복 검증을 유지하면서 critical path를 줄일 수 있지만 상위 collection manifest의 정확한 합집합/누락·중복, child 900초, artifact/required-check/전체 30분 예산을 설계해야 한다. artifact 뒤 gate는 head·merge SHA/run·attempt/policy·manifest 일치와 원본 JSON/JUnit 필수, upstream 실패/cancel/skip의 명시적 실패 전파가 필요하며 과거 성공 fallback이나 합성 PASS는 금지다. 각 job에 30분씩 줘 workflow 상한을 늘리는 안은 제안하지 않는다. 구체 비교는 scratch `investigation.md`에 남겼다.
+- 현재 helper 수정은 Plan §12.3 test-harness implementation detail이며 Contract·Decision·Baseline 의미/다른 Owner surface 변경은 없다. job 분리 자체가 자동으로 Contract Owner 승인 대상이라는 근거는 없지만 required-check·30분 적용·artifact acceptance 의미를 바꾸면 CI policy 판단 항목이다. 사용자 지시대로 workflow 수정 전에 비교만 보고하고 멈춘다. 새 Decision Gate는 만들지 않는다.
+- Boundary 직접 PASS(0), Contract fixture 직접 PASS(62/26/104), 두 workflow actionlint 직접 PASS, 현재 checker CLI의 보존된 전체 JSON/JUnit 906개 strict 직접 재검사 PASS다. full pytest/새 전체 MySQL은 실행하지 않았다(Linux Docker/media 도구 부재 및 이번 helper 변경 범위). 새 실제 DB는 위 tail 220개씩이며 보존 evidence와 합쳐 전체 MySQL PASS로 표현하지 않는다. P1/P2 제품 source·frame inventory는 그대로이고 이번 frame 98개 재실행은 하지 않았다. 과거 cleanup timeout/disconnect idle/import watchdog 원인은 여전히 미확정이며 이번 원인으로 소급하지 않는다.
+- 소유 DB audit는 system 4+base 1 schema, 기존 account 4개, 감사 외 client 없음, transaction/data lock 0이었다. 무효/v2 두 server 모두 종료 후 datadir 부재·연결 거부, 소유 process/listener 0과 unit/replay 임시 폴더 제거를 최종 감사했다. 진단은 archive에 보존했고 공유 WSL/relay는 변경하지 않았다. 이번 tracked 변경은 Log와 `tests/common/db/test_mysql_gate.py` 2개뿐이다. scratch 전체(uv/venv/cache/reference snapshot/RAW/JSON·JUnit/runner/timer/DB log/진단)는 PR 제외다. staging·commit·push·PR 수정·CI 재실행·reviewer/subagent 호출 없이 미커밋·미스테이징 상태로 멈춘다. 현재 원격 cancelled/skipped는 유지되며 수정 검토와 실제 원격 CI/strict gate 성공 전 병합은 차단된다.

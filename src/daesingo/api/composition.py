@@ -16,6 +16,8 @@ from daesingo.common.jobs.read_port import read_executions
 from daesingo.common.jobs.cancel import request_cancel
 from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
+from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.media import MediaRoot
 from daesingo.recording import RecordingService, FfprobeMediaProbe, RecordingCapabilityError
 from daesingo.recording.mysql_repository import MySQLRecordingRepository
 from daesingo.case.domain import SourceNotAccepted
@@ -67,6 +69,8 @@ class ApiComposition:
     ready_engine: Engine
     readiness: Readiness
     recording: RecordingService = field(default_factory=RecordingService, repr=False, compare=False)
+    cleanup: object = field(default=None, repr=False, compare=False)
+    media: object = field(default=None, repr=False, compare=False)
     _lock: object = field(default_factory=Lock, repr=False, compare=False)
     _closed: bool = field(default=False, init=False, repr=False, compare=False)
     cleanup_failed: bool = field(default=False, init=False, repr=False, compare=False)
@@ -135,13 +139,26 @@ class ApiComposition:
             raise RuntimeError('source response unavailable after commit') from None
         return {'case_id': case_id, 'source_asset_ref': source_ref, 'case_view': view}
 
+    def load_frame(self, case_id: str, frame_ref: str):
+        def operation(conn):
+            # Case existence is checked with the existing public store. No new
+            # association, projection mediation or Case callback is introduced.
+            self._store(conn).get_case(case_id)
+            with RecordingService(MySQLRecordingRepository(conn,
+                    storage_root=self.startup.config.media_root)) as recording:
+                return recording.read_owned_frame_image(case_id, frame_ref)
+        # Only detached bytes/metadata escape; the caller connection is returned
+        # before the route constructs headers or starts transmitting the body.
+        return run_api_transaction(self.engine, operation)
+
     def close(self):
         with self._lock:
             if self._closed:
                 return
             object.__setattr__(self, "_closed", True)
         failure = None
-        for close in (self.readiness.close, self.ready_engine.dispose, self.engine.dispose):
+        closes = ((self.cleanup.stop_and_join,) if self.cleanup is not None else ())
+        for close in (*closes, self.readiness.close, self.ready_engine.dispose, self.engine.dispose):
             try:
                 close()
             except BaseException as error:
@@ -165,7 +182,9 @@ def compose_api(startup: Startup) -> ApiComposition:
                 return connection.exec_driver_sql("SELECT 1").scalar_one() == 1
         readiness = Readiness(settings=config.ready, db_probe=db_probe,
                               storage_probe=lambda: storage_available(config.media_root), logger=startup.logger)
-        return ApiComposition(startup, engine, ready_engine, readiness)
+        cleanup = configured_cleanup(config, startup.logger, emit=readiness.events.emit)
+        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
+        return ApiComposition(startup, engine, ready_engine, readiness, cleanup=cleanup, media=media)
     except BaseException:
         # Construction can fail before a composition/lifespan owner exists.
         # Try every allocated engine, retaining the original fatal/error policy.

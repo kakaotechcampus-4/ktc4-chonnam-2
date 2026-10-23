@@ -127,6 +127,25 @@ class InMemoryRecordingRepository:
     def get_frame_content(self, frame_ref: str) -> bytes | None:
         return self._frame_content.get(frame_ref)
 
+    def get_owned_frame(self, case_id: str, frame_ref: str) -> tuple[FrameRef, bytes | None] | None:
+        frame = self._frames.get(frame_ref)
+        stream_ref = frame.media_stream_ref if frame is not None else None
+        stream = self._media_streams.get(stream_ref) if isinstance(stream_ref, str) else None
+        source_ref = stream.source_asset_ref if stream is not None else None
+        if not isinstance(source_ref, str):
+            return None
+        source = self._source_assets.get(source_ref)
+        if source is None or ContractRef(kind='source_asset', ref=source_ref) not in self._case_assets.get(case_id, []):
+            return None
+        # Match the persistent scope-before-restore boundary, including damaged
+        # model_copy inputs used by callers/tests. Ordinary capabilities stay as is.
+        restored = FrameRef.model_validate(frame.model_dump())
+        MediaStream.model_validate(stream.model_dump())
+        SourceAsset.model_validate(source.model_dump())
+        if restored.frame_ref != frame_ref:
+            raise ValueError('stored frame identity mismatch')
+        return restored, self._frame_content.get(frame_ref)
+
     def add_asset_facts(self, facts: AssetFacts) -> None:
         key = (facts.asset_ref.kind, facts.asset_ref.ref)
         self._asset_facts[key] = facts
@@ -310,6 +329,9 @@ class InMemoryRecordingRepository:
 
 
 class RecordingRepository(Protocol):
+
+    def get_owned_frame(self, case_id: str, frame_ref: str) -> tuple[FrameRef, bytes | None] | None:
+        ...
 
     def get_ownership_stream(self, stream_ref: str) -> MediaStream | None:
         ...

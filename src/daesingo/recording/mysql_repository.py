@@ -253,6 +253,46 @@ class MySQLRecordingRepository:
         row = self._get("frame", frame_ref)
         return row["content"] if row is not None else None
 
+    def get_owned_frame(self, case_id, frame_ref):
+        """One RC statement scopes ownership before restoring any model.
+
+        A statement-consistent snapshot covers relation and bytes; no check/read
+        gap, row locks, transaction completion or new association is introduced.
+        Index predicates narrow candidates; lengthless BINARY casts check exact
+        identity, including trailing space. utf8mb4_bin is PAD SPACE in MySQL.
+        """
+        frame, stream, source, link = (entries.alias(n) for n in ('f', 's', 'a', 'l'))
+        def text(column, *keys):
+            value = column
+            for key in keys:
+                value = value[key]
+            # Invalid relationship JSON types cannot become string identities.
+            return sa.case((sa.func.json_type(value) == 'STRING', value.as_string()), else_=sa.null())
+        def exact(left, right):
+            # No length: BINARY(N) would pad/truncate and change identity.
+            return sa.cast(left, sa.LargeBinary()) == sa.cast(right, sa.LargeBinary())
+        def kind(table, name):
+            return sa.and_(table.c.kind == name, exact(table.c.kind, sa.literal(name)))
+        joined = frame.join(stream, sa.and_(kind(stream, 'media_stream'),
+            exact(text(frame.c.payload, 'media_stream_ref'), text(stream.c.payload, 'media_stream_ref'))))
+        joined = joined.join(source, sa.and_(kind(source, 'source_asset'),
+            exact(text(stream.c.payload, 'source_asset_ref'), text(source.c.payload, 'source_asset_ref'))))
+        joined = joined.join(link, sa.and_(kind(link, 'case_asset'),
+            exact(text(link.c.payload, 'case_id'), sa.literal(case_id)),
+            exact(text(link.c.payload, 'asset_ref', 'kind'), sa.literal('source_asset')),
+            exact(text(link.c.payload, 'asset_ref', 'ref'), text(source.c.payload, 'source_asset_ref'))))
+        row = self._execute(sa.select(frame.c.payload, frame.c.content,
+            stream.c.payload.label('stream'), source.c.payload.label('source')).select_from(joined).where(
+                kind(frame, 'frame'), frame.c.entry_key == _key(frame_ref))).mappings().one_or_none()
+        if row is None:
+            return None
+        restored = m.FrameRef.model_validate(row['payload'])
+        m.MediaStream.model_validate(row['stream'])
+        m.SourceAsset.model_validate(row['source'])
+        if restored.frame_ref != frame_ref:
+            raise ValueError('stored frame identity mismatch')
+        return restored, row['content']
+
     def add_asset_facts(self, facts):
         self._put("asset_facts", [facts.asset_ref.kind, facts.asset_ref.ref], facts)
 

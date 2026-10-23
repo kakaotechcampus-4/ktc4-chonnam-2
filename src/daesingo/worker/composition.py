@@ -27,6 +27,8 @@ from daesingo.common.logging import bind_context, log_event_best_effort, safe_co
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.common.usage.reconciliation import reconcile_once
+from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.media import MediaRoot
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -164,6 +166,8 @@ def compose_worker(
             observe_reflection(incoming, result, startup.logger)
             return result
 
+    cleanup = configured_cleanup(startup.config, startup.logger)
+    media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
@@ -171,6 +175,7 @@ def compose_worker(
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
         reflect=reflect if reflector is not None else None,
         heartbeat=heartbeat,
+        cleanup=cleanup, media=media,
         usage_sink_factory=lambda context: DurableUsageSink(
             execution_ref=context.execution_id, case_id=context.case_id,
             logger=startup.logger, late_observe=usage_late_observe,

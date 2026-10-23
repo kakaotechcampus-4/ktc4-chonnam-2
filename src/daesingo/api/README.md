@@ -1,5 +1,11 @@
 # `api` — FastAPI composition root
 
+RT-12(a)는 lifespan startup에서 staging/temp 잔여 scan을 1회 수행하고 기존
+CleanupSettings 주기로 반복하며 종료 때 소유 thread를 join한다. upload의
+생성→publish까지 lease로 보호한다. `composition.media`는 기존 materializer의
+명시적 temp_root 주입·활성 보호용 factory이며 현재 기본 Recording에는
+materializer가 없다. [경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §8-1 · §8-2
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.
@@ -34,3 +40,5 @@ RT-08(c)는 `POST /cases/{case_id}/commands`를 연결한다. `application/json`
 RT-08(d)는 Case의 `cancelled_job_ids`를 같은 Connection/transaction의 기존 Runtime `request_cancel`에 전달한다. Case가 먼저 잠기며, QUEUED는 같은 commit에서 CANCELLED, RUNNING은 최초 cancel marker만 기록한다. HTTP status와 body는 기존 append 목록·Case 응답 표 그대로다. 실패는 전체 rollback이고 API 재시도는 없으며, COMMIT 결과 불명은 기존 500이다. Worker의 협력적 checkpoint·ownership fence·늦은 결과 guard와 T2 redelivery 의미는 유지한다. `START_ANALYSIS`의 `CaseTimelineSource`와 실제 모듈 결과 adapter/reader 조립도 아직 없으며, 해당 dependency가 필요한 command의 동작 완료를 주장하지 않는다. 이 slice의 실제 발주 acceptance는 기존 `RUN_NOTICE_ACTION`과 영속 fixture Case로 검증한다. media HTTP는 RT-11, 실제 capability 조립은 해당 선행 Owner/후속 Task 범위다.
 
 실제 MySQL acceptance는 기존 disposable 8.4 harness에 참여한다. SHUTDOWN 검사는 suite DB와 분리된 두 번째 서버를 사용한다. Linux CI는 서비스가 준비한 mysql:8.4 image를 Docker로 재사용하고 sudo/unshare/mount로 private RO tmpfs를 생성·해제한다. Windows 로컬 acceptance는 WSL Ubuntu 및 `DAESINGO_MYSQL_TEST_BASEDIR`/`DAESINGO_MYSQL_TEST_LIBDIR`의 테스트 전용 Linux 바이너리/라이브러리 위치가 필요하다. fixture는 기능 부재를 skip으로 대체하지 않는다.
+
+RT-11(b)는 `GET /cases/{case_id}/frames/{frame_ref}`를 구현한다. 기본2의 frame semaphore를 DB checkout 전에 획득하고, 짧은 caller transaction에서 case 존재 및 Recording 공개 `read_owned_frame_image`로 소유·저장 이미지를 복원한다. Connection 반환 뒤 실제 Content-Type·정확한 Content-Length·`private, max-age=3600` header를 구성하고 bytes를 전송한다. unknown/cross-case는 같은 safe404, owned-but-unavailable은 typed404이며 provider/decoder/재생성은 호출하지 않는다. 대기·응답 전송 중에는 DB connection을 보유하지 않는다. 순수 ASGI middleware는 access/BaseHTTPMiddleware 바깥에서 실제 body 전송 완료·disconnect·취소·send 예외까지 permit을 유지한다. HTTP가 먼저 취소돼도 진행 중 DB read 정리가 끝나기 전에는 반환하지 않는다. frame latency는 실제 ASGI 전송 수명과 HTTP status를 기록하며 client 수신 ACK를 보장하는 값은 아니다. 승인 해석·관측 범위·검증은 [RT-11(b) note](../../../docs/runtime/rt11b-frame-read.md)에 기록한다.
