@@ -728,23 +728,5 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .rs-actions .rs-btn { width: 100%; }
 }
 
-/* 움직임 줄이기 — 나타나기·이동·크기 변화·높이 애니메이션을 없애고 색 변화만 짧게 남긴다.
-   회전 표시는 멈추고, 상태는 아이콘과 문구(업로드 중·업로드 완료·업로드 실패)로 구분한다. */
-@media (prefers-reduced-motion: reduce) {
-  .rs *, .rs-header * {
-    animation: none !important;
-    transition-property: background-color, border-color, color !important;
-    transition-duration: .1s !important;
-  }
-  .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
-  .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
-  .rs .flow-now-leaving, .rs-upload-exit { display: none; }
-  .rs.flow.rs-push-in { animation: none !important; }
-  .flow-car { transition: none !important; }
-  .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
-  .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs-spin-sm { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs-vcard { display: none; }
-  .rs-check path { stroke-dashoffset: 0; }
-}
+/* 움직임은 OS의 「움직임 줄이기」(Windows 애니메이션 효과 끔 등) 설정과 상관없이 그대로 보인다 —
+   사용자 결정(10/23). 로딩 원·바퀴 회전·화면 전환·출발/도착 효과 모두 같다. */
