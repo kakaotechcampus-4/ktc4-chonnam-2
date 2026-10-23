@@ -287,7 +287,7 @@ REQUIRED_PARAMETERS = frozenset({
     ("redelivery", "concurrent", "case_first"),
     *(("redelivery", "commit_unknown", mode) for mode in ("followup", "stopped")),
     *(("redelivery", "isolation", mode) for mode in ("reflector", "db", "logger", "filter", "handler", "scan")),
-    *(("redelivery", "unsupported", mode) for mode in ("PLATE_READ", "UNKNOWN")),
+    *(("redelivery", "unsupported", mode) for mode in ("REPORT_VIDEO_EXPORT", "UNKNOWN")),
     *(("redelivery", "metric", mode) for mode in
       ("first_stopped", "retry_stopped", "third_stopped", "CANCELLED", "SUPERSEDED", "APPLIED")),
     *(("redelivery", "startup_periodic", mode) for mode in ("startup", "periodic")),
