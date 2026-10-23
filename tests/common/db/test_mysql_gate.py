@@ -2,6 +2,7 @@
 
 import importlib.util
 from copy import deepcopy
+from functools import cache
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,7 @@ from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARA
 from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
 from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
+from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -43,6 +45,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *FRAME_CHECKS,
     *UPLOAD_CHECKS,
     *PRODUCED_CHECKS,
     *RECORDING_CHECKS,
@@ -129,6 +132,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *FRAME_PARAMETERS,
     *UPLOAD_PARAMETERS,
     *PRODUCED_PARAMETERS,
     *RECORDING_PARAMETERS,
@@ -242,6 +246,7 @@ REQUIRED_PARAMETERS = (
 )
 
 
+@cache
 def checker():
     path = ROOT / "scripts" / "check_mysql_test_report.py"
     spec = importlib.util.spec_from_file_location("mysql_report_checker", path)
@@ -251,6 +256,7 @@ def checker():
 
 
 def good_report():
+    parameter_families = {(role, scenario) for role, scenario, _ in REQUIRED_PARAMETERS}
     nodes = [{"nodeid": f"tests/common/db/integration/test_required.py::test_{name}",
               "scenarios": [name]} for name in (
         "sessions", "session_replacements", "worker_1205", "worker_1213", "worker_disconnect",
@@ -273,7 +279,7 @@ def good_report():
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
               for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
-              if not any((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS)]
+              if (role, scenario) not in parameter_families]
     # Deliberately opaque node IDs: policy must use stable check metadata.
     nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
                "scenarios": [], "checks": [
@@ -290,6 +296,57 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+def test_case_inventory_validation_does_not_rescan_node_ids():
+    # A larger acceptance inventory must not multiply node-ID parsing by the
+    # number of Case requirements on every parameter-omission mutation.
+    splits = []
+
+    class MeasuredNodeId(str):
+        def split(self, *args, **kwargs):
+            splits.append(self)
+            return super().split(*args, **kwargs)
+
+    report = good_report()
+    for item in report["collected"]:
+        item["nodeid"] = MeasuredNodeId(item["nodeid"])
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(splits) <= 2 * len(report["collected"])
+
+
+def test_evidence_fixture_does_not_rescan_parameters_per_family(monkeypatch):
+    scans = []
+
+    class MeasuredParameters(tuple):
+        def __iter__(self):
+            scans.append(None)
+            return super().__iter__()
+
+    monkeypatch.setitem(globals(), "REQUIRED_PARAMETERS", MeasuredParameters(REQUIRED_PARAMETERS))
+    report = good_report()
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(scans) <= 2
+
+
+def test_multiple_reports_do_not_reload_checker_or_share_mutation_state(monkeypatch):
+    loads = []
+    original_spec = importlib.util.spec_from_file_location
+
+    def observed_spec(name, *args, **kwargs):
+        if name == "mysql_report_checker":
+            loads.append(None)
+        return original_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", observed_spec)
+    report = good_report()
+    expected = checker().validate_report(report)
+    broken = deepcopy(report)
+    broken["selected"].pop()
+    with pytest.raises(ValueError):
+        checker().validate_report(broken)
+    assert checker().validate_report(report) == expected
+    assert len(loads) <= 1
 
 
 @pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
@@ -496,7 +553,7 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", (*PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
+@pytest.mark.parametrize("identity", (*FRAME_PARAMETERS, *PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
 @pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
 def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()

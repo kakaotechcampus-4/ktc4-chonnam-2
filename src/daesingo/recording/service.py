@@ -399,6 +399,25 @@ class RecordingService:
             raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image format is unavailable")
         return FrameImage(content, "image/png", "png")
 
+    def read_owned_frame_image(self, case_id: str, frame_ref: str) -> FrameImage:
+        """Restore stored bytes on the caller transaction; never regenerate.
+
+        Ownership precedes availability so cross-case and unknown refs have the
+        same failure. The returned immutable image has no Connection or locator.
+        """
+        identity(case_id)
+        identity(frame_ref)
+        try:
+            stored = self._repository.get_owned_frame(case_id, frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError('TEMPORARY_FAILURE', 'stored owned frame metadata is invalid') from None
+        if stored is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "frame is not owned")
+        _, content = stored
+        if not png(content):
+            raise RecordingCapabilityError('FRAME_NOT_FOUND', 'stored owned frame image is unavailable')
+        return FrameImage(content, 'image/png', 'png')
+
     def owns_frame(self, case_id: str, frame_ref: str) -> bool:
         identity(case_id)
         identity(frame_ref)

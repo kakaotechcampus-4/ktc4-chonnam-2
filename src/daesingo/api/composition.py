@@ -135,6 +135,18 @@ class ApiComposition:
             raise RuntimeError('source response unavailable after commit') from None
         return {'case_id': case_id, 'source_asset_ref': source_ref, 'case_view': view}
 
+    def load_frame(self, case_id: str, frame_ref: str):
+        def operation(conn):
+            # Case existence is checked with the existing public store. No new
+            # association, projection mediation or Case callback is introduced.
+            self._store(conn).get_case(case_id)
+            with RecordingService(MySQLRecordingRepository(conn,
+                    storage_root=self.startup.config.media_root)) as recording:
+                return recording.read_owned_frame_image(case_id, frame_ref)
+        # Only detached bytes/metadata escape; the caller connection is returned
+        # before the route constructs headers or starts transmitting the body.
+        return run_api_transaction(self.engine, operation)
+
     def close(self):
         with self._lock:
             if self._closed:

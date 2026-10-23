@@ -14,6 +14,8 @@ from .routes_cases import cases_router
 from .routes_view import view_router
 from .routes_commands import commands_router
 from .routes_sources import sources_router
+from .routes_frames import frames_router
+from .frame_lifetime import FrameLifetimeMiddleware
 from .upload import NoUploadResponse, SourceBodyLimitMiddleware
 
 
@@ -50,6 +52,7 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     app.include_router(view_router(composition))
     app.include_router(commands_router(composition))
     app.include_router(sources_router(composition))
+    app.include_router(frames_router(composition))
     # Keep the byte-limit receiver inside the access receive proxy: exceptions
     # then reach the normal HTTP handler without an AnyIO ExceptionGroup wrapper.
     app.add_middleware(SourceBodyLimitMiddleware, composition=composition)
@@ -57,7 +60,7 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     @app.middleware("http")
     async def access(request, call_next):
         started = monotonic()
-        request.state.trace_id = new_trace_id()
+        request.state.trace_id = getattr(request.state, 'frame_trace_id', None) or new_trace_id()
         with bind_context(trace_id=request.state.trace_id, module="api"):
             try:
                 response = await call_next(request)
@@ -86,4 +89,6 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
         available = composition.readiness.check()
         return JSONResponse({"status": "ok" if available else "unavailable"},
                             status_code=200 if available else 503)
+    # This must surround access/BaseHTTPMiddleware's real outer body send.
+    app.add_middleware(FrameLifetimeMiddleware, composition=composition)
     return app
