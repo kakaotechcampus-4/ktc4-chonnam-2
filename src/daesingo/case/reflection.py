@@ -121,7 +121,7 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
     case.settle_job(outcome.job_id, "REFLECTED")
     # command 뒤와 같은 gate다(`command.execute_command`). 관찰 결과로 Package가 준비되면 여기서 READY가 된다.
     if case.stage == "EVIDENCE_REVIEW":
-        mark_ready_if_package_ready(case, store.get_adapter(case.case_id, case))
+        mark_ready_if_package_ready(case, store.adapter_for(case))
 
 
 _APPLIERS = {
