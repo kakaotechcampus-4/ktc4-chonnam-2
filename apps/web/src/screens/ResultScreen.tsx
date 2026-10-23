@@ -11,7 +11,7 @@ import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage,
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
 import { StatusBadge } from '../components/StatusBadge'
-import carSide from '../assets/car/car-side.webp'
+import { ArrivingCar } from '../components/ArrivingCar'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -175,7 +175,7 @@ export function ResultScreen(props: {
   return (
     <div className="rs rs-screen result">
       <header className="res-head">
-        <img className={`res-bgcar${props.arriving ? ' is-arriving' : ''}`} src={carSide} alt="" aria-hidden />
+        <ArrivingCar arriving={props.arriving} />
         <p className="state-context">신고자료</p>
         <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : '신고자료를 완성하지 못했어요.'}</h1>
         {counts.size > 0 && (

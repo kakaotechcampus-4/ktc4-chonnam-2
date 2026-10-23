@@ -578,20 +578,46 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 
 /* ── 결과 ── */
 .rs.result { position: relative; isolation: isolate; width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 24px; display: flex; flex-direction: column; gap: 44px; }
-/* 도착한 자동차 — 첫 화면 배경과 같은 원본·같은 흐림(10%)으로 제목 오른쪽 뒤에 선다. 글자 뒤(z-index -1)라
+/* 도착한 자동차(components/ArrivingCar.tsx) — 첫 화면과 같은 차가 제목 오른쪽 뒤에 선다. 글자 뒤(z-index -1)라
    읽기·누르기를 막지 않는다. 바퀴가 아래 양식의 위 선(머리글 아래 44px)에 닿게 머리글 아래끝 기준으로 둔다 —
    원본에서 바퀴 바닥은 높이의 약 85%라 520×260이면 그림 아래끝이 선보다 39px 아래, 곧 머리글보다 83px 아래다.
-   진행에서 막 넘어왔을 때만 오른쪽 밖에서 앞(왼쪽)으로 들어오며 점점 느려져 멈춘다 */
+   평소(하위 화면에서 돌아옴 등)에는 10% 흐린 배경으로 서 있다.
+   진행에서 막 넘어왔을 때(「아주 화려하게」, 사용자 결정 10/23) — 선명한 차가 오른쪽 밖(900px)에서 바퀴를 굴리며
+   들어와 점점 느려지고(0.1~1.1초, 대부분 0.6초 전에 섬), 0.38초부터 브레이크 연기·스키드 자국, 앞으로 숙였다
+   출렁이며 서고, 0.55초에 머리글이 쿵 울리며 바닥 파동이 퍼진다. 1.9초부터 0.7초 동안 흐린 배경으로 옅어진다 */
 .res-head { position: relative; }
-.res-bgcar {
-  position: absolute; right: 0; bottom: -83px; z-index: -1; width: 520px; height: auto; max-width: none;
-  opacity: .10; pointer-events: none;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+.res-bgcar { position: absolute; right: 0; bottom: -83px; z-index: -1; width: 520px; height: 260px; opacity: .10; pointer-events: none; }
+.res-car-drive, .res-car-body { position: absolute; inset: 0; }
+.res-car-body > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.res-car-wheel { position: absolute; }
+.res-car-wheel img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.res-bgcar.is-arriving { animation: res-settle 2.6s linear both; }
+.res-bgcar.is-arriving .res-car-drive { animation: res-drive 1s cubic-bezier(.16, 1, .3, 1) .1s both; }
+.res-bgcar.is-arriving .res-car-wheel .spin { animation: res-roll 1s cubic-bezier(.16, 1, .3, 1) .1s both; }
+.res-bgcar.is-arriving .res-car-body { transform-origin: 50% 85%; animation: res-pitch .8s ease-out .32s both; }
+.rs.result:has(.res-bgcar.is-arriving) .res-head { animation: rs-quake .4s linear .55s; }
+@keyframes res-settle { 0%, 73% { opacity: 1; } 100% { opacity: .10; } }
+@keyframes res-drive { from { transform: translateX(900px); } }
+/* 900px ÷ 화면 속 타이어 반지름(123 × 520/1774 ≈ 36px) ≈ 1430도 */
+@keyframes res-roll { from { transform: rotate(1430deg); } }
+@keyframes res-pitch {
+  0% { transform: rotate(0); } 30% { transform: rotate(-2.2deg); } 55% { transform: rotate(1deg); }
+  78% { transform: rotate(-.35deg); } 100% { transform: rotate(0); }
 }
-.res-bgcar.is-arriving { animation: res-arrive .9s cubic-bezier(.16, 1, .3, 1) .1s both; }
-@keyframes res-arrive { from { transform: translateX(100vw); } }
+.res-skid {
+  position: absolute; left: var(--x); top: var(--y); width: 0; height: 3px; border-radius: 2px; background: rgba(29, 29, 31, .28);
+  animation: res-skid 1.6s ease-out .36s both;
+}
+@keyframes res-skid { 0% { width: 0; opacity: 1; } 35% { width: 90px; opacity: 1; } 100% { width: 90px; opacity: 0; } }
+.res-ground-ring {
+  left: calc(50% - 24px); top: 214px; width: 48px; height: 14px;
+  animation: res-ring .8s ease-out var(--d) both;
+}
+@keyframes res-ring { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(9, 4); } }
 body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
+/* 머리글 안내 띠는 차 자리(오른쪽 520px + 여백)까지 오지 않는다 — 선명하게 도착하는 차가 띠 뒤에 잘리지
+   않고, 띠 안 버튼도 차에 가리지 않는다 */
+.res-head .res-notices { margin-right: 544px; }
 .res-head { display: flex; flex-direction: column; gap: 12px; }
 .res-head .state-context { margin: 0; }
 .res-title { margin: 0; font-size: var(--rs-h1); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }

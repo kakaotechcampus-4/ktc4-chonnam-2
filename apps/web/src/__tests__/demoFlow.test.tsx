@@ -92,10 +92,15 @@ it('진행이 끝나 결과로 넘어오면 배경 자동차가 도착하고, �
   wait()
   answer()
   expect(container.querySelector('.res-bgcar.is-arriving')).not.toBeNull()
+  // 「아주 화려하게」 — 브레이크 연기·스키드 자국·바닥 파동
+  expect(container.querySelectorAll('.res-bgcar .rs-puff').length).toBeGreaterThan(10)
+  expect(container.querySelectorAll('.res-bgcar .res-skid')).toHaveLength(2)
+  expect(container.querySelectorAll('.res-bgcar .res-ground-ring')).toHaveLength(2)
   fireEvent.click(getByText('어떻게 정했는지'))
   fireEvent.click(container.querySelector('.sub-back')!)
   expect(container.querySelector('.res-bgcar')).not.toBeNull()
   expect(container.querySelector('.res-bgcar.is-arriving')).toBeNull()
+  expect(container.querySelector('.res-bgcar .rs-puff')).toBeNull()
 })
 
 it('실패 화면에는 도착하는 자동차가 없다', () => {
