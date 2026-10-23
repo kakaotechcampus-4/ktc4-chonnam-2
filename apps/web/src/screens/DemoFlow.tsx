@@ -20,9 +20,9 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 // 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
-// 「영상에서 찾아보기」 뒤 자동차가 출발하고 업로드 화면이 밀려 나가는 시간(전환 0.54초 + 여유).
+// 「영상에서 찾아보기」 뒤 자동차가 출발하고 업로드 화면이 밀려 나가는 시간(출발 0.95초 + 전환 0.42초 + 여유).
 // 실제 상태는 누르는 즉시 진행으로 넘어가고, 이 시간 동안 겉모습 복사본만 위에 겹쳐 둔다.
-const UPLOAD_EXIT_MS = 580
+const UPLOAD_EXIT_MS = 1450
 const noop = () => {}
 
 // 스냅샷은 순번이 아니라 모양으로 고른다 — fixture에 스냅샷이 끼어들면 순번이 밀린다

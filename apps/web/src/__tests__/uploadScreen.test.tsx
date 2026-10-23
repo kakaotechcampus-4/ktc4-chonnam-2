@@ -85,7 +85,14 @@ it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 �
     expect(ghost.hasAttribute('inert')).toBe(true)
     // 진행 화면은 오른쪽에서 밀려 들어온다 — 출발 장면(앞·뒤 휠)은 복사본에만 있다
     expect(r.container.querySelector('.rs.flow.rs-push-in')).not.toBeNull()
-    expect(ghost.querySelectorAll('.rs-depart .rs-wheel')).toHaveLength(2)
+    expect(ghost.querySelectorAll('.rs-depart .rs-depart-body .rs-wheel')).toHaveLength(2)
+    // 「아주 화려하게」 — 연기·속도선·잔상이 함께 나온다
+    expect(ghost.querySelectorAll('.rs-depart .rs-puff').length).toBeGreaterThan(10)
+    expect(ghost.querySelectorAll('.rs-depart .rs-speed').length).toBeGreaterThan(0)
+    expect(ghost.querySelectorAll('.rs-depart .is-ghost')).toHaveLength(3)
+    // 출발(약 1초) 동안은 남아 있다가 밀려 나간 뒤 사라진다
+    act(() => vi.advanceTimersByTime(900))
+    expect(r.container.querySelector('.rs-upload-exit')).not.toBeNull()
     act(() => vi.advanceTimersByTime(600))
     expect(r.container.querySelector('.rs-upload-exit')).toBeNull()
 

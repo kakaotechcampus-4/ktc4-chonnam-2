@@ -8,6 +8,7 @@ import frontBlur from '../assets/car/wheel-front-blur.webp'
 import rearBack from '../assets/car/wheel-rear-back.webp'
 import rearSpin from '../assets/car/wheel-rear-spin.webp'
 import rearBlur from '../assets/car/wheel-rear-blur.webp'
+import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../components/CarFx'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -58,7 +59,33 @@ const TIRE_R = 123
 // 출발 — 차가 장면 안에서 앞(왼쪽)으로 달려 나가는 거리. 휠은 같은 시간·같은 가속으로 이 거리만큼
 // 구른다(미끄러지지 않는 회전각 = 거리 ÷ 화면 속 타이어 반지름).
 const DEPART_PX = 1000
-const DEPART_ROLL_DEG = (-DEPART_PX / (TIRE_R * (SCENE_H / VIEW.whole.span)) / Math.PI) * 180
+// 출발 전 제자리에서 헛도는 만큼(휠스핀) 더 돈다
+const BURNOUT_DEG = -900
+const DEPART_ROLL_DEG = (-DEPART_PX / (TIRE_R * (SCENE_H / VIEW.whole.span)) / Math.PI) * 180 + BURNOUT_DEG
+const GHOSTS = [1, 2, 3]
+
+// 출발 연기·속도선 — 원본 좌표(ox, oy)를 출발 장면(칸 너비 width, 높이 320) 좌표로 옮겨 놓는다.
+// 시간(ms)은 refresh.css의 출발 타임라인과 맞춘다: 시동 진동 100~450 · 배기 120~ · 휠스핀 연기 300~ · 출발 450~970
+function departFx(width: number): { puffs: Puff[]; lines: Speed[] } {
+  const s = SCENE_H / VIEW.whole.span
+  const at = (ox: number, oy: number) => ({ x: width / 2 + (ox - VIEW.whole.x) * s, y: SCENE_H / 2 + (oy - VIEW.whole.y) * s })
+  const puffs = [
+    // 배기 — 뒤범퍼 아래에서 작게 뭉게뭉게
+    ...burst(6, at(1700, 690), { from: 120, gap: 70, size: [16, 24], dx: [24, 60], dy: [-26, -10], t: 760, g: 2.4, seed: 7 }),
+    // 휠스핀 — 뒷바퀴 바닥에서 크게 터진다
+    ...burst(16, at(1386, 745), { from: 300, gap: 26, size: [36, 64], dx: [50, 150], dy: [-64, -18], t: 900, g: 3.2, seed: 11 }),
+    // 앞바퀴도 조금
+    ...burst(5, at(322, 745), { from: 360, gap: 40, size: [24, 36], dx: [30, 80], dy: [-36, -12], t: 700, g: 2.6, seed: 13 }),
+  ]
+  const r = seeded(17)
+  const lines = Array.from({ length: 9 }, (_, i) => ({
+    x: at(300 + r() * 1300, 0).x,
+    y: at(0, 260 + r() * 420).y,
+    w: 60 + r() * 110,
+    d: 520 + i * 45,
+  }))
+  return { puffs, lines }
+}
 
 function Wheel(props: { at: keyof typeof WHEELS }): JSX.Element {
   const w = WHEELS[props.at]
@@ -162,6 +189,7 @@ export function UploadScreen(props: {
   const bgOff = phase === 'wheel' || state === 'done' || state === 'fail'
   // 휠은 바퀴 화면에 도착한 뒤 업로드가 끝날 때까지만 돈다. 끝나거나 실패하면 그 각도에서 멈춘다.
   const spinning = phase === 'wheel'
+  const fx = props.departing ? departFx(width) : null
 
   const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
@@ -324,13 +352,25 @@ export function UploadScreen(props: {
         {props.departing && (
           // 출발 장면 — 이전 업로드 칸 자리에 겹쳐 그린다(아래 요소를 밀지 않음).
           <div className="rs-depart" aria-hidden>
+            {/* 잔상 — 같은 차가 조금씩 늦게 따라가며 흐려진다 */}
+            {GHOSTS.map((g) => (
+              <div key={g} className="rs-depart-car is-ghost" style={{ '--go': `${-DEPART_PX}px`, '--gd': `${g * 45}ms` } as CSSProperties}>
+                <div className="rs-rig" style={{ transform: sceneTransform('whole', width) }}>
+                  <img className="rs-scene-car" src={carSide} alt="" />
+                </div>
+              </div>
+            ))}
             <div className="rs-depart-car" style={{ '--roll': `${DEPART_ROLL_DEG}deg`, '--go': `${-DEPART_PX}px` } as CSSProperties}>
-              <div className="rs-rig" style={{ transform: sceneTransform('whole', width) }}>
-                <img className="rs-scene-car" src={carSide} alt="" />
-                <Wheel at="front" />
-                <Wheel at="rear" />
+              <div className="rs-depart-body">
+                <div className="rs-rig" style={{ transform: sceneTransform('whole', width) }}>
+                  <img className="rs-scene-car" src={carSide} alt="" />
+                  <Wheel at="front" />
+                  <Wheel at="rear" />
+                </div>
               </div>
             </div>
+            {fx && <Puffs items={fx.puffs} />}
+            {fx && <SpeedLines items={fx.lines} />}
           </div>
         )}
         {state === 'done' && props.skipped.length > 0 && (
