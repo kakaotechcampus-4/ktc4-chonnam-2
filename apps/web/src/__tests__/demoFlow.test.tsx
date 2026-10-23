@@ -194,13 +194,15 @@ it('상단 로고(대신고)를 누르면 진행 중이어도 첫 화면으로 �
   expect(container.querySelector('textarea')!.value).toBe('')
 })
 
-it('번호판은 자세히 보기에서 읽은 값을 채운 채 고치고, 결과 화면에 「사용자 확인됨」으로 반영된다', () => {
+it('번호판은 확인·수정하기에서 읽은 값을 채운 채 고치고, 결과 화면에 「사용자 확인됨」으로 반영된다', () => {
   const { wait, getByText, text, container, answer } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
-  fireEvent.click(getByText('자세히 보기'))
+  // 결과 화면에서 번호를 고칠 수 있는 곳임을 미리 알린다
+  expect(text()).toContain('번호가 틀렸다면 여기서 고칠 수 있어요')
+  fireEvent.click(getByText('확인·수정하기'))
   expect(text()).toContain('번호판을 읽은 장면')
   fireEvent.click(getByText('번호 수정'))
   const input = container.querySelector('.plate-input') as HTMLInputElement
@@ -350,7 +352,7 @@ it('번호판 수정: 취소·Esc·뒤로는 고치던 글자만 버리고, 저�
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
-  fireEvent.click(getByText('자세히 보기'))
+  fireEvent.click(getByText('확인·수정하기'))
   const input = () => container.querySelector('.plate-input') as HTMLInputElement
   fireEvent.click(getByText('번호 수정'))
   fireEvent.change(input(), { target: { value: '99허9999' } })
@@ -428,7 +430,7 @@ it('후보 A → B: A의 번호판·일시·장소·내용·검색어·영상·�
   wait()
   answer()
   // A에서 번호판을 고쳐 둔다
-  fireEvent.click(getByText('자세히 보기'))
+  fireEvent.click(getByText('확인·수정하기'))
   fireEvent.click(getByText('번호 수정'))
   fireEvent.change(container.querySelector('.plate-input')!, { target: { value: '12가3457' } })
   fireEvent.click(getByText('저장'))

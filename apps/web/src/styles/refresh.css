@@ -598,6 +598,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-plate-v.is-none { font-size: 24px; font-weight: 600; color: var(--rs-sub); }
 .res-plate-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .res-src { font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-plate-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
 .res-k { margin: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
 
 /* 연결 안 된 notice 동작 — 누를 수 없고 이유를 옆에 적는다 */

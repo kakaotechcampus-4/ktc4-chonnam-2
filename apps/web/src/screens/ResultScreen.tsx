@@ -39,6 +39,9 @@ const VIDEO_STATUS: Record<ReturnType<typeof reportVideoState>, string> = {
 }
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
+// 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
+const PLATE_EDIT_LINK = '확인·수정하기'
+const PLATE_EDIT_WHY = '번호가 틀렸다면 여기서 고칠 수 있어요'
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 
@@ -361,10 +364,15 @@ export function ResultScreen(props: {
               </div>
               {props.plateEditedLocally && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
               {ev && (
-                <button type="button" className="res-link" onClick={props.onPlate}>
-                  자세히 보기
-                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
-                </button>
+                <p className="res-plate-edit">
+                  <button type="button" className="res-link" onClick={props.onPlate} aria-describedby="res-plate-edit-why">
+                    {PLATE_EDIT_LINK}
+                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                  </button>
+                  <span id="res-plate-edit-why" className="res-src">
+                    {PLATE_EDIT_WHY}
+                  </span>
+                </p>
               )}
             </div>
           </Item>
