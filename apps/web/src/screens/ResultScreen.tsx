@@ -343,7 +343,7 @@ export function ResultScreen(props: {
 
           {report ? (
             <Item label="신고 내용">
-              <span className="res-val-line">
+              <span className="res-report">
                 <span className="res-val res-report-text">{report.description}</span>
                 {copyButton('신고 내용', report.description)}
               </span>
