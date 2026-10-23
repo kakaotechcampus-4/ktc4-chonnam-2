@@ -25,7 +25,7 @@ import { reportVideoState, splitDateTime } from '../state/resultModel'
 const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/'
 const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
-const TOAST_MS = 2000
+const TOAST_MS = 3000
 // 아래 문구는 검토 대기 중인 새 문구다(보고서 「검토할 문구」).
 // 붙여넣지 않고 안전신문고에서 사용자가 고르는 칸(유형·위치·발생 일시) 표시
 const PICK_MARK = '직접 선택'

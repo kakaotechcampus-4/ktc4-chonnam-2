@@ -19,7 +19,8 @@
   --rs-sub: #6e6e73;
   --rs-line: #d2d2d7;
   --rs-line-strong: #86868b;
-  --rs-off: #a1a1a6;
+  --rs-off: #a1a1a6;   /* 사용 불가 버튼 글자 전용 — 읽어야 하는 글자에는 쓰지 않는다(대비 2.6:1) */
+  --rs-faint: #737378; /* 읽어야 하지만 한발 물러선 글자(대기 단계·입력 예시) — 흰 바탕 대비 4.7:1 */
   /* 큰 제목은 두 단계 — 페이지 제목(업로드·진행·결과) / 하위·상태 화면 제목 */
   --rs-h1: clamp(34px, 3.4vw, 44px);
   --rs-h2: 32px;
@@ -32,6 +33,9 @@
   color: var(--rs-ink);
 }
 .rs :focus-visible, .rs-header :focus-visible { outline: 2px solid var(--rs-ink); outline-offset: 3px; }
+
+/* 위에 붙은 헤더(56px)가 키보드로 옮겨 간 초점을 가리지 않게 — 스크롤이 헤더 아래에서 멈춘다 */
+html:has(.rs-header) { scroll-padding-top: 72px; }
 
 /* 페이지 바탕 — 작업 대상 화면일 때만 흰색 */
 body:has(.rs-page) { background: #fff; }
@@ -325,7 +329,7 @@ body:has(.rs-page) { background: #fff; }
   font-weight: 450; line-height: 1.6; color: var(--rs-ink);
   transition: border-color .2s var(--rs-ease), box-shadow .2s var(--rs-ease);
 }
-.rs .field.situation::placeholder { color: var(--rs-off); }
+.rs .field.situation::placeholder { color: var(--rs-faint); }
 .rs .field.situation:hover { border-color: var(--rs-line-strong); }
 /* 입력칸은 테두리 변화로만 포커스를 보인다 — 바깥 윤곽선을 겹치지 않는다 */
 .rs .field.situation:focus, .rs .field.situation:focus-visible { outline: none; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
@@ -498,7 +502,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .flow-car img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .16)); }
 .rs.flow .timeline .tl-running .kv-src { color: var(--rs-ink); }
 /* 대기 — 회색 원 */
-.rs.flow .timeline .tl-pending .tl-label { color: var(--rs-off); }
+.rs.flow .timeline .tl-pending .tl-label { color: var(--rs-faint); }
 /* 실패 — 빨강. 부분 완료는 「확인 필요」 성격이라 주황 */
 .rs.flow .timeline .tl-failed::before { background: var(--red); border-color: var(--red); }
 .rs.flow .timeline .tl-failed .tl-label, .rs.flow .timeline .tl-failed .kv-src { color: var(--red); }

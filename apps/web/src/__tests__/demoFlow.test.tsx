@@ -431,7 +431,10 @@ it('복사 결과를 한 줄로 알린다 — 실패도 알린다', async () => 
   expect(container.querySelector('.res-toast')!.textContent).toBe('복사했습니다')
   await act(async () => fireEvent.click(getByText('붙여넣을 내용 전체 복사')))
   expect(container.querySelector('.res-toast')!.textContent).toContain('복사하지 못했어요')
+  // 읽을 시간을 3초 준다 — 2초에는 아직 남아 있다
   act(() => vi.advanceTimersByTime(2_000))
+  expect(container.querySelector('.res-toast')!.textContent).toContain('복사하지 못했어요')
+  act(() => vi.advanceTimersByTime(1_000))
   expect(container.querySelector('.res-toast')!.textContent).toBe('')
 })
 
