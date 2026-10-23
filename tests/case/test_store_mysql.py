@@ -99,6 +99,25 @@ def test_append_only_violation_writes_nothing_even_if_caller_commits(mysql_engin
         assert repo.load(conn, "case_ao001").hints == case.hints
 
 
+@pytest.mark.parametrize("lock", ["share", "update"])
+def test_load_rejects_trailing_space_alias(mysql_engine, lock):
+    """`ascii_bin`은 PAD SPACE라 `WHERE case_id = 'A '`가 `A` 행을 찾는다 — case_id는 opaque exact identity라
+    없는 case로 거부한다(#387)."""
+    from daesingo.case.store import CaseNotFound
+    from daesingo.case.store_mysql import MySQLCaseRepository
+
+    repo = MySQLCaseRepository()
+    with mysql_engine.begin() as conn:
+        repo.insert(conn, CaseAggregate.empty(f"case_pad_{lock}"))
+    with mysql_engine.connect() as conn:
+        trans = conn.begin()
+        with pytest.raises(CaseNotFound):
+            repo.load(conn, f"case_pad_{lock} ", lock=lock)
+        trans.rollback()
+    with mysql_engine.connect() as conn:
+        assert repo.load(conn, f"case_pad_{lock}").case_id == f"case_pad_{lock}"
+
+
 def _searching_case(case_id: str) -> CaseAggregate:
     case = CaseAggregate.empty(case_id)
     case.start_search()
