@@ -526,13 +526,21 @@ def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, ident
     check = {"role": role, "scenario": scenario, "parameter": parameter}
     item, = (n for n in report["collected"] if check in n.get("checks", []))
     node = item["nodeid"]
-    root = ElementTree.Element("testsuite")
-    for collected in report["collected"]:
-        if layer in {"junit", "all"} and collected is item:
-            continue
-        ElementTree.SubElement(root, "testcase", classname=collected["junit"][0], name=collected["junit"][1])
-    junit = tmp_path / "junit.xml"
-    ElementTree.ElementTree(root).write(junit, encoding="utf-8")
+    collected = report["collected"]
+
+    def write_junit():
+        root = ElementTree.Element("testsuite")
+        for entry in collected:
+            if layer in {"junit", "all"} and entry is item:
+                continue
+            ElementTree.SubElement(root, "testcase", classname=entry["junit"][0], name=entry["junit"][1])
+        path = tmp_path / "junit.xml"
+        ElementTree.ElementTree(root).write(path, encoding="utf-8")
+        return path
+
+    # Keep combined omissions materialized; ordinary JSON rejection never
+    # reaches JUnit validation, so do not serialize its unused passing XML.
+    junit = write_junit() if layer in {"junit", "all"} else None
     if layer in {"collection", "all"}:
         report["collected"] = [n for n in report["collected"] if n["nodeid"] != node]
     if layer in {"selection", "all"}:
@@ -543,7 +551,41 @@ def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, ident
     with pytest.raises(ValueError):
         gate = checker()
         gate.validate_report(report)
+        if junit is None:
+            junit = write_junit()
         gate.validate_junit(junit, report)
+
+
+def test_parameter_mutations_only_write_junit_after_json_validation(tmp_path, monkeypatch):
+    from xml.etree import ElementTree
+
+    calls = {"write": 0, "json": 0, "junit": 0}
+    gate = checker()
+    write = ElementTree.ElementTree.write
+    validate_report, validate_junit = gate.validate_report, gate.validate_junit
+
+    def observed_write(*args, **kwargs):
+        calls["write"] += 1
+        return write(*args, **kwargs)
+
+    def observed_json(*args, **kwargs):
+        calls["json"] += 1
+        return validate_report(*args, **kwargs)
+
+    def observed_junit(*args, **kwargs):
+        calls["junit"] += 1
+        return validate_junit(*args, **kwargs)
+
+    monkeypatch.setattr(ElementTree.ElementTree, "write", observed_write)
+    monkeypatch.setattr(gate, "validate_report", observed_json)
+    monkeypatch.setattr(gate, "validate_junit", observed_junit)
+    for layer in ("collection", "selection", "setup", "call", "teardown", "all", "junit"):
+        directory = tmp_path / layer
+        directory.mkdir()
+        test_each_required_parameter_cannot_be_omitted_from_evidence(
+            directory, REQUIRED_PARAMETERS[0], layer)
+    # Keep the combined "all" layer's missing-JUnit evidence materialized too.
+    assert calls == {"write": 2, "json": 7, "junit": 1}
 
 
 @pytest.mark.parametrize("tag", ["skipped", "failure", "error", "missing"])

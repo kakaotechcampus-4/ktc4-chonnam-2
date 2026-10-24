@@ -284,25 +284,35 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                     phase["xfail"] = True
                 else:
                     phase["outcome"] = "skipped" if layer == "skip" else "failed"
-            xml = ElementTree.parse(junit_path)
-            if layer in {"junit", "all"}:
-                matches = 0
-                for parent in xml.iter():
-                    for case in list(parent):
-                        if case.tag == "testcase" and (case.get("classname"), case.get("name")) == tuple(entry["junit"]):
-                            parent.remove(case)
-                            matches += 1
-                assert matches == 1
-            if layer.startswith("junit_"):
-                matches = [c for c in xml.findall(".//testcase")
-                           if (c.get("classname"), c.get("name")) == tuple(entry["junit"])]
-                assert len(matches) == 1
-                ElementTree.SubElement(matches[0], {"junit_skip": "skipped",
-                    "junit_failure": "failure", "junit_error": "error"}[layer])
-            mutation_junit = tmp_path / f"{scenario}-{parameter}-{layer}.xml"
-            xml.write(mutation_junit, encoding="utf-8")
+            def write_mutation_junit():
+                xml = ElementTree.parse(junit_path)
+                if layer in {"junit", "all"}:
+                    matches = 0
+                    for parent in xml.iter():
+                        for case in list(parent):
+                            if case.tag == "testcase" and (case.get("classname"), case.get("name")) == tuple(entry["junit"]):
+                                parent.remove(case)
+                                matches += 1
+                    assert matches == 1
+                if layer.startswith("junit_"):
+                    matches = [c for c in xml.findall(".//testcase")
+                               if (c.get("classname"), c.get("name")) == tuple(entry["junit"])]
+                    assert len(matches) == 1
+                    ElementTree.SubElement(matches[0], {"junit_skip": "skipped",
+                        "junit_failure": "failure", "junit_error": "error"}[layer])
+                path = tmp_path / f"{scenario}-{parameter}-{layer}.xml"
+                xml.write(path, encoding="utf-8")
+                return path
+
+            # Materialize every mutated XML (including combined "all") and
+            # retain its matching assertions. Passing XML is only needed if
+            # JSON unexpectedly survives validation; keep that fallback strict.
+            mutation_junit = (write_mutation_junit()
+                if layer in {"junit", "all"} or layer.startswith("junit_") else None)
             with pytest.raises(ValueError):
                 gate.validate_report(broken)
+                if mutation_junit is None:
+                    mutation_junit = write_mutation_junit()
                 gate.validate_junit(mutation_junit, broken)
             mutations.append({"role": role, "scenario": scenario, "parameter": parameter,
                               "layer": layer, "rejected": True})
