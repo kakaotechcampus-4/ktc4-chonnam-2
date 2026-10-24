@@ -89,6 +89,9 @@ class Candidate:
     # search `CandidateEvent.span.representative_ms`(그 후보 timeline revision 기준 상대 ms) 그대로.
     # CaseView `candidates[].marker_ms`의 원천이다(#184). case가 계산·보정하지 않는다.
     representative_ms: int | None = None
+    # search `CandidateEvent.span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot. 관찰 job 입력의
+    # 구간 원천이다(`decisions/incident-clip-observation-input.md` §4-1). 이 필드 전에 받은 후보는 `None`.
+    span: dict[str, Any] | None = None
     # 저장된 상태에 있었지만 이 코드가 모르는 키(새 코드가 쓴 필드). 다시 저장할 때 그대로 쓴다 —
     # rollback한 옛 코드가 새 필드를 지우지 않게(`decisions/case-store-mysql.md` §4).
     extra: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -160,6 +163,10 @@ class CaseAggregate:
     # 만들 입력이다(`decisions/start-analysis.md` §3-1). `video_stream_ref`는 등록 때 VIDEO가 정확히 하나였을 때만
     # 있다 — case가 여러 VIDEO 중 하나를 고르지 않는다. CaseView 비노출.
     sources: list[dict[str, Any]] = field(default_factory=list)
+
+    # 관찰 job의 고정 입력(`job_id` → 후보 · 세대 · span · clip ref). 발주할 때 남기고 고치지 않는다(append-only).
+    # handler는 `CaseStore.observation_input`으로 읽는다(`decisions/incident-clip-observation-input.md` §4-1). CaseView 비노출.
+    observation_inputs: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)

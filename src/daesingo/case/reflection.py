@@ -16,6 +16,7 @@ import copy
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
+from daesingo.case import observation
 from daesingo.case.analysis_start import InitialSearchBudget, reflect_hint_extraction
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.service import candidates_from_events, mark_ready_if_package_ready
@@ -54,9 +55,11 @@ class ProducedReader(Protocol):
 
     - `HINT_EXTRACT` → search 단서 구조화 결과(`{"status": "OK|ABSTAINED|FAILED", "*_hint": …}`)
     - `COARSE_SEARCH` → `{"outcome": "SUCCEEDED|FAILED|…", "candidate_events": [CandidateEvent, …]}`
+    - `FINE_VERIFY` → search `VisualEvidence`(`verification`만 본다 — 후속 발주 판단, `incident-clip-observation-input.md` §4-3)
+    - `INCIDENT_CLIP_BUILD` → `{"incident_clip_ref": str}`(두 판독이 공유할 clip, 같은 문서 §4-4)
 
-    관찰 kind(`PLATE_READ` · `OVERLAY_TIME_READ` · `FINE_VERIFY`)는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView
-    조립 때 adapter가 읽는다(`observation-storage.md` §4-2 · §4-5).
+    판독 kind(`PLATE_READ` · `OVERLAY_TIME_READ`)는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때
+    adapter가 읽는다(`observation-storage.md` §4-2 · §4-5). 성공한 Fine · clip만 읽는다.
     """
 
     def __call__(self, conn: Any, kind: str, produced: tuple[dict[str, str], ...]) -> dict[str, Any]: ...
@@ -124,10 +127,25 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
         mark_ready_if_package_ready(case, store.adapter_for(case))
 
 
+def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    if outcome.status == "SUCCEEDED":
+        observation.follow_fine(case, outcome.job_id, reader(store.conn, outcome.kind, outcome.produced))
+
+
+def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    # clip 실패는 정산만 한다 — 다시 준비는 case가 새 job_id로 발주한다(§6, notice · action은 후속).
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    if outcome.status == "SUCCEEDED":
+        content = reader(store.conn, outcome.kind, outcome.produced)
+        observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
+
+
 _APPLIERS = {
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
     "PLATE_READ": _apply_observation,
     "OVERLAY_TIME_READ": _apply_observation,
-    "FINE_VERIFY": _apply_observation,
+    "FINE_VERIFY": _apply_fine_verify,
+    "INCIDENT_CLIP_BUILD": _apply_incident_clip_build,
 }
