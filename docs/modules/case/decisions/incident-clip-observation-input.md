@@ -1,6 +1,6 @@
 # 관찰 job 입력 고정 · IncidentClip 준비 단위 · 발주 순서 (8-6 2단계 · RT-10(b))
 
-> **상태: 초안 — RT-10 Implementer(정철원) · Runtime/Ops Owner(김준영) 확인 대기** · 작성 2026-10-23 · 담당 유소연(`case`) · 근거 #297 [정철원 10-22 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6338265847) · [김준영 10-22 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6340336360) · `observation-storage.md` §1 · §6 미결 · 6.6순위 조건 2 · `reselect-observation-reuse.md` · `contract-case-command.md` 초기 선택(#168 결정 1)
+> **상태: RT-10 Implementer(정철원) · Runtime/Ops Owner(김준영) 확인 완료 — web(신유민) label 확인 대기** · 작성 2026-10-23 · 갱신 2026-10-24 · 담당 유소연(`case`) · 근거 #297 [정철원 10-22 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6338265847) · [김준영 10-22 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6340336360) · [서어진 10-23 Search 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6364998000) · [정철원 10-24 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380237333) · [정철원 10-24 요청 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380318817) · [김준영 10-24 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380794802) · `observation-storage.md` §1 · §6 미결 · 6.6순위 조건 2 · `reselect-observation-reuse.md` · `contract-case-command.md` 초기 선택(#168 결정 1)
 > 어느 후보를 언제 관찰하고 무엇을 다시 발주하는지는 case 결정 범위다(Tech Spec §12 「Worker가 orchestration 결정을 새로 만듦」 금지). IncidentClip 본체의 durable 보관 · 복원 · 동일성은 recording(REC) 몫이고, handler 등록 · T1 처리 · 재시도는 Runtime 몫이다. 이 문서는 그 둘이 기대는 **case 쪽 입력과 순서**만 정한다.
 
 ## 1. 목표 · 범위
@@ -19,7 +19,8 @@
 | 무엇 | 지금 |
 | --- | --- |
 | 후보 수신 뒤 초기 선택 · Fine 발주 | 비동기 경로에 없다. `receive_candidates`가 `CANDIDATE_REVIEW`로 올리고 멈춘다(`result-reflection.md` 범위 밖으로 미뤄 둠). 데모만 `select_top_ranked` · `issue_fine_verify`를 직접 부른다 |
-| 관찰 JobRecord에 담기는 입력 | `kind` · `input_fingerprint`뿐. 어느 후보 · 어느 세대 · 어느 clip인지는 JobRecord에 없다 |
+| 관찰 JobRecord에 담기는 입력 | `kind` · `input_fingerprint`뿐(`scope_ref`는 `null`). 어느 후보 · 어느 세대 · 어느 clip인지는 JobRecord에 없다 |
+| 관찰 kind T2 | `PLATE_READ` · `OVERLAY_TIME_READ` · `FINE_VERIFY` 정산 + READY gate는 develop에 있다(#357). `StoredObservationAdapter`는 관찰 객체 고르기(§4-4)까지만 있다(#386) |
 | IncidentClip 생성 | 동기 `real_e2e.observe_real_video_candidate`만. Fine → `classify_visual_evidence` → `NOT_ASSEMBLED`가 아니면 `resolve_span(candidate.span, media_stream_ref)` → `build_incident_clip` → 같은 `InputRef`로 `read_plate` · `read_overlay_time` |
 | clip 본체 | `RecordingService` 메모리 — `close()`에서 사라진다(#297 정철원 확인) |
 
@@ -52,14 +53,15 @@
      | --- | --- | --- |
      | `candidate_id` | 관찰 대상 후보 | 전부 |
      | `generation_job_id` | 그 후보 목록을 들여온 `COARSE_SEARCH` job — 세대 표식(`observation-storage.md` §4-4와 같은 기준) | 전부 |
-     | `scope_ref` | 그 탐색의 `AnalysisScope` | 전부 |
-     | `span` | 후보 `span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot | `FINE_VERIFY` · `INCIDENT_CLIP_BUILD` |
+     | `span` | 후보 `span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot. clip 구간은 이 Coarse `span`을 쓴다 — Fine `temporal_facts[].at_offset_ms`는 선택값이라 구간 근거로 보장되지 않는다(서어진 10-23 ③) | `FINE_VERIFY` · `INCIDENT_CLIP_BUILD` |
      | `fine_job_id` | clip 구간 · stream을 정한 Fine job | `INCIDENT_CLIP_BUILD` |
      | `incident_clip_ref` | 두 판독이 공유하는 clip | `PLATE_READ` · `OVERLAY_TIME_READ` |
 
+   - **`scope_ref`는 `observation_inputs`에 넣지 않고 JobRecord `scope_ref`에 싣는다.** 관찰 kind를 발주할 때 그 세대 `COARSE_SEARCH` JobRecord의 `scope_ref`를 그대로 넣는다. JobRecord 계약의 「`scope_ref`가 존재하면 유효한 AnalysisScope.scope_id를 가리킴」(`contract-job-record-case-view.md` §3)을 그대로 지키므로 계약 변경이 아니고, 같은 값을 두 곳에 두지 않는다. handler는 자기 JobRecord에서 `scope_ref`를 읽고, scope 본문은 `CaseStore.get_case(case_id).analysis_scopes[scope_ref]`로 읽는다([#297 10-21 case 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6314898281) 2-(a)).
+     - 그 결과 `issue_job`의 대체 규칙(같은 kind · `scope_ref`의 기다리던 job → `SUPERSEDED`)이 관찰 kind에서는 같은 scope 안으로 좁아진다. 이전 세대 scope의 기다리던 관찰 job은 대체되지 않고, 결과가 와도 §4-4대로 정산만 된다.
    - 공개 함수 `CaseStore.observation_input(case_id, job_id) -> dict`(질문 1). handler는 자기 JobRecord의 `job_id`로 부르고, case 내부 repository · schema를 읽지 않는다. 관찰 kind가 아니거나 입력이 없으면 `KeyError`.
    - `media_stream_ref`는 입력에 값으로 넣지 않는다. Fine 결과가 원본이라 `fine_job_id`로 그 produced를 읽는다(같은 값을 두 곳에 두지 않는다 — `observation-storage.md` §4-2와 같은 이유).
-   - 재시도 · 재판독(`RUN_NOTICE_ACTION` · `PLATE_REREAD`)은 지금처럼 「가장 나중 같은 kind JobRecord의 입력」을 쓰므로, `observation_inputs`도 그 job의 것을 그대로 복사한다 — 같은 clip을 다시 읽는다.
+   - 재시도 · 재판독(`RUN_NOTICE_ACTION` · `PLATE_REREAD`)은 지금처럼 「가장 나중 같은 kind JobRecord의 입력」(`scope_ref` 포함)을 쓰므로, `observation_inputs`도 그 job의 것을 그대로 복사한다 — 같은 clip을 다시 읽는다.
 
 2. **IncidentClip 준비는 새 kind `INCIDENT_CLIP_BUILD`로 둔다.** `FINE_VERIFY` handler 안에 넣지 않는다.
    - 김준영 10-22 답변대로 Fine 성공과 clip 준비는 다른 실패 · 재실행 단위다. 별도 job이면 clip만 실패했을 때 Fine(유료)을 다시 부르지 않고 새 `job_id`로 clip만 다시 낼 수 있고, `FINE_VERIFY`는 그 자체로 `SUCCEEDED`에 남는다.
@@ -88,8 +90,8 @@
 
 ## 6. 미결 (채우지 않는다)
 
-- clip 준비 실패(`INCIDENT_CLIP_BUILD` `FAILED`)의 notice code · action — CaseView 판본에서 web(신유민)과 정한다. 그때까지 package는 준비되지 않고 진행 화면에 머문다.
-- `INCIDENT_CLIP_BUILD` handler가 Fine produced에서 `media_stream_ref` · 구간을 읽는 방법 — RT-10 Implementer.
+- clip 준비 실패(`INCIDENT_CLIP_BUILD` `FAILED`)의 notice code · action — CaseView 판본에서 web(신유민)과 정한다. **이번 case 구현(§9) 범위가 아니라 후속이다.** 그때까지 package는 준비되지 않고 진행 화면에 머문다. 다시 시도는 Runtime 자동 재시도가 아니라 case가 새 `job_id`로 발주하는 것이다(김준영 10-24 ②).
+- `INCIDENT_CLIP_BUILD` handler가 Fine produced에서 `media_stream_ref`를 읽는 방법 — RT-10 Implementer. (구간은 입력 `span`, §4-1)
 - clip 본체 보관 · 동일성 · 생성 후 T1 전 crash 처리 — recording · Runtime(정철원).
 
 ## 7. 고르지 않은 안
@@ -105,14 +107,14 @@
 
 ## 8. 맞출 것
 
-- **정철원(RT-10 · recording):** `CaseStore.observation_input` 모양으로 handler 입력이 충분한지 · `INCIDENT_CLIP_BUILD` handler 등록과 recording 쪽 clip 보관 계획.
-- **김준영(Runtime/Ops):** 새 kind 추가가 Runtime registry · `JOB_KINDS` 대응 test 범위에서 문제없는지.
+- ~~정철원(RT-10 · recording)~~ — 10-24 확인: `observation_input` 모양으로 handler 진행 가능, `INCIDENT_CLIP_BUILD`는 별도 handler로 등록. clip 본체 durable 보관 · 복원 · 동일성은 recording 별도 변경으로 맡는다.
+- ~~김준영(Runtime/Ops)~~ — 10-24 승인: 새 kind · 독립 execution, Fine과 다른 terminal 경계, 자동 retry는 `STALE`만, `JOB_KINDS` ↔ registry 대응 검증에 포함, JobRecord · JobExecution 의미 변경 없음.
 - **신유민(web):** `INCIDENT_CLIP_BUILD` 이름 · `job.incident_clip_build` label.
 
 ## 9. case 쪽 구현 (확인 뒤, TDD)
 
 - `JOB_KINDS`에 `INCIDENT_CLIP_BUILD` · `label_key` 매핑 · JobRecord 계약 A§7 · A§12 등재.
-- `issue_job(..., observation_input=…)` · `CaseStore.observation_input`.
+- `issue_job(..., observation_input=…)` · 관찰 kind 발주 때 세대의 `scope_ref` 싣기 · `CaseStore.observation_input`.
 - `reflection`: `COARSE_SEARCH` 뒤 자동 선택 + Fine 발주, `FINE_VERIFY` · `INCIDENT_CLIP_BUILD` 뒤 후속 발주, `_APPLIERS`에 `INCIDENT_CLIP_BUILD`.
 - `SELECT_OTHER_CANDIDATE` 뒤 첫 빠진 단계부터 발주.
-- 테스트: 재선택 · 재탐색 뒤 기존 job 입력 불변, 이전 후보의 늦은 Fine · clip 결과가 후속을 내지 않음, `NOT_OBSERVED`면 clip 없음, 두 판독이 같은 clip ref, A→B→A 재사용.
+- 테스트: 관찰 JobRecord `scope_ref` = 그 세대 `COARSE_SEARCH`의 `scope_ref`, 재선택 · 재탐색 뒤 기존 job 입력 불변, 이전 후보의 늦은 Fine · clip 결과가 후속을 내지 않음, `NOT_OBSERVED`면 clip 없음, 두 판독이 같은 clip ref, A→B→A 재사용.
