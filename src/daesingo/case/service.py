@@ -62,6 +62,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     return candidates
 
 
+# 관찰 job 입력에 고정하는 후보 구간 키(`decisions/incident-clip-observation-input.md` §4-1).
+_SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms")
+
+
 def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candidate]:
     """search `CandidateEvent` → case `Candidate`. 동기 경로(`receive_search_candidates`)와 Worker 반영 경로
     (`reflection.reflect_execution`)가 같은 변환을 쓴다."""
@@ -76,6 +80,8 @@ def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candida
             # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
             representative_ms=c["span"]["representative_ms"],
             timeline_revision=c["span"]["timeline_revision"],
+            # 네 키가 다 있을 때만 남긴다 — 구간이 빠진 후보로 관찰을 발주하지 않는다.
+            span={k: c["span"][k] for k in _SPAN_KEYS} if all(k in c["span"] for k in _SPAN_KEYS) else None,
         )
         for c in raw_candidates
     ]

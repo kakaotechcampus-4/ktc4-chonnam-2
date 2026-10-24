@@ -70,6 +70,7 @@ JOB_LABEL_KEYS = {
     "REPORT_VIDEO_EXPORT": "job.report_video_export",
     "PLATE_IMAGE_EXPORT": "job.plate_image_export",
     "HINT_EXTRACT": "job.hint_extract",  # v1.7 등재(#259, PR #286)
+    "INCIDENT_CLIP_BUILD": "job.incident_clip_build",  # `decisions/incident-clip-observation-input.md` §4-2
 }
 JOB_LABEL_FALLBACK = "job.generic_processing"
 

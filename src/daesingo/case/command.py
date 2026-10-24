@@ -122,9 +122,7 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if prior is None:
         raise _Rejected("not_allowed")
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
-    jobs.issue_job(
-        case, kind, scope_ref=prior["scope_ref"], input_fingerprint=prior["input_fingerprint"]
-    )
+    jobs.issue_same_input(case, prior)
 
 
 def _start_analysis(
