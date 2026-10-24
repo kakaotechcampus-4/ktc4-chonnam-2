@@ -24,6 +24,7 @@ from daesingo.search.media import MediaInput, PreparedMedia
 from daesingo.search.provider import CoarseRequest, GeminiProvider, UsageBinding
 from daesingo.search.runs import ContractRef, RunOutcome
 from daesingo.search.schemas import CoarseResponse
+from daesingo.search.smoke_errors import ProviderPayloadError
 from daesingo.search.scope import (
     AnalysisScope,
     SearchBudget,
@@ -35,6 +36,7 @@ from daesingo.search.scope import (
 )
 from daesingo.search.service import SearchService
 from daesingo.search.sources import ResolvedAnalysisSource, StaticAnalysisSourceResolver
+from tests.search._openai_fake import RawResponseFake
 from tests.search._search_service_support import OpenableResolver
 
 
@@ -52,7 +54,7 @@ _NO_PARSED = object()
 
 
 @dataclass
-class _Completions:
+class _Completions(RawResponseFake):
     """시도마다 outcomes를 하나씩 소비한다. 예외면 던지고, 아니면 parsed로 돌려준다."""
 
     outcomes: list[object]
@@ -257,6 +259,73 @@ def test_parse_failure_finishes_failed_with_observed_tokens(
     (finish,) = sink.finishes
     assert finish["outcome"] == "FAILED"
     assert finish["failure_kind"] == "ProviderPayloadError"
+    assert finish["token_usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 2,
+        "total_tokens": 12,
+    }
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["not json", '{"candidates": "not-a-list"}'],
+    ids=["invalid-json", "schema-violation"],
+)
+def test_real_sdk_parse_failure_keeps_response_token_usage(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, content: str
+) -> None:
+    """실제 SDK는 parse() 안에서 JSON · schema 검증 예외를 던진다 — 그래도 usage를 남긴다."""
+    openai = pytest.importorskip("openai")
+    httpx = pytest.importorskip("httpx")
+    requests: list[object] = []
+
+    def respond(request: object) -> object:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "id": "c",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "m",
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": content},
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 2,
+                    "total_tokens": 12,
+                },
+            },
+        )
+
+    mod = ModuleType("openai")
+    setattr(  # noqa: B010
+        mod,
+        "OpenAI",
+        lambda **kw: openai.OpenAI(
+            **kw, http_client=httpx.Client(transport=httpx.MockTransport(respond))
+        ),
+    )
+    original = importlib.import_module
+    monkeypatch.setattr(
+        "daesingo.search.provider.importlib.import_module",
+        lambda name: mod if name == "openai" else original(name),
+    )
+    provider = GeminiProvider("k", GeminiSearchConfig(max_retries=0))
+    sink = _RecordingSink()
+
+    with pytest.raises(ProviderPayloadError):
+        _ = provider.search_coarse(_coarse_request(tmp_path, sink))
+
+    assert len(requests) == 1
+    assert len(sink.begins) == 1
+    (finish,) = sink.finishes
+    assert finish["outcome"] == "FAILED"
     assert finish["token_usage"] == {
         "input_tokens": 10,
         "output_tokens": 2,

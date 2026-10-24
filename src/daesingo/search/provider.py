@@ -6,7 +6,8 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, Protocol, cast, final
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Final, Protocol, cast, final
 
 if TYPE_CHECKING:
     import openai as _openai
@@ -165,6 +166,17 @@ def _usage_from_completion(usage: object | None) -> ProviderUsage:
         thought_tokens=0 if completion_tokens is not None else None,
         total_tokens=total,
     )
+
+
+def _usage_from_body(http_response: object) -> ProviderUsage:
+    try:
+        body = cast("Any", http_response).json()
+    except ValueError:  # JSON이 아닌 본문은 raw.parse()가 따로 실패시킨다.
+        return _usage_from_completion(None)
+    usage = body.get("usage") if isinstance(body, dict) else None
+    if not isinstance(usage, dict):
+        return _usage_from_completion(None)
+    return _usage_from_completion(SimpleNamespace(**usage))
 
 
 @final
@@ -368,7 +380,7 @@ class GeminiProvider:
             attempt_timeout: float, observed: list[ProviderUsage] | None = None
         ) -> ProviderResult[ResponseT]:
             started = time.monotonic()
-            completion = self._client.chat.completions.parse(
+            raw = self._client.chat.completions.with_raw_response.parse(
                 model=self._config.model,
                 messages=cast("list[ChatCompletionMessageParam]", messages),
                 response_format=response_model,
@@ -376,10 +388,12 @@ class GeminiProvider:
                 **options,  # pyright: ignore[reportArgumentType]
             )
             latency_ms = round((time.monotonic() - started) * 1000)
-            token_usage = _usage_from_completion(getattr(completion, "usage", None))
-            # 응답을 받았으면 parsing이 실패해도 토큰은 관측된 것이다.
+            # SDK는 raw.parse()에서 JSON · schema 검증이 실패하면 usage째 예외를 던진다.
+            # 응답을 받았으면 토큰은 관측된 것이므로 본문에서 먼저 꺼내 둔다.
+            token_usage = _usage_from_body(raw.http_response)
             if observed is not None:
                 observed.append(token_usage)
+            completion = raw.parse()
             parsed = completion.choices[0].message.parsed
             if parsed is None:
                 raise ProviderPayloadError("provider returned no parsed content")

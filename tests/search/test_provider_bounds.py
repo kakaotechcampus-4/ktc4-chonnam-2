@@ -26,6 +26,7 @@ from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import VisualEventType
 from daesingo.search.sources import ResolvedAnalysisSource
+from tests.search._openai_fake import RawResponseFake
 
 # ---------------------------------------------------------------------------
 # Fake OpenAI SDK helpers
@@ -61,7 +62,7 @@ class _Completion:
 
 
 @dataclass
-class _Completions:
+class _Completions(RawResponseFake):
     calls: list[dict[str, object]] = field(default_factory=list)
     raises: Exception | None = None
 
@@ -319,7 +320,7 @@ def _make_counting_provider(
     """Return (provider, media, call_counts) where call_counts is mutated on each parse()."""
     call_counts: list[int] = []
 
-    class _CountingCompletions:
+    class _CountingCompletions(RawResponseFake):
         def parse(self, **_kwargs: object) -> _Completion:
             call_counts.append(1)
             if len(call_counts) == 1:
@@ -442,7 +443,7 @@ def test_retry_stops_when_run_deadline_exhausted_between_attempts(
 
     call_counts: list[int] = []
 
-    class _ClockBurningCompletions:
+    class _ClockBurningCompletions(RawResponseFake):
         def parse(self, **_kwargs: object) -> _Completion:
             call_counts.append(1)
             now[0] += 0.2  # each attempt burns 200ms of budget
@@ -491,7 +492,7 @@ def test_retry_attempt_timeout_is_what_remains_of_run_budget(
     now = [0.0]
     timeouts: list[object] = []
 
-    class _SlowThenOk:
+    class _SlowThenOk(RawResponseFake):
         def parse(self, **kwargs: object) -> _Completion:
             timeouts.append(kwargs["timeout"])
             if len(timeouts) == 1:

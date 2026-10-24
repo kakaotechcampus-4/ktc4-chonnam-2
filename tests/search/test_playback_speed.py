@@ -12,6 +12,7 @@ from daesingo.search.prompts import COARSE_PROMPT, playback_note, sent_prompt_fi
 from daesingo.search.provider import CoarseRequest, FineRequest, GeminiProvider
 from daesingo.search.schemas import CoarseResponse, FineResponse
 from daesingo.search.scope import VisualEventType
+from tests.search._openai_fake import RawResponseFake
 
 from .test_provider_bounds import (
     _Chat,
@@ -25,7 +26,7 @@ from .test_provider_bounds import (
 
 
 @dataclass
-class _Returning:
+class _Returning(RawResponseFake):
     response: BaseModel
     calls: list[dict[str, object]] = field(default_factory=list)
 
