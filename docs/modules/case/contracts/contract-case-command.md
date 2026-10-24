@@ -98,7 +98,7 @@
 | `case.command.unknown_target` | 가리킨 대상이 이 case에 없다 | 없는 `candidate_id` · 없는 `case_id` · 현재 notices에 없는 `notice_code`/`action` 조합 |
 | `case.command.not_allowed` | 대상은 있지만 지금 상태에서 할 수 없다 | `CANDIDATE_REVIEW`에서 `MARK_REVIEWED` · 이미 선택된 후보를 다시 선택(무변경) · 새 후보 준비 중 다른 후보 선택 |
 | `case.command.invalid_payload` | payload 모양이 틀렸다 | 등재되지 않은 `value` · 필수 키 누락 |
-| `case.command.invalid_value` | **입력형 판본 초안(§12-4).** 모양은 맞지만 값이 정정 기록 규칙에 맞지 않는다 — evidence 기록 전 검사(E-3)가 거부했다 | 오프셋 없는 시각 · 번호판 빈 문자열 |
+| `case.command.invalid_value` | **입력형 판본 초안(§12-4).** 모양은 맞지만 값이 정정 기록 규칙에 맞지 않는다 — evidence 기록 전 검사(E-3)가 사용자가 고칠 수 있는 값 오류로 거부했다(내부 계약 위반은 이 코드가 아니다) | 오프셋 없는 시각 · 번호판 빈 문자열 |
 
 - 실패하면 **아무 상태도 바뀌지 않는다** — `case_rev`·CorrectionRecord·JobRecord·선택 상태 모두 그대로다(#166과 같은 원자성).
 - 검사 순서는 `invalid_payload` → `unknown_target`(case) → `stale_revision` → `unknown_target`(대상) → `not_allowed`다(입력형 판본은 마지막에 `invalid_value`, §12-4). 화면이 낡았으면 대상 검사 전에 먼저 알린다.
@@ -202,15 +202,15 @@ START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──�
 
 ## 12. 입력형 판본 초안 `case-command/v1` (2026-10-13)
 
-> **상태: 초안 — web(신유민) Consumer 확인 대기.** 열림 조건(§12-1)이 갖춰지기 전에는 case가 아래 kind를 받지 않는다(지금처럼 `invalid_payload`). 범위는 규칙이 이미 정해진 셋(번호판 · 발생시각 · `[다른 상황]`)이고, 나머지 입력형 action은 §12-5에 이유와 함께 남긴다. 근거 #235(E-1 · E-2 · E-3 결정) · `contract-correction-record.md` · `core-user-flow.md` §12 · §13 · §15 · §20.
+> **상태: 초안 — web(신유민) · evidence(flosure23) 확인(2026-10-21, PR #356), 리뷰 반영(2026-10-24 — §12-4 오류 두 부류 · §12-5 버튼 노출).** 열림 조건(§12-1)이 갖춰지기 전에는 case가 아래 kind를 받지 않는다(지금처럼 `invalid_payload`). 범위는 규칙이 이미 정해진 셋(번호판 · 발생시각 · `[다른 상황]`)이고, 나머지 입력형 action은 §12-5에 이유와 함께 남긴다. 근거 #235(E-1 · E-2 · E-3 결정) · `contract-correction-record.md` · `core-user-flow.md` §12 · §13 · §15 · §20.
 
 ### 12-1. 열림 조건
 
 web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. case 구현도 2 · 3 뒤에 한다.
 
-1. 이 판본 합의(web 확인).
+1. 이 판본 합의(web 확인). → **충족(2026-10-21, 신유민 PR #356 댓글).**
 2. **`correction-record/v1.2`** — `previous_value`에 `null`(값이 없던 상태) 허용(#235 E-1 · E-2). 계약 반영(PM)과 evidence 검사(`evidence/corrections.py`) 반영.
-3. **evidence 기록 전 검사 공개 함수**(#235 E-3) — 값 형식 + supersede chain 연속성. case가 기록 전에 부른다.
+3. **evidence 기록 전 검사 공개 함수**(#235 E-3) — 값 형식 + supersede chain 연속성. case가 기록 전에 부른다. 거부 결과는 「사용자가 고칠 수 있는 값 오류」와 「내부 계약 위반」을 구분해 돌려준다(§12-4) — 정확한 반환 · 예외 모양은 구현 때 evidence와 정한다.
 
 그 전에 열면 값이 없던 상태의 첫 입력이 기록된 뒤 evidence 조립에서 거부되고, 기록은 되돌리지 않으므로(`contract-correction-record.md` §8-9) 그 case는 이후 CaseView를 만들 수 없다(#235 §1).
 
@@ -238,7 +238,15 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 
 ### 12-4. `case.command.invalid_value`
 
-evidence 기록 전 검사(E-3)가 거부하면 `invalid_value`이고 아무것도 기록하지 않는다(§6 원자성). 검사 순서는 `not_allowed` 다음, 기록 직전이다. `message_key`는 `command.invalid_value`(문구는 §9 미결과 함께 web이 정한다). chain 연속성 위반은 case가 `previous_value`를 채우므로 정상 경로에서는 생기지 않는다 — 생기면 배선 오류다.
+evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른다. 거부하면 아무것도 기록하지 않는다(§6 원자성). **거부는 두 부류로 나눠 돌려준다**(PR #356 evidence 리뷰) — 사용자가 다시 입력해도 고쳐지지 않는 내부 문제를 사용자 입력 오류로 보이지 않게 하기 위해서다.
+
+| 부류 | 예 | case 응답 | 화면 |
+| --- | --- | --- | --- |
+| **사용자가 고칠 수 있는 값 오류** | 시각 형식(오프셋 없음 등) · 허용되지 않는 값 공간 · target별 값 형식 위반 | `case.command.invalid_value`(`message_key` `command.invalid_value`) | 값을 다시 입력하도록 안내한다 |
+| **내부 계약 위반** | supersede 대상이 없거나 다른 target을 가리킴 · chain 값이 이어지지 않음 · 같은 target에 head가 둘 · kind/target 조합 등 case가 구성한 CorrectionRecord 자체의 위반 | command 실패 코드가 아니다 — 배선 오류로 올려 transaction을 되돌리고, HTTP 층은 `500 http.internal_error`(HTTP API Contract §3.3)로 돌려준다 | 사용자 책임처럼 보이지 않는 일반 실패 문구(web) |
+
+- 내부 계약 위반은 정상 경로에서 생기지 않는다 — `previous_value` · `supersedes_ref` · `kind` · `target_field`를 모두 case가 채우기 때문이다(§12-2). 그래서 `case.command.*` 코드를 새로 두지 않는다.
+- `invalid_value` 문구는 §9 미결(`message_key` 목록)과 함께 web이 정한다.
 
 ### 12-5. 이 판본에 넣지 않는 입력형 action
 
@@ -249,6 +257,8 @@ evidence 기록 전 검사(E-3)가 거부하면 `invalid_value`이고 아무것�
 | 위치 단서 수정(Flow §14 `[위치 단서 수정]`) | CorrectionRecord `kind` 9종에 위치용이 없다 — kind 추가는 `contract-correction-record.md` 변경이다 |
 | 번호판 `[맞아요]`(Flow §12) | 값을 바꾸지 않는 확인이라 CorrectionRecord로 남길 수 없다(§8-7). 「사용자 확인됨」을 어디에 기록할지 정해야 한다 |
 | 신고 유형 · 위반 내용 정정(`REPORT_TYPE_CHANGE` · `event.violation_expression`) | Flow에 화면 입구가 없다 |
+
+- **보낼 command가 없는 동안 이 action은 버튼으로 노출하지 않는다**(PR #356 web 리뷰). web은 `REVIEW_TIME` · `EDIT_HINT`를 notice 버튼으로 그리지 않고, case도 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B§7)로 싣지 않는다. 지금 `search.no_candidates`는 `EDIT_HINT`를 싣고 있어(B§7 2026-09-29 등재, `service.NO_CANDIDATES_NOTICE`) 이 원칙과 어긋난다 — 빼는 일은 CaseView 계약 행 변경이라 이 문서 밖 후속이다(§12-7).
 
 ### 12-6. 예시
 
@@ -271,4 +281,6 @@ evidence 기록 전 검사(E-3)가 거부하면 `invalid_value`이고 아무것�
 
 - 열림 조건 2 · 3(§12-1) — #235 후속(PM · evidence).
 - CaseView 계약 B§7 `notices[].actions[]` 매핑의 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` 행을 이 kind로 가리키게 고치는 일 — 이 판본 합의 뒤.
+- `search.no_candidates`의 `EDIT_HINT` 빼기(§12-5) — CaseView 계약 B§7 행 · `service.NO_CANDIDATES_NOTICE` · `scenario_empty_001` fixture를 함께 고친다. web은 그동안 버튼으로 그리지 않는다.
+- evidence 기록 전 검사의 두 부류 반환 모양(§12-1 조건 3 · §12-4) — 구현 때 evidence와 정한다.
 - 구현 때 맞출 것: `CORRECTED`는 상황 응답 기록과 정정 기록이 각각 `case_rev`를 올리지 않게 한 번만 올린다(지금 `record_situation_response()` · `apply_correction()`이 각자 올린다).
