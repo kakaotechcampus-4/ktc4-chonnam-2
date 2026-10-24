@@ -64,7 +64,9 @@ class ProducedReader(Protocol):
       (판독 둘은 readout 공개 함수 반환 `(ReadoutRun, 결과 | None)`과 같은 모양)
 
     판독 kind는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때 `StoredObservationAdapter`가 같은 reader로
-    읽는다(`observation-storage.md` §4-2 · §4-5). T2는 성공한 Fine · clip만 읽는다.
+    읽는다(`observation-storage.md` §4-2 · §4-5). export kind(`REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`)는 reader로도
+    읽지 않는다 — 파생 asset은 recording case asset 목록에서 고른다(`result-reflection.md` §3-4). T2는 성공한 Fine · clip만
+    읽는다.
     """
 
     def __call__(self, conn: Any, kind: str, produced: tuple[dict[str, str], ...]) -> dict[str, Any]: ...
@@ -154,6 +156,13 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 
+def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
+    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice 매핑은 미결
+    # (`report-video-export.md` §5), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+
+
 _APPLIERS = {
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
@@ -161,4 +170,6 @@ _APPLIERS = {
     "OVERLAY_TIME_READ": _apply_observation,
     "FINE_VERIFY": _apply_fine_verify,
     "INCIDENT_CLIP_BUILD": _apply_incident_clip_build,
+    "REPORT_VIDEO_EXPORT": _apply_export,
+    "PLATE_IMAGE_EXPORT": _apply_export,
 }
