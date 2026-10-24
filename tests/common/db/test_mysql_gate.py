@@ -22,6 +22,7 @@ from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
 from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
 from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
+from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -45,6 +46,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *ASSET_CHECKS,
     *FRAME_CHECKS,
     *UPLOAD_CHECKS,
     *PRODUCED_CHECKS,
@@ -132,6 +134,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *ASSET_PARAMETERS,
     *FRAME_PARAMETERS,
     *UPLOAD_PARAMETERS,
     *PRODUCED_PARAMETERS,
@@ -553,7 +556,7 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", (*FRAME_PARAMETERS, *PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
+@pytest.mark.parametrize("identity", (*ASSET_PARAMETERS, *FRAME_PARAMETERS, *PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
 @pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
 def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()

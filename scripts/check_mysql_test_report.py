@@ -17,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("api_asset", s) for s in ("read", "isolation", "exact_identity", "corruption", "transaction", "failure", "interruption", "send")),
     *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
@@ -124,6 +125,20 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("api_asset", s, p) for s, p in (
+        ('read', 'mp4'), ('read', 'png'), ('read', 'restart'), ('read', 'safe_filename'),
+        *(('isolation', p) for p in ('missing_case', 'unknown', 'foreign', 'wrong_kind',
+                                    'unavailable', 'missing_bytes', 'invalid_bytes')),
+        *(('exact_identity', layer+'_'+variant) for layer in ('ref', 'scope')
+          for variant in ('trailing', 'leading', 'case', 'multiple', 'unicode', 'unicode_space')),
+        *(('corruption', p) for p in ('metadata', 'identity', 'descriptor', 'bytes', 'relation')),
+        *(('transaction', p) for p in ('caller_rollback', 'closed_stream', 'read_error', 'length_mismatch', 'cancel_read', 'headers_after_checkin')),
+        *(('failure', p) for p in ('pool', 'disconnect', 'temporary', 'unexpected', 'read_failure', 'validation')),
+        *(('interruption', p) for p in ('read', 'detached')),
+        *(('send', phase+'_'+ending) for phase in ('start', 'body', 'final')
+          for ending in ('normal', 'cancel', 'disconnect', 'oserror', 'unexpected')),
+        ('send', 'network_disconnect'), ('send', 'partial_failure'),
+    )),
     *(("api_frame", s, p) for s, p in (
         ('read', 'headers_repeat'), ('read', 'process_restart'),
         ('isolation', 'missing_case'), ('isolation', 'unknown'), ('isolation', 'cross_case'),
