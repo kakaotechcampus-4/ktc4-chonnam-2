@@ -22,6 +22,11 @@ class FrameUnavailable(HTTPException):
         super().__init__(404)
 
 
+class AssetUnavailable(HTTPException):
+    def __init__(self):
+        super().__init__(404)
+
+
 def error_response(status: int, *, headers=None, ref_unavailable=False) -> JSONResponse:
     code = "http.ref_unavailable" if status == 404 and ref_unavailable else _HTTP_CODES[status]
     if status == 413:
@@ -52,7 +57,7 @@ def install_error_handlers(app, events):
             methods = getattr(route, "methods", None)
             if methods:
                 headers = {"Allow": ", ".join(sorted(methods))}
-        return failure(status, headers=headers, ref_unavailable=isinstance(error, FrameUnavailable))
+        return failure(status, headers=headers, ref_unavailable=isinstance(error, (FrameUnavailable, AssetUnavailable)))
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):

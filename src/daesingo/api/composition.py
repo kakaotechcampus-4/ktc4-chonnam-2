@@ -6,7 +6,7 @@ from time import monotonic
 
 from sqlalchemy.engine import Engine
 import daesingo.case as case_api
-from daesingo.case.store import CaseStore
+from daesingo.case.store import CaseStore, validate_case_id
 from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.case.timeline_source import RecordingSequentialTimelineSource
 from daesingo.common.bootstrap import Startup
@@ -18,7 +18,7 @@ from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
 from daesingo.common.storage.cleanup import configured_cleanup
 from daesingo.common.storage.media import MediaRoot
-from daesingo.recording import RecordingService, FfprobeMediaProbe, RecordingCapabilityError
+from daesingo.recording import RecordingService, FfprobeMediaProbe, RecordingCapabilityError, ContractRef
 from daesingo.recording.mysql_repository import MySQLRecordingRepository
 from daesingo.case.domain import SourceNotAccepted
 from .health import Readiness
@@ -149,6 +149,24 @@ class ApiComposition:
                 return recording.read_owned_frame_image(case_id, frame_ref)
         # Only detached bytes/metadata escape; the caller connection is returned
         # before the route constructs headers or starts transmitting the body.
+        return run_api_transaction(self.engine, operation)
+
+    def load_asset(self, case_id: str, asset_ref: str):
+        validate_case_id(case_id)
+        def operation(conn):
+            self._store(conn).get_case(case_id)
+            with RecordingService(MySQLRecordingRepository(conn,
+                    storage_root=self.startup.config.media_root)) as recording:
+                if not recording.owns_asset(case_id, ContractRef(kind='derived_asset', ref=asset_ref)):
+                    raise RecordingCapabilityError('UNKNOWN_REF', 'asset is not owned')
+                opened = recording.open_derived_asset(asset_ref)
+                with opened.stream:
+                    content = opened.stream.read()
+                if not isinstance(content, bytes) or len(content) != opened.byte_size:
+                    raise RuntimeError('stored asset read is incomplete')
+                return content, opened.content_type
+        # Recording uses the caller Connection. Close its stream before ending
+        # the transaction; only detached bytes and media type reach the route.
         return run_api_transaction(self.engine, operation)
 
     def close(self):
