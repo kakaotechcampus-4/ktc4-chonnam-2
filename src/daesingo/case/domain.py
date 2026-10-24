@@ -89,6 +89,9 @@ class Candidate:
     # search `CandidateEvent.span.representative_ms`(그 후보 timeline revision 기준 상대 ms) 그대로.
     # CaseView `candidates[].marker_ms`의 원천이다(#184). case가 계산·보정하지 않는다.
     representative_ms: int | None = None
+    # search `CandidateEvent.span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot. 관찰 job 입력의
+    # 구간 원천이다(`decisions/incident-clip-observation-input.md` §4-1). 이 필드 전에 받은 후보는 `None`.
+    span: dict[str, Any] | None = None
     # 저장된 상태에 있었지만 이 코드가 모르는 키(새 코드가 쓴 필드). 다시 저장할 때 그대로 쓴다 —
     # rollback한 옛 코드가 새 필드를 지우지 않게(`decisions/case-store-mysql.md` §4).
     extra: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -160,6 +163,10 @@ class CaseAggregate:
     # 만들 입력이다(`decisions/start-analysis.md` §3-1). `video_stream_ref`는 등록 때 VIDEO가 정확히 하나였을 때만
     # 있다 — case가 여러 VIDEO 중 하나를 고르지 않는다. CaseView 비노출.
     sources: list[dict[str, Any]] = field(default_factory=list)
+
+    # 관찰 job의 고정 입력(`job_id` → 후보 · 세대 · span · clip ref). 발주할 때 남기고 고치지 않는다(append-only).
+    # handler는 `CaseStore.observation_input`으로 읽는다(`decisions/incident-clip-observation-input.md` §4-1). CaseView 비노출.
+    observation_inputs: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -404,6 +411,32 @@ class CaseAggregate:
             raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
         if match.selected:
             raise InvalidTransition(f"이미 선택된 candidate_id다: {candidate_id}")
+        if self.preparing_selected_candidate():
+            raise InvalidTransition("선택 후보의 신고자료를 준비하는 중에는 다른 후보를 고를 수 없다(core-user-flow §8-1)")
+
+    def current_generation_job_id(self) -> str | None:
+        """현재 후보 목록 세대 표식 — 가장 나중 `REFLECTED` `COARSE_SEARCH`의 `job_id`(`observation-storage.md` §4-4)."""
+        reflected = [
+            r["job_id"]
+            for r in self.job_records
+            if r["kind"] == "COARSE_SEARCH" and self.settled_jobs.get(r["job_id"]) == "REFLECTED"
+        ]
+        return reflected[-1] if reflected else None
+
+    def preparing_selected_candidate(self) -> bool:
+        """선택 후보의 신고자료를 준비하는 중인가 — 선택 후보 · 현재 세대로 입력이 고정된 관찰 job 중 아직 결과를
+        기다리는 것이 있다(6.6순위 조건 1, `decisions/reselect-while-preparing.md`). 입력 없이 발주된 job(동기 · 데모
+        경로)은 보지 않는다."""
+        selected = next((c.candidate_id for c in self.candidates if c.selected), None)
+        generation = self.current_generation_job_id()
+        if selected is None or generation is None:
+            return False
+        return any(
+            (source := self.observation_inputs.get(r["job_id"])) is not None
+            and source["candidate_id"] == selected
+            and source["generation_job_id"] == generation
+            for r in self.waiting_job_records()
+        )
 
     def reselect_candidate(self, candidate_id: str) -> None:
         """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤 사용자가 "다른 후보가 맞다"고 정정하는 경로.

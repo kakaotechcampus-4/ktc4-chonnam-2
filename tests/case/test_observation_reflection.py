@@ -32,8 +32,9 @@ class FakeTimelines:
 
 
 class FakeReader:
+    # T2가 읽는 관찰 kind는 성공한 `FINE_VERIFY`뿐이다 — 그 모양(`reflection.ProducedReader`)으로, 관찰 결과 없음.
     def __init__(self, content: dict[str, Any] | None = None):
-        self.content = content or {}
+        self.content = content or {"analysis_run": None, "visual_evidence": None}
         self.calls: list[str] = []
 
     def __call__(self, conn: Any, kind: str, produced: tuple) -> dict[str, Any]:
@@ -134,7 +135,9 @@ def test_observation_result_is_settled_without_reading_content(kind, status):
     case = store.get_case(case_id)
     assert case.settled_jobs[outcome.job_id] == "REFLECTED"
     assert case.processed_executions[outcome.execution_id] == outcome.job_id
-    assert reader.calls == []  # 내용은 CaseView 조립 때 adapter가 읽는다(§4-2)
+    # 내용은 CaseView 조립 때 adapter가 읽는다(§4-2). 성공한 Fine만 후속 발주 판단으로 `verification`을 읽는다
+    # (`incident-clip-observation-input.md` §4-3) — 입력 없이 발주된 job이라 후속은 없다.
+    assert reader.calls == (["FINE_VERIFY"] if (kind, status) == ("FINE_VERIFY", "SUCCEEDED") else [])
     assert case.stage == "EVIDENCE_REVIEW"
     assert jobs.latest_job_record(case, kind)["job_id"] not in [r["job_id"] for r in case.waiting_job_records()]
 

@@ -113,6 +113,10 @@
 
 ## 9. case 쪽 구현 (확인 뒤, TDD)
 
+> **진행 (2026-10-24, 1단계):** kind 등재 · 관찰 입력 고정과 `CaseStore.observation_input` · 관찰 kind의 `scope_ref` · Fine → clip → 판독 후속 발주 · 같은 입력 재발주(`jobs.issue_same_input`)를 넣었다(`case/observation.py`). **남은 것:** Coarse T2 자동 선택 · 첫 Fine 발주 배선은 `StoredObservationAdapter`를 composition에 꽂는 단계와 함께 연다 — 선택된 case는 CaseView 조립에 adapter가 필요해, 먼저 열면 API · Worker가 `AdapterNotAttached`로 멈춘다(Runtime 비동기 E2E의 rank=1 후보). `SELECT_OTHER_CANDIDATE` 뒤 첫 빠진 단계부터 발주(§4-6)도 그때 붙인다.
+>
+> **진행 (2026-10-24, 2단계):** §4-7 `StoredObservationAdapter`를 넣었다(`observation-storage.md` §9). 남은 것은 composition 주입(Runtime) 뒤 Coarse T2 자동 선택 배선과 §4-6이다.
+
 - `JOB_KINDS`에 `INCIDENT_CLIP_BUILD` · `label_key` 매핑 · JobRecord 계약 A§7 · A§12 등재.
 - `issue_job(..., observation_input=…)` · 관찰 kind 발주 때 세대의 `scope_ref` 싣기 · `CaseStore.observation_input`.
 - `reflection`: `COARSE_SEARCH` 뒤 자동 선택 + Fine 발주, `FINE_VERIFY` · `INCIDENT_CLIP_BUILD` 뒤 후속 발주, `_APPLIERS`에 `INCIDENT_CLIP_BUILD`.
