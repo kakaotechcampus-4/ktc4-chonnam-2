@@ -266,15 +266,13 @@ def test_parse_failure_finishes_failed_with_observed_tokens(
     }
 
 
-@pytest.mark.parametrize(
-    "content",
-    ["not json", '{"candidates": "not-a-list"}'],
-    ids=["invalid-json", "schema-violation"],
-)
-def test_real_sdk_parse_failure_keeps_response_token_usage(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, content: str
-) -> None:
-    """실제 SDK는 parse() 안에서 JSON · schema 검증 예외를 던진다 — 그래도 usage를 남긴다."""
+_TOKENS_10_2_12 = {"input_tokens": 10, "output_tokens": 2, "total_tokens": 12}
+
+
+def _real_sdk_provider(
+    monkeypatch: pytest.MonkeyPatch, content: str, usage: object
+) -> tuple[GeminiProvider, list[object]]:
+    """실제 OpenAI SDK에 모의 HTTP 200을 물린 provider. 보낸 요청을 함께 돌려준다."""
     openai = pytest.importorskip("openai")
     httpx = pytest.importorskip("httpx")
     requests: list[object] = []
@@ -295,11 +293,7 @@ def test_real_sdk_parse_failure_keeps_response_token_usage(
                         "message": {"role": "assistant", "content": content},
                     }
                 ],
-                "usage": {
-                    "prompt_tokens": 10,
-                    "completion_tokens": 2,
-                    "total_tokens": 12,
-                },
+                "usage": usage,
             },
         )
 
@@ -316,7 +310,24 @@ def test_real_sdk_parse_failure_keeps_response_token_usage(
         "daesingo.search.provider.importlib.import_module",
         lambda name: mod if name == "openai" else original(name),
     )
-    provider = GeminiProvider("k", GeminiSearchConfig(max_retries=0))
+    return GeminiProvider("k", GeminiSearchConfig(max_retries=0)), requests
+
+
+_USAGE_10_2_12 = {"prompt_tokens": 10, "completion_tokens": 2, "total_tokens": 12}
+_STRING_USAGE = {"prompt_tokens": "10", "completion_tokens": "2", "total_tokens": "12"}
+_EMPTY_COARSE = '{"candidates": []}'
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["not json", '{"candidates": "not-a-list"}'],
+    ids=["invalid-json", "schema-violation"],
+)
+def test_real_sdk_parse_failure_keeps_response_token_usage(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, content: str
+) -> None:
+    """실제 SDK는 parse() 안에서 JSON · schema 검증 예외를 던진다 — 그래도 usage를 남긴다."""
+    provider, requests = _real_sdk_provider(monkeypatch, content, _USAGE_10_2_12)
     sink = _RecordingSink()
 
     with pytest.raises(ProviderPayloadError):
@@ -326,11 +337,46 @@ def test_real_sdk_parse_failure_keeps_response_token_usage(
     assert len(sink.begins) == 1
     (finish,) = sink.finishes
     assert finish["outcome"] == "FAILED"
-    assert finish["token_usage"] == {
-        "input_tokens": 10,
-        "output_tokens": 2,
-        "total_tokens": 12,
-    }
+    assert finish["token_usage"] == _TOKENS_10_2_12
+
+
+def test_real_sdk_numeric_string_usage_is_normalized(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    provider, requests = _real_sdk_provider(monkeypatch, _EMPTY_COARSE, _STRING_USAGE)
+    sink = _RecordingSink()
+
+    result = provider.search_coarse(_coarse_request(tmp_path, sink))
+
+    assert result.usage.input_tokens == 10
+    assert result.usage.output_tokens == 2
+    assert len(requests) == 1
+    assert len(sink.begins) == 1
+    (finish,) = sink.finishes
+    assert finish["outcome"] == "SUCCEEDED"
+    assert finish["token_usage"] == _TOKENS_10_2_12
+
+
+@pytest.mark.parametrize(
+    "usage",
+    [
+        {"prompt_tokens": "abc", "completion_tokens": [1], "total_tokens": None},
+        {"prompt_tokens": -1, "completion_tokens": 2.5, "total_tokens": True},
+        "weird",
+    ],
+    ids=["garbage-values", "negative-fraction", "not-an-object"],
+)
+def test_real_sdk_unexpected_usage_still_finishes_without_tokens(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, usage: object
+) -> None:
+    provider, _requests = _real_sdk_provider(monkeypatch, _EMPTY_COARSE, usage)
+    sink = _RecordingSink()
+
+    _ = provider.search_coarse(_coarse_request(tmp_path, sink))
+
+    (finish,) = sink.finishes
+    assert finish["outcome"] == "SUCCEEDED"
+    assert finish["token_usage"] is None
 
 
 def test_unpriced_cost_is_none_not_zero(
@@ -374,16 +420,18 @@ class _TmpMediaPreparer:
 def _coarse_service(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
-    completions: _Completions,
+    completions: _Completions | GeminiProvider,
     max_retries: int = 0,
-) -> Callable[[_RecordingSink], Any]:
+) -> Callable[[_RecordingSink | None], Any]:
     source = _source()
     resolver = StaticAnalysisSourceResolver(
         {"scope-usage-1": (source,)}, {"clip-usage-1": source}
     )
     service = SearchService(
         OpenableResolver(resolver),
-        _provider(monkeypatch, completions, max_retries=max_retries),
+        completions
+        if isinstance(completions, GeminiProvider)
+        else _provider(monkeypatch, completions, max_retries=max_retries),
         GeminiSearchConfig(),
         _TmpMediaPreparer(_media(tmp_path)),
     )
@@ -426,6 +474,23 @@ def test_coarse_run_usage_refs_are_the_issued_usage_ids(
         b["run_ref"] == {"kind": "analysis_run", "ref": run.run_id} for b in sink.begins
     )
     assert all(f["processed_duration_sec"] == 5.0 for f in sink.finishes)
+
+
+@pytest.mark.parametrize("with_sink", [True, False], ids=["sink", "no-sink"])
+def test_real_sdk_string_usage_coarse_run_succeeds(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, with_sink: bool
+) -> None:
+    provider, _requests = _real_sdk_provider(monkeypatch, _EMPTY_COARSE, _STRING_USAGE)
+    search = _coarse_service(monkeypatch, tmp_path, provider)
+    sink = _RecordingSink() if with_sink else None
+
+    run = search(sink)
+
+    assert run.outcome is RunOutcome.SUCCEEDED
+    if sink is not None:
+        (finish,) = sink.finishes
+        assert finish["token_usage"] == _TOKENS_10_2_12
+        assert run.usage_refs == (sink.begins[0]["usage_id"],)
 
 
 def test_failed_coarse_run_still_links_issued_usage_ids(

@@ -150,11 +150,26 @@ def _to_origin_times(value: object, speed: float) -> object:
     return value
 
 
+def _token_count(value: object) -> int | None:
+    """SDK는 `"10"` 같은 숫자 문자열은 int로 바꾸지만 그 밖의 값은 그대로 넘긴다.
+
+    연산 전에 음이 아닌 int로 맞추고, 맞출 수 없으면 관측 안 됨(None)으로 둔다.
+    이상한 usage 때문에 호출이 실패하거나 `finish()`가 빠지면 안 된다.
+    """
+    if isinstance(value, bool) or (isinstance(value, float) and not value.is_integer()):
+        return None
+    try:
+        count = int(cast("Any", value))
+    except (TypeError, ValueError):
+        return None
+    return count if count >= 0 else None
+
+
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
     if usage is None:
         return ProviderUsage(None, None, None, None)
-    prompt_tokens: int | None = getattr(usage, "prompt_tokens", None)
-    completion_tokens: int | None = getattr(usage, "completion_tokens", None)
+    prompt_tokens = _token_count(getattr(usage, "prompt_tokens", None))
+    completion_tokens = _token_count(getattr(usage, "completion_tokens", None))
     total: int | None = None
     if prompt_tokens is not None and completion_tokens is not None:
         total = prompt_tokens + completion_tokens
