@@ -1,4 +1,4 @@
-"""Runtime version tracking only; business revisions belong to RT-03/RT-07.
+"""Runtime-owned revisions on a caller-owned transaction Connection.
 
 Online commands require a caller-owned transaction Connection. No env/config
 secret loading, engine creation or independent commit/close happens here.

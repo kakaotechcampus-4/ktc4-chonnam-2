@@ -85,9 +85,9 @@ def test_corrupt_file_is_not_registered(tmp_path):
     path.write_bytes(b"not a media container")
     before = fingerprint(path)
     repo = InMemoryRecordingRepository()
-    with pytest.raises(RecordingCapabilityError, match="조사하지 못") as caught:
+    with pytest.raises(RecordingCapabilityError) as caught:
         RecordingService(repo).register_local_source(path)
-    assert caught.value.code == "TEMPORARY_FAILURE"
+    assert caught.value.code == "UNSUPPORTED_MEDIA"
     assert str(path) not in str(caught.value)
     assert not repo._source_assets and not repo._media_streams and not repo._local_sources
     assert fingerprint(path) == before
@@ -212,8 +212,9 @@ def test_invalid_duration_tag_is_not_registered(monkeypatch, probe_input, tag):
         {"index": 0, "codec_type": "video", "tags": {"DURATION": tag}},
     ]})
     repo = InMemoryRecordingRepository()
-    with pytest.raises(ValueError):
+    with pytest.raises(RecordingCapabilityError) as error:
         RecordingService(repo).register_local_source(probe_input)
+    assert error.value.code == "TEMPORARY_FAILURE"
     assert not repo._source_assets and not repo._media_streams
 
 
@@ -230,8 +231,9 @@ def test_invalid_duration_tag_is_not_registered(monkeypatch, probe_input, tag):
 def test_invalid_or_unsupported_metadata_is_not_registered(monkeypatch, probe_input, payload):
     mock_response(monkeypatch, payload)
     repo = InMemoryRecordingRepository()
-    with pytest.raises(ValueError):
+    with pytest.raises(RecordingCapabilityError) as error:
         RecordingService(repo).register_local_source(probe_input)
+    assert error.value.code in {"UNSUPPORTED_MEDIA", "TEMPORARY_FAILURE"}
     assert not repo._source_assets and not repo._media_streams
 
 

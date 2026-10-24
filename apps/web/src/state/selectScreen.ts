@@ -8,6 +8,8 @@ import type { CaseView, Notice, RunningJob } from '../contracts/caseView'
 
 export type ScreenKind =
   | 'PROGRESS'
+  | 'STOPPED'
+  | 'SEARCH_FAILED'
   | 'NO_RESULT'
   | 'NOT_OBSERVED'
   | 'AWAIT_RESPONSE'
@@ -73,6 +75,14 @@ export function selectScreen(view: CaseView): Screen {
     case 'INTAKE':
       return { ...base, kind: 'PROGRESS', reason: 'stage=INTAKE' }
     case 'SEARCHING':
+      // 중단 · 탐색 실패는 작업이 끝난 상태다. 진행 화면에 두면 끝나지 않는 것처럼 보인다.
+      // 다시 하기 버튼은 notice가 가진다(`RETRY_SEARCH`). 중단은 stage가 SEARCHING에 머문다(#342).
+      if (view.notices.some((n) => n.code === 'case.analysis_stopped')) {
+        return { ...base, kind: 'STOPPED', reason: 'stage=SEARCHING · case.analysis_stopped' }
+      }
+      if (view.notices.some((n) => n.code === 'search.candidate_search_failed')) {
+        return { ...base, kind: 'SEARCH_FAILED', reason: 'stage=SEARCHING · search.candidate_search_failed' }
+      }
       return { ...base, kind: 'PROGRESS', reason: 'stage=SEARCHING' }
     case 'CANDIDATE_REVIEW':
       // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다.
@@ -82,6 +92,11 @@ export function selectScreen(view: CaseView): Screen {
         ? { ...base, kind: 'NO_RESULT', reason: 'stage=CANDIDATE_REVIEW · candidates 0건' }
         : { ...base, kind: 'PROGRESS', reason: `stage=CANDIDATE_REVIEW · 후보 ${view.candidates.length}건 · 초안 준비 중` }
     case 'EVIDENCE_REVIEW':
+      // 응답 뒤 신고자료를 다시 준비하는 동안(running_jobs)은 결과가 아니라 진행이다 — 아직 끝나지 않은 것을
+      // 「완성하지 못했어요」로 보이지 않는다. 응답 대기 중이면 job이 남아 있어도(다시 판독 등) 응답을 받아야 하므로 결과 화면이다.
+      if (jobs.length > 0 && !view.notices.some((n) => n.code === 'case.situation_response_pending')) {
+        return { ...base, kind: 'PROGRESS', reason: `stage=EVIDENCE_REVIEW · running_jobs ${jobs.length}건 · 신고자료 준비 중` }
+      }
       return { ...base, kind: 'EVIDENCE', reason: 'stage=EVIDENCE_REVIEW · evidence 있음' }
     case 'READY':
       // READY는 PACKAGE_READY 파생 gate 성립 시점이다(계약 B절 §7). package가

@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Final
 
+from daesingo.common.usage.port import UsageSink
+
 from .coarse import LinkedCoarseResult
+from .config import API_KEY_ENV_NAMES, api_key_from_env
 from .errors import (
     MissingCandidateError,
     UnknownCandidateError,
@@ -26,14 +29,6 @@ from .stream_context import (
     SelectedVideoStream,
     VisualVerificationExecution,
     select_single_video_stream,
-)
-from .usage_sink import (
-    InMemoryUsageSink,
-    UsageAttempt,
-    UsageCost,
-    UsageObservation,
-    UsagePersistenceError,
-    UsageSink,
 )
 from .visual import VisualVerificationResult
 
@@ -60,6 +55,7 @@ def verify_visual(
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     candidate: CandidateEvent | None = None,
+    max_latency_sec: int | None = None,
     usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
     """Return the recorded Fine run together with its visual evidence."""
@@ -68,7 +64,12 @@ def verify_visual(
     if candidate is None:
         raise MissingCandidateError(source_ref=input_ref)
     return service.verify_visual(
-        input_ref, candidate, target_hint, event_type, usage_sink=usage_sink
+        input_ref,
+        candidate,
+        target_hint,
+        event_type,
+        max_latency_sec=max_latency_sec,
+        usage_sink=usage_sink,
     )
 
 
@@ -80,6 +81,7 @@ def verify_visual_with_stream_context(
     *,
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
+    max_latency_sec: int | None = None,
     usage_sink: UsageSink | None = None,
 ) -> VisualVerificationExecution:
     """Run Fine and return its non-canonical selected VIDEO stream context.
@@ -95,6 +97,7 @@ def verify_visual_with_stream_context(
         service=service,
         event_type=event_type,
         candidate=candidate,
+        max_latency_sec=max_latency_sec,
         usage_sink=usage_sink,
     )
     return VisualVerificationExecution(
@@ -111,7 +114,6 @@ __all__ = [
     "CandidateSourceLink",
     "ContractRef",
     "FixtureNotFoundError",
-    "InMemoryUsageSink",
     "IntentFailureKind",
     "IntentHintExtractor",
     "IntentHintResult",
@@ -123,15 +125,12 @@ __all__ = [
     "SearchService",
     "UnknownCandidateError",
     "UnknownCandidateRunError",
-    "UsageAttempt",
-    "UsageCost",
-    "UsageObservation",
-    "UsagePersistenceError",
-    "UsageSink",
     "VideoStreamSelectionError",
     "VisualEventType",
     "VisualVerificationExecution",
     "VisualVerificationResult",
+    "API_KEY_ENV_NAMES",
+    "api_key_from_env",
     "build_gemini_search_service",
     "build_intent_hint_extractor",
     "search_candidates",

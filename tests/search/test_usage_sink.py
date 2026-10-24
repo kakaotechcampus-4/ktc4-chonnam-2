@@ -1,29 +1,27 @@
 """UsageSink(#303) — provider HTTP 시도마다 begin → HTTP → finish 1회씩.
 
 가짜 openai 모듈로 GeminiProvider를 돌린다 — 네트워크에 닿지 않는다.
+sink 인자는 Runtime `DurableUsageSink`의 검증을 그대로 거친다(DB 쓰기만 생략).
 """
 
 import importlib
 import sys
-from collections.abc import Generator
+from collections.abc import Callable, Generator, Mapping
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 
 import pytest
 
-from daesingo.search import (
-    InMemoryUsageSink,
-    UsageAttempt,
-    UsageObservation,
-    UsagePersistenceError,
-)
+from daesingo.common.usage.port import UsagePersistenceError
+from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import RunDeadline
 from daesingo.search.intent import IntentHintExtraction, IntentHintExtractor
 from daesingo.search.media import MediaInput, PreparedMedia
-from daesingo.search.provider import CoarseRequest, GeminiProvider
+from daesingo.search.provider import CoarseRequest, GeminiProvider, UsageBinding
 from daesingo.search.runs import ContractRef, RunOutcome
 from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import (
@@ -50,6 +48,9 @@ class _FakeBadRequestError(_FakeApiError):
     pass
 
 
+_NO_PARSED = object()
+
+
 @dataclass
 class _Completions:
     """시도마다 outcomes를 하나씩 소비한다. 예외면 던지고, 아니면 parsed로 돌려준다."""
@@ -63,8 +64,9 @@ class _Completions:
         if isinstance(outcome, Exception):
             raise outcome
         usage = SimpleNamespace(prompt_tokens=10, completion_tokens=2)
+        parsed = None if outcome is _NO_PARSED else outcome
         return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(parsed=outcome))],
+            choices=[SimpleNamespace(message=SimpleNamespace(parsed=parsed))],
             usage=usage,
         )
 
@@ -88,20 +90,63 @@ def _provider(
 
 
 @dataclass
-class _FailingSink:
+class _RecordingSink:
+    """호출을 기록하고, 인자는 Runtime sink 검증에 그대로 넘긴다."""
+
     fail_begin: bool = False
     fail_finish: bool = False
-    inner: InMemoryUsageSink = field(default_factory=InMemoryUsageSink)
+    begins: list[dict[str, Any]] = field(default_factory=list)
+    finishes: list[dict[str, Any]] = field(default_factory=list)
+    runtime: DurableUsageSink = field(
+        default_factory=lambda: DurableUsageSink(
+            execution_ref="exec-1", case_id="case-1", transaction=lambda _callback: None
+        )
+    )
 
-    def begin(self, attempt: UsageAttempt) -> str:
+    def begin(
+        self,
+        operation: str,
+        provider_label: str,
+        pricing_context: Mapping[str, Any],
+        *,
+        usage_id: str | None = None,
+        run_ref: Mapping[str, str] | None = None,
+        run_ref_reason: str | None = None,
+    ) -> str:
         if self.fail_begin:
-            raise OSError("db down")
-        return self.inner.begin(attempt)
+            raise UsagePersistenceError()
+        issued = self.runtime.begin(
+            operation,
+            provider_label,
+            pricing_context,
+            usage_id=usage_id,
+            run_ref=run_ref,
+            run_ref_reason=run_ref_reason,
+        )
+        self.begins.append(
+            {
+                "usage_id": issued,
+                "operation": operation,
+                "run_ref": run_ref,
+                "run_ref_reason": run_ref_reason,
+            }
+        )
+        return issued
 
-    def finish(self, usage_id: str, observed: UsageObservation) -> None:
+    def finish(self, usage_id: str, **observed: Any) -> None:
         if self.fail_finish:
-            raise OSError("db down")
-        self.inner.finish(usage_id, observed)
+            raise UsagePersistenceError(usage_id=usage_id)
+        self.runtime.finish(usage_id, **observed)
+        self.finishes.append({"usage_id": usage_id, **observed})
+
+    def finalize(
+        self,
+        usage_id: str,
+        *,
+        run_ref: Mapping[str, str] | None,
+        run_ref_reason: str | None,
+    ) -> None:
+        raise AssertionError("Search는 finalize하지 않는다(#303)")
 
 
 def _source() -> ResolvedAnalysisSource:
@@ -126,13 +171,12 @@ def _media(tmp_path: Path) -> PreparedMedia:
     )
 
 
-def _coarse_request(tmp_path: Path, sink: object) -> CoarseRequest:
+def _coarse_request(tmp_path: Path, sink: _RecordingSink) -> CoarseRequest:
     return CoarseRequest(
         _source(),
         (VisualEventType.SIGNAL,),
         media=_media(tmp_path),
-        usage_sink=sink,  # pyright: ignore[reportArgumentType]
-        run_ref="run_x",
+        usage=UsageBinding(sink, "CANDIDATE_SEARCH", "run_x", 5.0),
     )
 
 
@@ -143,32 +187,40 @@ def test_each_http_attempt_gets_one_begin_and_one_finish(
     completions = _Completions(
         [rate_limited, rate_limited, CoarseResponse(candidates=())]
     )
-    sink = InMemoryUsageSink()
+    sink = _RecordingSink()
+    request = _coarse_request(tmp_path, sink)
 
-    result = _provider(monkeypatch, completions, max_retries=2).search_coarse(
-        _coarse_request(tmp_path, sink)
-    )
+    _ = _provider(monkeypatch, completions, max_retries=2).search_coarse(request)
 
-    entries = sink.entries()
     assert completions.calls == 3
-    assert len(entries) == 3
-    assert result.usage_ids == tuple(usage_id for usage_id, _, _ in entries)
-    observations = [observed for _, _, observed in entries]
-    assert all(observed is not None for observed in observations)
-    assert [o.succeeded for o in observations if o] == [False, False, True]
-    assert [o.token_usage is None for o in observations if o] == [True, True, False]
-    attempt = entries[0][1]
-    assert attempt.run_ref == "run_x"
-    assert attempt.run_ref_reason is None
-    assert attempt.operation == "CANDIDATE_SEARCH"
-    assert attempt.provider == "elice"
+    assert len(sink.begins) == len(sink.finishes) == 3
+    assert request.usage is not None
+    assert request.usage.issued == [b["usage_id"] for b in sink.begins]
+    assert [f["usage_id"] for f in sink.finishes] == request.usage.issued
+    assert [f["outcome"] for f in sink.finishes] == ["FAILED", "FAILED", "SUCCEEDED"]
+    assert [f["failure_kind"] for f in sink.finishes] == [
+        "_FakeApiError",
+        "_FakeApiError",
+        None,
+    ]
+    assert [f["token_usage"] for f in sink.finishes] == [
+        None,
+        None,
+        {"input_tokens": 10, "output_tokens": 2, "total_tokens": 12},
+    ]
+    assert all(
+        b["run_ref"] == {"kind": "analysis_run", "ref": "run_x"}
+        and b["run_ref_reason"] is None
+        and b["operation"] == "CANDIDATE_SEARCH"
+        for b in sink.begins
+    )
 
 
 def test_begin_failure_sends_no_http_and_does_not_retry(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     completions = _Completions([CoarseResponse(candidates=())])
-    sink = _FailingSink(fail_begin=True)
+    sink = _RecordingSink(fail_begin=True)
 
     with pytest.raises(UsagePersistenceError):
         _ = _provider(monkeypatch, completions, max_retries=2).search_coarse(
@@ -182,7 +234,7 @@ def test_finish_failure_does_not_call_provider_again(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     completions = _Completions([_FakeApiError("rate", status_code=429)] * 3)
-    sink = _FailingSink(fail_finish=True)
+    sink = _RecordingSink(fail_finish=True)
 
     with pytest.raises(UsagePersistenceError):
         _ = _provider(monkeypatch, completions, max_retries=2).search_coarse(
@@ -192,19 +244,37 @@ def test_finish_failure_does_not_call_provider_again(
     assert completions.calls == 1
 
 
+def test_parse_failure_finishes_failed_with_observed_tokens(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    sink = _RecordingSink()
+
+    with pytest.raises(Exception, match="no parsed content"):
+        _ = _provider(monkeypatch, _Completions([_NO_PARSED])).search_coarse(
+            _coarse_request(tmp_path, sink)
+        )
+
+    (finish,) = sink.finishes
+    assert finish["outcome"] == "FAILED"
+    assert finish["failure_kind"] == "ProviderPayloadError"
+    assert finish["token_usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 2,
+        "total_tokens": 12,
+    }
+
+
 def test_unpriced_cost_is_none_not_zero(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    sink = InMemoryUsageSink()
+    sink = _RecordingSink()
 
     _ = _provider(
         monkeypatch, _Completions([CoarseResponse(candidates=())])
     ).search_coarse(_coarse_request(tmp_path, sink))
 
-    ((_, _, observed),) = sink.entries()
-    assert observed is not None
-    assert observed.cost.amount is None
-    assert observed.cost.currency == "KRW"
+    (finish,) = sink.finishes
+    assert finish["cost"] == {"amount": None, "currency": "KRW"}
 
 
 class _TmpMediaPreparer:
@@ -232,18 +302,19 @@ class _TmpMediaPreparer:
         yield self._media
 
 
-def test_coarse_run_usage_refs_are_the_issued_usage_ids(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def _coarse_service(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    completions: _Completions,
+    max_retries: int = 0,
+) -> Callable[[_RecordingSink], Any]:
     source = _source()
     resolver = StaticAnalysisSourceResolver(
         {"scope-usage-1": (source,)}, {"clip-usage-1": source}
     )
-    rate_limited = _FakeApiError("rate", status_code=429)
-    completions = _Completions([rate_limited, CoarseResponse(candidates=())])
     service = SearchService(
         OpenableResolver(resolver),
-        _provider(monkeypatch, completions, max_retries=1),
+        _provider(monkeypatch, completions, max_retries=max_retries),
         GeminiSearchConfig(),
         _TmpMediaPreparer(_media(tmp_path)),
     )
@@ -262,20 +333,60 @@ def test_coarse_run_usage_refs_are_the_issued_usage_ids(
         budget=SearchBudget(max_cost_krw=1000, max_latency_sec=30),
         contract_version="1.1.0",
     )
-    sink = InMemoryUsageSink()
+    return lambda sink: service.search_candidates(scope, usage_sink=sink).analysis_run
 
-    run = service.search_candidates(scope, usage_sink=sink).analysis_run
+
+def test_coarse_run_usage_refs_are_the_issued_usage_ids(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    rate_limited = _FakeApiError("rate", status_code=429)
+    search = _coarse_service(
+        monkeypatch,
+        tmp_path,
+        _Completions([rate_limited, CoarseResponse(candidates=())]),
+        max_retries=1,
+    )
+    sink = _RecordingSink()
+
+    run = search(sink)
 
     assert run.outcome is RunOutcome.SUCCEEDED
-    entries = sink.entries()
-    assert len(entries) == 2
-    assert run.usage_refs == tuple(usage_id for usage_id, _, _ in entries)
-    assert all(attempt.run_ref == run.run_id for _, attempt, _ in entries)
-    assert all(attempt.operation == "CANDIDATE_SEARCH" for _, attempt, _ in entries)
+    assert run.usage_refs == tuple(b["usage_id"] for b in sink.begins)
+    assert len(run.usage_refs) == 2
+    assert all(
+        b["run_ref"] == {"kind": "analysis_run", "ref": run.run_id} for b in sink.begins
+    )
+    assert all(f["processed_duration_sec"] == 5.0 for f in sink.finishes)
 
 
-def test_intent_call_is_direct_no_run(monkeypatch: pytest.MonkeyPatch) -> None:
-    extraction = IntentHintExtraction(
+def test_failed_coarse_run_still_links_issued_usage_ids(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    search = _coarse_service(
+        monkeypatch, tmp_path, _Completions([_FakeApiError("boom", status_code=400)])
+    )
+    sink = _RecordingSink()
+
+    run = search(sink)
+
+    assert run.outcome is RunOutcome.FAILED
+    assert run.usage_refs == (sink.begins[0]["usage_id"],)
+
+
+def test_usage_error_propagates_instead_of_failed_run(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    completions = _Completions([CoarseResponse(candidates=())])
+    search = _coarse_service(monkeypatch, tmp_path, completions)
+
+    with pytest.raises(UsagePersistenceError):
+        _ = search(_RecordingSink(fail_begin=True))
+
+    assert completions.calls == 0
+
+
+def _extraction() -> IntentHintExtraction:
+    return IntentHintExtraction(
         time_hint="19시",
         vehicle_hint=None,
         situation_hint=None,
@@ -284,16 +395,31 @@ def test_intent_call_is_direct_no_run(monkeypatch: pytest.MonkeyPatch) -> None:
         confidence="high",
         reasoning="근거",
     )
-    provider = _provider(monkeypatch, _Completions([extraction]))
-    sink = InMemoryUsageSink()
+
+
+def test_intent_call_is_direct_no_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    provider = _provider(monkeypatch, _Completions([_extraction()]))
+    sink = _RecordingSink()
 
     _ = IntentHintExtractor(provider, GeminiSearchConfig()).extract(
         "19시였어요", case_id="c1", usage_sink=sink
     )
 
-    ((_, attempt, observed),) = sink.entries()
-    assert attempt.run_ref is None
-    assert attempt.run_ref_reason == "DIRECT_NO_RUN"
-    assert attempt.operation == "HINT_EXTRACT"
-    assert observed is not None
-    assert observed.succeeded
+    (begin,) = sink.begins
+    assert begin["run_ref"] is None
+    assert begin["run_ref_reason"] == "DIRECT_NO_RUN"
+    assert begin["operation"] == "HINT_EXTRACT"
+    (finish,) = sink.finishes
+    assert finish["outcome"] == "SUCCEEDED"
+
+
+def test_intent_usage_error_is_not_swallowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    completions = _Completions([_extraction()])
+    provider = _provider(monkeypatch, completions)
+
+    with pytest.raises(UsagePersistenceError):
+        _ = IntentHintExtractor(provider, GeminiSearchConfig()).extract(
+            "19시였어요", case_id="c1", usage_sink=_RecordingSink(fail_begin=True)
+        )
+
+    assert completions.calls == 0

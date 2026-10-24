@@ -289,6 +289,8 @@ SUCCEEDED인데 case가 현재 context에 유효하지 않다고 판단 (중단�
 
 ### 7.2 Lease · Heartbeat · Recovery
 
+시각 ordering은 [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)에 따라 [JobExecution Contract §5.1](../architecture/contracts/contract-job-execution.md#51-durable-timestamp-ordering)과 [Baseline B-L2/B-L6](./provisional-baseline-v0.1.md#23-heartbeat--lease--stale--sweep--d)이 정한다. terminal 공통 하한과 heartbeat/lease non-regression은 같은 row의 최종 conditional UPDATE에서 계산한다. schema·ownership·idempotency 모델은 바꾸지 않는다.
+
 lease 구조는 확정이다(RD-01h, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-04).
 
 - lease는 RUNNING `job_execution` row의 Runtime 내부 column(lease owner · expiry · heartbeat · 중단 요청)에 둔다.

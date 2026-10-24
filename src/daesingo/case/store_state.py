@@ -23,7 +23,9 @@ _STATE_FIELDS = (
     "candidate_search_failed",
     "candidate_generation",
     "settled_jobs",
+    "processed_executions",
     "description",
+    "hint_unclear",
     "sources",
 )
 _CANDIDATE_FIELDS = tuple(f.name for f in dataclasses.fields(Candidate) if f.name != "extra")

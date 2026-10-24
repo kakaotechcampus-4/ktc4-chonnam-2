@@ -16,14 +16,14 @@ from typing import Final, Literal, Protocol
 from pydantic import BaseModel
 
 from daesingo.common import load_env_file
+from daesingo.common.usage.port import UsageError, UsageSink
 
 from .config import GeminiSearchConfig
 from .execution import DeadlineExceededError, RunDeadline
 from .ledger import UsageRecord
 from .prompts import load_prompt
-from .provider import GeminiProvider, ProviderResult, TextInvocation
+from .provider import GeminiProvider, ProviderResult, TextInvocation, UsageBinding
 from .smoke_errors import ProviderPayloadError
-from .usage_sink import UsageSink
 
 INTENT_SYSTEM_PROMPT: Final = load_prompt("intent-v3")
 INTENT_USER_PROMPT: Final = load_prompt("intent-user-v1")
@@ -106,6 +106,7 @@ class IntentHintExtractor:
         """Worker에서 1회 부른다. provider 실패는 던지지 않고 `FAILED`로 돌려준다.
 
         인자 오류(`timeout_sec`가 양수가 아님)만 `ValueError`로 던진다.
+        `usage_sink`의 `UsageError`는 그대로 올린다 — Runtime terminal 오류다(#303).
         """
         if not math.isfinite(timeout_sec) or timeout_sec <= 0:
             raise ValueError("timeout_sec must be finite and positive")
@@ -120,10 +121,16 @@ class IntentHintExtractor:
             ),
             response_model=IntentHintExtraction,
             deadline=RunDeadline(self.monotonic, round(timeout_sec * 1000)),
-            usage_sink=usage_sink,
+            usage=(
+                None
+                if usage_sink is None
+                else UsageBinding(usage_sink, "HINT_EXTRACT", None)
+            ),
         )
         try:
             result = self.provider.invoke_text(invocation)
+        except UsageError:
+            raise
         except Exception as error:  # noqa: BLE001 — 어떤 실패도 intake를 막지 않는다
             return IntentHintResult(
                 IntentHintStatus.FAILED,
