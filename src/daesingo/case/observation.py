@@ -23,13 +23,8 @@ from daesingo.case.domain import CaseAggregate
 
 
 def current_generation_job_id(case: CaseAggregate) -> str | None:
-    """현재 후보 목록 세대 표식 — 가장 나중 `REFLECTED` `COARSE_SEARCH`의 `job_id`(`observation-storage.md` §4-4와 같은 기준)."""
-    reflected = [
-        r["job_id"]
-        for r in case.job_records
-        if r["kind"] == "COARSE_SEARCH" and case.settled_jobs.get(r["job_id"]) == "REFLECTED"
-    ]
-    return reflected[-1] if reflected else None
+    """현재 후보 목록 세대 표식 — `CaseAggregate.current_generation_job_id()`."""
+    return case.current_generation_job_id()
 
 
 def _issue(case: CaseAggregate, kind: str, observation_input: dict[str, Any]) -> dict[str, Any]:

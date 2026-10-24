@@ -142,11 +142,13 @@ def _after_fine(verification: str = "OBSERVED"):
     return store, case_id, coarse, fine, result
 
 
-def _reselect(store: CaseStore, case_id: str, candidate_id: str) -> None:
-    case = store.get_case(case_id)
-    request = {"case_id": case_id, "expected_case_rev": case.case_rev, "kind": "SELECT_OTHER_CANDIDATE",
-               "payload": {"candidate_id": candidate_id}}
-    assert command.execute_command(request, store=store).response["ok"] is True
+def _move_selection(store: CaseStore, case_id: str, candidate_id: str) -> None:
+    """선택만 옮긴다. 준비 중 재선택은 command가 막지만(6.6순위 조건 1, `test_reselect_while_preparing.py`) 후속 발주는
+    그것과 따로 「현재 선택 · 세대」를 다시 확인한다 — 그 확인을 직접 시험한다."""
+    case = store.load_for_update(case_id)
+    for c in case.candidates:
+        c.selected = c.candidate_id == candidate_id
+    store.save(case)
 
 
 # ── kind 등재 ─────────────────────────────────────────────────────────────
@@ -252,7 +254,7 @@ def test_failed_fine_issues_nothing_and_reads_nothing():
 def test_late_fine_of_previous_candidate_issues_nothing():
     store, case_id, _, _ = _after_coarse()
     fine = _latest(store, case_id, "FINE_VERIFY")
-    _reselect(store, case_id, "cand_2")
+    _move_selection(store, case_id, "cand_2")
 
     result = _reflect(store, case_id, fine, _fine("OBSERVED"))
 
@@ -310,7 +312,7 @@ def test_failed_clip_build_issues_nothing():
 def test_late_clip_of_previous_candidate_issues_nothing():
     store, case_id, _, _, _ = _after_fine()
     clip = _latest(store, case_id, "INCIDENT_CLIP_BUILD")
-    _reselect(store, case_id, "cand_2")
+    _move_selection(store, case_id, "cand_2")
 
     result = _reflect(store, case_id, clip, {"incident_clip_ref": "clip_1"})
 

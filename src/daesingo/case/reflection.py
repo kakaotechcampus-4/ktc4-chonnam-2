@@ -58,10 +58,14 @@ class ProducedReader(Protocol):
     - `FINE_VERIFY` → `{"analysis_run": AnalysisRun, "visual_evidence": VisualEvidence | None}` — search `verify_visual`
       반환과 같은 모양. T2는 `verification`만 본다(후속 발주 판단, `incident-clip-observation-input.md` §4-3)
     - `INCIDENT_CLIP_BUILD` → `{"incident_clip_ref": str}`(두 판독이 공유할 clip, 같은 문서 §4-4)
+    - `PLATE_READ` → `{"readout_run": ReadoutRun, "plate_readout": PlateReadout | None}`
+    - `OVERLAY_TIME_READ` → `{"readout_run": ReadoutRun, "overlay_time_readout": OverlayTimeReadout | None}`
+      (판독 둘은 readout 공개 함수 반환 `(ReadoutRun, 결과 | None)`과 같은 모양)
 
-    판독 kind(`PLATE_READ` · `OVERLAY_TIME_READ`)와 export kind(`REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`)는 T2에서
-    부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때 adapter가 읽는다(`observation-storage.md` §4-2 · §4-5,
-    `result-reflection.md` §3-4). 성공한 Fine · clip만 읽는다.
+    판독 kind는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때 `StoredObservationAdapter`가 같은 reader로
+    읽는다(`observation-storage.md` §4-2 · §4-5). export kind(`REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`)는 reader로도
+    읽지 않는다 — 파생 asset은 recording case asset 목록에서 고른다(`result-reflection.md` §3-4). T2는 성공한 Fine · clip만
+    읽는다.
     """
 
     def __call__(self, conn: Any, kind: str, produced: tuple[dict[str, str], ...]) -> dict[str, Any]: ...
