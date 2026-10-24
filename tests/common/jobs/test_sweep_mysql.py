@@ -364,7 +364,7 @@ def test_stale_record_uses_update_time_even_when_transition_is_delayed(queue):
 @pytest.mark.mysql_check("sweep", "detect_boundary")
 @pytest.mark.parametrize("invalid", [pytest.param(mode, marks=pytest.mark.mysql_check(
     "sweep", "detect_boundary", parameter=mode)) for mode in ("null", "future")])
-def test_invalid_heartbeat_omits_measurement_without_invented_fallback_or_lost_retry(queue, invalid):
+def test_null_heartbeat_omits_and_future_heartbeat_clamps_causal_measurement(queue, invalid):
     execution = add(queue)
     claim_one(queue, "owner")
     expire(queue, execution)
@@ -373,9 +373,10 @@ def test_invalid_heartbeat_omits_measurement_without_invented_fallback_or_lost_r
             heartbeat_at=None if invalid == "null" else func.timestampadd(text("HOUR"), 1, func.now(6))))
     stream = StringIO()
     outcome, = sweep().sweep_once(queue, WorkerSettings(), logger=configure_logging("worker", stream=stream))
-    assert outcome.detect_latency_sec is None
+    # #370: a future persisted heartbeat is now a causal terminal lower bound.
+    assert outcome.detect_latency_sec == (None if invalid == "null" else 0)
     events = [json.loads(line)["event"] for line in stream.getvalue().splitlines()]
-    assert "runtime.stale.detect_latency_s" not in events
+    assert ("runtime.stale.detect_latency_s" in events) == (invalid == "future")
     assert "runtime.stale.count" in events and "runtime.retry.auto_count" in events
     assert [r["status"] for r in rows(queue)] == ["STALE", "QUEUED"]
 

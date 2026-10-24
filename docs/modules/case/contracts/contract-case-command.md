@@ -86,7 +86,7 @@
 - **성공 뒤 `READY` 재확인(2026-09-30).** command가 성공하고 stage가 `EVIDENCE_REVIEW`면 case가 `PACKAGE_READY`(FINAL `PASS`/`WARN` + ReportPackage, #167 gate 그대로)를 다시 보고, 성립하면 같은 command 안에서 `READY`로 올린다. `READY` 전이도 `case_rev`를 올리므로 그때는 위 표의 증가분에 +1이 더해진다. transport·web이 따로 전이를 부르지 않는다 — 통로에 판단을 넣지 않는다(#106). 실패한 command 뒤에는 보지 않는다(§6).
 - **`READY`에서 다시 조립되는 변경(2026-10-02, orchestration 지표 4차 측정).** `READY`에서 상황 응답(과 입력형 판본의 값 정정)을 받으면 case가 먼저 `EVIDENCE_REVIEW`로 내리고, 위 재확인이 gate가 여전히 성립할 때만 다시 올린다. 내리지 않으면 재조립으로 Package가 사라져도 `READY`로 남아 CaseView 계약 §10-9(「`stage=READY`이면 `requirements_package`가 `PASS`/`WARN`」)를 어긴다. 내려가는 것은 같은 요청의 결과라 `case_rev`를 따로 올리지 않는다(`SELECT_OTHER_CANDIDATE`와 같다) — 그래서 gate가 그대로면 응답 +1, 다시 `READY` +1로 +2다. `user_reviewed`는 그대로 둔다(필드 수정과 별개 — CaseView 계약 B절 `user_reviewed` · #173 값별 경계표). 새 초안이 되는 `SELECT_OTHER_CANDIDATE`만 되돌린다.
 - `RUN_NOTICE_ACTION`의 허용 조건은 「화면에 그 버튼이 떠 있었는가」와 같다. web은 `notices[].actions[]`에 있는 값으로만 버튼을 그리므로(CaseView 계약 B절 §7), case도 같은 근거로만 받는다.
-- `SELECT_OTHER_CANDIDATE`의 「새 후보 초안을 준비하는 중에는 다시 고르지 않는다」(#173 E-4 조건 1)는 case domain에 「준비 완료」 신호가 없어 이 판본에서 검사하지 않는다 — 진행 화면에서 버튼을 주지 않는 web 규칙에 기대고, worker 배선 때 case가 막는다(PR #190 — W7 기준 문서 6.6순위로 추가 중).
+- `SELECT_OTHER_CANDIDATE`는 새 후보 초안을 준비하는 중이면 `not_allowed`다(#173 E-4 조건 1, 2026-10-24) — 선택 후보 · 현재 세대의 관찰 job 중 case가 아직 결과를 기다리는 것이 있을 때다. 상황 응답 대기 · Fine 실패 뒤에는 받는다(`decisions/reselect-while-preparing.md`). 진행 화면에서 버튼을 주지 않는 web 규칙은 그대로다.
 - `responded_at`은 web이 보내지 않고 case가 채운다 — 사용자 기기 시계를 기록값으로 쓰지 않는다.
 - **`CORRECTED`(`[다른 상황]`)는 이 판본에서 받지 않는다**(`case.command.invalid_payload`) — 입력형 판본 초안 §12-3에서 연다. evidence는 `CORRECTED` 응답에 `SITUATION_CHANGE` CorrectionRecord가 정확히 1건 있어야 조립하고, 없으면 조립 자체를 거부한다(`src/daesingo/evidence/assembly.py` — `CORRECTED requires one SITUATION_CHANGE head`). 바뀐 상황을 보내는 입력형 경로가 없으므로(§2) 입력형 판본에서 둘을 한 command로 함께 연다.
 
@@ -96,7 +96,7 @@
 | --- | --- | --- |
 | `case.command.stale_revision` | `expected_case_rev`가 현재 `case_rev`와 다르다 — 사용자가 본 화면이 이미 바뀌었다 | 다른 탭에서 먼저 후보를 바꿨다 |
 | `case.command.unknown_target` | 가리킨 대상이 이 case에 없다 | 없는 `candidate_id` · 없는 `case_id` · 현재 notices에 없는 `notice_code`/`action` 조합 |
-| `case.command.not_allowed` | 대상은 있지만 지금 상태에서 할 수 없다 | `CANDIDATE_REVIEW`에서 `MARK_REVIEWED` · 이미 선택된 후보를 다시 선택(무변경) |
+| `case.command.not_allowed` | 대상은 있지만 지금 상태에서 할 수 없다 | `CANDIDATE_REVIEW`에서 `MARK_REVIEWED` · 이미 선택된 후보를 다시 선택(무변경) · 새 후보 준비 중 다른 후보 선택 |
 | `case.command.invalid_payload` | payload 모양이 틀렸다 | 등재되지 않은 `value` · 필수 키 누락 |
 | `case.command.invalid_value` | **입력형 판본 초안(§12-4).** 모양은 맞지만 값이 정정 기록 규칙에 맞지 않는다 — evidence 기록 전 검사(E-3)가 거부했다 | 오프셋 없는 시각 · 번호판 빈 문자열 |
 
@@ -169,7 +169,7 @@ START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──�
 - **결과 반영.** 결과 상태가 `OK`면 매핑대로 `hints`를 채운다(일부 필드가 비어 있을 수 있다). `ABSTAINED`(모델이 전부 보류)나 `FAILED`(호출 · 파싱 실패)면 `hints` 4개를 모두 `null`로 두고 그대로 진행한다 — 값을 지어내지 않는다. 어느 쪽이든 이어서 `AnalysisScope`를 만들고 `COARSE_SEARCH` 1건을 발주한다(빈 단서면 「시간 단서 없이 전체 찾기」, `core-user-flow.md` §5). 결과 반영은 사용자 요청이 아니라 `case_rev`를 올리지 않는다(`record_candidate_search_failure()`와 같다).
 - **빈 설명을 막지 않고, 구조화도 건너뛴다(2026-10-04 case 결정).** `description`이 빈 문자열이어도 `invalid_payload`가 아니다(키가 없거나 문자열이 아니면 `invalid_payload`). 앞뒤 공백을 지운 뒤 비었으면 `HINT_EXTRACT`를 발주하지 않고 `hints` 4개를 `null`로 둔 채 `AnalysisScope` · `COARSE_SEARCH`를 바로 발주한다 — 부를 이유가 없는 provider 호출과 대기를 만들지 않고, `ABSTAINED`가 「모델이 판단을 보류함」이라는 뜻으로만 남게 한다.
 - **Job 이름은 `HINT_EXTRACT`(label_key `job.hint_extract`)다(2026-10-04 case 결정).** 기존 kind의 `대상_동작` 꼴(`PLATE_READ` · `FINE_VERIFY`)과 조사 문서 · 스키마 용어(`llm-model-comparison-hint-extraction` · `IntentHintExtraction`)를 따른다.
-- **구조화 실패는 notice로 알리지 않는다(2026-10-04 case 결정).** search 결과가 `FAILED`면 Worker가 그 Job을 JobExecution `FAILED` + `failure_kind`로 기록하고, 「설정이 깨져 매번 실패」는 Runtime 원장으로 알아챈다(#210 3번의 목적). 사용자 흐름은 `ABSTAINED`와 같아(빈 단서로 탐색 계속) 사용자가 할 일이 없고, 사용자가 적은 내용은 아래 `description`으로 화면에 남는다.
+- **구조화 실패는 notice로 알리지 않는다(2026-10-04 case 결정).** search 결과가 `FAILED`면 Worker가 그 Job을 JobExecution `FAILED` + `failure_kind`로 기록하고, 「설정이 깨져 매번 실패」는 Runtime 원장으로 알아챈다(#210 3번의 목적). 빈 단서로 탐색을 계속해 사용자가 할 일이 없고, 사용자가 적은 내용은 아래 `description`으로 화면에 남는다. 판단 보류(`ABSTAINED`)와 `confidence=low`는 실패가 아니라 「설명을 잘 이해하지 못함」이라 결과 화면에 `search.hint_unclear`를 붙인다(#266, `decisions/hint-unclear-notice.md`) — 사용자가 다시 적을 수 있다.
 - **설명 원문을 CaseView 최상위 `description`(`string | null`)으로 내린다(2026-10-04 case 결정).** 구조화가 진행 중이거나 `ABSTAINED` · `FAILED`로 `hints`가 비어도 사용자가 자기 원문을 본다 — 그렇지 않으면 「기억하신 것」(web `HintRecall`)이 「없음」으로 떠, 단서를 적은 사용자에게 AI가 아무것도 이해하지 못한 것처럼 보인다(`core-user-flow.md` 「AI가 이해한 기억 단서가 맞는가?」). `hints` 안에 넣지 않는 이유는 `hints`가 「구조화된 4개」라는 뜻을 지키기 위해서다. `START_ANALYSIS` 전에는 `null`, 빈 설명이면 `""`다. CaseView 계약 변경이라 반영은 미결 1.
 - **일부 영상 실패는 막지 않는다.** 읽을 수 없는 파일은 건너뛴 사실을 보여 주고 나머지로 진행한다(§23 「다른 영상은 계속 분석」). 처리할 수 있는 영상이 하나도 없을 때만 `not_allowed`다.
 - **`case_rev`는 올리지 않는다** — `start_search()`가 `INTAKE→SEARCHING`에서 올리지 않는 현재 규칙 그대로다(`scenario_happy_001`: SEARCHING · `COARSE_SEARCH` 모두 `case_rev:1`). 같은 버튼을 두 번 눌러도 두 번째는 stage가 이미 `SEARCHING`이라 `not_allowed`로 막힌다 — §9 첫 항목(`case_rev`로 잡히지 않는 변경)이 이 command에서는 stage 검사로 해소된다.

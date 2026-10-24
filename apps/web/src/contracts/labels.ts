@@ -110,6 +110,8 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.search_no_candidates': '조건에 맞는 장면을 찾지 못했습니다.',
   // #197 — 탐색 Run 실패. 「후보 없음」과 다른 시스템 실패다.
   'notice.candidate_search_failed': '장면을 찾는 중에 문제가 생겼어요.',
+  // #342 — 사용자가 분석 진행을 중단했다. 실패가 아니라 사용자 행동의 결과다.
+  'notice.analysis_stopped': '분석을 중단했어요.',
   'notice.visual_event_unconfirmed': '어떤 상황인지 아직 확인되지 않았습니다.',
   // #168 [A] — 가장 유력한 후보에서 위반이 관찰되지 않은 음성 결과.
   'notice.visual_event_not_observed': '이 장면에서는 신고할 위반을 확인하지 못했어요.',
@@ -134,6 +136,22 @@ export const NOTICE_FALLBACK = '확인이 필요한 항목이 있습니다.'
 
 export function noticeMessage(key: string): string {
   return NOTICE_MESSAGES[key] ?? NOTICE_FALLBACK
+}
+
+// 요청이 실패했을 때의 알림. `error.code`가 키다 — `http.*`는 HTTP 층, `case.command.*`는 case,
+// `web.*`는 client가 만든 값이다(contract-http-api §3.3 · §7-5). 원인을 단정하지 않는다.
+const ERROR_MESSAGES: Record<string, string> = {
+  'web.network_error': '서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+  'web.invalid_response': '서버 응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+  'http.dependency_unavailable': '지금은 서버가 바빠요. 잠시 뒤 다시 시도해 주세요.',
+  'http.not_found': '찾을 수 없는 신고예요. 「새 신고」로 다시 시작해 주세요.',
+  'case.command.stale_revision': '화면이 그 사이 바뀌었어요. 바뀐 화면에서 다시 눌러 주세요.',
+  'case.command.not_allowed': '지금은 할 수 없는 동작이에요.',
+}
+export const ERROR_FALLBACK = '요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'
+
+export function errorMessage(code: string): string {
+  return ERROR_MESSAGES[code] ?? ERROR_FALLBACK
 }
 
 /** 버튼 — 닫힌 7종. 미등록 값은 렌더하지 않으므로 fallback을 두지 않는다. */

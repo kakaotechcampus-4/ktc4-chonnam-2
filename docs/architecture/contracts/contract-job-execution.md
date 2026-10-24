@@ -84,10 +84,18 @@
 | `attempt` | int | Y | 이 `job_id`에 대한 몇 번째 시도인가. 1부터 시작 | ADR 부록-A §6 이관 목록 |
 | `queued_at` | ISO8601 | Y | queue에 들어간 시각 = 이 execution이 생성된 시각. 자동 retry의 다음 attempt는 이전 attempt의 terminal 기록과 같은 시점에 생성되므로, **attempt ≥ 2의 `queued_at → started_at`은 계획된 backoff와 실제 queue 대기를 함께 포함한다**(2026-10-04 명확화) | 신규 (§10-2) |
 | `started_at` | ISO8601 \| null | Y(키) | `RUNNING` 진입 시각. `QUEUED`면 null | 신규 (§10-2) |
-| `ended_at` | ISO8601 \| null | Y(키) | 종료 시각. 종료 상태가 아니면 null | 신규 (§10-2) |
+| `ended_at` | ISO8601 \| null | Y(키) | execution의 causal ordering을 보장하는 DB 기반 durable 종료 timestamp. raw wall-clock 관측값 자체가 아니다(§5.1). 종료 상태가 아니면 null | 신규 (§10-2) |
 | `produced` | ContractRef[] | Y(빈 배열 허용) | 이 실행이 만든 산출물 참조. 공통 모양은 `contract-observation.md` §3의 `ContractRef` | ADR 부록-A §6 이관 목록 |
 | `failure_kind` | string \| null | Y(키) | 실패 종류. **모듈 접두어 규칙을 따른다** | ADR 부록-A §2 (v1 p.20) |
 | `usage_refs` | ID[] | Y(빈 배열 허용) | 이 실행에 속한 `UsageRecord` 참조 | §10-3 |
+
+### 5.1 Durable timestamp ordering
+
+2026-10-17 [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)에 따라 `ended_at`은 DB 시각과 execution의 causal lower bound 중 큰 값이다. RUNNING terminal은 `queued_at`·`started_at`·마지막 `heartbeat_at`·최초 취소 표식(존재하는 값)을 하한으로 삼고, QUEUED cancel은 최소 `ended_at >= queued_at`을 보장한다. lease expiry는 미래의 권한 만료 시각이므로 terminal 하한에 넣지 않는다. Runtime 내부 metadata를 Contract 필드로 공개하지 않는다.
+
+시각 역행 구간에서 `ended_at - started_at`은 0에 가까워질 수 있다. 이 차이는 durable lifecycle duration이며 실제 monotonic 경과시간을 보장하지 않는다. raw wall-clock 역행의 관측은 별도 observability/log에서 다룬다. validator의 기존 순서 제약은 유지한다.
+
+자동 retry의 다음 `queued_at`은 같은 transaction에 기록된 이전 STALE의 durable `ended_at`을 따른다. backoff는 이 queue 진입 시각에서 계산하므로 raw NOW 기준보다 eligibility가 늦어질 수 있다.
 
 ## 6. Enum / State
 
@@ -159,7 +167,7 @@ QUEUED → CANCELLED        (실행 시작 전 사용자가 중단)
 }
 ```
 
-`ended_at`이 null인 채로 `STALE`이 될 수 있다. 종료 시각을 관측하지 못한 것이 STALE의 정의이므로 값을 만들어내지 않는다(`product-spec.md` §7).
+`ended_at`이 null인 채로 `STALE`이 될 수 있다. 실제 handler/process 종료 시각을 관측한 것으로 값을 만들어내지 않는다(`product-spec.md` §7). Runtime sweeper가 STALE 전이를 기록할 때의 `ended_at`은 §5.1의 DB 기반 causal timestamp이며, 실제 process가 멈춘 raw 시각이라는 주장이 아니다([#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)).
 
 ## 9. 불변조건
 

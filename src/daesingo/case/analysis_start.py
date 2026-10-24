@@ -56,6 +56,14 @@ def hints_from_result(result: dict[str, Any]) -> dict[str, str | None]:
     raise ValueError(f"알 수 없는 단서 구조화 결과 상태: {status!r} (OK · ABSTAINED · FAILED)")
 
 
+def hint_unclear(result: dict[str, Any]) -> bool:
+    """구조화가 끝났지만 설명을 잘 이해하지 못했는가(#266) — `OK`인데 `confidence=low`이거나, 모델이 판단을 보류한
+    `ABSTAINED`. 실행 실패(`FAILED`)는 아니다 — #259 결정대로 사용자에게 알리지 않는다. `confidence`가 없으면
+    low로 읽지 않는다. 상태 검사는 `hints_from_result()`가 먼저 한다."""
+    status = result.get("status")
+    return status == "ABSTAINED" or (status == "OK" and result.get("confidence") == "low")
+
+
 def issue_initial_search(
     case: CaseAggregate, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
 ) -> dict[str, Any]:
@@ -125,7 +133,7 @@ def reflect_hint_extraction(
     if not case.awaits_result(job_id):
         return False
     hints = hints_from_result(result)
-    case.record_extracted_hints(hints)
+    case.record_extracted_hints(hints, unclear=hint_unclear(result))
     case.settle_job(job_id, "REFLECTED")
     issue_initial_search(case, timelines=timelines, budget=budget)
     return True

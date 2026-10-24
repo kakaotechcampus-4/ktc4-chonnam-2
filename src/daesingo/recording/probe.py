@@ -30,6 +30,7 @@ class LocalSource:
     sha256: str
     duration_sec: float | None
     streams: tuple[ProbedStream, ...]
+    original_filename: str | None = field(default=None, repr=False)
 
 
 class MediaProbe(Protocol):
@@ -109,9 +110,10 @@ def _parse_metadata(payload: object) -> tuple[float | None, tuple[ProbedStream, 
         indices.add(index)
         streams.append(ProbedStream(index, "VIDEO" if media_type == "video" else "AUDIO",
                                     _stream_duration(item)))
+    duration = _duration(format_info.get("duration"))
     if not any(stream.media_type == "VIDEO" for stream in streams):
-        raise ValueError("등록 가능한 video stream이 없습니다")
-    return _duration(format_info.get("duration")), tuple(streams)
+        raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "등록 가능한 video stream이 없습니다")
+    return duration, tuple(streams)
 
 
 class FfprobeMediaProbe:
@@ -129,21 +131,31 @@ class FfprobeMediaProbe:
             before = _snapshot(resolved)
             result = subprocess.run(
                 [self.executable, "-v", "error", "-protocol_whitelist", "file",
-                 "-show_entries", "format=duration:stream=index,codec_type,duration:stream_tags=DURATION:stream_disposition=attached_pic",
+                 "-show_error", "-show_entries", "error=code:format=duration:stream=index,codec_type,duration:stream_tags=DURATION:stream_disposition=attached_pic",
                  "-of", "json", str(resolved)],
                 stdin=subprocess.DEVNULL, capture_output=True, timeout=self.timeout_sec,
                 check=False,
             )
-            if result.returncode != 0:
-                raise RecordingCapabilityError("TEMPORARY_FAILURE", "ffprobe가 원본을 조사하지 못했습니다")
-            try:
-                payload = json.loads(result.stdout)
-            except (ValueError, UnicodeDecodeError):
-                raise ValueError("ffprobe JSON 응답이 유효하지 않습니다") from None
-            duration, streams = _parse_metadata(payload)
             after = _snapshot(resolved)
             if before != after:
                 raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록 중 원본 변경을 감지했습니다")
+            try:
+                payload = json.loads(result.stdout)
+            except (ValueError, UnicodeDecodeError):
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "ffprobe JSON 응답이 유효하지 않습니다") from None
+            if result.returncode != 0:
+                error = payload.get("error") if isinstance(payload, dict) else None
+                code = error.get("code") if isinstance(error, dict) else None
+                # libavutil/error.h: AVERROR_INVALIDDATA = FFERRTAG('I','N','D','A').
+                # Only a stable input and this structured code prove rejection.
+                # Unknown codes (including dependency/I/O errors) remain temporary.
+                if type(code) is int and code == -int.from_bytes(b"INDA", "little"):
+                    raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "지원하지 않는 미디어 입력입니다")
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "ffprobe가 원본을 조사하지 못했습니다")
+            try:
+                duration, streams = _parse_metadata(payload)
+            except ValueError:
+                raise RecordingCapabilityError("TEMPORARY_FAILURE", "ffprobe metadata 응답이 유효하지 않습니다") from None
             return LocalSource(resolved, after[2], after[3], after[4], duration, streams)
         except subprocess.TimeoutExpired:
             raise RecordingCapabilityError("TEMPORARY_FAILURE", "ffprobe 실행 제한 시간을 초과했습니다") from None

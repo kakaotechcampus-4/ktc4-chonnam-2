@@ -73,3 +73,19 @@ def test_record_source_registered_is_persisted():
     case_id = service.create_case(store=store)
     service.record_source_registered(case_id, {"source_asset_ref": "sa_1", "availability": "AVAILABLE"}, store=store)
     assert store.get_case(case_id).manifest_summary["file_count"] == 1
+
+
+def test_view_and_command_read_adapter_from_factory():
+    # 진입점(get_view · execute_command)이 registry가 아니라 `store.adapter_for`를 거친다(8-6 2단계 §4-3).
+    store, case_id = _store_with_two_candidates()
+    seen = []
+    store.adapter_factory = lambda case, conn: seen.append(case.case_id) or _NoDownstream()
+    service.get_view(case_id, store=store)
+    assert seen == [case_id]
+    rev = store.get_case(case_id).case_rev
+    result = command.execute_command(
+        {"case_id": case_id, "expected_case_rev": rev, "kind": "SELECT_OTHER_CANDIDATE", "payload": {"candidate_id": "cand_b"}},
+        store=store,
+    )
+    assert result.response["ok"] is True
+    assert len(seen) > 1
