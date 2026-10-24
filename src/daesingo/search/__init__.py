@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Final
 
+from daesingo.common.usage.port import UsageSink
+
 from .coarse import LinkedCoarseResult
 from .config import API_KEY_ENV_NAMES, api_key_from_env
 from .errors import (
@@ -38,11 +40,12 @@ def search_candidates(
     scope: AnalysisScope,
     *,
     service: SearchService | None = None,
+    usage_sink: UsageSink | None = None,
 ) -> CandidateSearchResult:
     """Return the recorded coarse run and ranked candidates for a scope."""
     if service is None:
         return _FIXTURE_SERVICE.search_candidates(scope)
-    return service.search_candidates(scope)
+    return service.search_candidates(scope, usage_sink=usage_sink)
 
 
 def verify_visual(
@@ -53,6 +56,7 @@ def verify_visual(
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     candidate: CandidateEvent | None = None,
     max_latency_sec: int | None = None,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
     """Return the recorded Fine run together with its visual evidence."""
     if service is None:
@@ -65,6 +69,7 @@ def verify_visual(
         target_hint,
         event_type,
         max_latency_sec=max_latency_sec,
+        usage_sink=usage_sink,
     )
 
 
@@ -77,6 +82,7 @@ def verify_visual_with_stream_context(
     service: SearchService | None = None,
     event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
     max_latency_sec: int | None = None,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationExecution:
     """Run Fine and return its non-canonical selected VIDEO stream context.
 
@@ -92,6 +98,7 @@ def verify_visual_with_stream_context(
         event_type=event_type,
         candidate=candidate,
         max_latency_sec=max_latency_sec,
+        usage_sink=usage_sink,
     )
     return VisualVerificationExecution(
         result=result,
