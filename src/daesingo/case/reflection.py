@@ -59,8 +59,9 @@ class ProducedReader(Protocol):
       반환과 같은 모양. T2는 `verification`만 본다(후속 발주 판단, `incident-clip-observation-input.md` §4-3)
     - `INCIDENT_CLIP_BUILD` → `{"incident_clip_ref": str}`(두 판독이 공유할 clip, 같은 문서 §4-4)
 
-    판독 kind(`PLATE_READ` · `OVERLAY_TIME_READ`)는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때
-    adapter가 읽는다(`observation-storage.md` §4-2 · §4-5). 성공한 Fine · clip만 읽는다.
+    판독 kind(`PLATE_READ` · `OVERLAY_TIME_READ`)와 export kind(`REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`)는 T2에서
+    부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때 adapter가 읽는다(`observation-storage.md` §4-2 · §4-5,
+    `result-reflection.md` §3-4). 성공한 Fine · clip만 읽는다.
     """
 
     def __call__(self, conn: Any, kind: str, produced: tuple[dict[str, str], ...]) -> dict[str, Any]: ...
@@ -143,6 +144,13 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 
+def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
+    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice 매핑은 미결
+    # (`report-video-export.md` §5), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+
+
 _APPLIERS = {
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
@@ -150,4 +158,6 @@ _APPLIERS = {
     "OVERLAY_TIME_READ": _apply_observation,
     "FINE_VERIFY": _apply_fine_verify,
     "INCIDENT_CLIP_BUILD": _apply_incident_clip_build,
+    "REPORT_VIDEO_EXPORT": _apply_export,
+    "PLATE_IMAGE_EXPORT": _apply_export,
 }
