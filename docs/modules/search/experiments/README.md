@@ -1,6 +1,6 @@
 # search/experiments
 
-- [CV Coarse → gemini-4-argon Fine 영상](cv-coarse-argon-fine-2026-10-23.md) — 영상 토큰=재생 길이×73(해상도 무관). CV 고유 후보6개 1회: 4유형 한 번에·유형 제공 모두 정답 구간5/5 정답 유형 OBSERVED, 위반 아님1/1 기각. 정상3클립 기각2/3(150504 분기부 실선 OBSERVED 오탐, 사용자 확인). 누적 약₩230
+- [CV Coarse → gemini-4-argon Fine 영상](cv-coarse-argon-fine-2026-10-23.md) — 영상 토큰=재생 길이×73. CV 후보 Fine 정답 구간5/5. argon Coarse로 보완하면 15영상 13건 중 CV 5→CV+argon 9(신호위반2/2 포함), 정답 밖 OBSERVED3(촬영 차량 오인·분기부·C47 미확인). 점선 변경5건 이유 대고 기각. 박스 편향 미관찰. 영상 1분당 약₩50, 누적 약₩924
 - [CV 전체 진행 결과와 남은 작업](cv-lane-track-progress-summary-2026-10-10.md) — 최신 평가 도구·중복 차선 처리·미완료 범위 반영.
 - [CV 잔여 작업 처리 결과](cv-remaining-plan-2026-10-11.md) — 188개 테스트·실제 영상 검증, 최종 선정·정답·L2 환경 미완료 상태 기록.
 
