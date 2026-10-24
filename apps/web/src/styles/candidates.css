@@ -38,6 +38,9 @@
   place-items: center;
 }
 
+/* 아이콘은 새 모양(.rs)에서만 보인다 — 개발용 화면은 글자만 */
+.cand-th-ico { display: none; }
+
 .cand-th-note {
   color: var(--muted-2);
   font-size: calc(12px * var(--font-scale));

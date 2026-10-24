@@ -59,6 +59,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     if (!SENDABLE.has(action)) return setUnsupported(true)
     run({ kind: 'RUN_NOTICE_ACTION', payload: { notice_code: noticeCode, action: action as NoticeAction } })
   }
+  // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
+  const canRun = (action: Action) => SENDABLE.has(action)
   const reselect = (candidateId: string) => {
     setSubs([])
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
@@ -117,10 +119,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         return (
           <FlowScreen
             view={view}
-            fileName={
+            files={
               state.uploads.length
-                ? state.uploads.filter((u) => u.status === 'DONE').map((u) => u.name).join(', ')
-                : `영상 ${view.manifest_summary.ok_file_count}개`
+                ? state.uploads.filter((u) => u.status === 'DONE')
+                : [{ name: `영상 ${view.manifest_summary.ok_file_count}개` }]
             }
             situation={situation || view.description || ''}
             startedAt={startedAt}
@@ -130,7 +132,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} />
+        return <FailedScreen view={view} onAction={onAction} canRun={canRun} />
       // ponytail: 다시 찾기 입력은 두지 않는다 — 설명을 고쳐 다시 찾는 command(EDIT_HINT)가 아직 없다. 「새 신고」로 다시 시작한다.
       case 'NO_RESULT':
         return <NoResultScreen view={view} />
@@ -148,6 +150,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onDetails={() => open('details')}
             onRespond={respond}
             onAction={onAction}
+            canRun={canRun}
           />
         )
     }

@@ -65,7 +65,7 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
   const { container, getByRole, getByText, findByText } = render(<ApiFlow api={api} />)
 
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
-  await findByText('올리기 완료')
+  await findByText(/^업로드 완료/)
   expect(m.createCase).toHaveBeenCalledOnce()
   expect(m.uploadSource).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'a.mp4' }))
   expect(m.sendCommand).not.toHaveBeenCalled() // 고르는 것만으로 분석이 시작되지 않는다
@@ -85,10 +85,10 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   const input = container.querySelector('input[type=file]')!
 
   fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
-  await findByText('올리는 중')
+  await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
-  await findByText('올리기 완료')
+  await findByText(/^업로드 완료/)
 
   expect(m.uploadSource).toHaveBeenCalledOnce()
   expect(queryByText(/b\.mp4/)).toBeNull()
@@ -100,7 +100,7 @@ it('시작 전에 이어받은 case는 서버에 있는 영상을 개수로 보�
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText('이미 올린 영상 1개')
-  expect(getByText('올리기 완료')).toBeTruthy()
+  expect(getByText(/^업로드 완료/)).toBeTruthy()
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.uploadSource).not.toHaveBeenCalled()

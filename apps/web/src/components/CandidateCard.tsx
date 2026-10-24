@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { Film } from 'lucide-react'
 import type { Candidate } from '../contracts/caseView'
 import { SITUATION_LABELS, atProvenanceLabel, formatValue, staleLabel } from '../contracts/labels'
 import '../styles/candidates.css'
@@ -12,20 +13,22 @@ import '../styles/candidates.css'
 // `rank`가 없으면 case가 준 배열 순서(`ordinal`, 1부터)를 그대로 쓴다.
 //
 // `selected`는 사용자가 고른 후보가 아니라 case가 자동 선택한 현재 초안의
-// 기준 후보다(§8-1, #122). 태그 문구도 그 뜻으로 적는다.
-export function CandidateCard(props: { candidate: Candidate; ordinal: number }): JSX.Element {
+// 기준 후보다(§8-1, #122). 태그 문구도 그 뜻으로 적는다. 신고자료가 없는 화면(위반 미관찰)은
+// selectedLabel로 그 뜻에 맞는 문구를 넘긴다.
+export function CandidateCard(props: { candidate: Candidate; ordinal: number; selectedLabel?: string }): JSX.Element {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
   return (
     <div className={`cand${c.selected ? ' sel' : ''}`}>
       <div className="cand-th">
+        <Film className="cand-th-ico" size={24} strokeWidth={1.5} aria-hidden />
         <span className="cand-th-note">미리보기 준비 중</span>
       </div>
       <div className="cand-b">
         <div className="cand-h">
           <span className="cnum">{c.rank ?? props.ordinal}</span>
           <span className="cand-tc">{c.at === null ? '시각 미확정' : formatValue(c.at)}</span>
-          {c.selected && <span className="cand-tag">지금 신고자료 기준</span>}
+          {c.selected && <span className="cand-tag">{props.selectedLabel ?? '지금 신고자료 기준'}</span>}
         </div>
         {c.stale_revision && stale && <span className="badge badge-unknown sm">{stale}</span>}
         <p className="cand-obs">{c.observed}</p>
