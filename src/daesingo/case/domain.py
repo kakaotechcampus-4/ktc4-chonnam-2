@@ -411,6 +411,32 @@ class CaseAggregate:
             raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
         if match.selected:
             raise InvalidTransition(f"이미 선택된 candidate_id다: {candidate_id}")
+        if self.preparing_selected_candidate():
+            raise InvalidTransition("선택 후보의 신고자료를 준비하는 중에는 다른 후보를 고를 수 없다(core-user-flow §8-1)")
+
+    def current_generation_job_id(self) -> str | None:
+        """현재 후보 목록 세대 표식 — 가장 나중 `REFLECTED` `COARSE_SEARCH`의 `job_id`(`observation-storage.md` §4-4)."""
+        reflected = [
+            r["job_id"]
+            for r in self.job_records
+            if r["kind"] == "COARSE_SEARCH" and self.settled_jobs.get(r["job_id"]) == "REFLECTED"
+        ]
+        return reflected[-1] if reflected else None
+
+    def preparing_selected_candidate(self) -> bool:
+        """선택 후보의 신고자료를 준비하는 중인가 — 선택 후보 · 현재 세대로 입력이 고정된 관찰 job 중 아직 결과를
+        기다리는 것이 있다(6.6순위 조건 1, `decisions/reselect-while-preparing.md`). 입력 없이 발주된 job(동기 · 데모
+        경로)은 보지 않는다."""
+        selected = next((c.candidate_id for c in self.candidates if c.selected), None)
+        generation = self.current_generation_job_id()
+        if selected is None or generation is None:
+            return False
+        return any(
+            (source := self.observation_inputs.get(r["job_id"])) is not None
+            and source["candidate_id"] == selected
+            and source["generation_job_id"] == generation
+            for r in self.waiting_job_records()
+        )
 
     def reselect_candidate(self, candidate_id: str) -> None:
         """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤 사용자가 "다른 후보가 맞다"고 정정하는 경로.
