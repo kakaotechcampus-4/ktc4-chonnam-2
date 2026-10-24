@@ -35,6 +35,12 @@ def _event(candidate_id: str, rank: int) -> dict[str, Any]:
 
 
 EVENTS = [_event("cand_1", 1), _event("cand_2", 2)]
+def _fine(verification: str | None) -> dict[str, Any]:
+    """`FINE_VERIFY` reader 결과 — search `verify_visual` 반환과 같은 모양(`AnalysisRun` + `VisualEvidence`)."""
+    visual = None if verification is None else {"candidate_id": "cand_1", "verification": verification}
+    return {"analysis_run": {"operation": "VISUAL_VERIFY", "outcome": "SUCCEEDED"}, "visual_evidence": visual}
+
+
 SPAN_1 = {"timeline_id": "tl_1", "timeline_revision": 1, "start_ms": 1_000, "end_ms": 4_000}
 
 
@@ -132,7 +138,7 @@ def _latest(store: CaseStore, case_id: str, kind: str) -> dict[str, Any]:
 def _after_fine(verification: str = "OBSERVED"):
     store, case_id, coarse, _ = _after_coarse()
     fine = _latest(store, case_id, "FINE_VERIFY")
-    result = _reflect(store, case_id, fine, {"verification": verification})
+    result = _reflect(store, case_id, fine, _fine(verification))
     return store, case_id, coarse, fine, result
 
 
@@ -226,6 +232,12 @@ def test_fine_not_observed_issues_nothing():
     assert store.get_case(case_id).settled_jobs[fine["job_id"]] == "REFLECTED"
 
 
+def test_fine_without_visual_evidence_issues_nothing():
+    store, case_id, _, _, result = _after_fine(None)
+
+    assert result.appended_job_records == []
+
+
 def test_failed_fine_issues_nothing_and_reads_nothing():
     store, case_id, _, _ = _after_coarse()
     fine = _latest(store, case_id, "FINE_VERIFY")
@@ -242,7 +254,7 @@ def test_late_fine_of_previous_candidate_issues_nothing():
     fine = _latest(store, case_id, "FINE_VERIFY")
     _reselect(store, case_id, "cand_2")
 
-    result = _reflect(store, case_id, fine, {"verification": "OBSERVED"})
+    result = _reflect(store, case_id, fine, _fine("OBSERVED"))
 
     assert result.status == "APPLIED"
     assert result.appended_job_records == []
@@ -261,7 +273,7 @@ def test_late_fine_of_previous_generation_issues_nothing():
     _reflect(store, case_id, new_coarse, {"outcome": "SUCCEEDED", "candidate_events": EVENTS})
     _select_and_issue_fine(store, case_id)
 
-    result = _reflect(store, case_id, old_fine, {"verification": "OBSERVED"})
+    result = _reflect(store, case_id, old_fine, _fine("OBSERVED"))
 
     assert result.status == "APPLIED"
     assert result.appended_job_records == []

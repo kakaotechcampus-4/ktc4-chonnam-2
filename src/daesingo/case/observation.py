@@ -65,11 +65,11 @@ def is_current(case: CaseAggregate, observation_input: dict[str, Any]) -> bool:
     )
 
 
-def follow_fine(case: CaseAggregate, fine_job_id: str, visual_evidence: dict[str, Any]) -> dict[str, Any] | None:
+def follow_fine(case: CaseAggregate, fine_job_id: str, visual_evidence: dict[str, Any] | None) -> dict[str, Any] | None:
     """성공한 Fine 결과 뒤 `INCIDENT_CLIP_BUILD`를 발주한다(§4-3). `NOT_OBSERVED` · `VisualEvidence` 없음 · 입력 없이
     발주된 Fine · 현재 선택 · 세대가 아닌 결과면 내지 않는다."""
     source = case.observation_inputs.get(fine_job_id)
-    verification = visual_evidence.get("verification")
+    verification = None if visual_evidence is None else visual_evidence.get("verification")
     if source is None or verification is None or verification == "NOT_OBSERVED" or not is_current(case, source):
         return None
     return _issue(case, "INCIDENT_CLIP_BUILD", {**source, "fine_job_id": fine_job_id})

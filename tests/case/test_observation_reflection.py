@@ -32,8 +32,9 @@ class FakeTimelines:
 
 
 class FakeReader:
+    # T2가 읽는 관찰 kind는 성공한 `FINE_VERIFY`뿐이다 — 그 모양(`reflection.ProducedReader`)으로, 관찰 결과 없음.
     def __init__(self, content: dict[str, Any] | None = None):
-        self.content = content or {}
+        self.content = content or {"analysis_run": None, "visual_evidence": None}
         self.calls: list[str] = []
 
     def __call__(self, conn: Any, kind: str, produced: tuple) -> dict[str, Any]:
