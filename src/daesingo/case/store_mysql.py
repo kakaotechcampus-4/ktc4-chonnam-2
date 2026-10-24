@@ -107,7 +107,8 @@ class MySQLCaseRepository:
         query = sa.select(cases_table).where(cases_table.c.case_id == case_id)
         query = query.with_for_update(read=(lock == "share"))
         head = conn.execute(query).mappings().first()
-        if head is None:
+        # `ascii_bin`은 PAD SPACE라 `'A '`가 `A` 행을 찾는다 — case_id는 opaque exact identity라 별칭을 받지 않는다(#387).
+        if head is None or head["case_id"] != case_id:
             raise CaseNotFound(f"등록되지 않은 case_id: {case_id!r}")
         return from_row(CaseRow(
             case_id=head["case_id"], case_rev=head["case_rev"], stage=head["stage"],

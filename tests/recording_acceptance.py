@@ -32,5 +32,14 @@ RECORDING_PARAMETERS = tuple(("recording", scenario, parameter) for scenario, pa
     ("media_validation", "ownership_source"), ("media_validation", "ownership_derived"),
     ("media_validation", "ownership_relation"),
     ("media_validation", "wrong_type"), ("media_read", "png_derived"),
+    # Issue #387: independent inventory, including both directions per test.
+    *(("exact_ownership", layer + "_" + variant)
+      for layer in ("scope", "source", "stream", "frame", "derived")
+      for variant in ("space", "case", "unicode", "unicode_case")),
+    ("exact_ownership", "concurrent"),
+    ("exact_purge", "forward"), ("exact_purge", "reverse"),
+    *(("exact_privacy", parameter) for parameter in (
+        "source_asset", "derived_asset", "frame", "media_stream", "case_asset",
+        "source_asset_identity", "derived_asset_identity", "nonstring_case", "padded_kind", "remote_copy")),
 ))
 RECORDING_CHECKS = tuple(sorted({(r, s) for r, s, p in RECORDING_PARAMETERS}))

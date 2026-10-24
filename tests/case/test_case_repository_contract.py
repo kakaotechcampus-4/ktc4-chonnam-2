@@ -142,6 +142,19 @@ def test_stopped_analysis_survives_save_and_load(repo_conn):
     assert again.case_rev == case.case_rev + 1
 
 
+def test_hint_unclear_survives_save_and_load(repo_conn):
+    """단서 구조화 판정(#266)은 다시 로드해도 남는다 — 결과 화면 notice의 근거다."""
+    repo, conn = repo_conn
+    case = CaseAggregate.empty("case_repo_hint")
+    case.start_search()
+    repo.insert(conn, case)
+    loaded = repo.load(conn, case.case_id, lock="update")
+    loaded.record_extracted_hints(dict(loaded.hints), unclear=True)
+    repo.save(conn, loaded)
+
+    assert repo.load(conn, case.case_id).hint_unclear is True
+
+
 def test_processed_executions_survive_save_and_load(repo_conn):
     """Worker T2가 반영한 execution 기록은 다시 로드해도 남는다 — 재전달을 ALREADY_APPLIED로 거른다(8-8)."""
     repo, conn = repo_conn
