@@ -838,5 +838,28 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .rs-actions .rs-btn { width: 100%; }
 }
 
-/* 움직임은 OS의 「움직임 줄이기」(Windows 애니메이션 효과 끔 등) 설정과 상관없이 그대로 보인다 —
-   사용자 결정(10/23). 로딩 원·바퀴 회전·화면 전환·출발/도착 효과 모두 같다. */
+/* 움직임 줄이기 — 나타나기·이동·크기 변화·높이 애니메이션을 없애고 색 변화만 짧게 남긴다.
+   회전 표시는 멈추고, 상태는 아이콘과 문구(업로드 중·업로드 완료·업로드 실패)로 구분한다. */
+@media (prefers-reduced-motion: reduce) {
+  .rs *, .rs-header * {
+    animation: none !important;
+    transition-property: background-color, border-color, color !important;
+    transition-duration: .1s !important;
+  }
+  .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
+  .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
+  .rs .flow-now-leaving, .rs-upload-exit { display: none; }
+  .rs.flow.rs-push-in { animation: none !important; }
+  .flow-car { transition: none !important; }
+  .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
+  .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs-spin-sm { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs-vcard { display: none; }
+  .rs-check path { stroke-dashoffset: 0; }
+  /* 자동차 출발·진행·도착 연출 — 출발은 위의 복사본(.rs-upload-exit)째 숨는다. 연기·속도선·잔상·스키드 자국·
+     파동은 애니메이션이 없으면 투명하게 남아 보이지 않고, 도착한 차는 제자리에 10% 흐린 배경으로 서 있다.
+     「장면 찾기」 박스 연출은 통째로 숨겨 정지 화면만 보인다 */
+  .flow-search-fx { display: none; }
+  .flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: visible; }
+}
