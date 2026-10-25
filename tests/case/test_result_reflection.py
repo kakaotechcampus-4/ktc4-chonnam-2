@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from daesingo.case import command, jobs, service
+from daesingo.case import command, jobs, reflection, service
 from daesingo.case.reflection import ExecutionOutcome, reflect_execution
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimeline
@@ -198,12 +198,17 @@ def test_kind_mismatch_is_a_programming_error():
         _reflect(store, ExecutionOutcome(**{**outcome.__dict__, "kind": "HINT_EXTRACT"}))
 
 
-def test_kind_without_reflector_is_an_error_not_silent_settlement():
+def test_every_job_kind_has_a_reflector():
+    # 발주할 수 있는 kind는 모두 T2로 돌아올 수 있다 — 반영기가 빠지면 Worker가 그 결과에서 멈춘다.
+    assert set(reflection._APPLIERS) == set(jobs.JOB_KINDS)
+
+
+def test_kind_without_reflector_is_an_error_not_silent_settlement(monkeypatch):
     store, case_id = _store_searching()
     case = store.load_for_update(case_id)
-    # 신고용 영상 export 반영기는 아직 없다(`report-video-export.md` — 실행기 · 배선 보류).
     job = jobs.issue_report_video_export(case, input_fingerprint="sha1:rv")
     store.save(case)
+    monkeypatch.delitem(reflection._APPLIERS, "REPORT_VIDEO_EXPORT")
     outcome = ExecutionOutcome(
         execution_id="exec_rv", job_id=job["job_id"], case_id=case_id, kind="REPORT_VIDEO_EXPORT", attempt=1,
         status="SUCCEEDED",

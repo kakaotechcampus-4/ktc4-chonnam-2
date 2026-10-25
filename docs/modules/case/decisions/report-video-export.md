@@ -36,6 +36,7 @@
 
 - **한 것:** `report_video_missing()` · notice(`derive_notices`) · 재시도 근거(`build_view_from_adapter`가 이전 `REPORT_VIDEO_EXPORT` JobRecord 유무를 넘김) · 계약 A§7 · B§7 · `scenario_plate_reread_001` rev4에서 notice 제거(응답 전이다 — 다음 행동은 `case.situation_response_pending`).
 - **보류 — 자동 발주 배선([R-1]).** 지금은 영상을 만들 실행기가 없다 — recording `REPORT_VIDEO_EXPORT` capability(C-07)와 Worker handler 등록(RT-10 #297)이 없고, 동기 real 경로는 후보 선택 뒤 관찰을 JobRecord 없이 adapter가 돌린다. 실행기 없이 발주하면 정산되지 않는 job이 `running_jobs`에 남아 「신고용 영상 만드는 중」이 끝나지 않는다. 그동안 notice는 버튼 없이 「아직 없어요」만 보인다.
+- **T2 반영기(2026-10-24):** `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT` 결과는 정산 + READY gate로 반영한다(`result-reflection.md` §3-4). [R-3] 재시도로 발주한 job이 Worker에서 돌아와도 멈추지 않는다. 자동 발주([R-1])는 아래 재개 조건 그대로 보류다.
 - **재개 조건:** recording export handler가 생기면 command 처리 뒤(`execute_command`의 READY gate 자리)와 T2 관찰 반영 뒤(`observation-storage.md` §4-5)에서 `report_video_missing()`과 「같은 입력의 발주 없음」으로 발주한다. 입력(IncidentClip · 사후 각인 값)과 fingerprint는 RT-10 「handler가 읽는 case 입력」(#297 Consult)에서 함께 정한다 — 지금 adapter는 TimeResolution · IncidentClip ref를 내보내지 않는다.
 
 ## 5. 미결 (채우지 않는다)

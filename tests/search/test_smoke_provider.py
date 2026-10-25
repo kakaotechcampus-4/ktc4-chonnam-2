@@ -23,6 +23,7 @@ from daesingo.search.smoke_fixture import (
     SmokeProviderFixture,
 )
 from daesingo.search.sources import ResolvedAnalysisSource
+from tests.search._openai_fake import RawResponseFake
 
 type JsonValue = (
     None | bool | int | float | str | list[JsonValue] | dict[str, JsonValue]
@@ -54,7 +55,7 @@ class _Completion:
 
 
 @dataclass
-class _Completions:
+class _Completions(RawResponseFake):
     calls: list[dict[str, JsonValue]] = field(default_factory=list)
 
     def parse(self, **kwargs: JsonValue) -> _Completion:

@@ -3,6 +3,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from daesingo.common.usage.port import UsageError
+
 from .execution import DeadlineExceededError, RunDeadline
 
 
@@ -54,7 +56,8 @@ def call_with_retry[T](
     for attempt in range(policy.max_retries + 1):
         try:
             return operation()
-        except DeadlineExceededError:
+        except (DeadlineExceededError, UsageError):
+            # usage 기록 실패는 provider 재시도 대상이 아니다(#303).
             raise
         except Exception as error:
             if not is_transient(error) or attempt == policy.max_retries:

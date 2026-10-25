@@ -1,5 +1,5 @@
-"""T2 관찰 kind 반영 — `PLATE_READ` · `OVERLAY_TIME_READ` · `FINE_VERIFY`(고도화 8-6 2단계 · 8-8,
-`decisions/observation-storage.md` §4-5).
+"""T2 관찰 · export kind 반영 — `PLATE_READ` · `OVERLAY_TIME_READ` · `FINE_VERIFY`(고도화 8-6 2단계 · 8-8,
+`decisions/observation-storage.md` §4-5)와 `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`(`decisions/result-reflection.md` §3-4).
 
 관찰 결과는 정산만 한다 — 내용은 case state에 복사하지 않고(CaseView는 adapter가 결과를 읽는다), job을 `REFLECTED`로
 정산한 뒤 stage가 `EVIDENCE_REVIEW`면 command 뒤와 같은 READY gate를 다시 본다. 실패 terminal도 정산만 하고, 실패
@@ -17,6 +17,8 @@ from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimeline
 
 OBSERVATION_KINDS = ["PLATE_READ", "OVERLAY_TIME_READ", "FINE_VERIFY"]
+# export 결과(파생 asset)는 recording asset 목록에 clip lineage로 남아 CaseView 조립 때 읽힌다 — 관찰과 같이 정산만 한다.
+EXPORT_KINDS = ["REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"]
 EVENT = {
     "candidate_id": "cand_1",
     "summary": "흰 SUV 실선 변경",
@@ -122,7 +124,7 @@ def _reflect(store: CaseStore, outcome: ExecutionOutcome, reader: FakeReader):
     return reflect_execution(outcome, store=store, reader=reader, timelines=FakeTimelines())
 
 
-@pytest.mark.parametrize("kind", OBSERVATION_KINDS)
+@pytest.mark.parametrize("kind", OBSERVATION_KINDS + EXPORT_KINDS)
 @pytest.mark.parametrize("status", ["SUCCEEDED", "FAILED"])
 def test_observation_result_is_settled_without_reading_content(kind, status):
     store, case_id = _store_with_observation_job(kind, SnapshotAdapter())
@@ -142,7 +144,7 @@ def test_observation_result_is_settled_without_reading_content(kind, status):
     assert jobs.latest_job_record(case, kind)["job_id"] not in [r["job_id"] for r in case.waiting_job_records()]
 
 
-@pytest.mark.parametrize("kind", OBSERVATION_KINDS)
+@pytest.mark.parametrize("kind", OBSERVATION_KINDS + EXPORT_KINDS)
 def test_observation_result_reopens_ready_gate(kind):
     # 관찰 결과로 Package가 준비되면 command 뒤와 같은 gate로 READY가 된다(§4-5).
     evidence = {
