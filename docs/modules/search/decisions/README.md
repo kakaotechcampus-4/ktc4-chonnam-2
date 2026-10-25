@@ -8,7 +8,7 @@
 - [fine-coarse-handoff-experiment-2026-09-28.md](fine-coarse-handoff-experiment-2026-09-28.md) — Coarse 관찰 Fine 인계·실선/중앙선 UNCERTAIN 지시를 진단 전용 profile로 분리 실험(운영 p3 불변)
 - [gemini-3.8-proxy-baseline-2026-09-18.md](gemini-3.8-proxy-baseline-2026-09-18.md) — 운영 baseline: `gemini-3.8-flash`, 프록시 경유, `.env` 설정
 - [challenger-policy.md](challenger-policy.md) — Failure decides the challenger 매핑·개방 절차 (A-2)
-- [failure-taxonomy.md](failure-taxonomy.md) — search 실패 분류 **초안** (Owner 확정 전)
+- [failure-taxonomy.md](failure-taxonomy.md) — search 실패 분류. 실행 실패(`JobExecution.failure_kind`)는 **확정**(2026-10-25, #297), 품질 분류는 **초안**
 - [candidate-span-semantics-2026-09-10.md](candidate-span-semantics-2026-09-10.md) — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신
 - [fine-temporal-offset-base-2026-09-22.md](fine-temporal-offset-base-2026-09-22.md) — Fine at_offset_ms 기준 = 잘라낸 clip의 0초 확정, 이슈 #132(유소연) 회신
 

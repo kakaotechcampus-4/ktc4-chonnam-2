@@ -12,6 +12,12 @@ from .errors import (
     VideoStreamSelectionError,
 )
 from .factory import build_gemini_search_service
+from .failure_kind import (
+    SearchFailureKind,
+    failure_kind_for_error,
+    failure_kind_for_intent,
+    failure_kind_for_run,
+)
 from .fixtures import FixtureNotFoundError, FixtureSearchService
 from .intent import (
     IntentFailureKind,
@@ -90,7 +96,9 @@ def verify_visual_with_stream_context(
     Recording MediaStream facts.  It lets Search select a VIDEO stream without
     parsing opaque refs or applying a default stream policy.
     """
-    selected_video_stream = select_single_video_stream(input_ref, analysis_source_streams)
+    selected_video_stream = select_single_video_stream(
+        input_ref, analysis_source_streams
+    )
     result = verify_visual(
         input_ref,
         target_hint,
@@ -121,6 +129,7 @@ __all__ = [
     "LinkedCoarseResult",
     "ResolvedAnalysisSource",
     "SelectedVideoStream",
+    "SearchFailureKind",
     "SearchHint",
     "SearchService",
     "UnknownCandidateError",
@@ -133,6 +142,9 @@ __all__ = [
     "api_key_from_env",
     "build_gemini_search_service",
     "build_intent_hint_extractor",
+    "failure_kind_for_error",
+    "failure_kind_for_intent",
+    "failure_kind_for_run",
     "search_candidates",
     "select_single_video_stream",
     "verify_visual",
