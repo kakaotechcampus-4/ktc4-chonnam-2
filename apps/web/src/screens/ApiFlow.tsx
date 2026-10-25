@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import type { Action, CaseView } from '../contracts/caseView'
+import { CircleAlert } from 'lucide-react'
 import { errorMessage } from '../contracts/labels'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
@@ -99,15 +100,18 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
 
+  const newReport = () => location.assign(`${location.pathname}?api`)
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
 
   return (
     <>
-      <AppHeader onNewReport={() => location.assign(`${location.pathname}?api`)} />
+      <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page">
         {banner && (
-          <div className="flow-notice blocking" role="alert">
-            {banner}
+          // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
+          <div className="rs rs-banner" role="alert">
+            <CircleAlert size={18} strokeWidth={1.8} aria-hidden />
+            <span>{banner}</span>
           </div>
         )}
         {analysing && leaving && (
@@ -183,9 +187,20 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         return <FailedScreen view={view} onAction={onAction} canRun={canRun} />
       // ponytail: 다시 찾기 입력은 두지 않는다 — 설명을 고쳐 다시 찾는 command(EDIT_HINT)가 아직 없다. 「새 신고」로 다시 시작한다.
       case 'NO_RESULT':
-        return <NoResultScreen view={view} />
+        // 시연과 같은 틀. 다시 찾을 command가 없어 입력 대신 「새 신고」로 처음부터 시작하게 한다
+        return (
+          <div className="rs rs-screen state-page noresult">
+            <p className="state-context">신고자료</p>
+            <NoResultScreen view={view} />
+            <div className="state-actions">
+              <button type="button" className="rs-btn pri" onClick={newReport}>
+                새 신고
+              </button>
+            </div>
+          </div>
+        )
       case 'NOT_OBSERVED':
-        return <NotObservedScreen view={view} onSelect={reselect} />
+        return <NotObservedScreen view={view} onSelect={reselect} restyled />
       default:
         if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate') return <PlateCheck view={view} onBack={back} />

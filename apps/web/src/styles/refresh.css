@@ -527,6 +527,12 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .state-cause { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.6; color: var(--rs-ink); }
 .state-body { margin: 0; font-size: 16px; line-height: 1.65; color: var(--rs-ink); }
 .state-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+/* 실제 흐름(?api)의 요청 실패 알림 — 화면 맨 위, 결과 화면 실패 안내와 같은 모양 */
+.rs.rs-banner {
+  display: flex; align-items: center; gap: 12px; width: 100%; max-width: 1120px; margin: 24px auto 0; padding: 14px 18px;
+  border-radius: 14px; background: var(--red-soft); color: var(--red); font-size: 16px; font-weight: 600; line-height: 1.5;
+}
+.rs.rs-banner > svg { flex: 0 0 auto; }
 
 /* 결과 없음 — 첫 패널은 면 없이 큰 제목, 두 번째(다시 찾기)는 연회색 면 */
 .rs.noresult .panel { border: 0; box-shadow: none; }

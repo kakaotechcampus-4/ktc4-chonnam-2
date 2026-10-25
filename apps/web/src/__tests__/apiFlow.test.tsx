@@ -189,3 +189,19 @@ it('진행에서 결과로 넘어오는 순간에만 자동차가 도착한다 �
   await waitFor(() => expect(b.container.querySelector('.res-bgcar')).not.toBeNull())
   expect(b.container.querySelector('.res-bgcar.is-arriving')).toBeNull()
 })
+
+it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「새 신고」로 처음부터 시작한다', async () => {
+  const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
+  const { api } = setup({ get: EMPTY })
+  const { container, findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(container.querySelector('.rs.state-page.noresult')).not.toBeNull()
+  expect(getAllByText('새 신고')).toHaveLength(2) // 헤더 + 본문 버튼
+  cleanup()
+
+  const s = setup({ get: STOPPED })
+  const r = render(<ApiFlow api={s.api} caseId="c1" />)
+  await r.findByText('다시 찾기')
+  expect(r.container.querySelector('.rs.state-page.stopped .state-head')).not.toBeNull()
+  expect(r.container.querySelector('.panel-t, .page-title')).toBeNull()
+})
