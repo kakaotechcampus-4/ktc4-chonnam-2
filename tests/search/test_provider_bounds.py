@@ -26,6 +26,7 @@ from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import VisualEventType
 from daesingo.search.sources import ResolvedAnalysisSource
+from daesingo.search.smoke_errors import ProviderApiError
 from tests.search._openai_fake import RawResponseFake
 
 # ---------------------------------------------------------------------------
@@ -483,6 +484,49 @@ def test_retry_stops_when_run_deadline_exhausted_between_attempts(
         _ = provider.search_coarse(request)
 
     assert len(call_counts) == 1  # exhausted after the first attempt → no retry
+
+
+@pytest.mark.parametrize(
+    ("burn_sec", "expected"),
+    [(0.2, DeadlineExceededError), (0.01, ProviderApiError)],
+    ids=["budget-spent", "budget-left"],
+)
+def test_sdk_timeout_after_budget_is_spent_is_deadline_exceeded(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    burn_sec: float,
+    expected: type[Exception],
+) -> None:
+    """SDK timeout은 남은 예산으로 잡힌다. 예산이 다 쓰였으면 provider 오류가 아니다(#297)."""
+    now = [0.0]
+
+    class _TimingOut(RawResponseFake):
+        def parse(self, **_kwargs: object) -> _Completion:
+            now[0] += burn_sec
+            raise _FakeApiError("Request timed out.")
+
+    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(_TimingOut())))
+    original = importlib.import_module
+    monkeypatch.setattr(
+        "daesingo.search.provider.importlib.import_module",
+        lambda name: mod if name == "openai" else original(name),
+    )
+    monkeypatch.setitem(sys.modules, "openai", mod)
+    media_file = tmp_path / "clip.mp4"
+    media_file.write_bytes(b"bytes")
+    deadline = RunDeadline(lambda: now[0], budget_ms=100)
+    request = CoarseRequest(
+        _source(),
+        (VisualEventType.SIGNAL,),
+        media=_make_media(media_file),
+        timeout_sec=deadline.remaining_sec(),
+        deadline=deadline,
+    )
+
+    with pytest.raises(expected):
+        _ = GeminiProvider("key", GeminiSearchConfig(max_retries=0)).search_coarse(
+            request
+        )
 
 
 def test_retry_attempt_timeout_is_what_remains_of_run_budget(
