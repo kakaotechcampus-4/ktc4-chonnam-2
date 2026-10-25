@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
-import type { Action, CaseView } from '../contracts/caseView'
+import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { CircleAlert } from 'lucide-react'
-import { errorMessage } from '../contracts/labels'
+import { ACTION_LABELS, errorMessage } from '../contracts/labels'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
 import { FailedScreen } from './FailedScreen'
@@ -187,20 +187,28 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         return <FailedScreen view={view} onAction={onAction} canRun={canRun} />
       // ponytail: 다시 찾기 입력은 두지 않는다 — 설명을 고쳐 다시 찾는 command(EDIT_HINT)가 아직 없다. 「새 신고」로 다시 시작한다.
       case 'NO_RESULT':
-        // 시연과 같은 틀. 다시 찾을 command가 없어 입력 대신 「새 신고」로 처음부터 시작하게 한다
+        // 시연과 같은 틀. case가 실은 동작 중 보낼 수 있는 것(RETRY_SEARCH = 같은 조건으로 다시 찾기)만 버튼으로 둔다.
+        // 설명을 고쳐 다시 찾는 EDIT_HINT는 command가 아직 없다 — 「새 신고」로 처음부터 시작할 수 있게 함께 둔다
         return (
           <div className="rs rs-screen state-page noresult">
             <p className="state-context">신고자료</p>
             <NoResultScreen view={view} />
             <div className="state-actions">
-              <button type="button" className="rs-btn pri" onClick={newReport}>
+              {view.notices.flatMap((n) =>
+                n.actions.filter(isAction).filter(canRun).map((a) => (
+                  <button key={`${n.code}-${a}`} type="button" className="rs-btn pri" onClick={() => onAction(n.code, a)}>
+                    {ACTION_LABELS[a]}
+                  </button>
+                )),
+              )}
+              <button type="button" className="rs-btn sec" onClick={newReport}>
                 새 신고
               </button>
             </div>
           </div>
         )
       case 'NOT_OBSERVED':
-        return <NotObservedScreen view={view} onSelect={reselect} restyled />
+        return <NotObservedScreen view={view} onSelect={reselect} restyled onNewReport={newReport} />
       default:
         if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate') return <PlateCheck view={view} onBack={back} />

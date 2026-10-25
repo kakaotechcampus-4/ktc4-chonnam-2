@@ -13,6 +13,9 @@ export function NotObservedScreen(props: {
   view: CaseView
   onSelect?: (candidateId: string) => void
   restyled?: boolean
+  /** 처음부터 다시 — 이 화면에는 case가 실은 다시 찾기 동작이 없다(출구는 「다른 후보 보기」, core-user-flow §6).
+   *  다른 후보가 없으면 막다른 화면이 되지 않게 주 버튼, 있으면 후보 고르기 다음 순위라 보조 버튼이다 */
+  onNewReport?: () => void
 }): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
   const r = props.restyled
@@ -27,6 +30,13 @@ export function NotObservedScreen(props: {
             영상은 정상적으로 확인했습니다.
             {others > 0 && ' 다른 장면이었다면 아래 후보 중에서 골라 주세요.'}
           </p>
+          {r && props.onNewReport && (
+            <div className="state-actions">
+              <button type="button" className={`rs-btn ${others > 0 ? 'sec' : 'pri'}`} onClick={props.onNewReport}>
+                새 신고
+              </button>
+            </div>
+          )}
         </section>
       </div>
       {others > 0 && props.onSelect && (

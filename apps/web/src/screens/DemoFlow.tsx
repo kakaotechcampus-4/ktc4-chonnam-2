@@ -499,7 +499,7 @@ export function DemoFlow(): JSX.Element {
         )}
         {done?.end === 'failed' && <FailedScreen view={done.view} onAction={onAction} canRun={canRun} />}
         {done?.end === 'stopped' && <StoppedScreen view={done.view} onAction={onAction} />}
-        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} restyled />}
+        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} restyled onNewReport={newReport} />}
         {done?.end === 'result' && !sub && doneView && (
           <ResultScreen
             view={doneView}

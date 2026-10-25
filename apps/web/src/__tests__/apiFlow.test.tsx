@@ -190,13 +190,23 @@ it('진행에서 결과로 넘어오는 순간에만 자동차가 도착한다 �
   expect(b.container.querySelector('.res-bgcar.is-arriving')).toBeNull()
 })
 
-it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「새 신고」로 처음부터 시작한다', async () => {
+it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「다시 찾기」(RETRY_SEARCH)와 「새 신고」를 둔다', async () => {
   const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
-  const { api } = setup({ get: EMPTY })
+  const { m, api } = setup({ get: EMPTY })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { container, findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText(/말씀하신 장면을 찾지 못했어요/)
   expect(container.querySelector('.rs.state-page.noresult')).not.toBeNull()
   expect(getAllByText('새 신고')).toHaveLength(2) // 헤더 + 본문 버튼
+  // case가 실은 동작 중 보낼 수 있는 것(RETRY_SEARCH)만 버튼으로 — 같은 조건으로 다시 찾는다
+  const retry = EMPTY.notices.find((n) => n.actions.includes('RETRY_SEARCH'))
+  if (retry) {
+    fireEvent.click(getAllByText('다시 찾기')[0])
+    await waitFor(() =>
+      expect(m.sendCommand).toHaveBeenCalledWith('c1', EMPTY.case_rev, { kind: 'RUN_NOTICE_ACTION', payload: { notice_code: retry.code, action: 'RETRY_SEARCH' } }),
+    )
+  }
+  expect(retry).toBeDefined()
   cleanup()
 
   const s = setup({ get: STOPPED })
