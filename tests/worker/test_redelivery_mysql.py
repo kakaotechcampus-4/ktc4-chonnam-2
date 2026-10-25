@@ -227,11 +227,13 @@ def test_fault_isolation_next_candidate_and_next_cycle(resources, mode, monkeypa
 
 @pytest.mark.mysql_check("redelivery", "unsupported")
 @pytest.mark.parametrize("mode", parameters("unsupported", ("REPORT_VIDEO_EXPORT", "UNKNOWN")))
-def test_unsupported_kind_failed_t1_remains_unreceipted_and_other_case_progresses(resources, mode):
+def test_unsupported_kind_failed_t1_remains_unreceipted_and_other_case_progresses(resources, mode, monkeypatch):
     engine, cfg = resources
     if mode == "REPORT_VIDEO_EXPORT":
-        from daesingo.case import jobs as case_jobs, service
+        from daesingo.case import jobs as case_jobs, reflection, service
         from daesingo.common.jobs.repository import enqueue
+        # Case now has a reflector for every JobRecord kind; remove one to keep exercising fail-closed T2.
+        monkeypatch.delitem(reflection._APPLIERS, mode)
         with engine.begin() as conn:
             case_id = service.create_case(store=store(conn))
             case = store(conn).load_for_update(case_id)
