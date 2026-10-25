@@ -159,3 +159,33 @@ it('command가 없는 알림 버튼(직접 입력류)은 보내지 않고 안내
   await findByText('이 동작은 아직 연결되지 않았어요.')
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
+
+it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모습 복사본에서 자동차가 출발한다', async () => {
+  const { m, api } = setup()
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { container, getByText, findByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  await findByText(/^업로드 완료/)
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  await findByText('분석 중단')
+  const ghost = container.querySelector('.rs-upload-exit')!
+  expect(ghost.getAttribute('aria-hidden')).toBe('true')
+  expect(ghost.querySelector('.rs-depart')).not.toBeNull()
+  expect(container.querySelector('.rs.flow.rs-push-in')).not.toBeNull()
+  await waitFor(() => expect(container.querySelector('.rs-upload-exit')).toBeNull(), { timeout: 3000 })
+})
+
+it('진행에서 결과로 넘어오는 순간에만 자동차가 도착한다 — 이어받아 바로 결과면 제자리', async () => {
+  const READY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const first = setup({ get: READY })
+  first.m.getView.mockResolvedValueOnce(ok(SEARCHING))
+  const a = render(<ApiFlow api={first.api} caseId="c1" />)
+  await a.findByText('분석 중단')
+  await waitFor(() => expect(a.container.querySelector('.res-bgcar.is-arriving')).not.toBeNull(), { timeout: 5000 })
+  cleanup()
+
+  const again = setup({ get: READY })
+  const b = render(<ApiFlow api={again.api} caseId="c1" />)
+  await waitFor(() => expect(b.container.querySelector('.res-bgcar')).not.toBeNull())
+  expect(b.container.querySelector('.res-bgcar.is-arriving')).toBeNull()
+})

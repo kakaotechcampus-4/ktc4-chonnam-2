@@ -63,6 +63,9 @@ const DEPART_PX = 1000
 const BURNOUT_DEG = -900
 const DEPART_ROLL_DEG = (-DEPART_PX / (TIRE_R * (SCENE_H / VIEW.whole.span)) / Math.PI) * 180 + BURNOUT_DEG
 const GHOSTS = [1, 2, 3]
+// 「영상에서 찾아보기」 뒤 겉모습 복사본을 남겨 두는 시간 — 출발 0.95초 + 밀려 나가는 0.42초 + 여유.
+// 시연(DemoFlow)과 실제(ApiFlow)가 같이 쓴다
+export const DEPART_EXIT_MS = 1450
 
 // 출발 연기·속도선 — 원본 좌표(ox, oy)를 출발 장면(칸 너비 width, 높이 320) 좌표로 옮겨 놓는다.
 // 시간(ms)은 refresh.css의 출발 타임라인과 맞춘다: 시동 진동 100~450 · 배기 120~ · 휠스핀 연기 300~ · 출발 450~970

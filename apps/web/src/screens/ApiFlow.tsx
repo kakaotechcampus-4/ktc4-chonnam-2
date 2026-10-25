@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import type { Action, CaseView } from '../contracts/caseView'
@@ -12,13 +12,16 @@ import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
-import { UploadScreen, type UploadState } from './UploadScreen'
+import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
 // 실제 HTTP API(`?api`)로 도는 흐름 — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
 // 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
 // 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
 
 type Sub = 'candidates' | 'plate' | 'details'
+const noop = () => {}
+// 결과 화면 갈래 — 진행에서 여기로 넘어오는 순간 자동차가 도착한다(시연과 같다)
+const RESULT_KINDS: ReadonlySet<string> = new Set(['AWAIT_RESPONSE', 'EVIDENCE', 'HANDOFF'])
 type NoticeAction = Extract<Command, { kind: 'RUN_NOTICE_ACTION' }>['payload']['action']
 
 // notice 버튼 중 command가 있는 것만 보낸다. 나머지(직접 입력류)는 입력형 command가 아직 없다(#212 · #217).
@@ -51,6 +54,29 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     history.replaceState(null, '', url)
   }, [state.caseId])
 
+  // 자동차 출발 — [영상에서 찾아보기]를 누른 뒤 진행 화면이 실제로 열리는 순간부터 업로드 화면 겉모습
+  // 복사본에서 차가 출발한다(시연과 같은 연출). 시작 요청이 실패해 진행 화면이 열리지 않으면 접는다.
+  const [leaving, setLeaving] = useState<{ files: { name: string }[]; skipped: string[] } | null>(null)
+  const analysing = !!view && view.stage !== 'INTAKE'
+  useEffect(() => {
+    if (!leaving || !analysing) return
+    const t = setTimeout(() => setLeaving(null), DEPART_EXIT_MS)
+    return () => clearTimeout(t)
+  }, [leaving, analysing])
+  useEffect(() => {
+    if (state.error) setLeaving(null)
+  }, [state.error])
+  // 자동차 도착 — 진행 화면에서 결과 화면으로 바뀐 그 순간에만. 이어받아 바로 결과를 열거나 하위 화면에서
+  // 돌아올 때는 제자리다
+  const kind = analysing ? selectScreen(view).kind : 'UPLOAD'
+  const lastKind = useRef(kind)
+  const [arriving, setArriving] = useState(false)
+  useEffect(() => {
+    if (lastKind.current === 'PROGRESS' && RESULT_KINDS.has(kind)) setArriving(true)
+    else if (!RESULT_KINDS.has(kind)) setArriving(false)
+    lastKind.current = kind
+  }, [kind])
+
   const run = (command: Command) => {
     setUnsupported(false)
     void send(command)
@@ -66,7 +92,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
   const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value } })
-  const open = (sub: Sub) => setSubs((s) => [...s, sub])
+  const open = (sub: Sub) => {
+    setSubs((s) => [...s, sub])
+    setArriving(false)
+  }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
 
@@ -75,10 +104,25 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   return (
     <>
       <AppHeader onNewReport={() => location.assign(`${location.pathname}?api`)} />
-      <main className="web-main">
+      <main className="web-main rs-page">
         {banner && (
           <div className="flow-notice blocking" role="alert">
             {banner}
+          </div>
+        )}
+        {analysing && leaving && (
+          // 겉모습만 남긴 업로드 화면 — 누를 수도, 읽히지도 않는다. 진행 화면은 이미 아래에 열려 있다
+          <div className="rs-upload-exit" aria-hidden inert>
+            <UploadScreen
+              state="done"
+              files={leaving.files}
+              skipped={leaving.skipped}
+              situation={situation}
+              onFiles={noop}
+              onSituation={noop}
+              onSearch={noop}
+              departing
+            />
           </div>
         )}
         {!view || view.stage === 'INTAKE' ? upload() : analysis(view)}
@@ -96,16 +140,19 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     const uploading = uploads.some((u) => u.status === 'WAITING' || u.status === 'UPLOADING')
     const anyDone = already > 0 || uploads.some((u) => u.status === 'DONE')
     const uploadState: UploadState = uploading ? 'uploading' : anyDone ? 'done' : uploads.length > 0 ? 'fail' : 'idle'
+    const files = already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads
+    const skipped = uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
     return (
       <UploadScreen
         state={uploadState}
-        files={already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads}
-        skipped={uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)}
+        files={files}
+        skipped={skipped}
         situation={situation}
         onFiles={(picked) => void addFiles(picked)} // 올리는 중에 고른 파일은 store가 받지 않는다
         onSituation={setSituation}
         onSearch={() => {
           setStartedAt(Date.now())
+          setLeaving({ files, skipped })
           run({ kind: 'START_ANALYSIS', payload: { description: situation } })
         }}
       />
@@ -126,6 +173,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             }
             situation={situation || view.description || ''}
             startedAt={startedAt}
+            pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
           />
         )
@@ -151,6 +199,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onRespond={respond}
             onAction={onAction}
             canRun={canRun}
+            arriving={arriving}
           />
         )
     }
