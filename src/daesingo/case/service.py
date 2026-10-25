@@ -377,7 +377,7 @@ def report_video_missing(view: dict[str, Any]) -> bool:
 
 ANALYSIS_TIMED_OUT_NOTICE: dict[str, Any] = {
     # case가 탐색 결과를 기다리다 마감이 지나 기다리기를 멈췄다(`decisions/case-wait-timeout.md`). 화면은 중단과 같은
-    # 결과(core-user-flow 「분석 중단·timeout·인프라 실패」)이고 출구도 같은 「이어서 찾기」다. 원인이 사용자가 아니라 code를 나눈다.
+    # 결과(core-user-flow 「분석 중단·timeout·인프라 실패」)이고 출구도 같은 「다시 찾기」(`RETRY_SEARCH`)다. 원인이 사용자가 아니라 code를 나눈다.
     "code": "case.analysis_timed_out",
     "severity": "INFO",
     "blocking": False,

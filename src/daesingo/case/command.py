@@ -217,7 +217,7 @@ def execute_command(
     `START_ANALYSIS`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
 
     case를 잠근 뒤 마감(`now`, 기본 현재 시각)이 지난 job을 먼저 `STOPPED_WAITING`으로 정산한다 — 사용자가 본 timeout 화면의
-    「이어서 찾기」가 같은 기준으로 검사되고, command가 성공하면 그 정산도 함께 저장된다(`decisions/case-wait-timeout.md`).
+    「다시 찾기」가 같은 기준으로 검사되고, command가 성공하면 그 정산도 함께 저장된다(`decisions/case-wait-timeout.md`).
     """
     now = now or utc_now()
     view_kwargs = {"store": store, "notices": notices, "now": now}
