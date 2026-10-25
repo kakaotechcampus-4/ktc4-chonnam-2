@@ -1,5 +1,6 @@
 """API-owned resources and caller transactions for the public Case boundary."""
 from dataclasses import dataclass, field
+from contextlib import ExitStack
 from pathlib import Path
 from threading import Lock
 from time import monotonic
@@ -8,17 +9,20 @@ from sqlalchemy.engine import Engine
 import daesingo.case as case_api
 from daesingo.case.store import CaseStore, validate_case_id
 from daesingo.case.store_mysql import MySQLCaseRepository
+from daesingo.case.stored_observation import stored_adapter_factory
 from daesingo.case.timeline_source import RecordingSequentialTimelineSource
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_api_engine, create_ready_engine
 from daesingo.common.db.transactions import run_api_transaction
 from daesingo.common.jobs.read_port import read_executions
+from daesingo.common.jobs.produced import ProducedReader
 from daesingo.common.jobs.cancel import request_cancel
 from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
 from daesingo.common.storage.cleanup import configured_cleanup
 from daesingo.common.storage.media import MediaRoot
-from daesingo.recording import RecordingService, FfprobeMediaProbe, RecordingCapabilityError, ContractRef
+from daesingo.recording import (RecordingService, RecordingFacts, ConnectionRecordingRepository,
+                               FfprobeMediaProbe, RecordingCapabilityError, ContractRef)
 from daesingo.recording.mysql_repository import MySQLRecordingRepository
 from daesingo.case.domain import SourceNotAccepted
 from .health import Readiness
@@ -68,7 +72,7 @@ class ApiComposition:
     engine: Engine
     ready_engine: Engine
     readiness: Readiness
-    recording: RecordingService = field(default_factory=RecordingService, repr=False, compare=False)
+    recording: RecordingService | None = field(default=None, repr=False, compare=False)
     cleanup: object = field(default=None, repr=False, compare=False)
     media: object = field(default=None, repr=False, compare=False)
     _lock: object = field(default_factory=Lock, repr=False, compare=False)
@@ -76,10 +80,10 @@ class ApiComposition:
     cleanup_failed: bool = field(default=False, init=False, repr=False, compare=False)
 
     def _store(self, connection):
-        # Keep the facade and its default registry local to this transaction
-        # (Case 8-6 is separate).
+        facts = RecordingFacts(ConnectionRecordingRepository(connection, storage_root=self.startup.config.media_root))
         return CaseStore(repository=MySQLCaseRepository(),
-                         conn=connection, executions=read_executions)
+            conn=connection, executions=read_executions,
+            adapter_factory=stored_adapter_factory(reader=ProducedReader(), executions=read_executions, recording=facts))
 
     def get_view(self, case_id: str):
         started = monotonic()
@@ -105,13 +109,18 @@ class ApiComposition:
 
     def execute_command(self, payload, trace_id: str):
         def operation(conn):
-            result = case_api.execute_command(payload, store=self._store(conn),
-                timelines=RecordingSequentialTimelineSource(self.recording))
-            if result.cancelled_job_ids:
-                request_cancel(conn, result.cancelled_job_ids)
-            if result.appended_job_records:
-                enqueue(conn, result.appended_job_records, trace_id)
-            return result
+            with ExitStack() as resources:
+                recording = self.recording
+                if recording is None:
+                    recording = resources.enter_context(RecordingService(ConnectionRecordingRepository(
+                        conn, storage_root=self.startup.config.media_root)))
+                result = case_api.execute_command(payload, store=self._store(conn),
+                    timelines=RecordingSequentialTimelineSource(recording))
+                if result.cancelled_job_ids:
+                    request_cancel(conn, result.cancelled_job_ids)
+                if result.appended_job_records:
+                    enqueue(conn, result.appended_job_records, trace_id)
+                return result
         # One attempt, Case lock first, same Connection and acknowledged commit.
         # The returned Case body was built before enqueue and is left untouched.
         return run_api_transaction(self.engine, operation)
