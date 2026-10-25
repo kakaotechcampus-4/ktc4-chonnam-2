@@ -50,6 +50,10 @@ class _FakeBadRequestError(_FakeApiError):
     pass
 
 
+class _FakeTimeoutError(_FakeApiError):
+    pass
+
+
 _NO_PARSED = object()
 
 
@@ -81,6 +85,7 @@ def _provider(
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010
     setattr(mod, "APIError", _FakeApiError)  # noqa: B010
     setattr(mod, "BadRequestError", _FakeBadRequestError)  # noqa: B010
+    setattr(mod, "APITimeoutError", _FakeTimeoutError)  # noqa: B010
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",

@@ -418,7 +418,7 @@ class GeminiProvider:
                 )
             return ProviderResult(parsed, token_usage, latency_ms)
 
-        from openai import APIError, BadRequestError
+        from openai import APIError, APITimeoutError, BadRequestError
 
         try:
             return call_with_retry(
@@ -430,7 +430,9 @@ class GeminiProvider:
             raise ProviderPayloadError("provider rejected the request") from error
         except APIError as error:
             # 남은 예산으로 잡은 timeout에 걸린 것이면 provider 오류가 아니라 실행 상한 초과다.
-            if deadline is not None and deadline.remaining_ms() <= 0:
+            # 인증 · 권한 · 모델 경로 오류는 시점과 무관하게 provider 오류로 남긴다.
+            timed_out = isinstance(error, APITimeoutError)
+            if timed_out and deadline is not None and deadline.remaining_ms() <= 0:
                 raise DeadlineExceededError("run budget exhausted") from error
             raise ProviderApiError("provider API error") from error
 

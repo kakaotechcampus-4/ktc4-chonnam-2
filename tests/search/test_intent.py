@@ -241,6 +241,7 @@ def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effor
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010
     setattr(mod, "APIError", type("APIError", (Exception,), {}))  # noqa: B010
     setattr(mod, "BadRequestError", type("BadRequestError", (Exception,), {}))  # noqa: B010
+    setattr(mod, "APITimeoutError", type("APITimeoutError", (Exception,), {}))  # noqa: B010
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",
