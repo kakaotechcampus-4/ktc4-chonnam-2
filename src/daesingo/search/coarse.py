@@ -186,15 +186,21 @@ def search_coarse(
             dropped += 1
     candidates = tuple(kept)
     issues: tuple[Issue, ...] = ()
+    outcome = RunOutcome.SUCCEEDED
     if dropped:
+        # 영상 밖 후보는 입력 범위를 못 본 것이 아니므로 scope_ref를 비운다 —
+        # coverage notice가 「범위 전체를 못 봤다」로 읽지 않게 한다(#327 case 제안 2).
         issues = (
             Issue(
                 kind=FailureKind.INFRA,
                 code="COARSE_SPAN_OUT_OF_SOURCE",
-                scope_ref=scope.scope_id,
+                scope_ref=None,
                 detail=f"dropped={dropped}",
             ),
         )
+        # 후보가 전부 빠지면 응답이 망가진 것이라 「다시 찾기」가 붙는 FAILED로 둔다
+        # (#327 case 제안 1). 일부만 빠지면 남은 후보로 PARTIAL.
+        outcome = RunOutcome.FAILED if not candidates else RunOutcome.PARTIAL
     completed = datetime.now(UTC)
     analysis_run = AnalysisRun(
         run_id=run_id,
@@ -206,7 +212,7 @@ def search_coarse(
             prompt_version=COARSE_PROMPT.version,
             config_version=dependencies.config.version,
         ),
-        outcome=RunOutcome.PARTIAL if issues else RunOutcome.SUCCEEDED,
+        outcome=outcome,
         started_at=started,
         completed_at=completed,
         issues=issues,

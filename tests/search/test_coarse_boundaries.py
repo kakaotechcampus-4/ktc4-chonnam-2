@@ -154,7 +154,7 @@ def test_search_coarse_preserves_valid_ranked_timeline_spans() -> None:
         (11.0, 12.0, 11.5),
     ],
 )
-def test_search_coarse_drops_invalid_provider_spans_as_partial(
+def test_search_coarse_fails_when_every_provider_span_is_invalid(
     start_sec: float, end_sec: float, at_sec: float
 ) -> None:
     # Given
@@ -166,12 +166,13 @@ def test_search_coarse_drops_invalid_provider_spans_as_partial(
     # When
     result = service.search_candidates(_scope())
 
-    # Then — 예외 대신 PARTIAL Run으로 남는다(#181)
+    # Then — 예외 대신 Run으로 남는다(#181). 후보가 전부 빠지면 FAILED(#327 case 제안)
     assert result.candidates == ()
-    assert result.analysis_run.outcome is RunOutcome.PARTIAL
+    assert result.analysis_run.outcome is RunOutcome.FAILED
     assert [issue.code for issue in result.analysis_run.issues] == [
         "COARSE_SPAN_OUT_OF_SOURCE"
     ]
+    assert result.analysis_run.issues[0].scope_ref is None
     assert result.analysis_run.usage_refs  # provider 호출 비용은 남는다
 
 
@@ -199,6 +200,8 @@ def test_search_coarse_keeps_valid_candidates_beside_invalid_one() -> None:
     assert result.candidates[0].span.start_ms == 1000
     assert result.analysis_run.outcome is RunOutcome.PARTIAL
     assert result.analysis_run.issues[0].detail == "dropped=1"
+    # 영상 밖 후보는 coverage 손실이 아니다
+    assert result.analysis_run.issues[0].scope_ref is None
 
 
 @pytest.mark.parametrize(
