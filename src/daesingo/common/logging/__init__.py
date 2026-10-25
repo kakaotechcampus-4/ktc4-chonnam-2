@@ -5,21 +5,25 @@ This is a safe event API, not a global third-party masking logger.
 """
 
 import contextvars
+import hashlib
 import json
 import logging
 import math
+import os
 import re
 import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from functools import partial
+from threading import RLock
 from typing import TextIO
 from uuid import uuid4
 
 _CONTEXT_FIELDS = frozenset({"trace_id", "case_id", "job_id", "execution_id", "module"})
 _TOKEN_FIELDS = _CONTEXT_FIELDS | {"status", "revision"}
 _TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,128}\Z")
+_JOB_TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,191}\Z")
 _EVENT = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+\Z")
 _KEY = re.compile(r"[A-Z][A-Z0-9_]*\Z")
 _context = contextvars.ContextVar("runtime_correlation", default=None)
@@ -32,12 +36,15 @@ def new_trace_id() -> str:
 def _validate(fields):
     for name, value in fields.items():
         if name in _TOKEN_FIELDS:
-            valid = isinstance(value, str) and _TOKEN.fullmatch(value)
+            pattern = _JOB_TOKEN if name == "job_id" else _TOKEN
+            valid = isinstance(value, str) and pattern.fullmatch(value)
         elif name == "duration_ms":
             try:
                 valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
             except OverflowError:
                 valid = False
+        elif name == "count":
+            valid = type(value) is int and value >= 0
         elif name == "keys":
             valid = isinstance(value, (list, tuple)) and all(
                 isinstance(key, str) and _KEY.fullmatch(key) for key in value
@@ -46,6 +53,20 @@ def _validate(fields):
             valid = False
         if not valid:
             raise ValueError("unsafe operational event field")
+
+
+def safe_correlation(**fields: str) -> dict[str, str]:
+    """Keep trusted IDs; use stable opaque aliases for non-token storage IDs.
+
+    Queue identity storage permits ASCII paths/control characters. They must
+    neither break dispatch through log validation nor appear verbatim in logs.
+    This does not identify secrets in arbitrary strings: callers supply IDs only.
+    """
+    if fields.keys() - _CONTEXT_FIELDS:
+        raise ValueError("unknown correlation field")
+    return {name: value if (_JOB_TOKEN if name == "job_id" else _TOKEN).fullmatch(value)
+            else "id_" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+            for name, value in fields.items()}
 
 
 @contextmanager
@@ -97,6 +118,74 @@ class _SafeStreamHandler(logging.StreamHandler):
             pass
 
 
+class _UnbufferedOutput:
+    """API stdout writes never hold Python's buffered I/O finalization lock."""
+    def __init__(self, stream):
+        self.fd = stream.fileno()
+        self.encoding = stream.encoding or "utf-8"
+        self.errors = stream.errors or "backslashreplace"
+
+    def write(self, value):
+        pending = value.encode(self.encoding, self.errors)
+        while pending:
+            written = os.write(self.fd, pending)
+            if written <= 0:
+                raise OSError("output unavailable")
+            pending = pending[written:]
+
+    def flush(self):
+        pass
+
+
+class _ApiStreamHandler(_SafeStreamHandler):
+    """API-owned I/O serialization is independent of logging.shutdown locks.
+
+    A stalled writer must never own Handler.lock, nor may shutdown flush the
+    sink again. Each healthy emit flushes itself; the caller owns the stream.
+    ApiEvents owns bounded draining. No logging registry/foreign handler edits.
+    """
+    def __init__(self, stream):
+        super().__init__(stream)
+        self._write_lock = RLock()
+
+    def handle(self, record):
+        accepted = self.filter(record)
+        if isinstance(accepted, logging.LogRecord):
+            record = accepted
+        if accepted:
+            self.emit(record)
+        return accepted
+
+    def emit(self, record):
+        try:
+            message = self.format(record) + self.terminator
+            with self._write_lock:
+                self.stream.write(message)
+                self.stream.flush()
+        except RecursionError:
+            raise
+        except Exception:
+            self.handleError(record)
+
+    def flush(self):
+        # logging.shutdown calls this while owning Handler.lock. Sink I/O is
+        # performed only by emit, under the separate API-owned write lock.
+        pass
+
+    def handleError(self, record):
+        # The fixed fallback must not hold buffered stderr's finalization lock
+        # either. In-memory caller-owned capture streams retain their behavior.
+        output = sys.stderr
+        try:
+            output = _UnbufferedOutput(output)
+        except (AttributeError, OSError, ValueError):
+            pass
+        try:
+            output.write('{"level":"ERROR","event":"log.write.failed"}\n')
+        except (OSError, ValueError):
+            pass
+
+
 def configure_logging(service: str, *, level: str = "INFO", stream: TextIO | None = None) -> logging.Logger:
     """Dedicated logger; no root/third-party handlers are modified."""
     if service not in ("api", "worker") or level not in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
@@ -105,7 +194,15 @@ def configure_logging(service: str, *, level: str = "INFO", stream: TextIO | Non
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
         handler.close()
-    handler = _SafeStreamHandler(stream if stream is not None else sys.stdout)
+    output = stream if stream is not None else sys.stdout
+    if service == "api" and stream is None:
+        try:
+            output = _UnbufferedOutput(output)
+        except (AttributeError, OSError, ValueError):
+            # In-memory capture streams have no file descriptor.
+            pass
+    handler_type = _ApiStreamHandler if service == "api" else _SafeStreamHandler
+    handler = handler_type(output)
     handler.setFormatter(_JsonFormatter(service))
     logger.addHandler(handler)
     logger.setLevel(level)
@@ -113,12 +210,33 @@ def configure_logging(service: str, *, level: str = "INFO", stream: TextIO | Non
     return logger
 
 
-def log_event(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+def _event_metadata(event, fields):
     if not isinstance(event, str) or not _EVENT.fullmatch(event):
         raise ValueError("unsafe operational event name")
     merged = (_context.get() or {}) | fields
     _validate(merged)
-    logger.log(level, "", extra={"runtime_event": event, "runtime_fields": merged})
+    return {"runtime_event": event, "runtime_fields": merged}
 
 
-__all__ = ["bind_context", "configure_logging", "copy_context_call", "log_event", "new_trace_id"]
+def log_event(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+    metadata = _event_metadata(event, fields)
+    logger.log(level, "", extra=metadata)
+
+
+def log_event_best_effort(logger: logging.Logger, event: str, *, level: int = logging.INFO, **fields) -> None:
+    """Validate strictly; isolate ordinary sink failures for opted-in callers.
+
+    Validation errors remain programming errors. Filters/handlers may raise the
+    same exception types, so isolate only the sink call, never validation.
+    Like transaction _emit/observer, catch Exception, without stderr diagnostics.
+    The existing log_event API and other callers retain their strict behavior.
+    """
+    metadata = _event_metadata(event, fields)
+    try:
+        logger.log(level, "", extra=metadata)
+    except Exception:
+        pass
+
+
+__all__ = ["bind_context", "configure_logging", "copy_context_call", "log_event", "log_event_best_effort",
+           "new_trace_id", "safe_correlation"]

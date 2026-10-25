@@ -56,6 +56,14 @@ def hints_from_result(result: dict[str, Any]) -> dict[str, str | None]:
     raise ValueError(f"알 수 없는 단서 구조화 결과 상태: {status!r} (OK · ABSTAINED · FAILED)")
 
 
+def hint_unclear(result: dict[str, Any]) -> bool:
+    """구조화가 끝났지만 설명을 잘 이해하지 못했는가(#266) — `OK`인데 `confidence=low`이거나, 모델이 판단을 보류한
+    `ABSTAINED`. 실행 실패(`FAILED`)는 아니다 — #259 결정대로 사용자에게 알리지 않는다. `confidence`가 없으면
+    low로 읽지 않는다. 상태 검사는 `hints_from_result()`가 먼저 한다."""
+    status = result.get("status")
+    return status == "ABSTAINED" or (status == "OK" and result.get("confidence") == "low")
+
+
 def issue_initial_search(
     case: CaseAggregate, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
 ) -> dict[str, Any]:
@@ -109,16 +117,23 @@ def start_analysis(
 
 
 def reflect_hint_extraction(
-    case: CaseAggregate, result: dict[str, Any], *, timelines: CaseTimelineSource, budget: InitialSearchBudget
+    case: CaseAggregate,
+    result: dict[str, Any],
+    *,
+    job_id: str,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget,
 ) -> bool:
-    """기다리던 `HINT_EXTRACT`가 있을 때만 hints를 채우고 정산한 뒤 첫 탐색을 발주한다. 없으면(같은 결과의
-    두 번째 도착) 아무것도 바꾸지 않고 `False`. 결과 상태는 상태를 바꾸기 전에 검사한다."""
-    waiting = [r for r in case.waiting_job_records() if r["kind"] == "HINT_EXTRACT"]
-    if not waiting:
+    """`job_id`(`HINT_EXTRACT`)를 case가 아직 기다릴 때만 hints를 채우고 그 job을 정산한 뒤 첫 탐색을 발주한다.
+    중단(`CANCELLED`) · 이미 반영된 job의 결과면(늦은 결과 · 같은 결과의 두 번째 도착) 아무것도 바꾸지 않고
+    `False`(8-9, #245 C-4). 결과 상태는 상태를 바꾸기 전에 검사한다."""
+    record = next((r for r in case.job_records if r["job_id"] == job_id), None)
+    if record is not None and record["kind"] != "HINT_EXTRACT":
+        raise ValueError(f"HINT_EXTRACT job이 아니다: {job_id!r} ({record['kind']})")
+    if not case.awaits_result(job_id):
         return False
     hints = hints_from_result(result)
-    case.record_extracted_hints(hints)
-    for record in waiting:
-        case.settle_job(record["job_id"], "REFLECTED")
+    case.record_extracted_hints(hints, unclear=hint_unclear(result))
+    case.settle_job(job_id, "REFLECTED")
     issue_initial_search(case, timelines=timelines, budget=budget)
     return True

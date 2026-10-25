@@ -66,7 +66,7 @@ LOW라도 값은 정한다. 구현자가 숫자를 고르지 않게 하는 것�
 | B-L3 | STALE threshold | = lease 만료 (별도 grace 없음) | DERIVED | HIGH |
 | B-L4 | 주기 stale sweep interval | 15 s · handler 실행 시간에 묶이지 않음 | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-L5 | startup stale sweep | 함 — 첫 claim 전 1회, 주기 sweep과 같은 조건 | DERIVED | HIGH |
-| B-L6 | lease 시각 기준 | DB server `NOW(6)` | CONSERVATIVE_DEFAULT | HIGH |
+| B-L6 | lease 시각 기준 | DB `NOW(6)` · 갱신 시 row causal 하한(§2.3) | CONSERVATIVE_DEFAULT | HIGH |
 | B-R1 | 자동 retry 상한 | 1회 (job당 execution 최대 2개) | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-R2 | backoff | `5 s × 2^(attempt−2)`, 상한 60 s → v0.1에서는 attempt 2 = 5 s | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-R3 | jitter | 없음 | DERIVED | HIGH |
@@ -129,13 +129,15 @@ idle polling에 jitter를 두지 않는다 — Worker가 1개다(B-W1). Worker�
 | ID | Parameter | v0.1 | Scope / Config | 근거 | Evidence | 검증 지표 | 재조정 Trigger |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | B-L1 | heartbeat interval | 10 s — **fixed-rate cadence**(`T0 + k × 10 s` tick) · **동시에 진행 중인 heartbeat 시도는 최대 1개** — tick이 왔을 때 이전 시도가 끝나지 않았으면 새 시도를 겹쳐 시작하지 않고 그 tick을 건너뛴다(밀린 tick을 몰아서 하지 않음). fixed-rate는 「10 s마다 무조건 새 DB 호출을 시작한다」는 뜻이 아니다 · 시도 안에서 B-D8 재시도 없음 — 다음 tick이 재시도다 · 시도 1회 전체의 시간 상한은 두지 않는다(B-D9) | worker heartbeat thread · `DAESINGO_RUNTIME_HEARTBEAT_INTERVAL_SEC`. 스케줄 수단(thread · event loop 등)은 §7 | lease(60 s) 안에 갱신 기회가 여러 번 오도록 lease의 1/6로 둔다 — 일시 실패 · 지연 몇 번으로 lease가 만료되지 않는다. 다만 실패 **횟수**는 STALE 조건이 아니다(아래 「STALE 조건」). 겹침 금지는 느린 DB 앞에 heartbeat가 쌓여 connection · DB 부하를 키우지 않게 하고, 전용 connection 1개(B-D9)로 충분하게 한다. heartbeat 간격은 cancel 관찰 지연(B-X1)의 기본 단위다. 쓰기 ≤ 0.1 qps(PK 1 row) | CONSERVATIVE_DEFAULT · DERIVED · MEDIUM | `runtime.heartbeat.lag_ms` · `runtime.heartbeat.attempt_ms` · `runtime.heartbeat.skipped_tick_count` | heartbeat lag p99 > 20 s 또는 false STALE ≥ 1(§6) |
-| B-L2 | lease duration | 60 s | worker · `DAESINGO_RUNTIME_LEASE_DURATION_SEC` | claim과 성공한 heartbeat가 `lease_expires_at = NOW(6) + 60 s`로 갱신한다. heartbeat가 handler와 **별개 thread**라(Tech Spec §7.2) lease는 capability 길이(case · Search · recording이 소유하는 timeout)보다 길 필요가 없고 **heartbeat 공백**보다 길면 된다. 공백 원인 후보 — t3.medium CPU credit 소진 · ffmpeg와의 CPU 경합 · GIL을 잡는 base64/JSON 구성 · DB stall — 을 실측하기 전이라 짧게 잡지 않는다. false STALE는 정상 실행 결과를 통째로 버리므로(Tech Spec §7.2) 느린 복구보다 비싸다 | CONSERVATIVE_DEFAULT · DERIVED · MEDIUM | `runtime.heartbeat.lag_ms` · `runtime.stale.detect_latency_s` · `runtime.stale.false_count` | false STALE ≥ 1 → 늘리거나 원인 제거 · P2에서 heartbeat lag p99 ≤ 10 s가 확인되고 복구 지연이 UX 문제면 → 줄이기 검토 |
+| B-L2 | lease duration | 60 s | worker · `DAESINGO_RUNTIME_LEASE_DURATION_SEC` | claim은 DB 시각 + duration으로 lease를 만들고, 성공한 heartbeat는 기존 heartbeat·lease보다 감소하지 않게 갱신한다(아래 「시각 역행」). heartbeat가 handler와 **별개 thread**라(Tech Spec §7.2) lease는 capability 길이(case · Search · recording이 소유하는 timeout)보다 길 필요가 없고 **heartbeat 공백**보다 길면 된다. 공백 원인 후보 — t3.medium CPU credit 소진 · ffmpeg와의 CPU 경합 · GIL을 잡는 base64/JSON 구성 · DB stall — 을 실측하기 전이라 짧게 잡지 않는다. false STALE는 정상 실행 결과를 통째로 버리므로(Tech Spec §7.2) 느린 복구보다 비싸다 | CONSERVATIVE_DEFAULT · DERIVED · MEDIUM | `runtime.heartbeat.lag_ms` · `runtime.stale.detect_latency_s` · `runtime.stale.false_count` | false STALE ≥ 1 → 늘리거나 원인 제거 · P2에서 heartbeat lag p99 ≤ 10 s가 확인되고 복구 지연이 UX 문제면 → 줄이기 검토 |
 | B-L3 | STALE threshold | lease 만료와 같다 — `status=RUNNING ∧ lease_expires_at < NOW(6)` | sweep predicate — **별도 config 아님** | lease와 STALE 판정을 두 축으로 두면 둘의 관계가 또 하나의 불변조건이 된다. RD-04a(어느 축을 config로 둘지)의 답으로 한 축만 둔다 | DERIVED · HIGH | `runtime.stale.count` | 「만료 직후 판정」이 false STALE의 원인으로 확인되면 grace 축 추가 검토 |
 | B-L4 | 주기 stale sweep interval | 15 s | worker · `DAESINGO_RUNTIME_STALE_SWEEP_INTERVAL_SEC` | lease 만료 뒤 판정까지 지연 ≤ 15 s. sweep은 index 조건 UPDATE 1회로 가볍다(0.07 qps). **값의 전제:** sweep 주기가 handler 실행 시간에 묶이지 않아야 15 s가 의미를 가진다 — claim 사이에만 돌면 분 단위 실행 동안 sweep이 멈춘다. Tech Spec §7.3의 「Worker loop의 periodic sweep · 별도 reaper process 없음」 안에서 수단(Worker process 안의 별도 주기 thread 등)은 §7이 정한다 | CONSERVATIVE_DEFAULT · MEDIUM | `runtime.stale.detect_latency_s` | detect latency p95 > lease + 20 s |
 | B-L5 | startup stale sweep | 한다 — 첫 claim 전 1회, B-L3와 **같은 조건** | worker — config 아님 | Tech Spec §7.3. 「이전 owner의 RUNNING은 즉시 STALE」 같은 지름길을 두지 않는다 — Worker가 2개 이상이 되거나 배포 중 두 Worker가 겹치면 살아 있는 실행을 빼앗는다. 아직 lease가 남은 row는 B-L4가 처리한다 | DERIVED · HIGH | 동상 | Worker ≥ 2 |
-| B-L6 | lease 시각 기준 | DB server `NOW(6)` | claim · heartbeat · sweep SQL — config 아님 | lease를 쓰는 쪽과 판정하는 쪽이 같은 시계를 본다. container 시계 차이를 lease 계산에 넣지 않는다 | CONSERVATIVE_DEFAULT · HIGH | — | — |
+| B-L6 | lease 시각 기준 | DB `NOW(6)` · 갱신 시 row causal 하한 | claim · heartbeat · sweep SQL — config 아님 | lease 갱신은 DB NOW(6)와 row의 causal 하한을 쓰고 만료 판정은 DB NOW(6)를 쓴다(아래 「시각 역행」). container 시계를 섞지 않는다 | CONSERVATIVE_DEFAULT · HIGH | — | — |
 
-**STALE 조건 — 마지막 성공 heartbeat 기준.** 성공한 heartbeat(와 claim)는 `lease_expires_at = NOW(6) + 60 s`로 lease를 갱신한다. 마지막으로 성공한 갱신의 DB 시각을 `T`라 하면, `T+60 s`까지 heartbeat 갱신이 한 번도 성공하지 못할 때 lease가 만료되고, sweeper가 그 뒤 다음 sweep(주기대로 돌면 ≤ `T+75 s`)에서 만료된 RUNNING row를 STALE로 처리한다. 그 60 s 동안 실패한 시도의 **횟수는 조건이 아니다** — 빠른 오류면 tick마다 다시 시도하지만, 시도가 timeout · DB stall로 길어지면 건너뛴 tick만큼 시도 수가 줄어든다. 「N회 연속 실패해야 STALE」로 읽지 않는다.
+**STALE 조건 — 저장된 lease 만료 기준.** 마지막 성공 갱신 뒤 저장된 `lease_expires_at < NOW(6)`인 RUNNING row만 다음 sweep에서 STALE로 처리한다. 역행이 없고 sweep이 주기대로 돌면 마지막 성공 heartbeat T 뒤 통상 T+60 s 만료, T+75 s 안의 판정 관계가 성립하지만, clock 역행 구간의 실제 경과시간 상한으로 해석하지 않는다. 그 60 s 동안 실패한 시도의 **횟수는 조건이 아니다** — 빠른 오류면 tick마다 다시 시도하지만, 시도가 timeout · DB stall로 길어지면 건너뛴 tick만큼 시도 수가 줄어든다. 「N회 연속 실패해야 STALE」로 읽지 않는다.
+
+**시각 역행 — 2026-10-17 [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934).** 성공한 heartbeat는 `H = max(DB NOW(6), queued_at, started_at, 기존 heartbeat_at)`(null metadata는 queued_at으로 대체)를 저장하고 lease는 `max(기존 lease_expires_at, H + duration)`으로 갱신한다. **successful renewal은 기존 lease를 단축하지 않는다.** heartbeat도 기존 값보다 감소하지 않는다. 기존 expiry가 null이면 H+duration을 쓴다. clock rollback 중 만료는 raw `NOW(6)+duration`보다 늦어질 수 있으며 이는 승인된 B-L2/B-L6 의미 변경이다. B-L3의 raw DB 만료 predicate와 status/owner fence는 유지한다. 시간 간격 숫자·retry 상한은 바꾸지 않는다.
 
 heartbeat가 공용 pool(B-D4 · B-D7)이나 B-D8 재시도에 묶이면 handler · sweep의 DB 사용과 서로 기다려 갱신 공백이 불필요하게 커진다. 그래서 heartbeat는 전용 connection(B-D9)을 쓰고 재시도를 다음 tick에 맡긴다. 이 분리는 공백을 줄이는 장치이며 시도 하나의 시간 상한을 보장하지 않는다.
 
@@ -145,7 +147,7 @@ heartbeat가 공용 pool(B-D4 · B-D7)이나 B-D8 재시도에 묶이면 handler
 
 ```text
 attempt 1 RUNNING → STALE
-→ (같은 transaction) attempt 2 QUEUED, available_at = NOW(6) + 5 s
+→ (같은 transaction) attempt 2 QUEUED, queued_at = STALE ended_at, available_at = queued_at + 5 s
 → attempt 2 RUNNING → STALE
 → 상한 도달 — attempt 3을 만들지 않는다 · job은 CaseView에서 FAILED (STALE→FAILED 매핑)
 ```
@@ -153,7 +155,7 @@ attempt 1 RUNNING → STALE
 | ID | Parameter | v0.1 | Scope / Config | 근거 | Evidence | 검증 지표 | 재조정 Trigger |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | B-R1 | 자동 retry 상한 | **1회** — 같은 `job_id`의 execution은 최대 2개(attempt 1 · 2) | worker · `DAESINGO_RUNTIME_STALE_RETRY_MAX` | ① STALE의 흔한 원인(배포 · 재시작)은 한 번의 재시도로 넘는다. ② 같은 입력에서 두 번 연속 Worker가 죽으면 입력이 원인(OOM 등)일 가능성이 커서 더 돌리면 crash loop가 된다. ③ attempt 2 시작까지 이미 최대 ~82 s가 걸려(§3.2) case 대기 안에서 attempt 3이 쓸모 있을 여지가 거의 없다. ④ 재시도마다 provider 비용이 다시 든다. Mock fixture `scenario_infra_failure_001`도 attempt 1 `STALE` → attempt 2가 마지막이다 | CONSERVATIVE_DEFAULT · MEDIUM | `runtime.retry.auto_count` · `runtime.retry.exhausted_count` | 상한 소진이 입력과 무관하게(배포 등) 반복되면 → 2로 · 소진 뒤 같은 입력으로 사용자 재시도도 실패하면 → 원인(OOM 등) 조사 |
-| B-R2 | backoff · `available_at` | `available_at = NOW(6) + min(5 s × 2^(attempt−2), 60 s)`. v0.1에서는 attempt 2만 생기므로 **5 s** | worker · `DAESINGO_RUNTIME_STALE_RETRY_BACKOFF_BASE_SEC` · `…_BACKOFF_MAX_SEC` | STALE 판정 시점에 이미 ≥ 60 s가 지났다 — 원인(재시작)은 대개 끝났다. backoff는 crash loop에서 즉시 재claim을 막는 정도면 된다. 곡선을 지금 정해 두면 B-R1을 올릴 때 다시 설계하지 않는다. `NOW(6)`은 terminal 기록 + 다음 attempt INSERT transaction의 DB 시각(Tech Spec §6.3) | CONSERVATIVE_DEFAULT · MEDIUM | `runtime.queue.wait_ms`(attempt ≥ 2) | B-R1 변경 시 곡선 재확인 |
+| B-R2 | backoff · `available_at` | `available_at = STALE의 durable ended_at + min(5 s × 2^(attempt−2), 60 s)`. v0.1에서는 attempt 2만 생기므로 **5 s** | worker · `DAESINGO_RUNTIME_STALE_RETRY_BACKOFF_BASE_SEC` · `…_BACKOFF_MAX_SEC` | STALE 판정 시점에 이미 ≥ 60 s가 지났다 — 원인(재시작)은 대개 끝났다. backoff는 crash loop에서 즉시 재claim을 막는 정도면 된다. 곡선을 지금 정해 두면 B-R1을 올릴 때 다시 설계하지 않는다. 기준 시각은 terminal 기록 + 다음 attempt INSERT transaction의 causal DB timestamp이며, 역행 중 raw NOW보다 뒤일 수 있다([#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934), Tech Spec §6.3) | CONSERVATIVE_DEFAULT · MEDIUM | `runtime.queue.wait_ms`(attempt ≥ 2) | B-R1 변경 시 곡선 재확인 |
 | B-R3 | jitter | 없음 | — | concurrency 1 · Worker 1이라 동시에 RUNNING인 execution이 1개다 → 한 번에 STALE이 되는 것도 사실상 1개라 thundering herd가 없다 | DERIVED · HIGH | `runtime.stale.count`(sweep 1회당) | Worker ≥ 2 또는 concurrency ≥ 2 → full jitter 추가 |
 
 - 중단 요청이 있는 job이 STALE이 되면 상한과 무관하게 다음 attempt를 만들지 않는다(Tech Spec §6.3 · §12.5).
@@ -276,16 +278,16 @@ heartbeat cadence 10 s  <  lease 60 s     → lease 안에 갱신 기회가 여�
 stale sweep 15 s  <  lease 60 s           → 만료 뒤 판정 지연 ≤ 15 s (설계 관계 — 정확성 조건은 아님)
 heartbeat 동시 시도 ≤ 1                    → 이전 시도가 안 끝난 tick은 건너뜀 · 겹침 없음 (B-L1)
 STALE threshold = lease 만료              → 같은 축 (B-L3)
-lease 갱신 · 판정 시각 = DB server NOW(6)   → container 시계 차이 무관 (B-L6)
+lease 갱신 = DB NOW(6) + row causal 하한 / 만료 판정 = DB NOW(6) → container 시계 차이 무관 (B-L6)
 heartbeat lock wait 2 s  <  heartbeat read_timeout 5 s → lock 경합이면 1205가 read timeout보다 먼저 온다 (단계별 timeout 사이 관계)
-STALE 가능 조건 = 마지막 성공 heartbeat 갱신(T) 뒤 T+60 s까지 성공한 갱신 없음
-Worker 생존 시 판정 지연 ≤ lease 60 s + sweep 15 s = 75 s (T 기준, sweep이 주기대로 돌 때)
+STALE 가능 조건 = RUNNING ∧ 저장된 lease_expires_at < DB NOW(6)
+역행 없는 정상 DB clock에서 Worker 생존 시 판정 지연 ≤ lease 60 s + sweep 15 s (sweep이 주기대로 돌 때)
 ```
 
 - **heartbeat 시도 1회의 시간 상한은 없다.** B-D9의 connect · read · write timeout은 I/O 단계별 상한이라 더해서 시도 전체 상한을 만들지 않는다. 그래서 「시도가 다음 tick 전에 끝난다」나 「N회 연속 실패해야 STALE」을 셈의 전제로 두지 않는다. 판정은 실패 횟수가 아니라 마지막 성공 갱신 뒤 지난 시간(lease)으로만 한다(§2.3 아래).
 - **heartbeat와 sweep의 대소는 필수 불변조건이 아니다.** lease 갱신은 heartbeat가, 만료 뒤 판정은 sweep이 하고 둘은 서로 기다리지 않는다. sweep 주기는 판정 지연만 정한다. v0.1에서 sweep(15 s) > heartbeat(10 s)인 것은 각자 정한 값의 결과다. sweep < lease도 판정 지연을 lease 안쪽으로 두려는 설계 관계로 지키지만, 어겨도 정확성은 깨지지 않으므로 startup 검증은 `sweep > 0`만 한다(§9).
 - Worker가 1개라 **Worker 자신이 죽으면 sweep할 주체도 없다.** 복구는 Worker가 다시 떠야 시작된다: `재시작 시각 + max(0, lease 남은 시간) + ≤ 15 s`. 재시작 정책은 RD-13c(§5)다.
-- 정상 실행이 STALE로 바뀌는 경로는 「마지막 성공 heartbeat 뒤 lease 60 s 동안 heartbeat 갱신이 한 번도 성공하지 못함」뿐이다. capability 길이와는 무관하다(heartbeat가 별개 thread). 이것이 lease를 다른 Owner의 capability timeout에 맞추지 않는 이유다(§4).
+- 정상 실행이 STALE로 바뀌는 조건은 저장된 lease의 만료(B-L3)다. clock 역행 중 성공한 renewal은 그 lease를 단축하지 않는다. capability 길이와는 무관하다(heartbeat가 별개 thread). 이것이 lease를 다른 Owner의 capability timeout에 맞추지 않는 이유다(§4).
 
 ### 3.2 STALE retry · case 대기
 
@@ -394,16 +396,16 @@ frame: max-age 1 h → 같은 썸네일은 세션 동안 1회 · 생성은 동�
 | --- | --- | --- | --- |
 | `runtime.queue.wait_ms` | `started_at − queued_at`. attempt 1과 ≥ 2를 나눈다(≥ 2는 backoff 포함, JobExecution Contract §5) | DB | p50 · p95 |
 | `runtime.queue.oldest_queued_age_s` | 지금 `available_at ≤ NOW()`인 QUEUED 중 가장 오래된 것 | DB | max |
-| `runtime.execution.duration_ms` | `ended_at − started_at`, kind · status별 | DB | p50 · p95 · max |
+| `runtime.execution.duration_ms` | causal `ended_at − started_at`, kind · status별. 역행 중 0 근처 허용, raw/monotonic elapsed 보장 아님 | DB | p50 · p95 · max |
 | `runtime.heartbeat.lag_ms` | heartbeat 성공 시 직전 성공과의 간격 − interval | log | p99 · max |
 | `runtime.heartbeat.attempt_ms` | heartbeat 시도 1회의 소요(성공 · 실패 모두). 보장 상한은 없다 — interval(10 s)을 넘으면 다음 tick을 건너뛴다(B-L1) | log | p99 · max |
 | `runtime.heartbeat.skipped_tick_count` | 이전 시도가 끝나지 않아 건너뛴 tick 수(B-L1) | log | 합계 |
 | `runtime.heartbeat.consecutive_failures` | execution별 최대 연속 실패 수 — 관찰용. STALE 조건이 아니다(§2.3) | log | max |
 | `runtime.stale.count` | `RUNNING→STALE` 전이 수 | DB | 합계 |
-| `runtime.stale.detect_latency_s` | STALE 기록 시각 − 마지막 heartbeat | DB · log | p95 |
+| `runtime.stale.detect_latency_s` | causal STALE ended_at − 마지막 durable heartbeat_at. heartbeat null이면 관측 생략, causal clamp로 0 가능 | DB · log | p95 |
 | `runtime.stale.false_count` | STALE 뒤 **원래 Worker가 terminal 기록을 시도해 0 rows를 받은** 수 = Worker가 살아 있었는데 STALE | log | 합계 — **1건이면 trigger** |
 | `runtime.retry.auto_count` · `…exhausted_count` | 자동 attempt 생성 수 · 상한 소진 수 | DB | 합계 |
-| `runtime.retry.after_case_stopped_count` | attempt ≥ 2가 끝났을 때 case가 반영하지 않은 수(§3.2) | log | 합계 |
+| `runtime.retry.after_case_stopped_count` | attempt ≥ 2의 T2 결과가 `NOT_APPLIED(STOPPED_WAITING)`인 수(§3.2). `APPLIED` · `ALREADY_APPLIED` · `NOT_APPLIED(CANCELLED)` · `NOT_APPLIED(SUPERSEDED)`는 제외하고 reflector 예외/rollback은 집계하지 않고 재전달 대상으로 남긴다 | log | 합계 |
 | `runtime.cancel.observe_latency_ms` | 중단 요청 기록 → handler 관찰. B-X1 목표와 비교할 때는 DB 정상 구간만 본다 | log | p95 · max |
 | `runtime.cancel.terminal_latency_ms` | 중단 요청 기록 → `CANCELLED` 기록 | DB | p95 · max |
 | `runtime.db.claim_latency_ms` | claim transaction 시작 → commit | log | p95 |
@@ -479,7 +481,7 @@ recording 쪽(B-C3 `temp_root` 주입 · B-F2)은 recording의 기존 인자 · 
 | --- | --- | --- | --- |
 | **Persistence / Queue** | B-W3 · B-L6 · B-D1 ~ B-D9 | api · worker 공용 engine factory(RC · `SET SESSION innodb_lock_wait_timeout` · pool · PyMySQL timeout · pre-ping · recycle) · heartbeat 전용 connection(B-D9) · ready probe 전용 연결(B-H1) · migration runner는 별도 timeout · Worker transaction 재시도 helper(1205 · 1213 · disconnect, 전체 재실행) | lock wait 1205 → transaction 전체 rollback · 재시도 뒤 중복 전이 없음 · pool 고갈 → API `503` · idle 연결 recycle · `wait_timeout` 초과 뒤 checkout 정상(Research 01 Spike F) |
 | **Worker lifecycle** | B-W1 · B-W2 · B-Q1 ~ B-Q3 · B-L1 · B-L2 · B-L4 · B-L5 | claim loop(빈 결과 2 s · 성공 즉시 · 오류 5 s) · heartbeat thread(fixed-rate 10 s cadence · 동시 시도 최대 1개 — 이전 시도가 안 끝났으면 그 tick 건너뜀 · 시도 안 재시도 없음 · lease 60 s · 중단 표식 전달) · heartbeat 전용 connection(B-D9) · handler 실행에 묶이지 않는 sweep 주기 15 s · startup sweep → 첫 claim. 스케줄 수단(thread · event loop)과 시간 기반 test 방식(fake · injected clock · test 전용 짧은 interval)은 §7이 정한다 | 빈 queue에서 claim 주기 · `available_at` 전 claim 없음 · heartbeat 시도가 tick보다 오래 걸려도 다음 tick에서 두 번째 heartbeat DB 호출이 겹쳐 시작되지 않음(건너뛴 tick 기록) · heartbeat 성공 시 `lease_expires_at` 갱신 · lease duration 동안 heartbeat 성공 없음 → 만료 뒤 sweep에서 STALE · heartbeat가 계속 성공하면 lease보다 긴 handler 실행도 STALE 아님 · heartbeat DB 오류 · timeout이 handler 실행을 죽이지 않고 handler 쪽 오류가 heartbeat thread를 죽이지 않음 · startup sweep이 lease 남은 row를 건드리지 않음 |
-| **Retry / Recovery** | B-L3 · B-R1 ~ B-R3 · B-D8 소진 규칙 | sweep transaction(STALE + attempt+1 QUEUED, `available_at = NOW(6)+5 s`) · 상한 1 · 중단 요청 시 생성 안 함 · terminal 기록 재시도(lease 보유 중) · T2 재전달 scan(startup + 15 s) | attempt 2만 생기고 attempt 3 없음 · backoff 5 s 동안 claim 없음 · 다중 sweeper attempt 중복 없음(Tech Spec §16 #10) · 소유 상실 뒤 결과 commit 없음(#13) · T1–T2 사이 kill 뒤 반영 1회(#15) |
+| **Retry / Recovery** | B-L3 · B-R1 ~ B-R3 · B-D8 소진 규칙 | sweep transaction(STALE + attempt+1 QUEUED, `queued_at = durable ended_at`, `available_at = queued_at+5 s`) · 상한 1 · 중단 요청 시 생성 안 함 · terminal 기록 재시도(lease 보유 중) · T2 재전달 scan(startup + 15 s) | attempt 2만 생기고 attempt 3 없음 · backoff 5 s 동안 claim 없음 · 다중 sweeper attempt 중복 없음(Tech Spec §16 #10) · 소유 상실 뒤 결과 commit 없음(#13) · T1–T2 사이 kill 뒤 반영 1회(#15) |
 | **Cancellation** | B-X1 | heartbeat가 읽은 중단 표식 → handler in-process 신호 · capability 사이 checkpoint | heartbeat가 읽은 중단 표식이 handler에 전달됨 · `runtime.cancel.observe_latency_ms` 기록 · checkpoint 뒤 `CANCELLED` · 중단 + STALE → 다음 attempt 없음(Tech Spec §16 #12) |
 | **Usage ledger** | B-G1 | in-flight reconciliation을 startup · sweep 주기에 결합 · terminal execution에 묶인 in-flight만 대상 | finish 뒤 Run 확정 전 kill → 다음 sweep에서 Final 1건(Tech Spec §16 #11) · 살아 있는 RUNNING의 in-flight는 건드리지 않음 |
 | **API / Upload** | B-W4 · B-U1 ~ B-U5 · B-D3 · B-D4 | `POST /sources` body limit middleware(1 GiB) · `POST /commands` 1 MiB(`POST /cases`는 한도 없음) · COMMIT 전 실패 `503` / COMMIT 결과 불명 `500` 분기 · ASGI receive idle 60 s · 전체 30 min · 중단 시 연결 종료 · upload 중 DB connection 미보유 · Starlette ≥ 1.6 pin · spool `/tmp` non-tmpfs | 1 GiB + 1 byte → `413` · COMMIT 응답 유실 주입 → `500`(`503` 아님) · `Content-Length` 없는 초과 body도 `413` · idle 60 s → 연결 종료 · staging 잔여는 B-C1 대상 · 응답 없음 뒤 `file_count` 경로 |
@@ -497,3 +499,5 @@ recording 쪽(B-C3 `temp_root` 주입 · B-F2)은 recording의 기존 인자 · 
 | --- | --- | --- |
 | 2026-10-05 | v0.1 최초 작성 — workflow §6. RD-04 축 · 제약 · 초기값, RD-11a(local rotation) · 11b, Register 「§5 → §6 Baseline 입력」, HTTP API Contract §4가 넘긴 숫자를 Provisional로 정함. 새 Decision · Contract 변경 없음 | `origin/develop` `a6027f6` |
 | 2026-10-06 | PR #276 Runtime 구현 담당 리뷰 반영 — 기술적 정합성 보정, 새 Architecture Decision 아님. PyMySQL의 I/O 단계별 timeout(B-D9)을 heartbeat 시도 전체의 wall-clock 상한으로 해석한 오류를 고쳤다. 시도 ≤ 7 s · 「5회 연속 실패해야 STALE」 · cancel 관찰 ≤ 17 s hard bound를 제거하고, B-L1을 heartbeat 겹침 금지(이전 시도가 안 끝난 tick은 건너뜀)로, STALE 설명을 마지막 성공 heartbeat + lease 기준으로, B-X1을 DB 정상 구간 p95 ≤ 20 s 측정 목표로 정합화. §3.1 · §3.6 · §6 · §7 · §9(config 불변조건 · integration test) 함께 수정. 10 s · 60 s · 15 s 값과 B-R1 · RD-04b 결론은 그대로. Owner 확인 결과 기록(§8.1) | PR #276 리뷰 |
+| 2026-10-10 | Issue #291 RT-04(b) T2 결과 taxonomy 합의에 맞춰 `runtime.retry.after_case_stopped_count`의 집계 의미를 §3.2의 원래 관찰 목적에 맞게 명확화. `attempt ≥ 2 ∧ NOT_APPLIED(STOPPED_WAITING)`만 집계하고 `CANCELLED` · `SUPERSEDED` · `ALREADY_APPLIED` 및 reflector 예외/rollback은 제외한다. retry/timeout 숫자와 정책 변경 없음 | Issue #291 · PR #337 |
+| 2026-10-17 | terminal causal ordering과 successful heartbeat/lease non-regression, 파생 duration·STALE latency·retry 시각 의미 반영. 숫자·fence·transaction 정책 유지 | [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934) |

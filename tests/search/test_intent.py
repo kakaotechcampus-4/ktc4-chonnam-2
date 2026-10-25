@@ -20,6 +20,7 @@ from daesingo.search.intent import (
 from daesingo.search.provider import GeminiProvider, ProviderResult, TextInvocation
 from daesingo.search.smoke_errors import ProviderApiError, ProviderPayloadError
 from daesingo.search.usage import ProviderUsage
+from tests.search._openai_fake import RawParse
 
 
 def _extraction(**overrides: object) -> IntentHintExtraction:
@@ -232,7 +233,9 @@ def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effor
         return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=None)
 
     client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(parse=parse))
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(parse=parse, with_raw_response=RawParse(parse))
+        )
     )
     mod = ModuleType("openai")
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010

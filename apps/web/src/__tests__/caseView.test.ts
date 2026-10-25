@@ -111,6 +111,31 @@ describe('화면 선택', () => {
     expect(selectScreen({ ...base, notices: [notice] }).kind).toBe('AWAIT_RESPONSE')
   })
 
+  it('SEARCHING이어도 중단 · 탐색 실패 notice가 있으면 진행 화면이 아니다(#342)', () => {
+    const base = views.find((v) => v.stage === 'SEARCHING')!
+    const notice = (code: string, message_key: string) => ({
+      code,
+      severity: 'INFO' as const,
+      blocking: false,
+      message_key,
+      actions: [],
+    })
+    const stopped = notice('case.analysis_stopped', 'notice.analysis_stopped')
+    const failed = notice('search.candidate_search_failed', 'notice.candidate_search_failed')
+    expect(selectScreen({ ...base, notices: [stopped] }).kind).toBe('STOPPED')
+    expect(selectScreen({ ...base, notices: [failed] }).kind).toBe('SEARCH_FAILED')
+    expect(selectScreen({ ...base, notices: [] }).kind).toBe('PROGRESS')
+  })
+
+  it('응답 뒤 신고자료를 준비하는 동안(running_jobs)은 진행이고, 응답 대기 중이면 job이 있어도 결과다', () => {
+    const evidence = views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence !== null)!
+    const job = { job_id: 'j', kind: 'REPORT_VIDEO_EXPORT', label_key: 'job.generic_processing', status: 'RUNNING' } as const
+    const pending = { code: 'case.situation_response_pending', severity: 'INFO' as const, blocking: false, message_key: 'notice.situation_response_pending', actions: [] }
+    expect(selectScreen({ ...evidence, notices: [], running_jobs: [job] }).kind).toBe('PROGRESS')
+    expect(selectScreen({ ...evidence, notices: [pending], running_jobs: [job] }).kind).not.toBe('PROGRESS')
+    expect(selectScreen({ ...evidence, notices: [], running_jobs: [] }).kind).toBe('EVIDENCE')
+  })
+
   it('READY + package면 신고자료 화면이다', () => {
     const ready = views.filter((v) => v.stage === 'READY' && v.package)
     expect(ready.length).toBeGreaterThan(0)
@@ -259,7 +284,7 @@ describe('계약 등재 목록 전수 매핑 — fixture에 없는 값도 문구
   // fixture를 훑는 검사만 있으면 「계약엔 등재됐는데 fixture엔 아직 없는 값」이 영영 안 잡힌다.
   // 실제로 등재 label_key 4종 중 3종이 「처리 중」 fallback으로 뭉개지고 있었다.
 
-  it('등재 label_key 4종이 fallback 문구로 새지 않는다', () => {
+  it('등재 label_key 5종이 fallback 문구로 새지 않는다', () => {
     const fallback = jobLabel(JOB_LABEL_FALLBACK_KEY)
     for (const key of JOB_LABEL_KEYS) {
       expect(jobLabel(key), key).not.toBe(fallback)

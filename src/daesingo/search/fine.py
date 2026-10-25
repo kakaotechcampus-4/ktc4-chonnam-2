@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from daesingo.common.usage.port import UsageSink
+
 from .config import GeminiSearchConfig
 from .errors import InvalidFineSpanError
 from .execution import RunDeadline
@@ -8,7 +10,7 @@ from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
 from .prompts import FINE_PROMPT, fine_prompt_for, sent_prompt_fingerprint
-from .provider import FineRequest, SearchProvider
+from .provider import FineRequest, SearchProvider, UsageBinding
 from .runs import (
     AnalysisRun,
     CandidateEvent,
@@ -116,16 +118,19 @@ def verify_fine(
     ledger: SearchLedger,
     media_preparer: CoarseMediaPreparer,
     deadline: RunDeadline,
+    usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
     source = resolver.resolve_reference(input_ref)
     CandidateSourceLink(source_ref=input_ref, candidate=candidate).validate(source)
+    # 후보는 Timeline 좌표다. 입력 좌표로 되돌려 자른다(#252).
+    offset_sec = source.timeline_start_sec
     start_sec = max(
         0.0,
-        candidate.span.start_ms / 1000 - config.fine_padding_sec,
+        candidate.span.start_ms / 1000 - offset_sec - config.fine_padding_sec,
     )
     end_sec = min(
         source.duration_sec,
-        candidate.span.end_ms / 1000 + config.fine_padding_sec,
+        candidate.span.end_ms / 1000 - offset_sec + config.fine_padding_sec,
     )
     if start_sec >= end_sec:
         raise InvalidFineSpanError(
@@ -141,6 +146,11 @@ def verify_fine(
         hint_text = "; ".join(
             filter(None, (target_hint.vehicle, target_hint.free_text))
         )
+    usage = (
+        None
+        if usage_sink is None
+        else UsageBinding(usage_sink, "VISUAL_VERIFY", run_id, source.duration_sec)
+    )
     with (
         resolver.open_source(input_ref) as media_input,
         media_preparer.prepare_fine(
@@ -158,6 +168,7 @@ def verify_fine(
                 media=prepared,
                 timeout_sec=deadline.remaining_sec(),
                 deadline=deadline,
+                usage=usage,
             )
         )
         ledger.append(
@@ -200,7 +211,9 @@ def verify_fine(
         started_at=started,
         completed_at=datetime.now(UTC),
         issues=(),
-        usage_refs=(f"usage:{source.source_id}",),
+        usage_refs=(
+            (f"usage:{source.source_id}",) if usage is None else tuple(usage.issued)
+        ),
         usage_summary=UsageSummary(
             processed_duration_ms=round(source.duration_sec * 1000),
             token_usage=None,

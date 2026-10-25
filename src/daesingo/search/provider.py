@@ -6,13 +6,16 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, cast, final
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Final, Protocol, cast, final
 
 if TYPE_CHECKING:
     import openai as _openai
     from openai.types.chat import ChatCompletionMessageParam
 
 from pydantic import BaseModel, ValidationError
+
+from daesingo.common.usage.port import UsageSink
 
 from .config import GeminiSearchConfig
 from .execution import RunDeadline
@@ -24,6 +27,28 @@ from .scope import VisualEventType
 from .smoke_errors import ProviderApiError, ProviderPayloadError
 from .sources import ResolvedAnalysisSource
 from .usage import ProviderUsage
+
+# ponytail: KRW 단가 · 환율(RD-08) 미정이라 금액은 늘 None. 정해지면 pricing_id와 함께 채운다.
+UNPRICED_PRICING_CONTEXT: Final = {
+    "pricing_id": "elice-unpriced-placeholder",
+    "unit": "per_1m_tokens",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class UsageBinding:
+    """provider HTTP 시도마다 Runtime `UsageSink`에 begin → finish를 남긴다(#303).
+
+    `run_ref`는 이 호출을 담을 AnalysisRun의 run_id(산출 예정 ID)다. None이면
+    Run 개념이 없는 호출(`DIRECT_NO_RUN`)이다. 발급된 usage_id는 성공 · 실패와
+    무관하게 `issued`에 시도 순서대로 쌓인다.
+    """
+
+    sink: UsageSink
+    operation: str
+    run_ref: str | None
+    processed_duration_sec: float | None = None
+    issued: list[str] = field(default_factory=list)
 
 
 class MediaSizeError(ValueError):
@@ -43,6 +68,7 @@ class CoarseRequest:
     # 있으면 retry 루프가 이 예산을 존중한다(시도 전 check + sleep clamp).
     # 없으면 timeout_sec 만으로 per-attempt timeout 을 잡는 기존 동작.
     deadline: RunDeadline | None = field(default=None)
+    usage: UsageBinding | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +81,7 @@ class FineRequest:
     media: PreparedMedia | None = field(default=None)
     timeout_sec: float = field(default=60.0)
     deadline: RunDeadline | None = field(default=None)
+    usage: UsageBinding | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +109,7 @@ class TextInvocation[ResponseT: BaseModel]:
     user_prompt: str
     response_model: type[ResponseT]
     deadline: RunDeadline
+    usage: UsageBinding | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,11 +150,26 @@ def _to_origin_times(value: object, speed: float) -> object:
     return value
 
 
+def _token_count(value: object) -> int | None:
+    """SDK는 `"10"` 같은 숫자 문자열은 int로 바꾸지만 그 밖의 값은 그대로 넘긴다.
+
+    연산 전에 음이 아닌 int로 맞추고, 맞출 수 없으면 관측 안 됨(None)으로 둔다.
+    이상한 usage 때문에 호출이 실패하거나 `finish()`가 빠지면 안 된다.
+    """
+    if isinstance(value, bool) or (isinstance(value, float) and not value.is_integer()):
+        return None
+    try:
+        count = int(cast("Any", value))
+    except (TypeError, ValueError):
+        return None
+    return count if count >= 0 else None
+
+
 def _usage_from_completion(usage: object | None) -> ProviderUsage:
     if usage is None:
         return ProviderUsage(None, None, None, None)
-    prompt_tokens: int | None = getattr(usage, "prompt_tokens", None)
-    completion_tokens: int | None = getattr(usage, "completion_tokens", None)
+    prompt_tokens = _token_count(getattr(usage, "prompt_tokens", None))
+    completion_tokens = _token_count(getattr(usage, "completion_tokens", None))
     total: int | None = None
     if prompt_tokens is not None and completion_tokens is not None:
         total = prompt_tokens + completion_tokens
@@ -138,6 +181,17 @@ def _usage_from_completion(usage: object | None) -> ProviderUsage:
         thought_tokens=0 if completion_tokens is not None else None,
         total_tokens=total,
     )
+
+
+def _usage_from_body(http_response: object) -> ProviderUsage:
+    try:
+        body = cast("Any", http_response).json()
+    except ValueError:  # JSON이 아닌 본문은 raw.parse()가 따로 실패시킨다.
+        return _usage_from_completion(None)
+    usage = body.get("usage") if isinstance(body, dict) else None
+    if not isinstance(usage, dict):
+        return _usage_from_completion(None)
+    return _usage_from_completion(SimpleNamespace(**usage))
 
 
 @final
@@ -180,7 +234,12 @@ class GeminiProvider:
             duration_sec=request.source.duration_sec,
         )
         return self._invoke(
-            request.media, prompt, CoarseResponse, request.timeout_sec, request.deadline
+            request.media,
+            prompt,
+            CoarseResponse,
+            request.timeout_sec,
+            request.deadline,
+            usage=request.usage,
         )
 
     def verify_fine(self, request: FineRequest) -> ProviderResult[FineResponse]:
@@ -195,7 +254,12 @@ class GeminiProvider:
             end_sec=request.end_sec,
         )
         return self._invoke(
-            request.media, prompt, FineResponse, request.timeout_sec, request.deadline
+            request.media,
+            prompt,
+            FineResponse,
+            request.timeout_sec,
+            request.deadline,
+            usage=request.usage,
         )
 
     def invoke_structured[ResponseT: BaseModel](
@@ -212,6 +276,8 @@ class GeminiProvider:
         response_model: type[ResponseT],
         timeout_sec: float,
         deadline: RunDeadline | None = None,
+        *,
+        usage: UsageBinding | None = None,
     ) -> ProviderResult[ResponseT]:
         # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
         # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
@@ -245,6 +311,7 @@ class GeminiProvider:
             deadline,
             speed=speed,
             reasoning_effort=self._config.reasoning_effort,
+            usage=usage,
         )
 
     def invoke_text[ResponseT: BaseModel](
@@ -261,6 +328,7 @@ class GeminiProvider:
             request.response_model,
             request.deadline.remaining_sec(),
             request.deadline,
+            usage=request.usage,
         )
 
     def _call[ResponseT: BaseModel](
@@ -272,6 +340,7 @@ class GeminiProvider:
         *,
         speed: float = 1.0,
         reasoning_effort: str | None = None,
+        usage: UsageBinding | None = None,
     ) -> ProviderResult[ResponseT]:
         options: dict[str, object] = {}
         if reasoning_effort is not None:
@@ -296,8 +365,37 @@ class GeminiProvider:
                 attempt_timeout = deadline.remaining_sec()
             else:
                 attempt_timeout = timeout_sec
+            if usage is None:
+                return attempt(attempt_timeout)
+            # begin이 UsageError를 내면 HTTP를 보내지 않고 그대로 올린다.
+            usage_id = usage.sink.begin(
+                usage.operation,
+                f"elice:{self._config.model}",
+                UNPRICED_PRICING_CONTEXT,
+                run_ref=(
+                    None
+                    if usage.run_ref is None
+                    else {"kind": "analysis_run", "ref": usage.run_ref}
+                ),
+                run_ref_reason="DIRECT_NO_RUN" if usage.run_ref is None else None,
+            )
+            usage.issued.append(usage_id)
             started = time.monotonic()
-            completion = self._client.chat.completions.parse(
+            observed: list[ProviderUsage] = []
+            try:
+                result = attempt(attempt_timeout, observed)
+            except Exception as error:
+                # finish의 UsageError는 provider 오류를 대신해 올라가고, 재시도되지 않는다.
+                self._finish(usage, usage_id, observed, started, type(error).__name__)
+                raise
+            self._finish(usage, usage_id, observed, started, None)
+            return result
+
+        def attempt(
+            attempt_timeout: float, observed: list[ProviderUsage] | None = None
+        ) -> ProviderResult[ResponseT]:
+            started = time.monotonic()
+            raw = self._client.chat.completions.with_raw_response.parse(
                 model=self._config.model,
                 messages=cast("list[ChatCompletionMessageParam]", messages),
                 response_format=response_model,
@@ -305,6 +403,12 @@ class GeminiProvider:
                 **options,  # pyright: ignore[reportArgumentType]
             )
             latency_ms = round((time.monotonic() - started) * 1000)
+            # SDK는 raw.parse()에서 JSON · schema 검증이 실패하면 usage째 예외를 던진다.
+            # 응답을 받았으면 토큰은 관측된 것이므로 본문에서 먼저 꺼내 둔다.
+            token_usage = _usage_from_body(raw.http_response)
+            if observed is not None:
+                observed.append(token_usage)
+            completion = raw.parse()
             parsed = completion.choices[0].message.parsed
             if parsed is None:
                 raise ProviderPayloadError("provider returned no parsed content")
@@ -312,8 +416,7 @@ class GeminiProvider:
                 parsed = response_model.model_validate(
                     _to_origin_times(parsed.model_dump(), speed)
                 )
-            usage = _usage_from_completion(getattr(completion, "usage", None))
-            return ProviderResult(parsed, usage, latency_ms)
+            return ProviderResult(parsed, token_usage, latency_ms)
 
         from openai import APIError, BadRequestError
 
@@ -327,3 +430,36 @@ class GeminiProvider:
             raise ProviderPayloadError("provider rejected the request") from error
         except APIError as error:
             raise ProviderApiError("provider API error") from error
+
+    @staticmethod
+    def _finish(
+        usage: UsageBinding,
+        usage_id: str,
+        observed: list[ProviderUsage],
+        started: float,
+        failure_kind: str | None,
+    ) -> None:
+        tokens = observed[0] if observed else None
+        usage.sink.finish(
+            usage_id,
+            token_usage=_token_usage(tokens),
+            processed_duration_sec=usage.processed_duration_sec,
+            latency_ms=round((time.monotonic() - started) * 1000),
+            pricing_context=UNPRICED_PRICING_CONTEXT,
+            # 요율 미정은 0원이 아니라 amount=None이다.
+            cost={"amount": None, "currency": "KRW"},
+            outcome="SUCCEEDED" if failure_kind is None else "FAILED",
+            failure_kind=failure_kind,
+        )
+
+
+def _token_usage(usage: ProviderUsage | None) -> dict[str, int] | None:
+    """port는 total = input + output을 요구하므로 thought 토큰은 output에 합친다."""
+    if usage is None or usage.input_tokens is None or usage.output_tokens is None:
+        return None
+    output = usage.output_tokens + (usage.thought_tokens or 0)
+    return {
+        "input_tokens": usage.input_tokens,
+        "output_tokens": output,
+        "total_tokens": usage.input_tokens + output,
+    }

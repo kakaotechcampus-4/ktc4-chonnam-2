@@ -9,11 +9,11 @@ from .models import (
     AssetSpan, ContractRef, FailureDetail, MissingRange, RecordingTimeline,
     SpanResolution, TimeRange, TimelineRef,
 )
-from .repository import InMemoryRecordingRepository
+from .repository import RecordingRepository
 
 
 def resolve_local_span(
-    repository: InMemoryRecordingRepository, timeline: RecordingTimeline, request: TimeRange,
+    repository: RecordingRepository, timeline: RecordingTimeline, request: TimeRange,
     *, selected_stream_ref: str,
 ) -> SpanResolution:
     # 공개 service에서 소속·VIDEO·유일성을 검증한 명시적 ref만 전달한다.

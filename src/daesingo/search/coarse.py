@@ -4,6 +4,8 @@ from decimal import Decimal
 from math import isfinite
 from uuid import uuid4
 
+from daesingo.common.usage.port import UsageError, UsageSink
+
 from .config import GeminiSearchConfig
 from .errors import (
     CoarseDurationMismatchError,
@@ -22,7 +24,7 @@ from .media import (
 )
 from .media_contract import CoarseMediaPreparer
 from .prompts import COARSE_PROMPT, sent_prompt_fingerprint
-from .provider import CoarseRequest, ProviderResult, SearchProvider
+from .provider import CoarseRequest, ProviderResult, SearchProvider, UsageBinding
 from .runs import (
     AnalysisRun,
     CandidateEvent,
@@ -68,6 +70,7 @@ class CoarseExecutionDependencies:
     ledger: SearchLedger
     media_preparer: CoarseMediaPreparer
     deadline: RunDeadline
+    usage_sink: UsageSink | None = None
 
 
 def search_coarse(
@@ -94,6 +97,16 @@ def search_coarse(
     # 만든 실행 상한이다(contract-analysis-scope.md §104, #149 A안) — 다른 상한과 겹치지 않는다.
     # budget.max_cost_krw는 KRW↔USD 환산이 미결이라 여기서 집행하지 않는다.
     deadline = dependencies.deadline
+    usage = (
+        None
+        if dependencies.usage_sink is None
+        else UsageBinding(
+            dependencies.usage_sink,
+            "CANDIDATE_SEARCH",
+            run_id,
+            source.duration_sec,
+        )
+    )
     try:
         with (
             dependencies.resolver.open_source(source.source_ref) as media_input,
@@ -116,8 +129,12 @@ def search_coarse(
                         media=prepared,
                         timeout_sec=deadline.remaining_sec(),
                         deadline=deadline,
+                        usage=usage,
                     )
                 )
+            except UsageError:
+                # usage 기록 실패는 Run 실패가 아니라 Runtime terminal 오류다(#303).
+                raise
             except DeadlineExceededError as error:
                 failure = _issue(
                     FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error
@@ -127,7 +144,8 @@ def search_coarse(
                     FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error
                 )
             else:
-                usage_refs.append(f"usage:{source.source_id}")
+                if usage is None:
+                    usage_refs.append(f"usage:{source.source_id}")
                 record = _usage_record(source, prepared, result, dependencies.config)
                 dependencies.ledger.append(record)
                 records.append(record)
@@ -148,8 +166,13 @@ def search_coarse(
     ) as error:
         failure = _issue(FailureKind.INFRA, "MEDIA_PREPARATION_FAILED", scope, error)
 
+    if usage is not None:
+        # 실패한 시도도 usage_id를 받았으므로 FAILED Run에도 연결한다(#294).
+        usage_refs.extend(usage.issued)
     if failure is not None:
-        return _failed_result(run_id, scope, source, started, failure, dependencies)
+        return _failed_result(
+            run_id, scope, source, started, failure, dependencies, tuple(usage_refs)
+        )
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
     # 영상 밖 span 같은 잘못된 후보 하나 때문에 정상 후보까지 버리지 않는다(#181).
@@ -229,10 +252,12 @@ def _failed_result(
     started: datetime,
     failure: Issue,
     dependencies: CoarseExecutionDependencies,
+    usage_refs: tuple[str, ...],
 ) -> LinkedCoarseResult:
     """FAILED AnalysisRun을 만든다 — 계약 §7 Producer는 결과 구분을 요구한다.
 
-    usage는 비운다. 호출이 결과를 내지 못했으므로 Eval이 재평가할 snapshot이 없다.
+    usage_summary는 비운다. 호출이 결과를 내지 못했으므로 Eval이 재평가할 snapshot이 없다.
+    usage_refs는 sink가 발급한 시도별 usage_id를 그대로 담는다(#294).
     """
     analysis_run = AnalysisRun(
         run_id=run_id,
@@ -248,7 +273,7 @@ def _failed_result(
         started_at=started,
         completed_at=datetime.now(UTC),
         issues=(failure,),
-        usage_refs=(),
+        usage_refs=usage_refs,
         usage_summary=UsageSummary(
             processed_duration_ms=None,
             token_usage=None,
@@ -302,10 +327,14 @@ def _candidate(
     start = max(0.0, min(candidate.span.start_sec, source.duration_sec))
     end = max(start + 0.001, min(candidate.span.end_sec, source.duration_sec))
     representative = min(max(candidate.at_sec, start), end)
+    # "점선" 단독은 정상 관찰("점선 차로로 변경")까지 잡으므로 쓰지 않는다(#169).
+    # 선 종류 애매함("점선처럼 보이나")은 "처럼 보"로 잡는다.
     uncertainties = tuple(
         fact
         for fact in candidate.observed
-        if any(word in fact for word in ("불확실", "판별", "가림", "저해상도", "점선"))
+        if any(
+            word in fact for word in ("불확실", "판별", "가림", "저해상도", "처럼 보")
+        )
     )
     return CandidateEvent(
         candidate_id=CandidateId(f"candidate_{uuid4().hex}"),
@@ -313,9 +342,12 @@ def _candidate(
         span=CandidateSpan(
             timeline_id=source.timeline_id,
             timeline_revision=source.timeline_revision,
-            start_ms=round(start * 1000),
-            end_ms=round(end * 1000),
-            representative_ms=round(representative * 1000),
+            # 입력 좌표 → Timeline 좌표(#252)
+            start_ms=round((source.timeline_start_sec + start) * 1000),
+            end_ms=round((source.timeline_start_sec + end) * 1000),
+            representative_ms=round(
+                (source.timeline_start_sec + representative) * 1000
+            ),
         ),
         rank=rank,
         ranking_score=candidate.score,
