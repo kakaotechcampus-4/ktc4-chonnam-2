@@ -39,7 +39,7 @@
 
 ## 5. 미결 (채우지 않는다)
 
-- **단서 구조화(`HINT_EXTRACT`) 90초**(`start-analysis.md` §3-5)는 이번에 하지 않는다. 마감 뒤 「빈 단서로 첫 탐색 발주」에는 발주(쓰기)가 필요한데 타이머가 없으면 그 시점이 없다. Runtime은 `APPLIED`일 때만 후속 job을 enqueue한다. 또 90초는 재시도 시작 ~82초와 같은 자릿수라 살아날 분석까지 끊는다. 그래서 Search 함수의 전체 상한 60초와 Runtime 재시도에 맡기고 계속 기다린다. **한계:** 재시도까지 `STALE`로 끝나면 T2가 오지 않아 `SEARCHING`에 머문다. Runtime 확인(2026-10-24 정철원, [#358 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/358)): 지금 공개 경계에서는 재시도가 끝난 `STALE`을 T2로 넘기지 않고, 기존 T2를 조용히 넓히지도 않는다. 넘기려면 ① 소진을 알리는 별도 terminal 알림인지 ② T2 확장이면 `produced` 없음 · 중복 전달 · `case_applied_at` receipt 의미 ③ case가 그 job을 어떤 사유로 정산하고 무엇을 다시 발주할지를 Runtime · Case가 먼저 정해야 한다. 이 PR의 탐색 timeout에는 Runtime 변경이 필요 없다.
+- **단서 구조화(`HINT_EXTRACT`) 90초**(`start-analysis.md` §3-5)는 이번에 하지 않는다. 마감 뒤 「빈 단서로 첫 탐색 발주」에는 발주(쓰기)가 필요한데 타이머가 없으면 그 시점이 없다. Runtime은 `APPLIED`일 때만 후속 job을 enqueue한다. 또 90초는 재시도 시작 ~82초와 같은 자릿수라 살아날 분석까지 끊는다. 그래서 Search 함수의 전체 상한 60초와 Runtime 재시도에 맡기고 계속 기다린다. **한계:** 재시도까지 `STALE`로 끝나면 T2가 오지 않아 `SEARCHING`에 머문다. Runtime 확인(2026-10-24 정철원, [#358 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/358)): 지금 공개 경계에서는 재시도가 끝난 `STALE`을 T2로 넘기지 않고, 기존 T2를 조용히 넓히지도 않는다. 넘기려면 ① 소진을 알리는 별도 terminal 알림인지 ② T2 확장이면 `produced` 없음 · 중복 전달 · `case_applied_at` receipt 의미 ③ case가 그 job을 어떤 사유로 정산하고 무엇을 다시 발주할지를 Runtime · Case가 먼저 정해야 한다. 이 PR의 탐색 timeout에는 Runtime 변경이 필요 없다. 결정 추적은 [#405](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/405).
 - 판독 · Fine · export 대기 — 값(Fine 70초만 있음)과 timeout 화면이 정해지지 않았다. Fine timeout을 `search.visual_verify_failed`와 같게 보일지는 web과 정한다.
 
 ## 6. 고르지 않은 안
