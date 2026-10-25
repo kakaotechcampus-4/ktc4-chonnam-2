@@ -1,6 +1,6 @@
 # search/experiments
 
-- [CV Coarse → gemini-4-argon Fine 영상](cv-coarse-argon-fine-2026-10-23.md) — 영상 토큰=재생 길이×73. CV 후보 Fine 정답 구간5/5. argon Coarse로 보완하면 15영상 13건 중 CV 5→CV+argon 9(신호위반2/2 포함), 정답 밖 OBSERVED3(촬영 차량 오인·분기부·C47 미확인). 점선 변경5건 이유 대고 기각. 박스 편향 미관찰. 영상 1분당 약₩50, 누적 약₩924
+- [CV Coarse → gemini-4-argon Fine 영상](cv-coarse-argon-fine-2026-10-23.md) — 영상 토큰=재생 길이×73. CV 후보 Fine 정답 구간5/5. argon Coarse로 보완하면 15영상 13건 중 CV 5→CV+argon 9(신호위반2/2 포함), 이전 Flash 채점 규칙으로 재채점해도 동일. 오탐은 정상 영상2건(촬영 차량 오인·분기부), C47 37초는 정답지 누락 사건으로 확인. 새 영상 검출 판정 기준 사전 고정. 점선 변경5건 이유 대고 기각. 박스 편향 미관찰. 영상 1분당 약₩50, 누적 약₩924
 - [CV 전체 진행 결과와 남은 작업](cv-lane-track-progress-summary-2026-10-10.md) — 최신 평가 도구·중복 차선 처리·미완료 범위 반영.
 - [CV 잔여 작업 처리 결과](cv-remaining-plan-2026-10-11.md) — 188개 테스트·실제 영상 검증, 최종 선정·정답·L2 환경 미완료 상태 기록.
 
