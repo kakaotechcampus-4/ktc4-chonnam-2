@@ -14,7 +14,14 @@ from .errors import (
 )
 from .execution import DeadlineExceededError, RunDeadline
 from .ledger import SearchLedger, UsageRecord
-from .media import PreparedMedia
+from .media import (
+    ByteSizeMismatchError,
+    FfmpegError,
+    FfprobeError,
+    MediaTooLargeError,
+    PreparedMedia,
+    SourceTooLargeError,
+)
 from .media_contract import CoarseMediaPreparer
 from .prompts import COARSE_PROMPT, sent_prompt_fingerprint
 from .provider import CoarseRequest, ProviderResult, SearchProvider, UsageBinding
@@ -90,54 +97,74 @@ def search_coarse(
     # 만든 실행 상한이다(contract-analysis-scope.md §104, #149 A안) — 다른 상한과 겹치지 않는다.
     # budget.max_cost_krw는 KRW↔USD 환산이 미결이라 여기서 집행하지 않는다.
     deadline = dependencies.deadline
-    with (
-        dependencies.resolver.open_source(source.source_ref) as media_input,
-        dependencies.media_preparer.prepare_coarse(media_input, deadline) as prepared,
-    ):
-        if abs(source.duration_sec - prepared.origin_end_sec) > 0.250:
-            raise CoarseDurationMismatchError(
-                source_id=source.source_id,
-                declared_sec=source.duration_sec,
-                probed_sec=prepared.origin_end_sec,
-            )
-        usage = (
-            None
-            if dependencies.usage_sink is None
-            else UsageBinding(
-                dependencies.usage_sink,
-                "CANDIDATE_SEARCH",
-                run_id,
-                source.duration_sec,
-            )
+    usage = (
+        None
+        if dependencies.usage_sink is None
+        else UsageBinding(
+            dependencies.usage_sink,
+            "CANDIDATE_SEARCH",
+            run_id,
+            source.duration_sec,
         )
-        try:
-            deadline.check()
-            result = dependencies.provider.search_coarse(
-                CoarseRequest(
-                    source,
-                    scope.target_event_types,
-                    media=prepared,
-                    timeout_sec=deadline.remaining_sec(),
-                    deadline=deadline,
-                    usage=usage,
+    )
+    try:
+        with (
+            dependencies.resolver.open_source(source.source_ref) as media_input,
+            dependencies.media_preparer.prepare_coarse(
+                media_input, deadline
+            ) as prepared,
+        ):
+            if abs(source.duration_sec - prepared.origin_end_sec) > 0.250:
+                raise CoarseDurationMismatchError(
+                    source_id=source.source_id,
+                    declared_sec=source.duration_sec,
+                    probed_sec=prepared.origin_end_sec,
                 )
-            )
-        except UsageError:
-            # usage 기록 실패는 Run 실패가 아니라 Runtime terminal 오류다(#303).
-            raise
-        except DeadlineExceededError as error:
-            failure = _issue(FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error)
-        except Exception as error:
-            failure = _issue(FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error)
-        else:
-            if usage is None:
-                usage_refs.append(f"usage:{source.source_id}")
-            record = _usage_record(source, prepared, result, dependencies.config)
-            dependencies.ledger.append(record)
-            records.append(record)
-            gathered.extend(
-                (source, candidate) for candidate in result.response.candidates
-            )
+            try:
+                deadline.check()
+                result = dependencies.provider.search_coarse(
+                    CoarseRequest(
+                        source,
+                        scope.target_event_types,
+                        media=prepared,
+                        timeout_sec=deadline.remaining_sec(),
+                        deadline=deadline,
+                        usage=usage,
+                    )
+                )
+            except UsageError:
+                # usage 기록 실패는 Run 실패가 아니라 Runtime terminal 오류다(#303).
+                raise
+            except DeadlineExceededError as error:
+                failure = _issue(
+                    FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error
+                )
+            except Exception as error:
+                failure = _issue(
+                    FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error
+                )
+            else:
+                if usage is None:
+                    usage_refs.append(f"usage:{source.source_id}")
+                record = _usage_record(source, prepared, result, dependencies.config)
+                dependencies.ledger.append(record)
+                records.append(record)
+                gathered.extend(
+                    (source, candidate) for candidate in result.response.candidates
+                )
+    # 영상 준비 단계 실패도 예외로 흘려보내지 않고 FAILED Run으로 남긴다(#181).
+    # provider 호출 전이라 쓸 결과가 없으므로 PARTIAL이 아니다.
+    except DeadlineExceededError as error:
+        failure = _issue(FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error)
+    except (
+        CoarseDurationMismatchError,
+        SourceTooLargeError,
+        ByteSizeMismatchError,
+        MediaTooLargeError,
+        FfprobeError,
+        FfmpegError,
+    ) as error:
+        failure = _issue(FailureKind.INFRA, "MEDIA_PREPARATION_FAILED", scope, error)
 
     if usage is not None:
         # 실패한 시도도 usage_id를 받았으므로 FAILED Run에도 연결한다(#294).
@@ -148,10 +175,32 @@ def search_coarse(
         )
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
-    candidates = tuple(
-        _candidate(run_id, rank, source, candidate)
-        for rank, (source, candidate) in enumerate(ranked, start=1)
-    )
+    # 영상 밖 span 같은 잘못된 후보 하나 때문에 정상 후보까지 버리지 않는다(#181).
+    # 잘못된 후보만 빼고 PARTIAL + issue로 남긴다 — 계약 §5 PARTIAL.
+    kept: list[CandidateEvent] = []
+    dropped = 0
+    for candidate_source, candidate in ranked:
+        try:
+            kept.append(_candidate(run_id, len(kept) + 1, candidate_source, candidate))
+        except InvalidCoarseSpanError:
+            dropped += 1
+    candidates = tuple(kept)
+    issues: tuple[Issue, ...] = ()
+    outcome = RunOutcome.SUCCEEDED
+    if dropped:
+        # 영상 밖 후보는 입력 범위를 못 본 것이 아니므로 scope_ref를 비운다 —
+        # coverage notice가 「범위 전체를 못 봤다」로 읽지 않게 한다(#327 case 제안 2).
+        issues = (
+            Issue(
+                kind=FailureKind.INFRA,
+                code="COARSE_SPAN_OUT_OF_SOURCE",
+                scope_ref=None,
+                detail=f"dropped={dropped}",
+            ),
+        )
+        # 후보가 전부 빠지면 응답이 망가진 것이라 「다시 찾기」가 붙는 FAILED로 둔다
+        # (#327 case 제안 1). 일부만 빠지면 남은 후보로 PARTIAL.
+        outcome = RunOutcome.FAILED if not candidates else RunOutcome.PARTIAL
     completed = datetime.now(UTC)
     analysis_run = AnalysisRun(
         run_id=run_id,
@@ -163,10 +212,10 @@ def search_coarse(
             prompt_version=COARSE_PROMPT.version,
             config_version=dependencies.config.version,
         ),
-        outcome=RunOutcome.SUCCEEDED,
+        outcome=outcome,
         started_at=started,
         completed_at=completed,
-        issues=(),
+        issues=issues,
         usage_refs=tuple(usage_refs),
         usage_summary=_usage_summary(records),
         contract_version="analysis-run-candidate-event/v1.1",
