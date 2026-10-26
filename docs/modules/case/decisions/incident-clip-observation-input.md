@@ -54,6 +54,7 @@
      | `candidate_id` | 관찰 대상 후보 | 전부 |
      | `generation_job_id` | 그 후보 목록을 들여온 `COARSE_SEARCH` job — 세대 표식(`observation-storage.md` §4-4와 같은 기준) | 전부 |
      | `span` | 후보 `span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot. clip 구간은 이 Coarse `span`을 쓴다 — Fine `temporal_facts[].at_offset_ms`는 선택값이라 구간 근거로 보장되지 않는다(서어진 10-23 ③) | `FINE_VERIFY` · `INCIDENT_CLIP_BUILD` |
+     | `max_latency_sec` | Fine 후보당 실행 상한(초, `timeout-fallback.md` 잠정값 표 70초). handler가 그대로 `verify_visual`에 넘기고, Coarse scope 상한으로 대신하지 않는다(#407 결정 (a), 2026-10-26 추가). clip 입력으로 옮기지 않는다 | `FINE_VERIFY` |
      | `fine_job_id` | clip 구간 · stream을 정한 Fine job | `INCIDENT_CLIP_BUILD` |
      | `incident_clip_ref` | 두 판독이 공유하는 clip | `PLATE_READ` · `OVERLAY_TIME_READ` |
 

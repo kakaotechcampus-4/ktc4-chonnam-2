@@ -39,7 +39,8 @@ def compose(ctx, policy, *, result=None, error=None, load_error=None, cancel_aft
             resource_error=None, resolve_error=None):
     scope, coarse, fine = fixtures()
     resources = []
-    data = SearchInput(description="text", scope=scope, candidate=coarse.candidates[0])
+    # Fine reads the Case-fixed bound from its input (#407 decision (a)).
+    data = SearchInput(description="text", scope=scope, candidate=coarse.candidates[0], max_latency_sec=70)
 
     def load(_):
         if load_error: raise load_error

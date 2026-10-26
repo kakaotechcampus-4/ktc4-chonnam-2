@@ -22,6 +22,10 @@ from daesingo.case.domain import CaseAggregate
 # 같은 clip으로 함께 발주하는 판독(§4-4).
 _READOUT_KINDS = ("PLATE_READ", "OVERLAY_TIME_READ")
 
+# Fine 후보당 실행 상한(초) — `decisions/timeout-fallback.md` 잠정값 표. Fine 입력에 고정하고 handler가 그대로 쓴다
+# (#407 결정 (a)). Coarse scope 상한을 이어받지 않는다.
+FINE_MAX_LATENCY_SEC = 70
+
 
 def current_generation_job_id(case: CaseAggregate) -> str | None:
     """현재 후보 목록 세대 표식 — `CaseAggregate.current_generation_job_id()`."""
@@ -48,7 +52,8 @@ def issue_fine_for_selected(case: CaseAggregate) -> dict[str, Any] | None:
     return _issue(
         case,
         "FINE_VERIFY",
-        {"candidate_id": selected.candidate_id, "generation_job_id": generation, "span": dict(selected.span)},
+        {"candidate_id": selected.candidate_id, "generation_job_id": generation, "span": dict(selected.span),
+         "max_latency_sec": FINE_MAX_LATENCY_SEC},
     )
 
 
@@ -68,7 +73,9 @@ def follow_fine(case: CaseAggregate, fine_job_id: str, visual_evidence: dict[str
     verification = None if visual_evidence is None else visual_evidence.get("verification")
     if source is None or verification is None or verification == "NOT_OBSERVED" or not is_current(case, source):
         return None
-    return _issue(case, "INCIDENT_CLIP_BUILD", {**source, "fine_job_id": fine_job_id})
+    # Fine 상한은 Fine 입력에만 둔다 — clip은 후보 · 세대 · 구간과 그 Fine만 이어받는다.
+    clip_input = {k: v for k, v in source.items() if k != "max_latency_sec"}
+    return _issue(case, "INCIDENT_CLIP_BUILD", {**clip_input, "fine_job_id": fine_job_id})
 
 
 def follow_clip(case: CaseAggregate, clip_job_id: str, incident_clip_ref: str) -> list[dict[str, Any]]:

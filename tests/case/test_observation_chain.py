@@ -161,10 +161,12 @@ def test_fine_for_selected_candidate_has_fixed_input():
     assert fine == _latest(store, case_id, "FINE_VERIFY")
     # scope_ref는 JobRecord에 싣는다(§4-1) — 그 세대 COARSE_SEARCH의 scope_ref 그대로.
     assert fine["scope_ref"] == coarse["scope_ref"]
+    # Fine 후보당 상한은 case가 발주 때 고정한다(`timeout-fallback.md`, #407 결정 (a)) — Coarse scope 150초가 아니다.
     assert store.observation_input(case_id, fine["job_id"]) == {
         "candidate_id": "cand_1",
         "generation_job_id": coarse["job_id"],
         "span": SPAN_1,
+        "max_latency_sec": 70,
     }
 
 
@@ -199,6 +201,7 @@ def test_coarse_reflection_selects_top_ranked_and_issues_first_fine():
         "candidate_id": "cand_1",
         "generation_job_id": coarse["job_id"],
         "span": SPAN_1,
+        "max_latency_sec": 70,
     }
 
 
@@ -248,6 +251,7 @@ def test_fine_not_not_observed_issues_clip_build(verification):
     clip = _latest(store, case_id, "INCIDENT_CLIP_BUILD")
     assert [j["job_id"] for j in result.appended_job_records] == [clip["job_id"]]
     assert clip["scope_ref"] == coarse["scope_ref"]
+    # Fine 상한은 Fine 입력에만 둔다 — clip 입력으로 옮기지 않는다.
     assert store.observation_input(case_id, clip["job_id"]) == {
         "candidate_id": "cand_1",
         "generation_job_id": coarse["job_id"],
@@ -392,6 +396,7 @@ def test_reselect_issues_fine_for_the_new_candidate():
         "candidate_id": "cand_2",
         "generation_job_id": coarse["job_id"],
         "span": {"timeline_id": "tl_1", "timeline_revision": 1, "start_ms": 2_000, "end_ms": 5_000},
+        "max_latency_sec": 70,
     })]
 
 
