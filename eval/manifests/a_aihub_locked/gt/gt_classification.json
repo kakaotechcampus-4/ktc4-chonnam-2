@@ -1,0 +1,2146 @@
+{
+  "meta": {
+    "gt_version": "lg1",
+    "tier": "A",
+    "stage": "classification",
+    "coverage": {
+      "sequences_total": 120,
+      "sampling_rule_version": "s2",
+      "sampling_seed": 20261026,
+      "items_with_target_bbox": 114,
+      "target_bbox_reason": "원본 라벨에 위반 차량 bbox 가 없는 시퀀스가 있다 (차선 등 다른 객체만 어노테이션된 경우). 그런 항목은 target_bbox/target_frame/distractor_count 가 null 이다."
+    }
+  },
+  "items": [
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005754",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        1,
+        472,
+        163,
+        835
+      ],
+      "target_frame": "20230222_중앙선주황색실선위반_0000005754_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005849",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        541,
+        358,
+        810,
+        466
+      ],
+      "target_frame": "20230222_중앙선주황색실선위반_0000005849_021.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005925",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005976",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        2,
+        570,
+        144,
+        719
+      ],
+      "target_frame": "20230222_중앙선주황색실선위반_0000005976_05.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006017",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        2,
+        400,
+        141,
+        553
+      ],
+      "target_frame": "20230222_중앙선주황색실선위반_0000006017_001.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006140",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        609,
+        391,
+        635,
+        403
+      ],
+      "target_frame": "20230222_중앙선주황색실선위반_0000006140_004.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006195",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        2,
+        373,
+        386,
+        632
+      ],
+      "target_frame": "20230226_중앙선주황색실선위반_0000006195_001.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006215",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006307",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        720,
+        173,
+        847,
+        280
+      ],
+      "target_frame": "20230226_중앙선주황색실선위반_0000006307_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006430",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        202,
+        264,
+        498,
+        457
+      ],
+      "target_frame": "20230226_중앙선주황색실선위반_0000006430_03.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006453",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        537,
+        285,
+        699,
+        452
+      ],
+      "target_frame": "20230226_중앙선주황색실선위반_0000006453_02.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008429",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008467",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        520,
+        324,
+        738,
+        518
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008467_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008469",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        424,
+        386,
+        605,
+        504
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008469_01.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008525",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        484,
+        416,
+        561,
+        479
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008525_045.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008534",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        541,
+        425,
+        758,
+        574
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008534_05.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008702",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        545,
+        413,
+        773,
+        595
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008702_013.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008724",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        595,
+        210,
+        787,
+        374
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008724_007.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008728",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        526,
+        193,
+        1073,
+        566
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008728_001.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008817",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        585,
+        374,
+        610,
+        391
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008817_012.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008900",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        66,
+        413,
+        144,
+        483
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008900_007.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008959",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        628,
+        327,
+        661,
+        352
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008959_01.jpg",
+      "distractor_count": 18,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008980",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        593,
+        334,
+        759,
+        495
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000008980_01.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009036",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        0,
+        376,
+        65,
+        639
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000009036_002.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009091",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009106",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        563,
+        415,
+        683,
+        492
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000009106_08.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009129",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009353",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        394,
+        449,
+        860,
+        632
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000009353_01.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009398",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        536,
+        402,
+        761,
+        585
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000009398_01.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009419",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": [
+        591,
+        100,
+        736,
+        285
+      ],
+      "target_frame": "20230222_중앙선주황색이중실선위반_0000009419_01.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000337",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        62,
+        509,
+        616,
+        958
+      ],
+      "target_frame": "20230222_안전모미착용_0000000337_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000404",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        249,
+        259,
+        463,
+        662
+      ],
+      "target_frame": "20230222_안전모미착용_0000000404_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000693",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        12,
+        12,
+        704,
+        1134
+      ],
+      "target_frame": "20230222_안전모미착용_0000000693_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000779",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        462,
+        40,
+        1030,
+        958
+      ],
+      "target_frame": "20230222_안전모미착용_0000000779_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000795",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        452,
+        675,
+        751,
+        1185
+      ],
+      "target_frame": "20230222_안전모미착용_0000000795_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000000799",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        368,
+        419,
+        471,
+        616
+      ],
+      "target_frame": "20230222_안전모미착용_0000000799_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001007",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        408,
+        297,
+        627,
+        585
+      ],
+      "target_frame": "20230222_안전모미착용_0000001007_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001023",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        511,
+        44,
+        1174,
+        713
+      ],
+      "target_frame": "20230222_안전모미착용_0000001023_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001038",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        433,
+        263,
+        557,
+        558
+      ],
+      "target_frame": "20230222_안전모미착용_0000001038_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001091",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        300,
+        19,
+        926,
+        1137
+      ],
+      "target_frame": "20230222_안전모미착용_0000001091_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001479",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        333,
+        551,
+        588,
+        838
+      ],
+      "target_frame": "20230222_안전모미착용_0000001479_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001580",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        1,
+        623,
+        523,
+        1275
+      ],
+      "target_frame": "20230222_안전모미착용_0000001580_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001625",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        11,
+        442,
+        473,
+        927
+      ],
+      "target_frame": "20230222_안전모미착용_0000001625_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001626",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        569,
+        219,
+        697,
+        475
+      ],
+      "target_frame": "20230222_안전모미착용_0000001626_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001734",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        33,
+        197,
+        352,
+        533
+      ],
+      "target_frame": "20230222_안전모미착용_0000001734_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000001999",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        570,
+        363,
+        677,
+        568
+      ],
+      "target_frame": "20230222_안전모미착용_0000001999_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002032",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        3,
+        354,
+        199,
+        690
+      ],
+      "target_frame": "20230222_안전모미착용_0000002032_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002103",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        43,
+        150,
+        475,
+        553
+      ],
+      "target_frame": "20230222_안전모미착용_0000002103_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002118",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        588,
+        374,
+        620,
+        445
+      ],
+      "target_frame": "20230222_안전모미착용_0000002118_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002206",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        581,
+        370,
+        823,
+        726
+      ],
+      "target_frame": "20230222_안전모미착용_0000002206_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002303",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        336,
+        795,
+        527,
+        1006
+      ],
+      "target_frame": "20230222_안전모미착용_0000002303_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002351",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        124,
+        272,
+        533,
+        750
+      ],
+      "target_frame": "20230222_안전모미착용_0000002351_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002578",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        669,
+        447,
+        860,
+        685
+      ],
+      "target_frame": "20230222_안전모미착용_0000002578_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002609",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        376,
+        40,
+        722,
+        693
+      ],
+      "target_frame": "20230222_안전모미착용_0000002609_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002771",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        277,
+        177,
+        693,
+        674
+      ],
+      "target_frame": "20230222_안전모미착용_0000002771_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002982",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        343,
+        320,
+        413,
+        418
+      ],
+      "target_frame": "20230222_안전모미착용_0000002982_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003058",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        479,
+        312,
+        705,
+        628
+      ],
+      "target_frame": "20230222_안전모미착용_0000003058_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003166",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        188,
+        449,
+        716,
+        1056
+      ],
+      "target_frame": "20230222_안전모미착용_0000003166_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000003267",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        528,
+        33,
+        939,
+        656
+      ],
+      "target_frame": "20230222_안전모미착용_0000003267_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_안전모미착용_0000003955",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": [
+        29,
+        275,
+        196,
+        519
+      ],
+      "target_frame": "20230226_안전모미착용_0000003955_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003619",
+      "label": "SIGNAL",
+      "target_bbox": [
+        146,
+        34,
+        1058,
+        1737
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003619_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003711",
+      "label": "SIGNAL",
+      "target_bbox": [
+        470,
+        0,
+        1080,
+        1195
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003711_003.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003723",
+      "label": "SIGNAL",
+      "target_bbox": [
+        0,
+        288,
+        137,
+        585
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003723_01.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003740",
+      "label": "SIGNAL",
+      "target_bbox": [
+        692,
+        260,
+        761,
+        378
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003740_01.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003829",
+      "label": "SIGNAL",
+      "target_bbox": [
+        615,
+        314,
+        661,
+        358
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003829_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003862",
+      "label": "SIGNAL",
+      "target_bbox": [
+        53,
+        384,
+        150,
+        435
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003862_06.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003937",
+      "label": "SIGNAL",
+      "target_bbox": [
+        559,
+        441,
+        679,
+        541
+      ],
+      "target_frame": "20230223_적색신호시좌회전_0000003937_01.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011935",
+      "label": "SIGNAL",
+      "target_bbox": [
+        672,
+        329,
+        898,
+        719
+      ],
+      "target_frame": "20230223_적색신호시직진_0000011935_001.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011936",
+      "label": "SIGNAL",
+      "target_bbox": [
+        838,
+        160,
+        990,
+        435
+      ],
+      "target_frame": "20230223_적색신호시직진_0000011936_06.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011969",
+      "label": "SIGNAL",
+      "target_bbox": [
+        727,
+        335,
+        852,
+        435
+      ],
+      "target_frame": "20230223_적색신호시직진_0000011969_01.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012050",
+      "label": "SIGNAL",
+      "target_bbox": [
+        600,
+        449,
+        673,
+        519
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012050_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012115",
+      "label": "SIGNAL",
+      "target_bbox": [
+        486,
+        171,
+        645,
+        526
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012115_04.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012285",
+      "label": "SIGNAL",
+      "target_bbox": [
+        513,
+        360,
+        615,
+        458
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012285_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012290",
+      "label": "SIGNAL",
+      "target_bbox": [
+        698,
+        306,
+        764,
+        374
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012290_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012293",
+      "label": "SIGNAL",
+      "target_bbox": [
+        740,
+        420,
+        828,
+        493
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012293_01.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012355",
+      "label": "SIGNAL",
+      "target_bbox": [
+        624,
+        279,
+        686,
+        375
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012355_001.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012413",
+      "label": "SIGNAL",
+      "target_bbox": [
+        613,
+        334,
+        698,
+        513
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012413_01.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012461",
+      "label": "SIGNAL",
+      "target_bbox": [
+        501,
+        457,
+        564,
+        586
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012461_01.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012524",
+      "label": "SIGNAL",
+      "target_bbox": [
+        244,
+        401,
+        367,
+        600
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012524_05.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012584",
+      "label": "SIGNAL",
+      "target_bbox": [
+        623,
+        477,
+        678,
+        517
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012584_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012778",
+      "label": "SIGNAL",
+      "target_bbox": [
+        968,
+        361,
+        1276,
+        596
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012778_001.jpg",
+      "distractor_count": 11,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012863",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012869",
+      "label": "SIGNAL",
+      "target_bbox": [
+        534,
+        448,
+        643,
+        523
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012869_025.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012902",
+      "label": "SIGNAL",
+      "target_bbox": [
+        626,
+        390,
+        664,
+        419
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012902_22.jpg",
+      "distractor_count": 8,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012905",
+      "label": "SIGNAL",
+      "target_bbox": [
+        626,
+        302,
+        756,
+        419
+      ],
+      "target_frame": "20230223_적색신호시직진_0000012905_10.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013038",
+      "label": "SIGNAL",
+      "target_bbox": [
+        755,
+        318,
+        813,
+        364
+      ],
+      "target_frame": "20230223_적색신호시직진_0000013038_05.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013205",
+      "label": "SIGNAL",
+      "target_bbox": [
+        684,
+        2,
+        1276,
+        424
+      ],
+      "target_frame": "20230223_적색신호시직진_0000013205_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013216",
+      "label": "SIGNAL",
+      "target_bbox": [
+        662,
+        272,
+        812,
+        419
+      ],
+      "target_frame": "20230223_적색신호시직진_0000013216_12.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013224",
+      "label": "SIGNAL",
+      "target_bbox": [
+        2,
+        2,
+        348,
+        564
+      ],
+      "target_frame": "20230223_적색신호시직진_0000013224_01.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001115",
+      "label": "SIGNAL",
+      "target_bbox": [
+        1,
+        310,
+        231,
+        537
+      ],
+      "target_frame": "20230226_좌회전신호시직진_0000001115_001.jpg",
+      "distractor_count": 9,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010456",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        522,
+        400,
+        584,
+        474
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010456_005.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010459",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        279,
+        410,
+        533,
+        571
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010459_013.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010536",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        658,
+        401,
+        684,
+        422
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010536_009.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010555",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        631,
+        396,
+        649,
+        408
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010555_001.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010603",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        617,
+        409,
+        646,
+        438
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010603_001.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010605",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        584,
+        370,
+        719,
+        491
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010605_028.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010606",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        636,
+        447,
+        703,
+        501
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010606_007.jpg",
+      "distractor_count": 0,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010635",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        542,
+        352,
+        594,
+        422
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010635_012.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010646",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        231,
+        187,
+        528,
+        473
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010646_001.jpg",
+      "distractor_count": 7,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010665",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        519,
+        388,
+        632,
+        462
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010665_010.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010962",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        420,
+        546,
+        613,
+        675
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010962_026.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010991",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        559,
+        199,
+        712,
+        308
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000010991_010.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011006",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        624,
+        358,
+        691,
+        407
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011006_008.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011047",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        914,
+        319,
+        1092,
+        412
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011047_019.jpg",
+      "distractor_count": 8,
+      "condition": {
+        "weather": "눈",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011051",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        775,
+        311,
+        1157,
+        547
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011051_003.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011062",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        493,
+        71,
+        814,
+        465
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011062_001.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011088",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        598,
+        441,
+        736,
+        542
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011088_032.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "눈",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011169",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        899,
+        1,
+        1286,
+        403
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011169_001.jpg",
+      "distractor_count": 8,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011176",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        354,
+        321,
+        537,
+        447
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011176_015.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011296",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        448,
+        306,
+        572,
+        392
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011296_011.jpg",
+      "distractor_count": 4,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011398",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        2,
+        278,
+        369,
+        625
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011398_03.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011486",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        741,
+        338,
+        905,
+        459
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011486_011.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011534",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        773,
+        372,
+        1093,
+        542
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011534_006.jpg",
+      "distractor_count": 2,
+      "condition": {
+        "weather": "맑음",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011622",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        603,
+        434,
+        628,
+        452
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011622_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "야간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011623",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        638,
+        534,
+        685,
+        569
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011623_01.jpg",
+      "distractor_count": 1,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011635",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        653,
+        314,
+        720,
+        396
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011635_01.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011673",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        553,
+        431,
+        637,
+        498
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011673_04.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "비",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011697",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        403,
+        351,
+        524,
+        443
+      ],
+      "target_frame": "20230222_일반도로진로변경위반_0000011697_03.jpg",
+      "distractor_count": 3,
+      "condition": {
+        "weather": "흐림",
+        "day_night": "주간",
+        "road_type": "일반도로"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000622",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        640,
+        327,
+        787,
+        416
+      ],
+      "target_frame": "20230222_터널내진로변경위반_0000000622_01.jpg",
+      "distractor_count": 5,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "터널"
+      },
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000623",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": [
+        815,
+        408,
+        864,
+        455
+      ],
+      "target_frame": "20230222_터널내진로변경위반_0000000623_01.jpg",
+      "distractor_count": 6,
+      "condition": {
+        "weather": "비",
+        "day_night": "야간",
+        "road_type": "터널"
+      },
+      "source_tier": "A"
+    }
+  ]
+}
