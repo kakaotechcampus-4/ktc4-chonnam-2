@@ -9,20 +9,21 @@ export function StoppedScreen(props: { view: CaseView; onAction: (noticeCode: st
   // 이 화면은 notice가 있을 때만 그린다(selectScreen `STOPPED`).
   const stopped = props.view.notices.find((n) => n.code === 'case.analysis_stopped')!
   const actions = stopped.actions.filter(isAction)
+  // 실패·결과 없음과 같은 틀(refresh.css .state-page) — 「신고자료」 → 큰 제목 → 설명 → 버튼. 실패가 아니라 빨강은 쓰지 않는다
   return (
-    <div className="stack">
-      <h1 className="page-title">신고자료</h1>
-      <section className="panel panel-p stack">
-        <h2 className="panel-t">{noticeMessage(stopped.message_key)}</h2>
-        <p className="kv-src">
+    <div className="rs rs-screen state-page stopped">
+      <p className="state-context">신고자료</p>
+      <section className="state-card">
+        <h1 className="state-head">{noticeMessage(stopped.message_key)}</h1>
+        <p className="state-body">
           {actions.length > 0
             ? '올린 영상은 그대로예요. 다시 찾으면 영상 전체를 처음부터 살펴볼게요.'
             : '「새 신고」로 처음부터 다시 시작할 수 있어요.'}
         </p>
         {actions.length > 0 && (
-          <div className="btnrow">
+          <div className="state-actions">
             {actions.map((a) => (
-              <button key={a} type="button" className="btn pri" onClick={() => props.onAction(stopped.code, a)}>
+              <button key={a} type="button" className="rs-btn pri" onClick={() => props.onAction(stopped.code, a)}>
                 {ACTION_LABELS[a]}
               </button>
             ))}

@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import type { Action, Candidate, CaseView, Notice } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { AppHeader } from '../components/AppHeader'
@@ -9,7 +9,8 @@ import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
-import { UploadScreen, type UploadState } from './UploadScreen'
+import { acceptView } from '../state/resultModel'
+import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
@@ -19,6 +20,7 @@ import { UploadScreen, type UploadState } from './UploadScreen'
 // 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
+const noop = () => {}
 
 // 스냅샷은 순번이 아니라 모양으로 고른다 — fixture에 스냅샷이 끼어들면 순번이 밀린다
 // (응답 전 스냅샷 추가, #177).
@@ -68,8 +70,8 @@ const walk = (until: number, failedAt = -1) => [
 //
 // fixture 후보가 1개뿐이라 「다른 후보」를 보이려고 두 개를 더 붙인다.
 const OTHER_CANDIDATES: Candidate[] = [
-  { ...HAPPY.candidates[0], candidate_id: 'demo_c2', selected: false, at: null, observed: '흰 SUV가 교차로에서 정지선을 넘어 멈춘 장면' },
-  { ...HAPPY.candidates[0], candidate_id: 'demo_c3', selected: false, at: null, observed: '회색 승용차가 실선 구간에서 차로를 바꾸는 장면' },
+  { ...HAPPY.candidates[0], candidate_id: 'demo_c2', rank: 2, selected: false, at: null, observed: '흰 SUV가 교차로에서 정지선을 넘어 멈춘 장면' },
+  { ...HAPPY.candidates[0], candidate_id: 'demo_c3', rank: 3, selected: false, at: null, observed: '회색 승용차가 실선 구간에서 차로를 바꾸는 장면' },
 ]
 const RESULT: CaseView = { ...HAPPY, candidates: [...HAPPY.candidates, ...OTHER_CANDIDATES] }
 
@@ -98,9 +100,8 @@ const PLATE_FAILED_RESULT: CaseView = {
   package: null,
 }
 // 번호판을 읽었지만 확정하지 못함(#172 D-3) — 경고만 달고 제출은 막지 않는다.
-const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [
-  { code: 'evidence.plate_abstained', severity: 'WARN', blocking: false, message_key: 'notice.plate_abstained', actions: [] },
-])
+// notice는 fixture 그대로(actions: MANUAL_PLATE_INPUT) — 실제 데이터에서 오는 버튼을 시연에서도 보인다.
+const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [fixtureNotice('evidence.plate_abstained')])
 // 신고용 영상 미생성 — 아직 만들지 않아 GENERATE_REPORT_VIDEO 발주가 필요한 상태다. 묶음이
 // 완성되지 않아 READY가 아니다. export 실패(recording.report_video_export_failed)와 다르다 —
 // 그 notice는 message_key·actions 모양이 아직 없어 시연하지 않는다(#224 recording 리뷰).
@@ -108,6 +109,7 @@ const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [
 const VIDEO_NOT_GENERATED_RESULT: CaseView = {
   ...RESULT,
   stage: 'EVIDENCE_REVIEW',
+  package: RESULT.package && { ...RESULT.package, artifact_ref: null },
   notices: [
     {
       code: 'case.report_video_not_generated',
@@ -117,6 +119,12 @@ const VIDEO_NOT_GENERATED_RESULT: CaseView = {
       actions: ['GENERATE_REPORT_VIDEO'],
     },
   ],
+}
+// 발생 시각 확인 필요 — fixture의 시각 notice 그대로(actions: EDIT_EVENT_TIME · REVIEW_TIME).
+// 두 동작은 입력 화면과 command가 아직 없어 사용 불가로 보인다. 제출을 막지 않는 경고다.
+const TIME_REVIEW_RESULT: CaseView = {
+  ...RESULT,
+  notices: [fixtureNotice('evidence.time_needs_user_confirmation'), fixtureNotice('evidence.time_conflict_needs_notice')],
 }
 // 음성 결과(#168 [A]) — EVIDENCE_REVIEW + evidence=null + evidence.visual_event_not_observed.
 const NOT_OBSERVED: CaseView = {
@@ -140,6 +148,45 @@ const SEARCH_FAILED: CaseView = {
       actions: ['RETRY_SEARCH'],
     },
   ],
+}
+
+// 다른 후보를 고른 뒤의 결과. 판독 결과 fixture는 1순위 후보(HAPPY) 것뿐이다.
+// 다른 후보는 이전 후보의 번호판·시각·장소·위반 내용·신고자료 묶음·영상을 옮기지 않는다(§8-1 「자동 이월
+// 금지」, case-view 계약: 이전 선택 context의 evidence·package는 내리지 않음). 값이 없으니 모두 알 수 없음이고
+// 신고자료 묶음(package)도 없다 — 시연용 상태다. 사건 전체 값(기억 단서·파일 요약·후보 목록)은 그대로 둔다.
+const FIXTURE_CANDIDATE = HAPPY.candidates[0].candidate_id
+function resultFor(candidateId: string): CaseView {
+  const candidates = RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId }))
+  // 다시 고르면 case_rev가 오른다(SELECT_OTHER_CANDIDATE 성공 시 case_rev +1, contract-case-command §74)
+  const base = { ...RESULT, candidates, case_rev: RESULT.case_rev + 1 }
+  if (candidateId === FIXTURE_CANDIDATE) return base
+  const chosen = candidates.find((c) => c.selected)!
+  const unknown = { value: null, needs_review: true, info_state: 'INFO_UNKNOWN' as const, source_label_key: null }
+  const unknownCode = { code: null, label: null, needs_review: true, info_state: 'INFO_UNKNOWN' as const, source_label_key: null }
+  return {
+    ...base,
+    stage: 'EVIDENCE_REVIEW',
+    notices: [],
+    running_jobs: [],
+    requirements_evidence: null,
+    requirements_package: null,
+    package: null,
+    evidence: {
+      ...RESULT.evidence!,
+      record_id: `demo_evidence_${candidateId}`,
+      case_type_display: unknownCode,
+      report_type_display: unknownCode,
+      violation_display: unknownCode,
+      plate_display: unknown,
+      event_time_display: unknown,
+      location_display: { ...unknown, coord: null, search_keyword: null },
+      user_edited: false,
+      // 계약: evidence.preview_ref는 선택된 후보의 thumb_ref와 같다
+      preview_ref: chosen.thumb_ref,
+      review_needed: true,
+      reason_code: 'evidence.multiple_fields_need_review',
+    },
+  }
 }
 
 // 사용자 중단(#342) — SEARCHING에 머물고 coarse_search는 PARTIAL, case.analysis_stopped가 붙는다.
@@ -192,6 +239,11 @@ const CASES: Record<string, DemoCase> = {
     upload: 'ok',
     run: { ...FULL_RUN, view: PLATE_UNREAD_RESULT },
   },
+  timeReview: {
+    label: '발생 시각 확인 필요(입력 화면 미연결)',
+    upload: 'ok',
+    run: { ...FULL_RUN, view: TIME_REVIEW_RESULT },
+  },
   plateFailed: {
     label: '번호판 판독 실패(시스템 오류)',
     upload: 'ok',
@@ -235,13 +287,26 @@ type Main =
   | { kind: 'upload'; state: UploadState }
   | { kind: 'flow'; run: Run; frame: number; startedAt: number }
   | { kind: 'done'; run: Run }
-type Sub = 'candidates' | 'plate' | 'details'
+type Sub = 'candidates' | 'plate' | 'plateEdit' | 'details'
+// 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 입력 화면과 command가
+// 아직 없어(contract-case-command §32 「입력형 action은 다음 판본」) 사용 불가로 보인다.
+// ponytail: 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
+const DEMO_ACTIONS = new Set<Action>(['RETRY_PLATE_READ', 'GENERATE_REPORT_VIDEO', 'RETRY_SEARCH', 'MANUAL_PLATE_INPUT'])
+const canRun = (a: Action) => DEMO_ACTIONS.has(a)
 
 // 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다.
 // ponytail: 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
 // 시연에서는 화면 안에서만 반영한다 — command가 생기면 PlateCheck onEdit 자리에서 보낸다.
 function withPlate(view: CaseView, plate: string | null): CaseView {
-  if (!plate || !view.evidence || !view.package) return view
+  if (!plate || !view.evidence) return view
+  if (!view.package)
+    return {
+      ...view,
+      evidence: {
+        ...view.evidence,
+        plate_display: { value: plate, needs_review: false, info_state: 'INFO_USER_CONFIRMED', source_label_key: null },
+      },
+    }
   return {
     ...view,
     evidence: {
@@ -266,7 +331,16 @@ export function DemoFlow(): JSX.Element {
   const [files, setFiles] = useState<File[]>([])
   const [situation, setSituation] = useState('')
   const [plate, setPlate] = useState<string | null>(null)
+  const [uploadLeaving, setUploadLeaving] = useState(false)
+  // 진행이 끝나 결과 화면이 막 열렸는가 — 자동차 도착은 이때만. 하위 화면을 열면 끈다
+  const [arriving, setArriving] = useState(false)
   const demo = CASES[caseKey]
+
+  useEffect(() => {
+    if (!uploadLeaving) return
+    const t = setTimeout(() => setUploadLeaving(false), DEPART_EXIT_MS)
+    return () => clearTimeout(t)
+  }, [uploadLeaving])
 
   // 업로드가 끝나면 완료/실패로 넘어간다. 일부만 실패하면 나머지로 계속한다.
   useEffect(() => {
@@ -276,53 +350,77 @@ export function DemoFlow(): JSX.Element {
   }, [main, demo])
 
   // 다음 CaseView가 오면 화면이 바뀌고, 마지막까지 흐르면 마지막 화면으로 간다.
+  // 후보를 바꾼 뒤에는 그 후보·그 case_rev 결과만 받는다 — 늦게 온 이전 후보 결과가 새 화면을 덮지 않게.
+  const expected = useRef<{ caseRev: number; candidateId: string | null }>({ caseRev: 0, candidateId: null })
   useEffect(() => {
     if (main.kind !== 'flow') return
     const last = main.frame >= main.run.frames.length - 1
-    const t = setTimeout(
-      () => setMain(last ? { kind: 'done', run: main.run } : { ...main, frame: main.frame + 1 }),
-      STEP_MS,
-    )
+    const t = setTimeout(() => {
+      if (last && !acceptView(main.run.view, expected.current)) return
+      if (last) setArriving(true)
+      setMain(last ? { kind: 'done', run: main.run } : { ...main, frame: main.frame + 1 })
+    }, STEP_MS)
     return () => clearTimeout(t)
   }, [main])
 
   // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
-  const start = (run: Run) => {
+  const start = (run: Run, expect: { caseRev: number; candidateId: string | null } = { caseRev: 0, candidateId: null }) => {
+    expected.current = expect
     setSubs([])
+    setReturnY([])
     setPlate(null)
     setMain({ kind: 'flow', run, frame: 0, startedAt: Date.now() })
   }
   const newReport = () => {
+    setUploadLeaving(false)
     setMain({ kind: 'upload', state: 'idle' })
     setSubs([])
+    setReturnY([])
     setPlate(null)
     setFiles([])
     setSituation('')
   }
-  const open = (sub: Sub) => setSubs((s) => [...s, sub])
+  // 하위 화면은 맨 위에서 열고, 뒤로 오면 결과 화면을 보던 자리로 돌아간다.
+  const [returnY, setReturnY] = useState<number[]>([])
+  const open = (sub: Sub) => {
+    setReturnY((y) => [...y, window.scrollY])
+    setSubs((s) => [...s, sub])
+    setArriving(false)
+  }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withPlate(done.view, plate)
+  // 화면이 바뀌면 맨 위에서 시작한다 — 업로드 화면 아래쪽 버튼을 누른 스크롤 위치가 다음 화면에
+  // 그대로 남지 않게. 하위 화면에서 돌아올 때만 저장해 둔 자리로 간다.
+  const screenKey = main.kind === 'done' ? `done-${done?.end}-${subs.join('/')}` : main.kind
+  useEffect(() => {
+    const y = subs.length < returnY.length ? returnY[returnY.length - 1] : 0
+    if (subs.length < returnY.length) setReturnY((r) => r.slice(0, subs.length))
+    if (window.scrollY !== y) window.scrollTo(0, y)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
+  }, [screenKey])
   // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비하고, 새 후보에 대한 응답을 새로 받는다
   // (core-user-flow §8-1 — 이전 응답을 복사하지 않는다).
   // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
-  const reselect = (candidateId: string) =>
-    start({
-      ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요', AWAIT_RUN),
-      view: awaiting(RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId }))),
-    })
-  // 신고 상황 응답 → 조립부터 이어서 한다.
+  const reselect = (candidateId: string) => {
+    const base = resultFor(candidateId)
+    const view = { ...awaiting(base.candidates), case_rev: base.case_rev }
+    start({ ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요', AWAIT_RUN), view }, { caseRev: view.case_rev, candidateId })
+  }
+  // 신고 상황 응답 → 조립부터 이어서 한다. 결과는 그 후보 것만 쓴다(resultFor).
   // API가 생기면 여기서 RECORD_SITUATION_RESPONSE { value } + expected_case_rev를 보낸다.
-  // ponytail: 응답 뒤 값은 fixture(1번 후보) 것이다 — 다른 후보를 골랐어도 같다. 진짜 CaseView가 오면 풀린다.
   const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => {
     if (!done) return
-    const candidates = done.view.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: value } : c))
-    start({ ...rerunFrom(EVIDENCE, '신고자료를 준비하고 있어요'), view: { ...RESULT, candidates } })
+    const candidateId = done.view.candidates.find((c) => c.selected)!.candidate_id
+    const base = resultFor(candidateId)
+    const view = { ...base, candidates: base.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: value } : c)) }
+    start({ ...rerunFrom(EVIDENCE, '신고자료를 준비하고 있어요'), view }, { caseRev: view.case_rev, candidateId })
   }
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
   // API가 생기면 RUN_NOTICE_ACTION { notice_code, action }으로 보낸다 — 그래서 code도 받아 둔다.
   const onAction = (_noticeCode: string, a: Action) => {
+    if (a === 'MANUAL_PLATE_INPUT') return open('plateEdit')
     if (a === 'RETRY_PLATE_READ') start(rerunFrom(PLATE, '번호판을 다시 읽고 있어요'))
     if (a === 'GENERATE_REPORT_VIDEO') start(rerunFrom(PACKAGE, '신고용 영상을 만들고 있어요'))
     if (a === 'RETRY_SEARCH') start(rerunFrom(COARSE, '장면을 다시 찾고 있어요', AWAIT_RUN))
@@ -331,7 +429,7 @@ export function DemoFlow(): JSX.Element {
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main">
+      <main className="web-main rs-page">
         {main.kind === 'upload' && (
           <>
             <UploadScreen
@@ -344,7 +442,10 @@ export function DemoFlow(): JSX.Element {
                 setMain({ kind: 'upload', state: 'uploading' })
               }}
               onSituation={setSituation}
-              onSearch={() => start(demo.run)}
+              onSearch={() => {
+                setUploadLeaving(true)
+                start(demo.run)
+              }}
             />
             <label className="kv-src demo-pick">
               시연할 경우{' '}
@@ -359,28 +460,46 @@ export function DemoFlow(): JSX.Element {
           </>
         )}
 
+        {main.kind === 'flow' && uploadLeaving && (
+          // 겉모습만 남긴 업로드 화면 — 누를 수도, 읽히지도 않는다. 진행 화면은 이미 아래에 열려 있다.
+          <div className="rs-upload-exit" aria-hidden inert>
+            <UploadScreen
+              state="done"
+              files={files}
+              skipped={demo.upload === 'partial' ? DEMO_SKIPPED : []}
+              situation={situation}
+              onFiles={noop}
+              onSituation={noop}
+              onSearch={noop}
+              departing
+            />
+          </div>
+        )}
         {main.kind === 'flow' && (
           <FlowScreen
             view={main.run.frames[main.frame]}
-            fileName={files.map((f) => f.name).join(', ')}
+            files={files}
+            skipped={demo.upload === 'partial' ? DEMO_SKIPPED : []}
             situation={situation}
             startedAt={main.startedAt}
             title={main.run.title}
+            pushIn={uploadLeaving}
           />
         )}
 
         {done?.end === 'notFound' && (
-          <>
+          <div className="rs rs-screen state-page noresult">
+            <p className="state-context">신고자료</p>
             <NoResultScreen
               view={{ ...done.view, hints: { time: null, vehicle: null, location: null, situation: situation || null } }}
             />
             {/* 다시 찾기는 새 탐색이다(core-user-flow §4-2). 시연에서는 찾아지는 경우로 다시 돈다. */}
             <RetrySearch situation={situation} onSituation={setSituation} onRetry={() => start(AWAIT_RUN)} />
-          </>
+          </div>
         )}
-        {done?.end === 'failed' && <FailedScreen view={done.view} onAction={onAction} />}
+        {done?.end === 'failed' && <FailedScreen view={done.view} onAction={onAction} canRun={canRun} />}
         {done?.end === 'stopped' && <StoppedScreen view={done.view} onAction={onAction} />}
-        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} />}
+        {done?.end === 'notObserved' && !sub && <NotObservedScreen view={done.view} onSelect={reselect} restyled onNewReport={newReport} />}
         {done?.end === 'result' && !sub && doneView && (
           <ResultScreen
             view={doneView}
@@ -389,11 +508,22 @@ export function DemoFlow(): JSX.Element {
             onDetails={() => open('details')}
             onRespond={respond}
             onAction={onAction}
+            canRun={canRun}
+            plateEditedLocally={plate !== null}
+            arriving={arriving}
           />
         )}
 
         {done && sub === 'candidates' && <CandidateCompare view={done.view} onBack={back} onSelect={reselect} />}
-        {doneView && sub === 'plate' && <PlateCheck view={doneView} onBack={back} onEdit={setPlate} />}
+        {doneView && (sub === 'plate' || sub === 'plateEdit') && (
+          <PlateCheck
+            view={doneView}
+            aiValue={done.view.evidence?.plate_display.value ?? null}
+            startEditing={sub === 'plateEdit'}
+            onBack={back}
+            onEdit={setPlate}
+          />
+        )}
         {doneView && sub === 'details' && <DetailsCheck view={doneView} onBack={back} />}
       </main>
     </>
