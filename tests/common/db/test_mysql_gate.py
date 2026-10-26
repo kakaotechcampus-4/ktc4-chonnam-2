@@ -23,6 +23,7 @@ from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
 from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
+from observability_acceptance import OBSERVABILITY_CHECKS, OBSERVABILITY_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -46,6 +47,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *OBSERVABILITY_CHECKS,
     *ASSET_CHECKS,
     *FRAME_CHECKS,
     *UPLOAD_CHECKS,
@@ -134,6 +136,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *OBSERVABILITY_PARAMETERS,
     *ASSET_PARAMETERS,
     *FRAME_PARAMETERS,
     *UPLOAD_PARAMETERS,
@@ -299,6 +302,25 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+@pytest.mark.parametrize('identity', OBSERVABILITY_PARAMETERS)
+@pytest.mark.parametrize('mutation', ('role','scenario','parameter','all_metadata','skip','xfail'))
+def test_observability_metadata_and_execution_are_mandatory(identity, mutation):
+    report = good_report()
+    target = dict(zip(('role','scenario','parameter'),identity))
+    item, = (n for n in report['collected'] if target in n.get('checks',[]))
+    if mutation in ('skip','xfail'):
+        phase, = (p for p in report['reports'] if p['nodeid']==item['nodeid'] and p['when']=='call')
+        if mutation=='skip': phase['outcome']='skipped'
+        else: phase['xfail']=True
+    elif mutation=='all_metadata':
+        item['checks']=[]
+    else:
+        # Remove every copy of the field, including the family-only mark.
+        for c in item['checks']:
+            c.pop(mutation,None)
+    with pytest.raises(ValueError): checker().validate_report(report)
 
 
 def test_case_inventory_validation_does_not_rescan_node_ids():

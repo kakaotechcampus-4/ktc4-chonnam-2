@@ -84,6 +84,8 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
                 # Catch inside correlation scope; ServerErrorMiddleware would
                 # otherwise log after context reset and return an unsafe default.
                 composition.readiness.events.emit("api.request.failed", status="500")
+                if getattr(request.scope.get('route'), 'path', None) == '/cases/{case_id}/sources':
+                    composition.readiness.events.emit('api.upload.failed', status='500')
                 response = error_response(500)
             # Only a Case-returned identity is trusted; never log raw path IDs.
             case_id = getattr(request.state, "case_id", None)

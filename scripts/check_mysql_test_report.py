@@ -17,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(('observability', s) for s in ('distribution','boundaries','transaction','catalog','privacy')),
     *(("api_asset", s) for s in ("read", "isolation", "exact_identity", "corruption", "transaction", "failure", "interruption", "send")),
     *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
@@ -125,6 +126,14 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(('observability','distribution',p) for p in ('empty','1','2','20','21')),
+    *(('observability','boundaries',p) for p in ('attempt_kind_status_null','oldest_db_clock','usage','cap')),
+    *(('observability','transaction',p) for p in ('read_only','caller_rollback')),
+    *(('observability','catalog','false_'+p) for p in
+      ('STALE','SUCCEEDED','FAILED','CANCELLED','QUEUED','foreign','missing')),
+    ('observability','catalog','api'),
+    ('observability','catalog','pool_timeout'),
+    ('observability','privacy','http_inputs'), ('observability','privacy','logger_cleanup'),
     *(("api_asset", s, p) for s, p in (
         ('read', 'mp4'), ('read', 'png'), ('read', 'restart'), ('read', 'safe_filename'),
         *(('isolation', p) for p in ('missing_case', 'unknown', 'foreign', 'wrong_kind',

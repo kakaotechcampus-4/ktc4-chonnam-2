@@ -53,6 +53,7 @@ class SourceBodyLimitMiddleware:
         if declared > limit:
             self.composition.readiness.events.emit('api.upload.rejected_413_count', count=1)
             self.composition.readiness.events.emit('api.request.failed', status='413')
+            self.composition.readiness.events.emit('api.upload.failed', status='413')
             return await error_response(413)(scope, receive, send)
         # Enforce actual bytes, including multipart overhead and absent/lying CL.
         await RequestBodyLimitMiddleware(self.app, max_body_size=limit)(scope, receive, send)
