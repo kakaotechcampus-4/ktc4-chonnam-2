@@ -452,3 +452,179 @@ pending. Final authored delta is six test/document files, separate from56 automa
 upstream paths (62 working-tree paths total). Final state is **IN_PROGRESS · Refs
 #297 (RT-10(b))**, pending uncommitted merge with empty index; no commit/push/PR
 mutation. The user receives the result before any integration publication.
+
+
+### 2026-10-26 — PR #407 timeout: systematic investigation and bounded optimization
+
+**IN_PROGRESS · Refs #297 (RT-10(b)).** The initial branch was
+`codex/rt10b-handler-registry`, HEAD
+`dac940dc2bb638a56df8fa03953c77c6f171ac96`, with an empty working tree and index.
+No branch/ref/index operation was needed. Read-only remote checks confirmed the
+same PR head, base/develop `1943cb51e2bd579a02f09d67f104f16c52666c88`, Draft,
+MERGEABLE/UNSTABLE, boundary success and python-tests cancellation. No remote
+workflow was rerun or PR changed.
+
+The preserved PR log is run40321183978/job121566213929; the latest successful
+develop push is run40320484510/job121563856235 at that exact base. The following
+are GitHub step timestamps, except the explicitly named pytest summary:
+
+| Stage | Successful develop | PR #407 | Interpretation |
+| --- | --- | --- | --- |
+| Setup/container/checkout/tools, excluding smoke | 53s | 59s | Sum of recorded setup step durations; +6s |
+| Synthetic media smoke step | 3s | 4s | pytest itself 1.25s vs1.33s; both1 passed |
+| Full pytest step | 1729s, SUCCESS | 1754s, CANCELLED | Incomplete PR duration is not a completed-suite regression delta |
+| Full pytest summary | 12446 passed/33 skipped,1721.76s | Absent | No explicit failure or final summary in cancelled log |
+| Following strict MySQL gate | 1s,1027 tests,skip0/xfail0 | SKIPPED | PR has no success evidence for this step |
+| Whole job | 1789s | 1821s including cancellation/cleanup | Successful baseline already close to30min |
+
+The PR's last full progress line is at12:45:37.2756209Z (97%,12312 outcome
+characters); cancellation is at12:46:09.123704Z. No `F`/`E` appears in those
+completed progress rows. This does not prove that an unfinished test passed.
+Remote quiet output does not identify the active node. A fresh **Linux
+collection-only** run has12610 items; removing135 added tests derives12475 base
+items, matching the successful remote outcome count (module collection skips
+are separate). This is a derived baseline order, not an executed base checkout.
+Windows has16 extra OS-specific parameters and must not be used unadjusted.
+
+Conditional on matching Linux collection/order and ordinary72-character pytest
+progress flushing, the possible active range is teardown of item12312 through
+the next unprinted block ending12384: redelivery12312-12343,
+reflection12344-12383, and the first search-capability item12384. This is a
+candidate range, not a recorded active-node diagnosis or evidence of a hang.
+
+The same common-node block1081-1152 took741.282535s on develop and783.925966s on
+PR (+42.643431s). It contains the nested real-MySQL test at1142 **and71 other
+items**; captured child stdout hides the child/mutation boundary remotely.
+The enclosing gate-unit block1153-9648 was173.452s vs172.184s: no increase there.
+The new E2E neighborhood10441-10512 was25.744s vs81.334s; its last five common
+items differ because of the five inserted scenarios, so55.590s is a neighborhood
+comparison, not an exact sum of new test durations. Other new tests and
+individual nested/mutation costs cannot be separated from remote quiet logs.
+The five new E2Es also run inside the mandatory nested inventory. Evidence
+supports aggregate budget pressure with added work, not a single blamed test.
+
+A fresh synthetic diagnostic executed the existing complete mutation body,
+without launching a DB or asserting actual-MySQL acceptance. Linux cProfile
+measured232.17s before/73.72s after; deepcopy cumulative cost171.27s before/0.67s
+after. Windows cProfile measured274.72s/144.69s. These instrumented local values
+are not remote CI savings. An **unprofiled serial Linux pair** measured68.014s
+before/40.442s after (27.573s lower). It used fresh995-node synthetic reports in
+both arms, HEAD's mutation body vs the current body, and left both input reports
+unchanged. All2842 generated artifact SHA256 values matched, including8415
+parameter mutation records. Other local verification was running on this host;
+these timings are diagnostic observations, not a controlled CI budget forecast.
+
+The minimal change only reduces evidence copying: family omissions own the
+filtered lists and retain read-only nodes; metadata omissions reuse the existing
+single-node isolation helper. Every fresh nested invocation, inventory, JSON/
+JUnit validation and materialized mutation XML remains. No product code,
+validator, workflow, required check, skip/xfail rule,900s/30min limit, retry,
+receipt or #405 policy changes. AST checks confirm identical integration
+inventories and fresh-child/validation prefix; workflow/validator/harness/gate
+unit source bytes equal HEAD.
+
+TDD first failed because the omission helper did not exist (1 failed/2 passed,
+0.62s), then reproduced the existing full-copy algorithm and failed on copying
+retained evidence (1 failed/2 passed,0.66s). The optimized helper passed3 tests in
+0.40s. RED outputs are preserved separately and not relabeled as success. The
+full gate-unit/helper run passed8412 tests in383.37s (Windows, command elapsed
+386.66s). Direct boundary check found0 violations; Contract fixtures passed
+62 structure/26 JSON/104 semantic checks. Full fresh real-MySQL nested acceptance
+was then started on a separate owned8.4.7 loopback server; its final result and
+cleanup follow below. No previous JSON/JUnit/report is used as acceptance for
+this change. Scratch RAW, JSON/JUnit, timing probes, profiles, runners and DB
+materials are excluded from PR scope.
+
+The complete outer pytest/current remote CI have not been run for this dirty
+candidate. Focused gate units plus the full fresh nested inventory target the
+only changed behavior and avoid another duplicate entire30-minute workload.
+Remote active-node identity, exact per-new-test remote durations and whether this
+optimization alone restores the30-minute budget remain unconfirmed. New remote
+CI must complete the entire pytest summary **and** following strict gate under
+the unchanged limits before any merge-readiness claim.
+
+Diagnostic setup failures are separate from acceptance results: an initial
+synthetic driver stopped with AttributeError because it assumed a unit-level
+`write_junit` helper existed; it had not entered the mutation body. The corrected
+scratch driver builds its own synthetic XML. The first unprivileged WSL
+collection attempt was denied with E_ACCESSDENIED before collection and was
+reissued with approved read-only host access. These attempts are not converted
+to PASS or combined with the subsequent measured runs.
+
+
+### Fresh MySQL/mutation completion and review handoff — 2026-10-26
+
+The separate Windows pytest invocation passed the actual nested-gate parent:
+**1 passed in966.96s** (command elapsed969.59s, parent call966.77s). Its newly
+executed child has1027 selected items,3081 passed phases, no skip/xfail and
+JUnit suite time838.736s. The subprocess900s bound is unchanged; the parent also
+performs validation/mutations after that subprocess exits. The observed child
+phase-report span is835.0s. The difference from the parent call includes child
+startup/shutdown, report handling, validation and mutation; it is not an exact
+isolated mutation timer and is not a remote timing comparison.
+
+The child covers the five actual production-process scenarios, including
+normal/partial/failed/fine_failed/hint. Their fresh setup+call+teardown times sum
+to95.756s (22.018/19.054/12.066/17.435/25.183s respectively). Worker HTTP-call1,
+pool-checkout0, real T1/T2/produced assertions were unchanged and executed.
+All8415 parameter mutations and1501 metadata/family omissions were rejected.
+The direct strict CLI accepts this new child's JSON/JUnit (exit0); separate
+copies with one missing setup phase or JUnit testcase are rejected (exit1 each).
+These intentional negative results remain separately recorded.
+
+Collection-only inspection identifies1045 current MySQL-marked tests. The
+nested1027 and the separately executed parent do **not** constitute a full
+current MySQL invocation. Seventeen other unchanged tests were not rerun:
+durable facts6, Case composition4, Search handlers3, Case execution-read/result-
+reflection4. Full outer pytest and all-MySQL-in-one-process remain unexecuted;
+the changed mutation path was exercised through the complete fresh mandatory
+nested command plus8412 gate-unit/helper tests, with over22 minutes of local
+verification command durations (the runs overlapped; this is not wall time).
+Another full product regression would duplicate unchanged
+code coverage. Remote develop's1027 gate count and this child's1027 are different
+sets and must not be treated as interchangeable evidence. No former CI artifact
+was substituted into the new nested test.
+
+Owned MySQL8.4.7 completed its schema/account/client/transaction/lock audit,
+shut down and removed its exact UUID datadir. Linux listener closure was verified.
+Original evidence reports, RAW, JSON/JUnit, mutation XML, probes and runners are retained only
+under ignored task scratch, excluded from PR scope. Other services/old scratch
+were not modified. Final Windows port check and fresh independent read-only
+review are recorded separately below.
+
+There is no product/Contract/Accepted Decision/Baseline or CI-policy delta.
+#405 STALE notification/receipt/Case policy stays pending. The remaining merge
+blocker is a new remote full pytest plus following strict gate under the
+unchanged30min/900s limits; local speedup is not proof this budget now fits.
+No staging, commit, push, PR mutation or CI rerun has occurred.
+
+
+Cleanup qualification: the Linux shutdown receipt confirms no client other than
+the auditor (plus MySQL's system event scheduler), transactions0/locks0, only
+system accounts/schemas plus the dedicated base, exited owned process and absent
+UUID datadir; Linux connect_ex111. The initial Windows probe was denied10013;
+approved host access later returned10035 after2s, so immediate Windows connection
+refusal is **not established**. No shared WSL/forwarding service was changed.
+This is a cleanup-observability limitation, not evidence of a surviving MySQL
+process. A fresh reviewer will assess only the five-file uncommitted delta and
+the separately labeled evidence; source/ref/index remain unchanged at handoff.
+
+
+### Fresh independent read-only review result — 2026-10-26
+
+A new reviewer with `fork_turns=none` checked only the five-file uncommitted delta,
+its SoT and preserved evidence. It found **no P1/P2/P3** in that scope: the current
+family consumers/validators do not edit retained nodes, single-node metadata
+copy preserves original isolation, and the omission assertions/XML/fresh child/
+limits remain intact. It independently read the raw hashes and JSON/JUnit counts,
+while explicitly distinguishing these preserved author runs from its own read-
+only inspection. It ran no tests/DB/remote CI and made no edits or subagents.
+Branch/HEAD/index and all five manifest hashes were unchanged before and after
+review. The author reverified all five before appending only this outcome and
+its log entry; reviewed source snapshots remain in ignored scratch.
+
+This is not whole RT-10 acceptance or a merge-readiness decision. Full current
+remote pytest plus following strict gate, real CI savings and remote active-node
+identity remain unconfirmed; #405 stays pending. Final delivery remains
+**IN_PROGRESS · Refs #297 (RT-10(b))**, uncommitted/unstaged, with no branch,
+commit/push/PR or CI mutation.

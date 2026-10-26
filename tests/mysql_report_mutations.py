@@ -14,3 +14,14 @@ def copy_parameter_evidence(report, node):
         "reports": [dict(item) if item["nodeid"] == node else item
                     for item in report["reports"]],
     }
+
+
+def omit_evidence_nodes(report, removed):
+    # Family omissions replace lists, never edit retained evidence. Preserve the
+    # fresh report and own only the containers that the mutation changes.
+    return {
+        **report,
+        "collected": [n for n in report["collected"] if n["nodeid"] not in removed],
+        "selected": [n for n in report["selected"] if n not in removed],
+        "reports": [n for n in report["reports"] if n["nodeid"] not in removed],
+    }
