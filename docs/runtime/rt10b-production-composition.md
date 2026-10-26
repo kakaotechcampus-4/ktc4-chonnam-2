@@ -628,3 +628,220 @@ remote pytest plus following strict gate, real CI savings and remote active-node
 identity remain unconfirmed; #405 stays pending. Final delivery remains
 **IN_PROGRESS · Refs #297 (RT-10(b))**, uncommitted/unstaged, with no branch,
 commit/push/PR or CI mutation.
+
+
+### 2026-10-27 — PR #407 second timeout: tail and unit-fixture investigation
+
+**IN_PROGRESS · Refs #297 (RT-10(b)).** Initial branch was
+`codex/rt10b-handler-registry`, HEAD
+`bc45925595dd540012432cd6dabd90ddcf06c9b6`, working tree/index clean. No branch,
+ref, staging, commit/push, PR or CI operation was performed. Read-only PR metadata
+confirmed this head, Draft/MERGEABLE/UNSTABLE, boundary success and the new
+python-tests cancellation. That commit contains the previous evidence-copy
+optimization; its old investigation/review history above remains unchanged.
+
+Current run40334969445/job121613963782 and preceding
+40321183978/job121566213929 are preserved separately. A fresh remote query found
+a newer successful develop run40331287437/job121601052393 at
+`4295abfff7e89297a75762ba653678240c8280d9`. Compared with the former develop
+baseline1943cb51, only three Case decision documents changed, with no code/tests.
+That newer success is the primary comparison below; the old successful run and
+its RAW remain a fourth, separately labeled series. Checkout was not updated.
+
+| Recorded stage/interval | Previous PR | Latest PR | Latest successful develop |
+| --- | --- | --- | --- |
+| Setup step sum excluding smoke | 59s | 51s | 57s |
+| Media smoke step | 4s | 4s | 4s |
+| Full pytest step | 1754s CANCELLED | 1761s CANCELLED | 1693s SUCCESS |
+| Same outcome1081-1152 block | 783.926s | 742.443s | 720.580s |
+| Same gate-unit interior1225-9576 | 143.509s | 163.816s | 138.776s |
+| Final full-pytest summary | Absent | Absent | 12446 passed/33 skipped,1686.74s |
+| Following strict gate | SKIPPED | SKIPPED | SUCCESS,1027 tests/skip0/xfail0 |
+
+The two interior rows are parts of full pytest, not extra stages to add to it.
+Their inferred common-node endpoints match all revisions. The nested-containing
+block includes the actual parent at1142 and71 other tests. A41.483s reduction
+from the previous PR is observed for that whole block; remote logs still cannot
+split child vs mutation cost or attribute the entire reduction to one function.
+The unit interior increased20.307s, consuming part of that headroom. E2E/tail
+blocks with the same numerical offsets have different endpoints after added
+unit/new RT-10 tests; they are retained as neighborhoods only, not exact per-node
+comparisons. The machine comparison records endpoint equality explicitly.
+
+Latest final progress:12456 outcome characters (12427 dots/29 skips),98%, at
+2026-10-26T14:25:54.3041261Z; cancellation14:26:23.0134016Z,28.709s later.
+No F/E/xfail or final pytest summary was observed. A fresh untouched-head Linux
+collection has12611 items. Under matching collection/order and normal72-outcome
+flushes, possible active work is teardown of12456 or subsequent work through
+12528 before its next progress line. Last inferred node is
+`test_search_failure_boundary.py::test_persistence_error_propagating_through_search_is_still_runtime_owned[resolver-error5]`.
+The73-item candidate window covers the remaining Search boundary tests, handlers,
+handler MySQL/inputs, all sweep-worker tests, reconciliation/usage and first
+usage-worker MySQL case. No particular remote active node or hang is confirmed.
+The two newly authored unit guards below are outside this historical collection.
+
+**Direct tail execution:** the last reported node plus all155 unprinted nodes
+were run in exactly their original Linux order, checked by a collection plugin.
+All156 passed in176.86s (command185.66s), with468 passing setup/call/teardown
+reports and no skip/xfail. Per-node values and order are in the task's ignored
+`tail-node-phase-summary.json`. Aggregate phase times include:
+
+| Tail file group | Setup | Call | Teardown |
+| --- | --- | --- | --- |
+| sweep-worker MySQL31 | 19.380s | 101.433s | 1.282s |
+| worker MySQL20 | 11.368s | 8.984s | 0.743s |
+| Search handler MySQL3 | 3.297s | 8.200s | 0.132s |
+| usage reconciliation MySQL6 | 3.049s | 4.693s | 0.195s |
+
+Total observed phase time168.367s; other time includes collection/reporting.
+The sweep subprocess tests are legitimate acceptance work, retained unchanged.
+Local Linux/WSL filesystem, load and MySQL8.4.7 differ from GitHub, so these times
+are not a remote remaining-time prediction. No product wait/lease/cleanup or
+process coverage was shortened.
+
+**Confirmed avoidable costs:** the full pre-change unit/helper profile passed
+8412 tests in167.78s. Numbered temporary-directory allocation6077 calls cost
+28.983s cumulatively, with18425500 find_prefixed generator calls/resumptions
+(not an exact scandir-entry count) while finding suffixes;
+this grows with earlier evidence directories. Role omissions redundantly deep-
+copied newly built, independently owned synthetic reports; deepcopy304 top-level
+calls/14889721 recursive calls cost23.677s. These are directly measured fixture
+costs, not proof of the sole cause of the remote timeout. The remote overall
+symptom remains accumulated work exceeding the existing budget.
+
+**Minimal TDD change:** only this unit file allocates each parameter case's fresh
+UUID directory through pytest's public factory, `numbered=False`, inside the
+same managed base and with the same `junit.xml` writer/validator. It does not
+change outer report destinations, artifact transfer/structure, CI orchestration,
+retention settings, inventory, test identity/selection or acceptance checks.
+Role omissions use their already fresh report without a second full copy.
+No baseline/synthetic/actual validation result is cached or reused across runs.
+
+The guards reject sibling directory scans and fresh-report deepcopy. Initial
+Windows focused attempts omitted an owned basetemp and failed default temporary
+root allocation; those failures are preserved and not called valid RED/GREEN.
+With explicit new workspace basetemp, both old algorithms failed their intended
+guards (2 failed,0.96s); the minimal implementation plus existing XML-call guard
+passed3 tests(0.93s). Subsequent full Linux unit/helper profile passed8414 tests
+in160.73s, preserving every former case plus the two guards.
+
+Numbered allocations fell6077→8 and find_prefixed resumptions18425500→17; deepcopy top-
+level304→5, cumulative23.677→0.091s. Whole-profile wall improvement is only7.05s:
+concurrent local DB verification and observed filesystem stat time6.894→33.910s
+plus subprocess waiting differ. These observations are not converted to a CI
+speedup claim. A separate unprofiled serial pair executed all299 role and6069
+parameter checks using the real pytest temporary-path allocator and fresh
+synthetic reports:53.123→33.879s. All1734 generated mutation XML hashes matched.
+That pair excludes whole-pytest overhead and actual MySQL acceptance.
+
+Diagnostic postprocessing initially failed because pstats received a Path rather
+than str after baseline pytest had already exited0; the driver failure and
+pytest result are distinct. The existing profile was read without rerunning or
+relabelling it. An initial byte-level invariant check also failed on an unchanged
+CRLF checkout helper; raw/HEAD hashes, newline-normalized equality and empty Git
+diff are recorded explicitly. No source change was made to that helper.
+
+AST/normalized-content checks preserve unit inventories, every former
+parametrization, the strict validator, mysql harness, actual mutation helper,
+nested command/900s bound and workflow30min. No product/Contract/Decision/
+Baseline delta, test exclusion, job split, timeout increase or required-check
+change. #405 remains pending. The fresh actual nested/evidence validation and
+resource cleanup results follow below; no old actual report is substituted.
+
+
+### Fresh actual evidence, scope and cleanup — 2026-10-27
+
+The post-change fresh real-MySQL nested parent passed1 test in697.52s (command
+699.42s). Its newly executed child has1027 selected tests/3081 passing phases,
+no skip/xfail, JUnit suite613.169s. All8415 parameter mutations and1501 metadata/
+family omissions were rejected. The separate strict CLI accepts the new original
+report/XML(exit0); copies with a missing setup phase or missing JUnit case each
+fail(exit1), retained as negative controls. Original reports are kept untouched.
+The five independent API/Worker production-search E2Es also passed in this child.
+No earlier actual JSON/JUnit was used to satisfy acceptance.
+
+These nested timings are fresh validation observations, not a measured effect
+of the unit-only change: the changed unit file is not in the nested command.
+The entire default outer pytest and all1045 MySQL tests in one invocation were
+not run. Direct node-set comparison of the new nested, separate parent and tail
+shows14 unexecuted MySQL nodes: durable facts6, Case composition4, Case execution-
+read/result-reflection4. This coverage disclosure is not a combined full-suite
+PASS. Complete affected unit/helper, mandatory real inventory/mutation and the
+full requested tail were exercised; another full outer product regression would
+duplicate unchanged product code and requires the new remote budget check anyway.
+
+The owned MySQL8.4.7 audit showed only system schemas/accounts plus ci_tail_test,
+only the auditor/system scheduler, transactions0 and locks0. Owned process exit,
+exact UUID datadir removal and Linux connect_ex111 are confirmed. Windows first
+returned connect_ex0 and a later bounded probe10035; no immediate Windows refusal
+or protocol outcome was established. The listener query produced no listener
+row and exit1, not affirmative port-closure proof. No shared WSL/forwarder/service
+was changed and no surviving owned MySQL process was observed. This Windows
+cleanup-observability limitation is explicit. Native tail/profile/pair directories
+were scoped TemporaryDirectory allocations and removed at exit; task RAW, JSON/
+JUnit, XML, diagnostics, profiles and runners remain ignored and PR-excluded.
+
+Full changed-source boundary/Contract/diff checks and a fresh independent read-
+only review of the new three-file delta follow. Current state remains
+**IN_PROGRESS · Refs #297 (RT-10(b))**. New remote full pytest **and** subsequent
+strict gate success under unchanged30min/900s are required before merge readiness;
+if still cancelled, no timeout/job/inventory/required-check/artifact-policy change
+is authorized by these performance observations.
+
+
+### Fresh review P3 and retention compatibility follow-up — 2026-10-27
+
+The independent `fork_turns=none` reviewer read only the new three-file delta and
+preserved evidence, found no P1/P2 and one P3. It verified all three first-manifest
+hashes and empty index. The P3 was a conditional behavior difference omitted by
+the earlier naming-only description: with `tmp_path_retention_policy=failed`,
+standard tmp_path removes each passed case directory, while a plain mktemp
+fixture does not. Current CI's default `all` and external report delivery were
+unaffected. The first candidate/review snapshots and finding remain preserved.
+
+The author checked the installed pytest implementation, added a real subprocess
+regression with one passed parameter case and one intentional controlled failure
+(so session success cannot hide per-case cleanup), and observed the retained
+passing XML RED:1 failed in2.55s. The fixture now delegates to standard tmp_path
+for non-`all` policies; the default-all fast allocator remains identical. Focused
+4 passed in2.43s includes the existing XML-call guard. The deliberately failing
+child is an expected negative control, not a product/outer-suite failure and not
+relabeled as PASS.
+
+Final unprofiled Linux unit/helper execution passed8415 tests in113.68s. All8412
+original cases remain, plus three guards; no skipped/failed/error JUnit cases.
+This is a new execution with different instrumentation from167.78/160.73s, not a
+comparable whole-suite speedup claim. The previously measured default-all core
+functions are AST-identical after this compatibility follow-up; the53.123/33.879s
+pair remains tied to its earlier source snapshot. The new retention guard itself
+cost8.24s in this local final run, not an inferred remote cost.
+
+The fresh actual nested/mutation execution above preceded only this unit fixture
+compatibility follow-up. None of its selected code, validator, harness, actual
+mutation helper or nested command changed; the unit file is not selected there.
+Those results are not relabeled as a new run. Another697s actual repetition was
+not required for this isolated unit-only branch. Full outer/current remote CI
+remain unexecuted and merge-blocking. Follow-up read-only review of the final
+three-file delta and result-only documentation follows.
+
+
+### Final independent review and uncommitted handoff — 2026-10-27
+
+The same independent reviewer, originally started with `fork_turns=none`, read
+only the retention follow-up/final three-file delta and preserved records. It
+confirmed the original P3 resolved and found **no new P1/P2/P3** in that scope.
+Non-all policy delegation preserves standard per-case cleanup; default-all
+allocator/report delivery and all original8412 cases remain. It independently
+compared the RED/GREEN child XML (one passed parameter/one intentional probe
+failure, no errors/skips), final8415 JUnit cases and actual-child selection.
+It did not run tests/DB/remote CI or change files/refs/index. Original and final
+review manifest hashes, branch/HEAD and empty index were preserved. The author
+rechecked all three final hashes before appending only this result and its log.
+
+This is not approval of the entire PR/RT-10 or proof of remote timeout resolution.
+The latest remote remains CANCELLED with following strict SKIPPED. New full
+pytest final summary and following strict success under unchanged30min/900s are
+still required. #405 pending; whole outer/current remote validation and the14
+unexecuted MySQL nodes remain disclosed. Source is uncommitted/unstaged on
+bc459255; no commit/push/PR/CI operation was performed. Status remains
+**IN_PROGRESS · Refs #297 (RT-10(b))**.
