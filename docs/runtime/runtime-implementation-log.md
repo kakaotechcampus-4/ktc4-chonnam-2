@@ -3285,3 +3285,92 @@ whole pytest·전체 mandatory MySQL/nested wrapper·전체 mutation·live provi
 2026-10-26 최종 독립 재리뷰: 같은 fresh reviewer가 추가 develop delta와 HINT assert2개를 읽기 전용으로 재확인해 **P3해소·새P1/P2/P3없음**으로 판단했다. authored6/전체62hash·integrated2136개·추가upstream10개blob 일치와 HEAD52629d4b/MERGE_HEADa08d6715/indexempty/conflict0을 직접 확인했다. reviewer는 테스트/DB/validator를 실행하거나 파일/ref/index/PR을 바꾸거나 추가agent를 만들지 않았다. 153/72/5는 저자의 JUnit 보존증거를 읽은 결과이며 reviewer 실행 증거가 아니다. 기존판정보류(최신Linux전체/전체pytest·mandatorynested·fullmutation·currentCI/#405/제외handler·media/liveprovider/전체RT10)는 유지한다.
 
 저자는 결과기록 전62개hash동일을 재확인했다. 두번째ownedMySQL8.4.7 종료·정확한root제거·portrefusal·기본계정/schema와전용base외사용자항목0·non-auditclient/transaction/lock0,rootlock/native도구잔여없음을 확인했다. 이전server로그copies/각실행/backup은분리보존했다. 최종작성변경6개와자동upstream56개(총62개)를구분하며scratch/RAW/JSON/JUnit/runner/probe/stack/DB/로컬plan은PR제외다. 내용충돌의미선택·새정책·T2확장없음,미커밋merge/indexempty/commit·push·PR변경없음으로보고한다. **IN_PROGRESS · Refs #297 (RT-10(b))** 유지.
+
+## RT-12(b) 관측 집계 · catalog/privacy — 2026-10-26
+
+- **IN_PROGRESS · Refs #299 (RT-12(b))**. PR/merge SHA pending. 시작 clean,
+  승인된 기준 `42ddea72bb927e7adedf352ba53d160bda1aa049`에서 구현한다.
+- 구현 권위는 [Runtime Owner 확정 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/299#issuecomment-6367448332)이다.
+  nearest-rank/empty 분포 None/고정 group 유지·동적 group 생략/queued_at 기준
+  eligible oldest age와 0 하한은 이번 명시적 구현 convention이다. 기존 eval
+  규칙을 자동 상속한 것으로 기록하지 않으며 Baseline/Contract는 수정하지 않는다.
+- 단일 read-only DB statement로 queue/duration/stale/retry/cancel/usage snapshot을
+  반환한다. 기존 UTC, #370 causal timestamp, transaction/ownership/retry/cancel/
+  usage recovery writer는 변경하지 않는다. 누락 false STALE 및 view/upload 관측만
+  Runtime/API 내부 경계에 추가한다. asset/ASGI 경로와 cleanup empty Context는 보존한다.
+- catalog 32 metric/32 event의 실제 producer·필드·status와 privacy를 검증하며,
+  필수 MySQL check/parameter를 추가했다. 기존 inventory와 30분/900초를 완화하지 않는다.
+- **과거 증거 분리:** PR #390 RT-12(a)의 merge SHA는
+  `1c876620d71f8c6f323a3e920139c0dc444a82c7`다. PR 본문이 보고한 원격 boundary
+  PASS, pytest 10,794 passed/33 skipped, MySQL gate 911 PASS(skip/xfail 0)는
+  RT-12(a) 과거 결과이며 이번 수치에 더하지 않는다.
+- 직접 RED→GREEN·실패 원본·정확한 계산/group/empty 의미·전체 event catalog와
+  Implementation Notes 초안은 [RT-12(b) Notes](rt12b-observability.md)에 기록했다.
+  현재 최종 query focused 49 passed, 영향 경로 회귀 511 passed다. 최초 mandatory는
+  testcase 1,021 passed여도 catalog 위반 때문에 process exit 1이어서 FAIL로 보존한다.
+  초기 두 회귀 실패/중단/환경 오류 역시 후속 성공으로 소급 변경하지 않는다.
+- retention/purge/disk guard/CloudWatch/정기 기록/orphan/P-6/RT-10 handler와
+  새로운 HTTP/CLI/dashboard는 제외한다. staging/commit/push/PR 생성은 하지 않는다.
+  최종 nested gate/mutation·fresh read-only review·자원 정리 결과는 후속 기록한다.
+
+
+### RT-12(b) 후속 검증 · fresh review — 2026-10-26
+
+- **IN_PROGRESS · Refs #299 (RT-12(b))** 유지. 최종 신규 focused 50 passed.
+  영향 경로 이전 직접 회귀 511 passed, 신규 gate 단위 137 passed는 각각의
+  실행 범위로만 기록하며 합산하지 않는다.
+- fresh read-only reviewer가 mutation 총건수 산식 누락 P2를 발견했다.
+  선택 8,415/기대 8,129의 RED를 보존하고 신규 22×13=286을 포함하도록 수정,
+  산술 GREEN과 reviewer 재확인으로 해소했다. 코드 미해결 P1/P2는 없다.
+- 최초 nested 정상 child는 실제 MySQL 8.4.7의 1,022 passed/skip0/xfail0,
+  strict JSON/JUnit PASS, catalog 32/32·위반0이었다. 그 parent는 산식 오류로
+  FAIL이었다. 수정 후 nested도 기존 Worker periodic-exit-logger의 변경하지 않은
+  30초 timeout 때문에 child 1,021 passed/1 failed, parent exit1/strict gate FAIL이다.
+  단독 파일 전용 진단은 통과했으나 원인은 미확정이며 실패를 소급 변경하지 않는다.
+- 정상 child 원본 SHA를 유지해 현 validation tail을 별도 실행한 actual mutation
+  재생은 8,415 execution mutation 전부 거부(신규286), 신규 metadata/family 누락93
+  전부 거부로 PASS다. 새 DB 실행이나 전체 nested 성공을 뜻하지 않는다.
+- 통합 readiness는 차단 상태다. 알려진 gate 실패가 있어 전체 pytest는 확장하지
+  않았고 미실행/원격 CI 미실행을 명시한다. 30분/900초/기존 test timeout, sleep,
+  retry, inventory, skip/xfail 정책을 변경하지 않았다.
+- owned DB/helper 종료·정확한 datadir 제거·양쪽 port 폐쇄·transaction/lock0·잔여
+  owned process0 및 test temp18개 제거를 확인했다. 텍스트 evidence4,628개는 ZIP과
+  별도 canonical child evidence로 보존했다. [최종 Notes/전체 18개 변경 파일](rt12b-observability.md)에
+  계산·catalog·privacy·실패 원본·Implementation Notes 초안·위험과 PR 제외 범위를
+  남겼다. 미커밋/미스테이징이며 staging/commit/push/PR/Issue 변경은 없다.
+
+- 최종 정적 확인: boundary PASS, Contract fixture 62/26/104 PASS, Python/boundary actionlint PASS, git diff --check PASS. Python 변경 16개는 최종 focused evidence SHA와 일치하며 전체 변경 18개/승인 HEAD 유지/staging 없음이다. 문서 후속 기록은 검사 실행과 구분한다.
+
+### RT-12(b) periodic-exit-logger 30초 원인 분리 — 2026-10-26
+
+- **IN_PROGRESS · Refs #299 (RT-12(b))** 유지. 제품/test/gate code 수정 없이
+  원본 RAW/JUnit/cleanup archive와 child 출력·종료 상태의 관측 공백을 대조했다.
+  현재 동일 설치경로의 subprocess.py:1630은 stdout reader thread join deadline
+  경계이며, EOF/close/스케줄링 또는 child 정체 단계를 원본에서 구별할 수 없다.
+  RAW의 Popen repr returncode1은 timeout 후 kill/재수집 경계 뒤 객체 상태이며
+  정상/강제 종료나 deadline 시점 실제 native child 상태를 증명하지 못한다.
+- 승인 HEAD42ddea72의 깨끗한 archive와 candidate snapshot을 동일 Python/MySQL
+  8.4.7로 비교했다. 기준/현재 단독 무계측 각각1 passed, 계측 각각1 passed,
+  동일 선행921개 순서 각각921 passed다. 원래 수집경로/catalog probe/신규 선행을
+  포함한 별도942개 prefix도942 passed(628.73s)였다. 이 진단은 outer nested/
+  strict 전체 gate가 아니며 원래1021 passed/1 failed/strict FAIL을 대체하지 않는다.
+- 계측한 대상은 예상 child exit1/stdout428 동일SHA/stderr0, main/cleanup/atexit/
+  두 pipe EOF 완료와 target stack0이었다. timeout30/900와 workflow30분, sleep,
+  retry, inventory/skip/xfail 정책을 보존했다. RT12 인과관계·baseline 동일 실패·
+  특정 환경 원인은 미확정이므로 추가 RED/수정 단계에 진입하지 않았고 해결 선언도
+  하지 않는다. 기존 실패와 이번 직접 관측은 별도 보존한다.
+- 전/teardown 후 DB client/transaction/lock0, fixture checkedout0와 관련 listener
+  동일, 종료 전 기본 schema/account 유지, 소유 MySQL/helper/97개 관측PID 잔여0,
+  UUID datadir와 Linux listener 부재를 확인했다. Windows는 첫 종료후 접속 수락,
+  이후 owner/listener 없음, 마지막connect_ex10035로 즉각적 접속 거부 증명 미확보다.
+  원인은 미확정이며 공유 WSL/relay를 강제 변경하지 않았다. test temp7개 제거,
+  bounded text67개(cleanup receipt46개) CRC/SHA ZIP 보존과 원본 hash 불변을 확인했다.
+- 조사 방법·단계별 시간·setup 실패·한계와 fresh read-only 재검토 결과는
+  [Notes의 후속 조사](rt12b-observability.md)에 기록한다. 전체 pytest/새 전체 nested/
+  strict/mutation은 이번 조사에서 미실행이다. 조사 후 tracked 추가 수정은 Notes와
+  이 log뿐이고 product/test16개 hash는 시작과 동일하다. staging/commit/push/PR은 없다.
+- 구현/대화 이력 없는 새 read-only reviewer가 RAW/JUnit/phase/Git blob/ZIP을
+  독립 대조해 이번 조사 범위의 확정 코드 P1/P2 없음, 원본 미해결 및 병합 차단
+  유지를 재확인했다. 기존 구현 전체 재승인이나 새 실행 증거가 아니다. 초기
+  단독 arm의 diagnostic SHA 미보존도 추가 명시했다. 현재 source에 diff check를
+  실행했고 제품/test16개 불변·전체 후보18개·staging0을 최종 확인한다.
