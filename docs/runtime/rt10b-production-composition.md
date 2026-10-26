@@ -229,3 +229,226 @@ reads still show #297/#303 open with the same sink/helper agreements, no new
 unstaged/uncommitted, no push/PR/new branch/worktree. Full 40-file inventory and
 immutable review/evidence manifests are retained in excluded scratch; two local
 plans and all RAW/JSON/JUnit/runner/temp/DB artifacts remain PR-excluded.
+
+## 2026-10-26 — merged #403 integration / PR #407 CI reproduction
+
+**IN_PROGRESS · Refs #297 (RT-10(b))**. The new user request is limited to the
+merged Search helper/default registry integration and the four failed PR #407
+process cases. #405 STALE exhaustion notice/receipt/Case policy stays excluded.
+This follow-up supersedes the earlier dependency status without editing history.
+
+The initial checkout was clean on codex/rt12b-observability at
+`42a4712d7f63eda64f3fd9766ac6765caae9869a`. After confirming both tree and index
+clean, the requested codex/rt10b-handler-registry branch was selected, also clean
+at `52629d4b562ee4ef03070e39fb23e83f44dcaf62`. Remote PR #403 is merged at
+`405512cd0c8b74fd602b9557668f8603fd9d286e`, the fetched origin/develop. The
+branch and incoming changes have no overlapping paths from their common base
+42ddea72. A no-commit merge completed without conflicts; no semantic choice or
+conflict resolution was performed. Its automatic index changes were unstaged.
+HEAD remains 52629d4b, MERGE_HEAD is 405512cd, and the merge is deliberately
+uncommitted with an empty index. Incoming web/Search files belong to that upstream
+integration; they are distinct from this task's authored test/document changes.
+
+Remote evidence is separate from direct execution:
+
+- PR #403 head `8a5413109575631f8b0e0e8664274c96f443d325`: python-tests run
+  40253669661 and boundary-check 40253669630 succeeded. These are predecessor
+  head CI results, not CI of this uncommitted integration or a merge-SHA CI claim.
+  The Owner follow-up 6406363557 covers intent auth/spent-budget correction.
+- PR #407 head 52629d4b: python-tests run 40230798384 / test job 121281892941
+  failed. normal/partial/failed/fine_failed each reported HTTP calls 0 instead
+  of 1. The nested actual-report test failed from those same four child cases;
+  the full remote result was 5 failed / 12182 passed / 33 skipped. The subsequent
+  MySQL execution-gate step was skipped. This run remains failed permanently;
+  later local passes do not relabel it.
+
+The three real helpers now import from daesingo.search and default registry
+discovery already works; no additional production dispatcher/taxonomy code is
+needed. The process helper's temporary ConfirmedPolicyPort was removed. It now
+calls compose_search_registry with no failures override. New offline checks use
+the installed helpers for HINT/Coarse/Fine and observe that Runtime input,
+transaction, persistence and checkpoint errors never reach the Search error
+helper. Their first three failures came from a mismatched test context/sink, not
+a production defect; that setup run is retained separately and the corrected
+characterization is 15 passed. Search results/exceptions keep Owner mapping;
+there is no local reclassification.
+
+The actual CI failure was reproduced locally: Windows original cases passed,
+while Ubuntu ffmpeg/ffprobe 6.1.1 produced the same four HTTP-0 failures
+(linux-process-baseline: 4 failed, 203.25 s). Scratch exception tracing identified
+Recording output validation's missing final frame duration/pkt_duration. Probe
+snapshots show both generated H.264 MP4 variants (with/without B frames) fail this
+existing strict check, whereas generated MPEG-4 AVI passes with observed coverage.
+Recording's policy is not loosened and no frame tail is invented from fps or
+container duration. The integration fixture now uses that supported AVI input,
+with matching filename suffix/MIME; generated media, public preparation and real
+Search media conversion remain in the test. This does not certify general H.264
+MP4 compatibility on old ffprobe; that existing limitation remains explicit.
+
+Process tests retain HTTP exactly 1 and pool checkout 0 assertions, add expected
+terminal status/failure-kind diagnostics in the private test pipe, and add a HINT
+scenario. It runs a separate HINT Worker, observes Case's existing T2 issue Coarse,
+then uses separate Coarse/Fine Workers. Fine selection/issuance is still explicitly
+performed through Case in the test; Runtime does not acquire orchestration policy.
+The existing HTTP public-field privacy assertions remain in force.
+
+Direct evidence at this checkpoint (overlapping runs are not added):
+
+| Execution | Result |
+| --- | --- |
+| Initial merged import/boundary baseline | 73 passed |
+| Real helper/default integration + Owner SDK auth/timeout/usage checks | 151 passed, 6.19 s |
+| Related Search/Worker/Case/jobs/usage/Recording/Readout/API offline | 2328 passed / 21 existing skipped / 970 deselected, 327.87 s |
+| Actual MySQL T1 payload/rollback/unknown COMMIT, usage/cancel, stored T2 | 72 passed, 58.99 s |
+| Windows process cases, now real default helpers + HINT | 5 passed, 91.22 s |
+| Unchanged gate bypass/JUnit/parameter mutation controls | 14 passed (earlier overlapping subset 4 passed) |
+| Boundary / Contract fixture / diff | violations 0; 62/26/104 checks; diff PASS |
+
+The offline skips remain four optional typer imports, two external Case videos
+and fifteen Recording real-video opt-ins. Warnings are the existing one
+FastAPI/httpx deprecation plus three malformed-usage serialization warnings.
+No skip/xfail policy was changed.
+
+An intermediate file named linux-process-green is **5 failed**, not a pass: after
+fixing the media fixture, WSL shared-filesystem I/O caused peer response timeouts
+(472.50 s). The subsequent traced AVI normal run also timed out. These runs are
+retained as failures. No timeout was raised: Ubuntu packages were extracted only
+into owned test scratch, then the tools and temporary media were placed in an
+owned Linux-native /tmp directory. Same-code normal then passed in 92.25 s with
+the original per-peer timeout. The complete Linux-native matrix is still running
+at this chronological checkpoint; its result will be appended below.
+
+### Final direct validation and resource audit
+
+The complete Linux-native run finished **5 passed, 474.95 s**: normal, partial,
+failed, fine_failed and hint. It uses the same Ubuntu ffmpeg/ffprobe
+6.1.1-3ubuntu5 reported in PR #407 CI. No code changed between the Windows and
+Linux final runs; the latter changed only test tool/media filesystem placement.
+The first same-code native normal check overlaps this run and is not additive.
+The prior five-test WSL timeout execution remains failed, even though its filename
+contains green. These distinguish the original fixture failure from local test
+environment delays; neither was hidden by larger timeouts or fake capabilities.
+
+The final direct DB reports are 72 tests/216 setup-call-teardown phases, Windows
+process 5/15 and Linux process 5/15. Each has unique complete collection/selection,
+all phases passed, no collection error and no skip/xfail. The unchanged JUnit
+validator accepts each report; removing an actual JUnit testcase is rejected.
+The full inventory validator rejects each subset for missing required roles,
+so **the full strict MySQL gate is not PASS**. All production source and protected
+Contract/gate/harness/workflow paths match the conflict-free integrated snapshot.
+The authored changes are tests and chronological documentation only.
+
+Whole pytest, the full mandatory MySQL/nested wrapper, the entire gate mutation
+matrix, live paid provider, broad media/BLOB acceptance and current-diff remote
+CI were not executed. Related offline 2328 tests, helper-focused 151, actual DB72
+and both-OS process matrices cover this integration. Repeating the full remote
+inventory would duplicate those checks and cannot produce CI evidence for an
+uncommitted/unpushed revision. The previous remote #407 failure is not cleared by
+these local results. Workflow 30 minutes, nested MySQL900 seconds, per-peer60
+seconds and runner880 seconds were maintained.
+
+Owned MySQL8.4.7 stopped, its exact datadir was removed and its port refused new
+connections. Before shutdown, only system schemas/default accounts plus the
+dedicated base schema remained; non-audit clients, transactions and locks were
+zero. Process test peers joined. Owned Linux-native tools/media and the newly
+downloaded host package cache were removed after retaining package hashes and
+evidence. Two new zero-byte root lock files (unignored, absent in initial clean
+checkout) were exclusively opened, backed up and removed. Shared runtimes and
+earlier evidence were retained. All new scratch/RAW/JSON/JUnit/runner/probe/stack
+and temporary DB material is PR-excluded.
+
+#405 stays pending by the user's explicit scope instruction. Clip/readout/export
+handlers, general old-ffprobe H.264 MP4 coverage and production provider/temp/SDK
+lifecycle acceptance remain outside this bounded integration. No extra Runtime
+mapping or T2/case_applied_at extension was introduced. The next step is one
+fresh-context read-only review of this integration delta; its result will be
+appended without changing the execution history. HEAD52629d4b / MERGE_HEAD405512cd
+and empty index are retained, with no staging/commit/push/PR update.
+
+### Usage-limit resume, additional develop update and review follow-up
+
+The first fresh review turn stopped at an account usage limit and produced no
+review verdict. On the user's explicit resume request, the author verified all
+57 review hashes, HEAD52629d4b/MERGE_HEAD405512cd, empty index and no conflicts,
+then resumed the same independent reviewer. Its read-only review found no P1/P2
+and one P3: the new HINT scenario checked Coarse issuance but not the extracted
+values. This is a coverage gap, not an observed production defect. The test now
+also checks the public CaseView preserves vehicle="white car" and
+situation="red signal" from the provider fixture. The review did not run tests.
+
+A fresh remote read during resume found develop had advanced to
+`a08d671547a9e1a79deac2464d0d0ae43f34f17f` (merged #395). The ten additional
+paths include Search provider cut-off-response handling and its tests/experiment
+notes/scripts. They do not overlap the six authored files. Both old/new automatic
+merge trees were computed without content conflicts, all 57 current files were
+backed up, and the additional paths were checked against the old tree before
+updating. The first update attempt was refused because index stat data was not
+refreshed; a direct update-ref of MERGE_HEAD was also refused by Git. Neither was
+a content conflict or a successful update. The index was restored and authored
+hashes remained intact. After refreshing stat data, the two-tree update succeeded;
+the ten files matched upstream exactly and all six authored hashes remained
+unchanged. The guarded pending-merge metadata was set atomically to a08d6715
+(Git's update-ref does not accept this pseudoref), and automatic index changes
+were unstaged again. No commit/rebase/new branch/worktree was created. HEAD remains
+52629d4b; MERGE_HEAD and fetched origin/develop are now a08d6715; index empty.
+
+Direct revalidation on this latest source, kept separate from the 405512cd runs:
+
+| Run | Result |
+| --- | --- |
+| Real helper/SDK/usage/runtime failure boundary focused | 153 passed, 15.14 s |
+| Actual MySQL T1/receipt/unknown COMMIT/usage/cancel/T2 | 72 passed, 52.42 s |
+| Windows separate API/Worker normal/partial/failed/fine_failed/hint | 5 passed, 95.62 s |
+| Boundary / Contract fixtures / diff | violations 0; 62/26/104 checks; PASS |
+
+The latest five process cases include both new public HINT-value assertions and
+the HTTP1/pool0/terminal/privacy checks. Latest DB evidence has 72 tests/216 phases
+and 5/15, complete/unique/all passed/no skip-xfail. Actual JUnit omission is rejected;
+full inventory still rejects these subsets for missing required roles. Production
+source matches the latest automatic integrated snapshot; no authored production
+code, taxonomy or policy change was added.
+
+The earlier offline2328 and Linux5 runs remain evidence of the 405512cd source;
+they are not relabeled as a08d6715 executions. They were not repeated wholesale
+after the additional change: only provider error handling/imports and Owner tests
+changed, while media/Runtime DB/worker code was unchanged. Latest focused153 covers
+the new SDK length/content-filter exception cases, and latest Windows process5
+and DB72 cover the integration paths. The eight-minute Linux matrix plus portable
+tool reprovisioning/full offline repetition would duplicate unchanged platform
+coverage. Full pytest/mandatory nested gate/full mutation/live provider/current
+diff remote CI remain unexecuted; no full gate or remote CI PASS is asserted.
+
+The second verification uses a separate owned MySQL server and distinct report/
+readiness/CA/shutdown records; first-server evidence/log copies are retained.
+Final cleanup and the same reviewer's read-only assessment of this additional
+delta will be recorded below. #405 and the earlier excluded acceptance remain
+pending. **IN_PROGRESS · Refs #297 (RT-10(b))**.
+
+
+### Final independent read-only re-review and handoff
+
+The same independent reviewer checked the additional develop delta and two HINT
+assertions without inheriting the author's conversation. It confirmed the P3
+resolved and found **no new P1/P2/P3**. It read all62 latest manifest hashes and
+the2136-file integrated snapshot, verified all ten extra upstream files against
+their a08d6715 Git blobs, and confirmed HEAD52629d4b/MERGE_HEADa08d6715, index empty
+and zero conflict entries. It read author JUnit153/72/5, but did not run tests,
+DB or validators, mutate any file/ref/index or create another agent. Its judgment
+is limited static review, not whole RT-10 acceptance or merge/remote-CI approval.
+
+Before recording this outcome the author rechecked all62 hashes unchanged. The
+second owned MySQL8.4.7 also exited; its exact datadir is absent, port refuses
+connections, only default system accounts/schemas plus the dedicated base remain,
+and non-audit clients/transactions/locks are zero. Original-server log copies,
+both execution histories and reviewed source snapshots remain separate. No root
+lock residue or owned native media/tools remains; scratch evidence is retained
+and excluded from PR scope.
+
+Latest-source Linux full process execution, full pytest/mandatory nested gate/
+mutation suite/current uncommitted CI, general old-ffprobe MP4/large media/live
+provider/operational lifecycle, excluded clip/readout/export and whole RT-10
+acceptance remain unexecuted or declined as documented above. #405 stays explicitly
+pending. Final authored delta is six test/document files, separate from56 automatic
+upstream paths (62 working-tree paths total). Final state is **IN_PROGRESS · Refs
+#297 (RT-10(b))**, pending uncommitted merge with empty index; no commit/push/PR
+mutation. The user receives the result before any integration publication.

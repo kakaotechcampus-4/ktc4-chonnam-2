@@ -89,6 +89,11 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     openai_module.OpenAI = openai_factory
     openai_module.APIError = _ApiError
     openai_module.BadRequestError = _BadRequest
+    openai_module.LengthFinishReasonError = type("LengthFinishReasonError", (Exception,), {})
+    openai_module.ContentFilterFinishReasonError = type(
+        "ContentFilterFinishReasonError", (Exception,), {}
+    )
+    openai_module.APITimeoutError = type("APITimeoutError", (_ApiError,), {})
     original = importlib.import_module
 
     def fake_import(name: str) -> ModuleType:

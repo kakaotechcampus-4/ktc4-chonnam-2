@@ -35,7 +35,7 @@ def public(message):
     return message["body"]
 
 
-@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed"])
+@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed", "hint"])
 @pytest.mark.mysql_check("search_process", "separate_api_worker")
 def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, scenario):
     _, _, engine = async_db
@@ -43,9 +43,11 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
     root.mkdir()
     api_temp, worker_temp = tmp_path / "api-temp", tmp_path / "worker-temp"
     api_temp.mkdir(); worker_temp.mkdir()
-    video = tmp_path / "input.mp4"
+    # The integration fixture needs observed frame coverage on Ubuntu ffprobe 6
+    # as well as newer Windows builds. Recording's strict tail policy stays real.
+    video = tmp_path / "input.avi"
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
-        "color=c=red:s=64x48:r=10:d=1", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(video)],
+        "color=c=red:s=64x48:r=10:d=1", "-c:v", "mpeg4", "-pix_fmt", "yuv420p", str(video)],
         check=True, capture_output=True, timeout=30)
     values = {"DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(root), "DAESINGO_RUNTIME_API_TEMP_ROOT": str(api_temp),
@@ -67,9 +69,9 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
         local.send(("upload", f"/cases/{identity}/sources", str(video))); uploaded = public(receive(local))
         local.send(("POST", f"/cases/{identity}/commands", {"case_id": identity,
             "expected_case_rev": uploaded["case_view"]["case_rev"],
-            "kind": "START_ANALYSIS", "payload": {"description": ""}}))
+            "kind": "START_ANALYSIS", "payload": {"description": "red signal" if scenario == "hint" else ""}}))
         accepted = public(receive(local))
-        assert accepted["case_view"]["running_jobs"][0]["kind"] == "COARSE_SEARCH"
+        assert accepted["case_view"]["running_jobs"][0]["kind"] == ("HINT_EXTRACT" if scenario == "hint" else "COARSE_SEARCH")
         def run_worker(kind):
             incoming, outgoing = context.Pipe()
             child = context.Process(target=worker_peer, args=(outgoing, str(env_file), scenario, kind))
@@ -78,7 +80,17 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
             incoming.close(); child.join(20)
             assert child.exitcode == 0 and not child.is_alive()
             assert result["pid"] not in {os.getpid(), api_pid}
-            assert result["http_calls"] == 1 and result["pool_checkedout"] == 0
+            assert result["http_calls"] == 1 and result["pool_checkedout"] == 0, result
+            failed = scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY"
+            assert result["terminals"] == [{"status": "FAILED" if failed else "SUCCEEDED",
+                "failure_kind": "SEARCH_PROVIDER_ERROR" if failed else None}], result
+        if scenario == "hint":
+            run_worker("HINT_EXTRACT")
+            local.send(("GET", f"/cases/{identity}/view", None))
+            hinted = public(receive(local))
+            assert [job["kind"] for job in hinted["running_jobs"]] == ["COARSE_SEARCH"]
+            assert hinted["hints"]["vehicle"] == "white car"
+            assert hinted["hints"]["situation"] == "red signal"
         run_worker("COARSE_SEARCH")
         local.send(("GET", f"/cases/{identity}/view", None)); view = public(receive(local))
         assert not view["running_jobs"]
@@ -98,9 +110,10 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
         with engine.begin() as conn:
             rows = conn.exec_driver_sql("SELECT execution_id,kind,status,produced,case_applied_at FROM job_execution ORDER BY queued_at").mappings().all()
             assert all(row["case_applied_at"] is not None for row in rows)
-            assert rows[0]["status"] == ("FAILED" if scenario == "failed" else "SUCCEEDED")
+            coarse, = [row for row in rows if row["kind"] == "COARSE_SEARCH"]
+            assert coarse["status"] == ("FAILED" if scenario == "failed" else "SUCCEEDED")
             import json
-            refs = json.loads(rows[0]["produced"]) if isinstance(rows[0]["produced"], str) else rows[0]["produced"]
+            refs = json.loads(coarse["produced"]) if isinstance(coarse["produced"], str) else coarse["produced"]
             payload = ProducedReader()(conn, "COARSE_SEARCH", tuple(refs))
             assert payload["analysis_run"]["outcome"] == {"partial": "PARTIAL", "failed": "FAILED"}.get(scenario, "SUCCEEDED")
             if scenario == "fine_failed": assert rows[-1]["status"] == "FAILED"

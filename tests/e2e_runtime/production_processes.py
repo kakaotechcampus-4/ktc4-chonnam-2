@@ -22,8 +22,9 @@ def api_peer(pipe, env_file):
                 method, path, payload = message
                 if method == "upload":
                     from pathlib import Path
-                    response = client.post(path, files={"file": ("20260620_141956_EVT_1.mp4",
-                        Path(payload).read_bytes(), "video/mp4")})
+                    source = Path(payload)
+                    response = client.post(path, files={"file": ("20260620_141956_EVT_1" + source.suffix,
+                        source.read_bytes(), "video/x-msvideo")})
                 else:
                     response = client.request(method, path, json=payload) if payload is not None else client.request(method, path)
                 pipe.send({"status": response.status_code, "body": response.json()})
@@ -31,18 +32,6 @@ def api_peer(pipe, env_file):
         import traceback
         pipe.send({"error": traceback.format_exc()})
     finally: pipe.close()
-
-
-class ConfirmedPolicyPort:
-    """Explicit test port while #403 is absent; no production fallback taxonomy."""
-    def failure_kind_for_run(self, run):
-        return "SEARCH_PROVIDER_ERROR" if run.outcome == "FAILED" else None
-    def failure_kind_for_intent(self, result):
-        raise AssertionError("HINT acceptance is outside this process scenario")
-    def failure_kind_for_error(self, error):
-        from daesingo.search.smoke_errors import SmokeProviderError
-        if not isinstance(error, SmokeProviderError): raise AssertionError("unexpected capability failure") from error
-        return "SEARCH_PROVIDER_ERROR"
 
 
 def worker_peer(pipe, env_file, scenario, kind):
@@ -67,7 +56,10 @@ def worker_peer(pipe, env_file, scenario, kind):
             calls.append(request)
             if scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY":
                 return httpx.Response(500, json={"error": {"message": "offline failure"}})
-            if kind == "COARSE_SEARCH":
+            if kind == "HINT_EXTRACT":
+                content = {"time_hint": None, "vehicle_hint": "white car", "situation_hint": "red signal",
+                    "location_hint": None, "correction_target": None, "confidence": "high", "reasoning": "offline"}
+            elif kind == "COARSE_SEARCH":
                 candidates = [{"event_type": "SIGNAL", "span": {"start_sec": .1, "end_sec": .8},
                     "at_sec": .5, "observed": ["red signal"], "score": .9}]
                 if scenario == "partial":
@@ -87,17 +79,20 @@ def worker_peer(pipe, env_file, scenario, kind):
         original = openai.OpenAI
         with httpx.Client(transport=httpx.MockTransport(respond)) as client:
             with patch.object(openai, "OpenAI", lambda **kw: original(http_client=client, **kw)):
-                registry = compose_search_registry(engine=engine, startup=startup, failures=ConfirmedPolicyPort())
+                registry = compose_search_registry(engine=engine, startup=startup)
                 stop = Event()
+                terminals = []
                 def invoke(ctx):
                     assert ctx.kind == kind
                     result = registry.dispatch(ctx)
+                    terminals.append({"status": result.status, "failure_kind": result.failure_kind})
                     stop.set()
                     return result
                 loop = compose_worker(engine=engine, startup=startup, registry=type("Dispatch", (),
                     {"dispatch": staticmethod(invoke)})(), stop=stop, reflector=StoredCaseReflector(startup=startup))
                 loop.run()
-        pipe.send({"pid": os.getpid(), "http_calls": len(calls), "pool_checkedout": engine.pool.checkedout()})
+        pipe.send({"pid": os.getpid(), "http_calls": len(calls), "pool_checkedout": engine.pool.checkedout(),
+                   "terminals": terminals})
     except BaseException:
         import traceback
         pipe.send({"error": traceback.format_exc()})

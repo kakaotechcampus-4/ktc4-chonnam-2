@@ -65,7 +65,7 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
   const { container, getByRole, getByText, findByText } = render(<ApiFlow api={api} />)
 
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
-  await findByText('올리기 완료')
+  await findByText(/^업로드 완료/)
   expect(m.createCase).toHaveBeenCalledOnce()
   expect(m.uploadSource).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'a.mp4' }))
   expect(m.sendCommand).not.toHaveBeenCalled() // 고르는 것만으로 분석이 시작되지 않는다
@@ -85,10 +85,10 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   const input = container.querySelector('input[type=file]')!
 
   fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
-  await findByText('올리는 중')
+  await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
-  await findByText('올리기 완료')
+  await findByText(/^업로드 완료/)
 
   expect(m.uploadSource).toHaveBeenCalledOnce()
   expect(queryByText(/b\.mp4/)).toBeNull()
@@ -100,7 +100,7 @@ it('시작 전에 이어받은 case는 서버에 있는 영상을 개수로 보�
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText('이미 올린 영상 1개')
-  expect(getByText('올리기 완료')).toBeTruthy()
+  expect(getByText(/^업로드 완료/)).toBeTruthy()
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.uploadSource).not.toHaveBeenCalled()
@@ -158,4 +158,60 @@ it('command가 없는 알림 버튼(직접 입력류)은 보내지 않고 안내
   fireEvent.click(await findByText('번호판 직접 입력'))
   await findByText('이 동작은 아직 연결되지 않았어요.')
   expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모습 복사본에서 자동차가 출발한다', async () => {
+  const { m, api } = setup()
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { container, getByText, findByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  await findByText(/^업로드 완료/)
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  await findByText('분석 중단')
+  const ghost = container.querySelector('.rs-upload-exit')!
+  expect(ghost.getAttribute('aria-hidden')).toBe('true')
+  expect(ghost.querySelector('.rs-depart')).not.toBeNull()
+  expect(container.querySelector('.rs.flow.rs-push-in')).not.toBeNull()
+  await waitFor(() => expect(container.querySelector('.rs-upload-exit')).toBeNull(), { timeout: 3000 })
+})
+
+it('진행에서 결과로 넘어오는 순간에만 자동차가 도착한다 — 이어받아 바로 결과면 제자리', async () => {
+  const READY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const first = setup({ get: READY })
+  first.m.getView.mockResolvedValueOnce(ok(SEARCHING))
+  const a = render(<ApiFlow api={first.api} caseId="c1" />)
+  await a.findByText('분석 중단')
+  await waitFor(() => expect(a.container.querySelector('.res-bgcar.is-arriving')).not.toBeNull(), { timeout: 5000 })
+  cleanup()
+
+  const again = setup({ get: READY })
+  const b = render(<ApiFlow api={again.api} caseId="c1" />)
+  await waitFor(() => expect(b.container.querySelector('.res-bgcar')).not.toBeNull())
+  expect(b.container.querySelector('.res-bgcar.is-arriving')).toBeNull()
+})
+
+it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「다시 찾기」(RETRY_SEARCH)와 「새 신고」를 둔다', async () => {
+  const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
+  const { m, api } = setup({ get: EMPTY })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { container, findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(container.querySelector('.rs.state-page.noresult')).not.toBeNull()
+  expect(getAllByText('새 신고')).toHaveLength(2) // 헤더 + 본문 버튼
+  // case가 실은 동작 중 보낼 수 있는 것(RETRY_SEARCH)만 버튼으로 — 같은 조건으로 다시 찾는다
+  const retry = EMPTY.notices.find((n) => n.actions.includes('RETRY_SEARCH'))
+  if (retry) {
+    fireEvent.click(getAllByText('다시 찾기')[0])
+    await waitFor(() =>
+      expect(m.sendCommand).toHaveBeenCalledWith('c1', EMPTY.case_rev, { kind: 'RUN_NOTICE_ACTION', payload: { notice_code: retry.code, action: 'RETRY_SEARCH' } }),
+    )
+  }
+  expect(retry).toBeDefined()
+  cleanup()
+
+  const s = setup({ get: STOPPED })
+  const r = render(<ApiFlow api={s.api} caseId="c1" />)
+  await r.findByText('다시 찾기')
+  expect(r.container.querySelector('.rs.state-page.stopped .state-head')).not.toBeNull()
+  expect(r.container.querySelector('.panel-t, .page-title')).toBeNull()
 })
