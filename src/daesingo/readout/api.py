@@ -377,7 +377,7 @@ def _abstain_reason(association, best, disagreed):
         # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
         if best.text and not re.search(r"[가-힣]", best.text):
             return "OCR_LOW_CONFIDENCE"
-        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 형식이 온전하지 않은 값은 번호판 일부다.
+        # 황색 2줄 번호판의 아랫줄(`바1234`)처럼 형식이 온전하지 않은 값은 번호판 일부다.
         # 관찰값은 보존하지만 자동 확정하지 않는다.
         if not is_full_plate(best.text):
             return "PARTIAL_PLATE_READ"

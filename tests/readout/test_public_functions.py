@@ -672,7 +672,7 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
             plate = read(text)
             self.assertEqual((plate.observation.value, plate.observation.status), (value, "OK"))
         # 일부만 읽힘 · 고시에 없는 한글 · 지역명+비사업용 · 없는 지역명 · 운수사업용 3자리 · 0으로 시작
-        for text in ("바5215", "경기12가", "12쿠3456", "서울12가3456", "한국12바3456",
+        for text in ("바1234", "경기12가", "12쿠3456", "서울12가3456", "한국12바3456",
                      "123바4567", "012가3456"):
             plate = read(text)
             self.assertEqual(plate.abstain_reason, "PARTIAL_PLATE_READ", text)
