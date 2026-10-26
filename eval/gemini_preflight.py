@@ -10,6 +10,8 @@ from eval import manifests_io, paths
 from eval.runners.errors import RunnerPreflightError
 
 MINIMUM_SDK = (1, 40, 0)
+# 부분 데이터로 유료 호출을 시작하지 않게 manifest별 클립 수를 고정한다.
+EXPECTED_CLIPS = {"b_youtube": 123, "ctier2": 149}
 
 
 class PreflightError(RunnerPreflightError):
@@ -34,8 +36,11 @@ class PreparedEval:
 def prepare(scope: dict[str, str]) -> PreparedEval:
     problems: list[str] = []
     env = load_env_file()
-    if scope.get("manifest") != "b_youtube":
-        problems.append("search:gemini-coarse-p3 supports manifest=b_youtube only")
+    manifest_name = scope.get("manifest", "")
+    if manifest_name not in EXPECTED_CLIPS:
+        problems.append(
+            "search:gemini-coarse-p3 supports manifest=%s only" % ", ".join(EXPECTED_CLIPS)
+        )
     if scope.get("stage") != "candidate":
         problems.append("search:gemini-coarse-p3 supports stage=candidate only")
 
@@ -47,10 +52,12 @@ def prepare(scope: dict[str, str]) -> PreparedEval:
     if ffprobe is None:
         problems.append("ffprobe is not installed or not on PATH")
 
-    manifest = manifests_io.load_clips("b_youtube")
-    clips = manifest.get("clips", [])
-    if len(clips) != 123:
-        problems.append(f"b_youtube must contain 123 clips, found {len(clips)}")
+    expected_clips = EXPECTED_CLIPS.get(manifest_name)
+    clips = manifests_io.load_clips(manifest_name).get("clips", []) if expected_clips else []
+    if expected_clips and len(clips) != expected_clips:
+        problems.append(
+            f"{manifest_name} must contain {expected_clips} clips, found {len(clips)}"
+        )
     data_root = env.get("DAESINGO_EVAL_DATA_ROOT", "").strip()
     root = Path(data_root) if data_root else Path(paths.REPO_ROOT)
     prepared: list[PreparedClip] = []
