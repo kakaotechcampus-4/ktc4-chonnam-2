@@ -13,6 +13,7 @@ from .errors import (
     UnknownCandidateError,
 )
 from .execution import DeadlineExceededError, RunDeadline
+from .failure_kind import provider_issue_code
 from .ledger import SearchLedger, UsageRecord
 from .media import (
     ByteSizeMismatchError,
@@ -141,7 +142,7 @@ def search_coarse(
                 )
             except Exception as error:
                 failure = _issue(
-                    FailureKind.INFRA, "PROVIDER_CALL_FAILED", scope, error
+                    FailureKind.INFRA, provider_issue_code(error), scope, error
                 )
             else:
                 if usage is None:

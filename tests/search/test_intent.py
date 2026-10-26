@@ -5,10 +5,17 @@ import sys
 from dataclasses import dataclass, field
 from types import ModuleType, SimpleNamespace
 
+import httpx
+import openai
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from daesingo.search import IntentFailureKind, IntentHintStatus
+from daesingo.search import (
+    IntentFailureKind,
+    IntentHintStatus,
+    SearchFailureKind,
+    failure_kind_for_intent,
+)
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import DeadlineExceededError
 from daesingo.search.intent import (
@@ -180,16 +187,48 @@ def test_failures_never_raise_and_are_classified(
     assert result.time_hint is None
 
 
-def test_slow_call_hitting_the_cap_is_deadline_exceeded() -> None:
-    clock = iter([0.0, 61.0, 61.0])
-    provider = _FakeProvider(
-        raises=_caused(ProviderApiError("timed out"), RuntimeError())
+@pytest.mark.parametrize(
+    ("status", "burn_sec", "kind"),
+    [
+        (None, 61.0, SearchFailureKind.DEADLINE_EXCEEDED),
+        (None, 1.0, SearchFailureKind.PROVIDER_ERROR),
+        (401, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (403, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (404, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (503, 61.0, SearchFailureKind.PROVIDER_ERROR),
+    ],
+    ids=["timeout-spent", "timeout-left", "401", "403", "404", "503"],
+)
+def test_real_sdk_only_timeout_with_spent_budget_is_deadline_exceeded(
+    monkeypatch: pytest.MonkeyPatch,
+    status: int | None,
+    burn_sec: float,
+    kind: SearchFailureKind,
+) -> None:
+    """예산을 다 써도 timeout이 아니면 deadline이 아니다(#297 · HINT_EXTRACT)."""
+    now = [0.0]
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        now[0] += burn_sec
+        if status is None:
+            raise httpx.ReadTimeout("timed out", request=request)
+        return httpx.Response(status, json={"error": {"message": "denied"}})
+
+    original = openai.OpenAI
+    client = httpx.Client(transport=httpx.MockTransport(respond))
+    monkeypatch.setattr(
+        openai, "OpenAI", lambda **kwargs: original(http_client=client, **kwargs)
     )
-    extractor = IntentHintExtractor(provider, GeminiSearchConfig(), lambda: next(clock))
+    config = GeminiSearchConfig(max_retries=0)
+    try:
+        result = IntentHintExtractor(
+            GeminiProvider("local-test-key", config), config, lambda: now[0]
+        ).extract("문장", case_id="c1")
+    finally:
+        client.close()
 
-    result = extractor.extract("문장", case_id="c1")
-
-    assert result.failure_kind is IntentFailureKind.DEADLINE_EXCEEDED
+    assert result.status is IntentHintStatus.FAILED
+    assert failure_kind_for_intent(result) is kind
 
 
 def test_truncated_response_is_response_invalid() -> None:
@@ -241,6 +280,7 @@ def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effor
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010
     setattr(mod, "APIError", type("APIError", (Exception,), {}))  # noqa: B010
     setattr(mod, "BadRequestError", type("BadRequestError", (Exception,), {}))  # noqa: B010
+    setattr(mod, "APITimeoutError", type("APITimeoutError", (Exception,), {}))  # noqa: B010
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",

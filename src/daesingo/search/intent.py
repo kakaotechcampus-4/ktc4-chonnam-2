@@ -134,7 +134,7 @@ class IntentHintExtractor:
         except Exception as error:  # noqa: BLE001 — 어떤 실패도 intake를 막지 않는다
             return IntentHintResult(
                 IntentHintStatus.FAILED,
-                failure_kind=_failure_kind(error, invocation.deadline),
+                failure_kind=_failure_kind(error),
             )
 
         parsed = result.response
@@ -178,11 +178,12 @@ class IntentHintExtractor:
         )
 
 
-def _failure_kind(error: Exception, deadline: RunDeadline) -> IntentFailureKind:
+def _failure_kind(error: Exception) -> IntentFailureKind:
     from openai import ContentFilterFinishReasonError, LengthFinishReasonError
 
-    # 한 번의 느린 호출이 상한에 걸리면 SDK timeout(APIError)으로 끝나므로 남은 예산으로 판단한다.
-    if isinstance(error, DeadlineExceededError) or deadline.remaining_ms() <= 0:
+    # 예산을 다 쓴 SDK timeout은 provider가 DeadlineExceededError로 올린다.
+    # 남은 예산만으로 판단하면 인증 · 권한 오류까지 deadline으로 잘못 분류된다.
+    if isinstance(error, DeadlineExceededError):
         return IntentFailureKind.DEADLINE_EXCEEDED
     # 호출은 됐지만 응답이 잘리거나 걸러져 쓸 수 없다.
     if isinstance(error, LengthFinishReasonError | ContentFilterFinishReasonError):
