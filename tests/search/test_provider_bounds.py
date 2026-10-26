@@ -11,8 +11,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 
+import httpx
+import openai
 import pytest
 
+from daesingo.search import SearchFailureKind, failure_kind_for_error
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import DeadlineExceededError, RunDeadline
 from daesingo.search.media import PreparedMedia
@@ -26,6 +29,7 @@ from daesingo.search.runs import ContractRef
 from daesingo.search.schemas import CoarseResponse
 from daesingo.search.scope import VisualEventType
 from daesingo.search.sources import ResolvedAnalysisSource
+from daesingo.search.smoke_errors import ProviderApiError
 from tests.search._openai_fake import RawResponseFake
 
 # ---------------------------------------------------------------------------
@@ -50,6 +54,10 @@ class _FakeLengthFinishReasonError(Exception):
 
 
 class _FakeContentFilterFinishReasonError(Exception):
+    pass
+
+
+class _FakeTimeoutError(_FakeApiError):
     pass
 
 
@@ -99,6 +107,7 @@ def _make_openai_module(factory: Callable[..., object]) -> ModuleType:
     setattr(mod, "BadRequestError", _FakeBadRequestError)  # noqa: B010
     setattr(mod, "LengthFinishReasonError", _FakeLengthFinishReasonError)  # noqa: B010
     setattr(mod, "ContentFilterFinishReasonError", _FakeContentFilterFinishReasonError)  # noqa: B010
+    setattr(mod, "APITimeoutError", _FakeTimeoutError)  # noqa: B010
     return mod
 
 
@@ -517,6 +526,108 @@ def test_retry_stops_when_run_deadline_exhausted_between_attempts(
         _ = provider.search_coarse(request)
 
     assert len(call_counts) == 1  # exhausted after the first attempt → no retry
+
+
+@pytest.mark.parametrize(
+    ("burn_sec", "expected"),
+    [(0.2, DeadlineExceededError), (0.01, ProviderApiError)],
+    ids=["budget-spent", "budget-left"],
+)
+def test_sdk_timeout_after_budget_is_spent_is_deadline_exceeded(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    burn_sec: float,
+    expected: type[Exception],
+) -> None:
+    """SDK timeout은 남은 예산으로 잡힌다. 예산이 다 쓰였으면 provider 오류가 아니다(#297)."""
+    now = [0.0]
+
+    class _TimingOut(RawResponseFake):
+        def parse(self, **_kwargs: object) -> _Completion:
+            now[0] += burn_sec
+            raise _FakeTimeoutError("Request timed out.")
+
+    mod = _make_openai_module(lambda **_kw: _FakeClient(_Chat(_TimingOut())))
+    original = importlib.import_module
+    monkeypatch.setattr(
+        "daesingo.search.provider.importlib.import_module",
+        lambda name: mod if name == "openai" else original(name),
+    )
+    monkeypatch.setitem(sys.modules, "openai", mod)
+    media_file = tmp_path / "clip.mp4"
+    media_file.write_bytes(b"bytes")
+    deadline = RunDeadline(lambda: now[0], budget_ms=100)
+    request = CoarseRequest(
+        _source(),
+        (VisualEventType.SIGNAL,),
+        media=_make_media(media_file),
+        timeout_sec=deadline.remaining_sec(),
+        deadline=deadline,
+    )
+
+    with pytest.raises(expected):
+        _ = GeminiProvider("key", GeminiSearchConfig(max_retries=0)).search_coarse(
+            request
+        )
+
+
+@pytest.mark.parametrize(
+    ("status", "burn_sec", "expected"),
+    [
+        (None, 0.2, SearchFailureKind.DEADLINE_EXCEEDED),
+        (None, 0.01, SearchFailureKind.PROVIDER_ERROR),
+        (401, 0.2, SearchFailureKind.PROVIDER_CONFIG),
+        (403, 0.2, SearchFailureKind.PROVIDER_CONFIG),
+        (404, 0.2, SearchFailureKind.PROVIDER_CONFIG),
+    ],
+    ids=["timeout-spent", "timeout-left", "401-spent", "403-spent", "404-spent"],
+)
+def test_real_sdk_only_timeout_turns_into_deadline_when_budget_is_spent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    status: int | None,
+    burn_sec: float,
+    expected: SearchFailureKind,
+) -> None:
+    """예산이 다 쓰여도 인증 · 권한 · 모델 경로 오류는 provider config 오류다(#297)."""
+    now = [0.0]
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        now[0] += burn_sec
+        if status is None:
+            raise httpx.ReadTimeout("timed out", request=request)
+        return httpx.Response(status, json={"error": {"message": "denied"}})
+
+    original = openai.OpenAI
+    client = httpx.Client(transport=httpx.MockTransport(respond))
+    monkeypatch.setattr(
+        openai, "OpenAI", lambda **kwargs: original(http_client=client, **kwargs)
+    )
+    media_file = tmp_path / "clip.mp4"
+    media_file.write_bytes(b"bytes")
+    deadline = RunDeadline(lambda: now[0], budget_ms=100)
+    request = CoarseRequest(
+        _source(),
+        (VisualEventType.SIGNAL,),
+        media=_make_media(media_file),
+        timeout_sec=deadline.remaining_sec(),
+        deadline=deadline,
+    )
+
+    try:
+        with pytest.raises(Exception) as caught:
+            _ = GeminiProvider(
+                "local-test-key", GeminiSearchConfig(max_retries=0)
+            ).search_coarse(request)
+    finally:
+        client.close()
+
+    assert failure_kind_for_error(caught.value) is expected
+    if status is not None:
+        # 원래 SDK 예외가 cause로 남아야 Runtime이 status를 볼 수 있다.
+        assert isinstance(caught.value, ProviderApiError)
+        assert isinstance(caught.value.__cause__, openai.APIStatusError)
+        assert caught.value.__cause__.status_code == status
 
 
 def test_retry_attempt_timeout_is_what_remains_of_run_budget(

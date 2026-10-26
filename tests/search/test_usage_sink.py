@@ -50,6 +50,10 @@ class _FakeBadRequestError(_FakeApiError):
     pass
 
 
+class _FakeTimeoutError(_FakeApiError):
+    pass
+
+
 _NO_PARSED = object()
 
 
@@ -86,6 +90,7 @@ def _provider(
         mod, "ContentFilterFinishReasonError",
         type("ContentFilterFinishReasonError", (Exception,), {}),
     )
+    setattr(mod, "APITimeoutError", _FakeTimeoutError)  # noqa: B010
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",

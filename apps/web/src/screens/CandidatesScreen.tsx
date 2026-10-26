@@ -11,14 +11,21 @@ import { Panel } from '../components/Panel'
 //
 // onSelect가 있으면 기준 후보가 아닌 카드 아래에 「이 장면으로 다시 준비」를 단다
 // (§8-1, SELECT_OTHER_CANDIDATE #216). 기준 후보는 버튼 없이 같이 놓아 비교 기준이 된다.
-export function CandidatesScreen(props: { view: CaseView; onSelect?: (candidateId: string) => void }): JSX.Element {
+export function CandidatesScreen(props: {
+  view: CaseView
+  onSelect?: (candidateId: string) => void
+  /** 기준 후보 태그 문구 — 신고자료가 없는 화면에서 바꾼다(CandidateCard) */
+  selectedLabel?: string
+}): JSX.Element {
   const { onSelect } = props
   return (
     <Panel title="찾은 장면">
       <HintRecall hints={props.view.hints} description={props.view.description} />
       <div className="cands">
         {props.view.candidates.map((c, i) => {
-          const card = <CandidateCard key={c.candidate_id} candidate={c} ordinal={i + 1} />
+          const card = (
+            <CandidateCard key={c.candidate_id} candidate={c} ordinal={i + 1} selectedLabel={props.selectedLabel} />
+          )
           if (!onSelect) return card
           return (
             <div key={c.candidate_id} className="cand-col">
