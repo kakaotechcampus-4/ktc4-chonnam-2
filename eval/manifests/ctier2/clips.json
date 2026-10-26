@@ -910,8 +910,8 @@
       "clip_id": "CT2_0091_C00",
       "source_video_id": "CT2_0091",
       "start_sec": 0,
-      "end_sec": 60.466667,
-      "duration_sec": 60.466667,
+      "end_sec": 60.733333,
+      "duration_sec": 60.733333,
       "file_path": "eval/datasets/ctier2/clips/CT2_0091_C00.mp4",
       "sha256": "ac6548e7cbdfd0177b1a0f3650e53c1443c649d34943f94d55f2a51ba1d13829",
       "split": "DEV"
