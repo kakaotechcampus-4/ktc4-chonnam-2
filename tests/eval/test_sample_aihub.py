@@ -127,7 +127,7 @@ def test_target_bbox_requires_the_coordinate_field():
     assert sample_aihub.pick_target_bbox(anns, "SIGNAL") is None
 
 
-# --- 잠근 평가셋: 이미 쓴 시퀀스를 빼고 뽑는다 (W12 E1) ------------------
+# --- 추가 샘플: 이미 쓴 시퀀스를 빼고 뽑는다 ------------------------------
 
 def _fake_label_zip(path, per_type):
     """유형마다 시퀀스 per_type 개, 시퀀스마다 프레임 1장짜리 라벨 zip."""
@@ -170,16 +170,15 @@ def test_split_and_versions_are_recorded(tmp_path):
     assert seqs["meta"]["sampling"]["excluded_count"] == 1
 
 
-def test_committed_locked_a_tier_does_not_overlap_dev():
-    """잠근 A tier 는 DEV(a_aihub)와 시퀀스 하나도 겹치지 않는다."""
-    dev = {s["sequence_id"] for s in manifests_io.load_sequences("a_aihub")["sequences"]}
-    locked = manifests_io.load_sequences("a_aihub_locked")
-    ids = [s["sequence_id"] for s in locked["sequences"]]
+def test_committed_extra_a_tier_does_not_overlap_first_sample():
+    """추가 A tier 는 첫 샘플(a_aihub)과 시퀀스 하나도 겹치지 않는다."""
+    first = {s["sequence_id"] for s in manifests_io.load_sequences("a_aihub")["sequences"]}
+    extra = manifests_io.load_sequences("a_aihub_extra")
+    ids = [s["sequence_id"] for s in extra["sequences"]]
 
     assert len(set(ids)) == len(ids), "sequence_id 중복"
-    assert not (dev & set(ids))
-    assert {s["split"] for s in locked["sequences"]} == {"LOCKED"}
-    assert "a_aihub" in locked["meta"]["sampling"]["excluded_manifests"]
+    assert not (first & set(ids))
+    assert "a_aihub" in extra["meta"]["sampling"]["excluded_manifests"]
 
-    gt = manifests_io.load_gt("a_aihub_locked", "classification")
+    gt = manifests_io.load_gt("a_aihub_extra", "classification")
     assert {i["sequence_id"] for i in gt["items"]} == set(ids)
