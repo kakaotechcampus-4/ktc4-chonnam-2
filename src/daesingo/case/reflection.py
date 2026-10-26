@@ -129,6 +129,10 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
         case.record_candidate_search_failure(job_id=outcome.job_id)
         return
     case.receive_candidates(candidates_from_events(content["candidate_events"]), job_id=outcome.job_id)
+    # 가장 유력한 후보를 자동으로 고르고 첫 Fine을 발주한다(W12:C2, #168 결정 1). rank=1이 없거나 stale이면 고르지
+    # 않고 CANDIDATE_REVIEW에 머문다(`select_top_ranked`).
+    if case.select_top_ranked() is not None:
+        observation.issue_fine_for_selected(case)
 
 
 def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:

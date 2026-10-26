@@ -3,14 +3,12 @@
 선택된 후보 → `FINE_VERIFY` → (`NOT_OBSERVED`가 아니면) `INCIDENT_CLIP_BUILD` → `PLATE_READ` ·
 `OVERLAY_TIME_READ`(같은 clip). 각 발주는 입력(후보 · 세대 · span · clip ref)을 case state에 고정하고, `scope_ref`는
 그 세대 `COARSE_SEARCH` JobRecord의 것을 싣는다(§4-1). aggregate 수준 함수만 둔다 — load · save와 append된
-JobRecord 반환은 호출자(reflection)가 한다.
+JobRecord 반환은 호출자(reflection)가 한다. 첫 Fine은 Coarse T2가 rank=1을 자동 선택한 뒤 `issue_fine_for_selected`로
+발주한다(§4-5, `reflection._apply_coarse_search`).
 
 ## 여기 없는 것
 
 - capability 호출 · clip 본체 보관. handler(Runtime)와 recording 몫이다.
-- Coarse T2의 rank=1 자동 선택 · 첫 Fine 발주 배선(§4-5). 선택된 case는 CaseView 조립에 adapter가 필요해, composition에
-  `StoredObservationAdapter`(`adapter_factory`)를 꽂는 단계와 함께 연다 — 그 전에 열면 API · Worker가
-  `AdapterNotAttached`로 멈춘다. `issue_fine_for_selected`가 그때 부를 함수다.
 - 다른 후보 선택 뒤 관찰 재사용(§4-6). 후보별 clip 결과 위치와 함께 다음 단계에서 붙인다.
 """
 from __future__ import annotations
