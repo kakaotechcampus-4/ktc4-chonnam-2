@@ -241,6 +241,11 @@ def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effor
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010
     setattr(mod, "APIError", type("APIError", (Exception,), {}))  # noqa: B010
     setattr(mod, "BadRequestError", type("BadRequestError", (Exception,), {}))  # noqa: B010
+    setattr(mod, "LengthFinishReasonError", type("LengthFinishReasonError", (Exception,), {}))  # noqa: B010
+    setattr(  # noqa: B010
+        mod, "ContentFilterFinishReasonError",
+        type("ContentFilterFinishReasonError", (Exception,), {}),
+    )
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",

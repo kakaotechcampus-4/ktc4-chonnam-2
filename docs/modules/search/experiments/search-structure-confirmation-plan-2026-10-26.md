@@ -293,7 +293,8 @@ Flash Fine은 이 3건에서 **차로 변경을 보고 점선이라 기각**했�
 
 **운영 경로 결함 발견.** P0 2회차 첫 시도가 중간에 멈췄다. 프록시가 non-streaming 응답을 약 2,000토큰에서 잘랐고(출력 1,986, 그중 reasoning 1,530), SDK가 `LengthFinishReasonError`를 냈다.
 `GeminiProvider._call`(`src/daesingo/search/provider.py`)은 `BadRequestError`·`ValidationError`·`APIError`만 Search 예외로 바꾸므로, 이 예외는 그대로 밖으로 나간다.
-실험 스크립트의 streaming 경로(`max_tokens=16384`)에서는 같은 조건이 끝까지 돌았다. 수정은 이 실험 범위 밖이다.
+실험 스크립트의 streaming 경로(`max_tokens=16384`)에서는 같은 조건이 끝까지 돌았다.
+**같은 PR에서 수정했다:** `GeminiProvider`가 `LengthFinishReasonError`·`ContentFilterFinishReasonError`를 재시도 없이 `ProviderPayloadError`로 바꾼다(`tests/search/test_provider_bounds.py`). 응답이 잘리는 원인(프록시 non-streaming 상한)은 그대로이며, 운영 호출을 streaming으로 바꿀지는 별도 판단이다.
 
 ## 7. 현재 가장 유력한 구조 (2026-10-26 판단, 결정 아님)
 

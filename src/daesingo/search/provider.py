@@ -418,7 +418,12 @@ class GeminiProvider:
                 )
             return ProviderResult(parsed, token_usage, latency_ms)
 
-        from openai import APIError, BadRequestError
+        from openai import (
+            APIError,
+            BadRequestError,
+            ContentFilterFinishReasonError,
+            LengthFinishReasonError,
+        )
 
         try:
             return call_with_retry(
@@ -428,6 +433,9 @@ class GeminiProvider:
             )
         except (BadRequestError, ValidationError) as error:
             raise ProviderPayloadError("provider rejected the request") from error
+        except (LengthFinishReasonError, ContentFilterFinishReasonError) as error:
+            # 프록시는 non-streaming 응답을 약 2,000토큰에서 자른다. 받은 응답을 쓸 수 없다.
+            raise ProviderPayloadError("provider response was cut off") from error
         except APIError as error:
             raise ProviderApiError("provider API error") from error
 

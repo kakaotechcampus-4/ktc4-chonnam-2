@@ -45,6 +45,14 @@ class _FakeBadRequestError(_FakeApiError):
     pass
 
 
+class _FakeLengthFinishReasonError(Exception):
+    pass
+
+
+class _FakeContentFilterFinishReasonError(Exception):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class _Msg:
     parsed: object
@@ -89,6 +97,8 @@ def _make_openai_module(factory: Callable[..., object]) -> ModuleType:
     setattr(mod, "OpenAI", factory)  # noqa: B010
     setattr(mod, "APIError", _FakeApiError)  # noqa: B010
     setattr(mod, "BadRequestError", _FakeBadRequestError)  # noqa: B010
+    setattr(mod, "LengthFinishReasonError", _FakeLengthFinishReasonError)  # noqa: B010
+    setattr(mod, "ContentFilterFinishReasonError", _FakeContentFilterFinishReasonError)  # noqa: B010
     return mod
 
 
@@ -302,6 +312,30 @@ def test_non_retryable_error_calls_client_exactly_once(
     with pytest.raises(ProviderPayloadError):
         _ = provider.search_coarse(_coarse_request(media))
 
+    assert len(completions.calls) == 1  # not retried
+
+
+@pytest.mark.parametrize(
+    "cut_off",
+    [_FakeLengthFinishReasonError("length"), _FakeContentFilterFinishReasonError("filter")],
+)
+def test_cut_off_response_becomes_payload_error_without_retry(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, cut_off: Exception
+) -> None:
+    """프록시가 응답을 자르거나 거른 경우 SDK 예외가 Search 밖으로 새지 않는다."""
+    completions = _Completions(raises=cut_off)
+    _install_fake_openai(monkeypatch, completions)
+
+    media_file = tmp_path / "clip.mp4"
+    media_file.write_bytes(b"bytes")
+    provider = GeminiProvider("key", GeminiSearchConfig(max_retries=3))
+
+    from daesingo.search.smoke_errors import ProviderPayloadError
+
+    with pytest.raises(ProviderPayloadError) as caught:
+        _ = provider.search_coarse(_coarse_request(_make_media(media_file)))
+
+    assert caught.value.__cause__ is cut_off
     assert len(completions.calls) == 1  # not retried
 
 
