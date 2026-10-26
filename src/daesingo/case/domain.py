@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 STAGES = (
@@ -89,6 +89,9 @@ class Candidate:
     # search `CandidateEvent.span.representative_ms`(그 후보 timeline revision 기준 상대 ms) 그대로.
     # CaseView `candidates[].marker_ms`의 원천이다(#184). case가 계산·보정하지 않는다.
     representative_ms: int | None = None
+    # search `CandidateEvent.span`(`timeline_id` · `timeline_revision` · `start_ms` · `end_ms`) snapshot. 관찰 job 입력의
+    # 구간 원천이다(`decisions/incident-clip-observation-input.md` §4-1). 이 필드 전에 받은 후보는 `None`.
+    span: dict[str, Any] | None = None
     # 저장된 상태에 있었지만 이 코드가 모르는 키(새 코드가 쓴 필드). 다시 저장할 때 그대로 쓴다 —
     # rollback한 옛 코드가 새 필드를 지우지 않게(`decisions/case-store-mysql.md` §4).
     extra: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -99,6 +102,9 @@ JOB_SETTLE_REASONS = ("REFLECTED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")
 
 # 「분석 진행」(`SEARCHING`)에서 사용자가 중단할 수 있는 job — `decisions/stop-analysis.md`.
 ANALYSIS_JOB_KINDS = ("HINT_EXTRACT", "COARSE_SEARCH")
+
+# case 대기 = 실행 상한 + 큐 대기 여유 — 단서 구조화 대기(`decisions/start-analysis.md` §3-5)와 같은 여유다.
+SEARCH_WAIT_QUEUE_MARGIN_SEC = 30.0
 
 
 @dataclass
@@ -160,6 +166,10 @@ class CaseAggregate:
     # 만들 입력이다(`decisions/start-analysis.md` §3-1). `video_stream_ref`는 등록 때 VIDEO가 정확히 하나였을 때만
     # 있다 — case가 여러 VIDEO 중 하나를 고르지 않는다. CaseView 비노출.
     sources: list[dict[str, Any]] = field(default_factory=list)
+
+    # 관찰 job의 고정 입력(`job_id` → 후보 · 세대 · span · clip ref). 발주할 때 남기고 고치지 않는다(append-only).
+    # handler는 `CaseStore.observation_input`으로 읽는다(`decisions/incident-clip-observation-input.md` §4-1). CaseView 비노출.
+    observation_inputs: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
@@ -295,12 +305,44 @@ class CaseAggregate:
     def analysis_stopped(self) -> bool:
         """`SEARCHING`이고, 기다리는 탐색 job이 없고, 가장 나중 탐색 job이 사용자 중단으로 끝났다. 저장하지 않고
         JobRecord와 정산 기록에서 계산한다 — 「이어서 찾기」로 새 job이 생기면 저절로 풀린다."""
+        return self._analysis_halt_reason() == "CANCELLED"
+
+    @property
+    def analysis_timed_out(self) -> bool:
+        """`analysis_stopped`와 같고, 가장 나중 탐색 job이 case 대기 timeout으로 끝났다(`decisions/case-wait-timeout.md`)."""
+        return self._analysis_halt_reason() == "STOPPED_WAITING"
+
+    def _analysis_halt_reason(self) -> str | None:
         if self.stage != "SEARCHING":
-            return False
+            return None
         records = [r for r in self.job_records if r["kind"] in ANALYSIS_JOB_KINDS]
         if not records or any(r["job_id"] not in self.settled_jobs for r in records):
-            return False
-        return self.settled_jobs[records[-1]["job_id"]] == "CANCELLED"
+            return None
+        return self.settled_jobs[records[-1]["job_id"]]
+
+    def wait_deadline(self, record: dict[str, Any]) -> datetime | None:
+        """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유(`decisions/case-wait-timeout.md`).
+        지금은 `COARSE_SEARCH`만 마감이 있다. 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`이고(#149 A안 —
+        단일 권위), scope를 모르면 마감을 지어내지 않는다(`None`)."""
+        if record["kind"] != "COARSE_SEARCH":
+            return None
+        scope = self.analysis_scopes.get(record.get("scope_ref") or "")
+        if scope is None:
+            return None
+        limit = scope["budget"]["max_latency_sec"] + SEARCH_WAIT_QUEUE_MARGIN_SEC
+        return datetime.fromisoformat(record["requested_at"]) + timedelta(seconds=limit)
+
+    def stop_waiting_expired(self, now: datetime) -> list[str]:
+        """마감이 지난 기다리던 job을 `STOPPED_WAITING`으로 정산하고 그 `job_id`를 돌려준다. 타이머는 없다 — case 행을
+        읽는 쪽(CaseView 조립 · command · T2 반영)이 부른다. 실행은 취소하지 않고(`timeout-fallback.md` 「진행 중인 Job은
+        강제 취소하지 않는다」) 사용자 요청이 아니라 `case_rev`도 올리지 않는다."""
+        expired = []
+        for record in self.waiting_job_records():
+            deadline = self.wait_deadline(record)
+            if deadline is not None and now >= deadline:
+                self.settle_job(record["job_id"], "STOPPED_WAITING")
+                expired.append(record["job_id"])
+        return expired
 
     def select_candidate(self, candidate_id: str) -> None:
         """후보 선택은 case 소유(ownership.md §6) — evidence는 참조만 하고 복사해 갖지 않는다.
@@ -404,6 +446,32 @@ class CaseAggregate:
             raise InvalidTransition(f"알 수 없는 candidate_id: {candidate_id}")
         if match.selected:
             raise InvalidTransition(f"이미 선택된 candidate_id다: {candidate_id}")
+        if self.preparing_selected_candidate():
+            raise InvalidTransition("선택 후보의 신고자료를 준비하는 중에는 다른 후보를 고를 수 없다(core-user-flow §8-1)")
+
+    def current_generation_job_id(self) -> str | None:
+        """현재 후보 목록 세대 표식 — 가장 나중 `REFLECTED` `COARSE_SEARCH`의 `job_id`(`observation-storage.md` §4-4)."""
+        reflected = [
+            r["job_id"]
+            for r in self.job_records
+            if r["kind"] == "COARSE_SEARCH" and self.settled_jobs.get(r["job_id"]) == "REFLECTED"
+        ]
+        return reflected[-1] if reflected else None
+
+    def preparing_selected_candidate(self) -> bool:
+        """선택 후보의 신고자료를 준비하는 중인가 — 선택 후보 · 현재 세대로 입력이 고정된 관찰 job 중 아직 결과를
+        기다리는 것이 있다(6.6순위 조건 1, `decisions/reselect-while-preparing.md`). 입력 없이 발주된 job(동기 · 데모
+        경로)은 보지 않는다."""
+        selected = next((c.candidate_id for c in self.candidates if c.selected), None)
+        generation = self.current_generation_job_id()
+        if selected is None or generation is None:
+            return False
+        return any(
+            (source := self.observation_inputs.get(r["job_id"])) is not None
+            and source["candidate_id"] == selected
+            and source["generation_job_id"] == generation
+            for r in self.waiting_job_records()
+        )
 
     def reselect_candidate(self, candidate_id: str) -> None:
         """`OTHER_CANDIDATE` — 이미 선택을 마친 뒤 사용자가 "다른 후보가 맞다"고 정정하는 경로.

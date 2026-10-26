@@ -24,6 +24,7 @@ from __future__ import annotations
 import copy
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 from daesingo.case import jobs
@@ -62,6 +63,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     return candidates
 
 
+# 관찰 job 입력에 고정하는 후보 구간 키(`decisions/incident-clip-observation-input.md` §4-1).
+_SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms")
+
+
 def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candidate]:
     """search `CandidateEvent` → case `Candidate`. 동기 경로(`receive_search_candidates`)와 Worker 반영 경로
     (`reflection.reflect_execution`)가 같은 변환을 쓴다."""
@@ -76,6 +81,8 @@ def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candida
             # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
             representative_ms=c["span"]["representative_ms"],
             timeline_revision=c["span"]["timeline_revision"],
+            # 네 키가 다 있을 때만 남긴다 — 구간이 빠진 후보로 관찰을 발주하지 않는다.
+            span={k: c["span"][k] for k in _SPAN_KEYS} if all(k in c["span"] for k in _SPAN_KEYS) else None,
         )
         for c in raw_candidates
     ]
@@ -228,6 +235,7 @@ def build_view_from_adapter(
         plate_read_retry_basis=jobs.latest_job_record(case, "PLATE_READ") is not None,
         search_retry_basis=jobs.latest_job_record(case, "COARSE_SEARCH") is not None,
         report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
+        analysis_timed_out=case.analysis_timed_out,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -367,6 +375,16 @@ def report_video_missing(view: dict[str, Any]) -> bool:
     return video is not None and video["outcome"] != "PASS"
 
 
+ANALYSIS_TIMED_OUT_NOTICE: dict[str, Any] = {
+    # case가 탐색 결과를 기다리다 마감이 지나 기다리기를 멈췄다(`decisions/case-wait-timeout.md`). 화면은 중단과 같은
+    # 결과(core-user-flow 「분석 중단·timeout·인프라 실패」)이고 출구도 같은 「다시 찾기」(`RETRY_SEARCH`)다. 원인이 사용자가 아니라 code를 나눈다.
+    "code": "case.analysis_timed_out",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.analysis_timed_out",
+    "actions": ["RETRY_SEARCH"],
+}
+
 PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
     "code": "evidence.plate_abstained",
     "severity": "WARN",
@@ -428,6 +446,7 @@ def derive_notices(
     search_retry_basis: bool = False,
     report_video_export_basis: bool = False,
     hint_unclear: bool = False,
+    analysis_timed_out: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -435,6 +454,8 @@ def derive_notices(
       evidence 유무와 무관하다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
+    - `case.analysis_timed_out` — 같은 조건에서 가장 나중 탐색 job이 case 대기 timeout으로 끝났을 때(`analysis_timed_out`,
+      `decisions/case-wait-timeout.md`). `case.analysis_stopped` 대신 붙는다. action 규칙은 같다.
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
       `SEARCHING`에 머물므로(PR #197) 이 조건에 들지 않는다.
     - `search.hint_unclear` — 단서 구조화가 설명을 잘 이해하지 못했고(`hint_unclear`, aggregate 판정) 탐색이 끝나
@@ -481,7 +502,8 @@ def derive_notices(
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):
-        derived.append(ANALYSIS_STOPPED_NOTICE if search_retry_basis else dict(ANALYSIS_STOPPED_NOTICE, actions=[]))
+        halted = ANALYSIS_TIMED_OUT_NOTICE if analysis_timed_out else ANALYSIS_STOPPED_NOTICE
+        derived.append(halted if search_retry_basis else dict(halted, actions=[]))
     if view.get("stage") == "CANDIDATE_REVIEW" and not view.get("candidates"):
         derived.append(NO_CANDIDATES_NOTICE)
     if hint_unclear and view.get("stage") not in ("INTAKE", "SEARCHING"):
@@ -565,11 +587,16 @@ def record_source_registered(
     store.save(case)
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def get_view(
     case_id: str,
     *,
     store: CaseStore,
     notices: list[dict[str, Any]] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """`web → case.get_view() → CaseView`(`module-architecture.md` §5-1 ⑪, §6 모듈6
     ③)의 실제 진입점. 지금까지 스모크 테스트 안에만 있던 "case_id로 저장된 case를
@@ -581,8 +608,12 @@ def get_view(
     "완성된 FastAPI/Worker 배선"에 해당한다.
 
     실행 상태는 `store`에 꽂힌 JobExecution read port로 이 case의 job만 조회한다(8-10) — 호출자가 넘기지 않는다.
+
+    마감(`now`, 기본 현재 시각)이 지난 job은 기다리지 않는 것으로 보인다 — 읽기라 저장하지 않고, 정산 기록은 다음 command ·
+    T2 반영이 남긴다(`decisions/case-wait-timeout.md`).
     """
     case = store.get_case(case_id)
+    case.stop_waiting_expired(now or utc_now())
     adapter = store.adapter_for(case)
     return build_view_from_adapter(case, adapter, executions=store.read_executions(case), notices=notices)
 

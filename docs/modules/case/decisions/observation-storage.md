@@ -83,5 +83,6 @@
 - ✅ `CaseStore(adapter_factory=…)` — 기본은 지금 registry factory. 진입점(`get_view` · `execute_command`)은 `store.adapter_for(case)`로 읽는다(2026-10-21).
 - `StoredObservationAdapter` — Runtime 저장소 전에는 가짜 `ProducedReader` · 가짜 recording으로 테스트한다.
   - ✅ 관찰 객체 고르기(§4-4) — `stored_observation.select_current_observations()`(2026-10-21). 조립 배선은 IncidentClip handler · 결과 위치(§6) 답 뒤.
+  - ✅ 조립(2026-10-24) — `StoredObservationAdapter` · `stored_adapter_factory(reader=, executions=, recording=)`. 관찰 job은 결과 객체의 `candidate_id`가 아니라 발주 때 고정한 입력(`incident-clip-observation-input.md` §4-1 · §4-7)으로 고른다 — 판독 결과에는 clip ref가 없고, 입력이 후보 · 세대 · clip을 한 번에 준다. recording 사실은 case port `RecordingFacts`(`get_incident_clip` · `get_time_source_candidates` · `list_case_asset_facts`)로 읽고, 원본은 case `sources`의 ref로 묻는다(고도화 8-13). Fine이 `NOT_OBSERVED`가 아니면 같은 clip의 판독 둘이 정산된 뒤에만 조립한다. **composition 주입(API · Worker의 `CaseStore(adapter_factory=…)`)과 reader · recording port 구현은 Runtime · recording 몫이다.**
 - `reflection._APPLIERS`에 관찰 kind 3개.
 - 테스트: 세대 · 선택 필터(재탐색 뒤 같은 id, A→B→A), 이전 후보의 늦은 결과, 관찰 반영 뒤 `READY`, `FAILED` 정산.

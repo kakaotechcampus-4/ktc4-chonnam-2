@@ -14,11 +14,13 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Literal, Protocol
 
+from daesingo.case import observation
 from daesingo.case.analysis_start import InitialSearchBudget, reflect_hint_extraction
 from daesingo.case.domain import CaseAggregate
-from daesingo.case.service import candidates_from_events, mark_ready_if_package_ready
+from daesingo.case.service import candidates_from_events, mark_ready_if_package_ready, utc_now
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
 
@@ -54,9 +56,17 @@ class ProducedReader(Protocol):
 
     - `HINT_EXTRACT` → search 단서 구조화 결과(`{"status": "OK|ABSTAINED|FAILED", "*_hint": …}`)
     - `COARSE_SEARCH` → `{"outcome": "SUCCEEDED|FAILED|…", "candidate_events": [CandidateEvent, …]}`
+    - `FINE_VERIFY` → `{"analysis_run": AnalysisRun, "visual_evidence": VisualEvidence | None}` — search `verify_visual`
+      반환과 같은 모양. T2는 `verification`만 본다(후속 발주 판단, `incident-clip-observation-input.md` §4-3)
+    - `INCIDENT_CLIP_BUILD` → `{"incident_clip_ref": str}`(두 판독이 공유할 clip, 같은 문서 §4-4)
+    - `PLATE_READ` → `{"readout_run": ReadoutRun, "plate_readout": PlateReadout | None}`
+    - `OVERLAY_TIME_READ` → `{"readout_run": ReadoutRun, "overlay_time_readout": OverlayTimeReadout | None}`
+      (판독 둘은 readout 공개 함수 반환 `(ReadoutRun, 결과 | None)`과 같은 모양)
 
-    관찰 kind(`PLATE_READ` · `OVERLAY_TIME_READ` · `FINE_VERIFY`)는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView
-    조립 때 adapter가 읽는다(`observation-storage.md` §4-2 · §4-5).
+    판독 kind는 T2에서 부르지 않는다 — 정산만 하고 내용은 CaseView 조립 때 `StoredObservationAdapter`가 같은 reader로
+    읽는다(`observation-storage.md` §4-2 · §4-5). export kind(`REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`)는 reader로도
+    읽지 않는다 — 파생 asset은 recording case asset 목록에서 고른다(`result-reflection.md` §3-4). T2는 성공한 Fine · clip만
+    읽는다.
     """
 
     def __call__(self, conn: Any, kind: str, produced: tuple[dict[str, str], ...]) -> dict[str, Any]: ...
@@ -69,12 +79,17 @@ def reflect_execution(
     reader: ProducedReader,
     timelines: CaseTimelineSource,
     budget: InitialSearchBudget | None = None,
+    now: datetime | None = None,
 ) -> ReflectionOutcome:
     """execution 하나를 반영한다. 반영했을 때만 저장하고, 예외는 그대로 올린다 — rollback · retry는 호출자 몫이다
-    (#245 D-2). 이 case의 job이 아니거나 kind가 다르거나 반영기가 없는 kind면 배선 오류(`ValueError`)다."""
+    (#245 D-2). 이 case의 job이 아니거나 kind가 다르거나 반영기가 없는 kind면 배선 오류(`ValueError`)다.
+
+    guard 전에 마감(`now`, 기본 현재 시각)이 지난 job을 `STOPPED_WAITING`으로 정산한다 — 마감 뒤 도착한 결과는
+    `NOT_APPLIED(STOPPED_WAITING)`이고, 그 정산은 반영하지 않아도 저장한다(`decisions/case-wait-timeout.md`)."""
     case = store.load_for_update(outcome.case_id)
     if outcome.execution_id in case.processed_executions:
         return ReflectionOutcome("ALREADY_APPLIED")
+    expired = case.stop_waiting_expired(now or utc_now())
     record = next((r for r in case.job_records if r["job_id"] == outcome.job_id), None)
     if record is None:
         raise ValueError(f"이 case가 발주하지 않은 job_id: {outcome.job_id!r}")
@@ -87,6 +102,8 @@ def reflect_execution(
         reason = case.settled_jobs[outcome.job_id]
         if reason not in _NOT_APPLIED_REASONS:
             raise ValueError(f"다른 경로로 이미 반영된 job: {outcome.job_id!r} ({reason})")
+        if expired:
+            store.save(case)
         return ReflectionOutcome("NOT_APPLIED", reason=reason)
 
     jobs_before = len(case.job_records)
@@ -124,10 +141,35 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
         mark_ready_if_package_ready(case, store.adapter_for(case))
 
 
+def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    if outcome.status == "SUCCEEDED":
+        content = reader(store.conn, outcome.kind, outcome.produced)
+        observation.follow_fine(case, outcome.job_id, content["visual_evidence"])
+
+
+def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    # clip 실패는 정산만 한다 — 다시 준비는 case가 새 job_id로 발주한다(§6, notice · action은 후속).
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    if outcome.status == "SUCCEEDED":
+        content = reader(store.conn, outcome.kind, outcome.produced)
+        observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
+
+
+def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
+    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice 매핑은 미결
+    # (`report-video-export.md` §5), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+
+
 _APPLIERS = {
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
     "PLATE_READ": _apply_observation,
     "OVERLAY_TIME_READ": _apply_observation,
-    "FINE_VERIFY": _apply_observation,
+    "FINE_VERIFY": _apply_fine_verify,
+    "INCIDENT_CLIP_BUILD": _apply_incident_clip_build,
+    "REPORT_VIDEO_EXPORT": _apply_export,
+    "PLATE_IMAGE_EXPORT": _apply_export,
 }

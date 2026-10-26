@@ -159,6 +159,16 @@ class CaseStore:
     def get_case(self, case_id: str) -> CaseAggregate:
         return self.repository.load(self.conn, case_id, lock="share")
 
+    def observation_input(self, case_id: str, job_id: str) -> dict[str, Any]:
+        """관찰 job의 고정 입력(복사본) — handler는 이것으로 읽고 case 내부 저장 형식을 읽지 않는다. `scope_ref`는
+        JobRecord에 있다(`decisions/incident-clip-observation-input.md` §4-1). 관찰 kind가 아니거나 입력 없이 발주된
+        job이면 `KeyError`."""
+        case = self.get_case(case_id)
+        try:
+            return copy.deepcopy(case.observation_inputs[job_id])
+        except KeyError:
+            raise KeyError(f"관찰 입력이 없는 job_id: {job_id!r} (case_id={case_id!r})") from None
+
     def load_for_update(self, case_id: str) -> CaseAggregate:
         return self.repository.load(self.conn, case_id, lock="update")
 
