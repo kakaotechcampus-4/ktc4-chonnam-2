@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import BinaryIO
+from io import BytesIO
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.mysql import LONGBLOB, insert
@@ -19,7 +20,8 @@ from sqlalchemy.exc import DBAPIError
 
 from . import models as m
 from .probe import LocalSource, ProbedStream
-from .media_content import derived_content, descriptor, checked_content, frame_format
+from .media_content import derived_content, descriptor, checked_content, frame_format, identity
+from .durable import media_identity, prepared_content, observation_payload, observation_from_payload
 
 
 metadata = sa.MetaData()
@@ -148,6 +150,41 @@ class MySQLRecordingRepository:
 
     def add_source_asset(self, asset):
         self._put("source_asset", asset.source_asset_ref, asset)
+
+    def add_prepared_media(self, media, content, *, case_id=None):
+        info = prepared_content(media, content)
+        if case_id is not None:
+            identity(case_id)
+        kind, ref = media_identity(media)
+        rows = [
+            self._row(kind, ref, media.model_dump(mode="json"), content),
+            self._row("prepared_content", [kind, ref], info),
+        ]
+        if case_id is not None:
+            rows.append(self._row("case_asset", [case_id, kind, ref],
+                {"case_id": case_id, "asset_ref": {"kind": kind, "ref": ref}}))
+        self._immutable_write(rows)
+
+    def get_prepared_content(self, ref):
+        row = self._get(ref.kind, ref.ref)
+        info = self._get("prepared_content", [ref.kind, ref.ref])
+        if row is None or row["content"] is None or info is None:
+            return None
+        return checked_content(row["content"], info["payload"])
+
+    def save_time_sources(self, source_ref, observed):
+        stmt = insert(entries).values(self._row("time_observation", source_ref, observation_payload(observed)))
+        self._execute(stmt.on_duplicate_key_update(entry_key=entries.c.entry_key))
+        return observation_from_payload(self._get("time_observation", source_ref, lock=True)["payload"])
+
+    def get_time_sources(self, source_ref):
+        row = self._get("time_observation", source_ref)
+        return observation_from_payload(row["payload"]) if row is not None else None
+
+    def get_time_source_candidate(self, candidate_id):
+        rows = self._execute(sa.select(entries.c.payload).where(entries.c.kind == "time_observation"))
+        return next((c for row in rows for c in observation_from_payload(row[0]).candidates
+                     if c.candidate_id == candidate_id), None)
 
     def get_source_asset(self, source_ref):
         return self._model("source_asset", source_ref, m.SourceAsset)
@@ -346,6 +383,9 @@ class MySQLRecordingRepository:
                 and m.ContractRef(kind="source_asset", ref=span.source_asset_ref) in s.source_refs]
 
     def open_analysis_stream(self, source_ref):
+        stored = self.get_prepared_content(m.ContractRef(kind="analysis_source", ref=source_ref))
+        if stored is not None:
+            return BytesIO(stored[0]), stored[1]
         value = self._analysis_streams.get(source_ref)
         # A rolled-back registration cannot expose its process-local stream.
         if value is None or self.get_analysis_source(source_ref) is None:

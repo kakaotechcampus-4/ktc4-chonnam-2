@@ -527,7 +527,7 @@ def test_gate_rejects_partial_case_file_even_when_every_selected_test_passes():
 
 @pytest.mark.parametrize("role,scenario", REQUIRED_CHECKS)
 def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere(role, scenario):
-    report = deepcopy(good_report())
+    report = good_report()
     removed = {item["nodeid"] for item in report["collected"]
                if {"role": role, "scenario": scenario} in item.get("checks", [])}
     assert len(removed) == (sum((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS) or 1)
@@ -538,9 +538,25 @@ def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere
         checker().validate_report(report)
 
 
+def _gate_artifact_directory(tmp_path_factory):
+    from uuid import uuid4
+
+    # Every case still owns a fresh directory under pytest's managed base.
+    # A unique name avoids scanning all earlier cases for a numeric suffix.
+    return tmp_path_factory.mktemp("gate-" + uuid4().hex, numbered=False)
+
+
+@pytest.fixture
+def gate_artifact_directory(tmp_path_factory, request):
+    # Keep pytest's per-case cleanup when users select another retention policy.
+    if request.config.getini("tmp_path_retention_policy") != "all":
+        return request.getfixturevalue("tmp_path")
+    return _gate_artifact_directory(tmp_path_factory)
+
+
 @pytest.mark.parametrize("identity", REQUIRED_PARAMETERS)
 @pytest.mark.parametrize("layer", ["collection", "selection", "setup", "call", "teardown", "all", "junit"])
-def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, identity, layer):
+def test_each_required_parameter_cannot_be_omitted_from_evidence(gate_artifact_directory, identity, layer):
     from xml.etree import ElementTree
 
     report = good_report()
@@ -556,7 +572,7 @@ def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, ident
             if layer in {"junit", "all"} and entry is item:
                 continue
             ElementTree.SubElement(root, "testcase", classname=entry["junit"][0], name=entry["junit"][1])
-        path = tmp_path / "junit.xml"
+        path = gate_artifact_directory / "junit.xml"
         ElementTree.ElementTree(root).write(path, encoding="utf-8")
         return path
 
@@ -639,3 +655,60 @@ def test_api_http_partial_evidence_is_rejected(identity, mutation):
         check.pop(mutation.removeprefix("missing_"))
     with pytest.raises(ValueError, match="role/scenario"):
         checker().validate_report(report)
+
+
+def test_parameter_directory_does_not_rescan_sibling_evidence(tmp_path_factory, monkeypatch):
+    base = tmp_path_factory.getbasetemp()
+    scan = os.scandir
+
+    def no_sibling_scan(path):
+        if Path(path) == base:
+            raise AssertionError("gate artifact allocation rescanned sibling evidence")
+        return scan(path)
+
+    monkeypatch.setattr(os, "scandir", no_sibling_scan)
+    first = _gate_artifact_directory(tmp_path_factory)
+    (first / "junit.xml").write_text("first evidence", encoding="utf-8")
+    second = _gate_artifact_directory(tmp_path_factory)
+    assert first != second
+    assert first.parent == second.parent == base
+    assert (first / "junit.xml").read_text(encoding="utf-8") == "first evidence"
+    assert list(second.iterdir()) == []
+
+
+def test_role_omission_does_not_deepcopy_its_fresh_report(monkeypatch):
+    class FreshEvidence(dict):
+        def __deepcopy__(self, memo):
+            raise AssertionError("fresh role-omission fixture copied again")
+
+    build = good_report
+
+    def fresh_report():
+        report = build()
+        report["collected"][0] = FreshEvidence(report["collected"][0])
+        return report
+
+    monkeypatch.setitem(globals(), "good_report", fresh_report)
+    test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere(*REQUIRED_CHECKS[0])
+
+
+def test_parameter_artifacts_honor_failed_retention_policy(tmp_path):
+    from xml.etree import ElementTree
+
+    failure = tmp_path / "test_retention_failure_probe.py"
+    failure.write_text("def test_retention_probe_failure():\n    assert False, 'retention probe'\n", encoding="utf-8")
+    base = tmp_path / "child"
+    child_xml = tmp_path / "retention-child.xml"
+    command = [sys.executable, "-B", "-X", "utf8", "-m", "pytest",
+               "tests/common/db/test_mysql_gate.py::test_each_required_parameter_cannot_be_omitted_from_evidence[junit-identity0]",
+               str(failure), "-q", "-p", "no:cacheprovider",
+               "-o", "tmp_path_retention_policy=failed", f"--basetemp={base}",
+               f"--junitxml={child_xml}"]
+    result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"),
+                            capture_output=True, text=True, encoding="utf-8", timeout=30)
+    (tmp_path / "retention-child.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
+    assert result.returncode == 1, result.stdout + result.stderr
+    cases = ElementTree.parse(child_xml).findall(".//testcase")
+    assert len(cases) == 2 and all(c.find("error") is None for c in cases)
+    assert [c.get("name") for c in cases if c.find("failure") is not None] == ["test_retention_probe_failure"]
+    assert not list(base.rglob("junit.xml")), "passing parameter evidence ignored failed-retention cleanup"

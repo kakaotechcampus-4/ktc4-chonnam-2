@@ -53,6 +53,7 @@ from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
 from .inspection import SourceFrameInspections, source_inspections
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
+from .durable import stable_media
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -120,6 +121,8 @@ class RecordingService:
         analysis_materializer: LocalAnalysisMaterializer | None = None,
         incident_materializer: LocalIncidentMaterializer | None = None,
         time_source_observer: LocalTimeSourceObserver | None = None,
+        durable_prepared: bool = False,
+        case_id: str | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._media_probe = media_probe or FfprobeMediaProbe()
@@ -137,6 +140,53 @@ class RecordingService:
         self._time_source_observer = time_source_observer or LocalTimeSourceObserver()
         self._time_observations: dict[str, ObservedTimeSources] = {}
         self._time_candidates: dict[str, TimeSourceCandidate] = {}
+        self._durable_prepared = durable_prepared
+        self._case_id = identity(case_id) if case_id is not None else None
+
+    def _publish_prepared(self, media, content):
+        if not self._durable_prepared:
+            return media
+        stored = stable_media(media, content)
+        self._repository.add_prepared_media(stored, content, case_id=self._case_id)
+        return stored
+
+    def get_source_asset(self, source_ref: str) -> SourceAsset:
+        value = self._repository.get_source_asset(source_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 원본입니다")
+        return value.model_copy(deep=True)
+
+    def get_media_stream(self, stream_ref: str) -> MediaStream:
+        value = self._repository.get_media_stream(stream_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 stream입니다")
+        return value.model_copy(deep=True)
+
+    def get_analysis_source(self, source_ref: str) -> AnalysisSource:
+        cached = self._local_analysis.get(source_ref)
+        value = cached[0] if cached is not None else self._repository.get_analysis_source(source_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 분석 입력입니다")
+        return value.model_copy(deep=True)
+
+    def get_time_source_candidates(self, source_ref: str) -> list[TimeSourceCandidate]:
+        observed = self._repository.get_time_sources(source_ref)
+        return list(observed.candidates) if observed is not None else []
+
+    def list_case_asset_facts(self, case_id: str) -> list[AssetFacts]:
+        identity(case_id)
+        result = []
+        for ref in self._repository.get_case_assets(case_id):
+            if ref.kind not in _ASSET_FACT_KINDS:
+                continue
+            try:
+                facts = self.lookup_asset_facts(ref)
+            except RecordingCapabilityError as error:
+                if error.code != "UNKNOWN_REF":
+                    raise
+                facts = self._metadata_facts(ref)
+            result.append(facts.model_copy(deep=True))
+        return result
 
     def observe_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
         local = self._repository.get_local_source(source_asset_ref)
@@ -144,21 +194,24 @@ class RecordingService:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록된 로컬 원본 ref가 필요합니다")
         self._time_source_observer.verify_source(local)
         if source_asset_ref not in self._time_observations:
-            observed = self._time_source_observer.observe(source_asset_ref, local)
+            observed = self._repository.get_time_sources(source_asset_ref)
+            if observed is None:
+                observed = self._repository.save_time_sources(source_asset_ref,
+                    self._time_source_observer.observe(source_asset_ref, local))
             self._time_observations[source_asset_ref] = observed
             for candidate in observed.candidates:
                 self._time_candidates[candidate.candidate_id] = candidate
         return self.get_time_sources(source_asset_ref)
 
     def get_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
-        observed = self._time_observations.get(source_asset_ref)
+        observed = self._time_observations.get(source_asset_ref) or self._repository.get_time_sources(source_asset_ref)
         if observed is None:
             raise RecordingCapabilityError("NOT_FOUND", "이 원본의 시간 관찰 결과가 없습니다")
         return ObservedTimeSources(tuple(c.model_copy(deep=True) for c in observed.candidates),
                                    tuple(c.model_copy(deep=True) for c in observed.checks))
 
     def get_time_source_candidate(self, candidate_id: str) -> TimeSourceCandidate:
-        candidate = self._time_candidates.get(candidate_id)
+        candidate = self._time_candidates.get(candidate_id) or self._repository.get_time_source_candidate(candidate_id)
         if candidate is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 시각 후보입니다")
         return candidate.model_copy(deep=True)
@@ -465,6 +518,30 @@ class RecordingService:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts
 
+    def _metadata_facts(self, parsed):
+        get = {"source_asset": self._repository.get_source_asset,
+               "analysis_source": self._repository.get_analysis_source,
+               "incident_clip": self._repository.get_incident_clip,
+               "derived_asset": self._repository.get_derived_asset}[parsed.kind]
+        media = get(parsed.ref)
+        if media is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
+        content = (self._repository.get_prepared_content(parsed) if parsed.kind in {"analysis_source", "incident_clip"}
+                   else self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None)
+        available = media.availability if content is not None else (
+            "UNAVAILABLE" if media.availability == "UNAVAILABLE" else "UNKNOWN")
+        lineage = (getattr(media, "source_refs", []) if parsed.kind != "incident_clip" else
+                   [ContractRef(kind="source_asset", ref=s.source_asset_ref)
+                    for s in media.source_provenance.asset_spans])
+        if parsed.kind == "source_asset" and media.external_source_ref is not None:
+            lineage = [ContractRef(kind="external_source", ref=media.external_source_ref.ref)]
+        return AssetFacts(contract="AssetFacts", contract_version="source-asset-media-stream/v1",
+            asset_ref=parsed, asset_kind=media.asset_kind, derived_role=getattr(media, "derived_role", None),
+            byte_size=media.byte_size if available == "AVAILABLE" else None, availability=available,
+            checked_at=datetime.now(timezone.utc), lineage=lineage,
+            duration_sec=media.duration_sec if available == "AVAILABLE" else None,
+            timeline_ref=getattr(media, "timeline_ref", None), timeline_range=getattr(media, "timeline_range", None))
+
     def create_relative_timeline(self, source_asset_ref: str) -> RecordingTimeline:
         """등록된 단일 Source를 [0, duration)에 배치한 새 revision 1을 생성한다.
 
@@ -618,6 +695,7 @@ class RecordingService:
                 availability="AVAILABLE", duration_sec=prepared.duration_sec,
                 timeline_ref=ref, timeline_range=prepared.timeline_range, profile_ref=profile_ref,
             )
+            source = self._publish_prepared(source, prepared.content)
             self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
             self._local_analysis_refs.add(source.analysis_source_ref)
             self._analysis_reuse[key] = source.analysis_source_ref
@@ -701,6 +779,7 @@ class RecordingService:
             media_stream_refs=[s.media_stream_ref for s in ordered], byte_size=len(prepared.content),
             availability="AVAILABLE", duration_sec=prepared.duration_sec, timeline_ref=parsed.timeline_ref,
             timeline_range=prepared.timeline_range, profile_ref=profile_ref)
+        source = self._publish_prepared(source, prepared.content)
         self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
         self._local_analysis_refs.add(source.analysis_source_ref)
         self._analysis_reuse[key] = source.analysis_source_ref
@@ -711,7 +790,7 @@ class RecordingService:
         if prepared is not None:
             source, content = prepared
             return OpenedAnalysisSource(BytesIO(content), "video/mp4", len(content))
-        if analysis_source_ref in self._local_analysis_refs:
+        if analysis_source_ref in self._local_analysis_refs and not self._durable_prepared:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         source = self._repository.get_analysis_source(analysis_source_ref)
         if source is None:
@@ -847,6 +926,7 @@ class RecordingService:
                 byte_size=len(prepared.content), availability="AVAILABLE", duration_sec=prepared.duration_sec,
                 timeline_ref=parsed_resolution.timeline_ref, timeline_range=prepared.timeline_range,
             )
+            clip = self._publish_prepared(clip, prepared.content)
             self._local_clips[clip.incident_clip_ref] = (clip.model_copy(deep=True), prepared.content)
             self._local_clip_refs.add(clip.incident_clip_ref)
             self._clip_identity[identity] = clip.incident_clip_ref
@@ -868,12 +948,12 @@ class RecordingService:
         local = self._local_clips.get(incident_clip_ref)
         if local is not None:
             return local[0].model_copy(deep=True)
-        if incident_clip_ref in self._local_clip_refs:
+        if incident_clip_ref in self._local_clip_refs and not self._durable_prepared:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 IncidentClip 실행이 종료되었습니다")
         clip = self._repository.get_incident_clip(incident_clip_ref)
         if clip is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
-        return clip
+        return clip.model_copy(deep=True)
 
     def register_derived_asset(self, payload: DerivedAsset | dict[str, Any], *,
                                content: bytes | None = None, content_type: str | None = None,

@@ -45,3 +45,29 @@ def test_parameter_mutation_does_not_traverse_unrelated_evidence():
     assert report["collected"][0]["nodeid"] == "target"
     assert broken["collected"][1] == {"nodeid": "other"}
     assert broken["reports"] == report["reports"]
+
+
+def test_family_omission_does_not_copy_or_change_retained_evidence():
+    import mysql_report_mutations as mutations
+
+    class RetainedEvidence(dict):
+        def __deepcopy__(self, memo):
+            raise AssertionError("retained evidence copied for a family omission")
+
+    kept = RetainedEvidence(nodeid="kept", checks=[{"role": "other"}])
+    report = {"server_version": "8.4.7", "collection_errors": [],
+              "collected": [{"nodeid": "removed"}, kept],
+              "selected": ["removed", "kept"],
+              "reports": [{"nodeid": node, "when": "call", "outcome": "passed"}
+                          for node in ("removed", "kept")]}
+    broken = mutations.omit_evidence_nodes(report, {"removed"})
+    assert broken == {"server_version": "8.4.7", "collection_errors": [],
+                      "collected": [{"nodeid": "kept", "checks": [{"role": "other"}]}],
+                      "selected": ["kept"],
+                      "reports": [{"nodeid": "kept", "when": "call", "outcome": "passed"}]}
+    broken["collected"].clear()
+    broken["selected"].clear()
+    broken["reports"].clear()
+    assert [n["nodeid"] for n in report["collected"]] == ["removed", "kept"]
+    assert report["selected"] == ["removed", "kept"]
+    assert [n["nodeid"] for n in report["reports"]] == ["removed", "kept"]

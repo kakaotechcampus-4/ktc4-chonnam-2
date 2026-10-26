@@ -7,7 +7,8 @@ from decimal import Decimal
 from typing import BinaryIO, Protocol
 
 from .probe import LocalSource
-from .media_content import derived_content, descriptor, checked_content, frame_format
+from .media_content import derived_content, descriptor, checked_content, frame_format, identity
+from .durable import media_identity, prepared_content, observation_payload, observation_from_payload
 
 from .models import (
     AnalysisSource,
@@ -55,6 +56,40 @@ class InMemoryRecordingRepository:
         self._derived_content: dict[str, tuple[bytes, dict]] = {}
         self._case_assets: dict[str, list[ContractRef]] = {}
         self._deleted_assets: set[tuple[str, str]] = set()
+        self._prepared_content = {}
+        self._time_observations = {}
+
+    def add_prepared_media(self, media, content, *, case_id=None):
+        info = prepared_content(media, content)
+        if case_id is not None:
+            identity(case_id)
+        kind, ref = media_identity(media)
+        models = self._analysis_sources if kind == "analysis_source" else self._incident_clips
+        previous = models.get(ref)
+        prior_content = self._prepared_content.get((kind, ref))
+        if ((previous is not None and previous != media)
+                or (prior_content is not None and prior_content != (content, info))):
+            raise ValueError("recording immutable media conflict")
+        models[ref] = media.model_copy(deep=True)
+        self._prepared_content[kind, ref] = content, info
+        if case_id is not None:
+            self.associate_case_asset(case_id, ContractRef(kind=kind, ref=ref))
+
+    def get_prepared_content(self, ref):
+        value = self._prepared_content.get((ref.kind, ref.ref))
+        return checked_content(*value) if value is not None else None
+
+    def save_time_sources(self, source_ref, observed):
+        payload = self._time_observations.setdefault(source_ref, observation_payload(observed))
+        return observation_from_payload(payload)
+
+    def get_time_sources(self, source_ref):
+        payload = self._time_observations.get(source_ref)
+        return observation_from_payload(payload) if payload is not None else None
+
+    def get_time_source_candidate(self, candidate_id):
+        return next((c for p in self._time_observations.values()
+                     for c in observation_from_payload(p).candidates if c.candidate_id == candidate_id), None)
 
     def add_source_asset(self, asset: SourceAsset) -> None:
         self._source_assets[asset.source_asset_ref] = asset
@@ -248,6 +283,10 @@ class InMemoryRecordingRepository:
         ]
 
     def open_analysis_stream(self, source_ref: str) -> tuple[BinaryIO, str] | None:
+        from io import BytesIO
+        stored = self.get_prepared_content(ContractRef(kind="analysis_source", ref=source_ref))
+        if stored is not None:
+            return BytesIO(stored[0]), stored[1]
         factory = self._analysis_stream_factories.get(source_ref)
         if factory is None:
             return None
@@ -329,6 +368,11 @@ class InMemoryRecordingRepository:
 
 
 class RecordingRepository(Protocol):
+    def add_prepared_media(self, media: AnalysisSource | IncidentClip, content: bytes, *, case_id: str | None = None) -> None: ...
+    def get_prepared_content(self, ref: ContractRef) -> tuple[bytes, str] | None: ...
+    def save_time_sources(self, source_ref: str, observed): ...
+    def get_time_sources(self, source_ref: str): ...
+    def get_time_source_candidate(self, candidate_id: str): ...
 
     def get_owned_frame(self, case_id: str, frame_ref: str) -> tuple[FrameRef, bytes | None] | None:
         ...

@@ -8,7 +8,8 @@ from daesingo.common.db import create_worker_engine
 from daesingo.common.logging import log_event_best_effort
 from daesingo.worker.bootstrap import bootstrap
 from daesingo.worker.composition import compose_worker
-from daesingo.worker.registry import KindRegistry
+from daesingo.worker.search_composition import compose_search_registry
+from daesingo.worker.case_composition import StoredCaseReflector
 
 
 def _failure(logger, event):
@@ -36,9 +37,9 @@ def main() -> int:
             previous[sig] = signal.getsignal(sig)
             signal.signal(sig, request_stop)
         engine = create_worker_engine(startup.config.db)
-        # Real Recording/Search capabilities are registered in RT-10.
-        registry = KindRegistry({})
-        compose_worker(engine=engine, startup=startup, registry=registry, stop=stop).run()
+        registry = compose_search_registry(engine=engine, startup=startup)
+        compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
+                       reflector=StoredCaseReflector(startup=startup)).run()
     except BaseException:
         stop.set()
         _failure(startup.logger, "runtime.worker.failed")

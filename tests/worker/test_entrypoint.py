@@ -32,6 +32,7 @@ def test_main_composes_single_registry_and_disposes_engine_and_restores_signals(
     monkeypatch.setattr(module.signal, "signal", install)
     def compose(**kw):
         assert kw["engine"] is engine and kw["startup"] is startup
+        assert kw["reflector"] is not None
         assert kw["registry"].dispatch(ExecutionContext("exec", "job", "case", "TEST", 1, "trace")).failure_kind == "RUNTIME_UNREGISTERED_KIND"
         def run():
             assert not kw["stop"].is_set()
