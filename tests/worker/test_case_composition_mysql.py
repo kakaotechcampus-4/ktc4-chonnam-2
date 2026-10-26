@@ -62,7 +62,9 @@ def test_stored_worker_reflector_applies_success_failure_partial_without_extendi
         facade = stored_case_store(conn, storage_root=selected_root)
         loaded = facade.get_case(case.case_id)
         view = __import__("daesingo.case", fromlist=["get_view"]).get_view(case.case_id, store=facade)
-        assert not view["running_jobs"] and loaded.processed_executions[execution] == job["job_id"]
+        # Case T2 selects rank=1 and issues the first Fine (Case W12:C2).
+        assert [j["kind"] for j in view["running_jobs"]] == (["FINE_VERIFY"] if status == "SUCCEEDED" else [])
+        assert loaded.processed_executions[execution] == job["job_id"]
         assert bool(view["candidates"]) == (status == "SUCCEEDED")
         assert conn.exec_driver_sql("SELECT case_applied_at IS NOT NULL FROM job_execution WHERE execution_id=%s", (execution,)).scalar_one()
 

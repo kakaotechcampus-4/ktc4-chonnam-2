@@ -406,7 +406,8 @@ def test_actual_process_kill_recovers_durable_case_exactly_once(resources, mode)
             assert final["started_at"] >= final["available_at"]
         case = snapshot(engine, case_id)
         assert case.processed_executions == {final["execution_id"]: final["job_id"]}
-        assert case.stage == "CANDIDATE_REVIEW"
+        # Case T2 selects rank=1 (Case W12:C2).
+        assert case.stage == "EVIDENCE_REVIEW"
         assert len(case.candidates) == 1
         deliver(engine)
         assert snapshot(engine, case_id).processed_executions == case.processed_executions
