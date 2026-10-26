@@ -28,6 +28,7 @@ _STATE_FIELDS = (
     "hint_unclear",
     "sources",
     "observation_inputs",
+    "observation_outcomes",
 )
 _CANDIDATE_FIELDS = tuple(f.name for f in dataclasses.fields(Candidate) if f.name != "extra")
 

@@ -80,6 +80,7 @@
 5. **초기 선택과 첫 Fine 발주는 `COARSE_SEARCH` T2에서 한다.** `rank=1` 자동 선택(`contract-case-command.md`, #168 결정 1)을 비동기 경로에도 그대로 적용한다. 후보가 0개이거나 첫 후보가 stale이면 선택 · 발주하지 않는다(`core-user-flow.md` 가장 유력한 후보). stage는 `CANDIDATE_REVIEW` → `EVIDENCE_REVIEW`로 지금 `select_candidate`가 하는 전이를 그대로 탄다.
 
 6. **다른 후보 선택은 같은 세대 안 관찰을 재사용한다(`reselect-observation-reuse.md` (b)).** `SELECT_OTHER_CANDIDATE` 뒤 그 후보 · 현재 세대에 `SUCCEEDED` 관찰 job이 있으면 그 단계는 다시 내지 않고, 없는 첫 단계부터 발주한다(Fine이 없으면 Fine, Fine만 있으면 clip, clip까지 있으면 판독).
+   - **(2026-10-26 구현 결정) 끝난 단계는 T2 때 case state에 남긴 기록으로 알아본다.** 관찰 job을 반영할 때 `observation_outcomes[job_id] = {status}`를 남기고, Fine은 `verification`, clip은 `incident_clip_ref`를 더한다 — 후속 발주(§4-3 · §4-4)가 이미 읽는 두 값뿐이고 결과 내용 전체는 복사하지 않는다(§4-5 「내용은 case state에 복사하지 않는다」를 지킨다). command는 이 기록만 보고 고르므로 command 경로에 reader가 필요 없다. 실패한 단계 · `VisualEvidence` 없이 끝난 Fine은 빠진 단계로 다시 내고, Fine이 `NOT_OBSERVED`면 아무것도 내지 않으며, 그 후보의 job을 아직 기다리면 내지 않는다. 판독은 빠진 kind만 같은 clip으로 낸다.
 
 7. **`StoredObservationAdapter`는 clip을 판독 입력에서 얻는다(질문 4).** 선택된 `PLATE_READ` 결과(§4-4 필터)의 입력 `incident_clip_ref`가 그 후보의 clip이고, 관련 asset은 지금처럼 그 clip lineage로 고른다(`select_case_assets`, `real-e2e-scenarios.md`). AssetFact는 recording 공개 함수로 읽는다. 판독이 아직 없으면 clip도 없는 것으로 본다.
 
@@ -104,6 +105,8 @@
 | JobRecord에 `candidate_id` · `incident_clip_ref` 필드를 더한다 | JobRecord ↔ CaseView 계약이 바뀌고 6.6순위 결정(「JobRecord 계약 변경 불필요」)을 뒤집는다(`observation-storage.md` §7과 같음) |
 | handler가 실행 시점의 현재 선택 후보를 조회한다 | 대기 중 재선택 · 재탐색이 오면 과거 job이 다른 후보를 관찰한다(#297 정철원 확인) |
 | `scope_ref`에 관찰 입력 ref를 싣는다 | `scope_ref`는 `AnalysisScope`를 가리키는 필드라 뜻이 바뀐다 |
+| §4-6 재선택 때 command가 `ProducedReader`로 이전 Fine · clip 결과를 다시 읽는다 | command 경로에 reader를 꽂는 composition 변경(Runtime)이 필요하고, T2가 이미 읽은 값을 다시 읽는다 |
+| §4-6 재사용을 Runtime JobRecord 캐시(같은 `input_fingerprint`의 `SUCCEEDED` 재사용, A절 §7)에 맡긴다 | case가 새 job을 발주하고 Runtime이 캐시로 끝내는 구조라 job · execution이 늘고, 캐시 구현(`input-fingerprint-implementation-label-deferred.md`)을 기다려야 한다. case가 발주하지 않는 쪽이 단순하다 |
 
 ## 8. 맞출 것
 
@@ -118,6 +121,8 @@
 > **진행 (2026-10-24, 2단계):** §4-7 `StoredObservationAdapter`를 넣었다(`observation-storage.md` §9). 남은 것은 composition 주입(Runtime) 뒤 Coarse T2 자동 선택 배선과 §4-6이다.
 >
 > **진행 (2026-10-26, 3단계):** §4-5 Coarse T2 자동 선택 · 첫 Fine 발주를 반영기에 넣었다(`reflection._apply_coarse_search`). composition 주입(RT-10(b) #407) 위에서 연다 — 발주한 Fine은 `appended_job_records`로 돌려주고 Worker reflector가 같은 transaction에서 enqueue한다. 남은 것은 §4-6.
+>
+> **진행 (2026-10-26, 4단계):** §4-6 `SELECT_OTHER_CANDIDATE` 뒤 첫 빠진 단계부터 발주(`observation.issue_missing_for_selected`, `command._select_other_candidate`)와 그 근거인 `observation_outcomes`(T2 반영 때 기록, case state 저장)를 넣었다. 발주한 job은 command `appended_job_records`로 돌려준다(`command-appended-job-records.md`).
 
 - `JOB_KINDS`에 `INCIDENT_CLIP_BUILD` · `label_key` 매핑 · JobRecord 계약 A§7 · A§12 등재.
 - `issue_job(..., observation_input=…)` · 관찰 kind 발주 때 세대의 `scope_ref` 싣기 · `CaseStore.observation_input`.

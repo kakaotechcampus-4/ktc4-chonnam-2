@@ -140,6 +140,7 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
     # adapter가 읽는다(§4-2). 실패 terminal도 같고, 실패 notice는 view가 read port의 실행 상태로 계산한다. 이전 후보의
     # 결과라도 기다리던 job이면 정산한다 — 투영은 선택 후보 필터가, READY는 gate의 현재 선택 확인(#191)이 막는다.
     case.settle_job(outcome.job_id, "REFLECTED")
+    observation.record_outcome(case, outcome.job_id, status=outcome.status)
     # command 뒤와 같은 gate다(`command.execute_command`). 관찰 결과로 Package가 준비되면 여기서 READY가 된다.
     if case.stage == "EVIDENCE_REVIEW":
         mark_ready_if_package_ready(case, store.adapter_for(case))
@@ -149,7 +150,10 @@ def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
-        observation.follow_fine(case, outcome.job_id, content["visual_evidence"])
+        visual = content["visual_evidence"]
+        observation.record_outcome(case, outcome.job_id, status=outcome.status,
+                                   verification=None if visual is None else visual.get("verification"))
+        observation.follow_fine(case, outcome.job_id, visual)
 
 
 def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
@@ -157,6 +161,8 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
+        observation.record_outcome(case, outcome.job_id, status=outcome.status,
+                                   incident_clip_ref=content["incident_clip_ref"])
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 

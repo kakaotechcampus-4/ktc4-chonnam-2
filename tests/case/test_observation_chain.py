@@ -348,6 +348,110 @@ def test_late_clip_of_previous_candidate_issues_nothing():
     assert result.appended_job_records == []
 
 
+# ── 다른 후보 선택 뒤 첫 빠진 단계부터 발주(§4-6) ─────────────────────────────
+
+
+def _select_other(store: CaseStore, case_id: str, candidate_id: str) -> list[dict[str, Any]]:
+    request = {
+        "case_id": case_id,
+        "expected_case_rev": store.get_case(case_id).case_rev,
+        "kind": "SELECT_OTHER_CANDIDATE",
+        "payload": {"candidate_id": candidate_id},
+    }
+    result = command.execute_command(request, store=store, timelines=FakeTimelines())
+    assert result.response["ok"] is True, result.response
+    return result.appended_job_records
+
+
+def _complete_chain(store: CaseStore, case_id: str, *, verification: str = "OBSERVED", clip: str = "SUCCEEDED",
+                    plate: str = "SUCCEEDED", overlay: str = "SUCCEEDED") -> None:
+    """선택 후보의 기다리던 Fine부터 판독까지 반영한다. 앞 단계가 멈추면 거기서 끝난다."""
+    _reflect(store, case_id, _latest(store, case_id, "FINE_VERIFY"), _fine(verification))
+    if verification == "NOT_OBSERVED":
+        return
+    clip_job = _latest(store, case_id, "INCIDENT_CLIP_BUILD")
+    clip_ref = f"clip_{store.observation_input(case_id, clip_job['job_id'])['candidate_id']}"
+    _reflect(store, case_id, clip_job, {"incident_clip_ref": clip_ref}, status=clip)
+    if clip == "FAILED":
+        return
+    _reflect(store, case_id, _latest(store, case_id, "PLATE_READ"), status=plate)
+    _reflect(store, case_id, _latest(store, case_id, "OVERLAY_TIME_READ"), status=overlay)
+
+
+def _inputs(store: CaseStore, case_id: str, jobs_: list[dict[str, Any]]) -> list[tuple[str, dict[str, Any]]]:
+    return [(j["kind"], store.observation_input(case_id, j["job_id"])) for j in jobs_]
+
+
+def test_reselect_issues_fine_for_the_new_candidate():
+    store, case_id, coarse, _ = _after_coarse()
+    _complete_chain(store, case_id)
+
+    appended = _select_other(store, case_id, "cand_2")
+
+    assert _inputs(store, case_id, appended) == [("FINE_VERIFY", {
+        "candidate_id": "cand_2",
+        "generation_job_id": coarse["job_id"],
+        "span": {"timeline_id": "tl_1", "timeline_revision": 1, "start_ms": 2_000, "end_ms": 5_000},
+    })]
+
+
+def test_reselect_back_reuses_completed_observations():
+    # A→B→A · B→A→B: 같은 탐색 결과 안에서 끝난 관찰은 다시 내지 않는다(`reselect-observation-reuse.md` (b)).
+    store, case_id, _, _ = _after_coarse()
+    _complete_chain(store, case_id)
+    _select_other(store, case_id, "cand_2")
+    _complete_chain(store, case_id, verification="NOT_OBSERVED")
+
+    assert _select_other(store, case_id, "cand_1") == []
+    assert _select_other(store, case_id, "cand_2") == []
+
+
+def test_reselect_back_resumes_from_failed_clip():
+    store, case_id, _, _ = _after_coarse()
+    fine_1 = _latest(store, case_id, "FINE_VERIFY")
+    _complete_chain(store, case_id, clip="FAILED")
+    _select_other(store, case_id, "cand_2")
+    _complete_chain(store, case_id, verification="NOT_OBSERVED")
+
+    appended = _select_other(store, case_id, "cand_1")
+
+    assert [(kind, source["fine_job_id"]) for kind, source in _inputs(store, case_id, appended)] == [
+        ("INCIDENT_CLIP_BUILD", fine_1["job_id"])
+    ]
+
+
+def test_reselect_back_reissues_only_the_failed_readout_with_the_same_clip():
+    store, case_id, _, _ = _after_coarse()
+    _complete_chain(store, case_id, overlay="FAILED")
+    _select_other(store, case_id, "cand_2")
+    _complete_chain(store, case_id, verification="NOT_OBSERVED")
+
+    appended = _select_other(store, case_id, "cand_1")
+
+    assert [(kind, source["incident_clip_ref"]) for kind, source in _inputs(store, case_id, appended)] == [
+        ("OVERLAY_TIME_READ", "clip_cand_1")
+    ]
+
+
+def test_reselect_does_not_reuse_observations_of_a_previous_generation():
+    store, case_id, _, _ = _after_coarse()
+    _complete_chain(store, case_id)
+    _select_other(store, case_id, "cand_2")
+    _complete_chain(store, case_id, verification="NOT_OBSERVED")
+    # 재탐색 — 같은 candidate_id가 다시 나와도 다른 세대다. 반영기가 cand_1을 다시 고르고 Fine을 낸다.
+    case = store.load_for_update(case_id)
+    case.regress_to_searching()
+    new_coarse = jobs.issue_coarse_search(case, scope_ref="scope_again", input_fingerprint="sha256:again")
+    store.save(case)
+    _reflect(store, case_id, new_coarse, {"outcome": "SUCCEEDED", "candidate_events": EVENTS})
+    _complete_chain(store, case_id)
+
+    appended = _select_other(store, case_id, "cand_2")
+
+    assert _inputs(store, case_id, appended)[0][0] == "FINE_VERIFY"
+    assert _inputs(store, case_id, appended)[0][1]["generation_job_id"] == new_coarse["job_id"]
+
+
 # ── 같은 입력으로 다시 발주 ─────────────────────────────────────────────────
 
 

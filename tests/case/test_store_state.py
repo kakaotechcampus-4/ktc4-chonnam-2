@@ -29,6 +29,18 @@ def test_round_trip_keeps_every_field():
     assert back.analysis_scopes["s1"]["scope_id"] == "s1"
 
 
+def test_observation_inputs_and_outcomes_survive_round_trip():
+    # 다른 후보 선택 뒤 첫 빠진 단계를 고르는 근거라 process가 바뀌어도 남아야 한다(`incident-clip-observation-input.md` §4-6).
+    case = _case()
+    case.observation_inputs["job_fine"] = {"candidate_id": "cand_a", "generation_job_id": "job_c", "span": {}}
+    case.observation_outcomes["job_fine"] = {"status": "SUCCEEDED", "verification": "OBSERVED"}
+
+    back = from_row(to_row(case))
+
+    assert back.observation_inputs == case.observation_inputs
+    assert back.observation_outcomes == case.observation_outcomes
+
+
 def test_row_splits_columns_records_and_state():
     row = to_row(_case())
     assert (row.case_id, row.stage, row.selection_rev) == ("case_state001", "EVIDENCE_REVIEW", 1)
