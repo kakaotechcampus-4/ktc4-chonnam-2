@@ -38,8 +38,10 @@ def error_response(status: int, *, headers=None, ref_unavailable=False) -> JSONR
 
 
 def install_error_handlers(app, events):
-    def failure(status, *, headers=None, ref_unavailable=False):
+    def failure(status, *, request, headers=None, ref_unavailable=False):
         events.emit("api.request.failed", status=str(status))
+        if getattr(request.scope.get('route'), 'path', None) == '/cases/{case_id}/sources':
+            events.emit('api.upload.failed', status=str(status))
         return error_response(status, headers=headers, ref_unavailable=ref_unavailable)
 
     @app.exception_handler(HTTPException)
@@ -57,22 +59,22 @@ def install_error_handlers(app, events):
             methods = getattr(route, "methods", None)
             if methods:
                 headers = {"Allow": ", ".join(sorted(methods))}
-        return failure(status, headers=headers, ref_unavailable=isinstance(error, (FrameUnavailable, AssetUnavailable)))
+        return failure(status, request=request, headers=headers, ref_unavailable=isinstance(error, (FrameUnavailable, AssetUnavailable)))
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):
         # Transport conversion failures, never domain invalid_payload. Command
         # handlers in (c) pass opaque JSON through to Case's own validation.
-        return failure(400)
+        return failure(400, request=request)
 
     @app.exception_handler(BeforeCommitFailure)
     async def before_commit(request, error):
-        return failure(503)
+        return failure(503, request=request)
 
     @app.exception_handler(CommitOutcomeUnknown)
     async def unknown_commit(request, error):
-        return failure(500)
+        return failure(500, request=request)
 
     @app.exception_handler(Exception)
     async def unexpected(request, error):
-        return failure(500)
+        return failure(500, request=request)

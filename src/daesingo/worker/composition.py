@@ -63,6 +63,7 @@ def compose_worker(
         objects = prepare_objects(context.execution_id, result.objects) if isinstance(result, HandlerResult) else ()
         terminal_latency = None
         sampled_at = acknowledged_at = None
+        false_stale = False
 
         @contextmanager
         def commit_guard():
@@ -86,8 +87,9 @@ def compose_worker(
                     {"execution_id": context.execution_id})
 
         def operation(conn):
-            nonlocal terminal_latency, sampled_at, acknowledged_at
+            nonlocal terminal_latency, sampled_at, acknowledged_at, false_stale
             terminal_latency = sampled_at = acknowledged_at = None
+            false_stale = False
             context.ownership.check()
             changed = finish(conn, context.execution_id, owner, status=result.status,
                              produced=result.produced, failure_kind=result.failure_kind)
@@ -105,6 +107,8 @@ def compose_worker(
                 job_execution.c.produced, job_execution.c.failure_kind,
             ).where(job_execution.c.execution_id == context.execution_id)
               .with_for_update()).mappings().one_or_none()
+            false_stale = bool(stored is not None and stored['lease_owner'] == owner
+                               and stored['status'] == 'STALE')
             recovered = bool(stored is not None and stored["lease_owner"] == owner
                         and stored["status"] == result.status
                         and stored["produced"] == produced
@@ -119,6 +123,13 @@ def compose_worker(
         committed = run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger,
                                       before_attempt=context.ownership.check,
                                       commit_guard=commit_guard)
+        if false_stale:
+            # The existing locking re-read proves both STALE and the original
+            # lease owner after a zero-row terminal attempt. Observe only after
+            # the DB callback returns; never classify other fencing as false STALE.
+            with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
+                job_id=context.job_id, execution_id=context.execution_id)):
+                log_event_best_effort(startup.logger, 'runtime.stale.false_count', status='STALE', count=1)
         if committed:
             # Separate from T1 and after its connection has returned. Failure
             # leaves terminal usage for the next sweep; never replay the handler/T1.
