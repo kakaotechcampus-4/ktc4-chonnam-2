@@ -144,8 +144,9 @@ class SlowVideoInvoker:
     """StructuredInvoker: 준비 미디어를 speed 배로 늘려 영상으로 보내고 시각을 원본으로 환산."""
 
     def __init__(self, client, config: GeminiSearchConfig,
-                 coarse_speed: float, fine_speed: float) -> None:
+                 coarse_speed: float, fine_speed: float, fine_extra: str = "") -> None:
         self._client = client
+        self._fine_extra = fine_extra
         self._cfg = config
         self._coarse_speed = coarse_speed
         self._fine_speed = fine_speed
@@ -161,6 +162,8 @@ class SlowVideoInvoker:
                 if request.media.playback_speed == 1.0:
                     path = Path(td) / "slow.mp4"
                     _slow(request.media.path, path, speed)
+                if not coarse and self._fine_extra:
+                    prompt = f"{prompt.rstrip()}\n\n{self._fine_extra}"
                 prompt += _note(speed, "Coarse 핵심 시각" in prompt)
             url = "data:video/mp4;base64," + base64.b64encode(path.read_bytes()).decode()
             messages = [{"role": "user", "content": [
@@ -204,7 +207,7 @@ def _overlaps(span: tuple[float, float], truth: tuple[tuple[float, float], ...] 
 def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
                   fine_speed: float, timeout: float,
                   profile: DiagnosticProfile = DiagnosticProfile.P3,
-                  transport: str = "video") -> dict:
+                  transport: str = "video", fine_extra: str = "") -> dict:
     # 준비 fps = 1/speed -> 늘린 뒤 재생 1초당 원본 프레임 1장(프록시 샘플링과 1:1).
     # image 는 늘리지 않고 그 fps 프레임을 전량 image_url 로 보낸다.
     cfg = replace(base_cfg, coarse_fps=1 / coarse_speed, fine_fps=1 / fine_speed, max_retries=0)
@@ -217,7 +220,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
         invoker = GeminiProvider(client.api_key, cfg,
                                  runtime=ProviderRuntimeOptions(request_timeout_sec=timeout))
     else:
-        invoker = SlowVideoInvoker(client, cfg, coarse_speed, fine_speed)
+        invoker = SlowVideoInvoker(client, cfg, coarse_speed, fine_speed, fine_extra)
     deps = DiagnosticDependencies(invoker, MediaPreparer(cfg), cfg, profile, timeout)
     tag = f"{profile.value}/{transport}/{coarse_speed}x/{fine_speed}x"
     verifs: Counter[str] = Counter()
@@ -300,6 +303,8 @@ def main() -> None:
     ap.add_argument("--reasoning", default=None,
                     help="쉼표로 나눈 reasoning_effort 값들(video transport 만 스트리밍). 없으면 설정값")
     ap.add_argument("--clips", default=None, help="쉼표로 나눈 case_id 앞부분으로 거른다")
+    ap.add_argument("--fine-variant", default=None,
+                    help="video transport 의 Fine 프롬프트에 붙일 문장(gemini_fine_fp_variant_trace.VARIANTS 이름)")
     ap.add_argument("--fine-height", type=int, default=None,
                     help="Fine 준비 영상 최대 높이(운영 MediaPreparer 는 360 고정). 실험에서만 바꾼다")
     args = ap.parse_args()
@@ -317,6 +322,12 @@ def main() -> None:
         base_url=base_cfg.base_url, api_key=key, max_retries=0, timeout=args.timeout_sec
     )
     efforts = args.reasoning.split(",") if args.reasoning else [base_cfg.reasoning_effort]
+    fine_extra = ""
+    if args.fine_variant:
+        if args.transport != "video":
+            raise SystemExit("--fine-variant 는 video transport 에서만 쓴다")
+        from gemini_fine_fp_variant_trace import VARIANTS
+        fine_extra = VARIANTS[args.fine_variant]
     runs = []
     for rep in range(args.repeats):
         for cond, prof, effort in ((c, p, e) for c in args.conditions.split(",")
@@ -325,7 +336,7 @@ def main() -> None:
             print(f"=== repeat {rep + 1} / {prof} / {args.transport} / {effort} / coarse {cs}x, fine {fs}x ===")
             started = time.monotonic()
             r = run_condition(client, replace(base_cfg, reasoning_effort=effort), cs, fs,
-                              args.timeout_sec, DiagnosticProfile(prof), args.transport)
+                              args.timeout_sec, DiagnosticProfile(prof), args.transport, fine_extra)
             r["repeat"] = rep + 1
             r["reasoning_effort"] = effort
             r["wall_sec"] = round(time.monotonic() - started, 1)
@@ -338,7 +349,7 @@ def main() -> None:
             if args.out:  # 조건마다 저장해 중간에 끊겨도 남긴다
                 args.out.write_text(json.dumps({
                     "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model, "fine_height": args.fine_height or 360,
-                               "reasoning_efforts": efforts,
+                               "reasoning_efforts": efforts, "fine_variant": args.fine_variant,
                                "fine_padding_sec": base_cfg.fine_padding_sec},
                     "runs": runs}, ensure_ascii=False, indent=2), encoding="utf-8")
 
