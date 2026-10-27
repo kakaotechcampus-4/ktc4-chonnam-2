@@ -12,20 +12,21 @@ import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
-import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
+import { CandidateCompare, DetailsCheck, EditHint, PlateCheck } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
 // 실제 HTTP API(`?api`)로 도는 흐름 — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
 // 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
 // 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
 
-type Sub = 'candidates' | 'plate' | 'details'
+type Sub = 'candidates' | 'plate' | 'details' | 'hint'
 const noop = () => {}
 // 결과 화면 갈래 — 진행에서 여기로 넘어오는 순간 자동차가 도착한다(시연과 같다)
 const RESULT_KINDS: ReadonlySet<string> = new Set(['AWAIT_RESPONSE', 'EVIDENCE', 'HANDOFF'])
 type NoticeAction = Extract<Command, { kind: 'RUN_NOTICE_ACTION' }>['payload']['action']
 
 // notice 버튼 중 command가 있는 것만 보낸다. 나머지(직접 입력류)는 입력형 command가 아직 없다(#212 · #217).
+// `EDIT_HINT`는 바로 보내지 않고 설명 입력 화면을 연다 — 거기서 `EDIT_HINT` command로 보낸다(#410).
 const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_REPORT_VIDEO',
   'RETRY_PLATE_READ',
@@ -83,14 +84,21 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     void send(command)
   }
   const onAction = (noticeCode: string, action: Action) => {
+    if (action === 'EDIT_HINT') return open('hint')
     if (!SENDABLE.has(action)) return setUnsupported(true)
     run({ kind: 'RUN_NOTICE_ACTION', payload: { notice_code: noticeCode, action: action as NoticeAction } })
   }
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
-  const canRun = (action: Action) => SENDABLE.has(action)
+  const canRun = (action: Action) => action === 'EDIT_HINT' || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
     setSubs([])
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
+  }
+  const editHint = (description: string) => {
+    setSubs([])
+    setSituation(description) // 진행 화면이 새 설명을 보인다
+    setStartedAt(Date.now())
+    run({ kind: 'EDIT_HINT', payload: { description } })
   }
   const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value } })
   const open = (sub: Sub) => {
@@ -164,6 +172,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   }
 
   function analysis(view: CaseView): JSX.Element {
+    // 설명 고치기는 결과 없음 · 중단 · 결과 화면 어디서나 열린다 — 화면 갈래보다 먼저 본다
+    if (sub === 'hint') return <EditHint view={view} onBack={back} onSearch={editHint} onHome={newReport} />
     const screen = selectScreen(view)
     switch (screen.kind) {
       case 'PROGRESS':
@@ -185,24 +195,25 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
         return <FailedScreen view={view} onAction={onAction} canRun={canRun} />
-      // ponytail: 다시 찾기 입력은 두지 않는다 — 설명을 고쳐 다시 찾는 command(EDIT_HINT)가 아직 없다. 「새 신고」로 다시 시작한다.
       case 'NO_RESULT':
-        // 시연과 같은 틀. case가 실은 동작 중 보낼 수 있는 것(RETRY_SEARCH = 같은 조건으로 다시 찾기)만 버튼으로 둔다.
-        // 설명을 고쳐 다시 찾는 EDIT_HINT는 command가 아직 없다 — 「새 신고」로 처음부터 시작할 수 있게 함께 둔다
+        // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
+        // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
         return (
           <div className="rs rs-screen state-page noresult">
             <p className="state-context">신고자료</p>
             <NoResultScreen view={view} />
             <div className="state-actions">
-              {view.notices.flatMap((n) =>
-                n.actions.filter(isAction).filter(canRun).map((a) => (
-                  <button key={`${n.code}-${a}`} type="button" className="rs-btn pri" onClick={() => onAction(n.code, a)}>
-                    {ACTION_LABELS[a]}
-                  </button>
-                )),
-              )}
+              {view.notices
+                .flatMap((n) => n.actions.filter(isAction).filter(canRun).map((a) => ({ code: n.code, a })))
+                // 설명을 잘 이해하지 못함(hint_unclear)도 함께 붙으면 같은 동작이 겹친다 — 한 번만 둔다
+                .filter((x, i, all) => all.findIndex((y) => y.a === x.a) === i)
+                .map(({ code, a }, i) => (
+                <button key={`${code}-${a}`} type="button" className={`rs-btn ${i === 0 ? 'pri' : 'sec'}`} onClick={() => onAction(code, a)}>
+                  {ACTION_LABELS[a]}
+                </button>
+              ))}
               <button type="button" className="rs-btn sec" onClick={newReport}>
-                새 신고
+                처음으로
               </button>
             </div>
           </div>

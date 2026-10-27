@@ -6,6 +6,7 @@ import { CandidateCard } from '../components/CandidateCard'
 import { StatusBadge } from '../components/StatusBadge'
 import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
+import { SituationInput } from './UploadScreen'
 
 // Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
 // 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
@@ -187,6 +188,50 @@ export function PlateCheck(props: {
           </section>
         </div>
       </div>
+    </SubPage>
+  )
+}
+
+// 설명 고쳐 다시 찾기(#410) — notice가 `EDIT_HINT`를 실었을 때 연다. 분석 시작과 같은 원문 입력이고
+// 이전 설명(`CaseView.description`)을 미리 채운다. 보내면 case가 단서 정리부터 다시 돈다(`EDIT_HINT` command).
+// 「다시 찾기」를 앞에 두고 강조, 「처음으로」는 약하게 — 언제나 그리는 고정 출구다(서버 action이 아니다).
+export function EditHint(props: {
+  view: CaseView
+  onBack: () => void
+  onSearch: (description: string) => void
+  onHome: () => void
+}): JSX.Element {
+  const [text, setText] = useState(props.view.description ?? '')
+  return (
+    <SubPage title="설명 고치기" onBack={props.onBack} className="hint-page">
+      <form
+        className="rs-group"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (text.trim()) props.onSearch(text.trim())
+        }}
+      >
+        <label className="rs-field">
+          <span className="rs-label">어떤 상황이었나요?</span>
+          <SituationInput
+            label="어떤 상황이었나요?"
+            example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
+            rows={4}
+            value={text}
+            onChange={setText}
+          />
+          <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
+        </label>
+        <div className="rs-actions">
+          {/* 비어 있으면 보내지 않는다 — 빈 설명은 단서 없이 같은 범위를 다시 찾을 뿐이다 */}
+          <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
+            다시 찾기
+          </button>
+          <button type="button" className="rs-btn sec" onClick={props.onHome}>
+            처음으로
+          </button>
+        </div>
+      </form>
     </SubPage>
   )
 }

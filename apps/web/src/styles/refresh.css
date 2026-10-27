@@ -784,6 +784,9 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 .plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
 .plate-form-actions { display: flex; gap: 10px; }
+/* 설명 고치기(#410) — 업로드 화면의 입력 틀을 하위 화면에서 다시 쓴다 */
+.hint-page .rs-field { margin-top: 24px; }
+.hint-page .rs-actions { gap: 10px; flex-wrap: wrap; }
 
 /* 후보 카드 · 기억 단서(다른 후보 · 위반 미관찰 · 어떻게 정했는지) */
 .rs .cands { gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
