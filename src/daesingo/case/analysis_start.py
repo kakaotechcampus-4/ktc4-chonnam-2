@@ -128,6 +128,10 @@ def edit_hint(
             raise InvalidTransition("분석 job을 기다리는 중에는 설명을 고칠 수 없다")
     else:
         case.regress_to_searching()  # INTAKE면 InvalidTransition — 아무것도 바꾸기 전이다
+        # 버린 후보 목록에 딸린 job(#412 자동 선택 뒤의 Fine · clip · 판독 등)은 더 기다리지 않는다. 실행은
+        # 취소하지 않고 늦은 결과만 `SUPERSEDED`로 버린다(`edit-hint.md` §4).
+        for record in case.waiting_job_records():
+            case.settle_job(record["job_id"], "SUPERSEDED")
     case.description = description
     case.hints = dict.fromkeys(_HINT_FIELDS)
     case.hint_unclear = False

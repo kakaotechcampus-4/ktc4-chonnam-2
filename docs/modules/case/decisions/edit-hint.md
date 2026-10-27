@@ -12,7 +12,7 @@
 ## 2. 결정
 
 1. **(A) 원문 다시 적기 + (가) 한 command.** 새 command `EDIT_HINT{description}`. web(신유민) 의견: 분석 시작 입력 UI를 다시 쓸 수 있고, 필드별 편집(B)은 화면을 새로 만들어야 한다. 「고치고 바로 찾기」가 화면상 자연스럽다.
-2. **성공하면** `SEARCHING`으로 역행(후보 · 선택 폐기, `regress_to_searching()` — `TIME_HINT_EDIT`와 같은 역행) · 원문 교체 · hints 4개 `null` · `hint_unclear` · `candidate_search_failed` 해제 · `case_rev` +1 · `HINT_EXTRACT` 1건. 설명이 비었으면 구조화 없이 바로 첫 탐색(분석 시작과 같다).
+2. **성공하면** `SEARCHING`으로 역행(후보 · 선택 폐기, `regress_to_searching()` — `TIME_HINT_EDIT`와 같은 역행) · 역행하면 기다리던 job을 `SUPERSEDED`로 정산(§4) · 원문 교체 · hints 4개 `null` · `hint_unclear` · `candidate_search_failed` 해제 · `case_rev` +1 · `HINT_EXTRACT` 1건. 설명이 비었으면 구조화 없이 바로 첫 탐색(분석 시작과 같다).
 3. **결과 반영은 분석 시작과 같은 경로다** — `reflect_hint_extraction()` → `issue_initial_search()`, 소진 알림이면 `reflect_hint_exhaustion()`. 구조화 · scope 생성 경로를 하나로 유지한다.
 4. **예산은 첫 탐색과 같다**(`InitialSearchBudget`). 같은 경로를 쓰는 것이 이 안을 고른 이유다.
 5. **허용 조건 = 현재 CaseView notice가 `EDIT_HINT`를 싣고 있는가.** `RUN_NOTICE_ACTION`과 같은 근거다. 어느 화면에 출구를 둘지는 notice가 정하므로, 화면을 더할 때(위반 미관찰) command를 고치지 않고 notice만 고친다. 추가로 `SEARCHING`에서는 분석 job을 기다리는 중이면 받지 않는다(진행 중 덮어쓰기 방지).
@@ -25,7 +25,8 @@
 
 ## 4. 알려진 한계
 
-- **후보 선택 뒤 고치면 이전 후보의 관찰 job이 끝날 때까지 `running_jobs`에 남는다.** 역행은 Fine · clip · 판독 job을 정산하지 않는다(`TIME_HINT_EDIT` 역행과 같다). 결과는 이전 후보 세대라 화면 값에 쓰이지 않는다. 지금 notice 3종은 선택 전 화면이라 이 경로는 위반 미관찰에 실을 때 생긴다 — 그때 정산 사유(`SUPERSEDED` 등)와 함께 정한다.
+- **후보 선택 뒤 고치면 이전 후보 목록에 딸린 job은 `SUPERSEDED`로 정산한다(2026-10-27).** #412로 Coarse 반영 뒤 rank=1을 자동 선택해 Fine을 발주하므로, `search.hint_unclear` 화면은 보통 `EVIDENCE_REVIEW`이고 Fine · clip · 판독 job이 돌고 있다. 그대로 두면 역행 뒤 진행 화면 `running_jobs`에 이전 후보의 job이 결과가 올 때까지 남는다(결과는 선택이 없어 쓰이지 않는다). 그래서 역행할 때 기다리던 job을 모두 정산한다 — `running_jobs`에서 바로 빠지고, 늦은 결과는 기존 guard대로 `NOT_APPLIED(SUPERSEDED)`다. Runtime 실행은 취소하지 않는다(`cancelled_job_ids=[]`, timeout-fallback 원칙). `SUPERSEDED`의 뜻을 「같은 kind · `scope_ref`로 새 job을 발주했다」에서 「case가 그 job의 입력(후보 목록)을 새것으로 바꿨다」로 넓혀 쓴다(`running-jobs-derivation.md`). Runtime이 이미 받는 사유라 새 사유를 만들지 않았다. 역행하지 않는 경로(`SEARCHING`, 중단 · timeout 뒤)는 정산하지 않는다.
+  - `TIME_HINT_EDIT` 역행(`correction.edit_time_hint()`)은 같은 정산을 하지 않는다 — 실행 경로(web 버튼)가 없어 이번 범위 밖이다.
 - 같은 원문을 다시 보내도 거부하지 않는다 — 구조화를 다시 돌리는 의미가 있다(중단 뒤 재시작).
 
 ## 5. 고르지 않은 안
@@ -40,7 +41,7 @@
 
 ## 6. 테스트
 
-`tests/case/test_edit_hint_command.py` — 결과 없음에서 `HINT_EXTRACT` 재발주 · 역행 · 원문 · hints · `case_rev` · 세대, 반영 뒤 첫 탐색, 빈 설명 바로 탐색 · 예산, `hint_unclear` notice action과 해제, 단서 구조화 중 중단의 출구, 탐색 근거가 있는 중단은 `RETRY_SEARCH`만, 버튼 없는 화면 · 분석 진행 중 `not_allowed`, `invalid_payload` · `stale_revision`, 타임라인 실패 시 저장 안 함, 선택 뒤 역행(aggregate), `INTAKE` 거부.
+`tests/case/test_edit_hint_command.py` — 결과 없음에서 `HINT_EXTRACT` 재발주 · 역행 · 원문 · hints · `case_rev` · 세대, 반영 뒤 첫 탐색, 빈 설명 바로 탐색 · 예산, `hint_unclear` notice action과 해제, 단서 구조화 중 중단의 출구, 탐색 근거가 있는 중단은 `RETRY_SEARCH`만, 버튼 없는 화면 · 분석 진행 중 `not_allowed`, `invalid_payload` · `stale_revision`, 타임라인 실패 시 저장 안 함, 선택 뒤 역행(aggregate), `EVIDENCE_REVIEW`에서 고치면 기다리던 Fine을 `SUPERSEDED`로 정산 · 역행 없는 경로는 정산 안 함, `INTAKE` 거부.
 
 ## 7. 남은 것
 

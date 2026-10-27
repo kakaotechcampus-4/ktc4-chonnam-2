@@ -291,7 +291,7 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 
 | `kind` | `payload` | 허용 상태 | 성공하면 |
 | --- | --- | --- | --- |
-| `EDIT_HINT` | `{ "description": "string" }` — 다시 적은 원문 그대로. 빈 문자열을 허용한다(§11과 같다) | 현재 CaseView `notices[]` 중 하나가 `actions[]`에 `EDIT_HINT`를 싣고 있을 때(`RUN_NOTICE_ACTION`과 같은 근거). 그리고 `SEARCHING`이면 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 없을 때 | `SEARCHING`으로 역행(후보 · 선택 폐기, 후보 세대 +1) · 설명 원문 교체 · `hints` 4개 `null` · `hint_unclear` 해제 · `case_rev` +1 · **`HINT_EXTRACT` 1건**. 설명이 비었으면 구조화 없이 `AnalysisScope` 1건 · `COARSE_SEARCH` 1건 |
+| `EDIT_HINT` | `{ "description": "string" }` — 다시 적은 원문 그대로. 빈 문자열을 허용한다(§11과 같다) | 현재 CaseView `notices[]` 중 하나가 `actions[]`에 `EDIT_HINT`를 싣고 있을 때(`RUN_NOTICE_ACTION`과 같은 근거). 그리고 `SEARCHING`이면 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 없을 때 | `SEARCHING`으로 역행(후보 · 선택 폐기, 후보 세대 +1, 기다리던 job은 `SUPERSEDED` 정산 · 실행 취소 없음) · 설명 원문 교체 · `hints` 4개 `null` · `hint_unclear` 해제 · `case_rev` +1 · **`HINT_EXTRACT` 1건**. 설명이 비었으면 구조화 없이 `AnalysisScope` 1건 · `COARSE_SEARCH` 1건 |
 
 - **고치기와 다시 찾기는 한 command다.** `RETRY_SEARCH`는 직전 탐색과 같은 입력으로 다시 찾는 동작이라(§5) 바뀐 단서를 보지 않는다.
 - **결과 반영은 분석 시작과 같다**(§11) — `service.receive_hint_extraction_result()` → hints · 첫 탐색. 소진 알림도 같다(`decisions/hint-exhaustion.md`).

@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import pytest
 
-from daesingo.case import analysis_start, command, service
+from daesingo.case import analysis_start, command, jobs, service
 from daesingo.case.analysis_start import InitialSearchBudget
 from daesingo.case.domain import Candidate, InvalidTransition
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimeline, TimelineUnavailable
+from tests.case.test_observation_chain import NoDownstream
 
 _ALL_NULL = {"time": None, "vehicle": None, "situation": None, "location": None}
 
@@ -263,6 +264,48 @@ def test_edit_after_selection_discards_candidates_and_selection():
     assert case.stage == "SEARCHING"
     assert case.candidates == []
     assert case.description == "새 설명"
+
+
+def _evidence_review_with_waiting_fine() -> tuple[CaseStore, str, str]:
+    """#412 이후의 보통 모양 — 후보를 받자마자 rank=1이 선택되고 Fine이 돈다. 그 화면에 `search.hint_unclear`가 있다."""
+    store, case_id = _started()
+    store.adapters.put(case_id, NoDownstream())
+    _reflect_hint(store, case_id, {"status": "ABSTAINED"})
+    case = store.load_for_update(case_id)
+    case.receive_candidates([_candidate("cand_1")])
+    case.select_candidate("cand_1")
+    fine = jobs.issue_job(case, "FINE_VERIFY", scope_ref="cand_1", input_fingerprint="fp_fine")
+    store.save(case)
+    return store, case_id, fine["job_id"]
+
+
+def test_edit_during_evidence_review_supersedes_waiting_observation_jobs():
+    """이전 후보 목록의 관찰 job은 더 기다리지 않는다 — 진행 화면 `running_jobs`에 남지 않고, 늦은 결과는
+    `NOT_APPLIED(SUPERSEDED)`다. 실행 취소는 요청하지 않는다(timeout-fallback 원칙)."""
+    store, case_id, fine_id = _evidence_review_with_waiting_fine()
+    assert _notice(store, case_id, "search.hint_unclear")["actions"] == ["EDIT_HINT"]
+
+    result = _edit(store, case_id, "흰 SUV가 실선을 넘어 끼어들었어요")
+
+    assert result.response["ok"] is True
+    assert result.cancelled_job_ids == []
+    saved = store.get_case(case_id)
+    assert saved.settled_jobs[fine_id] == "SUPERSEDED"
+    assert [r["kind"] for r in saved.waiting_job_records()] == ["HINT_EXTRACT"]
+
+
+def test_edit_while_searching_keeps_other_waiting_jobs():
+    """역행하지 않는 경로(중단 · timeout 뒤 `SEARCHING`)는 정리할 이전 후보 목록이 없다."""
+    store, case_id = _started()
+    rev = store.get_case(case_id).case_rev
+    command.execute_command(_req(case_id, "STOP_ANALYSIS", {}, rev), store=store, timelines=FakeTimelines())
+    case = store.load_for_update(case_id)
+    export = jobs.issue_job(case, "REPORT_VIDEO_EXPORT", input_fingerprint="fp_export")
+    store.save(case)
+
+    assert _edit(store, case_id, "새 설명").response["ok"] is True
+
+    assert export["job_id"] not in store.get_case(case_id).settled_jobs
 
 
 def test_edit_is_not_allowed_before_analysis_starts():
