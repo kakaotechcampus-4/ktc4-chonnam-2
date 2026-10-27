@@ -54,7 +54,8 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | type checker 도구 (Plan RT-15) | pending | RT-15 | — |
 | produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
-| Compose smoke의 CI 편입 여부 (Plan RT-13) | pending | RT-13 | — |
+| Compose smoke의 CI 편입 여부 (Plan RT-13) | opt-in local smoke; 일반 PR에는 기존 pytest의 구조/negative-control 검사. 실제 Docker 결과와 구분 | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
+| local image/migration/media/secret 경계 | single image · 10001:10001 · `/media` named volume · read-only host env · 기존 stdin migration CLI · success dependency | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
 | API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR #366 | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
 | API Case 생성·조회 transaction | 요청별 CaseStore(conn, executions) · 생성 commit 후 공개 read · postcommit read 실패 500 · bounded event만 사용 | RT-08(b) · PR #373 · `3ea6f09084f7396eb980f53d5afa69da7043c83c` | 아래 RT-08(b) · `api/{composition,routes_cases,routes_view}.py` |
 | API command/enqueue transaction | 실제 수신 byte 제한 · opaque JSON · Case 저장+append batch enqueue 한 commit · append/응답 표 status · 요청 trace 전달 | RT-08(c) · PR #375 · `da7e5e613b21fda02211aa9f47f8c61b94835d13` · `Refs #295 (RT-08(c))` | 아래 RT-08(c) · `api/{composition,routes_commands,app}.py` |
@@ -77,6 +78,7 @@ Plan §12.3에서 「멈추고 확인」에 해당해 Owner에게 확인한 건�
 | --- | --- | --- | --- | --- |
 | 2026-10-08 확인 | RT-02(b), PR 미생성 | Case env 입력 우선순위 최소 수정·외부 transaction 참여. Case fixture/revision/metadata/version table 의미 변경 없음, 공통 helper 의무 없음 | 유소연 @yuusoyeon | [Issue #289 승인 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/289#issuecomment-6055765577). Consult 결과이며 Case env는 향후 PR에서 Owner 리뷰 예정 |
 | 2026-10-14 직접 조회 | RT-07(c), PR #360 | Search에는 durable Run 저장소가 없고 최초 영속화는 T1 produced. 예정 Run ref 대조로 복구하며 명시적 DIRECT_NO_RUN 허용 | 김준영 @flosure23 · 서어진 @kong2488-star · 정철원 최종 확인 | [Runtime 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6145102027) · [Search 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6148574716) · [최종 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6150512406). 이 세션은 댓글을 작성하지 않고 직접 읽었다 |
+| 2026-10-27 직접 조회 | RT-13(a), PR 미생성 | RD-12a/g local slice와 Compose health/grace M4 provisional 승인. timeout 5s는 B-H3에서 DERIVED; interval10s/retries3/start_period10s/grace30s는 CONSERVATIVE_DEFAULT | Runtime/Ops Owner 김준영 @flosure23 | [결정 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6430017764) · [Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506). Issue 본문/최신 두 댓글 직접 조회; 댓글 작성 없음 |
 
 ## Milestone audit
 
@@ -1907,35 +1909,45 @@ RT-12 전체 DONE·Closes #299·merge-ready/Owner acceptance를 주장하지 않
 
 ## RT-13 — Docker / Compose local runtime
 
-Status: NOT_STARTED · Issue: #300 · Audit: C
+Status: IN_PROGRESS · Refs #300 (RT-13(a)) · Audit: C
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
-| — | — | — |
+| pending (미생성) | RT-13(a) Dockerfile/Compose, local one-shot migration·smoke 및 승인 Baseline 반영 | pending |
 
 ### 구현 결과
 
-—
+Python 3.12/locked uv/ffmpeg single image, api/worker command 분리, numeric UID/GID 10001:10001, MySQL8.4 data/media 별도 named volumes, read-only env 파일 mount, 기존 stdin migration adapter와 success dependency, ready healthcheck, worker stop grace, B-O1 local rotation을 추가했다. 파일·실행 흐름·근거와 전체 Implementation Notes는 [RT-13(a) Notes](./rt13a-docker-compose.md)가 원문이다.
 
 ### Plan 대비 변경
 
-—
+이전 2 PR 예시의 local migration/smoke를 사용자 요청/#300 승인에 따라 (a)에 포함했다. (b)는 logical backup/restore 절차 완성과 실제 restore smoke, 필요시 검증 확장이다. RD-12f/h production 배포·post-deploy 및 EC2/ECR/SSM/registry/CloudWatch/production restart policy/RT-14는 제외다. Plan 문서는 다시 쓰지 않았다. RT-13 전체 DONE/Issue 종료가 아니다.
 
 ### 새 implementation detail
 
-—
+YAML JSON subset source/resolved policy validator와 mutation negative controls, stdin CLI adapter, multi-stage editable install(기존 migration 경로 보존), local driver, project 전용 opt-in smoke. smoke는 fake key/무작위 임시 password와 test-only blocking handler로 기존 lease/sweep/retry 경로를 검증하도록 작성했고 application image에 test probe를 넣지 않았다. api/worker/migrate는 root 실행/권한 완화에 의존하지 않는다.
 
 ### Owner 확인 포인트
 
-—
+승인된 M4 수치는 [Baseline §2.10](./provisional-baseline-v0.1.md#210-health--readiness--j)에 Evidence/근거/지표/Trigger와 반영했다. timeout=5s는 B-H3 ready3s에서 DERIVED, interval10s/retries3/start_period10s/grace30s 숫자는 CONSERVATIVE_DEFAULT이며 실측값이 아니다. 새 claim 중단+grace 내 정상 종료 시도이고 모든 handler 완료 보장 없음. 초과 kill 뒤 기존 lease→STALE→retry로 복구한다. RT-13 smoke와 이후 Real E2E에 따라 재조정 가능하다.
 
 ### Verification
 
-—
+직접 검사와 fresh reviewer 판정의 원문은 [RT-13(a) Notes Verification](./rt13a-docker-compose.md#verification--2026-10-27)이다. `.codex-scratch/rt13a/` 원본은 PR 제외다. 최초 fresh review P1없음/P2두 건(normalized null entrypoint, cleanup 실패 전파·기록)을 TDD로 수정해 deploy79 passed; 같은 reviewer도79개를 독립 실행하고 재리뷰에서 잔여 P1/P2 source defect 없음을 확인했다. 실제 MySQL8.4.7 전체는12683 passed/3 failed/26 skipped/xfail0; MySQL subset1044 passed/1 failed/skip0/xfail0, strict JSON/JUnit FAIL. reviewer는 전체/MySQL suite를 재실행하지 않았다. 기존 API process-safety2건의5초 timeout과 nested gate900초 timeout을 보존하며, API2건 단독 재실행도2 failed다. boundary/Contract104/workflow/diff/lock check PASS. Docker는 CLI를 찾지 못해 preflight FAIL, 생성 자원0이다. MySQL 정리 전 예상 schema 감사는 extra1로 FAIL했지만 finally SHUTDOWN·UUID datadir 삭제·Linux port closed와 후속 Windows listener0/소유 Python0을 확인했다. 미커밋 intermediate 후보 보존 가능이며 merge-ready/전체·mandatory·Docker acceptance/RT-13 DONE을 주장하지 않는다.
+
+### Docker 설치 후 재개 — 2026-10-27
+
+기존 17개 후보 SHA-256/branch/HEAD/index empty를 먼저 확인했다. Engine29.9.2/Compose5.6.1/Desktop Linux에서 실제 smoke9 stages와 cleanup PASS를 확인했다. 최초 NTFS `.pytest_cache` xattr 접근 거부 build 실패와 image 미생성 cleanup 실패는 보존하고, 기존 ACL을 변경하지 않았다. ignored 파일을 제외한 2,188개 파일의 bytes/hash가 일치하는 전용 Linux 사본에서 clean build와 config, migrate exit7 negative control, 새 volumes의 MySQL healthy→migrate0→API ready, 별도 api/worker·동일 image, HTTP command/view, upload 동일 path/bytes, SIGKILL→STALE→attempt2, inspect secret/UID/GID/non-tmpfs/health/grace/log rotation, recreate DB/media persistence를 검증했다. worktree/commit/push/PR/Issue 변경은 없다. `docker-snapshot.json/jsonl`은 ignored 새 scratch에만 보존한다. 직접 NTFS context build 성공이나 provider 성공 분석/restore/production 검증으로 확대하지 않는다.
+
+이전 실패의 Windows 원래5초 재현은 후보/develop 모두1pass/1fail이며 source import I/O stack을 관측했다. 관련 source/test179개는 develop과 바이트 동일하다. Linux API는 양쪽2pass, 같은 DockerMySQL8.4.13의 nested는 양쪽 원래900초 timeout이었다. 실제 DDL 대기 stack/서버 누적비용을 보존하며 과거 timeout의 단일 원인으로 단정하지 않는다.
+
+최종은 실제MySQL8.4.7/Linux, 전용 pytest datadir, durability기본1/1, timeout/sleep불변으로 전체1회/strictCLI1회를 실행했다. 전체 **12678passed/3failed/33skipped/xfail0**, mandatoryMySQL **1045/1045passed·3135phases·skip/xfail0**, strict **PASS**다. 기존 API2건/nested부모는 이번 전체에서PASS, nested자식1027passed·656.449초다. deploy79pass다. 새Search3fail은 저자가검증사본의Git문맥/venv PATH를누락한환경구성오류로대조확인했다. develop원환경3fail, PATH만복구1pass/2fail, 실제읽기전용Git문맥만복구2pass/1fail, 둘다복구후후보/develop각3pass였다. source/test수정없고단독PASS로전체3fail을바꾸지않았다. 전체/strict재실행없음·원격CI시간여유미확정이다. 최초실패6개hash도유지한다. 상세원문과후속정리/리뷰는Notes를따른다.
+
+최종exactcleanup에서containers/volumes0·기본networks3ID불변,소유process/datadir/workspace/Windowslistener부재를확인했다. 진단DockerDB의schema2/transaction1감사FAIL은물리정리PASS와구분보존한다. 같은freshreviewer가최신17개hash/diff/실행·matrix·정리증거를읽기전용대조하여새P1/P2없음·추가수정없음으로판정했다. 이번후속에서테스트/strict/Docker를재실행하지않았다. 미커밋intermediate후보보존가능이며공식전체3FAIL을GREEN/무조건merge-ready로표현하지않는다는판정이다. 실행code/tests불변·문서4개만후속보완했고commit/push/PR/Issue변경없음이다.
 
 ### 남은 위험
 
-—
+app image base/apt는 digest snapshot pin이 아니므로 bit-for-bit 재현성을 주장하지 않는다. 공식전체3FAIL은환경대조PASS와별개로남기며원격CI성공·시간여유는미확인이다. 기존 grace는 모든 handler 완료를 보장하지 않는다. RT-13 전체 IN_PROGRESS/Refs #300과 (b) backup/restore 경계를 유지한다.
 
 ---
 

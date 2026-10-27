@@ -1,0 +1,68 @@
+{
+  "services": {
+    "mysql": {
+      "image": "mysql:8.4",
+      "environment": {
+        "MYSQL_DATABASE": "daesingo",
+        "MYSQL_USER": "daesingo",
+        "MYSQL_ROOT_PASSWORD_FILE": "/run/secrets/mysql-root-password",
+        "MYSQL_PASSWORD_FILE": "/run/secrets/mysql-password"
+      },
+      "volumes": [
+        {"type": "volume", "source": "mysql_data", "target": "/var/lib/mysql"},
+        {"type": "bind", "source": "${DAESINGO_MYSQL_ROOT_PASSWORD_FILE:?protected root password file required}", "target": "/run/secrets/mysql-root-password", "read_only": true, "bind": {"create_host_path": false}},
+        {"type": "bind", "source": "${DAESINGO_MYSQL_PASSWORD_FILE:?protected application password file required}", "target": "/run/secrets/mysql-password", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "healthcheck": {
+        "test": ["CMD", "mysqladmin", "ping", "--protocol=tcp", "--host=127.0.0.1", "--silent"],
+        "interval": "10s", "timeout": "5s", "retries": 10, "start_period": "30s"
+      },
+      "logging": {"driver": "local", "options": {"max-size": "20m", "max-file": "5"}}
+    },
+    "migrate": {
+      "image": "daesingo-rt13:local",
+      "build": {"context": ".", "args": {"REVISION": "${DAESINGO_REVISION:-local}"}},
+      "user": "10001:10001",
+      "environment": {"DAESINGO_ENV_FILE": "/run/secrets/runtime.env"},
+      "volumes": [
+        {"type": "bind", "source": "${DAESINGO_RUNTIME_ENV_FILE:?protected runtime env file required}", "target": "/run/secrets/runtime.env", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "command": ["python", "/app/docker/runtime.py", "migrate"],
+      "depends_on": {"mysql": {"condition": "service_healthy"}},
+      "logging": {"driver": "local", "options": {"max-size": "20m", "max-file": "5"}}
+    },
+    "api": {
+      "image": "daesingo-rt13:local",
+      "build": {"context": ".", "args": {"REVISION": "${DAESINGO_REVISION:-local}"}},
+      "user": "10001:10001",
+      "environment": {"DAESINGO_ENV_FILE": "/run/secrets/runtime.env"},
+      "volumes": [
+        {"type": "volume", "source": "media", "target": "/media"},
+        {"type": "bind", "source": "${DAESINGO_RUNTIME_ENV_FILE:?protected runtime env file required}", "target": "/run/secrets/runtime.env", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "command": ["python", "/app/docker/runtime.py", "api"],
+      "ports": ["127.0.0.1:${DAESINGO_API_PORT:-8000}:8000"],
+      "depends_on": {"migrate": {"condition": "service_completed_successfully"}},
+      "healthcheck": {
+        "test": ["CMD", "python", "/app/docker/runtime.py", "ready"],
+        "interval": "10s", "timeout": "5s", "retries": 3, "start_period": "10s"
+      },
+      "logging": {"driver": "local", "options": {"max-size": "20m", "max-file": "5"}}
+    },
+    "worker": {
+      "image": "daesingo-rt13:local",
+      "build": {"context": ".", "args": {"REVISION": "${DAESINGO_REVISION:-local}"}},
+      "user": "10001:10001",
+      "environment": {"DAESINGO_ENV_FILE": "/run/secrets/runtime.env"},
+      "volumes": [
+        {"type": "volume", "source": "media", "target": "/media"},
+        {"type": "bind", "source": "${DAESINGO_RUNTIME_ENV_FILE:?protected runtime env file required}", "target": "/run/secrets/runtime.env", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "command": ["python", "/app/docker/runtime.py", "worker"],
+      "depends_on": {"migrate": {"condition": "service_completed_successfully"}},
+      "stop_grace_period": "30s",
+      "logging": {"driver": "local", "options": {"max-size": "20m", "max-file": "5"}}
+    }
+  },
+  "volumes": {"mysql_data": {}, "media": {}}
+}

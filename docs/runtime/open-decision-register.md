@@ -852,6 +852,8 @@ Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 미결.
 **Consult:** —\
 **Source candidates:** D-13
 
+M4 local slice는 [#300 Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506)으로 RD-12a와 RD-12g의 local image/service/volume 경계를 확인했다. 승인값은 [Baseline §2.10](./provisional-baseline-v0.1.md#210-health--readiness--j), 실제 구현·검증 한계와 RT-13(b) backup/restore 후속은 [RT-13(a) Notes](./rt13a-docker-compose.md)에 기록한다. RD-12 전체를 CLOSED로 바꾸지 않으며 RD-12f/h production 절차와 RT-14는 미결이다.
+
 ### Question
 
 api · worker · mysql을 **어떤 image/Compose 모양으로 만들고, 어떤 경로로 EC2에 전달하며, revision을 어떻게 식별 · 기록 · rollback하고, DB migration과 backup을 어떤 절차로 운영하는가**.
