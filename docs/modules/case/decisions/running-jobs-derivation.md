@@ -11,7 +11,7 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
 
 ## 결정
 
-1. **aggregate에 정산 기록 `settled_jobs: dict[job_id, 사유]`를 둔다.** 사유는 4종이다.
+1. **aggregate에 정산 기록 `settled_jobs: dict[job_id, 사유]`를 둔다.** 사유는 4종이다(2026-10-27 `EXHAUSTED`를 더해 5종).
 
    | 사유 | 언제 | 누가 기록 |
    | --- | --- | --- |
@@ -19,6 +19,7 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
    | `STOPPED_WAITING` | case timeout으로 기다리기를 멈췄다 | timeout 경로(8-9 이후) |
    | `CANCELLED` | 사용자가 중단했다 | 중단 command(8-9) |
    | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다 | `jobs.issue_job()` |
+   | `EXHAUSTED` | Runtime이 재시도까지 끝나 결과가 오지 않는다고 확정했다(2026-10-27 추가, `HINT_EXTRACT`만) | 소진 알림 진입점(`hint-exhaustion.md`) |
 
    처음 사유가 이긴다. 이미 정산된 job을 다시 정산하면 아무것도 바뀌지 않는다(#245 D-5의 idempotent 반영과 같은 원칙). 정산은 `case_rev`를 올리지 않는다.
 2. **`running_jobs[]` = 정산되지 않은 JobRecord**이고 `job_records` 순서를 따른다.

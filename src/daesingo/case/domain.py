@@ -98,7 +98,8 @@ class Candidate:
 
 
 # JobRecord 정산 사유 — case가 그 job의 결과를 더 기다리지 않게 된 이유(`decisions/running-jobs-derivation.md`).
-JOB_SETTLE_REASONS = ("REFLECTED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")
+# `EXHAUSTED`는 Runtime이 재시도까지 끝나 결과가 오지 않는다고 확정한 job이다(#405, 지금은 `HINT_EXTRACT`만).
+JOB_SETTLE_REASONS = ("REFLECTED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED", "EXHAUSTED")
 
 # 「분석 진행」(`SEARCHING`)에서 사용자가 중단할 수 있는 job — `decisions/stop-analysis.md`.
 ANALYSIS_JOB_KINDS = ("HINT_EXTRACT", "COARSE_SEARCH")

@@ -137,3 +137,32 @@ def reflect_hint_extraction(
     case.settle_job(job_id, "REFLECTED")
     issue_initial_search(case, timelines=timelines, budget=budget)
     return True
+
+
+def reflect_hint_exhaustion(
+    case: CaseAggregate,
+    *,
+    job_id: str,
+    kind: str,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget,
+) -> bool:
+    """Runtime이 `job_id`(`HINT_EXTRACT`)를 재시도까지 `STALE`로 소진했다고 알렸다(#405 D-3). case가 아직 기다릴 때만
+    hints 4개를 `None`으로 두고(`hint_unclear`는 세우지 않는다 — 보류가 아니라 실행이 끝나지 못했다) `EXHAUSTED`로
+    정산한 뒤 첫 탐색을 발주한다. 이미 정산된 job이면(중단 · 결과 반영 · 같은 알림 재전달) 아무것도 바꾸지 않고 `False`.
+
+    이 case가 발주하지 않은 job · `HINT_EXTRACT`가 아닌 kind는 배선 오류(`ValueError`)다 — 「바뀐 것 없음」으로 받으면
+    Runtime이 receipt를 남겨 잘못된 알림이 조용히 사라진다(T2 `reflect_execution`과 같다)."""
+    if kind != "HINT_EXTRACT":
+        raise ValueError(f"소진 알림은 HINT_EXTRACT만 받는다: {kind!r}")
+    record = next((r for r in case.job_records if r["job_id"] == job_id), None)
+    if record is None:
+        raise ValueError(f"이 case가 발주하지 않은 job_id: {job_id!r}")
+    if record["kind"] != kind:
+        raise ValueError(f"kind가 다르다: JobRecord {record['kind']!r} != 알림 {kind!r}")
+    if not case.awaits_result(job_id):
+        return False
+    case.record_extracted_hints(dict.fromkeys(_HINT_FIELDS), unclear=False)
+    case.settle_job(job_id, "EXHAUSTED")
+    issue_initial_search(case, timelines=timelines, budget=budget)
+    return True

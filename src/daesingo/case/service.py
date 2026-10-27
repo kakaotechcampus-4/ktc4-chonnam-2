@@ -25,10 +25,16 @@ import copy
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from daesingo.case import jobs
-from daesingo.case.analysis_start import InitialSearchBudget, hint_unclear, hints_from_result, reflect_hint_extraction
+from daesingo.case.analysis_start import (
+    InitialSearchBudget,
+    hint_unclear,
+    hints_from_result,
+    reflect_hint_exhaustion,
+    reflect_hint_extraction,
+)
 from daesingo.case.adapters import ModuleAdapter
 from daesingo.case.domain import Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
@@ -649,3 +655,37 @@ def receive_hint_extraction_result(
         return ReflectionResult(appended_job_records=[], reflected=False)
     store.save(case)
     return ReflectionResult(appended_job_records=copy.deepcopy(case.job_records[jobs_before:]), reflected=True)
+
+
+@dataclass(frozen=True)
+class ExhaustionResult:
+    """`receive_hint_exhaustion()`의 결과(#405). `APPLIED`면 `appended_job_records`(첫 `COARSE_SEARCH` 1건)를
+    composition root가 같은 transaction에서 enqueue하고, `NO_CHANGE`면 `reason`이 이미 정산된 사유다. 둘 다 Runtime이
+    알림 receipt를 남길 정상 결과다."""
+
+    status: Literal["APPLIED", "NO_CHANGE"]
+    appended_job_records: list[dict[str, Any]] = field(default_factory=list)
+    reason: str | None = None
+
+
+def receive_hint_exhaustion(
+    case_id: str,
+    *,
+    job_id: str,
+    kind: str,
+    store: CaseStore,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget | None = None,
+) -> ExhaustionResult:
+    """Runtime 소진 알림을 반영하는 진입점(#405) — `receive_hint_extraction_result()`와 같은 모양이다. `load_for_update` →
+    `analysis_start.reflect_hint_exhaustion()` → 바뀐 경우만 `save`. 예외는 그대로 올라가고 저장되지 않는다 — rollback ·
+    retry와 알림 receipt는 호출자(Runtime) 몫이다."""
+    case = store.load_for_update(case_id)
+    jobs_before = len(case.job_records)
+    applied = reflect_hint_exhaustion(
+        case, job_id=job_id, kind=kind, timelines=timelines, budget=budget or InitialSearchBudget()
+    )
+    if not applied:
+        return ExhaustionResult("NO_CHANGE", reason=case.settled_jobs[job_id])
+    store.save(case)
+    return ExhaustionResult("APPLIED", appended_job_records=copy.deepcopy(case.job_records[jobs_before:]))
