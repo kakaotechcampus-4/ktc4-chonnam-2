@@ -167,14 +167,14 @@ def test_stopped_search_projects_partial_and_notice_with_resume():
     }
 
 
-def test_stopped_before_any_search_has_no_resume_action():
-    """단서 구조화 중 중단 — 다시 낼 `COARSE_SEARCH` 근거가 없어 action을 싣지 않는다."""
+def test_stopped_before_any_search_offers_edit_hint_instead_of_resume():
+    """단서 구조화 중 중단 — 다시 낼 `COARSE_SEARCH` 근거가 없어 「이어서 찾기」 대신 「설명 고쳐 다시 찾기」(#410)."""
     store, case_id = _store_with_source()
     case = _searching(store, case_id, "흰 SUV")
 
     view = command.execute_command(_stop(case_id, case.case_rev), store=store).response["case_view"]
 
-    assert _notice(view, STOPPED)["actions"] == []
+    assert _notice(view, STOPPED)["actions"] == ["EDIT_HINT"]
 
 
 def test_resume_clears_stopped_notice():

@@ -46,7 +46,11 @@ _PAYLOAD_KEYS = {
     "RUN_NOTICE_ACTION": frozenset({"notice_code", "action"}),
     "START_ANALYSIS": frozenset({"description"}),
     "STOP_ANALYSIS": frozenset(),
+    "EDIT_HINT": frozenset({"description"}),
 }
+
+# 분석 시작과 같은 발주를 하는 command — 타임라인 · 예산을 주입받는다.
+_ANALYSIS_KINDS = frozenset({"START_ANALYSIS", "EDIT_HINT"})
 
 
 class _Rejected(Exception):
@@ -142,6 +146,26 @@ def _start_analysis(
         raise _Rejected("not_allowed") from None
 
 
+def _edit_hint(
+    case: CaseAggregate,
+    payload: dict[str, Any],
+    view: dict[str, Any],
+    *,
+    timelines: CaseTimelineSource | None,
+    budget: InitialSearchBudget,
+) -> None:
+    if timelines is None:
+        raise RuntimeError("EDIT_HINT에는 timelines(CaseTimelineSource) 주입이 필요하다")
+    # 허용 조건 = 「화면에 그 버튼이 떠 있었는가」 — `RUN_NOTICE_ACTION`과 같은 근거(현재 CaseView notices)다(#410).
+    # 어느 화면에 출구를 둘지는 notice가 정하므로, 화면을 더할 때 command는 바꾸지 않는다.
+    if not any("EDIT_HINT" in n.get("actions", []) for n in view["notices"]):
+        raise _Rejected("not_allowed")
+    try:
+        analysis_start.edit_hint(case, payload["description"], timelines=timelines, budget=budget)
+    except InvalidTransition:
+        raise _Rejected("not_allowed") from None
+
+
 def _stop_analysis(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
     # 「분석 진행」(SEARCHING)만 받는다 — 「초안 준비 중」 중단은 product 미결(`decisions/stop-analysis.md`).
     try:
@@ -157,6 +181,7 @@ _HANDLERS = {
     "RUN_NOTICE_ACTION": _run_notice_action,
     "START_ANALYSIS": _start_analysis,
     "STOP_ANALYSIS": _stop_analysis,
+    "EDIT_HINT": _edit_hint,
 }
 
 
@@ -214,7 +239,7 @@ def execute_command(
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
     싣는다 — case_id가 없을 때만 `case_view=None`이다. `notices`는 `get_view()`에 그대로 넘긴다(사용자가 본
     화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해). 실행 상태는 `store`의 read port로 읽는다(8-10).
-    `START_ANALYSIS`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
+    `START_ANALYSIS` · `EDIT_HINT`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
 
     case를 잠근 뒤 마감(`now`, 기본 현재 시각)이 지난 job을 먼저 `STOPPED_WAITING`으로 정산한다 — 사용자가 본 timeout 화면의
     「다시 찾기」가 같은 기준으로 검사되고, command가 성공하면 그 정산도 함께 저장된다(`decisions/case-wait-timeout.md`).
@@ -252,8 +277,8 @@ def execute_command(
     jobs_before = len(case.job_records)
     settled_before = dict(case.settled_jobs)
     handler = _HANDLERS[request["kind"]]
-    if request["kind"] == "START_ANALYSIS":
-        handler = functools.partial(_start_analysis, timelines=timelines, budget=budget or InitialSearchBudget())
+    if request["kind"] in _ANALYSIS_KINDS:
+        handler = functools.partial(handler, timelines=timelines, budget=budget or InitialSearchBudget())
     try:
         handler(case, request["payload"], view)
     except _Rejected as rejected:

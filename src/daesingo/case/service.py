@@ -351,13 +351,13 @@ REPORT_VIDEO_NOT_GENERATED_NOTICE: dict[str, Any] = {
 }
 
 # 단서 구조화가 설명을 잘 이해하지 못했다(#266 — `confidence=low` · `ABSTAINED`). 접두어는 판단 근거(구조화 결과)를
-# 만드는 search를 따른다. 「다시 적기」(`EDIT_HINT`)는 입력형 command 판본(PR #356) 전에는 보낼 경로가 없어 비운다.
+# 만드는 search를 따른다. 「다시 적기」는 `EDIT_HINT{description}` command다(#410).
 HINT_UNCLEAR_NOTICE: dict[str, Any] = {
     "code": "search.hint_unclear",
     "severity": "INFO",
     "blocking": False,
     "message_key": "notice.hint_unclear",
-    "actions": [],
+    "actions": ["EDIT_HINT"],
 }
 
 _SITUATION_RESPONDED = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
@@ -509,7 +509,8 @@ def derive_notices(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):
         halted = ANALYSIS_TIMED_OUT_NOTICE if analysis_timed_out else ANALYSIS_STOPPED_NOTICE
-        derived.append(halted if search_retry_basis else dict(halted, actions=[]))
+        # 다시 낼 탐색이 없으면(단서 구조화 중 중단) 「설명 고쳐 다시 찾기」가 출구다(#405 Known Issue → #410).
+        derived.append(halted if search_retry_basis else dict(halted, actions=["EDIT_HINT"]))
     if view.get("stage") == "CANDIDATE_REVIEW" and not view.get("candidates"):
         derived.append(NO_CANDIDATES_NOTICE)
     if hint_unclear and view.get("stage") not in ("INTAKE", "SEARCHING"):

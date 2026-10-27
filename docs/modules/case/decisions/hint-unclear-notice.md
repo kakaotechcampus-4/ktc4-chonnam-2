@@ -8,7 +8,7 @@
 단서 구조화(`HINT_EXTRACT`)가 사용자의 설명을 잘 이해하지 못했으면, 분석은 그대로 진행하고 결과 화면에서 비차단으로 알린다(PM (a)). 사용자가 할 일은 「다시 적기」다.
 
 **1단계(이 문서):** notice 등재 · 발동 · 저장. `actions: []`로 문구만 보인다.
-**2단계:** 입력형 command 판본(case-command 계약 §2 「다음 판본」, 초안 PR #356)이 열린 뒤 `actions: [EDIT_HINT]`를 붙인다.
+**2단계:** 입력형 command 판본(case-command 계약 §2 「다음 판본」, 초안 PR #356)이 열린 뒤 `actions: [EDIT_HINT]`를 붙인다. → **2026-10-27 완료:** `EDIT_HINT{description}` command(#410, `edit-hint.md`)와 함께 `actions: [EDIT_HINT]`.
 
 ## 2. 결정
 

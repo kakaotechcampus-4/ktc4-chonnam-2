@@ -2,8 +2,8 @@
 
 단서 구조화(`HINT_EXTRACT`)가 끝났지만 설명을 잘 이해하지 못한 경우 — `OK`인데 `confidence=low`이거나, 모델이
 판단을 보류한 `ABSTAINED` — 결과 화면에 비차단 안내를 붙인다. 실행 실패(`FAILED`)는 #259 결정대로 notice가 없고,
-빈 설명은 구조화를 건너뛰어 대상이 아니다. 「다시 적기」(`EDIT_HINT`)는 입력형 command 판본(PR #356) 전이라
-`actions`를 비운다. 결과 화면(`stage`가 `SEARCHING` 뒤)에서만 붙인다(#224).
+빈 설명은 구조화를 건너뛰어 대상이 아니다. 「다시 적기」는 `EDIT_HINT{description}` command다(#410 — 2단계).
+결과 화면(`stage`가 `SEARCHING` 뒤)에서만 붙인다(#224).
 """
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def test_notice_shape():
         "severity": "INFO",
         "blocking": False,
         "message_key": "notice.hint_unclear",
-        "actions": [],
+        "actions": ["EDIT_HINT"],
     }
 
 
