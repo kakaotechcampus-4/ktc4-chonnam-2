@@ -3504,3 +3504,68 @@ manifest hash·branch/HEADbc459255·indexempty보존을저자도결과추가전�
 해소판정은아니며새fullpytest최종summary+후속strict성공/30분·900초유지가계속필요하다.
 미커밋/미스테이징·commit/push/PR/CI변경없음,#405pending,
 **IN_PROGRESS · Refs #297 (RT-10(b))**로먼저보고한다.
+
+## 2026-10-28 — RT-13(b) local logical backup / restore
+
+**IN_PROGRESS · Refs #300 (RT-13(b))**. 기존 기록을 대체하지 않는 후속 entry다.
+착수 전 clean branch `codex/rt13b-backup-restore`, HEAD/GitHub 최신 develop
+`071bbcca53fc7381592abcb0df7bcb3060324aa2`, #417 ancestor, #300 본문과 Owner
+승인을 직접 확인했다. 구현 범위·새 detail·실행법·제약·검증은
+[RT-13(b) Implementation Notes](rt13b-backup-restore.md)에 기록한다.
+
+일반 도구는 `daesingo` 논리 dump의 exclusive artifact·DB identity·length/SHA256·
+release heads, container operation lock, writer 정지, clean-target restore와
+import 뒤 전체 schema/data 재비교를 구현한다. 일반 DB/volume 삭제는 없다.
+전용 acceptance만 이번 project 소유 MySQL data volume을 정확한 이름+label로
+검사해 교체하며, 동일 media volume의 metadata/ref/bytes 관계를 검증한다.
+DB backup이 media bytes를 포함한다고 주장하지 않는다. 공통 DB/migration,
+Contract·Decision·Baseline·workflow·gate 정책 변경은 없다.
+
+신규 tool RED24→GREEN24, helper RED4→deploy107PASS를 직접 실행했다.
+actual Docker와 관련 MySQL 회귀·독립 review 결과는 아래에 추가한다. 기존 (a)의
+과거/원격 CI 수치는 이번 실행에 합산하지 않는다. 전체 pytest·전체 MySQL·strict
+CLI는 변경 영향이 runtime deploy script에 한정되어 미실행, 원격 CI 확인 필요다.
+운영 backup 자동화·retention·remote storage·media 운영 backup·production
+migration/rollback/post-deploy·EC2/OIDC/SSM은 RT-14다.
+
+staging·commit·push·PR 생성·Issue 변경을 수행하지 않는다. scratch/RAW/dump/
+credential/JSON/JUnit/Linux replica는 PR 제외이며 미커밋·미스테이징으로 남긴다.
+
+RT-13(b) 후속 직접 실행: Engine 29.9.2 / Compose 5.6.1의 이번 actual acceptance
+한 번에서 (a) 회귀9 + backup/restore10 = stage19 PASS, cleanup PASS/remaining0을
+확인했다. 합성 case/upload·recording6행·execution3행·12table을 준비하고, 빈 DB에
+복원해 heads/schema/data 전체 re-dump 동일성, 전체 행 fingerprint·CaseView·기존
+media/ref/bytes, 복원 DB의 Worker 새 job 처리를 확인했다. bytes/hash 대조한 Linux
+사본2198파일에서 실행했으며 NTFS 직접 build 성공이 아니다.
+
+관련 MySQL 직접 실행은 최초 socket권한 preflight 차단(수집0), 권한있는focused
+85PASS/1FAIL(Windows helper 환경변수 누락), 실패한1개에 기존binary 경로만 제공한
+별도rerun1PASS로 구분한다. 최초 원본 전체를 GREEN으로 바꾸지 않는다. fullpytest/
+fullmandatoryMySQL/strict는 미실행, 기존 (a) 과거 증거와 합산 없음. fresh read-only
+review가 진행 중이며 최종 판정은 후속 append한다.
+
+동일 대화 fresh reviewer 최초 판정 P1없음/P2한건: routines/events가 기본 dump와
+re-dump에서 모두 빠지는 schema 손실. 실제 MySQL procedure/event 재현 각각
+잘못된exit0 RED→source unsupported-object fail-closed guard 후 각각exit25 GREEN,
+영구회귀RED2→deploy109PASS로 수정했다. 권한/운영정책은 넓히지 않았다. reviewer
+직접 deploy는 default-temp89PASS/18setup오류와 전용basetemp107PASS를 구분한다.
+최종 code로 별도 actual acceptance2를 실행 중이며 첫19-stage 증거와 합산하지
+않는다. 동일 reviewer 후속 확인 전 커밋 준비 완료로 판단하지 않는다.
+
+P2 수정 후 actual acceptance2를 hash검증Linux사본2199파일에서 직접 재실행:
+새19stagePASS/cleanupPASS/failure0/remaining0. acceptance1과 합산하지 않는다.
+동일 reviewer source후속은 기존P2해결/새P1P2없음, 독립deploy109PASS였다.
+두번째report/최종audit증거검토는 마지막에append한다. 최종직접Docker audit는
+container0/volume0, 기본network3개만유지. 두smoke의전용image/project자원,
+관련MySQL전용container/volume, protectedcredential·dump·env·overlay·Linux사본,
+소유pytesttemp8개/reviewertemp를정리했다. 공유baseimage/buildcache/기존binary와
+다른작업scratch는건드리지않았다. 최신develop재조회는HEAD071bbcca와동일,
+indexempty·미커밋10파일·staging/commit/push/PR/Issue변경없음. 전체pytest/
+fullMySQL/strict/원격CI미실행, 잔여cancellation/외부writer/운영범위제약은Notes참조.
+
+동일fresh reviewer 최종증거후속: acceptance2 exit0/별도19PASS/cleanupPASS,
+source/test6hash일치·Docker최종audit·소유temp부재·정리script·최종문서/diff를
+읽기전용확인하고 **기존P2해결/잔여·신규P1P2없음**으로판정했다. reviewer직접
+deploy109PASS와 Docker/MySQL보존report검토는별개다. 실취소fault/fullpytest/
+fullMySQL/strict/원격CI미검증 유지. **IN_PROGRESS · Refs #300 (RT-13(b))**,
+미커밋·미스테이징으로종료하며 merge-ready/RT-13 DONE을주장하지않는다.

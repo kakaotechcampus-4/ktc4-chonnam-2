@@ -81,6 +81,8 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `docs/design/` | 디자인 시스템·1단계 목업·프로토타입 스펙 |
 | `docs/archive/` | 지난 제출물과 종료된 안건 — **현재 문서가 아니다** |
 
+Local logical backup/restore와 실제 복원 acceptance 실행은 [RT-13(b) Notes](docs/runtime/rt13b-backup-restore.md)를 따른다. DB backup은 shared media volume 자체를 포함하지 않는다.
+
 문서는 한국어로 쓰고 폴더·파일 이름은 영어로 쓴다.
 
 ## 문서를 읽는 순서
