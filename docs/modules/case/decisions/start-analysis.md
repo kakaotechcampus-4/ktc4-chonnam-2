@@ -56,6 +56,7 @@
 - **임시 구현 `RecordingSequentialTimelineSource`** — recording의 기존 공개 함수만 쓴다.
   - 영상 1개: `create_relative_timeline(source_asset_ref)`.
   - 영상 2개 이상: `create_relative_timeline_from_placements()`로 **등록 순서대로 이어 붙인다**(각 원본을 앞 원본 끝에서 시작, gap 없음). 파일마다 VIDEO 스트림 하나는 지금 real 경로(`real_e2e.py` `_unique_video_media_stream_ref`)와 같이 **VIDEO 스트림이 정확히 하나인지 검증**해 쓴다 — 고르지 않는다(정철원 확인 2026-09-21 「유일성 검증이지 임의 선택이 아니다」).
+  - **좌표는 십진값으로 누적한다**(2026-10-28, [#421](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/421)). `Decimal(str(duration_sec))`로 더하고 placement에 넣을 때만 float로 바꾼다. float로 더하면 표현 오차(예: 5e-15초)로 placement가 원본보다 길어져 recording 길이 검증(`Decimal(str(...))` 비교)에 거부됐다. recording 검증은 그대로 둔다 — 실제 길이 초과는 계속 거부된다. 유효숫자 15자리 이하의 좌표(ffprobe 길이는 소수점 6자리)는 float 왕복에서 십진값 그대로다.
   - **이 순서 판단은 원래 recording 책임이다.** case가 임시로 대신하며, 판단은 이 구현 안에만 둔다. recording이 정렬(파일명 시각 · 전후방 겹침 · gap)을 맡게 되면 이 구현 하나만 바꾼다. recording에 작업을 요청하지 않는다(#313 의견 수렴).
 - **영상 스트림 ref는 등록할 때 받아 둔다.** recording 공개 경로에서 스트림 종류(VIDEO/AUDIO)를 알 수 있는 곳은 등록 결과(`register_local_source()` → `RegisteredSource.media_streams`)뿐이다. 그래서 `service.record_source_registered(case_id, source_asset, *, media_streams=None, store)`가 선택 인자로 스트림 목록을 받아, case가 VIDEO가 정확히 하나면 그 ref를, 아니면 `None`을 원본과 함께 저장한다(`sources`). 인자를 빼는 기존 호출은 그대로 동작한다(`video_stream_ref=None`).
 - composition root가 구현을 주입한다. 테스트는 가짜 구현을 쓴다.
@@ -77,7 +78,7 @@
 
 - `max_latency_sec` = **150초** — `timeout-fallback.md` 「Coarse 클립당 150초」.
 - `max_cost_krw` = **설정값, 기본 1,000원** — 금액은 계약이 아니라 설정 관리 대상이다(`budget-krw-normalization.md`). 기본값은 지금 real 경로 값이다. 최근 search 실험의 Coarse 한 번이 약 5만 토큰(3.8 Flash 단가로 수십 원)이라 여유가 있다.
-- 시간 구간 = 타임라인 전체 `TIMELINE_RELATIVE [0, duration_ms]` 1개.
+- 시간 구간 = 타임라인 전체 `TIMELINE_RELATIVE [0, duration_ms]` 1개. `duration_ms`는 타임라인 끝(초)을 ms로 **내린** 값이다(2026-10-28, [#422](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/422)) — 반올림하면 끝점이 원본 끝을 넘어 recording이 `OUT_OF_TIMELINE_RANGE`로 거부했다. 1ms 미만의 끝 조각은 첫 탐색에서 빠지고, 내린 값이 0이면(1ms 미만 영상) `TimelineUnavailable`이다.
 
 ### 3-4. 첫 발주의 `input_fingerprint` — Draft §11 미결 3
 
