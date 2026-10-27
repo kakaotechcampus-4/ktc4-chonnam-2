@@ -194,7 +194,7 @@ export function PlateCheck(props: {
 
 // 설명 고쳐 다시 찾기(#410) — notice가 `EDIT_HINT`를 실었을 때 연다. 분석 시작과 같은 원문 입력이고
 // 이전 설명(`CaseView.description`)을 미리 채운다. 보내면 case가 단서 정리부터 다시 돈다(`EDIT_HINT` command).
-// 「다시 찾기」를 앞에 두고 강조, 「처음으로」는 약하게 — 언제나 그리는 고정 출구다(서버 action이 아니다).
+// 「고친 내용으로 찾기」를 앞에 두고 강조, 「처음으로」는 약하게 — 언제나 그리는 고정 출구다(서버 action이 아니다).
 export function EditHint(props: {
   view: CaseView
   onBack: () => void
@@ -225,7 +225,7 @@ export function EditHint(props: {
         <div className="rs-actions">
           {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
           <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
-            다시 찾기
+            고친 내용으로 찾기
           </button>
           <button type="button" className="rs-btn sec" onClick={props.onHome}>
             처음으로
