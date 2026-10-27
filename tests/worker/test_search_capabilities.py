@@ -50,7 +50,9 @@ def test_actual_capability_usage_attempts_and_error_boundary(monkeypatch, tmp_pa
     ctx = ExecutionContext("exec-capability", "job", "case", kind, 1, "trace", usage_sink=sink)
     @contextmanager
     def media_factory(data): yield make()  # fresh service, no Coarse budget cache
-    registry = search_registry(load=lambda _: SearchInput(description="text", scope=scope, candidate=candidate),
+    # Fine reads the Case-fixed bound from its input (#407 decision (a)); keep this test's 30 s timing.
+    registry = search_registry(load=lambda _: SearchInput(description="text", scope=scope, candidate=candidate,
+                                                          max_latency_sec=30 if kind == "FINE_VERIFY" else None),
         intent_factory=lambda: IntentHintExtractor(provider, config), service_factory=media_factory,
         failures=SuccessfulSearchPolicy())
     if fault:

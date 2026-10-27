@@ -23,7 +23,8 @@ def setup_input(kind="FINE_VERIFY"):
     candidate = coarse.candidates[0]
     case.observation_inputs["job_one"] = {"candidate_id": candidate.candidate_id,
         "generation_job_id": "generation", "span": {key: getattr(candidate.span, key)
-            for key in ("timeline_id", "timeline_revision", "start_ms", "end_ms")}}
+            for key in ("timeline_id", "timeline_revision", "start_ms", "end_ms")},
+        "max_latency_sec": 70}
     content = {"candidate_events": [c.model_dump(mode="json") for c in coarse.candidates]}
     execution = {"job_id": "generation", "attempt": 1, "status": "SUCCEEDED", "produced": [{"kind": "test", "ref": "object"}]}
     conn = object()
@@ -50,6 +51,23 @@ def test_reads_detached_public_case_input_and_fixed_generation(kind):
     if kind == "FINE_VERIFY":
         assert data.candidate.candidate_id == case.observation_inputs[ctx.job_id]["candidate_id"]
         assert data.candidate.span.start_ms == case.observation_inputs[ctx.job_id]["span"]["start_ms"]
+        # Fine 상한은 Case가 발주 때 고정한 값이다 — Coarse scope 상한이 아니다(#407 결정 (a)).
+        assert data.max_latency_sec == 70 != data.scope.budget.max_latency_sec
+    else:
+        assert data.max_latency_sec is None
+
+
+@pytest.mark.parametrize("value", ["missing", None, 0, -1, float("nan"), float("inf"), True, "70"])
+def test_fine_max_latency_must_be_a_finite_positive_number_without_fallback(value):
+    m = import_module("daesingo.worker.search_inputs")
+    ctx, case, store, reader, _ = setup_input()
+    if value == "missing": del case.observation_inputs[ctx.job_id]["max_latency_sec"]
+    else: case.observation_inputs[ctx.job_id]["max_latency_sec"] = value
+    store = CaseStore(conn=store.conn, executions=store.executions)
+    store.register(case)
+    load = m.SearchInputs(transaction=lambda callback: callback(store.conn), store_factory=lambda conn: store, reader=reader)
+    with pytest.raises(ValueError):
+        load(ctx)
 
 
 @pytest.mark.parametrize("mode", ["job", "kind", "case", "scope", "generation", "failed_generation", "candidate", "span"])

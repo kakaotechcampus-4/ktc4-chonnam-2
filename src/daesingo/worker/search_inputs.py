@@ -5,6 +5,7 @@ is invoked here; provider/media work starts after the caller releases it.
 """
 
 from copy import deepcopy
+import math
 
 from daesingo import search
 from daesingo.case.store import CaseStore
@@ -67,6 +68,11 @@ class SearchInputs:
                     for key in ("timeline_id", "timeline_revision", "start_ms", "end_ms")}
         if interval != source["span"]:
             raise ValueError("Search candidate span mismatch")
-        return SearchInput(scope=scope, candidate=candidate, prior_hints=deepcopy(case.hints),
+        # Case fixes the per-candidate Fine bound at issue time (#407 decision (a)); no Coarse fallback.
+        bound = source.get("max_latency_sec")
+        if (isinstance(bound, bool) or not isinstance(bound, (int, float))
+                or not math.isfinite(bound) or bound <= 0):
+            raise ValueError("Fine max_latency_sec must be a finite positive number")
+        return SearchInput(scope=scope, candidate=candidate, prior_hints=deepcopy(case.hints), max_latency_sec=bound,
                            case_id=context.case_id, checkpoint=context.checkpoint,
                            video_stream_refs=tuple(s["video_stream_ref"] for s in case.sources if s.get("video_stream_ref")))

@@ -113,7 +113,8 @@ class AsyncWorker:
         assert conn.in_transaction()
         stage, state = conn.exec_driver_sql("SELECT stage,state FROM cases WHERE case_id=%s", (context.case_id,)).one()
         own_state = json.loads(state)
-        assert stage == "CANDIDATE_REVIEW"
+        # Case T2 selects rank=1 (Case W12:C2); this fixture span has no window, so no Fine follows.
+        assert stage == "EVIDENCE_REVIEW"
         assert own_state["processed_executions"][context.execution_id] == context.job_id
         own_marker = conn.scalar(sa.select(job_execution.c.case_applied_at).where(
             job_execution.c.execution_id == context.execution_id))

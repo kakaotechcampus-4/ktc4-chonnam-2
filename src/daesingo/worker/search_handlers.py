@@ -63,6 +63,8 @@ class SearchInput:
     candidate: search.CandidateEvent | None = None
     case_id: str | None = None
     video_stream_refs: tuple[str, ...] = ()
+    # FINE_VERIFY only: Case-fixed per-candidate bound from observation_input (#407 decision (a)).
+    max_latency_sec: float | None = None
     checkpoint: Callable[[], None] = field(default=lambda: None, repr=False, compare=False)
 
 
@@ -114,6 +116,9 @@ def search_registry(
             else:
                 if data.candidate is None:
                     raise ValueError("fixed candidate required")
+                # No fallback to the Coarse scope bound: Case owns the Fine bound.
+                if data.max_latency_sec is None:
+                    raise ValueError("Case-fixed Fine max_latency_sec required")
                 sources = _public_call(lambda: service.resolver.resolve(data.scope), failures)
                 context.checkpoint()
                 if isinstance(sources, HandlerResult):
@@ -128,7 +133,7 @@ def search_registry(
                 source_ref = sources[0].source_ref
                 result = _public_call(lambda: search.verify_visual(source_ref, data.scope.hint,
                     service=service, candidate=data.candidate, event_type=event_type,
-                    max_latency_sec=data.scope.budget.max_latency_sec, usage_sink=context.usage_sink), failures)
+                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result
