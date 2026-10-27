@@ -18,3 +18,4 @@
 - [ADR-EVIDENCE-008 — 번호판 식별 실패와 실행 실패의 Requirement 경계 (#172 D·D-2·D-3)](adr-plate-identification-failure-boundary.md) — accepted. 활성 catalog `policy/requirement-rules-v5` 발행, ADR-002 §5.4·§5.6 · ADR-005 §5.5 번호판 행 대체. 번호판 없는 Package의 입력 계약·template은 후속
 - [ADR-EVIDENCE-009 — 상황 응답 전 진행 범위와 사라진 사건 확인 단계 (#171 B·B-2)](adr-situation-response-timing.md) — accepted. ADR-005 §2.5·§5.4 재검토, rule catalog 변경 없음
 - [ADR-EVIDENCE-010 — 최종 신고용 영상 재관찰(I4) 가시성 rule 제거 (#280)](adr-i4-report-video-visibility-rules-removal.md) — accepted. 활성 catalog `policy/requirement-rules-v6` 발행, `FINAL_PACKAGE` 무조건 rule 12 → 11, 검증된 overlay 시각 갈래는 rule 없음. ADR-002 §5.6·§5.7 · ADR-005 §5.5·§5.7 · ADR-008 §5.2·§6.2·§8 대체 표시
+- [ADR-EVIDENCE-011 — CorrectionRecord 기록 전 검사 경계 (#235 E-3)](adr-correction-append-precheck.md) — accepted. 공개 `validate_correction_append()` · `InvalidCorrectionValue` 신설, `correction-record/v1.2`(`previous_value=null`) 소비 반영, ADR-008 §4.3 · §8에 「4a 뒤 직접 입력」 행 추가

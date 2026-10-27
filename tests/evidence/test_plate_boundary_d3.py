@@ -29,6 +29,7 @@ from daesingo.evidence import (
     evaluate_requirements,
     render_report,
     validate_contract,
+    validate_correction_append,
 )
 from daesingo.evidence import mock_integration as mock
 from daesingo.evidence.disposition import ASSEMBLE
@@ -93,9 +94,9 @@ class PlateBoundaryD3Tests(unittest.TestCase):
 
     # --- inputs -------------------------------------------------------------------------------
 
-    def _record(self, plate):
+    def _record(self, plate, corrections=None):
         return mock._assemble(upstream=self.upstream, config=self.config, time=self.time,
-                              plate=plate, record_id="ev_d3_unit")
+                              plate=plate, record_id="ev_d3_unit", correction_records=corrections)
 
     def _unread_plate(self):
         plate = deepcopy(self.plate)
@@ -124,9 +125,9 @@ class PlateBoundaryD3Tests(unittest.TestCase):
 
     # --- pipeline -----------------------------------------------------------------------------
 
-    def _run(self, plate, *, observation_facts=None):
+    def _run(self, plate, *, observation_facts=None, corrections=None):
         """EVIDENCE → FINAL → Package(없으면 None) → case READY 여부."""
-        record = self._record(plate)
+        record = self._record(plate, corrections)
         evidence = evaluate_requirements(record, scope="EVIDENCE", report_id="req_d3_evidence",
                                          evaluated_at=EVIDENCE_AT, time_resolution=self.time)
         final = evaluate_requirements(record, scope="FINAL_PACKAGE", report_id="req_d3_final",
@@ -264,6 +265,28 @@ class PlateBoundaryD3Tests(unittest.TestCase):
         self.assertEqual("EVIDENCE_REVIEW", stage)
         # blocking notice(readout.plate_read_failed)는 case가 투영한다:
         # tests/case/test_plate_read_failure_projection.py
+
+    def test_6c_manual_plate_input_after_readout_execution_failure_builds_a_package(self):
+        # #235 E-1 ①: 4a 뒤 사용자가 번호판을 직접 입력하면 이전 값은 null이고(v1.2), 그 값으로
+        # Package · READY까지 간다. readout.plate_read_failed를 거두는 것은 case(#321).
+        manual = {
+            "contract_version": "correction-record/v1.2", "correction_id": "corr_d3_manual",
+            "case_id": self.upstream["case"]["case_views"][-1]["case_id"],
+            "selection_rev": self.config["selection_rev"], "kind": "PLATE_MANUAL_EDIT",
+            "target_field": "vehicle_number", "previous_value": None, "new_value": "12가3456",
+            "supersedes_ref": None, "corrected_at": EVIDENCE_AT,
+        }
+        validate_correction_append(manual, existing_records=[])
+        record, evidence, final, package, ready, stage = self._run(None, corrections=[manual])
+        self.assertFalse(any(ref["kind"] == "plate_readout" for ref in record["provenance"]["input_refs"]))
+        self.assertEqual(("12가3456", True), (record["vehicle_number"]["value"], record["vehicle_number"]["user_corrected"]))
+        check = self._check(evidence, "evidence.vehicle_number.present")
+        self.assertEqual(("PASS", "evidence.value_confirmed"), (check["outcome"], check["reason_code"]))
+        self.assertIn(final["overall"], {"PASS", "WARN"})
+        self.assertEqual("12가3456", package["report_inputs"]["vehicle_number"])
+        self.assertEqual("tmpl/safety-report-specific-v1", package["report"]["template_ref"])
+        self.assertTrue(ready)
+        self.assertEqual("READY", stage)
 
     def test_6b_builder_refuses_a_plate_less_record_without_plate_readout_even_if_report_says_warn(self):
         # FINAL이 어떤 경로로든 PASS/WARN이어도 builder가 실행 실패 기록을 Package로 만들지 않는다.
