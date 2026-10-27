@@ -43,6 +43,7 @@ const JOB_LABELS: Record<string, string> = {
   'job.hint_extract': '상황 설명을 읽는 중',
   'job.fine_verify': '정밀 확인 중',
   'job.report_video_export': '신고용 영상 만드는 중',
+  'job.incident_clip_build': '사건 장면 준비 중',
 }
 
 export function jobLabel(key: string): string {
@@ -110,6 +111,8 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.search_no_candidates': '조건에 맞는 장면을 찾지 못했습니다.',
   // #197 — 탐색 Run 실패. 「후보 없음」과 다른 시스템 실패다.
   'notice.candidate_search_failed': '장면을 찾는 중에 문제가 생겼어요.',
+  // #358 — case가 탐색 결과를 기다리다 마감이 지나 멈췄다. 사용자 중단과 원인이 다르다.
+  'notice.analysis_timed_out': '장면을 찾는 시간이 오래 걸려 멈췄어요.',
   // #342 — 사용자가 분석 진행을 중단했다. 실패가 아니라 사용자 행동의 결과다.
   'notice.analysis_stopped': '분석을 중단했어요.',
   'notice.visual_event_unconfirmed': '어떤 상황인지 아직 확인되지 않았습니다.',

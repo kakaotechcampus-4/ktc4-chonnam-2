@@ -125,6 +125,18 @@ it('[분석 중단]은 STOP_ANALYSIS를 보내고, 중단 화면에서 [다시 �
   })
 })
 
+it('case 대기 timeout(#358)은 중단 화면에 timeout 문구로 보이고, [다시 찾기]는 RETRY_SEARCH다', async () => {
+  const timedOut = view({ case_rev: 3, stage: 'SEARCHING', notices: [notice('case.analysis_timed_out', ['RETRY_SEARCH'])] })
+  const { m, api } = setup({ get: timedOut })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 }, 202))
+  const { findByText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText('장면을 찾는 시간이 오래 걸려 멈췄어요.')
+  expect(queryByText('분석을 중단했어요.')).toBeNull()
+  fireEvent.click(getByText('다시 찾기'))
+  await findByText('분석 중단')
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', 3, { kind: 'RUN_NOTICE_ACTION', payload: { notice_code: 'case.analysis_timed_out', action: 'RETRY_SEARCH' } })
+})
+
 it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지 않는다', async () => {
   const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: BASE.candidates }) })
   const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
