@@ -2,12 +2,26 @@
 
 작성: 2026-10-27 · 서어진(search Owner)
 
-[구조 확정 실험 계획](search-structure-confirmation-plan-2026-10-26.md)의 E1(15영상 1회) 후속이다. E1에서 argon + `fine-gore-v1`은 위반 7/12를 찾았고 미검출 5건 중 대부분은 Coarse 후보가 정답을 짚지 못한 경우였다. 두 가지를 확인했다.
+[구조 확정 실험 계획](search-structure-confirmation-plan-2026-10-26.md)의 E1(15영상 1회) 후속이다. E1에서 argon + `fine-gore-v1`은 위반 7/12를 찾았고 미검출 5건 중 대부분은 Coarse 후보가 정답을 짚지 못한 경우였다. 운영 경로 연결을 확인하고(§0), 두 가지를 실험했다.
 
 1. **A1·A2** — Coarse를 AI Hub 위반 검출 모델 후보로 바꾸거나 보태면 미검출이 줄어드는가
 2. **G2** — Fine이 정답 구간을 기각한 이유 중 프롬프트로 고칠 수 있는 것이 있는가
 
 두 실험 모두 결과를 보기 전에 판정 기준과 비용 상한을 정했고 1회만 돌렸다.
+
+## 0. 운영 경로 실제 호출 확인 (argon 기본값)
+
+E1 결정 직후 운영 코드 경로(`GeminiProvider`, 코드 기본값 argon · argon tenant 경로 · `fine-p3+fine-gore-v1`)로 `141927` 1클립을 1회 호출했다. 진단 스크립트 `--transport provider`, 원본 Coarse 2 fps → 0.5배속 · Fine 4 fps → 0.25배속.
+
+| 항목 | 값 |
+| --- | --- |
+| Coarse 후보 | 9.5–15초 (Fine 입력 5.5–19초, 정답 4–10초와 겹침) |
+| Fine | OBSERVED, 대상 "전방 어두운 색 SUV", 정답 차량과 일치 |
+| 호출 | 2회 (Coarse 8.6초 · Fine 10.8초) |
+| 토큰 | 입력 9,350 · 출력 549 |
+| 비용 | ₩34.3 |
+
+운영 경로에서 argon 모델 · 경로 · 문장이 실제로 동작함을 확인했다. 성능 판정이 아니라 연결 확인이다.
 
 ## 1. AI Hub LRCN 후보 → argon Fine (A1·A2)
 
@@ -97,9 +111,10 @@ C39의 Fine 서술("합류부 안전지대 경계를 넘어 본선 진입")이 �
 
 | 실험 | 비용 |
 | --- | --- |
+| 운영 경로 확인 | ₩34 |
 | A1 | ₩964 |
 | G2 | ₩97 |
-| 합계 | ₩1,061 |
+| 합계 | ₩1,095 |
 
 단가: argon 입력 ₩2,835 · 출력 ₩14,175 / 1M 토큰.
 
@@ -109,4 +124,5 @@ C39의 Fine 서술("합류부 안전지대 경계를 넘어 본선 진입")이 �
 
 - `run_lrcn_fine.py` · `a1-lrcn-argon.json` · `a1-lrcn-argon.log`
 - `run_gore_v2.py` · `g2-gore-v2.json`
+- `prod-path-argon.json` (§0)
 - 두 스크립트는 PR #413 브랜치(`feat/search-argon-model`)의 `scripts/gemini_coarse_fine_slowdown_trace.py` · `scripts/gemini_fine_fp_variant_trace.py`를 import한다.
