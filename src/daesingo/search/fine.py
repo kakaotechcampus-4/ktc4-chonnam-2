@@ -9,7 +9,7 @@ from .execution import RunDeadline
 from .ledger import SearchLedger, UsageRecord
 from .media import PreparedMedia
 from .media_contract import CoarseMediaPreparer
-from .prompts import FINE_PROMPT, fine_prompt_for, sent_prompt_fingerprint
+from .prompts import FINE_PROMPT_VERSION, fine_prompt_for, sent_prompt_fingerprint
 from .provider import FineRequest, SearchProvider, UsageBinding
 from .runs import (
     AnalysisRun,
@@ -175,7 +175,7 @@ def verify_fine(
             UsageRecord(
                 case_id=source.source_id,
                 model=config.model,
-                prompt_version=FINE_PROMPT.version,
+                prompt_version=FINE_PROMPT_VERSION,
                 prompt_fingerprint=sent_prompt_fingerprint(
                     fine_prompt_for(event_type), prepared.playback_speed
                 ),
@@ -204,7 +204,7 @@ def verify_fine(
         implementation=Implementation(
             impl_id="search:gemini-fine-p3",
             model_ref=config.model,
-            prompt_version=FINE_PROMPT.version,
+            prompt_version=FINE_PROMPT_VERSION,
             config_version=config.version,
         ),
         outcome=RunOutcome.SUCCEEDED,

@@ -13,11 +13,11 @@ def test_config_preserves_current_defaults_when_created() -> None:
     config = GeminiSearchConfig()
 
     # Then: the current model, media, and tenant proxy defaults remain available
-    assert config.model == "gemini-3.8-flash"
+    assert config.model == "gemini-4-argon"
     assert config.media_resolution == "low"
     assert (config.coarse_fps, config.fine_fps) == (2.0, 4.0)
     assert (
-        config.base_url == "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+        config.base_url == "https://mlapi.run/e1febb2a-0530-4f93-9ff4-ef844e185639/v1"
     )
 
 
