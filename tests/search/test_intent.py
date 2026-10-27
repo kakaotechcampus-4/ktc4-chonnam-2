@@ -261,6 +261,20 @@ def test_intent_model_key_is_separate_from_search_model() -> None:
     ).model == ("gemini-3.8-flash")
 
 
+def test_intent_keeps_flash_proxy_path_when_search_moves_to_argon() -> None:
+    flash_path = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    search_path = "https://mlapi.run/search-tenant/v1"
+
+    config = intent_config_from_dotenv({"DAESINGO_GEMINI_BASE_URL": search_path})
+    assert (config.model, config.base_url) == ("gemini-3.8-flash", flash_path)
+
+    override = "https://mlapi.run/intent-tenant/v1"
+    assert (
+        intent_config_from_dotenv({"DAESINGO_INTENT_BASE_URL": override}).base_url
+        == override
+    )
+
+
 def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effort(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

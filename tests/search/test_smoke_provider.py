@@ -132,7 +132,7 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     assert client_kwargs["max_retries"] == 0
     # And: chat.completions.parse with structured output and inline base64 video
     call = completions.calls[0]
-    assert call["model"] == "gemini-3.8-flash"
+    assert call["model"] == "gemini-4-argon"
     assert call["response_format"] is CoarseResponse
     assert call["reasoning_effort"] == "low"
     assert call["timeout"] == 7.5  # per-attempt timeout from request.timeout_sec
