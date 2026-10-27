@@ -570,12 +570,12 @@ it('package에 report가 없는 옛 판본이 와도 결과 화면이 깨지지 
   expect(container.textContent).toContain('안전신문고에서 직접 적어 주세요')
 })
 
-it('위반 미관찰에는 다시 찾기 동작이 없어 「새 신고」로 처음부터 시작할 수 있다', () => {
-  const { wait, getByText, getAllByText, container } = start('notObserved')
+it('위반 미관찰에는 다시 찾기 동작이 없어 「처음으로」로 처음부터 시작할 수 있다', () => {
+  const { wait, getByText, container } = start('notObserved')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   expect(container.querySelector('.notobs .state-actions')).not.toBeNull()
-  fireEvent.click(getAllByText('새 신고')[1])
+  fireEvent.click(getByText('처음으로'))
   expect(container.querySelector('.rs.upload')).not.toBeNull()
 })

@@ -257,11 +257,12 @@ it('설명이 비어 있으면 [다시 찾기]를 누를 수 없고, 뒤로 가�
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
 
-it('결과 없음에 hint_unclear가 함께 붙어도 [설명 고치기]는 하나다', async () => {
+it('결과 없음에 hint_unclear가 함께 붙으면 그 문구도 보이고, [설명 고치기]는 하나다', async () => {
   const both = { ...EMPTY, notices: [...EMPTY.notices, { ...notice('search.hint_unclear', ['EDIT_HINT']), message_key: 'notice.hint_unclear' }] }
   const { api } = setup({ get: both })
-  const { findAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  const { findAllByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
   expect(await findAllByText('설명 고치기')).toHaveLength(1)
+  expect(getByText(/입력하신 내용에서 확실한 단서를 찾지 못해 넓게 찾아봤어요/)).toBeTruthy()
 })
 
 it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로 다시 찾는다', async () => {

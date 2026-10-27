@@ -3,7 +3,7 @@ import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { CircleAlert } from 'lucide-react'
-import { ACTION_LABELS, errorMessage } from '../contracts/labels'
+import { ACTION_LABELS, errorMessage, noticeMessage } from '../contracts/labels'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
 import { FailedScreen } from './FailedScreen'
@@ -202,6 +202,14 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
           <div className="rs rs-screen state-page noresult">
             <p className="state-context">신고자료</p>
             <NoResultScreen view={view} />
+            {/* 설명을 잘 이해하지 못해 넓게 찾았는데도 0건 — 「결과 없음」과 뜻이 달라 함께 보인다(#266) */}
+            {view.notices
+              .filter((n) => n.code === 'search.hint_unclear')
+              .map((n) => (
+                <p key={n.code} className="state-body">
+                  {noticeMessage(n.message_key)}
+                </p>
+              ))}
             <div className="state-actions">
               {view.notices
                 .flatMap((n) => n.actions.filter(isAction).filter(canRun).map((a) => ({ code: n.code, a })))

@@ -223,7 +223,7 @@ export function EditHint(props: {
           <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
         </label>
         <div className="rs-actions">
-          {/* 비어 있으면 보내지 않는다 — 빈 설명은 단서 없이 같은 범위를 다시 찾을 뿐이다 */}
+          {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
           <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
             다시 찾기
           </button>

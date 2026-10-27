@@ -33,7 +33,7 @@ export function NotObservedScreen(props: {
           {r && props.onNewReport && (
             <div className="state-actions">
               <button type="button" className={`rs-btn ${others > 0 ? 'sec' : 'pri'}`} onClick={props.onNewReport}>
-                새 신고
+                처음으로
               </button>
             </div>
           )}
