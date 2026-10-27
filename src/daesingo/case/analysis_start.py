@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from daesingo.case import jobs
-from daesingo.case.domain import CaseAggregate, InvalidTransition
+from daesingo.case.domain import ANALYSIS_JOB_KINDS, CaseAggregate, InvalidTransition
 from daesingo.case.scope import build_analysis_scope
 from daesingo.case.timeline_source import CaseTimelineSource
 
@@ -107,6 +107,38 @@ def start_analysis(
     case.start_search()
     if not description.strip():
         # 타임라인 실패는 그대로 올라간다 — aggregate는 바뀐 채지만 호출자가 save하지 않는다(Task 4).
+        issue_initial_search(case, timelines=timelines, budget=budget)
+        return
+    jobs.issue_job(
+        case,
+        "HINT_EXTRACT",
+        input_fingerprint=fingerprint({"kind": "HINT_EXTRACT", "description": description, "prior_hints": None}),
+    )
+
+
+def edit_hint(
+    case: CaseAggregate, description: str, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
+) -> None:
+    """설명을 고쳐 다시 찾는다(`EDIT_HINT`, #410 · `decisions/edit-hint.md`). 후보가 있는 단계면 `SEARCHING`으로
+    역행하고(후보 · 선택 폐기, `TIME_HINT_EDIT`와 같은 역행), `SEARCHING`이면 분석 job을 기다리지 않을 때만(중단 ·
+    timeout 뒤) 받는다. 원문을 바꾸고 hints · 판정을 비운 뒤 분석 시작과 같은 방식으로 발주한다 — 비었으면 바로 첫 탐색,
+    아니면 `HINT_EXTRACT`. 사용자 요청이라 `case_rev`를 한 번 올린다. 검사는 상태를 바꾸기 전에 한다."""
+    if case.stage == "SEARCHING":
+        if any(r["kind"] in ANALYSIS_JOB_KINDS for r in case.waiting_job_records()):
+            raise InvalidTransition("분석 job을 기다리는 중에는 설명을 고칠 수 없다")
+    else:
+        case.regress_to_searching()  # INTAKE면 InvalidTransition — 아무것도 바꾸기 전이다
+        # 버린 후보 목록에 딸린 job(#412 자동 선택 뒤의 Fine · clip · 판독 등)은 더 기다리지 않는다. 실행은
+        # 취소하지 않고 늦은 결과만 `SUPERSEDED`로 버린다(`edit-hint.md` §4).
+        for record in case.waiting_job_records():
+            case.settle_job(record["job_id"], "SUPERSEDED")
+    case.description = description
+    case.hints = dict.fromkeys(_HINT_FIELDS)
+    case.hint_unclear = False
+    case.candidate_search_failed = False
+    case.bump_revision()
+    if not description.strip():
+        # 타임라인 실패는 그대로 올라간다 — 호출자가 save하지 않는다(`start_analysis()`와 같다).
         issue_initial_search(case, timelines=timelines, budget=budget)
         return
     jobs.issue_job(

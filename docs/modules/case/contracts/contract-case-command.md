@@ -29,10 +29,11 @@
 | `START_ANALYSIS` | 첫 화면에서 영상을 올리고(설명은 선택) 「영상에서 찾아보기」 | §11 · #247 H-2 · `decisions/start-analysis.md` |
 | `STOP_ANALYSIS` | 분석 진행 화면에서 `[분석 중단]`(2026-10-11, 고도화 8-9) | #245 C-1 · C-1a · `decisions/stop-analysis.md` · `core-user-flow.md` §7 |
 | `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME` · `RECORD_SITUATION_RESPONSE`(`CORRECTED`) | 번호판 · 발생시각 직접 입력, 신고 상황 `[다른 상황]` — **입력형 판본 초안(§12)** | `contract-correction-record.md` · #235 · `core-user-flow.md` §12 · §13 · §15 |
+| `EDIT_HINT` | 결과 없음 · 설명을 잘 이해하지 못함 · 단서 구조화 중 중단 화면에서 「설명 고쳐 다시 찾기」(2026-10-27, **§13**) | #410 · `decisions/edit-hint.md` |
 
 **이 판본에 넣지 않는 것**
 
-- **입력형 action 중 나머지**(`REVIEW_TIME` · `EDIT_HINT` · 위치 단서 수정 · 번호판 `[맞아요]`) — 규칙이 정해지지 않았다. 이유는 §12-5. 번호판 · 시각 · `[다른 상황]`은 §12 입력형 판본 초안이다.
+- **입력형 action 중 나머지**(`REVIEW_TIME` · 위치 단서 수정 · 번호판 `[맞아요]`) — 규칙이 정해지지 않았다. 이유는 §12-5. 번호판 · 시각 · `[다른 상황]`은 §12 입력형 판본 초안이다.
 - **초기 후보 선택** — `rank=1` 자동 선택이라 사용자 명령이 아니다(#168 결정 1, #194). 후보 command는 결과 화면에서 다른 후보를 고를 때만 쓴다(#106 신유민 09-23).
 - **`rejected_candidate_ids`** — 받지 않는다(#106 결론). 개별 후보를 「아니다」로 지목하는 화면 신호가 생기면 다시 본다.
 - **시간 보정 버튼 4종**(조금 전·조금 후 등) — W7 밖(#106 결론).
@@ -253,12 +254,11 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 | action · 화면 | 넣지 않는 이유 |
 | --- | --- |
 | `REVIEW_TIME`(시각 후보 확인) | Flow §13 「어느 기록이 맞는지 사용자에게 고르게 하는 별도 단계를 두지 않는다」와 어긋난다. CaseView 계약 B§7 행도 TimeResolution §9-2 미결에 걸려 있다 — product · evidence와 정한다 |
-| `EDIT_HINT`(결과 없음 화면 「설명 고치기」) | 원문을 다시 구조화(`HINT_EXTRACT`)할지, hints patch(`TIME_HINT_EDIT`, `correction.edit_time_hint()`)로 받을지, 재탐색 발주를 같이 할지 정해야 한다 — B§7 행은 「새 Job 없음, 다음 `RETRY_SEARCH`의 입력」인데 분석 시작은 이제 원문을 받는다(§11) |
 | 위치 단서 수정(Flow §14 `[위치 단서 수정]`) | CorrectionRecord `kind` 9종에 위치용이 없다 — kind 추가는 `contract-correction-record.md` 변경이다 |
 | 번호판 `[맞아요]`(Flow §12) | 값을 바꾸지 않는 확인이라 CorrectionRecord로 남길 수 없다(§8-7). 「사용자 확인됨」을 어디에 기록할지 정해야 한다 |
 | 신고 유형 · 위반 내용 정정(`REPORT_TYPE_CHANGE` · `event.violation_expression`) | Flow에 화면 입구가 없다 |
 
-- **보낼 command가 없는 동안 이 action은 버튼으로 노출하지 않는다**(PR #356 web 리뷰). web은 `REVIEW_TIME` · `EDIT_HINT`를 notice 버튼으로 그리지 않고, case도 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B§7)로 싣지 않는다. 지금 `search.no_candidates`는 `EDIT_HINT`를 싣고 있어(B§7 2026-09-29 등재, `service.NO_CANDIDATES_NOTICE`) 이 원칙과 어긋난다 — 빼는 일은 CaseView 계약 행 변경이라 이 문서 밖 후속이다(§12-7).
+- **보낼 command가 없는 동안 이 action은 버튼으로 노출하지 않는다**(PR #356 web 리뷰). web은 `REVIEW_TIME`을 notice 버튼으로 그리지 않고, case도 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B§7)로 싣지 않는다. (`EDIT_HINT`는 2026-10-27 §13으로 열렸다.)
 
 ### 12-6. 예시
 
@@ -281,6 +281,27 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 
 - 열림 조건 2 · 3(§12-1) — #235 후속(PM · evidence).
 - CaseView 계약 B§7 `notices[].actions[]` 매핑의 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` 행을 이 kind로 가리키게 고치는 일 — 이 판본 합의 뒤.
-- `search.no_candidates`의 `EDIT_HINT` 빼기(§12-5) — CaseView 계약 B§7 행 · `service.NO_CANDIDATES_NOTICE` · `scenario_empty_001` fixture를 함께 고친다. web은 그동안 버튼으로 그리지 않는다.
+- ~~`search.no_candidates`의 `EDIT_HINT` 빼기(§12-5)~~ → 2026-10-27 빼지 않고 §13으로 실행 경로를 열었다.
 - evidence 기록 전 검사의 두 부류 반환 모양(§12-1 조건 3 · §12-4) — 구현 때 evidence와 정한다.
 - 구현 때 맞출 것: `CORRECTED`는 상황 응답 기록과 정정 기록이 각각 `case_rev`를 올리지 않게 한 번만 올린다(지금 `record_situation_response()` · `apply_correction()`이 각자 올린다).
+
+## 13. 설명 고쳐 다시 찾기 `EDIT_HINT` (2026-10-27)
+
+> **상태: 구현(2026-10-27, #410).** 결정 · 고르지 않은 안은 `decisions/edit-hint.md`. web(신유민) (A) 원문 다시 적기 + (가) 한 command 의견, 버튼 순서(@kim1034) 반영. CaseView 계약 B§7 `EDIT_HINT` 행 개정은 web 확인 요청 중.
+
+| `kind` | `payload` | 허용 상태 | 성공하면 |
+| --- | --- | --- | --- |
+| `EDIT_HINT` | `{ "description": "string" }` — 다시 적은 원문 그대로. 빈 문자열을 허용한다(§11과 같다) | 현재 CaseView `notices[]` 중 하나가 `actions[]`에 `EDIT_HINT`를 싣고 있을 때(`RUN_NOTICE_ACTION`과 같은 근거). 그리고 `SEARCHING`이면 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 없을 때 | `SEARCHING`으로 역행(후보 · 선택 폐기, 후보 세대 +1, 기다리던 job은 `SUPERSEDED` 정산 · 실행 취소 없음) · 설명 원문 교체 · `hints` 4개 `null` · `hint_unclear` 해제 · `case_rev` +1 · **`HINT_EXTRACT` 1건**. 설명이 비었으면 구조화 없이 `AnalysisScope` 1건 · `COARSE_SEARCH` 1건 |
+
+- **고치기와 다시 찾기는 한 command다.** `RETRY_SEARCH`는 직전 탐색과 같은 입력으로 다시 찾는 동작이라(§5) 바뀐 단서를 보지 않는다.
+- **결과 반영은 분석 시작과 같다**(§11) — `service.receive_hint_extraction_result()` → hints · 첫 탐색. 소진 알림도 같다(`decisions/hint-exhaustion.md`).
+- **예산은 첫 탐색과 같다**(`InitialSearchBudget`, `decisions/start-analysis.md` §3-3).
+- **CorrectionRecord를 남기지 않는다.** 설명 원문은 evidence가 조립하는 값이 아니라 탐색 입력이고, 바뀐 원문은 CaseView 최상위 `description`으로 보인다.
+- **`EDIT_HINT`를 싣는 notice**(어느 화면에 출구를 둘지는 notice가 정한다): `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때 — 단서 구조화 중 중단). `evidence.visual_event_not_observed`는 `core-user-flow.md` §6 변경이라 PM 확인 뒤(#404).
+- web은 `RUN_NOTICE_ACTION`이 아니라 이 kind로 보낸다(입력형 action, §12-3과 같다). 실패 코드는 §6 그대로다.
+
+```json
+// 요청 — 결과 없음 화면에서 설명을 고쳐 다시 찾기
+{ "case_id": "case_e001", "expected_case_rev": 1, "kind": "EDIT_HINT",
+  "payload": { "description": "6시 반쯤 빨간 트럭이 신호를 무시했어요" } }
+```

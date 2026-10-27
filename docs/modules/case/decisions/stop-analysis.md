@@ -35,7 +35,7 @@
 
 ## 4. 알려진 한계
 
-- **단서 구조화(`HINT_EXTRACT`) 중에 중단하면 「이어서 찾기」가 없다.** 다시 낼 `COARSE_SEARCH`가 없어 `actions:[]`이고, `START_ANALYSIS`는 `INTAKE` 전용이라 사용자가 다시 시작할 길이 없다. 중단 뒤 첫 탐색을 발주하는 action을 열지는 web과 정한다.
+- **단서 구조화(`HINT_EXTRACT`) 중에 중단하면 「이어서 찾기」가 없다.** 다시 낼 `COARSE_SEARCH`가 없어 `actions:[]`이고, `START_ANALYSIS`는 `INTAKE` 전용이라 사용자가 다시 시작할 길이 없다. 중단 뒤 첫 탐색을 발주하는 action을 열지는 web과 정한다. → **2026-10-27 해소:** 이 경우 `actions:[EDIT_HINT]`(설명 고쳐 다시 찾기, #410 · `edit-hint.md`).
 - 중단 뒤 실행이 checkpoint까지 진행되며 나가는 비용은 Runtime C-3 A안의 한계 그대로다.
 
 ## 5. 미결 (채우지 않는다)

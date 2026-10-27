@@ -18,7 +18,7 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
    | `REFLECTED` | case가 그 job의 결과(성공 · 실패)를 반영했다 | 결과 반영 경로(8-8). 지금은 후보 수신(`receive_candidates` · `record_candidate_search_failure`)이 COARSE_SEARCH에 대해 기록한다 |
    | `STOPPED_WAITING` | case timeout으로 기다리기를 멈췄다 | timeout 경로(8-9 이후) |
    | `CANCELLED` | 사용자가 중단했다 | 중단 command(8-9) |
-   | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다 | `jobs.issue_job()` |
+   | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다. 2026-10-27부터 설명을 고쳐 역행해 그 job이 딸린 후보 목록을 버린 경우도(`edit-hint.md` §4) | `jobs.issue_job()` · `analysis_start.edit_hint()` |
    | `EXHAUSTED` | Runtime이 재시도까지 끝나 결과가 오지 않는다고 확정했다(2026-10-27 추가, `HINT_EXTRACT`만) | 소진 알림 진입점(`hint-exhaustion.md`) |
 
    처음 사유가 이긴다. 이미 정산된 job을 다시 정산하면 아무것도 바뀌지 않는다(#245 D-5의 idempotent 반영과 같은 원칙). 정산은 `case_rev`를 올리지 않는다.

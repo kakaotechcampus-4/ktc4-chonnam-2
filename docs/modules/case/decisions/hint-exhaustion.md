@@ -39,7 +39,7 @@ Runtime 조건부 계산(첫 attempt 마지막 heartbeat부터 최종 소진까�
 
 ## 5. 알려진 한계
 
-- **단서 구조화 단계에서 중단하면 출구가 「새 신고」뿐이다.** 다시 낼 이전 `COARSE_SEARCH`가 없어 `case.analysis_stopped`의 `actions`가 빈다. #410 `EDIT_HINT`가 정해지면 그 command가 출구가 된다.
+- **단서 구조화 단계에서 중단하면 출구가 「새 신고」뿐이다.** 다시 낼 이전 `COARSE_SEARCH`가 없어 `case.analysis_stopped`의 `actions`가 빈다. #410 `EDIT_HINT`가 정해지면 그 command가 출구가 된다. → 2026-10-27 `edit-hint.md`로 해소(`case.analysis_stopped`가 `actions:[EDIT_HINT]`).
 - 소진 뒤 늦은 T2가 오면 `reflect_execution`은 `EXHAUSTED`를 「다른 경로로 이미 반영된 job」으로 보고 `ValueError`를 올린다. Runtime은 최종 `STALE` execution의 T1을 받지 않으므로 생기지 않는 경로로 본다. 생기면 Runtime `ReflectionOutcome.reason`에 `EXHAUSTED`를 더할지 함께 정한다.
 
 ## 6. 고르지 않은 안
