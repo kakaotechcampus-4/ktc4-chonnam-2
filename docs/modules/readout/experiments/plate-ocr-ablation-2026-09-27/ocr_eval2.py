@@ -59,13 +59,25 @@ def gray_contrast(img):
 
 class Reader:
     def __init__(self):
+        self.direct = None
         from paddleocr import PaddleOCR
+        # REC_MODEL_DIR=<export_model.py 결과>면 인식기만 그 가중치로 바꾼다(미세조정 평가)
+        rec_dir = os.environ.get("REC_MODEL_DIR")
         self.engine = PaddleOCR(lang="korean", text_detection_model_name="PP-OCRv5_mobile_det",
                                 text_recognition_model_name="korean_PP-OCRv5_mobile_rec",
+                                **({"text_recognition_model_dir": rec_dir} if rec_dir else {}),
                                 enable_mkldnn=False, use_doc_orientation_classify=False,
                                 use_doc_unwarping=False, use_textline_orientation=False)
 
     def lines(self, img):
+        if os.environ.get("REC_DIRECT") == "1":  # 검출기를 건너뛰고 번호판 crop 한 장을 인식기에 바로 넣는다
+            if self.direct is None:
+                from paddleocr import TextRecognition
+                rec_dir = os.environ.get("REC_MODEL_DIR")
+                self.direct = TextRecognition(model_name="korean_PP-OCRv5_mobile_rec", enable_mkldnn=False,
+                                              **({"model_dir": rec_dir} if rec_dir else {}))
+            r = next(iter(self.direct.predict(img))).json["res"]
+            return [(r["rec_text"], float(r["rec_score"]), [0, 0, img.shape[1], img.shape[0]])] if r["rec_text"] else []
         res = next(iter(self.engine.predict(img))).json["res"]
         return sorted(zip(res["rec_texts"], res["rec_scores"], res["rec_boxes"]),
                       key=lambda r: (round(r[2][1] / 25), r[2][0]))

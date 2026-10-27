@@ -1,6 +1,5 @@
 """Check omissions against an actual complete MySQL report, not fabricated evidence."""
 
-from copy import deepcopy
 import importlib.util
 import json
 import os
@@ -10,7 +9,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from mysql_report_mutations import copy_parameter_evidence
+from mysql_report_mutations import copy_parameter_evidence, omit_evidence_nodes
 
 from migration_support import ROOT
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
@@ -255,13 +254,10 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
                            *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS,
                            *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
-        broken = deepcopy(report)
-        removed = {item["nodeid"] for item in broken["collected"]
+        removed = {item["nodeid"] for item in report["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
         assert removed, scenario
-        broken["collected"] = [item for item in broken["collected"] if item["nodeid"] not in removed]
-        broken["selected"] = [node for node in broken["selected"] if node not in removed]
-        broken["reports"] = [item for item in broken["reports"] if item["nodeid"] not in removed]
+        broken = omit_evidence_nodes(report, removed)
         with pytest.raises(ValueError, match="role/scenario"):
             gate.validate_report(broken)
 
@@ -330,8 +326,9 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
     omissions = []
     for role, scenario, parameter in (*CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS, *RECORDING_PARAMETERS, *UPLOAD_PARAMETERS, *PRODUCED_PARAMETERS, *FRAME_PARAMETERS, *ASSET_PARAMETERS, *OBSERVABILITY_PARAMETERS):
         expected = {"role": role, "scenario": scenario, "parameter": parameter}
+        original_entry, = (n for n in report["collected"] if expected in n.get("checks", []))
         for field in ("role", "scenario", "parameter", "all_metadata"):
-            broken = deepcopy(report)
+            broken = copy_parameter_evidence(report, original_entry["nodeid"])
             entry, = (n for n in broken["collected"] if expected in n.get("checks", []))
             if field == "all_metadata":
                 entry["checks"] = []
@@ -342,14 +339,11 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                 gate.validate_report(broken)
             omissions.append({"identity": [role, scenario, parameter], "field": field, "rejected": True})
     for role, scenario in (*CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS):
-        broken = deepcopy(report)
-        removed = {n["nodeid"] for n in broken["collected"] if any(
+        removed = {n["nodeid"] for n in report["collected"] if any(
             c.get("role") == role and c.get("scenario") == scenario for c in n.get("checks", []))}
         assert removed
-        identities = {tuple(n["junit"]) for n in broken["collected"] if n["nodeid"] in removed}
-        broken["collected"] = [n for n in broken["collected"] if n["nodeid"] not in removed]
-        broken["selected"] = [n for n in broken["selected"] if n not in removed]
-        broken["reports"] = [n for n in broken["reports"] if n["nodeid"] not in removed]
+        identities = {tuple(n["junit"]) for n in report["collected"] if n["nodeid"] in removed}
+        broken = omit_evidence_nodes(report, removed)
         xml = ElementTree.parse(junit_path)
         count = 0
         for parent in xml.iter():
