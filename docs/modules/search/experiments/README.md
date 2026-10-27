@@ -5,6 +5,7 @@
 - [구조 확정·성능 향상 확인 실험 계획](search-structure-confirmation-plan-2026-10-26.md) — E1~E5 계획과 로컬 7클립 선행 결과. 운영 v3에서 Flash 위반 2/4 ×2, argon 3/4 ×2·오탐 증가, **argon + Fine gore-v1 문장 위반 4·3/4·정상 기각 3/3 ×2**. argon Fine은 원본 2→4 fps에서 141927 0/3→2/3, 점선 변경 횡이동은 못 봄. 30분 영상 예상 Flash 약₩700–1,100·argon 약₩2,000–3,000. Provider `LengthFinishReasonError` 미처리 발견. 누적 약₩2,310
 - [CV 전체 진행 결과와 남은 작업](cv-lane-track-progress-summary-2026-10-10.md) — 최신 평가 도구·중복 차선 처리·미완료 범위 반영.
 - [CV 잔여 작업 처리 결과](cv-remaining-plan-2026-10-11.md) — 188개 테스트·실제 영상 검증, 최종 선정·정답·L2 환경 미완료 상태 기록.
+- [AI Hub 후보 → argon Fine · Fine 분기부 문장 v2](search-aihub-coarse-gore-v2-2026-10-27.md) — E1 후속. LRCN 후보 51개 → argon Fine 위반 4/12, argon Coarse와 합쳐도 7/12 그대로(정답 덮은 C39·C44·C47을 Fine이 기각). `fine-gore-v2`(합류 끼어듦 보고·분기 진출 제외)는 C39를 못 살리고 C05를 놓쳐 미채택, gore-v1 유지. 병목은 Coarse가 아니라 Fine. ₩1,061
 
 재현 가능한 실험 기록을 둔다. 입력/설정/결과/실패/다음 learning을 남긴다. AI 원문과 원본 영상은 저장소에 두지 않는다. 신규 실험 결과 원본(JSON·JSONL)은 로컬에만 보관하고, Git에는 설정·수치 요약·해석을 담은 Markdown 보고서를 남긴다.
 
