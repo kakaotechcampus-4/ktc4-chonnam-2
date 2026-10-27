@@ -172,6 +172,11 @@ class CaseAggregate:
     # handler는 `CaseStore.observation_input`으로 읽는다(`decisions/incident-clip-observation-input.md` §4-1). CaseView 비노출.
     observation_inputs: dict[str, dict[str, Any]] = field(default_factory=dict)
 
+    # 관찰 job의 T2 결과(`job_id` → `{status}` + Fine `verification` · clip `incident_clip_ref`). 다른 후보 선택 뒤
+    # 첫 빠진 단계를 고르는 근거다(`incident-clip-observation-input.md` §4-6). 결과 내용 전체는 복사하지 않는다 —
+    # 후속 발주가 이미 읽는 두 값뿐이다. append-only. CaseView 비노출.
+    observation_outcomes: dict[str, dict[str, Any]] = field(default_factory=dict)
+
     # 저장된 상태의 모르는 최상위 키 — `Candidate.extra`와 같은 이유. CaseView 비노출.
     extra_state: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
 

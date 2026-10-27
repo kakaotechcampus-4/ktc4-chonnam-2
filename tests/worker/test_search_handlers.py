@@ -42,13 +42,13 @@ class IntentProvider:
             usage=ProviderUsage(10, 2, 0, 12), latency_ms=7)
 
 
-def dependencies(ctx, *, provider=None, cancel_at=None):
+def dependencies(ctx, *, provider=None, cancel_at=None, fine_max_latency_sec=70):
     m = module()
     seen = []
     scope, coarse, fine = fixtures()
     provider = provider or IntentProvider(lambda usage: seen.append(usage.sink))
     data = m.SearchInput(description="private description", prior_hints={}, scope=scope,
-                         candidate=coarse.candidates[0])
+                         candidate=coarse.candidates[0], max_latency_sec=fine_max_latency_sec)
 
     def load(incoming):
         assert incoming is ctx
@@ -76,7 +76,9 @@ def dependencies(ctx, *, provider=None, cancel_at=None):
             def verify_visual(self, ref, candidate, hint, event_type, *, max_latency_sec, usage_sink):
                 assert ref == fine.analysis_run.input_ref and candidate is data.candidate
                 assert hint == scope.hint and event_type == data.candidate.event_type_hint
-                assert max_latency_sec == scope.budget.max_latency_sec and usage_sink is ctx.usage_sink
+                # Case fixes the Fine bound in observation_input (#407 decision (a)); never the Coarse scope bound.
+                assert max_latency_sec == fine_max_latency_sec != scope.budget.max_latency_sec
+                assert usage_sink is ctx.usage_sink
                 seen.append("fine")
                 return fine
         try:
@@ -99,6 +101,14 @@ def fixtures():
     from daesingo.search import ContractRef
     fine = service.verify_visual(ContractRef.model_validate(raw["visual_evidences"][0]["input_ref"]), scope.hint)
     return scope, coarse, fine
+
+
+def test_fine_without_case_bound_never_falls_back_to_coarse_scope():
+    ctx = context("FINE_VERIFY", object())
+    registry, seen, _ = dependencies(ctx, fine_max_latency_sec=None)
+    # dispatch turns the handler's ValueError into a FAILED terminal, like a missing UsageSink.
+    assert registry.dispatch(ctx).status == "FAILED"
+    assert "fine" not in seen
 
 
 @pytest.mark.parametrize("kind,key", [("HINT_EXTRACT", "status"), ("COARSE_SEARCH", "candidate_events"),

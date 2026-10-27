@@ -84,9 +84,11 @@ def test_coarse_candidates_are_applied_and_execution_recorded():
 
     result = _reflect(store, outcome, reader)
 
-    assert (result.status, result.reason, result.appended_job_records) == ("APPLIED", None, [])
     case = store.get_case(case_id)
-    assert case.stage == "CANDIDATE_REVIEW"
+    # rank=1은 자동 선택한다(W12:C2). 이 EVENT는 span에 구간이 없는 이전 형식이라 Fine은 내지 않는다 —
+    # 첫 Fine 발주는 `test_observation_chain.py`가 본다.
+    assert (result.status, result.reason, result.appended_job_records) == ("APPLIED", None, [])
+    assert case.stage == "EVIDENCE_REVIEW"
     assert [c.candidate_id for c in case.candidates] == ["cand_1"]
     assert case.candidates[0].representative_ms == 4_000
     assert case.settled_jobs[outcome.job_id] == "REFLECTED"

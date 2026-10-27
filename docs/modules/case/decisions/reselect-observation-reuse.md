@@ -57,7 +57,7 @@
 ## 결정하지 않는 것
 
 - **Fine 결과의 유효 기간.** 같은 탐색 결과 안에서 시간이 오래 지나도 재사용한다. 영상과 입력이 그대로면 결과가 달라질 이유가 없다고 보지만, provider 쪽 모델이 바뀌는 경우 등은 search 판단이다.
-- **worker 경로.** 비동기 Job으로 관찰이 돌면 이 재사용은 JobRecord 캐시 규칙(A절 §7)으로 성립해야 한다. 그때 `input_fingerprint`에 무엇을 넣을지는 `input-fingerprint-implementation-label-deferred.md`의 재검토 트리거와 함께 본다.
+- ~~**worker 경로.** 비동기 Job으로 관찰이 돌면 이 재사용은 JobRecord 캐시 규칙(A절 §7)으로 성립해야 한다.~~ → **2026-10-26: case가 끝난 단계를 다시 발주하지 않는 것으로 성립시켰다**(`incident-clip-observation-input.md` §4-6 구현 결정 · §7). Runtime 캐시에 맡기지 않는다.
 - **정정 승계.** A로 돌아왔을 때 이전 A의 정정을 되살릴지는 #173 E-1 범위다 — 이 문서로 다시 열지 않는다.
 
 ## 관련

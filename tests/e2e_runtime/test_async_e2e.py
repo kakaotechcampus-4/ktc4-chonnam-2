@@ -89,7 +89,8 @@ def test_http_command_worker_t1_t2_and_view_polling(async_db, tmp_path):
         final = snapshot(engine, identity, job["job_id"])
         stored, = final["executions"]
         view = polls[-1]
-        assert view["stage"] == "CANDIDATE_REVIEW" and view["running_jobs"] == []
+        # rank=1 is auto-selected in T2 (Case W12:C2); the fixture span has no window, so no Fine is issued.
+        assert view["stage"] == "EVIDENCE_REVIEW" and view["running_jobs"] == []
         assert [c["candidate_id"] for c in view["candidates"]] == ["cand_rt09"]
         assert {p["step"]: p["state"] for p in view["progress"]}["coarse_search"] == "DONE"
         assert {p["step"]: p["state"] for p in view["progress"]}["candidate_review"] == "DONE"

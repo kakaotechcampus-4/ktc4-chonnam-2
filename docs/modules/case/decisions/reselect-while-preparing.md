@@ -22,7 +22,7 @@
 
 ## 3. 알려진 한계
 
-- 비동기 경로의 첫 선택(Coarse T2 자동 선택)은 composition 주입 뒤 열린다(`incident-clip-observation-input.md` §9). 그 전에는 이 규칙이 막을 상황이 동기 · 데모 경로에 없다(§2-3 마지막 항목).
+- 비동기 경로의 첫 선택(Coarse T2 자동 선택)은 composition 주입과 함께 열렸다(2026-10-26, `incident-clip-observation-input.md` §9 3단계). 자동 선택 뒤 첫 Fine을 기다리는 동안이 이 규칙이 막는 「준비 중」이다.
 
 ## 4. 미결 (채우지 않는다)
 
