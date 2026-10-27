@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from daesingo.case import analysis_start, correction, jobs
+from daesingo.case import analysis_start, correction, jobs, observation
 from daesingo.case.analysis_start import AnalysisStartNotAllowed, InitialSearchBudget
 from daesingo.case.domain import CaseAggregate, InvalidTransition
 from daesingo.case.service import build_view_from_adapter, get_view, mark_ready_if_package_ready, utc_now
@@ -93,6 +93,8 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
     except InvalidTransition:
         raise _Rejected("not_allowed") from None
     correction.reselect_candidate(case, candidate_id)
+    # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(W12:C2, §4-6).
+    observation.issue_missing_for_selected(case)
 
 
 def _record_situation_response(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:

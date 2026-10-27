@@ -10,7 +10,6 @@ import pytest
 import sqlalchemy as sa
 from pydantic import SecretStr
 
-from daesingo.case import observation
 from daesingo.case.stored_observation import stored_adapter_factory
 from daesingo.common.config import DbSettings
 from daesingo.common.db import create_worker_engine
@@ -103,15 +102,8 @@ def test_real_search_chain_usage_and_payload_survive_t1_replay(queue, monkeypatc
                 composed(active, {kind: invoke}, stop=stop, reflector=reflector, stream=stream).run()
             once("HINT_EXTRACT")
             assert row(queue, hint_id)["case_applied_at"] is not None
+            # Coarse T2 selects rank=1 and the reflector enqueues the first Fine (Case W12:C2).
             once("COARSE_SEARCH")
-            with active.begin() as conn:
-                facade = store(conn)
-                case = facade.load_for_update(case_id)
-                case.select_candidate(case.candidates[0].candidate_id)
-                job = observation.issue_fine_for_selected(case)
-                facade.save(case)
-                from daesingo.common.jobs.repository import enqueue
-                enqueue(conn, [job], "trace")
             once("FINE_VERIFY")
             assert calls.calls == 3  # T1 retry never repeats paid work
             assert proxy.commit_ok_dropped == (1 if fault == "commit_unknown" else 0)

@@ -5,10 +5,7 @@ import subprocess
 
 import pytest
 
-from daesingo.case import observation
-from daesingo.common.jobs.repository import enqueue
 from daesingo.common.jobs.produced import ProducedReader
-from daesingo.worker.case_composition import stored_case_store
 from production_processes import api_peer, worker_peer
 
 pytestmark = pytest.mark.mysql
@@ -93,17 +90,11 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
             assert hinted["hints"]["situation"] == "red signal"
         run_worker("COARSE_SEARCH")
         local.send(("GET", f"/cases/{identity}/view", None)); view = public(receive(local))
-        assert not view["running_jobs"]
         assert bool(view["candidates"]) == (scenario != "failed")
+        # Case selects rank=1 and issues the first Fine in Coarse T2 (W12:C2); the reflector enqueues it.
+        # Runtime still invents no selection or downstream policy.
+        assert [job["kind"] for job in view["running_jobs"]] == ([] if scenario == "failed" else ["FINE_VERIFY"])
         if scenario != "failed":
-            # Case owns selection/follow-up. Exercise its public aggregate entry;
-            # Runtime must not invent automatic selection or downstream policy.
-            with engine.begin() as conn:
-                facade = stored_case_store(conn, storage_root=root)
-                case = facade.load_for_update(identity)
-                case.select_candidate(view["candidates"][0]["candidate_id"])
-                fine = observation.issue_fine_for_selected(case)
-                facade.save(case); enqueue(conn, [fine], "process-fine")
             run_worker("FINE_VERIFY")
             local.send(("GET", f"/cases/{identity}/view", None)); final_view = public(receive(local))
             assert not final_view["running_jobs"]

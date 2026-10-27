@@ -81,7 +81,8 @@ class SnapshotAdapter:
 
 
 def _store_with_observation_job(kind: str, adapter: Any) -> tuple[CaseStore, str]:
-    """후보를 고른(`EVIDENCE_REVIEW`) case에 관찰 job 하나를 발주해 둔다."""
+    """후보를 고른(`EVIDENCE_REVIEW`) case에 관찰 job 하나를 발주해 둔다. Coarse 반영이 rank=1을 고르고 첫 Fine을
+    발주하므로(W12:C2) 선택은 반영기가 한다."""
     store = CaseStore(conn=object())
     case_id = service.create_case(store=store)
     service.record_source_registered(
@@ -99,7 +100,6 @@ def _store_with_observation_job(kind: str, adapter: Any) -> tuple[CaseStore, str
         store=store, reader=FakeReader({"outcome": "SUCCEEDED", "candidate_events": [EVENT]}), timelines=FakeTimelines(),
     )
     case = store.load_for_update(case_id)
-    case.select_candidate("cand_1")
     jobs.issue_job(case, kind, input_fingerprint=f"sha256:{kind.lower()}")
     store.save(case)
     store.adapters.put(case_id, adapter)

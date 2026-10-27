@@ -146,7 +146,8 @@ def test_result_before_deadline_is_applied():
                                timelines=FakeTimelines(), now=now)
 
     assert result.status == "APPLIED"
-    assert store.get_case(case_id).stage == "CANDIDATE_REVIEW"
+    # 후보를 받아 rank=1을 자동 선택했다(W12:C2).
+    assert store.get_case(case_id).stage == "EVIDENCE_REVIEW"
 
 
 def test_result_after_deadline_is_not_applied_and_settlement_is_saved():
