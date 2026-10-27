@@ -31,6 +31,11 @@ INTENT_USER_PROMPT: Final = load_prompt("intent-user-v1")
 # Coarse · Fine 모델(DAESINGO_GEMINI_MODEL)을 바꿔도 intent 모델은 따로 남는다.
 INTENT_MODEL_ENV: Final = "DAESINGO_INTENT_MODEL"
 DEFAULT_INTENT_MODEL: Final = "gemini-3.8-flash"
+# Search가 argon tenant 경로로 옮겨도 intent는 지금 쓰는 Flash 경로를 그대로 쓴다(case 결정 유지).
+INTENT_BASE_URL_ENV: Final = "DAESINGO_INTENT_BASE_URL"
+DEFAULT_INTENT_BASE_URL: Final = (
+    "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+)
 # 재시도 포함 전체 상한. 실측 평균 3.9초 × 최대 4회 시도 + 재시도 대기 5+10+20초가 들어간다.
 DEFAULT_INTENT_TIMEOUT_SEC: Final = 60.0
 
@@ -199,11 +204,12 @@ def _failure_kind(error: Exception) -> IntentFailureKind:
 def intent_config_from_dotenv(
     env: Mapping[str, str] | None = None,
 ) -> GeminiSearchConfig:
-    """인증 · base URL · 재시도는 Search 설정을 공유하고 모델만 별도 키로 바꾼다."""
+    """인증 · 재시도는 Search 설정을 공유하고 모델 · base URL만 별도 키로 바꾼다."""
     if env is None:
         env = load_env_file()
     model = env.get(INTENT_MODEL_ENV, "").strip() or DEFAULT_INTENT_MODEL
-    return replace(GeminiSearchConfig.from_dotenv(env), model=model)
+    base_url = env.get(INTENT_BASE_URL_ENV, "").strip() or DEFAULT_INTENT_BASE_URL
+    return replace(GeminiSearchConfig.from_dotenv(env), model=model, base_url=base_url)
 
 
 def build_intent_hint_extractor(

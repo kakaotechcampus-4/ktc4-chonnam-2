@@ -6,7 +6,8 @@
 
 - [decision-trace-2026-09-26.md](decision-trace-2026-09-26.md) — p4 종료, p3 기반 Search 전용 판단 근거 진단과 단계별 프롬프트 실험
 - [fine-coarse-handoff-experiment-2026-09-28.md](fine-coarse-handoff-experiment-2026-09-28.md) — Coarse 관찰 Fine 인계·실선/중앙선 UNCERTAIN 지시를 진단 전용 profile로 분리 실험(운영 p3 불변)
-- [gemini-3.8-proxy-baseline-2026-09-18.md](gemini-3.8-proxy-baseline-2026-09-18.md) — 운영 baseline: `gemini-3.8-flash`, 프록시 경유, `.env` 설정
+- [search-argon-model-2026-10-27.md](search-argon-model-2026-10-27.md) — Search Coarse · Fine 모델 `gemini-4-argon` · argon tenant 경로 · Fine `fine-gore-v1` 문장. intent는 Flash 유지
+- [gemini-3.8-proxy-baseline-2026-09-18.md](gemini-3.8-proxy-baseline-2026-09-18.md) — 프록시 경유 · `.env` 설정 방식. 모델 · 경로 항목은 2026-10-27 argon 결정으로 대체
 - [challenger-policy.md](challenger-policy.md) — Failure decides the challenger 매핑·개방 절차 (A-2)
 - [failure-taxonomy.md](failure-taxonomy.md) — search 실패 분류. 실행 실패(`JobExecution.failure_kind`)는 **확정**(2026-10-25, #297), 품질 분류는 **초안**
 - [candidate-span-semantics-2026-09-10.md](candidate-span-semantics-2026-09-10.md) — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신

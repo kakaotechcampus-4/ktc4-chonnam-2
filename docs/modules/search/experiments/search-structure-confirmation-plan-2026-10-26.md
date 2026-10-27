@@ -296,9 +296,50 @@ Flash Fine은 이 3건에서 **차로 변경을 보고 점선이라 기각**했�
 실험 스크립트의 streaming 경로(`max_tokens=16384`)에서는 같은 조건이 끝까지 돌았다.
 **같은 PR에서 수정했다:** `GeminiProvider`가 `LengthFinishReasonError`·`ContentFilterFinishReasonError`를 재시도 없이 `ProviderPayloadError`로 바꾼다(`tests/search/test_provider_bounds.py`). 응답이 잘리는 원인(프록시 non-streaming 상한)은 그대로이며, 운영 호출을 streaming으로 바꿀지는 별도 판단이다.
 
+### 6.7 E1 — 15영상 1회 (2026-10-27)
+
+조건(결과를 보기 전 고정): 15영상(위반 12 · 정상 3, `scripts/gemini_coarse_fine_slowdown_trace.py` `CASES`), 정답 유형 1개, 1회, 상한 ₩2,000(사용자 승인).
+Fine은 §7 조건(후보 ± 4초, 원본 4 fps → 0.25배속)으로 네 조건을 맞췄다. `fine-gore-v1` 문장은 argon 조건에만 붙였다.
+
+- P0: Flash, `--transport video --conditions 0.5:0.25`
+- P1: argon, 같은 명령 + `--fine-variant gore-v1`, argon tenant 경로의 임시 env
+- P2: CV 후보(10/11 `selected-full-run/candidates.json`, (클립, 대표 시점) 중복 제거 6개) → argon Fine. 실행 스크립트는 로컬 `.omc/e1-15clip-2026-10-27/run_cv_fine.py`
+- P3: P1과 P2의 합집합으로 채점(추가 호출 없음)
+
+| 클립 | 정답 | P0 Flash | P1 argon | P2 CV → argon | P3 |
+| --- | --- | --- | --- | --- | --- |
+| `141628` | 정상 | 기각 | 기각 | 후보 없음 | 기각 |
+| `141927` | 실선 4–10초 | MISS (3.5–6.75초 기각) | **HIT** | 후보 없음 | HIT |
+| `141956` | 점선(합법) | 기각 | 기각 | 후보 없음 | 기각 |
+| `150504` | 정상 | 기각 | 기각 | 후보 없음 | 기각 |
+| `youtube_clip_01` | 실선 0–2초 | HIT | HIT | 후보 없음 | HIT |
+| `YT_0003_C05` | 실선 10–12·20–22초 | MISS + 4–7초 OBSERVED | MISS (0–6초 기각) | MISS (19–23초 기각) | MISS |
+| `YT_0002_C00` | 중앙선 10–14초 | HIT | HIT | HIT | HIT |
+| `YT_0001_C08` | 신호 15–17.8초 | MISS (12–18초 기각, 65–68초 영상 밖) | **HIT** | 후보 없음 | HIT |
+| `YT_0001_C09` | 실선 9–11초 | MISS | **HIT** | HIT | HIT |
+| `YT_0001_C33` | 신호 50–52초 | MISS (66.5–72.5초 영상 밖) | **HIT** (+45–50초 OBSERVED) | 후보 없음 | HIT |
+| `YT_0001_C39` | 실선 52–55초 | MISS (후보 2개 모두 영상 밖) | MISS (44–47.5초 기각) | 후보 없음 | MISS |
+| `YT_0001_C47` | 실선 0.5–3초 | MISS | MISS (후보 0) | 후보 없음 | MISS |
+| `YT_0003_C10` | 실선 7–9초 | MISS (6.5–9.5초 기각) | **HIT** | HIT | HIT |
+| `YT_0003_C28` | 중앙선 9–10초 | MISS (후보 0) | MISS (후보 0) | 후보 없음 | MISS |
+| `YT_0003_C44` | 실선 28–30초 | MISS (34.5–37.5초 기각) | MISS (46–58초 기각) | MISS (26.6–30.6초 기각) | MISS |
+| **합계** | | **위반 2/12 · 정상 3/3** | **위반 7/12 · 정상 3/3** | 위반 3/12 | **위반 7/12 · 정상 3/3** |
+| 비용 | | ₩256.3 (33호출) | ₩653.1 (31호출) | ₩118.0 (6호출) | 0 |
+
+- **CV를 합쳐도 검출이 늘지 않았다(P1 = P3 = 7/12).** CV가 잡은 3건(C09 · C00 · C10)은 argon Coarse도 찾았다. [CV + argon](cv-coarse-argon-fine-2026-10-23.md)에서 CV만 찾았던 C09를 이번 argon Coarse는 6–12초 후보로 찾았다.
+- C05 · C44는 10/23 CV + argon(Fine 원본 2 fps, 0.5배속, 박스)에서 통과했지만 이번 Fine 조건에서는 CV 후보 구간을 받고도 기각했다. 조건 차이인지 흔들림인지는 1회로 구분하지 않는다.
+- Flash Coarse는 영상 길이를 넘는 후보를 4개 냈다(C08 · C33 · C39). argon은 0개였다.
+- Flash는 `YT_0003_C05` 4–7초 OBSERVED를 다시 냈다(10/26 2회에 이어 3번째). 정답 밖이다.
+- 15영상은 CV 개발 표본이고 1회다. 구조 선택용이며 성능 향상 판정이 아니다(§3).
+- 누적 비용: ₩1,027.4 (상한 ₩2,000 안).
+
+이 결과로 Owner가 Search 모델을 argon으로 확정했다 — [결정](../decisions/search-argon-model-2026-10-27.md).
+
 ## 7. 현재 가장 유력한 구조 (2026-10-26 판단, 결정 아님)
 
 §6 결과까지 반영한 Owner 판단 메모다. 채택은 §3 E5와 §5 승인 경로를 거친다.
+
+> 2026-10-27: 모델 argon과 Fine `gore-v1` 문장은 [결정](../decisions/search-argon-model-2026-10-27.md)으로 운영에 반영했다. CV 합치기는 §6.7에서 기여가 없어 넣지 않는다.
 
 ```text
 [Coarse] argon · 운영 v3 그대로 (원본 2 fps → 0.5배속, coarse-p3)
@@ -328,7 +369,7 @@ Flash Fine은 이 3건에서 **차로 변경을 보고 점선이라 기각**했�
 
 ## 8. 미결
 
-- argon 호출이 가능한 키·엔드포인트: 확인 필요(현재 `.env` 키는 Flash만 허용).
+- argon 호출이 가능한 키·엔드포인트: 같은 키로 argon tenant 경로 호출 확인(2026-10-26 · 27). argon tenant 경로가 Flash를 받는지는 확인 필요.
 - E5 최소 사건 수: 미정.
 - E5 오탐 상한 추가 여부: 미정.
 - 정상 113클립 영상 로컬 확보 여부: 확인 필요.

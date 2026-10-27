@@ -33,6 +33,10 @@ def test_prompt_versions_placeholders_and_fingerprints_are_stable_metadata():
     signal = fine_prompt_for(VisualEventType.SIGNAL)
     assert lane.fingerprint != signal.fingerprint
     assert "점선처럼 보인다는 이유만으로" in lane.text
+    # 분기부 문장은 모든 유형의 맨 끝에 붙고 버전에 남는다.
+    for template in (lane, signal):
+        assert template.version == "fine-p3+fine-gore-v1"
+        assert template.text.rstrip().endswith("UNCERTAIN을 선택하세요.")
 
 
 def test_fine_prompt_pins_the_offset_base_to_the_clip_it_hands_over():
@@ -130,7 +134,7 @@ def test_privacy_and_fine_legacy_event_mapping():
 
 def test_config_defaults_are_values_not_slot_descriptors():
     config = GeminiSearchConfig.from_dotenv(env={})
-    assert config.model == "gemini-3.8-flash"
+    assert config.model == "gemini-4-argon"
     assert config.base_url.endswith("/v1")
 
 
