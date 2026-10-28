@@ -11,7 +11,7 @@ from eval.runners.errors import RunnerPreflightError
 
 MINIMUM_SDK = (1, 40, 0)
 # 부분 데이터로 유료 호출을 시작하지 않게 manifest별 클립 수를 고정한다.
-EXPECTED_CLIPS = {"b_youtube": 123, "ctier2": 149}
+EXPECTED_CLIPS = {"b_youtube": 123, "b_youtube_m4": 179, "ctier2": 149, "ctier3": 8}
 
 
 class PreflightError(RunnerPreflightError):

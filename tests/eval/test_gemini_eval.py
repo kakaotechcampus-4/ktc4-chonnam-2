@@ -119,7 +119,7 @@ def test_preflight_rejects_unknown_manifest(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(gemini_preflight.PreflightError) as raised:
         gemini_preflight.prepare({"manifest": "a_aihub", "stage": "candidate"})
 
-    assert "supports manifest=b_youtube, ctier2 only" in str(raised.value)
+    assert "supports manifest=b_youtube, b_youtube_m4, ctier2, ctier3 only" in str(raised.value)
 
 
 def test_eval_cli_reports_preflight_failure_without_creating_provider(
