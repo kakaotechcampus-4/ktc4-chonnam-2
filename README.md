@@ -72,7 +72,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
 | `Dockerfile` · `compose.yaml` · `docker/` | RT-13(a) local api/worker/migrate/mysql 구성·실행 어댑터. 설정과 전용 smoke는 [RT-13(a) Notes](docs/runtime/rt13a-docker-compose.md) 참조 |
-| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 레포 루트에서 `pytest` 한 번에 전부 돈다 |
+| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 수집하며, CI는 비-MySQL 회귀와 실제 MySQL·report gate를 분리한다 ([실행 구조](docs/runtime/ci-test-partitions.md)) |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
 | `docs/runtime/` | 공통 실행 인프라의 Runtime Tech Spec · Ops Spec. `common/runtime`은 도메인 모듈이 아님 |
@@ -127,12 +127,12 @@ Python 3.12 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아
 ```bash
 uv sync --locked --extra test   # daesingo + pytest를 uv.lock 잠금 버전으로 설치 (루트에서 한 번)
 # uv 없이: pip install -e ".[test]" — 이 경우 아래 명령의 `uv run`은 빼고 실행한다
-uv run pytest               # tests/ 전체 (모듈별 하위 폴더 포함, testpaths=["tests"] 기준)
+uv run python -m tests.ci_orchestration regression .codex-scratch/regression.xml  # 비-MySQL 회귀 (출력 폴더를 먼저 만든다)
 uv run pytest tests/case/   # 모듈 하나만
 uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 ```
 
-MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 MySQL 8.4 service와 `DAESINGO_REQUIRE_MYSQL=1`을 사용하고, MySQL 테스트의 skip/xfail 0·필수 시나리오·기존 Case MySQL 실행을 JSON/JUnit 보고서로 검사한다. URL이 없는 로컬 실행은 MySQL integration을 skip한다.
+MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 비-MySQL `regression`과 MySQL 8.4 service를 쓰는 `mysql`을 병렬 실행하고 기존 `test`가 두 성공을 요구한다. 전체 MySQL gate는 `uv run python -m tests.ci_orchestration mysql .codex-scratch/mysql-evidence`로 실행한다. 실제 inventory 1회 → 같은 실행의 JSON/JUnit strict → catalog·실제 report mutation 순서이며 skip/xfail 0을 요구한다. 검증 wrapper를 단독 또는 bare pytest로 실행하면 현재 실행의 evidence가 없어 실패하므로 전체 gate 진입점을 사용한다. URL 없는 개별 DB 테스트의 기존 opt-in skip은 유지된다. partition·실행 환경·제약은 [CI 실행 구조](docs/runtime/ci-test-partitions.md)를 따른다.
 
 Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`으로 실행한다. 호출자가 URL 한 개를 비대화형 stdin에 명시적으로 전달하며 credential을 argv·로그에 넣지 않는다. runner는 URL 환경변수·`.env`·RuntimeConfig를 읽지 않는다. 소스 checkout의 env를 frozen registry `case → runtime → recording` 순서로 `head`까지 적용하며, 새 env는 registry와 필수 테스트에 등록해야 한다. 기존 MySQL gate는 RT-02(a)·Case 실행 목록과 migration·Recording 필수 check를 함께 검사한다.
 
