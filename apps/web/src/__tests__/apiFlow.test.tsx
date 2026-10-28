@@ -190,14 +190,15 @@ it('진행에서 결과로 넘어오는 순간에만 자동차가 도착한다 �
   expect(b.container.querySelector('.res-bgcar.is-arriving')).toBeNull()
 })
 
-it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「다시 찾기」(RETRY_SEARCH)와 「새 신고」를 둔다', async () => {
+it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는 「다시 찾기」(RETRY_SEARCH)와 「처음으로」를 둔다', async () => {
   const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
   const { m, api } = setup({ get: EMPTY })
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { container, findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText(/말씀하신 장면을 찾지 못했어요/)
   expect(container.querySelector('.rs.state-page.noresult')).not.toBeNull()
-  expect(getAllByText('새 신고')).toHaveLength(2) // 헤더 + 본문 버튼
+  expect(getAllByText('새 신고')).toHaveLength(1) // 헤더
+  expect(getAllByText('처음으로')).toHaveLength(1) // 본문 고정 출구(#410)
   // case가 실은 동작 중 보낼 수 있는 것(RETRY_SEARCH)만 버튼으로 — 같은 조건으로 다시 찾는다
   const retry = EMPTY.notices.find((n) => n.actions.includes('RETRY_SEARCH'))
   if (retry) {
@@ -214,4 +215,64 @@ it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는
   await r.findByText('다시 찾기')
   expect(r.container.querySelector('.rs.state-page.stopped .state-head')).not.toBeNull()
   expect(r.container.querySelector('.panel-t, .page-title')).toBeNull()
+})
+
+// #410 — 설명 고쳐 다시 찾기. notice가 EDIT_HINT를 실으면 입력 화면을 열고, 거기서 EDIT_HINT command로 보낸다.
+const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
+
+it('결과 없음에서 [설명 고치기]는 이전 설명을 채운 입력 화면을 열고, [고친 내용으로 찾기]는 EDIT_HINT command를 보낸다', async () => {
+  const empty = { ...EMPTY, description: '저녁에 흰 차가 끼어들었어요' }
+  const { m, api } = setup({ get: empty })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: empty.case_rev + 1 }, 202))
+  const { container, findByText, getByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+
+  fireEvent.click(await findByText('설명 고치기'))
+  const input = getByLabelText('어떤 상황이었나요?') as HTMLTextAreaElement
+  expect(input.value).toBe('저녁에 흰 차가 끼어들었어요')
+  // 「고친 내용으로 찾기」가 먼저 · 강조, 「처음으로」는 약하게
+  const buttons = [...container.querySelectorAll('.hint-page .rs-actions button')].map((b) => [b.textContent, b.className])
+  expect(buttons).toEqual([
+    ['고친 내용으로 찾기', 'rs-btn pri'],
+    ['처음으로', 'rs-btn sec'],
+  ])
+
+  fireEvent.change(input, { target: { value: '  저녁 6시쯤 흰 SUV가 실선을 넘어 끼어들었어요 ' } })
+  fireEvent.click(getByText('고친 내용으로 찾기'))
+  await findByText('분석 중단')
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', empty.case_rev, {
+    kind: 'EDIT_HINT',
+    payload: { description: '저녁 6시쯤 흰 SUV가 실선을 넘어 끼어들었어요' },
+  })
+})
+
+it('설명이 비어 있으면 [고친 내용으로 찾기]를 누를 수 없고, 뒤로 가면 결과 없음 화면이다', async () => {
+  const { m, api } = setup({ get: { ...EMPTY, description: '' } })
+  const { findByText, getByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  expect(getByText('고친 내용으로 찾기').closest('button')!.disabled).toBe(true)
+  fireEvent.change(getByLabelText('어떤 상황이었나요?'), { target: { value: '   ' } })
+  expect(getByText('고친 내용으로 찾기').closest('button')!.disabled).toBe(true)
+  fireEvent.click(getByLabelText('뒤로'))
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('결과 없음에 hint_unclear가 함께 붙으면 그 문구도 보이고, [설명 고치기]는 하나다', async () => {
+  const both = { ...EMPTY, notices: [...EMPTY.notices, { ...notice('search.hint_unclear', ['EDIT_HINT']), message_key: 'notice.hint_unclear' }] }
+  const { api } = setup({ get: both })
+  const { findAllByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
+  expect(await findAllByText('설명 고치기')).toHaveLength(1)
+  expect(getByText(/입력하신 내용에서 확실한 단서를 찾지 못해 넓게 찾아봤어요/)).toBeTruthy()
+})
+
+it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로 다시 찾는다', async () => {
+  const stopped = view({ case_rev: 3, stage: 'SEARCHING', description: '흰 차', notices: [notice('case.analysis_stopped', ['EDIT_HINT'])] })
+  const { m, api } = setup({ get: stopped })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 }, 202))
+  const { findByText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  fireEvent.click(getByText('고친 내용으로 찾기'))
+  await findByText('분석 중단')
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', 3, { kind: 'EDIT_HINT', payload: { description: '흰 차' } })
+  expect(queryByText('이 동작은 아직 연결되지 않았어요.')).toBeNull()
 })

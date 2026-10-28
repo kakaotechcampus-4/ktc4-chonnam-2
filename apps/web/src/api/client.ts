@@ -43,6 +43,7 @@ export type Command =
   | { kind: 'SELECT_OTHER_CANDIDATE'; payload: { candidate_id: string } }
   | { kind: 'RECORD_SITUATION_RESPONSE'; payload: { value: 'CONFIRMED' | 'USER_UNSURE' } }
   | { kind: 'MARK_REVIEWED'; payload: Record<string, never> }
+  | { kind: 'EDIT_HINT'; payload: { description: string } }
   | {
       kind: 'RUN_NOTICE_ACTION'
       payload: {
