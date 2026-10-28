@@ -11,7 +11,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
-import { axisRows } from '../components/CandidateAxis'
+import { axisEnds, axisRows } from '../components/CandidateAxis'
 import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 import { EvidenceScreen } from '../screens/EvidenceScreen'
@@ -297,6 +297,13 @@ describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
     const cards = [...container.querySelectorAll('.cnum')].map((n) => n.textContent)
     expect(pins).toEqual(['2', '1'])
     expect(cards).toEqual(['2', '1'])
+  })
+
+  it('막대 양 끝은 촬영 시각 범위가 있으면 그 시각, 없으면 0:00과 전체 길이다', () => {
+    expect(axisEnds(['2026-08-27T13:00:00+09:00', '2026-08-27T13:25:00+09:00'], 1500000)).toEqual(['13:00:00', '13:25:00'])
+    expect(axisEnds(['18:03', '19:21'], 4680000)).toEqual(['18:03', '19:21'])
+    expect(axisEnds(null, 600000)).toEqual(['0:00', '10:00'])
+    expect(axisEnds(null, 4680000)).toEqual(['0:00', '1:18:00'])
   })
 
   it('시간축 길이가 없으면(null · 미전달) 그리지 않는다', () => {

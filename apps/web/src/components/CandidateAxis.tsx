@@ -45,8 +45,13 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
   if (!shown) return null
   const rows = width > 0 ? axisRows(pins.map((p) => p.pct), width) : pins.map(() => 0)
   const label = pins.map((p) => `${p.n}번 ${clock(p.ms)}`).join(', ')
+  const [from, to] = axisEnds(props.view.manifest_summary.range, duration)
   return (
-    <div className="cand-axis" ref={ref} role="img" aria-label={`시간축에서 후보 위치: ${label}`}>
+    <div className="cand-axis" ref={ref} role="img" aria-label={`시간축(${from}–${to})에서 후보 위치: ${label}`}>
+      <div className="cand-axis-ends" aria-hidden>
+        <span>{from}</span>
+        <span>{to}</span>
+      </div>
       <div className="cand-axis-bar" />
       <div className="cand-axis-pins" style={{ height: PIN + 14 + Math.max(...rows) * (PIN + GAP) }}>
         {pins.map((p, i) => (
@@ -67,4 +72,18 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
 function clock(ms: number): string {
   const s = Math.floor(ms / 1000)
   return `${Math.floor(s / 60)}분 ${s % 60}초`
+}
+
+/** 막대 양 끝 기준. 촬영 시각 범위(`manifest_summary.range`)가 있으면 그 시각, 없으면 영상 안 시간(0:00 · 전체 길이)이다.
+ *  range는 ISO 문자열이든 「18:03」이든 시각 부분만 쓴다 — 날짜는 카드에 있다. */
+export function axisEnds(range: [string, string] | null, durationMs: number): [string, string] {
+  const hm = (v: string) => v.match(/\d{2}:\d{2}(:\d{2})?/)?.[0]
+  const a = range && hm(range[0])
+  const b = range && hm(range[1])
+  if (a && b) return [a, b]
+  const s = Math.floor(durationMs / 1000)
+  const h = Math.floor(s / 3600)
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(h ? 2 : 1, '0')
+  const ss = String(s % 60).padStart(2, '0')
+  return ['0:00', h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`]
 }
