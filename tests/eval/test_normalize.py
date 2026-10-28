@@ -10,7 +10,8 @@ def test_normalize_candidate_passes_through_shape():
             "candidates": [{"rank": 1, "t_start_sec": 1.0, "t_end_sec": 2.0,
                             "representative_sec": 1.5, "timeline_revision": None,
                             "event_type": "SIGNAL", "score": 0.9,
-                            "summary": None, "uncertainties": None}]}]
+                            "summary": None, "uncertainties": None,
+                            "verification": None}]}]
     out = normalize.normalize_candidate(raw)
     assert out == raw
 
