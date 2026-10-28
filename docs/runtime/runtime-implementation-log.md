@@ -3780,3 +3780,90 @@ refusal/포트폐쇄 증거로 표현하지 않는다. 공유 Docker/WSL 프로�
 
 전체20개 변경 파일·호출/transaction 경계·검증/제한은
 [별도 Implementation Notes](rt10b-incident-clip-handler.md)에 기록했다.
+
+
+### RT-10(b) Readout handlers — 2026-10-29 KST
+
+**IN_PROGRESS · Refs #297 (RT-10(b))**
+
+Existing checkout `codex/rt10b-readout-handlers` started clean; HEAD and
+origin/develop both `debc783266d011ab46b102020c8d696a7dbd818e` (PR #440).
+Issue #297 Readout/Runtime Owner usage and A decisions were directly checked.
+No new branch/worktree, staging, commit, push, PR or Issue mutation was performed.
+
+PLATE_READ and OVERLAY_TIME_READ now use detached public Case fixed inputs,
+validate case/job/kind/candidate/generation/scope/durable clip, open an explicit
+execution-local OCR/Recording context and invoke only their matching Readout
+public function once. Provider invocation observes zero checked-out main-engine
+connections. Recording lookup uses public get_incident_clip and closes per
+execution; checkpoints surround input/invocation/resource boundaries.
+
+Each invocation issues a fresh rr_ ID, begins usage with that exact planned
+readout_run, passes the same ID to Readout, finishes usage, prepares one contract
+JSON ProducedObject and returns it to existing T1/reconciliation. FAILED Runs
+are preserved with null result and READOUT_INFRA; PARTIAL, abstain, NOT_APPLICABLE
+and both UNKNOWN branches remain successful. Runtime ValueError/DB/checkpoint/
+payload/context/cancel/usage errors are not recast as Readout failures. The
+ledger remains authoritative; Run usage_refs stays derived. No pre-T1 finalize,
+common/runtime port/schema or migration extension was made.
+
+Owner-confirmed usage labels/pricing/zero KRW, clip duration (unknown=null), sink
+occurred_at and Run-derived latency are applied. Before T1, terminal recovery
+without the planned durable Run resolves RUN_NOT_PRODUCED; after T1 it links
+the stored readout_run. T1 deadlock/receipt conflict/lost COMMIT and reconciliation
+replay do not invoke OCR or duplicate Final usage. Rollback followed by an
+actual STALE new attempt creates a fresh Run. Both Case jobs retain the same
+clip; both T2 writes were deliberately rolled back and then redelivered using
+durable payloads after provider processes exited. CaseView/StoredObservationAdapter
+restore both observations and distinguish all three overlay notice meanings.
+
+Direct RED→GREEN: missing handler25 FAIL→25 PASS; inputs/composition28 FAIL plus
+1 pre-existing default PASS→combined57 PASS. Final focused boundary/reselection/
+new-generation coverage69 PASS (2.33s). Initial test data enum/OCR fixture errors
+were corrected against public contracts and are not product fixes. The initial
+MySQL16 PASS/2 FAIL was a test's incorrect already-STALE retry seed; real lease
+expiry/sweep produced18 PASS. A process timeout was traced to a test's Plate-first
+assumption; the test follows Runtime available_at/execution_id order without
+changing timeout or orchestration policy. These failed runs remain in ignored RAW.
+
+Preserved direct evidence from before the usage-limit interruption: new handler
+MySQL18 PASS/54 phases (31.31s), existing reconciliation30 PASS/90 phases (60.20s).
+Product code remained unchanged across that interruption. Resume direct evidence:
+related Worker/Readout/Case/Recording/Search/jobs/usage non-MySQL selection2254
+PASS/48 FAIL/21 existing SKIP/831 deselected (231.81s), followed by **only those
+48 failures** PASS48/48 with task TEMP/TMP outside sandbox restrictions (57.83s).
+This is not one all-green full-suite execution. Existing skips cover missing
+typer/private real-video opt-ins; existing TestClient and malformed-usage
+serializer warnings are recorded, not suppressed.
+
+Related actual MySQL Search/clip/usage/produced/Case49 PASS/147 phases (123.37s).
+Full HINT→COARSE→FINE→CLIP→two Readout separate API/Worker process E2E6 PASS/18
+phases (248.37s), including success/abstain/three overlay notice branches/FAILED.
+Existing process normal/hint/fractional clip3 PASS/9 phases (56.88s). MySQL8.4.13
+preflight and scoped JSON/JUnit setup/call/teardown agreement passed; no skip or
+xfail in those subsets. Mandatory inventory validation was not claimed for a subset.
+
+Boundary0; Contract fixtures62/26/104 PASS; diff whitespace check PASS. Existing
+workflow/inventory/skip/xfail/30-minute/900-second policies are unchanged. Full
+local pytest/full mandatory MySQL/remote CI are not run; final full regression
+belongs to remote regression/mysql/test jobs. Live Paddle/model download/Linux
+deployment latency and export/package completeness remain unverified. Default
+production registration remains absent unless an OCR factory is explicitly supplied.
+
+Initial fresh read-only reviewer inherited no implementation history, rechecked
+Owner decisions and ran focused54 PASS independently; no confirmed product
+P1/P2/P3. Final evidence/docs/resource recheck is recorded in the follow-up below.
+No reviewer finding has been silently downgraded or deferred as fixed.
+
+The exact13-file intended deliverable set, invocation/transaction/payload mapping,
+direct versus preserved evidence and remaining operational limits are in
+[Readout handler Implementation Notes](rt10b-readout-handlers.md). Internal plan,
+RAW/JSON/JUnit, generated media/env and disposable DB material are ignored under
+`.codex-scratch/rt10b-readout/`, excluded from PR. Final resource audit and staging
+verification follow after closing the test resources.
+
+
+RT-10(b) Readout resource follow-up: final autocommit audit excluding itself found non-audit transactions0, data locks0, other clients0 and unexpected test schemas0. Dedicated codex-rt10b-readout-mysql and its inspected anonymous volume were removed; nine verified task-child test directories were removed. RAW/JSON/JUnit/internal plan remain ignored; generated media/env/DB material was cleaned. Existing process normal/hint/fractional regression3 PASS (56.88s) and all five scoped MySQL JSON/JUnit evidence sets passed phase agreement. Original log byte prefix remains unchanged. Final same-reviewer recheck pending.
+
+
+RT-10(b) Readout final same-reviewer recheck: P1/P2/P3 none. Reviewer independently passed focused69 (3.67s), validated all five scoped MySQL JSON/JUnit sets, matched exact48 initial failures to48 passing reruns and verified original718403-byte log prefix/SHA256 against HEAD. No reviewer fix round was required. Final13 changed files/staged0; HEAD and origin/develop remain debc783266d011ab46b102020c8d696a7dbd818e. No commit/push/PR/Issue mutation. Full suites/remote CI/live Paddle remain unrun as documented. IN_PROGRESS · Refs #297 (RT-10(b)).
