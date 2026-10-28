@@ -159,6 +159,10 @@ class CaseAggregate:
     # 내린다. 분석 시작 전에는 `None`.
     description: str | None = None
 
+    # case 타임라인 전체 길이(ms) — 분석 시작이 받은 `CaseTimeline.duration_ms` 그대로(#184). CaseView 최상위
+    # `timeline_duration_ms`와 `manifest_summary.duration_sec`의 원천이고 후보 `marker_ms`와 같은 좌표다. 분석 시작 전에는 `None`.
+    timeline_duration_ms: int | None = None
+
     # 단서 구조화가 끝났지만 설명을 잘 이해하지 못했는가(`confidence=low` · `ABSTAINED`, #266). 결과 화면의
     # `search.hint_unclear` notice 근거다. 다음 구조화 결과가 오면 그 결과로 바꾼다. CaseView 비노출.
     hint_unclear: bool = False
@@ -221,6 +225,14 @@ class CaseAggregate:
                     "duration_sec": source_asset.get("duration_sec"),
                 }
             )
+
+    def record_timeline_duration(self, duration_ms: int) -> None:
+        """분석 시작이 받은 타임라인 길이를 남긴다(#184). case는 계산하지 않는다 — recording 정의(0부터 마지막 원본
+        끝까지, 원본 사이 빈 구간 포함)로 만든 timeline port 값을 그대로 옮긴다. `manifest_summary.duration_sec`
+        (「전체 구간 길이」)도 같은 값이다(단위만 다르다). `case_rev`는 올리지 않는다 — 같은 요청(분석 시작 · 설명
+        고쳐 다시 찾기)의 일부다."""
+        self.timeline_duration_ms = duration_ms
+        self.manifest_summary["duration_sec"] = duration_ms / 1000
 
     def record_analysis_scope(self, scope: dict[str, Any]) -> None:
         """scope는 불변이다 — 같은 `scope_id`로 다른 내용이 오면 거부한다."""

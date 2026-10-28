@@ -146,6 +146,8 @@ def test_happy_path_before_situation_response_has_no_package():
 
     case = CaseAggregate.intake(case_id="case_h001", hints=before["hints"], manifest_summary=before["manifest_summary"])
     case.start_search()
+    # 분석 시작이 받는 타임라인 길이(#184) — 이 스냅샷은 `start_analysis()`를 거치지 않으므로 직접 남긴다.
+    case.record_timeline_duration(before["timeline_duration_ms"])
     jobs.issue_coarse_search(case, scope_ref="scope_h001", input_fingerprint="sha1:h001-coarse-search")
     fixture_candidate = before["candidates"][0]
     raw_candidate = adapter.get_candidate_events()[0]

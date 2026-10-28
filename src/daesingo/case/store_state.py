@@ -26,6 +26,7 @@ _STATE_FIELDS = (
     "processed_executions",
     "description",
     "hint_unclear",
+    "timeline_duration_ms",
     "sources",
     "observation_inputs",
     "observation_outcomes",

@@ -69,6 +69,7 @@ def issue_initial_search(
 ) -> dict[str, Any]:
     """case 타임라인 전체로 범위 1개를 만들고 `COARSE_SEARCH` 1건을 발주한다. 타임라인 실패는 그대로 올린다."""
     timeline = timelines.timeline_for(case.sources)
+    case.record_timeline_duration(timeline.duration_ms)
     scope = build_analysis_scope(
         case,
         scope_id=f"scope_{uuid.uuid4().hex}",
