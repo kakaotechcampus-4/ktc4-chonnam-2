@@ -73,7 +73,7 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
-// ponytail: 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
+// 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
 // `onEdit`이 없으면 수정 버튼을 두지 않는다 — 직접 입력을 case로 보내는 command가 아직 없다(#212 · #217).
 export function PlateCheck(props: {
   view: CaseView
@@ -201,37 +201,44 @@ export function EditHint(props: {
   onSearch: (description: string) => void
   onHome: () => void
 }): JSX.Element {
-  const [text, setText] = useState(props.view.description ?? '')
   return (
     <SubPage title="설명 고치기" onBack={props.onBack} className="hint-page">
-      <form
-        className="rs-group"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (text.trim()) props.onSearch(text.trim())
-        }}
-      >
-        <label className="rs-field">
-          <span className="rs-label">어떤 상황이었나요?</span>
-          <SituationInput
-            label="어떤 상황이었나요?"
-            example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
-            rows={4}
-            value={text}
-            onChange={setText}
-          />
-          <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
-        </label>
-        <div className="rs-actions">
-          {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
-          <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
-            고친 내용으로 찾기
-          </button>
-          <button type="button" className="rs-btn sec" onClick={props.onHome}>
-            처음으로
-          </button>
-        </div>
-      </form>
+      <HintForm view={props.view} onSearch={props.onSearch} onHome={props.onHome} />
     </SubPage>
+  )
+}
+
+// 설명 입력 폼만 — 위반 미관찰에 다른 후보가 없으면 화면 안에 바로 둔다(#431)
+export function HintForm(props: { view: CaseView; onSearch: (description: string) => void; onHome: () => void }): JSX.Element {
+  const [text, setText] = useState(props.view.description ?? '')
+  return (
+    <form
+      className="rs-group"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (text.trim()) props.onSearch(text.trim())
+      }}
+    >
+      <label className="rs-field">
+        <span className="rs-label">어떤 상황이었나요?</span>
+        <SituationInput
+          label="어떤 상황이었나요?"
+          example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
+          rows={4}
+          value={text}
+          onChange={setText}
+        />
+        <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
+      </label>
+      <div className="rs-actions">
+        {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
+        <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
+          고친 내용으로 찾기
+        </button>
+        <button type="button" className="rs-btn sec" onClick={props.onHome}>
+          처음으로
+        </button>
+      </div>
+    </form>
   )
 }

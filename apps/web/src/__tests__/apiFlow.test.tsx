@@ -277,6 +277,59 @@ it('결과 없음에 hint_unclear가 함께 붙으면 그 문구도 보이고, [
   expect(getByText(/입력하신 내용에서 확실한 단서를 찾지 못해 넓게 찾아봤어요/)).toBeTruthy()
 })
 
+// #431 — 위반 미관찰도 EDIT_HINT를 싣는다. 주 출구는 「다른 후보 보기」라, 다른 후보가 있으면 버튼은 둘 다 보조다
+const NOT_OBSERVED_BASE = SNAPSHOTS.map((s) => s.view).find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)!
+const notObserved = (candidates: CaseView['candidates']): CaseView => ({
+  ...NOT_OBSERVED_BASE,
+  description: '흰 차',
+  candidates,
+  notices: [{ ...notice('evidence.visual_event_not_observed', ['EDIT_HINT']), message_key: 'notice.visual_event_not_observed' }],
+})
+
+it('위반 미관찰에서 [설명 고치기]는 입력 화면을 열고 EDIT_HINT command를 보낸다 — 다른 후보가 있으면 버튼은 보조', async () => {
+  const first = SNAPSHOTS.flatMap((s) => s.view.candidates)[0]
+  const v = notObserved([
+    { ...first, selected: true },
+    { ...first, candidate_id: `${first.candidate_id}-2`, selected: false },
+  ])
+  const { m, api } = setup({ get: v })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: v.case_rev + 1 }, 202))
+  const { container, findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText('설명 고치기')
+  const buttons = [...container.querySelectorAll('.notobs .state-actions button')].map((b) => [b.textContent, b.className])
+  expect(buttons).toEqual([
+    ['설명 고치기', 'rs-btn sec'],
+    ['처음으로', 'rs-btn sec'],
+  ])
+
+  fireEvent.click(getByText('설명 고치기'))
+  fireEvent.click(getByText('고친 내용으로 찾기'))
+  await findByText('분석 중단')
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', v.case_rev, { kind: 'EDIT_HINT', payload: { description: '흰 차' } })
+})
+
+it('위반 미관찰에 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, [고친 내용으로 찾기]는 EDIT_HINT command를 보낸다', async () => {
+  const v = notObserved([])
+  const { m, api } = setup({ get: v })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: v.case_rev + 1 }, 202))
+  const { container, findByText, getByLabelText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText('고친 내용으로 찾기') // 불러오기 전 업로드 화면에도 같은 이름의 입력칸이 있다
+  const input = getByLabelText('어떤 상황이었나요?') as HTMLTextAreaElement
+  expect(input.value).toBe('흰 차')
+  expect(queryByText('설명 고치기')).toBeNull()
+  const buttons = [...container.querySelectorAll('.notobs .rs-actions button')].map((b) => [b.textContent, b.className])
+  expect(buttons).toEqual([
+    ['고친 내용으로 찾기', 'rs-btn pri'],
+    ['처음으로', 'rs-btn sec'],
+  ])
+
+  fireEvent.change(input, { target: { value: '흰 SUV가 실선을 넘었어요' } })
+  fireEvent.click(getByText('고친 내용으로 찾기'))
+  await waitFor(() =>
+    expect(m.sendCommand).toHaveBeenCalledWith('c1', v.case_rev, { kind: 'EDIT_HINT', payload: { description: '흰 SUV가 실선을 넘었어요' } }),
+  )
+})
+
 it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로 다시 찾는다', async () => {
   const stopped = view({ case_rev: 3, stage: 'SEARCHING', description: '흰 차', notices: [notice('case.analysis_stopped', ['EDIT_HINT'])] })
   const { m, api } = setup({ get: stopped })
