@@ -4,6 +4,7 @@
 
 ## 현재 결정
 
+- [search-structure-2026-10-28.md](search-structure-2026-10-28.md) — Search 구조 확정: argon Coarse 0.5배속 → argon Fine 0.25배속 + `fine-gore-v1`, CV · AI Hub 후보 미포함. 성능 판정(E5)은 미결
 - [decision-trace-2026-09-26.md](decision-trace-2026-09-26.md) — p4 종료, p3 기반 Search 전용 판단 근거 진단과 단계별 프롬프트 실험
 - [fine-coarse-handoff-experiment-2026-09-28.md](fine-coarse-handoff-experiment-2026-09-28.md) — Coarse 관찰 Fine 인계·실선/중앙선 UNCERTAIN 지시를 진단 전용 profile로 분리 실험(운영 p3 불변)
 - [search-argon-model-2026-10-27.md](search-argon-model-2026-10-27.md) — Search Coarse · Fine 모델 `gemini-4-argon` · argon tenant 경로 · Fine `fine-gore-v1` 문장. intent는 Flash 유지
@@ -13,9 +14,9 @@
 - [candidate-span-semantics-2026-09-10.md](candidate-span-semantics-2026-09-10.md) — CandidateEvent.span = coarse 후보 창(사건 구간 아님) 확정, 이슈 #22 B-2(김대원) 회신
 - [fine-temporal-offset-base-2026-09-22.md](fine-temporal-offset-base-2026-09-22.md) — Fine at_offset_ms 기준 = 잘라낸 clip의 0초 확정, 이슈 #132(유소연) 회신
 
-## 제안 (운영 반영 전)
+## 대체된 제안
 
-- [search-final-structure-2026-10-01.md](search-final-structure-2026-10-01.md) — 실험 전체에서 근거 있는 선택만: Coarse 0.5x / Fine 0.25x 느린 영상, p3 프롬프트 유지, 시각 환산. Eval 통지 후 반영
+- [search-final-structure-2026-10-01.md](search-final-structure-2026-10-01.md) — Flash 기준 최종 구조 제안. 구조는 2026-10-28 구조 확정으로 대체. 느린 영상 전송 채택 근거는 유효
 
 ## 접합 제안 (타 모듈 확인 대기)
 

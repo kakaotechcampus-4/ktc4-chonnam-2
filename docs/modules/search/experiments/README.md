@@ -1,5 +1,6 @@
 # search/experiments
 
+- [확정 구조 운영 경로 측정 (E4) · C05 정답 구간 반복](search-e4-operational-path-2026-10-28.md) — 5분 주행 영상 2개 운영 경로: 잘림 · 실패 없음, Coarse 전체 111–130초(Case 상한 150초), 원본 1분당 ₩55–82. 정상 주행 10분에서 거짓 OBSERVED 2건(촬영 차량 · 점선 오인). C05 첫 사건은 정답 구간이면 Fine 3/3(Coarse 미검출), 둘째는 1/3. ₩931
 - [CV Coarse → gemini-4-argon Fine 영상](cv-coarse-argon-fine-2026-10-23.md) — 영상 토큰=재생 길이×73. CV 후보 Fine 정답 구간5/5. argon Coarse로 보완하면 15영상 13건 중 CV 5→CV+argon 9(신호위반2/2 포함), 이전 Flash 채점 규칙으로 재채점해도 동일. 오탐은 정상 영상2건(촬영 차량 오인·분기부), C47 37초는 정답지 누락 사건으로 확인. 새 영상 검출 판정 기준 사전 고정. 점선 변경5건 이유 대고 기각. 박스 편향 미관찰. 영상 1분당 약₩50, 누적 약₩924
 - [E1 15영상 1회 (계획 문서 §6.7)](search-structure-confirmation-plan-2026-10-26.md#67-e1--15영상-1회-2026-10-27) — Flash 위반 2/12 · argon + gore-v1 7/12 · CV 합집합 7/12(기여 없음), 정상 기각 모두 3/3. ₩1,027. 모델 argon 확정 근거
 - [구조 확정·성능 향상 확인 실험 계획](search-structure-confirmation-plan-2026-10-26.md) — E1~E5 계획과 로컬 7클립 선행 결과. 운영 v3에서 Flash 위반 2/4 ×2, argon 3/4 ×2·오탐 증가, **argon + Fine gore-v1 문장 위반 4·3/4·정상 기각 3/3 ×2**. argon Fine은 원본 2→4 fps에서 141927 0/3→2/3, 점선 변경 횡이동은 못 봄. 30분 영상 예상 Flash 약₩700–1,100·argon 약₩2,000–3,000. Provider `LengthFinishReasonError` 미처리 발견. 누적 약₩2,310
