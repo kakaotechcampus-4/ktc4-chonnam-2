@@ -652,7 +652,7 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
         self.assertEqual(plate.contract_version, "plate-readout/v1.3")
 
     def test_plate_format_decides_between_accept_and_partial(self):
-        """공백은 붙이고, 온전한 형식(신형·지역명)만 확정한다. 나머지는 부분 판독이다."""
+        """공백은 붙이고, 고시 형식(용도 한글 40자 · 지역명은 운수사업용 2자리)만 확정한다. 나머지는 부분 판독이다."""
         def read(text):
             class One(providers.OcrProvider):
                 def read_plate(self, input_ref, target_hint):
@@ -667,10 +667,13 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
                     )
             return api.read_plate(request_for("clip_h001"), target_hint=HINT, provider=One())[1]
 
-        for text, value in (("12가 3456", "12가3456"), ("서울12가3456", "서울12가3456")):
+        for text, value in (("12가 3456", "12가3456"), ("123하4567", "123하4567"),
+                            ("서울12바3456", "서울12바3456")):
             plate = read(text)
             self.assertEqual((plate.observation.value, plate.observation.status), (value, "OK"))
-        for text in ("바5215", "경기12가"):
+        # 일부만 읽힘 · 고시에 없는 한글 · 지역명+비사업용 · 없는 지역명 · 운수사업용 3자리 · 0으로 시작
+        for text in ("바1234", "경기12가", "12쿠3456", "서울12가3456", "한국12바3456",
+                     "123바4567", "012가3456"):
             plate = read(text)
             self.assertEqual(plate.abstain_reason, "PARTIAL_PLATE_READ", text)
             self.assertIsNone(plate.best_frame, text)

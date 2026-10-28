@@ -91,9 +91,32 @@ MIN_AGREEING_FRAMES = 3
 2:1은 1표 차이라 합의로 보지 않는다. 실측(GT 13, 2026-09-28)에서 「투표 일치 + 프레임 ≥ 3」이
 오답 확정을 0으로 만든 조건이다(`experiments/plate-ocr-ablation-2026-09-27/` §3-⑥)."""
 
-FULL_PLATE = re.compile(r"\d{2,3}[가-힣]\d{4}|[가-힣]{2}\d{1,2}[가-힣]\d{4}")
-"""온전한 번호판 형식 — 신형(`12가3456`·`123가4567`)과 지역명 포함(`서울12가3456`).
-이 형식이 아닌 값은 번호판 전체가 아니라 글자 한 줄을 골라 온 것이라 보류한다."""
+PRIVATE_HANGUL = "가나다라마거너더러머버서어저고노도로모보소오조구누두루무부수우주"
+BUSINESS_HANGUL = "바사아자배"
+RENTAL_HANGUL = "하허호"
+REGIONS = frozenset("서울 부산 대구 인천 광주 대전 울산 세종 경기 강원 충북 충남 전북 전남 경북 경남 제주".split())
+_PLATE = re.compile(r"(?P<region>[가-힣]{2})?(?P<num>\d{2,3})(?P<use>[가-힣])\d{4}")
+
+
+def is_full_plate(text) -> bool:
+    """온전한 번호판인가 — 국토교통부고시 제2025-121호 제5조·제6조.
+
+    용도 한글은 40자(비사업 32 · 운수사업 `바사아자배` · 대여 `하허호`)뿐이고, 지역명(17 시·도)은
+    운수사업용에만 붙으며 그때 앞 숫자는 2자리다. 운수사업용 3자리 · `00` · 0으로 시작하는 3자리는 없다.
+    이 형식이 아닌 값은 번호판 전체가 아니거나 잘못 읽은 것이라 보류한다. 고시에 없는 특수 번호판도
+    보류로 떨어진다 — 틀린 값 확정보다 사람 확인이 낫다.
+    """
+    m = _PLATE.fullmatch(text or "")
+    if not m:
+        return False
+    region, num, use = m["region"], m["num"], m["use"]
+    if use not in PRIVATE_HANGUL + BUSINESS_HANGUL + RENTAL_HANGUL:
+        return False
+    if num == "00" or (len(num) == 3 and num[0] == "0"):
+        return False
+    if region:
+        return region in REGIONS and use in BUSINESS_HANGUL and len(num) == 2
+    return not (use in BUSINESS_HANGUL and len(num) == 3)
 
 OVERLAY_QUANTIZATION_SEC = 1.0
 """overlay는 초 단위로 찍힌다. 어느 두 sample이든 이만큼은 어긋날 수 있다."""
@@ -354,9 +377,9 @@ def _abstain_reason(association, best, disagreed):
         # 사용자가 확대 이미지를 보고 완성해야 하는 부분 판독이므로 자동 확정하지 않는다.
         if best.text and not re.search(r"[가-힣]", best.text):
             return "OCR_LOW_CONFIDENCE"
-        # 황색 2줄 번호판의 아랫줄(`바5215`)처럼 형식이 온전하지 않은 값은 번호판 일부다.
+        # 황색 2줄 번호판의 아랫줄(`바1234`)처럼 형식이 온전하지 않은 값은 번호판 일부다.
         # 관찰값은 보존하지만 자동 확정하지 않는다.
-        if not FULL_PLATE.fullmatch(best.text):
+        if not is_full_plate(best.text):
             return "PARTIAL_PLATE_READ"
         height = best.quality.get("plate_px_height")
         if height is not None and height < MIN_PLATE_PX_HEIGHT:

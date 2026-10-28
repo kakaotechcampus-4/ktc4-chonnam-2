@@ -135,7 +135,7 @@ def test_two_line_lower_row_is_partial_not_an_accepted_plate():
     class Engine:
         def predict(self, image):
             yield SimpleNamespace(json={"res": {
-                "rec_texts": ["바5215"], "rec_scores": [0.999],
+                "rec_texts": ["바1234"], "rec_scores": [0.999],
                 "rec_boxes": [[30, 60, 330, 120]],
             }})
 
@@ -154,7 +154,7 @@ def test_two_line_lower_row_is_partial_not_an_accepted_plate():
 
     _, plate = api.read_plate(request, hint, provider=provider)
 
-    assert plate.observation.value == "바5215"
+    assert plate.observation.value == "바1234"
     assert plate.observation.status == "NEEDS_REVIEW"
     assert plate.abstained is True
     assert plate.abstain_reason == "PARTIAL_PLATE_READ"
