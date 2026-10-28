@@ -229,6 +229,19 @@ it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는
   expect(r.container.querySelector('.panel-t, .page-title')).toBeNull()
 })
 
+it('결과 없음에서 [다시 찾기]를 누르면 탐색 job이 도는 동안 진행 화면이고 [다시 찾기]가 사라진다(#426)', async () => {
+  // case는 stage를 CANDIDATE_REVIEW에 두고 결과 없음 notice도 남긴다 — running_jobs만 달라진다
+  const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
+  const { m, api } = setup({ get: EMPTY })
+  m.sendCommand.mockResolvedValue(ok({ ...EMPTY, case_rev: EMPTY.case_rev + 1, running_jobs: [{ ...JOBS[0], status: 'QUEUED' }] }, 202))
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  fireEvent.click(getByText('다시 찾기'))
+  await waitFor(() => expect(container.querySelector('.rs.flow')).not.toBeNull())
+  expect(queryByText('다시 찾기')).toBeNull()
+  expect(m.sendCommand).toHaveBeenCalledTimes(1)
+})
+
 // #410 — 설명 고쳐 다시 찾기. notice가 EDIT_HINT를 실으면 입력 화면을 열고, 거기서 EDIT_HINT command로 보낸다.
 const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
 
