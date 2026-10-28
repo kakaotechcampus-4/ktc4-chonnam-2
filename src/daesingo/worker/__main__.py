@@ -9,7 +9,7 @@ from daesingo.common.logging import log_event_best_effort
 from daesingo.worker.bootstrap import bootstrap
 from daesingo.worker.composition import compose_worker
 from daesingo.worker.search_composition import compose_search_registry
-from daesingo.worker.case_composition import StoredCaseReflector
+from daesingo.worker.case_composition import StoredCaseReflector, StoredCaseExhaustionReceiver
 
 
 def _failure(logger, event):
@@ -39,7 +39,8 @@ def main() -> int:
         engine = create_worker_engine(startup.config.db)
         registry = compose_search_registry(engine=engine, startup=startup)
         compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
-                       reflector=StoredCaseReflector(startup=startup)).run()
+                       reflector=StoredCaseReflector(startup=startup),
+                       exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup)).run()
     except BaseException:
         stop.set()
         _failure(startup.logger, "runtime.worker.failed")

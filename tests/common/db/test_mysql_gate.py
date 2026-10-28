@@ -20,6 +20,7 @@ from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
 from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARAMETERS
 from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
 from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
+from exhaustion_acceptance import EXHAUSTION_CHECKS, EXHAUSTION_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
 from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
@@ -47,6 +48,7 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *EXHAUSTION_CHECKS,
     *OBSERVABILITY_CHECKS,
     *ASSET_CHECKS,
     *FRAME_CHECKS,
@@ -136,6 +138,7 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *EXHAUSTION_PARAMETERS,
     *OBSERVABILITY_PARAMETERS,
     *ASSET_PARAMETERS,
     *FRAME_PARAMETERS,
