@@ -9,14 +9,21 @@ from daesingo.recording import RecordingService
 from daesingo.recording.probe import LocalSource, ProbedStream
 
 
-def _service(video_streams: int = 1, duration: float = 10.0) -> RecordingService:
+def _service(video_streams: int = 1, duration: float = 10.0, durations: list[float] | None = None) -> RecordingService:
+    """`durations`를 주면 등록 순서대로 원본 길이를 그 값으로 한다."""
+    remaining = list(durations or [])
+    by_path: dict = {}
+
     class Probe:
         def probe(self, path):
+            if path not in by_path:
+                by_path[path] = remaining.pop(0) if remaining else duration
+            length = by_path[path]
             stat = path.stat()
-            streams = tuple(ProbedStream(i, "VIDEO", duration) for i in range(video_streams))
+            streams = tuple(ProbedStream(i, "VIDEO", length) for i in range(video_streams))
             streams += (ProbedStream(video_streams, "AUDIO", None),)
             return LocalSource(path, stat.st_size, stat.st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest(),
-                               duration, streams)
+                               length, streams)
 
     return RecordingService(media_probe=Probe())
 
@@ -82,3 +89,70 @@ def test_single_source_with_two_video_streams_is_unavailable(tmp_path):
     service = _service(video_streams=2)
     with pytest.raises(TimelineUnavailable):
         RecordingSequentialTimelineSource(service).timeline_for([_register(service, tmp_path, "front_rear.avi")])
+
+
+# ── 좌표 정밀도 (#421 · #422) ──────────────────────────────────────────────────
+
+
+def _first_search_resolution(service: RecordingService, timeline: CaseTimeline, sources: list[dict]):
+    """첫 탐색 범위(`0` ~ `duration_ms`)를 Worker와 같은 방식(ms → 초)으로 Recording에 해소한다."""
+    return service.resolve_span(
+        {"timeline_id": timeline.timeline_id, "revision": timeline.revision},
+        {"start_sec": 0.0, "end_sec": timeline.duration_ms / 1000},
+        media_stream_refs=[s["video_stream_ref"] for s in sources],
+    )
+
+
+def test_accumulated_placements_are_not_rejected_by_representation_error(tmp_path):
+    """#421 — float 누적이면 4번째 placement가 원본보다 5e-15초 길어 Recording이 거부했다."""
+    durations = [20.025323, 20.036430, 20.043529, 20.025323]
+    service = _service(durations=durations)
+    sources = [_register(service, tmp_path, f"{i}.avi") for i in range(len(durations))]
+
+    timeline = RecordingSequentialTimelineSource(service).timeline_for(sources)
+
+    placements = service.get_timeline(timeline.timeline_id, timeline.revision).source_placements
+    assert [p.timeline_start_sec for p in placements[1:]] == [p.timeline_end_sec for p in placements[:-1]]
+    assert placements[-1].timeline_end_sec == 80.130605
+
+
+def test_placement_longer_than_the_source_is_still_rejected(tmp_path):
+    """실제 길이 초과는 Recording이 계속 거부한다 — 표현 오차만 없앴다."""
+    service = _service(durations=[10.0, 10.0])
+    sources = [_register(service, tmp_path, "a.avi"), _register(service, tmp_path, "b.avi")]
+    sources[1] = dict(sources[1], duration_sec=10.000001)
+    with pytest.raises(ValueError, match="원본 길이"):
+        RecordingSequentialTimelineSource(service).timeline_for(sources)
+
+
+@pytest.mark.parametrize(
+    ("duration", "expected_ms"),
+    [(17.427524, 17_427), (20.024656, 20_024), (20.025323, 20_025), (20.025, 20_025), (10.0, 10_000)],
+)
+def test_duration_ms_is_floored_so_first_search_stays_inside(tmp_path, duration, expected_ms):
+    """#422 — 반올림하면 17.427524초가 17428ms가 돼 첫 탐색 끝점이 원본 끝을 넘었다."""
+    service = _service(duration=duration)
+    source = _register(service, tmp_path, "a.avi")
+
+    timeline = RecordingSequentialTimelineSource(service).timeline_for([source])
+
+    assert timeline.duration_ms == expected_ms
+    assert _first_search_resolution(service, timeline, [source]).status == "COMPLETE"
+
+
+def test_two_source_total_is_floored_too(tmp_path):
+    """#422 — 2개 합 40.050646초도 반올림이면 40051ms로 넘었다."""
+    service = _service(durations=[20.025323, 20.025323])
+    sources = [_register(service, tmp_path, "a.avi"), _register(service, tmp_path, "b.avi")]
+
+    timeline = RecordingSequentialTimelineSource(service).timeline_for(sources)
+
+    assert timeline.duration_ms == 40_050
+    assert _first_search_resolution(service, timeline, sources).status == "COMPLETE"
+
+
+def test_source_shorter_than_one_ms_is_unavailable(tmp_path):
+    """내린 길이가 0ms면 첫 탐색 범위를 만들 수 없다 — 길이 0인 `COARSE_SEARCH`를 내지 않는다."""
+    service = _service(duration=0.0004)
+    with pytest.raises(TimelineUnavailable):
+        RecordingSequentialTimelineSource(service).timeline_for([_register(service, tmp_path, "a.avi")])
