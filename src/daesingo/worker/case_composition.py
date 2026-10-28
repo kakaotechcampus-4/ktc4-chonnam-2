@@ -2,6 +2,7 @@
 from daesingo.case.store import CaseStore
 from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.case.stored_observation import stored_adapter_factory
+from daesingo.evidence.policy_catalog import load_attachment_policy
 from daesingo.case.timeline_source import RecordingSequentialTimelineSource
 from daesingo.common.jobs.produced import ProducedReader
 from daesingo.common.jobs.read_port import read_executions
@@ -14,7 +15,8 @@ def stored_case_store(conn, *, storage_root, reader=None):
     reader = reader if reader is not None else ProducedReader()
     facts = RecordingFacts(ConnectionRecordingRepository(conn, storage_root=storage_root))
     return CaseStore(repository=MySQLCaseRepository(), conn=conn, executions=read_executions,
-        adapter_factory=stored_adapter_factory(reader=reader, executions=read_executions, recording=facts))
+        adapter_factory=stored_adapter_factory(reader=reader, executions=read_executions, recording=facts,
+            export_max_byte_size=load_attachment_policy()["limits"]["image_each_bytes"]))
 
 
 class StoredCaseReflector:

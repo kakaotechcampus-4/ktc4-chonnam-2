@@ -53,7 +53,7 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
         engine = create_worker_engine(startup.config.db)
         calls = []
         readout_calls = []
-        builds, encodes = [], []
+        builds, encodes, exports = [], [], []
         original_build = RecordingService.build_incident_clip
         original_encode = LocalIncidentMaterializer.materialize
         def build(service, resolution, options=None):
@@ -108,7 +108,8 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                             if engine.pool.checkedout() else None)
                     readout_factory = recording_ocr_factory(
                         transaction=lambda callback: run_worker_transaction(engine, callback),
-                        storage_root=startup.config.media_root, ocr_factory=lambda recording: provider)
+                        storage_root=startup.config.media_root, ocr_factory=(lambda recording: __import__("tests.worker.export_support", fromlist=["ExportOcr"]).ExportOcr(recording))
+                            if scenario.startswith("clip_export") else lambda recording: provider)
                     function = "read_plate" if kind == "PLATE_READ" else "read_overlay_time"
                     actual = getattr(readout, function)
                     def invoke_readout(request, **kw):
@@ -118,6 +119,18 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     stack.enter_context(patch.object(readout, function, invoke_readout))
                 else:
                     stack = __import__("contextlib").ExitStack()
+                for export_name in ("export_report_video", "export_plate_image"):
+                    actual_export = getattr(RecordingService, export_name)
+                    def export(service, _actual=actual_export, _name=export_name, **kw):
+                        assert engine.pool.checkedout() == 0
+                        exports.append(_name)
+                        from sqlalchemy import event
+                        def checkout(*args):
+                            raise AssertionError("checkout inside export capability")
+                        event.listen(engine, "checkout", checkout)
+                        try: return _actual(service, **kw)
+                        finally: event.remove(engine, "checkout", checkout)
+                    stack.enter_context(patch.object(RecordingService, export_name, export))
                 with stack:
                     registry = compose_registry(engine=engine, startup=startup, readout_provider_factory=readout_factory)
                     stop = Event()
@@ -139,7 +152,7 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                         {"dispatch": staticmethod(invoke)})(), stop=stop, reflector=reflector)
                     loop.run()
         pipe.send({"pid": os.getpid(), "http_calls": len(calls), "pool_checkedout": engine.pool.checkedout(),
-                   "terminals": terminals, "clip_calls": len(builds), "encodes": len(encodes), "readout_calls": readout_calls})
+                   "terminals": terminals, "clip_calls": len(builds), "encodes": len(encodes), "readout_calls": readout_calls, "export_calls": exports, "registered_kinds": sorted(registry._handlers)})
     except BaseException:
         import traceback
         pipe.send({"error": traceback.format_exc()})
