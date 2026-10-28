@@ -26,7 +26,7 @@
 
 ## 4. 알려진 한계
 
-- **상황 응답 대기에서 `[다른 상황]`으로 AI가 본 유형과 같은 유형을 고르면 막지 못한다.** 부분 투영에는 유형 값이 없어(`case_type_display.code=null`) case가 비교할 값이 없다. 기록되면 evidence는 그 유형으로 조립한다 — 결과는 `[맞아요]`와 같다. web은 `[다른 상황]` 선택지에서 지금 유형을 빼 보여 준다(§12-3).
+- **상황 응답 대기에서 `[다른 상황]`으로 AI가 본 유형과 같은 유형을 고르면 막지 못한다.** 부분 투영에는 유형 값이 없어(`case_type_display.code=null`) case가 비교할 값이 없다. 기록되면 evidence는 그 유형으로 조립한다 — 결과는 `[맞아요]`와 같다. web도 CaseView만 받으므로 지금 유형을 모른다 — 부분 투영에서는 4종을 모두 보여 주고, 지금 값이 있을 때만 뺀다(§12-3, 2026-10-28 PR #433 web 확인). Fine 잠정 유형을 CaseView에 싣는 안은 계약 변경이라 이번에 택하지 않았다(§5).
 - **시각 정정 뒤 신고용 영상 재발주는 하지 않는다.** #351 [R-1] 자동 발주(`report-video-export.md`)가 맡고, 그 배선은 recording export handler 뒤로 보류돼 있다.
 - web 정정 입력 UI(W4)는 web 소유다 — 이 PR 뒤 연결한다.
 
@@ -37,6 +37,7 @@
 | 기록 전 검사를 command 층에서만 부르기 | `apply_correction()`을 직접 부르는 다른 경로(테스트 · 향후 command)가 검사를 건너뛴다 |
 | 이전 값을 항상 CaseView에서 읽기 | adapter 정규화 · fixture 고정값과 chain이 어긋나면 내부 오류가 된다(§2-4) |
 | `CORRECTED`를 정정 command와 응답 command 둘로 나누기 | 사이에 실패하면 `CORRECTED` 응답만 남아 evidence가 조립을 거부한다. §12-3이 한 command로 정했다 |
+| 부분 투영에 Fine 잠정 유형을 실어 `[다른 상황]`에서 빼기 | CaseView 필드 추가(계약 변경)와 evidence · web 재확인이 필요하다. 같은 유형을 골라도 결과가 `[맞아요]`와 같아 해가 없다 |
 | case가 유형 4종 · 시각 형식을 직접 검사 | target별 형식 규칙은 evidence 한 곳에만 둔다(#235 E-3) |
 
 ## 6. 테스트
