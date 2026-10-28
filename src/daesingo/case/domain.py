@@ -500,7 +500,7 @@ class CaseAggregate:
         if self.stage == "READY":
             self.stage = "EVIDENCE_REVIEW"
 
-    def record_situation_response(self, value: str, *, responded_at: str) -> dict[str, Any]:
+    def record_situation_response(self, value: str, *, responded_at: str, bump: bool = True) -> dict[str, Any]:
         """결과 화면 「신고 상황」 항목에서 사용자가 실제로 누른 응답을 기록한다(#171 B-2 ·
         통합 항목 I1). `value`는 `CONFIRMED`(맞아요)·`CORRECTED`(다른 상황)·`USER_UNSURE`
         (잘 모르겠어요) 중 하나이고, `candidate_ref`는 지금 선택된 candidate다.
@@ -508,6 +508,9 @@ class CaseAggregate:
         새 사용자 요청이라 `case_rev`를 올린다(§3-E) — adapter는 이를 보고 evidence를 다시
         조립한다(관찰 결과는 재사용, 이슈 #73). `CORRECTED`에 필요한 `SITUATION_CHANGE`
         CorrectionRecord 존재 여부는 evidence가 조립 시 검증한다.
+
+        `bump=False`는 같은 command가 이미 `case_rev`를 올렸을 때다 — `[다른 상황]`은 `SITUATION_CHANGE`
+        정정과 이 응답을 한 command로 남기고 `case_rev`는 한 번만 올린다(case-command 계약 §12-3).
         """
         if value not in _SITUATION_RESPONSE_VALUES:
             raise ValueError(f"알 수 없는 situation_response 값: {value!r}")
@@ -520,7 +523,8 @@ class CaseAggregate:
             "candidate_ref": {"kind": "candidate_event", "ref": selected.candidate_id},
         }
         self.leave_ready()
-        self.bump_revision()
+        if bump:
+            self.bump_revision()
         return dict(self.situation_response)
 
     def leave_ready(self) -> None:

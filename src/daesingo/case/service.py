@@ -327,9 +327,6 @@ VISUAL_VERIFY_FAILED_NOTICE: dict[str, Any] = {
 }
 
 
-# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
-# 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
-# 전에는 보낼 경로가 없어 `actions`를 비운다.
 ANALYSIS_STOPPED_NOTICE: dict[str, Any] = {
     # 사용자가 「분석 진행」을 중단했다(고도화 8-9, `decisions/stop-analysis.md`). 「이어서 찾기」는 영상 전체를 다시
     # 보는 새 탐색 의도라(core-user-flow §7) `RETRY_SEARCH`와 같은 발주다 — 다시 낼 `COARSE_SEARCH` 근거가 없으면 뺀다.
@@ -391,12 +388,15 @@ ANALYSIS_TIMED_OUT_NOTICE: dict[str, Any] = {
     "actions": ["RETRY_SEARCH"],
 }
 
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속). 모양은
+# `scenario_plate_reread_001` fixture 값이다. 「번호판 직접 입력」은 입력형 command `MANUAL_PLATE_INPUT`이다
+# (case-command 계약 §12-3).
 PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
     "code": "evidence.plate_abstained",
     "severity": "WARN",
     "blocking": False,
     "message_key": "notice.plate_abstained",
-    "actions": [],
+    "actions": ["MANUAL_PLATE_INPUT"],
 }
 
 
