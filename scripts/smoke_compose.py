@@ -83,7 +83,7 @@ def wait_for(callback, timeout):
     raise TimeoutError("smoke_deadline")
 
 
-def run_smoke(evidence):
+def run_smoke(evidence, *, after_persistence=None):
     from check_compose import validate
     project = "daesingo-rt13-smoke-" + secrets.token_hex(6)
     image = project + ":local"
@@ -249,6 +249,12 @@ def run_smoke(evidence):
                 assert volume("mysql", "/var/lib/mysql")["Name"] == data["Name"]
                 assert volume("worker", "/media")["Name"] == media["Name"]
                 record(stage, mysql_rows=expected, media_hashes=shared)
+                if after_persistence is not None:
+                    stage = "logical_backup_restore"
+                    after_persistence({"project": project, "root": root, "base": base,
+                        "compose": compose, "run": run, "probe": probe, "http": http,
+                        "inspect": inspect, "env": env, "record": record, "report": report,
+                        "secrets": secret_values, "shared": shared, "case": case})
                 report["result"] = "PASS"
             except BaseException as error:
                 record_failure(report, stage, error)
