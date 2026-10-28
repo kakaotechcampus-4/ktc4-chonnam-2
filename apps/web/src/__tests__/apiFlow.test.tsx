@@ -308,16 +308,26 @@ it('위반 미관찰에서 [설명 고치기]는 입력 화면을 열고 EDIT_HI
   expect(m.sendCommand).toHaveBeenCalledWith('c1', v.case_rev, { kind: 'EDIT_HINT', payload: { description: '흰 차' } })
 })
 
-it('위반 미관찰에 다른 후보가 없으면 [설명 고치기]를 강조한다', async () => {
+it('위반 미관찰에 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, [고친 내용으로 찾기]는 EDIT_HINT command를 보낸다', async () => {
   const v = notObserved([])
-  const { api } = setup({ get: v })
-  const { container, findByText } = render(<ApiFlow api={api} caseId="c1" />)
-  await findByText('설명 고치기')
-  const buttons = [...container.querySelectorAll('.notobs .state-actions button')].map((b) => [b.textContent, b.className])
+  const { m, api } = setup({ get: v })
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: v.case_rev + 1 }, 202))
+  const { container, findByText, getByLabelText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText('고친 내용으로 찾기') // 불러오기 전 업로드 화면에도 같은 이름의 입력칸이 있다
+  const input = getByLabelText('어떤 상황이었나요?') as HTMLTextAreaElement
+  expect(input.value).toBe('흰 차')
+  expect(queryByText('설명 고치기')).toBeNull()
+  const buttons = [...container.querySelectorAll('.notobs .rs-actions button')].map((b) => [b.textContent, b.className])
   expect(buttons).toEqual([
-    ['설명 고치기', 'rs-btn pri'],
+    ['고친 내용으로 찾기', 'rs-btn pri'],
     ['처음으로', 'rs-btn sec'],
   ])
+
+  fireEvent.change(input, { target: { value: '흰 SUV가 실선을 넘었어요' } })
+  fireEvent.click(getByText('고친 내용으로 찾기'))
+  await waitFor(() =>
+    expect(m.sendCommand).toHaveBeenCalledWith('c1', v.case_rev, { kind: 'EDIT_HINT', payload: { description: '흰 SUV가 실선을 넘었어요' } }),
+  )
 })
 
 it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로 다시 찾는다', async () => {

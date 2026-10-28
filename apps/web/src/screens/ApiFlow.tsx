@@ -228,7 +228,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         )
       case 'NOT_OBSERVED':
         return (
-          <NotObservedScreen view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} />
+          <NotObservedScreen view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
         )
       default:
         if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
