@@ -3,8 +3,8 @@ import type { CaseView } from '../contracts/caseView'
 import '../styles/candidates.css'
 
 // 후보 비교 시간축(core-user-flow §8-2, PROTOTYPE-SPEC §6 SearchAxis). 막대 아래 번호 원이
-// 후보 위치를 가리키고, 번호는 카드 번호와 같다(CandidateCard — case의 `rank`, 없으면 배열 순서 + 1). 시각은 막대에 쓰지 않는다 — 카드에서 읽는다.
-// 위치는 `marker_ms / timeline_duration_ms` 그대로다. 둘 중 하나라도 없으면(stale 후보 · 길이 미정) 그리지 않는다.
+// 후보 위치를 가리키고, 번호는 카드 번호와 같다(CandidateCard — case의 `rank`, 없으면 배열 순서 + 1). 마커에는 시각을 쓰지 않는다 — 카드에서 읽는다.
+// 위치는 `marker_ms / timeline_duration_ms` 그대로다. `marker_ms`가 없는 후보(stale)는 마커만 빠지고, 길이가 없거나 마커가 하나도 없으면 시간축을 그리지 않는다.
 const PIN = 28
 const GAP = 6
 
@@ -25,8 +25,8 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
   const pins =
     duration > 0
       ? props.view.candidates
-          .map((c, i) => ({ n: c.rank ?? i + 1, selected: c.selected, ms: c.marker_ms }))
-          .filter((p): p is { n: number; selected: boolean; ms: number } => p.ms != null)
+          .map((c, i) => ({ id: c.candidate_id, n: c.rank ?? i + 1, selected: c.selected, ms: c.marker_ms }))
+          .filter((p): p is { id: string; n: number; selected: boolean; ms: number } => p.ms != null)
           .map((p) => ({ ...p, pct: Math.min(100, Math.max(0, (p.ms / duration) * 100)) }))
           .sort((a, b) => a.pct - b.pct)
       : []
@@ -56,7 +56,7 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
       <div className="cand-axis-pins" style={{ height: PIN + 14 + Math.max(...rows) * (PIN + GAP) }}>
         {pins.map((p, i) => (
           <span
-            key={p.n}
+            key={p.id}
             className={`cand-axis-pin${p.selected ? ' sel' : ''}`}
             style={{ left: `${p.pct}%`, ['--row' as string]: rows[i] }}
           >

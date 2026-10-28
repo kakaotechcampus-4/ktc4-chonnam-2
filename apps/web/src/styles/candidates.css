@@ -58,7 +58,7 @@
 .cand-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 
 /* 후보 번호. `core-user-flow.md` §8-2가 요구한 「시간축 마커와 같은 번호」다
-   (CandidateAxis). candidates[] 배열 순서를 그대로 쓴다 — 점수나 시각으로 다시 매기지 않는다. */
+   (CandidateAxis). case가 준 `rank`를, 없으면 candidates[] 배열 순서를 쓴다 — web이 점수나 시각으로 다시 매기지 않는다. */
 .cnum {
   width: 24px; height: 24px; flex: 0 0 24px;
   border-radius: 999px;
