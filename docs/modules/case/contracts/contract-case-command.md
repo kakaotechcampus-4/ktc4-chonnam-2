@@ -297,7 +297,7 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 - **결과 반영은 분석 시작과 같다**(§11) — `service.receive_hint_extraction_result()` → hints · 첫 탐색. 소진 알림도 같다(`decisions/hint-exhaustion.md`).
 - **예산은 첫 탐색과 같다**(`InitialSearchBudget`, `decisions/start-analysis.md` §3-3).
 - **CorrectionRecord를 남기지 않는다.** 설명 원문은 evidence가 조립하는 값이 아니라 탐색 입력이고, 바뀐 원문은 CaseView 최상위 `description`으로 보인다.
-- **`EDIT_HINT`를 싣는 notice**(어느 화면에 출구를 둘지는 notice가 정한다): `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때 — 단서 구조화 중 중단). `evidence.visual_event_not_observed`는 `core-user-flow.md` §6 변경이라 PM 확인 뒤(#404).
+- **`EDIT_HINT`를 싣는 notice**(어느 화면에 출구를 둘지는 notice가 정한다): `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때 — 단서 구조화 중 중단) · `evidence.visual_event_not_observed`(위반 미관찰 — `core-user-flow.md` §6, 2026-10-27 PM 승인).
 - web은 `RUN_NOTICE_ACTION`이 아니라 이 kind로 보낸다(입력형 action, §12-3과 같다). 실패 코드는 §6 그대로다.
 
 ```json

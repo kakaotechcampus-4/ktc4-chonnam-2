@@ -304,14 +304,14 @@ NO_CANDIDATES_NOTICE: dict[str, Any] = {
 
 
 # 음성 결과(#168 [A] 후속, @uminshin 요청). 계약 B절 `notices[].code` 등재(2026-09-29). 접두어는
-# 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 출구(「다른 후보 보기」)는
-# 결과 화면 1차 명령이라 `actions`는 비운다.
+# 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 「다른 후보 보기」는 결과 화면 1차 명령이라
+# 싣지 않는다. 「설명 고쳐 다시 찾기」는 `EDIT_HINT{description}` command다(#410, PM 승인 2026-10-27).
 VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
     "code": "evidence.visual_event_not_observed",
     "severity": "INFO",
     "blocking": False,
     "message_key": "notice.visual_event_not_observed",
-    "actions": [],
+    "actions": ["EDIT_HINT"],
 }
 
 
