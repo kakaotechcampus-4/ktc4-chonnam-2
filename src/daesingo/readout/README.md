@@ -15,12 +15,13 @@
 다른 모듈은 **공개 함수만** 호출한다. `api.py`에 있다.
 
 ```python
-read_plate(request, target_hint=None, provider=None)  -> (ReadoutRun, PlateReadout | None)
-read_overlay_time(request, provider=None)             -> (ReadoutRun, OverlayTimeReadout | None)
+read_plate(request, target_hint=None, provider=None, *, run_id=None)  -> (ReadoutRun, PlateReadout | None)
+read_overlay_time(request, provider=None, *, run_id=None)             -> (ReadoutRun, OverlayTimeReadout | None)
 ```
 
 - `request`는 `ReadRequest(case_id, candidate_id, input_ref)`다. §4-모듈3 ③이 적은 `span`은 `plate-readout/v1.2`에서 `input_ref.span_ref`가 삭제되면서 사라졌다 — 사건 구간의 canonical reference는 `input_ref.incident_clip_ref` 하나다.
 - `target_hint`는 optional이다. 없으면 자체 association을 시도하고, 어느 쪽이든 결과는 `target_association`에 남는다.
+- `run_id`는 optional이다. 호출하는 쪽이 미리 발급해 넘기면 그 값이 `ReadoutRun.run_id`가 되고, 없으면 readout이 만든다(#297). 호출마다 새 값을 주는 것은 넘기는 쪽 책임이다.
 - 두 번째 반환값이 `None`인 경우는 **완전 실패 하나뿐**이다. 그때도 `ReadoutRun`은 남는다.
 - `list_impls()`는 아직 없다.
 
