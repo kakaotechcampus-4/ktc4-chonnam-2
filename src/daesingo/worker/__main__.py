@@ -8,7 +8,7 @@ from daesingo.common.db import create_worker_engine
 from daesingo.common.logging import log_event_best_effort
 from daesingo.worker.bootstrap import bootstrap
 from daesingo.worker.composition import compose_worker
-from daesingo.worker.search_composition import compose_search_registry
+from daesingo.worker.composition_root import compose_registry
 from daesingo.worker.case_composition import StoredCaseReflector, StoredCaseExhaustionReceiver
 
 
@@ -37,7 +37,7 @@ def main() -> int:
             previous[sig] = signal.getsignal(sig)
             signal.signal(sig, request_stop)
         engine = create_worker_engine(startup.config.db)
-        registry = compose_search_registry(engine=engine, startup=startup)
+        registry = compose_registry(engine=engine, startup=startup)
         compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
                        reflector=StoredCaseReflector(startup=startup),
                        exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup)).run()
