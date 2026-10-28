@@ -70,3 +70,14 @@ RT-07(c)는 `runtime_0004`에서 tracker에 예정 Run 관계·명시적 no-Run 
 API 소유 structured handler는 emission I/O lock을 stdlib handler cleanup lock과 분리하며, 정상 emission에서 flush하고 종료 cleanup에서 sink를 재호출하지 않는다. 실제 stdout 및 고정 stderr fallback은 unbuffered fd write를 사용한다. 이는 RT-08(a)의 bounded telemetry 종료 경계이며 Worker strict handler·allowlist/formatter·root/제3자 handler는 변경하지 않는다.
 
 RT-10(a)는 `common.jobs.produced`에 해석 없는 append-only JSON 결과 저장소와 기존 `ProducedReader(conn, kind, produced)` callable 구현을 추가한다. `runtime_0005`의 payload는 Worker T1 terminal·produced와 같은 transaction에서 저장한다. ID 없는 객체 ref는 execution/ordinal로 고정하고 COMMIT 불명 복구는 payload까지 검증한다. 다중 객체의 의미 조립은 주입한 assembler가 맡는다. 실제 handler/Case stored adapter 배선은 후속 범위이며 RT-10은 IN_PROGRESS다. 상세는 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)를 따른다.
+
+
+### RT-10(b) separate exhaustion outbox
+
+`jobs.exhaustion` owns the #405 DTO/port and pending notice delivery; live schema
+adds job_exhaustion_notice and forward migration runtime_0006. The pending index
+and per-job UNIQUE support recovery independently of T2/case_applied_at.
+Caller-owned Case save, enqueue and notice receipt share one transaction.
+runtime.exhaustion.failed contains only FAILED status and no correlation IDs or
+original error. Details and verification limits:
+[RT-10(b) Implementation Notes](../../../docs/runtime/rt10b-exhaustion-notice.md).

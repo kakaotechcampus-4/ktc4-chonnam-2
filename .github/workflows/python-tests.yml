@@ -11,7 +11,54 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.15"
+          enable-cache: false
+      - name: Install locked root dependencies (no PaddleOCR)
+        run: uv sync --locked --extra test --extra eval-gemini
+      - name: Verify complete and disjoint pytest collection partitions
+        run: uv run --no-sync python -m tests.ci_orchestration collect "$RUNNER_TEMP/collection"
+      - name: Install and inspect media tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg
+          ffmpeg -version
+          ffprobe -version
+          uv run --no-sync python --version
+          ffmpeg -hide_banner -h full > "$RUNNER_TEMP/ffmpeg-help.txt"
+          grep -q -- '-fps_mode' "$RUNNER_TEMP/ffmpeg-help.txt"
+          ffmpeg -hide_banner -encoders > "$RUNNER_TEMP/ffmpeg-encoders.txt"
+          grep -q 'libx264' "$RUNNER_TEMP/ffmpeg-encoders.txt"
+      - name: Recording synthetic media smoke (must execute)
+        run: |
+          uv run --no-sync python -m pytest tests/recording/test_ci_media_smoke.py -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/recording-smoke.xml"
+          uv run --no-sync python - <<'PY'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree
+          root = ElementTree.parse(Path(os.environ['RUNNER_TEMP']) / 'recording-smoke.xml')
+          cases = root.findall('.//testcase')
+          assert len(cases) == 1, 'Expected exactly one Recording media smoke'
+          assert all(c.find(tag) is None for c in cases for tag in ('skipped', 'failure', 'error')), 'Media smoke must pass without skips'
+          PY
+      - name: Non-MySQL regression
+        run: uv run --no-sync python -m tests.ci_orchestration regression "$RUNNER_TEMP/regression.xml"
+
+  mysql:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -57,24 +104,24 @@ jobs:
           grep -q -- '-fps_mode' "$RUNNER_TEMP/ffmpeg-help.txt"
           ffmpeg -hide_banner -encoders > "$RUNNER_TEMP/ffmpeg-encoders.txt"
           grep -q 'libx264' "$RUNNER_TEMP/ffmpeg-encoders.txt"
-      - name: Recording synthetic media smoke (must execute)
-        run: |
-          uv run --no-sync python -m pytest tests/recording/test_ci_media_smoke.py -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/recording-smoke.xml"
-          uv run --no-sync python - <<'PY'
-          import os
-          from pathlib import Path
-          from xml.etree import ElementTree
-          root = ElementTree.parse(Path(os.environ['RUNNER_TEMP']) / 'recording-smoke.xml')
-          cases = root.findall('.//testcase')
-          assert len(cases) == 1, 'Expected exactly one Recording media smoke'
-          assert all(c.find(tag) is None for c in cases for tag in ('skipped', 'failure', 'error')), 'Media smoke must pass without skips'
-          PY
-      - name: Full pytest regression (offline capability fixtures and real MySQL)
-        run: >-
-          uv run --no-sync python -m pytest -q -p no:cacheprovider
-          --mysql-report="$RUNNER_TEMP/mysql-tests.json"
-          --junitxml="$RUNNER_TEMP/pytest.xml"
-      - name: MySQL execution gate (required scenarios, skip 0, xfail 0)
-        run: >-
-          uv run --no-sync python scripts/check_mysql_test_report.py
-          "$RUNNER_TEMP/mysql-tests.json" "$RUNNER_TEMP/pytest.xml"
+      - name: Canonical MySQL once, strict JSON/JUnit and actual-report mutations
+        run: uv run --no-sync python -m tests.ci_orchestration mysql "$RUNNER_TEMP/mysql-evidence"
+
+  # Keep the original check name. A skipped/cancelled/failed dependency must
+  # never be turned into a successful required result by GitHub's skip rules.
+  test:
+    if: ${{ always() }}
+    needs: [regression, mysql]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Require every execution job to succeed
+        env:
+          CI_REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: python -m tests.ci_orchestration required

@@ -23,6 +23,7 @@ from daesingo.common.jobs.sweep import SweepService, sweep_once
 from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
 from daesingo.common.jobs.reflection import ReflectionInput, ResultReflector, reflect_terminal
 from daesingo.common.jobs.redelivery import observe_reflection, redeliver_once
+from daesingo.common.jobs.exhaustion import ExhaustionReceiver, redeliver_exhaustion_once
 from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
@@ -38,6 +39,7 @@ FROM job_execution WHERE execution_id = :execution_id""")
 def compose_worker(
     *, engine: Engine, startup: Startup, registry: KindRegistry, stop: Event,
     reflector: ResultReflector | None = None,
+    exhaustion_receiver: ExhaustionReceiver | None = None,
     heartbeat_engine: Engine | None = None, heartbeat_observe: Callable | None = None,
     cancel_observe: Callable | None = None,
     worker_id: str | None = None, sleep: Callable[[float], None] = time.sleep,
@@ -199,5 +201,7 @@ def compose_worker(
                    *sweep_hooks),
             redeliver=partial(redeliver_once, engine, reflector, sleep=sleep, logger=startup.logger)
                 if reflector is not None else None,
+            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, exhaustion_receiver,
+                sleep=sleep, logger=startup.logger) if exhaustion_receiver is not None else None,
         ),
     )

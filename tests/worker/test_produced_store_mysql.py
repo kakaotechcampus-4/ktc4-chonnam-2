@@ -228,7 +228,7 @@ def test_migration_metadata_and_forward_only_revision(queue):
     m = module()
     upgrade_all(queue.url)
     with queue.connect() as conn:
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0005"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0006"
         assert {c["name"] for c in sa.inspect(conn).get_columns("produced_objects")} == set(m.produced_objects.c.keys())
         assert sa.inspect(conn).get_foreign_keys("produced_objects") == []
 

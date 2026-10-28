@@ -32,6 +32,9 @@ def spec(fields, statuses, source, meaning):
 _HTTP = r'[1-5][0-9]{2}'
 _DB = r'LOCK_WAIT_TIMEOUT|DEADLOCK|POOL_TIMEOUT|DISCONNECT|CONNECT_FAILURE|CLEANUP|DB_FAILURE'
 EVENTS = MappingProxyType({
+    'runtime.exhaustion.failed': spec('status', 'FAILED',
+        'common/jobs/exhaustion.py:redeliver_exhaustion_once',
+        'Candidate rolled back; no identifiers, payload or exception text'),
     'runtime.heartbeat.attempt_ms': spec('status duration_ms', 'RENEWED|FAILED|OWNERSHIP_LOST',
         'common/jobs/heartbeat.py:Heartbeat._observe', 'Every attempt, milliseconds; no hard upper bound'),
     'runtime.heartbeat.lag_ms': spec('status duration_ms', 'RENEWED',
@@ -93,7 +96,8 @@ EVENTS = MappingProxyType({
 
 METRICS = MappingProxyType({
     **{name: MetricSpec((name,), value.meaning) for name,value in EVENTS.items()
-       if name.startswith('runtime.') or name.startswith('api.frame.') or name.startswith('api.asset.')
+       if (name.startswith('runtime.') and name != 'runtime.exhaustion.failed')
+       or name.startswith('api.frame.') or name.startswith('api.asset.')
        or (name.startswith('api.upload.') and name != 'api.upload.failed')},
     'api.view.request_rate': MetricSpec(('api.view.request_rate',), 'Count routed GET view attempts over operator-selected log interval'),
     'api.view.latency_ms': MetricSpec(('api.view.latency_ms',), 'View route duration_ms including failures'),
