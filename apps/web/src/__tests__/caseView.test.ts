@@ -123,6 +123,8 @@ describe('화면 선택', () => {
     const stopped = notice('case.analysis_stopped', 'notice.analysis_stopped')
     const failed = notice('search.candidate_search_failed', 'notice.candidate_search_failed')
     expect(selectScreen({ ...base, notices: [stopped] }).kind).toBe('STOPPED')
+    // case 대기 timeout(#358)도 중단 화면이다 — 진행 화면에 남으면 끝나지 않는 것처럼 보인다
+    expect(selectScreen({ ...base, notices: [notice('case.analysis_timed_out', 'notice.analysis_timed_out')] }).kind).toBe('STOPPED')
     expect(selectScreen({ ...base, notices: [failed] }).kind).toBe('SEARCH_FAILED')
     expect(selectScreen({ ...base, notices: [] }).kind).toBe('PROGRESS')
   })
@@ -284,7 +286,7 @@ describe('계약 등재 목록 전수 매핑 — fixture에 없는 값도 문구
   // fixture를 훑는 검사만 있으면 「계약엔 등재됐는데 fixture엔 아직 없는 값」이 영영 안 잡힌다.
   // 실제로 등재 label_key 4종 중 3종이 「처리 중」 fallback으로 뭉개지고 있었다.
 
-  it('등재 label_key 5종이 fallback 문구로 새지 않는다', () => {
+  it('등재 label_key 6종이 fallback 문구로 새지 않는다', () => {
     const fallback = jobLabel(JOB_LABEL_FALLBACK_KEY)
     for (const key of JOB_LABEL_KEYS) {
       expect(jobLabel(key), key).not.toBe(fallback)

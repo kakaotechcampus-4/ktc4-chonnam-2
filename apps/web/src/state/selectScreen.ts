@@ -6,6 +6,9 @@
 
 import type { CaseView, Notice, RunningJob } from '../contracts/caseView'
 
+/** 탐색 기다리기가 멈춘 notice — 사용자 중단(#342) · case 대기 timeout(#358) */
+export const HALTED_CODES: ReadonlySet<string> = new Set(['case.analysis_stopped', 'case.analysis_timed_out'])
+
 export type ScreenKind =
   | 'PROGRESS'
   | 'STOPPED'
@@ -77,8 +80,10 @@ export function selectScreen(view: CaseView): Screen {
     case 'SEARCHING':
       // 중단 · 탐색 실패는 작업이 끝난 상태다. 진행 화면에 두면 끝나지 않는 것처럼 보인다.
       // 다시 하기 버튼은 notice가 가진다(`RETRY_SEARCH`). 중단은 stage가 SEARCHING에 머문다(#342).
-      if (view.notices.some((n) => n.code === 'case.analysis_stopped')) {
-        return { ...base, kind: 'STOPPED', reason: 'stage=SEARCHING · case.analysis_stopped' }
+      // case 대기 timeout(#358)도 출구가 같은 중단 화면이다 — 문구만 다르다.
+      const halted = view.notices.find((n) => HALTED_CODES.has(n.code))
+      if (halted) {
+        return { ...base, kind: 'STOPPED', reason: `stage=SEARCHING · ${halted.code}` }
       }
       if (view.notices.some((n) => n.code === 'search.candidate_search_failed')) {
         return { ...base, kind: 'SEARCH_FAILED', reason: 'stage=SEARCHING · search.candidate_search_failed' }
