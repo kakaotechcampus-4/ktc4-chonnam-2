@@ -44,7 +44,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const [unsupported, setUnsupported] = useState(false)
 
   // 주소의 case id로 이어간다. 새로 만든 case는 주소에 남겨 새로고침해도 이어진다.
-  // ponytail: 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
+  // 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
   const { caseId } = props
   useEffect(() => {
     if (caseId) void resume(caseId)

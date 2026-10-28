@@ -15,7 +15,7 @@ import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
 // 진행 화면은 무엇이 실패하든 끝까지 흐르고, 결과는 마지막 화면에서 알린다.
-// ponytail: API(case.get_view)가 아직 없어 업로드는 타이머로, 진행은 단계를
+// API(case.get_view)가 아직 없어 업로드는 타이머로, 진행은 단계를
 // 하나씩 넘기는 CaseView를 만들어 재생해 흉내 낸다. API가 생기면 이 두 타이머
 // 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
 const UPLOAD_MS = 1500
@@ -65,7 +65,7 @@ const walk = (until: number, failedAt = -1) => [
   at(until, failedAt, true),
 ]
 
-// ponytail: 아래 시연용 CaseView들은 fixture에 아직 없는 경우를 계약 모양대로 만든 것이다.
+// 아래 시연용 CaseView들은 fixture에 아직 없는 경우를 계약 모양대로 만든 것이다.
 // fixture가 생기면 snapshot()으로 바꾼다.
 //
 // fixture 후보가 1개뿐이라 「다른 후보」를 보이려고 두 개를 더 붙인다.
@@ -280,7 +280,7 @@ const CASES: Record<string, DemoCase> = {
   uploadPartial: { label: '업로드 일부 실패(나머지로 계속)', upload: 'partial', run: AWAIT_RUN },
   uploadFail: { label: '업로드 실패', upload: 'fail', run: AWAIT_RUN },
 }
-// ponytail: 일부 실패 시연용 — 실제로는 업로드 응답이 건너뛴 파일을 알려 준다.
+// 일부 실패 시연용 — 실제로는 업로드 응답이 건너뛴 파일을 알려 준다.
 const DEMO_SKIPPED = ['FILE_017.mp4']
 
 type Main =
@@ -290,12 +290,12 @@ type Main =
 type Sub = 'candidates' | 'plate' | 'plateEdit' | 'details'
 // 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 입력 화면과 command가
 // 아직 없어(contract-case-command §32 「입력형 action은 다음 판본」) 사용 불가로 보인다.
-// ponytail: 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
+// 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
 const DEMO_ACTIONS = new Set<Action>(['RETRY_PLATE_READ', 'GENERATE_REPORT_VIDEO', 'RETRY_SEARCH', 'MANUAL_PLATE_INPUT'])
 const canRun = (a: Action) => DEMO_ACTIONS.has(a)
 
 // 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다.
-// ponytail: 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
+// 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
 // 시연에서는 화면 안에서만 반영한다 — command가 생기면 PlateCheck onEdit 자리에서 보낸다.
 function withPlate(view: CaseView, plate: string | null): CaseView {
   if (!plate || !view.evidence) return view
