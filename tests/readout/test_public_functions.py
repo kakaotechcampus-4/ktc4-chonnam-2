@@ -65,6 +65,41 @@ class PublicFunctionsExistTest(unittest.TestCase):
         self.assertEqual(len(run_ids), 6, "run_id는 1회성 식별자이며 재사용하지 않는다")
 
 
+class CallerRunIdTest(unittest.TestCase):
+    """#297 — worker가 호출 전에 `run_id`를 발급해 넘기면 그 값으로 run을 만든다."""
+
+    def test_given_run_id_is_used_for_run_and_result(self):
+        run, plate = api.read_plate(request_for("clip_h001"), HINT, provider=fresh_provider(), run_id="rr_given1")
+        self.assertEqual(run.run_id, "rr_given1")
+        self.assertEqual(plate.run_ref.ref, "rr_given1")
+        run, overlay = api.read_overlay_time(request_for("clip_h001"), provider=fresh_provider(), run_id="rr_given2")
+        self.assertEqual(run.run_id, "rr_given2")
+        self.assertEqual(overlay.run_ref.ref, "rr_given2")
+
+    def test_failed_run_keeps_given_run_id(self):
+        run, plate = api.read_plate(request_for("clip_x001"), HINT, provider=fresh_provider(), run_id="rr_given3")
+        self.assertIsNone(plate)
+        self.assertEqual((run.outcome, run.run_id), ("FAILED", "rr_given3"))
+
+    def test_blank_run_id_is_rejected_before_reading(self):
+        class MustNotRead(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                raise AssertionError("provider를 부르면 안 된다")
+
+            def read_overlay_time(self, input_ref):
+                raise AssertionError("provider를 부르면 안 된다")
+
+        for bad in ("", "  ", 123):
+            with self.assertRaises(ValueError):
+                api.read_plate(request_for("clip_h001"), HINT, provider=MustNotRead(), run_id=bad)
+            with self.assertRaises(ValueError):
+                api.read_overlay_time(request_for("clip_h001"), provider=MustNotRead(), run_id=bad)
+
+    def test_without_run_id_readout_issues_one(self):
+        run, _ = api.read_plate(request_for("clip_h001"), HINT, provider=fresh_provider())
+        self.assertTrue(run.run_id.startswith("rr_"))
+
+
 class HappyPathTest(unittest.TestCase):
     """`scenario_happy_001` 입력으로 두 함수가 실제로 돌고 계약 형식을 반환한다."""
 

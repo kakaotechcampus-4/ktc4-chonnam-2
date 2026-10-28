@@ -2,8 +2,8 @@
 
 다른 모듈은 이 두 함수만 부른다. 반환은 v4 §4-모듈3 ③ 그대로 **둘**이다.
 
-    read_plate(request, target_hint=None)  -> ReadoutRun, PlateReadout | None
-    read_overlay_time(request)             -> ReadoutRun, OverlayTimeReadout | None
+    read_plate(request, target_hint=None, *, run_id=None)  -> ReadoutRun, PlateReadout | None
+    read_overlay_time(request, *, run_id=None)             -> ReadoutRun, OverlayTimeReadout | None
 
 `span`이 아니라 `request`인 이유 — v4가 적은 `span`은 `plate-readout/v1.2`에서 `input_ref.span_ref`가
 삭제되면서 사라졌다. 사건 구간의 canonical reference는 `incident_clip_ref` 하나이고
@@ -29,6 +29,10 @@ overlay 4갈래 · validation 3종 · `ReadoutRun` 조립. 임계값도 여기 �
 
 두 함수 모두 실행하면 반드시 run 1건을 만든다. 결과 객체는 0~1건이다 — provider가 완전 실패하면
 run만 남는다(contract-readout-run.md §5).
+
+`run_id`는 호출하는 쪽이 미리 발급해 넘길 수 있다(#297) — worker가 호출 전에 `UsageRecord`의 예정 run을
+기록하려면 값을 먼저 알아야 하기 때문이다. 넘기지 않으면 여기서 만든다. 받은 값은 형식만 보고 그대로
+쓴다. 중복은 여기서 알 수 없으므로 호출마다 새 값을 주는 것은 발급하는 쪽 책임이다(계약 §9-1).
 
 예외가 나가는 자리는 **하나뿐**이다 — 입력이 계약 형식이 아니면 provider를 부르기 전에
 `ValueError`로 세운다. 그때는 판독이 시작되지 않았으므로 run도 없다. 반대로 provider를 부른
@@ -242,9 +246,14 @@ def _validate_input_ref(input_ref) -> None:
         )
 
 
-def _start_run(operation: str, request) -> ReadoutRun:
+def _validate_run_id(run_id) -> None:
+    if run_id is not None and (not isinstance(run_id, str) or not run_id.strip()):
+        raise ValueError("run_id는 빈 값이 아닌 문자열이어야 한다 — 넘기지 않으면 readout이 만든다")
+
+
+def _start_run(operation: str, request, run_id: Optional[str]) -> ReadoutRun:
     return ReadoutRun(
-        run_id=_new_id("rr"),
+        run_id=run_id if run_id is not None else _new_id("rr"),
         operation=operation,
         outcome="SUCCEEDED",
         failure=None,
@@ -390,7 +399,8 @@ def _abstain_reason(association, best, disagreed):
 
 
 def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
-               provider: Optional[providers.OcrProvider] = None) -> PlateReadResult:
+               provider: Optional[providers.OcrProvider] = None, *,
+               run_id: Optional[str] = None) -> PlateReadResult:
     """번호판을 관찰한다. 확정하지 않는다.
 
     `target_hint`는 optional이다 — 없으면 provider가 자체 association을 시도하고, 무엇을 대상으로
@@ -399,8 +409,9 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
     반환은 `(ReadoutRun, PlateReadout | None)`. provider가 완전 실패하면 두 번째가 `None`이다.
     """
     _validate_input_ref(request.input_ref)
+    _validate_run_id(run_id)
     provider = provider or providers.default_provider()
-    run = _start_run("PLATE_READ", request)
+    run = _start_run("PLATE_READ", request, run_id)
 
     try:
         reading = provider.read_plate(request.input_ref, target_hint)
@@ -603,7 +614,8 @@ def _validate_samples(samples):
 
 
 def read_overlay_time(request: ReadRequest,
-                      provider: Optional[providers.OcrProvider] = None) -> OverlayTimeReadResult:
+                      provider: Optional[providers.OcrProvider] = None, *,
+                      run_id: Optional[str] = None) -> OverlayTimeReadResult:
     """화면에 찍힌 시각을 관찰하고 검증한다. 최종 발생 시각을 고르지 않는다.
 
     네 갈래를 서로 다른 값으로 남긴다 — 읽음(`OK`) / 없음(`NOT_APPLICABLE` + `not_present`) /
@@ -614,8 +626,9 @@ def read_overlay_time(request: ReadRequest,
     반환은 `(ReadoutRun, OverlayTimeReadout | None)`.
     """
     _validate_input_ref(request.input_ref)
+    _validate_run_id(run_id)
     provider = provider or providers.default_provider()
-    run = _start_run("OVERLAY_TIME_READ", request)
+    run = _start_run("OVERLAY_TIME_READ", request, run_id)
 
     try:
         reading = provider.read_overlay_time(request.input_ref)
