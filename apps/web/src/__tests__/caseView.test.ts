@@ -112,7 +112,7 @@ describe('화면 선택', () => {
   })
 
   it('SEARCHING이어도 중단 · 탐색 실패 notice가 있으면 진행 화면이 아니다(#342)', () => {
-    const base = views.find((v) => v.stage === 'SEARCHING')!
+    const base = { ...views.find((v) => v.stage === 'SEARCHING')!, running_jobs: [] }
     const notice = (code: string, message_key: string) => ({
       code,
       severity: 'INFO' as const,
@@ -127,6 +127,17 @@ describe('화면 선택', () => {
     expect(selectScreen({ ...base, notices: [notice('case.analysis_timed_out', 'notice.analysis_timed_out')] }).kind).toBe('STOPPED')
     expect(selectScreen({ ...base, notices: [failed] }).kind).toBe('SEARCH_FAILED')
     expect(selectScreen({ ...base, notices: [] }).kind).toBe('PROGRESS')
+  })
+
+  it('결과 없음 · 탐색 실패 뒤 「다시 찾기」로 탐색 job이 도는 동안은 진행 화면이다(#426)', () => {
+    const job = { job_id: 'j', kind: 'COARSE_SEARCH', label_key: 'job.generic_processing', status: 'RUNNING' } as const
+    const empty = views.find((v) => v.case_id === 'case_e001')!
+    expect(selectScreen({ ...empty, running_jobs: [job] }).kind).toBe('PROGRESS')
+    expect(selectScreen({ ...empty, running_jobs: [] }).kind).toBe('NO_RESULT')
+    const searching = views.find((v) => v.stage === 'SEARCHING')!
+    const failed = { code: 'search.candidate_search_failed', severity: 'INFO' as const, blocking: false, message_key: 'notice.candidate_search_failed', actions: ['RETRY_SEARCH'] }
+    expect(selectScreen({ ...searching, notices: [failed], running_jobs: [job] }).kind).toBe('PROGRESS')
+    expect(selectScreen({ ...searching, notices: [failed], running_jobs: [] }).kind).toBe('SEARCH_FAILED')
   })
 
   it('응답 뒤 신고자료를 준비하는 동안(running_jobs)은 진행이고, 응답 대기 중이면 job이 있어도 결과다', () => {

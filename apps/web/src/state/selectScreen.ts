@@ -85,15 +85,21 @@ export function selectScreen(view: CaseView): Screen {
       if (halted) {
         return { ...base, kind: 'STOPPED', reason: `stage=SEARCHING · ${halted.code}` }
       }
+      // 실패 뒤 「다시 찾기」로 새 탐색이 도는 동안에도 실패 notice는 남는다 — 실패 화면에 두면 끝난 것처럼 보이고
+      // 버튼이 또 눌린다(#426). 기다리는 job이 있으면 진행이다.
+      if (jobs.length > 0) {
+        return { ...base, kind: 'PROGRESS', reason: `stage=SEARCHING · running_jobs ${jobs.length}건` }
+      }
       if (view.notices.some((n) => n.code === 'search.candidate_search_failed')) {
         return { ...base, kind: 'SEARCH_FAILED', reason: 'stage=SEARCHING · search.candidate_search_failed' }
       }
       return { ...base, kind: 'PROGRESS', reason: 'stage=SEARCHING' }
     case 'CANDIDATE_REVIEW':
-      // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다.
+      // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다. 다만 「다시 찾기」로 새 탐색이 도는 동안은
+      // stage가 그대로라 job으로 가른다(#426).
       // 후보가 있으면 가장 유력한 후보로 초안을 준비하는 중이다(core-user-flow.md
       // §8-1). 후보 비교는 기본 화면이 아니라 결과 화면의 「다른 후보 보기」다.
-      return view.candidates.length === 0
+      return view.candidates.length === 0 && jobs.length === 0
         ? { ...base, kind: 'NO_RESULT', reason: 'stage=CANDIDATE_REVIEW · candidates 0건' }
         : { ...base, kind: 'PROGRESS', reason: `stage=CANDIDATE_REVIEW · 후보 ${view.candidates.length}건 · 초안 준비 중` }
     case 'EVIDENCE_REVIEW':
