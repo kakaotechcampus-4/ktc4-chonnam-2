@@ -3504,3 +3504,64 @@ manifest hash·branch/HEADbc459255·indexempty보존을저자도결과추가전�
 해소판정은아니며새fullpytest최종summary+후속strict성공/30분·900초유지가계속필요하다.
 미커밋/미스테이징·commit/push/PR/CI변경없음,#405pending,
 **IN_PROGRESS · Refs #297 (RT-10(b))**로먼저보고한다.
+
+### 2026-10-28 — CI required 실행 분리와 실제 MySQL 중복 제거
+
+`codex/ci-split-mysql-gate`의 clean worktree/index/untracked 및 fetch 후
+HEAD=origin/develop=`daf6d14a6118a89e0ec54daa4280f8c7970e9a0a`를 확인했다.
+CLAUDE→docs README→Ops §19–20과 PR #352 멘토 원문을 조사했다.
+실제 develop branch protection은404(Branch not protected), 적용 rules는[]다.
+설정 변경 없이 기존 `test` check를 보존하고 `regression`/`mysql` 병렬 job의
+모든 result가 정확히 success인 경우만 aggregator가 성공하도록 분리했다.
+각 job30분·canonical actual900초·제품 source/production checker 판정은 그대로다.
+
+직접 baseline 전체12774/MySQL1045/child1027을 수집했고 중복교집합1027·child밖18
+(wrapper1+추가회귀17)을 확인했다. 새 실제 partition 수집은12810=
+regression11764+canonical1044+media1+gate1, 누락/중복0이다. 새36개는 orchestration
+테스트이며 기존12774 전부와 canonical1044를 보존한다. 기존 child1027+별도 smoke1의
+총1028회 반복을 제거했다. wrapper는 같은 job의 새 실제 report를 소비하며 원래
+strict/catalog/parameter/metadata/family assertions9개를 유지한다. child returncode
+assertion만 runner의 check=True로 옮겼다. 실행별 새 디렉터리·token·checkout/workflow
+SHA·run/attempt·JSON/JUnit/catalog/collection digest와 실제 selection을 검증한다.
+
+직접 TDD는 새 orchestration36FAIL→36PASS(5.26초), focused gate/mutation helper/
+schema policy/orchestration/Deploy8573PASS(161.10초), 실제 media1PASS(2.86초)다.
+36개는8573에 포함되며 합산하지 않는다. boundary0, Contract62/26/104, actionlint0,
+diff check PASS다. 최초 miniature fixture root/Windows cp949 출력 오류 및 sandbox DB
+preflight 실패도 scratch에 별도 보존하고 config/UTF8/실제 접근 권한으로 재검증했다.
+
+새 실제 MySQL8.4.7/Python3.12.14 canonical은1044PASS,3132phase·JUnit1044일치,
+MySQL skip/xfail0, pytest687.53초/runner693.47초다. summary의 unrelated Search collection
+skip4(typer 없음)는 별도로 공개한다. strictCLI PASS0.20초·catalog32/위반0,
+실제-report wrapper1PASS94.05초/runner95.83초,8415parameter+1501metadata/family omission
+모두 거부, 전체orchestration789.81초다. 실제 입력 digest는 후속 재검사에도 동일하다.
+새 report 복사본 normalCLIexit0/phase누락exit1/JUnit누락exit1을 확인했다.
+보존된10-27 child1027의 strict 재검사PASS는 새 DB 실행과 구분한다.
+
+동일 환경·base와 동일한 공통 MySQL2node 비용 재현: outer+child 모델2회실행
+4node/8.516초 → 단일partition2node/4.515초. 전체 suite 시간으로 외삽하지 않는다.
+기존 원격 성공40500553791은pytest1398.04초/strict1045PASS, 최신PR취소40637818339는
+97%·strictSKIPPED·최종summary없음이다. 8%839.927초 출력 공백의 active node는
+원격에 기록되지 않았으며 현재local wrapper1181/12774(9.25%)만으로 원인을 단정하지 않는다.
+원격head/merge revision도 이번base와 구분한다. 단계별시간·partition·정책·rollback·
+원격 확인 항목은 [CI 실행 구조](ci-test-partitions.md)에 기록했다.
+
+fresh-context 읽기전용 reviewer의 초기 독립 검토는 누락/중복0·새P1/P2/P3없음이다.
+최종 실제 실행·시간·문서/README delta는 같은 reviewer에게 후속 재확인을 요청한다.
+전체 regression/기존 whole outer/새 Ubuntu 원격CI/live provider/실제Compose 배포는
+미실행이며 이번 결과로 원격timeout 해소·merge 가능을 선언하지 않는다.
+
+전용 DB는 기본schema/account+전용base외항목0·non-auditclient0·transaction0·lock0을
+확인하고 종료했다. 정확한 소유datadir 제거·Linux포트refusal111·mysqld/helper/소유Python
+잔여0,secondary helper directory0을 확인했다. Windows 공유wslrelay PID1312의 TCP
+listener는 남지만 MySQLhandshake timeout/접속불가다. 공유WSL은 종료하지 않았으며
+Windows TCP 폐쇄로 표현하지 않는다. scratch/RAW/JSON/JUnit/profile/runner/DB/credential은
+PR제외이고 staging·commit·push·PR생성 없이 미커밋·미스테이징으로 유지한다.
+
+최종 후속 독립 재검토: 같은 fresh reviewer가 실제1044/3132/JUnit1044·모든입력digest,
+8415parameter/1501omission rejection·CLIexit0·693.47/789.81초와 문서·README delta를
+읽기전용으로 직접 대조해 **새 P1/P2/P3 없음**으로 판정했다. 기존 Log3506줄 prefix
+변경0과 append-only도 확인했다. reviewer는 테스트/DB/프로세스를 실행하지 않았다.
+작은subset8.516→4.515초는 전체CI wall개선 증거가 아니며 새 Ubuntu CI/전체regression/
+원격timeout 해소·merge준비는 판정보류다. 공유WSL relay listener 잔여를 공개하고
+제품/checker 무변경·branch/HEAD동일·indexempty를 다시 확인한 뒤 미커밋으로 보고한다.
