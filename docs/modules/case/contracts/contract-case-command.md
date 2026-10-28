@@ -222,7 +222,7 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 - **값이 지금 값과 같으면 `not_allowed`.** 기록하지 않는다(`contract-correction-record.md` §8-7 — 「이미 선택된 후보 재선택」과 같은 무변경 거부).
 - **성공하면** CorrectionRecord 1건 · `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 내리고 §5 「성공 뒤 `READY` 재확인」을 그대로 한다(§5 「`READY`에서 다시 조립되는 변경」).
 - **Job을 발주하지 않는다.** 값 정정은 evidence 재조립만 부른다(부분 재실행 정책 표). 시각 정정으로 사후 각인 값이 바뀌면 신고용 영상 입력도 바뀌는데, 그 재발주는 #351 [R-1] 자동 발주가 맡는다(`decisions/report-video-export.md`, 배선 보류).
-- **이전 값의 출처(구현, 2026-10-28).** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 CaseView 값이다 — 정상 경로에서 둘은 같다(`decisions/input-commands.md` §2-4).
+- **이전 값의 출처(구현, 2026-10-28).** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 CaseView 값이다 — 정상 경로에서 둘은 같다(`decisions/input-commands.md` §2-5).
 - **값 칸이 없는 화면(`evidence=null`)에서는 `not_allowed`**(2026-10-28) — 사용자가 본 이전 값이 없다. 상황 응답 대기의 부분 투영은 `evidence`가 있으므로 받는다.
 - **값을 판정하지 않는다**(§7-3). 번호판이 맞는지 · 시각이 그럴듯한지는 보지 않는다. 형식은 evidence 검사(E-3)에 맡기고 case가 target별 형식 규칙을 복제하지 않는다(#235 E-3).
 
@@ -230,7 +230,7 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 
 | `kind` | `payload` | CorrectionRecord | 성공하면 |
 | --- | --- | --- | --- |
-| `MANUAL_PLATE_INPUT` | `{ "value": "string" }` | `PLATE_MANUAL_EDIT` · `vehicle_number` | 번호판 값이 입력값이 되고 `plate_display.info_state=INFO_USER_CONFIRMED`. `readout.plate_read_failed`는 붙지 않는다(#235 ①, #321) |
+| `MANUAL_PLATE_INPUT` | `{ "value": "string" }` — 빈 문자열 · 공백만 있는 값은 `invalid_value`(evidence 값 공간, correction-record §6) | `PLATE_MANUAL_EDIT` · `vehicle_number` | 번호판 값이 입력값이 되고 `plate_display.info_state=INFO_USER_CONFIRMED`. `readout.plate_read_failed`는 붙지 않는다(#235 ①, #321) |
 | `EDIT_EVENT_TIME` | `{ "value": "string — offset-aware RFC3339" }` | `EVENT_TIME_MANUAL` · `occurred_at` | 최종 발생시각의 USER_INPUT 근거가 된다(`contract-time-resolution.md` §5) |
 | `RECORD_SITUATION_RESPONSE` | `{ "value": "CORRECTED", "visual_event_type": "SIGNAL \| CENTER_LINE_CROSSING \| SOLID_LINE_LANE_CHANGE \| MOTORCYCLE_HELMET_NON_USE" }` | `SITUATION_CHANGE` · `event.visual_event_type` | `situation_response=CORRECTED`와 정정 기록을 **한 command**로 남기고 `case_rev`는 +1이다. evidence는 `CORRECTED`에 `SITUATION_CHANGE` head가 정확히 1건 있어야 조립한다(`evidence/assembly.py`) |
 

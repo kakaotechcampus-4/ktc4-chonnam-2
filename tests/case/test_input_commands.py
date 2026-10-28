@@ -108,6 +108,16 @@ def test_same_value_as_current_is_not_allowed():
     assert _state(store, case_id) == before
 
 
+@pytest.mark.parametrize("value", ["", "   "])
+def test_empty_plate_is_invalid_value_and_records_nothing(value):
+    """번호판을 지우는 값은 evidence 값 공간 밖이다(correction-record §6) — 다시 입력하면 고쳐지는 값 오류."""
+    store, case_id = _store()
+    before = _state(store, case_id)
+
+    _rejected(_send(store, case_id, "MANUAL_PLATE_INPUT", {"value": value}), "case.command.invalid_value")
+    assert _state(store, case_id) == before
+
+
 class _PlateUnread(RealAdapter):
     """번호판을 읽지 못한 결과 — EvidenceRecord에 `vehicle_number`가 없다."""
 

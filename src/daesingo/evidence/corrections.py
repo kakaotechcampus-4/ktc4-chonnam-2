@@ -55,7 +55,9 @@ def _valid_value(target: str, value: Any) -> bool:
             return False
         return True
     if target == "vehicle_number":
-        return isinstance(value, str)
+        # An empty or whitespace-only plate would erase the value — correction-record §6 (#384 follow-up,
+        # PR #433): a plate the user cannot read stays unknown (`null`) instead of becoming "".
+        return isinstance(value, str) and bool(value.strip())
     if target == "location.coord":
         return (
             isinstance(value, dict)
