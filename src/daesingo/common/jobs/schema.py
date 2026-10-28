@@ -43,3 +43,27 @@ job_execution = sa.Table(
     sa.Index("ix_job_execution_job_id", "job_id"),
     mysql_engine="InnoDB", mysql_charset="utf8mb4",
 )
+
+
+job_exhaustion_notice = sa.Table(
+    "job_exhaustion_notice", metadata,
+    sa.Column("notice_id", _id(), primary_key=True),
+    sa.Column("job_id", _id(191), nullable=False),
+    sa.Column("case_id", _id(), nullable=False),
+    sa.Column("kind", _id(64), nullable=False),
+    sa.Column("final_execution_id", _id(), sa.ForeignKey("job_execution.execution_id",
+              name="fk_exhaustion_final_execution"), nullable=False),
+    sa.Column("attempt", sa.Integer, nullable=False),
+    sa.Column("terminal_status", _id(16), nullable=False),
+    sa.Column("reason", _id(16), nullable=False),
+    sa.Column("exhausted_at", DATETIME(fsp=6), nullable=False),
+    sa.Column("trace_id", _id(), nullable=False),
+    sa.Column("case_acknowledged_at", DATETIME(fsp=6)),
+    sa.UniqueConstraint("job_id", name="uq_exhaustion_job"),
+    sa.CheckConstraint("attempt >= 1", name="ck_exhaustion_attempt"),
+    sa.CheckConstraint("kind = 'HINT_EXTRACT'", name="ck_exhaustion_kind"),
+    sa.CheckConstraint("terminal_status = 'STALE'", name="ck_exhaustion_status"),
+    sa.CheckConstraint("reason = 'EXHAUSTED'", name="ck_exhaustion_reason"),
+    sa.Index("ix_exhaustion_unacknowledged", "case_acknowledged_at", "notice_id"),
+    mysql_engine="InnoDB", mysql_charset="utf8mb4",
+)

@@ -57,3 +57,18 @@ RT-10(a)는 내부 `HandlerResult.objects`에 JSON payload를 받을 수 있게 
 2026-10-26 composition 후속: 기본 entrypoint에 caller-transaction `StoredCaseReflector`와 CaseStore의 stored adapter/ProducedReader/RecordingFacts를 연결했다. Coarse/Fine production media는 명시적인 Recording profile mapping과 Case-selected VIDEO refs가 있어야 구성하며 execution별 RecordingService를 닫는다. Search payload는 기존 T1 object/terminal 원자 저장을 사용하고 T2는 기존 SUCCEEDED/FAILED 의미 그대로다. #403 helper 부재 시 기본 Search 미등록, HINT spent-auth 및 #405 STALE 정책 pending은 유지한다. 별도 process E2E·직접 검증·제한은 [production composition checkpoint](../../../docs/runtime/rt10b-production-composition.md)를 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
 
 2026-10-26 #403 통합 후속: merge405512cd의 실제 공개 helper를 기본 registry에서 소비한다. HINT와 명시적 media profile이 있는 Coarse/Fine을 테스트 정책 대체 없이 검증하며 production dispatcher/taxonomy 코드는 추가 변경하지 않았다. #405 STALE 소진 알림·receipt·Case정책은 이번 범위에서 제외한다. 선행 CI·직접 실행·Linux fixture/도구 경계는 위 composition checkpoint의 최신 후속 기록을 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+
+## RT-10(b) HINT_EXTRACT exhaustion notice (#405)
+
+`RT-10 IN_PROGRESS · Refs #297 (RT-10(b)) · Related #405`.
+The production entrypoint supplies StoredCaseExhaustionReceiver in addition to
+the T2 reflector. An uncancelled final HINT_EXTRACT STALE creates a Runtime
+outbox row in the same sweep transaction. Startup and periodic passes deliver
+pending notices through Case's public receive_hint_exhaustion service, then
+enqueue its COARSE_SEARCH record and acknowledge the notice atomically. Both
+redelivery scans complete before the first claim; shutdown retains stop/join.
+An omitted exhaustion_receiver leaves notices pending, like an omitted T2
+reflector. Existing T2/case_applied_at is unchanged. See
+[Implementation Notes](../../../docs/runtime/rt10b-exhaustion-notice.md) for the
+forward-only migration, Case-first lock order, port and safe failure event.

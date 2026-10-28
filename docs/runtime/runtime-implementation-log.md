@@ -3505,6 +3505,92 @@ manifest hash·branch/HEADbc459255·indexempty보존을저자도결과추가전�
 미커밋/미스테이징·commit/push/PR/CI변경없음,#405pending,
 **IN_PROGRESS · Refs #297 (RT-10(b))**로먼저보고한다.
 
+### 2026-10-28 — RT-10(b) #405 HINT_EXTRACT 최종 소진 outbox
+
+`RT-10 IN_PROGRESS · Refs #297 (RT-10(b)) · Related #405`
+
+PR / merge SHA: pending. 시작 branch codex/rt10b-exhaustion-notice,
+HEAD=071bbcca53fc7381592abcb0df7bcb3060324aa2. 수정 전 working tree/index clean,
+직접 조회한 원격 develop과 일치했고 Case PR #415 병합을 포함했다. #405 본문과
+Runtime/Case 합의 댓글, #297 관련 경계, Case 결정/공개 함수를 확인했다.
+
+별도 [Implementation Notes](./rt10b-exhaustion-notice.md)에 schema/port/lock/
+recovery/운영 event와 검증 한계를 기록했다. Runtime migration runtime_0006,
+job_id UNIQUE의 durable job_exhaustion_notice, 고정 notice identity와 최종
+STALE ended_at의 동일 tx INSERT를 구현했다. 전달은 비잠금 scan/receipt 확인 →
+Case public service의 Case lock → notice FOR UPDATE 재검증 → 기존 enqueue →
+notice 전용 receipt 순서다. Case 저장/후속 enqueue/receipt는 같은 caller tx다.
+Case adapter는 기존 service.receive_hint_exhaustion만 호출하고 Case reason을
+Runtime DTO로 넘기지 않는다. Startup/periodic 별도 callback과 production
+StoredCaseExhaustionReceiver를 연결했고 없는 receiver는 pending을 유지한다.
+
+Contract/Accepted Decision/Baseline 의미 변경 없음. 기존 T2/redelivery,
+case_applied_at, Case service, 역사 migration은 수정하지 않았다. 신규 safe
+runtime.exhaustion.failed는 식별자/원문/payload 없이 FAILED만 기록하며 기존
+Baseline metric 목록을 유지한다. Mandatory checker는 inventory만 추가했고
+독립 inventory/nested gate의 신규 file/metadata family도 확장했다. 기존
+skip/xfail 금지, nested 900초, workflow 30분 정책은 유지했다.
+
+직접 실행 증거(owned MySQL 8.4.7): 초기 outbox RED 3건, delivery/startup RED
+2건, inventory family RED 9건. 신규+Case+entrypoint GREEN 75건, 추가 port/
+scan-policy/DTO/정상 Search 별도 process E2E GREEN 31건. Gate unit negative
+controls 7160건 통과. 실제 신규 execution evidence 58건/parameter 58개/
+family 11개에 scoped checker 적용, mutation 881개 거부. 이는 전체 mandatory
+MySQL/strict gate 성공이 아니다. 새 event의 metric 자동 편입 회귀 RED 1건을
+수정한 뒤 event catalog 회귀 25건 통과, 실제 emitter catalog 위반 0건.
+Boundary와 Contract fixtures(62/26/104), diff check 통과. 기존 Runtime 관련
+MySQL 회귀와 fresh read-only review는 이 기록 시점에 진행/대기 중이다.
+
+과거 보존 evidence를 이번 실행 성공으로 재사용하지 않았다. 과거 자료에서는
+실행 환경/정책만 확인했고 기존 portable MySQL binary로 새 임시 server와
+새 per-test schema를 만들었다. 전체 pytest, 전체 mandatory MySQL와 nested
+strict gate는 요청대로 원격 CI에 남긴다. Staging/commit/push/PR/Issue 변경
+없음. 최종 reviewer 판정/회귀/cleanup/Git 상태는 이 절 뒤에 append한다.
+
+
+같은 날 후속 검증: related Runtime MySQL regression 224 passed (one
+pre-existing Starlette TestClient deprecation warning); cancellation focused 9
+passed / 10 deselected. 실제 STOP_ANALYSIS가 durable notice 뒤 STALE에
+cancel marker를 쓰는 경계를 추가해 delivery / unknown-COMMIT recovery 2 RED 확인.
+생성 시 cancel 판정은 유지하고 후발 mutable marker를 immutable facts에서 제외했다.
+최종 focused pass는 461 passed(신규 MySQL 60, DTO 18, Case 11, gate 372).
+이번 직접 실행 증거만으로 scoped checker 60 parameter / 12 family, mutation 912
+rejected. 전체 mandatory MySQL / nested strict gate 완료를 뜻하지 않는다.
+다음 단계에서 fresh reviewer를 실행하고 판정을 append한다.
+
+
+#### 2026-10-28 fresh read-only review와 수정 완료
+
+`RT-10 IN_PROGRESS · Refs #297 (RT-10(b)) · Related #405`
+
+구현 이력을 상속하지 않는 reviewer 최초 판정: P1 없음, P2 2건. ① nested
+metadata omission 기대 개수에 새 inventory가 빠져 정상 실행도 실패함(당시
+60×4=240). ② MySQL ascii_bin PAD SPACE 때문에 최종 execution ID의 뒤 공백
+별칭을 FK/WHERE가 수용하고 verify_execution이 원본 ID를 exact 비교하지 않음.
+실제 원본 nested omission 단계와 MySQL 컬럼을 사용한 유효 RED를 각각 보존한
+뒤 inventory/count/family/output 연결과 execution_id exact 비교를 수정했다.
+literal 기본 collation을 쓴 최초 fixture 오류는 유효 제품 RED로 계산하지 않았다.
+
+동일 reviewer 재검토: 두 P2 모두 해소, 새/잔여 P1/P2 없음. 최종 469 passed,
+MySQL 8.4.7 61 test/183 phase passed 확인. 최종 실행에는 신규 MySQL61,
+DTO18, Case11, gate378, nested omission stage control1이 포함된다.
+Nested control은 원래 statements와 마지막 assertion을 제어된 inventory에서
+실행해 metadata244+family12 omission을 검증하며 전체 DB child 통과가 아니다.
+Checker 계산 함수/정책 변경 없이 inventory를 반영한 범위라는 재검토도 받았다.
+그 뒤 구현자가 실제 신규61 parameter/12 family의 scoped checker와 mutation
+927건 거부를 직접 재실행했다. reviewer가 이 갱신본까지 봤다고 주장하지 않는다.
+
+전체 pytest/mandatory MySQL/nested strict gate·원격 CI는 미실행이다. Worker
+부재 시 전달 기한 없음과 잘못된 notice의 반복 pending은 비차단 운영 위험이다.
+새 버전부터 생성하는 outbox이며 과거 STALE backfill/다른 kind/purge는 범위 밖.
+
+정리: 전용 MySQL 8.4.7(pid439/port46713) 정상 종료, listener/datadir/init secret/
+credential 제거. 종료 전 잔여 per-test schema 0개. pytest fixture 임시 루트는
+workspace 경로 검증 후 제거했다. RED/GREEN evidence와 스크립트는 저장소 밖
+work/에 보존하며 공유용 report/summary/evidence bundle은 프로젝트 outputs/에
+생성한다. 저장소 변경만 PR 후보이며 실제 PR/staging/commit/push/Issue 변경은
+하지 않았다. HEAD 및 원격 develop의 최종 동일 여부와 전체 변경 파일 목록은
+공유 보고서에 직접 조회해 기록한다. 이 기록은 RT-10 전체 완료 선언이 아니다.
 ### 2026-10-28 — CI required 실행 분리와 실제 MySQL 중복 제거
 
 `codex/ci-split-mysql-gate`의 clean worktree/index/untracked 및 fetch 후

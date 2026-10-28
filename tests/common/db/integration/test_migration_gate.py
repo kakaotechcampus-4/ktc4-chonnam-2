@@ -19,6 +19,7 @@ from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
 from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARAMETERS
 from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
 from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
+from exhaustion_acceptance import EXHAUSTION_CHECKS, EXHAUSTION_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
 from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
@@ -77,6 +78,7 @@ LIFECYCLE_CHECKS = (
 )
 
 WORKER_CHECKS = (
+    *EXHAUSTION_CHECKS,
     *REDELIVERY_CHECKS,
     *(("sweep", scenario) for scenario in ("detect_latency", "detect_boundary", "detect_fault")),
     ("sweep_worker", "hook_fatal"), ("sweep_worker", "hook_exception"),
@@ -106,6 +108,7 @@ WORKER_CHECKS = (
 )
 
 WORKER_PARAMETERS = (
+    *EXHAUSTION_PARAMETERS,
     *REDELIVERY_PARAMETERS,
     *(("sweep", "detect_latency", f"{lease}_{reason}") for lease in (60, 7)
       for reason in ("RETRIED", "EXHAUSTED", "CANCELLED")),
@@ -302,7 +305,7 @@ def test_actual_report_rejects_each_missing_migration_check(tmp_path):
     # Complete passing nodes with absent RT-08(d)/RT-09/START_ANALYSIS metadata must also fail.
     # Mutate the actual report, retaining its original JSON/JUnit untouched.
     omissions = []
-    for role, scenario, parameter in (*CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS, *RECORDING_PARAMETERS, *UPLOAD_PARAMETERS, *PRODUCED_PARAMETERS, *FRAME_PARAMETERS, *ASSET_PARAMETERS, *OBSERVABILITY_PARAMETERS):
+    for role, scenario, parameter in (*EXHAUSTION_PARAMETERS, *CANCEL_API_PARAMETERS, *ASYNC_E2E_PARAMETERS, *START_ANALYSIS_PARAMETERS, *RECORDING_PARAMETERS, *UPLOAD_PARAMETERS, *PRODUCED_PARAMETERS, *FRAME_PARAMETERS, *ASSET_PARAMETERS, *OBSERVABILITY_PARAMETERS):
         expected = {"role": role, "scenario": scenario, "parameter": parameter}
         original_entry, = (n for n in report["collected"] if expected in n.get("checks", []))
         for field in ("role", "scenario", "parameter", "all_metadata"):
@@ -316,7 +319,7 @@ def test_actual_report_rejects_each_missing_migration_check(tmp_path):
             with pytest.raises(ValueError):
                 gate.validate_report(broken)
             omissions.append({"identity": [role, scenario, parameter], "field": field, "rejected": True})
-    for role, scenario in (*CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS):
+    for role, scenario in (*EXHAUSTION_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS):
         removed = {n["nodeid"] for n in report["collected"] if any(
             c.get("role") == role and c.get("scenario") == scenario for c in n.get("checks", []))}
         assert removed
@@ -336,8 +339,8 @@ def test_actual_report_rejects_each_missing_migration_check(tmp_path):
             gate.validate_report(broken)
             gate.validate_junit(mutation_junit, broken)
         omissions.append({"identity": [role, scenario], "field": "all_family_evidence", "rejected": True})
-    assert len(omissions) == (len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS) + len(RECORDING_PARAMETERS) + len(UPLOAD_PARAMETERS) + len(PRODUCED_PARAMETERS) + len(FRAME_PARAMETERS) + len(ASSET_PARAMETERS) + len(OBSERVABILITY_PARAMETERS)) * 4 + len(CANCEL_API_CHECKS) + len(ASYNC_E2E_CHECKS) + len(START_ANALYSIS_CHECKS) + len(RECORDING_CHECKS) + len(UPLOAD_CHECKS) + len(PRODUCED_CHECKS) + len(FRAME_CHECKS) + len(ASSET_CHECKS) + len(OBSERVABILITY_CHECKS)
-    for role, filename in (("api_cancel", "cancel-omissions.json"), ("async_e2e", "async-e2e-omissions.json"),
+    assert len(omissions) == (len(EXHAUSTION_PARAMETERS) + len(CANCEL_API_PARAMETERS) + len(ASYNC_E2E_PARAMETERS) + len(START_ANALYSIS_PARAMETERS) + len(RECORDING_PARAMETERS) + len(UPLOAD_PARAMETERS) + len(PRODUCED_PARAMETERS) + len(FRAME_PARAMETERS) + len(ASSET_PARAMETERS) + len(OBSERVABILITY_PARAMETERS)) * 4 + len(EXHAUSTION_CHECKS) + len(CANCEL_API_CHECKS) + len(ASYNC_E2E_CHECKS) + len(START_ANALYSIS_CHECKS) + len(RECORDING_CHECKS) + len(UPLOAD_CHECKS) + len(PRODUCED_CHECKS) + len(FRAME_CHECKS) + len(ASSET_CHECKS) + len(OBSERVABILITY_CHECKS)
+    for role, filename in (("exhaustion", "exhaustion-omissions.json"), ("api_cancel", "cancel-omissions.json"), ("async_e2e", "async-e2e-omissions.json"),
                            ("api_start_analysis", "start-analysis-omissions.json"), ("recording", "recording-omissions.json"), ("api_upload", "upload-omissions.json"), ("produced_store", "produced-omissions.json"), ("api_frame", "frame-omissions.json"), ("api_asset", "asset-omissions.json"), ("observability", "observability-omissions.json")):
         subset = [item for item in omissions if item["identity"][0] == role]
         (tmp_path / filename).write_text(json.dumps(subset, indent=2), encoding="utf-8")
