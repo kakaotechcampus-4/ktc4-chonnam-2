@@ -294,6 +294,31 @@ def test_edit_during_evidence_review_supersedes_waiting_observation_jobs():
     assert [r["kind"] for r in saved.waiting_job_records()] == ["HINT_EXTRACT"]
 
 
+class _NotObserved(NoDownstream):
+    def get_visual_evidence_decision(self): return "NOT_ASSEMBLED"
+
+
+def test_edit_from_not_observed_result_regresses_and_reextracts():
+    """위반 미관찰(음성 결과)에서도 설명을 고쳐 새로 찾는다(#410, PM 승인). 다음 후보를 자동으로 확인하지는 않는다(#168 [A])."""
+    store, case_id = _started()
+    store.adapters.put(case_id, _NotObserved())
+    _reflect_hint(store, case_id, {"status": "OK", "vehicle_hint": "흰 SUV"})
+    case = store.load_for_update(case_id)
+    case.receive_candidates([_candidate("cand_1"), _candidate("cand_2", rank=2)])
+    case.select_candidate("cand_1")
+    store.save(case)
+    assert _notice(store, case_id, "evidence.visual_event_not_observed")["actions"] == ["EDIT_HINT"]
+
+    result = _edit(store, case_id, "흰 SUV가 실선을 넘어 끼어들었어요")
+
+    assert result.response["ok"] is True
+    saved = store.get_case(case_id)
+    assert saved.stage == "SEARCHING"
+    assert saved.candidates == []
+    assert saved.description == "흰 SUV가 실선을 넘어 끼어들었어요"
+    assert [r["kind"] for r in saved.waiting_job_records()] == ["HINT_EXTRACT"]
+
+
 def test_edit_while_searching_keeps_other_waiting_jobs():
     """역행하지 않는 경로(중단 · timeout 뒤 `SEARCHING`)는 정리할 이전 후보 목록이 없다."""
     store, case_id = _started()

@@ -24,7 +24,7 @@ export function splitDateTime(value: string | null): { date: string | null; time
  *   preparing — 만드는 작업이 진행 중(running_jobs의 REPORT_VIDEO_EXPORT)
  *   failed    — 만들기 실패 notice
  *   unlinked  — 영상은 있지만(artifact_ref) 파일로 받을 경로가 아직 없다
- * ponytail: 「다운로드 가능」 상태는 없다 — artifact_ref를 파일로 바꾸는 API가 아직 없다
+ * 「다운로드 가능」 상태는 없다 — artifact_ref를 파일로 바꾸는 API가 아직 없다
  * (src/daesingo/api 미구현, 전달 방식 Pending: contract-source-asset-media-stream §9-6).
  * 경로가 생기면 여기서 ready를 돌려주고 화면이 다운로드 버튼을 연다.
  */

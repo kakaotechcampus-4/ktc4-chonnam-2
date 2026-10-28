@@ -16,12 +16,13 @@
 3. **결과 반영은 분석 시작과 같은 경로다** — `reflect_hint_extraction()` → `issue_initial_search()`, 소진 알림이면 `reflect_hint_exhaustion()`. 구조화 · scope 생성 경로를 하나로 유지한다.
 4. **예산은 첫 탐색과 같다**(`InitialSearchBudget`). 같은 경로를 쓰는 것이 이 안을 고른 이유다.
 5. **허용 조건 = 현재 CaseView notice가 `EDIT_HINT`를 싣고 있는가.** `RUN_NOTICE_ACTION`과 같은 근거다. 어느 화면에 출구를 둘지는 notice가 정하므로, 화면을 더할 때(위반 미관찰) command를 고치지 않고 notice만 고친다. 추가로 `SEARCHING`에서는 분석 job을 기다리는 중이면 받지 않는다(진행 중 덮어쓰기 방지).
-6. **`EDIT_HINT`를 싣는 notice:** `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때). 탐색 근거가 있는 중단 · timeout은 지금처럼 `RETRY_SEARCH`만 — 이번에 바꾸지 않는다.
+6. **`EDIT_HINT`를 싣는 notice:** `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때) · `evidence.visual_event_not_observed`(§3). 탐색 근거가 있는 중단 · timeout은 지금처럼 `RETRY_SEARCH`만 — 이번에 바꾸지 않는다.
 7. **CorrectionRecord를 남기지 않는다.** 설명 원문은 evidence 필드가 아니라 탐색 입력이고, CaseView `description`으로 보인다.
 
-## 3. PM 확인 대기
+## 3. 위반 미관찰에 싣기 — PM 승인(2026-10-27)
 
-- **위반 미관찰(`evidence.visual_event_not_observed`)에 싣기** — `core-user-flow.md` §6 · 표 변경이라 PM 확인 뒤(#404). 확인되면 `VISUAL_EVENT_NOT_OBSERVED_NOTICE.actions`에 `EDIT_HINT`를 넣기만 하면 된다. 「다음 후보를 자동으로 확인하지 않는다」(#168 [A])는 그대로다.
+- **`evidence.visual_event_not_observed`도 `actions:[EDIT_HINT]`를 싣는다.** `core-user-flow.md` §6 · §8-1 · §22 표 변경이라 PM 확인을 받았다([#410 PM 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/410#issuecomment-6441825700)). 기존 후보를 이어서 자동 확인하는 흐름이 아니라, 사용자가 설명을 고쳐 `SEARCHING → HINT_EXTRACT → COARSE_SEARCH`로 새 탐색을 시작하는 별도 복구 경로다. 「다음 후보를 자동으로 확인하지 않는다」(#168 [A])는 그대로다.
+- §2-5대로 command는 고치지 않고 notice만 고쳤다. 이 화면은 `EVIDENCE_REVIEW`라 역행하며 기다리던 job을 `SUPERSEDED`로 정산한다(§4).
 
 ## 4. 알려진 한계
 
@@ -41,10 +42,8 @@
 
 ## 6. 테스트
 
-`tests/case/test_edit_hint_command.py` — 결과 없음에서 `HINT_EXTRACT` 재발주 · 역행 · 원문 · hints · `case_rev` · 세대, 반영 뒤 첫 탐색, 빈 설명 바로 탐색 · 예산, `hint_unclear` notice action과 해제, 단서 구조화 중 중단의 출구, 탐색 근거가 있는 중단은 `RETRY_SEARCH`만, 버튼 없는 화면 · 분석 진행 중 `not_allowed`, `invalid_payload` · `stale_revision`, 타임라인 실패 시 저장 안 함, 선택 뒤 역행(aggregate), `EVIDENCE_REVIEW`에서 고치면 기다리던 Fine을 `SUPERSEDED`로 정산 · 역행 없는 경로는 정산 안 함, `INTAKE` 거부.
+`tests/case/test_edit_hint_command.py` — 위반 미관찰에서 역행 · 재구조화, 결과 없음에서 `HINT_EXTRACT` 재발주 · 역행 · 원문 · hints · `case_rev` · 세대, 반영 뒤 첫 탐색, 빈 설명 바로 탐색 · 예산, `hint_unclear` notice action과 해제, 단서 구조화 중 중단의 출구, 탐색 근거가 있는 중단은 `RETRY_SEARCH`만, 버튼 없는 화면 · 분석 진행 중 `not_allowed`, `invalid_payload` · `stale_revision`, 타임라인 실패 시 저장 안 함, 선택 뒤 역행(aggregate), `EVIDENCE_REVIEW`에서 고치면 기다리던 Fine을 `SUPERSEDED`로 정산 · 역행 없는 경로는 정산 안 함, `INTAKE` 거부.
 
 ## 7. 남은 것
 
-- 위반 미관찰에 싣기(§3, PM).
-- CaseView 계약 B§7 `EDIT_HINT` 행 개정 web 확인(#410).
-- web: `actionIntent.ts`의 `EDIT_HINT`(지금 `LOCAL_INPUT`)를 이 command로 보내기 · `ApiFlow.tsx` 입력 화면(web 소유).
+- web: 위반 미관찰 화면(`NotObservedScreen.tsx`)에 notice의 `EDIT_HINT`를 「설명 고치기」로 그리기(web 소유). command 연결과 입력 화면은 #418에서 끝났다.

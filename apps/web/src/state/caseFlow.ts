@@ -59,7 +59,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
   }
 
   /** `running_jobs`가 비어 있으면 멈춘다 — 그것이 「case가 더 기다리지 않는다」다(§5.4). */
-  // ponytail: 고정 간격이다 — 오래 걸리는 분석에서 서버 부하가 보이면 간격을 점점 늘린다(backoff).
+  // 고정 간격이다 — 오래 걸리는 분석에서 서버 부하가 보이면 간격을 점점 늘린다(backoff).
   function schedule() {
     clearTimeout(timer)
     timer = undefined
@@ -100,7 +100,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
   }
 
   /** 파일 하나. 성공 · 실패를 `uploads`에 남기고 다음 파일로 계속한다(core-user-flow §23). */
-  // ponytail: 실패한 파일을 다시 올리는 동작은 두지 않는다 — 사용자가 다시 고르면 같은 case에 이어 올린다(`addFiles`).
+  // 실패한 파일을 다시 올리는 동작은 두지 않는다 — 사용자가 다시 고르면 같은 case에 이어 올린다(`addFiles`).
   async function upload(caseId: string, index: number, file: File) {
     const before = state.view?.manifest_summary.file_count ?? 0
     patchUpload(index, 'UPLOADING')
@@ -162,7 +162,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
     if (!res.caseView && unknownOutcome(res.status)) {
       // 반영 여부를 모르면 다시 보내지 않고 먼저 읽는다(§3.4). 읽는 동안 `busy`를 풀지 않는다 —
       // 그 사이 같은 버튼이 command를 다시 보내면 두 번 반영될 수 있다.
-      // ponytail: 읽기도 실패하면 끝내 모른 채 버튼을 풀어 준다 — 간격을 두고 계속 읽는 것은 실서버가 생긴 뒤에.
+      // 읽기도 실패하면 끝내 모른 채 버튼을 풀어 준다 — 간격을 두고 계속 읽는 것은 실서버가 생긴 뒤에.
       set({ error: res.error })
       const res2 = await api.getView(caseId)
       if (state.caseId !== caseId) return
