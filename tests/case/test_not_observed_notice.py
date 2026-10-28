@@ -73,7 +73,7 @@ def test_notice_shape_matches_contract():
         "severity": "INFO",
         "blocking": False,
         "message_key": "notice.visual_event_not_observed",
-        "actions": [],
+        "actions": ["EDIT_HINT"],
     }
 
 

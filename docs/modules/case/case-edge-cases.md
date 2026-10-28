@@ -59,7 +59,7 @@
 | 실패 뒤 사용자가 번호판을 직접 입력 | 그 값으로 Package까지 가고 실패 notice를 거둔다 | `DECIDED` | #235 E-1 결정 · case 후속 코드는 계약 반영 PR 뒤 |
 | 화면 시각 판독: overlay 없음 · 판단 불가 · OCR 실패 | `readout.overlay_*` 3종(INFO) — 「시각이 없다」와 「확인 못 함」을 섞지 않는다 | `VERIFIED` | `test_overlay_notices.py` |
 | Fine 실행 실패(재시도 소진) | evidence가 없을 때 `search.visual_verify_failed`(ERROR · blocking), 출구는 「다른 후보 보기」 | `VERIFIED` | `test_visual_verify_failed_notice.py` · 8-14 |
-| Fine 음성(위반 관찰 안 됨) | `evidence.visual_event_not_observed`(INFO). 다음 후보를 자동으로 확인하지 않는다 | `VERIFIED` | `test_not_observed_notice.py` · #168 [A] |
+| Fine 음성(위반 관찰 안 됨) | `evidence.visual_event_not_observed`(INFO, `actions:[EDIT_HINT]` — 설명 고쳐 새 탐색, #410). 다음 후보를 자동으로 확인하지 않는다 | `VERIFIED` | `test_not_observed_notice.py` · #168 [A] |
 | Fine `UNCERTAIN` → 사용자 응답 대기 | `case.situation_response_pending`(INFO). 응답 전 Package 없음 | `VERIFIED` | `test_await_situation_response.py` · #165 · #171 |
 | 응답 대기 중 독립 관찰값(번호판 등)을 먼저 보여 줌 | `evidence.record_id: null` 부분 투영 | `DECIDED` | #239 case 결정 · web 확인(2026-10-07) · evidence 함수 대기 |
 | case가 Fine을 기다리다 멈췄는데 attempt 2가 아직 실행 중 | 화면 표시 미정 | `PENDING` | #276 후속 |
