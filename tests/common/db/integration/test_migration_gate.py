@@ -2,14 +2,12 @@
 
 import importlib.util
 import json
-import os
-import subprocess
-import sys
 from xml.etree import ElementTree
 
 import pytest
 
 from mysql_report_mutations import copy_parameter_evidence, omit_evidence_nodes
+from tests.ci_orchestration import load_evidence
 
 from migration_support import ROOT
 from usage_acceptance import USAGE_CHECKS, USAGE_PARAMETERS
@@ -216,40 +214,20 @@ JOB_PARAMETERS = (
 )
 
 
-def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tmp_path):
-    report_path = tmp_path / "mysql.json"
-    junit_path = tmp_path / "mysql.xml"
-    env = dict(os.environ, DAESINGO_MYSQL_URL=mysql_schema_url.render_as_string(hide_password=False),
-               DAESINGO_REQUIRE_MYSQL="1", PYTHONDONTWRITEBYTECODE="1",
-               RT12_CATALOG_EVIDENCE=str(tmp_path / 'event-catalog.json'))
-    # Exclude this test to avoid recursion. Use a separate disposable base schema
-    # so legacy Case initialization cannot alter the parent suite's database.
-    result = subprocess.run(
-        [sys.executable, "-B", "-X", "utf8", "-m", "pytest", "tests/e2e_runtime", "tests/api", "tests/recording/test_recording_repository_mysql.py", "tests/recording/test_recording_repository_compatibility_mysql.py", "tests/common/db/integration", "tests/common/jobs", "tests/common/usage",
-         "tests/worker/test_worker_mysql.py", "tests/worker/test_produced_store_mysql.py", "tests/worker/test_reflection_mysql.py",
-         "tests/worker/test_heartbeat_mysql.py",
-         "tests/worker/test_cancel_checkpoint_mysql.py",
-         "tests/worker/test_sweep_worker_mysql.py",
-         "tests/worker/test_redelivery_mysql.py", "tests/worker/test_exhaustion_mysql.py", "tests/worker/test_exhaustion_boundaries_mysql.py", "tests/worker/test_exhaustion_cancel_race_mysql.py", "tests/worker/test_exhaustion_exact_id_mysql.py",
-         "tests/worker/test_usage_worker_mysql.py",
-         "tests/worker/test_usage_reconciliation_worker_mysql.py",
-         "tests/case/test_store_mysql.py", "tests/case/test_case_repository_contract.py",
-         "--ignore=tests/common/db/integration/test_migration_gate.py", "-m", "mysql", "-q",
-          "-p", "no:cacheprovider", "-p", "tests.observability_capture", f"--basetemp={tmp_path / 'child'}",
-         f"--mysql-report={report_path}", f"--junitxml={junit_path}"],
-        # This repeats the complete MySQL inventory, including migrations for
-        # each fixture. Allow slower local servers without relaxing the gate.
-        env=env, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=900,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+def test_actual_report_rejects_each_missing_migration_check(tmp_path):
+    import os
+
+    # The CI runner executes the full canonical inventory once, then supplies
+    # its immutable reports from the same invocation/revision. Missing evidence
+    # is an error, never a skip or a synthetic-report fallback.
+    report, junit_path, catalog = load_evidence(
+        os.environ['DAESINGO_MYSQL_GATE_EVIDENCE'], os.environ['DAESINGO_MYSQL_GATE_TOKEN'])
     spec = importlib.util.spec_from_file_location("real_report_gate", ROOT / "scripts/check_mysql_test_report.py")
     gate = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gate)
     gate.validate_report(report)
     gate.validate_junit(junit_path, report)
     from daesingo.common.logging.catalog import EVENTS
-    catalog = json.loads((tmp_path / 'event-catalog.json').read_text(encoding='utf-8'))
     assert catalog['violations'] == 0
     assert set(EVENTS) <= set(catalog['events']), 'catalog events not exercised by actual emitters'
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
@@ -366,3 +344,5 @@ def test_actual_report_rejects_each_missing_migration_check(mysql_schema_url, tm
                            ("api_start_analysis", "start-analysis-omissions.json"), ("recording", "recording-omissions.json"), ("api_upload", "upload-omissions.json"), ("produced_store", "produced-omissions.json"), ("api_frame", "frame-omissions.json"), ("api_asset", "asset-omissions.json"), ("observability", "observability-omissions.json")):
         subset = [item for item in omissions if item["identity"][0] == role]
         (tmp_path / filename).write_text(json.dumps(subset, indent=2), encoding="utf-8")
+    print(f'Actual-report rejection evidence: {len(mutations)} parameter mutations, '
+          f'{len(omissions)} metadata/family omissions; catalog {len(catalog["events"])} events')
