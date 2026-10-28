@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
-import type { CaseView } from '../contracts/caseView'
-import { noticeMessage } from '../contracts/labels'
+import { isAction, type Action, type CaseView } from '../contracts/caseView'
+import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 import { CandidatesScreen } from './CandidatesScreen'
 
 // 음성 결과(#168 [A]) — 가장 유력한 후보에서 위반이 관찰되지 않았다. 결과 화면의
@@ -13,12 +13,20 @@ export function NotObservedScreen(props: {
   view: CaseView
   onSelect?: (candidateId: string) => void
   restyled?: boolean
-  /** 처음부터 다시 — 이 화면에는 case가 실은 다시 찾기 동작이 없다(출구는 「다른 후보 보기」, core-user-flow §6).
-   *  다른 후보가 없으면 막다른 화면이 되지 않게 주 버튼, 있으면 후보 고르기 다음 순위라 보조 버튼이다 */
+  /** 처음부터 다시 — 서버 action과 따로 언제나 두는 고정 출구다(#410) */
   onNewReport?: () => void
+  /** notice가 실은 동작(`설명 고치기` = `EDIT_HINT`, #431)을 연다. 없으면(시연) 버튼을 그리지 않는다 */
+  onAction?: (noticeCode: string, action: Action) => void
+  canRun?: (action: Action) => boolean
 }): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
   const r = props.restyled
+  const code = 'evidence.visual_event_not_observed'
+  const { onAction, canRun } = props
+  const actions =
+    onAction && canRun ? (props.view.notices.find((n) => n.code === code)?.actions.filter(isAction).filter(canRun) ?? []) : []
+  // 주 출구는 「다른 후보 보기」(core-user-flow §6). 다른 후보가 없을 때만 첫 버튼을 강조해 막다른 화면을 피한다
+  const cls = (i: number) => `rs-btn ${others === 0 && i === 0 ? 'pri' : 'sec'}`
   return (
     <div className="stack">
       {/* 기존 모양일 때 감싸는 div는 display: contents라 .stack 간격이 그대로다 */}
@@ -32,7 +40,12 @@ export function NotObservedScreen(props: {
           </p>
           {r && props.onNewReport && (
             <div className="state-actions">
-              <button type="button" className={`rs-btn ${others > 0 ? 'sec' : 'pri'}`} onClick={props.onNewReport}>
+              {actions.map((a, i) => (
+                <button key={a} type="button" className={cls(i)} onClick={() => onAction!(code, a)}>
+                  {ACTION_LABELS[a]}
+                </button>
+              ))}
+              <button type="button" className={cls(actions.length)} onClick={props.onNewReport}>
                 처음으로
               </button>
             </div>
