@@ -3715,3 +3715,68 @@ PR제외이고 staging·commit·push·PR생성 없이 미커밋·미스테이징
 작은subset8.516→4.515초는 전체CI wall개선 증거가 아니며 새 Ubuntu CI/전체regression/
 원격timeout 해소·merge준비는 판정보류다. 공유WSL relay listener 잔여를 공개하고
 제품/checker 무변경·branch/HEAD동일·indexempty를 다시 확인한 뒤 미커밋으로 보고한다.
+
+
+## RT-10(b) INCIDENT_CLIP_BUILD 최소 slice — 2026-10-28
+
+**IN_PROGRESS · Refs #297 (RT-10(b))**.
+
+시작 시 `codex/rt10b-incident-clip-handler`와 HEAD/최신 fetch origin/develop
+`6764c8f7f6dc5ef284db3c9bff3d4d19e02bfe73` 일치, clean checkout/index를 확인했다.
+기존 checkout에서 작업했으며 새 worktree·staging·commit·push·PR 작업은 없다.
+
+[#297 Owner 확정](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6464169000)에 따라
+build의 `RecordingCapabilityError.code=INCIDENT_CLIP_BUILD_FAILED`만
+FAILED / RECORDING_INCIDENT_CLIP_BUILD_FAILED / produced=[]로 매핑한다.
+[Recording taxonomy](../modules/recording/decisions/failure-taxonomy.md)에 등재했다.
+알 수 없는 code의 문자열 합성이나 입력/checkpoint/DB/persistence 오류의 Recording
+분류를 추가하지 않았다. 원문·경로·locator·credential을 결과/로그에 넣지 않는다.
+
+공개 CaseStore.observation_input으로 고정 candidate/generation/span/fine_job_id를
+읽고 JobRecord scope와 Coarse/Fine 성공 produced의 결속을 검증한다. 조회의 짧은
+caller transaction이 connection을 반환한 뒤 실행별 Recording context에서 공개
+metadata/ownership/resolve_span/build_incident_clip을 호출하고 checkpoint·close한다.
+build는 execution당 1회다. 결과 payload는 정확히 {incident_clip_ref: ref}이며
+immutable clip ref와 별개인 기존 execution별 produced-object receipt를 사용한다.
+T1 원자 저장·COMMIT ACK 유실/rollback retry와 T2 정산/후속 발주/재전달 코드는
+바꾸지 않았다. 명시적인 Recording incident height/preset/crf가 없으면 미등록이다.
+PLATE_READ/OVERLAY_TIME_READ 및 export handler, Case/Web 표시 변경은 포함하지 않는다.
+
+구현 부재 RED36, composition/config RED8, immutable clip receipt 충돌 RED1,
+종료 중 취소 RED1, 소수 프레임 경계 RED1을 보존했다. fresh 읽기전용 reviewer의 P2
+(실제 frame coverage를 원래 요청 scope tail로 재제한)를 별도 RED1로 재현해 수정했다.
+추가 duration 좌표 우려도 RED1로 재현해 Search와 동일한 start+duration 좌표로
+수정했다. scope/run/timeline/revision 결속은 유지하고 Case span은 변경하지 않는다.
+
+최종 코드 직접 실행: focused72PASS(2.09초), 관련 offline1634PASS/기존 opt-in17SKIP/
+619deselected(169.36초), 실제 MySQL8.4.13 부분집합59PASS(268.12초)다. 이 실행들은
+서로 중복되므로 합산하지 않는다. MySQL59개/177phase/JUnit59개가 정확히 일치하고
+skip/xfail/실패0이다. 여기에는 API/Worker 별도 OS process7시나리오(10fps/30fps 실제
+clip2종)가 포함된다. 각 clip worker의 build/encode1회·providerHTTP0회·느린 경계의
+main pool checkout0을 확인했고 두 readout은 같은 ref로 QUEUED다. 실패 후 새 clip
+job의2회 호출은2execution 각각1회이며 Fine/기존 produced는 보존됐다. T1/T2 replay는
+추가 호출0이다. 과거57PASS/59PASS 및 이전 RT-10 보존 기록은 이 결과에 더하지 않는다.
+
+중간 import/API202/cleanup lock/Case retry 인자 fixture 오류와 환경별 permission/
+Python 시작 메모리 실패는 별도 보존한다. 짧은20frame 원본의 추가 probe는 Coarse
+provider 이전에 막혀 clip 성공으로 보고하지 않으며, 지원되는1초30fps 원본의
+[33,667]ms clip E2E와 구분한다. timeout/skip으로 우회하거나 Owner 제품 의미를 바꾸지 않았다.
+
+boundary·Contract fixture(62/26/104)·git diff --check PASS. 기존 workflow/mandatory
+inventory/timeout/skip·xfail/Contract 정책은 변경0이다. 전체 pytest와 전체 mandatory
+MySQL은 로컬에서 재실행하지 않았고 원격 PR CI regression/mysql/test에서 확인해야 한다.
+live provider/배포/판독·export/package E2E 및 원격 CI는 미실행이다.
+
+완료된 fresh reviewer는 구현 이력 없이 전체 delta를 읽었고 수정 후 source/test와
+보존 RED/GREEN72/XML을 재확인해 남은 제품 P1/P2/P3 없음으로 판정했다. 리뷰는
+읽기전용이며 테스트/DB/commit/push/PR 작업을 하지 않았다. 앞선 usage-limit 중단
+리뷰 시도는 완료 판정에 포함하지 않는다. merge 준비나 RT-10 전체 완료를 뜻하지 않는다.
+
+최종 DB audit는 system+전용 base 외 schema0, non-audit client0, transaction0,
+data lock0이다. 전용 컨테이너·확인한 anonymous volume을 제거했고 검증한 task root
+아래 temp21개를 제거했다. media/env/임시DB 잔여 없이 RAW/JSON/JUnit은 ignored scratch로
+보존하며 PR 제외다. 제거 endpoint의 Windows probe10035는 접속 미성립이며 즉시
+refusal/포트폐쇄 증거로 표현하지 않는다. 공유 Docker/WSL 프로세스는 종료하지 않았다.
+
+전체20개 변경 파일·호출/transaction 경계·검증/제한은
+[별도 Implementation Notes](rt10b-incident-clip-handler.md)에 기록했다.

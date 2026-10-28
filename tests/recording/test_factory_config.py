@@ -34,3 +34,28 @@ def test_bad_module_values_reject_before_any_media_invocation(key, value):
 def test_partially_configured_profile_rejects_instead_of_enabling_defaults():
     module = import_module("daesingo.recording.factory")
     with pytest.raises(ValueError): module.RecordingSettings.from_mapping({"DAESINGO_RECORDING_ANALYSIS_HEIGHT": "240"})
+
+
+def clip_mapping():
+    return {"DAESINGO_RECORDING_INCIDENT_HEIGHT": "240",
+            "DAESINGO_RECORDING_INCIDENT_PRESET": "veryfast",
+            "DAESINGO_RECORDING_INCIDENT_CRF": "23"}
+
+
+def test_clip_encoding_is_explicit_and_independent_of_analysis_profile():
+    module = import_module("daesingo.recording.factory")
+    assert module.RecordingSettings.from_mapping(mapping()).incident_encoding is None
+    settings = module.RecordingSettings.from_mapping(clip_mapping())
+    assert settings.profile_ref is None
+    assert (settings.incident_encoding.height, settings.incident_encoding.preset, settings.incident_encoding.crf) == (240, "veryfast", 23)
+
+
+@pytest.mark.parametrize("values", [
+    {"DAESINGO_RECORDING_INCIDENT_HEIGHT": "240"},
+    {**clip_mapping(), "DAESINGO_RECORDING_INCIDENT_HEIGHT": "241"},
+    {**clip_mapping(), "DAESINGO_RECORDING_INCIDENT_PRESET": "unknown"},
+    {**clip_mapping(), "DAESINGO_RECORDING_INCIDENT_CRF": "52"},
+])
+def test_invalid_clip_encoding_rejects_startup(values):
+    module = import_module("daesingo.recording.factory")
+    with pytest.raises(ValueError): module.RecordingSettings.from_mapping(values)
