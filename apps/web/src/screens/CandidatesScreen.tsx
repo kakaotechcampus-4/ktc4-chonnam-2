@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
+import { CandidateAxis } from '../components/CandidateAxis'
 import { CandidateCard } from '../components/CandidateCard'
 import { HintRecall } from '../components/HintRecall'
 import { Panel } from '../components/Panel'
@@ -21,6 +22,7 @@ export function CandidatesScreen(props: {
   return (
     <Panel title="찾은 장면">
       <HintRecall hints={props.view.hints} description={props.view.description} />
+      <CandidateAxis view={props.view} />
       <div className="cands">
         {props.view.candidates.map((c, i) => {
           const card = (

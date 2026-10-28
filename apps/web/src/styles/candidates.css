@@ -57,9 +57,8 @@
 
 .cand-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 
-/* 후보 번호. `core-user-flow.md` §8-2가 요구한 「시간축 마커와 같은 번호」의
-   자리다. 시간축이 아직 없으므로 지금은 candidates[] 배열 순서를 그대로
-   쓴다 — 점수나 시각으로 다시 매기지 않는다. */
+/* 후보 번호. `core-user-flow.md` §8-2가 요구한 「시간축 마커와 같은 번호」다
+   (CandidateAxis). candidates[] 배열 순서를 그대로 쓴다 — 점수나 시각으로 다시 매기지 않는다. */
 .cnum {
   width: 24px; height: 24px; flex: 0 0 24px;
   border-radius: 999px;
@@ -150,3 +149,18 @@
 }
 .other-cands > summary:hover { color: var(--ink); }
 .other-cands-body { padding: 0 12px 12px; }
+
+/* 후보 비교 시간축(CandidateAxis). 막대 아래 번호 원이 연결선으로 위치를 가리킨다.
+   겹치는 원은 --row만큼 아래로 내려가고 연결선이 그만큼 길어진다(1단계 목업 규칙). */
+.cand-axis { position: relative; margin: 4px 0 8px; }
+.cand-axis-bar { height: 8px; border-radius: 999px; background: var(--rs-line, #d2d2d7); }
+.cand-axis-pins { position: relative; }
+.cand-axis-pin { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.cand-axis-pin i { display: block; width: 2px; height: calc(8px + var(--row, 0) * 34px); background: var(--rs-line-strong, #86868b); }
+.cand-axis-pin b {
+  width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center;
+  background: #fff; border: 1.5px solid var(--rs-line-strong, #86868b); color: var(--rs-ink, #1d1d1f);
+  font-size: 13px; font-weight: 700;
+}
+.cand-axis-pin.sel i { background: var(--rs-ink, #1d1d1f); }
+.cand-axis-pin.sel b { background: var(--rs-ink, #1d1d1f); border-color: var(--rs-ink, #1d1d1f); color: #fff; }

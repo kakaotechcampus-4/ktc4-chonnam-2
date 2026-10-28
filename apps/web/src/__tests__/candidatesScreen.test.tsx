@@ -11,6 +11,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
+import { axisRows } from '../components/CandidateAxis'
 import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 import { EvidenceScreen } from '../screens/EvidenceScreen'
@@ -255,5 +256,53 @@ describe('결과 화면에 「다른 후보 보기」가 붙는다', () => {
     const v = withOther((x) => x.stage === 'READY' && x.package !== null)
     const { container } = render(<HandoffScreen view={v} />)
     expect(container.querySelector('details.other-cands')).not.toBeNull()
+  })
+})
+
+describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
+  it('겹치는 원만 아래 줄로 내린다', () => {
+    // 폭 1000px에서 원 28px + 간격 6px = 3.4%보다 가까우면 겹친다
+    expect(axisRows([10, 12, 50], 1000)).toEqual([0, 1, 0])
+    expect(axisRows([10, 11, 12], 1000)).toEqual([0, 1, 2])
+    expect(axisRows([10, 30, 60], 1000)).toEqual([0, 0, 0])
+  })
+
+  it('번호는 카드 번호와 같고 위치는 marker_ms / timeline_duration_ms다. stale(marker_ms=null)은 마커가 없다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', selected: true, marker_ms: 300000 }),
+        candidate({ candidate_id: 'b', marker_ms: null, stale_revision: true }),
+        candidate({ candidate_id: 'c', marker_ms: 150000 }),
+      ]),
+      timeline_duration_ms: 600000,
+    }
+    const { container } = render(<CandidatesScreen view={v} />)
+    const pins = [...container.querySelectorAll<HTMLElement>('.cand-axis-pin')].map((p) => [p.textContent, p.style.left, p.classList.contains('sel')])
+    expect(pins).toEqual([
+      ['3', '25%', false],
+      ['1', '50%', true],
+    ])
+  })
+
+  it('case가 rank를 주면 카드와 같은 rank로 번호를 단다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', rank: 2, marker_ms: 100000 }),
+        candidate({ candidate_id: 'b', rank: 1, marker_ms: 400000 }),
+      ]),
+      timeline_duration_ms: 600000,
+    }
+    const { container } = render(<CandidatesScreen view={v} />)
+    const pins = [...container.querySelectorAll('.cand-axis-pin')].map((p) => p.textContent)
+    const cards = [...container.querySelectorAll('.cnum')].map((n) => n.textContent)
+    expect(pins).toEqual(['2', '1'])
+    expect(cards).toEqual(['2', '1'])
+  })
+
+  it('시간축 길이가 없으면(null · 미전달) 그리지 않는다', () => {
+    const c = [candidate({ candidate_id: 'a', marker_ms: 1000 })]
+    expect(render(<CandidatesScreen view={{ ...view(c), timeline_duration_ms: null }} />).container.querySelector('.cand-axis')).toBeNull()
+    cleanup()
+    expect(render(<CandidatesScreen view={view(c)} />).container.querySelector('.cand-axis')).toBeNull()
   })
 })
