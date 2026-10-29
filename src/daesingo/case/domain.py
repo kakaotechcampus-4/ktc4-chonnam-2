@@ -323,6 +323,12 @@ class CaseAggregate:
         return waiting
 
     @property
+    def search_awaited(self) -> bool:
+        """기다리는 탐색 job(`HINT_EXTRACT` · `COARSE_SEARCH`)이 있다 — 「다시 찾기」로 새 탐색이 접수돼 결과를 기다리는 중을
+        포함한다(#426). 저장하지 않고 정산 기록에서 계산한다."""
+        return any(r["kind"] in ANALYSIS_JOB_KINDS for r in self.waiting_job_records())
+
+    @property
     def analysis_stopped(self) -> bool:
         """`SEARCHING`이고, 기다리는 탐색 job이 없고, 가장 나중 탐색 job이 사용자 중단으로 끝났다. 저장하지 않고
         JobRecord와 정산 기록에서 계산한다 — 「이어서 찾기」로 새 job이 생기면 저절로 풀린다."""
