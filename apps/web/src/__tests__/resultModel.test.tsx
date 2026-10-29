@@ -144,6 +144,9 @@ describe('프레임 이미지', () => {
     fireEvent.error(img)
     expect(r.container.querySelector('img')).toBeNull()
     expect(r.container.textContent).toBe('자리')
+    // 자리 표시가 없으면 칸 자체를 그리지 않는다(근거 장면 — 있을 때만 보인다)
+    r.rerender(<FrameSlot className="f" src={null} alt="장면" />)
+    expect(r.container.querySelector('.f')).toBeNull()
   })
 
   it('번호판 확인 화면의 장면은 대표 썸네일(preview_ref)이 아니라 번호판을 읽은 frame(plate_preview_ref)이다. frameSrc가 없으면(시연) 그리지 않는다', () => {

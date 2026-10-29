@@ -266,11 +266,8 @@ export function ResultScreen(props: {
           <p className="res-situation-text">
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
-          {/* 근거 장면은 FrameRef다. 값이 없으면(null) 자리만 둔다 */}
-          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면">
-            <Film size={26} strokeWidth={1.5} aria-hidden />
-            <span>근거 장면 준비 중</span>
-          </FrameSlot>
+          {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
+          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (

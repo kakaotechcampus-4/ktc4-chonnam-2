@@ -657,6 +657,9 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-situation > .res-sec-head { grid-column: 1 / -1; }
 .res-situation > .res-frame { grid-column: 1; grid-row: 2 / span 4; }
 .res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 2; justify-self: start; }
+/* 근거 장면이 없으면 한 칸으로 — 왼쪽 자리를 비워 두지 않는다 */
+.res-situation:not(:has(> .res-frame)) { grid-template-columns: minmax(0, 1fr); }
+.res-situation:not(:has(> .res-frame)) > :not(.res-sec-head) { grid-column: 1; }
 .res-situation-text { margin: 0; font-size: 20px; font-weight: 500; line-height: 1.55; overflow-wrap: anywhere; }
 .res-pending { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 16px 0; list-style: none; border-top: 1px solid var(--rs-line-soft); border-bottom: 1px solid var(--rs-line-soft); justify-self: stretch !important; }
 .res-pending li { display: flex; gap: 16px; }
