@@ -163,11 +163,11 @@ it('요청이 실패하면 화면은 그대로 두고 알림만 띄운다', asyn
   expect(await findByText('분석 중단')).toBeTruthy()
 })
 
-it('command가 없는 알림 버튼(직접 입력류)은 보내지 않고 안내한다', async () => {
-  const stopped = view({ case_rev: 3, stage: 'SEARCHING', notices: [notice('case.analysis_stopped', ['MANUAL_PLATE_INPUT'])] })
+it('command가 없는 알림 버튼(시각 후보 고르기)은 보내지 않고 안내한다', async () => {
+  const stopped = view({ case_rev: 3, stage: 'SEARCHING', notices: [notice('case.analysis_stopped', ['REVIEW_TIME'])] })
   const { m, api } = setup({ get: stopped })
   const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
-  fireEvent.click(await findByText('번호판 직접 입력'))
+  fireEvent.click(await findByText('시각 확인하기'))
   await findByText('이 동작은 아직 연결되지 않았어요.')
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
@@ -353,4 +353,49 @@ it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로
   await findByText('분석 중단')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 3, { kind: 'EDIT_HINT', payload: { description: '흰 차' } })
   expect(queryByText('이 동작은 아직 연결되지 않았어요.')).toBeNull()
+})
+
+// #449 — 입력형 command. 결과 화면에서 번호판 · 시각을 직접 넣으면 새 값만 보낸다(case-command §12)
+const RESULT = SNAPSHOTS.map((s) => s.view).find((v) => v.package && v.evidence)!
+
+it('「번호판 직접 입력」은 번호판 확인 화면의 입력칸을 바로 열고, 저장하면 MANUAL_PLATE_INPUT을 보낸다', async () => {
+  const abstained = { ...RESULT, notices: [{ ...notice('evidence.plate_abstained', ['MANUAL_PLATE_INPUT']), message_key: 'notice.plate_abstained' }] }
+  const { m, api } = setup({ get: abstained })
+  m.sendCommand.mockResolvedValue(ok({ ...abstained, case_rev: abstained.case_rev + 1 }))
+  const { findByText, getByRole, getByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('번호판 직접 입력'))
+  fireEvent.change(getByRole('textbox', { name: '차량 번호' }), { target: { value: ' 12가3456 ' } })
+  fireEvent.click(getByText('저장'))
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', abstained.case_rev, { kind: 'MANUAL_PLATE_INPUT', payload: { value: '12가3456' } })
+})
+
+it('시각이 없어 묶음이 막힌 알림의 「시각 직접 입력」은 시각 입력 화면을 열고, 한국 시간 오프셋을 붙여 EDIT_EVENT_TIME을 보낸다', async () => {
+  const missing = {
+    ...RESULT,
+    notices: [{ code: 'evidence.event_time_missing', severity: 'WARN', blocking: true, message_key: 'notice.event_time_missing', actions: ['EDIT_EVENT_TIME'] } as Notice],
+  }
+  const { m, api } = setup({ get: missing })
+  m.sendCommand.mockResolvedValue(ok({ ...missing, case_rev: missing.case_rev + 1, notices: [] }))
+  const { findByText, getByLabelText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  expect(await findByText('발생 시각을 알 수 없어요. 시각을 직접 입력하면 신고자료를 완성할 수 있어요.')).toBeTruthy()
+  fireEvent.click(getByText('시각 직접 입력'))
+  fireEvent.change(getByLabelText('날짜'), { target: { value: '2026-08-24' } })
+  fireEvent.change(getByLabelText('시간'), { target: { value: '18:31' } })
+  fireEvent.click(getByText('저장'))
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', missing.case_rev, { kind: 'EDIT_EVENT_TIME', payload: { value: '2026-08-24T18:31:00+09:00' } })
+  expect(queryByText('한국 시간 기준으로 저장해요.')).toBeNull() // 결과 화면으로 돌아간다
+})
+
+it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 채운 입력 화면을 열고, 취소하면 보내지 않는다', async () => {
+  const { m, api } = setup({ get: RESULT })
+  const { findByText, getByLabelText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('시각 수정하기'))
+  // fixture 값은 2026-08-24T18:05:12+09:00
+  expect((getByLabelText('날짜') as HTMLInputElement).value).toBe('2026-08-24')
+  expect((getByLabelText('시간') as HTMLInputElement).value).toBe('18:05:12')
+  fireEvent.click(getByText('취소'))
+  await findByText('시각 수정하기')
+  expect(m.sendCommand).not.toHaveBeenCalled()
 })
