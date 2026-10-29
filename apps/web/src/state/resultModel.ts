@@ -23,12 +23,10 @@ export function splitDateTime(value: string | null): { date: string | null; time
  *   none      — 아직 만들지 않음(artifact_ref 없음)
  *   preparing — 만드는 작업이 진행 중(running_jobs의 REPORT_VIDEO_EXPORT)
  *   failed    — 만들기 실패 notice
- *   unlinked  — 영상은 있지만(artifact_ref) 파일로 받을 경로가 아직 없다
- * 「다운로드 가능」 상태는 없다 — artifact_ref를 파일로 바꾸는 API가 아직 없다
- * (src/daesingo/api 미구현, 전달 방식 Pending: contract-source-asset-media-stream §9-6).
- * 경로가 생기면 여기서 ready를 돌려주고 화면이 다운로드 버튼을 연다.
+ *   ready     — 영상이 있다(artifact_ref). `GET /cases/{case_id}/assets/{artifact_ref}`로 받는다
+ * 실제로 받을 수 있는지는 받아 봐야 안다(서버가 UNAVAILABLE을 돌려주면 화면이 실패로 바꾼다).
  */
-export type ReportVideoState = 'none' | 'preparing' | 'failed' | 'unlinked'
+export type ReportVideoState = 'none' | 'preparing' | 'failed' | 'ready'
 
 export function reportVideoState(view: CaseView): ReportVideoState {
   if (view.running_jobs.some((j) => j.kind === 'REPORT_VIDEO_EXPORT' || j.label_key === 'job.report_video_export'))
@@ -36,7 +34,7 @@ export function reportVideoState(view: CaseView): ReportVideoState {
   if (view.notices.some((n) => n.code === 'recording.report_video_export_failed')) return 'failed'
   // 「아직 만들지 않음」 notice가 있으면 참조값이 남아 있어도 받을 영상이 없다
   if (!view.package?.artifact_ref || view.notices.some((n) => n.code === 'case.report_video_not_generated')) return 'none'
-  return 'unlinked'
+  return 'ready'
 }
 
 /** 지금 기준 후보의 id — 결과가 이 후보 것인지 대조하는 데 쓴다 */

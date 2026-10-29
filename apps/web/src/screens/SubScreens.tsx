@@ -3,6 +3,7 @@ import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
 import { CandidateCard } from '../components/CandidateCard'
+import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
 import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
@@ -67,8 +68,8 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 }
 
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
-// 두 이미지는 계약상 FrameRef(evidence.preview_ref · plate_preview_ref)로만 와서 아직 그릴 수 없다 —
-// ref로 이미지를 가져오는 경로가 생기면(#47) 자리에 넣는다.
+// 두 이미지는 FrameRef(evidence.preview_ref · plate_preview_ref)다. 값이 없으면(null) 자리만 둔다.
+// 번호판 확대는 frame 전체를 그린다 — 현재 CaseView에는 bbox가 없다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
@@ -82,6 +83,8 @@ export function PlateCheck(props: {
   startEditing?: boolean
   onBack: () => void
   onEdit?: (plate: string) => void
+  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -106,24 +109,25 @@ export function PlateCheck(props: {
       </SubPage>
     )
   const plate = evidence.plate_display
+  const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const src = sourceLabel(plate.source_label_key)
   const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
         <figure className="plate-fig plate-scene">
-          <div className="plate-frame">
+          <FrameSlot className="plate-frame" src={frame(evidence.preview_ref)} alt="번호판을 읽은 장면">
             <Film size={26} strokeWidth={1.5} aria-hidden />
             <span>장면 이미지 준비 중</span>
-          </div>
+          </FrameSlot>
           <figcaption>번호판을 읽은 장면</figcaption>
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
-            <div className="plate-frame plate-crop">
+            <FrameSlot className="plate-frame plate-crop" src={frame(evidence.plate_preview_ref)} alt="번호판 확대">
               <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>번호판 이미지 준비 중</span>
-            </div>
+            </FrameSlot>
             <figcaption>번호판 확대</figcaption>
           </figure>
           <section className="plate-value" aria-labelledby="plate-k">
