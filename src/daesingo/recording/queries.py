@@ -17,3 +17,11 @@ class RecordingFacts:
     def list_case_asset_facts(self, case_id):
         with RecordingService(self.repository) as service:
             return [c.model_dump(mode="json") for c in service.list_case_asset_facts(case_id)]
+
+    def get_derived_asset(self, ref):
+        with RecordingService(self.repository) as service:
+            return service.get_derived_asset(ref).model_dump(mode="json")
+
+    def get_export_transform(self, ref):
+        with RecordingService(self.repository) as service:
+            return service.get_export_transform(ref)

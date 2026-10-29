@@ -3715,3 +3715,277 @@ PR제외이고 staging·commit·push·PR생성 없이 미커밋·미스테이징
 작은subset8.516→4.515초는 전체CI wall개선 증거가 아니며 새 Ubuntu CI/전체regression/
 원격timeout 해소·merge준비는 판정보류다. 공유WSL relay listener 잔여를 공개하고
 제품/checker 무변경·branch/HEAD동일·indexempty를 다시 확인한 뒤 미커밋으로 보고한다.
+
+
+## RT-10(b) INCIDENT_CLIP_BUILD 최소 slice — 2026-10-28
+
+**IN_PROGRESS · Refs #297 (RT-10(b))**.
+
+시작 시 `codex/rt10b-incident-clip-handler`와 HEAD/최신 fetch origin/develop
+`6764c8f7f6dc5ef284db3c9bff3d4d19e02bfe73` 일치, clean checkout/index를 확인했다.
+기존 checkout에서 작업했으며 새 worktree·staging·commit·push·PR 작업은 없다.
+
+[#297 Owner 확정](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6464169000)에 따라
+build의 `RecordingCapabilityError.code=INCIDENT_CLIP_BUILD_FAILED`만
+FAILED / RECORDING_INCIDENT_CLIP_BUILD_FAILED / produced=[]로 매핑한다.
+[Recording taxonomy](../modules/recording/decisions/failure-taxonomy.md)에 등재했다.
+알 수 없는 code의 문자열 합성이나 입력/checkpoint/DB/persistence 오류의 Recording
+분류를 추가하지 않았다. 원문·경로·locator·credential을 결과/로그에 넣지 않는다.
+
+공개 CaseStore.observation_input으로 고정 candidate/generation/span/fine_job_id를
+읽고 JobRecord scope와 Coarse/Fine 성공 produced의 결속을 검증한다. 조회의 짧은
+caller transaction이 connection을 반환한 뒤 실행별 Recording context에서 공개
+metadata/ownership/resolve_span/build_incident_clip을 호출하고 checkpoint·close한다.
+build는 execution당 1회다. 결과 payload는 정확히 {incident_clip_ref: ref}이며
+immutable clip ref와 별개인 기존 execution별 produced-object receipt를 사용한다.
+T1 원자 저장·COMMIT ACK 유실/rollback retry와 T2 정산/후속 발주/재전달 코드는
+바꾸지 않았다. 명시적인 Recording incident height/preset/crf가 없으면 미등록이다.
+PLATE_READ/OVERLAY_TIME_READ 및 export handler, Case/Web 표시 변경은 포함하지 않는다.
+
+구현 부재 RED36, composition/config RED8, immutable clip receipt 충돌 RED1,
+종료 중 취소 RED1, 소수 프레임 경계 RED1을 보존했다. fresh 읽기전용 reviewer의 P2
+(실제 frame coverage를 원래 요청 scope tail로 재제한)를 별도 RED1로 재현해 수정했다.
+추가 duration 좌표 우려도 RED1로 재현해 Search와 동일한 start+duration 좌표로
+수정했다. scope/run/timeline/revision 결속은 유지하고 Case span은 변경하지 않는다.
+
+최종 코드 직접 실행: focused72PASS(2.09초), 관련 offline1634PASS/기존 opt-in17SKIP/
+619deselected(169.36초), 실제 MySQL8.4.13 부분집합59PASS(268.12초)다. 이 실행들은
+서로 중복되므로 합산하지 않는다. MySQL59개/177phase/JUnit59개가 정확히 일치하고
+skip/xfail/실패0이다. 여기에는 API/Worker 별도 OS process7시나리오(10fps/30fps 실제
+clip2종)가 포함된다. 각 clip worker의 build/encode1회·providerHTTP0회·느린 경계의
+main pool checkout0을 확인했고 두 readout은 같은 ref로 QUEUED다. 실패 후 새 clip
+job의2회 호출은2execution 각각1회이며 Fine/기존 produced는 보존됐다. T1/T2 replay는
+추가 호출0이다. 과거57PASS/59PASS 및 이전 RT-10 보존 기록은 이 결과에 더하지 않는다.
+
+중간 import/API202/cleanup lock/Case retry 인자 fixture 오류와 환경별 permission/
+Python 시작 메모리 실패는 별도 보존한다. 짧은20frame 원본의 추가 probe는 Coarse
+provider 이전에 막혀 clip 성공으로 보고하지 않으며, 지원되는1초30fps 원본의
+[33,667]ms clip E2E와 구분한다. timeout/skip으로 우회하거나 Owner 제품 의미를 바꾸지 않았다.
+
+boundary·Contract fixture(62/26/104)·git diff --check PASS. 기존 workflow/mandatory
+inventory/timeout/skip·xfail/Contract 정책은 변경0이다. 전체 pytest와 전체 mandatory
+MySQL은 로컬에서 재실행하지 않았고 원격 PR CI regression/mysql/test에서 확인해야 한다.
+live provider/배포/판독·export/package E2E 및 원격 CI는 미실행이다.
+
+완료된 fresh reviewer는 구현 이력 없이 전체 delta를 읽었고 수정 후 source/test와
+보존 RED/GREEN72/XML을 재확인해 남은 제품 P1/P2/P3 없음으로 판정했다. 리뷰는
+읽기전용이며 테스트/DB/commit/push/PR 작업을 하지 않았다. 앞선 usage-limit 중단
+리뷰 시도는 완료 판정에 포함하지 않는다. merge 준비나 RT-10 전체 완료를 뜻하지 않는다.
+
+최종 DB audit는 system+전용 base 외 schema0, non-audit client0, transaction0,
+data lock0이다. 전용 컨테이너·확인한 anonymous volume을 제거했고 검증한 task root
+아래 temp21개를 제거했다. media/env/임시DB 잔여 없이 RAW/JSON/JUnit은 ignored scratch로
+보존하며 PR 제외다. 제거 endpoint의 Windows probe10035는 접속 미성립이며 즉시
+refusal/포트폐쇄 증거로 표현하지 않는다. 공유 Docker/WSL 프로세스는 종료하지 않았다.
+
+전체20개 변경 파일·호출/transaction 경계·검증/제한은
+[별도 Implementation Notes](rt10b-incident-clip-handler.md)에 기록했다.
+
+
+### RT-10(b) Readout handlers — 2026-10-29 KST
+
+**IN_PROGRESS · Refs #297 (RT-10(b))**
+
+Existing checkout `codex/rt10b-readout-handlers` started clean; HEAD and
+origin/develop both `debc783266d011ab46b102020c8d696a7dbd818e` (PR #440).
+Issue #297 Readout/Runtime Owner usage and A decisions were directly checked.
+No new branch/worktree, staging, commit, push, PR or Issue mutation was performed.
+
+PLATE_READ and OVERLAY_TIME_READ now use detached public Case fixed inputs,
+validate case/job/kind/candidate/generation/scope/durable clip, open an explicit
+execution-local OCR/Recording context and invoke only their matching Readout
+public function once. Provider invocation observes zero checked-out main-engine
+connections. Recording lookup uses public get_incident_clip and closes per
+execution; checkpoints surround input/invocation/resource boundaries.
+
+Each invocation issues a fresh rr_ ID, begins usage with that exact planned
+readout_run, passes the same ID to Readout, finishes usage, prepares one contract
+JSON ProducedObject and returns it to existing T1/reconciliation. FAILED Runs
+are preserved with null result and READOUT_INFRA; PARTIAL, abstain, NOT_APPLICABLE
+and both UNKNOWN branches remain successful. Runtime ValueError/DB/checkpoint/
+payload/context/cancel/usage errors are not recast as Readout failures. The
+ledger remains authoritative; Run usage_refs stays derived. No pre-T1 finalize,
+common/runtime port/schema or migration extension was made.
+
+Owner-confirmed usage labels/pricing/zero KRW, clip duration (unknown=null), sink
+occurred_at and Run-derived latency are applied. Before T1, terminal recovery
+without the planned durable Run resolves RUN_NOT_PRODUCED; after T1 it links
+the stored readout_run. T1 deadlock/receipt conflict/lost COMMIT and reconciliation
+replay do not invoke OCR or duplicate Final usage. Rollback followed by an
+actual STALE new attempt creates a fresh Run. Both Case jobs retain the same
+clip; both T2 writes were deliberately rolled back and then redelivered using
+durable payloads after provider processes exited. CaseView/StoredObservationAdapter
+restore both observations and distinguish all three overlay notice meanings.
+
+Direct RED→GREEN: missing handler25 FAIL→25 PASS; inputs/composition28 FAIL plus
+1 pre-existing default PASS→combined57 PASS. Final focused boundary/reselection/
+new-generation coverage69 PASS (2.33s). Initial test data enum/OCR fixture errors
+were corrected against public contracts and are not product fixes. The initial
+MySQL16 PASS/2 FAIL was a test's incorrect already-STALE retry seed; real lease
+expiry/sweep produced18 PASS. A process timeout was traced to a test's Plate-first
+assumption; the test follows Runtime available_at/execution_id order without
+changing timeout or orchestration policy. These failed runs remain in ignored RAW.
+
+Preserved direct evidence from before the usage-limit interruption: new handler
+MySQL18 PASS/54 phases (31.31s), existing reconciliation30 PASS/90 phases (60.20s).
+Product code remained unchanged across that interruption. Resume direct evidence:
+related Worker/Readout/Case/Recording/Search/jobs/usage non-MySQL selection2254
+PASS/48 FAIL/21 existing SKIP/831 deselected (231.81s), followed by **only those
+48 failures** PASS48/48 with task TEMP/TMP outside sandbox restrictions (57.83s).
+This is not one all-green full-suite execution. Existing skips cover missing
+typer/private real-video opt-ins; existing TestClient and malformed-usage
+serializer warnings are recorded, not suppressed.
+
+Related actual MySQL Search/clip/usage/produced/Case49 PASS/147 phases (123.37s).
+Full HINT→COARSE→FINE→CLIP→two Readout separate API/Worker process E2E6 PASS/18
+phases (248.37s), including success/abstain/three overlay notice branches/FAILED.
+Existing process normal/hint/fractional clip3 PASS/9 phases (56.88s). MySQL8.4.13
+preflight and scoped JSON/JUnit setup/call/teardown agreement passed; no skip or
+xfail in those subsets. Mandatory inventory validation was not claimed for a subset.
+
+Boundary0; Contract fixtures62/26/104 PASS; diff whitespace check PASS. Existing
+workflow/inventory/skip/xfail/30-minute/900-second policies are unchanged. Full
+local pytest/full mandatory MySQL/remote CI are not run; final full regression
+belongs to remote regression/mysql/test jobs. Live Paddle/model download/Linux
+deployment latency and export/package completeness remain unverified. Default
+production registration remains absent unless an OCR factory is explicitly supplied.
+
+Initial fresh read-only reviewer inherited no implementation history, rechecked
+Owner decisions and ran focused54 PASS independently; no confirmed product
+P1/P2/P3. Final evidence/docs/resource recheck is recorded in the follow-up below.
+No reviewer finding has been silently downgraded or deferred as fixed.
+
+The exact13-file intended deliverable set, invocation/transaction/payload mapping,
+direct versus preserved evidence and remaining operational limits are in
+[Readout handler Implementation Notes](rt10b-readout-handlers.md). Internal plan,
+RAW/JSON/JUnit, generated media/env and disposable DB material are ignored under
+`.codex-scratch/rt10b-readout/`, excluded from PR. Final resource audit and staging
+verification follow after closing the test resources.
+
+
+RT-10(b) Readout resource follow-up: final autocommit audit excluding itself found non-audit transactions0, data locks0, other clients0 and unexpected test schemas0. Dedicated codex-rt10b-readout-mysql and its inspected anonymous volume were removed; nine verified task-child test directories were removed. RAW/JSON/JUnit/internal plan remain ignored; generated media/env/DB material was cleaned. Existing process normal/hint/fractional regression3 PASS (56.88s) and all five scoped MySQL JSON/JUnit evidence sets passed phase agreement. Original log byte prefix remains unchanged. Final same-reviewer recheck pending.
+
+
+RT-10(b) Readout final same-reviewer recheck: P1/P2/P3 none. Reviewer independently passed focused69 (3.67s), validated all five scoped MySQL JSON/JUnit sets, matched exact48 initial failures to48 passing reruns and verified original718403-byte log prefix/SHA256 against HEAD. No reviewer fix round was required. Final13 changed files/staged0; HEAD and origin/develop remain debc783266d011ab46b102020c8d696a7dbd818e. No commit/push/PR/Issue mutation. Full suites/remote CI/live Paddle remain unrun as documented. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+
+### 2026-10-29 — RT-10(b) Recording export handlers · provisional wire implementation
+
+**IN_PROGRESS · Refs #297, #47, #351.** Current branch
+`codex/rt10b-recording-export-handlers`, start HEAD
+`85dd30b91b82711a4d56bbc3ea916a3bd3c2a355`, initially clean tree/index.
+User explicitly delegates minimal reversible provisional Runtime wires under PM
+approval; #47 Owner review remains deferred. Existing Contract meanings, Evidence
+limits and #351 response-before-export timing are not redefined.
+
+Recording adds public report/plate export capabilities, actual MP4/PNG output,
+measured size, immutable DerivedAsset refs, source lineage and stored transform
+provenance. Plate relays `incident_clip_ref`, `frame_ref`, `plate_bbox_xywh`,
+`max_byte_size` (existing Evidence SoT 30_000_000 bytes). No crop_ref or
+associated_region. Request and limit are fingerprinted. Bounded in-execution
+crop/downscale distinguishes `PLATE_IMAGE_EXPORT_FAILED` from provisional
+`PLATE_IMAGE_OUTPUT_LIMIT_UNSATISFIABLE`; the latter has no same-input retry
+button. Report keeps `REPORT_VIDEO_EXPORT_FAILED` and Contract notice mapping.
+
+Case fixes input at order time in an append-only export map; command and
+observation-T2 READY gates issue once per full input after response/evidence.
+Worker detaches Recording metadata/bytes in short caller transactions, returns
+connections, invokes one capability with DB checkout0, then publishes the same
+immutable output in retryable short DML. Existing T1/ProducedObject,
+reconciliation and T2 replay avoid media invocation and duplicate DerivedAssets.
+Current-input settled products feed CaseView/Evidence; old assets remain intact.
+
+RED/GREEN: Recording missing-capability10 setup failures → actual media10PASS;
+handler/order29FAIL →29PASS; immutable-input2FAIL/12PASS → focused46PASS.
+Initial related35FAIL/1739PASS/17skip was not accepted. Product entrypoint and
+legacy READY-adapter regressions were fixed; media/default-temp permission
+failures were separated. Final relevant module run1774PASS/17existing opt-in
+skip/660deselected(134.91s), plus actual MySQL8.4.13 export faults20PASS(56.30s)
+and separate API/Worker process2PASS(82.81s). JSON/JUnit scope/identity/phases
+match with skip/xfail0. Boundary0 and Contract62/26/104, diff whitespace PASS.
+Expanded MySQL and fresh read-only review are pending at this checkpoint.
+
+Full file manifest, exact test scope, failed intermediate attempts, PM rulings,
+#47 deferred Owner items and remaining risks are recorded in
+[Implementation Notes](rt10b-recording-exports.md). Whole pytest/full mandatory
+MySQL/nested mutation/current-diff remote CI/live providers/Linux/large media
+remain unrun. Abrupt death after publication and before durable T1 may leave an
+orphan and a later execution can encode again; no global crash-proof exactly-once
+claim. Scratch/RAW/media/JSON/JUnit/env/DB/credentials are excluded. No staging,
+commit, push, PR or Issue mutation. Final results and review are appended below.
+
+
+RT-10(b) Recording export follow-up: expanded actualMySQL56PASS/206.21s,
+MySQL8.4.13, JSON/JUnit56identities/168phases/skip-xfail0 (exports23,process2,
+Case4,clip9,Readout18). Direct canonical AssetFacts lookup gap was reproduced
+RED1 and fixed only for new export-transform-backed assets; focused102PASS
+(31.87s) and exportMySQL23PASS(55.37s,23identities/69phases). Earlier1774/56
+results remain explicitly earlier-source executions. Fresh read-only reviewer
+(fork_turns=none,whole35-file manifest) found P2 A→B→A retry selected B although
+A notice was visible. Both kinds' command regressions RED2 →63PASS(0.46s) after
+current-full-request retry binding; same-reviewer recheck/full review pending.
+
+
+RT-10(b) Recording exports final fresh-review checkpoint: the same fresh
+read-only reviewer inspected the whole35-file diff and rechecked the P2 fix with
+independent no-file production-command probes for both kinds. UnresolvedP1/P2=0.
+A production StoredObservationAdapter bbox-change probe excluded old image and
+retained current products. Reviewer did not run pytest/DB/media or audit all raw
+execution reports. P3 deferred2: permanent adapter correction/reread projection
+regression and stamped-frame pixel/no-stamp preservation assertion. #47 Owner
+wire decision, full CI, force-kill-before-T1, Linux/font and large-media checks
+remain unverified, explicitly not an RT-10/full acceptance claim.
+
+Post-P2 API/Evidence335PASS/248deselected/95.34s, existingStarlette warning1.
+Earlier sandbox attempt stalled at first cleanup test and was stopped using
+verified task processIDs; cause unconfirmed. Native rerun passed unchanged.
+Two task-created empty root cleanup locks were exclusive-open checked and removed.
+Autocommit audit: unexpected schemas0/other clients0/transactions0/data locks0.
+Owned MySQL container and inspected anonymous volume removed, inventories absent.
+Reports/media/env remain only in ignored task scratch and excluded from delivery.
+No source credential, staging,commit,push,PR or Issue mutation. Complete changed
+files (35):
+
+- `docs/modules/case/decisions/report-video-export.md`
+- `docs/modules/recording/decisions/failure-taxonomy.md`
+- `docs/runtime/rt10b-recording-exports.md`
+- `docs/runtime/runtime-implementation-log.md`
+- `src/daesingo/api/composition.py`
+- `src/daesingo/case/command.py`
+- `src/daesingo/case/domain.py`
+- `src/daesingo/case/exports.py`
+- `src/daesingo/case/jobs.py`
+- `src/daesingo/case/real_e2e.py`
+- `src/daesingo/case/reflection.py`
+- `src/daesingo/case/service.py`
+- `src/daesingo/case/store.py`
+- `src/daesingo/case/store_mysql.py`
+- `src/daesingo/case/store_state.py`
+- `src/daesingo/case/stored_observation.py`
+- `src/daesingo/recording/README.md`
+- `src/daesingo/recording/exports.py`
+- `src/daesingo/recording/mysql_repository.py`
+- `src/daesingo/recording/queries.py`
+- `src/daesingo/recording/repository.py`
+- `src/daesingo/recording/service.py`
+- `src/daesingo/worker/case_composition.py`
+- `src/daesingo/worker/composition_root.py`
+- `src/daesingo/worker/export_composition.py`
+- `src/daesingo/worker/export_handlers.py`
+- `src/daesingo/worker/export_inputs.py`
+- `tests/case/test_export_ordering.py`
+- `tests/e2e_runtime/production_processes.py`
+- `tests/e2e_runtime/test_export_process_mysql.py`
+- `tests/recording/test_exports.py`
+- `tests/worker/export_support.py`
+- `tests/worker/test_export_handlers.py`
+- `tests/worker/test_export_inputs.py`
+- `tests/worker/test_export_mysql.py`
+
+
+Final same-reviewer documentation delta recheck: no unresolved P1/P2 or evidence
+inconsistency. Reviewer verified the exact35-file manifests in both documents,
+reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
+git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
+and #47/CI/operational deferred boundaries remain as stated. Final state is
+uncommitted and unstaged; no staging, commit, push, PR or Issue operation.

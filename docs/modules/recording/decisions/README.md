@@ -6,3 +6,4 @@
 
 - [recording 1차 Mock E2E Tech Spec](first-integration-tech-spec.md)
 - [GPS reverse geocoder provider 결정](gps-reverse-geocoder-provider.md) — MVP는 Kakao Local REST API 사용
+- [실행 실패 taxonomy](failure-taxonomy.md) — IncidentClip capability code의 JobExecution terminal 매핑

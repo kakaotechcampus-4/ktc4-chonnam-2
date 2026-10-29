@@ -234,7 +234,7 @@ def build_view_from_adapter(
         visual_verify_status=visual_verify_status,
         independent_facts=snapshot.independent_facts,
     )
-    return derive_notices(
+    view = derive_notices(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
@@ -246,6 +246,10 @@ def build_view_from_adapter(
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
     )
+    from daesingo.case.exports import export_notices
+    requests = adapter.get_export_requests() if adapter is not None and hasattr(adapter, "get_export_requests") else {}
+    return export_notices(case, executions, view, requests)
+
 
 
 # `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).

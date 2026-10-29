@@ -143,7 +143,12 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
     observation.record_outcome(case, outcome.job_id, status=outcome.status)
     # command 뒤와 같은 gate다(`command.execute_command`). 관찰 결과로 Package가 준비되면 여기서 READY가 된다.
     if case.stage == "EVIDENCE_REVIEW":
-        mark_ready_if_package_ready(case, store.adapter_for(case))
+        from daesingo.case.exports import issue_missing_exports
+        from daesingo.case.service import build_view_from_adapter
+        adapter = store.adapter_for(case)
+        if adapter is not None and hasattr(adapter, "get_export_requests"):
+            issue_missing_exports(case, adapter, build_view_from_adapter(case, adapter, executions=store.read_executions(case)))
+        mark_ready_if_package_ready(case, adapter)
 
 
 def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:

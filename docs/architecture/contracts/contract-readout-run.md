@@ -76,7 +76,7 @@ read_overlay_time(span)         -> ReadoutRun, OverlayTimeReadout
 
 | 필드 | 타입 | 필수 | 규칙 |
 | --- | --- | --- | --- |
-| `run_id` | string | Y | 고유 식별자. 재사용 없음 |
+| `run_id` | string | Y | 고유 식별자. 재사용 없음. 호출하는 쪽이 공개 함수에 미리 발급해 넘길 수 있고, 넘기지 않으면 `readout`이 발급한다. 넘길 때 호출마다 새 값을 주는 것은 발급하는 쪽 책임이다(2026-10-28, #297, 스키마 변경 없음) |
 | `operation` | enum(2) | Y | 어떤 public capability의 실행인가 |
 | `outcome` | enum(3) | Y | `SUCCEEDED` / `PARTIAL` / `FAILED` |
 | `failure` | object \| null | 조건부 | `outcome ∈ {PARTIAL, FAILED}`일 때 필수, `SUCCEEDED`면 null |

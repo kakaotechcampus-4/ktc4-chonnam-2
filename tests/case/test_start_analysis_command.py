@@ -198,3 +198,57 @@ def test_two_videos_end_to_end_with_recording(tmp_path):
     view = service.get_view(case_id, store=store)
     assert [j["kind"] for j in view["running_jobs"]] == ["COARSE_SEARCH"]
     recording.close()
+
+
+# ── 시간축 전체 길이(#184, case-view/v1.9) ──────────────────────────────────────
+
+
+def test_view_has_no_timeline_duration_before_analysis_starts():
+    store, case_id = _store_with_sources(1)
+    view = service.get_view(case_id, store=store)
+    assert view["timeline_duration_ms"] is None
+    assert view["manifest_summary"]["duration_sec"] == 0
+
+
+def test_start_carries_timeline_duration_from_the_timeline_port():
+    """case는 계산하지 않는다 — timeline port가 준 `duration_ms`를 그대로 최상위 · `manifest_summary`로 옮긴다.
+    첫 탐색 범위의 끝과 같은 값이라 `marker_ms`와 같은 좌표다."""
+    store, case_id = _store_with_sources(2)
+    result = command.execute_command(_start(case_id, ""), store=store, timelines=FakeTimelines())
+
+    view = result.response["case_view"]
+    assert view["timeline_duration_ms"] == 10_000
+    assert view["manifest_summary"]["duration_sec"] == 10.0
+    coarse = result.appended_job_records[0]
+    scope = store.get_case(case_id).analysis_scopes[coarse["scope_ref"]]
+    assert scope["time_ranges"][0]["end_ms"] == view["timeline_duration_ms"]
+
+
+def test_timeline_duration_survives_store_round_trip():
+    store, case_id = _store_with_sources(1)
+    command.execute_command(_start(case_id, ""), store=store, timelines=FakeTimelines())
+
+    assert store.get_case(case_id).timeline_duration_ms == 10_000
+    assert service.get_view(case_id, store=store)["timeline_duration_ms"] == 10_000
+
+
+def test_timeline_failure_leaves_duration_unset():
+    """타임라인 실패는 그대로 올라가고 저장하지 않는다 — 길이도 남지 않는다."""
+    store, case_id = _store_with_sources(1)
+    with pytest.raises(TimelineUnavailable):
+        command.execute_command(_start(case_id, ""), store=store, timelines=FakeTimelines(fail=True))
+    assert store.get_case(case_id).timeline_duration_ms is None
+
+
+def test_duration_arrives_with_the_first_search_after_hint_extraction():
+    """설명이 있으면 타임라인은 구조화 결과가 와서 첫 탐색을 발주할 때 받는다 — 그 전에는 `null`."""
+    store, case_id = _store_with_sources(1)
+    command.execute_command(_start(case_id, "흰 SUV"), store=store, timelines=FakeTimelines())
+    assert service.get_view(case_id, store=store)["timeline_duration_ms"] is None
+
+    service.receive_hint_extraction_result(
+        case_id, {"status": "OK", "vehicle_hint": "흰 SUV"}, job_id=_hint_id(store, case_id),
+        store=store, timelines=FakeTimelines(),
+    )
+
+    assert service.get_view(case_id, store=store)["timeline_duration_ms"] == 10_000

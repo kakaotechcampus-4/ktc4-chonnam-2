@@ -43,3 +43,20 @@
 
 - export 실패 code 매핑 — 계약 A§7은 `REPORT_VIDEO_EXPORT_FAILED`를 `recording.report_video_export_failed` notice로 싣는다고 적었지만 B§7 등재 · web 문구가 없다. RT-10에서 실패가 실제로 나올 때 맞춘다.
 - `GENERATE_PLATE_IMAGE`의 notice 발동 조건 — 같은 모양이라 #351을 따르되(#351 범위 밖), 번호판 이미지는 선택 첨부라 Package를 막지 않는다(#280).
+
+## 6. Runtime implementation checkpoint — 2026-10-29
+
+The RT-10(b) Recording export implementation connects [R-1] at the existing
+command and observation T2 READY-gate locations. It fixes each request in a
+separate append-only Case input map, uses the #351 response/evidence gate and
+deduplicates automatic orders by kind plus full-input fingerprint. Case relays
+the existing Evidence policy limit injected by composition; no byte policy is
+calculated here. Current successful/reflected produced refs select the generated
+assets, and Case relays Recording's transform fact for post-stamp evaluation.
+
+The plate input/failure wire choices use the user's explicit PM delegation and
+remain #47 Owner deferred review. They do not replace the decision above or
+claim additional Case Owner approval. The export failure notices now follow the
+existing Contract mappings; limit exhaustion has no same-input plate retry.
+Detailed verification, limitations and file manifest are in the
+[Implementation Notes](../../../runtime/rt10b-recording-exports.md).

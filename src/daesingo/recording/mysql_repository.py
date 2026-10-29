@@ -431,6 +431,13 @@ class MySQLRecordingRepository:
     def get_incident_clip(self, clip_ref):
         return self._model("incident_clip", clip_ref, m.IncidentClip)
 
+    def add_export_transform(self, ref, payload):
+        self._immutable_write([self._row("export_transform", ref, payload)])
+
+    def get_export_transform(self, ref):
+        row = self._get("export_transform", ref)
+        return row["payload"] if row is not None else None
+
     def add_derived_asset(self, asset, *, content=None, content_type=None, case_id=None):
         derived_content(asset, content, content_type, case_id)
         rows = [self._row("derived_asset", asset.derived_asset_ref, asset.model_dump(mode="json"), content)]

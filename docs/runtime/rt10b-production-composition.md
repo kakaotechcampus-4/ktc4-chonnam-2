@@ -1,5 +1,10 @@
 # RT-10(b) — durable Recording / production Search composition checkpoint
 
+> 2026-10-28 follow-up: the next minimal clip-handler slice is documented in
+> [INCIDENT_CLIP_BUILD Implementation Notes](rt10b-incident-clip-handler.md).
+> This checkpoint's scope and execution evidence below retain their original
+> historical meaning; its excluded-handler list is not the later slice's status.
+
 **IN_PROGRESS · Refs #297 (RT-10(b))**. 2026-10-26 follow-up to
 [the Search adapter checkpoint](rt10b-search-handlers.md). This records the
 user-authorized independent composition work while #403 and #405 remain pending;

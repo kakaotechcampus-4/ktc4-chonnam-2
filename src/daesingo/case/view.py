@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.8` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.9` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -28,7 +28,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.8"
+CONTRACT_VERSION = "case-view/v1.9"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -726,6 +726,8 @@ def build_case_view(
         # 분석 시작 때 사용자가 적은 설명 원문(v1.7, #259) — 받은 그대로. 분석 시작 전에는 `null`.
         "description": case.description,
         "manifest_summary": case.manifest_summary,
+        # 후보 `marker_ms`와 같은 좌표의 시간축 전체 길이(v1.9, #184). 분석 시작 전에는 `null` — web은 시간축을 그리지 않는다.
+        "timeline_duration_ms": case.timeline_duration_ms,
         "hints": case.hints,
         "progress": _build_progress(
             case,

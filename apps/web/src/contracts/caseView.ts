@@ -150,6 +150,11 @@ export interface CaseView {
     range: [string, string] | null
   }
   /**
+   * 시간축 전체 길이(ms, `case-view/v1.9`, #184 · #436). 후보 `marker_ms`와 같은 좌표다.
+   * `null`(또는 아직 내리지 않는 서버의 `undefined`)이면 시간축을 그리지 않는다.
+   */
+  timeline_duration_ms?: number | null
+  /**
    * 사용자가 분석 시작 때 적은 설명 원문(v1.7, #259). 분석 시작 전 `null`, 빈 설명이면 `""`.
    * `package.report.description`(최종 신고문)과 이름만 같은 다른 값이다.
    */

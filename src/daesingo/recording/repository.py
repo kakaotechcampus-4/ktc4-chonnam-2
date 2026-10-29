@@ -35,6 +35,7 @@ def _offset_key(value: float) -> Decimal:
 
 class InMemoryRecordingRepository:
     def __init__(self) -> None:
+        self._export_transforms = {}
         self._source_assets: dict[str, SourceAsset] = {}
         self._local_sources: dict[str, LocalSource] = {}
         self._local_stream_indices: dict[str, int] = {}
@@ -326,6 +327,17 @@ class InMemoryRecordingRepository:
     def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
         return self._incident_clips.get(clip_ref)
 
+    def add_export_transform(self, ref, payload):
+        import copy
+        previous = self._export_transforms.get(ref)
+        if previous is not None and previous != payload:
+            raise ValueError("immutable export transform conflict")
+        self._export_transforms[ref] = copy.deepcopy(payload)
+
+    def get_export_transform(self, ref):
+        import copy
+        return copy.deepcopy(self._export_transforms.get(ref))
+
     def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None = None,
                           content_type: str | None = None, case_id: str | None = None) -> None:
         derived_content(asset, content, content_type, case_id)
@@ -472,6 +484,10 @@ class RecordingRepository(Protocol):
 
     def get_incident_clip(self, clip_ref: str) -> IncidentClip | None:
         ...
+
+    def add_export_transform(self, ref: str, payload: dict) -> None: ...
+
+    def get_export_transform(self, ref: str) -> dict | None: ...
 
     def add_derived_asset(self, asset: DerivedAsset, *, content: bytes | None=None,
                           content_type: str | None=None, case_id: str | None=None) -> None:

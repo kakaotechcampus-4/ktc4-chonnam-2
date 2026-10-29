@@ -19,6 +19,11 @@ class KindRegistry:
     def __init__(self, handlers: Mapping[str, Handler]):
         self._handlers = MappingProxyType(dict(handlers))
 
+    def merged(self, other: "KindRegistry") -> "KindRegistry":
+        if self._handlers.keys() & other._handlers.keys():
+            raise ValueError("duplicate kind registration")
+        return KindRegistry({**self._handlers, **other._handlers})
+
     def dispatch(self, context: ExecutionContext) -> HandlerResult:
         handler = self._handlers.get(context.kind)
         if handler is None:
