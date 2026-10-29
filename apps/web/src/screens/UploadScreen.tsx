@@ -9,6 +9,7 @@ import rearBack from '../assets/car/wheel-rear-back.webp'
 import rearSpin from '../assets/car/wheel-rear-spin.webp'
 import rearBlur from '../assets/car/wheel-rear-blur.webp'
 import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../components/CarFx'
+import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 
@@ -23,6 +24,11 @@ const DROP_TEXT: Record<Exclude<UploadState, 'done'>, string> = {
 // 첫 진입 효과는 페이지를 처음 열 때 한 번만 — 「새 신고」로 돌아올 때는 다시 하지 않는다.
 let introPlayed = false
 const INTRO_MS = 700
+
+// 고른 `File` — `?api`는 화면에 업로드 결과 이름만 넘기므로 영상 시각은 고를 때 받아 둔 원본에서 읽는다.
+// 출발 장면의 겉모습 복사본은 따로 고른 적이 없어 마지막으로 읽은 결과를 그대로 쓴다.
+let picked: File[] = []
+let lastTime: VideoTime | null = null
 
 // ── 자동차 장면 ────────────────────────────────────────────────
 // 원본 car-side.webp(1774×887, 앞이 왼쪽) 한 장의 위치·배율만 바꿔 문과 앞바퀴를 보인다 —
@@ -140,9 +146,33 @@ export function UploadScreen(props: {
   const input = useRef<HTMLInputElement>(null)
   const choose = () => input.current?.click()
   const pick = (files: FileList | null) => {
-    if (files?.length) props.onFiles([...files])
+    if (!files?.length) return
+    picked = [...files]
+    props.onFiles(picked)
   }
   const { state } = props
+
+  // 업로드가 끝나면 올라간 파일(건너뛴 파일 제외)의 촬영 시각을 읽는다. 파일 앞부분만 읽고 보내지 않는다.
+  // 화면이 받은 목록에 없는 원본(이전 신고에서 고른 것)은 쓰지 않는다.
+  const [vtime, setVtime] = useState(props.departing ? lastTime : null)
+  const uploaded = props.files.map((f) => f.name).filter((n) => !props.skipped.includes(n))
+  const uploadedKey = uploaded.join('\n')
+  useEffect(() => {
+    if (props.departing) return
+    setVtime(null)
+    if (state !== 'done') return
+    let live = true
+    void videoTime(picked.filter((f) => uploaded.includes(f.name))).then((v) => {
+      if (!live) return
+      lastTime = v
+      setVtime(v)
+    })
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 목록은 내용(uploadedKey)이 바뀔 때만
+  }, [state, uploadedKey, props.departing])
+  const timeText = vtime && videoTimeText(vtime)
 
   // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 업로드가 새로 시작될 때마다(파일 교체 포함)
   // 처음부터 다시 하고, 업로드 중이 아니면 바로 지운다.
@@ -387,6 +417,15 @@ export function UploadScreen(props: {
       <div className="rs-group" style={{ '--i': 2 } as CSSProperties}>
         <label className="rs-field">
           <span className="rs-label">어떤 상황이었나요?</span>
+          {/* 상황을 적을 때 「어제 오후 1시」 대신 실제 시각을 보도록 — 적는 칸 바로 위에 둔다 */}
+          {vtime && (vtime.spans.length > 0 || vtime.unread > 0) && (
+            <span className="rs-hint rs-vtime">
+              {timeText
+                ? `올린 영상은 ${timeText}에 찍혔어요(파일 이름 기준).`
+                : '파일 이름에서 찍힌 시각을 읽지 못했어요.'}
+              {timeText && vtime.unread > 0 && ` 시각을 못 읽은 파일 ${vtime.unread}개는 빠졌어요.`}
+            </span>
+          )}
           <SituationInput
             label="어떤 상황이었나요?"
             example={EXAMPLE}
