@@ -1,6 +1,9 @@
 """Small container adapters; credentials never enter argv or environment."""
+import hashlib
 import json
 import os
+from pathlib import Path
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -9,8 +12,43 @@ from daesingo.common.config import DbSettings
 from daesingo.common.env import load_env_file
 
 
+def verify_media_tools(manifest=Path("/usr/local/share/daesingo/media.json")):
+    """Exact supported release AND the binary pair produced by this image build."""
+    try:
+        identity = json.loads(manifest.read_text())
+        if identity["version"] != "8.1" or set(identity["sha256"]) != {"ffmpeg", "ffprobe"}:
+            raise ValueError()
+        configurations = []
+        for name in ("ffmpeg", "ffprobe"):
+            path = shutil.which(name)
+            if not path:
+                raise ValueError()
+            with open(path, "rb") as stream:
+                if hashlib.file_digest(stream, "sha256").hexdigest() != identity["sha256"][name]:
+                    raise ValueError()
+            result = subprocess.run([path, "-version"], stdin=subprocess.DEVNULL,
+                capture_output=True, text=True, timeout=5, check=False)
+            lines = result.stdout.splitlines()
+            if result.returncode or not lines or not lines[0].startswith(name + " version 8.1 "):
+                raise ValueError()
+            configuration, = [line for line in lines if line.startswith("configuration: ")]
+            configurations.append(configuration)
+        if configurations[0] != configurations[1]:
+            raise ValueError()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        raise ValueError("media_toolchain_invalid") from None
+
+
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
+    if args in (["api"], ["worker"], ["media-preflight"]):
+        try:
+            verify_media_tools()
+        except ValueError:
+            print("container: media_toolchain_invalid (requires matching pinned ffmpeg/ffprobe 8.1)", file=sys.stderr)
+            return 1
+        if args == ["media-preflight"]:
+            return 0
     try:
         if args == ["migrate"]:
             values = load_env_file(os.environ["DAESINGO_ENV_FILE"])

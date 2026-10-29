@@ -3989,3 +3989,101 @@ reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
 git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
 and #47/CI/operational deferred boundaries remain as stated. Final state is
 uncommitted and unstaged; no staging, commit, push, PR or Issue operation.
+
+## 2026-10-30 — Issue #465 MP4 deployment toolchain
+
+**IN_PROGRESS · Refs #465 · Related #460**
+
+Implementation Notes: [exact 8.1 supply, support commands and acceptance](./issue465-mp4-toolchain.md).
+Issue body/Owner comment and #467 were directly inspected. Starting branch is
+`codex/issue465-mp4-ffprobe-81`; HEAD/local and remote develop were
+`177505530cf6bc0f6575d846ae188a0868d4ae3e`, with clean worktree/empty index.
+
+Before image edits, official 8.1 source tarball PGP signature was directly checked
+and its SHA-256 pinned. Official n8.1 mirror commit and actual base/uv registry
+digests were checked too. Debian package snapshot input is fixed. Both media
+binaries are built together; runtime only copies tools and build-identity manifest,
+installs runtime libraries and preflights exact release/hash/configuration before
+API/worker exec. Strict Recording duration/coverage and #467 fixtures are unchanged.
+
+Author RED: ordinary synthetic 30fps MP4 through public Recording APIs with Ubuntu
+6.1.1-3ubuntu5 fails at output missing-tail validation. A preserved same-byte source
+is used for pinned-image comparison. Preflight new tests RED14 then GREEN17;
+Docker source-policy RED then focused deployment GREEN72. Windows supplementary
+9.0.1 media helper passes MP4/AVI/MKV/MP4-chain AnalysisSource and IncidentClip;
+focused deploy/workflow/Recording/worker run is **296 PASS, 1 existing real-pair
+opt-in SKIP (85.35s)**. Boundary/Contract fixtures/Compose structure/diff checks
+pass after correcting Windows console encoding. Actual Linux 8.1 image and Compose
+acceptance/review results are pending and will be appended as separate evidence.
+
+Actual private MP4 types were not available in known local source/data folders;
+their acceptance and provider first-search completion are not claimed. No DB,
+migration or inventory changes, so full mandatory MySQL was not rerun. Full
+regression/MySQL strict gate remain post-push remote CI conditions. No staging,
+commit/push/PR or external Issue edits; scratch/RAW/JUnit/downloads/private sources
+are PR-excluded. Earlier log entries and their historical results are preserved.
+
+Issue #465 author follow-up: final Linux 8.1 image build and same-byte synthetic
+MP4 strict GREEN succeeded; the retained input digest is unchanged. Initial
+source-build regression (missing drawtext/font libraries) was caught by #467
+export tests, reproduced in image media helper, and fixed by explicit font-library
+build/runtime inputs. Final helper passes MP4/AVI/MKV/MP4-chain AnalysisSource,
+IncidentClip, report stamp and plate crop. Final pinned-image focused selection
+is **311 PASS / 1 existing actual-pair opt-in SKIP, 26.14s**. Runtime dependency/
+tool/cache audit and six actual container startup negative controls PASS.
+Compose JSON omission handling had five direct RED→GREEN cases and preserves
+explicit false source policy. Final Windows deployment/workflow checks are
+**165 PASS, 17.84s**; supplementary Windows 9.0.1 helper PASS. Full Compose smoke
+and fresh review conclusions are still pending at this entry. No original
+failure or historical pending result has been rewritten as success.
+
+Issue #465 resume audit: HEAD/branch and unstaged delivery were preserved; local
+`origin/develop` independently moved to `1a784b9d1bad14197f8779387be8ef7e4618fa44`.
+No rebase/merge/reset. Prior WSL temporary workspace/report/image were unavailable
+on resume, so the interrupted Compose run's final result/cleanup is not claimed.
+A current-source isolated no-cache Compose smoke was started again under Docker
+29.9.2 / Compose v5.6.1 (Linux x86_64), persisting its report in ignored scratch.
+A fresh read-only reviewer without inherited implementation conversation directly
+passed 165 deploy/workflow checks (10.47s), boundary/Contract/source Compose/diff
+checks. Final execution evidence remains pending at this entry.
+
+Issue #465 final resumed author acceptance: isolated Docker29.9.2 / Compose5.6.1
+smoke **exit0 / PASS / cleanup PASS**, all ten stages through no-cache build,
+migration failure gate, normal migration/readiness, pinned MP4/AVI/MKV/chain and
+export materialization, cross-container media, command/view, kill→STALE→attempt2,
+secret/settings inspection and recreated DB/media persistence. Cleanup failures/
+remaining arrays are empty; separate Docker queries found no project containers,
+volumes, network or tagged image. Image tested before cleanup was
+`sha256:66ee0bccda379f71bd2948e711d57c2b8a5ed265c8f9e6271d5c8f2722a98883`.
+
+Fresh reviewer execution is distinct from author311/1-skip evidence: first fresh
+reviewer directly passed narrow pinned Linux fallback/IncidentClip/#467 **58/58**
+and original pinned helper/runtime/preflight. New fresh reviewer after interruption
+directly passed Windows deploy/workflow165 plus media146 (**311PASS / 1 existing
+actual-pair opt-in SKIP**), boundary/Contract/Compose/diff, and current no-cache
+Linux image's media helper (four PASS groups,6.29s) plus preflight exit0. Mounted
+helper hash matched checkout; original Log prefix/index integrity passed. Old
+image unavailable attempt executed no test, and is not counted as success.
+No actionable P1/P2/P3 code findings; final documentation consistency recheck
+is requested on the same resumed reviewer after these append-only entries.
+
+Issue completion mapping, exact #460 commands/provenance, twelve-file manifest,
+all original failures/pending entries and execution attribution are in
+[Implementation Notes](./issue465-mp4-toolchain.md). Actual two-type private MP4,
+Windows pinned8.1/non-amd64 Linux and provider first search remain unexecuted.
+Full local regression/mandatory MySQL were not rerun; full regression/MySQL
+strict gate remain post-push remote CI conditions. Owned source downloads,
+checkout and transport archives removed; ignored RAW/reports/test temp/diagnostic
+launchers and all scratch remain PR-excluded. No shared-resource prune/cache
+export, staging, commit, push, PR or external Issue/Notion operation.
+
+Issue #465 final same-reviewer documentation/report recheck: **P1/P2/P3 없음**.
+Reviewer independently confirmed report ten-stage PASS/cleanup PASS with empty
+failures/remaining, exact12-file manifest, original Log byte prefix, unchanged
+HEAD and empty index. Full Compose run remains author evidence; reviewer-direct
+current Linux helper/preflight and Windows165+146 results remain separately
+labeled. No source fix or unresolved finding remains. **IN_PROGRESS · Refs #465 ·
+Related #460**, actual-source and post-push remote CI boundaries remain unchanged.
+
+Final cleanup follow-up: exact-path-verified owned Linux temporary workspace
+removed after review; final `git diff --check` clean, HEAD unchanged/index empty.
