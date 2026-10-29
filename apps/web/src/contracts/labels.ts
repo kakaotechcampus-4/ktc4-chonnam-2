@@ -123,6 +123,10 @@ const NOTICE_MESSAGES: Record<string, string> = {
   // #168 [A] — 가장 유력한 후보에서 위반이 관찰되지 않은 음성 결과.
   'notice.visual_event_not_observed': '이 장면에서는 신고할 위반을 확인하지 못했어요.',
   'notice.report_video_not_generated': '신고용 영상이 아직 만들어지지 않았습니다.',
+  // case/exports.py가 `notice.` + code 뒷부분으로 싣는다. 다시 만들기 버튼은 서버가 action으로 준다
+  'notice.report_video_export_failed': '신고용 영상을 만들지 못했어요.',
+  // 번호판 이미지는 선택 첨부라 실패해도 묶음을 막지 않는다(#280)
+  'notice.plate_image_export_failed': '번호판 이미지를 만들지 못했어요. 번호판 이미지 없이도 신고자료는 완성돼요.',
   // 이슈 #48 확정 — 문구 뜻은 계약이 정했다(「지도에 붙여넣을 검색어를 제공하지
   // 못한다, 기억나는 장소를 직접 검색해야 한다」). 발동 기준은 `location` 부재가
   // 아니라 `location_display.search_keyword == null`이다.
