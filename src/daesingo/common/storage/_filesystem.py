@@ -53,6 +53,29 @@ def version(value):
     return identity(value), value.st_size, value.st_mtime_ns, value.st_ctime_ns
 
 
+def tool_directory(directory):
+    """Return a tool-openable spelling from an already pinned directory.
+
+    Ask Windows for its DOS name; never infer a drive from a Volume GUID.
+    Volumes without a DOS name fail closed. The caller must pin and compare
+    the returned path to the canonical identity before using it.
+    """
+    if os.name != 'nt':
+        return directory.path
+    size = _final_name(directory.descriptor, None, 0, 0)  # VOLUME_NAME_DOS
+    if not size:
+        raise UnsafePath('unverifiable tool directory')
+    buffer = ctypes.create_unicode_buffer(size + 1)
+    used = _final_name(directory.descriptor, buffer, len(buffer), 0)
+    if not used or used >= len(buffer):
+        raise UnsafePath('unverifiable tool directory')
+    path = Path(buffer.value)
+    if not re.fullmatch(r'\\\\\?\\[a-zA-Z]:\\', path.anchor):
+        raise UnsafePath('unsupported tool namespace')
+    # Only the OS-returned extended DOS prefix is removed, never a GUID.
+    return Path(str(path)[4:])
+
+
 if os.name == 'nt':
     import ctypes
     from ctypes import wintypes
