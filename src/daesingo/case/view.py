@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.preview_frame import current_preview_frame_ref
 from daesingo.case.labels import (
     at_provenance_label_key,
     event_type_label,
@@ -692,7 +693,9 @@ def build_case_view(
     independent_facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     selected = next((c for c in case.candidates if c.selected), None)
-    preview_ref = selected.thumb_ref if selected else None
+    # 근거 장면은 case가 clip에서 발급받은 frame이다(#446). Search 후보 `thumbnail_ref`는 실제 경로에서 늘 null이라
+    # 발급 전에는 그 값(fixture에만 있음)을 그대로 쓴다.
+    preview_ref = (current_preview_frame_ref(case) or selected.thumb_ref) if selected else None
 
     # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
     # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은
