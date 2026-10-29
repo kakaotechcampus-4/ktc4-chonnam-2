@@ -54,12 +54,14 @@ def test_worker_media_keeps_canonical_cleanup_identity_and_ordinary_tool_path(wo
 
 @pytest.fixture
 def sources(tmp_path):
+    # Match the 1/10 ticks of Recording's 10-fps synthetic AVI fixtures so
+    # ffprobe 6.1 also reports a duration for the materialized output's tail.
     paths = []
     for i, color in enumerate(('red', 'blue')):
         path = tmp_path / f'synthetic-{i}.mp4'
         subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-n', '-f', 'lavfi', '-i',
             f'color=c={color}:s=64x48:r=10:d=1', '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
-            '-video_track_timescale', '10000', str(path)], check=True, capture_output=True, timeout=30)
+            '-video_track_timescale', '10', str(path)], check=True, capture_output=True, timeout=30)
         paths.append(path)
     return paths
 
@@ -107,7 +109,7 @@ def test_worker_media_real_single_and_chain(worker_media, sources, tmp_path, mon
                              capture_output=True, check=True, timeout=30)
         stream, = json.loads(raw.stdout)['streams']
         assert int(stream['nb_frames']) == count * 10
-        assert (stream['width'], stream['height'], stream['time_base']) == (64, 48, '1/10000')
+        assert (stream['width'], stream['height'], stream['time_base']) == (64, 48, '1/10')
         pixels = subprocess.run(['ffmpeg', '-v', 'error', '-xerror', '-i', str(output),
             '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1'], capture_output=True, check=True, timeout=30).stdout
         assert len(pixels) == count * 10 * 64 * 48 * 3
@@ -139,9 +141,12 @@ def test_worker_concat_failure_does_not_expose_paths_or_filenames(worker_media, 
     incident = media.materializer(LocalIncidentMaterializer, IncidentClipEncoding(48, 'veryfast', 23))
     write_text = Path.write_text
     private_name = 'private-original-filename.mp4'
+    reached_concat = False
 
     def broken_manifest(path, text, *args, **kwargs):
+        nonlocal reached_concat
         if path.name == 'parts.txt':
+            reached_concat = True
             text = f'ffconcat version 1.0\nfile {private_name}\n'
         return write_text(path, text, *args, **kwargs)
 
@@ -161,6 +166,7 @@ def test_worker_concat_failure_does_not_expose_paths_or_filenames(worker_media, 
                 service.prepare_analysis_source_from_resolution(resolution, 'profile')
             else:
                 service.build_incident_clip(resolution)
+        assert reached_concat, 'concat manifest injection was not reached'
         assert caught.value.code == ('TEMPORARY_FAILURE' if kind == 'analysis' else 'INCIDENT_CLIP_BUILD_FAILED')
         observed = str(caught.value) + caplog.text + json.dumps(traces)
         assert all(secret not in observed for secret in
