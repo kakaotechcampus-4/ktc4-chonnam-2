@@ -77,13 +77,14 @@ def _delete_file(parent, name, snapshot, cutoff):
 
 class CleanupScanner:
     def __init__(self, *, root, kind, age_sec, now=time.time, lease_root=None,
-                 protected_paths=()):
+                 protected_paths=(), configured_root=None):
         if kind not in ('staging', 'temp') or not math.isfinite(age_sec) or age_sec <= 0:
             raise ValueError('invalid cleanup settings')
         protected_paths = tuple(protected_paths)
         # A protected scanner must use the configuration's OS-confirmed form
         # on both sides. Never canonicalize a deletion candidate during a scan.
         path = configuration_path if protected_paths else checked_path
+        self.configured_root = checked_path(root if configured_root is None else configured_root)
         self.root = path(root)
         self.lease_root = path(lease_root) if lease_root is not None else self.root
         self.protected_paths = tuple(path(value) for value in protected_paths)
@@ -255,7 +256,7 @@ def configured_cleanup(config, logger, *, emit=None):
     if temp_root == publish or publish in temp_root.parents:
         raise ValueError('publish root cannot be a cleanup temp target')
     temp = CleanupScanner(root=temp_root, kind='temp', age_sec=config.cleanup.temp_age_sec,
-                          protected_paths=(publish,))
+                          protected_paths=(publish,), configured_root=config.temp_root)
     scanners = [temp]
     if config.service == 'api':
         scanners.insert(0, CleanupScanner(root=configuration_path(media_root/'staging'),
