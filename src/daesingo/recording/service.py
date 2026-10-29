@@ -113,7 +113,10 @@ class _SyntheticBinaryStream(RawIOBase):
         return bytes(count)
 
 
-class RecordingService:
+from .exports import RecordingExports
+
+
+class RecordingService(RecordingExports):
     def __init__(
         self, repository: RecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
@@ -121,10 +124,12 @@ class RecordingService:
         analysis_materializer: LocalAnalysisMaterializer | None = None,
         incident_materializer: LocalIncidentMaterializer | None = None,
         time_source_observer: LocalTimeSourceObserver | None = None,
+        export_materializer=None,
         durable_prepared: bool = False,
         case_id: str | None = None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
+        self._export_materializer = export_materializer
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
         self._analysis_materializer = analysis_materializer
@@ -514,6 +519,13 @@ class RecordingService:
                     raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록된 원본 정보를 읽을 수 없습니다")
                 return inspect_local_source(asset, local)
         facts = self._repository.get_asset_facts(parsed.kind, parsed.ref)
+        if facts is None and parsed.kind == "derived_asset":
+            asset = self._repository.get_derived_asset(parsed.ref)
+            # Newly generated exports have durable content and transform facts,
+            # rather than a fixture AssetFacts row. Preserve legacy lookup rules.
+            if (asset is not None and asset.transform_ref is not None
+                    and self._repository.get_export_transform(asset.transform_ref) is not None):
+                return self._metadata_facts(parsed)
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts

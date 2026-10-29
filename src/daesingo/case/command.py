@@ -115,7 +115,7 @@ def _mark_reviewed(case: CaseAggregate, payload: dict[str, Any], view: dict[str,
     case.mark_reviewed()
 
 
-def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
+def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any], *, export_requests=None) -> None:
     # 허용 조건 = 「화면에 그 버튼이 떠 있었는가」(§5). web과 같은 근거(현재 CaseView notices)로만 받는다.
     notice = next((n for n in view["notices"] if n["code"] == payload["notice_code"]), None)
     if notice is None or payload["action"] not in notice.get("actions", []):
@@ -125,6 +125,9 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     # (`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 새로 계산하지 않으므로, 이전
     # 발주가 없으면 만들 수 없다.
     prior = jobs.latest_job_record(case, kind)
+    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"} and export_requests is not None:
+        prior = next((r for r in reversed(case.job_records) if r["kind"] == kind
+            and r["job_id"] in case.export_inputs and case.export_inputs[r["job_id"]] == export_requests.get(kind)), None)
     if prior is None:
         raise _Rejected("not_allowed")
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
@@ -281,6 +284,10 @@ def execute_command(
     handler = _HANDLERS[request["kind"]]
     if request["kind"] in _ANALYSIS_KINDS:
         handler = functools.partial(handler, timelines=timelines, budget=budget or InitialSearchBudget())
+    elif request["kind"] == "RUN_NOTICE_ACTION":
+        adapter = store.adapter_for(case)
+        if adapter is not None and hasattr(adapter, "get_export_requests"):
+            handler = functools.partial(handler, export_requests=adapter.get_export_requests())
     try:
         handler(case, request["payload"], view)
     except _Rejected as rejected:
@@ -288,7 +295,10 @@ def execute_command(
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW":
-        mark_ready_if_package_ready(case, store.adapter_for(case))
+        from daesingo.case.exports import issue_missing_exports
+        adapter = store.adapter_for(case)
+        issue_missing_exports(case, adapter, view_of(case))
+        mark_ready_if_package_ready(case, adapter)
     store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])
     cancelled = [j for j, reason in case.settled_jobs.items() if reason == "CANCELLED" and j not in settled_before]

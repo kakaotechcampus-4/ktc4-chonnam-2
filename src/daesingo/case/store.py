@@ -93,6 +93,9 @@ class InMemoryCaseRepository:
         if stored is None:
             raise CaseNotFound(f"등록되지 않은 case_id: {case.case_id!r}")
         new = _json_round_trip(to_row(case))
+        for job_id, request in stored.state.get("export_inputs", {}).items():
+            if new.state.get("export_inputs", {}).get(job_id) != request:
+                raise AppendOnlyViolation("export input changed or removed")
         check_append_only([r["job_id"] for r in stored.job_records], [r["job_id"] for r in new.job_records], "job_records")
         check_append_only(
             [r["correction_id"] for r in stored.correction_records],
@@ -168,6 +171,11 @@ class CaseStore:
             return copy.deepcopy(case.observation_inputs[job_id])
         except KeyError:
             raise KeyError(f"관찰 입력이 없는 job_id: {job_id!r} (case_id={case_id!r})") from None
+
+    def export_input(self, case_id: str, job_id: str) -> dict[str, Any]:
+        """Detached append-only request for an export job; never current selection."""
+        case = self.get_case(case_id)
+        return copy.deepcopy(case.export_inputs[job_id])
 
     def load_for_update(self, case_id: str) -> CaseAggregate:
         return self.repository.load(self.conn, case_id, lock="update")
