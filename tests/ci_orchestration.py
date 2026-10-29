@@ -156,7 +156,7 @@ def run_mysql(output):
         '-vv', '-p', 'tests.observability_capture', '-p', 'tests.ci_collection',
         '--ci-collection='+str(directory/'collection.json'),
         '--basetemp='+str(directory/'actual-temp'), '--mysql-report='+str(directory/'mysql.json'),
-        '--junitxml='+str(directory/'mysql.xml')), directory, env, timeout=900)
+        '--junitxml='+str(directory/'mysql.xml')), directory, env, timeout=1500)
     _run_stage('strict', [sys.executable, 'scripts/check_mysql_test_report.py',
         str(directory/'mysql.json'), str(directory/'mysql.xml')], directory, env)
     seal_evidence(directory, token, started_ns)

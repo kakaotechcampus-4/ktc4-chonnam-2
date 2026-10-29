@@ -159,7 +159,7 @@ def test_mysql_command_runs_complete_inventory_once_with_visible_output(tmp_path
     assert command.count('tests') == 1
     assert command[command.index('-m', command.index('pytest'))+1] == 'mysql'
     assert '--ignore='+GATE in command
-    assert kwargs['timeout'] == 900
+    assert kwargs['timeout'] == 1500
     assert not any(k in kwargs for k in ('capture_output','stdout','stderr'))
     assert len([cmd for cmd, _ in invocations if 'pytest' in cmd]) == 1
     assert not list(tmp_path.rglob('manifest.json'))
