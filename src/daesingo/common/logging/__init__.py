@@ -24,6 +24,7 @@ _CONTEXT_FIELDS = frozenset({"trace_id", "case_id", "job_id", "execution_id", "m
 _TOKEN_FIELDS = _CONTEXT_FIELDS | {"status", "revision"}
 _TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,128}\Z")
 _JOB_TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,191}\Z")
+_ERROR_TYPE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 _EVENT = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+\Z")
 _KEY = re.compile(r"[A-Z][A-Z0-9_]*\Z")
 _context = contextvars.ContextVar("runtime_correlation", default=None)
@@ -33,11 +34,25 @@ def new_trace_id() -> str:
     return "tr_" + uuid4().hex
 
 
+def safe_error_type(error: BaseException) -> dict[str, str]:
+    """Only the outermost class qualname, or no field; never inspect its text."""
+    try:
+        name = type(error).__qualname__
+        if type(name) is str and _ERROR_TYPE.fullmatch(name):
+            return {"error_type": name}
+    except Exception:
+        # Even an unusual metaclass must not change a failure's outcome.
+        pass
+    return {}
+
+
 def _validate(fields):
     for name, value in fields.items():
         if name in _TOKEN_FIELDS:
             pattern = _JOB_TOKEN if name == "job_id" else _TOKEN
             valid = isinstance(value, str) and pattern.fullmatch(value)
+        elif name == "error_type":
+            valid = type(value) is str and _ERROR_TYPE.fullmatch(value)
         elif name == "duration_ms":
             try:
                 valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
@@ -239,4 +254,4 @@ def log_event_best_effort(logger: logging.Logger, event: str, *, level: int = lo
 
 
 __all__ = ["bind_context", "configure_logging", "copy_context_call", "log_event", "log_event_best_effort",
-           "new_trace_id", "safe_correlation"]
+           "new_trace_id", "safe_correlation", "safe_error_type"]
