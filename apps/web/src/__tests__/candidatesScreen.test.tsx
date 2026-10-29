@@ -120,6 +120,30 @@ describe('CandidatesScreen — 나란히 비교(A-1)', () => {
   })
 })
 
+describe('CandidatesScreen — 준비 중에는 재선택 버튼을 막는다', () => {
+  const two = [candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })]
+  const job = (kind: string) => ({ job_id: 'j1', kind, label_key: 'job.generic_processing', status: 'RUNNING' as const })
+  const button = (v: CaseView) => {
+    const { getByText } = render(<CandidatesScreen view={v} onSelect={() => {}} />)
+    return getByText('이 장면으로 다시 준비') as HTMLButtonElement
+  }
+
+  it('관찰 job(재판독 포함)이 도는 동안은 비활성이고 이유를 말한다', () => {
+    expect(button({ ...view(two), running_jobs: [job('PLATE_READ')] }).disabled).toBe(true)
+    cleanup()
+    const { container } = render(<CandidatesScreen view={{ ...view(two), running_jobs: [job('PLATE_READ')] }} onSelect={() => {}} />)
+    expect(container.textContent).toContain('지금 준비 중이라 끝난 뒤에 고를 수 있어요.')
+  })
+
+  it('신고용 영상 만들기·탐색 job은 막지 않는다(case도 막지 않음)', () => {
+    expect(button({ ...view(two), running_jobs: [job('REPORT_VIDEO_EXPORT')] }).disabled).toBe(false)
+    cleanup()
+    expect(button({ ...view(two), running_jobs: [job('COARSE_SEARCH')] }).disabled).toBe(false)
+    cleanup()
+    expect(button(view(two)).disabled).toBe(false)
+  })
+})
+
 describe('CandidatesScreen — rank 번호', () => {
   it('case가 준 rank를 번호로 쓰고, 없으면 배열 순서를 센다', () => {
     const withRank = view([

@@ -243,7 +243,8 @@ def _build_progress(
     }
     # 후보 탐색 Run이 실패했으면 진행 중(RUNNING)으로 보이지 않게 한다 — 「결과 없음」과도,
     # 「아직 찾는 중」과도 다른 상태다(PR #187 리뷰).
-    if case.candidate_search_failed:
+    # 실패 뒤 「다시 찾기」로 새 탐색을 기다리는 중이면 진행 중이다 — 이전 실패를 보이지 않는다(#426).
+    if case.candidate_search_failed and not case.search_awaited:
         progress["coarse_search"] = "FAILED"
     # 사용자가 분석을 중단했으면 실행 상태와 상관없이 PARTIAL이다(B§7 `progress[].state` 행 · #245 C-3). 실패 뒤
     # 다시 찾다가 중단했으면 마지막 사용자 행동(중단)을 보인다(`decisions/stop-analysis.md`). case 대기 timeout도 case가

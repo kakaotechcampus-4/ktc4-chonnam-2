@@ -125,6 +125,14 @@ class AppendPrecheckTests(unittest.TestCase):
                 # 같은 위반이 기록돼 있었다면 읽는 쪽은 계약 오류로 본다 — 하위 타입이라 기존 처리와 맞는다.
                 self.assertIsInstance(caught.exception, ContractInputError)
 
+    def test_an_empty_or_blank_plate_is_a_user_fixable_rejection(self):
+        """번호판을 지우는 값은 받지 않는다 — 빈 문자열 · 공백만 있는 값(#384 후속, PR #433)."""
+        for value in ("", " ", "\t \n"):
+            with self.subTest(value=value):
+                record = _correction("corr_plate", "vehicle_number", None, value, kind="PLATE_MANUAL_EDIT")
+                with self.assertRaises(InvalidCorrectionValue):
+                    validate_correction_append(record, existing_records=[])
+
     def test_what_case_built_is_an_internal_contract_error_not_a_value_error(self):
         plate = "PLATE_MANUAL_EDIT"
         cases = {
