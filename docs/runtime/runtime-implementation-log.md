@@ -3867,3 +3867,125 @@ RT-10(b) Readout resource follow-up: final autocommit audit excluding itself fou
 
 
 RT-10(b) Readout final same-reviewer recheck: P1/P2/P3 none. Reviewer independently passed focused69 (3.67s), validated all five scoped MySQL JSON/JUnit sets, matched exact48 initial failures to48 passing reruns and verified original718403-byte log prefix/SHA256 against HEAD. No reviewer fix round was required. Final13 changed files/staged0; HEAD and origin/develop remain debc783266d011ab46b102020c8d696a7dbd818e. No commit/push/PR/Issue mutation. Full suites/remote CI/live Paddle remain unrun as documented. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+
+### 2026-10-29 — RT-10(b) Recording export handlers · provisional wire implementation
+
+**IN_PROGRESS · Refs #297, #47, #351.** Current branch
+`codex/rt10b-recording-export-handlers`, start HEAD
+`85dd30b91b82711a4d56bbc3ea916a3bd3c2a355`, initially clean tree/index.
+User explicitly delegates minimal reversible provisional Runtime wires under PM
+approval; #47 Owner review remains deferred. Existing Contract meanings, Evidence
+limits and #351 response-before-export timing are not redefined.
+
+Recording adds public report/plate export capabilities, actual MP4/PNG output,
+measured size, immutable DerivedAsset refs, source lineage and stored transform
+provenance. Plate relays `incident_clip_ref`, `frame_ref`, `plate_bbox_xywh`,
+`max_byte_size` (existing Evidence SoT 30_000_000 bytes). No crop_ref or
+associated_region. Request and limit are fingerprinted. Bounded in-execution
+crop/downscale distinguishes `PLATE_IMAGE_EXPORT_FAILED` from provisional
+`PLATE_IMAGE_OUTPUT_LIMIT_UNSATISFIABLE`; the latter has no same-input retry
+button. Report keeps `REPORT_VIDEO_EXPORT_FAILED` and Contract notice mapping.
+
+Case fixes input at order time in an append-only export map; command and
+observation-T2 READY gates issue once per full input after response/evidence.
+Worker detaches Recording metadata/bytes in short caller transactions, returns
+connections, invokes one capability with DB checkout0, then publishes the same
+immutable output in retryable short DML. Existing T1/ProducedObject,
+reconciliation and T2 replay avoid media invocation and duplicate DerivedAssets.
+Current-input settled products feed CaseView/Evidence; old assets remain intact.
+
+RED/GREEN: Recording missing-capability10 setup failures → actual media10PASS;
+handler/order29FAIL →29PASS; immutable-input2FAIL/12PASS → focused46PASS.
+Initial related35FAIL/1739PASS/17skip was not accepted. Product entrypoint and
+legacy READY-adapter regressions were fixed; media/default-temp permission
+failures were separated. Final relevant module run1774PASS/17existing opt-in
+skip/660deselected(134.91s), plus actual MySQL8.4.13 export faults20PASS(56.30s)
+and separate API/Worker process2PASS(82.81s). JSON/JUnit scope/identity/phases
+match with skip/xfail0. Boundary0 and Contract62/26/104, diff whitespace PASS.
+Expanded MySQL and fresh read-only review are pending at this checkpoint.
+
+Full file manifest, exact test scope, failed intermediate attempts, PM rulings,
+#47 deferred Owner items and remaining risks are recorded in
+[Implementation Notes](rt10b-recording-exports.md). Whole pytest/full mandatory
+MySQL/nested mutation/current-diff remote CI/live providers/Linux/large media
+remain unrun. Abrupt death after publication and before durable T1 may leave an
+orphan and a later execution can encode again; no global crash-proof exactly-once
+claim. Scratch/RAW/media/JSON/JUnit/env/DB/credentials are excluded. No staging,
+commit, push, PR or Issue mutation. Final results and review are appended below.
+
+
+RT-10(b) Recording export follow-up: expanded actualMySQL56PASS/206.21s,
+MySQL8.4.13, JSON/JUnit56identities/168phases/skip-xfail0 (exports23,process2,
+Case4,clip9,Readout18). Direct canonical AssetFacts lookup gap was reproduced
+RED1 and fixed only for new export-transform-backed assets; focused102PASS
+(31.87s) and exportMySQL23PASS(55.37s,23identities/69phases). Earlier1774/56
+results remain explicitly earlier-source executions. Fresh read-only reviewer
+(fork_turns=none,whole35-file manifest) found P2 A→B→A retry selected B although
+A notice was visible. Both kinds' command regressions RED2 →63PASS(0.46s) after
+current-full-request retry binding; same-reviewer recheck/full review pending.
+
+
+RT-10(b) Recording exports final fresh-review checkpoint: the same fresh
+read-only reviewer inspected the whole35-file diff and rechecked the P2 fix with
+independent no-file production-command probes for both kinds. UnresolvedP1/P2=0.
+A production StoredObservationAdapter bbox-change probe excluded old image and
+retained current products. Reviewer did not run pytest/DB/media or audit all raw
+execution reports. P3 deferred2: permanent adapter correction/reread projection
+regression and stamped-frame pixel/no-stamp preservation assertion. #47 Owner
+wire decision, full CI, force-kill-before-T1, Linux/font and large-media checks
+remain unverified, explicitly not an RT-10/full acceptance claim.
+
+Post-P2 API/Evidence335PASS/248deselected/95.34s, existingStarlette warning1.
+Earlier sandbox attempt stalled at first cleanup test and was stopped using
+verified task processIDs; cause unconfirmed. Native rerun passed unchanged.
+Two task-created empty root cleanup locks were exclusive-open checked and removed.
+Autocommit audit: unexpected schemas0/other clients0/transactions0/data locks0.
+Owned MySQL container and inspected anonymous volume removed, inventories absent.
+Reports/media/env remain only in ignored task scratch and excluded from delivery.
+No source credential, staging,commit,push,PR or Issue mutation. Complete changed
+files (35):
+
+- `docs/modules/case/decisions/report-video-export.md`
+- `docs/modules/recording/decisions/failure-taxonomy.md`
+- `docs/runtime/rt10b-recording-exports.md`
+- `docs/runtime/runtime-implementation-log.md`
+- `src/daesingo/api/composition.py`
+- `src/daesingo/case/command.py`
+- `src/daesingo/case/domain.py`
+- `src/daesingo/case/exports.py`
+- `src/daesingo/case/jobs.py`
+- `src/daesingo/case/real_e2e.py`
+- `src/daesingo/case/reflection.py`
+- `src/daesingo/case/service.py`
+- `src/daesingo/case/store.py`
+- `src/daesingo/case/store_mysql.py`
+- `src/daesingo/case/store_state.py`
+- `src/daesingo/case/stored_observation.py`
+- `src/daesingo/recording/README.md`
+- `src/daesingo/recording/exports.py`
+- `src/daesingo/recording/mysql_repository.py`
+- `src/daesingo/recording/queries.py`
+- `src/daesingo/recording/repository.py`
+- `src/daesingo/recording/service.py`
+- `src/daesingo/worker/case_composition.py`
+- `src/daesingo/worker/composition_root.py`
+- `src/daesingo/worker/export_composition.py`
+- `src/daesingo/worker/export_handlers.py`
+- `src/daesingo/worker/export_inputs.py`
+- `tests/case/test_export_ordering.py`
+- `tests/e2e_runtime/production_processes.py`
+- `tests/e2e_runtime/test_export_process_mysql.py`
+- `tests/recording/test_exports.py`
+- `tests/worker/export_support.py`
+- `tests/worker/test_export_handlers.py`
+- `tests/worker/test_export_inputs.py`
+- `tests/worker/test_export_mysql.py`
+
+
+Final same-reviewer documentation delta recheck: no unresolved P1/P2 or evidence
+inconsistency. Reviewer verified the exact35-file manifests in both documents,
+reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
+git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
+and #47/CI/operational deferred boundaries remain as stated. Final state is
+uncommitted and unstaged; no staging, commit, push, PR or Issue operation.

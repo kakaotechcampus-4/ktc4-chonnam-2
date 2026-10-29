@@ -2,9 +2,11 @@
 from daesingo.worker.search_composition import compose_search_registry
 from daesingo.worker.incident_clip_composition import compose_incident_clip_registry
 from daesingo.worker.readout_composition import compose_readout_registry
+from daesingo.worker.export_composition import compose_export_registry
 
 
 def compose_registry(*, engine, startup, readout_provider_factory=None):
     return compose_search_registry(engine=engine, startup=startup).merged(
         compose_incident_clip_registry(engine=engine, startup=startup)).merged(
-        compose_readout_registry(engine=engine, startup=startup, provider_factory=readout_provider_factory))
+        compose_readout_registry(engine=engine, startup=startup, provider_factory=readout_provider_factory)).merged(
+        compose_export_registry(engine=engine, startup=startup))

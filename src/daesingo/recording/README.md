@@ -62,3 +62,14 @@ isom MP4 container를 식별한다. 지원 범위·오류·용량 한계와 검�
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.
 
 2026-10-26 RT-10(b) composition 후속: 공개 `get_source_asset`·`get_media_stream`·`get_analysis_source`·`get_time_source_candidates`·`list_case_asset_facts`와 Case port용 detached `RecordingFacts`를 추가했다. `ConnectionRecordingRepository`/`TransactionalRecordingRepository`는 Recording이 소유하는 caller-connection/short-transaction facade다. module factory의 명시적 profile mapping에서만 prepared model/body·관찰을 durable하게 보존하며 기존 default ephemeral 수명과 lookup 의미를 유지한다. AnalysisSource는 기존 공개 open으로 복원하고 새 clip byte API는 추가하지 않는다. 구현·설정·검증·pending 경계는 [RT-10(b) composition](../../../docs/runtime/rt10b-production-composition.md)을 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+2026-10-29 RT-10(b) export: `RecordingService.export_report_video(incident_clip_ref=…, post_stamp={needed, value})`
+and `export_plate_image(incident_clip_ref=…, frame_ref=…, plate_bbox_xywh=…, max_byte_size=…)`
+produce fresh immutable DerivedAssets with measured bytes and a stored transform
+(`get_export_transform`). Worker prepares an execution-local snapshot before the
+call, so export and encoding perform no DB checkout, then publishes atomically in
+a separate short transaction. Plate uses the authoritative frame bbox, never
+crop_ref or associated_region. Actual oversize triggers bounded PNG downscale;
+exhaustion is distinct from ordinary generation failure. No output replaces a
+prior asset. PM-delegated provisional wires and #47 deferred review are documented
+in [Implementation Notes](../../../docs/runtime/rt10b-recording-exports.md).

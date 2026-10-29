@@ -79,12 +79,12 @@ class RecordingFacts(Protocol):
 
 
 def stored_adapter_factory(
-    *, reader: ProducedReader, executions: ExecutionReader, recording: RecordingFacts
+    *, reader: ProducedReader, executions: ExecutionReader, recording: RecordingFacts, export_max_byte_size=None
 ) -> AdapterFactory:
     """`CaseStore(adapter_factory=…)`에 꽂는 factory — 요청마다 호출자 transaction의 `conn`으로 adapter를 만든다."""
 
     def factory(case: CaseAggregate, conn: Any) -> StoredObservationAdapter:
-        return StoredObservationAdapter(case, conn, reader=reader, executions=executions, recording=recording)
+        return StoredObservationAdapter(case, conn, reader=reader, executions=executions, recording=recording, export_max_byte_size=export_max_byte_size)
 
     return factory
 
@@ -107,12 +107,15 @@ class StoredObservationAdapter:
         reader: ProducedReader,
         executions: ExecutionReader,
         recording: RecordingFacts,
+        export_max_byte_size=None,
     ) -> None:
         self._case = case
         self._conn = conn
         self._reader = reader
         self._executions = executions
         self._recording = recording
+        self._export_max_byte_size = export_max_byte_size
+        self._export_requests = {}
         self._built = False
         self._bundle: real_e2e.EvidenceBundle | None = None
 
@@ -243,6 +246,37 @@ class StoredObservationAdapter:
         source_refs = list(dict.fromkeys(s["source_asset_ref"] for s in spans if s["source_asset_ref"] in known))
         time_source_candidates = [c for ref in source_refs for c in self._recording.get_time_source_candidates(ref)]
         asset_facts = real_e2e.select_case_assets(clip_ref, self._recording.list_case_asset_facts(self._case.case_id))
+        observation_facts = None
+        if self._export_max_byte_size is not None:
+            from daesingo.case.exports import build_export_requests, EXPORT_KINDS
+            from daesingo.evidence import resolve_time
+            resolution = resolve_time(time_source_candidates=time_source_candidates, overlay_time_readout=overlay_readout,
+                candidate_event=observations.candidate.model_dump(mode="json"), correction_records=self._case.correction_records,
+                case_id=self._case.case_id, selection_rev=self._case.selection_rev,
+                resolution_id=f"tr_{self._case.case_id}_001")
+            self._export_requests = build_export_requests(clip_ref, plate_readout, resolution, self._export_max_byte_size)
+            export_jobs = [r for r in self._case.job_records if r["kind"] in EXPORT_KINDS
+                and self._case.export_inputs.get(r["job_id"]) == self._export_requests.get(r["kind"])
+                and r["job_id"] in self._case.export_inputs
+                and self._case.settled_jobs.get(r["job_id"]) == "REFLECTED"]
+            export_executions = self._representatives([r["job_id"] for r in export_jobs])
+            chosen = {}
+            for job in reversed(export_jobs):
+                if job["kind"] not in chosen and self._succeeded(export_executions, job["job_id"]):
+                    chosen[job["kind"]] = self._read(export_executions, job)["derived_asset_ref"]
+            selected_refs = set(chosen.values())
+            asset_facts = [f for f in asset_facts if f.get("derived_role") is None or f["asset_ref"]["ref"] in selected_refs]
+            report_ref = chosen.get("REPORT_VIDEO_EXPORT")
+            if report_ref:
+                report = next((f for f in asset_facts if f["asset_ref"]["ref"] == report_ref), None)
+                if report is not None:
+                    asset = self._recording.get_derived_asset(report_ref)
+                    transform = self._recording.get_export_transform(asset["transform_ref"])
+                    if transform["input"] != self._export_requests["REPORT_VIDEO_EXPORT"]:
+                        raise ValueError("report transform input mismatch")
+                    applied = any(op.get("post_stamp_applied") is True for op in transform["operations"])
+                    observation_facts = {"post_stamp_applied": {"value": applied, "subject_refs": [report["asset_ref"]]}}
+
         return real_e2e.ObservationBundle(
             candidate=observations.candidate,
             visual_evidence=observations.visual_evidence,
@@ -253,8 +287,14 @@ class StoredObservationAdapter:
             overlay_readout=overlay_readout,
             time_source_candidates=time_source_candidates,
             asset_facts=asset_facts,
+            observation_facts=observation_facts,
             plate_read_outcome=plate_outcome,
         )
+
+    def get_export_requests(self):
+        import copy
+        self._evidence_bundle()
+        return copy.deepcopy(self._export_requests)
 
     # ── ModuleAdapter ───────────────────────────────────────────────────
     # 탐색 결과는 Worker T2가 case에 들여오므로(`reflection`) 비동기 경로의 view는 탐색 getter를 쓰지 않는다.

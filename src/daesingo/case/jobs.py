@@ -51,6 +51,7 @@ def issue_job(
     input_fingerprint: str,
     force_rerun: bool = False,
     observation_input: dict[str, Any] | None = None,
+    export_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`observation_input`은 관찰 kind만 받고 같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
     if kind not in JOB_KINDS:
@@ -81,6 +82,10 @@ def issue_job(
     case.record_job(job_record)
     if observation_input is not None:
         case.observation_inputs[job_record["job_id"]] = copy.deepcopy(observation_input)
+    if export_input is not None:
+        if kind not in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+            raise ValueError("export input requires export kind")
+        case.export_inputs[job_record["job_id"]] = copy.deepcopy(export_input)
     return job_record
 
 
@@ -95,6 +100,7 @@ def issue_same_input(case: CaseAggregate, prior: dict[str, Any], *, force_rerun:
         input_fingerprint=prior["input_fingerprint"],
         force_rerun=force_rerun,
         observation_input=observation_input,
+        export_input=case.export_inputs.get(prior["job_id"]),
     )
 
 
