@@ -9,6 +9,7 @@ from daesingo.common.logging import log_event_best_effort
 from daesingo.worker.bootstrap import bootstrap
 from daesingo.worker.composition import compose_worker
 from daesingo.worker.composition_root import compose_registry
+from daesingo.worker.readout_composition import production_readout_factory
 from daesingo.worker.case_composition import StoredCaseReflector, StoredCaseExhaustionReceiver
 
 
@@ -21,7 +22,7 @@ def _failure(logger, event):
         pass
 
 
-def main() -> int:
+def main(*, readout_provider_factory=None) -> int:
     startup = bootstrap(revision="unknown")
     stop = Event()
     engine = None
@@ -37,7 +38,14 @@ def main() -> int:
             previous[sig] = signal.getsignal(sig)
             signal.signal(sig, request_stop)
         engine = create_worker_engine(startup.config.db)
-        registry = compose_registry(engine=engine, startup=startup)
+        if readout_provider_factory is None:
+            readout_provider_factory = production_readout_factory(engine=engine, startup=startup)
+        # Native OCR initialization may replace OS signal handlers. Reassert the
+        # Worker's graceful-stop ownership before any execution can be claimed.
+        for sig in previous:
+            signal.signal(sig, request_stop)
+        registry = compose_registry(engine=engine, startup=startup,
+                                    readout_provider_factory=readout_provider_factory)
         compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
                        reflector=StoredCaseReflector(startup=startup),
                        exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup)).run()

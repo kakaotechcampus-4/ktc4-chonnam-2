@@ -50,6 +50,10 @@ def main(argv=None):
         if args == ["media-preflight"]:
             return 0
     try:
+        if args == ["readout-preflight"]:
+            from daesingo.worker.readout_runtime import load_production_ocr_engine
+            load_production_ocr_engine()
+            return 0
         if args == ["migrate"]:
             values = load_env_file(os.environ["DAESINGO_ENV_FILE"])
             settings = DbSettings(url=values.get("DAESINGO_RUNTIME_DB_URL", ""))

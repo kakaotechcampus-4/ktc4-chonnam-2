@@ -10,6 +10,7 @@
 !migrations/**
 !docker/
 !docker/runtime.py
+!docker/readout_cache.py
 **/__pycache__/**
 **/*.pyc
 **/.env
