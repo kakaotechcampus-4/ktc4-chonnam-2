@@ -108,11 +108,11 @@ evidence Consumer Review가 실제로 소비하는 최소 값 공간이다. `cas
 | `event.safety_report_type` | string \| null | `SafetyReportType` 값 공간(`docs/modules/evidence/decisions/safety-report-policy-v1.md`) |
 | `event.violation_expression` | string \| null | 자유 문자열, 5~900자(안전신문고 신고문 제약과 동일 하한/상한 재사용) |
 | `occurred_at` | ISO8601 | offset-aware RFC3339 |
-| `vehicle_number` | string | 문자열 |
+| `vehicle_number` | string | 공백이 아닌 문자열 — 빈 문자열 · 공백만 있는 값은 번호판을 지우는 값이라 받지 않는다(2026-10-28, #384 후속 · PR #433) |
 | `location.coord` | `{lat:number, lon:number}` | 좌표 쌍 |
 | `location.address` \| `location.place_name` \| `location.search_keyword` \| `location.user_hint` | string \| null | 자유 문자열 |
 
-**(v1.2) 이전 값 `null`.** 위 경로 모두 `previous_value`는 표의 값 타입이거나 `null`이다. `null`은 「값이 없던 상태에서 처음 입력」을 뜻한다. `occurred_at` · `vehicle_number` · `location.coord`의 이전 값 `null`은 `contract_version`이 `correction-record/v1.2`인 레코드에서만 유효하다(v1.1 기록에 소급하지 않는다). `new_value`는 표의 값 타입 그대로다 — `occurred_at` · `vehicle_number` · `location.coord`의 `new_value`는 `null`이 될 수 없다. 필드마다 예외를 두지 않는다(#235 E-2).
+**(v1.2) 이전 값 `null`.** 위 경로 모두 `previous_value`는 표의 값 타입이거나 `null`이다. `null`은 「값이 없던 상태에서 처음 입력」을 뜻한다. `occurred_at` · `vehicle_number` · `location.coord`의 이전 값 `null`은 `contract_version`이 `correction-record/v1.2`인 레코드에서만 유효하다(v1.1 기록에 소급하지 않는다). `new_value`는 표의 값 타입 그대로다 — `occurred_at` · `vehicle_number` · `location.coord`의 `new_value`는 `null`이 될 수 없다. 필드마다 예외를 두지 않는다(#235 E-2). **`vehicle_number`의 빈 문자열 · 공백만 있는 값(2026-10-28)** 도 「번호판을 지우는 정정」이라 값 공간 밖이다 — 기록 전 검사가 `InvalidCorrectionValue`로 거부하고 case는 `case.command.invalid_value`로 돌려준다. 이 값으로 기록된 레코드는 아직 없다(번호판 정정을 기록하는 command는 같은 PR에서 열렸다). 번호판을 읽지 못한 상태는 계속 `null`이다.
 
 **`kind`** — `TIME_HINT_EDIT` · `OTHER_CANDIDATE` · `PLATE_MANUAL_EDIT` · `PLATE_REREAD` · `SPAN_ADJUST` · `REPORT_TYPE_CHANGE` · `EVENT_TIME_MANUAL` · `TIMELINE_REBASE` · `SITUATION_CHANGE`(v1.1 신규 — 사용자가 「다른 상황」을 선택해 사건 의미 자체를 바꾼 경우. 단순 「잘 모르겠어요」는 이 kind를 쓰지 않는다 — §8 불변조건 10)
 
