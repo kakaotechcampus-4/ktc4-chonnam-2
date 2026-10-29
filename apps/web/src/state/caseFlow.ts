@@ -9,6 +9,8 @@ import type { CaseView } from '../contracts/caseView'
 
 export interface UploadItem {
   name: string
+  /** 같은 탭에서 선택한 원본. 미리보기만 사용하며 서버 상태나 저장소에 직렬화하지 않는다. */
+  file: File
   status: 'WAITING' | 'UPLOADING' | 'DONE' | 'FAILED'
   /** 실패한 응답의 `error.code`. 문구는 화면이 code별로 연결한다(§3.3). */
   error: string | null
@@ -132,7 +134,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
     set({
       busy: true,
       error: null,
-      uploads: [...state.uploads, ...files.map((file) => ({ name: file.name, status: 'WAITING' as const, error: null }))],
+      uploads: [...state.uploads, ...files.map((file) => ({ name: file.name, file, status: 'WAITING' as const, error: null }))],
     })
     let caseId = state.caseId
     if (!caseId) {

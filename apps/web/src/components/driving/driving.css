@@ -1,0 +1,35 @@
+.driving-preview { position: absolute; inset: 0; color-scheme: light; color: #f3f6f3; }
+.driving-preview [hidden] { display: none !important; }
+.driving-preview .media { position: relative; width: 100%; height: 100%; overflow: hidden; isolation: isolate; background: #c0e1f0; }
+.driving-preview canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.driving-preview:not([data-status="ready"]) canvas { visibility: hidden; }
+.driving-preview button { display: grid; place-items: center; padding: 0; font: inherit; cursor: pointer; touch-action: manipulation; }
+.driving-preview button:focus-visible { outline: 3px solid #496e5a; outline-offset: 3px; }
+.driving-preview button:disabled { cursor: default; }
+.driving-preview .view-tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.driving-preview .view-tools button { width: 36px; height: 36px; border: 1px solid #ffffff77; border-radius: 50%; background: #ffffffb8; color: #4c5b61; }
+.driving-preview .view-tools button:hover { background: #fff; }
+.driving-preview .wheel-arrow { position: absolute; width: 44px; height: 44px; transform: translate(-50%, -50%); border: 1px solid #b6c5c53d; border-radius: 13px; background: #54646d40; color: #f3f6f3; box-shadow: inset 0 1px 0 #ffffff1c; }
+.driving-preview .wheel-arrow svg { width: 24px; height: 24px; stroke-width: 2; }
+.driving-preview .wheel-arrow:hover:not(:disabled) { background: #809a8870; color: #fff; }
+.driving-preview .wheel-arrow:disabled { color: #95a4aa80; background: transparent; border-color: #b6c5c51a; box-shadow: none; }
+.driving-preview .wheel-arrow[aria-pressed="true"] { color: #b8e9be; background: #71997845; border-color: #b8e9be6b; }
+.driving-preview .wheel-arrow[aria-pressed="true"]::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: #b8e9be; }
+.driving-preview .turn-symbol, .driving-preview .play-icon, .driving-preview .collapse-icon { display: none; }
+.driving-preview [data-mode="turn"] .lane-symbol, .driving-preview .motion[aria-pressed="true"] .pause-icon, .driving-preview .fullscreen[aria-pressed="true"] .expand-icon { display: none; }
+.driving-preview [data-mode="turn"] .turn-symbol, .driving-preview .motion[aria-pressed="true"] .play-icon, .driving-preview .fullscreen[aria-pressed="true"] .collapse-icon { display: block; }
+.driving-preview .gear { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 3px; padding: 5px; border: 1px solid #ffffff43; border-radius: 14px; background: #34424ce8; }
+.driving-preview .gear button { position: relative; width: 38px; height: 38px; border: 0; border-radius: 9px; background: transparent; color: #c8d3d9; font-size: 20px; font-weight: 500; line-height: 1; }
+.driving-preview .gear button[aria-pressed="true"] { background: #eff5f2; color: #314a3c; }
+.driving-preview .gear button[aria-pressed="true"]::after { content: ''; position: absolute; right: 4px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: #7ca28b; }
+.driving-preview .drive-message { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.driving-preview .drive-unavailable { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: var(--rs-fill); color: var(--rs-sub); font-size: 15px; text-align: center; padding: 16px; }
+.driving-preview .media:fullscreen { width: 100vw; height: 100vh; }
+.driving-preview .media:fullscreen .view-tools { top: 20px; right: 22px; gap: 8px; }
+.driving-preview .media:fullscreen .view-tools button { width: 44px; height: 44px; }
+.driving-preview .media:fullscreen .gear { bottom: 25px; right: 30px; padding: 7px; }
+.driving-preview .media:fullscreen .gear button { width: 50px; height: 49px; font-size: 23px; }
+.driving-preview .media:fullscreen .wheel-arrow { width: 52px; height: 48px; }
+@media (pointer: coarse) {
+  .driving-preview .view-tools button, .driving-preview .gear button { min-width: 44px; min-height: 44px; }
+}

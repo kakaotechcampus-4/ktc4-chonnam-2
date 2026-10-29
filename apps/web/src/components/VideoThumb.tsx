@@ -15,8 +15,8 @@ const MAX_WIDTH = 960
 export function VideoThumb(props: {
   file: File | null
   name: string
-  /** 정지 화면 위에 겹쳐 그릴 장식(진행 중 연출) */
-  overlay?: ReactNode
+  /** 미리보기 실패가 확인되었거나 원본이 없을 때만 표시한다. 준비 중·성공에는 표시하지 않는다. */
+  unavailableFallback?: ReactNode
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
@@ -29,7 +29,13 @@ export function VideoThumb(props: {
       setFailed(file)
       return
     }
-    const url = URL.createObjectURL(file)
+    let url: string
+    try {
+      url = URL.createObjectURL(file)
+    } catch {
+      setFailed(file)
+      return
+    }
     const video = document.createElement('video')
     video.muted = true
     video.preload = 'auto'
@@ -55,8 +61,13 @@ export function VideoThumb(props: {
 
     video.addEventListener('error', fail)
     video.addEventListener('loadedmetadata', () => {
+      if (done) return
       const d = video.duration
-      video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      try {
+        video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      } catch {
+        fail()
+      }
     })
     video.addEventListener('seeked', () => {
       if (done) return
@@ -90,14 +101,13 @@ export function VideoThumb(props: {
     <figure className="flow-thumb">
       <div className="flow-thumb-box">
         <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
-          {!src && (
+          {!src && (unavailable && props.unavailableFallback ? props.unavailableFallback : (
             <span className="flow-thumb-fallback">
               <Film size={24} strokeWidth={1.8} aria-hidden />
               {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
             </span>
-          )}
+          ))}
           {src && <img src={src} alt="" />}
-          {props.overlay}
         </div>
       </div>
       <figcaption>

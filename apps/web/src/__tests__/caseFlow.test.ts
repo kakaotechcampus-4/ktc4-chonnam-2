@@ -60,6 +60,7 @@ describe('영상 올리기', () => {
     expect(m.sendCommand).not.toHaveBeenCalled()
     expect(flow.getState()).toMatchObject({ caseId: 'c1', busy: false, error: null })
     expect(flow.getState().uploads.map((u) => u.status)).toEqual(['DONE', 'DONE'])
+    expect(flow.getState().uploads.map((u) => u.file)).toEqual(m.uploadSource.mock.calls.map((c) => c[1]))
   })
 
   it('실패한 파일은 표시하고 나머지로 계속한다(core-user-flow §23)', async () => {

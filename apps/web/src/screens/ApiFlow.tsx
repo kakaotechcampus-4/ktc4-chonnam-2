@@ -182,7 +182,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             view={view}
             files={
               state.uploads.length
-                ? state.uploads.filter((u) => u.status === 'DONE')
+                ? state.uploads.filter((u) => u.status === 'DONE').map((u) => u.file)
                 : [{ name: `영상 ${view.manifest_summary.ok_file_count}개` }]
             }
             situation={situation || view.description || ''}
