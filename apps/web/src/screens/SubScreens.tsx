@@ -68,8 +68,8 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 }
 
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
-// 두 이미지는 FrameRef(evidence.preview_ref · plate_preview_ref)다. 값이 없으면(null) 자리만 둔다.
-// 번호판 확대는 frame 전체를 그린다 — 현재 CaseView에는 bbox가 없다.
+// 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다(#47 · #446).
+// 값이 없으면(null) 자리만 둔다. 번호판 확대는 자를 위치(bbox)가 CaseView에 없어 아직 자리만 둔다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
@@ -116,7 +116,7 @@ export function PlateCheck(props: {
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
         <figure className="plate-fig plate-scene">
-          <FrameSlot className="plate-frame" src={frame(evidence.preview_ref)} alt="번호판을 읽은 장면">
+          <FrameSlot className="plate-frame" src={frame(evidence.plate_preview_ref)} alt="번호판을 읽은 장면">
             <Film size={26} strokeWidth={1.5} aria-hidden />
             <span>장면 이미지 준비 중</span>
           </FrameSlot>
@@ -124,10 +124,10 @@ export function PlateCheck(props: {
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
-            <FrameSlot className="plate-frame plate-crop" src={frame(evidence.plate_preview_ref)} alt="번호판 확대">
+            <div className="plate-frame plate-crop">
               <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>번호판 이미지 준비 중</span>
-            </FrameSlot>
+            </div>
             <figcaption>번호판 확대</figcaption>
           </figure>
           <section className="plate-value" aria-labelledby="plate-k">

@@ -146,13 +146,12 @@ describe('프레임 이미지', () => {
     expect(r.container.textContent).toBe('자리')
   })
 
-  it('번호판 확인 화면은 장면과 번호판 확대를 frameSrc로 그린다. frameSrc가 없으면(시연) 그리지 않는다', () => {
-    expect(HAPPY.evidence?.preview_ref).toBeTruthy()
+  it('번호판 확인 화면의 장면은 대표 썸네일(preview_ref)이 아니라 번호판을 읽은 frame(plate_preview_ref)이다. frameSrc가 없으면(시연) 그리지 않는다', () => {
     expect(HAPPY.evidence?.plate_preview_ref).toBeTruthy()
+    expect(HAPPY.evidence?.plate_preview_ref).not.toBe(HAPPY.evidence?.preview_ref)
     const frameSrc = (ref: string) => `/frames/${ref}`
     const withApi = render(<PlateCheck view={HAPPY} onBack={vi.fn()} frameSrc={frameSrc} />)
     expect([...withApi.container.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([
-      `/frames/${HAPPY.evidence!.preview_ref}`,
       `/frames/${HAPPY.evidence!.plate_preview_ref}`,
     ])
     withApi.unmount()
