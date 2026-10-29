@@ -166,13 +166,13 @@ def _without(view: dict, code: str) -> dict:
 
 
 def test_abstained_notice_shape_matches_contract():
-    """`actions[]`는 비운다 — `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106) 전에는 보낼 경로가 없다."""
+    """「번호판 직접 입력」은 입력형 command `MANUAL_PLATE_INPUT`이다(case-command 계약 §12-3)."""
     assert service.PLATE_ABSTAINED_NOTICE == {
         "code": ABSTAINED_CODE,
         "severity": "WARN",
         "blocking": False,
         "message_key": "notice.plate_abstained",
-        "actions": [],
+        "actions": ["MANUAL_PLATE_INPUT"],
     }
 
 
@@ -187,7 +187,7 @@ def test_abstained_notice_when_current_record_needs_plate_reread():
 
     codes = [n["code"] for n in derived["notices"]]
     assert codes.count(ABSTAINED_CODE) == 1
-    assert next(n for n in derived["notices"] if n["code"] == ABSTAINED_CODE)["actions"] == []
+    assert next(n for n in derived["notices"] if n["code"] == ABSTAINED_CODE)["actions"] == ["MANUAL_PLATE_INPUT"]
 
 
 def test_no_abstained_notice_after_reread_fills_plate():
