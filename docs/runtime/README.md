@@ -21,6 +21,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 
 | 문서 | 역할 |
 | --- | --- |
+| [`local-runtime-environment.md`](./local-runtime-environment.md) | 현재 로컬 Compose/API/Worker canonical 실행환경: 실제 env·secret 경계·버전·Recording profile 미결·production OCR·실행 순서·8종 등록 확인 (#460) |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |

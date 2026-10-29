@@ -6,7 +6,7 @@
 
 목표는 신고할 마음이 없던 사람을 유도하는 게 아니라, **이미 생긴 신고 의향이 준비 과정의 마찰 때문에 사라지지 않게 하는 것**이다.
 
-> **현재 Runtime 상태 (2026-10-18 갱신):** `api`는 RT-08(a)의 app factory·HTTP envelope·health·단일 process 실행과 RT-08(b)의 빈 Case 생성·CaseView 조회, RT-08(c)의 command/enqueue와 RT-08(d)의 중단 배선을 구현했다. `worker`는 claim/dispatch·T1/T2·heartbeat/cancel·STALE/retry·T2 재전달을 구현했고, 실제 handler 조립은 후속 범위다. media HTTP·분석 시작 timeline dependency와 실제 Search adapter 연결은 후속 작업이다. 구현·검증·남은 위험의 현재 기록은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
+> **현재 Runtime 실행환경 (2026-10-30 갱신):** 로컬 Compose는 API·Worker·migration·MySQL을 구성한다. 기본 Worker는 Search·Recording·production PaddleOCR·export를 조립하며, Analysis/Incident encoding 설정에 따라 등록 가능한 handler가 달라진다. 실제 env·버전·cache·실행 순서와 미결 항목은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md), 검증 이력과 남은 위험은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
 ## 무엇을 하고, 무엇을 하지 않는가
 
@@ -106,6 +106,10 @@ Local logical backup/restore와 실제 복원 acceptance 실행은 [RT-13(b) Not
 **미결은 미결로 남긴다.** 업로드 전략 · timeout 수치 · correction 로그 재사용 설계 · overlay 존재 탐지 세부 · 실패 분류 이름 목록은 실측 전이라 `미결`로 표시돼 있다. 문서를 완성도 있게 보이려고 채우지 않는다.
 
 ## 실행
+
+로컬 Compose/API/Worker 구성은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md)을 먼저 읽고
+[`.env.example`](.env.example)의 빈 필수값을 보호된 파일에 채운다. 현재 지원 toolchain, migration 순서,
+Search/Intent 모델 구분, production Paddle cache, encoding 미결 항목과 8종 등록 확인 방법을 한곳에서 안내한다.
 
 Node.js 20 이상. npm workspace라서 **레포 루트에서 한 번만** 설치한다(`apps/*` 안에서 하지 않는다).
 
