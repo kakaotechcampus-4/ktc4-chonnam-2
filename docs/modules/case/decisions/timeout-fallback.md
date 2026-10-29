@@ -41,7 +41,7 @@
 
 | 항목 | 상태 | 무엇으로 정하는가 |
 | --- | --- | --- |
-| 위 잠정값 확정 | 잠정 | runtime 머신 재측정(`common/runtime` 배치 후). Fine 70초는 근거 표본이 29회(#182)뿐이고 시계가 전처리 · provider 호출 · 재시도 대기를 모두 포함하므로, 재측정 때 **Fine timeout 발생 횟수**도 함께 본다(#328) |
+| 위 잠정값 확정 | 잠정 | runtime 머신 재측정(`common/runtime` 배치 후). **Recording 준비 · 큐 대기 · Search를 나눠 잰다**(2026-10-29, #452 — case 대기 마감은 셋을 모두 포함한다, `long-analysis-range.md` §3). Fine 70초는 근거 표본이 29회(#182)뿐이고 시계가 전처리 · provider 호출 · 재시도 대기를 모두 포함하므로, 재측정 때 **Fine timeout 발생 횟수**도 함께 본다(#328) |
 | Fine 70초 실제 적용 | Worker 경로 반영(2026-10-26, #412) · 동기 경로 미반영 | Worker 경로는 관찰 입력 `max_latency_sec`(`observation.FINE_MAX_LATENCY_SEC`)로 handler에 넘긴다. 동기 경로 `real_e2e.py`는 아직 Coarse 값(150초)을 이어받는다 |
-| 클립 분할 발주 구현 | 미구현 | 지금 case는 영상을 클립으로 나누지 않고 Coarse를 한 번에 부른다(`real_e2e.py`, 상한 150초 — #200). 분할은 인라인 상한을 넘는 영상에만 필요하고(#168 (c)), 그 전에 #168에 남은 overlap 길이·중복 제거 호출 지점을 정한다 |
+| 클립 분할 발주 구현 | 미구현 · **MVP 범위 밖**(2026-10-29, #452 — `long-analysis-range.md`. 상한을 넘는 범위는 Recording이 변환 전에 거르고 case가 구분된 notice로 알린다. 분할 크기에는 Recording 저장 상한도 들어가야 한다) | 지금 case는 영상을 클립으로 나누지 않고 Coarse를 한 번에 부른다(`real_e2e.py`, 상한 150초 — #200). 분할은 인라인 상한을 넘는 영상에만 필요하고(#168 (c)), 그 전에 #168에 남은 overlap 길이·중복 제거 호출 지점을 정한다 |
 | 부분 재실행 정책 표와의 정합 | 미결 | `module-architecture.md` §7-4 |
