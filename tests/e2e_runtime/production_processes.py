@@ -135,9 +135,9 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     registry = compose_registry(engine=engine, startup=startup, readout_provider_factory=readout_factory)
                     stop = Event()
                     terminals = []
-                    def invoke(ctx):
+                    def invoke(ctx, *, logger=None):
                         assert ctx.kind == kind
-                        result = registry.dispatch(ctx)
+                        result = registry.dispatch(ctx, logger=logger)
                         terminals.append({"status": result.status, "failure_kind": result.failure_kind})
                         stop.set()
                         return result
