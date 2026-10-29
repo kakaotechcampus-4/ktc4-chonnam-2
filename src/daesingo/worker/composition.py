@@ -184,7 +184,7 @@ def compose_worker(
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
-        dispatch=registry.dispatch, record=record, settings=settings, stop=stop,
+        dispatch=partial(registry.dispatch, logger=startup.logger), record=record, settings=settings, stop=stop,
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
         reflect=reflect if reflector is not None else None,
         heartbeat=heartbeat,

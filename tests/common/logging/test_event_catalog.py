@@ -80,3 +80,24 @@ def test_catalog_covers_every_baseline_log_metric_with_explicit_source():
     for metric in catalog().METRICS.values():
         assert metric.events and metric.meaning
         assert all(catalog().EVENTS[name].source for name in metric.events)
+
+
+@pytest.mark.parametrize("event", ["runtime.execution.failed", "runtime.reflect.failed"])
+@pytest.mark.parametrize("fields", [{}, {"error_type": "_FrameCoverageError"}])
+def test_failure_catalog_optional_error_type(event, fields):
+    output = StringIO()
+    log_event(configure_logging("worker", stream=output), event, status="FAILED", **fields)
+    value = json.loads(output.getvalue())
+    catalog().validate_event(value)
+    assert event not in catalog().METRICS
+    for change in ({"status": "SUCCEEDED"}, {"error_type": "Outer.Error"}, {"message": "private"}):
+        with pytest.raises(ValueError):
+            catalog().validate_event(dict(value, **change))
+
+
+def test_error_type_is_not_a_global_catalog_optional_field():
+    output = StringIO()
+    log_event(configure_logging("worker", stream=output), "runtime.heartbeat.lag_ms",
+              status="RENEWED", duration_ms=1, error_type="RuntimeError")
+    with pytest.raises(ValueError):
+        catalog().validate_event(json.loads(output.getvalue()))
