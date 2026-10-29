@@ -6,7 +6,9 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CaseView, Notice } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
+import { FrameSlot } from '../components/FrameSlot'
 import { ResultScreen } from '../screens/ResultScreen'
+import { PlateCheck } from '../screens/SubScreens'
 import { acceptView, reportVideoState, splitDateTime } from '../state/resultModel'
 
 afterEach(cleanup)
@@ -30,8 +32,8 @@ describe('발생 일시 나누기', () => {
 })
 
 describe('신고용 영상 상태', () => {
-  it('영상 참조가 있어도 파일로 받을 경로가 없으면 「연결 미완료」다 — 다운로드 가능이 아니다', () => {
-    expect(reportVideoState(HAPPY)).toBe('unlinked')
+  it('영상 참조가 있으면 받을 수 있다', () => {
+    expect(reportVideoState(HAPPY)).toBe('ready')
   })
   it('아직 없음 · 만드는 중 · 실패를 구분한다', () => {
     expect(reportVideoState({ ...HAPPY, package: { ...HAPPY.package!, artifact_ref: null } })).toBe('none')
@@ -86,5 +88,77 @@ describe('notice 동작', () => {
     expect(r.getByText('아직 이 화면에서 할 수 없어요')).toBeTruthy()
     fireEvent.click(btn)
     expect(onAction).not.toHaveBeenCalled()
+  })
+})
+
+describe('신고용 영상 다운로드', () => {
+  const noop = vi.fn()
+  const show = (videoHref?: string) =>
+    render(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref={videoHref} />)
+  const button = (r: ReturnType<typeof show>) => r.getByRole('button', { name: '신고용 영상 다운로드' }) as HTMLButtonElement
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('받을 주소가 없으면(시연) 막아 두고 이유를 말한다', () => {
+    const r = show()
+    expect(button(r).disabled).toBe(true)
+    expect(r.container.textContent).toContain('내려받는 연결이 아직 준비되지 않았어요')
+  })
+
+  it('받을 주소가 있으면 열려 있고, 누르면 그 주소를 받는다', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: async () => new Blob(['mp4']) })
+    vi.stubGlobal('fetch', fetchMock)
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const r = show('/cases/c1/assets/ref1')
+    expect(button(r).disabled).toBe(false)
+    fireEvent.click(button(r))
+    fireEvent.click(button(r)) // 받는 동안은 막혀 있어 한 번만 받는다
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/ref1')
+    expect(button(r).disabled).toBe(false)
+  })
+
+  it('서버가 못 준다고 하면 실패 안내로 바뀌고 버튼이 다시 막힌다. 다른 주소(다른 후보)면 다시 열린다', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+    const r = show('/cases/c1/assets/ref1')
+    fireEvent.click(button(r))
+    await r.findByText('신고용 영상을 받지 못했어요')
+    expect(button(r).disabled).toBe(true)
+    r.rerender(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/ref2" />)
+    expect(button(r).disabled).toBe(false)
+  })
+})
+
+describe('프레임 이미지', () => {
+  it('ref가 없으면 자리 표시를 두고, 있으면 이미지를 그리고, 받지 못하면 자리 표시로 돌아간다', () => {
+    const r = render(<FrameSlot className="f" src={null} alt="장면">자리</FrameSlot>)
+    expect(r.container.textContent).toBe('자리')
+    r.rerender(<FrameSlot className="f" src="/frames/a" alt="장면">자리</FrameSlot>)
+    const img = r.container.querySelector('img')!
+    expect(img.getAttribute('src')).toBe('/frames/a')
+    fireEvent.error(img)
+    expect(r.container.querySelector('img')).toBeNull()
+    expect(r.container.textContent).toBe('자리')
+    // 자리 표시가 없으면 칸 자체를 그리지 않는다(근거 장면 — 있을 때만 보인다)
+    r.rerender(<FrameSlot className="f" src={null} alt="장면" />)
+    expect(r.container.querySelector('.f')).toBeNull()
+  })
+
+  it('번호판 확인 화면의 장면은 대표 썸네일(preview_ref)이 아니라 번호판을 읽은 frame(plate_preview_ref)이다. frameSrc가 없으면(시연) 그리지 않는다', () => {
+    expect(HAPPY.evidence?.plate_preview_ref).toBeTruthy()
+    expect(HAPPY.evidence?.plate_preview_ref).not.toBe(HAPPY.evidence?.preview_ref)
+    const frameSrc = (ref: string) => `/frames/${ref}`
+    const withApi = render(<PlateCheck view={HAPPY} onBack={vi.fn()} frameSrc={frameSrc} />)
+    expect([...withApi.container.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([
+      `/frames/${HAPPY.evidence!.plate_preview_ref}`,
+    ])
+    withApi.unmount()
+    const demo = render(<PlateCheck view={HAPPY} onBack={vi.fn()} />)
+    expect(demo.container.querySelector('img')).toBeNull()
   })
 })
