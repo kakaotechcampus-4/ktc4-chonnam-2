@@ -41,7 +41,7 @@
 
 ## 5. 미결 (채우지 않는다)
 
-- export 실패 code 매핑 — 계약 A§7은 `REPORT_VIDEO_EXPORT_FAILED`를 `recording.report_video_export_failed` notice로 싣는다고 적었지만 B§7 등재 · web 문구가 없다. RT-10에서 실패가 실제로 나올 때 맞춘다.
+- ~~export 실패 code 매핑~~ → **닫힘(2026-10-29).** RT-10(b) #442가 `case/exports.py` `export_notices()`로 `recording.report_video_export_failed` · `recording.plate_image_export_failed`를 내리고, 같은 날 CaseView 계약 B§7에 그 모양 그대로 등재했다. 남은 것은 web 문구(`notice.report_video_export_failed` · `notice.plate_image_export_failed`, 신유민)다.
 - `GENERATE_PLATE_IMAGE`의 notice 발동 조건 — 같은 모양이라 #351을 따르되(#351 범위 밖), 번호판 이미지는 선택 첨부라 Package를 막지 않는다(#280).
 
 ## 6. Runtime implementation checkpoint — 2026-10-29
