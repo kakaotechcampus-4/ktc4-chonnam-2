@@ -84,6 +84,12 @@ class LocalAnalysisMaterializer:
     def has_profile(self, ref):
         return ref in self._profiles
 
+    def _materialize_many(self, inputs, profile_ref):
+        # Runtime's materializer wrapper must cover concat temp I/O as well as
+        # individual tool calls with the same pinned root and shared lease.
+        from .multi_analysis import materialize_chain
+        return materialize_chain(self, inputs, profile_ref)
+
     def _run(self, args):
         result = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
                                 timeout=self._timeout, check=False)

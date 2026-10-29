@@ -35,6 +35,7 @@
 
 - **시계.** 마감은 `requested_at`(발주한 process의 시계)과 판정하는 process의 시계를 비교한다. API · Worker container 시계가 어긋나면 그만큼 마감이 밀리거나 당겨진다. lease처럼 DB `NOW(6)`(Runtime B-L6)를 쓰지 않는다 — case 행에 그 시각이 없다. 수 초 차이는 30초 여유 안에 든다.
 - **재시도와의 관계.** Worker가 죽으면 attempt 2는 마지막 heartbeat 뒤 최대 ~82초에 시작한다(Baseline §3.2). 탐색이 길면 attempt 2는 마감 뒤에 끝나 반영되지 않는다. Runtime이 이미 case 확인을 받은 관계다(RD-04b).
+- **Recording 준비 시간이 마감에 들어간다**(2026-10-29, #452). 마감 기산점이 `requested_at`이라 큐 대기와 Recording 분석 영상 준비가 모두 150 + 30초 안에 든다. Search 실행 시계(`RunDeadline`)는 Search 호출부터 센다. 19분 26초 입력은 준비에만 240.8~285.2초가 걸려 Search 시작 전에 마감이 지났다. 기산점은 지금 바꾸지 않고 재측정 뒤 다시 본다 — `long-analysis-range.md` §2-6 · §3.
 - **클립 분할 전 값.** 지금 탐색은 클립 1개다. 분할하면 `timeout-fallback.md`의 「150초 × 클립 수」를 scope 예산으로 넘기는 방식에 따라 이 계산도 바뀐다.
 
 ## 5. 미결 (채우지 않는다)

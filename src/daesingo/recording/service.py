@@ -44,7 +44,6 @@ from .repository import InMemoryRecordingRepository, RecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .multi_source import build_placed_timeline, resolve_placed_span
-from .multi_analysis import materialize_chain
 from .analysis_tail import analysis_tail_scope
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
@@ -784,7 +783,7 @@ class RecordingService(RecordingExports):
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 또는 stream index가 없습니다")
             inputs.append((local, index, span))
         with source_inspections(self._source_inspections), analysis_tail_scope():
-            prepared = materialize_chain(engine, inputs, profile_ref)
+            prepared = engine._materialize_many(inputs, profile_ref)
         source = AnalysisSource(contract="AnalysisSource", contract_version="analysis-source-derived/v1",
             analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
             source_refs=[ContractRef(kind="source_asset", ref=s.source_asset_ref) for s in ordered],
