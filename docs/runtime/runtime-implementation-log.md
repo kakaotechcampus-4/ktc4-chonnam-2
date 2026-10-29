@@ -4101,3 +4101,117 @@ Issue #468 최종 로컬 acceptance: source mount 없는 image `sha256:51c214dba
 
 
 최종 cache 정리 후속 확인: 첫24개 ID만 선택한 검사에서는 preflight/permission 하위 참조가 남아 부재 assertion이 실패했다. 이 작업에서 생성된 비공유 root11개를 추가로 식별하고 child→parent 순서로 정확한35개 ID를 정리한 뒤 잔여0을 확인했다. 공유/이전 cache를 범용 prune하지 않았다. 이 검사는 container/volume/network/image 부재와 별도의 build cache 정리 검증이다.
+
+
+## 2026-10-30 — IN_PROGRESS · Refs #460 · Related #429, #450, #452, #465, #468
+
+Runtime/Ops·Recording 실행환경을 [canonical guide](./local-runtime-environment.md)로 정리했다.
+최초 branch는 `codex/issue460-runtime-environment`, HEAD는
+`d66fab9c47b84d6391232c866a7e73c5ac6b8f6b`; working tree/index는 비어 있었다.
+`git fetch origin develop` 후 최신 origin/develop과 동일, ahead/behind 0/0,
+변경 파일 차이 없음. 기존 파일/HEAD/index를 reset/rebase/merge하지 않았다.
+
+Issue #460/#429/#450/#452/#465/#468 본문과 전체 댓글을 GitHub 읽기 전용 도구로 확인했다.
+현재 `.env.example`/Compose/Docker/runtime adapter/Worker bootstrap·main·composition/
+Readout runtime/Recording factory/Runtime config/Search 결정·config/배포·Readout·media·cleanup
+Notes를 대조했다. 과거 댓글의 기본 Worker Readout 미등록 및 Analysis 그룹 누락 시 동작을
+현재 코드와 구분했다. 기본 main의 production Paddle 자동 조립, 정확한 dependency/model/cache/
+offline preflight, Worker의 GEMINI_API_KEY 필수와 Search 공용 ELICE alias 차이를 기록했다.
+
+변경 파일 전체(6개): `.env.example`, `README.md`, `docs/runtime/README.md`,
+`docs/runtime/rt13a-docker-compose.md`, `docs/runtime/local-runtime-environment.md`,
+`docs/runtime/runtime-implementation-log.md`. RT-13(a) Notes에 현재 guide pointer를 추가하고
+당시 기록은 유지했다. Log는 원본 bytes prefix를 보존하여 append한다.
+
+확정 근거: #465의 동일 build 정확히 8.1, #468 Owner의 Paddle3.7.0/3.3.1/OpenCV4.10.0.84와
+두 사전학습 모델, Search Owner의 Coarse/Fine argon·Intent Flash 분리. Runtime 수치는
+코드 기본값 및 Baseline의 잠정 정책으로 구분했다. Recording encoding/profile ref·filename
+offset 팀 대표값, 저장 bytes/지원 길이는 미확정이다. #460의 임시480/240·veryfast·23,
+#452의 64MiB/285.2초/분 수 추정을 운영 권장값·지원 보장으로 승격하지 않았다.
+#452의 DB 한 행 유지·측정 기반 사전/누적 거부 합의와 미구현 env/mapping/notice를 구분했다.
+
+8종 등록 전용 startup log/health 기능은 현재 없다. 기존 조립+내부 registry snapshot을 읽는
+별도 진단 절차와 기존 테스트를 문서화하고 #450 RD-12h 후속으로 남겼다. 실행 중 Worker
+메모리 관측이라고 표현하지 않는다. 제품 동작/기본값/taxonomy/DB/Contract 변경 없음.
+
+작성자 직접 최소 검증:
+
+- 실제 load_env_file·API/Worker RuntimeConfig·RecordingSettings·Worker bootstrap 수용,
+  빈 필수/부분 그룹 거부, shell credential 비병합, Search/Intent 모델·base URL 쌍,
+  전체 Runtime/Recording 키 및 문서/예시/로컬 링크 정합성 PASS.
+- 문서의 8종 진단 Python block을 그대로 실행하되 OCR load 경계만 대체하여 8종 snapshot 확인 PASS.
+  실제 Paddle/DB/provider 실행 증거로 집계하지 않는다.
+- boundary 0위반, Contract structure62/JSON26/semantic104 모두 PASS, Compose source 및
+  실제 CLI resolved JSON의 구조 검사 PASS, `git diff --check` PASS.
+- host Python3.13.0의 기존 최소 회귀 첫 실행: 95PASS/1FAIL(23.85초).
+  `test_default_main_registers_both_readouts`의 plate 경로 실패를 보존했다.
+  호스트 cv2 미설치 확인 후 작업 전용 ignored 의존성만 보완하여 대조한다.
+
+이 Python3.13 host 검사는 Docker의 locked Python3.12 환경 acceptance를 대신하지 않는다.
+실제 runtime secret/개인 env를 읽거나 기록하지 않았고 합성 설정만 썼다.
+전체 pytest/전체 MySQL/clean Docker build/기존 smoke를 반복하지 않는다. 기존 Docker inventory만
+읽었으며 application image tag는 없었다. 기존 image/build cache를 변경하거나 prune하지 않는다.
+실제 #465/#468 과거 실행은 guide의 별도 Notes 근거이고 이번 실행 수치가 아니다.
+
+fresh reviewer 결과·후속 대조·최종 정리는 이후 append한다. 작업 계획·검증 runner·합성 env/
+resolved JSON·JUnit·로컬 의존성은 ignored `.codex-scratch/issue460/`로 PR 제외다.
+commit/staging/push/PR/Issue 댓글/Notion 변경은 하지 않는다. #460 게시용 요약은
+guide의 지원 범위·설정 경계·미결 및 이 Log의 검증 결과로 제공한다.
+
+
+Issue #460 작성자 후속 검증: 최초 Readout 실패 환경은 numpy2.1.3/cv2 미설치였다.
+프로젝트 지정 opencv-contrib-python4.10.0.84를 ignored task 폴더에만 보완 후 같은
+실패 node 1PASS(2.05초), 동일 최소 4파일 선택 96PASS(22.83초)/skip0/error0을 확인했다.
+초기95PASS/1FAIL을 소급 변경하지 않는다. 문서 parser 체크는 Python3.13.0의 보조 검증이고
+locked Docker3.12 acceptance가 아니다. API --help 보조 probe는 호스트의 기존 Starlette에
+body_limit 모듈이 없어 import 실패했으며, lock의 API 패키지를 task 폴더에 보완해 대조한다.
+uv run --help의 --no-sync 존재는 직접 확인했다.
+
+Issue #460 API CLI 후속: lock의 fastapi0.143.0/starlette1.8.0/uvicorn0.54.0/
+python-multipart0.0.32를 ignored task 폴더에만 보완한 뒤 API --help exit0으로
+--revision/--host/--port를 직접 확인했다. parser/키/진단/링크 체크 재실행 PASS.
+README 상단의 오래된 2026-10-18 후속 작업 설명도 현재 canonical guide로 연결했다.
+
+Issue #460 fresh read-only reviewer 최초 지적 P3 1건: DAESINGO_ENV_FILE의
+API/Worker cwd/.env fallback과 migrate adapter의 명시 필수 경계를 표에서 구분하지 않았다.
+명령 예시는 이미 export하고 있었지만 표의 필요 여부를 현재 코드대로 수정했다.
+구현 이력을 상속하지 않은 같은 reviewer에게 수정 및 최종 기록 재확인을 요청한다.
+
+Issue #460 수정 후 검증: migrate selector 미지정 시 exit1인 경계 직접 확인,
+parser/필수키/8종 진단(실제 OCR 대체)/링크 재검사 PASS. 최종 focused JUnit을 읽어
+96 tests, failure0/error0/skip0 대조했다. boundary/Contract62·26·104/source Compose/diff
+재검사 PASS. 실 credential/provider/DB/OCR이나 전체 suite/build 성공으로 확대하지 않는다.
+reviewer는 초기 독립 검사에서 전체 Runtime/Recording 키·기본값·모델쌍·링크·
+Log prefix·Compose 구조·diff와 migrate selector 실패를 직접 확인했고 P1/P2는 없었다.
+
+Issue #460 검증 표현 정정: 앞의 OCR load 경계만 대체라는 문구는 정확히
+production_readout_factory 경계 전체를 대역(object 반환)으로 바꾼 등록 확인이다.
+진단 block의 bootstrap/config와 나머지 registry 조립은 실제지만 production factory 내부의
+Recording OCR factory 연결·cache·모델 load/예열은 이 문서용 runner에서 실행하지 않았다.
+실제 Paddle acceptance는 별도 #468 과거 Notes 근거로만 제시한다.
+Native 예시의 uv sync에는 --python 3.12를 명시해 Docker 기준 Python 계열을 선택했다.
+--python/--no-sync 옵션 존재는 uv help로 대조했고 sync 자체는 실행하지 않았다.
+
+Issue #460 동일 fresh reviewer 최종 재확인: 남은 P1/P2/P3 지적 없음.
+selector P3 수정, production factory 전체 대역 검증이라는 표현 정정, native Python3.12
+명시를 확인했다. reviewer가 원본 Log 741,713bytes SHA-256 prefix, 동일96개 JUnit의
+failure/error/skip0, 문서 링크, source/저장된 resolved Compose 구조, diff, branch/HEAD/
+빈 index 및 변경6파일을 읽기 전용으로 재검토했다. 실제 OCR/DB/provider 또는 전체
+suite/build를 reviewer가 이번에 실행했다고 표현하지 않는다.
+
+작업 자원 정리: 경로를 workspace 아래 task root로 resolve 검증하고 task-local
+python-deps와 pytest/final-pytest 디렉터리를 삭제·부재 확인했다. countercheck/config
+임시 디렉터리도 남지 않았다. JUnit/검증 runner/계획/합성 resolved JSON과 검증 메모만
+ignored scratch에 보존하며 모두 PR 제외다. Docker container/volume/network/image를
+이번 문서 작업에서 생성하지 않았고 build/cache/export/prune을 수행하지 않았다.
+실제 secret·개인 env·media·DB dump·모델을 새로 보관하지 않았다.
+
+#460 게시용 요약: canonical guide와 .env.example로 실제 키·필수 그룹·secret/file
+소비 경계·DB/migration/실행 순서·media/temp/cleanup·고정 media/OCR toolchain·Search와
+Intent 분리·8종 구성 진단을 연결했다. encoding 및 용량/길이 대표값은 Owner 측정 후
+확정할 미결로 유지하며 #450 운영 관측/배포와 #452 용량/시간 후속을 분리했다.
+최소 parser/정합성 및96개 회귀 PASS, 최초 호스트 의존성 실패는 별도 이력으로 보존.
+전체 pytest/MySQL/clean Docker build/native OCR/실 credential E2E는 미실행이다.
+
+6파일을 미커밋·미스테이징 상태로 남긴다. HEAD는 시작과 같고 원본 Log bytes prefix를
+유지한다. commit/push/PR/Issue 댓글/Notion 수정은 하지 않았다.
