@@ -151,3 +151,8 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 ## 라이선스
 
 [MIT](LICENSE).
+
+
+### 기본 Worker OCR 연결 (Issue #468 작업 중)
+
+`python -m daesingo.worker`의 production OCR 조립과 이미지 사전 다운로드, startup 실패 의미는 [Issue #468 Notes](docs/runtime/issue468-production-readout.md)에 기록한다. 상태: **IN_PROGRESS · Refs #468 · Related #460**.

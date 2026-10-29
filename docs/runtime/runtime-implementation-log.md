@@ -4087,3 +4087,17 @@ Related #460**, actual-source and post-push remote CI boundaries remain unchange
 
 Final cleanup follow-up: exact-path-verified owned Linux temporary workspace
 removed after review; final `git diff --check` clean, HEAD unchanged/index empty.
+
+
+## 2026-10-30 — IN_PROGRESS · Refs #468 · Related #460
+
+기본 Worker production Readout 조립을 진행한다. 최초 HEAD/fetched origin/develop은 `b9c74d5e1f2b48c95254f6178e4ce9b9b5fb73b5`, 작업 트리/index 비어 있음. Issue/Owner 댓글 직접 확인, 기본 main 미등록 RED→GREEN 및 명시적 injection 유지. 운영 main은 recording_ocr_factory/PaddleOcrProvider를 조립하고 startup에 cache 검증·로드·예열을 완료한다. 일반 collection에 Paddle 설치는 요구하지 않는다. 정확한 dependency/cache/UID/실행 명령, 로컬 #468/#460 기록 초안과 실패 이력은 [Issue #468 Notes](./issue468-production-readout.md). 기존 로그를 덮어쓰지 않고 실제 acceptance/review 결과를 후속 append한다.
+
+
+Issue #468 추가 검증: 실제 Paddle synthetic에서 발견한 sample/source 시각 float dust2건과 native signal ownership1건을 각각 RED→GREEN으로 수정했다. Recording strict 기준은 유지했다. 작성자 최종 일반 focused664PASS/338 MySQL deselected (66.04s, 기존 deprecation warning1), 별도 scoped MySQL55PASS/skip0/error0 (476.91s), image OCR plate/overlay PASS/network attempt0/model hash 불변/UID10001. 중간 image에서 source를 mount한 실제 기본 Worker+별도 API/MySQL T1/T2 및 SIGTERM exit0 PASS. source mount 없는 최종 image 재실행은 후속 append한다. fresh read-only reviewer P1/P2/P3 없음, reviewer 직접 focused52PASS/23.59s 및 Paddle 없는 import/diff PASS. Docker/OCR/MySQL 작성자 결과와 reviewer 직접 결과를 구분한다. 정확한 파일20개와 실패 이력/명령은 Issue468 Notes에 있다.
+
+
+Issue #468 최종 로컬 acceptance: source mount 없는 image `sha256:51c214dba2d1fee50c1092e68c6f09e74e2cc1759a30ded0275c551314c5c0de`에서 실제 기본 Worker/별도 API/실제 Paddle의 PLATE_READ·OVERLAY_TIME_READ T1/T2 및 SIGTERM exit0 PASS. standalone OCR/network none/socket 시도0/cache 불변 PASS. CI Nanum timestamp 공백 손실로 UNKNOWN인 초기 FAIL을 보존하고, 기존 DejaVu 숫자 font로 synthetic 입력만 수정하여 최종 PASS했다. 모델/기준/parser 완화 없음. 같은 fresh reviewer도 최종 image preflight2건과 실제 offline OCR 직접 PASS, P1/P2/P3 없음. reviewer52/작성자664·55 및 process 증거는 Notes에서 분리해 기록했다. DB audit 잔여0 뒤 전용 container/volume/network/images 부재 검사 PASS, task-owned 비공유 cache ID별 정리, task pytest/env/media와 임시 font 삭제. RAW/JSON/JUnit/scratch PR 제외. DB/migration/inventory 불변, 전체 local pytest/mandatory MySQL 미실행, post-push remote CI gate 유지. commit/staging/push/PR/외부 Issue 변경 없음. IN_PROGRESS · Refs #468 · Related #460.
+
+
+최종 cache 정리 후속 확인: 첫24개 ID만 선택한 검사에서는 preflight/permission 하위 참조가 남아 부재 assertion이 실패했다. 이 작업에서 생성된 비공유 root11개를 추가로 식별하고 child→parent 순서로 정확한35개 ID를 정리한 뒤 잔여0을 확인했다. 공유/이전 cache를 범용 prune하지 않았다. 이 검사는 container/volume/network/image 부재와 별도의 build cache 정리 검증이다.

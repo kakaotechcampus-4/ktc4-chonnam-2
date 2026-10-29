@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from math import isfinite
 
 from daesingo.recording import RecordingCapabilityError
@@ -240,7 +241,8 @@ class RecordingFrameSource:
             clip_frames = IncidentClipFrames(self._recording, incident_clip_ref)
             frames = []
             for ratio in self._ratios:
-                offset_sec = clip.duration_sec * ratio
+                # Preserve decimal sample instants across the strict Recording boundary.
+                offset_sec = float(Decimal(str(clip.duration_sec)) * Decimal(str(ratio)))
                 frame, content = clip_frames.read_at(offset_sec)
                 frames.append(SourceFrame(
                     frame_ref=frame.frame_ref,
@@ -342,12 +344,13 @@ class PaddleOcrProvider(OcrProvider):
 
     label = "paddleocr-3.7.0-ppocrv5-korean"
 
-    def __init__(self, frame_source, *, tz_offset: str = "+09:00"):
+    def __init__(self, frame_source, *, tz_offset: str = "+09:00", engine=None):
         self._source = frame_source
         self._tz_offset = tz_offset
         """overlay 문자열에는 timezone이 없다. 정식 출처는 clip의 source 메타데이터이고,
         여기 기본값은 **한국 블랙박스 전제의 단순화**다."""
-        self._engine = None
+        # Production injects its startup-loaded engine; standalone callers stay lazy.
+        self._engine = engine
         self._frames = {}
         self._seen = {}
         """clip별 프레임과 `(clip_ref, frame_ref)`별 OCR 결과. `read_plate`와
