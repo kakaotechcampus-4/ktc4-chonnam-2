@@ -119,7 +119,7 @@ def test_correction_rerun_before_and_after_match_fixture():
         new_value=correction_fixture["new_value"],
     )
     assert record["contract"] == "CorrectionRecord"
-    assert record["contract_version"] == "correction-record/v1.1"
+    assert record["contract_version"] == "correction-record/v1.2"
     assert record["kind"] == "EVENT_TIME_MANUAL"
     assert record["target_field"] == "occurred_at"
     assert record["previous_value"] == correction_fixture["previous_value"]
