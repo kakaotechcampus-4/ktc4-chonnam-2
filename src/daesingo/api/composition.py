@@ -10,7 +10,7 @@ import daesingo.case as case_api
 from daesingo.case.store import CaseStore, validate_case_id
 from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.case.stored_observation import stored_adapter_factory
-from daesingo.evidence.policy_catalog import load_attachment_policy
+from daesingo.evidence import attachment_constraint
 from daesingo.case.timeline_source import RecordingSequentialTimelineSource
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_api_engine, create_ready_engine
@@ -85,7 +85,7 @@ class ApiComposition:
         return CaseStore(repository=MySQLCaseRepository(),
             conn=connection, executions=read_executions,
             adapter_factory=stored_adapter_factory(reader=ProducedReader(), executions=read_executions, recording=facts,
-            export_max_byte_size=load_attachment_policy()["limits"]["image_each_bytes"]))
+            export_max_byte_size=attachment_constraint("PLATE_IMAGE")["max_byte_size"]))
 
     def get_view(self, case_id: str):
         started = monotonic()

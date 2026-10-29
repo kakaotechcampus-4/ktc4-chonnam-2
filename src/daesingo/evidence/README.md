@@ -25,8 +25,17 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다 — `contract_version`이 v1.2인 기록에만 적용하고 v1.1 기록에는 소급하지 않는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
 - `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
+- `attachment_constraint(derived_role: str) -> AttachmentConstraint`: 현재는 `"PLATE_IMAGE"`만 지원한다. 활성 attachment policy에서 읽은 개별 파일 최대 정수 byte `max_byte_size`와 정책 식별자 `policy_ref`만 담은 dict를 반환한다. 다른 role은 `ContractInputError`, 잘못된 정책 구성은 `PolicyConfigurationError`다. 전체 정책 객체나 합산·개수 제한은 공개하지 않는다.
 
 `evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 사후 각인(`post_stamp_applied`)의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다(최종 영상 번호판·시각 표시 관찰은 v6에서 읽지 않는다 — ADR-EVIDENCE-010). 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다. `VisualEventNotAssembled`는 `assemble_evidence()`가 `NOT_OBSERVED`로 직접 호출됐을 때 가짜 Record 대신 멈추는 경계이며, producer 계약 위반이 아니라 호출자가 분류를 건너뛴 경우다(`ADR-EVIDENCE-007`).
+
+### 제출 자산 제약의 책임 경계 (#47 P-1)
+
+Evidence는 제출 요구조건을 소유한다. Recording은 그 요구조건을 만족시키는 생성 전략을 소유한다. Case는 제약을 중계하며 정책값을 해석하지 않는다. Evidence는 생성 이후 실제 자산 사실로 정책 충족 여부를 독립적으로 다시 판정한다.
+
+`attachment_constraint()`는 resize·JPEG quality·codec/format·압축 방식·재시도 횟수를 정하지 않는다. 제한은 `attachment_policy_v1.json`의 `limits.image_each_bytes`, 식별자는 같은 정책의 `policy_ref`에서 읽으며 공개 API에 별도 기본값이나 상수를 두지 않는다. 근거는 [#47 RT-10(b) P-1 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6476963858), [Case 조건부 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6488537839), [Evidence 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6494921087)다.
+
+API/Worker composition은 이 공개 경계에서 받은 `max_byte_size`를 기존 `stored_adapter_factory(export_max_byte_size=...)`에 그대로 넣는다. Case의 export request와 fingerprint는 현재 이 byte 제한을 포함한다. **후속 wiring:** `policy_ref`도 Case 요청/fingerprint에 포함하는 것이 P-1 합의 방향이지만, 현재 `PlateImageRequest`는 이 필드 없이 `extra="forbid"`이고 `export_plate_image()`도 이를 받지 않는다. 이번 변경은 공개 API의 반환까지만 제공하며 Case/Recording 요청 계약 및 provenance schema를 확장하지 않는다. ref만 바뀌고 byte 제한이 같을 때 새 발주를 구분하는 일은 이 후속 연결이 완료된 뒤 보장된다. Recording RT-10(b)의 생성 전략·실패 taxonomy 등재도 별도 범위다.
 
 ## 정책 데이터
 
