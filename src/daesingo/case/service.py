@@ -404,6 +404,19 @@ PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
 }
 
 
+# 발생시각 출처(사용자 정정 · 화면 시각 · 파일명 · 메타데이터)가 모두 비어 `occurred_at`이 없는 상태(#449). evidence는
+# 발생시각 없이 Package를 만들지 않으므로(`package.input.occurred_at_missing`) 어떤 조작으로도 묶음에 가지 못한다 —
+# 그래서 blocking이고, 출구는 입력형 command `EDIT_EVENT_TIME`(case-command 계약 §12-3)이다. 접두어는 시각을
+# 정하는 `TimeResolution`을 만드는 evidence를 따른다(B절 `notices[].code`).
+EVENT_TIME_MISSING_NOTICE: dict[str, Any] = {
+    "code": "evidence.event_time_missing",
+    "severity": "WARN",
+    "blocking": True,
+    "message_key": "notice.event_time_missing",
+    "actions": ["EDIT_EVENT_TIME"],
+}
+
+
 # overlay 판독이 정상 종료했지만 시각을 얻지 못한 갈래(readout `failure-taxonomy.md` 「`CaseView.notices[].code`
 # 매핑」, #31 A-1). `observation.reason.code`와 1:1이고(점 → 밑줄) 셋을 합치지 않는다 — 「화면에 시각이 없다」
 # (사실)와 「확인하지 못했다」(모름)는 다른 말이다(`core-user-flow.md` §5). 실행 실패가 아니라 `INFO`이고,
@@ -494,6 +507,9 @@ def derive_notices(
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
       본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
+    - `evidence.event_time_missing` — evidence가 조립됐고(`record_id` non-null) `event_time_display.value`가
+      null일 때(#449). 발생시각이 없으면 Package가 나가지 않으므로 blocking이고, 출구는 `EDIT_EVENT_TIME`이다.
+      사용자가 시각을 입력하면 값이 생겨 사라진다.
     - `readout.overlay_not_present` · `readout.overlay_presence_undetermined` · `readout.overlay_ocr_failed` —
       현재 선택 후보의 가장 나중 overlay 판독 `observation.reason.code`에 1:1로 대응할 때(readout
       `failure-taxonomy.md`). evidence 유무와 무관하다. `overlay_time_readouts`를 넘기지 않으면 붙이지 않는다.
@@ -548,6 +564,9 @@ def derive_notices(
             derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+        # 응답 전 부분 투영(`record_id` null)은 시각을 아직 정하지 않은 상태라 「없음」으로 보지 않는다.
+        if evidence.get("record_id") is not None and evidence["event_time_display"]["value"] is None:
+            derived.append(EVENT_TIME_MISSING_NOTICE)
         if awaiting_response:
             derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     if report_video_missing(view):

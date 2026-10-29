@@ -238,7 +238,7 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 - **`[다른 상황]` 정정이 있는 후보의 `USER_UNSURE`는 `not_allowed`**(2026-10-28) — evidence가 조립을 거부하고 정정은 지우지 않으므로 그 case가 CaseView를 만들 수 없게 된다. `CONFIRMED`는 받는다.
 - **`visual_event_type`은 `CORRECTED`일 때만 필수다.** `CONFIRMED` · `USER_UNSURE`에 있으면 `invalid_payload`. 지금 값과 같은 유형이면 `not_allowed` — 그것은 `[맞아요]`다.
 - **`[다른 상황]` 선택지.** `VisualEventType` 4종에서 지금 값을 뺀 것이다. **지금 값이 `null`이면(상황 응답 대기의 부분 투영 — `case_type_display.code=null`, B§10-15) 4종을 모두 보여 준다**(2026-10-28, PR #433 web 확인) — web도 case도 지금 유형을 모르므로 같은 유형을 막지 않는다. 같은 유형을 골라도 evidence는 그 유형으로 조립해 결과가 `[맞아요]`와 같다(`decisions/input-commands.md` §4). Fine 잠정 유형을 CaseView에 싣는 안은 계약 변경이라 택하지 않았다. 사용자에게 법적 유형을 판정시키지 않으므로(Flow §15) 화면 문구는 상황 설명으로 쓴다 — 문구는 web.
-- **notice action 싣기.** `evidence.plate_abstained`는 `actions:[MANUAL_PLATE_INPUT]`을 싣는다(2026-10-28 — 이 판본이 열려 실행 경로가 생겼다).
+- **notice action 싣기.** `evidence.plate_abstained`는 `actions:[MANUAL_PLATE_INPUT]`을 싣는다(2026-10-28 — 이 판본이 열려 실행 경로가 생겼다). `evidence.event_time_missing`(발생시각이 없어 Package가 나가지 않는 상태)은 `actions:[EDIT_EVENT_TIME]`을 싣는다(2026-10-29, #449 — `decisions/event-time-missing-notice.md`).
 
 ### 12-4. `case.command.invalid_value`
 
