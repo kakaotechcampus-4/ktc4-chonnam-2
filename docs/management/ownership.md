@@ -164,12 +164,12 @@ v4 §4-모듈7 · §9 전체 · §2 원칙 8(제품과 Eval은 같은 public cap
 대상 차량 연결 · 번호판 검출 · 조각 수집 · best frame 선택 · 문자 인식 · 여러 프레임 비교 · **포기(abstain) 판단** · 화면 시각 OCR과 검증(형식·단조 증가·영상 길이 정합)
 **`web`:** Owner. `CaseView` 읽기 · 화면 고르기 · API 연결과 접근성 확인. 화면 구현은 김대원이 맡는다.
 
-`web` 파일 분담 (#408 표대로, 2026-10-29 김대원 합의 — `apps/web/src` 기준). #408에서 정하지 않은 파일은 만든 사람이 맡는다:
+`web` 파일 분담 (#408 표대로, 2026-10-29 김대원 합의 — `apps/web/src` 기준). #408에서 정하지 않은 파일은 하는 일로 나누고, 애매하면 만든 사람이 맡는다:
 
 | 담당 | 맡은 일 | 파일 |
 | --- | --- | --- |
-| 김대원 | 화면 · 접근성 수정 | `screens/*` · `components/*` · `assets/*` · `styles/*` · `contracts/labels.flow.ts` · `labels.candidate.ts` |
-| 신유민 | CaseView 읽기 · 화면 고르기 · API 연결 · 접근성 확인 | `contracts/caseView.ts` · `registry.ts` · `actionIntent.ts` · `fixtures.ts` · `labels.ts` · `state/selectScreen.ts` · `caseFlow.ts` · `useCaseFlow.ts` · `resultModel.ts` · `videoTime.ts` · `api/client.ts` · `App.tsx` · `main.tsx` |
+| 김대원 | 화면 · 접근성 수정 | `screens/*` · `components/*` · `assets/*` · `styles/*` · `contracts/labels.flow.ts` · `labels.candidate.ts` · `main.tsx`(CSS · 글꼴 불러오기) |
+| 신유민 | CaseView 읽기 · 화면 고르기 · API 연결 · 접근성 확인 | `contracts/caseView.ts` · `registry.ts` · `actionIntent.ts` · `fixtures.ts` · `labels.ts` · `state/selectScreen.ts` · `caseFlow.ts` · `useCaseFlow.ts` · `resultModel.ts` · `videoTime.ts` · `api/client.ts` · `App.tsx`(시연 · API 흐름 고르기) |
 
 ### ② 이 일에 필요한 특성
 - `readout`은 **새 도구를 빠르게 붙여보고 실제 샘플로 재보는 일**이다(OCR·검출기를 붙이고 실제 번호판으로 측정).
