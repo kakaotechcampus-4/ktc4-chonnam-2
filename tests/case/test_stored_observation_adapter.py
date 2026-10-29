@@ -259,3 +259,6 @@ def test_get_view_reads_through_the_stored_factory(chain):
     expected = real_e2e.assemble_evidence_bundle(chain.obs, case_id=CASE_ID, selection_rev=chain.case.selection_rev)
     assert view["evidence"]["record_id"] == expected.evidence_record["record_ref"]["ref"]
     assert view["evidence"]["plate_display"]["value"] is not None
+    # Worker 경로에서도 번호판 확인 장면은 판독 근거 best frame이다 — 사건 썸네일(`preview_ref`)이 아니다(#47 · #446).
+    assert view["evidence"]["plate_preview_ref"] == chain.obs.plate_readout["best_frame"]["frame_ref"]
+    assert view["evidence"]["plate_preview_ref"] is not None

@@ -199,6 +199,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
             and r["job_id"] in case.export_inputs and case.export_inputs[r["job_id"]] == export_requests.get(kind)), None)
     if prior is None:
         raise _Rejected("not_allowed")
+    # 결과 없음(`CANDIDATE_REVIEW` · 후보 0개)에서 다시 찾으면 `SEARCHING`으로 돌아간다(#426) — 탐색 결과 반영은
+    # `SEARCHING`에서만 받으므로(`receive_candidates`) 머물면 새 결과가 반영되지 못한다. `EDIT_HINT`와 같은 역행이다.
+    if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
+        case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
     jobs.issue_same_input(case, prior)
 

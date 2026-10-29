@@ -167,3 +167,23 @@ it('휠은 바퀴 화면에 도착한 뒤 업로드 중에만 돌고, 완료되�
     vi.useRealTimers()
   }
 })
+
+it('업로드가 끝나면 상황 입력칸 위에 고른 원본의 파일 이름으로 찍힌 시각을 알려 주고, 건너뛴 파일과 못 읽은 이름은 따로 말한다', async () => {
+  const y = new Date().getFullYear()
+  const evt = file(`${y}0824_140312_EVT_1.avi`)
+  const files = [evt, file('FILE_017.mp4'), file('REC_a.mp4')]
+  const r = render(screen('idle'))
+  fireEvent.change(r.container.querySelector('input[type=file]')!, { target: { files } })
+  expect(r.container.querySelector('.rs-vtime')).toBeNull() // 끝나기 전엔 말하지 않는다
+  r.rerender(screen('done', files, ['FILE_017.mp4']))
+  // jsdom은 파일 내용을 못 읽어 길이 없이 시작 시각만 나온다
+  const line = await r.findByText(/파일 이름 기준/)
+  expect(line.closest('.rs-field')).not.toBeNull()
+  expect(line.textContent).toBe(
+    '올린 영상은 8월 24일 오후 2:03에 찍혔어요(파일 이름 기준). 시각을 못 읽은 파일 1개는 빠졌어요.',
+  )
+
+  fireEvent.change(r.container.querySelector('input[type=file]')!, { target: { files: [file('REC_a.mp4')] } })
+  r.rerender(screen('done', [file('REC_a.mp4')]))
+  expect((await r.findByText(/읽지 못했어요/)).textContent).toBe('파일 이름에서 찍힌 시각을 읽지 못했어요.')
+})
