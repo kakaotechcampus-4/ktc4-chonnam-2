@@ -55,6 +55,14 @@ jobs:
           assert len(cases) == 1, 'Expected exactly one Recording media smoke'
           assert all(c.find(tag) is None for c in cases for tag in ('skipped', 'failure', 'error')), 'Media smoke must pass without skips'
           PY
+      - name: Pinned deployment image MP4 and media acceptance (must execute)
+        run: |
+          docker build --tag daesingo-deployment-media:ci .
+          trap 'docker image rm daesingo-deployment-media:ci' EXIT
+          docker run --rm --network none daesingo-deployment-media:ci python /app/docker/runtime.py media-preflight
+          docker run --rm --network none \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/media_acceptance.py",target=/opt/media-acceptance.py,readonly \
+            daesingo-deployment-media:ci python /opt/media-acceptance.py
       - name: Non-MySQL regression
         run: uv run --no-sync python -m tests.ci_orchestration regression "$RUNNER_TEMP/regression.xml"
 

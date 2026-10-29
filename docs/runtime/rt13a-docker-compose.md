@@ -207,3 +207,14 @@ ignored 파일·secret을 제외한 추적 파일과 17개 후보의 현재 byte
 | RD-12f/h · RT-14 | production migration/deployment/post-deploy, EC2/ECR/SSM/registry/CloudWatch/log transport/production restart policy |
 
 Issue #300은 닫지 않는다. RT-13 전체 DONE으로 표시하지 않는다. 새 GitHub Issue/comment/PR/commit/push를 만들지 않는다. 실제 env/DB dump/원본 media/로컬 증거는 PR 제외다.
+
+## 2026-10-30 후속 — Issue #465
+
+**IN_PROGRESS · Refs #465 · Related #460**
+
+위 base tag/apt ffmpeg에 관한 문장은 당시 build의 이력이다. 현재 배포
+toolchain 고정 방식, 공식 8.1 source/signature/checksum, image/package identity,
+startup/preflight 및 일반 MP4 실제 변환 검증 근거는
+[Issue #465 Implementation Notes](./issue465-mp4-toolchain.md)를 따른다.
+지원 기준은 동일 build의 ffmpeg **8.1** / ffprobe **8.1**이며 버전 범위를
+넓히지 않는다. 기존 strict tail/coverage와 #467 fixture는 바꾸지 않는다.
