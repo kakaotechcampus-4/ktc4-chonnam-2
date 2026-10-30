@@ -92,7 +92,7 @@
 
 ## 6. 미결 (채우지 않는다)
 
-- clip 준비 실패(`INCIDENT_CLIP_BUILD` `FAILED`)의 notice code · action — CaseView 판본에서 web(신유민)과 정한다. **이번 case 구현(§9) 범위가 아니라 후속이다.** 그때까지 package는 준비되지 않고 진행 화면에 머문다. 다시 시도는 Runtime 자동 재시도가 아니라 case가 새 `job_id`로 발주하는 것이다(김준영 10-24 ②).
+- ~~clip 준비 실패(`INCIDENT_CLIP_BUILD` `FAILED`)의 notice code · action — CaseView 판본에서 web(신유민)과 정한다.~~ **2026-10-30 구현(#297 후속, 서어진).** `recording.incident_clip_build_failed`(ERROR · blocking · `actions:[]`) — 발동은 현재 선택 · 세대의 가장 나중 clip job이 `FAILED`일 때(`observation.selected_clip_failed`). 이때 발주되지 않은 두 판독은 `progress[]`에서 `PENDING`이다. 같은 후보 clip 다시 만들기 action은 열지 않았다(새 action은 command · web 변경이 필요) — 출구는 「다른 후보 보기」이고 다시 고르면 §4-6대로 빠진 clip만 새 `job_id`로 발주한다. web 화면 전환 · 문구는 @uminshin.
 - `INCIDENT_CLIP_BUILD` handler가 Fine produced에서 `media_stream_ref`를 읽는 방법 — RT-10 Implementer. (구간은 입력 `span`, §4-1)
 - clip 본체 보관 · 동일성 · 생성 후 T1 전 crash 처리 — recording · Runtime(정철원).
 
