@@ -218,13 +218,13 @@ EIP 허용은 **미확정**으로 둔다. EIP 무료나 기존 공인 IPv4 비�
 
 ## 10. 2026-10-30 RT-14 전 재검증 snapshot
 
-RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) Decision Gate 전에 §8이 「확인 대상」으로 남긴 권한과 SSM 실행 경로를 다시 확인했다. §8과 같은 SSO profile(`StudentDeveloper`)을 썼다. 조회 외에 **생성 → 즉시 삭제 시도**와 **EC2 시작 → SSM Run Command → 중지**를 했고, 시도 뒤 남은 리소스가 없음을 다시 조회해 확인했다. §8과 마찬가지로 당일 관측값이며 결정이 아니다. 식별값은 싣지 않는다.
+RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) Decision Gate 전에 §8이 「확인 대상」으로 남긴 권한과 SSM 실행 경로를 다시 확인했다. §8과 같은 SSO profile(`StudentDeveloper`)을 썼다. 조회 외에 **생성 → 즉시 삭제 시도**와 **EC2 시작 → SSM Run Command → 중지**를 했고, 시도 뒤 남은 리소스가 없음을 다시 조회해 확인했다. 이 시작 · 중지는 같은 시간대에 다른 팀원이 쓰던 instance와 겹쳤다(아래 「공유 EC2 사용 충돌」). §8과 마찬가지로 당일 관측값이며 결정이 아니다. 식별값은 싣지 않는다.
 
 ### EC2 상태
 
 | 항목 | 실측 |
 | --- | --- |
-| 인스턴스 상태 | 2026-10-02 확인 직후 사용자가 중지한 뒤 **계속 `stopped`**. 이번 확인 때 잠깐 시작했다가 다시 중지했다(아래 Docker 설치 · 스파이크 포함) |
+| 인스턴스 상태 | 확인을 시작할 때 `stopped`(2026-10-02 확인 직후 중지된 뒤 그대로). 확인 · Docker 설치 · 스파이크를 위해 시작했고 자동화가 두 번 중지했다. 이후 다른 팀 principal이 다시 시작해 **마지막 관측 상태는 `running`**이다(아래 「공유 EC2 사용 충돌」) |
 | Public IPv4 | 중지 상태에서 없음. Elastic IP가 없으므로 시작할 때마다 바뀐다 |
 | CPU credit | `unlimited` |
 | Instance metadata | IMDSv2 필수(`HttpTokens=required`) · `HttpPutResponseHopLimit=1` |
@@ -232,10 +232,24 @@ RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) De
 | OS | Ubuntu 24.04.4 LTS |
 | disk 사용 | `/` 48G 중 2.6G (6%) |
 | 메모리 | total 3,832 MiB · swap 0 |
-| Docker / Compose | 확인 시점에는 **설치되지 않음**. 같은 날 RT-14 스파이크를 위해 Docker Engine 29.9.2 · Compose plugin v5.6.1을 설치했다(Docker 공식 apt 저장소, 버전 고정, `docker.service` enable). 설치 script와 스파이크 결과는 [RT-14 배포 설계](../rt14-deployment-design.md) 부록 A · §13 |
+| Docker / Compose | 확인 시점에는 **설치되지 않음**. 같은 날 RT-14 스파이크를 위해 Docker Engine 29.9.2 · Compose plugin v5.6.1을 설치했다(Docker 공식 apt 저장소, 버전 고정, `docker.service` enable). 설치 script와 스파이크 결과는 [RT-14 배포 설계](../rt14-deployment-design.md) 부록 A · §17 |
 | SSM Agent | snap 설치본, enabled · active. 시작 뒤 약 7초 만에 `Online` |
 | CloudWatch Agent | 설치되지 않음 |
 | ECR API endpoint DNS | resolve 됨 |
+
+### 공유 EC2 사용 충돌
+
+EC2는 팀원이 함께 쓴다(§1). 확인이 끝난 뒤 CloudTrail을 조회하니, 다른 팀 principal도 같은 시간대에 이 instance를 쓰고 있었다. 순서는 다음과 같다. principal · 시각 · 식별값은 싣지 않는다.
+
+1. 다른 principal이 EC2를 시작했다.
+2. 약 30초 뒤 이번 확인 script도 시작을 요청했다. 이어서 Docker 설치(host 전체 변경)와 RT-14 스파이크를 실행했다.
+3. 스파이크 script가 종료 처리로 EC2를 중지했다.
+4. IMDS 설정을 다시 확인하는 script가 EC2를 시작했다가 중지했다.
+5. 직후 다른 principal이 다시 시작했다. **마지막 관측 상태는 `running`이다.**
+
+즉 **다른 팀원이 쓰던 instance를 자동화가 두 번 중지했을 가능성이 있다.** 그 사용 중에 host 전체에 영향을 주는 package 설치도 했다. 자동화가 「시작한 쪽이 끝나면 끈다」고 가정한 것이 원인이다. 공유 host에서는 시작과 종료 사이에 다른 사용자가 끼어들 수 있으므로 이 가정이 성립하지 않는다. 이 사실이 주는 운영 원칙은 [Ops Spec](../ops-spec.md) §2-1 「공유 EC2 전원 · host 변경 원칙」에 둔다.
+
+§9의 `sp1-*` busybox container는 이름과 image가 이 확인의 스파이크(SP-1) 구성과 일치하고, 스파이크는 끝날 때 자기 container를 지웠다. 두 관측의 container 식별값은 서로 대조하지 않았다.
 
 ### IAM role 구성
 
