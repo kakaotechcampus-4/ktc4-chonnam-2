@@ -1,6 +1,7 @@
 """Run a single Worker: python -m daesingo.worker."""
 
 import logging
+import os
 import signal
 from threading import Event
 
@@ -23,7 +24,9 @@ def _failure(logger, event):
 
 
 def main(*, readout_provider_factory=None) -> int:
-    startup = bootstrap(revision="unknown")
+    revision = os.environ.get("DAESINGO_REVISION", "unknown")
+    startup = bootstrap(revision=revision)
+    deployment = os.environ.get("DAESINGO_DEPLOYMENT_CHECK") == "1"
     stop = Event()
     engine = None
     previous = {}
@@ -34,6 +37,9 @@ def main(*, readout_provider_factory=None) -> int:
         stop.set()
 
     try:
+        if deployment:
+            from daesingo.worker.deployment_status import clear
+            clear()
         for sig in (signal.SIGINT, signal.SIGTERM):
             previous[sig] = signal.getsignal(sig)
             signal.signal(sig, request_stop)
@@ -46,14 +52,28 @@ def main(*, readout_provider_factory=None) -> int:
             signal.signal(sig, request_stop)
         registry = compose_registry(engine=engine, startup=startup,
                                     readout_provider_factory=readout_provider_factory)
-        compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
+        worker = compose_worker(engine=engine, startup=startup, registry=registry, stop=stop,
                        reflector=StoredCaseReflector(startup=startup),
-                       exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup)).run()
+                       exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup))
+        if deployment:
+            from daesingo.worker.deployment_status import publish
+            settings = startup.modules["recording"]
+            if settings.profile is None or settings.analysis_limits is None or settings.incident_encoding is None:
+                raise ValueError("deployment_recording_incomplete")
+            publish(registry, revision)
+        worker.run()
     except BaseException:
         stop.set()
         _failure(startup.logger, "runtime.worker.failed")
         code = 1
     finally:
+        if deployment:
+            try:
+                from daesingo.worker.deployment_status import clear
+                clear()
+            except BaseException:
+                _failure(startup.logger, "runtime.worker.cleanup_failed")
+                code = 1
         try:
             if engine is not None:
                 engine.dispose()

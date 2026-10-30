@@ -191,3 +191,27 @@ local terminal
 - RDS 요청 시 지원 가능한 engine / instance class / storage 범위
 - ALB / Elastic IP 지원 조건
 - 팀별 AWS 예산 또는 비용 상한
+
+## 9. 2026-10-30 KST 사용자 관측
+
+아래는 사용자가 브라우저 SSM에서 직접 확인해 전달한 **당시 관측값**이다.
+이번 RT-14 구현자는 AWS 계정/SSM/EC2에 접속하지 않았다. §8의 2026-10-02 조사와
+합쳐 최신 IAM/CloudWatch/리소스 상태를 확인한 것으로 표현하지 않는다.
+
+| 항목 | 사용자 전달 관측 |
+| --- | --- |
+| 사용자 / architecture | `ubuntu` / `x86_64` |
+| RAM / swap | 총 약3.7GiB, 당시 available 약3.1GiB / swap0 |
+| root filesystem | 약48GB, 당시 여유 약45GB |
+| Docker | 29.9.2, systemd service active |
+| socket 권한 | 일반 사용자 접근 거부, sudo 조회 가능 |
+| 최종 Docker inventory | Compose project/image/container/volume/build cache 각각0 |
+
+앞선 조회에 잠시 보였던 `sp1-*` busybox container는 후속 조회에서 모두 없어졌다.
+소유자/생성 목적/정리 주체는 확인되지 않았다. 빈 Docker inventory는 host에 다른
+서비스가 없다는 증거도, Paddle Worker+API+MySQL 동시 운영 용량의 증거도 아니다.
+
+추가로 받은 캠퍼스 도메인 가이드는 EIP를 즉시 사용할 수 있다고 안내하지만 AWS 사용
+가이드는 기본 차단·요청 필요라고 안내한다. 실제 권한 또는 인프라 담당 확인 전까지
+EIP 허용은 **미확정**으로 둔다. EIP 무료나 기존 공인 IPv4 비용 면제로 해석하지 않는다.
+첨부 가이드 원문/내부 접속 정보는 공개 저장소에 복사하지 않는다.
