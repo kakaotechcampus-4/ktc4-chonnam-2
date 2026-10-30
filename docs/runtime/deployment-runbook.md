@@ -7,10 +7,13 @@
 **2026-10-30 RT-14 준비 구현:** 아래 기존 acceptance 기준과 함께
 [RT-14 실행 절차](./rt14-deployment.md)를 사용한다. 새 도구의 정확한 입력·명령·실패
 복구 경계는 그 문서에 있다. **IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
-실제 AWS 인증/배포 증거는 아직 없다. 정책은 2026-10-30 RT-14 Decision Gate에서 승인했고(#450), Gate별 상태와
+과거 OIDC/publish와 최신 댓글의 EC2 pull/preflight 근거는 Ops 및 후속 Notes에서 구분한다. 실제 공개 배포/rollback acceptance는 아직 완료되지 않았다. 정책은 2026-10-30 RT-14 Decision Gate에서 승인했고(#450), Gate별 상태와
 승인값은 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
 > 이 문서는 배포 담당자의 기억에 의존하지 않고 같은 절차를 반복·검증·복구할 수 있도록 하는 실행 체크리스트다. 현재 deployment stack의 exact command가 아직 구현되지 않은 항목은 임의로 채우지 않으며, 실제 Docker/Compose/OIDC/SSM 구현 PR에서 명령을 확정한다.
+
+2026-10-31 승인 후 구현의 정확한 복구·ingress·외부 smoke checklist는
+[공개 배포·복구 절차](rt14-public-deployment.md)를 따른다. SG 개방 전 별도 hardening P0가 필요하다.
 
 ## 1. 배포 완료의 정의
 

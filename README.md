@@ -72,7 +72,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
 | `Dockerfile` · `compose.yaml` · `docker/` | RT-13(a) local api/worker/migrate/mysql 구성·실행 어댑터. 설정과 전용 smoke는 [RT-13(a) Notes](docs/runtime/rt13a-docker-compose.md) 참조 |
-| `deploy/` | RT-14 수동 OIDC/ECR/SSM 및 EC2 배포·rollback 준비 도구. 실제 AWS 실행·정책 승인은 pending; [실행 계약](docs/runtime/rt14-deployment.md) |
+| `deploy/` | RT-14 수동 OIDC/ECR/SSM·rollback, release-bound Web·Caddy·외부 smoke 도구. Gate 승인 후 구현이며 실제 공개 배포 acceptance는 pending; [실행·복구 계약](docs/runtime/rt14-public-deployment.md) |
 | `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 수집하며, CI는 비-MySQL 회귀와 실제 MySQL·report gate를 분리한다 ([실행 구조](docs/runtime/ci-test-partitions.md)) |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |

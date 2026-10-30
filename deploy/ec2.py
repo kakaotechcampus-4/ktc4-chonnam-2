@@ -15,6 +15,12 @@ import stat
 import subprocess
 import sys
 import time
+import tempfile
+
+if __package__:
+    from .web_artifact import sync_directory, verify_web
+else:
+    from web_artifact import sync_directory, verify_web
 
 ROOT = Path("/opt/daesingo")
 DECISIONS = ("RD-12b", "RD-12c", "RD-12d", "RD-12e", "RD-12f", "RD-12h",
@@ -73,11 +79,47 @@ def read_record(path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def web_pointer(root):
+    path = root / "releases" / "current"
+    if not path.is_symlink():
+        require(not path.exists())
+        return None
+    value = path.readlink().as_posix()
+    require(bool(re.fullmatch(r"[0-9a-f]{40}/web", value)))
+    return value
+
+
+def reconcile(root, current, previous, dirty):
+    """Read-only, fail closed. Promotion recovery requires operator evidence."""
+    require(current is not None or previous is None)
+    expected = current["revision"] + "/web" if current else None
+    require(web_pointer(root) == expected)
+    for record in (current, previous):
+        if record:
+            verify_web(root / "releases" / record["revision"] / "web", record["revision"])
+    if dirty:
+        require(dirty.get("phase") in {"quiescing", "migration_pending", "migration_complete"})
+        require("before_current" in dirty and "before_previous" in dirty)
+        require(dirty["before_current"] == current and dirty["before_previous"] == previous
+                and dirty.get("web_before") == expected)
+
+
+def publish_web(root, release):
+    directory = root / "releases"
+    verify_web(directory / release["revision"] / "web", release["revision"])
+    temporary = directory / "current.new"
+    # A leftover temporary link is evidence, never silently overwritten.
+    temporary.symlink_to(release["revision"] + "/web", target_is_directory=True)
+    os.replace(temporary, directory / "current")
+    sync_directory(directory)
+
+
 def transition(root, release, operation, step):
     """Caller holds the host lock. Never downgrade schema or erase data."""
     current = read_record(root / "current.json")
     previous = read_record(root / "previous.json")
     dirty = read_record(root / "dirty.json")
+    reconcile(root, current, previous, dirty)
     # DB schema provenance survives application/config rollback. Never replace
     # this authority with an older release's historical compatibility list.
     schema = read_record(root / "schema.json") or dirty or current
@@ -99,7 +141,9 @@ def transition(root, release, operation, step):
         raise HostError("invalid_operation")
     step("preflight", release)
     # Write before stopping anything: even interrupt during stop must be audited.
-    journal = {**release, "phase": "quiescing"}
+    journal = {**release, "phase": "quiescing", "operation": operation,
+               "before_current": current, "before_previous": previous,
+               "web_before": web_pointer(root)}
     if operation == "rollback":
         journal["rollback_targets"] = schema["rollback_targets"]
         journal["schema_revision"] = schema["revision"]
@@ -115,11 +159,17 @@ def transition(root, release, operation, step):
     atomic_json(root / "dirty.json", {**journal, "phase": "migration_complete"})
     for stage in ("start", "health", "smoke"):
         step(stage, release)
-    # Two-record updates interrupted mid-promotion leave dirty marker -> stop.
+    # Intent is durable BEFORE switching Web. Even an identical pointer target
+    # cannot make an interrupted promotion look like an ordinary rollback.
+    atomic_json(root / "dirty.json", {**journal, "phase": "promotion_pending"})
+    publish_web(root, release)
+    atomic_json(root / "dirty.json", {**journal, "phase": "web_published"})
     if current and current != release:
         atomic_json(root / "previous.json", current)
     atomic_json(root / "current.json", release)
+    atomic_json(root / "dirty.json", {**journal, "phase": "state_promoted"})
     (root / "dirty.json").unlink()
+    sync_directory(root)
 
 
 def protected(path, uid, *, directory=False):
@@ -321,6 +371,7 @@ class DockerHost:
         require(info["Architecture"] == "amd64" and info["Os"] == "linux")
         require(info["Config"].get("Labels", {}).get("org.opencontainers.image.revision") == release["revision"])
         self.image_id = info["Id"]
+        self.stage_web(release)
         source = json.loads(run(["docker", "run", "--rm", "--network", "none", "--read-only",
             "--entrypoint", "python", release["image"], "-c",
             "from pathlib import Path; print(Path('/app/compose.yaml').read_text())"]))
@@ -334,6 +385,45 @@ class DockerHost:
         require(shutil.disk_usage(self.root).free >= policy["disk_reserve_bytes"])
         # MySQL remains the RT-13 8.4 line, never upgraded automatically here.
         run(["docker", "image", "inspect", policy["mysql_image"]])
+
+    def stage_web(self, release):
+        """Extract from the exact pulled image; no rebuild or external bundle."""
+        releases = self.root / "releases"
+        releases.mkdir(mode=0o755, exist_ok=True)
+        require(releases.is_dir() and not releases.is_symlink())
+        target = releases / release["revision"]
+        identity = {"revision": release["revision"], "image": release["image"]}
+        if target.exists() or target.is_symlink():
+            require(target.is_dir() and not target.is_symlink())
+            digest = verify_web(target / "web", release["revision"])
+            require(read_record(target / "release.json") == {**identity, "web_sha256": digest})
+            return
+        with tempfile.TemporaryDirectory(prefix="staging-", dir=releases) as temporary:
+            pending = Path(temporary) / "release"
+            pending.mkdir(mode=0o755)
+            container = run(["docker", "create", "--network", "none", "--entrypoint", "/bin/true",
+                             release["image"]]).strip()
+            require(bool(re.fullmatch(r"[0-9a-f]{64}", container)))
+            try:
+                run(["docker", "cp", container + ":/app/web/dist", str(pending / "web")])
+            finally:
+                run(["docker", "rm", container])
+            digest = verify_web(pending / "web", release["revision"])
+            atomic_json(pending / "release.json", {**identity, "web_sha256": digest})
+            for path in pending.rglob("*"):
+                if path.is_file():
+                    with path.open("r+b") as stream:
+                        os.fsync(stream.fileno())
+                    path.chmod(0o400 if path.name == "release.json" else 0o444)
+            for path in sorted(pending.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+                if path.is_dir():
+                    path.chmod(0o555)
+                    sync_directory(path)
+            sync_directory(pending)
+            os.rename(pending, target)
+            target.chmod(0o555)
+            sync_directory(target)
+            sync_directory(releases)
 
 
 def main(argv=None):

@@ -4527,3 +4527,36 @@ qualitywheel/임시설치본, reviewer 소유temp2개 삭제 완료. 공유image
 보존. Linux pytest symlink에서 Windows정리가 안전중단되어 동일image 내부에서 경로/
 linktarget 검증 후 소유root만 정리했다. PR제외scratch에는 실패원본5개(31,302bytes)와
 로그/JSON/XML/최소runner·요약만 남았다. 최종12파일/indexempty/branch·HEAD동일.
+# 2026-10-31 — RT-14 approved public deployment follow-up
+
+**IN_PROGRESS · Refs #450 · Related #287, #460, #452, #486**
+
+승인 설계 §13.6·§16.1에 맞춰 rollback tip CI 의존만 제거하고 대상 ancestry/push CI/digest,
+host exact tuple/schema 및 secret-scan gate를 유지했다. 같은 production image의 Web
+revision/manifest, host staging/pointer·phase journal, Caddy host 구성, 보호 DDNS updater,
+post-SSM 및 독립 외부 smoke를 추가했다. 첫 deploy 실패·partial promotion은 operator가
+데이터/상태를 대조하는 절차이며 자동 rollback/restore/volume 초기화는 없다.
+
+상세 [구현·복구 Notes](rt14-public-deployment.md)에 승인 대응표·26파일 manifest·RED→GREEN·
+작성자 직접 검증·fresh reviewer·실제 AWS acceptance 순서·hardening P0를 기록한다.
+기존 로그와 #479 Notes는 이력을 보존한다. Gate/실행 변수 승인과 실제 배포 완료를 구분한다.
+
+작성자 Linux 집중106 PASS, Windows focused136 PASS, 후속 guard58 PASS(중복 합산 없음),
+실제 Web build·Docker 변경 artifact 경계·loopback Caddy TLS/route·quality·boundary·Contract·
+actionlint·diff를 확인했다. 실제 public DNS/ACME·first/second deploy·rollback·DB restore는
+미실행이다. full regression/mysql/test와 최종 production Docker acceptance는 push 후 CI 조건이다.
+
+`GPT-6.1 Sol / high`, `fork_turns=none` fresh read-only reviewer가 승인/요구사항/diff를
+검토하고 Windows65/Linux38 및 Caddy 검증을 직접 실행했다. product defect 지적 없음;
+exact tuple 테스트가 reconciliation에서 먼저 막힌다는 보완 의견을 반영했다.
+최종 delta와 환경 실패·추가 검증 상태는 위 Notes §8에 이어 기록한다.
+
+GitHub Variable 한 개 읽기로 `RT14_EXECUTION_ENABLED=false` 확인, 변경 없음.
+staging/commit/push/PR/외부 댓글/merge/dispatch/AWS 작업 없음. #450을 종료하지 않는다.
+
+
+최종 추가 확인: Web 13 files/224 PASS, secret synthetic controls17 PASS 및
+현재2331 files/HEAD1535 commits counts-only scan findings0(기존 예외만 적용) PASS.
+처음 환경 실패 및 retry 한계는 Notes §8에 구분했다. 같은 fresh reviewer가 delta11 PASS를
+직접 확인했고 잔여 product defect 지적 없음. Log EOF 공백 수정 후 diff PASS.
+작업 전용 image2개만 제거했으며 공유 cache/base image·다른 scratch는 보존했다.
