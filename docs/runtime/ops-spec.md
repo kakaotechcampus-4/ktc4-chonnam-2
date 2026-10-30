@@ -68,11 +68,12 @@ API와 Worker는 같은 image를 쓰는 modular monolith의 두 composition root
 | 구분 | 상태 | 운영 함의 |
 | --- | --- | --- |
 | 추가 EC2 · 사양 변경 · 디스크 확장 · 추가 볼륨 | 차단. 사양 상향 · 디스크 확장은 카테캠 요청 시 검토 | capacity 대응은 §18 근거를 갖춰 요청 경로로만 한다. deploy role도 `ec2:CreateVolume` · `ec2:ModifyVolume`이 거부된다(10-30 확인) |
-| RDS · ALB · Elastic IP | 차단. 요청 시 검토 | §18 조건이 생길 때만 요청한다 |
+| RDS · ALB | 차단. 요청 시 검토 | capacity 자원이다. §18 조건이 생길 때만 요청한다 |
+| Elastic IP | 차단. 요청 시 검토 | capacity 자원이 아니라 public endpoint **주소 안정성** 결정이다. §2-2 · RD-14가 DDNS 등 대안으로 충분하지 않다고 판단할 때만 요청한다 |
 | S3 · ECR · CloudWatch · SSM Parameter Store | 사용 가능 | 10-30 SSO 권한으로 ECR · Log Group · SecureString 생성 → 삭제가 PASS. 사용 여부는 RD-12 · RD-13 결정이 정한다 |
 | 서버 중지 · 시작 · 재부팅 · Security Group 편집 | 사용 가능 | 22번을 `0.0.0.0/0`으로 열면 보안 모니터링에 탐지된다 |
 
-2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 대신고 stack은 아직 배포되지 않았다. 같은 날 RT-14 준비 구현(#479)이 `develop`에 병합됐지만 AWS에서 실행하지 않았다(§2-1 「현재 구현 범위」).
+2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §10). 같은 날 다른 팀원도 이 instance를 쓰고 있었고, 마지막 관측 상태는 `running`이다(같은 문서 §10 「공유 EC2 사용 충돌」). 대신고 stack은 아직 배포되지 않았다. 같은 날 RT-14 준비 구현(#479)이 `develop`에 병합됐지만 AWS에서 실행하지 않았다(§2-1 「현재 구현 범위」).
 
 ### 2-1. AWS 배포 인증 · 서버 접속 기준
 
@@ -97,13 +98,14 @@ GitHub Actions
 - AWS 인증이 필요한 job에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `ap-northeast-2`의 배포 역할을 assume한다. 준비 구현은 credential action 대신 `deploy/aws.py`가 OIDC token → STS 교환을 직접 하고, 임시 자격증명을 `GITHUB_ENV` · output · artifact에 남기지 않는다([RT-14 실행 절차](./rt14-deployment.md) §5).
 - 현재의 boundary/contract 등 **비-AWS CI에는 OIDC 권한을 추가하지 않는다.** 배포 workflow와 일반 PR CI를 분리한다.
 - 배포 트리거는 `workflow_dispatch`다. 준비 구현의 두 workflow는 이 repository · repository ID · `develop` ref일 때만 job을 실행하고, 실제 원격 작업은 `RT14_EXECUTION_ENABLED` Variable이 `true`일 때만 돈다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
+- **production 승격 source는 `develop`이다.** `develop`에 포함되고 push CI를 통과한 revision만 배포할 수 있다. `develop` push 자체는 배포를 시작하지 않고, 사람이 `workflow_dispatch`로 승격한다. `main`은 멘토 리뷰 · 제출 snapshot 흐름이며 배포 source가 아니다. 준비 구현이 이 조건을 검사하는 정확한 방식은 [RT-14 배포 설계](./rt14-deployment-design.md) §4다.
 - EC2 접속과 원격 명령 실행은 **SSM Session Manager / SSM Run Command**를 사용한다. GitHub Actions 배포를 위해 SSH private key를 저장하거나 보안그룹의 22번 포트를 인터넷에 개방하지 않는다.
 - Object Storage를 도입해 S3 경유 배포를 선택하는 경우, GitHub Actions의 업로드 주체(`ktc-github-deploy`)와 EC2의 다운로드 주체(`ktc-ec2-ssm-role`)를 별도 권한 주체로 취급한다.
 - 이 결정은 **S3 사용 자체를 확정하지 않는다.** Object Storage 범위는 §13의 실측 기반 결정 기준을 계속 따른다.
 
 #### 실환경에서 확인된 제약 — 2026-10-02 · 10-30
 
-관측 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9다. 아래는 그 사실이 위 원칙에 주는 함의만 적는다. exact 배포 절차는 RD-12(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))가 정한다.
+관측 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9 · §10이다. 아래는 그 사실이 위 원칙에 주는 함의만 적는다. exact 배포 절차는 RD-12(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))가 정한다.
 
 - **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽만 필요하고, 그 준비 구현은 `develop`에 있다. role로 실제 인증한 적은 아직 없다.
 - **deploy role trust의 `sub` 조건은 이 repository 전체(`:*`)다.** AWS가 branch · tag · PR · environment를 구분하지 않으므로, 어떤 ref가 배포 role을 얻을 수 있는지는 GitHub workflow의 trigger · 조건이 제한해야 한다. `pull_request`를 배포 경로로 쓰지 않는다는 위 원칙이 이 제한의 일부다.
@@ -112,9 +114,20 @@ GitHub Actions
 - **두 role 모두 `PowerUserAccess`가 붙어 있지만 최종 권한 상한은 카테캠 SCP · guardrail이다.** 정책 이름으로 사용 가능 서비스를 추론하지 않고, role로 직접 하는 확인은 OIDC 검증 workflow와 첫 배포에서 한다.
 - **공인 IPv4는 EC2를 시작할 때마다 바뀐다**(Elastic IP 없음). 배포 · smoke가 고정 IP를 전제하지 않는다. public endpoint 조건은 §2-2.
 
+#### 공유 EC2 전원 · host 변경 원칙
+
+EC2 1대를 팀원 전체가 함께 쓴다([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 2026-10-30 확인 자동화가 다른 팀원이 쓰던 instance를 두 번 중지했을 가능성이 있다(같은 문서 §10 「공유 EC2 사용 충돌」). 그래서 다음을 모든 자동화에 적용한다.
+
+- **배포 · bootstrap · 스파이크 자동화는 EC2를 start · stop · reboot하지 않는다.** instance가 `running`이 아니면 자동화는 실패로 끝난다.
+- **전원 변경은 사람이 한다.** 팀 공유 host의 사용 상황을 확인하고 알린 뒤에 한다.
+- **「작업 전 전원 상태로 되돌리기」 자동화도 두지 않는다.** 시작과 종료 사이에 다른 사용자가 끼어들 수 있어서, 되돌리기가 남의 사용을 끊는다. 최종 전원 상태는 자동화가 소유하지 않는다.
+- package 설치처럼 host 전체에 영향을 주는 변경도 같은 방식으로 사람이 알리고 한다. Docker daemon 설정 · 전역 prune 같은 세부 규칙은 [RT-14 배포 설계](./rt14-deployment-design.md) §7.3이다.
+
+준비 구현(`deploy/aws.py`)은 EC2 전원 API를 호출하지 않는다. instance가 꺼져 있으면 SSM 명령이 전달되지 않아 실패로 끝난다.
+
 #### 현재 구현 범위
 
-2026-10-30 `develop` `7bab60bc` 기준, 이 절의 결정은 **준비 구현까지 반영**돼 있다(#479, [RT-14 실행 절차](./rt14-deployment.md) — IN_PROGRESS). RT-14 Decision Gate는 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 진행 중이다.
+2026-10-30 `develop` `7bab60bc` 기준, 이 절의 결정은 **준비 구현까지 반영**돼 있다(#479, [RT-14 실행 절차](./rt14-deployment.md) — IN_PROGRESS). RT-14 Decision Gate는 2026-10-30 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 Runtime/Ops Owner가 승인했다. 승인값과 Gate 상태는 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
 `develop`에 있는 것 — 실행한 적 없는 준비 구현이다:
 
@@ -128,12 +141,12 @@ GitHub Actions
 - OIDC 인증 workflow 실제 실행, ECR repository · host controller · 보호 디렉터리 준비
 - 첫 publish · deploy · rollback rehearsal
 - Security Group / IAM / EC2 설정 변경
-- RD-12b ~ f · h Gate 승인 — 준비 구현은 후보이며 승인을 대신하지 않는다
+- Gate에서 `NEEDS_CHANGE`로 승인한 구현 변경(rollback tip gate · 외부 smoke · release-bound Web artifact 등, [RT-14 배포 설계](./rt14-deployment-design.md) §16)
 
 남은 순서:
 
 ```text
-1. RT-14 Gate 승인(#450) · Variable/Secret 등록
+1. ~~RT-14 Gate 승인(#450)~~ 2026-10-30 완료 · `NEEDS_CHANGE` 구현 변경 · Variable/Secret 등록
 2. rt14-oidc로 role 인증 확인
 3. host 준비(controller · 보호 디렉터리 · volume · config) — 별도 승인 작업
 4. publish → deploy → health · 8종 등록 · smoke 확인
@@ -157,9 +170,9 @@ GitHub Actions
 
 원칙:
 
-- **Elastic IP는 현재 필수 자원이 아니다.** EC2 stop/start 이후에도 유지되어야 하는 public endpoint가 실제 요구일 때 도입한다. Elastic IP는 카테캠 계정에서 기본 차단이므로 도입은 운영진 요청 경로를 거친다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4, RD-14a). 그 전까지 공인 IPv4는 시작할 때마다 바뀐다.
+- **Elastic IP는 필수 자원이 아니다.** public endpoint의 주소 안정성이 필요하고 DDNS 같은 대안으로 충분하지 않을 때만 요청한다. CPU · RAM · DB 같은 capacity 자원(§18)과 다른 결정이다. Elastic IP는 카테캠 계정에서 기본 차단이므로 도입은 운영진 요청 경로를 거친다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4, RD-14a). 그 전까지 공인 IPv4는 시작할 때마다 바뀐다.
 - 현재 Compose는 api를 `127.0.0.1:<port>`에만 publish한다. 2026-10-02 관측 시 Security Group inbound rule은 0개였다. 외부 공개는 이 두 경계를 함께 바꾸는 RD-14 결정이다.
-- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 현재 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다.
+- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 이 문서에서 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다. 공인 IPv4가 바뀌는 환경이므로 **record를 API로 갱신할 수 있는지**를 기준에 넣는다. RT-14 구현 후보는 DuckDNS를 먼저 검토한다([RT-14 배포 설계](./rt14-deployment-design.md) §13).
 - 도메인 자동 갱신에 token 같은 비밀값이 필요한 공급자를 선택하면 해당 값은 repository에 커밋하지 않고 secret으로 관리한다.
 - 외부 공개 endpoint에서 실제 사용자 데이터나 인증정보가 오가는 경우 **HTTPS를 pre-deploy 조건으로 검토**한다.
 - 80/443 Security Group 규칙, Let's Encrypt, Caddy/Nginx 등 reverse proxy/인증서 도구는 실제 deployment stack을 닫을 때 결정한다.
@@ -192,7 +205,12 @@ GitHub Actions
 - Caddy/Nginx 등 reverse proxy 도입
 - Google/Kakao OAuth client·callback 등록
 
-**2026-10-30 갱신:** 최종 산출물 제출 요건(§2-3)으로 「외부 공개 demo URL 필요」 조건이 실제가 됐다. 위 목록은 RD-14 결정 전까지 그대로지만, RD-14는 제출 마감(11/11) 전에 결정이 필요하다. [RT-14 실행 절차](./rt14-deployment.md) §9는 「공개 trigger가 생기면 PM/Owner 검수 뒤 DNS · TLS · 인증을 정한다」고 두고 내부 loopback smoke만 제공한다. EIP는 카테캠 도메인 가이드와 AWS 가이드의 안내가 달라 미확정이다([`aws-environment.md`](./official-inputs/aws-environment.md)).
+**2026-10-30 갱신:** 최종 산출물 제출 요건(§2-3)으로 「외부 공개 demo URL 필요」 조건이 실제가 됐다. RD-14는 trigger 대기가 아니라 제출 마감(11/11) 전에 닫아야 하는 결정이다. 위 목록은 RD-14 구현 전까지 「아직 하지 않은 것」으로 남는다.
+
+- 공개 모델은 [RT-14 배포 설계](./rt14-deployment-design.md) §13이다(2026-10-30 #450 Gate 승인). 로그인 · 회원가입 없는 공개 체험 서비스, Web + API same-origin, HTTPS, reverse proxy는 Caddy 1순위, Security Group은 public 80/443만 연다. Caddy는 app release와 분리된 host 인프라로 두고, Web 정적 산출물은 API와 같은 release revision에 묶는다(`Web revision == API revision`). 22 · 3306 · API 8000은 공개하지 않는다. 구현은 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 이어진다.
+- EIP는 필수로 두지 않는다. 카테캠 도메인 가이드와 AWS 가이드의 안내가 달라 사용 가능 여부도 미확정이다([`aws-environment.md`](./official-inputs/aws-environment.md) §9).
+- [RT-14 실행 절차](./rt14-deployment.md) §9의 준비 구현은 내부 loopback smoke만 제공한다. 공개 배포의 외부 smoke(DNS · TLS · Web · Web revision · same-origin API)는 RD-12h에 workflow의 SSM 성공 뒤 단계로 더한다.
+- RT-14가 직접 닫는 것은 public endpoint · 공개 모델 · DNS/TLS/reverse proxy · Security Group · 외부 smoke까지다. abuse · privacy · capacity 보호는 §2-4의 경계를 따른다.
 
 ### 2-3. 최종 제출 · 발표 기간 운영 조건
 
@@ -216,15 +234,18 @@ GitHub Actions
 
 원칙:
 
-- **제출한 URL이 11/20까지 유지돼야 한다.** EC2를 중지하면 공인 IPv4가 바뀐다(§2-1). RD-14에서 EIP · DNS 갱신 · 상시 가동 중 무엇을 고르든 이 조건을 결정 기준에 넣는다.
-- **EC2는 팀원 공유다**([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 제출 뒤에는 서비스 중인 instance의 중지 · 재시작 · host 전역 변경(package 설치 등)을 운영 창에서만 한다.
-- **공개 범위와 비용 상한을 공개 전에 정한다.** 인증 없이 업로드 · 분석이 가능하므로 공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용 중 무엇인지와 provider 호출 상한을 RD-14와 함께 정하고, 그 전에 §21 pre-deploy review를 실행한다. 카테캠 계정은 상업적 · 유료 서비스 운영이 금지다(같은 문서 §3).
+- **제출 · 심사 · 발표 기간 동안 URL이 실제로 쓸 수 있어야 한다.** 이것이 공지의 요구다. 공지에는 심사가 끝나는 시점이 없다(`확인 필요`).
+- **팀 운영 목표는 같은 URL을 11/20까지 유지하는 것을 기본값으로 둔다.** 11/20은 공지 요구가 아니라 카테캠 AWS 제공 종료일이라는 외부 조건이다. EC2를 중지하면 공인 IPv4가 바뀌므로(§2-1) 주소를 유지하는 수단은 RD-14가 정한다(§2-2).
+- **EC2는 팀원 공유다**([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 제출 뒤에는 서비스 중인 instance의 중지 · 재시작 · host 전역 변경(package 설치 등)을 운영 창에서만 한다. 전원 자동화 금지는 §2-1 「공유 EC2 전원 · host 변경 원칙」이다.
+- **공개 범위와 비용 상한은 RD-14(endpoint 구성)와 따로 정한다.** 인증 없이 업로드 · 분석이 가능하므로 공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용 중 무엇인지와 provider 호출 상한을 공개 전에 정한다. 이 결정과 §2-4 보호는 공개 운영 hardening 후속 이슈에서 우선순위를 나누고, 공개 전에 §21 pre-deploy review를 실행한다. 카테캠 계정은 상업적 · 유료 서비스 운영이 금지다(같은 문서 §3).
 - **외부 체험은 §2-4의 보호 범위 안에서만 받는다.**
 - **제공 종료 전 데이터 처리.** 업로드 영상 · 파생물 · DB의 삭제 시점과 방법은 retention 미결(§14, #71)과 함께 정한다. 결정 전에는 「제공 종료와 함께 사라진다」고 가정하지 않는다.
 
 ### 2-4. 외부 체험 운영 보호 · 부하 시험
 
 §2-3의 공개 URL은 팀 · 시연만 가정한 현재 용량 가정(Baseline B-P1 · B-W1 ~ B-W4)을 넘는 요청을 받을 수 있다. 목표는 처리량 보장이 아니라 **OOM · 데이터 손상 · 중복 비용 · 끝없는 대기 없이, 수락한 과업과 조회를 유지하고 초과 요청에는 빠른 안내를 주는 것**이다.
+
+> **범위 경계.** 이 절은 공개 운영에 필요한 hardening backlog와 검증 기준을 정의한다. 모든 항목이 RT-14 배포 Gate의 선행 구현 조건은 아니다. RT-14를 막는 최소 조건과 공개 운영 전 추가 hardening은 별도 이슈에서 우선순위를 나눈다. RT-14가 직접 닫는 것은 public endpoint · 공개 모델 · DNS/TLS/reverse proxy · Security Group · 외부 smoke다(§2-2). global admission control · queue backlog guard · 동시 upload 제한 · asset streaming · rate limiting · provider 비용 상한 · 부하 시험 · privacy/retention hardening은 그 이슈에서 다룬다.
 
 #### 요청 종류별 보호 경계
 
@@ -244,7 +265,7 @@ GitHub Actions
 - **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job을 `requested_at + 실행 예산 + 30초`까지만 기다린다([case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)). queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
 - **IP 단위 제한만으로 공정성 · 비용 상한을 삼지 않는다.** 같은 네트워크의 여러 사용자가 한 공인 IP를 쓸 수 있다. 서버 전체 상한을 우선하고, 인증 없는 case 생성으로 반복 상한을 우회할 수 있는지 함께 본다.
 - **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
-- **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 배포 전에 정한다.
+- **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 공개 전에 정한다.
 - 새 HTTP status · 오류 코드 · 사용자 안내가 필요하면 HTTP Contract Owner와 Consumer(case · web)가 함께 정한다. 이 문서는 운영 요구만 정한다.
 
 #### 부하 시험
@@ -293,7 +314,7 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 
 ### 아직 없는 것
 
-- EC2 실제 배포 — Gate 승인 · AWS 입력 등록 · 첫 publish/deploy · rollback rehearsal(RT-14, RD-12b ~ f)
+- EC2 실제 배포 — 승인한 구현 변경 · AWS 입력 등록 · 첫 publish/deploy · rollback rehearsal(RT-14, RD-12b ~ f. Gate는 2026-10-30 승인)
 - 배포 후 검증의 실제 실행(RD-12h). 준비 구현의 smoke는 host 내부 loopback이고, 외부 경로 smoke는 RD-14에 달려 있다
 - production log transport · log retention(RD-13a · RD-11a) — 준비 구현은 `awslogs` + dual local cache 후보만 있다. EC2에 Log Group 없음
 - production restart policy · health alert(RD-13c) — 준비 구현은 `no` · `unless-stopped` 중 승인값만 받고 기본값을 두지 않는다. local Compose에는 `restart:` 없음
@@ -356,12 +377,12 @@ Runtime
 
 | 구분 | local | CI | production(EC2) |
 | --- | --- | --- | --- |
-| image | 로컬 build(`compose.yaml`) | `python-tests`가 배포 image를 build해 media · OCR acceptance. push하지 않음 | `rt14-deploy` publish가 build · acceptance한 image를 ECR digest로 pull. EC2에서 build하지 않음(후보, RD-12b) |
+| image | 로컬 build(`compose.yaml`) | `python-tests`가 배포 image를 build해 media · OCR acceptance. push하지 않음 | `rt14-deploy` publish가 build · acceptance한 image를 ECR digest로 pull. EC2에서 build하지 않음(RD-12b 승인, acceptance 전) |
 | DB | Compose `mysql` named volume | MySQL 8.4 service container · test 전용 DB | 소유 label을 확인한 external volume. 도구가 생성 · 삭제하지 않음 |
 | 앱 설정 · secret | repo 밖 파일을 `DAESINGO_RUNTIME_ENV_FILE`로 지정 → `/run/secrets/runtime.env` read-only mount | 비밀값 없는 test 설정. 외부 AI 실제 호출 없음(§19) | Parameter Store SecureString → EC2 instance role → host 보호 파일(config ID별) → 같은 mount 경로(아래) |
 | AWS 권한 | 개인 SSO(사람이 확인할 때만) | 없음 — 일반 CI에 OIDC 권한을 주지 않음 | Actions는 OIDC deploy role, host는 instance role. 장기 Access Key 없음(§2-1) |
 | api 노출 | `127.0.0.1` | — | 준비 구현은 host loopback. 외부 공개는 RD-14 |
-| revision | `local` | `local`(build arg를 넘기지 않음) | 40자 commit SHA · image digest · config ID로 기록(후보, RD-12c) |
+| revision | `local` | `local`(build arg를 넘기지 않음) | 40자 commit SHA · image digest · config ID로 기록(RD-12c 승인) |
 
 Runtime secret source와 전달 경로는 확정이다(RD-07, [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249), 2026-10-04). 앱이 파일을 읽는 규칙(값은 파일에서만 · `DAESINGO_ENV_FILE`은 composition root만 해석 · startup fail-fast · key 이름만 로그)은 [Tech Spec](./runtime-tech-spec.md) §15.2가 소유한다.
 
@@ -376,7 +397,7 @@ SSM Parameter Store SecureString
 - **GitHub Actions는 secret 값을 조회하거나 전달하지 않는다.** OIDC로 deploy role을 얻어 SSM Run Command로 「배포 절차를 실행하라」만 지시한다. Run Command 입력에 평문 secret을 싣지 않는다. 역할은 `rt14-deploy.yml`(배포 orchestration) · host controller `deploy/configure.py`(Parameter Store fetch · 보호 파일 게시) · `deploy/ec2.py`(migration · Compose render · 실행 · 검증) · image 안 Compose 정의(secret file mount · 실행 구조)로 나뉜다. 준비 구현의 exact 단계는 [RT-14 실행 절차](./rt14-deployment.md) §4 · §6이고, 승인은 RD-12.
 - Compose는 file source secret의 `uid` · `gid` · `mode`를 적용하지 않으므로 **host 파일 권한이 접근 제어**다.
 - **rotation.** Parameter Store 재조회 → host 파일 갱신 → `docker compose up -d --force-recreate api worker`. `docker compose restart`를 rotation 보장 수단으로 쓰지 않는다.
-- **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 2026-10-30 SSO 권한으로 `SecureString`(기본 `aws/ssm` key) 생성 → `get-parameters-by-path --with-decryption` → 삭제가 PASS했고, EC2 instance role의 inline Deny에는 SSM이 없었다([`aws-environment.md`](./official-inputs/aws-environment.md) §9). SCP가 이 작업을 막지 않는다는 근거이며, **EC2 role로 직접 하는 조회는 첫 배포에서 확인한다.** 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
+- **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 2026-10-30 SSO 권한으로 `SecureString`(기본 `aws/ssm` key) 생성 → `get-parameters-by-path --with-decryption` → 삭제가 PASS했고, EC2 instance role의 inline Deny에는 SSM이 없었다([`aws-environment.md`](./official-inputs/aws-environment.md) §10). SCP가 이 작업을 막지 않는다는 근거이며, **EC2 role로 직접 하는 조회는 첫 배포에서 확인한다.** 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
 - container는 IMDS를 통해 instance role 자격증명을 얻지 못한다(hop limit 1, §2-1). Parameter Store 조회는 위 경로대로 host 배포 script에서만 한다.
 - secret을 process environment로 넣지 않으므로 `docker inspect` · `/proc/<pid>/environ` · ffmpeg 같은 자식 process에 값이 노출되지 않는다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)).
 
@@ -530,7 +551,7 @@ EC2 기본 CPU/RAM/disk 지표
 
 - queue wait · oldest queued · execution duration · STALE · retry · cancel 지표는 RT-12(b)의 **DB 집계 query**와 structured log event catalog로 local · integration에서 볼 수 있다([`rt12b-observability.md`](./rt12b-observability.md)). 정기 기록 · 대시보드는 없다(RD-13b).
 - 배포된 stack이 없으므로 이 값은 아직 실제 운영 metric이 아니다.
-- AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다. RT-14 준비 구현은 Docker `awslogs` driver + dual local cache를 승인 대기 후보로 render한다 — 별도 Agent는 필요 없지만 daemon의 instance role 권한과 실제 수신 확인이 남는다([RT-14 실행 절차](./rt14-deployment.md) §1 · §8).
+- AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §10). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다. RT-14 Gate는 Docker `awslogs` driver + dual local cache를 승인했고(2026-10-30) 준비 구현이 그대로 render한다 — 별도 Agent는 필요 없다. 이 EC2에서 Docker daemon이 instance role로 임시 group에 로그를 보내는 것은 2026-10-30 스파이크로 확인했고([RT-14 배포 설계](./rt14-deployment-design.md) §17), 운영 group · retention과 실제 stack 로그 수신 확인이 남는다([RT-14 실행 절차](./rt14-deployment.md) §1 · §8).
 - EC2 기본 CloudWatch metric(CPU 등)은 콘솔에서 볼 수 있다. RAM · disk · process RSS는 Agent 없이 기본 metric에 없다.
 
 ### Monitoring Stack 확장 기준
@@ -601,7 +622,7 @@ provider delete API 호출의 구현 경계는 provider adapter가 소유한다.
 
 ## 11. Local Disk Guardrail
 
-50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다. root filesystem은 약 48G로 보이고 Docker 설치 전 사용량은 2.6G였다(2026-10-30, [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 디스크 확장 · 추가 볼륨은 직접 할 수 없고 카테캠 요청 경로만 있다(§2). 공지는 디스크 부족의 가장 흔한 원인으로 Docker build cache 누적을 들었다(같은 문서 §7).
+50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다. root filesystem은 약 48G로 보이고 Docker 설치 전 사용량은 2.6G였다(2026-10-30, [`aws-environment.md`](./official-inputs/aws-environment.md) §10). 디스크 확장 · 추가 볼륨은 직접 할 수 없고 카테캠 요청 경로만 있다(§2). 공지는 디스크 부족의 가장 흔한 원인으로 Docker build cache 누적을 들었다(같은 문서 §7).
 
 동시에 local disk는 다음이 경쟁한다.
 
@@ -793,7 +814,7 @@ Worker 수를 늘리기 전에 DB claim/lease가 concurrent-safe함을 integrati
 
 ## 18. 카테캠 자원 확장 기준
 
-아래 자원은 모두 카테캠 계정에서 직접 만들거나 바꿀 수 없고 운영진 요청 후 검토된다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4). 요청에는 팀 · 필요 항목 · 이유 · 예상 사용 기간이 들어가므로, 이 절의 조건을 뒷받침하는 관측값을 함께 남긴다. 지원 가능한 상한(최대 사양 · GPU · EBS 상한 · 예산)은 아직 확인되지 않았다(같은 문서 §8). 제공 기간은 2026-11-20까지다.
+이 절은 capacity 자원(사양 · disk · DB · load balancing · GPU)의 요청 조건이다. Elastic IP는 capacity가 아니라 public endpoint 주소 안정성 결정이므로 §2-2 · RD-14가 정한다(아래 「Elastic IP」는 그 경계를 남긴 것이다). 아래 자원은 모두 카테캠 계정에서 직접 만들거나 바꿀 수 없고 운영진 요청 후 검토된다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4). 요청에는 팀 · 필요 항목 · 이유 · 예상 사용 기간이 들어가므로, 이 절의 조건을 뒷받침하는 관측값을 함께 남긴다. 지원 가능한 상한(최대 사양 · GPU · EBS 상한 · 예산)은 아직 확인되지 않았다(같은 문서 §8). 제공 기간은 2026-11-20까지다.
 
 ### EC2 사양 상향
 
@@ -822,7 +843,7 @@ cleanup/retention/Object Storage 분리를 적용한 뒤에도 **실행 working 
 
 ### Elastic IP
 
-외부 공개 demo/domain endpoint의 IP 안정성이 실제 요구일 때. §2-2의 public endpoint 조건이 생기기 전에는 baseline 자원으로 선점하지 않는다.
+capacity 조건으로 요청하지 않는다. public endpoint의 주소 안정성이 필요하고 DDNS 등 대안으로 충분하지 않을 때 RD-14 결정으로 요청한다(§2-2). baseline 자원으로 선점하지 않는다.
 
 ### ALB
 
@@ -935,8 +956,10 @@ CI quality gate
 → container/process 상태 확인
 → /health/live
 → /health/ready
+→ host 내부 smoke
+→ host current 기록
 → 외부 endpoint smoke test
-→ 성공 revision 기록
+→ production 배포 성공
 ```
 
 원칙:
@@ -945,6 +968,8 @@ CI quality gate
 - Registry 기반 image 배포를 선택하면 `latest`만 의존하지 않고 immutable tag 또는 digest로 어떤 image가 배포됐는지 재현 가능하게 한다.
 - 새 revision 배포 전 직전 known-good revision을 식별할 수 있어야 한다.
 - container가 실행 중이라는 사실만으로 성공 처리하지 않고 health/readiness와 실제 외부 경로의 최소 smoke test를 통과해야 한다.
+- **host 내부 배포 검증을 통과한 release만 host `current`로 승격한다.** 공개 production 배포 완료는 그 뒤 외부 smoke까지 통과해야 한다. 두 상태의 정의는 [RT-14 배포 설계](./rt14-deployment-design.md) §6이다.
+- 외부 smoke 실패는 배포 실패로 기록하지만 자동 rollback이나 host `current` 자동 복원을 하지 않는다. operator가 원인을 보고 명시적 rollback을 판단한다. 준비 구현도 자동 rollback을 하지 않는다(RD-12e 추천은 같은 문서 §9).
 - 배포 검증 실패 시 원인 분석보다 서비스 복구가 우선인 상황에서는 직전 known-good revision으로 rollback하고 같은 health/smoke test를 다시 수행한다.
 - DB migration처럼 코드 rollback만으로 되돌릴 수 없는 변경은 backward compatibility 또는 별도 rollback/restore 계획 없이 자동 rollback 대상으로 간주하지 않는다.
 - exact 명령과 체크 순서는 [`deployment-runbook.md`](./deployment-runbook.md)에 유지한다.
@@ -1005,12 +1030,12 @@ Prometheus/Grafana/OpenTelemetry full stack
 ## 23. Open Ops Decisions
 
 - [x] local Dockerfile / Compose exact service command — RT-13(a), §4
-- [ ] production restart policy — RD-13c
+- [x] production restart policy — RD-13c 승인(2026-10-30): api · worker · mysql `unless-stopped` · migrate `no`. restart rehearsal은 RT-14 acceptance
 - [x] local MySQL volume · logical backup/restore 도구 — RT-13(a) · RT-13(b)
-- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §9)
-- [ ] production log transport — RD-13a (CloudWatch Agent 미설치 · Log Group 없음. 준비 구현의 후보는 `awslogs` + dual local cache)
-- [ ] log retention
-- [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료, 운영 threshold는 RD-13c
+- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §10)
+- [ ] production log transport — RD-13a 승인(2026-10-30): service별 `awslogs` + dual local cache. 운영 Log Group 생성 · 실제 수신 acceptance가 남았다
+- [x] log retention(운영 log) — RD-11a 승인(2026-10-30): host dual cache 20m × 5 · CloudWatch 30일. 영상 · 파생물 · UsageRecord retention은 아래 별도 항목
+- [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다(2026-10-30 Gate)
 - [ ] disk working-set guardrail
 - [ ] Object Storage 사용 범위
 - [ ] Managed asset retention
@@ -1019,17 +1044,18 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate 승인 · Variable/Secret 등록 · OIDC 실제 인증 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
-- [ ] 배포 artifact 전달 방식 — 준비 구현의 후보는 CI build → ECR immutable tag · digest(RD-12b OPEN)
+- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate는 2026-10-30 승인. 승인한 구현 변경 · Variable/Secret 등록 · OIDC 실제 인증 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
+- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. ECR push · pull acceptance가 남았다
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
-- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — 준비 구현의 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. 승인(RD-12c · RD-12e)과 rehearsal이 남았다
-- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지이고, 외부 경로 smoke는 RD-14 뒤다
-- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** EIP · DNS 갱신 · 상시 가동 중 제출 URL을 11/20까지 유지할 방법 → DNS → HTTPS/reverse proxy, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
-- [ ] 공개 범위(공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용)와 샘플 입력 · 사용 안내 — §2-3
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10)
+- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · DDNS 우선 · EIP 비필수)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인. 구현이 남았다
+- [ ] 공개 범위(공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용)와 샘플 입력 · 사용 안내 — §2-3. RD-14와 분리해 공개 운영 hardening 후속 이슈에서 정한다
 - [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
-- [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4)
-- [ ] 외부 체험 부하 시험 실행과 결과 기록 — P2 다음 단계, 기준은 시험 전에 고정(§2-4)
+- [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4). RT-14 Gate가 아니라 공개 운영 hardening 후속 이슈 범위
+- [ ] 외부 체험 부하 시험 실행과 결과 기록 — P2 다음 단계, 기준은 시험 전에 고정(§2-4). 공개 운영 hardening 후속 이슈 범위
 - [ ] 제출 → 발표(11/16) → AWS 종료(11/20) 운영 유지와 종료 시 데이터 삭제 — §2-3 · §14
+- [x] 공유 EC2 전원 자동화 금지 — §2-1 「공유 EC2 전원 · host 변경 원칙」(2026-10-30 공유 사용 충돌 근거)
 - [ ] README 배포 절 · 환경 분리 서술 — 실제 배포 실행 뒤(§2-3 · §4-1)
 - [ ] 공개 전 pre-deploy security review 실행 — §21
 - [ ] secret scan gate
@@ -1043,7 +1069,7 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [카테캠 지원 AWS 환경](./official-inputs/aws-environment.md) — 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot
 - [로컬 Runtime/Ops·Recording 실행환경](./local-runtime-environment.md)
 - [RT-13(a) Docker / Compose](./rt13a-docker-compose.md) · [RT-13(b) backup / restore](./rt13b-backup-restore.md)
-- [RT-14 실행 절차](./rt14-deployment.md) · [Deployment Runbook](./deployment-runbook.md)
+- [RT-14 실행 절차](./rt14-deployment.md) · [RT-14 배포 설계 — Decision Gate](./rt14-deployment-design.md) · [Deployment Runbook](./deployment-runbook.md)
 - [CI test partitions](./ci-test-partitions.md)
 - [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [Runtime Tech Spec](./runtime-tech-spec.md)
