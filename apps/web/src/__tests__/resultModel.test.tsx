@@ -161,4 +161,27 @@ describe('프레임 이미지', () => {
     const demo = render(<PlateCheck view={HAPPY} onBack={vi.fn()} />)
     expect(demo.container.querySelector('img')).toBeNull()
   })
+
+  // #487에 올린 통과 · 차단 사례
+  it('번호판 입력은 형식이 맞을 때만 저장되고, 안쪽 공백은 지워서 보낸다', () => {
+    const onEdit = vi.fn()
+    const { container, getByText } = render(<PlateCheck view={HAPPY} onBack={vi.fn()} onEdit={onEdit} startEditing />)
+    const input = container.querySelector('.plate-input') as HTMLInputElement
+    const save = getByText('저장') as HTMLButtonElement
+    for (const bad of ['12가34?6', 'abc', '12']) {
+      fireEvent.change(input, { target: { value: bad } })
+      expect(save.disabled).toBe(true)
+      expect(input.getAttribute('aria-invalid')).toBe('true')
+      expect(container.textContent).toContain('번호판 형식을 확인해 주세요')
+      fireEvent.submit(input.form!)
+    }
+    expect(onEdit).not.toHaveBeenCalled()
+    for (const good of ['123가4567', '서울12가3456', '12가 3456']) {
+      fireEvent.change(input, { target: { value: good } })
+      expect(save.disabled).toBe(false)
+      expect(input.getAttribute('aria-invalid')).toBe('false')
+    }
+    fireEvent.submit(input.form!)
+    expect(onEdit).toHaveBeenCalledWith('12가3456')
+  })
 })
