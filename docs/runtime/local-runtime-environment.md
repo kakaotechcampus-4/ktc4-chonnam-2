@@ -81,10 +81,12 @@ schema 호환성 판단은 [backup/restore Notes](./rt13b-backup-restore.md)를 
 
 | 실제 키 | 필요 여부·코드 기본값 | 용도·허용값 | 대표값/secret |
 | --- | --- | --- | --- |
-| `DAESINGO_RECORDING_ANALYSIS_PROFILE_REF` | Analysis 4개 함께 필요, 없음 | 분석 profile 식별자(공백 아닌 문자열); height/preset/CRF와 함께 관리 | **미확정**, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_PROFILE_REF` | Analysis 6개 함께 필요, 없음 | 분석 profile 식별자(공백 아닌 문자열); height/preset/CRF/두 한도와 함께 관리 | **미확정**, 비secret |
 | `DAESINGO_RECORDING_ANALYSIS_HEIGHT` | 위 그룹, 없음 | 양의 짝수, 출력 높이 | **미확정**, 비secret |
 | `DAESINGO_RECORDING_ANALYSIS_PRESET` | 위 그룹, 없음 | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | **미확정**, 비secret |
 | `DAESINGO_RECORDING_ANALYSIS_CRF` | 위 그룹, 없음 | 정수 `0..51` | **미확정**, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_MAX_BYTES` | 위 그룹, 없음 | 양의 정수 **bytes**, `size <= limit` 허용; 누적 span 및 최종 MP4 전체 크기 각각 검사 | **미확정**, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS` | 위 그룹, 없음 | 양의 정수 **milliseconds**, `duration <= limit` 허용; 요청 범위의 길이를 encode 전 검사 | **미확정**, 비secret |
 | `DAESINGO_RECORDING_INCIDENT_HEIGHT` | Incident 3개 함께 필요, 없음 | 양의 짝수, 판독·신고 영상의 바탕인 IncidentClip 높이 | **미확정**, 비secret |
 | `DAESINGO_RECORDING_INCIDENT_PRESET` | 위 그룹, 없음 | Analysis와 같은 preset 허용 집합 | **미확정**, 비secret |
 | `DAESINGO_RECORDING_INCIDENT_CRF` | 위 그룹, 없음 | 정수 `0..51` | **미확정**, 비secret |
@@ -346,13 +348,14 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 | MVP 저장 | DB 한 행 유지; packet 상한만 올려 해결했다고 하지 않음 |
 | 사전/변환 중 거부 | Owner 합의: 명시적 prepared-media byte 한도 및 별도 지원 길이를 정하고, 변환 전/누적·최종 byte 검사로 DB write 전 중단 |
 | 오류 전달 합의 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`, Case는 재시도 없는 “분석 범위가 너무 김” notice 방향 |
-| 현재 구현 여부 | 현재 `RecordingSettings`에는 그 상한 env가 없음. 이 문서가 해당 거부/mapping/notice 구현 완료를 주장하지 않음 |
+| 현재 구현 여부 | #452: 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. 운영값 확정 및 Case notice 구현은 별도 pending; [구현 경계](../modules/recording/analysis-source-limits.md) |
 | 지원 길이/bytes/encoding | **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
 | Search 상한 | 코드 inline media `40 MiB`, request `56 MiB`; Recording 저장 상한과 다른 단계, runtime env knob 아님 |
 | 시간 예산 | Case 요청 시점 + Search `150초` + 큐 여유 `30초` 유지 합의. Recording 준비/큐는 Case 대기에 포함되며 Search RunDeadline은 Search 호출부터 시작 |
 | 재측정 | Runtime 머신에서 준비·큐·Search를 나눠 측정한 뒤 Case 대기 기준 판단. 범위 분할은 MVP 밖 #168 |
 
-지원 분 수·운영 encoding 수치·byte 한도를 임의로 정하거나 미구현 env 이름을 만들지 않는다.
+지원 분 수·운영 encoding 수치·byte 한도를 임의로 정하지 않는다. 두 한도 env는 Analysis profile과
+함께 명시해야 하며, 기존 4개만 있는 runtime 파일도 시작 단계에서 거부한다. 테스트값을 복사하지 않는다.
 이 미결과 무관하게 위 파일 경계·DB/migration·Readout·실제 parser 키로 환경을 준비할 수 있다.
 
 ## 10. 검증된 명령과 증거의 범위

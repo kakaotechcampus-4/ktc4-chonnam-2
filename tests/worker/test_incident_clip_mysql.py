@@ -41,6 +41,7 @@ def prepare(queue, tmp_path, monkeypatch):
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "test-analysis",
         "DAESINGO_RECORDING_ANALYSIS_HEIGHT": "240", "DAESINGO_RECORDING_ANALYSIS_PRESET": "veryfast",
         "DAESINGO_RECORDING_ANALYSIS_CRF": "23", "DAESINGO_RECORDING_INCIDENT_HEIGHT": "240",
+        "DAESINGO_RECORDING_ANALYSIS_MAX_BYTES": "1000000", "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS": "10000",
         "DAESINGO_RECORDING_INCIDENT_PRESET": "veryfast", "DAESINGO_RECORDING_INCIDENT_CRF": "23"}
     env_file = tmp_path / "peer.env"
     env_file.write_text("\n".join(f"{k}={v}" for k, v in values.items()), encoding="utf-8")

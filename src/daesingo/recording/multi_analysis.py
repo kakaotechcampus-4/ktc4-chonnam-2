@@ -9,6 +9,7 @@ from .errors import RecordingCapabilityError
 from .materialization import MaterializedVideo
 from .models import TimeRange
 from .probe import _snapshot
+from .analysis_limits import remaining_bytes, check_output_size, check_output, read_output, checkpoint
 
 
 def materialize_chain(engine, inputs, profile_ref):
@@ -17,7 +18,14 @@ def materialize_chain(engine, inputs, profile_ref):
         for (source, _, _), snapshot in zip(inputs, snapshots):
             if snapshot[2:] != (source.byte_size, source.mtime_ns, source.sha256):
                 raise RecordingCapabilityError("UNAVAILABLE", "등록 이후 원본이 변경되었습니다")
-        parts = [engine.materialize(source, index, span, profile_ref) for source, index, span in inputs]
+        parts, used = [], 0
+        for source, index, span in inputs:
+            checkpoint()
+            with remaining_bytes(used):
+                part = engine.materialize(source, index, span, profile_ref)
+                check_output_size(len(part.content))
+            used += len(part.content)
+            parts.append(part)
         best_effort = any(p.best_effort for p in parts)
         if any(not p.frames or p.time_base != parts[0].time_base or p.video_size != parts[0].video_size for p in parts):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 time base 또는 해상도가 일치하지 않습니다")
@@ -54,6 +62,7 @@ def materialize_chain(engine, inputs, profile_ref):
                 "-map", "0:v:0", "-an", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
                 "-c:v", "copy", "-video_track_timescale", str(parts[0].time_base.denominator),
                 "-movflags", "+faststart", str(output)])
+            check_output(output)
             raw = engine._probe(output)
             base, frames = engine._frames(raw, expected_coverage=expected)
             stream = raw["streams"][0]
@@ -69,7 +78,7 @@ def materialize_chain(engine, inputs, profile_ref):
             if not math.isfinite(duration) or duration <= 0 or abs(duration - float(offset)) > .001 + float(2 * base):
                 raise ValueError("연결 출력 duration 불일치")
             engine._strict_decode(output)
-            content = output.read_bytes()
+            content = read_output(output)
             boxes, position = [], 0
             while position + 8 <= len(content):
                 size = int.from_bytes(content[position:position+4], "big")
