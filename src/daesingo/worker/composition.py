@@ -155,6 +155,8 @@ def compose_worker(
         return committed
 
     def heartbeat(context):
+        # Worker RuntimeConfig validation requires heartbeat settings.
+        assert startup.config.heartbeat is not None
         dedicated = heartbeat_engine if heartbeat_engine is not None else create_heartbeat_engine(
             startup.config.db, startup.config.heartbeat)
         lease = LeaseConnection(dedicated, context.execution_id, owner, settings.lease_duration_sec,
@@ -167,6 +169,8 @@ def compose_worker(
                          observe=heartbeat_observe)
 
     def reflect(context: ExecutionContext, terminal: HandlerResult):
+        # This callback is installed below only with a reflector.
+        assert reflector is not None
         incoming = ReflectionInput(context.execution_id, context.job_id, context.case_id,
                                    context.kind, context.attempt, terminal)
         with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,

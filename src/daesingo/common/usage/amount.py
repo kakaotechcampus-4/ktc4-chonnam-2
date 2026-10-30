@@ -31,6 +31,8 @@ def parse_amount(value: Decimal | str | None) -> Decimal | None:
     if not value.is_finite():
         raise ValueError("invalid amount")
     digits = value.as_tuple()
+    # is_finite() above excludes Decimal's special exponent sentinels.
+    assert isinstance(digits.exponent, int)
     if digits.exponent < -AMOUNT_SCALE:
         raise ValueError("amount exceeds scale")
     if not value.is_zero() and len(digits.digits) + digits.exponent > AMOUNT_PRECISION - AMOUNT_SCALE:

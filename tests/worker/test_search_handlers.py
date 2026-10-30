@@ -103,6 +103,14 @@ def fixtures():
     return scope, coarse, fine
 
 
+def test_fractional_fine_bound_is_passed_to_public_search_unchanged():
+    ctx = context("FINE_VERIFY", object())
+    registry, seen, _ = dependencies(ctx, fine_max_latency_sec=0.125)
+    result = registry.dispatch(ctx)
+    assert result.status == "SUCCEEDED"
+    assert seen.count("fine") == 1
+
+
 def test_fine_without_case_bound_never_falls_back_to_coarse_scope():
     ctx = context("FINE_VERIFY", object())
     registry, seen, _ = dependencies(ctx, fine_max_latency_sec=None)

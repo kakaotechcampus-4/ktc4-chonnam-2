@@ -40,6 +40,8 @@ def _begin(conn, snapshot):
     try:
         conn.execute(insert(usage_inflight).values(snapshot))
     except IntegrityError as error:
+        # A driver-originated IntegrityError always carries its DBAPI cause.
+        assert error.orig is not None
         if not error.orig.args or error.orig.args[0] != 1062:
             raise
         row = _locked(conn, snapshot["usage_id"], snapshot["execution_ref"], snapshot["case_id"])
@@ -194,9 +196,10 @@ class DurableUsageSink:
                     **intent}
                 self._begins[usage_id] = snapshot
             else:
-                snapshot = self._begins.get(usage_id)
-                if snapshot is None:
+                existing_snapshot = self._begins.get(usage_id)
+                if existing_snapshot is None:
                     raise UsageStateError()
+                snapshot = existing_snapshot
                 if not _same(snapshot, supplied, ("operation", "provider_label", "pricing_id", "unit")):
                     raise UsageConflictError()
                 if not _same(snapshot, intent, _INTENT):

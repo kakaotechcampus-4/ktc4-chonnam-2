@@ -73,10 +73,10 @@ def validated_terminal(value: HandlerResult, *, execution_id: str | None = None)
         if execution_id is not None and snapshot.objects:
             refs = list(snapshot.produced)
             keys = {(r.kind, r.ref) for r in refs}
-            for obj in prepare_objects(execution_id, snapshot.objects):
-                if (obj.reference.kind, obj.reference.ref) not in keys:
-                    refs.append(obj.reference)
-                    keys.add((obj.reference.kind, obj.reference.ref))
+            for prepared in prepare_objects(execution_id, snapshot.objects):
+                if (prepared.reference.kind, prepared.reference.ref) not in keys:
+                    refs.append(prepared.reference)
+                    keys.add((prepared.reference.kind, prepared.reference.ref))
             snapshot = HandlerResult.model_validate({**snapshot.model_dump(), "produced": refs})
         return snapshot
     except Exception:

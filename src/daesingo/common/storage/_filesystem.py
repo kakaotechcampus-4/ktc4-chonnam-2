@@ -6,6 +6,7 @@ coordinated by the root lease. No recursive pathname deletion is used.
 """
 from contextlib import contextmanager, ExitStack
 import os
+import sys
 from pathlib import Path
 import re
 import stat
@@ -31,7 +32,7 @@ def configuration_path(value):
     """
     try:
         path = Path(value)
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             # Win32 abspath may discard a trailing dot before it reaches the
             # missing-suffix check. Reject ambiguous raw components first.
             _windows_components(path.parts[1:] if path.anchor else path.parts)
@@ -60,23 +61,23 @@ def tool_directory(directory):
     Volumes without a DOS name fail closed. The caller must pin and compare
     the returned path to the canonical identity before using it.
     """
-    if os.name != 'nt':
-        return directory.path
-    size = _final_name(directory.descriptor, None, 0, 0)  # VOLUME_NAME_DOS
-    if not size:
-        raise UnsafePath('unverifiable tool directory')
-    buffer = ctypes.create_unicode_buffer(size + 1)
-    used = _final_name(directory.descriptor, buffer, len(buffer), 0)
-    if not used or used >= len(buffer):
-        raise UnsafePath('unverifiable tool directory')
-    path = Path(buffer.value)
-    if not re.fullmatch(r'\\\\\?\\[a-zA-Z]:\\', path.anchor):
-        raise UnsafePath('unsupported tool namespace')
-    # Only the OS-returned extended DOS prefix is removed, never a GUID.
-    return Path(str(path)[4:])
+    if sys.platform == 'win32':
+        size = _final_name(directory.descriptor, None, 0, 0)  # VOLUME_NAME_DOS
+        if not size:
+            raise UnsafePath('unverifiable tool directory')
+        buffer = ctypes.create_unicode_buffer(size + 1)
+        used = _final_name(directory.descriptor, buffer, len(buffer), 0)
+        if not used or used >= len(buffer):
+            raise UnsafePath('unverifiable tool directory')
+        path = Path(buffer.value)
+        if not re.fullmatch(r'\\\\\?\\[a-zA-Z]:\\', path.anchor):
+            raise UnsafePath('unsupported tool namespace')
+        # Only the OS-returned extended DOS prefix is removed, never a GUID.
+        return Path(str(path)[4:])
+    return directory.path
 
 
-if os.name == 'nt':
+if sys.platform == 'win32':
     import ctypes
     from ctypes import wintypes
     import msvcrt
@@ -136,13 +137,13 @@ class Pinned:
         self.path, self.descriptor = path, descriptor
 
     def close(self):
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             _close(self.descriptor)
         else:
             os.close(self.descriptor)
 
     def stat(self):
-        return self.path.lstat() if os.name == 'nt' else os.fstat(self.descriptor)
+        return self.path.lstat() if sys.platform == 'win32' else os.fstat(self.descriptor)
 
     def entries(self):
         """Stream one metadata result at a time; None denotes one failed stat.
@@ -151,7 +152,7 @@ class Pinned:
         is counted by the scanner without retaining raw exception text. Failure
         to enumerate the directory itself still belongs to that directory.
         """
-        with os.scandir(self.path if os.name == 'nt' else self.descriptor) as entries:
+        with os.scandir(self.path if sys.platform == 'win32' else self.descriptor) as entries:
             # Windows DirEntry.stat reports st_ino=0; lstat supplies the actual
             # file identity used again after opening the deletion handle.
             for item in entries:
@@ -166,11 +167,11 @@ class Pinned:
     def is_empty(self):
         # The bounded name-only check neither restats failures nor materializes
         # the remaining directory. Actual rmdir still decides atomically.
-        with os.scandir(self.path if os.name == 'nt' else self.descriptor) as entries:
+        with os.scandir(self.path if sys.platform == 'win32' else self.descriptor) as entries:
             return next(iter(entries), None) is None
 
     def lstat(self, name):
-        return ((self.path/name).lstat() if os.name == 'nt'
+        return ((self.path/name).lstat() if sys.platform == 'win32'
                 else os.stat(name, dir_fd=self.descriptor, follow_symlinks=False))
 
     @contextmanager
@@ -178,7 +179,7 @@ class Pinned:
         if name in ('.', '..') or Path(name).name != name:
             raise UnsafePath('invalid child name')
         path = self.path/name
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             descriptor = _handle(path, delete=delete)
         else:
             flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
@@ -195,7 +196,7 @@ class Pinned:
             child.close()
 
     def remove(self, name, child, *, directory=False):
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             delete = wintypes.BOOL(True)
             if not _dispose(child.descriptor, 4, ctypes.byref(delete), ctypes.sizeof(delete)):
                 raise ctypes.WinError(ctypes.get_last_error())
@@ -206,7 +207,7 @@ class Pinned:
 
     @contextmanager
     def lock_file(self, name):
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             handle = _handle(self.path/name, lock=True)
             try:
                 descriptor = msvcrt.open_osfhandle(handle, os.O_RDWR | os.O_BINARY)
@@ -229,7 +230,7 @@ class Pinned:
 def pin_root(path):
     path = checked_path(path)
     with ExitStack() as stack:
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             descriptor = _handle(Path(path.anchor))
         else:
             descriptor = os.open(path.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
@@ -249,14 +250,14 @@ def _windows_components(parts):
 
 def _configuration_path(path):
     parts = path.parts[1:]
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         # Network shares/device namespaces need a separate ownership model.
         # Check before opening them; no implicit network access at composition.
         if not re.fullmatch(r'(?:[a-zA-Z]:\\|\\\\\?\\[a-zA-Z]:\\|\\\\\?\\Volume\{[0-9a-fA-F-]+\}\\)', path.anchor):
             raise UnsafePath('unsupported cleanup namespace')
     with ExitStack() as stack:
         root = stack.enter_context(pin_root(Path(path.anchor)))
-        if os.name != 'nt':
+        if sys.platform != 'win32':
             # Exactly two leading slashes may have special meaning on POSIX.
             # Collapse them only after the OS proves both root handles equal.
             single = stack.enter_context(pin_root(Path('/')))
@@ -264,14 +265,14 @@ def _configuration_path(path):
                 raise UnsafePath('ambiguous cleanup anchor')
             root.path = Path('/')
         current = root
-        remainder = ()
+        remainder: tuple[str, ...] = ()
         for offset, part in enumerate(parts):
             try:
                 current = stack.enter_context(current.child(part, directory=True))
             except FileNotFoundError:
                 remainder = parts[offset:]
                 break
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             # An absent 8.3 component has no verified long-name identity yet.
             if any('~' in part for part in remainder):
                 raise UnsafePath('unverifiable short-name suffix')

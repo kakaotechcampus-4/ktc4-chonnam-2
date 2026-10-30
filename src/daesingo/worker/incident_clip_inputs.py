@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from daesingo import search
 from daesingo.common.jobs.produced import ProducedReader
 from daesingo.search.runs import AnalysisRun
+from daesingo.search.scope import TimeRangeKind
 from daesingo.search.visual import VisualVerificationResult
 
 
@@ -69,7 +70,7 @@ class IncidentClipInputs:
         span = {key: getattr(candidate.span, key) for key in ("timeline_id", "timeline_revision", "start_ms", "end_ms")}
         if span != source["span"] or candidate.run_id != run.run_id:
             raise ValueError("clip candidate binding mismatch")
-        relative = [r for r in scope.time_ranges if r.kind == "TIMELINE_RELATIVE"]
+        relative = [r for r in scope.time_ranges if r.kind == TimeRangeKind.TIMELINE_RELATIVE]
         if relative and not any(
             r.timeline_ref.timeline_id == span["timeline_id"]
             and r.timeline_ref.revision == span["timeline_revision"]

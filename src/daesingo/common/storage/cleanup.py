@@ -4,6 +4,7 @@ from contextvars import Context
 from dataclasses import dataclass
 import math
 import os
+import sys
 import re
 import stat
 from threading import Event, Lock, Thread
@@ -34,7 +35,7 @@ def _lease(root, kind, *, exclusive, blocking):
         try:
             while True:
                 try:
-                    if os.name == 'nt':
+                    if sys.platform == 'win32':
                         import msvcrt
                         os.lseek(fd, 0, os.SEEK_SET)
                         msvcrt.locking(fd, msvcrt.LK_NBLCK if exclusive else msvcrt.LK_NBRLCK, 1)
@@ -50,7 +51,7 @@ def _lease(root, kind, *, exclusive, blocking):
             yield acquired
         finally:
             if acquired:
-                if os.name == 'nt':
+                if sys.platform == 'win32':
                     import msvcrt
                     os.lseek(fd, 0, os.SEEK_SET)
                     msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)

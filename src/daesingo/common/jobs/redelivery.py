@@ -70,7 +70,7 @@ def redeliver_once(engine: Engine, reflector: ResultReflector, *,
             continue
         if result is not None:
             results.append(result)
-            if logger is not None and incoming is not None:
+            if logger is not None and incoming is not None and trace_id is not None:
                 with bind_context(**safe_correlation(trace_id=trace_id, case_id=incoming.case_id,
                     job_id=incoming.job_id, execution_id=execution_id)):
                     log_event_best_effort(logger, "runtime.reflect.redelivery_count", status=result.status)
