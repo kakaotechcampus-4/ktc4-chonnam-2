@@ -36,6 +36,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
   none: '신고용 영상이 아직 없어요',
   preparing: jobLabel('job.report_video_export'),
   failed: '신고용 영상을 만들지 못했어요',
+  held: '영상은 준비됐어요 · 발생 시각을 확인하면 신고자료가 완성돼요',
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
