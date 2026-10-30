@@ -68,6 +68,9 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
   )
 }
 
+// 사용자 입력 번호판 형식(#487) — evidence 서버 검증과 맞출 규칙. 범위가 확정되면 여기만 고친다.
+const PLATE_FORMAT = /^([가-힣]{2})?\d{2,3}[가-힣]\d{4}$/
+
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
 // 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다(#47 · #446).
 // 값이 없으면(null) 자리만 둔다. 번호판 확대는 자를 위치(bbox)가 CaseView에 없어 아직 자리만 둔다.
@@ -113,6 +116,10 @@ export function PlateCheck(props: {
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const src = sourceLabel(plate.source_label_key)
   const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
+  // 안쪽 공백은 지우고 받는다(`12가 3456` → `12가3456`). 형식이 틀리면 저장을 막고 칸 아래에 알린다.
+  const plateInput = (editing ?? '').replace(/\s/g, '')
+  const plateOk = PLATE_FORMAT.test(plateInput)
+  const plateWrong = plateInput !== '' && !plateOk
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
@@ -166,7 +173,8 @@ export function PlateCheck(props: {
                 className="plate-form"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (editing.trim()) props.onEdit?.(editing.trim())
+                  if (!plateOk) return
+                  props.onEdit?.(plateInput)
                   close()
                 }}
                 onKeyDown={(e) => {
@@ -179,9 +187,14 @@ export function PlateCheck(props: {
                   autoFocus
                   value={editing}
                   onChange={(e) => setEditing(e.target.value)}
+                  aria-invalid={plateWrong}
+                  aria-describedby="plate-format"
                 />
+                <span className="rs-hint" id="plate-format">
+                  {plateWrong ? '번호판 형식을 확인해 주세요 (예: 12가3456)' : '예: 12가3456'}
+                </span>
                 <div className="plate-form-actions">
-                  <button type="submit" className="rs-btn pri" disabled={!editing.trim()}>
+                  <button type="submit" className="rs-btn pri" disabled={!plateOk}>
                     저장
                   </button>
                   <button type="button" className="rs-btn sec" onClick={close}>
