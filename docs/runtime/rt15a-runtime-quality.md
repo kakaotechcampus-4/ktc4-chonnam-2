@@ -214,6 +214,8 @@ tests/worker/test_entrypoint.py
 
 ## 변경 파일 전체 목록
 
+아래는 최초 RT-15(a) 구현의 40개 파일 목록이다. PR #483 회귀 수정 delta는 뒤의 후속 기록을 따른다.
+
 - `.github/workflows/python-tests.yml`
 - `README.md`
 - `docs/runtime/rt15a-runtime-quality.md`
@@ -254,3 +256,83 @@ tests/worker/test_entrypoint.py
 - `tests/test_runtime_quality.py`
 - `tests/worker/test_search_handlers.py`
 - `uv.lock`
+
+## 2026-10-30 — PR #483 regression 후속 (미커밋)
+
+### 재현과 원인 판단
+
+시작 checkout은 `codex/rt15a-runtime-quality`, clean index/tree,
+HEAD는 PR head `1e38d560357e22203142650516a746927befbd46`다.
+[원격 regression job](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/41044122824/job/124023856712)의
+실패는 `tests/deploy/test_deployment_runtime.py::test_actual_worker_publishes_registry_before_loop_and_removes_on_exit`다.
+원격 출력은 1 failed / 13133 passed / 34 skipped / 1168 deselected였다.
+같은 node를 변경 전 로컬에서 실행해 `assert 1 == 0`, 1 failed (2.03s)를 재현했다.
+
+RT-15(a)가 추가한 `isinstance(settings, RecordingSettings)`는 heterogeneous
+`Startup.modules: Mapping[str, object]`의 타입 narrowing을 위한 변경이었다.
+새 nominal 클래스 제약은 기존 제품 검증에 필요하지 않다. Worker bootstrap의 `_RECORDING`
+factory는 이미 `RecordingSettings.from_mapping()`을 통해 실제 값/범위/부분 설정을 검증한다.
+entrypoint에 원래 있던 profile/analysis_limits/incident_encoding의 `None` 검사와
+deployment registry의 정확한 8종 검사도 별도로 유지된다. 정상적인 구조를 주입하는 기존
+entrypoint 테스트를 새 nominal 검사에 맞추는 대신, 타입 정리로 생긴 동작 변경을 되돌린다.
+앞선 747 focused 범위에는 이 deploy node가 없어 회귀를 놓쳤고, 초기 fresh review도 찾지 못했다.
+
+### 최소 수정과 보존한 검증
+
+`worker/__main__.py`의 nominal 검사를 제거하고 factory가 이미 검증한 recording entry
+한 곳만 `cast(RecordingSettings, ...)`로 표현했다. 이 cast는 런타임 객체를 변환하거나
+검증하지 않는 타입 전용 표기이며, 임의 입력을 검증 없이 받아들이는 새 경로는 아니다.
+기존 세 필수값 검사·실패 코드·registry publish·loop·정리 순서는 변경하지 않았다.
+기존 실패 node의 SimpleNamespace 성공 fixture와 partial registry rejection은 그대로다.
+새 parameterized 테스트 3건은 각 필수 설정이 `None`이면 publish/loop 전에 실패하고
+marker cleanup과 engine disposal이 실행되는 기존 의미를 고정한다.
+
+### 작성자 직접 검증
+
+| 검사 | 결과 |
+| --- | --- |
+| 원격 실패 node | 변경 전 RED: 1 failed → 변경 후 GREEN: 1 passed (기존 node 수정 없음) |
+| 해당 node + 새 missing-setting 3건 | 4 passed (1.20s) |
+| deploy/Worker/Recording 설정 회귀 | 361 passed (18.87s), 실패/skip/xfail 0 |
+| 공통 quality 명령 | Ruff PASS; mypy Linux/win32 각각 87 source files, 오류 0 |
+| boundary / Contract | 위반 0; 문서 62 / JSON 26 / 의미 104 검사 PASS |
+| `git diff --check` | PASS |
+
+361개 회귀 명령:
+
+```text
+python -B -X utf8 -m pytest tests/deploy
+  tests/worker/test_entrypoint.py tests/worker/test_worker_bootstrap.py
+  tests/worker/test_worker_loop.py tests/worker/test_worker_cleanup.py
+  tests/worker/test_search_composition.py tests/worker/test_incident_clip_composition.py
+  tests/worker/test_export_handlers.py tests/worker/test_readout_handlers.py
+  tests/recording/test_factory_config.py -q -p no:cacheprovider
+```
+
+위 명령은 읽기 편하게 줄바꿈했다. 실제로는 같은 인자를 한 명령에 전달했다.
+Windows sandbox의 socketpair 제약을 피하기 위해 이 회귀는 sandbox 밖에서 실행했다.
+deploy 테스트의 외부 Docker/AWS 경계는 double이며 실제 AWS/provider/Docker build를 실행하지 않았다.
+원격 실패 job의 관측값은 수정 전 head의 결과다. 이번 수정 후 전체 regression/mysql/test,
+Docker acceptance는 재실행하지 않았고, push/commit/PR 수정/외부 댓글/merge도 하지 않는다.
+
+### Fresh delta review
+
+구현 이력을 상속하지 않은 read-only reviewer가 현재 unstaged delta를 검토했고,
+blocking 지적은 없었다. reviewer는 수정 전 HEAD entrypoint를 메모리에 로드하여 기존
+실패 node의 `assert 1 == 0`을 독립 재현했다. 현재 deploy 테스트 파일/Worker
+entrypoint/bootstrap/Recording factory config는 reviewer 직접 실행으로 65 passed
+(26.52s), 공통 quality는 Ruff PASS 및 mypy Linux/win32 각각 87 files / 0 errors,
+`git diff --check` PASS다. 타입 import와 cast를 제거하면 entrypoint 전체 AST가
+RT-15 이전 `HEAD^`와 동일함도 독립 확인했다. 작성자의 361건 및 boundary/Contract와
+원격 job 기록은 evidence 검토이며 reviewer 직접 실행으로 표현하지 않는다.
+reviewer는 산출물을 수정하지 않았고 본인 scratch를 제거했다. 추가 지적/미해결 blocking
+항목은 없다. 작성자 소유 test temp도 정리했으며 네 파일 delta는 미커밋·미스테이징으로 남긴다.
+
+### 이번 delta 파일
+
+| 파일 | 변경 |
+| --- | --- |
+| `src/daesingo/worker/__main__.py` | nominal runtime 검사 제거, factory 경계의 타입 전용 cast |
+| `tests/deploy/test_deployment_runtime.py` | 기존 성공 node 보존, 필수 설정 누락 3건 추가 |
+| `docs/runtime/rt15a-runtime-quality.md` | 재현/판단/검증/리뷰 후속, 기존 기록 보존 |
+| `docs/runtime/runtime-implementation-log.md` | PR #483 회귀 수정 후속 기록 |

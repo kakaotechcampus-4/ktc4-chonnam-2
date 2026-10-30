@@ -4,6 +4,7 @@ import logging
 import os
 import signal
 from threading import Event
+from typing import cast
 
 from daesingo.common.db import create_worker_engine
 from daesingo.common.logging import log_event_best_effort
@@ -58,9 +59,9 @@ def main(*, readout_provider_factory=None) -> int:
                        exhaustion_receiver=StoredCaseExhaustionReceiver(startup=startup))
         if deployment:
             from daesingo.worker.deployment_status import publish
-            settings = startup.modules["recording"]
-            if not isinstance(settings, RecordingSettings):
-                raise ValueError("deployment_recording_incomplete")
+            # bootstrap's Recording factory validates this heterogeneous entry;
+            # the cast is typing-only, not a new runtime class requirement.
+            settings = cast(RecordingSettings, startup.modules["recording"])
             if settings.profile is None or settings.analysis_limits is None or settings.incident_encoding is None:
                 raise ValueError("deployment_recording_incomplete")
             publish(registry, revision)

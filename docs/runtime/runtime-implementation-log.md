@@ -2000,6 +2000,16 @@ boundary/Contract/actionlint/lock PASS. Fresh read-only review에서 quality-onl
 추가 quality/CI 회귀 55 passed. 미해결 blocking 지적 없음. 선택 OCR·Search annotation
 타입 경계와 미실행 원격 MySQL/Docker 결과는 Notes의 잔여 위험으로 남긴다.
 
+2026-10-30 PR #483 regression 후속: PR head `1e38d560`에서 deploy Worker 등록 node의
+실패를 로컬 재현했다. RT-15(a)의 새 `RecordingSettings` nominal 검사는 타입 목적의
+불필요한 동작 변경으로 판단해 검증된 factory 경계의 타입 전용 cast로 대체했다.
+기존 세 필수값·registry 검증과 성공 fixture는 보존했다. 해당 node RED→GREEN,
+누락 설정 3건 포함 deploy/Worker/Recording 설정 회귀 361 passed, quality 양 플랫폼
+87 files 0 error, boundary/Contract/diff 검사 PASS. Fresh read-only delta reviewer도 이전
+HEAD의 실패를 독립 재현하고 관련 65 tests 및 quality 양 플랫폼을 직접 통과 확인했다.
+blocking 지적 없음. PR 변경/commit/push/merge는 하지 않는다. 상세 및 이번 delta 파일은
+위 Notes의 PR #483 후속 절이다.
+
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
 | — | — | — |
