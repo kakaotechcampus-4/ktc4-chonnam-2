@@ -73,7 +73,7 @@ API와 Worker는 같은 image를 쓰는 modular monolith의 두 composition root
 | S3 · ECR · CloudWatch · SSM Parameter Store | 사용 가능 | 10-30 SSO 권한으로 ECR · Log Group · SecureString 생성 → 삭제가 PASS. 사용 여부는 RD-12 · RD-13 결정이 정한다 |
 | 서버 중지 · 시작 · 재부팅 · Security Group 편집 | 사용 가능 | 22번을 `0.0.0.0/0`으로 열면 보안 모니터링에 탐지된다 |
 
-2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §10). 같은 날 다른 팀원도 이 instance를 쓰고 있었고, 마지막 관측 상태는 `running`이다(같은 문서 §10 「공유 EC2 사용 충돌」). 대신고 stack은 아직 배포되지 않았다. 같은 날 RT-14 준비 구현(#479)이 `develop`에 병합됐지만 AWS에서 실행하지 않았다(§2-1 「현재 구현 범위」).
+2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §10). 같은 날 다른 팀원도 이 instance를 쓰고 있었고, 마지막 관측 상태는 `running`이다(같은 문서 §10 「공유 EC2 사용 충돌」). 대신고 stack은 아직 배포되지 않았다. 같은 날 RT-14 준비 구현(#479)이 `develop`에 병합됐고, 그중 OIDC 인증과 ECR publish만 Actions에서 실제로 실행했다. EC2 쪽 배포는 실행하지 않았다(§2-1 「현재 구현 범위」).
 
 ### 2-1. AWS 배포 인증 · 서버 접속 기준
 
@@ -107,7 +107,7 @@ GitHub Actions
 
 관측 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9 · §10이다. 아래는 그 사실이 위 원칙에 주는 함의만 적는다. exact 배포 절차는 RD-12(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))가 정한다.
 
-- **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽만 필요하고, 그 준비 구현은 `develop`에 있다. role로 실제 인증한 적은 아직 없다.
+- **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽만 필요하고, 그 준비 구현은 `develop`에 있다. 2026-10-30 GitHub OIDC → `ktc-github-deploy` 실제 인증을 확인했다(§2-1 「현재 구현 범위」).
 - **deploy role trust의 `sub` 조건은 이 repository 전체(`:*`)다.** AWS가 branch · tag · PR · environment를 구분하지 않으므로, 어떤 ref가 배포 role을 얻을 수 있는지는 GitHub workflow의 trigger · 조건이 제한해야 한다. `pull_request`를 배포 경로로 쓰지 않는다는 위 원칙이 이 제한의 일부다.
 - **SSM Run Command(`AWS-RunShellScript`)는 `/bin/sh`로 실행되고 마지막 명령의 exit code만 결과가 된다.** 중간 명령이 실패해도 `Success`가 될 수 있으므로, Run Command `Success`를 배포 성공으로 읽지 않는다. 배포 절차는 실패를 끝까지 전파해야 하고, 성공 판정은 §19의 health · smoke 검증이 한다.
 - **IMDSv2 필수 + hop limit 1이다.** bridge network의 container는 EC2 instance role 자격증명에 닿지 않는다. Parameter Store 조회 같은 role 권한 작업은 host의 배포 script가 하고 container에는 결과 파일만 넘긴다(§4-1 경로와 같다).
@@ -129,27 +129,39 @@ EC2 1대를 팀원 전체가 함께 쓴다([`aws-environment.md`](./official-inp
 
 2026-10-30 `develop` `7bab60bc` 기준, 이 절의 결정은 **준비 구현까지 반영**돼 있다(#479, [RT-14 실행 절차](./rt14-deployment.md) — IN_PROGRESS). RT-14 Decision Gate는 2026-10-30 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 Runtime/Ops Owner가 승인했다. 승인값과 Gate 상태는 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
-`develop`에 있는 것 — 실행한 적 없는 준비 구현이다:
+`develop`에 있는 것 — #479 준비 구현이다. 이 중 OIDC 인증과 publish 경로는 2026-10-30 실제 Actions에서 확인했다. remote SSM deploy와 EC2 쪽 acceptance는 아직 실행하지 않았다:
 
 - `.github/workflows/rt14-oidc.yml` — 인증 전용 수동 workflow. 기대 account · role만 비교하고 identity를 출력하지 않는다
 - `.github/workflows/rt14-deploy.yml` — `publish` · `deploy` · `rollback`을 각각 별도 수동 실행. publish는 amd64 image build → media · OCR acceptance → ECR immutable tag push → digest 확인
 - `deploy/aws.py`(OIDC · ECR · SSM 호출) · `deploy/ec2.py`(host controller) · `deploy/configure.py`(Parameter Store → 보호 파일) · `tests/deploy/`
 
+AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
+
+| 구분 | 항목 | 근거 |
+| --- | --- | --- |
+| 검증 완료 | GitHub OIDC → `ktc-github-deploy` 인증 | [`rt14-oidc` run](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/41027826938) success |
+| 검증 완료 | deploy role의 ECR publish — build · media/OCR acceptance · 기존 repository `IMMUTABLE` 확인 · SHA tag push · digest 확인 | [`rt14-deployment` publish run](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/41030370406) success. `remote` job은 실행하지 않음 |
+| 미검증 | EC2 instance role의 ECR pull | 첫 배포 |
+| 미검증 | EC2 instance role의 Parameter Store 조회 · 복호화 | host 준비 · 첫 배포 |
+| 미검증 | remote SSM deploy · rollback | 첫 배포 · rollback rehearsal |
+
+위 publish image는 Gate 승인 전 `7bab60bc` 기준이라 release-bound Web artifact가 없다. 공개 배포에는 `NEEDS_CHANGE` 구현 변경 뒤 다시 publish한 image를 쓴다.
+
 아직 하지 않은 것(AWS 설정 · 실행 기준):
 
-- `AWS_ACCOUNT_ID` · `RT14_*` Variable · Secret 등록, `RT14_EXECUTION_ENABLED` 활성화
-- OIDC 인증 workflow 실제 실행, ECR repository · host controller · 보호 디렉터리 준비
-- 첫 publish · deploy · rollback rehearsal
+- remote용 Secret · Variable 등록(publish에 쓰는 Variable과 `RT14_EXECUTION_ENABLED`는 위 실행 때 등록됨)
+- host controller · 보호 디렉터리 준비
+- deploy · rollback rehearsal
 - Security Group / IAM / EC2 설정 변경
 - Gate에서 `NEEDS_CHANGE`로 승인한 구현 변경(rollback tip gate · 외부 smoke · release-bound Web artifact 등, [RT-14 배포 설계](./rt14-deployment-design.md) §16)
 
 남은 순서:
 
 ```text
-1. ~~RT-14 Gate 승인(#450)~~ 2026-10-30 완료 · `NEEDS_CHANGE` 구현 변경 · Variable/Secret 등록
-2. rt14-oidc로 role 인증 확인
+1. ~~RT-14 Gate 승인(#450)~~ 2026-10-30 완료 · `NEEDS_CHANGE` 구현 변경 · remote용 Secret/Variable 등록
+2. ~~rt14-oidc로 role 인증 확인~~ 2026-10-30 완료
 3. host 준비(controller · 보호 디렉터리 · volume · config) — 별도 승인 작업
-4. publish → deploy → health · 8종 등록 · smoke 확인
+4. 구현 변경 뒤 publish → deploy → health · 8종 등록 · smoke 확인
 5. rollback rehearsal · 실제 배포 환경에서 pre-deploy review 수행
 ```
 
@@ -218,9 +230,9 @@ EC2 1대를 팀원 전체가 함께 쓴다([`aws-environment.md`](./official-inp
 
 | 요구 | 운영 함의 | 2026-10-30 상태 |
 | --- | --- | --- |
-| 배포 서비스 URL — 접속해서 핵심 기능을 처음부터 끝까지 써 볼 수 있어야 한다 | 외부에서 닿는 endpoint(RD-14)와 실제 API · Worker · provider 경로, 심사자가 쓸 샘플 입력 | 외부 endpoint 없음. 배포 실행 전(§2-1) |
+| 배포 서비스 URL — 접속해서 핵심 기능을 처음부터 끝까지 써 볼 수 있어야 한다 | 외부에서 닿는 endpoint(RD-14)와 실제 API · Worker · provider 경로, 심사자가 쓸 샘플 입력 | 외부 endpoint 없음. OIDC 인증 · publish만 실행했고 EC2 배포 전(§2-1) |
 | 로그인이 필요하면 테스트 계정 · 샘플 데이터를 함께 적는다 | 현재 인증이 없고 `case_id`를 아는 것이 사실상 접근 조건이다([HTTP Contract](../architecture/contracts/contract-http-api.md) §3.6). 테스트 계정 대신 샘플 영상 · 사용 안내가 필요하다 | 샘플 입력 · 공개 범위 미정 |
-| GitHub 저장소 — README(실행 · 배포 방법) · 테스트 코드 · CI/CD 설정 | README 배포 절은 실제로 실행한 배포 절차를 근거로 쓴다 | CI 있음(§19). 배포 workflow는 준비 구현만 있음. README 배포 절 없음 |
+| GitHub 저장소 — README(실행 · 배포 방법) · 테스트 코드 · CI/CD 설정 | README 배포 절은 실제로 실행한 배포 절차를 근거로 쓴다 | CI 있음(§19). 배포 workflow는 준비 구현이며 OIDC 인증 · publish만 실행 확인. README 배포 절 없음 |
 | 멘토 심사 「배포 · 운영」 — URL 접속 · CI/CD · 환경 분리 | 환경 분리는 §4-1 「환경별 구분」으로 설명한다 | §4-1 |
 | 제출 뒤 산출물 수정 불가 | 제출 시점 revision을 known-good으로 기록하고, 그 revision으로 발표까지 운영한다 | 제출 뒤 배포본 hotfix 허용 여부는 `확인 필요` |
 
@@ -309,7 +321,7 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - staging · temp cleanup (RT-12(a)) · DB 집계 query와 structured log event catalog (RT-12(b))
 - local Docker / Compose — 단일 image · migrate one-shot · api · worker · mysql · secret file mount · B-O1 log rotation (RT-13(a))
 - local MySQL logical backup / restore 도구 (RT-13(b))
-- EC2 배포 준비 구현 — OIDC 인증 · ECR publish · SSM host controller · rollback 도구와 Worker 8종 등록 marker (RT-14 #479, §2-1). AWS에서 실행하지 않았다
+- EC2 배포 준비 구현 — OIDC 인증 · ECR publish · SSM host controller · rollback 도구와 Worker 8종 등록 marker (RT-14 #479, §2-1). OIDC 인증 · ECR publish만 실제 실행했고 EC2 배포는 실행하지 않았다
 - CI: MySQL gate · 배포 image media/OCR acceptance · boundary/contract · web (§19)
 
 ### 아직 없는 것
@@ -1044,8 +1056,8 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate는 2026-10-30 승인. 승인한 구현 변경 · Variable/Secret 등록 · OIDC 실제 인증 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
-- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. ECR push · pull acceptance가 남았다
+- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate는 2026-10-30 승인. OIDC 실제 인증 · publish는 같은 날 확인. 승인한 구현 변경 · remote용 Secret/Variable 등록 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
+- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. deploy role ECR push는 2026-10-30 확인(§2-1). EC2 instance role pull acceptance가 남았다
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
 - [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10)
