@@ -26,10 +26,9 @@ from daesingo.case.domain import CaseAggregate, InvalidTransition
 from daesingo.case.service import build_view_from_adapter, get_view, mark_ready_if_package_ready, utc_now
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
+from daesingo.evidence import InvalidCorrectionValue
 
-# 이 판본(v0)에서 받는 `CORRECTED` 제외 값 — `CORRECTED`는 `SITUATION_CHANGE`를 보낼 입력형
-# 판본에서 함께 연다(§5).
-_SITUATION_VALUES = frozenset({"CONFIRMED", "USER_UNSURE"})
+_SITUATION_VALUES = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
 
 # CaseView 계약 B절 §7 「`notices[].actions[]` → 발주 매핑」 중 발주형 4종 → `JobRecord.kind`.
 _ACTION_JOB_KIND = {
@@ -47,6 +46,8 @@ _PAYLOAD_KEYS = {
     "START_ANALYSIS": frozenset({"description"}),
     "STOP_ANALYSIS": frozenset(),
     "EDIT_HINT": frozenset({"description"}),
+    "MANUAL_PLATE_INPUT": frozenset({"value"}),
+    "EDIT_EVENT_TIME": frozenset({"value"}),
 }
 
 # 분석 시작과 같은 발주를 하는 command — 타임라인 · 예산을 주입받는다.
@@ -63,6 +64,13 @@ def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def _payload_keys(kind: str, payload: dict[str, Any]) -> frozenset[str]:
+    # `[다른 상황]`(`CORRECTED`)만 고른 유형을 함께 보낸다 — 다른 응답에 있으면 `invalid_payload`(§12-3).
+    if kind == "RECORD_SITUATION_RESPONSE" and payload.get("value") == "CORRECTED":
+        return frozenset({"value", "visual_event_type"})
+    return _PAYLOAD_KEYS[kind]
+
+
 def _check_payload(request: Any) -> None:
     if not isinstance(request, dict):
         raise _Rejected("invalid_payload")
@@ -76,7 +84,7 @@ def _check_payload(request: Any) -> None:
         or not isinstance(kind, str)  # dict 조회 전에 — 비문자열 kind가 TypeError로 새지 않게(#295)
         or kind not in _PAYLOAD_KEYS
         or not isinstance(payload, dict)
-        or set(payload) != _PAYLOAD_KEYS[kind]
+        or set(payload) != _payload_keys(kind, payload)
     ):
         raise _Rejected("invalid_payload")
     if any(not isinstance(v, str) for v in payload.values()):
@@ -104,8 +112,69 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
 def _record_situation_response(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
     if not any(c.selected for c in case.candidates):
         raise _Rejected("not_allowed")
+    head = correction.chain_head(case, "event.visual_event_type")
+    if payload["value"] == "USER_UNSURE" and head is not None and head["kind"] == "SITUATION_CHANGE":
+        # 이 후보에 `[다른 상황]` 정정이 이미 있으면 evidence가 「잘 모르겠어요」를 조립하지 않는다(`USER_UNSURE cannot
+        # create a SITUATION_CHANGE`). 정정은 지우지 않으므로(correction-record §8-9) 받으면 이후 CaseView를 만들 수 없다.
+        raise _Rejected("not_allowed")
+    if payload["value"] == "CORRECTED":
+        # 정정과 응답을 한 command로 남긴다 — `case_rev`는 정정이 한 번 올린다(§12-3). 정정이 거부되면 응답도 남지 않는다.
+        _correct(
+            case, view, kind="SITUATION_CHANGE", target_field="event.visual_event_type",
+            display="case_type_display", display_key="code", new_value=payload["visual_event_type"],
+        )
+        case.record_situation_response("CORRECTED", responded_at=_now(), bump=False)
+        return
     # `responded_at`은 web이 보내지 않는다 — 사용자 기기 시계를 기록값으로 쓰지 않는다(§5).
     case.record_situation_response(payload["value"], responded_at=_now())
+
+
+def _correct(
+    case: CaseAggregate,
+    view: dict[str, Any],
+    *,
+    kind: str,
+    target_field: str,
+    display: str,
+    display_key: str,
+    new_value: str,
+) -> None:
+    """입력형 판본(§12)의 값 정정 — web은 새 값만 보내고 나머지는 case가 채운다(§12-2).
+
+    이전 값은 같은 선택 context의 chain head가 있으면 그 `new_value`(chain 연속성, correction-record §8-11), 없으면
+    사용자가 본 CaseView 값이다(값이 없으면 `null`, v1.2). 값 칸이 없는 화면(`evidence=null` — 관찰 전 · 음성 결과)은
+    사용자가 본 값이 없어 받지 않는다(`decisions/input-commands.md`)."""
+    evidence = view.get("evidence")
+    if evidence is None:
+        raise _Rejected("not_allowed")
+    head = correction.chain_head(case, target_field)
+    previous = head["new_value"] if head is not None else evidence[display][display_key]
+    if previous == new_value:
+        raise _Rejected("not_allowed")  # 무변경 정정은 기록하지 않는다(correction-record §8-7)
+    try:
+        correction.apply_correction(
+            case, kind=kind, target_field=target_field, previous_value=previous, new_value=new_value
+        )
+    except InvalidTransition:
+        raise _Rejected("not_allowed") from None  # 후보 선택 전(EVIDENCE_REVIEW · READY 밖)
+    except InvalidCorrectionValue:
+        # 사용자가 다른 값을 넣으면 고쳐지는 거부만 command 실패다. 그 밖의 evidence 거부(`ContractInputError`)는
+        # case가 만든 레코드의 위반이라 배선 오류로 올라간다 — HTTP 층의 500(§12-4).
+        raise _Rejected("invalid_value") from None
+
+
+def _manual_plate_input(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
+    _correct(
+        case, view, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        display="plate_display", display_key="value", new_value=payload["value"],
+    )
+
+
+def _edit_event_time(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
+    _correct(
+        case, view, kind="EVENT_TIME_MANUAL", target_field="occurred_at",
+        display="event_time_display", display_key="value", new_value=payload["value"],
+    )
 
 
 def _mark_reviewed(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
@@ -130,6 +199,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
             and r["job_id"] in case.export_inputs and case.export_inputs[r["job_id"]] == export_requests.get(kind)), None)
     if prior is None:
         raise _Rejected("not_allowed")
+    # 결과 없음(`CANDIDATE_REVIEW` · 후보 0개)에서 다시 찾으면 `SEARCHING`으로 돌아간다(#426) — 탐색 결과 반영은
+    # `SEARCHING`에서만 받으므로(`receive_candidates`) 머물면 새 결과가 반영되지 못한다. `EDIT_HINT`와 같은 역행이다.
+    if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
+        case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
     jobs.issue_same_input(case, prior)
 
@@ -187,6 +260,8 @@ _HANDLERS = {
     "START_ANALYSIS": _start_analysis,
     "STOP_ANALYSIS": _stop_analysis,
     "EDIT_HINT": _edit_hint,
+    "MANUAL_PLATE_INPUT": _manual_plate_input,
+    "EDIT_EVENT_TIME": _edit_event_time,
 }
 
 

@@ -36,7 +36,7 @@ from daesingo.case.analysis_start import (
     reflect_hint_extraction,
 )
 from daesingo.case.adapters import ModuleAdapter
-from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case.domain import ANALYSIS_JOB_KINDS, Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
 from daesingo.case.view import (
@@ -331,9 +331,6 @@ VISUAL_VERIFY_FAILED_NOTICE: dict[str, Any] = {
 }
 
 
-# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
-# 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
-# 전에는 보낼 경로가 없어 `actions`를 비운다.
 ANALYSIS_STOPPED_NOTICE: dict[str, Any] = {
     # 사용자가 「분석 진행」을 중단했다(고도화 8-9, `decisions/stop-analysis.md`). 「이어서 찾기」는 영상 전체를 다시
     # 보는 새 탐색 의도라(core-user-flow §7) `RETRY_SEARCH`와 같은 발주다 — 다시 낼 `COARSE_SEARCH` 근거가 없으면 뺀다.
@@ -395,12 +392,28 @@ ANALYSIS_TIMED_OUT_NOTICE: dict[str, Any] = {
     "actions": ["RETRY_SEARCH"],
 }
 
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속). 모양은
+# `scenario_plate_reread_001` fixture 값이다. 「번호판 직접 입력」은 입력형 command `MANUAL_PLATE_INPUT`이다
+# (case-command 계약 §12-3).
 PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
     "code": "evidence.plate_abstained",
     "severity": "WARN",
     "blocking": False,
     "message_key": "notice.plate_abstained",
-    "actions": [],
+    "actions": ["MANUAL_PLATE_INPUT"],
+}
+
+
+# 발생시각 출처(사용자 정정 · 화면 시각 · 파일명 · 메타데이터)가 모두 비어 `occurred_at`이 없는 상태(#449). evidence는
+# 발생시각 없이 Package를 만들지 않으므로(`package.input.occurred_at_missing`) 어떤 조작으로도 묶음에 가지 못한다 —
+# 그래서 blocking이고, 출구는 입력형 command `EDIT_EVENT_TIME`(case-command 계약 §12-3)이다. 접두어는 시각을
+# 정하는 `TimeResolution`을 만드는 evidence를 따른다(B절 `notices[].code`).
+EVENT_TIME_MISSING_NOTICE: dict[str, Any] = {
+    "code": "evidence.event_time_missing",
+    "severity": "WARN",
+    "blocking": True,
+    "message_key": "notice.event_time_missing",
+    "actions": ["EDIT_EVENT_TIME"],
 }
 
 
@@ -464,6 +477,7 @@ def derive_notices(
       evidence 유무와 무관하다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
+    - 모든 notice 공통: `running_jobs`에 탐색 job(`HINT_EXTRACT` · `COARSE_SEARCH`)이 있으면 `RETRY_SEARCH`를 빼고 싣는다(#426).
     - `case.analysis_timed_out` — 같은 조건에서 가장 나중 탐색 job이 case 대기 timeout으로 끝났을 때(`analysis_timed_out`,
       `decisions/case-wait-timeout.md`). `case.analysis_stopped` 대신 붙는다. action 규칙은 같다.
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
@@ -494,6 +508,9 @@ def derive_notices(
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
       본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
+    - `evidence.event_time_missing` — evidence가 조립됐고(`record_id` non-null) `event_time_display.value`가
+      null일 때(#449). 발생시각이 없으면 Package가 나가지 않으므로 blocking이고, 출구는 `EDIT_EVENT_TIME`이다.
+      사용자가 시각을 입력하면 값이 생겨 사라진다.
     - `readout.overlay_not_present` · `readout.overlay_presence_undetermined` · `readout.overlay_ocr_failed` —
       현재 선택 후보의 가장 나중 overlay 판독 `observation.reason.code`에 1:1로 대응할 때(readout
       `failure-taxonomy.md`). evidence 유무와 무관하다. `overlay_time_readouts`를 넘기지 않으면 붙이지 않는다.
@@ -548,6 +565,9 @@ def derive_notices(
             derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+        # 응답 전 부분 투영(`record_id` null)은 시각을 아직 정하지 않은 상태라 「없음」으로 보지 않는다.
+        if evidence.get("record_id") is not None and evidence["event_time_display"]["value"] is None:
+            derived.append(EVENT_TIME_MISSING_NOTICE)
         if awaiting_response:
             derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     if report_video_missing(view):
@@ -556,8 +576,15 @@ def derive_notices(
         derived.append(
             REPORT_VIDEO_NOT_GENERATED_NOTICE if retry else dict(REPORT_VIDEO_NOT_GENERATED_NOTICE, actions=[])
         )
+    # 탐색을 기다리는 동안에는 「다시 찾기」를 싣지 않는다(#426) — 같은 입력의 발주가 겹친다. 허용 = 화면의 버튼이라
+    # (case-command 계약 §5) command도 함께 막힌다. `case.report_video_not_generated`의 실행 중 규칙(#351 [R-2])과 같다.
+    searching = any(j["kind"] in ANALYSIS_JOB_KINDS for j in view.get("running_jobs", []))
     present = {n["code"] for n in view["notices"]}
-    additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
+    additions = [
+        dict(n, actions=[a for a in n["actions"] if not (searching and a == "RETRY_SEARCH")])
+        for n in derived
+        if n["code"] not in present
+    ]
     if additions:
         view["notices"] = [*view["notices"], *additions]
     return view

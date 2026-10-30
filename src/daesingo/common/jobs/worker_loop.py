@@ -15,7 +15,7 @@ from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, runt
 from daesingo.common.jobs.repository import ClaimedExecution, ClaimLostError
 from daesingo.common.jobs.heartbeat import OwnershipLost
 from daesingo.common.jobs.cancel import CancellationRequested, CancelledExecution
-from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
+from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation, safe_error_type
 from daesingo.common.usage.port import UsageError, UsageSink
 
 _DB_ERRORS = (DBAPIError, TimeoutError, TransactionRetryExhausted)
@@ -110,6 +110,7 @@ class WorkerLoop:
                             status="RETRY" if claimed.attempt >= 2 else "INITIAL",
                             duration_ms=max(0, (claimed.started_at - claimed.queued_at).total_seconds() * 1000))
                     log_event_best_effort(self.logger, "runtime.execution.started", status="RUNNING")
+                    result: HandlerResult | CancelledExecution
                     try:
                         context.checkpoint()
                         if self.usage_sink_factory is not None:
@@ -123,11 +124,13 @@ class WorkerLoop:
                         result = CancelledExecution()
                     except UsageError as error:
                         result = runtime_failure("RUNTIME_USAGE_" + error.code)
-                    except Exception:
+                    except Exception as error:
+                        log_event_best_effort(self.logger, "runtime.execution.failed", level=logging.ERROR,
+                                              status="FAILED", **safe_error_type(error))
                         result = runtime_failure("RUNTIME_HANDLER_ERROR")
                     # Preserve terminal facts across DB retries; every attempt,
                     # including B-D8 retries, must still own this execution.
-                    committed = False
+                    committed: bool | TerminalCommit = False
                     while not context.ownership.lost:
                         try:
                             committed = self.record(context, result)
@@ -171,11 +174,11 @@ class WorkerLoop:
                             # claim, using the same interruptible idle boundary.
                             self._db_error(error)
                             log_event_best_effort(self.logger, "runtime.reflect.failed", level=logging.ERROR,
-                                                  status="FAILED")
+                                                  status="FAILED", **safe_error_type(error))
                             self.idle_wait(self.settings.error_backoff_sec)
-                        except Exception:
+                        except Exception as error:
                             # T1 is durable. RT-06 owns redelivery, not this loop.
                             log_event_best_effort(self.logger, "runtime.reflect.failed", level=logging.ERROR,
-                                                  status="FAILED")
+                                                  status="FAILED", **safe_error_type(error))
                 else:
                     log_event_best_effort(self.logger, "runtime.execution.finish_rejected", level=logging.WARNING)

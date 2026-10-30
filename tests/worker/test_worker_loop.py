@@ -131,7 +131,8 @@ def test_outside_dispatch_exception_is_safe_runtime_failure_with_correlated_logs
          logger=configure_logging("worker", stream=stream), clock=lambda: next(times)).run()
     assert recorded[0].failure_kind.startswith("RUNTIME_")
     rows = [json.loads(s) for s in stream.getvalue().splitlines()]
-    assert [r["event"] for r in rows] == ["runtime.execution.started", "runtime.execution.completed"]
+    assert [r["event"] for r in rows] == ["runtime.execution.started", "runtime.execution.failed", "runtime.execution.completed"]
+    assert rows[1]["error_type"] == "RuntimeError"
     assert rows[-1]["status"] == "FAILED" and rows[-1]["duration_ms"] == 250
     for row in rows:
         assert (row["trace_id"], row["case_id"], row["job_id"], row["execution_id"]) == ("trace", "case", "job", "exec_job")

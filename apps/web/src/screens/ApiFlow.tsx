@@ -39,6 +39,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
   const { view } = state
+  const cid = state.caseId
+  const frameSrc = cid ? (ref: string) => api.frameUrl(cid, ref) : undefined
   const [situation, setSituation] = useState('')
   const [subs, setSubs] = useState<Sub[]>([])
   const [startedAt, setStartedAt] = useState(() => Date.now())
@@ -241,7 +243,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
       default:
         if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
-          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} />
+          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
         if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
         return (
@@ -255,6 +257,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}
+            videoHref={cid && view.package?.artifact_ref ? api.assetUrl(cid, view.package.artifact_ref) : undefined}
+            frameSrc={frameSrc}
           />
         )
     }

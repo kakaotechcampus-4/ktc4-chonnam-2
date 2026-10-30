@@ -18,7 +18,8 @@ class ProductionMediaFactory:
         repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root)
         materializer = partial(self.media.materializer, LocalAnalysisMaterializer) if self.media is not None else None
         with build_recording_service(repository, self.settings, temp_root=self.temp_root,
-                                     materializer_factory=materializer, case_id=data.case_id) as recording:
+                                     materializer_factory=materializer, case_id=data.case_id,
+                                     analysis_checkpoint=data.checkpoint) as recording:
             scope = data.scope
             if scope is None or data.case_id is None or self.settings.profile_ref is None:
                 raise ValueError("bound scope and explicit Recording profile required")

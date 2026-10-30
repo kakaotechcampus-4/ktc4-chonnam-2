@@ -1,5 +1,10 @@
 # RT-13(a) — Docker / Compose local runtime
 
+> 현재 구성 절차는 [로컬 Runtime/Ops·Recording 실행환경](./local-runtime-environment.md)을 따른다.
+> 아래 초기 구현 기록의 Paddle 미설치·mutable media toolchain·Recording 미설정 설명은 당시 이력이다.
+> 현재 Dockerfile은 pinned 8.1과 production Paddle/model cache를 포함한다(#465/#468).
+> `--no-cache` 전용 acceptance 명령은 일반 문서/예시 수정 검증에 반복하지 않는다.
+
 **Status: IN_PROGRESS · Refs #300 (RT-13(a))** · PR/merge SHA: pending (미생성)
 
 근거: [Issue #300](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300), [결정 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6430017764), [Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506). 2026-10-27 세션에서 본문과 두 댓글을 직접 조회했다. Runtime Plan RT-13/§12, Ops §4·§4-1·§4-2·§5, Tech §4.4·§15.2, Baseline B-W1/W4/O1/H3/§2.6, Register RD-12를 적용한다.
@@ -207,3 +212,14 @@ ignored 파일·secret을 제외한 추적 파일과 17개 후보의 현재 byte
 | RD-12f/h · RT-14 | production migration/deployment/post-deploy, EC2/ECR/SSM/registry/CloudWatch/log transport/production restart policy |
 
 Issue #300은 닫지 않는다. RT-13 전체 DONE으로 표시하지 않는다. 새 GitHub Issue/comment/PR/commit/push를 만들지 않는다. 실제 env/DB dump/원본 media/로컬 증거는 PR 제외다.
+
+## 2026-10-30 후속 — Issue #465
+
+**IN_PROGRESS · Refs #465 · Related #460**
+
+위 base tag/apt ffmpeg에 관한 문장은 당시 build의 이력이다. 현재 배포
+toolchain 고정 방식, 공식 8.1 source/signature/checksum, image/package identity,
+startup/preflight 및 일반 MP4 실제 변환 검증 근거는
+[Issue #465 Implementation Notes](./issue465-mp4-toolchain.md)를 따른다.
+지원 기준은 동일 build의 ffmpeg **8.1** / ffprobe **8.1**이며 버전 범위를
+넓히지 않는다. 기존 strict tail/coverage와 #467 fixture는 바꾸지 않는다.

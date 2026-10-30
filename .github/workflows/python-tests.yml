@@ -11,6 +11,28 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.15"
+          enable-cache: false
+      - name: Install locked Runtime quality tools
+        run: uv sync --locked --extra quality
+      - name: Runtime lint and types (Linux and Windows branches)
+        run: uv run --no-sync python scripts/check_runtime_quality.py
+
   regression:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -29,13 +51,13 @@ jobs:
           version: "0.11.15"
           enable-cache: false
       - name: Install locked root dependencies (no PaddleOCR)
-        run: uv sync --locked --extra test --extra eval-gemini
+        run: uv sync --locked --extra test --extra eval-gemini --extra quality
       - name: Verify complete and disjoint pytest collection partitions
         run: uv run --no-sync python -m tests.ci_orchestration collect "$RUNNER_TEMP/collection"
       - name: Install and inspect media tools
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg
+          sudo apt-get install --no-install-recommends -y ffmpeg fonts-nanum
           ffmpeg -version
           ffprobe -version
           uv run --no-sync python --version
@@ -55,6 +77,50 @@ jobs:
           assert len(cases) == 1, 'Expected exactly one Recording media smoke'
           assert all(c.find(tag) is None for c in cases for tag in ('skipped', 'failure', 'error')), 'Media smoke must pass without skips'
           PY
+      - name: Pinned deployment image media and OCR acceptance (must execute)
+        run: |
+          docker build --tag daesingo-deployment-media:ci .
+          cleanup() {
+            result=$?
+            trap - EXIT
+            docker rm --force --volumes daesingo-issue468-mysql >/dev/null 2>&1 || result=1
+            docker network rm daesingo-issue468-acceptance >/dev/null 2>&1 || result=1
+            docker image rm daesingo-deployment-media:ci || result=1
+            exit "$result"
+          }
+          trap cleanup EXIT
+          docker run --rm --network none daesingo-deployment-media:ci python /app/docker/runtime.py media-preflight
+          docker run --rm --network none \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/media_acceptance.py",target=/opt/media-acceptance.py,readonly \
+            daesingo-deployment-media:ci python /opt/media-acceptance.py
+          docker run --rm --network none daesingo-deployment-media:ci python /app/docker/runtime.py readout-preflight
+          docker run --rm --network none \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/readout_acceptance.py",target=/opt/readout-acceptance.py,readonly \
+            --mount type=bind,source=/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf,target=/opt/acceptance-font.ttf,readonly \
+            daesingo-deployment-media:ci python /opt/readout-acceptance.py /opt/acceptance-font.ttf
+          for problem in dependency cache permission; do
+            docker run --rm --network none --user 0:0 \
+              --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/readout_startup_acceptance.py",target=/opt/readout-startup-acceptance.py,readonly \
+              daesingo-deployment-media:ci python /opt/readout-startup-acceptance.py "$problem"
+          done
+          docker network create --internal daesingo-issue468-acceptance
+          docker run --detach --name daesingo-issue468-mysql --network daesingo-issue468-acceptance \
+            -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_HOST=% -e MYSQL_DATABASE=daesingo_test mysql:8.4
+          ready=0
+          for attempt in $(seq 1 60); do
+            if docker exec daesingo-issue468-mysql mysqladmin ping --protocol=tcp --host=127.0.0.1 --silent; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = 1
+          docker run --rm --network daesingo-issue468-acceptance \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/readout_process_acceptance.py",target=/opt/readout-process-acceptance.py,readonly \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/readout_acceptance.py",target=/opt/readout_acceptance.py,readonly \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/e2e_runtime/production_processes.py",target=/opt/production_processes.py,readonly \
+            --mount type=bind,source=/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf,target=/opt/acceptance-font.ttf,readonly \
+            daesingo-deployment-media:ci python /opt/readout-process-acceptance.py /opt/acceptance-font.ttf
       - name: Non-MySQL regression
         run: uv run --no-sync python -m tests.ci_orchestration regression "$RUNNER_TEMP/regression.xml"
 
@@ -111,7 +177,7 @@ jobs:
   # never be turned into a successful required result by GitHub's skip rules.
   test:
     if: ${{ always() }}
-    needs: [regression, mysql]
+    needs: [quality, regression, mysql]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

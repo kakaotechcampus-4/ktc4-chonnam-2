@@ -12,6 +12,7 @@ import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
+import { FrameSlot } from '../components/FrameSlot'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -31,12 +32,13 @@ const TOAST_MS = 3000
 const PICK_MARK = '직접 선택'
 const NO_TITLE = '대신고가 아직 제목을 만들어 주지 않아요. 안전신문고에서 직접 적어 주세요.'
 const ACTION_UNAVAILABLE = '아직 이 화면에서 할 수 없어요'
-const VIDEO_STATUS: Record<ReturnType<typeof reportVideoState>, string> = {
+const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>, string> = {
   none: '신고용 영상이 아직 없어요',
   preparing: jobLabel('job.report_video_export'),
   failed: '신고용 영상을 만들지 못했어요',
-  unlinked: '영상 파일을 내려받는 연결이 아직 준비되지 않았어요',
 }
+const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
+const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -81,8 +83,16 @@ export function ResultScreen(props: {
   arriving?: boolean
   /** 신고 상황 응답. RECORD_SITUATION_RESPONSE가 받는 두 값만 둔다 — 「다른 상황」은 입력형이라 command가 아직 없다 */
   onRespond?: (value: 'CONFIRMED' | 'USER_UNSURE') => void
+  /** 신고용 영상을 받을 주소(API 모드). 없으면(시연) 다운로드 버튼을 막아 둔다 */
+  videoHref?: string
+  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   const { view } = props
+  // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
+  const [downloadFailed, setDownloadFailed] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
   // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
@@ -137,6 +147,32 @@ export function ResultScreen(props: {
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
+  const failedDownload = props.videoHref !== undefined && downloadFailed === props.videoHref
+  const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
+  const videoHint =
+    video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
+  // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
+  // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
+  const download = async () => {
+    const href = props.videoHref
+    if (!href) return
+    setDownloading(true)
+    try {
+      const res = await fetch(href)
+      if (!res.ok) throw new Error(String(res.status))
+      const url = URL.createObjectURL(await res.blob())
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'daesingo_report.mp4'
+      a.click()
+      // 바로 해제하면 일부 브라우저(Firefox · Safari)에서 저장이 취소된다
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setDownloadFailed(href)
+    } finally {
+      setDownloading(false)
+    }
+  }
   // 붙여넣을 것(§21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
   const pasteText = [
     ['제목', report?.title],
@@ -233,11 +269,8 @@ export function ResultScreen(props: {
           <p className="res-situation-text">
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
-          {/* 근거 장면은 FrameRef로만 와서 아직 그릴 수 없다(#47) — 자리만 둔다 */}
-          <div className="res-frame">
-            <Film size={26} strokeWidth={1.5} aria-hidden />
-            <span>근거 장면 준비 중</span>
-          </div>
+          {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
+          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
@@ -287,20 +320,28 @@ export function ResultScreen(props: {
           {!awaiting && (
             <Item label="동영상">
               <div className="res-video">
-                {/* 미리보기와 다운로드는 따로 판단한다 — 둘 다 아직 파일로 받을 경로가 없다 */}
+                {/* 미리보기와 다운로드는 따로 판단한다 — 미리보기는 아직 열지 않았다 */}
                 <div className="res-frame">
                   <Film size={26} strokeWidth={1.5} aria-hidden />
-                  <span>{video === 'unlinked' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                  <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
                 </div>
                 <div className="res-video-side">
-                  {video === 'unlinked' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
-                  <button type="button" className="rs-btn sec sm" disabled aria-describedby="res-video-why">
+                  {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
+                  <button
+                    type="button"
+                    className="rs-btn sec sm"
+                    disabled={!canDownload}
+                    onClick={() => void download()}
+                    aria-describedby={videoHint ? 'res-video-why' : undefined}
+                  >
                     <Download size={16} strokeWidth={2} aria-hidden />
                     신고용 영상 다운로드
                   </button>
-                  <p id="res-video-why" className={`res-hint${video === 'failed' ? ' is-fail' : ''}`}>
-                    {VIDEO_STATUS[video]}
-                  </p>
+                  {videoHint && (
+                    <p id="res-video-why" className={`res-hint${video === 'failed' || failedDownload ? ' is-fail' : ''}`}>
+                      {videoHint}
+                    </p>
+                  )}
                   {others > 0 && (
                     <button type="button" className="res-link" onClick={props.onCandidates}>
                       다른 후보 영상 {others}

@@ -67,6 +67,8 @@ export interface EvidenceView {
   location_display: LocationDisplay
   user_edited: boolean
   preview_ref: string | null
+  /** 번호판 판독의 best frame(FrameRef). 판독값이 없으면 null이고, 옛 판본 응답에는 키가 없다 */
+  plate_preview_ref?: string | null
   review_needed: boolean
   reason_code: string | null
 }

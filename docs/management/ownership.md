@@ -371,11 +371,50 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
        CLAUDE.md · docs/README.md 라우팅 표가 현재 폴더 구조와 맞는가
 ```
 
+### Runtime import 경계 — RT-15(b), 2026-10-30
+
+위 문자열 검사를 유지하면서 아래 두 방향을 Python AST로 검사한다. 새 정책이 아니라
+Architecture [§1의 7개 domain · 원칙 6 · §6](../architecture/module-architecture.md),
+Runtime [Implementation Plan RT-15](../runtime/runtime-implementation-plan.md) ·
+[Tech Spec §12 · §16](../runtime/runtime-tech-spec.md)의 기존 경계를 기계화한다.
+
+| 검사 소스 경로 | 금지 import | 허용 방향 / 책임 |
+| --- | --- | --- |
+| `src/daesingo/common/{jobs,usage,db,config,logging,storage}/` | 아래 7개 domain namespace와 그 하위 모듈 | common 간 기반 코드 사용을 막지 않는다. domain capability 연결은 API/Worker composition root가 맡는다 |
+| `src/daesingo/{case,recording,search,readout,evidence}/` · `eval/` · `apps/web/` | `daesingo.api` · `daesingo.worker` 및 그 하위 모듈 | 기존 Architecture의 domain 간 호출 방향은 그대로다. domain은 composition root를 역참조하지 않는다 |
+
+| domain (Architecture §1) | 실제 경로 | Python import namespace |
+| --- | --- | --- |
+| `case` | `src/daesingo/case/` | `daesingo.case` |
+| `recording` | `src/daesingo/recording/` | `daesingo.recording` |
+| `search` | `src/daesingo/search/` | `daesingo.search` |
+| `readout` | `src/daesingo/readout/` | `daesingo.readout` |
+| `evidence` | `src/daesingo/evidence/` | `daesingo.evidence` |
+| `eval` | `eval/` | `eval` (root package) |
+| `web` | `apps/web/` | `apps.web` (이 경로의 Python namespace; 현재 구현은 TypeScript) |
+
+`scripts/check_boundaries.py`의 `--only=boundaries`와 기본 전체 실행에 포함된다.
+위 경로 아래 `.py`를 재귀 검사하며 `import`/`from import`, alias, 하위 모듈,
+containing package 기준 상대 import를 해석한다. `from daesingo.readout import api`는
+`daesingo.api`가 아니므로 이 검사에서는 허용한다. 조건부·함수 내부·`TYPE_CHECKING`
+import도 검사하며, 새 allowlist/주석 우회 예외는 없다. 파싱 실패는 PASS로 넘기지 않는다.
+
+검사는 정적 Python import문에 한정된다. 동적 import, 간접 re-export/부모 package의
+star import가 노출하는 이름, alias 속성 접근, import hook/sys.path 조작은 전이 분석하지
+않는다. TypeScript 모듈 해석은 보장하지 않으며 web의 기존 문자열 검사를 유지한다.
+새 AST 검사는 주석·문자열을 import로 보지 않고 정확한 namespace 경계로 비교한다.
+기존 문자열 검사는 주석·문자열에도 적용되는 원래 의미를 유지한다.
+테스트·검증·Owner 통지 초안은 [RT-15(b) Notes](../runtime/rt15b-import-boundaries.md)에 있다.
+
 **실행 위치는 `.github/workflows/`다.** 운영진 CODEOWNERS 개정으로 팀 자체 CI 워크플로 추가가 명시적으로 허용됐다. 운영진 소유는 `.github/` 전체가 아니라 **파일 4개**뿐이다 — `workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `CODEOWNERS`. **이 4개는 수정·삭제하지 않는다**(멘토 자동 지정과 Discord 알림이 여기서 돈다). 그 밖에는 제약이 없다.
 
 **대기 상태는 끝났다 (2026-09-04 담임매니저 회신).** 운영진 배포가 완료됐고 안내도 왔다. 따로 `git pull`할 것은 없다 — 배포본은 `develop`에 이미 있고 `feature/* → develop` 머지에 그대로 따라온다. 즉 **지금 workflow를 추가해도 된다.** 다음 둘 중 하나가 보이면 진행하지 말고 담임매니저에게 알린다: ① 머지 시 `.github/` 충돌 ② PR에서 **admin 승인이 필요하다는 경고**. 후자는 위 4개를 건드렸다는 신호다 — CODEOWNERS는 base가 `develop`이어도 리뷰 요청 표시가 뜨고, 실제 차단은 `main`에서만 걸린다.
 
-**다만 지금은 돌릴 스크립트가 없다.** `scripts/`에 README만 있고 실제 grep 스크립트가 없으므로, 순서는 **① 스크립트 작성 → ② workflow 추가**다. 그때까지는 주간 회의 전에 손으로 점검한다. 스크립트 작성은 이 절의 grep 목록이 그대로 명세다.
+**초기 이력:** 당시에는 `scripts/`에 README만 있고 실제 grep 스크립트가 없어 **① 스크립트 작성 → ② workflow 추가** 순서로 계획했고, 그 전에는 주간 회의 전에 손으로 점검했다. 스크립트 작성 명세는 이 절의 grep 목록이었다.
+
+**현재 실행:** `.github/workflows/boundary-check.yml`이 기존 경계·계약 checker와
+Contract fixture checker를 실행한다. RT-15(b)는 같은 진입점에 import 검사를 더하므로
+workflow 변경은 없다. 새 pytest fixture는 기존 `python-tests` regression에서 실행된다.
 
 ---
 

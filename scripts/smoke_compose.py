@@ -84,7 +84,7 @@ def wait_for(callback, timeout):
 
 
 def run_smoke(evidence, *, after_persistence=None):
-    from check_compose import validate
+    from check_compose import validate_rendered
     project = "daesingo-rt13-smoke-" + secrets.token_hex(6)
     image = project + ":local"
     report = {"project": project, "stages": [], "result": "FAIL", "cleanup": "not_needed"}
@@ -140,15 +140,18 @@ def run_smoke(evidence, *, after_persistence=None):
             def compose(*args, **kwargs): return run([*base, *args], **kwargs)
             probe_path = str((ROOT / "tests/deploy/compose_probe.py").resolve())
             probe_mount = {"type": "bind", "source": probe_path, "target": "/opt/rt13-probe.py", "read_only": True}
+            media_mount = {"type": "bind", "source": str((ROOT / "tests/deploy/media_acceptance.py").resolve()),
+                "target": "/opt/media-acceptance.py", "read_only": True}
             # Probe runs in API/worker containers; it is a test mount, not image content.
             overlay.write_text(json.dumps({"services": {name: {"image": image,
-                **({"volumes": [probe_mount]} if name in {"api", "worker"} else {})} for name in ("api", "worker", "migrate")}}))
+                **({"volumes": [probe_mount, media_mount]} if name in {"api", "worker"} else {})} for name in ("api", "worker", "migrate")}}))
             try:
                 stage = "compose_config"
                 config = json.loads(compose("config", "--format", "json").stdout)
                 # Validate the production file separately; test overlay adds only probe/image/ephemeral port.
                 production = json.loads(run(["docker", "compose", "-f", str(ROOT / "compose.yaml"), "config", "--format", "json"]).stdout)
-                assert not validate(production, (ROOT / "Dockerfile").read_text(), (ROOT / ".dockerignore").read_text())
+                assert not validate_rendered(production, json.loads((ROOT / "compose.yaml").read_text()),
+                    (ROOT / "Dockerfile").read_text(), (ROOT / ".dockerignore").read_text())
                 record(stage)
                 stage = "clean_build"
                 touched = True
@@ -176,6 +179,12 @@ def run_smoke(evidence, *, after_persistence=None):
                 assert migration["State"]["Status"] == "exited" and migration["State"]["ExitCode"] == 0
                 wait_for(lambda: inspect("api")["State"].get("Health", {}).get("Status") == "healthy", 120)
                 record(stage, migration_exit=0, mysql="healthy", api="healthy")
+                stage = "pinned_media_materialization"
+                for name in ("api", "worker"):
+                    compose("exec", "-T", name, "python", "/app/docker/runtime.py", "media-preflight")
+                media = json.loads(compose("exec", "-T", "worker", "python", "/opt/media-acceptance.py").stdout)
+                assert media == {"mp4": "PASS", "avi": "PASS", "mkv": "PASS", "mp4_chain_analysis_incident": "PASS"}
+                record(stage, toolchain="8.1", materialization=media)
                 port = compose("port", "api", "8000").stdout.strip().rsplit(":", 1)[1]
                 def http(path, body=None, content_type="application/json"):
                     data = json.dumps(body).encode() if isinstance(body, dict) else body

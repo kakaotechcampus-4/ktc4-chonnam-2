@@ -51,7 +51,8 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | STALE 관측 · fatal hook 비노출 | DB STALE ended_at − 마지막 heartbeat_at · post-commit 측정/누락 fallback 없음 · fatal cleanup 후 process 경계에서 원문 비노출·고정 코드 1 | RT-06(a) 후속 P2 · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `sweep.py` · `worker/__main__.py` |
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
 | PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
-| type checker 도구 (Plan RT-15) | pending | RT-15 | — |
+| type checker 도구 (Plan RT-15) | mypy 2.4.1 · Runtime 네 경로 · 미타입 본문 검사 · Linux/Windows 분기 검사. Ruff 0.17.3과 quality extra/uv.lock 고정 | RT-15(a) · PR #483 · `e3fec617dc75b2cf21141a110bd8e81e816970b8` | [RT-15(a) Notes](./rt15a-runtime-quality.md) |
+| Runtime Python import 검사 | 기존 문자열/Contract 검사를 보존하고 AST로 common 6경로 → domain 7개, domain → api/worker 검사. alias·상대 import·정확한 namespace 비교 | RT-15(b) · 미커밋 · PR/merge SHA pending | [RT-15(b) Notes](./rt15b-import-boundaries.md) · ownership §6 |
 | produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | opt-in local smoke; 일반 PR에는 기존 pytest의 구조/negative-control 검사. 실제 Docker 결과와 구분 | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
@@ -1987,7 +1988,82 @@ Status: NOT_STARTED · Issue: — (RT-13 착수 때 생성) · Audit: C
 
 ## RT-15 — CI 품질 gate · Runtime import 경계
 
-Status: NOT_STARTED · Issue: #301 · Audit: C
+Status: IN_PROGRESS · Issue: #301 · Audit: C
+
+2026-10-30 RT-15(a) 로컬 구현. Ruff·mypy와 required quality job을 추가했다.
+상세 구현·선택 근거·예외·검증은 [RT-15(a) Implementation Notes](./rt15a-runtime-quality.md).
+PR/merge SHA는 pending이다. RT-15(b) import 경계 확장과 (c) secret scan은 미착수이며
+RT-15 전체 완료나 원격 CI 성공을 뜻하지 않는다. 아래 기존 빈 항목은 초기 이력으로 보존한다.
+
+로컬 검증: Ruff·mypy 양 플랫폼 각 87 files 0 error, focused 747 passed,
+boundary/Contract/actionlint/lock PASS. Fresh read-only review에서 quality-only NumPy 누락을
+찾아 실제 의존성으로 수정했고 같은 reviewer가 격리 환경의 PASS를 직접 재확인했다.
+추가 quality/CI 회귀 55 passed. 미해결 blocking 지적 없음. 선택 OCR·Search annotation
+타입 경계와 미실행 원격 MySQL/Docker 결과는 Notes의 잔여 위험으로 남긴다.
+
+2026-10-30 PR #483 regression 후속: PR head `1e38d560`에서 deploy Worker 등록 node의
+실패를 로컬 재현했다. RT-15(a)의 새 `RecordingSettings` nominal 검사는 타입 목적의
+불필요한 동작 변경으로 판단해 검증된 factory 경계의 타입 전용 cast로 대체했다.
+기존 세 필수값·registry 검증과 성공 fixture는 보존했다. 해당 node RED→GREEN,
+누락 설정 3건 포함 deploy/Worker/Recording 설정 회귀 361 passed, quality 양 플랫폼
+87 files 0 error, boundary/Contract/diff 검사 PASS. Fresh read-only delta reviewer도 이전
+HEAD의 실패를 독립 재현하고 관련 65 tests 및 quality 양 플랫폼을 직접 통과 확인했다.
+blocking 지적 없음. PR 변경/commit/push/merge는 하지 않는다. 상세 및 이번 delta 파일은
+위 Notes의 PR #483 후속 절이다.
+
+### 2026-10-30 — RT-15(b) import 경계 로컬 구현
+
+**RT-15 전체 IN_PROGRESS · Refs #301 (RT-15(b)) · Related #287 · PR/merge SHA pending**
+
+위 RT-15(a) 로컬/pending 문장은 당시 실행 이력으로 보존한다. 이번 시작 시 GitHub에서
+PR #483 merged와 merge SHA `e3fec617dc75b2cf21141a110bd8e81e816970b8`를 직접 확인했다.
+branch `codex/rt15b-import-boundaries`, HEAD/로컬 origin/develop/원격 ls-remote의 develop이
+모두 그 SHA이며 시작 tree/index clean, ahead/behind `0/0`이었다. Issue #301 본문과
+전체 댓글(0개)을 직접 읽었다. 선행 PR의 원격 CI는 이번 미커밋 diff 검증과 구분한다.
+
+- **구현 결과:** 기존 `check_boundaries.py`의 기본/`--only=boundaries` 진입점에 Python
+  AST 검사를 더했다. common의 jobs/usage/db/config/logging/storage는 domain 7개를,
+  domain 경로는 `daesingo.api`·`daesingo.worker`를 import하지 않는다. Architecture의
+  domain 7개와 실제 경로/namespace(`eval/`, TypeScript `apps/web/` 포함)를
+  ownership §6 표와 함께 정합화했다. 현재 scoped Python은 common35/domain143파일,
+  web0파일이다. 두 방향 현재 위반은 0건이며 제품 코드를 이동·수정하지 않았다.
+- **Plan 대비 변경:** 없음. 기존 문자열/Contract/스캔 제외 경로를 보존한 검사 추가다.
+  기존 workflow가 같은 CLI를 실행하고 새 pytest는 기존 regression으로 수집되므로
+  workflow/pyproject/lock/inventory/strict/timeout/skip/xfail 변경이 없다.
+- **새 implementation detail:** AST Import/ImportFrom의 원래 namespace 및 alias child를
+  검사한다. 상대 import는 containing package와 level로 계산하며 `__init__.py`도
+  같은 원칙이다. 파싱 실패를 PASS로 넘기지 않는다. `readout.api`와 Runtime `api`,
+  비슷한 prefix 및 문자열·주석을 구분한다. 새 예외나 주석 suppression은 없다.
+- **Contract / Decision / Baseline 영향:** 모두 없음. public surface·타 Owner 책임 변경
+  없음. Runtime/Ops Owner 김준영의 deferred review와 각 domain Owner별 통지 초안을
+  Notes에 작성했다. 외부 댓글·메시지 발송이나 Owner acceptance는 하지 않았다.
+- **직접 Verification:** 새 fixture 변경 전 **236 failed / 22 passed**(금지 import235와
+  파싱 실패1 누락), 수정 후 **258 passed**(48.72초). 변경 전 상대 import 한 사례에서
+  실제 CLI exit0/PASS를 별도 재현했다. 허용15/기존 문자열 거부7도 보존했다.
+  전체 boundary 및 contracts-only PASS, Contract 구조62/JSON26/의미104 PASS,
+  RT-15(a) Runtime Ruff PASS·mypy Linux/win32 각87파일 오류0, quality/CI 회귀
+  **55 passed**(13.25초). 최종 boundary-only 및 `git diff --check` PASS, index 비어 있음.
+- **추가 범위 밖 진단:** checker까지 임의로 확대한 Ruff에서 기존 Contract 코드의
+  `E741` 변수 `l` 1건이 나왔다. HEAD 원본 stdin 검사로 동일 진단을 재현했다.
+  Runtime quality gate 대상이 아니며 범위 밖 lint 정리는 하지 않았다. 새 테스트
+  파일의 단독 Ruff는 PASS다. 이 실패를 필수 gate 성공으로 바꾸어 기록하지 않는다.
+- **Fresh review:** 구현 이력을 상속하지 않은 read-only reviewer가 SoT/diff를 검토했다.
+  reviewer 직접 boundary PASS·새 fixture258PASS(48.42초), 독립 CLI 12사례 기대 일치,
+  diff check PASS; actionable 지적 없음. 최초 reviewer 실행은 basetemp 부모 디렉터리
+  부재로 setup258ERROR였고, 부모 생성 후 새 basetemp로 성공했다. 제품 결함이나
+  작성자 RED와 혼동하지 않는다. 같은 reviewer의 최종 문서 delta도 actionable 지적
+  없음. 새 파일 수 재집계/diff check와 보존 로그 열람을 이전 suite 직접 실행과 구분했다.
+- **남은 한계:** 동적 import·간접 re-export·부모 star 노출 이름·alias 속성 접근·import
+  hook/sys.path 변경은 전이 분석하지 않는다. TypeScript import 해석은 AST 보장 밖이다.
+  기존 문자열 검사는 주석/문자열에도 적용되는 원래 동작이다. 전체 local pytest·MySQL·
+  Docker build 및 이번 diff의 원격 CI는 미실행이며, 향후 push 뒤 boundary/quality/
+  regression/mysql/required test 성공이 최종 조건이다. RT-15(b)의 로컬 구현·검증과
+  RT-15 전체 완료를 구분한다. **(c) secret scan은 후속**, #301은 종료하지 않는다.
+
+전체 변경 파일·명령·RED/GREEN·review·통지 초안·정리 기록은
+[RT-15(b) Implementation Notes](./rt15b-import-boundaries.md)에 있다. 새 worktree,
+checkout 전환, staging/commit/push/PR/외부 댓글/merge, AWS/provider/배포,
+RT14_EXECUTION_ENABLED 변경은 없다. scratch/로그/credential은 PR에서 제외한다.
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
@@ -3989,3 +4065,269 @@ reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
 git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
 and #47/CI/operational deferred boundaries remain as stated. Final state is
 uncommitted and unstaged; no staging, commit, push, PR or Issue operation.
+
+## 2026-10-30 — Issue #465 MP4 deployment toolchain
+
+**IN_PROGRESS · Refs #465 · Related #460**
+
+Implementation Notes: [exact 8.1 supply, support commands and acceptance](./issue465-mp4-toolchain.md).
+Issue body/Owner comment and #467 were directly inspected. Starting branch is
+`codex/issue465-mp4-ffprobe-81`; HEAD/local and remote develop were
+`177505530cf6bc0f6575d846ae188a0868d4ae3e`, with clean worktree/empty index.
+
+Before image edits, official 8.1 source tarball PGP signature was directly checked
+and its SHA-256 pinned. Official n8.1 mirror commit and actual base/uv registry
+digests were checked too. Debian package snapshot input is fixed. Both media
+binaries are built together; runtime only copies tools and build-identity manifest,
+installs runtime libraries and preflights exact release/hash/configuration before
+API/worker exec. Strict Recording duration/coverage and #467 fixtures are unchanged.
+
+Author RED: ordinary synthetic 30fps MP4 through public Recording APIs with Ubuntu
+6.1.1-3ubuntu5 fails at output missing-tail validation. A preserved same-byte source
+is used for pinned-image comparison. Preflight new tests RED14 then GREEN17;
+Docker source-policy RED then focused deployment GREEN72. Windows supplementary
+9.0.1 media helper passes MP4/AVI/MKV/MP4-chain AnalysisSource and IncidentClip;
+focused deploy/workflow/Recording/worker run is **296 PASS, 1 existing real-pair
+opt-in SKIP (85.35s)**. Boundary/Contract fixtures/Compose structure/diff checks
+pass after correcting Windows console encoding. Actual Linux 8.1 image and Compose
+acceptance/review results are pending and will be appended as separate evidence.
+
+Actual private MP4 types were not available in known local source/data folders;
+their acceptance and provider first-search completion are not claimed. No DB,
+migration or inventory changes, so full mandatory MySQL was not rerun. Full
+regression/MySQL strict gate remain post-push remote CI conditions. No staging,
+commit/push/PR or external Issue edits; scratch/RAW/JUnit/downloads/private sources
+are PR-excluded. Earlier log entries and their historical results are preserved.
+
+Issue #465 author follow-up: final Linux 8.1 image build and same-byte synthetic
+MP4 strict GREEN succeeded; the retained input digest is unchanged. Initial
+source-build regression (missing drawtext/font libraries) was caught by #467
+export tests, reproduced in image media helper, and fixed by explicit font-library
+build/runtime inputs. Final helper passes MP4/AVI/MKV/MP4-chain AnalysisSource,
+IncidentClip, report stamp and plate crop. Final pinned-image focused selection
+is **311 PASS / 1 existing actual-pair opt-in SKIP, 26.14s**. Runtime dependency/
+tool/cache audit and six actual container startup negative controls PASS.
+Compose JSON omission handling had five direct RED→GREEN cases and preserves
+explicit false source policy. Final Windows deployment/workflow checks are
+**165 PASS, 17.84s**; supplementary Windows 9.0.1 helper PASS. Full Compose smoke
+and fresh review conclusions are still pending at this entry. No original
+failure or historical pending result has been rewritten as success.
+
+Issue #465 resume audit: HEAD/branch and unstaged delivery were preserved; local
+`origin/develop` independently moved to `1a784b9d1bad14197f8779387be8ef7e4618fa44`.
+No rebase/merge/reset. Prior WSL temporary workspace/report/image were unavailable
+on resume, so the interrupted Compose run's final result/cleanup is not claimed.
+A current-source isolated no-cache Compose smoke was started again under Docker
+29.9.2 / Compose v5.6.1 (Linux x86_64), persisting its report in ignored scratch.
+A fresh read-only reviewer without inherited implementation conversation directly
+passed 165 deploy/workflow checks (10.47s), boundary/Contract/source Compose/diff
+checks. Final execution evidence remains pending at this entry.
+
+Issue #465 final resumed author acceptance: isolated Docker29.9.2 / Compose5.6.1
+smoke **exit0 / PASS / cleanup PASS**, all ten stages through no-cache build,
+migration failure gate, normal migration/readiness, pinned MP4/AVI/MKV/chain and
+export materialization, cross-container media, command/view, kill→STALE→attempt2,
+secret/settings inspection and recreated DB/media persistence. Cleanup failures/
+remaining arrays are empty; separate Docker queries found no project containers,
+volumes, network or tagged image. Image tested before cleanup was
+`sha256:66ee0bccda379f71bd2948e711d57c2b8a5ed265c8f9e6271d5c8f2722a98883`.
+
+Fresh reviewer execution is distinct from author311/1-skip evidence: first fresh
+reviewer directly passed narrow pinned Linux fallback/IncidentClip/#467 **58/58**
+and original pinned helper/runtime/preflight. New fresh reviewer after interruption
+directly passed Windows deploy/workflow165 plus media146 (**311PASS / 1 existing
+actual-pair opt-in SKIP**), boundary/Contract/Compose/diff, and current no-cache
+Linux image's media helper (four PASS groups,6.29s) plus preflight exit0. Mounted
+helper hash matched checkout; original Log prefix/index integrity passed. Old
+image unavailable attempt executed no test, and is not counted as success.
+No actionable P1/P2/P3 code findings; final documentation consistency recheck
+is requested on the same resumed reviewer after these append-only entries.
+
+Issue completion mapping, exact #460 commands/provenance, twelve-file manifest,
+all original failures/pending entries and execution attribution are in
+[Implementation Notes](./issue465-mp4-toolchain.md). Actual two-type private MP4,
+Windows pinned8.1/non-amd64 Linux and provider first search remain unexecuted.
+Full local regression/mandatory MySQL were not rerun; full regression/MySQL
+strict gate remain post-push remote CI conditions. Owned source downloads,
+checkout and transport archives removed; ignored RAW/reports/test temp/diagnostic
+launchers and all scratch remain PR-excluded. No shared-resource prune/cache
+export, staging, commit, push, PR or external Issue/Notion operation.
+
+Issue #465 final same-reviewer documentation/report recheck: **P1/P2/P3 없음**.
+Reviewer independently confirmed report ten-stage PASS/cleanup PASS with empty
+failures/remaining, exact12-file manifest, original Log byte prefix, unchanged
+HEAD and empty index. Full Compose run remains author evidence; reviewer-direct
+current Linux helper/preflight and Windows165+146 results remain separately
+labeled. No source fix or unresolved finding remains. **IN_PROGRESS · Refs #465 ·
+Related #460**, actual-source and post-push remote CI boundaries remain unchanged.
+
+Final cleanup follow-up: exact-path-verified owned Linux temporary workspace
+removed after review; final `git diff --check` clean, HEAD unchanged/index empty.
+
+
+## 2026-10-30 — IN_PROGRESS · Refs #468 · Related #460
+
+기본 Worker production Readout 조립을 진행한다. 최초 HEAD/fetched origin/develop은 `b9c74d5e1f2b48c95254f6178e4ce9b9b5fb73b5`, 작업 트리/index 비어 있음. Issue/Owner 댓글 직접 확인, 기본 main 미등록 RED→GREEN 및 명시적 injection 유지. 운영 main은 recording_ocr_factory/PaddleOcrProvider를 조립하고 startup에 cache 검증·로드·예열을 완료한다. 일반 collection에 Paddle 설치는 요구하지 않는다. 정확한 dependency/cache/UID/실행 명령, 로컬 #468/#460 기록 초안과 실패 이력은 [Issue #468 Notes](./issue468-production-readout.md). 기존 로그를 덮어쓰지 않고 실제 acceptance/review 결과를 후속 append한다.
+
+
+Issue #468 추가 검증: 실제 Paddle synthetic에서 발견한 sample/source 시각 float dust2건과 native signal ownership1건을 각각 RED→GREEN으로 수정했다. Recording strict 기준은 유지했다. 작성자 최종 일반 focused664PASS/338 MySQL deselected (66.04s, 기존 deprecation warning1), 별도 scoped MySQL55PASS/skip0/error0 (476.91s), image OCR plate/overlay PASS/network attempt0/model hash 불변/UID10001. 중간 image에서 source를 mount한 실제 기본 Worker+별도 API/MySQL T1/T2 및 SIGTERM exit0 PASS. source mount 없는 최종 image 재실행은 후속 append한다. fresh read-only reviewer P1/P2/P3 없음, reviewer 직접 focused52PASS/23.59s 및 Paddle 없는 import/diff PASS. Docker/OCR/MySQL 작성자 결과와 reviewer 직접 결과를 구분한다. 정확한 파일20개와 실패 이력/명령은 Issue468 Notes에 있다.
+
+
+Issue #468 최종 로컬 acceptance: source mount 없는 image `sha256:51c214dba2d1fee50c1092e68c6f09e74e2cc1759a30ded0275c551314c5c0de`에서 실제 기본 Worker/별도 API/실제 Paddle의 PLATE_READ·OVERLAY_TIME_READ T1/T2 및 SIGTERM exit0 PASS. standalone OCR/network none/socket 시도0/cache 불변 PASS. CI Nanum timestamp 공백 손실로 UNKNOWN인 초기 FAIL을 보존하고, 기존 DejaVu 숫자 font로 synthetic 입력만 수정하여 최종 PASS했다. 모델/기준/parser 완화 없음. 같은 fresh reviewer도 최종 image preflight2건과 실제 offline OCR 직접 PASS, P1/P2/P3 없음. reviewer52/작성자664·55 및 process 증거는 Notes에서 분리해 기록했다. DB audit 잔여0 뒤 전용 container/volume/network/images 부재 검사 PASS, task-owned 비공유 cache ID별 정리, task pytest/env/media와 임시 font 삭제. RAW/JSON/JUnit/scratch PR 제외. DB/migration/inventory 불변, 전체 local pytest/mandatory MySQL 미실행, post-push remote CI gate 유지. commit/staging/push/PR/외부 Issue 변경 없음. IN_PROGRESS · Refs #468 · Related #460.
+
+
+최종 cache 정리 후속 확인: 첫24개 ID만 선택한 검사에서는 preflight/permission 하위 참조가 남아 부재 assertion이 실패했다. 이 작업에서 생성된 비공유 root11개를 추가로 식별하고 child→parent 순서로 정확한35개 ID를 정리한 뒤 잔여0을 확인했다. 공유/이전 cache를 범용 prune하지 않았다. 이 검사는 container/volume/network/image 부재와 별도의 build cache 정리 검증이다.
+
+
+## 2026-10-30 — IN_PROGRESS · Refs #460 · Related #429, #450, #452, #465, #468
+
+Runtime/Ops·Recording 실행환경을 [canonical guide](./local-runtime-environment.md)로 정리했다.
+최초 branch는 `codex/issue460-runtime-environment`, HEAD는
+`d66fab9c47b84d6391232c866a7e73c5ac6b8f6b`; working tree/index는 비어 있었다.
+`git fetch origin develop` 후 최신 origin/develop과 동일, ahead/behind 0/0,
+변경 파일 차이 없음. 기존 파일/HEAD/index를 reset/rebase/merge하지 않았다.
+
+Issue #460/#429/#450/#452/#465/#468 본문과 전체 댓글을 GitHub 읽기 전용 도구로 확인했다.
+현재 `.env.example`/Compose/Docker/runtime adapter/Worker bootstrap·main·composition/
+Readout runtime/Recording factory/Runtime config/Search 결정·config/배포·Readout·media·cleanup
+Notes를 대조했다. 과거 댓글의 기본 Worker Readout 미등록 및 Analysis 그룹 누락 시 동작을
+현재 코드와 구분했다. 기본 main의 production Paddle 자동 조립, 정확한 dependency/model/cache/
+offline preflight, Worker의 GEMINI_API_KEY 필수와 Search 공용 ELICE alias 차이를 기록했다.
+
+변경 파일 전체(6개): `.env.example`, `README.md`, `docs/runtime/README.md`,
+`docs/runtime/rt13a-docker-compose.md`, `docs/runtime/local-runtime-environment.md`,
+`docs/runtime/runtime-implementation-log.md`. RT-13(a) Notes에 현재 guide pointer를 추가하고
+당시 기록은 유지했다. Log는 원본 bytes prefix를 보존하여 append한다.
+
+확정 근거: #465의 동일 build 정확히 8.1, #468 Owner의 Paddle3.7.0/3.3.1/OpenCV4.10.0.84와
+두 사전학습 모델, Search Owner의 Coarse/Fine argon·Intent Flash 분리. Runtime 수치는
+코드 기본값 및 Baseline의 잠정 정책으로 구분했다. Recording encoding/profile ref·filename
+offset 팀 대표값, 저장 bytes/지원 길이는 미확정이다. #460의 임시480/240·veryfast·23,
+#452의 64MiB/285.2초/분 수 추정을 운영 권장값·지원 보장으로 승격하지 않았다.
+#452의 DB 한 행 유지·측정 기반 사전/누적 거부 합의와 미구현 env/mapping/notice를 구분했다.
+
+8종 등록 전용 startup log/health 기능은 현재 없다. 기존 조립+내부 registry snapshot을 읽는
+별도 진단 절차와 기존 테스트를 문서화하고 #450 RD-12h 후속으로 남겼다. 실행 중 Worker
+메모리 관측이라고 표현하지 않는다. 제품 동작/기본값/taxonomy/DB/Contract 변경 없음.
+
+작성자 직접 최소 검증:
+
+- 실제 load_env_file·API/Worker RuntimeConfig·RecordingSettings·Worker bootstrap 수용,
+  빈 필수/부분 그룹 거부, shell credential 비병합, Search/Intent 모델·base URL 쌍,
+  전체 Runtime/Recording 키 및 문서/예시/로컬 링크 정합성 PASS.
+- 문서의 8종 진단 Python block을 그대로 실행하되 OCR load 경계만 대체하여 8종 snapshot 확인 PASS.
+  실제 Paddle/DB/provider 실행 증거로 집계하지 않는다.
+- boundary 0위반, Contract structure62/JSON26/semantic104 모두 PASS, Compose source 및
+  실제 CLI resolved JSON의 구조 검사 PASS, `git diff --check` PASS.
+- host Python3.13.0의 기존 최소 회귀 첫 실행: 95PASS/1FAIL(23.85초).
+  `test_default_main_registers_both_readouts`의 plate 경로 실패를 보존했다.
+  호스트 cv2 미설치 확인 후 작업 전용 ignored 의존성만 보완하여 대조한다.
+
+이 Python3.13 host 검사는 Docker의 locked Python3.12 환경 acceptance를 대신하지 않는다.
+실제 runtime secret/개인 env를 읽거나 기록하지 않았고 합성 설정만 썼다.
+전체 pytest/전체 MySQL/clean Docker build/기존 smoke를 반복하지 않는다. 기존 Docker inventory만
+읽었으며 application image tag는 없었다. 기존 image/build cache를 변경하거나 prune하지 않는다.
+실제 #465/#468 과거 실행은 guide의 별도 Notes 근거이고 이번 실행 수치가 아니다.
+
+fresh reviewer 결과·후속 대조·최종 정리는 이후 append한다. 작업 계획·검증 runner·합성 env/
+resolved JSON·JUnit·로컬 의존성은 ignored `.codex-scratch/issue460/`로 PR 제외다.
+commit/staging/push/PR/Issue 댓글/Notion 변경은 하지 않는다. #460 게시용 요약은
+guide의 지원 범위·설정 경계·미결 및 이 Log의 검증 결과로 제공한다.
+
+
+Issue #460 작성자 후속 검증: 최초 Readout 실패 환경은 numpy2.1.3/cv2 미설치였다.
+프로젝트 지정 opencv-contrib-python4.10.0.84를 ignored task 폴더에만 보완 후 같은
+실패 node 1PASS(2.05초), 동일 최소 4파일 선택 96PASS(22.83초)/skip0/error0을 확인했다.
+초기95PASS/1FAIL을 소급 변경하지 않는다. 문서 parser 체크는 Python3.13.0의 보조 검증이고
+locked Docker3.12 acceptance가 아니다. API --help 보조 probe는 호스트의 기존 Starlette에
+body_limit 모듈이 없어 import 실패했으며, lock의 API 패키지를 task 폴더에 보완해 대조한다.
+uv run --help의 --no-sync 존재는 직접 확인했다.
+
+Issue #460 API CLI 후속: lock의 fastapi0.143.0/starlette1.8.0/uvicorn0.54.0/
+python-multipart0.0.32를 ignored task 폴더에만 보완한 뒤 API --help exit0으로
+--revision/--host/--port를 직접 확인했다. parser/키/진단/링크 체크 재실행 PASS.
+README 상단의 오래된 2026-10-18 후속 작업 설명도 현재 canonical guide로 연결했다.
+
+Issue #460 fresh read-only reviewer 최초 지적 P3 1건: DAESINGO_ENV_FILE의
+API/Worker cwd/.env fallback과 migrate adapter의 명시 필수 경계를 표에서 구분하지 않았다.
+명령 예시는 이미 export하고 있었지만 표의 필요 여부를 현재 코드대로 수정했다.
+구현 이력을 상속하지 않은 같은 reviewer에게 수정 및 최종 기록 재확인을 요청한다.
+
+Issue #460 수정 후 검증: migrate selector 미지정 시 exit1인 경계 직접 확인,
+parser/필수키/8종 진단(실제 OCR 대체)/링크 재검사 PASS. 최종 focused JUnit을 읽어
+96 tests, failure0/error0/skip0 대조했다. boundary/Contract62·26·104/source Compose/diff
+재검사 PASS. 실 credential/provider/DB/OCR이나 전체 suite/build 성공으로 확대하지 않는다.
+reviewer는 초기 독립 검사에서 전체 Runtime/Recording 키·기본값·모델쌍·링크·
+Log prefix·Compose 구조·diff와 migrate selector 실패를 직접 확인했고 P1/P2는 없었다.
+
+Issue #460 검증 표현 정정: 앞의 OCR load 경계만 대체라는 문구는 정확히
+production_readout_factory 경계 전체를 대역(object 반환)으로 바꾼 등록 확인이다.
+진단 block의 bootstrap/config와 나머지 registry 조립은 실제지만 production factory 내부의
+Recording OCR factory 연결·cache·모델 load/예열은 이 문서용 runner에서 실행하지 않았다.
+실제 Paddle acceptance는 별도 #468 과거 Notes 근거로만 제시한다.
+Native 예시의 uv sync에는 --python 3.12를 명시해 Docker 기준 Python 계열을 선택했다.
+--python/--no-sync 옵션 존재는 uv help로 대조했고 sync 자체는 실행하지 않았다.
+
+Issue #460 동일 fresh reviewer 최종 재확인: 남은 P1/P2/P3 지적 없음.
+selector P3 수정, production factory 전체 대역 검증이라는 표현 정정, native Python3.12
+명시를 확인했다. reviewer가 원본 Log 741,713bytes SHA-256 prefix, 동일96개 JUnit의
+failure/error/skip0, 문서 링크, source/저장된 resolved Compose 구조, diff, branch/HEAD/
+빈 index 및 변경6파일을 읽기 전용으로 재검토했다. 실제 OCR/DB/provider 또는 전체
+suite/build를 reviewer가 이번에 실행했다고 표현하지 않는다.
+
+작업 자원 정리: 경로를 workspace 아래 task root로 resolve 검증하고 task-local
+python-deps와 pytest/final-pytest 디렉터리를 삭제·부재 확인했다. countercheck/config
+임시 디렉터리도 남지 않았다. JUnit/검증 runner/계획/합성 resolved JSON과 검증 메모만
+ignored scratch에 보존하며 모두 PR 제외다. Docker container/volume/network/image를
+이번 문서 작업에서 생성하지 않았고 build/cache/export/prune을 수행하지 않았다.
+실제 secret·개인 env·media·DB dump·모델을 새로 보관하지 않았다.
+
+#460 게시용 요약: canonical guide와 .env.example로 실제 키·필수 그룹·secret/file
+소비 경계·DB/migration/실행 순서·media/temp/cleanup·고정 media/OCR toolchain·Search와
+Intent 분리·8종 구성 진단을 연결했다. encoding 및 용량/길이 대표값은 Owner 측정 후
+확정할 미결로 유지하며 #450 운영 관측/배포와 #452 용량/시간 후속을 분리했다.
+최소 parser/정합성 및96개 회귀 PASS, 최초 호스트 의존성 실패는 별도 이력으로 보존.
+전체 pytest/MySQL/clean Docker build/native OCR/실 credential E2E는 미실행이다.
+
+6파일을 미커밋·미스테이징 상태로 남긴다. HEAD는 시작과 같고 원본 Log bytes prefix를
+유지한다. commit/push/PR/Issue 댓글/Notion 수정은 하지 않았다.
+
+## 2026-10-30 — RT-14 deployment preparation (Refs #450)
+
+**IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
+기존 기록을 대체하지 않는 후속 entry다. 상세는 [RT-14 runbook / Implementation Notes](rt14-deployment.md).
+
+시작 branch `codex/rt14-deployment`, HEAD/fetched origin/develop
+`4876e646171ba9f0195de52d11741f3c39fb51a0`; working tree/index clean.
+Issue #450 본문/전체 댓글, #460/#452 현재 댓글, PR #473–#477 merged 상태를
+읽기 전용으로 확인했다. 첨부4자료는 환경 입력으로 읽고 명령 실행 승인과 구분했다.
+AWS 실계정/role 연결/SSM/agent/registry는 조회하지 않았다.
+
+준비 구현: develop 제한 manual OIDC 인증, amd64 CI image/ECR immutable digest 후보,
+query-only SSM 결과 판정, root host controller, versioned protected config,
+명시적 단일 migration과 dirty journal, 실제 Worker PID/starttime/8종 등록,
+live/ready/read-only Case smoke, atomic known-good과 schema-compatible code rollback.
+DB/media 삭제·downgrade·자동 restore는 없다. 결정 refs/retention/restart/용량 budget과
+#452 운영 profile/byte/length가 비었으면 운영 준비 완료로 처리하지 않는다. RD-12/13/11은 OPEN 유지.
+
+이번 직접 검증: focused **228 PASS** (Windows Python3.12.14, 41.45초).
+source/resolved local/production Compose, boundary, Contract62/26/104, actionlint,
+workflow bash 구문, diff, 첨부 식별 후보 비노출 검사 PASS.
+독립 subprocess lock 경쟁 거부/해제 후 실행 PASS. 기존 Linux image + read-only source에서
+production OCR 초기화/실제 registry8/PID1 marker/cleanup PASS지만 claim loop는 대역이다.
+DB/provider/AWS/서비스 deployment 증거가 아니다. 최초 helper pytest 누락 실패와
+runtime adapter patch 위치 실패는 수정 후 결과와 구분해 Notes에 보존했다.
+
+fresh read-only reviewer는 구현 이력을 상속하지 않고 schema compatibility 덮어쓰기와
+최초 populated-volume 인수 P1을 지적했다. 모두 RED→GREEN으로 수정하고 같은 reviewer가 재확인했다.
+최종 credential 격리/region/Worker cleanup delta를 포함해 독립 focused **228 PASS**
+(29.99초), 잔여 actionable finding 없음. schema.json 권위와 schema_parent는 code rollback으로
+되돌리지 않으며 최초 승인+실제 empty-volume 검사를 요구한다.
+
+새 PR remote CI/새 Dockerfile full build/OIDC/ECR/실EC2 SSM/config/migration/log 수신/
+4GB 동시 용량/rollback/DB+media restore는 pending이다. 전체 local pytest/전체 mandatory MySQL은
+반복하지 않았다. #452 운영값·22개 원본 측정과 Case notice, #445 orphan, #71 retention을
+이 Task에서 완료로 바꾸지 않는다. 전체26파일 manifest와 실행 입력/제공자/복구 경계는 Notes에 있다.
+전용 offline container 부재, structure volume/network0, 기존 image4개 보존·shared prune0.
+임시 pytest/render/helper는 task 범위로 정리하고 작은 실패 log/최종 요약만 ignored scratch에 보존한다.
+commit/staging/push/PR/외부 댓글/Notion/dispatch/AWS 변경·실제 deployment 없이 종료한다.

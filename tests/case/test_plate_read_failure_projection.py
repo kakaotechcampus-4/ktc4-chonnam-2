@@ -96,6 +96,7 @@ def _view_with_plate(info_state: str, value: str | None) -> dict:
             "record_id": "ev_test",
             "plate_display": {"value": value, "needs_review": False, "info_state": info_state, "source_label_key": None},
             "location_display": {"search_keyword": "광주 북구"},
+            "event_time_display": {"value": "2026-08-24T18:06:00+09:00"},
         },
         "candidates": [],
         "package": None,

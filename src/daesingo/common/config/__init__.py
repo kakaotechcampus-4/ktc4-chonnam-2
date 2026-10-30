@@ -188,7 +188,7 @@ class RuntimeConfig:
     def from_mapping(cls, service: Literal["api", "worker"], values: Mapping[str, str]) -> "RuntimeConfig":
         if service not in ("api", "worker"):
             raise ValueError("unsupported runtime service")
-        errors = []
+        errors: list[str] = []
         db = _read(DbSettings, values, errors, defaults=(
             {"pool_size": 2, "max_overflow": 2} if service == "worker" else None
         ))

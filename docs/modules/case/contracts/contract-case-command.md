@@ -79,7 +79,7 @@
 | `kind` | `payload` | 허용 상태 | 성공하면 |
 | --- | --- | --- | --- |
 | `SELECT_OTHER_CANDIDATE` | `{ "candidate_id": "string" }` | `EVIDENCE_REVIEW` · `READY` | `OTHER_CANDIDATE` CorrectionRecord 1건, `selection_rev` +1, `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아가고 `user_reviewed=false` |
-| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아간다(아래 「READY에서 다시 조립되는 변경」). 이 응답으로 Package가 준비되면 아래 「성공 뒤 `READY` 재확인」으로 `READY`가 되고 `case_rev`가 +1 더 오른다 |
+| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` · `[다른 상황]`은 §12-3 | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아간다(아래 「READY에서 다시 조립되는 변경」). 이 응답으로 Package가 준비되면 아래 「성공 뒤 `READY` 재확인」으로 `READY`가 되고 `case_rev`가 +1 더 오른다 |
 | `MARK_REVIEWED` | `{}` | `READY` | `user_reviewed=true`, `case_rev` +1 |
 | `RUN_NOTICE_ACTION` | `{ "notice_code": "string", "action": "GENERATE_REPORT_VIDEO \| RETRY_PLATE_READ \| RETRY_SEARCH \| GENERATE_PLATE_IMAGE" }` | 현재 CaseView의 `notices[]`에 **그 `code`를 가진 notice가 있고, 그 notice의 `actions[]`에 그 `action`이 있을 때** | CaseView 계약 B절 §7 매핑대로 새 `JobRecord` 1건 |
 | `STOP_ANALYSIS` | `{}` | `SEARCHING`이고 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 있을 때 | 그 job들을 `CANCELLED`로 정산(다른 kind는 그대로), `case_rev` +1, stage는 `SEARCHING` 그대로. CaseView는 `coarse_search`=`PARTIAL` · notice `case.analysis_stopped`(CaseView 계약 B§7). 중단된 job의 늦은 결과는 반영하지 않는다(#245 C-4) |
@@ -89,7 +89,7 @@
 - `RUN_NOTICE_ACTION`의 허용 조건은 「화면에 그 버튼이 떠 있었는가」와 같다. web은 `notices[].actions[]`에 있는 값으로만 버튼을 그리므로(CaseView 계약 B절 §7), case도 같은 근거로만 받는다.
 - `SELECT_OTHER_CANDIDATE`는 새 후보 초안을 준비하는 중이면 `not_allowed`다(#173 E-4 조건 1, 2026-10-24) — 선택 후보 · 현재 세대의 관찰 job 중 case가 아직 결과를 기다리는 것이 있을 때다. 상황 응답 대기 · Fine 실패 뒤에는 받는다(`decisions/reselect-while-preparing.md`). 진행 화면에서 버튼을 주지 않는 web 규칙은 그대로다.
 - `responded_at`은 web이 보내지 않고 case가 채운다 — 사용자 기기 시계를 기록값으로 쓰지 않는다.
-- **`CORRECTED`(`[다른 상황]`)는 이 판본에서 받지 않는다**(`case.command.invalid_payload`) — 입력형 판본 초안 §12-3에서 연다. evidence는 `CORRECTED` 응답에 `SITUATION_CHANGE` CorrectionRecord가 정확히 1건 있어야 조립하고, 없으면 조립 자체를 거부한다(`src/daesingo/evidence/assembly.py` — `CORRECTED requires one SITUATION_CHANGE head`). 바뀐 상황을 보내는 입력형 경로가 없으므로(§2) 입력형 판본에서 둘을 한 command로 함께 연다.
+- ~~**`CORRECTED`(`[다른 상황]`)는 이 판본에서 받지 않는다**~~ → **2026-10-28 §12-3으로 열었다**(`decisions/input-commands.md`). 아래는 그 전의 이유다. evidence는 `CORRECTED` 응답에 `SITUATION_CHANGE` CorrectionRecord가 정확히 1건 있어야 조립하고, 없으면 조립 자체를 거부한다(`src/daesingo/evidence/assembly.py` — `CORRECTED requires one SITUATION_CHANGE head`). 바뀐 상황을 보내는 입력형 경로가 없으므로(§2) 입력형 판본에서 둘을 한 command로 함께 연다.
 
 ## 6. 실패 코드
 
@@ -203,15 +203,15 @@ START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──�
 
 ## 12. 입력형 판본 초안 `case-command/v1` (2026-10-13)
 
-> **상태: 초안 — web(신유민) · evidence(flosure23) 확인(2026-10-21, PR #356), 리뷰 반영(2026-10-24 — §12-4 오류 두 부류 · §12-5 버튼 노출).** 열림 조건(§12-1)이 갖춰지기 전에는 case가 아래 kind를 받지 않는다(지금처럼 `invalid_payload`). 범위는 규칙이 이미 정해진 셋(번호판 · 발생시각 · `[다른 상황]`)이고, 나머지 입력형 action은 §12-5에 이유와 함께 남긴다. 근거 #235(E-1 · E-2 · E-3 결정) · `contract-correction-record.md` · `core-user-flow.md` §12 · §13 · §15 · §20.
+> **상태: 구현(2026-10-28, W12 C3 — `decisions/input-commands.md`).** web(신유민) · evidence(flosure23) 확인(2026-10-21, PR #356), 리뷰 반영(2026-10-24 — §12-4 오류 두 부류 · §12-5 버튼 노출). 열림 조건(§12-1)은 PR #384로 모두 갖춰졌다. 범위는 규칙이 이미 정해진 셋(번호판 · 발생시각 · `[다른 상황]`)이고, 나머지 입력형 action은 §12-5에 이유와 함께 남긴다. 근거 #235(E-1 · E-2 · E-3 결정) · `contract-correction-record.md` · `core-user-flow.md` §12 · §13 · §15 · §20.
 
 ### 12-1. 열림 조건
 
 web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. case 구현도 2 · 3 뒤에 한다.
 
 1. 이 판본 합의(web 확인). → **충족(2026-10-21, 신유민 PR #356 댓글).**
-2. **`correction-record/v1.2`** — `previous_value`에 `null`(값이 없던 상태) 허용(#235 E-1 · E-2). 계약 반영(PM)과 evidence 검사(`evidence/corrections.py`) 반영.
-3. **evidence 기록 전 검사 공개 함수**(#235 E-3) — 값 형식 + supersede chain 연속성. case가 기록 전에 부른다. 거부 결과는 「사용자가 고칠 수 있는 값 오류」와 「내부 계약 위반」을 구분해 돌려준다(§12-4) — 정확한 반환 · 예외 모양은 구현 때 evidence와 정한다.
+2. **`correction-record/v1.2`** — `previous_value`에 `null`(값이 없던 상태) 허용(#235 E-1 · E-2). 계약 반영(PM)과 evidence 검사(`evidence/corrections.py`) 반영. → **충족(PR #384).** case는 v1.2로 기록한다.
+3. **evidence 기록 전 검사 공개 함수**(#235 E-3) — 값 형식 + supersede chain 연속성. case가 기록 전에 부른다. 거부 결과는 「사용자가 고칠 수 있는 값 오류」와 「내부 계약 위반」을 구분해 돌려준다(§12-4) — 정확한 반환 · 예외 모양은 구현 때 evidence와 정한다. → **충족(PR #384)** — `validate_correction_append()`가 `InvalidCorrectionValue`(값 오류) · `ContractInputError`(그 밖)로 나눠 던진다.
 
 그 전에 열면 값이 없던 상태의 첫 입력이 기록된 뒤 evidence 조립에서 거부되고, 기록은 되돌리지 않으므로(`contract-correction-record.md` §8-9) 그 case는 이후 CaseView를 만들 수 없다(#235 §1).
 
@@ -222,20 +222,23 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 - **값이 지금 값과 같으면 `not_allowed`.** 기록하지 않는다(`contract-correction-record.md` §8-7 — 「이미 선택된 후보 재선택」과 같은 무변경 거부).
 - **성공하면** CorrectionRecord 1건 · `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 내리고 §5 「성공 뒤 `READY` 재확인」을 그대로 한다(§5 「`READY`에서 다시 조립되는 변경」).
 - **Job을 발주하지 않는다.** 값 정정은 evidence 재조립만 부른다(부분 재실행 정책 표). 시각 정정으로 사후 각인 값이 바뀌면 신고용 영상 입력도 바뀌는데, 그 재발주는 #351 [R-1] 자동 발주가 맡는다(`decisions/report-video-export.md`, 배선 보류).
+- **이전 값의 출처(구현, 2026-10-28).** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 CaseView 값이다 — 정상 경로에서 둘은 같다(`decisions/input-commands.md` §2-5).
+- **값 칸이 없는 화면(`evidence=null`)에서는 `not_allowed`**(2026-10-28) — 사용자가 본 이전 값이 없다. 상황 응답 대기의 부분 투영은 `evidence`가 있으므로 받는다.
 - **값을 판정하지 않는다**(§7-3). 번호판이 맞는지 · 시각이 그럴듯한지는 보지 않는다. 형식은 evidence 검사(E-3)에 맡기고 case가 target별 형식 규칙을 복제하지 않는다(#235 E-3).
 
 ### 12-3. kind별
 
 | `kind` | `payload` | CorrectionRecord | 성공하면 |
 | --- | --- | --- | --- |
-| `MANUAL_PLATE_INPUT` | `{ "value": "string" }` | `PLATE_MANUAL_EDIT` · `vehicle_number` | 번호판 값이 입력값이 되고 `plate_display.info_state=INFO_USER_CONFIRMED`. `readout.plate_read_failed`는 붙지 않는다(#235 ①, #321) |
+| `MANUAL_PLATE_INPUT` | `{ "value": "string" }` — 빈 문자열 · 공백만 있는 값은 `invalid_value`(evidence 값 공간, correction-record §6) | `PLATE_MANUAL_EDIT` · `vehicle_number` | 번호판 값이 입력값이 되고 `plate_display.info_state=INFO_USER_CONFIRMED`. `readout.plate_read_failed`는 붙지 않는다(#235 ①, #321) |
 | `EDIT_EVENT_TIME` | `{ "value": "string — offset-aware RFC3339" }` | `EVENT_TIME_MANUAL` · `occurred_at` | 최종 발생시각의 USER_INPUT 근거가 된다(`contract-time-resolution.md` §5) |
 | `RECORD_SITUATION_RESPONSE` | `{ "value": "CORRECTED", "visual_event_type": "SIGNAL \| CENTER_LINE_CROSSING \| SOLID_LINE_LANE_CHANGE \| MOTORCYCLE_HELMET_NON_USE" }` | `SITUATION_CHANGE` · `event.visual_event_type` | `situation_response=CORRECTED`와 정정 기록을 **한 command**로 남기고 `case_rev`는 +1이다. evidence는 `CORRECTED`에 `SITUATION_CHANGE` head가 정확히 1건 있어야 조립한다(`evidence/assembly.py`) |
 
 - **화면 입구와 kind.** 번호판 `[수정]` · `[직접 입력]`(Flow §12)과 notice action `MANUAL_PLATE_INPUT`은 모두 `MANUAL_PLATE_INPUT`으로, 발생시각 수정(Flow §20)과 notice action `EDIT_EVENT_TIME`은 모두 `EDIT_EVENT_TIME`으로 보낸다. notice에 붙은 입력형 action은 `RUN_NOTICE_ACTION`으로 보내지 않는다 — `RUN_NOTICE_ACTION`은 발주형 4종 그대로다.
+- **`[다른 상황]` 정정이 있는 후보의 `USER_UNSURE`는 `not_allowed`**(2026-10-28) — evidence가 조립을 거부하고 정정은 지우지 않으므로 그 case가 CaseView를 만들 수 없게 된다. `CONFIRMED`는 받는다.
 - **`visual_event_type`은 `CORRECTED`일 때만 필수다.** `CONFIRMED` · `USER_UNSURE`에 있으면 `invalid_payload`. 지금 값과 같은 유형이면 `not_allowed` — 그것은 `[맞아요]`다.
-- **`[다른 상황]` 선택지.** `VisualEventType` 4종에서 지금 값을 뺀 것이다. 사용자에게 법적 유형을 판정시키지 않으므로(Flow §15) 화면 문구는 상황 설명으로 쓴다 — 문구는 web.
-- **notice action 싣기.** `evidence.plate_abstained`는 지금 `MANUAL_PLATE_INPUT`을 비워 둔다(CaseView 계약 B§7 — 실행 경로가 없는 action은 싣지 않는다). 이 판본이 열릴 때 함께 싣는다.
+- **`[다른 상황]` 선택지.** `VisualEventType` 4종에서 지금 값을 뺀 것이다. **지금 값이 `null`이면(상황 응답 대기의 부분 투영 — `case_type_display.code=null`, B§10-15) 4종을 모두 보여 준다**(2026-10-28, PR #433 web 확인) — web도 case도 지금 유형을 모르므로 같은 유형을 막지 않는다. 같은 유형을 골라도 evidence는 그 유형으로 조립해 결과가 `[맞아요]`와 같다(`decisions/input-commands.md` §4). Fine 잠정 유형을 CaseView에 싣는 안은 계약 변경이라 택하지 않았다. 사용자에게 법적 유형을 판정시키지 않으므로(Flow §15) 화면 문구는 상황 설명으로 쓴다 — 문구는 web.
+- **notice action 싣기.** `evidence.plate_abstained`는 `actions:[MANUAL_PLATE_INPUT]`을 싣는다(2026-10-28 — 이 판본이 열려 실행 경로가 생겼다). `evidence.event_time_missing`(발생시각이 없어 Package가 나가지 않는 상태)은 `actions:[EDIT_EVENT_TIME]`을 싣는다(2026-10-29, #449 — `decisions/event-time-missing-notice.md`).
 
 ### 12-4. `case.command.invalid_value`
 
@@ -279,11 +282,12 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 
 ### 12-7. 남은 것
 
-- 열림 조건 2 · 3(§12-1) — #235 후속(PM · evidence).
-- CaseView 계약 B§7 `notices[].actions[]` 매핑의 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` 행을 이 kind로 가리키게 고치는 일 — 이 판본 합의 뒤.
+- ~~열림 조건 2 · 3(§12-1)~~ → PR #384로 충족.
+- ~~CaseView 계약 B§7 매핑의 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` 행~~ → 2026-10-28 이 kind로 고쳤다.
+- web 정정 입력 UI(W4) — web 소유.
 - ~~`search.no_candidates`의 `EDIT_HINT` 빼기(§12-5)~~ → 2026-10-27 빼지 않고 §13으로 실행 경로를 열었다.
-- evidence 기록 전 검사의 두 부류 반환 모양(§12-1 조건 3 · §12-4) — 구현 때 evidence와 정한다.
-- 구현 때 맞출 것: `CORRECTED`는 상황 응답 기록과 정정 기록이 각각 `case_rev`를 올리지 않게 한 번만 올린다(지금 `record_situation_response()` · `apply_correction()`이 각자 올린다).
+- ~~evidence 기록 전 검사의 두 부류 반환 모양~~ → PR #384(`InvalidCorrectionValue` · `ContractInputError`).
+- ~~`CORRECTED`의 `case_rev` 한 번~~ → 2026-10-28 구현(`record_situation_response(..., bump=False)`).
 
 ## 13. 설명 고쳐 다시 찾기 `EDIT_HINT` (2026-10-27)
 

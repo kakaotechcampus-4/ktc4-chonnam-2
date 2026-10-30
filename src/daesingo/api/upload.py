@@ -3,8 +3,10 @@ import asyncio
 from email.message import Message
 import logging
 import os
+import sys
 from pathlib import Path
 import tempfile
+from typing import TYPE_CHECKING
 from time import monotonic
 from uuid import uuid4
 
@@ -17,6 +19,9 @@ from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 from starlette.requests import ClientDisconnect
 
 from .errors import error_response
+
+if TYPE_CHECKING:
+    from python_multipart.multipart import MultipartCallbacks
 
 
 class UploadAborted(Exception):
@@ -79,9 +84,15 @@ class _MultipartFile:
         self.header_name = bytearray()
         self.header_value = bytearray()
         self.disposition = None
-        callbacks = {name: getattr(self, name) for name in (
-            'on_part_begin', 'on_header_field', 'on_header_value', 'on_header_end',
-            'on_headers_finished', 'on_part_data', 'on_end')}
+        callbacks: MultipartCallbacks = {
+            'on_part_begin': self.on_part_begin,
+            'on_header_field': self.on_header_field,
+            'on_header_value': self.on_header_value,
+            'on_header_end': self.on_header_end,
+            'on_headers_finished': self.on_headers_finished,
+            'on_part_data': self.on_part_data,
+            'on_end': self.on_end,
+        }
         try:
             self.parser = MultipartParser(boundary, callbacks)
         except (ValueError, MultipartParseError):
@@ -204,7 +215,7 @@ def publish(staging: Path, root: Path) -> Path:
     os.replace(staging, final)
     # POSIX rename is atomic but the directory entry needs its own durability
     # barrier before rows may commit. Windows has no directory fsync primitive.
-    if os.name != 'nt':
+    if sys.platform != 'win32':
         for directory in (final.parent, staging.parent, root):
             descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
             try:
