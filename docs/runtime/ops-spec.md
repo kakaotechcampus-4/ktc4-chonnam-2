@@ -3,6 +3,8 @@
 **Status:** Working — operations spec  
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
+**AWS 환경 입력:** [`official-inputs/aws-environment.md`](./official-inputs/aws-environment.md) — 카테캠 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot  
+**Last synced:** 2026-10-30 — `develop` `4876e646`  
 **Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
 **Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
 **Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
@@ -39,26 +41,37 @@
 
 ## 2. 배포 Baseline
 
-카테캠 현재 환경 제약 기준 baseline:
+카테캠 현재 환경 제약 기준 baseline. 제공 조건 · 실측값의 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md)이고 여기서는 운영 판단에 쓰는 값만 옮긴다.
 
 ```text
-Region      ap-northeast-2
-EC2         t3.medium
+Region      ap-northeast-2 (서울 외 리전 불가)
+EC2         t3.medium · CPU credit unlimited
 CPU         2 vCPU
-RAM         4GB
-Disk        50GB SSD
+RAM         4GB (OS usable 약 3.7 GiB · swap 0 — 초기 관측값)
+Disk        50GB gp3 · 암호화 (3,000 IOPS / 125 MiB/s)
 OS          Ubuntu 24.04 LTS
+제공 기간     2026-08-31 ~ 2026-11-20
 
 EC2 1대
 └─ Docker Compose
+   ├─ migrate (one-shot)
    ├─ api
    ├─ worker
    └─ mysql
 ```
 
-API와 Worker는 같은 repository/image 계열을 사용하는 modular monolith의 두 composition root다.
+API와 Worker는 같은 image를 쓰는 modular monolith의 두 composition root다. migration은 api · worker 기동 전에 끝나는 one-shot service다([RT-13(a)](./rt13a-docker-compose.md)).
 
-RDS, ALB, Elastic IP, 추가 EC2는 기본 제공으로 가정하지 않는다.
+카테캠 계정의 자원 경계([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4):
+
+| 구분 | 상태 | 운영 함의 |
+| --- | --- | --- |
+| 추가 EC2 · 사양 변경 · 디스크 확장 · 추가 볼륨 | 차단. 사양 상향 · 디스크 확장은 카테캠 요청 시 검토 | capacity 대응은 §18 근거를 갖춰 요청 경로로만 한다. deploy role도 `ec2:CreateVolume` · `ec2:ModifyVolume`이 거부된다(10-30 확인) |
+| RDS · ALB · Elastic IP | 차단. 요청 시 검토 | §18 조건이 생길 때만 요청한다 |
+| S3 · ECR · CloudWatch · SSM Parameter Store | 사용 가능 | 10-30 SSO 권한으로 ECR · Log Group · SecureString 생성 → 삭제가 PASS. 사용 여부는 RD-12 · RD-13 결정이 정한다 |
+| 서버 중지 · 시작 · 재부팅 · Security Group 편집 | 사용 가능 | 22번을 `0.0.0.0/0`으로 열면 보안 모니터링에 탐지된다 |
+
+2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 대신고 stack은 아직 배포되지 않았다.
 
 ### 2-1. AWS 배포 인증 · 서버 접속 기준
 
@@ -87,20 +100,31 @@ GitHub Actions
 - Object Storage를 도입해 S3 경유 배포를 선택하는 경우, GitHub Actions의 업로드 주체(`ktc-github-deploy`)와 EC2의 다운로드 주체(`ktc-ec2-ssm-role`)를 별도 권한 주체로 취급한다.
 - 이 결정은 **S3 사용 자체를 확정하지 않는다.** Object Storage 범위는 §13의 실측 기반 결정 기준을 계속 따른다.
 
+#### 실환경에서 확인된 제약 — 2026-10-02 · 10-30
+
+관측 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9다. 아래는 그 사실이 위 원칙에 주는 함의만 적는다. exact 배포 절차는 RD-12(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))가 정한다.
+
+- **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽 구현만 남는다.
+- **deploy role trust의 `sub` 조건은 이 repository 전체(`:*`)다.** AWS가 branch · tag · PR · environment를 구분하지 않으므로, 어떤 ref가 배포 role을 얻을 수 있는지는 GitHub workflow의 trigger · 조건이 제한해야 한다. `pull_request`를 배포 경로로 쓰지 않는다는 위 원칙이 이 제한의 일부다.
+- **SSM Run Command(`AWS-RunShellScript`)는 `/bin/sh`로 실행되고 마지막 명령의 exit code만 결과가 된다.** 중간 명령이 실패해도 `Success`가 될 수 있으므로, Run Command `Success`를 배포 성공으로 읽지 않는다. 배포 절차는 실패를 끝까지 전파해야 하고, 성공 판정은 §19의 health · smoke 검증이 한다.
+- **IMDSv2 필수 + hop limit 1이다.** bridge network의 container는 EC2 instance role 자격증명에 닿지 않는다. Parameter Store 조회 같은 role 권한 작업은 host의 배포 script가 하고 container에는 결과 파일만 넘긴다(§4-1 경로와 같다).
+- **두 role 모두 `PowerUserAccess`가 붙어 있지만 최종 권한 상한은 카테캠 SCP · guardrail이다.** 정책 이름으로 사용 가능 서비스를 추론하지 않고, role로 직접 하는 확인은 OIDC 검증 workflow와 첫 배포에서 한다.
+- **공인 IPv4는 EC2를 시작할 때마다 바뀐다**(Elastic IP 없음). 배포 · smoke가 고정 IP를 전제하지 않는다. public endpoint 조건은 §2-2.
+
 #### 현재 구현 범위
 
-이번 결정은 **운영 기준 문서화만 수행**한다.
+2026-10-30 `develop` 기준, 이 절의 결정은 **운영 기준 문서화까지만 반영**돼 있다. RT-14 Decision Gate는 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 진행 중이다.
 
-현재 단계에서는 다음을 하지 않는다.
+아직 하지 않은 것(`develop` · AWS 설정 기준):
 
 - `AWS_ACCOUNT_ID` repository Variable 등록
-- OIDC 검증 workflow 추가
-- 실제 deployment workflow 추가
-- SSM 배포 명령 구현
+- OIDC 검증 workflow
+- 실제 deployment workflow
+- SSM 배포 명령 · EC2 배포 script
 - Security Group / IAM / EC2 설정 변경
 - S3/ECR 등 배포 artifact 전달 방식 확정
 
-향후 API/Worker composition root와 Docker/Compose 배포 단위가 준비된 뒤 다음 순서로 구현한다.
+API/Worker composition root와 local Docker/Compose 배포 단위는 준비됐다(§3). 남은 순서:
 
 ```text
 1. AWS_ACCOUNT_ID Variable 등록
@@ -127,7 +151,8 @@ GitHub Actions
 
 원칙:
 
-- **Elastic IP는 현재 필수 자원이 아니다.** EC2 stop/start 이후에도 유지되어야 하는 public endpoint가 실제 요구일 때 도입한다.
+- **Elastic IP는 현재 필수 자원이 아니다.** EC2 stop/start 이후에도 유지되어야 하는 public endpoint가 실제 요구일 때 도입한다. Elastic IP는 카테캠 계정에서 기본 차단이므로 도입은 운영진 요청 경로를 거친다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4, RD-14a). 그 전까지 공인 IPv4는 시작할 때마다 바뀐다.
+- 현재 Compose는 api를 `127.0.0.1:<port>`에만 publish한다. 2026-10-02 관측 시 Security Group inbound rule은 0개였다. 외부 공개는 이 두 경계를 함께 바꾸는 RD-14 결정이다.
 - 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 현재 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다.
 - 도메인 자동 갱신에 token 같은 비밀값이 필요한 공급자를 선택하면 해당 값은 repository에 커밋하지 않고 secret으로 관리한다.
 - 외부 공개 endpoint에서 실제 사용자 데이터나 인증정보가 오가는 경우 **HTTPS를 pre-deploy 조건으로 검토**한다.
@@ -163,30 +188,34 @@ GitHub Actions
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것 — 2026-10-02 (`9c204ee` 기준)
+### 현재 develop에서 확인된 것 — 2026-10-30 (`4876e646` 기준)
 
-- domain module 구현 및 Mock integration
+Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-implementation-plan.md) §6 · [Implementation Log](./runtime-implementation-log.md)가 소유한다. 로컬 구성 절차는 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다.
+
 - Python 3.12 정렬 (§5)
-- CI: repo-wide pytest · Recording 합성 media smoke · boundary / contract fixture 검사 (§19)
-- `JobExecution` in-memory lifecycle
-- `recording` 실제 ffmpeg AnalysisSource materialization · 다중 원본 Timeline
-- `search` 실제 Elice ML API 호출 경로
-- case 동기 real 경로 — Search·Fine·Readout을 같은 프로세스에서 직접 호출하며 Runtime queue를 거치지 않는다
-- `api/`, `worker/` 책임 README
+- MySQL Runtime persistence · DB Queue — `job_execution` claim · lease/heartbeat fencing · STALE sweep · 자동 retry · 협력적 중단 (RT-03 ~ RT-06)
+- usage ledger · Final UsageRecord persistence · reconciliation (RT-07)
+- api composition root — FastAPI · case 생성/조회/command · `/health/live` · `/health/ready` · source upload · frame · DerivedAsset read (RT-08 · RT-11)
+- worker composition root — Search · IncidentClip · Readout · export handler 등록, 기본 Worker에 production Readout(PaddleOCR) 연결 (RT-10 · #468)
+- recording MySQL persistence · durable source publish (REC-1 · RT-11(a))
+- staging · temp cleanup (RT-12(a)) · DB 집계 query와 structured log event catalog (RT-12(b))
+- local Docker / Compose — 단일 image · migrate one-shot · api · worker · mysql · secret file mount · B-O1 log rotation (RT-13(a))
+- local MySQL logical backup / restore 도구 (RT-13(b))
+- CI: MySQL gate · 배포 image media/OCR acceptance · boundary/contract · web (§19)
 
 ### 아직 없는 것
 
-- 실제 api composition root
-- 실제 worker composition root
-- MySQL Runtime persistence / DB Queue
-- Final UsageRecord persistence
-- Runtime Docker / Compose
-- 배포 workflow
-- live/ready endpoint
-- 운영 log pipeline · structured logging
-- queue/lease/heartbeat metric
+- EC2 배포 — OIDC 검증 workflow · deployment workflow · SSM 배포 script · artifact 전달(RT-14, RD-12b ~ e)
+- post-deploy health · 외부 smoke 연결(RD-12h)
+- production log transport · log retention(RD-13a · RD-11a) — EC2에 CloudWatch Agent 미설치, Log Group 없음
+- production restart policy · health alert(RD-13c) — 현재 Compose에 `restart:` 없음
+- Worker 상태 운영 노출(RD-13d)
+- 지표 정기 기록 · 대시보드(RD-13b) — 집계 query는 있으나 수동 실행이다
+- public endpoint / domain / TLS(RD-14)
+- Ruff · type checker · secret scan(RT-15)
+- P2 Runtime Capacity Smoke — baseline EC2에서 working set · concurrency 실측
 
-따라서 이 문서의 배포/monitoring 절은 **현재 동작 설명이 아니라 구현 목표와 운영 acceptance criteria**다.
+따라서 local runtime 절(§4 · §6 · §9 일부)은 현재 동작을 가리키고, **EC2 배포 · 운영 관측 · capacity 절은 아직 구현 목표와 운영 acceptance criteria**다.
 
 ## 4. Docker / Process 운영
 
@@ -211,7 +240,7 @@ mysql
 - api/worker image는 가능한 같은 dependency/runtime baseline을 사용하고 command만 분리한다.
 - secret은 image나 repository에 bake하지 않는다.
 
-정확한 Dockerfile/Compose service command는 composition root 구현 후 그 entrypoint에 맞춰 닫는다.
+local Dockerfile · Compose는 RT-13(a)에서 닫혔다 — 단일 image, `docker/runtime.py`의 `migrate` · `api` · `worker` · `ready` 진입점, api · worker · migrate 같은 numeric UID(`10001`), MySQL은 named volume. 구성 원문은 [`rt13a-docker-compose.md`](./rt13a-docker-compose.md)와 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다. EC2에서의 image 전달 · restart policy는 RT-14 범위(RD-12b · RD-13c)로 남는다.
 
 ### 4-1. Build-time / Runtime Configuration 경계
 
@@ -246,7 +275,8 @@ SSM Parameter Store SecureString
 - **GitHub Actions는 secret 값을 조회하거나 전달하지 않는다.** OIDC로 deploy role을 얻어 SSM Run Command로 「배포 절차를 실행하라」만 지시한다. Run Command 입력에 평문 secret을 싣지 않는다. 역할은 `deploy.yml`(배포 orchestration) · EC2 배포 script(Parameter Store fetch · 보호 파일 렌더 · migration · Compose 실행) · Compose 파일(secret file mount · 실행 구조)로 나뉜다. exact 단계 · 명령은 RD-12.
 - Compose는 file source secret의 `uid` · `gid` · `mode`를 적용하지 않으므로 **host 파일 권한이 접근 제어**다.
 - **rotation.** Parameter Store 재조회 → host 파일 갱신 → `docker compose up -d --force-recreate api worker`. `docker compose restart`를 rotation 보장 수단으로 쓰지 않는다.
-- **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
+- **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 2026-10-30 SSO 권한으로 `SecureString`(기본 `aws/ssm` key) 생성 → `get-parameters-by-path --with-decryption` → 삭제가 PASS했고, EC2 instance role의 inline Deny에는 SSM이 없었다([`aws-environment.md`](./official-inputs/aws-environment.md) §9). SCP가 이 작업을 막지 않는다는 근거이며, **EC2 role로 직접 하는 조회는 첫 배포에서 확인한다.** 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
+- container는 IMDS를 통해 instance role 자격증명을 얻지 못한다(hop limit 1, §2-1). Parameter Store 조회는 위 경로대로 host 배포 script에서만 한다.
 - secret을 process environment로 넣지 않으므로 `docker inspect` · `/proc/<pid>/environ` · ffmpeg 같은 자식 process에 값이 노출되지 않는다([spike S3](./experiments/pre-implementation-spike-2026-10-03.md)).
 
 ### 4-2. API ↔ Worker 공유 저장 경계
@@ -264,15 +294,19 @@ SSM Parameter Store SecureString
 
 팀 문서 기준 목표는 Python 3.12 + root `pyproject.toml` + `uv.lock`이다.
 
-2026-09-19 당시 있던 불일치(pyproject `>=3.10` · uv.lock `>=3.13` · boundary CI 3.11)는 커밋 `10cfca4`(2026-09-20)에서 해소됐다. 2026-10-02 `develop` 기준 실제 값:
+2026-09-19 당시 있던 불일치(pyproject `>=3.10` · uv.lock `>=3.13` · boundary CI 3.11)는 커밋 `10cfca4`(2026-09-20)에서 해소됐다. 2026-10-30 `develop` 기준 실제 값:
 
 ```text
 root pyproject.toml   requires-python >=3.12
 uv.lock               requires-python >=3.12
 .python-version       3.12
-python-tests CI       Python 3.12 · uv sync --locked
+Dockerfile            python:3.12-slim-bookworm (digest 고정) · uv 0.11.15 (digest 고정)
+                      uv sync --locked --no-dev --extra eval-gemini --extra readout-paddle
+python-tests CI       Python 3.12 · uv 0.11.15 · uv sync --locked
 boundary-check CI     Python 3.12
 ```
+
+media · OCR toolchain(FFmpeg 8.1 · PaddleOCR 버전 · 모델)의 고정값은 [로컬 Runtime 실행환경](./local-runtime-environment.md) §1이 정리한다.
 
 구현 체크:
 
@@ -391,7 +425,12 @@ EC2 기본 CPU/RAM/disk 지표
 - local disk working set이 얼마나 되는가
 - OOM/swap/CPU saturation이 반복되는가
 
-현재 DB Runtime이 없으므로 queue/lease/heartbeat 지표는 아직 실제 운영 metric이 아니다.
+2026-10-30 현재:
+
+- queue wait · oldest queued · execution duration · STALE · retry · cancel 지표는 RT-12(b)의 **DB 집계 query**와 structured log event catalog로 local · integration에서 볼 수 있다([`rt12b-observability.md`](./rt12b-observability.md)). 정기 기록 · 대시보드는 없다(RD-13b).
+- 배포된 stack이 없으므로 이 값은 아직 실제 운영 metric이 아니다.
+- AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다.
+- EC2 기본 CloudWatch metric(CPU 등)은 콘솔에서 볼 수 있다. RAM · disk · process RSS는 Agent 없이 기본 metric에 없다.
 
 ### Monitoring Stack 확장 기준
 
@@ -426,7 +465,9 @@ Runtime Tech Spec의 endpoint 의미:
 - 외부 AI provider 하나의 장애를 API 전체 liveness failure로 취급하지 않음
 - Worker는 Runtime DB의 heartbeat/lease 기반으로 별도 관측 가능
 
-`/health/ready` probe 제한 시간은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.10(B-H1 ~ B-H3)이다. 실제 restart/alert threshold는 deployment 환경이 생긴 뒤 정한다.
+`/health/ready` probe 제한 시간은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.10(B-H1 ~ B-H3)이다. 실제 restart/alert threshold는 deployment 환경이 생긴 뒤 정한다(RD-13c).
+
+현재 구현(2026-10-30): 두 endpoint는 api composition root에 있다(RT-08(a)). local Compose의 api healthcheck는 `docker/runtime.py ready`로 readiness를 확인하고, mysql은 `mysqladmin ping`을 쓴다. Compose에 `restart:` 정책은 없다. Worker는 HTTP health가 없고 heartbeat는 Runtime DB와 log로만 보인다 — 운영 노출 방식은 RD-13d다.
 
 ## 10. Storage Lifecycle
 
@@ -459,7 +500,7 @@ provider delete API 호출의 구현 경계는 provider adapter가 소유한다.
 
 ## 11. Local Disk Guardrail
 
-50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다.
+50GB local disk를 장시간 원본의 영구 저장소로 설계하지 않는다. root filesystem은 약 48G로 보이고 Docker 설치 전 사용량은 2.6G였다(2026-10-30, [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 디스크 확장 · 추가 볼륨은 직접 할 수 없고 카테캠 요청 경로만 있다(§2). 공지는 디스크 부족의 가장 흔한 원인으로 Docker build cache 누적을 들었다(같은 문서 §7).
 
 동시에 local disk는 다음이 경쟁한다.
 
@@ -485,7 +526,7 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
-> **현재 구현 사실 (2026-10-02 `develop` 기준):** recording은 준비된 AnalysisSource · IncidentClip bytes를 `RecordingService` 인스턴스 메모리에 보관하고 `close()` 때 해제한다. 임시 디렉터리는 ffmpeg encode 동안만 쓴다. 따라서 지금 이 working set은 local disk보다 **Worker process memory(RSS)**에 먼저 쌓인다. 위 목록의 AnalysisSource · IncidentClip 항목은 저장 위치가 바뀔 경우의 후보로 읽는다. service 수명과 AnalysisSource 저장·재사용 범위는 아직 결정되지 않았다(RD-09). API ↔ Worker가 공유하는 원본 · 파생물 bytes와 persistent ref의 위치는 §4-2(RD-17)가 정한다 — 그 파일도 이 disk의 working set에 들어간다.
+> **현재 구현 사실 (2026-10-30 `develop` `4876e646` 기준):** local Compose에서 api · worker는 named volume `/media` 하나를 공유한다 — `source`(durable publish 원본), `staging`(API upload), `api-temp` · `worker-temp`(각 process의 미디어 작업 temp). Recording이 준비한 미디어 bytes(AnalysisSource 등)는 recording 소유 MySQL table의 `LONGBLOB` 행에 저장되므로 **MySQL data volume의 working set**에 들어간다. 이 저장의 지원 길이 · byte 한도 운영값은 Recording Owner 측정 뒤 확정할 미결이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), [로컬 Runtime 실행환경](./local-runtime-environment.md) §5 · §9). 그 밖에 Docker image(PaddleOCR 모델 cache 포함)와 container log(B-O1, container당 ~100 MB)가 같은 disk를 쓴다. AnalysisSource 재사용 범위는 RD-09, process 사이 bytes · ref 경계는 §4-2(RD-17)다.
 
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
@@ -651,6 +692,8 @@ Worker 수를 늘리기 전에 DB claim/lease가 concurrent-safe함을 integrati
 
 ## 18. 카테캠 자원 확장 기준
 
+아래 자원은 모두 카테캠 계정에서 직접 만들거나 바꿀 수 없고 운영진 요청 후 검토된다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4). 요청에는 팀 · 필요 항목 · 이유 · 예상 사용 기간이 들어가므로, 이 절의 조건을 뒷받침하는 관측값을 함께 남긴다. 지원 가능한 상한(최대 사양 · GPU · EBS 상한 · 예산)은 아직 확인되지 않았다(같은 문서 §8). 제공 기간은 2026-11-20까지다.
+
 ### EC2 사양 상향
 
 같은 workload에서 반복적으로:
@@ -690,9 +733,9 @@ API server 2대 이상 또는 load balancing/health routing이 필요할 때.
 
 ## 19. CI Quality Gate — 현재와 목표
 
-### 현재 실제 CI — 2026-10-02 (`develop` `9c204ee` 기준)
+### 현재 실제 CI — 2026-10-30 (`develop` `4876e646` 기준)
 
-두 workflow 모두 trigger는 같다.
+세 workflow 모두 trigger는 같다. `web-tests`만 path filter(`apps/web/**` · `data/**` · `package*.json` · 자기 파일)가 있다.
 
 ```text
 pull_request → develop/main
@@ -700,14 +743,22 @@ push         → develop
 workflow_dispatch
 ```
 
-`.github/workflows/python-tests.yml`:
+`.github/workflows/python-tests.yml` — job 3개. 분할 근거는 [`ci-test-partitions.md`](./ci-test-partitions.md)다.
 
 ```text
-ubuntu-24.04 · Python 3.12 · uv 0.11.15
-uv sync --locked --extra test --extra eval-gemini   (PaddleOCR 제외)
-ffmpeg 설치 · -fps_mode / libx264 지원 검사
-Recording 합성 media smoke 1건 — skip 금지 assert
-python -m pytest -q                                 (testpaths = tests, offline fixture)
+regression   ubuntu-24.04 · Python 3.12 · uv 0.11.15
+             uv sync --locked --extra test --extra eval-gemini   (PaddleOCR 제외)
+             pytest collection partition 완전성 · 서로소 검사
+             ffmpeg 설치 · -fps_mode / libx264 지원 검사
+             Recording 합성 media smoke 1건 — skip 금지 assert
+             배포 image docker build → media / OCR preflight · acceptance
+               (readout startup 실패 3종 · MySQL 붙은 Readout process acceptance 포함)
+             Non-MySQL regression
+
+mysql        MySQL 8.4 service · DAESINGO_REQUIRE_MYSQL=1
+             canonical MySQL suite 1회 · strict JSON/JUnit · 실제 report mutation
+
+test         regression · mysql 결과를 모두 요구하는 집계 job (기존 check 이름 유지)
 ```
 
 `.github/workflows/boundary-check.yml`:
@@ -718,6 +769,13 @@ python scripts/check_boundaries.py
 python scripts/check_contract_fixtures.py
 ```
 
+`.github/workflows/web-tests.yml`:
+
+```text
+Node 24 · npm ci
+apps/web: tsc -b · npm run test:web
+```
+
 Gate별 현재 상태:
 
 | Gate | 상태 |
@@ -725,16 +783,19 @@ Gate별 현재 상태:
 | Python 3.12 | 있음 |
 | `uv sync --locked` | 있음 (`python-tests`) |
 | boundary / contract fixture | 있음 (`boundary-check`) |
-| repo-wide pytest (offline) | 있음 (`python-tests`). Mock Pack fixture 검증은 이 pytest 안의 module별 테스트로 돈다. 별도 Mock validator job은 없다 |
-| Recording media smoke | 있음 (`python-tests`) |
+| repo-wide pytest (offline) | 있음 (`python-tests` regression · mysql로 분할). Mock Pack fixture 검증은 module별 테스트로 돈다. 별도 Mock validator job은 없다 |
+| Recording media smoke | 있음 (`python-tests` regression) |
+| MySQL Runtime integration | 있음 (`python-tests` mysql) |
+| 배포 image build · media/OCR acceptance | 있음 (`python-tests` regression). image를 registry에 push하지 않는다 |
+| web 타입 검사 · 테스트 | 있음 (`web-tests`) |
 | Ruff | 없음 (CI step · 설정 파일 없음) |
-| type checker | 없음 |
+| Python type checker | 없음 |
 | secret scan | 없음 |
-| MySQL Runtime integration | 없음 (대상 Runtime persistence 미구현) |
-| deployment workflow | 없음 |
+| Compose smoke · backup/restore smoke | CI 밖. `scripts/smoke_compose.py` · `scripts/smoke_backup_restore.py`를 로컬에서 실행 |
+| deployment workflow | 없음 (RT-14) |
 | 외부 AI 실제 호출 | CI 밖 (의도) |
 
-따라서 현재 CI가 Ruff/type/secret scan/MySQL integration/배포까지 수행한다고 쓰지 않는다.
+따라서 현재 CI가 Ruff/type/secret scan/배포까지 수행한다고 쓰지 않는다.
 
 ### 목표 확장 순서
 
@@ -743,17 +804,20 @@ Gate별 현재 상태:
 3. ~~boundary / contract fixture~~ — 완료
 4. ~~repo-wide pytest~~ — 완료
 5. Mock validator — 현재는 pytest 안에서 부분 충족. 별도 gate 필요 여부는 미정
-6. root Ruff
-7. 선택한 repo-wide type checker
-8. pre-deploy secret scan
+6. ~~MySQL Runtime integration~~ — 완료
+7. root Ruff
+8. 선택한 repo-wide type checker
+9. pre-deploy secret scan
+
+7 ~ 9는 RT-15가 Runtime 소유 경로부터 건다([Implementation Plan](./runtime-implementation-plan.md) §6 RT-15).
 
 외부 AI 실제 호출은 일반 PR CI의 deterministic gate에서 분리한다.
 
 ### Deployment workflow 분리 원칙
 
-현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사)과 `python-tests.yml`(pytest · media smoke)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다.
+현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사) · `python-tests.yml`(pytest · MySQL · 배포 image acceptance) · `web-tests.yml`(web)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다. `python-tests`가 배포 image를 build해 검증하더라도 AWS에 접근하지 않는다.
 
-향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
+향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. deploy role trust가 repository 전체를 허용하므로(§2-1) 배포 role을 얻는 ref 제한은 이 workflow의 trigger · 조건이 맡는다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
 
 ### Release 식별 · 배포 검증 · Rollback 원칙
 
@@ -838,11 +902,13 @@ Prometheus/Grafana/OpenTelemetry full stack
 
 ## 23. Open Ops Decisions
 
-- [ ] Dockerfile / Compose exact service command
-- [ ] MySQL volume/backup baseline
-- [ ] production log transport
+- [x] local Dockerfile / Compose exact service command — RT-13(a), §4
+- [ ] production restart policy — RD-13c
+- [x] local MySQL volume · logical backup/restore 도구 — RT-13(a) · RT-13(b)
+- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §9)
+- [ ] production log transport — RD-13a (CloudWatch Agent 미설치 · Log Group 없음)
 - [ ] log retention
-- [ ] health alert/restart threshold
+- [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료, 운영 threshold는 RD-13c
 - [ ] disk working-set guardrail
 - [ ] Object Storage 사용 범위
 - [ ] Managed asset retention
@@ -851,11 +917,11 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업
+- [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)). AWS 쪽 OIDC provider · deploy role은 provision돼 있다(§2-1)
 - [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command
-- [ ] post-deploy health/readiness + external smoke test 연결
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1)
 - [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
 - [ ] secret scan gate
 
@@ -865,6 +931,10 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 
 - [Architecture v4](../architecture/module-architecture.md)
 - [Logical ERD](../architecture/erd-draft.md)
+- [카테캠 지원 AWS 환경](./official-inputs/aws-environment.md) — 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot
+- [로컬 Runtime/Ops·Recording 실행환경](./local-runtime-environment.md)
+- [RT-13(a) Docker / Compose](./rt13a-docker-compose.md) · [RT-13(b) backup / restore](./rt13b-backup-restore.md)
+- [CI test partitions](./ci-test-partitions.md)
 - [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [Runtime Tech Spec](./runtime-tech-spec.md)
 - [AnalysisSource / Derived Asset Contract](../architecture/contracts/contract-analysis-source-derived.md)
