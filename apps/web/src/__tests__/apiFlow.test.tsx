@@ -358,6 +358,25 @@ it('단서 정리 중 중단(EDIT_HINT만 실림)에서도 [설명 고치기]로
 // #449 — 입력형 command. 결과 화면에서 번호판 · 시각을 직접 넣으면 새 값만 보낸다(case-command §12)
 const RESULT = SNAPSHOTS.map((s) => s.view).find((v) => v.package && v.evidence)!
 
+it.each([
+  ['2026-10-29T23:30:00Z', '2026-10-30T08:30:00+09:00'],
+  ['2026-12-31T23:30:00-05:00', '2027-01-01T13:30:00+09:00'],
+  ['2026-08-24T18:05:12+09:00', '2026-08-24T18:05:12+09:00'],
+])('발생시각 %s를 수정 없이 저장해도 같은 순간을 보낸다', async (original, expected) => {
+  const current = structuredClone(RESULT)
+  current.evidence!.event_time_display.value = original
+  current.package!.report_fields.occurred_at = original
+  const { m, api } = setup({ get: current })
+  m.sendCommand.mockResolvedValue(ok({ ...current, case_rev: current.case_rev + 1 }))
+  const { findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('시각 수정하기'))
+  fireEvent.click(getByText('저장'))
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalledWith('c1', current.case_rev, {
+    kind: 'EDIT_EVENT_TIME', payload: { value: expected },
+  }))
+  expect(Date.parse(expected)).toBe(Date.parse(original))
+})
+
 it('「번호판 직접 입력」은 번호판 확인 화면의 입력칸을 바로 열고, 저장하면 MANUAL_PLATE_INPUT을 보낸다', async () => {
   const abstained = { ...RESULT, notices: [{ ...notice('evidence.plate_abstained', ['MANUAL_PLATE_INPUT']), message_key: 'notice.plate_abstained' }] }
   const { m, api } = setup({ get: abstained })
