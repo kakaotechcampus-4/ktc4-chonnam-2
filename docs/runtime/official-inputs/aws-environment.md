@@ -3,11 +3,11 @@
 **Status:** Input — 카테캠 운영진 공지 요약  
 **Source:** 카테캠 운영진 AWS 실습환경 공지 (비공개) + 팀 AWS 실환경 조회  
 **Notice date:** 확인 필요  
-**Captured:** 2026-10-02 · 재검증 2026-10-30(§9)  
+**Captured:** 2026-10-02 · 재검증 2026-10-30(§9 · §10)  
 **Maintainer:** common/runtime — 김준영  
 **Router:** [Official Inputs](./README.md)
 
-> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이고, §9는 2026-10-30 RT-14(#450) 전에 권한 · SSM 경로를 다시 확인한 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
+> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이다. §9는 2026-10-30 사용자가 브라우저 SSM에서 확인해 RT-14 구현자에게 전달한 관측이고, §10은 같은 날 RT-14(#450) 전에 권한 · SSM 경로를 다시 확인한 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
 >
 > 이 문서는 외부 입력이며 결정이 아니다. Runtime 배포·용량 결정은 [`ops-spec.md`](../ops-spec.md)에 기록하고 이 문서를 근거로 가리킨다.
 
@@ -192,7 +192,31 @@ local terminal
 - ALB / Elastic IP 지원 조건
 - 팀별 AWS 예산 또는 비용 상한
 
-## 9. 2026-10-30 RT-14 전 재검증 snapshot
+## 9. 2026-10-30 KST 사용자 관측
+
+아래는 사용자가 브라우저 SSM에서 직접 확인해 전달한 **당시 관측값**이다.
+이번 RT-14 구현자는 AWS 계정/SSM/EC2에 접속하지 않았다. §8의 2026-10-02 조사와
+합쳐 최신 IAM/CloudWatch/리소스 상태를 확인한 것으로 표현하지 않는다.
+
+| 항목 | 사용자 전달 관측 |
+| --- | --- |
+| 사용자 / architecture | `ubuntu` / `x86_64` |
+| RAM / swap | 총 약3.7GiB, 당시 available 약3.1GiB / swap0 |
+| root filesystem | 약48GB, 당시 여유 약45GB |
+| Docker | 29.9.2, systemd service active |
+| socket 권한 | 일반 사용자 접근 거부, sudo 조회 가능 |
+| 최종 Docker inventory | Compose project/image/container/volume/build cache 각각0 |
+
+앞선 조회에 잠시 보였던 `sp1-*` busybox container는 후속 조회에서 모두 없어졌다.
+소유자/생성 목적/정리 주체는 확인되지 않았다. 빈 Docker inventory는 host에 다른
+서비스가 없다는 증거도, Paddle Worker+API+MySQL 동시 운영 용량의 증거도 아니다.
+
+추가로 받은 캠퍼스 도메인 가이드는 EIP를 즉시 사용할 수 있다고 안내하지만 AWS 사용
+가이드는 기본 차단·요청 필요라고 안내한다. 실제 권한 또는 인프라 담당 확인 전까지
+EIP 허용은 **미확정**으로 둔다. EIP 무료나 기존 공인 IPv4 비용 면제로 해석하지 않는다.
+첨부 가이드 원문/내부 접속 정보는 공개 저장소에 복사하지 않는다.
+
+## 10. 2026-10-30 RT-14 전 재검증 snapshot
 
 RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) Decision Gate 전에 §8이 「확인 대상」으로 남긴 권한과 SSM 실행 경로를 다시 확인했다. §8과 같은 SSO profile(`StudentDeveloper`)을 썼다. 조회 외에 **생성 → 즉시 삭제 시도**와 **EC2 시작 → SSM Run Command → 중지**를 했고, 시도 뒤 남은 리소스가 없음을 다시 조회해 확인했다. §8과 마찬가지로 당일 관측값이며 결정이 아니다. 식별값은 싣지 않는다.
 

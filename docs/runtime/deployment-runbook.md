@@ -4,6 +4,11 @@
 **Owner:** common/runtime — 김준영  
 **Ops policy:** [Runtime Ops Spec](./ops-spec.md)
 
+**2026-10-30 RT-14 준비 구현:** 아래 기존 acceptance 기준과 함께
+[RT-14 실행 절차](./rt14-deployment.md)를 사용한다. 새 도구의 정확한 입력·명령·실패
+복구 경계는 그 문서에 있다. **IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
+실제 AWS 인증/배포 증거와 Owner의 미결 정책 승인은 아직 없다.
+
 > 이 문서는 배포 담당자의 기억에 의존하지 않고 같은 절차를 반복·검증·복구할 수 있도록 하는 실행 체크리스트다. 현재 deployment stack의 exact command가 아직 구현되지 않은 항목은 임의로 채우지 않으며, 실제 Docker/Compose/OIDC/SSM 구현 PR에서 명령을 확정한다.
 
 ## 1. 배포 완료의 정의
