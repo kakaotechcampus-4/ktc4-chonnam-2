@@ -45,6 +45,8 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     @asynccontextmanager
     async def lifespan(app):
         try:
+            # compose_api always supplies the cleanup lifecycle.
+            assert composition.cleanup is not None
             await run_in_threadpool(composition.cleanup.start)
             yield
         finally:

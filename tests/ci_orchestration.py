@@ -75,7 +75,7 @@ def collect_partitions(root, output, env=None):
 
 
 def required_success(needs):
-    return (isinstance(needs, dict) and set(needs) == {'regression', 'mysql'}
+    return (isinstance(needs, dict) and set(needs) == {'quality', 'regression', 'mysql'}
             and all(isinstance(value, dict) and value.get('result') == 'success'
                     for value in needs.values()))
 

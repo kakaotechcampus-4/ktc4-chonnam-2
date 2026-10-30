@@ -29,7 +29,7 @@ def read_executions(conn: Connection, job_ids: Iterable[str]) -> list[dict[str, 
         job_execution.c.job_id.in_(ids),
     ).order_by(job_execution.c.job_id, job_execution.c.attempt)
     rows = conn.execute(statement).mappings().all()
-    refs = {}
+    refs: dict[str, list[str]] = {}
     if rows:
         for execution, identity in conn.execute(select(
             usage_record.c.execution_ref, usage_record.c.usage_id

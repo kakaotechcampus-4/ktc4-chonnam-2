@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import TextIO
+from typing import Literal, TextIO
 
 from daesingo.common.config import ConfigError, RuntimeConfig, runtime_keys
 from daesingo.common.env import load_env_file
@@ -34,7 +34,7 @@ class Startup:
     logger: logging.Logger = field(repr=False)
 
 
-def bootstrap_service(service: str, *, env_file: str, revision: str,
+def bootstrap_service(service: Literal["api", "worker"], *, env_file: str, revision: str,
                       module_factories: Sequence[ModuleFactory] = (),
                       stream: TextIO | None = None) -> Startup:
     logger = configure_logging(service, stream=stream)

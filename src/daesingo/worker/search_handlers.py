@@ -144,7 +144,9 @@ def search_registry(
                 source_ref = sources[0].source_ref
                 result = _public_call(lambda: search.verify_visual(source_ref, data.scope.hint,
                     service=service, candidate=data.candidate, event_type=event_type,
-                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)
+                    # Search annotates int, while its arithmetic and the fixed
+                    # Case input support fractional seconds. Preserve the bound.
+                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)  # type: ignore[arg-type]
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result
@@ -152,10 +154,10 @@ def search_registry(
         context.checkpoint()
         run = result.analysis_run
         failed = run.outcome == RunOutcome.FAILED
-        return HandlerResult(status="FAILED" if failed else "SUCCEEDED",
+        return HandlerResult.model_validate(dict(status="FAILED" if failed else "SUCCEEDED",
             failure_kind=failures.failure_kind_for_run(run),
             produced=({"kind": "analysis_run", "ref": run.run_id},),
-            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),))
+            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),)))
 
     kinds = SEARCH_KINDS if service_factory is not None else {"HINT_EXTRACT"}
     return KindRegistry({kind: invoke for kind in kinds})

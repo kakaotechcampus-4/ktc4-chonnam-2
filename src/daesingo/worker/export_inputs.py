@@ -1,4 +1,6 @@
 """Read the append-only export request; never follow mutable current selection."""
+from pydantic import BaseModel
+
 from daesingo.recording.exports import PlateImageRequest, ReportVideoRequest, export_fingerprint
 from daesingo.worker.export_handlers import ExportInput
 
@@ -17,7 +19,8 @@ class ExportInputs:
             if (len(records) != 1 or records[0]["case_id"] != context.case_id
                     or records[0]["kind"] != context.kind):
                 raise ValueError("export job binding mismatch")
-            model = {"REPORT_VIDEO_EXPORT": ReportVideoRequest, "PLATE_IMAGE_EXPORT": PlateImageRequest}.get(context.kind)
+            models: dict[str, type[BaseModel]] = {"REPORT_VIDEO_EXPORT": ReportVideoRequest, "PLATE_IMAGE_EXPORT": PlateImageRequest}
+            model = models.get(context.kind)
             if model is None:
                 raise ValueError("unsupported export kind")
             request = model.model_validate(store.export_input(context.case_id, context.job_id)).model_dump(mode="json")

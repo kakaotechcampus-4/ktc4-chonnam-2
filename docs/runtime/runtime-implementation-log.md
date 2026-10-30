@@ -51,7 +51,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | STALE 관측 · fatal hook 비노출 | DB STALE ended_at − 마지막 heartbeat_at · post-commit 측정/누락 fallback 없음 · fatal cleanup 후 process 경계에서 원문 비노출·고정 코드 1 | RT-06(a) 후속 P2 · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `sweep.py` · `worker/__main__.py` |
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
 | PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
-| type checker 도구 (Plan RT-15) | pending | RT-15 | — |
+| type checker 도구 (Plan RT-15) | mypy 2.4.1 · Runtime 네 경로 · 미타입 본문 검사 · Linux/Windows 분기 검사. Ruff 0.17.3과 quality extra/uv.lock 고정 | RT-15(a) · PR/merge SHA pending | [RT-15(a) Notes](./rt15a-runtime-quality.md) |
 | produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | opt-in local smoke; 일반 PR에는 기존 pytest의 구조/negative-control 검사. 실제 Docker 결과와 구분 | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
@@ -1987,7 +1987,28 @@ Status: NOT_STARTED · Issue: — (RT-13 착수 때 생성) · Audit: C
 
 ## RT-15 — CI 품질 gate · Runtime import 경계
 
-Status: NOT_STARTED · Issue: #301 · Audit: C
+Status: IN_PROGRESS · Issue: #301 · Audit: C
+
+2026-10-30 RT-15(a) 로컬 구현. Ruff·mypy와 required quality job을 추가했다.
+상세 구현·선택 근거·예외·검증은 [RT-15(a) Implementation Notes](./rt15a-runtime-quality.md).
+PR/merge SHA는 pending이다. RT-15(b) import 경계 확장과 (c) secret scan은 미착수이며
+RT-15 전체 완료나 원격 CI 성공을 뜻하지 않는다. 아래 기존 빈 항목은 초기 이력으로 보존한다.
+
+로컬 검증: Ruff·mypy 양 플랫폼 각 87 files 0 error, focused 747 passed,
+boundary/Contract/actionlint/lock PASS. Fresh read-only review에서 quality-only NumPy 누락을
+찾아 실제 의존성으로 수정했고 같은 reviewer가 격리 환경의 PASS를 직접 재확인했다.
+추가 quality/CI 회귀 55 passed. 미해결 blocking 지적 없음. 선택 OCR·Search annotation
+타입 경계와 미실행 원격 MySQL/Docker 결과는 Notes의 잔여 위험으로 남긴다.
+
+2026-10-30 PR #483 regression 후속: PR head `1e38d560`에서 deploy Worker 등록 node의
+실패를 로컬 재현했다. RT-15(a)의 새 `RecordingSettings` nominal 검사는 타입 목적의
+불필요한 동작 변경으로 판단해 검증된 factory 경계의 타입 전용 cast로 대체했다.
+기존 세 필수값·registry 검증과 성공 fixture는 보존했다. 해당 node RED→GREEN,
+누락 설정 3건 포함 deploy/Worker/Recording 설정 회귀 361 passed, quality 양 플랫폼
+87 files 0 error, boundary/Contract/diff 검사 PASS. Fresh read-only delta reviewer도 이전
+HEAD의 실패를 독립 재현하고 관련 65 tests 및 quality 양 플랫폼을 직접 통과 확인했다.
+blocking 지적 없음. PR 변경/commit/push/merge는 하지 않는다. 상세 및 이번 delta 파일은
+위 Notes의 PR #483 후속 절이다.
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |

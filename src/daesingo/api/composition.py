@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from contextlib import ExitStack
 from pathlib import Path
 from threading import Lock
+from _thread import LockType
 from time import monotonic
 
 from sqlalchemy.engine import Engine
@@ -20,7 +21,7 @@ from daesingo.common.jobs.produced import ProducedReader
 from daesingo.common.jobs.cancel import request_cancel
 from daesingo.common.jobs.repository import enqueue
 from daesingo.common.logging import bind_context, safe_correlation
-from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.cleanup import CleanupService, configured_cleanup
 from daesingo.common.storage.media import MediaRoot
 from daesingo.recording import (RecordingService, RecordingFacts, ConnectionRecordingRepository,
                                FfprobeMediaProbe, RecordingCapabilityError, ContractRef)
@@ -43,7 +44,7 @@ class _PreparedMediaProbe:
     No new Recording capability, schema, taxonomy or cache lifetime is introduced.
     """
     def __init__(self, path):
-        self._failure = None
+        self._failure: Exception | None = None
         try:
             self._path = Path(path).resolve(strict=True)
             self._identity = _file_identity(self._path)
@@ -74,9 +75,9 @@ class ApiComposition:
     ready_engine: Engine
     readiness: Readiness
     recording: RecordingService | None = field(default=None, repr=False, compare=False)
-    cleanup: object = field(default=None, repr=False, compare=False)
+    cleanup: CleanupService | None = field(default=None, repr=False, compare=False)
     media: object = field(default=None, repr=False, compare=False)
-    _lock: object = field(default_factory=Lock, repr=False, compare=False)
+    _lock: LockType = field(default_factory=Lock, repr=False, compare=False)
     _closed: bool = field(default=False, init=False, repr=False, compare=False)
     cleanup_failed: bool = field(default=False, init=False, repr=False, compare=False)
 
