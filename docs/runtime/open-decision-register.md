@@ -791,7 +791,7 @@ Mock/합성 데이터 중심 개발에서는 구현을 막지 않는다. 실제 
 
 ## RD-11 — Ops retention / cleanup
 
-**Status:** OPEN — 11a의 container local rotation · 11b temp 회수 나이만 Provisional v0.1(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9 · §2.13). 11a log 보관 기간 · transport와 11c는 그대로 열림\
+**Status:** OPEN — 11a의 container local rotation · 11b temp 회수 나이만 Provisional v0.1(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9 · §2.13). 11a log 보관 기간 · transport와 11c는 그대로 열림. 2026-10-30 RT-14 Gate에서 11a 운영 log 보관(host dual cache 20m × 5 · CloudWatch 30일)을 승인했다(#450 · [RT-14 배포 설계](rt14-deployment-design.md) §1). 11c는 그대로 열림\
 **Owner:** common/runtime — 김준영\
 **Consult:** recording — 정철원(temp media 정리 · RemoteCopy cleanup 실행)\
 **Source candidates:** D-12b
@@ -851,7 +851,9 @@ Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 미결.
 CI amd64/ECR digest/SSM controller/명시적 migration·rollback candidate를 제공하되
 RD-12b~f/h 승인·실제 AWS acceptance를 대신하지 않는다. 현재 OPEN 상태 유지.
 
-**Status:** OPEN\
+2026-10-30 RT-14 Decision Gate에서 RD-12b~f/h 값을 Runtime/Ops Owner가 승인했다. 승인값과 Gate 상태는 [RT-14 배포 설계](rt14-deployment-design.md) §1이다. 남은 구현 변경(§16)과 AWS acceptance가 끝날 때까지 CLOSED로 바꾸지 않는다.
+
+**Status:** OPEN — Gate 승인(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §1) · 구현 변경 · AWS acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** —\
 **Source candidates:** D-13
@@ -920,7 +922,9 @@ composition root가 생긴 뒤의 slice다(workflow §7 「Deployment automation
 candidate로 제공하고 실제 Worker process/8종 등록 snapshot을 추가한다. restart 선택,
 retention/buffer/용량, 실제 전송/경보/idle heartbeat 정책과 운영 acceptance는 OPEN 유지.
 
-**Status:** OPEN\
+2026-10-30 RT-14 Decision Gate에서 RD-13a · c(restart) · d를 승인했다. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다. 승인값은 [RT-14 배포 설계](rt14-deployment-design.md) §1이다.
+
+**Status:** OPEN — Gate 승인(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §1) · 구현 변경 · AWS acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** —\
 **Source candidates:** D-14
@@ -978,7 +982,12 @@ Ops §8 1차 관측 수단은 「structured stdout → AWS log collection + Runt
 
 ## RD-14 — Public endpoint / domain / TLS
 
-**Status:** OPEN — trigger 대기\
+2026-10-30: 카테캠 최종 산출물 제출 안내(2026-10-22)가 「접속해 핵심 기능을 끝까지 써 볼 수 있는
+배포 서비스 URL」을 요구해 **trigger가 발생했다**(Ops §2-2 · §2-3). 추천 공개 모델(same-origin ·
+HTTPS · Caddy 1순위 · SG 80/443만 · DDNS 우선 · EIP 필수 아님)은
+[RT-14 배포 설계](rt14-deployment-design.md) §13이고, 승인은 #450에서 한다.
+
+**Status:** OPEN — triggered(2026-10-22 제출 요건) · 공개 모델 Gate 승인(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §13) · 구현 pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** web — 신유민 · PM\
 **Source candidates:** D-15
@@ -989,7 +998,7 @@ Ops §8 1차 관측 수단은 「structured stdout → AWS log collection + Runt
 
 ### Why this is open
 
-Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는 선택 기준까지만 정했다. 요구 자체가 아직 발생하지 않았다.
+Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는 선택 기준까지만 정했다. 2026-10-22 제출 요건으로 요구가 발생했고, 추천 공개 모델의 승인과 구현이 남았다.
 
 ### Already fixed / Do not reopen
 
@@ -1010,7 +1019,8 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Current evidence
 
-- Spec: Ops §2-2 · §18 Elastic IP · §23
+- Spec: Ops §2-2 · §2-3 · §18 Elastic IP(capacity가 아님을 남긴 경계) · §23
+- Design: [RT-14 배포 설계](rt14-deployment-design.md) §10.2 · §13
 - Official input: [`aws-environment.md`](./official-inputs/aws-environment.md) §2 · 외부 공개 절
 
 ### Implementation impact
@@ -1019,7 +1029,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Timing candidate
 
-**D** (요구 발생 시)
+**D** (요구 발생 시) — 2026-10-22 발생. 제출 마감(11/11) 전
 
 ### Follow-up needs
 
@@ -1028,7 +1038,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 - **Pre-implementation spike:** 아니오
 - **Experiment:** 아니오
 - **ADR 후보:** 아니오
-- **Trigger:** 외부 공개 demo 또는 OAuth 요구가 실제로 생기면 이 group을 연다(Ops §2-2 순서) *(이전 RD-14a)*
+- **Trigger:** 외부 공개 demo 또는 OAuth 요구가 실제로 생기면 이 group을 연다(Ops §2-2 순서) *(이전 RD-14a)* — 2026-10-22 최종 제출 요건으로 발생
 
 ---
 
@@ -1549,6 +1559,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-05 | workflow §6 — [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) 작성. 「§5 → §6 Baseline 입력」에 v0.1 ID 열 추가, RD-04 · RD-11 Status에 Provisional 적용 표시. RD-04 · RD-11은 OPEN 유지(최종값 P2), 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
 | 2026-10-06 | RD-04 Status — RD-04b case 확인 완료 표시(PR #276 review). 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
 | 2026-10-06 | workflow §7 — 「Implementation Gap」 아래에 [Runtime Implementation Plan](./runtime-implementation-plan.md) Task · Gate 배치 pointer 추가. 결정 · Timing · State · Owner 변경 없음, 새 RD 없음 | PR #304 |
+| 2026-10-30 | RT-14 Decision Gate 승인(#450) — RD-12b~f/h · RD-13a · c · d · RD-11a 운영 log 보관 · RD-14 공개 모델. 승인값은 [RT-14 배포 설계](rt14-deployment-design.md) §1. RD-14는 trigger 발생으로 표시. 구현 변경 · AWS acceptance가 남아 CLOSED로 바꾸지 않음. 새 RD 없음 | PR #480 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 
