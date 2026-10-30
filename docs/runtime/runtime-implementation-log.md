@@ -52,9 +52,9 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
 | PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
 | type checker 도구 (Plan RT-15) | mypy 2.4.1 · Runtime 네 경로 · 미타입 본문 검사 · Linux/Windows 분기 검사. Ruff 0.17.3과 quality extra/uv.lock 고정 | RT-15(a) · PR #483 · `e3fec617dc75b2cf21141a110bd8e81e816970b8` | [RT-15(a) Notes](./rt15a-runtime-quality.md) |
-| Runtime Python import 검사 | 기존 문자열/Contract 검사를 보존하고 AST로 common 6경로 → domain 7개, domain → api/worker 검사. alias·상대 import·정확한 namespace 비교 | RT-15(b) · 미커밋 · PR/merge SHA pending | [RT-15(b) Notes](./rt15b-import-boundaries.md) · ownership §6 |
+| Runtime Python import 검사 | 기존 문자열/Contract 검사를 보존하고 AST로 common 6경로 → domain 7개, domain → api/worker 검사. alias·상대 import·정확한 namespace 비교 | RT-15(b) · PR #484 · `6b116e4a1317dc8e5c13e34b05481107bc00ca21` | [RT-15(b) Notes](./rt15b-import-boundaries.md) · ownership §6 |
 | produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
-| secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
+| secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | Gitleaks 8.30.1·archive/실행 파일/rules SHA-256 고정, 현재 Git 파일+전체 HEAD ancestry. develop 수동/배포 선행, A01/A02 정확한 지문 예외, 일반 PR 편입 보류(cold CI 비용 미측정) | RT-15(c) · 미커밋 · 원격 CI pending | [RT-15(c) Notes](./rt15c-secret-scan.md) |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | opt-in local smoke; 일반 PR에는 기존 pytest의 구조/negative-control 검사. 실제 Docker 결과와 구분 | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
 | local image/migration/media/secret 경계 | single image · 10001:10001 · `/media` named volume · read-only host env · 기존 stdin migration CLI · success dependency | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
 | API factory · readiness · safe telemetry | dedicated NullPool + deadline/in-flight 공유 · metadata-only mount · bounded daemon events · workers=1 CLI | RT-08(a) · PR #366 | 아래 RT-08 · `api/{app,composition,errors,health,storage,events,__main__}.py` |
@@ -4331,3 +4331,144 @@ fresh read-only reviewer는 구현 이력을 상속하지 않고 schema compatib
 전용 offline container 부재, structure volume/network0, 기존 image4개 보존·shared prune0.
 임시 pytest/render/helper는 task 범위로 정리하고 작은 실패 log/최종 요약만 ignored scratch에 보존한다.
 commit/staging/push/PR/외부 댓글/Notion/dispatch/AWS 변경·실제 deployment 없이 종료한다.
+
+
+## 2026-10-30 — RT-15(c) secret scan 로컬 구현
+
+**Status: IN_PROGRESS · Refs #301 · Related #287 · PR/merge SHA pending**
+
+시작 branch `codex/rt15c-secret-scan`, HEAD `6b116e4a1317dc8e5c13e34b05481107bc00ca21`,
+working tree/index clean. 최신 `git fetch --no-tags origin develop` 뒤 ahead/behind0/0,
+nonshallow HEAD ancestry1,519개였다. PR #483/#484 merged와 merge SHA를 GitHub에서 확인했다.
+Issue #301 본문과 댓글 전체(0개)를 읽었다. 위 (a)/(b)의 당시 pending 기록은 역사로 보존하며
+최신 색인만 #484 merge로 갱신한다. 상세/전체 파일 manifest는 [RT-15(c) Notes](./rt15c-secret-scan.md).
+
+- **구현 결과:** 공식 Gitleaks8.30.1 archive/실행 파일/rules SHA-256을 고정한다. 현재 Git 관리
+  파일과 nonignored 새 파일은 사본 없는 hardlink view로, Git 이력은 전체 HEAD ancestry로
+  검사한다. root/side/merge-resolution을 포함하고 shallow/partial/graft는 실패한다.
+  비밀값/경로/주변 코드/URL을 출력하지 않고 verified rule ID/건수만 공유한다. custom report
+  projection과 capture로 원본 보고서를 생성하지 않는다. suppression/baseline/추가 allowlist0.
+- **Plan 대비 변경:** Plan이 위임한 도구/배치 선택이다. 일반 PR 편입은 보류하고 별도 develop
+  수동/재사용 workflow 및 RT-14 publish/remote 선행 dependency로 배치했다. 기존 quality/
+  regression/mysql/test와 boundary/Contract 실행 의미를 유지한다. 운영진 3workflow/CODEOWNERS
+  변경은 없다. app/DB/도메인 코드를 바꾸지 않는다.
+- **새 implementation detail:** install만 공식 GitHub download를 허용하며 scan은 offline이다.
+  tool hash 재검사, ignore/env/config bypass 차단, --text로 Git -diff 속성 누락 방지,
+  child error 진단/누락 보고서/exit 불일치도 fail closed. wrapper exit0 clean/1 findings/2 error.
+  Linux/Windows x64, Python>=3.12. scanner 권한은 contents:read만, PR/fork context는 checkout 전
+  거부하고 OIDC/secrets는 전달하지 않는다. 전체 fetch의 cold 비용은 원격 CI pending이다.
+- **Contract / Decision / Baseline 영향:** 모두 없음. Runtime/Ops Owner 김준영 deferred review:
+  탐지 비공개 분류와 향후 일반 PR gate 재검토. 전역 privacy/security review를 대체하지 않는다.
+- **실측:** initial snapshot2,314파일 generic-api-key2occurrences/12.98초, HEAD history1,519commits
+  generic-api-key24occurrences/69.38초. 두 범위 중복을 고유 credential 수로 합산하지 않는다.
+  실제 credential 여부/오탐률은 원문을 열어 분류하지 않아 확인할 수 없다. 승인 예외로 숨기지
+  않는다. 현재 pre-deploy gate는 탐지로 실패한다. 담당자의 비공개 분류와 실제 credential이면
+  소유자의 폐기/회전 판단이 필요하다. 이 작업은 사용/검증/회전/이력 변경을 하지 않는다.
+- **작성자 검증:** test-first script부재 RED와 clone setup오류를 구분했다. hardlink sandbox차단도
+  성공 처리하지 않았고 sandbox 밖 합성 검증에서 정상 동작을 확인했다. 실제 binary 합성14controls
+  PASS(41.910초): 검출→제거GREEN, safe EXAMPLE, tracked ignored/untracked, text media 확장자,
+  root삭제/side/merge-only/-diff이력, shallow/partial 거부, 무결성/도구오류, child stdout/stderr와
+  보고서/민감 파일명 sentinel 비노출. -diff 누락 RED→--text GREEN이며 Windows CRLF 테스트 보정도
+  기록했다. offline unit12PASS, quality/CI/deploy 경계 포함 focused94PASS(23.80초).
+- **미완료:** 최종 boundary/Contract/quality/actionlint/diff 결과와 fresh read-only review는 Notes의
+  최종 기록으로 보완한다. 이번 diff의 원격 CI·배포 성공은 확인하지 않았다. 전체 local pytest/
+  MySQL/Docker build는 반복하지 않는다. #301 전체는 IN_PROGRESS이며 Issue를 닫지 않는다.
+
+새 worktree/checkout 전환/staging/commit/push/PR/외부 댓글/merge/AWS/provider/배포/
+RT14_EXECUTION_ENABLED 변경을 수행하지 않았다. 소유 임시 자원만 정리하고 scratch/RAW/
+credential/원본 보고서는 PR 대상에서 제외한다.
+
+
+### RT-15(c) 후속 검증·fresh review delta
+
+작성자 boundary CLI/Contract 구조62·JSON26·의미104 PASS, import fixture258PASS(88.58초),
+Runtime Ruff PASS·mypy Linux/win32 각각87파일 오류0, actionlint1.7.12 변경2workflow PASS,
+새 script/test Ruff와 diff check PASS. 최초 boundary 출력은 Windows cp949 em dash 오류였고
+UTF-8 환경으로 재실행해 PASS였다. --text/--no-renames 이후 history도1,519commits/
+generic-api-key24occurrences/76.41초/exit1로 동일했다. 실제 탐지 분류는 여전히 미완료다.
+
+Fresh read-only reviewer는 unit12PASS와 당시 합성14controls PASS를 직접 실행했다.
+local Git log.showSignature/gpg.program이 외부 verifier를 실행하는 P2를 재현해 지적했다.
+작성자 marker control RED 후 --no-show-signature로 차단했다. 별도 배포 ancestry 경합도
+--require-ancestor + reusable require_target/target_revision input으로 검사 HEAD에 결박했다.
+빈/잘못된/미포함 target은 실패한다. 해당 control RED→GREEN1PASS(8.138초) 확인.
+Windows/Linux 공식 검증 archive를 응답 대역으로 공급한 실제 installer extraction/hash 재확인도
+두 플랫폼 PASS이며 Linux 프로세스 실행/원격 CI 성공 증거와 구분한다.
+최종16controls·동일 reviewer delta·임시 자원 정리는 Notes 최종 기록으로 이어서 보완한다.
+
+
+### RT-15(c) 최종 로컬 검증
+
+작성자 실제 고정 바이너리 최종 합성16controls PASS(59.792초), wrapper unit12PASS(0.59초),
+fresh reviewer 직접 기존14controls PASS(65.989초)와 추가2delta PASS(7.345초)를 확인했다.
+후자 둘은 별도 실행이며 한 번의 전체16 실행으로 합산하지 않는다. 동일 reviewer의 delta
+검토에서 서명 verifier P2 해결·남은 코드/보안 지적 없음. 문서 완료 표기의 로컬 pending
+불일치도 수정했다. 최종 snapshot2,315파일/generic-api-key2occurrences/8.47초/exit1.
+마지막 전체 history76.41초 기록은 --no-show-signature 추가 전이며 그 flag의 비실행 보장은
+합성/reviewer 직접 증거다. 실제 탐지 분류/해결과 Linux 원격 CI는 여전히 미완료다.
+#301 전체 IN_PROGRESS 유지, 선행 (a)/(b) 병합/원격 성공과 이번 (c) 로컬 결과를 구분한다.
+
+
+동일 reviewer 최종 문서 delta도 추가 지적 없음(문서 검토만 수행).
+작성자 소유 .codex-scratch/rt15c의 tool/archive/합성 저장소와 실패한 sandbox TEMP 한 경로를
+절대 경로 검증 후 정리했다. reviewer 소유 scratch도 reviewer가 정리했다. scanner view잔존0.
+다른 작업 scratch/기존 변경은 보존했다. 최종9파일은 미커밋/미스테이징이며 index 비어 있음.
+로컬 구현 검증 완료와 미분류 탐지/원격 CI pending을 구분하고 RT-15 전체 IN_PROGRESS를 유지한다.
+
+
+## 2026-10-31 — RT-15(c) A01/A02 최소 예외·비노출 절차 보강
+
+**IN_PROGRESS · Refs #301 · Related #287 · 미커밋/미스테이징 · 원격 CI pending**
+
+이전 분류 요청의 원문/주변 코드/경로 누출은 임시 조사 helper의 성공 JSON dump에서
+발생했다. 제품 counts-only 실행기의 원본 출력 사고가 아니다. 실행 후 파일 변경이 진행 중인
+프로세스에도 적용된 것으로 잘못 간주한 채 진단 출력을 읽었고 성공 경로의 출력 schema
+검증이 빠졌다. 확인된 탐지 항목이 정상 코드와 합성 fixture였다는 판단과 비노출 절차가
+위반됐다는 사실을 구분한다. 원문을 재인용하거나 이미 발생한 출력을 지웠다고 주장하지 않는다.
+자세한 원인·출력 경로·차단·검증은 [RT-15(c) Notes 후속 절](./rt15c-secret-scan.md)에 있다.
+
+- A01(current1/history11)은 정상 계측식, A02(current1/history13)는 명시적 합성 privacy fixture.
+  두 정확한 rule/위치SHA/도구좌표/값SHA/전체patternSHA만 template 내부에서 허용한다.
+  원문·실제 위치는 예외 파일/문서/보고서에 쓰지 않는다. 전체 rule/path/history 제외나 baseline은 없다.
+- 새 파일 scripts/secret_scan_exceptions.json은 hash-only 지문2개다. 스캔 자체는 모든 Git 대상과
+  전체 HEAD ancestry를 유지한다. raw값은 scanner 메모리에서 비교하고 stdout은 V2 marker,
+  rule ID/익명 예외 ID/건수만 반환한다. 누락·손상·미지 ID·exit/report 불일치·도구오류는 실패한다.
+- 오류 경계: CLI 인자/ScanError 공개코드 제한, child stdout/stderr/보고서 오류 원문 차단,
+  controls 테스트/framework/setup 모두 캡처. 성공도 숫자 요약만 허용하고 빈 suite/skip/
+  expected-failure/Python -O는 필수 실행 성공으로 바꾸지 않는다. 제품 잠재 오류 경로 보강을
+  실제 조사용 helper 사고의 원인과 혼동하지 않는다.
+- 예외 비활성화 통제: current2/history24, exit1,77.84초. 적용 후 current0/예외2,
+  history1,519commits0/예외24, exit0,77.09초. A0112/A0214는 발생횟수이며 고유credential 수가 아니다.
+  실제 위치 복제 1method/2subtest PASS13.228초: 같은 위치·길이의 새 generic credential은
+  두 항목 모두 current/history에서 exit1이며 rule 전체 무력화가 아님을 확인했다.
+- RED: 신규7FAIL/13PASS → controls 인자·최적화2FAIL/20PASS → reviewer setup2FAIL/22PASS →
+  부적합 성공 payload1FAIL/24PASS → 빈 suite/skip/xfail3FAIL/25PASS. 모두 합성 입력이다.
+  최종 단위28PASS3.77초, 관련 focused107PASS44.22초(추가 필수 실행3분기는 최종28에서 재검증).
+- 같은 fresh reviewer는 원문/실제 탐지 경로를 보지 않고 합성 경로·값·지문으로 exact/mutation/
+  CRLF/출력 비노출/이력 실패 전파를 직접 확인했다. 발견한 P2 두 건은 수정 후 단위28PASS3.66초와
+  코드 delta로 재확인했고 남은 기능·보안 지적 없음. actual 분류/재스캔은 작성자 증거로 구분한다.
+
+Contract/Accepted Decision/Baseline 의미·제품 앱/DB·운영진 workflow/CODEOWNERS 변경 없음.
+기존 quality/regression/mysql/test와 배포 needs 의미를 보존한다. 일반 PR 편입 보류는 유지하며
+배포 전 필수 검사는 새 finding/오류/실패/취소/skip을 통과시키지 않는다. 원격 Linux CI와
+#301 전체 완료는 아직 미확인이다. 최종 gate/검사/정리 결과는 이어지는 마감 기록을 따른다.
+
+
+### RT-15(c) 예외/비노출 보강 마감 검증
+
+최종 합성17controls PASS(실패/오류0), 단위29PASS1.75초(현재 예외-only 후 history 오류 전파
+추가 회귀 포함). 관련 focused107과 중복 합산하지 않는다. boundary/Contract62·26·104 PASS,
+import258PASS96.70초, Runtime Ruff PASS·mypy Linux/win32 각각87파일 오류0, 새 scripts/test Ruff,
+actionlint1.7.12 변경2workflow exit0. 원래 shell두분기6경우의 exit0/1/2 전파와 needs의
+failure/cancel/skip 차단을 확인했고 실제 deployment/AWS/provider 호출은 없다.
+같은 reviewer는 단위28PASS3.66초 + 추가 orchestration1PASS0.31초를 별도 직접 실행했고
+코드/문서 delta 잔여 지적 없음. actual 분류/스캔과 reviewer 합성 검증의 구분을 유지한다.
+소유 scratch/tool/hash-only 준비 metadata/helper는 PR에서 제외하고 검증 후 정리한다.
+전체10파일(이번보완8 + 기존workflow2 유지)은 미커밋/미스테이징 상태로 남긴다.
+
+
+마감 후 current2,316files 재검사0finding/예외2/exit0(8.47초), 전체 history는 기존
+1,519commits0finding/예외24/exit0(77.09초) 기록 유지. 소유 rt15c-exceptions tool/helper/
+hash-only metadata·임시 자원 정리, root scanner view0, 다른 scratch 보존. 최종10파일 공백/
+diff PASS, index 비어 있음, branch/HEAD 동일. 이번 요청도 미커밋/미스테이징이며 remote CI/
+실제 배포 완료로 해석하지 않는다. #301은 IN_PROGRESS, Issue close/외부 게시 없음.

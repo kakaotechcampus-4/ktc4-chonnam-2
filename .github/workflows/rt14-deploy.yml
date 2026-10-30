@@ -16,7 +16,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  secret-scan:
+    if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop' && vars.RT14_EXECUTION_ENABLED == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/secret-scan.yml
+    with:
+      require_target: ${{ inputs.operation != 'publish' }}
+      target_revision: ${{ vars.RT14_REVISION }}
+
   publish:
+    needs: [secret-scan]
     if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop' && inputs.operation == 'publish' && vars.RT14_EXECUTION_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -47,6 +57,7 @@ jobs:
         run: python3 deploy/aws.py publish
 
   remote:
+    needs: [secret-scan]
     if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop' && inputs.operation != 'publish' && vars.RT14_EXECUTION_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
