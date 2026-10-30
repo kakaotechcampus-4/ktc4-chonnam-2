@@ -88,7 +88,7 @@ RD-13c는 restart와 alert의 상태가 달라 두 줄로 나눴다. RD-14 안�
 
 ### 3.2 #479 준비 구현 — `develop` `7bab60bc`
 
-AWS에서 실행한 적 없는 준비 구현이다. 실행 절차 원문은 [RT-14 실행 절차](./rt14-deployment.md)다.
+이 설계 작성 시점에는 AWS에서 실행한 적 없는 준비 구현이었다. 이후 2026-10-30 OIDC 인증과 publish(deploy role ECR push)는 실제 Actions에서 성공했고, remote SSM deploy와 EC2 쪽 acceptance는 아직 실행하지 않았다. 현재 실행 상태는 [Ops Spec](./ops-spec.md) §2-1 「현재 구현 범위」다. 실행 절차 원문은 [RT-14 실행 절차](./rt14-deployment.md)다.
 
 | 사실 | 위치 | 설계 영향 |
 | --- | --- | --- |
