@@ -4,7 +4,7 @@
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
 **AWS 환경 입력:** [`official-inputs/aws-environment.md`](./official-inputs/aws-environment.md) — 카테캠 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot  
-**Last synced:** 2026-10-30 — `develop` `4876e646`  
+**Last synced:** 2026-10-30 — `develop` `7bab60bc`  
 **Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
 **Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
 **Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
@@ -71,7 +71,7 @@ API와 Worker는 같은 image를 쓰는 modular monolith의 두 composition root
 | S3 · ECR · CloudWatch · SSM Parameter Store | 사용 가능 | 10-30 SSO 권한으로 ECR · Log Group · SecureString 생성 → 삭제가 PASS. 사용 여부는 RD-12 · RD-13 결정이 정한다 |
 | 서버 중지 · 시작 · 재부팅 · Security Group 편집 | 사용 가능 | 22번을 `0.0.0.0/0`으로 열면 보안 모니터링에 탐지된다 |
 
-2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 대신고 stack은 아직 배포되지 않았다.
+2026-10-30 host 상태: EC2는 10-02 이후 중지 상태였고, RT-14 스파이크를 위해 Docker Engine · Compose plugin을 설치했다(버전 · 설치 방식은 [`aws-environment.md`](./official-inputs/aws-environment.md) §9). 대신고 stack은 아직 배포되지 않았다. 같은 날 RT-14 준비 구현(#479)이 `develop`에 병합됐지만 AWS에서 실행하지 않았다(§2-1 「현재 구현 범위」).
 
 ### 2-1. AWS 배포 인증 · 서버 접속 기준
 
@@ -92,10 +92,10 @@ GitHub Actions
 
 - GitHub Actions에서 AWS에 접근할 때 **장기 Access Key를 만들거나 GitHub Secrets에 저장하지 않는다.**
 - 카테캠에서 제공하는 배포 역할 **`ktc-github-deploy`** 를 사용한다. 별도 IAM 역할 생성은 기본 경로가 아니다.
-- AWS 계정 ID는 향후 배포 workflow를 구현할 때 repository **Variable `AWS_ACCOUNT_ID`** 로 등록한다. 계정 ID 자체를 Secret으로 취급하지 않는다.
-- AWS 인증이 필요한 workflow에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `aws-actions/configure-aws-credentials@v4`로 `ap-northeast-2`의 배포 역할을 assume한다.
+- AWS 계정 ID는 repository **Variable `AWS_ACCOUNT_ID`** 로 공급한다. 계정 ID 자체를 Secret으로 취급하지 않는다.
+- AWS 인증이 필요한 job에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `ap-northeast-2`의 배포 역할을 assume한다. 준비 구현은 credential action 대신 `deploy/aws.py`가 OIDC token → STS 교환을 직접 하고, 임시 자격증명을 `GITHUB_ENV` · output · artifact에 남기지 않는다([RT-14 실행 절차](./rt14-deployment.md) §5).
 - 현재의 boundary/contract 등 **비-AWS CI에는 OIDC 권한을 추가하지 않는다.** 배포 workflow와 일반 PR CI를 분리한다.
-- 배포 트리거는 `push` 또는 `workflow_dispatch`를 기본 후보로 둔다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
+- 배포 트리거는 `workflow_dispatch`다. 준비 구현의 두 workflow는 이 repository · repository ID · `develop` ref일 때만 job을 실행하고, 실제 원격 작업은 `RT14_EXECUTION_ENABLED` Variable이 `true`일 때만 돈다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
 - EC2 접속과 원격 명령 실행은 **SSM Session Manager / SSM Run Command**를 사용한다. GitHub Actions 배포를 위해 SSH private key를 저장하거나 보안그룹의 22번 포트를 인터넷에 개방하지 않는다.
 - Object Storage를 도입해 S3 경유 배포를 선택하는 경우, GitHub Actions의 업로드 주체(`ktc-github-deploy`)와 EC2의 다운로드 주체(`ktc-ec2-ssm-role`)를 별도 권한 주체로 취급한다.
 - 이 결정은 **S3 사용 자체를 확정하지 않는다.** Object Storage 범위는 §13의 실측 기반 결정 기준을 계속 따른다.
@@ -104,7 +104,7 @@ GitHub Actions
 
 관측 원문은 [`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9다. 아래는 그 사실이 위 원칙에 주는 함의만 적는다. exact 배포 절차는 RD-12(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))가 정한다.
 
-- **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽 구현만 남는다.
+- **OIDC provider와 `ktc-github-deploy`는 이미 provision돼 있다.** 별도 IAM 생성 없이 workflow 쪽만 필요하고, 그 준비 구현은 `develop`에 있다. role로 실제 인증한 적은 아직 없다.
 - **deploy role trust의 `sub` 조건은 이 repository 전체(`:*`)다.** AWS가 branch · tag · PR · environment를 구분하지 않으므로, 어떤 ref가 배포 role을 얻을 수 있는지는 GitHub workflow의 trigger · 조건이 제한해야 한다. `pull_request`를 배포 경로로 쓰지 않는다는 위 원칙이 이 제한의 일부다.
 - **SSM Run Command(`AWS-RunShellScript`)는 `/bin/sh`로 실행되고 마지막 명령의 exit code만 결과가 된다.** 중간 명령이 실패해도 `Success`가 될 수 있으므로, Run Command `Success`를 배포 성공으로 읽지 않는다. 배포 절차는 실패를 끝까지 전파해야 하고, 성공 판정은 §19의 health · smoke 검증이 한다.
 - **IMDSv2 필수 + hop limit 1이다.** bridge network의 container는 EC2 instance role 자격증명에 닿지 않는다. Parameter Store 조회 같은 role 권한 작업은 host의 배포 script가 하고 container에는 결과 파일만 넘긴다(§4-1 경로와 같다).
@@ -113,25 +113,30 @@ GitHub Actions
 
 #### 현재 구현 범위
 
-2026-10-30 `develop` 기준, 이 절의 결정은 **운영 기준 문서화까지만 반영**돼 있다. RT-14 Decision Gate는 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 진행 중이다.
+2026-10-30 `develop` `7bab60bc` 기준, 이 절의 결정은 **준비 구현까지 반영**돼 있다(#479, [RT-14 실행 절차](./rt14-deployment.md) — IN_PROGRESS). RT-14 Decision Gate는 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 진행 중이다.
 
-아직 하지 않은 것(`develop` · AWS 설정 기준):
+`develop`에 있는 것 — 실행한 적 없는 준비 구현이다:
 
-- `AWS_ACCOUNT_ID` repository Variable 등록
-- OIDC 검증 workflow
-- 실제 deployment workflow
-- SSM 배포 명령 · EC2 배포 script
+- `.github/workflows/rt14-oidc.yml` — 인증 전용 수동 workflow. 기대 account · role만 비교하고 identity를 출력하지 않는다
+- `.github/workflows/rt14-deploy.yml` — `publish` · `deploy` · `rollback`을 각각 별도 수동 실행. publish는 amd64 image build → media · OCR acceptance → ECR immutable tag push → digest 확인
+- `deploy/aws.py`(OIDC · ECR · SSM 호출) · `deploy/ec2.py`(host controller) · `deploy/configure.py`(Parameter Store → 보호 파일) · `tests/deploy/`
+
+아직 하지 않은 것(AWS 설정 · 실행 기준):
+
+- `AWS_ACCOUNT_ID` · `RT14_*` Variable · Secret 등록, `RT14_EXECUTION_ENABLED` 활성화
+- OIDC 인증 workflow 실제 실행, ECR repository · host controller · 보호 디렉터리 준비
+- 첫 publish · deploy · rollback rehearsal
 - Security Group / IAM / EC2 설정 변경
-- S3/ECR 등 배포 artifact 전달 방식 확정
+- RD-12b ~ f · h Gate 승인 — 준비 구현은 후보이며 승인을 대신하지 않는다
 
-API/Worker composition root와 local Docker/Compose 배포 단위는 준비됐다(§3). 남은 순서:
+남은 순서:
 
 ```text
-1. AWS_ACCOUNT_ID Variable 등록
-2. OIDC 인증 전용 workflow로 aws sts get-caller-identity 검증
-3. SSM 기반 deployment workflow 구현
-4. 필요 시 artifact 전달 방식(S3/ECR 등) 선택
-5. 실제 배포 환경에서 pre-deploy review 수행
+1. RT-14 Gate 승인(#450) · Variable/Secret 등록
+2. rt14-oidc로 role 인증 확인
+3. host 준비(controller · 보호 디렉터리 · volume · config) — 별도 승인 작업
+4. publish → deploy → health · 8종 등록 · smoke 확인
+5. rollback rehearsal · 실제 배포 환경에서 pre-deploy review 수행
 ```
 
 ### 2-2. Public endpoint · Domain · TLS 기준
@@ -188,7 +193,7 @@ API/Worker composition root와 local Docker/Compose 배포 단위는 준비됐�
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것 — 2026-10-30 (`4876e646` 기준)
+### 현재 develop에서 확인된 것 — 2026-10-30 (`7bab60bc` 기준)
 
 Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-implementation-plan.md) §6 · [Implementation Log](./runtime-implementation-log.md)가 소유한다. 로컬 구성 절차는 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다.
 
@@ -201,15 +206,16 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - staging · temp cleanup (RT-12(a)) · DB 집계 query와 structured log event catalog (RT-12(b))
 - local Docker / Compose — 단일 image · migrate one-shot · api · worker · mysql · secret file mount · B-O1 log rotation (RT-13(a))
 - local MySQL logical backup / restore 도구 (RT-13(b))
+- EC2 배포 준비 구현 — OIDC 인증 · ECR publish · SSM host controller · rollback 도구와 Worker 8종 등록 marker (RT-14 #479, §2-1). AWS에서 실행하지 않았다
 - CI: MySQL gate · 배포 image media/OCR acceptance · boundary/contract · web (§19)
 
 ### 아직 없는 것
 
-- EC2 배포 — OIDC 검증 workflow · deployment workflow · SSM 배포 script · artifact 전달(RT-14, RD-12b ~ e)
-- post-deploy health · 외부 smoke 연결(RD-12h)
-- production log transport · log retention(RD-13a · RD-11a) — EC2에 CloudWatch Agent 미설치, Log Group 없음
-- production restart policy · health alert(RD-13c) — 현재 Compose에 `restart:` 없음
-- Worker 상태 운영 노출(RD-13d)
+- EC2 실제 배포 — Gate 승인 · AWS 입력 등록 · 첫 publish/deploy · rollback rehearsal(RT-14, RD-12b ~ f)
+- 배포 후 검증의 실제 실행(RD-12h). 준비 구현의 smoke는 host 내부 loopback이고, 외부 경로 smoke는 RD-14에 달려 있다
+- production log transport · log retention(RD-13a · RD-11a) — 준비 구현은 `awslogs` + dual local cache 후보만 있다. EC2에 Log Group 없음
+- production restart policy · health alert(RD-13c) — 준비 구현은 `no` · `unless-stopped` 중 승인값만 받고 기본값을 두지 않는다. local Compose에는 `restart:` 없음
+- Worker 상태 운영 노출(RD-13d) — 8종 등록 marker는 process · 등록 증거이며 idle heartbeat가 아니다
 - 지표 정기 기록 · 대시보드(RD-13b) — 집계 query는 있으나 수동 실행이다
 - public endpoint / domain / TLS(RD-14)
 - Ruff · type checker · secret scan(RT-15)
@@ -272,7 +278,7 @@ SSM Parameter Store SecureString
 → DAESINGO_ENV_FILE = mount된 파일 경로
 ```
 
-- **GitHub Actions는 secret 값을 조회하거나 전달하지 않는다.** OIDC로 deploy role을 얻어 SSM Run Command로 「배포 절차를 실행하라」만 지시한다. Run Command 입력에 평문 secret을 싣지 않는다. 역할은 `deploy.yml`(배포 orchestration) · EC2 배포 script(Parameter Store fetch · 보호 파일 렌더 · migration · Compose 실행) · Compose 파일(secret file mount · 실행 구조)로 나뉜다. exact 단계 · 명령은 RD-12.
+- **GitHub Actions는 secret 값을 조회하거나 전달하지 않는다.** OIDC로 deploy role을 얻어 SSM Run Command로 「배포 절차를 실행하라」만 지시한다. Run Command 입력에 평문 secret을 싣지 않는다. 역할은 `rt14-deploy.yml`(배포 orchestration) · host controller `deploy/configure.py`(Parameter Store fetch · 보호 파일 게시) · `deploy/ec2.py`(migration · Compose render · 실행 · 검증) · image 안 Compose 정의(secret file mount · 실행 구조)로 나뉜다. 준비 구현의 exact 단계는 [RT-14 실행 절차](./rt14-deployment.md) §4 · §6이고, 승인은 RD-12.
 - Compose는 file source secret의 `uid` · `gid` · `mode`를 적용하지 않으므로 **host 파일 권한이 접근 제어**다.
 - **rotation.** Parameter Store 재조회 → host 파일 갱신 → `docker compose up -d --force-recreate api worker`. `docker compose restart`를 rotation 보장 수단으로 쓰지 않는다.
 - **배포 전 확인(차단 아님).** 카테캠 guardrail에서 EC2 instance role이 해당 경로에 `ssm:GetParametersByPath`(필요 시 `kms:Decrypt`)를 할 수 있는지 M6 전에 확인한다. 2026-10-30 SSO 권한으로 `SecureString`(기본 `aws/ssm` key) 생성 → `get-parameters-by-path --with-decryption` → 삭제가 PASS했고, EC2 instance role의 inline Deny에는 SSM이 없었다([`aws-environment.md`](./official-inputs/aws-environment.md) §9). SCP가 이 작업을 막지 않는다는 근거이며, **EC2 role로 직접 하는 조회는 첫 배포에서 확인한다.** 불가하면 Session Manager 등으로 host 파일을 수동 배치하고, container 쪽 계약은 그대로다.
@@ -429,7 +435,7 @@ EC2 기본 CPU/RAM/disk 지표
 
 - queue wait · oldest queued · execution duration · STALE · retry · cancel 지표는 RT-12(b)의 **DB 집계 query**와 structured log event catalog로 local · integration에서 볼 수 있다([`rt12b-observability.md`](./rt12b-observability.md)). 정기 기록 · 대시보드는 없다(RD-13b).
 - 배포된 stack이 없으므로 이 값은 아직 실제 운영 metric이 아니다.
-- AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다.
+- AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §9). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다. RT-14 준비 구현은 Docker `awslogs` driver + dual local cache를 승인 대기 후보로 render한다 — 별도 Agent는 필요 없지만 daemon의 instance role 권한과 실제 수신 확인이 남는다([RT-14 실행 절차](./rt14-deployment.md) §1 · §8).
 - EC2 기본 CloudWatch metric(CPU 등)은 콘솔에서 볼 수 있다. RAM · disk · process RSS는 Agent 없이 기본 metric에 없다.
 
 ### Monitoring Stack 확장 기준
@@ -467,7 +473,7 @@ Runtime Tech Spec의 endpoint 의미:
 
 `/health/ready` probe 제한 시간은 [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.10(B-H1 ~ B-H3)이다. 실제 restart/alert threshold는 deployment 환경이 생긴 뒤 정한다(RD-13c).
 
-현재 구현(2026-10-30): 두 endpoint는 api composition root에 있다(RT-08(a)). local Compose의 api healthcheck는 `docker/runtime.py ready`로 readiness를 확인하고, mysql은 `mysqladmin ping`을 쓴다. Compose에 `restart:` 정책은 없다. Worker는 HTTP health가 없고 heartbeat는 Runtime DB와 log로만 보인다 — 운영 노출 방식은 RD-13d다.
+현재 구현(2026-10-30): 두 endpoint는 api composition root에 있다(RT-08(a)). local Compose의 api healthcheck는 `docker/runtime.py ready`로 readiness를 확인하고, mysql은 `mysqladmin ping`을 쓴다. local Compose에 `restart:` 정책은 없다. Worker는 HTTP health가 없고 heartbeat는 Runtime DB와 log로만 보인다 — 운영 노출 방식은 RD-13d다. RT-14 준비 구현은 배포 검증에서 Worker의 실제 process · revision · 8종 handler 등록 marker(`worker/deployment_status.py`)를 확인한다. 이 marker는 idle heartbeat나 handler 성공을 뜻하지 않는다.
 
 ## 10. Storage Lifecycle
 
@@ -526,7 +532,7 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
-> **현재 구현 사실 (2026-10-30 `develop` `4876e646` 기준):** local Compose에서 api · worker는 named volume `/media` 하나를 공유한다 — `source`(durable publish 원본), `staging`(API upload), `api-temp` · `worker-temp`(각 process의 미디어 작업 temp). Recording이 준비한 미디어 bytes(AnalysisSource 등)는 recording 소유 MySQL table의 `LONGBLOB` 행에 저장되므로 **MySQL data volume의 working set**에 들어간다. 이 저장의 지원 길이 · byte 한도 운영값은 Recording Owner 측정 뒤 확정할 미결이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), [로컬 Runtime 실행환경](./local-runtime-environment.md) §5 · §9). 그 밖에 Docker image(PaddleOCR 모델 cache 포함)와 container log(B-O1, container당 ~100 MB)가 같은 disk를 쓴다. AnalysisSource 재사용 범위는 RD-09, process 사이 bytes · ref 경계는 §4-2(RD-17)다.
+> **현재 구현 사실 (2026-10-30 `develop` `7bab60bc` 기준):** local Compose에서 api · worker는 named volume `/media` 하나를 공유한다 — `source`(durable publish 원본), `staging`(API upload), `api-temp` · `worker-temp`(각 process의 미디어 작업 temp). Recording이 준비한 미디어 bytes(AnalysisSource 등)는 recording 소유 MySQL table의 `LONGBLOB` 행에 저장되므로 **MySQL data volume의 working set**에 들어간다. 이 저장의 지원 길이 · byte 한도 운영값은 Recording Owner 측정 뒤 확정할 미결이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), [로컬 Runtime 실행환경](./local-runtime-environment.md) §5 · §9). 그 밖에 Docker image(PaddleOCR 모델 cache 포함)와 container log(B-O1, container당 ~100 MB)가 같은 disk를 쓴다. EC2 배포에서는 rollback을 위해 current · previous known-good image를 지우지 않고 candidate image가 잠시 더해진다([RT-14 실행 절차](./rt14-deployment.md) §8 예산표). AnalysisSource 재사용 범위는 RD-09, process 사이 bytes · ref 경계는 §4-2(RD-17)다.
 
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
@@ -733,9 +739,9 @@ API server 2대 이상 또는 load balancing/health routing이 필요할 때.
 
 ## 19. CI Quality Gate — 현재와 목표
 
-### 현재 실제 CI — 2026-10-30 (`develop` `4876e646` 기준)
+### 현재 실제 CI — 2026-10-30 (`develop` `7bab60bc` 기준)
 
-세 workflow 모두 trigger는 같다. `web-tests`만 path filter(`apps/web/**` · `data/**` · `package*.json` · 자기 파일)가 있다.
+일반 CI 세 workflow의 trigger는 같다. 배포용 `rt14-*` 두 workflow는 수동 실행 전용이며 아래 「Deployment workflow 분리 원칙」에 따로 적는다. `web-tests`만 path filter(`apps/web/**` · `data/**` · `package*.json` · 자기 파일)가 있다.
 
 ```text
 pull_request → develop/main
@@ -792,7 +798,8 @@ Gate별 현재 상태:
 | Python type checker | 없음 |
 | secret scan | 없음 |
 | Compose smoke · backup/restore smoke | CI 밖. `scripts/smoke_compose.py` · `scripts/smoke_backup_restore.py`를 로컬에서 실행 |
-| deployment workflow | 없음 (RT-14) |
+| deployment workflow | 준비 구현 있음 (`rt14-oidc` · `rt14-deploy`, `workflow_dispatch` 전용). 실행 Variable 미등록 · 실행 기록 없음 (RT-14) |
+| 배포 도구 단위 테스트 | 있음 (`tests/deploy/`, `python-tests` regression) |
 | 외부 AI 실제 호출 | CI 밖 (의도) |
 
 따라서 현재 CI가 Ruff/type/secret scan/배포까지 수행한다고 쓰지 않는다.
@@ -817,7 +824,7 @@ Gate별 현재 상태:
 
 현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사) · `python-tests.yml`(pytest · MySQL · 배포 image acceptance) · `web-tests.yml`(web)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다. `python-tests`가 배포 image를 build해 검증하더라도 AWS에 접근하지 않는다.
 
-향후 배포 workflow는 별도 파일로 추가하며, §2-1의 **OIDC + SSM** 기준을 따른다. 먼저 인증 전용 수동 workflow로 AssumeRole 연결만 검증한 뒤 실제 배포 명령을 붙인다. deploy role trust가 repository 전체를 허용하므로(§2-1) 배포 role을 얻는 ref 제한은 이 workflow의 trigger · 조건이 맡는다. 따라서 현재 CI가 배포까지 수행한다고 간주하지 않는다.
+배포 workflow는 별도 파일로 두며 §2-1의 **OIDC + SSM** 기준을 따른다. 준비 구현은 이 원칙대로 인증 전용 `rt14-oidc.yml`과 배포용 `rt14-deploy.yml`을 나눴다. deploy role trust가 repository 전체를 허용하므로(§2-1) 배포 role을 얻는 ref 제한은 workflow 조건(repository · repository ID · `develop` ref · `RT14_EXECUTION_ENABLED`)이 맡는다. 배포 도구는 실행 시 `develop` tip의 push CI(`python-tests` · `boundary-check`) 최신 run 성공을 요구한다([RT-14 실행 절차](./rt14-deployment.md) §5). 실행 기록이 아직 없으므로 현재 CI가 배포까지 수행한다고 간주하지 않는다.
 
 ### Release 식별 · 배포 검증 · Rollback 원칙
 
@@ -906,7 +913,7 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] production restart policy — RD-13c
 - [x] local MySQL volume · logical backup/restore 도구 — RT-13(a) · RT-13(b)
 - [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §9)
-- [ ] production log transport — RD-13a (CloudWatch Agent 미설치 · Log Group 없음)
+- [ ] production log transport — RD-13a (CloudWatch Agent 미설치 · Log Group 없음. 준비 구현의 후보는 `awslogs` + dual local cache)
 - [ ] log retention
 - [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료, 운영 threshold는 RD-13c
 - [ ] disk working-set guardrail
@@ -917,11 +924,11 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow 구현 — 인증/접속 방식은 §2-1로 결정, `AWS_ACCOUNT_ID` Variable 등록 → OIDC 연결 검증 → 실제 SSM 배포 명령은 후속 작업(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)). AWS 쪽 OIDC provider · deploy role은 provision돼 있다(§2-1)
-- [ ] 배포 artifact 전달 방식 필요 여부 및 방식(S3/ECR 등) — §13 기준으로 실측 후 결정
+- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate 승인 · Variable/Secret 등록 · OIDC 실제 인증 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
+- [ ] 배포 artifact 전달 방식 — 준비 구현의 후보는 CI build → ECR immutable tag · digest(RD-12b OPEN)
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
-- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command
-- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1)
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — 준비 구현의 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. 승인(RD-12c · RD-12e)과 rehearsal이 남았다
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지이고, 외부 경로 smoke는 RD-14 뒤다
 - [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
 - [ ] secret scan gate
 
@@ -934,6 +941,7 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [카테캠 지원 AWS 환경](./official-inputs/aws-environment.md) — 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot
 - [로컬 Runtime/Ops·Recording 실행환경](./local-runtime-environment.md)
 - [RT-13(a) Docker / Compose](./rt13a-docker-compose.md) · [RT-13(b) backup / restore](./rt13b-backup-restore.md)
+- [RT-14 실행 절차](./rt14-deployment.md) · [Deployment Runbook](./deployment-runbook.md)
 - [CI test partitions](./ci-test-partitions.md)
 - [ERD ↔ Runtime 정합화 ADR](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
 - [Runtime Tech Spec](./runtime-tech-spec.md)
