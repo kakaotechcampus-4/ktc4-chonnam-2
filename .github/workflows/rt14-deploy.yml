@@ -1,0 +1,72 @@
+name: rt14-deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Approved operation; publish and deployment are separate runs
+        required: true
+        type: choice
+        options: [publish, deploy, rollback]
+
+permissions: {}
+
+concurrency:
+  group: rt14-team-ec2
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop' && inputs.operation == 'publish' && vars.RT14_EXECUTION_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Build Linux amd64 image with shared FFmpeg and Paddle layers
+        run: docker build --platform linux/amd64 --build-arg REVISION="$GITHUB_SHA" --tag daesingo-rt14:verified .
+      - name: Exact image media and offline model acceptance
+        run: |
+          docker run --rm --network none daesingo-rt14:verified python /app/docker/runtime.py media-preflight
+          docker run --rm --network none daesingo-rt14:verified python /app/docker/runtime.py readout-preflight
+          docker run --rm --network none \
+            --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/media_acceptance.py",target=/opt/media-acceptance.py,readonly \
+            daesingo-rt14:verified python /opt/media-acceptance.py
+      - name: Publish verified image (captured registry output; no deployment)
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ vars.RT14_AWS_REGION }}
+          ECR_REPOSITORY: ${{ vars.RT14_ECR_REPOSITORY }}
+          RT14_EXECUTION_ENABLED: ${{ vars.RT14_EXECUTION_ENABLED }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 deploy/aws.py publish
+
+  remote:
+    if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop' && inputs.operation != 'publish' && vars.RT14_EXECUTION_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Run fixed controller and require remote status plus exit code
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ vars.RT14_AWS_REGION }}
+          RT14_EXECUTION_ENABLED: ${{ vars.RT14_EXECUTION_ENABLED }}
+          DEPLOY_INSTANCE_ID: ${{ secrets.RT14_INSTANCE_ID }}
+          DEPLOY_IMAGE: ${{ secrets.RT14_IMAGE }}
+          DEPLOY_REVISION: ${{ vars.RT14_REVISION }}
+          DEPLOY_CONFIG_ID: ${{ vars.RT14_CONFIG_ID }}
+          OPERATION: ${{ inputs.operation }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 deploy/aws.py "$OPERATION"

@@ -297,9 +297,16 @@ DB backup은 media volume 전체 backup을 대신하지 않는다.
 
 ## 8. 필수 8종 handler를 확인하는 현재 수단
 
+2026-10-30 RT-14 준비 도구는 opt-in `DAESINGO_DEPLOYMENT_CHECK=1`에서 실제 Worker가
+OCR 초기화와 registry 조립을 끝낸 뒤 PID/starttime/revision/8종 snapshot을 기록하고
+`docker/runtime.py worker-status`로 확인하는 경계를 추가한다.
+[RT-14 runbook](rt14-deployment.md#6-host-순서와-성공-기준)을 따른다. 이는 별도 idle
+heartbeat/작업 성공 API가 아니며 실제 EC2 acceptance는 pending이다. 아래 진단은 이
+opt-in이 없는 로컬 실행과 기존 문서의 별도 조립 확인 수단으로 유지한다.
+
 필수 목록은 `HINT_EXTRACT`, `COARSE_SEARCH`, `FINE_VERIFY`, `INCIDENT_CLIP_BUILD`,
 `PLATE_READ`, `OVERLAY_TIME_READ`, `REPORT_VIDEO_EXPORT`, `PLATE_IMAGE_EXPORT`다.
-현재 운영 startup 로그/health에는 등록 목록 전용 관측 API가 없다.
+일반 startup 로그/HTTP health에는 등록 목록 전용 관측 API가 없다.
 
 구성 확인은 기존 조립 함수를 별도 진단 프로세스에서 호출하고 테스트에서도 사용하는 내부
 `registry._handlers` snapshot을 읽는 방법이다. 아래는 **현재 파일로 새로 조립한 결과**이며
@@ -332,7 +339,9 @@ PY
 `test_readout_composition.py`가 main/factory/등록 경계를 검증한다. 테스트 대역 결과를 실제 Paddle 성공으로 세지 않는다.
 기존 Compose smoke의 의도적 미등록 test kind 재시도 검사는 8종 등록 acceptance가 아니다.
 #468 실제 OCR acceptance는 두 판독/T1/T2 증거이며 8종 전체의 운영 관측 기능이 아니다.
-등록 목록 startup log/smoke와 배포 차단 조건은 **#450 RD-12h 후속**이며 이번 문서 작업에서 기능을 추가하지 않는다.
+이 진단의 #460 문서 작업에서는 기능을 추가하지 않았다. 이후 #450 준비 구현의
+opt-in process snapshot·배포 차단 조건은 위 RT-14 링크로 구분한다. RD-12h Owner
+승인과 실제 배포 smoke acceptance는 여전히 pending이다.
 
 ## 9. #452 용량·처리시간 제약과 미확정 판단
 

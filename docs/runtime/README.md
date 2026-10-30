@@ -25,6 +25,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
+| [`rt14-deployment.md`](./rt14-deployment.md) | RT-14 준비 도구·보호 입력·CI/ECR/SSM/Compose·rollback 명령, 미결 정책/실계정 acceptance와 증거 경계 (#450) |
 | [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
 | [`provisional-baseline-v0.1.md`](./provisional-baseline-v0.1.md) | workflow §6 산출물 — Worker · polling · lease/heartbeat/STALE · retry · DB · upload · frame · cleanup · health · logging의 **Provisional 시작값의 canonical source**. 다른 문서는 ID(`B-xx`)만 가리킨다 |
 | [`runtime-implementation-plan.md`](./runtime-implementation-plan.md) | workflow §7 산출물 — 현재 구현 gap · critical path · Task/Issue 분해 · Decision Gate 위치 · integration test 배치 · 구현 책임 구조(§12 Single Implementer + Deferred Owner Review). 결정 · 값을 새로 만들지 않는다 |

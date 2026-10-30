@@ -7,9 +7,53 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import urllib.error
 
 from daesingo.common.config import DbSettings
 from daesingo.common.env import load_env_file
+
+
+def deployment_config():
+    from daesingo.common.config import RuntimeConfig
+    from daesingo.recording.factory import RecordingSettings
+    from daesingo.worker.bootstrap import _search_config
+    values = load_env_file(os.environ["DAESINGO_ENV_FILE"])
+    for service in ("api", "worker"):
+        config = RuntimeConfig.from_mapping(service, values)
+        if config.media_root != Path("/media"):
+            raise ValueError("deployment_media_root")
+    if (values.get("DAESINGO_RUNTIME_API_TEMP_ROOT") != "/media/api-temp"
+            or values.get("DAESINGO_RUNTIME_WORKER_TEMP_ROOT") != "/media/worker-temp"):
+        raise ValueError("deployment_temp_roots")
+    settings = RecordingSettings.from_mapping(values)
+    if settings.profile is None or settings.analysis_limits is None or settings.incident_encoding is None:
+        raise ValueError("deployment_recording_incomplete")
+    _search_config(values)
+    from sqlalchemy.engine import make_url
+    url = make_url(values["DAESINGO_RUNTIME_DB_URL"])
+    if url.host != "mysql" or url.database != "daesingo" or url.username != "daesingo":
+        raise ValueError("deployment_database_target")
+    return values, settings
+
+
+def check_packet(maximum, packet, margin):
+    if any(type(v) is not int or v <= 0 for v in (maximum, packet, margin)) or maximum + margin >= packet:
+        raise ValueError("deployment_packet_margin")
+
+
+def deployment_smoke():
+    for name in ("live", "ready"):
+        with urllib.request.urlopen("http://127.0.0.1:8000/health/" + name, timeout=4) as response:
+            if response.status != 200 or json.load(response) != {"status": "ok"}:
+                raise ValueError("deployment_health")
+    # Read-only representative DB-backed Case route. No media or provider call.
+    from uuid import uuid4
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/cases/" + uuid4().hex + "/view", timeout=4):
+            raise ValueError("deployment_smoke_expected_missing_case")
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
 
 
 def verify_media_tools(manifest=Path("/usr/local/share/daesingo/media.json")):
@@ -50,6 +94,28 @@ def main(argv=None):
         if args == ["media-preflight"]:
             return 0
     try:
+        if args == ["deploy-config"]:
+            deployment_config()
+            return 0
+        if len(args) == 2 and args[0] == "deploy-packet":
+            values, settings = deployment_config()
+            from sqlalchemy import create_engine, text
+            engine = create_engine(values["DAESINGO_RUNTIME_DB_URL"], connect_args={"connect_timeout": 5,
+                "read_timeout": 5, "write_timeout": 5})
+            try:
+                with engine.connect() as conn:
+                    packet = conn.scalar(text("SELECT @@SESSION.max_allowed_packet"))
+                check_packet(settings.analysis_limits.max_bytes, packet, int(args[1]))
+            finally:
+                engine.dispose()
+            return 0
+        if args == ["worker-status"]:
+            from daesingo.worker.deployment_status import verify
+            verify(revision=os.environ["DAESINGO_REVISION"])
+            return 0
+        if args == ["deploy-smoke"]:
+            deployment_smoke()
+            return 0
         if args == ["readout-preflight"]:
             from daesingo.worker.readout_runtime import load_production_ocr_engine
             load_production_ocr_engine()

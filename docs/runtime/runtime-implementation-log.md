@@ -4215,3 +4215,43 @@ Intent 분리·8종 구성 진단을 연결했다. encoding 및 용량/길이 �
 
 6파일을 미커밋·미스테이징 상태로 남긴다. HEAD는 시작과 같고 원본 Log bytes prefix를
 유지한다. commit/push/PR/Issue 댓글/Notion 수정은 하지 않았다.
+
+## 2026-10-30 — RT-14 deployment preparation (Refs #450)
+
+**IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
+기존 기록을 대체하지 않는 후속 entry다. 상세는 [RT-14 runbook / Implementation Notes](rt14-deployment.md).
+
+시작 branch `codex/rt14-deployment`, HEAD/fetched origin/develop
+`4876e646171ba9f0195de52d11741f3c39fb51a0`; working tree/index clean.
+Issue #450 본문/전체 댓글, #460/#452 현재 댓글, PR #473–#477 merged 상태를
+읽기 전용으로 확인했다. 첨부4자료는 환경 입력으로 읽고 명령 실행 승인과 구분했다.
+AWS 실계정/role 연결/SSM/agent/registry는 조회하지 않았다.
+
+준비 구현: develop 제한 manual OIDC 인증, amd64 CI image/ECR immutable digest 후보,
+query-only SSM 결과 판정, root host controller, versioned protected config,
+명시적 단일 migration과 dirty journal, 실제 Worker PID/starttime/8종 등록,
+live/ready/read-only Case smoke, atomic known-good과 schema-compatible code rollback.
+DB/media 삭제·downgrade·자동 restore는 없다. 결정 refs/retention/restart/용량 budget과
+#452 운영 profile/byte/length가 비었으면 운영 준비 완료로 처리하지 않는다. RD-12/13/11은 OPEN 유지.
+
+이번 직접 검증: focused **228 PASS** (Windows Python3.12.14, 41.45초).
+source/resolved local/production Compose, boundary, Contract62/26/104, actionlint,
+workflow bash 구문, diff, 첨부 식별 후보 비노출 검사 PASS.
+독립 subprocess lock 경쟁 거부/해제 후 실행 PASS. 기존 Linux image + read-only source에서
+production OCR 초기화/실제 registry8/PID1 marker/cleanup PASS지만 claim loop는 대역이다.
+DB/provider/AWS/서비스 deployment 증거가 아니다. 최초 helper pytest 누락 실패와
+runtime adapter patch 위치 실패는 수정 후 결과와 구분해 Notes에 보존했다.
+
+fresh read-only reviewer는 구현 이력을 상속하지 않고 schema compatibility 덮어쓰기와
+최초 populated-volume 인수 P1을 지적했다. 모두 RED→GREEN으로 수정하고 같은 reviewer가 재확인했다.
+최종 credential 격리/region/Worker cleanup delta를 포함해 독립 focused **228 PASS**
+(29.99초), 잔여 actionable finding 없음. schema.json 권위와 schema_parent는 code rollback으로
+되돌리지 않으며 최초 승인+실제 empty-volume 검사를 요구한다.
+
+새 PR remote CI/새 Dockerfile full build/OIDC/ECR/실EC2 SSM/config/migration/log 수신/
+4GB 동시 용량/rollback/DB+media restore는 pending이다. 전체 local pytest/전체 mandatory MySQL은
+반복하지 않았다. #452 운영값·22개 원본 측정과 Case notice, #445 orphan, #71 retention을
+이 Task에서 완료로 바꾸지 않는다. 전체26파일 manifest와 실행 입력/제공자/복구 경계는 Notes에 있다.
+전용 offline container 부재, structure volume/network0, 기존 image4개 보존·shared prune0.
+임시 pytest/render/helper는 task 범위로 정리하고 작은 실패 log/최종 요약만 ignored scratch에 보존한다.
+commit/staging/push/PR/외부 댓글/Notion/dispatch/AWS 변경·실제 deployment 없이 종료한다.
