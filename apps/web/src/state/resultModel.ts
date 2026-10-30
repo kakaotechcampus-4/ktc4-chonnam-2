@@ -42,9 +42,8 @@ export function reportVideoState(view: CaseView): ReportVideoState {
 
 // 묶음 전에는 package가 없어 영상 ref를 못 받는다. 영상이 만들어졌는지는 이 check 하나로만 안다(#447)
 function videoCheckPassed(view: CaseView): boolean {
-  return (view.requirements_package?.checks ?? []).some(
-    (c) => (c as { code?: string; outcome?: string }).code === 'package.asset.report_video.exists' && (c as { outcome?: string }).outcome === 'PASS',
-  )
+  const checks = (view.requirements_package?.checks ?? []) as { code?: string; outcome?: string }[]
+  return checks.some((c) => c.code === 'package.asset.report_video.exists' && c.outcome === 'PASS')
 }
 
 /** 지금 기준 후보의 id — 결과가 이 후보 것인지 대조하는 데 쓴다 */
