@@ -4,7 +4,7 @@
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
 **AWS 환경 입력:** [`official-inputs/aws-environment.md`](./official-inputs/aws-environment.md) — 카테캠 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot  
-**Last synced:** 2026-10-30 — `develop` `7bab60bc`  
+**Last synced:** 2026-10-30 — `develop` `f208d65f`(#479 · #478 포함)  
 **Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
 **Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
 **Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
