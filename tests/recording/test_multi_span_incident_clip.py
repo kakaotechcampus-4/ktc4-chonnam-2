@@ -134,3 +134,32 @@ def test_multi_identity_requires_same_revision_and_actual_bytes(incident_chain, 
     assert service.get_incident_clip(first.incident_clip_ref) == first
     assert third.byte_size == first.byte_size + 8
     assert not list(work.iterdir())
+
+
+def test_different_actual_time_bases_keep_existing_safe_refusal(tmp_path):
+    from daesingo.recording import RecordingService
+    work = tmp_path / "work"
+    work.mkdir()
+    adapter = LocalIncidentMaterializer(IncidentClipEncoding(48, "veryfast", 23), temp_root=work)
+    with RecordingService(incident_materializer=adapter) as service:
+        rows, paths = [], []
+        for i, rate in enumerate((10, 12)):
+            path = tmp_path / f"source-{i}.mp4"
+            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
+                f"color=c=red:s=64x48:r={rate}:d=2", "-c:v", "libx264", str(path)],
+                check=True, capture_output=True, timeout=30)
+            registered = service.register_local_source(path)
+            rows.append(dict(source_asset_ref=registered.source_asset.source_asset_ref,
+                media_stream_ref=registered.media_streams[0].media_stream_ref,
+                timeline_start_sec=float(i*2), timeline_end_sec=float(i*2+2)))
+            paths.append(path)
+        before = [fingerprint(p) for p in paths]
+        timeline = service.create_relative_timeline_from_placements(rows)
+        resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
+            dict(start_sec=1., end_sec=3.), media_stream_refs=[r["media_stream_ref"] for r in rows])
+        assert resolution.status == "COMPLETE"
+        with pytest.raises(RecordingCapabilityError) as error:
+            service.build_incident_clip(resolution)
+        assert error.value.code == "INCIDENT_CLIP_BUILD_FAILED"
+        assert not service._local_clips and not list(work.iterdir())
+        assert [fingerprint(p) for p in paths] == before

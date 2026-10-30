@@ -37,10 +37,26 @@ def incident_clip_registry(*, load, service_factory=None):
                         raise ValueError("clip source is not owned by case")
                     context.checkpoint()
                     videos.append(ref)
-            if len(videos) != 1:
-                raise ValueError("exactly one Fine VIDEO stream required")
-            resolution = recording.resolve_span(data.timeline_ref, data.requested_range, media_stream_ref=videos[0])
+            selected = data.video_stream_refs
+            if (not videos or not selected or len(set(selected)) != len(selected)
+                    or len(set(videos)) != len(videos) or not set(videos).issubset(selected)):
+                raise ValueError("Fine VIDEO provenance must match explicit Case stream selection")
+            # The public resolver requires the entire revision's selection, even
+            # when Fine pixels and the event use only one placement of a chain.
+            for ref in selected:
+                if ref in videos:
+                    continue
+                stream = recording.get_media_stream(ref)
+                context.checkpoint()
+                if (stream.media_type != "VIDEO" or not recording.owns_asset(data.case_id,
+                        ContractRef(kind="source_asset", ref=stream.source_asset_ref))):
+                    raise ValueError("clip selection is not owned VIDEO")
+                context.checkpoint()
+            resolution = recording.resolve_span(data.timeline_ref, data.requested_range,
+                **({"media_stream_ref": selected[0]} if len(selected) == 1 else {"media_stream_refs": list(selected)}))
             context.checkpoint()
+            if any(span.media_stream_ref not in videos for span in resolution.spans):
+                raise ValueError("resolved clip stream is absent from Fine provenance")
             # Only this invocation's confirmed Recording code is mapped. Input,
             # context, metadata reads, checkpoint and persistence stay outside.
             try:

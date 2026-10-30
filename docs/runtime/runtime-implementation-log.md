@@ -64,6 +64,7 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | 첫 비동기 E2E 테스트 조립 | HTTP 생성 Case + 실패 검색 fixture · RETRY_SEARCH · 별도 Worker thread/engine · 기존 CaseReflector · T1/T2 barrier와 독립 plain read | RT-09 · 미커밋 · `Refs #296 (RT-09)` | 아래 2026-10-18 RT-09 후속 · `tests/async_e2e_support.py` |
 | 저장 FrameRef HTTP · 승인된 DB 경계 | semaphore2 획득 뒤 짧은 caller tx에서 Recording 소유+이미지 복원 · 반환 뒤 header/bytes · 취소된 read도 cleanup 후 permit 반환 · bounded wait/latency/count 관측 | RT-11(b) · 미커밋 · Refs #298 (RT-11(b)) | [RT-11(b) note](./rt11b-frame-read.md) |
 | staging/temp cleanup · filesystem lease | 명시 root·mtime 나이·no-follow/handle 삭제·shared producer/exclusive scan·startup/주기 thread·stop/join·cleanup count/bytes/privacy | RT-12(a) · PR/merge SHA pending · Refs #299 (RT-12(a)) | [RT-12(a) note](./rt12a-cleanup.md) |
+| IncidentClip 순차 원본 선택 | Case 명시 VIDEO tuple → 공개 Recording plural resolve; Fine 사용 stream provenance/전체 선택 ownership 검증, T1/T2 의미 유지 | #486 §8 · 미커밋 · PR/merge pending | [Multi-source IncidentClip Notes](./multisource-incident-clip.md) |
 
 ## Baseline revisit 후보
 
@@ -4472,3 +4473,57 @@ failure/cancel/skip 차단을 확인했고 실제 deployment/AWS/provider 호출
 hash-only metadata·임시 자원 정리, root scanner view0, 다른 scratch 보존. 최종10파일 공백/
 diff PASS, index 비어 있음, branch/HEAD 동일. 이번 요청도 미커밋/미스테이징이며 remote CI/
 실제 배포 완료로 해석하지 않는다. #301은 IN_PROGRESS, Issue close/외부 게시 없음.
+
+## 2026-10-31 — #486 §8 sequential multi-source IncidentClip P0
+
+**IN_PROGRESS · Refs #486 §8 · Related #458/#297/#425 · PR/merge SHA pending.**
+[Implementation Notes 및 멘토 inline 답변 초안](multisource-incident-clip.md).
+시작 시 요청 브랜치 `codex/multisource-incident-clip`/HEAD/origin-develop
+`3ec753ef05b110f7765db018d48f4390a9c4dcb9`, divergence0/0, worktree/index clean.
+기존 checkout을 사용했고 worktree/checkout 전환은 하지 않았다.
+
+실제 Recording/FFmpeg 제품 경계 RED 3건 보존 후 최소 adapter 수정:
+Case의 원본별 명시 VIDEO 선택을 짧은 입력 transaction에서 detached tuple로 읽고,
+기존 Recording 복수-ref resolve_span에 전달한다. 사건이 B에만 있어도 전체 timeline
+선택으로 해소하며, 실제 사용 span이 Fine VIDEO provenance에 포함되는지 확인한다.
+소유권은 모든 선택 source에 공개 capability로 검증한다. Runtime은 Recording 내부
+schema/repository나 placement 계산을 읽거나 복제하지 않는다. 단일 경로, 명시 camera,
+모호성 안전 거부, checkpoint/context close, 기존 build-only terminal taxonomy와
+produced/T1/T2/Readout 후속 의미를 유지한다. Contract/Decision/Baseline 변경 없음.
+
+직접 실행: Windows 초기63/확장71/PTS·timebase14/cancel2 PASS(서로 중복 합산 금지).
+Linux Python3.12.16/FFmpeg·ffprobe8.1 기존 image 재사용(재빌드 없음): focused463PASS,
+실제 사용자 원본 미지정4skip, 운영 image의 quality tool 부재3실패를 보존했다.
+Windows quality tests19PASS, Runtime Ruff PASS·mypy Linux/win32 각각87파일 오류0.
+Boundary0위반/Contract62·26·104PASS. 최종 실제 MySQL8.4.13/process17PASS145.16초,
+skip/xfail0: 단일/chain의 T1 rollback·COMMIT 불명 receipt 복구·T2 rollback/redelivery,
+pre-T1 주입 crash 후 새 attempt, 독립 API/Worker OS process 단일/chain 포함.
+정상chain build1/encode2; receipt/T2 추가0. pre-T1 새 attempt는 총build2/encode4,
+이후T2 추가0. provider는 offline Coarse1/Fine1/clip0, media 경계 Runtime checkout0,
+동일clip ref의 PLATE_READ/OVERLAY_TIME_READ 발주2건을 검증했다.
+기존 generic Runtime OS kill2건은 별도 실행 증거이며 clip의 SystemExit 주입과 구분한다.
+
+초기 mixed AVI/MP4의 1/10 대 1/10240은 #425 기존 UNSUPPORTED_MEDIA를 직접 재현했다.
+성공fixture는 명시적 동일1/10으로 생성했으며 검증식을 완화하지 않았다. 실제 서로
+다른timebase 입력의 안전 거부도 회귀로 보존했다. 이후 계측/Coarse playback좌표
+fixture 오류와 수정 이력은 excluded scratch에 남겼다.
+이력을 상속하지 않은 read-only reviewer: 초기58+13 직접PASS, delta16 직접PASS,
+최종17 MySQL text/XML/JSON은 열람만 수행. P0/P1/P2/P3 지적 없음.
+취소검증은 FFmpeg active interruption이 아닌 기존 후속checkpoint 취소/cleanup이다.
+
+최종 전체 회귀·원격CI는 향후push/PR 조건으로 남긴다. 실제 사용자 영상/명시 배치
+미제공으로 해당E2E는 미실행이며 합성AVI/MP4 증거와 구분한다. #425 시간축 구현,
+#470 preview, #486 §9 사건시각, GPS/새camera정책/운영profile/AWS/provider/배포는 제외.
+RT14_EXECUTION_ENABLED는 GitHub API read 결과false, 수정 없음. PM Runtime acceptance
+미완료, 12파일 미커밋/미스테이징. 소유DB/container/volume/temp만 정리하고 실패원본·
+최소요약은 PR제외scratch에 보존한다. 공유cache/image/다른작업자료는 보존한다.
+
+마감 추가: Linux quality 도구 부재3건은 uv.lock SHA-256 일치wheel7개를 소유scratch에만
+오프라인 설치하여 동일quality테스트19PASS30.96초로 해소했다. 기존image 재빌드/변경은
+없다. 실패로그는 삭제하지 않고 성공run과 구분한다.
+
+정리 확인: 이번 소유 MySQL/container/anonymous volume/network, 성공media/temp,
+qualitywheel/임시설치본, reviewer 소유temp2개 삭제 완료. 공유image/cache 및 타작업자료
+보존. Linux pytest symlink에서 Windows정리가 안전중단되어 동일image 내부에서 경로/
+linktarget 검증 후 소유root만 정리했다. PR제외scratch에는 실패원본5개(31,302bytes)와
+로그/JSON/XML/최소runner·요약만 남았다. 최종12파일/indexempty/branch·HEAD동일.
