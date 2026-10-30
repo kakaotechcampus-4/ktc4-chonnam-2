@@ -847,6 +847,10 @@ Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 미결.
 
 ## RD-12 — Deployment pipeline 세부
 
+2026-10-31 승인 후 구현은 [공개 배포·복구 Notes](rt14-public-deployment.md)에 연결한다.
+rollback tip 독립·Web/pointer·외부 smoke와 복구 절차를 구현하되 AWS acceptance pending은 유지한다.
+
+
 2026-10-30 RT-14 **준비 구현**은 [Notes/runbook](rt14-deployment.md)에 연결한다.
 CI amd64/ECR digest/SSM controller/명시적 migration·rollback candidate를 제공한다.
 #479 준비 구현 당시에는 RD-12b~f/h 승인과 AWS acceptance가 남아 있었다.

@@ -7,6 +7,14 @@
 아래 candidate는 Owner 결정이나 production acceptance를 대신하지 않는다.
 2026-10-30 Decision Gate 승인값과 이 준비 구현에 남은 변경은 [RT-14 배포 설계](rt14-deployment-design.md) §1 · §16이다.
 
+## 2026-10-31 후속 운영 기준
+
+승인 후 구현·현재 운영 명령·최초 실패 복구·pointer reconciliation·Caddy/DDNS/TLS·
+외부 smoke는 [공개 배포·복구 Notes](rt14-public-deployment.md)를 우선 사용한다.
+아래 §1~§10은 #479 당시의 구현·검증 이력을 보존한다. 당시의 「후보/미승인」,
+「rollback tip CI 의존」, 「recovery 없음」은 현재 상태로 읽지 않는다.
+승인된 Gate는 재개방하지 않으며 OIDC trust 축소 답변은 코드 구현 blocker가 아니다.
+
 ## 1. 확인된 근거와 준비 범위
 
 | 구분 | 근거 / 상태 |

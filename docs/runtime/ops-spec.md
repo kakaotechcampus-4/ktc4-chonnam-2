@@ -11,6 +11,11 @@
 
 > 이 문서는 배포된 Runtime을 **어떻게 운영·관찰·복구·확장할지** 정한다. Final Contract와 Logical ERD가 정의한 논리 의미·관계를 바꾸지 않으며, JobExecution/UsageRecord persistence와 queue algorithm은 [`runtime-tech-spec.md`](./runtime-tech-spec.md)이 소유한다.
 
+**2026-10-31 구현 갱신:** 승인값은 유지하며 [공개 배포·복구 Notes](rt14-public-deployment.md)에
+rollback tip 독립·release-bound Web·pointer/state·Caddy/DDNS·외부 smoke와 현재 검증을 연결한다.
+아래 2026-10-30 snapshot 표는 당시 이력이다. #483/#484/#488의 quality/import/secret gate는
+현재 CI에 있으며 이번 변경에서 완화하지 않았다. 실제 AWS/public acceptance는 완료하지 않았다.
+
 ## 1. 문서 경계
 
 ### 이 문서가 소유한다
@@ -952,7 +957,7 @@ Gate별 현재 상태:
 
 현재 `.github/workflows/boundary-check.yml`(모듈 경계·계약 검사) · `python-tests.yml`(pytest · MySQL · 배포 image acceptance) · `web-tests.yml`(web)은 일반 PR CI로 유지하고 AWS 인증 권한을 추가하지 않는다. `python-tests`가 배포 image를 build해 검증하더라도 AWS에 접근하지 않는다.
 
-배포 workflow는 별도 파일로 두며 §2-1의 **OIDC + SSM** 기준을 따른다. 준비 구현은 이 원칙대로 인증 전용 `rt14-oidc.yml`과 배포용 `rt14-deploy.yml`을 나눴다. deploy role trust가 repository 전체를 허용하므로(§2-1) 배포 role을 얻는 ref 제한은 workflow 조건(repository · repository ID · `develop` ref · `RT14_EXECUTION_ENABLED`)이 맡는다. 배포 도구는 실행 시 `develop` tip의 push CI(`python-tests` · `boundary-check`) 최신 run 성공을 요구한다([RT-14 실행 절차](./rt14-deployment.md) §5). 실행 기록이 아직 없으므로 현재 CI가 배포까지 수행한다고 간주하지 않는다.
+배포 workflow는 별도 파일로 두며 §2-1의 **OIDC + SSM** 기준을 따른다. 준비 구현은 이 원칙대로 인증 전용 `rt14-oidc.yml`과 배포용 `rt14-deploy.yml`을 나눴다. deploy role trust가 repository 전체를 허용하므로(§2-1) 배포 role을 얻는 ref 제한은 workflow 조건(repository · repository ID · `develop` ref · `RT14_EXECUTION_ENABLED`)이 맡는다. publish/deploy는 실행 시 `develop` tip의 push CI(`python-tests` · `boundary-check`) 최신 run 성공을 요구한다([RT-14 실행 절차](./rt14-deployment.md) §5). rollback은 tip CI와 독립적으로 대상 ancestry/push CI/digest 및 host exact tuple/schema를 검사한다. 실제 공개 배포 acceptance와 일반 CI를 구분한다.
 
 ### Release 식별 · 배포 검증 · Rollback 원칙
 

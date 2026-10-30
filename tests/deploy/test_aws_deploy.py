@@ -165,3 +165,67 @@ def test_oidc_token_file_removed_and_credentials_never_exported(tmp_path, monkey
     assert "AWS_ACCESS_KEY_ID" not in env
     output = str(capsys.readouterr())
     assert all(secret not in output for secret in ("JWT-CANARY", "KEY-CANARY", "SECRET-CANARY", "SESSION-CANARY", "REQUEST-CANARY"))
+
+
+@pytest.mark.parametrize("tip", ["pending", "failure"])
+@pytest.mark.parametrize("operation", ["rollback", "deploy", "publish"])
+def test_rollback_independent_of_tip_but_preserves_target_gate(monkeypatch, tip, operation):
+    m = module()
+    env = {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF": "refs/heads/develop",
+        "GITHUB_REPOSITORY": m.REPOSITORY, "GITHUB_REPOSITORY_ID": m.REPOSITORY_ID,
+        "GITHUB_SHA": "a" * 40, "RT14_EXECUTION_ENABLED": "true", "AWS_REGION": m.REGION,
+        "AWS_ACCOUNT_ID": "1" * 12, "DEPLOY_REVISION": "b" * 40,
+        "DEPLOY_CONFIG_ID": "config-1", "DEPLOY_INSTANCE_ID": "i-" + "c" * 17,
+        "DEPLOY_IMAGE": "1" * 12 + ".dkr.ecr.ap-northeast-2.amazonaws.com/runtime@sha256:" + "d" * 64}
+    monkeypatch.setattr(m.os, "environ", env)
+    monkeypatch.setattr(m, "oidc", lambda env: env)
+    requests = []
+    def github(path, env):
+        requests.append(path)
+        if path.startswith("/compare/"):
+            return {"status": "ahead"}
+        if path.startswith("/git/ref/"):
+            return {"object": {"sha": "a" * 40}}
+        sha = "b" * 40 if "head_sha=" + "b" * 40 in path else "a" * 40
+        return {"workflow_runs": [{"head_sha": sha, "event": "push",
+            "head_repository": {"id": int(m.REPOSITORY_ID)}, "id": 1,
+            "status": "completed" if tip == "failure" or sha == "b" * 40 else "in_progress",
+            "conclusion": "success" if sha == "b" * 40 else tip}]}
+    monkeypatch.setattr(m, "github_json", github)
+    sent = []
+    def aws(args, **kwargs):
+        if args[:2] == ["ecr", "describe-images"]:
+            return {"imageDetails": [{"imageDigest": "sha256:" + "d" * 64}]}
+        if args[:2] == ["ssm", "send-command"]:
+            sent.append(True)
+            return "00000000-0000-0000-0000-000000000000"
+        return {"Status": "Success", "ResponseCode": 0}
+    monkeypatch.setattr(m, "aws", aws)
+    assert m.main([operation]) == (0 if operation == "rollback" else 1)
+    assert bool(sent) == (operation == "rollback")
+    if operation == "rollback":
+        assert any(p.startswith("/compare/") for p in requests)
+        assert len([p for p in requests if "head_sha=" + "b" * 40 in p]) == 2
+        assert not any("head_sha=" + "a" * 40 in p for p in requests)
+
+
+@pytest.mark.parametrize("failure", ["ancestry", "pending", "failure", "cancelled", "skipped", "digest"])
+def test_rollback_rejects_bad_target_before_send(monkeypatch, failure):
+    m = module()
+    env = {"AWS_ACCOUNT_ID": "1" * 12, "DEPLOY_REVISION": "b" * 40,
+        "DEPLOY_CONFIG_ID": "config-1", "DEPLOY_INSTANCE_ID": "i-" + "c" * 17,
+        "DEPLOY_IMAGE": "1" * 12 + ".dkr.ecr.ap-northeast-2.amazonaws.com/runtime@sha256:" + "d" * 64}
+    def github(path, env):
+        if path.startswith("/compare/"):
+            return {"status": "diverged" if failure == "ancestry" else "ahead"}
+        return {"workflow_runs": [{"head_sha": "b" * 40, "event": "push",
+            "head_repository": {"id": int(m.REPOSITORY_ID)}, "id": 1,
+            "status": "in_progress" if failure == "pending" else "completed",
+            "conclusion": "success" if failure == "digest" else failure}]}
+    def aws(args, **kwargs):
+        assert args[:2] == ["ecr", "describe-images"], "invalid target reached SSM"
+        return {"imageDetails": [{"imageDigest": "sha256:" + "e" * 64}]}
+    monkeypatch.setattr(m, "github_json", github)
+    monkeypatch.setattr(m, "aws", aws)
+    with pytest.raises(m.DeployError):
+        m.remote(env, "rollback")
