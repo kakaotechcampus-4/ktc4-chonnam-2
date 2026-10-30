@@ -200,7 +200,7 @@ RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) De
 
 | 항목 | 실측 |
 | --- | --- |
-| 인스턴스 상태 | 2026-10-02 확인 직후 사용자가 중지한 뒤 **계속 `stopped`**. 이번 확인 때 약 1분 시작했다가 다시 중지했다 |
+| 인스턴스 상태 | 2026-10-02 확인 직후 사용자가 중지한 뒤 **계속 `stopped`**. 이번 확인 때 잠깐 시작했다가 다시 중지했다(아래 Docker 설치 · 스파이크 포함) |
 | Public IPv4 | 중지 상태에서 없음. Elastic IP가 없으므로 시작할 때마다 바뀐다 |
 | CPU credit | `unlimited` |
 | Instance metadata | IMDSv2 필수(`HttpTokens=required`) · `HttpPutResponseHopLimit=1` |
@@ -208,7 +208,7 @@ RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) De
 | OS | Ubuntu 24.04.4 LTS |
 | disk 사용 | `/` 48G 중 2.6G (6%) |
 | 메모리 | total 3,832 MiB · swap 0 |
-| Docker / Compose | **설치되지 않음** |
+| Docker / Compose | 확인 시점에는 **설치되지 않음**. 같은 날 RT-14 스파이크를 위해 Docker Engine 29.9.2 · Compose plugin v5.6.1을 설치했다(Docker 공식 apt 저장소, 버전 고정, `docker.service` enable). 설치 script와 스파이크 결과는 [RT-14 배포 설계](../rt14-deployment-design.md) 부록 A · §13 |
 | SSM Agent | snap 설치본, enabled · active. 시작 뒤 약 7초 만에 `Online` |
 | CloudWatch Agent | 설치되지 않음 |
 | ECR API endpoint DNS | resolve 됨 |
