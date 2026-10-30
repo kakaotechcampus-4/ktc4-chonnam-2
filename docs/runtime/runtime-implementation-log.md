@@ -51,7 +51,8 @@ Plan §0.1이 Task PR로 넘긴 선택은 미리 행을 둔다. 그 밖의 선�
 | STALE 관측 · fatal hook 비노출 | DB STALE ended_at − 마지막 heartbeat_at · post-commit 측정/누락 fallback 없음 · fatal cleanup 후 process 경계에서 원문 비노출·고정 코드 1 | RT-06(a) 후속 P2 · 로컬 미커밋 · `Refs #293` | 아래 RT-06 · `sweep.py` · `worker/__main__.py` |
 | T2 재전달 · Case adapter · kill 복구 | 비잠금 후보/receipt 조회 → 후보별 기존 T2 · Case→Runtime 잠금 · startup admission gate · 주입형 Case 8-8 bridge · 실제 spawned process kill/DB 상태 관측 | RT-06(b) · PR/merge SHA pending · `Refs #293` | 아래 RT-06(b) · `common/jobs/redelivery.py` · `worker/case_reflector.py` |
 | PR CI job timeout | `python-tests` test job 30분 · nested 900초 및 strict gate 유지 | 로컬 미커밋 · `Refs #368` · PR/merge SHA pending | 아래 「Issue #368 — CI 실행시간·timeout 후속」 |
-| type checker 도구 (Plan RT-15) | mypy 2.4.1 · Runtime 네 경로 · 미타입 본문 검사 · Linux/Windows 분기 검사. Ruff 0.17.3과 quality extra/uv.lock 고정 | RT-15(a) · PR/merge SHA pending | [RT-15(a) Notes](./rt15a-runtime-quality.md) |
+| type checker 도구 (Plan RT-15) | mypy 2.4.1 · Runtime 네 경로 · 미타입 본문 검사 · Linux/Windows 분기 검사. Ruff 0.17.3과 quality extra/uv.lock 고정 | RT-15(a) · PR #483 · `e3fec617dc75b2cf21141a110bd8e81e816970b8` | [RT-15(a) Notes](./rt15a-runtime-quality.md) |
+| Runtime Python import 검사 | 기존 문자열/Contract 검사를 보존하고 AST로 common 6경로 → domain 7개, domain → api/worker 검사. alias·상대 import·정확한 namespace 비교 | RT-15(b) · 미커밋 · PR/merge SHA pending | [RT-15(b) Notes](./rt15b-import-boundaries.md) · ownership §6 |
 | produced object 저장 · T1 receipt | `runtime_0005` · 해석 없는 JSON snapshot · execution/ordinal 무ID ref · caller-owned append batch · terminal과 같은 tx · COMMIT 불명 payload 검증 · 기존 ProducedReader callable | RT-10(a) · PR/merge SHA pending · Refs #297 (RT-10(a)) | [RT-10(a) note](./rt10a-produced-store.md) |
 | secret scan 배치 — PR gate 편입 여부 (Plan RT-15) | pending | RT-15 | — |
 | Compose smoke의 CI 편입 여부 (Plan RT-13) | opt-in local smoke; 일반 PR에는 기존 pytest의 구조/negative-control 검사. 실제 Docker 결과와 구분 | RT-13(a) · PR pending | [RT-13(a) Notes](./rt13a-docker-compose.md) |
@@ -2009,6 +2010,60 @@ boundary/Contract/actionlint/lock PASS. Fresh read-only review에서 quality-onl
 HEAD의 실패를 독립 재현하고 관련 65 tests 및 quality 양 플랫폼을 직접 통과 확인했다.
 blocking 지적 없음. PR 변경/commit/push/merge는 하지 않는다. 상세 및 이번 delta 파일은
 위 Notes의 PR #483 후속 절이다.
+
+### 2026-10-30 — RT-15(b) import 경계 로컬 구현
+
+**RT-15 전체 IN_PROGRESS · Refs #301 (RT-15(b)) · Related #287 · PR/merge SHA pending**
+
+위 RT-15(a) 로컬/pending 문장은 당시 실행 이력으로 보존한다. 이번 시작 시 GitHub에서
+PR #483 merged와 merge SHA `e3fec617dc75b2cf21141a110bd8e81e816970b8`를 직접 확인했다.
+branch `codex/rt15b-import-boundaries`, HEAD/로컬 origin/develop/원격 ls-remote의 develop이
+모두 그 SHA이며 시작 tree/index clean, ahead/behind `0/0`이었다. Issue #301 본문과
+전체 댓글(0개)을 직접 읽었다. 선행 PR의 원격 CI는 이번 미커밋 diff 검증과 구분한다.
+
+- **구현 결과:** 기존 `check_boundaries.py`의 기본/`--only=boundaries` 진입점에 Python
+  AST 검사를 더했다. common의 jobs/usage/db/config/logging/storage는 domain 7개를,
+  domain 경로는 `daesingo.api`·`daesingo.worker`를 import하지 않는다. Architecture의
+  domain 7개와 실제 경로/namespace(`eval/`, TypeScript `apps/web/` 포함)를
+  ownership §6 표와 함께 정합화했다. 현재 scoped Python은 common35/domain143파일,
+  web0파일이다. 두 방향 현재 위반은 0건이며 제품 코드를 이동·수정하지 않았다.
+- **Plan 대비 변경:** 없음. 기존 문자열/Contract/스캔 제외 경로를 보존한 검사 추가다.
+  기존 workflow가 같은 CLI를 실행하고 새 pytest는 기존 regression으로 수집되므로
+  workflow/pyproject/lock/inventory/strict/timeout/skip/xfail 변경이 없다.
+- **새 implementation detail:** AST Import/ImportFrom의 원래 namespace 및 alias child를
+  검사한다. 상대 import는 containing package와 level로 계산하며 `__init__.py`도
+  같은 원칙이다. 파싱 실패를 PASS로 넘기지 않는다. `readout.api`와 Runtime `api`,
+  비슷한 prefix 및 문자열·주석을 구분한다. 새 예외나 주석 suppression은 없다.
+- **Contract / Decision / Baseline 영향:** 모두 없음. public surface·타 Owner 책임 변경
+  없음. Runtime/Ops Owner 김준영의 deferred review와 각 domain Owner별 통지 초안을
+  Notes에 작성했다. 외부 댓글·메시지 발송이나 Owner acceptance는 하지 않았다.
+- **직접 Verification:** 새 fixture 변경 전 **236 failed / 22 passed**(금지 import235와
+  파싱 실패1 누락), 수정 후 **258 passed**(48.72초). 변경 전 상대 import 한 사례에서
+  실제 CLI exit0/PASS를 별도 재현했다. 허용15/기존 문자열 거부7도 보존했다.
+  전체 boundary 및 contracts-only PASS, Contract 구조62/JSON26/의미104 PASS,
+  RT-15(a) Runtime Ruff PASS·mypy Linux/win32 각87파일 오류0, quality/CI 회귀
+  **55 passed**(13.25초). 최종 boundary-only 및 `git diff --check` PASS, index 비어 있음.
+- **추가 범위 밖 진단:** checker까지 임의로 확대한 Ruff에서 기존 Contract 코드의
+  `E741` 변수 `l` 1건이 나왔다. HEAD 원본 stdin 검사로 동일 진단을 재현했다.
+  Runtime quality gate 대상이 아니며 범위 밖 lint 정리는 하지 않았다. 새 테스트
+  파일의 단독 Ruff는 PASS다. 이 실패를 필수 gate 성공으로 바꾸어 기록하지 않는다.
+- **Fresh review:** 구현 이력을 상속하지 않은 read-only reviewer가 SoT/diff를 검토했다.
+  reviewer 직접 boundary PASS·새 fixture258PASS(48.42초), 독립 CLI 12사례 기대 일치,
+  diff check PASS; actionable 지적 없음. 최초 reviewer 실행은 basetemp 부모 디렉터리
+  부재로 setup258ERROR였고, 부모 생성 후 새 basetemp로 성공했다. 제품 결함이나
+  작성자 RED와 혼동하지 않는다. 같은 reviewer의 최종 문서 delta도 actionable 지적
+  없음. 새 파일 수 재집계/diff check와 보존 로그 열람을 이전 suite 직접 실행과 구분했다.
+- **남은 한계:** 동적 import·간접 re-export·부모 star 노출 이름·alias 속성 접근·import
+  hook/sys.path 변경은 전이 분석하지 않는다. TypeScript import 해석은 AST 보장 밖이다.
+  기존 문자열 검사는 주석/문자열에도 적용되는 원래 동작이다. 전체 local pytest·MySQL·
+  Docker build 및 이번 diff의 원격 CI는 미실행이며, 향후 push 뒤 boundary/quality/
+  regression/mysql/required test 성공이 최종 조건이다. RT-15(b)의 로컬 구현·검증과
+  RT-15 전체 완료를 구분한다. **(c) secret scan은 후속**, #301은 종료하지 않는다.
+
+전체 변경 파일·명령·RED/GREEN·review·통지 초안·정리 기록은
+[RT-15(b) Implementation Notes](./rt15b-import-boundaries.md)에 있다. 새 worktree,
+checkout 전환, staging/commit/push/PR/외부 댓글/merge, AWS/provider/배포,
+RT14_EXECUTION_ENABLED 변경은 없다. scratch/로그/credential은 PR에서 제외한다.
 
 | PR | 내용 | Merge SHA |
 | --- | --- | --- |
