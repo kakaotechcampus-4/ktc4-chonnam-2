@@ -242,6 +242,7 @@ def build_view_from_adapter(
         search_retry_basis=jobs.latest_job_record(case, "COARSE_SEARCH") is not None,
         report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
         analysis_timed_out=case.analysis_timed_out,
+        analysis_range_too_long=case.analysis_range_too_long,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -271,6 +272,17 @@ CANDIDATE_SEARCH_FAILED_NOTICE: dict[str, Any] = {
     "blocking": True,
     "message_key": "notice.candidate_search_failed",
     "actions": ["RETRY_SEARCH"],
+}
+
+
+# 분석 범위가 저장 상한을 넘어 Recording이 변환 전에 거부한 탐색 실패(#452, `decisions/long-analysis-range.md` 결정 4).
+# 같은 입력으로 다시 찾아도 결과가 같으므로 `RETRY_SEARCH`를 싣지 않는다. 계약 B절 `notices[].code` 등재(2026-10-30).
+ANALYSIS_RANGE_TOO_LONG_NOTICE: dict[str, Any] = {
+    "code": "recording.analysis_range_too_long",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.analysis_range_too_long",
+    "actions": [],
 }
 
 
@@ -470,11 +482,14 @@ def derive_notices(
     report_video_export_basis: bool = False,
     hint_unclear: bool = False,
     analysis_timed_out: bool = False,
+    analysis_range_too_long: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
       evidence 유무와 무관하다.
+    - `recording.analysis_range_too_long` — 같은 조건에서 그 실패가 분석 범위 상한 초과일 때(`analysis_range_too_long`, #452).
+      `search.candidate_search_failed` 대신 붙는다. 다시 찾아도 같으므로 action이 없다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
     - 모든 notice 공통: `running_jobs`에 탐색 job(`HINT_EXTRACT` · `COARSE_SEARCH`)이 있으면 `RETRY_SEARCH`를 빼고 싣는다(#426).
@@ -525,7 +540,7 @@ def derive_notices(
     derived = []
     # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
     if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(CANDIDATE_SEARCH_FAILED_NOTICE)
+        derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE)
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):

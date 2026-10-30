@@ -121,7 +121,10 @@ def _apply_hint_extract(case: CaseAggregate, outcome: ExecutionOutcome, *, store
 
 def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
     if outcome.status == "FAILED":
-        case.record_candidate_search_failure(job_id=outcome.job_id)
+        case.record_candidate_search_failure(
+            job_id=outcome.job_id,
+            range_too_long=outcome.failure_kind == "RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED",
+        )
         return
     content = reader(store.conn, outcome.kind, outcome.produced)
     # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — 동기 경로 `service.receive_search_candidates`와 같다.
