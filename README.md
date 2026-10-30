@@ -139,6 +139,12 @@ uv run pytest tests/case/   # 모듈 하나만
 uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
 ```
 
+경계 검사는 기존 문자열·계약 검사에 Runtime Python import 검사를 더한다.
+대상 경로·허용/금지 방향은 [ownership §6](docs/management/ownership.md),
+정적 분석 한계·검증 기록은 [RT-15(b) Notes](docs/runtime/rt15b-import-boundaries.md)를 따른다.
+`--only=boundaries`로 경계만 실행할 수 있고, 회귀 fixture는
+`uv run --no-sync pytest tests/test_import_boundaries.py`로 확인한다.
+
 Runtime lint/type gate는 네 소유 경로만 검사한다. `uv sync --locked --extra quality`
 후 로컬과 CI에서 `uv run --no-sync python scripts/check_runtime_quality.py`를 실행한다.
 Ruff·mypy 버전, 규칙, 타입 예외와 검증 기록은 [RT-15(a) Notes](docs/runtime/rt15a-runtime-quality.md)에 있다.
