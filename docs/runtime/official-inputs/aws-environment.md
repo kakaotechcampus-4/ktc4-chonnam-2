@@ -3,11 +3,11 @@
 **Status:** Input — 카테캠 운영진 공지 요약  
 **Source:** 카테캠 운영진 AWS 실습환경 공지 (비공개) + 팀 AWS 실환경 조회  
 **Notice date:** 확인 필요  
-**Captured:** 2026-10-02  
+**Captured:** 2026-10-02 · 재검증 2026-10-30(§9)  
 **Maintainer:** common/runtime — 김준영  
 **Router:** [Official Inputs](./README.md)
 
-> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
+> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이고, §9는 2026-10-30 RT-14(#450) 전에 권한 · SSM 경로를 다시 확인한 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
 >
 > 이 문서는 외부 입력이며 결정이 아니다. Runtime 배포·용량 결정은 [`ops-spec.md`](../ops-spec.md)에 기록하고 이 문서를 근거로 가리킨다.
 
@@ -191,3 +191,62 @@ local terminal
 - RDS 요청 시 지원 가능한 engine / instance class / storage 범위
 - ALB / Elastic IP 지원 조건
 - 팀별 AWS 예산 또는 비용 상한
+
+## 9. 2026-10-30 RT-14 전 재검증 snapshot
+
+RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) Decision Gate 전에 §8이 「확인 대상」으로 남긴 권한과 SSM 실행 경로를 다시 확인했다. §8과 같은 SSO profile(`StudentDeveloper`)을 썼다. 조회 외에 **생성 → 즉시 삭제 시도**와 **EC2 시작 → SSM Run Command → 중지**를 했고, 시도 뒤 남은 리소스가 없음을 다시 조회해 확인했다. §8과 마찬가지로 당일 관측값이며 결정이 아니다. 식별값은 싣지 않는다.
+
+### EC2 상태
+
+| 항목 | 실측 |
+| --- | --- |
+| 인스턴스 상태 | 2026-10-02 확인 직후 사용자가 중지한 뒤 **계속 `stopped`**. 이번 확인 때 약 1분 시작했다가 다시 중지했다 |
+| Public IPv4 | 중지 상태에서 없음. Elastic IP가 없으므로 시작할 때마다 바뀐다 |
+| CPU credit | `unlimited` |
+| Instance metadata | IMDSv2 필수(`HttpTokens=required`) · `HttpPutResponseHopLimit=1` |
+| Root EBS | gp3 50 GiB, 암호화 |
+| OS | Ubuntu 24.04.4 LTS |
+| disk 사용 | `/` 48G 중 2.6G (6%) |
+| 메모리 | total 3,832 MiB · swap 0 |
+| Docker / Compose | **설치되지 않음** |
+| SSM Agent | snap 설치본, enabled · active. 시작 뒤 약 7초 만에 `Online` |
+| CloudWatch Agent | 설치되지 않음 |
+| ECR API endpoint DNS | resolve 됨 |
+
+### IAM role 구성
+
+조회는 IAM 정책까지다. Organizations SCP는 이 SSO 권한으로 조회되지 않는다(`AccessDenied`). 그래서 아래 「생성 시도」로 실제 동작을 따로 확인했다.
+
+| 주체 | 붙은 managed policy | inline policy의 Deny |
+| --- | --- | --- |
+| EC2 instance role (`ktc-ec2-ssm-role`) | `PowerUserAccess` · `AmazonSSMManagedInstanceCore` · `CloudWatchAgentServerPolicy` | RDS 생성 · 복원, ALB 생성. 별도 inline으로 카테캠 관리 role의 PassRole 거부 |
+| GitHub deploy role (`ktc-github-deploy`) | `PowerUserAccess` | 카테캠 관리 role · instance profile · OIDC provider 변경, 장기 자격증명 생성, `ec2:RunInstances` · `ec2:TerminateInstances`, **`ec2:CreateVolume` · `ec2:ModifyVolume`**, `ec2:ModifyInstanceAttribute`, RDS 생성 · 복원, ALB 생성 |
+
+- GitHub OIDC provider는 1개다. deploy role trust의 `sub` 조건은 이 repository의 이름 형식과 immutable owner/repo ID 형식 두 가지를 모두 `:*`로 허용한다. 즉 **branch · tag · PR · environment를 AWS 쪽에서 구분하지 않는다.**
+- deploy role의 `ec2:CreateVolume` 거부는 §2 「추가 볼륨 불가」를 정책으로 확인한 것이다. EBS snapshot에서 새 volume을 만들어 복원하는 경로가 이 role로는 막혀 있다.
+- EC2 instance role이 `PowerUserAccess`를 갖는다. hop limit 1에서는 bridge network의 container가 IMDS 자격증명에 닿지 않는다(위 표).
+
+### 생성 → 즉시 삭제 시도
+
+모두 성공했고 남은 리소스는 0건이다.
+
+| 서비스 | 시도한 작업 | 결과 |
+| --- | --- | --- |
+| ECR | repository 생성(tag `IMMUTABLE`) · login token 발급 · lifecycle policy 설정 · 삭제 | PASS |
+| CloudWatch Logs | Log Group 생성 · retention 설정 · 삭제 | PASS |
+| SSM Parameter Store | `SecureString`(기본 `aws/ssm` key) 생성 · `get-parameters-by-path --with-decryption`(값 일치) · 삭제 | PASS |
+
+SCP는 계정 안의 모든 role에 똑같이 적용되고 위 두 role의 IAM 정책도 이 작업을 허용하므로, 이 작업들이 SCP로 막혀 있지 않다는 근거로 쓴다. deploy role · EC2 role로 직접 하는 확인은 OIDC 검증 workflow와 첫 배포에서 한다.
+
+### SSM Run Command 동작
+
+`AWS-RunShellScript`를 `send-command` → `get-command-invocation`으로 끝까지 확인했다.
+
+| 시도 | 명령 | Status / ResponseCode |
+| --- | --- | --- |
+| host inventory | 위 「EC2 상태」 표의 값 조회 | `Success` / 0. 실행 사용자는 `root` |
+| 중간 실패 | `echo step1` → `false` → `echo step3` | **`Success` / 0** — step3까지 실행되고 중간 실패가 가려짐 |
+| `set -e` 추가 | 같은 명령 앞에 `set -e` | `Failed` / 1 — step1 뒤에서 멈춤 |
+
+- 명령은 bash가 아니라 `/bin/sh`로 실행됐다(오류 메시지가 dash 형식 `_script.sh: N: ...`).
+- 마지막 명령의 exit code가 결과가 된다는 [Research 04](../research/04-deployment-observability-operations-2026-10-03.md) §3의 공식 문서 사실이 실제로 재현됐다.
