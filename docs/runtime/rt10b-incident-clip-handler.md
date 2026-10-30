@@ -244,3 +244,10 @@ remains ignored and excluded from PR candidates; no temporary DB data is retaine
 
 RAW, JSON/JUnit, generated media, temporary DBs, env files and runners remain
 excluded scratch evidence, not PR candidates. No original user media is used.
+
+## 2026-10-31 follow-up — #486 §8
+
+The single-VIDEO restriction described above is the historical RT-10(b) baseline.
+The current unstaged sequential-source adapter and its verification are recorded
+in [Multi-source IncidentClip Implementation Notes](multisource-incident-clip.md).
+Earlier execution evidence and the original implementation history are preserved.

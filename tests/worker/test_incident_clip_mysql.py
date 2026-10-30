@@ -12,7 +12,7 @@ from daesingo.common.db import create_worker_engine
 from daesingo.common.jobs.produced import ProducedReader, produced_objects
 from daesingo.common.jobs.redelivery import redeliver_once
 from daesingo.common.jobs.schema import job_execution
-from daesingo.recording import RecordingService, LocalIncidentMaterializer, ConnectionRecordingRepository
+from daesingo.recording import RecordingService, LocalIncidentMaterializer, LocalAnalysisMaterializer, ConnectionRecordingRepository
 from daesingo.worker.bootstrap import bootstrap
 from daesingo.worker.case_composition import StoredCaseReflector, stored_case_store
 from daesingo.worker.composition import compose_worker
@@ -24,7 +24,7 @@ from test_worker_mysql import queue  # noqa: F401
 pytestmark = pytest.mark.mysql
 
 
-def prepare(queue, tmp_path, monkeypatch):
+def prepare(queue, tmp_path, monkeypatch, *, multisource=False):
     from fastapi.testclient import TestClient
     from daesingo.api.bootstrap import bootstrap as api_bootstrap
     from daesingo.api.app import create_app
@@ -50,6 +50,13 @@ def prepare(queue, tmp_path, monkeypatch):
         created = client.post("/cases").json(); case_id = created["case_id"]
         upload = client.post(f"/cases/{case_id}/sources", files={"file": ("synthetic.avi", video.read_bytes(), "video/x-msvideo")})
         assert upload.status_code == 201
+        if multisource:
+            second = tmp_path / "second.mp4"
+            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
+                "color=c=blue:s=64x48:r=10:d=1", "-c:v", "libx264", "-video_track_timescale", "10", str(second)],
+                check=True, capture_output=True, timeout=30)
+            upload = client.post(f"/cases/{case_id}/sources", files={"file": ("second.mp4", second.read_bytes(), "video/mp4")})
+            assert upload.status_code == 201
         response = client.post(f"/cases/{case_id}/commands", json={"case_id": case_id,
             "expected_case_rev": upload.json()["case_view"]["case_rev"], "kind": "START_ANALYSIS", "payload": {"description": ""}})
         assert response.status_code == 202
@@ -58,7 +65,7 @@ def prepare(queue, tmp_path, monkeypatch):
     for kind in ("COARSE_SEARCH", "FINE_VERIFY"):
         incoming, outgoing = multiprocessing.Pipe()
         try:
-            worker_peer(outgoing, str(env_file), "clip", kind)
+            worker_peer(outgoing, str(env_file), "clip_multisource" if multisource else "clip", kind)
             result = incoming.recv()
             assert "error" not in result, result
             assert result["http_calls"] == 1 and result["terminals"] == [{"status": "SUCCEEDED", "failure_kind": None}]
@@ -67,15 +74,16 @@ def prepare(queue, tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("fault", ["none", "rollback", "commit_unknown", "t2_rollback", "t2_redelivery"])
+@pytest.mark.parametrize("multisource", [False, True], ids=["single", "chain"])
 @pytest.mark.mysql_check("incident_clip", "t1_replay")
-def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, monkeypatch, fault):
-    case_id, root, temp, startup = prepare(queue, tmp_path, monkeypatch)
+def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, monkeypatch, fault, multisource):
+    case_id, root, temp, startup = prepare(queue, tmp_path, monkeypatch, multisource=multisource)
     with queue.begin() as conn:
         clip_row = dict(conn.execute(sa.select(job_execution).where(job_execution.c.kind == "INCIDENT_CLIP_BUILD")).mappings().one())
         fixed = stored_case_store(conn, storage_root=root).observation_input(case_id, clip_row["job_id"])
     assert set(fixed) == {"candidate_id", "generation_job_id", "span", "fine_job_id"}
     calls, encodes, closed, seen = [], [], [], []
-    original_build, original_encode, original_close = RecordingService.build_incident_clip, LocalIncidentMaterializer.materialize, RecordingService.close
+    original_build, original_encode, original_close = RecordingService.build_incident_clip, LocalAnalysisMaterializer.materialize, RecordingService.close
     active = queue
     def build(service, resolution, options=None):
         assert active.pool.checkedout() == 0
@@ -87,7 +95,7 @@ def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, 
         return original_encode(materializer, *args)
     def close(service): closed.append(service); original_close(service)
     monkeypatch.setattr(RecordingService, "build_incident_clip", build)
-    monkeypatch.setattr(LocalIncidentMaterializer, "materialize", encode)
+    monkeypatch.setattr(LocalAnalysisMaterializer, "materialize", encode)
     monkeypatch.setattr(RecordingService, "close", close)
     with CommitResponseProxy(queue.url.host, queue.url.port) as proxy:
         extra = None
@@ -115,12 +123,15 @@ def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, 
             loop = compose_worker(engine=active, startup=startup, registry=KindRegistry({"INCIDENT_CLIP_BUILD": invoke}),
                 stop=stop, reflector=reflector, sleep=lambda seconds: None)
             loop.run()
-            assert len(calls) == len(encodes) == len(seen) == 1
+            assert len(calls) == len(seen) == 1
+            assert len(calls[0].spans) == (2 if multisource else 1), calls[0].model_dump()
+            assert len(encodes) == (2 if multisource else 1)
             assert injected
             assert proxy.commit_ok_dropped == (1 if fault == "commit_unknown" else 0)
             # Explicit redelivery must not call the handler or build again.
             redeliver_once(active, reflector, sleep=lambda seconds: None)
             assert len(calls) == 1 and active.pool.checkedout() == 0
+            assert len(encodes) == (2 if multisource else 1)
         finally:
             sa.event.remove(active, "after_cursor_execute", after_write)
             if extra is not None: extra.dispose()
@@ -140,6 +151,7 @@ def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, 
         with RecordingService(ConnectionRecordingRepository(conn, storage_root=root)) as reopened:
             clip = reopened.get_incident_clip(content["incident_clip_ref"])
             assert clip.availability == "AVAILABLE" and clip.byte_size > 0
+            assert len(clip.source_provenance.asset_spans) == (2 if multisource else 1)
             assert clip.source_provenance.requested_range.start_sec == fixed["span"]["start_ms"] / 1000
             assert clip.source_provenance.requested_range.end_sec == fixed["span"]["end_ms"] / 1000
     assert {p.name for p in temp.iterdir()} == {".runtime-cleanup-temp.lock"}
@@ -268,4 +280,59 @@ def test_two_successful_executions_can_reference_the_same_durable_clip(queue, tm
         payloads = [ProducedReader()(conn, "INCIDENT_CLIP_BUILD", tuple(row["produced"])) for row in rows]
         assert payloads[0] == payloads[1] and set(payloads[0]) == {"incident_clip_ref"}
         assert all(row["case_applied_at"] is not None for row in rows)
+    assert queue.pool.checkedout() == 0
+
+
+def test_chain_crash_before_t1_rebuilds_new_attempt_but_t2_does_not(queue, tmp_path, monkeypatch):
+    from daesingo.common.jobs.sweep import sweep_expired
+    _, root, _, startup = prepare(queue, tmp_path, monkeypatch, multisource=True)
+    builds, encodes = [], []
+    original_build = RecordingService.build_incident_clip
+    original_encode = LocalAnalysisMaterializer.materialize
+    def build(service, resolution, options=None):
+        assert queue.pool.checkedout() == 0
+        builds.append(True)
+        return original_build(service, resolution, options)
+    def encode(materializer, *args):
+        assert queue.pool.checkedout() == 0
+        encodes.append(True)
+        return original_encode(materializer, *args)
+    monkeypatch.setattr(RecordingService, "build_incident_clip", build)
+    monkeypatch.setattr(LocalAnalysisMaterializer, "materialize", encode)
+    registry = compose_registry(engine=queue, startup=startup)
+    reflector = StoredCaseReflector(storage_root=root)
+    first = compose_worker(engine=queue, startup=startup, registry=registry, stop=Event(), reflector=reflector)
+    def crash_before_t1(*args):
+        raise SystemExit("test crash before terminal transaction")
+    first.record = crash_before_t1
+    with pytest.raises(SystemExit):
+        first.run()
+    assert len(builds) == 1 and len(encodes) == 2
+    with queue.begin() as conn:
+        old = conn.execute(sa.select(job_execution).where(job_execution.c.kind == "INCIDENT_CLIP_BUILD")).mappings().one()
+        assert old["status"] == "RUNNING" and old["produced"] == [] and old["case_applied_at"] is None
+        assert conn.scalar(sa.select(sa.func.count()).select_from(produced_objects).where(
+            produced_objects.c.job_kind == "INCIDENT_CLIP_BUILD")) == 0
+        conn.execute(job_execution.update().where(job_execution.c.execution_id == old["execution_id"]).values(
+            lease_expires_at=sa.text("DATE_SUB(NOW(6), INTERVAL 1 SECOND)")))
+        outcome = sweep_expired(conn, old["execution_id"], first.settings)
+        assert outcome.reason == "RETRIED"
+        conn.execute(job_execution.update().where(job_execution.c.execution_id == outcome.retry_execution_id).values(
+            available_at=sa.func.now(6)))
+    stop = Event()
+    def invoke(ctx):
+        try:
+            return registry.dispatch(ctx)
+        finally:
+            stop.set()
+    compose_worker(engine=queue, startup=startup, registry=KindRegistry({"INCIDENT_CLIP_BUILD": invoke}),
+        stop=stop, reflector=reflector).run()
+    assert len(builds) == 2 and len(encodes) == 4
+    redeliver_once(queue, reflector, sleep=lambda seconds: None)
+    assert len(builds) == 2 and len(encodes) == 4
+    with queue.begin() as conn:
+        rows = conn.execute(sa.select(job_execution).where(job_execution.c.kind == "INCIDENT_CLIP_BUILD")
+            .order_by(job_execution.c.attempt)).mappings().all()
+        assert [(r["attempt"], r["status"]) for r in rows] == [(1, "STALE"), (2, "SUCCEEDED")]
+        assert rows[0]["produced"] == [] and rows[1]["case_applied_at"] is not None
     assert queue.pool.checkedout() == 0

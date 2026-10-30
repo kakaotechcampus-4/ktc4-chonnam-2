@@ -56,6 +56,14 @@ def test_reads_successful_fine_through_public_reader_and_detaches_fixed_span():
     assert data.requested_range["end_sec"] != case.observation_inputs[ctx.job_id]["span"]["end_ms"] / 1000
 
 
+def test_case_explicit_stream_selection_is_detached_for_the_whole_timeline():
+    ctx, case, _, _, make_load = bound_input()
+    case.sources = [{"video_stream_ref": "a-rear"}, {"video_stream_ref": "b-rear"}]
+    data = make_load()(ctx)
+    case.sources[1]["video_stream_ref"] = "b-front"
+    assert data.video_stream_refs == ("a-rear", "b-rear")
+
+
 @pytest.mark.parametrize("mode", ["kind", "case", "scope", "generation", "candidate", "span", "fine_kind",
     "fine_scope", "fine_candidate", "fine_generation", "fine_span", "fine_failed", "newer_failed",
     "visual_candidate", "visual_run", "visual_source", "source_kind", "run_failed", "coarse_candidate_run",

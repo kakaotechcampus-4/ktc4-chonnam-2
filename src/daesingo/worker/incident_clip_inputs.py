@@ -14,6 +14,7 @@ class IncidentClipInput:
     timeline_ref: dict
     requested_range: dict
     analysis_source_ref: str
+    video_stream_refs: tuple[str, ...]
 
 
 class IncidentClipInputs:
@@ -86,4 +87,5 @@ class IncidentClipInputs:
         return IncidentClipInput(case_id=context.case_id,
             timeline_ref={"timeline_id": span["timeline_id"], "revision": span["timeline_revision"]},
             requested_range={"start_sec": span["start_ms"] / 1000, "end_sec": span["end_ms"] / 1000},
-            analysis_source_ref=fine.analysis_run.input_ref.ref)
+            analysis_source_ref=fine.analysis_run.input_ref.ref,
+            video_stream_refs=tuple(s["video_stream_ref"] for s in case.sources if s.get("video_stream_ref")))
