@@ -12,21 +12,22 @@ import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
-import { CandidateCompare, DetailsCheck, EditHint, PlateCheck } from './SubScreens'
+import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
 // 실제 HTTP API(`?api`)로 도는 흐름 — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
 // 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
 // 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
 
-type Sub = 'candidates' | 'plate' | 'details' | 'hint'
+type Sub = 'candidates' | 'plate' | 'plateEdit' | 'time' | 'details' | 'hint'
 const noop = () => {}
 // 결과 화면 갈래 — 진행에서 여기로 넘어오는 순간 자동차가 도착한다(시연과 같다)
 const RESULT_KINDS: ReadonlySet<string> = new Set(['AWAIT_RESPONSE', 'EVIDENCE', 'HANDOFF'])
 type NoticeAction = Extract<Command, { kind: 'RUN_NOTICE_ACTION' }>['payload']['action']
 
-// notice 버튼 중 command가 있는 것만 보낸다. 나머지(직접 입력류)는 입력형 command가 아직 없다(#212 · #217).
-// `EDIT_HINT`는 바로 보내지 않고 설명 입력 화면을 연다 — 거기서 `EDIT_HINT` command로 보낸다(#410).
+// notice 버튼 중 command가 있는 것만 보낸다. 입력이 필요한 동작은 바로 보내지 않고 입력 화면을 연다 —
+// `EDIT_HINT`는 설명(#410), `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 번호판 · 시각(#449). 거기서 같은 이름의 command로 보낸다.
+const INPUT_SUB: Partial<Record<Action, Sub>> = { EDIT_HINT: 'hint', MANUAL_PLATE_INPUT: 'plateEdit', EDIT_EVENT_TIME: 'time' }
 const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_REPORT_VIDEO',
   'RETRY_PLATE_READ',
@@ -86,12 +87,13 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     void send(command)
   }
   const onAction = (noticeCode: string, action: Action) => {
-    if (action === 'EDIT_HINT') return open('hint')
+    const input = INPUT_SUB[action]
+    if (input) return open(input)
     if (!SENDABLE.has(action)) return setUnsupported(true)
     run({ kind: 'RUN_NOTICE_ACTION', payload: { notice_code: noticeCode, action: action as NoticeAction } })
   }
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
-  const canRun = (action: Action) => action === 'EDIT_HINT' || SENDABLE.has(action)
+  const canRun = (action: Action) => !!INPUT_SUB[action] || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
     setSubs([])
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
@@ -103,6 +105,12 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     run({ kind: 'EDIT_HINT', payload: { description } })
   }
   const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value } })
+  // 번호판은 저장 뒤에도 확인 화면에 남아 서버가 반영한 값을 보인다. 시각은 결과 화면으로 돌아간다.
+  const editPlate = (value: string) => run({ kind: 'MANUAL_PLATE_INPUT', payload: { value } })
+  const editTime = (value: string) => {
+    back()
+    run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
+  }
   const open = (sub: Sub) => {
     setSubs((s) => [...s, sub])
     setArriving(false)
@@ -234,7 +242,9 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         )
       default:
         if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
-        if (sub === 'plate') return <PlateCheck view={view} onBack={back} frameSrc={frameSrc} />
+        if (sub === 'plate' || sub === 'plateEdit')
+          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
+        if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
         if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
         return (
           <ResultScreen
@@ -242,6 +252,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
+            onTime={() => open('time')}
             onRespond={respond}
             onAction={onAction}
             canRun={canRun}

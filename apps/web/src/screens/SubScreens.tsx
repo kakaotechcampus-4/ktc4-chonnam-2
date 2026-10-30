@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
+import { splitDateTime } from '../state/resultModel'
 import { CandidateCard } from '../components/CandidateCard'
 import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
@@ -74,8 +75,8 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
-// 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
-// `onEdit`이 없으면 수정 버튼을 두지 않는다 — 직접 입력을 case로 보내는 command가 아직 없다(#212 · #217).
+// 시연은 화면 안에서만 반영하고, `?api`는 `MANUAL_PLATE_INPUT` command로 보낸다(#449).
+// `onEdit`이 없으면 수정 버튼을 두지 않는다.
 export function PlateCheck(props: {
   view: CaseView
   aiValue?: string | null
@@ -192,6 +193,43 @@ export function PlateCheck(props: {
           </section>
         </div>
       </div>
+    </SubPage>
+  )
+}
+
+// 발생 시각 직접 입력(#449) — 결과 화면 발생 시간의 「시각 입력하기 · 수정하기」나 notice의 `시각 직접 입력`으로 연다.
+// 입력칸은 날짜 · 시간만 받고, 계약이 오프셋이 있는 RFC3339를 요구해 한국 시간(+09:00)을 붙여 보낸다.
+export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (value: string) => void }): JSX.Element {
+  const shown = splitDateTime(props.view.evidence?.event_time_display.value ?? null)
+  const [date, setDate] = useState(shown.date ?? '')
+  const [time, setTime] = useState(shown.time ?? '')
+  return (
+    <SubPage title="발생 시각" onBack={props.onBack} className="time-page">
+      <form
+        className="rs-group"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (date && time) props.onSave(`${date}T${time.length === 5 ? `${time}:00` : time}+09:00`)
+        }}
+      >
+        <label className="rs-field">
+          <span className="rs-label">날짜</span>
+          <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="rs-field">
+          <span className="rs-label">시간</span>
+          <input type="time" step={1} className="field" value={time} onChange={(e) => setTime(e.target.value)} />
+        </label>
+        <span className="rs-hint">한국 시간 기준으로 저장해요.</span>
+        <div className="rs-actions">
+          <button type="submit" className="rs-btn pri" disabled={!date || !time}>
+            저장
+          </button>
+          <button type="button" className="rs-btn sec" onClick={props.onBack}>
+            취소
+          </button>
+        </div>
+      </form>
     </SubPage>
   )
 }

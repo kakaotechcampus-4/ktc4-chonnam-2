@@ -99,6 +99,8 @@ export function reviewReason(code: string | null): string {
  * (`contract-job-record-case-view.md` §`notices[].code`, 2026-09-14 등재). */
 const NOTICE_MESSAGES: Record<string, string> = {
   'notice.event_time_needs_review': '사건 시각을 확인해 주세요.',
+  // #449 · #455 — 시각 출처가 하나도 없어 신고자료를 묶지 못한다. 버튼은 `시각 직접 입력`(EDIT_EVENT_TIME)
+  'notice.event_time_missing': '발생 시각을 알 수 없어요. 시각을 직접 입력하면 신고자료를 완성할 수 있어요.',
   'notice.time_conflict': '시각 단서가 서로 달라 확인이 필요합니다.',
   'notice.post_stamp_required': '촬영 후 찍힌 시각이라 확인이 필요합니다.',
   'notice.time_post_stamp_required': '촬영 후 찍힌 시각이라 확인이 필요합니다.',
@@ -121,6 +123,10 @@ const NOTICE_MESSAGES: Record<string, string> = {
   // #168 [A] — 가장 유력한 후보에서 위반이 관찰되지 않은 음성 결과.
   'notice.visual_event_not_observed': '이 장면에서는 신고할 위반을 확인하지 못했어요.',
   'notice.report_video_not_generated': '신고용 영상이 아직 만들어지지 않았습니다.',
+  // case/exports.py가 `notice.` + code 뒷부분으로 싣는다. 다시 만들기 버튼은 서버가 action으로 준다
+  'notice.report_video_export_failed': '신고용 영상을 만들지 못했어요.',
+  // 번호판 이미지는 선택 첨부라 실패해도 묶음을 막지 않는다(#280)
+  'notice.plate_image_export_failed': '번호판 이미지를 만들지 못했어요. 번호판 이미지 없이도 신고자료는 완성돼요.',
   // 이슈 #48 확정 — 문구 뜻은 계약이 정했다(「지도에 붙여넣을 검색어를 제공하지
   // 못한다, 기억나는 장소를 직접 검색해야 한다」). 발동 기준은 `location` 부재가
   // 아니라 `location_display.search_keyword == null`이다.
@@ -152,6 +158,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'http.not_found': '찾을 수 없는 신고예요. 「새 신고」로 다시 시작해 주세요.',
   'case.command.stale_revision': '화면이 그 사이 바뀌었어요. 바뀐 화면에서 다시 눌러 주세요.',
   'case.command.not_allowed': '지금은 할 수 없는 동작이에요.',
+  'case.command.invalid_value': '입력한 값을 받을 수 없어요. 다시 확인해 주세요.',
 }
 export const ERROR_FALLBACK = '요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.'
 
