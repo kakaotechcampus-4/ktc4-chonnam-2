@@ -16,6 +16,7 @@
 ### 이 문서가 소유한다
 
 - 배포 topology
+- 최종 제출 · 발표 기간의 운영 조건과 외부 체험 보호 요구
 - api / worker / mysql 운영 경계
 - logging / privacy guardrail
 - monitoring / alert 방향
@@ -191,6 +192,87 @@ GitHub Actions
 - Caddy/Nginx 등 reverse proxy 도입
 - Google/Kakao OAuth client·callback 등록
 
+**2026-10-30 갱신:** 최종 산출물 제출 요건(§2-3)으로 「외부 공개 demo URL 필요」 조건이 실제가 됐다. 위 목록은 RD-14 결정 전까지 그대로지만, RD-14는 제출 마감(11/11) 전에 결정이 필요하다. [RT-14 실행 절차](./rt14-deployment.md) §9는 「공개 trigger가 생기면 PM/Owner 검수 뒤 DNS · TLS · 인증을 정한다」고 두고 내부 loopback smoke만 제공한다. EIP는 카테캠 도메인 가이드와 AWS 가이드의 안내가 달라 미확정이다([`aws-environment.md`](./official-inputs/aws-environment.md)).
+
+### 2-3. 최종 제출 · 발표 기간 운영 조건
+
+카테캠 「최종 산출물 제출 안내 & 심사 기준 공개」(2026-10-22 공지)가 배포 · 운영에 주는 요구다.
+
+| 요구 | 운영 함의 | 2026-10-30 상태 |
+| --- | --- | --- |
+| 배포 서비스 URL — 접속해서 핵심 기능을 처음부터 끝까지 써 볼 수 있어야 한다 | 외부에서 닿는 endpoint(RD-14)와 실제 API · Worker · provider 경로, 심사자가 쓸 샘플 입력 | 외부 endpoint 없음. 배포 실행 전(§2-1) |
+| 로그인이 필요하면 테스트 계정 · 샘플 데이터를 함께 적는다 | 현재 인증이 없고 `case_id`를 아는 것이 사실상 접근 조건이다([HTTP Contract](../architecture/contracts/contract-http-api.md) §3.6). 테스트 계정 대신 샘플 영상 · 사용 안내가 필요하다 | 샘플 입력 · 공개 범위 미정 |
+| GitHub 저장소 — README(실행 · 배포 방법) · 테스트 코드 · CI/CD 설정 | README 배포 절은 실제로 실행한 배포 절차를 근거로 쓴다 | CI 있음(§19). 배포 workflow는 준비 구현만 있음. README 배포 절 없음 |
+| 멘토 심사 「배포 · 운영」 — URL 접속 · CI/CD · 환경 분리 | 환경 분리는 §4-1 「환경별 구분」으로 설명한다 | §4-1 |
+| 제출 뒤 산출물 수정 불가 | 제출 시점 revision을 known-good으로 기록하고, 그 revision으로 발표까지 운영한다 | 제출 뒤 배포본 hotfix 허용 여부는 `확인 필요` |
+
+운영 기간:
+
+```text
+2026-11-11(수) 17:00  제출 마감 — 이 시점 revision이 심사 대상
+2026-11-16(월) 18:00  광주(전남대) 현장 발표회 — 시연 중 서비스 유지
+2026-11-20            카테캠 AWS 제공 종료
+```
+
+원칙:
+
+- **제출한 URL이 11/20까지 유지돼야 한다.** EC2를 중지하면 공인 IPv4가 바뀐다(§2-1). RD-14에서 EIP · DNS 갱신 · 상시 가동 중 무엇을 고르든 이 조건을 결정 기준에 넣는다.
+- **EC2는 팀원 공유다**([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 제출 뒤에는 서비스 중인 instance의 중지 · 재시작 · host 전역 변경(package 설치 등)을 운영 창에서만 한다.
+- **공개 범위와 비용 상한을 공개 전에 정한다.** 인증 없이 업로드 · 분석이 가능하므로 공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용 중 무엇인지와 provider 호출 상한을 RD-14와 함께 정하고, 그 전에 §21 pre-deploy review를 실행한다. 카테캠 계정은 상업적 · 유료 서비스 운영이 금지다(같은 문서 §3).
+- **외부 체험은 §2-4의 보호 범위 안에서만 받는다.**
+- **제공 종료 전 데이터 처리.** 업로드 영상 · 파생물 · DB의 삭제 시점과 방법은 retention 미결(§14, #71)과 함께 정한다. 결정 전에는 「제공 종료와 함께 사라진다」고 가정하지 않는다.
+
+### 2-4. 외부 체험 운영 보호 · 부하 시험
+
+§2-3의 공개 URL은 팀 · 시연만 가정한 현재 용량 가정(Baseline B-P1 · B-W1 ~ B-W4)을 넘는 요청을 받을 수 있다. 목표는 처리량 보장이 아니라 **OOM · 데이터 손상 · 중복 비용 · 끝없는 대기 없이, 수락한 과업과 조회를 유지하고 초과 요청에는 빠른 안내를 주는 것**이다.
+
+#### 요청 종류별 보호 경계
+
+| 요청 | 현재 (`develop` `7bab60bc`) | 필요한 보호 |
+| --- | --- | --- |
+| 신규 분석 시작 | 서버 전체의 수락 상한이 없다. 실행은 Worker 1 · concurrency 1(B-W1 · B-W2)로 직렬화되므로 초과분은 queue에서 기다린다 | 수락 조건 · 전체 대기량 상한. 검사와 발주가 경쟁해 상한을 넘지 않게 서버에서 처리하고, 거절할 때 job · provider 비용이 생기지 않아야 한다 |
+| 업로드 | 파일별 body 상한 · 수신 timeout(B-U1 ~ B-U4)은 있다. 동시 수신 수 · 전체 working set 상한은 없다 | 동시 수신 · 남은 disk 기준 거절. 받을 수 없는 파일을 끝까지 받은 뒤 거절하는 경로를 줄인다 |
+| frame | API 동시 생성 2(B-F2), 초과 요청은 기다린다 | 현재 값 유지. 혼합 부하에서 대기 시간 관측 |
+| asset 다운로드 | 응답이 파일 전체를 메모리로 읽는다(`src/daesingo/api/composition.py:175`). 동시 수 제한이 없다 | 동시 다운로드 수 제한 또는 streaming. 큰 파일 동시 다운로드의 RSS를 먼저 측정한다 |
+| `GET /view` polling | 탭당 ≤ 0.5 rps · 동시 탭 ≤ 10 가정(B-P1) | 오류 시 backoff, 요청 유실 뒤 command 자동 재전송 금지 |
+| provider 호출 | 자동 retry 상한은 있다. 사용자 반복(재탐색 · 다시 판독 · 다른 후보)에는 MVP에서 상한을 두지 않고 운영 관찰 뒤 다시 보기로 했다([#311](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/311) 결정 B). 서버 전체 · 일일 호출 상한도 없다 | 공개 URL은 #311의 재검토 조건이다. 서버 전체 신규 분석 상한(첫 행)으로 먼저 막고, 반복 상한이 필요한지는 UsageRecord · 반복 횟수로 판단한다. 금액을 믿을 수 없으면 횟수 상한부터 둔다 |
+
+원칙:
+
+- **초과 요청은 일찍 거절한다.** 과부하에서 일부 요청을 의도적으로 거절해 수락한 요청의 지연을 낮게 유지하는 load shedding 접근을 따른다([AWS Builders' Library](https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload)).
+- **전역 connection 한도 하나로 끝내지 않는다.** Uvicorn `--limit-concurrency`는 한도를 넘는 새 요청에 바로 `503`을 주고 idle keep-alive 연결도 한도에 센다([Uvicorn 문서](https://uvicorn.dev/server-behavior/)). 요청 종류를 구분하지 못해 조회 · health까지 막을 수 있으므로 위 표처럼 종류별 경계를 둔다.
+- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job을 `requested_at + 실행 예산 + 30초`까지만 기다린다([case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)). queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
+- **IP 단위 제한만으로 공정성 · 비용 상한을 삼지 않는다.** 같은 네트워크의 여러 사용자가 한 공인 IP를 쓸 수 있다. 서버 전체 상한을 우선하고, 인증 없는 case 생성으로 반복 상한을 우회할 수 있는지 함께 본다.
+- **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
+- **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 배포 전에 정한다.
+- 새 HTTP status · 오류 코드 · 사용자 안내가 필요하면 HTTP Contract Owner와 Consumer(case · web)가 함께 정한다. 이 문서는 운영 요구만 정한다.
+
+#### 부하 시험
+
+[P2 Runtime Capacity Smoke](./experiments/elice-runtime-capacity-smoke-plan.md)(concurrency=1 baseline)를 먼저 하고, 그 위에 외부 체험 시나리오를 얹는다. 배포된 EC2에서 한다.
+
+| 시나리오 | 확인할 것 |
+| --- | --- |
+| 단일 실제 과업 cold · warm | E2E 시간 · CPU/RSS · disk · provider 호출 · 결과 |
+| 정상 혼합 — 조회 여러 탭 + 실제 분석 1 + 허용 업로드 | UI · health 응답, heartbeat lag · false STALE · DB pool · 조회 지연 |
+| 몰림 — 조회 다수 + 분석 시작 시도 다수 | 수락 수가 상한을 지키고 초과는 빠르게 안내, 수락한 과업은 정상 종료, 부하 뒤 회복 |
+| 큰 · 느린 입력 — 상한 근처 파일 · 느린 업로드 · 중도 끊김 | 거절 응답 · 자원 회수 · staging/temp 정리 · disk 고갈 방지 |
+| 다운로드 경쟁 — 큰 asset 동시 · 느린 소비 · 끊김 | RSS peak · 연결 · DB 회수 · 진행 중 분석 영향 |
+| 장애 · 재개 — Worker kill · provider 지연/429/실패 · 일시 DB 장애 | retry 상한 · 중복 정산 방지 · 사용자 출구 · 이후 정상 과업 복귀 |
+| 짧은 지속 시험 — 혼합 부하 수십 분 | 자원 · 잔여 파일 누적 여부 · CPU credit 추세. 장기 무장애 보장이 아니다 |
+
+수집값: 수락 · 거부 · 실패 수, 완료 과업 수, queue wait, UI · health 지연, CPU · RSS · host memory · disk, CPU credit, provider 호출 · UsageRecord, false STALE, cleanup 뒤 잔여. **예상한 거절과 예기치 않은 5xx를 나눠 센다.**
+
+규율:
+
+- 체험 규모 가정 · 운영 상한 · 통과 기준은 실측 뒤 정하고 **시험 전에 고정한다.** 실패 뒤 기준을 느슨하게 바꿔 통과로 만들지 않는다.
+- 조회 · 거절 폭주는 fake provider와 통제된 미디어로 시작하고, 실제 provider 혼합은 소수로 확인한다. fake 결과로 provider quota · 실제 비용 · 실제 영상의 peak RAM을 주장하지 않는다.
+- 표본이 작은 실제 영상 결과는 개별값 · 범위로 쓰고 p95를 대표 성능처럼 쓰지 않는다.
+- **CPU credit.** EC2는 `unlimited` 모드다(§2). 24시간 평균 CPU가 baseline을 넘으면 초과분이 vCPU-hour당 추가 요금으로 청구된다([AWS 문서](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html)). 시험 중 `CPUSurplusCreditBalance` · `CPUSurplusCreditsCharged`를 함께 기록한다.
+- RAM · disk · process RSS는 EC2 기본 metric에 없다(§8). OS · container 계측으로 남긴다. 이 시험을 위해 monitoring stack을 새로 설치하지 않는다(§22).
+- **공유 host.** 부하 · 장애 주입은 다른 팀원의 사용 시간과 조율한 뒤에만 한다.
+- 결과는 `experiments/`에 남기고, 반복 가능한 운영 결론만 이 문서와 Baseline으로 승격한다(§20).
+
 ## 3. 현재 상태와 목표 상태
 
 ### 현재 develop에서 확인된 것 — 2026-10-30 (`7bab60bc` 기준)
@@ -267,6 +349,19 @@ Runtime
 - Compose/Dockerfile에는 secret 값 자체보다 변수 이름과 주입 경계만 남긴다.
 - `.env.example`을 둘 경우 non-secret key 이름과 안전한 예시만 제공한다.
 - CI에 등록된 값이라도 build 단계에서 필요한 값인지 runtime 단계에서 필요한 값인지 구분한다.
+
+#### 환경별 구분
+
+같은 Dockerfile · 같은 앱 설정 key를 쓰고, 환경마다 image 출처 · DB · 설정 파일 공급 · AWS 권한이 다르다. 이 표는 기존 결정을 한곳에서 보이게 한 것이며 새 결정이 아니다. 앱 설정 key 원문은 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다.
+
+| 구분 | local | CI | production(EC2) |
+| --- | --- | --- | --- |
+| image | 로컬 build(`compose.yaml`) | `python-tests`가 배포 image를 build해 media · OCR acceptance. push하지 않음 | `rt14-deploy` publish가 build · acceptance한 image를 ECR digest로 pull. EC2에서 build하지 않음(후보, RD-12b) |
+| DB | Compose `mysql` named volume | MySQL 8.4 service container · test 전용 DB | 소유 label을 확인한 external volume. 도구가 생성 · 삭제하지 않음 |
+| 앱 설정 · secret | repo 밖 파일을 `DAESINGO_RUNTIME_ENV_FILE`로 지정 → `/run/secrets/runtime.env` read-only mount | 비밀값 없는 test 설정. 외부 AI 실제 호출 없음(§19) | Parameter Store SecureString → EC2 instance role → host 보호 파일(config ID별) → 같은 mount 경로(아래) |
+| AWS 권한 | 개인 SSO(사람이 확인할 때만) | 없음 — 일반 CI에 OIDC 권한을 주지 않음 | Actions는 OIDC deploy role, host는 instance role. 장기 Access Key 없음(§2-1) |
+| api 노출 | `127.0.0.1` | — | 준비 구현은 host loopback. 외부 공개는 RD-14 |
+| revision | `local` | `local`(build arg를 넘기지 않음) | 40자 commit SHA · image digest · config ID로 기록(후보, RD-12c) |
 
 Runtime secret source와 전달 경로는 확정이다(RD-07, [#249](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/249), 2026-10-04). 앱이 파일을 읽는 규칙(값은 파일에서만 · `DAESINGO_ENV_FILE`은 composition root만 해석 · startup fail-fast · key 이름만 로그)은 [Tech Spec](./runtime-tech-spec.md) §15.2가 소유한다.
 
@@ -929,7 +1024,14 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — 준비 구현의 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. 승인(RD-12c · RD-12e)과 rehearsal이 남았다
 - [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지이고, 외부 경로 smoke는 RD-14 뒤다
-- [ ] public endpoint / domain / TLS — 외부 공개 demo 또는 OAuth 요구 발생 시 EIP 필요 여부 → DNS → HTTPS/reverse proxy → callback 구성, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
+- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** EIP · DNS 갱신 · 상시 가동 중 제출 URL을 11/20까지 유지할 방법 → DNS → HTTPS/reverse proxy, single-EC2 첫 구현 후보는 §2-2 기준으로 Caddy 검토
+- [ ] 공개 범위(공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용)와 샘플 입력 · 사용 안내 — §2-3
+- [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
+- [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4)
+- [ ] 외부 체험 부하 시험 실행과 결과 기록 — P2 다음 단계, 기준은 시험 전에 고정(§2-4)
+- [ ] 제출 → 발표(11/16) → AWS 종료(11/20) 운영 유지와 종료 시 데이터 삭제 — §2-3 · §14
+- [ ] README 배포 절 · 환경 분리 서술 — 실제 배포 실행 뒤(§2-3 · §4-1)
+- [ ] 공개 전 pre-deploy security review 실행 — §21
 - [ ] secret scan gate
 
 Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까지 수치를 임의 확정하지 않는다.
@@ -956,4 +1058,10 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)
 - Kakao Tech Campus AWS OIDC guide (2026-09-22 공지)
 - Kakao Tech Campus 무료 도메인 발급 가이드 (2026-09-22 공지)
+- Kakao Tech Campus 최종 산출물 제출 안내 & 심사 기준 공개 (2026-10-22 공지)
+- [Case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)
+- [Issue #311 — 비용이 드는 사용자 반복의 상한](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/311)
+- [AWS Builders' Library — Using load shedding to avoid overload](https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload)
+- [Uvicorn — Server Behavior (resource limits)](https://uvicorn.dev/server-behavior/)
+- [AWS — Unlimited mode concepts for burstable instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html)
 - Kakao Tech Campus 「에이전틱 서비스 배포 & CI/CD」 특강 (2026-09-23) — 소규모 팀의 운영 복잡도, observability, 반복 가능한 배포·복구 관점의 설계 입력
