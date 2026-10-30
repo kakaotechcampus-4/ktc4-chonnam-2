@@ -64,7 +64,9 @@ RUN find /opt/daesingo/paddlex -type d -exec chmod 0555 {} + \
     && chmod 0750 /opt/daesingo/paddlex
 COPY migrations ./migrations
 COPY docker/runtime.py ./docker/runtime.py
+COPY compose.yaml ./compose.yaml
 ARG REVISION=local
+LABEL org.opencontainers.image.revision=$REVISION
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DAESINGO_REVISION=$REVISION
 ENV PADDLE_PDX_CACHE_HOME=/opt/daesingo/paddlex PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 USER 10001:10001

@@ -847,6 +847,10 @@ Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 미결.
 
 ## RD-12 — Deployment pipeline 세부
 
+2026-10-30 RT-14 **준비 구현**은 [Notes/runbook](rt14-deployment.md)에 연결한다.
+CI amd64/ECR digest/SSM controller/명시적 migration·rollback candidate를 제공하되
+RD-12b~f/h 승인·실제 AWS acceptance를 대신하지 않는다. 현재 OPEN 상태 유지.
+
 **Status:** OPEN\
 **Owner:** common/runtime — 김준영\
 **Consult:** —\
@@ -911,6 +915,10 @@ composition root가 생긴 뒤의 slice다(workflow §7 「Deployment automation
 ---
 
 ## RD-13 — 운영 관측 수단
+
+2026-10-30 [RT-14 준비 구현](rt14-deployment.md)은 awslogs+dual local cache를 승인 대기
+candidate로 제공하고 실제 Worker process/8종 등록 snapshot을 추가한다. restart 선택,
+retention/buffer/용량, 실제 전송/경보/idle heartbeat 정책과 운영 acceptance는 OPEN 유지.
 
 **Status:** OPEN\
 **Owner:** common/runtime — 김준영\
