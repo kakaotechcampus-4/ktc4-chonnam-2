@@ -140,6 +140,18 @@ describe('화면 선택', () => {
     expect(selectScreen({ ...searching, notices: [failed], running_jobs: [] }).kind).toBe('SEARCH_FAILED')
   })
 
+  it('다시 하기가 없는 실패(분석 범위 초과 · 클립 · Fine 실패)는 실패 화면이고, job이 도는 동안은 진행이다(#481 · #482)', () => {
+    const job = { job_id: 'j', kind: 'INCIDENT_CLIP_BUILD', label_key: 'job.generic_processing', status: 'RUNNING' } as const
+    const failed = (code: string) => ({ code, severity: 'ERROR' as const, blocking: true, message_key: 'x', actions: [] })
+    const searching = { ...views.find((v) => v.stage === 'SEARCHING')!, running_jobs: [] }
+    const assembling = { ...views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)!, running_jobs: [] }
+    expect(selectScreen({ ...searching, notices: [failed('recording.analysis_range_too_long')] }).kind).toBe('SEARCH_FAILED')
+    for (const code of ['recording.incident_clip_build_failed', 'search.visual_verify_failed']) {
+      expect(selectScreen({ ...assembling, notices: [failed(code)] }).kind).toBe('SEARCH_FAILED')
+      expect(selectScreen({ ...assembling, notices: [failed(code)], running_jobs: [job] }).kind).toBe('PROGRESS')
+    }
+  })
+
   it('응답 뒤 신고자료를 준비하는 동안(running_jobs)은 진행이고, 응답 대기 중이면 job이 있어도 결과다', () => {
     const evidence = views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence !== null)!
     const job = { job_id: 'j', kind: 'REPORT_VIDEO_EXPORT', label_key: 'job.generic_processing', status: 'RUNNING' } as const

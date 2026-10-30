@@ -229,6 +229,30 @@ it('결과 없음·분석 중단도 새 모양 틀이고, 결과 없음에서는
   expect(r.container.querySelector('.panel-t, .page-title')).toBeNull()
 })
 
+it('클립 준비 실패(#482)는 실패 화면에서 다시 시도 안내 없이 다른 후보와 「처음으로」를 두고, 후보를 고르면 SELECT_OTHER_CANDIDATE다', async () => {
+  // 클립은 후보를 고른 뒤에 만든다 — 고른 후보 하나와 다른 후보 하나를 둔다
+  const c = SNAPSHOTS.map((s) => s.view).find((v) => v.candidates.length > 0)!.candidates[0]
+  const two = { candidates: [{ ...c, selected: true }, { ...c, candidate_id: 'cand_other', selected: false }] }
+  const failedView = view({
+    ...two,
+    case_rev: 9,
+    stage: 'EVIDENCE_REVIEW',
+    evidence: null,
+    notices: [{ code: 'recording.incident_clip_build_failed', severity: 'ERROR', blocking: true, message_key: 'notice.incident_clip_build_failed', actions: [] }],
+  })
+  const { m, api } = setup({ get: failedView })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { container, findByText, getByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText('이 장면의 영상을 준비하지 못했어요.')
+  expect(container.textContent).not.toContain('다시 시도하면')
+  expect(getByText('처음으로')).toBeTruthy()
+  const other = two.candidates.find((c) => !c.selected)!
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  await waitFor(() =>
+    expect(m.sendCommand).toHaveBeenCalledWith('c1', 9, { kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: other.candidate_id } }),
+  )
+})
+
 it('결과 없음에서 [다시 찾기]를 누르면 탐색 job이 도는 동안 진행 화면이고 [다시 찾기]가 사라진다(#426)', async () => {
   // case는 stage를 CANDIDATE_REVIEW에 두고 결과 없음 notice도 남긴다 — running_jobs만 달라진다
   const EMPTY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_empty_001')!.view
