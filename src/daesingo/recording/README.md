@@ -2,6 +2,16 @@
 
 **Owner:** 정철원 (`docs/management/ownership.md`) · **경계:** `docs/architecture/module-architecture.md` §4-모듈1 · **문서 작업공간:** `docs/modules/recording/`
 
+2026-10-31 P-6 구현 판단(#445): 공개
+`RecordingService.read_publish_registration(locator)`와 `PublishRegistration`
+(`REGISTERED`/`UNREGISTERED`/`UNKNOWN`)을 추가한다. 입력은 관리 source의
+상대 locator `source/<lowercase UUID hex>`다. MySQL repository는 caller
+transaction의 current locking read를 사용하고 DB 오류를 전파한다. stale
+snapshot의 false absence를 사용하지 않으며 mock repository는 durable 부재를
+입증할 수 없어 UNKNOWN이다. 이는 삭제 권한·파일 identity 증명이 아니고,
+Runtime의 별도 lease/identity 검사가 필요하다. schema·migration·제품 Contract는
+확대하지 않는다. [P-6 판단·transaction·Owner 확인 항목](../../../docs/runtime/issue445-orphan-publish.md).
+
 ## 이 폴더가 하는 일 (요약 — 원문은 §4-모듈1)
 
 사용자 원본 참조·파일과 stream 사실·시간축·파일 경계 해석(`resolve_span`)·시각 후보·GPS 관찰·분석용 사본·RemoteCopy registry·Incident Clip·Report Video·보관/삭제

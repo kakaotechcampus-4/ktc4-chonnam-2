@@ -4560,3 +4560,76 @@ staging/commit/push/PR/외부 댓글/merge/dispatch/AWS 작업 없음. #450을 �
 처음 환경 실패 및 retry 한계는 Notes §8에 구분했다. 같은 fresh reviewer가 delta11 PASS를
 직접 확인했고 잔여 product defect 지적 없음. Log EOF 공백 수정 후 diff PASS.
 작업 전용 image2개만 제거했으며 공유 cache/base image·다른 scratch는 보존했다.
+
+## 2026-10-31 — P-6 orphan publish capability·cleanup (#445)
+
+IN_PROGRESS · Refs #445 · Related #299. 배포는 보류한다.
+브랜치 `codex/issue445-orphan-publish-cleanup`, 시작 HEAD와 조회한 원격 develop은
+`326f91334a4878b34135631e6b0e660b2c791b98`, 최초 index/worktree clean이었다.
+기존 #299·PR #390/#409의 publish 제외 이력은 보존하며 소급 완료로 바꾸지 않는다.
+
+[전체 Implementation Notes·파일 목록·완료 조건별 증거](issue445-orphan-publish.md)에
+P-6 입력/출력/transaction 판단과 Owner/PR 확인 항목을 기록했다. 실제 filesystem
+publish는 API 원본 `source/<uuid hex>`이고 준비된 analysis/incident·frame·derived
+bytes의 MySQL BLOB과 구분했다. Recording 공개 enum capability는 current
+`FOR UPDATE NOWAIT`로 등록/미등록/불확실을 구분하며 DB 오류는 전파한다.
+Runtime은 새 Recording schema 조회 없이 facade를 호출하고 DB connection을
+반환한 뒤 identity를 재검사해 삭제한다. schema·migration·제품 Contract는 불변이다.
+
+API는 수신 전부터 등록 commit/rollback·취소 worker 종료까지 shared orphan
+lease를 보유한다. scanner는 같은 root exclusive lease 안에서만 판정·삭제한다.
+기존 staging/temp publish 보호·주기·중복 방지·join은 보존한다. 새 orphan은
+Windows native LockFileEx 공유 잠금, POSIX flock을 사용한다. leased media fd에서
+source를 열고 root/source/leaf identity를 재확인한다. 나이는 기존 B-C2 86400초,
+B-C4 startup+3600초이며 mtime·엄격한 초과를 구현 선택으로 기록했다. 활성 root나
+비정규 legacy locator는 root 전체 회수를 지연할 수 있고 임의 비협력 POSIX rename은
+마지막 검사와 syscall 사이에서 원자적으로 배제할 수 없음을 명시했다.
+
+직접 RED→GREEN: capability/scanner23, API wiring2, lookup FileNotFound 집계1,
+POSIX root 교체2, lease 대기 deadline1, Windows 중첩 CRT lease timeout1,
+orphan lock 접근 오류 집계1을 각각 재현 후 수정했다. lease 우회 및 consistent-read
+대체 negative control은 활성/미커밋 합성 파일이 삭제되는 위험을 검출한다.
+경합은 Event/Pipe와 transaction barrier로 제어했고 timeout/assertion을 완화하지 않았다.
+
+| 직접 실행 | 결과 |
+| --- | --- |
+| Windows focused (기존 upload/storage/lifecycle 포함) | 246 PASS |
+| WSL POSIX focused | 185 PASS, 기존 Windows 전용7 SKIP |
+| Windows Python → owned MySQL8.4.7 | 새16+기존 API upload34 = 50 PASS, skip/xfail0 |
+| WSL Python/process → 같은 owned MySQL8.4.7 | 새16 PASS, skip/xfail0 |
+| 최종 lock-error delta 포함 orphan | Windows33 PASS, POSIX31 PASS |
+| 최종 Runtime quality | Ruff PASS, linux/win32 mypy 각각87 source files PASS |
+| boundary·Contract·diff | 위반0, 62/26/104 PASS, diff PASS |
+
+별도 실행의 수치는 합산하지 않는다. POSIX source는 /mnt/c(v9fs), storage focused
+합성 root는 /tmp(ext4), POSIX MySQL 합성 root는 /mnt/c였다. Windows NTFS/WSL
+검증이며 별도 배포 Linux host/container, UNC/bind mount·비협력 writer 보장은 아니다.
+full pytest/full MySQL strict inventory·Docker build를 관례적으로 반복하지 않았고
+최종 전체 통합/원격 CI는 push 뒤 조건으로 남긴다. inventory/gate/skip/xfail 정책 불변.
+
+보존 실패: 최초 sandbox temp/hardlink 접근 오류, cp949 진단 출력 오류, 초기 mypy
+Optional guard 오류, 중첩 Windows lease 때문에 정체된 mysql2 실행(16개 진행 후
+첫 기존 HTTP에서 정체, 해당 소유 pytest만 종료). 나중 PASS로 소급 덮지 않았다.
+RAW·JSON/JUnit·내부 runner·진단은 `.codex-scratch/issue445/`에 PR 제외로 보존한다.
+
+`GPT-6.1 Sol / high`, history fork 없음, fresh read-only reviewer는 root reopen P1,
+deadline·집계 P2를 지적했고 동일 reviewer가 수정과 Windows 공유 잠금 후속을
+재확인했다. reviewer는 작성자 테스트 증거를 검토했으며 테스트 직접 실행은 하지
+않았다(직접 diff check만 PASS). 최종 문서/작은 lock-error delta 확인은 Notes 후속에 기록한다.
+
+staging/commit/push/PR/외부 댓글/merge/Issue 종료/AWS/provider/배포/dispatch 없음.
+RT14_EXECUTION_ENABLED 변경 없음. 현재 원격 값의 읽기는 자동 승인 검토가
+provider 호출로 분류해 거부했으며 재시도하지 않았다. 이전 false 관측을 이번의 새
+검증으로 주장하지 않는다. 소유 DB/temp 정리 및 최종 Git 상태는 아래 후속에 기록한다.
+
+후속: 동일 fresh reviewer는 최종 lock 접근 오류 분류·문서·MySQL POSIX16 증거까지
+재검토해 협력 writer 경계 내 잔여 actionable code finding 없음으로 판정했다.
+root 단계 실패와 항목별 identity 실패의 집계 문구를 구분하라는 경미한 문서 의견을
+반영했다. 테스트 직접 실행이 아닌 작성자 증거 검토라는 구분은 유지한다.
+소유 MySQL은 정확한 datadir 확인 및 non-audit client/transaction/data lock 모두0
+감사 후 종료했고 port 폐쇄와 소유 Linux DB·temp5개 제거를 확인했다.
+
+최종 후속: 동일 reviewer가 집계 문구 수정까지 확인해 잔여 지적 없음.
+Windows 소유 temp18개를 절대경로 검증 후 제거했고 잔여0을 확인했다.
+코드는 최종 quality4 및 Windows orphan33/POSIX31 검증 이후 변경하지 않았다.
+21개 후보 파일은 미커밋·미스테이징으로 인계하며 원본 증거는 PR 제외 상태다.

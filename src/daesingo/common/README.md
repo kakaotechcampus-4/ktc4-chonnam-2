@@ -5,6 +5,14 @@ producer/scan filesystem lease, startup/주기 scan과 stop/join을 제공한다
 publish cleanup과 DB 집계는 제외한다.
 [구현·검증·제약](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
 
+2026-10-31 P-6 후속(#445): API에만 별도 orphan scanner를 조립한다.
+기존 staging/temp의 publish 가지 보호는 그대로이며, 관리 source의 오래된
+UUID 파일만 공개 Recording 판정 port와 identity 검사를 통과한 뒤 정리한다.
+공유 producer lease와 exclusive scanner lease가 등록 transaction 종료까지
+경합을 막는다. Windows orphan은 실제 공유 `LockFileEx`, POSIX는 `flock`을
+사용한다. 나이·집계·실행 증거·비협력 writer 제한은
+[P-6 Implementation Notes](../../../docs/runtime/issue445-orphan-publish.md)에 있다.
+
 **Owner:** 김준영 (공통 기반/운영) · **Architecture 경계:** `docs/architecture/module-architecture.md` §6-2 · §2 원칙 6 · §5-13  
 **Runtime 문서:** [`docs/runtime/README.md`](../../../docs/runtime/README.md)
 

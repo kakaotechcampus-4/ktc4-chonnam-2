@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .publication import PublishRegistration, managed_publish_locator
+
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
@@ -153,6 +155,17 @@ class RecordingService(RecordingExports):
             raise ValueError("explicit AnalysisSourceLimits required")
         self._analysis_limits = analysis_limits
         self._analysis_checkpoint = analysis_checkpoint or (lambda: None)
+
+    def read_publish_registration(self, locator):
+        """Current registration fact, not authorization to delete a file.
+
+        Caller owns the transaction and writer synchronization. Failures
+        propagate; unsupported/ambiguous results are explicitly UNKNOWN.
+        """
+        if not managed_publish_locator(locator):
+            return PublishRegistration.UNKNOWN
+        result = self._repository.read_publish_registration(locator)
+        return result if isinstance(result, PublishRegistration) else PublishRegistration.UNKNOWN
 
     def _publish_prepared(self, media, content):
         if isinstance(media, AnalysisSource) and self._analysis_limits is not None:

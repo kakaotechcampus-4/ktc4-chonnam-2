@@ -22,6 +22,7 @@ from . import models as m
 from .probe import LocalSource, ProbedStream
 from .media_content import derived_content, descriptor, checked_content, frame_format, identity
 from .durable import media_identity, prepared_content, observation_payload, observation_from_payload
+from .publication import PublishRegistration, managed_publish_locator, registration_from_payloads
 
 
 metadata = sa.MetaData()
@@ -150,6 +151,22 @@ class MySQLRecordingRepository:
 
     def add_source_asset(self, asset):
         self._put("source_asset", asset.source_asset_ref, asset)
+
+    def read_publish_registration(self, locator):
+        """Locking current read, including under REPEATABLE READ snapshots.
+
+        Lock every local-source metadata row, not BLOB content. NOWAIT means
+        pending registration/deletion is uncertainty, never committed absence.
+        Caller ends the short transaction before filesystem work. No retry,
+        commit, rollback or filesystem lookup belongs to this method.
+        """
+        if not managed_publish_locator(locator):
+            return PublishRegistration.UNKNOWN
+        if not self._connection.in_transaction():
+            raise ValueError('publish registration requires caller transaction')
+        rows = self._execute(sa.select(entries.c.payload).where(
+            entries.c.kind == 'local_source').with_for_update(nowait=True)).scalars().all()
+        return registration_from_payloads(locator, rows)
 
     def add_prepared_media(self, media, content, *, case_id=None):
         info = prepared_content(media, content)
