@@ -7,7 +7,9 @@ def mapping():
     return {"DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "explicit-profile",
             "DAESINGO_RECORDING_ANALYSIS_HEIGHT": "240",
             "DAESINGO_RECORDING_ANALYSIS_PRESET": "veryfast",
-            "DAESINGO_RECORDING_ANALYSIS_CRF": "23"}
+            "DAESINGO_RECORDING_ANALYSIS_CRF": "23",
+            "DAESINGO_RECORDING_ANALYSIS_MAX_BYTES": "100000",
+            "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS": "10000"}
 
 
 def test_module_mapping_requires_explicit_media_profile_without_guessing_env(monkeypatch, tmp_path):
@@ -59,3 +61,17 @@ def test_clip_encoding_is_explicit_and_independent_of_analysis_profile():
 def test_invalid_clip_encoding_rejects_startup(values):
     module = import_module("daesingo.recording.factory")
     with pytest.raises(ValueError): module.RecordingSettings.from_mapping(values)
+
+
+@pytest.mark.parametrize("key", ["DAESINGO_RECORDING_ANALYSIS_MAX_BYTES", "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS"])
+@pytest.mark.parametrize("value", [None, "", "0", "-1", "1.5", "nan", "inf", "True"])
+def test_analysis_profile_requires_explicit_positive_integer_limits(key, value):
+    module = import_module("daesingo.recording.factory")
+    values = {**mapping(), "DAESINGO_RECORDING_ANALYSIS_MAX_BYTES": "100000",
+              "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS": "10000"}
+    if value is None:
+        values.pop(key)
+    else:
+        values[key] = value
+    with pytest.raises(ValueError):
+        module.RecordingSettings.from_mapping(values)

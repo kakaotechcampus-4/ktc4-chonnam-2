@@ -14,6 +14,8 @@ from .probe import LocalSource, _snapshot
 from .observability import observed_materialization, phase
 from .inspection import active_inspections
 from .analysis_tail import TailDecodeFailure, allowed, report, validate_tail
+from .analysis_limits import byte_budget, check_output, read_output
+from .analysis_process import run_output
 
 
 class _FrameCoverageError(RecordingCapabilityError):
@@ -91,8 +93,12 @@ class LocalAnalysisMaterializer:
         return materialize_chain(self, inputs, profile_ref)
 
     def _run(self, args):
-        result = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
-                                timeout=self._timeout, check=False)
+        if byte_budget() is not None and "-movflags" in args:
+            code, stderr = run_output(args, Path(args[-1]), self._timeout)
+            result = subprocess.CompletedProcess(args, code, b"", stderr)
+        else:
+            result = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
+                                    timeout=self._timeout, check=False)
         if result.returncode:
             if ("-vf" in args and "-xerror" in args
                     and b"No start code is found" in result.stderr
@@ -259,6 +265,7 @@ class LocalAnalysisMaterializer:
                         output.unlink(missing_ok=True)
                         self._run([arg for arg in command if arg != "-xerror"])
                         fallback = True
+                check_output(output)
                 with phase("output_probe"):
                     probed = self._probe(output)
                 with phase("output_validate"):
@@ -289,7 +296,7 @@ class LocalAnalysisMaterializer:
                     self._strict_decode(output)
                     audit["output_strict_decode"] = True
                 with phase("bytes_read"):
-                    content = output.read_bytes()
+                    content = read_output(output)
                 with phase("bytes_validate"):
                     if not content:
                         raise ValueError("빈 출력 media")

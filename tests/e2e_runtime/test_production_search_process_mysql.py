@@ -54,6 +54,7 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "process-profile",
         "DAESINGO_RECORDING_ANALYSIS_HEIGHT": "240", "DAESINGO_RECORDING_ANALYSIS_PRESET": "veryfast",
         "DAESINGO_RECORDING_ANALYSIS_CRF": "23",
+        "DAESINGO_RECORDING_ANALYSIS_MAX_BYTES": "1000000", "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS": "10000",
         "DAESINGO_RECORDING_INCIDENT_HEIGHT": "240", "DAESINGO_RECORDING_INCIDENT_PRESET": "veryfast",
         "DAESINGO_RECORDING_INCIDENT_CRF": "23"}
     env_file = tmp_path / "process.env"
