@@ -399,6 +399,7 @@ def assemble_evidence_bundle(
             case_id=case_id,
             selection_rev=selection_rev,
             resolution_id=f"tr_{case_id}_001",
+            incident_clip=obs.incident_clip,
         )
         return EvidenceBundle(
             evidence_record=None,
@@ -447,6 +448,7 @@ def assemble_evidence_bundle(
         case_id=case_id,
         selection_rev=selection_rev,
         resolution_id=f"tr_{case_id}_001",
+        incident_clip=obs.incident_clip,
     )
 
     evidence_record = assemble_evidence(
