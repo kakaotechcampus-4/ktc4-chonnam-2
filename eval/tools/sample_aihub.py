@@ -13,7 +13,7 @@ import random
 import sys
 import zipfile
 
-from eval import paths
+from eval import manifests_io, paths
 
 RULE_VERSION = "s2"   # 2026-09-16 대상 객체를 위반유형별로 좁혔다 (F10)
 
@@ -60,14 +60,16 @@ def _index(zf):
     return idx
 
 
-def sample(zip_path, per_type, seed):
+def sample(zip_path, per_type, seed, exclude_ids=frozenset(), excluded_manifests=(),
+           split="DEV", manifest_version="m1", gt_version="g1"):
+    """exclude_ids 의 시퀀스는 후보에서 뺀다 — 잠근 평가셋이 DEV 와 겹치지 않게."""
     zf = zipfile.ZipFile(zip_path)
     idx = _index(zf)
 
     by_type = collections.defaultdict(list)
     for key in sorted(idx):
         top = key[0]
-        if top in TYPE_MAP:
+        if top in TYPE_MAP and key[2] not in exclude_ids:
             by_type[TYPE_MAP[top]].append(key)
 
     rng = random.Random(seed)
@@ -111,7 +113,7 @@ def sample(zip_path, per_type, seed):
                 },
                 "archive": os.path.basename(zip_path).replace("VL", "VS"),
                 "archive_path": "%s/%s/%s" % (top, sub, seq_id),
-                "split": "DEV",
+                "split": split,
             })
             gt_items.append({
                 "sequence_id": seq_id,
@@ -134,7 +136,7 @@ def sample(zip_path, per_type, seed):
 
     seqs = {
         "meta": {
-            "manifest_version": "m1",
+            "manifest_version": manifest_version,
             "tier": "A",
             "source": "aihub",
             "sampling": {
@@ -143,12 +145,14 @@ def sample(zip_path, per_type, seed):
                 "per_type": per_type,
                 "actual_per_type": actual_per_type,
                 "strategy": "type-stratified, sequence-level",
+                "excluded_manifests": list(excluded_manifests),
+                "excluded_count": len(exclude_ids),
             },
         },
         "sequences": sequences,
     }
     gt = {
-        "meta": {"gt_version": "g1", "tier": "A", "stage": "classification",
+        "meta": {"gt_version": gt_version, "tier": "A", "stage": "classification",
                  "coverage": {"sequences_total": len(gt_items),
                               "sampling_rule_version": RULE_VERSION,
                               "sampling_seed": seed,
@@ -170,14 +174,25 @@ def main(argv=None):
         paths.REPO_ROOT, "eval", "manifests", "02.라벨링데이터", "VL.zip"))
     ap.add_argument("--per-type", type=int, default=30)
     ap.add_argument("--seed", type=int, default=20260906)
+    ap.add_argument("--out", default="a_aihub", help="쓸 manifest 이름")
+    ap.add_argument("--exclude-manifest", action="append", default=[],
+                    help="이 manifest 의 시퀀스를 빼고 뽑는다 (여러 번 줄 수 있다)")
+    ap.add_argument("--split", default="DEV")
+    ap.add_argument("--manifest-version", default="m1")
+    ap.add_argument("--gt-version", default="g1")
     args = ap.parse_args(argv)
 
     if not os.path.exists(args.zip):
         print("실패: %s 가 없다" % args.zip, file=sys.stderr)
         return 2
 
-    seqs, gt = sample(args.zip, args.per_type, args.seed)
-    outdir = paths.manifest_dir("a_aihub")
+    exclude_ids = set()
+    for name in args.exclude_manifest:
+        exclude_ids |= {s["sequence_id"] for s in manifests_io.load_sequences(name)["sequences"]}
+
+    seqs, gt = sample(args.zip, args.per_type, args.seed, exclude_ids, args.exclude_manifest,
+                      args.split, args.manifest_version, args.gt_version)
+    outdir = paths.manifest_dir(args.out)
     os.makedirs(os.path.join(outdir, "gt"), exist_ok=True)
     with open(os.path.join(outdir, "sequences.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(seqs, f, ensure_ascii=False, indent=2)

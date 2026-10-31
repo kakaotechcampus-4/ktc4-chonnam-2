@@ -89,6 +89,39 @@ def test_preflight_reports_all_boundary_requirements_before_provider_creation(
     assert "media file does not exist" in message
 
 
+def test_preflight_accepts_ctier2_and_checks_its_own_clip_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    loaded: list[str] = []
+
+    def load_clips(name: str) -> dict[str, object]:
+        loaded.append(name)
+        return {"clips": []}
+
+    monkeypatch.setattr(gemini_preflight, "load_env_file", lambda: {})
+    monkeypatch.setattr(gemini_preflight.manifests_io, "load_clips", load_clips)
+
+    with pytest.raises(gemini_preflight.PreflightError) as raised:
+        gemini_preflight.prepare({"manifest": "ctier2", "stage": "candidate"})
+
+    message = str(raised.value)
+    assert loaded == ["ctier2"]
+    assert "supports manifest=" not in message
+    assert "ctier2 must contain 149 clips, found 0" in message
+
+
+def test_preflight_rejects_unknown_manifest(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(gemini_preflight, "load_env_file", lambda: {})
+    monkeypatch.setattr(
+        gemini_preflight.manifests_io, "load_clips", lambda _: {"clips": []}
+    )
+
+    with pytest.raises(gemini_preflight.PreflightError) as raised:
+        gemini_preflight.prepare({"manifest": "a_aihub", "stage": "candidate"})
+
+    assert "supports manifest=b_youtube, b_youtube_m4, ctier2, ctier3 only" in str(raised.value)
+
+
 def test_eval_cli_reports_preflight_failure_without_creating_provider(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):

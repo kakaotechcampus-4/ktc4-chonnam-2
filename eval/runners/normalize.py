@@ -4,7 +4,7 @@ scorer 는 계약을 직접 읽지 않는다. 계약 간 필드명이 갈리는 
 (docs/mock/CONTRACT_CONFLICTS.md §4)를 이 경계에서 흡수한다.
 """
 
-NORMALIZER_VERSION = "n3"   # 2026-09-20 candidate 판단 근거(summary·uncertainties) 보존
+NORMALIZER_VERSION = "n4"   # 2026-10-28 Fine 판정(verification) 보존
 
 
 def _require_dict(obj, where):
@@ -64,7 +64,9 @@ def normalize_candidate(raw):
                  "event_type": c["event_type"],
                  "score": float(c["score"]),
                  "summary": c.get("summary"),
-                 "uncertainties": c.get("uncertainties")}
+                 "uncertainties": c.get("uncertainties"),
+                 # Fine을 돌리지 않은 후보·impl은 null 이다.
+                 "verification": c.get("verification")}
                 for k, c in enumerate(cands)
             ],
         })

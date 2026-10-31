@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "manifest_version": "m1",
+    "clip_rule_version": "c1",
+    "tier": "C",
+    "source": "dashcam_ctier_jdr"
+  },
+  "clips": [
+    {
+      "clip_id": "CT3_0001_C00",
+      "source_video_id": "CT3_0001",
+      "start_sec": 0,
+      "end_sec": 75.52,
+      "duration_sec": 75.52,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0001_C00.mp4",
+      "sha256": "0d222199ade96d15e3d7877c9ca14e939b1aa781db7429ef23fe1e102179b795",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0002_C00",
+      "source_video_id": "CT3_0002",
+      "start_sec": 0,
+      "end_sec": 75.456,
+      "duration_sec": 75.456,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0002_C00.mp4",
+      "sha256": "13209cd1185eed72cf3909a8ac5ad30ce1120c65fd4eb376d090d99ea3de4f0e",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0003_C00",
+      "source_video_id": "CT3_0003",
+      "start_sec": 0,
+      "end_sec": 75.456,
+      "duration_sec": 75.456,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0003_C00.mp4",
+      "sha256": "b611c51cfdde0251573c25e29e83c012379c393105f3d15d0025917cd049992f",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0004_C00",
+      "source_video_id": "CT3_0004",
+      "start_sec": 0,
+      "end_sec": 75.4,
+      "duration_sec": 75.4,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0004_C00.mp4",
+      "sha256": "e467d96e2d333b15ade0b0c894fb5ab042236d1250ccde77aa09ae1790476261",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0005_C00",
+      "source_video_id": "CT3_0005",
+      "start_sec": 0,
+      "end_sec": 72.064,
+      "duration_sec": 72.064,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0005_C00.mp4",
+      "sha256": "727a8295bc751dd90f1f0c172053b6434c427a6987c2132782ffb33e27188dc6",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0006_C00",
+      "source_video_id": "CT3_0006",
+      "start_sec": 0,
+      "end_sec": 80.0,
+      "duration_sec": 80.0,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0006_C00.mp4",
+      "sha256": "56ac3a3406ec44cb324150a3d66d55a6cc085d2aed09ae5612f3dbe3b6b21168",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0007_C00",
+      "source_video_id": "CT3_0007",
+      "start_sec": 0,
+      "end_sec": 81.92,
+      "duration_sec": 81.92,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0007_C00.mp4",
+      "sha256": "8e5f62e40c3fed6cca8a208ad125ce8515c3709b9d3482f17244321d39e6af14",
+      "split": "DEV"
+    },
+    {
+      "clip_id": "CT3_0008_C00",
+      "source_video_id": "CT3_0008",
+      "start_sec": 0,
+      "end_sec": 348.544,
+      "duration_sec": 348.544,
+      "file_path": "eval/datasets/ctier3/clips/CT3_0008_C00.mp4",
+      "sha256": "597e815b10efe8a6268fcaeba4061d4f9fc0c1e54d18d3503a2aca7b376a2020",
+      "split": "DEV"
+    }
+  ]
+}

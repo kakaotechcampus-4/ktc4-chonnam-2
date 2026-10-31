@@ -11,7 +11,7 @@ import os
 import sys
 
 from eval import manifests_io, paths
-from eval.scorers import candidate, classification, cost, persistence, plate
+from eval.scorers import candidate, classification, cost, persistence, pipeline, plate
 
 
 def _prediction_path(run_id):
@@ -111,6 +111,8 @@ def build_result(env):
         "classification": None,
         "plate": None,
         "persistence": None,
+        # Fine 판정이 붙은 candidate 실행에서만 채운다(search:s1~s3).
+        "pipeline": None,
         "cost": cost.score(
             (env.get("facts") or {}).get("usage_records", []),
             env["meta"].get("processed_duration_sec"),
@@ -119,6 +121,9 @@ def build_result(env):
     }
     if stage == "candidate":
         result["candidate"] = candidate.score(norm, gt)
+        if pipeline.has_verification(norm):
+            result["pipeline"] = pipeline.score(norm, gt)
+            result["meta"]["pipeline_scorer_version"] = pipeline.SCORER_VERSION
         result["classification"] = classification.not_run(
             "NOT_RUN — stage=candidate 실행이다")
         result["plate"] = plate.not_run("NOT_RUN — stage=candidate 실행이다")

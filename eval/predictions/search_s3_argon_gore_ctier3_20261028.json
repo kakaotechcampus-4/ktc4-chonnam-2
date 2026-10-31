@@ -1,0 +1,1491 @@
+{
+  "meta": {
+    "run_id": "search_s3_argon_gore_ctier3_20261028",
+    "impl": "search:s3-argon-gore",
+    "impl_version": "v1",
+    "stage": "candidate",
+    "manifest": "ctier3",
+    "manifest_version": "m1",
+    "clip_rule_version": "c1",
+    "normalizer_version": "n4",
+    "code_commit": "be362664",
+    "created_at": "2026-10-28T16:44:04.345394+09:00",
+    "contract_version": "analysis-run-candidate-event/v1.1",
+    "processed_duration_sec": 884.36
+  },
+  "raw": [
+    {
+      "clip_id": "CT3_0001_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.9,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 13.0,
+          "t_end_sec": 17.0,
+          "representative_sec": 14.5,
+          "timeline_revision": 1,
+          "summary": "좌측 차로의 흰색 승용차가 우측 차로로 이동하며 차선을 횡단함; 규제봉이 끝나는 구간의 백색 실선 부근을 지나는 것으로 보임; 강한 역광으로 인해 바닥 노면 표시가 다소 흐릿하게 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "블랙박스 차량 및 전방의 검은색 승용차가 합류 차로에서 본선으로 주행하며, 좌측 차로의 차량들도 각자 차로를 유지하거나 점선 구간에서 주행함",
+          "fine_facts": [
+            "블랙박스 차량과 전방 검은색 승용차가 우측 합류 차로(안전지대 및 규제봉 우측)를 따라 주행함",
+            "규제봉과 실선 구간이 끝나고 본선과 합류하는 구간으로 진입함",
+            "좌측에서 검은색 SUV가 주행해 오나 자신의 차로를 유지하며 진행함"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.8,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 17.0,
+          "t_end_sec": 21.0,
+          "representative_sec": 18.5,
+          "timeline_revision": 1,
+          "summary": "좌측에서 나타난 어두운 색 SUV 차량이 우측 차로로 진입함; 백색 실선이 점선으로 바뀌는 경계 구간을 횡단함; 역광으로 인해 정확한 실선 종료 지점 판별에 일부 제한이 있음",
+          "uncertainties": [
+            "역광으로 인해 정확한 실선 종료 지점 판별에 일부 제한이 있음"
+          ],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "자차 전방에서 합류로를 따라 주행하며 좌측 본선으로 진입하는 검은색 승용차",
+          "fine_facts": [
+            "자차와 전방의 검은색 승용차가 우측 합류 차로(규제봉 및 빗금 안전지대 우측)를 따라 주행 중이다.",
+            "규제봉과 안전지대가 끝나고 본선과의 경계가 흰색 점선으로 바뀐다.",
+            "전방의 검은색 승용차가 좌측 방향지시등을 켜고 흰색 점선 구간에서 좌측 차로로 이동하기 시작한다.",
+            "검은색 승용차의 좌측 바퀴가 흰색 점선을 넘어 차로 변경을 진행한다.",
+            "자차 역시 흰색 점선 경계를 넘어 좌측 차로로 진입한다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.3,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 32.5,
+          "t_end_sec": 37.0,
+          "representative_sec": 35.0,
+          "timeline_revision": 1,
+          "summary": "좌측 차로의 소형 화물차가 우측 차로로 차선을 변경함; 해당 구간의 차선은 백색 점선으로 보임; 역광이 존재함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": null,
+          "fine_facts": [
+            "전방 차량들과 좌측 차로의 차량들이 각자의 차로를 유지하며 주행하고 있으며, 주행 차로 사이의 경계선은 흰색 점선으로 보인다.",
+            "좌측 차로에서 흰색 소형 화물차가 점선 경계선을 넘어가지 않고 본인의 차로를 따라 직진하여 지나간다.",
+            "좌측 차로의 흰색 SUV와 승합차 또한 점선 경계선을 횡단하지 않고 각자의 차로를 유지하며 주행한다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 4,
+          "score": 0.2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 67.0,
+          "t_end_sec": 72.0,
+          "representative_sec": 69.5,
+          "timeline_revision": 1,
+          "summary": "좌측 차로의 대형 탑차가 우측 차로로 차선을 변경함; 백색 점선 구간을 횡단하는 것으로 보임; 역광 조건임",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0002_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.9,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 14.5,
+          "t_end_sec": 17.5,
+          "representative_sec": 16.0,
+          "timeline_revision": 1,
+          "summary": "우측 차선의 승용차가 백색 실선이 포함된 분기점 경계선을 넘어 우측 진출로 방향으로 차선을 변경함; 강한 역광이 존재함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "블랙박스 차량 좌측 차로에서 주행하다가 우측으로 차로를 변경하는 흰색 경차(소형 해치백)",
+          "fine_facts": [
+            "좌측 1차로에서 흰색 경차가 화면 좌측 하단으로 진입하며 주행함",
+            "흰색 경차가 우측 방향지시등을 켜고 우측 차로(블랙박스 주행 차로) 방향으로 횡방향 이동을 시작함",
+            "흰색 경차의 우측 바퀴가 백색 점선으로 된 차로 경계선을 넘어섬",
+            "흰색 경차가 점선 경계선을 횡단하여 우측 차로로 진입함"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.5,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 2.0,
+          "t_end_sec": 6.0,
+          "representative_sec": 4.0,
+          "timeline_revision": 1,
+          "summary": "좌측에서 나타난 백색 해치백 차량이 백색 점선으로 보이는 차선을 넘어 우측 차선으로 이동함; 강한 역광으로 시야가 일부 제한됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "블랙박스 차량 좌측의 실선 및 점선 차로를 주행하는 흰색 경차 및 기타 주변 차량들",
+          "fine_facts": [
+            "블랙박스 차량은 우측 차로를 주행 중이며 좌측 차로와의 경계선은 백색 실선과 점선이 병행된 형태로 보인다.",
+            "좌측 차로에서 흰색 경차가 나타나 자신의 차로를 유지하며 직진 주행한다.",
+            "차로 경계선이 일반 점선으로 바뀌는 구간을 통과하며 모든 주변 차량들이 차로 변경 없이 각자의 차로를 유지한다.",
+            "차로 경계선이 다시 실선과 점선 병행 구간으로 이어지나 경계선을 횡단하는 차량은 관찰되지 않는다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.4,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 49.0,
+          "t_end_sec": 53.0,
+          "representative_sec": 51.0,
+          "timeline_revision": 1,
+          "summary": "전방의 백색 해치백 차량이 백색 점선으로 보이는 차선을 넘어 좌측 차선으로 이동함; 강한 역광으로 차선 식별이 다소 제한됨",
+          "uncertainties": [],
+          "verification": "UNCERTAIN",
+          "verified_event_type": null,
+          "fine_target": "좌측 합류로에서 본선 1차로로 진입하는 흰색 SUV 차량",
+          "fine_facts": [
+            "화면 좌측 합류로에서 흰색 SUV가 본선 방향으로 주행함",
+            "흰색 SUV가 합류부와 본선 사이의 백색 실선(또는 안전지대 경계선)을 밟으며 우측(본선 1차로)으로 횡방향 이동을 시작함",
+            "점선 구간이 나타나며 흰색 SUV가 본선 1차로로 진입을 이어감",
+            "흰색 SUV가 본선 1차로에 완전히 진입함"
+          ],
+          "fine_error": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0003_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.95,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 29.0,
+          "t_end_sec": 34.0,
+          "representative_sec": 31.0,
+          "timeline_revision": 1,
+          "summary": "우회전 합류 직후 구간; 전방 검은색 차량이 좌측의 백색 복선 실선을 가로질러 좌측 차로로 변경함",
+          "uncertainties": [],
+          "verification": "OBSERVED",
+          "verified_event_type": "SOLID_LINE_LANE_CHANGE",
+          "fine_target": "전방 우측 차로에서 주행하다가 좌측 차로로 변경하는 어두운 색상의 해치백/소형 SUV 차량",
+          "fine_facts": [
+            "전방 우측의 어두운 색상 차량이 횡단보도 통과 후 우측 차로에서 주행함",
+            "해당 차량이 차로 사이의 백색 복선 실선(진출입로 합류부 분리선) 쪽으로 붙으며 좌측 방향지시등을 켬",
+            "차량의 좌측 바퀴가 백색 복선 실선을 밟고 넘어가기 시작함",
+            "차량 차체의 절반 이상이 백색 복선 실선을 넘어 좌측 차로로 진입함",
+            "차량이 백색 복선 실선을 완전히 넘어 좌측 차로로 진입을 완료함 (블랙박스 차량도 약 33000ms~38000ms 사이에 동일한 복선 실선 구간의 끝부분을 넘어 좌측으로 이동함)"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.9,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 62.0,
+          "t_end_sec": 67.5,
+          "representative_sec": 64.5,
+          "timeline_revision": 1,
+          "summary": "교량 진입 직후 구간; 전방 우측의 검은색 승용차가 백색 실선을 넘어 우측 차로로 변경함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "자차(블랙박스 차량) 및 전방의 회색 SUV와 검은색 승용차",
+          "fine_facts": [
+            "자차가 2차로에서 1차로 방향의 백색 점선을 밟고 이동하고 있으며, 전방의 검은색 승용차와 회색 SUV도 백색 점선 구간을 넘어 좌측 차로로 이동하고 있다.",
+            "자차가 백색 점선 구간에서 1차로로의 진입을 완료한다.",
+            "교량 신축이음장치를 지나며 차로 경계선이 백색 실선으로 변경되나, 이 시점 이후에는 자차 및 전방 차량 모두 차로 변경 없이 각자의 차로를 유지하며 주행한다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.75,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 0.0,
+          "t_end_sec": 9.0,
+          "representative_sec": 6.0,
+          "timeline_revision": 1,
+          "summary": "역광이 있는 주간 교량 구간; 전방 검은색 차량이 우측 진출로 방향의 백색 실선을 밟고 이동함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "자차 전방 우측 분기 차로에서 좌측 본선 방향으로 빗금 안전지대 및 시선유도봉 구간을 횡단하는 흰색 SUV 차량",
+          "fine_facts": [
+            "전방 멀리 우측 진출로 방향에 있던 흰색 SUV 차량이 좌측으로 방향을 틀기 시작함",
+            "해당 흰색 SUV 차량이 분기부의 빗금 안전지대와 시선유도봉 사이를 통과하여 좌측 본선 차로로 진입함",
+            "흰색 SUV 차량이 좌측 본선 차로로 완전히 넘어감 (일반 차로 간 실선 변경이 아닌 분기부 안전지대 횡단)",
+            "자차 및 전방의 검은색 SUV, 좌측의 흰색 승용차는 점선 구간을 따라 정상 주행함"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 4,
+          "score": 0.3,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 35.0,
+          "t_end_sec": 60.0,
+          "representative_sec": 47.5,
+          "timeline_revision": 1,
+          "summary": "다차로 도로 구간; 블랙박스 차량 및 주변 차량들이 백색 점선을 넘어 차로를 변경함",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0004_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.9,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 28.0,
+          "t_end_sec": 34.0,
+          "representative_sec": 31.0,
+          "timeline_revision": 1,
+          "summary": "좌측 전방의 흰색 SUV 차량이 우측에서 좌측 차로로 변경함; 교차로 진입 전 백색 실선 구간에서 차선을 횡단하는 움직임이 관찰됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": null,
+          "fine_facts": [
+            "다차로 도로에서 블랙박스 차량을 포함한 차량들이 각자의 차로를 따라 주행 중임",
+            "전방 우측의 검은색 SUV가 점선 차선을 넘어 우측 가장자리 차로로 차로를 변경함",
+            "교차로 진입 전 정지선 부근에 백색 실선 구간이 있으나, 이 구간에서 실선을 넘어 차로를 변경하는 차량은 관찰되지 않음",
+            "차량들이 교차로를 통과하며 주행을 이어감"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.4,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 62.0,
+          "t_end_sec": 68.0,
+          "representative_sec": 65.0,
+          "timeline_revision": 1,
+          "summary": "우측 차로의 은색 차량이 좌측 차로로 이동하며 차선을 횡단함; 횡단 지점의 차선은 백색 점선으로 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": null,
+          "fine_facts": [
+            "다차로 도로에서 차로 간 경계선이 모두 백색 점선으로 표시되어 있으며 차량들이 각자의 차로를 따라 주행함",
+            "우측 끝 차로에서 은색 SUV가 우측 진출입로 방향으로 빠져나감",
+            "우측 차로의 검은색 승합차가 좌측 방향지시등을 켜고 주행하나 영상이 끝날 때까지 차로 경계선(백색 점선)을 넘지 않음"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.3,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 24.0,
+          "t_end_sec": 29.0,
+          "representative_sec": 27.0,
+          "timeline_revision": 1,
+          "summary": "좌측 차로의 검은색 승용차가 우측 차로로 이동함; 횡단 구간의 차선은 백색 점선으로 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": null,
+          "fine_facts": [
+            "자차와 전방 차량들이 점선 차로가 그어진 다차로 도로에서 주행 중이다.",
+            "자차가 좌측의 정체된 차량들을 지나며 앞으로 직진한다.",
+            "교차로가 가까워지면서 일부 차로 경계선이 실선으로 바뀌지만, 실선을 넘어 차로를 변경하는 차량은 관찰되지 않는다.",
+            "자차가 교차로 횡단보도 부근에 도달할 때까지 전방 차량들은 각자의 차로를 유지한다."
+          ],
+          "fine_error": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0005_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.85,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 69.0,
+          "t_end_sec": 72.0,
+          "representative_sec": 70.5,
+          "timeline_revision": 1,
+          "summary": "전방의 회색 승합차가 우측 차로로 변경하며 경계선을 횡단함; 바닥의 기존 차선 도색 흔적과 그림자로 인해 백색 실선인지 점선인지 판별하기 어려움",
+          "uncertainties": [
+            "바닥의 기존 차선 도색 흔적과 그림자로 인해 백색 실선인지 점선인지 판별하기 어려움"
+          ],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "우측 차로에서 주행하며 우측으로 차로를 변경하는 검은색 승용차",
+          "fine_facts": [
+            "우측 2번째 차로(블랙박스 차량 기준 우측 옆옆 차로)의 검은색 승용차가 우측 방향지시등을 켜고 우측으로 이동을 시작함",
+            "검은색 승용차의 우측 바퀴가 백색 점선으로 된 차로 경계선을 넘기 시작함",
+            "검은색 승용차가 백색 점선을 완전히 넘어 우측 차로로 진입을 완료함",
+            "영상 끝부분에서 정체 중인 차량들 중 실선을 넘어 차로를 변경하는 차량은 관찰되지 않음"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.8,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 25.0,
+          "t_end_sec": 31.0,
+          "representative_sec": 28.0,
+          "timeline_revision": 1,
+          "summary": "좌측의 검은색 SUV가 우측 차로로 변경하며 경계선을 횡단함; 횡단 지점이 백색 점선에서 실선으로 바뀌는 구간 부근으로 보이나 그림자와 원거리로 인해 정확한 선 종류 판별이 어려움",
+          "uncertainties": [
+            "횡단 지점이 백색 점선에서 실선으로 바뀌는 구간 부근으로 보이나 그림자와 원거리로 인해 정확한 선 종류 판별이 어려움"
+          ],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": null,
+          "fine_facts": [
+            "영상 시작 시점부터 모든 차로의 차량들이 각자의 차로를 유지하며 정지 또는 서행 중입니다.",
+            "신호가 바뀌거나 앞차가 이동함에 따라 차량들이 본래 차로를 따라 직진하기 시작합니다.",
+            "교차로 정지선 부근에 백색 실선 구간이 나타나지만, 이 구간에서 차로를 변경하는 차량은 관찰되지 않습니다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.75,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 66.0,
+          "t_end_sec": 71.0,
+          "representative_sec": 68.0,
+          "timeline_revision": 1,
+          "summary": "전방의 흰색 SUV가 우측 차로로 변경하며 경계선을 횡단함; 원거리로 인해 실선과 점선 여부 판별이 어려움",
+          "uncertainties": [
+            "원거리로 인해 실선과 점선 여부 판별이 어려움"
+          ],
+          "verification": "OBSERVED",
+          "verified_event_type": "SOLID_LINE_LANE_CHANGE",
+          "fine_target": "전방 멀리 2차로에서 3차로로 차로를 변경하는 흰색 SUV",
+          "fine_facts": [
+            "전방 멀리 2차로를 주행하던 흰색 SUV가 우측 차로로 이동하기 시작함",
+            "흰색 SUV가 우측 차로와의 백색 실선 경계를 넘기 시작함",
+            "흰색 SUV가 3차로로 차로 변경을 완료함"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 4,
+          "score": 0.65,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 0.0,
+          "t_end_sec": 6.0,
+          "representative_sec": 1.5,
+          "timeline_revision": 1,
+          "summary": "트럭이 우측에서 진입하여 백색 점선으로 보이는 여러 차선을 연속으로 횡단함; 우측 원거리 및 그림자로 인해 선 종류 일부 판별 어려움",
+          "uncertainties": [
+            "우측 원거리 및 그림자로 인해 선 종류 일부 판별 어려움"
+          ],
+          "verification": null
+        },
+        {
+          "rank": 5,
+          "score": 0.6,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 63.0,
+          "t_end_sec": 69.0,
+          "representative_sec": 66.0,
+          "timeline_revision": 1,
+          "summary": "우측 차로의 검은색 승용차가 우측으로 차로를 변경하며 백색 점선으로 보이는 경계선을 횡단함",
+          "uncertainties": [],
+          "verification": null
+        },
+        {
+          "rank": 6,
+          "score": 0.55,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 4.0,
+          "t_end_sec": 9.0,
+          "representative_sec": 7.0,
+          "timeline_revision": 1,
+          "summary": "좌측 차로의 검은색 SUV가 좌측으로 차로를 변경하며 경계선을 횡단함; 백색 점선으로 보이나 원거리로 인해 선 종류 판별이 다소 불확실함",
+          "uncertainties": [
+            "백색 점선으로 보이나 원거리로 인해 선 종류 판별이 다소 불확실함"
+          ],
+          "verification": null
+        },
+        {
+          "rank": 7,
+          "score": 0.5,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 6.0,
+          "t_end_sec": 11.0,
+          "representative_sec": 9.0,
+          "timeline_revision": 1,
+          "summary": "전방 우측의 검은색 승용차가 우측 차로로 변경하며 백색 점선으로 보이는 경계선을 횡단함",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0006_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.9,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 22.0,
+          "t_end_sec": 28.0,
+          "representative_sec": 25.0,
+          "timeline_revision": 1,
+          "summary": "전방 검은색 승용차가 우측 버스정류장 노면표시 및 백색 실선 구간을 밟고 넘어 우측 차로로 차선을 변경함; 역광 및 그림자로 인해 시야가 일부 제한됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "전방 우측 차로를 주행하는 검은색 승용차",
+          "fine_facts": [
+            "전방의 검은색 승용차가 우측 차로를 따라 직진 주행함",
+            "버스정류장 부근에서 우측에 흰색 실선으로 구분된 정차 구역이 나타나고, 검은색 승용차가 해당 실선 좌측에 근접하여 주행함",
+            "버스정류장 구역이 끝나고 차선이 다시 점선으로 바뀌며, 검은색 승용차는 차로 변경 없이 기존 주행 차로를 계속 유지함",
+            "영상이 끝날 때까지 검은색 승용차의 차로 변경 움직임이 관찰되지 않음"
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 2,
+          "score": 0.8,
+          "event_type": "SIGNAL",
+          "t_start_sec": 57.0,
+          "t_end_sec": 62.0,
+          "representative_sec": 59.0,
+          "timeline_revision": 1,
+          "summary": "전방 차량 신호등이 녹색 점등이고 우측 횡단보도 보행자 신호등이 녹색 점등인 상태에서 전방 검은색 승용차가 정지선 및 횡단보도를 통과하여 우회전함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "전방 우회전 차로의 검은색 승용차 및 인접 직진 차로 차량들",
+          "fine_facts": [
+            "전방 차량용 신호등에 녹색 등화가 점등되어 있으며, 블랙박스 전방의 검은색 승용차는 우회전 표시가 있는 가장 우측 차로를 주행 중이다.",
+            "차량용 신호등이 계속 녹색인 상태에서 전방의 검은색 승용차가 정지선을 통과한다.",
+            "인접 차로의 흰색 SUV 역시 녹색 신호에서 정지선을 통과하여 직진한다.",
+            "전방 검은색 승용차가 교차로 우측으로 우회전을 시작하며, 우측 횡단보도에는 별도의 보행자 신호등이 관찰되지 않고 보행자도 없다.",
+            "전방 검은색 승용차와 블랙박스 차량 모두 우회전을 완료하여 우측 도로로 진입한다."
+          ],
+          "fine_error": null
+        },
+        {
+          "rank": 3,
+          "score": 0.5,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 1.0,
+          "t_end_sec": 5.0,
+          "representative_sec": 3.0,
+          "timeline_revision": 1,
+          "summary": "전방 검은색 승용차가 백색 점선 구간을 넘어 좌측 유턴 차로로 진입함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED",
+          "verified_event_type": null,
+          "fine_target": "전방에서 주행하다가 유턴 구간에서 좌측으로 회전하는 검은색 세단",
+          "fine_facts": [
+            "전방의 검은색 세단이 백색 점선으로 구분된 차로에서 직진 주행 중이다.",
+            "검은색 세단이 좌측 깜빡이를 켜고 중앙분리대 규제봉이 끝나는 유턴 가능 구간으로 접근한다.",
+            "검은색 세단이 유턴 표시가 있는 구간의 백색 점선을 넘어 반대편 차로 방향으로 유턴을 시작한다.",
+            "검은색 세단이 유턴을 완료하며 좌측 화면 밖으로 사라지고, 블랙박스 차량도 뒤이어 유턴한다."
+          ],
+          "fine_error": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0007_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "score": 0.6,
+          "event_type": "CENTER_LINE_CROSSING",
+          "t_start_sec": 29.0,
+          "t_end_sec": 35.5,
+          "representative_sec": 32.5,
+          "timeline_revision": 1,
+          "summary": "아파트 단지 내 통행로에서 황색 복선이 관찰됨; 자차가 우회전 후 황색 복선을 차체 중앙에 걸친 상태로 주행함; 이후 지하주차장 입구로 진입함",
+          "uncertainties": [],
+          "verification": "OBSERVED",
+          "verified_event_type": "CENTER_LINE_CROSSING",
+          "fine_target": "블랙박스 장착 자차(단지 내 도로를 주행하여 지하주차장으로 진입하는 차량)",
+          "fine_facts": [
+            "단지 입구 차단기가 열리며 자차가 전진을 시작함",
+            "자차가 우회전하여 황색 복선 실선 중앙선이 그려진 단지 내 도로로 진입함",
+            "자차의 좌측 차체가 황색 복선 실선(소방차 전용 구역 표시선 겸 중앙선)을 넘어 반대편 차로로 걸쳐 주행함",
+            "우측 지하주차장 입구로 회전하기 전까지 중앙선을 밟고 넘어간 상태를 유지하며 주행함",
+            "자차가 우회전하여 지하주차장 진입로로 들어감"
+          ],
+          "fine_error": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0008_C00",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": []
+    }
+  ],
+  "normalized": [
+    {
+      "clip_id": "CT3_0001_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 13.0,
+          "t_end_sec": 17.0,
+          "representative_sec": 14.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.9,
+          "summary": "좌측 차로의 흰색 승용차가 우측 차로로 이동하며 차선을 횡단함; 규제봉이 끝나는 구간의 백색 실선 부근을 지나는 것으로 보임; 강한 역광으로 인해 바닥 노면 표시가 다소 흐릿하게 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 17.0,
+          "t_end_sec": 21.0,
+          "representative_sec": 18.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.8,
+          "summary": "좌측에서 나타난 어두운 색 SUV 차량이 우측 차로로 진입함; 백색 실선이 점선으로 바뀌는 경계 구간을 횡단함; 역광으로 인해 정확한 실선 종료 지점 판별에 일부 제한이 있음",
+          "uncertainties": [
+            "역광으로 인해 정확한 실선 종료 지점 판별에 일부 제한이 있음"
+          ],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 32.5,
+          "t_end_sec": 37.0,
+          "representative_sec": 35.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.3,
+          "summary": "좌측 차로의 소형 화물차가 우측 차로로 차선을 변경함; 해당 구간의 차선은 백색 점선으로 보임; 역광이 존재함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 4,
+          "t_start_sec": 67.0,
+          "t_end_sec": 72.0,
+          "representative_sec": 69.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.2,
+          "summary": "좌측 차로의 대형 탑차가 우측 차로로 차선을 변경함; 백색 점선 구간을 횡단하는 것으로 보임; 역광 조건임",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0002_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 14.5,
+          "t_end_sec": 17.5,
+          "representative_sec": 16.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.9,
+          "summary": "우측 차선의 승용차가 백색 실선이 포함된 분기점 경계선을 넘어 우측 진출로 방향으로 차선을 변경함; 강한 역광이 존재함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 2.0,
+          "t_end_sec": 6.0,
+          "representative_sec": 4.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.5,
+          "summary": "좌측에서 나타난 백색 해치백 차량이 백색 점선으로 보이는 차선을 넘어 우측 차선으로 이동함; 강한 역광으로 시야가 일부 제한됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 49.0,
+          "t_end_sec": 53.0,
+          "representative_sec": 51.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.4,
+          "summary": "전방의 백색 해치백 차량이 백색 점선으로 보이는 차선을 넘어 좌측 차선으로 이동함; 강한 역광으로 차선 식별이 다소 제한됨",
+          "uncertainties": [],
+          "verification": "UNCERTAIN"
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0003_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 29.0,
+          "t_end_sec": 34.0,
+          "representative_sec": 31.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.95,
+          "summary": "우회전 합류 직후 구간; 전방 검은색 차량이 좌측의 백색 복선 실선을 가로질러 좌측 차로로 변경함",
+          "uncertainties": [],
+          "verification": "OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 62.0,
+          "t_end_sec": 67.5,
+          "representative_sec": 64.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.9,
+          "summary": "교량 진입 직후 구간; 전방 우측의 검은색 승용차가 백색 실선을 넘어 우측 차로로 변경함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 0.0,
+          "t_end_sec": 9.0,
+          "representative_sec": 6.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.75,
+          "summary": "역광이 있는 주간 교량 구간; 전방 검은색 차량이 우측 진출로 방향의 백색 실선을 밟고 이동함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 4,
+          "t_start_sec": 35.0,
+          "t_end_sec": 60.0,
+          "representative_sec": 47.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.3,
+          "summary": "다차로 도로 구간; 블랙박스 차량 및 주변 차량들이 백색 점선을 넘어 차로를 변경함",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0004_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 28.0,
+          "t_end_sec": 34.0,
+          "representative_sec": 31.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.9,
+          "summary": "좌측 전방의 흰색 SUV 차량이 우측에서 좌측 차로로 변경함; 교차로 진입 전 백색 실선 구간에서 차선을 횡단하는 움직임이 관찰됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 62.0,
+          "t_end_sec": 68.0,
+          "representative_sec": 65.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.4,
+          "summary": "우측 차로의 은색 차량이 좌측 차로로 이동하며 차선을 횡단함; 횡단 지점의 차선은 백색 점선으로 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 24.0,
+          "t_end_sec": 29.0,
+          "representative_sec": 27.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.3,
+          "summary": "좌측 차로의 검은색 승용차가 우측 차로로 이동함; 횡단 구간의 차선은 백색 점선으로 보임",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0005_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 69.0,
+          "t_end_sec": 72.0,
+          "representative_sec": 70.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85,
+          "summary": "전방의 회색 승합차가 우측 차로로 변경하며 경계선을 횡단함; 바닥의 기존 차선 도색 흔적과 그림자로 인해 백색 실선인지 점선인지 판별하기 어려움",
+          "uncertainties": [
+            "바닥의 기존 차선 도색 흔적과 그림자로 인해 백색 실선인지 점선인지 판별하기 어려움"
+          ],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 25.0,
+          "t_end_sec": 31.0,
+          "representative_sec": 28.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.8,
+          "summary": "좌측의 검은색 SUV가 우측 차로로 변경하며 경계선을 횡단함; 횡단 지점이 백색 점선에서 실선으로 바뀌는 구간 부근으로 보이나 그림자와 원거리로 인해 정확한 선 종류 판별이 어려움",
+          "uncertainties": [
+            "횡단 지점이 백색 점선에서 실선으로 바뀌는 구간 부근으로 보이나 그림자와 원거리로 인해 정확한 선 종류 판별이 어려움"
+          ],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 66.0,
+          "t_end_sec": 71.0,
+          "representative_sec": 68.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.75,
+          "summary": "전방의 흰색 SUV가 우측 차로로 변경하며 경계선을 횡단함; 원거리로 인해 실선과 점선 여부 판별이 어려움",
+          "uncertainties": [
+            "원거리로 인해 실선과 점선 여부 판별이 어려움"
+          ],
+          "verification": "OBSERVED"
+        },
+        {
+          "rank": 4,
+          "t_start_sec": 0.0,
+          "t_end_sec": 6.0,
+          "representative_sec": 1.5,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65,
+          "summary": "트럭이 우측에서 진입하여 백색 점선으로 보이는 여러 차선을 연속으로 횡단함; 우측 원거리 및 그림자로 인해 선 종류 일부 판별 어려움",
+          "uncertainties": [
+            "우측 원거리 및 그림자로 인해 선 종류 일부 판별 어려움"
+          ],
+          "verification": null
+        },
+        {
+          "rank": 5,
+          "t_start_sec": 63.0,
+          "t_end_sec": 69.0,
+          "representative_sec": 66.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.6,
+          "summary": "우측 차로의 검은색 승용차가 우측으로 차로를 변경하며 백색 점선으로 보이는 경계선을 횡단함",
+          "uncertainties": [],
+          "verification": null
+        },
+        {
+          "rank": 6,
+          "t_start_sec": 4.0,
+          "t_end_sec": 9.0,
+          "representative_sec": 7.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55,
+          "summary": "좌측 차로의 검은색 SUV가 좌측으로 차로를 변경하며 경계선을 횡단함; 백색 점선으로 보이나 원거리로 인해 선 종류 판별이 다소 불확실함",
+          "uncertainties": [
+            "백색 점선으로 보이나 원거리로 인해 선 종류 판별이 다소 불확실함"
+          ],
+          "verification": null
+        },
+        {
+          "rank": 7,
+          "t_start_sec": 6.0,
+          "t_end_sec": 11.0,
+          "representative_sec": 9.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.5,
+          "summary": "전방 우측의 검은색 승용차가 우측 차로로 변경하며 백색 점선으로 보이는 경계선을 횡단함",
+          "uncertainties": [],
+          "verification": null
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0006_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 22.0,
+          "t_end_sec": 28.0,
+          "representative_sec": 25.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.9,
+          "summary": "전방 검은색 승용차가 우측 버스정류장 노면표시 및 백색 실선 구간을 밟고 넘어 우측 차로로 차선을 변경함; 역광 및 그림자로 인해 시야가 일부 제한됨",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 2,
+          "t_start_sec": 57.0,
+          "t_end_sec": 62.0,
+          "representative_sec": 59.0,
+          "timeline_revision": 1,
+          "event_type": "SIGNAL",
+          "score": 0.8,
+          "summary": "전방 차량 신호등이 녹색 점등이고 우측 횡단보도 보행자 신호등이 녹색 점등인 상태에서 전방 검은색 승용차가 정지선 및 횡단보도를 통과하여 우회전함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        },
+        {
+          "rank": 3,
+          "t_start_sec": 1.0,
+          "t_end_sec": 5.0,
+          "representative_sec": 3.0,
+          "timeline_revision": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.5,
+          "summary": "전방 검은색 승용차가 백색 점선 구간을 넘어 좌측 유턴 차로로 진입함",
+          "uncertainties": [],
+          "verification": "NOT_OBSERVED"
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0007_C00",
+      "candidates": [
+        {
+          "rank": 1,
+          "t_start_sec": 29.0,
+          "t_end_sec": 35.5,
+          "representative_sec": 32.5,
+          "timeline_revision": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.6,
+          "summary": "아파트 단지 내 통행로에서 황색 복선이 관찰됨; 자차가 우회전 후 황색 복선을 차체 중앙에 걸친 상태로 주행함; 이후 지하주차장 입구로 진입함",
+          "uncertainties": [],
+          "verification": "OBSERVED"
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0008_C00",
+      "candidates": []
+    }
+  ],
+  "facts": {
+    "contract_version": "analysis-run-candidate-event/v1.1",
+    "processed_duration_sec": 884.36,
+    "point": "s3",
+    "model": "gemini-4-argon",
+    "coarse_fps": 2.0,
+    "fine_fps": 4.0,
+    "prompt_version": "coarse-p3",
+    "fine_prompt_version": "fine-p3+fine-gore-v1",
+    "fine_top_k": 3,
+    "usd_per_million": [
+      2.025,
+      10.125
+    ],
+    "config_version": "gemini-search-v4",
+    "config_fingerprint": "03c4a0f779cb0d5d9368efceaef294ec7cda6c0f037f1a79c4f12c2ae0d74f22",
+    "sdk_version": "2.54.0",
+    "usage_records": [
+      {
+        "case_id": "CT3_0001_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.52,
+        "prepared_media_bytes": 7622462,
+        "prepared_duration_ms": 151000,
+        "latency_ms": 23172,
+        "input_tokens": 11965,
+        "output_tokens": 470,
+        "thought_tokens": 0,
+        "total_tokens": 12435,
+        "cost": {
+          "amount": "0.028987875",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0004_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.4,
+        "prepared_media_bytes": 9266147,
+        "prepared_duration_ms": 151000,
+        "latency_ms": 30734,
+        "input_tokens": 11965,
+        "output_tokens": 323,
+        "thought_tokens": 0,
+        "total_tokens": 12288,
+        "cost": {
+          "amount": "0.0274995",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0003_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 7804415,
+        "prepared_duration_ms": 151000,
+        "latency_ms": 31391,
+        "input_tokens": 11965,
+        "output_tokens": 397,
+        "thought_tokens": 0,
+        "total_tokens": 12362,
+        "cost": {
+          "amount": "0.02824875",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0002_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 6978056,
+        "prepared_duration_ms": 151000,
+        "latency_ms": 41578,
+        "input_tokens": 11965,
+        "output_tokens": 326,
+        "thought_tokens": 0,
+        "total_tokens": 12291,
+        "cost": {
+          "amount": "0.027529875",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0001_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.52,
+        "prepared_media_bytes": 2378387,
+        "prepared_duration_ms": 48000,
+        "latency_ms": 18750,
+        "input_tokens": 5070,
+        "output_tokens": 352,
+        "thought_tokens": 0,
+        "total_tokens": 5422,
+        "cost": {
+          "amount": "0.01383075",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0004_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.4,
+        "prepared_media_bytes": 3285487,
+        "prepared_duration_ms": 56000,
+        "latency_ms": 13578,
+        "input_tokens": 5655,
+        "output_tokens": 443,
+        "thought_tokens": 0,
+        "total_tokens": 6098,
+        "cost": {
+          "amount": "0.01593675",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0003_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2514723,
+        "prepared_duration_ms": 52000,
+        "latency_ms": 16844,
+        "input_tokens": 5363,
+        "output_tokens": 530,
+        "thought_tokens": 0,
+        "total_tokens": 5893,
+        "cost": {
+          "amount": "0.016226325",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0002_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2083678,
+        "prepared_duration_ms": 44000,
+        "latency_ms": 14125,
+        "input_tokens": 4779,
+        "output_tokens": 584,
+        "thought_tokens": 0,
+        "total_tokens": 5363,
+        "cost": {
+          "amount": "0.015590475",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0001_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.52,
+        "prepared_media_bytes": 2293544,
+        "prepared_duration_ms": 48000,
+        "latency_ms": 13312,
+        "input_tokens": 5071,
+        "output_tokens": 566,
+        "thought_tokens": 0,
+        "total_tokens": 5637,
+        "cost": {
+          "amount": "0.015999525",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0004_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.4,
+        "prepared_media_bytes": 3917812,
+        "prepared_duration_ms": 56000,
+        "latency_ms": 13531,
+        "input_tokens": 5655,
+        "output_tokens": 334,
+        "thought_tokens": 0,
+        "total_tokens": 5989,
+        "cost": {
+          "amount": "0.014833125",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0003_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2641541,
+        "prepared_duration_ms": 54000,
+        "latency_ms": 12109,
+        "input_tokens": 5509,
+        "output_tokens": 385,
+        "thought_tokens": 0,
+        "total_tokens": 5894,
+        "cost": {
+          "amount": "0.01505385",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0002_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2124838,
+        "prepared_duration_ms": 40000,
+        "latency_ms": 11797,
+        "input_tokens": 4486,
+        "output_tokens": 453,
+        "thought_tokens": 0,
+        "total_tokens": 4939,
+        "cost": {
+          "amount": "0.013670775",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0001_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.52,
+        "prepared_media_bytes": 2314361,
+        "prepared_duration_ms": 50000,
+        "latency_ms": 13704,
+        "input_tokens": 5217,
+        "output_tokens": 387,
+        "thought_tokens": 0,
+        "total_tokens": 5604,
+        "cost": {
+          "amount": "0.0144828",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0004_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.4,
+        "prepared_media_bytes": 2904206,
+        "prepared_duration_ms": 52000,
+        "latency_ms": 14906,
+        "input_tokens": 5363,
+        "output_tokens": 361,
+        "thought_tokens": 0,
+        "total_tokens": 5724,
+        "cost": {
+          "amount": "0.0145152",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0002_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2117762,
+        "prepared_duration_ms": 48000,
+        "latency_ms": 11484,
+        "input_tokens": 5071,
+        "output_tokens": 477,
+        "thought_tokens": 0,
+        "total_tokens": 5548,
+        "cost": {
+          "amount": "0.0150984",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0006_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 80.0,
+        "prepared_media_bytes": 8233971,
+        "prepared_duration_ms": 160000,
+        "latency_ms": 13437,
+        "input_tokens": 12622,
+        "output_tokens": 329,
+        "thought_tokens": 0,
+        "total_tokens": 12951,
+        "cost": {
+          "amount": "0.028890675",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0005_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 72.064,
+        "prepared_media_bytes": 7621073,
+        "prepared_duration_ms": 144000,
+        "latency_ms": 19937,
+        "input_tokens": 11454,
+        "output_tokens": 760,
+        "thought_tokens": 0,
+        "total_tokens": 12214,
+        "cost": {
+          "amount": "0.03088935",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0007_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 81.92,
+        "prepared_media_bytes": 8320978,
+        "prepared_duration_ms": 164000,
+        "latency_ms": 11032,
+        "input_tokens": 12914,
+        "output_tokens": 127,
+        "thought_tokens": 0,
+        "total_tokens": 13041,
+        "cost": {
+          "amount": "0.027436725",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0003_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 75.456,
+        "prepared_media_bytes": 2048487,
+        "prepared_duration_ms": 52000,
+        "latency_ms": 40250,
+        "input_tokens": 5362,
+        "output_tokens": 429,
+        "thought_tokens": 0,
+        "total_tokens": 5791,
+        "cost": {
+          "amount": "0.015201675",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0005_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 72.064,
+        "prepared_media_bytes": 1250549,
+        "prepared_duration_ms": 28000,
+        "latency_ms": 11906,
+        "input_tokens": 3611,
+        "output_tokens": 397,
+        "thought_tokens": 0,
+        "total_tokens": 4008,
+        "cost": {
+          "amount": "0.0113319",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0006_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 80.0,
+        "prepared_media_bytes": 2671101,
+        "prepared_duration_ms": 56000,
+        "latency_ms": 13125,
+        "input_tokens": 5655,
+        "output_tokens": 561,
+        "thought_tokens": 0,
+        "total_tokens": 6216,
+        "cost": {
+          "amount": "0.0171315",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0007_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "9835435f4185f20a8d1594001d881d1f5f6a3d030db4a882e80e23853e05c7f5",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 81.92,
+        "prepared_media_bytes": 3209465,
+        "prepared_duration_ms": 58000,
+        "latency_ms": 18250,
+        "input_tokens": 5774,
+        "output_tokens": 565,
+        "thought_tokens": 0,
+        "total_tokens": 6339,
+        "cost": {
+          "amount": "0.017412975",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0006_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d691401e4dab6d8a2cfffe441a580bba49c685ef585e0c86b86766592b55278b",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 80.0,
+        "prepared_media_bytes": 2741479,
+        "prepared_duration_ms": 52000,
+        "latency_ms": 16328,
+        "input_tokens": 5332,
+        "output_tokens": 439,
+        "thought_tokens": 0,
+        "total_tokens": 5771,
+        "cost": {
+          "amount": "0.015242175",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0005_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 72.064,
+        "prepared_media_bytes": 2792624,
+        "prepared_duration_ms": 56000,
+        "latency_ms": 22562,
+        "input_tokens": 5655,
+        "output_tokens": 292,
+        "thought_tokens": 0,
+        "total_tokens": 5947,
+        "cost": {
+          "amount": "0.014407875",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0006_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 80.0,
+        "prepared_media_bytes": 1856135,
+        "prepared_duration_ms": 36000,
+        "latency_ms": 11703,
+        "input_tokens": 4193,
+        "output_tokens": 393,
+        "thought_tokens": 0,
+        "total_tokens": 4586,
+        "cost": {
+          "amount": "0.01246995",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0008_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 348.544,
+        "prepared_media_bytes": 20762948,
+        "prepared_duration_ms": 697000,
+        "latency_ms": 37203,
+        "input_tokens": 51824,
+        "output_tokens": 20,
+        "thought_tokens": 0,
+        "total_tokens": 51844,
+        "cost": {
+          "amount": "0.1051461",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "CT3_0005_C00",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "fine-p3+fine-gore-v1",
+        "prompt_fingerprint": "d681dde55d72da601bd75d208428bb6b11750b5c910d3b2b81cd04a299bb26ce",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 72.064,
+        "prepared_media_bytes": 1793751,
+        "prepared_duration_ms": 40000,
+        "latency_ms": 13312,
+        "input_tokens": 4487,
+        "output_tokens": 355,
+        "thought_tokens": 0,
+        "total_tokens": 4842,
+        "cost": {
+          "amount": "0.01268055",
+          "currency": "USD"
+        }
+      }
+    ],
+    "clips": [
+      "CT3_0001_C00",
+      "CT3_0002_C00",
+      "CT3_0003_C00",
+      "CT3_0004_C00",
+      "CT3_0005_C00",
+      "CT3_0006_C00",
+      "CT3_0007_C00",
+      "CT3_0008_C00"
+    ],
+    "scenarios": [
+      "CT3_0001_C00",
+      "CT3_0002_C00",
+      "CT3_0003_C00",
+      "CT3_0004_C00",
+      "CT3_0005_C00",
+      "CT3_0006_C00",
+      "CT3_0007_C00",
+      "CT3_0008_C00"
+    ],
+    "n_not_succeeded_clips": 0,
+    "not_succeeded_clips": [],
+    "n_fine_errors": 0,
+    "fine_errors": []
+  }
+}
