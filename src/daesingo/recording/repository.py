@@ -34,6 +34,11 @@ def _offset_key(value: float) -> Decimal:
 
 
 class InMemoryRecordingRepository:
+    def read_publish_registration(self, locator):
+        # A mock repository cannot prove durable cross-process absence.
+        from .publication import PublishRegistration
+        return PublishRegistration.UNKNOWN
+
     def __init__(self) -> None:
         self._export_transforms = {}
         self._source_assets: dict[str, SourceAsset] = {}
@@ -380,6 +385,9 @@ class InMemoryRecordingRepository:
 
 
 class RecordingRepository(Protocol):
+    def read_publish_registration(self, locator):
+        ...
+
     def add_prepared_media(self, media: AnalysisSource | IncidentClip, content: bytes, *, case_id: str | None = None) -> None: ...
     def get_prepared_content(self, ref: ContractRef) -> tuple[bytes, str] | None: ...
     def save_time_sources(self, source_ref: str, observed): ...

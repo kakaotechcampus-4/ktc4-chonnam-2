@@ -1,12 +1,11 @@
 """Contract §5.2 upload; receive/publish precede caller-owned registration."""
 from fastapi import APIRouter, HTTPException, Request
-from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse
 
 from daesingo.case.domain import SourceNotAccepted
 from daesingo.case.store import CaseNotFound, InvalidCaseId
 from daesingo.recording import RecordingCapabilityError
-from .upload import receive_source
+from .upload import leased_source, _storage_call
 from .errors import SourceHTTPException
 
 
@@ -15,9 +14,9 @@ def sources_router(composition):
 
     @router.post('/cases/{case_id}/sources')
     async def source(case_id: str, request: Request):
-        path, filename = await receive_source(request, composition)
         try:
-            body = await run_in_threadpool(composition.register_source, case_id, path, filename)
+            async with leased_source(request, composition) as (path, filename):
+                body = await _storage_call(composition.register_source, case_id, path, filename)
         except (CaseNotFound, InvalidCaseId):
             raise HTTPException(404) from None
         except SourceNotAccepted:

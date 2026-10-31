@@ -2,6 +2,10 @@
 
 대신고의 `common/runtime` 실행 인프라 문서 진입점이다.
 
+P-6 orphan publish 후속 #445의 구현·안전성·직접 검증·남은 Owner/CI 확인은
+[Implementation Notes](issue445-orphan-publish.md)에 기록한다. 기존 RT-12(a)/(b)
+이력의 publish 제외 범위는 소급 변경하지 않는다.
+
 > `common/runtime`은 여덟 번째 도메인 모듈이 아니다. `case`가 작업의 이유와 발주 의도를 소유하고, Runtime은 그 Intent를 실제 실행으로 옮긴다.
 
 ## Source of Truth 우선순위

@@ -51,9 +51,9 @@ def test_startup_cleanup_queue_does_not_inherit_request_or_private_context(api_s
     cleanup_events = [event for event in events if event['event'].startswith('storage.cleanup.')]
     cleanup_count = len(cleanup_events)
     names = {event['event'] for event in cleanup_events}
-    assert cleanup_count == 6
+    assert cleanup_count == 9
     assert names == {'storage.cleanup.'+kind+'.'+metric
-                     for kind in ('staging', 'temp') for metric in ('count', 'bytes', 'failed_count')}
+                     for kind in ('staging', 'temp', 'orphan') for metric in ('count', 'bytes', 'failed_count')}
     # Compare only schema/booleans: a regression must not print context values.
     schema_is_private = all(set(event) == {'timestamp', 'level', 'service', 'event', 'count'}
                             for event in cleanup_events)

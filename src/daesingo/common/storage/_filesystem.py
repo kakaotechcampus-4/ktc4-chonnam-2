@@ -97,6 +97,36 @@ if sys.platform == 'win32':
     _final_name.argtypes = (wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
     _final_name.restype = wintypes.DWORD
 
+    class _Overlapped(ctypes.Structure):
+        _fields_ = [('Internal', ctypes.c_size_t), ('InternalHigh', ctypes.c_size_t),
+                    ('Offset', wintypes.DWORD), ('OffsetHigh', wintypes.DWORD),
+                    ('hEvent', wintypes.HANDLE)]
+
+    _lock_file = _kernel.LockFileEx
+    _lock_file.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD,
+                          wintypes.DWORD, wintypes.DWORD, ctypes.POINTER(_Overlapped))
+    _lock_file.restype = wintypes.BOOL
+    _unlock_file = _kernel.UnlockFileEx
+    _unlock_file.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD,
+                            wintypes.DWORD, ctypes.POINTER(_Overlapped))
+    _unlock_file.restype = wintypes.BOOL
+
+    def publish_lock(fd, *, exclusive):
+        # CRT LK_NBRLCK is not a shared Windows lock: nested registration and
+        # concurrent uploads must use actual LockFileEx shared byte-range locks.
+        overlap = _Overlapped()
+        if not _lock_file(msvcrt.get_osfhandle(fd), 1 | (2 if exclusive else 0), 0, 1, 0,
+                          ctypes.byref(overlap)):
+            code = ctypes.get_last_error()
+            if code == 33:  # ERROR_LOCK_VIOLATION, nonblocking contention
+                raise BlockingIOError('publish lease busy')
+            raise ctypes.WinError(code)
+
+    def publish_unlock(fd):
+        overlap = _Overlapped()
+        if not _unlock_file(msvcrt.get_osfhandle(fd), 0, 1, 0, ctypes.byref(overlap)):
+            raise ctypes.WinError(ctypes.get_last_error())
+
     def _canonical_directory(directory):
         # FILE_NAME_NORMALIZED | VOLUME_NAME_GUID unifies DOS, extended and
         # short names without reopening or following a pathname. Refuse remote

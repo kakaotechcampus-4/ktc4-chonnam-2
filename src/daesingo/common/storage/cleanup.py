@@ -1,4 +1,4 @@
-"""B-C1/B-C3 cleanup: aged Runtime residues only, never published media."""
+"""B-C1/B-C3 residues and a separate fail-closed B-C2 orphan boundary."""
 from contextlib import closing, contextmanager
 from contextvars import Context
 from dataclasses import dataclass
@@ -10,7 +10,7 @@ import stat
 from threading import Event, Lock, Thread
 import time
 
-from ._filesystem import checked_path, configuration_path, identity, ordinary, pin_root, version
+from ._filesystem import UnsafePath, checked_path, configuration_path, identity, ordinary, pin_root, version
 from daesingo.common.logging import log_event_best_effort
 
 # Existing tempfile producers use these prefixes and Python's eight-character
@@ -18,6 +18,7 @@ from daesingo.common.logging import log_event_best_effort
 # of Runtime ownership. Keep this aligned if the producer naming ever changes.
 _STAGING = re.compile(r'upload-[a-z0-9_]{8}\Z')
 _TEMP = re.compile(r'recording-(?:analysis|chain)-[a-z0-9_]{8}\Z')
+_PUBLISH = re.compile(r'[0-9a-f]{32}\Z')
 
 
 @dataclass
@@ -29,7 +30,7 @@ class ScanResult:
 
 
 @contextmanager
-def _lease(root, kind, *, exclusive, blocking):
+def _lease(root, kind, *, exclusive, blocking, with_root=False):
     with pin_root(root) as directory, directory.lock_file('.runtime-cleanup-' + kind + '.lock') as fd:
         acquired = False
         try:
@@ -37,24 +38,36 @@ def _lease(root, kind, *, exclusive, blocking):
                 try:
                     if sys.platform == 'win32':
                         import msvcrt
-                        os.lseek(fd, 0, os.SEEK_SET)
-                        msvcrt.locking(fd, msvcrt.LK_NBLCK if exclusive else msvcrt.LK_NBRLCK, 1)
+                        if kind == 'orphan':
+                            from ._filesystem import publish_lock
+                            publish_lock(fd, exclusive=exclusive)
+                        else:
+                            os.lseek(fd, 0, os.SEEK_SET)
+                            msvcrt.locking(fd, msvcrt.LK_NBLCK if exclusive else msvcrt.LK_NBRLCK, 1)
                     else:
                         import fcntl
                         fcntl.flock(fd, (fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH) | fcntl.LOCK_NB)
                     acquired = True
                     break
-                except (BlockingIOError, PermissionError):
+                except (BlockingIOError, PermissionError) as error:
+                    if kind == 'orphan' and not isinstance(error, BlockingIOError):
+                        # Native orphan locks classify contention explicitly;
+                        # access failures must not spin forever as a busy lease.
+                        raise
                     if not blocking:
                         break
                     time.sleep(.01)
-            yield acquired
+            yield (directory if acquired else None) if with_root else acquired
         finally:
             if acquired:
                 if sys.platform == 'win32':
                     import msvcrt
-                    os.lseek(fd, 0, os.SEEK_SET)
-                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                    if kind == 'orphan':
+                        from ._filesystem import publish_unlock
+                        publish_unlock(fd)
+                    else:
+                        os.lseek(fd, 0, os.SEEK_SET)
+                        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
                 else:
                     import fcntl
                     fcntl.flock(fd, fcntl.LOCK_UN)
@@ -176,7 +189,7 @@ def cleanup_emitter(logger, *, emit=None):
     or execution identities. API may inject its existing bounded event queue.
     """
     def record(kind, result):
-        if kind not in ('staging', 'temp'):
+        if kind not in ('staging', 'temp', 'orphan'):
             raise ValueError('invalid cleanup event kind')
         for suffix, value in (('count', result.count), ('bytes', result.bytes),
                               ('failed_count', result.failed)):
@@ -249,8 +262,8 @@ class CleanupService:
             raise failure
 
 
-def configured_cleanup(config, logger, *, emit=None):
-    """Composition-owned roots. Never accept/derive a publish scan target."""
+def configured_cleanup(config, logger, *, emit=None, registration=None):
+    """Keep staging/temp protection; opt in through a public registration port."""
     media_root = configuration_path(config.media_root)
     publish = configuration_path(media_root/'source')
     temp_root = configuration_path(config.temp_root)
@@ -263,5 +276,108 @@ def configured_cleanup(config, logger, *, emit=None):
         scanners.insert(0, CleanupScanner(root=configuration_path(media_root/'staging'),
             lease_root=media_root, kind='staging', age_sec=config.cleanup.staging_age_sec,
             protected_paths=(publish,)))
+        if registration is not None:
+            scanners.append(OrphanPublishScanner(root=publish, lease_root=media_root,
+                age_sec=config.cleanup.orphan_age_sec, registration=registration))
     return CleanupService(scanners=scanners, interval_sec=config.cleanup.interval_sec,
                           emit=cleanup_emitter(logger, emit=emit))
+
+
+class OrphanPublishScanner(CleanupScanner):
+    """Direct managed source files only. True/False/None port, exact bool checks.
+
+    Composition translates Recording's enum. None or exceptions fail closed.
+    Filesystem identity is checked independently, before and after the query.
+    Root lease remains exclusive until deletion; DB resources do not.
+    """
+    def __init__(self, *, root, lease_root, age_sec, registration, now=time.time):
+        super().__init__(root=configuration_path(root), lease_root=configuration_path(lease_root),
+                         kind='staging', age_sec=age_sec, now=now)
+        if self.root != self.lease_root / 'source':
+            raise ValueError('orphan root must be managed source')
+        self.kind = 'orphan'
+        self.registration = registration
+
+    def _verify_root(self, directory):
+        with pin_root(self.lease_root) as current:
+            if identity(current.stat()) != identity(directory.stat()):
+                raise UnsafePath('publish root changed')
+
+    @contextmanager
+    def in_use(self):
+        with _lease(self.lease_root, self.kind, exclusive=False, blocking=True,
+                    with_root=True) as directory:
+            def verify():
+                self._verify_root(directory)
+            verify()
+            yield verify
+
+    def scan(self):
+        result = ScanResult()
+        if not self._scan_lock.acquire(blocking=False):
+            return result
+        try:
+            cutoff = int((self.now()-self.age_sec)*1_000_000_000)
+            with _lease(self.lease_root, self.kind, exclusive=True, blocking=False,
+                        with_root=True) as media:
+                if media is not None:
+                    self._verify_root(media)
+                    # POSIX openat anchors traversal to the SAME directory as
+                    # the lease. Never reopen a potentially replaced pathname.
+                    with media.child('source', directory=True) as source:
+                        self._walk(source, cutoff, result, root_identity=identity(media.stat()))
+        except FileNotFoundError:
+            pass
+        except OSError:
+            result.failed += 1
+        finally:
+            self._scan_lock.release()
+        return result
+
+    def _verify_source(self, parent, root_identity):
+        with pin_root(self.lease_root) as media:
+            if root_identity is not None and identity(media.stat()) != root_identity:
+                raise UnsafePath('publish root changed')
+            with media.child('source', directory=True) as source:
+                if identity(source.stat()) != identity(parent.stat()):
+                    raise UnsafePath('publish source changed')
+
+    def _walk(self, parent, cutoff, result, *, top=False, root_identity=None):
+        with closing(parent.entries()) as entries:
+            for name, snapshot in entries:
+                if snapshot is None:
+                    result.failed += 1
+                    continue
+                if (not _PUBLISH.fullmatch(name) or not stat.S_ISREG(snapshot.st_mode)
+                        or not ordinary(snapshot) or snapshot.st_nlink != 1
+                        or snapshot.st_mtime_ns >= cutoff):
+                    continue
+                try:
+                    # Validate before spending a DB checkout. Do not keep the
+                    # leaf handle across lookup: reopen and compare its version.
+                    with parent.child(name) as child:
+                        if version(child.stat()) != version(snapshot):
+                            continue
+                    try:
+                        registered = self.registration('source/' + name)
+                    except Exception:
+                        # A lookup FileNotFoundError is a failed lookup, not a
+                        # concurrently vanished filesystem candidate.
+                        result.failed += 1
+                        continue
+                    if registered is True:
+                        continue
+                    if registered is not False:
+                        result.failed += 1
+                        continue
+                    self._verify_source(parent, root_identity)
+                    size = _delete_file(parent, name, snapshot, cutoff)
+                    if size is not None:
+                        result.count += 1
+                        result.bytes += size
+                except FileNotFoundError:
+                    pass
+                except Exception:
+                    # Query/metadata/deletion failures are item-local, with no
+                    # path, locator, exception text or request context retained.
+                    result.failed += 1
