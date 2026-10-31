@@ -4,11 +4,18 @@
 import type { CaseView } from '../contracts/caseView'
 
 /**
- * 발생 일시(occurred_at, RFC3339 한 값)를 안전신문고 양식처럼 일자·시간으로 나눈다.
+ * 발생 일시(occurred_at, RFC3339 한 값)를 한국 시간의 일자·시간으로 나눈다.
  * 시간만 있으면 일자를 추측하지 않고, 읽을 수 없는 모양이면 둘 다 null이다.
  */
 export function splitDateTime(value: string | null): { date: string | null; time: string | null } {
   if (value === null) return { date: null, time: null }
+  // 편집 화면이 +09:00으로 저장하므로 표시할 때도 같은 시간대를 쓴다.
+  if (/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
+    const instant = Date.parse(value)
+    if (Number.isNaN(instant)) return { date: null, time: null }
+    const korean = new Date(instant + 9 * 60 * 60 * 1000).toISOString()
+    return { date: korean.slice(0, 10), time: korean.slice(11, 19) }
+  }
   const full = value.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)/)
   if (full) return { date: full[1], time: full[2] }
   const dateOnly = value.match(/^(\d{4}-\d{2}-\d{2})$/)
