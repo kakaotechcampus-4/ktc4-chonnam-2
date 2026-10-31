@@ -181,7 +181,7 @@ function resultFor(candidateId: string): CaseView {
       event_time_display: unknown,
       location_display: { ...unknown, coord: null, search_keyword: null },
       user_edited: false,
-      // 계약: evidence.preview_ref는 선택된 후보의 thumb_ref와 같다
+      // 시연은 발급 frame이 없어 선택 후보의 thumb_ref를 쓴다(계약: 발급 전에는 thumb_ref, #446)
       preview_ref: chosen.thumb_ref,
       review_needed: true,
       reason_code: 'evidence.multiple_fields_need_review',

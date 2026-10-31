@@ -113,6 +113,10 @@ const NOTICE_MESSAGES: Record<string, string> = {
   'notice.search_no_candidates': '조건에 맞는 장면을 찾지 못했습니다.',
   // #197 — 탐색 Run 실패. 「후보 없음」과 다른 시스템 실패다.
   'notice.candidate_search_failed': '장면을 찾는 중에 문제가 생겼어요.',
+  // #481 · #482 · #244 — 다시 하기 action이 없는 실패. 출구는 실패 화면의 다른 후보 · 처음으로다
+  'notice.analysis_range_too_long': '영상이 너무 길어 한 번에 살펴볼 수 없어요. 사건 장면이 담긴 영상만 골라 다시 올려 주세요.',
+  'notice.incident_clip_build_failed': '이 장면의 영상을 준비하지 못했어요.',
+  'notice.visual_verify_failed': '이 장면을 확인하는 중에 문제가 생겼어요.',
   // #358 — case가 탐색 결과를 기다리다 마감이 지나 멈췄다. 사용자 중단과 원인이 다르다.
   'notice.analysis_timed_out': '장면을 찾는 시간이 오래 걸려 멈췄어요.',
   // #342 — 사용자가 분석 진행을 중단했다. 실패가 아니라 사용자 행동의 결과다.

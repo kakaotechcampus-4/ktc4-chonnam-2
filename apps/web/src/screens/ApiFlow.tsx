@@ -204,7 +204,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} canRun={canRun} />
+        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
         // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
