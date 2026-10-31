@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.8` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.9` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
     event_type_label,
@@ -28,7 +29,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.8"
+CONTRACT_VERSION = "case-view/v1.10"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -70,6 +71,7 @@ JOB_LABEL_KEYS = {
     "REPORT_VIDEO_EXPORT": "job.report_video_export",
     "PLATE_IMAGE_EXPORT": "job.plate_image_export",
     "HINT_EXTRACT": "job.hint_extract",  # v1.7 등재(#259, PR #286)
+    "INCIDENT_CLIP_BUILD": "job.incident_clip_build",  # `decisions/incident-clip-observation-input.md` §4-2
 }
 JOB_LABEL_FALLBACK = "job.generic_processing"
 
@@ -198,6 +200,16 @@ def _build_progress(
             {"step": "package_assembly", "state": "PENDING"},
         ]
 
+    # clip 준비가 실패하면 판독은 발주되지 않는다(§4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
+    if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and selected_clip_failed(case):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": "PENDING"},
+            {"step": "overlay_time_read", "state": "PENDING"},
+        ]
+
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
         return [
             {"step": "file_intake", "state": "DONE"},
@@ -242,11 +254,13 @@ def _build_progress(
     }
     # 후보 탐색 Run이 실패했으면 진행 중(RUNNING)으로 보이지 않게 한다 — 「결과 없음」과도,
     # 「아직 찾는 중」과도 다른 상태다(PR #187 리뷰).
-    if case.candidate_search_failed:
+    # 실패 뒤 「다시 찾기」로 새 탐색을 기다리는 중이면 진행 중이다 — 이전 실패를 보이지 않는다(#426).
+    if case.candidate_search_failed and not case.search_awaited:
         progress["coarse_search"] = "FAILED"
     # 사용자가 분석을 중단했으면 실행 상태와 상관없이 PARTIAL이다(B§7 `progress[].state` 행 · #245 C-3). 실패 뒤
-    # 다시 찾다가 중단했으면 마지막 사용자 행동(중단)을 보인다(`decisions/stop-analysis.md`).
-    if case.analysis_stopped:
+    # 다시 찾다가 중단했으면 마지막 사용자 행동(중단)을 보인다(`decisions/stop-analysis.md`). case 대기 timeout도 case가
+    # 기다리기를 멈춘 것이라 같다(B§10 불변조건 5, `decisions/case-wait-timeout.md`).
+    if case.analysis_stopped or case.analysis_timed_out:
         progress["coarse_search"] = "PARTIAL"
     if stage_rank < 3:
         for step in ("plate_read", "overlay_time_read", "evidence_assembly", "requirement_check", "package_assembly"):
@@ -688,6 +702,8 @@ def build_case_view(
     visual_verify_status: str | None = None,
     independent_facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from .search_progress import search_progress_view
+
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
 
@@ -714,6 +730,7 @@ def build_case_view(
     ):
         evidence_source = independent_facts
 
+    scene_search = search_progress_view(case)
     return {
         "contract": "CaseView",
         "contract_version": CONTRACT_VERSION,
@@ -724,7 +741,10 @@ def build_case_view(
         # 분석 시작 때 사용자가 적은 설명 원문(v1.7, #259) — 받은 그대로. 분석 시작 전에는 `null`.
         "description": case.description,
         "manifest_summary": case.manifest_summary,
+        # 후보 `marker_ms`와 같은 좌표의 시간축 전체 길이(v1.9, #184). 분석 시작 전에는 `null` — web은 시간축을 그리지 않는다.
+        "timeline_duration_ms": case.timeline_duration_ms,
         "hints": case.hints,
+        **({"scene_search": scene_search} if scene_search is not None else {}),
         "progress": _build_progress(
             case,
             evidence_record,

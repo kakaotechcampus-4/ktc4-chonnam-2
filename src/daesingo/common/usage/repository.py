@@ -121,6 +121,8 @@ def append_final(conn: Connection, record: Mapping[str, Any]) -> bool:
     try:
         conn.execute(insert(usage_record).values(row))
     except IntegrityError as error:
+        # A driver-originated IntegrityError always carries its DBAPI cause.
+        assert error.orig is not None
         if not error.orig.args or error.orig.args[0] != 1062:
             raise
         existing = conn.execute(select(usage_record).where(

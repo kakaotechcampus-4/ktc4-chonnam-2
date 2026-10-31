@@ -73,7 +73,7 @@ export const SITUATION_CONFIRMATIONS: readonly SituationConfirmation[] = [
 ]
 
 /**
- * A절 §12 · B절 §12 — 등재된 `running_jobs[].label_key` 4종.
+ * A절 §12 · B절 §12 — 등재된 `running_jobs[].label_key` 6종.
  *
  * `COARSE_SEARCH`는 아직 전용 키가 없어 fallback을 그대로 쓴다(유소연 확인, 우선순위 낮음).
  * 미등록 kind도 fallback이다 — `actions[]`와 달리 여기는 fallback이 계약에 명시돼 있다.
@@ -84,6 +84,7 @@ export const JOB_LABEL_KEYS = [
   'job.fine_verify',
   'job.report_video_export',
   'job.hint_extract',
+  'job.incident_clip_build',
 ] as const
 
 export const JOB_LABEL_FALLBACK_KEY = 'job.generic_processing'

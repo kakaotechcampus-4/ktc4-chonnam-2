@@ -45,3 +45,23 @@ def test_store_wraps_given_repository_and_registry():
     store = CaseStore(repository=repo, adapters=registry, conn=None)
     store.register(CaseAggregate.empty("case_f004"))
     assert repo.load(None, "case_f004").case_id == "case_f004"
+
+
+def test_adapter_for_builds_adapter_from_factory_with_case_and_conn():
+    # 8-6 2단계 §4-3 — composition root가 꽂은 factory가 요청마다 adapter를 만든다. registry는 보지 않는다.
+    calls, made = [], _BindingAdapter()
+    conn = object()
+    store = CaseStore(conn=conn, adapter_factory=lambda case, c: calls.append((case, c)) or made)
+    store.register(CaseAggregate.empty("case_f005"))
+    case = store.get_case("case_f005")
+    assert store.adapter_for(case) is made
+    assert calls == [(case, conn)]
+
+
+def test_adapter_for_without_factory_uses_registry():
+    store = CaseStore()
+    adapter = _BindingAdapter()
+    store.register(CaseAggregate.empty("case_f006"), adapter)
+    case = store.get_case("case_f006")
+    assert store.adapter_for(case) is adapter
+    assert adapter.bound is case

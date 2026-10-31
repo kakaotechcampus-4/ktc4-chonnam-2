@@ -1,4 +1,5 @@
 import collections
+import json
 import os
 
 import pytest
@@ -124,3 +125,60 @@ def test_target_bbox_ignores_another_types_object():
 def test_target_bbox_requires_the_coordinate_field():
     anns = [{"Object Name": "신호 위반 차량(이륜차 포함)"}]
     assert sample_aihub.pick_target_bbox(anns, "SIGNAL") is None
+
+
+# --- 추가 샘플: 이미 쓴 시퀀스를 빼고 뽑는다 ------------------------------
+
+def _fake_label_zip(path, per_type):
+    """유형마다 시퀀스 per_type 개, 시퀀스마다 프레임 1장짜리 라벨 zip."""
+    import zipfile
+    label = json.dumps({
+        "condition": {"Weather": "맑음", "DayNights": "주간", "roadType": "일반도로"},
+        "Annotation": {"annotations": []},
+    })
+    with zipfile.ZipFile(path, "w") as zf:
+        for top in sample_aihub.TYPE_MAP:
+            for i in range(per_type):
+                seq = "%s_%04d" % (top, i)
+                zf.writestr("%s/sub/%s/%s_001.json" % (top, seq, seq), label)
+    return str(path)
+
+
+def test_excluded_sequences_are_never_picked(tmp_path):
+    z = _fake_label_zip(tmp_path / "VL.zip", per_type=4)
+    first, _ = sample_aihub.sample(z, per_type=2, seed=1)
+    used = {s["sequence_id"] for s in first["sequences"]}
+
+    second, gt = sample_aihub.sample(z, per_type=2, seed=1, exclude_ids=used)
+    picked = {s["sequence_id"] for s in second["sequences"]}
+
+    assert not (used & picked)
+    assert len(picked) == 2 * len(VIOLATION_TYPES)
+    assert {i["sequence_id"] for i in gt["items"]} == picked
+
+
+def test_split_and_versions_are_recorded(tmp_path):
+    z = _fake_label_zip(tmp_path / "VL.zip", per_type=2)
+    seqs, gt = sample_aihub.sample(
+        z, per_type=1, seed=1, exclude_ids={"x"}, excluded_manifests=["a_aihub"],
+        split="LOCKED", manifest_version="lm1", gt_version="lg1")
+
+    assert {s["split"] for s in seqs["sequences"]} == {"LOCKED"}
+    assert seqs["meta"]["manifest_version"] == "lm1"
+    assert gt["meta"]["gt_version"] == "lg1"
+    assert seqs["meta"]["sampling"]["excluded_manifests"] == ["a_aihub"]
+    assert seqs["meta"]["sampling"]["excluded_count"] == 1
+
+
+def test_committed_extra_a_tier_does_not_overlap_first_sample():
+    """추가 A tier 는 첫 샘플(a_aihub)과 시퀀스 하나도 겹치지 않는다."""
+    first = {s["sequence_id"] for s in manifests_io.load_sequences("a_aihub")["sequences"]}
+    extra = manifests_io.load_sequences("a_aihub_extra")
+    ids = [s["sequence_id"] for s in extra["sequences"]]
+
+    assert len(set(ids)) == len(ids), "sequence_id 중복"
+    assert not (first & set(ids))
+    assert "a_aihub" in extra["meta"]["sampling"]["excluded_manifests"]
+
+    gt = manifests_io.load_gt("a_aihub_extra", "classification")
+    assert {i["sequence_id"] for i in gt["items"]} == set(ids)

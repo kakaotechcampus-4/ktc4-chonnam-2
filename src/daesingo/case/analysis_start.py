@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from daesingo.case import jobs
-from daesingo.case.domain import CaseAggregate, InvalidTransition
+from daesingo.case.domain import ANALYSIS_JOB_KINDS, CaseAggregate, InvalidTransition
 from daesingo.case.scope import build_analysis_scope
 from daesingo.case.timeline_source import CaseTimelineSource
 
@@ -56,11 +56,20 @@ def hints_from_result(result: dict[str, Any]) -> dict[str, str | None]:
     raise ValueError(f"알 수 없는 단서 구조화 결과 상태: {status!r} (OK · ABSTAINED · FAILED)")
 
 
+def hint_unclear(result: dict[str, Any]) -> bool:
+    """구조화가 끝났지만 설명을 잘 이해하지 못했는가(#266) — `OK`인데 `confidence=low`이거나, 모델이 판단을 보류한
+    `ABSTAINED`. 실행 실패(`FAILED`)는 아니다 — #259 결정대로 사용자에게 알리지 않는다. `confidence`가 없으면
+    low로 읽지 않는다. 상태 검사는 `hints_from_result()`가 먼저 한다."""
+    status = result.get("status")
+    return status == "ABSTAINED" or (status == "OK" and result.get("confidence") == "low")
+
+
 def issue_initial_search(
     case: CaseAggregate, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
 ) -> dict[str, Any]:
     """case 타임라인 전체로 범위 1개를 만들고 `COARSE_SEARCH` 1건을 발주한다. 타임라인 실패는 그대로 올린다."""
     timeline = timelines.timeline_for(case.sources)
+    case.record_timeline_duration(timeline.duration_ms)
     scope = build_analysis_scope(
         case,
         scope_id=f"scope_{uuid.uuid4().hex}",
@@ -108,6 +117,38 @@ def start_analysis(
     )
 
 
+def edit_hint(
+    case: CaseAggregate, description: str, *, timelines: CaseTimelineSource, budget: InitialSearchBudget
+) -> None:
+    """설명을 고쳐 다시 찾는다(`EDIT_HINT`, #410 · `decisions/edit-hint.md`). 후보가 있는 단계면 `SEARCHING`으로
+    역행하고(후보 · 선택 폐기, `TIME_HINT_EDIT`와 같은 역행), `SEARCHING`이면 분석 job을 기다리지 않을 때만(중단 ·
+    timeout 뒤) 받는다. 원문을 바꾸고 hints · 판정을 비운 뒤 분석 시작과 같은 방식으로 발주한다 — 비었으면 바로 첫 탐색,
+    아니면 `HINT_EXTRACT`. 사용자 요청이라 `case_rev`를 한 번 올린다. 검사는 상태를 바꾸기 전에 한다."""
+    if case.stage == "SEARCHING":
+        if any(r["kind"] in ANALYSIS_JOB_KINDS for r in case.waiting_job_records()):
+            raise InvalidTransition("분석 job을 기다리는 중에는 설명을 고칠 수 없다")
+    else:
+        case.regress_to_searching()  # INTAKE면 InvalidTransition — 아무것도 바꾸기 전이다
+        # 버린 후보 목록에 딸린 job(#412 자동 선택 뒤의 Fine · clip · 판독 등)은 더 기다리지 않는다. 실행은
+        # 취소하지 않고 늦은 결과만 `SUPERSEDED`로 버린다(`edit-hint.md` §4).
+        for record in case.waiting_job_records():
+            case.settle_job(record["job_id"], "SUPERSEDED")
+    case.description = description
+    case.hints = dict.fromkeys(_HINT_FIELDS)
+    case.hint_unclear = False
+    case.candidate_search_failed = False
+    case.bump_revision()
+    if not description.strip():
+        # 타임라인 실패는 그대로 올라간다 — 호출자가 save하지 않는다(`start_analysis()`와 같다).
+        issue_initial_search(case, timelines=timelines, budget=budget)
+        return
+    jobs.issue_job(
+        case,
+        "HINT_EXTRACT",
+        input_fingerprint=fingerprint({"kind": "HINT_EXTRACT", "description": description, "prior_hints": None}),
+    )
+
+
 def reflect_hint_extraction(
     case: CaseAggregate,
     result: dict[str, Any],
@@ -125,7 +166,36 @@ def reflect_hint_extraction(
     if not case.awaits_result(job_id):
         return False
     hints = hints_from_result(result)
-    case.record_extracted_hints(hints)
+    case.record_extracted_hints(hints, unclear=hint_unclear(result))
     case.settle_job(job_id, "REFLECTED")
+    issue_initial_search(case, timelines=timelines, budget=budget)
+    return True
+
+
+def reflect_hint_exhaustion(
+    case: CaseAggregate,
+    *,
+    job_id: str,
+    kind: str,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget,
+) -> bool:
+    """Runtime이 `job_id`(`HINT_EXTRACT`)를 재시도까지 `STALE`로 소진했다고 알렸다(#405 D-3). case가 아직 기다릴 때만
+    hints 4개를 `None`으로 두고(`hint_unclear`는 세우지 않는다 — 보류가 아니라 실행이 끝나지 못했다) `EXHAUSTED`로
+    정산한 뒤 첫 탐색을 발주한다. 이미 정산된 job이면(중단 · 결과 반영 · 같은 알림 재전달) 아무것도 바꾸지 않고 `False`.
+
+    이 case가 발주하지 않은 job · `HINT_EXTRACT`가 아닌 kind는 배선 오류(`ValueError`)다 — 「바뀐 것 없음」으로 받으면
+    Runtime이 receipt를 남겨 잘못된 알림이 조용히 사라진다(T2 `reflect_execution`과 같다)."""
+    if kind != "HINT_EXTRACT":
+        raise ValueError(f"소진 알림은 HINT_EXTRACT만 받는다: {kind!r}")
+    record = next((r for r in case.job_records if r["job_id"] == job_id), None)
+    if record is None:
+        raise ValueError(f"이 case가 발주하지 않은 job_id: {job_id!r}")
+    if record["kind"] != kind:
+        raise ValueError(f"kind가 다르다: JobRecord {record['kind']!r} != 알림 {kind!r}")
+    if not case.awaits_result(job_id):
+        return False
+    case.record_extracted_hints(dict.fromkeys(_HINT_FIELDS), unclear=False)
+    case.settle_job(job_id, "EXHAUSTED")
     issue_initial_search(case, timelines=timelines, budget=budget)
     return True

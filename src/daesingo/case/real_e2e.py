@@ -336,6 +336,7 @@ class ObservationBundle:
     overlay_readout: dict[str, Any] | None = None
     time_source_candidates: list[dict[str, Any]] = field(default_factory=list)
     asset_facts: list[dict[str, Any]] = field(default_factory=list)
+    observation_facts: dict[str, Any] | None = None
     # 번호판 판독 `ReadoutRun.outcome`(#172 [D]). 판독을 시작하지 않았으면 None.
     plate_read_outcome: str | None = None
 
@@ -398,6 +399,7 @@ def assemble_evidence_bundle(
             case_id=case_id,
             selection_rev=selection_rev,
             resolution_id=f"tr_{case_id}_001",
+            incident_clip=obs.incident_clip,
         )
         return EvidenceBundle(
             evidence_record=None,
@@ -446,6 +448,7 @@ def assemble_evidence_bundle(
         case_id=case_id,
         selection_rev=selection_rev,
         resolution_id=f"tr_{case_id}_001",
+        incident_clip=obs.incident_clip,
     )
 
     evidence_record = assemble_evidence(
@@ -486,7 +489,7 @@ def assemble_evidence_bundle(
         time_resolution=time_resolution,
         asset_facts=obs.asset_facts,
         # 알려진 단순화 2와 같은 이유로 None (모듈 docstring 참고).
-        observation_facts=None,
+        observation_facts=obs.observation_facts,
     )
 
     report_package: dict[str, Any] | None = None

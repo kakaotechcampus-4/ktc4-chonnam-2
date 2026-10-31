@@ -65,6 +65,41 @@ class PublicFunctionsExistTest(unittest.TestCase):
         self.assertEqual(len(run_ids), 6, "run_id는 1회성 식별자이며 재사용하지 않는다")
 
 
+class CallerRunIdTest(unittest.TestCase):
+    """#297 — worker가 호출 전에 `run_id`를 발급해 넘기면 그 값으로 run을 만든다."""
+
+    def test_given_run_id_is_used_for_run_and_result(self):
+        run, plate = api.read_plate(request_for("clip_h001"), HINT, provider=fresh_provider(), run_id="rr_given1")
+        self.assertEqual(run.run_id, "rr_given1")
+        self.assertEqual(plate.run_ref.ref, "rr_given1")
+        run, overlay = api.read_overlay_time(request_for("clip_h001"), provider=fresh_provider(), run_id="rr_given2")
+        self.assertEqual(run.run_id, "rr_given2")
+        self.assertEqual(overlay.run_ref.ref, "rr_given2")
+
+    def test_failed_run_keeps_given_run_id(self):
+        run, plate = api.read_plate(request_for("clip_x001"), HINT, provider=fresh_provider(), run_id="rr_given3")
+        self.assertIsNone(plate)
+        self.assertEqual((run.outcome, run.run_id), ("FAILED", "rr_given3"))
+
+    def test_blank_run_id_is_rejected_before_reading(self):
+        class MustNotRead(providers.OcrProvider):
+            def read_plate(self, input_ref, target_hint):
+                raise AssertionError("provider를 부르면 안 된다")
+
+            def read_overlay_time(self, input_ref):
+                raise AssertionError("provider를 부르면 안 된다")
+
+        for bad in ("", "  ", 123):
+            with self.assertRaises(ValueError):
+                api.read_plate(request_for("clip_h001"), HINT, provider=MustNotRead(), run_id=bad)
+            with self.assertRaises(ValueError):
+                api.read_overlay_time(request_for("clip_h001"), provider=MustNotRead(), run_id=bad)
+
+    def test_without_run_id_readout_issues_one(self):
+        run, _ = api.read_plate(request_for("clip_h001"), HINT, provider=fresh_provider())
+        self.assertTrue(run.run_id.startswith("rr_"))
+
+
 class HappyPathTest(unittest.TestCase):
     """`scenario_happy_001` 입력으로 두 함수가 실제로 돌고 계약 형식을 반환한다."""
 
@@ -652,7 +687,7 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
         self.assertEqual(plate.contract_version, "plate-readout/v1.3")
 
     def test_plate_format_decides_between_accept_and_partial(self):
-        """공백은 붙이고, 온전한 형식(신형·지역명)만 확정한다. 나머지는 부분 판독이다."""
+        """공백은 붙이고, 고시 형식(용도 한글 40자 · 지역명은 운수사업용 2자리)만 확정한다. 나머지는 부분 판독이다."""
         def read(text):
             class One(providers.OcrProvider):
                 def read_plate(self, input_ref, target_hint):
@@ -667,10 +702,13 @@ class AbstainWithCompleteValueTest(unittest.TestCase):
                     )
             return api.read_plate(request_for("clip_h001"), target_hint=HINT, provider=One())[1]
 
-        for text, value in (("12가 3456", "12가3456"), ("서울12가3456", "서울12가3456")):
+        for text, value in (("12가 3456", "12가3456"), ("123하4567", "123하4567"),
+                            ("서울12바3456", "서울12바3456")):
             plate = read(text)
             self.assertEqual((plate.observation.value, plate.observation.status), (value, "OK"))
-        for text in ("바5215", "경기12가"):
+        # 일부만 읽힘 · 고시에 없는 한글 · 지역명+비사업용 · 없는 지역명 · 운수사업용 3자리 · 0으로 시작
+        for text in ("바1234", "경기12가", "12쿠3456", "서울12가3456", "한국12바3456",
+                     "123바4567", "012가3456"):
             plate = read(text)
             self.assertEqual(plate.abstain_reason, "PARTIAL_PLATE_READ", text)
             self.assertIsNone(plate.best_frame, text)

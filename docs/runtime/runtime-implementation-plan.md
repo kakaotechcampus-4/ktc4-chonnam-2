@@ -466,6 +466,12 @@ HTTP command → case JobRecord append → JobExecution enqueue (같은 commit)
 
 ### RT-14 — EC2 배포 · 운영 (Issue는 RT-13 착수 때 생성)
 
+**2026-10-30:** IN_PROGRESS · Refs #450 · Related #287, #460, #452.
+사용자 요청에 따라 외부 작업 없이 준비 도구·실패 검증·runbook을 구현한다.
+[준비 구현 Notes/실행 계약](./rt14-deployment.md). 기존 Gate는 실제 배포/운영 acceptance를
+계속 막으며 policy 입력/코드 준비만으로 CLOSED로 바꾸지 않는다. 아래 역사적 Issue 생성
+문구는 #450 생성 이전 Plan의 기준이며 현재 추적 Issue는 #450이다.
+
 - **Goal:** 카테캠 EC2 1대에 Compose stack을 OIDC → SSM으로 배포하고 revision · health · smoke · rollback을 식별 가능하게 한다(M6 → P2).
 - **Responsibility:** Implementer 정철원 · Owner / Acceptance 김준영
 - **Dependencies:** RT-13 · **Gate: RD-12b ~ e · RD-12h · RD-13a · RD-13c · RD-13d · RD-11a · RD-07c 확인 · RD-14(외부 공개 시)**

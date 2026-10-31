@@ -8,6 +8,7 @@ recording 공개 함수로 **등록 순서대로 이어 붙인다** — 이 순�
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import ROUND_FLOOR, Decimal
 from typing import Any, Protocol
 
 
@@ -27,8 +28,13 @@ class CaseTimelineSource(Protocol):
 
 
 def _case_timeline(timeline: Any) -> CaseTimeline:
+    # 첫 탐색 끝점(`end_ms`)이 원본 끝을 넘지 않게 ms로 **내린다** — 반올림하면 17.427524초가 17428ms가 돼 Recording이
+    # `OUT_OF_TIMELINE_RANGE`로 거부했다(#422). `end_sec * 1000`의 float 곱셈 오차가 끼지 않게 십진값으로 내린다.
     end_sec = max(p.timeline_end_sec for p in timeline.source_placements)
-    return CaseTimeline(timeline_id=timeline.timeline_id, revision=timeline.revision, duration_ms=round(end_sec * 1000))
+    duration_ms = int((Decimal(str(end_sec)) * 1000).to_integral_value(rounding=ROUND_FLOOR))
+    if duration_ms <= 0:
+        raise TimelineUnavailable(f"1ms보다 짧은 타임라인: {end_sec!r}초")
+    return CaseTimeline(timeline_id=timeline.timeline_id, revision=timeline.revision, duration_ms=duration_ms)
 
 
 class RecordingSequentialTimelineSource:
@@ -50,19 +56,22 @@ class RecordingSequentialTimelineSource:
                 raise TimelineUnavailable(f"VIDEO 스트림을 정할 수 없는 원본: {source['source_asset_ref']!r}")
         if len(sources) == 1:
             return _case_timeline(self._recording.create_relative_timeline(sources[0]["source_asset_ref"]))
+        # 좌표를 십진값으로 누적한다 — float로 더하면 표현 오차로 placement가 원본보다 미세하게 길어져 Recording의
+        # 길이 검증(`Decimal(str(...))` 비교)에 거부됐다(#421). 유효숫자 15자리 이하의 좌표는 float 왕복에서 그대로다.
         placements = []
-        start = 0.0
+        start = Decimal(0)
         for source in sources:
             duration = source.get("duration_sec")
             if not duration or duration <= 0:
                 raise TimelineUnavailable(f"길이를 모르는 원본: {source['source_asset_ref']!r}")
+            end = start + Decimal(str(duration))
             placements.append(
                 {
                     "source_asset_ref": source["source_asset_ref"],
                     "media_stream_ref": source["video_stream_ref"],
-                    "timeline_start_sec": start,
-                    "timeline_end_sec": start + float(duration),
+                    "timeline_start_sec": float(start),
+                    "timeline_end_sec": float(end),
                 }
             )
-            start += float(duration)
+            start = end
         return _case_timeline(self._recording.create_relative_timeline_from_placements(placements))

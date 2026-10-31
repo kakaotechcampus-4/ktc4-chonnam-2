@@ -2,6 +2,7 @@
 
 import importlib.util
 from copy import deepcopy
+from functools import cache
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,15 @@ from redelivery_acceptance import REDELIVERY_CHECKS, REDELIVERY_PARAMETERS
 from timestamp_acceptance import TIMESTAMP_CHECKS, TIMESTAMP_PARAMETERS
 from commands_acceptance import COMMAND_CHECKS, COMMAND_PARAMETERS
 from cancel_api_acceptance import CANCEL_API_CHECKS, CANCEL_API_PARAMETERS
+from async_e2e_acceptance import ASYNC_E2E_CHECKS, ASYNC_E2E_PARAMETERS
+from start_analysis_acceptance import START_ANALYSIS_CHECKS, START_ANALYSIS_PARAMETERS
+from recording_acceptance import RECORDING_CHECKS, RECORDING_PARAMETERS
+from upload_acceptance import UPLOAD_CHECKS, UPLOAD_PARAMETERS
+from exhaustion_acceptance import EXHAUSTION_CHECKS, EXHAUSTION_PARAMETERS
+from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
+from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
+from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
+from observability_acceptance import OBSERVABILITY_CHECKS, OBSERVABILITY_PARAMETERS
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -38,6 +48,15 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
 REQUIRED_CHECKS = (
+    *EXHAUSTION_CHECKS,
+    *OBSERVABILITY_CHECKS,
+    *ASSET_CHECKS,
+    *FRAME_CHECKS,
+    *UPLOAD_CHECKS,
+    *PRODUCED_CHECKS,
+    *RECORDING_CHECKS,
+    *START_ANALYSIS_CHECKS,
+    *ASYNC_E2E_CHECKS,
     *CANCEL_API_CHECKS,
     *COMMAND_CHECKS,
     *TIMESTAMP_CHECKS,
@@ -119,6 +138,15 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *EXHAUSTION_PARAMETERS,
+    *OBSERVABILITY_PARAMETERS,
+    *ASSET_PARAMETERS,
+    *FRAME_PARAMETERS,
+    *UPLOAD_PARAMETERS,
+    *PRODUCED_PARAMETERS,
+    *RECORDING_PARAMETERS,
+    *START_ANALYSIS_PARAMETERS,
+    *ASYNC_E2E_PARAMETERS,
     *CANCEL_API_PARAMETERS,
     *TIMESTAMP_PARAMETERS,
     *COMMAND_PARAMETERS,
@@ -227,6 +255,7 @@ REQUIRED_PARAMETERS = (
 )
 
 
+@cache
 def checker():
     path = ROOT / "scripts" / "check_mysql_test_report.py"
     spec = importlib.util.spec_from_file_location("mysql_report_checker", path)
@@ -236,6 +265,7 @@ def checker():
 
 
 def good_report():
+    parameter_families = {(role, scenario) for role, scenario, _ in REQUIRED_PARAMETERS}
     nodes = [{"nodeid": f"tests/common/db/integration/test_required.py::test_{name}",
               "scenarios": [name]} for name in (
         "sessions", "session_replacements", "worker_1205", "worker_1213", "worker_disconnect",
@@ -258,7 +288,7 @@ def good_report():
     nodes += [{"nodeid": f"tests/common/db/integration/test_checks.py::test_check_{index}",
                "scenarios": [], "checks": [{"role": role, "scenario": scenario}]}
               for index, (role, scenario) in enumerate(REQUIRED_CHECKS)
-              if not any((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS)]
+              if (role, scenario) not in parameter_families]
     # Deliberately opaque node IDs: policy must use stable check metadata.
     nodes += [{"nodeid": f"tests/common/jobs/test_checks.py::test_opaque_{index}",
                "scenarios": [], "checks": [
@@ -275,6 +305,76 @@ def good_report():
 
 def test_report_accepts_complete_real_mysql_evidence():
     checker().validate_report(good_report())
+
+
+@pytest.mark.parametrize('identity', OBSERVABILITY_PARAMETERS)
+@pytest.mark.parametrize('mutation', ('role','scenario','parameter','all_metadata','skip','xfail'))
+def test_observability_metadata_and_execution_are_mandatory(identity, mutation):
+    report = good_report()
+    target = dict(zip(('role','scenario','parameter'),identity))
+    item, = (n for n in report['collected'] if target in n.get('checks',[]))
+    if mutation in ('skip','xfail'):
+        phase, = (p for p in report['reports'] if p['nodeid']==item['nodeid'] and p['when']=='call')
+        if mutation=='skip': phase['outcome']='skipped'
+        else: phase['xfail']=True
+    elif mutation=='all_metadata':
+        item['checks']=[]
+    else:
+        # Remove every copy of the field, including the family-only mark.
+        for c in item['checks']:
+            c.pop(mutation,None)
+    with pytest.raises(ValueError): checker().validate_report(report)
+
+
+def test_case_inventory_validation_does_not_rescan_node_ids():
+    # A larger acceptance inventory must not multiply node-ID parsing by the
+    # number of Case requirements on every parameter-omission mutation.
+    splits = []
+
+    class MeasuredNodeId(str):
+        def split(self, *args, **kwargs):
+            splits.append(self)
+            return super().split(*args, **kwargs)
+
+    report = good_report()
+    for item in report["collected"]:
+        item["nodeid"] = MeasuredNodeId(item["nodeid"])
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(splits) <= 2 * len(report["collected"])
+
+
+def test_evidence_fixture_does_not_rescan_parameters_per_family(monkeypatch):
+    scans = []
+
+    class MeasuredParameters(tuple):
+        def __iter__(self):
+            scans.append(None)
+            return super().__iter__()
+
+    monkeypatch.setitem(globals(), "REQUIRED_PARAMETERS", MeasuredParameters(REQUIRED_PARAMETERS))
+    report = good_report()
+    assert checker().validate_report(report) == len(report["collected"])
+    assert len(scans) <= 2
+
+
+def test_multiple_reports_do_not_reload_checker_or_share_mutation_state(monkeypatch):
+    loads = []
+    original_spec = importlib.util.spec_from_file_location
+
+    def observed_spec(name, *args, **kwargs):
+        if name == "mysql_report_checker":
+            loads.append(None)
+        return original_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", observed_spec)
+    report = good_report()
+    expected = checker().validate_report(report)
+    broken = deepcopy(report)
+    broken["selected"].pop()
+    with pytest.raises(ValueError):
+        checker().validate_report(broken)
+    assert checker().validate_report(report) == expected
+    assert len(loads) <= 1
 
 
 @pytest.mark.parametrize("identity", TIMESTAMP_PARAMETERS, ids=lambda i: ":".join(i))
@@ -430,7 +530,7 @@ def test_gate_rejects_partial_case_file_even_when_every_selected_test_passes():
 
 @pytest.mark.parametrize("role,scenario", REQUIRED_CHECKS)
 def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere(role, scenario):
-    report = deepcopy(good_report())
+    report = good_report()
     removed = {item["nodeid"] for item in report["collected"]
                if {"role": role, "scenario": scenario} in item.get("checks", [])}
     assert len(removed) == (sum((r, s) == (role, scenario) for r, s, p in REQUIRED_PARAMETERS) or 1)
@@ -441,9 +541,25 @@ def test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere
         checker().validate_report(report)
 
 
+def _gate_artifact_directory(tmp_path_factory):
+    from uuid import uuid4
+
+    # Every case still owns a fresh directory under pytest's managed base.
+    # A unique name avoids scanning all earlier cases for a numeric suffix.
+    return tmp_path_factory.mktemp("gate-" + uuid4().hex, numbered=False)
+
+
+@pytest.fixture
+def gate_artifact_directory(tmp_path_factory, request):
+    # Keep pytest's per-case cleanup when users select another retention policy.
+    if request.config.getini("tmp_path_retention_policy") != "all":
+        return request.getfixturevalue("tmp_path")
+    return _gate_artifact_directory(tmp_path_factory)
+
+
 @pytest.mark.parametrize("identity", REQUIRED_PARAMETERS)
 @pytest.mark.parametrize("layer", ["collection", "selection", "setup", "call", "teardown", "all", "junit"])
-def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, identity, layer):
+def test_each_required_parameter_cannot_be_omitted_from_evidence(gate_artifact_directory, identity, layer):
     from xml.etree import ElementTree
 
     report = good_report()
@@ -451,13 +567,21 @@ def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, ident
     check = {"role": role, "scenario": scenario, "parameter": parameter}
     item, = (n for n in report["collected"] if check in n.get("checks", []))
     node = item["nodeid"]
-    root = ElementTree.Element("testsuite")
-    for collected in report["collected"]:
-        if layer in {"junit", "all"} and collected is item:
-            continue
-        ElementTree.SubElement(root, "testcase", classname=collected["junit"][0], name=collected["junit"][1])
-    junit = tmp_path / "junit.xml"
-    ElementTree.ElementTree(root).write(junit, encoding="utf-8")
+    collected = report["collected"]
+
+    def write_junit():
+        root = ElementTree.Element("testsuite")
+        for entry in collected:
+            if layer in {"junit", "all"} and entry is item:
+                continue
+            ElementTree.SubElement(root, "testcase", classname=entry["junit"][0], name=entry["junit"][1])
+        path = gate_artifact_directory / "junit.xml"
+        ElementTree.ElementTree(root).write(path, encoding="utf-8")
+        return path
+
+    # Keep combined omissions materialized; ordinary JSON rejection never
+    # reaches JUnit validation, so do not serialize its unused passing XML.
+    junit = write_junit() if layer in {"junit", "all"} else None
     if layer in {"collection", "all"}:
         report["collected"] = [n for n in report["collected"] if n["nodeid"] != node]
     if layer in {"selection", "all"}:
@@ -468,7 +592,41 @@ def test_each_required_parameter_cannot_be_omitted_from_evidence(tmp_path, ident
     with pytest.raises(ValueError):
         gate = checker()
         gate.validate_report(report)
+        if junit is None:
+            junit = write_junit()
         gate.validate_junit(junit, report)
+
+
+def test_parameter_mutations_only_write_junit_after_json_validation(tmp_path, monkeypatch):
+    from xml.etree import ElementTree
+
+    calls = {"write": 0, "json": 0, "junit": 0}
+    gate = checker()
+    write = ElementTree.ElementTree.write
+    validate_report, validate_junit = gate.validate_report, gate.validate_junit
+
+    def observed_write(*args, **kwargs):
+        calls["write"] += 1
+        return write(*args, **kwargs)
+
+    def observed_json(*args, **kwargs):
+        calls["json"] += 1
+        return validate_report(*args, **kwargs)
+
+    def observed_junit(*args, **kwargs):
+        calls["junit"] += 1
+        return validate_junit(*args, **kwargs)
+
+    monkeypatch.setattr(ElementTree.ElementTree, "write", observed_write)
+    monkeypatch.setattr(gate, "validate_report", observed_json)
+    monkeypatch.setattr(gate, "validate_junit", observed_junit)
+    for layer in ("collection", "selection", "setup", "call", "teardown", "all", "junit"):
+        directory = tmp_path / layer
+        directory.mkdir()
+        test_each_required_parameter_cannot_be_omitted_from_evidence(
+            directory, REQUIRED_PARAMETERS[0], layer)
+    # Keep the combined "all" layer's missing-JUnit evidence materialized too.
+    assert calls == {"write": 2, "json": 7, "junit": 1}
 
 
 @pytest.mark.parametrize("tag", ["skipped", "failure", "error", "missing"])
@@ -481,7 +639,7 @@ def test_junit_cross_check_rejects_missing_or_unsuccessful_execution(tmp_path, t
         checker().validate_junit(path, report)
 
 
-@pytest.mark.parametrize("identity", (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
+@pytest.mark.parametrize("identity", (*ASSET_PARAMETERS, *FRAME_PARAMETERS, *PRODUCED_PARAMETERS, *UPLOAD_PARAMETERS, *RECORDING_PARAMETERS, *START_ANALYSIS_PARAMETERS, *ASYNC_E2E_PARAMETERS, *API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS, *COMMAND_PARAMETERS, *CANCEL_API_PARAMETERS))
 @pytest.mark.parametrize("mutation", ["missing_node", "missing_parameter", "missing_role", "missing_scenario"])
 def test_api_http_partial_evidence_is_rejected(identity, mutation):
     report = good_report()
@@ -500,3 +658,60 @@ def test_api_http_partial_evidence_is_rejected(identity, mutation):
         check.pop(mutation.removeprefix("missing_"))
     with pytest.raises(ValueError, match="role/scenario"):
         checker().validate_report(report)
+
+
+def test_parameter_directory_does_not_rescan_sibling_evidence(tmp_path_factory, monkeypatch):
+    base = tmp_path_factory.getbasetemp()
+    scan = os.scandir
+
+    def no_sibling_scan(path):
+        if Path(path) == base:
+            raise AssertionError("gate artifact allocation rescanned sibling evidence")
+        return scan(path)
+
+    monkeypatch.setattr(os, "scandir", no_sibling_scan)
+    first = _gate_artifact_directory(tmp_path_factory)
+    (first / "junit.xml").write_text("first evidence", encoding="utf-8")
+    second = _gate_artifact_directory(tmp_path_factory)
+    assert first != second
+    assert first.parent == second.parent == base
+    assert (first / "junit.xml").read_text(encoding="utf-8") == "first evidence"
+    assert list(second.iterdir()) == []
+
+
+def test_role_omission_does_not_deepcopy_its_fresh_report(monkeypatch):
+    class FreshEvidence(dict):
+        def __deepcopy__(self, memo):
+            raise AssertionError("fresh role-omission fixture copied again")
+
+    build = good_report
+
+    def fresh_report():
+        report = build()
+        report["collected"][0] = FreshEvidence(report["collected"][0])
+        return report
+
+    monkeypatch.setitem(globals(), "good_report", fresh_report)
+    test_each_required_role_check_is_mandatory_even_with_same_scenario_elsewhere(*REQUIRED_CHECKS[0])
+
+
+def test_parameter_artifacts_honor_failed_retention_policy(tmp_path):
+    from xml.etree import ElementTree
+
+    failure = tmp_path / "test_retention_failure_probe.py"
+    failure.write_text("def test_retention_probe_failure():\n    assert False, 'retention probe'\n", encoding="utf-8")
+    base = tmp_path / "child"
+    child_xml = tmp_path / "retention-child.xml"
+    command = [sys.executable, "-B", "-X", "utf8", "-m", "pytest",
+               "tests/common/db/test_mysql_gate.py::test_each_required_parameter_cannot_be_omitted_from_evidence[junit-identity0]",
+               str(failure), "-q", "-p", "no:cacheprovider",
+               "-o", "tmp_path_retention_policy=failed", f"--basetemp={base}",
+               f"--junitxml={child_xml}"]
+    result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"),
+                            capture_output=True, text=True, encoding="utf-8", timeout=30)
+    (tmp_path / "retention-child.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
+    assert result.returncode == 1, result.stdout + result.stderr
+    cases = ElementTree.parse(child_xml).findall(".//testcase")
+    assert len(cases) == 2 and all(c.find("error") is None for c in cases)
+    assert [c.get("name") for c in cases if c.find("failure") is not None] == ["test_retention_probe_failure"]
+    assert not list(base.rglob("junit.xml")), "passing parameter evidence ignored failed-retention cleanup"

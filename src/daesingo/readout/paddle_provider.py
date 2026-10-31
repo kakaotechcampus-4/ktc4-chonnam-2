@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from math import isfinite
 
 from daesingo.recording import RecordingCapabilityError
@@ -52,7 +53,7 @@ MIN_ASPECT = 2.2
 여기서도 1줄처럼 보인다(baseline §① bbox 미결)."""
 
 PLATE_PATTERN = re.compile(r"\d{2,3}[가-힣]\d{4}")
-"""1줄 형식. 맞는 후보를 **우선**하지만 안 맞는다고 버리지 않는다 — 2줄 아랫줄(`바5215`)."""
+"""1줄 형식. 맞는 후보를 **우선**하지만 안 맞는다고 버리지 않는다 — 2줄 아랫줄(`바1234`)."""
 
 DIGITS_ONLY_PLATE = re.compile(r"\d{2,3}\s?\d{4}")
 """대상 차량 crop 안에서 한글만 빠진 1줄 번호판 OCR 결과.
@@ -240,7 +241,8 @@ class RecordingFrameSource:
             clip_frames = IncidentClipFrames(self._recording, incident_clip_ref)
             frames = []
             for ratio in self._ratios:
-                offset_sec = clip.duration_sec * ratio
+                # Preserve decimal sample instants across the strict Recording boundary.
+                offset_sec = float(Decimal(str(clip.duration_sec)) * Decimal(str(ratio)))
                 frame, content = clip_frames.read_at(offset_sec)
                 frames.append(SourceFrame(
                     frame_ref=frame.frame_ref,
@@ -342,12 +344,13 @@ class PaddleOcrProvider(OcrProvider):
 
     label = "paddleocr-3.7.0-ppocrv5-korean"
 
-    def __init__(self, frame_source, *, tz_offset: str = "+09:00"):
+    def __init__(self, frame_source, *, tz_offset: str = "+09:00", engine=None):
         self._source = frame_source
         self._tz_offset = tz_offset
         """overlay 문자열에는 timezone이 없다. 정식 출처는 clip의 source 메타데이터이고,
         여기 기본값은 **한국 블랙박스 전제의 단순화**다."""
-        self._engine = None
+        # Production injects its startup-loaded engine; standalone callers stay lazy.
+        self._engine = engine
         self._frames = {}
         self._seen = {}
         """clip별 프레임과 `(clip_ref, frame_ref)`별 OCR 결과. `read_plate`와
@@ -444,7 +447,7 @@ def selfcheck() -> None:
     assert pick_plate([box("23두4874", 0.80, (100, 100, 300, 160)),
                        box("13가20 0가020", 0.99, (400, 100, 700, 160))]).text == "23두4874"
     # 형식 후보가 없으면 필터 통과분 중 신뢰도 최고 (2줄 번호판 아랫줄)
-    assert pick_plate([box("바5215", 0.99, (100, 100, 300, 150))]).text == "바5215"
+    assert pick_plate([box("바1234", 0.99, (100, 100, 300, 150))]).text == "바1234"
     # 세로로 긴 것·숫자가 적은 것은 번호판이 아니다
     assert pick_plate([box("12가", 0.99, (0, 0, 200, 90))]) is None
     assert pick_plate([box("가나다라", 0.99, (0, 0, 300, 100))]) is None

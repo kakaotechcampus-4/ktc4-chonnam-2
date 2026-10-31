@@ -121,13 +121,14 @@ def test_t2_applies_case_and_marks_runtime_receipt_once(engine):
         assert reflect_terminal(conn, incoming, reflector, "trace_rf").status == "ALREADY_APPLIED"
 
     with engine.begin() as conn:
-        view = service.get_view(case_id, store=_store(conn))
         case = _store(conn).get_case(case_id)
         applied = conn.exec_driver_sql(
             "SELECT case_applied_at FROM job_execution WHERE execution_id = %s", (incoming.execution_id,)
         ).scalar_one()
-    assert view["stage"] == "CANDIDATE_REVIEW"
-    assert view["running_jobs"] == []
+    # rank=1은 T2가 자동 선택한다(W12:C2). 이 EVENT는 span에 구간이 없어 Fine은 내지 않는다. 선택된 case의 CaseView는
+    # adapter가 있어야 조립되므로(adapter 없는 이 store로는 `AdapterNotAttached`) aggregate로 본다.
+    assert case.stage == "EVIDENCE_REVIEW"
+    assert case.waiting_job_records() == []
     assert case.processed_executions == {incoming.execution_id: incoming.job_id}
     assert applied is not None
 

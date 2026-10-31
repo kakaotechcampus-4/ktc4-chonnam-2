@@ -4,9 +4,9 @@
 // 않고 이 표만 따른다. 아직 발주를 보낼 경로(case worker)가 없지만, **무엇을
 // 보낼지는 계약이 이미 정해 뒀으므로** 여기까지는 지금 확정할 수 있다.
 //
-// 7종 중 3종만 새 JobRecord를 만들고, 4종은 발주 없이 web이 사용자 입력을
-// 받는 동작이다. 이 구분을 코드에 박아 두지 않으면 나중에 「버튼 = 발주」로
-// 뭉뚱그리게 된다.
+// 7종 중 3종만 web이 새 JobRecord를 발주하고, 3종은 발주 없이 web이 사용자 입력을
+// 받는 동작이다. `EDIT_HINT`는 입력을 받아 command로 보내고, 발주는 case가 한다(#410).
+// 이 구분을 코드에 박아 두지 않으면 나중에 「버튼 = 발주」로 뭉뚱그리게 된다.
 
 import type { Action } from './caseView'
 
@@ -16,6 +16,7 @@ export type JobKind = 'PLATE_READ' | 'COARSE_SEARCH' | 'REPORT_VIDEO_EXPORT'
 export type ActionIntent =
   | { type: 'JOB'; jobKind: JobKind; forceRerun: boolean; note: string }
   | { type: 'LOCAL_INPUT'; note: string }
+  | { type: 'INPUT_COMMAND'; note: string }
 
 export const ACTION_INTENT: Record<Action, ActionIntent> = {
   RETRY_PLATE_READ: {
@@ -42,12 +43,11 @@ export const ACTION_INTENT: Record<Action, ActionIntent> = {
   EDIT_EVENT_TIME: { type: 'LOCAL_INPUT', note: '사용자 입력을 받아 시각 정정 — 발주 없음' },
   MANUAL_PLATE_INPUT: { type: 'LOCAL_INPUT', note: '사용자 입력을 받아 번호판 정정 — 발주 없음' },
   REVIEW_TIME: { type: 'LOCAL_INPUT', note: '시각 후보 중 선택/확인 — 발주 없음' },
-  EDIT_HINT: { type: 'LOCAL_INPUT', note: '검색 단서 입력 — 발주 없음, 다음 재검색의 입력이 된다' },
+  EDIT_HINT: { type: 'INPUT_COMMAND', note: '설명 원문을 다시 받아 EDIT_HINT command로 — case가 HINT_EXTRACT를 발주한다' },
 }
 
 export function describeIntent(action: Action): string {
   const intent = ACTION_INTENT[action]
-  return intent.type === 'JOB'
-    ? `JobRecord 발주 — kind=${intent.jobKind} · force_rerun=${intent.forceRerun} (${intent.note})`
-    : `발주 없음 — ${intent.note}`
+  if (intent.type === 'JOB') return `JobRecord 발주 — kind=${intent.jobKind} · force_rerun=${intent.forceRerun} (${intent.note})`
+  return intent.type === 'INPUT_COMMAND' ? `입력 command — ${intent.note}` : `발주 없음 — ${intent.note}`
 }

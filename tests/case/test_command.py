@@ -174,8 +174,8 @@ def test_record_situation_response_is_filled_by_case_clock():
     assert response_record["responded_at"]  # web이 아니라 case가 채운다(§5)
 
 
-def test_record_situation_response_rejects_corrected_in_this_version():
-    """`CORRECTED`는 입력형 판본에서 `SITUATION_CHANGE`와 함께 연다(§5)."""
+def test_record_situation_response_rejects_corrected_without_visual_event_type():
+    """`CORRECTED`는 고른 유형(`visual_event_type`)과 함께 보낸다(§12-3) — 나머지는 `test_input_commands.py`."""
     store, case = _store_with_selected_case()
     before = _state(_reload(store, case))
 

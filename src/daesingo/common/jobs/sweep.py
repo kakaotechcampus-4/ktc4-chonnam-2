@@ -23,7 +23,8 @@ from daesingo.common.job_execution import validate_transition
 from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
 
 from .retry_policy import is_stale, retry_backoff, should_retry
-from .schema import job_execution as jobs
+from .schema import job_execution as jobs, job_exhaustion_notice as notices
+from .exhaustion import notice_from_row, verify_execution
 from .timestamps import terminal_timestamp
 
 _DB_ERRORS = (DBAPIError, PoolTimeout, TransactionRetryExhausted)
@@ -55,7 +56,7 @@ def _detect_latency(outcome: SweepOutcome) -> float | None:
 
 
 def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings, *,
-                  retry_execution_id: str | None = None) -> SweepOutcome | None:
+                  retry_execution_id: str | None = None, notice_id: str | None = None) -> SweepOutcome | None:
     """Caller owns commit/rollback. Recheck lease and marker under the row lock.
 
     SKIP LOCKED lets another sweeper, heartbeat, terminal writer or cancellation
@@ -68,7 +69,7 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
         .with_for_update(skip_locked=True)).mappings().one_or_none()
     if row is None:
         return None
-    now = conn.scalar(select(func.now(6)))
+    now = conn.execute(select(func.now(6))).scalar_one()
     if not is_stale(row["status"], row["lease_expires_at"], now):
         return None
     validate_transition("RUNNING", "STALE")
@@ -79,7 +80,7 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
     if changed != 1:
         return None
     # Use the actual UPDATE's DB timestamp for both the receipt and new attempt.
-    now = conn.scalar(select(jobs.c.ended_at).where(jobs.c.execution_id == execution_id))
+    now = conn.execute(select(jobs.c.ended_at).where(jobs.c.execution_id == execution_id)).scalar_one()
     cancelled = row["cancel_requested_at"] is not None
     retry_id = None
     reason = "CANCELLED" if cancelled else "EXHAUSTED"
@@ -93,13 +94,21 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
             available_at=now + timedelta(seconds=retry_backoff(attempt, settings)),
         ))
         reason = "RETRIED"
+    elif not cancelled and row["kind"] == "HINT_EXTRACT":
+        conn.execute(insert(notices).values(
+            notice_id=notice_id if notice_id is not None else "notice_" + uuid4().hex,
+            job_id=row["job_id"], case_id=row["case_id"], kind=row["kind"],
+            final_execution_id=execution_id, attempt=row["attempt"],
+            terminal_status="STALE", reason="EXHAUSTED", exhausted_at=now,
+            trace_id=row["trace_id"],
+        ))
     return SweepOutcome(execution_id, row["job_id"], row["case_id"], row["trace_id"], now,
         row["heartbeat_at"], retry_id, reason)
 
 
-def _recover(conn: Connection, outcome: SweepOutcome) -> SweepOutcome | None:
+def _recover(conn: Connection, outcome: SweepOutcome, notice_id: str) -> SweepOutcome | None:
     # A blocking PK read resolves a possibly still-finishing unknown COMMIT.
-    row = conn.execute(select(jobs.c.status, jobs.c.ended_at).where(
+    row = conn.execute(select(jobs).where(
         jobs.c.execution_id == outcome.execution_id).with_for_update()).mappings().one_or_none()
     if row is None or row["status"] != "STALE" or row["ended_at"] != outcome.ended_at:
         return None
@@ -108,6 +117,15 @@ def _recover(conn: Connection, outcome: SweepOutcome) -> SweepOutcome | None:
             jobs.c.execution_id == outcome.retry_execution_id).with_for_update()).scalar_one_or_none()
         if child is None:
             return None
+    if row["kind"] == "HINT_EXTRACT" and outcome.reason == "EXHAUSTED":
+        stored = conn.execute(select(notices).where(
+            notices.c.job_id == outcome.job_id).with_for_update()).mappings().one_or_none()
+        if stored is None or stored["notice_id"] != notice_id:
+            raise ValueError("exhaustion recovery facts mismatch")
+        notice = notice_from_row(stored)
+        if notice.final_execution_id != outcome.execution_id or notice.exhausted_at != outcome.ended_at:
+            raise ValueError("exhaustion recovery facts mismatch")
+        verify_execution(conn, notice, outcome.trace_id)
     return outcome
 
 
@@ -125,15 +143,16 @@ def sweep_once(engine: Engine, settings: WorkerSettings, *, sleep: Callable = ti
     outcomes = []
     for execution_id in candidates:
         retry_id = "exec_" + uuid4().hex
+        notice_id = "notice_" + uuid4().hex
         pending = None
 
         def operation(conn):
             nonlocal pending
             if pending is not None:
-                recovered = _recover(conn, pending)
+                recovered = _recover(conn, pending, notice_id)
                 if recovered is not None:
                     return recovered
-            pending = sweep_expired(conn, execution_id, settings, retry_execution_id=retry_id)
+            pending = sweep_expired(conn, execution_id, settings, retry_execution_id=retry_id, notice_id=notice_id)
             return pending
 
         result = run_worker_transaction(engine, operation, sleep=sleep, logger=logger)
@@ -169,15 +188,17 @@ class SweepService:
     def __init__(self, *, sweep: Callable, settings: WorkerSettings, stop: Event,
                  logger: logging.Logger, hooks: Sequence[Callable[[], object]] = (),
                  redeliver: Callable[[], object] | None = None,
+                 redeliver_exhaustion: Callable[[], object] | None = None,
                  wait: Callable | None = None, retry_wait: Callable | None = None):
         self.sweep, self.settings, self.worker_stop, self.logger = sweep, settings, stop, logger
         self.hooks = tuple(hooks)
         self.redeliver = redeliver
+        self.redeliver_exhaustion = redeliver_exhaustion
         self.stop = Event()
         self.wait = wait if wait is not None else self.stop.wait
         self.retry_wait = retry_wait if retry_wait is not None else stop.wait
-        self.thread = None
-        self._fatal = None
+        self.thread: Thread | None = None
+        self._fatal: BaseException | None = None
 
     def _pass(self):
         self.sweep()
@@ -185,6 +206,8 @@ class SweepService:
             # Startup scan failures use the same admission retry gate; individual
             # candidates isolate their own faults within this callback.
             self.redeliver()
+        if self.redeliver_exhaustion is not None:
+            self.redeliver_exhaustion()
         for hook in self.hooks:
             try:
                 hook()

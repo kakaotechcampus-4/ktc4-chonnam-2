@@ -63,3 +63,27 @@ def test_recording_frame_source_maps_recording_failure_to_provider_failure(monke
         paddle_provider.RecordingFrameSource(recording).frames("clip_real")
 
     assert (raised.value.kind, raised.value.code) == ("INFRA", "READOUT_FRAME_ACCESS_FAILED")
+
+
+def test_three_second_clip_does_not_request_after_exact_sample_due_to_float_dust(monkeypatch):
+    recording = FakeRecording()
+    recording.clip.duration_sec = 3.0
+    recording.clip.timeline_range.start_sec = 0.0
+    span = recording.clip.source_provenance.asset_spans[0]
+    span.timeline_range = _range(0.0, 3.0)
+    span.source_range = _range(0.0, 3.0)
+    monkeypatch.setattr(paddle_provider, "_decode_image", lambda content: object())
+    paddle_provider.RecordingFrameSource(recording).frames("clip_real")
+    # Recording rejects a returned exact 0.6s frame for a 0.6000000000000001 request.
+    assert recording.offsets == [0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4]
+
+
+def test_incident_position_mapping_does_not_add_float_dust():
+    from daesingo.readout.providers import IncidentClipFrames
+    recording = FakeRecording()
+    recording.clip.timeline_range.start_sec = 0.1
+    span = recording.clip.source_provenance.asset_spans[0]
+    span.timeline_range = _range(0.1, 3.1)
+    span.source_range = _range(0.1, 3.1)
+    IncidentClipFrames(recording, "clip_real").read_at(0.2)
+    assert recording.offsets == [0.3]

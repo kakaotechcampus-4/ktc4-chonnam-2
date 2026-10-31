@@ -209,6 +209,8 @@ Research PDF 본문 일부의 괄호 출처명 `공정거래위원회`는 연결
 - 후보 구간이 `Asia/Seoul` 자정을 가로질러 위반일 자체가 달라질 수 있으면 사용자 확인 전 `NEEDS_REVIEW`로 둔다.
 - Mock·회귀 Artifact는 오늘 시각으로 다시 평가하지 않고 기록된 `evaluated_at`을 사용한다.
 
+> **정정 (2026-10-31).** 「선택된 시간 기준값 + `representative_ms`」는 원본 하나가 timeline 0초에서 시작한다는 가정에서만 맞다. `representative_ms`는 timeline 위치이고 기준값은 원본 하나의 시계라서, 원본 여러 개를 이으면 앞 원본 길이만큼 시각이 밀린다(PR #458 리뷰). 기준값과 offset을 같은 원본으로 재는 규칙은 [`contract-time-resolution.md` §17](../../../architecture/contracts/contract-time-resolution.md)이 정한다. 대표 순간 하나로 `occurred_at`을 만든다는 이 절의 원칙은 그대로다. 원문은 보존한다.
+
 ### 4.4 결정 — 2개 달력일과 마감 경계
 
 | 항목 | 결정값 |

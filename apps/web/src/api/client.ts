@@ -43,6 +43,11 @@ export type Command =
   | { kind: 'SELECT_OTHER_CANDIDATE'; payload: { candidate_id: string } }
   | { kind: 'RECORD_SITUATION_RESPONSE'; payload: { value: 'CONFIRMED' | 'USER_UNSURE' } }
   | { kind: 'MARK_REVIEWED'; payload: Record<string, never> }
+  | { kind: 'EDIT_HINT'; payload: { description: string } }
+  /** §12 입력형 — 새 값만 보낸다. 이전 값 · supersede는 case가 채운다 */
+  | { kind: 'MANUAL_PLATE_INPUT'; payload: { value: string } }
+  /** 값은 오프셋이 있는 RFC3339다. 오프셋이 없으면 `case.command.invalid_value` */
+  | { kind: 'EDIT_EVENT_TIME'; payload: { value: string } }
   | {
       kind: 'RUN_NOTICE_ACTION'
       payload: {

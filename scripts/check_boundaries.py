@@ -2,13 +2,15 @@
 """모듈 경계 · 계약 정합성 점검.
 
 명세는 두 문서가 소유한다. 이 스크립트는 규칙을 새로 만들지 않는다.
-  - 모듈 경계 grep 목록  → docs/management/ownership.md §6
+  - 모듈 경계 문자열 · Python import 목록 → docs/management/ownership.md §6
   - 계약 번호·enum 정답지 → docs/architecture/module-architecture.md §5-1 · §3-5
 
 사용:
     python scripts/check_boundaries.py            # 전체
     python scripts/check_boundaries.py --only=contracts
 """
+import ast
+from importlib.util import resolve_name
 import os
 import re
 import sys
@@ -34,6 +36,19 @@ BOUNDARIES = [
                                              "from daesingo.case", "from daesingo.evidence"]),
     ("web",       "apps/web",               ["threshold", "130MB", "기한"]),
 ]
+
+# Architecture §1 · §6-2, Implementation Plan RT-15. Domain은 7개이며
+# eval은 root package, web은 apps/web에 있다(src/daesingo 아래가 아니다).
+DOMAIN_IMPORTS = (
+    ("case", "src/daesingo/case", "daesingo.case"),
+    ("recording", "src/daesingo/recording", "daesingo.recording"),
+    ("search", "src/daesingo/search", "daesingo.search"),
+    ("readout", "src/daesingo/readout", "daesingo.readout"),
+    ("evidence", "src/daesingo/evidence", "daesingo.evidence"),
+    ("eval", "eval", "eval"),
+    ("web", "apps/web", "apps.web"),
+)
+COMMON_IMPORT_ROOTS = ("jobs", "usage", "db", "config", "logging", "storage")
 
 # ── 계약 헤더 필수 항목 ────────────────────────────────────────
 REQUIRED_HEADERS = ["Status:", "Architecture Contract:", "Contract Version:"]
@@ -84,6 +99,62 @@ def check_boundaries():
                              "%s:%d — 금지 문자열 %r" % (shown, lineno, token))
         if checked == 0:
             note("boundary/" + module, "%s 아래에 검사할 코드 파일이 없다 (골격 단계)" % rel)
+    check_runtime_imports()
+
+
+def import_targets(node, package):
+    """Static statement targets only; never execute imports or follow re-exports.
+
+    ImportFrom.module omits the imported child in `from daesingo import api`.
+    Include both the base and named children; aliases change bindings, not targets.
+    resolve_name uses the containing package (also for __init__.py), not the
+    filename, and does not import the target. Star imports identify only the base.
+    """
+    if isinstance(node, ast.Import):
+        return [alias.name for alias in node.names]
+    base = node.module or ""
+    if node.level:
+        base = resolve_name("." * node.level + base, package)
+    return [base] + [base + "." + alias.name for alias in node.names if alias.name != "*"]
+
+
+def check_runtime_imports():
+    """RT-15(b): preserve grep rules and add two directed Python AST checks."""
+    domains = tuple(prefix for _, _, prefix in DOMAIN_IMPORTS)
+    rules = [("common/" + name, "src/daesingo/common/" + name, domains)
+             for name in COMMON_IMPORT_ROOTS]
+    rules += [(name, rel, ("daesingo.api", "daesingo.worker"))
+              for name, rel, _ in DOMAIN_IMPORTS]
+    for module, rel, banned in rules:
+        for path in walk_code(rel):
+            if not path.endswith(".py"):
+                continue
+            shown = os.path.relpath(path, ROOT).replace(os.sep, "/")
+            # src layout for daesingo, repository-root packages for eval/apps.
+            import_path = shown.removeprefix("src/")
+            package = import_path.rsplit("/", 1)[0].replace("/", ".")
+            check = "boundary/import/" + module
+            try:
+                with open(path, "rb") as fh:
+                    tree = ast.parse(fh.read(), filename=shown)
+            except (SyntaxError, UnicodeError, OSError) as exc:
+                fail(check, "%s:%d — Python AST를 읽을 수 없다 (%s)"
+                     % (shown, getattr(exc, "lineno", None) or 1, type(exc).__name__))
+                continue
+            for node in ast.walk(tree):
+                if not isinstance(node, (ast.Import, ast.ImportFrom)):
+                    continue
+                try:
+                    targets = import_targets(node, package)
+                except ImportError:
+                    fail(check, "%s:%d — 상대 import가 package root를 벗어난다"
+                         % (shown, node.lineno))
+                    continue
+                for prefix in banned:
+                    if any(target == prefix or target.startswith(prefix + ".")
+                           for target in targets):
+                        fail(check, "%s:%d — 금지 import %s"
+                             % (shown, node.lineno, prefix))
 
 
 # ══ 2. 계약 헤더 ══════════════════════════════════════════════

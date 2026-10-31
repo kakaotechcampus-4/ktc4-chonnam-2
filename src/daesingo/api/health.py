@@ -6,7 +6,7 @@ from time import monotonic
 from daesingo.common.config import ReadySettings
 from daesingo.common.logging import copy_context_call
 from .events import ApiEvents
-from .storage import storage_available
+from .storage import storage_available as storage_available
 
 
 class _Probe:

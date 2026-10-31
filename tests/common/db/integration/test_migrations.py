@@ -33,7 +33,7 @@ def tables(conn):
 
 
 def expected_tables():
-    return {"cases", "job_records", "correction_records", "analysis_scopes", "case_alembic_version", "runtime_alembic_version", "job_execution", "usage_inflight", "usage_record"}
+    return {"cases", "job_records", "correction_records", "analysis_scopes", "case_alembic_version", "runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_alembic_version"}
 
 
 @contextmanager
@@ -83,7 +83,7 @@ def test_case_direct_url_paths_and_percent_encoding(mysql_schema_url, monkeypatc
         cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     command.upgrade(cfg, "head")
     with observe(mysql_schema_url) as conn:
-        assert tables(conn) == expected_tables() - {"runtime_alembic_version", "job_execution", "usage_inflight", "usage_record"}
+        assert tables(conn) == expected_tables() - {"runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_alembic_version"}
         assert conn.exec_driver_sql("SELECT version_num FROM case_alembic_version").scalar_one() == "case_0001"
 
 
@@ -128,21 +128,21 @@ def test_production_runner_empty_schema_and_second_run_preserve_data(mysql_schem
     m = runner()
     monkeypatch.delenv("DAESINGO_MYSQL_URL", raising=False)
     result = m.upgrade_all(mysql_schema_url)
-    assert result.completed == ("case", "runtime")
+    assert result.completed == ("case", "runtime", "recording")
     with observe(mysql_schema_url) as conn:
         assert tables(conn) == expected_tables()
         assert conn.exec_driver_sql("SELECT version_num FROM case_alembic_version").scalar_one() == "case_0001"
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0004"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0006"
         conn.exec_driver_sql("INSERT INTO cases VALUES ('retained', 0, 'INIT', 0, '{}', NOW(6), NOW(6))")
         conn.commit()
         schema = {name: conn.exec_driver_sql(f"SHOW CREATE TABLE `{name}`").one()[1] for name in expected_tables()}
         data = conn.exec_driver_sql("SELECT * FROM cases").all()
-    assert m.upgrade_all(mysql_schema_url).completed == ("case", "runtime")
+    assert m.upgrade_all(mysql_schema_url).completed == ("case", "runtime", "recording")
     with observe(mysql_schema_url) as conn:
         assert tables(conn) == expected_tables()
         assert conn.exec_driver_sql("SELECT case_id FROM cases").scalar_one() == "retained"
         assert conn.exec_driver_sql("SELECT version_num FROM case_alembic_version").scalar_one() == "case_0001"
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0004"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0006"
         assert {name: conn.exec_driver_sql(f"SHOW CREATE TABLE `{name}`").one()[1] for name in expected_tables()} == schema
         assert conn.exec_driver_sql("SELECT * FROM cases").all() == data
 
@@ -165,7 +165,7 @@ def test_same_runner_applies_future_first_runtime_revision(mysql_schema_url, tmp
     m = runner()
     m.upgrade_all(mysql_schema_url, migrations_root=root)
     # Extend the real first revision rather than introduce a second graph head.
-    add_revision(root / "runtime", "test_runtime_first", "runtime_0004", create_table("test_future_runtime"))
+    add_revision(root / "runtime", "test_runtime_first", "runtime_0006", create_table("test_future_runtime"))
     m.upgrade_all(mysql_schema_url, migrations_root=root)
     with observe(mysql_schema_url) as conn:
         assert "test_future_runtime" in tables(conn)
@@ -269,7 +269,7 @@ def test_real_cli_stdin_success_and_observer_versions(mysql_schema_url):
                             env=env, cwd=ROOT.parent, text=True, capture_output=True, timeout=30)
     assert result.returncode == 0
     assert result.stderr == ""
-    assert result.stdout == "migration: complete case runtime\n"
+    assert result.stdout == "migration: complete case runtime recording\n"
     with observe(mysql_schema_url) as conn:
         assert tables(conn) == expected_tables()
         assert conn.exec_driver_sql("SELECT version_num FROM case_alembic_version").scalar_one() == "case_0001"

@@ -79,6 +79,7 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 | I4가 최종 신고영상에서 번호판 식별 불가를 실제 관찰 | `WARN` — v4의 `BLOCK`을 supersede |
 | I4 미실행 / 최종 영상 fact 없음(4b) | `UNKNOWN` |
 | Readout 실행 실패로 `PlateReadout = None`(4a) | `UNKNOWN` — 식별 실패 `WARN`으로 치환하지 않는다. 실행 실패는 진행 상태·notice로 별도 노출 |
+| 4a 뒤 사용자가 번호판을 직접 입력(#235 추가) | `PASS` — 정정값이 `vehicle_number`가 되어 `value_present`다(§5.1). Package · `READY`까지 간다. 실행 실패 notice(`readout.plate_read_failed`)는 case가 거둔다(#321) |
 | `REPORT_VIDEO` 생성 실패 | Recording 경계로 유지 |
 
 세 값의 뜻:
@@ -86,6 +87,8 @@ v4는 1·2·3·4를 모두 「값 없음 → `UNKNOWN`」으로 합쳤고, 최�
 - **`WARN`** = 실제 판독·관찰을 수행했고 번호판 정보가 부족함을 **확인한** 경우
 - **`UNKNOWN`** = 아직 판정할 수 없거나 판독 결과 자체가 없는 경우
 - **실행 실패** = 위 둘과 별도로 진행 상태·notice에서 노출하는 failure 상태
+
+> **#235에 따른 추가 (2026-10-21).** 「4a 뒤 직접 입력」 행은 #235 E-1 연결 질문 ①(Case 결정, Evidence 동의)이다. 이전 값이 없으므로 그 정정은 `previous_value=null`로 기록되고(`correction-record/v1.2`), case는 기록 전에 evidence 검사로 형식을 확인한다([ADR-EVIDENCE-011](adr-correction-append-precheck.md)). rule은 바뀌지 않는다 — §5.1 마지막 줄이 이미 이 경로를 `value_present`로 본다. 4a를 `UNKNOWN`으로 둔 이유(실행 실패를 정상 결과로 위장하지 않음)와 충돌하지 않는다 — 이 행의 값은 판독 결과가 아니라 사용자가 넣은 값이고 `user_corrected=true` · `case.user_correction` 출처로 남는다.
 
 `PlateReadout` 존재 여부로 1·2·3과 4a를 가르는 것은 Case 조건(#172 `[D-3] Case 의견`)이다. 부재까지 `WARN`으로 두면 4a가 1·3과 같은 `WARN` Package로 나가 case가 `READY`로 올린다 — 실행 실패가 정상 결과로 위장된다. 부재를 `UNKNOWN`으로 두면 FINAL이 `PASS`/`WARN`이 되지 않아 Package-ready와 저절로 구분되고, case는 새 gate를 만들지 않는다.
 
@@ -193,6 +196,7 @@ builder는 FINAL이 어떤 이유로 `PASS`/`WARN`이어도 `PlateReadout` 없�
 | I4 `observed_false` | — | `WARN` | 생성 | 가능 |
 | I4 미관찰 | — | `UNKNOWN` | 없음 | 불가 |
 | 실행 실패(`PlateReadout = None`) | `UNKNOWN` | `UNKNOWN`(렌더 입력 불완전) | 없음 · builder도 거절 | 불가 — notice는 `tests/case/test_plate_read_failure_projection.py` |
+| 실행 실패 뒤 직접 입력(#235, `previous_value=null`) | `PASS` | `PASS`/`WARN` | 생성(`vehicle_number` 입력값, 번호판 있는 template) | 가능 — `test_6c` |
 | 번호판 없는 신고문 | — | — | 4 template 렌더, `UNKNOWN`·차량번호 슬롯 없음, 식별 못 함 문장 포함 | — |
 | v4·v1.1 보존 | `requirement_rules_v4.json`의 `observed_false → BLOCK`, 번호판 있는 신고문 문구 v1.1 동일 | | | |
 

@@ -13,19 +13,23 @@ from sqlalchemy.engine import Engine
 from daesingo.common.bootstrap import Startup
 from daesingo.common.db import create_heartbeat_engine
 from daesingo.common.db.transactions import run_worker_transaction
-from daesingo.common.jobs.execution import ExecutionContext, HandlerResult
+from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, validated_terminal
 from daesingo.common.jobs.cancel import CancelledExecution
 from daesingo.common.jobs.heartbeat import Heartbeat, LeaseConnection
 from daesingo.common.jobs.repository import claim_one, finish
+from daesingo.common.jobs.produced import prepare_objects, append_objects, verify_objects
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.sweep import SweepService, sweep_once
 from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
 from daesingo.common.jobs.reflection import ReflectionInput, ResultReflector, reflect_terminal
 from daesingo.common.jobs.redelivery import observe_reflection, redeliver_once
+from daesingo.common.jobs.exhaustion import ExhaustionReceiver, redeliver_exhaustion_once
 from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.common.usage.reconciliation import reconcile_once
+from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.media import MediaRoot
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -35,6 +39,7 @@ FROM job_execution WHERE execution_id = :execution_id""")
 def compose_worker(
     *, engine: Engine, startup: Startup, registry: KindRegistry, stop: Event,
     reflector: ResultReflector | None = None,
+    exhaustion_receiver: ExhaustionReceiver | None = None,
     heartbeat_engine: Engine | None = None, heartbeat_observe: Callable | None = None,
     cancel_observe: Callable | None = None,
     worker_id: str | None = None, sleep: Callable[[float], None] = time.sleep,
@@ -54,9 +59,13 @@ def compose_worker(
     settings = startup.config.worker
 
     def record(context: ExecutionContext, result: HandlerResult | CancelledExecution) -> bool | TerminalCommit:
+        if isinstance(result, HandlerResult):
+            result = validated_terminal(result, execution_id=context.execution_id)
         produced = [ref.model_dump() for ref in result.produced]
+        objects = prepare_objects(context.execution_id, result.objects) if isinstance(result, HandlerResult) else ()
         terminal_latency = None
         sampled_at = acknowledged_at = None
+        false_stale = False
 
         @contextmanager
         def commit_guard():
@@ -80,12 +89,16 @@ def compose_worker(
                     {"execution_id": context.execution_id})
 
         def operation(conn):
-            nonlocal terminal_latency, sampled_at, acknowledged_at
+            nonlocal terminal_latency, sampled_at, acknowledged_at, false_stale
             terminal_latency = sampled_at = acknowledged_at = None
+            false_stale = False
             context.ownership.check()
             changed = finish(conn, context.execution_id, owner, status=result.status,
                              produced=result.produced, failure_kind=result.failure_kind)
             if changed == 1:
+                if objects:
+                    append_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
                 return True
             # A lost COMMIT acknowledgement can replay T1 against its own already
@@ -96,17 +109,29 @@ def compose_worker(
                 job_execution.c.produced, job_execution.c.failure_kind,
             ).where(job_execution.c.execution_id == context.execution_id)
               .with_for_update()).mappings().one_or_none()
+            false_stale = bool(stored is not None and stored['lease_owner'] == owner
+                               and stored['status'] == 'STALE')
             recovered = bool(stored is not None and stored["lease_owner"] == owner
                         and stored["status"] == result.status
                         and stored["produced"] == produced
                         and stored["failure_kind"] == result.failure_kind)
             if recovered:
+                if objects:
+                    verify_objects(conn, case_id=context.case_id, execution_id=context.execution_id,
+                                   job_kind=context.kind, objects=objects)
                 cancellation_latency(conn)
             return recovered
 
         committed = run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger,
                                       before_attempt=context.ownership.check,
                                       commit_guard=commit_guard)
+        if false_stale:
+            # The existing locking re-read proves both STALE and the original
+            # lease owner after a zero-row terminal attempt. Observe only after
+            # the DB callback returns; never classify other fencing as false STALE.
+            with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
+                job_id=context.job_id, execution_id=context.execution_id)):
+                log_event_best_effort(startup.logger, 'runtime.stale.false_count', status='STALE', count=1)
         if committed:
             # Separate from T1 and after its connection has returned. Failure
             # leaves terminal usage for the next sweep; never replay the handler/T1.
@@ -130,6 +155,8 @@ def compose_worker(
         return committed
 
     def heartbeat(context):
+        # Worker RuntimeConfig validation requires heartbeat settings.
+        assert startup.config.heartbeat is not None
         dedicated = heartbeat_engine if heartbeat_engine is not None else create_heartbeat_engine(
             startup.config.db, startup.config.heartbeat)
         lease = LeaseConnection(dedicated, context.execution_id, owner, settings.lease_duration_sec,
@@ -142,6 +169,8 @@ def compose_worker(
                          observe=heartbeat_observe)
 
     def reflect(context: ExecutionContext, terminal: HandlerResult):
+        # This callback is installed below only with a reflector.
+        assert reflector is not None
         incoming = ReflectionInput(context.execution_id, context.job_id, context.case_id,
                                    context.kind, context.attempt, terminal)
         with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
@@ -154,13 +183,16 @@ def compose_worker(
             observe_reflection(incoming, result, startup.logger)
             return result
 
+    cleanup = configured_cleanup(startup.config, startup.logger)
+    media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
-        dispatch=registry.dispatch, record=record, settings=settings, stop=stop,
+        dispatch=partial(registry.dispatch, logger=startup.logger), record=record, settings=settings, stop=stop,
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
         reflect=reflect if reflector is not None else None,
         heartbeat=heartbeat,
+        cleanup=cleanup, media=media,
         usage_sink_factory=lambda context: DurableUsageSink(
             execution_ref=context.execution_id, case_id=context.case_id,
             logger=startup.logger, late_observe=usage_late_observe,
@@ -173,5 +205,7 @@ def compose_worker(
                    *sweep_hooks),
             redeliver=partial(redeliver_once, engine, reflector, sleep=sleep, logger=startup.logger)
                 if reflector is not None else None,
+            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, exhaustion_receiver,
+                sleep=sleep, logger=startup.logger) if exhaustion_receiver is not None else None,
         ),
     )

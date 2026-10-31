@@ -6,6 +6,16 @@
 
 import type { CaseView, Notice, RunningJob } from '../contracts/caseView'
 
+/** 탐색 기다리기가 멈춘 notice — 사용자 중단(#342) · case 대기 timeout(#358) */
+export const HALTED_CODES: ReadonlySet<string> = new Set(['case.analysis_stopped', 'case.analysis_timed_out'])
+
+/** 다시 하기 action이 없는 실패 — 같은 입력 · 같은 후보로는 결과가 같아 실패 화면에서 출구만 보인다(#481 · #482) */
+const DEAD_END_CODES: ReadonlySet<string> = new Set([
+  'recording.analysis_range_too_long',
+  'recording.incident_clip_build_failed',
+  'search.visual_verify_failed',
+])
+
 export type ScreenKind =
   | 'PROGRESS'
   | 'STOPPED'
@@ -65,6 +75,12 @@ export function selectScreen(view: CaseView): Screen {
     return { ...base, kind: 'AWAIT_RESPONSE', reason: 'evidence=null · case.situation_response_pending' }
   }
 
+  // 분석 범위 초과는 SEARCHING, 클립 · Fine 실패는 evidence 조립 전에 온다 — 둘 다 진행 화면에 두면 끝나지 않는다.
+  // 같은 후보를 다시 골라 클립을 새로 만드는 동안(running_jobs)은 진행이다(#426과 같다).
+  if (jobs.length === 0 && view.notices.some((n) => DEAD_END_CODES.has(n.code))) {
+    return { ...base, kind: 'SEARCH_FAILED', reason: 'notice 실패(다시 하기 없음)' }
+  }
+
   // evidence=null은 「값이 없다」가 아니라 「증거 조립 전」이다. 값 상태 화면이
   // 아니라 진행 상태 화면이 담당한다(value-state-display.md §4).
   if (view.stage === 'EVIDENCE_REVIEW' && view.evidence === null) {
@@ -77,18 +93,26 @@ export function selectScreen(view: CaseView): Screen {
     case 'SEARCHING':
       // 중단 · 탐색 실패는 작업이 끝난 상태다. 진행 화면에 두면 끝나지 않는 것처럼 보인다.
       // 다시 하기 버튼은 notice가 가진다(`RETRY_SEARCH`). 중단은 stage가 SEARCHING에 머문다(#342).
-      if (view.notices.some((n) => n.code === 'case.analysis_stopped')) {
-        return { ...base, kind: 'STOPPED', reason: 'stage=SEARCHING · case.analysis_stopped' }
+      // case 대기 timeout(#358)도 출구가 같은 중단 화면이다 — 문구만 다르다.
+      const halted = view.notices.find((n) => HALTED_CODES.has(n.code))
+      if (halted) {
+        return { ...base, kind: 'STOPPED', reason: `stage=SEARCHING · ${halted.code}` }
+      }
+      // 실패 뒤 「다시 찾기」로 새 탐색이 도는 동안에도 실패 notice는 남는다 — 실패 화면에 두면 끝난 것처럼 보이고
+      // 버튼이 또 눌린다(#426). 기다리는 job이 있으면 진행이다.
+      if (jobs.length > 0) {
+        return { ...base, kind: 'PROGRESS', reason: `stage=SEARCHING · running_jobs ${jobs.length}건` }
       }
       if (view.notices.some((n) => n.code === 'search.candidate_search_failed')) {
         return { ...base, kind: 'SEARCH_FAILED', reason: 'stage=SEARCHING · search.candidate_search_failed' }
       }
       return { ...base, kind: 'PROGRESS', reason: 'stage=SEARCHING' }
     case 'CANDIDATE_REVIEW':
-      // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다.
+      // 후보 0건은 실패가 아니다 — 빈 결과 화면으로 구분해 그린다. 다만 「다시 찾기」로 새 탐색이 도는 동안은
+      // stage가 그대로라 job으로 가른다(#426).
       // 후보가 있으면 가장 유력한 후보로 초안을 준비하는 중이다(core-user-flow.md
       // §8-1). 후보 비교는 기본 화면이 아니라 결과 화면의 「다른 후보 보기」다.
-      return view.candidates.length === 0
+      return view.candidates.length === 0 && jobs.length === 0
         ? { ...base, kind: 'NO_RESULT', reason: 'stage=CANDIDATE_REVIEW · candidates 0건' }
         : { ...base, kind: 'PROGRESS', reason: `stage=CANDIDATE_REVIEW · 후보 ${view.candidates.length}건 · 초안 준비 중` }
     case 'EVIDENCE_REVIEW':

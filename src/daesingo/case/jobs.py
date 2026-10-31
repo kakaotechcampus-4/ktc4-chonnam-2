@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import copy
 from datetime import datetime, timezone
 from typing import Any
 
@@ -28,8 +29,14 @@ JOB_KINDS = frozenset(
         "PLATE_IMAGE_EXPORT",
         # 자연어 단서 구조화 발주(v1.7, #259). 발주 경로(`START_ANALYSIS`)는 case-command Draft §11 미결 뒤.
         "HINT_EXTRACT",
+        # Fine 결과로 IncidentClip을 준비하는 발주 — Fine과 다른 실패 · 재실행 단위
+        # (`decisions/incident-clip-observation-input.md` §4-2).
+        "INCIDENT_CLIP_BUILD",
     }
 )
+
+# 발주 때 입력(후보 · 세대 · span · clip ref)을 case state에 고정하는 kind(같은 문서 §4-1).
+OBSERVATION_KINDS = frozenset({"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"})
 
 
 def _now() -> str:
@@ -43,9 +50,14 @@ def issue_job(
     scope_ref: str | None = None,
     input_fingerprint: str,
     force_rerun: bool = False,
+    observation_input: dict[str, Any] | None = None,
+    export_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """`observation_input`은 관찰 kind만 받고 같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
     if kind not in JOB_KINDS:
         raise ValueError(f"알 수 없는 JobRecord.kind: {kind!r} (등록된 kind: {sorted(JOB_KINDS)})")
+    if observation_input is not None and kind not in OBSERVATION_KINDS:
+        raise ValueError(f"관찰 kind가 아니라 observation_input을 받지 않는다: {kind!r}")
     if force_rerun:
         # 사용자가 명시적으로 재요청한 Job(재판독/재검색 등)은 그 자체가 새 "요청 시점 케이스
         # 리비전"이다(§3-E) — `scenario_plate_reread_001` fixture로 확인(2026-09-14): 재판독을
@@ -68,7 +80,28 @@ def issue_job(
         if prior["kind"] == kind and prior["scope_ref"] == scope_ref:
             case.settle_job(prior["job_id"], "SUPERSEDED")
     case.record_job(job_record)
+    if observation_input is not None:
+        case.observation_inputs[job_record["job_id"]] = copy.deepcopy(observation_input)
+    if export_input is not None:
+        if kind not in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+            raise ValueError("export input requires export kind")
+        case.export_inputs[job_record["job_id"]] = copy.deepcopy(export_input)
     return job_record
+
+
+def issue_same_input(case: CaseAggregate, prior: dict[str, Any], *, force_rerun: bool = False) -> dict[str, Any]:
+    """`prior`와 같은 입력(`scope_ref` · `input_fingerprint` · 관찰 입력)으로 같은 kind를 새 `job_id`로 발주한다 —
+    재시도 · 재판독은 「같은 입력을 다시 본다」는 뜻이라 같은 clip을 다시 읽는다(같은 문서 §4-1)."""
+    observation_input = case.observation_inputs.get(prior["job_id"])
+    return issue_job(
+        case,
+        prior["kind"],
+        scope_ref=prior["scope_ref"],
+        input_fingerprint=prior["input_fingerprint"],
+        force_rerun=force_rerun,
+        observation_input=observation_input,
+        export_input=case.export_inputs.get(prior["job_id"]),
+    )
 
 
 def issue_coarse_search(
@@ -157,8 +190,5 @@ def issue_needed_jobs(case: CaseAggregate, evidence_needs: dict[str, Any]) -> li
             raise ValueError(
                 f"{kind!r} Need를 처리할 원본 {source_kind!r} JobRecord가 없다 (case_id={case.case_id!r})"
             )
-        if source_kind == "PLATE_READ":
-            issued.append(issue_plate_reread(case, input_fingerprint=prior["input_fingerprint"]))
-        else:
-            issued.append(issue_overlay_time_reread(case, input_fingerprint=prior["input_fingerprint"]))
+        issued.append(issue_same_input(case, prior, force_rerun=True))
     return issued

@@ -140,6 +140,36 @@ describe('진행 갱신', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 
+  it('첫 조회부터 무응답이어도 상태 조회만 재개하고, 복구되면 오류를 비운다', async () => {
+    const { m, flow } = setup({ pollMs: 1000 })
+    m.getView.mockResolvedValueOnce(NO_RESPONSE).mockResolvedValue(ok(view({ case_rev: 3 })))
+    const disconnect = flow.connect()
+    await flow.resume('c1')
+    expect(flow.getState()).toMatchObject({ view: null, viewUnavailable: true })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(flow.getState()).toMatchObject({ view: { case_rev: 3 }, error: null, viewUnavailable: false })
+    expect(m.sendCommand).not.toHaveBeenCalled()
+    disconnect()
+  })
+
+  it('command와 확인 조회가 모두 끊기면 중복 command를 막고 GET으로만 복구한다', async () => {
+    const { m, flow } = setup({ pollMs: 1000 })
+    m.getView.mockResolvedValueOnce(ok(view({ case_rev: 1 })))
+      .mockResolvedValueOnce(NO_RESPONSE).mockResolvedValue(ok(view({ case_rev: 2, running_jobs: JOBS })))
+    m.sendCommand.mockResolvedValue(NO_RESPONSE)
+    const disconnect = flow.connect()
+    await flow.resume('c1')
+    const command = { kind: 'START_ANALYSIS', payload: { description: '흰 차' } } as const
+    await flow.send(command)
+    await flow.send(command)
+    expect(m.sendCommand).toHaveBeenCalledOnce()
+    expect(flow.getState().viewUnavailable).toBe(true)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(flow.getState()).toMatchObject({ view: { case_rev: 2 }, error: null, viewUnavailable: false })
+    expect(m.sendCommand).toHaveBeenCalledOnce()
+    disconnect()
+  })
+
   it('running_jobs가 있는 동안 간격마다 읽고, 비면 멈춘다(§5.4)', async () => {
     const { m, flow } = setup({ pollMs: 1000 })
     m.getView
@@ -306,13 +336,13 @@ describe('command', () => {
     expect(flow.getState().error?.code ?? null).toBe(code)
   })
 
-  it('확인 읽기도 실패하면 그 오류를 알리고 버튼은 푼다', async () => {
+  it('확인 읽기도 실패하면 오류와 조회 불가 상태를 남긴다', async () => {
     const { m, flow } = setup()
     await ready(m, flow)
     m.sendCommand.mockResolvedValue(NO_RESPONSE)
     m.getView.mockResolvedValueOnce(bad(503, 'http.dependency_unavailable'))
     await flow.send({ kind: 'MARK_REVIEWED', payload: {} })
-    expect(flow.getState()).toMatchObject({ busy: false, error: { code: 'http.dependency_unavailable' }, view: { case_rev: 4 } })
+    expect(flow.getState()).toMatchObject({ busy: false, viewUnavailable: true, error: { code: 'http.dependency_unavailable' }, view: { case_rev: 4 } })
   })
 
   it('503은 반영되지 않았으니 읽지 않고 오류만 남긴다', async () => {

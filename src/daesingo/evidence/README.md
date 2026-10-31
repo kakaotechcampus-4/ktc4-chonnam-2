@@ -14,7 +14,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 
 `daesingo.evidence`는 Final Contract 값을 받거나 반환하는 순수 함수 경계다. 인수는 Contract JSON을 역직렬화한 `dict`이며, `scenario_id`나 Mock 파일명은 공개 입력이 아니다.
 
-- `resolve_time(...) -> TimeResolution`
+- `resolve_time(..., incident_clip=None) -> TimeResolution`: 원본 시각 + offset으로 계산할 때 `incident_clip`의 AssetSpan으로 사건 대표 순간이 담긴 원본을 찾아, 그 원본의 시간 후보와 원본 안 위치만 쓴다(`contract-time-resolution.md` §17). `incident_clip`을 빼면 timeline 위치를 그대로 offset으로 쓰므로 원본 하나가 timeline 0초에서 시작할 때만 맞다 — 운영 경로(case)는 항상 넘긴다.
 - `classify_visual_evidence(visual_evidence, situation_response=None) -> VisualEvidenceDisposition`: `EvidenceRecord` 조립 이전에 VisualEvidence 하나의 결말을 정한다(`ASSEMBLE` / `AWAIT_SITUATION_RESPONSE` / `NOT_ASSEMBLED`). `verification=NOT_OBSERVED`는 예외가 아니라 안정적인 비조립 결과다 — 후보 선택·순회는 여기 없다.
 - `resolve_independent_facts(*, case_id, selection_rev, time_resolution, plate_readout, location_hint=None, gps_observation=None, correction_records=None) -> dict`: EvidenceRecord의 **상황 독립 필드** `occurred_at` · `vehicle_number` · `location`만 계산한다(#239). 각 값은 EvidenceRecord의 같은 필드와 모양이 같고, 결정할 수 없으면 키를 두지 않는다. 해당 필드의 CorrectionRecord도 같은 규칙으로 반영한다. **EvidenceRecord 생성 API가 아니다.** `record_ref` · `basis` · `event` · `provenance` · `situation_response`가 없고, RequirementReport · ReportPackage로 이어지지 않는다. Fine `UNCERTAIN` 응답 대기(`AWAIT_SITUATION_RESPONSE`)에서도 부를 수 있다. case가 이 결과로 `record_id=null` 부분 투영을 만든다. 응답 전에 최종 Record를 만들지 않는다는 원칙(ADR-EVIDENCE-009 §2.1)은 그대로다. 시각은 `resolve_time()`이 만든 `TimeResolution`을 받는다.
 - `assemble_evidence(...) -> EvidenceRecord`: 위 세 필드는 `resolve_independent_facts()`와 같은 계산으로 채운다. 그래서 응답 전 부분 투영과 응답 후 Record가 같은 규칙을 따른다.
@@ -22,10 +22,20 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
 - `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
-- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증
+- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다 — `contract_version`이 v1.2인 기록에만 적용하고 v1.1 기록에는 소급하지 않는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
+- `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
+- `attachment_constraint(derived_role: str) -> AttachmentConstraint`: 현재는 `"PLATE_IMAGE"`만 지원한다. 활성 attachment policy에서 읽은 개별 파일 최대 정수 byte `max_byte_size`와 정책 식별자 `policy_ref`만 담은 dict를 반환한다. 다른 role은 `ContractInputError`, 잘못된 정책 구성은 `PolicyConfigurationError`다. 전체 정책 객체나 합산·개수 제한은 공개하지 않는다.
 
 `evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 사후 각인(`post_stamp_applied`)의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다(최종 영상 번호판·시각 표시 관찰은 v6에서 읽지 않는다 — ADR-EVIDENCE-010). 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다. `VisualEventNotAssembled`는 `assemble_evidence()`가 `NOT_OBSERVED`로 직접 호출됐을 때 가짜 Record 대신 멈추는 경계이며, producer 계약 위반이 아니라 호출자가 분류를 건너뛴 경우다(`ADR-EVIDENCE-007`).
+
+### 제출 자산 제약의 책임 경계 (#47 P-1)
+
+Evidence는 제출 요구조건을 소유한다. Recording은 그 요구조건을 만족시키는 생성 전략을 소유한다. Case는 제약을 중계하며 정책값을 해석하지 않는다. Evidence는 생성 이후 실제 자산 사실로 정책 충족 여부를 독립적으로 다시 판정한다.
+
+`attachment_constraint()`는 resize·JPEG quality·codec/format·압축 방식·재시도 횟수를 정하지 않는다. 제한은 `attachment_policy_v1.json`의 `limits.image_each_bytes`, 식별자는 같은 정책의 `policy_ref`에서 읽으며 공개 API에 별도 기본값이나 상수를 두지 않는다. 근거는 [#47 RT-10(b) P-1 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6476963858), [Case 조건부 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6488537839), [Evidence 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6494921087)다.
+
+API/Worker composition은 이 공개 경계에서 받은 `max_byte_size`를 기존 `stored_adapter_factory(export_max_byte_size=...)`에 그대로 넣는다. Case의 export request와 fingerprint는 현재 이 byte 제한을 포함한다. **후속 wiring:** `policy_ref`도 Case 요청/fingerprint에 포함하는 것이 P-1 합의 방향이지만, 현재 `PlateImageRequest`는 이 필드 없이 `extra="forbid"`이고 `export_plate_image()`도 이를 받지 않는다. 이번 변경은 공개 API의 반환까지만 제공하며 Case/Recording 요청 계약 및 provenance schema를 확장하지 않는다. ref만 바뀌고 byte 제한이 같을 때 새 발주를 구분하는 일은 이 후속 연결이 완료된 뒤 보장된다. Recording RT-10(b)의 생성 전략·실패 taxonomy 등재도 별도 범위다.
 
 ## 정책 데이터
 

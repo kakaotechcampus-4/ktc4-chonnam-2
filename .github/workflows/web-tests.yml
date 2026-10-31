@@ -1,0 +1,45 @@
+# web 테스트 · 타입 검사 (#365)
+#
+# 팀 자체 워크플로다. web은 data/mock/case/*.json을 그대로 읽으므로 fixture를 바꾸는 PR에서도 돈다.
+name: web-tests
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "apps/web/**"
+      - "data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/web-tests.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "apps/web/**"
+      - "data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/web-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: 타입 검사
+        run: npx tsc -b
+        working-directory: apps/web
+      - name: 테스트
+        run: npm run test:web

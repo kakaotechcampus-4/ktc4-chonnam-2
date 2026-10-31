@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
+
+from daesingo.readout import api
 
 from daesingo.readout.paddle_provider import (
     PaddleOcrProvider,
@@ -10,6 +13,52 @@ from daesingo.readout.paddle_provider import (
     _to_frame_boxes,
     pick_plate,
 )
+
+
+@pytest.mark.parametrize('capability', [api.read_plate, api.read_overlay_time])
+@pytest.mark.parametrize('failure', ['runtime', 'empty_result', 'malformed_result'])
+def test_ocr_engine_errors_return_a_failed_run(capability, failure):
+    frame = SourceFrame('fr_target', 5.0, np.zeros((100, 200, 3), dtype=np.uint8))
+
+    class Engine:
+        def predict(self, image):
+            if failure == 'runtime':
+                raise RuntimeError('private-engine-detail')
+            if failure == 'malformed_result':
+                yield SimpleNamespace(json={'res': {}})
+
+    provider = PaddleOcrProvider(SimpleNamespace(frames=lambda _: [frame]), engine=Engine())
+    request = api.ReadRequest('case', 'candidate', api.InputRef(
+        'clip', 'readout-native', 'SOURCE_DERIVED_INCIDENT_CLIP',
+    ))
+
+    run, result = capability(request, provider=provider, run_id='rr_engine_failure')
+
+    assert result is None
+    assert run.run_id == 'rr_engine_failure'
+    assert run.operation == ('PLATE_READ' if capability is api.read_plate else 'OVERLAY_TIME_READ')
+    assert run.outcome == 'FAILED'
+    assert run.failure.to_dict() == {'kind': 'INFRA', 'code': 'READOUT_PIPELINE_ERROR'}
+    assert run.started_at is not None and run.ended_at is not None
+    assert type(run).from_dict(run.to_dict()).to_dict() == run.to_dict()
+    assert 'private-engine-detail' not in str(run.to_dict())
+
+
+@pytest.mark.parametrize('capability', [api.read_plate, api.read_overlay_time])
+@pytest.mark.parametrize('signal', [KeyboardInterrupt, SystemExit])
+def test_ocr_process_control_signals_are_not_swallowed(capability, signal):
+    frame = SourceFrame('fr_target', 5.0, np.zeros((100, 200, 3), dtype=np.uint8))
+
+    class Engine:
+        def predict(self, image):
+            raise signal()
+
+    provider = PaddleOcrProvider(SimpleNamespace(frames=lambda _: [frame]), engine=Engine())
+    request = api.ReadRequest('case', 'candidate', api.InputRef(
+        'clip', 'readout-native', 'SOURCE_DERIVED_INCIDENT_CLIP',
+    ))
+    with pytest.raises(signal):
+        capability(request, provider=provider)
 
 
 def test_target_crop_only_uses_bbox_from_the_same_frame():
@@ -135,7 +184,7 @@ def test_two_line_lower_row_is_partial_not_an_accepted_plate():
     class Engine:
         def predict(self, image):
             yield SimpleNamespace(json={"res": {
-                "rec_texts": ["바5215"], "rec_scores": [0.999],
+                "rec_texts": ["바1234"], "rec_scores": [0.999],
                 "rec_boxes": [[30, 60, 330, 120]],
             }})
 
@@ -154,7 +203,7 @@ def test_two_line_lower_row_is_partial_not_an_accepted_plate():
 
     _, plate = api.read_plate(request, hint, provider=provider)
 
-    assert plate.observation.value == "바5215"
+    assert plate.observation.value == "바1234"
     assert plate.observation.status == "NEEDS_REVIEW"
     assert plate.abstained is True
     assert plate.abstain_reason == "PARTIAL_PLATE_READ"

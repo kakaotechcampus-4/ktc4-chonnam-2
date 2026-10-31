@@ -1,5 +1,18 @@
 # `common` — runtime 기반 (도메인 모듈이 아니다)
 
+RT-12(a)의 `storage/`는 명시적 staging/temp root의 나이 조건 cleanup,
+producer/scan filesystem lease, startup/주기 scan과 stop/join을 제공한다.
+publish cleanup과 DB 집계는 제외한다.
+[구현·검증·제약](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
+2026-10-31 P-6 후속(#445): API에만 별도 orphan scanner를 조립한다.
+기존 staging/temp의 publish 가지 보호는 그대로이며, 관리 source의 오래된
+UUID 파일만 공개 Recording 판정 port와 identity 검사를 통과한 뒤 정리한다.
+공유 producer lease와 exclusive scanner lease가 등록 transaction 종료까지
+경합을 막는다. Windows orphan은 실제 공유 `LockFileEx`, POSIX는 `flock`을
+사용한다. 나이·집계·실행 증거·비협력 writer 제한은
+[P-6 Implementation Notes](../../../docs/runtime/issue445-orphan-publish.md)에 있다.
+
 **Owner:** 김준영 (공통 기반/운영) · **Architecture 경계:** `docs/architecture/module-architecture.md` §6-2 · §2 원칙 6 · §5-13  
 **Runtime 문서:** [`docs/runtime/README.md`](../../../docs/runtime/README.md)
 
@@ -63,3 +76,16 @@ RT-07(c)는 `runtime_0004`에서 tracker에 예정 Run 관계·명시적 no-Run 
 따라서 README의 Runtime 항목을 구현 완료로 해석하지 않는다.
 
 API 소유 structured handler는 emission I/O lock을 stdlib handler cleanup lock과 분리하며, 정상 emission에서 flush하고 종료 cleanup에서 sink를 재호출하지 않는다. 실제 stdout 및 고정 stderr fallback은 unbuffered fd write를 사용한다. 이는 RT-08(a)의 bounded telemetry 종료 경계이며 Worker strict handler·allowlist/formatter·root/제3자 handler는 변경하지 않는다.
+
+RT-10(a)는 `common.jobs.produced`에 해석 없는 append-only JSON 결과 저장소와 기존 `ProducedReader(conn, kind, produced)` callable 구현을 추가한다. `runtime_0005`의 payload는 Worker T1 terminal·produced와 같은 transaction에서 저장한다. ID 없는 객체 ref는 execution/ordinal로 고정하고 COMMIT 불명 복구는 payload까지 검증한다. 다중 객체의 의미 조립은 주입한 assembler가 맡는다. 실제 handler/Case stored adapter 배선은 후속 범위이며 RT-10은 IN_PROGRESS다. 상세는 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)를 따른다.
+
+
+### RT-10(b) separate exhaustion outbox
+
+`jobs.exhaustion` owns the #405 DTO/port and pending notice delivery; live schema
+adds job_exhaustion_notice and forward migration runtime_0006. The pending index
+and per-job UNIQUE support recovery independently of T2/case_applied_at.
+Caller-owned Case save, enqueue and notice receipt share one transaction.
+runtime.exhaustion.failed contains only FAILED status and no correlation IDs or
+original error. Details and verification limits:
+[RT-10(b) Implementation Notes](../../../docs/runtime/rt10b-exhaustion-notice.md).

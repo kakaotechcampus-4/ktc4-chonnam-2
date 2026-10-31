@@ -7,7 +7,7 @@
 
 Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리던 job일 때만 결과를 반영하고 후속 JobRecord를 돌려준다. RT-09 첫 비동기 E2E가 fake handler · fake reader로 이 경로를 쓴다.
 
-**범위 밖:** 결과 내용의 저장 위치(8-6 2단계) · 판독 · Fine · export kind 반영(8-6 2단계 뒤) · 후보 수신 뒤 자동 선택과 판독 · Fine 발주(동기 경로도 반영 함수 밖에서 한다 — worker 배선 때) · 이전 후보 결과의 선택 context 대조(6.6순위 조건 2 — 판독 · Fine 반영과 함께) · case timeout.
+**범위 밖:** 결과 내용의 저장 위치(8-6 2단계) · 판독 · Fine 반영(`observation-storage.md` §4-5) · 후보 수신 뒤 자동 선택과 판독 · Fine 발주(동기 경로도 반영 함수 밖에서 한다 — worker 배선 때) · 이전 후보 결과의 선택 context 대조(6.6순위 조건 2 — 판독 · Fine 반영과 함께) · case timeout.
 
 ## 2. 흐름
 
@@ -35,6 +35,7 @@ Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리�
 4. **kind별 반영(이번 판).**
    - `HINT_EXTRACT` — `SUCCEEDED`면 reader가 준 단서 구조화 결과, `FAILED`면 `{"status": "FAILED"}`로 `reflect_hint_extraction(job_id=…)` — 실패해도 빈 단서로 첫 탐색을 발주한다(case-command Draft §11). 그 `COARSE_SEARCH`가 후속 JobRecord다.
    - `COARSE_SEARCH` — `SUCCEEDED`면 reader의 `{outcome, candidate_events}`: Run이 `FAILED`면 탐색 실패, 아니면 후보 수신. 실행이 `FAILED`면 reader를 부르지 않고 탐색 실패. 후보 변환은 동기 경로와 같은 `service.candidates_from_events()`다.
+   - `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`(2026-10-24) — 판독과 같이 **정산(`REFLECTED`)하고 `EVIDENCE_REVIEW`면 READY gate만 다시 본다.** reader는 부르지 않는다 — export가 만든 파생 asset은 recording이 IncidentClip lineage로 등록하고, CaseView 조립 때 case asset 목록에서 고른다(`real_e2e.select_case_assets`, `real-e2e-scenarios.md` §4-2). case state에 asset ref를 복사하면 recording 등록과 두 군데가 된다. 실패 terminal도 정산만 한다 — kind가 `running_jobs`에서 빠지면 「신고용 영상 만들기」 재시도 버튼이 열린다(`report-video-export.md` [R-2]). 실패 code 매핑은 그 문서 §5 미결 그대로다. **발주하는 kind는 모두 반영기를 가진다**(테스트로 지킨다) — 빠지면 Worker가 그 결과에서 `ValueError`로 멈춘다.
 5. **결과 내용은 주입한 `ProducedReader`(`(conn, kind, produced) -> dict`)가 준다.** `produced`는 `(kind, ref)` 참조뿐이다. 무엇을 어디서 읽는지는 8-6 2단계가 정하고, 그때 reader를 꽂는다. reader 예외는 그대로 올라가고 아무것도 저장되지 않는다.
 6. **반영했을 때만 저장한다.** `ALREADY_APPLIED` · `NOT_APPLIED`는 case를 바꾸지 않는다 — 결정적이라 재전달에도 같은 답이다.
 
@@ -50,12 +51,13 @@ Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리�
 
 ## 5. 테스트
 
-- `tests/case/test_result_reflection.py` — 탐색 후보 · Run 실패 · 실행 실패, 단서 성공 · 실패(후속 `COARSE_SEARCH`), 같은 execution 재전달, 중단 · 대체 job, 다른 case job · kind 불일치 · 반영기 없는 kind · 다른 경로로 반영된 job, reader 오류 시 저장 없음.
+- `tests/case/test_result_reflection.py` — 탐색 후보 · Run 실패 · 실행 실패, 단서 성공 · 실패(후속 `COARSE_SEARCH`), 같은 execution 재전달, 중단 · 대체 job, 다른 case job · kind 불일치 · 반영기 없는 kind · 다른 경로로 반영된 job, reader 오류 시 저장 없음, 모든 `JOB_KINDS`에 반영기.
+- `tests/case/test_observation_reflection.py` — 판독 · Fine · export kind의 정산(성공 · 실패) · READY gate.
 - `tests/case/test_case_repository_contract.py::test_processed_executions_survive_save_and_load` — in-memory · MySQL.
 - `tests/case/test_result_reflection_mysql.py`(MySQL opt-in, CI 필수) — 실제 Runtime `enqueue` · `claim_one` · `finish` · `reflect_terminal`에 어댑터로 꽂아 `APPLIED` → 재전달 `ALREADY_APPLIED` · `case_applied_at` 표식 · `running_jobs=[]`, rollback이면 case · 표식 둘 다 남지 않음.
 
 ## 6. 남은 것
 
 - RT-09(#296) · RT-06(T2 재전달)이 composition root에서 이 함수를 `ResultReflector`로 꽂는다.
-- 8-6 2단계: 모듈 결과 저장 위치와 실제 `ProducedReader`, 판독 · Fine · export 반영기, adapter 제거.
+- 8-6 2단계: 모듈 결과 저장 위치와 실제 `ProducedReader`, adapter 제거. *(판독 · Fine 반영기는 2026-10-13 — 정산 + READY gate, `observation-storage.md` §4-5. export 반영기는 2026-10-24 — §3-4.)*
 - 후보 수신 뒤 자동 선택 · 판독 · Fine 발주와 선택 context 대조(6.6순위 조건 1 · 2).

@@ -23,6 +23,7 @@ from daesingo.search.smoke_fixture import (
     SmokeProviderFixture,
 )
 from daesingo.search.sources import ResolvedAnalysisSource
+from tests.search._openai_fake import RawResponseFake
 
 type JsonValue = (
     None | bool | int | float | str | list[JsonValue] | dict[str, JsonValue]
@@ -54,7 +55,7 @@ class _Completion:
 
 
 @dataclass
-class _Completions:
+class _Completions(RawResponseFake):
     calls: list[dict[str, JsonValue]] = field(default_factory=list)
 
     def parse(self, **kwargs: JsonValue) -> _Completion:
@@ -88,6 +89,11 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     openai_module.OpenAI = openai_factory
     openai_module.APIError = _ApiError
     openai_module.BadRequestError = _BadRequest
+    openai_module.LengthFinishReasonError = type("LengthFinishReasonError", (Exception,), {})
+    openai_module.ContentFilterFinishReasonError = type(
+        "ContentFilterFinishReasonError", (Exception,), {}
+    )
+    openai_module.APITimeoutError = type("APITimeoutError", (_ApiError,), {})
     original = importlib.import_module
 
     def fake_import(name: str) -> ModuleType:
@@ -126,7 +132,7 @@ def test_gemini_provider_uses_openai_chat_completions_with_inline_video(
     assert client_kwargs["max_retries"] == 0
     # And: chat.completions.parse with structured output and inline base64 video
     call = completions.calls[0]
-    assert call["model"] == "gemini-3.8-flash"
+    assert call["model"] == "gemini-4-argon"
     assert call["response_format"] is CoarseResponse
     assert call["reasoning_effort"] == "low"
     assert call["timeout"] == 7.5  # per-attempt timeout from request.timeout_sec

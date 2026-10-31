@@ -102,6 +102,11 @@ docs/management/secret/
 # docs/ 원본에서 파생된 문서라 커밋하지 않는다.
 docs/management/submissions/
 
+# ── 최종 산출물·발표 준비 작업 공간 ─────────────────
+# 운영진 공지 원문·타 팀 자료·참고 문헌 등 공개 불가 자료가 섞여 있다.
+# 공개해도 되는 결과물은 이 폴더 밖으로 옮겨서 커밋한다. docs/final-submission/README.md 참고.
+docs/final-submission/
+
 # ── 평가 데이터 원본 미디어 ─────────────────────────
 # 용량이 크고 세부 실패 사례·hard-negative는 비공개 (product-strategy §6).
 # 목록은 eval/manifests/ 가 말한다.

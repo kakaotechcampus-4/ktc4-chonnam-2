@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from .publication import PublishRegistration, managed_publish_locator
+
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
 import hashlib
@@ -14,6 +16,7 @@ from uuid import uuid4
 from pydantic import TypeAdapter
 
 from .errors import RecordingCapabilityError
+from .media_content import FrameImage, OpenedDerivedAsset, identity, png
 from .fixtures import RecordingFixture
 from .models import (
     GPSObservation,
@@ -39,11 +42,10 @@ from .models import (
     TimeRange,
     TimelineRef,
 )
-from .repository import InMemoryRecordingRepository
+from .repository import InMemoryRecordingRepository, RecordingRepository
 from .probe import FfprobeMediaProbe, MediaProbe
 from .timeline import build_relative_timeline
 from .multi_source import build_placed_timeline, resolve_placed_span
-from .multi_analysis import materialize_chain
 from .analysis_tail import analysis_tail_scope
 from .frames import FfmpegFrameExtractor, FrameExtractor
 from .facts import inspect_local_source
@@ -52,6 +54,8 @@ from .materialization import LocalAnalysisMaterializer, _FrameCoverageError
 from .inspection import SourceFrameInspections, source_inspections
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
+from .durable import stable_media
+from .analysis_limits import AnalysisSourceLimits, analysis_source_scope
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -111,16 +115,25 @@ class _SyntheticBinaryStream(RawIOBase):
         return bytes(count)
 
 
-class RecordingService:
+from .exports import RecordingExports
+
+
+class RecordingService(RecordingExports):
     def __init__(
-        self, repository: InMemoryRecordingRepository | None = None,
+        self, repository: RecordingRepository | None = None,
         *, media_probe: MediaProbe | None = None,
         frame_extractor: FrameExtractor | None = None,
         analysis_materializer: LocalAnalysisMaterializer | None = None,
         incident_materializer: LocalIncidentMaterializer | None = None,
         time_source_observer: LocalTimeSourceObserver | None = None,
+        export_materializer=None,
+        durable_prepared: bool = False,
+        case_id: str | None = None,
+        analysis_limits: AnalysisSourceLimits | None = None,
+        analysis_checkpoint=None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
+        self._export_materializer = export_materializer
         self._media_probe = media_probe or FfprobeMediaProbe()
         self._frame_extractor = frame_extractor or FfmpegFrameExtractor()
         self._analysis_materializer = analysis_materializer
@@ -136,6 +149,71 @@ class RecordingService:
         self._time_source_observer = time_source_observer or LocalTimeSourceObserver()
         self._time_observations: dict[str, ObservedTimeSources] = {}
         self._time_candidates: dict[str, TimeSourceCandidate] = {}
+        self._durable_prepared = durable_prepared
+        self._case_id = identity(case_id) if case_id is not None else None
+        if analysis_limits is not None and not isinstance(analysis_limits, AnalysisSourceLimits):
+            raise ValueError("explicit AnalysisSourceLimits required")
+        self._analysis_limits = analysis_limits
+        self._analysis_checkpoint = analysis_checkpoint or (lambda: None)
+
+    def read_publish_registration(self, locator):
+        """Current registration fact, not authorization to delete a file.
+
+        Caller owns the transaction and writer synchronization. Failures
+        propagate; unsupported/ambiguous results are explicitly UNKNOWN.
+        """
+        if not managed_publish_locator(locator):
+            return PublishRegistration.UNKNOWN
+        result = self._repository.read_publish_registration(locator)
+        return result if isinstance(result, PublishRegistration) else PublishRegistration.UNKNOWN
+
+    def _publish_prepared(self, media, content):
+        if isinstance(media, AnalysisSource) and self._analysis_limits is not None:
+            self._analysis_limits.check_bytes(len(content))
+        self._analysis_checkpoint()
+        if not self._durable_prepared:
+            return media
+        stored = stable_media(media, content)
+        self._repository.add_prepared_media(stored, content, case_id=self._case_id)
+        return stored
+
+    def get_source_asset(self, source_ref: str) -> SourceAsset:
+        value = self._repository.get_source_asset(source_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 원본입니다")
+        return value.model_copy(deep=True)
+
+    def get_media_stream(self, stream_ref: str) -> MediaStream:
+        value = self._repository.get_media_stream(stream_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 stream입니다")
+        return value.model_copy(deep=True)
+
+    def get_analysis_source(self, source_ref: str) -> AnalysisSource:
+        cached = self._local_analysis.get(source_ref)
+        value = cached[0] if cached is not None else self._repository.get_analysis_source(source_ref)
+        if value is None:
+            raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 분석 입력입니다")
+        return value.model_copy(deep=True)
+
+    def get_time_source_candidates(self, source_ref: str) -> list[TimeSourceCandidate]:
+        observed = self._repository.get_time_sources(source_ref)
+        return list(observed.candidates) if observed is not None else []
+
+    def list_case_asset_facts(self, case_id: str) -> list[AssetFacts]:
+        identity(case_id)
+        result = []
+        for ref in self._repository.get_case_assets(case_id):
+            if ref.kind not in _ASSET_FACT_KINDS:
+                continue
+            try:
+                facts = self.lookup_asset_facts(ref)
+            except RecordingCapabilityError as error:
+                if error.code != "UNKNOWN_REF":
+                    raise
+                facts = self._metadata_facts(ref)
+            result.append(facts.model_copy(deep=True))
+        return result
 
     def observe_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
         local = self._repository.get_local_source(source_asset_ref)
@@ -143,21 +221,24 @@ class RecordingService:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록된 로컬 원본 ref가 필요합니다")
         self._time_source_observer.verify_source(local)
         if source_asset_ref not in self._time_observations:
-            observed = self._time_source_observer.observe(source_asset_ref, local)
+            observed = self._repository.get_time_sources(source_asset_ref)
+            if observed is None:
+                observed = self._repository.save_time_sources(source_asset_ref,
+                    self._time_source_observer.observe(source_asset_ref, local))
             self._time_observations[source_asset_ref] = observed
             for candidate in observed.candidates:
                 self._time_candidates[candidate.candidate_id] = candidate
         return self.get_time_sources(source_asset_ref)
 
     def get_time_sources(self, source_asset_ref: str) -> ObservedTimeSources:
-        observed = self._time_observations.get(source_asset_ref)
+        observed = self._time_observations.get(source_asset_ref) or self._repository.get_time_sources(source_asset_ref)
         if observed is None:
             raise RecordingCapabilityError("NOT_FOUND", "이 원본의 시간 관찰 결과가 없습니다")
         return ObservedTimeSources(tuple(c.model_copy(deep=True) for c in observed.candidates),
                                    tuple(c.model_copy(deep=True) for c in observed.checks))
 
     def get_time_source_candidate(self, candidate_id: str) -> TimeSourceCandidate:
-        candidate = self._time_candidates.get(candidate_id)
+        candidate = self._time_candidates.get(candidate_id) or self._repository.get_time_source_candidate(candidate_id)
         if candidate is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 시각 후보입니다")
         return candidate.model_copy(deep=True)
@@ -214,14 +295,28 @@ class RecordingService:
         """등록된 Mock GPS 관찰값의 독립 복사본. 미기재는 UNKNOWN이 아니라 []다."""
         return self._repository.list_gps_observations()
 
-    def register_local_source(self, path: str | Path) -> RegisteredSource:
+    def register_local_source(self, path: str | Path, *, original_filename: str | None = None,
+                              case_id: str | None = None) -> RegisteredSource:
         """읽기 전용 로컬 영상 등록. 경로는 신뢰된 로컬 호출 입력으로만 받는다.
 
         실패 시 자산을 등록하지 않는다. 매 성공 호출은 새 opaque ref를 발급한다.
         Source는 파일 읽기를 확인했으므로 AVAILABLE, stream은 decode 검사 전이므로
         UNKNOWN이다. 카메라 방향과 누락된 stream duration을 추정하지 않는다.
         """
+        # Filename is opaque metadata. Do not normalize it or use it as a path.
+        # None keeps legacy path-only registration/observation behavior.
+        if original_filename is not None and not isinstance(original_filename, str):
+            raise ValueError("original_filename must be a string")
+        if original_filename is not None:
+            try:
+                original_filename.encode("utf-8")
+            except UnicodeError:
+                raise ValueError("original_filename must be Unicode text") from None
+        if case_id is not None and (not isinstance(case_id, str) or not case_id):
+            raise ValueError("case_id must be a nonempty string")
         source = self._media_probe.probe(Path(path))
+        if original_filename is not None:
+            source = replace(source, original_filename=original_filename)
         source_ref = f"sa_{uuid4().hex}"
         streams = tuple(
             MediaStream(
@@ -238,7 +333,10 @@ class RecordingService:
             media_stream_refs=[stream.media_stream_ref for stream in streams],
             byte_size=source.byte_size, availability="AVAILABLE", duration_sec=source.duration_sec,
         )
-        self._repository.add_local_source(asset, streams, source)
+        if case_id is None:
+            self._repository.add_local_source(asset, streams, source)
+        else:
+            self._repository.add_local_source(asset, streams, source, case_id=case_id)
         return RegisteredSource(asset, streams)
 
     @classmethod
@@ -363,13 +461,70 @@ class RecordingService:
         return frame
 
     def read_frame(self, frame_ref: str) -> bytes:
-        frame = self._repository.get_frame(frame_ref)
+        identity(frame_ref)
+        try:
+            frame = self._repository.get_frame(frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored frame metadata is invalid") from None
         if frame is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 FrameRef입니다")
         content = self._repository.get_frame_content(frame_ref)
         if content is None:
             raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image를 읽을 수 없습니다")
         return content
+
+    def read_frame_image(self, frame_ref: str) -> FrameImage:
+        content = self.read_frame(frame_ref)
+        if not png(content):
+            raise RecordingCapabilityError("FRAME_NOT_FOUND", "frame image format is unavailable")
+        return FrameImage(content, "image/png", "png")
+
+    def read_owned_frame_image(self, case_id: str, frame_ref: str) -> FrameImage:
+        """Restore stored bytes on the caller transaction; never regenerate.
+
+        Ownership precedes availability so cross-case and unknown refs have the
+        same failure. The returned immutable image has no Connection or locator.
+        """
+        identity(case_id)
+        identity(frame_ref)
+        try:
+            stored = self._repository.get_owned_frame(case_id, frame_ref)
+        except ValueError:
+            raise RecordingCapabilityError('TEMPORARY_FAILURE', 'stored owned frame metadata is invalid') from None
+        if stored is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "frame is not owned")
+        _, content = stored
+        if not png(content):
+            raise RecordingCapabilityError('FRAME_NOT_FOUND', 'stored owned frame image is unavailable')
+        return FrameImage(content, 'image/png', 'png')
+
+    def owns_frame(self, case_id: str, frame_ref: str) -> bool:
+        identity(case_id)
+        identity(frame_ref)
+        try:
+            # Scope before restoring metadata, as in read_owned_frame_image.
+            # The repository uses a nonlocking, statement-consistent read.
+            return self._repository.get_owned_frame(case_id, frame_ref) is not None
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored owned frame metadata is invalid") from None
+
+    def owns_asset(self, case_id: str, asset_ref: ContractRef | dict[str, Any]) -> bool:
+        identity(case_id)
+        try:
+            parsed = ContractRef.model_validate(asset_ref)
+        except ValueError:
+            raise ValueError("invalid recording asset reference") from None
+        identity(parsed.ref)
+        if parsed.kind not in {"source_asset", "derived_asset"}:
+            raise RecordingCapabilityError("INVALID_REF_KIND", "unsupported ownership reference kind")
+        try:
+            if parsed not in self._repository.get_case_assets(case_id):
+                return False
+            get = self._repository.get_source_asset if parsed.kind == "source_asset" else self._repository.get_derived_asset
+            asset = get(parsed.ref)
+            return asset is not None and getattr(asset, parsed.kind + "_ref") == parsed.ref
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
 
     def lookup_asset_facts(self, asset_ref: ContractRef | dict[str, Any]) -> AssetFacts:
         parsed = ContractRef.model_validate(asset_ref)
@@ -386,9 +541,40 @@ class RecordingService:
                     raise RecordingCapabilityError("TEMPORARY_FAILURE", "등록된 원본 정보를 읽을 수 없습니다")
                 return inspect_local_source(asset, local)
         facts = self._repository.get_asset_facts(parsed.kind, parsed.ref)
+        if facts is None and parsed.kind == "derived_asset":
+            asset = self._repository.get_derived_asset(parsed.ref)
+            # Newly generated exports have durable content and transform facts,
+            # rather than a fixture AssetFacts row. Preserve legacy lookup rules.
+            if (asset is not None and asset.transform_ref is not None
+                    and self._repository.get_export_transform(asset.transform_ref) is not None):
+                return self._metadata_facts(parsed)
         if facts is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
         return facts
+
+    def _metadata_facts(self, parsed):
+        get = {"source_asset": self._repository.get_source_asset,
+               "analysis_source": self._repository.get_analysis_source,
+               "incident_clip": self._repository.get_incident_clip,
+               "derived_asset": self._repository.get_derived_asset}[parsed.kind]
+        media = get(parsed.ref)
+        if media is None:
+            raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
+        content = (self._repository.get_prepared_content(parsed) if parsed.kind in {"analysis_source", "incident_clip"}
+                   else self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None)
+        available = media.availability if content is not None else (
+            "UNAVAILABLE" if media.availability == "UNAVAILABLE" else "UNKNOWN")
+        lineage = (getattr(media, "source_refs", []) if parsed.kind != "incident_clip" else
+                   [ContractRef(kind="source_asset", ref=s.source_asset_ref)
+                    for s in media.source_provenance.asset_spans])
+        if parsed.kind == "source_asset" and media.external_source_ref is not None:
+            lineage = [ContractRef(kind="external_source", ref=media.external_source_ref.ref)]
+        return AssetFacts(contract="AssetFacts", contract_version="source-asset-media-stream/v1",
+            asset_ref=parsed, asset_kind=media.asset_kind, derived_role=getattr(media, "derived_role", None),
+            byte_size=media.byte_size if available == "AVAILABLE" else None, availability=available,
+            checked_at=datetime.now(timezone.utc), lineage=lineage,
+            duration_sec=media.duration_sec if available == "AVAILABLE" else None,
+            timeline_ref=getattr(media, "timeline_ref", None), timeline_range=getattr(media, "timeline_range", None))
 
     def create_relative_timeline(self, source_asset_ref: str) -> RecordingTimeline:
         """등록된 단일 Source를 [0, duration)에 배치한 새 revision 1을 생성한다.
@@ -497,6 +683,8 @@ class RecordingService:
         *, timeline_ref: TimelineRef | dict[str, Any] | None = None,
     ) -> AnalysisSource:
         parsed_span = AssetSpan.model_validate(span)
+        if self._analysis_limits is not None:
+            self._analysis_limits.check_range(parsed_span.timeline_range)
         if not profile_ref:
             raise ValueError("profile_ref는 비어 있을 수 없습니다")
         local = self._repository.get_local_source(parsed_span.source_asset_ref)
@@ -533,7 +721,8 @@ class RecordingService:
             index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
             if index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
-            with source_inspections(self._source_inspections), analysis_tail_scope():
+            with source_inspections(self._source_inspections), analysis_tail_scope(), analysis_source_scope(
+                    self._analysis_limits, self._analysis_checkpoint):
                 prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
             source = AnalysisSource(
                 contract="AnalysisSource", contract_version="analysis-source-derived/v1",
@@ -543,6 +732,7 @@ class RecordingService:
                 availability="AVAILABLE", duration_sec=prepared.duration_sec,
                 timeline_ref=ref, timeline_range=prepared.timeline_range, profile_ref=profile_ref,
             )
+            source = self._publish_prepared(source, prepared.content)
             self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
             self._local_analysis_refs.add(source.analysis_source_ref)
             self._analysis_reuse[key] = source.analysis_source_ref
@@ -569,6 +759,8 @@ class RecordingService:
         spans = [AssetSpan.model_validate(s) for s in data.get("spans", [])]
         data["spans"] = sorted(spans, key=lambda s: s.sequence)
         parsed = SpanResolution.model_validate(data)
+        if self._analysis_limits is not None:
+            self._analysis_limits.check_range(parsed.requested_range)
         if self._analysis_closed:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         if parsed.status != "COMPLETE":
@@ -618,14 +810,16 @@ class RecordingService:
             if local is None or index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 또는 stream index가 없습니다")
             inputs.append((local, index, span))
-        with source_inspections(self._source_inspections), analysis_tail_scope():
-            prepared = materialize_chain(engine, inputs, profile_ref)
+        with source_inspections(self._source_inspections), analysis_tail_scope(), analysis_source_scope(
+                self._analysis_limits, self._analysis_checkpoint):
+            prepared = engine._materialize_many(inputs, profile_ref)
         source = AnalysisSource(contract="AnalysisSource", contract_version="analysis-source-derived/v1",
             analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",
             source_refs=[ContractRef(kind="source_asset", ref=s.source_asset_ref) for s in ordered],
             media_stream_refs=[s.media_stream_ref for s in ordered], byte_size=len(prepared.content),
             availability="AVAILABLE", duration_sec=prepared.duration_sec, timeline_ref=parsed.timeline_ref,
             timeline_range=prepared.timeline_range, profile_ref=profile_ref)
+        source = self._publish_prepared(source, prepared.content)
         self._local_analysis[source.analysis_source_ref] = (source.model_copy(deep=True), prepared.content)
         self._local_analysis_refs.add(source.analysis_source_ref)
         self._analysis_reuse[key] = source.analysis_source_ref
@@ -636,7 +830,7 @@ class RecordingService:
         if prepared is not None:
             source, content = prepared
             return OpenedAnalysisSource(BytesIO(content), "video/mp4", len(content))
-        if analysis_source_ref in self._local_analysis_refs:
+        if analysis_source_ref in self._local_analysis_refs and not self._durable_prepared:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         source = self._repository.get_analysis_source(analysis_source_ref)
         if source is None:
@@ -772,6 +966,7 @@ class RecordingService:
                 byte_size=len(prepared.content), availability="AVAILABLE", duration_sec=prepared.duration_sec,
                 timeline_ref=parsed_resolution.timeline_ref, timeline_range=prepared.timeline_range,
             )
+            clip = self._publish_prepared(clip, prepared.content)
             self._local_clips[clip.incident_clip_ref] = (clip.model_copy(deep=True), prepared.content)
             self._local_clip_refs.add(clip.incident_clip_ref)
             self._clip_identity[identity] = clip.incident_clip_ref
@@ -793,17 +988,43 @@ class RecordingService:
         local = self._local_clips.get(incident_clip_ref)
         if local is not None:
             return local[0].model_copy(deep=True)
-        if incident_clip_ref in self._local_clip_refs:
+        if incident_clip_ref in self._local_clip_refs and not self._durable_prepared:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 IncidentClip 실행이 종료되었습니다")
         clip = self._repository.get_incident_clip(incident_clip_ref)
         if clip is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
-        return clip
+        return clip.model_copy(deep=True)
 
-    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any]) -> DerivedAsset:
-        asset = DerivedAsset.model_validate(payload)
-        self._repository.add_derived_asset(asset)
+    def register_derived_asset(self, payload: DerivedAsset | dict[str, Any], *,
+                               content: bytes | None = None, content_type: str | None = None,
+                               case_id: str | None = None) -> DerivedAsset:
+        try:
+            asset = DerivedAsset.model_validate(payload)
+        except ValueError:
+            raise ValueError("invalid recording derived asset") from None
+        self._repository.add_derived_asset(asset, content=content, content_type=content_type, case_id=case_id)
         return asset
+
+    def open_derived_asset(self, derived_asset_ref: str) -> OpenedDerivedAsset:
+        identity(derived_asset_ref)
+        try:
+            asset = self.get_derived_asset(derived_asset_ref)
+        except RecordingCapabilityError as error:
+            if error.code == "NOT_FOUND":
+                raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 DerivedAsset입니다") from None
+            raise
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if asset.availability != "AVAILABLE":
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        try:
+            value = self._repository.get_derived_content(derived_asset_ref)
+        except ValueError:
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable") from None
+        if value is None or asset.byte_size != len(value[0]):
+            raise RecordingCapabilityError("UNAVAILABLE", "derived content is unavailable")
+        content, content_type = value
+        return OpenedDerivedAsset(BytesIO(content), content_type, len(content))
 
     def get_derived_asset(self, derived_asset_ref: str) -> DerivedAsset:
         asset = self._repository.get_derived_asset(derived_asset_ref)
@@ -824,9 +1045,16 @@ class RecordingService:
             raise ValueError("requested_at은 offset-aware datetime이어야 합니다")
 
         items: list[DeletionItem] = []
-        for asset_ref in self._repository.get_case_assets(case_id):
+        try:
+            assets = self._repository.get_case_assets(case_id)
+        except ValueError:
+            raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored ownership metadata is invalid") from None
+        for asset_ref in assets:
             if asset_ref.kind == "remote_copy":
-                remote_copy = self._repository.get_remote_copy_by_ref(asset_ref.ref)
+                try:
+                    remote_copy = self._repository.get_remote_copy_by_ref(asset_ref.ref)
+                except ValueError:
+                    raise RecordingCapabilityError("TEMPORARY_FAILURE", "stored remote copy metadata is invalid") from None
                 if (
                     remote_copy is not None
                     and remote_copy.expires_at is not None

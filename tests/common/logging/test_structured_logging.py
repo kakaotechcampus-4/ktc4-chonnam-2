@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from logging_faults import install_logging_fault
+from worker_error_support import NAMES, private_error
 
 from daesingo.common.logging import (
     bind_context, configure_logging, copy_context_call, log_event, new_trace_id,
@@ -209,3 +210,18 @@ def test_best_effort_keeps_structured_context_and_stream_oserror_policy(capsys):
     logger = configure_logging("worker", stream=BrokenStream())
     module.log_event_best_effort(logger, "runtime.test.event")
     assert json.loads(capsys.readouterr().err) == {"level": "ERROR", "event": "log.write.failed"}
+
+
+@pytest.mark.parametrize("qualname,expected", NAMES)
+def test_safe_error_type_omits_invalid_qualnames_without_inspecting_exception(qualname, expected):
+    from daesingo.common import logging as module
+    assert module.safe_error_type(private_error(qualname)) == ({"error_type": expected} if expected else {})
+
+
+@pytest.mark.parametrize("value", ["", "A" * 65, "Outer.Error", "Error Name", "오류", "1Error", 1, None])
+def test_error_type_allowlist_rejects_unvalidated_tokens(value):
+    stream = io.StringIO()
+    logger = configure_logging("worker", stream=stream)
+    with pytest.raises(ValueError, match="unsafe operational event field"):
+        log_event(logger, "runtime.reflect.failed", status="FAILED", error_type=value)
+    assert stream.getvalue() == ""

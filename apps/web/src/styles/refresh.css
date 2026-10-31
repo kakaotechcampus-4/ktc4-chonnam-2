@@ -1,0 +1,917 @@
+/* ============================================================
+   대신고 — refresh.css
+   레퍼런스(Apple MacBook Air · Creative Marketing AI · Opal) 기준의 새 모양.
+   작업 대상 화면에만 붙는다 — 모든 규칙은 `.rs`(화면 본문)·`.rs-page`(페이지
+   바탕)·`.rs-header`(공통 헤더) 안에서만 산다. 개발용 화면(?dev)은 .rs가 없어
+   global.css 그대로다.
+
+   글꼴은 'Pretendard Variable'로 따로 불러와 이 범위에서만 쓴다 — global.css의
+   'Pretendard'와 이름이 달라서 제외 화면의 글꼴은 바뀌지 않는다.
+
+   색은 검정·흰색·회색만 쓴다. 주황(--orange*)은 「확인 필요」, 빨강(--red*)은
+   실패에만 쓴다 — 둘 다 tokens.css의 기존 값이다.
+   ============================================================ */
+
+.rs, .rs-header {
+  --rs-bg: #ffffff;
+  --rs-fill: #f5f5f7;
+  --rs-ink: #1d1d1f;
+  --rs-sub: #6e6e73;
+  --rs-line: #d2d2d7;
+  --rs-line-strong: #86868b;
+  --rs-off: #a1a1a6;   /* 사용 불가 버튼 글자 전용 — 읽어야 하는 글자에는 쓰지 않는다(대비 2.6:1) */
+  --rs-faint: #737378; /* 읽어야 하지만 한발 물러선 글자(대기 단계·입력 예시) — 흰 바탕 대비 4.7:1 */
+  /* 큰 제목은 두 단계 — 페이지 제목(업로드·진행·결과) / 하위·상태 화면 제목 */
+  --rs-h1: clamp(34px, 3.4vw, 44px);
+  --rs-h2: 32px;
+  /* 연한 구분선(목록 줄 사이) · 사진·영상 자리 모서리 */
+  --rs-line-soft: #ececf0;
+  --rs-r-media: 16px;
+  /* 움직임은 한 곡선으로 — 처음엔 움직이다 끝에서 부드럽게 선다. 튕김 없음 */
+  --rs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  color: var(--rs-ink);
+}
+.rs :focus-visible, .rs-header :focus-visible { outline: 2px solid var(--rs-ink); outline-offset: 3px; }
+
+/* 위에 붙은 헤더(56px)가 키보드로 옮겨 간 초점을 가리지 않게 — 스크롤이 헤더 아래에서 멈춘다 */
+html:has(.rs-header) { scroll-padding-top: 72px; }
+
+/* 페이지 바탕 — 작업 대상 화면일 때만 흰색 */
+body:has(.rs-page) { background: #fff; }
+.rs-page { background: #fff; }
+
+/* ============================================================
+   공통 헤더 — 모든 화면(결정 2-b)
+   ============================================================ */
+.app-header.rs-header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px;
+  min-height: 56px;
+  /* 왼쪽 끝을 넓은 본문(1120 = web-main 1160 − 안쪽 여백)과 맞춘다 */
+  padding: 10px max(20px, calc((100% - 1160px) / 2 + 20px));
+  background: rgba(255, 255, 255, .92);
+  border-bottom: 1px solid var(--rs-line);
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: saturate(180%) blur(16px);
+}
+.rs-header .brand {
+  flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 12px;
+  padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; border-radius: 6px;
+}
+.rs-header .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink); }
+.rs-header .brand-sub { font-size: 13px; color: var(--rs-sub); }
+.rs-header .nav-link {
+  font-size: 14px; font-weight: 500; color: var(--rs-ink);
+  padding: 6px 14px; border-radius: 980px;
+}
+.rs-header .nav-link { transition: background-color .2s var(--rs-ease); }
+.rs-header .nav-link:hover { color: var(--rs-ink); background: var(--rs-fill); }
+
+/* ============================================================
+   버튼 — 알약 모양. 주 버튼은 검정, 보조는 흰 바탕 + 얇은 테두리
+   ============================================================ */
+.rs-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 22px;
+  border: 1px solid transparent; border-radius: 980px;
+  font: inherit; font-size: 16px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background-color .3s var(--rs-ease), border-color .2s var(--rs-ease), color .3s var(--rs-ease), transform .12s var(--rs-ease);
+}
+.rs-btn:active:not(:disabled) { transform: scale(.98); }
+.rs-btn.pri { background: var(--rs-ink); color: #fff; }
+.rs-btn.pri:hover { background: #424245; }
+.rs-btn.sec { background: #fff; color: var(--rs-ink); border-color: var(--rs-line); }
+.rs-btn.sec:hover { border-color: var(--rs-ink); }
+.rs-btn.lg { min-height: 54px; padding: 0 32px; font-size: 17px; }
+.rs-btn:disabled, .rs-btn:disabled:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
+
+/* ============================================================
+   업로드 화면
+   ============================================================ */
+.rs.upload { width: 100%; max-width: 760px; margin: 0 auto; padding: 56px 0 8px; display: flex; flex-direction: column; }
+.rs-title {
+  margin: 0 0 16px;
+  font-size: var(--rs-h1); font-weight: 700; line-height: 1.12; letter-spacing: -0.03em;
+}
+.rs-lede { max-width: 36em; margin: 0 0 48px; font-size: 17px; line-height: 1.65; color: var(--rs-sub); }
+
+/* 첫 진입 — 세 묶음(제목·설명 / 업로드 영역 / 상황 입력·버튼)이 8px 아래에서 올라온다.
+   페이지를 처음 열 때 한 번만(.rs-intro). 나타나는 중에도 바로 쓸 수 있고, 키보드 포커스가
+   들어온 묶음은 즉시 보인다. */
+.rs-intro .rs-group { animation: rs-rise .4s var(--rs-ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.rs-intro .rs-group:focus-within { animation: none; }
+@keyframes rs-rise { from { opacity: 0; transform: translateY(8px); } }
+
+/* 업로드 칸 = 자동차 앞문. 위는 그림 창(320px, 원본 한 장의 위치·배율만 바뀜), 아래는 안내 줄.
+   완료되면 그림 창이 접혀 한 줄 요약만 남는다. 테두리는 색만 부드럽게 바뀐다. */
+.g-drop { position: relative; }
+.rs-drop {
+  position: relative; z-index: 1; overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .10);
+  border-radius: 18px;
+  transition: border-color .25s var(--rs-ease);
+}
+.rs-drop.is-idle, .rs-drop.is-fail { cursor: pointer; }
+.rs-drop.over { border-color: var(--rs-ink); }
+.rs-drop.is-fail { border-color: var(--red-bd); }
+
+.rs-scene { position: relative; height: 320px; overflow: hidden; background: #fff; transition: height .35s var(--rs-ease); }
+.rs-drop.is-done .rs-scene { height: 0; }
+.rs-rig { position: absolute; left: 0; top: 0; width: 1774px; height: 887px; transform-origin: 0 0; pointer-events: none; transition: transform .35s var(--rs-ease); }
+.rs-scene-car, .rs-scene-open { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; }
+.rs-scene-car { width: 1774px; height: 887px; }
+/* 휠 — 고정 층 위에 도는 층. 업로드 중(바퀴 화면)에만 1.2초에 한 바퀴씩 앞(왼쪽)으로 구르는 방향으로
+   돌고, 끝나면 그 각도에서 멈춘다(일시정지라 0도로 튀지 않음). 흐린 층은 출발 때만 쓴다 */
+.rs-wheel { position: absolute; width: 243px; height: 243px; }
+.rs-wheel img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; }
+.rs-wheel-spin { animation: rs-wheel-turn 1.2s linear infinite paused; }
+.rs-drop.is-spinning .rs-wheel-spin { animation-play-state: running; }
+.rs-wheel-blur { opacity: 0; }
+@keyframes rs-wheel-turn { to { transform: rotate(-360deg); } }
+/* 문 열림 — 열림 사진을 원본 문 위치에 겹친다(회전 아님). 문·입구 밖은 흐려 원본에 섞는다 */
+.rs-scene-open {
+  width: 900px; height: 675px; opacity: 0;
+  transition: opacity .15s var(--rs-ease);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 83%, transparent 88%), linear-gradient(180deg, transparent 0, #000 13%, #000 93%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 83%, transparent 88%), linear-gradient(180deg, transparent 0, #000 13%, #000 93%, transparent 100%);
+  mask-composite: intersect;
+}
+.rs-drop.is-open .rs-scene-open { opacity: 1; }
+/* 영상 카드 — 검정 카드 + 흰 재생 표시. 위에서 열린 입구 쪽으로 작아지며 들어간다(약 0.3초) */
+.rs-cards { position: absolute; inset: 0; pointer-events: none; }
+.rs-vcard {
+  position: absolute; left: 0; top: 0; width: 64px; height: 40px; border-radius: 7px; background: #1d1d1f;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, .25); display: grid; place-items: center; opacity: 0;
+  animation: rs-board .24s var(--rs-ease) forwards; animation-delay: var(--d, 0ms);
+}
+.rs-vcard::after { content: ''; margin-left: 3px; border-left: 11px solid #fff; border-top: 6.5px solid transparent; border-bottom: 6.5px solid transparent; }
+@keyframes rs-board {
+  0% { opacity: 0; transform: translate(calc(500px + var(--x, 0px)), -50px) scale(1); }
+  20% { opacity: 1; }
+  80% { opacity: 1; transform: translate(400px, 150px) scale(.5); }
+  100% { opacity: 0; transform: translate(392px, 168px) scale(.34); }
+}
+
+/* 배경 — 같은 원본 전체를 10%로. 업로드 칸 가운데·칸 높이 안(제목 뒤로 올라오지 않음).
+   바퀴로 이동하기 시작하면 0.2초 동안 흐려지고 완료·실패에서도 숨긴다 */
+.rs-bgcar {
+  position: absolute; left: 50%; top: 178px; z-index: 0; width: 1048px; height: auto; max-width: none;
+  transform: translate(-50%, -50%); opacity: .10; pointer-events: none; transition: opacity .2s var(--rs-ease);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+.rs.upload.bg-off .rs-bgcar { opacity: 0; }
+
+/* 안내 줄 — 글자·버튼은 그림과 겹치지 않고 제자리 */
+.rs-cap { display: flex; align-items: center; gap: 16px; padding: 18px 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
+.rs-drop.is-done .rs-cap { border-top: 0; }
+.rs-cap-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rs-cap .rs-btn { flex: 0 0 auto; }
+.rs-drop-title { display: inline-flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; }
+.rs-drop.is-fail .rs-drop-title { color: var(--red); }
+.rs-drop-note { font-size: 14px; line-height: 1.55; color: var(--rs-sub); overflow-wrap: anywhere; }
+.rs-drop-note.one { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 업로드 중 작은 로딩 — 휠 회전과 함께 우선 둔다(1초에 한 바퀴) */
+.rs-spin-sm { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
+@keyframes rs-spin { to { transform: rotate(360deg); } }
+@keyframes rs-pop { from { opacity: 0; transform: scale(.9); } }
+
+/* 완료 요약 — [작은 자동차(앞이 왼쪽, 출발 방향)] [체크 · 업로드 완료 · 영상 N개] [다시 선택] */
+.rs-mini-car {
+  flex: 0 0 auto; width: 96px; height: 32px;
+  background: url('../assets/car/car-side.webp') no-repeat; background-size: 100.6px auto; background-position: -2.3px -11.4px;
+  animation: rs-fade-in .3s var(--rs-ease) both;
+}
+.rs-done-text { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; }
+.rs-done-badge { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; margin-top: -1px; border-radius: 50%; background: var(--rs-ink); color: #fff; animation: rs-pop .3s var(--rs-ease) both; }
+.rs-done-one { display: flex; flex-direction: column; min-width: 0; }
+.rs-done-files { min-width: 0; }
+.rs-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rs-draw .32s var(--rs-ease) .08s forwards; }
+@keyframes rs-draw { to { stroke-dashoffset: 0; } }
+.rs.upload.is-done .rs-actions .rs-btn.pri:not(:disabled) { animation: rs-cta-ready .45s var(--rs-ease) .2s both; }
+@keyframes rs-cta-ready { from { box-shadow: 0 0 0 0 rgba(29, 29, 31, .28); } to { box-shadow: 0 0 0 10px rgba(29, 29, 31, 0); } }
+.rs-done-text .rs-drop-title { font-size: 18px; }
+.rs-done-name { display: block; margin-top: 2px; font-size: 15px; line-height: 1.5; color: var(--rs-sub); overflow-wrap: anywhere; }
+.rs-done-files summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; border-radius: 6px; }
+.rs-done-files summary::-webkit-details-marker { display: none; }
+.rs-done-files summary svg { flex: 0 0 auto; color: var(--rs-sub); transition: transform .25s var(--rs-ease); }
+.rs-done-files[open] summary svg { transform: rotate(180deg); }
+.rs-done-files summary:hover .rs-drop-title { text-decoration: underline; text-underline-offset: 3px; }
+.rs-done-files .rs-files { width: 100%; margin-top: 10px; }
+.rs-done-files[open] .rs-files { animation: rs-drop-in .3s var(--rs-ease) both; }
+
+/* 출발 — 「영상에서 찾아보기」 직후 겉모습 복사본(.is-departing)에서만. 이전 업로드 칸 자리에 같은
+   자동차 전체가 겹쳐 나타난다(0.1초). 타임라인(약 1.4초, 사용자 결정 「아주 화려하게」 10/23):
+     0.10~0.45 시동 진동 + 배기 연기
+     0.30~     뒷바퀴가 제자리에서 헛돌며(휠스핀) 연기가 크게 터지고 화면이 흔들린다
+     0.45~0.97 앞(왼쪽)으로 점점 빨라지며 달려 나간다 — 뒤로 살짝 주저앉고, 속도선과 잔상 3개가 따라간다
+     0.95~     칸이 흐려지고 업로드 본문이 왼쪽으로 밀려 나간다(아래 .rs-upload-exit)
+   휠은 휠스핀 몫(BURNOUT_DEG)만큼 더 돌고, 빨라지는 동안 한 바퀴 평균한 흐린 층으로 넘어간다 */
+.rs-depart {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 320px;
+  background: #fff; border: 1px solid rgba(0, 0, 0, .10); border-radius: 18px;
+  animation: rs-fade-in .1s var(--rs-ease) both, rs-depart-out .2s linear .95s forwards;
+}
+@keyframes rs-depart-out { to { opacity: 0; } }
+/* 칸이 흐려지며 아래 요약이 비쳐도 작은 자동차가 두 번째 차로 보이지 않게 */
+.rs.upload.is-departing .rs-mini-car { visibility: hidden; }
+.rs-depart-car { position: absolute; inset: 0; animation: rs-drive .52s cubic-bezier(.55, .085, .68, .53) .45s both; }
+.rs-depart-body { position: absolute; inset: 0; transform-origin: 60% 85%; animation: rs-rev .35s linear .1s, rs-squat .45s ease-out .45s; }
+.rs-depart .rs-rig { transition: none; }
+.rs-depart .rs-wheel-spin { animation: rs-roll .67s cubic-bezier(.5, 0, .75, 0) .3s both, rs-sharp-out .16s ease-in .38s both; }
+.rs-depart .rs-wheel-blur { animation: rs-blur-in .14s ease-out .34s both; }
+.rs-depart-car.is-ghost { opacity: 0; filter: blur(1.5px); animation: rs-drive .52s cubic-bezier(.55, .085, .68, .53) calc(.45s + var(--gd)) both, rs-ghost .52s linear calc(.45s + var(--gd)) both; }
+.rs.upload.is-departing { animation: rs-quake .42s linear .3s; }
+@keyframes rs-drive { to { transform: translateX(var(--go)); } }
+@keyframes rs-roll { to { transform: rotate(var(--roll)); } }
+@keyframes rs-sharp-out { to { opacity: 0; } }
+@keyframes rs-blur-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rs-ghost { 0% { opacity: 0; } 25% { opacity: .22; } 100% { opacity: 0; } }
+/* 시동 진동 — 차체만 잘게 떨린다 */
+@keyframes rs-rev {
+  0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-1px, .6px); } 20% { transform: translate(1.2px, -.4px); }
+  30% { transform: translate(-.8px, -.6px); } 40% { transform: translate(1px, .5px); } 50% { transform: translate(-1.2px, .3px); }
+  60% { transform: translate(.8px, -.6px); } 70% { transform: translate(-1px, .4px); } 80% { transform: translate(1.2px, .2px); } 90% { transform: translate(-.6px, -.4px); }
+}
+/* 출발 순간 뒤로 주저앉았다가 돌아온다 */
+@keyframes rs-squat { 0% { transform: rotate(0); } 30% { transform: rotate(1.4deg); } 100% { transform: rotate(0); } }
+/* 화면 흔들림 — 짧고 세게 시작해 잦아든다 */
+@keyframes rs-quake {
+  0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-5px, 2px); } 20% { transform: translate(5px, -2px); }
+  30% { transform: translate(-4px, -1px); } 40% { transform: translate(4px, 2px); } 55% { transform: translate(-3px, 1px); }
+  70% { transform: translate(2px, -1px); } 85% { transform: translate(-1px, 0); }
+}
+
+/* 연기 · 속도선 · 파동 — components/CarFx.tsx가 위치·크기·지연을 CSS 변수로 넘긴다 */
+.rs-puff {
+  position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at 40% 40%, rgba(130, 130, 140, .55), rgba(150, 150, 160, .25) 55%, rgba(170, 170, 180, 0) 72%);
+  filter: blur(1px);
+  animation: rs-puff var(--t) cubic-bezier(.2, .7, .3, 1) var(--d) both;
+}
+@keyframes rs-puff {
+  0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(var(--g)); }
+}
+.rs-speed {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: 2px; border-radius: 2px; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, rgba(29, 29, 31, .55), rgba(29, 29, 31, 0));
+  animation: rs-speed .45s ease-out var(--d) both;
+}
+@keyframes rs-speed { 0% { opacity: 0; transform: translateX(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateX(60px); } }
+.rs-puff.is-loop { animation-iteration-count: infinite; }
+.rs-ring {
+  position: absolute; border: 2px solid rgba(29, 29, 31, .35); border-radius: 50%; pointer-events: none; opacity: 0;
+}
+
+/* 진행 — 「장면 찾기」 중 대표 영상 박스 안(components/SearchFx.tsx). 영상 위를 옅게 덮고 도로가 흐르는 위를
+   차가 제자리에서 달린다. 바퀴 1초에 한 바퀴 반, 차체는 잘게 떨리고, 연기·레이더 파동이 계속 이어진다 */
+.flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: hidden; }
+.flow-search-fx { position: absolute; inset: 0; overflow: hidden; background: rgba(245, 245, 247, .72); animation: rs-fade-in .3s var(--rs-ease) both; }
+.flow-search-road {
+  position: absolute; left: 0; right: 0; bottom: 20%; height: 3px;
+  background: repeating-linear-gradient(90deg, #b8b8be 0 26px, transparent 26px 46px);
+  animation: flow-road .5s linear infinite;
+}
+@keyframes flow-road { to { background-position: -46px 0; } }
+/* 바퀴 바닥(원본 높이의 85%)이 도로선에 닿게 — 차 높이가 박스 높이의 약 41%라 15% 몫(6%)만큼 내린다 */
+.flow-search-car { position: absolute; left: 50%; bottom: calc(20% - 6%); width: 46%; aspect-ratio: 2 / 1; transform: translateX(-50%); }
+.flow-search-body { position: absolute; inset: 0; animation: flow-bob .24s linear infinite; }
+.flow-search-body > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flow-search-wheel { position: absolute; }
+.flow-search-wheel img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flow-search-wheel .spin { animation: flow-wheel .4s linear infinite; }
+@keyframes flow-wheel { to { transform: rotate(-360deg); } }
+@keyframes flow-bob { 0%, 100% { transform: translateY(0); } 25% { transform: translate(.5px, -1px); } 50% { transform: translateY(.4px); } 75% { transform: translate(-.5px, -.6px); } }
+.flow-search-at { position: absolute; width: 0; height: 0; }
+.flow-search-ring {
+  left: 50%; top: 52%; width: 22%; aspect-ratio: 1; margin-left: -11%; transform: translateY(-50%) scale(.4);
+  animation: flow-radar 2.4s ease-out var(--d) infinite;
+}
+@keyframes flow-radar { 0% { opacity: .75; transform: translateY(-50%) scale(.4); } 100% { opacity: 0; transform: translateY(-50%) scale(4.2); } }
+.rs.upload.is-departing .rs-check path { animation: none; stroke-dashoffset: 0; }
+.rs.upload.is-departing .rs-actions .rs-btn.pri { animation: none; }
+
+/* 새로 들어오는 목록·버튼은 위에서 4px 내려오며 나타난다 */
+.rs-appear { animation: rs-drop-in .3s var(--rs-ease) both; }
+@keyframes rs-drop-in { from { opacity: 0; transform: translateY(-4px); } }
+
+.rs-files {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  width: min(100%, 460px);
+  border-top: 1px solid var(--rs-line);
+  text-align: left;
+}
+.rs-files li {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px;
+  border-bottom: 1px solid var(--rs-line);
+  font-size: 15px; line-height: 1.45; color: var(--rs-ink);
+}
+.rs-files li svg { flex: 0 0 auto; margin-top: 3px; color: var(--rs-sub); }
+/* 긴 파일 이름도 자르지 않고 줄을 바꾼다 */
+.rs-files li span { min-width: 0; overflow-wrap: anywhere; }
+
+/* 일부 건너뜀은 「확인 필요」 성격이라 주황을 그대로 쓴다 */
+.rs .skip-list { margin: 16px 0 0; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+
+.rs-field { display: flex; flex-direction: column; gap: 12px; margin-top: 48px; transition: margin-top .35s var(--rs-ease); }
+/* 완료 뒤에는 다음 행동(상황 입력·찾아보기)이 더 가까이 */
+.rs.upload.is-done .rs-field { margin-top: 32px; }
+.rs-label { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.rs .field.situation {
+  padding: 16px 18px; border: 1px solid var(--rs-line); border-radius: 12px;
+  background: #fff; box-shadow: none;
+  font-weight: 450; line-height: 1.6; color: var(--rs-ink);
+  transition: border-color .2s var(--rs-ease), box-shadow .2s var(--rs-ease);
+}
+.rs .field.situation::placeholder { color: var(--rs-faint); }
+.rs .field.situation:hover { border-color: var(--rs-line-strong); }
+/* 입력칸은 테두리 변화로만 포커스를 보인다 — 바깥 윤곽선을 겹치지 않는다 */
+.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: none; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
+.rs-hint { margin: 0; font-size: 14px; color: var(--rs-sub); }
+
+.rs-actions { display: flex; justify-content: flex-end; margin-top: 32px; }
+
+/* 시연용 경우 고르기 — 화면 끝에 작게 */
+.rs-page .demo-pick {
+  width: 100%; max-width: 760px; margin: 32px auto 0; padding-top: 16px;
+  border-top: 1px solid #e8e8ed;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif; font-size: 13px; color: #6e6e73;
+}
+.rs-page .demo-pick select {
+  font: inherit; color: #1d1d1f; padding: 4px 8px; border: 1px solid #d2d2d7; border-radius: 8px; background: #fff;
+}
+
+/* ============================================================
+   화면 전환 — 작업 대상 본문만(.rs-screen). 헤더·제외 화면에는 없다.
+   화면이 바뀔 때 한 번만 6px 올라오며 나타나고, 같은 화면 안의 상태 변화에는 반복하지 않는다.
+   ============================================================ */
+.rs-screen { animation: rs-screen-in .25s var(--rs-ease) both; }
+@keyframes rs-screen-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ============================================================
+   진행 화면 — 지금 하는 작업이 가장 크고, 영상·상황·경과 시간은 보조, 단계 목록은 아래에 작게
+   ============================================================ */
+.rs.flow {
+  width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px; column-gap: 48px; row-gap: 32px; align-items: start;
+}
+/* 업로드 → 진행 전환(약 1.4초). 실제 상태는 누르는 즉시 진행 화면이다. 업로드 화면 겉모습 복사본
+   (.rs-upload-exit, 누를 수도 읽히지도 않음)에서 자동차가 앞(왼쪽)으로 출발하고, 0.95초 뒤부터 업로드
+   본문은 왼쪽으로 밀려 나가며 진행 본문(.rs-push-in)이 오른쪽에서 같은 거리·같은 가속으로 들어온다.
+   두 본문은 한 화면 폭만큼 떨어져 함께 움직여 겹치지 않는다. 헤더는 그대로다 */
+.web-main.rs-page { position: relative; }
+body:has(.rs-upload-exit) { overflow-x: clip; }
+.rs-upload-exit {
+  position: absolute; top: 20px; left: 20px; right: 20px; z-index: 5; pointer-events: none;
+  animation: rs-push-out .42s cubic-bezier(.65, 0, .35, 1) .95s both;
+}
+.rs.flow.rs-push-in { animation: rs-push-in .42s cubic-bezier(.65, 0, .35, 1) .95s both; }
+@keyframes rs-push-out { to { transform: translateX(-100vw); } }
+@keyframes rs-push-in { from { transform: translateX(100vw); } }
+/* 출발한 큰 자동차가 화면을 떠난 뒤에 경로 위 작은 자동차가 나타난다(두 대가 함께 주인공이 되지 않게) */
+.rs-push-in .flow-car { animation-delay: 1.35s; }
+/* 복사본은 새로 그려진 것이라 완료 연출(체크 그리기·배지·요약 등장)을 다시 하지 않는다 */
+.rs-upload-exit .rs-done-badge, .rs-upload-exit .rs-appear, .rs-upload-exit .rs-group { animation: none; }
+.rs-upload-exit .rs-scene, .rs-upload-exit .rs-rig { transition: none; }
+.rs.flow:focus, .rs.flow:focus-visible { outline: none; }
+.rs-enter .flow-head { animation: rs-enter-up .38s var(--rs-ease) .06s both; }
+.rs-enter .flow-thumb-box { animation: rs-frame-open .45s var(--rs-ease) both; }
+.rs-enter .flow-thumb figcaption, .rs-enter .flow-files, .rs-enter .flow-situation { animation: rs-fade-in .3s var(--rs-ease) .2s both; }
+.rs-enter .flow-steps { animation: rs-enter-up .38s var(--rs-ease) .13s both; }
+@keyframes rs-enter-up { from { opacity: 0; transform: translateY(10px); } }
+@keyframes rs-frame-open { from { opacity: 0; transform: scale(.965); } }
+
+/* 진행 화면만 본문 폭을 넓힌다(헤더·다른 화면은 1040 그대로) */
+.web-main:has(> .rs.flow) { max-width: 1160px; }
+/* 1행: 위쪽 안내(왼쪽 칸). 2행: 대표 영상과 단계 목록이 같은 높이에서 시작 — 안내가 늘어나도
+   2행 시작이 함께 내려간다. 파일 목록을 펼쳐도 오른쪽 칸 위치는 그대로다 */
+.flow-head { grid-column: 1; grid-row: 1; min-width: 0; }
+.flow-main { grid-column: 1; grid-row: 2; min-width: 0; display: flex; flex-direction: column; }
+.flow-steps { grid-column: 2; grid-row: 2; min-width: 0; }
+.flow-overall { margin: 0 0 10px; font-size: 17px; color: var(--rs-sub); }
+.flow-now-box { position: relative; }
+.rs .flow-now { margin: 0; animation: rs-title-in .28s var(--rs-ease) both; }
+/* 이전 제목 — 새 제목과 같은 자리에서 겹쳐 사라진다 */
+.rs .flow-now-leaving { position: absolute; left: 0; top: 0; margin: 0; pointer-events: none; animation: rs-title-out .22s var(--rs-ease) both; }
+@keyframes rs-title-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes rs-title-out { to { opacity: 0; transform: translateY(-4px); } }
+/* 제목 아래 상태 줄 — 단계 목록과 같은 표시(검정 원형 로딩·검정 체크·빨강). 높이는 늘 같다 */
+.flow-status-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 12px 0 0; }
+.flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 0; font-size: 15px; color: var(--rs-sub); }
+.flow-elapsed { margin: 0; font-size: 15px; color: var(--rs-sub); }
+.flow-elapsed span { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.flow-status-mark { position: relative; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--rs-line); transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease); }
+.flow-status.is-running { color: var(--rs-ink); }
+.flow-status.is-running .flow-status-mark { border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
+.flow-status.is-done .flow-status-mark { background: var(--rs-ink); border-color: var(--rs-ink); }
+.flow-status.is-done .flow-status-mark::after {
+  content: ''; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px;
+  border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
+.flow-status.is-failed { color: var(--red); }
+.flow-status.is-failed .flow-status-mark { background: var(--red); border-color: var(--red); }
+.flow-status.is-partial .flow-status-mark { background: var(--orange-soft); border-color: var(--orange); }
+/* 일부 단계 실패 + 나머지 계속 — 빨간 점과 기본 글자색 한 줄 */
+/* 안내 한 줄 자리(16px × 1.55)를 늘 둔다 — 나타나도 아래가 밀리지 않고, 길면 늘어난다 */
+.flow-partial-slot { min-height: 25px; margin-top: 10px; }
+.flow-partial { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 16px; line-height: 1.55; color: var(--rs-ink); animation: rs-fade-in .3s var(--rs-ease) both; }
+@keyframes rs-fade-in { from { opacity: 0; } }
+.flow-partial-mark { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--red); transform: translateY(-1px); }
+
+/* 대표 영상 — 정지 화면 한 장(16:9). 못 그리면 필름 아이콘과 파일 이름 */
+.flow-thumb { margin: 0; }
+.flow-thumb-frame {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+  background: var(--rs-fill); border: 1px solid rgba(0, 0, 0, .08); border-radius: var(--rs-r-media);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px rgba(0, 0, 0, .06);
+  display: grid; place-items: center;
+}
+.flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-fade-in .35s var(--rs-ease) both; }
+.flow-thumb-box { position: relative; }
+
+.flow-thumb-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; color: var(--rs-sub); }
+.flow-thumb-fallback svg { color: var(--rs-sub); }
+.flow-thumb figcaption { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font-size: 15px; color: var(--rs-sub); }
+.flow-thumb-name { min-width: 0; text-align: right; overflow-wrap: anywhere; color: var(--rs-ink); }
+
+.flow-situation { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rs-line); }
+.flow-situation h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.flow-situation p { margin: 0; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.flow-stop-row { margin-top: 24px; }
+
+/* 여러 파일 — 「영상 N개」를 눌러(또는 Enter·Space) 펼친다. 기본은 접힘 */
+.flow-files { margin-top: 20px; font-size: 15px; min-width: 0; }
+.flow-files summary {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none;
+  color: var(--rs-ink); border-radius: 6px;
+}
+.flow-files summary::-webkit-details-marker { display: none; }
+.flow-files summary svg { color: var(--rs-sub); transition: transform .25s var(--rs-ease); }
+.flow-files[open] summary svg { transform: rotate(180deg); }
+.flow-files summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+.flow-files ul { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--rs-line-soft); }
+.flow-files[open] ul { animation: rs-drop-in .3s var(--rs-ease) both; }
+.flow-files li { padding: 6px 0; border-bottom: 1px solid var(--rs-line-soft); overflow-wrap: anywhere; }
+
+/* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
+.rs.flow .panel { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.rs.flow .flow-steps .sec-label { align-items: baseline; padding-bottom: 14px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 18px; font-weight: 650; line-height: 1.3; color: var(--rs-ink); }
+.flow-steps-count { font-size: 14px; font-weight: 500; color: var(--rs-sub); }
+.rs.flow .sec-label { margin: 0 0 4px; padding: 0; border: 0; font-size: 14px; font-weight: 600; color: var(--rs-sub); }
+.rs.flow .timeline { display: flex; flex-direction: column; gap: 2px; padding: 0; }
+.rs.flow .timeline li {
+  align-items: center; gap: 12px; min-height: 54px;
+  padding: 12px 0 12px 70px; border-left: 0; border-bottom: 0;
+  font-size: 16px;
+}
+.rs.flow .timeline li::before {
+  left: 40px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
+  background: #fff; border: 1.5px solid var(--rs-line);
+  animation: none;
+}
+.rs.flow .tl-label { font-weight: 500; color: var(--rs-ink); }
+.rs.flow .timeline .kv-src { margin: 0; font-size: 14px; color: var(--rs-sub); }
+/* 완료 — 검정 원 + 흰 체크 */
+.rs.flow .timeline .tl-done::before { background: var(--rs-ink); border-color: var(--rs-ink); }
+.rs.flow .timeline .tl-done::after {
+  content: ''; position: absolute; left: 46px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
+  border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
+/* 진행 중 — 검정 원형 로딩 */
+.rs.flow .timeline .tl-running::before {
+  background: #fff; border: 2px solid #e5e5ea; border-top-color: var(--rs-ink);
+  animation: rs-spin 1s linear infinite;
+}
+.rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
+/* 진행 중인 행만 아주 연한 회색 면 — 경로 칸(왼쪽 40px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 칠한다 */
+.rs.flow .timeline .tl-running { background: linear-gradient(90deg, transparent 30px, var(--rs-fill) 30px); border-radius: 0 10px 10px 0; }
+/* 세로 경로 — 경로 칸(40px) 가운데 얇은 회색 선, 단계마다 정류장 점(색이 바뀌지 않아 완료를 뜻하지 않음).
+   위에서 본 같은 은색 자동차가 실제 진행 단계 옆에 서고, 단계가 바뀔 때만 이동한다(시간으로 움직이지 않음) */
+.flow-steps { position: relative; }
+.flow-lane { position: absolute; left: 0; top: 0; width: 40px; height: 100%; pointer-events: none; z-index: 1; }
+.flow-lane-line { position: absolute; left: 19px; width: 2px; background: #e3e3e8; }
+.flow-stop { position: absolute; left: 17px; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #c7c7cc; }
+.flow-car { position: absolute; left: 5px; top: 0; width: 30px; height: 53px; transition: transform .45s var(--rs-ease); animation: rs-fade-in .3s var(--rs-ease) both; }
+.flow-car img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .16)); }
+.rs.flow .timeline .tl-running .kv-src { color: var(--rs-ink); }
+/* 대기 — 회색 원 */
+.rs.flow .timeline .tl-pending .tl-label { color: var(--rs-faint); }
+/* 실패 — 빨강. 부분 완료는 「확인 필요」 성격이라 주황 */
+.rs.flow .timeline .tl-failed::before { background: var(--red); border-color: var(--red); }
+.rs.flow .timeline .tl-failed .tl-label, .rs.flow .timeline .tl-failed .kv-src { color: var(--red); }
+.rs.flow .timeline .tl-partial::before { background: var(--orange-soft); border-color: var(--orange); }
+/* 진행 중인 작업 목록(running_jobs) */
+.rs.flow .timeline .scene-search-step {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px;
+  padding: 14px 12px 14px 70px; min-height: 80px;
+}
+.rs.flow .timeline .scene-search-step::before,
+.rs.flow .timeline .scene-search-step::after { display: none; }
+.scene-search-mark { position: absolute; left: 38px; top: 17px; width: 20px; height: 20px; color: var(--rs-ink); }
+.scene-search-ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); fill: none; stroke-width: 3; }
+.scene-search-track { stroke: var(--rs-line); }
+.scene-search-fill { stroke: currentColor; transition: stroke-dashoffset .45s var(--rs-ease); }
+.scene-search-step.is-active.is-preparing .scene-search-ring { animation: scene-search-spin 1s linear infinite; }
+.scene-search-step.tl-done .scene-search-mark { display: grid; place-items: center; background: var(--rs-ink); color: var(--rs-bg); border-radius: 50%; }
+.scene-search-mark > svg:not(.scene-search-ring) { width: 14px; height: 14px; stroke-width: 2.5; }
+.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 16px; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
+.scene-search-detail > span { display: inline-block; max-width: 100%; vertical-align: top; }
+.scene-search-detail.is-running > span {
+  background: linear-gradient(105deg, var(--rs-sub) 36%, var(--rs-ink) 50%, var(--rs-sub) 64%);
+  background-size: 250% 100%; background-position: 100% 50%;
+  background-clip: text; -webkit-background-clip: text; color: transparent;
+  animation: scene-search-shimmer 2.2s linear infinite;
+}
+.scene-search-detail.is-done > span { color: var(--rs-ink); -webkit-text-stroke: .2px; animation: scene-search-edge 3.6s ease-in-out infinite; }
+@keyframes scene-search-spin { to { transform: rotate(270deg); } }
+@keyframes scene-search-shimmer { to { background-position: 0% 50%; } }
+@keyframes scene-search-edge {
+  0%, 100% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 15%, transparent); text-shadow: 0 0 1px color-mix(in srgb, var(--rs-ink) 5%, transparent); }
+  50% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 35%, transparent); text-shadow: 0 0 3px color-mix(in srgb, var(--rs-ink) 24%, transparent); }
+}
+@media (max-width: 460px) {
+  .scene-search-detail { padding-left: 8px; min-height: 48px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-search-step .scene-search-ring, .scene-search-detail > span { animation: none !important; }
+  .scene-search-fill { transition: none; }
+  .scene-search-detail.is-running > span { background: none; color: var(--rs-sub); }
+}
+.rs.flow .panel > .kv-src { margin-top: 12px !important; font-size: 13px; color: var(--rs-sub); }
+
+/* ============================================================
+   결과 없음·다시 찾기 / 실패 / 위반 미관찰(위쪽 안내만) — 같은 틀(.state-page)
+   ============================================================ */
+.notobs-legacy { display: contents; }
+/* 세 화면 모두 결과 화면처럼 면 없는 틀 — 「신고자료」 → 큰 제목 → 설명 → 버튼 */
+.rs.state-page { width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 0 8px; display: flex; flex-direction: column; gap: 12px; }
+/* 위반 미관찰은 아래 후보 그리드와 같은 줄에 맞춘다 */
+.rs.state-page.notobs { max-width: none; margin: 0; }
+.state-context { margin: 0; font-size: 17px; font-weight: 500; color: var(--rs-sub); }
+.state-card { display: flex; flex-direction: column; gap: 12px; }
+.state-head, .failed-head { margin: 0 0 4px; font-size: var(--rs-h2); font-weight: 700; line-height: 1.25; letter-spacing: -0.025em; color: var(--rs-ink); }
+/* 실패 — 빨강은 오류 아이콘과 짧은 핵심 안내에만 */
+.failed-head { display: flex; align-items: center; gap: 12px; color: var(--red); }
+.failed-head svg { flex: 0 0 auto; }
+.state-cause { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.6; color: var(--rs-ink); }
+.state-body { margin: 0; font-size: 16px; line-height: 1.65; color: var(--rs-ink); }
+.connection-retry-status { display: flex; align-items: center; gap: 8px; }
+.connection-retry-note { margin: 4px 0 0 24px; color: var(--rs-sub); }
+.state-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+/* 실제 흐름(?api)의 요청 실패 알림 — 화면 맨 위, 결과 화면 실패 안내와 같은 모양 */
+.rs.rs-banner {
+  display: flex; align-items: center; gap: 12px; width: 100%; max-width: 1120px; margin: 24px auto 0; padding: 14px 18px;
+  border-radius: 14px; background: var(--red-soft); color: var(--red); font-size: 16px; font-weight: 600; line-height: 1.5;
+}
+.rs.rs-banner > svg { flex: 0 0 auto; }
+
+/* 결과 없음 — 첫 패널은 면 없이 큰 제목, 두 번째(다시 찾기)는 연회색 면 */
+.rs.noresult .panel { border: 0; box-shadow: none; }
+.rs.noresult > .panel:first-of-type { padding: 0; background: none; border-radius: 0; }
+.rs.noresult > .panel:first-of-type > .panel-title {
+  margin: 0 0 12px; font-size: var(--rs-h2); font-weight: 700; line-height: 1.25; letter-spacing: -0.025em;
+}
+.rs.noresult > .panel:first-of-type > .kv-src { margin: 0; font-size: 16px; line-height: 1.65; color: var(--rs-ink); }
+.rs.noresult .kv.kv-rows { margin-top: 28px; border-top: 1px solid var(--rs-line); }
+.rs.noresult .kv-row { grid-template-columns: 140px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rs-line-soft); align-items: baseline; }
+.rs.noresult .kv-k { padding: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.rs.noresult .kv-val, .rs.noresult .kv-val.mono {
+  font-family: inherit; font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--rs-ink); font-variant-numeric: tabular-nums;
+}
+.rs.noresult > .panel + .panel { margin-top: 20px; padding: 32px; background: var(--rs-fill); border-radius: 18px; }
+.rs.noresult > .panel + .panel > .panel-title { margin: 0 0 4px; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+.rs.noresult > .panel + .panel .kv-src { margin: 0; font-size: 15px; color: var(--rs-sub); }
+
+/* 기존 .btn을 쓰는 버튼(다시 찾기)도 같은 알약 모양으로 */
+.rs .btn {
+  min-height: 44px; padding: 0 22px; border-radius: 980px; box-shadow: none;
+  font-family: inherit; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+  transition: background-color .3s var(--rs-ease), border-color .2s var(--rs-ease), transform .12s var(--rs-ease);
+}
+.rs .btn:hover { box-shadow: none; }
+.rs .btn.pri { background: var(--rs-ink); border-color: var(--rs-ink); color: #fff; }
+.rs .btn.pri:hover { background: #424245; border-color: #424245; }
+.rs .btn:active:not(:disabled) { transform: scale(.98); }
+.rs .btn.cta { align-self: flex-end; justify-self: end; min-width: 0; }
+
+/* ============================================================
+   신고자료 결과 · 하위 화면(다른 후보 · 번호판 확인 · 어떻게 정했는지) · 위반 미관찰 후보
+   큰 상태 문장 → 영상과 번호판 → 신고서 초안 → 안전신문고 연결 순서로 크기와 여백만으로 위계를
+   나눈다. 공용 부품(후보 카드·값 행·상태 배지)은 개발용 화면에서도 쓰므로 .rs 안에서만 바꾼다.
+   ============================================================ */
+.web-main:has(> .rs.result), .web-main:has(> .rs.sub), .web-main:has(.rs.notobs) { max-width: 1160px; }
+.rs .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.rs .rs-btn.sm { min-height: 36px; padding: 0 16px; font-size: 14px; }
+
+/* 상태 배지 — 출처·사용자 확인은 검정 점, AI 추정은 회색 점, 확인 필요만 주황, 알 수 없음은 빈 원 */
+.rs .badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border: 1px solid transparent; border-radius: 980px; background: var(--rs-fill);
+  font-size: 13px; font-weight: 600; line-height: 1; color: var(--rs-ink); white-space: nowrap;
+}
+.rs .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rs-ink); }
+.rs .badge-estimated { color: var(--rs-sub); }
+.rs .badge-estimated .dot { background: var(--rs-line-strong); }
+.rs .badge-attention { background: var(--orange-soft); color: var(--orange-ink); }
+.rs .badge-attention .dot { background: var(--orange); }
+.rs .badge-unknown { background: #fff; border-color: var(--rs-line); color: var(--rs-sub); }
+.rs .badge-unknown .dot { background: #fff; box-shadow: inset 0 0 0 1.5px var(--rs-line-strong); }
+
+/* ── 결과 ── */
+.rs.result { position: relative; isolation: isolate; width: 100%; max-width: 1120px; margin: 0 auto; padding: 48px 0 24px; display: flex; flex-direction: column; gap: 44px; }
+/* 도착한 자동차(components/ArrivingCar.tsx) — 첫 화면과 같은 차가 제목 오른쪽 뒤에 선다. 글자 뒤(z-index -1)라
+   읽기·누르기를 막지 않는다. 바퀴가 아래 양식의 위 선(머리글 아래 44px)에 닿게 머리글 아래끝 기준으로 둔다 —
+   원본에서 바퀴 바닥은 높이의 약 85%라 520×260이면 그림 아래끝이 선보다 39px 아래, 곧 머리글보다 83px 아래다.
+   평소(하위 화면에서 돌아옴 등)에는 10% 흐린 배경으로 서 있다.
+   진행에서 막 넘어왔을 때(「아주 화려하게」, 사용자 결정 10/23) — 선명한 차가 오른쪽 밖(900px)에서 바퀴를 굴리며
+   들어와 점점 느려지고(0.1~1.1초, 대부분 0.6초 전에 섬), 0.38초부터 브레이크 연기·스키드 자국, 앞으로 숙였다
+   출렁이며 서고, 0.55초에 머리글이 쿵 울리며 바닥 파동이 퍼진다. 1.9초부터 0.7초 동안 흐린 배경으로 옅어진다 */
+.res-head { position: relative; }
+.res-bgcar { position: absolute; right: 0; bottom: -83px; z-index: -1; width: 520px; height: 260px; opacity: .10; pointer-events: none; }
+.res-car-drive, .res-car-body { position: absolute; inset: 0; }
+.res-car-body > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.res-car-wheel { position: absolute; }
+.res-car-wheel img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.res-bgcar.is-arriving { animation: res-settle 2.6s linear both; }
+.res-bgcar.is-arriving .res-car-drive { animation: res-drive 1s cubic-bezier(.16, 1, .3, 1) .1s both; }
+.res-bgcar.is-arriving .res-car-wheel .spin { animation: res-roll 1s cubic-bezier(.16, 1, .3, 1) .1s both; }
+.res-bgcar.is-arriving .res-car-body { transform-origin: 50% 85%; animation: res-pitch .8s ease-out .32s both; }
+.rs.result:has(.res-bgcar.is-arriving) .res-head { animation: rs-quake .4s linear .55s; }
+@keyframes res-settle { 0%, 73% { opacity: 1; } 100% { opacity: .10; } }
+@keyframes res-drive { from { transform: translateX(900px); } }
+/* 900px ÷ 화면 속 타이어 반지름(123 × 520/1774 ≈ 36px) ≈ 1430도 */
+@keyframes res-roll { from { transform: rotate(1430deg); } }
+@keyframes res-pitch {
+  0% { transform: rotate(0); } 30% { transform: rotate(-2.2deg); } 55% { transform: rotate(1deg); }
+  78% { transform: rotate(-.35deg); } 100% { transform: rotate(0); }
+}
+.res-skid {
+  position: absolute; left: var(--x); top: var(--y); width: 0; height: 3px; border-radius: 2px; background: rgba(29, 29, 31, .28);
+  animation: res-skid 1.6s ease-out .36s both;
+}
+@keyframes res-skid { 0% { width: 0; opacity: 1; } 35% { width: 90px; opacity: 1; } 100% { width: 90px; opacity: 0; } }
+.res-ground-ring {
+  left: calc(50% - 24px); top: 214px; width: 48px; height: 14px;
+  animation: res-ring .8s ease-out var(--d) both;
+}
+@keyframes res-ring { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(9, 4); } }
+body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
+/* 머리글 안내 띠는 차 자리(오른쪽 520px + 여백)까지 오지 않는다 — 선명하게 도착하는 차가 띠 뒤에 잘리지
+   않고, 띠 안 버튼도 차에 가리지 않는다 */
+.res-head .res-notices { margin-right: 544px; }
+.res-head { display: flex; flex-direction: column; gap: 12px; }
+.res-head .state-context { margin: 0; }
+.res-title { margin: 0; font-size: var(--rs-h1); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }
+.res-counts { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 4px 0 0; padding: 0; font-size: 15px; color: var(--rs-sub); }
+.res-count { display: inline-flex; align-items: center; gap: 7px; }
+.res-count b { font-weight: 650; color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.res-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rs-line-strong); }
+.res-count.is-info_needs_review .res-dot { background: var(--orange); }
+.res-count.is-info_unknown .res-dot { background: #fff; box-shadow: inset 0 0 0 1.5px var(--rs-line-strong); }
+.res-count.is-info_source_verified .res-dot, .res-count.is-info_user_confirmed .res-dot { background: var(--rs-ink); }
+.res-notices { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 8px 0 0; padding: 0; }
+.res-notice { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: var(--rs-fill); font-size: 16px; line-height: 1.5; }
+.res-notice > svg { flex: 0 0 auto; color: var(--rs-sub); }
+.res-notice-text { flex: 1; min-width: 0; }
+.res-notice.is-review { background: var(--orange-soft); }
+.res-notice.is-review > svg { color: var(--orange); }
+.res-notice.is-fail { background: var(--red-soft); }
+.res-notice.is-fail > svg { color: var(--red); }
+.res-notice.is-fail .res-notice-text { font-weight: 600; color: var(--red); }
+
+/* 신고 상황 응답(응답 전) — 정리한 상황 · 근거 장면 자리 · 응답 뒤에 정해질 값 · 응답 버튼 */
+/* 왼쪽 근거 장면(480px), 오른쪽 정리한 상황 → 응답 뒤 정해질 값 → 응답 버튼 → 다른 후보(사용자 결정 10/23) */
+.res-situation {
+  display: grid; grid-template-columns: 480px minmax(0, 1fr); column-gap: 40px; row-gap: 16px; align-items: start;
+  padding-top: 32px; border-top: 1px solid var(--rs-line);
+}
+.res-situation > .res-sec-head { grid-column: 1 / -1; }
+.res-situation > .res-frame { grid-column: 1; grid-row: 2 / span 4; }
+.res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 2; justify-self: start; }
+/* 근거 장면이 없으면 한 칸으로 — 왼쪽 자리를 비워 두지 않는다 */
+.res-situation:not(:has(> .res-frame)) { grid-template-columns: minmax(0, 1fr); }
+.res-situation:not(:has(> .res-frame)) > :not(.res-sec-head) { grid-column: 1; }
+.res-situation-text { margin: 0; font-size: 20px; font-weight: 500; line-height: 1.55; overflow-wrap: anywhere; }
+.res-pending { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 16px 0; list-style: none; border-top: 1px solid var(--rs-line-soft); border-bottom: 1px solid var(--rs-line-soft); justify-self: stretch !important; }
+.res-pending li { display: flex; gap: 16px; }
+.res-pending-k { min-width: 80px; font-size: 15px; color: var(--rs-sub); }
+.res-pending .res-val { font-size: 16px; }
+.res-situation .res-actions { justify-content: flex-start; }
+/* 신고 내용(완성 신고문) — 그대로 붙여넣을 덩어리를 연회색 상자로, 복사는 상자 오른쪽 위(사용자 결정 10/23) */
+.res-report { position: relative; display: block; width: 100%; max-width: 760px; padding: 18px 104px 18px 22px; border-radius: 14px; background: var(--rs-fill); }
+.res-report .rs-btn { position: absolute; top: 14px; right: 14px; }
+.res-report-text { white-space: pre-wrap; font-weight: 500; }
+
+/* 신고 양식 — 왼쪽 칸 이름(안전신문고 양식 순서), 오른쪽 값. 값 바로 옆에 상태 배지와 복사, 아래에 출처 */
+.res-form { padding-top: 32px; border-top: 1px solid var(--rs-line); }
+.res-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.res-sec-head h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.res-link {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px 2px; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink); cursor: pointer;
+}
+.res-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.res-item { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--rs-line-soft); }
+.res-item.is-review { margin: 0 -16px; padding: 22px 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
+.res-item-k { margin: 0; padding-top: 3px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.res-item-pick { margin: 4px 0 0; font-size: 13px; color: var(--rs-sub); }
+/* 주황 면 위에서도 배지 모양이 보이게 이 칸의 「확인 필요」 배지만 흰 바탕 */
+.res-item.is-review .badge-attention { background: #fff; }
+.res-item-v { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.res-val-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.res-val { font-size: 18px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.res-val.is-none { font-weight: 500; color: var(--rs-sub); }
+.res-hint { margin: 0; font-size: 14px; line-height: 1.55; color: var(--rs-sub); }
+.res-hint.is-fail { color: var(--red); }
+.res-missing { margin: 0; font-size: 16px; line-height: 1.6; color: var(--rs-sub); }
+.res-keyword { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 4px 0 0; }
+.res-keyword-k { font-size: 14px; color: var(--rs-sub); }
+.res-keyword-v { font-size: 16px; font-weight: 600; }
+/* 검색어를 못 만들었을 때 — 검색어 자리에 안내만. 주황(확인 필요)은 쓰지 않는다 */
+.res-keyword-missing { display: flex; align-items: flex-start; gap: 6px; margin: 4px 0 0; font-size: 14px; line-height: 1.55; color: var(--rs-ink); }
+.res-keyword-missing svg { flex: 0 0 auto; margin-top: 3px; color: var(--rs-sub); }
+
+/* 동영상 — 미리보기 자리(왼쪽)와 다운로드·상태·다른 후보(오른쪽) */
+.res-video { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; }
+.res-frame {
+  aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 0 16px; border-radius: var(--rs-r-media); background: var(--rs-fill); color: var(--rs-sub); font-size: 15px; text-align: center;
+}
+.res-video-side { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.res-video-cap { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rs-ink); }
+.res-video-side .res-link { margin-top: 6px; }
+
+/* 차량 번호 — 큰 번호판과 확인·수정 진입점을 한 칸에 */
+.res-plate { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.res-plate-v { margin: 0; font-size: 44px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.res-plate-v.is-none { font-size: 24px; font-weight: 600; color: var(--rs-sub); }
+.res-plate-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.res-src { font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-plate-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
+.res-k { margin: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+
+/* 연결 안 된 notice 동작 — 누를 수 없고 이유를 옆에 적는다 */
+.res-action-off { display: inline-flex; align-items: center; gap: 8px; }
+.res-off-why { font-size: 13px; color: var(--rs-sub); white-space: nowrap; }
+.state-actions .res-action-off .res-off-why { font-size: 14px; }
+
+/* 안전신문고 연결 — 접수가 아니라 이동이라는 안내를 버튼 바로 옆에 둔다 */
+.res-handoff {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 32px; align-items: center;
+  padding: 28px 32px; border-radius: 18px; background: var(--rs-fill);
+}
+.res-disclaimer { margin: 0; font-size: 15px; line-height: 1.65; color: var(--rs-ink); }
+.res-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.res-block-note { grid-column: 1 / -1; margin: 0; font-size: 14px; line-height: 1.55; color: var(--rs-sub); }
+/* 복사 결과 — 버튼 아래 여백에 잠깐 뜬다(자리를 차지하지 않음) */
+.res-toast { position: absolute; right: 32px; bottom: 6px; margin: 0; font-size: 14px; }
+.res-toast span { font-weight: 600; color: var(--rs-ink); animation: rs-fade-in .2s var(--rs-ease) both; }
+
+/* ── 하위 화면 공통 ── */
+.rs.sub { width: 100%; max-width: 1120px; margin: 0 auto; padding: 40px 0 24px; display: flex; flex-direction: column; gap: 32px; }
+.sub-head { display: flex; align-items: center; gap: 14px; }
+.sub-back {
+  display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--rs-line); border-radius: 50%; background: #fff; color: var(--rs-ink); cursor: pointer;
+  transition: border-color .2s var(--rs-ease);
+}
+.sub-back:hover { border-color: var(--rs-ink); }
+.sub-title { margin: 0; font-size: var(--rs-h2); font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; }
+.sub-title:focus { outline: none; }
+
+/* 공용 값 행(DisplayRow) — 자세히 보기·근거 화면에서만 */
+.rs.sub .panel { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.rs.sub .panel-title { margin: 0 0 12px; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+.rs.sub .kv-rows { border-top: 1px solid var(--rs-line); }
+/* 상태 배지를 값 바로 옆에 — 값 칸을 내용 폭만큼만 잡는다 */
+.rs.sub .kv-row { grid-template-columns: 120px fit-content(560px) auto; justify-content: start; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--rs-line-soft); }
+.rs.sub .kv-row.est { margin: 0; padding: 16px 0; background: none; border-bottom-color: var(--rs-line-soft); }
+.rs.sub .kv-row.act { margin: 0 -16px; padding: 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
+.rs.sub .kv-k { padding-top: 2px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.rs.sub .kv-val { font-size: 18px; font-weight: 600; line-height: 1.45; color: var(--rs-ink); }
+.rs.sub .kv-val.unk { font-weight: 500; color: var(--rs-sub); }
+.rs.sub .kv-src { margin-top: 4px; font-size: 14px; font-weight: 400; color: var(--rs-sub); }
+.rs.sub .panel > .kv-src { margin-top: 14px !important; font-size: 15px; color: var(--rs-ink); }
+
+/* 어떻게 정했는지 — 왼쪽 기준 장면, 오른쪽 그 장면에서 정한 값 */
+.details-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 48px; align-items: start; }
+
+/* 번호판 확인 — 장면(넓게) | 확대 + 값·수정 */
+.plate-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 48px; align-items: start; }
+.plate-side { display: flex; flex-direction: column; gap: 32px; }
+.plate-fig { margin: 0; }
+.plate-fig figcaption { margin-top: 12px; font-size: 14px; color: var(--rs-sub); }
+.plate-frame {
+  aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  border-radius: var(--rs-r-media); background: var(--rs-fill); color: var(--rs-sub); font-size: 15px;
+}
+.plate-frame.plate-crop { aspect-ratio: 3 / 1; }
+.res-frame, .plate-frame { overflow: hidden; }
+.res-frame > img, .plate-frame > img { width: 100%; height: 100%; object-fit: contain; }
+.plate-value { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 24px; border-top: 1px solid var(--rs-line); }
+.plate-value > .rs-btn { margin-top: 10px; }
+.plate-ai { margin: 0; font-size: 15px; color: var(--rs-sub); }
+.plate-ai b { margin-left: 6px; font-weight: 600; color: var(--rs-ink); }
+.plate-local { margin: 0; font-size: 14px; color: var(--rs-sub); }
+.plate-form { display: flex; flex-direction: column; gap: 14px; align-self: stretch; }
+.plate-input {
+  width: 100%; height: 64px; padding: 0 18px; border: 1px solid var(--rs-ink); border-radius: 14px; background: #fff;
+  font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink);
+}
+.plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
+.plate-form-actions { display: flex; gap: 10px; }
+/* 설명 고치기(#410) — 업로드 화면의 입력 틀을 하위 화면에서 다시 쓴다 */
+.hint-page .rs-field { margin-top: 24px; }
+.hint-page .rs-actions { gap: 10px; flex-wrap: wrap; }
+
+/* 후보 카드 · 기억 단서(다른 후보 · 위반 미관찰 · 어떻게 정했는지) */
+.rs .cands { gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.rs .cand-col { gap: 12px; }
+.rs .cand { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--rs-line); border-radius: 18px; background: #fff; box-shadow: none; }
+.rs .cand.sel { border-color: var(--rs-ink); box-shadow: inset 0 0 0 1px var(--rs-ink); }
+.rs .cand-th { border-bottom: 0; background: var(--rs-fill); }
+/* 미리보기 빈 자리 — 결과·번호판 확인과 같은 필름 아이콘 + 15px 회색 글자 */
+.rs .cand-th { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--rs-sub); }
+.rs .cand-th-ico { display: block; }
+.rs .cand-th-note { font-size: 15px; font-weight: 400; color: var(--rs-sub); }
+.rs .cand-b { gap: 12px; padding: 18px 20px 20px; }
+.rs .cand-h { gap: 10px; }
+.rs .cnum { width: 26px; height: 26px; flex-basis: 26px; border: 1.5px solid var(--rs-line-strong); background: #fff; color: var(--rs-ink); font-family: inherit; font-size: 13px; font-weight: 700; }
+.rs .cand.sel .cnum { border-color: var(--rs-ink); background: var(--rs-ink); color: #fff; }
+.rs .cand-tc { font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+/* 기준 후보 표시는 미리보기 왼쪽 위 — 카드마다 본문 줄 위치가 같아 나란히 비교하기 쉽다 */
+.rs .cand { position: relative; }
+.rs .cand-tag { position: absolute; top: 12px; left: 12px; margin: 0; padding: 5px 11px; border: 0; background: var(--rs-ink); color: #fff; font-size: 12px; font-weight: 600; }
+.rs .cand-obs { min-height: 3em; font-size: 15px; font-weight: 500; line-height: 1.5; color: var(--rs-ink); }
+.rs .cand-meta { gap: 10px; padding-top: 14px; border-top-color: var(--rs-line-soft); }
+.rs .cand-meta dt { font-size: 13px; font-weight: 500; color: var(--rs-sub); }
+.rs .cand-meta dd { font-size: 15px; font-weight: 600; color: var(--rs-ink); }
+.rs .cand .badge { align-self: flex-start; }
+.rs .cand-col > .btn {
+  min-height: 44px; border: 1px solid var(--rs-line); border-radius: 980px; background: #fff; box-shadow: none;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink);
+  transition: border-color .2s var(--rs-ease), background-color .2s var(--rs-ease), color .2s var(--rs-ease);
+}
+.rs .cand-col > .btn:hover { border-color: var(--rs-ink); background: var(--rs-ink); color: #fff; }
+.rs .hint-recall { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 24px; padding: 0; border: 0; border-radius: 0; background: none; }
+.rs .hint-recall .sec-label { margin: 0; padding: 0; border: 0; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
+.rs .hint-chip { padding: 7px 14px; border: 0; background: var(--rs-fill); }
+.rs .hint-chip-k { font-size: 13px; font-weight: 500; color: var(--rs-sub); }
+.rs .hint-chip-v { font-size: 15px; font-weight: 600; color: var(--rs-ink); }
+.rs .hint-none { font-size: 15px; font-weight: 400; color: var(--rs-sub); }
+.rs.notobs-cands { margin-top: 8px; }
+.rs.notobs-cands .panel, .rs.cands-page .panel { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.rs.notobs-cands .panel-title, .rs.cands-page .panel-title { margin: 0 0 16px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.details-scene .cand-obs { min-height: 0; }
+
+/* 낮은 PC 화면(1280×800 등) — 진행 화면의 단계 목록 마지막 줄이 화면 아래끝에 걸리지 않게 위 여백과
+   두 행 사이만 줄인다. 글자 크기는 그대로다 */
+@media (min-width: 641px) and (max-height: 860px) {
+  .rs.flow { padding-top: 16px; row-gap: 20px; }
+  .rs.result { padding-top: 24px; gap: 32px; }
+  .rs.sub { padding-top: 24px; gap: 24px; }
+}
+
+@media (max-width: 640px) {
+  .rs.upload, .rs.flow { padding-top: 32px; }
+  .rs.flow { grid-template-columns: 1fr; }
+  .flow-steps { grid-column: 1; grid-row: 3; }
+  .rs-lede { margin-bottom: 32px; font-size: 16px; }
+  .rs-drop-in { padding: 40px 18px 32px; }
+  .rs-drop.is-idle .rs-drop-in, .rs-drop.is-uploading .rs-drop-in { min-height: 0; }
+  .rs-field { margin-top: 32px; }
+  .rs-actions .rs-btn { width: 100%; }
+}
+
+/* 움직임 줄이기 — 나타나기·이동·크기 변화·높이 애니메이션을 없애고 색 변화만 짧게 남긴다.
+   회전 표시는 멈추고, 상태는 아이콘과 문구(업로드 중·업로드 완료·업로드 실패)로 구분한다. */
+@media (prefers-reduced-motion: reduce) {
+  .rs *, .rs-header * {
+    animation: none !important;
+    transition-property: background-color, border-color, color !important;
+    transition-duration: .1s !important;
+  }
+  .rs-btn:active:not(:disabled), .rs .btn:active:not(:disabled) { transform: none; }
+  .rs-screen, .rs .flow-now, .flow-partial { animation: none !important; }
+  .rs .flow-now-leaving, .rs-upload-exit { display: none; }
+  .rs.flow.rs-push-in { animation: none !important; }
+  .flow-car { transition: none !important; }
+  .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
+  .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs-spin-sm { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
+  .rs-vcard { display: none; }
+  .rs-check path { stroke-dashoffset: 0; }
+  /* 자동차 출발·진행·도착 연출 — 출발은 위의 복사본(.rs-upload-exit)째 숨는다. 연기·속도선·잔상·스키드 자국·
+     파동은 애니메이션이 없으면 투명하게 남아 보이지 않고, 도착한 차는 제자리에 10% 흐린 배경으로 서 있다.
+     「장면 찾기」 박스 연출은 통째로 숨겨 정지 화면만 보인다 */
+  .flow-search-fx { display: none; }
+  .flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: visible; }
+}

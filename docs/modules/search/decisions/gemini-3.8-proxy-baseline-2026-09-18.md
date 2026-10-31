@@ -12,6 +12,8 @@
 > (`files.upload`·`interactions.create` 서술은 당시 기준). 결정 2의 FPS 값은 이 경로에서 모델 입력에
 > 반영되지 않는다 — [09-28 실험](../experiments/gemini-proxy-video-sampling-2026-09-28.md). 처리 방향은 미정.
 
+> 2026-10-27: 모델(`gemini-3.8-flash`) · 기본 base URL 항목은 [argon 전환 결정](search-argon-model-2026-10-27.md)으로 대체됐다.
+
 ## 결정
 
 1. **모델 기본값을 `gemini-3.8-flash`로 올린다.** Interactions API 호출 구조는 3.7과 같다. 토큰/비용/품질 재측정은 여전히 필요하지만 baseline 자체는 3.8로 둔다.

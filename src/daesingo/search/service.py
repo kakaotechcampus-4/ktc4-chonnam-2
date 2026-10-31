@@ -2,6 +2,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from daesingo.common.usage.port import UsageSink
+
 from .coarse import (
     CoarseExecutionDependencies,
     LinkedCoarseResult,
@@ -14,6 +16,7 @@ from .fine import normalize_event_type, verify_fine
 from .ledger import SearchLedger
 from .media_contract import CoarseMediaPreparer
 from .provider import SearchProvider
+from .progress import SearchProgress
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef, RunId
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .sources import AnalysisSourceResolver
@@ -33,7 +36,10 @@ class SearchService:
         default_factory=dict, init=False, repr=False
     )
 
-    def search_candidates_linked(self, scope: AnalysisScope) -> LinkedCoarseResult:
+    def search_candidates_linked(
+        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None,
+        on_progress: SearchProgress | None = None,
+    ) -> LinkedCoarseResult:
         """Return coarse search result together with source linkage.
 
         실행 상한은 scope.budget.max_latency_sec 하나이고(#149 A안), 시계는 이 호출
@@ -49,13 +55,18 @@ class SearchService:
                 ledger=self.ledger,
                 media_preparer=self.media_preparer,
                 deadline=RunDeadline(self.monotonic, budget_ms),
+                usage_sink=usage_sink,
+                on_progress=on_progress,
             ),
         )
         self._run_budget_ms[linked.result.analysis_run.run_id] = budget_ms
         return linked
 
-    def search_candidates(self, scope: AnalysisScope) -> CandidateSearchResult:
-        return self.search_candidates_linked(scope).result
+    def search_candidates(
+        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None,
+        on_progress: SearchProgress | None = None,
+    ) -> CandidateSearchResult:
+        return self.search_candidates_linked(scope, usage_sink=usage_sink, on_progress=on_progress).result
 
     def verify_visual(
         self,
@@ -65,6 +76,7 @@ class SearchService:
         event_type: str | VisualEventType = VisualEventType.SOLID_LINE_LANE_CHANGE,
         *,
         max_latency_sec: int | None = None,
+        usage_sink: UsageSink | None = None,
     ) -> VisualVerificationResult:
         """Fine 실행 상한을 받아, 호출마다 새 시계로 센다.
 
@@ -73,7 +85,7 @@ class SearchService:
         상한을 이어받는다. FINE_VERIFY는 COARSE_SEARCH와 다른 Job이라
         (contract-job-record-case-view.md §110) Coarse에서 쓴 시간이 깎이지 않는다.
         """
-        # ponytail: 메모리 fallback은 Case/Runtime이 FINE_VERIFY Job에서 값을 넘기기 시작하면 제거.
+        # 메모리 fallback은 Case/Runtime이 FINE_VERIFY Job에서 값을 넘기기 시작하면 제거.
         if max_latency_sec is not None:
             budget_ms = max_latency_sec * 1000
         else:
@@ -91,4 +103,5 @@ class SearchService:
             self.ledger,
             self.media_preparer,
             RunDeadline(self.monotonic, budget_ms),
+            usage_sink,
         )

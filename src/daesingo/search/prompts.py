@@ -38,6 +38,9 @@ def load_prompt(version: str) -> PromptTemplate:
 
 COARSE_PROMPT = load_prompt("coarse-p3")
 FINE_PROMPT = load_prompt("fine-p3")
+# 분기부 안전지대 오탐을 UNCERTAIN으로 돌리는 문장(experiments/search-structure-confirmation-plan-2026-10-26.md §6.4).
+FINE_GORE_NOTE = load_prompt("fine-gore-v1")
+FINE_PROMPT_VERSION = f"{FINE_PROMPT.version}+{FINE_GORE_NOTE.version}"
 PLAYBACK_NOTE = load_prompt("playback-slowdown-v1")
 
 
@@ -62,9 +65,11 @@ def sent_prompt_fingerprint(template: PromptTemplate, playback_speed: float) -> 
 def fine_prompt_for(event_type: VisualEventType) -> PromptTemplate:
     suffix = event_type.value.lower().replace("_", "-")
     delta = load_prompt(f"fine-p3-{suffix}")
-    text = f"{FINE_PROMPT.text.rstrip()}\n\n{delta.text}"
+    text = (
+        f"{FINE_PROMPT.text.rstrip()}\n\n{delta.text.rstrip()}\n\n{FINE_GORE_NOTE.text}"
+    )
     return PromptTemplate(
-        version=FINE_PROMPT.version,
+        version=FINE_PROMPT_VERSION,
         text=text,
         fingerprint=sha256(text.encode("utf-8")).hexdigest(),
         placeholders=FINE_PROMPT.placeholders,
