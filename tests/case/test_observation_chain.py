@@ -473,3 +473,44 @@ def test_reread_copies_scope_ref_and_observation_input_of_prior_readout():
     assert reread["job_id"] != prior["job_id"]
     assert (reread["scope_ref"], reread["input_fingerprint"]) == (prior["scope_ref"], prior["input_fingerprint"])
     assert store.observation_input(case_id, reread["job_id"]) == store.observation_input(case_id, prior["job_id"])
+
+
+# ── INCIDENT_CLIP_BUILD 실패 표시(#297 후속) ───────────────────────────────
+
+
+CLIP_FAILED = "recording.incident_clip_build_failed"
+
+
+def _clip_failed() -> tuple[CaseStore, str]:
+    store, case_id, _, _, _ = _after_fine("OBSERVED")
+    _reflect(store, case_id, _latest(store, case_id, "INCIDENT_CLIP_BUILD"), status="FAILED")
+    return store, case_id
+
+
+def test_clip_failure_shows_notice_and_no_running_readouts():
+    store, case_id = _clip_failed()
+
+    view = service.get_view(case_id, store=store)
+
+    notice = next(n for n in view["notices"] if n["code"] == CLIP_FAILED)
+    assert notice == {"code": CLIP_FAILED, "severity": "ERROR", "blocking": True,
+                      "message_key": "notice.incident_clip_build_failed", "actions": []}
+    assert view["running_jobs"] == []
+    # 발주되지 않은 판독을 진행 중으로 보이지 않는다(#297 수락 기준 2).
+    assert {s["step"]: s["state"] for s in view["progress"]}.get("plate_read") != "RUNNING"
+    assert {s["step"]: s["state"] for s in view["progress"]}.get("overlay_time_read") != "RUNNING"
+
+
+def test_clip_success_has_no_clip_failed_notice():
+    store, case_id, _, _, _ = _after_fine("OBSERVED")
+    _reflect(store, case_id, _latest(store, case_id, "INCIDENT_CLIP_BUILD"), {"incident_clip_ref": "clip_1"})
+
+    assert CLIP_FAILED not in [n["code"] for n in service.get_view(case_id, store=store)["notices"]]
+
+
+def test_clip_failure_of_other_candidate_is_not_shown():
+    # 실패한 clip은 cand_1 것이다. 다른 후보로 옮기면 그 후보의 실패가 아니라 notice가 없다.
+    store, case_id = _clip_failed()
+    _move_selection(store, case_id, "cand_2")
+
+    assert CLIP_FAILED not in [n["code"] for n in service.get_view(case_id, store=store)["notices"]]

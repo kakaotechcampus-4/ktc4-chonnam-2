@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 from typing import Any, Literal
 
 from daesingo.case import jobs
+from daesingo.case.observation import selected_clip_failed
 from daesingo.case.analysis_start import (
     InitialSearchBudget,
     hint_unclear,
@@ -242,6 +243,7 @@ def build_view_from_adapter(
         search_retry_basis=jobs.latest_job_record(case, "COARSE_SEARCH") is not None,
         report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
         analysis_timed_out=case.analysis_timed_out,
+        clip_build_failed=selected_clip_failed(case),
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -327,6 +329,18 @@ VISUAL_VERIFY_FAILED_NOTICE: dict[str, Any] = {
     "severity": "ERROR",
     "blocking": True,
     "message_key": "notice.visual_verify_failed",
+    "actions": [],
+}
+
+
+# IncidentClip 준비 실패(#297 후속, `incident-clip-observation-input.md` §6). 판독이 발주되지 않아 Package가 나가지 않으므로
+# blocking이다. 같은 후보의 clip을 다시 내는 action은 닫힌 `actions[]` 목록에 없어 비운다 — 출구는 「다른 후보 보기」이고,
+# 다시 이 후보를 고르면 빠진 clip부터 새 job으로 발주한다(§4-6). 접두어는 clip을 만드는 recording을 따른다.
+INCIDENT_CLIP_BUILD_FAILED_NOTICE: dict[str, Any] = {
+    "code": "recording.incident_clip_build_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.incident_clip_build_failed",
     "actions": [],
 }
 
@@ -470,6 +484,7 @@ def derive_notices(
     report_video_export_basis: bool = False,
     hint_unclear: bool = False,
     analysis_timed_out: bool = False,
+    clip_build_failed: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -504,6 +519,8 @@ def derive_notices(
     - `search.visual_verify_failed` — evidence가 없고, Fine의 대표 실행 상태(`visual_verify_status`, read port
       조회 결과에서 `build_view_from_adapter()`가 고름)가 terminal 실패(`FAILED` · 재시도가 끝난 `STALE`)일 때(8-14). 진행 상태에
       Fine step이 없어 CaseView 값만으로는 조립 전과 구분되지 않는다.
+    - `recording.incident_clip_build_failed` — 현재 선택 후보의 가장 나중 IncidentClip 준비가 `FAILED`로 끝났을 때
+      (`clip_build_failed`, aggregate 판정 `observation.selected_clip_failed`, #297 후속). action은 없다.
     - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
@@ -556,6 +573,8 @@ def derive_notices(
         derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
     if evidence is None and execution_failed(visual_verify_status):
         derived.append(VISUAL_VERIFY_FAILED_NOTICE)
+    if clip_build_failed:
+        derived.append(INCIDENT_CLIP_BUILD_FAILED_NOTICE)
     # Fine `UNCERTAIN` 응답 대기는 evidence가 없어 CaseView 값만으로는 조립 중과 같아 보인다 —
     # 음성 결과와 같은 방식으로 adapter의 Fine 판정을 본다(PR #224 리뷰).
     if evidence is None and visual_evidence_decision == AWAIT_SITUATION_RESPONSE and awaiting_response:
