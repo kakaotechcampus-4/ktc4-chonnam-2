@@ -33,3 +33,27 @@ to existing `recording.report_video_export_failed` and
 plate failure notice with no same-input `GENERATE_PLATE_IMAGE` action.
 The bounded strategy and deferred items are in the
 [Implementation Notes](../../../runtime/rt10b-recording-exports.md).
+
+## #425 analysis input preparation — 2026-10-31 request specification
+
+The following literal is adopted by this implementation request. It is not a
+terminal value previously approved in the #425 Owner comment.
+
+| Capability error, only from that invocation | JobExecution status | failure_kind | produced |
+| --- | --- | --- | --- |
+| `prepare_analysis_source_from_resolution`: `RecordingCapabilityError.code == "UNSUPPORTED_MEDIA"` | `FAILED` | `RECORDING_UNSUPPORTED_MEDIA` | `[]` |
+
+Applies to the shared production analysis input preparation for `COARSE_SEARCH`
+and `FINE_VERIFY`, not `HINT_EXTRACT`. This is not an automatic prefix rule or a
+global Recording exception converter. Unknown codes, input/metadata reads,
+factory configuration, DB/transaction/commit/persistence errors, checkpoints,
+cancellation, usage, Search/provider calls and context exit/cleanup retain their
+existing boundaries. The factory catches only the single preparation invocation;
+its repository calls propagate database/transaction exceptions unchanged.
+No exception text, filename, path, locator or video content enters the terminal.
+Existing size-limit, IncidentClip and export mappings remain unchanged.
+
+Case continues to consume FAILED through its existing projection and notices;
+this mapping does not establish a new notice, action or retry policy. Details and
+the unposted Case Owner proposal are in the
+[Implementation Notes](../../../runtime/issue425-media-failure-mapping.md).
