@@ -1,4 +1,6 @@
-# RT-11(b) stored Frame read HTTP
+<a id="rt-11b-stored-frame-read-http"></a>
+
+# RT-11(b) 저장 Frame 읽기 HTTP
 
 RT-11 IN_PROGRESS · Refs #298 (RT-11(b)) · PR pending · merge SHA pending.
 
@@ -28,7 +30,9 @@ stored bytes 복원을 위한 짧은 DB 구간을 허용한다. 원래 Plan/B-F2
 - [x] API/Recording 및 gate 회귀, static/workflow 검증(실패 이력과 제한은 아래).
 - [x] 소유 DB 자원 정리·감사(공유 Windows relay 잔여와 helper exit1은 아래).
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -102,7 +106,9 @@ Accepted Decision, Baseline 값의 추가 변경은 없다. Recording 최소 cap
 저장 형식 식별은 기존 Recording PNG adapter 범위이며 전체 decode 검증이 아니다.
 읽기 중 case/ref 상태가 바뀌는 retention 정책은 이번 범위에서 정하지 않는다.
 
-### Verification — 진행 기록
+<a id="verification--진행-기록"></a>
+
+### 검증 — 진행 기록
 
 - initial sandbox RED: API fixture temp 생성 오류13 ERROR/Recording3 FAIL.
 - explicit basetemp sandbox 시도는 출력 없이 진행이 멈춰 소유 pytest를 종료했다.
@@ -201,11 +207,11 @@ Linux listener0, MySQL handshake 없음, 이 작업 소유 Windows Python proces
 | `src/daesingo/api/app.py` | route·outer middleware 순서·trace 연결 |
 | `src/daesingo/api/composition.py` | 짧은 caller transaction |
 | `src/daesingo/api/errors.py` | typed frame unavailable |
-| `src/daesingo/api/routes_frames.py` (신규) | shielded stored read/HTTP headers |
+| `src/daesingo/api/routes_frames.py` (신규) | shield로 보호한 저장 데이터 조회/HTTP header |
 | `src/daesingo/api/frame_lifetime.py` (신규) | outer ASGI permit/실제 전송 관측 |
 | `src/daesingo/recording/README.md` | 신규 최소 capability 설명 |
 | `src/daesingo/recording/service.py` | owned stored image 공개 read |
-| `src/daesingo/recording/repository.py` | in-memory scope-before-restore |
+| `src/daesingo/recording/repository.py` | in-memory에서 scope 확인 후 복원 |
 | `src/daesingo/recording/mysql_repository.py` | 단일 ownership-scoped statement |
 | `tests/api/test_frames.py` (신규) | HTTP·취소·실패·관측 단위 검증 |
 | `tests/api/test_frames_mysql.py` (신규) | 실제 MySQL71개 필수 acceptance |

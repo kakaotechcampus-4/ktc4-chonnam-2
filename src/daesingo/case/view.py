@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
     event_type_label,
@@ -197,6 +198,16 @@ def _build_progress(
             {"step": "evidence_assembly", "state": "PENDING"},
             {"step": "requirement_check", "state": "PENDING"},
             {"step": "package_assembly", "state": "PENDING"},
+        ]
+
+    # clip 준비가 실패하면 판독은 발주되지 않는다(§4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
+    if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and selected_clip_failed(case):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": "PENDING"},
+            {"step": "overlay_time_read", "state": "PENDING"},
         ]
 
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:

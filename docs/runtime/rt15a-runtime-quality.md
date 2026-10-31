@@ -1,8 +1,12 @@
-# RT-15(a) Runtime quality gate
+<a id="rt-15a-runtime-quality-gate"></a>
+
+# RT-15(a) Runtime 품질 gate
 
 Status: IN_PROGRESS · Refs #301 · Related #287 · PR / merge SHA pending.
 
-## Implementation plan
+<a id="implementation-plan"></a>
+
+## 구현 계획
 
 Spec: Runtime Implementation Plan RT-15 · §12; Ops §19; Issue #301.
 현재 checkout을 유지하고 commit/staging/push/PR/외부 댓글 없이 구현한다.
@@ -59,7 +63,9 @@ Windows/지원 POSIX 실행 경로를 유지했다.
   0.125초를 그대로 전달하는 focused 회귀를 추가했다. Search Owner의 공개 annotation
   정합화는 별도 후속이며 다른 모듈 소스는 이번에 수정하지 않았다. 실행 결함으로 단정하지 않는다.
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -107,7 +113,9 @@ Windows/지원 POSIX 실행 경로를 유지했다.
 ### Owner 확인 포인트
 Runtime 범위와 strictness, 선택 OCR 타입 경계. repo 전체 확대는 팀 합의 후 별도.
 
-### Verification
+<a id="verification"></a>
+
+### 검증
 
 | 검사 | 작성자 직접 실행 결과 |
 | --- | --- |
@@ -133,7 +141,9 @@ Docker acceptance의 최종 결과는 향후 push 후 CI 조건이다. AWS/provi
 RT14 실행 변수/배포환경 변경은 없다. RT14의 true opt-in 조건을 그대로 보존했다.
 GitHub Actions 변수는 읽기 전용 조회로 `RT14_EXECUTION_ENABLED=false`를 확인했다.
 
-### Fresh review와 수정
+<a id="fresh-review와-수정"></a>
+
+### Fresh 리뷰와 수정
 
 구현 대화 이력을 상속하지 않는 read-only reviewer가 전체 diff를 확인했다.
 초기 P1: quality-only 설치에 NumPy가 없는데 검사 대상 OCR warmup에서 import한다.
@@ -315,7 +325,9 @@ deploy 테스트의 외부 Docker/AWS 경계는 double이며 실제 AWS/provider
 원격 실패 job의 관측값은 수정 전 head의 결과다. 이번 수정 후 전체 regression/mysql/test,
 Docker acceptance는 재실행하지 않았고, push/commit/PR 수정/외부 댓글/merge도 하지 않는다.
 
-### Fresh delta review
+<a id="fresh-delta-review"></a>
+
+### Fresh 변경분 리뷰
 
 구현 이력을 상속하지 않은 read-only reviewer가 현재 unstaged delta를 검토했고,
 blocking 지적은 없었다. reviewer는 수정 전 HEAD entrypoint를 메모리에 로드하여 기존

@@ -1,4 +1,6 @@
-# RT-14 — EC2 deployment preparation
+<a id="rt-14--ec2-deployment-preparation"></a>
+
+# RT-14 — EC2 배포 준비
 
 **IN_PROGRESS · Refs #450 · Related #287, #460, #452**
 
@@ -14,6 +16,11 @@
 아래 §1~§10은 #479 당시의 구현·검증 이력을 보존한다. 당시의 「후보/미승인」,
 「rollback tip CI 의존」, 「recovery 없음」은 현재 상태로 읽지 않는다.
 승인된 Gate는 재개방하지 않으며 OIDC trust 축소 답변은 코드 구현 blocker가 아니다.
+
+운영자 제공 UID·재부팅·사본 정리 후속은 [실험 기록 §14](experiments/2026-10-31-rt14-aws-real-e2e.md#14-운영자-제공-후속-조치),
+운영 크기 DB/media backup과 전용 빈 target 복원 준비는 [복구 acceptance 절차](rt14-recovery-acceptance.md)를 따른다.
+약 4GiB 호스트의 dump 메모리/격리 예산과 heads를 확인하기 전에는 기존 smoke나 큰 dump를 실행하지 않는다.
+이번 후속 준비에서는 AWS·서비스 정지·backup/restore를 실행하지 않았다.
 
 ## 1. 확인된 근거와 준비 범위
 
@@ -374,7 +381,9 @@ driver/tag와 dual cache의 구현 형식은 [Docker awslogs 공식 문서](http
 | RD-14/auth/IDOR | 2026-10-22 최종 제출 요건으로 공개 trigger 발생. 공개 모델·외부 smoke는 [RT-14 배포 설계](rt14-deployment-design.md) §13 · §10.2(2026-10-30 Gate 승인, 구현 전). 이 준비 구현은 내부 loopback smoke만 제공 |
 | AWS/용량/로그/rollback/restore 실제 증거 | mock/local 성공으로 닫지 않음. 실제 운영 승인 후 rehearsal 필요 |
 
-## 10. Implementation Notes
+<a id="10-implementation-notes"></a>
+
+## 10. 구현 기록
 
 직접 실행 검증·fresh reviewer·자원 정리·전체 변경 manifest는 구현 종료 시 이 절에
 append한다. 과거 #473~#477 CI, 이번 로컬 Python/Linux Docker 검증, 미래 새 PR CI를

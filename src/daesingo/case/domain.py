@@ -140,6 +140,10 @@ class CaseAggregate:
     # Latest coarse work boundary; same job's retries retain completed work and search start.
     scene_search_progress: dict[str, Any] | None = None
 
+    # 마지막 탐색 실패가 분석 범위 상한 초과(Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`)였는가(#452).
+    # `candidate_search_failed`일 때만 뜻이 있고 실패마다 덮어쓴다. case는 수치를 갖지 않고 code만 본다. CaseView 비노출.
+    analysis_range_too_long: bool = False
+
     # 후보 목록 세대 — `receive_candidates()`가 목록을 교체하거나 `regress_to_searching()`이 비울 때마다
     # 오른다. adapter는 같은 세대 안에서만 후보별 관찰(Fine·판독)을 재사용한다
     # (`decisions/reselect-observation-reuse.md`). `selection_rev`와 달리 재선택으로는 오르지 않는다. CaseView 비노출.
@@ -275,7 +279,7 @@ class CaseAggregate:
         self.hints = dict(hints)
         self.hint_unclear = unclear
 
-    def record_candidate_search_failure(self, *, job_id: str | None = None) -> bool:
+    def record_candidate_search_failure(self, *, job_id: str | None = None, range_too_long: bool = False) -> bool:
         """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
         바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
         web이 「결과 없음」으로 그린다). stage는 `SEARCHING`에 머물고 실패 사실만 남긴다.
@@ -288,6 +292,7 @@ class CaseAggregate:
         if self.stage != "SEARCHING":
             raise InvalidTransition(f"{self.stage}에서는 후보 탐색 실패를 받을 수 없다(SEARCHING 전용)")
         self.candidate_search_failed = True
+        self.analysis_range_too_long = range_too_long
         self._reflect(job_id, "COARSE_SEARCH")
         return True
 
