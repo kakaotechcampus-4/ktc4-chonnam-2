@@ -166,15 +166,18 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
+        # 근거 장면은 handler가 T1 전에 발급해 실은 값을 그대로 남긴다(#446 결정 5). 싣지 않은 결과(이전 형식 ·
+        # 발급 불가)는 `None`이고, 여기서 다시 발급하지 않는다.
         observation.record_outcome(case, outcome.job_id, status=outcome.status,
-                                   incident_clip_ref=content["incident_clip_ref"])
+                                   incident_clip_ref=content["incident_clip_ref"],
+                                   preview_frame_ref=content.get("preview_frame_ref"))
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 
 def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
     # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
-    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice 매핑은 미결
-    # (`report-video-export.md` §5), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice는 view가 실행 상태로
+    # 계산하고(`exports.export_notices`), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
 
 
