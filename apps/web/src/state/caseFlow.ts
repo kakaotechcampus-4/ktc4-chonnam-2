@@ -20,6 +20,8 @@ export interface FlowState {
   uploads: UploadItem[]
   /** 마지막 실패. 화면이 그려지는 기준은 `view`이고 이 값은 알림용이다. 성공하면 비운다. */
   error: ApiError | null
+  /** 조회 실패 중에는 마지막 view를 현재 진행 상태로 보여 주지 않는다. */
+  viewUnavailable: boolean
   /** 요청이 나가 있는 동안. 같은 버튼을 두 번 눌러도 command가 두 번 나가지 않게 한다. */
   busy: boolean
 }
@@ -29,7 +31,7 @@ export interface FlowOptions {
   pollMs?: number
 }
 
-const INITIAL: FlowState = { caseId: null, view: null, uploads: [], error: null, busy: false }
+const INITIAL: FlowState = { caseId: null, view: null, uploads: [], error: null, viewUnavailable: false, busy: false }
 
 /**
  * 반영 여부를 모르는 응답 — 응답 없음 · 500 · 게이트웨이 오류. 503은 「반영되지 않았다」가 계약이다(§3.4).
@@ -54,16 +56,17 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
    * 같은 값은 받는다(`case_rev`를 올리지 않는 변경이 있다, case-command §9).
    */
   function adopt(view: CaseView) {
-    if (!state.view || view.case_rev >= state.view.case_rev) set({ view })
+    if (!state.view || view.case_rev >= state.view.case_rev) set({ view, viewUnavailable: false })
     schedule() // 옛 응답을 버려도 갱신은 이어가야 한다 — 안 그러면 폴링이 여기서 끊긴다.
   }
 
-  /** `running_jobs`가 비어 있으면 멈춘다 — 그것이 「case가 더 기다리지 않는다」다(§5.4). */
+  /** 작업이 있거나 마지막 조회가 실패했으면 다시 읽는다. */
   // 고정 간격이다 — 오래 걸리는 분석에서 서버 부하가 보이면 간격을 점점 늘린다(backoff).
   function schedule() {
     clearTimeout(timer)
     timer = undefined
-    if (active && state.caseId && state.view && state.view.running_jobs.length > 0) {
+    if (active && state.caseId && state.error?.code !== 'http.not_found' &&
+        (state.viewUnavailable || (state.view?.running_jobs.length ?? 0) > 0)) {
       timer = setTimeout(refresh, pollMs)
     }
   }
@@ -81,7 +84,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
       adopt(res.data)
       return
     }
-    set({ error: res.error })
+    set({ error: res.error, viewUnavailable: true })
     if (res.status !== 404) schedule() // 일시 장애는 다음 주기에 다시 읽는다. case가 없으면(404) 멈춘다.
   }
 
@@ -92,7 +95,10 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
     if (state.caseId !== caseId) return
     set({ busy: false })
     if (res.ok) adopt(res.data)
-    else set({ error: res.error })
+    else {
+      set({ error: res.error, viewUnavailable: true })
+      if (res.status !== 404) schedule()
+    }
   }
 
   function patchUpload(index: number, status: UploadItem['status'], error: string | null = null) {
@@ -149,7 +155,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
   /** command 1건. `expected_case_rev`는 화면이 본 값이다 — 낡았으면 409와 현재 화면이 온다(§5.3). */
   async function send(command: Command) {
     const { caseId, view } = state
-    if (!caseId || !view || state.busy) return
+    if (!caseId || !view || state.busy || state.viewUnavailable) return
     commands++
     set({ busy: true, error: null })
     const res = await api.sendCommand(caseId, view.case_rev, command)
@@ -162,7 +168,7 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
     if (!res.caseView && unknownOutcome(res.status)) {
       // 반영 여부를 모르면 다시 보내지 않고 먼저 읽는다(§3.4). 읽는 동안 `busy`를 풀지 않는다 —
       // 그 사이 같은 버튼이 command를 다시 보내면 두 번 반영될 수 있다.
-      // 읽기도 실패하면 끝내 모른 채 버튼을 풀어 준다 — 간격을 두고 계속 읽는 것은 실서버가 생긴 뒤에.
+      // 읽기도 실패하면 조회만 재시도한다. 반영 여부를 알기 전에 command를 다시 보내지 않는다.
       set({ error: res.error })
       const res2 = await api.getView(caseId)
       if (state.caseId !== caseId) return
@@ -170,7 +176,8 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
         adopt(res2.data)
         if (res2.data.case_rev > view.case_rev) set({ error: null }) // 반영돼 있으면 알림이 필요 없다
       } else {
-        set({ error: res2.error })
+        set({ error: res2.error, viewUnavailable: true })
+        if (res2.status !== 404) schedule()
       }
       return set({ busy: false })
     }

@@ -137,6 +137,9 @@ class CaseAggregate:
     # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
     candidate_search_failed: bool = False
 
+    # Latest coarse work boundary; same job's retries retain completed work and search start.
+    scene_search_progress: dict[str, Any] | None = None
+
     # 마지막 탐색 실패가 분석 범위 상한 초과(Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`)였는가(#452).
     # `candidate_search_failed`일 때만 뜻이 있고 실패마다 덮어쓴다. case는 수치를 갖지 않고 code만 본다. CaseView 비노출.
     analysis_range_too_long: bool = False

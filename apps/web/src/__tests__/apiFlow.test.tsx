@@ -3,7 +3,7 @@
 // `?api` 흐름 — 화면은 CaseView로 고르고, 버튼은 command로 이어진다(contract-case-command · contract-http-api §6).
 // 서버가 없으므로 Api를 가짜로 끼운다.
 
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { Api, ApiResult } from '../api/client'
 import type { CaseView, Notice } from '../contracts/caseView'
@@ -126,15 +126,22 @@ it('[분석 중단]은 STOP_ANALYSIS를 보내고, 중단 화면에서 [다시 �
 })
 
 it('case 대기 timeout(#358)은 중단 화면에 timeout 문구로 보이고, [다시 찾기]는 RETRY_SEARCH다', async () => {
-  const timedOut = view({ case_rev: 3, stage: 'SEARCHING', notices: [notice('case.analysis_timed_out', ['RETRY_SEARCH'])] })
-  const { m, api } = setup({ get: timedOut })
-  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 }, 202))
-  const { findByText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
-  await findByText('장면을 찾는 시간이 오래 걸려 멈췄어요.')
-  expect(queryByText('분석을 중단했어요.')).toBeNull()
-  fireEvent.click(getByText('다시 찾기'))
-  await findByText('분석 중단')
-  expect(m.sendCommand).toHaveBeenCalledWith('c1', 3, { kind: 'RUN_NOTICE_ACTION', payload: { notice_code: 'case.analysis_timed_out', action: 'RETRY_SEARCH' } })
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-31T00:00:00Z'))
+  try {
+    const timedOut = view({ case_rev: 3, stage: 'SEARCHING', notices: [notice('case.analysis_timed_out', ['RETRY_SEARCH'])] })
+    const { m, api } = setup({ get: timedOut })
+    m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 }, 202))
+    const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+    await findByText('장면을 찾는 시간이 오래 걸려 멈췄어요.')
+    expect(queryByText('분석을 중단했어요.')).toBeNull()
+    clock.mockReturnValue(Date.parse('2026-10-31T00:05:00Z'))
+    fireEvent.click(getByText('다시 찾기'))
+    await findByText('분석 중단')
+    expect(container.querySelector('.flow-elapsed span')?.textContent).toBe('00:00')
+    expect(m.sendCommand).toHaveBeenCalledWith('c1', 3, { kind: 'RUN_NOTICE_ACTION', payload: { notice_code: 'case.analysis_timed_out', action: 'RETRY_SEARCH' } })
+  } finally {
+    clock.mockRestore()
+  }
 })
 
 it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지 않는다', async () => {
@@ -161,6 +168,28 @@ it('요청이 실패하면 화면은 그대로 두고 알림만 띄운다', asyn
   fireEvent.click(await findByText('분석 중단'))
   await findByText('서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.')
   expect(await findByText('분석 중단')).toBeTruthy()
+})
+
+it('진행 조회가 끊기면 진행 화면을 내리고, 조회 복구로 최신 화면을 되찾는다 — 분석은 다시 보내지 않는다', async () => {
+  vi.useFakeTimers()
+  try {
+    const { m, api } = setup({ get: SEARCHING })
+    m.getView.mockResolvedValueOnce(ok(SEARCHING)).mockResolvedValueOnce(NETWORK_DOWN).mockResolvedValue(ok(STOPPED))
+    const { container, getByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+    await act(async () => {})
+    expect(getByText('분석 중단')).toBeTruthy()
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    expect(getByText('진행 상태를 확인할 수 없어요')).toBeTruthy()
+    expect(container.querySelector('.flow')).toBeNull()
+    expect(queryByText('다시 찾기')).toBeNull()
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    expect(getByText('분석을 중단했어요.')).toBeTruthy()
+    expect(queryByText('진행 상태를 확인할 수 없어요')).toBeNull()
+    expect(m.sendCommand).not.toHaveBeenCalled()
+  } finally {
+    cleanup()
+    vi.useRealTimers()
+  }
 })
 
 it('command가 없는 알림 버튼(시각 후보 고르기)은 보내지 않고 안내한다', async () => {

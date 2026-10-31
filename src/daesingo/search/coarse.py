@@ -25,6 +25,7 @@ from .media import (
 )
 from .media_contract import CoarseMediaPreparer
 from .prompts import COARSE_PROMPT, sent_prompt_fingerprint
+from .progress import SearchProgress
 from .provider import CoarseRequest, ProviderResult, SearchProvider, UsageBinding
 from .runs import (
     AnalysisRun,
@@ -72,12 +73,15 @@ class CoarseExecutionDependencies:
     media_preparer: CoarseMediaPreparer
     deadline: RunDeadline
     usage_sink: UsageSink | None = None
+    on_progress: SearchProgress | None = None
 
 
 def search_coarse(
     scope: AnalysisScope,
     dependencies: CoarseExecutionDependencies,
 ) -> LinkedCoarseResult:
+    if dependencies.on_progress is not None:
+        dependencies.on_progress("PREPARING")
     started = datetime.now(UTC)
     run_id = RunId(f"run_search_{uuid4().hex}")
     gathered: list[tuple[ResolvedAnalysisSource, CoarseCandidate]] = []
@@ -123,6 +127,8 @@ def search_coarse(
                 )
             try:
                 deadline.check()
+                if dependencies.on_progress is not None:
+                    dependencies.on_progress("SEARCHING")
                 result = dependencies.provider.search_coarse(
                     CoarseRequest(
                         source,
@@ -145,6 +151,8 @@ def search_coarse(
                     FailureKind.INFRA, provider_issue_code(error), scope, error
                 )
             else:
+                if dependencies.on_progress is not None:
+                    dependencies.on_progress("ORGANIZING")
                 if usage is None:
                     usage_refs.append(f"usage:{source.source_id}")
                 record = _usage_record(source, prepared, result, dependencies.config)

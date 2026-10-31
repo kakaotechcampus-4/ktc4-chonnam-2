@@ -21,6 +21,7 @@ _STATE_FIELDS = (
     "manifest_summary",
     "situation_response",
     "candidate_search_failed",
+    "scene_search_progress",
     "analysis_range_too_long",
     "candidate_generation",
     "settled_jobs",

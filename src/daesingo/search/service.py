@@ -16,6 +16,7 @@ from .fine import normalize_event_type, verify_fine
 from .ledger import SearchLedger
 from .media_contract import CoarseMediaPreparer
 from .provider import SearchProvider
+from .progress import SearchProgress
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef, RunId
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .sources import AnalysisSourceResolver
@@ -36,7 +37,8 @@ class SearchService:
     )
 
     def search_candidates_linked(
-        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None
+        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None,
+        on_progress: SearchProgress | None = None,
     ) -> LinkedCoarseResult:
         """Return coarse search result together with source linkage.
 
@@ -54,15 +56,17 @@ class SearchService:
                 media_preparer=self.media_preparer,
                 deadline=RunDeadline(self.monotonic, budget_ms),
                 usage_sink=usage_sink,
+                on_progress=on_progress,
             ),
         )
         self._run_budget_ms[linked.result.analysis_run.run_id] = budget_ms
         return linked
 
     def search_candidates(
-        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None
+        self, scope: AnalysisScope, *, usage_sink: UsageSink | None = None,
+        on_progress: SearchProgress | None = None,
     ) -> CandidateSearchResult:
-        return self.search_candidates_linked(scope, usage_sink=usage_sink).result
+        return self.search_candidates_linked(scope, usage_sink=usage_sink, on_progress=on_progress).result
 
     def verify_visual(
         self,
@@ -81,7 +85,7 @@ class SearchService:
         상한을 이어받는다. FINE_VERIFY는 COARSE_SEARCH와 다른 Job이라
         (contract-job-record-case-view.md §110) Coarse에서 쓴 시간이 깎이지 않는다.
         """
-        # ponytail: 메모리 fallback은 Case/Runtime이 FINE_VERIFY Job에서 값을 넘기기 시작하면 제거.
+        # 메모리 fallback은 Case/Runtime이 FINE_VERIFY Job에서 값을 넘기기 시작하면 제거.
         if max_latency_sec is not None:
             budget_ms = max_latency_sec * 1000
         else:

@@ -90,6 +90,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     const input = INPUT_SUB[action]
     if (input) return open(input)
     if (!SENDABLE.has(action)) return setUnsupported(true)
+    if (action === 'RETRY_SEARCH') setStartedAt(Date.now())
     run({ kind: 'RUN_NOTICE_ACTION', payload: { notice_code: noticeCode, action: action as NoticeAction } })
   }
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
@@ -125,7 +126,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page">
-        {banner && (
+        {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
             <CircleAlert size={18} strokeWidth={1.8} aria-hidden />
@@ -147,7 +148,31 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             />
           </div>
         )}
-        {!view || view.stage === 'INTAKE' ? upload() : analysis(view)}
+        {state.viewUnavailable ? (
+          <div className="rs rs-screen state-page" role="alert">
+            <h1 className="state-context">신고자료</h1>
+            <section className="state-card">
+              <h2 className="state-head">{state.error?.code === 'http.not_found' ? '진행 정보를 찾을 수 없어요' : '진행 상태를 확인할 수 없어요'}</h2>
+              {state.error?.code === 'http.not_found' ? (
+                <>
+                  <p className="state-body">{banner}</p>
+                  <div className="state-actions"><button type="button" className="rs-btn sec" onClick={newReport}>처음으로</button></div>
+                </>
+              ) : (
+                <>
+                  <p className="state-cause">서버 응답을 받지 못했어요. 분석이 중단됐는지는 아직 알 수 없어요.</p>
+                  <div className="connection-retry">
+                    <p className="state-body connection-retry-status">
+                      <span className="rs-spin-sm" aria-hidden />
+                      연결을 다시 확인하고 있어요
+                    </p>
+                    <p className="state-body connection-retry-note">연결되면 최신 진행 상황을 자동으로 보여드릴게요.</p>
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
+        ) : !view || view.stage === 'INTAKE' ? upload() : analysis(view)}
       </main>
     </>
   )

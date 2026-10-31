@@ -16,7 +16,7 @@ _APPROVED_GEMINI_BASE_URL_HOSTS: Final = frozenset(
 
 
 # 새 이름을 먼저 읽고, 없으면 기존 이름을 읽는다(#153 합의: alias는 Search config 안).
-# ponytail: GEMINI_API_KEY alias는 팀 .env · 배포 secret migration 뒤 제거한다.
+# GEMINI_API_KEY alias는 팀 .env · 배포 secret migration 뒤 제거한다.
 API_KEY_ENV_NAMES: Final = ("ELICE_ML_API_KEY", "GEMINI_API_KEY")
 
 
