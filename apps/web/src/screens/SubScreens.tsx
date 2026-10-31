@@ -68,7 +68,7 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
   )
 }
 
-// 사용자 입력 번호판 형식(#487) — evidence 서버 검증과 맞출 규칙. 범위가 확정되면 여기만 고친다.
+// 사용자 입력 번호판 형식(#487) — 경고용이다. 최종 규칙이 아니다(ADR-EVIDENCE-006: 정상값인 지역·구형 번호판도 어긋날 수 있다).
 const PLATE_FORMAT = /^([가-힣]{2})?\d{2,3}[가-힣]\d{4}$/
 
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
@@ -116,7 +116,7 @@ export function PlateCheck(props: {
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const src = sourceLabel(plate.source_label_key)
   const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
-  // 안쪽 공백은 지우고 받는다(`12가 3456` → `12가3456`). 형식이 틀리면 저장을 막고 칸 아래에 알린다.
+  // 안쪽 공백은 지우고 받는다(`12가 3456` → `12가3456`). 형식이 틀려도 저장은 막지 않고 칸 아래에 경고만 한다(core-user-flow §12).
   const plateInput = (editing ?? '').replace(/\s/g, '')
   const plateOk = PLATE_FORMAT.test(plateInput)
   const plateWrong = plateInput !== '' && !plateOk
@@ -175,7 +175,7 @@ export function PlateCheck(props: {
                 className="plate-form"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (!plateOk) return
+                  if (plateInput === '') return
                   props.onEdit?.(plateInput)
                   close()
                 }}
@@ -196,7 +196,7 @@ export function PlateCheck(props: {
                   {plateWrong ? '번호판 형식을 확인해 주세요 (예: 12가3456)' : '예: 12가3456'}
                 </span>
                 <div className="plate-form-actions">
-                  <button type="submit" className="rs-btn pri" disabled={!plateOk}>
+                  <button type="submit" className="rs-btn pri" disabled={plateInput === ''}>
                     저장
                   </button>
                   <button type="button" className="rs-btn sec" onClick={close}>

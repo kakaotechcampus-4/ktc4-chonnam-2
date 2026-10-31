@@ -189,25 +189,29 @@ describe('프레임 이미지', () => {
   })
 
   // #487에 올린 통과 · 차단 사례
-  it('번호판 입력은 형식이 맞을 때만 저장되고, 안쪽 공백은 지워서 보낸다', () => {
+  it('번호판 형식이 어긋나도 저장은 막지 않고 경고만 한다(core-user-flow §12). 빈 값만 막고, 안쪽 공백은 지워서 보낸다', () => {
     const onEdit = vi.fn()
     const { container, getByText } = render(<PlateCheck view={HAPPY} onBack={vi.fn()} onEdit={onEdit} startEditing />)
     const input = container.querySelector('.plate-input') as HTMLInputElement
     const save = getByText('저장') as HTMLButtonElement
-    for (const bad of ['12가34?6', 'abc', '12']) {
-      fireEvent.change(input, { target: { value: bad } })
-      expect(save.disabled).toBe(true)
-      expect(input.getAttribute('aria-invalid')).toBe('true')
-      expect(container.textContent).toContain('번호판 형식을 확인해 주세요')
-      fireEvent.submit(input.form!)
-    }
-    expect(onEdit).not.toHaveBeenCalled()
-    for (const good of ['123가4567', '서울12가3456', '12가 3456']) {
-      fireEvent.change(input, { target: { value: good } })
-      expect(save.disabled).toBe(false)
-      expect(input.getAttribute('aria-invalid')).toBe('false')
-    }
+    fireEvent.change(input, { target: { value: '  ' } })
+    expect(save.disabled).toBe(true)
     fireEvent.submit(input.form!)
-    expect(onEdit).toHaveBeenCalledWith('12가3456')
+    expect(onEdit).not.toHaveBeenCalled()
+    fireEvent.change(input, { target: { value: '12가34?6' } })
+    expect(save.disabled).toBe(false)
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect(container.textContent).toContain('번호판 형식을 확인해 주세요')
+    fireEvent.submit(input.form!)
+    expect(onEdit).toHaveBeenLastCalledWith('12가34?6')
+    // 저장하면 입력칸이 닫히므로 새로 연다
+    const again = render(<PlateCheck view={HAPPY} onBack={vi.fn()} onEdit={onEdit} startEditing />)
+    const input2 = again.container.querySelector('.plate-input') as HTMLInputElement
+    for (const good of ['123가4567', '서울12가3456', '12가 3456']) {
+      fireEvent.change(input2, { target: { value: good } })
+      expect(input2.getAttribute('aria-invalid')).toBe('false')
+    }
+    fireEvent.submit(input2.form!)
+    expect(onEdit).toHaveBeenLastCalledWith('12가3456')
   })
 })
