@@ -417,6 +417,10 @@ def read_plate(request: ReadRequest, target_hint: Optional[TargetHint] = None,
         reading = provider.read_plate(request.input_ref, target_hint)
     except providers.ProviderError as error:
         return PlateReadResult(_fail_run(run, error), None)
+    except Exception:
+        # OCR 엔진의 추론·응답 오류도 실행 후 실패이므로 run을 남긴다.
+        return PlateReadResult(_fail_run(run, _provider_broke_contract(
+            "plate provider 실행 실패")), None)
 
     try:
         plate = _interpret_plate(reading, target_hint, request, run.run_id)
@@ -634,6 +638,10 @@ def read_overlay_time(request: ReadRequest,
         reading = provider.read_overlay_time(request.input_ref)
     except providers.ProviderError as error:
         return OverlayTimeReadResult(_fail_run(run, error), None)
+    except Exception:
+        # OCR 엔진의 추론·응답 오류도 실행 후 실패이므로 run을 남긴다.
+        return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
+            "overlay provider 실행 실패")), None)
 
     if reading.presence not in providers.PRESENCES:
         return OverlayTimeReadResult(_fail_run(run, _provider_broke_contract(
