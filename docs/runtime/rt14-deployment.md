@@ -17,6 +17,11 @@
 「rollback tip CI 의존」, 「recovery 없음」은 현재 상태로 읽지 않는다.
 승인된 Gate는 재개방하지 않으며 OIDC trust 축소 답변은 코드 구현 blocker가 아니다.
 
+운영자 제공 UID·재부팅·사본 정리 후속은 [실험 기록 §14](experiments/2026-10-31-rt14-aws-real-e2e.md#14-운영자-제공-후속-조치),
+운영 크기 DB/media backup과 전용 빈 target 복원 준비는 [복구 acceptance 절차](rt14-recovery-acceptance.md)를 따른다.
+약 4GiB 호스트의 dump 메모리/격리 예산과 heads를 확인하기 전에는 기존 smoke나 큰 dump를 실행하지 않는다.
+이번 후속 준비에서는 AWS·서비스 정지·backup/restore를 실행하지 않았다.
+
 ## 1. 확인된 근거와 준비 범위
 
 | 구분 | 근거 / 상태 |

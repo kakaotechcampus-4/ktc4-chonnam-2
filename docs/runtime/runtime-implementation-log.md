@@ -4834,3 +4834,46 @@ fixture alias/서식 정리 후 최종 전용 MySQL은 12 passed / 44.19 s, serv
 HEAD의 기존 Runtime Log byte prefix 불변을 검증했다.
 최종 branch/HEAD는 같고 일곱 파일이 unstaged/uncommitted이며 index는 비었고 diff check PASS다.
 전체 원격 CI·원래 #425 AVI/MP4 세트·Case/Web 안내 정책은 미결이며 IN_PROGRESS다.
+
+### 2026-10-31 RT-14 운영 후속·복구 acceptance 준비
+
+**IN_PROGRESS · Refs #450 · Related #300, #452.**
+`codex/rt14-recovery-acceptance`, 시작 HEAD `42fb2e691b8685b44e38767674d7f64b73c345b2`,
+clean index/worktree에서 현재 브랜치로 문서 준비를 진행했다. worktree를 만들지 않았다.
+Issue #450의 최신 본문·댓글 5개를 GitHub 읽기 도구로 확인하고 승인된 Gate를 유지했다.
+
+운영자가 이번 대화에서 제공한 SSM 조치 결과를 [실험 기록 §14](experiments/2026-10-31-rt14-aws-real-e2e.md#14-운영자-제공-후속-조치)에
+후속 추가했다. Caddy UID997·GID987/보조 그룹 유지, MySQL999:999 유지, Docker/Caddy와
+영구 RO bind mount enabled, 실제 재부팅 후 내부 health/Worker 상태, 알려진 비밀값 사본
+6파일·빈 2디렉터리 정리 결과다. 구현자가 AWS에서 독립 재검증한 결과가 아니다.
+local resolve TLS 후 403은 외부 Web 200/public smoke 전체 PASS로 계산하지 않는다.
+
+[복구 acceptance 절차](rt14-recovery-acceptance.md)에 기존 in-memory DB 도구의 재사용 범위,
+4GiB 환경의 SQL 상한/복사·peak/disk/추가 target 예산 gate, release heads 대조,
+host/DB 두 lock·외부 writer/DDL 통제, 같은 쓰기 중단점 DB/media/hash/config 결속,
+운영 복귀 우선, 새 credential/내부 network/빈 전용 DB·media 복원, migration 전 전체
+schema/data/BLOB 비교와 API GET·offline Worker 경계·소유 자원 정리를 준비했다.
+기존 smoke의 원래 media volume 유지 검사를 media 복원 완료로 전용하지 않는다.
+
+이번 변경은 문서만 수정하며 도구/제품/migration/Contract/workflow/timeout/strict gate를
+변경하지 않는다. 실제 AWS·SSM·dispatch·배포·서비스 정지·backup/restore, 전체 pytest·
+전체 mandatory MySQL은 실행하지 않는다. 로컬 정합성 검사와 fresh 읽기 전용 reviewer 및
+같은 reviewer의 delta 확인은 완료 후 아래에 추가한다. RAW·식별자·내부 manifest는
+Git 제외 보호 경로에서만 취급한다. commit/push/PR/외부 댓글은 하지 않는다.
+
+실제 실행 입력·제공 주체·중단/복귀 명령은 위 절차에 있으며 용량/heads/격리 근거가 없으면
+실행을 보류한다. 두 번째 정상 배포/rollback rehearsal·최종 Package READY·#452 운영값과
+장기 보관/공개 정책의 완료를 이번 준비로 주장하지 않는다.
+
+후속 로컬 검증: 쉘16 block `bash -n`·Python5 block AST·추가 로컬 링크/anchor13·기존
+실험/Log 본문 prefix 보존·파일을 생성하지 않는 target Compose 메모리 대역 검사 PASS.
+로컬 Compose create/up/start help만 읽어 CLI flag를 확인했고 container를 실행하지 않았다.
+Git Bash sandbox IPC 오류 뒤 구문 검사 재실행, Windows `os.chown` 부재로 인한 검사 대역
+오류 수정 뒤 PASS를 구분해 기록한다. 제품/운영 실패 또는 실제 backup 성공으로 세지 않는다.
+
+fresh 읽기 전용 reviewer 1명의 초기 지적(시작 대기·media copy-up·OCR 쓰기 경계)과
+같은 reviewer의 delta 지적(Docker CLI 자체 종료 제한)을 수정했다. 같은 reviewer의
+최종 확인은 **기존 지적 해결·새 actionable P1/P2 없음**, 직접 검증은 정적/diff 검사다.
+실제 Docker/DB/AWS 검증이 아니다. 전체 변경은 위 절차의 manifest 6개 문서이고
+ignored 검사 helper/RAW/credential/내부 manifest는 제출 대상이 아니다. 최종 상태는
+같은 branch/HEAD, index 비어 있음, 미커밋으로 확인하며 실제 실행 입력/자원 gate는 남긴다.
