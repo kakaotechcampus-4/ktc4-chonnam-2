@@ -120,13 +120,15 @@ export function PlateCheck(props: {
   const plateInput = (editing ?? '').replace(/\s/g, '')
   const plateOk = PLATE_FORMAT.test(plateInput)
   const plateWrong = plateInput !== '' && !plateOk
+  // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
+  const pending = props.view.running_jobs.length > 0
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
         <figure className="plate-fig plate-scene">
           <FrameSlot className="plate-frame" src={frame(evidence.plate_preview_ref)} alt="번호판을 읽은 장면">
             <Film size={26} strokeWidth={1.5} aria-hidden />
-            <span>장면 이미지 준비 중</span>
+            <span>{pending ? '장면 이미지 준비 중' : '장면 이미지가 없어요'}</span>
           </FrameSlot>
           <figcaption>번호판을 읽은 장면</figcaption>
         </figure>
@@ -134,7 +136,7 @@ export function PlateCheck(props: {
           <figure className="plate-fig">
             <div className="plate-frame plate-crop">
               <Film size={24} strokeWidth={1.5} aria-hidden />
-              <span>번호판 이미지 준비 중</span>
+              <span>{pending ? '번호판 이미지 준비 중' : '번호판 이미지가 없어요'}</span>
             </div>
             <figcaption>번호판 확대</figcaption>
           </figure>

@@ -176,6 +176,18 @@ describe('프레임 이미지', () => {
     expect(demo.container.querySelector('img')).toBeNull()
   })
 
+  it('이미지가 없을 때 도는 job이 있으면 「준비 중」, 없으면 「없어요」 — 오지 않을 이미지를 기다리게 하지 않는다', () => {
+    const noImage = { ...HAPPY, evidence: { ...HAPPY.evidence!, plate_preview_ref: null } }
+    const done = render(<PlateCheck view={{ ...noImage, running_jobs: [] }} onBack={vi.fn()} />)
+    expect(done.container.textContent).toContain('장면 이미지가 없어요')
+    expect(done.container.textContent).toContain('번호판 이미지가 없어요')
+    expect(done.container.textContent).not.toContain('준비 중')
+    done.unmount()
+    const job = { job_id: 'j1', kind: 'PLATE_READ', label_key: 'job.plate_read', status: 'RUNNING' as const }
+    const running = render(<PlateCheck view={{ ...noImage, running_jobs: [job] }} onBack={vi.fn()} />)
+    expect(running.container.textContent).toContain('장면 이미지 준비 중')
+  })
+
   // #487에 올린 통과 · 차단 사례
   it('번호판 입력은 형식이 맞을 때만 저장되고, 안쪽 공백은 지워서 보낸다', () => {
     const onEdit = vi.fn()
