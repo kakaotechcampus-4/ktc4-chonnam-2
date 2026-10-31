@@ -1,6 +1,6 @@
 # RT-12(b) 관측 집계 · event catalog
 
-**IN_PROGRESS · Refs #299 (RT-12(b))** · PR/merge SHA pending.
+**IN_PROGRESS · Refs #299 (RT-12(b))** · PR/merge SHA 대기 중.
 
 구현 기준은 사용자가 승인한 `42ddea72bb927e7adedf352ba53d160bda1aa049`다.
 시작 시 branch는 `codex/rt12b-observability`, tracked/untracked/index 변경은 없었다.
@@ -78,7 +78,9 @@ ownership fence 때문에 시도 자체를 안 한 경우도 이 지표에 넣�
 필수 필드/타입/상태를 validate하고 catalog 전체 event coverage와 violation=0을
 검증한다. 보존 자료는 event 이름/위반 건수뿐이며 private context 값은 저장하지 않는다.
 
-## Privacy
+<a id="privacy"></a>
+
+## 개인정보 보호
 
 번호판, GPS/상세 위치, 영상/frame bytes, 전체 path, 외부 AI request/response,
 사용자 free text, API key/access token/secret, raw provider payload canary를
@@ -101,7 +103,9 @@ PR 본문에 기록된 원격 boundary PASS, pytest 10,794 passed/33 skipped,
 MySQL execution gate 911 PASS(skip=0/xfail=0)는 RT-12(a)의 과거 결과다.
 이번 실행 수치에 합산하지 않는다.
 
-## Implementation Notes 초안
+<a id="implementation-notes-초안"></a>
+
+## 구현 기록 초안
 
 IN_PROGRESS · Refs #299 (RT-12(b)). Runtime Owner comment 6367448332에 따라
 read-only DB 집계의 percentile/empty/group/oldest 의미를 구체화했다.
@@ -119,38 +123,38 @@ mutation inventory와 독립 reviewer 자료는 PR 대상이 아니다. 자원 �
 
 | Metric | 실제 event | 의미 |
 | --- | --- | --- |
-| runtime.heartbeat.attempt_ms | runtime.heartbeat.attempt_ms | Every attempt, milliseconds; no hard upper bound |
-| runtime.heartbeat.lag_ms | runtime.heartbeat.lag_ms | Successful interval minus cadence, milliseconds |
-| runtime.heartbeat.skipped_tick_count | runtime.heartbeat.skipped_tick_count | Nonnegative integer encoded in status; preserve existing schema |
-| runtime.heartbeat.consecutive_failures | runtime.heartbeat.consecutive_failures | Nonnegative integer encoded in status; preserve existing schema |
-| runtime.stale.detect_latency_s | runtime.stale.detect_latency_s | Post-COMMIT causal ended_at-heartbeat_at; duration_ms / 1000; omit NULL heartbeat |
-| runtime.stale.false_count | runtime.stale.false_count | Original owner attempted terminal write with zero rows and durable STALE; count=1 |
-| runtime.retry.after_case_stopped_count | runtime.retry.after_case_stopped_count | Committed attempt>=2 T2 NOT_APPLIED(STOPPED_WAITING) only |
-| runtime.cancel.observe_latency_ms | runtime.cancel.observe_latency_ms | Committed DB marker observation plus monotonic signal-delivery interval |
-| runtime.db.claim_latency_ms | runtime.db.claim_latency_ms | Transaction start to outcome; use successful commit outcomes for claim latency |
-| runtime.db.lock_wait_timeout_count | runtime.db.lock_wait_timeout_count | One observed DB failure/retry; sanitized DB taxonomy, never exception text |
-| runtime.db.deadlock_count | runtime.db.deadlock_count | One observed DB failure/retry; sanitized DB taxonomy, never exception text |
-| runtime.db.pool_timeout_count | runtime.db.pool_timeout_count | One observed DB failure/retry; sanitized DB taxonomy, never exception text |
-| runtime.db.error_count | runtime.db.error_count | One observed DB failure/retry; sanitized DB taxonomy, never exception text |
-| runtime.db.tx_retry_count | runtime.db.tx_retry_count | One observed DB failure/retry; sanitized DB taxonomy, never exception text |
-| runtime.reflect.redelivery_count | runtime.reflect.redelivery_count | Committed T2 redelivery result |
-| api.upload.bytes | api.upload.bytes | Received upload bytes after publish; no raw body |
-| api.upload.duration_ms | api.upload.duration_ms | Upload receive-through-publish duration |
-| api.upload.aborted_count | api.upload.aborted_count | One rowless abort, reason in status |
-| api.upload.rejected_413_count | api.upload.rejected_413_count | Source upload limit rejection |
-| api.frame.latency_ms | api.frame.latency_ms | Outer ASGI response lifetime |
-| api.frame.wait_ms | api.frame.wait_ms | Frame permit admission wait |
-| api.frame.request_rate | api.frame.request_rate | One frame admission occurrence |
-| api.asset.download_latency_ms | api.asset.download_latency_ms | Outer ASGI send lifetime |
-| api.asset.bytes | api.asset.bytes | Bytes successfully returned from downstream send, not client-received bytes |
-| api.view.request_rate | api.view.request_rate | Count routed GET view attempts over operator-selected log interval |
-| api.view.latency_ms | api.view.latency_ms | View route duration_ms including failures |
-| api.request.latency_ms | api.request.completed | duration_ms across response statuses |
-| api.request.rejected_413_count | api.request.completed | Count status=413, once per request |
-| api.upload.throughput_bps | api.upload.bytes / api.upload.duration_ms | Paired byte/duration observations by trace_id; no rate field or periodic recording is emitted |
-| api.upload.failures | api.upload.failed | Source request failures by status and request trace |
-| api.ready.duration_ms | api.ready.completed | duration_ms of each readiness check |
-| api.ready.unavailable_count | api.ready.completed | Count status=UNAVAILABLE once per readiness check |
+| runtime.heartbeat.attempt_ms | runtime.heartbeat.attempt_ms | 매 attempt를 밀리초로 측정. 고정 상한 없음 |
+| runtime.heartbeat.lag_ms | runtime.heartbeat.lag_ms | 성공 간격에서 cadence를 뺀 값, 밀리초 |
+| runtime.heartbeat.skipped_tick_count | runtime.heartbeat.skipped_tick_count | status에 음이 아닌 정수로 기록. 기존 schema 유지 |
+| runtime.heartbeat.consecutive_failures | runtime.heartbeat.consecutive_failures | status에 음이 아닌 정수로 기록. 기존 schema 유지 |
+| runtime.stale.detect_latency_s | runtime.stale.detect_latency_s | COMMIT 이후 인과관계가 성립하는 ended_at-heartbeat_at; duration_ms / 1000; NULL heartbeat는 생략 |
+| runtime.stale.false_count | runtime.stale.false_count | 원래 owner의 terminal 쓰기에서 영향받은 행이 없고 영속 상태가 STALE인 경우; count=1 |
+| runtime.retry.after_case_stopped_count | runtime.retry.after_case_stopped_count | commit된 attempt>=2의 T2 NOT_APPLIED(STOPPED_WAITING)만 해당 |
+| runtime.cancel.observe_latency_ms | runtime.cancel.observe_latency_ms | commit된 DB marker 관측과 monotonic 신호 전달 간격의 합 |
+| runtime.db.claim_latency_ms | runtime.db.claim_latency_ms | transaction 시작부터 결과까지. claim latency에는 commit 성공 결과 사용 |
+| runtime.db.lock_wait_timeout_count | runtime.db.lock_wait_timeout_count | 관측된 DB 실패/재시도 한 건. 정제된 DB taxonomy를 사용하고 예외 원문은 제외 |
+| runtime.db.deadlock_count | runtime.db.deadlock_count | 관측된 DB 실패/재시도 한 건. 정제된 DB taxonomy를 사용하고 예외 원문은 제외 |
+| runtime.db.pool_timeout_count | runtime.db.pool_timeout_count | 관측된 DB 실패/재시도 한 건. 정제된 DB taxonomy를 사용하고 예외 원문은 제외 |
+| runtime.db.error_count | runtime.db.error_count | 관측된 DB 실패/재시도 한 건. 정제된 DB taxonomy를 사용하고 예외 원문은 제외 |
+| runtime.db.tx_retry_count | runtime.db.tx_retry_count | 관측된 DB 실패/재시도 한 건. 정제된 DB taxonomy를 사용하고 예외 원문은 제외 |
+| runtime.reflect.redelivery_count | runtime.reflect.redelivery_count | commit된 T2 redelivery 결과 |
+| api.upload.bytes | api.upload.bytes | publish 후 수신 upload bytes. body 원문 제외 |
+| api.upload.duration_ms | api.upload.duration_ms | upload 수신부터 publish까지의 시간 |
+| api.upload.aborted_count | api.upload.aborted_count | DB 행을 만들지 않은 abort 한 건. 사유는 status에 기록 |
+| api.upload.rejected_413_count | api.upload.rejected_413_count | 원본 upload 한도 거부 |
+| api.frame.latency_ms | api.frame.latency_ms | 바깥 ASGI 응답 수명 |
+| api.frame.wait_ms | api.frame.wait_ms | frame permit 진입 대기 시간 |
+| api.frame.request_rate | api.frame.request_rate | frame 진입 한 건 |
+| api.asset.download_latency_ms | api.asset.download_latency_ms | 바깥 ASGI send 수명 |
+| api.asset.bytes | api.asset.bytes | downstream send가 성공 반환한 bytes. client 수신 bytes를 의미하지 않음 |
+| api.view.request_rate | api.view.request_rate | 운영자가 선택한 로그 구간의 라우팅된 GET view 시도 수 |
+| api.view.latency_ms | api.view.latency_ms | 실패를 포함한 view route의 duration_ms |
+| api.request.latency_ms | api.request.completed | 응답 status별 duration_ms |
+| api.request.rejected_413_count | api.request.completed | status=413을 요청당 한 번 집계 |
+| api.upload.throughput_bps | api.upload.bytes / api.upload.duration_ms | trace_id별 byte/duration 관측을 짝지음. rate field나 정기 기록은 emit하지 않음 |
+| api.upload.failures | api.upload.failed | status·요청 trace별 원본 요청 실패 |
+| api.ready.duration_ms | api.ready.completed | 각 readiness 검사의 duration_ms |
+| api.ready.unavailable_count | api.ready.completed | readiness 검사당 status=UNAVAILABLE을 한 번 집계 |
 
 ## 전체 event schema와 producer
 
@@ -243,7 +247,9 @@ workflow 파일 byte 의미와 30분/nested 900초 제한을 보존했다.
 mandatory 실제 MySQL·strict gate·actual mutation을 먼저 평가한다. unrelated
 domain/eval/media 전체 회귀를 이 결과로 대체했다고 주장하지 않는다.
 
-### Fresh reviewer P2와 수정
+<a id="fresh-reviewer-p2와-수정"></a>
+
+### Fresh 리뷰er P2와 수정
 
 구현 대화 이력을 상속하지 않는 fresh reviewer가 읽기 전용으로 source/test/증거를
 검토했다. P1은 없고 P2 1건을 발견했다: mutation 순회에 신규 22개 parameter를

@@ -1,8 +1,12 @@
-# RT-15(b) Runtime import boundaries
+<a id="rt-15b-runtime-import-boundaries"></a>
+
+# RT-15(b) Runtime import 경계
 
 Status: IN_PROGRESS · Refs #301 · Related #287 · PR / merge SHA pending.
 
-## Implementation plan
+<a id="implementation-plan"></a>
+
+## 구현 계획
 
 Goal: 기존 Architecture의 두 import 방향을 기존 CLI에서 검사한다.
 Spec: [Implementation Plan RT-15 · §12](./runtime-implementation-plan.md),
@@ -51,7 +55,9 @@ Pre-flight: checker가 CLI 진입점이고 테스트는 그 파일을 작은 임
   넓은 탐색에서 기존 `.pytest_cache` 접근 거부가 있었으며 그 cache는 검사 대상이 아니다.
 - 변경 전 boundary 0 위반, Contract 구조 62 / JSON 26 / 의미 fixture 104 PASS.
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -98,7 +104,9 @@ Contract 변경: 없음. Decision 변경: 없음. Baseline 변경: 없음.
 Owner 통지는 아래 초안만 작성하며 게시하지 않는다. (c) secret scan과 RT-15 전체
 완료·Owner acceptance는 이 변경으로 닫지 않는다.
 
-### Verification
+<a id="verification"></a>
+
+### 검증
 
 아래는 이번 작성자의 직접 실행이다. `.venv/Scripts/python.exe`의 Python 3.12.14,
 pytest 8.4.2, mypy 2.4.1을 사용했다. 기존 환경을 재사용했고 새 venv/archive를 만들지
@@ -125,7 +133,9 @@ skip/xfail gate는 변경하지 않는다. workflow 파일을 수정하지 않�
 초기/최종 raw 요약은 ignored `.codex-scratch/rt15b/`에만 두고 PR 파일에서 제외한다.
 중간 pytest root는 최종 정리한다. RED와 GREEN은 다른 실행이며 합산하지 않는다.
 
-### Fresh read-only review
+<a id="fresh-read-only-review"></a>
+
+### Fresh 읽기 전용 리뷰
 
 구현 이력을 상속하지 않는 reviewer에게 SoT와 현재 미커밋 diff를 전달했다.
 reviewer는 소스·테스트·문서를 수정하지 않는 read-only 조건으로 검토했다.

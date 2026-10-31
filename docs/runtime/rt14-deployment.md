@@ -1,4 +1,6 @@
-# RT-14 — EC2 deployment preparation
+<a id="rt-14--ec2-deployment-preparation"></a>
+
+# RT-14 — EC2 배포 준비
 
 **IN_PROGRESS · Refs #450 · Related #287, #460, #452**
 
@@ -374,7 +376,9 @@ driver/tag와 dual cache의 구현 형식은 [Docker awslogs 공식 문서](http
 | RD-14/auth/IDOR | 2026-10-22 최종 제출 요건으로 공개 trigger 발생. 공개 모델·외부 smoke는 [RT-14 배포 설계](rt14-deployment-design.md) §13 · §10.2(2026-10-30 Gate 승인, 구현 전). 이 준비 구현은 내부 loopback smoke만 제공 |
 | AWS/용량/로그/rollback/restore 실제 증거 | mock/local 성공으로 닫지 않음. 실제 운영 승인 후 rehearsal 필요 |
 
-## 10. Implementation Notes
+<a id="10-implementation-notes"></a>
+
+## 10. 구현 기록
 
 직접 실행 검증·fresh reviewer·자원 정리·전체 변경 manifest는 구현 종료 시 이 절에
 append한다. 과거 #473~#477 CI, 이번 로컬 Python/Linux Docker 검증, 미래 새 PR CI를

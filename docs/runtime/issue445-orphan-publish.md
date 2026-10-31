@@ -1,260 +1,276 @@
-# P-6 orphan publish — implementation notes
+<a id="p-6-orphan-publish--implementation-notes"></a>
 
-IN_PROGRESS · Refs #445 · Related #299. Deployment is deferred.
+# P-6 고아 publish — 구현 참고 사항
 
-## Authority and starting state
+IN_PROGRESS · Refs #445 · Related #299. 배포는 보류한다.
 
-2026-10-31: branch `codex/issue445-orphan-publish-cleanup`, HEAD and remote
-develop `326f91334a4878b34135631e6b0e660b2c791b98`; index/worktree initially clean.
-No repository AGENTS.md found; supplied AGENTS instructions and CLAUDE.md router
-apply. Issue #445 has no comments. #299's closing comment explicitly transfers
-P-6; PR #390 preserves publish and PR #409 adds observation only. Their historical
-test results are not evidence for this change.
+<a id="authority-and-starting-state"></a>
 
-## Design and implementation choices
+## 권한과 시작 상태
 
-Only API upload publishes durable filesystem originals (`source/<uuid hex>`).
-Recording `local_source` metadata registers their relative locator; prepared
-analysis/incident, frame and derived content use Recording MySQL BLOBs. Worker
-materializers produce temporary files under their existing leased temp root.
-Product purge and BLOB lifecycle are outside this change.
+2026-10-31: 브랜치 `codex/issue445-orphan-publish-cleanup`, HEAD와 원격
+develop은 `326f91334a4878b34135631e6b0e660b2c791b98`; 인덱스/작업 트리는 처음에 깨끗했다.
+저장소 AGENTS.md는 발견되지 않았으며, 제공된 AGENTS 지침과 CLAUDE.md 라우터를
+적용한다. Issue #445에는 댓글이 없다. #299의 종료 댓글은 P-6을 명시적으로
+이관한다. PR #390은 publish를 보존하고 PR #409는 관측만 추가한다. 이들의 과거
+테스트 결과는 이번 변경의 증거가 아니다.
 
-The public Recording capability accepts one canonical managed relative publish
-locator and returns REGISTERED, UNREGISTERED or UNKNOWN. SQL/connection failures
-remain failures, never absence. Runtime consumes the public surface, not tables.
-The repository uses a current locking read of local-source metadata, not a
-consistent snapshot. NOWAIT contention is fail-closed, including an abandoned
-client's still-live transaction. The caller owns transaction completion; runtime
-uses a fresh short transaction and releases its connection before file deletion.
+<a id="design-and-implementation-choices"></a>
 
-Reuse root-level OS leases: API holds a shared publish lease before upload and
-through registration commit/rollback and cancellation cleanup. Scanner holds the
-exclusive nonblocking lease through lookup and identity-checked deletion. A live
-producer postpones the entire root. Locks are never removed or replaced. OS
-crash release does not establish DB rollback: the current locking query must
-also succeed. Query then unlink alone is not atomic; the cooperating writer
-protocol and pinned filesystem identity provide separate necessary protections.
+## 설계와 구현 선택
 
-Only direct canonical UUID files in pinned source are candidates. Existing
-staging/temp publish protection stays intact. Reject links, reparse points,
-multiple hardlinks, changed identity/version and unprovable root relationships.
-Do not infer identity from a locator. Relative canonical registrations protect
-the name regardless of stored root-key spelling; noncanonical stored locators
-make absence uncertain (potentially deferring the whole root).
+API 업로드만 영속 파일시스템 원본(`source/<uuid hex>`)을 publish한다.
+Recording의 `local_source` 메타데이터는 그 상대 locator를 등록하며, 준비된
+analysis/incident, frame 및 파생 콘텐츠는 Recording MySQL BLOB을 사용한다. Worker
+materializer는 기존 lease 임시 루트 아래에 임시 파일을 만든다.
+제품 purge와 BLOB 수명주기는 이번 변경의 범위 밖이다.
 
-Alternatives considered: age alone cannot protect stalled registration; a new
-durable publish timestamp/table expands schema unnecessarily; per-file leases
-require a new alias-safe lock identity. Reusing coarse root leases preserves the
-existing tradeoff: active work can postpone unrelated cleanup.
+공개 Recording capability는 정규화된 관리 대상 상대 publish locator 하나를 받아
+REGISTERED, UNREGISTERED 또는 UNKNOWN을 반환한다. SQL/연결 실패는 계속 실패이며
+부재로 취급하지 않는다. Runtime은 테이블이 아닌 공개 인터페이스를 사용한다.
+저장소는 일관된 스냅샷이 아니라 local-source 메타데이터의 현재 잠금 읽기를 사용한다.
+NOWAIT 경합은 안전하게 차단되며, 연결이 끊긴 클라이언트의 아직 살아 있는
+트랜잭션도 포함한다. 트랜잭션 완료는 호출자가 책임지며, runtime은 새로운 짧은
+트랜잭션을 사용하고 파일 삭제 전에 연결을 반환한다.
 
-B-C2 remains 86400 seconds and B-C4 startup plus 3600-second fixed delay. Adopt
-mtime as an implementation choice consistent with existing cleanup; equality is
-preserved. A backward wall clock delays cleanup; a forward jump may advance
-age eligibility but cannot bypass registration/lease/identity checks. No new
-operating profile, retention policy or byte limit is selected.
+루트 수준 OS lease를 재사용한다. API는 업로드 전부터 등록 commit/rollback과
+취소 정리까지 공유 publish lease를 유지한다. 스캐너는 조회와 신원을 검증한
+삭제가 끝날 때까지 비차단 배타 lease를 유지한다. 살아 있는 producer는 전체
+루트의 처리를 연기한다. 잠금은 제거하거나 교체하지 않는다. OS 충돌로 잠금이
+해제되더라도 DB rollback이 입증되지는 않는다. 현재 잠금 쿼리도 성공해야 한다.
+쿼리 후 unlink만으로는 원자적이지 않으며, 협력하는 writer 프로토콜과 고정한
+파일시스템 신원은 각각 별도의 필수 보호 장치다.
 
-POSIX advisory leases require cooperating writers; arbitrary SQL/direct file
-writers and mount namespace/bind aliases are outside that guarantee. Windows
-uses the existing pinned handles and OS-confirmed alias normalization. Exact
-platform executions, limitations, review and acceptance evidence follow below.
+고정한 source 안의 직속 정규 UUID 파일만 후보가 된다. 기존 staging/temp publish
+보호는 유지한다. 링크, reparse point, 여러 hardlink, 변경된 신원/버전 및 입증할 수
+없는 루트 관계는 거부한다. locator로 신원을 추론하지 않는다. 정규 상대 등록은
+저장된 root-key 표기와 관계없이 이름을 보호하며, 정규형이 아닌 저장 locator는
+부재를 불확실하게 만든다(전체 루트의 처리를 연기할 수 있음).
 
-## Capability and ownership
+검토한 대안: 나이만으로는 정체된 등록을 보호할 수 없고, 새로운 영속 publish
+타임스탬프/테이블은 스키마를 불필요하게 확장하며, 파일별 lease에는 alias에 안전한
+새 잠금 신원이 필요하다. 거친 루트 lease를 재사용하면 기존 절충이 유지된다.
+활성 작업이 관계없는 정리까지 연기할 수 있다.
 
-| Boundary | Meaning |
+B-C2는 86400초, B-C4는 시작 시 실행과 3600초 고정 지연을 유지한다. 기존 정리와
+일치하는 구현 선택으로 mtime을 채택하며, 경계값이 같으면 보존한다. 시스템 시계가
+뒤로 가면 정리가 지연되고, 앞으로 뛰면 나이 조건을 더 빨리 충족할 수 있지만
+등록/lease/신원 검증을 우회할 수는 없다. 새로운 운영 프로필, 보존 정책 또는
+바이트 제한은 선택하지 않는다.
+
+POSIX advisory lease에는 협력하는 writer가 필요하며, 임의 SQL/직접 파일 writer와
+mount namespace/bind alias는 그 보장의 범위 밖이다. Windows는 기존 고정 handle과
+OS가 확인한 alias 정규화를 사용한다. 정확한 플랫폼 실행, 한계, 리뷰 및 인수
+증거는 아래에 기록한다.
+
+<a id="capability-and-ownership"></a>
+
+## Capability와 소유권
+
+| 경계 | 의미 |
 | --- | --- |
-| Public entry | `RecordingService.read_publish_registration(locator)`; exported `PublishRegistration` enum |
-| Input | Exactly `source/[0-9a-f]{32}`. Invalid namespace, spelling, type or traversal returns UNKNOWN before repository access |
-| REGISTERED | A durable local-source metadata row names this relative locator; do not delete |
-| UNREGISTERED | Successful current read found no matching row and no ambiguous stored locator; not independent deletion authorization |
-| UNKNOWN / exception | Invalid/unsupported result or locator is UNKNOWN; DB/connection/lock errors propagate. Composition maps only the exact enum to True/False/None; scanner deletes only for `is False` |
-| Transaction | Caller-owned open MySQL transaction. `SELECT payload ... WHERE kind='local_source' FOR UPDATE NOWAIT`; no BLOB fetch, DML, commit, rollback, retries or file lookup in that method |
-| Runtime composition | Fresh `run_api_transaction` on existing RC/UTC API engine, returned connection before unlink. Runtime has no new Recording table/schema query |
-| Stale caller | Current locking read sees newer committed data under REPEATABLE READ even when the caller already established a stale consistent snapshot |
-| Mock | In-memory repository returns UNKNOWN: it cannot establish durable cross-process absence |
+| 공개 진입점 | `RecordingService.read_publish_registration(locator)`; 내보낸 `PublishRegistration` enum |
+| 입력 | 정확히 `source/[0-9a-f]{32}`. 잘못된 namespace, 표기, 타입 또는 traversal은 저장소 접근 전에 UNKNOWN 반환 |
+| REGISTERED | 영속 local-source 메타데이터 행이 이 상대 locator를 가리킴; 삭제 금지 |
+| UNREGISTERED | 성공한 현재 읽기에서 일치하는 행과 모호한 저장 locator가 없었음; 독립적인 삭제 허가는 아님 |
+| UNKNOWN / 예외 | 잘못되었거나 지원하지 않는 결과 또는 locator는 UNKNOWN; DB/연결/잠금 오류는 전파. Composition은 정확한 enum만 True/False/None으로 매핑하며, 스캐너는 `is False`일 때만 삭제 |
+| 트랜잭션 | 호출자가 소유한 열린 MySQL 트랜잭션. `SELECT payload ... WHERE kind='local_source' FOR UPDATE NOWAIT`; 이 메서드에서 BLOB fetch, DML, commit, rollback, 재시도 또는 파일 조회 없음 |
+| Runtime composition | 기존 RC/UTC API 엔진에서 새로운 `run_api_transaction` 실행, unlink 전에 연결 반환. Runtime에 새 Recording 테이블/스키마 쿼리 없음 |
+| 오래된 호출자 | 호출자가 이미 오래된 일관 스냅샷을 설정했어도 현재 잠금 읽기는 REPEATABLE READ에서 더 최근에 commit된 데이터를 확인 |
+| Mock | 메모리 저장소는 UNKNOWN 반환: 프로세스 간 영속 부재를 입증할 수 없음 |
 
-This P-6 implementation request authorizes adding the capability; the decision
-is visible in Recording README rather than silently treating the old Plan as
-already imposing it. Runtime/Recording Owner and PR review must confirm its
-documented scope and conservative tradeoffs. No Owner acceptance or Issue closure
-is claimed here.
+이번 P-6 구현 요청은 capability 추가를 허용한다. 이전 Plan이 이미 이를 요구한
+것처럼 조용히 취급하지 않고 Recording README에 이 결정을 드러낸다.
+Runtime/Recording Owner와 PR 리뷰는 문서화한 범위와 보수적 절충을 확인해야 한다.
+여기서는 Owner 인수나 Issue 종료를 주장하지 않는다.
 
-## Synchronization, failure and deletion conditions
+<a id="synchronization-failure-and-deletion-conditions"></a>
 
-1. API obtains shared orphan lease before staging creation; its monotonic
-   idle/total clocks start before this wait. Existing staging lease still spans
-   staging creation/receive/fsync/close/publish. Actual production filesystem
-   writer is `api.upload.publish`; Worker does not publish these originals.
-2. Root identity is checked before staging open and before/after publish. The
-   route shields and awaits its registration worker even after asyncio cancel.
-   `ApiComposition.register_source` also leases direct invocations, validates
-   root after preprobe and completes the existing Case + Recording transaction.
-3. Orphan scanner takes a nonblocking exclusive root lease. It opens source
-   **through the leased media directory**, not an independent pathname reopen.
-   Current media/source identities are rechecked before deletion. Only direct
-   ordinary UUID files with one link and `mtime_ns < cutoff` are candidates.
-4. Lookup must affirm committed absence. Pending registration rows cause NOWAIT
-   failure and preservation. API has inserted local-source metadata before
-   submitting COMMIT; a process crash/lost commit acknowledgement cannot convert
-   an in-flight registration into a safe negative query. Tests distinguish OS
-   lease release from the server transaction's later resolution.
-5. After lookup/transaction end, reopen the leaf, compare device/inode, size,
-   mtime/ctime, ordinary type, link count and directory entry version, then use
-   the existing Windows delete handle or POSIX unlinkat. The exclusive lease is
-   still held. A later cooperating registration waits and then rejects a file
-   already deleted. Registered names are preserved even if their bytes changed.
+## 동기화, 실패 및 삭제 조건
 
-Lock order is orphan lease → staging lease (receive) → file preparation →
-Case lock → Recording DML (registration); staging is released before DB. Scanner
-uses orphan exclusive → short Recording-only query, never Case/staging locks.
-There is no DB transaction while waiting for filesystem leases or deleting bytes.
-The existing repository constructor/prepared registration retain their existing
-short filesystem metadata validation; expensive probe/hash/encode remains outside
-checkout. `FOR UPDATE NOWAIT` may contend with another root's registration and
-conservatively defer cleanup. Full local-source payload scans are O(registrations)
-per candidate and deliberately avoid a new schema/index; large inventories can
-delay uploads and cleanup. This is a documented implementation limitation.
+1. API는 staging 생성 전에 공유 orphan lease를 얻으며, 단조 증가 idle/total
+   시계는 이 대기 전에 시작한다. 기존 staging lease는 staging 생성/수신/fsync/
+   close/publish 전체에 계속 적용된다. 실제 운영 파일시스템 writer는
+   `api.upload.publish`이며 Worker는 이 원본들을 publish하지 않는다.
+2. staging open 전과 publish 전후에 루트 신원을 확인한다. 라우트는 asyncio
+   cancel 이후에도 등록 worker를 shield하고 기다린다.
+   `ApiComposition.register_source`는 직접 호출에도 lease를 적용하고,
+   preprobe 후 루트를 검증하며 기존 Case + Recording 트랜잭션을 완료한다.
+3. orphan 스캐너는 비차단 배타 루트 lease를 얻는다. source는 독립 경로를 다시
+   여는 방식이 아니라 **lease가 적용된 media 디렉터리를 통해** 연다.
+   삭제 전에 현재 media/source 신원을 다시 확인한다. 링크가 하나이고
+   `mtime_ns < cutoff`인 직속 일반 UUID 파일만 후보가 된다.
+4. 조회는 commit된 부재를 확증해야 한다. 보류 중인 등록 행은 NOWAIT 실패와
+   보존으로 이어진다. API는 COMMIT 제출 전에 local-source 메타데이터를 삽입하므로,
+   프로세스 충돌/commit 응답 유실로 진행 중인 등록이 안전한 부정 쿼리로
+   바뀔 수 없다. 테스트는 OS lease 해제와 이후 서버 트랜잭션 확정을 구분한다.
+5. 조회/트랜잭션 종료 후 leaf를 다시 열고 device/inode, 크기, mtime/ctime,
+   일반 파일 타입, 링크 수 및 디렉터리 항목 버전을 비교한 다음 기존 Windows
+   delete handle 또는 POSIX unlinkat을 사용한다. 배타 lease는 계속 유지한다.
+   이후 협력하는 등록은 기다린 다음 이미 삭제된 파일을 거부한다.
+   등록된 이름은 바이트가 변경됐더라도 보존한다.
 
-Windows orphan uses native `LockFileEx` shared/exclusive byte-range locks; nested
-route/composition leases and concurrent producers are permitted. Existing
-staging/temp CRT locking behavior is unchanged. POSIX uses `flock`. Persistent
-lease files are never deleted by the product. Process death releases OS locks;
-unknown DB state is still protected by current reads. Access failure differs
-from ordinary lock contention and does not spin indefinitely. Cleanup retains
-startup, completion-relative interval, local duplicate-scan exclusion and owned
-shutdown join; filesystem/DB stalls can still delay join.
+잠금 순서는 orphan lease → staging lease(수신) → 파일 준비 → Case lock →
+Recording DML(등록)이며, staging은 DB 전에 해제한다. 스캐너는 orphan exclusive →
+짧은 Recording 전용 쿼리를 사용하며 Case/staging lock은 사용하지 않는다.
+파일시스템 lease 대기나 바이트 삭제 중에는 DB 트랜잭션이 없다. 기존 저장소
+생성자/준비된 등록은 기존의 짧은 파일시스템 메타데이터 검증을 유지하며, 비용이
+큰 probe/hash/encode는 checkout 밖에 남는다. `FOR UPDATE NOWAIT`는 다른 루트의
+등록과 경합해 정리를 보수적으로 연기할 수 있다. 전체 local-source payload
+스캔은 후보마다 O(registrations)이며 새 스키마/인덱스를 의도적으로 피한다.
+목록이 크면 업로드와 정리가 지연될 수 있다. 이는 문서화한 구현 한계다.
 
-| Observation | count / bytes / failed |
+Windows orphan은 native `LockFileEx` 공유/배타 byte-range lock을 사용하며,
+중첩 route/composition lease와 동시 producer를 허용한다. 기존 staging/temp CRT
+잠금 동작은 바뀌지 않는다. POSIX는 `flock`을 사용한다. 제품은 영속 lease 파일을
+삭제하지 않는다. 프로세스가 죽으면 OS 잠금은 해제되지만, 불명확한 DB 상태는
+현재 읽기가 계속 보호한다. 접근 실패는 일반 잠금 경합과 다르며 무한 반복하지
+않는다. 정리는 시작 시 실행, 완료 기준 간격, 로컬 중복 스캔 배제 및 소유한
+종료 join을 유지한다. 파일시스템/DB 정체는 여전히 join을 지연시킬 수 있다.
+
+| 관측 | count / bytes / failed |
 | --- | --- |
-| Actual ordinary file removal | +1 / snapshot bytes after identity recheck / 0 |
-| Registered, live root, young/equal age, unsafe link or changed leaf identity | 0 / 0 / 0 |
-| Concurrent filesystem disappearance | 0 / 0 / 0 |
-| UNKNOWN or any lookup exception, including FileNotFoundError | 0 / 0 / +1 per candidate |
-| Metadata/delete error | 0 / 0 / +1 for the item; continue other entries |
-| Root/lease identity or access failure | no deletion / 0 / +1 for root-level failure, or +1 per candidate when detected during item processing |
+| 실제 일반 파일 제거 | +1 / 신원 재확인 후 스냅샷 바이트 / 0 |
+| 등록됨, 살아 있는 루트, 젊음/같은 나이, 안전하지 않은 링크 또는 바뀐 leaf 신원 | 0 / 0 / 0 |
+| 동시 파일시스템 소멸 | 0 / 0 / 0 |
+| FileNotFoundError를 포함한 UNKNOWN 또는 모든 조회 예외 | 후보마다 0 / 0 / +1 |
+| 메타데이터/삭제 오류 | 해당 항목에 0 / 0 / +1; 다른 항목 계속 처리 |
+| 루트/lease 신원 또는 접근 실패 | 삭제 없음 / 0 / 루트 수준 실패는 +1, 항목 처리 중 발견하면 후보마다 +1 |
 
-Events are `storage.cleanup.orphan.{count,bytes,failed_count}` with the existing
-integer count field. Empty Context submission retains only timestamp, level,
-service, event and count, never locator/path/filename/Case ID/exception text.
-The API startup event test now requires **nine** exact cleanup events (previously
-six staging/temp events); no existing assertion was relaxed.
+이벤트는 기존 정수 count 필드를 사용하는
+`storage.cleanup.orphan.{count,bytes,failed_count}`다. 빈 Context 제출은 timestamp,
+level, service, event, count만 유지하고 locator/path/filename/Case ID/예외 텍스트는
+포함하지 않는다. API 시작 이벤트 테스트는 이제 정확히 **아홉** 개의 정리 이벤트를
+요구한다(기존 staging/temp 이벤트는 여섯 개). 기존 assertion은 완화하지 않았다.
 
-## Direct verification and retained failure history
+<a id="direct-verification-and-retained-failure-history"></a>
 
-Evidence below is this task's own execution; counts from separate runs are not
-summed. Raw outputs/JSON/JUnit/internal runners stay ignored in
-`.codex-scratch/issue445/`. All media and DB schemas are synthetic and owned.
+## 직접 검증과 보존한 실패 이력
 
-| Run | Direct result |
+아래 증거는 이 작업이 직접 실행한 결과이며, 서로 다른 실행의 수를 합산하지
+않는다. 원시 출력/JSON/JUnit/내부 runner는
+`.codex-scratch/issue445/`에 무시된 상태로 보관한다. 모든 media와 DB 스키마는
+합성 데이터이며 이 작업이 소유한다.
+
+| 실행 | 직접 결과 |
 | --- | --- |
-| `red1b.txt` → `green1b.txt` | Missing capability/scanner: 23 FAIL → 23 PASS |
-| `red2.txt` → first focused | API wiring/lease: 2 FAIL; then focused1 192 PASS |
-| `red3.txt`, `posix1.raw` | Lookup FileNotFoundError failed-count defect reproduced; Windows 1 FAIL/4 PASS and POSIX 1 FAIL/162 PASS/7 platform skips |
-| `posixred.raw` → `posix2.raw` | Leased-root and post-query replacement: 2 FAIL, then 182 PASS/7 existing platform skips |
-| `red4.txt` → focused3 | Lease wait omitted from deadlines: 1 FAIL; focused3 210 PASS after fix |
-| `red5.txt` → `green5.txt` | Windows nested CRT lease: child 10-second timeout with outer lease held → native shared-lock regression/API 5 PASS |
-| `mysql2.raw` | 16 new MySQL tests completed, then first existing HTTP test stalled on nested Windows lease. Verified owned pytest PID terminated; partial raw/run retained, not PASS |
-| `mysql3.raw/.json/.xml` | MySQL 8.4.7: 50 PASS (new 16 + existing API upload 34), skip/xfail 0, all 150 phase reports PASS |
-| `focused4.txt` | Windows: 246 PASS, existing Starlette deprecation warning only |
-| `posix3.raw` | WSL Ubuntu POSIX: 185 PASS, 7 existing Windows-only skips, same warning |
-| `mysqlposix.raw/.json/.xml` | WSL Python + actual MySQL 8.4.7: new 16 PASS, skip/xfail 0 |
-| `red6.txt` → `finalstorage.txt` | Lock access failure miscounted as contention: 1 FAIL → final Windows orphan 33 PASS |
-| `posixfinal.raw` | Final lock-access delta and POSIX orphan boundary: 31 PASS, skip 0 |
-| Quality | Final `quality4.txt`: Ruff + mypy linux/win32 (87 source files each) PASS |
-| Boundary/Contract/diff | `boundary2.txt`: 0 violations; Contract 62 structural/26 JSON/104 semantic checks PASS; `git diff --check` PASS |
+| `red1b.txt` → `green1b.txt` | capability/스캐너 부재: 23 FAIL → 23 PASS |
+| `red2.txt` → 첫 focused | API 연결/lease: 2 FAIL; 이후 focused1 192 PASS |
+| `red3.txt`, `posix1.raw` | 조회 FileNotFoundError의 failed-count 결함 재현; Windows 1 FAIL/4 PASS 및 POSIX 1 FAIL/162 PASS/7 플랫폼 skip |
+| `posixred.raw` → `posix2.raw` | lease 루트와 쿼리 후 교체: 2 FAIL, 이후 182 PASS/7 기존 플랫폼 skip |
+| `red4.txt` → focused3 | deadline에서 lease 대기 누락: 1 FAIL; 수정 후 focused3 210 PASS |
+| `red5.txt` → `green5.txt` | Windows 중첩 CRT lease: 외부 lease를 유지한 상태에서 child 10초 timeout → native 공유 잠금 회귀/API 5 PASS |
+| `mysql2.raw` | 새 MySQL 테스트 16개 완료 후 첫 기존 HTTP 테스트가 중첩 Windows lease에서 정체. 소유한 pytest PID 종료 확인; 부분 원시 출력/실행 보존, PASS 아님 |
+| `mysql3.raw/.json/.xml` | MySQL 8.4.7: 50 PASS(신규 16 + 기존 API 업로드 34), skip/xfail 0, 150개 phase report 모두 PASS |
+| `focused4.txt` | Windows: 246 PASS, 기존 Starlette deprecation warning만 있음 |
+| `posix3.raw` | WSL Ubuntu POSIX: 185 PASS, 기존 Windows 전용 skip 7개, 같은 warning |
+| `mysqlposix.raw/.json/.xml` | WSL Python + 실제 MySQL 8.4.7: 신규 16 PASS, skip/xfail 0 |
+| `red6.txt` → `finalstorage.txt` | 잠금 접근 실패를 경합으로 잘못 집계: 1 FAIL → 최종 Windows orphan 33 PASS |
+| `posixfinal.raw` | 최종 잠금 접근 변경분과 POSIX orphan 경계: 31 PASS, skip 0 |
+| 품질 | 최종 `quality4.txt`: Ruff + mypy linux/win32(각 소스 파일 87개) PASS |
+| 경계/Contract/diff | `boundary2.txt`: 위반 0; Contract 구조 62/JSON 26/의미 104 검사 PASS; `git diff --check` PASS |
 
-`red1.txt` had scratch access errors, `green1.txt` had sandbox-denied hardlink
-creation; they are environment failures, not product GREEN. Tests then used owned
-basetemp and approved native filesystem access. The first boundary script failed
-while printing an em dash through cp949; the same check passed with Python UTF-8.
-Initial mypy Optional cleanup guard error was fixed without suppressions.
+`red1.txt`에는 scratch 접근 오류, `green1.txt`에는 sandbox가 거부한 hardlink
+생성이 있었다. 이는 환경 실패이며 제품 GREEN이 아니다. 이후 테스트는 소유한
+basetemp와 승인된 native 파일시스템 접근을 사용했다. 첫 경계 스크립트는 cp949로
+em dash를 출력하다 실패했고, 같은 검사는 Python UTF-8로 통과했다.
+초기 mypy Optional cleanup guard 오류는 suppression 없이 수정했다.
 
-Negative controls are actual dangerous behavior on synthetic files: bypassing
-the lease deletes an active pre-registration file; replacing the locking query
-with a normal consistent read deletes an uncommitted registration's file.
-The RR snapshot test also proves a normal query misses a later commit while
-the public capability sees it. Thread Events/IPC Pipe handshakes control race
-points; no sleep-based race assertions. Separate spawn processes cover publish
-before DB, uncommitted/commit/rollback, crash before DB and crash with transaction.
-An explicit test-only DB lock barrier observes dead-session resolution.
+음성 대조군은 합성 파일에 실제로 위험한 동작을 수행한다. lease를 우회하면 등록
+전 활성 파일이 삭제되고, 잠금 쿼리를 일반 일관 읽기로 바꾸면 commit 전 등록
+파일이 삭제된다. RR snapshot 테스트는 일반 쿼리가 나중 commit을 놓치는 반면
+공개 capability는 이를 확인한다는 점도 입증한다. Thread Events/IPC Pipe
+handshake로 경쟁 지점을 제어하며 sleep 기반 경쟁 assertion은 없다. 별도 spawn
+프로세스는 DB 전 publish, uncommitted/commit/rollback, DB 전 충돌 및 트랜잭션이
+있는 충돌을 다룬다. 명시적인 테스트 전용 DB lock barrier가 죽은 세션의 확정을
+관측한다.
 
-## Platform scope and remaining limits
+<a id="platform-scope-and-remaining-limits"></a>
 
-- Windows execution used local NTFS synthetic files, ordinary/extended namespace,
-  case/separator/dot/actual 8.3 aliases, junctions, hardlinks, readonly, pinned
-  handle and process boundaries. Existing storage sharing/metadata/lifecycle
-  tests also ran. No Windows skip was added or taken in focused4.
-- POSIX source checkout is on WSL `/mnt/c` (v9fs); storage/lifecycle test basetemp
-  is `/tmp/issue445-posix*` on ext4, confirmed with stat/findmnt. MySQL POSIX
-  tests use scratch basetemp on `/mnt/c`. These are WSL Linux process/filesystem
-  results, not tests on a separate deployed native Linux host or container.
-- Arbitrary **noncooperating** POSIX directory/file renames between the final
-  identity check and syscall cannot be atomically excluded by advisory leases.
-  Detected substitutions fail closed; do not interpret that as universal safety
-  against hostile direct filesystem writers, direct SQL inserts, bind mounts,
-  mount namespaces, UNC/network filesystems or untested Windows filesystems.
-- A noncanonical legacy/local-source locator makes absence UNKNOWN for unrelated
-  names too. Ignoring root-key spellings and root-wide active protection can
-  preserve an entire root. No cleanup throughput or disk-pressure guarantee.
-- Root/lock replacement by external actors and coordination across DBs pointing
-  at the same media root are not supported. Every deployed writer must use the
-  same DB and lease protocol; old binaries must not concurrently publish without
-  this lease. No mixed-version deployment was executed.
-- No full pytest/full MySQL inventory/strict whole-suite gate or Docker build
-  was run. Required inventory/checkers/timeouts/skip/xfail policies were unchanged.
-  Final integrated whole-suite and remote CI remain conditions after user push.
+## 플랫폼 범위와 남은 한계
 
-## Fresh review
+- Windows 실행은 로컬 NTFS 합성 파일, 일반/확장 namespace,
+  대소문자/구분자/dot/실제 8.3 alias, junction, hardlink, readonly,
+  고정 handle 및 프로세스 경계를 사용했다. 기존 storage sharing/metadata/lifecycle
+  테스트도 실행했다. focused4에서는 Windows skip을 추가하거나 사용하지 않았다.
+- POSIX 소스 checkout은 WSL `/mnt/c`(v9fs)에 있으며, storage/lifecycle 테스트
+  basetemp는 ext4의 `/tmp/issue445-posix*`로 stat/findmnt로 확인했다. MySQL POSIX
+  테스트는 `/mnt/c`의 scratch basetemp를 사용한다. 이는 WSL Linux 프로세스/
+  파일시스템 결과이며, 별도 배포된 native Linux 호스트나 컨테이너의 테스트가 아니다.
+- 최종 신원 확인과 syscall 사이에 임의의 **비협력** POSIX 디렉터리/파일 rename이
+  발생하는 것을 advisory lease로 원자적으로 배제할 수 없다. 탐지된 교체는
+  안전하게 차단한다. 이를 악의적인 직접 파일시스템 writer, 직접 SQL insert,
+  bind mount, mount namespace, UNC/network 파일시스템 또는 미검증 Windows
+  파일시스템에 대한 보편적 안전성으로 해석해서는 안 된다.
+- 정규형이 아닌 legacy/local-source locator는 관계없는 이름의 부재도 UNKNOWN으로
+  만든다. root-key 표기를 무시하고 루트 전체 활성 보호를 적용하면 전체 루트를
+  보존할 수 있다. 정리 처리량이나 디스크 압력에 대한 보장은 없다.
+- 외부 행위자의 루트/잠금 교체와 같은 media 루트를 가리키는 여러 DB 간 조정은
+  지원하지 않는다. 배포된 모든 writer는 같은 DB와 lease 프로토콜을 사용해야
+  하며, 이전 바이너리는 이 lease 없이 동시에 publish해서는 안 된다.
+  혼합 버전 배포는 실행하지 않았다.
+- 전체 pytest/전체 MySQL inventory/엄격한 전체 suite gate나 Docker build는
+  실행하지 않았다. 필수 inventory/checker/timeout/skip/xfail 정책은 바꾸지 않았다.
+  최종 통합 전체 suite와 원격 CI는 사용자 push 이후의 조건으로 남는다.
 
-Fresh `GPT-6.1 Sol`, reasoning high, no conversation-history fork, read-only.
-Initial P1 root reopening and P2 deadline/failure-accounting findings were
-reproduced and fixed; the same reviewer inspected deltas and the new Windows
-shared-lock fix. Its subsequent judgment found no additional actionable defect
-within the cooperative-writer model. Reviewer inspected author evidence and
-directly ran only `git diff --check`; it did **not** execute the test suite.
-Final documentation/small lock-error delta review found no remaining actionable
-code finding. Its minor observation-table correction (root-level versus
-per-candidate identity failure count) was applied without changing code. The
-same reviewer confirmed this exact documentation delta with no remaining finding.
+<a id="fresh-review"></a>
 
-## Complete candidate file list
+## 새로운 리뷰
 
-| Area | Files |
+새 `GPT-6.1 Sol` 리뷰는 reasoning high, 대화 이력 fork 없이 읽기 전용으로
+수행했다. 초기 P1 루트 재열기와 P2 deadline/실패 집계 지적은 재현하고 수정했다.
+같은 reviewer가 변경분과 새 Windows 공유 잠금 수정도 점검했다. 이후 판단에서는
+협력 writer 모델 안에서 추가로 조치할 결함을 찾지 못했다. reviewer는 작성자
+증거를 점검하고 직접 실행한 것은 `git diff --check`뿐이며, 테스트 suite는
+실행하지 **않았다**. 최종 문서/작은 잠금 오류 변경분 리뷰에서 남은 조치 가능한
+코드 지적은 없었다. 관측 표에 대한 사소한 수정(루트 수준 대 후보별 신원 실패
+집계)은 코드 변경 없이 적용했다. 같은 reviewer가 이 정확한 문서 변경분을
+확인했고 남은 지적은 없었다.
+
+<a id="complete-candidate-file-list"></a>
+
+## 전체 후보 파일 목록
+
+| 영역 | 파일 |
 | --- | --- |
 | API | `src/daesingo/api/composition.py`, `routes_sources.py`, `upload.py`, `README.md` |
 | Storage | `src/daesingo/common/storage/_filesystem.py`, `cleanup.py`, `src/daesingo/common/README.md` |
 | Recording | `src/daesingo/recording/__init__.py`, `mysql_repository.py`, `repository.py`, `service.py`, `publication.py`, `README.md` |
-| API tests | `tests/api/test_api_cleanup.py`, `test_orphan_upload.py` |
-| Storage tests | `tests/common/storage/test_orphan_publish.py` |
-| Recording tests | `tests/recording/test_publish_registration.py`, `test_publish_registration_mysql.py` |
-| Runtime docs | `docs/runtime/README.md`, `issue445-orphan-publish.md`, `runtime-implementation-log.md` |
+| API 테스트 | `tests/api/test_api_cleanup.py`, `test_orphan_upload.py` |
+| Storage 테스트 | `tests/common/storage/test_orphan_publish.py` |
+| Recording 테스트 | `tests/recording/test_publish_registration.py`, `test_publish_registration_mysql.py` |
+| Runtime 문서 | `docs/runtime/README.md`, `issue445-orphan-publish.md`, `runtime-implementation-log.md` |
 
-## Issue acceptance evidence and PR/Owner checks
+<a id="issue-acceptance-evidence-and-prowner-checks"></a>
 
-| #445 completion criterion | Evidence / remaining confirmation |
+## Issue 인수 증거와 PR/Owner 확인
+
+| #445 완료 기준 | 증거 / 남은 확인 |
 | --- | --- |
-| Registered files preserved | MySQL committed/current RR reads, original API commit/unknown-commit regression |
-| Active and young files preserved | Exact age equality, wall-clock tests, route/producer leases, process IPC and cancellation tests |
-| Failed lookup / uncertain identity preserved | UNKNOWN/error tests, real NOWAIT contention, alias/link/root/leaf replacement tests |
-| Only old unregistered publish removed | Strict mtime predicate + managed UUID direct files + successful exact verdict + final identity verification |
-| Runtime does not query Recording schema | Public facade composition and unchanged boundary gate PASS |
-| Safety/transaction/race/privacy tests | Focused Windows/POSIX + actual MySQL/process evidence above; remote whole CI pending |
-| Notes/Log/P-6 decision | This note, Recording README, appended Implementation Log; Owner acceptance pending |
+| 등록 파일 보존 | MySQL committed/현재 RR 읽기, 기존 API commit/unknown-commit 회귀 |
+| 활성 파일과 젊은 파일 보존 | 정확한 나이 경계 동등성, 시스템 시계 테스트, route/producer lease, 프로세스 IPC 및 취소 테스트 |
+| 조회 실패 / 불확실한 신원 보존 | UNKNOWN/오류 테스트, 실제 NOWAIT 경합, alias/link/root/leaf 교체 테스트 |
+| 오래된 미등록 publish만 제거 | 엄격한 mtime 조건 + 관리 UUID 직속 파일 + 성공한 정확한 판정 + 최종 신원 검증 |
+| Runtime이 Recording 스키마를 쿼리하지 않음 | 공개 facade composition 및 변경 없는 경계 gate PASS |
+| 안전/트랜잭션/경쟁/개인정보 테스트 | 위 집중 Windows/POSIX + 실제 MySQL/프로세스 증거; 원격 전체 CI 대기 |
+| 참고 사항/Log/P-6 결정 | 이 문서, Recording README, 추가한 Implementation Log; Owner 인수 대기 |
 
-PR/Owner must confirm coarse-root/legacy-alias conservatism, mtime implementation
-choice, common DB/all-writer protocol and current-read lock cost, then validate
-post-push whole integrated CI. This session performs no staging, commit, push,
-PR, external comment, merge, Issue closure, provider/AWS call, workflow dispatch
-or deployment. RT14 variable was not mutated; its current remote value could not
-be re-read because automatic approval review rejected that read as a provider
-call. Historical false evidence is not represented as a new verification.
+PR/Owner는 거친 루트/legacy alias 보수성, mtime 구현 선택, 공통 DB/전체 writer
+프로토콜 및 현재 읽기 잠금 비용을 확인한 다음 push 후 전체 통합 CI를 검증해야
+한다. 이 세션에서는 staging, commit, push, PR, 외부 댓글, merge, Issue 종료,
+provider/AWS 호출, workflow dispatch 또는 배포를 수행하지 않는다. RT14 변수는
+변경하지 않았다. 자동 승인 검토가 provider 호출이라는 이유로 읽기를 거부하여
+현재 원격 값을 다시 읽을 수 없었다. 과거 false 증거를 새 검증으로 제시하지 않는다.
 
-## Owned-resource cleanup and handoff
+<a id="owned-resource-cleanup-and-handoff"></a>
 
-The task-owned MySQL server was identified by exact recorded datadir before
-shutdown: non-audit clients, InnoDB transactions and data locks were all zero.
-Its port closed, its exact `/tmp/issue445-<generated UUID>` directory and the
-five explicitly named POSIX test temp roots were removed. No container/image
-was created, removed or rebuilt. Eighteen Windows task temp roots were removed,
-with zero matching roots remaining. The final Git audit is recorded in the
-handoff evidence. RAW/failure originals/JSON/JUnit and small
-diagnostic scripts remain ignored; other tasks' scratch/cache/images are intact.
+## 소유 리소스 정리와 인계
+
+종료 전 작업 소유 MySQL 서버를 정확히 기록된 datadir로 식별했다.
+감사 외 클라이언트, InnoDB 트랜잭션 및 data lock은 모두 없었다.
+포트가 닫혔으며, 정확한 `/tmp/issue445-<generated UUID>` 디렉터리와 명시적으로
+이름을 지정한 POSIX 테스트 임시 루트 다섯 개를 제거했다. 컨테이너/이미지는
+생성, 제거 또는 재빌드하지 않았다. Windows 작업 임시 루트 열여덟 개를 제거했고
+일치하는 루트는 남지 않았다. 최종 Git 감사는 인계 증거에 기록했다.
+RAW/실패 원본/JSON/JUnit 및 작은 진단 스크립트는 계속 무시된 상태로 남기며,
+다른 작업의 scratch/cache/image는 그대로 보존했다.
