@@ -16,7 +16,7 @@
 >
 > **notice 등재 (2026-10-29, [#449](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/449), 유소연) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** `evidence.event_time_missing`(WARN · blocking · `actions:[EDIT_EVENT_TIME]`)을 B§7 `notices[].code`에 등재한다 — 발생시각이 없어 Package가 나가지 않는 상태의 이유와 출구. 상세 `docs/modules/case/decisions/event-time-missing-notice.md`.
 >
-> **notice 등재 (2026-10-29, RT-10(b) [#442](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/442) 구현 반영, 유소연) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** `recording.report_video_export_failed` · `recording.plate_image_export_failed`를 B§7 `notices[].code`에 등재한다. 코드는 #442에서 이미 이 모양으로 내리고 있었고, 행에는 「RT-10에서 맞춘다」로 미뤄져 있었다. web 문구는 신유민 확인 대기.
+> **notice 등재 (2026-10-29, RT-10(b) [#442](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/442) 구현 반영, 유소연) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** `recording.report_video_export_failed` · `recording.plate_image_export_failed`를 B§7 `notices[].code`에 등재한다. 코드는 #442에서 이미 이 모양으로 내리고 있었고, 행에는 「RT-10에서 맞춘다」로 미뤄져 있었다. web 문구는 확인 완료 — `apps/web/src/contracts/labels.ts`의 `notice.report_video_export_failed` · `notice.plate_image_export_failed`(2026-10-31, 신유민 [#492](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/492) 확인).
 >
 > **`RETRY_SEARCH` 규칙 (2026-10-29, [#426](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/426), 유소연) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** 결과 없음에서 다시 찾으면 `SEARCHING`으로 돌아가고, 탐색 job을 기다리는 동안에는 `RETRY_SEARCH`를 싣지 않으며, 그동안 `coarse_search`는 이전 실패를 보이지 않는다(B§7 매핑 행). 상세 `docs/modules/case/decisions/retry-search-while-waiting.md`.
 >
