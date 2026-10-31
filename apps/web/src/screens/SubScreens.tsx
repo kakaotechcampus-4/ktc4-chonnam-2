@@ -116,9 +116,9 @@ export function PlateCheck(props: {
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const src = sourceLabel(plate.source_label_key)
   const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
-  // 안쪽 공백은 지우고 받는다(`12가 3456` → `12가3456`). 형식이 틀려도 저장은 막지 않고 칸 아래에 경고만 한다(core-user-flow §12).
-  const plateInput = (editing ?? '').replace(/\s/g, '')
-  const plateOk = PLATE_FORMAT.test(plateInput)
+  // 입력한 그대로 보낸다(`12가 3456`도 그대로). 공백은 형식을 볼 때만 지운다. 형식이 틀려도 저장은 막지 않고 경고만 한다(core-user-flow §12).
+  const plateInput = (editing ?? '').trim()
+  const plateOk = PLATE_FORMAT.test(plateInput.replace(/\s/g, ''))
   const plateWrong = plateInput !== '' && !plateOk
   // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
   const pending = props.view.running_jobs.length > 0

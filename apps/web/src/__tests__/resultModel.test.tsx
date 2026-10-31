@@ -189,7 +189,7 @@ describe('프레임 이미지', () => {
   })
 
   // #487에 올린 통과 · 차단 사례
-  it('번호판 형식이 어긋나도 저장은 막지 않고 경고만 한다(core-user-flow §12). 빈 값만 막고, 안쪽 공백은 지워서 보낸다', () => {
+  it('번호판 형식이 어긋나도 저장은 막지 않고 경고만 한다(core-user-flow §12). 빈 값만 막고, 입력한 값은 공백까지 그대로 보낸다', () => {
     const onEdit = vi.fn()
     const { container, getByText } = render(<PlateCheck view={HAPPY} onBack={vi.fn()} onEdit={onEdit} startEditing />)
     const input = container.querySelector('.plate-input') as HTMLInputElement
@@ -212,6 +212,6 @@ describe('프레임 이미지', () => {
       expect(input2.getAttribute('aria-invalid')).toBe('false')
     }
     fireEvent.submit(input2.form!)
-    expect(onEdit).toHaveBeenLastCalledWith('12가3456')
+    expect(onEdit).toHaveBeenLastCalledWith('12가 3456')
   })
 })
