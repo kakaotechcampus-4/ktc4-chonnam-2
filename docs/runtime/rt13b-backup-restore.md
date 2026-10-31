@@ -4,6 +4,15 @@
 
 **IN_PROGRESS · Refs #300 (RT-13(b))**
 
+### 2026-10-31 운영 복구 준비 연결
+
+아래 로컬 구현/검증 이력은 보존한다. 운영 DB/media의 일관된 backup과 **별도 media 사본의 복원**은
+[RT-14 복구 acceptance 준비](rt14-recovery-acceptance.md)를 따른다. `backup_compose.py`는 dump를
+메모리에 수집하며 media 파일을 backup하지 않는다. 기존 `smoke_backup_restore.py`는 생성한
+테스트 DB volume을 교체하고 원래 media volume을 유지하므로 운영 project/volume에 적용하지 않는다.
+RT-13 DB 내부 lock은 RT-14 host `operation.lock`과 별개이며, 약 4GiB 운영 환경에서 자원 예산과
+source release의 heads를 확인하기 전 실제 dump/추가 MySQL/Paddle stack을 실행하지 않는다.
+
 <a id="implementation-notes"></a>
 
 ## 구현 기록
