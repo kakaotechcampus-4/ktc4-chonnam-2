@@ -86,6 +86,8 @@ AI 실험에서는 한 번에 여러 설정을 바꾸면 **무엇 때문에 성�
 
 성능 수치에는 반드시 **어떤 평가셋으로 측정했는지**가 따라야 한다.
 
+현행 평가셋의 규모·정답 범위·용도는 [`datasets/README.md`](datasets/README.md)를 따른다. 새 AI-Hub 선별 영상은 `a_aihub_best100_all`(원본 Training 포함 전체 개발 진단), `a_aihub_best100_val`(중복 제거 Validation), `aihub_mixed_pilot_mp2`(8쌍 파일럿), `aihub_mixed_100_v1`(100쌍 확장 합성 진단)로 **별도** 기록한다. 삽입 영상 수치를 실제 장시간 블박 성능과 합산하지 않는다.
+
 | 항목 | 예시 |
 | --- | --- |
 | Dataset | `long_dashcam_eval` |

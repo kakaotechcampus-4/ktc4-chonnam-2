@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "run_id": "aihub_best100_pilot_20261030",
+    "impl": "search:s3-argon-gore-coarse-top1",
+    "impl_version": "v1",
+    "stage": "classification",
+    "manifest": "a_aihub_best100_val",
+    "manifest_version": "bm1",
+    "clip_rule_version": null,
+    "normalizer_version": "n4",
+    "code_commit": "50da838b",
+    "created_at": "2026-10-30T13:40:18.666175+09:00",
+    "contract_version": null,
+    "processed_duration_sec": 20.5
+  },
+  "raw": [
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001128",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.9
+        }
+      ]
+    }
+  ],
+  "normalized": [
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001128",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    }
+  ],
+  "facts": {
+    "prediction_rule": "top-ranked coarse candidate event_type; no candidate => NONE",
+    "model": "gemini-4-argon",
+    "config_version": "gemini-search-v4",
+    "config_fingerprint": "03c4a0f779cb0d5d9368efceaef294ec7cda6c0f037f1a79c4f12c2ae0d74f22",
+    "usage_records": [
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001128",
+        "provider": "elice",
+        "model": "gemini-4-argon",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "cb733fa128dc1689f749639780779ea87c2c1e690c42a317a6c0702b735f2528",
+        "config_version": "gemini-search-v4",
+        "processed_duration_sec": 20.5,
+        "prepared_media_bytes": 773936,
+        "prepared_duration_ms": 41000,
+        "latency_ms": 6656,
+        "input_tokens": 3935,
+        "output_tokens": 111,
+        "thought_tokens": 0,
+        "total_tokens": 4046,
+        "cost": {
+          "amount": "0.00909225",
+          "currency": "USD"
+        }
+      }
+    ],
+    "scenarios": [
+      "20230226_좌회전신호시직진_0000001128"
+    ],
+    "partial_run": true,
+    "n_errors": 0
+  }
+}

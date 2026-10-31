@@ -1,0 +1,4759 @@
+{
+  "meta": {
+    "run_id": "aihub_best100_val_from_all_s1_20261031",
+    "impl": "search:s1-coarse-top1",
+    "impl_version": "v1",
+    "stage": "classification",
+    "manifest": "a_aihub_best100_val",
+    "manifest_version": "bm1",
+    "clip_rule_version": null,
+    "normalizer_version": "n4",
+    "code_commit": "50da838b",
+    "created_at": "2026-10-31T15:15:15.699313+09:00",
+    "contract_version": null,
+    "processed_duration_sec": 960.9,
+    "derived_from_run_id": "aihub_best100_all_s1_20261031"
+  },
+  "raw": [
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001128",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.75
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001116",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001141",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001065",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.4
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001039",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001071",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.42
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001059",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001118",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 3,
+          "event_type": "SIGNAL",
+          "score": 0.82
+        },
+        {
+          "rank": 4,
+          "event_type": "SIGNAL",
+          "score": 0.78
+        },
+        {
+          "rank": 5,
+          "event_type": "SIGNAL",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013349",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003998",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011930",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.55
+        },
+        {
+          "rank": 2,
+          "event_type": "SIGNAL",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001091",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012793",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.9
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003699",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.32
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003705",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013343",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012791",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013365",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012320",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012424",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.25
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012348",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012862",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.8
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003707",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003696",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013368",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003678",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013402",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003996",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003714",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.2
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011924",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012066",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.35
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012426",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012421",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.25
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013357",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.35
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012771",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013390",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "SIGNAL",
+          "score": 0.6
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012419",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010453",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010484",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010597",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011146",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011027",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.72
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000612",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.84
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011185",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011532",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010514",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010999",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011362",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.72
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011163",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011035",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.82
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010837",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011232",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011029",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011113",
+      "predicted": "NONE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": []
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010591",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011064",
+      "predicted": "NONE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": []
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010774",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011222",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.78
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010838",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.78
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010993",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010515",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010937",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011457",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.42
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011244",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010948",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011270",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011462",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.45
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.35
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010579",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.82
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011160",
+      "predicted": "NONE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": []
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010679",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010510",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.78
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010509",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002504",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "SIGNAL",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002389",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002529",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.35
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002512",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002411",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002465",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002472",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002530",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002404",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006120",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009053",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.78
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005978",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006028",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008576",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008912",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009001",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006188",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008497",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009010",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005811",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.78
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006139",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005984",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.9
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006147",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.85
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.55
+        },
+        {
+          "rank": 3,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005961",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005825",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008894",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009395",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005982",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005986",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006054",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005837",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.82
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.74
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008599",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.65
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006007",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006103",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008560",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006087",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006198",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.65
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.55
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008554",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.65
+        },
+        {
+          "rank": 2,
+          "event_type": "MOTORCYCLE_HELMET_NON_USE",
+          "score": 0.45
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006018",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006202",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.95
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006148",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.88
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.82
+        },
+        {
+          "rank": 3,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006118",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.65
+        },
+        {
+          "rank": 2,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.62
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008746",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.92
+        },
+        {
+          "rank": 2,
+          "event_type": "SIGNAL",
+          "score": 0.85
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009043",
+      "predicted": "SIGNAL",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "SIGNAL",
+          "score": 0.75
+        }
+      ]
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008494",
+      "predicted": "CENTER_LINE_CROSSING",
+      "outcome": "SUCCEEDED",
+      "issues": [],
+      "candidates": [
+        {
+          "rank": 1,
+          "event_type": "CENTER_LINE_CROSSING",
+          "score": 0.78
+        },
+        {
+          "rank": 2,
+          "event_type": "SOLID_LINE_LANE_CHANGE",
+          "score": 0.65
+        }
+      ]
+    }
+  ],
+  "normalized": [
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001128",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001116",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001141",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001065",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001039",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001071",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001059",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001118",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013349",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003998",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011930",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001091",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012793",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003699",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003705",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013343",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012791",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013365",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012320",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012424",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012348",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012862",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003707",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003696",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013368",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003678",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013402",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003996",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003714",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011924",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012066",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012426",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012421",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013357",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012771",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013390",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012419",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010453",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010484",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010597",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011146",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011027",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000612",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011185",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011532",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010514",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010999",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011362",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011163",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011035",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010837",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011232",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011029",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011113",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010591",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011064",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010774",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011222",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010838",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010993",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010515",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010937",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011457",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011244",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010948",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011270",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011462",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010579",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011160",
+      "predicted": "NONE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010679",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010510",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010509",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002504",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002389",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002529",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002512",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002411",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002465",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002472",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002530",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002404",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006120",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009053",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005978",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006028",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008576",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008912",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009001",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006188",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008497",
+      "predicted": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009010",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005811",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006139",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005984",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006147",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005961",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005825",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008894",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009395",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005982",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005986",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006054",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005837",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008599",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006007",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006103",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008560",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006087",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006198",
+      "predicted": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008554",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006018",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006202",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006148",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006118",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008746",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009043",
+      "predicted": "SIGNAL",
+      "target_bbox": null
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008494",
+      "predicted": "CENTER_LINE_CROSSING",
+      "target_bbox": null
+    }
+  ],
+  "facts": {
+    "prediction_rule": "top-ranked coarse candidate event_type; no candidate => NONE",
+    "model": "gemini-3.8-flash",
+    "point": "s1",
+    "config_version": "gemini-search-v2",
+    "config_fingerprint": "437bfd31e6092c64c9420c11a502b551d18a79604757b7eb90aff4b0dc73cb66",
+    "usage_records": [
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001039",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 361254,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 5969,
+        "input_tokens": 1214,
+        "output_tokens": 170,
+        "thought_tokens": 0,
+        "total_tokens": 1384,
+        "cost": {
+          "amount": "0.00168267",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001128",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 20.5,
+        "prepared_media_bytes": 454938,
+        "prepared_duration_ms": 21000,
+        "latency_ms": 7421,
+        "input_tokens": 1808,
+        "output_tokens": 300,
+        "thought_tokens": 0,
+        "total_tokens": 2108,
+        "cost": {
+          "amount": "0.00269692",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001141",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 26.9,
+        "prepared_media_bytes": 549739,
+        "prepared_duration_ms": 27000,
+        "latency_ms": 7391,
+        "input_tokens": 2204,
+        "output_tokens": 173,
+        "thought_tokens": 0,
+        "total_tokens": 2377,
+        "cost": {
+          "amount": "0.002501754",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001071",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 16.0,
+        "prepared_media_bytes": 440967,
+        "prepared_duration_ms": 16000,
+        "latency_ms": 7688,
+        "input_tokens": 1478,
+        "output_tokens": 304,
+        "thought_tokens": 0,
+        "total_tokens": 1782,
+        "cost": {
+          "amount": "0.002444282",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001065",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 20.4,
+        "prepared_media_bytes": 649124,
+        "prepared_duration_ms": 20000,
+        "latency_ms": 7813,
+        "input_tokens": 1742,
+        "output_tokens": 294,
+        "thought_tokens": 0,
+        "total_tokens": 2036,
+        "cost": {
+          "amount": "0.002618662",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001116",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 23.8,
+        "prepared_media_bytes": 649762,
+        "prepared_duration_ms": 24000,
+        "latency_ms": 8500,
+        "input_tokens": 2006,
+        "output_tokens": 323,
+        "thought_tokens": 0,
+        "total_tokens": 2329,
+        "cost": {
+          "amount": "0.002952084",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001059",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 15.2,
+        "prepared_media_bytes": 281874,
+        "prepared_duration_ms": 15000,
+        "latency_ms": 4531,
+        "input_tokens": 1412,
+        "output_tokens": 167,
+        "thought_tokens": 0,
+        "total_tokens": 1579,
+        "cost": {
+          "amount": "0.001831806",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013349",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 240463,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4391,
+        "input_tokens": 817,
+        "output_tokens": 144,
+        "thought_tokens": 0,
+        "total_tokens": 961,
+        "cost": {
+          "amount": "0.001253087",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001118",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 9.9,
+        "prepared_media_bytes": 147732,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 7203,
+        "input_tokens": 1081,
+        "output_tokens": 597,
+        "thought_tokens": 0,
+        "total_tokens": 1678,
+        "cost": {
+          "amount": "0.003315581",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003998",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 142063,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3860,
+        "input_tokens": 817,
+        "output_tokens": 143,
+        "thought_tokens": 0,
+        "total_tokens": 960,
+        "cost": {
+          "amount": "0.001249009",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_좌회전신호시직진_0000001091",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 292921,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 3875,
+        "input_tokens": 1214,
+        "output_tokens": 190,
+        "thought_tokens": 0,
+        "total_tokens": 1404,
+        "cost": {
+          "amount": "0.00176423",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000011930",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 162468,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4344,
+        "input_tokens": 817,
+        "output_tokens": 294,
+        "thought_tokens": 0,
+        "total_tokens": 1111,
+        "cost": {
+          "amount": "0.001864787",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012793",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 175355,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4078,
+        "input_tokens": 817,
+        "output_tokens": 150,
+        "thought_tokens": 0,
+        "total_tokens": 967,
+        "cost": {
+          "amount": "0.001277555",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003699",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 266115,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5078,
+        "input_tokens": 817,
+        "output_tokens": 308,
+        "thought_tokens": 0,
+        "total_tokens": 1125,
+        "cost": {
+          "amount": "0.001921879",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003705",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 228355,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4625,
+        "input_tokens": 817,
+        "output_tokens": 173,
+        "thought_tokens": 0,
+        "total_tokens": 990,
+        "cost": {
+          "amount": "0.001371349",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013343",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 230681,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3937,
+        "input_tokens": 817,
+        "output_tokens": 180,
+        "thought_tokens": 0,
+        "total_tokens": 997,
+        "cost": {
+          "amount": "0.001399895",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012320",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 225697,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4297,
+        "input_tokens": 817,
+        "output_tokens": 165,
+        "thought_tokens": 0,
+        "total_tokens": 982,
+        "cost": {
+          "amount": "0.001338725",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012791",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 304392,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 8156,
+        "input_tokens": 817,
+        "output_tokens": 607,
+        "thought_tokens": 0,
+        "total_tokens": 1424,
+        "cost": {
+          "amount": "0.003141201",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012424",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 162589,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4938,
+        "input_tokens": 817,
+        "output_tokens": 318,
+        "thought_tokens": 0,
+        "total_tokens": 1135,
+        "cost": {
+          "amount": "0.001962659",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012348",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 262180,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3750,
+        "input_tokens": 817,
+        "output_tokens": 150,
+        "thought_tokens": 0,
+        "total_tokens": 967,
+        "cost": {
+          "amount": "0.001277555",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013365",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 395627,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 11156,
+        "input_tokens": 817,
+        "output_tokens": 161,
+        "thought_tokens": 0,
+        "total_tokens": 978,
+        "cost": {
+          "amount": "0.001322413",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012862",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 138224,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4063,
+        "input_tokens": 817,
+        "output_tokens": 148,
+        "thought_tokens": 0,
+        "total_tokens": 965,
+        "cost": {
+          "amount": "0.001269399",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003696",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 87673,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3735,
+        "input_tokens": 817,
+        "output_tokens": 153,
+        "thought_tokens": 0,
+        "total_tokens": 970,
+        "cost": {
+          "amount": "0.001289789",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003707",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 123025,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5875,
+        "input_tokens": 799,
+        "output_tokens": 321,
+        "thought_tokens": 0,
+        "total_tokens": 1120,
+        "cost": {
+          "amount": "0.001960223",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013368",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 187115,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4547,
+        "input_tokens": 817,
+        "output_tokens": 174,
+        "thought_tokens": 0,
+        "total_tokens": 991,
+        "cost": {
+          "amount": "0.001375427",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013402",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 206238,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4188,
+        "input_tokens": 817,
+        "output_tokens": 169,
+        "thought_tokens": 0,
+        "total_tokens": 986,
+        "cost": {
+          "amount": "0.001355037",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003996",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 263933,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4125,
+        "input_tokens": 817,
+        "output_tokens": 157,
+        "thought_tokens": 0,
+        "total_tokens": 974,
+        "cost": {
+          "amount": "0.001306101",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003678",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 176419,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6375,
+        "input_tokens": 817,
+        "output_tokens": 164,
+        "thought_tokens": 0,
+        "total_tokens": 981,
+        "cost": {
+          "amount": "0.001334647",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시좌회전_0000003714",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 111155,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6141,
+        "input_tokens": 817,
+        "output_tokens": 318,
+        "thought_tokens": 0,
+        "total_tokens": 1135,
+        "cost": {
+          "amount": "0.001962659",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012066",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 240066,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4453,
+        "input_tokens": 817,
+        "output_tokens": 162,
+        "thought_tokens": 0,
+        "total_tokens": 979,
+        "cost": {
+          "amount": "0.001326491",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000011924",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 173489,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6015,
+        "input_tokens": 817,
+        "output_tokens": 351,
+        "thought_tokens": 0,
+        "total_tokens": 1168,
+        "cost": {
+          "amount": "0.002097233",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012426",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 191606,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4781,
+        "input_tokens": 817,
+        "output_tokens": 178,
+        "thought_tokens": 0,
+        "total_tokens": 995,
+        "cost": {
+          "amount": "0.001391739",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012421",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 195476,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5609,
+        "input_tokens": 817,
+        "output_tokens": 365,
+        "thought_tokens": 0,
+        "total_tokens": 1182,
+        "cost": {
+          "amount": "0.002154325",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013357",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 290424,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5672,
+        "input_tokens": 817,
+        "output_tokens": 314,
+        "thought_tokens": 0,
+        "total_tokens": 1131,
+        "cost": {
+          "amount": "0.001946347",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012771",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 142300,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4453,
+        "input_tokens": 799,
+        "output_tokens": 175,
+        "thought_tokens": 0,
+        "total_tokens": 974,
+        "cost": {
+          "amount": "0.001364835",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000013390",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 236954,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4172,
+        "input_tokens": 817,
+        "output_tokens": 290,
+        "thought_tokens": 0,
+        "total_tokens": 1107,
+        "cost": {
+          "amount": "0.001848475",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230223_적색신호시직진_0000012419",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 83348,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3766,
+        "input_tokens": 817,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "total_tokens": 975,
+        "cost": {
+          "amount": "0.001310179",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010453",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 16.4,
+        "prepared_media_bytes": 790454,
+        "prepared_duration_ms": 16000,
+        "latency_ms": 5218,
+        "input_tokens": 1478,
+        "output_tokens": 200,
+        "thought_tokens": 0,
+        "total_tokens": 1678,
+        "cost": {
+          "amount": "0.00202017",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010597",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 282608,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 4969,
+        "input_tokens": 1178,
+        "output_tokens": 186,
+        "thought_tokens": 0,
+        "total_tokens": 1364,
+        "cost": {
+          "amount": "0.001718578",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011146",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 10.9,
+        "prepared_media_bytes": 366984,
+        "prepared_duration_ms": 11000,
+        "latency_ms": 4782,
+        "input_tokens": 1148,
+        "output_tokens": 188,
+        "thought_tokens": 0,
+        "total_tokens": 1336,
+        "cost": {
+          "amount": "0.001702284",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010484",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 16.6,
+        "prepared_media_bytes": 635066,
+        "prepared_duration_ms": 17000,
+        "latency_ms": 6672,
+        "input_tokens": 1544,
+        "output_tokens": 201,
+        "thought_tokens": 0,
+        "total_tokens": 1745,
+        "cost": {
+          "amount": "0.002078038",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011027",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 9.0,
+        "prepared_media_bytes": 327239,
+        "prepared_duration_ms": 9000,
+        "latency_ms": 6031,
+        "input_tokens": 1015,
+        "output_tokens": 378,
+        "thought_tokens": 0,
+        "total_tokens": 1393,
+        "cost": {
+          "amount": "0.002368709",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011185",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.6,
+        "prepared_media_bytes": 319249,
+        "prepared_duration_ms": 9000,
+        "latency_ms": 4750,
+        "input_tokens": 1015,
+        "output_tokens": 198,
+        "thought_tokens": 0,
+        "total_tokens": 1213,
+        "cost": {
+          "amount": "0.001634669",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011532",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 162599,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4797,
+        "input_tokens": 817,
+        "output_tokens": 167,
+        "thought_tokens": 0,
+        "total_tokens": 984,
+        "cost": {
+          "amount": "0.001346881",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_터널내진로변경위반_0000000612",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 13.7,
+        "prepared_media_bytes": 353147,
+        "prepared_duration_ms": 14000,
+        "latency_ms": 8281,
+        "input_tokens": 1346,
+        "output_tokens": 340,
+        "thought_tokens": 0,
+        "total_tokens": 1686,
+        "cost": {
+          "amount": "0.00248351",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010514",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.6,
+        "prepared_media_bytes": 292769,
+        "prepared_duration_ms": 7000,
+        "latency_ms": 4281,
+        "input_tokens": 883,
+        "output_tokens": 179,
+        "thought_tokens": 0,
+        "total_tokens": 1062,
+        "cost": {
+          "amount": "0.001449607",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010999",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 164132,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4765,
+        "input_tokens": 817,
+        "output_tokens": 189,
+        "thought_tokens": 0,
+        "total_tokens": 1006,
+        "cost": {
+          "amount": "0.001436597",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011163",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 207193,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4875,
+        "input_tokens": 817,
+        "output_tokens": 168,
+        "thought_tokens": 0,
+        "total_tokens": 985,
+        "cost": {
+          "amount": "0.001350959",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011362",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 620801,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 5344,
+        "input_tokens": 1214,
+        "output_tokens": 175,
+        "thought_tokens": 0,
+        "total_tokens": 1389,
+        "cost": {
+          "amount": "0.00170306",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011035",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 182724,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3828,
+        "input_tokens": 817,
+        "output_tokens": 189,
+        "thought_tokens": 0,
+        "total_tokens": 1006,
+        "cost": {
+          "amount": "0.001436597",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010837",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 247312,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4344,
+        "input_tokens": 817,
+        "output_tokens": 186,
+        "thought_tokens": 0,
+        "total_tokens": 1003,
+        "cost": {
+          "amount": "0.001424363",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011232",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 202408,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4281,
+        "input_tokens": 817,
+        "output_tokens": 178,
+        "thought_tokens": 0,
+        "total_tokens": 995,
+        "cost": {
+          "amount": "0.001391739",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011113",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 338255,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3265,
+        "input_tokens": 817,
+        "output_tokens": 4,
+        "thought_tokens": 0,
+        "total_tokens": 821,
+        "cost": {
+          "amount": "0.000682167",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011029",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 233818,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 3938,
+        "input_tokens": 817,
+        "output_tokens": 182,
+        "thought_tokens": 0,
+        "total_tokens": 999,
+        "cost": {
+          "amount": "0.001408051",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010591",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 182869,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 8422,
+        "input_tokens": 817,
+        "output_tokens": 610,
+        "thought_tokens": 0,
+        "total_tokens": 1427,
+        "cost": {
+          "amount": "0.003153435",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011064",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 27.6,
+        "prepared_media_bytes": 800031,
+        "prepared_duration_ms": 28000,
+        "latency_ms": 4328,
+        "input_tokens": 2270,
+        "output_tokens": 5,
+        "thought_tokens": 0,
+        "total_tokens": 2275,
+        "cost": {
+          "amount": "0.00187044",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010774",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 58500,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4203,
+        "input_tokens": 817,
+        "output_tokens": 178,
+        "thought_tokens": 0,
+        "total_tokens": 995,
+        "cost": {
+          "amount": "0.001391739",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011222",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 251590,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4437,
+        "input_tokens": 817,
+        "output_tokens": 205,
+        "thought_tokens": 0,
+        "total_tokens": 1022,
+        "cost": {
+          "amount": "0.001501845",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010838",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 126728,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4016,
+        "input_tokens": 817,
+        "output_tokens": 186,
+        "thought_tokens": 0,
+        "total_tokens": 1003,
+        "cost": {
+          "amount": "0.001424363",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010993",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.0,
+        "prepared_media_bytes": 253301,
+        "prepared_duration_ms": 7000,
+        "latency_ms": 4234,
+        "input_tokens": 883,
+        "output_tokens": 165,
+        "thought_tokens": 0,
+        "total_tokens": 1048,
+        "cost": {
+          "amount": "0.001392515",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010937",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 278830,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4469,
+        "input_tokens": 817,
+        "output_tokens": 205,
+        "thought_tokens": 0,
+        "total_tokens": 1022,
+        "cost": {
+          "amount": "0.001501845",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010515",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 144681,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6266,
+        "input_tokens": 817,
+        "output_tokens": 191,
+        "thought_tokens": 0,
+        "total_tokens": 1008,
+        "cost": {
+          "amount": "0.001444753",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011270",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 258345,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4282,
+        "input_tokens": 817,
+        "output_tokens": 193,
+        "thought_tokens": 0,
+        "total_tokens": 1010,
+        "cost": {
+          "amount": "0.001452909",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010948",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 135336,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4953,
+        "input_tokens": 817,
+        "output_tokens": 176,
+        "thought_tokens": 0,
+        "total_tokens": 993,
+        "cost": {
+          "amount": "0.001383583",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011244",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 235896,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5469,
+        "input_tokens": 817,
+        "output_tokens": 205,
+        "thought_tokens": 0,
+        "total_tokens": 1022,
+        "cost": {
+          "amount": "0.001501845",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011457",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.0,
+        "prepared_media_bytes": 103111,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 9828,
+        "input_tokens": 949,
+        "output_tokens": 805,
+        "thought_tokens": 0,
+        "total_tokens": 1754,
+        "cost": {
+          "amount": "0.004056225",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010579",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 254212,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4110,
+        "input_tokens": 817,
+        "output_tokens": 174,
+        "thought_tokens": 0,
+        "total_tokens": 991,
+        "cost": {
+          "amount": "0.001375427",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011462",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.0,
+        "prepared_media_bytes": 225958,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 5922,
+        "input_tokens": 949,
+        "output_tokens": 314,
+        "thought_tokens": 0,
+        "total_tokens": 1263,
+        "cost": {
+          "amount": "0.002053927",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010679",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 175814,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4453,
+        "input_tokens": 817,
+        "output_tokens": 169,
+        "thought_tokens": 0,
+        "total_tokens": 986,
+        "cost": {
+          "amount": "0.001355037",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010509",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 214969,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4735,
+        "input_tokens": 817,
+        "output_tokens": 173,
+        "thought_tokens": 0,
+        "total_tokens": 990,
+        "cost": {
+          "amount": "0.001371349",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000011160",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 200101,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 11000,
+        "input_tokens": 817,
+        "output_tokens": 920,
+        "thought_tokens": 0,
+        "total_tokens": 1737,
+        "cost": {
+          "amount": "0.004417615",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_일반도로진로변경위반_0000010510",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 180935,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 8735,
+        "input_tokens": 817,
+        "output_tokens": 724,
+        "thought_tokens": 0,
+        "total_tokens": 1541,
+        "cost": {
+          "amount": "0.003618327",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002504",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.8,
+        "prepared_media_bytes": 38848,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 5328,
+        "input_tokens": 484,
+        "output_tokens": 314,
+        "thought_tokens": 0,
+        "total_tokens": 798,
+        "cost": {
+          "amount": "0.001674952",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002389",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 1.0,
+        "prepared_media_bytes": 19812,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 3703,
+        "input_tokens": 487,
+        "output_tokens": 160,
+        "thought_tokens": 0,
+        "total_tokens": 647,
+        "cost": {
+          "amount": "0.001049385",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002529",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.9,
+        "prepared_media_bytes": 32879,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 3891,
+        "input_tokens": 487,
+        "output_tokens": 163,
+        "thought_tokens": 0,
+        "total_tokens": 650,
+        "cost": {
+          "amount": "0.001061619",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002512",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.9,
+        "prepared_media_bytes": 61465,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 4593,
+        "input_tokens": 487,
+        "output_tokens": 302,
+        "thought_tokens": 0,
+        "total_tokens": 789,
+        "cost": {
+          "amount": "0.001628461",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002411",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.9,
+        "prepared_media_bytes": 55350,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 4281,
+        "input_tokens": 487,
+        "output_tokens": 103,
+        "thought_tokens": 0,
+        "total_tokens": 590,
+        "cost": {
+          "amount": "0.000816939",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002465",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.8,
+        "prepared_media_bytes": 15834,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 3719,
+        "input_tokens": 487,
+        "output_tokens": 170,
+        "thought_tokens": 0,
+        "total_tokens": 657,
+        "cost": {
+          "amount": "0.001090165",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002530",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.8,
+        "prepared_media_bytes": 27274,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 3828,
+        "input_tokens": 487,
+        "output_tokens": 176,
+        "thought_tokens": 0,
+        "total_tokens": 663,
+        "cost": {
+          "amount": "0.001114633",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002472",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.9,
+        "prepared_media_bytes": 71162,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 7641,
+        "input_tokens": 487,
+        "output_tokens": 547,
+        "thought_tokens": 0,
+        "total_tokens": 1034,
+        "cost": {
+          "amount": "0.002627571",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_안전모미착용_0000002404",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 0.8,
+        "prepared_media_bytes": 58546,
+        "prepared_duration_ms": 1000,
+        "latency_ms": 3531,
+        "input_tokens": 487,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "total_tokens": 645,
+        "cost": {
+          "amount": "0.001041229",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006120",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 16.7,
+        "prepared_media_bytes": 477276,
+        "prepared_duration_ms": 17000,
+        "latency_ms": 6032,
+        "input_tokens": 1544,
+        "output_tokens": 130,
+        "thought_tokens": 0,
+        "total_tokens": 1674,
+        "cost": {
+          "amount": "0.0017885",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000009053",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 14.3,
+        "prepared_media_bytes": 425906,
+        "prepared_duration_ms": 14000,
+        "latency_ms": 4531,
+        "input_tokens": 1346,
+        "output_tokens": 113,
+        "thought_tokens": 0,
+        "total_tokens": 1459,
+        "cost": {
+          "amount": "0.001557804",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005978",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 14.5,
+        "prepared_media_bytes": 726837,
+        "prepared_duration_ms": 15000,
+        "latency_ms": 5516,
+        "input_tokens": 1412,
+        "output_tokens": 180,
+        "thought_tokens": 0,
+        "total_tokens": 1592,
+        "cost": {
+          "amount": "0.00188482",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008576",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 13.0,
+        "prepared_media_bytes": 708174,
+        "prepared_duration_ms": 13000,
+        "latency_ms": 4906,
+        "input_tokens": 1280,
+        "output_tokens": 174,
+        "thought_tokens": 0,
+        "total_tokens": 1454,
+        "cost": {
+          "amount": "0.001752772",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006028",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 18.0,
+        "prepared_media_bytes": 590807,
+        "prepared_duration_ms": 18000,
+        "latency_ms": 5766,
+        "input_tokens": 1610,
+        "output_tokens": 340,
+        "thought_tokens": 0,
+        "total_tokens": 1950,
+        "cost": {
+          "amount": "0.00269867",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008912",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 10.2,
+        "prepared_media_bytes": 436067,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 4437,
+        "input_tokens": 1082,
+        "output_tokens": 183,
+        "thought_tokens": 0,
+        "total_tokens": 1265,
+        "cost": {
+          "amount": "0.001628104",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000009001",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 273796,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4500,
+        "input_tokens": 817,
+        "output_tokens": 168,
+        "thought_tokens": 0,
+        "total_tokens": 985,
+        "cost": {
+          "amount": "0.001350959",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_중앙선주황색실선위반_0000006188",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 10.2,
+        "prepared_media_bytes": 316519,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 5437,
+        "input_tokens": 1082,
+        "output_tokens": 191,
+        "thought_tokens": 0,
+        "total_tokens": 1273,
+        "cost": {
+          "amount": "0.001660728",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008497",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 327197,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 5110,
+        "input_tokens": 1178,
+        "output_tokens": 198,
+        "thought_tokens": 0,
+        "total_tokens": 1376,
+        "cost": {
+          "amount": "0.001767514",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005811",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 632600,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 4719,
+        "input_tokens": 1214,
+        "output_tokens": 163,
+        "thought_tokens": 0,
+        "total_tokens": 1377,
+        "cost": {
+          "amount": "0.001654124",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006139",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 10.0,
+        "prepared_media_bytes": 368849,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 4843,
+        "input_tokens": 1082,
+        "output_tokens": 208,
+        "thought_tokens": 0,
+        "total_tokens": 1290,
+        "cost": {
+          "amount": "0.001730054",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000009010",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.0,
+        "prepared_media_bytes": 226545,
+        "prepared_duration_ms": 7000,
+        "latency_ms": 6937,
+        "input_tokens": 883,
+        "output_tokens": 321,
+        "thought_tokens": 0,
+        "total_tokens": 1204,
+        "cost": {
+          "amount": "0.002028683",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005984",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 9.6,
+        "prepared_media_bytes": 339086,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 6031,
+        "input_tokens": 1081,
+        "output_tokens": 289,
+        "thought_tokens": 0,
+        "total_tokens": 1370,
+        "cost": {
+          "amount": "0.002059557",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005961",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.5,
+        "prepared_media_bytes": 378581,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 4437,
+        "input_tokens": 949,
+        "output_tokens": 180,
+        "thought_tokens": 0,
+        "total_tokens": 1129,
+        "cost": {
+          "amount": "0.001507475",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_중앙선주황색실선위반_0000006147",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 15.5,
+        "prepared_media_bytes": 820186,
+        "prepared_duration_ms": 16000,
+        "latency_ms": 6797,
+        "input_tokens": 1478,
+        "output_tokens": 454,
+        "thought_tokens": 0,
+        "total_tokens": 1932,
+        "cost": {
+          "amount": "0.003055982",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008894",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.0,
+        "prepared_media_bytes": 129330,
+        "prepared_duration_ms": 7000,
+        "latency_ms": 4140,
+        "input_tokens": 883,
+        "output_tokens": 147,
+        "thought_tokens": 0,
+        "total_tokens": 1030,
+        "cost": {
+          "amount": "0.001319111",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005825",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.5,
+        "prepared_media_bytes": 398870,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 5375,
+        "input_tokens": 949,
+        "output_tokens": 206,
+        "thought_tokens": 0,
+        "total_tokens": 1155,
+        "cost": {
+          "amount": "0.001613503",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000009395",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.5,
+        "prepared_media_bytes": 364673,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 4469,
+        "input_tokens": 949,
+        "output_tokens": 168,
+        "thought_tokens": 0,
+        "total_tokens": 1117,
+        "cost": {
+          "amount": "0.001458539",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005986",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.0,
+        "prepared_media_bytes": 289578,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 4234,
+        "input_tokens": 949,
+        "output_tokens": 183,
+        "thought_tokens": 0,
+        "total_tokens": 1132,
+        "cost": {
+          "amount": "0.001519709",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005982",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 13.0,
+        "prepared_media_bytes": 599234,
+        "prepared_duration_ms": 13000,
+        "latency_ms": 6141,
+        "input_tokens": 1280,
+        "output_tokens": 193,
+        "thought_tokens": 0,
+        "total_tokens": 1473,
+        "cost": {
+          "amount": "0.001830254",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006054",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.5,
+        "prepared_media_bytes": 353226,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 4828,
+        "input_tokens": 949,
+        "output_tokens": 195,
+        "thought_tokens": 0,
+        "total_tokens": 1144,
+        "cost": {
+          "amount": "0.001568645",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008599",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 10.0,
+        "prepared_media_bytes": 317324,
+        "prepared_duration_ms": 10000,
+        "latency_ms": 4234,
+        "input_tokens": 1082,
+        "output_tokens": 154,
+        "thought_tokens": 0,
+        "total_tokens": 1236,
+        "cost": {
+          "amount": "0.001509842",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000005837",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.6,
+        "prepared_media_bytes": 303340,
+        "prepared_duration_ms": 7000,
+        "latency_ms": 5000,
+        "input_tokens": 883,
+        "output_tokens": 326,
+        "thought_tokens": 0,
+        "total_tokens": 1209,
+        "cost": {
+          "amount": "0.002049073",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006103",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.0,
+        "prepared_media_bytes": 191964,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 4656,
+        "input_tokens": 949,
+        "output_tokens": 191,
+        "thought_tokens": 0,
+        "total_tokens": 1140,
+        "cost": {
+          "amount": "0.001552333",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006007",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 8.8,
+        "prepared_media_bytes": 518058,
+        "prepared_duration_ms": 9000,
+        "latency_ms": 5563,
+        "input_tokens": 1015,
+        "output_tokens": 174,
+        "thought_tokens": 0,
+        "total_tokens": 1189,
+        "cost": {
+          "amount": "0.001536797",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008560",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 307393,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5109,
+        "input_tokens": 817,
+        "output_tokens": 191,
+        "thought_tokens": 0,
+        "total_tokens": 1008,
+        "cost": {
+          "amount": "0.001444753",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006087",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 99598,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5485,
+        "input_tokens": 817,
+        "output_tokens": 183,
+        "thought_tokens": 0,
+        "total_tokens": 1000,
+        "cost": {
+          "amount": "0.001412129",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008554",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 213804,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6109,
+        "input_tokens": 817,
+        "output_tokens": 307,
+        "thought_tokens": 0,
+        "total_tokens": 1124,
+        "cost": {
+          "amount": "0.001917801",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_중앙선주황색실선위반_0000006198",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 284760,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 7922,
+        "input_tokens": 817,
+        "output_tokens": 323,
+        "thought_tokens": 0,
+        "total_tokens": 1140,
+        "cost": {
+          "amount": "0.001983049",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006018",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 209157,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 4766,
+        "input_tokens": 817,
+        "output_tokens": 208,
+        "thought_tokens": 0,
+        "total_tokens": 1025,
+        "cost": {
+          "amount": "0.001514079",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_중앙선주황색실선위반_0000006202",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 197258,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 6219,
+        "input_tokens": 817,
+        "output_tokens": 381,
+        "thought_tokens": 0,
+        "total_tokens": 1198,
+        "cost": {
+          "amount": "0.002219573",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색실선위반_0000006118",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 280229,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 5906,
+        "input_tokens": 1214,
+        "output_tokens": 327,
+        "thought_tokens": 0,
+        "total_tokens": 1541,
+        "cost": {
+          "amount": "0.002322916",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230226_중앙선주황색실선위반_0000006148",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 7.6,
+        "prepared_media_bytes": 339771,
+        "prepared_duration_ms": 8000,
+        "latency_ms": 7203,
+        "input_tokens": 949,
+        "output_tokens": 412,
+        "thought_tokens": 0,
+        "total_tokens": 1361,
+        "cost": {
+          "amount": "0.002453571",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008746",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 133224,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5656,
+        "input_tokens": 817,
+        "output_tokens": 305,
+        "thought_tokens": 0,
+        "total_tokens": 1122,
+        "cost": {
+          "amount": "0.001909645",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000009043",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 6.0,
+        "prepared_media_bytes": 164205,
+        "prepared_duration_ms": 6000,
+        "latency_ms": 5250,
+        "input_tokens": 817,
+        "output_tokens": 155,
+        "thought_tokens": 0,
+        "total_tokens": 972,
+        "cost": {
+          "amount": "0.001297945",
+          "currency": "USD"
+        }
+      },
+      {
+        "case_id": "20230222_중앙선주황색이중실선위반_0000008494",
+        "provider": "elice",
+        "model": "gemini-3.8-flash",
+        "prompt_version": "coarse-p3",
+        "prompt_fingerprint": "ac53a32ba5a37af0a8093faf860113925261fa2deba14b895ecc4f43f1704c3c",
+        "config_version": "gemini-search-v2",
+        "processed_duration_sec": 12.0,
+        "prepared_media_bytes": 640627,
+        "prepared_duration_ms": 12000,
+        "latency_ms": 5047,
+        "input_tokens": 1214,
+        "output_tokens": 202,
+        "thought_tokens": 0,
+        "total_tokens": 1416,
+        "cost": {
+          "amount": "0.001813166",
+          "currency": "USD"
+        }
+      }
+    ],
+    "scenarios": [
+      "20230226_좌회전신호시직진_0000001128",
+      "20230226_좌회전신호시직진_0000001116",
+      "20230226_좌회전신호시직진_0000001141",
+      "20230226_좌회전신호시직진_0000001065",
+      "20230226_좌회전신호시직진_0000001039",
+      "20230226_좌회전신호시직진_0000001071",
+      "20230226_좌회전신호시직진_0000001059",
+      "20230226_좌회전신호시직진_0000001118",
+      "20230223_적색신호시직진_0000013349",
+      "20230223_적색신호시좌회전_0000003998",
+      "20230223_적색신호시직진_0000011930",
+      "20230226_좌회전신호시직진_0000001091",
+      "20230223_적색신호시직진_0000012793",
+      "20230223_적색신호시좌회전_0000003699",
+      "20230223_적색신호시좌회전_0000003705",
+      "20230223_적색신호시직진_0000013343",
+      "20230223_적색신호시직진_0000012791",
+      "20230223_적색신호시직진_0000013365",
+      "20230223_적색신호시직진_0000012320",
+      "20230223_적색신호시직진_0000012424",
+      "20230223_적색신호시직진_0000012348",
+      "20230223_적색신호시직진_0000012862",
+      "20230223_적색신호시좌회전_0000003707",
+      "20230223_적색신호시좌회전_0000003696",
+      "20230223_적색신호시직진_0000013368",
+      "20230223_적색신호시좌회전_0000003678",
+      "20230223_적색신호시직진_0000013402",
+      "20230223_적색신호시좌회전_0000003996",
+      "20230223_적색신호시좌회전_0000003714",
+      "20230223_적색신호시직진_0000011924",
+      "20230223_적색신호시직진_0000012066",
+      "20230223_적색신호시직진_0000012426",
+      "20230223_적색신호시직진_0000012421",
+      "20230223_적색신호시직진_0000013357",
+      "20230223_적색신호시직진_0000012771",
+      "20230223_적색신호시직진_0000013390",
+      "20230223_적색신호시직진_0000012419",
+      "20230222_일반도로진로변경위반_0000010453",
+      "20230222_일반도로진로변경위반_0000010484",
+      "20230222_일반도로진로변경위반_0000010597",
+      "20230222_일반도로진로변경위반_0000011146",
+      "20230222_일반도로진로변경위반_0000011027",
+      "20230222_터널내진로변경위반_0000000612",
+      "20230222_일반도로진로변경위반_0000011185",
+      "20230222_일반도로진로변경위반_0000011532",
+      "20230222_일반도로진로변경위반_0000010514",
+      "20230222_일반도로진로변경위반_0000010999",
+      "20230222_일반도로진로변경위반_0000011362",
+      "20230222_일반도로진로변경위반_0000011163",
+      "20230222_일반도로진로변경위반_0000011035",
+      "20230222_일반도로진로변경위반_0000010837",
+      "20230222_일반도로진로변경위반_0000011232",
+      "20230222_일반도로진로변경위반_0000011029",
+      "20230222_일반도로진로변경위반_0000011113",
+      "20230222_일반도로진로변경위반_0000010591",
+      "20230222_일반도로진로변경위반_0000011064",
+      "20230222_일반도로진로변경위반_0000010774",
+      "20230222_일반도로진로변경위반_0000011222",
+      "20230222_일반도로진로변경위반_0000010838",
+      "20230222_일반도로진로변경위반_0000010993",
+      "20230222_일반도로진로변경위반_0000010515",
+      "20230222_일반도로진로변경위반_0000010937",
+      "20230222_일반도로진로변경위반_0000011457",
+      "20230222_일반도로진로변경위반_0000011244",
+      "20230222_일반도로진로변경위반_0000010948",
+      "20230222_일반도로진로변경위반_0000011270",
+      "20230222_일반도로진로변경위반_0000011462",
+      "20230222_일반도로진로변경위반_0000010579",
+      "20230222_일반도로진로변경위반_0000011160",
+      "20230222_일반도로진로변경위반_0000010679",
+      "20230222_일반도로진로변경위반_0000010510",
+      "20230222_일반도로진로변경위반_0000010509",
+      "20230222_안전모미착용_0000002504",
+      "20230222_안전모미착용_0000002389",
+      "20230222_안전모미착용_0000002529",
+      "20230222_안전모미착용_0000002512",
+      "20230222_안전모미착용_0000002411",
+      "20230222_안전모미착용_0000002465",
+      "20230222_안전모미착용_0000002472",
+      "20230222_안전모미착용_0000002530",
+      "20230222_안전모미착용_0000002404",
+      "20230222_중앙선주황색실선위반_0000006120",
+      "20230222_중앙선주황색이중실선위반_0000009053",
+      "20230222_중앙선주황색실선위반_0000005978",
+      "20230222_중앙선주황색실선위반_0000006028",
+      "20230222_중앙선주황색이중실선위반_0000008576",
+      "20230222_중앙선주황색이중실선위반_0000008912",
+      "20230222_중앙선주황색이중실선위반_0000009001",
+      "20230226_중앙선주황색실선위반_0000006188",
+      "20230222_중앙선주황색이중실선위반_0000008497",
+      "20230222_중앙선주황색이중실선위반_0000009010",
+      "20230222_중앙선주황색실선위반_0000005811",
+      "20230222_중앙선주황색실선위반_0000006139",
+      "20230222_중앙선주황색실선위반_0000005984",
+      "20230226_중앙선주황색실선위반_0000006147",
+      "20230222_중앙선주황색실선위반_0000005961",
+      "20230222_중앙선주황색실선위반_0000005825",
+      "20230222_중앙선주황색이중실선위반_0000008894",
+      "20230222_중앙선주황색이중실선위반_0000009395",
+      "20230222_중앙선주황색실선위반_0000005982",
+      "20230222_중앙선주황색실선위반_0000005986",
+      "20230222_중앙선주황색실선위반_0000006054",
+      "20230222_중앙선주황색실선위반_0000005837",
+      "20230222_중앙선주황색이중실선위반_0000008599",
+      "20230222_중앙선주황색실선위반_0000006007",
+      "20230222_중앙선주황색실선위반_0000006103",
+      "20230222_중앙선주황색이중실선위반_0000008560",
+      "20230222_중앙선주황색실선위반_0000006087",
+      "20230226_중앙선주황색실선위반_0000006198",
+      "20230222_중앙선주황색이중실선위반_0000008554",
+      "20230222_중앙선주황색실선위반_0000006018",
+      "20230226_중앙선주황색실선위반_0000006202",
+      "20230226_중앙선주황색실선위반_0000006148",
+      "20230222_중앙선주황색실선위반_0000006118",
+      "20230222_중앙선주황색이중실선위반_0000008746",
+      "20230222_중앙선주황색이중실선위반_0000009043",
+      "20230222_중앙선주황색이중실선위반_0000008494"
+    ],
+    "partial_run": false,
+    "n_errors": 0
+  }
+}
