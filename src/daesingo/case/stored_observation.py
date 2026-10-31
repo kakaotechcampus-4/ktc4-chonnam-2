@@ -253,7 +253,7 @@ class StoredObservationAdapter:
             resolution = resolve_time(time_source_candidates=time_source_candidates, overlay_time_readout=overlay_readout,
                 candidate_event=observations.candidate.model_dump(mode="json"), correction_records=self._case.correction_records,
                 case_id=self._case.case_id, selection_rev=self._case.selection_rev,
-                resolution_id=f"tr_{self._case.case_id}_001")
+                resolution_id=f"tr_{self._case.case_id}_001", incident_clip=clip)
             self._export_requests = build_export_requests(clip_ref, plate_readout, resolution, self._export_max_byte_size)
             export_jobs = [r for r in self._case.job_records if r["kind"] in EXPORT_KINDS
                 and self._case.export_inputs.get(r["job_id"]) == self._export_requests.get(r["kind"])

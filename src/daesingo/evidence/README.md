@@ -14,7 +14,7 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 
 `daesingo.evidence`는 Final Contract 값을 받거나 반환하는 순수 함수 경계다. 인수는 Contract JSON을 역직렬화한 `dict`이며, `scenario_id`나 Mock 파일명은 공개 입력이 아니다.
 
-- `resolve_time(...) -> TimeResolution`
+- `resolve_time(..., incident_clip=None) -> TimeResolution`: 원본 시각 + offset으로 계산할 때 `incident_clip`의 AssetSpan으로 사건 대표 순간이 담긴 원본을 찾아, 그 원본의 시간 후보와 원본 안 위치만 쓴다(`contract-time-resolution.md` §17). `incident_clip`을 빼면 timeline 위치를 그대로 offset으로 쓰므로 원본 하나가 timeline 0초에서 시작할 때만 맞다 — 운영 경로(case)는 항상 넘긴다.
 - `classify_visual_evidence(visual_evidence, situation_response=None) -> VisualEvidenceDisposition`: `EvidenceRecord` 조립 이전에 VisualEvidence 하나의 결말을 정한다(`ASSEMBLE` / `AWAIT_SITUATION_RESPONSE` / `NOT_ASSEMBLED`). `verification=NOT_OBSERVED`는 예외가 아니라 안정적인 비조립 결과다 — 후보 선택·순회는 여기 없다.
 - `resolve_independent_facts(*, case_id, selection_rev, time_resolution, plate_readout, location_hint=None, gps_observation=None, correction_records=None) -> dict`: EvidenceRecord의 **상황 독립 필드** `occurred_at` · `vehicle_number` · `location`만 계산한다(#239). 각 값은 EvidenceRecord의 같은 필드와 모양이 같고, 결정할 수 없으면 키를 두지 않는다. 해당 필드의 CorrectionRecord도 같은 규칙으로 반영한다. **EvidenceRecord 생성 API가 아니다.** `record_ref` · `basis` · `event` · `provenance` · `situation_response`가 없고, RequirementReport · ReportPackage로 이어지지 않는다. Fine `UNCERTAIN` 응답 대기(`AWAIT_SITUATION_RESPONSE`)에서도 부를 수 있다. case가 이 결과로 `record_id=null` 부분 투영을 만든다. 응답 전에 최종 Record를 만들지 않는다는 원칙(ADR-EVIDENCE-009 §2.1)은 그대로다. 시각은 `resolve_time()`이 만든 `TimeResolution`을 받는다.
 - `assemble_evidence(...) -> EvidenceRecord`: 위 세 필드는 `resolve_independent_facts()`와 같은 계산으로 채운다. 그래서 응답 전 부분 투영과 응답 후 Record가 같은 규칙을 따른다.

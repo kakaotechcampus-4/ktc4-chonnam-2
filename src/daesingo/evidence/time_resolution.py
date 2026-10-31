@@ -51,6 +51,31 @@ def _correction_head(
     return correction_heads(records, case_id=case_id, selection_rev=selection_rev).get("occurred_at")
 
 
+def _event_source_position(incident_clip: Contract, candidate_event: Contract) -> tuple[str, int] | None:
+    """Source asset holding the representative moment and the moment's position inside it (ms).
+
+    `representative_ms` is a timeline position; a time source value belongs to one source asset. The clip's
+    AssetSpans map one to the other. A span owns `[start, end)`, the last span also owns its end. `None` when the
+    moment falls outside every span (a timeline gap)."""
+    span = candidate_event.get("span") or {}
+    provenance = incident_clip.get("source_provenance") or {}
+    timeline = provenance.get("timeline_ref") or {}
+    require(span.get("timeline_id") == timeline.get("timeline_id"), "CandidateEvent and IncidentClip timeline_id mismatch")
+    require(
+        span.get("timeline_revision") == timeline.get("revision"),
+        "CandidateEvent and IncidentClip timeline revision mismatch",
+    )
+    asset_spans = sorted(provenance.get("asset_spans") or [], key=lambda item: item["sequence"])
+    require(bool(asset_spans), "IncidentClip asset_spans is required")
+    representative_ms = span["representative_ms"]
+    for index, item in enumerate(asset_spans):
+        start_ms = round(item["timeline_range"]["start_sec"] * 1000)
+        end_ms = round(item["timeline_range"]["end_sec"] * 1000)
+        if start_ms <= representative_ms < end_ms or (index == len(asset_spans) - 1 and representative_ms == end_ms):
+            return item["source_asset_ref"], representative_ms - start_ms + round(item["source_range"]["start_sec"] * 1000)
+    return None
+
+
 def resolve_time(
     *,
     time_source_candidates: Iterable[Contract],
@@ -61,8 +86,13 @@ def resolve_time(
     selection_rev: int,
     resolution_id: str,
     supersedes_id: str | None = None,
+    incident_clip: Contract | None = None,
 ) -> Contract:
-    """Resolve existing contract values without calling an upstream module."""
+    """Resolve existing contract values without calling an upstream module.
+
+    With `incident_clip`, a base-plus-offset time uses only the time sources of the source asset that holds the
+    representative moment, offset from inside that asset. Without it the timeline position is added to the base
+    as is, which is right only when the timeline is a single source starting at 0."""
     candidates = [dict(item) for item in time_source_candidates]
     for item in candidates:
         require(item.get("observation_status") in {"OK", "UNKNOWN", "ERROR"}, "invalid time observation status")
@@ -183,11 +213,26 @@ def resolve_time(
                     "reason_code": "time.overlay_not_verified",
                 }
             )
-        valid_candidates = [c for c in candidates if c.get("observation_status") == "OK" and c.get("value")]
+        # A time source value is the clock of one source asset; it may only meet a position inside that asset.
+        position = None if incident_clip is None else _event_source_position(incident_clip, candidate_event)
+        if incident_clip is None:
+            eligible = candidates
+        else:
+            event_asset = position[0] if position else None
+            eligible = [c for c in candidates if (c.get("applies_to") or {}).get("source_asset_ref") == event_asset]
+        eligible_ids = {c["candidate_id"] for c in eligible}
+        valid_candidates = [c for c in eligible if c.get("observation_status") == "OK" and c.get("value")]
         filename = next((c for c in valid_candidates if c.get("source_kind") == "FILENAME"), None)
         selected = filename or (valid_candidates[0] if valid_candidates else None)
         if selected is None:
-            considered.extend(_candidate_summary(item, used=False, reason_code="time.no_usable_value") for item in candidates)
+            considered.extend(
+                _candidate_summary(
+                    item,
+                    used=False,
+                    reason_code="time.no_usable_value" if item["candidate_id"] in eligible_ids else "time.other_source_asset",
+                )
+                for item in candidates
+            )
             result.update(
                 {
                     "status": "UNKNOWN",
@@ -206,11 +251,19 @@ def resolve_time(
             for item in candidates:
                 is_selected = item["candidate_id"] == selected["candidate_id"]
                 reason = None
-                if not is_selected:
+                if item["candidate_id"] not in eligible_ids:
+                    reason = "time.other_source_asset"
+                elif not is_selected:
                     reason = "time.conflicting_metadata_candidate" if conflict else "time.not_selected"
                 considered.append(_candidate_summary(item, used=is_selected, reason_code=reason))
             base = parse_rfc3339(selected["value"])
-            resolved_value = (base + timedelta(milliseconds=representative_ms)).isoformat()
+            if position is None:
+                source_offset_ms = representative_ms
+            else:
+                # The value may describe a point other than the asset start (`applies_to.source_offset_sec`).
+                applies_at_ms = round(selected["applies_to"].get("source_offset_sec", 0) * 1000)
+                source_offset_ms = position[1] - applies_at_ms
+            resolved_value = (base + timedelta(milliseconds=source_offset_ms)).isoformat()
             result.update(
                 {
                     "status": "NEEDS_REVIEW",
@@ -221,7 +274,7 @@ def resolve_time(
                         "computation": {
                             "mode": "BASE_PLUS_OFFSET",
                             "base_input_ref": selected_ref,
-                            "source_offset_ms": representative_ms,
+                            "source_offset_ms": source_offset_ms,
                             "timezone": {
                                 "zone_id": "Asia/Seoul",
                                 "utc_offset": "+09:00",
