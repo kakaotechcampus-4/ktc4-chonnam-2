@@ -50,6 +50,13 @@ describe('신고용 영상 상태', () => {
       }),
     ).toBe('failed')
   })
+  it('묶음 전이라도 영상 check가 PASS면 「없음」이 아니라 「준비됨(받기 전)」이다', () => {
+    const before = { ...HAPPY, package: null }
+    const check = { code: 'package.asset.report_video.exists', outcome: 'PASS' }
+    expect(reportVideoState({ ...before, requirements_package: { readiness: 'UNKNOWN', checks: [check] } } as CaseView)).toBe('held')
+    expect(reportVideoState({ ...before, requirements_package: { readiness: 'UNKNOWN', checks: [{ ...check, outcome: 'UNKNOWN' }] } } as CaseView)).toBe('none')
+    expect(reportVideoState({ ...before, requirements_package: null })).toBe('none')
+  })
   it('결과 화면의 다운로드 버튼은 파일이 없으면 누를 수 없고 이유를 함께 읽힌다', () => {
     const r = render(<ResultScreen view={HAPPY} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
     const btn = r.getByText('신고용 영상 다운로드').closest('button')!
