@@ -4684,3 +4684,50 @@ cleaned; no volumes created, shared images/cache preserved. Ignored evidence onl
 attributed solely to task cleanup. Ten files remain unstaged, index empty, original
 branch/HEAD unchanged, diff check PASS. Original Issue-set evidence, Runtime mapping
 Owner decision and full remote CI remain outstanding; IN_PROGRESS is retained.
+
+
+### 2026-10-31 — PR #499 CI follow-up (Refs #425; Related #452, #460)
+
+IN_PROGRESS. Started on requested branch at 4369bdc668435d432440a77006fdb6f73538edab,
+clean worktree/index. Remote failing node reproduced unchanged on Ubuntu
+FFmpeg/ffprobe 6.1.1-3ubuntu5: 1 failed, missing tail duration. Stage diagnostics
+locate the first individual encode's output_validate, before mixed normalization.
+Cross-probing identical files with 6.1.1/8.1 demonstrates the MOV duration-reader
+difference: the veryfast derived MP4 has ten packets without observed duration
+on 6.1.1; 8.1 observes duration 1024. Original coverage remains observable.
+
+Changed only the success fixture's output preset to ultrafast, retaining distinct
+1/10240 and 1/12288 clocks. Added direct mixed-path observation and independent
+source/output PTS, duration, 22-frame count, seam, decoded color order and
+provenance assertions; original fingerprints and cleanup still checked.
+No product code, strict validation, AVI fallback, taxonomy, dependencies or
+workflow change. Runtime UNSUPPORTED_MEDIA mapping remains an Owner follow-up.
+
+Direct author GREEN: 6.1.1 media focused 155 passed/4 existing skips, safety/Worker
+88 passed/1 platform skip (243/5 total); 8.1 156/3 plus 88/1 (244/4 total).
+Both run at /repo in local containers; Python 3.12.3 vs 3.12.16, not a claim of
+complete CI environment parity. Exact identities, binary hashes, command scopes
+and stage evidence are retained in ignored issue499-ci scratch. Runtime quality,
+boundary and Contract fixtures passed; optional test-file lint has the same
+17 baseline findings. Diff check passed at this stage.
+
+Current private originals: seven expected files, inventory only. No CI dependency
+on removed files; no search/restore or fresh private media measurement. Previous
+ten-file/actual-pair evidence remains historical, not a claim about current mixed
+clocks or original Issue reproduction sets. Candidate files are Notes, this Log,
+and test_multi_span_incident_clip.py. Preserved original document byte prefixes
+and LF via append-only writes. Fresh review/cleanup results will be appended.
+No full local pytest/MySQL/mutation/OCR acceptance; later remote CI is required.
+
+
+PR #499 final local follow-up: fresh GPT-6.1 Sol / High reviewer with no inherited
+implementation history found no actionable issue. Direct reviewer runs: changed
+node 1 passed on each of 6.1.1 and 8.1, no skip; broader results reviewed from
+author XML only. No code correction requested. Task Ubuntu container/temporary
+8.1 containers and copied pytest dependencies cleaned; no task volumes remain.
+Successful intermediate media deleted; only two tiny synthetic failure-repro
+MP4s and small ignored evidence retained. Shared images/cache/originals and prior
+36-file issue425 evidence preserved. Disk free ~8.48 GiB at start, 10903822336
+bytes (~10.16 GiB) at cleanup, not solely attributed to cleanup. Three files remain
+unstaged/uncommitted, index empty, original branch/HEAD maintained, diff check PASS.
+Full remote CI and prior Owner/original-Issue-set follow-ups remain open.

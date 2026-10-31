@@ -1,5 +1,6 @@
 """다중 IncidentClip 공개 경로: strict 연결, provenance, 실패 미발급."""
 from dataclasses import replace
+from fractions import Fraction
 import subprocess
 
 import pytest
@@ -8,6 +9,7 @@ from daesingo.recording import LocalIncidentMaterializer, IncidentClipEncoding, 
 from daesingo.recording.analysis_tail import analysis_tail_scope, TailDecodeFailure
 from tests.recording.test_multi_span_analysis_source import chain
 from tests.recording.test_local_analysis_source import fingerprint
+from tests.recording.test_mixed_timebase import probe
 
 
 @pytest.fixture
@@ -136,17 +138,28 @@ def test_multi_identity_requires_same_revision_and_actual_bytes(incident_chain, 
     assert not list(work.iterdir())
 
 
-def test_different_actual_time_bases_preserve_clip_provenance(tmp_path):
+def test_different_actual_time_bases_preserve_clip_provenance(tmp_path, monkeypatch):
     from daesingo.recording import RecordingService
+    from daesingo.recording import multi_analysis
     work = tmp_path / "work"
     work.mkdir()
-    adapter = LocalIncidentMaterializer(IncidentClipEncoding(48, "veryfast", 23), temp_root=work)
+    # This success fixture requires individually verifiable outputs on 6.1.1 and
+    # 8.1. With veryfast, 6.1.1 omits duration on this B-frame MP4's encoded tail.
+    adapter = LocalIncidentMaterializer(IncidentClipEncoding(48, "ultrafast", 23), temp_root=work)
+    mixed_calls = []
+    prepare = multi_analysis.prepare_mixed_parts
+
+    def observe_mixed(engine, parts, root):
+        mixed_calls.append(tuple(part.time_base for part in parts))
+        return prepare(engine, parts, root)
+
+    monkeypatch.setattr(multi_analysis, "prepare_mixed_parts", observe_mixed)
     with RecordingService(incident_materializer=adapter) as service:
         rows, paths = [], []
         for i, rate in enumerate((10, 12)):
             path = tmp_path / f"source-{i}.mp4"
             subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
-                f"color=c=red:s=64x48:r={rate}:d=2", "-c:v", "libx264", str(path)],
+                f"color=c={'red' if i == 0 else 'blue'}:s=64x48:r={rate}:d=2", "-c:v", "libx264", str(path)],
                 check=True, capture_output=True, timeout=30)
             registered = service.register_local_source(path)
             rows.append(dict(source_asset_ref=registered.source_asset.source_asset_ref,
@@ -154,12 +167,39 @@ def test_different_actual_time_bases_preserve_clip_provenance(tmp_path):
                 timeline_start_sec=float(i*2), timeline_end_sec=float(i*2+2)))
             paths.append(path)
         before = [fingerprint(p) for p in paths]
+        originals = [probe(p) for p in paths]
+        bases = (Fraction(1, 10240), Fraction(1, 12288))
+        assert tuple(base for base, _ in originals) == bases
         timeline = service.create_relative_timeline_from_placements(rows)
         resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
             dict(start_sec=1., end_sec=3.), media_stream_refs=[r["media_stream_ref"] for r in rows])
         assert resolution.status == "COMPLETE"
         clip = service.build_incident_clip(resolution)
+        assert mixed_calls == [bases]
         assert clip.source_provenance.asset_spans == resolution.spans
+        assert clip.source_provenance.timeline_ref == resolution.timeline_ref == clip.timeline_ref
+        assert clip.media_stream_refs == [span.media_stream_ref for span in resolution.spans]
         assert clip.duration_sec == 2.
+        output = tmp_path / "joined.mp4"
+        output.write_bytes(service._local_clips[clip.incident_clip_ref][1])
+        base, actual = probe(output)
+        expected, offset = [], Fraction(0)
+        for (_, frames), span in zip(originals, resolution.spans):
+            start, end = (Fraction(str(value)) for value in
+                          (span.source_range.start_sec, span.source_range.end_sec))
+            selected = [(at, length) for at, length in frames if start <= at < end]
+            expected.extend((offset + at - selected[0][0], length) for at, length in selected)
+            offset += selected[-1][0] + selected[-1][1] - selected[0][0]
+        assert base == Fraction(1, 60) and actual == expected
+        assert len(actual) == 22
+        assert actual[9][0] + actual[9][1] == actual[10][0] == 1
+        assert actual[-1][0] + actual[-1][1] == 2
+        decoded = subprocess.run(["ffmpeg", "-v", "error", "-xerror", "-i", str(output),
+            "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+            check=True, capture_output=True, timeout=30).stdout
+        assert len(decoded) == 22 * 64 * 48 * 3
+        for i in range(22):
+            red, _, blue = decoded[i*64*48*3:i*64*48*3+3]
+            assert (red > 230 and blue < 10) if i < 10 else (blue > 230 and red < 10)
         assert not list(work.iterdir())
         assert [fingerprint(p) for p in paths] == before

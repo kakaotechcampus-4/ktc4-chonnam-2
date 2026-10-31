@@ -391,3 +391,126 @@ UNSUPPORTED_MEDIA terminal/Case notice mapping remain open. Full remote CI after
 an authorized push must run repository regression, strict MySQL/mutation inventory
 and boundary/Contract/quality gates without policy relaxation. This local result
 is neither Issue closure, one-hour analysis support nor deployment completion.
+
+
+### PR #499 CI follow-up: duration observability (2026-10-31)
+
+Status: IN_PROGRESS · Refs #425 · Related #452, #460. Start branch
+`codex/issue425-mixed-timebase`, HEAD
+`4369bdc668435d432440a77006fdb6f73538edab`, worktree/index clean.
+[Remote failure](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/41185698185/job/124492062285)
+ran the PR merge ref `8a32827548b059d1b853b5e17a3d6fb8aa33f276` with
+Ubuntu FFmpeg/ffprobe `6.1.1-3ubuntu5`, Python 3.12.15. The failing node was
+`test_multi_span_incident_clip.py::test_different_actual_time_bases_preserve_clip_provenance`.
+
+Author reproduced the unchanged node: **1 failed**, identical missing last-frame
+duration error. Instrumentation located failure in the first individual encode's
+`output_validate`, before the second encode, common-clock normalization or concat.
+The original MP4 has 20 frames and observed duration 1024 at time base 1/10240.
+Its selected one-second veryfast output has 10 frames; 6.1.1 reports no duration
+on any packet and neither duration nor pkt_duration on the last decoded frame.
+No verified-coverage exception applies to this ordinary MP4. Strict rejection is
+correct under the existing individually-successful-input scope of #425.
+
+Cross-probing both 6.1.1-generated and 8.1-generated versions of the SAME synthetic
+files isolates the reader difference: 6.1.1 misses all ten output packet durations
+and the tail duration, while 8.1 reports duration 1024. Both readers observe the
+original durations. This is not evidence of lost encoded frames or a concat bug.
+The n6.1.1 [MOV reader](https://github.com/FFmpeg/FFmpeg/blob/n6.1.1/libavformat/mov.c#L8386-L8401)
+does not assign packet duration in its CTTS branch; n8.1
+[MOV finalization](https://github.com/FFmpeg/FFmpeg/blob/n8.1/libavformat/mov.c#L10494-L10505)
+reads sample duration before CTTS handling. Trace-header observations also show
+source/output H.264 time_scale 20/20480, num_units_in_tick 1, fixed_frame_rate_flag 0;
+n6.1.1 [duration computation](https://github.com/FFmpeg/FFmpeg/blob/n6.1.1/libavformat/demux.c#L610-L650)
+has a codec-rate bound relevant to this fine encoder clock. The decisive evidence
+is the measured frame/packet output, not an FPS-derived replacement duration.
+
+Minimal fixture correction: use ultrafast for this success test's output profile,
+leaving source generation rates 10/12 and actual clocks 1/10240 and 1/12288.
+Both individual outputs now expose durations to both readers. Product code,
+strict checks, fallback scope, numeric bounds, API/Worker/receipt contracts and
+workflow/dependencies are unchanged. No new support promise for unobservable
+veryfast output on 6.1.1 is made. Runtime UNSUPPORTED_MEDIA-specific terminal/Case
+mapping remains the prior unresolved Owner item, outside this change.
+
+The test now observes the real mixed normalization call, independently probes
+source/output PTS and duration, requires clock 1/60, all 22 frames in order,
+exact boundary coverage at one second and endpoint two seconds, checks decoded
+red/blue segment order, provenance and original SHA-256/size/mtime preservation.
+No duration is synthesized by the test's probe helper. Existing VFR, rejection,
+overflow, timestamp mutation, same-clock and cleanup tests also execute.
+
+Direct author results (no new skip/xfail or policy changes):
+
+| Environment | Media focused (six files, including whole failing file) | Safety/Worker focused (six files) |
+| --- | --- | --- |
+| Ubuntu FFmpeg/ffprobe 6.1.1-3ubuntu5 | 155 passed, 4 existing skips; 95.80 s | 88 passed, 1 existing platform skip; 41.97 s |
+| Existing identical-build FFmpeg/ffprobe 8.1 | 156 passed, 3 existing skips; 29.55 s | 88 passed, 1 existing platform skip; 18.07 s |
+
+The extra 6.1.1 skip is the unchanged synthetic AVI test that does not observe a
+strict encode failure on that binary. Its existing policy stays intact; this is
+not fallback success evidence. The changed node passes and all its exactness
+assertions execute on both versions. The unmodified veryfast node also passed
+in the author's 8.1 diagnostic run before the correction.
+
+6.1.1 ran at `/repo`, `/usr/bin/ffmpeg` and `/usr/bin/ffprobe`, Python 3.12.3
+at `/tmp/ci-venv/bin/python`, in a task-only Ubuntu 24.04 container. Actual binary
+SHA-256: ffmpeg `ed16af623947494a72e284b6eb8ff225f2da22b38b5d5069c2fd4b4ba3384e41`,
+ffprobe `272f6ebc634a63d9c8b4ca68e964119d980f25154e5aa2c35e5487da48e9a58f`.
+8.1 reused `daesingo-issue452:local`, image
+`sha256:f76274a9b66b8fcdde51d88d34cfb221c7667e756ac237daaa21ff3cabcd140f`,
+at `/repo`, binaries `/usr/local/bin/ffmpeg` and `/usr/local/bin/ffprobe`, Python
+3.12.16 at `/app/.venv/bin/python`. Binary hashes match the preceding #425 evidence.
+Full tool identities and temporary Python dependency versions are in ignored
+evidence; Python/dependencies are not claimed identical to the remote runner.
+Windows PATH media binaries were not used. Native Runtime quality (ruff and mypy
+linux/win32, 87 files each), boundary, and Contract fixtures (62/26/104) passed.
+An optional lint of the entire changed test file reports the same 17 pre-existing
+findings as HEAD (F401/F811 fixture import plus E701); no Runtime gate was relaxed.
+
+Current private input inventory matches the user's seven remaining files.
+No private media was decoded/reprobed for this CI fix, and no removed file was
+searched for or restored. The earlier ten-file inventory and actual-pair 8.1 run
+remain historical evidence with their original inputs/tools; they are not fresh
+evidence for the seven-file inventory. No pending validation here depends on the
+removed inputs. Current mixed clocks are not asserted without measurement.
+The original Issue AVI-nine/MP4-two sets remain unconfirmed.
+
+Complete candidate file list: this Notes file, `runtime-implementation-log.md`,
+and `tests/recording/test_multi_span_incident_clip.py`. PR-excluded material lives
+only under ignored `.codex-scratch/issue499-ci`: original test snapshot, RED XML,
+stage/cross-probe JSON, tool identities, focused XML, runners and prefix hashes.
+Earlier `.codex-scratch/issue425` evidence is preserved. No private identifiers or
+frames are added to public documentation. Fresh review and cleanup results follow.
+Full pytest, mandatory MySQL, full mutation and Docker OCR acceptance are not
+repeated locally; all remain conditions of a later authorized push's remote CI.
+
+
+### PR #499 fresh review and local cleanup
+
+Fresh GPT-6.1 Sol / High reviewer, without implementation conversation history,
+found no actionable finding in the three-file delta. It directly ran the changed
+node on 6.1.1 and 8.1: **1 passed on each, no skip** (reviewer61.xml/reviewer81.xml).
+It reviewed the author's broader XML and diagnostic evidence; it did not rerun
+the full focused groups or private media. Source/clock assertions, strict boundary,
+document prefix/LF, branch/HEAD/index and diff check were independently checked.
+No code correction was requested. Native checker execution used Windows Python
+3.12.14 at the repository .venv/Scripts/python.exe; media checks used Linux tools
+as recorded above.
+
+Task Ubuntu container and its installed dependencies/intermediates were removed.
+Temporary 8.1 containers used --rm. No task container/volume remains. Copied pytest
+dependencies and all successful intermediate videos were deleted after checking
+target paths inside task scratch. Two tiny synthetic source/failing-output MP4s
+remain solely for reproducing the cross-probe diagnosis, alongside small JSON/XML
+evidence. Shared images/build cache, other tasks and originals are preserved;
+previous issue425 evidence remains 36 files / 357075 bytes. C: free space was
+about 8.48 GiB at start and 10903822336 bytes (about 10.16 GiB) at cleanup; this
+change is not attributed solely to this task.
+
+Final candidates remain exactly the test and the two append-only documents listed
+above, unstaged/uncommitted; index empty and git diff --check PASS. Branch/HEAD
+remain codex/issue425-mixed-timebase / 4369bdc668435d432440a77006fdb6f73538edab.
+No external write, push, workflow dispatch or deployment occurred. Full remote
+CI after a later authorized push remains required; neither merge readiness nor
+Issue closure is claimed.
