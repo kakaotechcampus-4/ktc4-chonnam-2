@@ -27,7 +27,7 @@
 | 4 | DB / Object Storage 접근 규칙 확인 | 김준영 (공통 기반) | 원본 영상 유출 | | |
 | 5 | 사용자 간 영상 IDOR 방지 | 유소연 (`case`) · 김준영 | 원본 영상 유출 | | |
 | 6 | 업로드할 원본/파생영상 범위 정의 | 정철원 (`recording`) | — (WARN) | | |
-| 7 | 외부 AI API에 보내는 영상 범위·provider 명시 | 서어진 (`search/providers`) | 원본 영상 유출 (범위 밖 전송) | | |
+| 7 | 외부 AI API에 보내는 영상 범위·provider 명시 | 서어진 (`search/providers`) | 원본 영상 유출 (범위 밖 전송) | 2026-10-31 | PASS — 360p 이하 · 무음 재인코딩 영상과 사용자 문장만 전송, 원본 미전송(`modules/search/decisions/external-ai-transfer-scope-2026-10-31.md`). provider 측 요청 보관은 미확인(#450) |
 | 8 | 보관기간 / TTL / 자동삭제 실제 동작 | 정철원 (`recording`) | 삭제 미동작 | | |
 | 9 | 학습·평가 데이터 재사용 정책과 고지 — **정책은 확정됨**(재사용 한다 · 평가/학습 2단계 · `modules/case/decisions/correction-log-reuse.md`). 여기서는 고지 문구·동의 저장·익명화가 구현됐는지 확인 | 유소연 (`case`) | — (WARN) | | |
 | 10 | raw video 로그 미기록 | 김준영 (마스킹 로거) | — (WARN) | | |
