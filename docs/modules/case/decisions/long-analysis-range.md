@@ -29,7 +29,8 @@ case는 업로드된 전체 범위를 scope 하나 · `COARSE_SEARCH` 하나(`ma
 ## 4. 지금 한 것 · 남은 것
 
 - **한 것:** 이 문서 · `timeout-fallback.md` 「남은 것」 · `case-wait-timeout.md` §4 갱신. 코드 변경 없음.
-- **남은 것 — 「분석 범위가 너무 김」 notice 등재 · 구현.** Recording code는 정해졌고(결정 3), Recording · Runtime 구현 뒤 한다. 발동 조건은 마지막 탐색 job의 실패 code가 `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`인 경우다. 할 일: notice code · `message_key` · CaseView 계약 B§7 등재 · web 문구(@uminshin). 담당은 10/30~11/3 Case 인수자(서어진).
+- **한 것(2026-10-30, 서어진) — 「분석 범위가 너무 김」 notice 등재 · 구현.** Recording · Runtime 구현(PR #477) 뒤 `recording.analysis_range_too_long`(ERROR · blocking · `actions:[]` · `message_key: notice.analysis_range_too_long`)을 CaseView 계약 B§7에 등재하고 구현했다. 발동은 마지막 탐색 job의 terminal `failure_kind`가 `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`일 때이고 `search.candidate_search_failed` 대신 붙는다(`case/reflection.py` · `service.derive_notices()`).
+- **남은 것 — web 문구 · 화면(@uminshin).** `notice.analysis_range_too_long` 문구, 그리고 이 notice를 탐색 실패 화면으로 그리는 것. web은 지금 `search.candidate_search_failed`가 있을 때만 실패 화면이라, 이 notice만 오면 진행 화면에 머문다.
 - **남은 것 — 접수 단계 안내.** web이 업로드 단계에서 미리 안내할지는 web 판단이다. 안내에 수치를 넣으면 그 출처는 Recording 값이어야 한다(결정 2).
 
 ## 5. 고르지 않은 것

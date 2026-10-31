@@ -245,3 +245,39 @@ def test_reader_error_saves_nothing():
     case = store.get_case(case_id)
     assert case.processed_executions == {}
     assert outcome.job_id not in case.settled_jobs
+
+
+def _coarse_failed_with(store: CaseStore, case_id: str, failure_kind: str, execution_id: str = "exec_1") -> None:
+    job = jobs.latest_job_record(store.get_case(case_id), "COARSE_SEARCH")
+    outcome = ExecutionOutcome(execution_id=execution_id, job_id=job["job_id"], case_id=case_id, kind="COARSE_SEARCH",
+                               attempt=1, status="FAILED", failure_kind=failure_kind)
+    assert _reflect(store, outcome).status == "APPLIED"
+
+
+def test_analysis_source_size_limit_shows_range_too_long_without_retry():
+    # #452 · `long-analysis-range.md` 결정 4 — 같은 입력으로 다시 찾아도 같으므로 `RETRY_SEARCH`가 없고, 탐색 실패와 code를 나눈다.
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED")
+
+    notices = service.get_view(case_id, store=store)["notices"]
+
+    assert [n["code"] for n in notices] == ["recording.analysis_range_too_long"]
+    assert notices[0] == {"code": "recording.analysis_range_too_long", "severity": "ERROR", "blocking": True,
+                          "message_key": "notice.analysis_range_too_long", "actions": []}
+
+
+def test_other_coarse_failure_keeps_candidate_search_failed():
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "SEARCH_PROVIDER_FAILED")
+
+    codes = [n["code"] for n in service.get_view(case_id, store=store)["notices"]]
+
+    assert codes == ["search.candidate_search_failed"]
+
+
+def test_range_too_long_survives_store_round_trip():
+    from daesingo.case.store_state import from_row, to_row
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED")
+
+    assert from_row(to_row(store.get_case(case_id))).analysis_range_too_long is True
