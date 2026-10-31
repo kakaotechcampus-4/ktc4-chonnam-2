@@ -1,8 +1,8 @@
-# RT-14 DB·media 백업·격리 복원 acceptance 준비
+# RT-14 DB·media 백업·격리 복원 acceptance 준비와 운영자 실행 결과
 
 **IN_PROGRESS · Refs #450 · Related #300, #452 · 2026-10-31**
 
-이 문서는 실제 실행을 위한 **조건부 운영 계획**이다. 이번 변경에서는 AWS 접속·SSM·workflow dispatch·배포·운영 정지·실제 backup/restore를 실행하지 않았다. 운영자가 이번 대화에서 제공한 조치 결과는 [실험 기록 후속](experiments/2026-10-31-rt14-aws-real-e2e.md#14-운영자-제공-후속-조치)에 구분해 남긴다. 기존 [Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450#issuecomment-6522291826), [설계](rt14-deployment-design.md), [공개 배포 절차](rt14-public-deployment.md)는 재개방하지 않는다.
+이 문서의 §1–§9는 2026-10-31 작성한 **조건부 운영 계획과 당시 로컬 검증 이력**이다. 2026-11-01 문서화한 운영자 실제 실행 결과는 [§10](#rt14-recovery-operator-results)에 별도로 추가했다. 아래의 미실행·입력 미충족 표현은 준비 당시 상태이며, 현재 에이전트가 운영 실행을 직접 검증했다는 뜻이 아니다. 이번 변경에서는 AWS 접속·SSM·workflow dispatch·배포·운영 정지·실제 backup/restore를 실행하지 않았다. 운영자가 이번 대화에서 제공한 조치 결과는 [실험 기록 후속](experiments/2026-10-31-rt14-aws-real-e2e.md#14-운영자-제공-후속-조치)에 구분해 남긴다. 기존 [Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450#issuecomment-6522291826), [설계](rt14-deployment-design.md), [공개 배포 절차](rt14-public-deployment.md)는 재개방하지 않는다.
 
 ## 1. 기존 도구 평가와 실행 판정
 
@@ -13,7 +13,7 @@
 | `tests/deploy/backup_probe.py` | 작은 합성 fixture의 전체 행/identity/BLOB fingerprint 검증 의미 참고 | `.all()`·hex/JSON 직렬화가 추가 메모리를 쓴다. 운영 전체 DB에 그대로 적용하지 않음. 실제 복원 DB 동등성은 기존 도구의 migration 전 re-dump 비교를 우선 사용 |
 | `deploy/ec2.py` | 실제 project/volume/config·exact image·current/previous/schema/pointer 계약과 host lock 의미 | preflight 자체도 AWS 조회/pull·Compose render·container 실행을 한다. **읽기 전용 조사 명령으로 호출하지 않음**. backup 도구는 host lock을 자동 획득하지 않음 |
 
-**현재 판정: 운영 크기 backup/격리 복원 실행 입력 미충족.** 약 4GiB라는 사양만으로 실행 가능 판정을 하지 않는다. Gate A/B 확인 전 큰 dump, 추가 MySQL 또는 Paddle stack을 시작하지 않는다. 코드 보완 없이 기존 도구를 사용할 수 있는 범위는 **source release와 heads가 같고 승인된 자원 예산 안의 신뢰하는 artifact**다.
+**준비 당시 판정: 운영 크기 backup/격리 복원 실행 입력 미충족.** 약 4GiB라는 사양만으로 실행 가능 판정을 하지 않는다. Gate A/B 확인 전 큰 dump, 추가 MySQL 또는 Paddle stack을 시작하지 않는다. 코드 보완 없이 기존 도구를 사용할 수 있는 범위는 **source release와 heads가 같고 승인된 자원 예산 안의 신뢰하는 artifact**다.
 
 ### Gate A — source 백업 예산
 
@@ -473,3 +473,53 @@ write_stop, backup 완료, source 복귀, import 시작/완료, API 검증 완�
 | `docs/runtime/rt13b-backup-restore.md` | 로컬 DB 도구/media/두 lock/운영 적용 금지 경계 연결 |
 | `docs/runtime/runtime-implementation-log.md` | 이번 작업·검증·증거 구분 후속 기록 |
 | `docs/superpowers/plans/2026-10-31-rt14-recovery-acceptance.md` | 사용자 제약·문서 준비 계획·검증 진행 기록 |
+
+
+<a id="rt14-recovery-operator-results"></a>
+
+## 10. 운영자 실제 실행 결과 — 2026-11-01 문서화
+
+**단회 DB·media 백업·격리 복원 acceptance는 운영자 제공 결과상 PASS. RT-14 전체는 IN_PROGRESS다.** 운영자가 제공한 최종 SSM 출력과 기존 로컬 준비 자료를 대조해 기록했다. 에이전트는 이번 문서 작업에서 AWS/SSM 접속, 서비스 중단, backup/restore 재실행, provider 호출을 하지 않았다. 운영 실행의 정확한 시작·종료 시각과 RPO/RTO 실측값은 제공된 최종 출력만으로 확인할 수 없다.
+
+### 10.1 증거의 출처와 시점
+
+| 근거 | 확인 범위와 한계 |
+| --- | --- |
+| 이 대화의 최종 SSM 출력 6개 | 아래 §10.3의 운영자 보고. 에이전트가 원격 호스트에서 독립 확인한 결과가 아님 |
+| `.codex-scratch/rt14-recovery-preflight-20261031/`의 기존 자료 | 에이전트가 로컬 파일을 읽고 요약·절차·최종 marker의 의미를 정적으로 대조. 보호 원문·원격 실행 로그 전체를 공개하거나 원격 상태를 재검증하지 않음 |
+| `operator-progress.json` 초기 필드 | `status=PREPARATION_ONLY`, `actual_backup_artifact_created=false`, `actual_restore_executed=false`, `target_resources_created_by_this_run=false`는 초기 준비 단계의 기록으로 보존 |
+| 같은 파일의 최종 필드 | `operator_reported_latest_stage`와 `scope_result`는 이후 운영자 보고 요약. 초기 필드를 덮어쓴 단일 시점 snapshot으로 읽지 않음 |
+| 같은 파일의 로컬 검증 필드 | coordinator별 `actual_execution=false`·`actual_vm_execution=false` 등은 로컬 대역 검사 범위. 최종 운영자 실행 보고와 구분하며 모의 검사 횟수를 운영 PASS 증거로 쓰지 않음 |
+
+### 10.2 최초 실패와 수정 후 실행을 분리
+
+| 단계 | 기록과 판정 경계 |
+| --- | --- |
+| 최초 source backup precheck | 기존 요약은 최초 실패를 보존하고 v2에서 별도 시도 자료를 쓰도록 기록한다. 최초 precheck 실패를 backup/restore 성공으로 바꾸지 않는다. 실제 최초 EC2 오류 원문은 현재 확인한 자료만으로 확정할 수 없음 |
+| PID 열 누락 문제 | 에이전트 정적 확인: 최초 coordinator는 `docker top`의 `-eo comm`을 사용했고 v2는 `-eo pid,comm`으로 수정했다. v2는 PID 헤더·숫자 PID·행 형식을 확인한다. 기존 요약의 `actual_ec2_error_not_yet_confirmed=true`도 보존하며, 누락 문제가 원격에서 어떤 오류 문구로 나왔는지는 단정하지 않음 |
+| 수정 후 성공 | v2의 별도 시도·최초 실패 보존 구조와 최종 운영자 PASS 보고를 구분해 기록. 최종 성공은 아래 운영자 SSM 출력에 근거하며, 로컬 대역 검사가 실제 운영 실행을 입증한 것은 아님 |
+| 기본 tar 정밀도 | `tar-identity-ruling.json`과 진행 요약에 기본 tar의 `mtime_ns` 보존 실패가 남아 있음. byte/hash 일치만으로 Recording identity 보존 성공이라 하지 않음 |
+| PAX 보존 검증 | 같은 자료의 운영자 제공 합성 검증은 PAX content·owner·mode·mtime 보존과 합성 자료 정리 PASS. 에이전트 정적 확인: v2는 `--format=pax`와 ns 검사를 사용하고 restore coordinator는 복원 파일의 hash·uid/gid·mode·mtime_ns를 비교. 실제 DB/media 복원 PASS는 합성 probe와 별개인 아래 최종 보고에 근거 |
+
+초기 Windows 검사 대역의 `os.chown` 부재·mock 수정 이력과 이전 모의 happy-path assertion 한계도 실제 EC2 실패 또는 성공으로 전환하지 않는다. 제품의 Recording identity 검사를 완화한 것으로 기록하지 않는다.
+
+### 10.3 최종 운영자 제공 출력과 acceptance 범위
+
+아래 세부 검증 의미는 기존 coordinator를 에이전트가 정적으로 대조한 것이다. 실제 실행 판정의 출처는 각 운영자 marker이며, 에이전트 직접 실행 결과가 아니다.
+
+| 운영자 제공 최종 출력 | 기록한 결과와 한계 |
+| --- | --- |
+| `ISOLATED_DB_MEDIA_RESTORE_AND_COMPARE_PASS` | DB·PAX media 백업을 신규 전용 target에 격리 복원·비교한 단회 acceptance PASS 보고. 기존 절차는 API 시작 전 동일 heads와 전체 schema/data re-dump bytes(BLOB 포함), 별도 media 사본의 내용·속성을 검증. 운영 DB로의 복원 전환 성공을 뜻하지 않음 |
+| `CASE_ASSET_LOCAL_SOURCE_BLOB_COMPARE_PASS` | source/target의 CaseView·asset 응답 및 local source/BLOB inventory 비교 PASS 보고. 대표 GET과 전체 media/DB 검사를 서로 대체하지 않음. 실제 식별자·응답 원문은 비공개 |
+| `OFFLINE_MEDIA_READOUT_PREFLIGHT_PASS` | network none의 일회 container에서 media/readout offline preflight PASS 보고. 복원 DB의 정상 Worker job claim·처리·반영 성공은 미검증 |
+| `TARGET_RESOURCES_AND_TRIAL_SECRETS_CLEANED` | 이번 생성 전용 target container·DB/media volume·network 및 trial secret 정리 완료 보고. 운영 자원·활성 config·보호 backup/evidence의 삭제 또는 오프호스트 보관 완료로 확대하지 않음 |
+| `SOURCE_HEALTHY_LOCAL_HTTPS=403` | 운영 복귀와 source API/MySQL health·Worker 상태 및 local resolve HTTPS 403 확인 보고. 외부 공개 HTTP 200 또는 이번 public smoke PASS가 아님 |
+| `HOST_LOCK_RELEASED_MAINTENANCE_COMPLETE` | 이번 소유 host lock 해제·점검 종료 보고. backup 후 격리 복원 전 lock 유지 단계와 최종 해제를 구분 |
+
+### 10.4 직접 문서 검증과 남은 항목
+
+이번 에이전트 직접 검증 범위는 로컬 증거 읽기·기존 coordinator 정적 대조·문서 링크/anchor·기록 정합성·추가 diff 비노출·`git diff --check`다. 전체 pytest/MySQL/Docker 검증은 반복하지 않는다. 기존 준비와 실패 기록을 보존하고, SQL dump·비밀값·원본 영상·실제 Case/asset 식별자·내부 경로·manifest 원문을 추가 공개하지 않는다.
+
+미완료 경계는 외부 공개 HTTP 200 재확인, 복원 DB의 정상 Worker job 처리, 두 번째 배포·rollback rehearsal, 운영 Recording profile·길이·byte 한도 확정, 오프호스트 보관 정책·승인된 RPO/RTO다. 최종 Package READY와 장기 공개 gate도 기존 후속으로 남으며 **RT-14 전체 완료를 주장하지 않는다**. 이번 단회 작은 데이터 결과를 운영 용량·복구 시간 보장으로 일반화하지 않는다.
+
+관련 후속 기록: [실험 §15](experiments/2026-10-31-rt14-aws-real-e2e.md#rt14-recovery-execution-results), [Runtime 구현 로그](runtime-implementation-log.md#rt14-recovery-results-20261101).
