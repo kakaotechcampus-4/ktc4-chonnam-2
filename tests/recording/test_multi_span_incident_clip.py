@@ -136,7 +136,7 @@ def test_multi_identity_requires_same_revision_and_actual_bytes(incident_chain, 
     assert not list(work.iterdir())
 
 
-def test_different_actual_time_bases_keep_existing_safe_refusal(tmp_path):
+def test_different_actual_time_bases_preserve_clip_provenance(tmp_path):
     from daesingo.recording import RecordingService
     work = tmp_path / "work"
     work.mkdir()
@@ -158,8 +158,8 @@ def test_different_actual_time_bases_keep_existing_safe_refusal(tmp_path):
         resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
             dict(start_sec=1., end_sec=3.), media_stream_refs=[r["media_stream_ref"] for r in rows])
         assert resolution.status == "COMPLETE"
-        with pytest.raises(RecordingCapabilityError) as error:
-            service.build_incident_clip(resolution)
-        assert error.value.code == "INCIDENT_CLIP_BUILD_FAILED"
-        assert not service._local_clips and not list(work.iterdir())
+        clip = service.build_incident_clip(resolution)
+        assert clip.source_provenance.asset_spans == resolution.spans
+        assert clip.duration_sec == 2.
+        assert not list(work.iterdir())
         assert [fingerprint(p) for p in paths] == before

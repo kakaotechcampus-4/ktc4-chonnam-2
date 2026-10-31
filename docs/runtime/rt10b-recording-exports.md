@@ -247,3 +247,147 @@ reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
 git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
 and #47/CI/operational deferred boundaries remain as stated. Final state is
 uncommitted and unstaged; no staging, commit, push, PR or Issue operation.
+
+
+## Issue #425 mixed time base — 2026-10-31 KST
+
+Status IN_PROGRESS · Refs #425 · Related #452, #460. Local unstaged implementation.
+[Design, numeric bounds and plan](../modules/recording/mixed-timebase-plan.md) is
+this change's rule reference. Owner decision and reproduction comments were read
+directly. Start branch `codex/issue425-mixed-timebase`, clean tree/index, full HEAD
+`6d8dbc9485b9060938e2036ff4874de7985bff1c`; live origin/develop was identical.
+No worktree, staging, commit, push, PR, merge, deployment, dispatch, provider/AWS or
+shared EC2 access. Repository AGENTS.md was absent; supplied instructions and the
+CLAUDE.md/document router were read.
+
+### Author execution evidence
+
+| Check | Observed result |
+| --- | --- |
+| Initial synthetic RED | Four failures at mixed-clock connection after individual success; two clock pairs, both public capabilities |
+| Earlier VFR setup attempt | veryfast single conversion rejected coverage; recorded separately, not counted as connection RED |
+| Focused synthetic GREEN | 49 passed (before final three packet-bound tests); includes exact source/output frames, decoded color order, B-frame seam, negative controls, remux byte/timeout/cancel cleanup |
+| Related FFmpeg 8.1 regression | 946 passed, 16 existing opt-in/platform skips, 126 MySQL deselected; Recording plus selected Worker, execution and cleanup tests; 68.94 s |
+| Verification-bypass mutant | Two expected test failures (DID NOT RAISE), mutating source-coverage guard in memory only; mutation did not alter source files |
+| Additional integer bounds | RED 3 missing-helper failures, then 11 pure arithmetic checks passed including those 3; no native media execution in this Windows check |
+| Boundaries/Contract/ruff | PASS: no boundary violations; 62 structure, 26 JSON, 104 semantic fixture checks; changed new code lint clean |
+| Actual local inventory | 10 available AVI files inspected metadata-first; explicit VIDEO index 0 selected, no camera role inferred |
+| Actual eligible pair | COMPLETE public AnalysisSource; short explicit experimental placements, 12 frames exactly preserved, clock 1/900390, 155798 output bytes, provenance and original SHA-256/size/mtime unchanged; cleanup verified |
+| Actual strict/fallback | Successful pair: two initial strict encodes succeeded, no fallback; earlier selected source failed source coverage and remained UNSUPPORTED_MEDIA |
+| Original Issue media | Original AVI nine-file / MP4 two-file repro sets not established; their completion evidence remains unverified |
+
+Actual pair used existing 480/ultrafast/23 configuration. Earlier 480/veryfast/23
+and short ultrafast attempts against the first metadata-selected pair failed:
+the second source's original frame coverage was discontinuous. A subsequent
+source-only coverage check rejected that source and selected an eligible pair;
+no source was repaired or fully converted. The coordinates are explicit test
+placements, not a claim of real filming continuity. No original names, identifiers,
+paths or frames are included in public evidence. Output videos existed only in
+task containers' tmpfs and were removed on exit.
+
+The reused local image is `daesingo-issue452:local`, actual image ID
+`sha256:f76274a9b66b8fcdde51d88d34cfb221c7667e756ac237daaa21ff3cabcd140f`.
+Both FFmpeg and ffprobe report 8.1, GCC 12 Debian 12.2.0-14+deb12u1, libavutil
+60.26.100, libavcodec 62.28.100 and libavformat 62.12.100, with the same build
+configuration. No Windows PATH media result substitutes for this verification.
+The image lacked pytest; existing local pure-Python pytest dependencies were
+copied to task scratch and mounted, with plugin autoload disabled. No image or
+shared cache was changed. Network was disabled and original media mounted read-only.
+
+Preserved intermediate failures include missing pytest `py` dependency, UTF-8
+edit/console errors, a missed internal field edit, an incorrect nested offset
+expression, an incorrect test-only clip-open method and B-frame seam duration.
+These are not relabeled successful. The B-frame case drove separate decode-clock
+projection; final exact frame and packet validation detected the wrong offset.
+
+UNSUPPORTED_MEDIA terminal/notice policy remains the separate Owner item described
+in the design. No new Runtime taxonomy was inferred. Both AnalysisSource and
+IncidentClip inherit the internal media fix; prepared stores and provenance
+schemas are unchanged. No DB implementation changed, so MySQL was not run locally.
+Full pytest, full mandatory MySQL/mutation inventory, real original Issue sets,
+API/Worker provider E2E and deployment remain unexecuted. Remote full integration
+is a condition after an independently authorized push, not a result of this work.
+
+Candidate files: `src/daesingo/recording/{chain_clock,materialization,multi_analysis}.py`,
+`tests/recording/{test_mixed_timebase,test_multi_span_incident_clip}.py`,
+`docs/modules/recording/{mixed-timebase-plan,multi-span-analysis-source,multi-span-incident-clip}.md`,
+this Notes file and `runtime-implementation-log.md`. PR-excluded:
+`.codex-scratch/issue425/` runners, copied test dependencies, XML and anonymized
+summaries. No media, original identifiers or runtime credentials belong in the PR.
+Fresh review, final delta verification, prefix audit and cleanup are recorded below.
+
+
+### Issue #425 fresh review and final delta evidence
+
+GPT-6.1 Sol / High reviewed from a fresh context without implementation chat history,
+and read the Issue/Owner comments directly. Two P2 findings were reproduced and
+fixed: (1) a linear-depth setts expression fails around 99 segments; balanced
+packet-ordinal lookup removes this depth dependency, and (2) LCM of unused stream
+ticks rejected sparse but exactly representable inputs; clock selection now uses
+actual frame plus packet timing denominators. The nominal AVI-clock LCM by itself
+therefore does not establish that those files are unsupported. Actual Issue-set
+observations remain necessary and unverified.
+
+Author evidence: depth-red failed once; a flat-sum intermediate also failed FFmpeg
+AVExpr depth and is preserved separately; balanced expression plus focused tests
+passed 53. Sparse public RED failed once after both individual conversions passed;
+final sparse-inclusive focused suite passed **54**, no skips/xfails, 8.50 s.
+The new mixed-remux failure tests run the real cleanup scanner: a live lease
+prevents removal of deliberately aged files, then cleanup proceeds after failure
+releases the lease. Byte exhaustion, timeout and cancellation retain their codes.
+Source fingerprints and absence of partial publication are also checked.
+
+Reviewer direct execution (distinct from author XML review): exact image identity,
+original parser-depth reproduction; balanced 99/101/1024-expression probes; sparse
+public-boundary failure and successful exact-clock counterfactual; finally **13
+passed, 22 deselected** for sparse public, packet precision, numeric boundaries and
+expression regression on FFmpeg 8.1. Reviewer inspected author 946-pass and final
+54-pass XML rather than independently rerunning those suites. Code delta verdict:
+no remaining actionable finding. No private media, DB or remote hosts were used
+by the reviewer. Documentation correction is submitted for a final separate delta check.
+
+`media-identity.json` records full version/configuration and binary hashes:
+FFmpeg `19e0073f42f3cc0c1880ac9a4a91fc6c42d511bec9497db03872cc527791c91a`,
+ffprobe `ec4bde78f8b08c56109d68fffb16e9972ae7543ed62253fd90e699dda4a0f975`.
+Notes and Log pre-existing byte prefixes were SHA-256 checked and preserved;
+existing LF line endings were retained. Review-stage focused reruns follow below.
+
+
+Final post-review author run: **244 passed, 4 unchanged opt-in/platform skips**,
+36.66 s, FFmpeg/ffprobe 8.1. It covers mixed/same-clock AnalysisSource and
+IncidentClip, single-input media, frame-duration/tail strictness, budgets/process
+cleanup, Worker limit mapping/multisource use, and actual cleanup leases. The real
+eligible pair was repeated against the final code: 12 exact frames, 1/900390,
+155798 bytes, same provenance, unchanged source fingerprints and cleaned temp;
+both encodes succeeded strict-first, no fallback. No native PATH9.0.1 media run.
+
+
+### Issue #425 final local handoff
+
+Same reviewer checked the corrected documents and found no remaining actionable
+code/document finding. It also independently checked original Notes/Log byte
+prefixes, LF preservation, empty index and diff check. Its review of actual media
+results was of the author's anonymized JSON only, not direct private-media use.
+The actual final file is `.codex-scratch/issue425/real-pair.json` (an earlier
+review message called it `real-pair-eligible.json` incorrectly). Intermediate
+actual-media summaries are reconstructed from captured tool output in
+`real-attempt-history.json`; earlier attempts wrote to the same output filename.
+Their failures remain reported, not replaced by the final PASS claim.
+
+Task containers used --rm, network none and tmpfs; task container residue is zero.
+No task volume was created. No successful intermediate media remains on the host.
+The copied pytest dependency directory was removed after checking its absolute
+path under task scratch. Remaining ignored evidence: 36 small files, 357075 bytes
+at cleanup measurement (XML, runners, prefix hashes and anonymous summaries).
+Shared images/caches and other work materials were preserved. C: free space was
+about 2.12 GiB at start and 9283850240 bytes (about 8.65 GiB) at cleanup; the change
+in free space is not attributed solely to this task.
+
+Branch/HEAD remain `codex/issue425-mixed-timebase` /
+`6d8dbc9485b9060938e2036ff4874de7985bff1c`. Ten candidate files are unstaged;
+index empty, diff check passed. No staging/commit/push/PR/merge occurred.
+Status remains IN_PROGRESS: original Issue AVI/MP4 repro evidence and agreed
+UNSUPPORTED_MEDIA terminal/Case notice mapping remain open. Full remote CI after
+an authorized push must run repository regression, strict MySQL/mutation inventory
+and boundary/Contract/quality gates without policy relaxation. This local result
+is neither Issue closure, one-hour analysis support nor deployment completion.
