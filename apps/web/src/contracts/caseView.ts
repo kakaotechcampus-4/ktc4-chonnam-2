@@ -1,4 +1,4 @@
-// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.8)
+// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.10)
 //
 // 이 파일이 web의 타입 정본이다. `apps/prototype/src/types.ts`의 CaseState는
 // 참고만 하고 가져오지 않는다(`docs/modules/web/decisions/web-stack.md`).
@@ -163,6 +163,13 @@ export interface CaseView {
   description: string | null
   hints: { time: string | null; vehicle: string | null; situation: string | null; location: string | null }
   progress: { step: string; state: ProgressState }[]
+  /** Real coarse-work boundaries; absent on older servers. Ring segments are work, not elapsed time. */
+  scene_search?: {
+    job_id: string
+    phase: 'PREPARING' | 'SEARCHING' | 'ORGANIZING'
+    /** First SEARCHING boundary for this job; retained across automatic retries. */
+    search_started_at: string | null
+  } | null
   candidates: Candidate[]
   evidence: EvidenceView | null
   requirements_evidence: Requirements | null

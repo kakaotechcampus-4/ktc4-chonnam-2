@@ -28,7 +28,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.9"
+CONTRACT_VERSION = "case-view/v1.10"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -691,6 +691,8 @@ def build_case_view(
     visual_verify_status: str | None = None,
     independent_facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from .search_progress import search_progress_view
+
     selected = next((c for c in case.candidates if c.selected), None)
     preview_ref = selected.thumb_ref if selected else None
 
@@ -717,6 +719,7 @@ def build_case_view(
     ):
         evidence_source = independent_facts
 
+    scene_search = search_progress_view(case)
     return {
         "contract": "CaseView",
         "contract_version": CONTRACT_VERSION,
@@ -730,6 +733,7 @@ def build_case_view(
         # 후보 `marker_ms`와 같은 좌표의 시간축 전체 길이(v1.9, #184). 분석 시작 전에는 `null` — web은 시간축을 그리지 않는다.
         "timeline_duration_ms": case.timeline_duration_ms,
         "hints": case.hints,
+        **({"scene_search": scene_search} if scene_search is not None else {}),
         "progress": _build_progress(
             case,
             evidence_record,

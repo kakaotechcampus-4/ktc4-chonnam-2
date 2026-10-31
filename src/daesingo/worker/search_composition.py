@@ -8,6 +8,8 @@ from daesingo.worker.case_composition import stored_case_store
 from daesingo.worker.production_media import ProductionMediaFactory
 from daesingo.common.storage.cleanup import configured_cleanup
 from daesingo.common.storage.media import MediaRoot
+from daesingo.case.search_progress import record_search_progress
+from daesingo.common.logging import log_event_best_effort
 
 
 def compose_search_registry(*, engine, startup, service_factory=None, failures=None):
@@ -29,4 +31,16 @@ def compose_search_registry(*, engine, startup, service_factory=None, failures=N
         settings = startup.modules["search"]
         return build_intent_hint_extractor(settings.api_key.get_secret_value(), startup.modules["intent"])
 
-    return search_registry(load=inputs, intent_factory=intent, service_factory=service_factory, failures=failures)
+    def report_progress(context, phase):
+        # Display updates must never turn a successful analysis into a failed job.
+        if context.ownership.lost:
+            return
+        try:
+            transaction(lambda conn: record_search_progress(
+                stored_case_store(conn, storage_root=startup.config.media_root),
+                context.case_id, context.job_id, phase, execution_id=context.execution_id))
+        except Exception:
+            log_event_best_effort(startup.logger, "search.progress_unavailable")
+
+    return search_registry(load=inputs, intent_factory=intent, service_factory=service_factory,
+                           failures=failures, report_progress=report_progress)

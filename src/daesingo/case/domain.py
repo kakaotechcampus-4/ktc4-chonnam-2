@@ -137,6 +137,9 @@ class CaseAggregate:
     # 구분하려면 이 사실이 따로 필요하다(PR #187 리뷰). 다음 탐색이 성공하면 지운다.
     candidate_search_failed: bool = False
 
+    # Latest coarse work boundary; same job's retries retain completed work and search start.
+    scene_search_progress: dict[str, Any] | None = None
+
     # 후보 목록 세대 — `receive_candidates()`가 목록을 교체하거나 `regress_to_searching()`이 비울 때마다
     # 오른다. adapter는 같은 세대 안에서만 후보별 관찰(Fine·판독)을 재사용한다
     # (`decisions/reselect-observation-reuse.md`). `selection_rev`와 달리 재선택으로는 오르지 않는다. CaseView 비노출.

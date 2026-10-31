@@ -8,6 +8,7 @@ Usage finalization belongs to the existing Worker post-T1 reconciliation.
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Protocol, cast
 
 from pydantic import TypeAdapter
@@ -75,6 +76,7 @@ def search_registry(
     intent_factory: Callable[[], search.IntentHintExtractor],
     service_factory: Callable[[SearchInput], AbstractContextManager[search.SearchService]] | None = None,
     failures: SearchFailures | None = None,
+    report_progress: Callable[[ExecutionContext, search.SearchPhase], None] | None = None,
 ) -> KindRegistry:
     """One immutable registry. Factories must release execution resources on exit."""
     failures = failures if failures is not None else _public_failures()
@@ -104,6 +106,10 @@ def search_registry(
 
         if data.scope is None or service_factory is None:
             raise ValueError("Search scope and media capability required")
+        progress = None
+        if context.kind == "COARSE_SEARCH" and report_progress is not None:
+            progress = partial(report_progress, context)
+            progress("PREPARING")
         with ExitStack() as resources:
             # Only production preparation emits this private signal. Bare
             # UNSUPPORTED_MEDIA from input/configuration/reads/exit is Runtime's.
@@ -121,7 +127,7 @@ def search_registry(
             context.checkpoint()
             if context.kind == "COARSE_SEARCH":
                 result = _public_call(lambda: search.search_candidates(data.scope, service=service,
-                    usage_sink=context.usage_sink), failures)
+                    usage_sink=context.usage_sink, on_progress=progress), failures)
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result

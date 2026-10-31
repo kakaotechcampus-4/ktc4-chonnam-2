@@ -8,7 +8,9 @@
 
 **Architecture Contract:** v4 §5-1 ⑪ `CaseView` · ⑫ `JobRecord`
 
-**Contract Version:** `job-record/v1` · `case-view/v1.9`
+**Contract Version:** `job-record/v1` · `case-view/v1.10`
+
+> **v1.10 로컬 구현 — 장면 찾기 세부 진행.** 선택 필드 `scene_search: {job_id, phase, search_started_at}`를 추가한다. `phase`는 `PREPARING | SEARCHING | ORGANIZING`, `search_started_at`은 최초 탐색 시작 ISO8601 시각 또는 `null`이다. 같은 job의 자동 재시도에는 단계와 최초 시각을 유지하고, 새 사용자 탐색에는 초기화한다. 완료·실패·중단 판단은 기존 `progress`와 `notices`가 우선한다. 구버전 응답처럼 이 필드가 없으면 web은 세부 진행률을 추정하지 않는다. 아래 v1.9 전체 예시에 이 선택 필드를 더한 호환 확장이다.
 
 **Related ADR:** `adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` §6 R-1·R-2 · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2·§4.3·§4.9 (v1.2 근거)
 

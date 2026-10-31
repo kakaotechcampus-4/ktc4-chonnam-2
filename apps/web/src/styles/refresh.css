@@ -508,6 +508,42 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .rs.flow .timeline .tl-failed .tl-label, .rs.flow .timeline .tl-failed .kv-src { color: var(--red); }
 .rs.flow .timeline .tl-partial::before { background: var(--orange-soft); border-color: var(--orange); }
 /* 진행 중인 작업 목록(running_jobs) */
+.rs.flow .timeline .scene-search-step {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px;
+  padding: 14px 12px 14px 70px; min-height: 80px;
+}
+.rs.flow .timeline .scene-search-step::before,
+.rs.flow .timeline .scene-search-step::after { display: none; }
+.scene-search-mark { position: absolute; left: 38px; top: 17px; width: 20px; height: 20px; color: var(--rs-ink); }
+.scene-search-ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); fill: none; stroke-width: 3; }
+.scene-search-track { stroke: var(--rs-line); }
+.scene-search-fill { stroke: currentColor; transition: stroke-dashoffset .45s var(--rs-ease); }
+.scene-search-step.is-active.is-preparing .scene-search-ring { animation: scene-search-spin 1s linear infinite; }
+.scene-search-step.tl-done .scene-search-mark { display: grid; place-items: center; background: var(--rs-ink); color: var(--rs-bg); border-radius: 50%; }
+.scene-search-mark > svg:not(.scene-search-ring) { width: 14px; height: 14px; stroke-width: 2.5; }
+.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 16px; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
+.scene-search-detail > span { display: inline-block; max-width: 100%; vertical-align: top; }
+.scene-search-detail.is-running > span {
+  background: linear-gradient(105deg, var(--rs-sub) 36%, var(--rs-ink) 50%, var(--rs-sub) 64%);
+  background-size: 250% 100%; background-position: 100% 50%;
+  background-clip: text; -webkit-background-clip: text; color: transparent;
+  animation: scene-search-shimmer 2.2s linear infinite;
+}
+.scene-search-detail.is-done > span { color: var(--rs-ink); -webkit-text-stroke: .2px; animation: scene-search-edge 3.6s ease-in-out infinite; }
+@keyframes scene-search-spin { to { transform: rotate(270deg); } }
+@keyframes scene-search-shimmer { to { background-position: 0% 50%; } }
+@keyframes scene-search-edge {
+  0%, 100% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 15%, transparent); text-shadow: 0 0 1px color-mix(in srgb, var(--rs-ink) 5%, transparent); }
+  50% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 35%, transparent); text-shadow: 0 0 3px color-mix(in srgb, var(--rs-ink) 24%, transparent); }
+}
+@media (max-width: 460px) {
+  .scene-search-detail { padding-left: 8px; min-height: 48px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-search-step .scene-search-ring, .scene-search-detail > span { animation: none !important; }
+  .scene-search-fill { transition: none; }
+  .scene-search-detail.is-running > span { background: none; color: var(--rs-sub); }
+}
 .rs.flow .panel > .kv-src { margin-top: 12px !important; font-size: 13px; color: var(--rs-sub); }
 
 /* ============================================================
@@ -526,6 +562,8 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .failed-head svg { flex: 0 0 auto; }
 .state-cause { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.6; color: var(--rs-ink); }
 .state-body { margin: 0; font-size: 16px; line-height: 1.65; color: var(--rs-ink); }
+.connection-retry-status { display: flex; align-items: center; gap: 8px; }
+.connection-retry-note { margin: 4px 0 0 24px; color: var(--rs-sub); }
 .state-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 /* 실제 흐름(?api)의 요청 실패 알림 — 화면 맨 위, 결과 화면 실패 안내와 같은 모양 */
 .rs.rs-banner {

@@ -278,7 +278,7 @@ def run_condition(client, base_cfg: GeminiSearchConfig, coarse_speed: float,
 
 
 def _patch_fine_height(height: int) -> None:
-    # ponytail: 운영 media.py 를 고치지 않으려고 모듈 함수를 바꿔 끼운다. 운영에 넣을 때는 config 값으로.
+    # 운영 media.py 를 고치지 않으려고 모듈 함수를 바꿔 끼운다. 운영에 넣을 때는 config 값으로.
     from daesingo.search import media
     original = media._run_ffmpeg_encode
 

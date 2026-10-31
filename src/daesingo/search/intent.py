@@ -174,7 +174,7 @@ class IntentHintExtractor:
             processed_duration_sec=0.0,
             latency_ms=result.latency_ms,
             usage=result.usage,
-            # ponytail: 단가는 Coarse · Fine과 같은 DAESINGO_GEMINI_*_USD_PER_MILLION을 쓴다.
+            # 단가는 Coarse · Fine과 같은 DAESINGO_GEMINI_*_USD_PER_MILLION을 쓴다.
             # intent 모델을 다른 모델로 바꾸면 intent 전용 단가 키를 따로 둔다.
             cost_usd=result.usage.cost_with_rates(
                 self.config.input_usd_per_million,
