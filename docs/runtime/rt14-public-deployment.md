@@ -257,6 +257,8 @@ GPS, #425 time base, #470 preview는 변경 범위 밖이다.
 
 ## 8. 검증 기록
 
+실제 AWS acceptance 기록 → [2026-10-31 RT-14 AWS 배포·Real E2E](./experiments/2026-10-31-rt14-aws-real-e2e.md).
+
 최종 로컬 결과와 fresh review는 이 절에 실행 후 기록한다. 실제 AWS acceptance와
 과거 증거를 합산하지 않는다. 최초 시작은 HEAD/원격 develop `3819a5d`, 깨끗한
 `codex/rt14-public-deployment`였고 #479/#483/#484/#488/#491 병합을 GitHub에서 확인했다.
