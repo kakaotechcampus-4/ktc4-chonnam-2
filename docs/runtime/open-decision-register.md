@@ -875,7 +875,7 @@ Ops §4 「정확한 Dockerfile/Compose service command는 composition root 구�
 ### Already fixed / Do not reopen
 
 - EC2 1대 + Docker Compose(api · worker · mysql) · RDS/ALB/EIP/추가 EC2 미가정 (Ops §2)
-- GitHub OIDC → `ktc-github-deploy` AssumeRole · SSM Session Manager/Run Command · SSH key 저장·22번 개방 없음 · `AWS_ACCOUNT_ID`는 Variable · 비-AWS CI에 OIDC 권한 없음 · fork PR을 배포 경로로 쓰지 않음 (Ops §2-1)
+- GitHub OIDC → `ktc-github-deploy` AssumeRole · SSM Session Manager/Run Command · SSH key 저장·22번 개방 없음 · `AWS_ACCOUNT_ID`는 Secret(2026-10-31 Variable에서 변경) · 비-AWS CI에 OIDC 권한 없음 · fork PR을 배포 경로로 쓰지 않음 (Ops §2-1)
 - api/worker는 같은 dependency baseline, command만 분리 · MySQL volume은 container layer와 분리 · secret bake 금지 (Ops §4)
 - 배포 성공 = revision 식별 + health/readiness + 외부 smoke + 직전 known-good 식별 · commit SHA 식별 · registry면 `latest`만 의존 금지 · DB migration은 자동 rollback 대상으로 가정하지 않음 (Ops §19, Runbook §1·§5)
 - Blue-Green/Canary는 기본값이 아님 (Ops §19)
@@ -992,7 +992,12 @@ HTTPS · Caddy 1순위 · SG 80/443만 · DDNS 우선 · EIP 필수 아님)은
 [RT-14 배포 설계](rt14-deployment-design.md) §13이고, 2026-10-30 #450에서 Runtime/Ops Owner가 승인했다.
 구현과 외부 smoke acceptance가 남아 OPEN을 유지한다. 결정이 남았다는 뜻이 아니다.
 
-**Status:** OPEN — triggered(2026-10-22 제출 요건) · Gate approved(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §13) · implementation/AWS acceptance pending\
+2026-10-31: 팀 계정에서 EIP 할당 · 연결 권한을 확인해 **RD-14a를 「EIP 사용」으로 정했다**
+(DuckDNS updater는 백업, [RT-14 배포 설계](rt14-deployment-design.md) §13.2 · §13.3). 같은 날 검증자 1명(`/32`)으로
+제한한 public acceptance와 실영상 E2E 1회를 수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)).
+공개 범위 확대와 그때의 workflow 외부 smoke가 남아 OPEN을 유지한다.
+
+**Status:** OPEN — triggered(2026-10-22 제출 요건) · Gate approved(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §13) · RD-14a decided(2026-10-31, EIP 사용) · restricted public acceptance PASS(2026-10-31, 검증자 `/32`) · 공개 범위 확대 acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** web — 신유민 · PM\
 **Source candidates:** D-15
@@ -1013,7 +1018,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Sub-decisions
 
-- **RD-14a** — EIP 요청 여부(운영진 요청 자원, [`aws-environment.md`](./official-inputs/aws-environment.md) §2)
+- **RD-14a** — EIP 요청 여부(운영진 요청 자원, [`aws-environment.md`](./official-inputs/aws-environment.md) §2) — **2026-10-31 결정: 사용.** 요청 없이 할당 · 연결할 수 있음을 확인했다([`aws-environment.md`](./official-inputs/aws-environment.md) §11). 공개 주소에 1개, DuckDNS updater는 백업
 - **RD-14b** — DNS 공급자 · reverse proxy · 인증서 구성
 - **RD-14c** — Security Group 80/443 변경 범위
 
@@ -1026,7 +1031,8 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 - Spec: Ops §2-2 · §2-3 · §18 Elastic IP(capacity가 아님을 남긴 경계) · §23
 - Design: [RT-14 배포 설계](rt14-deployment-design.md) §10.2 · §13
-- Official input: [`aws-environment.md`](./official-inputs/aws-environment.md) §2 · 외부 공개 절
+- Official input: [`aws-environment.md`](./official-inputs/aws-environment.md) §2 · 외부 공개 절 · §11(2026-10-31 EIP 권한)
+- Execution: [RT-14 AWS 배포 · Real E2E 2026-10-31](experiments/2026-10-31-rt14-aws-real-e2e.md)
 
 ### Implementation impact
 
@@ -1566,6 +1572,7 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-06 | workflow §7 — 「Implementation Gap」 아래에 [Runtime Implementation Plan](./runtime-implementation-plan.md) Task · Gate 배치 pointer 추가. 결정 · Timing · State · Owner 변경 없음, 새 RD 없음 | PR #304 |
 | 2026-10-30 | RT-14 Decision Gate 승인(#450) — RD-12b~f/h · RD-13a · c · d · RD-11a 운영 log 보관 · RD-14 공개 모델. 승인값은 [RT-14 배포 설계](rt14-deployment-design.md) §1. RD-14는 trigger 발생으로 표시. 구현 변경 · AWS acceptance가 남아 CLOSED로 바꾸지 않음. 새 RD 없음 | PR #480 |
 | 2026-10-30 | Gate 승인 뒤 정합 — RD-12 · RD-13 · RD-14의 승인 전 미래형 문구를 과거 맥락으로 정리하고, OPEN이 「Gate 미승인」이 아니라 「implementation/AWS acceptance pending」임을 Status에 명시. 결정 값 · Timing · Owner 변경 없음, 새 RD 없음 | #450 |
+| 2026-10-31 | RD-14a 결정 — EIP 사용(팀 계정 할당 · 연결 권한 확인, 카테캠 도메인 가이드와 일치). DuckDNS updater는 백업. RD-14 Status에 검증자 `/32` 제한 public acceptance PASS 반영, OPEN 유지. Ops §2-1 `AWS_ACCOUNT_ID` Variable → Secret 변경에 맞춰 RD-12 「Already fixed」 문구 갱신. Timing · Owner 변경 없음, 새 RD 없음 | #450 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 

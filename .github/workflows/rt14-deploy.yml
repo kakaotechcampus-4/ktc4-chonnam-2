@@ -50,7 +50,7 @@ jobs:
             daesingo-rt14:verified python /opt/media-acceptance.py
       - name: Publish verified image (captured registry output; no deployment)
         env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ vars.RT14_AWS_REGION }}
           ECR_REPOSITORY: ${{ vars.RT14_ECR_REPOSITORY }}
           RT14_EXECUTION_ENABLED: ${{ vars.RT14_EXECUTION_ENABLED }}
@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
       - name: Run fixed controller and require remote status plus exit code
         env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ vars.RT14_AWS_REGION }}
           RT14_EXECUTION_ENABLED: ${{ vars.RT14_EXECUTION_ENABLED }}
           DEPLOY_INSTANCE_ID: ${{ secrets.RT14_INSTANCE_ID }}

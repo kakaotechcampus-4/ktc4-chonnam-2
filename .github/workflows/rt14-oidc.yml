@@ -19,6 +19,6 @@ jobs:
           persist-credentials: false
       - name: Verify only expected account and deploy role (no identity output)
         env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ vars.RT14_AWS_REGION }}
         run: python3 deploy/aws.py authenticate

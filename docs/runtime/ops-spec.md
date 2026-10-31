@@ -16,6 +16,11 @@ rollback tip 독립·release-bound Web·pointer/state·Caddy/DDNS·외부 smoke�
 아래 2026-10-30 snapshot 표는 당시 이력이다. #483/#484/#488의 quality/import/secret gate는
 현재 CI에 있으며 이번 변경에서 완화하지 않았다. 실제 AWS/public acceptance는 완료하지 않았다.
 
+**2026-10-31 실행 갱신:** 첫 AWS 배포, 검증자 1명(`/32`)으로 제한한 public acceptance, 실영상 E2E 1회를
+수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 같은 날 팀 계정에서 Elastic IP를
+할당·연결할 수 있음을 확인해 공개 주소에 쓰기로 했고(§2-2, RD-14a), `AWS_ACCOUNT_ID`는 Secret으로
+공급하도록 바꿨다(§2-1). 두 번째 deploy·rollback·restore rehearsal과 장기 공개 hardening은 남았다.
+
 ## 1. 문서 경계
 
 ### 이 문서가 소유한다
@@ -74,7 +79,7 @@ API와 Worker는 같은 image를 쓰는 modular monolith의 두 composition root
 | --- | --- | --- |
 | 추가 EC2 · 사양 변경 · 디스크 확장 · 추가 볼륨 | 차단. 사양 상향 · 디스크 확장은 카테캠 요청 시 검토 | capacity 대응은 §18 근거를 갖춰 요청 경로로만 한다. deploy role도 `ec2:CreateVolume` · `ec2:ModifyVolume`이 거부된다(10-30 확인) |
 | RDS · ALB | 차단. 요청 시 검토 | capacity 자원이다. §18 조건이 생길 때만 요청한다 |
-| Elastic IP | 차단. 요청 시 검토 | capacity 자원이 아니라 public endpoint **주소 안정성** 결정이다. §2-2 · RD-14가 DDNS 등 대안으로 충분하지 않다고 판단할 때만 요청한다 |
+| Elastic IP | AWS 가이드는 「할당 불가 · 요청 시 검토」. **2026-10-31 팀 계정에서 할당 · 연결 가능 확인**(dry-run, 실제 1개 할당 · [`aws-environment.md`](./official-inputs/aws-environment.md) §11) | capacity 자원이 아니라 public endpoint **주소 안정성** 결정이다. RT-14 공개 주소에 1개를 쓴다(§2-2 · RD-14a) |
 | S3 · ECR · CloudWatch · SSM Parameter Store | 사용 가능 | 10-30 SSO 권한으로 ECR · Log Group · SecureString 생성 → 삭제가 PASS. 사용 여부는 RD-12 · RD-13 결정이 정한다 |
 | 서버 중지 · 시작 · 재부팅 · Security Group 편집 | 사용 가능 | 22번을 `0.0.0.0/0`으로 열면 보안 모니터링에 탐지된다 |
 
@@ -99,7 +104,7 @@ GitHub Actions
 
 - GitHub Actions에서 AWS에 접근할 때 **장기 Access Key를 만들거나 GitHub Secrets에 저장하지 않는다.**
 - 카테캠에서 제공하는 배포 역할 **`ktc-github-deploy`** 를 사용한다. 별도 IAM 역할 생성은 기본 경로가 아니다.
-- AWS 계정 ID는 repository **Variable `AWS_ACCOUNT_ID`** 로 공급한다. 계정 ID 자체를 Secret으로 취급하지 않는다.
+- AWS 계정 ID는 repository **Secret `AWS_ACCOUNT_ID`** 로 공급한다(2026-10-31 변경, 이전: Variable). 계정 ID는 credential이 아니지만, 공개 repository에서 Variable은 step `env` 표시로 Actions log에 평문으로 남아 「계정 ID를 Actions log에 쓰지 않는다」([RT-14 실행 절차](./rt14-deployment.md) §2) 규칙과 충돌한다. Secret masking으로 이 규칙을 지킨다.
 - AWS 인증이 필요한 job에만 `permissions: id-token: write`와 `contents: read`를 선언하고 `ap-northeast-2`의 배포 역할을 assume한다. 준비 구현은 credential action 대신 `deploy/aws.py`가 OIDC token → STS 교환을 직접 하고, 임시 자격증명을 `GITHUB_ENV` · output · artifact에 남기지 않는다([RT-14 실행 절차](./rt14-deployment.md) §5).
 - 현재의 boundary/contract 등 **비-AWS CI에는 OIDC 권한을 추가하지 않는다.** 배포 workflow와 일반 PR CI를 분리한다.
 - 배포 트리거는 `workflow_dispatch`다. 준비 구현의 두 workflow는 이 repository · repository ID · `develop` ref일 때만 job을 실행하고, 실제 원격 작업은 `RT14_EXECUTION_ENABLED` Variable이 `true`일 때만 돈다. fork PR에서는 OIDC token이 발급되지 않을 수 있으므로 `pull_request`를 실제 배포 경로로 사용하지 않는다.
@@ -117,7 +122,7 @@ GitHub Actions
 - **SSM Run Command(`AWS-RunShellScript`)는 `/bin/sh`로 실행되고 마지막 명령의 exit code만 결과가 된다.** 중간 명령이 실패해도 `Success`가 될 수 있으므로, Run Command `Success`를 배포 성공으로 읽지 않는다. 배포 절차는 실패를 끝까지 전파해야 하고, 성공 판정은 §19의 health · smoke 검증이 한다.
 - **IMDSv2 필수 + hop limit 1이다.** bridge network의 container는 EC2 instance role 자격증명에 닿지 않는다. Parameter Store 조회 같은 role 권한 작업은 host의 배포 script가 하고 container에는 결과 파일만 넘긴다(§4-1 경로와 같다).
 - **두 role 모두 `PowerUserAccess`가 붙어 있지만 최종 권한 상한은 카테캠 SCP · guardrail이다.** 정책 이름으로 사용 가능 서비스를 추론하지 않고, role로 직접 하는 확인은 OIDC 검증 workflow와 첫 배포에서 한다.
-- **공인 IPv4는 EC2를 시작할 때마다 바뀐다**(Elastic IP 없음). 배포 · smoke가 고정 IP를 전제하지 않는다. public endpoint 조건은 §2-2.
+- **EIP가 없으면 공인 IPv4는 EC2를 시작할 때마다 바뀐다.** 2026-10-31부터 공개 주소에 EIP를 연결했지만, 배포 · smoke는 여전히 고정 IP를 전제하지 않는다. public endpoint 조건은 §2-2.
 
 #### 공유 EC2 전원 · host 변경 원칙
 
@@ -187,9 +192,9 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 원칙:
 
-- **Elastic IP는 필수 자원이 아니다.** public endpoint의 주소 안정성이 필요하고 DDNS 같은 대안으로 충분하지 않을 때만 요청한다. CPU · RAM · DB 같은 capacity 자원(§18)과 다른 결정이다. Elastic IP는 카테캠 계정에서 기본 차단이므로 도입은 운영진 요청 경로를 거친다([`aws-environment.md`](./official-inputs/aws-environment.md) §2 · §4, RD-14a). 그 전까지 공인 IPv4는 시작할 때마다 바뀐다.
+- **Elastic IP는 필수 자원이 아니라 주소 안정성 결정이다.** CPU · RAM · DB 같은 capacity 자원(§18)과 다르다. AWS 가이드는 기본 차단 · 요청 대상이라고 안내하지만, 2026-10-31 팀 계정에서 할당 · 연결 권한을 확인했다([`aws-environment.md`](./official-inputs/aws-environment.md) §11). 공개 기간에는 팀원이 EC2를 다시 시작해도 주소 · DNS · 인증서가 그대로여야 하므로 RT-14는 EIP 1개를 공개 주소에 쓴다(RD-14a). EIP가 없으면 공인 IPv4는 시작할 때마다 바뀐다.
 - 현재 Compose는 api를 `127.0.0.1:<port>`에만 publish한다. 2026-10-02 관측 시 Security Group inbound rule은 0개였다. 외부 공개는 이 두 경계를 함께 바꾸는 RD-14 결정이다.
-- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 이 문서에서 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다. 공인 IPv4가 바뀌는 환경이므로 **record를 API로 갱신할 수 있는지**를 기준에 넣는다. RT-14 구현 후보는 DuckDNS를 먼저 검토한다([RT-14 배포 설계](./rt14-deployment-design.md) §13).
+- 무료 서브도메인 공급자(DuckDNS, is-a.dev 등)는 이 문서에서 하나로 고정하지 않는다. 필요한 DNS record, 발급 소요시간, 유지 정책을 그 시점에 확인해 선택한다. 공인 IPv4가 바뀔 수 있으므로 **record를 API로 갱신할 수 있는지**를 기준에 넣는다. RT-14는 DuckDNS를 쓰고, EIP를 연결한 뒤에도 API 갱신(updater)을 백업으로 둔다([RT-14 배포 설계](./rt14-deployment-design.md) §13.2).
 - 도메인 자동 갱신에 token 같은 비밀값이 필요한 공급자를 선택하면 해당 값은 repository에 커밋하지 않고 secret으로 관리한다.
 - 외부 공개 endpoint에서 실제 사용자 데이터나 인증정보가 오가는 경우 **HTTPS를 pre-deploy 조건으로 검토**한다.
 - 80/443 Security Group 규칙, Let's Encrypt, Caddy/Nginx 등 reverse proxy/인증서 도구는 실제 deployment stack을 닫을 때 결정한다.
@@ -225,9 +230,11 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 **2026-10-30 갱신:** 최종 산출물 제출 요건(§2-3)으로 「외부 공개 demo URL 필요」 조건이 실제가 됐다. RD-14는 trigger 대기가 아니라 제출 마감(11/11) 전에 닫아야 하는 결정이다. 위 목록은 RD-14 구현 전까지 「아직 하지 않은 것」으로 남는다.
 
 - 공개 모델은 [RT-14 배포 설계](./rt14-deployment-design.md) §13이다(2026-10-30 #450 Gate 승인). 로그인 · 회원가입 없는 공개 체험 서비스, Web + API same-origin, HTTPS, reverse proxy는 Caddy 1순위, Security Group은 public 80/443만 연다. Caddy는 app release와 분리된 host 인프라로 두고, Web 정적 산출물은 API와 같은 release revision에 묶는다(`Web revision == API revision`). 22 · 3306 · API 8000은 공개하지 않는다. 구현은 [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)에서 이어진다.
-- EIP는 필수로 두지 않는다. 카테캠 도메인 가이드와 AWS 가이드의 안내가 달라 사용 가능 여부도 미확정이다([`aws-environment.md`](./official-inputs/aws-environment.md) §9).
+- ~~EIP는 필수로 두지 않는다. 카테캠 도메인 가이드와 AWS 가이드의 안내가 달라 사용 가능 여부도 미확정이다.~~ **2026-10-31 갱신:** 팀 계정에서 할당 · 연결 권한을 확인했고(카테캠 도메인 가이드와 일치, [`aws-environment.md`](./official-inputs/aws-environment.md) §11) 공개 주소에 EIP를 쓴다(RD-14a).
 - [RT-14 실행 절차](./rt14-deployment.md) §9의 준비 구현은 내부 loopback smoke만 제공한다. 공개 배포의 외부 smoke(DNS · TLS · Web · Web revision · same-origin API)는 RD-12h에 workflow의 SSM 성공 뒤 단계로 더한다.
 - RT-14가 직접 닫는 것은 public endpoint · 공개 모델 · DNS/TLS/reverse proxy · Security Group · 외부 smoke까지다. abuse · privacy · capacity 보호는 §2-4의 경계를 따른다.
+
+**2026-10-31 갱신:** 위 「하지 않는다」 목록 중 EIP 할당 · 연결, DNS record, Security Group 80/443, TLS 인증서, Caddy는 검증자 1명(`/32`)으로 제한한 public acceptance에서 수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). OAuth는 로그인이 MVP 범위 밖이라 해당 없다. Caddy가 검증자 IP만 허용하는 동안 GitHub-hosted runner의 외부 smoke는 403을 받으므로, 외부 smoke는 검증자 PC에서 `deploy/public_smoke.py`로 실행했다. 공개 범위를 넓힐 때 workflow 외부 smoke 경로를 함께 정한다(§2-3).
 
 ### 2-3. 최종 제출 · 발표 기간 운영 조건
 
@@ -860,7 +867,7 @@ cleanup/retention/Object Storage 분리를 적용한 뒤에도 **실행 working 
 
 ### Elastic IP
 
-capacity 조건으로 요청하지 않는다. public endpoint의 주소 안정성이 필요하고 DDNS 등 대안으로 충분하지 않을 때 RD-14 결정으로 요청한다(§2-2). baseline 자원으로 선점하지 않는다.
+capacity 조건으로 다루지 않는다. public endpoint 주소 안정성 결정으로 RD-14a에서 다룬다(§2-2). 2026-10-31 팀 계정에 할당 권한이 있음을 확인했고, RT-14 공개 주소에 1개를 쓴다. capacity baseline 자원으로 선점하지 않는다.
 
 ### ALB
 
@@ -1065,8 +1072,8 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. deploy role ECR push는 2026-10-30 확인(§2-1). EC2 instance role pull acceptance가 남았다
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
-- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10)
-- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · DDNS 우선 · EIP 비필수)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인. 구현이 남았다
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10). 2026-10-31: 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
+- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 공개 범위 확대가 남았다
 - [ ] 공개 범위(공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용)와 샘플 입력 · 사용 안내 — §2-3. RD-14와 분리해 공개 운영 hardening 후속 이슈에서 정한다
 - [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
 - [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4). RT-14 Gate가 아니라 공개 운영 hardening 후속 이슈 범위
