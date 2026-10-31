@@ -3,9 +3,17 @@ from contextlib import contextmanager
 from functools import partial
 
 from daesingo import search
-from daesingo.recording import ContractRef, TransactionalRecordingRepository, LocalAnalysisMaterializer
+from daesingo.recording import ContractRef, TransactionalRecordingRepository, LocalAnalysisMaterializer, RecordingCapabilityError
 from daesingo.recording.factory import build_recording_service
 from daesingo.search.sources import RecordingAnalysisSourceResolver, SourceMeta
+
+
+class _UnsupportedAnalysisInput(Exception):
+    """Internal entry signal, raised only by the analysis preparation call.
+
+    A raw Recording error from any other factory stage is not this signal.
+    Recording context cleanup completes before this reaches the handler.
+    """
 
 
 class ProductionMediaFactory:
@@ -44,7 +52,12 @@ class ProductionMediaFactory:
             for source_ref in dict.fromkeys(s.source_asset_ref for s in resolution.spans):
                 recording.observe_time_sources(source_ref)
                 data.checkpoint()
-            source = recording.prepare_analysis_source_from_resolution(resolution, self.settings.profile_ref)
+            try:
+                source = recording.prepare_analysis_source_from_resolution(resolution, self.settings.profile_ref)
+            except RecordingCapabilityError as error:
+                if error.code != "UNSUPPORTED_MEDIA":
+                    raise
+                raise _UnsupportedAnalysisInput() from None
             data.checkpoint()
             ref = search.ContractRef(kind="analysis_source", ref=source.analysis_source_ref)
             resolver = RecordingAnalysisSourceResolver({scope.scope_id: (ref,)},

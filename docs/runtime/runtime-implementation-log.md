@@ -4731,3 +4731,70 @@ MP4s and small ignored evidence retained. Shared images/cache/originals and prio
 bytes (~10.16 GiB) at cleanup, not solely attributed to cleanup. Three files remain
 unstaged/uncommitted, index empty, original branch/HEAD maintained, diff check PASS.
 Full remote CI and prior Owner/original-Issue-set follow-ups remain open.
+
+
+### 2026-10-31 — #425 Recording unsupported analysis input terminal mapping
+
+IN_PROGRESS · Refs #425 · Related #297. Started on
+`codex/issue425-media-failure-mapping` at
+`d1f57b343c509ef2d5ea42aa119487d79c9adc43`, clean working tree and index.
+PR #499 is merged at that HEAD. Its common time axis and strict validators are
+unchanged. Issue #425 body and both comments were read; the new literal below is
+this request's specification, not a terminal value previously Owner-approved.
+
+Recording taxonomy now registers FAILED / RECORDING_UNSUPPORTED_MEDIA /
+produced=[] for UNSUPPORTED_MEDIA from the production analysis preparation call.
+The production factory marks only prepare_analysis_source_from_resolution; the
+handler converts that internal entry signal after Recording context cleanup.
+Coarse and Fine use this same boundary; Hint is excluded. Input/configuration,
+metadata reads, DB/transaction/commit, usage/checkpoint/cancel, Search/provider,
+unknown code and exit/cleanup keep their existing error boundaries. Existing
+size-limit, IncidentClip and export mappings remain. No API/schema/migration or
+receipt/retry change. No raw media details enter terminal fields.
+
+Author RED: both media kinds produced RUNTIME_HANDLER_ERROR before changes (2
+expected assertion failures). GREEN plus size-limit: 9 passed. Focused regression:
+176 passed, no skips, 109.15 s. Dedicated real MySQL 8.4: 12 passed, no skip/xfail,
+30.96 s; actual automatic production Search composition, T1/T2 rollback and lost
+COMMIT response, gap redelivery, durable receipt and idle restart with no repeated
+media/provider calls, empty produced, no duplicate jobs, zero pool checkout and
+no Recording temp residue. Runtime quality (Ruff, mypy linux/win32), boundary,
+Contract fixtures and diff checks passed. CP949 boundary-print error was rerun
+with UTF-8; new tests were formatted/linted. Credentials/raw reports remain only
+in task-specific ignored scratch. No full local pytest/MySQL/mutation/OCR run.
+
+Case stored projection consumes the new string: Coarse FAILED keeps the general
+search.candidate_search_failed and RETRY_SEARCH; Fine settles FAILED, retains the
+candidate and shows the existing blocking search.visual_verify_failed (actions
+empty). Fine has no separate failure progress row; downstream unstarted steps
+are omitted. Neither path remains RUNNING or becomes no-result success. No new
+Case/Web notice/copy/actions/retry policy was implemented. A concrete unposted
+Case Owner proposal and complete seven-file inventory are in
+[mapping Implementation Notes](issue425-media-failure-mapping.md).
+
+Original #425 AVI/MP4 sets remain separate/unverified. Full remote CI is required
+after a later push; #425 completion and resolved user guidance are not claimed.
+No user originals, provider, AWS/EC2/deploy, branch/worktree switch, staging,
+commit, push, PR, Issue comment, merge or dispatch. Fresh reviewer and final
+cleanup/status evidence will be appended below after completion.
+
+
+#425 mapping final handoff: fresh read-only GPT-6.1 Sol / High review, no inherited
+implementation history, found no actionable issue across all seven candidate
+files and their relevant callers. Direct reviewer verification: 104 passed in
+33.14 s (new mapping, existing size-limit and Search failure boundary), diff check
+PASS. First reviewer attempt had 44 fixture setup errors solely from a missing
+review temp parent; after creating it the direct rerun passed. MySQL was not run
+by reviewer; author raw evidence and test assertions were assessed separately.
+No product correction was requested, so no re-review was needed.
+
+Final author focused matrix: 48 passed / 30.58 s. Final dedicated MySQL after
+fixture alias/format cleanup: 12 passed / 44.19 s, server 8.4.13, zero skip/xfail
+or collection errors in report. Zero harness schemas remained before task-only
+MySQL container/tmpfs removal (ownership label checked). Owned pytest/reviewer
+media/temp/cache, credentials and helper scripts cleaned; small raw logs/report
+remain only in ignored issue425-mapping scratch. Shared images/cache, original
+media and previous tasks' materials preserved. Original Runtime Log byte prefix
+from HEAD verified unchanged. Final branch/HEAD unchanged; seven files unstaged
+and uncommitted, empty index, diff check PASS. Full remote CI, original #425
+AVI/MP4 sets and Case/Web guidance policy remain outstanding; IN_PROGRESS.

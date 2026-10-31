@@ -23,6 +23,7 @@ from daesingo.common.jobs.produced import ProducedObject
 from daesingo.common.usage.port import UsageError
 from daesingo.search.runs import RunOutcome
 from daesingo.worker.registry import KindRegistry
+from daesingo.worker.production_media import _UnsupportedAnalysisInput
 
 SEARCH_KINDS = frozenset({"HINT_EXTRACT", "COARSE_SEARCH", "FINE_VERIFY"})
 
@@ -104,10 +105,13 @@ def search_registry(
         if data.scope is None or service_factory is None:
             raise ValueError("Search scope and media capability required")
         with ExitStack() as resources:
-            # Recording preparation happens while entering this resource. Catch
-            # only the agreed capability failure, never Search/body/exit errors.
+            # Only production preparation emits this private signal. Bare
+            # UNSUPPORTED_MEDIA from input/configuration/reads/exit is Runtime's.
             try:
                 service = resources.enter_context(service_factory(data))
+            except _UnsupportedAnalysisInput:
+                context.checkpoint()
+                return HandlerResult(status="FAILED", failure_kind="RECORDING_UNSUPPORTED_MEDIA")
             except RecordingCapabilityError as error:
                 context.checkpoint()
                 if error.code != "ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED":
