@@ -1,4 +1,6 @@
-# RT-13(a) — Docker / Compose local runtime
+<a id="rt-13a--docker--compose-local-runtime"></a>
+
+# RT-13(a) — Docker / Compose 로컬 실행환경
 
 > 현재 구성 절차는 [로컬 Runtime/Ops·Recording 실행환경](./local-runtime-environment.md)을 따른다.
 > 아래 초기 구현 기록의 Paddle 미설치·mutable media toolchain·Recording 미설정 설명은 당시 이력이다.
@@ -9,7 +11,9 @@
 
 근거: [Issue #300](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300), [결정 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6430017764), [Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506). 2026-10-27 세션에서 본문과 두 댓글을 직접 조회했다. Runtime Plan RT-13/§12, Ops §4·§4-1·§4-2·§5, Tech §4.4·§15.2, Baseline B-W1/W4/O1/H3/§2.6, Register RD-12를 적용한다.
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -91,7 +95,9 @@ script는 무작위 `daesingo-rt13-smoke-<12hex>` project, 전용 image tag와 n
 
 probe는 테스트 파일이며 application image에 넣지 않는다. smoke JSON은 stage 성공 증거와 실패 stage/type, 정리 상태만 보존하고 secret 원문/command output은 출력하지 않는다. 실패 시 성공 stage와 미실행 stage를 구분한다.
 
-## Verification — 2026-10-27
+<a id="verification--2026-10-27"></a>
+
+## 검증 — 2026-10-27
 
 이 절은 Docker 설치 전 초기 실행 결과를 보존한다. 설치 후 결과는 아래 재개 절을 따른다. 초기 HEAD/원격 develop `ef5806aec92307fa89fdc489b61f9fab9a1702bc`, branch `codex/rt13a-docker-compose`, index/worktree clean 확인 후 수정했다. 로컬 증거는 gitignored `.codex-scratch/rt13a/`에 보관한다.
 
@@ -123,7 +129,9 @@ Docker 미실행으로 migration exit/ready/upload sharing/STALE attempt2/inspec
 
 테스트 자원: Docker는 preflight 이전 차단으로 생성0. 실제 MySQL은 기존 binary를 읽어 전용 UUID datadir `/dev/shm/rt13a-a4919cd9505b4980b02713ccb6af49ee`, loopback port42921, schema `rt13a_test`를 생성했다. 종료 전 schema audit에서 예상 밖 schema1개가 있어 helper exit1(AssertionError)을 보존했다. finally에서 SHUTDOWN·server 종료·정확한 UUID datadir 삭제, Linux port closed는 별도 확인했다(`server-final.json`, `owned_root_absent=true`, connect errno111). 후속 `linux-final-audit.json`에서 소유 datadir 없음/mysqld0, `windows-final-audit.json`에서 listener0/소유 Python0을 직접 확인했다. 일시적인 shared WSL relay listener1 관측도 보존하며 공유 WSL/다른 MySQL service를 종료하지 않았다. 물리 자원 정리를 schema audit PASS로 소급하지 않는다.
 
-### Fresh review 수정 기록
+<a id="fresh-review-수정-기록"></a>
+
+### Fresh 리뷰 수정 기록
 
 | 최초 판정 | TDD 수정 · 검증 |
 | --- | --- |

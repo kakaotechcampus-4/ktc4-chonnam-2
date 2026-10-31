@@ -1,166 +1,177 @@
-# RT-10(b) HINT_EXTRACT exhaustion notice — Implementation Notes
+<a id="rt-10b-hint_extract-exhaustion-notice--implementation-notes"></a>
+
+# RT-10(b) HINT_EXTRACT 소진 알림 — 구현 기록
 
 `RT-10 IN_PROGRESS · Refs #297 (RT-10(b)) · Related #405`
 
-2026-10-28 · uncommitted / unstaged · PR/merge SHA pending.
-Agreement: [#405](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/405), including Runtime/Case port agreement and Case PR #415.
-Case semantics remain authoritative in [hint-exhaustion](../modules/case/decisions/hint-exhaustion.md).
+2026-10-28 · 미커밋 / 미스테이징 · PR/merge SHA 미정.
+합의: [#405](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/405). Runtime/Case 포트 합의와 Case PR #415를 포함한다.
+Case 의미론의 권위 있는 기준은 계속 [hint-exhaustion](../modules/case/decisions/hint-exhaustion.md)이다.
 
 ## 구현 결과
 
-Runtime owns `common/jobs/exhaustion.py`, its DTO/port, outbox delivery, and the new
-`job_exhaustion_notice` table. `case/exhaustion_adapter.py` delegates to the merged
-`service.receive_hint_exhaustion()` on the caller Connection and drops the Case
-diagnostic `reason`. `worker/case_composition.py` supplies the existing durable
-Recording timeline capability; the production entrypoint supplies both adapters.
+Runtime은 `common/jobs/exhaustion.py`, 해당 DTO/포트, outbox 전달, 새
+`job_exhaustion_notice` 테이블을 소유한다. `case/exhaustion_adapter.py`는 호출자의 Connection에서 병합된
+`service.receive_hint_exhaustion()`에 위임하고 Case
+진단값 `reason`은 제외한다. `worker/case_composition.py`는 기존의 영속
+Recording 타임라인 기능을 제공하고, 프로덕션 진입점은 두 어댑터를 모두 제공한다.
 
-`sweep_expired()` inserts a notice only when an uncancelled HINT_EXTRACT becomes
-STALE with no retry. STALE and INSERT share the same transaction. `sweep_once()`
-pins a notice ID before entering B-D8 retries, alongside the existing retry ID.
-Unknown-COMMIT recovery locks the original execution, confirms its durable
-STALE/ended_at and the original notice identity/facts, and never synthesizes a
-replacement notice for an already-STALE row. `SweepOutcome` and metric meanings
-are retained. Other kinds get no exhaustion notification.
+`sweep_expired()`는 취소되지 않은 HINT_EXTRACT가
+재시도 없이 STALE이 될 때만 알림을 삽입한다. STALE과 INSERT는 같은 트랜잭션에 속한다. `sweep_once()`는
+기존 재시도 ID와 함께 B-D8 재시도에 들어가기 전에 알림 ID를 고정한다.
+COMMIT 결과 불명 복구는 원래 실행을 잠그고, 영속 저장된
+STALE/ended_at과 원래 알림의 식별값/사실을 확인하며, 이미 STALE인 행에 대해
+대체 알림을 합성하지 않는다. `SweepOutcome`과 메트릭의 의미는
+유지된다. 다른 kind에는 소진 알림을 보내지 않는다.
 
-## Schema · migration
+<a id="schema--migration"></a>
 
-Forward migration `runtime_0006` follows `runtime_0005`. Frozen DDL is independent
-of live metadata. Columns: notice_id (PK), job_id (UNIQUE), case_id, kind,
+## 스키마 · 마이그레이션
+
+정방향 마이그레이션 `runtime_0006`은 `runtime_0005` 다음이다. 고정된 DDL은
+실시간 메타데이터와 독립적이다. 열: notice_id (PK), job_id (UNIQUE), case_id, kind,
 final_execution_id, attempt, terminal_status, reason, exhausted_at, trace_id,
-case_acknowledged_at. Only case_acknowledged_at is nullable. Both timestamps are
-DATETIME(6), stored in UTC. exhausted_at is read from the terminal UPDATE's actual
-durable ended_at, including its existing causal lower bound.
+case_acknowledged_at. case_acknowledged_at만 nullable이다. 두 타임스탬프 모두
+DATETIME(6)이며 UTC로 저장한다. exhausted_at은 terminal UPDATE가 실제로
+영속 저장한 ended_at에서 읽으며, 기존의 인과적 하한도 포함한다.
 
-The FK targets the Runtime-owned job_execution.execution_id; there is no
-cross-module Case/JobRecord FK. CHECKs constrain HINT_EXTRACT, STALE, EXHAUSTED,
-and positive attempt. The pending scan index is (case_acknowledged_at, notice_id).
-Runtime validates the notice against its execution/job/case/attempt/status/time/
-trace facts and rejects a later attempt before receipt. Cancellation is checked
-under the generation lock; a later STOP_ANALYSIS marker on STALE is mutable and
-allows the already-created notice to acknowledge NO_CHANGE(CANCELLED).
+FK는 Runtime 소유의 job_execution.execution_id를 가리킨다.
+모듈 간 Case/JobRecord FK는 없다. CHECK는 HINT_EXTRACT, STALE, EXHAUSTED와
+양수 attempt를 제약한다. 대기 스캔 인덱스는 (case_acknowledged_at, notice_id)이다.
+Runtime은 알림을 실행/job/case/attempt/status/time/
+trace 사실과 대조해 검증하고, receipt 전에 후속 attempt가 있으면 거부한다. 취소 여부는
+generation 잠금 아래 확인한다. STALE에 나중에 추가되는 STOP_ANALYSIS 표시는 변경 가능한 상태이며,
+이미 생성된 알림이 NO_CHANGE(CANCELLED)로 확인되도록 허용한다.
 
-The existing runner is unchanged: migrate once before API/Worker startup;
-forward-only, no operational downgrade, no startup migration, no automatic
-DDL/unknown-COMMIT replay. Already-applied head is a no-op. The same-process guard
-is retained; deployment must serialize separate migration processes. MySQL DDL
-can leave partial schema on failure and requires existing manual repair policy.
-No repository migration checksum registry was found; head/table fixtures were
-updated without changing historical migration files.
+기존 실행기는 그대로다. API/Worker 시작 전에 한 번 마이그레이션하며,
+정방향만 지원하고 운영 downgrade, 시작 시 마이그레이션, 자동
+DDL/COMMIT 결과 불명 재실행은 없다. 이미 적용된 head는 아무 작업도 하지 않는다. 동일 프로세스 가드는
+유지하며, 배포 시 별도 마이그레이션 프로세스는 직렬화해야 한다. MySQL DDL은
+실패 시 부분 스키마를 남길 수 있으며 기존 수동 복구 정책을 따라야 한다.
+저장소 마이그레이션 checksum 레지스트리는 발견되지 않았다. 과거 마이그레이션 파일을 바꾸지 않고
+head/테이블 fixture를 갱신했다.
 
-## 생성 · 전달 · receipt transaction
+<a id="생성--전달--receipt-transaction"></a>
 
-1. Scan pending notice IDs without locks, then begin one B-D8 transaction per ID.
-2. Read the notice receipt without a lock on every transaction replay. A durable
-   receipt skips the Case receiver, including after a lost COMMIT response.
-3. The Case adapter calls the public service, which locks Case first, validates
-   Case-issued job/kind, and applies EXHAUSTED or returns NO_CHANGE.
-4. Runtime locks the notice FOR UPDATE and checks its immutable snapshot plus
-   the corresponding terminal execution. No Runtime lock precedes the Case lock.
-5. APPLIED returns exactly one COARSE_SEARCH record; Runtime projects only
-   job_id/case_id/kind through existing enqueue. NO_CHANGE has no followups.
-6. Runtime writes case_acknowledged_at using UTC_TIMESTAMP(6). Case save,
-   followup enqueue and receipt commit/rollback together.
+## 생성 · 전달 · receipt 트랜잭션
 
-Concurrent delivery serializes at Case. A receipt discovered after that lock
-suppresses duplicate enqueue; an inconsistent APPLIED with an existing receipt
-is an error. Invalid Case/job/kind, invalid port results, immutable mismatch,
-enqueue failure or receipt failure rolls the whole candidate back. A failed
-candidate does not stop other candidates. Scan failures propagate to the
-existing startup admission retry or periodic DB-error policy.
+1. 잠금 없이 대기 알림 ID를 스캔하고, ID별로 B-D8 트랜잭션 하나를 시작한다.
+2. 트랜잭션을 재실행할 때마다 잠금 없이 알림 receipt를 읽는다. 영속
+   receipt가 있으면 COMMIT 응답이 유실된 뒤에도 Case 수신기 호출을 건너뛴다.
+3. Case 어댑터는 공개 서비스를 호출한다. 이 서비스는 Case를 먼저 잠그고,
+   Case가 발급한 job/kind를 검증한 뒤 EXHAUSTED를 적용하거나 NO_CHANGE를 반환한다.
+4. Runtime은 알림을 FOR UPDATE로 잠그고 불변 스냅샷과
+   해당 terminal 실행을 확인한다. Case 잠금보다 먼저 잡는 Runtime 잠금은 없다.
+5. APPLIED는 정확히 하나의 COARSE_SEARCH 레코드를 반환한다. Runtime은 기존 enqueue를 통해
+   job_id/case_id/kind만 투영한다. NO_CHANGE에는 후속 작업이 없다.
+6. Runtime은 UTC_TIMESTAMP(6)으로 case_acknowledged_at을 기록한다. Case 저장,
+   후속 enqueue, receipt는 함께 commit/rollback된다.
 
-`SweepService.redeliver_exhaustion` is separate from its existing T2 callback.
-Startup completes both before the first claim. Periodic sweep runs both; the
-existing stop/join lifecycle is retained. An absent optional receiver leaves
-notices pending, matching the existing optional T2 reflector pattern.
+동시 전달은 Case에서 직렬화된다. 해당 잠금 뒤 receipt가 발견되면
+중복 enqueue를 억제한다. 기존 receipt가 있는데 APPLIED를 반환하는 불일치는
+오류다. 잘못된 Case/job/kind, 유효하지 않은 포트 결과, 불변값 불일치,
+enqueue 실패 또는 receipt 실패는 해당 후보 전체를 롤백한다. 한 후보의
+실패는 다른 후보를 중단하지 않는다. 스캔 실패는
+기존 시작 시 admission 재시도 또는 주기적 DB 오류 정책으로 전파된다.
 
-## Port · operational event
+`SweepService.redeliver_exhaustion`은 기존 T2 콜백과 별도다.
+시작 시 첫 claim 전에 둘 다 완료한다. 주기적 sweep도 둘 다 실행하며,
+기존 stop/join 수명주기는 유지한다. 선택적 수신기가 없으면
+기존의 선택적 T2 reflector 패턴처럼 알림을 대기 상태로 남긴다.
 
-`JobExhaustionNotice` has only the agreed notice/job/case/kind/final execution/
-attempt/status/reason/exhausted_at fields. trace_id remains Runtime correlation
-storage, outside the public DTO. `ExhaustionResult` contains only APPLIED or
-NO_CHANGE and appended_job_records. Case's settlement reason is not exported.
-The receiver never commits, rolls back or performs transaction retries.
+<a id="port--operational-event"></a>
 
-`runtime.exhaustion.failed` is a predefined ERROR with status=FAILED. It clears
-ambient correlation for that event and records no notice/job/case IDs, payload,
-provider response, original exception, locator, file name or path. Candidate
-failure leaves receipt NULL for a future sweep. The event catalog is extended;
-no notice content or raw exception is added to logging.
+## 포트 · 운영 이벤트
 
-## Plan 대비 변경 · 새 implementation detail
+`JobExhaustionNotice`에는 합의된 notice/job/case/kind/final execution/
+attempt/status/reason/exhausted_at 필드만 있다. trace_id는 공개 DTO 밖의
+Runtime 상관관계 저장값으로 남는다. `ExhaustionResult`에는 APPLIED 또는
+NO_CHANGE와 appended_job_records만 들어간다. Case의 정산 사유는 외부로 내보내지 않는다.
+수신기는 commit, rollback, 트랜잭션 재시도를 수행하지 않는다.
 
-The agreed #405 boundary is a separate RT-10(b) slice. Optional composition
-arguments follow existing T2 patterns. A same-module FK and strict minimal
-enqueue projection were selected as physical implementation details. Existing
-T2, ExecutionOutcome, produced and job_execution.case_applied_at are unchanged.
-No new retry policy, scheduler, timeout, provider invocation or config value.
+`runtime.exhaustion.failed`는 status=FAILED인 사전 정의 ERROR다.
+이 이벤트의 주변 상관관계를 지우며 notice/job/case ID, payload,
+provider 응답, 원래 예외, locator, 파일명 또는 경로를 기록하지 않는다. 후보
+실패 시 receipt를 NULL로 남겨 이후 sweep에서 처리하게 한다. 이벤트 카탈로그를 확장하며,
+로그에 알림 내용이나 원시 예외를 추가하지 않는다.
+
+<a id="plan-대비-변경--새-implementation-detail"></a>
+
+## 계획 대비 변경 · 새로운 구현 세부사항
+
+합의된 #405 경계는 별도의 RT-10(b) 작업 범위다. 선택적 구성
+인자는 기존 T2 패턴을 따른다. 같은 모듈 내 FK와 엄격한 최소
+enqueue 투영은 물리적 구현 세부사항으로 선택했다. 기존
+T2, ExecutionOutcome, produced, job_execution.case_applied_at은 그대로다.
+새 재시도 정책, scheduler, timeout, provider 호출 또는 설정값은 없다.
 
 ## Contract / Decision / Baseline 영향
 
-- Contract 변경: 없음. The implementation consumes the agreed #405 port.
-- Decision 변경: 없음. Case PR #415 public behavior is consumed unchanged.
-- Baseline 변경: 없음. Existing retry limits/timing, B-D8 and admission remain.
-- Owner 확인 포인트: audit the separate terminal outbox, event and migration;
-  Fine/readout/export exhaustion policy remains outside this implementation.
+- Contract 변경: 없음. 구현은 합의된 #405 포트를 사용한다.
+- Decision 변경: 없음. Case PR #415의 공개 동작을 그대로 사용한다.
+- Baseline 변경: 없음. 기존 재시도 제한/시간, B-D8, admission을 유지한다.
+- Owner 확인 포인트: 별도의 terminal outbox, 이벤트, 마이그레이션 감사.
+  Fine/readout/export 소진 정책은 이 구현 범위 밖이다.
 
-## Verification
+<a id="verification"></a>
 
-RED evidence precedes product edits: three actual-MySQL creation/atomicity/
-migration failures, two delivery/startup failures; nine family-omission tests
-failed before adding checker inventory. Initial integration run had 44 passes
-and two test-fixture/driver-exception expectation failures, then corrected.
+## 검증
 
-Fresh local evidence on owned MySQL 8.4.7:
+제품 수정 전에 RED 증거가 있다. 실제 MySQL 생성/원자성/
+마이그레이션 실패 세 건, 전달/시작 실패 두 건이며, checker inventory를 추가하기 전에
+family 누락 테스트 아홉 건이 실패했다. 최초 통합 실행은 44건 통과와
+테스트 fixture/driver 예외 기대값 실패 두 건이 있었고 이후 수정했다.
 
-- New exhaustion + Case exhaustion + entrypoint: 75 passed.
-- Additional stored adapter/port/scan-policy + DTO + normal Search process E2E:
-  31 passed (including real independent API/Worker OS processes).
-- Actual exhaustion-only strict-checker scope: 61 tests / 61 parameter boundaries /
-  12 families; 927 omissions/metadata/phase/skip/xfail/JUnit mutations rejected.
-  This is not a full mandatory-MySQL or full strict-gate result.
-- Boundary check: zero violations. Contract fixtures: 62 structure, 26 JSON,
-  104 semantic checks passed. Workflow policy unchanged; diff check passed.
-- Related sweep/T2/reflection/composition/produced/timestamp/migration MySQL
-  regressions: 224 passed; one existing Starlette TestClient deprecation warning.
-- Existing cancellation states/transaction/sweep controls: 9 passed, 10 deselected.
-- Gate unit omission controls: 7160 passed, 2031 deselected (before the final two
-  cancellation obligations); all 372 current exhaustion gate controls reran in
-  the final focused pass.
-- The pass after the late-cancellation fix: 461 passed (60 actual MySQL
-  boundaries, 18 Runtime DTO tests, 11 Case exhaustion tests, 372 gate controls).
-- Catalog regression: 1 RED from unintended metric auto-inclusion, then 25 GREEN
-  and zero real-emitter schema violations. Existing metric inventory is retained.
-- Late real STOP_ANALYSIS delivery/unknown-COMMIT recovery: 2 RED, then GREEN in
-  the 461-test final pass. Cancellation can mark STALE after notice generation;
-  it is mutable state, not a contradiction of the earlier exhaustion fact.
-- Fresh read-only reviewer, with no implementation history: initially two P2s,
-  no P1. Both reproduced with valid RED and fixed; the same reviewer confirmed
-  both resolved with no new/remaining P1/P2 for this scope.
-- Review fix 1: include exhaustion in nested metadata/family count and output
-  inventories. A focused control executes the original nested omission stage,
-  including its final assertion, against controlled input: 244 metadata and 12
-  family omissions. It is not a full nested database-child execution.
-- Review fix 2: compare the returned execution_id exactly in Python. MySQL's
-  ascii_bin PAD SPACE comparison accepts a trailing-space FK/WHERE alias; the
-  actual-MySQL RED demonstrated incorrect APPLIED/enqueue before the fix.
-  The first literal-comparison fixture attempt was corrected and is not treated
-  as valid product RED; the subsequent real-column RED and GREEN are preserved.
-- After both review fixes, the final focused run: 469 passed (61 actual MySQL,
-  18 DTO, 11 Case exhaustion, 378 gate controls, 1 nested omission control).
-- The reviewer confirmed the 469-test evidence. The implementer subsequently
-  refreshed the actual scoped checker to 61 parameters / 927 rejected mutations;
-  the reviewer did not inspect that refreshed mutation artifact.
-- This is a scope review, not full CI/merge approval.
+소유한 MySQL 8.4.7에서 얻은 새로운 로컬 증거:
 
-Full pytest, complete mandatory MySQL and its nested strict gate are deliberately
-left for remote CI, as requested. Checker calculation logic is unchanged; only
-inventory and independent test inventories are extended. Existing skip/xfail,
-nested 900-second and workflow 30-minute policies are retained.
+- 새 소진 + Case 소진 + 진입점: 75건 통과.
+- 추가 stored adapter/포트/스캔 정책 + DTO + 정상 Search 프로세스 E2E:
+  31건 통과(실제 독립 API/Worker OS 프로세스 포함).
+- 실제 소진 전용 strict-checker 범위: 61개 테스트 / 61개 매개변수 경계 /
+  12개 family. 누락/메타데이터/phase/skip/xfail/JUnit 변형 927건 거부.
+  전체 필수 MySQL 또는 전체 strict-gate 결과는 아니다.
+- 경계 검사: 위반 없음. Contract fixture: 구조 62건, JSON 26건,
+  의미 검사 104건 통과. workflow 정책은 그대로이며 diff 검사 통과.
+- 관련 sweep/T2/reflection/composition/produced/timestamp/migration MySQL
+  회귀: 224건 통과. 기존 Starlette TestClient 폐기 예정 경고 한 건.
+- 기존 취소 상태/트랜잭션/sweep 제어: 9건 통과, 10건 선택 해제.
+- Gate 단위 누락 제어: 7160건 통과, 2031건 선택 해제(최종 취소 의무 두 개
+  추가 전). 최종 집중 실행에서 현재 소진 gate 제어 372건을 모두 재실행했다.
+- 늦은 취소 수정 후 통과 실행: 461건 통과(실제 MySQL
+  경계 60건, Runtime DTO 테스트 18건, Case 소진 테스트 11건, gate 제어 372건).
+- 카탈로그 회귀: 의도하지 않은 메트릭 자동 포함으로 RED 1건, 이후 GREEN 25건과
+  실제 emitter 스키마 위반 없음. 기존 메트릭 inventory는 유지한다.
+- 늦은 실제 STOP_ANALYSIS 전달/COMMIT 결과 불명 복구: RED 2건, 이후
+  최종 461개 테스트 실행에서 GREEN. 알림 생성 뒤 취소가 STALE에 표시될 수 있다.
+  이는 변경 가능한 상태이며, 앞선 소진 사실과 모순되지 않는다.
+- 구현 이력이 없는 새로운 읽기 전용 검토자: 최초 P2 두 건,
+  P1 없음. 두 건 모두 유효한 RED로 재현하고 수정했다. 같은 검토자가
+  둘 다 해결되었으며 이 범위에서 새로 발견되거나 남은 P1/P2가 없음을 확인했다.
+- 검토 수정 1: nested 메타데이터/family 수와 출력
+  inventory에 소진을 포함한다. 집중 제어는 통제된 입력으로 원래 nested 누락 단계를
+  최종 assertion까지 실행한다. 메타데이터 누락 244건과
+  family 누락 12건이다. 전체 nested database-child 실행은 아니다.
+- 검토 수정 2: 반환된 execution_id를 Python에서 정확히 비교한다. MySQL의
+  ascii_bin PAD SPACE 비교는 뒤에 공백이 붙은 FK/WHERE 별칭을 허용한다.
+  실제 MySQL RED는 수정 전 잘못된 APPLIED/enqueue를 입증했다.
+  최초 literal 비교 fixture 시도는 수정했으며 유효한 제품 RED로 취급하지 않는다.
+  이후의 실제 열 RED와 GREEN은 보존한다.
+- 두 검토 수정 후 최종 집중 실행: 469건 통과(실제 MySQL 61건,
+  DTO 18건, Case 소진 11건, gate 제어 378건, nested 누락 제어 1건).
+- 검토자는 469개 테스트 증거를 확인했다. 구현자는 이후
+  실제 한정 checker를 매개변수 61개 / 거부된 변형 927건으로 갱신했다.
+  검토자는 갱신된 변형 산출물을 살펴보지 않았다.
+- 이는 범위 검토이며, 전체 CI/merge 승인은 아니다.
+
+요청에 따라 전체 pytest, 전체 필수 MySQL과 nested strict gate는 의도적으로
+원격 CI에 남겨 두었다. Checker 계산 논리는 그대로이며,
+inventory와 독립 테스트 inventory만 확장했다. 기존 skip/xfail,
+nested 900초, workflow 30분 정책을 유지한다.
 
 ## 남은 위험
 
-Worker absence still has no finite delivery SLA; pending notices need a running
-sweeper. Repeatedly miswired notices remain pending with a safe failure event;
-repair is operational. No historical STALE backfill is attempted: this migration
-starts the atomic outbox for newly finalized sweeps. Other kind exhaustion and
-retention/purge policy are separate decisions. Full remote CI remains required.
+Worker 부재 시 여전히 유한한 전달 SLA가 없으며, 대기 알림에는 실행 중인
+sweeper가 필요하다. 반복적으로 잘못 연결된 알림은 안전한 실패 이벤트와 함께 대기 상태로 남으며,
+복구는 운영 작업이다. 과거 STALE을 backfill하지 않는다. 이 마이그레이션은
+새로 최종화되는 sweep부터 원자적 outbox를 시작한다. 다른 kind의 소진과
+retention/purge 정책은 별도 결정 사항이다. 전체 원격 CI는 여전히 필요하다.

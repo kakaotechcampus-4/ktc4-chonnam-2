@@ -27,7 +27,7 @@ _JOB_TOKEN = re.compile(r"[A-Za-z0-9_.:@+-]{1,191}\Z")
 _ERROR_TYPE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 _EVENT = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+\Z")
 _KEY = re.compile(r"[A-Z][A-Z0-9_]*\Z")
-_context = contextvars.ContextVar("runtime_correlation", default=None)
+_context: contextvars.ContextVar[dict[str, str] | None] = contextvars.ContextVar("runtime_correlation", default=None)
 
 
 def new_trace_id() -> str:
@@ -47,6 +47,7 @@ def safe_error_type(error: BaseException) -> dict[str, str]:
 
 
 def _validate(fields):
+    valid: bool | re.Match[str] | None
     for name, value in fields.items():
         if name in _TOKEN_FIELDS:
             pattern = _JOB_TOKEN if name == "job_id" else _TOKEN

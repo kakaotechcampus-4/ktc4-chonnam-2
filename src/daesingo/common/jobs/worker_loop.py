@@ -110,6 +110,7 @@ class WorkerLoop:
                             status="RETRY" if claimed.attempt >= 2 else "INITIAL",
                             duration_ms=max(0, (claimed.started_at - claimed.queued_at).total_seconds() * 1000))
                     log_event_best_effort(self.logger, "runtime.execution.started", status="RUNNING")
+                    result: HandlerResult | CancelledExecution
                     try:
                         context.checkpoint()
                         if self.usage_sink_factory is not None:
@@ -129,7 +130,7 @@ class WorkerLoop:
                         result = runtime_failure("RUNTIME_HANDLER_ERROR")
                     # Preserve terminal facts across DB retries; every attempt,
                     # including B-D8 retries, must still own this execution.
-                    committed = False
+                    committed: bool | TerminalCommit = False
                     while not context.ownership.lost:
                         try:
                             committed = self.record(context, result)

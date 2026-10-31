@@ -69,7 +69,7 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
         .with_for_update(skip_locked=True)).mappings().one_or_none()
     if row is None:
         return None
-    now = conn.scalar(select(func.now(6)))
+    now = conn.execute(select(func.now(6))).scalar_one()
     if not is_stale(row["status"], row["lease_expires_at"], now):
         return None
     validate_transition("RUNNING", "STALE")
@@ -80,7 +80,7 @@ def sweep_expired(conn: Connection, execution_id: str, settings: WorkerSettings,
     if changed != 1:
         return None
     # Use the actual UPDATE's DB timestamp for both the receipt and new attempt.
-    now = conn.scalar(select(jobs.c.ended_at).where(jobs.c.execution_id == execution_id))
+    now = conn.execute(select(jobs.c.ended_at).where(jobs.c.execution_id == execution_id)).scalar_one()
     cancelled = row["cancel_requested_at"] is not None
     retry_id = None
     reason = "CANCELLED" if cancelled else "EXHAUSTED"
@@ -197,8 +197,8 @@ class SweepService:
         self.stop = Event()
         self.wait = wait if wait is not None else self.stop.wait
         self.retry_wait = retry_wait if retry_wait is not None else stop.wait
-        self.thread = None
-        self._fatal = None
+        self.thread: Thread | None = None
+        self._fatal: BaseException | None = None
 
     def _pass(self):
         self.sweep()

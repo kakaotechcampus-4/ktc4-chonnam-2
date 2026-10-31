@@ -66,6 +66,31 @@ def test_packet_limit_requires_explicit_margin_and_strict_gap():
             m.check_packet(maximum, packet, margin)
 
 
+@pytest.mark.parametrize("missing", ["profile", "analysis_limits", "incident_encoding"])
+def test_worker_missing_recording_setting_rejects_before_publish_and_loop(monkeypatch, missing):
+    import io
+    import daesingo.worker.__main__ as main
+    import daesingo.worker.deployment_status as status
+    from daesingo.common.logging import configure_logging
+    from daesingo.worker.registry import KindRegistry
+    monkeypatch.setenv("DAESINGO_DEPLOYMENT_CHECK", "1")
+    fields = dict(profile=object(), analysis_limits=object(), incident_encoding=object())
+    fields[missing] = None
+    startup = SimpleNamespace(config=SimpleNamespace(db=object()),
+        logger=configure_logging("worker", stream=io.StringIO()),
+        modules={"recording": SimpleNamespace(**fields)})
+    calls = []
+    monkeypatch.setattr(main, "bootstrap", lambda **kw: startup)
+    monkeypatch.setattr(main, "create_worker_engine", lambda _: SimpleNamespace(dispose=lambda: calls.append("dispose")))
+    registry = KindRegistry({kind: lambda _: None for kind in status.EXPECTED})
+    monkeypatch.setattr(main, "compose_registry", lambda **kw: registry)
+    monkeypatch.setattr(main, "compose_worker", lambda **kw: SimpleNamespace(run=lambda: calls.append("loop")))
+    monkeypatch.setattr(status, "publish", lambda *args: calls.append("publish"))
+    monkeypatch.setattr(status, "clear", lambda: calls.append("clear"))
+    assert main.main(readout_provider_factory=lambda _: None) == 1
+    assert calls == ["clear", "clear", "dispose"]
+
+
 def complete_config():
     # Synthetic fixture only; none of these values are operational defaults.
     return {"DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://daesingo:PRIVATE-CANARY@mysql/daesingo",

@@ -1,6 +1,7 @@
 """Public pure-function boundary for the evidence module."""
 
 from .assembly import assemble_evidence, calculate_evidence_needs, resolve_independent_facts
+from .attachments import AttachmentConstraint, attachment_constraint
 from .corrections import correction_heads, validate_correction_append
 from .disposition import (
     ASSEMBLE,
@@ -32,6 +33,7 @@ __all__ = [
     "EVENT_POLICY",
     "NOT_ASSEMBLED",
     "SAFETY_REPORT_POLICY_REF",
+    "AttachmentConstraint",
     "ContractInputError",
     "EvidenceError",
     "InvalidCorrectionValue",
@@ -41,6 +43,7 @@ __all__ = [
     "VisualEvidenceDisposition",
     "aggregate_outcomes",
     "assemble_evidence",
+    "attachment_constraint",
     "build_report_package",
     "calculate_evidence_needs",
     "classify_visual_evidence",

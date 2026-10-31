@@ -36,6 +36,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
   none: '신고용 영상이 아직 없어요',
   preparing: jobLabel('job.report_video_export'),
   failed: '신고용 영상을 만들지 못했어요',
+  held: '영상은 준비됐어요 · 신고자료가 완성되면 받을 수 있어요',
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
@@ -44,6 +45,7 @@ const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
 const PLATE_EDIT_LINK = '확인·수정하기'
 const PLATE_EDIT_WHY = '번호가 틀렸다면 여기서 고칠 수 있어요'
+const TIME_EDIT_LINK = { none: '시각 입력하기', some: '시각 수정하기' }
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 
@@ -71,6 +73,8 @@ export function ResultScreen(props: {
   onCandidates: () => void
   onPlate: () => void
   onDetails: () => void
+  /** 발생 시각 직접 입력 화면을 연다(`?api`, #449). 없으면(시연) 입구를 두지 않는다 */
+  onTime?: () => void
   onAction: (noticeCode: string, action: Action) => void
   /** 지금 연결된 notice 동작인가 — 아니면 버튼을 사용 불가로 두고 이유를 적는다 */
   canRun: (action: Action) => boolean
@@ -424,6 +428,15 @@ export function ResultScreen(props: {
 
           <Item label="발생 시간" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.time }} />
+            {/* 결과 화면 발생 시각 수정이 EDIT_EVENT_TIME의 입구다(input-commands 결정 §2-8). 값 칸이 없으면 case가 거부한다 */}
+            {ev && props.onTime && (
+              <p className="res-plate-edit">
+                <button type="button" className="res-link" onClick={props.onTime}>
+                  {occurred?.value ? TIME_EDIT_LINK.some : TIME_EDIT_LINK.none}
+                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                </button>
+              </p>
+            )}
           </Item>
         </section>
       )}

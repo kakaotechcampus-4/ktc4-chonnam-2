@@ -7,9 +7,13 @@
 **2026-10-30 RT-14 준비 구현:** 아래 기존 acceptance 기준과 함께
 [RT-14 실행 절차](./rt14-deployment.md)를 사용한다. 새 도구의 정확한 입력·명령·실패
 복구 경계는 그 문서에 있다. **IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
-실제 AWS 인증/배포 증거와 Owner의 미결 정책 승인은 아직 없다.
+과거 OIDC/publish와 최신 댓글의 EC2 pull/preflight 근거는 Ops 및 후속 Notes에서 구분한다. 실제 공개 배포/rollback acceptance는 아직 완료되지 않았다. 정책은 2026-10-30 RT-14 Decision Gate에서 승인했고(#450), Gate별 상태와
+승인값은 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
 > 이 문서는 배포 담당자의 기억에 의존하지 않고 같은 절차를 반복·검증·복구할 수 있도록 하는 실행 체크리스트다. 현재 deployment stack의 exact command가 아직 구현되지 않은 항목은 임의로 채우지 않으며, 실제 Docker/Compose/OIDC/SSM 구현 PR에서 명령을 확정한다.
+
+2026-10-31 승인 후 구현의 정확한 복구·ingress·외부 smoke checklist는
+[공개 배포·복구 절차](rt14-public-deployment.md)를 따른다. SG 개방 전 별도 hardening P0가 필요하다.
 
 ## 1. 배포 완료의 정의
 
@@ -112,8 +116,8 @@ GitHub Actions
 
 - [ ] DNS resolve
 - [ ] HTTPS handshake / 응답
-- [ ] 대표 API endpoint 응답
-- [ ] 필요 시 Web → API 연결
+- [ ] 공개 Web 페이지 응답
+- [ ] Web origin의 API 경로 응답 — same-origin 공개 모델의 후보 확인 항목은 [RT-14 배포 설계](./rt14-deployment-design.md) §10.2
 - [ ] 새 revision 반영 확인
 
 exact smoke endpoint는 API composition root가 구현될 때 고정한다.
@@ -149,7 +153,7 @@ exact smoke endpoint는 API composition root가 구현될 때 고정한다.
 
 DB schema/data migration처럼 단순 code rollback으로 되돌릴 수 없는 변경은 자동 rollback 대상으로 가정하지 않는다. 해당 배포는 사전에 backward-compatible migration 또는 별도 restore 절차가 있어야 한다.
 
-exact rollback command는 deployment workflow 구현 시 이 문서에 추가한다.
+RT-14 준비 구현은 자동 rollback을 하지 않는다. host 내부 검증에 실패한 release는 host `current`로 승격되지 않고, operator가 rollback을 명시적으로 실행한다. 공개 배포의 외부 smoke는 host `current` 갱신 뒤 workflow에서 돌며, 실패해도 자동으로 되돌리지 않는다([RT-14 배포 설계](./rt14-deployment-design.md) §10.2). 후보 명령과 현재 동작의 경계는 [RT-14 실행 절차](./rt14-deployment.md) §7이다.
 
 ## 6. 장애 원인 축소 순서
 
@@ -187,6 +191,8 @@ known_good_revision
 저장 위치와 자동화 방식은 deployment workflow 구현 시 결정한다.
 
 ## 8. 아직 닫지 않은 항목
+
+2026-10-30: 아래 항목 대부분은 RT-14 준비 구현에 후보 명령이 있다([RT-14 실행 절차](./rt14-deployment.md)). Gate 승인과 실제 실행 증거 전까지 닫지 않는다. Gate별 상태는 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
 - [ ] exact Dockerfile / Compose command
 - [ ] artifact 전달 방식(S3/ECR 등)

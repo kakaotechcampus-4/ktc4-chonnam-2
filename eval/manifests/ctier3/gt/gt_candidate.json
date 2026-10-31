@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "gt_version": "g1",
+    "tier": "C",
+    "stage": "candidate",
+    "coverage": {
+      "clips_total": 8,
+      "clips_reviewed": 8,
+      "clips_with_events": 2,
+      "negatives_confirmed": true,
+      "reviewed_by": "daewon",
+      "reviewed_at": "2026-10-28"
+    }
+  },
+  "items": [
+    {
+      "clip_id": "CT3_0001_C00",
+      "source_video_id": "CT3_0001",
+      "targets": []
+    },
+    {
+      "clip_id": "CT3_0002_C00",
+      "source_video_id": "CT3_0002",
+      "targets": []
+    },
+    {
+      "clip_id": "CT3_0003_C00",
+      "source_video_id": "CT3_0003",
+      "targets": [
+        {
+          "event_id": "EV_CT3_0003_C00_1",
+          "t_onset_sec": 32,
+          "scoring": "INCLUDED",
+          "violation_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 31,
+          "t_end_sec": 32
+        },
+        {
+          "event_id": "EV_CT3_0003_C00_2",
+          "t_onset_sec": 62,
+          "scoring": "INCLUDED",
+          "violation_type": "SOLID_LINE_LANE_CHANGE",
+          "t_start_sec": 61,
+          "t_end_sec": 64
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0004_C00",
+      "source_video_id": "CT3_0004",
+      "targets": [
+        {
+          "event_id": "EV_CT3_0004_C00_1",
+          "t_onset_sec": 17,
+          "scoring": "INCLUDED",
+          "violation_type": "CENTER_LINE_CROSSING",
+          "t_start_sec": 15,
+          "t_end_sec": 20
+        }
+      ]
+    },
+    {
+      "clip_id": "CT3_0005_C00",
+      "source_video_id": "CT3_0005",
+      "targets": []
+    },
+    {
+      "clip_id": "CT3_0006_C00",
+      "source_video_id": "CT3_0006",
+      "targets": []
+    },
+    {
+      "clip_id": "CT3_0007_C00",
+      "source_video_id": "CT3_0007",
+      "targets": []
+    },
+    {
+      "clip_id": "CT3_0008_C00",
+      "source_video_id": "CT3_0008",
+      "targets": []
+    }
+  ]
+}

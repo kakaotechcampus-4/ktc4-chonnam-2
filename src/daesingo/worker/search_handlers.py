@@ -23,6 +23,7 @@ from daesingo.common.jobs.produced import ProducedObject
 from daesingo.common.usage.port import UsageError
 from daesingo.search.runs import RunOutcome
 from daesingo.worker.registry import KindRegistry
+from daesingo.worker.production_media import _UnsupportedAnalysisInput
 
 SEARCH_KINDS = frozenset({"HINT_EXTRACT", "COARSE_SEARCH", "FINE_VERIFY"})
 
@@ -104,10 +105,13 @@ def search_registry(
         if data.scope is None or service_factory is None:
             raise ValueError("Search scope and media capability required")
         with ExitStack() as resources:
-            # Recording preparation happens while entering this resource. Catch
-            # only the agreed capability failure, never Search/body/exit errors.
+            # Only production preparation emits this private signal. Bare
+            # UNSUPPORTED_MEDIA from input/configuration/reads/exit is Runtime's.
             try:
                 service = resources.enter_context(service_factory(data))
+            except _UnsupportedAnalysisInput:
+                context.checkpoint()
+                return HandlerResult(status="FAILED", failure_kind="RECORDING_UNSUPPORTED_MEDIA")
             except RecordingCapabilityError as error:
                 context.checkpoint()
                 if error.code != "ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED":
@@ -144,7 +148,9 @@ def search_registry(
                 source_ref = sources[0].source_ref
                 result = _public_call(lambda: search.verify_visual(source_ref, data.scope.hint,
                     service=service, candidate=data.candidate, event_type=event_type,
-                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)
+                    # Search annotates int, while its arithmetic and the fixed
+                    # Case input support fractional seconds. Preserve the bound.
+                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)  # type: ignore[arg-type]
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result
@@ -152,10 +158,10 @@ def search_registry(
         context.checkpoint()
         run = result.analysis_run
         failed = run.outcome == RunOutcome.FAILED
-        return HandlerResult(status="FAILED" if failed else "SUCCEEDED",
+        return HandlerResult.model_validate(dict(status="FAILED" if failed else "SUCCEEDED",
             failure_kind=failures.failure_kind_for_run(run),
             produced=({"kind": "analysis_run", "ref": run.run_id},),
-            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),))
+            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),)))
 
     kinds = SEARCH_KINDS if service_factory is not None else {"HINT_EXTRACT"}
     return KindRegistry({kind: invoke for kind in kinds})

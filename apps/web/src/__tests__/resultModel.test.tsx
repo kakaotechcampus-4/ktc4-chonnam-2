@@ -21,6 +21,13 @@ describe('발생 일시 나누기', () => {
   it('RFC3339 한 값을 일자·시간으로 나눈다', () => {
     expect(splitDateTime('2026-08-24T18:05:12+09:00')).toEqual({ date: '2026-08-24', time: '18:05:12' })
   })
+  it.each([
+    ['2026-10-29T23:30:00Z', '2026-10-30', '08:30:00'],
+    ['2026-12-31T23:30:00-05:00', '2027-01-01', '13:30:00'],
+    ['2026-01-01T02:30:00+14:00', '2025-12-31', '21:30:00'],
+  ])('다른 오프셋의 %s도 한국 시간으로 표시한다', (value, date, time) => {
+    expect(splitDateTime(value)).toEqual({ date, time })
+  })
   it('시간만 있으면 일자를 추측하지 않는다', () => {
     expect(splitDateTime('18:05')).toEqual({ date: null, time: '18:05' })
   })
@@ -49,6 +56,13 @@ describe('신고용 영상 상태', () => {
         notices: [{ code: 'recording.report_video_export_failed', severity: 'ERROR', blocking: true, message_key: 'x', actions: [] }],
       }),
     ).toBe('failed')
+  })
+  it('묶음 전이라도 영상 check가 PASS면 「없음」이 아니라 「준비됨(받기 전)」이다', () => {
+    const before = { ...HAPPY, package: null }
+    const check = { code: 'package.asset.report_video.exists', outcome: 'PASS' }
+    expect(reportVideoState({ ...before, requirements_package: { readiness: 'UNKNOWN', checks: [check] } } as CaseView)).toBe('held')
+    expect(reportVideoState({ ...before, requirements_package: { readiness: 'UNKNOWN', checks: [{ ...check, outcome: 'UNKNOWN' }] } } as CaseView)).toBe('none')
+    expect(reportVideoState({ ...before, requirements_package: null })).toBe('none')
   })
   it('결과 화면의 다운로드 버튼은 파일이 없으면 누를 수 없고 이유를 함께 읽힌다', () => {
     const r = render(<ResultScreen view={HAPPY} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
@@ -160,5 +174,28 @@ describe('프레임 이미지', () => {
     withApi.unmount()
     const demo = render(<PlateCheck view={HAPPY} onBack={vi.fn()} />)
     expect(demo.container.querySelector('img')).toBeNull()
+  })
+
+  // #487에 올린 통과 · 차단 사례
+  it('번호판 입력은 형식이 맞을 때만 저장되고, 안쪽 공백은 지워서 보낸다', () => {
+    const onEdit = vi.fn()
+    const { container, getByText } = render(<PlateCheck view={HAPPY} onBack={vi.fn()} onEdit={onEdit} startEditing />)
+    const input = container.querySelector('.plate-input') as HTMLInputElement
+    const save = getByText('저장') as HTMLButtonElement
+    for (const bad of ['12가34?6', 'abc', '12']) {
+      fireEvent.change(input, { target: { value: bad } })
+      expect(save.disabled).toBe(true)
+      expect(input.getAttribute('aria-invalid')).toBe('true')
+      expect(container.textContent).toContain('번호판 형식을 확인해 주세요')
+      fireEvent.submit(input.form!)
+    }
+    expect(onEdit).not.toHaveBeenCalled()
+    for (const good of ['123가4567', '서울12가3456', '12가 3456']) {
+      fireEvent.change(input, { target: { value: good } })
+      expect(save.disabled).toBe(false)
+      expect(input.getAttribute('aria-invalid')).toBe('false')
+    }
+    fireEvent.submit(input.form!)
+    expect(onEdit).toHaveBeenCalledWith('12가3456')
   })
 })

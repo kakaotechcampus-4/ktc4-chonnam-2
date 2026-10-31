@@ -18,7 +18,7 @@
 | 이름 | 주 담당 (Owner) | 부 담당 | 초반 / 중반 / 후반 비중 |
 | --- | --- | --- | --- |
 | **서어진** | **`search`** 사건 탐색 | — | ●●● / ●●● / ●● |
-| **김대원** | **`eval`** 성능 채점기 | `web` 영상 화면 | ●●● / ●● / ●●(FE) |
+| **김대원** | **`eval`** 성능 채점기 | `web` 화면 구현 | ●●● / ●● / ●●(FE) |
 | **신유민** | **`readout`** 화면 값 판독 | **`web`** 화면 Owner | ●(web 골격) / ●●● / ●●●(web) |
 | **유소연** | **`case`** 진행 관리·오케스트레이션 | E2E 통합 | ●● / ●●● / ●●● |
 | **정철원** | **`recording`** 블랙박스 파일 계층 | `common/runtime` `JobExecution` 구현 | ●●● / ●●● / ●● |
@@ -26,9 +26,9 @@
 
 ```text
                      ┌──────────── web ────────────┐
-                     │ Owner: 신유민 (화면 상태·진행·검토) │
-                     │ 영상 화면: 김대원 (후보카드·   │
-                     │           타임라인·번호판확대)  │
+                     │ Owner: 신유민 (CaseView 읽기·  │
+                     │        화면 고르기·API 연결)   │
+                     │ 화면: 김대원 (화면·부품·스타일) │
                      └──────────────┬───────────────┘
                                     │ web은 case.get_view()만 부른다
                      ┌──────────────▼───────────────┐
@@ -123,11 +123,11 @@ v4 §4-모듈2 · §3-3(파일 생성 안 함) · §3-5(Visual Event ≠ 신고 
 
 ---
 
-## 김대원 — `eval` (성능 채점기) + `web` 영상 화면
+## 김대원 — `eval` (성능 채점기) + `web` 화면 구현
 
 ### ① 소유
 정답지 · manifest 버전 · 참조자료 · locked test · 지표 계산 · 결과 파일 (`eval/` 루트 독립 패키지 — runners / scorers 분리)
-**후반부터:** 후보 카드 · 타임라인 · 번호판 확대·프레임 넘기기 화면
+**`web` 화면:** 화면 · 부품 · 스타일 구현과 접근성 수정. 파일 단위 분담은 신유민 ①의 표(#408)
 
 ### ② 이 일에 필요한 특성
 - `eval`은 **제품 코드가 하나도 없어도 시작할 수 있는 유일한 영역**이다. 초반 병렬성이 여기서 나온다. 미리 시작해야 하는 일이다.
@@ -149,7 +149,7 @@ v4 §4-모듈7 · §9 전체 · §2 원칙 8(제품과 Eval은 같은 public cap
 ### ⑥ 누구와 붙는가
 - **서어진(`search`)과 상시.** 단, 채점 기준은 `eval` Owner가 정한다.
 - 신유민(`readout`)과 중반 — 번호판·시각 채점 진입점
-- 신유민과 `web` 화면 경계 1회 합의
+- 신유민과 `web` 화면 경계 — 합의 결과는 신유민 ①의 표(#408)
 
 ### ⑦ 절대 만지지 않는 것
 `search`·`readout`의 **내부 코드**(프롬프트 파일·파서 import 금지) / `case`·`evidence`·`web`의 존재 / 제품 상태 / eval batch 비용을 runtime 비용과 같은 숫자로 보고
@@ -162,7 +162,14 @@ v4 §4-모듈7 · §9 전체 · §2 원칙 8(제품과 Eval은 같은 public cap
 
 ### ① 소유
 대상 차량 연결 · 번호판 검출 · 조각 수집 · best frame 선택 · 문자 인식 · 여러 프레임 비교 · **포기(abstain) 판단** · 화면 시각 OCR과 검증(형식·단조 증가·영상 길이 정합)
-**`web`:** 화면 상태 · `CaseView` 소비 · 단계형 화면(기억 단서 입력 1곳) · 진행 표시 · 증거 검토 카드 · 실패/빈 결과 화면 · `USER_REVIEWED` 전달
+**`web`:** Owner. `CaseView` 읽기 · 화면 고르기 · API 연결과 접근성 확인. 화면 구현은 김대원이 맡는다.
+
+`web` 파일 분담 (#408 표대로, 2026-10-29 김대원 합의 — `apps/web/src` 기준). #408에서 정하지 않은 파일은 하는 일로 나누고, 애매하면 만든 사람이 맡는다:
+
+| 담당 | 맡은 일 | 파일 |
+| --- | --- | --- |
+| 김대원 | 화면 · 접근성 수정 | `screens/*` · `components/*` · `assets/*` · `styles/*` · `contracts/labels.flow.ts` · `labels.candidate.ts` · `main.tsx`(CSS · 글꼴 불러오기) |
+| 신유민 | CaseView 읽기 · 화면 고르기 · API 연결 · 접근성 확인 | `contracts/caseView.ts` · `registry.ts` · `actionIntent.ts` · `fixtures.ts` · `labels.ts` · `state/selectScreen.ts` · `caseFlow.ts` · `useCaseFlow.ts` · `resultModel.ts` · `videoTime.ts` · `api/client.ts` · `App.tsx`(시연 · API 흐름 고르기) |
 
 ### ② 이 일에 필요한 특성
 - `readout`은 **새 도구를 빠르게 붙여보고 실제 샘플로 재보는 일**이다(OCR·검출기를 붙이고 실제 번호판으로 측정).
@@ -182,7 +189,7 @@ v4 §4-모듈3 · §4-모듈6 · §3-2(Timestamp — readout은 검증까지) ·
 - (web) 프론트 프레임워크 결정 + 프로토타입(`apps/prototype`) 확장 여부 결정
 
 ### ⑥ 누구와 붙는가
-- 김대원 — `web` 화면 경계(영상 관련 화면 담당) + 번호판 채점 기준
+- 김대원 — `web` 화면 구현(위 표) + 번호판 채점 기준
 - 유소연 — `case.get_view()` 계약. **화면은 이 함수 하나만 부른다**
 - 정철원 — `read_frame` / `frame_ref` 형식
 
@@ -371,11 +378,50 @@ web/        에서  threshold · 130MB · 기한                   → 0건이�
        CLAUDE.md · docs/README.md 라우팅 표가 현재 폴더 구조와 맞는가
 ```
 
+### Runtime import 경계 — RT-15(b), 2026-10-30
+
+위 문자열 검사를 유지하면서 아래 두 방향을 Python AST로 검사한다. 새 정책이 아니라
+Architecture [§1의 7개 domain · 원칙 6 · §6](../architecture/module-architecture.md),
+Runtime [Implementation Plan RT-15](../runtime/runtime-implementation-plan.md) ·
+[Tech Spec §12 · §16](../runtime/runtime-tech-spec.md)의 기존 경계를 기계화한다.
+
+| 검사 소스 경로 | 금지 import | 허용 방향 / 책임 |
+| --- | --- | --- |
+| `src/daesingo/common/{jobs,usage,db,config,logging,storage}/` | 아래 7개 domain namespace와 그 하위 모듈 | common 간 기반 코드 사용을 막지 않는다. domain capability 연결은 API/Worker composition root가 맡는다 |
+| `src/daesingo/{case,recording,search,readout,evidence}/` · `eval/` · `apps/web/` | `daesingo.api` · `daesingo.worker` 및 그 하위 모듈 | 기존 Architecture의 domain 간 호출 방향은 그대로다. domain은 composition root를 역참조하지 않는다 |
+
+| domain (Architecture §1) | 실제 경로 | Python import namespace |
+| --- | --- | --- |
+| `case` | `src/daesingo/case/` | `daesingo.case` |
+| `recording` | `src/daesingo/recording/` | `daesingo.recording` |
+| `search` | `src/daesingo/search/` | `daesingo.search` |
+| `readout` | `src/daesingo/readout/` | `daesingo.readout` |
+| `evidence` | `src/daesingo/evidence/` | `daesingo.evidence` |
+| `eval` | `eval/` | `eval` (root package) |
+| `web` | `apps/web/` | `apps.web` (이 경로의 Python namespace; 현재 구현은 TypeScript) |
+
+`scripts/check_boundaries.py`의 `--only=boundaries`와 기본 전체 실행에 포함된다.
+위 경로 아래 `.py`를 재귀 검사하며 `import`/`from import`, alias, 하위 모듈,
+containing package 기준 상대 import를 해석한다. `from daesingo.readout import api`는
+`daesingo.api`가 아니므로 이 검사에서는 허용한다. 조건부·함수 내부·`TYPE_CHECKING`
+import도 검사하며, 새 allowlist/주석 우회 예외는 없다. 파싱 실패는 PASS로 넘기지 않는다.
+
+검사는 정적 Python import문에 한정된다. 동적 import, 간접 re-export/부모 package의
+star import가 노출하는 이름, alias 속성 접근, import hook/sys.path 조작은 전이 분석하지
+않는다. TypeScript 모듈 해석은 보장하지 않으며 web의 기존 문자열 검사를 유지한다.
+새 AST 검사는 주석·문자열을 import로 보지 않고 정확한 namespace 경계로 비교한다.
+기존 문자열 검사는 주석·문자열에도 적용되는 원래 의미를 유지한다.
+테스트·검증·Owner 통지 초안은 [RT-15(b) Notes](../runtime/rt15b-import-boundaries.md)에 있다.
+
 **실행 위치는 `.github/workflows/`다.** 운영진 CODEOWNERS 개정으로 팀 자체 CI 워크플로 추가가 명시적으로 허용됐다. 운영진 소유는 `.github/` 전체가 아니라 **파일 4개**뿐이다 — `workflows/{assign-mentor,notify-discord,convention-check}.yml`과 `CODEOWNERS`. **이 4개는 수정·삭제하지 않는다**(멘토 자동 지정과 Discord 알림이 여기서 돈다). 그 밖에는 제약이 없다.
 
 **대기 상태는 끝났다 (2026-09-04 담임매니저 회신).** 운영진 배포가 완료됐고 안내도 왔다. 따로 `git pull`할 것은 없다 — 배포본은 `develop`에 이미 있고 `feature/* → develop` 머지에 그대로 따라온다. 즉 **지금 workflow를 추가해도 된다.** 다음 둘 중 하나가 보이면 진행하지 말고 담임매니저에게 알린다: ① 머지 시 `.github/` 충돌 ② PR에서 **admin 승인이 필요하다는 경고**. 후자는 위 4개를 건드렸다는 신호다 — CODEOWNERS는 base가 `develop`이어도 리뷰 요청 표시가 뜨고, 실제 차단은 `main`에서만 걸린다.
 
-**다만 지금은 돌릴 스크립트가 없다.** `scripts/`에 README만 있고 실제 grep 스크립트가 없으므로, 순서는 **① 스크립트 작성 → ② workflow 추가**다. 그때까지는 주간 회의 전에 손으로 점검한다. 스크립트 작성은 이 절의 grep 목록이 그대로 명세다.
+**초기 이력:** 당시에는 `scripts/`에 README만 있고 실제 grep 스크립트가 없어 **① 스크립트 작성 → ② workflow 추가** 순서로 계획했고, 그 전에는 주간 회의 전에 손으로 점검했다. 스크립트 작성 명세는 이 절의 grep 목록이었다.
+
+**현재 실행:** `.github/workflows/boundary-check.yml`이 기존 경계·계약 checker와
+Contract fixture checker를 실행한다. RT-15(b)는 같은 진입점에 import 검사를 더하므로
+workflow 변경은 없다. 새 pytest fixture는 기존 `python-tests` regression에서 실행된다.
 
 ---
 

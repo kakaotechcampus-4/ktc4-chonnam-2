@@ -3,10 +3,11 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 from threading import Event, Lock
+from typing import Literal
 import time
 
 from sqlalchemy import text
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Connection, RowMapping
 from .timestamps import TERMINAL_TIMESTAMP_SQL
 
 
@@ -53,7 +54,7 @@ class CancelSignal:
 @dataclass(frozen=True, slots=True)
 class CancelledExecution:
     """Internal T1 outcome; handlers/Case reflection retain HandlerResult."""
-    status: str = "CANCELLED"
+    status: Literal["CANCELLED"] = "CANCELLED"
     produced: tuple = ()
     failure_kind: None = None
 
@@ -91,7 +92,7 @@ def request_cancel(conn: Connection, job_ids: Iterable[str]) -> None:
         ordered = sorted(set(snapshot))
     except Exception:
         raise ValueError("invalid cancel job_ids") from None
-    locked = []
+    locked: list[RowMapping] = []
     for job in ordered:
         locked.extend(conn.execute(_LOCK_JOB, {"job_id": job}).mappings().all())
     for row in locked:

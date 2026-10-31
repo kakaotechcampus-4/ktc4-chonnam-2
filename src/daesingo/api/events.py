@@ -1,4 +1,5 @@
 """Bounded API telemetry; an unavailable sink cannot hold an HTTP response."""
+from collections.abc import Callable
 from queue import Empty, Full, Queue
 from threading import Event, Lock, Thread
 
@@ -18,7 +19,7 @@ class ApiEvents:
     """
     def __init__(self, logger):
         self.logger = logger
-        self.queue = Queue(maxsize=128)
+        self.queue: Queue[Callable[[], object]] = Queue(maxsize=128)
         self.closed = Event()
         self.lock = Lock()
         self.thread = None

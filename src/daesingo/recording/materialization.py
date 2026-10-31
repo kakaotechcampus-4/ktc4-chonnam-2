@@ -50,6 +50,8 @@ class MaterializedVideo:
     time_base: Fraction | None = None
     video_size: tuple[int, int] | None = None
     best_effort: bool = False
+    # Selected source coverage before encoding; not serialized as output facts.
+    source_frames: tuple[tuple[Fraction, Fraction], ...] = ()
 
 
 def _millisecond_quantization(payload, base, frames):
@@ -317,7 +319,8 @@ class LocalAnalysisMaterializer:
                 shift = Fraction(str(span.timeline_range.start_sec)) - start
                 result = MaterializedVideo(content, duration, TimeRange(
                     start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)),
-                    tuple(output_frames), output_base, (width, profile.height), fallback)
+                    tuple(output_frames), output_base, (width, profile.height), fallback,
+                    tuple((at - actual_start, length) for _, at, length in selected))
             # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
             if inspections is not None:
                 inspections.put(inspection_key, inspected)

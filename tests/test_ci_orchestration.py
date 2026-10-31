@@ -73,7 +73,7 @@ def test_partition_audit_rejects_uncovered_or_repeated_execution(defect):
 @pytest.mark.parametrize('job', ['regression', 'mysql'])
 @pytest.mark.parametrize('result', ['failure','cancelled','skipped',None,'','success'])
 def test_required_result_accepts_only_success_for_every_dependency(job, result):
-    needs = {'regression':{'result':'success'}, 'mysql':{'result':'success'}}
+    needs = {'quality':{'result':'success'}, 'regression':{'result':'success'}, 'mysql':{'result':'success'}}
     needs[job]['result'] = result
     assert orchestration().required_success(needs) is (result == 'success')
 
@@ -167,12 +167,12 @@ def test_mysql_command_runs_complete_inventory_once_with_visible_output(tmp_path
 
 def test_cli_required_uses_fail_closed_exit_status(tmp_path):
     env = dict(os.environ, CI_REQUIRED_RESULTS=json.dumps({
-        'regression':{'result':'success'}, 'mysql':{'result':'skipped'}}))
+        'quality':{'result':'success'}, 'regression':{'result':'success'}, 'mysql':{'result':'skipped'}}))
     result = subprocess.run([sys.executable,'-m','tests.ci_orchestration','required'],
                             cwd=ROOT, env=env, capture_output=True, text=True)
     assert result.returncode == 1, result.stdout + result.stderr
     env['CI_REQUIRED_RESULTS'] = json.dumps({
-        'regression':{'result':'success'}, 'mysql':{'result':'success'}})
+        'quality':{'result':'success'}, 'regression':{'result':'success'}, 'mysql':{'result':'success'}})
     result = subprocess.run([sys.executable,'-m','tests.ci_orchestration','required'],
                             cwd=ROOT, env=env, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr

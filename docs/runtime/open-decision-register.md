@@ -791,7 +791,7 @@ Mock/합성 데이터 중심 개발에서는 구현을 막지 않는다. 실제 
 
 ## RD-11 — Ops retention / cleanup
 
-**Status:** OPEN — 11a의 container local rotation · 11b temp 회수 나이만 Provisional v0.1(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9 · §2.13). 11a log 보관 기간 · transport와 11c는 그대로 열림\
+**Status:** OPEN — 11a의 container local rotation · 11b temp 회수 나이만 Provisional v0.1(2026-10-05 → [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) §2.9 · §2.13). 11a log 보관 기간 · transport와 11c는 그대로 열림. 2026-10-30 RT-14 Gate에서 11a 운영 log 보관(host dual cache 20m × 5 · CloudWatch 30일)을 승인했다(#450 · [RT-14 배포 설계](rt14-deployment-design.md) §1). 11c는 그대로 열림\
 **Owner:** common/runtime — 김준영\
 **Consult:** recording — 정철원(temp media 정리 · RemoteCopy cleanup 실행)\
 **Source candidates:** D-12b
@@ -847,16 +847,22 @@ Ops §23 「log retention」 · 「provider RemoteCopy cleanup 운영」 미결.
 
 ## RD-12 — Deployment pipeline 세부
 
-2026-10-30 RT-14 **준비 구현**은 [Notes/runbook](rt14-deployment.md)에 연결한다.
-CI amd64/ECR digest/SSM controller/명시적 migration·rollback candidate를 제공하되
-RD-12b~f/h 승인·실제 AWS acceptance를 대신하지 않는다. 현재 OPEN 상태 유지.
+2026-10-31 승인 후 구현은 [공개 배포·복구 Notes](rt14-public-deployment.md)에 연결한다.
+rollback tip 독립·Web/pointer·외부 smoke와 복구 절차를 구현하되 AWS acceptance pending은 유지한다.
 
-**Status:** OPEN\
+
+2026-10-30 RT-14 **준비 구현**은 [Notes/runbook](rt14-deployment.md)에 연결한다.
+CI amd64/ECR digest/SSM controller/명시적 migration·rollback candidate를 제공한다.
+#479 준비 구현 당시에는 RD-12b~f/h 승인과 AWS acceptance가 남아 있었다.
+
+2026-10-30 #450에서 RT-14 Decision Gate의 RD-12b~f/h 값을 Runtime/Ops Owner가 승인했다. 승인값과 Gate 상태는 [RT-14 배포 설계](rt14-deployment-design.md) §1이다. 남은 것은 구현 변경(§16)과 AWS acceptance다(OIDC 인증 · ECR publish만 실행 확인, Ops §2-1). 그래서 RD-12 group은 OPEN을 유지한다. 이 OPEN은 결정이 남았다는 뜻이 아니라 실행 검증이 끝나지 않았다는 뜻이다.
+
+**Status:** OPEN — Gate approved(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §1) · implementation/AWS acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** —\
 **Source candidates:** D-13
 
-M4 local slice는 [#300 Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506)으로 RD-12a와 RD-12g의 local image/service/volume 경계를 확인했다. 승인값은 [Baseline §2.10](./provisional-baseline-v0.1.md#210-health--readiness--j), 실제 구현·검증 한계와 RT-13(b) backup/restore 후속은 [RT-13(a) Notes](./rt13a-docker-compose.md)에 기록한다. RD-12 전체를 CLOSED로 바꾸지 않으며 RD-12f/h production 절차와 RT-14는 미결이다.
+M4 local slice는 [#300 Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506)으로 RD-12a와 RD-12g의 local image/service/volume 경계를 확인했다. 승인값은 [Baseline §2.10](./provisional-baseline-v0.1.md#210-health--readiness--j), 실제 구현·검증 한계와 RT-13(b) backup/restore 후속은 [RT-13(a) Notes](./rt13a-docker-compose.md)에 기록한다. RD-12 전체를 CLOSED로 바꾸지 않았고, 당시 RD-12f/h production 절차와 RT-14는 미결이었다(2026-10-30 Gate 승인은 위 Status).
 
 ### Question
 
@@ -869,7 +875,7 @@ Ops §4 「정확한 Dockerfile/Compose service command는 composition root 구�
 ### Already fixed / Do not reopen
 
 - EC2 1대 + Docker Compose(api · worker · mysql) · RDS/ALB/EIP/추가 EC2 미가정 (Ops §2)
-- GitHub OIDC → `ktc-github-deploy` AssumeRole · SSM Session Manager/Run Command · SSH key 저장·22번 개방 없음 · `AWS_ACCOUNT_ID`는 Variable · 비-AWS CI에 OIDC 권한 없음 · fork PR을 배포 경로로 쓰지 않음 (Ops §2-1)
+- GitHub OIDC → `ktc-github-deploy` AssumeRole · SSM Session Manager/Run Command · SSH key 저장·22번 개방 없음 · `AWS_ACCOUNT_ID`는 Secret(2026-10-31 Variable에서 변경) · 비-AWS CI에 OIDC 권한 없음 · fork PR을 배포 경로로 쓰지 않음 (Ops §2-1)
 - api/worker는 같은 dependency baseline, command만 분리 · MySQL volume은 container layer와 분리 · secret bake 금지 (Ops §4)
 - 배포 성공 = revision 식별 + health/readiness + 외부 smoke + 직전 known-good 식별 · commit SHA 식별 · registry면 `latest`만 의존 금지 · DB migration은 자동 rollback 대상으로 가정하지 않음 (Ops §19, Runbook §1·§5)
 - Blue-Green/Canary는 기본값이 아님 (Ops §19)
@@ -916,11 +922,13 @@ composition root가 생긴 뒤의 slice다(workflow §7 「Deployment automation
 
 ## RD-13 — 운영 관측 수단
 
-2026-10-30 [RT-14 준비 구현](rt14-deployment.md)은 awslogs+dual local cache를 승인 대기
-candidate로 제공하고 실제 Worker process/8종 등록 snapshot을 추가한다. restart 선택,
-retention/buffer/용량, 실제 전송/경보/idle heartbeat 정책과 운영 acceptance는 OPEN 유지.
+2026-10-30 [RT-14 준비 구현](rt14-deployment.md)은 awslogs+dual local cache를 candidate로
+제공하고 실제 Worker process/8종 등록 snapshot을 추가했다. 준비 구현 당시에는 restart 선택,
+retention/buffer/용량, 실제 전송/경보/idle heartbeat 정책과 운영 acceptance가 남아 있었다.
 
-**Status:** OPEN\
+2026-10-30 #450에서 RT-14 Decision Gate의 RD-13a · c(restart) · d를 Runtime/Ops Owner가 승인했다. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다. 승인값은 [RT-14 배포 설계](rt14-deployment-design.md) §1이다. 실제 log 전송 · restart · Worker 관측의 운영 acceptance가 남아 RD-13 group은 OPEN을 유지한다. 이 OPEN은 결정이 남았다는 뜻이 아니라 실행 검증이 끝나지 않았다는 뜻이다.
+
+**Status:** OPEN — Gate approved(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §1) · alert follow-up · implementation/AWS acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** —\
 **Source candidates:** D-14
@@ -978,7 +986,18 @@ Ops §8 1차 관측 수단은 「structured stdout → AWS log collection + Runt
 
 ## RD-14 — Public endpoint / domain / TLS
 
-**Status:** OPEN — trigger 대기\
+2026-10-30: 카테캠 최종 산출물 제출 안내(2026-10-22)가 「접속해 핵심 기능을 끝까지 써 볼 수 있는
+배포 서비스 URL」을 요구해 **trigger가 발생했다**(Ops §2-2 · §2-3). 공개 모델(same-origin ·
+HTTPS · Caddy 1순위 · SG 80/443만 · DDNS 우선 · EIP 필수 아님)은
+[RT-14 배포 설계](rt14-deployment-design.md) §13이고, 2026-10-30 #450에서 Runtime/Ops Owner가 승인했다.
+구현과 외부 smoke acceptance가 남아 OPEN을 유지한다. 결정이 남았다는 뜻이 아니다.
+
+2026-10-31: 팀 계정에서 EIP 할당 · 연결 권한을 확인해 **RD-14a를 「EIP 사용」으로 정했다**
+(DuckDNS updater는 백업, [RT-14 배포 설계](rt14-deployment-design.md) §13.2 · §13.3). 같은 날 검증자 1명(`/32`)으로
+제한한 public acceptance와 실영상 E2E 1회를 수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)).
+공개 범위 확대와 그때의 workflow 외부 smoke가 남아 OPEN을 유지한다.
+
+**Status:** OPEN — triggered(2026-10-22 제출 요건) · Gate approved(2026-10-30, #450 · [RT-14 배포 설계](rt14-deployment-design.md) §13) · RD-14a decided(2026-10-31, EIP 사용) · restricted public acceptance PASS(2026-10-31, 검증자 `/32`) · 공개 범위 확대 acceptance pending\
 **Owner:** common/runtime — 김준영\
 **Consult:** web — 신유민 · PM\
 **Source candidates:** D-15
@@ -989,7 +1008,7 @@ Ops §8 1차 관측 수단은 「structured stdout → AWS log collection + Runt
 
 ### Why this is open
 
-Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는 선택 기준까지만 정했다. 요구 자체가 아직 발생하지 않았다.
+Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는 선택 기준까지만 정했다. 2026-10-22 제출 요건으로 요구가 발생했고, 공개 모델은 2026-10-30 #450에서 승인됐다. 구현과 외부 smoke acceptance가 남았다.
 
 ### Already fixed / Do not reopen
 
@@ -999,7 +1018,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Sub-decisions
 
-- **RD-14a** — EIP 요청 여부(운영진 요청 자원, [`aws-environment.md`](./official-inputs/aws-environment.md) §2)
+- **RD-14a** — EIP 요청 여부(운영진 요청 자원, [`aws-environment.md`](./official-inputs/aws-environment.md) §2) — **2026-10-31 결정: 사용.** 요청 없이 할당 · 연결할 수 있음을 확인했다([`aws-environment.md`](./official-inputs/aws-environment.md) §11). 공개 주소에 1개, DuckDNS updater는 백업
 - **RD-14b** — DNS 공급자 · reverse proxy · 인증서 구성
 - **RD-14c** — Security Group 80/443 변경 범위
 
@@ -1010,8 +1029,10 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Current evidence
 
-- Spec: Ops §2-2 · §18 Elastic IP · §23
-- Official input: [`aws-environment.md`](./official-inputs/aws-environment.md) §2 · 외부 공개 절
+- Spec: Ops §2-2 · §2-3 · §18 Elastic IP(capacity가 아님을 남긴 경계) · §23
+- Design: [RT-14 배포 설계](rt14-deployment-design.md) §10.2 · §13
+- Official input: [`aws-environment.md`](./official-inputs/aws-environment.md) §2 · 외부 공개 절 · §11(2026-10-31 EIP 권한)
+- Execution: [RT-14 AWS 배포 · Real E2E 2026-10-31](experiments/2026-10-31-rt14-aws-real-e2e.md)
 
 ### Implementation impact
 
@@ -1019,7 +1040,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 
 ### Timing candidate
 
-**D** (요구 발생 시)
+**D** (요구 발생 시) — 2026-10-22 발생. 제출 마감(11/11) 전
 
 ### Follow-up needs
 
@@ -1028,7 +1049,7 @@ Ops §2-2가 trigger 조건과 순서, 「Caddy를 첫 후보로 검토」라는
 - **Pre-implementation spike:** 아니오
 - **Experiment:** 아니오
 - **ADR 후보:** 아니오
-- **Trigger:** 외부 공개 demo 또는 OAuth 요구가 실제로 생기면 이 group을 연다(Ops §2-2 순서) *(이전 RD-14a)*
+- **Trigger:** 외부 공개 demo 또는 OAuth 요구가 실제로 생기면 이 group을 연다(Ops §2-2 순서) *(이전 RD-14a)* — 2026-10-22 최종 제출 요건으로 발생
 
 ---
 
@@ -1549,6 +1570,9 @@ provider · 운영진 정책처럼 우리가 고르지 않고 확인해야 하�
 | 2026-10-05 | workflow §6 — [Provisional Baseline v0.1](./provisional-baseline-v0.1.md) 작성. 「§5 → §6 Baseline 입력」에 v0.1 ID 열 추가, RD-04 · RD-11 Status에 Provisional 적용 표시. RD-04 · RD-11은 OPEN 유지(최종값 P2), 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
 | 2026-10-06 | RD-04 Status — RD-04b case 확인 완료 표시(PR #276 review). 결정 · Timing · Owner 변경 없음, 새 RD 없음 | PR #276 |
 | 2026-10-06 | workflow §7 — 「Implementation Gap」 아래에 [Runtime Implementation Plan](./runtime-implementation-plan.md) Task · Gate 배치 pointer 추가. 결정 · Timing · State · Owner 변경 없음, 새 RD 없음 | PR #304 |
+| 2026-10-30 | RT-14 Decision Gate 승인(#450) — RD-12b~f/h · RD-13a · c · d · RD-11a 운영 log 보관 · RD-14 공개 모델. 승인값은 [RT-14 배포 설계](rt14-deployment-design.md) §1. RD-14는 trigger 발생으로 표시. 구현 변경 · AWS acceptance가 남아 CLOSED로 바꾸지 않음. 새 RD 없음 | PR #480 |
+| 2026-10-30 | Gate 승인 뒤 정합 — RD-12 · RD-13 · RD-14의 승인 전 미래형 문구를 과거 맥락으로 정리하고, OPEN이 「Gate 미승인」이 아니라 「implementation/AWS acceptance pending」임을 Status에 명시. 결정 값 · Timing · Owner 변경 없음, 새 RD 없음 | #450 |
+| 2026-10-31 | RD-14a 결정 — EIP 사용(팀 계정 할당 · 연결 권한 확인, 카테캠 도메인 가이드와 일치). DuckDNS updater는 백업. RD-14 Status에 검증자 `/32` 제한 public acceptance PASS 반영, OPEN 유지. Ops §2-1 `AWS_ACCOUNT_ID` Variable → Secret 변경에 맞춰 RD-12 「Already fixed」 문구 갱신. Timing · Owner 변경 없음, 새 RD 없음 | #450 |
 
 2026-10-03 ID 대응표(이전 → 현재):
 

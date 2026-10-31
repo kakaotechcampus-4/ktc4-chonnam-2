@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 
+from .chain_clock import common_time_base, prepare_mixed_parts, validate_packets
 from .errors import RecordingCapabilityError
 from .materialization import MaterializedVideo
 from .models import TimeRange
@@ -27,11 +28,13 @@ def materialize_chain(engine, inputs, profile_ref):
             used += len(part.content)
             parts.append(part)
         best_effort = any(p.best_effort for p in parts)
-        if any(not p.frames or p.time_base != parts[0].time_base or p.video_size != parts[0].video_size for p in parts):
-            raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 time base 또는 해상도가 일치하지 않습니다")
+        if any(not p.frames or p.video_size != parts[0].video_size for p in parts):
+            raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 frame 또는 해상도가 일치하지 않습니다")
+        mixed = any(p.time_base != parts[0].time_base for p in parts)
+        output_clock = common_time_base(parts) if mixed else parts[0].time_base
         # 초 단위 decimal metadata의 표현 오차에만 사용하는 비교 상한이다.
         # 한 tick/frame보다 항상 작게 제한하며 timestamp/range는 수정하지 않는다.
-        tolerance = min(Fraction(1, 1000000), parts[0].time_base / 2,
+        tolerance = min(Fraction(1, 1000000), min(p.time_base for p in parts) / 2,
                         min(length for p in parts for _, length in p.frames) / 2)
         if tolerance <= 0:
             raise ValueError("유효하지 않은 frame 정밀도")
@@ -49,22 +52,31 @@ def materialize_chain(engine, inputs, profile_ref):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결 coverage와 Timeline 길이가 일치하지 않습니다")
         with TemporaryDirectory(prefix="recording-chain-", dir=engine._temp_root) as work:
             root = Path(work)
-            lines = ["ffconcat version 1.0"]
-            for i, p in enumerate(parts):
-                name = f"part-{i}.mp4"
-                (root / name).write_bytes(p.content)
-                lines.extend([f"file {name}", f"duration {float(p.frames[-1][0] + p.frames[-1][1]):.12f}"])
+            options, expected_packets = [], None
+            if mixed:
+                lines, options, expected_packets, output_clock = prepare_mixed_parts(engine, parts, root)
+            else:
+                lines = ["ffconcat version 1.0"]
+                for i, p in enumerate(parts):
+                    name = f"part-{i}.mp4"
+                    (root / name).write_bytes(p.content)
+                    lines.extend([f"file {name}", f"duration {float(p.frames[-1][0] + p.frames[-1][1]):.12f}"])
             manifest = root / "parts.txt"
             manifest.write_text("\n".join(lines) + "\n", encoding="ascii")
             output = root / "prepared.mp4"
             engine._run([engine._ffmpeg, "-nostdin", "-v", "error", "-xerror", "-n",
                 "-protocol_whitelist", "file", "-f", "concat", "-safe", "1", "-i", str(manifest),
                 "-map", "0:v:0", "-an", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
-                "-c:v", "copy", "-video_track_timescale", str(parts[0].time_base.denominator),
+                "-c:v", "copy", "-video_track_timescale", str(output_clock.denominator), *options,
                 "-movflags", "+faststart", str(output)])
             check_output(output)
             raw = engine._probe(output)
             base, frames = engine._frames(raw, expected_coverage=expected)
+            if mixed:
+                if (base != output_clock or tuple(frames) != tuple(expected)
+                        or int(raw["frames"][0]["best_effort_timestamp"]) != 0):
+                    raise ValueError("exact mixed-clock coverage mismatch")
+                validate_packets(engine, output, output_clock, expected_packets)
             stream = raw["streams"][0]
             if (stream["codec_name"] != "h264" or stream["pix_fmt"] != "yuv420p"
                     or (stream["width"], stream["height"]) != parts[0].video_size

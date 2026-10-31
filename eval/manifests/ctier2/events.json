@@ -1,0 +1,20 @@
+[
+  {
+    "event_id": "EV_CT2_0121_C00_1",
+    "clip_id": "CT2_0121_C00",
+    "source_video_id": "CT2_0121",
+    "violation_type": "CENTER_LINE_CROSSING",
+    "t_onset_sec": 30,
+    "t_start_sec": 29,
+    "t_end_sec": 31,
+    "target_vehicle": null,
+    "plate_status": "UNREADABLE",
+    "plate_text": null,
+    "plate_partial_text": null,
+    "plate_vehicle_type": null,
+    "label_status": "CONFIRMED",
+    "labeler": "daewon",
+    "labeled_at": "2026-10-26",
+    "evidence_note": "좌측에서 중앙선 침범, 번호판 안 보임"
+  }
+]

@@ -43,6 +43,19 @@ ENV PADDLE_PDX_CACHE_HOME=/opt/daesingo/paddlex PADDLE_PDX_DISABLE_MODEL_SOURCE_
 COPY docker/readout_cache.py /build/readout_cache.py
 RUN /app/.venv/bin/python /build/readout_cache.py
 
+FROM node:24-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS web-build
+WORKDIR /build
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/package.json
+RUN npm ci --workspace=daesingo-web --include-workspace-root=false --ignore-scripts
+COPY apps/web ./apps/web
+COPY data/mock/case ./data/mock/case
+COPY data/real/case ./data/real/case
+COPY docker/web_release.mjs ./docker/web_release.mjs
+ARG REVISION=local
+RUN npm run build --workspace=daesingo-web \
+    && node docker/web_release.mjs apps/web/dist "$REVISION"
+
 FROM base AS runtime
 RUN apt-get -o Acquire::Check-Valid-Until=false update \
     && apt-get install -y --no-install-recommends libx264-164 zlib1g \
@@ -65,11 +78,14 @@ RUN find /opt/daesingo/paddlex -type d -exec chmod 0555 {} + \
 COPY migrations ./migrations
 COPY docker/runtime.py ./docker/runtime.py
 COPY compose.yaml ./compose.yaml
+COPY --from=web-build /build/apps/web/dist ./web/dist
+COPY deploy/web_artifact.py ./docker/web_artifact.py
 ARG REVISION=local
 LABEL org.opencontainers.image.revision=$REVISION
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 DAESINGO_REVISION=$REVISION
 ENV PADDLE_PDX_CACHE_HOME=/opt/daesingo/paddlex PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 USER 10001:10001
+RUN python /app/docker/web_artifact.py /app/web/dist "$REVISION"
 RUN python /app/docker/runtime.py media-preflight
 RUN --network=none python /app/docker/runtime.py readout-preflight
 CMD ["python", "/app/docker/runtime.py", "api"]

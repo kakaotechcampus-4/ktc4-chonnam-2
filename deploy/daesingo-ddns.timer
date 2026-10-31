@@ -1,0 +1,10 @@
+[Unit]
+Description=Daesingo DDNS boot and periodic refresh
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=daesingo-ddns.service
+
+[Install]
+WantedBy=timers.target

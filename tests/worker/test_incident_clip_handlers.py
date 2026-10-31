@@ -19,7 +19,8 @@ def dependencies(*, error=None, cancel=None, load_error=None, metadata=None, own
     context = ExecutionContext("exec", "clip", "case", "INCIDENT_CLIP_BUILD", 1, "trace")
     calls = []
     data = SimpleNamespace(case_id="case", timeline_ref={"timeline_id": "tl", "revision": 1},
-        requested_range=requested_range or {"start_sec": 1, "end_sec": 2}, analysis_source_ref="analysis")
+        requested_range=requested_range or {"start_sec": 1, "end_sec": 2}, analysis_source_ref="analysis",
+        video_stream_refs=("video",))
     def checkpoint(stage):
         if cancel == stage: context.cancel_signal.request()
     def load(ctx):
@@ -46,9 +47,9 @@ def dependencies(*, error=None, cancel=None, load_error=None, metadata=None, own
             assert timeline == data.timeline_ref and requested == data.requested_range
             assert media_stream_ref == "video"
             calls.append("resolve"); checkpoint("resolve")
-            return "resolution"
+            return SimpleNamespace(spans=[SimpleNamespace(media_stream_ref="video")])
         def build_incident_clip(self, resolution):
-            assert resolution == "resolution"
+            assert [s.media_stream_ref for s in resolution.spans] == ["video"]
             calls.append("build"); checkpoint("build")
             if error: raise error
             return SimpleNamespace(incident_clip_ref="clip-ref")

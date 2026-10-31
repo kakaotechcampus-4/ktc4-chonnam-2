@@ -1,0 +1,235 @@
+{
+  "meta": {
+    "run_id": "search_s1_flash_1x_ctier3_20261028",
+    "impl": "search:s1-flash-1x",
+    "stage": "candidate",
+    "manifest": "ctier3",
+    "gt_version": "g1",
+    "normalizer_version": "n4",
+    "code_commit": "be362664",
+    "scorer_version": "s5",
+    "cost_scorer_version": "c3",
+    "prediction_ref": {
+      "path": "eval/predictions/search_s1_flash_1x_ctier3_20261028.json",
+      "sha256": "10b206ebdc84bfe520f3197395ce1d314e40b76062c71c6cd81e003b79240ad5"
+    },
+    "pipeline_scorer_version": "pl1"
+  },
+  "candidate": {
+    "recall_at": {
+      "1": 0.0,
+      "3": 0.0,
+      "10": 0.0
+    },
+    "recall_at_ci95": {
+      "1": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ],
+      "3": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ],
+      "10": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ]
+    },
+    "localization_recall_at": {
+      "1": 0.0,
+      "3": 0.0,
+      "10": 0.0
+    },
+    "localization_recall_at_ci95": {
+      "1": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ],
+      "3": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ],
+      "10": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ]
+    },
+    "type_accuracy_given_localized": null,
+    "type_accuracy_given_localized_ci95": null,
+    "onset_error_sec": {
+      "mean": null,
+      "median": null,
+      "tolerance_sec": 2.0
+    },
+    "containment_rate": null,
+    "containment_rate_ci95": null,
+    "fp_per_clip": 1.6666666666666667,
+    "n_events": 3,
+    "n_negative_clips": 6,
+    "excluded_by_reason": {},
+    "by_type": {
+      "CENTER_LINE_CROSSING": {
+        "recall_at": {
+          "1": 0.0,
+          "3": 0.0,
+          "10": 0.0
+        },
+        "recall_at_ci95": {
+          "1": [
+            0.0,
+            0.7934506856227626
+          ],
+          "3": [
+            0.0,
+            0.7934506856227626
+          ],
+          "10": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "n": 1
+      },
+      "SOLID_LINE_LANE_CHANGE": {
+        "recall_at": {
+          "1": 0.0,
+          "3": 0.0,
+          "10": 0.0
+        },
+        "recall_at_ci95": {
+          "1": [
+            0.0,
+            0.6576197724933469
+          ],
+          "3": [
+            0.0,
+            0.6576197724933469
+          ],
+          "10": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "n": 2
+      }
+    },
+    "coverage": "NO_MATCHED_EVENTS — onset_error_sec 를 낼 수 없다; NO_LOCALIZED_EVENTS — 허용 오차 안에 든 사건이 없어 type_accuracy_given_localized 를 낼 수 없다 (0 이 아니다); NO_EVENTS_FOR_TYPE — SIGNAL, MOTORCYCLE_HELMET_NON_USE 유형의 사건이 정답지에 없다. 이 유형의 recall 은 측정되지 않았다 (0점이 아니다)"
+  },
+  "classification": {
+    "recall_macro": null,
+    "precision_macro": null,
+    "recall_by_label": null,
+    "recall_by_label_ci95": null,
+    "confusion": null,
+    "target_correctness": null,
+    "target_correctness_ci95": null,
+    "n": null,
+    "n_invalid_predictions": null,
+    "n_invalid_gt_labels": null,
+    "n_invalid_bboxes": null,
+    "coverage": "NOT_RUN — stage=candidate 실행이다"
+  },
+  "plate": {
+    "exact_accuracy": null,
+    "wrong_accept_rate": null,
+    "abstention_recall": null,
+    "readable_abstention_rate": null,
+    "n_readable": null,
+    "abstain_reasons": null,
+    "n_abstained_without_reason": null,
+    "n": null,
+    "coverage": "NOT_RUN — stage=candidate 실행이다"
+  },
+  "persistence": null,
+  "pipeline": {
+    "k": 3,
+    "n_events": 3,
+    "n_negative_clips": 6,
+    "verdicts_on_event_candidates": {
+      "OBSERVED": 0,
+      "UNCERTAIN": 0,
+      "NOT_OBSERVED": 0,
+      "None": 0
+    },
+    "verdicts_on_unmatched_positive_clip_candidates": {
+      "OBSERVED": 0,
+      "UNCERTAIN": 0,
+      "NOT_OBSERVED": 5,
+      "None": 1
+    },
+    "verdicts_on_negative_clip_candidates": {
+      "OBSERVED": 1,
+      "UNCERTAIN": 0,
+      "NOT_OBSERVED": 8,
+      "None": 0
+    },
+    "fine_confirm_rate": null,
+    "fine_confirm_rate_ci95": null,
+    "fine_reject_rate": 0.8888888888888888,
+    "fine_reject_rate_ci95": [
+      0.5650002944233439,
+      0.9801091123614551
+    ],
+    "final": {
+      "observed": {
+        "recall": 0.0,
+        "recall_ci95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ],
+        "hits": 0,
+        "fp": 1,
+        "fp_per_negative_clip": 0.16666666666666666,
+        "negative_clips_with_fp": 1
+      },
+      "not_rejected": {
+        "recall": 0.0,
+        "recall_ci95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ],
+        "hits": 0,
+        "fp": 1,
+        "fp_per_negative_clip": 0.16666666666666666,
+        "negative_clips_with_fp": 1
+      }
+    }
+  },
+  "cost": {
+    "cost_per_case": {
+      "CT3_0002_C00": 0.01014288,
+      "CT3_0001_C00": 0.0073078940000000005,
+      "CT3_0004_C00": 0.014058751,
+      "CT3_0003_C00": 0.016623258000000002,
+      "CT3_0005_C00": 0.019426453,
+      "CT3_0006_C00": 0.012893917000000001,
+      "CT3_0007_C00": 0.011221218,
+      "CT3_0008_C00": 0.019154157
+    },
+    "cost_per_source_video_hour": 0.4511541688904971,
+    "total": 0.11082852800000001,
+    "currency": "USD",
+    "n_rows": 22,
+    "n_unknown_cost": 0,
+    "latency_ms": {
+      "p50": 9469,
+      "p90": 13625,
+      "max": 20141,
+      "n": 22,
+      "n_missing": 0
+    },
+    "latency_per_source_video_hour": 917.3820616038718,
+    "scenarios": [
+      "CT3_0001_C00",
+      "CT3_0002_C00",
+      "CT3_0003_C00",
+      "CT3_0004_C00",
+      "CT3_0005_C00",
+      "CT3_0006_C00",
+      "CT3_0007_C00",
+      "CT3_0008_C00"
+    ],
+    "coverage": null,
+    "scorer_version": "c3"
+  }
+}

@@ -1,10 +1,21 @@
-# RT-14 — EC2 deployment preparation
+<a id="rt-14--ec2-deployment-preparation"></a>
+
+# RT-14 — EC2 배포 준비
 
 **IN_PROGRESS · Refs #450 · Related #287, #460, #452**
 
 이 문서는 [deployment runbook](deployment-runbook.md)의 구현 명령을 제공한다.
 배포/복구 명령은 **향후 승인된 운영 작업의 예시**다. 이번 구현에서 실행하지 않았다.
 아래 candidate는 Owner 결정이나 production acceptance를 대신하지 않는다.
+2026-10-30 Decision Gate 승인값과 이 준비 구현에 남은 변경은 [RT-14 배포 설계](rt14-deployment-design.md) §1 · §16이다.
+
+## 2026-10-31 후속 운영 기준
+
+승인 후 구현·현재 운영 명령·최초 실패 복구·pointer reconciliation·Caddy/DDNS/TLS·
+외부 smoke는 [공개 배포·복구 Notes](rt14-public-deployment.md)를 우선 사용한다.
+아래 §1~§10은 #479 당시의 구현·검증 이력을 보존한다. 당시의 「후보/미승인」,
+「rollback tip CI 의존」, 「recovery 없음」은 현재 상태로 읽지 않는다.
+승인된 Gate는 재개방하지 않으며 OIDC trust 축소 답변은 코드 구현 blocker가 아니다.
 
 ## 1. 확인된 근거와 준비 범위
 
@@ -291,6 +302,16 @@ schema authority의 compatibility는 code rollback의 성공/실패와 무관하
 **migration을 실행하지 않는다**. DB/media volume 삭제·DB downgrade·자동 restore 없음.
 처음 배포하거나 이전 digest/config가 삭제됐거나 schema가 호환되지 않으면 code rollback할 수 없다.
 
+2026-10-30 설계 검토에서 확인한 현재 동작의 경계([RT-14 배포 설계](rt14-deployment-design.md) §9.3):
+
+- workflow의 `rollback`도 dispatch한 develop tip의 push CI 성공을 요구한다. tip CI가 진행 중이거나
+  실패한 동안에는 workflow rollback이 거부된다. 설계 변경안은 rollback에서 tip 검사를 빼고 대상 revision
+  검사(develop 조상 · push CI · ECR digest)와 host exact tuple · schema 검사만 남기는 것이다. 위 controller
+  명령의 SSM Session 직접 실행은 break-glass 경로로 남긴다.
+- 최초 배포가 migration 뒤 실패하면 current가 없어 rollback 대상이 없다. dirty가 남아 deploy가
+  거부되고, dirty를 치워도 preflight가 비어 있지 않은 volume을 거부한다. operator recovery 절차는 아직
+  없고 첫 AWS deploy 전에 필요하다. 필요한 내용은 설계 §9.3이다. dirty 파일 삭제만으로는 복구가 아니다.
+
 부분 DDL은 DB transaction rollback으로 되돌아갔다고 가정하지 않는다. 진행 작업이 없고
 DB 실제 상태를 조사한 뒤 Owner가 forward repair/restore와 재개를 승인한 경우에만
 private marker/lock을 별도로 보존·해제한다. 자동 unlock/retry 도구를 제공하지 않는다.
@@ -352,10 +373,12 @@ driver/tag와 dual cache의 구현 형식은 [Docker awslogs 공식 문서](http
 | #452 Case 전용 notice | 큰 입력의 typed 실패가 일반 재시도 notice로 보일 수 있음; 사용자 경로 acceptance에 남음. RT-14에서 Case 정책 변경 안 함 |
 | #445 orphan publish cleanup | crash 잔여 media의 장기 disk 증가 위험; 소유 scan/정리 검증과 운영 창 필요 |
 | #71 retention·provider lifecycle | 장기 데이터 보관/삭제·외부 사본 lifecycle 미완료. deployment image 준비와 구분 |
-| RD-14/auth/IDOR | 공개 trigger가 있으면 PM/Owner 검수 후 DNS/TLS/인증을 정함. 내부 loopback smoke만 제공 |
+| RD-14/auth/IDOR | 2026-10-22 최종 제출 요건으로 공개 trigger 발생. 공개 모델·외부 smoke는 [RT-14 배포 설계](rt14-deployment-design.md) §13 · §10.2(2026-10-30 Gate 승인, 구현 전). 이 준비 구현은 내부 loopback smoke만 제공 |
 | AWS/용량/로그/rollback/restore 실제 증거 | mock/local 성공으로 닫지 않음. 실제 운영 승인 후 rehearsal 필요 |
 
-## 10. Implementation Notes
+<a id="10-implementation-notes"></a>
+
+## 10. 구현 기록
 
 직접 실행 검증·fresh reviewer·자원 정리·전체 변경 manifest는 구현 종료 시 이 절에
 append한다. 과거 #473~#477 CI, 이번 로컬 Python/Linux Docker 검증, 미래 새 PR CI를

@@ -216,6 +216,7 @@ def main(argv=None):
         require(args in (["authenticate"], ["publish"], ["deploy"], ["rollback"]))
         if args != ["authenticate"]:
             require(env.get("RT14_EXECUTION_ENABLED") == "true", "execution_not_enabled")
+        if args in (["publish"], ["deploy"]):
             quality_gate(env)
         authenticated = oidc(env)
         if args == ["authenticate"]:

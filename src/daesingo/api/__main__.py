@@ -51,7 +51,7 @@ def main(argv=None):
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=_port, default=8000)
     args = parser.parse_args(argv)
-    signals = (signal.SIGINT, signal.SIGTERM)
+    signals: tuple[signal.Signals, ...] = (signal.SIGINT, signal.SIGTERM)
     if hasattr(signal, "SIGBREAK"):
         signals += (signal.SIGBREAK,)
     previous = {sig: signal.getsignal(sig) for sig in signals}

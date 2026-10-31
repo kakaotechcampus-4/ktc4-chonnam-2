@@ -23,8 +23,8 @@ timeline_range는 관측 frame coverage의 시작·끝이다. 동일 provenance�
 Readout은 기존 source provenance 기반 resolve_frame/read_frame 경로를 사용한다.
 
 범위는 source-local start 0 placement로 해소되는 연속 단일 카메라 체인이다.
-카메라 역할·파일 순서·촬영 연속성은 추론하지 않는다. 연결 출력은 동일한 time base와
-해상도여야 한다. 전체 구간 bytes를 메모리에 보관하는 기존 방식의 한계가 있다.
+카메라 역할·파일 순서·촬영 연속성은 추론하지 않는다. 연결 출력은 같은 해상도여야 하며 서로 다른 time base는
+[공통 시간축 규칙](mixed-timebase-plan.md)으로 정확히 투영할 수 있을 때 지원한다. 전체 구간 bytes를 메모리에 보관하는 기존 방식의 한계가 있다.
 다른 geometry 정규화, 자동 overlap 처리, 신고영상 export는 포함하지 않는다.
 
 검증: `python -m pytest tests/recording/test_multi_span_incident_clip.py -q`
