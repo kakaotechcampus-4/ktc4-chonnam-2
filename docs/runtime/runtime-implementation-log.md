@@ -4877,3 +4877,38 @@ fresh 읽기 전용 reviewer 1명의 초기 지적(시작 대기·media copy-up�
 실제 Docker/DB/AWS 검증이 아니다. 전체 변경은 위 절차의 manifest 6개 문서이고
 ignored 검사 helper/RAW/credential/내부 manifest는 제출 대상이 아니다. 최종 상태는
 같은 branch/HEAD, index 비어 있음, 미커밋으로 확인하며 실제 실행 입력/자원 gate는 남긴다.
+
+
+<a id="rt14-recovery-results-20261101"></a>
+
+### 2026-11-01 — RT-14 백업·격리 복원 운영자 실행 결과 문서화
+
+**IN_PROGRESS · Refs #450 · Related #300, #452.**
+`codex/rt14-recovery-results`, 기준 HEAD `e27623240d9a08058ee9dfdd353fa6fb3f8ec0f3`와
+clean worktree/index를 직접 확인하고 문서만 수정했다. 기존 준비·실패 이력은 보존했다.
+
+[복구 acceptance §10](rt14-recovery-acceptance.md#rt14-recovery-operator-results)과
+[실험 §15](experiments/2026-10-31-rt14-aws-real-e2e.md#rt14-recovery-execution-results)에
+운영자 최종 SSM 출력 6개를 기록했다. DB/PAX media 백업·격리 복원·비교,
+Case/asset·local source/BLOB 비교, offline media/readout PASS 및 운영 복귀,
+전용 target 자원·trial secret 정리, 소유 host lock 해제·점검 종료는 **운영자 보고**다.
+source local HTTPS 403을 외부 공개 HTTP 200/public smoke PASS로 쓰지 않는다.
+
+에이전트는 기존 ignored 준비 자료를 로컬에서 읽고 coordinator를 정적으로 대조했다.
+최초 precheck 실패 보존, `docker top -eo comm`의 PID 열 누락과 v2의 `-eo pid,comm`
+수정·PID 형식 검사를 구분했다. 최초 원격 오류 원문은 확인할 수 없으므로 단정하지 않는다.
+기본 tar의 mtime ns 손실, PAX 보존 합성 검증, 최종 실제 복원 PASS 보고를 구분했다.
+`operator-progress.json`의 초기 PREPARATION_ONLY/false와 최종
+`operator_reported_latest_stage`는 시점이 다른 누적 기록이며 전체 파일을 단일 snapshot으로
+인용하지 않는다. 로컬 대역 검사 결과·과거 Windows 검사 실패는 운영 성공 근거가 아니다.
+
+이번 직접 검증은 문서 링크/anchor·기존 실험/Log 본문 보존·기록 정합성·추가 diff 비노출과
+`git diff --check`로 한정한다. 비밀값·SQL dump·원본 영상·실제 Case/asset 식별자·내부
+경로·manifest 원문을 추가 공개하지 않는다. AWS/SSM 접속·서비스 중단·backup/restore
+재실행·provider 호출 없이 문서만 변경하며 전체 pytest/MySQL/Docker 검증은 반복하지 않는다.
+
+변경 대상은 `rt14-recovery-acceptance.md`, `experiments/2026-10-31-rt14-aws-real-e2e.md`,
+이 Runtime Log 세 문서다. staging·commit·push·PR·외부 댓글은 하지 않는다.
+외부 공개 HTTP 200, 복원 DB의 정상 Worker job, 두 번째 배포·rollback rehearsal,
+운영 Recording profile·길이·byte 한도, 오프호스트 보관 정책·승인된 RPO/RTO,
+최종 Package READY·장기 공개 gate와 RT-14 전체 완료는 남겨 둔다.
