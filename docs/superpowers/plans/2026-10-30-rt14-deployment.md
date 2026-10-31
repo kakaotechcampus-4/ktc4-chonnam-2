@@ -1,52 +1,59 @@
-# RT-14 deployment preparation implementation plan
+<a id="rt-14-deployment-preparation-implementation-plan"></a>
 
-**Status:** IN_PROGRESS · Refs #450 · Related #287, #460, #452
+# RT-14 배포 준비 구현 계획
 
-**Goal:** prepare reviewable deployment tools without accessing or changing AWS.
-**Spec:** Issue #450, user request 2026-10-30, Runtime Plan RT-14, Ops §2/4-1/19.
-**Architecture:** trusted develop-only manual workflows; CI-built amd64 ECR digest;
-SSM to an explicitly installed root-owned controller; existing Compose services,
-external existing volumes, protected versioned config files. No host builds.
+**상태:** IN_PROGRESS · Refs #450 · 관련 #287, #460, #452
 
-## Constraints and rulings
+**목표:** AWS에 접근하거나 변경하지 않고 검토 가능한 배포 도구를 준비한다.
+**명세:** Issue #450, 사용자 요청 2026-10-30, Runtime Plan RT-14, Ops §2/4-1/19.
+**아키텍처:** 신뢰할 수 있는 develop 전용 수동 workflow, CI 빌드 amd64 ECR digest,
+명시적으로 설치된 root 소유 controller로의 SSM, 기존 Compose service,
+외부 기존 volume, 보호된 버전 지정 config 파일. 호스트 빌드는 없다.
 
-- No commit/staging/push/PR/comment/dispatch or real AWS/service operations.
-- Existing HEAD and fetched develop: `4876e646171ba9f0195de52d11741f3c39fb51a0`; clean index/worktree.
-- #473–#477 merged; their historical CI is not verification of this change.
-- RD-12b–e/h, RD-13a/c/d, RD-11a and actual RD-07c remain open in SoT.
-  Tools implement a candidate path, require explicit owner-approved host policy;
-  neither implementation nor a config flag constitutes owner acceptance.
-- Ruling: ECR pull candidate follows user's CI/registry preference and avoids
-  large repeated EC2 builds. S3 delivery and host build add no required value here.
-- Ruling: migration failure leaves writers stopped and persistent dirty marker;
-  no automatic rollback, retry, schema downgrade or volume deletion.
-- Ruling: deploy from a pinned application image carrying its Compose source;
-  host controller is separately installed/reviewed, never auto-updated by SSM.
-- Ruling: no new public endpoint/domain/OAuth; internal read-only smoke only.
-- Logging/restart/retention and disk budgets must be explicit approved inputs,
-  never invented production defaults. CloudWatch resources are pre-provisioned.
+<a id="constraints-and-rulings"></a>
 
-## Work
+## 제약과 판단
 
-- [x] 1. Tests first: immutable input validation, fixed subprocess diagnostics,
-  SSM pending/success/nonzero/missing/timeout/cancel, exact account/role check.
-- [x] 2. Implement safe OIDC/AWS orchestration and separate manual workflows;
-  preserve regression/mysql/test and all existing required checks.
-- [x] 3. Tests first: host lock, single migration, dirty marker, health failure,
-  known-good atomic promotion, config-aware rollback, volume ownership guard.
-- [x] 4. Implement host controller and image/runtime deployment preflight;
-  actual Worker process registration marker, live/ready and read-only API smoke.
-- [x] 5. Document protected inputs, minimum IAM actions/resources, exact commands,
-  backup/media consistency, partial DDL recovery and capacity/retention pending.
-- [x] 6. Focused tests, source/rendered Compose, boundary/fixtures/actionlint/diff;
-  existing image/cache only if needed, no full local pytest/full MySQL.
-- [x] 7. Fresh read-only reviewer without implementation history; regressions for
-  findings, same reviewer recheck. Append notes/log and leave unstaged.
+- commit/staging/push/PR/comment/dispatch 또는 실제 AWS/service 작업은 없다.
+- 기존 HEAD와 가져온 develop: `4876e646171ba9f0195de52d11741f3c39fb51a0`; 깨끗한 index/worktree.
+- #473–#477은 병합됐으며 과거 CI는 이 변경의 검증이 아니다.
+- RD-12b–e/h, RD-13a/c/d, RD-11a와 실제 RD-07c는 SoT에서 열린 상태다.
+  도구는 후보 경로를 구현하며 명시적인 Owner 승인 호스트 정책을 요구한다.
+  구현이나 config flag는 Owner 수락을 의미하지 않는다.
+- 판단: ECR pull 후보는 사용자의 CI/registry 선호를 따르며 대규모 반복 EC2 빌드를
+  피한다. S3 전달과 호스트 빌드는 여기서 필수 가치를 더하지 않는다.
+- 판단: migration 실패 시 writer를 중지한 채 영속 dirty marker를 남긴다.
+  자동 롤백, 재시도, 스키마 downgrade, volume 삭제는 없다.
+- 판단: Compose 소스가 포함된 고정 application image에서 배포한다.
+  host controller는 별도로 설치/검토하며 SSM으로 자동 갱신하지 않는다.
+- 판단: 새 공개 endpoint/domain/OAuth는 없으며 내부 읽기 전용 smoke만 수행한다.
+- 로깅/restart/retention과 disk 예산은 명시적으로 승인된 입력이어야 하며 운영
+  기본값을 지어내면 안 된다. CloudWatch 자원은 사전 provision한다.
 
-## Review focus
+<a id="work"></a>
 
-Untrusted dispatch refs and OIDC subjects; exception/CLI leakage; SSM delivery vs
-execution; dirty or uncertain migration; old config/schema rollback; competing
-deploys and operator recovery; unchanged media/DB ownership; synthetic vs actual
-AWS/production evidence. Runtime memory/disk capacity cannot be inferred from
-an empty Docker inventory.
+## 작업
+
+- [x] 1. 테스트 우선: 불변 입력 검증, 고정 subprocess 진단,
+  SSM pending/success/nonzero/missing/timeout/cancel, 정확한 account/role 검사.
+- [x] 2. 안전한 OIDC/AWS orchestration과 별도 수동 workflow를 구현하고
+  regression/mysql/test 및 모든 기존 필수 검사를 보존한다.
+- [x] 3. 테스트 우선: host lock, 단일 migration, dirty marker, health 실패,
+  known-good 원자적 승격, config를 고려한 롤백, volume 소유권 guard.
+- [x] 4. host controller와 image/runtime 배포 preflight를 구현한다.
+  실제 Worker process 등록 marker, live/ready, 읽기 전용 API smoke.
+- [x] 5. 보호 입력, 최소 IAM action/resource, 정확한 명령, backup/media 일관성,
+  부분 DDL 복구와 pending인 capacity/retention을 문서화한다.
+- [x] 6. 집중 테스트, source/rendered Compose, 경계/fixture/actionlint/diff를 실행한다.
+  필요한 경우에만 기존 image/cache를 사용하고 전체 로컬 pytest/전체 MySQL은 없다.
+- [x] 7. 구현 이력이 없는 새 읽기 전용 검토자를 사용한다. 지적에 대한 회귀 테스트,
+  같은 검토자의 재검사, notes/log 추가 후 unstaged로 둔다.
+
+<a id="review-focus"></a>
+
+## 검토 초점
+
+신뢰하지 않는 dispatch ref와 OIDC subject, 예외/CLI 유출, SSM 전달 대 실행,
+dirty 또는 불확실한 migration, 이전 config/schema 롤백, 경쟁 배포와 운영자 복구,
+변경하지 않은 media/DB 소유권, 합성 대 실제 AWS/운영 증거.
+비어 있는 Docker 목록에서 Runtime 메모리/disk 용량을 추론할 수 없다.

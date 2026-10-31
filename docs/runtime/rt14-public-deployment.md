@@ -195,7 +195,9 @@ deploy가 자동 인수하지 않는 기존 guard를 유지한다. 아래는 **o
 6. `initial_state=verified-empty-owned-volumes` 승인을 새로 대조하고 deploy → 내부 검증 →
    pointer/state → 외부 smoke를 다시 수행한다. 실제 재시도 성공 전까지 실패는 열린 상태다.
 
-### Break-glass
+<a id="break-glass"></a>
+
+### 비상 복구
 
 GitHub/Actions 장애 시 SSM Session 직접 controller rollback은 operator의 비상 경로다.
 기존 [명령 예시](rt14-deployment.md#7-실패취소rollback부분-ddl)는 일반 workflow gate를
@@ -300,7 +302,9 @@ Windows 기본 pytest temp 권한 오류는 작업 전용 basetemp 재실행과 
 처음 SHA256으로 비교해 거부했으며 공식 파일의 SHA512를 확인한 뒤 일치 검사 후에만 실행했다.
 이 실패들을 product/AWS 실패나 성공 증거로 바꾸어 기록하지 않는다.
 
-### Fresh review
+<a id="fresh-review"></a>
+
+### Fresh 리뷰
 
 구현 이력을 상속하지 않는 `GPT-6.1 Sol / high` read-only subagent를 명시 호출했다.
 원래 요청·Owner 승인/후속 댓글·설계·최종 diff와 새 파일을 제공했다. 1차 검토에서

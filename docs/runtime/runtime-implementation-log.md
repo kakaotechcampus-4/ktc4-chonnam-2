@@ -1,4 +1,6 @@
-# Runtime Implementation Log
+<a id="runtime-implementation-log"></a>
+
+# Runtime 구현 기록
 
 **Status:** workflow §8 Implementation Log — 구현이 진행되며 누적하는 living record**Owner:** Runtime/Ops 김준영(@flosure23) · Primary Implementer 정철원(@cheol1203)**Plan:** [Runtime Implementation Plan](./runtime-implementation-plan.md) — 구현 **전** 계획. 이 Log는 **실제로** 구현된 것이다(Plan §12.5)**Started:** 2026-10-06 · 기준 `origin/develop` `960a046`
 
@@ -82,7 +84,9 @@ Plan §12.3에서 「멈추고 확인」에 해당해 Owner에게 확인한 건�
 | 2026-10-14 직접 조회 | RT-07(c), PR #360 | Search에는 durable Run 저장소가 없고 최초 영속화는 T1 produced. 예정 Run ref 대조로 복구하며 명시적 DIRECT_NO_RUN 허용 | 김준영 @flosure23 · 서어진 @kong2488-star · 정철원 최종 확인 | [Runtime 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6145102027) · [Search 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6148574716) · [최종 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/294#issuecomment-6150512406). 이 세션은 댓글을 작성하지 않고 직접 읽었다 |
 | 2026-10-27 직접 조회 | RT-13(a), PR 미생성 | RD-12a/g local slice와 Compose health/grace M4 provisional 승인. timeout 5s는 B-H3에서 DERIVED; interval10s/retries3/start_period10s/grace30s는 CONSERVATIVE_DEFAULT | Runtime/Ops Owner 김준영 @flosure23 | [결정 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6430017764) · [Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506). Issue 본문/최신 두 댓글 직접 조회; 댓글 작성 없음 |
 
-## Milestone audit
+<a id="milestone-audit"></a>
+
+## 마일스톤 감사
 
 묶음 정의는 Plan §12.6이다. workflow gate가 아니다.
 
@@ -135,7 +139,9 @@ Status: DONE · Issue: #288 · Audit: A
 - `process.started`는 RT-01 bootstrap 검증 완료 이벤트다. HTTP readiness·claim 가능성·provider 연결 성공을 의미하지 않는다. 후속 composition이 완료된 시점으로 호출 위치를 연결해야 한다.
 - 정본 의미나 타 Owner surface 변경이 없어 사전 Owner 확인 대상은 없었다. Owner acceptance와 CI/E2E를 이번 local unit 검증으로 대체하지 않는다.
 
-### Verification
+<a id="verification"></a>
+
+### 검증
 
 - RED: 새 config/logging/bootstrap import 부재 3 collection error 확인 후 구현. 이후 잘못된 DB URL 예외·subprocess stderr 경로 4 failed / 69 passed 확인 → SQLAlchemy `ArgumentError`를 key-only 오류로 정규화하여 GREEN.
 - 기존 common baseline: 14 passed. key 선언 검증 수정 전 RT-01 targeted unit: 85 passed · common/api/worker 회귀: 99 passed. 수정 후 common/api/worker 회귀: **121 passed** (`.venv/Scripts/python.exe -X utf8 -m pytest -q tests/common tests/api tests/worker -p no:cacheprovider --basetemp=.codex-scratch/rt01-keys-regression-001 --tb=short`). Baseline §2 표를 직접 파싱해 모든 canonical key와 P-8 추가 key가 실제 registry와 일치하는 대조 테스트를 포함한다.
@@ -200,7 +206,9 @@ Status: DONE · Issue: #289 · Audit: A
 - Case Owner의 새 callback/fixture 의무를 만들지 않았다. Plan의 Consult 대상인 공용 interface와 기존 저장소 참여 호환성은 코드·테스트·Notes에서 검토할 수 있다. Contract·Decision·Baseline 재결정이나 추가 Owner 승인이 필요한 의미 변경은 없다.
 - 전체 acceptance의 권한 실패 시나리오는 schema CREATE/DROP·자기 connection KILL 외에 테스트 사용자 CREATE/GRANT SELECT/DROP 권한도 요구한다. 폐기 가능한 관리자 계정 전용이며 app 계정 권한 요구가 아니다.
 
-### Verification — 최초 구현 기록(2026-10-07)
+<a id="verification--최초-구현-기록2026-10-07"></a>
+
+### 검증 — 최초 구현 기록(2026-10-07)
 
 - TDD: factory 10 RED → 10 GREEN; transaction 15 RED → 15 GREEN. callback commit 정리 누수·rollback 오류 마스킹·API 초기 연결 실패·preflight URL option 원문 노출·부분 Case 누락을 각각 RED로 확인하고 수정했다. proxy import 부재 3 RED → 실제 MySQL proxy 3 GREEN; 권한 실패까지 포함한 focused fault 재검증 4 PASS.
 - 실제 MySQL: 기존 Windows MySQL 8.0은 사용하지 않고 workspace의 ignored scratch에 공식 MySQL 8.4.7 배포본을 추출해 WSL에서 독립 port로 실행했다. 프로젝트/시스템 패키지를 설치하지 않았고 Python은 기존 venv를 사용했다. sandbox DLL 제한 때문에 승인된 권한과 새 basetemp·`-B -p no:cacheprovider`를 사용했다.
@@ -343,7 +351,9 @@ Status: DONE · Issue: #290 · Audit: A
 - 김준영 deferred Audit A: 내부 column 명칭·길이, UTC 저장/Contract 변환, enqueue 반환 ID 순서와 batch atomicity, read port가 모든 attempt를 반환하는 경계.
 - claim/finish는 (b)에서 기존 전이표·조건부 UPDATE·lease owner·B-W3/B-L2/B-L6·RC locking을 검증해야 한다. 이번 schema의 lease column이 존재하는 것을 해당 lifecycle 구현 완료로 해석하지 않는다.
 
-### Verification
+<a id="verification-1"></a>
+
+### 검증
 
 - 실제 MySQL 8.4.7 별도 임시 서버/폐기 schema를 사용한다. 기존 검증 서버가 응답하지 않아 기존 MySQL 배포 파일과 임시 libaio/libnuma로 준비했다. 시스템 설치나 사용자 DB 변경은 하지 않았다. `DAESINGO_REQUIRE_MYSQL=1`로 실행한다.
 - schema/enqueue RED **15 failed**(table/repository 부재) → GREEN **15 passed**. read port RED **10 failed**(read_port 부재) → 신규 jobs 합계 **25 passed**. 첫 RED 수집 전 잘못된 transaction helper import를 바로잡았다. 수집 오류는 기능 RED 근거로 세지 않았다.
@@ -401,7 +411,9 @@ Status: DONE · Issue: #290 · Audit: A
 - 김준영 deferred Audit A: durable receipt와 동일 PK 재시도, session UTC 복원, finish target의 Worker/recovery 구분, commit acknowledgement/latency 경계. 새 사전 Owner 승인 gate를 만들지 않는다.
 - RT-04 이후 composition은 공용 engine과 WorkerSettings lease 값을 사용하고, 공개 claim에서 반환된 snapshot 이후에만 handler를 실행한다. 임의 engine이나 transaction 중 timezone 변경은 지원 경계 밖이다.
 
-#### Verification
+<a id="verification-2"></a>
+
+#### 검증
 
 - 실 MySQL 8.4.7 별도 임시 서버(port 13311, 폐기 schema), 서버 기본 timezone `+09:00`, `DAESINGO_REQUIRE_MYSQL=1`로 검증한다. 재부팅으로 기존 WSL 임시 배포가 없어 보관 archive와 임시 라이브러리를 이번 작업 디렉터리에 풀었다. 시스템 설치나 사용자 DB 변경은 없다.
 - UTC/session/migration RED **7 failed** → foundation GREEN **61 passed**. 새 session/reused/replacement에서 NOW(6)=UTC 시각, runtime_0001의 기존 row를 보존한 token nullable upgrade를 확인했다.
@@ -482,7 +494,9 @@ Status: DONE · Issue: #291 · Audit: A
 - RD-09a Gate: [Issue #334의 Runtime Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/334#issuecomment-6081077166)을 확인했다. 실제 handler 연결 시 RecordingService mutable cache/working state는 execution마다 새 service + `finally: close()`로 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 의미는 아니다. 이 PR에서는 domain service를 만들거나 lifecycle을 확장 구현하지 않는다.
 - RT-04(b)의 T2 공개 반영 port는 Case Owner와 Consult 뒤 연결한다. 이번 작업에서 다른 Owner에게 새 공개 surface 의무를 만들지 않았다.
 
-### Verification
+<a id="verification-3"></a>
+
+### 검증
 
 - 초기 unit RED 22 failed → GREEN 22 passed. entrypoint RED 3 failed와 실제 MySQL composition RED 10 failed를 확인한 뒤 Worker 전체 GREEN **42 passed**, 19.43초(실제 MySQL 신규 10개, skip/xfail 없음)를 확인했다.
 - Worker 필수 MySQL check 누락 RED **6 failed** → gate GREEN **469 passed**. ID logging 경계 RED **2 failed** → unit/structured logging GREEN **33 passed**. 종료 시 dispose 오류 원문 노출 RED **1 failed**도 확인해 고정된 cleanup failure event로 처리했다.
@@ -689,7 +703,9 @@ Status: DONE · Issue: #292 · Audit: A · 최종 PR 연결 문구: `Closes #292
 
 - 김준영 Audit A: 0행 fencing 및 T1 commit 직전 경합, B-D8/loop 재시도 진입 fence, B-L1 skip 계산·관측 지연, B-D9 전용 연결 재사용·재연결, BaseException 보존 경계. Contract·Accepted Decision·Baseline 값/의미 변경 없음. 다른 Owner에 새 의무 없음.
 
-### Verification
+<a id="verification-4"></a>
+
+### 검증
 
 - 구현 전 WorkerLoop·claim_one/finish·transaction helper·역할별 engine·기존 테스트와 Issue #292, Plan §6/§12, Baseline을 직접 확인했다.
 - 초기 RED: heartbeat lifecycle/composition 부재로 unit 6 + 실제 MySQL 17 = **23 failed**. 추가 gate RED: heartbeat family 누락을 허용하는 **7 failed**. cleanup 중 BaseException이 primary를 덮는 회귀 **1 failed**를 확인한 뒤 수정했다.
@@ -921,7 +937,9 @@ Status: DONE · Issue: #293 · Audit: A
 - 사전 Owner 확인이 필요한 Contract·Accepted Decision·Baseline 의미 변경, 다른 Owner의 새 surface/의무, SoT 충돌은 발견하지 않았다. 기존 Runtime cancellation port만 소비하며 case schema/callback을 추가하지 않는다.
 - Deferred Audit A: 후보별 commit 경계와 unknown-COMMIT receipt 확인, cancel이 먼저 잠근 row의 skip/다음 pass 재평가, sweep이 먼저 잠근 경우 cancel이 새 QUEUED까지 취소하는 경계, startup DB 장애 claim admission, post-commit hook 배선과 thread shutdown.
 
-### Verification — 구현 단계 보존 결과
+<a id="verification--구현-단계-보존-결과"></a>
+
+### 검증 — 구현 단계 보존 결과
 
 - TDD RED: pure policy 19개·thread lifecycle 6개·실제 MySQL sweep 14개·production composition 3개를 미구현 실패로 확인했다. initial/retry queue wait 2개도 누락을 재현했다. 리뷰 P2는 실제 MySQL slow logger 회귀에서 실패한 뒤 수정 후 통과했다.
 - MySQL 대상은 실제 MySQL 8.4.7 disposable schema이며 mock/skip 대체는 없다. 자연 lease 만료·late finish fencing, commit/rollback, backoff claim, 상한/중단, 두 sweeper, heartbeat/finish/cancel 재확인, 실제 cancel lock wait, 실제 1213 전체 rollback 재시도, COMMIT OK 폐기 proxy 복구를 검증한다.
@@ -1063,7 +1081,9 @@ Status: DONE · Issue: #294 · Audit: B
 
 - Deferred Audit B: amount의 명시적 물리 범위, unknown=null/0 구분, pending in-flight/Final run 연결 경계, fixed identity의 snapshot conflict와 caller transaction/COMMIT 불명 경계를 확인한다. §12.3에 따른 사전 Owner 확인 사항은 없다.
 
-### Verification
+<a id="verification-5"></a>
+
+### 검증
 
 - **RT-07(a) 독립 재리뷰 최종 판정 — PASS(사용자 전달 결과):** 병합 차단 문제 없음. schema·DECIMAL·caller transaction·idempotency의 최종 판정이 모두 통과했다. 아래 구현 단계의 보존 증거와 구분한다.
 - **독립 MySQL 재검증:** **445 passed · skip 0 · xfail 0**, JSON/JUnit gate **PASS**. parameter 누락 **2,093/2,093 거부**, usage parameter 증거 누락 **560/560 거부**다. 독립 재리뷰의 전체 pytest 실행 결과로 아래 **5,022 passed / 26 skipped**를 재인용하지 않는다.
@@ -1365,7 +1385,9 @@ Status: IN_PROGRESS · Issue: #295 · Audit: B
 - 김준영: Linux CI의 두 번째 MySQL Docker 서버와 sudo/unshare private RO mount acceptance 실행을 확인한다. workflow source는 바꾸지 않았고 remote CI 결과를 이번 local 검증으로 단정하지 않는다.
 - Case/Search 새 공개 capability·의무·Consult 대상 배선 없음. command/view port는 (b/c/d), 실제 Search adapter는 SRCH-1, 전용 metrics 집계는 RT-12에 남는다.
 
-### Verification
+<a id="verification-6"></a>
+
+### 검증
 
 - RED: app factory 미구현 ModuleNotFoundError와 신규 evidence 누락 10개 허용을 직접 확인했다. 독립 리뷰 finding의 동시 ready false unavailable, uvicorn raw traceback, slow logger deadline, composition 입력 노출, event thread start failure도 각각 failing test로 보존했다.
 - GREEN: 최신 RT-08(a) targeted 49 passed. 실제 MySQL dedicated ready/pool 고갈·transport 단절·독립 server SHUTDOWN·private RO mount·실제 API process를 포함한다. MySQL 대상 skip/xfail 없음. 로그 sink 예외/지연/시작 실패, 유한 queue/context, configuration/composition safe fail-fast와 raw logger 차단을 확인했다.
@@ -1580,7 +1602,9 @@ Plan §4가 허용한 기존 RETRY_SEARCH command + fixture를 사용한다. 제
 
 두 차례 전체 MySQL 900초 timeout의 원인·fresh 전체 gate·원격 Linux CI가 미확인이다. 최종 독립 재리뷰와 deferred acceptance가 남으며 #295 timeline 후속과 분리한다.
 
-### Verification
+<a id="verification-7"></a>
+
+### 검증
 
 단독 E2E1·targeted238(실제 MySQL219/657 phases)·gate unit4595·비MySQL 회귀681 PASS/기존 영상2 skip. fresh 전체 acceptance는 미통과다. 보존683+현재 E2E1의 별도 CLI/mutation 검사를 새 전체 통과로 대체하지 않는다. 원본·건수는 아래 최종 후속 기록을 따른다.
 
@@ -1614,7 +1638,9 @@ RT-10(a)의 해석 없는 append-only 저장소·T1 원자 저장·무ID stable 
 
 Runtime/Ops deferred review: 저장 identity·T1 receipt·append-only 경계. Case의 다중 객체 의미 조립은 기존 callable을 주입하는 후속 composition이 맡는다.
 
-### Verification
+<a id="verification-8"></a>
+
+### 검증
 
 단위6,364 PASS, 실제 MySQL834 PASS/2,502 phases/skip·xfail0, strict JSON/JUnit PASS, 원본 mandatory1 PASS, parameter mutation5,997건 및 신규 omission125건 모두 거부. 기존 checker/inventory·frozen migration·timeout을 보존했다. 전체 pytest/현재 diff 원격CI는 미실행이다.
 
@@ -1648,7 +1674,9 @@ Status: NOT_STARTED · Issue: #298 · Audit: B
 
 —
 
-### Verification
+<a id="verification-9"></a>
+
+### 검증
 
 —
 
@@ -1697,7 +1725,9 @@ analysis/incident와 활성 temp 경합·close를 직접 검증했고, 기본 ha
 root 전체 scan 지연과 긴 filesystem I/O의 join 지연, Linux/POSIX 검증 및 독립
 재리뷰가 남아 있다. 다른 Owner 공개 surface·새 capability 요청은 추가하지 않았다.
 
-### Verification
+<a id="verification-10"></a>
+
+### 검증
 
 보존된 기능상 RED 20/8/14/2/1/4 failed → 최종 focused 51 passed.
 관련 API/Worker/upload/logger/config 회귀 363 passed(마지막 두 보강 전), boundary
@@ -1909,7 +1939,9 @@ RT-12 전체 DONE·Closes #299·merge-ready/Owner acceptance를 주장하지 않
 
 ---
 
-## RT-13 — Docker / Compose local runtime
+<a id="rt-13--docker--compose-local-runtime"></a>
+
+## RT-13 — Docker / Compose 로컬 실행환경
 
 Status: IN_PROGRESS · Refs #300 (RT-13(a)) · Audit: C
 
@@ -1933,7 +1965,9 @@ YAML JSON subset source/resolved policy validator와 mutation negative controls,
 
 승인된 M4 수치는 [Baseline §2.10](./provisional-baseline-v0.1.md#210-health--readiness--j)에 Evidence/근거/지표/Trigger와 반영했다. timeout=5s는 B-H3 ready3s에서 DERIVED, interval10s/retries3/start_period10s/grace30s 숫자는 CONSERVATIVE_DEFAULT이며 실측값이 아니다. 새 claim 중단+grace 내 정상 종료 시도이고 모든 handler 완료 보장 없음. 초과 kill 뒤 기존 lease→STALE→retry로 복구한다. RT-13 smoke와 이후 Real E2E에 따라 재조정 가능하다.
 
-### Verification
+<a id="verification-11"></a>
+
+### 검증
 
 직접 검사와 fresh reviewer 판정의 원문은 [RT-13(a) Notes Verification](./rt13a-docker-compose.md#verification--2026-10-27)이다. `.codex-scratch/rt13a/` 원본은 PR 제외다. 최초 fresh review P1없음/P2두 건(normalized null entrypoint, cleanup 실패 전파·기록)을 TDD로 수정해 deploy79 passed; 같은 reviewer도79개를 독립 실행하고 재리뷰에서 잔여 P1/P2 source defect 없음을 확인했다. 실제 MySQL8.4.7 전체는12683 passed/3 failed/26 skipped/xfail0; MySQL subset1044 passed/1 failed/skip0/xfail0, strict JSON/JUnit FAIL. reviewer는 전체/MySQL suite를 재실행하지 않았다. 기존 API process-safety2건의5초 timeout과 nested gate900초 timeout을 보존하며, API2건 단독 재실행도2 failed다. boundary/Contract104/workflow/diff/lock check PASS. Docker는 CLI를 찾지 못해 preflight FAIL, 생성 자원0이다. MySQL 정리 전 예상 schema 감사는 extra1로 FAIL했지만 finally SHUTDOWN·UUID datadir 삭제·Linux port closed와 후속 Windows listener0/소유 Python0을 확인했다. 미커밋 intermediate 후보 보존 가능이며 merge-ready/전체·mandatory·Docker acceptance/RT-13 DONE을 주장하지 않는다.
 
@@ -1977,7 +2011,9 @@ Status: NOT_STARTED · Issue: — (RT-13 착수 때 생성) · Audit: C
 
 —
 
-### Verification
+<a id="verification-12"></a>
+
+### 검증
 
 —
 
@@ -2086,7 +2122,9 @@ RT14_EXECUTION_ENABLED 변경은 없다. scratch/로그/credential은 PR에서 �
 
 —
 
-### Verification
+<a id="verification-13"></a>
+
+### 검증
 
 —
 
@@ -2122,7 +2160,9 @@ recording Owner(정철원) 작업이다. 여기에는 Runtime이 소비하는 su
 
 —
 
-### Verification
+<a id="verification-14"></a>
+
+### 검증
 
 —
 
@@ -3582,7 +3622,9 @@ manifest hash·branch/HEADbc459255·indexempty보존을저자도결과추가전�
 미커밋/미스테이징·commit/push/PR/CI변경없음,#405pending,
 **IN_PROGRESS · Refs #297 (RT-10(b))**로먼저보고한다.
 
-## 2026-10-28 — RT-13(b) local logical backup / restore
+<a id="2026-10-28--rt-13b-local-logical-backup--restore"></a>
+
+## 2026-10-28 — RT-13(b) 로컬 논리 백업 / 복원
 
 **IN_PROGRESS · Refs #300 (RT-13(b))**. 기존 기록을 대체하지 않는 후속 entry다.
 착수 전 clean branch `codex/rt13b-backup-restore`, HEAD/GitHub 최신 develop
@@ -3859,169 +3901,165 @@ refusal/포트폐쇄 증거로 표현하지 않는다. 공유 Docker/WSL 프로�
 [별도 Implementation Notes](rt10b-incident-clip-handler.md)에 기록했다.
 
 
-### RT-10(b) Readout handlers — 2026-10-29 KST
+<a id="rt-10b-readout-handlers--2026-10-29-kst"></a>
+
+### RT-10(b) Readout handler — 2026-10-29 KST
 
 **IN_PROGRESS · Refs #297 (RT-10(b))**
 
-Existing checkout `codex/rt10b-readout-handlers` started clean; HEAD and
-origin/develop both `debc783266d011ab46b102020c8d696a7dbd818e` (PR #440).
-Issue #297 Readout/Runtime Owner usage and A decisions were directly checked.
-No new branch/worktree, staging, commit, push, PR or Issue mutation was performed.
+기존 checkout `codex/rt10b-readout-handlers`는 깨끗한 상태에서 시작했다. HEAD와
+origin/develop은 모두 `debc783266d011ab46b102020c8d696a7dbd818e`였다(PR #440).
+Issue #297의 Readout/Runtime Owner usage·A 결정을 직접 확인했다.
+새 branch/worktree, staging, commit, push, PR 또는 Issue 변경은 수행하지 않았다.
 
-PLATE_READ and OVERLAY_TIME_READ now use detached public Case fixed inputs,
-validate case/job/kind/candidate/generation/scope/durable clip, open an explicit
-execution-local OCR/Recording context and invoke only their matching Readout
-public function once. Provider invocation observes zero checked-out main-engine
-connections. Recording lookup uses public get_incident_clip and closes per
-execution; checkpoints surround input/invocation/resource boundaries.
+PLATE_READ·OVERLAY_TIME_READ는 transaction에서 분리한 Case 공개 고정 입력을 사용한다.
+case/job/kind/candidate/generation/scope/영속 clip 결속을 검증하고 execution 전용
+OCR/Recording context를 명시적으로 연 뒤 대응하는 Readout 공개 함수만 한 번 호출한다.
+provider 호출 시 main engine의 checkout connection은 없다. Recording 조회는 공개
+get_incident_clip을 사용하고 execution별로 닫는다. 입력·호출·자원 경계에 checkpoint를 둔다.
 
-Each invocation issues a fresh rr_ ID, begins usage with that exact planned
-readout_run, passes the same ID to Readout, finishes usage, prepares one contract
-JSON ProducedObject and returns it to existing T1/reconciliation. FAILED Runs
-are preserved with null result and READOUT_INFRA; PARTIAL, abstain, NOT_APPLICABLE
-and both UNKNOWN branches remain successful. Runtime ValueError/DB/checkpoint/
-payload/context/cancel/usage errors are not recast as Readout failures. The
-ledger remains authoritative; Run usage_refs stays derived. No pre-T1 finalize,
-common/runtime port/schema or migration extension was made.
+호출마다 새 rr_ ID를 발급하고 계획한 readout_run과 정확히 같은 ID로 usage begin을 한 뒤,
+Readout에 같은 ID를 전달한다. usage finish 후 Contract JSON ProducedObject 하나를 준비해
+기존 T1/reconciliation에 반환한다. FAILED Run은 result=null·READOUT_INFRA로 보존한다.
+PARTIAL·abstain·NOT_APPLICABLE과 두 UNKNOWN 분기는 성공을 유지한다.
+Runtime ValueError/DB/checkpoint/payload/context/cancel/usage 오류를 Readout 실패로
+다시 분류하지 않는다. ledger가 기준이며 Run usage_refs는 파생값이다.
+T1 전 finalize, common/runtime port/schema 또는 migration 확장은 없다.
 
-Owner-confirmed usage labels/pricing/zero KRW, clip duration (unknown=null), sink
-occurred_at and Run-derived latency are applied. Before T1, terminal recovery
-without the planned durable Run resolves RUN_NOT_PRODUCED; after T1 it links
-the stored readout_run. T1 deadlock/receipt conflict/lost COMMIT and reconciliation
-replay do not invoke OCR or duplicate Final usage. Rollback followed by an
-actual STALE new attempt creates a fresh Run. Both Case jobs retain the same
-clip; both T2 writes were deliberately rolled back and then redelivered using
-durable payloads after provider processes exited. CaseView/StoredObservationAdapter
-restore both observations and distinguish all three overlay notice meanings.
+Owner가 확정한 usage label/pricing/zero KRW, clip duration(알 수 없으면 null), sink
+occurred_at과 Run 기반 latency를 적용했다. T1 전 terminal 복구에서 계획한 영속 Run이
+없으면 RUN_NOT_PRODUCED가 되고, T1 뒤에는 저장된 readout_run을 연결한다.
+T1 deadlock/receipt 충돌/COMMIT 응답 유실과 reconciliation replay는 OCR을 호출하거나
+Final usage를 중복 생성하지 않는다. rollback 후 실제 STALE 새 attempt는 새 Run을 만든다.
+두 Case job은 같은 clip을 유지한다. 두 T2 쓰기를 의도적으로 rollback한 뒤 provider
+process가 종료된 후 영속 payload로 redelivery했다. CaseView/StoredObservationAdapter는
+두 observation을 복원하고 overlay notice의 세 의미를 구분한다.
 
-Direct RED→GREEN: missing handler25 FAIL→25 PASS; inputs/composition28 FAIL plus
-1 pre-existing default PASS→combined57 PASS. Final focused boundary/reselection/
-new-generation coverage69 PASS (2.33s). Initial test data enum/OCR fixture errors
-were corrected against public contracts and are not product fixes. The initial
-MySQL16 PASS/2 FAIL was a test's incorrect already-STALE retry seed; real lease
-expiry/sweep produced18 PASS. A process timeout was traced to a test's Plate-first
-assumption; the test follows Runtime available_at/execution_id order without
-changing timeout or orchestration policy. These failed runs remain in ignored RAW.
+직접 RED→GREEN: handler 부재 25 FAIL→25 PASS; 입력/composition 28 FAIL과 기존
+기본 1 PASS→결합 57 PASS. 최종 focused 경계/재선택/새 generation 범위는
+69 PASS(2.33s). 최초 enum/OCR fixture 오류는 공개 Contract에 맞게 고쳤으며 제품 수정이
+아니다. 최초 MySQL 16 PASS/2 FAIL은 이미 STALE인 잘못된 retry seed를 사용한 테스트
+문제였다. 실제 lease 만료/sweep을 사용하자 18 PASS였다. process timeout은 테스트의
+Plate 우선 가정이 원인이었고, timeout·오케스트레이션 정책 변경 없이 Runtime의
+available_at/execution_id 순서를 따르도록 했다. 실패 실행은 ignored RAW에 보존했다.
 
-Preserved direct evidence from before the usage-limit interruption: new handler
-MySQL18 PASS/54 phases (31.31s), existing reconciliation30 PASS/90 phases (60.20s).
-Product code remained unchanged across that interruption. Resume direct evidence:
-related Worker/Readout/Case/Recording/Search/jobs/usage non-MySQL selection2254
-PASS/48 FAIL/21 existing SKIP/831 deselected (231.81s), followed by **only those
-48 failures** PASS48/48 with task TEMP/TMP outside sandbox restrictions (57.83s).
-This is not one all-green full-suite execution. Existing skips cover missing
-typer/private real-video opt-ins; existing TestClient and malformed-usage
-serializer warnings are recorded, not suppressed.
+사용량 한도 중단 전 직접 실행 증거: 신규 handler MySQL 18 PASS/54 phases(31.31s),
+기존 reconciliation 30 PASS/90 phases(60.20s). 중단 전후 제품 코드는 같았다.
+재개 후 직접 증거: Worker/Readout/Case/Recording/Search/jobs/usage의 관련 non-MySQL
+선택은 2254 PASS/48 FAIL/기존 21 SKIP/831 deselected(231.81s)였고, 이후 **그 48개
+실패만** sandbox 제약 밖 작업 TEMP/TMP에서 48/48 PASS(57.83s)했다.
+이는 전체 suite를 한 번에 모두 통과한 실행이 아니다. 기존 skip은 typer 부재/비공개 실제
+영상 opt-in이며 TestClient·잘못된 usage serializer 경고는 억제하지 않고 기록했다.
 
-Related actual MySQL Search/clip/usage/produced/Case49 PASS/147 phases (123.37s).
-Full HINT→COARSE→FINE→CLIP→two Readout separate API/Worker process E2E6 PASS/18
-phases (248.37s), including success/abstain/three overlay notice branches/FAILED.
-Existing process normal/hint/fractional clip3 PASS/9 phases (56.88s). MySQL8.4.13
-preflight and scoped JSON/JUnit setup/call/teardown agreement passed; no skip or
-xfail in those subsets. Mandatory inventory validation was not claimed for a subset.
+관련 실제 MySQL Search/clip/usage/produced/Case는 49 PASS/147 phases(123.37s).
+HINT→COARSE→FINE→CLIP→두 Readout 전체 체인의 별도 API/Worker process E2E는
+6 PASS/18 phases(248.37s)이며 성공/abstain/overlay notice 세 분기/FAILED를 포함한다.
+기존 process 정상/hint/소수 clip은 3 PASS/9 phases(56.88s). MySQL 8.4.13 preflight와
+부분집합 JSON/JUnit setup/call/teardown 일치가 통과했고 skip·xfail은 없었다.
+부분집합으로 mandatory 전체 inventory 검증을 충족했다고 주장하지 않았다.
 
-Boundary0; Contract fixtures62/26/104 PASS; diff whitespace check PASS. Existing
-workflow/inventory/skip/xfail/30-minute/900-second policies are unchanged. Full
-local pytest/full mandatory MySQL/remote CI are not run; final full regression
-belongs to remote regression/mysql/test jobs. Live Paddle/model download/Linux
-deployment latency and export/package completeness remain unverified. Default
-production registration remains absent unless an OCR factory is explicitly supplied.
+boundary 위반 0; Contract fixture 62/26/104 PASS; diff 공백 검사 PASS.
+기존 workflow/inventory/skip/xfail/30분/900초 정책은 변경하지 않았다.
+전체 로컬 pytest·전체 mandatory MySQL·원격 CI는 미실행이며 최종 전체 회귀는 원격
+regression/mysql/test job에서 수행한다. 실제 Paddle/model 다운로드/Linux 배포 latency와
+export/package 완결성은 미검증이다. 기본 production 등록은 OCR factory를 명시적으로
+제공하지 않으면 여전히 없다.
 
-Initial fresh read-only reviewer inherited no implementation history, rechecked
-Owner decisions and ran focused54 PASS independently; no confirmed product
-P1/P2/P3. Final evidence/docs/resource recheck is recorded in the follow-up below.
-No reviewer finding has been silently downgraded or deferred as fixed.
+최초 fresh 읽기 전용 reviewer는 구현 이력을 상속하지 않고 Owner 결정을 재확인했으며
+focused 54 PASS를 독립 실행했다. 확정된 제품 P1/P2/P3는 없었다.
+최종 증거/문서/자원 재확인은 아래 후속 기록에 남긴다.
+reviewer 지적을 근거 없이 낮추거나 deferred를 해결된 것으로 바꾸지 않았다.
 
-The exact13-file intended deliverable set, invocation/transaction/payload mapping,
-direct versus preserved evidence and remaining operational limits are in
-[Readout handler Implementation Notes](rt10b-readout-handlers.md). Internal plan,
-RAW/JSON/JUnit, generated media/env and disposable DB material are ignored under
-`.codex-scratch/rt10b-readout/`, excluded from PR. Final resource audit and staging
-verification follow after closing the test resources.
+정확한 13파일 전달 목록, 호출/transaction/payload mapping, 직접·보존 증거 구분과 남은
+운영 한계는 [Readout handler 구현 기록](rt10b-readout-handlers.md)에 있다.
+내부 계획·RAW/JSON/JUnit·생성 media/env·임시 DB 자료는 ignored
+`.codex-scratch/rt10b-readout/`에 두고 PR에서 제외한다.
+테스트 자원을 닫은 뒤 최종 자원 감사와 staging 확인을 추가한다.
 
 
-RT-10(b) Readout resource follow-up: final autocommit audit excluding itself found non-audit transactions0, data locks0, other clients0 and unexpected test schemas0. Dedicated codex-rt10b-readout-mysql and its inspected anonymous volume were removed; nine verified task-child test directories were removed. RAW/JSON/JUnit/internal plan remain ignored; generated media/env/DB material was cleaned. Existing process normal/hint/fractional regression3 PASS (56.88s) and all five scoped MySQL JSON/JUnit evidence sets passed phase agreement. Original log byte prefix remains unchanged. Final same-reviewer recheck pending.
+RT-10(b) Readout 자원 후속: 최종 autocommit 감사에서 감사 연결을 제외한 transaction 0, data lock 0, 다른 client 0, 예상 밖 테스트 schema 0을 확인했다. 전용 codex-rt10b-readout-mysql과 확인한 익명 volume, 작업 하위임을 검증한 테스트 디렉터리 아홉 개를 제거했다. RAW/JSON/JUnit/내부 계획은 ignored로 보존하고 생성 media/env/DB는 정리했다. 기존 process 정상/hint/소수 회귀 3 PASS(56.88s)이며 다섯 MySQL 부분집합 JSON/JUnit 증거 세트의 phase가 모두 일치했다. 기존 Log byte prefix는 보존했다. 동일 reviewer의 최종 재확인은 대기 중이다.
 
 
-RT-10(b) Readout final same-reviewer recheck: P1/P2/P3 none. Reviewer independently passed focused69 (3.67s), validated all five scoped MySQL JSON/JUnit sets, matched exact48 initial failures to48 passing reruns and verified original718403-byte log prefix/SHA256 against HEAD. No reviewer fix round was required. Final13 changed files/staged0; HEAD and origin/develop remain debc783266d011ab46b102020c8d696a7dbd818e. No commit/push/PR/Issue mutation. Full suites/remote CI/live Paddle remain unrun as documented. IN_PROGRESS · Refs #297 (RT-10(b)).
+RT-10(b) Readout 동일 reviewer 최종 재확인: P1/P2/P3 없음. reviewer는 focused 69 PASS(3.67s)를 독립 실행하고 다섯 MySQL 부분집합 JSON/JUnit을 검증했으며 최초 실패 48개와 재실행 성공 48개가 정확히 대응함을 확인했다. 기존 718403-byte Log prefix/SHA256을 HEAD와 대조했다. reviewer 수정 회차는 필요하지 않았다. 최종 변경 13파일/staged 0; HEAD·origin/develop은 debc783266d011ab46b102020c8d696a7dbd818e를 유지했다. commit/push/PR/Issue 변경 없음. 문서에 명시한 전체 suite/원격 CI/실제 Paddle은 미실행이다. IN_PROGRESS · Refs #297 (RT-10(b)).
 
 
-### 2026-10-29 — RT-10(b) Recording export handlers · provisional wire implementation
+<a id="2026-10-29--rt-10b-recording-export-handlers--provisional-wire-implementation"></a>
 
-**IN_PROGRESS · Refs #297, #47, #351.** Current branch
-`codex/rt10b-recording-export-handlers`, start HEAD
-`85dd30b91b82711a4d56bbc3ea916a3bd3c2a355`, initially clean tree/index.
-User explicitly delegates minimal reversible provisional Runtime wires under PM
-approval; #47 Owner review remains deferred. Existing Contract meanings, Evidence
-limits and #351 response-before-export timing are not redefined.
+### 2026-10-29 — RT-10(b) Recording export handler · 잠정 연결 구현
 
-Recording adds public report/plate export capabilities, actual MP4/PNG output,
-measured size, immutable DerivedAsset refs, source lineage and stored transform
-provenance. Plate relays `incident_clip_ref`, `frame_ref`, `plate_bbox_xywh`,
-`max_byte_size` (existing Evidence SoT 30_000_000 bytes). No crop_ref or
-associated_region. Request and limit are fingerprinted. Bounded in-execution
-crop/downscale distinguishes `PLATE_IMAGE_EXPORT_FAILED` from provisional
-`PLATE_IMAGE_OUTPUT_LIMIT_UNSATISFIABLE`; the latter has no same-input retry
-button. Report keeps `REPORT_VIDEO_EXPORT_FAILED` and Contract notice mapping.
+**IN_PROGRESS · Refs #297, #47, #351.** 현재 branch는
+`codex/rt10b-recording-export-handlers`, 시작 HEAD는
+`85dd30b91b82711a4d56bbc3ea916a3bd3c2a355`이며 최초 작업 트리/index는 깨끗했다.
+사용자는 PM 승인 아래 최소한의 되돌릴 수 있는 잠정 Runtime 연결을 명시적으로 위임했고,
+#47 Owner 리뷰는 후속으로 남겼다. 기존 Contract 의미·Evidence 한도·#351의 응답 후
+export 시점은 다시 정의하지 않았다.
 
-Case fixes input at order time in an append-only export map; command and
-observation-T2 READY gates issue once per full input after response/evidence.
-Worker detaches Recording metadata/bytes in short caller transactions, returns
-connections, invokes one capability with DB checkout0, then publishes the same
-immutable output in retryable short DML. Existing T1/ProducedObject,
-reconciliation and T2 replay avoid media invocation and duplicate DerivedAssets.
-Current-input settled products feed CaseView/Evidence; old assets remain intact.
+Recording에 공개 report/plate export capability, 실제 MP4/PNG 출력, 실측 크기,
+불변 DerivedAsset ref, 원본 lineage·저장 transform provenance를 추가했다.
+Plate는 `incident_clip_ref`, `frame_ref`, `plate_bbox_xywh`, `max_byte_size`를 전달한다
+(기존 Evidence SoT 30_000_000 bytes). crop_ref·associated_region은 사용하지 않는다.
+요청과 한도는 fingerprint에 포함한다. execution 내부의 유한 crop/downscale 전략은
+`PLATE_IMAGE_EXPORT_FAILED`와 잠정 `PLATE_IMAGE_OUTPUT_LIMIT_UNSATISFIABLE`을
+구분하며 후자는 같은 입력 retry 버튼이 없다. Report는 `REPORT_VIDEO_EXPORT_FAILED`와
+Contract notice mapping을 유지한다.
 
-RED/GREEN: Recording missing-capability10 setup failures → actual media10PASS;
-handler/order29FAIL →29PASS; immutable-input2FAIL/12PASS → focused46PASS.
-Initial related35FAIL/1739PASS/17skip was not accepted. Product entrypoint and
-legacy READY-adapter regressions were fixed; media/default-temp permission
-failures were separated. Final relevant module run1774PASS/17existing opt-in
-skip/660deselected(134.91s), plus actual MySQL8.4.13 export faults20PASS(56.30s)
-and separate API/Worker process2PASS(82.81s). JSON/JUnit scope/identity/phases
-match with skip/xfail0. Boundary0 and Contract62/26/104, diff whitespace PASS.
-Expanded MySQL and fresh read-only review are pending at this checkpoint.
+Case는 발주 시 append-only export map에 입력을 고정한다. command·observation-T2의
+READY gate는 응답/evidence 이후 전체 입력별 한 번 발주한다. Worker는 짧은 caller
+transaction에서 Recording metadata/bytes를 분리하고 connection을 반환한다.
+DB checkout 0 상태에서 capability를 한 번 호출한 뒤 같은 불변 출력을 재시도 가능한
+짧은 DML로 publish한다. 기존 T1/ProducedObject·reconciliation·T2 replay에서는
+media를 호출하거나 DerivedAsset을 중복 생성하지 않는다. 현재 입력과 일치하는 정산된
+결과만 CaseView/Evidence에 전달하며 이전 asset은 보존한다.
 
-Full file manifest, exact test scope, failed intermediate attempts, PM rulings,
-#47 deferred Owner items and remaining risks are recorded in
-[Implementation Notes](rt10b-recording-exports.md). Whole pytest/full mandatory
-MySQL/nested mutation/current-diff remote CI/live providers/Linux/large media
-remain unrun. Abrupt death after publication and before durable T1 may leave an
-orphan and a later execution can encode again; no global crash-proof exactly-once
-claim. Scratch/RAW/media/JSON/JUnit/env/DB/credentials are excluded. No staging,
-commit, push, PR or Issue mutation. Final results and review are appended below.
+RED/GREEN: Recording capability 부재 10 setup 실패→실제 media 10 PASS;
+handler/발주 29 FAIL→29 PASS; 불변 입력 2 FAIL/12 PASS→focused 46 PASS.
+최초 관련 35 FAIL/1739 PASS/17 skip은 성공으로 인정하지 않았다.
+제품 entrypoint·기존 READY adapter 회귀를 수정했고 media/default-temp 권한 실패는
+구분했다. 최종 관련 모듈 실행은 1774 PASS/기존 opt-in 17 skip/660 deselected(134.91s),
+실제 MySQL 8.4.13 export fault는 20 PASS(56.30s), 별도 API/Worker process는
+2 PASS(82.81s). JSON/JUnit 범위·identity·phase가 일치하고 skip/xfail은 0이다.
+boundary 위반 0, Contract 62/26/104·diff 공백 검사는 PASS였다.
+이 시점의 확장 MySQL·fresh 읽기 전용 리뷰는 대기 중이다.
 
-
-RT-10(b) Recording export follow-up: expanded actualMySQL56PASS/206.21s,
-MySQL8.4.13, JSON/JUnit56identities/168phases/skip-xfail0 (exports23,process2,
-Case4,clip9,Readout18). Direct canonical AssetFacts lookup gap was reproduced
-RED1 and fixed only for new export-transform-backed assets; focused102PASS
-(31.87s) and exportMySQL23PASS(55.37s,23identities/69phases). Earlier1774/56
-results remain explicitly earlier-source executions. Fresh read-only reviewer
-(fork_turns=none,whole35-file manifest) found P2 A→B→A retry selected B although
-A notice was visible. Both kinds' command regressions RED2 →63PASS(0.46s) after
-current-full-request retry binding; same-reviewer recheck/full review pending.
+전체 파일 목록, 정확한 테스트 범위, 중간 실패, PM 결정,
+#47 Owner 후속 항목과 남은 위험은
+[구현 기록](rt10b-recording-exports.md)에 있다. 전체 pytest/mandatory
+MySQL/nested mutation/현재 diff 원격 CI/실제 provider/Linux/대용량 media는 미실행이다.
+publish 후 영속 T1 전에 강제 종료되면 orphan이 남고 후속 execution에서 다시 encode할
+수 있다. crash를 포함한 전역 exactly-once는 보장하지 않는다.
+Scratch/RAW/media/JSON/JUnit/env/DB/credential은 제외한다. staging/commit/push/PR/Issue
+변경은 없다. 최종 결과와 리뷰는 아래에 추가한다.
 
 
-RT-10(b) Recording exports final fresh-review checkpoint: the same fresh
-read-only reviewer inspected the whole35-file diff and rechecked the P2 fix with
-independent no-file production-command probes for both kinds. UnresolvedP1/P2=0.
-A production StoredObservationAdapter bbox-change probe excluded old image and
-retained current products. Reviewer did not run pytest/DB/media or audit all raw
-execution reports. P3 deferred2: permanent adapter correction/reread projection
-regression and stamped-frame pixel/no-stamp preservation assertion. #47 Owner
-wire decision, full CI, force-kill-before-T1, Linux/font and large-media checks
-remain unverified, explicitly not an RT-10/full acceptance claim.
+RT-10(b) Recording export 후속: 실제 확장 MySQL 56 PASS/206.21s,
+MySQL 8.4.13, JSON/JUnit 56 identities/168 phases/skip-xfail 0
+(exports 23, process 2, Case 4, clip 9, Readout 18).
+직접 canonical AssetFacts 조회 누락을 RED 1로 재현하고 새 export-transform 기반 asset만
+수정했다. focused 102 PASS(31.87s), export MySQL 23 PASS(55.37s,
+23 identities/69 phases). 이전 1774/56 결과는 이전 source 실행으로 명시했다.
+전체 35파일 목록을 받은 fresh 읽기 전용 reviewer(fork_turns=none)가 A→B→A retry에서
+A notice가 보이는데 B를 선택하는 P2를 발견했다. 두 kind의 command 회귀 RED 2 후
+현재 전체 요청에 retry를 결속하자 63 PASS(0.46s). 동일 reviewer의 재확인/전체 리뷰는 대기 중이다.
 
-Post-P2 API/Evidence335PASS/248deselected/95.34s, existingStarlette warning1.
-Earlier sandbox attempt stalled at first cleanup test and was stopped using
-verified task processIDs; cause unconfirmed. Native rerun passed unchanged.
-Two task-created empty root cleanup locks were exclusive-open checked and removed.
-Autocommit audit: unexpected schemas0/other clients0/transactions0/data locks0.
-Owned MySQL container and inspected anonymous volume removed, inventories absent.
-Reports/media/env remain only in ignored task scratch and excluded from delivery.
-No source credential, staging,commit,push,PR or Issue mutation. Complete changed
-files (35):
+
+RT-10(b) Recording export 최종 fresh-review 시점: 같은 fresh 읽기 전용 reviewer가
+전체 35파일 diff를 검토하고 두 kind를 대상으로 파일을 만들지 않는 production command
+probe를 독립 실행해 P2 수정을 재확인했다. 미해결 P1/P2=0.
+production StoredObservationAdapter의 bbox 변경 probe에서 이전 이미지를 제외하고
+현재 결과를 유지했다. reviewer는 pytest/DB/media 또는 전체 원본 실행 보고서 감사를
+수행하지 않았다. P3 보류 2건: adapter 보정/재판독 projection의 영구 회귀 테스트,
+stamp frame의 실제 pixel 변화와 비각인 시 보존 assertion이다.
+#47 Owner 연결 결정·전체 CI·T1 전 강제 종료·Linux/font·대용량 media 검사는 미검증이며
+RT-10/전체 수락을 뜻하지 않는다고 명시했다.
+
+P2 이후 API/Evidence 335 PASS/248 deselected/95.34s, 기존 Starlette 경고 1건.
+이전 sandbox 실행은 최초 cleanup 테스트에서 정지해 확인한 작업 process ID로 종료했다.
+원인은 미확정이며 native 재실행은 변경 없이 통과했다.
+작업에서 만든 빈 root cleanup lock 두 개를 배타적으로 열 수 있음을 확인하고 제거했다.
+autocommit 감사: 예상 밖 schema 0/다른 client 0/transaction 0/data lock 0.
+소유 MySQL container·확인한 익명 volume을 제거하고 inventory에서 부재를 확인했다.
+보고서/media/env는 ignored 작업 scratch에만 보관하며 전달 대상에서 제외한다.
+source credential, staging/commit/push/PR/Issue 변경은 없다. 전체 변경 파일(35):
 
 - `docs/modules/case/decisions/report-video-export.md`
 - `docs/modules/recording/decisions/failure-taxonomy.md`
@@ -4060,110 +4098,106 @@ files (35):
 - `tests/worker/test_export_mysql.py`
 
 
-Final same-reviewer documentation delta recheck: no unresolved P1/P2 or evidence
-inconsistency. Reviewer verified the exact35-file manifests in both documents,
-reviewed source fixes, unchanged HEAD/empty index, original Log byte prefix and
-git diff --check. No reviewer file/test/DB mutation. P3 two test-strength items
-and #47/CI/operational deferred boundaries remain as stated. Final state is
-uncommitted and unstaged; no staging, commit, push, PR or Issue operation.
+최종 동일 reviewer 문서 delta 재확인: 미해결 P1/P2와 증거 불일치 없음.
+reviewer는 두 문서의 정확한 35파일 목록, source 수정, HEAD 불변/빈 index,
+기존 Log byte prefix와 git diff --check를 확인했다. reviewer는 파일/테스트/DB를
+변경하지 않았다. P3 테스트 보강 두 항목과 #47/CI/운영 후속 범위는 그대로 남는다.
+최종 상태는 미커밋·미스테이징이며 staging/commit/push/PR/Issue 작업은 없었다.
 
-## 2026-10-30 — Issue #465 MP4 deployment toolchain
+<a id="2026-10-30--issue-465-mp4-deployment-toolchain"></a>
+
+## 2026-10-30 — Issue #465 MP4 배포 도구 체인
 
 **IN_PROGRESS · Refs #465 · Related #460**
 
-Implementation Notes: [exact 8.1 supply, support commands and acceptance](./issue465-mp4-toolchain.md).
-Issue body/Owner comment and #467 were directly inspected. Starting branch is
-`codex/issue465-mp4-ffprobe-81`; HEAD/local and remote develop were
-`177505530cf6bc0f6575d846ae188a0868d4ae3e`, with clean worktree/empty index.
+구현 기록: [정확한 8.1 공급·지원 명령·수락 검증](./issue465-mp4-toolchain.md).
+Issue 본문/Owner 댓글과 #467을 직접 확인했다. 시작 브랜치는
+`codex/issue465-mp4-ffprobe-81`; HEAD/로컬·원격 develop은
+`177505530cf6bc0f6575d846ae188a0868d4ae3e`이며 작업 트리는 깨끗하고 index는 비어 있었다.
 
-Before image edits, official 8.1 source tarball PGP signature was directly checked
-and its SHA-256 pinned. Official n8.1 mirror commit and actual base/uv registry
-digests were checked too. Debian package snapshot input is fixed. Both media
-binaries are built together; runtime only copies tools and build-identity manifest,
-installs runtime libraries and preflights exact release/hash/configuration before
-API/worker exec. Strict Recording duration/coverage and #467 fixtures are unchanged.
+image 수정 전에 공식 8.1 source tarball의 PGP 서명을 직접 검증하고 SHA-256을 고정했다.
+공식 n8.1 mirror commit과 실제 base/uv registry digest도 확인했다.
+Debian package snapshot 입력을 고정하고 media binary 두 개를 함께 빌드한다.
+runtime에는 도구와 build-identity manifest만 복사하며 runtime library를 설치한다.
+API/worker exec 전에 정확한 release/hash/configuration을 preflight한다.
+Recording strict duration/coverage와 #467 fixture는 변경하지 않았다.
 
-Author RED: ordinary synthetic 30fps MP4 through public Recording APIs with Ubuntu
-6.1.1-3ubuntu5 fails at output missing-tail validation. A preserved same-byte source
-is used for pinned-image comparison. Preflight new tests RED14 then GREEN17;
-Docker source-policy RED then focused deployment GREEN72. Windows supplementary
-9.0.1 media helper passes MP4/AVI/MKV/MP4-chain AnalysisSource and IncidentClip;
-focused deploy/workflow/Recording/worker run is **296 PASS, 1 existing real-pair
-opt-in SKIP (85.35s)**. Boundary/Contract fixtures/Compose structure/diff checks
-pass after correcting Windows console encoding. Actual Linux 8.1 image and Compose
-acceptance/review results are pending and will be appended as separate evidence.
+작성자 RED: Ubuntu 6.1.1-3ubuntu5에서 일반 합성 30fps MP4를 공개 Recording API에
+전달하면 출력의 마지막 frame duration 누락 검증에서 실패한다. 같은 bytes의 원본을 보존해 pinned image와
+비교했다. 새 preflight 테스트 RED 14→GREEN 17; Docker source 정책 RED 후
+focused deploy GREEN 72. 보조 Windows 9.0.1 media helper는
+MP4/AVI/MKV/연결 MP4 AnalysisSource와 IncidentClip을 통과했다.
+focused deploy/workflow/Recording/worker 결과는 **296 PASS, 기존 실제 pair opt-in
+1 SKIP(85.35s)**. Windows 콘솔 인코딩 보완 후 boundary/Contract fixture/Compose
+구조/diff 검사 PASS. 실제 Linux 8.1 image·Compose acceptance·리뷰 결과는 대기 중이며
+별도 증거로 추가한다.
 
-Actual private MP4 types were not available in known local source/data folders;
-their acceptance and provider first-search completion are not claimed. No DB,
-migration or inventory changes, so full mandatory MySQL was not rerun. Full
-regression/MySQL strict gate remain post-push remote CI conditions. No staging,
-commit/push/PR or external Issue edits; scratch/RAW/JUnit/downloads/private sources
-are PR-excluded. Earlier log entries and their historical results are preserved.
+알려진 로컬 원본/데이터 폴더에는 실제 비공개 MP4 두 유형이 없었다. 해당 원본 수락과
+provider 첫 탐색 완료는 주장하지 않는다. DB/migration/inventory 변경이 없어 전체
+mandatory MySQL은 반복하지 않았다. 전체 regression/MySQL strict gate는 push 후
+원격 CI 조건이다. staging/commit/push/PR/외부 Issue 변경은 없으며
+scratch/RAW/JUnit/download/비공개 원본은 PR에서 제외한다. 이전 Log와 당시 결과는 보존한다.
 
-Issue #465 author follow-up: final Linux 8.1 image build and same-byte synthetic
-MP4 strict GREEN succeeded; the retained input digest is unchanged. Initial
-source-build regression (missing drawtext/font libraries) was caught by #467
-export tests, reproduced in image media helper, and fixed by explicit font-library
-build/runtime inputs. Final helper passes MP4/AVI/MKV/MP4-chain AnalysisSource,
-IncidentClip, report stamp and plate crop. Final pinned-image focused selection
-is **311 PASS / 1 existing actual-pair opt-in SKIP, 26.14s**. Runtime dependency/
-tool/cache audit and six actual container startup negative controls PASS.
-Compose JSON omission handling had five direct RED→GREEN cases and preserves
-explicit false source policy. Final Windows deployment/workflow checks are
-**165 PASS, 17.84s**; supplementary Windows 9.0.1 helper PASS. Full Compose smoke
-and fresh review conclusions are still pending at this entry. No original
-failure or historical pending result has been rewritten as success.
+Issue #465 작성자 후속: 최종 Linux 8.1 image build와 같은 bytes 합성 MP4의 strict GREEN이
+성공했고 보존 입력 digest는 같았다. 최초 source build에서 drawtext/font library 누락 회귀를
+#467 export 테스트로 발견해 image media helper에서 재현했으며, font library build/runtime
+입력을 명시해 수정했다. 최종 helper는 MP4/AVI/MKV/연결 MP4 AnalysisSource,
+IncidentClip, report stamp·plate crop을 통과한다. 최종 pinned image focused 선택은
+**311 PASS / 기존 실제 pair opt-in 1 SKIP, 26.14s**.
+runtime 의존성/도구/cache 감사와 실제 container startup negative control 여섯 건 PASS.
+Compose JSON 생략값 처리의 직접 RED→GREEN 다섯 건은 명시적인 false source 정책을
+보존한다. 최종 Windows deploy/workflow는 **165 PASS, 17.84s**이며 보조 Windows
+9.0.1 helper도 PASS. 이 기록 시점의 전체 Compose smoke·fresh 리뷰 결론은 대기 중이다.
+원래 실패와 과거 pending 결과를 성공으로 다시 쓰지 않았다.
 
-Issue #465 resume audit: HEAD/branch and unstaged delivery were preserved; local
-`origin/develop` independently moved to `1a784b9d1bad14197f8779387be8ef7e4618fa44`.
-No rebase/merge/reset. Prior WSL temporary workspace/report/image were unavailable
-on resume, so the interrupted Compose run's final result/cleanup is not claimed.
-A current-source isolated no-cache Compose smoke was started again under Docker
-29.9.2 / Compose v5.6.1 (Linux x86_64), persisting its report in ignored scratch.
-A fresh read-only reviewer without inherited implementation conversation directly
-passed 165 deploy/workflow checks (10.47s), boundary/Contract/source Compose/diff
-checks. Final execution evidence remains pending at this entry.
+Issue #465 재개 감사: HEAD/branch와 unstaged 전달물을 보존했다. 로컬
+`origin/develop`은 별도로 `1a784b9d1bad14197f8779387be8ef7e4618fa44`로 이동했다.
+rebase/merge/reset은 하지 않았다. 재개 시 이전 WSL 임시 workspace/report/image를
+사용할 수 없어 중단된 Compose 실행의 최종 결과/정리를 주장하지 않는다.
+Docker 29.9.2 / Compose v5.6.1(Linux x86_64)에서 현재 source로 격리된 no-cache
+Compose smoke를 다시 시작하고 보고서를 ignored scratch에 저장했다.
+구현 대화 이력을 상속하지 않은 fresh 읽기 전용 reviewer가 deploy/workflow
+165건(10.47s), boundary/Contract/source Compose/diff를 직접 통과했다.
+최종 실행 증거는 이 기록 시점에 대기 중이다.
 
-Issue #465 final resumed author acceptance: isolated Docker29.9.2 / Compose5.6.1
-smoke **exit0 / PASS / cleanup PASS**, all ten stages through no-cache build,
-migration failure gate, normal migration/readiness, pinned MP4/AVI/MKV/chain and
-export materialization, cross-container media, command/view, kill→STALE→attempt2,
-secret/settings inspection and recreated DB/media persistence. Cleanup failures/
-remaining arrays are empty; separate Docker queries found no project containers,
-volumes, network or tagged image. Image tested before cleanup was
-`sha256:66ee0bccda379f71bd2948e711d57c2b8a5ed265c8f9e6271d5c8f2722a98883`.
+Issue #465 재개 후 작성자 최종 acceptance: 격리된 Docker 29.9.2 / Compose 5.6.1
+smoke **exit 0 / PASS / cleanup PASS**. no-cache build, migration 실패 gate,
+정상 migration/readiness, pinned MP4/AVI/MKV/chain·export materialization,
+container 간 media, command/view, kill→STALE→attempt 2, secret/settings 검사,
+DB/media 재생성 보존까지 열 단계를 모두 통과했다. cleanup 실패/remaining 배열은 비었고,
+별도 Docker 조회에서도 프로젝트 container/volume/network/tagged image가 없었다.
+정리 전 검사 image는
+`sha256:66ee0bccda379f71bd2948e711d57c2b8a5ed265c8f9e6271d5c8f2722a98883`다.
 
-Fresh reviewer execution is distinct from author311/1-skip evidence: first fresh
-reviewer directly passed narrow pinned Linux fallback/IncidentClip/#467 **58/58**
-and original pinned helper/runtime/preflight. New fresh reviewer after interruption
-directly passed Windows deploy/workflow165 plus media146 (**311PASS / 1 existing
-actual-pair opt-in SKIP**), boundary/Contract/Compose/diff, and current no-cache
-Linux image's media helper (four PASS groups,6.29s) plus preflight exit0. Mounted
-helper hash matched checkout; original Log prefix/index integrity passed. Old
-image unavailable attempt executed no test, and is not counted as success.
-No actionable P1/P2/P3 code findings; final documentation consistency recheck
-is requested on the same resumed reviewer after these append-only entries.
+fresh reviewer 직접 실행은 작성자 311/1-skip 증거와 구분한다.
+최초 fresh reviewer는 pinned Linux fallback/IncidentClip/#467의 좁은 범위 **58/58**과
+기존 pinned helper/runtime/preflight를 직접 통과했다. 중단 후 새 fresh reviewer는
+Windows deploy/workflow 165 + media 146(**311 PASS / 기존 실제 pair opt-in 1 SKIP**),
+boundary/Contract/Compose/diff를 직접 통과했다. 현재 no-cache Linux image의 media
+helper(네 PASS 그룹, 6.29s)와 preflight exit 0도 확인했다.
+mount한 helper hash가 checkout과 같고 기존 Log prefix/index 무결성도 통과했다.
+이전 image를 사용할 수 없었던 시도는 테스트를 실행하지 않았으며 성공으로 세지 않는다.
+수정할 P1/P2/P3 코드 지적은 없다. append-only 기록 후 재개 reviewer와 같은 reviewer에게
+최종 문서 정합성 재확인을 요청했다.
 
-Issue completion mapping, exact #460 commands/provenance, twelve-file manifest,
-all original failures/pending entries and execution attribution are in
-[Implementation Notes](./issue465-mp4-toolchain.md). Actual two-type private MP4,
-Windows pinned8.1/non-amd64 Linux and provider first search remain unexecuted.
-Full local regression/mandatory MySQL were not rerun; full regression/MySQL
-strict gate remain post-push remote CI conditions. Owned source downloads,
-checkout and transport archives removed; ignored RAW/reports/test temp/diagnostic
-launchers and all scratch remain PR-excluded. No shared-resource prune/cache
-export, staging, commit, push, PR or external Issue/Notion operation.
+Issue 완료 조건 대응, 정확한 #460 명령/출처, 열두 파일 목록, 원래 실패/pending 기록과
+실행 주체 구분은 [구현 기록](./issue465-mp4-toolchain.md)에 있다.
+실제 비공개 MP4 두 유형, Windows pinned 8.1/non-amd64 Linux, provider 첫 탐색은
+미실행이다. 전체 로컬 regression/mandatory MySQL은 반복하지 않았고 전체
+regression/MySQL strict gate는 push 후 원격 CI 조건이다.
+소유 source 다운로드/checkout/전송 archive를 제거했다. ignored RAW/report/test temp/
+진단 launcher와 모든 scratch는 PR 제외다. 공유 자원 prune/cache export,
+staging/commit/push/PR/외부 Issue/Notion 작업은 없다.
 
-Issue #465 final same-reviewer documentation/report recheck: **P1/P2/P3 없음**.
-Reviewer independently confirmed report ten-stage PASS/cleanup PASS with empty
-failures/remaining, exact12-file manifest, original Log byte prefix, unchanged
-HEAD and empty index. Full Compose run remains author evidence; reviewer-direct
-current Linux helper/preflight and Windows165+146 results remain separately
-labeled. No source fix or unresolved finding remains. **IN_PROGRESS · Refs #465 ·
-Related #460**, actual-source and post-push remote CI boundaries remain unchanged.
+Issue #465 최종 동일 reviewer 문서/보고서 재확인: **P1/P2/P3 없음**.
+reviewer는 보고서의 열 단계 PASS/cleanup PASS·빈 failures/remaining,
+정확한 12파일 목록, 기존 Log byte prefix, HEAD 불변·빈 index를 독립 확인했다.
+전체 Compose 실행은 작성자 증거이며 reviewer가 직접 실행한 현재 Linux helper/preflight와
+Windows 165+146 결과는 별도로 표시했다. source 수정이나 미해결 지적은 없다.
+**IN_PROGRESS · Refs #465 · Related #460**, 실제 원본·push 후 원격 CI 범위는 그대로다.
 
-Final cleanup follow-up: exact-path-verified owned Linux temporary workspace
-removed after review; final `git diff --check` clean, HEAD unchanged/index empty.
+최종 정리 후속: 리뷰 후 정확한 경로로 확인한 소유 Linux 임시 workspace를 제거했다.
+최종 `git diff --check`는 깨끗하고 HEAD는 같으며 index는 비어 있다.
 
 
 ## 2026-10-30 — IN_PROGRESS · Refs #468 · Related #460
@@ -4293,7 +4327,9 @@ Intent 분리·8종 구성 진단을 연결했다. encoding 및 용량/길이 �
 6파일을 미커밋·미스테이징 상태로 남긴다. HEAD는 시작과 같고 원본 Log bytes prefix를
 유지한다. commit/push/PR/Issue 댓글/Notion 수정은 하지 않았다.
 
-## 2026-10-30 — RT-14 deployment preparation (Refs #450)
+<a id="2026-10-30--rt-14-deployment-preparation-refs-450"></a>
+
+## 2026-10-30 — RT-14 배포 준비 (Refs #450)
 
 **IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
 기존 기록을 대체하지 않는 후속 entry다. 상세는 [RT-14 runbook / Implementation Notes](rt14-deployment.md).
@@ -4527,7 +4563,9 @@ qualitywheel/임시설치본, reviewer 소유temp2개 삭제 완료. 공유image
 보존. Linux pytest symlink에서 Windows정리가 안전중단되어 동일image 내부에서 경로/
 linktarget 검증 후 소유root만 정리했다. PR제외scratch에는 실패원본5개(31,302bytes)와
 로그/JSON/XML/최소runner·요약만 남았다. 최종12파일/indexempty/branch·HEAD동일.
-# 2026-10-31 — RT-14 approved public deployment follow-up
+<a id="2026-10-31--rt-14-approved-public-deployment-follow-up"></a>
+
+# 2026-10-31 — RT-14 승인된 공개 배포 후속
 
 **IN_PROGRESS · Refs #450 · Related #287, #460, #452, #486**
 
@@ -4635,166 +4673,164 @@ Windows 소유 temp18개를 절대경로 검증 후 제거했고 잔여0을 확�
 21개 후보 파일은 미커밋·미스테이징으로 인계하며 원본 증거는 PR 제외 상태다.
 
 
-### 2026-10-31 — Issue #425 mixed time base (IN_PROGRESS)
+<a id="2026-10-31--issue-425-mixed-time-base-in_progress"></a>
 
-Refs #425 · Related #452, #460. Local implementation on
-`codex/issue425-mixed-timebase`, HEAD/origin-develop
-`6d8dbc9485b9060938e2036ff4874de7985bff1c`; started clean. No worktree or Git writes.
-Recording chooses a checked rational common MP4 clock, remuxes derived parts,
-restores exact concat presentation offsets, joins decode intervals with a shared
-reorder delay and independently verifies all final frames/packets and strict decode.
-Source coverage is retained separately; provenance, single-input behavior and
-same-clock validation remain. Numeric failures retain typed UNSUPPORTED_MEDIA;
-IncidentClip retains its agreed public wrapper. No Runtime/Case policy was added.
+### 2026-10-31 — Issue #425 서로 다른 time base (IN_PROGRESS)
 
-Synthetic two-pair public-boundary RED -> GREEN, negative timestamp/duration/count/
-normalization controls and verification-bypass mutant were executed. Related 8.1
-regression: 946 passed, 16 unchanged skips, 126 MySQL deselected. A local actual
-eligible AVI pair passed a short public AnalysisSource test with 12 exact frames,
-unchanged source fingerprints and cleaned temp; a different source's discontinuous
-coverage stayed rejected. Original Issue AVI/MP4 sets remain unverified. Strict
-initial success and fallback are distinguished; the successful actual pair did not
-use fallback. See [Implementation Notes](rt10b-recording-exports.md#issue-425-mixed-time-base--2026-10-31-kst)
-for image identity, all intermediate failures, bounds/limitations, file manifest,
-PR-excluded evidence and final review/cleanup follow-up. Whole pytest/MySQL/mutation,
-remote CI, provider E2E, deployment and one-hour service support are not claimed.
+Refs #425 · Related #452, #460. 로컬 구현 branch는
+`codex/issue425-mixed-timebase`, HEAD/origin-develop은
+`6d8dbc9485b9060938e2036ff4874de7985bff1c`이며 깨끗한 상태에서 시작했다.
+worktree 생성·Git 쓰기는 없다. Recording은 범위를 검사한 유리수 공통 MP4 clock을 선택해
+파생 구간을 remux한다. concat의 정확한 presentation offset을 복원하고 공통 reorder delay로
+decode interval을 연결한 뒤 최종 frame/packet 전체와 strict decode를 독립 검증한다.
+원본 coverage를 별도로 보존하고 provenance·단일 입력 동작·동일 clock 검증을 유지한다.
+수치 실패는 typed UNSUPPORTED_MEDIA, IncidentClip은 합의된 공개 wrapper를 유지한다.
+Runtime/Case 정책은 추가하지 않았다.
 
-
-#425 review follow-up: fresh GPT-6.1 Sol / High found two P2 issues, both reproduced
-and fixed: balanced timestamp expression lookup avoids FFmpeg depth failure, and
-actual observed frame/packet denominators avoid false overflow from unused stream
-ticks. Author focused final 54 passed; reviewer directly executed 13 passing tests
-and independently confirmed the two fixes, with no remaining actionable code
-finding. Reviewer distinguished its direct execution from author XML evidence.
-The nominal AVI clock LCM alone no longer implies rejection; actual original
-Issue media remains unverified. Original Notes/Log byte prefixes and LF preserved.
-
-Final author post-review subset: 244 passed, 4 unchanged skips (8.1, 36.66 s).
-Final real eligible pair repeated with exact 12 frames and source/provenance/cleanup
-checks passing. This does not establish original Issue-set or provider E2E completion.
+합성 두 pair의 공개 경계 RED -> GREEN, 잘못된 timestamp/duration/count/normalization
+control과 검증 우회 mutant를 실행했다. 관련 8.1 회귀는 946 passed, 기존 16 skips,
+126 MySQL deselected다. 사용 가능한 실제 로컬 AVI pair는 짧은 공개 AnalysisSource
+테스트에서 정확한 12 frames·원본 fingerprint 불변·temp 정리를 통과했다.
+다른 원본의 불연속 coverage는 계속 거부됐다. 원래 Issue AVI/MP4 세트는 미검증이다.
+최초 strict 성공과 fallback을 구분했으며 성공한 실제 pair는 fallback을 사용하지 않았다.
+image identity·모든 중간 실패·표현 범위/한계·파일 목록·PR 제외 증거·최종 리뷰/정리
+후속은 [구현 기록](rt10b-recording-exports.md#issue-425-mixed-time-base--2026-10-31-kst)에 있다.
+전체 pytest/MySQL/mutation, 원격 CI, provider E2E, 배포와 한 시간 서비스 지원은 주장하지 않는다.
 
 
-#425 final handoff: same reviewer confirmed corrected code/docs with no remaining
-actionable findings. Author final 244-pass/4-skip and real12-frame summaries were
-reviewed as evidence, not claimed as reviewer private-media execution. Actual
-summary filename is real-pair.json; failed intermediate summaries are reconstructed
-from captured tool output separately. Task containers/temp and copied pytest deps
-cleaned; no volumes created, shared images/cache preserved. Ignored evidence only,
-357075 bytes at cleanup. C: free ~2.12 GiB -> 9283850240 bytes (~8.65 GiB), not
-attributed solely to task cleanup. Ten files remain unstaged, index empty, original
-branch/HEAD unchanged, diff check PASS. Original Issue-set evidence, Runtime mapping
-Owner decision and full remote CI remain outstanding; IN_PROGRESS is retained.
+#425 리뷰 후속: fresh GPT-6.1 Sol / High가 발견한 P2 두 건을 모두 재현·수정했다.
+균형 잡힌 timestamp 표현식 탐색으로 FFmpeg 깊이 실패를 방지하고, 실제 관측 frame/packet
+분모를 사용해 사용되지 않는 stream tick 때문에 발생하던 잘못된 overflow 거부를 없앴다.
+작성자 최종 focused 54 passed, reviewer 직접 실행 13 passed이며 두 수정을 독립 확인했다.
+남은 수정 가능 코드 지적은 없다. reviewer는 직접 실행과 작성자 XML 증거 검토를 구분했다.
+명목상 AVI clock의 LCM만으로 거부를 단정하지 않으며 원래 Issue 실제 영상은 여전히
+미검증이다. 기존 Notes/Log byte prefix와 LF는 보존했다.
+
+작성자 리뷰 후 최종 부분집합: 244 passed, 기존 4 skips(8.1, 36.66 s).
+실제 사용 가능 pair를 반복 검증해 정확한 12 frames·원본/provenance/cleanup 검사가
+통과했다. 원래 Issue 세트나 provider E2E 완료를 뜻하지 않는다.
 
 
-### 2026-10-31 — PR #499 CI follow-up (Refs #425; Related #452, #460)
-
-IN_PROGRESS. Started on requested branch at 4369bdc668435d432440a77006fdb6f73538edab,
-clean worktree/index. Remote failing node reproduced unchanged on Ubuntu
-FFmpeg/ffprobe 6.1.1-3ubuntu5: 1 failed, missing tail duration. Stage diagnostics
-locate the first individual encode's output_validate, before mixed normalization.
-Cross-probing identical files with 6.1.1/8.1 demonstrates the MOV duration-reader
-difference: the veryfast derived MP4 has ten packets without observed duration
-on 6.1.1; 8.1 observes duration 1024. Original coverage remains observable.
-
-Changed only the success fixture's output preset to ultrafast, retaining distinct
-1/10240 and 1/12288 clocks. Added direct mixed-path observation and independent
-source/output PTS, duration, 22-frame count, seam, decoded color order and
-provenance assertions; original fingerprints and cleanup still checked.
-No product code, strict validation, AVI fallback, taxonomy, dependencies or
-workflow change. Runtime UNSUPPORTED_MEDIA mapping remains an Owner follow-up.
-
-Direct author GREEN: 6.1.1 media focused 155 passed/4 existing skips, safety/Worker
-88 passed/1 platform skip (243/5 total); 8.1 156/3 plus 88/1 (244/4 total).
-Both run at /repo in local containers; Python 3.12.3 vs 3.12.16, not a claim of
-complete CI environment parity. Exact identities, binary hashes, command scopes
-and stage evidence are retained in ignored issue499-ci scratch. Runtime quality,
-boundary and Contract fixtures passed; optional test-file lint has the same
-17 baseline findings. Diff check passed at this stage.
-
-Current private originals: seven expected files, inventory only. No CI dependency
-on removed files; no search/restore or fresh private media measurement. Previous
-ten-file/actual-pair evidence remains historical, not a claim about current mixed
-clocks or original Issue reproduction sets. Candidate files are Notes, this Log,
-and test_multi_span_incident_clip.py. Preserved original document byte prefixes
-and LF via append-only writes. Fresh review/cleanup results will be appended.
-No full local pytest/MySQL/mutation/OCR acceptance; later remote CI is required.
+#425 최종 인계: 같은 reviewer가 수정된 코드/문서에 남은 수정 가능 지적이 없음을 확인했다.
+작성자의 최종 244-pass/4-skip·실제 12-frame 요약은 증거로 검토했으며 reviewer가 비공개
+영상을 직접 실행했다고 주장하지 않는다. 실제 요약 파일명은 real-pair.json이며 중간 실패
+요약은 캡처한 도구 출력에서 별도로 재구성했다. 작업 container/temp·복사한 pytest 의존성을
+정리했고 volume은 만들지 않았다. 공유 image/cache는 보존했다. 남은 증거는 ignored 자료뿐이며
+정리 측정 시 357075 bytes다. C: 여유 약 2.12 GiB -> 9283850240 bytes(약 8.65 GiB).
+이 변화를 작업 정리만의 결과로 귀속하지 않는다. 열 파일이 unstaged이고 index는 비었으며
+기존 branch/HEAD는 같고 diff check는 PASS다. 원래 Issue 세트 증거, Runtime mapping의
+Owner 결정, 전체 원격 CI는 미결이며 IN_PROGRESS를 유지한다.
 
 
-PR #499 final local follow-up: fresh GPT-6.1 Sol / High reviewer with no inherited
-implementation history found no actionable issue. Direct reviewer runs: changed
-node 1 passed on each of 6.1.1 and 8.1, no skip; broader results reviewed from
-author XML only. No code correction requested. Task Ubuntu container/temporary
-8.1 containers and copied pytest dependencies cleaned; no task volumes remain.
-Successful intermediate media deleted; only two tiny synthetic failure-repro
-MP4s and small ignored evidence retained. Shared images/cache/originals and prior
-36-file issue425 evidence preserved. Disk free ~8.48 GiB at start, 10903822336
-bytes (~10.16 GiB) at cleanup, not solely attributed to cleanup. Three files remain
-unstaged/uncommitted, index empty, original branch/HEAD maintained, diff check PASS.
-Full remote CI and prior Owner/original-Issue-set follow-ups remain open.
+<a id="2026-10-31--pr-499-ci-follow-up-refs-425-related-452-460"></a>
+
+### 2026-10-31 — PR #499 CI 후속 (Refs #425; Related #452, #460)
+
+IN_PROGRESS. 요청 branch·4369bdc668435d432440a77006fdb6f73538edab에서
+깨끗한 작업 트리/index로 시작했다. 원격 실패 node를 Ubuntu FFmpeg/ffprobe
+6.1.1-3ubuntu5에서 변경 없이 재현했다: 마지막 duration 누락으로 1 failed.
+단계 진단상 첫 개별 encode의 output_validate에서 실패했으며 mixed 정규화 전이다.
+같은 파일을 6.1.1/8.1로 교차 probe해 MOV duration reader 차이를 확인했다.
+veryfast 파생 MP4의 packet 열 개는 6.1.1에서 duration이 관측되지 않았지만,
+8.1은 duration 1024를 관측했다. 원본 coverage는 계속 관측 가능했다.
+
+성공 fixture의 출력 preset만 ultrafast로 변경하고 서로 다른 1/10240·1/12288 clock을
+유지했다. mixed 경로 직접 관측, 독립적인 원본/출력 PTS·duration, 22-frame 수,
+연결 경계, decode 색상 순서·provenance assertion을 추가했다.
+원본 fingerprint·cleanup 검사도 유지한다. 제품 코드·strict 검증·AVI fallback·taxonomy·
+의존성·workflow는 변경하지 않았다. Runtime UNSUPPORTED_MEDIA mapping은 Owner 후속이다.
+
+작성자 직접 GREEN: 6.1.1 media focused 155 passed/기존 4 skips,
+safety/Worker 88 passed/기존 platform 1 skip(합계 243/5).
+8.1은 156/3 + 88/1(합계 244/4).
+두 실행 모두 로컬 container의 /repo에서 수행했으며 Python은 3.12.3과 3.12.16이다.
+CI 환경 전체와 같다는 주장이 아니다. 정확한 identity·binary hash·명령 범위·단계 증거는
+ignored issue499-ci scratch에 보관했다. Runtime quality·boundary·Contract fixture PASS.
+선택적 테스트 파일 lint는 기준과 같은 17개 지적이며 이 시점의 diff check는 PASS다.
+
+현재 비공개 원본은 예상한 일곱 파일로 inventory만 확인했다.
+제외 파일에 의존하는 CI는 없고 파일 검색/복원·새 비공개 media 측정은 하지 않았다.
+이전 열 파일/실제 pair 증거는 과거 기록이며 현재 mixed clock이나 원래 Issue 재현 세트의
+증거로 간주하지 않는다. 후보 파일은 Notes·이 Log·test_multi_span_incident_clip.py다.
+append-only로 기존 문서 byte prefix·LF를 보존했다. fresh 리뷰/정리는 아래에 추가한다.
+전체 로컬 pytest/MySQL/mutation/OCR acceptance는 없으며 후속 원격 CI가 필요하다.
 
 
-### 2026-10-31 — #425 Recording unsupported analysis input terminal mapping
-
-IN_PROGRESS · Refs #425 · Related #297. Started on
-`codex/issue425-media-failure-mapping` at
-`d1f57b343c509ef2d5ea42aa119487d79c9adc43`, clean working tree and index.
-PR #499 is merged at that HEAD. Its common time axis and strict validators are
-unchanged. Issue #425 body and both comments were read; the new literal below is
-this request's specification, not a terminal value previously Owner-approved.
-
-Recording taxonomy now registers FAILED / RECORDING_UNSUPPORTED_MEDIA /
-produced=[] for UNSUPPORTED_MEDIA from the production analysis preparation call.
-The production factory marks only prepare_analysis_source_from_resolution; the
-handler converts that internal entry signal after Recording context cleanup.
-Coarse and Fine use this same boundary; Hint is excluded. Input/configuration,
-metadata reads, DB/transaction/commit, usage/checkpoint/cancel, Search/provider,
-unknown code and exit/cleanup keep their existing error boundaries. Existing
-size-limit, IncidentClip and export mappings remain. No API/schema/migration or
-receipt/retry change. No raw media details enter terminal fields.
-
-Author RED: both media kinds produced RUNTIME_HANDLER_ERROR before changes (2
-expected assertion failures). GREEN plus size-limit: 9 passed. Focused regression:
-176 passed, no skips, 109.15 s. Dedicated real MySQL 8.4: 12 passed, no skip/xfail,
-30.96 s; actual automatic production Search composition, T1/T2 rollback and lost
-COMMIT response, gap redelivery, durable receipt and idle restart with no repeated
-media/provider calls, empty produced, no duplicate jobs, zero pool checkout and
-no Recording temp residue. Runtime quality (Ruff, mypy linux/win32), boundary,
-Contract fixtures and diff checks passed. CP949 boundary-print error was rerun
-with UTF-8; new tests were formatted/linted. Credentials/raw reports remain only
-in task-specific ignored scratch. No full local pytest/MySQL/mutation/OCR run.
-
-Case stored projection consumes the new string: Coarse FAILED keeps the general
-search.candidate_search_failed and RETRY_SEARCH; Fine settles FAILED, retains the
-candidate and shows the existing blocking search.visual_verify_failed (actions
-empty). Fine has no separate failure progress row; downstream unstarted steps
-are omitted. Neither path remains RUNNING or becomes no-result success. No new
-Case/Web notice/copy/actions/retry policy was implemented. A concrete unposted
-Case Owner proposal and complete seven-file inventory are in
-[mapping Implementation Notes](issue425-media-failure-mapping.md).
-
-Original #425 AVI/MP4 sets remain separate/unverified. Full remote CI is required
-after a later push; #425 completion and resolved user guidance are not claimed.
-No user originals, provider, AWS/EC2/deploy, branch/worktree switch, staging,
-commit, push, PR, Issue comment, merge or dispatch. Fresh reviewer and final
-cleanup/status evidence will be appended below after completion.
+PR #499 최종 로컬 후속: 구현 이력을 상속하지 않은 fresh GPT-6.1 Sol / High reviewer는
+수정할 지적이 없었다. reviewer는 변경 node를 6.1.1·8.1에서 각각 직접 실행해
+1 passed·skip 없음을 확인했다. 더 넓은 결과는 작성자 XML 증거로만 검토했다.
+코드 수정 요청은 없었다. 작업 Ubuntu container·임시 8.1 container·복사한 pytest 의존성을
+정리했으며 작업 volume 잔여는 없다. 성공 중간 media는 삭제하고 작은 합성 실패 재현 MP4
+두 개와 작은 ignored 증거만 남겼다. 공유 image/cache/원본과 이전 issue425 증거
+36파일은 보존했다. 디스크 여유는 시작 약 8.48 GiB, 정리 시 10903822336 bytes
+(약 10.16 GiB)이며 정리만의 효과로 귀속하지 않는다. 세 파일이 unstaged/uncommitted이며
+index는 비었고 기존 branch/HEAD 유지·diff check PASS다.
+전체 원격 CI, 기존 Owner/원래 Issue 세트 후속은 여전히 미결이다.
 
 
-#425 mapping final handoff: fresh read-only GPT-6.1 Sol / High review, no inherited
-implementation history, found no actionable issue across all seven candidate
-files and their relevant callers. Direct reviewer verification: 104 passed in
-33.14 s (new mapping, existing size-limit and Search failure boundary), diff check
-PASS. First reviewer attempt had 44 fixture setup errors solely from a missing
-review temp parent; after creating it the direct rerun passed. MySQL was not run
-by reviewer; author raw evidence and test assertions were assessed separately.
-No product correction was requested, so no re-review was needed.
+<a id="2026-10-31--425-recording-unsupported-analysis-input-terminal-mapping"></a>
 
-Final author focused matrix: 48 passed / 30.58 s. Final dedicated MySQL after
-fixture alias/format cleanup: 12 passed / 44.19 s, server 8.4.13, zero skip/xfail
-or collection errors in report. Zero harness schemas remained before task-only
-MySQL container/tmpfs removal (ownership label checked). Owned pytest/reviewer
-media/temp/cache, credentials and helper scripts cleaned; small raw logs/report
-remain only in ignored issue425-mapping scratch. Shared images/cache, original
-media and previous tasks' materials preserved. Original Runtime Log byte prefix
-from HEAD verified unchanged. Final branch/HEAD unchanged; seven files unstaged
-and uncommitted, empty index, diff check PASS. Full remote CI, original #425
-AVI/MP4 sets and Case/Web guidance policy remain outstanding; IN_PROGRESS.
+### 2026-10-31 — #425 Recording 미지원 분석 입력 terminal 매핑
+
+IN_PROGRESS · Refs #425 · Related #297.
+`codex/issue425-media-failure-mapping`,
+`d1f57b343c509ef2d5ea42aa119487d79c9adc43`에서 깨끗한 작업 트리/index로 시작했다.
+PR #499가 해당 HEAD에 병합돼 있으며 공통 시간축·strict validator는 변경하지 않았다.
+Issue #425 본문·댓글 두 개를 읽었다. 아래 새 값은 이번 요청 사양이며 이전에 Owner가
+승인했던 terminal 값은 아니다.
+
+Recording taxonomy에 production 분석 준비 호출의 UNSUPPORTED_MEDIA를
+FAILED / RECORDING_UNSUPPORTED_MEDIA / produced=[]로 등재했다.
+production factory는 prepare_analysis_source_from_resolution만 표시하고,
+handler는 Recording context 정리 후 내부 진입 신호를 변환한다.
+Coarse·Fine은 같은 경계를 쓰고 Hint는 제외한다.
+입력/설정·metadata 조회·DB/transaction/commit·usage/checkpoint/cancel·Search/provider·
+unknown code·종료/정리는 기존 오류 경계를 유지한다. 기존 크기 한도·IncidentClip·export
+mapping을 보존하며 API/schema/migration·receipt/retry 변경은 없다.
+terminal field에는 media 원문 상세를 넣지 않는다.
+
+작성자 RED: 두 media kind가 변경 전 RUNTIME_HANDLER_ERROR를 반환했다
+(예상한 assertion 실패 2건). GREEN + 크기 한도 9 passed.
+focused 회귀 176 passed, skip 없음, 109.15 s.
+전용 실제 MySQL 8.4는 12 passed, skip/xfail 없음, 30.96 s다.
+실제 자동 production Search 조립, T1/T2 rollback·COMMIT 응답 유실,
+gap redelivery·영속 receipt·idle 재시작에서 media/provider 재호출 없음,
+빈 produced·중복 job 없음·pool checkout 없음·Recording temp 잔여 없음을 검증했다.
+Runtime quality(Ruff, mypy linux/win32), boundary, Contract fixture·diff 검사 PASS.
+CP949 boundary 출력 오류는 UTF-8로 재실행했고 새 테스트는 서식/lint를 정리했다.
+credential/원본 보고서는 작업 전용 ignored scratch에만 보관한다.
+전체 로컬 pytest/MySQL/mutation/OCR은 실행하지 않았다.
+
+저장된 Case projection은 새 문자열을 소비한다. Coarse FAILED는 일반
+search.candidate_search_failed·RETRY_SEARCH를 유지한다. Fine은 FAILED로 정산하고
+선택 후보와 기존 blocking search.visual_verify_failed(actions 비어 있음)를 유지한다.
+Fine 전용 실패 progress 행은 없으며 미시작 downstream 단계는 생략한다.
+어느 경로도 RUNNING으로 남거나 결과 없음 성공이 되지 않는다.
+새 Case/Web notice/문구/action/retry 정책은 구현하지 않았다.
+구체적인 미게시 Case Owner 제안과 전체 일곱 파일 목록은
+[매핑 구현 기록](issue425-media-failure-mapping.md)에 있다.
+
+원래 #425 AVI/MP4 세트는 별도 미검증이다. 후속 push 뒤 전체 원격 CI가 필요하며
+#425 완료·사용자 안내 해결을 주장하지 않는다. 사용자 원본·provider·AWS/EC2/배포·
+branch/worktree 전환·staging/commit/push/PR/Issue 댓글/merge/dispatch는 없다.
+fresh reviewer와 최종 정리/상태 증거는 완료 후 아래에 추가한다.
+
+
+#425 mapping 최종 인계: 구현 이력을 상속하지 않은 fresh 읽기 전용 GPT-6.1 Sol / High
+reviewer가 후보 일곱 파일·관련 caller를 검토했으며 수정할 지적은 없었다.
+직접 검증은 새 mapping·기존 크기 한도·Search 실패 경계 104 passed, 33.14 s,
+diff check PASS다. 최초 reviewer 실행은 review temp 상위 디렉터리가 없어
+fixture setup 오류 44건이었고 생성 후 직접 재실행이 통과했다.
+reviewer는 MySQL을 실행하지 않고 작성자 원본 증거·테스트 assertion을 별도로 검토했다.
+제품 수정 요청이 없어 재리뷰는 필요하지 않았다.
+
+작성자 최종 focused matrix는 48 passed / 30.58 s.
+fixture alias/서식 정리 후 최종 전용 MySQL은 12 passed / 44.19 s, server 8.4.13이며
+보고서에 skip/xfail·collection 오류는 없다.
+소유 label 확인 후 작업 전용 MySQL container/tmpfs를 제거하기 전 harness schema
+잔여가 없었다. 소유 pytest/reviewer media/temp/cache·credential·helper script를 정리하고
+작은 원본 로그/보고서만 ignored issue425-mapping scratch에 남겼다.
+공유 image/cache·원본 media·이전 작업 자료는 보존했다.
+HEAD의 기존 Runtime Log byte prefix 불변을 검증했다.
+최종 branch/HEAD는 같고 일곱 파일이 unstaged/uncommitted이며 index는 비었고 diff check PASS다.
+전체 원격 CI·원래 #425 AVI/MP4 세트·Case/Web 안내 정책은 미결이며 IN_PROGRESS다.

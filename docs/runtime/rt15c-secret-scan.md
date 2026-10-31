@@ -1,8 +1,12 @@
-# RT-15(c) — pre-deploy secret scan
+<a id="rt-15c--pre-deploy-secret-scan"></a>
+
+# RT-15(c) — 배포 전 secret 검사
 
 **IN_PROGRESS · Refs #301 · Related #287 · 미커밋/미스테이징 · 원격 CI pending**
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -190,7 +194,9 @@ Runtime/Ops Owner 김준영의 deferred review: 미분류 탐지의 비공개 �
 의존성, 향후 PR gate 재검토. 일반 pre-deploy privacy/HTTPS/retention/provider 검수는 남는다.
 운영진 workflow 3개와 CODEOWNERS는 변경하지 않는다. 외부 통지·Issue close는 수행하지 않았다.
 
-### Verification
+<a id="verification"></a>
+
+### 검증
 
 초기 test-first 실행은 script 부재로 검출/clean controls가 실패했다. shallow clone control의
 file URL/setup 오류도 섞여 있었고 수정했다. 이를 scanner 결함 RED와 구분한다.

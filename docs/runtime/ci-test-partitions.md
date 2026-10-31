@@ -1,4 +1,6 @@
-# CI test partitions
+<a id="ci-test-partitions"></a>
+
+# CI 테스트 분할
 
 ## 조사와 설계 (2026-10-28)
 
@@ -201,7 +203,9 @@ handshake가 timeout되고 MySQL 접속은 실패한다. 따라서 Windows TCP �
 이전 보존 진단에서도 같은 relay 현상이 기록됐으며 새 CI 코드의 finding으로 분류하지 않는다.
 원시 증거는 보존하고 공유 runtime·기존 진단물은 삭제하지 않는다.
 
-## Fresh reviewer 최종 판정
+<a id="fresh-reviewer-최종-판정"></a>
+
+## Fresh 리뷰er 최종 판정
 
 구현 이력을 상속하지 않은 reviewer 1명이 읽기 전용으로 검토했고, 최종 증거·README·문서를
 같은 reviewer가 재확인했다. 새 P1/P2/P3 finding은 없었다. reviewer는 실제 node 집합과

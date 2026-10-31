@@ -1,4 +1,6 @@
-# Kakao reverse geocoder adapter
+<a id="kakao-reverse-geocoder-adapter"></a>
+
+# Kakao 역지오코딩 adapter
 
 `recording.kakao_geocoder`는 provider 내부 adapter다. RecordingService capability,
 Canonical Contract, 기존 GPS Observation은 변경하지 않는다. 최종 Owner·composition
