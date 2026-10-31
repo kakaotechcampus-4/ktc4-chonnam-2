@@ -4633,3 +4633,101 @@ root 단계 실패와 항목별 identity 실패의 집계 문구를 구분하라
 Windows 소유 temp18개를 절대경로 검증 후 제거했고 잔여0을 확인했다.
 코드는 최종 quality4 및 Windows orphan33/POSIX31 검증 이후 변경하지 않았다.
 21개 후보 파일은 미커밋·미스테이징으로 인계하며 원본 증거는 PR 제외 상태다.
+
+
+### 2026-10-31 — Issue #425 mixed time base (IN_PROGRESS)
+
+Refs #425 · Related #452, #460. Local implementation on
+`codex/issue425-mixed-timebase`, HEAD/origin-develop
+`6d8dbc9485b9060938e2036ff4874de7985bff1c`; started clean. No worktree or Git writes.
+Recording chooses a checked rational common MP4 clock, remuxes derived parts,
+restores exact concat presentation offsets, joins decode intervals with a shared
+reorder delay and independently verifies all final frames/packets and strict decode.
+Source coverage is retained separately; provenance, single-input behavior and
+same-clock validation remain. Numeric failures retain typed UNSUPPORTED_MEDIA;
+IncidentClip retains its agreed public wrapper. No Runtime/Case policy was added.
+
+Synthetic two-pair public-boundary RED -> GREEN, negative timestamp/duration/count/
+normalization controls and verification-bypass mutant were executed. Related 8.1
+regression: 946 passed, 16 unchanged skips, 126 MySQL deselected. A local actual
+eligible AVI pair passed a short public AnalysisSource test with 12 exact frames,
+unchanged source fingerprints and cleaned temp; a different source's discontinuous
+coverage stayed rejected. Original Issue AVI/MP4 sets remain unverified. Strict
+initial success and fallback are distinguished; the successful actual pair did not
+use fallback. See [Implementation Notes](rt10b-recording-exports.md#issue-425-mixed-time-base--2026-10-31-kst)
+for image identity, all intermediate failures, bounds/limitations, file manifest,
+PR-excluded evidence and final review/cleanup follow-up. Whole pytest/MySQL/mutation,
+remote CI, provider E2E, deployment and one-hour service support are not claimed.
+
+
+#425 review follow-up: fresh GPT-6.1 Sol / High found two P2 issues, both reproduced
+and fixed: balanced timestamp expression lookup avoids FFmpeg depth failure, and
+actual observed frame/packet denominators avoid false overflow from unused stream
+ticks. Author focused final 54 passed; reviewer directly executed 13 passing tests
+and independently confirmed the two fixes, with no remaining actionable code
+finding. Reviewer distinguished its direct execution from author XML evidence.
+The nominal AVI clock LCM alone no longer implies rejection; actual original
+Issue media remains unverified. Original Notes/Log byte prefixes and LF preserved.
+
+Final author post-review subset: 244 passed, 4 unchanged skips (8.1, 36.66 s).
+Final real eligible pair repeated with exact 12 frames and source/provenance/cleanup
+checks passing. This does not establish original Issue-set or provider E2E completion.
+
+
+#425 final handoff: same reviewer confirmed corrected code/docs with no remaining
+actionable findings. Author final 244-pass/4-skip and real12-frame summaries were
+reviewed as evidence, not claimed as reviewer private-media execution. Actual
+summary filename is real-pair.json; failed intermediate summaries are reconstructed
+from captured tool output separately. Task containers/temp and copied pytest deps
+cleaned; no volumes created, shared images/cache preserved. Ignored evidence only,
+357075 bytes at cleanup. C: free ~2.12 GiB -> 9283850240 bytes (~8.65 GiB), not
+attributed solely to task cleanup. Ten files remain unstaged, index empty, original
+branch/HEAD unchanged, diff check PASS. Original Issue-set evidence, Runtime mapping
+Owner decision and full remote CI remain outstanding; IN_PROGRESS is retained.
+
+
+### 2026-10-31 — PR #499 CI follow-up (Refs #425; Related #452, #460)
+
+IN_PROGRESS. Started on requested branch at 4369bdc668435d432440a77006fdb6f73538edab,
+clean worktree/index. Remote failing node reproduced unchanged on Ubuntu
+FFmpeg/ffprobe 6.1.1-3ubuntu5: 1 failed, missing tail duration. Stage diagnostics
+locate the first individual encode's output_validate, before mixed normalization.
+Cross-probing identical files with 6.1.1/8.1 demonstrates the MOV duration-reader
+difference: the veryfast derived MP4 has ten packets without observed duration
+on 6.1.1; 8.1 observes duration 1024. Original coverage remains observable.
+
+Changed only the success fixture's output preset to ultrafast, retaining distinct
+1/10240 and 1/12288 clocks. Added direct mixed-path observation and independent
+source/output PTS, duration, 22-frame count, seam, decoded color order and
+provenance assertions; original fingerprints and cleanup still checked.
+No product code, strict validation, AVI fallback, taxonomy, dependencies or
+workflow change. Runtime UNSUPPORTED_MEDIA mapping remains an Owner follow-up.
+
+Direct author GREEN: 6.1.1 media focused 155 passed/4 existing skips, safety/Worker
+88 passed/1 platform skip (243/5 total); 8.1 156/3 plus 88/1 (244/4 total).
+Both run at /repo in local containers; Python 3.12.3 vs 3.12.16, not a claim of
+complete CI environment parity. Exact identities, binary hashes, command scopes
+and stage evidence are retained in ignored issue499-ci scratch. Runtime quality,
+boundary and Contract fixtures passed; optional test-file lint has the same
+17 baseline findings. Diff check passed at this stage.
+
+Current private originals: seven expected files, inventory only. No CI dependency
+on removed files; no search/restore or fresh private media measurement. Previous
+ten-file/actual-pair evidence remains historical, not a claim about current mixed
+clocks or original Issue reproduction sets. Candidate files are Notes, this Log,
+and test_multi_span_incident_clip.py. Preserved original document byte prefixes
+and LF via append-only writes. Fresh review/cleanup results will be appended.
+No full local pytest/MySQL/mutation/OCR acceptance; later remote CI is required.
+
+
+PR #499 final local follow-up: fresh GPT-6.1 Sol / High reviewer with no inherited
+implementation history found no actionable issue. Direct reviewer runs: changed
+node 1 passed on each of 6.1.1 and 8.1, no skip; broader results reviewed from
+author XML only. No code correction requested. Task Ubuntu container/temporary
+8.1 containers and copied pytest dependencies cleaned; no task volumes remain.
+Successful intermediate media deleted; only two tiny synthetic failure-repro
+MP4s and small ignored evidence retained. Shared images/cache/originals and prior
+36-file issue425 evidence preserved. Disk free ~8.48 GiB at start, 10903822336
+bytes (~10.16 GiB) at cleanup, not solely attributed to cleanup. Three files remain
+unstaged/uncommitted, index empty, original branch/HEAD maintained, diff check PASS.
+Full remote CI and prior Owner/original-Issue-set follow-ups remain open.
