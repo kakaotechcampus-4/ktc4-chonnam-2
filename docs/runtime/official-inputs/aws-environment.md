@@ -35,6 +35,8 @@
 | 네트워크·관리형 | Elastic IP, RDS, ALB, 고비용 서비스(NAT Gateway·EKS·Redshift·SageMaker·ElastiCache 등) | RDS, ALB, Elastic IP, 기타 차단 서비스 |
 | 계정·보안 | 서울 외 리전, IAM 사용자·액세스 키 생성, CloudTrail 변경, Spot·Auto Scaling | — |
 
+> 위 표는 공지 원문이다. Elastic IP는 2026-10-31 실제로 할당·연결됐다(§11).
+
 자유롭게 할 수 있는 것:
 
 - 서버 중지·시작·재부팅
@@ -112,7 +114,7 @@
 ## 7. 공지가 함께 안내한 운영 팁
 
 - **디스크 부족:** 가장 흔한 원인은 Docker 빌드 캐시 누적이다. `docker system df`로 확인하고 `docker system prune`·`docker volume prune`으로 정리한다. 그래도 부족하면 §4로 확장을 요청한다.
-- **외부 공개:** 보안그룹에서 서비스 포트(예: 80/443/8080)를 열고 서버 공인 IP로 접속한다. HTTPS는 Caddy 등으로 Let's Encrypt 인증서를 발급한다. 고정 IP(Elastic IP)는 기본 차단이므로 §4 요청 대상이다.
+- **외부 공개:** 보안그룹에서 서비스 포트(예: 80/443/8080)를 열고 서버 공인 IP로 접속한다. HTTPS는 Caddy 등으로 Let's Encrypt 인증서를 발급한다. 고정 IP(Elastic IP)는 기본 차단이므로 §4 요청 대상이다(공지 원문. 실제 권한은 §11).
 
 
 ## 8. 2026-10-02 실환경 검증 snapshot
@@ -214,7 +216,7 @@ local terminal
 추가로 받은 캠퍼스 도메인 가이드는 EIP를 즉시 사용할 수 있다고 안내하지만 AWS 사용
 가이드는 기본 차단·요청 필요라고 안내한다. 실제 권한 또는 인프라 담당 확인 전까지
 EIP 허용은 **미확정**으로 둔다. EIP 무료나 기존 공인 IPv4 비용 면제로 해석하지 않는다.
-첨부 가이드 원문/내부 접속 정보는 공개 저장소에 복사하지 않는다.
+첨부 가이드 원문/내부 접속 정보는 공개 저장소에 복사하지 않는다. → 2026-10-31 확인 결과는 §11.
 
 ## 10. 2026-10-30 RT-14 전 재검증 snapshot
 
@@ -288,3 +290,17 @@ SCP는 계정 안의 모든 role에 똑같이 적용되고 위 두 role의 IAM �
 
 - 명령은 bash가 아니라 `/bin/sh`로 실행됐다(오류 메시지가 dash 형식 `_script.sh: N: ...`).
 - 마지막 명령의 exit code가 결과가 된다는 [Research 04](../research/04-deployment-observability-operations-2026-10-03.md) §3의 공식 문서 사실이 실제로 재현됐다.
+
+## 11. 2026-10-31 RT-14 실행 중 관측 — Elastic IP
+
+§9가 「미확정」으로 남긴 EIP 권한을 RT-14 첫 배포 중에 확인했다. 같은 SSO profile(`StudentDeveloper`)이다. 당일 관측값이며 식별값(주소 · allocation ID)은 싣지 않는다. 실행 전체 기록은 [RT-14 AWS 배포 · Real E2E](../experiments/2026-10-31-rt14-aws-real-e2e.md)다.
+
+| 확인 | 결과 |
+| --- | --- |
+| `ec2 allocate-address --domain vpc --dry-run` | `DryRunOperation` — 권한 있음 |
+| `ec2 associate-address --dry-run` | `DryRunOperation` — 권한 있음 |
+| 실제 할당 · 연결 · tag | 각 1회 시도로 성공. 연결 뒤 SSM · API health · release 상태 불변 |
+
+- 카테캠 「무료 도메인 발급 가이드」(2026-09-22 공지)의 「팀 계정에 권한이 이미 있으니 별도 신청 없이」와 일치한다. §2 · §7의 AWS 사용 가이드 「할당 불가 · 요청 시 검토」는 현재 권한과 다르다.
+- 비용은 여전히 무료로 해석하지 않는다. 공인 IPv4는 사용 여부와 관계없이 시간당 과금되며, EC2가 중지된 동안에도 연결된 EIP는 과금된다. 실행 중에는 자동 할당 공인 IPv4와 같은 요금이다.
+- dry-run은 IAM · SCP 권한 확인이다. 계정의 EIP 개수 한도나 카테캠의 사후 감시 정책까지 확인한 것은 아니다.

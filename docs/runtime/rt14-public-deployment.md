@@ -51,7 +51,7 @@ revision·전체 파일 SHA-256 manifest를 검사한다. `releases/<SHA>/web`�
 | `RT14_PUBLIC_HOSTNAME` | 운영자가 소유/관리하는 bare DDNS hostname. repo Variable과 Caddy service 환경에 동일하게 공급 |
 | `RT14_REVISION`, `RT14_CONFIG_ID` | 승인 SHA, immutable config ID. 기존 workflow Variable |
 | `RT14_IMAGE`, `RT14_INSTANCE_ID` | 기존 workflow Secret. 전체 값/ARN/IP는 공개 기록 금지 |
-| account/region/ECR repository | 기존 Variable 계약. 실제 identity 대조 |
+| account/region/ECR repository | account는 Secret `AWS_ACCOUNT_ID`(2026-10-31 Variable에서 변경, Ops §2-1), region · ECR repository는 Variable. 실제 identity 대조 |
 | policy·volume·MySQL digest/UID·Log Group | 기존 [준비 절차](rt14-deployment.md) §4. 운영자 선택·권한·소유권 확인 |
 | runtime config·packet·메모리/disk/log buffer | Owner 승인 실측값. #452 profile/한도에 근거 없는 기본값 없음 |
 | release approval | exact tuple, schema_parent, rollback_targets, backup_reference, §5 job compatibility 근거 |
@@ -65,6 +65,9 @@ revision·전체 파일 SHA-256 manifest를 검사한다. `releases/<SHA>/web`�
    [공식 설치 안내](https://caddyserver.com/docs/install)의 Ubuntu 패키지를 버전 고정해
    운영자가 설치한다. 이번 로컬 검증 binary는 Caddy 2.11.7(공식 SHA512 대조)이며
    운영 package를 자동 설치/업그레이드하는 스크립트는 제공하지 않는다.
+   설치 뒤 package가 만든 `caddy` 사용자의 UID가 container 사용자 UID(MySQL image는 `999`)와
+   겹치지 않는지 확인한다. 겹치면 인터넷에 노출된 Caddy가 그 container process에 signal을 보낼 수
+   있다. 2026-10-31 점검에서 실제로 겹쳤고(파일 · `/proc` 접근은 차단 확인), 유지보수 때 UID를 바꾼다.
 2. `deploy/ec2.py`, `web_artifact.py`, `configure.py`, 필요 시 `ddns.py`를 승인 source의
    SHA-256과 대조하여 root 소유 controller에 함께 설치한다. 기존 두 파일만 설치된
    host는 새 helper도 필요하다. controller는 배포 중 자동 교체하지 않는다.
@@ -107,6 +110,10 @@ IPv6 운영은 별도 검토한다. 실패는 nonzero와 고정 문구만 출력
 있고 shell/CLI argv·log·artifact에는 쓰지 않는다. redirect와 환경 proxy도 사용하지 않는다.
 token rotation은 보호 파일을 교체한 뒤 service를 명시적으로 실행하고 외부 smoke로 확인한다.
 EC2 IP 변경 뒤 timer 성공만으로 DNS 전파/TLS 성공을 간주하지 않는다.
+
+**2026-10-31부터 EIP를 연결했다(RD-14a, [승인 설계](rt14-deployment-design.md) §13.2).** updater는
+EIP를 DuckDNS에 등록할 때 1회 실행하고, timer는 비활성으로 두어 백업으로 남긴다. EIP를 해제하거나
+잃으면 timer를 켜고 외부 smoke로 확인한다.
 
 ## 3. Pointer·상태 불변식과 reconciliation
 

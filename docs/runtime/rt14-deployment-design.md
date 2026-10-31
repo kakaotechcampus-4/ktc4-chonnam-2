@@ -49,7 +49,7 @@ Gate 상태는 네 가지 중 하나로 표시한다.
 | RD-13c alert | `DEFER_TO_FOLLOWUP` | RT-14 blocker로 두지 않는다. 공개 기간 최소 감시는 후속 이슈 P1 | — |
 | RD-13d Worker 노출 | `ACCEPT` | 실제 Worker process의 8종 등록 marker + container 상태 + `awslogs` + Runtime DB 집계 query. 새 HTTP · idle heartbeat table 없음 | queue 상태 운영 조회 명령은 후속 이슈 P1 |
 | RD-07c secret | `IMPLEMENTED_PENDING_ACCEPTANCE` | prefix 아래 SecureString 정확히 3개 → 운영자가 host에서 `configure.py` 실행(instance role) → config ID별 보호 파일 | EC2 role의 조회 · 복호화 실측 · `runtime-env` 값 크기 확인 |
-| RD-14 public endpoint | `NEEDS_CHANGE` | 공개 체험 서비스 · same-origin · HTTPS · **Caddy는 app release와 분리된 host 인프라** · **Web 정적 산출물은 API와 같은 release에 묶음**(`Web revision == API revision`) · Web current pointer는 host 내부 검증 PASS 뒤 전환 · Security Group 80/443만 · DDNS(DuckDNS 우선) · EIP 필수 아님 | Caddy 설치 · 운영, release-bound Web artifact와 revision marker · pointer 승격 · reconciliation(코드), DDNS · TLS · SG(§13.4) |
+| RD-14 public endpoint | `NEEDS_CHANGE` | 공개 체험 서비스 · same-origin · HTTPS · **Caddy는 app release와 분리된 host 인프라** · **Web 정적 산출물은 API와 같은 release에 묶음**(`Web revision == API revision`) · Web current pointer는 host 내부 검증 PASS 뒤 전환 · Security Group 80/443만 · ~~DDNS(DuckDNS 우선) · EIP 필수 아님~~ **EIP + DuckDNS, updater는 백업**(2026-10-31 RD-14a 갱신, §13.2) | Caddy 설치 · 운영, release-bound Web artifact와 revision marker · pointer 승격 · reconciliation(코드), DDNS · TLS · SG(§13.4) |
 
 RD-13c는 restart와 alert의 상태가 달라 두 줄로 나눴다. RD-14 안의 항목별 상태는 §13.4다. OIDC trust `:*`는 Gate가 아니라 infra risk로 §4 · §16.2에서 다룬다.
 
@@ -59,7 +59,7 @@ RD-13c는 restart와 alert의 상태가 달라 두 줄로 나눴다. RD-14 안�
 | --- | --- |
 | EC2 1대 + Compose(api · worker · mysql) · RDS · ALB · 추가 EC2 미가정 | Ops §2 |
 | Elastic IP는 capacity 자원이 아니라 주소 안정성 결정이고 필수가 아니다 | Ops §2 · §2-2 · §18 |
-| GitHub OIDC → `ktc-github-deploy` · SSM Session Manager / Run Command · SSH key · 22번 포트 없음 · `AWS_ACCOUNT_ID`는 Variable | Ops §2-1 |
+| GitHub OIDC → `ktc-github-deploy` · SSM Session Manager / Run Command · SSH key · 22번 포트 없음 · `AWS_ACCOUNT_ID`는 Secret(2026-10-31 Variable에서 변경) | Ops §2-1 |
 | production 승격 source는 `develop`이고 `workflow_dispatch`로만 배포한다 | Ops §2-1 |
 | 자동화는 공유 EC2를 start · stop · reboot하지 않고 전원을 되돌리지도 않는다 | Ops §2-1 「공유 EC2 전원 · host 변경 원칙」 |
 | secret은 Parameter Store → EC2 role로 fetch → host 보호 파일 → `DAESINGO_ENV_FILE` · Actions는 secret을 다루지 않음 | Ops §4-1 (RD-07) |
@@ -84,7 +84,7 @@ RD-13c는 restart와 alert의 상태가 달라 두 줄로 나눴다. RD-14 안�
 - deploy role은 `ec2:CreateVolume`이 거부된다. EBS snapshot에서 복원하는 경로는 쓸 수 없다.
 - OIDC trust `sub` 조건은 이 repository 전체(`:*`)다. AWS 쪽에서 branch · PR을 구분하지 않는다.
 - Run Command(`AWS-RunShellScript`)는 `/bin/sh`로 실행되고 **마지막 명령의 exit code만 결과**가 된다.
-- EIP는 카테캠 도메인 가이드와 AWS 가이드의 안내가 다르다. 실제 사용 가능 여부는 미확정이다(§9).
+- EIP는 카테캠 도메인 가이드와 AWS 가이드의 안내가 다르다. 실제 사용 가능 여부는 미확정이다(§9). → 2026-10-31 할당 · 연결 권한 확인(AWS 환경 §11, §13.2)
 
 ### 3.2 #479 준비 구현 — `develop` `7bab60bc`
 
@@ -585,7 +585,7 @@ host에서 public URL을 부르는 검사는 필요하면 보조로 둘 수 있�
 | reverse proxy | **Caddy 1순위**(Ops §2-2 선택 원칙). app release와 분리된 host 인프라로 둔다(§13.5) |
 | Web 정적 산출물 | API와 **같은 release revision**에 묶는다. `Web revision == API revision`(§13.6) |
 | Security Group inbound | public **80 · 443만**. 22는 열지 않고 SSM을 유지한다. 3306 · 8000 공개 금지 |
-| 주소 | EC2 기본 public IPv4 + 무료 DDNS subdomain. **DuckDNS 우선 검토** |
+| 주소 | ~~EC2 기본 public IPv4 + 무료 DDNS subdomain. DuckDNS 우선 검토~~ **EIP + DuckDNS subdomain. DDNS updater는 백업**(2026-10-31 RD-14a 갱신) |
 | 검증 | SSM 성공 뒤 workflow에서 외부 DNS · TLS · Web · same-origin API smoke(§10.2) |
 
 ```text
@@ -596,20 +596,21 @@ Internet
    └─ /cases* · /health* → 127.0.0.1:8000
 ```
 
-주소 추천 순서:
+주소 구성 순서(2026-10-31 RD-14a 갱신):
 
-1. EC2 기본 public IPv4
-2. 무료 DDNS subdomain(DuckDNS 등)
-3. Caddy + Let's Encrypt
-4. EC2가 다시 시작돼 IP가 바뀌면 DDNS record 갱신
-5. EIP는 주소 안정성이 DDNS로 충분하지 않을 때만 카테캠에 요청한다(요청 검토 대상, AWS 환경 §2 · §9)
+1. EIP 1개를 할당해 EC2에 연결한다. 팀 계정에 권한이 있다(AWS 환경 §11)
+2. 무료 DDNS subdomain(DuckDNS)의 A record를 EIP로 등록한다. 주소를 손으로 입력하지 않고 EC2에서 updater를 1회 실행한다
+3. Caddy + Let's Encrypt. 인증서 발급은 SG 80/443을 연 뒤에 성공한다
+4. DDNS updater · timer는 백업이다. EIP를 해제하거나 잃으면 timer를 켜서 바뀌는 IP를 따라간다
+
+승인 당시(2026-10-30) 순서는 「EC2 기본 public IPv4 → DDNS → Caddy → IP가 바뀌면 DDNS 갱신 → EIP는 DDNS로 부족할 때만 요청」이었다.
 
 ### 13.3 이 모델을 고른 이유
 
 - **제출 요건.** 심사자가 URL로 접속해 끝까지 써 봐야 한다. SSM port forwarding은 팀원만 쓸 수 있다.
 - **same-origin.** Web의 API client는 상대 경로(`baseUrl` 기본값 `''`, `apps/web/src/api/client.ts`)로 `/cases…`를 부른다. 개발 서버도 `/cases`를 API로 넘겨 같은 origin처럼 쓴다(`apps/web/vite.config.ts`). production에서 proxy가 같은 역할을 하면 CORS 설정과 API URL env가 필요 없다. API 경로는 모두 `/cases` 아래와 `/health/*`다.
 - **Caddy.** TLS 발급 · 갱신을 앱에서 분리하고, single EC2의 운영 표면을 작게 유지한다(Ops §2-2).
-- **DDNS 우선.** EIP는 요청 대상이고 승인 시점을 예측할 수 없다. 안내도 엇갈린다(AWS 환경 §9). DuckDNS는 HTTP API로 IP를 갱신하므로 IP가 바뀌는 환경에 맞는다. 공급자를 영구 SoT로 고정하지는 않는다(Ops §2-2).
+- **EIP + DuckDNS(2026-10-31 갱신).** 승인 당시에는 EIP가 요청 대상이라 승인 시점을 예측할 수 없었고 안내도 엇갈려(AWS 환경 §9) DDNS를 우선했다. 2026-10-31 dry-run과 실제 할당으로 팀 계정에 권한이 있음을 확인했다(AWS 환경 §11). 공개 기간에는 팀원이 EC2를 다시 시작해도 주소 · DNS · 인증서가 그대로여야 하고, DDNS만으로는 재시작 뒤 갱신 · DNS 전파까지 접속이 끊길 수 있어 EIP를 붙인다. DuckDNS는 즉시 발급되고 A record를 지원하며 HTTP API로 갱신할 수 있어 그대로 쓴다. 공급자를 영구 SoT로 고정하지는 않는다(Ops §2-2).
 - **80을 여는 이유.** 인증서 발급 검증과 HTTP → HTTPS redirect에 쓴다.
 - **22를 닫는 이유.** `0.0.0.0/0` 개방은 보안 모니터링에 탐지되고(AWS 환경 §3), SSM으로 충분하다.
 
@@ -620,7 +621,8 @@ Internet
 | 공개 모델(공개 체험 · same-origin · 로그인 없음 · SG 80/443만 · 22 · 3306 · 8000 비공개) | 추천값. 지금 승인할 수 있다 |
 | Caddy 배치 원칙(app release 밖 host 인프라, §13.5) | 추천값. host package인지 container인지는 구현 PR |
 | Web artifact lifecycle(`Web revision == API revision`, §13.6) | `NEEDS_CHANGE` — image · controller 코드 변경이 필요하다 |
-| DDNS · TLS · SG 구성(§13.7) | 구현 · 운영 작업 필요 |
+| DDNS · TLS · SG 구성(§13.7) | 구현 · 운영 작업 필요 → 2026-10-31 수행: EIP · DuckDNS · TLS · SG 80/443, Caddy는 검증자 `/32`만 허용([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)) |
+| EIP 사용(RD-14a) | 2026-10-31 Owner 결정. 근거는 §13.3 |
 | 외부 smoke | `NEEDS_CHANGE` — RD-12h workflow post-SSM 단계(§10.2) |
 
 Caddy와 Web 산출물은 lifecycle이 다르다. **Caddy 프로세스와 인증서 상태는 release와 무관하게 오래 사는 인프라**이고, **Web 정적 산출물은 release마다 바뀌고 API와 함께 rollback되는 release 산출물**이다. 아래 두 절을 섞어 읽지 않는다.
@@ -702,7 +704,7 @@ Web artifact staging (releases/<SHA>/web 배치 · 식별값 확인)
 
 | 항목 | 제약 · 추천 |
 | --- | --- |
-| DDNS 갱신 | token은 secret이다. repository에 커밋하지 않고(Ops §2-2) Parameter Store 또는 host 보호 파일로 둔다. boot 때와 주기적으로 갱신한다. 주기는 구현이 정하고, 갱신 실패는 외부 smoke가 잡는다 |
+| DDNS 갱신 | token은 secret이다. repository에 커밋하지 않고(Ops §2-2) Parameter Store 또는 host 보호 파일로 둔다. boot 때와 주기적으로 갱신한다. 주기는 구현이 정하고, 갱신 실패는 외부 smoke가 잡는다. 2026-10-31부터 EIP를 연결해 updater는 백업이다. timer는 비활성으로 두고 EIP가 없어지면 켠다 |
 | 인증서 상태 | ACME 계정과 인증서를 proxy 재시작 뒤에도 남게 보관한다. 반복 발급이 발급 한도에 걸리지 않게 하기 위해서다 |
 | 업로드 경로 | proxy의 request body 크기 · timeout이 업로드 상한(B-U1 1 GiB · B-U3 · B-U4)과 Analysis 한도(#452)를 깎거나 우회하지 않는지 확인한다 |
 | 배포 창 | 배포 중 api가 멈춘 동안 proxy는 오류를 낸다. 공개 기간의 배포 창은 미리 알린다. 점검 안내 화면은 후속 P2다 |
