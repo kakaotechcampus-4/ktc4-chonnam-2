@@ -87,9 +87,9 @@ schema 호환성 판단은 [backup/restore Notes](./rt13b-backup-restore.md)를 
 | `DAESINGO_RECORDING_ANALYSIS_CRF` | 위 그룹, 없음 | 정수 `0..51` | baseline v1, 비secret |
 | `DAESINGO_RECORDING_ANALYSIS_MAX_BYTES` | 위 그룹, 없음 | 양의 정수 **bytes**, `size <= limit` 허용; 누적 span 및 최종 MP4 전체 크기 각각 검사 | baseline v1, 비secret |
 | `DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS` | 위 그룹, 없음 | 양의 정수 **milliseconds**, `duration <= limit` 허용; 요청 범위의 길이를 encode 전 검사 | baseline v1, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_HEIGHT` | Incident 3개 함께 필요, 없음 | 양의 짝수, 판독·신고 영상의 바탕인 IncidentClip 높이 | baseline v1, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_PRESET` | 위 그룹, 없음 | Analysis와 같은 preset 허용 집합 | baseline v1, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_CRF` | 위 그룹, 없음 | 정수 `0..51` | baseline v1, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_HEIGHT` | Incident 3개 함께 필요, 없음 | 양의 짝수, 판독·신고 영상의 바탕인 IncidentClip 높이 | 현재 적용값은 설정 명세 §3.2, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_PRESET` | 위 그룹, 없음 | Analysis와 같은 preset 허용 집합 | 현재 적용값은 설정 명세 §3.2, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_CRF` | 위 그룹, 없음 | 정수 `0..51` | 현재 적용값은 설정 명세 §3.2, 비secret |
 | `DAESINGO_RECORDING_FILENAME_OFFSET` | 선택, 없음 | 파일명 시각 관찰의 명시적 `±HH:MM`; 예 `+09:00`은 사용 파일의 실제 offset일 때만 선택 | 팀 대표값 미확정, 비secret |
 
 근거: `recording/factory.py`, `materialization.AnalysisProfile`, `time_sources.py`.
@@ -99,12 +99,13 @@ schema 호환성 판단은 [backup/restore Notes](./rt13b-backup-restore.md)를 
 과거 #460 댓글의 “Coarse/Fine 등록 후 실행 실패” 설명을 현재 동작으로 복사하지 않는다.
 `FILENAME_OFFSET`은 필수 encoding 키가 아니며 Readout 화면시각 timezone과 별개다.
 
-**초기 배포 baseline v1**: 9개 키의 값·근거·한계는
+**초기 배포 baseline v1·현재 적용값**: 9개 키의 값·근거·한계는
 [환경·배포 설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이
 repo 원문이다([#460 Recording Owner 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740)).
 baseline은 AWS E2E 재현 기준이며 최적 운영값이 아니다. 테스트에서 쓰는 작은 출력값도 품질·성능 합의가 아니다.
 분석 정확도/번호판·화면시각 가독성/신고 export 품질, 저장 bytes, 준비·처리시간 실측으로
-값을 바꿀 때는 새 profile 식별자와 근거를 함께 남긴다.
+Analysis 값을 바꿀 때는 새 Analysis profile 식별자와 근거를 함께 남긴다.
+2026-11-02 Incident만 변경한 적용에서는 Analysis profile과 설정을 유지했다([운영자 제공 결과](./experiments/2026-11-02-incident720-config-real-e2e.md)).
 
 ### Search Coarse/Fine과 Intent
 
@@ -348,7 +349,7 @@ opt-in process snapshot·배포 차단 조건은 위 RT-14 링크로 구분한�
 
 이 절의 현재 상태는 2026-11-02에 #460·#452 최신 논의와 병합된 #526·#481·#492 및 코드를
 대조해 갱신했다. 다른 절의 기준일·과거 실행 기록을 이번 검증 결과로 바꾸지 않는다.
-공개 설정 원문은 [PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)의
+초기 baseline은 [PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)에 기록됐으며, 현재 공개 설정 원문은
 [환경·배포 설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이다.
 
 [#452 전체 논의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)의
@@ -365,7 +366,7 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 | 오류 전달 구현 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Case `recording.analysis_range_too_long`(`ERROR`, blocking, `message_key: notice.analysis_range_too_long`, `actions: []`). Case는 수치를 복제하지 않고 typed code만 소비 |
 | 현재 구현·병합 상태 | 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. Case notice [#481](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/481)과 Web 문구·실패 화면 [#492](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/492)도 병합됨. job이 없으면 `SEARCH_FAILED`, 있으면 진행 화면 유지; [구현 경계·코드 근거](../modules/recording/analysis-source-limits.md#typed-실패와-case-연결) |
 | 지원 길이/bytes/encoding | 초기 배포 baseline v1은 4분·48 MiB([설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)). 약 1시간 입력 지원과 운영 최적 encoding은 **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
-| Incident 품질 | 적용된 baseline은 `240 / veryfast / CRF23`; 번호판 가독성·제출 품질 최적값 확정 아님. `720p / CRF20`은 [별도 비교 후보](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6559419741)이며 현 baseline·EC2 적용값이 아님 |
+| Incident 품질 | 현재 EC2 적용 기준은 `720 / veryfast / CRF20`([운영자 제공 적용·E2E 결과](./experiments/2026-11-02-incident720-config-real-e2e.md)). 과거 baseline v1은 `240 / veryfast / CRF23`. 사건 포함·화질 개선은 사용자 육안 확인이며 최적 화질·OCR 정확도·모든 입력 품질·실제 신고 수용 보장이 아님 |
 | Search 상한 | 코드 inline media `40 MiB`, request `56 MiB`; Recording 저장 상한과 다른 단계, runtime env knob 아님 |
 | 시간 예산 | Case 요청 시점 + Search `150초` + 큐 여유 `30초` 유지 합의. Recording 준비/큐는 Case 대기에 포함되며 Search RunDeadline은 Search 호출부터 시작 |
 | 재측정 | Runtime 머신에서 준비·큐·Search를 나눠 측정한 뒤 Case 대기 기준 판단. 범위 분할은 MVP 밖 #168 |
@@ -375,7 +376,7 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 Search 단독 7분 20초 성공·표본별 9~13분 추정도 현재 전체 Recording→Search 경로의 지원 길이가 아니다.
 두 한도 env는 Analysis profile과 함께 명시해야 하며, 기존 4개만 있는 runtime 파일도 시작 단계에서 거부한다.
 설정 명세의 baseline을 사용하고 테스트값을 복사하거나 한도·DB packet만 늘려 장시간 지원 완료로 처리하지 않는다.
-이 절은 문서·코드 대조 결과이며, 과거 측정·검증을 재실행한 기록이 아니다.
+이 절의 Incident 적용·E2E 후속은 운영자 제공 증거이며, 이번 문서 갱신의 직접 검증은 결과 파일 metadata·hash 확인이다. 과거 측정·검증을 재실행한 기록이 아니다.
 
 ## 10. 검증된 명령과 증거의 범위
 
