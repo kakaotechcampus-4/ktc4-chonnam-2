@@ -1,0 +1,24 @@
+name: rt14-oidc-authentication
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  authenticate:
+    if: github.repository == 'kakaotechcampus-4/ktc4-chonnam-2' && github.repository_id == '1340154683' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Verify only expected account and deploy role (no identity output)
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ vars.RT14_AWS_REGION }}
+        run: python3 deploy/aws.py authenticate

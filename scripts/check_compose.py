@@ -3,6 +3,7 @@
 This proves structural invariants, not Docker execution or image provenance.
 No secret-bearing input or parser exception is printed.
 """
+from copy import deepcopy
 import json
 from pathlib import Path
 import re
@@ -73,7 +74,8 @@ def validate(config: dict, dockerfile: str, dockerignore: str) -> list[str]:
         require(services.get("worker", {}).get("stop_grace_period") == "30s", "worker_grace")
         require("uv sync --locked --no-dev --extra eval-gemini" in dockerfile, "locked_dependencies")
         require("ffmpeg" in dockerfile and "--no-install-recommends" in dockerfile, "media_tools")
-        require(dockerfile.count("FROM python:3.12-slim-bookworm") == 2, "python312")
+        require(dockerfile.count("FROM python:3.12-slim-bookworm@sha256:") == 1
+            and all("FROM base AS " + stage in dockerfile for stage in ("build", "media-build", "runtime")), "python312")
         require("USER 10001:10001" in dockerfile and not re.search(r"^USER (?!10001:10001$)", dockerfile, re.M), "image_nonroot")
         for line in dockerfile.splitlines():
             if line.startswith("COPY "):
@@ -87,11 +89,36 @@ def validate(config: dict, dockerfile: str, dockerignore: str) -> list[str]:
     return sorted(set(errors))
 
 
+def validate_rendered(config, source, dockerfile, dockerignore):
+    """Compose's bool omitempty drops explicit false in rendered JSON.
+
+    Restore only that serialization omission for a mount in a separately valid
+    source. Never default a source omission or replace an observed true value.
+    """
+    errors = validate(source, dockerfile, dockerignore)
+    if errors:
+        return errors
+    normalized = deepcopy(config)
+    try:
+        for name, service in normalized["services"].items():
+            approved = {v["target"] for v in source["services"][name]["volumes"]
+                if v["type"] == "bind" and v.get("bind", {}).get("create_host_path") is False}
+            for mount in service.get("volumes", []):
+                if (mount.get("type") == "bind" and mount.get("target") in approved
+                        and mount.get("bind") == {}):
+                    mount["bind"]["create_host_path"] = False
+    except (KeyError, TypeError, AttributeError):
+        return ["invalid_structure"]
+    return validate(normalized, dockerfile, dockerignore)
+
+
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
     try:
         config = json.loads(Path(args[0] if args else ROOT / "compose.yaml").read_text(encoding="utf-8"))
-        errors = validate(config, (ROOT / "Dockerfile").read_text(), (ROOT / ".dockerignore").read_text())
+        inputs = (config, (ROOT / "Dockerfile").read_text(), (ROOT / ".dockerignore").read_text())
+        errors = (validate_rendered(config, json.loads((ROOT / "compose.yaml").read_text()), *inputs[1:])
+            if args else validate(*inputs))
     except (OSError, ValueError):
         errors = ["invalid_input"]
     print("Compose policy " + ("FAIL: " + ",".join(errors) if errors else "PASS (structural only)"))

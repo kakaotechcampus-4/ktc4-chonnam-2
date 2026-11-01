@@ -32,7 +32,7 @@ def public(message):
     return message["body"]
 
 
-@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed", "hint", "clip", "clip_fractional"])
+@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed", "hint", "clip", "clip_fractional", "clip_multisource"])
 @pytest.mark.mysql_check("search_process", "separate_api_worker")
 def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, scenario):
     _, _, engine = async_db
@@ -54,6 +54,7 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "process-profile",
         "DAESINGO_RECORDING_ANALYSIS_HEIGHT": "240", "DAESINGO_RECORDING_ANALYSIS_PRESET": "veryfast",
         "DAESINGO_RECORDING_ANALYSIS_CRF": "23",
+        "DAESINGO_RECORDING_ANALYSIS_MAX_BYTES": "1000000", "DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS": "10000",
         "DAESINGO_RECORDING_INCIDENT_HEIGHT": "240", "DAESINGO_RECORDING_INCIDENT_PRESET": "veryfast",
         "DAESINGO_RECORDING_INCIDENT_CRF": "23"}
     env_file = tmp_path / "process.env"
@@ -68,6 +69,12 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
         local.send(("POST", "/cases", None)); created = public(receive(local))
         identity = created["case_id"]
         local.send(("upload", f"/cases/{identity}/sources", str(video))); uploaded = public(receive(local))
+        if scenario == "clip_multisource":
+            second = tmp_path / "second.mp4"
+            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
+                "color=c=blue:s=64x48:r=10:d=1", "-c:v", "libx264", "-video_track_timescale", "10", str(second)],
+                check=True, capture_output=True, timeout=30)
+            local.send(("upload", f"/cases/{identity}/sources", str(second))); uploaded = public(receive(local))
         local.send(("POST", f"/cases/{identity}/commands", {"case_id": identity,
             "expected_case_rev": uploaded["case_view"]["case_rev"],
             "kind": "START_ANALYSIS", "payload": {"description": "red signal" if scenario == "hint" else ""}}))
@@ -83,7 +90,8 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
             assert result["pid"] not in {os.getpid(), api_pid}
             is_clip = kind == "INCIDENT_CLIP_BUILD"
             assert result["http_calls"] == (0 if is_clip else 1) and result["pool_checkedout"] == 0, result
-            assert result["clip_calls"] == result["encodes"] == (1 if is_clip else 0), result
+            assert result["clip_calls"] == (1 if is_clip else 0), result
+            assert result["encodes"] == (2 if scenario == "clip_multisource" else 1) * int(is_clip), result
             failed = scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY"
             assert result["terminals"] == [{"status": "FAILED" if failed else "SUCCEEDED",
                 "failure_kind": "SEARCH_PROVIDER_ERROR" if failed else None}], result
@@ -137,6 +145,14 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
                 with RecordingService(ConnectionRecordingRepository(conn, storage_root=root)) as recording:
                     clip = recording.get_incident_clip(payload["incident_clip_ref"])
                     assert clip.availability == "AVAILABLE" and clip.byte_size > 0 and clip.duration_sec > 0
+                    if scenario == "clip_multisource":
+                        spans = clip.source_provenance.asset_spans
+                        assert [(s.timeline_range.start_sec, s.timeline_range.end_sec,
+                                 s.source_range.start_sec, s.source_range.end_sec) for s in spans] == [
+                            (.5, 1., .5, 1.), (1., 1.5, 0., .5)]
+                        assert len({s.source_asset_ref for s in spans}) == 2
+                        assert clip.media_stream_refs == [s.media_stream_ref for s in spans]
+                        assert clip.duration_sec == 1.
                 # Readout capability remains absent even with complete clip config.
                 from daesingo.worker.composition_root import compose_registry
                 from daesingo.common.jobs.execution import ExecutionContext

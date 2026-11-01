@@ -1,10 +1,13 @@
 """Bounded streaming multipart reception into the shared mount, without DB I/O."""
 import asyncio
+from contextlib import asynccontextmanager
 from email.message import Message
 import logging
 import os
+import sys
 from pathlib import Path
 import tempfile
+from typing import TYPE_CHECKING
 from time import monotonic
 from uuid import uuid4
 
@@ -17,6 +20,9 @@ from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 from starlette.requests import ClientDisconnect
 
 from .errors import error_response
+
+if TYPE_CHECKING:
+    from python_multipart.multipart import MultipartCallbacks
 
 
 class UploadAborted(Exception):
@@ -79,9 +85,15 @@ class _MultipartFile:
         self.header_name = bytearray()
         self.header_value = bytearray()
         self.disposition = None
-        callbacks = {name: getattr(self, name) for name in (
-            'on_part_begin', 'on_header_field', 'on_header_value', 'on_header_end',
-            'on_headers_finished', 'on_part_data', 'on_end')}
+        callbacks: MultipartCallbacks = {
+            'on_part_begin': self.on_part_begin,
+            'on_header_field': self.on_header_field,
+            'on_header_value': self.on_header_value,
+            'on_header_end': self.on_header_end,
+            'on_headers_finished': self.on_headers_finished,
+            'on_part_data': self.on_part_data,
+            'on_end': self.on_end,
+        }
         try:
             self.parser = MultipartParser(boundary, callbacks)
         except (ValueError, MultipartParseError):
@@ -178,15 +190,23 @@ async def _storage_call(callback, *args):
 
 
 class _StagingOwner:
-    def __init__(self, root, scanner):
+    def __init__(self, root, scanner, verify_root=lambda: None):
         self.root, self.scanner = root, scanner
+        self.verify_root = verify_root
         self.guard = self.target = None
 
     def open(self):
         self.guard = self.scanner.in_use()
         self.guard.__enter__()
+        self.verify_root()
         self.target = _open_staging(self.root)
         return self.target
+
+    def publish(self, path):
+        self.verify_root()
+        final = publish(path, self.root)
+        self.verify_root()
+        return final
 
     def close(self):
         try:
@@ -204,7 +224,7 @@ def publish(staging: Path, root: Path) -> Path:
     os.replace(staging, final)
     # POSIX rename is atomic but the directory entry needs its own durability
     # barrier before rows may commit. Windows has no directory fsync primitive.
-    if os.name != 'nt':
+    if sys.platform != 'win32':
         for directory in (final.parent, staging.parent, root):
             descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
             try:
@@ -214,16 +234,17 @@ def publish(staging: Path, root: Path) -> Path:
     return final
 
 
-async def receive_source(request, composition):
+async def receive_source(request, composition, *, started=None, verify_root=lambda: None):
     content_type = request.headers.get('content-type', '')
     if content_type.split(';', 1)[0].strip().lower() != 'multipart/form-data':
         raise HTTPException(415)
     settings = composition.startup.config.upload
     root = composition.startup.config.media_root
     scanner = next(s for s in composition.cleanup.scanners if s.kind == 'staging')
-    owner = _StagingOwner(root, scanner)
+    owner = _StagingOwner(root, scanner, verify_root)
     target = None
-    started, last_byte = monotonic(), monotonic()
+    started = monotonic() if started is None else started
+    last_byte = started
     total_bytes = 0
     try:
         target = await _storage_call(owner.open)
@@ -253,7 +274,7 @@ async def receive_source(request, composition):
         path = Path(target.name)
         await _storage_call(target.close)
         target = None
-        final = await _storage_call(publish, path, root)
+        final = await _storage_call(owner.publish, path)
         events = composition.readiness.events
         events.emit('api.upload.bytes', count=total_bytes)
         events.emit('api.upload.duration_ms', duration_ms=(monotonic()-started)*1000)
@@ -264,6 +285,27 @@ async def receive_source(request, composition):
         # Preserve rowless abort staging for B-C1, but release its live lease.
         # The lease includes the closed staging -> publish window.
         owner.close()
+
+
+@asynccontextmanager
+async def leased_source(request, composition):
+    """Protect the publish-before-registration gap, including cancellation.
+
+    Acquire before any receive/publish; release only after the route's shielded
+    registration worker has finished commit/rollback and resource cleanup.
+    Staging retains its independent existing lease and failure behavior.
+    """
+    scanner = next(s for s in composition.cleanup.scanners if s.kind == 'orphan')
+    guard = scanner.in_use()
+    started = monotonic()
+    try:
+        try:
+            verify_root = await _storage_call(guard.__enter__)
+        except OSError:
+            raise HTTPException(503) from None
+        yield await receive_source(request, composition, started=started, verify_root=verify_root)
+    finally:
+        await _storage_call(guard.__exit__, None, None, None)
 
 
 def _abort(request, reason):

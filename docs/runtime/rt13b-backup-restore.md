@@ -1,8 +1,21 @@
-# RT-13(b) — local logical backup / restore
+<a id="rt-13b--local-logical-backup--restore"></a>
+
+# RT-13(b) — 로컬 논리 백업 / 복원
 
 **IN_PROGRESS · Refs #300 (RT-13(b))**
 
-## Implementation Notes
+### 2026-10-31 운영 복구 준비 연결
+
+아래 로컬 구현/검증 이력은 보존한다. 운영 DB/media의 일관된 backup과 **별도 media 사본의 복원**은
+[RT-14 복구 acceptance 준비](rt14-recovery-acceptance.md)를 따른다. `backup_compose.py`는 dump를
+메모리에 수집하며 media 파일을 backup하지 않는다. 기존 `smoke_backup_restore.py`는 생성한
+테스트 DB volume을 교체하고 원래 media volume을 유지하므로 운영 project/volume에 적용하지 않는다.
+RT-13 DB 내부 lock은 RT-14 host `operation.lock`과 별개이며, 약 4GiB 운영 환경에서 자원 예산과
+source release의 heads를 확인하기 전 실제 dump/추가 MySQL/Paddle stack을 실행하지 않는다.
+
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -110,7 +123,9 @@ heads/schema/data, startup 후 전체 행·CaseView·media refs/hash·Worker 새
 project-scoped cleanup을 재사용한다. 임시 env/option/dump/probe overlay는 정리한다.
 report에는 안전한 단계/개수/판정만 기록하며 실패·cleanup 실패를 PASS로 바꾸지 않는다.
 
-### Verification — 2026-10-28 (직접 실행 중)
+<a id="verification--2026-10-28-직접-실행-중"></a>
+
+### 검증 — 2026-10-28 (직접 실행 중)
 
 | 구분 | 이번 세션 결과 |
 | --- | --- |
@@ -178,7 +193,9 @@ assertion/gate 정책 변경은 없다. 두 실행은 기존 Starlette deprecati
 case_0001 / runtime_0005 / recording_0001이며 restore 후 startup 전에 동일했다.
 후속 새 Worker job은 snapshot 비교가 끝난 뒤에 넣어 기존 값 비교를 가리지 않았다.
 
-### Fresh review 최초 판정 및 P2 TDD 수정
+<a id="fresh-review-최초-판정-및-p2-tdd-수정"></a>
+
+### Fresh 리뷰 최초 판정 및 P2 TDD 수정
 
 이력을 상속하지 않는 reviewer가 diff·SoT·tests·증거를 읽기 전용 검토했다.
 최초 판정은 **P1 0 / P2 1**: source에 procedure/function/event가 있으면 기본

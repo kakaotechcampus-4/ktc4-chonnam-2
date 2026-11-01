@@ -27,6 +27,7 @@ from .intent import (
     build_intent_hint_extractor,
 )
 from .runs import CandidateEvent, CandidateSearchResult, ContractRef
+from .progress import SearchPhase, SearchProgress
 from .scope import AnalysisScope, SearchHint, VisualEventType
 from .service import SearchService
 from .sources import AnalysisSourceResolver, CandidateSourceLink, ResolvedAnalysisSource
@@ -47,10 +48,13 @@ def search_candidates(
     *,
     service: SearchService | None = None,
     usage_sink: UsageSink | None = None,
+    on_progress: SearchProgress | None = None,
 ) -> CandidateSearchResult:
     """Return the recorded coarse run and ranked candidates for a scope."""
     if service is None:
         return _FIXTURE_SERVICE.search_candidates(scope)
+    if on_progress is not None:
+        return service.search_candidates(scope, usage_sink=usage_sink, on_progress=on_progress)
     return service.search_candidates(scope, usage_sink=usage_sink)
 
 
@@ -115,6 +119,8 @@ def verify_visual_with_stream_context(
 
 
 __all__ = [
+    "SearchPhase",
+    "SearchProgress",
     "AnalysisScope",
     "AnalysisSourceStream",
     "AnalysisSourceResolver",

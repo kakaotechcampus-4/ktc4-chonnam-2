@@ -66,6 +66,16 @@ def is_current(case: CaseAggregate, observation_input: dict[str, Any]) -> bool:
     )
 
 
+def selected_clip_failed(case: CaseAggregate) -> bool:
+    """현재 선택 · 세대의 가장 나중 `INCIDENT_CLIP_BUILD`가 T2에서 `FAILED`로 끝났는가(#297 후속). 판독은 clip 성공
+    뒤에만 발주하므로(§4-4) 이때 판독 job은 없다. 다른 후보로 옮기면 그 후보의 clip이 아니라 `False`다."""
+    latest = next((r for r in reversed(case.job_records)
+                   if r["kind"] == "INCIDENT_CLIP_BUILD"
+                   and (source := case.observation_inputs.get(r["job_id"])) is not None
+                   and is_current(case, source)), None)
+    return latest is not None and case.observation_outcomes.get(latest["job_id"], {}).get("status") == "FAILED"
+
+
 def follow_fine(case: CaseAggregate, fine_job_id: str, visual_evidence: dict[str, Any] | None) -> dict[str, Any] | None:
     """성공한 Fine 결과 뒤 `INCIDENT_CLIP_BUILD`를 발주한다(§4-3). `NOT_OBSERVED` · `VisualEvidence` 없음 · 입력 없이
     발주된 Fine · 현재 선택 · 세대가 아닌 결과면 내지 않는다."""

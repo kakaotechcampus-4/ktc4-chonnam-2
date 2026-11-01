@@ -123,9 +123,11 @@ class IncidentClipFrames:
         self._clip = recording.get_incident_clip(incident_clip_ref)
 
     def read_at(self, offset_sec: float):
+        from decimal import Decimal
         if offset_sec < 0:
             raise ValueError("offset_sec는 0 이상이어야 합니다")
-        at_sec = self._clip.timeline_range.start_sec + offset_sec
+        at_decimal = Decimal(str(self._clip.timeline_range.start_sec)) + Decimal(str(offset_sec))
+        at_sec = float(at_decimal)
         spans = [
             span for span in self._clip.source_provenance.asset_spans
             if span.timeline_range.start_sec <= at_sec < span.timeline_range.end_sec
@@ -139,11 +141,8 @@ class IncidentClipFrames:
         frame = self._recording.resolve_frame({
             "kind": "STREAM_POSITION",
             "media_stream_ref": span.media_stream_ref,
-            "source_offset_sec": (
-                span.source_range.start_sec
-                + at_sec
-                - span.timeline_range.start_sec
-            ),
+            "source_offset_sec": float(Decimal(str(span.source_range.start_sec))
+                + at_decimal - Decimal(str(span.timeline_range.start_sec))),
         })
         return frame, self._recording.read_frame(frame.frame_ref)
 

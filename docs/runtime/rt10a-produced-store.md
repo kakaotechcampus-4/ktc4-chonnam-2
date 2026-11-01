@@ -1,8 +1,12 @@
-# RT-10(a) produced object storage gate
+<a id="rt-10a-produced-object-storage-gate"></a>
+
+# RT-10(a) produced object 저장 gate
 
 **IN_PROGRESS · Refs #297 (RT-10(a)) · PR pending · merge SHA pending.**
 
-## Implementation Notes
+<a id="implementation-notes"></a>
+
+## 구현 기록
 
 ### 구현 결과
 
@@ -36,7 +40,9 @@
 
 Runtime/Ops deferred review: opaque store와 COMMIT receipt 검증, ref/index 구현 선택. Case 후속 composition은 기존 callable에 reader를 주입하고 다중 객체의 의미를 조립한다. 이번 slice는 실제 handler 배선·비동기 Real E2E 완료를 주장하지 않는다.
 
-### Verification
+<a id="verification"></a>
+
+### 검증
 
 검증 원본은 ignored `.codex-scratch/rt10a-20261021/`에 있다. 아래 최종 결과와 별도로 이전 실패·중단 이력을 보존한다.
 

@@ -116,13 +116,19 @@ export function FlowScreen(props: {
   useLayoutEffect(() => {
     const root = stepsRef.current
     if (!root) return
-    const top = root.getBoundingClientRect().top
-    setStops(
-      [...root.querySelectorAll<HTMLElement>('.timeline > li')].map((li) => {
-        const r = li.getBoundingClientRect()
+    const measure = () => {
+      const top = root.getBoundingClientRect().top
+      setStops([...root.querySelectorAll<HTMLElement>('.timeline > li')].map((li) => {
+        const marker = li.querySelector<HTMLElement>('.scene-search-mark')
+        const r = (marker ?? li).getBoundingClientRect()
         return r.top - top + r.height / 2
-      }),
-    )
+      }))
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    return () => observer.disconnect()
   }, [progress.length])
   const carY = carIndex !== null && stops[carIndex] !== undefined ? stops[carIndex] - CAR_H / 2 : null
 
@@ -221,6 +227,7 @@ export function FlowScreen(props: {
         )}
         <ProgressPanel
           view={props.view}
+          sceneNow={now}
           jobs={screen.jobs}
           heading={
             <>

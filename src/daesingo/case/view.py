@@ -19,6 +19,7 @@ from typing import Any
 
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.preview_frame import current_preview_frame_ref
+from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
     event_type_label,
@@ -29,7 +30,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.9"
+CONTRACT_VERSION = "case-view/v1.10"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -198,6 +199,16 @@ def _build_progress(
             {"step": "evidence_assembly", "state": "PENDING"},
             {"step": "requirement_check", "state": "PENDING"},
             {"step": "package_assembly", "state": "PENDING"},
+        ]
+
+    # clip 준비가 실패하면 판독은 발주되지 않는다(§4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
+    if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and selected_clip_failed(case):
+        return [
+            {"step": "file_intake", "state": "DONE"},
+            {"step": "coarse_search", "state": "DONE"},
+            {"step": "candidate_review", "state": "DONE"},
+            {"step": "plate_read", "state": "PENDING"},
+            {"step": "overlay_time_read", "state": "PENDING"},
         ]
 
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
@@ -692,6 +703,8 @@ def build_case_view(
     visual_verify_status: str | None = None,
     independent_facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from .search_progress import search_progress_view
+
     selected = next((c for c in case.candidates if c.selected), None)
     # 근거 장면은 case가 clip에서 발급받은 frame이다(#446). Search 후보 `thumbnail_ref`는 실제 경로에서 늘 null이라
     # 발급 전에는 그 값(fixture에만 있음)을 그대로 쓴다.
@@ -720,6 +733,7 @@ def build_case_view(
     ):
         evidence_source = independent_facts
 
+    scene_search = search_progress_view(case)
     return {
         "contract": "CaseView",
         "contract_version": CONTRACT_VERSION,
@@ -733,6 +747,7 @@ def build_case_view(
         # 후보 `marker_ms`와 같은 좌표의 시간축 전체 길이(v1.9, #184). 분석 시작 전에는 `null` — web은 시간축을 그리지 않는다.
         "timeline_duration_ms": case.timeline_duration_ms,
         "hints": case.hints,
+        **({"scene_search": scene_search} if scene_search is not None else {}),
         "progress": _build_progress(
             case,
             evidence_record,

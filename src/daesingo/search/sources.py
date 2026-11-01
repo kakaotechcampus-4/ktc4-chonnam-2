@@ -220,7 +220,7 @@ _RECORDING_ERROR_MAP: dict[
     "UNAVAILABLE": AnalysisSourceUnavailableError,
     "TEMPORARY_FAILURE": AnalysisSourceTemporaryFailureError,
     # Defensive: UNSUPPORTED_MEDIA is documented but not raised by recording/service.py today.
-    # ponytail: mapping included defensively; exercise only via fake gateway in tests.
+    # mapping included defensively; exercise only via fake gateway in tests.
     "UNSUPPORTED_MEDIA": AnalysisSourceUnavailableError,
 }
 

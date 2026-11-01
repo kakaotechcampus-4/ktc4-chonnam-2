@@ -17,6 +17,7 @@ class EventSpec:
     statuses: str | None
     source: str
     meaning: str
+    optional: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -25,13 +26,23 @@ class MetricSpec:
     meaning: str
 
 
-def spec(fields, statuses, source, meaning):
-    return EventSpec(frozenset(fields.split()), statuses, source, meaning)
+def spec(fields, statuses, source, meaning, optional=''):
+    return EventSpec(frozenset(fields.split()), statuses, source, meaning, frozenset(optional.split()))
 
 
 _HTTP = r'[1-5][0-9]{2}'
 _DB = r'LOCK_WAIT_TIMEOUT|DEADLOCK|POOL_TIMEOUT|DISCONNECT|CONNECT_FAILURE|CLEANUP|DB_FAILURE'
 EVENTS = MappingProxyType({
+    'runtime.execution.failed': spec('status', 'FAILED',
+        'worker/registry.py:KindRegistry.dispatch; common/jobs/worker_loop.py:WorkerLoop._run_claims',
+        'Exception converted to RUNTIME_HANDLER_ERROR, before T1; not a committed terminal result. '
+        'Optional outermost class qualname only, ASCII [A-Za-z_][A-Za-z0-9_]{0,63}; omit invalid names',
+        optional='error_type'),
+    'runtime.reflect.failed': spec('status', 'FAILED',
+        'common/jobs/worker_loop.py:WorkerLoop._run_claims; common/jobs/redelivery.py:redeliver_once',
+        'Initial T2 or redelivery candidate failure; T1 remains durable. '
+        'Optional outermost class qualname only, ASCII [A-Za-z_][A-Za-z0-9_]{0,63}; omit invalid names',
+        optional='error_type'),
     'runtime.exhaustion.failed': spec('status', 'FAILED',
         'common/jobs/exhaustion.py:redeliver_exhaustion_once',
         'Candidate rolled back; no identifiers, payload or exception text'),
@@ -96,7 +107,8 @@ EVENTS = MappingProxyType({
 
 METRICS = MappingProxyType({
     **{name: MetricSpec((name,), value.meaning) for name,value in EVENTS.items()
-       if (name.startswith('runtime.') and name != 'runtime.exhaustion.failed')
+       if (name.startswith('runtime.') and name not in (
+           'runtime.exhaustion.failed', 'runtime.execution.failed', 'runtime.reflect.failed'))
        or name.startswith('api.frame.') or name.startswith('api.asset.')
        or (name.startswith('api.upload.') and name != 'api.upload.failed')},
     'api.view.request_rate': MetricSpec(('api.view.request_rate',), 'Count routed GET view attempts over operator-selected log interval'),
@@ -120,7 +132,7 @@ def validate_event(value):
         fields = {k:v for k,v in value.items() if k not in base}
         if not base <= value.keys() or not definition.required <= fields.keys():
             raise ValueError()
-        if fields.keys() - definition.required - correlation:
+        if fields.keys() - definition.required - definition.optional - correlation:
             raise ValueError()
         _validate(fields)
         if definition.statuses is not None and re.fullmatch(definition.statuses, fields['status']) is None:

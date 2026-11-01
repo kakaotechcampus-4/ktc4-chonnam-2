@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import Any
 
@@ -172,6 +173,45 @@ def test_recording_facts_are_read_by_case_known_source_and_clip_lineage(chain):
     assert ("time", "sa_unrelated") not in chain.recording.calls
     assert ("clip", chain.obs.incident_clip["incident_clip_ref"]) in chain.recording.calls
     assert ("assets", CASE_ID) in chain.recording.calls
+
+
+class PerSourceTimeRecording(FakeRecording):
+    """원본마다 다른 시계를 돌려준다."""
+
+    def __init__(self, obs: real_e2e.ObservationBundle, clocks: dict[str, list[dict[str, Any]]]) -> None:
+        super().__init__(obs)
+        self.clocks = clocks
+
+    def get_time_source_candidates(self, source_asset_ref: str) -> list[dict[str, Any]]:
+        self.calls.append(("time", source_asset_ref))
+        return self.clocks[source_asset_ref]
+
+
+def test_clip_across_sources_is_timed_by_the_source_holding_the_moment(fixture_observation):
+    # PR #458 리뷰: 원본을 이어 붙이면 timeline 위치를 원본 시각에 그대로 더할 수 없다. 앞 원본(timeline 0~310초)
+    # 뒤에 50초 끊긴 다음 원본(18:06:00 녹화 시작)을 이었고, 사건(timeline 312.48초)은 다음 원본 안 2.48초다.
+    candidate_event, obs = fixture_observation
+    front, nxt = obs.time_source_candidates[0], {
+        **obs.time_source_candidates[0], "candidate_id": "tsc_h001_next_filename", "value": "2026-08-24T18:06:00+09:00",
+        "applies_to": {"source_asset_ref": "sa_h001_next", "source_offset_sec": 0.0}}
+    provenance = obs.incident_clip["source_provenance"]
+    (whole,) = provenance["asset_spans"]
+    clip = {**obs.incident_clip, "source_provenance": {**provenance, "asset_spans": [
+        {**whole, "timeline_range": {"start_sec": 300.0, "end_sec": 310.0}, "source_range": {"start_sec": 300.0, "end_sec": 310.0}},
+        {**whole, "sequence": 1, "source_asset_ref": "sa_h001_next", "media_stream_ref": "ms_h001_next_v",
+         "timeline_range": {"start_sec": 310.0, "end_sec": 420.0}, "source_range": {"start_sec": 0.0, "end_sec": 110.0}},
+    ]}}
+    # 화면 시각이 없어야 원본 시각 + 위치로 계산한다.
+    multi = dataclasses.replace(obs, incident_clip=clip, overlay_readout=None, time_source_candidates=[front, nxt])
+    chain = Chain(candidate_event, multi)
+    chain.case.sources.append({"source_asset_ref": "sa_h001_next", "video_stream_ref": "ms_h001_next_v", "duration_sec": 110.0})
+    recording = PerSourceTimeRecording(multi, {"sa_h001_front": [front], "sa_h001_next": [nxt]})
+
+    record = chain.fine_done().clip_done().readouts_done().adapter(recording).get_evidence_record()
+
+    assert record["occurred_at"]["value"] == "2026-08-24T18:06:02.480000+09:00"
+    assert record["occurred_at"]["resolution_status"] == "NEEDS_REVIEW"
+    assert {("time", "sa_h001_front"), ("time", "sa_h001_next")} <= set(recording.calls)
 
 
 def test_reader_and_read_port_share_the_callers_connection(chain):

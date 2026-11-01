@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from daesingo import search
 from daesingo.common.jobs.produced import ProducedReader
 from daesingo.search.runs import AnalysisRun
+from daesingo.search.scope import TimeRangeKind
 from daesingo.search.visual import VisualVerificationResult
 
 
@@ -13,6 +14,7 @@ class IncidentClipInput:
     timeline_ref: dict
     requested_range: dict
     analysis_source_ref: str
+    video_stream_refs: tuple[str, ...]
 
 
 class IncidentClipInputs:
@@ -69,7 +71,7 @@ class IncidentClipInputs:
         span = {key: getattr(candidate.span, key) for key in ("timeline_id", "timeline_revision", "start_ms", "end_ms")}
         if span != source["span"] or candidate.run_id != run.run_id:
             raise ValueError("clip candidate binding mismatch")
-        relative = [r for r in scope.time_ranges if r.kind == "TIMELINE_RELATIVE"]
+        relative = [r for r in scope.time_ranges if r.kind == TimeRangeKind.TIMELINE_RELATIVE]
         if relative and not any(
             r.timeline_ref.timeline_id == span["timeline_id"]
             and r.timeline_ref.revision == span["timeline_revision"]
@@ -85,4 +87,5 @@ class IncidentClipInputs:
         return IncidentClipInput(case_id=context.case_id,
             timeline_ref={"timeline_id": span["timeline_id"], "revision": span["timeline_revision"]},
             requested_range={"start_sec": span["start_ms"] / 1000, "end_sec": span["end_ms"] / 1000},
-            analysis_source_ref=fine.analysis_run.input_ref.ref)
+            analysis_source_ref=fine.analysis_run.input_ref.ref,
+            video_stream_refs=tuple(s["video_stream_ref"] for s in case.sources if s.get("video_stream_ref")))

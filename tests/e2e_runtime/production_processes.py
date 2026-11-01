@@ -42,7 +42,7 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
     from daesingo.worker.composition_root import compose_registry
     from daesingo.worker.case_composition import StoredCaseReflector
     from daesingo.common.db import create_worker_engine
-    from daesingo.recording import RecordingService, LocalIncidentMaterializer
+    from daesingo.recording import RecordingService, LocalAnalysisMaterializer
     os.environ["DAESINGO_ENV_FILE"] = env_file
     engine = None
     try:
@@ -55,14 +55,20 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
         readout_calls = []
         builds, encodes, exports = [], [], []
         original_build = RecordingService.build_incident_clip
-        original_encode = LocalIncidentMaterializer.materialize
+        original_encode = LocalAnalysisMaterializer.materialize
+        original_run = LocalAnalysisMaterializer._run
+        def media_run(materializer, args):
+            # Includes input probing, decode, each encode and final concat/decode.
+            assert engine.pool.checkedout() == 0
+            return original_run(materializer, args)
         def build(service, resolution, options=None):
             assert engine.pool.checkedout() == 0
             builds.append(True)
             return original_build(service, resolution, options)
         def encode(materializer, *args):
             assert engine.pool.checkedout() == 0
-            encodes.append(True)
+            if args[-1] == "incident-encoding":
+                encodes.append(True)
             return original_encode(materializer, *args)
         def respond(request):
             assert engine.pool.checkedout() == 0
@@ -74,9 +80,13 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     "location_hint": None, "correction_target": None, "confidence": "high", "reasoning": "offline"}
             elif kind == "COARSE_SEARCH":
                 fractional = scenario == "clip_fractional"
+                multi = scenario == "clip_multisource"
                 candidates = [{"event_type": "SIGNAL", "span": {
-                    "start_sec": 1 / 30 if fractional else .1, "end_sec": 20 / 30 if fractional else .8},
-                    "at_sec": .5, "observed": ["red signal"], "score": .9}]
+                    # Provider replies in the slowed Coarse playback coordinate.
+                    "start_sec": 1 / 30 if fractional else .5 * settings.config.coarse_fps if multi else .1,
+                    "end_sec": 20 / 30 if fractional else 1.5 * settings.config.coarse_fps if multi else .8},
+                    "at_sec": settings.config.coarse_fps if multi else .5,
+                    "observed": ["red signal"], "score": .9}]
                 if scenario == "partial":
                     candidates.append({"event_type": "SIGNAL", "span": {"start_sec": 8, "end_sec": 9},
                         "at_sec": 8.5, "observed": ["outside source"], "score": .5})
@@ -96,7 +106,8 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
         with httpx.Client(transport=httpx.MockTransport(respond)) as client:
             with patch.object(openai, "OpenAI", lambda **kw: original(http_client=client, **kw)), \
                  patch.object(RecordingService, "build_incident_clip", build), \
-                 patch.object(LocalIncidentMaterializer, "materialize", encode):
+                 patch.object(LocalAnalysisMaterializer, "_run", media_run), \
+                 patch.object(LocalAnalysisMaterializer, "materialize", encode):
                 readout_factory = None
                 if kind in {"PLATE_READ", "OVERLAY_TIME_READ"}:
                     from daesingo.worker.readout_composition import recording_ocr_factory
@@ -135,9 +146,9 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     registry = compose_registry(engine=engine, startup=startup, readout_provider_factory=readout_factory)
                     stop = Event()
                     terminals = []
-                    def invoke(ctx):
+                    def invoke(ctx, *, logger=None):
                         assert ctx.kind == kind
-                        result = registry.dispatch(ctx)
+                        result = registry.dispatch(ctx, logger=logger)
                         terminals.append({"status": result.status, "failure_kind": result.failure_kind})
                         stop.set()
                         return result

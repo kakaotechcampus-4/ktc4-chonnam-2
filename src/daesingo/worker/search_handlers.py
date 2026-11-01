@@ -6,14 +6,16 @@ Usage finalization belongs to the existing Worker post-T1 reconciliation.
 """
 
 from collections.abc import Callable, Mapping
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Protocol, cast
 
 from pydantic import TypeAdapter
 from sqlalchemy.exc import SQLAlchemyError
 
 from daesingo import search
+from daesingo.recording import RecordingCapabilityError
 from daesingo.common.db.errors import (BeforeCommitFailure, CommitOutcomeUnknown,
     TransactionBoundaryError, TransactionRetryExhausted)
 from daesingo.common.jobs.execution import ExecutionContext, HandlerResult
@@ -22,6 +24,7 @@ from daesingo.common.jobs.produced import ProducedObject
 from daesingo.common.usage.port import UsageError
 from daesingo.search.runs import RunOutcome
 from daesingo.worker.registry import KindRegistry
+from daesingo.worker.production_media import _UnsupportedAnalysisInput
 
 SEARCH_KINDS = frozenset({"HINT_EXTRACT", "COARSE_SEARCH", "FINE_VERIFY"})
 
@@ -73,6 +76,7 @@ def search_registry(
     intent_factory: Callable[[], search.IntentHintExtractor],
     service_factory: Callable[[SearchInput], AbstractContextManager[search.SearchService]] | None = None,
     failures: SearchFailures | None = None,
+    report_progress: Callable[[ExecutionContext, search.SearchPhase], None] | None = None,
 ) -> KindRegistry:
     """One immutable registry. Factories must release execution resources on exit."""
     failures = failures if failures is not None else _public_failures()
@@ -102,11 +106,28 @@ def search_registry(
 
         if data.scope is None or service_factory is None:
             raise ValueError("Search scope and media capability required")
-        with service_factory(data) as service:
+        progress = None
+        if context.kind == "COARSE_SEARCH" and report_progress is not None:
+            progress = partial(report_progress, context)
+            progress("PREPARING")
+        with ExitStack() as resources:
+            # Only production preparation emits this private signal. Bare
+            # UNSUPPORTED_MEDIA from input/configuration/reads/exit is Runtime's.
+            try:
+                service = resources.enter_context(service_factory(data))
+            except _UnsupportedAnalysisInput:
+                context.checkpoint()
+                return HandlerResult(status="FAILED", failure_kind="RECORDING_UNSUPPORTED_MEDIA")
+            except RecordingCapabilityError as error:
+                context.checkpoint()
+                if error.code != "ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED":
+                    raise
+                return HandlerResult(status="FAILED",
+                    failure_kind="RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED")
             context.checkpoint()
             if context.kind == "COARSE_SEARCH":
                 result = _public_call(lambda: search.search_candidates(data.scope, service=service,
-                    usage_sink=context.usage_sink), failures)
+                    usage_sink=context.usage_sink, on_progress=progress), failures)
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result
@@ -133,7 +154,9 @@ def search_registry(
                 source_ref = sources[0].source_ref
                 result = _public_call(lambda: search.verify_visual(source_ref, data.scope.hint,
                     service=service, candidate=data.candidate, event_type=event_type,
-                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)
+                    # Search annotates int, while its arithmetic and the fixed
+                    # Case input support fractional seconds. Preserve the bound.
+                    max_latency_sec=data.max_latency_sec, usage_sink=context.usage_sink), failures)  # type: ignore[arg-type]
                 context.checkpoint()
                 if isinstance(result, HandlerResult):
                     return result
@@ -141,10 +164,10 @@ def search_registry(
         context.checkpoint()
         run = result.analysis_run
         failed = run.outcome == RunOutcome.FAILED
-        return HandlerResult(status="FAILED" if failed else "SUCCEEDED",
+        return HandlerResult.model_validate(dict(status="FAILED" if failed else "SUCCEEDED",
             failure_kind=failures.failure_kind_for_run(run),
             produced=({"kind": "analysis_run", "ref": run.run_id},),
-            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),))
+            objects=(ProducedObject(kind="analysis_run", ref=run.run_id, payload=payload),)))
 
     kinds = SEARCH_KINDS if service_factory is not None else {"HINT_EXTRACT"}
     return KindRegistry({kind: invoke for kind in kinds})

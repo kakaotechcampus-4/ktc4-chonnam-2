@@ -1,0 +1,30 @@
+{
+  "region": "ap-northeast-2",
+  "repository": "",
+  "project": "daesingo-runtime",
+  "mysql_volume": "",
+  "media_volume": "",
+  "mysql_image": "",
+  "mysql_uid": null,
+  "parameter_path": "",
+  "restart_policy": "",
+  "log_group": "",
+  "log_retention_days": null,
+  "log_buffer_bytes": null,
+  "disk_reserve_bytes": null,
+  "memory_reserve_bytes": null,
+  "packet_margin_bytes": null,
+  "decision_refs": {
+    "RD-12b": "pending",
+    "RD-12c": "pending",
+    "RD-12d": "pending",
+    "RD-12e": "pending",
+    "RD-12f": "pending",
+    "RD-12h": "pending",
+    "RD-13a": "pending",
+    "RD-13c": "pending",
+    "RD-13d": "pending",
+    "RD-11a": "pending",
+    "RD-07c": "pending"
+  }
+}

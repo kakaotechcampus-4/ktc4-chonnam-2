@@ -38,4 +38,5 @@
 - [등록 원본의 현재 AssetFacts 조회](local-asset-facts.md)
 - [실제 단일 원본의 SpanResolution 계산](local-span-resolution.md)
 - [실행별 로컬 AnalysisSource materialization](local-analysis-source.md)
+- [AnalysisSource byte·지원 길이 한도와 pending 운영값](analysis-source-limits.md)
 - [실제 단일 VIDEO IncidentClip과 Readout 경계](local-incident-clip.md)

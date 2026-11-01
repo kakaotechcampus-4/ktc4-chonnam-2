@@ -3,11 +3,11 @@
 **Status:** Input — 카테캠 운영진 공지 요약  
 **Source:** 카테캠 운영진 AWS 실습환경 공지 (비공개) + 팀 AWS 실환경 조회  
 **Notice date:** 확인 필요  
-**Captured:** 2026-10-02  
+**Captured:** 2026-10-02 · 재검증 2026-10-30(§9 · §10)  
 **Maintainer:** common/runtime — 김준영  
 **Router:** [Official Inputs](./README.md)
 
-> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
+> 공지 원문은 비공개이므로 싣지 않는다. §1–§4는 카테캠 고유 조건을 **사실만 요약**했고, §5–§7은 공지가 안내한 접속·운영 절차를 **표준 AWS 절차로 재서술**했다. §8은 2026-10-02 팀 AWS에서 직접 확인한 실환경 snapshot이다. §9는 2026-10-30 사용자가 브라우저 SSM에서 확인해 RT-14 구현자에게 전달한 관측이고, §10은 같은 날 RT-14(#450) 전에 권한 · SSM 경로를 다시 확인한 snapshot이다. 스크린샷과 본문에는 계정·사용자·리소스 식별자를 싣지 않는다.
 >
 > 이 문서는 외부 입력이며 결정이 아니다. Runtime 배포·용량 결정은 [`ops-spec.md`](../ops-spec.md)에 기록하고 이 문서를 근거로 가리킨다.
 
@@ -34,6 +34,8 @@
 | 스토리지 | 디스크 확장, 추가 볼륨 | 디스크 확장 |
 | 네트워크·관리형 | Elastic IP, RDS, ALB, 고비용 서비스(NAT Gateway·EKS·Redshift·SageMaker·ElastiCache 등) | RDS, ALB, Elastic IP, 기타 차단 서비스 |
 | 계정·보안 | 서울 외 리전, IAM 사용자·액세스 키 생성, CloudTrail 변경, Spot·Auto Scaling | — |
+
+> 위 표는 공지 원문이다. Elastic IP는 2026-10-31 실제로 할당·연결됐다(§11).
 
 자유롭게 할 수 있는 것:
 
@@ -112,7 +114,7 @@
 ## 7. 공지가 함께 안내한 운영 팁
 
 - **디스크 부족:** 가장 흔한 원인은 Docker 빌드 캐시 누적이다. `docker system df`로 확인하고 `docker system prune`·`docker volume prune`으로 정리한다. 그래도 부족하면 §4로 확장을 요청한다.
-- **외부 공개:** 보안그룹에서 서비스 포트(예: 80/443/8080)를 열고 서버 공인 IP로 접속한다. HTTPS는 Caddy 등으로 Let's Encrypt 인증서를 발급한다. 고정 IP(Elastic IP)는 기본 차단이므로 §4 요청 대상이다.
+- **외부 공개:** 보안그룹에서 서비스 포트(예: 80/443/8080)를 열고 서버 공인 IP로 접속한다. HTTPS는 Caddy 등으로 Let's Encrypt 인증서를 발급한다. 고정 IP(Elastic IP)는 기본 차단이므로 §4 요청 대상이다(공지 원문. 실제 권한은 §11).
 
 
 ## 8. 2026-10-02 실환경 검증 snapshot
@@ -191,3 +193,114 @@ local terminal
 - RDS 요청 시 지원 가능한 engine / instance class / storage 범위
 - ALB / Elastic IP 지원 조건
 - 팀별 AWS 예산 또는 비용 상한
+
+## 9. 2026-10-30 KST 사용자 관측
+
+아래는 사용자가 브라우저 SSM에서 직접 확인해 전달한 **당시 관측값**이다.
+이번 RT-14 구현자는 AWS 계정/SSM/EC2에 접속하지 않았다. §8의 2026-10-02 조사와
+합쳐 최신 IAM/CloudWatch/리소스 상태를 확인한 것으로 표현하지 않는다.
+
+| 항목 | 사용자 전달 관측 |
+| --- | --- |
+| 사용자 / architecture | `ubuntu` / `x86_64` |
+| RAM / swap | 총 약3.7GiB, 당시 available 약3.1GiB / swap0 |
+| root filesystem | 약48GB, 당시 여유 약45GB |
+| Docker | 29.9.2, systemd service active |
+| socket 권한 | 일반 사용자 접근 거부, sudo 조회 가능 |
+| 최종 Docker inventory | Compose project/image/container/volume/build cache 각각0 |
+
+앞선 조회에 잠시 보였던 `sp1-*` busybox container는 후속 조회에서 모두 없어졌다.
+소유자/생성 목적/정리 주체는 확인되지 않았다. 빈 Docker inventory는 host에 다른
+서비스가 없다는 증거도, Paddle Worker+API+MySQL 동시 운영 용량의 증거도 아니다.
+
+추가로 받은 캠퍼스 도메인 가이드는 EIP를 즉시 사용할 수 있다고 안내하지만 AWS 사용
+가이드는 기본 차단·요청 필요라고 안내한다. 실제 권한 또는 인프라 담당 확인 전까지
+EIP 허용은 **미확정**으로 둔다. EIP 무료나 기존 공인 IPv4 비용 면제로 해석하지 않는다.
+첨부 가이드 원문/내부 접속 정보는 공개 저장소에 복사하지 않는다. → 2026-10-31 확인 결과는 §11.
+
+## 10. 2026-10-30 RT-14 전 재검증 snapshot
+
+RT-14([#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)) Decision Gate 전에 §8이 「확인 대상」으로 남긴 권한과 SSM 실행 경로를 다시 확인했다. §8과 같은 SSO profile(`StudentDeveloper`)을 썼다. 조회 외에 **생성 → 즉시 삭제 시도**와 **EC2 시작 → SSM Run Command → 중지**를 했고, 시도 뒤 남은 리소스가 없음을 다시 조회해 확인했다. 이 시작 · 중지는 같은 시간대에 다른 팀원이 쓰던 instance와 겹쳤다(아래 「공유 EC2 사용 충돌」). §8과 마찬가지로 당일 관측값이며 결정이 아니다. 식별값은 싣지 않는다.
+
+### EC2 상태
+
+| 항목 | 실측 |
+| --- | --- |
+| 인스턴스 상태 | 확인을 시작할 때 `stopped`(2026-10-02 확인 직후 중지된 뒤 그대로). 확인 · Docker 설치 · 스파이크를 위해 시작했고 자동화가 두 번 중지했다. 이후 다른 팀 principal이 다시 시작해 **마지막 관측 상태는 `running`**이다(아래 「공유 EC2 사용 충돌」) |
+| Public IPv4 | 중지 상태에서 없음. Elastic IP가 없으므로 시작할 때마다 바뀐다 |
+| CPU credit | `unlimited` |
+| Instance metadata | IMDSv2 필수(`HttpTokens=required`) · `HttpPutResponseHopLimit=1` |
+| Root EBS | gp3 50 GiB, 암호화 |
+| OS | Ubuntu 24.04.4 LTS |
+| disk 사용 | `/` 48G 중 2.6G (6%) |
+| 메모리 | total 3,832 MiB · swap 0 |
+| Docker / Compose | 확인 시점에는 **설치되지 않음**. 같은 날 RT-14 스파이크를 위해 Docker Engine 29.9.2 · Compose plugin v5.6.1을 설치했다(Docker 공식 apt 저장소, 버전 고정, `docker.service` enable). 설치 script와 스파이크 결과는 [RT-14 배포 설계](../rt14-deployment-design.md) 부록 A · §17 |
+| SSM Agent | snap 설치본, enabled · active. 시작 뒤 약 7초 만에 `Online` |
+| CloudWatch Agent | 설치되지 않음 |
+| ECR API endpoint DNS | resolve 됨 |
+
+### 공유 EC2 사용 충돌
+
+EC2는 팀원이 함께 쓴다(§1). 확인이 끝난 뒤 CloudTrail을 조회하니, 다른 팀 principal도 같은 시간대에 이 instance를 쓰고 있었다. 순서는 다음과 같다. principal · 시각 · 식별값은 싣지 않는다.
+
+1. 다른 principal이 EC2를 시작했다.
+2. 약 30초 뒤 이번 확인 script도 시작을 요청했다. 이어서 Docker 설치(host 전체 변경)와 RT-14 스파이크를 실행했다.
+3. 스파이크 script가 종료 처리로 EC2를 중지했다.
+4. IMDS 설정을 다시 확인하는 script가 EC2를 시작했다가 중지했다.
+5. 직후 다른 principal이 다시 시작했다. **마지막 관측 상태는 `running`이다.**
+
+즉 **다른 팀원이 쓰던 instance를 자동화가 두 번 중지했을 가능성이 있다.** 그 사용 중에 host 전체에 영향을 주는 package 설치도 했다. 자동화가 「시작한 쪽이 끝나면 끈다」고 가정한 것이 원인이다. 공유 host에서는 시작과 종료 사이에 다른 사용자가 끼어들 수 있으므로 이 가정이 성립하지 않는다. 이 사실이 주는 운영 원칙은 [Ops Spec](../ops-spec.md) §2-1 「공유 EC2 전원 · host 변경 원칙」에 둔다.
+
+§9의 `sp1-*` busybox container는 이름과 image가 이 확인의 스파이크(SP-1) 구성과 일치하고, 스파이크는 끝날 때 자기 container를 지웠다. 두 관측의 container 식별값은 서로 대조하지 않았다.
+
+### IAM role 구성
+
+조회는 IAM 정책까지다. Organizations SCP는 이 SSO 권한으로 조회되지 않는다(`AccessDenied`). 그래서 아래 「생성 시도」로 실제 동작을 따로 확인했다.
+
+| 주체 | 붙은 managed policy | inline policy의 Deny |
+| --- | --- | --- |
+| EC2 instance role (`ktc-ec2-ssm-role`) | `PowerUserAccess` · `AmazonSSMManagedInstanceCore` · `CloudWatchAgentServerPolicy` | RDS 생성 · 복원, ALB 생성. 별도 inline으로 카테캠 관리 role의 PassRole 거부 |
+| GitHub deploy role (`ktc-github-deploy`) | `PowerUserAccess` | 카테캠 관리 role · instance profile · OIDC provider 변경, 장기 자격증명 생성, `ec2:RunInstances` · `ec2:TerminateInstances`, **`ec2:CreateVolume` · `ec2:ModifyVolume`**, `ec2:ModifyInstanceAttribute`, RDS 생성 · 복원, ALB 생성 |
+
+- GitHub OIDC provider는 1개다. deploy role trust의 `sub` 조건은 이 repository의 이름 형식과 immutable owner/repo ID 형식 두 가지를 모두 `:*`로 허용한다. 즉 **branch · tag · PR · environment를 AWS 쪽에서 구분하지 않는다.**
+- deploy role의 `ec2:CreateVolume` 거부는 §2 「추가 볼륨 불가」를 정책으로 확인한 것이다. EBS snapshot에서 새 volume을 만들어 복원하는 경로가 이 role로는 막혀 있다.
+- EC2 instance role이 `PowerUserAccess`를 갖는다. hop limit 1에서는 bridge network의 container가 IMDS 자격증명에 닿지 않는다(위 표).
+
+### 생성 → 즉시 삭제 시도
+
+모두 성공했고 남은 리소스는 0건이다.
+
+| 서비스 | 시도한 작업 | 결과 |
+| --- | --- | --- |
+| ECR | repository 생성(tag `IMMUTABLE`) · login token 발급 · lifecycle policy 설정 · 삭제 | PASS |
+| CloudWatch Logs | Log Group 생성 · retention 설정 · 삭제 | PASS |
+| SSM Parameter Store | `SecureString`(기본 `aws/ssm` key) 생성 · `get-parameters-by-path --with-decryption`(값 일치) · 삭제 | PASS |
+
+SCP는 계정 안의 모든 role에 똑같이 적용되고 위 두 role의 IAM 정책도 이 작업을 허용하므로, 이 작업들이 SCP로 막혀 있지 않다는 근거로 쓴다. deploy role · EC2 role로 직접 하는 확인은 OIDC 검증 workflow와 첫 배포에서 한다.
+
+### SSM Run Command 동작
+
+`AWS-RunShellScript`를 `send-command` → `get-command-invocation`으로 끝까지 확인했다.
+
+| 시도 | 명령 | Status / ResponseCode |
+| --- | --- | --- |
+| host inventory | 위 「EC2 상태」 표의 값 조회 | `Success` / 0. 실행 사용자는 `root` |
+| 중간 실패 | `echo step1` → `false` → `echo step3` | **`Success` / 0** — step3까지 실행되고 중간 실패가 가려짐 |
+| `set -e` 추가 | 같은 명령 앞에 `set -e` | `Failed` / 1 — step1 뒤에서 멈춤 |
+
+- 명령은 bash가 아니라 `/bin/sh`로 실행됐다(오류 메시지가 dash 형식 `_script.sh: N: ...`).
+- 마지막 명령의 exit code가 결과가 된다는 [Research 04](../research/04-deployment-observability-operations-2026-10-03.md) §3의 공식 문서 사실이 실제로 재현됐다.
+
+## 11. 2026-10-31 RT-14 실행 중 관측 — Elastic IP
+
+§9가 「미확정」으로 남긴 EIP 권한을 RT-14 첫 배포 중에 확인했다. 같은 SSO profile(`StudentDeveloper`)이다. 당일 관측값이며 식별값(주소 · allocation ID)은 싣지 않는다. 실행 전체 기록은 [RT-14 AWS 배포 · Real E2E](../experiments/2026-10-31-rt14-aws-real-e2e.md)다.
+
+| 확인 | 결과 |
+| --- | --- |
+| `ec2 allocate-address --domain vpc --dry-run` | `DryRunOperation` — 권한 있음 |
+| `ec2 associate-address --dry-run` | `DryRunOperation` — 권한 있음 |
+| 실제 할당 · 연결 · tag | 각 1회 시도로 성공. 연결 뒤 SSM · API health · release 상태 불변 |
+
+- 카테캠 「무료 도메인 발급 가이드」(2026-09-22 공지)의 「팀 계정에 권한이 이미 있으니 별도 신청 없이」와 일치한다. §2 · §7의 AWS 사용 가이드 「할당 불가 · 요청 시 검토」는 현재 권한과 다르다.
+- 비용은 여전히 무료로 해석하지 않는다. 공인 IPv4는 사용 여부와 관계없이 시간당 과금되며, EC2가 중지된 동안에도 연결된 EIP는 과금된다. 실행 중에는 자동 할당 공인 IPv4와 같은 요금이다.
+- dry-run은 IAM · SCP 권한 확인이다. 계정의 EIP 개수 한도나 카테캠의 사후 감시 정책까지 확인한 것은 아니다.

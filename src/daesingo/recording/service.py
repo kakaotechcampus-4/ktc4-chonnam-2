@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .publication import PublishRegistration, managed_publish_locator
+
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO, RawIOBase
@@ -53,6 +55,7 @@ from .inspection import SourceFrameInspections, source_inspections
 from .incidents import LocalIncidentMaterializer
 from .time_sources import AnchorApplication, LocalTimeSourceObserver, ObservedTimeSources, TimeSourceCandidate
 from .durable import stable_media
+from .analysis_limits import AnalysisSourceLimits, analysis_source_scope
 
 
 _FRAME_LOCATOR_ADAPTER = TypeAdapter(FrameLocator)
@@ -126,6 +129,8 @@ class RecordingService(RecordingExports):
         export_materializer=None,
         durable_prepared: bool = False,
         case_id: str | None = None,
+        analysis_limits: AnalysisSourceLimits | None = None,
+        analysis_checkpoint=None,
     ) -> None:
         self._repository = repository or InMemoryRecordingRepository()
         self._export_materializer = export_materializer
@@ -146,8 +151,26 @@ class RecordingService(RecordingExports):
         self._time_candidates: dict[str, TimeSourceCandidate] = {}
         self._durable_prepared = durable_prepared
         self._case_id = identity(case_id) if case_id is not None else None
+        if analysis_limits is not None and not isinstance(analysis_limits, AnalysisSourceLimits):
+            raise ValueError("explicit AnalysisSourceLimits required")
+        self._analysis_limits = analysis_limits
+        self._analysis_checkpoint = analysis_checkpoint or (lambda: None)
+
+    def read_publish_registration(self, locator):
+        """Current registration fact, not authorization to delete a file.
+
+        Caller owns the transaction and writer synchronization. Failures
+        propagate; unsupported/ambiguous results are explicitly UNKNOWN.
+        """
+        if not managed_publish_locator(locator):
+            return PublishRegistration.UNKNOWN
+        result = self._repository.read_publish_registration(locator)
+        return result if isinstance(result, PublishRegistration) else PublishRegistration.UNKNOWN
 
     def _publish_prepared(self, media, content):
+        if isinstance(media, AnalysisSource) and self._analysis_limits is not None:
+            self._analysis_limits.check_bytes(len(content))
+        self._analysis_checkpoint()
         if not self._durable_prepared:
             return media
         stored = stable_media(media, content)
@@ -660,6 +683,8 @@ class RecordingService(RecordingExports):
         *, timeline_ref: TimelineRef | dict[str, Any] | None = None,
     ) -> AnalysisSource:
         parsed_span = AssetSpan.model_validate(span)
+        if self._analysis_limits is not None:
+            self._analysis_limits.check_range(parsed_span.timeline_range)
         if not profile_ref:
             raise ValueError("profile_ref는 비어 있을 수 없습니다")
         local = self._repository.get_local_source(parsed_span.source_asset_ref)
@@ -696,7 +721,8 @@ class RecordingService(RecordingExports):
             index = self._repository.get_local_stream_index(parsed_span.media_stream_ref)
             if index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 stream index가 없습니다")
-            with source_inspections(self._source_inspections), analysis_tail_scope():
+            with source_inspections(self._source_inspections), analysis_tail_scope(), analysis_source_scope(
+                    self._analysis_limits, self._analysis_checkpoint):
                 prepared = self._analysis_materializer.materialize(local, index, parsed_span, profile_ref)
             source = AnalysisSource(
                 contract="AnalysisSource", contract_version="analysis-source-derived/v1",
@@ -733,6 +759,8 @@ class RecordingService(RecordingExports):
         spans = [AssetSpan.model_validate(s) for s in data.get("spans", [])]
         data["spans"] = sorted(spans, key=lambda s: s.sequence)
         parsed = SpanResolution.model_validate(data)
+        if self._analysis_limits is not None:
+            self._analysis_limits.check_range(parsed.requested_range)
         if self._analysis_closed:
             raise RecordingCapabilityError("UNAVAILABLE", "로컬 AnalysisSource 실행이 종료되었습니다")
         if parsed.status != "COMPLETE":
@@ -782,7 +810,8 @@ class RecordingService(RecordingExports):
             if local is None or index is None:
                 raise RecordingCapabilityError("UNAVAILABLE", "원본 또는 stream index가 없습니다")
             inputs.append((local, index, span))
-        with source_inspections(self._source_inspections), analysis_tail_scope():
+        with source_inspections(self._source_inspections), analysis_tail_scope(), analysis_source_scope(
+                self._analysis_limits, self._analysis_checkpoint):
             prepared = engine._materialize_many(inputs, profile_ref)
         source = AnalysisSource(contract="AnalysisSource", contract_version="analysis-source-derived/v1",
             analysis_source_ref=f"as_{uuid4().hex}", asset_kind="ANALYSIS_SOURCE",

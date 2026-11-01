@@ -9,7 +9,7 @@ from typing import Any, Literal
 from uuid import uuid4
 
 from sqlalchemy import insert, select, func, text, update
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.engine import Connection, Engine, RowMapping
 
 from daesingo.common.config import WorkerSettings
 from daesingo.common.db.transactions import run_worker_transaction
@@ -41,7 +41,7 @@ def enqueue(conn: Connection, job_records: Iterable[Mapping[str, Any]], trace_id
     if not conn.in_transaction():
         raise ValueError("enqueue requires a caller-owned transaction")
     trace = _identifier(trace_id, "trace_id", 128)
-    rows = [
+    rows: list[dict[str, Any]] = [
         {"execution_id": f"exec_{uuid4().hex}",
          "job_id": _identifier(job["job_id"], "job_id", 191),
          "case_id": _identifier(job["case_id"], "case_id", 128),
@@ -94,7 +94,7 @@ _EXECUTION_CONTRACT_FIELDS = (
 )
 
 
-def _execution_model(row: Mapping[str, Any], **changes: Any) -> JobExecution:
+def _execution_model(row: Mapping[str, Any] | RowMapping, **changes: Any) -> JobExecution:
     # Pydantic errors retain their input even when extra fields are ignored.
     # Project before validation so neither rows nor overrides disclose internals.
     payload = {name: row[name] for name in _EXECUTION_CONTRACT_FIELDS}
@@ -107,8 +107,10 @@ def _execution_model(row: Mapping[str, Any], **changes: Any) -> JobExecution:
                         usage_refs=[], **payload)
 
 
-def _claimed(row: Mapping[str, Any]) -> ClaimedExecution:
+def _claimed(row: Mapping[str, Any] | RowMapping) -> ClaimedExecution:
     model = _execution_model(row)
+    # The validated RUNNING Contract requires started_at.
+    assert model.started_at is not None
     return ClaimedExecution(
         execution_id=model.execution_id, job_id=model.job_id, attempt=model.attempt,
         kind=row["kind"], case_id=row["case_id"], trace_id=row["trace_id"],

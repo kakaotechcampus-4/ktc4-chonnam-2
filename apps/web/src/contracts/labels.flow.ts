@@ -60,3 +60,13 @@ export const PREVIEW_UNAVAILABLE = '미리보기를 표시할 수 없어요'
 
 /** 상황 설명 제목 — 결과 없음 화면의 「적어 주신 상황」과 같은 말 */
 export const SITUATION_HEADING = '적어 주신 상황'
+
+export const SCENE_SEARCH_MESSAGES = {
+  PREPARING: '영상을 준비하고 있어요',
+  SEARCHING: '말씀하신 상황을 찾고 있어요',
+  ORGANIZING: '찾은 장면을 정리하고 있어요',
+  DONE: '장면 찾기를 마쳤어요',
+  DELAYED: '장면을 찾는 데 시간이 더 걸리고 있어요',
+  UNKNOWN: '장면을 찾고 있어요',
+} as const
+export const SCENE_SEARCH_DELAY_MS = 120_000

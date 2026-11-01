@@ -30,7 +30,8 @@ def db_reason(error: BaseException) -> str | None:
         return "pool_timeout"
     if not isinstance(error, DBAPIError):
         return None
-    code = error.orig.args[0] if getattr(error.orig, "args", ()) else None
+    args = getattr(error.orig, "args", ())
+    code = args[0] if args else None
     if code == 1205:
         return "lock_wait_timeout"
     if code == 1213:

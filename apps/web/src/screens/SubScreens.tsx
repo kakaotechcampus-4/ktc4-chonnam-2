@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
+import { splitDateTime } from '../state/resultModel'
 import { CandidateCard } from '../components/CandidateCard'
+import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
 import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
@@ -66,15 +68,18 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
   )
 }
 
+// 사용자 입력 번호판 형식(#487) — 경고용이다. 최종 규칙이 아니다(ADR-EVIDENCE-006: 정상값인 지역·구형 번호판도 어긋날 수 있다).
+const PLATE_FORMAT = /^([가-힣]{2})?\d{2,3}[가-힣]\d{4}$/
+
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
-// 두 이미지는 계약상 FrameRef(evidence.preview_ref · plate_preview_ref)로만 와서 아직 그릴 수 없다 —
-// ref로 이미지를 가져오는 경로가 생기면(#47) 자리에 넣는다.
+// 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다(#47 · #446).
+// 값이 없으면(null) 자리만 둔다. 번호판 확대는 자를 위치(bbox)가 CaseView에 없어 아직 자리만 둔다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
-// 시연은 화면 안에서만 반영한다 — 번호판 직접 입력 command(MANUAL_PLATE_INPUT)는 다음 판본이다.
-// `onEdit`이 없으면 수정 버튼을 두지 않는다 — 직접 입력을 case로 보내는 command가 아직 없다(#212 · #217).
+// 시연은 화면 안에서만 반영하고, `?api`는 `MANUAL_PLATE_INPUT` command로 보낸다(#449).
+// `onEdit`이 없으면 수정 버튼을 두지 않는다.
 export function PlateCheck(props: {
   view: CaseView
   aiValue?: string | null
@@ -82,6 +87,8 @@ export function PlateCheck(props: {
   startEditing?: boolean
   onBack: () => void
   onEdit?: (plate: string) => void
+  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -106,23 +113,30 @@ export function PlateCheck(props: {
       </SubPage>
     )
   const plate = evidence.plate_display
+  const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const src = sourceLabel(plate.source_label_key)
   const edited = plate.info_state === 'INFO_USER_CONFIRMED' && props.aiValue !== undefined && props.aiValue !== plate.value
+  // 입력한 그대로 보낸다(`12가 3456`도 그대로). 공백은 형식을 볼 때만 지운다. 형식이 틀려도 저장은 막지 않고 경고만 한다(core-user-flow §12).
+  const plateInput = (editing ?? '').trim()
+  const plateOk = PLATE_FORMAT.test(plateInput.replace(/\s/g, ''))
+  const plateWrong = plateInput !== '' && !plateOk
+  // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
+  const pending = props.view.running_jobs.length > 0
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
         <figure className="plate-fig plate-scene">
-          <div className="plate-frame">
+          <FrameSlot className="plate-frame" src={frame(evidence.plate_preview_ref)} alt="번호판을 읽은 장면">
             <Film size={26} strokeWidth={1.5} aria-hidden />
-            <span>장면 이미지 준비 중</span>
-          </div>
+            <span>{pending ? '장면 이미지 준비 중' : '장면 이미지가 없어요'}</span>
+          </FrameSlot>
           <figcaption>번호판을 읽은 장면</figcaption>
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
             <div className="plate-frame plate-crop">
               <Film size={24} strokeWidth={1.5} aria-hidden />
-              <span>번호판 이미지 준비 중</span>
+              <span>{pending ? '번호판 이미지 준비 중' : '번호판 이미지가 없어요'}</span>
             </div>
             <figcaption>번호판 확대</figcaption>
           </figure>
@@ -161,7 +175,8 @@ export function PlateCheck(props: {
                 className="plate-form"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (editing.trim()) props.onEdit?.(editing.trim())
+                  if (plateInput === '') return
+                  props.onEdit?.(plateInput)
                   close()
                 }}
                 onKeyDown={(e) => {
@@ -174,9 +189,14 @@ export function PlateCheck(props: {
                   autoFocus
                   value={editing}
                   onChange={(e) => setEditing(e.target.value)}
+                  aria-invalid={plateWrong}
+                  aria-describedby="plate-format"
                 />
+                <span className="rs-hint" id="plate-format">
+                  {plateWrong ? '번호판 형식을 확인해 주세요 (예: 12가3456)' : '예: 12가3456'}
+                </span>
                 <div className="plate-form-actions">
-                  <button type="submit" className="rs-btn pri" disabled={!editing.trim()}>
+                  <button type="submit" className="rs-btn pri" disabled={plateInput === ''}>
                     저장
                   </button>
                   <button type="button" className="rs-btn sec" onClick={close}>
@@ -188,6 +208,43 @@ export function PlateCheck(props: {
           </section>
         </div>
       </div>
+    </SubPage>
+  )
+}
+
+// 발생 시각 직접 입력(#449) — 결과 화면 발생 시간의 「시각 입력하기 · 수정하기」나 notice의 `시각 직접 입력`으로 연다.
+// 입력칸은 날짜 · 시간만 받고, 계약이 오프셋이 있는 RFC3339를 요구해 한국 시간(+09:00)을 붙여 보낸다.
+export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (value: string) => void }): JSX.Element {
+  const shown = splitDateTime(props.view.evidence?.event_time_display.value ?? null)
+  const [date, setDate] = useState(shown.date ?? '')
+  const [time, setTime] = useState(shown.time ?? '')
+  return (
+    <SubPage title="발생 시각" onBack={props.onBack} className="time-page">
+      <form
+        className="rs-group"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (date && time) props.onSave(`${date}T${time.length === 5 ? `${time}:00` : time}+09:00`)
+        }}
+      >
+        <label className="rs-field">
+          <span className="rs-label">날짜</span>
+          <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="rs-field">
+          <span className="rs-label">시간</span>
+          <input type="time" step={1} className="field" value={time} onChange={(e) => setTime(e.target.value)} />
+        </label>
+        <span className="rs-hint">한국 시간 기준으로 저장해요.</span>
+        <div className="rs-actions">
+          <button type="submit" className="rs-btn pri" disabled={!date || !time}>
+            저장
+          </button>
+          <button type="button" className="rs-btn sec" onClick={props.onBack}>
+            취소
+          </button>
+        </div>
+      </form>
     </SubPage>
   )
 }

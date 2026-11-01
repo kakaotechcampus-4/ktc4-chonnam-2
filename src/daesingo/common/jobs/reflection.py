@@ -144,7 +144,7 @@ def reflect_terminal(conn: Connection, incoming: ReflectionInput, reflector: Res
         return row is not None and all(row[key] == value for key, value in expected.items())
 
     stored = conn.execute(statement).mappings().one_or_none()
-    if not matching(stored):
+    if stored is None or not matching(stored):
         raise ValueError("reflection terminal facts mismatch")
     if stored["case_applied_at"] is not None:
         if result.status == "APPLIED":
@@ -159,7 +159,7 @@ def reflect_terminal(conn: Connection, incoming: ReflectionInput, reflector: Res
     ).values(case_applied_at=func.utc_timestamp(6))).rowcount
     if changed != 1:
         stored = conn.execute(statement).mappings().one_or_none()
-        if not matching(stored) or stored["case_applied_at"] is None:
+        if stored is None or not matching(stored) or stored["case_applied_at"] is None:
             raise ValueError("reflection marker not recorded")
         return ReflectionResult("ALREADY_APPLIED")
     return result

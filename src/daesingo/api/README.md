@@ -6,6 +6,13 @@ CleanupSettings 주기로 반복하며 종료 때 소유 thread를 join한다. u
 명시적 temp_root 주입·활성 보호용 factory이며 현재 기본 Recording에는
 materializer가 없다. [경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
 
+2026-10-31 P-6 후속(#445)은 별도 orphan lease를 수신 전부터 DB 등록의
+commit/rollback·취소 정리까지 유지한다. lease 대기는 기존 upload deadline에
+포함한다. 오래된 source 후보가 있으면 startup/주기 scan도 Recording 공개
+capability를 통해 짧은 DB 조회를 수행하며, 실패 시 파일을 보존한다. 아래
+RT-08의 startup DB 미접속 설명은 이 후속 추가 전의 경계다. 파일 삭제 동안
+DB connection을 보유하지 않는다. [구현·검증·제약](../../../docs/runtime/issue445-orphan-publish.md).
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §8-1 · §8-2
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.

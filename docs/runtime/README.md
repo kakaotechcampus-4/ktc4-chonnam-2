@@ -2,6 +2,10 @@
 
 대신고의 `common/runtime` 실행 인프라 문서 진입점이다.
 
+P-6 orphan publish 후속 #445의 구현·안전성·직접 검증·남은 Owner/CI 확인은
+[Implementation Notes](issue445-orphan-publish.md)에 기록한다. 기존 RT-12(a)/(b)
+이력의 publish 제외 범위는 소급 변경하지 않는다.
+
 > `common/runtime`은 여덟 번째 도메인 모듈이 아니다. `case`가 작업의 이유와 발주 의도를 소유하고, Runtime은 그 Intent를 실제 실행으로 옮긴다.
 
 ## Source of Truth 우선순위
@@ -21,9 +25,12 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 
 | 문서 | 역할 |
 | --- | --- |
+| [`local-runtime-environment.md`](./local-runtime-environment.md) | 현재 로컬 Compose/API/Worker canonical 실행환경: 실제 env·secret 경계·버전·Recording profile 미결·production OCR·실행 순서·8종 등록 확인 (#460) |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
+| [`rt14-deployment.md`](./rt14-deployment.md) | RT-14 준비 도구·보호 입력·CI/ECR/SSM/Compose·rollback 명령, 미결 정책/실계정 acceptance와 증거 경계 (#450) |
+| [`rt14-deployment-design.md`](./rt14-deployment-design.md) | RT-14 Decision Gate 승인본(2026-10-30) — Gate별 상태(ACCEPT · 구현 후 acceptance 대기 · 변경 필요 · 후속), 근거, 공개 endpoint 모델, 남은 구현 변경 · blocker, 공개 운영 hardening 경계 (#450) |
 | [`runtime-ops-workflow.md`](./runtime-ops-workflow.md) | Runtime/Ops 작업 순서 — 정합성 검수 → 공식 제약 → Open Decision → 필요한 외부 조사 → 필수 결정 → Baseline → 구현·관측 → 실험 → 갱신. 결정은 담지 않음 |
 | [`provisional-baseline-v0.1.md`](./provisional-baseline-v0.1.md) | workflow §6 산출물 — Worker · polling · lease/heartbeat/STALE · retry · DB · upload · frame · cleanup · health · logging의 **Provisional 시작값의 canonical source**. 다른 문서는 ID(`B-xx`)만 가리킨다 |
 | [`runtime-implementation-plan.md`](./runtime-implementation-plan.md) | workflow §7 산출물 — 현재 구현 gap · critical path · Task/Issue 분해 · Decision Gate 위치 · integration test 배치 · 구현 책임 구조(§12 Single Implementer + Deferred Owner Review). 결정 · 값을 새로 만들지 않는다 |

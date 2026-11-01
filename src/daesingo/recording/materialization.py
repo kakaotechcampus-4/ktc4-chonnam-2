@@ -14,6 +14,8 @@ from .probe import LocalSource, _snapshot
 from .observability import observed_materialization, phase
 from .inspection import active_inspections
 from .analysis_tail import TailDecodeFailure, allowed, report, validate_tail
+from .analysis_limits import byte_budget, check_output, read_output
+from .analysis_process import run_output
 
 
 class _FrameCoverageError(RecordingCapabilityError):
@@ -48,6 +50,8 @@ class MaterializedVideo:
     time_base: Fraction | None = None
     video_size: tuple[int, int] | None = None
     best_effort: bool = False
+    # Selected source coverage before encoding; not serialized as output facts.
+    source_frames: tuple[tuple[Fraction, Fraction], ...] = ()
 
 
 def _millisecond_quantization(payload, base, frames):
@@ -91,8 +95,12 @@ class LocalAnalysisMaterializer:
         return materialize_chain(self, inputs, profile_ref)
 
     def _run(self, args):
-        result = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
-                                timeout=self._timeout, check=False)
+        if byte_budget() is not None and "-movflags" in args:
+            code, stderr = run_output(args, Path(args[-1]), self._timeout)
+            result = subprocess.CompletedProcess(args, code, b"", stderr)
+        else:
+            result = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True,
+                                    timeout=self._timeout, check=False)
         if result.returncode:
             if ("-vf" in args and "-xerror" in args
                     and b"No start code is found" in result.stderr
@@ -259,6 +267,7 @@ class LocalAnalysisMaterializer:
                         output.unlink(missing_ok=True)
                         self._run([arg for arg in command if arg != "-xerror"])
                         fallback = True
+                check_output(output)
                 with phase("output_probe"):
                     probed = self._probe(output)
                 with phase("output_validate"):
@@ -289,7 +298,7 @@ class LocalAnalysisMaterializer:
                     self._strict_decode(output)
                     audit["output_strict_decode"] = True
                 with phase("bytes_read"):
-                    content = output.read_bytes()
+                    content = read_output(output)
                 with phase("bytes_validate"):
                     if not content:
                         raise ValueError("빈 출력 media")
@@ -310,7 +319,8 @@ class LocalAnalysisMaterializer:
                 shift = Fraction(str(span.timeline_range.start_sec)) - start
                 result = MaterializedVideo(content, duration, TimeRange(
                     start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)),
-                    tuple(output_frames), output_base, (width, profile.height), fallback)
+                    tuple(output_frames), output_base, (width, profile.height), fallback,
+                    tuple((at - actual_start, length) for _, at, length in selected))
             # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
             if inspections is not None:
                 inspections.put(inspection_key, inspected)

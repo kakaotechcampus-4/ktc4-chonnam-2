@@ -9,6 +9,13 @@ import type { CaseView, Notice, RunningJob } from '../contracts/caseView'
 /** 탐색 기다리기가 멈춘 notice — 사용자 중단(#342) · case 대기 timeout(#358) */
 export const HALTED_CODES: ReadonlySet<string> = new Set(['case.analysis_stopped', 'case.analysis_timed_out'])
 
+/** 다시 하기 action이 없는 실패 — 같은 입력 · 같은 후보로는 결과가 같아 실패 화면에서 출구만 보인다(#481 · #482) */
+const DEAD_END_CODES: ReadonlySet<string> = new Set([
+  'recording.analysis_range_too_long',
+  'recording.incident_clip_build_failed',
+  'search.visual_verify_failed',
+])
+
 export type ScreenKind =
   | 'PROGRESS'
   | 'STOPPED'
@@ -66,6 +73,12 @@ export function selectScreen(view: CaseView): Screen {
   // (#232). 응답 입력(맞아요/잘 모르겠어요)은 아직 없어 notice만 보인다.
   if (view.evidence === null && view.notices.some((n) => n.code === 'case.situation_response_pending')) {
     return { ...base, kind: 'AWAIT_RESPONSE', reason: 'evidence=null · case.situation_response_pending' }
+  }
+
+  // 분석 범위 초과는 SEARCHING, 클립 · Fine 실패는 evidence 조립 전에 온다 — 둘 다 진행 화면에 두면 끝나지 않는다.
+  // 같은 후보를 다시 골라 클립을 새로 만드는 동안(running_jobs)은 진행이다(#426과 같다).
+  if (jobs.length === 0 && view.notices.some((n) => DEAD_END_CODES.has(n.code))) {
+    return { ...base, kind: 'SEARCH_FAILED', reason: 'notice 실패(다시 하기 없음)' }
   }
 
   // evidence=null은 「값이 없다」가 아니라 「증거 조립 전」이다. 값 상태 화면이

@@ -9,6 +9,7 @@ from eval.runners.impls import (
     mock_pack,
     readout_paddle,
     search_gemini,
+    search_pipeline,
     yolo_persistence,
 )
 
@@ -18,6 +19,9 @@ _REGISTRY = {
     # 팀 공용 Mock Pack 산출물을 읽는다. 정답지를 보지 않으므로 fake: 가 아니다.
     "mock_pack:contracts": mock_pack.run,
     "search:gemini-coarse-p3": search_gemini.run,
+    "search:s1-flash-1x": search_pipeline.run_s1,
+    "search:s2-flash-slow": search_pipeline.run_s2,
+    "search:s3-argon-gore": search_pipeline.run_s3,
     "readout:paddle-crop": readout_paddle.run,
     "readout-exp:yolo11n": yolo_persistence.run,
 }

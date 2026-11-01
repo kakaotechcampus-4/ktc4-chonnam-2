@@ -41,7 +41,7 @@ def test_main_composes_single_registry_and_disposes_engine_and_restores_signals(
             calls.append("loop")
         return SimpleNamespace(run=run)
     monkeypatch.setattr(module, "compose_worker", compose)
-    assert module.main() == 0
+    assert module.main(readout_provider_factory=lambda data: None) == 0
     assert calls == ["bootstrap", "engine", "loop", "dispose"]
     assert set(installed) == {signal.SIGINT, signal.SIGTERM}
     assert set(restored) == {(signal.SIGINT, signal.SIGINT), (signal.SIGTERM, signal.SIGTERM)}
@@ -60,7 +60,7 @@ def test_main_disposes_resources_on_loop_error_without_raw_exception(monkeypatch
     def run():
         raise RuntimeError("/private/path secret user/provider payload")
     monkeypatch.setattr(module, "compose_worker", lambda **kw: SimpleNamespace(run=run))
-    assert module.main() == 1
+    assert module.main(readout_provider_factory=lambda data: None) == 1
     assert calls == ["dispose"]
     assert json.loads(stream.getvalue())["event"] == "runtime.worker.failed"
     assert all(word not in stream.getvalue() for word in ("private", "secret", "payload"))
@@ -92,7 +92,7 @@ def test_dispose_error_is_sanitized_without_replacing_signal_restoration(monkeyp
     monkeypatch.setattr(module.signal, "getsignal", lambda sig: signal.SIG_DFL)
     monkeypatch.setattr(module.signal, "signal", lambda sig, handler: restored.append(handler))
     monkeypatch.setattr(module, "compose_worker", lambda **kw: SimpleNamespace(run=lambda: None))
-    assert module.main() == 1
+    assert module.main(readout_provider_factory=lambda data: None) == 1
     assert restored[-2:] == [signal.SIG_DFL, signal.SIG_DFL]
     assert "runtime.worker.cleanup_failed" in stream.getvalue()
     assert all(word not in stream.getvalue() for word in ("secret", "private", "payload"))
@@ -126,7 +126,7 @@ def test_main_error_and_cleanup_sink_failures_preserve_exit_and_do_not_disclose(
         module.create_worker_engine = lambda db: SimpleNamespace(dispose=dispose)
         module.compose_worker = lambda **kw: SimpleNamespace(run=run)
         previous = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}
-        result = module.main()
+        result = module.main(readout_provider_factory=lambda data: None)
         print(json.dumps({"code": result, "calls": calls,
                           "signals_restored": all(signal.getsignal(sig) == handler for sig, handler in previous.items())}))
         raise SystemExit(result)
@@ -154,4 +154,4 @@ def test_fatal_system_exit_cannot_choose_worker_process_success_or_arbitrary_cod
     def run():
         raise SystemExit(requested_code)
     monkeypatch.setattr(module, "compose_worker", lambda **kw: SimpleNamespace(run=run))
-    assert module.main() == 1
+    assert module.main(readout_provider_factory=lambda data: None) == 1

@@ -158,11 +158,13 @@ ContractRef {
 
 1. 검증을 통과한 Video Overlay가 있으면 가장 강한 근거로 사용한다.
 2. 검증된 Overlay가 없으면 Filename / File Metadata / 제조사 metadata 등의 후보를 비교한다.
-3. Filename / metadata 계열이 충돌하면 MVP 기본 정책에 따라 Filename 기반 값을 사용할 수 있으나 `conflict.exists=true`와 사용자 안내 필요성을 함께 보존한다.
+3. Filename / metadata 계열이 충돌하면 MVP 기본 정책에 따라 Filename 기반 값을 사용할 수 있으나 `conflict.exists=true`와 사용자 안내 필요성을 함께 보존한다. 비교·충돌 판단은 사건 대표 순간이 담긴 원본의 후보끼리만 한다(§17).
 4. 사용자가 사건 시각을 명시적으로 수정한 경우 `USER_INPUT` provenance를 사용할 수 있다.
 5. 신뢰 가능한 근거가 없으면 `UNKNOWN`으로 남긴다.
 
 Consumer는 이 우선순위를 복제하거나 재계산하지 않는다.
+
+**Recording 후보 종류와 Evidence 결과 출처 (#511).** 입력 `TimeSourceCandidate.source_kind`는 [Recording 계약 §15](contract-recording-timeline-asset-span.md#15-source_kind)의 `FILENAME` · `FILE_METADATA` · `VENDOR_METADATA`를 따른다. `MANUFACTURER_METADATA`는 입력 alias로 받지 않는다. `VENDOR_METADATA`의 Evidence 결과 출처는 기존 `recording.manufacturer_metadata_time`을 유지한다. 후보 종류와 결과 출처는 서로 다른 값 공간이며, 이 정합화는 선택 우선순위·검증·reason code를 바꾸지 않는다. 현재 Recording은 제조사 parser 없이 `vendor.parser-unavailable/v1`의 `UNSUPPORTED` 관측 기록만 남기며, parser 구현과 도입 일정은 이번 변경 범위가 아니다.
 
 **`status=OK` 부여 조건 (2026-09-07 확정 · Decider 김준영 `evidence` · 확인 유소연 `case` · 신유민 `web` · B01 종결).** `OK`는 **검증된 Video Overlay 시각(정책 1) 또는 명시적 사용자 확정(정책 4)** 에만 부여한다. Filename / File Metadata / 제조사 metadata로 계산한 시각(정책 2·3)은 `resolved`에 값을 유지하되 `status=NEEDS_REVIEW`로 낸다. 이 조건 덕분에 `CaseView`는 source를 다시 보지 않고 `EvidenceRecord.occurred_at.resolution_status`만으로 정보 상태를 만든다(`contract-evidence-record-needs.md` §4.4 · `contract-job-record-case-view.md` B절 §7). `OK`와 사용자 확정을 구분하는 것은 `resolved.user_corrected`다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1.
 
@@ -241,6 +243,8 @@ USER_OVERRIDE
 ```
 
 `BASE_PLUS_OFFSET`이면 `base_input_ref`와 `source_offset_ms`를 반드시 보존한다. Consumer는 이 값을 이용해 최종 시각을 다시 계산하지 않는다.
+
+`source_offset_ms`는 기준시각과 **같은 원본 안에서** 잰 offset이다. timeline이 여러 원본으로 이어질 때의 기준은 §17을 따른다.
 
 ---
 
@@ -360,3 +364,18 @@ conflict.requires_user_notice
 `recording`이 `CandidateEvent.span.timeline_revision`으로 사용 revision을 보존하기로 확정하면서(`adr/adr-data-contract-call-closure-2026-09-07.md` §4.8, B09), `evidence`도 **동일한 `{timeline_id, revision}` 형태**로 `TimeResolution`의 시간 계산 provenance에 사용 revision을 반영하기로 했다(김준영). `BASE_PLUS_OFFSET` 계산은 특정 revision 좌표에 의존하므로 rebase 이후 과거 결과를 복원하려면 이 provenance가 필요하다.
 
 **필드 위치·이름은 아직 정하지 않았다.** 다음 `time-resolution` 개정에서 Owner가 정하며 여기서 임의로 만들지 않는다. 그 전까지는 `computation.base_input_ref`가 가리키는 대상 계약의 revision을 따라간다.
+
+## 17. 후속 — 여러 원본을 이은 timeline의 `BASE_PLUS_OFFSET` 기준 (2026-10-31 · Decider 김준영 `evidence`)
+
+**배경.** 시간 후보 값은 원본 하나의 시계다(`TimeSourceCandidate.applies_to.source_asset_ref`). 반면 `CandidateEvent.span.representative_ms`는 timeline 위치다. 원본이 하나이고 timeline 0초에서 시작하면 두 기준이 같아서, v1 구현은 timeline 위치를 기준시각에 그대로 더했다. 원본 여러 개를 이은 timeline에서는 앞 원본들의 길이만큼 시각이 밀린다(PR #458 리뷰 — A 12:00:00 · B 12:01:00, 사건 timeline 65초를 B 기준으로 12:02:05로 계산).
+
+**결정.** 기준시각과 offset은 같은 원본으로 잰다. evidence는 `IncidentClip.source_provenance.asset_spans`로 대표 순간이 담긴 원본과 그 원본 안 위치를 찾는다.
+
+- 기준시각 후보는 그 원본의 것만 쓴다. 다른 원본의 후보는 `considered[]`에 `used=false`, `reason_code=time.other_source_asset`으로 남긴다.
+- `source_offset_ms` = 원본 안 대표 순간 위치 − 후보 값이 가리키는 원본 위치(`applies_to.source_offset_sec`).
+- `conflict`는 같은 원본의 후보끼리만 판단한다. 원본마다 시작 시각이 다른 것은 충돌이 아니다.
+- span은 `[start, end)`이고 마지막 span만 끝을 포함한다. 경계 순간은 뒤 원본에 속한다.
+- 대표 순간이 어느 span에도 없거나(timeline gap) 그 원본에 쓸 수 있는 후보가 없으면 `UNKNOWN`이다. 이웃 원본의 시계로 대신하지 않는다.
+- `IncidentClip`과 `CandidateEvent`의 timeline id · revision이 다르면 Contract 입력 오류다.
+
+계약 필드 모양은 바뀌지 않는다. 원본이 하나이고 timeline 0초에서 시작하는 경우 결과는 v1 구현과 같다. 원본을 실제 녹화 시각 순서로 정렬하거나 gap을 반영하는 일은 recording 몫이며 이 결정과 무관하다 — 이 기준은 원본 사이 배치에 의존하지 않는다.

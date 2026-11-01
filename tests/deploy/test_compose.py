@@ -24,6 +24,18 @@ def test_repository_bundle_matches_owner_approval():
     assert validate(config, dockerfile, ignore) == []
 
 
+def test_image_pins_verified_media_source_and_keeps_build_tools_out_of_runtime():
+    _, _, dockerfile, _ = bundle()
+    assert "https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz" in dockerfile
+    assert "b072aed6871998cce9b36e7774033105ca29e33632be5b6347f3206898e0756a" in dockerfile
+    assert "sha256sum -c -" in dockerfile
+    assert "snapshot.debian.org/archive/debian/20261027T000000Z" in dockerfile
+    runtime = dockerfile.split(" AS runtime\n", 1)[1]
+    assert "COPY --from=media-build /opt/media/bin/ /usr/local/bin/" in runtime
+    assert "build-essential" not in runtime and "curl" not in runtime
+    assert "media-preflight" in runtime
+
+
 def test_mysql_health_waits_for_tcp_not_temporary_init_socket():
     _, config, _, _ = bundle()
     command = config["services"]["mysql"]["healthcheck"]["test"]
@@ -35,6 +47,27 @@ def test_resolved_compose_null_entrypoint_preserves_image_default():
     for service in config["services"].values():
         service["entrypoint"] = None
     assert validate(config, dockerfile, ignore) == []
+
+
+@pytest.mark.parametrize("change", [None, "source_missing", "source_true", "rendered_true", "unknown_mount"])
+def test_rendered_bind_false_omission_requires_valid_explicit_source(change):
+    _, source, dockerfile, ignore = bundle()
+    spec = importlib.util.spec_from_file_location("compose_check", ROOT / "scripts/check_compose.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    rendered = deepcopy(source)
+    for service in rendered["services"].values():
+        for mount in service["volumes"]:
+            if mount["type"] == "bind": mount["bind"] = {}
+    original = source["services"]["api"]["volumes"][1]
+    resolved = rendered["services"]["api"]["volumes"][1]
+    if change == "source_missing": original["bind"] = {}
+    elif change == "source_true": original["bind"]["create_host_path"] = True
+    elif change == "rendered_true": resolved["bind"]["create_host_path"] = True
+    elif change == "unknown_mount": resolved["target"] = "/unknown"
+    errors = module.validate_rendered(rendered, source, dockerfile, ignore)
+    assert bool(errors) is (change is not None)
+    assert resolved["bind"] == ({"create_host_path": True} if change == "rendered_true" else {})
 
 
 @pytest.mark.parametrize("entrypoint", [[], "", ["sh", "-c", "echo bypass"]])

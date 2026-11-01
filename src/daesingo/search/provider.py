@@ -28,7 +28,7 @@ from .smoke_errors import ProviderApiError, ProviderPayloadError
 from .sources import ResolvedAnalysisSource
 from .usage import ProviderUsage
 
-# ponytail: KRW 단가 · 환율(RD-08) 미정이라 금액은 늘 None. 정해지면 pricing_id와 함께 채운다.
+# KRW 단가 · 환율(RD-08) 미정이라 금액은 늘 None. 정해지면 pricing_id와 함께 채운다.
 UNPRICED_PRICING_CONTEXT: Final = {
     "pricing_id": "elice-unpriced-placeholder",
     "unit": "per_1m_tokens",
@@ -279,7 +279,7 @@ class GeminiProvider:
         *,
         usage: UsageBinding | None = None,
     ) -> ProviderResult[ResponseT]:
-        # ponytail: 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
+        # 전체 영상을 인라인 전송한다 (Files API 없음). 프록시는 fps·
         # media_resolution을 받지 않으므로 프레임 밀도는 준비 영상을 늘려서 넣는다.
         speed = media.playback_speed
         prompt += playback_note(speed)
