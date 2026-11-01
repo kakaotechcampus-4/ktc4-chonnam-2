@@ -1,8 +1,8 @@
 # ADR-EVIDENCE-006: 번호판 형식 규칙은 hard reject가 아니라 사용자 검토 신호로 사용한다
 
-> 상태: **ACCEPTED — IMPLEMENTATION PENDING**
+> 상태: **ACCEPTED — IMPLEMENTED (문자열 규칙)** · readout partial/layout 신호 연계는 후속(§7)
 >
-> 결정일: `2026-09-19`
+> 결정일: `2026-09-19` · 구현: `2026-11-01` (#487)
 >
 > Decider / Owner: 김준영 (`evidence`)
 >
@@ -109,6 +109,8 @@ PR #80이 제기한 질문은 “윗줄을 못 읽었는데 `status=OK`가 되�
 
 ## 4. 후속 코드 구현 — 이 PR에서는 하지 않는다
 
+> **구현됨 (2026-11-01, #487).** 아래 요구사항의 구현 결과와 남은 범위는 §7에 있다.
+
 이 ADR은 정책 방향만 확정한다. **실제 rule 값과 validator 구현은 후속 구현 PR에서 진행한다.**
 
 후속 구현은 최소 다음을 포함해야 한다.
@@ -138,3 +140,35 @@ PR #80이 제기한 질문은 “윗줄을 못 읽었는데 `status=OK`가 되�
 ## 6. 한 줄 결정
 
 > Readout은 관찰한 번호판 문자열과 vision 신호를 보존하고, Evidence는 PR #88의 공식 번호판 근거를 향후 versioned rule 값으로 구현해 형식 일관성을 검사하되 이를 hard `VALID/INVALID` gate로 사용하지 않는다. 값이 있으나 완전성이나 형식이 의심되면 값을 유지한 채 `needs_review=true`로 CaseView까지 전달하고 사용자가 영상과 비교해 수정하도록 하며, 값 자체가 없을 때의 `PLATE_REREAD`와는 별도 상태로 다룬다. PR #80의 `바5215` 부분 판독 사례는 이 정책의 대표 회귀 테스트로 사용한다.
+
+## 7. 구현 상태 (2026-11-01, #487)
+
+PR #91 실험의 `classify()`·`notes()`를 제품 코드로 옮겼다. 실험 파일은 import하지 않는다.
+
+| 위치 | 내용 |
+| --- | --- |
+| `src/daesingo/evidence/plate_format_rules_kr_v1.json` | rule 값. revision `plate-format/kr-v1`, 기준 고시 제2025-121호. 기호 집합·분류기호 대역·profile 8종마다 `provenance`(`OFFICIAL` / `OBSERVED_OUTSIDE_NOTICE_SCOPE`)와 근거를 단다 |
+| `src/daesingo/evidence/plate_format.py` | 위 파일만 해석하는 evaluator. `assess_plate_format(value)` → `matched_profile` · `reason_codes` · `review_required` · `rule_ref`. `VALID/INVALID`는 없다 |
+| `assembly.py` `_independent_facts()` | `PlateReadout`이 `status=OK`·`abstained=false`로 준 값만 검사한다. 값은 그대로 두고 `needs_review`에만 반영한다 |
+| `policy.py` | `provenance.policy_ref`를 `policy/evidence-assembly-v2`로 올렸다. v2가 적용하는 rule revision은 `PLATE_FORMAT_RULE_REF`(`plate-format/kr-v1`)이고 테스트로 묶었다. 계약 변경은 없다 |
+
+§4 요구사항별 결과:
+
+1. **versioned rule 데이터** — 위 JSON. 고시가 바뀌면 `plate_format_rules_kr_v2.json`을 새로 두고 `supersedes_rule_ref`를 채운다. v1은 고치지 않는다.
+2. **단일 rule source** — 기호·대역·profile 값은 JSON 한 곳에만 있다. 판정 순서(관할 → 용도 → 분류기호 → 일련번호)와 부분 문자열 진단만 코드에 있다.
+3. **deterministic check** — 순수 함수다. 검사는 NFC 정규화 후 공백만 지운 사본으로 하고, 저장값은 바꾸지 않는다(`core-user-flow.md` §12 · web #513 · readout과 같다). PR #91 E-0은 사람 라벨 표기를 흡수하려고 `-`·`.`·`·`도 지웠지만 제품은 지우지 않는다. 그런 값은 review로 간다.
+4. **`needs_review` 연결** — `plate.format.*`(구조가 설명되지 않음, 첫 실패 하나)나 `plate.consistency.*`(설명되지만 고시 밖 조합·관측 기반 profile·검사 불완전)가 하나라도 있으면 `needs_review=true`다. reason code는 wire에 싣지 않는다. CaseView는 기존대로 `INFO_NEEDS_REVIEW`만 받는다.
+5. **`바5215` 회귀** — readout이 `OK`로 준 `바5215`는 값이 보존되고 `needs_review=true`, `plate.format.incomplete`다(`tests/evidence/test_plate_format_review.py`).
+6. **대표 사례** — 정상 7·8자리, 사업용·대여용(`허/하/호`), 관할기호형, 허용 문자 밖 오인식, 사용자 수정을 테스트한다. PR #91 엔진과의 parity는 고정 fixture 45건으로 확인한다(`tests/evidence/fixtures/plate_format_parity_kr_v1.json`).
+7. **미확정 profile** — 구형 1자리·군용·건설기계(관측 기반)는 인식하되 `legacy_scheme`·`outside_notice_scope`로, 이륜차(시·군·구 목록 없음)·외교(관측 0건)는 `plate.consistency.partial_coverage`로 review다. 거부하지 않는다. `partial_coverage`는 PR #91에 없던 제품 추가 코드다.
+8. **revision 갱신** — 제2025-676호(2026-11-28 시행)는 rule 파일의 `basis.pending_notice`에 적어 두었다. 시행 후 대조는 하지 않았다.
+
+사용자 수정값(`user_corrected=true`)은 형식 검사를 하지 않는다. 형식이 어긋나도 `validate_correction_append()`가 거부하지 않고 `needs_review=false`로 남는다(§2.5).
+
+### 7.1 남은 것
+
+- **readout의 부분 판독 보류와 §2.3·§2.4의 충돌은 그대로다.** readout은 `바5215` 같은 값에 이미 `PARTIAL_PLATE_READ`로 abstain한다(`readout/api.py` `is_full_plate()`). 그러면 §2.4와 ADR-EVIDENCE-008 §4.3에 따라 `vehicle_number`가 없고 `PLATE_REREAD`가 나간다. 이번 구현은 이 경로를 바꾸지 않았다. 따라서 실제 파이프라인에서 Evidence 규칙이 작동하는 곳은 readout이 `OK`로 넘긴 값이다. provider가 바뀌거나 readout guard를 통과한 값에 대한 2차 방어선이다. abstain된 관찰값도 보존할지는 PR #91 README §6-4의 선택지와 함께 `readout`·`evidence`·`case`가 정할 일이다.
+- **partial/layout 신호 연계(PR #91 E-9)는 하지 않았다.** `best_frame.plate_bbox_xywh`가 2줄판에서 텍스트 한 줄만 감싸는 문제(PR #80 ⓑ)가 전제조건이다. 문자열 규칙만으로는 「관할기호만 누락」(`경기37바…` → `37바…`)을 잡지 못한다(PR #91 §4, 0.24%).
+- **형식 통과는 정확성을 보장하지 않는다.** 자릿수·문자종이 보존된 오독은 원리상 검출할 수 없다(PR #91 §2-②).
+- **reason code별 안내 문구는 없다.** 코드는 evaluator 결과에만 있고 계약 필드가 없다. 「일부만 인식되었을 수 있습니다」처럼 사유별로 안내하려면 wire 필드가 따로 필요하다.
+- Web은 #513에서 저장을 막지 않는 경고로 바꿨다. web 정규식은 경고용이며 이 rule source와 같지 않다.

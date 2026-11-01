@@ -49,6 +49,8 @@ API/Worker composition은 이 공개 경계에서 받은 `max_byte_size`를 기�
 - `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑. v1.2로 대체된 보존 revision.
 - `safety_report_policy_v1_2.json` — **활성 신고문 policy.** v1.1의 네 template을 그대로 두고, 판독 후 번호판을 식별하지 못한 경우의 차량번호 슬롯 없는 네 template을 더했다(`docs/modules/evidence/decisions/safety-report-policy-v1.2.md`).
 
+- `plate_format_rules_kr_v1.json` — **번호판 형식 rule** `plate-format/kr-v1`(ADR-EVIDENCE-006, #487). `plate_format.py`의 `assess_plate_format()`이 이 파일만 읽는다. readout이 `OK`로 준 번호판 값이 알려진 profile로 설명되지 않거나 고시 밖 조합이면 값을 그대로 두고 `needs_review=true`로 조립한다. 거부·삭제하지 않고, 사용자 수정값에는 적용하지 않는다. 이 검사를 적용하는 조립 policy는 `policy/evidence-assembly-v2`다. 고시가 바뀌면 새 revision 파일을 추가한다.
+
 활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v6.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
 
 번호판 판독을 수행했지만 식별하지 못한 기록은 번호판 없는 신고문으로 `ReportPackage`(`report-package/v1.2`, `vehicle_number=null`)가 발행된다. 판독 결과 자체가 없는 기록(실행 실패)은 렌더 입력이 불완전해 Package가 없다. 두 경우를 가르는 판별은 `requirements.py`의 `_plate_readout_performed()` 한 곳이다(ADR-EVIDENCE-008 §6).
