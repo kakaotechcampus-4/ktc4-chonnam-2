@@ -78,13 +78,13 @@ body:has(.rs-page) { background: #fff; }
   cursor: pointer;
   transition: background-color .3s var(--rs-ease), border-color .2s var(--rs-ease), color .3s var(--rs-ease), transform .12s var(--rs-ease);
 }
-.rs-btn:active:not(:disabled) { transform: scale(.98); }
+.rs-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(.98); }
 .rs-btn.pri { background: var(--rs-ink); color: #fff; }
 .rs-btn.pri:hover { background: #424245; }
 .rs-btn.sec { background: #fff; color: var(--rs-ink); border-color: var(--rs-line); }
 .rs-btn.sec:hover { border-color: var(--rs-ink); }
 .rs-btn.lg { min-height: 54px; padding: 0 32px; font-size: 17px; }
-.rs-btn:disabled, .rs-btn:disabled:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
+.rs-btn:disabled, .rs-btn:disabled:hover, .rs-btn[aria-disabled="true"], .rs-btn[aria-disabled="true"]:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
 
 /* ============================================================
    업로드 화면

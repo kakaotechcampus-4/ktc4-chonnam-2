@@ -355,7 +355,7 @@ it('업로드 일부 실패: 건너뛴 파일을 알리고 나머지로 계속�
   const { wait, getByText, text } = start('uploadPartial')
   wait()
   expect(text()).toContain('FILE_017.mp4')
-  expect((getByText('영상에서 찾아보기') as HTMLButtonElement).disabled).toBe(false)
+  expect(getByText('영상에서 찾아보기').getAttribute('aria-disabled')).toBe('false')
 })
 
 it('다른 후보를 고르면 「새 후보 기준으로」 다시 준비한다고 말한다', () => {
@@ -485,7 +485,7 @@ it('후보 A → B: A의 번호판·일시·장소·내용·검색어·영상·�
   expect(text()).toContain('신고용 영상이 아직 없어요')
   expect(container.querySelectorAll('button[aria-label$="복사"]')).toHaveLength(0)
   expect(text()).not.toContain('안전신문고로 이동')
-  expect((getByText('신고용 영상 다운로드').closest('button') as HTMLButtonElement).disabled).toBe(true)
+  expect(getByText('신고용 영상 다운로드').closest('button')!.getAttribute('aria-disabled')).toBe('true')
   // 사건 전체 값(기억 단서)은 그대로, 기준 후보는 2번
   fireEvent.click(getByText('다른 후보 영상 2'))
   expect(container.querySelector('.hint-recall')!.textContent).toContain('흰색 SUV')

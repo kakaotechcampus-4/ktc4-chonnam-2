@@ -72,6 +72,12 @@ const GHOSTS = [1, 2, 3]
 // 「영상에서 찾아보기」 뒤 겉모습 복사본을 남겨 두는 시간 — 출발 0.95초 + 밀려 나가는 0.42초 + 여유.
 // 시연(DemoFlow)과 실제(ApiFlow)가 같이 쓴다
 export const DEPART_EXIT_MS = 1450
+// 「영상에서 찾아보기」를 아직 못 누르는 이유 — 화면 낭독기용
+const SEARCH_OFF_WHY: Record<Exclude<UploadState, 'done'>, string> = {
+  idle: '영상을 먼저 올려 주세요.',
+  uploading: '영상을 올리는 중이에요. 끝나면 누를 수 있어요.',
+  fail: '영상을 올리지 못했어요. 다시 선택해 주세요.',
+}
 
 // 출발 연기·속도선 — 원본 좌표(ox, oy)를 출발 장면(칸 너비 width, 높이 320) 좌표로 옮겨 놓는다.
 // 시간(ms)은 refresh.css의 출발 타임라인과 맞춘다: 시동 진동 100~450 · 배기 120~ · 휠스핀 연기 300~ · 출발 450~970
@@ -443,9 +449,23 @@ export function UploadScreen(props: {
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         <div className="rs-actions">
-          <button type="button" className="rs-btn pri lg" disabled={state !== 'done'} onClick={props.onSearch}>
+          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}
+          <button
+            type="button"
+            className="rs-btn pri lg"
+            aria-disabled={state !== 'done'}
+            aria-describedby={state !== 'done' ? `${situationId}-why` : undefined}
+            onClick={() => {
+              if (state === 'done') props.onSearch()
+            }}
+          >
             영상에서 찾아보기
           </button>
+          {state !== 'done' && (
+            <span id={`${situationId}-why`} className="sr-only">
+              {SEARCH_OFF_WHY[state]}
+            </span>
+          )}
         </div>
       </div>
     </div>

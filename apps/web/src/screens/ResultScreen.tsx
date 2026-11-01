@@ -328,11 +328,14 @@ export function ResultScreen(props: {
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
+                  {/* disabled 대신 aria-disabled — Tab으로 닿아야 못 누르는 이유(res-video-why)가 읽힌다(#509 #5) */}
                   <button
                     type="button"
                     className="rs-btn sec sm"
-                    disabled={!canDownload}
-                    onClick={() => void download()}
+                    aria-disabled={!canDownload}
+                    onClick={() => {
+                      if (canDownload) void download()
+                    }}
                     aria-describedby={videoHint ? 'res-video-why' : undefined}
                   >
                     <Download size={16} strokeWidth={2} aria-hidden />
