@@ -324,7 +324,8 @@ function withPlate(view: CaseView, plate: string | null): CaseView {
   }
 }
 
-export function DemoFlow(): JSX.Element {
+// 어느 경우를 보여 줄지 고르는 상자는 시연 준비용이다. 서비스 화면에는 두지 않고 `?cases`일 때만 연다.
+export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   const [caseKey, setCaseKey] = useState('main')
   const [main, setMain] = useState<Main>({ kind: 'upload', state: 'idle' })
   const [subs, setSubs] = useState<Sub[]>([])
@@ -447,16 +448,18 @@ export function DemoFlow(): JSX.Element {
                 start(demo.run)
               }}
             />
-            <label className="kv-src demo-pick">
-              시연할 경우{' '}
-              <select value={caseKey} onChange={(e) => setCaseKey(e.target.value)}>
-                {Object.entries(CASES).map(([key, c]) => (
-                  <option key={key} value={key}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {props.casePicker && (
+              <label className="kv-src demo-pick">
+                시연할 경우{' '}
+                <select value={caseKey} onChange={(e) => setCaseKey(e.target.value)}>
+                  {Object.entries(CASES).map(([key, c]) => (
+                    <option key={key} value={key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </>
         )}
 
