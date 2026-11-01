@@ -1,7 +1,7 @@
-import type { JSX } from 'react'
+import { useId, type JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { Panel } from '../components/Panel'
-import { SituationInput } from './UploadScreen'
+import { ExampleButton, SituationInput } from './UploadScreen'
 
 // 후보 0건은 실패가 아니다. candidates=[]·evidence=null·package=null을
 // 실패 화면으로 그리지 않는다(체크리스트 Failure/Partial · scenario_empty_001).
@@ -50,18 +50,24 @@ export function RetrySearch(props: {
   onSituation: (text: string) => void
   onRetry: () => void
 }): JSX.Element {
+  const id = useId()
+  const example = '아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요.'
   return (
     <Panel title="어떤 장면이었는지 조금만 더 알려 주세요">
       <div className="stack">
-        <span className="kv-src">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 적어 주세요. 처음과 조금만 달라도 다른 장면을 찾을 수 있어요.</span>
+        <span className="kv-src" id={`${id}-hint`}>
+          시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 적어 주세요. 처음과 조금만 달라도 다른 장면을 찾을 수 있어요.
+        </span>
         <SituationInput
           label="다시 찾을 상황"
-          example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
+          example={example}
           rows={3}
           value={props.situation}
           onChange={props.onSituation}
+          id={id}
+          describedBy={`${id}-hint`}
         />
-        <span className="kv-src">Tab 키를 누르면 예시 문장이 들어가요.</span>
+        <ExampleButton example={example} value={props.situation} onChange={props.onSituation} inputId={id} />
         <button type="button" className="btn pri cta" onClick={props.onRetry}>
           다시 찾기
         </button>

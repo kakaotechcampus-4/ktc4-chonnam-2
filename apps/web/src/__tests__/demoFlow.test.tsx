@@ -154,7 +154,7 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   expect([...container.querySelectorAll('main h1')].map((h) => h.textContent)).toContain('말씀하신 장면을 찾지 못했어요.')
   const box = container.querySelector('textarea')!
   fireEvent.change(box, { target: { value: '' } })
-  fireEvent.keyDown(box, { key: 'Tab' })
+  fireEvent.click(getByText('예시 문장 넣기'))
   expect(box.value).toContain('검은 승용차')
   fireEvent.click(getByText('다시 찾기'))
   expect(text()).toContain('경과 시간')
@@ -193,11 +193,17 @@ it('업로드 실패: 다시 선택하면 다시 올린다', () => {
   expect(text()).toContain('파일을 올리지 못했어요')
 })
 
-it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 처음 화면으로 돌아간다', () => {
-  const { container, getByText, text, wait, answer } = start('main')
+it('Tab은 예시를 채우지 않고, 「예시 문장 넣기」가 채운 뒤 칸으로 초점을 옮긴다. 「새 신고」는 처음 화면으로 돌아간다', () => {
+  const { container, getByText, queryByText, text, wait, answer } = start('main')
   const box = container.querySelector('textarea')!
-  fireEvent.keyDown(box, { key: 'Tab' })
+  // Tab은 초점 이동에만 쓴다(#509 #4). 안내는 칸에 연결돼 화면 낭독기가 읽는다
+  expect(fireEvent.keyDown(box, { key: 'Tab' })).toBe(true)
+  expect(box.value).toBe('')
+  expect(document.getElementById(box.getAttribute('aria-describedby')!)!.textContent).toContain('비워 두셔도')
+  fireEvent.click(getByText('예시 문장 넣기'))
   expect(box.value).toContain('흰색 SUV')
+  expect(document.activeElement).toBe(box)
+  expect(queryByText('예시 문장 넣기')).toBeNull()
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()

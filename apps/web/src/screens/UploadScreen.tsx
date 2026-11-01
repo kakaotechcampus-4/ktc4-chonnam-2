@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
 import { ChevronDown, CircleAlert } from 'lucide-react'
 import carSide from '../assets/car/car-side.webp'
 import carDoorOpen from '../assets/car/car-door-open.webp'
@@ -135,6 +135,7 @@ export function UploadScreen(props: {
   /** 분석 시작 직후 화면이 빠지는 동안 — 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
   departing?: boolean
 }): JSX.Element {
+  const situationId = useId()
   const [over, setOver] = useState(false)
   const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
@@ -432,9 +433,14 @@ export function UploadScreen(props: {
             rows={4}
             value={props.situation}
             onChange={props.onSituation}
+            id={situationId}
+            describedBy={`${situationId}-hint`}
           />
-          <span className="rs-hint">Tab 키를 누르면 예시 문장이 들어가요. 비워 두셔도 영상에서 찾아볼게요.</span>
+          <span className="rs-hint" id={`${situationId}-hint`}>
+            비워 두셔도 영상에서 찾아볼게요.
+          </span>
         </label>
+        <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         <div className="rs-actions">
           <button type="button" className="rs-btn pri lg" disabled={state !== 'done'} onClick={props.onSearch}>
@@ -453,21 +459,40 @@ export function SituationInput(props: {
   rows: number
   value: string
   onChange: (text: string) => void
+  /** 예시 버튼이 채운 뒤 초점을 돌려줄 때 쓴다 */
+  id?: string
+  /** 칸 아래 안내 — 화면 낭독기가 칸과 함께 읽는다 */
+  describedBy?: string
 }): JSX.Element {
+  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(#509 #4)
   return (
     <textarea
+      id={props.id}
       className="field situation"
       rows={props.rows}
       aria-label={props.label}
+      aria-describedby={props.describedBy}
       placeholder={`예: ${props.example}`}
       value={props.value}
       onChange={(e) => props.onChange(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Tab' && !e.shiftKey && !props.value) {
-          e.preventDefault()
-          props.onChange(props.example)
-        }
-      }}
     />
+  )
+}
+
+// 칸이 비어 있을 때만 보인다. 누르면 예시를 채우고 초점을 칸으로 옮긴다 — 버튼이 사라져도 초점을 잃지 않게.
+// 칸을 감싼 label 안에 두지 않는다(label 안의 두 번째 조작 요소가 되지 않게).
+export function ExampleButton(props: { example: string; value: string; onChange: (text: string) => void; inputId: string }): JSX.Element | null {
+  if (props.value) return null
+  return (
+    <button
+      type="button"
+      className="rs-example"
+      onClick={() => {
+        props.onChange(props.example)
+        document.getElementById(props.inputId)?.focus()
+      }}
+    >
+      예시 문장 넣기
+    </button>
   )
 }
