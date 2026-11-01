@@ -13,7 +13,12 @@ _POLICY = load_report_policy()
 
 SAFETY_REPORT_POLICY_REF = _POLICY["policy_ref"]
 TIME_POLICY_REF = "policy/time-source-priority-v1"
-EVIDENCE_POLICY_REF = "policy/evidence-assembly-v1"
+EVIDENCE_POLICY_REF = "policy/evidence-assembly-v2"
+"""v2 (#487 · ADR-EVIDENCE-006): a readout plate value is checked against
+`PLATE_FORMAT_RULE_REF` and kept with `needs_review=true` when the check asks for review.
+v1 adopted every accepted readout value with `needs_review=false`."""
+PLATE_FORMAT_RULE_REF = "plate-format/kr-v1"
+"""The plate rule revision `EVIDENCE_POLICY_REF` applies. A test pins it to the loaded rule file."""
 
 SPECIFIC_TEMPLATE_REF = _POLICY["specific_template_ref"]
 GENERIC_TEMPLATE_REF = _POLICY["generic_template_ref"]
