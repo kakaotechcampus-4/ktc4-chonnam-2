@@ -12,7 +12,7 @@ from .policy import TIME_POLICY_REF
 _SOURCE_KIND = {
     "FILENAME": "recording.filename_time",
     "FILE_METADATA": "recording.file_metadata_time",
-    "MANUFACTURER_METADATA": "recording.manufacturer_metadata_time",
+    "VENDOR_METADATA": "recording.manufacturer_metadata_time",
 }
 
 
