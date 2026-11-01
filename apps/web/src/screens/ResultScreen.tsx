@@ -46,8 +46,14 @@ const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용
 const PLATE_EDIT_LINK = '확인·수정하기'
 const PLATE_EDIT_WHY = '번호가 틀렸다면 여기서 고칠 수 있어요'
 const TIME_EDIT_LINK = { none: '시각 입력하기', some: '시각 수정하기' }
+const DATE_EDIT_LINK = { none: '일자 입력하기', some: '일자 수정하기' }
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
+// 안전신문고 첫 화면에서 신고 양식까지 — 실제 메뉴 이름(11/1 확인). 이동 버튼은 첫 화면을 연다
+const HANDOFF_STEPS = ['위쪽 메뉴에서 「신고하기」를 누르세요', '「자동차·교통위반」을 누르세요']
+
+/** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
+export type ReportEdits = Partial<Record<'title' | 'description' | 'location', string>>
 
 const COUNT_ORDER: InfoState[] = [
   'INFO_NEEDS_REVIEW',
@@ -80,6 +86,12 @@ export function ResultScreen(props: {
   canRun: (action: Action) => boolean
   /** 번호판을 이 화면에서만 고쳤는가(서버 저장 아님) */
   plateEditedLocally?: boolean
+  /** 발생 시각을 이 화면에서만 고쳤는가(시연, 서버 저장 아님) */
+  timeEditedLocally?: boolean
+  /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 하위 화면을 다녀와도 남게 흐름이 들고 있다 */
+  edits?: ReportEdits
+  /** 없으면 고치기 입구를 두지 않는다 */
+  onEdit?: (key: keyof ReportEdits, value: string) => void
   /** 진행에서 막 넘어왔는가 — 첫 화면의 배경 자동차가 오른쪽에서 들어와 멈춘다. 하위 화면에서 돌아올 때는 제자리 */
   arriving?: boolean
   /** 신고 상황 응답. RECORD_SITUATION_RESPONSE가 받는 두 값만 둔다 — 「다른 상황」은 입력형이라 command가 아직 없다 */
@@ -119,9 +131,12 @@ export function ResultScreen(props: {
   const reportType = field('safety_report_type', () =>
     ev ? { value: ev.report_type_display.label, state: ev.report_type_display.info_state, source: sourceLabel(ev.report_type_display.source_label_key) } : null,
   )
-  const location = field('location', () =>
+  const edits = props.edits ?? {}
+  const shownLocation = field('location', () =>
     ev ? { value: ev.location_display.value, state: ev.location_display.info_state, source: sourceLabel(ev.location_display.source_label_key) } : null,
   )
+  const location: Field | null =
+    edits.location !== undefined ? { value: edits.location, state: 'INFO_USER_CONFIRMED', source: null } : shownLocation
   const content = field('violation_expression', () =>
     ev ? { value: ev.violation_display.label, state: ev.violation_display.info_state, source: sourceLabel(ev.violation_display.source_label_key) } : null,
   )
@@ -134,7 +149,11 @@ export function ResultScreen(props: {
   const when = splitDateTime(occurred?.value ?? null)
   // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
   // 계약상 package가 있으면 report도 항상 있다. 옛 판본 응답이 와도 깨지지 않게 없으면 예전처럼 둔다.
-  const report = pkg?.report ?? null
+  const shownReport = pkg?.report ?? null
+  const report = shownReport && {
+    title: edits.title ?? shownReport.title,
+    description: edits.description ?? shownReport.description,
+  }
   const keyword = ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
@@ -199,6 +218,15 @@ export function ResultScreen(props: {
       () => done(false),
     )
   }
+  // 고치는 동안에는 보이던 값 대신 입력칸이 그 자리에 열린다. onEdit이 없으면 값만 둔다
+  const editable = (key: keyof ReportEdits, label: string, value: string | null | undefined, shown: ReactNode, multiline?: boolean) =>
+    props.onEdit ? (
+      <EditText label={label} value={value ?? ''} multiline={multiline} edited={edits[key] !== undefined} onSave={(v) => props.onEdit!(key, v)}>
+        {shown}
+      </EditText>
+    ) : (
+      shown
+    )
   const copyButton = (label: string, value: string | null | undefined) =>
     canCopy && (
       <button
@@ -355,7 +383,7 @@ export function ResultScreen(props: {
           )}
 
           <Item label="위치 선택" review={location?.state} pick>
-            <Value f={location} />
+            {ev ? editable('location', '위치', location?.value, <Value f={location} />) : <Value f={location} />}
             {keyword && (
               <p className="res-keyword">
                 <span className="res-keyword-k">검색어</span>
@@ -377,10 +405,15 @@ export function ResultScreen(props: {
 
           <Item label="제목">
             {report ? (
-              <span className="res-val-line">
-                <span className="res-val">{report.title}</span>
-                {copyButton('제목', report.title)}
-              </span>
+              editable(
+                'title',
+                '제목',
+                report.title,
+                <span className="res-val-line">
+                  <span className="res-val">{report.title}</span>
+                  {copyButton('제목', report.title)}
+                </span>,
+              )
             ) : (
               <p className="res-missing">{NO_TITLE}</p>
             )}
@@ -388,10 +421,16 @@ export function ResultScreen(props: {
 
           {report ? (
             <Item label="신고 내용">
-              <span className="res-report">
-                <span className="res-val res-report-text">{report.description}</span>
-                {copyButton('신고 내용', report.description)}
-              </span>
+              {editable(
+                'description',
+                '신고 내용',
+                report.description,
+                <span className="res-report">
+                  <span className="res-val res-report-text">{report.description}</span>
+                  {copyButton('신고 내용', report.description)}
+                </span>,
+                true,
+              )}
             </Item>
           ) : (
             <Item label="신고 내용" review={content?.state}>
@@ -422,12 +461,22 @@ export function ResultScreen(props: {
             </div>
           </Item>
 
+          {/* 일자·시간은 한 값(occurred_at)이라 어느 칸에서 열어도 같은 시각 입력 화면이다 */}
           <Item label="발생 일자" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.date }} />
+            {ev && props.onTime && (
+              <p className="res-plate-edit">
+                <button type="button" className="res-link" onClick={props.onTime}>
+                  {when.date ? DATE_EDIT_LINK.some : DATE_EDIT_LINK.none}
+                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                </button>
+              </p>
+            )}
           </Item>
 
           <Item label="발생 시간" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.time }} />
+            {props.timeEditedLocally && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
             {/* 결과 화면 발생 시각 수정이 EDIT_EVENT_TIME의 입구다(input-commands 결정 §2-8). 값 칸이 없으면 case가 거부한다 */}
             {ev && props.onTime && (
               <p className="res-plate-edit">
@@ -479,6 +528,18 @@ export function ResultScreen(props: {
           </p>
         )}
         {pkg && !ready && <p className="res-block-note">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
+        {pkg?.capabilities.includes('OPEN_DESTINATION') && (
+          <div className="res-steps">
+            <p id="res-steps-h" className="res-steps-h">
+              안전신문고에서는 이렇게 들어가세요
+            </p>
+            <ol aria-labelledby="res-steps-h">
+              {HANDOFF_STEPS.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+          </div>
+        )}
         <p className="res-toast" role="status" aria-live="polite">
           {toast && <span key={toast.id}>{toast.text}</span>}
         </p>
@@ -520,5 +581,70 @@ function Value(props: { f: Field | null; pending?: boolean; after?: ReactNode })
       </span>
       {f?.source && <span className="res-src">{f.source}</span>}
     </>
+  )
+}
+
+// 이 화면에서만 고치기 — 「수정」을 누르면 그 자리에서 입력칸이 열린다. 빈 값으로는 저장하지 않는다.
+function EditText(props: {
+  label: string
+  value: string
+  multiline?: boolean
+  edited: boolean
+  onSave: (value: string) => void
+  children: ReactNode
+}): JSX.Element {
+  const [draft, setDraft] = useState<string | null>(null)
+  const line = useRef<HTMLInputElement>(null)
+  const area = useRef<HTMLTextAreaElement>(null)
+  const opener = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (draft !== null) (line.current ?? area.current)?.focus()
+  }, [draft !== null]) // eslint-disable-line react-hooks/exhaustive-deps -- 열릴 때만
+  const close = () => {
+    setDraft(null)
+    requestAnimationFrame(() => opener.current?.focus())
+  }
+  if (draft === null)
+    return (
+      <>
+        {props.children}
+        {props.edited && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
+        <p className="res-plate-edit">
+          <button ref={opener} type="button" className="res-link" onClick={() => setDraft(props.value)}>
+            {props.label} 수정하기
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      </>
+    )
+  const field = {
+    className: 'field',
+    'aria-label': props.label,
+    value: draft,
+    onChange: (e: { target: { value: string } }) => setDraft(e.target.value),
+  }
+  return (
+    <form
+      className="res-edit"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!draft.trim()) return
+        props.onSave(draft.trim())
+        close()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') close()
+      }}
+    >
+      {props.multiline ? <textarea ref={area} rows={6} {...field} /> : <input ref={line} {...field} />}
+      <div className="res-edit-actions">
+        <button type="submit" className="rs-btn pri sm" disabled={!draft.trim()}>
+          저장
+        </button>
+        <button type="button" className="rs-btn sec sm" onClick={close}>
+          취소
+        </button>
+      </div>
+    </form>
   )
 }
