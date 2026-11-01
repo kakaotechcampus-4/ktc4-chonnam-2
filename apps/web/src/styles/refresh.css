@@ -332,7 +332,8 @@ body:has(.rs-page) { background: #fff; }
 .rs .field.situation::placeholder { color: var(--rs-faint); }
 .rs .field.situation:hover { border-color: var(--rs-line-strong); }
 /* 입력칸은 테두리 변화로만 포커스를 보인다 — 바깥 윤곽선을 겹치지 않는다 */
-.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: none; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
+/* outline을 투명으로 남긴다 — 강제 색상(고대비) 모드에서는 box-shadow가 지워지고 이 테두리가 보인다(#509 #9) */
+.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: 2px solid transparent; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
 .rs-hint { margin: 0; font-size: 14px; color: var(--rs-sub); }
 /* 상황 설명칸 아래 「예시 문장 넣기」 — Tab 대신 쓰는 명시적 버튼(#509 #4) */
 .rs-example { align-self: flex-start; margin: 8px 0 0; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--rs-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -827,7 +828,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   width: 100%; height: 64px; padding: 0 18px; border: 1px solid var(--rs-ink); border-radius: 14px; background: #fff;
   font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink);
 }
-.plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
+.plate-input:focus { outline: 2px solid transparent; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
 .plate-form-actions { display: flex; gap: 10px; }
 /* 설명 고치기(#410) — 업로드 화면의 입력 틀을 하위 화면에서 다시 쓴다 */
 .hint-page .rs-field { margin-top: 24px; }
