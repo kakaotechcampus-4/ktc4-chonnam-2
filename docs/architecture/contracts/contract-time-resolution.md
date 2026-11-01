@@ -164,6 +164,8 @@ ContractRef {
 
 Consumer는 이 우선순위를 복제하거나 재계산하지 않는다.
 
+**Recording 후보 종류와 Evidence 결과 출처 (#511).** 입력 `TimeSourceCandidate.source_kind`는 [Recording 계약 §15](contract-recording-timeline-asset-span.md#15-source_kind)의 `FILENAME` · `FILE_METADATA` · `VENDOR_METADATA`를 따른다. `MANUFACTURER_METADATA`는 입력 alias로 받지 않는다. `VENDOR_METADATA`의 Evidence 결과 출처는 기존 `recording.manufacturer_metadata_time`을 유지한다. 후보 종류와 결과 출처는 서로 다른 값 공간이며, 이 정합화는 선택 우선순위·검증·reason code를 바꾸지 않는다. 현재 Recording은 제조사 parser 없이 `vendor.parser-unavailable/v1`의 `UNSUPPORTED` 관측 기록만 남기며, parser 구현과 도입 일정은 이번 변경 범위가 아니다.
+
 **`status=OK` 부여 조건 (2026-09-07 확정 · Decider 김준영 `evidence` · 확인 유소연 `case` · 신유민 `web` · B01 종결).** `OK`는 **검증된 Video Overlay 시각(정책 1) 또는 명시적 사용자 확정(정책 4)** 에만 부여한다. Filename / File Metadata / 제조사 metadata로 계산한 시각(정책 2·3)은 `resolved`에 값을 유지하되 `status=NEEDS_REVIEW`로 낸다. 이 조건 덕분에 `CaseView`는 source를 다시 보지 않고 `EvidenceRecord.occurred_at.resolution_status`만으로 정보 상태를 만든다(`contract-evidence-record-needs.md` §4.4 · `contract-job-record-case-view.md` B절 §7). `OK`와 사용자 확정을 구분하는 것은 `resolved.user_corrected`다. 근거 `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1.
 
 ---
