@@ -1,0 +1,771 @@
+{
+  "meta": {
+    "gt_version": "g1",
+    "tier": "C",
+    "stage": "candidate",
+    "coverage": {
+      "clips_total": 149,
+      "clips_reviewed": 149,
+      "clips_with_events": 1,
+      "negatives_confirmed": true,
+      "reviewed_by": "daewon",
+      "reviewed_at": "2026-10-26"
+    }
+  },
+  "items": [
+    {
+      "clip_id": "CT2_0001_C00",
+      "source_video_id": "CT2_0001",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0002_C00",
+      "source_video_id": "CT2_0002",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0003_C00",
+      "source_video_id": "CT2_0003",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0004_C00",
+      "source_video_id": "CT2_0004",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0005_C00",
+      "source_video_id": "CT2_0005",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0006_C00",
+      "source_video_id": "CT2_0006",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0007_C00",
+      "source_video_id": "CT2_0007",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0008_C00",
+      "source_video_id": "CT2_0008",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0009_C00",
+      "source_video_id": "CT2_0009",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0010_C00",
+      "source_video_id": "CT2_0010",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0011_C00",
+      "source_video_id": "CT2_0011",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0012_C00",
+      "source_video_id": "CT2_0012",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0013_C00",
+      "source_video_id": "CT2_0013",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0014_C00",
+      "source_video_id": "CT2_0014",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0015_C00",
+      "source_video_id": "CT2_0015",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0016_C00",
+      "source_video_id": "CT2_0016",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0017_C00",
+      "source_video_id": "CT2_0017",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0018_C00",
+      "source_video_id": "CT2_0018",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0019_C00",
+      "source_video_id": "CT2_0019",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0020_C00",
+      "source_video_id": "CT2_0020",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0021_C00",
+      "source_video_id": "CT2_0021",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0022_C00",
+      "source_video_id": "CT2_0022",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0023_C00",
+      "source_video_id": "CT2_0023",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0024_C00",
+      "source_video_id": "CT2_0024",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0025_C00",
+      "source_video_id": "CT2_0025",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0026_C00",
+      "source_video_id": "CT2_0026",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0027_C00",
+      "source_video_id": "CT2_0027",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0028_C00",
+      "source_video_id": "CT2_0028",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0029_C00",
+      "source_video_id": "CT2_0029",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0030_C00",
+      "source_video_id": "CT2_0030",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0031_C00",
+      "source_video_id": "CT2_0031",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0032_C00",
+      "source_video_id": "CT2_0032",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0033_C00",
+      "source_video_id": "CT2_0033",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0034_C00",
+      "source_video_id": "CT2_0034",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0035_C00",
+      "source_video_id": "CT2_0035",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0036_C00",
+      "source_video_id": "CT2_0036",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0037_C00",
+      "source_video_id": "CT2_0037",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0038_C00",
+      "source_video_id": "CT2_0038",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0039_C00",
+      "source_video_id": "CT2_0039",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0040_C00",
+      "source_video_id": "CT2_0040",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0041_C00",
+      "source_video_id": "CT2_0041",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0042_C00",
+      "source_video_id": "CT2_0042",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0043_C00",
+      "source_video_id": "CT2_0043",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0044_C00",
+      "source_video_id": "CT2_0044",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0045_C00",
+      "source_video_id": "CT2_0045",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0046_C00",
+      "source_video_id": "CT2_0046",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0047_C00",
+      "source_video_id": "CT2_0047",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0048_C00",
+      "source_video_id": "CT2_0048",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0049_C00",
+      "source_video_id": "CT2_0049",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0050_C00",
+      "source_video_id": "CT2_0050",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0051_C00",
+      "source_video_id": "CT2_0051",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0052_C00",
+      "source_video_id": "CT2_0052",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0053_C00",
+      "source_video_id": "CT2_0053",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0054_C00",
+      "source_video_id": "CT2_0054",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0055_C00",
+      "source_video_id": "CT2_0055",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0056_C00",
+      "source_video_id": "CT2_0056",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0057_C00",
+      "source_video_id": "CT2_0057",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0058_C00",
+      "source_video_id": "CT2_0058",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0059_C00",
+      "source_video_id": "CT2_0059",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0060_C00",
+      "source_video_id": "CT2_0060",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0061_C00",
+      "source_video_id": "CT2_0061",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0062_C00",
+      "source_video_id": "CT2_0062",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0063_C00",
+      "source_video_id": "CT2_0063",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0064_C00",
+      "source_video_id": "CT2_0064",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0065_C00",
+      "source_video_id": "CT2_0065",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0066_C00",
+      "source_video_id": "CT2_0066",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0067_C00",
+      "source_video_id": "CT2_0067",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0068_C00",
+      "source_video_id": "CT2_0068",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0069_C00",
+      "source_video_id": "CT2_0069",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0070_C00",
+      "source_video_id": "CT2_0070",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0071_C00",
+      "source_video_id": "CT2_0071",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0072_C00",
+      "source_video_id": "CT2_0072",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0073_C00",
+      "source_video_id": "CT2_0073",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0074_C00",
+      "source_video_id": "CT2_0074",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0075_C00",
+      "source_video_id": "CT2_0075",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0076_C00",
+      "source_video_id": "CT2_0076",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0077_C00",
+      "source_video_id": "CT2_0077",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0078_C00",
+      "source_video_id": "CT2_0078",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0079_C00",
+      "source_video_id": "CT2_0079",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0080_C00",
+      "source_video_id": "CT2_0080",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0081_C00",
+      "source_video_id": "CT2_0081",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0082_C00",
+      "source_video_id": "CT2_0082",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0083_C00",
+      "source_video_id": "CT2_0083",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0084_C00",
+      "source_video_id": "CT2_0084",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0085_C00",
+      "source_video_id": "CT2_0085",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0086_C00",
+      "source_video_id": "CT2_0086",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0087_C00",
+      "source_video_id": "CT2_0087",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0088_C00",
+      "source_video_id": "CT2_0088",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0089_C00",
+      "source_video_id": "CT2_0089",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0090_C00",
+      "source_video_id": "CT2_0090",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0091_C00",
+      "source_video_id": "CT2_0091",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0092_C00",
+      "source_video_id": "CT2_0092",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0093_C00",
+      "source_video_id": "CT2_0093",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0094_C00",
+      "source_video_id": "CT2_0094",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0095_C00",
+      "source_video_id": "CT2_0095",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0096_C00",
+      "source_video_id": "CT2_0096",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0097_C00",
+      "source_video_id": "CT2_0097",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0098_C00",
+      "source_video_id": "CT2_0098",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0099_C00",
+      "source_video_id": "CT2_0099",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0100_C00",
+      "source_video_id": "CT2_0100",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0101_C00",
+      "source_video_id": "CT2_0101",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0102_C00",
+      "source_video_id": "CT2_0102",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0103_C00",
+      "source_video_id": "CT2_0103",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0104_C00",
+      "source_video_id": "CT2_0104",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0105_C00",
+      "source_video_id": "CT2_0105",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0106_C00",
+      "source_video_id": "CT2_0106",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0107_C00",
+      "source_video_id": "CT2_0107",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0108_C00",
+      "source_video_id": "CT2_0108",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0109_C00",
+      "source_video_id": "CT2_0109",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0110_C00",
+      "source_video_id": "CT2_0110",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0111_C00",
+      "source_video_id": "CT2_0111",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0112_C00",
+      "source_video_id": "CT2_0112",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0113_C00",
+      "source_video_id": "CT2_0113",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0114_C00",
+      "source_video_id": "CT2_0114",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0115_C00",
+      "source_video_id": "CT2_0115",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0116_C00",
+      "source_video_id": "CT2_0116",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0117_C00",
+      "source_video_id": "CT2_0117",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0118_C00",
+      "source_video_id": "CT2_0118",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0119_C00",
+      "source_video_id": "CT2_0119",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0120_C00",
+      "source_video_id": "CT2_0120",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0121_C00",
+      "source_video_id": "CT2_0121",
+      "targets": [
+        {
+          "event_id": "EV_CT2_0121_C00_1",
+          "t_onset_sec": 30,
+          "scoring": "INCLUDED",
+          "violation_type": "CENTER_LINE_CROSSING",
+          "t_start_sec": 29,
+          "t_end_sec": 31
+        }
+      ]
+    },
+    {
+      "clip_id": "CT2_0122_C00",
+      "source_video_id": "CT2_0122",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0123_C00",
+      "source_video_id": "CT2_0123",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0124_C00",
+      "source_video_id": "CT2_0124",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0125_C00",
+      "source_video_id": "CT2_0125",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0126_C00",
+      "source_video_id": "CT2_0126",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0127_C00",
+      "source_video_id": "CT2_0127",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0128_C00",
+      "source_video_id": "CT2_0128",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0129_C00",
+      "source_video_id": "CT2_0129",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0130_C00",
+      "source_video_id": "CT2_0130",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0131_C00",
+      "source_video_id": "CT2_0131",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0132_C00",
+      "source_video_id": "CT2_0132",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0133_C00",
+      "source_video_id": "CT2_0133",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0134_C00",
+      "source_video_id": "CT2_0134",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0135_C00",
+      "source_video_id": "CT2_0135",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0136_C00",
+      "source_video_id": "CT2_0136",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0137_C00",
+      "source_video_id": "CT2_0137",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0138_C00",
+      "source_video_id": "CT2_0138",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0139_C00",
+      "source_video_id": "CT2_0139",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0140_C00",
+      "source_video_id": "CT2_0140",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0141_C00",
+      "source_video_id": "CT2_0141",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0142_C00",
+      "source_video_id": "CT2_0142",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0143_C00",
+      "source_video_id": "CT2_0143",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0144_C00",
+      "source_video_id": "CT2_0144",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0145_C00",
+      "source_video_id": "CT2_0145",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0146_C00",
+      "source_video_id": "CT2_0146",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0147_C00",
+      "source_video_id": "CT2_0147",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0148_C00",
+      "source_video_id": "CT2_0148",
+      "targets": []
+    },
+    {
+      "clip_id": "CT2_0149_C00",
+      "source_video_id": "CT2_0149",
+      "targets": []
+    }
+  ]
+}

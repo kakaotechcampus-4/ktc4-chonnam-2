@@ -10,7 +10,6 @@ from . import search_candidates, verify_visual
 from .config import GeminiSearchConfig
 from .errors import (
     CandidateSourceMismatchError,
-    InvalidCoarseSpanError,
     InvalidFineSpanError,
 )
 from .execution import RunDeadline
@@ -233,7 +232,7 @@ def run_smoke(
     )
     try:
         coarse = search_candidates(scope, service=service)
-    except (SmokeProviderError, InvalidCoarseSpanError):
+    except SmokeProviderError:
         return report_builder.build(
             SmokeOutcome(SmokeStatus.FAILED, SmokeFailureStage.COARSE)
         )

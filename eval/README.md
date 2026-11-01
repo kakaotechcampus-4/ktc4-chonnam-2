@@ -45,6 +45,29 @@ python -m eval.score --prediction demo_correct
 
 `ab_mixed` manifest 는 A tier 시퀀스 120개와 B tier negative 클립 30개를 이어 붙인 것이다. **5×5 confusion 의 `NONE` 행·열은 이 manifest 로만 채워진다** — AI-Hub 시퀀스는 전부 4종 중 하나여서 「아무 위반도 아닌 것」이 없기 때문이다. `python -m eval.tools.build_ab_mixed` 로 재생성하며 뽑은 클립은 `meta.coverage.sampling`(rule_version·seed)에 기록된다. 항목마다 `source_tier` 가 있다 — A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라 해상도·압축 특성이 다르다.
 
+### AI-Hub 선별 MP4 분류 평가
+
+전체 데이터셋 구성과 해석 한계는 [`docs/modules/eval/datasets/README.md`](../docs/modules/eval/datasets/README.md)에 정리했다. 로컬 `D:/카테캠/데이터/AIHub_traffic_videos_best_100_each/manifest.csv`에는 유형별 100개씩 400개가 있다. `a_aihub_best100_all`은 전체 400개 개발 진단용이고, `a_aihub_best100_val`은 원본 Validation 129개에서 기존 A tier manifest와 겹치는 12개를 제외한 **117개 양성 영상**이다. MP4는 저장소에 넣지 않는다.
+
+```bash
+uv run python -m eval.tools.evaluate_aihub_best100 build --source D:/카테캠/데이터/AIHub_traffic_videos_best_100_each
+uv run python -m eval.tools.evaluate_aihub_best100 run --source D:/카테캠/데이터/AIHub_traffic_videos_best_100_each --run-id <새_run_id>
+uv run python -m eval.score --prediction <새_run_id>
+
+# 유형별 100개 전부: Training 포함 개발 진단으로 별도 집계
+uv run python -m eval.tools.evaluate_aihub_best100 build --set all
+uv run python -m eval.tools.evaluate_aihub_best100 run --set all --run-id <다른_run_id>
+uv run python -m eval.score --prediction <다른_run_id>
+```
+
+`build`는 manifest가 이미 있으면 덮어쓰지 않는다. `run`도 prediction을 덮어쓰지 않는다. 실제 실행은 현재 Search S3 (`gemini-4-argon`, coarse 2 fps)의 공개 `search_candidates`를 각 영상 전체에 적용하고 **최상위 후보의 위반 유형**을 영상 단위 예측으로 쓴다. 후보가 없거나 유형이 없으면 `NONE`이다. 따라서 이 수치는 **Search의 후보 찾기까지 포함한 영상 단위 유형 적중률**이며 독립 분류기 정확도가 아니다. 위반 시점·정상 영상·대상 bbox 정답은 없어서 해당 지표는 내지 않는다. 유료 호출 전에 원천 파일의 SHA-256을 manifest와 대조한다.
+
+같은 AI-Hub 영상 8개를 검토된 C tier 2 정상 블박 8개 사이에 삽입한 개발용 진단도 있다. `uv run python -m eval.tools.evaluate_aihub_mixed build` 후 `uv run python -m eval.tools.evaluate_aihub_mixed run --run-id <새_run_id>`로 후보를 평가하고, `--fine`을 붙인 **별도 새 run ID**로 Fine까지 평가한다. 생성된 MP4는 `eval/datasets/aihub_mixed_pilot/`에만 남고, manifest `aihub_mixed_pilot_mp2`는 삽입 시작·끝과 실제 인코딩 길이·해시를 기록한다. 산출물과 결과 해석은 [10/30 실험 기록](../docs/modules/eval/experiments/2026-10-30-aihub-best100-video-and-mixed.md)을 본다. 이 점수는 합성 영상 진단이며 `locked_test` 실제 장시간 블박 평가를 대체하지 않는다.
+
+확장 진단 `aihub_mixed_100_v1`은 서로 다른 정상 블박 100개와 AI-Hub 원본 100개(4종별 25개)를 사용한다. 삽입 100개와 대조 100개, 총 200개를 `uv run python -m eval.tools.build_aihub_mixed_100`으로 만들고 `uv run python -m eval.tools.evaluate_aihub_mixed run --dataset aihub_mixed_100_v1 --fine --run-id <새_run_id>`로 평가한다. 영상은 로컬 `eval/datasets/aihub_mixed_100_v1/`에만 남고, manifest·결과는 위 실험 기록에 연결했다.
+
+같은 AIHub 400개와 혼합 100쌍에 Search S1/S2/S3를 적용한 결과는 [10/31 시점별 비교](../docs/modules/eval/experiments/2026-10-31-aihub-video-search-points.md)를 본다. 두 평가 명령 모두 `--point s1|s2|s3`를 받으며, 400개 run에서 Validation 117개를 추출하려면 `evaluate_aihub_best100 derive-val --from-run-id <전체_run_id> --run-id <새_val_id>`를 사용한다.
+
 `mock_pack` manifest 는 팀 공용 Mock Pack(`data/mock/`) 산출물을 `mock_pack:contracts` impl 로 읽어 파이프라인이 끝까지 연결되는지 본다(`candidate`·`plate` 지원). 여기서 나오는 지표는 정답지가 채점 대상 fixture 에서 파생돼 순환적이다 — 성능 근거가 아니라 배관 확인용이다(결과의 `coverage` 경고 참조).
 
 ### Gemini Coarse 공식 평가
@@ -113,4 +136,3 @@ uv run python -m eval.tools.build_private_aihub172 --track 1 --source <.../aihub
 uv run python -m eval.run --impl readout-exp:yolo11n --manifest private_aihub172_track1 --stage persistence --run-id <run_id>
 uv run python -m eval.score --prediction <run_id>
 ```
-

@@ -11,6 +11,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
+import { axisEnds, axisRows } from '../components/CandidateAxis'
 import { OtherCandidates } from '../components/OtherCandidates'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 import { EvidenceScreen } from '../screens/EvidenceScreen'
@@ -116,6 +117,30 @@ describe('CandidatesScreen — 나란히 비교(A-1)', () => {
     expect(container.textContent).toContain('흰색 SUV가 백색 실선을 넘어 인접 차로로 이동')
     expect(container.textContent).toContain('사용자 확인됨')
     expect(container.textContent).toContain('파일명 시각')
+  })
+})
+
+describe('CandidatesScreen — 준비 중에는 재선택 버튼을 막는다', () => {
+  const two = [candidate({ candidate_id: 'c1', selected: true }), candidate({ candidate_id: 'c2' })]
+  const job = (kind: string) => ({ job_id: 'j1', kind, label_key: 'job.generic_processing', status: 'RUNNING' as const })
+  const button = (v: CaseView) => {
+    const { getByText } = render(<CandidatesScreen view={v} onSelect={() => {}} />)
+    return getByText('이 장면으로 다시 준비') as HTMLButtonElement
+  }
+
+  it('관찰 job(재판독 포함)이 도는 동안은 비활성이고 이유를 말한다', () => {
+    expect(button({ ...view(two), running_jobs: [job('PLATE_READ')] }).disabled).toBe(true)
+    cleanup()
+    const { container } = render(<CandidatesScreen view={{ ...view(two), running_jobs: [job('PLATE_READ')] }} onSelect={() => {}} />)
+    expect(container.textContent).toContain('지금 준비 중이라 끝난 뒤에 고를 수 있어요.')
+  })
+
+  it('신고용 영상 만들기·탐색 job은 막지 않는다(case도 막지 않음)', () => {
+    expect(button({ ...view(two), running_jobs: [job('REPORT_VIDEO_EXPORT')] }).disabled).toBe(false)
+    cleanup()
+    expect(button({ ...view(two), running_jobs: [job('COARSE_SEARCH')] }).disabled).toBe(false)
+    cleanup()
+    expect(button(view(two)).disabled).toBe(false)
   })
 })
 
@@ -255,5 +280,60 @@ describe('결과 화면에 「다른 후보 보기」가 붙는다', () => {
     const v = withOther((x) => x.stage === 'READY' && x.package !== null)
     const { container } = render(<HandoffScreen view={v} />)
     expect(container.querySelector('details.other-cands')).not.toBeNull()
+  })
+})
+
+describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
+  it('겹치는 원만 아래 줄로 내린다', () => {
+    // 폭 1000px에서 원 28px + 간격 6px = 3.4%보다 가까우면 겹친다
+    expect(axisRows([10, 12, 50], 1000)).toEqual([0, 1, 0])
+    expect(axisRows([10, 11, 12], 1000)).toEqual([0, 1, 2])
+    expect(axisRows([10, 30, 60], 1000)).toEqual([0, 0, 0])
+  })
+
+  it('번호는 카드 번호와 같고 위치는 marker_ms / timeline_duration_ms다. stale(marker_ms=null)은 마커가 없다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', selected: true, marker_ms: 300000 }),
+        candidate({ candidate_id: 'b', marker_ms: null, stale_revision: true }),
+        candidate({ candidate_id: 'c', marker_ms: 150000 }),
+      ]),
+      timeline_duration_ms: 600000,
+    }
+    const { container } = render(<CandidatesScreen view={v} />)
+    const pins = [...container.querySelectorAll<HTMLElement>('.cand-axis-pin')].map((p) => [p.textContent, p.style.left, p.classList.contains('sel')])
+    expect(pins).toEqual([
+      ['3', '25%', false],
+      ['1', '50%', true],
+    ])
+  })
+
+  it('case가 rank를 주면 카드와 같은 rank로 번호를 단다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', rank: 2, marker_ms: 100000 }),
+        candidate({ candidate_id: 'b', rank: 1, marker_ms: 400000 }),
+      ]),
+      timeline_duration_ms: 600000,
+    }
+    const { container } = render(<CandidatesScreen view={v} />)
+    const pins = [...container.querySelectorAll('.cand-axis-pin')].map((p) => p.textContent)
+    const cards = [...container.querySelectorAll('.cnum')].map((n) => n.textContent)
+    expect(pins).toEqual(['2', '1'])
+    expect(cards).toEqual(['2', '1'])
+  })
+
+  it('막대 양 끝은 촬영 시각 범위가 있으면 그 시각, 없으면 0:00과 전체 길이다', () => {
+    expect(axisEnds(['2026-08-27T13:00:00+09:00', '2026-08-27T13:25:00+09:00'], 1500000)).toEqual(['13:00:00', '13:25:00'])
+    expect(axisEnds(['18:03', '19:21'], 4680000)).toEqual(['18:03', '19:21'])
+    expect(axisEnds(null, 600000)).toEqual(['0:00', '10:00'])
+    expect(axisEnds(null, 4680000)).toEqual(['0:00', '1:18:00'])
+  })
+
+  it('시간축 길이가 없으면(null · 미전달) 그리지 않는다', () => {
+    const c = [candidate({ candidate_id: 'a', marker_ms: 1000 })]
+    expect(render(<CandidatesScreen view={{ ...view(c), timeline_duration_ms: null }} />).container.querySelector('.cand-axis')).toBeNull()
+    cleanup()
+    expect(render(<CandidatesScreen view={view(c)} />).container.querySelector('.cand-axis')).toBeNull()
   })
 })

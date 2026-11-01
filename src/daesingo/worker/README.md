@@ -1,5 +1,11 @@
 # `worker` — Worker composition root
 
+RT-12(a)는 첫 claim 전 temp 잔여 scan과 별도의 주기 cleanup thread를 시작하고,
+startup/claim 실패와 정상 종료 모두에서 stop/join한다. `loop.media`는 기존
+materializer에 service별 temp_root와 활성 lease를 주입하는 factory다. 기본
+entrypoint의 실제 handler 등록은 그대로 후속 범위다.
+[경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
 - 배포 단위 「Worker 1」. `common/jobs`에서 row를 claim → RUNNING + heartbeat → 도메인 모듈의 **public capability**를 dispatch → 결과 ref + usage 기록.
@@ -41,3 +47,28 @@ Case가 지원하지 않는 kind는 T2 오류로 남고 receipt를 기록하지 
 RD-09a에 따라 실제 Recording invocation은 execution마다 새 `RecordingService`를 만들고 `finally`에서 닫아 mutable cache/working state를 제한한다. durable repository/persistence를 execution마다 새로 격리한다는 뜻은 아니다. 이 PR은 service lifecycle을 구현하거나 process-global cache를 추가하지 않는다.
 
 structured event에는 queue의 trace/case/job/execution ID를 연결한다. 저장 가능한 ID라도 경로·제어문자가 포함돼 event token으로 안전하지 않으면 로그에서만 일관된 opaque alias를 쓴다. handler context와 DB의 원래 ID는 유지한다. thread에 correlation을 전달할 때는 `common.logging.copy_context_call`로 제출 시점의 context를 캡처한다. 세부 선택과 검증 결과는 [Implementation Log](../../../docs/runtime/runtime-implementation-log.md)에 기록한다.
+
+RT-10(a)는 내부 `HandlerResult.objects`에 JSON payload를 받을 수 있게 한다. Worker는 module 의미를 해석하지 않고 stable ref를 결합한 snapshot을 T1에서 terminal·produced와 함께 저장한다. 기존 외부 produced 참조만 있는 handler도 유지한다. COMMIT 응답 유실 시 payload까지 동일한지 확인하며 누락 객체를 사후 복구하지 않는다. 실제 handler 등록과 기본 entrypoint의 reader/timeline 조립은 후속 범위다. 상태는 IN_PROGRESS이며 [RT-10(a) note](../../../docs/runtime/rt10a-produced-store.md)에 검증·제한을 기록한다.
+
+2026-10-25 RT-10(b) 구현 checkpoint: `search_handlers.py`가 HINT_EXTRACT·COARSE_SEARCH·FINE_VERIFY의 공개 Search 호출과 execution UsageSink 전달을 조립한다. `search_inputs.py`는 CaseStore와 ProducedReader로 고정된 입력을 읽고 DB transaction 밖에서 capability를 호출한다. `search_composition.py`의 기본 registry는 HINT_EXTRACT만 등록하며, Coarse/Fine은 호출자가 execution resource context factory를 제공해야 등록된다. 기본 entrypoint의 전체 Case T2 배선·Recording durable facts는 여전히 후속이다. **현재 draft에는 JobExecution failure taxonomy 매핑 차단이 있어 배포·병합 가능한 상태가 아니다.** 상세한 RED→GREEN·직접 검증·미완료 경계는 [RT-10(b) checkpoint](../../../docs/runtime/rt10b-search-handlers.md)를 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+2026-10-26 후속: raw failure forwarding을 제거하고 확정된 Search 공개 helper 세 개를 `SearchFailures` port로 소비한다. helper는 Search capability 결과·예외에만 적용하며 Runtime 입력/transaction/checkpoint/T1 오류를 분류하지 않는다. PR #403이 아직 미병합이라 현재 develop에는 helper가 없으므로 기본 registry는 Search kind를 미등록으로 유지한다. helper 설치 뒤에는 위 HINT 기본 등록·미디어 factory 조건이 적용된다. HINT 401·403·404 + 예산 소진의 분류는 Search Owner 답변 전까지 pending acceptance이며 Runtime 재매핑은 없다. 기본 media/T2 composition과 전체 RT-10 acceptance도 미완료다. 새 직접 검증과 별도 #403 snapshot 결과는 위 checkpoint의 2026-10-26 후속 기록을 따른다.
+
+2026-10-26 composition 후속: 기본 entrypoint에 caller-transaction `StoredCaseReflector`와 CaseStore의 stored adapter/ProducedReader/RecordingFacts를 연결했다. Coarse/Fine production media는 명시적인 Recording profile mapping과 Case-selected VIDEO refs가 있어야 구성하며 execution별 RecordingService를 닫는다. Search payload는 기존 T1 object/terminal 원자 저장을 사용하고 T2는 기존 SUCCEEDED/FAILED 의미 그대로다. #403 helper 부재 시 기본 Search 미등록, HINT spent-auth 및 #405 STALE 정책 pending은 유지한다. 별도 process E2E·직접 검증·제한은 [production composition checkpoint](../../../docs/runtime/rt10b-production-composition.md)를 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+2026-10-26 #403 통합 후속: merge405512cd의 실제 공개 helper를 기본 registry에서 소비한다. HINT와 명시적 media profile이 있는 Coarse/Fine을 테스트 정책 대체 없이 검증하며 production dispatcher/taxonomy 코드는 추가 변경하지 않았다. #405 STALE 소진 알림·receipt·Case정책은 이번 범위에서 제외한다. 선행 CI·직접 실행·Linux fixture/도구 경계는 위 composition checkpoint의 최신 후속 기록을 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+
+## RT-10(b) HINT_EXTRACT exhaustion notice (#405)
+
+`RT-10 IN_PROGRESS · Refs #297 (RT-10(b)) · Related #405`.
+The production entrypoint supplies StoredCaseExhaustionReceiver in addition to
+the T2 reflector. An uncancelled final HINT_EXTRACT STALE creates a Runtime
+outbox row in the same sweep transaction. Startup and periodic passes deliver
+pending notices through Case's public receive_hint_exhaustion service, then
+enqueue its COARSE_SEARCH record and acknowledge the notice atomically. Both
+redelivery scans complete before the first claim; shutdown retains stop/join.
+An omitted exhaustion_receiver leaves notices pending, like an omitted T2
+reflector. Existing T2/case_applied_at is unchanged. See
+[Implementation Notes](../../../docs/runtime/rt10b-exhaustion-notice.md) for the
+forward-only migration, Case-first lock order, port and safe failure event.

@@ -1,0 +1,951 @@
+{
+  "meta": {
+    "gt_version": "bg1",
+    "tier": "A",
+    "stage": "classification",
+    "coverage": {
+      "sequences_total": 117,
+      "label_source": "manifest.csv category_folder",
+      "target_bbox": "not provided",
+      "negative_examples": 0
+    }
+  },
+  "items": [
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001128",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001116",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001141",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001065",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001039",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001071",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001059",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001118",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013349",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003998",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011930",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_좌회전신호시직진_0000001091",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012793",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003699",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003705",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013343",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012791",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013365",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012320",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012424",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012348",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012862",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003707",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003696",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013368",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003678",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013402",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003996",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시좌회전_0000003714",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000011924",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012066",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012426",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012421",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013357",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012771",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000013390",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230223_적색신호시직진_0000012419",
+      "label": "SIGNAL",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010453",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010484",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010597",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011146",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011027",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_터널내진로변경위반_0000000612",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011185",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011532",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010514",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010999",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011362",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011163",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011035",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010837",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011232",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011029",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011113",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010591",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011064",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010774",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011222",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010838",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010993",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010515",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010937",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011457",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011244",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010948",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011270",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011462",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010579",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000011160",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010679",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010510",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_일반도로진로변경위반_0000010509",
+      "label": "SOLID_LINE_LANE_CHANGE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002504",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002389",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002529",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002512",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002411",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002465",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002472",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002530",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_안전모미착용_0000002404",
+      "label": "MOTORCYCLE_HELMET_NON_USE",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006120",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009053",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005978",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006028",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008576",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008912",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009001",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006188",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008497",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009010",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005811",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006139",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005984",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006147",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005961",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005825",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008894",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009395",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005982",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005986",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006054",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000005837",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008599",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006007",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006103",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008560",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006087",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006198",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008554",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006018",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006202",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230226_중앙선주황색실선위반_0000006148",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색실선위반_0000006118",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008746",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000009043",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    },
+    {
+      "sequence_id": "20230222_중앙선주황색이중실선위반_0000008494",
+      "label": "CENTER_LINE_CROSSING",
+      "target_bbox": null,
+      "target_frame": null,
+      "distractor_count": null,
+      "source_tier": "A"
+    }
+  ]
+}

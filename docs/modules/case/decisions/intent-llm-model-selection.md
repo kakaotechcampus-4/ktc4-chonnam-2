@@ -187,3 +187,7 @@ GPT-5 Nano는 평균 12,745ms로 나머지 둘(2,676ms/3,417ms)보다 **3.7~4.8�
 ### 재검토 트리거 (§13에 더함)
 - [ ] 실사용 로그에서 「여러 사건을 한 설명에 적는」 입력이 드물다고 확인된다 → 3.8 Flash `low`(비용 약 59% 절감)를 같은 날 나란히 다시 잰다.
 - [ ] intent 호출 비용이 의미 있는 비중이 된다 → 비용 대안은 Flash-Lite가 아니라 Luna `none`으로 비교한다(§13 첫 트리거 대체).
+
+## 15. 평가 도구 — MLflow는 쓰지 않는다
+
+§12 ~ §14의 평가는 모두 `experiments/intent-llm-model-comparison/scripts/` 하네스로 했다. MLflow 도입 검토와 재검토 조건은 `intent-llm-mlflow-review.md`에 있다.

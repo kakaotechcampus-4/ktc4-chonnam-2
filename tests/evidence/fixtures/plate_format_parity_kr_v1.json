@@ -1,0 +1,798 @@
+{
+  "fixture": "plate-format parity vectors",
+  "rule_ref": "plate-format/kr-v1",
+  "experiment_source": "docs/modules/evidence/experiments/plate-format-rules-2026-09-19/scripts/rules.py @ c0c3c95b",
+  "note": "Vectors with '-', '.', '·' are left out: PR #91 E-0 removed them, the product does not (core-user-flow.md §12). experiment = classify()/notes() output recorded when this file was generated. The test does not import the experiment. Values are synthetic except 바5215 (PR #80, ADR-EVIDENCE-006).",
+  "vectors": [
+    {
+      "label": "정상 · 전국형 2자리 비사업용(7자리)",
+      "input": "12가3456",
+      "experiment": {
+        "format_id": "NAT2_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 전국형 3자리 비사업용(8자리)",
+      "input": "123가4567",
+      "experiment": {
+        "format_id": "NAT3_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 관할기호형 비사업용",
+      "input": "서울12가3456",
+      "experiment": {
+        "format_id": "REGION_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": "REGION_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 공백은 검사 사본에서만 지운다",
+      "input": "12가 3456",
+      "experiment": {
+        "format_id": "NAT2_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 비사업용 다른 기호",
+      "input": "34나5678",
+      "experiment": {
+        "format_id": "NAT2_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 2자리 운수사업용",
+      "input": "12바3456",
+      "experiment": {
+        "format_id": "NAT2_BIZ",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_BIZ",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 2자리 택배(배)",
+      "input": "12배3456",
+      "experiment": {
+        "format_id": "NAT2_PARCEL",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_PARCEL",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 2자리 대여 하",
+      "input": "12하3456",
+      "experiment": {
+        "format_id": "NAT2_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 2자리 대여 허",
+      "input": "12허3456",
+      "experiment": {
+        "format_id": "NAT2_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 2자리 대여 호",
+      "input": "12호3456",
+      "experiment": {
+        "format_id": "NAT2_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 3자리 대여 승용",
+      "input": "123하4567",
+      "experiment": {
+        "format_id": "NAT3_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 3자리 대여 승합",
+      "input": "700허1234",
+      "experiment": {
+        "format_id": "NAT3_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 3자리 화물 비사업용",
+      "input": "850가1234",
+      "experiment": {
+        "format_id": "NAT3_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 3자리 특수 비사업용",
+      "input": "990가1234",
+      "experiment": {
+        "format_id": "NAT3_PRIVATE",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 관할기호형 운수사업용",
+      "input": "서울12바3456",
+      "experiment": {
+        "format_id": "REGION_BIZ",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": "REGION_BIZ",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 관할기호형 택배",
+      "input": "부산12배1234",
+      "experiment": {
+        "format_id": "REGION_PARCEL",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": "REGION_PARCEL",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "정상 · 관할기호형 대여",
+      "input": "서울12하3456",
+      "experiment": {
+        "format_id": "REGION_RENT",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": "REGION_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    },
+    {
+      "label": "고시 조합 밖 · 3자리 + 운수사업용",
+      "input": "123바4567",
+      "experiment": {
+        "format_id": "NAT3_BIZ",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.biz_with_3digit_band"
+        ]
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_BIZ",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.biz_with_3digit_band"
+        ]
+      }
+    },
+    {
+      "label": "고시 조합 밖 · 3자리 대여 + 화물대역",
+      "input": "800하1234",
+      "experiment": {
+        "format_id": "NAT3_RENT",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.rent_band_mismatch"
+        ]
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_RENT",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.rent_band_mismatch"
+        ]
+      }
+    },
+    {
+      "label": "고시 조합 밖 · 긴급 대역",
+      "input": "998가1234",
+      "experiment": {
+        "format_id": "NAT3_PRIVATE",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.emergency_band"
+        ]
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": "NAT3_PRIVATE",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.emergency_band"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 구형 1자리 관할기호판(관측)",
+      "input": "서울3가1234",
+      "experiment": {
+        "format_id": "REGION_LEGACY1",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.legacy_scheme"
+        ]
+      },
+      "expected": {
+        "shape": "REGION_LEGACY1",
+        "matched_profile": "REGION_LEGACY1",
+        "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.legacy_scheme"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 이륜차",
+      "input": "서울강남가1234",
+      "experiment": {
+        "format_id": "MOTO",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "MOTO",
+        "matched_profile": "MOTO",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.partial_coverage"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 이륜차 용도기호 밖",
+      "input": "서울강남쿠1234",
+      "experiment": {
+        "format_id": "MOTO",
+        "reason_code": "plate.format.use_code_unknown",
+        "notes": []
+      },
+      "expected": {
+        "shape": "MOTO",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.use_code_unknown"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 외교",
+      "input": "외교123456",
+      "experiment": {
+        "format_id": "DIPLO",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "DIPLO",
+        "matched_profile": "DIPLO",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.partial_coverage"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 외교 협정",
+      "input": "협정123456",
+      "experiment": {
+        "format_id": "DIPLO",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "DIPLO",
+        "matched_profile": "DIPLO",
+        "provenance": "OFFICIAL",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.partial_coverage"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 군용(관측)",
+      "input": "12육3456",
+      "experiment": {
+        "format_id": "MIL",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.outside_notice_scope"
+        ]
+      },
+      "expected": {
+        "shape": "MIL",
+        "matched_profile": "MIL",
+        "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.outside_notice_scope"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 건설기계 영업용(관측)",
+      "input": "영서울06가5001",
+      "experiment": {
+        "format_id": "CONSTR_BIZ",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.outside_notice_scope"
+        ]
+      },
+      "expected": {
+        "shape": "CONSTR_BIZ",
+        "matched_profile": "CONSTR_BIZ",
+        "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.outside_notice_scope"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 건설기계 일련번호 구간 밖",
+      "input": "영서울06가1234",
+      "experiment": {
+        "format_id": "CONSTR_BIZ",
+        "reason_code": null,
+        "notes": [
+          "plate.consistency.constr_serial_band_mismatch",
+          "plate.consistency.outside_notice_scope"
+        ]
+      },
+      "expected": {
+        "shape": "CONSTR_BIZ",
+        "matched_profile": "CONSTR_BIZ",
+        "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+        "review_required": true,
+        "reason_codes": [
+          "plate.consistency.constr_serial_band_mismatch",
+          "plate.consistency.outside_notice_scope"
+        ]
+      }
+    },
+    {
+      "label": "특수 · 건설기계 기종번호 밖",
+      "input": "영서울28가5001",
+      "experiment": {
+        "format_id": "CONSTR_BIZ",
+        "reason_code": "plate.format.head_out_of_range",
+        "notes": []
+      },
+      "expected": {
+        "shape": "CONSTR_BIZ",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.head_out_of_range"
+        ]
+      }
+    },
+    {
+      "label": "부분 · PR #80 2줄판 아랫줄",
+      "input": "바5215",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 한글+4자리",
+      "input": "바1234",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 프레임 불일치 표기",
+      "input": "12가34?6",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 영문",
+      "input": "abc",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 숫자만",
+      "input": "12",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 일련번호 1자 누락",
+      "input": "12가345",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "부분 · 뒤에 한글 덧붙음",
+      "input": "12가3456바",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.incomplete",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.incomplete"
+        ]
+      }
+    },
+    {
+      "label": "미지 형태 · 일련번호 1자 덧붙음",
+      "input": "12가34567",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.unknown_shape",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.unknown_shape"
+        ]
+      }
+    },
+    {
+      "label": "미지 형태 · 앞자리 4자리",
+      "input": "1234가5678",
+      "experiment": {
+        "format_id": null,
+        "reason_code": "plate.format.unknown_shape",
+        "notes": []
+      },
+      "expected": {
+        "shape": null,
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.unknown_shape"
+        ]
+      }
+    },
+    {
+      "label": "용도기호 밖 · 2자리",
+      "input": "12쿠3456",
+      "experiment": {
+        "format_id": "NAT2",
+        "reason_code": "plate.format.use_code_unknown",
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.use_code_unknown"
+        ]
+      }
+    },
+    {
+      "label": "용도기호 밖 · 관할기호형",
+      "input": "서울12시3456",
+      "experiment": {
+        "format_id": "REGION",
+        "reason_code": "plate.format.use_code_unknown",
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.use_code_unknown"
+        ]
+      }
+    },
+    {
+      "label": "관할기호 밖",
+      "input": "한국12바3456",
+      "experiment": {
+        "format_id": "REGION",
+        "reason_code": "plate.format.region_unknown",
+        "notes": []
+      },
+      "expected": {
+        "shape": "REGION",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.region_unknown"
+        ]
+      }
+    },
+    {
+      "label": "분류기호 밖 · 00",
+      "input": "00가1234",
+      "experiment": {
+        "format_id": "NAT2",
+        "reason_code": "plate.format.head_out_of_range",
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.head_out_of_range"
+        ]
+      }
+    },
+    {
+      "label": "분류기호 밖 · 0으로 시작하는 3자리",
+      "input": "012가3456",
+      "experiment": {
+        "format_id": "NAT3",
+        "reason_code": "plate.format.head_out_of_range",
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT3",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.head_out_of_range"
+        ]
+      }
+    },
+    {
+      "label": "일련번호 밖 · 0000",
+      "input": "12가0000",
+      "experiment": {
+        "format_id": "NAT2",
+        "reason_code": "plate.format.serial_out_of_range",
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": null,
+        "provenance": null,
+        "review_required": true,
+        "reason_codes": [
+          "plate.format.serial_out_of_range"
+        ]
+      }
+    },
+    {
+      "label": "한계 · 관할기호만 누락되면 구조가 보존된다(PR #91 §2-④)",
+      "input": "37바1234",
+      "experiment": {
+        "format_id": "NAT2_BIZ",
+        "reason_code": null,
+        "notes": []
+      },
+      "expected": {
+        "shape": "NAT2",
+        "matched_profile": "NAT2_BIZ",
+        "provenance": "OFFICIAL",
+        "review_required": false,
+        "reason_codes": []
+      }
+    }
+  ]
+}

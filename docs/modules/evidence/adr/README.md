@@ -13,8 +13,9 @@
 - [ADR-EVIDENCE-003 — 위치를 확보하지 못한 사건의 `ReportPackage` 발행 (D1)](adr-location-absent-package.md) — accepted. 이슈 #48 종결, ADR-002 §5.6·§5.8·§5.11·§5.14 갱신
 - [ADR-EVIDENCE-004 — versioned requirement policy engine 구현 구조](adr-requirement-policy-engine.md) — K1~K4·D1 loader/evaluator/template/error 경계 구현 구조
 - [ADR-EVIDENCE-005 — 판정 주체가 없는 사건 장면·전후 상황 rule 제거 (D2)](adr-event-context-rules-removal.md) — accepted. `FINAL_PACKAGE` 무조건 rule 15 → 12, ADR-002 §5.6·§5.12·§5.14·§5.15 갱신
-- [ADR-EVIDENCE-006 — 번호판 형식 규칙은 hard reject가 아니라 사용자 검토 신호로 사용](adr-license-plate-format-review-rules.md) — accepted, implementation pending. PR #80 실측 + PR #88 공식 규정 조사 연결, 후속 versioned rule 구현 필요
+- [ADR-EVIDENCE-006 — 번호판 형식 규칙은 hard reject가 아니라 사용자 검토 신호로 사용](adr-license-plate-format-review-rules.md) — accepted, implemented (문자열 규칙, #487). rule revision `plate-format/kr-v1`, `policy/evidence-assembly-v2`. readout partial/layout 신호 연계는 후속(§7.1)
 - [ADR-EVIDENCE-007 — `NOT_OBSERVED` VisualEvidence는 `EvidenceRecord` 이전에 끝나는 정상 결과 (D3)](adr-not-observed-non-assembly.md) — accepted. 이슈 #137, `classify_visual_evidence()` 경계 신설, `contract-evidence-record-needs.md` null 예외 절 명확화(버전 유지)
 - [ADR-EVIDENCE-008 — 번호판 식별 실패와 실행 실패의 Requirement 경계 (#172 D·D-2·D-3)](adr-plate-identification-failure-boundary.md) — accepted. 활성 catalog `policy/requirement-rules-v5` 발행, ADR-002 §5.4·§5.6 · ADR-005 §5.5 번호판 행 대체. 번호판 없는 Package의 입력 계약·template은 후속
 - [ADR-EVIDENCE-009 — 상황 응답 전 진행 범위와 사라진 사건 확인 단계 (#171 B·B-2)](adr-situation-response-timing.md) — accepted. ADR-005 §2.5·§5.4 재검토, rule catalog 변경 없음
 - [ADR-EVIDENCE-010 — 최종 신고용 영상 재관찰(I4) 가시성 rule 제거 (#280)](adr-i4-report-video-visibility-rules-removal.md) — accepted. 활성 catalog `policy/requirement-rules-v6` 발행, `FINAL_PACKAGE` 무조건 rule 12 → 11, 검증된 overlay 시각 갈래는 rule 없음. ADR-002 §5.6·§5.7 · ADR-005 §5.5·§5.7 · ADR-008 §5.2·§6.2·§8 대체 표시
+- [ADR-EVIDENCE-011 — CorrectionRecord 기록 전 검사 경계 (#235 E-3)](adr-correction-append-precheck.md) — accepted. 공개 `validate_correction_append()` · `InvalidCorrectionValue` 신설, `correction-record/v1.2`(`previous_value=null`) 소비 반영, ADR-008 §4.3 · §8에 「4a 뒤 직접 입력」 행 추가

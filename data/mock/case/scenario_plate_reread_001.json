@@ -82,6 +82,7 @@
           "2026-08-29T20:30:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1800000,
       "hints": {
         "time": "저녁 8시쯤",
         "vehicle": "은색 해치백",
@@ -295,6 +296,7 @@
           "2026-08-29T20:30:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1800000,
       "hints": {
         "time": "저녁 8시쯤",
         "vehicle": "은색 해치백",
@@ -458,15 +460,6 @@
       "package": null,
       "running_jobs": [],
       "notices": [
-        {
-          "code": "case.report_video_not_generated",
-          "severity": "INFO",
-          "blocking": false,
-          "message_key": "notice.report_video_not_generated",
-          "actions": [
-            "GENERATE_REPORT_VIDEO"
-          ]
-        },
         {
           "code": "evidence.location_search_keyword_missing",
           "severity": "INFO",

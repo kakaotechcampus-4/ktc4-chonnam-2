@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 
 from daesingo.common.db.transactions import run_worker_transaction
-from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
+from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation, safe_error_type
 
 from .execution import HandlerResult
 from .reflection import ReflectionInput, ReflectionResult, ResultReflector, reflect_terminal
@@ -61,15 +61,16 @@ def redeliver_once(engine: Engine, reflector: ResultReflector, *,
 
         try:
             result = run_worker_transaction(engine, operation, sleep=sleep, logger=logger)
-        except Exception:
+        except Exception as error:
             # No exception strings, SQL, unsupported kind or reader payload logs.
             if logger is not None:
                 with bind_context(**safe_correlation(execution_id=execution_id)):
-                    log_event_best_effort(logger, "runtime.reflect.failed", level=logging.ERROR, status="FAILED")
+                    log_event_best_effort(logger, "runtime.reflect.failed", level=logging.ERROR,
+                                          status="FAILED", **safe_error_type(error))
             continue
         if result is not None:
             results.append(result)
-            if logger is not None and incoming is not None:
+            if logger is not None and incoming is not None and trace_id is not None:
                 with bind_context(**safe_correlation(trace_id=trace_id, case_id=incoming.case_id,
                     job_id=incoming.job_id, execution_id=execution_id)):
                     log_event_best_effort(logger, "runtime.reflect.redelivery_count", status=result.status)

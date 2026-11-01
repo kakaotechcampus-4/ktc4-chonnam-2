@@ -24,12 +24,20 @@ from __future__ import annotations
 import copy
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Literal
 
 from daesingo.case import jobs
-from daesingo.case.analysis_start import InitialSearchBudget, hints_from_result, reflect_hint_extraction
+from daesingo.case.observation import selected_clip_failed
+from daesingo.case.analysis_start import (
+    InitialSearchBudget,
+    hint_unclear,
+    hints_from_result,
+    reflect_hint_exhaustion,
+    reflect_hint_extraction,
+)
 from daesingo.case.adapters import ModuleAdapter
-from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case.domain import ANALYSIS_JOB_KINDS, Candidate, CaseAggregate
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
 from daesingo.case.view import (
@@ -62,6 +70,10 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     return candidates
 
 
+# 관찰 job 입력에 고정하는 후보 구간 키(`decisions/incident-clip-observation-input.md` §4-1).
+_SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms")
+
+
 def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candidate]:
     """search `CandidateEvent` → case `Candidate`. 동기 경로(`receive_search_candidates`)와 Worker 반영 경로
     (`reflection.reflect_execution`)가 같은 변환을 쓴다."""
@@ -76,6 +88,8 @@ def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candida
             # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
             representative_ms=c["span"]["representative_ms"],
             timeline_revision=c["span"]["timeline_revision"],
+            # 네 키가 다 있을 때만 남긴다 — 구간이 빠진 후보로 관찰을 발주하지 않는다.
+            span={k: c["span"][k] for k in _SPAN_KEYS} if all(k in c["span"] for k in _SPAN_KEYS) else None,
         )
         for c in raw_candidates
     ]
@@ -92,7 +106,7 @@ def receive_hint_extraction(case: CaseAggregate, result: dict[str, Any]) -> None
     `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — scope 기본값과 첫 발주 fingerprint가
     정해지지 않았다(Draft §11 미결).
     """
-    case.record_extracted_hints(hints_from_result(result))
+    case.record_extracted_hints(hints_from_result(result), unclear=hint_unclear(result))
 
 
 @dataclass
@@ -221,15 +235,24 @@ def build_view_from_adapter(
         visual_verify_status=visual_verify_status,
         independent_facts=snapshot.independent_facts,
     )
-    return derive_notices(
+    view = derive_notices(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
         plate_read_retry_basis=jobs.latest_job_record(case, "PLATE_READ") is not None,
         search_retry_basis=jobs.latest_job_record(case, "COARSE_SEARCH") is not None,
+        report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
+        analysis_timed_out=case.analysis_timed_out,
+        clip_build_failed=selected_clip_failed(case),
+        analysis_range_too_long=case.analysis_range_too_long,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
+        hint_unclear=case.hint_unclear,
     )
+    from daesingo.case.exports import export_notices
+    requests = adapter.get_export_requests() if adapter is not None and hasattr(adapter, "get_export_requests") else {}
+    return export_notices(case, executions, view, requests)
+
 
 
 # `contract-job-record-case-view.md` B절 `notices[].code` 표의 2026-09-14 등재값(이슈 #47/#48).
@@ -251,6 +274,17 @@ CANDIDATE_SEARCH_FAILED_NOTICE: dict[str, Any] = {
     "blocking": True,
     "message_key": "notice.candidate_search_failed",
     "actions": ["RETRY_SEARCH"],
+}
+
+
+# 분석 범위가 저장 상한을 넘어 Recording이 변환 전에 거부한 탐색 실패(#452, `decisions/long-analysis-range.md` 결정 4).
+# 같은 입력으로 다시 찾아도 결과가 같으므로 `RETRY_SEARCH`를 싣지 않는다. 계약 B절 `notices[].code` 등재(2026-10-30).
+ANALYSIS_RANGE_TOO_LONG_NOTICE: dict[str, Any] = {
+    "code": "recording.analysis_range_too_long",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.analysis_range_too_long",
+    "actions": [],
 }
 
 
@@ -288,14 +322,14 @@ NO_CANDIDATES_NOTICE: dict[str, Any] = {
 
 
 # 음성 결과(#168 [A] 후속, @uminshin 요청). 계약 B절 `notices[].code` 등재(2026-09-29). 접두어는
-# 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 출구(「다른 후보 보기」)는
-# 결과 화면 1차 명령이라 `actions`는 비운다.
+# 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 「다른 후보 보기」는 결과 화면 1차 명령이라
+# 싣지 않는다. 「설명 고쳐 다시 찾기」는 `EDIT_HINT{description}` command다(#410, PM 승인 2026-10-27).
 VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
     "code": "evidence.visual_event_not_observed",
     "severity": "INFO",
     "blocking": False,
     "message_key": "notice.visual_event_not_observed",
-    "actions": [],
+    "actions": ["EDIT_HINT"],
 }
 
 
@@ -311,9 +345,18 @@ VISUAL_VERIFY_FAILED_NOTICE: dict[str, Any] = {
 }
 
 
-# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속).
-# 모양은 `scenario_plate_reread_001` fixture 값이되, `MANUAL_PLATE_INPUT`은 입력형 command 판본(#106)
-# 전에는 보낼 경로가 없어 `actions`를 비운다.
+# IncidentClip 준비 실패(#297 후속, `incident-clip-observation-input.md` §6). 판독이 발주되지 않아 Package가 나가지 않으므로
+# blocking이다. 같은 후보의 clip을 다시 내는 action은 닫힌 `actions[]` 목록에 없어 비운다 — 출구는 「다른 후보 보기」이고,
+# 다시 이 후보를 고르면 빠진 clip부터 새 job으로 발주한다(§4-6). 접두어는 clip을 만드는 recording을 따른다.
+INCIDENT_CLIP_BUILD_FAILED_NOTICE: dict[str, Any] = {
+    "code": "recording.incident_clip_build_failed",
+    "severity": "ERROR",
+    "blocking": True,
+    "message_key": "notice.incident_clip_build_failed",
+    "actions": [],
+}
+
+
 ANALYSIS_STOPPED_NOTICE: dict[str, Any] = {
     # 사용자가 「분석 진행」을 중단했다(고도화 8-9, `decisions/stop-analysis.md`). 「이어서 찾기」는 영상 전체를 다시
     # 보는 새 탐색 의도라(core-user-flow §7) `RETRY_SEARCH`와 같은 발주다 — 다시 낼 `COARSE_SEARCH` 근거가 없으면 뺀다.
@@ -324,12 +367,79 @@ ANALYSIS_STOPPED_NOTICE: dict[str, Any] = {
     "actions": ["RETRY_SEARCH"],
 }
 
+# 신고용 영상이 없다(#351 [R-2]). 모양은 `scenario_plate_reread_001` fixture가 먼저 쓰던 값 그대로다. 「신고용 영상 만들기」는
+# 이전 발주를 다시 내는 재시도라(#351 [R-3]) 발주 근거가 있고 실행 중이 아닐 때만 싣는다.
+REPORT_VIDEO_NOT_GENERATED_NOTICE: dict[str, Any] = {
+    "code": "case.report_video_not_generated",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.report_video_not_generated",
+    "actions": ["GENERATE_REPORT_VIDEO"],
+}
+
+# 단서 구조화가 설명을 잘 이해하지 못했다(#266 — `confidence=low` · `ABSTAINED`). 접두어는 판단 근거(구조화 결과)를
+# 만드는 search를 따른다. 「다시 적기」는 `EDIT_HINT{description}` command다(#410).
+HINT_UNCLEAR_NOTICE: dict[str, Any] = {
+    "code": "search.hint_unclear",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.hint_unclear",
+    "actions": ["EDIT_HINT"],
+}
+
+_SITUATION_RESPONDED = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
+
+
+def report_video_missing(view: dict[str, Any]) -> bool:
+    """신고 상황 응답이 끝났는데 신고용 영상이 없는가(#351). notice와 자동 발주(R-1)가 같은 조건을 쓴다.
+
+    evidence가 조립됐고(`record_id` non-null — 응답 전 부분 투영이 아니다), 선택 후보의 응답이 끝났고, FINAL 요건의
+    `package.asset.report_video.exists`가 `PASS`가 아닐 때다. 요건 전체 판정(`readiness`)은 보지 않는다 — 영상이
+    없으면 첨부 규칙 · 사후 각인 check도 함께 `UNKNOWN`이 되어 「영상만 남았는가」를 가를 수 없다(#351 정정).
+    FINAL 요건을 아직 계산하지 않았으면 영상이 없는지 모르므로 `False`다."""
+    evidence = view.get("evidence")
+    selected = [c for c in view.get("candidates", []) if c["selected"]]
+    if evidence is None or evidence.get("record_id") is None or len(selected) != 1:
+        return False
+    if selected[0]["situation_confirmation"] not in _SITUATION_RESPONDED:
+        return False
+    checks = (view.get("requirements_package") or {}).get("checks", [])
+    video = next((c for c in checks if c["code"] == "package.asset.report_video.exists"), None)
+    return video is not None and video["outcome"] != "PASS"
+
+
+ANALYSIS_TIMED_OUT_NOTICE: dict[str, Any] = {
+    # case가 탐색 결과를 기다리다 마감이 지나 기다리기를 멈췄다(`decisions/case-wait-timeout.md`). 화면은 중단과 같은
+    # 결과(core-user-flow 「분석 중단·timeout·인프라 실패」)이고 출구도 같은 「다시 찾기」(`RETRY_SEARCH`)다. 원인이 사용자가 아니라 code를 나눈다.
+    "code": "case.analysis_timed_out",
+    "severity": "INFO",
+    "blocking": False,
+    "message_key": "notice.analysis_timed_out",
+    "actions": ["RETRY_SEARCH"],
+}
+
+# `contract-job-record-case-view.md` B절 `notices[].code` 등재값(2026-09-30, #172 D-3 case 후속). 모양은
+# `scenario_plate_reread_001` fixture 값이다. 「번호판 직접 입력」은 입력형 command `MANUAL_PLATE_INPUT`이다
+# (case-command 계약 §12-3).
 PLATE_ABSTAINED_NOTICE: dict[str, Any] = {
     "code": "evidence.plate_abstained",
     "severity": "WARN",
     "blocking": False,
     "message_key": "notice.plate_abstained",
-    "actions": [],
+    "actions": ["MANUAL_PLATE_INPUT"],
+}
+
+
+# 발생시각 출처(사용자 정정 · 화면 시각 · 파일명 · 메타데이터)가 모두 비어 `occurred_at`이 없는 상태(#449). evidence는
+# 발생시각 없이 Package를 만들지 않으므로(`package.input.occurred_at_missing`) 어떤 조작으로도 묶음에 가지 못한다 —
+# 그래서 blocking이고, 출구는 입력형 command `EDIT_EVENT_TIME`(case-command 계약 §12-3)이다. 접두어는 시각을
+# 정하는 `TimeResolution`을 만드는 evidence를 따른다(B절 `notices[].code`).
+EVENT_TIME_MISSING_NOTICE: dict[str, Any] = {
+    "code": "evidence.event_time_missing",
+    "severity": "WARN",
+    "blocking": True,
+    "message_key": "notice.event_time_missing",
+    "actions": ["EDIT_EVENT_TIME"],
 }
 
 
@@ -383,15 +493,28 @@ def derive_notices(
     visual_verify_status: str | None = None,
     overlay_time_readouts: list[dict[str, Any]] | None = None,
     search_retry_basis: bool = False,
+    report_video_export_basis: bool = False,
+    hint_unclear: bool = False,
+    analysis_timed_out: bool = False,
+    clip_build_failed: bool = False,
+    analysis_range_too_long: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
       evidence 유무와 무관하다.
+    - `recording.analysis_range_too_long` — 같은 조건에서 그 실패가 분석 범위 상한 초과일 때(`analysis_range_too_long`, #452).
+      `search.candidate_search_failed` 대신 붙는다. 다시 찾아도 같으므로 action이 없다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
+    - 모든 notice 공통: `running_jobs`에 탐색 job(`HINT_EXTRACT` · `COARSE_SEARCH`)이 있으면 `RETRY_SEARCH`를 빼고 싣는다(#426).
+    - `case.analysis_timed_out` — 같은 조건에서 가장 나중 탐색 job이 case 대기 timeout으로 끝났을 때(`analysis_timed_out`,
+      `decisions/case-wait-timeout.md`). `case.analysis_stopped` 대신 붙는다. action 규칙은 같다.
     - `search.no_candidates` — `stage=CANDIDATE_REVIEW`이고 `candidates`가 비었을 때. 탐색 실패는
       `SEARCHING`에 머물므로(PR #197) 이 조건에 들지 않는다.
+    - `search.hint_unclear` — 단서 구조화가 설명을 잘 이해하지 못했고(`hint_unclear`, aggregate 판정) 탐색이 끝나
+      결과 화면(`INTAKE` · `SEARCHING` 뒤)일 때(#266). 진행 화면에는 붙이지 않는다(#224). 후보 0건이면
+      `search.no_candidates`와 함께 붙는다.
     - `readout.plate_read_failed` — 진행 상태 `plate_read`가 `FAILED`일 때(#172 [D]). evidence
       유무와 무관하다. 「다시 판독」(`RETRY_PLATE_READ`)은 발주 근거(같은 kind의 이전 `PLATE_READ`
       JobRecord, `plate_read_retry_basis`)가 있을 때만 싣는다 — 없으면 command가 늘 거부한다
@@ -411,13 +534,21 @@ def derive_notices(
     - `search.visual_verify_failed` — evidence가 없고, Fine의 대표 실행 상태(`visual_verify_status`, read port
       조회 결과에서 `build_view_from_adapter()`가 고름)가 terminal 실패(`FAILED` · 재시도가 끝난 `STALE`)일 때(8-14). 진행 상태에
       Fine step이 없어 CaseView 값만으로는 조립 전과 구분되지 않는다.
+    - `recording.incident_clip_build_failed` — 현재 선택 후보의 가장 나중 IncidentClip 준비가 `FAILED`로 끝났을 때
+      (`clip_build_failed`, aggregate 판정 `observation.selected_clip_failed`, #297 후속). action은 없다.
     - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
       본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
+    - `evidence.event_time_missing` — evidence가 조립됐고(`record_id` non-null) `event_time_display.value`가
+      null일 때(#449). 발생시각이 없으면 Package가 나가지 않으므로 blocking이고, 출구는 `EDIT_EVENT_TIME`이다.
+      사용자가 시각을 입력하면 값이 생겨 사라진다.
     - `readout.overlay_not_present` · `readout.overlay_presence_undetermined` · `readout.overlay_ocr_failed` —
       현재 선택 후보의 가장 나중 overlay 판독 `observation.reason.code`에 1:1로 대응할 때(readout
       `failure-taxonomy.md`). evidence 유무와 무관하다. `overlay_time_readouts`를 넘기지 않으면 붙이지 않는다.
+    - `case.report_video_not_generated` — `report_video_missing(view)`일 때(#351 [R-2]). 실행 중에도 붙인다 — 없으면
+      web이 응답 대기가 아닐 때 영상 칸을 있는 것처럼 그린다. 「신고용 영상 만들기」(`GENERATE_REPORT_VIDEO`)는 이전
+      `REPORT_VIDEO_EXPORT` JobRecord(`report_video_export_basis`)가 있고 그 kind가 `running_jobs`에 없을 때만 싣는다.
 
     evidence에 걸린 notice는 `evidence`가 아직 없으면(EvidenceRecord 조립 전) 판단할 값이 없으므로 붙이지 않는다.
     호출자가 같은 code를 이미 넣었으면 중복하지 않는다. 호출자가 넘긴 `notices` 리스트는
@@ -426,13 +557,17 @@ def derive_notices(
     derived = []
     # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
     if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(CANDIDATE_SEARCH_FAILED_NOTICE)
+        derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE)
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):
-        derived.append(ANALYSIS_STOPPED_NOTICE if search_retry_basis else dict(ANALYSIS_STOPPED_NOTICE, actions=[]))
+        halted = ANALYSIS_TIMED_OUT_NOTICE if analysis_timed_out else ANALYSIS_STOPPED_NOTICE
+        # 다시 낼 탐색이 없으면(단서 구조화 중 중단) 「설명 고쳐 다시 찾기」가 출구다(#405 Known Issue → #410).
+        derived.append(halted if search_retry_basis else dict(halted, actions=["EDIT_HINT"]))
     if view.get("stage") == "CANDIDATE_REVIEW" and not view.get("candidates"):
         derived.append(NO_CANDIDATES_NOTICE)
+    if hint_unclear and view.get("stage") not in ("INTAKE", "SEARCHING"):
+        derived.append(HINT_UNCLEAR_NOTICE)
     # 번호판 판독 실행 실패는 evidence 유무와 무관하게 알린다(#172 [D]) — 「읽지 못함」은 값
     # 상태(INFO_UNKNOWN)로만 보이고, 실행 실패만 이 notice를 갖는다. 사용자가 번호판을 직접 입력했으면
     # 그 값으로 Package까지 가므로 거둔다(#235 ①). 진행 상태 `FAILED`는 실행 사실이라 그대로 둔다.
@@ -453,6 +588,8 @@ def derive_notices(
         derived.append(VISUAL_EVENT_NOT_OBSERVED_NOTICE)
     if evidence is None and execution_failed(visual_verify_status):
         derived.append(VISUAL_VERIFY_FAILED_NOTICE)
+    if clip_build_failed:
+        derived.append(INCIDENT_CLIP_BUILD_FAILED_NOTICE)
     # Fine `UNCERTAIN` 응답 대기는 evidence가 없어 CaseView 값만으로는 조립 중과 같아 보인다 —
     # 음성 결과와 같은 방식으로 adapter의 Fine 판정을 본다(PR #224 리뷰).
     if evidence is None and visual_evidence_decision == AWAIT_SITUATION_RESPONSE and awaiting_response:
@@ -462,10 +599,26 @@ def derive_notices(
             derived.append(PLATE_ABSTAINED_NOTICE)
         if evidence["location_display"]["search_keyword"] is None:
             derived.append(LOCATION_SEARCH_KEYWORD_MISSING_NOTICE)
+        # 응답 전 부분 투영(`record_id` null)은 시각을 아직 정하지 않은 상태라 「없음」으로 보지 않는다.
+        if evidence.get("record_id") is not None and evidence["event_time_display"]["value"] is None:
+            derived.append(EVENT_TIME_MISSING_NOTICE)
         if awaiting_response:
             derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
+    if report_video_missing(view):
+        exporting = any(j["kind"] == "REPORT_VIDEO_EXPORT" for j in view.get("running_jobs", []))
+        retry = report_video_export_basis and not exporting
+        derived.append(
+            REPORT_VIDEO_NOT_GENERATED_NOTICE if retry else dict(REPORT_VIDEO_NOT_GENERATED_NOTICE, actions=[])
+        )
+    # 탐색을 기다리는 동안에는 「다시 찾기」를 싣지 않는다(#426) — 같은 입력의 발주가 겹친다. 허용 = 화면의 버튼이라
+    # (case-command 계약 §5) command도 함께 막힌다. `case.report_video_not_generated`의 실행 중 규칙(#351 [R-2])과 같다.
+    searching = any(j["kind"] in ANALYSIS_JOB_KINDS for j in view.get("running_jobs", []))
     present = {n["code"] for n in view["notices"]}
-    additions = [dict(n, actions=list(n["actions"])) for n in derived if n["code"] not in present]
+    additions = [
+        dict(n, actions=[a for a in n["actions"] if not (searching and a == "RETRY_SEARCH")])
+        for n in derived
+        if n["code"] not in present
+    ]
     if additions:
         view["notices"] = [*view["notices"], *additions]
     return view
@@ -506,11 +659,16 @@ def record_source_registered(
     store.save(case)
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def get_view(
     case_id: str,
     *,
     store: CaseStore,
     notices: list[dict[str, Any]] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """`web → case.get_view() → CaseView`(`module-architecture.md` §5-1 ⑪, §6 모듈6
     ③)의 실제 진입점. 지금까지 스모크 테스트 안에만 있던 "case_id로 저장된 case를
@@ -522,9 +680,13 @@ def get_view(
     "완성된 FastAPI/Worker 배선"에 해당한다.
 
     실행 상태는 `store`에 꽂힌 JobExecution read port로 이 case의 job만 조회한다(8-10) — 호출자가 넘기지 않는다.
+
+    마감(`now`, 기본 현재 시각)이 지난 job은 기다리지 않는 것으로 보인다 — 읽기라 저장하지 않고, 정산 기록은 다음 command ·
+    T2 반영이 남긴다(`decisions/case-wait-timeout.md`).
     """
     case = store.get_case(case_id)
-    adapter = store.get_adapter(case_id, case)
+    case.stop_waiting_expired(now or utc_now())
+    adapter = store.adapter_for(case)
     return build_view_from_adapter(case, adapter, executions=store.read_executions(case), notices=notices)
 
 
@@ -559,3 +721,37 @@ def receive_hint_extraction_result(
         return ReflectionResult(appended_job_records=[], reflected=False)
     store.save(case)
     return ReflectionResult(appended_job_records=copy.deepcopy(case.job_records[jobs_before:]), reflected=True)
+
+
+@dataclass(frozen=True)
+class ExhaustionResult:
+    """`receive_hint_exhaustion()`의 결과(#405). `APPLIED`면 `appended_job_records`(첫 `COARSE_SEARCH` 1건)를
+    composition root가 같은 transaction에서 enqueue하고, `NO_CHANGE`면 `reason`이 이미 정산된 사유다. 둘 다 Runtime이
+    알림 receipt를 남길 정상 결과다."""
+
+    status: Literal["APPLIED", "NO_CHANGE"]
+    appended_job_records: list[dict[str, Any]] = field(default_factory=list)
+    reason: str | None = None
+
+
+def receive_hint_exhaustion(
+    case_id: str,
+    *,
+    job_id: str,
+    kind: str,
+    store: CaseStore,
+    timelines: CaseTimelineSource,
+    budget: InitialSearchBudget | None = None,
+) -> ExhaustionResult:
+    """Runtime 소진 알림을 반영하는 진입점(#405) — `receive_hint_extraction_result()`와 같은 모양이다. `load_for_update` →
+    `analysis_start.reflect_hint_exhaustion()` → 바뀐 경우만 `save`. 예외는 그대로 올라가고 저장되지 않는다 — rollback ·
+    retry와 알림 receipt는 호출자(Runtime) 몫이다."""
+    case = store.load_for_update(case_id)
+    jobs_before = len(case.job_records)
+    applied = reflect_hint_exhaustion(
+        case, job_id=job_id, kind=kind, timelines=timelines, budget=budget or InitialSearchBudget()
+    )
+    if not applied:
+        return ExhaustionResult("NO_CHANGE", reason=case.settled_jobs[job_id])
+    store.save(case)
+    return ExhaustionResult("APPLIED", appended_job_records=copy.deepcopy(case.job_records[jobs_before:]))

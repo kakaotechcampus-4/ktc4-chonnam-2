@@ -1,5 +1,18 @@
 # `api` — FastAPI composition root
 
+RT-12(a)는 lifespan startup에서 staging/temp 잔여 scan을 1회 수행하고 기존
+CleanupSettings 주기로 반복하며 종료 때 소유 thread를 join한다. upload의
+생성→publish까지 lease로 보호한다. `composition.media`는 기존 materializer의
+명시적 temp_root 주입·활성 보호용 factory이며 현재 기본 Recording에는
+materializer가 없다. [경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+
+2026-10-31 P-6 후속(#445)은 별도 orphan lease를 수신 전부터 DB 등록의
+commit/rollback·취소 정리까지 유지한다. lease 대기는 기존 upload deadline에
+포함한다. 오래된 source 후보가 있으면 startup/주기 scan도 Recording 공개
+capability를 통해 짧은 DB 조회를 수행하며, 실패 시 파일을 보존한다. 아래
+RT-08의 startup DB 미접속 설명은 이 후속 추가 전의 경계다. 파일 삭제 동안
+DB connection을 보유하지 않는다. [구현·검증·제약](../../../docs/runtime/issue445-orphan-publish.md).
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §8-1 · §8-2
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.
@@ -34,3 +47,11 @@ RT-08(c)는 `POST /cases/{case_id}/commands`를 연결한다. `application/json`
 RT-08(d)는 Case의 `cancelled_job_ids`를 같은 Connection/transaction의 기존 Runtime `request_cancel`에 전달한다. Case가 먼저 잠기며, QUEUED는 같은 commit에서 CANCELLED, RUNNING은 최초 cancel marker만 기록한다. HTTP status와 body는 기존 append 목록·Case 응답 표 그대로다. 실패는 전체 rollback이고 API 재시도는 없으며, COMMIT 결과 불명은 기존 500이다. Worker의 협력적 checkpoint·ownership fence·늦은 결과 guard와 T2 redelivery 의미는 유지한다. `START_ANALYSIS`의 `CaseTimelineSource`와 실제 모듈 결과 adapter/reader 조립도 아직 없으며, 해당 dependency가 필요한 command의 동작 완료를 주장하지 않는다. 이 slice의 실제 발주 acceptance는 기존 `RUN_NOTICE_ACTION`과 영속 fixture Case로 검증한다. media HTTP는 RT-11, 실제 capability 조립은 해당 선행 Owner/후속 Task 범위다.
 
 실제 MySQL acceptance는 기존 disposable 8.4 harness에 참여한다. SHUTDOWN 검사는 suite DB와 분리된 두 번째 서버를 사용한다. Linux CI는 서비스가 준비한 mysql:8.4 image를 Docker로 재사용하고 sudo/unshare/mount로 private RO tmpfs를 생성·해제한다. Windows 로컬 acceptance는 WSL Ubuntu 및 `DAESINGO_MYSQL_TEST_BASEDIR`/`DAESINGO_MYSQL_TEST_LIBDIR`의 테스트 전용 Linux 바이너리/라이브러리 위치가 필요하다. fixture는 기능 부재를 skip으로 대체하지 않는다.
+
+RT-11(b)는 `GET /cases/{case_id}/frames/{frame_ref}`를 구현한다. 기본2의 frame semaphore를 DB checkout 전에 획득하고, 짧은 caller transaction에서 case 존재 및 Recording 공개 `read_owned_frame_image`로 소유·저장 이미지를 복원한다. Connection 반환 뒤 실제 Content-Type·정확한 Content-Length·`private, max-age=3600` header를 구성하고 bytes를 전송한다. unknown/cross-case는 같은 safe404, owned-but-unavailable은 typed404이며 provider/decoder/재생성은 호출하지 않는다. 대기·응답 전송 중에는 DB connection을 보유하지 않는다. 순수 ASGI middleware는 access/BaseHTTPMiddleware 바깥에서 실제 body 전송 완료·disconnect·취소·send 예외까지 permit을 유지한다. HTTP가 먼저 취소돼도 진행 중 DB read 정리가 끝나기 전에는 반환하지 않는다. frame latency는 실제 ASGI 전송 수명과 HTTP status를 기록하며 client 수신 ACK를 보장하는 값은 아니다. 승인 해석·관측 범위·검증은 [RT-11(b) note](../../../docs/runtime/rt11b-frame-read.md)에 기록한다.
+
+RT-11(c)는 `GET /cases/{case_id}/assets/{asset_ref}`를 구현한다. 기존 Case ID 검증 및 존재 조회와 Recording 공개 `owns_asset`·`open_derived_asset`를 한 caller transaction에서 사용한다. 저장 stream은 transaction 안에서 닫고, commit·connection 반환 뒤 detached bytes로 응답한다. 실제 형식과 길이, 서버가 정한 ASCII attachment filename 및 `private, no-store`를 제공한다. unknown·foreign·종류 불일치는 같은 `404 http.not_found`, owned-but-unavailable은 `404 http.ref_unavailable`이며 기존 dependency·validation·unexpected 오류 매핑을 유지한다. frame semaphore를 사용하지 않으며 provider·재생성·Range·retention·새 생성 surface를 추가하지 않는다. [구현·검증 경계](../../../docs/runtime/rt11c-asset-read.md)를 참조한다.
+
+Asset 전송 관측은 [Issue #298 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/298#issuecomment-6380891047)을 따른다. `api.asset.download_latency_ms.duration_ms`는 outer ASGI 진입부터 최종 body의 downstream send 반환 또는 예외·취소 종료까지 monotonic으로 측정한다. `api.asset.bytes.count`는 **successfully returned downstream send bytes, not client-received bytes**다. Content-Length를 집계하지 않으며, 부분 전송·오류 응답에서 정상 반환한 chunk는 포함하고 실패한 chunk는 제외한다. client 수신이나 TCP ACK를 보장하지 않는다. matched GET마다 종료 시 두 metric을 한 번씩 emit하며, 정상 전송은 실제 HTTP status 문자열, 예외는 `FAILED`, task cancel·final body 없는 종료는 `CANCELLED`다. `DISCONNECTED`는 추가하지 않는다. 원래 HTTP status를 바꾸거나 raw case/ref/filename/locator/예외 원문을 기록하지 않으며 공통 `api.request.completed`의 전역 의미도 유지한다. 기존 유한 ApiEvents queue의 best-effort 전달 정책을 사용한다.
+
+2026-10-26 RT-10(b) composition 후속: `_store`에 공개 stored_adapter_factory·ProducedReader·RecordingFacts를 같은 caller Connection으로 주입한다. command의 timeline 조회는 요청별 RecordingService를 만들고 닫으며, 기존 Case/enqueue/cancel 단일 transaction과 HTTP 응답 의미를 유지한다. provider/미디어 인코딩을 HTTP command에서 실행하지 않는다. 별도 process의 실제 MySQL/media 검증 및 pending dependency는 [RT-10(b) composition](../../../docs/runtime/rt10b-production-composition.md)에 기록한다. IN_PROGRESS · Refs #297 (RT-10(b)).

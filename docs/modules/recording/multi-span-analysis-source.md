@@ -55,7 +55,9 @@ AnalysisSource에는 IncidentClip의 `source_provenance` 필드를 추가하지 
 `duration_sec`과 `byte_size`는 최종 출력에서 측정한다. 같은 실행의 동일 요청은
 현재 원본 상태를 재확인한 후 기존 ref/bytes를 재사용한다.
 
-현재 연결은 같은 출력 time base·해상도에 한정한다. 서로 다른 geometry의 정규화,
+연결은 같은 해상도의 검증된 H.264 출력에 대해 서로 다른 time base도 지원한다.
+정확한 공통 시간축·거부 조건은 [mixed time base 설계](mixed-timebase-plan.md)를 따른다.
+서로 다른 geometry의 정규화,
 자동 overlap, source-local trim 모델 확장, 기본 VIDEO 선택, IncidentClip stitching은
 포함하지 않는다. 메모리에 구간 bytes와 최종 bytes를 보관하므로 장시간 영상의 메모리
 최적화도 후속이다. 기존 trace는 개별 materialization을 기록하며 연결 전용 schema를 추가하지 않는다.

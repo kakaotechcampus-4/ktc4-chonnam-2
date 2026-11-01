@@ -66,8 +66,8 @@ def test_command_result_is_preserved_and_visible_only_after_commit(api_db, monke
     before = snapshot(engine, identity)
     original = case_api.execute_command
     results, connections = [], []
-    def execute(payload, *, store):
-        result = original(payload, store=store)
+    def execute(payload, *, store, **kwargs):
+        result = original(payload, store=store, **kwargs)
         assert snapshot(engine, identity) == before
         results.append(result)
         connections.append(store.conn)

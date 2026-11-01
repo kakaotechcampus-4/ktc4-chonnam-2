@@ -41,7 +41,7 @@ export function UploadScreen(props: { state: AppState; dispatch: (a: Action) => 
   // leave for the vacated one), even though the pointer never left the dropzone visually. The
   // old code set `dragOver` unconditionally on every dragleave targeting the dropzone, so that
   // dragleave(dropzone) still flipped it off regardless of the just-fired dragenter(child) —
-  // confirmed live via claude-in-chrome by dispatching that exact enter-then-leave sequence
+  // reproduced by dispatching that exact enter-then-leave sequence
   // against a child of the dropzone and observing `.drop.on` drop to `.drop` for one frame. A
   // depth counter fixes it: every enter/leave on a nested child nets to a stable non-zero depth
   // while the pointer stays somewhere inside the dropzone, so only the true final dragleave

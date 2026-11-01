@@ -1,0 +1,15 @@
+[Unit]
+Description=Daesingo protected DDNS update
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/daesingo-ddns/public.env
+ExecStart=/usr/bin/python3 /opt/daesingo/controller/ddns.py
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

@@ -112,7 +112,7 @@ describe('화면 선택', () => {
   })
 
   it('SEARCHING이어도 중단 · 탐색 실패 notice가 있으면 진행 화면이 아니다(#342)', () => {
-    const base = views.find((v) => v.stage === 'SEARCHING')!
+    const base = { ...views.find((v) => v.stage === 'SEARCHING')!, running_jobs: [] }
     const notice = (code: string, message_key: string) => ({
       code,
       severity: 'INFO' as const,
@@ -123,8 +123,33 @@ describe('화면 선택', () => {
     const stopped = notice('case.analysis_stopped', 'notice.analysis_stopped')
     const failed = notice('search.candidate_search_failed', 'notice.candidate_search_failed')
     expect(selectScreen({ ...base, notices: [stopped] }).kind).toBe('STOPPED')
+    // case 대기 timeout(#358)도 중단 화면이다 — 진행 화면에 남으면 끝나지 않는 것처럼 보인다
+    expect(selectScreen({ ...base, notices: [notice('case.analysis_timed_out', 'notice.analysis_timed_out')] }).kind).toBe('STOPPED')
     expect(selectScreen({ ...base, notices: [failed] }).kind).toBe('SEARCH_FAILED')
     expect(selectScreen({ ...base, notices: [] }).kind).toBe('PROGRESS')
+  })
+
+  it('결과 없음 · 탐색 실패 뒤 「다시 찾기」로 탐색 job이 도는 동안은 진행 화면이다(#426)', () => {
+    const job = { job_id: 'j', kind: 'COARSE_SEARCH', label_key: 'job.generic_processing', status: 'RUNNING' } as const
+    const empty = views.find((v) => v.case_id === 'case_e001')!
+    expect(selectScreen({ ...empty, running_jobs: [job] }).kind).toBe('PROGRESS')
+    expect(selectScreen({ ...empty, running_jobs: [] }).kind).toBe('NO_RESULT')
+    const searching = views.find((v) => v.stage === 'SEARCHING')!
+    const failed = { code: 'search.candidate_search_failed', severity: 'INFO' as const, blocking: false, message_key: 'notice.candidate_search_failed', actions: ['RETRY_SEARCH'] }
+    expect(selectScreen({ ...searching, notices: [failed], running_jobs: [job] }).kind).toBe('PROGRESS')
+    expect(selectScreen({ ...searching, notices: [failed], running_jobs: [] }).kind).toBe('SEARCH_FAILED')
+  })
+
+  it('다시 하기가 없는 실패(분석 범위 초과 · 클립 · Fine 실패)는 실패 화면이고, job이 도는 동안은 진행이다(#481 · #482)', () => {
+    const job = { job_id: 'j', kind: 'INCIDENT_CLIP_BUILD', label_key: 'job.generic_processing', status: 'RUNNING' } as const
+    const failed = (code: string) => ({ code, severity: 'ERROR' as const, blocking: true, message_key: 'x', actions: [] })
+    const searching = { ...views.find((v) => v.stage === 'SEARCHING')!, running_jobs: [] }
+    const assembling = { ...views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence === null)!, running_jobs: [] }
+    expect(selectScreen({ ...searching, notices: [failed('recording.analysis_range_too_long')] }).kind).toBe('SEARCH_FAILED')
+    for (const code of ['recording.incident_clip_build_failed', 'search.visual_verify_failed']) {
+      expect(selectScreen({ ...assembling, notices: [failed(code)] }).kind).toBe('SEARCH_FAILED')
+      expect(selectScreen({ ...assembling, notices: [failed(code)], running_jobs: [job] }).kind).toBe('PROGRESS')
+    }
   })
 
   it('응답 뒤 신고자료를 준비하는 동안(running_jobs)은 진행이고, 응답 대기 중이면 job이 있어도 결과다', () => {
@@ -284,7 +309,7 @@ describe('계약 등재 목록 전수 매핑 — fixture에 없는 값도 문구
   // fixture를 훑는 검사만 있으면 「계약엔 등재됐는데 fixture엔 아직 없는 값」이 영영 안 잡힌다.
   // 실제로 등재 label_key 4종 중 3종이 「처리 중」 fallback으로 뭉개지고 있었다.
 
-  it('등재 label_key 5종이 fallback 문구로 새지 않는다', () => {
+  it('등재 label_key 6종이 fallback 문구로 새지 않는다', () => {
     const fallback = jobLabel(JOB_LABEL_FALLBACK_KEY)
     for (const key of JOB_LABEL_KEYS) {
       expect(jobLabel(key), key).not.toBe(fallback)

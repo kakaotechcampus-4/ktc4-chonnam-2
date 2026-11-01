@@ -8,7 +8,7 @@ import { SituationInput } from './UploadScreen'
 export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   const { hints, manifest_summary } = props.view
   return (
-    <Panel title="말씀하신 장면을 찾지 못했어요">
+    <Panel title="말씀하신 장면을 찾지 못했어요.">
       <div className="kv-src">영상은 잘 받았어요. 설명을 조금 바꿔 주시면 다시 찾아볼게요.</div>
       <div className="kv kv-rows">
         <div className="kv-row">
@@ -21,7 +21,7 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
         </div>
         {hints.situation && (
           <div className="kv-row">
-            <span className="kv-k">말한 상황</span>
+            <span className="kv-k">적어 주신 상황</span>
             <span className="kv-v">
               <span className="kv-val">{hints.situation}</span>
             </span>
@@ -29,7 +29,7 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
         )}
         {hints.time && (
           <div className="kv-row">
-            <span className="kv-k">말한 시각</span>
+            <span className="kv-k">적어 주신 시각</span>
             <span className="kv-v">
               <span className="kv-val">{hints.time}</span>
             </span>

@@ -20,6 +20,8 @@
 - `jobs` — JobRecord 발주 7종(`issue_coarse_search`/`issue_plate_read`/`issue_overlay_time_read`/`issue_fine_verify`/`issue_report_video_export`/`issue_resume_search`/`issue_plate_reread`)
 - `correction.apply_correction` — CorrectionRecord 생성(case가 Producer)
 - `view.build_case_view` — CaseView projection(web의 유일한 read 경로, `case-view/v1.3`)
+- `store.CaseStore.observation_input` — 관찰 job(`FINE_VERIFY` · `INCIDENT_CLIP_BUILD` · 판독 2종)의 고정 입력 조회. handler 입력 경계(`docs/modules/case/decisions/incident-clip-observation-input.md` §4-1)
+- `stored_observation.stored_adapter_factory` — composition root가 `CaseStore(adapter_factory=…)`에 꽂는 저장된 관찰 adapter factory(reader · read port · recording port 주입, `docs/modules/case/decisions/observation-storage.md` §4-3)
 - `reflection.reflect_execution` — Worker T2가 terminal execution을 넘기는 반영 진입점(`execution_id` 중복 제거 · 기다리는 job만 반영, `docs/modules/case/decisions/result-reflection.md`)
 - `adapters.MockFixtureAdapter` — 1차 구현 한정 내부 stand-in, **공개 API 아님**(Tech Spec §7 참고)
 

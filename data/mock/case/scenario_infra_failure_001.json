@@ -70,6 +70,7 @@
           "2026-08-30T09:20:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1200000,
       "hints": {
         "time": "아침 9시쯤",
         "vehicle": "파란색 SUV",
@@ -155,6 +156,7 @@
           "2026-08-30T09:20:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1200000,
       "hints": {
         "time": "아침 9시쯤",
         "vehicle": "파란색 SUV",
@@ -242,6 +244,7 @@
           "2026-08-30T09:20:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1200000,
       "hints": {
         "time": "아침 9시쯤",
         "vehicle": "파란색 SUV",
@@ -329,6 +332,7 @@
           "2026-08-30T09:20:00+09:00"
         ]
       },
+      "timeline_duration_ms": 1200000,
       "hints": {
         "time": "아침 9시쯤",
         "vehicle": "파란색 SUV",

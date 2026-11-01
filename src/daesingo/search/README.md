@@ -16,12 +16,12 @@ Coarse 후보 구간 생성·Fine/Classification visual verification·4종 event
 
 | 함수 | 입력 | 출력 |
 | --- | --- | --- |
-| `search_candidates(scope)` | `AnalysisScope` | `CandidateSearchResult(analysis_run, candidates)` |
-| `verify_visual(input_ref, target_hint=None)` | `ContractRef`, 선택 `SearchHint` | `VisualVerificationResult(analysis_run, visual_evidence)` |
-| `verify_visual_with_stream_context(input_ref, candidate, analysis_source_streams, target_hint=None, *, max_latency_sec=None)` | `ContractRef`, `CandidateEvent`, typed MediaStream facts, 선택 Fine 실행 상한(초) | `VisualVerificationExecution(result, selected_video_stream)` — 월요일 Real E2E용 비정규 실행 문맥. `max_latency_sec`를 넘기면 Coarse와 다른 Worker에서도 실행된다(#226). 생략하면 같은 `SearchService`가 실행한 Coarse scope 상한을 이어받는다 |
-| `build_intent_hint_extractor(api_key).extract(text, case_id=..., prior_hints=None, timeout_sec=60)` | 사용자 자연어 원문, 선택 이전 단서 | `IntentHintResult(status=OK·ABSTAINED·FAILED, 단서 4개, confidence, correction_target, failure_kind, usage)` — 자연어 단서 구조화(#210). 예외를 던지지 않는다. 모델은 `DAESINGO_INTENT_MODEL` |
+| `search_candidates(scope, usage_sink=None)` | `AnalysisScope` | `CandidateSearchResult(analysis_run, candidates)` |
+| `verify_visual(input_ref, target_hint=None, usage_sink=None)` | `ContractRef`, 선택 `SearchHint` | `VisualVerificationResult(analysis_run, visual_evidence)` |
+| `verify_visual_with_stream_context(input_ref, candidate, analysis_source_streams, target_hint=None, *, max_latency_sec=None, usage_sink=None)` | `ContractRef`, `CandidateEvent`, typed MediaStream facts, 선택 Fine 실행 상한(초) | `VisualVerificationExecution(result, selected_video_stream)` — 월요일 Real E2E용 비정규 실행 문맥. `max_latency_sec`를 넘기면 Coarse와 다른 Worker에서도 실행된다(#226). 생략하면 같은 `SearchService`가 실행한 Coarse scope 상한을 이어받는다 |
+| `build_intent_hint_extractor(api_key).extract(text, case_id=..., prior_hints=None, timeout_sec=60, usage_sink=None)` | 사용자 자연어 원문, 선택 이전 단서 | `IntentHintResult(status=OK·ABSTAINED·FAILED, 단서 4개, confidence, correction_target, failure_kind, usage)` — 자연어 단서 구조화(#210). 예외를 던지지 않는다(`usage_sink`의 `UsageError`만 그대로 올린다). 모델은 `DAESINGO_INTENT_MODEL` |
 
-fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `SearchService`와 `AnalysisSourceResolver`를 구성하고 `service=`로 주입한다. 제품과 eval 모두 이 경로를 사용하며 `eval_mode`나 GT 접근 분기는 없다.
+fixture 기본 동작은 그대로 유지한다. 실제 실행에서는 공개 `SearchService`와 `AnalysisSourceResolver`를 구성하고 `service=`로 주입한다. `usage_sink=`(Runtime `common/usage/port.py::UsageSink`)를 주면 provider HTTP 시도마다 HTTP 직전 `begin`, 관측 뒤 `finish`를 부르고, 발급된 `usage_id`를 성공 · 실패 Run의 `usage_refs`에 담는다(#303). `finalize`는 Worker가 한다. `begin`·`finish`의 `UsageError`는 감싸거나 재시도하지 않고 그대로 올린다. 없으면(eval · CLI) 기록하지 않고 내부 `SearchLedger`만 남긴다. 제품과 eval 모두 이 경로를 사용하며 `eval_mode`나 GT 접근 분기는 없다.
 
 입력과 출력은 Final Data Contract를 파싱한 불변 Pydantic 객체다. JSON 경계에서는
 `model_validate_json`, Consumer 전달 시에는 위 타입을 그대로 사용한다.

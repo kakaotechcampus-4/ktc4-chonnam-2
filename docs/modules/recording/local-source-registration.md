@@ -1,5 +1,10 @@
 # 실제 로컬 영상 등록 — 첫 번째 기능 단위
 
+이 문서는 최초 구현 기록이다. 현재 영속화는 [REC-1(a)](rec1a-persistence.md),
+원본 파일명 입력·복원, 선택적 case 연결과 등록 실패 taxonomy는
+[REC-1(b)](rec1b-registration-input.md)를 따른다. 아래 최초 signature와
+in-memory 저장·ffprobe 실패 설명은 후속 구현 이전의 이력으로 읽는다.
+
 `RecordingService.register_local_source(path: str | Path) -> RegisteredSource`는
 기존 `SourceAsset`과 `MediaStream` tuple을 반환한다. `RegisteredSource`는 Python
 반환 묶음이며 새 Canonical Contract가 아니다. 기존 계약 모델·버전은 유지한다.

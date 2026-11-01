@@ -58,6 +58,7 @@ LOW라도 값은 정한다. 구현자가 숫자를 고르지 않게 하는 것�
 | B-W2 | Worker 당 execution concurrency | 1 (config로 열지 않음) | DERIVED · MEASURED | HIGH |
 | B-W3 | claim 1회당 execution 수 | 1 (`LIMIT 1`) | DERIVED | HIGH |
 | B-W4 | API(uvicorn) process 수 | 1 | DERIVED | HIGH |
+| B-W5 | Worker stop grace | 30 s | CONSERVATIVE_DEFAULT (숫자) · DERIVED (종료 의미) | LOW |
 | B-Q1 | idle poll interval (빈 queue) | 2 s | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-Q2 | claim 성공 · 실행 종료 직후 다음 claim | 즉시 (0 s) | DERIVED | HIGH |
 | B-Q3 | Worker DB 오류 시 대기 | 5 s 고정 · process 유지 | CONSERVATIVE_DEFAULT | MEDIUM |
@@ -94,6 +95,10 @@ LOW라도 값은 정한다. 구현자가 숫자를 고르지 않게 하는 것�
 | B-H1 | ready DB probe 제한 | 2 s — pool을 쓰지 않는 전용 연결 | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-H2 | ready 공유 저장소 probe 제한 | 1 s | CONSERVATIVE_DEFAULT | MEDIUM |
 | B-H3 | ready 전체 budget | 3 s | DERIVED | MEDIUM |
+| B-H4 | Compose ready caller timeout | 5 s (> B-H3) | DERIVED | MEDIUM |
+| B-H5 | Compose ready interval | 10 s | CONSERVATIVE_DEFAULT | LOW |
+| B-H6 | Compose ready retries | 3 | CONSERVATIVE_DEFAULT | LOW |
+| B-H7 | Compose ready start period | 10 s | CONSERVATIVE_DEFAULT | LOW |
 | B-X1 | cancel 요청 → handler 관찰 목표 | DB 정상 응답 시 p95 ≤ 20 s — 측정 목표, 상한 보장 아님 | DERIVED · CONSERVATIVE_DEFAULT | MEDIUM |
 | B-G1 | usage in-flight 복구 시점 | event 기반 — execution terminal 뒤, sweep 주기에 함께 | DERIVED | MEDIUM |
 | B-O1 | container local log rotation | `max-size=20m` · `max-file=5` (container당 ~100 MB) | EXTERNAL · CONSERVATIVE_DEFAULT | MEDIUM |
@@ -236,6 +241,22 @@ FrameRef를 bytes로 저장할지 원본 + 위치로 다시 만들지는 recordi
 - `/health/live`는 dependency를 보지 않으므로 숫자가 없다.
 - ready는 외부 provider · Worker 생존 · queue 적체를 보지 않는다(HTTP Contract §5.7). Worker 상태는 heartbeat lag(§6)로 본다.
 
+#### M4 local Compose slice — RT-13(a)
+
+[결정 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6430017764)과 [Runtime/Ops Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506)을 근거로 §5의 Compose 미결 항목을 아래 M4 provisional 값으로 반영한다. 실제 Docker smoke 및 이후 Real E2E 실측 최종값이 아니다.
+
+| ID | Parameter | v0.1 | Scope / Config | 근거 | Evidence | 검증 지표 | 재조정 Trigger |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| B-H4 | ready caller timeout | 5 s | api Compose healthcheck, app config 아님 | B-H3 전체 3 s보다 caller가 길어야 함. 내부 HTTP timeout은 4 s, outer Compose timeout은 5 s | DERIVED · MEDIUM | ready duration · health timeout · 정상 상태의 false unhealthy | ready budget 변경 · RT-13 smoke/Real E2E에서 정상 응답 timeout 관측 |
+| B-H5 | ready interval | 10 s | api Compose healthcheck | Owner 승인 초기값; 실측 최적 주기를 뜻하지 않음 | CONSERVATIVE_DEFAULT · LOW | probe 빈도 · health 감지 지연 · CPU/DB 부하 | smoke/Real E2E에서 감지가 늦거나 probe 부하가 관측됨 |
+| B-H6 | ready retries | 3 | api Compose healthcheck | Owner 승인 초기 연속 실패 허용 횟수 | CONSERVATIVE_DEFAULT · LOW | false unhealthy 빈도 · 감지 지연 | 일시 장애 오탐 또는 장애 감지 지연 |
+| B-H7 | ready start period | 10 s | api Compose healthcheck | Owner 승인 초기 startup 유예 | CONSERVATIVE_DEFAULT · LOW | startup→first ready · startup 중 health 실패 | 정상 startup이 유예를 반복 초과 |
+| B-W5 | Worker stop grace | 30 s | worker Compose stop_grace_period | SIGTERM 이후 새 claim 중단 + grace window 안의 정상 종료 시도. 숫자 30 s만 초기값이며 모든 handler 완료를 보장하지 않음 | CONSERVATIVE_DEFAULT (30 s) · DERIVED (기존 종료/복구 의미) · LOW | SIGTERM→exit · 강제 kill 비율 · STALE→attempt 2 복구 시간 | smoke/Real E2E에서 정상 정리의 반복 강제 kill 또는 복구 지연 |
+
+grace 초과 시 강제 종료될 수 있고 기존 lease 만료 → STALE → retry(B-L2/L3/L4, B-R1/R2)로 복구한다. baseline timeout/sleep을 늘려 테스트를 통과시키지 않는다. 위 지표는 검증·관측 대상이며 이 표가 실측 결과를 주장하지 않는다. container restart/alert, production post-deploy health 정책은 §5/RD-12h·RD-13c 미결로 남는다.
+
+2026-10-27 RT-13(a) 설치 후 local Docker smoke에서 실제 inspect의 위 설정값과 SIGKILL 후 STALE→attempt 2 경로를 확인했다([실행 기록](./rt13a-docker-compose.md#docker-설치-후-재개--2026-10-27)). 이는 설정·복구 동작 검증이며 숫자의 최적성·부하별 false unhealthy 비율·handler 완료 보장에 대한 실측 근거가 아니므로 Evidence 분류와 값을 변경하지 않는다.
+
 ### 2.11 Cancellation observation — L
 
 | ID | Parameter | v0.1 | Scope / Config | 근거 | Evidence | 검증 지표 | 재조정 Trigger |
@@ -373,7 +394,7 @@ frame: max-age 1 h → 같은 썸네일은 세션 동안 1회 · 생성은 동�
 | --- | --- | --- | --- |
 | Worker concurrency ≥ 2 · Worker ≥ 2 | C — 실측 뒤 선택 | runtime · RD-15a | M8 (P2-E 뒤) |
 | container restart policy · health 기반 restart/alert | A — 열린 B Decision 정책 자체 | runtime · RD-13c · Ops §9 | M7 Provisional · M8 최종 |
-| Compose healthcheck interval/timeout · `stop_grace_period` · Worker graceful shutdown 동작 | A — Compose 모양이 열린 Decision | runtime · RD-12a · RD-12h | M4 (Compose slice). 조건만: ready 호출 timeout > B-H3 |
+| production post-deploy health/smoke 연결 | A — 배포 절차 미결. M4 local Compose health/grace는 §2.10 B-H4~H7/B-W5로 승인됨 | runtime · RD-12h | M6 — RT-14 |
 | log transport(driver · CloudWatch Agent) · CloudWatch Log Group retention | A — 열린 Decision · 비용 정책 | runtime · RD-13a · RD-11a | M7 (P2 직전, Research 04 R2) |
 | disk free-space guard · 동시 upload 수 제한 · capacity threshold | A/C — 운영 threshold는 실측 뒤(workflow §6 「임의 threshold 금지」) | runtime · RD-15c | M8 |
 | Product retention — 원본 · managed asset · ReportPackage · UsageRecord · `purge_case` 범위 | A — Timing D Product 정책 | recording · RD-10 | M9 전 |
@@ -501,3 +522,4 @@ recording 쪽(B-C3 `temp_root` 주입 · B-F2)은 recording의 기존 인자 · 
 | 2026-10-06 | PR #276 Runtime 구현 담당 리뷰 반영 — 기술적 정합성 보정, 새 Architecture Decision 아님. PyMySQL의 I/O 단계별 timeout(B-D9)을 heartbeat 시도 전체의 wall-clock 상한으로 해석한 오류를 고쳤다. 시도 ≤ 7 s · 「5회 연속 실패해야 STALE」 · cancel 관찰 ≤ 17 s hard bound를 제거하고, B-L1을 heartbeat 겹침 금지(이전 시도가 안 끝난 tick은 건너뜀)로, STALE 설명을 마지막 성공 heartbeat + lease 기준으로, B-X1을 DB 정상 구간 p95 ≤ 20 s 측정 목표로 정합화. §3.1 · §3.6 · §6 · §7 · §9(config 불변조건 · integration test) 함께 수정. 10 s · 60 s · 15 s 값과 B-R1 · RD-04b 결론은 그대로. Owner 확인 결과 기록(§8.1) | PR #276 리뷰 |
 | 2026-10-10 | Issue #291 RT-04(b) T2 결과 taxonomy 합의에 맞춰 `runtime.retry.after_case_stopped_count`의 집계 의미를 §3.2의 원래 관찰 목적에 맞게 명확화. `attempt ≥ 2 ∧ NOT_APPLIED(STOPPED_WAITING)`만 집계하고 `CANCELLED` · `SUPERSEDED` · `ALREADY_APPLIED` 및 reflector 예외/rollback은 제외한다. retry/timeout 숫자와 정책 변경 없음 | Issue #291 · PR #337 |
 | 2026-10-17 | terminal causal ordering과 successful heartbeat/lease non-regression, 파생 duration·STALE latency·retry 시각 의미 반영. 숫자·fence·transaction 정책 유지 | [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934) |
+| 2026-10-27 | M4 local Compose 승인값 B-H4~H7/B-W5 반영. timeout은 B-H3 파생, 나머지 숫자는 CONSERVATIVE_DEFAULT. production 정책 확정 아님 | [#300 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/300#issuecomment-6433879506) |

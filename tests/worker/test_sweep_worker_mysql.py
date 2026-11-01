@@ -282,7 +282,7 @@ def test_fatal_hook_process_boundary_preserves_db_cleanup_and_hides_original(res
                 raise error("secret /private/hook payload")
             return real_compose(**kwargs, sweep_hooks=(hook, lambda: later.append("later")))
         module.compose_worker = compose
-        result = module.main()
+        result = module.main(readout_provider_factory=lambda data: None)
         assert all(value not in stream.getvalue() for value in ("Traceback", "secret", "/private/", "payload"))
         print(json.dumps({"code": result, "hook_calls": len(calls), "later_calls": len(later),
                           "signals_restored": all(signal.getsignal(sig) == value for sig, value in previous.items()),

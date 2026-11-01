@@ -97,10 +97,10 @@ def test_variants_other_than_handoff_do_not_pass_coarse_observation(
     assert "Coarse 관찰" not in spec.prompt
 
 
-def test_operational_fine_prompt_stays_p3() -> None:
+def test_operational_fine_prompt_is_p3_with_gore_note() -> None:
     template = fine_prompt_for(VisualEventType.CENTER_LINE_CROSSING)
 
-    assert template.version == "fine-p3"
+    assert template.version == "fine-p3+fine-gore-v1"
     assert "coarse_observation" not in template.placeholders
     assert "모호하면 UNCERTAIN을 사용" not in template.text
 

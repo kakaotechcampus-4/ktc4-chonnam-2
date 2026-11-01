@@ -1,4 +1,4 @@
-// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.8)
+// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.10)
 //
 // 이 파일이 web의 타입 정본이다. `apps/prototype/src/types.ts`의 CaseState는
 // 참고만 하고 가져오지 않는다(`docs/modules/web/decisions/web-stack.md`).
@@ -67,6 +67,8 @@ export interface EvidenceView {
   location_display: LocationDisplay
   user_edited: boolean
   preview_ref: string | null
+  /** 번호판 판독의 best frame(FrameRef). 판독값이 없으면 null이고, 옛 판본 응답에는 키가 없다 */
+  plate_preview_ref?: string | null
   review_needed: boolean
   reason_code: string | null
 }
@@ -150,12 +152,24 @@ export interface CaseView {
     range: [string, string] | null
   }
   /**
+   * 시간축 전체 길이(ms, `case-view/v1.9`, #184 · #436). 후보 `marker_ms`와 같은 좌표다.
+   * `null`(또는 아직 내리지 않는 서버의 `undefined`)이면 시간축을 그리지 않는다.
+   */
+  timeline_duration_ms?: number | null
+  /**
    * 사용자가 분석 시작 때 적은 설명 원문(v1.7, #259). 분석 시작 전 `null`, 빈 설명이면 `""`.
    * `package.report.description`(최종 신고문)과 이름만 같은 다른 값이다.
    */
   description: string | null
   hints: { time: string | null; vehicle: string | null; situation: string | null; location: string | null }
   progress: { step: string; state: ProgressState }[]
+  /** Real coarse-work boundaries; absent on older servers. Ring segments are work, not elapsed time. */
+  scene_search?: {
+    job_id: string
+    phase: 'PREPARING' | 'SEARCHING' | 'ORGANIZING'
+    /** First SEARCHING boundary for this job; retained across automatic retries. */
+    search_started_at: string | null
+  } | null
   candidates: Candidate[]
   evidence: EvidenceView | null
   requirements_evidence: Requirements | null

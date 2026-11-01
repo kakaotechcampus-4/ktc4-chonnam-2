@@ -16,12 +16,13 @@ from typing import Final, Literal, Protocol
 from pydantic import BaseModel
 
 from daesingo.common import load_env_file
+from daesingo.common.usage.port import UsageError, UsageSink
 
 from .config import GeminiSearchConfig
 from .execution import DeadlineExceededError, RunDeadline
 from .ledger import UsageRecord
 from .prompts import load_prompt
-from .provider import GeminiProvider, ProviderResult, TextInvocation
+from .provider import GeminiProvider, ProviderResult, TextInvocation, UsageBinding
 from .smoke_errors import ProviderPayloadError
 
 INTENT_SYSTEM_PROMPT: Final = load_prompt("intent-v3")
@@ -30,6 +31,11 @@ INTENT_USER_PROMPT: Final = load_prompt("intent-user-v1")
 # Coarse · Fine 모델(DAESINGO_GEMINI_MODEL)을 바꿔도 intent 모델은 따로 남는다.
 INTENT_MODEL_ENV: Final = "DAESINGO_INTENT_MODEL"
 DEFAULT_INTENT_MODEL: Final = "gemini-3.8-flash"
+# Search가 argon tenant 경로로 옮겨도 intent는 지금 쓰는 Flash 경로를 그대로 쓴다(case 결정 유지).
+INTENT_BASE_URL_ENV: Final = "DAESINGO_INTENT_BASE_URL"
+DEFAULT_INTENT_BASE_URL: Final = (
+    "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+)
 # 재시도 포함 전체 상한. 실측 평균 3.9초 × 최대 4회 시도 + 재시도 대기 5+10+20초가 들어간다.
 DEFAULT_INTENT_TIMEOUT_SEC: Final = 60.0
 
@@ -100,10 +106,12 @@ class IntentHintExtractor:
         case_id: str,
         prior_hints: Mapping[str, str | None] | None = None,
         timeout_sec: float = DEFAULT_INTENT_TIMEOUT_SEC,
+        usage_sink: UsageSink | None = None,
     ) -> IntentHintResult:
         """Worker에서 1회 부른다. provider 실패는 던지지 않고 `FAILED`로 돌려준다.
 
         인자 오류(`timeout_sec`가 양수가 아님)만 `ValueError`로 던진다.
+        `usage_sink`의 `UsageError`는 그대로 올린다 — Runtime terminal 오류다(#303).
         """
         if not math.isfinite(timeout_sec) or timeout_sec <= 0:
             raise ValueError("timeout_sec must be finite and positive")
@@ -118,13 +126,20 @@ class IntentHintExtractor:
             ),
             response_model=IntentHintExtraction,
             deadline=RunDeadline(self.monotonic, round(timeout_sec * 1000)),
+            usage=(
+                None
+                if usage_sink is None
+                else UsageBinding(usage_sink, "HINT_EXTRACT", None)
+            ),
         )
         try:
             result = self.provider.invoke_text(invocation)
+        except UsageError:
+            raise
         except Exception as error:  # noqa: BLE001 — 어떤 실패도 intake를 막지 않는다
             return IntentHintResult(
                 IntentHintStatus.FAILED,
-                failure_kind=_failure_kind(error, invocation.deadline),
+                failure_kind=_failure_kind(error),
             )
 
         parsed = result.response
@@ -159,7 +174,7 @@ class IntentHintExtractor:
             processed_duration_sec=0.0,
             latency_ms=result.latency_ms,
             usage=result.usage,
-            # ponytail: 단가는 Coarse · Fine과 같은 DAESINGO_GEMINI_*_USD_PER_MILLION을 쓴다.
+            # 단가는 Coarse · Fine과 같은 DAESINGO_GEMINI_*_USD_PER_MILLION을 쓴다.
             # intent 모델을 다른 모델로 바꾸면 intent 전용 단가 키를 따로 둔다.
             cost_usd=result.usage.cost_with_rates(
                 self.config.input_usd_per_million,
@@ -168,11 +183,12 @@ class IntentHintExtractor:
         )
 
 
-def _failure_kind(error: Exception, deadline: RunDeadline) -> IntentFailureKind:
+def _failure_kind(error: Exception) -> IntentFailureKind:
     from openai import ContentFilterFinishReasonError, LengthFinishReasonError
 
-    # 한 번의 느린 호출이 상한에 걸리면 SDK timeout(APIError)으로 끝나므로 남은 예산으로 판단한다.
-    if isinstance(error, DeadlineExceededError) or deadline.remaining_ms() <= 0:
+    # 예산을 다 쓴 SDK timeout은 provider가 DeadlineExceededError로 올린다.
+    # 남은 예산만으로 판단하면 인증 · 권한 오류까지 deadline으로 잘못 분류된다.
+    if isinstance(error, DeadlineExceededError):
         return IntentFailureKind.DEADLINE_EXCEEDED
     # 호출은 됐지만 응답이 잘리거나 걸러져 쓸 수 없다.
     if isinstance(error, LengthFinishReasonError | ContentFilterFinishReasonError):
@@ -188,11 +204,12 @@ def _failure_kind(error: Exception, deadline: RunDeadline) -> IntentFailureKind:
 def intent_config_from_dotenv(
     env: Mapping[str, str] | None = None,
 ) -> GeminiSearchConfig:
-    """인증 · base URL · 재시도는 Search 설정을 공유하고 모델만 별도 키로 바꾼다."""
+    """인증 · 재시도는 Search 설정을 공유하고 모델 · base URL만 별도 키로 바꾼다."""
     if env is None:
         env = load_env_file()
     model = env.get(INTENT_MODEL_ENV, "").strip() or DEFAULT_INTENT_MODEL
-    return replace(GeminiSearchConfig.from_dotenv(env), model=model)
+    base_url = env.get(INTENT_BASE_URL_ENV, "").strip() or DEFAULT_INTENT_BASE_URL
+    return replace(GeminiSearchConfig.from_dotenv(env), model=model, base_url=base_url)
 
 
 def build_intent_hint_extractor(

@@ -5,10 +5,17 @@ import sys
 from dataclasses import dataclass, field
 from types import ModuleType, SimpleNamespace
 
+import httpx
+import openai
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from daesingo.search import IntentFailureKind, IntentHintStatus
+from daesingo.search import (
+    IntentFailureKind,
+    IntentHintStatus,
+    SearchFailureKind,
+    failure_kind_for_intent,
+)
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.execution import DeadlineExceededError
 from daesingo.search.intent import (
@@ -20,6 +27,7 @@ from daesingo.search.intent import (
 from daesingo.search.provider import GeminiProvider, ProviderResult, TextInvocation
 from daesingo.search.smoke_errors import ProviderApiError, ProviderPayloadError
 from daesingo.search.usage import ProviderUsage
+from tests.search._openai_fake import RawParse
 
 
 def _extraction(**overrides: object) -> IntentHintExtraction:
@@ -179,16 +187,48 @@ def test_failures_never_raise_and_are_classified(
     assert result.time_hint is None
 
 
-def test_slow_call_hitting_the_cap_is_deadline_exceeded() -> None:
-    clock = iter([0.0, 61.0, 61.0])
-    provider = _FakeProvider(
-        raises=_caused(ProviderApiError("timed out"), RuntimeError())
+@pytest.mark.parametrize(
+    ("status", "burn_sec", "kind"),
+    [
+        (None, 61.0, SearchFailureKind.DEADLINE_EXCEEDED),
+        (None, 1.0, SearchFailureKind.PROVIDER_ERROR),
+        (401, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (403, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (404, 61.0, SearchFailureKind.PROVIDER_CONFIG),
+        (503, 61.0, SearchFailureKind.PROVIDER_ERROR),
+    ],
+    ids=["timeout-spent", "timeout-left", "401", "403", "404", "503"],
+)
+def test_real_sdk_only_timeout_with_spent_budget_is_deadline_exceeded(
+    monkeypatch: pytest.MonkeyPatch,
+    status: int | None,
+    burn_sec: float,
+    kind: SearchFailureKind,
+) -> None:
+    """예산을 다 써도 timeout이 아니면 deadline이 아니다(#297 · HINT_EXTRACT)."""
+    now = [0.0]
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        now[0] += burn_sec
+        if status is None:
+            raise httpx.ReadTimeout("timed out", request=request)
+        return httpx.Response(status, json={"error": {"message": "denied"}})
+
+    original = openai.OpenAI
+    client = httpx.Client(transport=httpx.MockTransport(respond))
+    monkeypatch.setattr(
+        openai, "OpenAI", lambda **kwargs: original(http_client=client, **kwargs)
     )
-    extractor = IntentHintExtractor(provider, GeminiSearchConfig(), lambda: next(clock))
+    config = GeminiSearchConfig(max_retries=0)
+    try:
+        result = IntentHintExtractor(
+            GeminiProvider("local-test-key", config), config, lambda: now[0]
+        ).extract("문장", case_id="c1")
+    finally:
+        client.close()
 
-    result = extractor.extract("문장", case_id="c1")
-
-    assert result.failure_kind is IntentFailureKind.DEADLINE_EXCEEDED
+    assert result.status is IntentHintStatus.FAILED
+    assert failure_kind_for_intent(result) is kind
 
 
 def test_truncated_response_is_response_invalid() -> None:
@@ -221,6 +261,20 @@ def test_intent_model_key_is_separate_from_search_model() -> None:
     ).model == ("gemini-3.8-flash")
 
 
+def test_intent_keeps_flash_proxy_path_when_search_moves_to_argon() -> None:
+    flash_path = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    search_path = "https://mlapi.run/search-tenant/v1"
+
+    config = intent_config_from_dotenv({"DAESINGO_GEMINI_BASE_URL": search_path})
+    assert (config.model, config.base_url) == ("gemini-3.8-flash", flash_path)
+
+    override = "https://mlapi.run/intent-tenant/v1"
+    assert (
+        intent_config_from_dotenv({"DAESINGO_INTENT_BASE_URL": override}).base_url
+        == override
+    )
+
+
 def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effort(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -232,12 +286,20 @@ def test_gemini_provider_text_call_sends_system_and_user_without_reasoning_effor
         return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=None)
 
     client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(parse=parse))
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(parse=parse, with_raw_response=RawParse(parse))
+        )
     )
     mod = ModuleType("openai")
     setattr(mod, "OpenAI", lambda **_kw: client)  # noqa: B010
     setattr(mod, "APIError", type("APIError", (Exception,), {}))  # noqa: B010
     setattr(mod, "BadRequestError", type("BadRequestError", (Exception,), {}))  # noqa: B010
+    setattr(mod, "LengthFinishReasonError", type("LengthFinishReasonError", (Exception,), {}))  # noqa: B010
+    setattr(  # noqa: B010
+        mod, "ContentFilterFinishReasonError",
+        type("ContentFilterFinishReasonError", (Exception,), {}),
+    )
+    setattr(mod, "APITimeoutError", type("APITimeoutError", (Exception,), {}))  # noqa: B010
     original = importlib.import_module
     monkeypatch.setattr(
         "daesingo.search.provider.importlib.import_module",

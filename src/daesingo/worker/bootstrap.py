@@ -10,6 +10,8 @@ from pydantic import SecretStr
 
 from daesingo.common.bootstrap import ModuleFactory, Startup, bootstrap_service
 from daesingo.search.config import GeminiSearchConfig
+from daesingo.search.intent import intent_config_from_dotenv
+from daesingo.recording.factory import RECORDING_KEYS, RecordingSettings
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +34,9 @@ _SEARCH = ModuleFactory("search", (
     "DAESINGO_GEMINI_OUTPUT_USD_PER_MILLION", "DAESINGO_GEMINI_MAX_COST_USD",
 ), _search_config)
 
+_INTENT = ModuleFactory("intent", ("DAESINGO_INTENT_MODEL",), intent_config_from_dotenv)
+_RECORDING = ModuleFactory("recording", RECORDING_KEYS, RecordingSettings.from_mapping)
+
 
 def bootstrap(*, revision: str, stream: TextIO | None = None,
               module_factories: Sequence[ModuleFactory] = ()) -> Startup:
@@ -41,4 +46,4 @@ def bootstrap(*, revision: str, stream: TextIO | None = None,
     """
     path = os.environ.get("DAESINGO_ENV_FILE", str(Path.cwd() / ".env"))
     return bootstrap_service("worker", env_file=path, revision=revision,
-                             stream=stream, module_factories=(_SEARCH, *module_factories))
+                             stream=stream, module_factories=(_SEARCH, _INTENT, _RECORDING, *module_factories))

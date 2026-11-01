@@ -11,14 +11,15 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
 
 ## 결정
 
-1. **aggregate에 정산 기록 `settled_jobs: dict[job_id, 사유]`를 둔다.** 사유는 4종이다.
+1. **aggregate에 정산 기록 `settled_jobs: dict[job_id, 사유]`를 둔다.** 사유는 4종이다(2026-10-27 `EXHAUSTED`를 더해 5종).
 
    | 사유 | 언제 | 누가 기록 |
    | --- | --- | --- |
    | `REFLECTED` | case가 그 job의 결과(성공 · 실패)를 반영했다 | 결과 반영 경로(8-8). 지금은 후보 수신(`receive_candidates` · `record_candidate_search_failure`)이 COARSE_SEARCH에 대해 기록한다 |
    | `STOPPED_WAITING` | case timeout으로 기다리기를 멈췄다 | timeout 경로(8-9 이후) |
    | `CANCELLED` | 사용자가 중단했다 | 중단 command(8-9) |
-   | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다 | `jobs.issue_job()` |
+   | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다. 2026-10-27부터 설명을 고쳐 역행해 그 job이 딸린 후보 목록을 버린 경우도(`edit-hint.md` §4) | `jobs.issue_job()` · `analysis_start.edit_hint()` |
+   | `EXHAUSTED` | Runtime이 재시도까지 끝나 결과가 오지 않는다고 확정했다(2026-10-27 추가, `HINT_EXTRACT`만) | 소진 알림 진입점(`hint-exhaustion.md`) |
 
    처음 사유가 이긴다. 이미 정산된 job을 다시 정산하면 아무것도 바뀌지 않는다(#245 D-5의 idempotent 반영과 같은 원칙). 정산은 `case_rev`를 올리지 않는다.
 2. **`running_jobs[]` = 정산되지 않은 JobRecord**이고 `job_records` 순서를 따른다.
@@ -39,6 +40,6 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
 
 ## 남은 것
 
-- 결과 반영 경로마다 `REFLECTED` 기록(8-8 — 단서 구조화 · 탐색은 2026-10-11 `result-reflection.md`, 판독 · Fine · export는 8-6 2단계 뒤), timeout 기록(`STOPPED_WAITING`). ~~중단 기록과 늦은 결과 guard(8-9)~~ → 2026-10-11 `stop-analysis.md`.
+- 결과 반영 경로마다 `REFLECTED` 기록(8-8 — 단서 구조화 · 탐색은 2026-10-11 `result-reflection.md`, 판독 · Fine은 2026-10-13 `observation-storage.md` §4-5, export는 8-6 2단계 뒤), ~~timeout 기록(`STOPPED_WAITING`)~~ → 2026-10-13 `case-wait-timeout.md`(탐색만). ~~중단 기록과 늦은 결과 guard(8-9)~~ → 2026-10-11 `stop-analysis.md`.
 - ~~JobExecution 읽기 포트(D-6)가 생기면 `job_executions` 인자를 포트 조회로 바꾼다.~~ → 2026-10-11 `jobexecution-read-port.md`(8-10).
 - #276 후속: case가 Fine 결과를 기다리지 않게 됐는데 실행이 아직 남은 경우의 화면 표시.

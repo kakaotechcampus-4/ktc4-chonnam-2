@@ -2,6 +2,16 @@
 
 **Owner:** 정철원 (`docs/management/ownership.md`) · **경계:** `docs/architecture/module-architecture.md` §4-모듈1 · **문서 작업공간:** `docs/modules/recording/`
 
+2026-10-31 P-6 구현 판단(#445): 공개
+`RecordingService.read_publish_registration(locator)`와 `PublishRegistration`
+(`REGISTERED`/`UNREGISTERED`/`UNKNOWN`)을 추가한다. 입력은 관리 source의
+상대 locator `source/<lowercase UUID hex>`다. MySQL repository는 caller
+transaction의 current locking read를 사용하고 DB 오류를 전파한다. stale
+snapshot의 false absence를 사용하지 않으며 mock repository는 durable 부재를
+입증할 수 없어 UNKNOWN이다. 이는 삭제 권한·파일 identity 증명이 아니고,
+Runtime의 별도 lease/identity 검사가 필요하다. schema·migration·제품 Contract는
+확대하지 않는다. [P-6 판단·transaction·Owner 확인 항목](../../../docs/runtime/issue445-orphan-publish.md).
+
 ## 이 폴더가 하는 일 (요약 — 원문은 §4-모듈1)
 
 사용자 원본 참조·파일과 stream 사실·시간축·파일 경계 해석(`resolve_span`)·시각 후보·GPS 관찰·분석용 사본·RemoteCopy registry·Incident Clip·Report Video·보관/삭제
@@ -15,9 +25,19 @@
 다른 모듈은 `RecordingService`와 `load_recording_fixture()`만 사용한다. 저장소와 Stub 구현은 공개 경계가 아니다.
 
 - frame·사실: `resolve_frame()`, `read_frame()`, `lookup_asset_facts()`
+- 소유·형식·영속 bytes: `owns_frame()`, `owns_asset()`, `read_frame_image()`, `open_derived_asset()`
+- case 소유 저장 이미지: `read_owned_frame_image(case_id, frame_ref)` — caller transaction에서 소유를 먼저 확인하고 detached `FrameImage`를 반환한다. unknown/cross-case는 `UNKNOWN_REF`, 소유하지만 bytes/이미지 형식이 없으면 `FRAME_NOT_FOUND`다. provider·재생성·원본 재처리는 호출하지 않는다.
 - timeline·구간: `get_timeline()`, `get_latest_timeline()`, `resolve_span()`
 - 분석 자산: `prepare_analysis_source()`, `open_analysis_source()`, `find_remote_copy()`, `register_remote_copy()`
 - 사건·파생 자산: `build_incident_clip()`, `get_incident_clip()`, `register_derived_asset()`, `get_derived_asset()`, `purge_case()`
+
+Issue #387 — **IN_PROGRESS · Refs #387**: 소유권과 purge 대상의 `case_id`·ref는
+공백·대소문자·Unicode 표현까지 정확히 비교한다. MySQL 후보 조건은 유지하며
+exact residual로 association을 거르고, `owns_frame()`도 기존 소유 범위 조회 뒤에만
+metadata를 복원한다. foreign/unknown은 소유 아님이며, 손상된 foreign metadata를
+복원하지 않는다. 소유 관계 metadata 오류는 원문을 제외한 `TEMPORARY_FAILURE`로
+처리한다. caller Connection/transaction을 완료하지 않으며 schema·정규화·retention
+정책은 추가하지 않는다.
 
 Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
@@ -28,4 +48,38 @@ Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
 
 ## 상태
 
+REC-1(a)는 호출자 Connection을 사용하는 내부 MySQL repository와
+`migrations/recording/`을 추가한다. SourceAsset·FrameRef(bytes 포함)·DerivedAsset
+metadata·기존 case/ref 연결을 새 service에서 복원한다. 원본 locator는 주입한
+storage root 아래 상대 경로이며 파일 publication은 하지 않는다.
+범위와 후속 acceptance는 [구현 경계](../../../docs/modules/recording/rec1a-persistence.md)를 따른다.
+
+REC-1(b)는 `register_local_source()`의 `original_filename` 입력을 내부 metadata로
+보존·복원하고, canonical locator와 분리해 시각 관찰에 사용한다. 등록 실패는
+`UNSUPPORTED_MEDIA`와 `TEMPORARY_FAILURE`로 구분하며 선택적 `case_id` 연결은
+기존 Recording 관계를 같은 caller transaction에 저장한다. Case 승인·집계와
+HTTP 조립은 기존 Case 공개 함수 및 RT-11 경계다.
+[등록 입력 경계](../../../docs/modules/recording/rec1b-registration-input.md)를 따른다.
+
+REC-1(c)는 Recording이 저장한 case 관계로 source/frame/derived 소유를 조회하고,
+저장된 FrameRef bytes의 PNG 형식과 DerivedAsset bytes·Content-Type을 제공한다.
+읽기는 원본·ffmpeg를 다시 실행하지 않는다. DerivedAsset 등록의 선택적 bytes·형식·
+case 관계는 같은 caller transaction에 원자적으로 저장한다. legacy metadata-only
+자산은 bytes unavailable이며, 현재 bytes adapter는 기존 Recording 출력인 PNG와
+isom MP4 container를 식별한다. 지원 범위·오류·용량 한계와 검증 결과는
+[REC-1(c) 경계](../../../docs/modules/recording/rec1c-ownership-reads.md)를 따른다.
+
 1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.
+
+2026-10-26 RT-10(b) composition 후속: 공개 `get_source_asset`·`get_media_stream`·`get_analysis_source`·`get_time_source_candidates`·`list_case_asset_facts`와 Case port용 detached `RecordingFacts`를 추가했다. `ConnectionRecordingRepository`/`TransactionalRecordingRepository`는 Recording이 소유하는 caller-connection/short-transaction facade다. module factory의 명시적 profile mapping에서만 prepared model/body·관찰을 durable하게 보존하며 기존 default ephemeral 수명과 lookup 의미를 유지한다. AnalysisSource는 기존 공개 open으로 복원하고 새 clip byte API는 추가하지 않는다. 구현·설정·검증·pending 경계는 [RT-10(b) composition](../../../docs/runtime/rt10b-production-composition.md)을 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
+
+2026-10-29 RT-10(b) export: `RecordingService.export_report_video(incident_clip_ref=…, post_stamp={needed, value})`
+and `export_plate_image(incident_clip_ref=…, frame_ref=…, plate_bbox_xywh=…, max_byte_size=…)`
+produce fresh immutable DerivedAssets with measured bytes and a stored transform
+(`get_export_transform`). Worker prepares an execution-local snapshot before the
+call, so export and encoding perform no DB checkout, then publishes atomically in
+a separate short transaction. Plate uses the authoritative frame bbox, never
+crop_ref or associated_region. Actual oversize triggers bounded PNG downscale;
+exhaustion is distinct from ordinary generation failure. No output replaces a
+prior asset. PM-delegated provisional wires and #47 deferred review are documented
+in [Implementation Notes](../../../docs/runtime/rt10b-recording-exports.md).

@@ -16,7 +16,7 @@ _APPROVED_GEMINI_BASE_URL_HOSTS: Final = frozenset(
 
 
 # 새 이름을 먼저 읽고, 없으면 기존 이름을 읽는다(#153 합의: alias는 Search config 안).
-# ponytail: GEMINI_API_KEY alias는 팀 .env · 배포 secret migration 뒤 제거한다.
+# GEMINI_API_KEY alias는 팀 .env · 배포 secret migration 뒤 제거한다.
 API_KEY_ENV_NAMES: Final = ("ELICE_ML_API_KEY", "GEMINI_API_KEY")
 
 
@@ -36,7 +36,8 @@ class GeminiSearchConfig:
     배포 .env 호환을 위해 유지한다(#153, #95). model은 프록시가 서빙하는 Gemini 계열.
     """
 
-    model: str = "gemini-3.8-flash"
+    # 2026-10-27 Owner 결정: Coarse · Fine 모두 argon(decisions/search-argon-model-2026-10-27.md).
+    model: str = "gemini-4-argon"
     media_resolution: str = "low"  # Coarse. 넓게 싸게 훑는다
     # 원본 1초당 모델에 넣을 프레임 수. 프록시는 영상을 재생 1초당 1장(66토큰)으로만
     # 보므로 준비 영상을 이 배수만큼 늘려 재생 1초 = 원본 프레임 1장으로 만든다
@@ -59,10 +60,11 @@ class GeminiSearchConfig:
     # 예산 한도
     max_cost_usd: float = 0.0
     # 모든 Gemini 호출은 이 프록시(Bearer 인증)를 거친다. 운영자가 로컬에서
-    # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다.
-    base_url: str = "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"
+    # DAESINGO_GEMINI_BASE_URL 로 덮어쓸 수 있다. 기존 Flash tenant 경로는 argon을 400으로 거부한다.
+    base_url: str = "https://mlapi.run/e1febb2a-0530-4f93-9ff4-ef844e185639/v1"
     # v3: 늘린 영상 전송(coarse 2 / fine 4 fps)·배속 안내·시각 환산. prepared_duration_ms 는 늘린 길이다.
-    version: str = "gemini-search-v3"
+    # v4: gemini-4-argon · argon tenant 경로 · Fine 분기부 문장(fine-gore-v1).
+    version: str = "gemini-search-v4"
 
     def __post_init__(self) -> None:
         try:

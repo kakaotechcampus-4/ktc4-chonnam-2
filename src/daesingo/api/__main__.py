@@ -5,6 +5,7 @@ import signal
 from contextlib import contextmanager
 import uvicorn
 from .app import create_app
+from .upload_protocol import UploadH11Protocol
 
 
 class _QuietParser(argparse.ArgumentParser):
@@ -50,7 +51,7 @@ def main(argv=None):
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=_port, default=8000)
     args = parser.parse_args(argv)
-    signals = (signal.SIGINT, signal.SIGTERM)
+    signals: tuple[signal.Signals, ...] = (signal.SIGINT, signal.SIGTERM)
     if hasattr(signal, "SIGBREAK"):
         signals += (signal.SIGBREAK,)
     previous = {sig: signal.getsignal(sig) for sig in signals}
@@ -63,7 +64,7 @@ def main(argv=None):
         with _server_logging():
             serving = True
             uvicorn.run(app, host=args.host, port=args.port, workers=1, reload=False,
-                        access_log=False, log_config=None)
+                        access_log=False, log_config=None, http=UploadH11Protocol)
     except KeyboardInterrupt:
         # Only an interrupt during the server invocation is graceful. Bootstrap
         # and composition have not established a running API and must fail.

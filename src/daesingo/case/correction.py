@@ -17,8 +17,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate, InvalidTransition
+from daesingo.evidence import validate_correction_append
 
-CONTRACT_VERSION = "correction-record/v1.1"
+# v1.2 — evidence 의미 경로의 `previous_value=null`(값이 없던 상태의 첫 입력)은 v1.2로 기록한 레코드에서만
+# 유효하다(`contract-correction-record.md` §6, #235 E-1 · E-2).
+CONTRACT_VERSION = "correction-record/v1.2"
 
 
 def _now() -> str:
@@ -28,6 +31,23 @@ def _now() -> str:
 # case가 스스로 정의한 non-evidence target_field 네임스페이스 중 후보에 묶이지 않는 것
 # (`contract-correction-record.md` §6).
 _CASE_SCOPED_TARGETS = frozenset({"hints", "candidate.selected_id"})
+
+
+def chain_head(case: CaseAggregate, target_field: str) -> dict[str, Any] | None:
+    """`target_field`의 supersede chain head — 다음 정정이 supersede할 레코드다.
+
+    순환 방지를 위해 "가장 최근에 추가된 것"만 후보로 삼는다(같은 target_field에 여러 개가 있어도 head는 하나).
+    후보에 종속된 값(evidence 의미 경로)은 같은 선택 context 안에서만 잇는다(#173 E-1) — 새 후보의 첫 정정이
+    이전 후보의 정정을 supersede하면 evidence의 chain 연속성 검사에 걸린다. hints·candidate.selected_id처럼
+    case 전체에 걸린 값은 후보가 바뀌어도 잇는다."""
+    return next(
+        (
+            c for c in reversed(case.correction_records)
+            if c["target_field"] == target_field
+            and (target_field in _CASE_SCOPED_TARGETS or c["selection_rev"] == case.selection_rev)
+        ),
+        None,
+    )
 
 
 def apply_correction(
@@ -49,19 +69,7 @@ def apply_correction(
     # 되돌리지 않으므로(§8-9) 그 case는 이후 CaseView를 만들 수 없게 된다.
     if previous_value == new_value:
         return None
-    # 같은 target_field의 최신(=supersede 체인의 head) correction을 찾는다 — 순환 방지를 위해
-    # "가장 최근에 추가된 것"만 후보로 삼는다(같은 target_field에 여러 개가 있어도 head는 하나).
-    # 후보에 종속된 값(evidence 의미 경로)은 같은 선택 context 안에서만 잇는다(#173 E-1) — 새
-    # 후보의 첫 정정이 이전 후보의 정정을 supersede하면 evidence의 chain 연속성 검사에 걸린다.
-    # hints·candidate.selected_id처럼 case 전체에 걸린 값은 후보가 바뀌어도 잇는다.
-    previous = next(
-        (
-            c for c in reversed(case.correction_records)
-            if c["target_field"] == target_field
-            and (target_field in _CASE_SCOPED_TARGETS or c["selection_rev"] == case.selection_rev)
-        ),
-        None,
-    )
+    previous = chain_head(case, target_field)
     record: dict[str, Any] = {
         "contract": "CorrectionRecord",
         "contract_version": CONTRACT_VERSION,
@@ -78,6 +86,10 @@ def apply_correction(
         "new_value": new_value,
         "corrected_at": _now(),
     }
+    # 기록 전 검사(correction-record §8-6, #235 E-3) — target별 값 형식 · chain 규칙은 evidence 한 곳에만 있다.
+    # 사용자가 다른 값을 넣으면 고쳐지는 거부는 `InvalidCorrectionValue`, case가 만든 레코드의 위반은
+    # `ContractInputError`로 올라간다. 둘 다 아무것도 기록하기 전이다. case namespace(`hints` 등)는 evidence가 보지 않는다.
+    validate_correction_append(record, existing_records=case.correction_records)
     case.correction_records.append(record)
     if target_field not in _CASE_SCOPED_TARGETS:
         case.leave_ready()  # 값이 다시 조립된다 — PACKAGE_READY gate를 다시 봐야 한다

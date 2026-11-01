@@ -2,7 +2,7 @@
 
 **Status:** `Draft` — 팀 합의 전 초안. 합의되면 `docs/architecture/contracts/`로 옮기고(`contract-case-command.md` + `adr/adr-case-command.md`) 이 사본은 지운다(`docs/architecture/contracts/README.md`).
 
-**Contract Version:** `case-command/v0` (초안)
+**Contract Version:** `case-command/v0` (초안) · 입력형 판본 초안 `case-command/v1`(2026-10-13, §12 — 열림 조건 충족 전에는 받지 않는다)
 
 **Owner:** 유소연(`case`) · **Consumer 확인 대상:** 신유민(`web`)
 
@@ -28,10 +28,12 @@
 | `RUN_NOTICE_ACTION` | notice에 붙은 발주형 버튼(`GENERATE_REPORT_VIDEO` · `RETRY_PLATE_READ` · `RETRY_SEARCH` · `GENERATE_PLATE_IMAGE`) | CaseView 계약 B절 §7 「`notices[].actions[]` → 발주 매핑」 |
 | `START_ANALYSIS` | 첫 화면에서 영상을 올리고(설명은 선택) 「영상에서 찾아보기」 | §11 · #247 H-2 · `decisions/start-analysis.md` |
 | `STOP_ANALYSIS` | 분석 진행 화면에서 `[분석 중단]`(2026-10-11, 고도화 8-9) | #245 C-1 · C-1a · `decisions/stop-analysis.md` · `core-user-flow.md` §7 |
+| `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME` · `RECORD_SITUATION_RESPONSE`(`CORRECTED`) | 번호판 · 발생시각 직접 입력, 신고 상황 `[다른 상황]` — **입력형 판본 초안(§12)** | `contract-correction-record.md` · #235 · `core-user-flow.md` §12 · §13 · §15 |
+| `EDIT_HINT` | 결과 없음 · 설명을 잘 이해하지 못함 · 단서 구조화 중 중단 화면에서 「설명 고쳐 다시 찾기」(2026-10-27, **§13**) | #410 · `decisions/edit-hint.md` |
 
 **이 판본에 넣지 않는 것**
 
-- **입력형 action**(`EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` · `REVIEW_TIME` · `EDIT_HINT`) — 사용자 입력값이 `CorrectionRecord`로 들어가는 경로라 payload 모양을 `contract-correction-record.md`와 함께 정해야 한다. 다음 판본.
+- **입력형 action 중 나머지**(`REVIEW_TIME` · 위치 단서 수정 · 번호판 `[맞아요]`) — 규칙이 정해지지 않았다. 이유는 §12-5. 번호판 · 시각 · `[다른 상황]`은 §12 입력형 판본 초안이다.
 - **초기 후보 선택** — `rank=1` 자동 선택이라 사용자 명령이 아니다(#168 결정 1, #194). 후보 command는 결과 화면에서 다른 후보를 고를 때만 쓴다(#106 신유민 09-23).
 - **`rejected_candidate_ids`** — 받지 않는다(#106 결론). 개별 후보를 「아니다」로 지목하는 화면 신호가 생기면 다시 본다.
 - **시간 보정 버튼 4종**(조금 전·조금 후 등) — W7 밖(#106 결론).
@@ -52,7 +54,7 @@
 {
   "case_id": "string",
   "expected_case_rev": "int",
-  "kind": "SELECT_OTHER_CANDIDATE | RECORD_SITUATION_RESPONSE | MARK_REVIEWED | RUN_NOTICE_ACTION | START_ANALYSIS | STOP_ANALYSIS",
+  "kind": "SELECT_OTHER_CANDIDATE | RECORD_SITUATION_RESPONSE | MARK_REVIEWED | RUN_NOTICE_ACTION | START_ANALYSIS | STOP_ANALYSIS | MANUAL_PLATE_INPUT | EDIT_EVENT_TIME",
   "payload": "object — kind별(§5)"
 }
 ```
@@ -77,7 +79,7 @@
 | `kind` | `payload` | 허용 상태 | 성공하면 |
 | --- | --- | --- | --- |
 | `SELECT_OTHER_CANDIDATE` | `{ "candidate_id": "string" }` | `EVIDENCE_REVIEW` · `READY` | `OTHER_CANDIDATE` CorrectionRecord 1건, `selection_rev` +1, `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아가고 `user_reviewed=false` |
-| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아간다(아래 「READY에서 다시 조립되는 변경」). 이 응답으로 Package가 준비되면 아래 「성공 뒤 `READY` 재확인」으로 `READY`가 되고 `case_rev`가 +1 더 오른다 |
+| `RECORD_SITUATION_RESPONSE` | `{ "value": "CONFIRMED \| USER_UNSURE" }` · `[다른 상황]`은 §12-3 | 선택된 후보가 있을 때 | `situation_response` 기록(`candidate_ref`=현재 선택 후보, `responded_at`=case가 받은 시각), `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 돌아간다(아래 「READY에서 다시 조립되는 변경」). 이 응답으로 Package가 준비되면 아래 「성공 뒤 `READY` 재확인」으로 `READY`가 되고 `case_rev`가 +1 더 오른다 |
 | `MARK_REVIEWED` | `{}` | `READY` | `user_reviewed=true`, `case_rev` +1 |
 | `RUN_NOTICE_ACTION` | `{ "notice_code": "string", "action": "GENERATE_REPORT_VIDEO \| RETRY_PLATE_READ \| RETRY_SEARCH \| GENERATE_PLATE_IMAGE" }` | 현재 CaseView의 `notices[]`에 **그 `code`를 가진 notice가 있고, 그 notice의 `actions[]`에 그 `action`이 있을 때** | CaseView 계약 B절 §7 매핑대로 새 `JobRecord` 1건 |
 | `STOP_ANALYSIS` | `{}` | `SEARCHING`이고 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 있을 때 | 그 job들을 `CANCELLED`로 정산(다른 kind는 그대로), `case_rev` +1, stage는 `SEARCHING` 그대로. CaseView는 `coarse_search`=`PARTIAL` · notice `case.analysis_stopped`(CaseView 계약 B§7). 중단된 job의 늦은 결과는 반영하지 않는다(#245 C-4) |
@@ -85,9 +87,9 @@
 - **성공 뒤 `READY` 재확인(2026-09-30).** command가 성공하고 stage가 `EVIDENCE_REVIEW`면 case가 `PACKAGE_READY`(FINAL `PASS`/`WARN` + ReportPackage, #167 gate 그대로)를 다시 보고, 성립하면 같은 command 안에서 `READY`로 올린다. `READY` 전이도 `case_rev`를 올리므로 그때는 위 표의 증가분에 +1이 더해진다. transport·web이 따로 전이를 부르지 않는다 — 통로에 판단을 넣지 않는다(#106). 실패한 command 뒤에는 보지 않는다(§6).
 - **`READY`에서 다시 조립되는 변경(2026-10-02, orchestration 지표 4차 측정).** `READY`에서 상황 응답(과 입력형 판본의 값 정정)을 받으면 case가 먼저 `EVIDENCE_REVIEW`로 내리고, 위 재확인이 gate가 여전히 성립할 때만 다시 올린다. 내리지 않으면 재조립으로 Package가 사라져도 `READY`로 남아 CaseView 계약 §10-9(「`stage=READY`이면 `requirements_package`가 `PASS`/`WARN`」)를 어긴다. 내려가는 것은 같은 요청의 결과라 `case_rev`를 따로 올리지 않는다(`SELECT_OTHER_CANDIDATE`와 같다) — 그래서 gate가 그대로면 응답 +1, 다시 `READY` +1로 +2다. `user_reviewed`는 그대로 둔다(필드 수정과 별개 — CaseView 계약 B절 `user_reviewed` · #173 값별 경계표). 새 초안이 되는 `SELECT_OTHER_CANDIDATE`만 되돌린다.
 - `RUN_NOTICE_ACTION`의 허용 조건은 「화면에 그 버튼이 떠 있었는가」와 같다. web은 `notices[].actions[]`에 있는 값으로만 버튼을 그리므로(CaseView 계약 B절 §7), case도 같은 근거로만 받는다.
-- `SELECT_OTHER_CANDIDATE`의 「새 후보 초안을 준비하는 중에는 다시 고르지 않는다」(#173 E-4 조건 1)는 case domain에 「준비 완료」 신호가 없어 이 판본에서 검사하지 않는다 — 진행 화면에서 버튼을 주지 않는 web 규칙에 기대고, worker 배선 때 case가 막는다(PR #190 — W7 기준 문서 6.6순위로 추가 중).
+- `SELECT_OTHER_CANDIDATE`는 새 후보 초안을 준비하는 중이면 `not_allowed`다(#173 E-4 조건 1, 2026-10-24) — 선택 후보 · 현재 세대의 관찰 job 중 case가 아직 결과를 기다리는 것이 있을 때다. 상황 응답 대기 · Fine 실패 뒤에는 받는다(`decisions/reselect-while-preparing.md`). 진행 화면에서 버튼을 주지 않는 web 규칙은 그대로다.
 - `responded_at`은 web이 보내지 않고 case가 채운다 — 사용자 기기 시계를 기록값으로 쓰지 않는다.
-- **`CORRECTED`(`[다른 상황]`)는 이 판본에서 받지 않는다**(`case.command.invalid_payload`). evidence는 `CORRECTED` 응답에 `SITUATION_CHANGE` CorrectionRecord가 정확히 1건 있어야 조립하고, 없으면 조립 자체를 거부한다(`src/daesingo/evidence/assembly.py` — `CORRECTED requires one SITUATION_CHANGE head`). 바뀐 상황을 보내는 입력형 경로가 없으므로(§2) 입력형 판본에서 둘을 한 command로 함께 연다.
+- ~~**`CORRECTED`(`[다른 상황]`)는 이 판본에서 받지 않는다**~~ → **2026-10-28 §12-3으로 열었다**(`decisions/input-commands.md`). 아래는 그 전의 이유다. evidence는 `CORRECTED` 응답에 `SITUATION_CHANGE` CorrectionRecord가 정확히 1건 있어야 조립하고, 없으면 조립 자체를 거부한다(`src/daesingo/evidence/assembly.py` — `CORRECTED requires one SITUATION_CHANGE head`). 바뀐 상황을 보내는 입력형 경로가 없으므로(§2) 입력형 판본에서 둘을 한 command로 함께 연다.
 
 ## 6. 실패 코드
 
@@ -95,11 +97,12 @@
 | --- | --- | --- |
 | `case.command.stale_revision` | `expected_case_rev`가 현재 `case_rev`와 다르다 — 사용자가 본 화면이 이미 바뀌었다 | 다른 탭에서 먼저 후보를 바꿨다 |
 | `case.command.unknown_target` | 가리킨 대상이 이 case에 없다 | 없는 `candidate_id` · 없는 `case_id` · 현재 notices에 없는 `notice_code`/`action` 조합 |
-| `case.command.not_allowed` | 대상은 있지만 지금 상태에서 할 수 없다 | `CANDIDATE_REVIEW`에서 `MARK_REVIEWED` · 이미 선택된 후보를 다시 선택(무변경) |
+| `case.command.not_allowed` | 대상은 있지만 지금 상태에서 할 수 없다 | `CANDIDATE_REVIEW`에서 `MARK_REVIEWED` · 이미 선택된 후보를 다시 선택(무변경) · 새 후보 준비 중 다른 후보 선택 |
 | `case.command.invalid_payload` | payload 모양이 틀렸다 | 등재되지 않은 `value` · 필수 키 누락 |
+| `case.command.invalid_value` | **입력형 판본 초안(§12-4).** 모양은 맞지만 값이 정정 기록 규칙에 맞지 않는다 — evidence 기록 전 검사(E-3)가 사용자가 고칠 수 있는 값 오류로 거부했다(내부 계약 위반은 이 코드가 아니다) | 오프셋 없는 시각 · 번호판 빈 문자열 |
 
 - 실패하면 **아무 상태도 바뀌지 않는다** — `case_rev`·CorrectionRecord·JobRecord·선택 상태 모두 그대로다(#166과 같은 원자성).
-- 검사 순서는 `invalid_payload` → `unknown_target`(case) → `stale_revision` → `unknown_target`(대상) → `not_allowed`다. 화면이 낡았으면 대상 검사 전에 먼저 알린다.
+- 검사 순서는 `invalid_payload` → `unknown_target`(case) → `stale_revision` → `unknown_target`(대상) → `not_allowed`다(입력형 판본은 마지막에 `invalid_value`, §12-4). 화면이 낡았으면 대상 검사 전에 먼저 알린다.
 
 ## 7. 불변조건
 
@@ -167,7 +170,7 @@ START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──�
 - **결과 반영.** 결과 상태가 `OK`면 매핑대로 `hints`를 채운다(일부 필드가 비어 있을 수 있다). `ABSTAINED`(모델이 전부 보류)나 `FAILED`(호출 · 파싱 실패)면 `hints` 4개를 모두 `null`로 두고 그대로 진행한다 — 값을 지어내지 않는다. 어느 쪽이든 이어서 `AnalysisScope`를 만들고 `COARSE_SEARCH` 1건을 발주한다(빈 단서면 「시간 단서 없이 전체 찾기」, `core-user-flow.md` §5). 결과 반영은 사용자 요청이 아니라 `case_rev`를 올리지 않는다(`record_candidate_search_failure()`와 같다).
 - **빈 설명을 막지 않고, 구조화도 건너뛴다(2026-10-04 case 결정).** `description`이 빈 문자열이어도 `invalid_payload`가 아니다(키가 없거나 문자열이 아니면 `invalid_payload`). 앞뒤 공백을 지운 뒤 비었으면 `HINT_EXTRACT`를 발주하지 않고 `hints` 4개를 `null`로 둔 채 `AnalysisScope` · `COARSE_SEARCH`를 바로 발주한다 — 부를 이유가 없는 provider 호출과 대기를 만들지 않고, `ABSTAINED`가 「모델이 판단을 보류함」이라는 뜻으로만 남게 한다.
 - **Job 이름은 `HINT_EXTRACT`(label_key `job.hint_extract`)다(2026-10-04 case 결정).** 기존 kind의 `대상_동작` 꼴(`PLATE_READ` · `FINE_VERIFY`)과 조사 문서 · 스키마 용어(`llm-model-comparison-hint-extraction` · `IntentHintExtraction`)를 따른다.
-- **구조화 실패는 notice로 알리지 않는다(2026-10-04 case 결정).** search 결과가 `FAILED`면 Worker가 그 Job을 JobExecution `FAILED` + `failure_kind`로 기록하고, 「설정이 깨져 매번 실패」는 Runtime 원장으로 알아챈다(#210 3번의 목적). 사용자 흐름은 `ABSTAINED`와 같아(빈 단서로 탐색 계속) 사용자가 할 일이 없고, 사용자가 적은 내용은 아래 `description`으로 화면에 남는다.
+- **구조화 실패는 notice로 알리지 않는다(2026-10-04 case 결정).** search 결과가 `FAILED`면 Worker가 그 Job을 JobExecution `FAILED` + `failure_kind`로 기록하고, 「설정이 깨져 매번 실패」는 Runtime 원장으로 알아챈다(#210 3번의 목적). 빈 단서로 탐색을 계속해 사용자가 할 일이 없고, 사용자가 적은 내용은 아래 `description`으로 화면에 남는다. 판단 보류(`ABSTAINED`)와 `confidence=low`는 실패가 아니라 「설명을 잘 이해하지 못함」이라 결과 화면에 `search.hint_unclear`를 붙인다(#266, `decisions/hint-unclear-notice.md`) — 사용자가 다시 적을 수 있다.
 - **설명 원문을 CaseView 최상위 `description`(`string | null`)으로 내린다(2026-10-04 case 결정).** 구조화가 진행 중이거나 `ABSTAINED` · `FAILED`로 `hints`가 비어도 사용자가 자기 원문을 본다 — 그렇지 않으면 「기억하신 것」(web `HintRecall`)이 「없음」으로 떠, 단서를 적은 사용자에게 AI가 아무것도 이해하지 못한 것처럼 보인다(`core-user-flow.md` 「AI가 이해한 기억 단서가 맞는가?」). `hints` 안에 넣지 않는 이유는 `hints`가 「구조화된 4개」라는 뜻을 지키기 위해서다. `START_ANALYSIS` 전에는 `null`, 빈 설명이면 `""`다. CaseView 계약 변경이라 반영은 미결 1.
 - **일부 영상 실패는 막지 않는다.** 읽을 수 없는 파일은 건너뛴 사실을 보여 주고 나머지로 진행한다(§23 「다른 영상은 계속 분석」). 처리할 수 있는 영상이 하나도 없을 때만 `not_allowed`다.
 - **`case_rev`는 올리지 않는다** — `start_search()`가 `INTAKE→SEARCHING`에서 올리지 않는 현재 규칙 그대로다(`scenario_happy_001`: SEARCHING · `COARSE_SEARCH` 모두 `case_rev:1`). 같은 버튼을 두 번 눌러도 두 번째는 stage가 이미 `SEARCHING`이라 `not_allowed`로 막힌다 — §9 첫 항목(`case_rev`로 잡히지 않는 변경)이 이 command에서는 stage 검사로 해소된다.
@@ -197,3 +200,112 @@ START_ANALYSIS ── 원문 보존 · SEARCHING · HINT_EXTRACT 발주 ──�
 3. **첫 발주의 `input_fingerprint`.** case는 fingerprint를 계산하지 않고 공식도 미정이다(`decisions/input-fingerprint-implementation-label-deferred.md`). `HINT_EXTRACT`와 `COARSE_SEARCH` 모두 재사용할 이전 `JobRecord`가 없다. → **닫힘: 같은 문서 §3-4.**
 4. **`HINT_EXTRACT`를 얼마나 기다리는가.** 이 호출에는 `AnalysisScope`가 없어 실행 상한을 어떻게 받을지 #210 Search PR에서 정하기로 했다. 그 값을 보고 case 대기 시간(`decisions/timeout-fallback.md`)과 기다리다 멈췄을 때 빈 단서로 진행할지를 정한다. → **닫힘: 같은 문서 §3-5(90초, 빈 단서로 진행 — 동작 구현은 8-9).**
 5. **선행 작업.** 빈 case 생성과 업로드마다 `manifest_summary` 갱신(고도화 8-12, #247 H-2 · H-5), search의 텍스트 structured public 함수(#210 Search 작업), Worker 결과 반영 경로 · handler 등록(#245 D-5 · D-7). → **8-12 ✅ · #277 ✅ · case 반영 진입 함수 ✅ · Worker handler는 Runtime #297.**
+
+## 12. 입력형 판본 초안 `case-command/v1` (2026-10-13)
+
+> **상태: 구현(2026-10-28, W12 C3 — `decisions/input-commands.md`).** web(신유민) · evidence(flosure23) 확인(2026-10-21, PR #356), 리뷰 반영(2026-10-24 — §12-4 오류 두 부류 · §12-5 버튼 노출). 열림 조건(§12-1)은 PR #384로 모두 갖춰졌다. 범위는 규칙이 이미 정해진 셋(번호판 · 발생시각 · `[다른 상황]`)이고, 나머지 입력형 action은 §12-5에 이유와 함께 남긴다. 근거 #235(E-1 · E-2 · E-3 결정) · `contract-correction-record.md` · `core-user-flow.md` §12 · §13 · §15 · §20.
+
+### 12-1. 열림 조건
+
+web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. case 구현도 2 · 3 뒤에 한다.
+
+1. 이 판본 합의(web 확인). → **충족(2026-10-21, 신유민 PR #356 댓글).**
+2. **`correction-record/v1.2`** — `previous_value`에 `null`(값이 없던 상태) 허용(#235 E-1 · E-2). 계약 반영(PM)과 evidence 검사(`evidence/corrections.py`) 반영. → **충족(PR #384).** case는 v1.2로 기록한다.
+3. **evidence 기록 전 검사 공개 함수**(#235 E-3) — 값 형식 + supersede chain 연속성. case가 기록 전에 부른다. 거부 결과는 「사용자가 고칠 수 있는 값 오류」와 「내부 계약 위반」을 구분해 돌려준다(§12-4) — 정확한 반환 · 예외 모양은 구현 때 evidence와 정한다. → **충족(PR #384)** — `validate_correction_append()`가 `InvalidCorrectionValue`(값 오류) · `ContractInputError`(그 밖)로 나눠 던진다.
+
+그 전에 열면 값이 없던 상태의 첫 입력이 기록된 뒤 evidence 조립에서 거부되고, 기록은 되돌리지 않으므로(`contract-correction-record.md` §8-9) 그 case는 이후 CaseView를 만들 수 없다(#235 §1).
+
+### 12-2. 공통 규칙
+
+- **web은 새 값만 보낸다.** CorrectionRecord의 `kind` · `target_field` · `previous_value` · `supersedes_ref`는 case가 채운다. `previous_value`는 현재 선택 context의 지금 값(= 사용자가 본 CaseView 값)이고, 값이 없으면 `null`이다(v1.2). web이 이전 값을 보내지 않으므로 chain이 끊기지 않는다.
+- **허용 상태:** 선택된 후보가 있고 `stage`가 `EVIDENCE_REVIEW` · `READY`일 때(`correction.apply_correction()`의 가드 그대로). 상황 응답 대기 중(evidence 부분 투영, `record_id=null`)에도 받는다 — #235 E-2가 이 경로를 위해 `null` 이전 값을 연다.
+- **값이 지금 값과 같으면 `not_allowed`.** 기록하지 않는다(`contract-correction-record.md` §8-7 — 「이미 선택된 후보 재선택」과 같은 무변경 거부).
+- **성공하면** CorrectionRecord 1건 · `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 내리고 §5 「성공 뒤 `READY` 재확인」을 그대로 한다(§5 「`READY`에서 다시 조립되는 변경」).
+- **Job을 발주하지 않는다.** 값 정정은 evidence 재조립만 부른다(부분 재실행 정책 표). 시각 정정으로 사후 각인 값이 바뀌면 신고용 영상 입력도 바뀌는데, 그 재발주는 #351 [R-1] 자동 발주가 맡는다(`decisions/report-video-export.md`, 배선 보류).
+- **이전 값의 출처(구현, 2026-10-28).** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 CaseView 값이다 — 정상 경로에서 둘은 같다(`decisions/input-commands.md` §2-5).
+- **값 칸이 없는 화면(`evidence=null`)에서는 `not_allowed`**(2026-10-28) — 사용자가 본 이전 값이 없다. 상황 응답 대기의 부분 투영은 `evidence`가 있으므로 받는다.
+- **값을 판정하지 않는다**(§7-3). 번호판이 맞는지 · 시각이 그럴듯한지는 보지 않는다. 형식은 evidence 검사(E-3)에 맡기고 case가 target별 형식 규칙을 복제하지 않는다(#235 E-3).
+
+### 12-3. kind별
+
+| `kind` | `payload` | CorrectionRecord | 성공하면 |
+| --- | --- | --- | --- |
+| `MANUAL_PLATE_INPUT` | `{ "value": "string" }` — 빈 문자열 · 공백만 있는 값은 `invalid_value`(evidence 값 공간, correction-record §6) | `PLATE_MANUAL_EDIT` · `vehicle_number` | 번호판 값이 입력값이 되고 `plate_display.info_state=INFO_USER_CONFIRMED`. `readout.plate_read_failed`는 붙지 않는다(#235 ①, #321) |
+| `EDIT_EVENT_TIME` | `{ "value": "string — offset-aware RFC3339" }` | `EVENT_TIME_MANUAL` · `occurred_at` | 최종 발생시각의 USER_INPUT 근거가 된다(`contract-time-resolution.md` §5) |
+| `RECORD_SITUATION_RESPONSE` | `{ "value": "CORRECTED", "visual_event_type": "SIGNAL \| CENTER_LINE_CROSSING \| SOLID_LINE_LANE_CHANGE \| MOTORCYCLE_HELMET_NON_USE" }` | `SITUATION_CHANGE` · `event.visual_event_type` | `situation_response=CORRECTED`와 정정 기록을 **한 command**로 남기고 `case_rev`는 +1이다. evidence는 `CORRECTED`에 `SITUATION_CHANGE` head가 정확히 1건 있어야 조립한다(`evidence/assembly.py`) |
+
+- **화면 입구와 kind.** 번호판 `[수정]` · `[직접 입력]`(Flow §12)과 notice action `MANUAL_PLATE_INPUT`은 모두 `MANUAL_PLATE_INPUT`으로, 발생시각 수정(Flow §20)과 notice action `EDIT_EVENT_TIME`은 모두 `EDIT_EVENT_TIME`으로 보낸다. notice에 붙은 입력형 action은 `RUN_NOTICE_ACTION`으로 보내지 않는다 — `RUN_NOTICE_ACTION`은 발주형 4종 그대로다.
+- **`[다른 상황]` 정정이 있는 후보의 `USER_UNSURE`는 `not_allowed`**(2026-10-28) — evidence가 조립을 거부하고 정정은 지우지 않으므로 그 case가 CaseView를 만들 수 없게 된다. `CONFIRMED`는 받는다.
+- **`visual_event_type`은 `CORRECTED`일 때만 필수다.** `CONFIRMED` · `USER_UNSURE`에 있으면 `invalid_payload`. 지금 값과 같은 유형이면 `not_allowed` — 그것은 `[맞아요]`다.
+- **`[다른 상황]` 선택지.** `VisualEventType` 4종에서 지금 값을 뺀 것이다. **지금 값이 `null`이면(상황 응답 대기의 부분 투영 — `case_type_display.code=null`, B§10-15) 4종을 모두 보여 준다**(2026-10-28, PR #433 web 확인) — web도 case도 지금 유형을 모르므로 같은 유형을 막지 않는다. 같은 유형을 골라도 evidence는 그 유형으로 조립해 결과가 `[맞아요]`와 같다(`decisions/input-commands.md` §4). Fine 잠정 유형을 CaseView에 싣는 안은 계약 변경이라 택하지 않았다. 사용자에게 법적 유형을 판정시키지 않으므로(Flow §15) 화면 문구는 상황 설명으로 쓴다 — 문구는 web.
+- **notice action 싣기.** `evidence.plate_abstained`는 `actions:[MANUAL_PLATE_INPUT]`을 싣는다(2026-10-28 — 이 판본이 열려 실행 경로가 생겼다). `evidence.event_time_missing`(발생시각이 없어 Package가 나가지 않는 상태)은 `actions:[EDIT_EVENT_TIME]`을 싣는다(2026-10-29, #449 — `decisions/event-time-missing-notice.md`).
+
+### 12-4. `case.command.invalid_value`
+
+evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른다. 거부하면 아무것도 기록하지 않는다(§6 원자성). **거부는 두 부류로 나눠 돌려준다**(PR #356 evidence 리뷰) — 사용자가 다시 입력해도 고쳐지지 않는 내부 문제를 사용자 입력 오류로 보이지 않게 하기 위해서다.
+
+| 부류 | 예 | case 응답 | 화면 |
+| --- | --- | --- | --- |
+| **사용자가 고칠 수 있는 값 오류** | 시각 형식(오프셋 없음 등) · 허용되지 않는 값 공간 · target별 값 형식 위반 | `case.command.invalid_value`(`message_key` `command.invalid_value`) | 값을 다시 입력하도록 안내한다 |
+| **내부 계약 위반** | supersede 대상이 없거나 다른 target을 가리킴 · chain 값이 이어지지 않음 · 같은 target에 head가 둘 · kind/target 조합 등 case가 구성한 CorrectionRecord 자체의 위반 | command 실패 코드가 아니다 — 배선 오류로 올려 transaction을 되돌리고, HTTP 층은 `500 http.internal_error`(HTTP API Contract §3.3)로 돌려준다 | 사용자 책임처럼 보이지 않는 일반 실패 문구(web) |
+
+- 내부 계약 위반은 정상 경로에서 생기지 않는다 — `previous_value` · `supersedes_ref` · `kind` · `target_field`를 모두 case가 채우기 때문이다(§12-2). 그래서 `case.command.*` 코드를 새로 두지 않는다.
+- `invalid_value` 문구는 §9 미결(`message_key` 목록)과 함께 web이 정한다.
+
+### 12-5. 이 판본에 넣지 않는 입력형 action
+
+| action · 화면 | 넣지 않는 이유 |
+| --- | --- |
+| `REVIEW_TIME`(시각 후보 확인) | Flow §13 「어느 기록이 맞는지 사용자에게 고르게 하는 별도 단계를 두지 않는다」와 어긋난다. CaseView 계약 B§7 행도 TimeResolution §9-2 미결에 걸려 있다 — product · evidence와 정한다 |
+| 위치 단서 수정(Flow §14 `[위치 단서 수정]`) | CorrectionRecord `kind` 9종에 위치용이 없다 — kind 추가는 `contract-correction-record.md` 변경이다 |
+| 번호판 `[맞아요]`(Flow §12) | 값을 바꾸지 않는 확인이라 CorrectionRecord로 남길 수 없다(§8-7). 「사용자 확인됨」을 어디에 기록할지 정해야 한다 |
+| 신고 유형 · 위반 내용 정정(`REPORT_TYPE_CHANGE` · `event.violation_expression`) | Flow에 화면 입구가 없다 |
+
+- **보낼 command가 없는 동안 이 action은 버튼으로 노출하지 않는다**(PR #356 web 리뷰). web은 `REVIEW_TIME`을 notice 버튼으로 그리지 않고, case도 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B§7)로 싣지 않는다. (`EDIT_HINT`는 2026-10-27 §13으로 열렸다.)
+
+### 12-6. 예시
+
+```json
+// 요청 — 번호판을 읽지 못한 상태에서 직접 입력(previous_value는 case가 null로 채운다)
+{ "case_id": "case_p001", "expected_case_rev": 4, "kind": "MANUAL_PLATE_INPUT",
+  "payload": { "value": "12가 3456" } }
+
+// 요청 — [다른 상황]에서 중앙선 침범을 고름
+{ "case_id": "case_h001", "expected_case_rev": 3, "kind": "RECORD_SITUATION_RESPONSE",
+  "payload": { "value": "CORRECTED", "visual_event_type": "CENTER_LINE_CROSSING" } }
+
+// 응답 — 형식이 맞지 않는 시각(오프셋 없음)
+{ "ok": false,
+  "error": { "code": "case.command.invalid_value", "message_key": "command.invalid_value" },
+  "case_view": { "case_id": "case_h001", "case_rev": 3, "...": "..." } }
+```
+
+### 12-7. 남은 것
+
+- ~~열림 조건 2 · 3(§12-1)~~ → PR #384로 충족.
+- ~~CaseView 계약 B§7 매핑의 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT` 행~~ → 2026-10-28 이 kind로 고쳤다.
+- web 정정 입력 UI(W4) — web 소유.
+- ~~`search.no_candidates`의 `EDIT_HINT` 빼기(§12-5)~~ → 2026-10-27 빼지 않고 §13으로 실행 경로를 열었다.
+- ~~evidence 기록 전 검사의 두 부류 반환 모양~~ → PR #384(`InvalidCorrectionValue` · `ContractInputError`).
+- ~~`CORRECTED`의 `case_rev` 한 번~~ → 2026-10-28 구현(`record_situation_response(..., bump=False)`).
+
+## 13. 설명 고쳐 다시 찾기 `EDIT_HINT` (2026-10-27)
+
+> **상태: 구현(2026-10-27, #410).** 결정 · 고르지 않은 안은 `decisions/edit-hint.md`. web(신유민) (A) 원문 다시 적기 + (가) 한 command 의견, 버튼 순서(@kim1034) 반영. CaseView 계약 B§7 `EDIT_HINT` 행 개정은 web 확인 요청 중.
+
+| `kind` | `payload` | 허용 상태 | 성공하면 |
+| --- | --- | --- | --- |
+| `EDIT_HINT` | `{ "description": "string" }` — 다시 적은 원문 그대로. 빈 문자열을 허용한다(§11과 같다) | 현재 CaseView `notices[]` 중 하나가 `actions[]`에 `EDIT_HINT`를 싣고 있을 때(`RUN_NOTICE_ACTION`과 같은 근거). 그리고 `SEARCHING`이면 case가 기다리는 `HINT_EXTRACT` · `COARSE_SEARCH`가 없을 때 | `SEARCHING`으로 역행(후보 · 선택 폐기, 후보 세대 +1, 기다리던 job은 `SUPERSEDED` 정산 · 실행 취소 없음) · 설명 원문 교체 · `hints` 4개 `null` · `hint_unclear` 해제 · `case_rev` +1 · **`HINT_EXTRACT` 1건**. 설명이 비었으면 구조화 없이 `AnalysisScope` 1건 · `COARSE_SEARCH` 1건 |
+
+- **고치기와 다시 찾기는 한 command다.** `RETRY_SEARCH`는 직전 탐색과 같은 입력으로 다시 찾는 동작이라(§5) 바뀐 단서를 보지 않는다.
+- **결과 반영은 분석 시작과 같다**(§11) — `service.receive_hint_extraction_result()` → hints · 첫 탐색. 소진 알림도 같다(`decisions/hint-exhaustion.md`).
+- **예산은 첫 탐색과 같다**(`InitialSearchBudget`, `decisions/start-analysis.md` §3-3).
+- **CorrectionRecord를 남기지 않는다.** 설명 원문은 evidence가 조립하는 값이 아니라 탐색 입력이고, 바뀐 원문은 CaseView 최상위 `description`으로 보인다.
+- **`EDIT_HINT`를 싣는 notice**(어느 화면에 출구를 둘지는 notice가 정한다): `search.no_candidates` · `search.hint_unclear` · `case.analysis_stopped`(다시 낼 탐색 근거가 없을 때 — 단서 구조화 중 중단) · `evidence.visual_event_not_observed`(위반 미관찰 — `core-user-flow.md` §6, 2026-10-27 PM 승인).
+- web은 `RUN_NOTICE_ACTION`이 아니라 이 kind로 보낸다(입력형 action, §12-3과 같다). 실패 코드는 §6 그대로다.
+
+```json
+// 요청 — 결과 없음 화면에서 설명을 고쳐 다시 찾기
+{ "case_id": "case_e001", "expected_case_rev": 1, "kind": "EDIT_HINT",
+  "payload": { "description": "6시 반쯤 빨간 트럭이 신호를 무시했어요" } }
+```
