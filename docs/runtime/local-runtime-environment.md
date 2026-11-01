@@ -346,8 +346,13 @@ opt-in process snapshot·배포 차단 조건은 위 RT-14 링크로 구분한�
 
 ## 9. #452 용량·처리시간 제약과 미확정 판단
 
+이 절의 현재 상태는 2026-11-02에 #460·#452 최신 논의와 병합된 #526·#481·#492 및 코드를
+대조해 갱신했다. 다른 절의 기준일·과거 실행 기록을 이번 검증 결과로 바꾸지 않는다.
+공개 설정 원문은 [PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)의
+[환경·배포 설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이다.
+
 [#452 전체 논의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)의
-64 MiB는 당시 MySQL `max_allowed_packet` 관측값이다. LONGBLOB의 제품 지원 상한이나
+64 MiB는 2026-10-29 당시 MySQL `max_allowed_packet` 관측값이다. LONGBLOB의 제품 지원 상한이나
 “약 5분까지 지원”이라는 보장이 아니다. CRF 출력은 내용에 따라 달라진다.
 22개 원본/1,166.13초 범위의 AnalysisSource `234,566,319 bytes`, 준비 누적 `285.2초`는
 해당 Windows 직접 호출의 측정값이고 Linux/현재 profile 보장값이 아니다.
@@ -357,16 +362,20 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 | --- | --- |
 | MVP 저장 | DB 한 행 유지; packet 상한만 올려 해결했다고 하지 않음 |
 | 사전/변환 중 거부 | Owner 합의: 명시적 prepared-media byte 한도 및 별도 지원 길이를 정하고, 변환 전/누적·최종 byte 검사로 DB write 전 중단 |
-| 오류 전달 합의 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`, Case는 재시도 없는 “분석 범위가 너무 김” notice 방향 |
-| 현재 구현 여부 | #452: 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. 운영값 확정 및 Case notice 구현은 별도 pending; [구현 경계](../modules/recording/analysis-source-limits.md) |
+| 오류 전달 구현 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Case `recording.analysis_range_too_long`(`ERROR`, blocking, `message_key: notice.analysis_range_too_long`, `actions: []`). Case는 수치를 복제하지 않고 typed code만 소비 |
+| 현재 구현·병합 상태 | 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. Case notice [#481](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/481)과 Web 문구·실패 화면 [#492](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/492)도 병합됨. job이 없으면 `SEARCH_FAILED`, 있으면 진행 화면 유지; [구현 경계·코드 근거](../modules/recording/analysis-source-limits.md#typed-실패와-case-연결) |
 | 지원 길이/bytes/encoding | 초기 배포 baseline v1은 4분·48 MiB([설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)). 약 1시간 입력 지원과 운영 최적 encoding은 **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
+| Incident 품질 | 적용된 baseline은 `240 / veryfast / CRF23`; 번호판 가독성·제출 품질 최적값 확정 아님. `720p / CRF20`은 [별도 비교 후보](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6559419741)이며 현 baseline·EC2 적용값이 아님 |
 | Search 상한 | 코드 inline media `40 MiB`, request `56 MiB`; Recording 저장 상한과 다른 단계, runtime env knob 아님 |
 | 시간 예산 | Case 요청 시점 + Search `150초` + 큐 여유 `30초` 유지 합의. Recording 준비/큐는 Case 대기에 포함되며 Search RunDeadline은 Search 호출부터 시작 |
 | 재측정 | Runtime 머신에서 준비·큐·Search를 나눠 측정한 뒤 Case 대기 기준 판단. 범위 분할은 MVP 밖 #168 |
 
-지원 분 수·운영 encoding 수치·byte 한도를 임의로 정하지 않는다. 두 한도 env는 Analysis profile과
-함께 명시해야 하며, 기존 4개만 있는 runtime 파일도 시작 단계에서 거부한다. 테스트값을 복사하지 않는다.
-이 미결과 무관하게 위 파일 경계·DB/migration·Readout·실제 parser 키로 환경을 준비할 수 있다.
+초기 배포 baseline v1은 코드 기본값이나 약 1시간 지원 보장이 아니다.
+[#452 최신 측정 해석](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6559422935)의
+Search 단독 7분 20초 성공·표본별 9~13분 추정도 현재 전체 Recording→Search 경로의 지원 길이가 아니다.
+두 한도 env는 Analysis profile과 함께 명시해야 하며, 기존 4개만 있는 runtime 파일도 시작 단계에서 거부한다.
+설정 명세의 baseline을 사용하고 테스트값을 복사하거나 한도·DB packet만 늘려 장시간 지원 완료로 처리하지 않는다.
+이 절은 문서·코드 대조 결과이며, 과거 측정·검증을 재실행한 기록이 아니다.
 
 ## 10. 검증된 명령과 증거의 범위
 
