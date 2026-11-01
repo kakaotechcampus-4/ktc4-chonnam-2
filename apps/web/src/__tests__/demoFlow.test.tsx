@@ -583,3 +583,35 @@ it('위반 미관찰에는 다시 찾기 동작이 없어 「처음으로」로 
   fireEvent.click(getByText('처음으로'))
   expect(container.querySelector('.rs.upload')).not.toBeNull()
 })
+
+it('화면이 바뀌면 새 화면 제목에 초점이 가고, 하위 화면에서 뒤로 오면 연 버튼으로 돌아간다 (#509 #2)', () => {
+  const { wait, getByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  // 진행 → 신고 상황 확인
+  expect(document.activeElement?.tagName).toBe('H1')
+  expect(document.activeElement?.textContent).toBe('신고 상황을 확인해 주세요.')
+  // 맞아요 → (진행) → 결과
+  fireEvent.click(getByText('맞아요'))
+  wait()
+  expect(document.activeElement?.textContent).toBe('신고자료가 준비됐어요.')
+  // 하위 화면은 자기 제목, 뒤로 오면 연 버튼
+  const opener = getByText('어떻게 정했는지').closest('button')!
+  opener.focus()
+  fireEvent.click(opener)
+  expect(document.activeElement?.textContent).toBe('어떻게 정했는지')
+  expect(document.activeElement?.closest('.sub')).not.toBeNull()
+  fireEvent.click(container.querySelector('.sub-back')!)
+  expect(document.activeElement?.tagName).toBe('BUTTON')
+  expect(document.activeElement?.textContent).toBe('어떻게 정했는지')
+})
+
+it('실패 화면으로 넘어가면 상태 문구 제목에 초점이 간다 (#509 #2)', () => {
+  const { wait, getByText } = start('searchFailed')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(document.activeElement?.tagName).toBe('H1')
+  expect(document.activeElement?.textContent).toContain('영상을 살펴보다가 문제가 생겼어요')
+})

@@ -12,6 +12,7 @@ import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
+import { useScreenFocus } from './screenFocus'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
@@ -113,11 +114,14 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
   }
   const open = (sub: Sub) => {
+    rememberOpener()
     setSubs((s) => [...s, sub])
     setArriving(false)
   }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
+  const mainRef = useRef<HTMLElement>(null)
+  const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
 
   const newReport = () => location.assign(`${location.pathname}?api`)
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
@@ -125,7 +129,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main rs-page">
+      <main className="web-main rs-page" ref={mainRef}>
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
