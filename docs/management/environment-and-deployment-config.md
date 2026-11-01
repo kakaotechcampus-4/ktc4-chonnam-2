@@ -7,7 +7,7 @@
 
 - **실행 절차는 여기 없다.** 아래 §7의 기존 runbook으로 간다.
 - **키별 의미·허용값·코드 기본값의 원문**은 [canonical guide](../runtime/local-runtime-environment.md)다. 이 문서는 그 표를 복제하지 않고 이름·필수 여부·값 분류만 모은다.
-- 이 문서가 원문인 것은 [§3 Recording baseline v1](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
+- 이 문서가 원문인 것은 [§3 Recording baseline v1·현재 적용값](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
 - 실제 팀 환경의 값(account·instance·경로·hostname·허용 IP 등)과 Secret 보관 위치는 **팀 Notion 엔지니어링 위키의 「운영 비공개 정보」**에 있다.
 
 ## 1. 공개 구분 규칙
@@ -76,6 +76,10 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 
 ## 3. Recording 초기 배포 baseline v1
 
+### 3.1 과거 초기 배포·재현 기준
+
+아래는 `aws-e2e-20261031-v1` 당시의 baseline v1이다. 현재 Incident 적용값은 §3.2를 따른다.
+
 ```env
 DAESINGO_RECORDING_ANALYSIS_PROFILE_REF=aws-e2e-v1
 DAESINGO_RECORDING_ANALYSIS_HEIGHT=480
@@ -89,13 +93,29 @@ DAESINGO_RECORDING_INCIDENT_PRESET=veryfast
 DAESINGO_RECORDING_INCIDENT_CRF=23
 ```
 
-- **현재 초기 배포 baseline v1**이다. 근거: [#460 Recording Owner 정리(2026-11-01)](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740), 실행 근거는 [AWS E2E 기록 §4](../runtime/experiments/2026-10-31-rt14-aws-real-e2e.md#4-aws-real-e2e-temporary-acceptance-values). 같은 값이 현재 AWS 배포 config에 들어 있다.
+- **과거 초기 배포 baseline v1**이다. 근거: [#460 Recording Owner 정리(2026-11-01)](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740), 당시 실행 근거는 [AWS E2E 기록 §4](../runtime/experiments/2026-10-31-rt14-aws-real-e2e.md#4-aws-real-e2e-temporary-acceptance-values). 과거 Incident 240p 기록은 보존한다.
 - **최적 운영값 확정이 아니다.** 단회 E2E 재현 기준이며 판독 정확도 · 번호판 가독성 · 신고영상 품질을 최적으로 검증한 값이 아니다.
 - Analysis 최대 분석 범위는 **4분**(`240000` ms), 최종 분석 영상은 48 MiB다. 4분을 넘는 요청은 거부된다.
 - **약 1시간 영상 지원은 후속 실측·개선 대상**이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)). 한도만 키워서 해결했다고 하지 않는다.
-- 값을 바꾸면 **`PROFILE_REF`도 새 식별자로 바꾸고** 변경 이유와 검증 근거를 남긴 뒤 이 절과 `.env.example`을 함께 갱신한다.
+- **Analysis 설정을 바꾸면 `ANALYSIS_PROFILE_REF`도 새 식별자로 바꾸고** 변경 이유와 검증 근거를 남긴 뒤 이 절과 `.env.example`을 함께 갱신한다. Incident만 변경할 때 Analysis profile 식별자는 유지한다.
 - 배포에서는 `MAX_BYTES + packet_margin_bytes < 실제 DB session max_allowed_packet`를 controller가 확인한다(현재 48 MiB + 8 MiB < 64 MiB).
 - 한도의 정확한 의미: [AnalysisSource 한도](../modules/recording/analysis-source-limits.md).
+
+### 3.2 현재 적용값 — Incident 720p (2026-11-02)
+
+운영자 제공 적용 결과 기준으로 current config는 `aws-e2e-20261102-incident720-v1`,
+previous는 `aws-e2e-20261031-v1`이다. Incident만 다음 값으로 바뀌었다.
+
+```env
+DAESINGO_RECORDING_INCIDENT_HEIGHT=720
+DAESINGO_RECORDING_INCIDENT_PRESET=veryfast
+DAESINGO_RECORDING_INCIDENT_CRF=20
+```
+
+Analysis 6개 값은 §3.1 그대로이며 `ANALYSIS_PROFILE_REF=aws-e2e-v1`을 유지한다.
+이미지·revision·비밀번호 등 나머지 설정도 유지됐다는 운영자 보고다.
+근거와 한계는 [Incident 720p 적용·실영상 E2E 기록](../runtime/experiments/2026-11-02-incident720-config-real-e2e.md)에 둔다.
+이는 현재 적용 기준이며 최적 화질·OCR 정확도·모든 입력의 성능이나 실제 신고 수용을 보장하지 않는다.
 
 ## 4. AWS E2E / production
 
@@ -298,6 +318,6 @@ workflow 안에서는 `ECR_REPOSITORY`, `DEPLOY_IMAGE`, `DEPLOY_REVISION`, `DEPL
 ## 8. 바꿀 때 같이 고칠 곳
 
 - env 이름을 추가 · 삭제 · 변경: 코드 consumer → `.env.example` → canonical guide 해당 절 → 이 문서 §2 · §4.
-- Recording baseline: §3과 `.env.example`을 함께, `PROFILE_REF`를 새 값으로.
+- Recording 적용값: §3과 `.env.example`을 함께 갱신한다. Analysis 설정 변경 시에만 `ANALYSIS_PROFILE_REF`를 새 값으로 관리하고, Incident만 변경하면 유지한다.
 - workflow Secret/Variable 이름: workflow → 이 문서 §5 → 팀 Notion의 실제 값 표.
 - host 구조 · policy 필드 · Caddy 설정: `deploy/` 코드 또는 host 변경 → 이 문서 §4 → 필요하면 runbook.

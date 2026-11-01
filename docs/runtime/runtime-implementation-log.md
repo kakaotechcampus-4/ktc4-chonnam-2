@@ -4923,3 +4923,46 @@ source local HTTPS 403을 외부 공개 HTTP 200/public smoke PASS로 쓰지 않
 실제 영상 GPS 추출·EC2 배선·Case/Web 주소 표시는 이번 시험에서 NOT_RUN이다.
 기존 두 문서에 후속 기록만 추가하며 제품·설정 변경이나 API 재호출은 하지 않았다.
 키·좌표·주소 원문을 추가하지 않고 staging·commit·push·외부 게시는 수행하지 않는다.
+
+<a id="incident720-config-real-e2e-20261102"></a>
+
+### 2026-11-02 — Incident 720p 실제 적용·실영상 E2E 증거 문서화
+
+**IN_PROGRESS · Related #450, #452, #460.**
+`codex/docs-incident720-e2e`, 시작 HEAD `54f6ecbbda1db89bf2372c89e91009d9cbe93bd7`와
+clean worktree/index를 직접 확인했다. 저장소와 상위 경로에서 AGENTS.md는 발견되지 않았다.
+README·문서 규칙과 공개 구분 규칙을 읽고 문서·Incident 설정 예시만 수정했다.
+
+[Incident 720p 적용·실영상 E2E 기록](experiments/2026-11-02-incident720-config-real-e2e.md)에
+EC2 5초 단독 측정, current/previous config 적용, 변경 후 실영상 결과를 구분해 기록했다.
+EC2 실행·서비스 상태·E2E 시간과 사건 포함·화질 육안 평가는 **운영자 제공 증거**다.
+이번 에이전트가 EC2/provider/encode/E2E/배포/dispatch를 재실행한 결과가 아니다.
+로컬 결과 파일에는 접근할 수 있어 ffprobe metadata·SHA-256만 직접 재확인했다.
+1280×720 H.264, 7.5초·225 frames·30fps, 8,333,019 bytes와 인계 hash가 일치했다.
+전체 decode 통과는 기존 대화의 직접 검사 인계 증거이며 이번 작업에서는 재실행하지 않았다.
+
+설정 명세에 과거 baseline v1의 Incident 240 / veryfast / CRF23을 보존하고,
+현재 적용 기준 720 / veryfast / CRF20 및 근거 링크를 추가했다. `.env.example`은
+Incident HEIGHT·CRF 예시와 관련 설명만 정합화했다. Analysis profile `aws-e2e-v1`과
+6개 설정·4분·48 MiB 한도를 유지하며, Incident만 변경 시 Analysis 식별자를 바꾸지 않음을 명시했다.
+과거 실험 문서와 이 Log의 기존 본문은 보존한다.
+
+이전 E2E는 약 4분 38초로 정정하고 4분 33초는 정정 전 수치로 구분했다.
+변경 후 약 4분 44초와의 약 6초 차이는 출력 5초/7.5초의 비통제 비교이며 인과적 비용이 아니다.
+5초 단독 측정의 6.904초·172,863,488 bytes peak RSS를 전체 E2E나 자원 상한으로 일반화하지 않는다.
+기존 backup artifact hash·과거 격리 복원 재확인은 이번 배포 직전 새 DB 백업이 아니며,
+rollback 대상 준비와 실제 rollback 실행을 구분한다.
+
+제품 코드·테스트·workflow·Analysis 설정·실제 runtime.env·DB·AWS는 변경하지 않는다.
+실제 영상·개인 경로·계정·image URI·credential·Case 접근 식별정보는 추가 공개하지 않는다.
+약 1시간 입력 지원·최적 화질·OCR 정확도·전체 입력 성능·실제 신고 수용·실제 rollback rehearsal·
+최종 Package READY·장기 공개 gate 및 RT-14 전체 완료는 미확정/후속으로 유지한다.
+
+직접 정적 검증: 7개 허용 파일만 변경, `.env.example`의 실제 값 차이는 Incident HEIGHT·CRF뿐이며
+나머지 키·값 불변, Runtime Log의 HEAD byte prefix와 과거 실험 파일 전체 bytes 보존,
+추가/변경 상대 링크·anchor 10개 및 추가 diff의 비공개정보 패턴·육안 검사,
+신규 문서 공백 검사와 `git diff --check`를 통과했다. 이는 전역 secret audit나 운영 재검증이 아니다.
+
+독립 읽기 전용 reviewer는 최신 변경 7개 파일과 위 검증 문단을 확인하고 수정이 필요한 지적 없음으로
+판정했다. reviewer의 검증도 문서·설정 정적 검사이며 운영 결과나 영상 decode의 독립 재현이 아니다.
+동일 branch/HEAD, index 비어 있음, 전체 변경 미스테이징·미커밋 상태로 종료한다.
