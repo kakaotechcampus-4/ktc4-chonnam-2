@@ -4912,3 +4912,14 @@ source local HTTPS 403을 외부 공개 HTTP 200/public smoke PASS로 쓰지 않
 외부 공개 HTTP 200, 복원 DB의 정상 Worker job, 두 번째 배포·rollback rehearsal,
 운영 Recording profile·길이·byte 한도, 오프호스트 보관 정책·승인된 RPO/RTO,
 최종 Package READY·장기 공개 gate와 RT-14 전체 완료는 남겨 둔다.
+
+<a id="recording-geocoder-operator-smoke-20261101"></a>
+
+### 2026-11-01 — Mock GPS 기반 Kakao 실호출 운영자 결과 기록
+
+운영자가 로컬에서 기존 Mock GPS 관찰값과 Kakao adapter로 실제 주소 변환을
+1회 실행해 성공 출력을 공유했다. 상세 결과·앞선 구문 오류·대역 검사와 실호출의
+구분은 [Recording adapter 후속 기록](../modules/recording/kakao-geocoder.md#operator-live-geocoder-20261101)에 둔다.
+실제 영상 GPS 추출·EC2 배선·Case/Web 주소 표시는 이번 시험에서 NOT_RUN이다.
+기존 두 문서에 후속 기록만 추가하며 제품·설정 변경이나 API 재호출은 하지 않았다.
+키·좌표·주소 원문을 추가하지 않고 staging·commit·push·외부 게시는 수행하지 않는다.
