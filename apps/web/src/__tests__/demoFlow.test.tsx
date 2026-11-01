@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 function start(caseKey: string) {
-  const r = render(<DemoFlow />)
+  const r = render(<DemoFlow casePicker />)
   fireEvent.change(r.container.querySelector('select')!, { target: { value: caseKey } })
   fireEvent.change(r.container.querySelector('input[type=file]')!, {
     target: { files: [new File([''], 'a.mp4', { type: 'video/mp4' })] },
@@ -34,6 +34,12 @@ function start(caseKey: string) {
   }
   return { ...r, text, wait, answer }
 }
+
+it('시연 경우 고르기 상자는 서비스 화면에 없고 casePicker일 때만 보인다', () => {
+  expect(render(<DemoFlow />).container.textContent).not.toContain('시연할 경우')
+  cleanup()
+  expect(render(<DemoFlow casePicker />).container.textContent).toContain('시연할 경우')
+})
 
 it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하위 화면은 「<」로 돌아온다', () => {
   const { text, wait, getByText, container } = start('main')
