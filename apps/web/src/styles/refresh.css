@@ -750,6 +750,10 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 
 /* 동영상 — 미리보기 자리(왼쪽)와 다운로드·상태·다른 후보(오른쪽) */
 .res-video { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; }
+/* 좁은 화면에서는 미리보기가 480px를 먼저 차지해 오른쪽 칸이 밖으로 밀린다 — 위아래로 쌓는다 */
+@media (max-width: 960px) {
+  .res-video { grid-template-columns: minmax(0, 1fr); }
+}
 .res-frame {
   aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   padding: 0 16px; border-radius: var(--rs-r-media); background: var(--rs-fill); color: var(--rs-sub); font-size: 15px; text-align: center;
