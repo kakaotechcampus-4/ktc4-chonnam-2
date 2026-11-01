@@ -29,6 +29,7 @@
 | 전체 데이터 관계·cardinality·저장 후보를 볼 때 | `architecture/erd-draft.md` (Logical ERD) | Runtime의 실제 queue/index/FK 세부 |
 | DB Queue · claim · retry · lease/heartbeat · JobExecution/Usage persistence를 구현할 때 | `runtime/runtime-tech-spec.md` + 관련 Final Contract + Logical ERD | `runtime/ops-spec.md`의 배포 운영 상세 |
 | 배포 · logging · monitoring · health · storage/retention · capacity · CI/CD를 다룰 때 | `runtime/ops-spec.md` | domain 알고리즘·품질 threshold |
+| 환경변수·배포 설정 이름, GitHub Secrets/Variables, 무엇이 공개 가능한지 | `management/environment-and-deployment-config.md` | 실행 절차는 그 문서 §7의 runbook으로 |
 | 누가 무엇을 맡는지 | `management/ownership.md` | — |
 | 모듈 경계 밖 운영 결정(승인 경로·리뷰 담당) | `management/cross-cutting-decisions.md` | `archive/management/`의 안건지 |
 | 배포 전 점검 | `management/pre-deploy-security-review.md` · `management/tool-trajectory-review.md` | — |

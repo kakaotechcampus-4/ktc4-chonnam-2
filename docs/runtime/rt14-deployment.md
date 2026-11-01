@@ -196,7 +196,7 @@ GITHUB_ENV/output/artifact에 저장하지 않는다. 기대 account/정확한 r
 
 | 위치 | 이름 | 내용 |
 | --- | --- | --- |
-| Variable | `AWS_ACCOUNT_ID` | 실계정과 대조한 값; 출력 수집 제한+마스킹 |
+| Variable | `AWS_ACCOUNT_ID` | 실계정과 대조한 값; 출력 수집 제한+마스킹. **2026-10-31부터 Secret**([공개 배포 Notes §2](rt14-public-deployment.md#2-운영자-입력과-host-ingress-준비)) |
 | Variable | `RT14_AWS_REGION` | 자료상 허용 region `ap-northeast-2`; 누락/다른 값은 거부 |
 | Variable | `RT14_EXECUTION_ENABLED` | Owner/인프라 확인 완료 전 미설정; 승인 후 `true` |
 | Variable | `RT14_ECR_REPOSITORY` | 승인된 기존 repository 이름 |

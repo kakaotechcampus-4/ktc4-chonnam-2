@@ -79,17 +79,17 @@ schema 호환성 판단은 [backup/restore Notes](./rt13b-backup-restore.md)를 
 
 ### Recording: 명시적 encoding이 필요한 두 그룹
 
-| 실제 키 | 필요 여부·코드 기본값 | 용도·허용값 | 대표값/secret |
+| 실제 키 | 필요 여부·코드 기본값 | 용도·허용값 | baseline/secret |
 | --- | --- | --- | --- |
-| `DAESINGO_RECORDING_ANALYSIS_PROFILE_REF` | Analysis 6개 함께 필요, 없음 | 분석 profile 식별자(공백 아닌 문자열); height/preset/CRF/두 한도와 함께 관리 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_ANALYSIS_HEIGHT` | 위 그룹, 없음 | 양의 짝수, 출력 높이 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_ANALYSIS_PRESET` | 위 그룹, 없음 | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | **미확정**, 비secret |
-| `DAESINGO_RECORDING_ANALYSIS_CRF` | 위 그룹, 없음 | 정수 `0..51` | **미확정**, 비secret |
-| `DAESINGO_RECORDING_ANALYSIS_MAX_BYTES` | 위 그룹, 없음 | 양의 정수 **bytes**, `size <= limit` 허용; 누적 span 및 최종 MP4 전체 크기 각각 검사 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS` | 위 그룹, 없음 | 양의 정수 **milliseconds**, `duration <= limit` 허용; 요청 범위의 길이를 encode 전 검사 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_HEIGHT` | Incident 3개 함께 필요, 없음 | 양의 짝수, 판독·신고 영상의 바탕인 IncidentClip 높이 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_PRESET` | 위 그룹, 없음 | Analysis와 같은 preset 허용 집합 | **미확정**, 비secret |
-| `DAESINGO_RECORDING_INCIDENT_CRF` | 위 그룹, 없음 | 정수 `0..51` | **미확정**, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_PROFILE_REF` | Analysis 6개 함께 필요, 없음 | 분석 profile 식별자(공백 아닌 문자열); height/preset/CRF/두 한도와 함께 관리 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_HEIGHT` | 위 그룹, 없음 | 양의 짝수, 출력 높이 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_PRESET` | 위 그룹, 없음 | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | baseline v1, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_CRF` | 위 그룹, 없음 | 정수 `0..51` | baseline v1, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_MAX_BYTES` | 위 그룹, 없음 | 양의 정수 **bytes**, `size <= limit` 허용; 누적 span 및 최종 MP4 전체 크기 각각 검사 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS` | 위 그룹, 없음 | 양의 정수 **milliseconds**, `duration <= limit` 허용; 요청 범위의 길이를 encode 전 검사 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_HEIGHT` | Incident 3개 함께 필요, 없음 | 양의 짝수, 판독·신고 영상의 바탕인 IncidentClip 높이 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_PRESET` | 위 그룹, 없음 | Analysis와 같은 preset 허용 집합 | baseline v1, 비secret |
+| `DAESINGO_RECORDING_INCIDENT_CRF` | 위 그룹, 없음 | 정수 `0..51` | baseline v1, 비secret |
 | `DAESINGO_RECORDING_FILENAME_OFFSET` | 선택, 없음 | 파일명 시각 관찰의 명시적 `±HH:MM`; 예 `+09:00`은 사용 파일의 실제 offset일 때만 선택 | 팀 대표값 미확정, 비secret |
 
 근거: `recording/factory.py`, `materialization.AnalysisProfile`, `time_sources.py`.
@@ -99,11 +99,12 @@ schema 호환성 판단은 [backup/restore Notes](./rt13b-backup-restore.md)를 
 과거 #460 댓글의 “Coarse/Fine 등록 후 실행 실패” 설명을 현재 동작으로 복사하지 않는다.
 `FILENAME_OFFSET`은 필수 encoding 키가 아니며 Readout 화면시각 timezone과 별개다.
 
-**대표 profile 미확정**: [#460 임시 실행값](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6495668489)의
-Analysis `480 / veryfast / 23`, Incident `240 / veryfast / 23`은 운영 권장값이 아니다.
-테스트에서 쓰는 작은 출력값도 품질·성능 합의가 아니다. Recording Owner가 Runtime 머신에서
-분석 정확도/번호판·화면시각 가독성/신고 export 품질, 저장 bytes, 준비·처리시간을 함께 측정해
-두 profile과 식별자를 정해야 한다. 그 전에는 사용자가 검증할 profile을 명시적으로 선택해야 한다.
+**초기 배포 baseline v1**: 9개 키의 값·근거·한계는
+[환경·배포 설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이
+repo 원문이다([#460 Recording Owner 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740)).
+baseline은 AWS E2E 재현 기준이며 최적 운영값이 아니다. 테스트에서 쓰는 작은 출력값도 품질·성능 합의가 아니다.
+분석 정확도/번호판·화면시각 가독성/신고 export 품질, 저장 bytes, 준비·처리시간 실측으로
+값을 바꿀 때는 새 profile 식별자와 근거를 함께 남긴다.
 
 ### Search Coarse/Fine과 Intent
 
@@ -358,7 +359,7 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 | 사전/변환 중 거부 | Owner 합의: 명시적 prepared-media byte 한도 및 별도 지원 길이를 정하고, 변환 전/누적·최종 byte 검사로 DB write 전 중단 |
 | 오류 전달 합의 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`, Case는 재시도 없는 “분석 범위가 너무 김” notice 방향 |
 | 현재 구현 여부 | #452: 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. 운영값 확정 및 Case notice 구현은 별도 pending; [구현 경계](../modules/recording/analysis-source-limits.md) |
-| 지원 길이/bytes/encoding | **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
+| 지원 길이/bytes/encoding | 초기 배포 baseline v1은 4분·48 MiB([설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)). 약 1시간 입력 지원과 운영 최적 encoding은 **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
 | Search 상한 | 코드 inline media `40 MiB`, request `56 MiB`; Recording 저장 상한과 다른 단계, runtime env knob 아님 |
 | 시간 예산 | Case 요청 시점 + Search `150초` + 큐 여유 `30초` 유지 합의. Recording 준비/큐는 Case 대기에 포함되며 Search RunDeadline은 Search 호출부터 시작 |
 | 재측정 | Runtime 머신에서 준비·큐·Search를 나눠 측정한 뒤 Case 대기 기준 판단. 범위 분할은 MVP 밖 #168 |

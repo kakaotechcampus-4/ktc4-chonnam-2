@@ -49,6 +49,7 @@ revision·전체 파일 SHA-256 manifest를 검사한다. `releases/<SHA>/web`�
 | 입력 | 공급·보관 |
 | --- | --- |
 | `RT14_PUBLIC_HOSTNAME` | 운영자가 소유/관리하는 bare DDNS hostname. repo Variable과 Caddy service 환경에 동일하게 공급 |
+| `RT14_E2E_ALLOWED_IP` (host 전용) | 2026-10-31 제한적 acceptance의 허용 CIDR 목록. 위 hostname과 함께 Caddy `EnvironmentFile`에 두고 host Caddyfile의 `remote_ip` matcher가 읽는다(그 밖은 403). **repo `deploy/Caddyfile`에는 이 matcher와 64 MiB body 제한이 없다.** allowlist가 있는 동안 GitHub-hosted runner의 외부 smoke는 403으로 실패한다. 구조는 [설정 명세 §4.7](../management/environment-and-deployment-config.md#47-public-ingress-caddy--ddns) |
 | `RT14_REVISION`, `RT14_CONFIG_ID` | 승인 SHA, immutable config ID. 기존 workflow Variable |
 | `RT14_IMAGE`, `RT14_INSTANCE_ID` | 기존 workflow Secret. 전체 값/ARN/IP는 공개 기록 금지 |
 | account/region/ECR repository | account는 Secret `AWS_ACCOUNT_ID`(2026-10-31 Variable에서 변경, Ops §2-1), region · ECR repository는 Variable. 실제 identity 대조 |

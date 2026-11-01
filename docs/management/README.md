@@ -9,6 +9,7 @@
 - `pre-deploy-security-review.md` — 배포 전 보안·개인정보 검수표 (담당 Owner · 확인일 · PASS/WARN/BLOCK)
 - `tool-trajectory-review.md` — 결과가 아니라 **경로**가 맞았는지 판정하는 절차 (목데이터 통합 1회 + 데모 직전 1회)
 - `cross-cutting-decisions.md` — 모듈 경계 밖 운영 책임 11건의 결정 기록
+- [`environment-and-deployment-config.md`](environment-and-deployment-config.md) — 로컬·AWS 실행/배포 설정 이름, GitHub Secrets/Variables, host·policy 구조, Recording baseline v1. 공개 가능한 명세만 두고 실제 팀 값·Secret 위치는 팀 Notion
 
 ## 회의 안건지의 수명
 
