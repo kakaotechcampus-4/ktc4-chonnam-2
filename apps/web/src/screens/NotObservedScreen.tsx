@@ -21,6 +21,8 @@ export function NotObservedScreen(props: {
   canRun?: (action: Action) => boolean
   /** 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, 여기로 고친 설명을 보낸다 */
   onEditHint?: (description: string) => void
+  /** 후보 미리보기 이미지 주소(API 모드) */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
   const r = props.restyled
@@ -64,7 +66,7 @@ export function NotObservedScreen(props: {
       </div>
       {others > 0 && props.onSelect && (
         <div className={r ? 'rs notobs-cands' : undefined}>
-          <CandidatesScreen view={props.view} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" />
+          <CandidatesScreen view={props.view} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" frameSrc={props.frameSrc} />
         </div>
       )}
     </div>
