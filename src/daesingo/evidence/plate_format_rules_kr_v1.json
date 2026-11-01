@@ -1,0 +1,196 @@
+{
+  "rule_ref": "plate-format/kr-v1",
+  "supersedes_rule_ref": null,
+  "semantics": "ADR-EVIDENCE-006 — a review signal, never a VALID/INVALID gate. A match explains the structure only; it does not prove the plate was read correctly.",
+  "basis": {
+    "notice": "국토교통부고시 제2025-121호 「자동차 등록번호판 등의 기준에 관한 고시」 (시행 2025-03-15)",
+    "researched_on": "2026-09-19",
+    "research": "docs/modules/evidence/research/대한민국 자동차 등록번호판 형식 및 분류기호 조사.md (PR #88)",
+    "experiment": "docs/modules/evidence/experiments/plate-format-rules-2026-09-19/ (PR #91 — AI Hub OCR labels 90,000)",
+    "pending_notice": {
+      "notice": "국토교통부고시 제2025-676호",
+      "effective_on": "2026-11-28",
+      "action": "Compare after it takes effect and add a new revision file; do not edit this revision in place."
+    }
+  },
+  "normalization": {
+    "unicode": "NFC",
+    "strip_pattern": "\\s",
+    "note": "Applied to the checked copy only; the stored value is never rewritten. Whitespace only, as core-user-flow.md §12, web (#513) and readout do. PR #91 E-0 also removed '-', '.', '·' to absorb human label notation; those stay and lead to review."
+  },
+  "symbol_sets": {
+    "use_private": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 비사업용 (PR #88 §4.1)",
+      "symbols": ["가", "나", "다", "라", "마",
+                  "거", "너", "더", "러", "머", "버", "서", "어", "저",
+                  "고", "노", "도", "로", "모", "보", "소", "오", "조",
+                  "구", "누", "두", "루", "무", "부", "수", "우", "주"]
+    },
+    "use_business": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 자동차운수사업용 일반용 (PR #88 §4.2)",
+      "symbols": ["바", "사", "아", "자", "배"]
+    },
+    "use_rental": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 대여사업용 (PR #88 §4.3)",
+      "symbols": ["허", "하", "호"]
+    },
+    "use_parcel": {
+      "provenance": "OFFICIAL",
+      "source": "택배용 통칭. 고시상 use_business의 일부다 (PR #91 §5-1)",
+      "symbols": ["배"]
+    },
+    "use_motorcycle": {
+      "provenance": "OFFICIAL",
+      "source": "제2025-121호 개정문 별표 13·14·15 이륜자동차 용도기호 (PR #88 §8)",
+      "symbols": ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하",
+                  "거", "너", "더", "러", "머", "버", "서", "어", "저", "처", "커", "터", "퍼", "허"]
+    },
+    "use_military": {
+      "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+      "source": "AI Hub 정답지 관측 16건 — 자동차 등록번호판 고시 범위 밖 (PR #91 §5-3)",
+      "symbols": ["국", "합", "육", "해", "공"]
+    },
+    "regions": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제6조 관할관청 기호 17개 (PR #88 §5)",
+      "symbols": ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원",
+                  "충북", "충남", "전북", "전남", "경북", "경남", "제주"]
+    },
+    "diplomatic_prefixes": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 외교용 기호 (PR #88 §4.4)",
+      "symbols": ["외교", "영사", "준외", "준영", "국기", "대표", "협정"]
+    }
+  },
+  "class_bands": {
+    "three_digit": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 차종별 분류기호 (PR #88 §3)",
+      "bands": [
+        {"from": 100, "to": 699, "vehicle_class": "PASSENGER"},
+        {"from": 700, "to": 799, "vehicle_class": "VAN"},
+        {"from": 800, "to": 979, "vehicle_class": "TRUCK"},
+        {"from": 980, "to": 997, "vehicle_class": "SPECIAL"},
+        {"from": 998, "to": 999, "vehicle_class": "EMERGENCY"}
+      ]
+    },
+    "two_digit": {
+      "provenance": "OFFICIAL",
+      "source": "고시 제5조제1항 단서 2자리 분류기호 (PR #88 §3)",
+      "bands": [
+        {"from": 1, "to": 69, "vehicle_class": "PASSENGER"},
+        {"from": 70, "to": 79, "vehicle_class": "VAN"},
+        {"from": 80, "to": 97, "vehicle_class": "TRUCK"},
+        {"from": 98, "to": 99, "vehicle_class": "SPECIAL"}
+      ]
+    }
+  },
+  "profiles": [
+    {
+      "id": "CONSTR_BIZ",
+      "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+      "source": "건설기계 영업용 등록번호표 — 건설기계관리법 소관, AI Hub 관측 58건 (PR #91 §5-3)",
+      "pattern": "영(?P<region>[가-힣]{2})(?P<head>\\d{2})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"region": ["regions"], "head": {"range": [1, 27]}, "serial": {"range": [1, 9999]}},
+      "consistency": [
+        {"code": "plate.consistency.constr_serial_band_mismatch", "when": {"serial_below": 5001}},
+        {"code": "plate.consistency.outside_notice_scope"}
+      ]
+    },
+    {
+      "id": "REGION",
+      "provenance": "OFFICIAL",
+      "source": "관할기호 + 2자리 분류기호 (고시 제5조·제6조, PR #88 §5·§6)",
+      "pattern": "(?P<region>[가-힣]{2})(?P<head>\\d{2})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"region": ["regions"], "use": ["use_private", "use_business", "use_rental"],
+                 "head": {"range": [1, 99]}, "serial": {"range": [1, 9999]}},
+      "variants": [
+        {"id": "REGION_PARCEL", "use_in": "use_parcel"},
+        {"id": "REGION_BIZ", "use_in": "use_business"},
+        {"id": "REGION_RENT", "use_in": "use_rental"},
+        {"id": "REGION_PRIVATE"}
+      ]
+    },
+    {
+      "id": "REGION_LEGACY1",
+      "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+      "source": "구형 1자리 관할기호판(1973~1995 폐지 체계) — AI Hub 관측 9건 (PR #91 §5-3)",
+      "pattern": "(?P<region>[가-힣]{2})(?P<head>\\d)(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"region": ["regions"], "use": ["use_private", "use_business", "use_rental"],
+                 "serial": {"range": [1, 9999]}},
+      "consistency": [
+        {"code": "plate.consistency.legacy_scheme"}
+      ]
+    },
+    {
+      "id": "MOTO",
+      "provenance": "OFFICIAL",
+      "source": "이륜자동차 관할기호 + 시·군·구 + 용도기호 (PR #88 §8)",
+      "pattern": "(?P<region>[가-힣]{2})(?P<district>[가-힣]{1,4})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"region": ["regions"], "use": ["use_motorcycle"], "serial": {"range": [1, 9999]}},
+      "coverage": {
+        "complete": false,
+        "reason": "시·군·구 기호 목록이 없어 그 자리를 검사하지 못한다(PR #91 §7-4). 제2025-121호 신형 이륜차 체계는 등재하지 않았다(PR #91 §5-2). ADR-EVIDENCE-006 §4-7 review 경로."
+      }
+    },
+    {
+      "id": "NAT3",
+      "provenance": "OFFICIAL",
+      "source": "전국형 3자리 분류기호 8자리 번호판 (고시 제5조제1항, PR #88 §3·§7)",
+      "pattern": "(?P<head>\\d{3})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"use": ["use_private", "use_business", "use_rental"],
+                 "head": {"bands": "three_digit"}, "serial": {"range": [1, 9999]}},
+      "variants": [
+        {"id": "NAT3_BIZ", "use_in": "use_business"},
+        {"id": "NAT3_RENT", "use_in": "use_rental"},
+        {"id": "NAT3_PRIVATE"}
+      ],
+      "consistency": [
+        {"code": "plate.consistency.biz_with_3digit_band", "when": {"use_in": "use_business"}},
+        {"code": "plate.consistency.rent_band_mismatch",
+         "when": {"use_in": "use_rental", "class_not_in": ["PASSENGER", "VAN"]}},
+        {"code": "plate.consistency.emergency_band", "when": {"class_in": ["EMERGENCY"]}}
+      ]
+    },
+    {
+      "id": "MIL",
+      "provenance": "OBSERVED_OUTSIDE_NOTICE_SCOPE",
+      "source": "군용 번호판 — AI Hub 관측 16건 (PR #91 §5-3)",
+      "pattern": "(?P<head>\\d{2})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "select_when": {"use_in": "use_military"},
+      "checks": {},
+      "consistency": [
+        {"code": "plate.consistency.outside_notice_scope"}
+      ]
+    },
+    {
+      "id": "NAT2",
+      "provenance": "OFFICIAL",
+      "source": "전국형 2자리 분류기호 7자리 번호판 (고시 제5조제1항 단서, PR #88 §3·§7)",
+      "pattern": "(?P<head>\\d{2})(?P<use>[가-힣])(?P<serial>\\d{4})",
+      "checks": {"use": ["use_private", "use_business", "use_rental"],
+                 "head": {"range": [1, 99]}, "serial": {"range": [1, 9999]}},
+      "variants": [
+        {"id": "NAT2_PARCEL", "use_in": "use_parcel"},
+        {"id": "NAT2_BIZ", "use_in": "use_business"},
+        {"id": "NAT2_RENT", "use_in": "use_rental"},
+        {"id": "NAT2_PRIVATE"}
+      ]
+    },
+    {
+      "id": "DIPLO",
+      "provenance": "OFFICIAL",
+      "source": "외교용 번호판 (고시 제5조제1항, PR #88 §4.4)",
+      "pattern": "(?P<prefix>[가-힣]{2})(?P<head>\\d{3})(?P<serial>\\d{3})",
+      "select_when": {"prefix_in": "diplomatic_prefixes"},
+      "checks": {},
+      "coverage": {
+        "complete": false,
+        "reason": "AI Hub 관측 0건이라 형식을 데이터로 검증하지 못했다(PR #91 §5-2). ADR-EVIDENCE-006 §4-7 review 경로."
+      }
+    }
+  ]
+}

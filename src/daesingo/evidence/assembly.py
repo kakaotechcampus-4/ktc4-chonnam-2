@@ -9,6 +9,7 @@ from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .corrections import correction_heads
 from .disposition import NOT_ASSEMBLED, classify_visual_evidence
 from .errors import VisualEventNotAssembled
+from .plate_format import assess_plate_format
 from .policy import EVIDENCE_POLICY_REF, GENERIC_VIOLATION_EXPRESSION, event_policy
 
 _TIME_LABELS = {
@@ -207,6 +208,8 @@ def _independent_facts(
         value = observation.get("value")
         if not plate_readout.get("abstained") and observation.get("status") == "OK" and value:
             require(isinstance(value, str), "an accepted plate value must be a string")
+            # ADR-EVIDENCE-006: the format check only asks for review. The observed value is
+            # kept as read — a fragment such as `바5215` stays, with needs_review=true.
             facts["vehicle_number"] = _evidence_value(
                 value,
                 source_kind="readout.plate_ocr",
@@ -214,6 +217,7 @@ def _independent_facts(
                 observability="OBSERVED",
                 label_key="plate.source.plate_ocr",
                 support_refs=[plate_ref],
+                needs_review=assess_plate_format(value).review_required,
             )
 
     location = _location(case_id=case_id, location_hint=location_hint, gps_observation=gps_observation)
