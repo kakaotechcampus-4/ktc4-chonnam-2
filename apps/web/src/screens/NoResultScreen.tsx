@@ -8,7 +8,9 @@ import { SituationInput } from './UploadScreen'
 export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   const { hints, manifest_summary } = props.view
   return (
-    <Panel title="말씀하신 장면을 찾지 못했어요.">
+    <Panel>
+      {/* 이 화면의 제목이다 — Panel 기본 제목(h3)이 아니라 h1으로 둔다(#509 #3) */}
+      <h1 className="panel-title">말씀하신 장면을 찾지 못했어요.</h1>
       <div className="kv-src">영상은 잘 받았어요. 설명을 조금 바꿔 주시면 다시 찾아볼게요.</div>
       <div className="kv kv-rows">
         <div className="kv-row">

@@ -110,6 +110,8 @@ it('실패 화면에는 도착하는 자동차가 없다', () => {
   wait()
   expect(container.querySelector('.rs.failed')).not.toBeNull()
   expect(container.querySelector('.res-bgcar')).toBeNull()
+  // 상태 문구가 화면 제목이다(#509 #3)
+  expect(container.querySelector('.rs.failed h1')!.textContent).toContain('영상을 살펴보다가 문제가 생겼어요')
 })
 
 it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 알리며 제출을 막는다', () => {
@@ -140,6 +142,7 @@ it('위반 미관찰: 후보 확인에서 멈추고 번호판 판독은 시작�
   expect(seen.has('후보 확인')).toBe(true)
   expect(seen.has('번호판 판독')).toBe(false)
   expect(text()).toContain('위반을 확인하지 못했어요')
+  expect(container.querySelector('.notobs h1')!.textContent).toContain('위반을 확인하지 못했어요')
 })
 
 it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한다', () => {
@@ -148,6 +151,7 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   expect(text()).toContain('말씀하신 장면을 찾지 못했어요')
+  expect([...container.querySelectorAll('main h1')].map((h) => h.textContent)).toContain('말씀하신 장면을 찾지 못했어요.')
   const box = container.querySelector('textarea')!
   fireEvent.change(box, { target: { value: '' } })
   fireEvent.keyDown(box, { key: 'Tab' })
