@@ -142,3 +142,9 @@ it('제목이 바뀌면 이전 제목이 잠깐 겹쳐 남고, 화면에 읽히�
   expect(r.container.querySelectorAll('h1')).toHaveLength(1)
   expect(r.container.querySelector('h1')!.textContent).toBe('장면 찾기')
 })
+
+it('경과 시간은 live 영역 안내에서 빠진다 (#509 #1)', () => {
+  const { container } = show(view({ file_intake: 'RUNNING' }))
+  expect(container.querySelector('.flow-head')!.getAttribute('aria-live')).toBe('polite')
+  expect(container.querySelector('.flow-elapsed')!.getAttribute('aria-live')).toBe('off')
+})
