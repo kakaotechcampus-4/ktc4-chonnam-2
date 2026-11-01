@@ -29,3 +29,14 @@ def test_worker_root_combines_search_and_clip_without_eager_db_or_provider():
     registry = module.compose_registry(engine=object(), startup=SimpleNamespace())
     for kind in ("INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"):
         assert registry.dispatch(ExecutionContext("e", "j", "c", kind, 1, "t")).failure_kind == "RUNTIME_UNREGISTERED_KIND"
+
+
+def test_stored_case_consumer_uses_validating_reader():
+    from daesingo.worker.case_composition import StoredCaseReflector, stored_case_store
+    reflector = StoredCaseReflector(storage_root="unused")
+    assert reflector.reader.assemble is not None
+    with pytest.raises(ValueError):
+        reflector.reader.assemble("INCIDENT_CLIP_BUILD", ({"incident_clip_ref": "clip", "preview_frame_ref": 1},))
+    facade = stored_case_store(object(), storage_root="unused")
+    # Construction remains lazy; no Recording/media capability was called.
+    assert facade.conn is not None

@@ -4923,3 +4923,21 @@ source local HTTPS 403을 외부 공개 HTTP 200/public smoke PASS로 쓰지 않
 실제 영상 GPS 추출·EC2 배선·Case/Web 주소 표시는 이번 시험에서 NOT_RUN이다.
 기존 두 문서에 후속 기록만 추가하며 제품·설정 변경이나 API 재호출은 하지 않았다.
 키·좌표·주소 원문을 추가하지 않고 staging·commit·push·외부 게시는 수행하지 않는다.
+
+### 2026-11-02 — #470·#523 A안 preview / Top-3 Runtime 독립 slice
+
+정철원(Runtime/Recording). 현재 브랜치 `codex/rt10b-preview-frames`, HEAD `204b85eb`에서
+기존 index/working tree가 비어 있음을 확인하고 작업했다. 최신 #470·#523 전체 댓글과 #525 Web Owner 리뷰,
+관련 계약·실제 코드를 대조했다. #470은 미병합이며 PR을 merge/cherry-pick하지 않았다.
+
+입력 detach/현재성 검증, handler의 Case 위치 함수 주입 경계, 문자열/null payload 검증과
+Worker ProducedReader 소비 경로를 구현했다. production의 Case helper/Top-3 selector/소비는 미연결이며
+테스트 대역을 연결하지 않았다. 직접 검증·원본 증거·전체 파일 목록·미해결 Owner 인터페이스와
+#525 준비 중 판정 확인 제안은 [Implementation Notes](rt10b-preview-frames.md)에 한 번만 기록한다.
+기존 [#470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470) 및
+[#523 합의 원본](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/523#issuecomment-6559417301),
+기술 결과 원본 링크는 Notes가 보존하며 여기 중복 복제하지 않는다.
+
+**IN_PROGRESS — 독립 구현과 실제 Case/Web 통합·배포 완료를 구분한다.**
+전체 pytest/mandatory MySQL 로컬 일괄 반복, 원격 CI dispatch, AWS/EC2/provider/배포/기존 서비스 중지는
+하지 않는다. staging·commit·push·PR·댓글 게시·merge도 하지 않는다.
