@@ -669,6 +669,13 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 /* 머리글 안내 띠는 차 자리(오른쪽 520px + 여백)까지 오지 않는다 — 선명하게 도착하는 차가 띠 뒤에 잘리지
    않고, 띠 안 버튼도 차에 가리지 않는다 */
 .res-head .res-notices { margin-right: 544px; }
+/* 좁은 화면(200% 확대 포함)에서는 차 자리를 비우지 않는다 — 띠가 눌려 본문이 넘치고 가로 스크롤이 생긴다(#509 #8).
+   차는 글자 뒤(z-index -1) · 흐린 상태라 띠와 겹쳐도 읽기와 누르기를 막지 않는다 */
+/* 도착 연기(.rs-puff)도 화면 오른쪽 밖으로 나가 가로 스크롤을 만들므로 차 상자 가로로 자른다 */
+@media (max-width: 960px) {
+  .res-head .res-notices { margin-right: 0; }
+  .res-bgcar { overflow-x: clip; }
+}
 .res-head { display: flex; flex-direction: column; gap: 12px; }
 .res-head .state-context { margin: 0; }
 .res-title { margin: 0; font-size: var(--rs-h1); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }
