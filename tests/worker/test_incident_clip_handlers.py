@@ -14,7 +14,7 @@ from daesingo.recording import RecordingCapabilityError
 
 
 def dependencies(*, error=None, cancel=None, load_error=None, metadata=None, owns=True, close_error=None, source_error=None,
-                 requested_range=None):
+                 requested_range=None, frames=None):
     module = import_module("daesingo.worker.incident_clip_handlers")
     context = ExecutionContext("exec", "clip", "case", "INCIDENT_CLIP_BUILD", 1, "trace")
     calls = []
@@ -62,7 +62,7 @@ def dependencies(*, error=None, cancel=None, load_error=None, metadata=None, own
             calls.append("close")
             checkpoint("close")
             if close_error: raise close_error
-    registry = module.incident_clip_registry(load=load, service_factory=service)
+    registry = module.incident_clip_registry(load=load, service_factory=service, **({"frames": frames} if frames else {}))
     return registry, context, calls
 
 
@@ -184,3 +184,34 @@ def test_absent_capability_is_unregistered_without_loading():
     def load(ctx): pytest.fail("unconfigured kind loaded input")
     registry = module.incident_clip_registry(load=load)
     assert registry.dispatch(ExecutionContext("e", "j", "c", "INCIDENT_CLIP_BUILD", 1, "t")).failure_kind == "RUNTIME_UNREGISTERED_KIND"
+
+
+def test_frame_issuance_is_after_build_before_close_and_payload_is_validated():
+    seen = []
+    def frames(ctx, data, clip, recording):
+        seen.append(clip.incident_clip_ref)
+        return {"preview_frame_ref": "frame", "candidate_frame_refs": {"candidate": "frame", "b": None}}
+    registry, context, calls = dependencies(frames=frames)
+    result = registry.dispatch(context)
+    assert result.status == "SUCCEEDED" and seen == ["clip-ref"]
+    assert result.objects[0].payload == {"incident_clip_ref": "clip-ref", "preview_frame_ref": "frame",
+                                        "candidate_frame_refs": {"candidate": "frame", "b": None}}
+    assert calls[-2:] == ["build", "close"]
+
+
+@pytest.mark.parametrize("mode", ["db", "cancel", "malformed"])
+def test_frame_errors_do_not_leave_clip_success(mode):
+    def frames(ctx, *args):
+        if mode == "cancel":
+            ctx.cancel_signal.request()
+            ctx.checkpoint()
+        if mode == "db": raise OperationalError("private", {}, Exception("db"))
+        return {"preview_frame_ref": {"frame_ref": "invalid"}}
+    registry, ctx, calls = dependencies(frames=frames)
+    if mode == "cancel":
+        with pytest.raises(CancellationRequested): registry.dispatch(ctx)
+    else:
+        result = registry.dispatch(ctx)
+        assert result.status == "FAILED" and result.failure_kind == "RUNTIME_HANDLER_ERROR"
+        assert result.objects == ()
+    assert calls[-1] == "close"
