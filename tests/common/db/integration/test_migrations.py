@@ -33,7 +33,7 @@ def tables(conn):
 
 
 def expected_tables():
-    return {"cases", "job_records", "correction_records", "analysis_scopes", "case_alembic_version", "runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_alembic_version"}
+    return {"cases", "job_records", "correction_records", "analysis_scopes", "case_alembic_version", "runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_media_chunk", "recording_alembic_version"}
 
 
 @contextmanager
@@ -83,7 +83,7 @@ def test_case_direct_url_paths_and_percent_encoding(mysql_schema_url, monkeypatc
         cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     command.upgrade(cfg, "head")
     with observe(mysql_schema_url) as conn:
-        assert tables(conn) == expected_tables() - {"runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_alembic_version"}
+        assert tables(conn) == expected_tables() - {"runtime_alembic_version", "job_execution", "job_exhaustion_notice", "produced_objects", "usage_inflight", "usage_record", "recording_entry", "recording_media_chunk", "recording_alembic_version"}
         assert conn.exec_driver_sql("SELECT version_num FROM case_alembic_version").scalar_one() == "case_0001"
 
 

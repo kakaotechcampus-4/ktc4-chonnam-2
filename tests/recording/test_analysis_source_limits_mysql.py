@@ -34,7 +34,7 @@ def test_analysis_limit_insert_and_caller_transaction(db, tmp_path, mode):
     inserts = []
     def observe(conn, cursor, statement, params, context, many):
         if statement.lstrip().upper().startswith("INSERT"):
-            inserts.append(True)
+            inserts.append(statement.split()[2])
     sa.event.listen(engine, "before_cursor_execute", observe)
     try:
         with engine.connect() as conn:
@@ -50,7 +50,8 @@ def test_analysis_limit_insert_and_caller_transaction(db, tmp_path, mode):
                     assert conn.exec_driver_sql("SHOW GLOBAL STATUS LIKE 'Aborted_clients'").one()[1] == aborted
                 else:
                     source = service.prepare_analysis_source_from_resolution(resolution, "test")
-                    assert inserts == [True]
+                    assert inserts.count("recording_entry") == 3  # media, manifest, case link
+                    assert inserts.count("recording_media_chunk") >= 1
                     assert service.open_analysis_source(source.analysis_source_ref).stream.read() == prepared.content
                 assert conn.in_transaction() and conn.get_transaction().is_active
                 if mode == "rollback":
@@ -60,6 +61,7 @@ def test_analysis_limit_insert_and_caller_transaction(db, tmp_path, mode):
         with engine.connect() as conn:
             assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry WHERE kind='analysis_source'").scalar_one() == (mode == "commit")
             assert conn.exec_driver_sql("SELECT COUNT(*) FROM recording_entry WHERE kind='prepared_content'").scalar_one() == (mode == "commit")
+            assert (conn.exec_driver_sql("SELECT COUNT(*) FROM recording_media_chunk").scalar_one() > 0) == (mode == "commit")
             if mode == "commit":
                 with RecordingService(adapter(conn, root)) as restarted:
                     with restarted.open_analysis_source(source.analysis_source_ref).stream as stream:

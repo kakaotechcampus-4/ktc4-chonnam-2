@@ -150,7 +150,13 @@ def test_migration_inventory_uses_actual_single_heads():
     m = module()
     heads = m.migration_heads()
     assert set(heads) == {"case", "runtime", "recording"}
-    assert heads["recording"] == "recording_0001"
+    assert heads["recording"] == "recording_0002"
+
+
+def test_dump_keeps_chunk_rows_in_separate_insert_commands():
+    script = module().remote_script("backup")
+    assert "--hex-blob" in script
+    assert "--skip-extended-insert" in script
 
 
 @pytest.mark.parametrize("objects", ["routines", "events"])

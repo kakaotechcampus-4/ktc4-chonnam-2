@@ -1,5 +1,5 @@
 """Snapshot/read and immutable publish transactions surround a DB-free export."""
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 from daesingo.common.db.transactions import run_worker_transaction
 from daesingo.common.config import RuntimeConfig
@@ -20,8 +20,13 @@ class ExportRecordingFactory:
     @contextmanager
     def __call__(self, data):
         def repository(conn):
-            return MySQLRecordingRepository(conn, storage_root=self.storage_root)
-        snapshot = self.transaction(lambda conn: export_snapshot(repository(conn), data.case_id, data.request))
+            return MySQLRecordingRepository(conn, storage_root=self.storage_root, temp_root=self.temp_root)
+        def read_snapshot(conn):
+            context = self.media.detached_temp() if self.media is not None else nullcontext(self.temp_root)
+            with context as temp_root:
+                source = MySQLRecordingRepository(conn, storage_root=self.storage_root, temp_root=temp_root)
+                return export_snapshot(source, data.case_id, data.request)
+        snapshot = self.transaction(read_snapshot)
         materializer = self.media.materializer(LocalExportMaterializer) if self.media else LocalExportMaterializer(temp_root=self.temp_root)
         with RecordingService(snapshot, export_materializer=materializer, case_id=data.case_id) as recording:
             yield recording

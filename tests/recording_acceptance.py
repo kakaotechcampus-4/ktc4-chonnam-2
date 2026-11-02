@@ -1,6 +1,11 @@
 """Independent REC-1(a) inventory; never imported by the production checker."""
 
 RECORDING_PARAMETERS = tuple(("recording", scenario, parameter) for scenario, parameter in (
+    *(("chunked_media", parameter) for parameter in (
+        "bounded", "detached", "duplicate", "replay", "metadata", "commit_unknown", "search_consumer",
+        "atomic_chunk", "atomic_manifest", "atomic_case_link",
+        "corrupt_missing", "corrupt_changed", "corrupt_extra", "corrupt_order", "corrupt_oversize", "corrupt_manifest",
+        "concurrent_equal", "concurrent_conflict", "legacy_analysis_source", "legacy_incident_clip")),
     ("restore", "identities"), ("restore", "local_source"), ("restore", "timeline_span"),
     ("transaction", "rollback"), ("transaction", "visibility"),
     ("transaction", "failed_registration"), ("transaction", "failed_frame"),
