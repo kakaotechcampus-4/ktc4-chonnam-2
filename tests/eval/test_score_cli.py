@@ -233,6 +233,7 @@ def test_prediction_ref_sha_matches_the_file_as_committed(tmp_path, monkeypatch)
 
 def test_committed_results_point_at_the_committed_predictions():
     """커밋된 산출물끼리도 지문이 맞아야 한다 — 위 테스트는 tmp 안에서만 본다."""
+    import fnmatch
     import glob
     from eval import paths as p
     checked = 0
@@ -241,6 +242,9 @@ def test_committed_results_point_at_the_committed_predictions():
             result = json.load(f)
         ref = result.get("meta", {}).get("prediction_ref")
         if not ref:
+            continue
+        # AI-Hub 실험의 원본 예측은 커밋하지 않는다(.gitignore, #533) — 공유 드라이브 zip에 있다.
+        if fnmatch.fnmatch(ref["path"], "eval/predictions/aihub_*.json"):
             continue
         target = os.path.join(p.REPO_ROOT, ref["path"])
         assert manifests_io.sha256_file(target) == ref["sha256"], path

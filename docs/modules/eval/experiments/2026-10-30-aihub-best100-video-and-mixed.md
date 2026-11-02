@@ -92,7 +92,7 @@ uv run python -m eval.tools.evaluate_aihub_mixed run --run-id <새_id>
 uv run python -m eval.tools.evaluate_aihub_mixed run --fine --run-id <다른_새_id>
 ```
 
-`build`는 고정 manifest가 이미 있으면 덮어쓰지 않는다. 재생성할 때는 새 버전·경로로 만든다. 산출물은 `eval/manifests/a_aihub_best100_{all,val}/`, `eval/manifests/aihub_mixed_pilot_mp2/samples.json`, `eval/predictions/aihub_best100_{all,val}_s3_20261030.json`, `eval/results/aihub_best100_{all,val}_s3_20261030.bg1.cl3-c3.json`, `eval/predictions/aihub_mixed_pilot_mp2_s3_20261030.json`, `eval/results/aihub_mixed_pilot_mp2_s3_20261030.mp2.json`, `eval/predictions/aihub_mixed_pilot_mp2_s3_fine_20261030.json`, `eval/results/aihub_mixed_pilot_mp2_s3_fine_20261030.mp2-fine.json`이다. 혼합 MP4 16개는 `eval/datasets/aihub_mixed_pilot/`에만 있고 커밋하지 않는다.
+`build`는 고정 manifest가 이미 있으면 덮어쓰지 않는다. 재생성할 때는 새 버전·경로로 만든다. 산출물은 `eval/manifests/a_aihub_best100_{all,val}/`, `eval/manifests/aihub_mixed_pilot_mp2/samples.json`, `eval/results/aihub_best100_{all,val}_s3_20261030.bg1.cl3-c3.json`, `eval/results/aihub_mixed_pilot_mp2_s3_20261030.mp2.json`, `eval/results/aihub_mixed_pilot_mp2_s3_fine_20261030.mp2-fine.json`이다. 같은 이름의 runner 원본(`eval/predictions/aihub_*.json`)은 커밋하지 않고 공유 드라이브 `daesingo_eval_aihub_predictions_20261102.zip`에 둔다. 혼합 MP4 16개는 `eval/datasets/aihub_mixed_pilot/`에만 있고 커밋하지 않는다.
 
 ## 6. 확장 혼합 세트: 100쌍
 
@@ -129,4 +129,4 @@ uv run python -m eval.tools.evaluate_aihub_mixed run --dataset aihub_mixed_100_v
 
 전체 200개 중 191개는 `SUCCEEDED`, 9개는 `COARSE_SPAN_OUT_OF_SOURCE`가 포함된 `PARTIAL`이었다. 후보별 Fine `ProviderPayloadError`도 2건 있었고 해당 후보는 검증 일치에 넣지 않았다. 이 오류와 부분 처리 사례를 제외하지 않은 전체 100쌍 기준 수치다. 총 모델 호출 기록 491건, 기록 비용 **$9.03**이다. 원본 Training 16개가 포함되어 있고 영상 자체도 장면을 통째로 끼워 넣은 합성이므로, 이 수치는 실제 위반 탐지 성능이나 실시간 오탐률이 아니다. 특히 정상 배경 29개에서 검증된 후보가 나와 배포 전 실제 영상의 오탐 확인이 필요하다.
 
-원본 결과는 `eval/predictions/aihub_mixed_100_v1_s3_fine_20261030.json`과 `eval/results/aihub_mixed_100_v1_s3_fine_20261030.mixed-fine.json`에 있다.
+채점 결과는 `eval/results/aihub_mixed_100_v1_s3_fine_20261030.mixed-fine.json`에 있다. runner 원본은 공유 드라이브 zip에 있다.
