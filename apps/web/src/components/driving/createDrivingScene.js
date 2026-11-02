@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { nextDrivingFrame } from './frameTiming';
 import { GRID, signalAspect, signalPhase, pedestrianAspect, crossingPose, crossingOccupied } from './rules';
 // Scene state is local to this instance. No analysis commands, timers or progress live here.
 export function createDrivingScene(root, onUnavailable) {
@@ -582,7 +583,7 @@ export function createDrivingScene(root, onUnavailable) {
         const steerButtons = [...root.querySelectorAll('[data-steer]')], gearButtons = [...root.querySelectorAll('[data-gear]')], motionButton = root.querySelector('.motion'), fullscreenButton = root.querySelector('.fullscreen'), message = root.querySelector('.drive-message'), media = root.querySelector('.media');
         const reduced = matchMedia('(prefers-reduced-motion: reduce)');
         const state = { anchor: { x: 0, z: 0 }, dir: 0, progress: 36, lane: 5.25, targetLane: 5.25, speed: 7, queued: 0, turn: null, gear: 'D', parking: 'none', parkGoal: 0, entered: false, waitingSignal: false, waitingTraffic: false, stopDwell: 0, rightReleased: false, clock: 0, paused: reduced.matches, completed: false, turns: 0 };
-        let active = !root.hidden, visible = true, last = 0, wheelAngle = 0;
+        let active = !root.hidden, visible = true, last = 0, deadline = 0, wheelAngle = 0;
         const vectors = [{ x: 0, z: -1 }, { x: 1, z: 0 }, { x: 0, z: 1 }, { x: -1, z: 0 }];
         const right = h => ({ x: -h.z, z: h.x });
         const point = (a, h, n, r, l) => ({ x: a.x + h.x * n + r.x * l, z: a.z + h.z * n + r.z * l });
@@ -836,10 +837,10 @@ export function createDrivingScene(root, onUnavailable) {
         observer.observe(canvas);
         cleanups.push(() => observer.disconnect());
         function animate(now) { frame = 0; if (disposed || !active || !visible || document.hidden || state.paused || state.completed)
-            return; if (!last)
-            last = now; const dt = Math.min((now - last) / 1000, .08); if (dt >= 1 / 30) {
-            last = now;
-            tick(dt);
+            return; const timing = nextDrivingFrame(now, last, deadline); if (timing) {
+            last = timing.last;
+            deadline = timing.deadline;
+            tick(timing.dt);
             draw();
         } schedule(); }
         function schedule() { if (!disposed && active && !frame && visible && !document.hidden && !state.paused && !state.completed)
