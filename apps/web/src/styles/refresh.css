@@ -937,3 +937,10 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .flow-search-fx { display: none; }
   .flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: visible; }
 }
+
+/* 위치 칸 지도(LocationMap) — 카카오 지도. 아래 한 줄로 어느 위치인지(GPS · 내 위치) 말한다 */
+.res-map { margin: 12px 0 0; }
+.res-map-canvas { width: 100%; height: 240px; border-radius: var(--rs-r-media); overflow: hidden; background: var(--rs-fill); }
+.res-map-note { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-map-empty { margin-top: 12px; }
+.res-map-empty .rs-btn { gap: 6px; }

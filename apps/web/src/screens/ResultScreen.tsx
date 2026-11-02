@@ -10,6 +10,7 @@ import {
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
+import { LocationMap } from '../components/LocationMap'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
 import { FrameSlot } from '../components/FrameSlot'
@@ -405,6 +406,7 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
+            {ev && <LocationMap coord={ev.location_display.coord} />}
           </Item>
 
           <Item label="제목">
