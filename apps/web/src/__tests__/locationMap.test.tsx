@@ -28,6 +28,8 @@ const maps = {
     constructor(_el: HTMLElement, o: { center: LatLng }) {
       created.push({ center: [o.center.lat, o.center.lng] })
     }
+    relayout() {}
+    setCenter() {}
   },
   Marker: class {},
   load: (cb: () => void) => cb(),
@@ -35,6 +37,13 @@ const maps = {
 
 const geo = (impl: (ok: PositionCallback, fail: PositionErrorCallback) => void) =>
   Object.defineProperty(navigator, 'geolocation', { value: { getCurrentPosition: vi.fn(impl) }, configurable: true })
+
+// jsdom에는 ResizeObserver가 없다
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  disconnect() {}
+  unobserve() {}
+} as unknown as typeof ResizeObserver
 
 beforeEach(async () => {
   created.length = 0

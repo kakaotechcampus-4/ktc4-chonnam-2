@@ -25,17 +25,25 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null 
   useEffect(() => {
     if (!key || !spot || !el.current) return
     let live = true
+    let resize: ResizeObserver | undefined
     loadKakaoMaps(key).then(
       (maps) => {
         if (!live || !el.current) return
         const center = new maps.LatLng(spot.lat, spot.lon)
         const map = new maps.Map(el.current, { center, level: 3 })
         new maps.Marker({ position: center, map })
+        // 칸 크기가 만든 뒤에 바뀌면(화면이 자리 잡는 중 등) 지도는 옛 크기 기준이라 핀이 가운데서 벗어난다
+        resize = new ResizeObserver(() => {
+          map.relayout()
+          map.setCenter(center)
+        })
+        resize.observe(el.current)
       },
       () => live && setBroken(true),
     )
     return () => {
       live = false
+      resize?.disconnect()
     }
   }, [key, spot?.lat, spot?.lon]) // eslint-disable-line react-hooks/exhaustive-deps -- 좌표가 바뀔 때만
 

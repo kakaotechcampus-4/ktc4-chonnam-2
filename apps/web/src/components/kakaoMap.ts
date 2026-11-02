@@ -7,9 +7,14 @@ export interface KakaoLatLng {
   getLng(): number
 }
 
+export interface KakaoMap {
+  relayout(): void
+  setCenter(latlng: KakaoLatLng): void
+}
+
 export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng
-  Map: new (el: HTMLElement, options: { center: KakaoLatLng; level: number }) => unknown
+  Map: new (el: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMap
   Marker: new (options: { position: KakaoLatLng; map: unknown }) => unknown
   load(callback: () => void): void
 }
