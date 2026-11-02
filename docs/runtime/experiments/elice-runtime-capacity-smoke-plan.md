@@ -134,7 +134,7 @@ P2-0c: 격리 experimental override로 현 single-source 구조의 최초 병목
 | production | `deploy/ec2.py:production_compose`: exact image/digest, build/depends_on 제거, external DB/media volumes, awslogs non-blocking + local cache, policy restart, API loopback. Caddy host·release-bound Web·EIP/DDNS/TLS 별도 |
 | Worker | B-W1/B-W2: process 1, execution 1. 실행별 Recording/Search 서비스와 UsageSink, heartbeat/sweep 별도 thread. 내부 concurrency env 없음 |
 | tools | 현재 Dockerfile의 Python 3.12·동일 build FFmpeg/ffprobe 8.1·사전 탑재 Paddle/OCR·Linux amd64. RT-14보다 새 코드는 새 artifact 검증 필요 |
-| Recording 입력 | 위 설정 SoT의 baseline v1: Analysis `aws-e2e-v1 / 480 / veryfast / CRF23`, `50331648 bytes / 240000 ms`(48 MiB/4분), Incident `240 / veryfast / CRF23`. **현재 배포 안전값 snapshot**이며 코드 기본값/최적값·PM 승인 최종 제품 한도 아님. 0c는 별도 experimental config를 사용 |
+| Recording 입력 | 위 설정 SoT 기준 Analysis는 `aws-e2e-v1 / 480 / veryfast / CRF23`, `50331648 bytes / 240000 ms`(48 MiB/4분)이다. Incident `240 / veryfast / CRF23`은 **과거 baseline v1**이며, #529 반영 현재 적용값은 `720 / veryfast / CRF20`이다. Analysis 한도와 현재 Incident 적용값 모두 코드 기본값/최적값·PM 승인 최종 제품 한도가 아니며 실행 전 exact config/revision을 다시 확인한다. 0c는 별도 experimental config를 사용 |
 | lifecycle 입력 | [Baseline](../provisional-baseline-v0.1.md) B-Q*/B-L*/B-R*/B-D*/B-X1과 `common/config` 기본값 일치 확인. heartbeat 10s/lease 60s/sweep 15s, STALE retry 1회·첫 backoff 5s는 Provisional 입력. 실제 override와 시계 상태 기록 |
 | config/secret | 보호 runtime 파일→bootstrap의 immutable snapshot. Worker는 `GEMINI_API_KEY` 소비. Search/eval alias와 다름. Parameter Store/보호 host 파일·immutable config/recreate 절차는 [실행환경](../local-runtime-environment.md)·[공개 배포 Notes](../rt14-public-deployment.md) 소유 |
 
