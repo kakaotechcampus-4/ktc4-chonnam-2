@@ -2,6 +2,10 @@
 
 대신고의 `common/runtime` 실행 인프라 문서 진입점이다.
 
+2026-11-02 현재 구현과 과거 구현 전 snapshot의 구분은 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md),
+RT-14 이후 capacity·#452 결합 검증의 남은 질문은 [갱신한 P2 계획](./experiments/elice-runtime-capacity-smoke-plan.md)을 참조한다.
+아래 2026-10-02 상태 절은 당시 snapshot이며 현재 Queue/Worker 구현의 부재를 뜻하지 않는다.
+
 P-6 orphan publish 후속 #445의 구현·안전성·직접 검증·남은 Owner/CI 확인은
 [Implementation Notes](issue445-orphan-publish.md)에 기록한다. 기존 RT-12(a)/(b)
 이력의 publish 제외 범위는 소급 변경하지 않는다.

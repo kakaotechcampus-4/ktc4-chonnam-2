@@ -466,6 +466,11 @@ deterministic Integration
 
 우선 다음 조건에서 확인한다. P2 계획은 [`experiments/elice-runtime-capacity-smoke-plan.md`](./experiments/elice-runtime-capacity-smoke-plan.md)에 있다.
 
+2026-11-02 현재 구현/증거와의 대조는 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md)를 참조한다.
+RT-14의 제한적 AWS Real E2E·운영자 제공 격리 복원 결과와 아직 Planned인 P2를 구분한다.
+P2에는 #452의 안전 거부 regression/지원 범위 결합 측정을 포함하며, 실험별 선행조건·계측 공백은 그 계획이 추적한다.
+Deployment rollback·off-host/RPO·RTO·Package READY 후속을 모든 P2의 일괄 gate로 만들지 않는다.
+
 ```text
 P2 Runtime Capacity Smoke
 Worker concurrency = 1

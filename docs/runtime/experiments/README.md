@@ -23,7 +23,7 @@ runtime experiments
 - api + worker + mysql이 같은 baseline host에서 함께 동작할 때 자원 경합이 있는가
 - ffmpeg materialization과 provider request construction의 peak working set은 얼마인가
 - Worker concurrency를 늘릴 여유가 실제로 있는가
-- process-local reuse가 restart/다중 Worker에서도 충분한가
+- 실행 내 reuse·반복 job의 재준비·durable ref 읽기 비용이 restart/다중 Worker에서 어떻게 달라지는가
 - failure/crash 후 temp asset과 실행 상태가 회수되는가
 - long-duration Real E2E가 현재 storage/capacity 가정을 깨는가
 
@@ -82,10 +82,15 @@ Plan 단계에서는 다음을 하지 않는다.
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
 | [RT-14 AWS 배포·Real E2E 2026-10-31](./2026-10-31-rt14-aws-real-e2e.md) | Result | 실제 EC2 배포·public smoke·7 job 실행과 최종 Package READY의 입력 조건을 구분한 단회 acceptance |
-| [Elice Runtime Capacity Smoke Plan](./elice-runtime-capacity-smoke-plan.md) | Planned | #95 P0/P1 경로를 baseline EC2에서 실행할 때 CPU/RAM/disk/queue/reuse가 안전한가 |
+| [Runtime Capacity Smoke Plan — P2 (Elice ML API)](./elice-runtime-capacity-smoke-plan.md) | Planned · 2026-11-02 develop 정합성 감사 반영, 미실행 | 현재 Runtime의 자원·시간·cleanup/recovery 및 #452의 안전 거부/지원 범위 결합 검증. RT-14 단회 acceptance와 구분 |
 | [Pre-implementation Spike 2026-10-03](./pre-implementation-spike-2026-10-03.md) | Result | workflow §5 A Decision의 기술 semantics — claim lock(RR/RC) · conditional UPDATE 경합 · Compose secret file · shared volume rename. capacity 실험이 아니다 |
 
-P2 결과가 현재 가정을 크게 바꾸면 그 결과를 바탕으로 P3 30분~1시간 Runtime E2E plan을 별도로 만든다. P3 문서를 선작성해 가정을 고정하지 않는다.
+[P2 수정 전 감사](../reviews/runtime-p2-plan-audit-2026-11-02.md)는 기존 A~F 판정·현재 코드 경로·계측 공백을 기록한다.
+RT-14 Result의 §14~§15와 Recovery §10에는 재부팅·DB/media 격리 복원의 운영자 제공 후속 결과가 있다.
+이를 P2 capacity 완료 또는 RT-14 전체 완료로 확대하지 않는다.
+
+P3 30분~1시간 Runtime E2E는 P2 결과와 Recording/Case/Search의 장시간 지원 방식·한도 결정 뒤 검토한다.
+현재 4분 AnalysisSource 설정을 임의로 늘려 실행하지 않으며 P3 문서를 선작성해 가정을 고정하지 않는다.
 
 ## Routing
 
