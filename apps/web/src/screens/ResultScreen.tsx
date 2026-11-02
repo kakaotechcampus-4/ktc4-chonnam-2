@@ -135,8 +135,9 @@ export function ResultScreen(props: {
   const shownLocation = field('location', () =>
     ev ? { value: ev.location_display.value, state: ev.location_display.info_state, source: sourceLabel(ev.location_display.source_label_key) } : null,
   )
+  // 상태·출처는 서버가 정한 값 그대로 둔다 — 값만 바꾸고 「이 화면에서만 바꿨어요」로 알린다
   const location: Field | null =
-    edits.location !== undefined ? { value: edits.location, state: 'INFO_USER_CONFIRMED', source: null } : shownLocation
+    edits.location !== undefined && shownLocation ? { ...shownLocation, value: edits.location } : shownLocation
   const content = field('violation_expression', () =>
     ev ? { value: ev.violation_display.label, state: ev.violation_display.info_state, source: sourceLabel(ev.violation_display.source_label_key) } : null,
   )

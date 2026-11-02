@@ -653,10 +653,16 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   expect(text()).toContain('끼어들기 신고')
   expect(text()).toContain('이 화면에서만 바꿨어요')
 
+  // 위치는 값만 바뀌고 상태 배지·출처는 서버 값 그대로다
+  const locationRow = () => getByText('위치 선택').closest('.res-item')!
+  const badgeAndSource = () =>
+    [...locationRow().querySelectorAll('.res-val-line > :not(.res-val), .res-src')].map((e) => e.textContent)
+  const before = badgeAndSource()
   fireEvent.click(getByText('위치 수정하기'))
   fireEvent.change(getByLabelText('위치'), { target: { value: '상무대로 교차로' } })
   fireEvent.click(getByText('저장'))
-  expect(text()).toContain('상무대로 교차로')
+  expect(locationRow().querySelector('.res-val')!.textContent).toBe('상무대로 교차로')
+  expect(badgeAndSource()).toEqual(before)
 
   // 취소(Esc)하면 그대로다
   fireEvent.click(getByText('신고 내용 수정하기'))
