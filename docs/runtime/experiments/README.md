@@ -81,6 +81,7 @@ Plan 단계에서는 다음을 하지 않는다.
 
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
+| [#544 이후 청크 저장 규모 재검증 2026-11-03](./2026-11-03-chunked-capacity-recheck.md) | Result · 합성38,359,627B DB 대조 PASS | 최초 disk/RAM 중단·harness 실패 보존. packet64MiB에서 저장·분할 조회·rollback 개선 확인, 20분/큰 복원 미검증 |
 | [Incident 720p 설정 적용·실영상 E2E 2026-11-02](./2026-11-02-incident720-config-real-e2e.md) | Result (운영자 제공 증거·로컬 metadata/hash 재확인) | EC2 5초 단독 측정, config 적용, 변경 후 실영상 결과와 비통제 시간 비교의 한계 |
 | [RT-14 AWS 배포·Real E2E 2026-10-31](./2026-10-31-rt14-aws-real-e2e.md) | Result | 실제 EC2 배포·public smoke·7 job 실행과 최종 Package READY의 입력 조건을 구분한 단회 acceptance |
 | [Runtime Capacity Smoke Plan — P2 (Elice ML API)](./elice-runtime-capacity-smoke-plan.md) | Planned · 2026-11-02 구현/Product 정합성 반영, 미실행 | 0a 현 baseline rejection 회귀 / 0b 현 baseline 안 characterization / 0c 격리 experimental override로 최초 병목·최소 20분 logical timeline 가능성 판단. RT-14 단회 acceptance와 구분 |
