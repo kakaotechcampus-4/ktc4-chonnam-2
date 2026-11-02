@@ -10,7 +10,7 @@ import { FailedScreen } from './FailedScreen'
 import { FlowScreen } from './FlowScreen'
 import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
-import { ResultScreen } from './ResultScreen'
+import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
@@ -41,6 +41,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const { view } = state
   const cid = state.caseId
   const frameSrc = cid ? (ref: string) => api.frameUrl(cid, ref) : undefined
+  // 제목·신고 내용·위치를 화면에서만 고친 값. 다른 case · 다른 후보의 초안으로 넘기지 않는다
+  const draftKey = `${cid}/${view?.candidates.find((c) => c.selected)?.candidate_id}`
+  const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
+  const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
   const [subs, setSubs] = useState<Sub[]>([])
   const [startedAt, setStartedAt] = useState(() => Date.now())
@@ -278,6 +282,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
             onTime={() => open('time')}
+            edits={edits}
+            onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
             onAction={onAction}
             canRun={canRun}

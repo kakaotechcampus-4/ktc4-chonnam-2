@@ -471,3 +471,18 @@ it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 �
   await findByText('시각 수정하기')
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
+
+it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「일자 수정하기」도 같은 시각 입력 화면을 연다', async () => {
+  const { m, api } = setup({ get: RESULT })
+  const { findByText, getByLabelText, getByText, container } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('제목 수정하기'))
+  fireEvent.change(getByLabelText('제목'), { target: { value: '끼어들기 신고' } })
+  fireEvent.click(getByText('저장'))
+  expect(container.textContent).toContain('끼어들기 신고')
+  expect(container.textContent).toContain('이 화면에서만 바꿨어요')
+  fireEvent.click(getByText('일자 수정하기'))
+  expect((getByLabelText('날짜') as HTMLInputElement).value).toBe('2026-08-24')
+  fireEvent.click(getByText('취소'))
+  await findByText('끼어들기 신고')
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})

@@ -585,3 +585,54 @@ it('위반 미관찰에는 다시 찾기 동작이 없어 「처음으로」로 
   fireEvent.click(getByText('처음으로'))
   expect(container.querySelector('.rs.upload')).not.toBeNull()
 })
+
+it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치면 화면에만 반영되고, 하위 화면을 다녀와도 남는다', () => {
+  const { text, wait, answer, getByText, getByLabelText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  answer()
+  // 안전신문고 첫 화면에서 신고 양식까지 가는 순서
+  expect(text()).toContain('안전신문고에서는 이렇게 들어가세요')
+  expect([...container.querySelectorAll('.res-steps li')].map((l) => l.textContent)).toEqual([
+    '위쪽 메뉴에서 「신고하기」를 누르세요',
+    '「자동차·교통위반」을 누르세요',
+  ])
+  expect(text()).not.toContain('이 화면에서만 바꿨어요')
+
+  fireEvent.click(getByText('제목 수정하기'))
+  const title = getByLabelText('제목') as HTMLInputElement
+  expect(title.value).toBe('진로변경 위반 차량 신고')
+  fireEvent.change(title, { target: { value: '   ' } })
+  expect((getByText('저장') as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.change(title, { target: { value: '끼어들기 신고' } })
+  fireEvent.click(getByText('저장'))
+  expect(text()).toContain('끼어들기 신고')
+  expect(text()).toContain('이 화면에서만 바꿨어요')
+
+  fireEvent.click(getByText('위치 수정하기'))
+  fireEvent.change(getByLabelText('위치'), { target: { value: '상무대로 교차로' } })
+  fireEvent.click(getByText('저장'))
+  expect(text()).toContain('상무대로 교차로')
+
+  // 취소(Esc)하면 그대로다
+  fireEvent.click(getByText('신고 내용 수정하기'))
+  fireEvent.change(getByLabelText('신고 내용'), { target: { value: '다른 내용' } })
+  fireEvent.keyDown(getByLabelText('신고 내용'), { key: 'Escape' })
+  expect(text()).not.toContain('다른 내용')
+
+  // 일자·시간은 같은 시각 입력 화면으로 연다
+  fireEvent.click(getByText('일자 수정하기'))
+  expect(text()).toContain('발생 시각')
+  fireEvent.change(container.querySelector('input[type=date]')!, { target: { value: '2026-08-25' } })
+  fireEvent.change(container.querySelector('input[type=time]')!, { target: { value: '09:10:11' } })
+  fireEvent.click(getByText('저장'))
+  expect(text()).toContain('2026-08-25')
+  expect(text()).toContain('09:10:11')
+
+  fireEvent.click(getByText('어떻게 정했는지'))
+  fireEvent.click(container.querySelector('.sub-back')!)
+  expect(text()).toContain('끼어들기 신고')
+  expect(text()).toContain('상무대로 교차로')
+  expect(text()).toContain('09:10:11')
+})
