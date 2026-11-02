@@ -115,6 +115,8 @@ it('[분석 중단]은 STOP_ANALYSIS를 보내고, 중단 화면에서 [다시 �
   fireEvent.click(await findByText('분석 중단'))
   await findByText('분석을 중단했어요.')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 2, { kind: 'STOP_ANALYSIS', payload: {} })
+  // 중단 화면으로 바뀌면 그 제목에 초점이 간다(#509 #2)
+  expect(document.activeElement?.textContent).toBe('분석을 중단했어요.')
 
   m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 })) // 다시 찾으면 rev가 오른다
   fireEvent.click(getByText('다시 찾기'))

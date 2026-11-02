@@ -11,6 +11,7 @@ import { StoppedScreen } from './StoppedScreen'
 import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
 import { acceptView } from '../state/resultModel'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
+import { useScreenFocus } from './screenFocus'
 
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
@@ -384,6 +385,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   // 하위 화면은 맨 위에서 열고, 뒤로 오면 결과 화면을 보던 자리로 돌아간다.
   const [returnY, setReturnY] = useState<number[]>([])
   const open = (sub: Sub) => {
+    rememberOpener()
     setReturnY((y) => [...y, window.scrollY])
     setSubs((s) => [...s, sub])
     setArriving(false)
@@ -401,6 +403,8 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     if (window.scrollY !== y) window.scrollTo(0, y)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
   }, [screenKey])
+  const mainRef = useRef<HTMLElement>(null)
+  const rememberOpener = useScreenFocus(mainRef, screenKey, subs.length)
   // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비하고, 새 후보에 대한 응답을 새로 받는다
   // (core-user-flow §8-1 — 이전 응답을 복사하지 않는다).
   // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
@@ -430,7 +434,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main rs-page">
+      <main className="web-main rs-page" ref={mainRef}>
         {main.kind === 'upload' && (
           <>
             <UploadScreen

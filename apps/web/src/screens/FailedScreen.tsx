@@ -25,12 +25,12 @@ export function FailedScreen(props: {
   const others = props.onSelect ? props.view.candidates.filter((c) => !c.selected).length : 0
   return (
     <div className="rs rs-screen state-page failed">
-      <h1 className="state-context">신고자료</h1>
+      <p className="state-context">신고자료</p>
       <section className="state-card">
-        <h2 className="failed-head">
+        <h1 className="failed-head">
           <CircleAlert size={26} strokeWidth={1.8} aria-hidden />
           영상을 살펴보다가 문제가 생겼어요.
-        </h2>
+        </h1>
         {blocking.map((n) => (
           <p key={n.code} className="state-cause">
             {noticeMessage(n.message_key)}

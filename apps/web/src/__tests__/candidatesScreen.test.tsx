@@ -306,6 +306,8 @@ describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
       ['3', '25%', false],
       ['1', '50%', true],
     ])
+    // 기준 후보는 라벨에도 「지금 기준」으로 읽힌다(#509 #6)
+    expect(container.querySelector('.cand-axis')!.getAttribute('aria-label')).toContain('3번 2분 30초, 1번 5분 0초 (지금 기준)')
   })
 
   it('case가 rank를 주면 카드와 같은 rank로 번호를 단다', () => {

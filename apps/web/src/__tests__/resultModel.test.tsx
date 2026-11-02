@@ -67,7 +67,9 @@ describe('신고용 영상 상태', () => {
   it('결과 화면의 다운로드 버튼은 파일이 없으면 누를 수 없고 이유를 함께 읽힌다', () => {
     const r = render(<ResultScreen view={HAPPY} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
     const btn = r.getByText('신고용 영상 다운로드').closest('button')!
-    expect(btn.disabled).toBe(true)
+    // Tab으로 닿도록 disabled 대신 aria-disabled다(#509 #5)
+    expect(btn.getAttribute('aria-disabled')).toBe('true')
+    expect(btn.disabled).toBe(false)
     expect(document.getElementById(btn.getAttribute('aria-describedby')!)!.textContent).toContain('연결이 아직 준비되지 않았어요')
   })
 })
@@ -117,7 +119,7 @@ describe('신고용 영상 다운로드', () => {
 
   it('받을 주소가 없으면(시연) 막아 두고 이유를 말한다', () => {
     const r = show()
-    expect(button(r).disabled).toBe(true)
+    expect(button(r).getAttribute('aria-disabled')).toBe('true')
     expect(r.container.textContent).toContain('내려받는 연결이 아직 준비되지 않았어요')
   })
 
@@ -128,13 +130,13 @@ describe('신고용 영상 다운로드', () => {
     URL.revokeObjectURL = vi.fn()
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     const r = show('/cases/c1/assets/ref1')
-    expect(button(r).disabled).toBe(false)
+    expect(button(r).getAttribute('aria-disabled')).toBe('false')
     fireEvent.click(button(r))
     fireEvent.click(button(r)) // 받는 동안은 막혀 있어 한 번만 받는다
     await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/ref1')
-    expect(button(r).disabled).toBe(false)
+    expect(button(r).getAttribute('aria-disabled')).toBe('false')
   })
 
   it('서버가 못 준다고 하면 실패 안내로 바뀌고 버튼이 다시 막힌다. 다른 주소(다른 후보)면 다시 열린다', async () => {
@@ -142,9 +144,9 @@ describe('신고용 영상 다운로드', () => {
     const r = show('/cases/c1/assets/ref1')
     fireEvent.click(button(r))
     await r.findByText('신고용 영상을 받지 못했어요')
-    expect(button(r).disabled).toBe(true)
+    expect(button(r).getAttribute('aria-disabled')).toBe('true')
     r.rerender(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/ref2" />)
-    expect(button(r).disabled).toBe(false)
+    expect(button(r).getAttribute('aria-disabled')).toBe('false')
   })
 })
 

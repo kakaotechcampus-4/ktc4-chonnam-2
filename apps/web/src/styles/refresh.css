@@ -78,13 +78,13 @@ body:has(.rs-page) { background: #fff; }
   cursor: pointer;
   transition: background-color .3s var(--rs-ease), border-color .2s var(--rs-ease), color .3s var(--rs-ease), transform .12s var(--rs-ease);
 }
-.rs-btn:active:not(:disabled) { transform: scale(.98); }
+.rs-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(.98); }
 .rs-btn.pri { background: var(--rs-ink); color: #fff; }
 .rs-btn.pri:hover { background: #424245; }
 .rs-btn.sec { background: #fff; color: var(--rs-ink); border-color: var(--rs-line); }
 .rs-btn.sec:hover { border-color: var(--rs-ink); }
 .rs-btn.lg { min-height: 54px; padding: 0 32px; font-size: 17px; }
-.rs-btn:disabled, .rs-btn:disabled:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
+.rs-btn:disabled, .rs-btn:disabled:hover, .rs-btn[aria-disabled="true"], .rs-btn[aria-disabled="true"]:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
 
 /* ============================================================
    업로드 화면
@@ -332,8 +332,11 @@ body:has(.rs-page) { background: #fff; }
 .rs .field.situation::placeholder { color: var(--rs-faint); }
 .rs .field.situation:hover { border-color: var(--rs-line-strong); }
 /* 입력칸은 테두리 변화로만 포커스를 보인다 — 바깥 윤곽선을 겹치지 않는다 */
-.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: none; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
+/* outline을 투명으로 남긴다 — 강제 색상(고대비) 모드에서는 box-shadow가 지워지고 이 테두리가 보인다(#509 #9) */
+.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: 2px solid transparent; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
 .rs-hint { margin: 0; font-size: 14px; color: var(--rs-sub); }
+/* 상황 설명칸 아래 「예시 문장 넣기」 — Tab 대신 쓰는 명시적 버튼(#509 #4) */
+.rs-example { align-self: flex-start; margin: 8px 0 0; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--rs-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 .rs-actions { display: flex; justify-content: flex-end; margin-top: 32px; }
 
@@ -666,6 +669,13 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 /* 머리글 안내 띠는 차 자리(오른쪽 520px + 여백)까지 오지 않는다 — 선명하게 도착하는 차가 띠 뒤에 잘리지
    않고, 띠 안 버튼도 차에 가리지 않는다 */
 .res-head .res-notices { margin-right: 544px; }
+/* 좁은 화면(200% 확대 포함)에서는 차 자리를 비우지 않는다 — 띠가 눌려 본문이 넘치고 가로 스크롤이 생긴다(#509 #8).
+   차는 글자 뒤(z-index -1) · 흐린 상태라 띠와 겹쳐도 읽기와 누르기를 막지 않는다 */
+/* 도착 연기(.rs-puff)도 화면 오른쪽 밖으로 나가 가로 스크롤을 만들므로 차 상자 가로로 자른다 */
+@media (max-width: 960px) {
+  .res-head .res-notices { margin-right: 0; }
+  .res-bgcar { overflow-x: clip; }
+}
 .res-head { display: flex; flex-direction: column; gap: 12px; }
 .res-head .state-context { margin: 0; }
 .res-title { margin: 0; font-size: var(--rs-h1); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }
@@ -740,6 +750,10 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 
 /* 동영상 — 미리보기 자리(왼쪽)와 다운로드·상태·다른 후보(오른쪽) */
 .res-video { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; }
+/* 좁은 화면에서는 미리보기가 480px를 먼저 차지해 오른쪽 칸이 밖으로 밀린다 — 위아래로 쌓는다 */
+@media (max-width: 960px) {
+  .res-video { grid-template-columns: minmax(0, 1fr); }
+}
 .res-frame {
   aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   padding: 0 16px; border-radius: var(--rs-r-media); background: var(--rs-fill); color: var(--rs-sub); font-size: 15px; text-align: center;
@@ -825,7 +839,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   width: 100%; height: 64px; padding: 0 18px; border: 1px solid var(--rs-ink); border-radius: 14px; background: #fff;
   font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink);
 }
-.plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
+.plate-input:focus { outline: 2px solid transparent; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
 .plate-form-actions { display: flex; gap: 10px; }
 /* 설명 고치기(#410) — 업로드 화면의 입력 틀을 하위 화면에서 다시 쓴다 */
 .hint-page .rs-field { margin-top: 24px; }

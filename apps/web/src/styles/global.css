@@ -108,7 +108,8 @@ body {
   border-radius: var(--R); font-family: inherit; font-size: calc(17px * var(--font-scale));
   font-weight: 600; box-shadow: var(--sh-soft);
 }
-.field:focus, .field:focus-within { border-color: var(--green); box-shadow: 0 0 0 4px rgba(16, 147, 63, .09); outline: none; }
+/* outline은 투명으로 남긴다 — 강제 색상(고대비) 모드에서 초점 테두리로 보인다(#509 #9) */
+.field:focus, .field:focus-within { border-color: var(--green); box-shadow: 0 0 0 4px rgba(16, 147, 63, .09); outline: 2px solid transparent; }
 .field::placeholder { color: var(--muted-2); }
 
 /* ============================================================

@@ -36,9 +36,14 @@ export function NotObservedScreen(props: {
     <div className="stack">
       {/* 기존 모양일 때 감싸는 div는 display: contents라 .stack 간격이 그대로다 */}
       <div className={r ? 'rs rs-screen state-page notobs' : 'notobs-legacy'}>
-        <h1 className={r ? 'state-context' : 'page-title'}>신고자료</h1>
+        {/* 새 모양은 분석 중단 화면처럼 상태 문구가 h1이다(#509 #3). 기존 모양은 그대로 둔다 */}
+        {r ? <p className="state-context">신고자료</p> : <h1 className="page-title">신고자료</h1>}
         <section className={r ? 'state-card' : 'panel panel-p stack'}>
-          <h2 className={r ? 'state-head' : 'panel-t'}>{noticeMessage('notice.visual_event_not_observed')}</h2>
+          {r ? (
+            <h1 className="state-head">{noticeMessage('notice.visual_event_not_observed')}</h1>
+          ) : (
+            <h2 className="panel-t">{noticeMessage('notice.visual_event_not_observed')}</h2>
+          )}
           <p className={r ? 'state-body' : 'kv-src'}>
             영상은 정상적으로 확인했습니다.
             {others > 0 && ' 다른 장면이었다면 아래 후보 중에서 골라 주세요.'}

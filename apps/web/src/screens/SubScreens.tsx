@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
@@ -8,7 +8,7 @@ import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
 import { CandidatesScreen } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
-import { SituationInput } from './UploadScreen'
+import { ExampleButton, SituationInput } from './UploadScreen'
 
 // Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
 // 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
@@ -268,6 +268,8 @@ export function EditHint(props: {
 // 설명 입력 폼만 — 위반 미관찰에 다른 후보가 없으면 화면 안에 바로 둔다(#431)
 export function HintForm(props: { view: CaseView; onSearch: (description: string) => void; onHome: () => void }): JSX.Element {
   const [text, setText] = useState(props.view.description ?? '')
+  const id = useId()
+  const example = '아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요.'
   return (
     <form
       className="rs-group"
@@ -280,13 +282,18 @@ export function HintForm(props: { view: CaseView; onSearch: (description: string
         <span className="rs-label">어떤 상황이었나요?</span>
         <SituationInput
           label="어떤 상황이었나요?"
-          example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
+          example={example}
           rows={4}
           value={text}
           onChange={setText}
+          id={id}
+          describedBy={`${id}-hint`}
         />
-        <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
+        <span className="rs-hint" id={`${id}-hint`}>
+          시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.
+        </span>
       </label>
+      <ExampleButton example={example} value={text} onChange={setText} inputId={id} />
       <div className="rs-actions">
         {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
         <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
