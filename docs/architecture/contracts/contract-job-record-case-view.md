@@ -14,6 +14,8 @@
 
 **Related ADR:** `adr/adr-job-record-case-view.md` · `adr/adr-consistency-2026-09.md` §6 R-1·R-2 · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.1·§4.2·§4.3·§4.9 (v1.2 근거)
 
+> **`evidence.preview_ref` 원천 변경 (2026-10-29, [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446), 유소연) — 버전 유지 `case-view/v1.9`, 필드 · 타입 변경 없음.** 「선택 후보 `thumb_ref`와 항상 같다」를 「선택 후보 IncidentClip 준비 때 발급된 frame(위치는 case가 정하고 clip handler가 발급), 없으면 `thumb_ref`」로 바꾼다. Search 후보 `thumbnail_ref`는 계속 `null`이다. 상세 `decisions/evidence-preview-frame.md`.
+>
 > **notice 등재 (2026-10-30, [#297](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297) 후속, 서어진) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** `recording.incident_clip_build_failed`(ERROR · blocking · `actions:[]`)를 B§7 `notices[].code`에 등재한다 — 선택 후보의 IncidentClip 준비가 실패해 판독 · Package로 가지 못하는 상태. 이때 발주되지 않은 `plate_read` · `overlay_time_read`는 `RUNNING`이 아니라 `PENDING`이다. 상세 `docs/modules/case/decisions/incident-clip-observation-input.md` §6.
 >
 > **notice 등재 (2026-10-30, [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), 서어진) — 버전 유지 `case-view/v1.9`, 필드 변경 없음.** `recording.analysis_range_too_long`(ERROR · blocking · `actions:[]`)을 B§7 `notices[].code`에 등재한다 — 분석 범위가 상한을 넘어 탐색 전에 거부된 상태. `search.candidate_search_failed` 대신 붙는다. 상세 `docs/modules/case/decisions/long-analysis-range.md`.
@@ -273,7 +275,7 @@ json
 | evidence.*_display.source_label_key | string \| null | Y | `EvidenceValue.source.label_key`(사건시각은 `occurred_at.source.label_key`)를 화면 라벨 키로 노출. `location_display`에서는 대표값 `value`의 출처만 뜻한다. web은 이 키로 문구를 고르고 `kind` 문자열을 직접 해석하지 않는다 | **확정** (유소연·신유민 2026-09-06 · 2026-09-07) |
 | evidence.location_display.coord | `{lat, lon}` \| null | Y(키) | `EvidenceRecord.location.coord.value`를 대표값과 **별도로** 내려보낸다. 포맷은 web | **확정** (유소연·신유민·김준영 2026-09-07) |
 | evidence.location_display.search_keyword | string \| null | Y(키) | `EvidenceRecord.location.search_keyword.value`. 대표값으로 승격하지 않는다 | **확정** (2026-09-07) |
-| evidence.preview_ref | `FrameRef` \| null | Y(키) | **사건 대표 썸네일.** 선택된 후보의 `candidates[].thumb_ref`와 항상 같은 값이다. **번호판 프레임이 아니다** — 번호판 프레임은 `plate_preview_ref` | **확정** (2026-09-28, 이슈 #47 — 2026-09-07 유지 결정의 정의 행 추가) |
+| evidence.preview_ref | `FrameRef` \| null | Y(키) | **근거 장면** — 위반 장면 근처의 대표 frame. 선택 후보의 IncidentClip 준비 때 대표 시각(`representative_ms`) frame을 발급한 값이고(위치는 case가 정하고 `INCIDENT_CLIP_BUILD` handler가 발급한다), 발급 전 · 실패면 선택 후보 `candidates[].thumb_ref`다(실제 경로에서는 `null`). clip 준비 전에는 `null`일 수 있고 notice는 없다. **번호판 프레임이 아니다** — 번호판 프레임은 `plate_preview_ref` | **확정** (2026-09-28, 이슈 #47) · **원천 변경** (2026-10-29, #446 — `docs/modules/case/decisions/evidence-preview-frame.md`) |
 | evidence.plate_preview_ref | `FrameRef` \| null | Y(키) | 현재 번호판 값의 근거 `PlateReadout`의 `best_frame.frame_ref`. 근거 판독은 `EvidenceRecord.vehicle_number`의 `source.ref` → `support_refs` 순서로 처음 나오는 `kind=plate_readout` ref다 — case가 판독을 고르지 않고 evidence가 준 연결을 따른다. 재판독 뒤에는 재판독 결과의 프레임이다. 번호판 값이 없거나(판독 abstain) PlateReadout 근거가 없으면 `null`. `crop_ref`는 내리지 않는다(opaque identity, 조회 handle 아님). 여러 프레임 넘겨보기(`frame_results[]`)는 `[프로토타입]` 범위라 싣지 않는다 | **신규(v1.6)** (2026-09-28, 이슈 #47) |
 | evidence.review_needed | boolean | Y | 여섯 개 `*_display.needs_review`의 OR 집계(object-level). 파생 규칙 §7 | **확정** (2026-09-09, 유소연) |
 | requirements_evidence | object \| null | Y(키) | 현재 basis의 scope=`EVIDENCE` `RequirementReport` projection `{readiness, checks}`. 선택 규칙 §7. 미실행이면 `null` | **확정** (유소연 2026-09-07, B02 종결) |
