@@ -116,6 +116,8 @@ it('실패 화면에는 도착하는 자동차가 없다', () => {
   wait()
   expect(container.querySelector('.rs.failed')).not.toBeNull()
   expect(container.querySelector('.res-bgcar')).toBeNull()
+  // 상태 문구가 화면 제목이다(#509 #3)
+  expect(container.querySelector('.rs.failed h1')!.textContent).toContain('영상을 살펴보다가 문제가 생겼어요')
 })
 
 it('번호판 판독 실패: 진행은 끝까지 흐르고 결과 화면에서 알리며 제출을 막는다', () => {
@@ -146,6 +148,7 @@ it('위반 미관찰: 후보 확인에서 멈추고 번호판 판독은 시작�
   expect(seen.has('후보 확인')).toBe(true)
   expect(seen.has('번호판 판독')).toBe(false)
   expect(text()).toContain('위반을 확인하지 못했어요')
+  expect(container.querySelector('.notobs h1')!.textContent).toContain('위반을 확인하지 못했어요')
 })
 
 it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한다', () => {
@@ -154,9 +157,10 @@ it('결과 없음: 아래에서 다시 적고 다시 찾으면 새로 진행한�
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   expect(text()).toContain('말씀하신 장면을 찾지 못했어요')
+  expect([...container.querySelectorAll('main h1')].map((h) => h.textContent)).toContain('말씀하신 장면을 찾지 못했어요.')
   const box = container.querySelector('textarea')!
   fireEvent.change(box, { target: { value: '' } })
-  fireEvent.keyDown(box, { key: 'Tab' })
+  fireEvent.click(getByText('예시 문장 넣기'))
   expect(box.value).toContain('검은 승용차')
   fireEvent.click(getByText('다시 찾기'))
   expect(text()).toContain('경과 시간')
@@ -195,11 +199,17 @@ it('업로드 실패: 다시 선택하면 다시 올린다', () => {
   expect(text()).toContain('파일을 올리지 못했어요')
 })
 
-it('설명이 비어 있으면 Tab이 예시를 채우고, 「새 신고」는 처음 화면으로 돌아간다', () => {
-  const { container, getByText, text, wait, answer } = start('main')
+it('Tab은 예시를 채우지 않고, 「예시 문장 넣기」가 채운 뒤 칸으로 초점을 옮긴다. 「새 신고」는 처음 화면으로 돌아간다', () => {
+  const { container, getByText, queryByText, text, wait, answer } = start('main')
   const box = container.querySelector('textarea')!
-  fireEvent.keyDown(box, { key: 'Tab' })
+  // Tab은 초점 이동에만 쓴다(#509 #4). 안내는 칸에 연결돼 화면 낭독기가 읽는다
+  expect(fireEvent.keyDown(box, { key: 'Tab' })).toBe(true)
+  expect(box.value).toBe('')
+  expect(document.getElementById(box.getAttribute('aria-describedby')!)!.textContent).toContain('비워 두셔도')
+  fireEvent.click(getByText('예시 문장 넣기'))
   expect(box.value).toContain('흰색 SUV')
+  expect(document.activeElement).toBe(box)
+  expect(queryByText('예시 문장 넣기')).toBeNull()
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
@@ -215,7 +225,8 @@ it('상단 로고(대신고)를 누르면 진행 중이어도 첫 화면으로 �
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   expect(container.querySelector('.rs.flow')).not.toBeNull()
-  fireEvent.click(getByLabelText('대신고 첫 화면으로'))
+  // 이름은 보이는 글자(대신고 · 부제)로 시작한다(#509 #7)
+  fireEvent.click(getByLabelText('대신고 신고할 순간을 대신 찾아드립니다, 첫 화면으로'))
   expect(container.querySelector('.rs.flow')).toBeNull()
   expect(text()).toContain('블랙박스 영상을 올려주세요')
   expect(container.querySelector('textarea')!.value).toBe('')
@@ -351,7 +362,7 @@ it('업로드 일부 실패: 건너뛴 파일을 알리고 나머지로 계속�
   const { wait, getByText, text } = start('uploadPartial')
   wait()
   expect(text()).toContain('FILE_017.mp4')
-  expect((getByText('영상에서 찾아보기') as HTMLButtonElement).disabled).toBe(false)
+  expect(getByText('영상에서 찾아보기').getAttribute('aria-disabled')).toBe('false')
 })
 
 it('다른 후보를 고르면 「새 후보 기준으로」 다시 준비한다고 말한다', () => {
@@ -481,7 +492,7 @@ it('후보 A → B: A의 번호판·일시·장소·내용·검색어·영상·�
   expect(text()).toContain('신고용 영상이 아직 없어요')
   expect(container.querySelectorAll('button[aria-label$="복사"]')).toHaveLength(0)
   expect(text()).not.toContain('안전신문고로 이동')
-  expect((getByText('신고용 영상 다운로드').closest('button') as HTMLButtonElement).disabled).toBe(true)
+  expect(getByText('신고용 영상 다운로드').closest('button')!.getAttribute('aria-disabled')).toBe('true')
   // 사건 전체 값(기억 단서)은 그대로, 기준 후보는 2번
   fireEvent.click(getByText('다른 후보 영상 2'))
   expect(container.querySelector('.hint-recall')!.textContent).toContain('흰색 SUV')
@@ -584,4 +595,36 @@ it('위반 미관찰에는 다시 찾기 동작이 없어 「처음으로」로 
   expect(container.querySelector('.notobs .state-actions')).not.toBeNull()
   fireEvent.click(getByText('처음으로'))
   expect(container.querySelector('.rs.upload')).not.toBeNull()
+})
+
+it('화면이 바뀌면 새 화면 제목에 초점이 가고, 하위 화면에서 뒤로 오면 연 버튼으로 돌아간다 (#509 #2)', () => {
+  const { wait, getByText, container } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  // 진행 → 신고 상황 확인
+  expect(document.activeElement?.tagName).toBe('H1')
+  expect(document.activeElement?.textContent).toBe('신고 상황을 확인해 주세요.')
+  // 맞아요 → (진행) → 결과
+  fireEvent.click(getByText('맞아요'))
+  wait()
+  expect(document.activeElement?.textContent).toBe('신고자료가 준비됐어요.')
+  // 하위 화면은 자기 제목, 뒤로 오면 연 버튼
+  const opener = getByText('어떻게 정했는지').closest('button')!
+  opener.focus()
+  fireEvent.click(opener)
+  expect(document.activeElement?.textContent).toBe('어떻게 정했는지')
+  expect(document.activeElement?.closest('.sub')).not.toBeNull()
+  fireEvent.click(container.querySelector('.sub-back')!)
+  expect(document.activeElement?.tagName).toBe('BUTTON')
+  expect(document.activeElement?.textContent).toBe('어떻게 정했는지')
+})
+
+it('실패 화면으로 넘어가면 상태 문구 제목에 초점이 간다 (#509 #2)', () => {
+  const { wait, getByText } = start('searchFailed')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  expect(document.activeElement?.tagName).toBe('H1')
+  expect(document.activeElement?.textContent).toContain('영상을 살펴보다가 문제가 생겼어요')
 })
