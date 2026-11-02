@@ -40,10 +40,11 @@ export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   return (
     <SubPage title="다른 후보" onBack={props.onBack} className="cands-page">
-      <CandidatesScreen view={props.view} onSelect={props.onSelect} />
+      <CandidatesScreen view={props.view} onSelect={props.onSelect} frameSrc={props.frameSrc} />
     </SubPage>
   )
 }

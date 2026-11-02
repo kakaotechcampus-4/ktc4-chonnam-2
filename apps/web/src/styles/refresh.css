@@ -814,7 +814,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 .plate-frame.plate-crop { aspect-ratio: 3 / 1; }
 .res-frame, .plate-frame { overflow: hidden; }
-.res-frame > img, .plate-frame > img { width: 100%; height: 100%; object-fit: contain; }
+.res-frame > img, .plate-frame > img, .cand-th > img { width: 100%; height: 100%; object-fit: contain; }
 .plate-value { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 24px; border-top: 1px solid var(--rs-line); }
 .plate-value > .rs-btn { margin-top: 10px; }
 .plate-ai { margin: 0; font-size: 15px; color: var(--rs-sub); }

@@ -96,12 +96,12 @@ describe('CandidatesScreen — 나란히 비교(A-1)', () => {
     expect(cards.map((c) => c.classList.contains('sel'))).toEqual([false, true, false])
   })
 
-  it('썸네일 자리는 후보마다 비워 둔다 — 계약(A-5)이 열리기 전까지', () => {
+  it('이미지 주소가 없으면 썸네일 자리를 후보마다 둔다 — 도는 작업이 없으면 「없어요」 (#523)', () => {
     const { container } = render(
       <CandidatesScreen view={view([candidate({ candidate_id: 'c1' }), candidate({ candidate_id: 'c2' })])} />,
     )
     expect(container.querySelectorAll('.cand-th')).toHaveLength(2)
-    expect(container.textContent).toContain('미리보기 준비 중')
+    expect(container.textContent).toContain('미리보기가 없어요')
   })
 
   it('후보 1건에서도 깨지지 않는다 — relative_rebase 스냅샷 회귀', () => {
@@ -335,5 +335,36 @@ describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
     expect(render(<CandidatesScreen view={{ ...view(c), timeline_duration_ms: null }} />).container.querySelector('.cand-axis')).toBeNull()
     cleanup()
     expect(render(<CandidatesScreen view={view(c)} />).container.querySelector('.cand-axis')).toBeNull()
+  })
+})
+
+describe('후보 카드 미리보기 (#523)', () => {
+  const frameSrc = (ref: string) => `/frames/${ref}`
+  const imgs = (c: HTMLElement) => [...c.querySelectorAll<HTMLImageElement>('.cand-th img')].map((i) => [i.getAttribute('src'), i.alt])
+
+  it('thumb_ref가 있으면 그 장면을, 기준 후보는 thumb_ref가 없을 때 근거 장면을 그린다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', rank: 1, selected: true, thumb_ref: null }),
+        candidate({ candidate_id: 'b', rank: 2, thumb_ref: 'fr_b' }),
+        candidate({ candidate_id: 'c', rank: 3, thumb_ref: null }),
+      ]),
+      evidence: { ...view([]).evidence!, preview_ref: 'fr_ev' },
+      running_jobs: [],
+    } as CaseView
+    const { container } = render(<CandidatesScreen view={v} frameSrc={frameSrc} />)
+    expect(imgs(container)).toEqual([
+      ['/frames/fr_ev', '1번 후보 장면'],
+      ['/frames/fr_b', '2번 후보 장면'],
+    ])
+    // 도는 작업이 없으면 더 오지 않으므로 「준비 중」이라 하지 않는다
+    expect(container.querySelector('.cand-th-note')!.textContent).toBe('미리보기가 없어요')
+  })
+
+  it('이미지 주소를 만들 수 없으면(시연) 자리만 두고, 작업이 도는 동안은 준비 중이라 한다', () => {
+    const v = { ...view([candidate({ candidate_id: 'a', thumb_ref: 'fr_a' })]), running_jobs: [{ kind: 'PLATE_READ' }] } as unknown as CaseView
+    const { container } = render(<CandidatesScreen view={v} />)
+    expect(imgs(container)).toEqual([])
+    expect(container.querySelector('.cand-th-note')!.textContent).toBe('미리보기 준비 중')
   })
 })
