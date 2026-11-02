@@ -13,7 +13,7 @@
 - **한계 2:** 오탐 분류는 키워드 규칙으로 한 칸에만 넣은 근사치다. 순서대로 먼저 맞는 칸에 넣었다(자차 → 장애물 회피 → 도로 밖 출입 → 이륜차 → 교차로 앞 → 점선·실선 전환).
 - **원본:**
   - `eval/predictions/search_s3_argon_gore_{b_youtube_m4,ctier2}_20261028.json`
-  - `eval/predictions/aihub_best100_all_s3_20261030.json`
+  - `eval/predictions/aihub_best100_all_s3_20261030.json` (커밋하지 않음 — 공유 드라이브 `daesingo_eval_aihub_predictions_20261102.zip`, #533)
 
 ---
 
