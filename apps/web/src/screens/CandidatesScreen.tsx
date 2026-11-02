@@ -34,7 +34,8 @@ export function CandidatesScreen(props: {
     const ref = c.thumb_ref ?? (c.selected ? preview : null)
     return ref && frameSrc ? frameSrc(ref) : null
   }
-  const pending = props.view.running_jobs.length > 0
+  // 후보 장면과 근거 장면은 사건 클립을 만드는 작업이 함께 발급한다(#523 · #470). 그 작업이 돌 때만 「준비 중」이라 한다
+  const pending = props.view.running_jobs.some((j) => j.kind === 'INCIDENT_CLIP_BUILD')
   const preparing = props.view.running_jobs.some((j) => PREPARING_KINDS.includes(j.kind))
   return (
     <Panel title="찾은 장면">

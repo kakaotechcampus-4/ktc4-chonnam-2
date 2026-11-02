@@ -361,10 +361,16 @@ describe('후보 카드 미리보기 (#523)', () => {
     expect(container.querySelector('.cand-th-note')!.textContent).toBe('미리보기가 없어요')
   })
 
-  it('이미지 주소를 만들 수 없으면(시연) 자리만 두고, 작업이 도는 동안은 준비 중이라 한다', () => {
-    const v = { ...view([candidate({ candidate_id: 'a', thumb_ref: 'fr_a' })]), running_jobs: [{ kind: 'PLATE_READ' }] } as unknown as CaseView
+  it('이미지 주소를 만들 수 없으면(시연) 자리만 두고, 장면을 발급하는 작업이 도는 동안은 준비 중이라 한다', () => {
+    const v = { ...view([candidate({ candidate_id: 'a', thumb_ref: 'fr_a' })]), running_jobs: [{ kind: 'INCIDENT_CLIP_BUILD' }] } as unknown as CaseView
     const { container } = render(<CandidatesScreen view={v} />)
     expect(imgs(container)).toEqual([])
     expect(container.querySelector('.cand-th-note')!.textContent).toBe('미리보기 준비 중')
+  })
+
+  it('장면을 발급하지 않는 작업(번호판 다시 읽기 등)이 돌 때는 준비 중이라 하지 않는다', () => {
+    const v = { ...view([candidate({ candidate_id: 'a', thumb_ref: null })]), running_jobs: [{ kind: 'PLATE_READ' }] } as unknown as CaseView
+    const { container } = render(<CandidatesScreen view={v} />)
+    expect(container.querySelector('.cand-th-note')!.textContent).toBe('미리보기가 없어요')
   })
 })
