@@ -6,6 +6,8 @@
 
 > locked real long-dashcam에서 목표 event의 **Final Event Recall@3**를 중심으로 확인하고, 후보 검토수·사용자 직접 작업시간·신고 준비 완료율/실제 handoff 행동·비용·latency가 기존 방식보다 개선되는지 함께 본다.
 
+**[변경 2026-10-26]** 잠근 셋(locked)은 쓰지 않기로 했다. 그 뒤의 수치를 어떻게 말하는지는 §3 마지막 항목을 따른다.
+
 AI 단계 평가는 eval이 담당하지만, **사용자 직접 작업시간·준비 완료율·handoff/실제 접수 행동은 코드 채점기가 아니라 별도 사용자 테스트**로 확인한다.
 
 ## 2. Evaluation Harness v1 지표
@@ -41,7 +43,7 @@ source-video-hour당 비용
 - Pilot을 동일 event에 수행한 뒤 모델 간 disagreement·confidence interval을 보고 평가 규모를 결정한다.
 - `20분→3분`은 제품 UX 목표 가설이며 실측 전 성과수치로 말하지 않는다.
 - Synthetic long-video는 architecture 개발용이다.
-- 최종 제품 성능 주장은 **locked real long-dashcam test**에서만 한다.
+- ~~최종 제품 성능 주장은 **locked real long-dashcam test**에서만 한다.~~ **[변경 2026-10-26]** 잠근 셋은 쓰지 않기로 했다(`64924b51`, `a_aihub_locked` → `a_aihub_extra`). 그래서 모든 수치는 보유 데이터로 잰 **「개발 중 반복 측정」**으로 표기하고, 최종 일반화 성능으로 주장하지 않는다. 지금까지의 결과와 발표에서 쓰는 범위는 [평가 결과 정리](evaluation-results-2026-11-01.md)·[발표 대표·보조 지표](presentation-metrics-2026-11-01.md)에 있다.
 
 ## 4. Fine Verifier 초기 A/B
 
