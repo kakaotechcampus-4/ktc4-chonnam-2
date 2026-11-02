@@ -169,11 +169,12 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
-        # 근거 장면은 handler가 T1 전에 발급해 실은 값을 그대로 남긴다(#446 결정 5). 싣지 않은 결과(이전 형식 ·
-        # 발급 불가)는 `None`이고, 여기서 다시 발급하지 않는다.
+        # 근거 장면 · 후보 썸네일은 handler가 T1 전에 발급해 실은 값을 그대로 남긴다(#446 결정 5, #523). 싣지 않은
+        # 결과(이전 형식 · 발급 불가)는 `None` · `{}`이고, 여기서 다시 발급하지 않는다.
         observation.record_outcome(case, outcome.job_id, status=outcome.status,
                                    incident_clip_ref=content["incident_clip_ref"],
-                                   preview_frame_ref=content.get("preview_frame_ref"))
+                                   preview_frame_ref=content.get("preview_frame_ref"),
+                                   candidate_frame_refs=dict(content.get("candidate_frame_refs") or {}))
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 

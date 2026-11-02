@@ -1,6 +1,6 @@
 # 근거 장면(`evidence.preview_ref`) — case가 선택 후보의 IncidentClip에서 FrameRef를 발급받아 채운다
 
-> **상태: 결정 · case 쪽 구현(handler 발급 미연결)** · 2026-10-29 · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
+> **상태: 결정 · case 쪽 구현(handler 발급 미연결)** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
 
 ## 1. 문제
 
@@ -18,6 +18,7 @@ Search는 썸네일을 채우지 않기로 답했다(#446 4번). 이유는 셋�
 
 1. **근거 장면의 생산자는 case다.** case가 recording 공개 함수로 `FrameRef`를 받아 `evidence.preview_ref`를 채운다. Search도 동의했다(#446 6번 의견).
 2. **선택 후보 하나만 만든다.** 화면에 그리는 것은 선택 후보의 근거 장면 하나다. 후보 전체를 만들지 않는다(Search가 지적한 비용과 같은 이유).
+   - **2026-11-02 범위 확대(#523):** 다른 후보 화면 카드용으로 **상위 3개 후보 썸네일**(`candidates[].thumb_ref`)도 만든다. 근거 장면(`evidence.preview_ref`)은 그대로 선택 후보 하나다. 후보 전체는 여전히 만들지 않는다 — §7.
 3. **발급 경로는 IncidentClip → `STREAM_POSITION`이다.** readout이 쓰는 것과 같은 공개 경로다(`readout/providers.py` `IncidentClipFrames.read_at`).
    1. `get_incident_clip(clip_ref)`
    2. 대표 시각이 든 `source_provenance.asset_spans[]` 하나를 고른다
@@ -54,7 +55,19 @@ Search는 썸네일을 채우지 않기로 답했다(#446 4번). 이유는 셋�
 | 안 | 고르지 않은 이유 |
 | --- | --- |
 | Search가 Coarse 후보마다 `thumbnail_ref` 생산 | Search는 `FrameRef`를 발급할 수 없고, 후보 전체 디코딩은 Coarse 상한을 압박한다(#446 4번) |
-| case가 모든 후보에 썸네일 발급 | 화면에 그리는 것은 선택 후보 하나다. clip이 없는 후보는 `STREAM_POSITION` 위치를 정할 공개 경로가 없다 |
+| case가 모든 후보에 썸네일 발급 | Coarse 후보 전체(7~13개) 디코딩은 비용이 크다. 다른 후보 화면에 필요한 상위 3개만 만든다(§7). 「clip 없는 후보는 위치를 정할 공개 경로가 없다」는 이유는 #523에서 틀린 것으로 확인했다 — 후보 구간 `resolve_span`으로 정한다 |
 | `TIMELINE_POSITION`으로 대표 시각 바로 조회 | 새로 발급하지 않아 `FRAME_NOT_FOUND`다(결정 3) |
 | CaseView 조회 때 발급 | 읽기 경로에서 디코딩하면 조회마다 비용이 들고 결과를 저장할 곳이 없다(결정 5) |
 | T2 반영 안에서 발급(`RecordingFacts` 확장) | T2는 DB transaction 안이다. 디코딩 · 저장 중 connection을 잡으면 Runtime의 「무거운 작업 중 connection 반환」 경계와 부딪힌다(정철원 2026-10-30) |
+
+## 7. 상위 3개 후보 썸네일 (#523, 2026-11-02)
+
+결정 추적 [#523](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/523). 발급 시점은 A안(정철원 2026-11-01) — 별도 job 없이 선택 후보 clip handler가 근거 장면과 함께 발급한다. Runtime 배선은 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527).
+
+1. **고르는 후보는 case가 정한다.** 현재 세대 rank 1~3, rank 순. 3개보다 적으면 있는 만큼만 고른다. 위치를 정할 수 없는 후보(rebase로 stale · span 없음 · 그 세대 Coarse 결과에 없음)는 빼고 **4위로 채우지 않는다**. 입력이 현재 세대가 아니면 고르지 않는다.
+2. **위치는 후보 자기 구간에서 정한다.** 선택 후보 clip의 provenance에 다른 후보를 맞추지 않는다. 후보 구간의 `SpanResolution`에서 대표 시각이 든 원본 span이 정확히 하나일 때만 위치를 낸다 — 해석은 결정 3 · 4 · 6과 같다.
+3. **결과 형태는 `incident_clip_result.payload.candidate_frame_refs`** — 후보 ID → `frame_ref` 문자열 또는 `null`(최대 3개). 키가 없는 이전 결과는 「썸네일 없음」이다. 반영 때 다시 발급하지 않는다(결정 5와 같다).
+4. **투영은 현재 세대 성공 clip들의 값이다.** 다른 후보를 고르면 그 후보 clip이 다시 발급한다 — 나중 frame이 앞의 것을 덮고, 나중 `null`은 앞서 만든 frame을 지우지 않는다. 세대가 바뀌면 앞 세대 값은 쓰지 않는다. `thumb_ref`는 이 값이 우선이고 없으면 Search `thumbnail_ref`(실제 경로에서 늘 `null`)다.
+5. **썸네일은 clip이 끝난 뒤에 나온다.** clip 실패 전에 썸네일이 먼저 보이는 것은 보장하지 않는다(A안의 한계).
+
+case 쪽 구현은 `case/preview_frame.py` `thumbnail_candidate_ids` · `candidate_frame_position` · `current_candidate_frame_refs`, `reflection.py`(`candidate_frame_refs` 저장), `view.py`(`thumb_ref` 투영), 테스트 `tests/case/test_candidate_thumbnails.py`다. handler 주입과 production 연결은 #527에 남아 있다.
