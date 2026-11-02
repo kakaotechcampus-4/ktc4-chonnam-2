@@ -81,6 +81,7 @@ Plan 단계에서는 다음을 하지 않는다.
 
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
+| [Incident 720p 설정 적용·실영상 E2E 2026-11-02](./2026-11-02-incident720-config-real-e2e.md) | Result (운영자 제공 증거·로컬 metadata/hash 재확인) | EC2 5초 단독 측정, config 적용, 변경 후 실영상 결과와 비통제 시간 비교의 한계 |
 | [RT-14 AWS 배포·Real E2E 2026-10-31](./2026-10-31-rt14-aws-real-e2e.md) | Result | 실제 EC2 배포·public smoke·7 job 실행과 최종 Package READY의 입력 조건을 구분한 단회 acceptance |
 | [Elice Runtime Capacity Smoke Plan](./elice-runtime-capacity-smoke-plan.md) | Planned | #95 P0/P1 경로를 baseline EC2에서 실행할 때 CPU/RAM/disk/queue/reuse가 안전한가 |
 | [Pre-implementation Spike 2026-10-03](./pre-implementation-spike-2026-10-03.md) | Result | workflow §5 A Decision의 기술 semantics — claim lock(RR/RC) · conditional UPDATE 경합 · Compose secret file · shared volume rename. capacity 실험이 아니다 |
