@@ -221,6 +221,18 @@ def build_view_from_adapter(
     snapshot = _inputs_for(case, adapter)
     executions = executions or []
     visual_verify_status = representative_execution_status(case.job_records, executions, "FINE_VERIFY")
+    search_job = jobs.latest_job_record(case, "COARSE_SEARCH")
+    search_execution = max(
+        (execution for execution in executions
+         if search_job is not None and execution["job_id"] == search_job["job_id"]),
+        key=lambda execution: execution["attempt"],
+        default=None,
+    )
+    search_input_unsupported = (
+        search_execution is not None
+        and search_execution["status"] == "FAILED"
+        and search_execution.get("failure_kind") == "RECORDING_UNSUPPORTED_MEDIA"
+    )
     view = build_case_view(
         case,
         evidence_record=snapshot.evidence_record,
@@ -245,6 +257,7 @@ def build_view_from_adapter(
         analysis_timed_out=case.analysis_timed_out,
         clip_build_failed=selected_clip_failed(case),
         analysis_range_too_long=case.analysis_range_too_long,
+        search_input_unsupported=search_input_unsupported,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -498,6 +511,7 @@ def derive_notices(
     analysis_timed_out: bool = False,
     clip_build_failed: bool = False,
     analysis_range_too_long: bool = False,
+    search_input_unsupported: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
@@ -557,7 +571,8 @@ def derive_notices(
     derived = []
     # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
     if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE)
+        search_notice = ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE
+        derived.append({**search_notice, "actions": []} if search_input_unsupported else search_notice)
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):
