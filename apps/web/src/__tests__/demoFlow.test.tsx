@@ -456,6 +456,27 @@ it('복사 결과를 한 줄로 알린다 — 실패도 알린다', async () => 
   expect(container.querySelector('.res-toast')!.textContent).toBe('')
 })
 
+it('복사에 성공하면 누른 버튼만 잠깐 「복사됨」으로 바뀌고, 실패하면 바뀌지 않는다', async () => {
+  const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'))
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+  const { wait, getByText, getByLabelText, answer } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  answer()
+  const plate = getByLabelText('차량 번호 복사')
+  await act(async () => fireEvent.click(plate))
+  expect(plate.textContent).toBe('복사됨')
+  expect(plate.classList.contains('is-copied')).toBe(true)
+  // 다른 복사 버튼은 그대로다
+  expect(getByLabelText('제목 복사').textContent).toBe('복사')
+  act(() => vi.advanceTimersByTime(1_600))
+  expect(plate.textContent).toBe('복사')
+  expect(plate.classList.contains('is-copied')).toBe(false)
+  await act(async () => fireEvent.click(plate))
+  expect(plate.textContent).toBe('복사')
+})
+
 it('위반 미관찰: 1순위 카드는 신고자료 기준이 아니라 「먼저 확인한 장면」이다', () => {
   const { wait, getByText, text } = start('notObserved')
   wait()
