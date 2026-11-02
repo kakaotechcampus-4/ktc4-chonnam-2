@@ -833,7 +833,7 @@ export function createDrivingScene(root, onUnavailable) {
             cancelAnimationFrame(frame);
             frame = 0;
             last = 0;
-        } }, { threshold: 0 });
+        } });
         observer.observe(canvas);
         cleanups.push(() => observer.disconnect());
         function animate(now) { frame = 0; if (disposed || !active || !visible || document.hidden || state.paused || state.completed)
