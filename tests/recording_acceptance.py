@@ -6,6 +6,9 @@ RECORDING_PARAMETERS = tuple(("recording", scenario, parameter) for scenario, pa
         "atomic_chunk", "atomic_manifest", "atomic_case_link",
         "corrupt_missing", "corrupt_changed", "corrupt_extra", "corrupt_order", "corrupt_oversize", "corrupt_manifest",
         "concurrent_equal", "concurrent_conflict", "legacy_analysis_source", "legacy_incident_clip")),
+    *(("chunked_media", prefix + "_" + kind)
+      for prefix in ("exact", "exact_attach", "exact_legacy", "exact_corrupt")
+      for kind in ("analysis_source", "incident_clip")),
     ("restore", "identities"), ("restore", "local_source"), ("restore", "timeline_span"),
     ("transaction", "rollback"), ("transaction", "visibility"),
     ("transaction", "failed_registration"), ("transaction", "failed_frame"),
