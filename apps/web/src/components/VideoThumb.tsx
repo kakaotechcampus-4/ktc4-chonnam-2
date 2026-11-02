@@ -1,6 +1,7 @@
-import { useEffect, useState, type JSX, type ReactNode } from 'react'
-import { Film } from 'lucide-react'
+import { useEffect, useRef, useState, type JSX } from 'react'
+import { ChevronRight, Film } from 'lucide-react'
 import { PREVIEW_UNAVAILABLE, REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
+import { DrivingPreview } from './driving/DrivingPreview'
 
 // 대표 영상의 정지 화면 한 장. 브라우저 안에서 원본 File로 임시 주소를 만들어 앞부분 한
 // 장면을 그린다 — 서버 업로드·분석과 무관하고, 재생 기능도 없다.
@@ -15,11 +16,23 @@ const MAX_WIDTH = 960
 export function VideoThumb(props: {
   file: File | null
   name: string
-  /** 정지 화면 위에 겹쳐 그릴 장식(진행 중 연출) */
-  overlay?: ReactNode
+  /** 분석 중 선택해서 여는 주행 게임. 미리보기 성공 여부와 무관하다. */
+  canDrive?: boolean
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
+  const [driving, setDriving] = useState<'unopened' | 'preview' | 'game'>('unopened')
+  const entry = useRef<HTMLButtonElement>(null)
+  const wasDriving = useRef(false)
+  const gameVisible = !!props.canDrive && driving === 'game'
+
+  useEffect(() => {
+    if (!props.canDrive) setDriving('unopened')
+  }, [props.canDrive])
+  useEffect(() => {
+    if (wasDriving.current && !gameVisible) entry.current?.focus({ preventScroll: true })
+    wasDriving.current = gameVisible
+  }, [gameVisible])
 
   useEffect(() => {
     const file = props.file
@@ -29,7 +42,13 @@ export function VideoThumb(props: {
       setFailed(file)
       return
     }
-    const url = URL.createObjectURL(file)
+    let url: string
+    try {
+      url = URL.createObjectURL(file)
+    } catch {
+      setFailed(file)
+      return
+    }
     const video = document.createElement('video')
     video.muted = true
     video.preload = 'auto'
@@ -55,8 +74,13 @@ export function VideoThumb(props: {
 
     video.addEventListener('error', fail)
     video.addEventListener('loadedmetadata', () => {
+      if (done) return
       const d = video.duration
-      video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      try {
+        video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      } catch {
+        fail()
+      }
     })
     video.addEventListener('seeked', () => {
       if (done) return
@@ -90,14 +114,26 @@ export function VideoThumb(props: {
     <figure className="flow-thumb">
       <div className="flow-thumb-box">
         <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
-          {!src && (
-            <span className="flow-thumb-fallback">
-              <Film size={24} strokeWidth={1.8} aria-hidden />
-              {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
-            </span>
+          <div className="flow-thumb-content" hidden={gameVisible}>
+            {!src && (
+              <span className="flow-thumb-fallback">
+                <Film size={24} strokeWidth={1.8} aria-hidden />
+                {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
+              </span>
+            )}
+            {src && <img src={src} alt="" />}
+            {props.canDrive && (
+              <button type="button" ref={entry} className="flow-preview-switch is-game" onClick={() => setDriving('game')}>
+                <span className="flow-preview-invite-copy">
+                  {driving === 'unopened' ? '기다리는 동안 게임을 해보시겠어요?' : '주행 게임'}
+                </span>
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            )}
+          </div>
+          {props.canDrive && driving !== 'unopened' && (
+            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} />
           )}
-          {src && <img src={src} alt="" />}
-          {props.overlay}
         </div>
       </div>
       <figcaption>

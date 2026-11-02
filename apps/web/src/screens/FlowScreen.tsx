@@ -15,7 +15,6 @@ import {
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 import { VideoThumb } from '../components/VideoThumb'
-import { SearchFx } from '../components/SearchFx'
 import carTop from '../assets/car/car-top.webp'
 
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
@@ -176,9 +175,10 @@ export function FlowScreen(props: {
 
       <div className="flow-main">
         <VideoThumb
+          key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}
-          overlay={running === 'coarse_search' && <SearchFx />}
+          canDrive={running === 'coarse_search' && screen.blocking.length === 0}
         />
 
         {props.files.length > 1 && (

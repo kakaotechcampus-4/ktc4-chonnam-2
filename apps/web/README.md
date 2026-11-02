@@ -1,16 +1,15 @@
-# web — 브라우저 작업공간 (자리만 잡아둔 폴더)
+# web — 브라우저 앱
 
 **Owner:** 신유민 (공동 개발: 김대원 — 후보 카드·타임라인·번호판 확대) · **경계:** `docs/architecture/module-architecture.md` §4-모듈6 · **문서 작업공간:** `docs/modules/web/`
 
 ## 지금 상태
 
-**코드도 `package.json`도 없다.** 그래서 npm workspace(`apps/*`)에 잡히지 않는다. 다른 모듈과 대칭으로 자리를 잡아둔 것뿐이다.
+React 19/Vite 6 제품 앱이다. 루트 npm workspace에서 설치·빌드·테스트한다(`README.md`의 실행 방법). 장면 찾기 중 사용자가 주행 게임을 선택하면 Three.js 0.160.1을 지연 로딩한다. 게임은 분석 상태를 읽거나 바꾸지 않는다.
 
 ## 이 폴더와 `apps/prototype/`의 관계
 
 - `apps/prototype/`은 **흐름 프로토타입**이다(mock 데이터, 백엔드 없음). 제품 코드가 아니고, 손대지 않는다.
-- 실제 web을 프로토타입을 확장해 만들지, 새로 만들지는 **Owner가 정한다** — 판단에 필요한 사실은 `apps/prototype/README.md`에 있다. 프레임워크도 미결이다(`docs/architecture/module-architecture.md` §10-3).
-- **확장하기로 하면** 프로토타입 코드를 이 폴더로 옮기고 `apps/prototype/`은 아카이브한다. **새로 만들기로 하면** 여기서 시작하고 프로토타입은 참고 자료로 남긴다. 어느 쪽이든 「실제 앱」은 이 폴더 하나다.
+- 실제 제품 화면과 API 연결은 이 폴더에 있고, `apps/prototype/`은 별도의 목데이터 시연 앱이다.
 
 ## 지켜야 할 것 (원문은 §4-모듈6)
 
