@@ -152,3 +152,116 @@ MySQL·전체 pytest·전체 mandatory gate는 실행하지 않았다. 향후 pu
 20분 실험의 재개 가능성은 이번 coverage 수정만으로 확정하지 않는다. 현재 4분 정책,
 별도 [DB packet·driver working set·감독/OOM 병목](../../../runtime/experiments/2026-11-02-local-capacity-probe.md)은
 해결되지 않았다. 전체 240초 chain·20분·MySQL·Search/Case/Web·provider·운영 EC2 재실행은 범위 밖이다.
+
+## PR #538 CI 후속 — 6.1.1 fixture 이식성
+
+시작 기준은 `codex/issue452-timing-repro`, `51263d96a90408d68cb674ea35506bf7fee69e7d`이며
+실패한 원격 HEAD와 같았다. working tree·index는 비어 있었다. branch 전환이나 기존 변경 덮어쓰기는 없다.
+[실패 job](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/41440624992/job/125261265406)의
+일반 regression은 FFmpeg/ffprobe `6.1.1-3ubuntu5`, VFR 테스트 10 FAIL이었다.
+quality·MySQL·고정 배포 이미지 acceptance 성공과 일반 regression 실패를 구분한다.
+
+### 확인한 원인과 단계
+
+**확정: 새 테스트가 8.1에서 관측한 B-frame MP4 duration을 6.1.1에서도 관측할 수 있다고 가정했다.**
+6.1.1에서는 CFR 개별 변환물의 packet/frame duration 근거가 없어 기존 strict parser가 의도대로 거부한다.
+이 작업은 그 도구 조합의 지원 범위를 확장하지 않고 fixture 구성을 이식 가능하게 고친다.
+source 손상이나 concat 오류로 분류하지 않는다.
+
+| 관찰 대상 | 6.1.1 | 8.1 |
+| --- | --- | --- |
+| 원본 합성 CFR 4 frame, time base `1/30000`, B-frame 없음 | duration `1000 tick` 관측 | 같은 값 관측 |
+| veryfast CFR 개별 변환물, B-frame 2 | PTS `0,1000,2000,3000`, DTS `-2000,-1000,0,1000`; packet/frame duration 누락 | duration `1000 tick` 관측 |
+| VFR 개별 변환물, 조건부 `-bf 0` | 원본 PTS·duration 보존 | 보존 |
+| 기존 VFR/CFR chain | CFR 개별 검증에서 실패, concat 미도달 | remux·concat·decode 통과 |
+| **6.1.1이 생성한 동일 1679-byte CFR 출력** 교차 probe | duration 누락 | 같은 bytes에서 duration `1000 tick` 관측 |
+
+위 CFR packet의 PTS는 decode 순서로 `0,3000,1000,2000`이다. 표의 PTS 목록은 표시 순서이며
+DTS 목록과 위치별로 짝짓는 목록이 아니다. 모든 command·frame/packet 원문과 hash는 ignored evidence에 보존했다.
+FFmpeg [n6.1.1 MOV CTTS 분기](https://github.com/FFmpeg/FFmpeg/blob/n6.1.1/libavformat/mov.c#L8386)는
+그 분기에서 packet duration을 설정하지 않으며,
+[n8.1](https://github.com/FFmpeg/FFmpeg/blob/n8.1/libavformat/mov.c#L10494)은 STTS duration을 별도로 읽는다.
+관측은 이 차이와 일치한다. codec parser의 모든 duration 추정 경로·다른 파일까지 일반화하지 않는다.
+
+clock만 `1/30`으로 약분한 실험도 수행했다. 단일 CFR은 통과했으나 VFR+B-frame concat의 첫
+duration이 `3→1 tick`으로 관측돼 실패했다. 이 방법은 채택하지 않았고 fixture time base·PTS·duration을
+변경하지 않았다. profile만 바꾼 대조에서 원래 `1/30000` source clock과 rational timing을 보존하며
+개별·최종 duration 근거가 관측되는 것을 확인한 뒤 아래 수정으로 한정했다.
+
+### 수정 범위와 대조의 의미
+
+**제품 source 수정 없음.** 테스트 fixture의 CFR 단일 대조와 chain encoding만 `ultrafast`로 구성한다.
+VFR 단일 성공·훼손 회귀는 원래 `veryfast`를 유지한다. source fixture 생성 명령, 원래 VFR 간격,
+CFR timing, 실제 frame 수·PTS/duration 기대값, 두 연결 순서, 두 capability와 provenance 검증은 유지한다.
+같은 clock chain은 VFR/CFR coverage와 경계를 검증하며, 이 portable fixture의 encoded part 사이
+B-frame 지연 차이를 실영상으로 검증했다고 주장하지 않는다.
+그 차이는 별도 `test_same_clock_packet_projection_with_reorder`에서 보존한다. duration 근거가 있는
+실제 합성 VFR(B-frame 0)·CFR(B-frame 2, 처음 DTS `-2/30초`) packet을 입력으로
+기존 exact projection의 remux·검증·BSF를 실행하고, concat의 실제 copy-mux `framecrc` 출력에서
+PTS/duration·10 packet·공통 지연·decode interval 연속성을 두 순서와 두 VFR 패턴으로 검사한다.
+이는 구버전 MOV에 최종 MP4를 재-demux하기 전의 packet 검사이며 최종 MP4의 display 검증을 대신하는
+제품 경로 변경이 아니다. 공개 chain 테스트는 여전히 별도로 MP4 frame·format·strict decode를 검증한다.
+
+- 실제 encoding 명령을 관찰해 **선택 duration이 가변일 때만 명시적 `-bf 0`**이 있는지 확인한다.
+  `ultrafast` 자체의 B-frame 기본값 때문에 조건부 옵션 회귀를 놓치지 않게 한다.
+- PTS/duration/tail 부정 대조는 변조 전 출력의 strict frame 파싱 성공, 실제 변조 1회 및
+  변조한 객체의 검증 진입 1회를 요구한다. 구버전의 두 duration alias는 함께 변조한다.
+- format duration `0.4→0.45초` 대조는 정상 10-frame coverage 확인 뒤 format만 변조하고,
+  그 객체의 정확한 frame 대조와 최종 packet 검증 성공을 요구한다. 앞단 오류를 성공으로 세지 않는다.
+- 정상 chain은 실제 strict decode 완료 1회, format 변조 거부는 decode 이전 종료를 확인한다.
+  모든 source fingerprint와 작업 temp cleanup 검사는 유지한다. skip/xfail·workflow·의존성·timeout·
+  strict 검증·허용 오차·제품 encoding/timing은 변경하지 않는다.
+
+### 후속 검증과 실행 환경
+
+수정 전 대표 실패 **1 FAIL**, 전체 **10 FAIL / 21 PASS**를 정확한 `6.1.1-3ubuntu5`에서 보존했다.
+fixture 수정 직후 두 버전의 VFR 테스트는 각각 **31 PASS**였다(6.1.1 28.06초, 8.1 4.60초).
+첫 관측 hook 보완 실행의 변수 이름 충돌과 harness 준비 오류도 별도 실패로 남겼으며 제품 RED로 세지 않았다.
+fresh reviewer는 portable fixture의 decode-delay seam 회귀 공백 P2를 지적했다. 위 별도 회귀
+4개 추가 후 최종 파일 전체는 6.1.1 **35 PASS**(35.43초), 8.1 **35 PASS**(4.58초)다.
+`decode_origin` 보정을 제거한 ignored 함수 복사본은 실제 FFmpeg에서
+`Non-monotonic DTS; previous 3, current 2`, exit 234로 실패했다. 보완이 그 결함을 검출함을 확인했다.
+원래 VFR 단일 회귀도 진단에서만 `-bf 0`을 제거하면 8.1에서 원래 `1000→3000 tick` coverage 실패를
+다시 검출했다. 해당 두 mutation은 제품 source 파일을 수정하지 않았다.
+
+보유 Ubuntu 24.04 image `sha256:d9b8c34d61a9b9a3c44cab883d7d2f2619d674966ab520186f799cf32e3e0377`에
+정확한 공식 `ffmpeg=7:6.1.1-3ubuntu5`를 작업 소유 환경으로 설치했다. 8.1은 앞 절의 동일 image다.
+두 실행의 Python `3.12.16`·pydantic `2.13.5`·SQLAlchemy `2.1.3`는 기존 8.1 이미지에서 재사용했고
+pytest `8.4.2` 순수 Python 모듈은 기존 로컬 환경에서 연결했다. 저장소 의존성 변경은 없다.
+초기 RAM total/free `16,281,024/1,334,540 KiB`, C free `2,529,648,640 bytes`였다.
+공식 apt 준비 후 네트워크를 분리하고, source ro·CPU 1.5/affinity 2개·RAM 768 MiB/swap 추가 없음·
+PID 96·work 96 MiB·실행 600초를 적용했다. 시작 C 2 GiB/RAM 1000 MiB,
+중단 C 1.8 GiB/disk 증가 64 MiB/RAM 700 MiB의 감독을 유지했고 gate가 닫히면 실행하지 않았다.
+
+기존 frame-duration·multi-span Analysis/Incident·mixed-time-base 4개 파일의 focused 회귀는
+6.1.1 **130 PASS / 기존 1 SKIP / opt-in 1 DESELECT**, 8.1 **131 PASS / opt-in 1 DESELECT**다.
+6.1.1의 기존 skip은 손상 AVI fixture에서 strict encoding failure가 관찰되지 않는 경우이며,
+이번 변경에서 skip/xfail을 추가하지 않았다. boundary와 Contract fixture(구조 62/JSON 26/의미 104),
+변경 테스트 Ruff·diff 검사는 PASS다. Runtime quality(Ruff, Linux/Windows mypy 각 87 source)도 PASS다.
+최초 최종 8.1 실행은 host RAM 561,508,352 bytes에서 감독 중단(exit 143, OOMKilled=false)했으며
+제품/test assertion 실패로 세지 않는다. 자원 회복 후 위 35 PASS를 별도 실행으로 확인했다.
+
+구현 이력을 받지 않은 fresh read-only reviewer의 P2 지적과 같은 reviewer의 보완 재검토를 완료했다.
+추가 actionable finding은 없으며, reviewer는 코드·보존 실행 증거를 읽었고 테스트나 원본 실영상은
+직접 실행하지 않았다. 제품 source가 같으므로 실제 원본 최소 구간은 재실행하지 않는다.
+전체 로컬 pytest·MySQL·원격 CI 재실행·20분 실험은 NOT_RUN이며,
+이 후속으로 #452의 DB·메모리 병목이나 장시간 지원을 해결했다고 판정하지 않는다.
+
+### 후속 종료 확인
+
+제품 source aggregate SHA-256은 시작·종료 모두
+`ed044c3e35a325d4dbe136612b139579870256d05925885dbf169d598655350b`다.
+최종 테스트 SHA-256 `5c151ad3abd112acdc3433833f461e1b6dc974fac3311956dc84894493a98b80`와
+두 버전 35 PASS의 실행 manifest를 대조했다. 원본 15개와 기존 실패 DB volume은 이번 후속의
+어떤 컨테이너에도 연결하지 않았으며 변경·재시작·삭제하지 않았다. 원본 재-hash도 수행하지 않았다.
+
+작업 소유 컨테이너는 0개다. 설치용 자체 archive와 자체 컨테이너의 apt metadata를 정리했고,
+기존 이미지·공유 cache·network·volume을 삭제하지 않았다. RED와 최소 합성 출력(1679 bytes),
+frame/packet·실행 명령·버전·mutation·자원 중단 기록은 ignored scratch에 보존했다.
+공개 문서에 실제 원본 파일명·개인 경로·영상·RAW·credential을 추가하지 않았다.
+
+후속 변경 파일은 이 문서와 `tests/recording/test_vfr_materialization.py` 두 개다.
+시작 branch/HEAD 유지, index 비어 있음, 미커밋·미스테이징 상태다.
+commit·push·PR/Issue 변경·CI 재실행·외부 댓글·merge·배포는 하지 않았다.
+향후 push 후 동일 CI의 전체 non-MySQL 및 MySQL·배포 이미지 acceptance와 최종 집계 성공이
+원격 완료 조건으로 남는다. 로컬 focused 성공만으로 원격 CI 성공을 선결 판정하지 않는다.
