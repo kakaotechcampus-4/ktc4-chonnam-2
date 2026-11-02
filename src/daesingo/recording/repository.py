@@ -85,6 +85,15 @@ class InMemoryRecordingRepository:
         value = self._prepared_content.get((ref.kind, ref.ref))
         return checked_content(*value) if value is not None else None
 
+    def open_prepared_stream(self, ref):
+        from io import BytesIO
+        value = self.get_prepared_content(ref)
+        return (BytesIO(value[0]), value[1]) if value is not None else None
+
+    def get_prepared_metadata(self, ref):
+        value = self._prepared_content.get((ref.kind, ref.ref))
+        return dict(value[1]) if value is not None else None
+
     def save_time_sources(self, source_ref, observed):
         payload = self._time_observations.setdefault(source_ref, observation_payload(observed))
         return observation_from_payload(payload)
@@ -390,6 +399,8 @@ class RecordingRepository(Protocol):
 
     def add_prepared_media(self, media: AnalysisSource | IncidentClip, content: bytes, *, case_id: str | None = None) -> None: ...
     def get_prepared_content(self, ref: ContractRef) -> tuple[bytes, str] | None: ...
+    def open_prepared_stream(self, ref: ContractRef) -> tuple[BinaryIO, str] | None: ...
+    def get_prepared_metadata(self, ref: ContractRef) -> dict | None: ...
     def save_time_sources(self, source_ref: str, observed): ...
     def get_time_sources(self, source_ref: str): ...
     def get_time_source_candidate(self, candidate_id: str): ...

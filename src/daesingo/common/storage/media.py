@@ -43,6 +43,12 @@ class MediaRoot:
             delegate = factory(*args, **kwargs, temp_root=tool_root)
         return _LeasedMaterializer(delegate, self, tool_root)
 
+    @contextmanager
+    def detached_temp(self):
+        """Pin/lease the configured root while creating an anonymous media file."""
+        with self._pinned_tool_root() as tool_root, self.scanner.in_use():
+            yield tool_root
+
 
 class _LeasedMaterializer:
     def __init__(self, delegate, media, tool_root):
