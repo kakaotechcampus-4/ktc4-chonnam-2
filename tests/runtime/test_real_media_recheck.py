@@ -218,3 +218,135 @@ def test_search_timeout_reaps_child_without_raw_diagnostic(monkeypatch):
     with pytest.raises(DeadlineExceededError):
         media._run_subprocess(['ffmpeg','private input'],RunDeadline(time.monotonic,1))
     assert [c[0] for c in calls]==['communicate','kill','communicate']
+
+
+def experimental(**changes):
+    return dict(experiment_id='p2-0c-240', max_output_bytes=100663296,
+                max_duration_ms=240000, run_timeout_sec=900, **changes)
+
+
+@pytest.mark.parametrize('key,value', [
+    ('max_output_bytes', 0), ('max_output_bytes', True), ('max_output_bytes', 268435457),
+    ('max_duration_ms', 1200001), ('max_duration_ms', 239999),
+    ('run_timeout_sec', 0), ('run_timeout_sec', 3601), ('run_timeout_sec', float('inf')),
+    ('experiment_id', '../private'), ('search_cap', 999),
+])
+def test_experiment_rejects_unsafe_values_and_unrelated_overrides(key, value):
+    p = probe()
+    values = experimental()
+    values[key] = value
+    with pytest.raises(ValueError, match='EXPERIMENT'):
+        p.Experiment.from_mapping(values)
+
+
+def test_experiment_rejects_duplicate_json_and_preserves_recording_guard(tmp_path):
+    p = probe()
+    config = tmp_path / 'experiment.json'
+    config.write_text('{"experiment_id":"x","experiment_id":"y"}')
+    with pytest.raises(ValueError, match='EXPERIMENT'):
+        p.load_experiment(config)
+    exp = p.Experiment.from_mapping(experimental())
+    from daesingo.recording.factory import RecordingSettings
+    from daesingo.recording.analysis_limits import analysis_source_scope, check_output_size
+    from daesingo.recording.errors import RecordingCapabilityError
+    settings = RecordingSettings.from_mapping(p.recording_config(exp))
+    assert settings.analysis_limits.max_bytes == 100663296
+    assert settings.analysis_limits.max_duration_ms == 240000
+    # 새 상한에서도 제품 실행 중 guard가 유효해야 한다.
+    with analysis_source_scope(settings.analysis_limits, lambda: None):
+        check_output_size(50331649)
+        with pytest.raises(RecordingCapabilityError) as failure:
+            check_output_size(100663297)
+    assert failure.value.code == 'ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED'
+
+
+def test_long_requests_require_explicit_config_and_finite_contiguous_selection():
+    p = probe()
+    exp = p.Experiment.from_mapping({**experimental(), 'max_duration_ms': 480000})
+    p.validate_selection(1, 5, 480, exp)
+    for first, count, seconds, config in [(1, 5, 480, None), (2, 5, 480, exp),
+            (1, 0, 240, exp), (1, 16, 240, exp), (1, 5, 481, exp), (True, 5, 240, exp)]:
+        with pytest.raises(ValueError, match='INPUT_PROFILE'):
+            p.validate_selection(first, count, seconds, config)
+    baseline = p.recording_config(None)
+    assert baseline['DAESINGO_RECORDING_ANALYSIS_MAX_BYTES'] == '50331648'
+    assert baseline['DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS'] == '240000'
+
+
+@pytest.mark.parametrize('start,end', [(10.1, 20), (9.9, 20), (10, 9)])
+def test_logical_coverage_rejects_gap_overlap_or_reversed_boundary(start, end):
+    p = probe()
+    with pytest.raises(ValueError, match='PLACEMENT'):
+        p.logical_coverage([{'start': 0, 'end': 10}, {'start': start, 'end': end}], 20)
+
+
+def test_logical_coverage_requires_full_requested_range_but_does_not_invent_capture_continuity():
+    p = probe()
+    result = p.logical_coverage([{'start': 0, 'end': 10}, {'start': 10, 'end': 21}], 20)
+    assert result['requested_sec'] == 20 and result['logical_gap_overlap_count'] == 0
+    assert result['capture_continuity'] == 'UNKNOWN'
+    with pytest.raises(ValueError, match='PLACEMENT'):
+        p.logical_coverage([{'start': 0, 'end': 19}], 20)
+
+
+def test_network_observation_counts_actual_attempts_after_controls():
+    import httpx
+    p = probe()
+    with p.egress_fence('192.0.2.2') as counts:
+        assert counts['external_socket_attempts'] == 0 and counts['http_send_attempts'] == 0
+        with socket.socket() as sock, pytest.raises(RuntimeError, match='EGRESS_BLOCKED'):
+            sock.connect(('192.0.2.3', 443))
+        with httpx.Client() as client, pytest.raises(RuntimeError, match='HTTP_SEND_BLOCKED'):
+            client.send(httpx.Request('POST', 'https://example.invalid'))
+        assert counts['external_socket_attempts'] == 1 and counts['http_send_attempts'] == 1
+
+
+def test_cli_accepts_explicit_long_request_and_rejects_implicit_override(tmp_path, monkeypatch):
+    p = probe()
+    path = tmp_path / 'experiment.json'
+    path.write_text(__import__('json').dumps({**experimental(), 'max_duration_ms': 480000}))
+    common = ['probe', '--manifest', 'protected', '--output', 'result', '--db-host', '192.0.2.2',
+              '--schema', 'owned', '--code-sha', 'head', '--image-id', 'fixed',
+              '--first', '1', '--count', '5', '--seconds', '480']
+    reached = []
+    monkeypatch.setattr(p, 'run', lambda args: reached.append(args.seconds) or 0)
+    monkeypatch.setattr(sys, 'argv', common)
+    with pytest.raises(SystemExit) as failure:
+        p.main()
+    assert failure.value.code == 2 and reached == []
+    monkeypatch.setattr(sys, 'argv', common + ['--experimental-config', str(path)])
+    assert p.main() == 0 and reached == [480]
+
+
+def test_driver_observes_all_result_packets_and_restores_hook(monkeypatch):
+    import pymysql.connections
+    from pymysql.protocol import MysqlPacket
+    p = probe()
+    cls = pymysql.connections.Connection
+    packet = MysqlPacket(b'x' * 123, 'utf8')
+    monkeypatch.setattr(cls, '_read_packet', lambda *a, **kw: packet)
+    original = cls._read_packet
+    report = {'phase': 'control', 'driver': []}
+    with p.command_metrics(report):
+        conn = cls(defer_connect=True)
+        assert conn._read_packet() is packet
+        assert max(d.get('result_packet_bytes', 0) for d in report['driver']) == 123
+    assert cls._read_packet is original
+
+
+def test_search_output_size_survives_real_media_cap_rejection_and_cleanup(tmp_path):
+    from daesingo.search.media import _verify_output, MediaTooLargeError
+    p = probe()
+    output = tmp_path / 'private.mp4'
+    events = []
+    def encode(source, target, **kwargs):
+        target.write_bytes(b'x' * 11)
+    try:
+        p.measure_search_encode(events, encode, Path('unused'), output)
+        with pytest.raises(MediaTooLargeError):
+            _verify_output(output, 10)
+    finally:
+        output.unlink(missing_ok=True)
+    assert not output.exists()
+    assert events[0]['output_bytes'] == 11 and events[0]['status'] == 'PASS'
+    assert 'private' not in str(events)

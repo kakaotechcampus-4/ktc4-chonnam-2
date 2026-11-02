@@ -6,6 +6,7 @@ are reused for diagnostics only; its run() and legacy read path are never called
 """
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 import hashlib
@@ -14,12 +15,89 @@ import os
 from pathlib import Path
 import signal
 import socket
+import re
 from types import SimpleNamespace
 import threading
 import time
 import traceback
 
 import recording_capacity_probe as diag
+
+
+@dataclass(frozen=True)
+class Experiment:
+    """실험 process에만 주입하는 유한 예산. 운영 config를 읽거나 쓰지 않는다."""
+    experiment_id: str
+    max_output_bytes: int
+    max_duration_ms: int
+    run_timeout_sec: int
+
+    @classmethod
+    def from_mapping(cls, values):
+        if not isinstance(values, dict) or set(values) != set(cls.__dataclass_fields__):
+            raise ValueError('EXPERIMENT_KEYS_REQUIRED')
+        name = values['experiment_id']
+        if not isinstance(name, str) or re.fullmatch(r'[a-z0-9][a-z0-9-]{0,63}', name) is None:
+            raise ValueError('EXPERIMENT_ID_INVALID')
+        for key, low, high in (('max_output_bytes', 50331648, 256 * 1024**2),
+                               ('max_duration_ms', 240000, 1200000),
+                               ('run_timeout_sec', 900, 3600)):
+            if type(values[key]) is not int or not low <= values[key] <= high:
+                raise ValueError('EXPERIMENT_FINITE_BUDGET_REQUIRED')
+        return cls(**values)
+
+
+def load_experiment(path):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('EXPERIMENT_DUPLICATE_KEY')
+            result[key] = value
+        return result
+    return Experiment.from_mapping(json.loads(Path(path).read_text(encoding='utf-8'), object_pairs_hook=unique))
+
+
+def validate_selection(first, count, seconds, experiment):
+    if any(type(v) is not int for v in (first, count, seconds)):
+        raise ValueError('INPUT_PROFILE_INVALID')
+    if experiment is None:
+        valid = (first, count, seconds) in ((2, 1, 10), (2, 2, 100), (1, 3, 240))
+    else:
+        valid = first == 1 and 1 <= count <= 15 and 240 <= seconds <= 1200 and seconds * 1000 <= experiment.max_duration_ms
+    if not valid:
+        raise ValueError('INPUT_PROFILE_REQUIRES_EXPLICIT_FINITE_EXPERIMENT')
+
+
+def recording_config(experiment):
+    return {'DAESINGO_RECORDING_ANALYSIS_PROFILE_REF': 'aws-e2e-v1',
+        'DAESINGO_RECORDING_ANALYSIS_HEIGHT': '480', 'DAESINGO_RECORDING_ANALYSIS_PRESET': 'veryfast',
+        'DAESINGO_RECORDING_ANALYSIS_CRF': '23',
+        'DAESINGO_RECORDING_ANALYSIS_MAX_BYTES': str(experiment.max_output_bytes if experiment else 50331648),
+        'DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS': str(experiment.max_duration_ms if experiment else 240000)}
+
+
+def logical_coverage(placements, seconds):
+    offset = Decimal(0)
+    for item in placements:
+        start, end = Decimal(str(item['start'])), Decimal(str(item['end']))
+        if not start.is_finite() or not end.is_finite() or start != offset or end <= start:
+            raise ValueError('PLACEMENT_GAP_OVERLAP_OR_ORDER')
+        offset = end
+    if offset < seconds:
+        raise ValueError('PLACEMENT_INSUFFICIENT_COVERAGE')
+    return {'requested_sec': seconds, 'placed_end_sec': str(offset), 'logical_gap_overlap_count': 0,
+            'capture_continuity': 'UNKNOWN', 'order_basis': 'protected_manifest_explicit_placement'}
+
+
+def exact_frame_summary(payload):
+    summary = diag.frame_summary(payload)
+    frames = payload.get('frames', [])
+    if frames:
+        summary.update(first_pts_ticks=frames[0].get('best_effort_timestamp'),
+            last_pts_ticks=frames[-1].get('best_effort_timestamp'),
+            last_duration_ticks=frames[-1].get('duration', frames[-1].get('pkt_duration')))
+    return summary
 
 
 @contextmanager
@@ -33,6 +111,12 @@ def tool_measure(events, name, output=None):
                     event['output_bytes'] = output.stat().st_size
                 except OSError:
                     event['output_size_available'] = False
+
+
+def measure_search_encode(events, encode, source, output, **kwargs):
+    """후속 guard/cleanup이 거부해도 변환 직후 bytes를 복사 없이 보존한다."""
+    with tool_measure(events, 'search_reencode', Path(output)):
+        return encode(source, output, **kwargs)
 
 
 def metadata_differences(before, after, path=''):
@@ -98,18 +182,23 @@ def egress_fence(db_ip):
     import httpx
     connect, connect_ex = socket.socket.connect, socket.socket.connect_ex
     send, async_send = httpx.Client.send, httpx.AsyncClient.send
+    counts = {'external_socket_attempts': 0, 'http_send_attempts': 0, 'allowed_db_connections': 0}
 
     def checked(original):
         def call(sock, address):
             if not isinstance(address, tuple) or address[:2] != (db_ip, 3306):
+                counts['external_socket_attempts'] += 1
                 raise RuntimeError('EGRESS_BLOCKED')
+            counts['allowed_db_connections'] += 1
             return original(sock, address)
         return call
 
     def blocked(*args, **kwargs):
+        counts['http_send_attempts'] += 1
         raise RuntimeError('HTTP_SEND_BLOCKED')
 
     async def async_blocked(*args, **kwargs):
+        counts['http_send_attempts'] += 1
         raise RuntimeError('HTTP_SEND_BLOCKED')
 
     socket.socket.connect, socket.socket.connect_ex = checked(connect), checked(connect_ex)
@@ -128,7 +217,8 @@ def egress_fence(db_ip):
             blocked()
         except RuntimeError:
             pass
-        yield
+        counts.update(external_socket_attempts=0, http_send_attempts=0)
+        yield counts
     finally:
         socket.socket.connect, socket.socket.connect_ex = connect, connect_ex
         httpx.Client.send, httpx.AsyncClient.send = send, async_send
@@ -175,7 +265,7 @@ class Sampler:
         for child in process.children(recursive=True):
             try:
                 cpu = child.cpu_times()
-                children.append({'name': child.name(), 'rss_bytes': child.memory_info().rss,
+                children.append({'pid': child.pid, 'name': child.name(), 'rss_bytes': child.memory_info().rss,
                                  'cpu_sec': cpu.user + cpu.system})
             except psutil.NoSuchProcess:
                 pass
@@ -215,6 +305,7 @@ def command_metrics(report):
     import pymysql.connections
     cls, result_cls = pymysql.connections.Connection, pymysql.connections.MySQLResult
     command, row = cls._execute_command, result_cls._read_row_from_packet
+    read_packet = cls._read_packet
 
     def observed_command(conn, code, sql):
         n = len(sql.encode(conn.encoding) if isinstance(sql, str) else (sql or b'')) + 1
@@ -229,11 +320,20 @@ def command_metrics(report):
         diag.emit({'kind': 'row_packet', **entry})
         return row(result, packet)
 
+    def observed_packet(conn, *args, **kwargs):
+        packet = read_packet(conn, *args, **kwargs)
+        entry = {'phase': report['phase'], 'result_packet_bytes': len(packet._data)}
+        report['driver'].append(entry)
+        diag.emit({'kind': 'result_packet', **entry})
+        return packet
+
     cls._execute_command, result_cls._read_row_from_packet = observed_command, observed_row
+    cls._read_packet = observed_packet
     try:
         yield
     finally:
         cls._execute_command, result_cls._read_row_from_packet = command, row
+        cls._read_packet = read_packet
 
 
 def request_boundary(cfg, media, source, timeline_id, deadline, report, events, check):
@@ -287,6 +387,8 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
 
 
 def run(args):
+    experiment = load_experiment(args.experimental_config) if getattr(args, 'experimental_config', None) else None
+    validate_selection(args.first, args.count, args.seconds, experiment)
     import resource
     import sqlalchemy as sa
     import daesingo.recording
@@ -318,7 +420,11 @@ def run(args):
         'recording': 'NOT_REACHED', 'db_store': 'NOT_REACHED', 'db_read': 'NOT_REACHED',
         'search_media': 'NOT_REACHED', 'request_guard': 'NOT_REACHED',
         'sdk_body': 'NOT_RUN', 'HTTP_wire': 'NOT_RUN', 'provider_calls': 0, 'case_web': 'NOT_RUN',
-        'requested_sec': args.seconds}
+        'requested_sec': args.seconds, 'experiment': asdict(experiment) if experiment else None,
+        'tool_timeout_sec': 120, 'runner_timeout_sec': experiment.run_timeout_sec if experiment else 900,
+        'provenance': 'NOT_REACHED', 'detached_strict_decode': 'NOT_REACHED',
+        'db_commit': 'NOT_REACHED', 'prepared_rollback': 'NOT_REACHED'}
+    report['sdk_entry_count'] = 0
     events = report['events']
     diag.JOURNAL = diag.Journal(output.with_suffix('.events.jsonl'))
     sampler = Sampler(work, report, output.with_suffix('.abort'))
@@ -341,13 +447,14 @@ def run(args):
 
     signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(TimeoutError('FINITE_RUN_TIMEOUT')))
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(RuntimeError('SUPERVISOR_STOP')))
-    signal.alarm(900)
+    signal.alarm(report['runner_timeout_sec'])
     sampler.start()
     records = []
     try:
         manifest = json.loads(Path(args.manifest).read_text(encoding='utf-8-sig'))
         records = manifest['files'][args.first-1:args.first-1+args.count]
-        with egress_fence(args.db_host), command_metrics(report):
+        with egress_fence(args.db_host) as network_counts, command_metrics(report):
+            report['network_counts'] = network_counts
             if len(records) != args.count:
                 raise ValueError('INPUT_SELECTION_MISMATCH')
             report['input_ids'] = [r['fixture_id'] for r in records]
@@ -415,7 +522,7 @@ def run(args):
                 def _probe(self, path, index=None):
                     value = super()._probe(path, index)
                     report['frames'].append({'role': 'source' if Path(path).is_relative_to('/inputs') else 'output',
-                                             **diag.frame_summary(value)})
+                                             **exact_frame_summary(value)})
                     return value
 
                 def _run(self, argv):
@@ -430,16 +537,17 @@ def run(args):
                         result = super().materialize(*a, **kw)
                         event['bytes'] = len(result.content)
                         report['parts'].append(len(result.content))
+                        event['cumulative_part_bytes'] = sum(report['parts'])
+                        event['exact_duration'] = str(result.frames[-1][0] + result.frames[-1][1])
+                        event['timeline_start_sec'] = result.timeline_range.start_sec
+                        event['timeline_end_sec'] = result.timeline_range.end_sec
                         return result
 
                 def _materialize_many(self, inputs, profile_ref):
                     with diag.measure(events, 'chain_total'):
                         return super()._materialize_many(inputs, profile_ref)
 
-            config = {'DAESINGO_RECORDING_ANALYSIS_PROFILE_REF': 'aws-e2e-v1',
-                'DAESINGO_RECORDING_ANALYSIS_HEIGHT': '480', 'DAESINGO_RECORDING_ANALYSIS_PRESET': 'veryfast',
-                'DAESINGO_RECORDING_ANALYSIS_CRF': '23', 'DAESINGO_RECORDING_ANALYSIS_MAX_BYTES': '50331648',
-                'DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS': '240000'}
+            config = recording_config(experiment)
             report['recording_config'] = config
             report['config_sha256'] = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
             service = build_recording_service(repo, RecordingSettings.from_mapping(config), temp_root=work,
@@ -464,6 +572,7 @@ def run(args):
                     offset = end
                 report['placements'] = [{'id': r['fixture_id'], 'start': p['timeline_start_sec'],
                     'end': p['timeline_end_sec'], 'video_index': r['proposed_video_index']} for r, p in zip(records, placements)]
+                report['timeline_coverage'] = logical_coverage(report['placements'], args.seconds)
                 timeline = service.create_relative_timeline_from_placements(placements)
                 resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
                     dict(start_sec=0, end_sec=args.seconds), media_stream_refs=[p['media_stream_ref'] for p in placements])
@@ -484,7 +593,9 @@ def run(args):
             report['provenance'] = 'PASS'
             report['service_retained_content_bytes'] = sum(len(value[1]) for value in service._local_analysis.values())
             with phase('db_commit'):
+                report['db_commit'] = 'FAIL'
                 conn.commit()
+                report['db_commit'] = 'PASS'
                 report['db_store'] = 'PASS_COMMITTED'
                 rows = conn.exec_driver_sql('SELECT COUNT(*), SUM(OCTET_LENGTH(content)), MAX(OCTET_LENGTH(content)) FROM recording_media_chunk').one()
                 report['chunk_rows'], report['chunk_bytes'], report['max_chunk_bytes'] = int(rows[0]), int(rows[1]), int(rows[2])
@@ -565,8 +676,7 @@ def run(args):
                     return result
 
             def encode(*a, **kw):
-                with diag.measure(events, 'search_reencode'):
-                    return original_encode(*a, **kw)
+                return measure_search_encode(events, original_encode, *a, **kw)
 
             search_media._materialize, search_media._run_ffmpeg_encode = copy, encode
             report['search_media'] = 'FAIL'
@@ -636,10 +746,14 @@ def main():
         parser.add_argument('--' + key, required=True)
     parser.add_argument('--first', type=int, required=True)
     parser.add_argument('--count', type=int, required=True)
-    parser.add_argument('--seconds', type=int, choices=(10, 100, 240), required=True)
+    parser.add_argument('--seconds', type=int, required=True)
+    parser.add_argument('--experimental-config', help='격리 실험 전용 유한 예산 JSON; 운영 설정과 분리')
     args = parser.parse_args()
-    if (args.first, args.count, args.seconds) not in ((2, 1, 10), (2, 2, 100), (1, 3, 240)):
-        parser.error('only the approved finite input profiles are allowed')
+    try:
+        experiment = load_experiment(args.experimental_config) if args.experimental_config else None
+        validate_selection(args.first, args.count, args.seconds, experiment)
+    except (ValueError, OSError):
+        parser.error('명시적 유한 실험 설정과 허용 입력 범위가 필요합니다')
     return run(args)
 
 
