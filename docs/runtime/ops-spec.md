@@ -571,10 +571,10 @@ EC2 기본 CPU/RAM/disk 지표
 - local disk working set이 얼마나 되는가
 - OOM/swap/CPU saturation이 반복되는가
 
-2026-10-30 현재:
+2026-10-30 당시 관측 준비 상태:
 
 - queue wait · oldest queued · execution duration · STALE · retry · cancel 지표는 RT-12(b)의 **DB 집계 query**와 structured log event catalog로 local · integration에서 볼 수 있다([`rt12b-observability.md`](./rt12b-observability.md)). 정기 기록 · 대시보드는 없다(RD-13b).
-- 배포된 stack이 없으므로 이 값은 아직 실제 운영 metric이 아니다.
+- 당시에는 배포된 stack이 없었다. 이후 실제 stack의 CloudWatch 상관 이벤트와 DB/자원 단회 표본은 [RT-14 Result §8](./experiments/2026-10-31-rt14-aws-real-e2e.md)에 있다. 전용 phase 계측·지속 관측·capacity 검증 완료를 뜻하지 않으며, 현재 가용 관측과 gap은 [P2 §7](./experiments/elice-runtime-capacity-smoke-plan.md#7-관측-방법과-instrumentation-gaps)을 따른다.
 - AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §10). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다. RT-14 Gate는 Docker `awslogs` driver + dual local cache를 승인했고(2026-10-30) 준비 구현이 그대로 render한다 — 별도 Agent는 필요 없다. 이 EC2에서 Docker daemon이 instance role로 임시 group에 로그를 보내는 것은 2026-10-30 스파이크로 확인했고([RT-14 배포 설계](./rt14-deployment-design.md) §17), 운영 group · retention과 실제 stack 로그 수신 확인이 남는다([RT-14 실행 절차](./rt14-deployment.md) §1 · §8).
 - EC2 기본 CloudWatch metric(CPU 등)은 콘솔에서 볼 수 있다. RAM · disk · process RSS는 Agent 없이 기본 metric에 없다.
 
@@ -672,17 +672,22 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
-> **현재 구현 사실 (2026-10-30 `develop` `7bab60bc` 기준):** local Compose에서 api · worker는 named volume `/media` 하나를 공유한다 — `source`(durable publish 원본), `staging`(API upload), `api-temp` · `worker-temp`(각 process의 미디어 작업 temp). Recording이 준비한 미디어 bytes(AnalysisSource 등)는 recording 소유 MySQL table의 `LONGBLOB` 행에 저장되므로 **MySQL data volume의 working set**에 들어간다. 이 저장의 지원 길이 · byte 한도 운영값은 Recording Owner 측정 뒤 확정할 미결이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), [로컬 Runtime 실행환경](./local-runtime-environment.md) §5 · §9). 그 밖에 Docker image(PaddleOCR 모델 cache 포함)와 container log(B-O1, container당 ~100 MB)가 같은 disk를 쓴다. EC2 배포에서는 rollback을 위해 current · previous known-good image를 지우지 않고 candidate image가 잠시 더해진다([RT-14 실행 절차](./rt14-deployment.md) §8 예산표). AnalysisSource 재사용 범위는 RD-09, process 사이 bytes · ref 경계는 §4-2(RD-17)다.
+> **구현 경계 (2026-11-02 `develop` `15b8b6a1` 대조):** local Compose에서 api · worker는 `/media` volume을 공유한다 — `source`(durable 원본), `staging`(upload), `api-temp` · `worker-temp`(Recording temp). production은 [RT-14 controller](./rt14-public-deployment.md)가 소유 external volume을 연결한다. prepared AnalysisSource 등은 Recording MySQL `LONGBLOB`이므로 **DB volume working set**이다. 초기 profile/byte/길이 baseline v1은 이미 확정됐으며 원문은 [Recording limits](../modules/recording/analysis-source-limits.md)와 [설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)다. 운영 최적값·장시간 지원과 DB/Search/Case 결합 측정은 #452/P2에 남는다. Search 자체 tempfile은 별도 `/tmp`/container layer도 쓰므로 `/media/worker-temp`만 관찰하지 않는다. image/OCR cache·logs·DB/media·backup도 같은 disk 예산에 포함한다. current/previous known-good/candidate 보존 예산은 RT-14 절차를 따른다.
 
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
-따라서 Runtime은 persistent/shared cache를 먼저 도입하지 않고 다음을 capacity 실험에서 함께 관측한다.
+현재 Worker는 invocation별 새 RecordingService를 만들며 instance-local reuse와 durable BLOB 읽기는 다르다.
+새 job의 local-source preparation이 자동 persistent cache hit가 되는 것은 아니다.
+반복 job/실행 내 reuse·restart 뒤 ref 읽기/재준비·temp 회수와 durable DB 증가를 구분하는
+측정은 [갱신한 P2-B/C/D](./experiments/elice-runtime-capacity-smoke-plan.md#8-실험-순서와-각-선행조건)를 따른다.
 
-- cold materialization과 warm reuse의 시간·disk 차이
-- Worker/process restart 후 재생성 비용
-- 동일 입력 동시 요청의 duplicate materialization 가능성
-- cleanup 이후 steady-state disk 회수
-- reuse 이득이 local-only storage의 제약을 상쇄하는지
+초기 4분/48 MiB 설정은 [Product Spec](../product/product-spec.md)의 장시간·다중 영상 후보 탐색 약속을
+축소한 최종 제품 한도가 아니다. P2-0a의 현재 구성 안전 거부와 0b의 baseline 관측에 더해,
+[P2-0c](./experiments/elice-runtime-capacity-smoke-plan.md#p2-0c--isolated-capacity-probe--최소-20분-logical-timeline-판단)는
+최소 20분 logical timeline 가능성/최초 병목을 판단하도록 격리 target의 근거 있는 experimental override를 허용한다.
+유한한 guard·자원/비용·config 복귀를 유지하며 운영 packet/limit 변경이나 자동 승격은 하지 않는다.
+목표 미충족 시 bounded/chunked processing·storage·Search/Case 결합 설계를 다시 열 수 있으나 방식을 확정하지 않는다.
+제품 지원 범위 변경의 최종 승인자는 PM이고, P3는 처리 방식 미정의 30~60분 logical timeline Real E2E다.
 
 이 결과가 local-only storage로 부족하다는 근거를 만들 때 §13의 Object Storage 또는 shared persistence 후보를 검토한다.
 
@@ -724,6 +729,11 @@ Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실
 - 20초·480p H.264 MP4·audio off는 P1에서 다음 단계의 첫 시험 후보로 제안됐지만 **canonical profile이나 운영 상수가 아니다.**
 
 반대로 아직 다음은 확인되지 않았다.
+
+이 목록의 현재 잔여 범위는 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md)와
+[P2 §0](./experiments/elice-runtime-capacity-smoke-plan.md#0-감사-결과와-이미-있는-evidence)에서 구분한다.
+RT-14의 작은 실영상 단회 자원 표본은 이미 있으나 대표 working set·구간 분해·동시 부하 검증은 아니다.
+Coarse/Fine의 현재 기본은 Argon이며 inline 경로와 Intent Flash를 구분한다.
 
 - baseline EC2에서 api + worker + mysql + ffmpeg + base64/JSON이 동시에 실행될 때 peak CPU/RAM/disk
 - provider call 중 request construction이 Worker RSS에 미치는 실제 영향
@@ -1102,7 +1112,7 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Recording architecture input](../modules/recording/research/architecture-input-memo.md)
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
 - [Runtime experiments router](./experiments/README.md)
-- [Elice Runtime Capacity Smoke Plan](./experiments/elice-runtime-capacity-smoke-plan.md)
+- [Runtime Capacity Smoke Plan — P2 (Elice ML API)](./experiments/elice-runtime-capacity-smoke-plan.md)
 - [Issue #95 — Elice ML API migration tracker](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95)
 - [Issue #153 — provider usage · pricing · runtime config boundary review](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)

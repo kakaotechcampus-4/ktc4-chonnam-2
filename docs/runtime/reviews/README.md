@@ -19,4 +19,5 @@ review가 찾은 Open Decision 후보는 Decision 절차(`runtime-ops-workflow.m
 
 | 문서 | Audited SHA | 날짜 | 범위 |
 | --- | --- | --- | --- |
+| [P2 Capacity Smoke 정합성 감사](./runtime-p2-plan-audit-2026-11-02.md) | `15b8b6a1` | 2026-11-02 | 기존 P2-A~F·Runtime 코드/배포·RT-14 후속 evidence·#452·계측 공백. 실험 실행 결과 아님 |
 | [Runtime/Ops §0 정합성 검수](./runtime-ops-consistency-audit-2026-10-02.md) | `9c204ee` | 2026-10-02 | `runtime-ops-workflow.md` §0 — Runtime/Ops 문서 · 관련 Contract/ADR · 코드 · CI 현재 상태 |
