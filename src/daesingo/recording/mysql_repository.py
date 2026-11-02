@@ -24,6 +24,9 @@ from .media_content import derived_content, descriptor, checked_content, frame_f
 from .durable import media_identity, prepared_content, observation_payload, observation_from_payload
 from .publication import PublishRegistration, managed_publish_locator, registration_from_payloads
 from .chunked_media import MAX_CHUNK_BYTES, COMMAND_ALLOWANCE, checked_manifest, legacy_manifest, detached_stream
+from .prepared_metadata import encode_prepared_payload, decode_prepared_payload
+
+_PREPARED_KINDS = frozenset({'analysis_source', 'incident_clip'})
 
 
 metadata = sa.MetaData()
@@ -108,6 +111,8 @@ class MySQLRecordingRepository:
                               connection_invalidated=error.connection_invalidated) from None
 
     def _row(self, kind, identity, payload, content=None):
+        if kind in _PREPARED_KINDS:
+            payload = encode_prepared_payload(payload)
         return {"kind": kind, "entry_key": _key(identity), "payload": payload, "content": content}
 
     def _write(self, rows):
@@ -126,7 +131,10 @@ class MySQLRecordingRepository:
             entries.c.kind == kind, entries.c.entry_key == _key(identity))
         if lock:
             query = query.with_for_update()
-        return self._execute(query).mappings().one_or_none()
+        row = self._execute(query).mappings().one_or_none()
+        if row is not None and kind in _PREPARED_KINDS:
+            return {**row, 'payload': decode_prepared_payload(row['payload'])}
+        return row
 
     def _immutable_write(self, rows):
         # The duplicate branch deliberately raises a server JSON error on any
@@ -153,7 +161,8 @@ class MySQLRecordingRepository:
         return model.model_validate_json(json.dumps(row["payload"])) if row is not None else None
 
     def _models(self, kind, model):
-        return [model.model_validate_json(json.dumps(row[0])) for row in self._execute(
+        return [model.model_validate_json(json.dumps(
+            decode_prepared_payload(row[0]) if kind in _PREPARED_KINDS else row[0])) for row in self._execute(
             sa.select(entries.c.payload).where(entries.c.kind == kind).order_by(entries.c.ordinal))]
 
     def _put(self, kind, identity, model, *, immutable=False):
