@@ -1,4 +1,4 @@
-"""Spawn targets for real DB/media/HTTP; Case frame helpers remain test-only."""
+"""Spawn targets for production Case/Recording composition and durable HTTP reads."""
 import os
 
 
@@ -15,7 +15,7 @@ def frame_worker_peer(pipe, env_file):
     from daesingo.worker.composition import compose_worker
     from daesingo.worker.produced_reader import worker_produced_reader
     from daesingo.worker.registry import KindRegistry
-    from incident_frame_support import test_registry
+    from daesingo.worker.incident_clip_composition import compose_incident_clip_registry
     os.environ["DAESINGO_ENV_FILE"] = env_file
     engine = None
     try:
@@ -27,7 +27,7 @@ def frame_worker_peer(pipe, env_file):
             calls.append(True)
             return original(self, *args)
         FfmpegFrameExtractor.extract = extract
-        stop, registry = Event(), test_registry(engine, startup)
+        stop, registry = Event(), compose_incident_clip_registry(engine=engine, startup=startup)
         def invoke(ctx):
             try: return registry.dispatch(ctx)
             finally: stop.set()
@@ -69,8 +69,10 @@ def frame_api_peer(pipe, env_file, case_id, frame_ref):
             exact = client.get(f"/cases/{case_id}%20/frames/{frame_ref}")
             view = client.get(f"/cases/{case_id}/view")
             assert view.status_code == 200
+            assert view.json()["evidence"] is not None
             pipe.send({"pid": os.getpid(), "sha256": hashlib.sha256(response.content).hexdigest(),
                 "foreign": foreign.status_code, "exact": exact.status_code,
+                "preview_ref": view.json()["evidence"]["preview_ref"],
                 "thumbs": [c["thumb_ref"] for c in view.json()["candidates"]]})
     except BaseException:
         import traceback

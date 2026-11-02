@@ -2,6 +2,9 @@
 from contextlib import contextmanager
 from functools import partial
 
+from daesingo.case.preview_frame import (
+    candidate_frame_position, preview_frame_position, thumbnail_candidate_ids,
+)
 from daesingo.common.db.transactions import run_worker_transaction
 from daesingo.common.storage.cleanup import configured_cleanup
 from daesingo.common.storage.media import MediaRoot
@@ -10,6 +13,7 @@ from daesingo.recording.factory import build_incident_recording_service
 from daesingo.worker.case_composition import stored_case_store
 from daesingo.worker.incident_clip_handlers import incident_clip_registry
 from daesingo.worker.incident_clip_inputs import IncidentClipInputs
+from daesingo.worker.incident_frames import IncidentFrameIssuer
 
 
 class IncidentRecordingFactory:
@@ -30,11 +34,14 @@ def compose_incident_clip_registry(*, engine, startup, service_factory=None):
     def transaction(callback):
         return run_worker_transaction(engine, callback, logger=startup.logger)
     inputs = IncidentClipInputs(transaction=transaction,
-        store_factory=lambda conn: stored_case_store(conn, storage_root=startup.config.media_root))
+        store_factory=lambda conn: stored_case_store(conn, storage_root=startup.config.media_root),
+        thumbnail_candidates=thumbnail_candidate_ids)
     settings = getattr(startup, "modules", {}).get("recording")
     if service_factory is None and settings is not None and settings.incident_encoding is not None:
         cleanup = configured_cleanup(startup.config, startup.logger)
         media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"))
         service_factory = IncidentRecordingFactory(transaction=transaction, storage_root=startup.config.media_root,
             temp_root=startup.config.temp_root, settings=settings, media=media)
-    return incident_clip_registry(load=inputs, service_factory=service_factory)
+    return incident_clip_registry(load=inputs, service_factory=service_factory,
+        frames=IncidentFrameIssuer(preview_position=preview_frame_position,
+            candidate_position=candidate_frame_position))

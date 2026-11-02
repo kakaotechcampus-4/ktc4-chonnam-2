@@ -185,3 +185,184 @@ scratch에 디렉터리나 .env가 남지 않았음을 확인했다. 기존 scra
 GitHub snapshot, RED/GREEN text·JUnit·MySQL JSON, quality/boundary/Contract와 baseline git 기록은 그대로 보존한다.
 기존 공통 Log 본문의 byte prefix가 보존됐음을 HEAD와 비교했다. 최종 diff 공백 검사 통과,
 HEAD/branch 동일 및 index 비어 있음을 확인했다.
+
+## 실제 Case 통합 후속 — 실행 계획 (2026-11-02 KST)
+
+사용자 요청을 이 후속의 spec으로 삼는다. 기존 기록은 당시 상태로 보존한다.
+시작 branch `codex/rt10b-preview-frames`, HEAD `a561f47583a2f5de5ab4f7f066c28c888a35583a`,
+working tree/index는 비어 있었다. 최신 develop은 `ea2bc5e3d6be67b308b25073c7d36c29510bd135`.
+#470은 병합됐고 #532는 Draft/미병합, 고정 HEAD `1ee6d66fb8f3097544c84c6bab5dee478670846c`.
+
+**설계:** Case 공개 `thumbnail_candidate_ids(case, observation_input, events)`를 입력에,
+`preview_frame_position(clip, span, representative_ms)`와
+`candidate_frame_position(resolution, span, representative_ms)`를 issuer에 직접 주입한다.
+Case 정책 복제나 optional import fallback은 두지 않는다. T1 전 발급/T2 ref 소비 경계를 유지한다.
+
+**실행:** `executing-plans`로 이 세 작업을 직접 수행하고 마지막에 fresh read-only reviewer를 사용한다.
+미커밋/미스테이징 종료, 다른 Owner 구현/브랜치/정책 변경 금지, 전체 suite 반복 금지를 우선한다.
+
+- [x] Task 1: production composition 연결. `test_incident_clip_composition.py`에 실제 Case selector/위치 함수의
+  주입 및 동작 회귀를 먼저 작성하고 임시 통합 사본에서 RED 확인 → 최소 production 배선 → GREEN.
+- [x] Task 2: `test_incident_frames_mysql.py`와 `frame_process_support.py`를 production registry로 전환하고
+  T1/T2/CaseView/HTTP assertion을 실제 소비에 맞춰 강화한다. 후보 0~3, stale/세대 변경,
+  후보별 자기 resolution, 동일 위치 재사용, rollback/receipt/redelivery, pool checkout 0,
+  clip 성공/두 Readout, legacy missing/null을 focused 검증한다.
+- [x] Task 3: Web #525의 준비 중 조건과 Case running_jobs를 대조하고, focused quality/boundary/contract,
+  fresh reviewer 지적 보완, 기록 append, 작업 소유 자원 정리, branch/HEAD/index 및 전체 diff 재확인.
+
+**통합 사본:** ignored `.codex-scratch/case-frame-integration-20261102/tree`에 Git archive로 최신 develop을
+추출하고 #532 diff 및 #527 단독 diff를 적용했다. Git branch/index를 만들거나 변경하지 않았다.
+Runtime Log append 위치 충돌만 있었으며 임시 사본에서 develop 본문 뒤에 #527 추가분을 붙여 양쪽 이력을 보존했다.
+최종 #527 단독 diff의 실행에는 #532 선행 병합과 develop 동기화가 필요하다.
+
+**Review focus:** stale/세대 변경 중 T1→T2, rank 4 대체 금지, 자기 후보 resolution,
+durable receipt 이후 추가 decode 금지, 허용 거부와 persistence 오류 분리, Web 대기 판정의 한계.
+
+### 통합 구현 결과와 선행 조건
+
+`worker/incident_clip_composition.py`가 위 세 Case 함수를 직접 import하여 production 입력/issuer에 연결한다.
+기존 encoding/context가 없을 때 kind 미등록 정책은 유지한다. `incident_frames.py`는 활성화 설명만 갱신했다.
+Case/Recording 구현, T1/T2 transaction, schema, workflow/inventory/timeout/skip, Incident 화질/Analysis 한도는 변경하지 않았다.
+미사용 테스트 대역 `tests/worker/incident_frame_support.py`는 삭제했다. Case 정책을 Runtime에 복제하지 않았다.
+
+이번 실행 기준은 **develop + 고정 #532 + #527 + 미커밋 변경**인 임시 사본이다.
+원본 branch/HEAD에는 develop/#532를 병합하지 않았으므로, **원본 단독 checkout에는 새 Case API가 없어
+현재 미커밋 production import를 실행할 수 없다.** optional import/fallback으로 숨기지 않은 선행 의존성이다.
+
+| 조건 | 현재 상태 |
+| --- | --- |
+| #470 | 병합됨; develop에 preview 위치 함수/소비 포함 |
+| #532 | Draft/미병합, `1ee6d66f` 고정 검증. develop 기준 #527 실행·CI에는 선행 병합 필요 |
+| develop 동기화 | 원본 미수행. #527 mergeability 조회 결과 false. 임시 patch 적용에서는 Runtime Log append 충돌만 있었고 양쪽 이력을 보존 |
+| #525 | OPEN, `f8906816`. 실제 Web 이미지 표시에는 별도 반영 필요; Runtime 검증에는 불필요 |
+| 최종 전체 회귀 | 사용자가 선행 반영·commit/push한 뒤 원격 quality/regression/mysql/test/check로 검증할 조건. 이번에는 push/dispatch하지 않음 |
+
+본문·전체 댓글·HEAD·check snapshot은 scratch의 `github-snapshot.json`, develop CI는 `develop-ci.json`에 보존했다.
+develop `ea2bc5e3`, #470 `1a496874`, #527 `a561f475`, #532 `1ee6d66f`, #525 `f8906816`의
+quality/regression/mysql/test/check는 직접 조회에서 모두 SUCCESS였다(#525 notify는 SKIPPED).
+이는 미게시 통합 변경의 CI 결과가 아니다. #523 및 #532의 Runtime 답변도 원문 대조했다.
+
+### 실제 검증·실패 기록
+
+증거 root: `.codex-scratch/case-frame-integration-20261102/`. 아래 실행에는 중복이 있어 단순 합산하지 않는다.
+
+| 실행 | 직접 관측한 결과 |
+| --- | --- |
+| `red-composition.txt` → `green-composition.txt` | `frames` 미주입으로 1 failed/4 passed → 실제 Case 배선 후 5 passed |
+| `focused.txt/xml` | 입력/handler/composition/issuer + 실제 Case preview/Top-3: 155 passed |
+| `mysql-local.txt/json/xml` | 실제 production Case/Recording, MySQL 8.4.13: 9 passed; setup/call/teardown 27개 모두 passed |
+| `integrated.txt/json/xml` | 23개 중 17 passed/6 failed. single/chain clip T1 10종, 동일 clip의 두 receipt, 직접 T2 receipt replay 4종은 통과. Top-3 테스트 가정 실패는 아래 별도 재검증 |
+| `legacy-process.txt/json/xml` | 별도 API/Worker process clip/fractional/chain 3종 + historical missing/null 실제 T1/T2 2종: 5 passed, 단계 15개 모두 passed |
+| `top3-success.txt/json/xml` | 최종 후보 0/1/2/3, stale 2위, span 없는 2위, 실행 전 세대 변경, T1 후/T2 전 세대 변경: 8 passed, 단계 24개 모두 passed |
+| `media.txt/xml` | clip multisource/Readout 입력/API frame/Recording frame: 91 passed, 사용자 영상 기존 opt-in 1 skipped |
+| `quality.txt` | required Runtime Ruff + Linux/win32 mypy 각각 89 files PASS |
+| `boundary.txt`, `contracts.txt` | 경계 PASS; fixture 구조 62/JSON 26/의미 104 PASS |
+
+성공한 MySQL 실행은 collection error/skip/xfail이 없다. 마지막 시나리오별 유효 결과를 집계한 별도 요약도 보존한다.
+실제 후보는 offline provider 응답에서 Search/Case가 만들며 Case selector/위치 함수는 대역이 아니다.
+0개는 clip 발주/decode 없음, 1~3개는 모든 ref가 nonempty string이다. 무효 2위는 제외하고 4위로 채우지 않는다.
+각 후보의 public resolve_span 요청/응답과 Case가 반환한 source-local 위치를 정확 비교한다.
+다른 후보 대표 시각은 선택 clip 밖이다. preview/1위는 같은 ref이며 resolve/decode 수는 고유 후보 수와 같다.
+
+T1 produced → 실제 Case T2 outcome → 새 transaction에서 복원한 CaseView thumb/현재 preview를 대조했다.
+T1 후 세대 변경에서는 저장된 frame이 현재 View/후속 Readout에 섞이지 않는다. 정상 clip 성공은 같은 clip ref의
+두 Readout 발주를 유지한다. 각 frame HTTP의 PNG bytes/content-type/signature를 저장값과 정확 비교하고,
+다른 Case 및 뒤 공백 Case ID의 404를 검증했다. HTTP/View에서 extractor 호출을 금지했다.
+T1 rollback/실제 COMMIT ACK 유실/T2 rollback/redelivery/직접 reflect_terminal receipt replay에 추가 decode가 없다.
+decode/frame resolve/clip build에서 Runtime pool checkout 0을 확인했다. DB 저장 오류는 runtime FAILED,
+취소는 CANCELLED이며 null 성공 receipt가 없다. T1 이전 crash 후 새 attempt의 두 번째 decode는 실제 관측했다.
+historical fixture는 저장 전 옛 payload 형태로 직렬화했으며 durable receipt는 수정하지 않는다.
+reader 정규화와 Case의 null/빈 map 소비를 확인하고 T2에서 누락 frame 재생성을 금지했다.
+
+별도 Worker/API OS process 테스트도 production composition/MySQL/FFmpeg를 사용한다.
+실제 public Readout 두 개는 offline OCR provider로 실행하여 CaseView `evidence.preview_ref`/`thumb_ref`까지 확인했다.
+API child HTTP는 **ASGI TestClient**다. 실제 browser 화면·TCP listener·사용자 영상·live provider·AWS/배포는 NOT_RUN이다.
+
+실패/진단 이력도 보존한다.
+
+- archive 내 첫 git apply가 상위 저장소 탐색으로 파일을 무시했다. GIT_CEILING_DIRECTORIES로 탐색을 막고
+  재적용한 뒤 실제 helper 존재와 최종 Runtime/test 파일 동일성을 확인했다. 잘못된 초기 Docker 설치 경로도 정정했다.
+- sandbox localhost 제한의 MySQL preflight 실패(`mysql.txt`)는 전용 localhost 컨테이너의 로컬 실행으로 재검증했다.
+- `top3.txt`(6 failed/2 passed), `integrated.txt`(6 failed/17 passed): 테스트가 source offset을 timeline 시각과
+  같다고 정확 비교하고 build 내부 TimeRange 재조회까지 세었다. 실제 후보별 공개 resolution/Case 반환값의
+  정확 비교로 수정했다. 허용오차나 production 위치 정책은 추가하지 않았다.
+- `top3-final.txt`(3 failed/5 passed): 성공 fixture가 10fps exact PTS 부근을 요청하여 일부 ref가 null이었다.
+  `pts-diagnostic.txt`에서 같은 원본으로 `0.6 → OK(0.6)`, `0.6000000000000001 → TEMPORARY_FAILURE`,
+  `0.55 → OK(0.6)`를 실제 Recording 공개 호출로 재현했다. 이 기존 명시적 거부 경계는 변경하지 않았다.
+  최종 성공 fixture는 PTS 사이 시각이며 모든 ref가 문자열인지 추가 검증한다. exact PTS 근처의 기존 동작은 남는다.
+- 추가 test 파일 전체 Ruff 탐색은 기존 compact statement/pytest fixture import 관행 등 77 diagnostics로 실패했다.
+  HEAD 동일 파일 66개와 비교한 `test-lint-comparison.json`을 보존했다. 새 compact statement 일부를 정리했지만
+  이 탐색의 전체 PASS는 주장하지 않는다. required Runtime quality는 별도 PASS이며 ignore/정책을 바꾸지 않았다.
+
+### Web 준비 중 판정 대조와 reviewer
+
+#525는 thumb_ref, 선택 후보의 fallback evidence.preview_ref를 frameSrc로 그린다.
+`CandidatesScreen`의 `pending = view.running_jobs.length > 0`을 CandidateCard 문구에 사용한다.
+Case derive_running_jobs는 정산 전 job을 포함하여 T1 terminal/T2 대기도 보이지만 job별 candidate/generation/발급 자격은 없다.
+
+| 실제 상태 | 현재 #525 판정의 한계 |
+| --- | --- |
+| 현재 세대의 자격 있는 clip 대기, T1 후 T2 대기 | frame 추가 가능 구간이지만 전체 job 유무로 자격까지 식별 불가 |
+| clip T2 완료 + frame null + Readout만 진행 | 추가 thumbnail 작업 없이 준비 중 표시 가능 |
+| Fine/export/다른 작업만 진행 | 그 작업 자체는 frame producer가 아니어도 pending=true 가능 |
+| stale/세대 변경/대기 중단 | 현재 발급 자격과 결속된 표현을 일반 job 목록만으로 확정할 수 없음 |
+
+Runtime은 Web 문구/정책이나 CaseView 계약을 대신 변경하지 않았다. Owner 후속과 실제 화면 확인이 남는다.
+fresh read-only reviewer는 기존 MySQL/process 회귀 두 곳의 clip-only 필드 assertion을 P2로 지적했다.
+같은 clip/receipt equality·Readout 연결 검증을 유지하고 새 3필드/frame/CaseView 검증을 추가하여 보완했다.
+같은 reviewer가 최종 source/test diff(위 위치 비교·성공 fixture 수정 포함)를 재검토했고 추가 actionable P1/P2/P3는 없었다.
+reviewer는 테스트/DB/네트워크를 독립 실행하지 않았다. 선행 PR 승인/병합 승인이 아니다.
+
+### 이번 후속의 전체 변경 파일
+
+- `docs/runtime/rt10b-preview-frames.md`
+- `docs/runtime/runtime-implementation-log.md` (append only)
+- `src/daesingo/worker/incident_clip_composition.py`
+- `src/daesingo/worker/incident_frames.py` (설명만)
+- `tests/e2e_runtime/production_processes.py`
+- `tests/e2e_runtime/test_production_search_process_mysql.py`
+- `tests/worker/frame_process_support.py`
+- `tests/worker/incident_frame_support.py` (미사용 대역 삭제)
+- `tests/worker/test_incident_clip_composition.py`
+- `tests/worker/test_incident_clip_mysql.py`
+- `tests/worker/test_incident_frames_mysql.py`
+
+### 종료·자원 정리
+
+`mysql-latest-summary.json`은 위 네 MySQL 실행에서 node별 마지막 결과를 골라 중복을 제거한 **33개 시나리오**다.
+각 시나리오의 마지막 setup/call/teardown은 모두 passed이며 단일 33개 일괄 실행이라는 뜻은 아니다.
+최종 Runtime/test 파일과 검증 사본의 byte 동일성은 삭제 전 `verified-files.json`으로 확인했다.
+원격 고정 SHA, #532/#527 patch와 최종 미커밋 patch, RED/GREEN/실패 출력·JUnit/MySQL JSON은 보존한다.
+
+작업 컨테이너 ID `91ea215d02b18701b69a5508ac2e579fcaaf2341352c3f6ccecde04d203bf71e`와 task label을
+재확인했다. 정리 전 시스템 스키마와 작업 base 외 schema 없음, 다른 client/transaction/data lock 각각 0이었다
+(`resource-before-cleanup.json`). 컨테이너와 그 익명 volume만 제거했고 재조회 목록은 비어 있었다.
+이 작업 command line의 python/ffmpeg 잔존 process도 없었다. Docker Desktop/cache·기존 서비스는 보존했다.
+scratch 절대경로 내부/reparse point 없음을 검사한 검증 사본과 임시 media 디렉터리를 제거했다.
+작업 scratch에 디렉터리·env 파일이 남지 않았으며 원본/다른 작업 자료는 삭제하지 않았다.
+
+기존 Log의 정규화한 byte prefix 보존을 HEAD와 대조했다. 최종 branch/HEAD는 시작과 같고 index는 비어 있다.
+미커밋·미스테이징으로 종료한다. diff 공백 검사 PASS. 원본 단독 실행/최종 develop 기준 전체 회귀는 앞선 선행 조건을 유지한다.
+
+### 기존 #527을 포함한 누적 전체 diff (18파일)
+
+develop과의 merge-base 기준 파일 목록이다. develop/#532의 Owner 변경을 포함하지 않는다.
+
+- `docs/runtime/rt10b-preview-frames.md`
+- `docs/runtime/runtime-implementation-log.md`
+- `src/daesingo/worker/case_composition.py`
+- `src/daesingo/worker/incident_clip_composition.py`
+- `src/daesingo/worker/incident_clip_handlers.py`
+- `src/daesingo/worker/incident_clip_inputs.py`
+- `src/daesingo/worker/incident_frames.py`
+- `src/daesingo/worker/produced_reader.py`
+- `src/daesingo/worker/readout_inputs.py`
+- `tests/e2e_runtime/production_processes.py`
+- `tests/e2e_runtime/test_production_search_process_mysql.py`
+- `tests/worker/frame_process_support.py`
+- `tests/worker/test_incident_clip_composition.py`
+- `tests/worker/test_incident_clip_handlers.py`
+- `tests/worker/test_incident_clip_inputs.py`
+- `tests/worker/test_incident_clip_mysql.py`
+- `tests/worker/test_incident_frames.py`
+- `tests/worker/test_incident_frames_mysql.py`

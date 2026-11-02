@@ -4941,3 +4941,24 @@ Worker ProducedReader 소비 경로를 구현했다. production의 Case helper/T
 **IN_PROGRESS — 독립 구현과 실제 Case/Web 통합·배포 완료를 구분한다.**
 전체 pytest/mandatory MySQL 로컬 일괄 반복, 원격 CI dispatch, AWS/EC2/provider/배포/기존 서비스 중지는
 하지 않는다. staging·commit·push·PR·댓글 게시·merge도 하지 않는다.
+
+## 2026-11-02 — #527 실제 Case preview/Top-3 production 연결 후속
+
+정철원(Runtime/Recording). branch `codex/rt10b-preview-frames`, HEAD `a561f475`의 빈 working tree/index에서 시작했다.
+최신 develop `ea2bc5e3` 및 #470/#527/#532/#525 본문·댓글·HEAD·CI와 #523 Runtime 답변을 직접 확인했다.
+Case 공개 selector/위치 함수 세 개를 production composition에 직접 연결했다.
+#532는 Draft/미병합이므로 고정 HEAD `1ee6d66f`와 develop을 별도 임시 archive 사본에 적용하여
+실제 Case/Recording/MySQL/CaseView/HTTP·replay 경계를 검증했다. 원본 branch/HEAD와 다른 Owner 코드는 유지한다.
+
+RED→GREEN, focused 회귀, MySQL 후보 0~3/stale/세대 변경, T1/T2/receipt rollback·redelivery,
+과거 payload, 두 Readout·별도 process/HTTP 증거와 실패/진단은
+[Implementation Notes 후속](rt10b-preview-frames.md#실제-case-통합-후속--실행-계획-2026-11-02-kst)에 기록했다.
+fresh read-only reviewer의 P2(옛 receipt assertion)를 보완했고 최종 source/test 재검토에 추가 actionable finding은 없었다.
+
+**선행 조건:** #532 병합과 develop 동기화 전 원본 단독 checkout의 새 import는 실행할 수 없다.
+Web #525의 전체 running job 기반 준비 중 판정과 실제 화면 확인은 Owner 후속이다.
+전체 로컬 pytest/mandatory MySQL 반복, live provider·AWS/배포, staging/commit/push·PR/외부 댓글·merge는 하지 않는다.
+최종 전체 회귀는 사용자의 추후 push 뒤 원격 CI 조건으로 남긴다. 기존 로그는 append만 하여 보존한다.
+작업 전용 MySQL/익명 volume·임시 검증 사본/media를 정리했고 증거/patch는 보존했다.
+33개 focused MySQL 시나리오의 마지막 단계 결과와 최종 파일 동일성을 확인했다(실행 간 중복 제거 요약).
+branch/HEAD 유지, index 비어 있음, 미커밋·미스테이징으로 종료한다.

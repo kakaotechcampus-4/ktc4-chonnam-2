@@ -1,7 +1,7 @@
 """T1-before issuance with Case-owned position functions; no T2 capability.
 
-This seam is deliberately not enabled by production composition until the Case
-helpers and result consumers are available. Never substitute test selectors.
+Production composition supplies Case's public selection/position functions.
+T2 and views consume only durable refs; they never invoke this issuer.
 """
 import math
 from typing import Any
