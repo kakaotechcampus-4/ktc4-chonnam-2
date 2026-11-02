@@ -681,6 +681,14 @@ Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materializ
 반복 job/실행 내 reuse·restart 뒤 ref 읽기/재준비·temp 회수와 durable DB 증가를 구분하는
 측정은 [갱신한 P2-B/C/D](./experiments/elice-runtime-capacity-smoke-plan.md#8-실험-순서와-각-선행조건)를 따른다.
 
+초기 4분/48 MiB 설정은 [Product Spec](../product/product-spec.md)의 장시간·다중 영상 후보 탐색 약속을
+축소한 최종 제품 한도가 아니다. P2-0a의 현재 구성 안전 거부와 0b의 baseline 관측에 더해,
+[P2-0c](./experiments/elice-runtime-capacity-smoke-plan.md#p2-0c--isolated-capacity-probe--최소-20분-logical-timeline-판단)는
+최소 20분 logical timeline 가능성/최초 병목을 판단하도록 격리 target의 근거 있는 experimental override를 허용한다.
+유한한 guard·자원/비용·config 복귀를 유지하며 운영 packet/limit 변경이나 자동 승격은 하지 않는다.
+목표 미충족 시 bounded/chunked processing·storage·Search/Case 결합 설계를 다시 열 수 있으나 방식을 확정하지 않는다.
+제품 지원 범위 변경의 최종 승인자는 PM이고, P3는 처리 방식 미정의 30~60분 logical timeline Real E2E다.
+
 이 결과가 local-only storage로 부족하다는 근거를 만들 때 §13의 Object Storage 또는 shared persistence 후보를 검토한다.
 
 ## 12. Recording / Search Benchmark Dependency

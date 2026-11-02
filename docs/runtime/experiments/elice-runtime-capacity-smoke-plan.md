@@ -6,6 +6,9 @@
 **Inputs:** #95 P0/P1/R3 · #452 · RT-01~RT-14 · [실행환경](../local-runtime-environment.md)\
 **Router:** [Runtime Experiments](README.md) · **Policy:** [Tech](../runtime-tech-spec.md) / [Ops](../ops-spec.md)
 
+**제품 정합성 재검토:** 2026-11-02 · [Product Spec](../../product/product-spec.md) 및 이번 PM 요청.
+구현 감사 SHA는 위 snapshot으로 보존하며, Product Spec은 이후 `develop` `c39353ad`의 #531 변경까지 대조했다.
+
 이 문서는 **계획**이다. [수정 전 정합성 감사](../reviews/runtime-p2-plan-audit-2026-11-02.md)를 먼저 수행했다.
 AWS 실험·provider 호출·배포·rollback·fault injection·실제 22개 영상 실행이나 Runtime 코드 변경은 하지 않았다.
 현재 develop 구현과 과거 AWS 배포 RC를 구분한다. 파일명은 inbound link 호환을 위해 유지한다.
@@ -21,7 +24,7 @@ Elice는 여전히 현재 Search의 실제 provider 경로이며, 과거 Flash �
 | P2-D restart | UPDATE / EVIDENCE EXISTS(일부 내구성) | durable ref 읽기와 새 job 재준비를 분리. restore/release rollback은 RT-14로 REMOVE |
 | P2-E concurrency | UPDATE | process당 execution=1 유지. 복수 Worker는 별도 target·gate 필요 |
 | P2-F lifecycle | SPLIT / UPDATE | F1~F5별 target·계측 공백 명시. 미구현 전제 REMOVE |
-| #452 결합 검증 | ADD | P2-0a 안전 거부 regression / P2-0b 지원 범위 characterization |
+| #452 결합 검증 | ADD | P2-0a 현 baseline 안전 거부 regression / P2-0b 현 baseline 안 characterization / P2-0c 격리 capacity probe. 20분 logical timeline 판단으로 연결 |
 
 ### 0.1 RT-14 evidence와 책임 경계
 
@@ -51,27 +54,50 @@ P2의 M7→M8 capacity/timing 최종 검증·§11 승격은 남아 있다.
 
 현재 승인된 Recording/Search 설정과 Runtime을 같은 배포 환경에 조합했을 때
 **working set·시간·queue·실패 의미·cleanup·복구 관측**이 유지되는지 검증한다.
-질문은 “기능이 한 번 끝까지 가는가”에서 “어떤 입력/부하/실패 조건까지 근거를 설명할 수 있는가”로 좁힌다.
+이를 [Product Spec §3~§5·§9](../../product/product-spec.md)의 **장시간·다중 블랙박스에서 사건 후보를 먼저 찾고
+Coarse → Fine으로 필요한 장면을 정밀 검증한다는 제품 약속**에 연결한다.
+이번 PM 방향은 우선 **최소 20분 logical timeline 지원 가능성**을 판단할 근거를 수집하는 것이다.
+현재 20분 지원 확정이나 acceptance 완료를 뜻하지 않는다. capacity probe는 자원·시간·최초 병목을 측정하며,
+Product Spec의 Top-3 탐색 성능·실용적인 비용/시간까지 입증하는 제품 acceptance는 Search/Eval/Case 검증과 함께 판단한다.
+
+Analysis 48 MiB/4분은 **초기 배포 안전 baseline v1·실험 시작점·현재 configuration snapshot**이다.
+PM 승인 최종 지원 길이·MVP 제품 요구사항·장시간 탐색 포기 결정이 아니다.
+지원 범위·Must/Won't·불변 경계 변경의 최종 승인자는 Product Spec이 정한 **PM 김준영**이며,
+모듈 Owner의 설정/구현 결정이나 Runtime 실험 결과가 이를 대신하지 않는다.
+
+Product Spec §5의 `2시간 원본을 무조건 전체 서버 업로드` Won't는 전송·비용·privacy 때문에
+범위축소/proxy/clip 전략이 필요하다는 뜻이다. 장시간 logical timeline 탐색을 포기하거나
+반드시 하나의 거대한 AnalysisSource/BLOB으로 처리한다는 뜻이 아니다.
+Spec §8의 `약 20분 → 약 3분`은 사용자 직접 작업시간 목표이며, 이번 **영상 timeline 최소 20분** 목표의 수치 근거로 전용하지 않는다.
 
 Recording profile/limits의 원문은 [AnalysisSource limits](../../modules/recording/analysis-source-limits.md)와
 [환경·배포 설정 명세 §3](../../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)다.
 Search provider/media/retry 의미와 Case 대기·notice는 각 Owner 문서를 따른다. 이 계획이 값을 새로 소유하지 않는다.
+
+```text
+P2-0a: current baseline regression ≠ final product support range
+P2-0b: 현 baseline 안의 자원·시간·결합 특성
+P2-0c: 격리 experimental override로 현 single-source 구조의 최초 병목 측정
+→ Decision Gate: 최소 20분 logical timeline 가능성 / 필요한 후속 설계 판단
+→ P3: 30~60분 logical timeline Real E2E, 처리 방식 미정
+```
 
 ## 2. 닫을 질문
 
 1. concurrency=1의 대표 단일/다중 원본에서 Recording·Search·OCR과 API/MySQL의 자원 경합은 무엇인가.
 2. prepared BLOB·DB driver·Search 재인코딩·base64/JSON의 동시 working set과 실제 저장/전송 여유는 얼마인가.
 3. 큐·Recording 준비·Search 준비·provider·T1/T2·Case-visible elapsed를 나누어 기존 대기 예산과 설명할 수 있는가.
-4. #452의 지원 밖 입력이 늦은 MySQL disconnect 대신 typed terminal failure·재시도 없는 notice로 끝나는가.
+4. #452 입력이 **현 baseline 한도 초과 시** 늦은 MySQL disconnect 대신 typed terminal failure·재시도 없는 notice로 끝나는가. 이 결과는 제품 지원 범위 결정과 분리한다.
 5. 정상/실패 후 temp·자식 process·메모리가 회수되고, durable 원본/파생물 증가와 잔여 temp를 구분할 수 있는가.
 6. 반복 job·process restart에서 무엇을 다시 준비하고 무엇을 ref로 복원하며 비용은 얼마인가.
 7. 실제 정상 부하의 heartbeat gap·STALE·retry·cancel 관측으로 B-L*/B-R*/B-X1을 재검토할 수 있는가.
 8. 복수 Worker 탐색이 필요하고 실행 가능한지 근거가 있는가. Worker 수/인프라 변경은 결과 뒤 Owner가 판단한다.
+9. 격리 target에서 현 single-AnalysisSource/단일 Coarse request 구조의 최초 병목은 어디인가. 그 근거로 최소 20분 logical timeline 지원 가능성 또는 구조 재검토 필요성을 설명할 수 있는가.
 
 ## 3. 결정하지 않는 것
 
-- Recording canonical/최적 profile, 지원 길이·byte 한도 변경, Incident 품질, Search recall/최종 media quality.
-- Case timeout/기산점 변경·클립 분할(#168)·Web 접수 정책. 기존 [긴 범위 결정](../../modules/case/decisions/long-analysis-range.md)을 다시 열지 않는다.
+- Recording canonical/최적 profile·**운영** duration/byte 한도·제품 최종 지원 범위 변경, Incident 품질, Search recall/최종 media quality. P2-0c의 실험 전용 한도는 별도 기록한다.
+- Case timeout/기산점 변경·chunking 구현·Web 접수 정책을 이 문서에서 확정하지 않는다. [기존 긴 범위 결정](../../modules/case/decisions/long-analysis-range.md)의 MVP 분할 제외는 현재 구현/Owner 결정 이력이며 PM의 장시간 제품 약속을 축소한 최종 정책이 아니다. 0c 결과가 제품 목표 미충족을 보이면 bounded/chunked processing 등을 포함한 cross-module 설계를 다시 연다.
 - Worker count 확정·EC2/EBS 증설·Object Storage·RDS·전용 Queue·GPU 도입.
 - retention/purge·off-host backup·RPO/RTO·공개 운영 승인·pricing/FX 정책.
 - #452/#450 종료, RT-14 rollback/recovery·Package READY 완료 선언.
@@ -85,13 +111,15 @@ Search provider/media/retry 의미와 Case 대기·notice는 각 Owner 문서를
 | --- | --- | --- |
 | minimal smoke | #95 P1의 20s/480p/H.264/MP4/audio off는 여전히 작은 후보 | 역사적 transport 후보이며 production encoding 설정이 아님. 실제 확보/권한/manifest 확인 후 선택 |
 | RT-14 continuity | Result §8.1의 비식별 `aws-real-e2e-001`, 5.533333초 사본 | 기본 관통 증거는 재사용. 원본/사본을 혼동하거나 20초 후보와 동일시하지 않음. 무조건 재호출하지 않음 |
-| representative | 현재 지원 범위 안의 주·야간, 움직임/노이즈/복잡도가 다른 영상, 단일/다중 원본 | 내용별 CRF byte 차이와 concat 비용을 비교. 같은 footage의 길이 변형만으로 대표성 주장 금지 |
+| representative | P2-0b용 **현 baseline 한도 안**의 주·야간, 움직임/노이즈/복잡도가 다른 영상, 단일/다중 원본 | 내용별 CRF byte 차이와 concat 비용을 비교. 같은 footage의 길이 변형만으로 대표성 주장 금지 |
 | boundary | 현 duration 상한의 직전/동일/초과, bytes가 큰 유효 입력 | length=limit은 허용·초과만 거부라는 기존 의미. exact-byte synthetic 증거와 실영상 측정을 구분. byte 초과를 만들려고 DB packet을 낮추거나 운영 한도를 바꾸지 않음 |
-| long regression | #452 실제 22개, 총 1,166.131초(약 19분 26초), 당시 H.264/1080p·같은 time base | 현재 정책에서 안전 거부 대상. SHA/길이/stream 순서·권한을 보호 manifest로 확보해야 실행 가능 |
+| long regression | #452 실제 22개, 총 1,166.131초(약 19분 26초), 당시 H.264/1080p·같은 time base | **0a의 baseline v1에서만** 안전 거부가 기대값. 제품적으로 계속 거부하기로 정한 입력이 아님. SHA/길이/stream 순서·권한 확보 필요 |
+| isolated long probe | 0c용 짧은 대표→긴 대표→약 10분급→약 20분급의 연속된 logical timeline | 확보 fixture·비용/자원 예산으로 단계 조정. single/multi 원본을 한 AnalysisSource/Coarse로 처리하는 현재 경로 유지. 19분 26초를 최소 20분 달성 표본으로 올림하지 않음 |
 
 본 감사에서는 실제 22개나 새 대표 fixture를 확보·실행하지 않았다. Git에 있는 합성 fixture/test는 그 대체품이 아니다.
 `1/2/3/4분` grid를 확정하지 않는다. 먼저 확보된 입력의 duration/bytes/복잡도·현재 상한을 대조해
-짧은 대표→긴 대표→상한 인접 순으로 선택하고 선정 이유·개수·반복 수·비용 한도를 실행 전에 기록한다.
+0b는 짧은 대표→긴 대표→현 상한 인접, 0c는 별도 실험 한도/중단 계획에 따라 더 긴 timeline을 선택한다.
+선정 이유·개수·반복 수·비용 한도를 실행 전에 기록한다. 최소 20분을 판정할 실제 입력이 없으면 그 목표는 미검증으로 남긴다.
 4분 이하라도 bytes·coverage·Search/time 조건으로 실패할 수 있다. 하나의 영상으로 “N분까지 안전”을 결론 내리지 않는다.
 
 ## 5. 실행 환경과 현재 baseline
@@ -106,7 +134,7 @@ Search provider/media/retry 의미와 Case 대기·notice는 각 Owner 문서를
 | production | `deploy/ec2.py:production_compose`: exact image/digest, build/depends_on 제거, external DB/media volumes, awslogs non-blocking + local cache, policy restart, API loopback. Caddy host·release-bound Web·EIP/DDNS/TLS 별도 |
 | Worker | B-W1/B-W2: process 1, execution 1. 실행별 Recording/Search 서비스와 UsageSink, heartbeat/sweep 별도 thread. 내부 concurrency env 없음 |
 | tools | 현재 Dockerfile의 Python 3.12·동일 build FFmpeg/ffprobe 8.1·사전 탑재 Paddle/OCR·Linux amd64. RT-14보다 새 코드는 새 artifact 검증 필요 |
-| Recording 입력 | 위 설정 SoT의 baseline v1: Analysis `aws-e2e-v1 / 480 / veryfast / CRF23`, `50331648 bytes / 240000 ms`(48 MiB/4분), Incident `240 / veryfast / CRF23`. **현재 입력 snapshot**이며 코드 기본값/최적값 아님 |
+| Recording 입력 | 위 설정 SoT의 baseline v1: Analysis `aws-e2e-v1 / 480 / veryfast / CRF23`, `50331648 bytes / 240000 ms`(48 MiB/4분), Incident `240 / veryfast / CRF23`. **현재 배포 안전값 snapshot**이며 코드 기본값/최적값·PM 승인 최종 제품 한도 아님. 0c는 별도 experimental config를 사용 |
 | lifecycle 입력 | [Baseline](../provisional-baseline-v0.1.md) B-Q*/B-L*/B-R*/B-D*/B-X1과 `common/config` 기본값 일치 확인. heartbeat 10s/lease 60s/sweep 15s, STALE retry 1회·첫 backoff 5s는 Provisional 입력. 실제 override와 시계 상태 기록 |
 | config/secret | 보호 runtime 파일→bootstrap의 immutable snapshot. Worker는 `GEMINI_API_KEY` 소비. Search/eval alias와 다름. Parameter Store/보호 host 파일·immutable config/recreate 절차는 [실행환경](../local-runtime-environment.md)·[공개 배포 Notes](../rt14-public-deployment.md) 소유 |
 
@@ -115,7 +143,7 @@ Search provider/media/retry 의미와 Case 대기·notice는 각 Owner 문서를
 runtime.env 파일 값 일치와 이미 실행 중인 process 적용도 구분한다.
 host Caddy는 검증자 IP 제한·64 MiB body 제한이 있고 repo Caddyfile과 차이가 있다([설정 명세](../../management/environment-and-deployment-config.md)).
 22개 원본의 개별 파일이 이 upload 제한에 걸리면 거부 regression이 Recording까지 도달하지 못한다.
-경계를 넓히지 말고 승인된 격리 ingest/기존 등록 사본 경로를 준비하거나 BLOCKED로 남긴다.
+운영 ingress 경계를 넓히지 말고 별도 experimental target의 검토된 ingest/기존 등록 사본 경로를 준비하거나 BLOCKED로 남긴다.
 
 ## 6. 현재 실행 경로와 reuse 경계
 
@@ -140,6 +168,7 @@ Usage 최종화 일부는 Search가 Run 확정 뒤 수행하며, T1 이후/주�
 Elice OpenAI-compatible `/v1/chat/completions`, inline base64는 유지된다. Files API/RemoteCopy reuse는 전제하지 않는다.
 `search/media.py`는 AnalysisSource를 다시 준비한다(Coarse 360p·원본 2fps, Fine 360p·4fps, audio off·재생 길이 확장).
 현재 Search media 40 MiB/request 56 MiB cap은 Search 코드 소유이며 Recording 48 MiB와 다른 단계다.
+현재 Case는 전체 timeline을 하나의 Coarse scope/request로 발주하는 구현이며 chunked Coarse는 최종 합의/구현된 구조가 아니다.
 `provider.py`는 요청 크기 확인 뒤 네트워크에 진입하고 SDK retry=0, Search `retry.py`의 429/5xx retry를
 RunDeadline 안에서 수행한다. Recording preparation은 Search RunDeadline 시작 전이며 Case 대기에는 포함된다.
 실행별 model/config version/fingerprint·Usage provider_label로 override 적용을 확인한다.
@@ -196,6 +225,8 @@ metric 이름을 CloudWatch custom metric/dashboard의 존재로 읽지 않는�
 정확한 kill barrier·bounded DB fault harness. 실제 수집 방식·권한·비노출·overhead를 검토해야 한다.
 이번 작업에서는 구현하지 않는다. 가용 자원/DB/log만으로 subset 실행은 가능하나,
 누락 구간은 N/A/UNKNOWN으로 남기며 P2-0b/F2~F4 전체 완료를 선언하지 않는다.
+0c도 동일 phase/byte gap을 가진다. 추가로 experimental config/packet의 적용·복귀·연결별 값,
+단계별 실제 duration/최초 차단 경계를 연결하는 manifest가 필요하다. 이 기록은 새 Runtime metric이나 실패 enum이 아니다.
 
 ## 8. 실험 순서와 각 선행조건
 
@@ -203,6 +234,10 @@ metric 이름을 CloudWatch custom metric/dashboard의 존재로 읽지 않는�
 번호가 병렬 실행 허가나 강제 일렬 의존성을 뜻하지 않는다. A와 0b는 같은 정상 실행 evidence를 공유한다.
 
 ### P2-0a — Known failure regression (#452)
+
+**역할:** 현재 baseline v1에서 긴 입력이 encode/concat·BLOB write·Search/provider까지 늦게 진행한 뒤
+실패하지 않고 빠르게 typed reject되는지 검증한다. **이 결과는 약 19분 입력을 제품 지원 범위 밖으로
+확정하는 acceptance가 아니다.** current baseline regression ≠ final product support range.
 
 **선행:** 실제 22개 보호 manifest·업로드/기존 등록 경로·권한 확보, baseline v1의 process 적용,
 해당 Coarse execution을 분리한 provider/process/BLOB 관측. 처음에는 격리된 짧은 상한초과 synthetic으로
@@ -215,11 +250,13 @@ metric 이름을 CloudWatch custom metric/dashboard의 존재로 읽지 않는�
 - HINT_EXTRACT가 앞서 실행됐다면 별도 usage다. 전체 Case usage=0을 provider 미호출 판정으로 삼지 않는다. 비용 없는 거부 시험은 기존 준비 상태/격리 입력 경로를 명시하고 예상치 못한 다른 job 발주도 확인한다.
 - 전용 DB의 연결 유지·해당 window `Aborted_clients` delta와 disconnect 오류, Worker/자식 RSS/temp 잔여·원본 SHA/size/mtime 불변을 확인한다. 공유 DB 전역 delta는 attribution 불명으로 남긴다.
 
-**기대:** 약 19분 입력의 성공이 아니라 빠른 typed rejection이다. Case waiting이 먼저 종료됐다면
+**0a의 현재 구성 기대값:** 약 19분 입력에 빠른 typed rejection이 남는 것이다. 같은 입력의 향후 성공 가능성/지원 방식은 0c와 Decision Gate에서 따로 판단한다. Case waiting이 먼저 종료됐다면
 notice 미반영과 T2 reason을 따로 기록하고 queue/준비 지연을 조사한다. 현재 구현만으로 deadline 이후에도 notice가 반드시 적용된다고 가정하지 않는다.
 기본 로그만으로 ffmpeg/Search 호출·BLOB write 부재를 증명할 수 없으면 그 항목은 BLOCKED다.
 
-### P2-A + P2-0b — concurrency=1 cold path / supported-range characterization
+### P2-A + P2-0b — concurrency=1 cold path / 현 baseline 안 characterization
+
+0b의 범위는 baseline v1을 바꾸지 않은 정상/경계 경로이며, 제품 최종 지원 범위를 정의하지 않는다.
 
 **A 선행:** 작은 허용 fixture·8종 registry·health와 bounded resource sampler/DB/log 수집.
 **0b 추가 선행:** 대표/다중/상한 인접 fixture 선정, §7.2 phase/byte 계측, 동일 DB packet/driver·Search config 확인.
@@ -239,8 +276,59 @@ minimal A로 수집을 확인한 뒤 짧은 대표→긴 대표→경계 인접 
 현재 [Case 대기 결정](../../modules/case/decisions/case-wait-timeout.md)의 Coarse 150초 + 큐 여유 30초와 비교하되
 P2가 이 값을 바꾸지 않는다. Recording 준비/Search 재인코딩/provider를 합쳤을 때 지원 안의 입력도
 Case timeout이면 그대로 결과에 남겨 Case/Search/Recording Owner에게 전달한다.
-byte limit 이하여도 driver/packet 오류가 나면 FAIL·후속 원인으로 기록하며 packet/limit을 올려 성공 처리하지 않는다.
+byte limit 이하여도 driver/packet 오류가 나면 해당 **baseline 실행은 FAIL로 보존**한다.
+운영 packet/limit을 올려 이 acceptance를 PASS로 덮어쓰지 않는다. 근거·복귀 계획이 있는
+**격리 0c의 별도 experimental override는 허용**하며 다른 config/run으로 기록한다.
 CRF 고복잡도에서 bytes 초과는 허용된 typed rejection일 수 있다. 이 경우 성공 시간 표본과 섞지 않는다.
+
+### P2-0c — Isolated capacity probe / 최소 20분 logical timeline 판단
+
+**목적:** 현 **single-AnalysisSource + 전체 timeline에 대한 단일 Coarse request** 구조를 유지한 채,
+격리 experimental target의 안전 한도를 명시적으로 조절했을 때 **처음 막히는 경계**를 측정한다.
+“20분을 반드시 성공시켜라”가 아니라 “20분 logical timeline 지원을 가로막는 최초 병목과 그 근거를 설명할 수 있는가”가 질문이다.
+단일 AnalysisSource가 제품적으로 필수라고 결정하는 실험이 아니며, chunking/storage 코드를 구현하는 단계도 아니다.
+
+**선행:** G1~G5 중 target에 해당하는 항목, 작은 A/0b의 sampler·phase/byte 계측과 안전 예산,
+검토된 fixture/전송 권한·timeline/stream manifest, 운영과 분리된 DB/media/network/config·자원 예산,
+유한한 단계별 한도·provider 시도/비용/시간·중단/cleanup·config 복귀 계획.
+같은 작은 EC2에서 project 이름만 다르게 띄운 것은 자원 격리가 아니다. 이 준비 전에는 BLOCKED다.
+
+#### Experimental override 경계
+
+| 구분 | 허용 범위와 기록 |
+| --- | --- |
+| 운영 baseline | baseline v1·보호 config·운영 DB/packet·ingress는 그대로 둔다. 원래 실패를 성공으로 바꾸는 덮어쓰기 금지 |
+| 실험 Recording | `MAX_DURATION_MS`/`MAX_BYTES`를 **유한한 experimental 값**으로 명시할 수 있다. encode/실행 중/DB write 전 guard와 typed code·notice·no automatic retry는 유지하고 disable/bypass하지 않음 |
+| 실험 MySQL | session packet/driver/statement overhead·메모리 예산 근거가 있을 때 **전용 DB만** packet을 조절할 수 있다. 적용 전후 server/session 값·새 연결 적용·저장/재조회/rollback·연결 상태를 기록. packet만 올려 해결됐다고 결론 내리지 않음 |
+| Search | 첫 probe는 현재 source materialization 512 MiB·Coarse 재인코딩·40 MiB media/56 MiB request cap을 유지하고 최초 거부를 기록. 이 값들은 현재 env knob가 아니므로 변경이 필요하면 Search Owner 후속 설계로 넘긴다. cap 하나를 키우는 것으로 전체 경로 해결을 선언하지 않음 |
+| config 식별·복귀 | baseline/experimental 파일·config ID/내용 hash·profile 구성 식별을 분리하고 변경 이유·이전/실험 값·적용 순서를 보호 기록에 남긴다. 실험 입력 설정→process 적용 확인→측정→기존 실험 config로 복귀/시험 자원 정리 확인. 운영에는 자동 반영하지 않음 |
+
+실험값은 §5의 운영 snapshot 표에 덮어쓰지 않는다. 단순 duration guard만 상향해 bytes가 먼저 막히는 실행도
+유효한 병목 관측이다. 다음 비교를 하려면 원 실패를 보존한 별도 run에서 하나의 변경축과 근거·복귀를 명시한다.
+임의의 무한 한도·packet 최대치·메모리 과할당으로 guard/배포 검증을 우회하지 않는다.
+이 절은 향후 측정 계획이며 이번 PR 수정에서 실제 설정을 바꾸거나 실험을 실행하지 않는다.
+
+#### 진행과 수집
+
+1. 짧은 대표→더 긴 대표→약 10분급→약 20분급을 후보로 하되 fixture·관측 working set·비용 예산에 따라 단계를 정한다. 예산 근거가 없는 다음 길이로 진입하지 않는다.
+2. logical timeline의 선택 범위·총 duration·span/원본 수를 확인한다. 20분 중 사건 주변 4분만 처리하고 20분 전체 탐색 성공으로 기록하지 않는다. 22개/19분 26초 원본은 별도 lineage로 재사용 가능하지만 최소 20분 달성의 대체 evidence는 아니다.
+3. 아래 경계를 관측해 처음 걸린 guard/오류/자원·시간 제약을 분류한다. 앞단에서 멈추면 뒷단은 NOT_REACHED로 남긴다. 기존 cap 거부 자체도 결과이며 실제 DB disconnect/OOM을 유발해 ceiling을 찾지 않는다.
+
+| 경계 | 필수 관측 |
+| --- | --- |
+| Recording | 요청 duration, span별/누적/final AnalysisSource bytes, encode/concat/전체 preparation elapsed, temp/RSS |
+| DB | BLOB write/read elapsed·길이/hash, driver/statement metadata·escaping/buffer overhead, server/session `max_allowed_packet`와 여유, 연결 안정성·`Aborted_clients`·rollback |
+| Search | Coarse 재인코딩 media bytes/elapsed, 현 40 MiB media cap·56 MiB request cap, base64/JSON/request construction bytes/elapsed, 실제 provider 시도/latency/usage |
+| Runtime/Case | queue·Recording preparation·Search preparation·provider·T1/T2·Case-visible elapsed/timeout/반영 reason을 분리. 기존 Case waiting budget은 그대로 측정해 충돌 evidence로 남김 |
+| resource/cleanup | Worker/API/MySQL/ffmpeg/ffprobe RSS/CPU·cgroup, 전체 temp/disk/DB 증가, 정상/거부 후 자식·파일·RAM 회수와 잔여 |
+
+**중단/결과:** §9의 reserve·health·DB 연결·원본/비노출 경계를 유지한다. 한도 거부는 typed 결과로 보존하고,
+예산 부족 시 결과 문서에 RESOURCE_BUDGET_STOP, 계측 불충분 시 UNKNOWN으로 남긴다. 이들은 실험 판정 라벨이며 새 Runtime failure code가 아니다. 관측 없이 “N분 ceiling”을 단정하지 않는다.
+기본 계측으로 경계를 분리할 수 없으면 §7 gap이 해소될 때까지 전체 판정은 BLOCKED다.
+통과한 가장 긴 표본·다음 차단 경계·config·내용 의존성·미도달 단계와 미실행 길이를 같이 기록한다.
+단회 20분 통과도 생산 환경 지원/품질/대기시간 acceptance 완료나 운영값 자동 승격이 아니다.
+
+**Decision Gate:** §10에서 0a/0b/0c 결과를 합쳐 현 구조 유지 가능성과 장시간 지원 설계 재개 필요성을 판단한다.
 
 ### P2-B — 반복 job과 reuse 비용
 
@@ -253,7 +341,7 @@ Case result reuse로 execution이 없으면 그것을 기록하고 encode warm h
 
 ### P2-C — 실패 / cleanup
 
-**선행:** A, 한정된 시험 자원/비민감 fixture. byte/duration guard는 현재 정책으로, deterministic Search timeout/도구 실패는 격리 harness에서만 유도한다.
+**선행:** A, 한정된 시험 자원/비민감 fixture. baseline 회귀는 baseline v1의 byte/duration 값으로 실행하고 0c override 표본과 분리한다. deterministic Search timeout/도구 실패는 격리 harness에서만 유도한다.
 실제 provider를 일부러 timeout시키거나 운영 원본을 훼손하지 않는다.
 
 duration 거부(0a)와 encode 중 누적 bytes·최종 concat bytes 거부, Search 준비 실패, Search/provider 실패를 분리한다.
@@ -354,12 +442,15 @@ production controller는 service당 container 1개를 검증하므로 기존 배
 | G3 data/provider | fixture 소유자·Recording/Search: 개인정보/외부 전송·보관 권한·비식별화, manifest, provider 시도/비용 한도와 예상 followup job | 모든 media 실행. 22개 거부는 media provider 진입 차단 관측 필요. raw 원본/번호판/GPS를 공개 evidence에 넣지 않음 |
 | G4 계측 | Runtime/Recording/Search: 표본 시계·window·필드·비노출·누락, §7의 실험별 필요 gap | gap이 있으면 subset/UNKNOWN으로 제한. 전체 완료 표기 금지 |
 | G5 운영 보호/복구 | 운영자: 현재 public 경계 확인, 알려진 복귀 절차·backup 참조·서비스 영향·실행 창 | 활성 서비스 process 변경/고위험 시나리오는 RT-14 후속 evidence 뒤 재평가. 격리 target은 자체 복귀 조건 충족으로 독립 가능 |
+| G6 experimental override (0c) | Runtime/Recording·DB 운영자: 변경축·유한한 값/packet 여유·자원/비용 근거·원 config 식별·적용/복귀 절차 | 0c 전용 target에만 적용. Search/Case의 기존 cap/대기 의미는 관측 입력으로 보존. 운영 지원 범위 승격과 분리 |
 
 격리 target은 운영 project/DB/media/config·외부 공개 port와 분리한다. 같은 4GiB host에서 이름만 다른
 두 번째 stack을 띄우면 자원 격리가 되지 않는다. Recovery target은 일반 Worker/provider 재생용이 아니므로 재사용하지 않는다.
 권한이 없는 별도 host를 새로 만들거나 리소스를 증설하는 결정도 이 계획이 하지 않는다.
 
 운영 Caddy/SG/IP 허용 범위·secret source·packet·limit·release tuple을 실험 편의를 위해 바꾸지 않는다.
+이는 **운영 변경 금지**다. P2-0c의 별도 experimental target에서는 G6의 근거·복귀 계획에 따라
+Recording duration/bytes·전용 MySQL packet을 조절할 수 있으며 guard/typed failure는 계속 유효하다.
 SQL echo/general log, SDK debug/raw HTTP logging, `docker inspect`/env 전체 덤프, base64·media·credential 출력은 사용하지 않는다.
 표본기는 경로/argv 대신 필요한 숫자·안전한 고정 phase만 수집한다.
 disk exhaustion·swap/OOM·CPU credit 고갈을 목표로 부하를 만들지 않고 bounded 단계 관찰로 대체한다.
@@ -385,6 +476,7 @@ subset을 실행한 사실을 capacity 전체 PASS로 쓰지 않는다. 임의 C
 | heartbeat/lease/retry/cancel tuning | Provisional Baseline B-L*/B-R*/B-X1 change log + evidence, Tech Spec·RD-04. 최소 F1/F2 없이 최종값 선언 금지 |
 | 실행 내/간 reuse·restart 비용 | Recording + Runtime, RD-09·Ops. durable storage를 process cache처럼 다시 설계하지 않음 |
 | profile/limit·DB 전송 여유·준비시간 | Recording limits/환경 설정 원문 + #452. Runtime은 측정 영향만 링크 |
+| 0c 최초 병목·최소 20분 logical timeline 가능성 | 아래 Decision Gate. baseline/experimental 증거 분리, 운영값 후보 검토와 제품 최종 승인 구분 |
 | Search media/request/latency | Search Owner 문서. provider 계약/품질을 Runtime이 정하지 않음 |
 | Case waiting·notice·late retry | Case timeout/long-analysis-range 결정 + #72/#452. 180초 변경은 Case 판단 |
 | deploy/restore/off-host/RPO·RTO | RT-14/Recovery/Ops 후속. P2 결과로 자동 closure하지 않음 |
@@ -395,13 +487,32 @@ workflow §10→§11로 승격한다. 관측값·추정·Owner 결정·코드 �
 아직 Owner 확인이 필요한 것은 **실험 입력과 수집/운영 방식**이다. Recording은 대표/경계 fixture·phase 관측과
 driver 여유 검증, Search는 요청 구성 관측·실제 provider 동시 한도/비용, Case는 대기/late-result 비교와
 결과 환류를 확인한다. Runtime/Ops는 target·자원/복귀 예산·T2/fault harness와 cohort 수집을 정리한다.
-이미 정한 baseline v1·typed code·재시도 없는 notice·MVP 분할 제외 결정을 다시 승인받는 절차는 아니다.
+기존 baseline v1·typed code·재시도 없는 notice는 유지한다. 0c는 초기 baseline을 지우거나
+MVP 분할 제외 이력을 PM의 영구 제품 정책으로 승격하는 절차가 아니다.
+
+### 10.1 Decision Gate — 제품 목표에 대한 환류
+
+0a rejection PASS만으로 #452나 장시간 지원 문제를 해결 처리하지 않는다.
+0b의 현재 구성 비용과 0c의 최초 병목을 합쳐 **최소 20분 logical timeline**에 대한 다음 판단을 남긴다.
+
+| 근거 | 다음 판단·책임 |
+| --- | --- |
+| 현 single-source 구조에서 20분급 대표 입력이 안전한 자원·전송·시간 안에 처리될 가능성 확인 | Recording/Search/Case/Runtime이 운영 profile/limit·DB 여유·대기시간 **후보**를 재검토. 반복/품질·비용 검증과 필요한 승인 후 결정하며 실험값을 자동 production 승격하지 않음 |
+| Recording/DB/Search 요청·Case 대기 등에서 제품 목표 미충족 | 최초 병목을 근거로 **장시간 지원 cross-module 설계를 다시 연다**. bounded/chunked processing, Recording 저장 구조/Object Storage, Search 요청 구조, Case 후보 merge/dedup·시간 좌표/파일 경계 처리 등을 후보로 비교. 채택 방식/구현은 미확정 |
+| 20분 fixture·계측·안전 예산 부족 또는 뒤 단계 미도달 | 목표 미검증/UNKNOWN과 필요한 입력을 명시. 4분을 최종 제품 지원 길이로 고정하거나 무조건 chunking 필요라고 결론 내리지 않음 |
+
+운영 설정의 기술적 검토는 각 Owner가 맡고, Must/Won't·불변 경계·제품 지원 범위 변경의
+최종 승인은 [Product Spec 변경 절차](../../product/product-spec.md)에 따라 **PM 김준영**이 한다.
+이 Gate는 정책/구현 결정을 위한 근거를 마련한다. 현 구조가 불충분하면 설계를 재개할 수 있으며,
+장시간 지원 논의를 P3 이후로 미루는 gate가 아니다. chunking·storage·provider cap 하나만 바꾸면
+해결된다는 결론도 전체 DB/Search/Case/자원·탐색 품질 검증 없이 내리지 않는다.
 
 ## 11. Evidence 기록 규칙
 
 별도 날짜별 Result에 plan revision/실험 ID·미실행 항목을 연결한다. 이 계획에 실행 결과를 덮어쓰지 않는다.
 
 - 실행 시각(KST/UTC)·source SHA/image digest·실제 배포 tuple/schema·도구/driver/model/config version·override·B-ID/profile 입력.
+- 0a/0b의 baseline config와 0c experimental config/변경축·이전값·유한한 실험값·근거·적용/복귀 기록을 분리. 선택한 logical timeline 전체 duration/coverage와 최초 차단·NOT_REACHED 단계, 20분 목표의 검증/미검증 범위 보존.
 - 안전한 fixture alias·선정 이유·길이/bytes/내용군·단일/다중·반복 수. 원본 hash/mtime·실제 식별자/위치·private manifest는 보호 저장.
 - source→Recording→DB→Search→provider→T1/T2→Case-visible 경계별 bytes/elapsed, 각 시계·수집 간격·표본 수·누락/overhead.
 - API/Worker/MySQL/ffmpeg/ffprobe RSS/cgroup/CPU, 모든 temp/DB/media/writable-layer peak 표본·종료 후 추세·자식/잔여 cleanup.
@@ -414,7 +525,8 @@ driver 여유 검증, Search는 요청 구성 관측·실제 provider 동시 한
 
 ## 12. 실행 readiness와 P3 진입
 
-권장 순서: **G1~G4/수집 점검 → 0a(권한·fixture 확보 시) → minimal A → 대표 A/0b → B + F1/F5 → C → D → 격리 F2/F3/F4 → E**.
+권장 순서: **G1~G4/수집 점검 → 0a(권한·fixture 확보 시) → minimal A → 대표 A/0b → G6·격리 0c → 제품/운영 Decision Gate**.
+작은 정상 표본으로 B + F1/F5 → C → D → 격리 F2/F3/F4 → E도 이어가며, 0c가 모든 장애/복수 Worker 실험 완료를 기다릴 필요는 없다.
 22개가 미확보면 그 regression은 남기고 독립적인 작은 A를 진행할 수 있다.
 readiness는 구현/계획상의 분류이며 현재 AWS 가용 상태나 이번 작업의 실행 허가를 뜻하지 않는다.
 
@@ -433,22 +545,26 @@ readiness는 구현/계획상의 분류이며 현재 AWS 가용 상태나 이번
 
 - 실제 22개 0a: 권한/manifest·등록 경로·baseline process 적용·무encode/무provider/무BLOB 증명 수집 미확보.
 - 0b/A 전체 phase attribution: Recording 전체/concat/write·Search preparation/request·driver 여유 계측과 대표 fixture 선정 필요.
+- 0c: 운영과 분리된 target·자원/비용 예산, experimental config/packet의 적용·복귀 근거, 단계별 장시간 fixture·최초 병목 계측 필요. 최소 20분 판정은 해당 duration의 실제 유효 timeline evidence가 있어야 함.
 - F2의 정확한 T1/T2 kill, F3 heartbeat-only DB stall, F4 reason 검증: 격리/bounded harness·post-commit outcome 수집 필요.
 - F5의 정확한 첫 checkpoint 지연은 해당 계측 없으면 목표 판정 불가. 기존 signal/terminal subset과 구분.
 - E: 선행 concurrency=1 evidence·동시성 acceptance·별도 복수 Worker target·provider/자원 예산 확인 필요.
 
 ### DEFERRED
 
-- 30분~1시간을 한 AnalysisSource로 성공시키는 P3. 현재 4분 설정을 늘려 실행하지 않는다.
-- 클립 분할/장시간 지원 정책, 운영 scaling·Object Storage/RDS/Queue/GPU·새 monitoring stack과 장기 공개 hardening 결정.
+- **30분~1시간 logical timeline Real E2E(P3)**. 처리 방식은 P2 capacity 결과와 Recording/Search/Case 장시간 지원 설계 결정 뒤 정한다. single AnalysisSource·bounded/chunked processing·storage 구조 변경·기타 Owner 합의 방식 중 아직 확정한 것은 없다.
+- 운영 scaling·Object Storage/RDS/Queue/GPU 도입·새 monitoring stack·장기 공개 hardening의 실제 적용. 다만 0c가 제품 목표 미충족을 보이면 필요한 장시간 지원 설계 **검토는 P2 Decision Gate에서 바로 재개**한다.
 
-P3를 열려면 P2의 대표/경계/거부·DB/Search/Case timing·cleanup evidence와 잔여 failure mode를 먼저 정리한다.
-장시간 입력이 계속 필요한 경우 Recording/Case/Search의 지원 방식·한도·분할 결정과 fixture 전송 권한,
-실행 환경/복구·자원/비용 예산을 마련한 뒤 별도 P3 계획을 작성한다.
-긴 원본을 상한 안의 여러 실행으로 처리하는 정책과 긴 단일 AnalysisSource 지원을 혼동하지 않는다.
+P3는 제품 약속인 장시간 탐색을 30~60분 logical timeline에서 확인하는 Real E2E다.
+P2의 0a/0b/0c·DB/Search/Case timing·cleanup evidence와 잔여 failure mode를 정리하고,
+제품 목표에 맞는 처리 방식·한도/대기·필요한 후보 merge/dedup·privacy/전송·실행/복구·자원/비용 조건을
+Owner들과 검토한 뒤 별도 P3 계획을 작성한다. 실제 지원 범위 변경은 PM 승인 경계를 따른다.
+4분 baseline 변경을 P3까지 금지하지 않는다. P2-0c experimental override와 향후 운영값 승인 절차를 분리한다.
+긴 logical timeline의 사건 탐색과 거대한 단일 BLOB 성공은 서로 다른 질문이다.
 
 ## References
 
+- [Product Spec — 장시간 탐색·Coarse/Fine·제품 변경 승인 경계](../../product/product-spec.md)
 - [수정 전 감사와 owning code 인벤토리](../reviews/runtime-p2-plan-audit-2026-11-02.md)
 - [#452 본문·전체 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452) · [#460](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460) · [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)
 - [RT-14 Result](2026-10-31-rt14-aws-real-e2e.md) · [Recovery acceptance](../rt14-recovery-acceptance.md) · [공개 배포 Notes](../rt14-public-deployment.md)

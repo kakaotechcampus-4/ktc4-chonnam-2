@@ -468,7 +468,11 @@ deterministic Integration
 
 2026-11-02 현재 구현/증거와의 대조는 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md)를 참조한다.
 RT-14의 제한적 AWS Real E2E·운영자 제공 격리 복원 결과와 아직 Planned인 P2를 구분한다.
-P2에는 #452의 안전 거부 regression/지원 범위 결합 측정을 포함하며, 실험별 선행조건·계측 공백은 그 계획이 추적한다.
+P2에는 #452의 현 baseline 안전 거부 regression(0a), 현 baseline 안 결합 측정(0b),
+격리 experimental override capacity probe(0c)를 포함하며, 실험별 선행조건·계측 공백은 그 계획이 추적한다.
+이는 [Product Spec](../product/product-spec.md)의 장시간·다중 영상 후보 탐색과 이번 PM 요청의
+최소 20분 logical timeline 가능성을 판단하기 위한 것이다. 현재 4분/48 MiB는 최종 제품 지원 범위가 아니다.
+0c의 실험 전용 값·복귀와 운영 baseline 변경/승격을 구분하고, 제품 지원 범위 변경은 PM이 최종 승인한다.
 Deployment rollback·off-host/RPO·RTO·Package READY 후속을 모든 P2의 일괄 gate로 만들지 않는다.
 
 ```text
@@ -496,7 +500,7 @@ restart/reuse
 
 ```text
 concurrency >= 2
-30분~1시간 P3
+30분~1시간 logical timeline P3 (처리 방식 미정)
 Object Storage
 EC2 증설
 RDS

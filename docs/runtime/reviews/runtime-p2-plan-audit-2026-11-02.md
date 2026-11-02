@@ -43,7 +43,7 @@ RT-14(M6)는 IN_PROGRESS이며, P2(M7→M8)는 본격 측정 전이다.
 | P2-F timing/failure | heartbeat/sweep/retry/cancel과 DB 집계·이벤트 구현. 정확한 T2 reason의 상시 로그/DB column은 없음 | KEEP(질문) / SPLIT / UPDATE | F1 정상 관측, F2 kill, F3 heartbeat DB stall, F4 late reflection, F5 cancel로 유지하되 가용 계측·target을 각각 명시 |
 | 구현 전 조건문·과거 모델 고정 | API/Worker/MySQL/health/deploy 실제 구현 존재 | REMOVE / UPDATE | 역사적 입력은 링크로 보존, 현재 경로는 owning code로 재구성 |
 | 20s/480p/H.264/MP4/audio off | #95 P1의 역사적 후보. RT-14 입력은 별도 5.533333초 비식별 사본 | UPDATE / SPLIT | minimal/representative/boundary/long regression fixture를 분리. 실제 확보·권한·manifest 확인 전 길이 grid를 확정하지 않음 |
-| #452 남은 결합 검증 | 구현·Case/Web 연결·초기 baseline은 병합. 실제 22개와 Runtime phase별 측정은 미완료 | ADD | P2-0a duration rejection regression + P2-0b supported-range characterization. P2-A와 같은 실행 자료 재사용 |
+| #452 남은 결합 검증 | 구현·Case/Web 연결·초기 baseline은 병합. 실제 22개와 Runtime phase별 측정은 미완료 | ADD | P2-0a 현 baseline duration rejection regression + P2-0b 현 baseline 안 characterization, A와 정상 자료 재사용. 제품 정합성 후속으로 0c 격리 capacity probe·20분 logical timeline Decision Gate 추가 |
 
 제목의 Elice는 여전히 실제 provider 경로와 맞는다. inbound link를 `rg`로 조사했고
 Ops·workflow·Baseline·Register·Classification·과거 review/official input이 참조한다.
@@ -120,10 +120,13 @@ Case 180초 대기와 Recording 준비/Search RunDeadline의 기산점 차이도
 상세 구현·로컬/CI evidence는 [Recording limits](../../modules/recording/analysis-source-limits.md)가 소유한다.
 
 남은 질문은 Runtime/DB/Search/Case 결합 자원·시간·실패 의미이므로 P2에 편입한다.
-22개/약 19분 26초는 현재 4분 설정에서 **성공시킬 입력이 아니라 안전 거부 regression**이다.
+22개/약 19분 26초는 **P2-0a의 현 4분 baseline에서** 빠른 typed rejection을 기대하는 regression이다.
+이는 해당 입력을 제품적으로 계속 거부하거나 최종 지원 범위 밖으로 정하는 acceptance가 아니다.
+장시간 지원 가능성은 P2-0c 격리 probe와 제품/운영 Decision Gate에서 따로 판단한다.
 7분 20초 Search 단독 성공이나 표본의 9~13분 추정을 전체 경로 지원 길이로 쓰지 않는다.
 profile/limit SoT는 Recording 문서와 [설정 명세 §3](../../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이며
-P2는 그 값을 입력받는다. #452 close, 클립 분할, timeout/길이 변경은 하지 않는다.
+P2-0a/0b는 그 값을 입력받고 0c는 별도 experimental config/복귀를 기록한다.
+이번 문서 변경은 #452 close·운영 timeout/한도 변경·chunking 구현 결정이 아니다.
 
 ## 6. 최소 계측 공백과 blocker
 
@@ -152,9 +155,61 @@ README의 10/02 구현 전 snapshot, Register RD-09의 in-memory 설명, Ops의 
 미확정 표현은 역사적 상태와 현재 상태가 혼재한다. 이번에는 P2 진입·직접 참조에 필요한
 링크/상태만 최소 수정하고 상위 문서 전체 재작성이나 Owner 결정 종료는 하지 않는다.
 
-## 8. 이번 문서 작업의 검증
+## 8. 최초 감사 문서 작업의 검증 (후속 Product 정합화 전)
 
 - 변경한 Markdown 7개(감사 신규 1개 포함)의 로컬 링크/anchor 205개를 확인했다. 누락 0개.
 - `git diff --check`와 변경 경로 검사를 통과했다. 제품 코드·config·Contract·workflow 변경은 없다.
 - 위 source·PR merge metadata·Issue 본문/댓글 대조는 정적 감사다. pytest/MySQL/Docker·AWS/provider·실영상 실행 검증으로 세지 않는다.
 - 기존 작업 브랜치를 보존한 `codex/runtime-p2-plan-audit` worktree에서 문서만 수정했다. 감사 작성 시점에는 commit/push/PR·외부 댓글/Issue 상태 변경을 하지 않았다.
+
+## 9. Product Spec·PM 장시간 의도 정합성 후속 — PR #530 수정
+
+최초 감사는 구현과 당시 설정의 정합성에 집중했고, 제품 목표에 대한 환류를 충분히 담지 못했다.
+**4분 baseline의 rejection을 제품 최종 지원 범위로 읽을 수 있게 한 제한 표현을 수정한다.**
+본 후속은 [Product Spec](../../product/product-spec.md) 전문과 최신 `develop` `c39353ad`의 #531 delta,
+이번 PM 요청을 직접 대조했다. 구현 감사 SHA는 §0의 `15b8b6a1` snapshot을 보존한다.
+#531은 ego vehicle 후보 제외라는 Product 불변 경계 추가이며 장시간 탐색·변경 승인 절차와 충돌하지 않는다.
+Product/Recording/Search/Case Owner 문서는 수정하지 않는다.
+
+| 기존 표현/공백 | 제품 의도와의 충돌 | 수정 |
+| --- | --- | --- |
+| 19분 입력을 성공시킬 입력이 아닌 거부 대상으로 설명 | 현 설정 regression을 미래 제품 acceptance로 고정할 수 있음 | 0a는 **현재 baseline v1**의 typed rejection만 판정. 약 19분 입력의 최종 지원 제외 결정이 아님 |
+| 4분 한도를 유지하며 P3 전까지 늘리지 않는 듯한 문맥 | 초기 배포 snapshot을 PM 승인 최종 한도로 오독 | 4분/48 MiB는 안전 시작값. baseline 회귀와 격리 experimental override·운영 승격을 분리 |
+| packet/limit을 올려 성공 처리하지 않는다는 일괄 문구 | 현재 구성의 acceptance 보존은 맞지만 ceiling probe까지 막음 | 원 baseline FAIL 보존 + **0c 전용 target**에서 유한한 Recording/DB 실험값·근거·복귀 허용. 자동 production 승격 금지 |
+| 30분~1시간 P3를 한 AnalysisSource 성공으로 정의 | 제품은 긴 logical timeline의 후보 탐색이며 BLOB 개수는 구현 선택 | P3를 **30~60분 logical timeline Real E2E**로 정의. single/bounded/chunked/storage 방식 미정 |
+| MVP 분할 제외 결정을 다시 열지 않는다는 문맥 | 현재 모듈 결정 이력을 PM의 영구 제품 정책처럼 고정 | 현 구조 목표 미충족이면 cross-module 장시간 설계를 재개. chunking은 후보 중 하나이며 미확정 |
+| 목표 길이 없는 baseline characterization | 제품의 장시간 탐색 약속에 답할 decision target 부재 | **최소 20분 logical timeline 가능성**을 이번 PM 요청의 검증 목표로 명시. 현재 지원/acceptance 완료 주장 없음 |
+
+### 9.1 실험과 결정의 최종 역할
+
+| 단계 | 입력/판정 경계 |
+| --- | --- |
+| P2-0a | baseline v1 그대로. 실제 22개/19분 26초 입력의 무encode/무Search/무BLOB·typed failure/전용 notice·no automatic retry regression. rejection PASS가 장시간 지원 해결은 아님 |
+| P2-0b | 현 baseline 한도 안 정상/경계 경로의 자원·시간·DB/Search/Case characterization |
+| P2-0c | 격리 target에서 single-AnalysisSource/단일 Coarse 구조를 유지하고 실험 한도·복귀를 명시해 최초 병목 측정. Recording→DB→Search→Case/자원 전체 경계 수집 |
+| Decision Gate | 현 구조가 목표를 충족할 가능성이 있으면 Owner들이 운영값 **후보**를 검토. 미충족이면 bounded/chunked processing·Recording storage/Object Storage·Search request·Case merge/dedup 등 설계를 재개. 지원 범위 변경 최종 승인은 PM |
+| P3 | P2 결과·장시간 지원 설계 결정 뒤 30~60분 logical timeline Real E2E. single AnalysisSource 필수 아님 |
+
+기존 guard·typed failure·DB write 전 차단·Case/Web notice·no automatic retry·baseline v1·RT-14 evidence는 유지한다.
+0c에서는 Search의 현재 source/media/request cap을 관측하고, env로 바꿀 수 없는 cap 변경은 별도 Owner 설계로 넘긴다.
+DB packet이나 Search cap 하나의 상향을 전체 경로 문제 해결로 쓰지 않는다.
+최초 차단 이후 미도달 단계는 NOT_REACHED, 표본/계측/예산 부족은 미검증으로 남긴다.
+실제 19분 26초 표본을 최소 20분 달성으로 올림하지 않는다.
+
+### 9.2 Product 정합성 체크
+
+| Product Spec 원문 | Runtime 계획의 접합 결과 |
+| --- | --- |
+| §3 장시간·다중 영상에서 후보/증거구간 먼저 구성 | P2 목적·20분 logical timeline Decision Gate·P3를 이 약속에 연결 |
+| §4 기술 하위가설·§5 Coarse 후보 + 정밀 검증·§9 비용/시간 위험 | 0c는 capacity/최초 병목만 제공. Top-3 탐색 품질·실용 비용/시간의 제품 acceptance는 Search/Eval/Case와 별도로 함께 검증 |
+| §5 2시간 원본 무조건 전체 서버 업로드 Won't | 범위축소/proxy/clip 전략 필요라는 경계 유지. 장시간 탐색 포기나 거대한 단일 BLOB 필수로 해석하지 않음 |
+| 문서 머리의 PM 최종 승인 절차 | module 설정/실험 결과와 제품 지원 범위 승격 분리. PM 김준영 승인 경계 명시 |
+| §8 약 20분→약 3분 | 사용자 직접 작업시간 목표로 유지. 영상 길이 최소 20분 목표의 근거로 전용하지 않음. 이번 영상 길이 목표의 출처는 PM 요청 |
+
+이번 후속은 문서/계획 정합화이며 실제 AWS·provider·DB/config·배포·Runtime 코드를 변경하거나
+실험하지 않는다. 요청에 따라 수정 diff와 판단 근거를 먼저 보고하며 PR merge는 하지 않는다.
+
+후속 검증: Runtime 문서 6개 수정, PR 전체 Markdown 7개의 로컬 링크/anchor 215개와
+저장소 문서에서 이 파일들로 들어오는 anchor 참조 4개 모두 누락 0개.
+`git diff --check` PASS. Product/Recording/Search/Case 문서·제품 코드·실제 운영 설정 변경은 없다.
+이 수치는 문서 정적 검증이며 capacity·20분 지원·실영상 acceptance 증거가 아니다.
