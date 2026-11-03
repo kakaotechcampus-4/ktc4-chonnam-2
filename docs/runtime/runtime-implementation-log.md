@@ -5079,3 +5079,36 @@ Web #525의 전체 running job 기반 준비 중 판정과 실제 화면 확인�
 작업 전용 MySQL/익명 volume·임시 검증 사본/media를 정리했고 증거/patch는 보존했다.
 33개 focused MySQL 시나리오의 마지막 단계 결과와 최종 파일 동일성을 확인했다(실행 간 중복 제거 요약).
 branch/HEAD 유지, index 비어 있음, 미커밋·미스테이징으로 종료한다.
+
+
+<a id="rt527-develop-integration-20261103"></a>
+
+### 2026-11-03 — #527 실제 브랜치 develop 통합·focused 재검증
+
+정철원(Runtime/Recording). `codex/rt10b-preview-frames`의 clean tree/index,
+시작 `f379276fc88a1e60b8c49d86cc06ae1bb98e7ad1`에서 최신 원격 develop을 조회·fetch했다.
+승인된 merge `d0b5b6e947760fe151376c357eefff46a515df2c`의 부모는 보존 커밋 `f379276f`와
+`ba8e21ea57a400db1820594f5b50303bbf7df454`다. 종료 전 원격 재조회도 develop 동일·#527 `a561f475`였다.
+Log append 충돌은 develop 원문 전체 뒤에 기존 브랜치 추가분을 붙여 양쪽 byte 원문을 보존했다.
+자동 병합된 composition의 실제 Case 세 함수와 최신 metadata envelope/청크 reader/temp 배선을 함께 확인했다.
+
+이번에는 임시 사본의 PASS를 쓰지 않고 실제 통합 브랜치에서 focused 155 passed,
+media/API 150 passed·기존 사용자 영상 opt-in 1 skipped, 중복 제외 MySQL 31개 마지막 시나리오의
+setup/call/teardown passed를 확인했다. 단일 전체 suite 결과로 합산하지 않는다.
+초기 MySQL 18 passed/1 failed의 새 process 하네스 순서 가정을 기준 develop과 대조하고 역순 DB 진단으로 재현했다.
+실제 queue 순서를 따라 두 Readout의 첫 kind 양쪽을 강제하는 테스트 보완은 미커밋·미스테이징이다.
+최종 두 경우 2 passed, 품질·boundary·Contract·diff PASS. 제품/timeout/skip/xfail 정책은 변경하지 않았다.
+
+전달 이력 없는 fresh reviewer의 정적 리뷰와 같은 reviewer의 최종 delta 재확인에서 추가 actionable 지적은 없었다.
+reviewer의 작성자 JSON/JUnit/RAW 증거 검토와 독립 테스트 실행은 구분한다(reviewer 직접 실행 없음).
+상세 실패·환경 이력·31개 집계·원격 옛 HEAD CI 구분·18개 기능 경로/114개 merge 유입 경로·NOT_RUN과
+후속 조건은 [이번 Implementation Notes](rt10b-preview-frames.md#rt527-develop-integration-20261103)에 둔다.
+Web #525는 병합됐고 준비 중은 INCIDENT_CLIP_BUILD로 한정됐으나 카드별 자격/실제 화면은 Owner 후속이다.
+유소연 Owner 복귀 정책 검토는 별도 후속이며 현재 통합의 새 차단 조건이 아니다.
+전체 로컬 pytest/mandatory MySQL·TCP/브라우저·사용자 영상·provider·AWS/배포는 실행하지 않았다.
+이번 merge 외 새 commit/push·PR 변경·댓글·Draft 해제·PR 병합은 하지 않는다.
+
+작업 전 RAM/C 디스크 예산 확인 후 전용 MySQL만 사용했고, 종료 전 조회자 외 client/transaction/lock 0을 확인했다.
+task label·ID·mount를 대조해 작업 컨테이너/새 익명 volume 하나만 정상 정리했으며 보호 volume 3개는 유지했다.
+작업 scratch의 생성 media·credential·baseline 사본만 정리하고 RAW/JSON/JUnit은 보존했다.
+Notes·이 Log의 HEAD 원문 byte prefix 보존, 종료 HEAD 동일·index 비어 있음·새 수정 3파일 미커밋을 확인한다.

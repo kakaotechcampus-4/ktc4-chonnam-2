@@ -349,7 +349,9 @@ def test_frame_receipt_survives_real_lost_t1_commit_ack(queue, tmp_path, monkeyp
             active.dispose()
 
 
-def test_separate_worker_and_api_processes_read_exact_owned_frame(queue, tmp_path, monkeypatch):
+@pytest.mark.parametrize("first_kind", ["PLATE_READ", "OVERLAY_TIME_READ"])
+def test_separate_worker_and_api_processes_read_exact_owned_frame(queue, tmp_path, monkeypatch, first_kind):
+    from datetime import timedelta
     import hashlib
     import multiprocessing
     import os
@@ -376,13 +378,30 @@ def test_separate_worker_and_api_processes_read_exact_owned_frame(queue, tmp_pat
         worker = run(frame_worker_peer)
         assert worker["decodes"] == 1 and worker["checkedout"] == 0
         frame = worker["payload"]["preview_frame_ref"]
+        # clip의 T2에서 발주된 두 판독의 claim 순서를 각각 강제해 확인한다.
+        with queue.begin() as conn:
+            earliest = conn.scalar(sa.select(sa.func.min(job_execution.c.available_at))
+                .where(job_execution.c.status == "QUEUED"))
+            changed = conn.execute(sa.update(job_execution).where(job_execution.c.status == "QUEUED",
+                job_execution.c.kind == first_kind).values(available_at=earliest - timedelta(microseconds=1)))
+            assert changed.rowcount == 1
         from tests.e2e_runtime.production_processes import worker_peer
-        for kind in ("PLATE_READ", "OVERLAY_TIME_READ"):
+        observed = set()
+        for _ in range(2):
+            # 두 판독은 한 transaction에서 발주된다. Runtime의 실제 queue 순서를 따른다.
+            with queue.connect() as conn:
+                kind = conn.scalar(sa.select(job_execution.c.kind).where(job_execution.c.status == "QUEUED")
+                    .order_by(job_execution.c.available_at, job_execution.c.execution_id).limit(1))
+            assert kind in {"PLATE_READ", "OVERLAY_TIME_READ"} - observed
+            if not observed:
+                assert kind == first_kind
             readout = run(worker_peer, "clip_readout_ok", kind)
             assert readout["http_calls"] == 0
             assert len(readout["readout_calls"]) == 1
             assert readout["readout_calls"][0][1] == worker["payload"]["incident_clip_ref"]
             assert readout["terminals"] == [{"status": "SUCCEEDED", "failure_kind": None}]
+            observed.add(kind)
+        assert observed == {"PLATE_READ", "OVERLAY_TIME_READ"}
         api = run(frame_api_peer, case_id, frame)
         assert len({os.getpid(), worker["pid"], api["pid"]}) == 3
         assert api["foreign"] == api["exact"] == 404
