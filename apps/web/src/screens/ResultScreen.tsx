@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
-import { ChevronRight, CircleAlert, Download, ExternalLink, Film, Info } from 'lucide-react'
+import { Check, ChevronRight, CircleAlert, Download, ExternalLink, Film, Info } from 'lucide-react'
 import {
   isAction,
   type Action,
@@ -27,6 +27,8 @@ const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/'
 const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
 const TOAST_MS = 3000
+// 누른 복사 버튼이 「복사됨」으로 바뀌어 있는 시간 — 알림(TOAST_MS)보다 짧게 두어 버튼이 먼저 돌아온다
+const COPIED_MS = 1600
 // 아래 문구는 검토 대기 중인 새 문구다(보고서 「검토할 문구」).
 // 붙여넣지 않고 안전신문고에서 사용자가 고르는 칸(유형·위치·발생 일시) 표시
 const PICK_MARK = '직접 선택'
@@ -206,12 +208,24 @@ export function ResultScreen(props: {
 
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  useEffect(() => () => clearTimeout(timer.current), [])
-  const copy = (text: string) => {
+  // 복사에 성공하면 누른 버튼 자체가 잠깐 「복사됨」으로 바뀐다. 알림 글은 화면 구석이라 눈이 가지 않기 때문이다
+  const [copied, setCopied] = useState<string | null>(null)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current)
+      clearTimeout(copiedTimer.current)
+    },
+    [],
+  )
+  const copy = (text: string, key: string) => {
     const done = (ok: boolean) => {
       setToast({ text: ok ? COPIED : COPY_FAILED, id: Date.now() })
       clearTimeout(timer.current)
       timer.current = setTimeout(() => setToast(null), TOAST_MS)
+      clearTimeout(copiedTimer.current)
+      setCopied(ok ? key : null)
+      if (ok) copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS)
     }
     if (!navigator.clipboard) return done(false)
     navigator.clipboard.writeText(text).then(
@@ -219,6 +233,16 @@ export function ResultScreen(props: {
       () => done(false),
     )
   }
+  const copyClass = (key: string, base: string) => `${base} rs-copy${copied === key ? ' is-copied' : ''}`
+  const copyText = (key: string, idle: string, done: string) =>
+    copied === key ? (
+      <>
+        <Check className="rs-copy-check" size={16} strokeWidth={2.5} aria-hidden />
+        {done}
+      </>
+    ) : (
+      idle
+    )
   // 고치는 동안에는 보이던 값 대신 입력칸이 그 자리에 열린다. onEdit이 없으면 값만 둔다
   const editable = (key: keyof ReportEdits, label: string, value: string | null | undefined, shown: ReactNode, multiline?: boolean) =>
     props.onEdit ? (
@@ -232,12 +256,12 @@ export function ResultScreen(props: {
     canCopy && (
       <button
         type="button"
-        className="rs-btn sec sm"
+        className={copyClass(label, 'rs-btn sec sm')}
         disabled={!value}
         aria-label={`${label} 복사`}
-        onClick={() => value && copy(formatValue(value))}
+        onClick={() => value && copy(formatValue(value), label)}
       >
-        복사
+        {copyText(label, '복사', '복사됨')}
       </button>
     )
 
@@ -393,8 +417,8 @@ export function ResultScreen(props: {
                 <span className="res-keyword-k">검색어</span>
                 <span className="res-keyword-v">{keyword}</span>
                 {canCopy && (
-                  <button type="button" className="rs-btn sec sm" aria-label="검색어 복사" onClick={() => copy(keyword)}>
-                    복사
+                  <button type="button" className={copyClass('검색어', 'rs-btn sec sm')} aria-label="검색어 복사" onClick={() => copy(keyword, '검색어')}>
+                    {copyText('검색어', '복사', '복사됨')}
                   </button>
                 )}
               </p>
@@ -504,12 +528,12 @@ export function ResultScreen(props: {
             {canCopy && (
               <button
                 type="button"
-                className="rs-btn sec"
+                className={copyClass('전체', 'rs-btn sec')}
                 disabled={!ready || !pasteText}
                 aria-describedby="res-copy-all-note"
-                onClick={() => copy(pasteText)}
+                onClick={() => copy(pasteText, '전체')}
               >
-                붙여넣을 내용 전체 복사
+                {copyText('전체', '붙여넣을 내용 전체 복사', '전체 복사했어요')}
               </button>
             )}
             {pkg.capabilities.includes('OPEN_DESTINATION') && (
