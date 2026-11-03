@@ -87,6 +87,16 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     "end_sec": 20 / 30 if fractional else 1.5 * settings.config.coarse_fps if multi else .8},
                     "at_sec": settings.config.coarse_fps if multi else .5,
                     "observed": ["red signal"], "score": .9}]
+                if scenario.startswith("clip_frames_"):
+                    count = int(scenario.removeprefix("clip_frames_"))
+                    candidates = [{"event_type": "SIGNAL", "span": {
+                        "start_sec": (.1 + index * .2) * settings.config.coarse_fps,
+                        "end_sec": (.25 + index * .2) * settings.config.coarse_fps},
+                        # Between 10fps PTS boundaries so this success fixture
+                        # cannot exercise a float-at-exact-PTS refusal instead.
+                        "at_sec": (.15 + index * .2) * settings.config.coarse_fps,
+                        "observed": ["red signal"], "score": .9 - index * .1}
+                        for index in range(count)]
                 if scenario == "partial":
                     candidates.append({"event_type": "SIGNAL", "span": {"start_sec": 8, "end_sec": 9},
                         "at_sec": 8.5, "observed": ["outside source"], "score": .5})

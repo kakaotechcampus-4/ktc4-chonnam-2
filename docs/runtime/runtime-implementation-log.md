@@ -5040,3 +5040,75 @@ UNKNOWN: 과거packet128 대조 저장/재조회/rollback 및 timeout↔OOM 인�
 20분 E2E 전에는 materializer/서비스 전체 content 보유, Search 준비·base64/JSON·request cap,
 Case 대기/timeout·발주/병합, ingress body/time 예산과 실제 입력 실험을 별도로 닫아야 한다.
 #452 전체 해결·20분 완주·운영 지원 길이를 선언하지 않는다.
+
+### 2026-11-02 — #470·#523 A안 preview / Top-3 Runtime 독립 slice
+
+정철원(Runtime/Recording). 현재 브랜치 `codex/rt10b-preview-frames`, HEAD `204b85eb`에서
+기존 index/working tree가 비어 있음을 확인하고 작업했다. 최신 #470·#523 전체 댓글과 #525 Web Owner 리뷰,
+관련 계약·실제 코드를 대조했다. #470은 미병합이며 PR을 merge/cherry-pick하지 않았다.
+
+입력 detach/현재성 검증, handler의 Case 위치 함수 주입 경계, 문자열/null payload 검증과
+Worker ProducedReader 소비 경로를 구현했다. production의 Case helper/Top-3 selector/소비는 미연결이며
+테스트 대역을 연결하지 않았다. 직접 검증·원본 증거·전체 파일 목록·미해결 Owner 인터페이스와
+#525 준비 중 판정 확인 제안은 [Implementation Notes](rt10b-preview-frames.md)에 한 번만 기록한다.
+기존 [#470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470) 및
+[#523 합의 원본](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/523#issuecomment-6559417301),
+기술 결과 원본 링크는 Notes가 보존하며 여기 중복 복제하지 않는다.
+
+**IN_PROGRESS — 독립 구현과 실제 Case/Web 통합·배포 완료를 구분한다.**
+전체 pytest/mandatory MySQL 로컬 일괄 반복, 원격 CI dispatch, AWS/EC2/provider/배포/기존 서비스 중지는
+하지 않는다. staging·commit·push·PR·댓글 게시·merge도 하지 않는다.
+
+## 2026-11-02 — #527 실제 Case preview/Top-3 production 연결 후속
+
+정철원(Runtime/Recording). branch `codex/rt10b-preview-frames`, HEAD `a561f475`의 빈 working tree/index에서 시작했다.
+최신 develop `ea2bc5e3` 및 #470/#527/#532/#525 본문·댓글·HEAD·CI와 #523 Runtime 답변을 직접 확인했다.
+Case 공개 selector/위치 함수 세 개를 production composition에 직접 연결했다.
+#532는 Draft/미병합이므로 고정 HEAD `1ee6d66f`와 develop을 별도 임시 archive 사본에 적용하여
+실제 Case/Recording/MySQL/CaseView/HTTP·replay 경계를 검증했다. 원본 branch/HEAD와 다른 Owner 코드는 유지한다.
+
+RED→GREEN, focused 회귀, MySQL 후보 0~3/stale/세대 변경, T1/T2/receipt rollback·redelivery,
+과거 payload, 두 Readout·별도 process/HTTP 증거와 실패/진단은
+[Implementation Notes 후속](rt10b-preview-frames.md#실제-case-통합-후속--실행-계획-2026-11-02-kst)에 기록했다.
+fresh read-only reviewer의 P2(옛 receipt assertion)를 보완했고 최종 source/test 재검토에 추가 actionable finding은 없었다.
+
+**선행 조건:** #532 병합과 develop 동기화 전 원본 단독 checkout의 새 import는 실행할 수 없다.
+Web #525의 전체 running job 기반 준비 중 판정과 실제 화면 확인은 Owner 후속이다.
+전체 로컬 pytest/mandatory MySQL 반복, live provider·AWS/배포, staging/commit/push·PR/외부 댓글·merge는 하지 않는다.
+최종 전체 회귀는 사용자의 추후 push 뒤 원격 CI 조건으로 남긴다. 기존 로그는 append만 하여 보존한다.
+작업 전용 MySQL/익명 volume·임시 검증 사본/media를 정리했고 증거/patch는 보존했다.
+33개 focused MySQL 시나리오의 마지막 단계 결과와 최종 파일 동일성을 확인했다(실행 간 중복 제거 요약).
+branch/HEAD 유지, index 비어 있음, 미커밋·미스테이징으로 종료한다.
+
+
+<a id="rt527-develop-integration-20261103"></a>
+
+### 2026-11-03 — #527 실제 브랜치 develop 통합·focused 재검증
+
+정철원(Runtime/Recording). `codex/rt10b-preview-frames`의 clean tree/index,
+시작 `f379276fc88a1e60b8c49d86cc06ae1bb98e7ad1`에서 최신 원격 develop을 조회·fetch했다.
+승인된 merge `d0b5b6e947760fe151376c357eefff46a515df2c`의 부모는 보존 커밋 `f379276f`와
+`ba8e21ea57a400db1820594f5b50303bbf7df454`다. 종료 전 원격 재조회도 develop 동일·#527 `a561f475`였다.
+Log append 충돌은 develop 원문 전체 뒤에 기존 브랜치 추가분을 붙여 양쪽 byte 원문을 보존했다.
+자동 병합된 composition의 실제 Case 세 함수와 최신 metadata envelope/청크 reader/temp 배선을 함께 확인했다.
+
+이번에는 임시 사본의 PASS를 쓰지 않고 실제 통합 브랜치에서 focused 155 passed,
+media/API 150 passed·기존 사용자 영상 opt-in 1 skipped, 중복 제외 MySQL 31개 마지막 시나리오의
+setup/call/teardown passed를 확인했다. 단일 전체 suite 결과로 합산하지 않는다.
+초기 MySQL 18 passed/1 failed의 새 process 하네스 순서 가정을 기준 develop과 대조하고 역순 DB 진단으로 재현했다.
+실제 queue 순서를 따라 두 Readout의 첫 kind 양쪽을 강제하는 테스트 보완은 미커밋·미스테이징이다.
+최종 두 경우 2 passed, 품질·boundary·Contract·diff PASS. 제품/timeout/skip/xfail 정책은 변경하지 않았다.
+
+전달 이력 없는 fresh reviewer의 정적 리뷰와 같은 reviewer의 최종 delta 재확인에서 추가 actionable 지적은 없었다.
+reviewer의 작성자 JSON/JUnit/RAW 증거 검토와 독립 테스트 실행은 구분한다(reviewer 직접 실행 없음).
+상세 실패·환경 이력·31개 집계·원격 옛 HEAD CI 구분·18개 기능 경로/114개 merge 유입 경로·NOT_RUN과
+후속 조건은 [이번 Implementation Notes](rt10b-preview-frames.md#rt527-develop-integration-20261103)에 둔다.
+Web #525는 병합됐고 준비 중은 INCIDENT_CLIP_BUILD로 한정됐으나 카드별 자격/실제 화면은 Owner 후속이다.
+유소연 Owner 복귀 정책 검토는 별도 후속이며 현재 통합의 새 차단 조건이 아니다.
+전체 로컬 pytest/mandatory MySQL·TCP/브라우저·사용자 영상·provider·AWS/배포는 실행하지 않았다.
+이번 merge 외 새 commit/push·PR 변경·댓글·Draft 해제·PR 병합은 하지 않는다.
+
+작업 전 RAM/C 디스크 예산 확인 후 전용 MySQL만 사용했고, 종료 전 조회자 외 client/transaction/lock 0을 확인했다.
+task label·ID·mount를 대조해 작업 컨테이너/새 익명 volume 하나만 정상 정리했으며 보호 volume 3개는 유지했다.
+작업 scratch의 생성 media·credential·baseline 사본만 정리하고 RAW/JSON/JUnit은 보존했다.
+Notes·이 Log의 HEAD 원문 byte prefix 보존, 종료 HEAD 동일·index 비어 있음·새 수정 3파일 미커밋을 확인한다.

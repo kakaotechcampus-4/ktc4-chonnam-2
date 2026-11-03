@@ -135,7 +135,10 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
                 assert clip_row["status"] == "SUCCEEDED"
                 refs = json.loads(clip_row["produced"]) if isinstance(clip_row["produced"], str) else clip_row["produced"]
                 payload = ProducedReader()(conn, "INCIDENT_CLIP_BUILD", tuple(refs))
-                assert set(payload) == {"incident_clip_ref"}
+                assert set(payload) == {"incident_clip_ref", "preview_frame_ref", "candidate_frame_refs"}
+                assert payload["preview_frame_ref"]
+                assert set(payload["candidate_frame_refs"].values()) == {payload["preview_frame_ref"]}
+                assert [c["thumb_ref"] for c in clip_view["candidates"]] == [payload["preview_frame_ref"]]
                 readouts = [row for row in rows if row["kind"] in {"PLATE_READ", "OVERLAY_TIME_READ"}]
                 assert len(readouts) == 2 and all(row["status"] == "QUEUED" for row in readouts)
                 case = case_store.get_case(identity)
