@@ -30,17 +30,25 @@ RT-14 종료의 증거가 아니다.**
 
 `REVISION`은 공개 가능한 source identity다. production에서는 40자 SHA를 넣고,
 기존 local/일반 CI build는 `local` marker를 허용한다. host와 public smoke는 `local`을
-배포 revision으로 받지 않는다. Web은 상대 API URL을 그대로 사용하며 별도 public
-API key/endpoint env가 필요 없다. `API_PROXY_TARGET`은 Vite dev server 전용이다.
+배포 revision으로 받지 않는다. Web은 상대 API URL을 그대로 사용한다. 선택적 지도
+공개 build 입력의 이름·공급·소비·도메인 제한과 #541 통합 선행조건은
+[환경·배포 설정 명세 §2.4](../management/environment-and-deployment-config.md#24-web-선택적-build-설정)가 소유한다.
+`API_PROXY_TARGET`은 Vite dev server 전용이다.
 Docker context는 필요한 Web source·JSON fixture만 추가하며 `.env*`·credential·key
 제외를 유지한다. provider/DB/DDNS/TLS secret을 build arg/env/bundle에 넣지 않는다.
 개인 로컬 build에는 비공개 `VITE_*`를 공급하지 않는다. 배포 image build에는 그런
-입력을 전달하지 않는다. 기존 공개 fixture의 개인정보 적합성은 별도 P0 검수다.
+비공개 입력을 전달하지 않는다. 기존 공개 fixture의 개인정보 적합성은 별도 P0 검수다.
 
 host는 pull한 exact image에서 `docker create`/`docker cp`로 Web을 임시 staging하고,
 revision·전체 파일 SHA-256 manifest를 검사한다. `releases/<SHA>/web`은 읽기 전용으로
 게시하고 previous/candidate 디렉터리를 자동 삭제하지 않는다. 기존 revision 경로를
 새 bundle로 덮어쓰지 않는다. 파일 manifest는 image digest 신뢰의 대체물이 아니다.
+공개 build 입력이 바뀌면 같은 source SHA라도 다른 bundle이 된다. 이미 게시한 SHA의
+키만 바꿔 재게시하지 않고 새 revision으로 publish한다. 동일 SHA의 다중 variant는
+현재 immutable tag/release 구조가 지원하지 않는다(근거·별도 결정 범위는 위 명세).
+승격 때 exact image digest와 그 image의 전체 manifest/`release.json web_sha256`를
+대조하고 revision 일치 검사도 유지한다. public smoke의 revision PASS만으로 지도
+artifact·도메인 권한·실제 SDK 로드 성공을 판정하지 않는다.
 
 ## 2. 운영자 입력과 host ingress 준비
 

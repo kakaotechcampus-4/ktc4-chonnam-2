@@ -39,7 +39,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Build Linux amd64 image with shared FFmpeg and Paddle layers
-        run: docker build --platform linux/amd64 --build-arg REVISION="$GITHUB_SHA" --tag daesingo-rt14:verified .
+        env:
+          VITE_KAKAO_MAP_KEY: ${{ vars.RT14_KAKAO_MAP_JS_KEY }}
+        run: docker build --platform linux/amd64 --build-arg REVISION="$GITHUB_SHA" --build-arg VITE_KAKAO_MAP_KEY --tag daesingo-rt14:verified .
       - name: Exact image media and offline model acceptance
         run: |
           docker run --rm --network none daesingo-rt14:verified python /app/docker/web_artifact.py /app/web/dist "$GITHUB_SHA"
