@@ -430,7 +430,7 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
-            {ev && <LocationMap coord={ev.location_display.coord} />}
+            {ev && <LocationMap coord={ev.location_display.coord} query={keyword ?? location?.value} />}
           </Item>
 
           <Item label="제목">
