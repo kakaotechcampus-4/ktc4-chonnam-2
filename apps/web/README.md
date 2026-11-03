@@ -4,7 +4,7 @@
 
 ## 지금 상태
 
-React 19/Vite 6 제품 앱이다. 루트 npm workspace에서 설치·빌드·테스트한다(`README.md`의 실행 방법). 장면 찾기 중 사용자가 주행 게임을 선택하면 Three.js 0.160.1을 지연 로딩한다. 게임은 분석 상태를 읽거나 바꾸지 않는다.
+React 19/Vite 6 제품 앱이다. 루트 npm workspace에서 설치·빌드·테스트한다(`README.md`의 실행 방법). 분석을 기다리는 동안 사용자가 주행 게임을 선택하면 Three.js 0.160.1을 지연 로딩한다. 게임은 분석 상태를 읽거나 바꾸지 않는다. 빌드할 때 `VITE_DRIVING_GAME=off`를 주면 게임을 끈다.
 
 ## 이 폴더와 `apps/prototype/`의 관계
 

@@ -75,7 +75,7 @@ it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하
   expect(text()).toContain('신고자료가 준비됐어요')
 })
 
-it('「장면 찾기」 동안 게임을 선택해서 열고 단계가 끝나면 게임과 진입 버튼을 해제한다', () => {
+it('「장면 찾기」 동안 게임을 선택해서 열면 다음 단계에서도 이어지고, 진행 화면을 벗어나면 게임과 진입 버튼을 해제한다', () => {
   // Decode is not available in jsdom; explicitly exercise the unavailable branch.
   const original = URL.createObjectURL
   URL.createObjectURL = () => { throw new Error('preview unavailable') }
@@ -83,22 +83,28 @@ it('「장면 찾기」 동안 게임을 선택해서 열고 단계가 끝나면
     const { wait, getByText, container } = start('main')
     wait()
     fireEvent.click(getByText('영상에서 찾아보기'))
+    const steps = new Set<string>()
     const seen: boolean[] = []
-    let searching = 0
+    let opened = false
+    let left = false
     for (let i = 0; i < 12; i++) {
       const now = container.querySelector('.flow-now')?.textContent
-      if (now === '장면 찾기') {
-        if (searching++ === 0) {
-          expect(container.querySelector('.driving-preview')).toBeNull()
-          fireEvent.click(getByText('기다리는 동안 게임을 해보시겠어요?'))
-        }
+      if (!opened && now === '장면 찾기') {
+        expect(container.querySelector('.driving-preview')).toBeNull()
+        fireEvent.click(getByText('기다리는 동안 게임을 해보시겠어요?'))
+        opened = true
+      }
+      if (opened && now) {
+        steps.add(now)
         seen.push(!!container.querySelector('.driving-preview'))
-      } else {
+      } else if (opened) {
+        left = true
         seen.push(!container.querySelector('.driving-preview, .flow-preview-switch'))
       }
       act(() => vi.advanceTimersByTime(1_200))
     }
-    expect(searching).toBeGreaterThan(0)
+    expect(steps.size).toBeGreaterThan(1)
+    expect(left).toBe(true)
     expect(seen.every(Boolean)).toBe(true)
   } finally {
     URL.createObjectURL = original

@@ -17,6 +17,9 @@ import { ProgressPanel } from '../components/ProgressPanel'
 import { VideoThumb } from '../components/VideoThumb'
 import carTop from '../assets/car/car-top.webp'
 
+// 주행 게임을 빌드에서 끈다(`VITE_DRIVING_GAME=off`). 끄면 진입 버튼이 없고 Three.js도 불러오지 않는다.
+const DRIVING_ON = import.meta.env.VITE_DRIVING_GAME !== 'off'
+
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
 // 진행 화면에는 버튼이 없다. 실패한 단계는 목록에서 빨갛게 칠하고, 다른 단계가 실제로
@@ -178,7 +181,8 @@ export function FlowScreen(props: {
           key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}
-          canDrive={running === 'coarse_search' && screen.blocking.length === 0}
+          // 분석을 기다리는 동안(PROGRESS)이면 단계와 상관없이 연다 — 단계 사이에 RUNNING이 잠깐 없어도 닫지 않는다.
+          canDrive={DRIVING_ON && screen.kind === 'PROGRESS' && screen.blocking.length === 0}
         />
 
         {props.files.length > 1 && (
