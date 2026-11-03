@@ -127,7 +127,7 @@ npm run preview:web        # apps/web 프로덕션 빌드 서빙
 npm run test:web           # apps/web 테스트 (vitest)
 ```
 
-`apps/web` 결과 화면의 위치 지도는 `apps/web/.env.local`의 `VITE_KAKAO_MAP_KEY`(카카오 **JavaScript 키**, 루트 `.env`가 아니다)를 build 때 읽는다. 키가 없으면 지도 칸만 숨고 나머지는 그대로 동작한다. 카카오 콘솔 설정은 `apps/web/src/components/kakaoMap.ts` 첫 주석에 있다.
+`apps/web` 결과 화면의 위치 지도는 선택적 build 설정 `VITE_KAKAO_MAP_KEY`를 읽는다. 로컬 공급 위치(`apps/web/.env.local`)와 배포 이미지 공급 경로는 [환경·배포 설정 명세 §2.4](docs/management/environment-and-deployment-config.md#24-web-선택적-build-설정)를 따르며, API/Worker runtime 설정만으로 활성화되지 않는다. 키가 없으면 지도 칸만 숨고 나머지 흐름은 그대로 동작한다.
 
 ### Python (`src/daesingo`, `eval/`)
 

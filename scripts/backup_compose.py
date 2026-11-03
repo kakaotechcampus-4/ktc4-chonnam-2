@@ -107,7 +107,7 @@ client <&0
     finish = r'''
 client -e "SELECT 'case',version_num FROM case_alembic_version UNION ALL SELECT 'recording',version_num FROM recording_alembic_version UNION ALL SELECT 'runtime',version_num FROM runtime_alembic_version ORDER BY 1"
 printf '__RT13_SQL__\n'
-timeout 180 mysqldump --defaults-extra-file="$config" --single-transaction --quick --skip-lock-tables --skip-add-locks --skip-comments --skip-dump-date --skip-add-drop-table --order-by-primary --hex-blob --no-tablespaces --set-gtid-purged=OFF daesingo 2>/dev/null
+timeout 180 mysqldump --defaults-extra-file="$config" --single-transaction --quick --skip-lock-tables --skip-add-locks --skip-comments --skip-dump-date --skip-add-drop-table --order-by-primary --hex-blob --skip-extended-insert --no-tablespaces --set-gtid-purged=OFF daesingo 2>/dev/null
 '''
     return setup + source_guard + clean + finish
 

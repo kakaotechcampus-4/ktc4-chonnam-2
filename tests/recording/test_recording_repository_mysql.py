@@ -100,10 +100,15 @@ def test_rec1c_conflicting_bytes_cannot_partially_add_new_case(db):
 
 
 @check("media_read", "legacy")
-def test_rec1c_frozen_schema_rerun_and_metadata_only_legacy(db):
+def test_rec1c_frozen_schema_rerun_and_metadata_only_legacy(mysql_engine, tmp_path):
     from test_ownership_reads import asset, PNG
     from daesingo.recording import RecordingCapabilityError
-    engine, root = db
+    engine, root = mysql_engine, tmp_path
+    # Explicit historical release seed; upgrade must preserve its legacy rows.
+    cfg = Config(str(ROOT / "migrations/recording/alembic.ini"))
+    with engine.begin() as conn:
+        cfg.attributes["connection"] = conn
+        command.upgrade(cfg, "recording_0001")
     with engine.begin() as conn:
         repo = adapter(conn, root)
         repo.add_derived_asset(asset())
@@ -113,7 +118,7 @@ def test_rec1c_frozen_schema_rerun_and_metadata_only_legacy(db):
     upgrade_all(engine.url)
     with engine.begin() as conn:
         assert conn.exec_driver_sql("SELECT kind, entry_key, payload, content FROM recording_entry ORDER BY ordinal").all() == before
-        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0002"
         service = RecordingService(adapter(conn, root))
         assert service.get_derived_asset(asset().derived_asset_ref) == asset()
         with pytest.raises(RecordingCapabilityError) as e:
@@ -785,7 +790,7 @@ def test_fresh_migration_metadata_and_rerun_preserve_data(db):
     with engine.begin() as conn:
         seed(adapter(conn, root))
         before = conn.exec_driver_sql("SELECT kind, entry_key, payload, content FROM recording_entry ORDER BY ordinal").all()
-        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0002"
         from alembic.migration import MigrationContext
         from alembic.autogenerate import compare_metadata
         diff = compare_metadata(MigrationContext.configure(conn, opts={"include_name": lambda name, type_, parents: type_ != "table" or name in metadata.tables}), metadata)
@@ -808,7 +813,7 @@ def test_upgrade_existing_case_runtime_revisions_keeps_their_data(mysql_engine, 
     with mysql_engine.connect() as conn:
         assert conn.exec_driver_sql("SELECT case_id FROM cases").scalar_one() == "retained"
         assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0006"
-        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0002"
 
 
 @check("migration", "failure")
@@ -819,7 +824,7 @@ def test_failed_recording_upgrade_and_rejected_downgrade_preserve_existing_data(
     with engine.begin() as conn:
         seed(adapter(conn, root))
     copied = copy_production(tmp_path / "migrations")
-    add_revision(copied / "recording", "recording_test_failure", "recording_0001",
+    add_revision(copied / "recording", "recording_test_failure", "recording_0002",
                  create_table("recording_partial") + "\n" + create_table("recording_partial"))
     with pytest.raises(MigrationFailure):
         upgrade_all(engine.url, migrations_root=copied)
@@ -828,7 +833,7 @@ def test_failed_recording_upgrade_and_rejected_downgrade_preserve_existing_data(
         cfg.attributes["connection"] = conn
         with pytest.raises(NotImplementedError):
             command.downgrade(cfg, "base")
-        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0002"
         assert "recording_partial" in sa.inspect(conn).get_table_names()
         assert RecordingService(adapter(conn, root)).read_frame("fr_h001_thumb") == b"durable-image-fr_h001_thumb"
 
@@ -895,7 +900,7 @@ def test_legacy_json_without_original_filename_restores_without_rewrite(db):
         restored = adapter(conn, root).get_local_source(result.source_asset.source_asset_ref)
         assert restored.original_filename is None and restored.path == source.path
         assert conn.exec_driver_sql("SELECT ordinal, payload FROM recording_entry ORDER BY ordinal").all() == before
-        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0001"
+        assert conn.exec_driver_sql("SELECT version_num FROM recording_alembic_version").scalar_one() == "recording_0002"
 
 
 @check("registration_input", "concurrent")

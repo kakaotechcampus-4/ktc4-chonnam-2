@@ -4,6 +4,7 @@
 
 ## 현재 결정
 
+- [external-ai-transfer-scope-2026-10-31.md](external-ai-transfer-scope-2026-10-31.md) — 외부 AI에는 360p 이하 · 무음 재인코딩 영상(Coarse 전체 timeline, Fine 후보 ±4초)과 사용자 문장만 보낸다. 원본 · 고화질 미전송, 최소 범위 원칙 적용 (#71 §3)
 - [search-structure-2026-10-28.md](search-structure-2026-10-28.md) — Search 구조 확정: argon Coarse 0.5배속 → argon Fine 0.25배속 + `fine-gore-v1`, CV · AI Hub 후보 미포함. 성능 판정(E5)은 미결
 - [decision-trace-2026-09-26.md](decision-trace-2026-09-26.md) — p4 종료, p3 기반 Search 전용 판단 근거 진단과 단계별 프롬프트 실험
 - [fine-coarse-handoff-experiment-2026-09-28.md](fine-coarse-handoff-experiment-2026-09-28.md) — Coarse 관찰 Fine 인계·실선/중앙선 UNCERTAIN 지시를 진단 전용 profile로 분리 실험(운영 p3 불변)

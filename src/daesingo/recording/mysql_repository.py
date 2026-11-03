@@ -1,20 +1,20 @@
 """Recording-owned persistence on the caller's Connection.
 
-No transaction completion, retries, filesystem publication or connection ownership.
+No outer transaction completion, retries, filesystem publication or connection ownership.
 Contract JSON and frame bytes share InnoDB DML. Stream reads lock their row until
 the caller ends its transaction, serializing same-stream frame identity creation.
 """
 
 from collections.abc import Callable
+from contextlib import contextmanager
 from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import BinaryIO
-from io import BytesIO
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.mysql import LONGBLOB, insert
+from sqlalchemy.dialects.mysql import LONGBLOB, MEDIUMBLOB, insert
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DBAPIError
 
@@ -23,6 +23,10 @@ from .probe import LocalSource, ProbedStream
 from .media_content import derived_content, descriptor, checked_content, frame_format, identity
 from .durable import media_identity, prepared_content, observation_payload, observation_from_payload
 from .publication import PublishRegistration, managed_publish_locator, registration_from_payloads
+from .chunked_media import MAX_CHUNK_BYTES, COMMAND_ALLOWANCE, checked_manifest, legacy_manifest, detached_stream
+from .prepared_metadata import encode_prepared_payload, decode_prepared_payload
+
+_PREPARED_KINDS = frozenset({'analysis_source', 'incident_clip'})
 
 
 metadata = sa.MetaData()
@@ -34,6 +38,14 @@ entries = sa.Table(
     sa.Column("payload", sa.JSON, nullable=False),
     sa.Column("content", LONGBLOB),
     sa.UniqueConstraint("kind", "entry_key", name="uq_recording_entry_identity"),
+    mysql_engine="InnoDB", mysql_charset="utf8mb4",
+)
+chunks = sa.Table(
+    "recording_media_chunk", metadata,
+    sa.Column("kind", sa.String(32, collation="ascii_bin"), primary_key=True),
+    sa.Column("entry_key", sa.String(64, collation="ascii_bin"), primary_key=True),
+    sa.Column("chunk_index", sa.Integer, primary_key=True),
+    sa.Column("content", MEDIUMBLOB, nullable=False),
     mysql_engine="InnoDB", mysql_charset="utf8mb4",
 )
 
@@ -65,7 +77,8 @@ class _DatabaseFailure(Exception):
 
 
 class MySQLRecordingRepository:
-    def __init__(self, connection: Connection, *, storage_root: str | Path):
+    def __init__(self, connection: Connection, *, storage_root: str | Path, temp_root=None,
+                 command_budget=None):
         if connection.dialect.name != "mysql" or connection.closed:
             raise ValueError("recording requires an open MySQL Connection")
         self._connection = connection
@@ -76,11 +89,19 @@ class MySQLRecordingRepository:
         except (OSError, ValueError, RuntimeError):
             raise ValueError("invalid recording storage root") from None
         self._root_key = _key(str(self._root))
+        self._temp_root = temp_root
+        if command_budget is not None and (type(command_budget) is not int or command_budget <= COMMAND_ALLOWANCE):
+            raise ValueError("invalid prepared-media command budget")
+        self._command_budget = command_budget
         self._analysis_streams: dict[str, tuple[Callable[[], BinaryIO], str]] = {}
 
     def _execute(self, statement):
+        return self._database_call(lambda: self._connection.execute(statement))
+
+    @staticmethod
+    def _database_call(operation):
         try:
-            return self._connection.execute(statement)
+            return operation()
         except DBAPIError as error:
             code = error.orig.args[0] if getattr(error.orig, "args", ()) else None
             code = code if type(code) is int else None
@@ -90,6 +111,8 @@ class MySQLRecordingRepository:
                               connection_invalidated=error.connection_invalidated) from None
 
     def _row(self, kind, identity, payload, content=None):
+        if kind in _PREPARED_KINDS:
+            payload = encode_prepared_payload(payload)
         return {"kind": kind, "entry_key": _key(identity), "payload": payload, "content": content}
 
     def _write(self, rows):
@@ -102,12 +125,16 @@ class MySQLRecordingRepository:
             content=sa.func.coalesce(stmt.inserted.content, entries.c.content),
         ))
 
-    def _get(self, kind, identity, *, lock=False):
-        query = sa.select(entries.c.payload, entries.c.content).where(
+    def _get(self, kind, identity, *, lock=False, content=False):
+        columns = [entries.c.payload, entries.c.content] if content else [entries.c.payload]
+        query = sa.select(*columns).where(
             entries.c.kind == kind, entries.c.entry_key == _key(identity))
         if lock:
             query = query.with_for_update()
-        return self._execute(query).mappings().one_or_none()
+        row = self._execute(query).mappings().one_or_none()
+        if row is not None and kind in _PREPARED_KINDS:
+            return {**row, 'payload': decode_prepared_payload(row['payload'])}
+        return row
 
     def _immutable_write(self, rows):
         # The duplicate branch deliberately raises a server JSON error on any
@@ -134,7 +161,8 @@ class MySQLRecordingRepository:
         return model.model_validate_json(json.dumps(row["payload"])) if row is not None else None
 
     def _models(self, kind, model):
-        return [model.model_validate_json(json.dumps(row[0])) for row in self._execute(
+        return [model.model_validate_json(json.dumps(
+            decode_prepared_payload(row[0]) if kind in _PREPARED_KINDS else row[0])) for row in self._execute(
             sa.select(entries.c.payload).where(entries.c.kind == kind).order_by(entries.c.ordinal))]
 
     def _put(self, kind, identity, model, *, immutable=False):
@@ -173,21 +201,153 @@ class MySQLRecordingRepository:
         if case_id is not None:
             identity(case_id)
         kind, ref = media_identity(media)
-        rows = [
-            self._row(kind, ref, media.model_dump(mode="json"), content),
-            self._row("prepared_content", [kind, ref], info),
-        ]
-        if case_id is not None:
-            rows.append(self._row("case_asset", [case_id, kind, ref],
-                {"case_id": case_id, "asset_ref": {"kind": kind, "ref": ref}}))
-        self._immutable_write(rows)
+        packet = self._execute(sa.select(sa.literal_column("@@session.max_allowed_packet"))).scalar_one()
+        # Reserve 64 KiB for packet/protocol slack; cap the ordinary SQL command
+        # budget at 1 MiB. Worst-case PyMySQL escaping doubles binary bytes.
+        budget = min(self._command_budget or 1024*1024, packet - 64*1024)
+        size = min(MAX_CHUNK_BYTES, (budget-COMMAND_ALLOWANCE)//2)
+        if size <= 0:
+            raise ValueError("insufficient prepared-media command budget")
+        with self._prepared_commands(budget), self._publish_savepoint():
+            # A duplicate no-op is a current read/row lock even under RR; never
+            # compare/transfer legacy content or overwrite immutable metadata.
+            row = self._row(kind, ref, media.model_dump(mode="json"))
+            stmt = insert(entries).values(row)
+            self._execute(stmt.on_duplicate_key_update(entry_key=entries.c.entry_key))
+            stored = self._get(kind, ref, lock=True)
+            if type(media).model_validate(stored["payload"]) != media:
+                raise ValueError("recording immutable identity conflicts with stored payload")
+            prior = self._get("prepared_content", [kind, ref], lock=True)
+            if prior is not None:
+                value = prior["payload"]
+                if "version" in value:
+                    checked_manifest(value)
+                    previous_info = {key: value[key] for key in info}
+                else:
+                    previous_info = value
+                    # Check old bytes on the server, returning only small facts.
+                    length, digest = self._execute(sa.select(sa.func.octet_length(entries.c.content),
+                        sa.func.sha2(entries.c.content, 256)).where(
+                            entries.c.kind == kind, entries.c.entry_key == _key(ref))).one()
+                    if length != info["byte_size"] or digest != info["sha256"]:
+                        raise ValueError("recording immutable identity conflicts with stored payload")
+                if previous_info != info:
+                    raise ValueError("recording immutable identity conflicts with stored payload")
+            else:
+                # Metadata-only registrations can acquire content once. A legacy
+                # BLOB without its integrity descriptor is never silently replaced.
+                length = self._execute(sa.select(sa.func.octet_length(entries.c.content)).where(
+                    entries.c.kind == kind, entries.c.entry_key == _key(ref))).scalar_one()
+                if length is not None:
+                    raise ValueError("invalid recording stored content")
+                for index, offset in enumerate(range(0, len(content), size)):
+                    self._execute(insert(chunks).values(kind=kind, entry_key=_key(ref),
+                        chunk_index=index, content=content[offset:offset+size]))
+                manifest = {**info, "version": 1, "chunk_size": size,
+                            "chunk_count": (len(content)+size-1)//size}
+                self._immutable_write([self._row("prepared_content", [kind, ref], manifest)])
+            if case_id is not None:
+                self._immutable_write([self._row("case_asset", [case_id, kind, ref],
+                    {"case_id": case_id, "asset_ref": {"kind": kind, "ref": ref}})])
+
+    @contextmanager
+    def _prepared_commands(self, budget):
+        def guard(conn, cursor, statement, parameters, context, many):
+            if many:
+                raise ValueError("prepared media cannot batch commands")
+            rendered = cursor.mogrify(statement, parameters)
+            length = len(rendered.encode(cursor.connection.encoding) if isinstance(rendered, str) else rendered)
+            if length + 1 > budget:
+                raise ValueError("prepared-media command exceeds budget")
+        sa.event.listen(self._connection, "before_cursor_execute", guard)
+        try:
+            yield
+        finally:
+            sa.event.remove(self._connection, "before_cursor_execute", guard)
+
+    @contextmanager
+    def _publish_savepoint(self):
+        savepoint = self._database_call(self._connection.begin_nested)
+        try:
+            yield
+            self._database_call(savepoint.commit)  # RELEASE only; caller owns outer transaction.
+        except BaseException:
+            try:
+                if not savepoint.is_active:
+                    # RELEASE may fail after deactivating the local object.
+                    self._connection.invalidate()
+                else:
+                    savepoint.rollback()
+            except BaseException:
+                # Deadlock can remove the server SAVEPOINT; disconnect can make
+                # rollback impossible. Never hide the initiating error or let a
+                # caught error commit an uncertain partial publish.
+                try:
+                    self._connection.invalidate()
+                except BaseException:
+                    pass
+            raise
 
     def get_prepared_content(self, ref):
+        # Compatibility boundary for existing byte-oriented export callers.
+        # AnalysisSource and metadata reads use open_prepared_stream directly.
+        opened = self.open_prepared_stream(ref)
+        if opened is None:
+            return None
+        stream, content_type = opened
+        with stream:
+            return stream.read(), content_type
+
+    def get_prepared_metadata(self, ref):
+        """Published descriptor, not a fresh integrity scan of the video bytes."""
         row = self._get(ref.kind, ref.ref)
         info = self._get("prepared_content", [ref.kind, ref.ref])
-        if row is None or row["content"] is None or info is None:
+        if row is None or info is None:
             return None
-        return checked_content(row["content"], info["payload"])
+        value = info["payload"]
+        manifest = checked_manifest(value) if isinstance(value, dict) and "version" in value else legacy_manifest(value)
+        if row["payload"].get("byte_size") != manifest["byte_size"]:
+            raise ValueError("invalid recording stored content")
+        return {key: manifest[key] for key in ("byte_size", "sha256", "content_type")}
+
+    def open_prepared_stream(self, ref):
+        row = self._get(ref.kind, ref.ref)
+        info = self._get("prepared_content", [ref.kind, ref.ref])
+        if row is None or info is None:
+            return None
+        value = info["payload"]
+        if "version" in value:
+            manifest = checked_manifest(value)
+            condition = sa.and_(chunks.c.kind == ref.kind, chunks.c.entry_key == _key(ref.ref))
+            count, low, high = self._execute(sa.select(sa.func.count(), sa.func.min(chunks.c.chunk_index),
+                sa.func.max(chunks.c.chunk_index)).where(condition)).one()
+            if (count, low, high) != (manifest["chunk_count"], 0, manifest["chunk_count"]-1):
+                raise ValueError("invalid recording media chunks")
+            def parts():
+                for index in range(count):
+                    # Bound results even if a damaged row contains a giant BLOB.
+                    with self._execute(sa.select(sa.func.substring(chunks.c.content, 1, manifest["chunk_size"]+1),
+                            sa.func.octet_length(chunks.c.content)).where(condition, chunks.c.chunk_index == index)) as result:
+                        part = result.one_or_none()
+                    if part is None or len(part[0]) != part[1]:
+                        raise ValueError("invalid recording media chunk")
+                    yield part[0]
+        else:
+            # Legacy format is read in bounded substrings without a full BLOB row.
+            manifest = legacy_manifest(value)
+            condition = sa.and_(entries.c.kind == ref.kind, entries.c.entry_key == _key(ref.ref))
+            length = self._execute(sa.select(sa.func.octet_length(entries.c.content)).where(condition)).scalar_one()
+            if length != manifest["byte_size"]:
+                raise ValueError("invalid recording stored content")
+            def parts():
+                for offset in range(0, length, MAX_CHUNK_BYTES):
+                    with self._execute(sa.select(sa.func.substring(entries.c.content, offset+1,
+                            min(MAX_CHUNK_BYTES, length-offset))).where(condition)) as result:
+                        part = result.scalar_one()
+                    yield part
+        if row["payload"].get("byte_size") != manifest["byte_size"]:
+            raise ValueError("invalid recording stored content")
+        return detached_stream(parts(), manifest, temp_root=self._temp_root), manifest["content_type"]
 
     def save_time_sources(self, source_ref, observed):
         stmt = insert(entries).values(self._row("time_observation", source_ref, observation_payload(observed)))
@@ -304,7 +464,7 @@ class MySQLRecordingRepository:
         return self._model("frame", frame_ref, m.FrameRef)
 
     def get_frame_content(self, frame_ref):
-        row = self._get("frame", frame_ref)
+        row = self._get("frame", frame_ref, content=True)
         return row["content"] if row is not None else None
 
     def get_owned_frame(self, case_id, frame_ref):
@@ -400,9 +560,9 @@ class MySQLRecordingRepository:
                 and m.ContractRef(kind="source_asset", ref=span.source_asset_ref) in s.source_refs]
 
     def open_analysis_stream(self, source_ref):
-        stored = self.get_prepared_content(m.ContractRef(kind="analysis_source", ref=source_ref))
+        stored = self.open_prepared_stream(m.ContractRef(kind="analysis_source", ref=source_ref))
         if stored is not None:
-            return BytesIO(stored[0]), stored[1]
+            return stored
         value = self._analysis_streams.get(source_ref)
         # A rolled-back registration cannot expose its process-local stream.
         if value is None or self.get_analysis_source(source_ref) is None:
@@ -467,7 +627,7 @@ class MySQLRecordingRepository:
         self._immutable_write(rows)
 
     def get_derived_content(self, asset_ref):
-        row = self._get("derived_asset", asset_ref)
+        row = self._get("derived_asset", asset_ref, content=True)
         info = self._get("derived_content", asset_ref)
         if row is None or row["content"] is None or info is None:
             return None

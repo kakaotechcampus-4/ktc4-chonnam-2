@@ -38,7 +38,7 @@ REQUIRED_CHECKS = frozenset({
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
     *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
-    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure", "exact_ownership", "exact_purge", "exact_privacy")),
+    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure", "exact_ownership", "exact_purge", "exact_privacy", "chunked_media")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
@@ -141,6 +141,14 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("recording", "chunked_media", parameter) for parameter in (
+        "bounded", "detached", "duplicate", "replay", "metadata", "commit_unknown", "search_consumer",
+        "atomic_chunk", "atomic_manifest", "atomic_case_link",
+        "corrupt_missing", "corrupt_changed", "corrupt_extra", "corrupt_order", "corrupt_oversize", "corrupt_manifest",
+        "concurrent_equal", "concurrent_conflict", "legacy_analysis_source", "legacy_incident_clip")),
+    *(("recording", "chunked_media", prefix + "_" + kind)
+      for prefix in ("exact", "exact_attach", "exact_legacy", "exact_corrupt")
+      for kind in ("analysis_source", "incident_clip")),
     ('exhaustion', 'port', 'exact_execution_id'),
     ('exhaustion', 'cancellation', 'delivery'),
     ('exhaustion', 'cancellation', 'recovery'),
