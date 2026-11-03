@@ -136,8 +136,11 @@ OVERLAY_TIME_FORMATS = (
 )
 """지원하는 overlay 날짜/시간 형식. 여기서 못 읽으면 `format_ok=false`다(계약 §7)."""
 
-OVERLAY_TIME_IN_TEXT = re.compile(r"\d{4}[-/.]\d{2}[-/.]\d{2}[ T]\d{2}:\d{2}:\d{2}")
+OVERLAY_TIME_IN_TEXT = re.compile(r"(?<!\d)\d{4}[-/.]\d{2}[-/.]\d{2}[ T]?\d{2}:\d{2}:\d{2}")
 """OCR 원문 **안에서** 시각 부분을 찾는 패턴. 위 형식들이 쓰는 구분자를 그대로 받는다.
+
+날짜와 시간 사이 구분자는 OCR이 빠뜨릴 수 있어(`2026-11-0214:00:29`, #536) 없어도 찾는다.
+앞에 숫자가 붙은 자리는 받지 않는다 — 더 긴 숫자열의 일부를 시각으로 오려 내지 않는다.
 
 여기서 찾은 문자열만 `OVERLAY_TIME_FORMATS`로 해석한다 — 이 패턴은 자리를 찾을 뿐이고
 유효성은 `strptime`이 판정한다(`13/45/99 99:99:99`는 이 패턴을 통과하고 거기서 걸린다).
@@ -556,6 +559,8 @@ def _parse_overlay_text(raw, tz_offset):
     if found is None:
         return None
     stamp = found.group(0)
+    if stamp[10].isdigit():  # 구분자가 빠진 자리 — 원문은 그대로 두고 해석할 사본에만 채운다
+        stamp = f"{stamp[:10]} {stamp[10:]}"
     for fmt in OVERLAY_TIME_FORMATS:
         try:
             parsed = datetime.strptime(stamp, fmt)
