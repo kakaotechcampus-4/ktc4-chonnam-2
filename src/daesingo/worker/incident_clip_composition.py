@@ -14,6 +14,7 @@ from daesingo.worker.case_composition import stored_case_store
 from daesingo.worker.incident_clip_handlers import incident_clip_registry
 from daesingo.worker.incident_clip_inputs import IncidentClipInputs
 from daesingo.worker.incident_frames import IncidentFrameIssuer
+from daesingo.worker.candidate_video import CandidateVideoInputs, candidate_video_registry
 
 
 class IncidentRecordingFactory:
@@ -43,6 +44,9 @@ def compose_incident_clip_registry(*, engine, startup, service_factory=None):
         media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"))
         service_factory = IncidentRecordingFactory(transaction=transaction, storage_root=startup.config.media_root,
             temp_root=startup.config.temp_root, settings=settings, media=media)
+    previews = CandidateVideoInputs(transaction=transaction,
+        store_factory=lambda conn: stored_case_store(conn, storage_root=startup.config.media_root))
     return incident_clip_registry(load=inputs, service_factory=service_factory,
         frames=IncidentFrameIssuer(preview_position=preview_frame_position,
-            candidate_position=candidate_frame_position))
+            candidate_position=candidate_frame_position)).merged(
+        candidate_video_registry(load=previews, service_factory=service_factory))

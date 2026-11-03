@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { Film } from 'lucide-react'
 import type { Candidate } from '../contracts/caseView'
 import { FrameSlot } from './FrameSlot'
@@ -25,15 +25,16 @@ export function CandidateCard(props: {
   selectedLabel?: string
   src?: string | null
   pending?: boolean
+  preview?: ReactNode
 }): JSX.Element {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
   return (
     <div className={`cand${c.selected ? ' sel' : ''}`}>
-      <FrameSlot className="cand-th" src={props.src ?? null} alt={`${c.rank ?? props.ordinal}번 후보 장면`}>
+      {props.preview ? <div className="cand-th">{props.preview}</div> : <FrameSlot className="cand-th" src={props.src ?? null} alt={`${c.rank ?? props.ordinal}번 후보 장면`}>
         <Film className="cand-th-ico" size={24} strokeWidth={1.5} aria-hidden />
         <span className="cand-th-note">{props.pending ? '미리보기 준비 중' : '미리보기가 없어요'}</span>
-      </FrameSlot>
+      </FrameSlot>}
       <div className="cand-b">
         <div className="cand-h">
           <span className="cnum">{c.rank ?? props.ordinal}</span>

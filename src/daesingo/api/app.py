@@ -18,6 +18,7 @@ from .routes_commands import commands_router
 from .routes_sources import sources_router
 from .routes_frames import frames_router
 from .routes_assets import assets_router
+from .routes_candidate_videos import candidate_videos_router
 from .frame_lifetime import FrameLifetimeMiddleware
 from .asset_lifetime import AssetLifetimeMiddleware
 from .upload import NoUploadResponse, SourceBodyLimitMiddleware
@@ -66,6 +67,7 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     app.include_router(sources_router(composition))
     app.include_router(frames_router(composition))
     app.include_router(assets_router(composition))
+    app.include_router(candidate_videos_router(composition))
     # Keep the byte-limit receiver inside the access receive proxy: exceptions
     # then reach the normal HTTP handler without an AnyIO ExceptionGroup wrapper.
     app.add_middleware(SourceBodyLimitMiddleware, composition=composition)

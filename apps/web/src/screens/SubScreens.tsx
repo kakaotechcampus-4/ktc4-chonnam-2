@@ -1,3 +1,4 @@
+import type { CandidatePlayback } from '../components/CandidateVideo'
 import { useEffect, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
@@ -40,11 +41,10 @@ export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   return (
     <SubPage title="다른 후보" onBack={props.onBack} className="cands-page">
-      <CandidatesScreen view={props.view} onSelect={props.onSelect} frameSrc={props.frameSrc} />
+      <CandidatesScreen {...props} />
     </SubPage>
   )
 }

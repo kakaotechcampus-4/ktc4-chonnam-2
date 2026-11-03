@@ -113,7 +113,11 @@
           "timeline_revision": 1,
           "stale_revision": false,
           "stale_revision_label_key": null,
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,
@@ -199,7 +203,11 @@
           "timeline_revision": 1,
           "stale_revision": false,
           "stale_revision_label_key": null,
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,
@@ -287,7 +295,11 @@
           "timeline_revision": 1,
           "stale_revision": false,
           "stale_revision_label_key": null,
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,
@@ -375,7 +387,11 @@
           "timeline_revision": 1,
           "stale_revision": false,
           "stale_revision_label_key": null,
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,

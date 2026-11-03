@@ -19,6 +19,7 @@ from typing import Any
 
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.preview_frame import current_candidate_frame_refs, current_preview_frame_ref
+from daesingo.case.candidate_video import preview_state
 from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
@@ -30,7 +31,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.10"
+CONTRACT_VERSION = "case-view/v1.11"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -66,6 +67,7 @@ _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
 
 # `running_jobs[].label_key` — 계약 A§12 · B§12 등재 키. 미등록 kind와 `COARSE_SEARCH`는 fallback.
 JOB_LABEL_KEYS = {
+    "CANDIDATE_VIDEO_PREVIEW": "job.candidate_video_preview",
     "PLATE_READ": "job.plate_read",
     "OVERLAY_TIME_READ": "job.overlay_time_read",
     "FINE_VERIFY": "job.fine_verify",
@@ -361,6 +363,7 @@ def _build_candidates_view(
                 "observed": c.observed,
                 # case가 clip에서 발급받은 썸네일(#523)이 우선이다 — Search `thumbnail_ref`는 실제 경로에서 늘 null이다.
                 "thumb_ref": frame_refs.get(c.candidate_id) or c.thumb_ref,
+                "video_preview": {"status": "UNAVAILABLE", "clip_ref": None} if stale_revision else preview_state(case, c),
                 "selected": c.selected,
                 "timeline_revision": c.timeline_revision,
                 "stale_revision": stale_revision,

@@ -502,7 +502,8 @@ class CaseAggregate:
         if selected is None or generation is None:
             return False
         return any(
-            (source := self.observation_inputs.get(r["job_id"])) is not None
+            r["kind"] in {"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"}
+            and (source := self.observation_inputs.get(r["job_id"])) is not None
             and source["candidate_id"] == selected
             and source["generation_job_id"] == generation
             for r in self.waiting_job_records()

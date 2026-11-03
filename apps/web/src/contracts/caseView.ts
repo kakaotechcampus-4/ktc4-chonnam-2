@@ -1,4 +1,4 @@
-// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.10)
+// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.11)
 //
 // 이 파일이 web의 타입 정본이다. `apps/prototype/src/types.ts`의 CaseState는
 // 참고만 하고 가져오지 않는다(`docs/modules/web/decisions/web-stack.md`).
@@ -90,6 +90,11 @@ export interface PackageView {
   warnings: string[]
 }
 
+export interface CandidateVideoPreview {
+  status: 'NOT_REQUESTED' | 'PREPARING' | 'READY' | 'FAILED' | 'UNAVAILABLE'
+  clip_ref: string | null
+}
+
 export interface Candidate {
   candidate_id: string
   at: string | null
@@ -111,6 +116,7 @@ export interface Candidate {
   marker_ms?: number | null
   observed: string
   thumb_ref: string | null
+  video_preview?: CandidateVideoPreview
   selected: boolean
   timeline_revision: number
   stale_revision: boolean

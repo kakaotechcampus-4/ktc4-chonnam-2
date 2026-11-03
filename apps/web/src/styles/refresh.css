@@ -950,3 +950,18 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .rs .rs-btn.is-copied { animation: rs-copy-pop .5s var(--rs-spring) !important; }
   .rs .rs-copy-check path { animation: rs-copy-draw .32s ease-out .1s both !important; }
 }
+
+@media (max-width: 960px) {
+  .res-situation { grid-template-columns: minmax(0, 1fr); }
+  .res-situation > .res-frame { grid-row: auto; }
+  .res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 1; }
+}
+
+@media (max-width: 720px) {
+  .res-item { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .res-report { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .res-report .rs-btn { position: static; align-self: flex-end; order: 1; }
+  .res-handoff { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+  .res-handoff .res-actions { justify-content: flex-start; }
+  .res-toast { position: static; }
+}

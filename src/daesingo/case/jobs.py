@@ -32,6 +32,7 @@ JOB_KINDS = frozenset(
         # Fine 결과로 IncidentClip을 준비하는 발주 — Fine과 다른 실패 · 재실행 단위
         # (`decisions/incident-clip-observation-input.md` §4-2).
         "INCIDENT_CLIP_BUILD",
+        "CANDIDATE_VIDEO_PREVIEW",
     }
 )
 
@@ -56,7 +57,7 @@ def issue_job(
     """`observation_input`은 관찰 kind만 받고 같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
     if kind not in JOB_KINDS:
         raise ValueError(f"알 수 없는 JobRecord.kind: {kind!r} (등록된 kind: {sorted(JOB_KINDS)})")
-    if observation_input is not None and kind not in OBSERVATION_KINDS:
+    if observation_input is not None and kind not in OBSERVATION_KINDS | {"CANDIDATE_VIDEO_PREVIEW"}:
         raise ValueError(f"관찰 kind가 아니라 observation_input을 받지 않는다: {kind!r}")
     if force_rerun:
         # 사용자가 명시적으로 재요청한 Job(재판독/재검색 등)은 그 자체가 새 "요청 시점 케이스
@@ -77,6 +78,11 @@ def issue_job(
     }
     # 같은 kind · scope_ref의 기다리던 job은 이 job으로 대체된다 — 대표 job은 가장 나중 job이다(A§10-7).
     for prior in case.waiting_job_records():
+        if kind == "CANDIDATE_VIDEO_PREVIEW" and (
+            case.observation_inputs.get(prior["job_id"], {}).get("candidate_id")
+            != (observation_input or {}).get("candidate_id")
+        ):
+            continue
         if prior["kind"] == kind and prior["scope_ref"] == scope_ref:
             case.settle_job(prior["job_id"], "SUPERSEDED")
     case.record_job(job_record)

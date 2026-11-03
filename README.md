@@ -165,6 +165,8 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 
 `apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.
 
+후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
+
 실제 웹 앱은 `apps/web`에서 구현이 진행 중이다(`CaseView` 소비 화면·컴포넌트). 프로토타입을 얼마나 참고했는지·구조가 어떻게 다른지는 `web` Owner가 관리하는 [`apps/web/README.md`](apps/web/README.md)와 `docs/modules/web/`이 소유한다.
 
 ## 라이선스

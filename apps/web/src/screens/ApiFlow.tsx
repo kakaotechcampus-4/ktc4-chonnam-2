@@ -104,6 +104,12 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     setSubs([])
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
+  const playback = {
+    videoSrc: cid ? (ref: string) => api.candidateVideoUrl(cid, ref) : undefined,
+    frameSrc,
+    onPreview: (candidateId: string) => run({ kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: candidateId } }),
+    previewBusy: state.busy,
+  }
   const editHint = (description: string) => {
     setSubs([])
     setSituation(description) // 진행 화면이 새 설명을 보인다
@@ -237,7 +243,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} frameSrc={frameSrc} />
+        return <FailedScreen {...playback} view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
         // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
@@ -271,25 +277,17 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         )
       case 'NOT_OBSERVED':
         return (
-          <NotObservedScreen
-            view={view}
-            onSelect={reselect}
-            restyled
-            onNewReport={newReport}
-            onAction={onAction}
-            canRun={canRun}
-            onEditHint={editHint}
-            frameSrc={frameSrc}
-          />
+          <NotObservedScreen {...playback} view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
         )
       default:
-        if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} frameSrc={frameSrc} />
+        if (sub === 'candidates') return <CandidateCompare {...playback} view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
           return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
         if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
         return (
           <ResultScreen
+            {...playback}
             view={view}
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
