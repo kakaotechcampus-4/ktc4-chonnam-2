@@ -5,7 +5,7 @@ payload logging, operational schema or original-media writes. Legacy runner help
 are reused for diagnostics only; its run() and legacy read path are never called.
 """
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -22,6 +22,7 @@ import time
 import traceback
 
 import recording_capacity_probe as diag
+from recording_probe_budget import ProbeBudget
 
 
 @dataclass(frozen=True)
@@ -31,19 +32,21 @@ class Experiment:
     max_output_bytes: int
     max_duration_ms: int
     run_timeout_sec: int
+    resource_profile: str = 'legacy'
 
     @classmethod
     def from_mapping(cls, values):
-        if not isinstance(values, dict) or set(values) != set(cls.__dataclass_fields__):
+        required = set(cls.__dataclass_fields__) - {'resource_profile'}
+        if not isinstance(values, dict) or set(values) not in (required, required | {'resource_profile'}):
             raise ValueError('EXPERIMENT_KEYS_REQUIRED')
         name = values['experiment_id']
         if not isinstance(name, str) or re.fullmatch(r'[a-z0-9][a-z0-9-]{0,63}', name) is None:
             raise ValueError('EXPERIMENT_ID_INVALID')
-        for key, low, high in (('max_output_bytes', 50331648, 256 * 1024**2),
-                               ('max_duration_ms', 240000, 1200000),
-                               ('run_timeout_sec', 900, 3600)):
-            if type(values[key]) is not int or not low <= values[key] <= high:
-                raise ValueError('EXPERIMENT_FINITE_BUDGET_REQUIRED')
+        try:
+            budget = ProbeBudget.from_profile(values.get('resource_profile', 'legacy'))
+            budget.validate_experiment(values['max_output_bytes'], values['max_duration_ms'], values['run_timeout_sec'])
+        except ValueError:
+            raise ValueError('EXPERIMENT_FINITE_BUDGET_REQUIRED') from None
         return cls(**values)
 
 
@@ -58,10 +61,15 @@ def load_experiment(path):
     return Experiment.from_mapping(json.loads(Path(path).read_text(encoding='utf-8'), object_pairs_hook=unique))
 
 
-def validate_selection(first, count, seconds, experiment):
+def validate_selection(first, count, seconds, experiment, *, recording_only=False):
     if any(type(v) is not int for v in (first, count, seconds)):
         raise ValueError('INPUT_PROFILE_INVALID')
-    if experiment is None:
+    if recording_only:
+        valid = (first, count, seconds) in ((2, 1, 10), (1, 2, 120)) and (
+            experiment is None or (experiment.resource_profile == 'legacy'
+                and experiment.max_output_bytes == 96*1024**2
+                and experiment.max_duration_ms == 240000 and experiment.run_timeout_sec == 900))
+    elif experiment is None:
         valid = (first, count, seconds) in ((2, 1, 10), (2, 2, 100), (1, 3, 240))
     else:
         valid = first == 1 and 1 <= count <= 15 and 240 <= seconds <= 1200 and seconds * 1000 <= experiment.max_duration_ms
@@ -75,6 +83,20 @@ def recording_config(experiment):
         'DAESINGO_RECORDING_ANALYSIS_CRF': '23',
         'DAESINGO_RECORDING_ANALYSIS_MAX_BYTES': str(experiment.max_output_bytes if experiment else 50331648),
         'DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS': str(experiment.max_duration_ms if experiment else 240000)}
+
+
+def experiment_budget(experiment):
+    return ProbeBudget.from_profile(experiment.resource_profile if experiment else 'legacy')
+
+
+def require_recording_result(report):
+    """Search를 건너뛸 때도 저장·복원·strict·provenance 경계를 모두 요구한다."""
+    expected = {'recording': 'PASS', 'db_store': 'PASS_COMMITTED',
+        'db_commit': 'PASS', 'prepared_rollback': 'PASS_SAME_CONNECTION',
+        'db_read': 'PASS_HASH_LENGTH_DETACHED', 'provenance': 'PASS',
+        'detached_strict_decode': 'PASS'}
+    if any(report.get(k) != value for k, value in expected.items()):
+        raise ValueError('RECORDING_ONLY_INCOMPLETE')
 
 
 def logical_coverage(placements, seconds):
@@ -117,6 +139,94 @@ def measure_search_encode(events, encode, source, output, **kwargs):
     """후속 guard/cleanup이 거부해도 변환 직후 bytes를 복사 없이 보존한다."""
     with tool_measure(events, 'search_reencode', Path(output)):
         return encode(source, output, **kwargs)
+
+
+@dataclass(frozen=True)
+class CoarseOverride:
+    """Owner가 요청한 단일 후보만 허용한다. 운영 설정 API가 아니다."""
+    height: int
+    crf: int
+
+    def __post_init__(self):
+        if type(self.height) is not int or type(self.crf) is not int or (self.height, self.crf) != (270, 28):
+            raise ValueError('COARSE_EXPERIMENT_270_CRF28_REQUIRED')
+
+    @classmethod
+    def from_mapping(cls, value):
+        if not isinstance(value, dict) or set(value) != {'height', 'crf'}:
+            raise ValueError('COARSE_EXPERIMENT_KEYS_REQUIRED')
+        return cls(**value)
+
+
+@contextmanager
+def coarse_encode_override(media_module, setting, report):
+    """명시적 Coarse 준비 중 현재 thread의 정확한 encode만 바꾼다.
+
+    제품 argv builder·deadline·seek·필터는 재사용한다. subprocess hook은
+    해당 encode 호출 동안만 설치하고 Fine/다른 도구에는 전달하지 않는다.
+    """
+    CoarseOverride.from_mapping(asdict(setting))
+    original_encode = media_module._run_ffmpeg_encode
+    original_subprocess = media_module._run_subprocess
+    thread_id = threading.get_ident()
+    report['coarse_override'] = asdict(setting)
+    report['coarse_commands'] = []
+
+    def encode(source, output, **kwargs):
+        if (threading.get_ident() != thread_id or Path(output).name != 'coarse.mp4'
+                or kwargs.get('start_sec') is not None or kwargs.get('end_sec') is not None):
+            return original_encode(source, output, **kwargs)
+        if set(kwargs) != {'fps', 'max_height', 'deadline'} or kwargs['fps'] != 2.0 or kwargs['max_height'] != 360:
+            raise ValueError('COARSE_EXPERIMENT_CALL_DRIFT')
+        original_run = media_module._run_subprocess
+        expected_filter = "fps=2.0,scale=-2:'min(270,ih)',setpts=(PTS-STARTPTS)*2.0,fps=1"
+
+        def run(argv, deadline, **options):
+            if threading.get_ident() != thread_id or argv[-1] != str(output):
+                return original_run(argv, deadline, **options)
+            expected = [media_module._ffmpeg_path(), '-y', '-i', str(source), '-vf', expected_filter,
+                        '-c:v', 'libx264', '-an', '-movflags', '+faststart', str(output)]
+            if argv != expected or deadline is not kwargs['deadline'] or options:
+                raise ValueError('COARSE_EXPERIMENT_ARGV_DRIFT')
+            actual = [*argv[:-1], '-crf', str(setting.crf), argv[-1]]
+            safe = [('<source>' if item == str(source) else '<coarse>' if item == str(output)
+                     else Path(item).name if index == 0 else item) for index, item in enumerate(actual)]
+            record = {'argv': safe, 'fps_origin': 2.0, 'playback_speed': 0.5}
+            report['coarse_commands'].append(record)
+            result = original_run(actual, deadline)
+            match = re.search(rb'\bcrf=([0-9.]+)', result.stderr or b'')
+            record['encoder_reported_crf'] = float(match[1]) if match else 'UNKNOWN'
+            return result
+
+        media_module._run_subprocess = run
+        try:
+            return original_encode(source, output, **{**kwargs, 'max_height': setting.height})
+        finally:
+            media_module._run_subprocess = original_run
+
+    media_module._run_ffmpeg_encode = encode
+    try:
+        yield
+    finally:
+        media_module._run_ffmpeg_encode = original_encode
+        report['coarse_override_restored'] = media_module._run_ffmpeg_encode is original_encode
+        report['coarse_subprocess_restored'] = media_module._run_subprocess is original_subprocess
+
+
+def inspect_coarse_output(media_module, media, deadline):
+    """식별자/RAW 없이 실제 출력 stream과 frame 시각을 확인한다."""
+    result = media_module._run_subprocess([media_module._ffprobe_path(), '-v', 'error',
+        '-show_streams', '-show_format', '-show_frames', '-show_entries',
+        'stream=codec_type,width,height,time_base,r_frame_rate:format=duration:'
+        'frame=best_effort_timestamp,best_effort_timestamp_time,duration,duration_time,pkt_duration,pkt_duration_time',
+        '-of', 'json', str(media.path)], deadline, capture_stdout=True)
+    if result.returncode:
+        raise RuntimeError('COARSE_OUTPUT_PROBE_FAILED')
+    payload = json.loads(result.stdout)
+    streams = payload['streams']
+    return {'streams': streams, 'format_duration_sec': float(payload['format']['duration']),
+        'frames': exact_frame_summary(payload), 'origin_start_sec': media.origin_start_sec,
+        'origin_end_sec': media.origin_end_sec, 'playback_speed': media.playback_speed}
 
 
 def metadata_differences(before, after, path=''):
@@ -248,11 +358,36 @@ def temp_usage(root):
     return {'named_bytes': named, 'including_open_unlinked_bytes': sum(files.values())}
 
 
+def current_cgroup_root(root='/sys/fs/cgroup', membership=None):
+    """private/host namespace 모두 실제 process의 unified leaf를 선택한다."""
+    if membership is None:
+        membership=Path('/proc/self/cgroup').read_text()
+    lines=membership.strip().splitlines()
+    if len(lines)!=1 or not lines[0].startswith('0::/'):
+        raise ValueError('RUNNER_UNIFIED_CGROUP_REQUIRED')
+    relative=lines[0][4:]
+    if '..' in relative.split('/') or '\\' in relative or ':' in relative:
+        raise ValueError('RUNNER_CGROUP_ESCAPE')
+    root=Path(root).resolve()
+    leaf=(root/relative).resolve(strict=True)
+    if not leaf.is_relative_to(root):
+        raise ValueError('RUNNER_CGROUP_ESCAPE')
+    return leaf
+
+
 class Sampler:
-    def __init__(self, root, report, marker):
+    def __init__(self, root, report, marker, budget=None):
         self.root, self.report, self.marker = root, report, marker
+        self.budget = budget or ProbeBudget.from_profile('legacy')
         self.stop = threading.Event()
         self.error = None
+        self._cgroup_root = None
+
+    @property
+    def cgroup_root(self):
+        if self._cgroup_root is None:
+            self._cgroup_root=current_cgroup_root()
+        return self._cgroup_root
 
     def start(self):
         self.thread = threading.Thread(target=self.sample, daemon=True)
@@ -272,7 +407,7 @@ class Sampler:
         cpu = process.cpu_times()
         return {'monotonic': time.monotonic(), 'phase': self.report['phase'],
             'runner_rss_bytes': process.memory_info().rss, 'runner_cpu_sec': cpu.user + cpu.system,
-            'children': children, 'cgroup_bytes': int(Path('/sys/fs/cgroup/memory.current').read_text()),
+            'children': children, 'cgroup_bytes': int((self.cgroup_root/'memory.current').read_text()),
             **temp_usage(self.root)}
 
     def sample(self):
@@ -281,7 +416,8 @@ class Sampler:
                 sample = self.collect()
                 self.report['samples'].append(sample)
                 diag.emit({'kind': 'sample', **sample})
-                if sample['cgroup_bytes'] >= 1100 * 1024**2 or sample['including_open_unlinked_bytes'] >= 512 * 1024**2:
+                if (sample['cgroup_bytes'] >= self.budget.runner_soft_mib * 1024**2
+                        or sample['including_open_unlinked_bytes'] >= self.budget.temp_soft_mib * 1024**2):
                     raise RuntimeError('SOFT_RESOURCE_STOP')
             except BaseException as error:
                 self.error = type(error).__name__
@@ -386,9 +522,26 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
         provider_module._video_data_url, provider_module.json.dumps = original_url, original_dumps
 
 
-def run(args):
+def run(args, *, cpu_observer=None):
+    """CPU observer는 감독자가 실제 runner/DB leaf reader를 연결할 때만 사용한다."""
+    if cpu_observer is None:
+        return _run(args)
+    if not getattr(args, 'recording_only', False):
+        raise ValueError('CPU_OBSERVER_REQUIRES_RECORDING_ONLY')
+    from recording_cpu_quota_probe import observe_measurements
+    with observe_measurements(diag, cpu_observer):
+        result = _run(args)
+    if any(event['status'] != 'PASS' for event in cpu_observer.events):
+        return 1
+    return result
+
+
+def _run(args):
     experiment = load_experiment(args.experimental_config) if getattr(args, 'experimental_config', None) else None
-    validate_selection(args.first, args.count, args.seconds, experiment)
+    validate_selection(args.first, args.count, args.seconds, experiment,
+                       recording_only=getattr(args, 'recording_only', False))
+    if getattr(args, 'recording_only', False) and getattr(args, 'coarse_270p_crf28', False):
+        raise ValueError('RECORDING_ONLY_EXCLUDES_SEARCH')
     import resource
     import sqlalchemy as sa
     import daesingo.recording
@@ -427,7 +580,10 @@ def run(args):
     report['sdk_entry_count'] = 0
     events = report['events']
     diag.JOURNAL = diag.Journal(output.with_suffix('.events.jsonl'))
-    sampler = Sampler(work, report, output.with_suffix('.abort'))
+    budget = experiment_budget(experiment)
+    report['resource_budget'] = asdict(budget)
+    report['resource_budget_module_sha256'] = hashlib.sha256(Path(__import__('recording_probe_budget').__file__).read_bytes()).hexdigest()
+    sampler = Sampler(work, report, output.with_suffix('.abort'), budget=budget)
     engine = conn = service = detached = None
     cleanup_errors = []
     held = {}
@@ -526,10 +682,14 @@ def run(args):
                     return value
 
                 def _run(self, argv):
+                    from recording_cpu_quota_probe import classify_argv
+                    # 원문 경로/argv를 출력하지 않고 실제 옵션의 고정 분류만 기록한다.
+                    summary = classify_argv(argv)
                     kind = 'probe' if Path(argv[0]).name == 'ffprobe' else (
                         'concat' if 'concat' in argv else 'encode' if '-vf' in argv else 'decode')
                     output = Path(argv[-1]) if kind in ('encode', 'concat') else None
-                    with tool_measure(events, 'recording_tool_' + kind, output):
+                    with tool_measure(events, 'recording_tool_' + kind, output) as event:
+                        event['tool_summary'] = summary
                         return super()._run(argv)
 
                 def materialize(self, *a, **kw):
@@ -655,43 +815,46 @@ def run(args):
                 report['reader_connection_ids'] = read_ids
                 report['checkedout_after_read'] = engine.pool.checkedout()
                 report['db_read'] = 'PASS_HASH_LENGTH_DETACHED'
-            cfg = GeminiSearchConfig()
             with phase('detached_strict_decode'):
                 # Reopen the anonymous file through the parent fd; no whole read or media copy.
                 decoder = LocalAnalysisMaterializer({}, temp_root=work, timeout_sec=120)
                 decoder._strict_decode(Path(f'/proc/{os.getpid()}/fd/{detached.fileno()}'))
                 report['detached_strict_decode'] = 'PASS'
-            report['search_config'] = {'source_cap': cfg.max_materialized_source_bytes,
-                'media_cap': cfg.max_inline_media_bytes, 'request_cap': cfg.max_inline_request_bytes,
-                'fingerprint': cfg.fingerprint, 'budget_ms': 150000}
-            deadline = RunDeadline(time.monotonic, 150000)
-            original_copy, original_encode = search_media._materialize, search_media._run_ffmpeg_encode
+            if not getattr(args, 'recording_only', False):
+                cfg = GeminiSearchConfig()
+                report['search_config'] = {'source_cap': cfg.max_materialized_source_bytes,
+                    'media_cap': cfg.max_inline_media_bytes, 'request_cap': cfg.max_inline_request_bytes,
+                    'fingerprint': cfg.fingerprint, 'budget_ms': 150000}
+                deadline = RunDeadline(time.monotonic, 150000)
+                original_copy, original_encode = search_media._materialize, search_media._run_ffmpeg_encode
 
-            def copy(*a, **kw):
-                with diag.measure(events, 'search_source_copy') as event:
-                    result = original_copy(*a, **kw)
-                    event['bytes'] = result.actual_byte_size
-                    if result.sha256 != report['expected_sha256']:
-                        raise ValueError('SEARCH_SOURCE_HASH_MISMATCH')
-                    return result
+                def copy(*a, **kw):
+                    with diag.measure(events, 'search_source_copy') as event:
+                        result = original_copy(*a, **kw)
+                        event['bytes'] = result.actual_byte_size
+                        if result.sha256 != report['expected_sha256']:
+                            raise ValueError('SEARCH_SOURCE_HASH_MISMATCH')
+                        return result
 
-            def encode(*a, **kw):
-                return measure_search_encode(events, original_encode, *a, **kw)
+                def encode(*a, **kw):
+                    return measure_search_encode(events, original_encode, *a, **kw)
 
-            search_media._materialize, search_media._run_ffmpeg_encode = copy, encode
-            report['search_media'] = 'FAIL'
-            try:
-                with phase('search_prepare'):
-                    with search_media.MediaPreparer(cfg).prepare_coarse(search_media.MediaInput(
-                            view, 'video/mp4', source.byte_size, source.duration_sec), deadline) as media:
-                        report['search_media'] = 'PASS'
-                        report['search_media_bytes'] = media.byte_size
-                        report['search_media_duration_sec'] = media.duration_sec
-                        with phase('search_request'):
-                            request_boundary(cfg, media, source, timeline.timeline_id, deadline, report, events, sampler.check)
-            finally:
-                search_media._materialize, search_media._run_ffmpeg_encode = original_copy, original_encode
-            report['max_stream_read'] = view.max_read
+                search_media._materialize, search_media._run_ffmpeg_encode = copy, encode
+                report['search_media'] = 'FAIL'
+                try:
+                    with phase('search_prepare'), (coarse_encode_override(search_media, CoarseOverride(270, 28), report)
+                            if getattr(args, 'coarse_270p_crf28', False) else nullcontext()):
+                        with search_media.MediaPreparer(cfg).prepare_coarse(search_media.MediaInput(
+                                view, 'video/mp4', source.byte_size, source.duration_sec), deadline) as media:
+                            report['search_media'] = 'PASS'
+                            report['search_media_bytes'] = media.byte_size
+                            report['search_media_duration_sec'] = media.duration_sec
+                            report['coarse_output'] = inspect_coarse_output(search_media, media, deadline)
+                            with phase('search_request'):
+                                request_boundary(cfg, media, source, timeline.timeline_id, deadline, report, events, sampler.check)
+                finally:
+                    search_media._materialize, search_media._run_ffmpeg_encode = original_copy, original_encode
+                report['max_stream_read'] = view.max_read
             detached.close()
             report['stream_closed'] = detached.closed
             detached = None
@@ -704,7 +867,11 @@ def run(args):
                     report['aborted_after'] = int(final_conn.exec_driver_sql("SHOW GLOBAL STATUS LIKE 'Aborted_clients'").one()[1])
                 if report['aborted_after'] != report['aborted_before']:
                     raise ValueError('ABORTED_CLIENTS_CHANGED')
-            report['status'] = 'PASS_STOP_BEFORE_SEND'
+            if getattr(args, 'recording_only', False):
+                require_recording_result(report)
+                report['status'] = 'PASS_RECORDING_ONLY'
+            else:
+                report['status'] = 'PASS_STOP_BEFORE_SEND'
     except BaseException as error:
         report.update(error_type=type(error).__name__, error_code=getattr(error, 'code', None), failure_phase=report['phase'],
             error_frames=[{'file': Path(f.filename).name, 'line': f.lineno, 'function': f.name} for f in traceback.extract_tb(error.__traceback__)])
@@ -727,7 +894,7 @@ def run(args):
         report['temp_after'] = temp_usage(work)
         report['live_children_after'] = [p.name() for p in __import__('psutil').Process().children(recursive=True)]
         report['runner_ru_maxrss_kib'] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        report['cgroup_peak_bytes'] = int(Path('/sys/fs/cgroup/memory.peak').read_text())
+        report['cgroup_peak_bytes'] = int((sampler.cgroup_root/'memory.peak').read_text())
         report['cleanup_errors'] = cleanup_errors
         for r in records:
             clean('original_stat_after', lambda r=r: diag.verify_stat(Path('/inputs') / r['filename'], r))
@@ -737,7 +904,7 @@ def run(args):
         diag.emit({'kind': 'final', 'status': report['status']})
         diag.JOURNAL = None
     print(json.dumps({k: report.get(k) for k in ('status', 'failure_phase', 'error_type', 'error_code', 'final_bytes', 'db_read', 'request_guard')}))
-    return 0 if report['status'] in ('PASS_STOP_BEFORE_SEND', 'TYPED_REJECTION') else 1
+    return 0 if report['status'] in ('PASS_STOP_BEFORE_SEND', 'PASS_RECORDING_ONLY', 'TYPED_REJECTION') else 1
 
 
 def main():
@@ -748,10 +915,18 @@ def main():
     parser.add_argument('--count', type=int, required=True)
     parser.add_argument('--seconds', type=int, required=True)
     parser.add_argument('--experimental-config', help='격리 실험 전용 유한 예산 JSON; 운영 설정과 분리')
+    parser.add_argument('--coarse-270p-crf28', action='store_true', help='Owner 요청 후보를 Coarse에만 명시 적용')
+    parser.add_argument('--recording-only', action='store_true', help='고정 10/120초 후보에서 Search 실행 없이 저장·정확성·정리를 검증')
     args = parser.parse_args()
     try:
         experiment = load_experiment(args.experimental_config) if args.experimental_config else None
-        validate_selection(args.first, args.count, args.seconds, experiment)
+        validate_selection(args.first, args.count, args.seconds, experiment, recording_only=args.recording_only)
+        if args.recording_only and args.coarse_270p_crf28:
+            raise ValueError('RECORDING_ONLY_EXCLUDES_SEARCH')
+        if args.coarse_270p_crf28 and experiment is None:
+            raise ValueError('COARSE_EXPERIMENT_REQUIRES_EXPLICIT_EXPERIMENT')
+        if experiment and experiment.resource_profile != 'legacy' and not args.coarse_270p_crf28:
+            raise ValueError('EXPERIMENT_EXTENDED_REQUIRES_COARSE')
     except (ValueError, OSError):
         parser.error('명시적 유한 실험 설정과 허용 입력 범위가 필요합니다')
     return run(args)
