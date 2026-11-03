@@ -560,8 +560,10 @@ class RecordingService(RecordingExports):
         media = get(parsed.ref)
         if media is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
-        content = (self._repository.get_prepared_content(parsed) if parsed.kind in {"analysis_source", "incident_clip"}
-                   else self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None)
+        if parsed.kind in {"analysis_source", "incident_clip"}:
+            content = self._repository.get_prepared_metadata(parsed)
+        else:
+            content = self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None
         available = media.availability if content is not None else (
             "UNAVAILABLE" if media.availability == "UNAVAILABLE" else "UNKNOWN")
         lineage = (getattr(media, "source_refs", []) if parsed.kind != "incident_clip" else

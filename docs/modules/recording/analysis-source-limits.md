@@ -1,11 +1,16 @@
 # AnalysisSource 저장 한도
 
-IN_PROGRESS · Refs #452 · Related #460, #450, #72 · 2026-10-30
+IN_PROGRESS (#452 장시간 입력·운영 최적화 후속) · Related #460, #450, #72 · 상태 갱신 2026-11-02
 
 근거: [#452 본문·전체 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452),
 [Case 결정 PR #454](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/454),
 [현재 Runtime 실행환경](../../runtime/local-runtime-environment.md).
 MVP DB 한 행 저장을 유지한다. DB `max_allowed_packet`을 제품 상한으로 읽거나 변경하지 않는다.
+
+초기 배포 baseline v1은 병합된
+[PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)에 기록됐다. 과거 baseline과 현재 적용값의 원문은
+[환경·배포 설정 명세 §3](../../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이다.
+이는 코드 기본값이나 운영 최적값 확정이 아니며, 약 1시간 입력 지원은 미확정이다.
 
 ## 설정과 전달
 
@@ -52,15 +57,40 @@ Worker는 Search media resource 진입에서 이 code만
 AnalysisRun/produced receipt를 만들지 않는다. 다른 Recording 오류, Search 본문/exit 오류는 이 매핑에 섞지 않는다.
 기존 Runtime terminal FAILED이며 STALE 자동 재시도 대상이 아니다.
 
-Case reflector는 이미 `failure_kind`를 `ExecutionOutcome`에 전달한다. 현재 coarse 실패 projection은
-원인을 구분하지 않고 일반 `search.candidate_search_failed`/`RETRY_SEARCH`를 사용한다.
-따라서 재시도 없는 별도 notice는 아직 완료가 아니다. #454에 따라 Case Owner가 terminal code를
-소비하여 notice code·message_key·계약·web 문구를 등재할 후속이 필요하다. Case에 수치를 복제하지 않는다.
+Case notice는 [PR #481](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/481),
+Web 문구·실패 화면은 [PR #492](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/492)로
+모두 병합됐다. 현재 [Case reflector](../../../src/daesingo/case/reflection.py)의
+`_apply_coarse_search`는 위 terminal `failure_kind`를 구분하고,
+[notice projection](../../../src/daesingo/case/service.py)의 `derive_notices()`는 일반
+`search.candidate_search_failed` 대신 다음 notice를 붙인다. 다른 coarse 실패는 기존 일반 notice를 유지한다.
 
-## pending 운영 결정과 측정
+| 항목 | 현재 구현 |
+| --- | --- |
+| code | `recording.analysis_range_too_long` |
+| severity · blocking | `ERROR` · `true` |
+| message_key | `notice.analysis_range_too_long` |
+| actions | `[]` — `RETRY_SEARCH` 없음 |
 
-운영 대표 bytes·지원 길이·encoding은 미확정. 기존 64MiB packet 관측, “약 5분” 추정,
-테스트의 낮은 한도를 운영 기본값으로 사용하지 않는다. 실행하려면 Owner가 아래 근거로 두 설정을 확정해야 한다.
+CaseView 계약에도 등재됐으며 Case는 길이·byte 수치를 복제하지 않고 typed code만 소비한다.
+[Web 화면 분기](../../../apps/web/src/state/selectScreen.ts)는 진행 중인 job이 없으면
+`SEARCH_FAILED`로 보내고, job이 있으면 진행 화면을 유지한다.
+[Web 문구](../../../apps/web/src/contracts/labels.ts)는 사건 장면이 담긴 영상만 골라 다시 올리도록 안내한다.
+이는 병합·현재 코드 대조 결과이며 이번 문서 갱신에서 실서버 화면이나 실제 22개 입력 E2E를 새로 검증한 것은 아니다.
+
+## 초기 배포 baseline v1과 남은 운영 측정
+
+[설정 명세 §3](../../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)의
+초기 구성·재현 기준은 Analysis `aws-e2e-v1 / 480 / veryfast / CRF23`,
+`50331648 bytes (48 MiB) / 240000 ms (4분)`, Incident `240 / veryfast / CRF23`이다.
+코드에는 여전히 기본값이 없으므로 runtime 파일에 명시해야 한다.
+현재 EC2 Incident 적용 기준은 `720 / veryfast / CRF20`이며, Analysis profile과 6개 설정은 유지됐다.
+[2026-11-02 적용·실영상 E2E 기록](../../runtime/experiments/2026-11-02-incident720-config-real-e2e.md)은
+운영자 제공 결과와 로컬 결과 파일 metadata·hash 재확인을 구분한다.
+사건 포함·화질 개선은 사용자 육안 확인이며 OCR 정확도나 전체 입력 품질 보장이 아니다.
+운영 최적 encoding·품질 및 약 1시간 입력 지원은 미확정이다. 이번 Incident 변경으로
+Analysis의 4분·48 MiB 제한이나 장시간 입력 지원 상태가 바뀌지 않는다.
+기존 64MiB packet 관측, “약 5분” 추정, 테스트의 낮은 한도를 운영 기본값으로 사용하지 않는다.
+장시간 입력 지원·운영 최적값을 판단할 때는 아래 근거를 함께 검증해야 한다.
 
 1. 실제 Runtime의 확정 profile로 대표/복잡한 영상과 지원하려는 길이를 측정: 구간/누적/최종 bytes,
    encode/concat/준비 경과, peak RSS/temp 사용량, 원본 불변·coverage.
@@ -68,7 +98,16 @@ Case reflector는 이미 `failure_kind`를 `ExecutionOutcome`에 전달한다. �
 3. Search inline/request byte 상한과 준비·큐·Search 각각의 시간 및 기존 Case 180초 대기를 함께 검증.
 4. 22개 실제 원본으로 재검증. 작은 합성 영상 검증은 해당 실제 입력 검증이나 제품 한도 결정이 아니다.
 
-## 검증 (합성 입력)
+[#452 최신 측정 해석](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6559422935)에
+따라 Search 단독 7분 20초 성공과 표본별 9~13분 추정은 전체 Recording→Search 지원 길이가 아니다.
+현재 baseline은 4분 상한이며 한도나 DB packet만 늘려 약 1시간 지원이 해결됐다고 하지 않는다.
+
+## 과거 검증 기록 (2026-10-30 구현 당시, 합성 입력)
+
+아래 결과·미실행 항목은 당시 로컬 구현 검증 기록으로 보존한다. 이후
+[#477 병합·원격 CI 결과](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6515949133)는
+별도 기록이며, 아래의 “후속 PR 원격 CI 대상으로 남긴다”는 당시 상태다.
+현재 baseline의 실영상 품질·장시간 지원 검증이나 이번 문서 갱신의 실행 결과로 합산하지 않는다.
 
 | 검증 | 결과 |
 | --- | --- |

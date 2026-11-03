@@ -10,8 +10,9 @@ import { FailedScreen } from './FailedScreen'
 import { FlowScreen } from './FlowScreen'
 import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
-import { ResultScreen } from './ResultScreen'
+import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
+import { useScreenFocus } from './screenFocus'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
@@ -41,6 +42,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const { view } = state
   const cid = state.caseId
   const frameSrc = cid ? (ref: string) => api.frameUrl(cid, ref) : undefined
+  // 제목·신고 내용·위치를 화면에서만 고친 값. 다른 case · 다른 후보의 초안으로 넘기지 않는다
+  const draftKey = `${cid}/${view?.candidates.find((c) => c.selected)?.candidate_id}`
+  const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
+  const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
   const [subs, setSubs] = useState<Sub[]>([])
   const [startedAt, setStartedAt] = useState(() => Date.now())
@@ -113,11 +118,14 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
   }
   const open = (sub: Sub) => {
+    rememberOpener()
     setSubs((s) => [...s, sub])
     setArriving(false)
   }
   const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
+  const mainRef = useRef<HTMLElement>(null)
+  const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
 
   const newReport = () => location.assign(`${location.pathname}?api`)
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
@@ -125,7 +133,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main rs-page">
+      <main className="web-main rs-page" ref={mainRef}>
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
@@ -229,7 +237,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
+        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} frameSrc={frameSrc} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
         // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
@@ -263,10 +271,19 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         )
       case 'NOT_OBSERVED':
         return (
-          <NotObservedScreen view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
+          <NotObservedScreen
+            view={view}
+            onSelect={reselect}
+            restyled
+            onNewReport={newReport}
+            onAction={onAction}
+            canRun={canRun}
+            onEditHint={editHint}
+            frameSrc={frameSrc}
+          />
         )
       default:
-        if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
+        if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} frameSrc={frameSrc} />
         if (sub === 'plate' || sub === 'plateEdit')
           return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
@@ -278,6 +295,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
             onTime={() => open('time')}
+            edits={edits}
+            onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
             onAction={onAction}
             canRun={canRun}

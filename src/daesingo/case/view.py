@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.preview_frame import current_candidate_frame_refs, current_preview_frame_ref
 from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
@@ -331,6 +332,7 @@ def _build_candidates_view(
     # current_timeline_revision=2≠timeline_revision:1 → stale_revision:true,
     # stale_revision_label_key:"candidate.stale_timeline_revision")로 확인.
     out = []
+    frame_refs = current_candidate_frame_refs(case)
     # rank 오름차순(#122). rank가 없는 후보(구 fixture 등)는 뒤로, 같은 rank면 받은 순서를 유지한다.
     for c in sorted(case.candidates, key=lambda c: (c.rank is None, c.rank or 0)):
         at, at_provenance = c.at, c.at_provenance
@@ -357,7 +359,8 @@ def _build_candidates_view(
                 "at_provenance": at_provenance,
                 "at_provenance_label_key": at_provenance_label_key(at_provenance),
                 "observed": c.observed,
-                "thumb_ref": c.thumb_ref,
+                # case가 clip에서 발급받은 썸네일(#523)이 우선이다 — Search `thumbnail_ref`는 실제 경로에서 늘 null이다.
+                "thumb_ref": frame_refs.get(c.candidate_id) or c.thumb_ref,
                 "selected": c.selected,
                 "timeline_revision": c.timeline_revision,
                 "stale_revision": stale_revision,
@@ -705,7 +708,9 @@ def build_case_view(
     from .search_progress import search_progress_view
 
     selected = next((c for c in case.candidates if c.selected), None)
-    preview_ref = selected.thumb_ref if selected else None
+    # 근거 장면은 case가 clip에서 발급받은 frame이다(#446). Search 후보 `thumbnail_ref`는 실제 경로에서 늘 null이라
+    # 발급 전에는 그 값(fixture에만 있음)을 그대로 쓴다.
+    preview_ref = (current_preview_frame_ref(case) or selected.thumb_ref) if selected else None
 
     # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
     # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은

@@ -44,7 +44,8 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
   }, [shown])
   if (!shown) return null
   const rows = width > 0 ? axisRows(pins.map((p) => p.pct), width) : pins.map(() => 0)
-  const label = pins.map((p) => `${p.n}번 ${clock(p.ms)}`).join(', ')
+  // 기준 후보는 채운 원으로만 보이므로 라벨에도 적는다(#509 #6)
+  const label = pins.map((p) => `${p.n}번 ${clock(p.ms)}${p.selected ? ' (지금 기준)' : ''}`).join(', ')
   const [from, to] = axisEnds(props.view.manifest_summary.range, duration)
   return (
     <div className="cand-axis" ref={ref} role="img" aria-label={`시간축(${from}–${to})에서 후보 위치: ${label}`}>

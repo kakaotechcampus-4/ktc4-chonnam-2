@@ -23,7 +23,8 @@ class IncidentRecordingFactory:
 
     @contextmanager
     def __call__(self, data):
-        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root)
+        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root, temp_root=self.temp_root,
+            temp_context=self.media.detached_temp if self.media is not None else None)
         materializer = partial(self.media.materializer, LocalIncidentMaterializer) if self.media is not None else None
         with build_incident_recording_service(repository, self.settings, temp_root=self.temp_root,
                 materializer_factory=materializer, case_id=data.case_id) as recording:

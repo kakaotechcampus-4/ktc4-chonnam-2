@@ -187,3 +187,21 @@ it('업로드가 끝나면 상황 입력칸 위에 고른 원본의 파일 이�
   r.rerender(screen('done', [file('REC_a.mp4')]))
   expect((await r.findByText(/읽지 못했어요/)).textContent).toBe('파일 이름에서 찍힌 시각을 읽지 못했어요.')
 })
+
+it('업로드 전 「영상에서 찾아보기」는 Tab으로 닿고 못 누르는 이유가 읽히며, 눌러도 시작하지 않는다 (#509 #5)', () => {
+  const onSearch = vi.fn()
+  const r = render(
+    <UploadScreen state="idle" files={[]} skipped={[]} situation="" onFiles={() => {}} onSituation={() => {}} onSearch={onSearch} />,
+  )
+  const btn = r.getByText('영상에서 찾아보기').closest('button')!
+  expect(btn.disabled).toBe(false)
+  expect(btn.getAttribute('aria-disabled')).toBe('true')
+  expect(document.getElementById(btn.getAttribute('aria-describedby')!)!.textContent).toBe('영상을 먼저 올려 주세요.')
+  fireEvent.click(btn)
+  expect(onSearch).not.toHaveBeenCalled()
+  r.rerender(<UploadScreen state="done" files={[file('a.mp4')]} skipped={[]} situation="" onFiles={() => {}} onSituation={() => {}} onSearch={onSearch} />)
+  expect(btn.getAttribute('aria-disabled')).toBe('false')
+  expect(btn.hasAttribute('aria-describedby')).toBe(false)
+  fireEvent.click(btn)
+  expect(onSearch).toHaveBeenCalledTimes(1)
+})

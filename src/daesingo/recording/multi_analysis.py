@@ -31,7 +31,12 @@ def materialize_chain(engine, inputs, profile_ref):
         if any(not p.frames or p.video_size != parts[0].video_size for p in parts):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 frame 또는 해상도가 일치하지 않습니다")
         mixed = any(p.time_base != parts[0].time_base for p in parts)
+        # VFR parts use no B frames; even equal clocks can then have different
+        # decode delays. Reuse exact packet projection to preserve seam durations.
+        exact_clock = mixed or any(len({duration for _, duration in p.frames}) > 1 for p in parts)
         output_clock = common_time_base(parts) if mixed else parts[0].time_base
+        # A reduced common clock must not widen the existing duration check.
+        duration_base = output_clock
         # 초 단위 decimal metadata의 표현 오차에만 사용하는 비교 상한이다.
         # 한 tick/frame보다 항상 작게 제한하며 timestamp/range는 수정하지 않는다.
         tolerance = min(Fraction(1, 1000000), min(p.time_base for p in parts) / 2,
@@ -53,7 +58,7 @@ def materialize_chain(engine, inputs, profile_ref):
         with TemporaryDirectory(prefix="recording-chain-", dir=engine._temp_root) as work:
             root = Path(work)
             options, expected_packets = [], None
-            if mixed:
+            if exact_clock:
                 lines, options, expected_packets, output_clock = prepare_mixed_parts(engine, parts, root)
             else:
                 lines = ["ffconcat version 1.0"]
@@ -72,10 +77,10 @@ def materialize_chain(engine, inputs, profile_ref):
             check_output(output)
             raw = engine._probe(output)
             base, frames = engine._frames(raw, expected_coverage=expected)
-            if mixed:
+            if exact_clock:
                 if (base != output_clock or tuple(frames) != tuple(expected)
                         or int(raw["frames"][0]["best_effort_timestamp"]) != 0):
-                    raise ValueError("exact mixed-clock coverage mismatch")
+                    raise ValueError("exact chain coverage mismatch")
                 validate_packets(engine, output, output_clock, expected_packets)
             stream = raw["streams"][0]
             if (stream["codec_name"] != "h264" or stream["pix_fmt"] != "yuv420p"
@@ -87,7 +92,8 @@ def materialize_chain(engine, inputs, profile_ref):
                            for (a, x), (b, y) in zip(frames, expected))):
                 raise ValueError("연결 출력 검증 실패")
             duration = float(raw["format"]["duration"])
-            if not math.isfinite(duration) or duration <= 0 or abs(duration - float(offset)) > .001 + float(2 * base):
+            if (not math.isfinite(duration) or duration <= 0
+                    or abs(duration - float(offset)) > .001 + float(2 * min(base, duration_base))):
                 raise ValueError("연결 출력 duration 불일치")
             engine._strict_decode(output)
             content = read_output(output)

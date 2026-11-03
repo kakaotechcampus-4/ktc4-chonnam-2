@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from ._contract import parse_rfc3339
 from .errors import ContractInputError
 from .policy_catalog import load_report_policy
 
 _POLICY = load_report_policy()
+_SEOUL = ZoneInfo("Asia/Seoul")
 
 SAFETY_REPORT_POLICY_REF = _POLICY["policy_ref"]
 TIME_POLICY_REF = "policy/time-source-priority-v1"
@@ -71,7 +73,7 @@ def render_report(
     elif situation_response not in {"CONFIRMED", "CORRECTED"}:
         raise ContractInputError("report.input.situation_unconfirmed")
     parsed: datetime = parse_rfc3339(occurred_at)
-    display_time = parsed.strftime("%Y-%m-%d %H:%M:%S")
+    display_time = parsed.astimezone(_SEOUL).strftime("%Y-%m-%d %H:%M:%S")
     if not isinstance(violation_expression, str) or not violation_expression.strip():
         raise ContractInputError("violation_expression must be a non-empty string")
     if vehicle_number is not None and (not isinstance(vehicle_number, str) or not vehicle_number.strip()):

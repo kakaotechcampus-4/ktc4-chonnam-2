@@ -157,7 +157,8 @@ export function FlowScreen(props: {
               </>
             )}
           </p>
-          <p className="flow-elapsed">
+          {/* 1초마다 바뀌므로 live 영역에서 뺀다 — 화면 낭독기가 단계 안내 사이에 매초 읽지 않게(#509 #1) */}
+          <p className="flow-elapsed" aria-live="off">
             경과 시간 <span>{elapsed}</span>
           </p>
         </div>

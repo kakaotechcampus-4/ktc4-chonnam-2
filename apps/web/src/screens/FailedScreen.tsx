@@ -18,6 +18,8 @@ export function FailedScreen(props: {
   onSelect?: (candidateId: string) => void
   /** 처음부터 다시 — 분석 범위 초과처럼 다른 출구가 없을 때 막다른 화면을 피한다 */
   onNewReport?: () => void
+  /** 후보 미리보기 이미지 주소(API 모드) */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
   const blocking = props.view.notices.filter((n) => n.blocking)
   // 버튼은 한 줄에 모으되, 누르면 어느 notice의 동작인지(code)도 함께 넘긴다(RUN_NOTICE_ACTION).
@@ -25,12 +27,12 @@ export function FailedScreen(props: {
   const others = props.onSelect ? props.view.candidates.filter((c) => !c.selected).length : 0
   return (
     <div className="rs rs-screen state-page failed">
-      <h1 className="state-context">신고자료</h1>
+      <p className="state-context">신고자료</p>
       <section className="state-card">
-        <h2 className="failed-head">
+        <h1 className="failed-head">
           <CircleAlert size={26} strokeWidth={1.8} aria-hidden />
           영상을 살펴보다가 문제가 생겼어요.
-        </h2>
+        </h1>
         {blocking.map((n) => (
           <p key={n.code} className="state-cause">
             {noticeMessage(n.message_key)}
@@ -72,7 +74,7 @@ export function FailedScreen(props: {
       </section>
       {others > 0 && (
         <div className="rs notobs-cands">
-          <CandidatesScreen view={props.view} onSelect={props.onSelect!} selectedLabel="먼저 확인한 장면" />
+          <CandidatesScreen view={props.view} onSelect={props.onSelect!} selectedLabel="먼저 확인한 장면" frameSrc={props.frameSrc} />
         </div>
       )}
     </div>

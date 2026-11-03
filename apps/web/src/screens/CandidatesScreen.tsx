@@ -24,8 +24,18 @@ export function CandidatesScreen(props: {
   onSelect?: (candidateId: string) => void
   /** 기준 후보 태그 문구 — 신고자료가 없는 화면에서 바꾼다(CandidateCard) */
   selectedLabel?: string
+  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 미리보기 자리만 둔다 */
+  frameSrc?: (frameRef: string) => string
 }): JSX.Element {
-  const { onSelect } = props
+  const { onSelect, frameSrc } = props
+  // 후보 장면은 thumb_ref(#523 상위 후보). 기준 후보는 아직 thumb_ref가 없으면 근거 장면(evidence.preview_ref, #470)을 쓴다
+  const preview = props.view.evidence?.preview_ref ?? null
+  const src = (c: (typeof props.view.candidates)[number]) => {
+    const ref = c.thumb_ref ?? (c.selected ? preview : null)
+    return ref && frameSrc ? frameSrc(ref) : null
+  }
+  // 후보 장면과 근거 장면은 사건 클립을 만드는 작업이 함께 발급한다(#523 · #470). 그 작업이 돌 때만 「준비 중」이라 한다
+  const pending = props.view.running_jobs.some((j) => j.kind === 'INCIDENT_CLIP_BUILD')
   const preparing = props.view.running_jobs.some((j) => PREPARING_KINDS.includes(j.kind))
   return (
     <Panel title="찾은 장면">
@@ -35,7 +45,14 @@ export function CandidatesScreen(props: {
       <div className="cands">
         {props.view.candidates.map((c, i) => {
           const card = (
-            <CandidateCard key={c.candidate_id} candidate={c} ordinal={i + 1} selectedLabel={props.selectedLabel} />
+            <CandidateCard
+              key={c.candidate_id}
+              candidate={c}
+              ordinal={i + 1}
+              selectedLabel={props.selectedLabel}
+              src={src(c)}
+              pending={pending}
+            />
           )
           if (!onSelect) return card
           return (

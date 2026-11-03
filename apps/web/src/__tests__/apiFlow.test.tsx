@@ -115,6 +115,8 @@ it('[분석 중단]은 STOP_ANALYSIS를 보내고, 중단 화면에서 [다시 �
   fireEvent.click(await findByText('분석 중단'))
   await findByText('분석을 중단했어요.')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 2, { kind: 'STOP_ANALYSIS', payload: {} })
+  // 중단 화면으로 바뀌면 그 제목에 초점이 간다(#509 #2)
+  expect(document.activeElement?.textContent).toBe('분석을 중단했어요.')
 
   m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 })) // 다시 찾으면 rev가 오른다
   fireEvent.click(getByText('다시 찾기'))
@@ -469,5 +471,20 @@ it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 �
   expect((getByLabelText('시간') as HTMLInputElement).value).toBe('18:05:12')
   fireEvent.click(getByText('취소'))
   await findByText('시각 수정하기')
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「일자 수정하기」도 같은 시각 입력 화면을 연다', async () => {
+  const { m, api } = setup({ get: RESULT })
+  const { findByText, getByLabelText, getByText, container } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('제목 수정하기'))
+  fireEvent.change(getByLabelText('제목'), { target: { value: '끼어들기 신고' } })
+  fireEvent.click(getByText('저장'))
+  expect(container.textContent).toContain('끼어들기 신고')
+  expect(container.textContent).toContain('이 화면에서만 바꿨어요')
+  fireEvent.click(getByText('일자 수정하기'))
+  expect((getByLabelText('날짜') as HTMLInputElement).value).toBe('2026-08-24')
+  fireEvent.click(getByText('취소'))
+  await findByText('끼어들기 신고')
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
