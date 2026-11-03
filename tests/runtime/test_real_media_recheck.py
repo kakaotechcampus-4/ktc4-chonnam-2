@@ -350,3 +350,152 @@ def test_search_output_size_survives_real_media_cap_rejection_and_cleanup(tmp_pa
     assert not output.exists()
     assert events[0]['output_bytes'] == 11 and events[0]['status'] == 'PASS'
     assert 'private' not in str(events)
+
+
+@pytest.mark.parametrize('values', [None, {}, {'height': 360, 'crf': 28},
+    {'height': 270, 'crf': True}, {'height': 270, 'crf': 29},
+    {'height': 270, 'crf': 28, 'media_cap': 99}])
+def test_coarse_override_rejects_unapproved_settings(values):
+    with pytest.raises(ValueError, match='COARSE_EXPERIMENT'):
+        probe().CoarseOverride.from_mapping(values)
+
+
+@pytest.mark.parametrize('fail', [False, True])
+def test_coarse_override_changes_actual_encode_argv_only_and_restores(tmp_path, monkeypatch, fail):
+    """실제 제품 argv builder를 통과한다. subprocess 실행만 이 control에서 대체한다."""
+    import subprocess
+    import time
+    from daesingo.search import media
+    from daesingo.search.execution import RunDeadline
+    p = probe()
+    seen = []
+    def execute(argv, deadline):
+        seen.append(argv)
+        if fail and argv[-1].endswith('coarse.mp4'):
+            raise RuntimeError('encode control failure')
+        return subprocess.CompletedProcess(argv, 0, b'', b'crf=28.0')
+    monkeypatch.setattr(media, '_run_subprocess', execute)
+    original_encode, original_run = media._run_ffmpeg_encode, media._run_subprocess
+    settings = p.CoarseOverride.from_mapping({'height': 270, 'crf': 28})
+    report = {}
+    deadline = RunDeadline(time.monotonic, 150000)
+    src = tmp_path / 'source.mp4'
+    with p.coarse_encode_override(media, settings, report):
+        # Fine도 같은 thread/context 안에서 baseline으로 실행돼야 한다.
+        media._run_ffmpeg_encode(src, tmp_path/'fine.mp4', fps=4.0, max_height=360,
+                                deadline=deadline, start_sec=2.0, end_sec=5.0)
+        media._run_subprocess(['ffmpeg', '-i', 'other', 'other.mp4'], deadline)
+        if fail:
+            with pytest.raises(RuntimeError, match='encode control failure'):
+                media._run_ffmpeg_encode(src, tmp_path/'coarse.mp4', fps=2.0,
+                                        max_height=360, deadline=deadline)
+        else:
+            media._run_ffmpeg_encode(src, tmp_path/'coarse.mp4', fps=2.0,
+                                    max_height=360, deadline=deadline)
+        assert media._run_subprocess is original_run
+    assert media._run_ffmpeg_encode is original_encode and media._run_subprocess is original_run
+    assert '-crf' not in seen[0] and seen[0][1:5] == ['-y', '-ss', '2.0', '-t']
+    assert "fps=4.0,scale=-2:'min(360,ih)',setpts=(PTS-STARTPTS)*4.0,fps=1" in seen[0]
+    assert seen[1] == ['ffmpeg', '-i', 'other', 'other.mp4']
+    actual = seen[2]
+    assert actual[actual.index('-crf') + 1] == '28'
+    assert "fps=2.0,scale=-2:'min(270,ih)',setpts=(PTS-STARTPTS)*2.0,fps=1" in actual
+    assert '-an' in actual and actual[actual.index('-c:v')+1] == 'libx264'
+    assert report['coarse_override_restored'] is True
+
+
+def test_coarse_override_context_failure_restores_before_propagation(monkeypatch):
+    from daesingo.search import media
+    p = probe()
+    original_encode, original_run = media._run_ffmpeg_encode, media._run_subprocess
+    with pytest.raises(KeyboardInterrupt):
+        with p.coarse_encode_override(media, p.CoarseOverride(270, 28), {}):
+            raise KeyboardInterrupt()
+    assert media._run_ffmpeg_encode is original_encode and media._run_subprocess is original_run
+
+
+def test_coarse_output_probe_captures_actual_stdout(tmp_path, monkeypatch):
+    import json
+    import subprocess
+    from daesingo.search import media
+    p = probe()
+    def execute(argv, deadline, *, capture_stdout=False):
+        payload = {'streams': [{'codec_type': 'video', 'height': 270, 'time_base': '1/16384'}],
+            'format': {'duration': '2'}, 'frames': [
+                {'best_effort_timestamp': 0, 'duration': 16384},
+                {'best_effort_timestamp': 16384, 'duration': 16384}]}
+        return subprocess.CompletedProcess(argv, 0, json.dumps(payload).encode() if capture_stdout else None, b'')
+    monkeypatch.setattr(media, '_run_subprocess', execute)
+    result = p.inspect_coarse_output(media, SimpleNamespace(path=tmp_path/'coarse.mp4',
+        origin_start_sec=0, origin_end_sec=1, playback_speed=.5), object())
+    assert result['frames']['frame_count'] == 2 and result['format_duration_sec'] == 2
+
+
+def test_extended_experiment_requires_shared_profile_and_sampler_uses_it(tmp_path):
+    p = probe()
+    values = {'experiment_id': 'coarse270-1200', 'max_output_bytes': 402653184,
+        'max_duration_ms': 1200000, 'run_timeout_sec': 3000, 'resource_profile': 'coarse-1200-384m'}
+    exp = p.Experiment.from_mapping(values)
+    budget = p.experiment_budget(exp)
+    assert budget.runner_hard_mib == 2176 and budget.runner_soft_mib == 1900 and budget.temp_soft_mib == 896
+    assert p.recording_config(exp)['DAESINGO_RECORDING_ANALYSIS_MAX_BYTES'] == '402653184'
+    sampler = p.Sampler(tmp_path, {'samples': []}, tmp_path/'abort', budget=budget)
+    # 확장 soft 직전은 통과, 실제 확장 soft에서는 중단한다.
+    sampler.collect = lambda: {'cgroup_bytes': 1992294399, 'including_open_unlinked_bytes': 939524095}
+    original_emit = p.diag.emit
+    p.diag.emit = lambda value: sampler.stop.set()
+    try:
+        sampler.sample()
+        assert sampler.error is None
+        sampler.stop.clear()
+        sampler.collect = lambda: {'cgroup_bytes': 1992294400, 'including_open_unlinked_bytes': 0}
+        sampler.sample()
+        assert sampler.error == 'RuntimeError' and (tmp_path/'abort').exists()
+    finally:
+        p.diag.emit = original_emit
+    for change in ({'resource_profile': 'legacy'}, {'run_timeout_sec': 1800}, {'max_duration_ms': 720000}):
+        with pytest.raises(ValueError, match='EXPERIMENT'):
+            p.Experiment.from_mapping({**values, **change})
+
+
+def test_coarse_override_does_not_change_another_thread_encode(tmp_path, monkeypatch):
+    import subprocess
+    import threading
+    import time
+    from daesingo.search import media
+    from daesingo.search.execution import RunDeadline
+    p = probe()
+    seen, errors = [], []
+    deadline = RunDeadline(time.monotonic, 150000)
+    def other():
+        try:
+            media._run_ffmpeg_encode(tmp_path/'other-source', tmp_path/'other'/'coarse.mp4',
+                fps=2.0, max_height=360, deadline=deadline)
+        except BaseException as error:
+            errors.append(error)
+    def execute(argv, deadline, **options):
+        seen.append(argv)
+        if '-crf' in argv:
+            thread = threading.Thread(target=other)
+            thread.start()
+            thread.join(2)
+            assert not thread.is_alive()
+        return subprocess.CompletedProcess(argv, 0, b'', b'')
+    monkeypatch.setattr(media, '_run_subprocess', execute)
+    with p.coarse_encode_override(media, p.CoarseOverride(270, 28), {}):
+        media._run_ffmpeg_encode(tmp_path/'source', tmp_path/'coarse.mp4',
+            fps=2.0, max_height=360, deadline=deadline)
+    assert not errors and len(seen) == 2
+    assert '-crf' in seen[0] and '-crf' not in seen[1]
+    assert "fps=2.0,scale=-2:'min(360,ih)',setpts=(PTS-STARTPTS)*2.0,fps=1" in seen[1]
+
+
+def test_coarse_override_refuses_changed_call_contract(tmp_path):
+    from daesingo.search import media
+    p = probe()
+    original = media._run_ffmpeg_encode
+    with pytest.raises(ValueError, match='COARSE_EXPERIMENT_CALL_DRIFT'):
+        with p.coarse_encode_override(media, p.CoarseOverride(270, 28), {}):
+            media._run_ffmpeg_encode(tmp_path/'source', tmp_path/'coarse.mp4',
+                fps=4.0, max_height=360, deadline=object())
+    assert media._run_ffmpeg_encode is original
