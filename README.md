@@ -122,7 +122,7 @@ npm run dev:prototype  # Vite가 출력하는 URL 열기 (기본 http://localhos
 ```bash
 npm run build              # build 스크립트가 있는 workspace 전부
 npm run preview:prototype  # 프로토타입 프로덕션 빌드 서빙
-npm run dev:web            # apps/web 개발 서버
+npm run dev:web            # apps/web 개발 서버 — / 는 실제 흐름(API 서버 :8000 필요), 시연은 /?demo
 npm run preview:web        # apps/web 프로덕션 빌드 서빙
 npm run test:web           # apps/web 테스트 (vitest)
 ```
