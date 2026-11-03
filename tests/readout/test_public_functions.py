@@ -420,14 +420,14 @@ class OverlayBranchTest(unittest.TestCase):
             with self.subTest(readout=overlay.readout_id):
                 self.assertIn(overlay.observation.reason.code, registry.OVERLAY_REASON_CODES)
 
-    def test_one_sample_missing_separator_still_validates_the_whole_flow(self):
-        """#536 재현 — 7개 중 하나만 공백이 빠져도 형식 · 단조 · 재생 시간 검증을 모두 거친다."""
-        stamps = [(3.2, "2026-11-02 14:00:23"), (4.8, "2026-11-02 14:00:24"),
-                  (6.4, "2026-11-02 14:00:26"), (8.0, "2026-11-02 14:00:28"),
-                  (9.6, "2026-11-0214:00:29"), (11.2, "2026-11-02 14:00:31"),
-                  (12.8, "2026-11-02 14:00:32")]
+    # #536 실측 — 9.6초 샘플만 OCR이 날짜와 시간 사이 공백을 빠뜨렸다
+    SEVEN = [(3.2, "2026-11-02 14:00:23"), (4.8, "2026-11-02 14:00:24"),
+             (6.4, "2026-11-02 14:00:26"), (8.0, "2026-11-02 14:00:28"),
+             (9.6, "2026-11-0214:00:29"), (11.2, "2026-11-02 14:00:31"),
+             (12.8, "2026-11-02 14:00:32")]
 
-        class SevenSamples(providers.OcrProvider):
+    def _read_samples(self, stamps):
+        class Samples(providers.OcrProvider):
             def read_overlay_time(self, input_ref):
                 return providers.OverlayReading(
                     presence=providers.PRESENT,
@@ -435,12 +435,28 @@ class OverlayBranchTest(unittest.TestCase):
                              for i, (t, raw) in enumerate(stamps)],
                 )
 
-        _, overlay = api.read_overlay_time(request_for("clip_h001"), provider=SevenSamples())
+        return api.read_overlay_time(request_for("clip_h001"), provider=Samples())[1]
+
+    def test_one_sample_missing_separator_still_validates_the_whole_flow(self):
+        """#536 재현 — 7개 중 하나만 공백이 빠져도 형식 · 단조 · 재생 시간 검증을 모두 거친다."""
+        overlay = self._read_samples(self.SEVEN)
         self.assertEqual(overlay.observation.status, "OK")
         self.assertIs(overlay.validation.format_ok, True)
         self.assertIs(overlay.validation.monotonic_ok, True)
         self.assertIs(overlay.validation.duration_match_ok, True)
         self.assertEqual(overlay.samples[4].raw_text, "2026-11-0214:00:29", "원문은 덮어쓰지 않는다")
+
+    def test_other_unreadable_sample_still_makes_the_whole_overlay_unknown(self):
+        """공백 생략만 받아 준다 — 다른 이유로 못 읽은 샘플이 하나라도 있으면 지금처럼 전체를 보류한다."""
+        stamps = list(self.SEVEN)
+        stamps[2] = (6.4, "2026-11-02 14:0O:26")  # OCR이 0을 O로 읽었다
+        overlay = self._read_samples(stamps)
+        self.assertEqual(overlay.observation.status, "UNKNOWN")
+        self.assertEqual(overlay.observation.reason.code, "readout.overlay.ocr_failed")
+        self.assertIs(overlay.validation.format_ok, False)
+        self.assertIsNone(overlay.validation.monotonic_ok)
+        self.assertIsNotNone(overlay.samples[4].parsed_at, "공백 빠진 샘플은 읽혔다")
+        self.assertIsNone(overlay.samples[2].parsed_at)
 
     def test_validation_failure_does_not_fail_the_run(self):
         """`OVERLAY_VALIDATION`은 run 실패가 아니다 — 시간이 역행해도 outcome은 내려가지 않는다."""
