@@ -732,6 +732,11 @@ def _run(args):
                     offset = end
                 report['placements'] = [{'id': r['fixture_id'], 'start': p['timeline_start_sec'],
                     'end': p['timeline_end_sec'], 'video_index': r['proposed_video_index']} for r, p in zip(records, placements)]
+                if getattr(args, 'explicit_placement_path', None):
+                    from recording_ec2_entry import placement_gate
+                    expected = json.loads(Path(args.explicit_placement_path).read_text())
+                    stage = 'smoke' if args.seconds == 10 else 'representative'
+                    placement_gate(expected[stage], report['placements'], stage)
                 report['timeline_coverage'] = logical_coverage(report['placements'], args.seconds)
                 timeline = service.create_relative_timeline_from_placements(placements)
                 resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),
