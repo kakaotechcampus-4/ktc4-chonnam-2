@@ -81,6 +81,7 @@ Plan 단계에서는 다음을 하지 않는다.
 
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
+| [Recording CPU quota 대조 2026-11-03](./2026-11-03-recording-cpu-quota-probe.md) | IN_PROGRESS · 새 승인 g의 실제 smoke·A1/B/A2 PASS, 출력 동일 | 준비132.800/114.251/131.314초·B 관측13~14% 감소. 단회/cache·호스트 한계·이전 실패 보존. 배포20분 성능·과거 차이 전체는 미확정 |
 | [Recording 준비 시간 재집계 2026-11-03](./2026-11-03-recording-preparation-timing.md) | Analysis · #452 원인별 기여도 미확정 | #552 보호 events/trace의 중첩 없는 시간 분해·CPU/청크 인과 한계·대표 구간 및 배포 후속 측정안. 새 실영상/운영 실측은 NOT_RUN |
 | [P2-0c 격리 capacity override 2026-11-03](./2026-11-03-capacity-override.md) | Result · 240/480초 준비 경계 PASS, 720초 Search40MiB 거부 | Analysis 전용 유한 override·packet64MiB 유지. provider 직전 차단 실험이며1200초·배포 E2E는 NOT_RUN |
 | [#544 이후 청크 저장 규모 재검증 2026-11-03](./2026-11-03-chunked-capacity-recheck.md) | Result · 합성38,359,627B DB 대조 PASS | 최초 disk/RAM 중단·harness 실패 보존. packet64MiB에서 저장·분할 조회·rollback 개선 확인, 20분/큰 복원 미검증 |
