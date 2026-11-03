@@ -128,7 +128,10 @@ describe('신고용 영상 다운로드', () => {
     vi.stubGlobal('fetch', fetchMock)
     URL.createObjectURL = vi.fn(() => 'blob:x')
     URL.revokeObjectURL = vi.fn()
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const names: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      names.push(this.download)
+    })
     const r = show('/cases/c1/assets/ref1')
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
     fireEvent.click(button(r))
@@ -136,6 +139,7 @@ describe('신고용 영상 다운로드', () => {
     await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/ref1')
+    expect(names).toEqual([expect.stringMatching(/^daesingo_clip_\d{8}_\d{6}\.mp4$/)])
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
   })
 
